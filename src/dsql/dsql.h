@@ -36,6 +36,8 @@
 #include "../jrd/common.h"
 #include "../dsql/all.h"
 #include "../jrd/y_ref.h"
+#include "../common/classes/array.h"
+#include "../common/classes/stack.h"
 
 #ifdef DEV_BUILD
 // This macro enables DSQL tracing code
@@ -83,6 +85,7 @@ const char* const NEW_CONTEXT		= "NEW";
 const char* const TEMP_CONTEXT		= "TEMP";
 
 //! macros and block used to implement a generic stack mechanism
+#ifdef NOT_USED_OR_REPLACED
 class dsql_lls : public pool_alloc<dsql_type_lls>
 {
 public:
@@ -99,7 +102,14 @@ inline blk* LLS_POP(dsql_lls** stack)
 {
 	return DsqlMemoryPool::ALLD_pop(stack);
 }
+#endif
 
+class dsql_ctx;
+class dsql_str;
+class dsql_nod;
+typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
+typedef Firebird::Stack<dsql_str*> DsqlStrStack;
+typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
 
 //======================================================================
 // remaining node definitions for local processing
@@ -388,14 +398,26 @@ public:
 													const dsql_nod* for_columns);
 	// end - member functions that should be private
 
+	dsql_req(DsqlMemoryPool& p) 
+		: req_pool(p), 
+		req_main_context(p), 
+		req_context(&req_main_context), 
+		req_union_context(p), 
+		req_dt_context(p), 
+		req_dt_base_context(0), 
+		req_blr_data(p),
+		req_labels(p), 
+		req_cursors(p) { }
+
 	dsql_req*	req_parent;		//!< Source request, if cursor update
 	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update
 	dsql_req*	req_offspring;	//!< Cursor update requests
-	DsqlMemoryPool*	req_pool;
-	dsql_lls*	req_context;
-    dsql_lls*	req_union_context;	//!< Save contexts for views of unions
-    dsql_lls*	req_dt_context;		//!< Save contexts for views of derived tables
-    dsql_lls*	req_dt_base_context;	//!< Save base context used for processing derived tables
+	DsqlMemoryPool&	req_pool;
+	DsqlContextStack	req_main_context;
+	DsqlContextStack*	req_context;
+    DsqlContextStack	req_union_context;	//!< Save contexts for views of unions
+    DsqlContextStack	req_dt_context;		//!< Save contexts for views of derived tables
+    DsqlContextStack*	req_dt_base_context;	//!< Save base context used for processing derived tables
 	dsql_sym* req_name;			//!< Name of request
 	dsql_sym* req_cursor;		//!< Cursor symbol, if any
 	dsql_dbb*	req_dbb;			//!< Database handle
@@ -405,7 +427,8 @@ public:
 	dsql_nod* req_blk_node;		//!< exec_block node 
 	class dsql_blb* req_blob;			//!< Blob info for blob requests
 	FRBRD*	req_handle;				//!< OSRI request handle
-	dsql_str*	req_blr_string;			//!< String block during BLR generation
+	//dsql_str*	req_blr_string;			//!< String block during BLR generation
+	Firebird::HalfStaticArray<BLOB_PTR, 256> req_blr_data;
 	class dsql_msg* req_send;		//!< Message to be sent to start request
 	class dsql_msg* req_receive;	//!< Per record message to be received
 	class dsql_msg* req_async;		//!< Message for sending scrolling information
@@ -417,8 +440,8 @@ public:
 	dsql_rel* req_relation;	//!< relation created by this request (for DDL)
 	dsql_prc* req_procedure;	//!< procedure created by this request (for DDL)
 	class dsql_ctx* req_outer_agg_context;	//!< agg context for outer ref
-	BLOB_PTR* req_blr;			//!< Running blr address
-	BLOB_PTR* req_blr_yellow;	//!< Threshold for upping blr buffer size
+	//BLOB_PTR* req_blr;			//!< Running blr address
+	//BLOB_PTR* req_blr_yellow;	//!< Threshold for upping blr buffer size
 	ULONG	req_inserts;			//!< records processed in request
 	ULONG	req_deletes;
 	ULONG	req_updates;
@@ -429,9 +452,9 @@ public:
 	USHORT	req_scope_level;		//!< Scope level for parsing aliases in subqueries
 	USHORT	req_message_number;	//!< Next available message number
 	USHORT	req_loop_level;		//!< Loop level
-	dsql_lls*	req_labels;			//!< Loop labels
+	DsqlStrStack	req_labels;			//!< Loop labels
 	USHORT	req_cursor_number;	//!< Cursor number
-	dsql_lls*	req_cursors;		//!< Cursors
+	DsqlNodStack	req_cursors;		//!< Cursors
 	USHORT	req_in_select_list;	//!< now processing "select list"
 	USHORT	req_in_where_clause;	//!< processing "where clause"
 	USHORT	req_in_group_by_clause;	//!< processing "group by clause"
@@ -498,6 +521,9 @@ public:
 class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
+	dsql_ctx(MemoryPool &p)
+		: ctx_childs_derived_table(p) {}
+
 	dsql_req*			ctx_request;		//!< Parent request
 	dsql_rel*			ctx_relation;		//!< Relation for context
 	dsql_prc*			ctx_procedure;		//!< Procedure for context
@@ -509,7 +535,25 @@ public:
 	USHORT				ctx_context;		//!< Context id
 	USHORT				ctx_scope_level;	//!< Subquery level within this request
 	USHORT				ctx_flags;			//!< Various flag values
-	dsql_lls*			ctx_childs_derived_table;	//!< Childs derived table context
+	DsqlContextStack	ctx_childs_derived_table;	//!< Childs derived table context
+
+	dsql_ctx& operator=(dsql_ctx& v)
+	{
+		ctx_request = v.ctx_request;
+		ctx_relation = v.ctx_relation;
+		ctx_procedure = v.ctx_procedure;
+		ctx_proc_inputs = v.ctx_proc_inputs;
+		ctx_map = v.ctx_map;
+		ctx_rse = v.ctx_rse;
+		ctx_parent = v.ctx_parent;
+		ctx_alias = v.ctx_alias;
+		ctx_context = v.ctx_context;
+		ctx_scope_level = v.ctx_scope_level;
+		ctx_flags = v.ctx_flags;
+		ctx_childs_derived_table.assign(v.ctx_childs_derived_table);
+
+		return *this;
+	}
 };
 
 // Flag values for ctx_flags

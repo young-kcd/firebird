@@ -83,19 +83,19 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 static bool check_hex(const TEXT*, USHORT);
 static bool check_number(const TEXT*, USHORT);
-static bool check_user_group(const TEXT*, USHORT, STR*, ULONG*);
+static bool check_user_group(const TEXT*, USHORT, CharBuffer&, ULONG*);
 static bool check_string(const TEXT*, const TEXT*);
 static SLONG compute_access(thread_db*, const SecurityClass*, const jrd_rel*,
 	const TEXT*, const TEXT*);
 static TEXT* save_string(const TEXT*, TEXT**);
 static SLONG walk_acl(thread_db*, const TEXT*, const jrd_rel*, const TEXT*,
-	const TEXT*, STR*, ULONG*);
+	const TEXT*, CharBuffer&, ULONG*);
 
-static inline void check_and_move(UCHAR*& to, UCHAR from, STR& start, ULONG* length_ptr)
+static inline void check_and_move(TEXT*& to, TEXT from, CharBuffer& start, ULONG* length_ptr)
 {
-	if ((start->str_data + *length_ptr) < (to + 1))
+	if ((start.begin() + *length_ptr) < (to + 1))
 	{
-		start = GRANT_realloc_acl(start, &to, length_ptr);
+		GRANT_realloc_acl(start, &to, length_ptr);
 	}
 	*to++ = from;
 }
@@ -793,7 +793,7 @@ void SCL_init(bool create,
 }
 
 
-void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, STR* start_ptr, ULONG* length_ptr)
+void SCL_move_priv(TEXT** acl_ptr, USHORT mask, CharBuffer& start_ptr, ULONG* length_ptr)
 {
 /**************************************
  *
@@ -805,23 +805,23 @@ void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, STR* start_ptr, ULONG* length_p
  *	Given a mask of privileges, move privileges types to acl.
  *
  **************************************/
-	UCHAR* p = *acl_ptr;
+	TEXT* p = *acl_ptr;
 
 	// Terminate identification criteria, and move privileges
 
-	check_and_move(p, ACL_end, *start_ptr, length_ptr);
-	check_and_move(p, ACL_priv_list, *start_ptr, length_ptr);
+	check_and_move(p, ACL_end, start_ptr, length_ptr);
+	check_and_move(p, ACL_priv_list, start_ptr, length_ptr);
 
 	for (const P_NAMES* priv = p_names; priv->p_names_priv; priv++)
 	{
 		if (mask & priv->p_names_priv)
 		{
 			fb_assert(priv->p_names_acl <= MAX_UCHAR);
-			check_and_move(p, (UCHAR) priv->p_names_acl, *start_ptr, length_ptr);
+			check_and_move(p, priv->p_names_acl, start_ptr, length_ptr);
 		}
 	}
 
-	check_and_move(p, 0, *start_ptr, length_ptr);
+	check_and_move(p, 0, start_ptr, length_ptr);
 
 	*acl_ptr = p;
 }
@@ -955,7 +955,7 @@ static bool check_number(const TEXT* acl, USHORT number)
 
 static bool check_user_group(const TEXT* acl,
 							 USHORT number,
-							 STR* start_ptr,
+							 CharBuffer& start_ptr,
 							 ULONG* length_ptr)
 {
 /**************************************
@@ -983,12 +983,8 @@ static bool check_user_group(const TEXT* acl,
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	STR buffer = NULL;
+	CharBuffer buffer(*length_ptr);
 	SLONG n = 0;
-
-	try {
-
-	buffer = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str();
 
 	USHORT l = *acl++;
 	if (l)
@@ -1001,25 +997,18 @@ static bool check_user_group(const TEXT* acl,
 		}
 		else				// processing group name
 		{
-			TEXT* user_group_name = (TEXT*) buffer->str_data;
+			TEXT* user_group_name = buffer.begin();
 			do {
 				const TEXT one_char = *acl++;
 				*user_group_name++ = LOWWER(one_char);
 			} while (--l);
 			*user_group_name = '\0';
-			user_group_name = (TEXT*) buffer->str_data;
+			user_group_name = buffer.begin();
 
 			// convert unix group name to unix group id
 
 			n = ISC_get_user_group_id(user_group_name);
 		}
-	}
-
-	delete buffer;
-	}
-	catch (const std::exception&) {
-		delete buffer;
-		throw;
 	}
 
 	return (n != number);
@@ -1090,21 +1079,15 @@ static SLONG compute_access(thread_db* tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	STR str_buffer = NULL;
+	CharBuffer str_buffer(BLOB_BUFFER_SIZE);
+	TEXT* buffer = str_buffer.begin();
+
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
 	SLONG privileges = SCL_scanned;
-
-	try {
-
-	// Get some space that's not off the stack
-
-	str_buffer = FB_NEW_RPT(*dbb->dbb_permanent, BLOB_BUFFER_SIZE) str();
-	str_buffer->str_length = BLOB_BUFFER_SIZE - 1;
-	TEXT* buffer = (TEXT*) str_buffer->str_data;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
 
@@ -1132,8 +1115,7 @@ static SLONG compute_access(thread_db* tdbb,
 			{
 				const ULONG old_offset = (ULONG) (acl - buffer);
 				length += BLOB_BUFFER_SIZE;
-				str::extend(str_buffer, length);
-				buffer = (TEXT*) str_buffer->str_data;
+				buffer = str_buffer.getBuffer(length);
 				acl = buffer + old_offset;
 			}
 		}
@@ -1146,22 +1128,13 @@ static SLONG compute_access(thread_db* tdbb,
 									view,
 									trg_name,
 									prc_name,
-									&str_buffer,
+									str_buffer,
 									(ULONG*)length_ptr);
 		}
 	END_FOR;
 
 	if (!REQUEST(irq_l_security))
 		REQUEST(irq_l_security) = request;
-
-
-	delete str_buffer;
-	}
-	catch (const std::exception&) {
-		delete str_buffer;
-		// CVC: we may need to call BLB_close here
-		throw;
-	}
 
 	return privileges;
 }
@@ -1200,7 +1173,7 @@ static SLONG walk_acl(thread_db* tdbb,
 					  const jrd_rel* view,
 					  const TEXT* trg_name,
 					  const TEXT* prc_name,
-					  STR* start_ptr,
+					  CharBuffer& start_ptr,
 					  ULONG* length_ptr)
 {
 /**************************************

@@ -40,11 +40,9 @@ namespace Jrd {
 	class OptimizerBlk;
 }
 
-class lls;
-
 bool OPT_access_path(const Jrd::jrd_req*, SCHAR*, SSHORT, USHORT*);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
-					   Jrd::RecordSelExpr*, lls*);
+							   Jrd::RecordSelExpr*, Jrd::NodeStack*);
 							   
 // Begin only exported for VMS
 Jrd::jrd_nod* OPT_make_dbkey(Jrd::OptimizerBlk*, Jrd::jrd_nod*,

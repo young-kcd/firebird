@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		lls.h
- *	DESCRIPTION:	Linked list stack definitions
+ *	DESCRIPTION:	most commonly used in Jrd stacks
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -13,30 +13,30 @@
  * or implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * The Original Code was created by Inprise Corporation
- * and its predecessors. Portions created by Inprise Corporation are
- * Copyright (C) Inprise Corporation.
+ * Created by: Alex Peshkov <peshkoff@mail.ru>
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
  */
 
 #ifndef JRD_LLS_H
 #define JRD_LLS_H
 
-#include "../jrd/jrd_blks.h"
-#include "../include/fb_blk.h"
+#include "../common/classes/stack.h"
 
-#define LLS_PUSH(object, stack)		(JrdMemoryPool::ALL_push((BLK)object,stack))
-#define LLS_POP(stack)			(JrdMemoryPool::ALL_pop(stack))
-
-class lls : public pool_alloc<type_lls>
-{
-	public:
-		blk* lls_object;
-		lls* lls_next;
-};
-typedef lls *LLS;
+namespace Jrd {
+	class Record;
+	class jrd_nod;
+	class RecordSource;
+	class River;
+	typedef Firebird::Stack<Record*> RecordStack;
+	typedef Firebird::Stack<jrd_nod*> NodeStack;
+	typedef Firebird::Stack<SLONG> PageStack;
+	typedef Firebird::Stack<UCHAR*> UCharStack;
+	typedef Firebird::Stack<RecordSource*> RsbStack;
+	typedef Firebird::Stack<River*> RiverStack;
+	typedef Firebird::Stack<UCHAR> StreamStack;
+}
 
 #endif // JRD_LLS_H
-

@@ -27,7 +27,6 @@
 #include "../include/fb_blk.h"
 #include "../jrd/os/pio.h"
 
-class lls;
 struct exp_index_buf;
 
 namespace Ods {
@@ -60,8 +59,9 @@ struct bcb_repeat
 
 class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
-    public:
-	lls*		bcb_memory;			/* Large block partitioned into buffers */
+public:
+	BufferControl(MemoryPool& p) : bcb_memory(p) { }
+	UCharStack	bcb_memory;			/* Large block partitioned into buffers */
 	que			bcb_in_use;			/* Que of buffers in use */
 	que			bcb_empty;			/* Que of empty buffers */
 	BufferDesc*	bcb_btree;			/* root of dirty page btree */

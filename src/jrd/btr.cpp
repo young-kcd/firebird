@@ -210,11 +210,9 @@ static bool scan(thread_db*, UCHAR*, SparseBitmap**, USHORT, USHORT,
 				 temporary_key*, USHORT, const SCHAR);
 static void update_selectivity(index_root_page*, USHORT, const SelectivityList&);
 
-USHORT BTR_all(thread_db*    tdbb,
-			   jrd_rel* relation,
-			   index_desc**   start_buffer,
-			   index_desc**   csb_idx,
-			   IndexDescAlloc** csb_idx_allocation)
+USHORT BTR_all(thread_db*		tdbb,
+			   jrd_rel*			relation,
+			   IndexDescAlloc**	csb_idx)
 {
 /**************************************
  *
@@ -239,18 +237,15 @@ USHORT BTR_all(thread_db*    tdbb,
 		return 0;
 	}
 
-	delete *csb_idx_allocation;
-	*csb_idx_allocation = FB_NEW_RPT(*tdbb->tdbb_default, root->irt_count) IndexDescAlloc();
-	index_desc* buffer = *start_buffer = (*csb_idx_allocation)->items;
+	delete *csb_idx;
+	*csb_idx = FB_NEW_RPT(*tdbb->tdbb_default, root->irt_count) IndexDescAlloc();
+	index_desc* buffer = (*csb_idx)->items;
 	USHORT count = 0;
 	for (USHORT i = 0; i < root->irt_count; i++) {
-		if (BTR_description(relation, root, buffer, i)) {
+		if (BTR_description(relation, root, &buffer[count], i)) {
 			count++;
-			buffer = NEXT_IDX(buffer->idx_rpt, buffer->idx_count);
 		}
 	}
-	*csb_idx = *start_buffer;
-	*start_buffer = buffer;
 
 	CCH_RELEASE(tdbb, &window);
 	return count;

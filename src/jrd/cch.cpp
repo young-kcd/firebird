@@ -1248,7 +1248,7 @@ void CCH_fini(thread_db* tdbb)
 
 		if ( (bcb = dbb->dbb_bcb) ) {
 			while (bcb->bcb_memory) {
-				gds__free(LLS_POP(&bcb->bcb_memory));
+				gds__free(bcb->bcb_memory.pop());
 			}
 #ifdef CACHE_WRITER
 			/* Dispose off any associated latching semaphores */
@@ -1651,7 +1651,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	BufferControl* bcb = 0;
 	while (!bcb) {
 		try {
-			bcb = FB_NEW_RPT(*dbb->dbb_bufferpool, number) BufferControl;
+			bcb = FB_NEW_RPT(*dbb->dbb_bufferpool, number) BufferControl(*dbb->dbb_bufferpool);
 		} catch(const std::exception& ex) {
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 			/* If the buffer control block can't be allocated, memory is
@@ -3769,7 +3769,8 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 	const bcb_repeat* const old_end = old->bcb_rpt + old->bcb_count;
 
 	BufferControl* new_block =
-		FB_NEW_RPT(*dbb->dbb_bufferpool, number) BufferControl;
+		FB_NEW_RPT(*dbb->dbb_bufferpool, number) 
+		BufferControl(*dbb->dbb_bufferpool);
 	new_block->bcb_count = number;
 	new_block->bcb_free_minimum = (SSHORT) MIN(number / 4, 128);	/* 25% clean page reserve */
 	new_block->bcb_checkpoint = old->bcb_checkpoint;
@@ -3795,8 +3796,8 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 /* Copy addresses of previously allocated buffer space to new block */
 
-	for (const lls* stack = old->bcb_memory; stack; stack = stack->lls_next) {
-		LLS_PUSH(stack->lls_object, &new_block->bcb_memory);
+	for (Jrd::UCharStack::iterator stack(old->bcb_memory); stack; ++stack) {
+		new_block->bcb_memory.push(stack.object());
 	}
 
 /* Initialize tail of new buffer control block */
@@ -3834,7 +3835,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 			memory = (UCHAR *)gds__alloc((SLONG) dbb->dbb_page_size *
 										 (num_per_seg + 1));
 			// NOMEM: crash!
-			LLS_PUSH(memory, &new_block->bcb_memory);
+			new_block->bcb_memory.push(memory);
 			memory = (UCHAR *) (((U_IPTR) memory + dbb->dbb_page_size - 1) &
 								~((int) dbb->dbb_page_size - 1));
 			num_in_seg = num_per_seg;
@@ -4696,7 +4697,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 				}
 			} while (true);
 
-			LLS_PUSH(memory, &bcb->bcb_memory);
+			bcb->bcb_memory.push(memory);
 			memory_end = memory + memory_size;
 
 			/* Allocate buffers on an address that is an even multiple
@@ -4717,7 +4718,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 			   overhead. Reduce this number by a 25% fudge factor to
 			   leave some memory for useful work. */
 
-			gds__free(LLS_POP(&bcb->bcb_memory));
+			gds__free(bcb->bcb_memory.pop());
 			memory = 0;
 			for (bcb_repeat* tail2 = old_tail; tail2 < tail; tail2++)
 			{

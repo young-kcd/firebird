@@ -35,7 +35,7 @@ void MAKE_desc(dsc*, dsql_nod*);
 void MAKE_desc_from_field(dsc*, const class dsql_fld*);
 void MAKE_desc_from_list(dsc*, dsql_nod*, const TEXT*);
 dsql_nod* MAKE_field(class dsql_ctx*, class dsql_fld*, dsql_nod*);
-dsql_nod* MAKE_list(class dsql_lls*);
+dsql_nod* MAKE_list(DsqlNodStack&);
 dsql_nod* MAKE_node(enum nod_t, int);
 class dsql_par* MAKE_parameter(class dsql_msg* , bool, bool, USHORT);
 class dsql_str* MAKE_string(const char* , int);

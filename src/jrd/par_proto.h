@@ -32,14 +32,13 @@ namespace Jrd {
 }
 
 struct dsc;
-class lls;
 
 Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, Jrd::CompilerScratch*,
 					Jrd::CompilerScratch**, Jrd::jrd_req**, const bool, USHORT);
 USHORT			PAR_desc(Jrd::CompilerScratch*, dsc*);
 Jrd::jrd_nod*	PAR_gen_field(Jrd::thread_db*, USHORT, USHORT);
 Jrd::jrd_nod*	PAR_make_field(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, const Firebird::string&);
-Jrd::jrd_nod*	PAR_make_list(Jrd::thread_db*, lls*);
+Jrd::jrd_nod*	PAR_make_list(Jrd::thread_db*, Jrd::NodeStack&);
 Jrd::jrd_nod*	PAR_make_node(Jrd::thread_db*, int);
 Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR*, USHORT);
 SLONG			PAR_symbol_to_gdscode(const Firebird::string&);

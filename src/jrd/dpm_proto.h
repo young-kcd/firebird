@@ -39,8 +39,6 @@ namespace Ods {
 	struct data_page;
 }
 
-class lls;
-
 Ods::pag* DPM_allocate(Jrd::thread_db*, Jrd::win*);
 void	DPM_backout(Jrd::thread_db*, Jrd::record_param*);
 bool		DPM_chain(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
@@ -59,10 +57,10 @@ bool	DPM_next(Jrd::thread_db*, Jrd::record_param*, USHORT, bool, bool);
 void	DPM_pages(Jrd::thread_db*, SSHORT, int, ULONG, SLONG);
 SLONG	DPM_prefetch_bitmap(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::SparseBitmap*, SLONG);
 void	DPM_scan_pages(Jrd::thread_db*);
-void	DPM_store(Jrd::thread_db*, Jrd::record_param*, lls**, USHORT);
+void	DPM_store(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack&, USHORT);
 SLONG	DPM_store_blob(Jrd::thread_db*, Jrd::blb*, Jrd::Record*);
 void	DPM_rewrite_header(Jrd::thread_db*, Jrd::record_param*);
-void	DPM_update(Jrd::thread_db*, Jrd::record_param*, lls**, const Jrd::jrd_tra*);
+void	DPM_update(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack&, const Jrd::jrd_tra*);
 
 #endif // JRD_DPM_PROTO_H
 

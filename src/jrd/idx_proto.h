@@ -37,9 +37,8 @@ namespace Jrd {
 	struct index_desc;
 	class CompilerScratch;
 	class jrd_fld;
+	class Record;
 }
-
-class lls;
 
 void IDX_check_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_rel*, Jrd::jrd_rel*,
 							 Jrd::jrd_fld*);
@@ -50,7 +49,7 @@ void IDX_delete_index(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 void IDX_delete_indices(Jrd::thread_db*, Jrd::jrd_rel*);
 Jrd::idx_e IDX_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, Jrd::jrd_rel**,
 							USHORT*);
-void IDX_garbage_collect(Jrd::thread_db*, Jrd::record_param*, lls*, lls*);
+void IDX_garbage_collect(Jrd::thread_db*, Jrd::record_param*, const Jrd::RecordStack&, const Jrd::RecordStack&);
 Jrd::idx_e IDX_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
 							 Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT *);
 Jrd::idx_e IDX_modify_check_constraints(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,

@@ -91,7 +91,7 @@
 class str;
 class CharSetContainer;
 struct dsc;
-class lls;
+struct mod;
 
 namespace Jrd {
 
@@ -173,7 +173,7 @@ public:
 	vcl*		dbb_t_pages;	/* pages number for transactions */
 	vcl*		dbb_gen_id_pages;	/* known pages for gen_id */
 	BlobFilter*	dbb_blob_filters;	/* known blob filters */
-	lls*		dbb_modules;	/* external function/filter modules */
+	Firebird::Stack<mod*>	dbb_modules;	/* external function/filter modules */
 	MUTX_T *dbb_mutexes;		/* Database block mutexes */
 	WLCK_T *dbb_rw_locks;		/* Database block read/write locks */
 	REC_MUTX_T dbb_sp_rec_mutex;	/* Recursive mutex for accessing/updating stored procedure metadata */
@@ -258,7 +258,8 @@ public:
 
 private:
 	explicit Database(MemoryPool& p)
-	:	dbb_spare_string(p),
+	:	dbb_modules(p),
+		dbb_spare_string(p),
 		dbb_filename(p),
 		dbb_encrypt_key(p),
 		dbb_pools(1, p, type_dbb),
@@ -957,11 +958,23 @@ struct ihndl
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 {
 	char* rc = (char*) p.allocate(s.length() + 1, 0
-#ifdef DEBYG_GDS_ALLOC
+#ifdef DEBUG_GDS_ALLOC
 		, __FILE__, __LINE__
 #endif
 		);
 	strcpy(rc, s.c_str());
+	return rc;
+}
+
+inline char* stringDup(MemoryPool& p, const char* s, int l)
+{
+	char* rc = (char*) p.allocate(l + 1, 0
+#ifdef DEBUG_GDS_ALLOC
+		, __FILE__, __LINE__
+#endif
+		);
+	memcpy(rc, s, l);
+	rc[l] = 0;
 	return rc;
 }
 
@@ -975,24 +988,6 @@ class str : public pool_alloc_rpt<SCHAR, type_str>
 public:
 	USHORT str_length;
 	UCHAR str_data[2];			/* one byte for ALLOC and one for the NULL */
-
-	static bool extend(str*& s, size_t new_len)
-	{
-		fb_assert(s);
-		MemoryPool* pPool = MemoryPool::blk_pool(s);
-		fb_assert(pPool);
-		if (!pPool) {
-			return false;	// runtime safety
-		}
-		// TMN: Note that this violates "common sense" and should be fixed.
-		str* res = FB_NEW_RPT(*pPool, new_len + 1) str;
-		res->str_length = new_len;
-		memcpy(res->str_data, s->str_data, s->str_length + 1);
-		str* old = s;
-		s = res;
-		delete old;
-		return s != 0;
-	}
 };
 typedef str *STR;
 

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.66 2004-04-10 17:24:43 skidder Exp $
+$Id: blb.cpp,v 1.67 2004-04-18 14:22:18 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -277,10 +277,16 @@ blb* BLB_create2(thread_db* tdbb,
 }
 
 
+//
+// This function makes linear stacks lookup. Therefore 
+// in case of big stacks garbage collection speed may become 
+// real problem. Stacks should be sorted before run?
+//
 void BLB_garbage_collect(
 						 thread_db* tdbb,
-						 LLS going,
-						 LLS staying, SLONG prior_page, jrd_rel* relation)
+						 const RecordStack& going, 
+						 const RecordStack& staying, 
+						 SLONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *
@@ -307,11 +313,11 @@ void BLB_garbage_collect(
 
 /* Loop thru records on the way out looking for blobs to garbage collect */
 
-	for (lls* stack1 = going; stack1; stack1 = stack1->lls_next) {
-		Record* rec1 = (Record*) stack1->lls_object;
+	for (RecordStack::iterator stack1(going); stack1; ++stack1) {
+		Record* rec1 = stack1.object();
 		if (!rec1)
 			continue;
-		const Format* format = (Format*) rec1->rec_format;
+		const Format* format = rec1->rec_format;
 
 		/* Look for active blob records */
 
@@ -325,9 +331,8 @@ void BLB_garbage_collect(
 
 			/* Got active blob, cancel it out of any remaining records on the way out */
 
-			lls* stack2;
-			for (stack2 = stack1->lls_next; stack2; stack2 = stack2->lls_next) {
-				Record* rec2 = (Record*) stack2->lls_object;
+			for (RecordStack::iterator stack2(stack1); stack2; ++stack2) {
+				Record* rec2 = stack2.object();
 				if (!EVL_field(0, rec2, id, &desc2))
 					continue;
 				const bid* blob2 = (bid*) desc2.dsc_address;
@@ -340,18 +345,19 @@ void BLB_garbage_collect(
 
 			/* Make sure the blob doesn't stack in any record remaining */
 
-			for (stack2 = staying; stack2; stack2 = stack2->lls_next) {
-				Record* rec2 = (Record*) stack2->lls_object;
-				if (!EVL_field(0, rec2, id, &desc2))
+			RecordStack::iterator stack3(staying);
+			for (; stack3; ++stack3) {
+				Record* rec3 = stack3.object();
+				if (!EVL_field(0, rec3, id, &desc2))
 					continue;
-				const bid* blob2 = (bid*) desc2.dsc_address;
-				if (blob->bid_relation_id == blob2->bid_relation_id &&
-					blob->bid_stuff.bid_number == blob2->bid_stuff.bid_number)
+				const bid* blob3 = (bid*) desc2.dsc_address;
+				if (blob->bid_relation_id == blob3->bid_relation_id &&
+					blob->bid_stuff.bid_number == blob3->bid_stuff.bid_number)
 				{
 					break;
 				}
 			}
-			if (stack2)
+			if (stack3)
 				continue;
 
 			/* Get rid of blob */

@@ -455,7 +455,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 }
 
 
-jrd_nod* PAR_make_list(thread_db* tdbb, LLS stack)
+jrd_nod* PAR_make_list(thread_db* tdbb, NodeStack& stack)
 {
 /**************************************
  *
@@ -470,17 +470,15 @@ jrd_nod* PAR_make_list(thread_db* tdbb, LLS stack)
 	SET_TDBB(tdbb);
 
 /* Count the number of nodes */
-	USHORT count = 0;
-	for (const lls* temp = stack; temp; count++) {
-		temp = temp->lls_next;
-	}
+	USHORT count = stack.getCount();
 
 	jrd_nod* node = PAR_make_node(tdbb, count);
 	node->nod_type = nod_list;
 	jrd_nod** ptr = node->nod_arg + count;
 
-	while (stack)
-		*--ptr = (jrd_nod*) LLS_POP(&stack);
+	while (stack) {
+		*--ptr = stack.pop();
+	}
 
 	return node;
 }
@@ -576,8 +574,9 @@ SLONG PAR_symbol_to_gdscode(const Firebird::string& name)
 	{
 		length = name.length();
 	}
+	Firebird::string::const_pointer nm = name.c_str();
 	for (int i = 0; codes[i].code_number; ++i) {
-		if (name.compare(0, length, codes[i].code_string, length) == 0) {
+		if (strncmp(nm, codes[i].code_string, length) == 0) {
 			return codes[i].code_number;
 		}
 	}
@@ -808,7 +807,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 		dep_node->nod_arg[e_dep_object] =
 			(jrd_nod*)(IPTR) exception_list->xcp_rpt[0].xcp_code;
 		dep_node->nod_arg[e_dep_object_type] = (jrd_nod*) obj_exception;
-		LLS_PUSH(dep_node, &csb->csb_dependencies);
+		csb->csb_dependencies.push(dep_node);
 		break;
 
 	default:
@@ -875,7 +874,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 			dep_node->nod_arg[e_dep_object] =
 				(jrd_nod*) (IPTR)exception_list->xcp_rpt[0].xcp_code;
 			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*) obj_exception;
-			LLS_PUSH(dep_node, &csb->csb_dependencies);
+			csb->csb_dependencies.push(dep_node);
 			break;
 
 		case blr_default_code:
@@ -976,7 +975,7 @@ static void par_dependency(thread_db*   tdbb,
 		field_node->nod_arg[0] = (jrd_nod*) (IPTR) id;
 	}
 
-	LLS_PUSH(node, &csb->csb_dependencies);
+	csb->csb_dependencies.push(node);
 }
 
 
@@ -1026,7 +1025,7 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	dep_node->nod_arg[e_dep_object] = (jrd_nod*) procedure;
 	dep_node->nod_arg[e_dep_object_type] = (jrd_nod*) obj_procedure;
 
-	LLS_PUSH(dep_node, &csb->csb_dependencies);
+	csb->csb_dependencies.push(dep_node);
 
 	return node;
 }
@@ -1264,7 +1263,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
         dep_node->nod_type = nod_dependency;
         dep_node->nod_arg [e_dep_object] = (jrd_nod*) function;
         dep_node->nod_arg [e_dep_object_type] = (jrd_nod*) obj_udf;
-        LLS_PUSH (dep_node, &csb->csb_dependencies);
+        csb->csb_dependencies.push(dep_node);
     }
 
 	return node;
@@ -1389,7 +1388,7 @@ static jrd_nod* par_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 		syntax_error(csb, "blr_map");
 
 	SSHORT count = BLR_WORD;
-	lls* map = NULL;
+	NodeStack map;
 
 	while (--count >= 0) {
 		jrd_nod* assignment = PAR_make_node(tdbb, e_asgn_length);
@@ -1398,7 +1397,7 @@ static jrd_nod* par_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 		assignment->nod_arg[e_asgn_to] =
 			PAR_gen_field(tdbb, stream, BLR_WORD);
 		assignment->nod_arg[e_asgn_from] = parse(tdbb, csb, VALUE);
-		LLS_PUSH(assignment, &map);
+		map.push(assignment);
 	}
 
 	jrd_nod* node = PAR_make_list(tdbb, map);
@@ -1939,7 +1938,6 @@ static jrd_nod* par_relation(
 	if (blr_operator == blr_rid || blr_operator == blr_rid2) {
 		const SSHORT id = BLR_WORD;
 		if (blr_operator == blr_rid2) {
-			BLR_PEEK; // Do not delete. It skips the length.
 			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
 			par_name(csb, *alias_string);
 		}
@@ -1951,7 +1949,6 @@ static jrd_nod* par_relation(
 	else if (blr_operator == blr_relation || blr_operator == blr_relation2) {
 		par_name(csb, name);
 		if (blr_operator == blr_relation2) {
-			BLR_PEEK; // Do not delete. It skips the length.
 			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
 			par_name(csb, *alias_string);
 		}
@@ -2238,11 +2235,11 @@ static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb)
 
 /* Pick up the sub-RecordSelExpr's and maps */
 
-	lls* clauses = NULL;
+	NodeStack clauses;
 
 	while (--count >= 0) {
-		LLS_PUSH(parse(tdbb, csb, TYPE_RSE), &clauses);
-		LLS_PUSH(par_map(tdbb, csb, stream), &clauses);
+		clauses.push(parse(tdbb, csb, TYPE_RSE));
+		clauses.push(par_map(tdbb, csb, stream));
 	}
 
 	node->nod_arg[e_uni_clauses] = PAR_make_list(tdbb, clauses);
@@ -2580,7 +2577,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
                 dep_node->nod_type = nod_dependency;
                 dep_node->nod_arg [e_dep_object] = (jrd_nod*) (IPTR) tmp;
                 dep_node->nod_arg [e_dep_object_type] = (jrd_nod*) obj_generator;
-                LLS_PUSH (dep_node, &csb->csb_dependencies);
+                csb->csb_dependencies.push(dep_node);
             }
 
 		}
@@ -2698,12 +2695,12 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_select:
 	case blr_begin:
 		{
-			lls* stack = NULL;
+			NodeStack stack;
 
 			while (BLR_PEEK != (UCHAR) blr_end) {
 				if (blr_operator == blr_select && BLR_PEEK != blr_receive)
 					syntax_error(csb, "blr_receive");
-				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
+				stack.push(parse(tdbb, csb, sub_type));
 			}
 			BLR_BYTE; // skip blr_end
 			node = PAR_make_list(tdbb, stack);
@@ -2712,11 +2709,13 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_block:
 		{
-			lls* stack = NULL;
+			NodeStack stack;
 
 			node->nod_arg[e_blk_action] = parse(tdbb, csb, sub_type);
 			while (BLR_PEEK != (UCHAR) blr_end)
-				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
+			{
+				stack.push(parse(tdbb, csb, sub_type));
+			}
 			BLR_BYTE; // skip blr_end
 			node->nod_arg[e_blk_handlers] = PAR_make_list(tdbb, stack);
 		}

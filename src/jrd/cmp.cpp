@@ -130,9 +130,9 @@ const size_t REQ_TAIL = sizeof (Jrd::jrd_req::blk_repeat_type);
 using namespace Jrd;
 
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
-static jrd_nod* catenate_nodes(thread_db*, LLS);
+static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
 static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
-static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, LLS *, NOD_T);
+static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, NOD_T);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
@@ -141,7 +141,7 @@ static void pass1_erase(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass1_expand_view(thread_db*, CompilerScratch*, USHORT, USHORT, bool);
 static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
 static RecordSelExpr* pass1_rse(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_rel*, USHORT);
-static void pass1_source(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_nod*, jrd_nod**, LLS *, jrd_rel*, USHORT);
+static void pass1_source(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_nod*, jrd_nod**, NodeStack&, jrd_rel*, USHORT);
 static jrd_nod* pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, trig_vec*, USHORT, USHORT, USHORT, jrd_rel*,
 						USHORT);
@@ -2553,7 +2553,7 @@ static USHORT base_stream(CompilerScratch* csb, jrd_nod** stream_number, bool na
 #endif
 
 
-static jrd_nod* catenate_nodes(thread_db* tdbb, LLS stack)
+static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 {
 /**************************************
  *
@@ -2568,9 +2568,7 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, LLS stack)
  **************************************/
 	SET_TDBB(tdbb);
 
-	DEV_BLKCHK(stack, type_lls);
-
-	jrd_nod* node1 = (jrd_nod*) LLS_POP(&stack);
+	jrd_nod* node1 = stack.pop();
 
 	if (!stack)
 		return node1;
@@ -2999,7 +2997,7 @@ static jrd_nod* copy(thread_db* tdbb,
 static void expand_view_nodes(thread_db* tdbb,
 							  CompilerScratch* csb,
 							  USHORT stream,
-							  LLS * stack,
+							  NodeStack& stack,
 							  NOD_T type)
 {
 /**************************************
@@ -3015,7 +3013,6 @@ static void expand_view_nodes(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(*stack, type_lls);
 
 	// if the stream's dbkey should be ignored, do so
 
@@ -3039,7 +3036,7 @@ static void expand_view_nodes(thread_db* tdbb,
 		node->nod_count = 0;
 		node->nod_type = type;
 		node->nod_arg[0] = (jrd_nod*) (IPTR) stream;
-		LLS_PUSH(node, stack);
+		stack.push(node);
 	}
 }
 
@@ -3137,7 +3134,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 		map[2] = 2;
 	}
 
-	lls* stack = NULL;
+	NodeStack stack;
 
 	USHORT field_id = 0;
 	vec::iterator ptr1 = vector->begin();
@@ -3151,7 +3148,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 			node->nod_arg[e_asgn_from] =
 				copy(tdbb, csb, value, map, (USHORT) (field_id + 1), NULL, false);
 			node->nod_arg[e_asgn_to] = PAR_gen_field(tdbb, stream, field_id);
-			LLS_PUSH(node, &stack);
+			stack.push(node);
 		}
 	}
 
@@ -3161,7 +3158,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 	// we have some default - add the original statement and make a list out of
 	// the whole mess
 
-	LLS_PUSH(statement, &stack);
+	stack.push(statement);
 
 	return PAR_make_list(tdbb, stack);
 }
@@ -3197,7 +3194,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 		map[0] = (UCHAR) stream;
 	}
 
-	lls* stack = NULL;
+	NodeStack stack;
 
 	USHORT field_id = 0;
 	vec::iterator ptr1 = vector->begin();
@@ -3213,7 +3210,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 					 NULL, false);
 			node->nod_arg[e_val_value] =
 				PAR_gen_field(tdbb, stream, field_id);
-			LLS_PUSH(node, &stack);
+			stack.push(node);
 		}
 
 		if (*ptr1 && (validation = ((jrd_fld*)(*ptr1))->fld_not_null)) {
@@ -3224,7 +3221,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 					 NULL, false);
 			node->nod_arg[e_val_value] =
 				PAR_gen_field(tdbb, stream, field_id);
-			LLS_PUSH(node, &stack);
+			stack.push(node);
 		}
 	}
 
@@ -3587,8 +3584,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 			if (!csb->csb_rpt[stream].csb_map)
 				return node;
-			lls* stack = NULL;
-			expand_view_nodes(tdbb, csb, stream, &stack, type);
+			NodeStack stack;
+			expand_view_nodes(tdbb, csb, stream, stack, type);
 			if (stack)
 				return catenate_nodes(tdbb, stack);
 
@@ -3771,7 +3768,7 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 
 	DEV_BLKCHK(csb, type_csb);
 
-	lls* stack = NULL;
+	NodeStack stack;
 	jrd_rel* relation = csb->csb_rpt[org_stream].csb_relation;
 	vec* fields = relation->rel_fields;
 
@@ -3808,7 +3805,7 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 			assign->nod_arg[e_asgn_to] = node;
 			assign->nod_arg[e_asgn_from] =
 				PAR_gen_field(tdbb, org_stream, id);
-			LLS_PUSH(assign, &stack);
+			stack.push(assign);
 		}
 	}
 
@@ -3977,7 +3974,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 
 	csb->csb_current_nodes.push(rse);
 
-	lls* stack = NULL;
+	NodeStack stack;
 	jrd_nod* boolean = NULL;
 	jrd_nod* sort = rse->rse_sorted;
 	jrd_nod* project = rse->rse_projection;
@@ -3994,17 +3991,14 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 	for (const jrd_nod* const* const end = arg + rse->rse_count;
 		arg < end; arg++)
 	{
-		pass1_source(tdbb, csb, rse, *arg, &boolean, &stack, view,
+		pass1_source(tdbb, csb, rse, *arg, &boolean, stack, view,
 		             view_stream);
 	}
 
 	// Now, rebuild the RecordSelExpr block. If possible, re-use the old block,
 	// otherwise allocate a new one.
 
-	USHORT count = 0;
-	for (const lls* temp = stack; temp; temp = temp->lls_next) {
-		++count;
-	}
+	USHORT count = stack.getCount();
 
 	if (count != rse->rse_count) {
 		RecordSelExpr* new_rse = (RecordSelExpr*) PAR_make_node(tdbb, count + rse_delta + 2);
@@ -4023,8 +4017,9 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 
 	arg = rse->rse_relation + count;
 
-	while (stack) {
-		*--arg = (jrd_nod*) LLS_POP(&stack);
+	while (stack) 
+	{
+		*--arg = stack.pop();
 	}
 
 	// finish of by processing other clauses
@@ -4085,14 +4080,14 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 }
 
 
-static void pass1_source(thread_db*     tdbb,
-						 CompilerScratch*      csb,
-						 RecordSelExpr*      rse,
-						 jrd_nod*  source,
-						 jrd_nod** boolean,
-						 LLS*     stack,
-						 jrd_rel*  parent_view,
-						 USHORT   view_stream)
+static void pass1_source(thread_db*			tdbb,
+						 CompilerScratch*	csb,
+						 RecordSelExpr*		rse,
+						 jrd_nod*	source,
+						 jrd_nod**	boolean,
+						 NodeStack&	stack,
+						 jrd_rel*	parent_view,
+						 USHORT		view_stream)
 {
 /**************************************
  *
@@ -4111,7 +4106,6 @@ static void pass1_source(thread_db*     tdbb,
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(source, type_nod);
 	DEV_BLKCHK(*boolean, type_nod);
-	DEV_BLKCHK(*stack, type_lls);
 	DEV_BLKCHK(parent_view, type_rel);
 
 	Database* dbb = tdbb->tdbb_database;
@@ -4161,13 +4155,13 @@ static void pass1_source(thread_db*     tdbb,
 		}
 
 		source = pass1(tdbb, csb, source, parent_view, view_stream, false);
-		LLS_PUSH(source, stack);
+		stack.push(source);
 		return;
 	}
 
 	// Assume that the source will be used. Push it on the final stream stack.
 
-	LLS_PUSH(source, stack);
+	stack.push(source);
 
 	// special case: procedure
 
@@ -4240,7 +4234,7 @@ static void pass1_source(thread_db*     tdbb,
 	// we've got a view, expand it
 
 	DEBUG;
-	LLS_POP(stack);
+	stack.pop();
 	UCHAR* map = alloc_map(tdbb, csb, stream);
 
 	// We don't expand the view in two cases: 
@@ -4258,7 +4252,7 @@ static void pass1_source(thread_db*     tdbb,
 	{
 		jrd_nod* node = copy(tdbb, csb, (jrd_nod*) view_rse, map, 0, NULL, false);
 		DEBUG;
-		LLS_PUSH(pass1(tdbb, csb, node, view, stream, false), stack);
+		stack.push(pass1(tdbb, csb, node, view, stream, false));
 		DEBUG;
 		return;
 	}
@@ -5408,7 +5402,6 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			for (map++; *map; map++) {
 				tail = &csb->csb_rpt[*map];
 				const jrd_rel* relation = tail->csb_relation;
-				const Firebird::string& alias = *(tail->csb_alias);
 
 				// match the user-supplied alias with the alias supplied
 				// with the view definition; failing that, try the base

@@ -666,6 +666,42 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, USHORT size, bool err_flag)
 	return length;
 }
 
+TEXT* DYN_dup_string(MemoryPool& pool, const TEXT** ptr, bool trim, USHORT size)
+{
+/**************************************
+ *
+ *	D Y N _ d u p _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Duplicate a string from ptr.
+ *	If size is > 0 and it is too small for string, punt.
+ *	Returns newly allocated string.
+ *
+ **************************************/
+	USHORT e = 0;
+	const TEXT* p = *ptr;
+	USHORT length = (UCHAR) *p++;
+	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
+	*ptr = p + length;
+	
+	if (trim) {
+		while (length) {
+			if (p[length - 1] != ' ') {
+				break;
+			}
+			--length;
+		}
+	}
+	if (size > 0 && length >= size) {
+		DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
+		/* msg 159: Name longer than database field size */
+	}
+
+	return stringDup(pool, p, length);
+}
+
 USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 {
 /**************************************

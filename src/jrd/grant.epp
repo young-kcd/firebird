@@ -67,40 +67,42 @@ using namespace Jrd;
 #define DEFAULT_CLASS	"SQL$DEFAULT"
 
 #define CHECK_ACL_BOUND(to, start, length_ptr, move_length)\
-          {\
-          if (((start)->str_data + *length_ptr) < (to + move_length))  {start = GRANT_realloc_acl(start, &to, length_ptr);} \
-          }
+		{\
+			if (((start).begin() + *length_ptr) < (to + move_length))  {\
+				GRANT_realloc_acl(start, &to, length_ptr);\
+			}\
+		}
 #define CHECK_AND_MOVE(to, from, start, length_ptr) {CHECK_ACL_BOUND (to, start, length_ptr, 1); *(to)++ = from;}
 #define CHECK_MOVE_INCR(to, from, start, length_ptr) {CHECK_ACL_BOUND (to, start, length_ptr, 1); *(to)++ = (from)++;}
 
 DATABASE DB = STATIC "yachts.lnk";
 
-static void define_default_class(thread_db*, const TEXT*, TEXT*, const UCHAR*, USHORT);
+static void define_default_class(thread_db*, const TEXT*, TEXT*, const TEXT*, USHORT);
 #ifdef NOT_USED_OR_REPLACED
 static void delete_security_class(thread_db*, TEXT *);
 #endif
-static void finish_security_class(UCHAR **, USHORT, STR *, ULONG *);
+static void finish_security_class(TEXT**, USHORT, CharBuffer&, ULONG *);
 static void get_object_info(thread_db*, const TEXT*, SSHORT,
 							TEXT*, TEXT*, TEXT*, bool*);
 static USHORT get_public_privs(thread_db*, TEXT *, SSHORT);
-static void get_user_privs(thread_db*, UCHAR **, TEXT *,
-						   SSHORT, TEXT *, USHORT, STR *, ULONG *);
-static void grant_user(UCHAR**, TEXT*, SSHORT, USHORT, STR*, ULONG*);
+static void get_user_privs(thread_db*, TEXT **, TEXT *,
+						   SSHORT, TEXT *, USHORT, CharBuffer&, ULONG *);
+static void grant_user(TEXT**, TEXT*, SSHORT, USHORT, CharBuffer&, ULONG*);
 #ifdef NOT_USED_OR_REPLACED
-static void grant_views(UCHAR **, USHORT, STR *, ULONG *);
+static void grant_views(TEXT**, USHORT, CharBuffer&, ULONG *);
 static void purge_default_class(TEXT *, SSHORT);
 #endif
-static USHORT save_field_privileges(thread_db*, STR *, UCHAR **,
+static USHORT save_field_privileges(thread_db*, CharBuffer&, TEXT**,
 									TEXT *, TEXT *, USHORT, ULONG *);
-static void save_security_class(thread_db*, const TEXT*, const UCHAR*, USHORT);
+static void save_security_class(thread_db*, const TEXT*, const TEXT*, USHORT);
 static USHORT trans_sql_priv(TEXT *);
-static SLONG squeeze_acl(UCHAR *, UCHAR **, TEXT *, SSHORT);
+static SLONG squeeze_acl(TEXT*, TEXT**, TEXT *, SSHORT);
 static bool check_string(const TEXT*, const TEXT*);
 
 
-STR GRANT_realloc_acl(STR		start_ptr,
-					  UCHAR**	write_ptr,
-					  ULONG * buffer_length)
+void GRANT_realloc_acl(CharBuffer&	start_ptr,
+					  TEXT**	write_ptr,
+					  ULONG*	buffer_length)
 {
 /**************************************
  *
@@ -114,21 +116,14 @@ STR GRANT_realloc_acl(STR		start_ptr,
  *
  **************************************/
 
-	const ULONG old_offset = (ULONG) (*write_ptr - start_ptr->str_data);
+	const ULONG old_offset = *write_ptr - start_ptr.begin();
 	const ULONG realloc_length = *buffer_length + ACL_BUFFER_SIZE;
 
-
-/* realloc the new length, ERR_punt incase of no memory */
-	// plb::ALL_extend((BLK*)&start_ptr, realloc_length);
-	str::extend(start_ptr, realloc_length);
-
-/* the write_ptr is set back to the same offset in the new buffer*/
-	*write_ptr = start_ptr->str_data + old_offset;
-
+// realloc the new length, ERR_punt incase of no memory
+// the write_ptr is set back to the same offset in the new buffer
+	*write_ptr = &(start_ptr.getBuffer(realloc_length))[old_offset];
 
 	*buffer_length = realloc_length;
-
-	return (start_ptr);
 }
 
 
@@ -156,8 +151,8 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		{
-			UCHAR *acl, *temp_acl;
-			UCHAR *default_acl;
+			TEXT *acl, *temp_acl;
+			TEXT *default_acl;
 			USHORT public_priv, aggregate_public;
 			ULONG length = ACL_BUFFER_SIZE, *length_ptr = &length;
 			ULONG default_length = ACL_BUFFER_SIZE;
@@ -184,16 +179,10 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 
 			/* start the acl off by giving the owner all privileges */
-			str* str_buffer = NULL;
-			str* str_default_buffer = NULL;
+			CharBuffer str_buffer(ACL_BUFFER_SIZE - 1);
+			CharBuffer str_default_buffer(ACL_BUFFER_SIZE - 1);
 
-			try {
-
-			str_buffer = FB_NEW_RPT(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
-			str_default_buffer = FB_NEW_RPT(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
-			str_buffer->str_length = str_default_buffer->str_length = ACL_BUFFER_SIZE - 1;
-
-			acl = str_buffer->str_data;
+			acl = str_buffer.begin();
 
 			CHECK_AND_MOVE(acl, ACL_version, str_buffer, length_ptr);
 			grant_user(&acl,
@@ -201,22 +190,21 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						obj_user,
 						(USHORT)((work->dfw_id == obj_procedure) ?
 							(SCL_execute | OWNER_PRIVS) : OWNER_PRIVS),
-						&str_buffer,
+						str_buffer,
 						length_ptr);
 
 			/* Pick up any relation-level privileges */
 
 			public_priv = get_public_privs(tdbb, work->dfw_name, work->dfw_id);
 			get_user_privs(tdbb, &acl, work->dfw_name, work->dfw_id,
-						   owner, public_priv, &str_buffer, length_ptr);
+						   owner, public_priv, str_buffer, length_ptr);
 
 			if (work->dfw_id == obj_relation)
 			{
 				/* If we have the space to copy the acl list 
 				   no need to realloc */
 				if (length > default_length) {
-					//plb::ALL_extend((BLK*)&str_default_buffer, length);
-					str::extend(str_default_buffer, length);
+					str_default_buffer.getBuffer(length);
 					default_length = length;
 				}
 				/* Now handle field-level privileges.  This might require adding
@@ -224,14 +212,13 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				   off the relation acl because we need to add a default field
 				   acl in that case. */
 
-				MOVE_FAST(str_buffer->str_data, str_default_buffer->str_data,
-						  (int) (acl - str_buffer->str_data));
+				MOVE_FAST(str_buffer.begin(), str_default_buffer.begin(),
+						  (int) (acl - str_buffer.begin()));
 				default_acl =
-					str_default_buffer->str_data + (acl -
-													str_buffer->str_data);
+					str_default_buffer.begin() + (acl - str_buffer.begin());
 				temp_acl = acl;
 
-				aggregate_public = save_field_privileges(tdbb, &str_buffer,
+				aggregate_public = save_field_privileges(tdbb, str_buffer,
 														 &acl, work->dfw_name,
 														 owner, public_priv,
 														 length_ptr);
@@ -244,13 +231,13 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				/* finish off and store the security class for the relation */
 
-				finish_security_class(&acl, aggregate_public, &str_buffer,
+				finish_security_class(&acl, aggregate_public, str_buffer,
 									  length_ptr);
 
 				save_security_class(tdbb,
 									s_class,
-									str_buffer->str_data,
-									(USHORT)(acl - str_buffer->str_data));
+									str_buffer.begin(),
+									(USHORT)(acl - str_buffer.begin()));
 
 				if (temp_acl != acl)	/* relation privs were added? */
 					restrct = true;
@@ -262,30 +249,21 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				if (restrct)
 				{
 					finish_security_class(&default_acl, public_priv,
-										  &str_default_buffer,
+										  str_default_buffer,
 										  default_length_ptr);
 					define_default_class(
 						tdbb,
 						work->dfw_name,
 						default_class,
-						str_default_buffer->str_data,
-						(USHORT)(default_acl - str_default_buffer->str_data));
+						str_default_buffer.begin(),
+						(USHORT)(default_acl - str_default_buffer.begin()));
 				}
 			}
 			else {
-				finish_security_class(&acl, public_priv, &str_buffer, length_ptr);
-				save_security_class(tdbb, s_class, str_buffer->str_data,
-									(USHORT)(acl - str_buffer->str_data));
+				finish_security_class(&acl, public_priv, str_buffer, length_ptr);
+				save_security_class(tdbb, s_class, str_buffer.begin(),
+									(USHORT)(acl - str_buffer.begin()));
 			}
-			}	// try
-			catch (const std::exception&) {
-				delete str_buffer;
-				delete str_default_buffer;
-				throw;
-			}
-			
-			delete str_buffer;
-			delete str_default_buffer;
 
 #ifdef V4_THREADING
 			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
@@ -307,7 +285,7 @@ static void define_default_class(
 								 thread_db* tdbb,
 								 const TEXT* relation_name,
 								 TEXT* default_class,
-								 const UCHAR* buffer, USHORT length)
+								 const TEXT* buffer, USHORT length)
 {
 /**************************************
  *
@@ -394,9 +372,9 @@ static void delete_security_class( thread_db* tdbb, TEXT * s_class)
 }
 #endif // NOT_USED_OR_REPLACED
 
-static void finish_security_class(UCHAR**	acl_ptr,
+static void finish_security_class(TEXT**	acl_ptr,
 								  USHORT	public_priv,
-								  STR*		start_ptr,
+								  CharBuffer&	start_ptr,
 								  ULONG*	length_ptr)
 {
 /**************************************
@@ -410,14 +388,14 @@ static void finish_security_class(UCHAR**	acl_ptr,
  *	in a wildcard for any public privileges.
  *
  **************************************/
-	UCHAR* acl = *acl_ptr;
+	TEXT* acl = *acl_ptr;
 
 	if (public_priv) {
-		CHECK_AND_MOVE(acl, ACL_id_list, *start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, ACL_id_list, start_ptr, length_ptr);
 		SCL_move_priv(&acl, public_priv, start_ptr, length_ptr);
 	}
 
-	CHECK_AND_MOVE(acl, ACL_end, *start_ptr, length_ptr);
+	CHECK_AND_MOVE(acl, ACL_end, start_ptr, length_ptr);
 
 	*acl_ptr = acl;
 }
@@ -534,12 +512,12 @@ static void get_object_info(
 
 
 static void get_user_privs(thread_db*		tdbb,
-						   UCHAR**	acl_ptr,
+						   TEXT**	acl_ptr,
 						   TEXT*	object_name,
 						   SSHORT	obj_type,
 						   TEXT*	owner,
 						   USHORT	public_priv,
-						   STR*		start_ptr,
+						   CharBuffer&	start_ptr,
 						   ULONG*	length_ptr)
 {
 /**************************************
@@ -555,7 +533,7 @@ static void get_user_privs(thread_db*		tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	UCHAR* acl = *acl_ptr;
+	TEXT* acl = *acl_ptr;
 	SqlIdentifier user;
 	user[0] = 0;
 	SSHORT user_type = -2;
@@ -606,11 +584,11 @@ static void get_user_privs(thread_db*		tdbb,
 }
 
 
-static void grant_user(UCHAR**	acl_ptr,
+static void grant_user(TEXT**	acl_ptr,
 					   TEXT*	user,
 					   SSHORT	user_type,
 					   USHORT	privs,
-					   STR*		start_ptr,
+					   CharBuffer&	start_ptr,
 					   ULONG*	length_ptr)
 {
 /**************************************
@@ -623,32 +601,32 @@ static void grant_user(UCHAR**	acl_ptr,
  *	Grant privileges to a particular user.
  *
  **************************************/
-	UCHAR* acl = *acl_ptr;
+	TEXT* acl = *acl_ptr;
 
-	CHECK_AND_MOVE(acl, ACL_id_list, *start_ptr, length_ptr);
+	CHECK_AND_MOVE(acl, ACL_id_list, start_ptr, length_ptr);
 	switch (user_type) {
 	case obj_user_group:
-		CHECK_AND_MOVE(acl, id_group, *start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_group, start_ptr, length_ptr);
 		break;
 
 	case obj_sql_role:
-		CHECK_AND_MOVE(acl, id_sql_role, *start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_sql_role, start_ptr, length_ptr);
 		break;
 
 	case obj_user:
-		CHECK_AND_MOVE(acl, id_person, *start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_person, start_ptr, length_ptr);
 		break;
 
 	case obj_procedure:
-		CHECK_AND_MOVE(acl, id_procedure, *start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_procedure, start_ptr, length_ptr);
 		break;
 
 	case obj_trigger:
-		CHECK_AND_MOVE(acl, id_trigger, *start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_trigger, start_ptr, length_ptr);
 		break;
 
 	case obj_view:
-		CHECK_AND_MOVE(acl, id_view, *start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_view, start_ptr, length_ptr);
 		break;
 
 	default:
@@ -656,10 +634,10 @@ static void grant_user(UCHAR**	acl_ptr,
 
 	}
 
-	const UCHAR length = strlen(user);
-	CHECK_AND_MOVE(acl, (UCHAR) length, *start_ptr, length_ptr);
+	const char length = strlen(user);
+	CHECK_AND_MOVE(acl, length, start_ptr, length_ptr);
 	if (length) {
-		CHECK_ACL_BOUND(acl, *start_ptr, length_ptr, length);
+		CHECK_ACL_BOUND(acl, start_ptr, length_ptr, length);
 		MOVE_FAST(user, acl, length);
 		acl += length;
 	}
@@ -671,8 +649,8 @@ static void grant_user(UCHAR**	acl_ptr,
 
 #ifdef NOT_USED_OR_REPLACED
 static void grant_views(
-						UCHAR ** acl_ptr,
-						USHORT privs, STR * start_ptr, ULONG * length_ptr)
+						TEXT ** acl_ptr,
+						USHORT privs, CharBuffer& start_ptr, ULONG * length_ptr)
 {
 /**************************************
  *
@@ -684,11 +662,11 @@ static void grant_views(
  *	Grant privileges to all views.
  *
  **************************************/
-	UCHAR* acl = *acl_ptr;
+	TEXT* acl = *acl_ptr;
 
-	CHECK_AND_MOVE(acl, ACL_id_list, *start_ptr, length_ptr);
-	CHECK_AND_MOVE(acl, id_views, *start_ptr, length_ptr);
-	CHECK_AND_MOVE(acl, 0, *start_ptr, length_ptr);
+	CHECK_AND_MOVE(acl, ACL_id_list, start_ptr, length_ptr);
+	CHECK_AND_MOVE(acl, id_views, start_ptr, length_ptr);
+	CHECK_AND_MOVE(acl, 0, start_ptr, length_ptr);
 	SCL_move_priv(&acl, privs, start_ptr, length_ptr);
 
 	*acl_ptr = acl;
@@ -746,8 +724,8 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 
 static USHORT save_field_privileges(
 									thread_db* tdbb,
-									STR * str_relation_buffer,
-									UCHAR ** acl_ptr,
+									CharBuffer& str_relation_buffer,
+									TEXT ** acl_ptr,
 TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 {
 /**************************************
@@ -768,36 +746,30 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	DSC desc;
 	SSHORT user_type;
 	
-	STR str_field_buffer = 0;
-	STR str_field_buffer_start = 0;
+	CharBuffer str_field_buffer;
+	CharBuffer str_field_buffer_start;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	try {
-
-	/* initialize the field-level acl buffer to include all relation-level privs */
-
-	str_field_buffer_start = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str;
-	str_field_buffer       = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str;
-	str_field_buffer_start->str_length = str_field_buffer->str_length = *length_ptr - 1;
+	// initialize the field-level acl buffer to include all relation-level privs
+	str_field_buffer_start.getBuffer(*length_ptr - 1);
+	str_field_buffer.getBuffer(*length_ptr - 1);
 
 	ULONG field_length, start_length;
 	field_length = start_length = *length_ptr;
 	ULONG* field_length_ptr = &field_length;
 
-	STR relation_buffer = *str_relation_buffer;
-	MOVE_FAST(relation_buffer->str_data, str_field_buffer->str_data,
-			  (int) (*acl_ptr - relation_buffer->str_data));
-	const int field_buffer_start_index = (int) (*acl_ptr - relation_buffer->str_data);
-	UCHAR* field_acl = str_field_buffer->str_data + field_buffer_start_index;
-	UCHAR* relation_acl = relation_buffer->str_data + field_buffer_start_index;
+	MOVE_FAST(str_relation_buffer.begin(), str_field_buffer.begin(),
+			  (int) (*acl_ptr - str_relation_buffer.begin()));
+	const int field_buffer_start_index = (int) (*acl_ptr - str_relation_buffer.begin());
+	TEXT* field_acl = str_field_buffer.begin() + field_buffer_start_index;
+	TEXT* relation_acl = str_relation_buffer.begin() + field_buffer_start_index;
 
 	int i;
 /* remember this starting point for subsequent fields. */
 	for (i = 0; field_buffer_start_index > i;
-		 i++, str_field_buffer_start->str_data[i] =
-		 str_field_buffer->str_data[i]);
+		 i++, str_field_buffer_start[i] = str_field_buffer[i]);
 
 	field_name[0] = 0;
 	user[0] = 0;
@@ -835,7 +807,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 					const USHORT field_priv =
 						(USHORT)(	public_priv |
 									priv |
-									squeeze_acl(str_field_buffer->str_data,
+									squeeze_acl(str_field_buffer.begin(),
 												&field_acl,
 												user,
 												user_type));
@@ -843,12 +815,12 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 								user,
 								user_type,
 								field_priv,
-								&str_field_buffer,
+								str_field_buffer,
 								field_length_ptr);
 					const USHORT relation_priv =
 						(USHORT)(	public_priv |
 									priv |
-									squeeze_acl(relation_buffer->str_data,
+									squeeze_acl(str_relation_buffer.begin(),
 												&relation_acl,
 												user,
 												user_type));
@@ -883,13 +855,13 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 				aggregate_public |= field_public;
 				finish_security_class(&field_acl,
 										(USHORT)(field_public | public_priv),
-										&str_field_buffer,
+										str_field_buffer,
 										field_length_ptr);
 				save_security_class(
 						tdbb,
 						s_class,
-						str_field_buffer->str_data,
-						(USHORT)(field_acl - str_field_buffer->str_data));
+						str_field_buffer.begin(),
+						(USHORT)(field_acl - str_field_buffer.begin()));
 			}
 
 			/* initialize for new field */
@@ -925,11 +897,10 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 			while (field_buffer_start_index > i)
 			{
 				++i;
-				str_field_buffer->str_data[i] =
-					str_field_buffer_start->str_data[i];
+				str_field_buffer[i] = str_field_buffer_start[i];
 			}
 
-			field_acl = str_field_buffer->str_data + field_buffer_start_index;
+			field_acl = str_field_buffer.begin() + field_buffer_start_index;
 		}
 
 		priv |= trans_sql_priv(PRV.RDB$PRIVILEGE);
@@ -950,7 +921,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 			const USHORT field_priv =
 				(USHORT)(	public_priv |
 							priv |
-							squeeze_acl(str_field_buffer->str_data,
+							squeeze_acl(str_field_buffer.begin(),
 										&field_acl,
 										user,
 										user_type));
@@ -958,12 +929,12 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 						user,
 						user_type,
 						field_priv,
-						&str_field_buffer,
+						str_field_buffer,
 						field_length_ptr);
 			const USHORT relation_priv =
 				(USHORT)(	public_priv |
 							priv |
-							squeeze_acl(relation_buffer->str_data,
+							squeeze_acl(str_relation_buffer.begin(),
 										&relation_acl,
 										user,
 										user_type));
@@ -987,12 +958,12 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 		aggregate_public |= field_public;
 		finish_security_class(&field_acl,
 							(USHORT)(field_public | public_priv),
-							&str_field_buffer,
+							str_field_buffer,
 							field_length_ptr);
 		save_security_class(tdbb,
 							s_class,
-							str_field_buffer->str_data,
-							(USHORT)(field_acl - str_field_buffer->str_data));
+							str_field_buffer.begin(),
+							(USHORT)(field_acl - str_field_buffer.begin()));
 		desc.dsc_dtype = dtype_text;
 		desc.dsc_sub_type = 0;
 		desc.dsc_scale = 0;
@@ -1003,15 +974,6 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	}
 
 	*acl_ptr = relation_acl;
-	}
-	catch (const std::exception&) {
-		delete str_field_buffer;
-		delete str_field_buffer_start;
-		throw;
-	}
-
-	delete str_field_buffer;
-	delete str_field_buffer_start;
 
 	return aggregate_public;
 }
@@ -1019,7 +981,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
 static void save_security_class(thread_db*	tdbb,
 								const TEXT*	s_class,
-								const UCHAR*	buffer,
+								const TEXT*	buffer,
 								USHORT	length)
 {
 /**************************************
@@ -1037,7 +999,7 @@ static void save_security_class(thread_db*	tdbb,
 
 	bid blob_id;
 	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id);
-	BLB_put_segment(tdbb, blob, buffer, length);
+	BLB_put_segment(tdbb, blob, (UCHAR*)(buffer), length);
 	BLB_close(tdbb, blob);
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
@@ -1112,8 +1074,8 @@ static USHORT trans_sql_priv( TEXT * privileges)
 }
 
 
-static SLONG squeeze_acl(UCHAR*		acl_base,
-						 UCHAR**	acl_ptr,
+static SLONG squeeze_acl(TEXT*		acl_base,
+						 TEXT**		acl_ptr,
 						 TEXT*		user,
 						 SSHORT		user_type)
 {
@@ -1130,17 +1092,17 @@ static SLONG squeeze_acl(UCHAR*		acl_base,
  *	privilege for the input user.
  *
  **************************************/
-	UCHAR *dup_acl;
-	UCHAR *dest, *source;
+	TEXT *dup_acl;
+	TEXT *dest, *source;
 	SLONG privilege = 0;
-	UCHAR c;
+	TEXT c;
 	int length;
-	UCHAR l;
+	TEXT l;
 
 
 /* Make sure that this half-finished acl looks good enough to process. */
 	**acl_ptr = 0;
-	UCHAR* acl = acl_base;
+	TEXT* acl = acl_base;
 
 	if (*acl++ != ACL_version)
 		BUGCHECK(160);			/* msg 160 wrong ACL version */

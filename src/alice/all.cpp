@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.18 2004-03-19 06:14:29 robocop Exp $
+//	$Id: all.cpp,v 1.19 2004-04-18 14:22:09 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
@@ -82,6 +82,7 @@ void ALLA_init(void)
 
 
 
+#ifdef NOT_USED_OR_REPLACED
 void AliceMemoryPool::ALLA_push(blk* object, alice_lls** stack)
 {
 /**************************************
@@ -121,13 +122,12 @@ BLK AliceMemoryPool::ALLA_pop(alice_lls** stack)
 	*stack = node->lls_next;
 	BLK object = node->lls_object;
 
-	AliceMemoryPool* pool = (AliceMemoryPool*)MemoryPool::blk_pool(node);
+	AliceMemoryPool* pool = (AliceMemoryPool*)MemoryPool::blk _pool(node);
 	pool->lls_cache.returnBlock(node);
 
 	return object;
 }
 
-#ifdef NOT_USED_OR_REPLACED
 AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 {
 /**************************************
@@ -185,7 +185,7 @@ void AliceMemoryPool::deletePool(AliceMemoryPool* pool)
 			break;
 		}
 	}
-	pool->lls_cache.~BlockCache<alice_lls>();
+//	pool->lls_cache.~BlockCache<alice_lls>();
 	MemoryPool::deletePool(pool);
 }
 

@@ -85,6 +85,8 @@
 
 using namespace Jrd;
 
+typedef Firebird::Array<TEXT*> TextStack;
+
 #ifdef SUPERSERVER
 #define V4_THREADING
 #endif
@@ -244,8 +246,9 @@ void DYN_define_constraint(Global*		gbl,
 	UCHAR verb;
 	SqlIdentifier constraint_name, index_name, referred_index_name;
 	SqlIdentifier null_field_name, trigger_name;
+	TextStack field_list;
+	int list_index = -1;
 	int all_count, unique_count;
-	LLS field_list = NULL, list_ptr;
 	bool primary_flag = false, foreign_flag = false;
 	UCHAR ri_action = 0;
 
@@ -419,9 +422,7 @@ void DYN_define_constraint(Global*		gbl,
 		}
 
 		unique_count++;
-		str* str_fld = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(IDS.RDB$FIELD_NAME) - 1) str();
-		strcpy((char*)str_fld->str_data, IDS.RDB$FIELD_NAME);
-		LLS_PUSH(str_fld, &field_list);
+		field_list.add(stringDup(*tdbb->tdbb_default, IDS.RDB$FIELD_NAME));
 	END_FOR;
 	if (!DYN_REQUEST(drq_c_unq_nam)) {
 		DYN_REQUEST(drq_c_unq_nam) = request;
@@ -460,7 +461,7 @@ void DYN_define_constraint(Global*		gbl,
 		id = drq_c_dup_con;
 
 		index_name[0] = 0;
-		list_ptr = NULL;
+		list_index = -1;
 		bool found  = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			CRT IN RDB$RELATION_CONSTRAINTS CROSS
@@ -476,26 +477,24 @@ void DYN_define_constraint(Global*		gbl,
 			fb_utils::fb_exact_name_limit(CRT.RDB$INDEX_NAME, sizeof(CRT.RDB$INDEX_NAME));
 			if (strcmp(index_name, CRT.RDB$INDEX_NAME))
 			{
-				if (list_ptr) {
+				if (list_index >= 0) {
 					found = false;
 				}
 				if (found) {
 					EXE_unwind(tdbb,(jrd_req*)request);
 					break;
 				}
-				list_ptr = field_list;
+				list_index = field_list.getCount() - 1;
 				strcpy(index_name, CRT.RDB$INDEX_NAME);
 				found = true;
 			}
 
-			if (list_ptr)
+			if (list_index >= 0)
 			{
-				if (strcmp((char*)((STR) list_ptr->lls_object)->str_data,
-							IDS.RDB$FIELD_NAME))
+				if (strcmp(field_list[list_index--], IDS.RDB$FIELD_NAME))
 				{
 					found = false;
 				}
-				list_ptr = list_ptr->lls_next;
 			}
 			else {
 				found = false;
@@ -505,7 +504,7 @@ void DYN_define_constraint(Global*		gbl,
 			DYN_REQUEST(drq_c_dup_con) = request;
 		}
 
-		if (list_ptr) {
+		if (list_index >= 0) {
 			found = false;
 		}
 
@@ -1639,10 +1638,8 @@ void DYN_define_index(Global*		gbl,
 	UCHAR verb;
 	UCHAR seg_count;
 	UCHAR fld_count;
-	LLS field_list = NULL;
-	LLS seg_list = NULL;
-	LLS list_ptr;
-	STR str_fld;
+	TextStack field_list, seg_list;
+	int list_index = -1;
 	USHORT key_length, length, referred_cols = 0;
 	SqlIdentifier trigger_name;
 
@@ -1752,16 +1749,17 @@ void DYN_define_index(Global*		gbl,
 				break;
 				
 			case isc_dyn_fld_name:
-				str_fld = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
-				DYN_get_string(reinterpret_cast<const TEXT**>(ptr),
-					(TEXT*)str_fld->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
-				LLS_PUSH(str_fld, &seg_list);
+			{
+				TEXT* str = DYN_dup_string(*tdbb->tdbb_default,
+					reinterpret_cast<const TEXT**>(ptr),
+					true, MAX_SQL_IDENTIFIER_SIZE);
+				seg_list.push(str);
 				seg_count++;
 
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
 						WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
-						F.RDB$FIELD_NAME EQ str_fld->str_data AND
+						F.RDB$FIELD_NAME EQ str AND
 						IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
                     if (!DYN_REQUEST(drq_l_lfield))
 					{
@@ -1835,6 +1833,7 @@ void DYN_define_index(Global*		gbl,
 				if (!DYN_REQUEST(drq_l_lfield))
 					DYN_REQUEST(drq_l_lfield) = request;
 				break;
+			}
 
 #ifdef EXPRESSION_INDICES
 				/* for expression indices, store the BLR and the source string */
@@ -1861,11 +1860,9 @@ void DYN_define_index(Global*		gbl,
 				break;
 
 			case isc_dyn_idx_ref_column:
-				str_fld = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
-				DYN_get_string(reinterpret_cast<const TEXT**>(ptr),
-					(TEXT*)str_fld->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
-				fb_utils::fb_exact_name_limit((TEXT*)str_fld->str_data, MAX_SQL_IDENTIFIER_SIZE);
-				LLS_PUSH(str_fld, &field_list);
+				field_list.add(DYN_dup_string(*tdbb->tdbb_default, 
+								reinterpret_cast<const TEXT**>(ptr), 
+								true, MAX_SQL_IDENTIFIER_SIZE));
 				referred_cols++;
 				break;
 
@@ -1993,14 +1990,14 @@ void DYN_define_index(Global*		gbl,
 			old_id = id;
 			request = CMP_find_request(tdbb, drq_s_idx_segs, DYN_REQUESTS);
 			id = drq_s_idx_segs;
-			while (seg_list) {
-				str_fld = (STR) LLS_POP(&seg_list);
+			while (seg_list.getCount() > 0) {
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					X IN RDB$INDEX_SEGMENTS
                     strcpy((char*)X.RDB$INDEX_NAME, (char*)IDX.RDB$INDEX_NAME);
-					strcpy(X.RDB$FIELD_NAME, (char*)str_fld->str_data);
+					TEXT *str = seg_list.pop();
+					strcpy(X.RDB$FIELD_NAME, str);
 					X.RDB$FIELD_POSITION = --fld_count;
-					delete str_fld;
+					delete str;
 				END_STORE;
 			}
 			if (!DYN_REQUEST(drq_s_idx_segs))
@@ -2016,7 +2013,7 @@ void DYN_define_index(Global*		gbl,
 						   NULL);
 		/* msg 119 "no keys for index %s" */
 
-		if (field_list) {
+		if (field_list.getCount()) {
 			/* If referring columns count <> referred columns return error */
 
 			if (seg_count != referred_cols)
@@ -2032,7 +2029,7 @@ void DYN_define_index(Global*		gbl,
 			id = drq_l_unq_idx;
 
 			index_name[0] = 0;
-			list_ptr = NULL;
+			list_index = -1;
 			bool found = false;
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			    X IN RDB$RELATION_CONSTRAINTS CROSS
@@ -2053,13 +2050,13 @@ void DYN_define_index(Global*		gbl,
 
 				fb_utils::fb_exact_name_limit(Y.RDB$INDEX_NAME, sizeof(Y.RDB$INDEX_NAME));
 				if (strcmp((char*)index_name, (char*)Y.RDB$INDEX_NAME)) {
-					if (list_ptr)
+					if (list_index >= 0)
 						found = false;
 					if (found) {
 						EXE_unwind(tdbb,(jrd_req*)request);
 						break;
 					}
-					list_ptr = field_list;
+					list_index = field_list.getCount() - 1;
 					strcpy((char*)index_name, (char*)Y.RDB$INDEX_NAME);
 					found = true;
 				}
@@ -2067,14 +2064,12 @@ void DYN_define_index(Global*		gbl,
 				/* if there are no more fields or the field name doesn't
 				   match, then this is not the correct index */
 
-				if (list_ptr) {
+				if (list_index >= 0) {
 					fb_utils::fb_exact_name_limit(Z.RDB$FIELD_NAME, sizeof(Z.RDB$FIELD_NAME));
-					if (strcmp((char*)((STR) list_ptr->lls_object)->str_data,
-								(char*)Z.RDB$FIELD_NAME))
+					if (strcmp(field_list[list_index--], (char*)Z.RDB$FIELD_NAME))
 					{
 						found = false;
 					}
-					list_ptr = list_ptr->lls_next;
 				}
 				else
 					found = false;
@@ -2085,7 +2080,7 @@ void DYN_define_index(Global*		gbl,
 			request = old_request;
 			id = old_id;
 
-			if (list_ptr)
+			if (list_index >= 0)
 				found = false;
 
 			if (found) {

@@ -35,6 +35,7 @@
 #include "../jrd/constants.h"
 
 #include "../jrd/dsc.h"
+#include "../jrd/lls.h"
 
 class str;
 struct dsc;
@@ -81,6 +82,8 @@ typedef rsb_t RSB_T;
 class RecordSource : public pool_alloc_rpt<RecordSource*, type_rsb>
 {
 public:
+	RecordSource() : rsb_left_inner_streams(0),
+		rsb_left_streams(0), rsb_left_rsbs(0) { }
 	RSB_T rsb_type;						// type of rsb
 	UCHAR rsb_stream;					// stream, if appropriate
 	USHORT rsb_count;					// number of sub arguments
@@ -94,6 +97,14 @@ public:
 	jrd_prc*	rsb_procedure;			// procedure, if appropriate
 	Format*		rsb_format;				// format, if appropriate
 	jrd_nod*	rsb_any_boolean;		// any/all boolean
+
+	// AP:	stop saving memory with the price of awful conversions,
+	//		later may be union will help this, because no ~ are
+	//		needed - pool destroyed as whole entity.
+	StreamStack*	rsb_left_inner_streams;
+	StreamStack*	rsb_left_streams;
+	RsbStack*		rsb_left_rsbs;
+
 	RecordSource* rsb_arg[1];
 };
 
@@ -120,11 +131,8 @@ const USHORT rsb_writelock = 16;		// records should be locked for writing
 #define RSB_LEFT_outer			0
 #define RSB_LEFT_inner			1
 #define RSB_LEFT_boolean		2
-#define RSB_LEFT_streams		3
-#define RSB_LEFT_rsbs			4
-#define RSB_LEFT_inner_boolean	5
-#define RSB_LEFT_inner_streams	6
-#define RSB_LEFT_count			7
+#define RSB_LEFT_inner_boolean	3
+#define RSB_LEFT_count			4
 
 
 // Merge (equivalence) file block

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.92 2004-04-10 00:25:05 robocop Exp $
+ * $Id: ddl.cpp,v 1.93 2004-04-18 14:22:16 alexpeshkoff Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -268,19 +268,19 @@ void DDL_execute(dsql_req* request)
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 4) {
 		dsql_trace("Output DYN string for DDL:");
-		PRETTY_print_dyn(reinterpret_cast<UCHAR*>(request->req_blr_string->str_data),
+		PRETTY_print_dyn(request->req_blr_data.begin(),
 						 gds__trace_printer, NULL, 0);
 	}
 #endif
 
-	const USHORT length = request->req_blr -
-	                reinterpret_cast<BLOB_PTR*>(request->req_blr_string->str_data);
+	const USHORT length = request->req_blr_data.getCount();
 
 	THREAD_EXIT;
 
 	const ISC_STATUS s =
 		isc_ddl(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
-				&request->req_trans, length, request->req_blr_string->str_data);
+				&request->req_trans, length, 
+				(char*)(request->req_blr_data.begin()));
 
 	THREAD_ENTER;
 
@@ -3287,7 +3287,7 @@ static void define_update_action(
 		const dsql_str* rel_name =
 			reinterpret_cast<const dsql_str*>(relation_node->nod_arg[e_rln_name]);
 		const dsql_rel* relation = METD_get_relation(request, rel_name);
-		dsql_lls* field_stack = NULL;
+		DsqlNodStack field_stack;
 		for (const dsql_fld* field = relation->rel_fields; field;
 			field = field->fld_next)
 		{
@@ -3296,7 +3296,7 @@ static void define_update_action(
 			dsql_nod* field_node = MAKE_node(nod_field_name, (int) e_fln_count);
 			field_node->nod_arg[e_fln_name] =
 				(dsql_nod*) MAKE_cstring(field->fld_name);
-			LLS_PUSH(field_node, &field_stack);
+			field_stack.push(field_node);
 		}
 		fields_node = MAKE_list(field_stack);
 	}
@@ -3535,21 +3535,19 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 
 /* define the view source relations from the request contexts & union contexts*/
 
-	while (request->req_dt_context) {
-		dsql_ctx* context = 
-			reinterpret_cast<dsql_ctx*>(LLS_POP(&request->req_dt_context));
-		LLS_PUSH(context, &request->req_context);
-	}
-
-	while (request->req_union_context) {
-		dsql_ctx* context = 
-			reinterpret_cast<dsql_ctx*>(LLS_POP(&request->req_union_context));
-		LLS_PUSH(context, &request->req_context);
-	}
-
-	for (const dsql_lls* temp = request->req_context; temp; temp = temp->lls_next)
+	while (request->req_dt_context) 
 	{
-		const dsql_ctx* context = (dsql_ctx*) temp->lls_object;
+		request->req_context->push(request->req_dt_context.pop());
+	}
+
+	while (request->req_union_context) 
+	{
+		request->req_context->push(request->req_union_context.pop());
+	}
+
+	for (DsqlContextStack::iterator temp(*request->req_context); temp; ++temp)
+	{
+		const dsql_ctx* context = temp.object();
 		const dsql_rel* relation = context->ctx_relation;
 		if (relation)
 		{
@@ -3854,10 +3852,10 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 			/* If an alias is specified for the single base table involved,
 			   save and then add the context                               */
 
-			dsql_lls* stack = request->req_context;
-			context = (dsql_ctx*) stack->lls_object;
+			context = request->req_context->object();
 			if (context->ctx_alias) {
-				sav_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
+				sav_context = FB_NEW(*tdsql->tsql_default) 
+					dsql_ctx(*tdsql->tsql_default);
 				*sav_context = *context;
 			}
 		}
@@ -3872,7 +3870,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 		if (sav_context) {
 			sav_context->ctx_context = request->req_context_number++;
 			context->ctx_scope_level = request->req_scope_level;
-			LLS_PUSH(sav_context, &request->req_context);
+			request->req_context->push(sav_context);
 		}
 
 		if (trig_type == PRE_MODIFY_TRIGGER) {
@@ -4987,7 +4985,7 @@ static void modify_privilege(	dsql_req*			request,
 		request->append_uchar(*privs);
 	}
 
-	UCHAR* dynsave = request->req_blr;
+	UCHAR* dynsave = request->req_blr_data.end();
 	for (SSHORT i = priv_count + 2; i; i--) {
 		--dynsave;
 	}
@@ -5754,9 +5752,7 @@ static void reset_context_stack( dsql_req* request)
  *
  **************************************/
 
-	while (request->req_context) {
-		LLS_POP(&request->req_context);
-	}
+	request->req_context->clear();
 	request->req_context_number = 0;
 }
 
@@ -6103,7 +6099,7 @@ void dsql_req::begin_blr(UCHAR verb)
 		append_uchar(verb);
 	}
 
-	req_base_offset = req_blr - reinterpret_cast<BLOB_PTR*>(req_blr_string->str_data);
+	req_base_offset = req_blr_data.getCount();
 
 	// put in a place marker for the size of the blr, since it is unknown
 	append_ushort(0);
@@ -6120,8 +6116,8 @@ void dsql_req::end_blr()
 
 	// go back and stuff in the proper length
 
-	char* blr_base = req_blr_string->str_data + req_base_offset;
-	const ULONG length   = (ULONG) (reinterpret_cast<char*>(req_blr) - blr_base) - 2;
+	UCHAR* blr_base = &req_blr_data[req_base_offset];
+	const ULONG length   = (req_blr_data.getCount() - req_base_offset) - 2;
 
 	if (length > 0xFFFF) {
 		// TODO : need appropriate error message, like "too long BLR"
@@ -6191,12 +6187,7 @@ void dsql_req::append_string(UCHAR verb, const char* string, USHORT length)
 
 void dsql_req::append_uchar(UCHAR byte)
 {
-	if (req_blr < req_blr_yellow) {
-		*req_blr++ = byte;
-	}
-	else {
-		GEN_expand_buffer(this, byte);
-	}
+	req_blr_data.add(byte);
 }
 
 void dsql_req::append_uchars(UCHAR byte, UCHAR count)

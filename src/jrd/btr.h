@@ -129,10 +129,6 @@ struct IndexDescAlloc : public pool_alloc_rpt<index_desc> {
 #define	idx_used_with_and	64	/* marker used in procedure sort_indices */
 #define	idx_marker			128	/* marker used in procedure sort_indices */
 
-/* Macro to locate the next index_desc block */
-
-#define NEXT_IDX(buffer, count)	(index_desc*) (buffer + count)
-
 /* Index insertion block -- parameter block for index insertions */
 
 struct index_insertion {

@@ -80,6 +80,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../common/classes/array.h"
+#include "../common/classes/objects_array.h"
 
 using namespace Jrd;
 
@@ -87,7 +88,7 @@ using namespace Jrd;
 #define OPT_DEBUG
 #endif
 
-static bool augment_stack(const jrd_nod*, LLS*);
+static bool augment_stack(jrd_nod*, NodeStack&);
 static UINT64 calculate_priority_level(const OptimizerBlk*, const index_desc*);
 static void check_indices(const CompilerScratch::csb_repeat*);
 static bool check_relationship(const OptimizerBlk*, USHORT, USHORT);
@@ -100,8 +101,8 @@ static void compute_dependencies(const jrd_nod*, ULONG*);
 static void compute_dbkey_streams(const CompilerScratch*, const jrd_nod*, UCHAR*);
 static void compute_rse_streams(const CompilerScratch*, const RecordSelExpr*, UCHAR*);
 static bool check_for_nod_from(const jrd_nod*);
-static SLONG decompose(thread_db*, jrd_nod*, LLS *, CompilerScratch*);
-static USHORT distribute_equalities(LLS *, CompilerScratch*, USHORT);
+static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
+static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
 static bool dump_index(const jrd_nod*, SCHAR**, SSHORT*);
 static bool dump_rsb(const jrd_req*, const RecordSource*, SCHAR**, SSHORT*);
 static bool estimate_cost(thread_db*, OptimizerBlk*, USHORT, double *, double *);
@@ -113,22 +114,22 @@ static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, const j
 					  double, double);
 static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
 static USHORT find_order(thread_db*, OptimizerBlk*, UCHAR*, const jrd_nod*);
-static void find_rsbs(RecordSource*, LLS *, LLS *);
+static void find_rsbs(RecordSource*, StreamStack*, RsbStack*);
 static void find_used_streams(const RecordSource*, UCHAR*);
-static void form_rivers(thread_db*, OptimizerBlk*, UCHAR*, LLS *, jrd_nod**, jrd_nod**, jrd_nod*);
-static bool form_river(thread_db*, OptimizerBlk*, USHORT, UCHAR *, UCHAR *, LLS *, jrd_nod**,
+static void form_rivers(thread_db*, OptimizerBlk*, UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
+static bool form_river(thread_db*, OptimizerBlk*, USHORT, UCHAR *, UCHAR *, RiverStack&, jrd_nod**,
 						  jrd_nod**, jrd_nod*);
 static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_boolean(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static RecordSource* gen_first(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
-static void gen_join(thread_db*, OptimizerBlk*, UCHAR *, LLS *, jrd_nod**, jrd_nod**, jrd_nod*);
+static void gen_join(thread_db*, OptimizerBlk*, UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
 static RecordSource* gen_navigation(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, STR, index_desc*, jrd_nod**);
 #ifdef SCROLLABLE_CURSORS
 static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, STR, index_desc*, RSE_GET_MODE);
 #else
 static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, STR, index_desc*);
 #endif
-static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, LLS, jrd_nod**, jrd_nod**);
+static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverStack&, jrd_nod**, jrd_nod**);
 static RecordSource* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, jrd_nod**, bool, bool,
@@ -136,13 +137,13 @@ static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**,
 static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, jrd_rel*, STR, jrd_nod*, float);
 static RecordSource*	gen_skip (thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static RecordSource* gen_sort(thread_db*, OptimizerBlk*, UCHAR *, UCHAR *, RecordSource*, jrd_nod*, bool);
-static bool gen_sort_merge(thread_db*, OptimizerBlk*, LLS *);
+static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT);
 static void get_inactivities(const CompilerScratch*, ULONG*);
 static IndexedRelationship* indexed_relationship(thread_db*, OptimizerBlk*, USHORT);
 static STR make_alias(thread_db*, CompilerScratch*, CompilerScratch::csb_repeat*);
 static jrd_nod* make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
-static RecordSource* make_cross(thread_db*, OptimizerBlk*, LLS);
+static RecordSource* make_cross(thread_db*, OptimizerBlk*, RiverStack&);
 static jrd_nod* make_index_node(thread_db*, jrd_rel*, CompilerScratch*, index_desc*);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
 static jrd_nod* make_inversion(thread_db*, OptimizerBlk*, jrd_nod*, USHORT);
@@ -160,7 +161,7 @@ static void print_order(OptimizerBlk*, USHORT, double, double);
 #endif
 static USHORT river_count(USHORT, jrd_nod**);
 static bool river_reference(const River*, const jrd_nod*, bool* field_found = NULL);
-static bool search_stack(jrd_nod*, const lls*);
+static bool search_stack(jrd_nod*, const NodeStack&);
 static void set_active(OptimizerBlk*, const River*);
 static void set_direction(const jrd_nod*, jrd_nod*);
 static void set_inactive(OptimizerBlk*, const River*);
@@ -299,8 +300,10 @@ bool OPT_access_path(const jrd_req* request,
 }
 
 
-RecordSource* OPT_compile(thread_db* tdbb,
-				CompilerScratch* csb, RecordSelExpr* rse, LLS parent_stack)
+RecordSource* OPT_compile(thread_db*		tdbb,
+						  CompilerScratch*	csb, 
+						  RecordSelExpr*	rse, 
+						  NodeStack*		parent_stack)
 {
 /**************************************
  *
@@ -318,7 +321,6 @@ RecordSource* OPT_compile(thread_db* tdbb,
 		
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
-	DEV_BLKCHK(parent_stack, type_lls);
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -353,8 +355,8 @@ RecordSource* OPT_compile(thread_db* tdbb,
 		opt->opt_g_flags |= opt_g_stream;
 
 	beds[0] = streams[0] = key_streams[0] = outer_streams[0] = sub_streams[0] = 0;
-	lls* conjunct_stack = NULL;
-	lls* rivers_stack = NULL;
+	NodeStack conjunct_stack;
+	RiverStack rivers_stack;
 	SLONG conjunct_count = 0;
 
 	check_sorts(rse);
@@ -367,16 +369,10 @@ RecordSource* OPT_compile(thread_db* tdbb,
 	// to utilize indices that we might not have noticed
 	if (rse->rse_boolean) {
 		conjunct_count =
-			decompose(tdbb, rse->rse_boolean, &conjunct_stack, csb);
+			decompose(tdbb, rse->rse_boolean, conjunct_stack, csb);
 	}
 
-	conjunct_count += distribute_equalities(&conjunct_stack, csb, conjunct_count);
-
-	// find the end of the conjunct stack.
-	lls** stack_end = &conjunct_stack;
-	while (*stack_end) {
-		stack_end = &(*stack_end)->lls_next;
-	}
+	conjunct_count += distribute_equalities(conjunct_stack, csb, conjunct_count);
 
 	// AB: If we have limit our retrieval with FIRST / SKIP syntax then
 	// we may not deliver above conditions (from higher rse's) to this 
@@ -469,36 +465,47 @@ RecordSource* OPT_compile(thread_db* tdbb,
 					}
 				}
 
-				lls** stackSavepoint = &conjunct_stack;
+				NodeStack::iterator stackSavepoint(conjunct_stack);
+				NodeStack::iterator stack_end;
 				if (rse->rse_jointype != blr_inner) {
 					// Make list of nodes that can be delivered to a outer-stream.
 					// In fact this are all nodes except IS NULL (nod_missing).
 					// Note! That for OR nodes this meant the whole node must be ignored.
-					lls** stackItem = &parent_stack;
-					for (; *stackItem; stackItem = &(*stackItem)->lls_next) {
-						jrd_nod* deliverNode = (jrd_nod*) (*stackItem)->lls_object;
+					NodeStack::iterator stackItem;
+					if (parent_stack)
+					{
+						stackItem = *parent_stack;
+					}
+					for (; stackItem; ++stackItem) {
+						jrd_nod* deliverNode = stackItem.object();
 						if (!expression_contains(deliverNode, nod_missing, true, true)) {
-							LLS_PUSH(deliverNode, &conjunct_stack);
+							conjunct_stack.push(deliverNode);
 						}
 					}
 				}
 				else {
-					*stack_end = parent_stack;
+					if (parent_stack)
+					{
+						stack_end = conjunct_stack.merge(*parent_stack);
+					}
 				}
 
-				rsb = OPT_compile(tdbb, csb, (RecordSelExpr*) node, conjunct_stack);
+				rsb = OPT_compile(tdbb, csb, (RecordSelExpr*) node, &conjunct_stack);
 
 				if (rse->rse_jointype != blr_inner) {
 					if (parent_stack) {
 						// Remove previously added parent conjuctions from the stack.
-						lls** stackItem = &conjunct_stack;
-						for (; stackSavepoint != stackItem; stackItem = &(*stackItem)->lls_next) {
-							LLS_POP(&conjunct_stack);
+						while(conjunct_stack != stackSavepoint)
+						{
+							conjunct_stack.pop();
 						}
 					}
 				}
 				else {
-					*stack_end = NULL;
+					if (parent_stack)
+					{
+						conjunct_stack.split(stack_end, *parent_stack);
+					}
 				}
 
 
@@ -534,7 +541,7 @@ RecordSource* OPT_compile(thread_db* tdbb,
 			}
 			set_made_river(opt, river);
 			set_inactive(opt, river);
-			LLS_PUSH(river, &rivers_stack);
+			rivers_stack.push(river);
 			continue;
 		}
 
@@ -568,9 +575,8 @@ RecordSource* OPT_compile(thread_db* tdbb,
 			if (relation && !relation->rel_file)
 			{
 				csb->csb_rpt[stream].csb_indices =
-					BTR_all(tdbb, relation, &idx,
-							&csb->csb_rpt[stream].csb_idx,
-							&csb->csb_rpt[stream].csb_idx_allocation);
+					BTR_all(tdbb, relation, 
+						&csb->csb_rpt[stream].csb_idx);
 				sort_indices_by_selectivity(&csb->csb_rpt[stream]);
 				mark_indices(&csb->csb_rpt[stream], relation->rel_id);
 			}
@@ -605,17 +611,16 @@ RecordSource* OPT_compile(thread_db* tdbb,
 	//   but be sure that opt->opt_base_conjuncts contains the real "base"
 
 	// find the end of the conjunct stack.
-	for (stack_end = &conjunct_stack; *stack_end;
-		 stack_end = &(*stack_end)->lls_next);
+	NodeStack::iterator stack_end;
+	if (parent_stack)
+	{
+		stack_end = conjunct_stack.merge(*parent_stack);
+	}
 	const SLONG saved_conjunct_count = conjunct_count;
-
-	*stack_end = parent_stack;
-	conjunct_count += distribute_equalities(&conjunct_stack, csb, conjunct_count);
+	conjunct_count += distribute_equalities(conjunct_stack, csb, conjunct_count);
 	if (parent_stack) {
 		// Find parent_stack position and reset it to NULL
-		for (stack_end = &conjunct_stack; *stack_end && !(*stack_end == parent_stack);
-			stack_end = &(*stack_end)->lls_next) ;
-		*stack_end = NULL;
+		conjunct_stack.split(stack_end, *parent_stack);
 	}
 
 	if (conjunct_count > MAX_CONJUNCTS) {
@@ -629,33 +634,35 @@ RecordSource* OPT_compile(thread_db* tdbb,
 
 	// AB: If equality nodes could be made get them first from the stack
 	for (i = saved_conjunct_count; i < conjunct_count; i++) {
-		jrd_nod* node = (jrd_nod*) LLS_POP(&conjunct_stack);
+		jrd_nod* node = conjunct_stack.pop();
 		opt->opt_conjuncts[i].opt_conjunct_node = node;
 		compute_dependencies(node, opt->opt_conjuncts[i].opt_dependencies);
 	}
 
 	for (i = 0; i < saved_conjunct_count; i++) {
-		jrd_nod* node = (jrd_nod*) LLS_POP(&conjunct_stack);
+		jrd_nod* node = conjunct_stack.pop();
 		opt->opt_conjuncts[i].opt_conjunct_node = node;
 		compute_dependencies(node, opt->opt_conjuncts[i].opt_dependencies);
 	}
 
 	// Store the conjuncts from the parent RecordSelExpr.  But don't fiddle with
 	// the parent's stack itself.
-	for (; parent_stack && conjunct_count < MAX_CONJUNCTS;
-		parent_stack = parent_stack->lls_next, conjunct_count++)
-	{
-		opt->opt_conjuncts.grow(conjunct_count + 1);
-		jrd_nod* node = (jrd_nod*) parent_stack->lls_object;
-		opt->opt_conjuncts[conjunct_count].opt_conjunct_node = node;
-		compute_dependencies(node,
-							opt->opt_conjuncts[conjunct_count].opt_dependencies);
-	}
-
-	// Check if size of optimizer block exceeded.
 	if (parent_stack) {
-		ERR_post(isc_optimizer_blk_exc, 0);
-		// Msg442: size of optimizer block exceeded
+		NodeStack::iterator iter(*parent_stack);
+		for (; iter && conjunct_count < MAX_CONJUNCTS; ++conjunct_count, ++iter)
+		{
+			opt->opt_conjuncts.grow(conjunct_count + 1);
+			jrd_nod* node = iter.object();
+			opt->opt_conjuncts[conjunct_count].opt_conjunct_node = node;
+			compute_dependencies(node,
+							opt->opt_conjuncts[conjunct_count].opt_dependencies);
+		}
+
+		// Check if size of optimizer block exceeded.
+		if (iter) {
+			ERR_post(isc_optimizer_blk_exc, 0);
+			// Msg442: size of optimizer block exceeded
+		}
 	}
 
 	// attempt to optimize aggregates via an index, if possible
@@ -688,8 +695,8 @@ RecordSource* OPT_compile(thread_db* tdbb,
 			outer_rivers = true;
 			// AB: We could already have multiple rivers at this
 			// point so try to do some sort/merging now.
-			while (rivers_stack->lls_next
-			   && gen_sort_merge(tdbb, opt, &rivers_stack));
+			while (rivers_stack.getCount() > 1
+			   && gen_sort_merge(tdbb, opt, rivers_stack));
 			// AB: Mark the previous used streams (sub-RecordSelExpr's) again
 			// as active, because an SORT/MERGE could reset the flags
 			for (i = 1; i <= sub_streams[0]; i++) {
@@ -699,12 +706,12 @@ RecordSource* OPT_compile(thread_db* tdbb,
 
 		// attempt to form joins in decreasing order of desirability 
 		fb_assert(streams[0] != 1 || csb->csb_rpt[streams[1]].csb_relation != 0);
-		gen_join(tdbb, opt, streams, &rivers_stack, &sort, &project,
+		gen_join(tdbb, opt, streams, rivers_stack, &sort, &project,
 				 rse->rse_plan);
 
 		// If there are multiple rivers, try some sort/merging
-		while (rivers_stack->lls_next
-			   && gen_sort_merge(tdbb, opt, &rivers_stack));
+		while (rivers_stack.getCount() > 1
+			   && gen_sort_merge(tdbb, opt, rivers_stack));
 
 		rsb = make_cross(tdbb, opt, rivers_stack);
 
@@ -783,15 +790,14 @@ RecordSource* OPT_compile(thread_db* tdbb,
 // release memory allocated for index descriptions
 	for (i = 0; i < streams[0]; i++) {
 		stream = streams[i + 1];
-		delete csb->csb_rpt[stream].csb_idx_allocation;
-		csb->csb_rpt[stream].csb_idx_allocation = 0;
+		delete csb->csb_rpt[stream].csb_idx;
+		csb->csb_rpt[stream].csb_idx = 0;
 
         // CVC: The following line added because OPT_compile is recursive, both directly
         //   and through gen_union(), too. Otherwise, we happen to step on deallocated memory
         //   and this is the cause of the crashes with indices that have plagued IB since v4.
 
-        csb->csb_rpt [stream].csb_indices = 0;
-
+        csb->csb_rpt[stream].csb_indices = 0;
 	}
 
 	DEBUG
@@ -810,8 +816,8 @@ RecordSource* OPT_compile(thread_db* tdbb,
 	catch (const std::exception&) {
 		for (SSHORT i = 0; i < streams[0]; i++) {
 			SSHORT stream = streams[i + 1];
-			delete csb->csb_rpt[stream].csb_idx_allocation;
-			csb->csb_rpt[stream].csb_idx_allocation = 0;
+			delete csb->csb_rpt[stream].csb_idx;
+			csb->csb_rpt[stream].csb_idx = 0;
 		}
 		delete opt;
 		throw;
@@ -1198,7 +1204,7 @@ void OPT_set_index(thread_db* tdbb,
 #endif
 
 
-static bool augment_stack(const jrd_nod* node, LLS * stack)
+static bool augment_stack(jrd_nod* node, NodeStack& stack)
 {
 /**************************************
  *
@@ -1211,15 +1217,14 @@ static bool augment_stack(const jrd_nod* node, LLS * stack)
  *
  **************************************/
 	DEV_BLKCHK(node, type_nod);
-	DEV_BLKCHK(*stack, type_lls);
 
-	for (const lls* temp = *stack; temp; temp = temp->lls_next) {
-		if (node_equality(node, (const jrd_nod*) temp->lls_object)) {
+	for (NodeStack::iterator temp(stack); temp; ++temp) {
+		if (node_equality(node, temp.object())) {
 			return false;
 		}
 	}
 
-	LLS_PUSH(node, stack);
+	stack.push(node);
 
 	return true;
 }
@@ -1321,7 +1326,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
    and that there are no unused navigational indices */
 	SqlIdentifier index_name;
 
-	const index_desc* idx = csb_tail->csb_idx;
+	const index_desc* idx = csb_tail->csb_idx->items;
 	for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
 		if (!(idx->idx_runtime_flags & (idx_plan_dont_use | idx_used)) ||
 			((idx->idx_runtime_flags & idx_plan_navigate)
@@ -1344,7 +1349,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 						 ERR_cstring(index_name), 0);
 			}
 		}
-		idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+		++idx;
 	}
 }
 
@@ -1991,8 +1996,10 @@ static bool check_for_nod_from(const jrd_nod* node)
 	return false;
 }
 
-static SLONG decompose(thread_db* tdbb,
-					   jrd_nod* boolean_node, LLS* stack, CompilerScratch* csb)
+static SLONG decompose(thread_db*		tdbb,
+					   jrd_nod*			boolean_node, 
+					   NodeStack&		stack, 
+					   CompilerScratch*	csb)
 {
 /**************************************
  *
@@ -2005,7 +2012,6 @@ static SLONG decompose(thread_db* tdbb,
  *
  **************************************/
 	DEV_BLKCHK(boolean_node, type_nod);
-    DEV_BLKCHK(*stack, type_lls);
 	DEV_BLKCHK(csb, type_csb);
 
 
@@ -2025,10 +2031,10 @@ static SLONG decompose(thread_db* tdbb,
 			/* Msg 493: Unsupported field type specified in BETWEEN predicate */
 		}
 		jrd_nod* node = make_binary_node(nod_geq, arg, boolean_node->nod_arg[1], true);
-		LLS_PUSH(node, stack);
+		stack.push(node);
 		arg = CMP_clone_node(tdbb, csb, arg);
 		node = make_binary_node(nod_leq, arg, boolean_node->nod_arg[2], true);
-		LLS_PUSH(node, stack);
+		stack.push(node);
 		return 2;
 	}
 
@@ -2039,20 +2045,19 @@ static SLONG decompose(thread_db* tdbb,
 	if ((boolean_node->nod_type == nod_like) &&
 		(arg = optimize_like(tdbb, boolean_node))) 
 	{
-		jrd_nod* node = make_binary_node(nod_starts, boolean_node->nod_arg[0], arg,
-							 false);
-		LLS_PUSH(node, stack);
-		LLS_PUSH(boolean_node, stack);
+		stack.push(make_binary_node(nod_starts, 
+			boolean_node->nod_arg[0], arg, false));
+		stack.push(boolean_node);
 		return 2;
 	}
 
-	LLS_PUSH(boolean_node, stack);
+	stack.push(boolean_node);
 
 	return 1;
 }
 
 
-static USHORT distribute_equalities(LLS * org_stack, CompilerScratch* csb, USHORT base_count)
+static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, USHORT base_count)
 {
 /**************************************
  *
@@ -2071,16 +2076,15 @@ static USHORT distribute_equalities(LLS * org_stack, CompilerScratch* csb, USHOR
  *		operation '$'.
  *
  **************************************/
-	Firebird::HalfStaticArray<LLS, OPT_STATIC_ITEMS> classes(*GET_THREAD_DATA->tdbb_default);
-	LLS *eq_class, stack;
+	Firebird::ObjectsArray<NodeStack> classes;
+	Firebird::ObjectsArray<NodeStack>::iterator eq_class;
 
-	DEV_BLKCHK(*org_stack, type_lls);
 	DEV_BLKCHK(csb, type_csb);
 
 /* Zip thru stack of booleans looking for field equalities */
 
-	for (stack = *org_stack; stack; stack = stack->lls_next) {
-		jrd_nod* boolean = (jrd_nod*) stack->lls_object;
+	for (NodeStack::iterator stack1(org_stack); stack1; ++stack1) {
+		jrd_nod* boolean = stack1.object();
 		if (boolean->nod_type != nod_eql)
 			continue;
 		jrd_nod* node1 = boolean->nod_arg[0];
@@ -2089,20 +2093,22 @@ static USHORT distribute_equalities(LLS * org_stack, CompilerScratch* csb, USHOR
 		jrd_nod* node2 = boolean->nod_arg[1];
 		if (node2->nod_type != nod_field)
 			continue;
-		for (eq_class = classes.begin(); eq_class < classes.end(); eq_class++)
+		for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class)
+		{
 			if (search_stack(node1, *eq_class)) {
-				augment_stack(node2, eq_class);
+				augment_stack(node2, *eq_class);
 				break;
 			}
 			else if (search_stack(node2, *eq_class)) {
-				LLS_PUSH(node1, eq_class);
+				eq_class->push(node1);
 				break;
 			}
+		}
 		if (eq_class == classes.end()) {
-			classes.grow(classes.getCount() + 1);
-			eq_class = &classes.back();
-			LLS_PUSH(node1, eq_class);
-			LLS_PUSH(node2, eq_class);
+			NodeStack& s = classes.add();
+			s.push(node1);
+			s.push(node2);
+			eq_class = classes.back();
 		}
 	}
 
@@ -2113,15 +2119,15 @@ static USHORT distribute_equalities(LLS * org_stack, CompilerScratch* csb, USHOR
    have crept in between classes (this could result from the
    sequence (A = B, C = D, B = C) */
 
-	for (eq_class = classes.begin(); eq_class < classes.end(); eq_class++) {
-		for (stack = *eq_class; stack; stack = stack->lls_next) {
-			for (lls** eq_class2 = eq_class + 1; eq_class2 < classes.end();
-				eq_class2++)
+	for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class) {
+		for (NodeStack::iterator stack2(*eq_class); stack2; ++stack2) {
+			for (Firebird::ObjectsArray<NodeStack>::iterator eq_class2(eq_class); 
+				++eq_class2 != classes.end();)
 			{
-				if (search_stack((jrd_nod*) stack->lls_object, *eq_class2)) {
+				if (search_stack(stack2.object(), *eq_class2)) {
 					DEBUG;
 					while (*eq_class2) {
-						augment_stack((jrd_nod*) LLS_POP(eq_class2), eq_class);
+						augment_stack(eq_class2->pop(), *eq_class);
 					}
 				}
 			}
@@ -2132,17 +2138,14 @@ static USHORT distribute_equalities(LLS * org_stack, CompilerScratch* csb, USHOR
 
 /* Start by making a pass distributing field equalities */
 
-	for (eq_class = classes.begin(); eq_class < classes.end(); eq_class++) {
-		USHORT n = 0;
-		for (stack = *eq_class; stack; stack = stack->lls_next) {
-			n++;
-		}
+	for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class) {
+		int n = eq_class->getCount();
 		if (n >= 3) {
-			for (stack = *eq_class; stack; stack = stack->lls_next) {
-				for (lls* temp = stack->lls_next; temp; temp = temp->lls_next) {
+			for (NodeStack::iterator outer(*eq_class); outer; ++outer) {
+				for (NodeStack::iterator inner(outer); ++inner; ) {
 					jrd_nod* boolean =
-						make_binary_node(nod_eql, (jrd_nod*) stack->lls_object,
-										 (jrd_nod*) temp->lls_object, true);
+						make_binary_node(nod_eql, outer.object(),
+										 inner.object(), true);
 					if ((base_count + count < MAX_CONJUNCTS) &&
 						augment_stack(boolean, org_stack))
 					{
@@ -2158,8 +2161,8 @@ static USHORT distribute_equalities(LLS * org_stack, CompilerScratch* csb, USHOR
 
 /* Now make a second pass looking for non-field equalities */
 
-	for (stack = *org_stack; stack; stack = stack->lls_next) {
-		jrd_nod* boolean = (jrd_nod*) stack->lls_object;
+	for (NodeStack::iterator stack3(org_stack); stack3; ++stack3) {
+		jrd_nod* boolean = stack3.object();
 		if (boolean->nod_type != nod_eql &&
 			boolean->nod_type != nod_gtr &&
 			boolean->nod_type != nod_geq &&
@@ -2189,18 +2192,18 @@ static USHORT distribute_equalities(LLS * org_stack, CompilerScratch* csb, USHOR
 		{
 			continue;
 		}
-		for (eq_class = classes.begin(); eq_class < classes.end(); eq_class++) {
+		for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class) {
 			if (search_stack(node1, *eq_class)) {
-				for (lls* temp = *eq_class; temp; temp = temp->lls_next) {
-					if (!node_equality(node1, (const jrd_nod*) temp->lls_object)) {
+				for (NodeStack::iterator temp(*eq_class); temp; ++temp) {
+					if (!node_equality(node1, temp.object())) {
 						jrd_nod* arg1;
 						jrd_nod* arg2;
 						if (reverse) {
 							arg1 = boolean->nod_arg[0];
-							arg2 = (jrd_nod*) temp->lls_object;
+							arg2 = temp.object();
 						}
 						else {
-							arg1 = (jrd_nod*) temp->lls_object;
+							arg1 = temp.object();
 							arg2 = boolean->nod_arg[1];
 						}
 
@@ -2610,7 +2613,7 @@ static bool estimate_cost(thread_db* tdbb,
 	// to be utilized and making a crude guess of selectivities.
 
 	if (opt->opt_base_conjuncts) {
-		index_desc* idx = csb_tail->csb_idx;
+		index_desc* idx = csb_tail->csb_idx->items;
 		for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
 			SSHORT n = 0;
 			clear_bounds(opt, idx);
@@ -2651,7 +2654,7 @@ static bool estimate_cost(thread_db* tdbb,
 				index_selectivity *= s;
 				index_hits += MAX(count, n);
 			}
-			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+			++idx;
 		}
 	}
 
@@ -3223,7 +3226,7 @@ static USHORT find_order(thread_db* tdbb,
 }
 
 
-static void find_rsbs(RecordSource* rsb, LLS * stream_list, LLS * rsb_list)
+static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb_list)
 {
 /**************************************
  *
@@ -3239,10 +3242,6 @@ static void find_rsbs(RecordSource* rsb, LLS * stream_list, LLS * rsb_list)
  **************************************/
 #ifdef DEV_BUILD
 	DEV_BLKCHK(rsb, type_rsb);
-	DEV_BLKCHK(*stream_list, type_lls);
-	if (rsb_list) {
-		DEV_BLKCHK(*rsb_list, type_lls);
-	}
 #endif
 
 	if (!rsb) {
@@ -3257,14 +3256,14 @@ static void find_rsbs(RecordSource* rsb, LLS * stream_list, LLS * rsb_list)
 		case rsb_aggregate:
 		case rsb_procedure:
 			if (rsb_list) {
-				LLS_PUSH(rsb, rsb_list);
+				rsb_list->push(rsb);
 			}
 		case rsb_indexed:
 		case rsb_sequential:
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
 			// No need to go any farther down with these.
-			LLS_PUSH((BLK)(IPTR) rsb->rsb_stream, stream_list);
+			stream_list->push(rsb->rsb_stream);
 			return;
 
 		case rsb_cross:
@@ -3373,12 +3372,13 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 }
 
 
-static void form_rivers(thread_db* tdbb,
-						OptimizerBlk* opt,
-						UCHAR * streams,
-						LLS * river_stack,
-						jrd_nod** sort_clause,
-						jrd_nod** project_clause, jrd_nod* plan_clause)
+static void form_rivers(thread_db*		tdbb,
+						OptimizerBlk*	opt,
+						UCHAR*			streams,
+						RiverStack&		river_stack,
+						jrd_nod**		sort_clause,
+						jrd_nod**		project_clause,
+						jrd_nod*		plan_clause)
 {
 /**************************************
  *
@@ -3393,7 +3393,6 @@ static void form_rivers(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(*river_stack, type_lls);
 	if (sort_clause) {
 		DEV_BLKCHK(*sort_clause, type_nod);
 	}
@@ -3444,14 +3443,15 @@ static void form_rivers(thread_db* tdbb,
 }
 
 
-static bool form_river(thread_db* tdbb,
-						  OptimizerBlk* opt,
-						  USHORT count,
-						  UCHAR * streams,
-						  UCHAR * temp,
-						  LLS * river_stack,
-						  jrd_nod** sort_clause,
-						  jrd_nod** project_clause, jrd_nod* plan_clause)
+static bool form_river(thread_db*		tdbb,
+					   OptimizerBlk*	opt,
+					   USHORT			count,
+					   UCHAR*			streams,
+					   UCHAR*			temp,
+					   RiverStack&		river_stack,
+					   jrd_nod**		sort_clause,
+					   jrd_nod**		project_clause, 
+					   jrd_nod*			plan_clause)
 {
 /**************************************
  *
@@ -3464,7 +3464,6 @@ static bool form_river(thread_db* tdbb,
  *
  **************************************/
 	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(*river_stack, type_lls);
 	if (sort_clause) {
 		DEV_BLKCHK(*sort_clause, type_nod);
 	}
@@ -3479,7 +3478,7 @@ static bool form_river(thread_db* tdbb,
 
 	// Allocate a river block and move the best order into it.
 	River* river = FB_NEW_RPT(*tdbb->tdbb_default, count) River();
-	LLS_PUSH(river, river_stack);
+	river_stack.push(river);
 	river->riv_count = (UCHAR) count;
 
 	RecordSource* rsb;
@@ -3738,13 +3737,13 @@ static RecordSource* gen_first(thread_db* tdbb, OptimizerBlk* opt,
 }
 
 
-static void gen_join(thread_db*     tdbb,
-					 OptimizerBlk* opt,
-					 UCHAR*   streams,
-					 LLS*     river_stack,
-					 jrd_nod** sort_clause,
-					 jrd_nod** project_clause,
-					 jrd_nod*  plan_clause)
+static void gen_join(thread_db*		tdbb,
+					 OptimizerBlk*	opt,
+					 UCHAR*			streams,
+					 RiverStack&	river_stack,
+					 jrd_nod**		sort_clause,
+					 jrd_nod**		project_clause,
+					 jrd_nod*		plan_clause)
 {
 /**************************************
  *
@@ -3759,7 +3758,6 @@ static void gen_join(thread_db*     tdbb,
  *
  **************************************/
 	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(*river_stack, type_lls);
 	DEV_BLKCHK(*sort_clause, type_nod);
 	DEV_BLKCHK(*project_clause, type_nod);
 	DEV_BLKCHK(plan_clause, type_nod);
@@ -3799,7 +3797,7 @@ static void gen_join(thread_db*     tdbb,
 			gen_retrieval(tdbb, opt, streams[1], sort_clause, project_clause,
 						  false, false, NULL);
 		river->riv_streams[0] = streams[1];
-		LLS_PUSH(river, river_stack);
+		river_stack.push(river);
 		return;
 	}
 
@@ -3882,8 +3880,8 @@ static void gen_join(thread_db*     tdbb,
 		do {
 			count = find_order(tdbb, opt, temp, 0);
 		} while (form_river
-			   (tdbb, opt, count, streams, temp, river_stack, sort_clause,
-				project_clause, 0));
+			   (tdbb, opt, count, streams, temp, river_stack, 
+				sort_clause, project_clause, 0));
 	}
 }
 
@@ -4072,7 +4070,7 @@ static RecordSource* gen_nav_rsb(thread_db* tdbb,
 static RecordSource* gen_outer(thread_db* tdbb,
 					 OptimizerBlk* opt,
 					 RecordSelExpr* rse,
-					 LLS river_stack, jrd_nod** sort_clause, jrd_nod** project_clause)
+					 RiverStack& river_stack, jrd_nod** sort_clause, jrd_nod** project_clause)
 {
 /**************************************
  *
@@ -4096,7 +4094,6 @@ static RecordSource* gen_outer(thread_db* tdbb,
 	
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(rse, type_nod);
-	DEV_BLKCHK(river_stack, type_lls);
 	DEV_BLKCHK(*sort_clause, type_nod);
 	SET_TDBB(tdbb);
 
@@ -4126,7 +4123,7 @@ static RecordSource* gen_outer(thread_db* tdbb,
 			node->nod_type == nod_aggregate ||
 			node->nod_type == nod_procedure || node->nod_type == nod_rse)
 		{
-			river = (River*) LLS_POP(&river_stack);
+			river = river_stack.pop();
 			stream_ptr[i]->stream_rsb = river->riv_rsb;
 		}
 		else {
@@ -4176,17 +4173,20 @@ static RecordSource* gen_outer(thread_db* tdbb,
 	rsb->rsb_arg[RSB_LEFT_outer] = stream_o.stream_rsb;
 	rsb->rsb_arg[RSB_LEFT_inner] = stream_i.stream_rsb;
 	rsb->rsb_arg[RSB_LEFT_boolean] = (RecordSource*) boolean;
-	rsb->rsb_arg[RSB_LEFT_streams] = NULL;
-	rsb->rsb_arg[RSB_LEFT_rsbs] = NULL;
 	rsb->rsb_arg[RSB_LEFT_inner_boolean] = (RecordSource*) inner_boolean;
-	rsb->rsb_arg[RSB_LEFT_inner_streams] = NULL;
+	rsb->rsb_left_streams = 
+		FB_NEW(*tdbb->tdbb_default) StreamStack(*tdbb->tdbb_default);
+	rsb->rsb_left_inner_streams = 
+		FB_NEW(*tdbb->tdbb_default) StreamStack(*tdbb->tdbb_default);
+	rsb->rsb_left_rsbs = 
+		FB_NEW(*tdbb->tdbb_default) RsbStack(*tdbb->tdbb_default);
 	// find all the outer and inner substreams and push them on a stack.
 	find_rsbs(stream_i.stream_rsb,
-			  (LLS *) & rsb->rsb_arg[RSB_LEFT_streams],
-			  (LLS *) & rsb->rsb_arg[RSB_LEFT_rsbs]);
+			  rsb->rsb_left_streams,
+			  rsb->rsb_left_rsbs);
 	if (rse->rse_jointype == blr_full) {
 		find_rsbs(stream_o.stream_rsb,
-				  (LLS *) & rsb->rsb_arg[RSB_LEFT_inner_streams], NULL);
+				  rsb->rsb_left_inner_streams, NULL);
 	}
 	return rsb;
 }
@@ -4382,8 +4382,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
 		i = 0;
-		for (index_desc* idx = csb_tail->csb_idx; i < csb_tail->csb_indices;
-			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count))
+		for (index_desc* idx = csb_tail->csb_idx->items; i < csb_tail->csb_indices;
+			 ++i, ++idx)
 		{
 
 			idx_walk[i] = idx;
@@ -4810,15 +4810,15 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		(dbkey_streams ? dbkey_streams[0] : 0);
 	const UCHAR* const end_ptr = streams + streams[0];
 	const jrd_nod* const* const end_node = sort->nod_arg + sort->nod_count;
-	lls* id_stack = NULL;
-	lls* stream_stack = NULL;
+	Firebird::Stack<SLONG> id_stack;
+	StreamStack stream_stack;
 	
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++) {
 		SLONG id = -1;
 		while (SBM_next(csb->csb_rpt[*ptr].csb_fields, &id, RSE_get_forward)) {
 			items++;
-			LLS_PUSH((BLK)(IPTR)id, &id_stack);
-			LLS_PUSH((BLK)(IPTR) * ptr, &stream_stack);
+			id_stack.push(id);
+			stream_stack.push(*ptr);
 			for (jrd_nod** node_ptr = sort->nod_arg; node_ptr < end_node; node_ptr++)
 			{
 				jrd_nod* node = *node_ptr;
@@ -4832,8 +4832,8 @@ static RecordSource* gen_sort(thread_db* tdbb,
 					if (IS_INTL_DATA(desc))
 						break;
 					--items;
-					LLS_POP(&id_stack);
-					LLS_POP(&stream_stack);
+					id_stack.pop();
+					stream_stack.pop();
 					break;
 				}
 			}
@@ -4954,8 +4954,9 @@ static RecordSource* gen_sort(thread_db* tdbb,
    field has already been mentioned as a sort key, don't bother to repeat
    it. */
 	while (stream_stack) {
-		const SLONG id = (SLONG)(IPTR) LLS_POP(&id_stack);
-		const USHORT stream = (USHORT)(IPTR) LLS_POP(&stream_stack);
+		const SLONG id = id_stack.pop();
+		// AP: why USHORT - we pushed UCHAR
+		const USHORT stream = stream_stack.pop();
 		const Format* format = CMP_format(tdbb, csb, stream);
 		const dsc* desc = &format->fmt_desc[id];
 		if (id >= format->fmt_count || desc->dsc_length == 0)
@@ -5041,7 +5042,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 }
 
 
-static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, LLS * org_rivers)
+static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_rivers)
 {
 /**************************************
  *
@@ -5058,12 +5059,10 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, LLS * org_rivers)
  *	return false.
  *
  **************************************/
-	LLS stack1;
 	USHORT i;
 	ULONG selected_rivers[OPT_STREAM_BITS], selected_rivers2[OPT_STREAM_BITS];
 	jrd_nod **eq_class, **ptr;
 	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(*org_rivers, type_lls);
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
@@ -5071,9 +5070,8 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, LLS * org_rivers)
 	// a scratch block large enough to hold values to compute equality
 	// classes.
 	USHORT cnt = 0;
-	for (stack1 = *org_rivers; stack1; stack1 = stack1->lls_next) {
-		River* river1 = (River*) stack1->lls_object;
-		river1->riv_number = cnt++;
+	for (RiverStack::iterator stack1(org_rivers); stack1; ++stack1) {
+		stack1.object()->riv_number = cnt++;
 	}
 
 	Firebird::HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch(*tdbb->tdbb_default);
@@ -5096,8 +5094,8 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, LLS * org_rivers)
 		}
 		jrd_nod* node1 = node->nod_arg[0];
 		jrd_nod* node2 = node->nod_arg[1];
-		for (stack1 = *org_rivers; stack1; stack1 = stack1->lls_next) {
-			River* river1 = (River*) stack1->lls_object;
+		for (RiverStack::iterator stack0(org_rivers); stack0; ++stack0) {
+			River* river1 = stack0.object();
 			if (!river_reference(river1, node1)) {
 				if (river_reference(river1, node2)) {
 					node = node1;
@@ -5108,9 +5106,9 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, LLS * org_rivers)
 					continue;
 				}
 			}
-			for (lls* stack2 = stack1->lls_next; stack2; stack2 = stack2->lls_next)
+			for (RiverStack::iterator stack2(stack0); ++stack2;)
 			{
-				River* river2 = (River*) stack2->lls_object;
+				River* river2 = stack2.object();
 				if (river_reference(river2, node2)) {
 					for (eq_class = classes; eq_class < last_class; eq_class += cnt)
 					{
@@ -5170,8 +5168,8 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, LLS * org_rivers)
 
 	RecordSource** rsb_tail = merge_rsb->rsb_arg;
 	stream_cnt = 0;
-	for (stack1 = *org_rivers; stack1; stack1 = stack1->lls_next) {
-		River* river1 = (River*) stack1->lls_object;
+	for (RiverStack::iterator stack3(org_rivers); stack3; ++stack3) {
+		River* river1 = stack3.object();
 		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number))) {
 			continue;
 		}
@@ -5197,28 +5195,28 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, LLS * org_rivers)
 	river1->riv_count = (UCHAR) stream_cnt;
 	river1->riv_rsb = merge_rsb;
 	UCHAR* stream = river1->riv_streams;
-	stack1 = NULL;
-	while (*org_rivers) {
-		River* river2 = (River*) LLS_POP(org_rivers);
+	RiverStack newRivers(org_rivers.getPool());
+	while (org_rivers) {
+		River* river2 = org_rivers.pop();
 		if (TEST_DEP_BIT(selected_rivers, river2->riv_number)) {
 			MOVE_FAST(river2->riv_streams, stream, river2->riv_count);
 			stream += river2->riv_count;
 		}
 		else {
 			// AB: Be sure that the rivers 'order' will be kept.
-			if (stack1) {
-				River* river3 = (River*) LLS_POP(&stack1);
-				LLS_PUSH(river2, &stack1);
-				LLS_PUSH(river3, &stack1);
+			if (newRivers) {
+				River* river3 = newRivers.pop();
+				newRivers.push(river2);
+				newRivers.push(river3);
 			}
 			else {
-				LLS_PUSH(river2, &stack1);
+				newRivers.push(river2);
 			}
 		}
 	}
 	// AB: Moved LLS_PUSH() from before the while (*org_rivers) loop to here, because
 	// the merged rivers could be refering to other streams on the list.
-	LLS_PUSH(river1, &stack1);
+	newRivers.push(river1);
 
 	// Pick up any boolean that may apply.
 	{
@@ -5249,7 +5247,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, LLS * org_rivers)
 			river1->riv_rsb = gen_boolean(tdbb, opt, river1->riv_rsb, node);
 		}
 		set_inactive(opt, river1);
-		*org_rivers = stack1;
+		org_rivers = newRivers;
 
 		for (stream_nr = 0, fv = flag_vector; 
 			stream_nr < opt->opt_csb->csb_n_stream; stream_nr++) 
@@ -5366,9 +5364,9 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 	IndexedRelationship* relationship = NULL;
 
 /* Loop thru indexes looking for a match */
-	index_desc* idx = csb_tail->csb_idx;
+	index_desc* idx = csb_tail->csb_idx->items;
 	for (USHORT i = 0; i < csb_tail->csb_indices;
-		 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count))
+		 ++i, ++idx)
 	{
 		/* skip this part if the index wasn't specified for indexed retrieval */
 		if (idx->idx_runtime_flags & idx_plan_dont_use) {
@@ -5511,7 +5509,7 @@ static jrd_nod* make_binary_node(NOD_T type, jrd_nod* arg1, jrd_nod* arg2, bool 
 }
 
 
-static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, LLS stack)
+static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, RiverStack& stack)
 {
 /**************************************
  *
@@ -5524,15 +5522,10 @@ static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, LLS stack)
  *
  **************************************/
 	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(stack, type_lls);
 	SET_TDBB(tdbb);
-	USHORT count = 0;
-	for (const lls* temp = stack; temp; count++) {
-		temp = temp->lls_next;
-	}
+	int count = stack.getCount();
 	if (count == 1) {
-		River* river = (River*) LLS_POP(&stack);
-		return river->riv_rsb;
+		return stack.pop()->riv_rsb;
 	}
 
 	CompilerScratch* csb = opt->opt_csb;
@@ -5542,8 +5535,7 @@ static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, LLS stack)
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
 	RecordSource** ptr = rsb->rsb_arg + count;
 	while (stack) {
-		River* river = (River*) LLS_POP(&stack);
-		*--ptr = river->riv_rsb;
+		*--ptr = stack.pop()->riv_rsb;
 	}
 
 	return rsb;
@@ -5720,7 +5712,7 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 	idx_priority_level_vector.grow(csb_tail->csb_indices);
 	UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
-	index_desc* idx = csb_tail->csb_idx;
+	index_desc* idx = csb_tail->csb_idx->items;
 	SSHORT i;
 	if (opt->opt_base_conjuncts) {
 		for (i = 0; i < csb_tail->csb_indices; i++) {
@@ -5765,7 +5757,7 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 				}
 			}
 
-			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+			++idx;
 		}
 	}
 
@@ -5775,7 +5767,7 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 		sort_indices_by_priority(csb_tail, idx_walk, idx_priority_level);
 
 	bool accept = true;
-	idx = csb_tail->csb_idx;
+	idx = csb_tail->csb_idx->items;
 	if (opt->opt_base_conjuncts) {
 		for (i = 0; i < idx_walk_count; i++) {
 			idx = idx_walk[i];
@@ -6020,7 +6012,7 @@ static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_
 /* go through each of the indices and mark it unusable
    for indexed retrieval unless it was specifically mentioned 
    in the plan; also mark indices for navigational access */
-	index_desc* idx = csb_tail->csb_idx;
+	index_desc* idx = csb_tail->csb_idx->items;
 	for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
 		if (access_type) {
 			const jrd_nod* const* arg = access_type->nod_arg;
@@ -6050,7 +6042,7 @@ static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_
 		else {
 			idx->idx_runtime_flags |= idx_plan_dont_use;
 		}
-		idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+		++idx;
 	}
 }
 
@@ -6610,7 +6602,7 @@ static bool river_reference(const River* river, const jrd_nod* node, bool* field
 }
 
 
-static bool search_stack(jrd_nod* node, const lls* stack)
+static bool search_stack(jrd_nod* node, const NodeStack& stack)
 {
 /**************************************
  *
@@ -6623,9 +6615,8 @@ static bool search_stack(jrd_nod* node, const lls* stack)
  *
  **************************************/
 	DEV_BLKCHK(node, type_nod);
-	DEV_BLKCHK(stack, type_lls);
-	for (; stack; stack = stack->lls_next) {
-		if (node_equality(node, (jrd_nod*) stack->lls_object)) {
+	for (NodeStack::iterator iter(stack); iter; ++iter) {
+		if (node_equality(node, iter.object())) {
 			return true;
 		}
 	}
@@ -6849,7 +6840,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 	if (csb_tail->csb_idx && (csb_tail->csb_indices > 1)) {
 		for (j = 0; j < csb_tail->csb_indices; j++) {
 			float selectivity = 1; // Maximum selectivity is 1 (when all keys are the same)
-			index_desc* idx = csb_tail->csb_idx;
+			index_desc* idx = csb_tail->csb_idx->items;
 			for (i = 0; i < csb_tail->csb_indices; i++) {
 				// Prefer ASC indices in the case of almost the same selectivities
 				if (selectivity > idx->idx_selectivity) {
@@ -6865,18 +6856,18 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 					selectivity = idx->idx_selectivity;
 					selected_idx = idx;
 				}
-				idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+				++idx;
 			}
 			// If no index was found than pick the first one available out of the list
 			if ((!selected_idx) || (selected_idx->idx_runtime_flags & idx_marker))
 			{
-				idx = csb_tail->csb_idx;
+				idx = csb_tail->csb_idx->items;
 				for (i = 0; i < csb_tail->csb_indices; i++) {
 					if (!(idx->idx_runtime_flags & idx_marker)) {
 						selected_idx = idx;
 						break;
 					}	
-					idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+					++idx;
 				}
 			}
 			selected_idx->idx_runtime_flags |= idx_marker;
@@ -6884,11 +6875,11 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 		}
 
 		// Finally store the right order in cbs_tail->csb_idx
-		index_desc* idx = csb_tail->csb_idx;
+		index_desc* idx = csb_tail->csb_idx->items;
 		for (j = 0; j < csb_tail->csb_indices; j++) {
 			idx->idx_runtime_flags &= ~idx_marker;
 			MOVE_FAST(&idx_sort[j], idx, sizeof(index_desc));
-			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
+			++idx;
 		}
 	}
 }

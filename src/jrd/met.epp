@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.109 2004-04-18 02:50:38 skidder Exp $
+$Id: met.epp,v 1.110 2004-04-18 14:22:27 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1511,11 +1511,14 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 		{
 			/* Register interest in the module by database. */
 
-			lls* stack;
-			for (stack = dbb->dbb_modules; stack; stack = stack->lls_next) {
-				if (module == (MOD) stack->lls_object) {
+			Firebird::Stack<MOD>::iterator stack(dbb->dbb_modules);
+			while (stack)
+			{
+				if (module == stack.object())
+				{
 					break;
 				}
+				++stack;
 			}
 
 			/* If the module was already registered with this database
@@ -1528,10 +1531,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 			}
 			else
 			{
-				JrdMemoryPool* old_pool = tdbb->tdbb_default;
-				tdbb->tdbb_default = dbb->dbb_permanent;
-				LLS_PUSH(module, &dbb->dbb_modules);
-				tdbb->tdbb_default = old_pool;
+				dbb->dbb_modules.push(module);
 			}
 		}
 	END_FOR;
@@ -4306,7 +4306,7 @@ static void store_dependencies(thread_db*	tdbb,
 
 	while (csb->csb_dependencies)
 	{
-		jrd_nod* node = (jrd_nod*) LLS_POP(&csb->csb_dependencies);
+		jrd_nod* node = csb->csb_dependencies.pop();
 		if (!node->nod_arg[e_dep_object])
 			continue;
 		const SSHORT dpdo_type = (SSHORT) (IPTR) node->nod_arg[e_dep_object_type];
@@ -4320,7 +4320,7 @@ static void store_dependencies(thread_db*	tdbb,
             break;
         case obj_procedure:
             procedure = (jrd_prc*) node->nod_arg [e_dep_object];
-            dpdo_name = (TEXT*) procedure->prc_name.c_str();
+            dpdo_name = procedure->prc_name.c_str();
             break;
         case obj_exception:
 			{

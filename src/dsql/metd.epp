@@ -915,7 +915,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	DB = dbb->dbb_database_handle;
 	gds_trans = request->req_trans;
 	userFunc = NULL;
-    dsql_lls* stack = 0;
+    DsqlNodStack stack;
     USHORT return_arg;
 
 	THREAD_EXIT;
@@ -1044,7 +1044,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
                     d->dsc_flags = DSC_nullable;
                 }
                 
-                LLS_PUSH (udf_param_node, &stack);
+                stack.push(udf_param_node);
             }
 
             THREAD_EXIT;
@@ -1070,11 +1070,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
     /* Can't call MAKE_list because it allocates an initial list node
        in the default pool. */
-	USHORT arg_count = 0;
-    for (dsql_lls* stack_temp = stack; stack_temp; stack_temp = stack_temp->lls_next)
-	{
-        ++arg_count;
-    }
+	USHORT arg_count = stack.getCount();
 
     /* userFunc->udf_arguments = MAKE_node (nod_list, count); */
     userFunc->udf_arguments = FB_NEW_RPT(*dbb->dbb_pool, arg_count) dsql_nod;
@@ -1083,7 +1079,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
     
     ptr = userFunc->udf_arguments->nod_arg + arg_count;
     while (stack) {
-        *--ptr = (dsql_nod*) LLS_POP (&stack);
+        *--ptr = stack.pop();
 		// dimitr: adjust the UDF arguments for CSTRING
 		if ((*ptr)->nod_desc.dsc_dtype == dtype_cstring)
 			(*ptr)->nod_desc.dsc_dtype = dtype_text;

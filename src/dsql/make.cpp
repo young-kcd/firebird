@@ -1499,19 +1499,16 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
     @param stack
 
  **/
-dsql_nod* MAKE_list(dsql_lls* stack)
+dsql_nod* MAKE_list(DsqlNodStack& stack)
 {
-	DEV_BLKCHK(stack, dsql_type_lls);
-
-	USHORT count = 0;
-	for (dsql_lls* temp = stack; temp; temp = temp->lls_next)
-		++count;
-
+	USHORT count = stack.getCount();
 	dsql_nod* node = MAKE_node(nod_list, count);
 	dsql_nod** ptr = node->nod_arg + count;
 
 	while (stack)
-		*--ptr = (dsql_nod*) LLS_POP(&stack);
+	{
+		*--ptr = stack.pop();
+	}
 
 	return node;
 }

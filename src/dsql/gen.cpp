@@ -86,48 +86,6 @@ const bool USE_VALUE    = false;
 
 
 /**
-
-    GEN_expand_buffer
-
-    @brief The blr buffer needs to be expanded.
-    
-
-    @param request
-    @param byte
-
-**/
-UCHAR GEN_expand_buffer( dsql_req* request, UCHAR byte)
-{
-	tsql* tdsql = GET_THREAD_DATA;
-
-	const ULONG length = request->req_blr_string->str_length + 2048;
-	// AB: We must define a maximum length and post an error when exceeded else 
-	// the server can crash with a huge SQL command.
-
-	const bool bIsPermanentPool = MemoryPool::blk_pool(request->req_blr_string) == DSQL_permanent_pool;
-	DsqlMemoryPool* pool = bIsPermanentPool ? DSQL_permanent_pool : tdsql->tsql_default;
-	dsql_str* new_buffer = FB_NEW_RPT(*pool, length) dsql_str;
-	new_buffer->str_length = length;
-
-	// one huge pointer per line for LIBS
-	// TMN: What does that mean???
-
-	char*       p   = new_buffer->str_data;
-	const char* q   = request->req_blr_string->str_data;
-	BLOB_PTR*   end = request->req_blr;
-	const size_t copy_length = (reinterpret_cast<char*>(end) - q);
-	memcpy(p, q, copy_length);
-
-	delete request->req_blr_string;
-	request->req_blr_string = new_buffer;
-	request->req_blr = reinterpret_cast<BLOB_PTR*>(p + copy_length);
-	request->req_blr_yellow = reinterpret_cast<BLOB_PTR*>(new_buffer->str_data + length);
-
-	return (*request->req_blr++ = byte);
-}
-
-
-/**
   
  	GEN_expr
   
@@ -587,11 +545,11 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 {
 	tsql* tdsql = GET_THREAD_DATA;
 
-	if (request->req_blr_string) {
+//	if (request->req_blr_string) {
 		stuff(request, blr_message);
 		stuff(request, message->msg_number);
 		stuff_word(request, message->msg_parameter);
-	}
+//	}
 
     dsql_par* parameter;
 
@@ -630,7 +588,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 		parameter->par_desc.dsc_address = (UCHAR*)(IPTR)message->msg_length;
 		// CVC: No check for overflow here? Should be < 64K
 		message->msg_length += parameter->par_desc.dsc_length;
-		if (request->req_blr_string)
+//		if (request->req_blr_string)
 			gen_descriptor(request, &parameter->par_desc, false);
 	}
 

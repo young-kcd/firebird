@@ -458,9 +458,8 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 
 // allocate the request block 
 
-		dsql_req* request = FB_NEW(*tdsql->tsql_default) dsql_req;
+		dsql_req* request = FB_NEW(*tdsql->tsql_default) dsql_req(*tdsql->tsql_default);
 		request->req_dbb = database;
-		request->req_pool = tdsql->tsql_default;
 
 		*req_handle = request;
 	}
@@ -527,7 +526,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 		sing_status = 0;
 
 		dsql_req* request = *req_handle;
-		tdsql->tsql_default = request->req_pool;
+		tdsql->tsql_default = &request->req_pool;
 
 		if ((SSHORT) in_msg_type == -1) {
 			request->req_type = REQ_EMBED_SELECT;
@@ -670,9 +669,9 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 
 	// allocate the request block, then prepare the request 
 
-		dsql_req* request = FB_NEW(*tdsql->tsql_default) dsql_req;
+		dsql_req* request = FB_NEW(*tdsql->tsql_default) 
+			dsql_req(*tdsql->tsql_default);
 		request->req_dbb = database;
-		request->req_pool = tdsql->tsql_default;
 		request->req_trans = *trans_handle;
 
 		try {
@@ -967,7 +966,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 		init(0);
 
 		dsql_req* request = *req_handle;
-		tdsql->tsql_default = request->req_pool;
+		tdsql->tsql_default = &request->req_pool;
 
 // if the cursor isn't open, we've got a problem 
 
@@ -1187,7 +1186,7 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 		init(0);
 
 		request = *req_handle;
-		tdsql->tsql_default = request->req_pool;
+		tdsql->tsql_default = &request->req_pool;
 
 		if (option & DSQL_drop) {
 		// Release everything associate with the request. 
@@ -1253,7 +1252,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 		init(0);
 
 		dsql_req* request = *req_handle;
-		tdsql->tsql_default = request->req_pool;
+		tdsql->tsql_default = &request->req_pool;
 
 // if the cursor isn't open, we've got a problem 
 
@@ -1373,9 +1372,9 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
    don't want to trash the context in it -- 2001-Oct-27 Ann Harrison */
 
 		tdsql->tsql_default = DsqlMemoryPool::createPool();
-		dsql_req* request = FB_NEW(*tdsql->tsql_default) dsql_req;
+		dsql_req* request = FB_NEW(*tdsql->tsql_default) 
+			dsql_req(*tdsql->tsql_default);
 		request->req_dbb = database;
-		request->req_pool = tdsql->tsql_default;
 		request->req_trans = *trans_handle;
 
 		try {
@@ -1436,7 +1435,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 // Now that we know that the new request exists, zap the old one. 
 
-			tdsql->tsql_default = old_request->req_pool;
+			tdsql->tsql_default = &old_request->req_pool;
 			release_request(old_request, true);
 			tdsql->tsql_default = NULL;
 
@@ -1503,7 +1502,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 		init(0);
 
 		dsql_req* request = *req_handle;
-		tdsql->tsql_default = request->req_pool;
+		tdsql->tsql_default = &request->req_pool;
 
 		TEXT cursor[132];
 
@@ -3196,8 +3195,8 @@ static ISC_STATUS execute_request(dsql_req*			request,
 									&request->req_trans,
 									1,
 									&request->req_dbb->dbb_database_handle,
-									(int)(reinterpret_cast<char*>(request->req_blr) - request->req_blr_string->str_data),
-									request->req_blr_string->str_data);
+									request->req_blr_data.getCount(),
+									request->req_blr_data.begin());
 		THREAD_ENTER;
 		if (s)
 			punt();
@@ -3288,9 +3287,8 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		s = isc_transact_request(tdsql->tsql_status,
 								 &request->req_dbb->dbb_database_handle,
 								 &request->req_trans,
-								 (USHORT) (reinterpret_cast<char*>(request->req_blr) -
-										   request->req_blr_string->str_data),
-								 request->req_blr_string->str_data,
+								 (USHORT) (request->req_blr_data.getCount()),
+								 (char*)(request->req_blr_data.begin()),
 								 in_msg_length,
 								 reinterpret_cast<char*>(in_msg),
 								 use_msg_length,
@@ -4729,6 +4727,11 @@ static dsql_req* prepare(
 
 // Generate BLR, DDL or TPB for request 
 
+#ifdef NOT_USED_OR_REPLACED
+
+	//What's a reason not to bloat request_pool?
+	//It was made to keep data local for that request...
+
 	if (request->req_type == REQ_START_TRANS ||
 		request->req_type == REQ_DDL ||
 		request->req_type == REQ_EXEC_PROCEDURE)
@@ -4747,6 +4750,7 @@ static dsql_req* prepare(
 	request->req_blr = reinterpret_cast<BLOB_PTR*>(request->req_blr_string->str_data);
 	request->req_blr_yellow =
 		request->req_blr + request->req_blr_string->str_length;
+#endif
 
 /* Start transactions takes parameters via a parameter block.
    The request blr string is used for that. */
@@ -4761,9 +4765,8 @@ static dsql_req* prepare(
 	else
 		request->req_flags |= REQ_blr_version4;
 	GEN_request(request, node);
-	const USHORT length =
-		reinterpret_cast<char*>(request->req_blr) - request->req_blr_string->str_data;
-
+	const USHORT length = request->req_blr_data.getCount();
+	
 // stop here for ddl requests 
 
 	if (request->req_type == REQ_DDL)
@@ -4774,7 +4777,7 @@ static dsql_req* prepare(
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 64) {
 		dsql_trace("Resulting BLR code for DSQL:");
-		gds__print_blr(reinterpret_cast<const UCHAR*>(request->req_blr_string->str_data),
+		gds__print_blr(request->req_blr_data.begin(),
 			gds__trace_printer, 0, 0);
 	}
 #endif
@@ -4796,7 +4799,7 @@ static dsql_req* prepare(
 	const ISC_STATUS status = isc_compile_request(tdsql->tsql_status,
 								 &request->req_dbb->dbb_database_handle,
 								 &request->req_handle, length,
-								 request->req_blr_string->str_data);
+								 (const char*)(request->req_blr_data.begin()));
 	THREAD_ENTER;
 
 // restore warnings (if there are any) 
@@ -4817,9 +4820,6 @@ static dsql_req* prepare(
 			MOVE_FASTER(&local_status[2], &tdsql->tsql_status[indx],
 						sizeof(ISC_STATUS) * len);
 	}
-
-	delete request->req_blr_string;
-	request->req_blr_string = NULL;
 
 	if (status)
 		punt();
@@ -4913,7 +4913,7 @@ static void release_request(dsql_req* request, bool top_level)
 		child->req_flags |= REQ_orphan;
 		child->req_parent = NULL;
 		DsqlMemoryPool *save_default = tdsql->tsql_default;
-		tdsql->tsql_default = child->req_pool;
+		tdsql->tsql_default = &child->req_pool;
 		release_request(child, false);
 		tdsql->tsql_default = save_default;
 	}
@@ -4952,11 +4952,6 @@ static void release_request(dsql_req* request, bool top_level)
 		request->req_cursor = NULL;
 	}
 
-	if (request->req_blr_string) {
-		delete request->req_blr_string;
-		request->req_blr_string = NULL;
-	}
-
 // If a request has been compiled, release it now
 
 	if (request->req_handle) {
@@ -4968,7 +4963,7 @@ static void release_request(dsql_req* request, bool top_level)
 // Only release the entire request for top level requests 
 
 	if (top_level)
-		DsqlMemoryPool::deletePool(request->req_pool);
+		DsqlMemoryPool::deletePool(&request->req_pool);
 }
 
 

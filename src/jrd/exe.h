@@ -61,7 +61,6 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 
 class str;
 struct dsc;
-class lls;
 
 namespace Jrd {
 
@@ -670,6 +669,7 @@ public:
 		csb_external(p),
 		csb_access(p),
 		csb_resources(p),
+		csb_dependencies(p),
 		csb_fors(p),
 		csb_invariants(p),
 		csb_current_nodes(p),
@@ -696,8 +696,8 @@ public:
 	AccessItemList	csb_access;			/* Access items to be checked */
 	vec*			csb_variables;		/* Vector of variables, if any */
 	ResourceList	csb_resources;		/* Resources (relations and indexes) */
-	lls*			csb_dependencies;	/* objects this request depends upon */
-	Firebird::Array<RecordSource*> csb_fors;		/* stack of fors */
+	NodeStack		csb_dependencies;	/* objects this request depends upon */
+	Firebird::Array<RecordSource*> csb_fors;	/* stack of fors */
 	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* RecordSelExpr's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
@@ -724,7 +724,6 @@ public:
 			csb_procedure(0),
 			csb_view(0),
 			csb_idx(0),
-			csb_idx_allocation(0),
 			csb_message(0),
 			csb_format(0),
 			csb_fields(0),
@@ -744,8 +743,7 @@ public:
 		jrd_prc* csb_procedure;
 		jrd_rel* csb_view;		/* parent view */
 
-		index_desc* csb_idx;		/* Packed description of indices */
-		IndexDescAlloc *csb_idx_allocation;	/* Memory allocated to hold index descriptions */
+		IndexDescAlloc* csb_idx;	/* Packed description of indices */
 		jrd_nod* csb_message;			/* Msg for send/receive */
 		Format* csb_format;		/* Default Format for stream */
 		SparseBitmap* csb_fields;		/* Fields referenced */

@@ -36,7 +36,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.39 2004-03-31 17:13:24 alexpeshkoff Exp $
+ *  $Id: alloc.h,v 1.40 2004-04-18 14:22:13 alexpeshkoff Exp $
  *
  */
 
@@ -344,9 +344,9 @@ public:
 	}
 	
 	/// Returns the pool the memory was allocated from.
-	static MemoryPool* blk_pool(const void* mem) {
-		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool;
-	}
+	//static MemoryPool* blk_pool(const void* mem) {
+	//	return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool;
+	//}
 	
 	friend class InternalAllocator;
 };

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.66 2004-03-30 04:10:50 robocop Exp $
+ * $Id: rse.cpp,v 1.67 2004-04-18 14:22:27 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -114,7 +114,7 @@ static UCHAR* get_merge_data(thread_db*, merge_file*, SLONG);
 static bool get_procedure(thread_db*, RecordSource*, IRSB_PROCEDURE, record_param*);
 static bool get_record(thread_db*, RecordSource*, RecordSource*, RSE_GET_MODE);
 static bool get_union(thread_db*, RecordSource*, IRSB);
-static void join_to_nulls(thread_db*, RecordSource*, USHORT);
+static void join_to_nulls(thread_db*, RecordSource*, StreamStack*);
 static void map_sort_data(jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, RecordSource*, IRSB_MRG);
 static void open_procedure(thread_db*, RecordSource*, IRSB_PROCEDURE);
@@ -764,13 +764,12 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				   stream in the right sub-stream.  The block will be needed
 				   if we join to nulls before opening the rsbs */
 
-				for (lls* stack = (LLS) rsb->rsb_arg[RSB_LEFT_rsbs]; stack;
-					 stack = stack->lls_next)
+				for (RsbStack::iterator stack(*(rsb->rsb_left_rsbs)); 
+					stack; ++stack)
 				{
-					RecordSource* right_rsbs = (RecordSource*) stack->lls_object;
 					VIO_record(tdbb,
-							   &request->req_rpb[right_rsbs->rsb_stream],
-							   right_rsbs->rsb_format, tdbb->tdbb_default);
+							   &request->req_rpb[stack.object()->rsb_stream],
+							   stack.object()->rsb_format, tdbb->tdbb_default);
 				}
 				return;
 			}
@@ -1170,8 +1169,11 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 				{
 					if (mode == RSE_get_backward)
 						return false;
-					else if (!rsb->rsb_arg[RSB_LEFT_inner_streams])
-						return false;
+					else 
+					{
+						if (!rsb->rsb_arg[RSB_LEFT_inner_streams])
+							return false;
+					}
 
 					/* We have a full outer join.  Open up the inner stream
 					   one more time. */
@@ -1189,7 +1191,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 				{
 					/* The boolean pertaining to the left sub-stream is false
 					   so just join sub-stream to a null valued right sub-stream */
-					join_to_nulls(tdbb, rsb, RSB_LEFT_streams);
+					join_to_nulls(tdbb, rsb, rsb->rsb_left_streams);
 					return true;
 				}
 
@@ -1219,7 +1221,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 			   the left stream to a null valued right sub-stream */
 
 			if (!(impure->irsb_flags & irsb_joined)) {
-				join_to_nulls(tdbb, rsb, RSB_LEFT_streams);
+				join_to_nulls(tdbb, rsb, rsb->rsb_left_streams);
 				return true;
 			}
 		}
@@ -1279,7 +1281,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 					goto return_to_outer;
 			}
 
-			join_to_nulls(tdbb, rsb, RSB_LEFT_inner_streams);
+			join_to_nulls(tdbb, rsb, rsb->rsb_left_inner_streams);
 			return true;
 
 return_to_outer:
@@ -1329,7 +1331,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 					(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL,
 					 RSE_get_forward))
 				{
-					if (!rsb->rsb_arg[RSB_LEFT_inner_streams])
+					if (! *(rsb->rsb_left_inner_streams))
 						return false;
 
 					/* We have a full outer join.  Open up the inner stream
@@ -1345,7 +1347,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 				{
 					/* The boolean pertaining to the left sub-stream is false
 					   so just join sub-stream to a null valued right sub-stream */
-					join_to_nulls(tdbb, rsb, RSB_LEFT_streams);
+					join_to_nulls(tdbb, rsb, rsb->rsb_left_streams);
 					return true;
 				}
 				impure->irsb_flags &= ~(irsb_mustread | irsb_joined);
@@ -1372,7 +1374,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 			{
 				/* The current left sub-stream record has not been joined
 				   to anything.  Join it to a null valued right sub-stream */
-				join_to_nulls(tdbb, rsb, RSB_LEFT_streams);
+				join_to_nulls(tdbb, rsb, rsb->rsb_left_streams);
 				return true;
 			}
 		}
@@ -1421,7 +1423,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 	else if (!get_record(tdbb, full, NULL, RSE_get_forward))
 		return false;
 
-	join_to_nulls(tdbb, rsb, RSB_LEFT_inner_streams);
+	join_to_nulls(tdbb, rsb, rsb->rsb_left_inner_streams);
 
 	return true;
 }
@@ -1963,7 +1965,8 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
    of merge blocks. This ordering will vary for each set of equivalence
    groups and cannot be statically assigned by the optimizer. */
 
-	lls* best_tails = 0;
+	typedef Firebird::Stack<irsb_mrg::irsb_mrg_repeat*> ImrStack;
+	ImrStack best_tails;
 
 	tail = impure->irsb_mrg_rpt;
 	for (const irsb_mrg::irsb_mrg_repeat* const tail_end = tail + rsb->rsb_count;
@@ -1975,10 +1978,10 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
 		for (irsb_mrg::irsb_mrg_repeat* tail2 = impure->irsb_mrg_rpt;
 			tail2 < tail_end; tail2++)
 		{
-			lls* stack;
-			for (stack = best_tails; stack; stack = stack->lls_next)
+			ImrStack::iterator stack(best_tails);
+			for (; stack; ++stack)
 			{
-				if (stack->lls_object == (BLK) tail2)
+				if (stack.object() == tail2)
 				{
 					break;
 				}
@@ -1994,13 +1997,13 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
 			}
 		}
 
-		LLS_PUSH(best_tail, &best_tails);
+		best_tails.push(best_tail);
 		tail->irsb_mrg_order = best_tail - impure->irsb_mrg_rpt;
 	}
 
-	while (best_tails) {
+/*	while (best_tails) {
 		LLS_POP(&best_tails);
-	}
+	} */
 
 	return true;
 }
@@ -2102,7 +2105,7 @@ static bool get_procedure(thread_db*			tdbb,
 	Record* record;
 	if (!rpb->rpb_record) {
 		record = rpb->rpb_record =
-			FB_NEW_RPT(*tdbb->tdbb_default, rec_format->fmt_length) Record();
+			FB_NEW_RPT(*tdbb->tdbb_default, rec_format->fmt_length) Record(*tdbb->tdbb_default);
 		record->rec_format = rec_format;
 		record->rec_length = rec_format->fmt_length;
 	}
@@ -2849,7 +2852,7 @@ static bool get_union(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 }
 
 
-static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, USHORT streams)
+static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* stream)
 {
 /**************************************
  *
@@ -2865,9 +2868,10 @@ static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, USHORT streams)
 	SET_TDBB(tdbb);
 
 	jrd_req* request = tdbb->tdbb_request;
-	lls* stack = (LLS) rsb->rsb_arg[streams];
-	for (; stack; stack = stack->lls_next) {
-		record_param* rpb = &request->req_rpb[(USHORT)(IPTR) stack->lls_object];
+	for (StreamStack::iterator stack(*stream);
+		stack; ++stack)
+	{
+		record_param* rpb = &request->req_rpb[stack.object()];
 
 		/* Make sure a record block has been allocated.  If there isn't
 		   one, first find the format, then allocate the record block */
@@ -3696,7 +3700,7 @@ static void save_record(thread_db* tdbb, record_param* rpb)
 			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->tdbb_default) SaveRecordParam(); 
 
 		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
-		Record* rec_copy = FB_NEW_RPT(*tdbb->tdbb_default, size) Record();
+		Record* rec_copy = FB_NEW_RPT(*tdbb->tdbb_default, size) Record(*tdbb->tdbb_default);
 		rpb_copy->srpb_rpb->rpb_record = rec_copy;
 
 		rec_copy->rec_length = size;

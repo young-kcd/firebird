@@ -35,8 +35,6 @@
 
 #include <vector>
 
-class lls;
-
 namespace Jrd {
 
 class Lock;
@@ -115,9 +113,11 @@ struct record_param {
 
 class Record : public pool_alloc_rpt<SCHAR, type_rec>
 {
-    public:
+public:
+	MemoryPool& rec_pool;		// pool where record to be expanded
+	Record(MemoryPool& p) : rec_pool(p), rec_precedence(p) { }
 	const Format* rec_format;	/* what the data looks like */
-	lls* rec_precedence;		/* stack of higher precedence pages */
+	PageStack rec_precedence;	/* stack of higher precedence pages */
 	USHORT rec_length;			/* how much there is */
 	const Format* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			/* misc record flags */

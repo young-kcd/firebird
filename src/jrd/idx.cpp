@@ -220,7 +220,7 @@ void IDX_create_index(
 				 ERR_cstring(index_name), 0);
 	}
 
-	lls* stack = NULL;
+	RecordStack stack;
 	const UCHAR pad = (idx->idx_flags & idx_descending) ? -1 : 0;
 
 	ifl_data.ifl_duplicates = 0;
@@ -293,7 +293,7 @@ void IDX_create_index(
 			VIO_data(tdbb, &primary,
 					 reinterpret_cast<BLK>(dbb->dbb_permanent));
 			gc_record = primary.rpb_record;
-			LLS_PUSH(primary.rpb_record, &stack);
+			stack.push(primary.rpb_record);
 		}
 		secondary.rpb_page = primary.rpb_b_page;
 		secondary.rpb_line = primary.rpb_b_line;
@@ -304,13 +304,13 @@ void IDX_create_index(
 			secondary.rpb_record = NULL;
 			VIO_data(tdbb, &secondary,
 					 reinterpret_cast<BLK>(tdbb->tdbb_default));
-			LLS_PUSH(secondary.rpb_record, &stack);
+			stack.push(secondary.rpb_record);
 			secondary.rpb_page = secondary.rpb_b_page;
 			secondary.rpb_line = secondary.rpb_b_line;
 		}
 
 		while (stack) {
-			Record* record = (Record*) LLS_POP(&stack);
+			Record* record = stack.pop();
 
 			/* If foreign key index is being defined, make sure foreign
 			   key definition will not be violated */
@@ -349,7 +349,7 @@ void IDX_create_index(
 				do {
 					if (record != gc_record)
 						delete record;
-				} while (stack && (record = (Record*) LLS_POP(&stack)));
+				} while (stack && (record = stack.pop()));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
@@ -362,7 +362,7 @@ void IDX_create_index(
 				do {
 					if (record != gc_record)
 						delete record;
-				} while (stack && (record = (Record*) LLS_POP(&stack)));
+				} while (stack && (record = stack.pop()));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
@@ -380,7 +380,7 @@ void IDX_create_index(
 				do {
 					if (record != gc_record)
 						delete record;
-				} while (stack && (record = (Record*) LLS_POP(&stack)));
+				} while (stack && (record = stack.pop()));
 				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.rpb_window.win_flags & WIN_large_scan)
@@ -576,7 +576,10 @@ IDX_E IDX_erase(thread_db* tdbb,
 }
 
 
-void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, LLS going, LLS staying)
+void IDX_garbage_collect(thread_db*			tdbb, 
+						 record_param*		rpb, 
+						 const RecordStack& going, 
+						 const RecordStack& staying)
 {
 /**************************************
  *
@@ -606,16 +609,16 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, LLS going, LLS stay
 
 	for (USHORT i = 0; i < root->irt_count; i++) {
 		if (BTR_description(rpb->rpb_relation, root, &idx, i)) {
-			for (lls* stack1 = going; stack1; stack1 = stack1->lls_next) {
-				Record* rec1 = (Record*) stack1->lls_object;
+			for (RecordStack::iterator stack1(going); stack1; ++stack1) {
+				Record* rec1 = stack1.object();
 				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0);
 
 				/* Cancel index if there are duplicates in the remaining records */
 
-				lls* stack2;
-				for (stack2 = stack1->lls_next; stack2; stack2 = stack2->lls_next)
+				RecordStack::iterator stack2(stack1);
+				for (; stack2; ++stack2)
 				{
-					Record* rec2 = (Record*) stack2->lls_object;
+					Record* rec2 = stack2.object();
 					if (rec2->rec_number == rec1->rec_number) {
 						BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0);
 						if (key_equal(&key1, &key2))
@@ -627,20 +630,21 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, LLS going, LLS stay
 
 				/* Make sure the index doesn't exist in any record remaining */
 
-				for (stack2 = staying; stack2; stack2 = stack2->lls_next) {
-					Record* rec2 = (Record*) stack2->lls_object;
-					BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0);
+				RecordStack::iterator stack3(staying);
+				for (; stack3; ++stack3) {
+					Record* rec3 = stack3.object();
+					BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0);
 					if (key_equal(&key1, &key2))
 						break;
 				}
-				if (stack2)
+				if (stack3)
 					continue;
 
 				/* Get rid of index node */
 
 				BTR_remove(tdbb, &window, &insertion);
 				root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
-				if (stack1->lls_next)
+				if (++stack1)
 					BTR_description(rpb->rpb_relation, root, &idx, i);
 			}
 		}

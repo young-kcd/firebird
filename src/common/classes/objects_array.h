@@ -44,8 +44,14 @@ namespace Firebird
 		private:
 			ObjectsArray *lst;
 			int pos;
-			iterator(ObjectsArray *l, int p) : lst(l), pos(p){}
+			iterator(ObjectsArray *l, int p) : lst(l), pos(p) { }
 		public:
+			iterator() : lst(0), pos(0) { }
+			iterator& operator=(ObjectsArray& a)
+			{
+				lst = a.l;
+				pos = 0;
+			}
 			iterator& operator++() {++pos; return (*this);}
 			iterator operator++(int) {iterator tmp = *this; ++pos; 
 									  return tmp;}
@@ -53,17 +59,24 @@ namespace Firebird
 			iterator operator--(int) {iterator tmp = *this; --pos; 
 									  return tmp;}
 			T* operator->() {
+				fb_assert(lst);
 				T* pointer = lst->getPointer(pos);
 				return pointer;
 			}
 			T& operator*() {
+				fb_assert(lst);
 				T* pointer = lst->getPointer(pos);
 				return *pointer;
 			}
 			bool operator!=(const iterator& v) const
 			{
 				fb_assert(lst == v.lst);
-				return pos != v.pos;
+				return lst ? pos != v.pos : true;
+			}
+			bool operator==(const iterator& v) const
+			{
+				fb_assert(lst == v.lst);
+				return lst ? pos == v.pos : false;
 			}
 		};
 	public:
@@ -74,6 +87,11 @@ namespace Firebird
 		int add(const T& item) {
 			T* data = FB_NEW(getPool()) T(getPool(), item);
 			return inherited::add(data);
+		};
+		T& add() {
+			T* data = FB_NEW(getPool()) T(getPool());
+			inherited::add(data);
+			return *data;
 		};
 		void push(const T& item) {
 			add(item);
@@ -103,6 +121,10 @@ namespace Firebird
 		}
 		iterator end() {
 			return iterator(this, getCount());
+		}
+		iterator back() {
+  			fb_assert(getCount() > 0);
+			return iterator(this, getCount() - 1);
 		}
 		const T& operator[](int index) const {
   			return *getPointer(index);

@@ -101,12 +101,12 @@ static bool check_user(thread_db*, const dsc*);
 static void delete_record(thread_db*, record_param*, SLONG, JrdMemoryPool*);
 static UCHAR* delete_tail(thread_db*, record_param*, SLONG, UCHAR*, const UCHAR*);
 static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
-static void garbage_collect(thread_db*, record_param*, SLONG, LLS);
+static void garbage_collect(thread_db*, record_param*, SLONG, const RecordStack&);
 static void garbage_collect_idx(thread_db*, record_param*, record_param*, Record*);
 #ifdef GARBAGE_THREAD
 static void THREAD_ROUTINE garbage_collector(Database*);
 #endif
-static void list_staying(thread_db*, record_param*, LLS *);
+static void list_staying(thread_db*, record_param*, RecordStack&);
 #ifdef GARBAGE_THREAD
 static void notify_garbage_collector(thread_db*, record_param*);
 #endif
@@ -115,11 +115,11 @@ static void notify_garbage_collector(thread_db*, record_param*);
 #define PREPARE_CONFLICT 1
 #define PREPARE_DELETE   2
 static int prepare_update(thread_db*, jrd_tra*, SLONG, record_param*, 
-						  record_param*, record_param*, LLS*, bool);
+						  record_param*, record_param*, PageStack&, bool);
 
 static void purge(thread_db*, record_param*);
 static Record* replace_gc_record(jrd_rel*, Record**, USHORT);
-static void replace_record(thread_db*, record_param*, LLS *, const jrd_tra*);
+static void replace_record(thread_db*, record_param*, PageStack&, const jrd_tra*);
 static void set_system_flag(record_param*, USHORT, SSHORT);
 static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, record_param*,
@@ -217,8 +217,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	jrd_rel* relation = rpb->rpb_relation;
 	VIO_bump_count(tdbb, DBB_backout_count, relation, false);
-	lls* going = NULL;
-	lls* staying = NULL;
+	RecordStack going, staying;
 	Record* data = NULL;
 	Record* old_data = NULL;
 	Record* gc_rec1 = NULL;
@@ -269,7 +268,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		old_data = temp.rpb_record;
 		rpb->rpb_prior = temp.rpb_prior;
 		gc_rec2 = temp.rpb_record;
-		LLS_PUSH(temp.rpb_record, &going);
+		going.push(temp.rpb_record);
 	}
 
 /* Set up an extra record parameter block.  This will be used to preserve
@@ -342,9 +341,9 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	if (!rpb->rpb_b_page) {
 		delete_record(tdbb, rpb, (SLONG) 0, 0);
 		if (!(rpb->rpb_flags & rpb_deleted)) {
-			BLB_garbage_collect(tdbb, going, 0, rpb->rpb_page, relation);
-			IDX_garbage_collect(tdbb, rpb, going, 0);
-			LLS_POP(&going);
+			BLB_garbage_collect(tdbb, going, RecordStack(), rpb->rpb_page, relation);
+			IDX_garbage_collect(tdbb, rpb, going, RecordStack());
+			going.pop();
 		}
 		goto gc_cleanup;
 	}
@@ -373,7 +372,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		rpb->rpb_format_number = temp.rpb_format_number;
 
 		if (temp2.rpb_flags & rpb_deleted) {
-			replace_record(tdbb, rpb, 0, transaction);
+			PageStack empty;
+			replace_record(tdbb, rpb, empty, transaction);
 			if (!DPM_fetch(tdbb, &temp, LCK_write))
 				BUGCHECK(291);	/* msg 291 cannot find record back version */
 			delete_record(tdbb, &temp, rpb->rpb_page, 0);
@@ -384,7 +384,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 		rpb->rpb_flags &=
 			~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active);
-		DPM_update(tdbb, rpb, 0, transaction);
+		PageStack empty;
+		DPM_update(tdbb, rpb, empty, transaction);
 		delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
 
 		/* Next, delete the old copy of the now current version. */
@@ -396,16 +397,16 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 
 	rpb->rpb_prior = NULL;
-	list_staying(tdbb, rpb, &staying);
+	list_staying(tdbb, rpb, staying);
 	BLB_garbage_collect(tdbb, going, staying, rpb->rpb_page, relation);
 	IDX_garbage_collect(tdbb, rpb, going, staying);
 
 	if (going) {
-		LLS_POP(&going);
+		going.pop();
 	}
 
 	while (staying) {
-		delete LLS_POP(&staying);
+		delete staying.pop();
 	}
 
 /* Return relation garbage collect record blocks to vector. */
@@ -1419,9 +1420,9 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	else
 	{
 		/* Update stub didn't find one page -- do a long, hard update */
-		lls* stack = NULL;
+		PageStack stack;
 		if (prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0,
-			&stack, false))
+			stack, false))
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
@@ -1436,7 +1437,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		rpb->rpb_flags |= rpb_deleted;
 		rpb->rpb_flags &= ~rpb_delta;
 
-		replace_record(tdbb, rpb, &stack, transaction);
+		replace_record(tdbb, rpb, stack, transaction);
 	}
 
 /* Check to see if recursive revoke needs to be propogated */
@@ -2232,9 +2233,9 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	}
 
 	record_param temp;
-	lls* stack = NULL;
+	PageStack stack;
 	if (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb,
-				   &temp, new_rpb, &stack, false))
+				   &temp, new_rpb, stack, false))
 	{
 		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 	}
@@ -2250,7 +2251,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	org_rpb->rpb_flags &= ~rpb_delta;
 	org_rpb->rpb_flags |= new_rpb->rpb_flags & rpb_delta;
 
-	replace_record(tdbb, org_rpb, &stack, transaction);
+	replace_record(tdbb, org_rpb, stack, transaction);
 
 	if (!(transaction->tra_flags & TRA_system) &&
 		(transaction->tra_save_point) &&
@@ -2348,9 +2349,9 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 			return true;
 		}
 
-		lls* stack = NULL;
+		PageStack stack;
 		switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr,
-					org_rpb, &temp, 0, &stack, true))
+					org_rpb, &temp, 0, stack, true))
 		{
 			case PREPARE_CONFLICT:
 				// Do not spin wait if we have nowait transaction
@@ -2372,7 +2373,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 		org_rpb->rpb_length = org_record->rec_format->fmt_length;
 		org_rpb->rpb_flags |= rpb_delta;
 
-		replace_record(tdbb, org_rpb, &stack, transaction);
+		replace_record(tdbb, org_rpb, stack, transaction);
 
 		if (!(transaction->tra_flags & TRA_system) &&
 			(transaction->tra_save_point))
@@ -2501,7 +2502,7 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 		if (!pool) {
 			pool = dbb->dbb_permanent;
 		}
-		record = rpb->rpb_record = FB_NEW_RPT(*pool, format->fmt_length) Record;
+		record = rpb->rpb_record = FB_NEW_RPT(*pool, format->fmt_length) Record(*pool);
 		record->rec_length = format->fmt_length;
 	}
 	else if (record->rec_length < format->fmt_length) {
@@ -2513,7 +2514,8 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 		}
 		else
 		{
-			record = FB_NEW_RPT(*MemoryPool::blk_pool(record), format->fmt_length) Record;
+			record = FB_NEW_RPT(rpb->rpb_record->rec_pool, format->fmt_length) 
+				Record(rpb->rpb_record->rec_pool);
 			memcpy(record, rpb->rpb_record, sizeof(Record) + sizeof(SCHAR) * rpb->rpb_record->rec_length);
 			delete rpb->rpb_record;
 			rpb->rpb_record = record;
@@ -2695,8 +2697,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	rpb->rpb_flags = 0;
 	rpb->rpb_transaction_nr = transaction->tra_number;
 	rpb->rpb_window.win_flags = 0;
-	LLS_PUSH((BLK) (IPTR) -rpb->rpb_transaction_nr, &rpb->rpb_record->rec_precedence);
-	DPM_store(tdbb, rpb, &rpb->rpb_record->rec_precedence, DPM_primary);
+	rpb->rpb_record->rec_precedence.push(-rpb->rpb_transaction_nr);
+	DPM_store(tdbb, rpb, rpb->rpb_record->rec_precedence, DPM_primary);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
@@ -3408,14 +3410,14 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 /* Delete old versions fetching data for garbage collection. */
 
 	record_param temp = *rpb;
-	garbage_collect(tdbb, &temp, rpb->rpb_page, 0);
+	garbage_collect(tdbb, &temp, rpb->rpb_page, RecordStack());
 	VIO_bump_count(tdbb, DBB_expunge_count, rpb->rpb_relation, false);
 }
 
 
-static void garbage_collect(
-							thread_db* tdbb,
-							record_param* rpb, SLONG prior_page, LLS staying)
+static void garbage_collect(thread_db* tdbb,
+							record_param* rpb, SLONG prior_page, 
+							const RecordStack& staying)
 {
 /**************************************
  *
@@ -3454,7 +3456,7 @@ static void garbage_collect(
 
 /* Delete old versions fetching data for garbage collection. */
 
-	lls* going = NULL;
+	RecordStack going;
 
 	while (rpb->rpb_b_page != 0) {
 		rpb->rpb_record = NULL;
@@ -3466,7 +3468,7 @@ static void garbage_collect(
 		}
 		delete_record(tdbb, rpb, prior_page, tdbb->tdbb_default);
 		if (rpb->rpb_record) {
-			LLS_PUSH(rpb->rpb_record, &going);
+			going.push(rpb->rpb_record);
 		}
 #ifdef SUPERSERVER
 		/* Don't monopolize the server while chasing long
@@ -3482,7 +3484,7 @@ static void garbage_collect(
 	IDX_garbage_collect(tdbb, rpb, going, staying);
 
 	while (going) {
-		delete LLS_POP(&going);
+		delete going.pop();
 	}
 }
 
@@ -3512,27 +3514,21 @@ static void garbage_collect_idx(
 /* Garbage collect.  Start by getting all existing old versions (other
    than the immediate two in question). */
 
-	lls* going = NULL;
-	lls* staying = NULL;
-	list_staying(tdbb, org_rpb, &staying);
+	RecordStack going, staying;
+	list_staying(tdbb, org_rpb, staying);
 
 /* The data that is going is passed either via old_data, or via org_rpb. */
 
-	if (old_data) {
-		LLS_PUSH(old_data, &going);
-	}
-	else {
-		LLS_PUSH(org_rpb->rpb_record, &going);
-	}
+	going.push(old_data ? old_data : org_rpb->rpb_record);
 
 	BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page,
 						org_rpb->rpb_relation);
 	IDX_garbage_collect(tdbb, org_rpb, going, staying);
 
-	LLS_POP(&going);
+	going.pop();
 
 	while (staying) {
-		delete LLS_POP(&staying);
+		delete staying.pop();
 	}
 }
 
@@ -3834,7 +3830,7 @@ gc_exit:
 #endif
 
 
-static void list_staying(thread_db* tdbb, record_param* rpb, LLS * staying)
+static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& staying)
 {
 /**************************************
  *
@@ -3869,8 +3865,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, LLS * staying)
 
 		/* If the entire record disappeared, then there is nothing staying. */
 		if (!DPM_fetch(tdbb, &temp, LCK_read)) {
-			while (*staying) {
-				delete LLS_POP(staying);
+			while (staying) {
+				delete staying.pop();
 			}
 			return;
 		}
@@ -3882,8 +3878,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, LLS * staying)
 			temp.rpb_b_line != rpb->rpb_b_line ||
 			temp.rpb_flags != rpb->rpb_flags)
 		{
-			while (*staying) {
-				delete LLS_POP(staying);
+			while (staying) {
+				delete staying.pop();
 			}
 			next_page = temp.rpb_page;
 			next_line = temp.rpb_line;
@@ -3926,7 +3922,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, LLS * staying)
 			else {
 				VIO_data(tdbb, &temp,
 						 reinterpret_cast<blk*>(tdbb->tdbb_default));
-				LLS_PUSH(temp.rpb_record, staying);
+				staying.push(temp.rpb_record);
 				data = temp.rpb_record;
 			}
 			max_depth = depth;
@@ -3944,8 +3940,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, LLS * staying)
    somebody else must have been garbage collecting also.  Remove the entries
    in 'staying' that have already been garbage collected. */
 	while (depth < max_depth--) {
-		if (*staying) {
-			delete LLS_POP(staying);
+		if (staying) {
+			delete staying.pop();
 		}
 	}
 }
@@ -4000,14 +3996,14 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb)
 #endif
 
 
-static int prepare_update(	thread_db*	tdbb,
+static int prepare_update(	thread_db*		tdbb,
 							jrd_tra*		transaction,
-							SLONG	commit_tid_read,
+							SLONG			commit_tid_read,
 							record_param*	rpb,
 							record_param*	temp,
 							record_param*	new_rpb,
-							LLS*	stack,
-							bool writelock)
+							PageStack&		stack,
+							bool			writelock)
 {
 /**************************************
  *
@@ -4272,7 +4268,7 @@ static int prepare_update(	thread_db*	tdbb,
 				DPM_store(tdbb, temp, stack, DPM_secondary);
 				continue;
 			}
-			LLS_PUSH((BLK) (IPTR)temp->rpb_page, stack);
+			stack.push(temp->rpb_page);
 			return PREPARE_OK;
 
 		case tra_active:
@@ -4449,10 +4445,9 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	DPM_rewrite_header(tdbb, rpb);
 	CCH_RELEASE(tdbb, &rpb->rpb_window);
 
-	lls* staying = NULL;
-	LLS_PUSH(record, &staying);
+	RecordStack staying;
+	staying.push(record);
 	garbage_collect(tdbb, &temp, rpb->rpb_page, staying);
-	LLS_POP(&staying);
 	gc_rec->rec_flags &= ~REC_gc_active;
 	VIO_bump_count(tdbb, DBB_purge_count, relation, false);
 
@@ -4482,7 +4477,7 @@ static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT l
 					++rec_ptr)
 	{
 		if (*rec_ptr == *gc_record) {
-			Record* temp = FB_NEW_RPT(*MemoryPool::blk_pool(*gc_record), length) Record;
+			Record* temp = FB_NEW_RPT((*gc_record)->rec_pool, length) Record((*gc_record)->rec_pool);
 			memcpy(temp, *rec_ptr, sizeof(Record) + sizeof(SCHAR) * (*gc_record)->rec_length);
 			delete *rec_ptr;
 			*rec_ptr = temp;
@@ -4500,9 +4495,10 @@ static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT l
 }
 
 
-static void replace_record(
-						   thread_db* tdbb, record_param* rpb, LLS * stack,
-						   const jrd_tra* transaction)
+static void replace_record(thread_db*		tdbb, 
+						   record_param*	rpb, 
+						   PageStack&		stack,
+						   const jrd_tra*	transaction)
 {
 /**************************************
  *
@@ -4615,7 +4611,7 @@ static void update_in_place(
 	}
 #endif
 
-	lls** stack = &new_rpb->rpb_record->rec_precedence;
+	PageStack& stack = new_rpb->rpb_record->rec_precedence;
 	jrd_rel* relation = org_rpb->rpb_relation;
 	Record* old_data = org_rpb->rpb_record;
 
@@ -4625,24 +4621,15 @@ static void update_in_place(
    with an old "complete" record, update in placement, then delete the old
    delta record */
 
-	bool refetched = false;
 	record_param temp2;
 	Record* prior;
-retry:
 	if ( (prior = org_rpb->rpb_prior) ) {
 		temp2 = *org_rpb;
 		temp2.rpb_record = VIO_gc_record(tdbb, relation);
 		temp2.rpb_page = org_rpb->rpb_b_page;
 		temp2.rpb_line = org_rpb->rpb_b_line;
 		if (! DPM_fetch(tdbb, &temp2, LCK_read)) {
-			if (refetched) {
-			    BUGCHECK(291);	 // msg 291 cannot find record back version
-			}
-
-            // maybe pre-trigger modified our record - refetch it
-			RefetchRecord(tdbb, org_rpb, transaction);
-			refetched = true;
-			goto retry;
+			BUGCHECK(291);	 // msg 291 cannot find record back version
         }
         
 		VIO_data(tdbb, &temp2,
@@ -4655,7 +4642,7 @@ retry:
 		temp2.rpb_number = org_rpb->rpb_number;
 		DPM_store(tdbb, &temp2, stack, DPM_secondary);
 
-		LLS_PUSH((BLK)(IPTR)temp2.rpb_page, stack);
+		stack.push(temp2.rpb_page);
 	}
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write)) {
@@ -4693,22 +4680,20 @@ retry:
 		/* Garbage collect.  Start by getting all existing old versions (other
 		   than the immediate two in question). */
 
-		lls* staying = NULL;
-		list_staying(tdbb, org_rpb, &staying);
+		RecordStack staying;
+		list_staying(tdbb, org_rpb, staying);
+		staying.push(new_rpb->rpb_record);
 		
-		lls* going = NULL;
-		LLS_PUSH(org_rpb->rpb_record, &going);
-		LLS_PUSH(new_rpb->rpb_record, &staying);
+		RecordStack going;
+		going.push(org_rpb->rpb_record);
 
 		BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page,
 							relation);
 		IDX_garbage_collect(tdbb, org_rpb, going, staying);
 
-		LLS_POP(&going);
-		LLS_POP(&staying);
-
+		staying.pop();
 		while (staying) {
-			delete LLS_POP(&staying);
+			delete staying.pop();
 		}
 	}
 
@@ -4782,7 +4767,7 @@ static void verb_post(
 			/* An update-in-place is being posted to this savepoint, and this
 			   savepoint hasn't seen this record before. */
 
-			Record* data = FB_NEW_RPT(*tdbb->tdbb_default, old_data->rec_length) Record();
+			Record* data = FB_NEW_RPT(*tdbb->tdbb_default, old_data->rec_length) Record(*tdbb->tdbb_default);
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = old_data->rec_length;
 			data->rec_format = old_data->rec_format;
@@ -4804,7 +4789,7 @@ static void verb_post(
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint hasn't seen this record before. */
 
-			Record* data = FB_NEW_RPT(*tdbb->tdbb_default, 1) Record;
+			Record* data = FB_NEW_RPT(*tdbb->tdbb_default, 1) Record(*tdbb->tdbb_default);
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
 			if (new_ver) {
@@ -4831,7 +4816,7 @@ static void verb_post(
 			   and this savepoint has seen this record before but it doesn't have
 			   undo data. */
 
-			Record* data = FB_NEW_RPT(*tdbb->tdbb_default, 1) Record();
+			Record* data = FB_NEW_RPT(*tdbb->tdbb_default, 1) Record(*tdbb->tdbb_default);
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
 			data->rec_flags |= (REC_same_tx | REC_new_version);

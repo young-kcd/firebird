@@ -33,8 +33,6 @@
 TEXT* ALL_cstring(const Firebird::string& in_string);
 void ALL_fini(void);
 void ALL_init(void);
-//void ALL_push(BLK , LLS *);
-//BLK ALL_pop(LLS *);
 
 struct blk;
 
@@ -55,7 +53,7 @@ class JrdMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	JrdMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL), lls_cache(*this) {}
+	JrdMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL)/*, lls_cache(*this)*/ {}
 	~JrdMemoryPool() {}	
 public:
 	static JrdMemoryPool *createDbPool(Firebird::MemoryStats &stats);
@@ -63,15 +61,9 @@ public:
 	static void deletePool(JrdMemoryPool* pool);
 	static void noDbbDeletePool(JrdMemoryPool* pool);
 
-	static blk* ALL_pop(lls**);
-	static void       ALL_push(blk*, lls**);
-
     Jrd::SparseBitmap* plb_buckets;   /* available bit map buckets */
     Jrd::BitmapSegment* plb_segments;  /* available bit map segments */
 	Jrd::DataComprControl* plb_dccs;
-
-private:
-	BlockCache<lls> lls_cache;  /* Was plb_lls */
 };
 
 #endif	// JRD_ALL_H

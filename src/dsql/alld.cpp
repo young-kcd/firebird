@@ -108,6 +108,7 @@ void ALLD_init()
 	}
 }
 
+#ifdef NOT_USED_OR_REPLACED
 void DsqlMemoryPool::ALLD_push(BLK object, dsql_lls** stack)
 {
 	tsql* tdsql = GET_THREAD_DATA;
@@ -131,11 +132,12 @@ BLK DsqlMemoryPool::ALLD_pop(dsql_lls* *stack)
 
 	return object;
 }
+#endif //NOT_USED_OR_REPLACED
 
 DsqlMemoryPool* DsqlMemoryPool::createPool()
 {
 	DsqlMemoryPool* result = (DsqlMemoryPool*)internal_create(sizeof(DsqlMemoryPool));
-	new (&result->lls_cache) BlockCache<class dsql_lls> (*result);
+//	new (&result->lls_cache) BlockCache<class dsql_lls> (*result);
 	
 	if (!DSQL_permanent_pool)
 		return result;
@@ -165,7 +167,7 @@ DsqlMemoryPool* DsqlMemoryPool::createPool()
 
 void DsqlMemoryPool::deletePool(DsqlMemoryPool* pool)
 {
-	pool->lls_cache.~BlockCache<class dsql_lls>();
+//	pool->lls_cache.~BlockCache<class dsql_lls>();
 	MemoryPool::deletePool(pool);
 	
 	if (pool == DSQL_permanent_pool)

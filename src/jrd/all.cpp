@@ -125,7 +125,6 @@ JrdMemoryPool *JrdMemoryPool::createDbPool(Firebird::MemoryStats &stats) {
 	result->plb_buckets = NULL;
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
-	new (&result->lls_cache) BlockCache<lls> (*result);
 	return result;
 }
 
@@ -142,7 +141,6 @@ JrdMemoryPool *JrdMemoryPool::createPool() {
 	result->plb_buckets = NULL;
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
-	new (&result->lls_cache) BlockCache<lls> (*result);
 	dbb->dbb_pools.push_back(result);
 	return result;
 }
@@ -152,12 +150,10 @@ void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
 	Database::pool_vec_type::iterator itr =
 		std::find(dbb->dbb_pools.begin(), dbb->dbb_pools.end(), pool);
 	if (itr != dbb->dbb_pools.end()) dbb->dbb_pools.erase(itr);
-	pool->lls_cache.~BlockCache<lls>();
 	MemoryPool::deletePool(pool);
 }
 
 void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {
-	pool->lls_cache.~BlockCache<lls>();
 	MemoryPool::deletePool(pool);
 }
 
@@ -244,51 +240,6 @@ void ALL_init(void)
 	dbb->dbb_pools[0] = pool;
 	dbb->dbb_bufferpool = JrdMemoryPool::createPool();
 //	FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
-}
-
-void JrdMemoryPool::ALL_push(BLK object, LLS* stack)
-{
-/**************************************
- *
- *	A L L _ p u s h
- *
- **************************************
- *
- * Functional description
- *	Push an object on an LLS stack.
- *
- **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
-
-	JrdMemoryPool* pool = tdbb->tdbb_default;
-	lls* node = pool->lls_cache.newBlock();
-	node->lls_object = object;
-	node->lls_next = *stack;
-	*stack = node;
-}
-
-
-BLK JrdMemoryPool::ALL_pop(LLS* stack)
-{
-/**************************************
- *
- *	A L L _ p o p
- *
- **************************************
- *
- * Functional description
- *	Pop an object off a linked list stack.  Save the node for
- *	further use.
- *
- **************************************/
-	lls* node = *stack;
-	*stack = node->lls_next;
-	blk* object = node->lls_object;
-
-	JrdMemoryPool* pool = (JrdMemoryPool*)MemoryPool::blk_pool(node);
-	pool->lls_cache.returnBlock(node);
-
-	return object;
 }
 
 

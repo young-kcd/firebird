@@ -86,13 +86,13 @@ using namespace Ods;
 static void delete_tail(thread_db*, RHDF, USHORT);
 static void fragment(thread_db*, record_param*, SSHORT, DataComprControl*, SSHORT, const jrd_tra*);
 static void extend_relation(thread_db*, jrd_rel*, WIN *);
-static UCHAR* find_space(thread_db*, record_param*, SSHORT, LLS *, Record*, USHORT);
+static UCHAR* find_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static bool get_header(WIN *, SSHORT, record_param*);
 static pointer_page* get_pointer_page(thread_db*, jrd_rel*, WIN *, USHORT, USHORT);
-static RHD locate_space(thread_db*, record_param*, SSHORT, LLS *, Record*, USHORT);
+static RHD locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static void mark_full(thread_db*, record_param*);
 static void release_dcc(DataComprControl*);
-static void store_big_record(thread_db*, record_param*, LLS *, DataComprControl*, USHORT);
+static void store_big_record(thread_db*, record_param*, PageStack&, DataComprControl*, USHORT);
 
 
 PAG DPM_allocate(thread_db* tdbb, WIN* window)
@@ -660,7 +660,8 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
    state of both the page and the appropriate pointer page. */
 
 	if (count && (page->pag_flags & dpg_full)) {
-		DEBUG page->pag_flags &= ~dpg_full;
+		DEBUG 
+		page->pag_flags &= ~dpg_full;
 		mark_full(tdbb, rpb);
 
 #ifdef VIO_DEBUG
@@ -1811,7 +1812,7 @@ void DPM_scan_pages( thread_db* tdbb)
 }
 
 
-void DPM_store( thread_db* tdbb, record_param* rpb, LLS * stack, USHORT type)
+void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT type)
 {
 /**************************************
  *
@@ -1925,6 +1926,8 @@ SLONG DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	vcl* vector = 0;
 	USHORT length;
 	const UCHAR* q;
+	PageStack stack;
+
 	if (blob->blb_level == 0) {
 		length = blob->blb_clump_size - blob->blb_space_remaining;
 		q = (UCHAR *) ((blob_page*) blob->blb_data)->blp_page;
@@ -1935,18 +1938,14 @@ SLONG DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 		// JMB: Not such a good thing with std::vector
 		q = (UCHAR *) &*(vector->begin());
 //		q = (UCHAR *) &(vector->[0]);
-	}
-
-/* Figure out precedence pages, if any */
-
-	lls* stack = NULL;
-
-	if (blob->blb_level > 0) {
+		/* Figure out precedence pages, if any */
 		vcl::iterator ptr, end;
 		for (ptr = vector->begin(), end = vector->end(); ptr < end;) {
-            LLS_PUSH((BLK)(IPTR)*ptr++, &stack);
+            stack.push(*ptr);
+			ptr++;
         }
-    }
+	}
+
 
 /* Locate space to store blob */
 
@@ -1954,7 +1953,7 @@ SLONG DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	blh* header = (BLH) locate_space(tdbb,
 								&rpb,
 								(SSHORT)(BLH_SIZE + length),
-								&stack,
+								stack,
 								record,
 								DPM_other);
 	header->blh_flags = rhd_blob;
@@ -2044,7 +2043,7 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 }
 
 
-void DPM_update( thread_db* tdbb, record_param* rpb, LLS * stack,
+void DPM_update( thread_db* tdbb, record_param* rpb, PageStack& stack,
 	const jrd_tra* transaction)
 {
 /**************************************
@@ -2079,10 +2078,9 @@ void DPM_update( thread_db* tdbb, record_param* rpb, LLS * stack,
 /* Mark the page as modified, then figure out the compressed length of the
    replacement record. */
 
-	DEBUG if (stack) {
-		while (*stack) {
-			CCH_precedence(tdbb, &rpb->rpb_window, (IPTR) LLS_POP(stack));
-		}
+	DEBUG
+	while (stack) {
+		CCH_precedence(tdbb, &rpb->rpb_window, stack.pop());
 	}
 
 	CCH_precedence(tdbb, &rpb->rpb_window, -rpb->rpb_transaction_nr);
@@ -2395,14 +2393,14 @@ static void fragment(
 	tail_rpb.rpb_length = rpb->rpb_length - pre_header_length;
 	tail_rpb.rpb_window.win_flags = 0;
 
-	lls* stack = NULL;
+	PageStack stack;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf("    about to store tail\n");
 #endif
 
-	DPM_store(tdbb, &tail_rpb, &stack, DPM_other);
+	DPM_store(tdbb, &tail_rpb, stack, DPM_other);
 
 /* That was unreasonablly easy.  Now re-fetch the original page and
    fill in the fragment pointer */
@@ -2611,7 +2609,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 static UCHAR* find_space(thread_db*	tdbb,
 						 record_param*	rpb,
 						 SSHORT	size,
-						 LLS*	stack,
+						 PageStack&	stack,
 						 Record*	record,
 						 USHORT	type)
 {
@@ -2684,8 +2682,8 @@ static UCHAR* find_space(thread_db*	tdbb,
 /* There's space on page.  If the line index needs expansion, do so.
    If the page need to be compressed, compress it. */
 
-	while (*stack) {
-		CCH_precedence(tdbb, &rpb->rpb_window, (SLONG)(IPTR)LLS_POP(stack));
+	while (stack) {
+		CCH_precedence(tdbb, &rpb->rpb_window, stack.pop());
 	}
 	CCH_MARK(tdbb, &rpb->rpb_window);
 
@@ -2710,7 +2708,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 		(SLONG) page->dpg_sequence * dbb->dbb_max_records + slot;
 
 	if (record) {
-		LLS_PUSH((BLK)(IPTR)rpb->rpb_page, &record->rec_precedence);
+		record->rec_precedence.push(rpb->rpb_page);
 	}
 
 	return (UCHAR *) page + space;
@@ -2825,7 +2823,7 @@ static pointer_page* get_pointer_page(
 static RHD locate_space(
 						thread_db* tdbb,
 						record_param* rpb,
-						SSHORT size, LLS * stack, Record* record, USHORT type)
+						SSHORT size, PageStack& stack, Record* record, USHORT type)
 {
 /**************************************
  *
@@ -2922,7 +2920,7 @@ static RHD locate_space(
 	}
 
 	if (record) {
-		LLS_PUSH((BLK)(IPTR)window->win_page, &record->rec_precedence);
+		record->rec_precedence.push(window->win_page);
 	}
 
 #ifdef VIO_DEBUG
@@ -3060,10 +3058,9 @@ static void release_dcc( DataComprControl* dcc)
 }
 
 
-static void store_big_record(
-							 thread_db* tdbb,
-							 record_param* rpb,
-							 LLS * stack, DataComprControl* head_dcc, USHORT size)
+static void store_big_record(thread_db* tdbb, record_param* rpb,
+							 PageStack& stack, 
+							 DataComprControl* head_dcc, USHORT size)
 {
 /**************************************
  *

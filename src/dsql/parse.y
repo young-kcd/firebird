@@ -160,7 +160,7 @@ static void	prepare_console_debug (int, int  *);
 #ifdef NOT_USED_OR_REPLACED
 static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 #endif
-static void	stack_nodes (dsql_nod*, dsql_lls**);
+static void	stack_nodes (dsql_nod*, DsqlNodStack&);
 inline static int	yylex (USHORT, USHORT, USHORT, bool*);
 static void	yyabandon (SSHORT, ISC_STATUS);
 
@@ -4376,12 +4376,9 @@ static dsql_nod* make_list (dsql_nod* node)
 	if (!node)
 		return node;
 
-	dsql_lls* stack = 0;
-	stack_nodes (node, &stack);
-	USHORT l = 0;
-	{for (const dsql_lls* temp = stack; temp; temp = temp->lls_next)
-		l++;
-	}
+	DsqlNodStack stack;
+	stack_nodes (node, stack);
+	USHORT l = stack.getCount();
 
 	dsql_nod* old  = node;
 	node = FB_NEW_RPT(*tdsql->tsql_default, l) dsql_nod;
@@ -4391,7 +4388,7 @@ static dsql_nod* make_list (dsql_nod* node)
 	dsql_nod** ptr = node->nod_arg + node->nod_count;
 
 	while (stack)
-		*--ptr = (dsql_nod*) LLS_POP (&stack);
+		*--ptr = stack.pop();
 
 	return node;
 }
@@ -4572,7 +4569,7 @@ static bool short_int(dsql_nod* string,
 #endif
 
 static void stack_nodes (dsql_nod*	node,
-						 dsql_lls** stack)
+						 DsqlNodStack& stack)
 {
 /**************************************
  *
@@ -4585,10 +4582,10 @@ static void stack_nodes (dsql_nod*	node,
  *
  **************************************/
 	if (node->nod_type != nod_list)
-		{
-		LLS_PUSH (node, stack);
+	{
+		stack.push(node);
 		return;
-		}
+	}
 
 	/* To take care of cases where long lists of nodes are in a chain
 	   of list nodes with exactly one entry, this algorithm will look
@@ -4626,14 +4623,14 @@ static void stack_nodes (dsql_nod*	node,
 		/* first, handle the rest of the nodes */
 		/* note that next_node still points to the first non-pattern node */
 
-		stack_nodes( next_node, stack);
+		stack_nodes (next_node, stack);
 
 		/* stack the non-list nodes and reverse the chain on the way back */
 		
 		curr_node = end_chain;
 		while (true)
 		{
-			LLS_PUSH( curr_node->nod_arg[1], stack);
+			stack.push(curr_node->nod_arg[1]);
 			if ( curr_node == start_chain)
 				break;
 			dsql_nod* save_link = curr_node->nod_arg[0];

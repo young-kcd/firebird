@@ -33,12 +33,12 @@ class AliceMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	AliceMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL), lls_cache(*this) {}
+	AliceMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL)/*, lls_cache(*this)*/ {}
 	~AliceMemoryPool() {}	
 public:
 	static AliceMemoryPool *createPool() {
 		AliceMemoryPool *result = (AliceMemoryPool *)internal_create(sizeof(AliceMemoryPool));
-		new (&result->lls_cache) BlockCache<alice_lls> (*result);
+		//new (&result->lls_cache) BlockCache<alice_lls> (*result);
 		return result;
 	}
 	static void deletePool(AliceMemoryPool* pool);
@@ -48,11 +48,11 @@ public:
 //		lls_cache(*this)
 //	{}
 
-	static blk* ALLA_pop(alice_lls**);
-	static void ALLA_push(blk*, alice_lls**);
+//	static blk* ALLA_pop(alice_lls**);
+//	static void ALLA_push(blk*, alice_lls**);
 
-private:
-	BlockCache<alice_lls> lls_cache;  // Was plb_lls
+//private:
+//	BlockCache<alice_lls> lls_cache;  // Was plb_lls
 };
 
 #endif // ALICE_ALL_H

@@ -133,6 +133,13 @@ public:
 		memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 		data[index] = item;
 	}
+	void insert(int index, Array<T>& L) {
+		fb_assert(index >= 0 && index <= count);
+		ensureCapacity(count + L.count);
+		memmove(data + index + L.count, data + index, sizeof(T) * (count - index));
+		memcpy(data + index, L.data, L.count);
+		count += L.count;
+	}
 	int add(const T& item) {
 		ensureCapacity(count + 1);
 		data[count++] = item;
@@ -175,6 +182,7 @@ public:
 	}
 	T* getBuffer(int capacity) {
 		ensureCapacity(capacity);
+		count = capacity;
 		return data;
 	}
 protected:

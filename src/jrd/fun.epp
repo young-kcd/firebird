@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.47 2004-04-16 21:51:30 skidder Exp $
+$Id: fun.epp,v 1.48 2004-04-18 14:22:19 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -100,12 +100,10 @@ struct udf_blob {
 	SLONG (*blob_seek) (blb*, USHORT, SLONG);
 };
 
-
-
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
-static SLONG get_scalar_array(fun_repeat*, DSC*, scalar_array_desc*, LLS*);
+static SLONG get_scalar_array(fun_repeat*, DSC*, scalar_array_desc*, UCharStack&);
 
 
 void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
@@ -150,13 +148,13 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;
-	LLS	blob_stack	= 0;
-	LLS array_stack = 0;
+	Firebird::Stack<blb*> blob_stack;
+	UCharStack array_stack;
 	
 	jrd_req* request = tdbb->tdbb_request;
 	// CVC: restoring the null flag seems like a Borland hack to try to
 	// patch a bug with null handling. There's no evident reason to restore it
-    // because EVL_expr() resets it every time it's called.	Kept it for now.
+	// because EVL_expr() resets it every time it's called.	Kept it for now.
 	bool null_flag	= ((request->req_flags & req_null) == req_null);
 	
 	fun_repeat*	return_ptr = function->fun_rpt + function->fun_return_arg;
@@ -169,17 +167,12 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	bool unsup_datatype = false;
 
 	// We'll use to this trick to give the UDF a way to signal
-    // "I sent a null blob" when not using descriptors.
+	// "I sent a null blob" when not using descriptors.
 	udf_blob* return_blob_struct = 0;
 
 // Trap any potential errors
 
-#pragma FB_COMPILER_MESSAGE("Note that we cannot use C++ EH here for Win32 SS!")
-#if !defined(SUPERSERVER) && !defined(WIN_NT)
 	try {
-#endif
-
-	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 
 	// If the return data type is any of the string types,
 	// allocate space to hold value
@@ -269,7 +262,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 		}
 		else if ((SSHORT) abs(tail->fun_mechanism) == FUN_scalar_array)
 		{
-			length = get_scalar_array(tail, input, (scalar_array_desc*)temp_ptr, &array_stack);
+			length = get_scalar_array(tail, input, (scalar_array_desc*)temp_ptr, array_stack);
 		}
 		else
 		{
@@ -459,7 +452,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 										tdbb->tdbb_request->req_transaction,
 										&blob_id);
 					}
-					LLS_PUSH(blob, &blob_stack);
+					blob_stack.push(blob);
 					blob_desc->blob_get_segment = blob_get_segment;
 					blob_desc->blob_put_segment = blob_put_segment;
 					blob_desc->blob_seek = blob_lseek;
@@ -684,22 +677,17 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 		}
 	}
 
-	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
-
 	if (unsup_datatype) {
 		IBERROR(169);			// msg 169 return data type not supported
 	}
-
-#if !defined(SUPERSERVER) && !defined(WIN_NT)
 	}
 	catch (const std::exception&) {
 		delete temp_string;
 		while (array_stack) {
-			delete[] (UCHAR*)LLS_POP(&array_stack);
+			delete[] array_stack.pop();
 		}
 		throw;
 	}
-#endif
 
     // We can't do this here: if temp_string was allocated, temp_ptr points to it
     // if the length of the stack-based buffer is not enough. Moved below.
@@ -707,12 +695,12 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 
 	while (blob_stack)
 	{
-		BLB_close(tdbb, (blb*)LLS_POP(&blob_stack));
+		BLB_close(tdbb, blob_stack.pop());
 	}
 
 	while (array_stack)
 	{
-		delete[] (UCHAR*)LLS_POP(&array_stack);
+		delete[] array_stack.pop();
 	}
 
     // We acknowledge null in three cases:
@@ -759,7 +747,7 @@ void FUN_fini( thread_db* tdbb)
 	Database* dbb = tdbb->tdbb_database;
 
 	while (dbb->dbb_modules)
-		FLU_unregister_module((MOD) LLS_POP(&dbb->dbb_modules));
+		FLU_unregister_module(dbb->dbb_modules.pop());
 }
 
 
@@ -876,10 +864,15 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
 		if (module) {
 			/* Register interest in the module by database. */
 
-			lls* stack;
-			for (stack = dbb->dbb_modules; stack; stack = stack->lls_next)
-				if (module == (MOD) stack->lls_object)
+			Firebird::Stack<mod*>::iterator stack(dbb->dbb_modules);
+			while (stack)
+			{
+				if (module == stack.object())
+				{
 					break;
+				}
+				++stack;
+			}
 
 			/* If the module was already registered with this database
 			   then decrement the use count that was incremented in
@@ -892,10 +885,7 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
 			}
 			else
 			{
-				JrdMemoryPool* old_pool = tdbb->tdbb_default;
-				tdbb->tdbb_default = dbb->dbb_permanent;
-				LLS_PUSH(module, &dbb->dbb_modules);
-				tdbb->tdbb_default = old_pool;
+				dbb->dbb_modules.push(module);
 			}
 		}
 
@@ -1064,7 +1054,7 @@ static SSHORT blob_get_segment(
 static SLONG get_scalar_array(fun_repeat*	arg,
 							  DSC*	value,
 							  scalar_array_desc*	scalar_desc,
-							  LLS*	stack)
+							  UCharStack&	stack)
 {
 /**************************************
  *
@@ -1117,7 +1107,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 
 /* Fill out the scalar array descriptor */
 
-	LLS_PUSH(data, stack);
+	stack.push(data);
 	scalar_desc->sad_desc = arg->fun_desc;
 	scalar_desc->sad_desc.dsc_address = data;
 	scalar_desc->sad_dimensions = dimensions;

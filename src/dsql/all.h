@@ -25,7 +25,7 @@
 #define DSQL_ALL_H
 
 #include "../common/classes/alloc.h"
-#include "../jrd/block_cache.h"
+//#include "../jrd/block_cache.h"
 
 struct blk;
 
@@ -33,18 +33,18 @@ class DsqlMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	DsqlMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL), lls_cache(*this) {}
+	DsqlMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL) { }
 	~DsqlMemoryPool() {}	
 public:
 	static DsqlMemoryPool* createPool();
 	
 	static void deletePool(DsqlMemoryPool* pool);
 
-	static blk* ALLD_pop(class dsql_lls**);
-	static void ALLD_push(blk*, class dsql_lls**);
-
-private:
-	BlockCache<class dsql_lls> lls_cache;  // Was plb_lls
+//	static blk* ALLD_pop(class dsql_lls**);
+//	static void ALLD_push(blk*, class dsql_lls**);
+//
+//private:
+//	BlockCache<class dsql_lls> lls_cache;  // Was plb_lls
 };
 
 extern DsqlMemoryPool* DSQL_permanent_pool;
