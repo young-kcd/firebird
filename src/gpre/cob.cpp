@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.22 2003-04-03 08:52:45 brodsom Exp $
+//	$Id: cob.cpp,v 1.23 2003-08-09 18:00:13 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -60,8 +60,8 @@
 #ifdef VMS
 #define GIVING_SUPPORTED
 #define OMITTED 		"OMITTED"
-#define RAW_BLR_TEMPLATE	"03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %d."
-#define RAW_TPB_TEMPLATE	"03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %d."
+#define RAW_BLR_TEMPLATE	"03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT"."
+#define RAW_TPB_TEMPLATE	"03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT"."
 #define BY_VALUE		"BY VALUE "
 #define END_VALUE		""
 #define BY_REF			"BY REFERENCE "
@@ -183,8 +183,8 @@
 #define END_VALUE		""
 #define BY_REF			"BY REFERENCE "
 #define BY_DESC 		"BY REFERENCE "
-#define RAW_BLR_TEMPLATE	"03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %u."
-#define RAW_TPB_TEMPLATE	"03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %u."
+#define RAW_BLR_TEMPLATE	"03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %"ULONGFORMAT"."
+#define RAW_TPB_TEMPLATE	"03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %"ULONGFORMAT"."
 #define COMP_VALUE		"COMP-5"
 #endif
 
@@ -2679,7 +2679,7 @@ static void gen_event_init( ACT action)
 		}
 		else
 			printa(names[COLUMN], FALSE, "MOVE %s TO %s(%d)",
-				   node->nod_arg[0], names[ISC_EVENT_NAMES2], count);
+				   (TEXT *) node->nod_arg[0], names[ISC_EVENT_NAMES2], count);
 
 		printa(names[COLUMN], TRUE, EVENT_MOVE_TEMPLATE, ISC_BADDRESS,
 			   names[ISC_EVENT_NAMES2], count, names[ISC_EVENT_NAMES], count);
@@ -4703,7 +4703,7 @@ static void gen_trans( ACT action)
 static void gen_type( ACT action)
 {
 
-	printa(names[COLUMN], TRUE, "%ld", action->act_object);
+	printa(names[COLUMN], TRUE, "%ld", (SLONG) action->act_object);
 }
 
 

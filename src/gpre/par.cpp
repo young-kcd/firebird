@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.21 2003-07-04 16:19:37 brodsom Exp $
+//  $Id: par.cpp,v 1.22 2003-08-09 18:00:13 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.21 2003-07-04 16:19:37 brodsom Exp $
+//	$Id: par.cpp,v 1.22 2003-08-09 18:00:13 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -253,7 +253,7 @@ ACT PAR_action(TEXT* base_dir)
 			return par_window_create();
 #endif
 		case KW_DATABASE:
-			return PAR_database(FALSE,base_dir);
+			return PAR_database(FALSE, base_dir);
 #ifdef PYXIS
 		case KW_DELETE_WINDOW:
 			return par_window_delete();
@@ -562,8 +562,10 @@ ACT PAR_database(USHORT sql, TEXT* base_directory)
 
 		if (QUOTED(token.tok_type)) {
 			if (base_directory){
-				db->dbb_filename = string = (TEXT *) ALLOC(token.tok_length + strlen(base_directory) + 1);
-				COPY_CAT(base_directory, strlen(base_directory),token.tok_string, token.tok_length, string);
+				db->dbb_filename = string = (TEXT *) ALLOC(token.tok_length + 
+													strlen(base_directory) + 1);
+				COPY_CAT(base_directory, strlen(base_directory), 
+						 token.tok_string, token.tok_length, string);
 			}
 			else {
 				db->dbb_filename = string = (TEXT *) ALLOC(token.tok_length + 1);
@@ -3728,7 +3730,7 @@ static ACT par_type()
 
 	ADVANCE_TOKEN;
 	action = MAKE_ACTION(0, ACT_type);
-	action->act_object = (REF) type;
+	action->act_object = (REF) (ULONG) type;
 
 	return action;
 }

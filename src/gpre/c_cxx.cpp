@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.20 2003-04-01 11:49:33 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.21 2003-08-09 18:00:14 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -2200,7 +2200,7 @@ static void gen_event_init( ACT action, int column)
 			printb(", %s", variable);
 		}
 		else
-			printb(", %s", node->nod_arg[0]);
+			printb(", %s", (TEXT *) node->nod_arg[0]);
 	}
 
 	printb(");");
@@ -4182,7 +4182,7 @@ static void gen_trans( ACT action, int column)
 static void gen_type( ACT action, int column)
 {
 
-	printa(column, "%ld", action->act_object);
+	printa(column, "%ld", (SLONG) action->act_object);
 }
 
 

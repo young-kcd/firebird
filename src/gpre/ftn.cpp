@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.20 2003-04-06 11:40:29 alexpeshkoff Exp $
+//	$Id: ftn.cpp,v 1.21 2003-08-09 18:00:13 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -75,7 +75,9 @@ static void	gen_blob_for (ACT);
 static void	gen_blob_open (ACT);
 static int	gen_blr (int *, int, TEXT *);
 static void	gen_clear_handles(ACT);
+#ifdef NOT_USED_OR_REPLACED
 static void	gen_compatibility_symbol( TEXT *, TEXT *, TEXT *);
+#endif
 static void	gen_compile (ACT);
 static void	gen_create_database (ACT);
 static void	gen_cursor_close (ACT, GPRE_REQ);
@@ -142,7 +144,9 @@ static void gen_raw(UCHAR *, enum req_t, int, int, int);
 static void	gen_ready (ACT);
 static void	gen_receive (ACT, POR);
 static void	gen_release (ACT);
+#ifdef NOT_USED_OR_REPLACED
 static void	gen_request (GPRE_REQ);
+#endif
 static void	gen_request_data (GPRE_REQ);
 static void	gen_request_decls (GPRE_REQ);
 static void	gen_return_value (ACT);
@@ -157,7 +161,9 @@ static void	gen_slice (ACT);
 static void	gen_start (ACT, POR);
 static void	gen_store (ACT);
 static void	gen_t_start (ACT);
+#ifdef NOT_USED_OR_REPLACED
 static void 	gen_tpb(TPB);
+#endif
 static void	gen_tpb_data (TPB);
 static void	gen_tpb_decls (TPB);
 static void	gen_trans (ACT);
@@ -177,7 +183,9 @@ static void	make_port (POR);
 static void	make_ready (DBB, TEXT *, TEXT *, GPRE_REQ);
 static USHORT	next_label (void);
 static void	printa (SCHAR *, SCHAR *, ...);
+#ifdef NOT_USED_OR_REPLACED
 static void	printb (SCHAR *,  ...);
+#endif
 static TEXT	*request_trans (ACT, GPRE_REQ);
 static void	status_and_stop (ACT);
 static TEXT	*status_vector (ACT);
@@ -1001,7 +1009,7 @@ static void gen_based( ACT action)
 		break;
 
 	case dtype_text:
-		ib_fprintf(out_file, "%sCHARACTER*%d%s", COLUMN,
+		ib_fprintf(out_file, "%sCHARACTER*%ld%s", COLUMN,
 				   (based_on->bas_flags & BAS_segment) ? length :
 				   ((field->fld_array_info) ? field->fld_array->
 					fld_length : field->fld_length), COLUMN);
@@ -1039,9 +1047,9 @@ static void gen_based( ACT action)
 			for (dimension = field->fld_array_info->ary_dimension; dimension;
 				 dimension = dimension->dim_next) {
 				if (dimension->dim_lower != 1)
-					ib_fprintf(out_file, "%d:", dimension->dim_lower);
+					ib_fprintf(out_file, "%"SLONGFORMAT":", dimension->dim_lower);
 
-				ib_fprintf(out_file, "%d", dimension->dim_upper);
+				ib_fprintf(out_file, "%"SLONGFORMAT, dimension->dim_upper);
 				if (dimension->dim_next)
 					ib_fprintf(out_file, ", ");
 			}
@@ -2728,7 +2736,8 @@ static void gen_get_or_put_slice( ACT action, REF reference, BOOLEAN get)
 	if (get) {
 		if (action->act_flags & ACT_sql) {
 			sprintf(output_buffer,
-					"%sCALL ISC_GET_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%d%s, %s, ISC_ARRAY_LENGTH)\n",
+					"%sCALL ISC_GET_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%"
+					SLONGFORMAT"%s, %s, ISC_ARRAY_LENGTH)\n",
 					COLUMN,
 					status_vector(action),
 					action->act_request->req_database->dbb_name->sym_string,
@@ -2743,7 +2752,8 @@ static void gen_get_or_put_slice( ACT action, REF reference, BOOLEAN get)
 		}
 		else {
 			sprintf(output_buffer,
-					"%sCALL ISC_GET_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%d%s, isc_%d, ISC_ARRAY_LENGTH)\n",
+					"%sCALL ISC_GET_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%"
+					SLONGFORMAT"%s, isc_%d, ISC_ARRAY_LENGTH)\n",
 					COLUMN,
 					status_vector(action),
 					action->act_request->req_database->dbb_name->sym_string,
@@ -2761,7 +2771,8 @@ static void gen_get_or_put_slice( ACT action, REF reference, BOOLEAN get)
 	else {
 		if (action->act_flags & ACT_sql) {
 			sprintf(output_buffer,
-					"%sCALL ISC_PUT_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%d%s, %s)\n",
+					"%sCALL ISC_PUT_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%"
+					SLONGFORMAT"%s, %s)\n",
 					COLUMN,
 					status_vector(action),
 					action->act_request->req_database->dbb_name->sym_string,
@@ -2776,7 +2787,8 @@ static void gen_get_or_put_slice( ACT action, REF reference, BOOLEAN get)
 		}
 		else {
 			sprintf(output_buffer,
-					"%sCALL ISC_PUT_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%d%s, isc_%d)\n",
+					"%sCALL ISC_PUT_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%"
+					SLONGFORMAT"%s, isc_%d)\n",
 					COLUMN,
 					status_vector(action),
 					action->act_request->req_database->dbb_name->sym_string,
@@ -3435,9 +3447,9 @@ static void gen_raw(
 			}
 		}
 		if (blr_length)
-			sprintf(p, "%d,", blr_hunk.longword_blr);
+			sprintf(p, "%"SLONGFORMAT",", blr_hunk.longword_blr);
 		else
-			sprintf(p, "%d", blr_hunk.longword_blr);
+			sprintf(p, "%"SLONGFORMAT, blr_hunk.longword_blr);
 		while (*p)
 			p++;
 		if (p - buffer > 50) {
@@ -3597,7 +3609,7 @@ static void gen_request_data( GPRE_REQ request)
 			 begin_i = begin_i + (75 * sizeof(SLONG))) {
 			end_i =
 				MIN(request->req_length - 1,
-					begin_i + (75 * sizeof(SLONG)) - 1);
+					begin_i + (SLONG)(75 * sizeof(SLONG)) - 1);
 			printa(COLUMN, "DATA (isc_%d(ISC_I)%s ISC_I=%d,%d)  /",
 				   request->req_ident, COMMA, (begin_i / sizeof(SLONG)) + 1,
 				   (end_i / sizeof(SLONG)) + 1);
@@ -3687,7 +3699,7 @@ static void gen_request_data( GPRE_REQ request)
 					 begin_i = begin_i + (75 * sizeof(SLONG))) {
 					end_i =
 						MIN(reference->ref_sdl_length - 1,
-							begin_i + (75 * sizeof(SLONG)) - 1);
+							begin_i + (SLONG)(75 * sizeof(SLONG)) - 1);
 					printa(COLUMN, "DATA (isc_%d(ISC_I)%s ISC_I=%d,%d)  /",
 						   reference->ref_sdl_ident, COMMA,
 						   (begin_i / sizeof(SLONG)) + 1,
@@ -3714,7 +3726,7 @@ static void gen_request_data( GPRE_REQ request)
 				 begin_i = begin_i + (75 * sizeof(SLONG))) {
 				end_i =
 					MIN(blob->blb_bpb_length - 1,
-						begin_i + (75 * sizeof(SLONG)) - 1);
+						begin_i + (SLONG)(75 * sizeof(SLONG)) - 1);
 				printa(COLUMN, "DATA (isc_%d(ISC_I)%s ISC_I=%d,%d)  /",
 					   blob->blb_bpb_ident, COMMA,
 					   (begin_i / sizeof(SLONG)) + 1,
@@ -4300,9 +4312,9 @@ static void gen_tpb_data( TPB tpb)
 				break;
 		}
 		if (length)
-			sprintf(p, "%11d,", tpb_hunk.longword_tpb);
+			sprintf(p, "%"SLONGFORMAT",", tpb_hunk.longword_tpb);
 		else
-			sprintf(p, "%d/\n", tpb_hunk.longword_tpb);
+			sprintf(p, "%"SLONGFORMAT"/\n", tpb_hunk.longword_tpb);
 		p += 12;
 	}
 
@@ -4538,9 +4550,9 @@ static void make_array_declaration( REF reference)
 	for (dimension = field->fld_array_info->ary_dimension; dimension;
 		 dimension = dimension->dim_next) {
 		if (dimension->dim_lower != 1)
-			ib_fprintf(out_file, "%d:", dimension->dim_lower);
+			ib_fprintf(out_file, "%"SLONGFORMAT":", dimension->dim_lower);
 
-		ib_fprintf(out_file, "%d", dimension->dim_upper);
+		ib_fprintf(out_file, "%"SLONGFORMAT, dimension->dim_upper);
 		if (dimension->dim_next)
 			ib_fprintf(out_file, ", ");
 	}
@@ -5040,6 +5052,7 @@ static void gen_clear_handles( ACT action)
 	}
 }
 
+#ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
 //  
 //		Generate a symbol to ease compatibility with V3.
@@ -5056,6 +5069,7 @@ static void gen_compatibility_symbol(
 	ib_fprintf(out_file, "#define %s%s\t%s%s%s\n", v3_prefix, symbol,
 			   v4_prefix, symbol, trailer);
 }
+#endif
 
 //____________________________________________________________
 //  
@@ -5154,6 +5168,7 @@ static void gen_function( ACT function)
 			   gen_name(s, port->por_references, TRUE));
 }
 
+#ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
 //  
 //		Generate a TPB in the output file
@@ -5199,6 +5214,7 @@ static void gen_tpb( TPB tpb)
 
 	ib_fprintf(out_file, "%s};\n", buffer);
 }
+#endif
 
 //____________________________________________________________
 //  
@@ -5211,6 +5227,7 @@ static void gen_type( ACT action)
 	printa("%s%ld", COLUMN, action->act_object);
 }
 
+#ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
 //  
 //		Print a fixed string at a particular column.
@@ -5223,3 +5240,4 @@ static void printb( TEXT * string, ...)
 	VA_START(ptr, string);
 	ib_vfprintf(out_file, string, ptr);
 }
+#endif

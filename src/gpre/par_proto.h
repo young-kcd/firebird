@@ -30,7 +30,7 @@ extern "C" {
 
 extern ACT PAR_action(TEXT*);
 extern SSHORT PAR_blob_subtype(DBB);
-extern ACT PAR_database(USHORT,TEXT*);
+extern ACT PAR_database(USHORT, TEXT*);
 extern BOOLEAN PAR_end(void);
 extern void PAR_error(TEXT *);
 extern ACT PAR_event_init(USHORT);

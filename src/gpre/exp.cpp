@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.12 2003-04-01 11:49:32 brodsom Exp $
+//	$Id: exp.cpp,v 1.13 2003-08-09 18:00:13 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -956,7 +956,7 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 					upcase->nod_arg[0] = item;
 				}
 				count++;
-				PUSH((GPRE_NOD) direction, &directions);
+				PUSH((GPRE_NOD) (ULONG) direction, &directions);
 				if (insensitive)
 					PUSH(upcase, &items);
 				else

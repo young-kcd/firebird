@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.15 2003-03-27 17:15:48 brodsom Exp $
+//	$Id: ada.cpp,v 1.16 2003-08-09 18:00:14 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -61,12 +61,16 @@ static void	gen_blob_for (ACT, USHORT);
 static void	gen_blob_open (ACT, USHORT);
 static int	gen_blr (int *, int, TEXT *);
 static void	gen_clear_handles (ACT, int);
+#ifdef NOT_USED_OR_REPLACED
 static void	gen_compatability_symbol (TEXT *, TEXT *, TEXT *);
+#endif
 static void	gen_compile (ACT, int);
 static void	gen_create_database (ACT, int);
 static int	gen_cursor_close (ACT, GPRE_REQ, int);
 static void	gen_cursor_init (ACT, int);
+#ifdef NOT_USED_OR_REPLACED
 static int	gen_cursor_open (ACT, GPRE_REQ, int);
+#endif
 static void	gen_database (ACT, int);
 static void	gen_ddl (ACT, int);
 static void	gen_drop_database (ACT, int);
@@ -140,9 +144,11 @@ static void	gen_type (ACT, int);
 static void	gen_update (ACT, int);
 static void	gen_variable (ACT, int);
 static void	gen_whenever (SWE, int);
+#ifdef PYXIS
 static void	gen_window_create (ACT, int);
 static void	gen_window_delete (ACT, int);
 static void	gen_window_suspend (ACT, int);
+#endif
 static void	make_array_declaration (REF, int);
 static void	make_cursor_open_test (enum act_t, GPRE_REQ, int);
 static TEXT	*make_name (TEXT *, SYM);
@@ -150,7 +156,9 @@ static void	make_ok_test (ACT, GPRE_REQ, int);
 static void	make_port (POR, int);
 static void	make_ready (DBB, TEXT *, TEXT *, USHORT, GPRE_REQ);
 static void	printa (int, TEXT *, ...);
+#ifdef NOT_USED_OR_REPLACED
 static void	printb (TEXT *, ...);
+#endif
 static TEXT	*request_trans (ACT, GPRE_REQ);
 static TEXT	*status_vector (ACT);
 static void	t_start_auto (ACT, GPRE_REQ, TEXT *, int, SSHORT);
@@ -731,13 +739,14 @@ static void gen_based( ACT action, int column)
 		for (dimension = field->fld_array_info->ary_dimension, i = 1;
 			 i < field->fld_array_info->ary_dimension_count;
 			 dimension = dimension->dim_next, i++) {
-			sprintf(s2, "%s range %d..%d,\n                            ",
+			sprintf(s2, "%s range %"SLONGFORMAT"..%"SLONGFORMAT
+					",\n                            ",
 					LONG_DCL, dimension->dim_lower, dimension->dim_upper);
 			for (p = s2; *p; p++, q++)
 				*q = *p;
 		}
 
-		sprintf(s2, "%s range %d..%d) of ",
+		sprintf(s2, "%s range %"SLONGFORMAT"..%"SLONGFORMAT") of ",
 				LONG_DCL, dimension->dim_lower, dimension->dim_upper);
 		for (p = s2; *p; p++, q++)
 			*q = *p;
@@ -1224,6 +1233,7 @@ static void gen_cursor_init( ACT action, int column)
 																	  blb_ident);
 }
 
+#ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
 //  
 //		Generate text to open an embedded SQL cursor.
@@ -1234,7 +1244,7 @@ static int gen_cursor_open( ACT action, GPRE_REQ request, int column)
 
 	return column;
 }
-
+#endif
 
 //____________________________________________________________
 //  
@@ -4072,10 +4082,11 @@ static void make_array_declaration( REF reference, int column)
 	for (dimension = field->fld_array_info->ary_dimension, i = 1;
 		 i < field->fld_array_info->ary_dimension_count;
 		 dimension = dimension->dim_next, i++)
-		ib_fprintf(out_file, "%s range %d..%d,\n                        ",
+		ib_fprintf(out_file, "%s range %"SLONGFORMAT"..%"SLONGFORMAT
+				   ",\n                        ",
 				   LONG_DCL, dimension->dim_lower, dimension->dim_upper);
 
-	ib_fprintf(out_file, "%s range %d..%d) of ",
+	ib_fprintf(out_file, "%s range %"SLONGFORMAT"..%"SLONGFORMAT") of ",
 			   LONG_DCL, dimension->dim_lower, dimension->dim_upper);
 
 	switch (field->fld_array_info->ary_dtype) {

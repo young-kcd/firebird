@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.11 2003-07-02 18:58:41 brodsom Exp $
+//	$Id: int_cxx.cpp,v 1.12 2003-08-09 18:00:13 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -113,10 +113,10 @@ void INT_CXX_action( ACT action, int column)
 		gen_emodify(action, column);
 		break;
 	case ACT_endstore:
-		gen_estore(action, column,false);
+		gen_estore(action, column, false);
 		break;
 	case ACT_endstore_special:
-		gen_estore(action, column,true);
+		gen_estore(action, column, true);
 		break;
 	case ACT_erase:
 		gen_erase(action, column);

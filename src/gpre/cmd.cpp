@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.9 2003-02-27 16:05:14 brodsom Exp $
+//	$Id: cmd.cpp,v 1.10 2003-08-09 18:00:14 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -204,7 +204,7 @@ CMD_compile_ddl(GPRE_REQ request)
 
 	case ACT_drop_shadow:
 		put_numeric(request, gds_dyn_delete_shadow,
-					(SSHORT) action->act_object);
+					(SSHORT) (SLONG) action->act_object);
 		STUFF_END;
 		break;
 
@@ -579,7 +579,7 @@ static void create_check_constraint( GPRE_REQ request, ACT action, CNSTRT cnstrt
 
 //  "insert violates CHECK constraint on table" 
 
-	trigger->trg_message = (STR) NULL;
+	trigger->trg_message = NULL;
 	trigger->trg_boolean = cnstrt->cnstrt_boolean;
 	trigger->trg_source = (STR) ALLOC(cnstrt->cnstrt_text->txt_length + 1);
 	CPR_get_text((TEXT *) trigger->trg_source, cnstrt->cnstrt_text);
@@ -1040,7 +1040,7 @@ static void create_set_default_trg(
 			/* Nop. The column is not being created in this ddl statement */
 			if (request->req_actions->act_type == ACT_create_table) {
 				sprintf(s, "field \"%s\" does not exist in relation \"%s\"",
-						for_key_fld_name, relation->rel_symbol->sym_string);
+						for_key_fld_name->str_string, relation->rel_symbol->sym_string);
 				CPR_error(s);
 			}
 
@@ -1324,7 +1324,7 @@ static void get_referred_fields( ACT action, CNSTRT cnstrt)
 		/* Nothing is in system tables. */
 		sprintf(s,
 				"\"REFERENCES %s\" without \"(column list)\" requires PRIMARY KEY on referenced table",
-				cnstrt->cnstrt_referred_rel);
+				cnstrt->cnstrt_referred_rel->str_string);
 		CPR_error(s);
 	}
 	else {
@@ -1342,7 +1342,7 @@ static void get_referred_fields( ACT action, CNSTRT cnstrt)
 		if (prim_key_num_flds != for_key_num_flds) {
 			sprintf(s,
 					"PRIMARY KEY column count in relation \"%s\" does not match FOREIGN KEY in relation \"%s\"",
-					cnstrt->cnstrt_referred_rel,
+					cnstrt->cnstrt_referred_rel->str_string,
 					relation->rel_symbol->sym_string);
 			CPR_error(s);
 		}
@@ -2106,7 +2106,7 @@ static BOOLEAN create_view( GPRE_REQ request, ACT action)
 
 		/* "update violates CHECK constraint on view" */
 
-		trigger->trg_message = (STR) NULL;
+		trigger->trg_message = NULL;
 		trigger->trg_boolean = (GPRE_NOD) select;
 		create_view_trigger(request, action, trigger, view_boolean, contexts,
 							set_list);

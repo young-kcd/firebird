@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.10 2003-06-01 17:02:22 fsg Exp $
+//	$Id: pas.cpp,v 1.11 2003-08-09 18:00:13 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -800,7 +800,7 @@ static void gen_based( ACT action, int column)
 		datatype = dtype_text;
 		if (!(length = field->fld_seg_length))
 			length = 256;
-		ib_fprintf(out_file, "%s [1..%d] of ", PACKED_ARRAY, length);
+		ib_fprintf(out_file, "%s [1..%"SLONGFORMAT"] of ", PACKED_ARRAY, length);
 	}
 	else if (field->fld_array_info) {
 		datatype = field->fld_array_info->ary_dtype;
@@ -811,7 +811,7 @@ static void gen_based( ACT action, int column)
 
 		for (dimension = field->fld_array_info->ary_dimension; dimension;
 			 dimension = dimension->dim_next) {
-			ib_fprintf(out_file, "%d..%d", dimension->dim_lower,
+			ib_fprintf(out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
 					   dimension->dim_upper);
 			if (dimension->dim_next)
 				ib_fprintf(out_file, ", ");
@@ -4058,7 +4058,7 @@ static void make_array_declaration( REF reference)
 //   Print out the dimension part of the declaration  
 	for (dimension = field->fld_array_info->ary_dimension; dimension;
 		 dimension = dimension->dim_next) {
-		ib_fprintf(out_file, "%d..%d", dimension->dim_lower,
+		ib_fprintf(out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
 				   dimension->dim_upper);
 		if (dimension->dim_next)
 			ib_fprintf(out_file, ", ");
