@@ -1467,7 +1467,8 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 		ERR_post(gds_shutinprog, gds_arg_cstring,
-				 dbb->dbb_filename->str_length, dbb->dbb_filename->str_data,
+				 tdbb->tdbb_attachment->att_filename->str_length,
+				 tdbb->tdbb_attachment->att_filename->str_data,
 				 0);
 
 #ifdef GATEWAY
