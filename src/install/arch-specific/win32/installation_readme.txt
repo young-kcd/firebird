@@ -224,3 +224,21 @@ following parameters may be passed:
   breaking a perfectly good working install of 
   InterBase. Its your choice.
 
+
+/NOCPL
+
+  Don't install the Control Panel Applet. This is 
+  useful for two reasons:
+  
+  o Installing/Uninstalling the CPL applet will 
+    often require a system restart.
+
+  o You may wish to use an alternative cpl applet.
+
+  
+/NOGDS32
+
+  Don't install a copy of the client library into
+  the system directory, even if installation 
+  analysis concludes it is OK to do so.
+

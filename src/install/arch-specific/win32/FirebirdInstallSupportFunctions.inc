@@ -90,6 +90,11 @@ begin
 end;
 
 
+function GetAppPath: String;
+begin
+  Result := ExpandConstant('{app}');
+//  Result := '"' + Result +'"';
+end;
 
 
 function GetSysPath: String;

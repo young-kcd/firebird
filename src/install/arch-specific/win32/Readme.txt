@@ -61,11 +61,11 @@ o Are you sure you understand how Firebird works?
 
   Perhaps you are seeing the correct behaviour and you
   really have a support question. In this case contact
-  the fb-support list server.
+  the firebird-support list server.
  
   You may subscribe here: 
 
-    mailto:fb-support-subscribe@yahoogroups.com
+    mailto:firebird-support-subscribe@yahoogroups.com
 
 
 o Still think it is a bug? 

@@ -114,8 +114,11 @@ Name: UseServiceTask; Description: Run as a &Service?; GroupDescription: Run Fir
 Name: AutoStartTask; Description: Start &Firebird automatically everytime you boot up?; Components: ServerComponent; MinVersion: 4,4; Check: ConfigureFirebird;
 ;Developer Tasks
 Name: MenuGroupTask; Description: Create a Menu &Group; Components: DevAdminComponent; MinVersion: 4,4
-;One for Ron
-;Name: MenuGroupTask\desktopicon; Description: Create a &desktop icon; Components: ServerComponent; MinVersion: 4.0,4.0;
+;If InstallGDS32
+Name: CopyFBClientAsGds32; Description: Copy client library to <system> directory (GDS32.DLL for legacy app. support)?; Components: ClientComponent; MinVersion: 4,4; Check: CopyGds32;
+;Allow user to not install cpl applet
+Name: InstallCPLAppletTask; Description: "Install Control &Panel Applet?"; Components: SuperServerComponent; MinVersion: 4.0,4.0; Check: InstallCPLApplet;
+
 
 [Run]
 ;Always register Firebird
@@ -127,6 +130,7 @@ Filename: {app}\bin\instsvc.exe; Description: Start Firebird Service now?; Param
 
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: Start Firebird now?; Parameters: -a; StatusMsg: Starting the server; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
+
 
 [Registry]
 ;If user has chosen to start as App they may well want to start automatically. That is handled by a function below.
@@ -183,8 +187,9 @@ Source: output\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent; 
 Source: output\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 
 ;This file is a bit 'special'. See the InstallGds32 procedure below for more info.
-Source: output\bin\gds32.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile promptifolder; Check: InstallGds32
-Source: output\bin\gds32.dll; DestDir: {app}\bin\gds32.dll.stub; Components: ClientComponent; Check: InstallGds32Stub
+Source: output\bin\fbclient.dll; DestDir: {sys}; DestName: gds32.dll; Components: ClientComponent; Flags: sharedfile ignoreversion comparetimestamp; Tasks: CopyFBClientAsGds32;
+;Source: output\bin\gds32.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile promptifolder; Check: InstallGds32
+;Source: output\bin\gds32.dll; DestDir: {app}\bin\gds32.dll.stub; Components: ClientComponent; Check: InstallGds32Stub
 Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
 Source: output\bin\fbclient.local; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile; MinVersion: 0,5.0
 
@@ -206,8 +211,8 @@ Source: output\v5_examples\*.*; DestDir: {app}\examples; Components: DevAdminCom
 ;Source: output\doc\Firebird_v15.104_ReleaseNotes.pdf; DestDir: {app}\doc\Firebird_v15.ReleaseNotes.pdf; Components: DevAdminComponent; Flags: ignoreversion
 ;Source: firebird\install\doc_all_platforms\Firebird_v1_5_*.html; DestDir: {app}\doc; Components: DevAdminComponent;  Flags: ignoreversion;
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
-Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete
-Source: output\system32\FIREBI~1.CPL; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete
+Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Tasks: InstallCPLAppletTask;
+Source: output\system32\FIREBI~1.CPL; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Tasks: InstallCPLAppletTask;
 
 ;TO DO note
 ;We could add in the debug files here, if #define debug has been set above.
@@ -232,11 +237,28 @@ program Setup;
 //Var
 //  ProductVersion = '1.5.0';
 
+// Some global variables are also in FirebirdInstallEnvironmentChecks.inc
+// This is not ideal, but then this scripting environment is not ideal, either.
+// The basic point of the include files is to isolate chunks of code that are
+// a) Form a module or have common functionality
+// b) Debugged.
+// This hopefully keeps the main script simpler to follow.
 
 Var
   InstallRootDir: String;
   FirebirdConfSaved: boolean;
+  ForceInstall: Boolean;        // If /force set on command-line we install _and_
+                                // configure. Default is to install and configure only if
+                                // no other working installation is found (unless we are installing
+                                // over the same version)
 
+  NoCPL: Boolean;                // If /nocpl is on command-line then uncheck the checkbox.
+  NoLegacyClient: Boolean;      // If /nogds32 is on command line then uncheck the checkbox.
+  
+Const
+  FB15RUNNING =    'An existing Firebird 1.5 Server is running.'
+         +#13#13 + 'You must close the application or stop the '
+         +#13    + '       service before continuing.';
 
 #include "FirebirdInstallSupportFunctions.inc"
 #include "FirebirdInstallEnvironmentChecks.inc"
@@ -327,8 +349,7 @@ begin
     //install were in vain and Firebird 1.5 _is_ running...
     if ( FirebirdOneFiveRunning ) then begin
       result := false;
-      MsgBox('An existing Firebird 1.5 Server is running. You must close the '+
-             'application or stop the service before continuing.', mbError, MB_OK);
+      MsgBox(FB15RUNNING, mbError, MB_OK);
       exit;
       end
     else begin
@@ -343,8 +364,7 @@ begin
      ((ProductsInstalled AND FB15RC) = FB15RC)) then
     if ( FirebirdOneFiveRunning ) then begin
       result := false;
-      MsgBox('An existing Firebird 1.5 Server is running. You must close the '+
-             'application or stop the service before continuing.', mbError, MB_OK);
+      MsgBox(FB15RUNNING, mbError, MB_OK);
       exit;
       end
     else begin
@@ -386,6 +406,12 @@ begin
   if pos('FORCE',Uppercase(CommandLine))>0 then
     ForceInstall:=True;
     
+  if pos('NOCPL', Uppercase(CommandLine))>0 then
+    NoCPL := True;
+
+  if pos('NOGDS32', Uppercase(CommandLine))>0 then
+    NoLegacyClient := True;
+
   //By default we want to install and confugure,
   //unless subsequent analysis suggest otherwise.
   InstallAndConfigure := Install + Configure;

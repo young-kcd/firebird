@@ -36,18 +36,14 @@
     function FirebirdOneRunning: boolean;
 
     function InstallGds32: boolean;
-    function InstallGds32Stub: boolean;
+    function InstallGds32Stub: boolean;   (deprecated.)
+    
+    function InstallCPLApplet: boolean;
     
  *)
 
 
 
-
-function GetAppPath: String;
-begin
-  Result := ExpandConstant('{app}');
-//  Result := '"' + Result +'"';
-end;
 
 
 //Registry keys for Firebird and InterBase
@@ -116,10 +112,6 @@ Const
 Var
   ProductsInstalled: Integer;
   ProductsInstalledCount: Integer;
-  ForceInstall: Boolean;       // If /force set on command-line we install _and_
-                                // configure. Default is to install and configure only if
-                                // no other working installation is found (unless we are installing 
-                                // over the same version)
   InstallAndConfigure: Integer;
 
 Type
@@ -659,3 +651,13 @@ begin
 end;
 
 
+function InstallCPLApplet: boolean;
+begin
+  result := not NoCPL;
+end;
+
+
+function CopyGDS32: boolean;
+begin
+  result := ((not NoLegacyClient) and ConfigureFirebird);
+end;
