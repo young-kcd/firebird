@@ -94,12 +94,14 @@ static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
 static const DWORD g_dwExtraFlags = FILE_FLAG_OVERLAPPED |
 									FILE_FLAG_NO_BUFFERING |
 									FILE_FLAG_RANDOM_ACCESS;
-#elif SUPERSERVER
+#else
+#ifdef SUPERSERVER
 static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
 static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
 #else
 static const DWORD g_dwShareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
 static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
+#endif
 #endif
 
 

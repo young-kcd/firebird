@@ -41,18 +41,8 @@ extern void SVC_read_ib_log(class svc*);
 extern TEXT *SVC_err_string(TEXT*, USHORT);
 
 #ifdef SERVER_SHUTDOWN
-
-#ifdef  WIN_NT
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
+#ifdef WIN_NT
 #include <windows.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef void (__stdcall * STDCALL_FPTR_VOID) (UINT);
 void SVC_shutdown_init(STDCALL_FPTR_VOID, ULONG);
 #else

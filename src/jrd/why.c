@@ -30,7 +30,7 @@
  *
  */
 /*
-$Id: why.c,v 1.8 2002-02-25 11:41:54 dimitr Exp $
+$Id: why.c,v 1.9 2002-04-03 08:39:57 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3564,7 +3564,7 @@ STATUS API_ROUTINE GDS_EVENT_WAIT(STATUS * user_status,
 	GET_STATUS;
 
 	if (!why_initialized) {
-		gds__register_cleanup(exit_handler, why_event);
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, why_event);
 		why_initialized = TRUE;
 		ISC_event_init(why_event, 0, 0);
 	}
