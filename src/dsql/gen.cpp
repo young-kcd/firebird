@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.26 2003-02-15 03:01:50 hippoman Exp $
+$Id: gen.cpp,v 1.27 2003-02-21 00:27:16 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -89,9 +89,17 @@ static const SCHAR db_key_name[] = "DB_KEY";
 #define USE_VALUE    FALSE
 
 
-//
-// The blr buffer needs to be expanded.
-//
+/**
+
+    GEN_expand_buffer
+
+    @brief The blr buffer needs to be expanded.
+    
+
+    @param request
+    @param byte
+
+**/
 UCHAR GEN_expand_buffer( DSQL_REQ request, UCHAR byte)
 {
 	TSQL tdsql = GET_THREAD_DATA;
