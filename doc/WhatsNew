@@ -1,4 +1,99 @@
   **************
+  * v1.5 RC 1
+  **************
+
+    * Fixed Beta 4 bug.
+        EXECUTE STATEMENT and SQLDA > 32KB.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Changed parser.
+        1) ROWS_AFFECTED is renamed to ROW_COUNT
+        2) CONNECTION_ID/TRANSACTION_ID are renamed to CURRENT_CONNECTION/CURRENT_TRANSACTION
+        3) Some of newly introduced tokens are made non-reserved
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+	* Fixed Beta 4 bugs.
+		1) sub-selects inside COALESCE function
+		2) parameter ordering
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Services API.
+        Partially enabled Services API for win32 CS builds.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Wrong type of event delivery (unnecessary usage of OOB packets).
+      Contributor(s):
+        Jim Starkey <jas@netfrastructure.com>
+        Paul Reeves <preeves@ibphoenix.com>
+
+    * Fixed Beta 4 bug.
+        Optimizer couldn't ignore bad indices in some cases.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 4 bug.
+        Locking and performance issues in win32 CS.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed Beta 4 bug.
+        Error during backup with "ignore in-limbo transactions" option.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crashes in some Services API operations.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Beta 4 bug.
+        Problems with IP address in connection strings.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 4 bug.
+        Compatibility problems with new IBX versions.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 4 bug.
+        EXECUTE STATEMENT: numeric variables and dialect 3 databases.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Advanced security abilities.
+        Implemented configurable access for databases, external tables and UDF libraries.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed resource/memory leaks.
+      Contributor(s):
+        Mike Nordell <tamlin@algonet.se>
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+        Nickolay Samofatov <skidder@bssys.com>
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Buffer overrun with multidimensional arrays.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 4 bug.
+        RECREATE VIEW with check option.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 4 bug.
+        Problems with loading INTL plugins.
+      Contributor(s):
+        Mike Nordell <tamlin@algonet.se>
+
+  **************
   * v1.5 Beta 4
   **************
 
