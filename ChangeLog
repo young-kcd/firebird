@@ -1,3 +1,29 @@
+2003-01-03 17:03  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h,
+	class_perf.cpp, class_test.cpp, test.sh, tree.h:
+	
+	Further class library development. MemoryPool works now
+
+2003-01-03 13:52  alexpeshkoff
+
+	* firebird2/src/: alice/alice.h, alice/aliceswi.h, burp/burp.cpp,
+	burp/burpswi.h, remote/chop.cpp, remote/ibconfig.cpp,
+	remote/property.cpp, include/jrd/gds.h, qli/dtr.h, gpre/gpre.h,
+	pipe/head.cpp:
+	
+	Don't include internals of struct why_hndl where it is not
+	required.
+
+2003-01-03 13:49  alexpeshkoff
+
+	* firebird2/src/jrd/: dbt.cpp, flu.cpp, flu_proto.h, gds.h,
+	ibase.h, isc.cpp, svc.cpp, svc.h, unix.cpp, vio.cpp, why.cpp,
+	y_handle.h, y_ref.h:
+	
+	1. Don't include internals of struct why_hndl where it is nit
+	required.  2. CONST fixup in why.cpp & flu.cpp.
+
 2003-01-02 17:01  skidder
 
 	* firebird2/: builds/posix/Makefile.in.extlib,
