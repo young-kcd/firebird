@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.17 2003-03-01 12:10:16 brodsom Exp $
+//  $Id: par.cpp,v 1.18 2003-03-03 08:27:33 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.17 2003-03-01 12:10:16 brodsom Exp $
+//	$Id: par.cpp,v 1.18 2003-03-03 08:27:33 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -128,7 +128,9 @@ static ACT		par_on_error();
 static ACT		par_open_blob(ACT_T, SYM);
 static BOOLEAN	par_options(GPRE_REQ, BOOLEAN);
 static ACT		par_procedure();
+#ifdef PYXIS
 static TEXT*	par_quoted_string();
+#endif
 static ACT		par_ready();
 static ACT		par_returning_values();
 static ACT		par_right_brace();
@@ -3070,7 +3072,7 @@ static ACT par_procedure()
 	return action;
 }
 
-
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Parse a quoted string.
@@ -3092,7 +3094,7 @@ static TEXT *par_quoted_string()
 	ADVANCE_TOKEN;
 	return string;
 }
-
+#endif
 
 //____________________________________________________________
 //  
