@@ -205,7 +205,7 @@ static void service_fork(TEXT *, SVC);
 #endif
 static void service_get(SVC, SCHAR *, USHORT, USHORT, USHORT, USHORT *);
 static void service_put(SVC, SCHAR *, USHORT);
-#ifndef SUPERSERVER
+#if !defined(WIN_NT) && !defined(SUPERSERVER)
 static void timeout_handler(SVC);
 #endif
 #if defined(WIN_NT) && !defined(SUPERSERVER)
@@ -451,7 +451,7 @@ SVC SVC_attach(USHORT	service_length,
 				 0);
 #endif
 
-	TDBB tdbb = GET_THREAD_DATA;
+	GET_THREAD_DATA;
 
 /* If anything goes wrong, we want to be able to free any memory
    that may have been allocated. */
@@ -2384,11 +2384,11 @@ static void service_fork(TEXT * service_path, SVC service)
 			*arg = ' ';
 			if (!strncmp(arg, " -svc", p - arg)) {
 				if (windows_nt)
-					sprintf(p, "_re %d %d %d", pipe_input, pipe_output,
-							pipe_error);
+					sprintf(p, "_re %lu %lu %lu", (ULONG) pipe_input, (ULONG) pipe_output,
+							(ULONG) pipe_error);
 				else
-					sprintf(p, "_re %d %d %d", my_output, my_input,
-							my_output);
+					sprintf(p, "_re %lu %lu %lu", (ULONG) my_output, (ULONG) my_input,
+							(ULONG) my_output);
 				p += strlen(p);
 				*p = q[-1];
 				svc_flag = TRUE;
@@ -2517,7 +2517,7 @@ static void service_get(SVC service,
 				dwCurrentFilePosition =
 					SetFilePointer(service->svc_input, 0, NULL, FILE_CURRENT);
 
-				if (temp_len && temp_len == dwCurrentFilePosition)
+				if (temp_len && temp_len == (SLONG) dwCurrentFilePosition)
 					SetFilePointer(service->svc_input, 0, NULL, FILE_BEGIN);
 			}
 
