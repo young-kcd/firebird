@@ -48,9 +48,9 @@ class AutoPtr {
 private:
 	Where* ptr;
 public:
-	AutoPtr<Where, Clear>(Where* v) {ptr = v;}
+	AutoPtr<Where, Clear>(Where* v = NULL) {ptr = v;}
+	AutoPtr<Where, Clear>& operator= (Where* v) { ptr = v; return *this; }
 	operator Where*() {return ptr;}
-	operator bool() {return ptr ? true : false;}
 	bool operator !() {return ptr ? false : true;}
 	Where* operator->() {return ptr;}
 	~AutoPtr<Where, Clear>() {Clear::clear(ptr);}

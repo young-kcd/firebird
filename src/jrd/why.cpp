@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.63 2004-05-02 23:05:11 skidder Exp $
+$Id: why.cpp,v 1.64 2004-05-03 01:53:24 skidder Exp $
 */
 
 #include "firebird.h"
@@ -88,6 +88,7 @@ $Id: why.cpp,v 1.63 2004-05-02 23:05:11 skidder Exp $
 #include "../dsql/utld_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/classes/rwlock.h"
+#include "../common/classes/auto.h"
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -206,7 +207,7 @@ public:
 
 typedef Firebird::BePlusTree<why_hndl*, FB_API_HANDLE, MemoryPool, HandlePublicKey> HandleMapping;
 
-static HandleMapping handleMapping(getDefaultMemoryPool());
+static Firebird::AutoPtr<HandleMapping> handleMapping;
 static ULONG handle_sequence_number = 0;
 static Firebird::RWLock handleMappingLock;
 
@@ -239,6 +240,9 @@ why_hndl* WHY_alloc_handle(int implementation, int handle_type)
 #endif
 		handleMappingLock.beginWrite();
 		try {
+			if (!handleMapping)
+				handleMapping = FB_NEW(*getDefaultMemoryPool())
+					HandleMapping(getDefaultMemoryPool());
 			// Loop until we find an empty handle slot.
 			// This is to care of case when counter rolls over
 			do {
@@ -251,10 +255,10 @@ why_hndl* WHY_alloc_handle(int implementation, int handle_type)
 				if (!temp)
 					temp = ++handle_sequence_number;
 				handle->public_handle = reinterpret_cast<FB_API_HANDLE>(temp);
-			} while(!handleMapping.add(handle));
+			} while(!handleMapping->add(handle));
 
 			handleMappingLock.endWrite();
-		} catch(std::exception& ex) {
+		} catch(const std::exception&) {
 			// Handle out-of-memory conditions
 			handleMappingLock.endWrite();
 			free_block(handle);
@@ -268,7 +272,9 @@ why_hndl* WHY_alloc_handle(int implementation, int handle_type)
 why_hndl* WHY_translate_handle(FB_API_HANDLE handle) {
 	Firebird::ReadLockGuard sync(handleMappingLock);
 
-	HandleMapping::Accessor accessor(&handleMapping);
+	if (!handleMapping) return NULL;
+
+	HandleMapping::Accessor accessor(handleMapping);
 	if (accessor.locate(handle))
 		return accessor.current();
 
@@ -278,9 +284,10 @@ why_hndl* WHY_translate_handle(FB_API_HANDLE handle) {
 void WHY_free_handle(FB_API_HANDLE handle) {
 	Firebird::WriteLockGuard sync(handleMappingLock);
 
-	if (handleMapping.locate(handle)) {
-		why_hndl* temp = handleMapping.current();
-		handleMapping.fastRemove();
+	// Silently ignore bad handles for now
+	if (handleMapping && handleMapping->locate(handle)) {
+		why_hndl* temp = handleMapping->current();
+		handleMapping->fastRemove();
 		free_block(temp);
 	}
 }
@@ -1726,8 +1733,14 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
  * a GPF.
  * We should check with IDAPI periodically to see if we still need this.
  */
-	if (IsBadReadPtr(dbb, sizeof(WHY_ATT)))
-		return bad_handle(user_status, isc_bad_db_handle);
+
+// 02-May-2004, Nickolay Samofatov. We really need to check if BDE still 
+// needs this junk and how exactly problem looks like. I disable the code 
+// for now because handleMapping provides means for reliable detection of 
+// bad handles, no tricks are needed.
+// 
+//	if (IsBadReadPtr(handle, sizeof(FB_API_HANDLE)))
+//		return bad_handle(user_status, isc_bad_db_handle);
 #endif /* WIN_NT */
 
 	TRANSLATE_HANDLE(*handle, dbb, HANDLE_database, isc_bad_db_handle);
