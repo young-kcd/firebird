@@ -1,3 +1,3 @@
-instreg install c:\opt\firebird -z
-instsvc install c:\opt\firebird -auto -superserver -g -z
+instreg install -z
+instsvc install -auto -superserver -guardian -z
 instsvc start

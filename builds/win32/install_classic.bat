@@ -1,2 +1,3 @@
-instreg install c:\opt\firebird -z
-instsvc install c:\opt\firebird -auto -classic -g -z
+instreg install -z
+instsvc install -auto -classic -guardian -z
+instsvc start
