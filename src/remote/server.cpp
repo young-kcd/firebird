@@ -61,7 +61,6 @@
 #endif
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 
-
 #define SET_THREAD_DATA		trdb = &thd_context;\
 				trdb->trdb_status_vector = NULL;\
 				THD_put_specific ((THDD) trdb);\
@@ -980,8 +979,8 @@ static void cancel_operation( PORT port)
 		if (!(rdb->rdb_flags & RDB_service))
 		{
 			THREAD_EXIT;
-//			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
-//								  CANCEL_raise);
+			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
+								  CANCEL_raise);
 			THREAD_ENTER;
 		}
 	}
@@ -1239,8 +1238,8 @@ void port::disconnect(PACKET* send, PACKET* receive)
 			   a good, clean detach from the database. */
 
 			THREAD_EXIT;
-//			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
-//								  CANCEL_disable);
+			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
+								  CANCEL_disable);
 			THREAD_ENTER;
 #endif
 			while (rdb->rdb_requests)

@@ -126,10 +126,6 @@ ISC_STATUS API_ROUTINE isc_cancel_blob(ISC_STATUS*, FRBRD**);
 
 ISC_STATUS API_ROUTINE isc_cancel_events(ISC_STATUS*, FRBRD**, SLONG*);
 
-#ifdef CANCEL_OPERATION
-ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FRBRD**, USHORT);
-#endif
-
 ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS*, FRBRD**);
 
 ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS*, FRBRD**);
@@ -252,6 +248,9 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS*, FRBRD**, SSHORT);
 #endif
 
 typedef void DatabaseCleanupRoutine(FRBRD**, SLONG);
+#ifdef CANCEL_OPERATION
+ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FRBRD**, USHORT);
+#endif
 ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS*, FRBRD**,
 												DatabaseCleanupRoutine*, SLONG);
 int API_ROUTINE gds__disable_subsystem(TEXT*);
