@@ -761,7 +761,7 @@ int LEX_push_string( TEXT * string)
 }
 
 
-void LEX_put_procedure( void *blob, SLONG start, SLONG stop)
+void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
 {
 /**************************************
  *

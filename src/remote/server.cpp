@@ -142,7 +142,7 @@ static REM_MSG		dump_cache(rrq::rrq_repeat*);
 #endif
 
 static USHORT	get_next_msg_no(RRQ, USHORT, USHORT*);
-static RTR		make_transaction(RDB, int*);
+static RTR		make_transaction(RDB, struct why_hndl*);
 
 static void	release_blob(RBL);
 static void	release_event(RVNT);
@@ -629,7 +629,7 @@ static STATUS allocate_statement( PORT port, P_RLSE * allocate, PACKET* send)
  **************************************/
 	RDB rdb;
 	RSR statement;
-	int *handle;
+	struct why_hndl *handle;
 	OBJCT object;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
@@ -638,8 +638,8 @@ static STATUS allocate_statement( PORT port, P_RLSE * allocate, PACKET* send)
 
 	THREAD_EXIT;
 	GDS_DSQL_ALLOCATE(status_vector,
-					  reinterpret_cast<void**>(&rdb->rdb_handle),
-					  reinterpret_cast<void**>(&handle));
+					  &rdb->rdb_handle,
+					  &handle);
 	THREAD_ENTER;
 
 	if (status_vector[1])
@@ -660,7 +660,7 @@ static STATUS allocate_statement( PORT port, P_RLSE * allocate, PACKET* send)
 			object = 0;
 			THREAD_EXIT;
 			GDS_DSQL_FREE(status_vector,
-						  reinterpret_cast<void**>(GDS_REF(statement->rsr_handle)),
+						  GDS_REF(statement->rsr_handle),
 						  DSQL_drop);
 			THREAD_ENTER;
 			ALLR_release(statement);
@@ -739,7 +739,7 @@ static STATUS attach_database(
  **************************************/
 	USHORT l, dl;
 	UCHAR *file, *dpb, new_dpb_buffer[512], *new_dpb, *p, *end;
-	int *handle;
+	struct why_hndl*handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	RDB rdb;
 	STR string;
@@ -782,7 +782,7 @@ static STATUS attach_database(
 		isc_attach_database(status_vector,
 							l,
 							reinterpret_cast<char*>(GDS_VAL(file)),
-							reinterpret_cast<void**>(GDS_REF(handle)),
+							GDS_REF(handle),
 							dl,
 							reinterpret_cast<char*>(GDS_VAL(dpb)));
 	}
@@ -791,7 +791,7 @@ static STATUS attach_database(
 		isc_create_database(status_vector,
 							l,
 							reinterpret_cast<char*>(GDS_VAL(file)),
-							reinterpret_cast<void**>(GDS_REF(handle)),
+							GDS_REF(handle),
 							dl,
 							reinterpret_cast<char*>(GDS_VAL(dpb)),
 							0);
@@ -930,7 +930,7 @@ static STATUS cancel_events( PORT port, P_EVENT * stuff, PACKET* send)
 	if (event->rvnt_id) {
 		THREAD_EXIT;
 		isc_cancel_events(status_vector,
-						  reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
+						  GDS_REF(rdb->rdb_handle),
 						  GDS_REF(event->rvnt_id));
 		THREAD_ENTER;
 	}
@@ -972,7 +972,7 @@ static void cancel_operation( PORT port)
 		if (!(rdb->rdb_flags & RDB_service)) {
 			THREAD_EXIT;
 			gds__cancel_operation(status_vector,
-								  (struct hndl **) GDS_REF(rdb->rdb_handle),
+								  (struct why_hndl **) GDS_REF(rdb->rdb_handle),
 								  CANCEL_raise);
 			THREAD_ENTER;
 		}
@@ -1026,7 +1026,7 @@ static USHORT check_statement_type( RSR statement)
 
 	THREAD_EXIT;
 	if (!GDS_DSQL_SQL_INFO(local_status,
-						   reinterpret_cast<void**>(&statement->rsr_handle),
+						   &statement->rsr_handle,
 						   sizeof(sql_info),
 						   (SCHAR *) sql_info,	/* const_cast */
 						   sizeof(buffer),
@@ -1082,7 +1082,7 @@ STATUS port::compile(P_CMPL* compile, PACKET* send)
 	REM_MSG message, next;
 	UCHAR *blr;
 	USHORT max_msg, blr_length;
-	int *handle;
+	struct why_hndl*handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	rrq::rrq_repeat* tail;
 	OBJCT object;
@@ -1094,8 +1094,8 @@ STATUS port::compile(P_CMPL* compile, PACKET* send)
 
 	THREAD_EXIT;
 	isc_compile_request(status_vector,
-						reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
-						reinterpret_cast<void**>(GDS_REF(handle)),
+						GDS_REF(rdb->rdb_handle),
+						GDS_REF(handle),
 						blr_length,
 						reinterpret_cast<char*>(GDS_VAL(blr)));
 	THREAD_ENTER;
@@ -1129,7 +1129,7 @@ STATUS port::compile(P_CMPL* compile, PACKET* send)
 	else {
 		THREAD_EXIT;
 		isc_release_request(status_vector,
-							reinterpret_cast<void**>(GDS_REF(request->rrq_handle)));
+							GDS_REF(request->rrq_handle));
 		THREAD_ENTER;
 		ALLR_release(request);
 		status_vector[0] = isc_arg_gds;
@@ -1188,8 +1188,8 @@ STATUS port::ddl(P_DDL* ddl, PACKET* send)
 
 	THREAD_EXIT;
 	isc_ddl(status_vector,
-			reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
-			reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)),
+			GDS_REF(rdb->rdb_handle),
+			GDS_REF(transaction->rtr_handle),
 			blr_length, reinterpret_cast<char*>(GDS_VAL(blr)));
 	THREAD_ENTER;
 
@@ -1235,7 +1235,7 @@ void port::disconnect(PACKET* send, PACKET* receive)
 
 			THREAD_EXIT;
 			gds__cancel_operation(status_vector,
-								  (struct hndl **) GDS_REF(rdb->rdb_handle),
+								  (struct why_hndl **) GDS_REF(rdb->rdb_handle),
 								  CANCEL_disable);
 			THREAD_ENTER;
 #endif
@@ -1247,7 +1247,7 @@ void port::disconnect(PACKET* send, PACKET* receive)
 				THREAD_EXIT;
 				if (!(transaction->rtr_flags & RTR_limbo))
 					isc_rollback_transaction(status_vector,
-											 reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)));
+											 GDS_REF(transaction->rtr_handle));
 #ifdef SUPERSERVER
 				/* The underlying JRD subsystem will release all
 				   memory resources related to a limbo transaction
@@ -1258,7 +1258,7 @@ void port::disconnect(PACKET* send, PACKET* receive)
 
 				else
 					gds__handle_cleanup(status_vector,
-										(struct hndl **) GDS_REF(transaction->
+										(struct why_hndl **) GDS_REF(transaction->
 																 rtr_handle));
 #endif
 				THREAD_ENTER;
@@ -1266,7 +1266,7 @@ void port::disconnect(PACKET* send, PACKET* receive)
 			}
 			THREAD_EXIT;
 			isc_detach_database(status_vector,
-								reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)));
+								GDS_REF(rdb->rdb_handle));
 			THREAD_ENTER;
 			while (rdb->rdb_events) {
 				release_event(rdb->rdb_events);
@@ -1279,7 +1279,7 @@ void port::disconnect(PACKET* send, PACKET* receive)
 		{
 			THREAD_EXIT;
 			isc_service_detach(status_vector,
-							   reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)));
+							   GDS_REF(rdb->rdb_handle));
 			THREAD_ENTER;
 		}
 
@@ -1368,7 +1368,7 @@ void port::drop_database(P_RLSE* release, PACKET* send)
 
 	THREAD_EXIT;
 	isc_drop_database(status_vector,
-					  reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)));
+					  GDS_REF(rdb->rdb_handle));
 	THREAD_ENTER;
 
 	if (status_vector[1]
@@ -1452,10 +1452,10 @@ STATUS port::end_blob(P_OP operation, P_RLSE * release, PACKET* send)
 	THREAD_EXIT;
 	if (operation == op_close_blob)
 		isc_close_blob(status_vector,
-					   reinterpret_cast<void**>(GDS_REF(blob->rbl_handle)));
+					   GDS_REF(blob->rbl_handle));
 	else
 		isc_cancel_blob(status_vector,
-						reinterpret_cast<void**>(GDS_REF(blob->rbl_handle)));
+						GDS_REF(blob->rbl_handle));
 	THREAD_ENTER;
 
 	if (!status_vector[1]) {
@@ -1485,7 +1485,7 @@ STATUS port::end_database(P_RLSE * release, PACKET* send)
 
 	THREAD_EXIT;
 	isc_detach_database(status_vector,
-						reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)));
+						GDS_REF(rdb->rdb_handle));
 	THREAD_ENTER;
 
 	if (status_vector[1])
@@ -1533,7 +1533,7 @@ STATUS port::end_request(P_RLSE * release, PACKET* send)
 
 	THREAD_EXIT;
 	isc_release_request(status_vector,
-						reinterpret_cast<void**>(GDS_REF(request->rrq_handle)));
+						GDS_REF(request->rrq_handle));
 	THREAD_ENTER;
 
 	if (!status_vector[1])
@@ -1567,7 +1567,7 @@ STATUS port::end_statement(P_SQLFREE* free_stmt, PACKET* send)
 
 	THREAD_EXIT;
 	GDS_DSQL_FREE(status_vector,
-				  reinterpret_cast<void**>(&statement->rsr_handle),
+				  &statement->rsr_handle,
 				  free_stmt->p_sqlfree_option);
 	THREAD_ENTER;
 
@@ -1617,27 +1617,27 @@ STATUS port::end_transaction(P_OP operation, P_RLSE * release, PACKET* send)
 	{
 	case op_commit:
 		isc_commit_transaction(status_vector,
-							   reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)));
+							   GDS_REF(transaction->rtr_handle));
 		break;
 
 	case op_rollback:
 		isc_rollback_transaction(status_vector,
-								 reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)));
+								 GDS_REF(transaction->rtr_handle));
 		break;
 
 	case op_rollback_retaining:
 		isc_rollback_retaining(status_vector,
-							   reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)));
+							   GDS_REF(transaction->rtr_handle));
 		break;
 
 	case op_commit_retaining:
 		isc_commit_retaining(status_vector,
-							 reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)));
+							 GDS_REF(transaction->rtr_handle));
 		break;
 
 	case op_prepare:
 		if (!isc_prepare_transaction(status_vector,
-									 reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle))))
+									 GDS_REF(transaction->rtr_handle)))
 				transaction->rtr_flags |= RTR_limbo;
 		break;
 	}
@@ -1670,7 +1670,7 @@ STATUS port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
 	USHORT in_blr_length, in_msg_type, in_msg_length, parser_version,
 		out_blr_length, out_msg_type, out_msg_length;
 	UCHAR *in_blr, *in_msg, *out_blr, *out_msg;
-	int *handle;
+	struct why_hndl*handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rdb = this->port_context;
@@ -1747,8 +1747,8 @@ STATUS port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
 
 	THREAD_EXIT;
 	GDS_DSQL_EXECUTE_IMMED(status_vector,
-						   reinterpret_cast<void**>(&rdb->rdb_handle),
-						   reinterpret_cast<void**>(&handle),
+						   &rdb->rdb_handle,
+						   &handle,
 						   exnow->p_sqlst_SQL_str.cstr_length,
 						   reinterpret_cast<char*>(exnow->p_sqlst_SQL_str.cstr_address),
 						   (USHORT) ((exnow->p_sqlst_SQL_dialect * 10) +
@@ -1814,7 +1814,7 @@ STATUS port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send)
 	RSR statement;
 	USHORT in_msg_length, out_msg_type, out_blr_length, out_msg_length;
 	UCHAR *in_msg, *out_blr, *out_msg;
-	int *handle;
+	struct why_hndl*handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
@@ -1863,8 +1863,8 @@ STATUS port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send)
 
 	THREAD_EXIT;
 	GDS_DSQL_EXECUTE(status_vector,
-					 reinterpret_cast<void**>(&handle),
-					 reinterpret_cast<void**>(&statement->rsr_handle),
+					 &handle,
+					 &statement->rsr_handle,
 					 sqldata->p_sqldata_blr.cstr_length,
 					 reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
 					 sqldata->p_sqldata_message_number,
@@ -2010,7 +2010,7 @@ STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 			assert(statement->rsr_msgs_waiting == 0);
 			THREAD_EXIT;
 			s = GDS_DSQL_FETCH(status_vector,
-							   reinterpret_cast<void**>(&statement->rsr_handle),
+							   &statement->rsr_handle,
 							   sqldata->p_sqldata_blr.cstr_length,
 							   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
 							   sqldata->p_sqldata_message_number,
@@ -2086,7 +2086,7 @@ STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 		}
 		THREAD_EXIT;
 		s = GDS_DSQL_FETCH(status_vector,
-						   reinterpret_cast<void**>(&statement->rsr_handle),
+						   &statement->rsr_handle,
 						   sqldata->p_sqldata_blr.cstr_length,
 						   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
 						   sqldata->p_sqldata_message_number,
@@ -2159,7 +2159,7 @@ STATUS port::fetch_blob(P_SQLDATA * sqldata, PACKET* send)
 
 	THREAD_EXIT;
 	s = GDS_DSQL_FETCH(status_vector,
-					   reinterpret_cast<void**>(&statement->rsr_handle),
+					   &statement->rsr_handle,
 					   sqldata->p_sqldata_blr.cstr_length,
 					   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
 					   sqldata->p_sqldata_message_number,
@@ -2248,7 +2248,7 @@ static USHORT get_next_msg_no(RRQ request,
 
 	THREAD_EXIT;
 	isc_request_info(status_vector,
-					 reinterpret_cast<void**>(GDS_REF(request->rrq_handle)),
+					 GDS_REF(request->rrq_handle),
 					 incarnation,
 					 sizeof(request_info),
 					 (SCHAR *) request_info,	/* const_cast */
@@ -2341,7 +2341,7 @@ STATUS port::get_segment(P_SGMT* segment, PACKET* send)
 		length = 0;
 		THREAD_EXIT;
 		isc_get_segment(status_vector,
-						reinterpret_cast<void**>(GDS_REF(blob->rbl_handle)),
+						GDS_REF(blob->rbl_handle),
 						GDS_REF(length),
 						segment->p_sgmt_length,
 						reinterpret_cast<char*>(GDS_VAL(buffer)));
@@ -2371,7 +2371,7 @@ STATUS port::get_segment(P_SGMT* segment, PACKET* send)
 		p += 2;
 		THREAD_EXIT;
 		isc_get_segment(status_vector,
-						reinterpret_cast<void**>(GDS_REF(blob->rbl_handle)),
+						GDS_REF(blob->rbl_handle),
 						GDS_REF(length),
 						buffer_length,
 						reinterpret_cast<char*>(GDS_VAL(p)));
@@ -2468,8 +2468,8 @@ STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 
 	THREAD_EXIT;
 	isc_get_slice(status_vector,
-				  reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
-				  reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)),
+				  GDS_REF(rdb->rdb_handle),
+				  GDS_REF(transaction->rtr_handle),
 				  (GDS_QUAD *) GDS_REF(stuff->p_slc_id),
 				  stuff->p_slc_sdl.cstr_length,
 				  reinterpret_cast<char*>(GDS_VAL(stuff->p_slc_sdl.cstr_address)),
@@ -2557,7 +2557,7 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 							isc_bad_segstr_handle);
 		THREAD_EXIT;
 		isc_blob_info(status_vector,
-					  reinterpret_cast<void**>(GDS_REF(blob->rbl_handle)),
+					  GDS_REF(blob->rbl_handle),
 					  stuff->p_info_items.cstr_length,
 					  reinterpret_cast<char*>(GDS_VAL(stuff->p_info_items.cstr_address)),
 					  stuff->p_info_buffer_length,
@@ -2568,7 +2568,7 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 	case op_info_database:
 		THREAD_EXIT;
 		isc_database_info(status_vector,
-						  reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
+						  GDS_REF(rdb->rdb_handle),
 						  stuff->p_info_items.cstr_length,
 						  reinterpret_cast<char*>(GDS_VAL(stuff->p_info_items.cstr_address)),
 						  stuff->p_info_buffer_length /*sizeof (temp)*/,
@@ -2593,8 +2593,7 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 							isc_bad_req_handle);
 		THREAD_EXIT;
 		isc_request_info(status_vector,
-						 reinterpret_cast <
-						 void **>(GDS_REF(request->rrq_handle)),
+						 GDS_REF(request->rrq_handle),
 						 stuff->p_info_incarnation,
 						 stuff->p_info_items.cstr_length,
 						 reinterpret_cast <
@@ -2612,8 +2611,7 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 							isc_bad_trans_handle);
 		THREAD_EXIT;
 		isc_transaction_info(status_vector,
-							 reinterpret_cast <
-							 void **>(GDS_REF(transaction->rtr_handle)),
+							 GDS_REF(transaction->rtr_handle),
 							 stuff->p_info_items.cstr_length,
 							 reinterpret_cast <
 							 char
@@ -2626,7 +2624,7 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 	case op_service_info:
 		THREAD_EXIT;
 		isc_service_query(status_vector,
-						  reinterpret_cast<void**>(&rdb->rdb_handle),
+						  &rdb->rdb_handle,
 						  NULL,
 						  stuff->p_info_items.cstr_length,
 						  reinterpret_cast <
@@ -2647,7 +2645,7 @@ STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 							isc_bad_req_handle);
 		THREAD_EXIT;
 		GDS_DSQL_SQL_INFO(status_vector,
-						  reinterpret_cast<void**>(&statement->rsr_handle),
+						  &statement->rsr_handle,
 						  stuff->p_info_items.cstr_length,
 						  reinterpret_cast <
 						  char *>(stuff->p_info_items.cstr_address),
@@ -2715,7 +2713,7 @@ STATUS port::insert(P_SQLDATA * sqldata, PACKET* send)
 
 	THREAD_EXIT;
 	GDS_DSQL_INSERT(status_vector,
-					reinterpret_cast<void**>(&statement->rsr_handle),
+					&statement->rsr_handle,
 					sqldata->p_sqldata_blr.cstr_length,
 					reinterpret_cast <
 					char *>(sqldata->p_sqldata_blr.cstr_address),
@@ -2727,7 +2725,7 @@ STATUS port::insert(P_SQLDATA * sqldata, PACKET* send)
 }
 
 
-static RTR make_transaction( RDB rdb, int *handle)
+static RTR make_transaction( RDB rdb, struct why_hndl*handle)
 {
 /**************************************
  *
@@ -2775,7 +2773,7 @@ STATUS port::open_blob(P_OP op, P_BLOB * stuff, PACKET* send)
 	RTR transaction;
 	USHORT bpb_length;
 	UCHAR *bpb;
-	int *handle;
+	struct why_hndl*handle;
 	USHORT object;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
@@ -2798,19 +2796,16 @@ STATUS port::open_blob(P_OP op, P_BLOB * stuff, PACKET* send)
 	THREAD_EXIT;
 	if (op == op_open_blob || op == op_open_blob2)
 		isc_open_blob2(status_vector,
-					   reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
-					   reinterpret_cast <
-					   void **>(GDS_REF(transaction->rtr_handle)),
-					   reinterpret_cast<void**>(GDS_REF(handle)),
+					   GDS_REF(rdb->rdb_handle),
+					   GDS_REF(transaction->rtr_handle),
+					   GDS_REF(handle),
 					   (GDS_QUAD *) GDS_REF(stuff->p_blob_id), bpb_length,
 					   GDS_VAL(bpb));
 	else
 		isc_create_blob2(status_vector,
-						 reinterpret_cast <
-						 void **>(GDS_REF(rdb->rdb_handle)),
-						 reinterpret_cast <
-						 void **>(GDS_REF(transaction->rtr_handle)),
-						 reinterpret_cast<void**>(GDS_REF(handle)),
+						 GDS_REF(rdb->rdb_handle),
+						 GDS_REF(transaction->rtr_handle),
+						 GDS_REF(handle),
 						 (GDS_QUAD *) GDS_REF(send->p_resp.p_resp_blob_id),
 						 bpb_length,
 						 reinterpret_cast < char *>(GDS_VAL(bpb)));
@@ -2839,8 +2834,7 @@ STATUS port::open_blob(P_OP op, P_BLOB * stuff, PACKET* send)
 			object = 0;
 			THREAD_EXIT;
 			isc_cancel_blob(status_vector,
-							reinterpret_cast <
-							void **>(GDS_REF(blob->rbl_handle)));
+							GDS_REF(blob->rbl_handle));
 			THREAD_ENTER;
 			ALLR_release(blob);
 			status_vector[0] = isc_arg_gds;
@@ -2876,7 +2870,7 @@ STATUS port::prepare(P_PREP * stuff, PACKET* send)
 
 	THREAD_EXIT;
 	if (!isc_prepare_transaction2(status_vector,
-								  reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)),
+								  GDS_REF(transaction->rtr_handle),
 								  stuff->p_prep_data.cstr_length,
 								  GDS_VAL(stuff->p_prep_data.cstr_address)))
 	{
@@ -2905,7 +2899,7 @@ STATUS port::prepare_statement(P_SQLST * prepare, PACKET* send)
 	UCHAR *buffer, local_buffer[1024];
 	STATUS status, status_vector[ISC_STATUS_LENGTH];
 	USHORT state, parser_version;
-	int *handle;
+	struct why_hndl*handle;
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
 	if (prepare->p_sqlst_transaction)
@@ -2953,8 +2947,8 @@ STATUS port::prepare_statement(P_SQLST * prepare, PACKET* send)
 
 	THREAD_EXIT;
 	GDS_DSQL_PREPARE(status_vector,
-					 reinterpret_cast<void**>(&handle),
-					 reinterpret_cast<void**>(&statement->rsr_handle),
+					 &handle,
+					 &statement->rsr_handle,
 					 prepare->p_sqlst_SQL_str.cstr_length,
 					 reinterpret_cast <
 					 char *>(prepare->p_sqlst_SQL_str.cstr_address),
@@ -3327,8 +3321,7 @@ STATUS port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
 	if (op == op_put_segment) {
 		THREAD_EXIT;
 		isc_put_segment(status_vector,
-						reinterpret_cast <
-						void **>(GDS_REF(blob->rbl_handle)), length,
+						GDS_REF(blob->rbl_handle), length,
 						reinterpret_cast < char *>(GDS_VAL(p)));
 		THREAD_ENTER;
 		return this->send_response(send, 0, 0, status_vector);
@@ -3343,8 +3336,7 @@ STATUS port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
 		length += *p++ << 8;
 		THREAD_EXIT;
 		isc_put_segment(status_vector,
-						reinterpret_cast <
-						void **>(GDS_REF(blob->rbl_handle)), length,
+						GDS_REF(blob->rbl_handle), length,
 						reinterpret_cast < char *>(GDS_VAL(p)));
 		THREAD_ENTER;
 		if (status_vector[1])
@@ -3383,8 +3375,8 @@ STATUS port::put_slice(P_SLC * stuff, PACKET* send)
 	THREAD_EXIT;
 	send->p_resp.p_resp_blob_id = stuff->p_slc_id;
 	isc_put_slice(status_vector,
-				  reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
-				  reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)),
+				  GDS_REF(rdb->rdb_handle),
+				  GDS_REF(transaction->rtr_handle),
 				  (GDS_QUAD *) GDS_REF(send->p_resp.p_resp_blob_id),
 				  stuff->p_slc_sdl.cstr_length,
 				  reinterpret_cast<char*>(GDS_VAL(stuff->p_slc_sdl.cstr_address)),
@@ -3442,7 +3434,7 @@ STATUS port::que_events(P_EVENT * stuff, PACKET* send)
 
 	THREAD_EXIT;
 	isc_que_events(status_vector,
-				   reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
+				   GDS_REF(rdb->rdb_handle),
 				   GDS_REF(event->rvnt_id),
 				   stuff->p_event_items.cstr_length,
 				   GDS_VAL(stuff->p_event_items.cstr_address),
@@ -3631,7 +3623,7 @@ STATUS port::receive_msg(P_DATA * data, PACKET* send)
 						 message->msg_buffer, level, direction, offset);
 #else
 			isc_receive(status_vector,
-						reinterpret_cast<void**>(GDS_REF(request->rrq_handle)),
+						GDS_REF(request->rrq_handle),
 						msg_number,
 						format->fmt_length,
 						message->msg_buffer,
@@ -3765,7 +3757,7 @@ STATUS port::receive_msg(P_DATA * data, PACKET* send)
 
 		THREAD_EXIT;
 		isc_receive(status_vector,
-					reinterpret_cast<void**>(GDS_REF(request->rrq_handle)),
+					GDS_REF(request->rrq_handle),
 					msg_number,
 					format->fmt_length,
 					message->msg_buffer, data->p_data_incarnation);
@@ -4126,7 +4118,7 @@ STATUS port::seek_blob(P_SEEK * seek, PACKET* send)
 
 	THREAD_EXIT;
 	isc_seek_blob(status_vector,
-				  reinterpret_cast<void**>(GDS_REF(blob->rbl_handle)),
+				  GDS_REF(blob->rbl_handle),
 				  mode, offset, GDS_REF(result));
 	THREAD_ENTER;
 
@@ -4167,7 +4159,7 @@ STATUS port::send_msg(P_DATA * data, PACKET* send)
 
 	THREAD_EXIT;
 	isc_send(status_vector,
-			 reinterpret_cast<void**>(GDS_REF(request->rrq_handle)),
+			 GDS_REF(request->rrq_handle),
 			 number,
 			 format->fmt_length,
 			 GDS_VAL(message->msg_address), data->p_data_incarnation);
@@ -4356,7 +4348,7 @@ STATUS port::service_attach(P_ATCH* attach, PACKET* send)
  **************************************/
 	USHORT service_length, spb_length;
 	UCHAR *service_name, *spb, new_spb_buffer[512], *new_spb, *p, *end;
-	int *handle;
+	struct why_hndl*handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	RDB rdb;
 	STR string;
@@ -4400,7 +4392,7 @@ STATUS port::service_attach(P_ATCH* attach, PACKET* send)
 	isc_service_attach(status_vector,
 					   service_length,
 					   reinterpret_cast<char*>(service_name),
-					   reinterpret_cast<void**>(&handle),
+					   &handle,
 					   spb_length,
 					   reinterpret_cast<char*>(spb));
 	THREAD_ENTER;
@@ -4441,7 +4433,7 @@ STATUS port::service_end(P_RLSE * release, PACKET* send)
 
 	THREAD_EXIT;
 	isc_service_detach(status_vector,
-					   reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)));
+					   GDS_REF(rdb->rdb_handle));
 	THREAD_ENTER;
 
 	return this->send_response(send, 0, 0, status_vector);
@@ -4468,7 +4460,7 @@ STATUS port::service_start(P_INFO * stuff, PACKET* send)
 
 	THREAD_EXIT;
 	isc_service_start(status_vector,
-					  reinterpret_cast<void**>(&rdb->rdb_handle),
+					  &rdb->rdb_handle,
 					  reinterpret_cast<long*>(reserved),
 					  stuff->p_info_items.cstr_length,
 					  reinterpret_cast<char*>(stuff->p_info_items.cstr_address));
@@ -4501,7 +4493,7 @@ STATUS port::set_cursor(P_SQLCUR * sqlcur, PACKET* send)
 
 	THREAD_EXIT;
 	GDS_DSQL_SET_CURSOR(status_vector,
-						reinterpret_cast<void**>(&statement->rsr_handle),
+						&statement->rsr_handle,
 						reinterpret_cast<char*>(sqlcur->p_sqlcur_cursor_name.cstr_address),
 						sqlcur->p_sqlcur_type);
 	THREAD_ENTER;
@@ -4577,8 +4569,8 @@ STATUS port::start(P_OP operation, P_DATA * data, PACKET* send)
 
 	THREAD_EXIT;
 	isc_start_request(status_vector,
-					  reinterpret_cast<void**>(GDS_REF(request->rrq_handle)),
-					  reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)),
+					  GDS_REF(request->rrq_handle),
+					  GDS_REF(transaction->rtr_handle),
 					  data->p_data_incarnation);
 	THREAD_ENTER;
 
@@ -4632,8 +4624,8 @@ STATUS port::start_and_send(P_OP	operation,
 
 	THREAD_EXIT;
 	isc_start_and_send(status_vector,
-					   reinterpret_cast<void**>(GDS_REF(request->rrq_handle)),
-					   reinterpret_cast<void**>(GDS_REF(transaction->rtr_handle)),
+					   GDS_REF(request->rrq_handle),
+					   GDS_REF(transaction->rtr_handle),
 					   number,
 					   format->fmt_length,
 					   GDS_VAL(message->msg_address),
@@ -4669,18 +4661,18 @@ STATUS port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	RDB rdb = this->port_context;
-	int* handle = NULL;
+	struct why_hndl* handle = NULL;
 
 	THREAD_EXIT;
 	if (operation == op_reconnect)
 		isc_reconnect_transaction(status_vector,
-								  reinterpret_cast<void**>(GDS_REF(rdb->rdb_handle)),
-								  reinterpret_cast<void**>(GDS_REF(handle)),
+								  GDS_REF(rdb->rdb_handle),
+								  GDS_REF(handle),
 								  stuff->p_sttr_tpb.cstr_length,
 								  reinterpret_cast<char*>(GDS_VAL(stuff->p_sttr_tpb.cstr_address)));
 	else
 		isc_start_transaction(status_vector,
-							  reinterpret_cast<void**>(GDS_REF(handle)),
+							  GDS_REF(handle),
 							  (SSHORT) 1, GDS_REF(rdb->rdb_handle),
 							  stuff->p_sttr_tpb.cstr_length,
 							  GDS_VAL(stuff->p_sttr_tpb.cstr_address));
@@ -4707,7 +4699,7 @@ STATUS port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
 			THREAD_EXIT;
 			if (operation != op_reconnect)
 				isc_rollback_transaction(status_vector,
-										 reinterpret_cast<void**>(GDS_REF(handle)));
+										 GDS_REF(handle));
 #ifdef SUPERSERVER
 			/* Note that there is an underlying transaction pool
 			   that won't be released until this connection is
@@ -4719,7 +4711,7 @@ STATUS port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
 
 			else {
 				gds__handle_cleanup(status_vector,
-									(struct hndl **) GDS_REF(handle));
+									(struct why_hndl **) GDS_REF(handle));
 			}
 #endif
 			THREAD_ENTER;
@@ -4957,8 +4949,8 @@ STATUS port::transact_request(P_TRRQ * trrq, PACKET* send)
 
 	THREAD_EXIT;
 	isc_transact_request(status_vector,
-						 reinterpret_cast<void**>(&rdb->rdb_handle),
-						 reinterpret_cast<void**>(&transaction->rtr_handle),
+						 &rdb->rdb_handle,
+						 &transaction->rtr_handle,
 						 blr_length,
 						 reinterpret_cast<char*>(blr),
 						 in_msg_length,

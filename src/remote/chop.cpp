@@ -23,6 +23,7 @@
  */
 
 #include "firebird.h"
+#include "../jrd/y_handle.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 

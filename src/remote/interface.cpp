@@ -2091,7 +2091,7 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 			return error(user_status);
 		}
 
-		statement->rsr_handle = (int *) packet->p_resp.p_resp_object;
+		statement->rsr_handle = (struct why_hndl *) packet->p_resp.p_resp_object;
 		if (packet->p_resp.p_resp_object == 0xFFFF) {
 			release_sql_request(statement);
 			*stmt_handle = NULL;
@@ -4756,7 +4756,9 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
 #ifdef HAVE_GETCWD
 		getcwd(cwd, sizeof(cwd));
 #else
+#ifdef HAVE_GETWD
 		getwd(cwd);
+#endif
 #endif
 	}
 	else
