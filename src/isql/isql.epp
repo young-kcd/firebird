@@ -718,64 +718,43 @@ static void readNextInputLine(const char* prompt)
 			lastInputLine = NULL;
 		}
 
-		if (Ifp == stdin) {
+		getColumn = 0;
+
 #ifdef HAVE_EDITLINE_H
+		if (Ifp == stdin)
+		{
 			lastInputLine = readline(const_cast<char*>(prompt));
 
 			if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
 				add_history(lastInputLine);
 			}
+			return;
+		}
 
-#else
+#endif
+		if (Interactive || Echo)
+		{
 			// Write the prompt out.
 			fprintf(stdout, prompt);
 			fflush(stdout);
+		}
 
-			// Read the line
-			char buffer[MAX_USHORT];
-			if (fgets(buffer, sizeof(buffer), Ifp) != NULL)
+		// Read the line
+		char buffer[MAX_USHORT];
+		if (fgets(buffer, sizeof(buffer), Ifp) != NULL)
+		{
+			size_t lineSize = strlen(buffer);
+
+			while (lineSize > 0 &&
+				   (buffer[lineSize-1] == '\n' || buffer[lineSize-1] == '\r'))
 			{
-				size_t lineSize = strlen(buffer);
-				lastInputLine = (char*) malloc(lineSize + 1);
-				memcpy(lastInputLine, buffer, lineSize + 1);
-			}
-#endif
-		}
-		else {
-			// Write the prompt out, only if !Interactive && Echo
-			if (!Interactive && Echo) {
-				fprintf(stdout, prompt);
-				fflush(stdout);
+				buffer[--lineSize] = '\0';
 			}
 
-			const int growStep = 1024;//128;
-			int size = 0;
-			int pos = 0;
-			while (true) {
-				int c = getc(Ifp);
-				if (c == 0x0D)
-					c = getc(Ifp);
-				if (c == EOF)
-					break;
-				if (pos >= size - 2) {
-					size += growStep;
-					char* line2 = (char*) malloc (size);
-					if (pos > 0) {
-						memcpy(line2, lastInputLine, pos + 1);
-						free(lastInputLine);
-					}
-					lastInputLine = line2;
-				}
-				if (c == '\n')
-					break;
-				else
-					lastInputLine[pos++] = static_cast<char>(c);
-			}
-			if (lastInputLine != NULL)
-				lastInputLine[pos] = '\0';
-		}
+			lastInputLine = (char*) malloc(lineSize + 1);
+			memcpy(lastInputLine, buffer, lineSize + 1);
 
-	getColumn = 0;
+		}
 
 }
 
