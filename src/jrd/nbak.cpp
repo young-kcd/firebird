@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbak.cpp,v 1.41 2004-07-10 03:20:08 robocop Exp $
+ *  $Id: nbak.cpp,v 1.42 2004-09-15 05:29:04 skidder Exp $
  *
  */
 
@@ -508,6 +508,8 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 		CCH_flush_database(tdbb); // This may release database lock
 		if (ast_status[1])
 			gds__log_status(new_dbb->dbb_file->fil_string, ast_status);				
+	} else {
+		LCK_release(tdbb, lock);
 	}
 
 /* Restore the prior thread context */
