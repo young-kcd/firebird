@@ -617,22 +617,17 @@ typedef tsql* TSQL;
 
 #define DEV_BLKCHK(blk, typ)	{						\
 		if ((blk) && MemoryPool::blk_type(blk) != (SSHORT)typ) {	\
-			ERRD_assert_msg((char*)assert_blkchk_msg,			\
-							(char*)assert_filename,			\
+			ERRD_assert_msg("Unexpected memory block type",			\
+							(char*) __FILE__,			\
 							(ULONG) __LINE__);			\
 		}												\
 	}
 
 
-#define _assert(ex)	{if (!(ex)){ERRD_assert_msg (NULL, (char*)assert_filename, __LINE__);}}
+#define _assert(ex)	{if (!(ex)){ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__);}}
 #undef assert
 #define assert(ex)	_assert(ex)
-#define ASSERT_FAIL ERRD_assert_msg (NULL, (char*)assert_filename, __LINE__)
-
-// Define the assert_filename as a static variable to save on codespace
-
-static UCHAR assert_filename[] = __FILE__;
-static UCHAR assert_blkchk_msg[] = "Unexpected memory block type";	// NTX: dev
+#define ASSERT_FAIL ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__)
 
 #else // PROD_BUILD
 
