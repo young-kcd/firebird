@@ -58,7 +58,7 @@ struct MemoryBlock /* 16 bytes of block header is not too much I think */ {
 	bool last;
 	SSHORT type;
 	size_t length; /* Includes only actual block size, header not included */
-	struct MemoryBlock *prev;
+	MemoryBlock *prev;
 #ifdef DEBUG_GDS_ALLOC
 	char *file;
 	int line;
