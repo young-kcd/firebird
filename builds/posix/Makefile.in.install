@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.install,v 1.4 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.install,v 1.5 2002-11-11 05:55:18 skywalker Exp $
 #
 ROOT=..
 
@@ -48,9 +48,8 @@ FIREBIRD=$(FirebirdInstallPrefix)
 export -n FIREBIRD
 export -n INTERBASE
 
-.PHONY: all CSrpmscript SSrpmscript ssinstall runclassicinstall \
-        classicpackages
-
+.PHONY: install dist packages tarfile rpmfile 
+.PHONY: buildTarDir buildImageDir
 
 # Some of these targets are run from the root tree of the build.
 # those need to know where the install subdirectory is kept.
@@ -76,6 +75,8 @@ Version=$(BuildVersion)-$(PackageVersion)
 
 
 # This means something like: FirebirdCS-2.0.0-1.i386.tar.gz
+
+TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
 TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar.gz
 RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
 
@@ -95,48 +96,62 @@ PackageDir:=$(shell if [ -d $(RedhatPackageDir) ]; then echo $(RedhatPackageDir)
 
 
 PkgSrcDir=$(InstallRoot)/$(ArchType)
-RPMSrcDir=$(SRC)/install/@FIREBIRD_ARCH_TYPE@/
 ScriptDir=$(GEN_ROOT)/install/scripts/
+RPMSrcDir=$(GEN_ROOT)/install/scripts
 
 
 TarInstallDir=$(GEN_ROOT)/install
 
 
-.PHONY: install tarfile rpmfile dist packages
-
 
 dist : packages
 
-packages: tarfile
-#packages: tarfile rpmfile
+packages: tarfile rpmfile
 
 tarfile:  $(TarFile)
 
-$(TarFile) :  buildInstallDir
-	(cd $(GEN_ROOT); tar -czf $(TarFile) install)
+#
+#$(TarFile) :  buildInstallDir
+#	(cd $(GEN_ROOT); tar -czf $(TarFile) install)
+
+$(TarFile) :  buildTarDir
+	(cd $(GEN_ROOT); tar -czf $(TarFile) $(TarDir))
 
 
-buildInstallDir:
-	(cd $(GEN_ROOT); tar -czf install/firebird.tar.gz firebird)
+# No longer needed: MOD 7-Nov-2002
+#buildInstallDir:
+#	(cd $(GEN_ROOT); tar -czf install/firebird.tar.gz firebird)
+
+buildImageDir:
+	(cd $(GEN_ROOT); ./install/makeInstallImage.sh)
 
 
-install:
-	(cd $(GEN_ROOT)/install; ./install.sh)
+buildTarDir: buildImageDir
+	mkdir -p $(GEN_ROOT)/$(TarDir)
+	cp -r $(GEN_ROOT)/install/scripts $(GEN_ROOT)/$(TarDir)
+	cp -r $(GEN_ROOT)/install/scripts/tarMainInstall.sh $(GEN_ROOT)/$(TarDir)/install.sh
+	chmod a+x $(GEN_ROOT)/$(TarDir)/install.sh $(GEN_ROOT)/$(TarDir)/scripts/*sh
+	(cd $(GEN_ROOT)/$(TarDir); tar -C ../buildroot -czf buildroot.tar.gz . )
+	(cd $(GEN_ROOT)/$(TarDir); tar -tzf buildroot.tar.gz > manifest.txt )
+
+
+install: buildTarDir
+	(cd $(GEN_ROOT)/$(TarDir); ./install.sh)
+
 
 rpmfile: $(RPMFile)
 
-$(RPMFile) : $(GEN_ROOT)/rpmscript
-	rpm -bb $(GEN_ROOT)/rpmscript
+$(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir
+	rpm -bb $(GEN_ROOT)/install/rpmscript
 #	rpm -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
 	cp $(PackageDir)/$(RPMFile) .
 
 
-.PHONY: $(GEN_ROOT)/rpmscript
+.PHONY: $(GEN_ROOT)/install/rpmscript
 
-$(GEN_ROOT)/rpmscript :
+$(GEN_ROOT)/install/rpmscript :
 	echo $@
-	cat $(RPMSrcDir)/rpmheader.txt.in | sed 's/^Version:.*/Version: $(BuildVersion)/' \
-	     | sed 's/Release:.*/Release: $(PackageVersion)/' > $@
+	cat $(RPMSrcDir)/rpmheader.txt > $@
 	echo "" >> $@
 	echo "%prep" >> $@
 #	cat $(ClassicSrcDir)/prepinstall.sh >> $@
@@ -148,7 +163,7 @@ $(GEN_ROOT)/rpmscript :
 #	cat $(ScriptDir)/install.sh >> $@
 	echo "" >> $@
 	echo "%files" >> $@
-	cat $(RPMSrcDir)/rpmfiles.txt.in >> $@
+	cat $(RPMSrcDir)/rpmfiles.txt >> $@
 	echo "" >> $@
 	echo "%pre" >> $@
 	cat $(ScriptDir)/preinstall.sh >> $@
