@@ -197,10 +197,9 @@ const int SAV_event_post	= 2;	/* event posted in the save point */
 const int SAV_user			= 4;	/* named user savepoint as opposed to system ones */
 
 /* Maximum size in bytes of transaction-level savepoint data.
-  When transaction-level savepoint gets past this size we drop it and use GC
-  mechanisms to clean out changes done in transaction */
-const IPTR SAV_LARGE			= 1024 * 1024;	// 1 MB of savepoint undo data is A LOT:
-                                                // ~25K - ~4M changed records
+   When transaction-level savepoint gets past this size we drop it and use GC
+   mechanisms to clean out changes done in transaction */
+const IPTR SAV_LARGE		= 1024 * 32;
 
 /* Deferred work blocks are used by the meta data handler to keep track
    of work deferred to commit time.  This are usually used to perform
