@@ -2215,11 +2215,11 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 			else {
 				if (node->nod_count) {
 					// If there's another aggregate with the same scope_level or
-					// an lower one then it's a invalid aggregate, because
-					// aggregate-functions from the same or lower context can't 
-					// part of each other. 
+					// an higher one then it's a invalid aggregate, because
+					// aggregate-functions from the same or higher context can't 
+					// be part of each other. 
 					if (pass1_found_aggregate(node->nod_arg[0], context->ctx_scope_level,
-											  FIELD_MATCH_TYPE_EQUAL, TRUE)) {
+											  FIELD_MATCH_TYPE_HIGHER_EQUAL, TRUE)) {
 						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 							gds_arg_gds, gds_dsql_agg_nested_err, 0);
 						// Nested aggregate functions are not allowed
