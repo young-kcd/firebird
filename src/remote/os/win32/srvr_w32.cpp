@@ -398,7 +398,8 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		if (!port) {
 			if (status_vector[1] != isc_io_error ||
 				status_vector[6] != isc_arg_win32 ||
-				status_vector[7] != ERROR_CALL_NOT_IMPLEMENTED) {
+				status_vector[7] != ERROR_CALL_NOT_IMPLEMENTED)
+			{
 				gds__log_status(0, status_vector);
 			}
 			break;

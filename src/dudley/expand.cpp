@@ -488,7 +488,8 @@ static DUDLEY_FLD field_search( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_CT
 
 		name = symbol;
 		for (contexts = contexts->lls_next; contexts;
-			 contexts = contexts->lls_next) {
+			 contexts = contexts->lls_next)
+		{
 			context = (DUDLEY_CTX) contexts->lls_object;
 			if (context->ctx_relation && !context->ctx_view_rse) {
 				*output_context = context;

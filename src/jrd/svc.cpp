@@ -1463,7 +1463,8 @@ void SVC_query(Service*		service,
 			   string
 			 */
 			if (!(info = INF_put_item(item, strlen(PathBuffer),
-									  PathBuffer, info, end))) {
+									  PathBuffer, info, end)))
+			{
 				THREAD_ENTER();
 				return;
 			}
@@ -2310,7 +2311,8 @@ static void service_fork(TEXT* service_path, Service* service)
 		my_output = (HANDLE) _get_osfhandle(tmp);
 
 		if (my_input == INVALID_HANDLE_VALUE ||
-			my_output == INVALID_HANDLE_VALUE) {
+			my_output == INVALID_HANDLE_VALUE)
+		{
 			CloseHandle(my_input);
 			CloseHandle(my_output);
 			ERR_post(isc_sys_request, isc_arg_string, "CreateFile", SYS_ERR,
@@ -2815,7 +2817,6 @@ static void service_get(Service*		service,
  * Functional description
  *
  **************************************/
-	int ch = 'Z';
 
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval start_time, end_time;
@@ -2844,7 +2845,7 @@ static void service_get(Service*		service,
 		}
 
 		while (!service_empty(service) && length > 0) {
-			ch = service_dequeue_byte(service);
+			const int ch = service_dequeue_byte(service);
 			length--;
 
 			/* If returning a line of information, replace all new line

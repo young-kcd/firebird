@@ -267,7 +267,8 @@ void SCH_ast(enum ast_t action)
  *
  **************************************/
 	if (!ast_thread && !(action == AST_alloc || action == AST_disable ||
-						 action == AST_enable)) {
+						 action == AST_enable))
+	{
 		/* Better be an AST thread before we do anything to it! */
 		fb_assert(FALSE);
 		return;

@@ -725,7 +725,8 @@ static void gen_based( const act* action, int column)
 			fprintf(gpreGlob.out_file, "array [");
 
 		for (dimension = field->fld_array_info->ary_dimension; dimension;
-			 dimension = dimension->dim_next) {
+			 dimension = dimension->dim_next)
+		{
 			fprintf(gpreGlob.out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
 					   dimension->dim_upper);
 			if (dimension->dim_next)
@@ -1938,7 +1939,8 @@ static void gen_event_init( const act* action, int column)
 //  generate call to dynamically generate event blocks 
 
 	for (ptr = event_list->nod_arg, count = 0, end =
-		 ptr + event_list->nod_count; ptr < end; ptr++) {
+		 ptr + event_list->nod_count; ptr < end; ptr++)
+	{
 		count++;
 		node = *ptr;
 		if (node->nod_type == nod_field) {
@@ -2061,7 +2063,8 @@ static void gen_fetch( const act* action, int column)
 		   next FETCH statement if applicable */
 
 		for (reference = port->por_references; reference;
-			 reference = reference->ref_next) {
+			 reference = reference->ref_next)
+		{
 			value = reference->ref_values;
 			reference->ref_value = value->val_value;
 			reference->ref_values = value->val_next;
@@ -3119,7 +3122,8 @@ static void gen_store( const act* action, int column)
 
 	port = request->req_primary;
 	for (reference = port->por_references; reference;
-		 reference = reference->ref_next) {
+		 reference = reference->ref_next)
+	{
 		field = reference->ref_field;
 		if (field->fld_flags & FLD_blob)
 			printa(column, "%s := gds__blob_null;\n",
@@ -3376,7 +3380,8 @@ static void make_array_declaration( const ref* reference)
 
 //   Print out the dimension part of the declaration  
 	for (dimension = field->fld_array_info->ary_dimension; dimension;
-		 dimension = dimension->dim_next) {
+		 dimension = dimension->dim_next)
+	{
 		fprintf(gpreGlob.out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
 				   dimension->dim_upper);
 		if (dimension->dim_next)

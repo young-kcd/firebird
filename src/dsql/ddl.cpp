@@ -5426,7 +5426,8 @@ static void put_dtype(dsql_req* request, const dsql_fld* field, bool use_subtype
 // Check if the field describes a known datatype 
 
 	if (field->fld_dtype > FB_NELEM(blr_dtypes) ||
-		!blr_dtypes[field->fld_dtype]) {
+		!blr_dtypes[field->fld_dtype])
+	{
 		SCHAR buffer[100];
 
 		sprintf(buffer, "Invalid dtype %d in put_dtype", field->fld_dtype);

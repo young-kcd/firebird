@@ -2127,7 +2127,8 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 	GET_STATUS;
 
 	if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
-									dialect, &buffer_len))) {
+									dialect, &buffer_len)))
+	{
 		status[0] = isc_arg_gds;
 		status[1] = isc_virmemexh;
 		status[2] = isc_arg_end;
@@ -2637,7 +2638,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 
 		crdb_trans_handle = 0;
 		if (GDS_START_TRANSACTION(status, &crdb_trans_handle, 1,
-								  db_handle, 0, 0)) {
+								  db_handle, 0, 0))
+		{
 			save_error_string(status);
 			GDS_DROP_DATABASE(temp_status, db_handle);
 			*db_handle = 0;
@@ -4582,7 +4584,8 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_START(ISC_STATUS* user_status,
 	if (CALL(PROC_SERVICE_START, service->implementation) (status,
 														   &service->handle,
 														   NULL,
-														   spb_length, spb)) {
+														   spb_length, spb))
+	{
 		return error(status, local);
 	}
 

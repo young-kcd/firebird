@@ -103,7 +103,8 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 
 	if (svc_status[0] != isc_arg_gds ||
 		(svc_status[0] == isc_arg_gds && svc_status[1] == 0 &&
-		 svc_status[2] != isc_arg_warning)) {
+		 svc_status[2] != isc_arg_warning))
+	{
 		MOVE_FASTER(tmp_status, svc_status, sizeof(ISC_STATUS) * tmp_status_len);
 	}
 	else {
@@ -150,7 +151,8 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							sizeof(ISC_STATUS) * tmp_status_len);
 				/* copy current warning(s) to the status_vector */
 				if (warning_count
-					&& i + warning_count - 1 < ISC_STATUS_LENGTH) {
+					&& i + warning_count - 1 < ISC_STATUS_LENGTH)
+				{
 					MOVE_FASTER(warning_status, &svc_status[i - 1],
 								sizeof(ISC_STATUS) * warning_count);
 				}

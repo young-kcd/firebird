@@ -1729,7 +1729,8 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 
 	if (dbb->dbb_sweep_interval &&
 		(trans->tra_oldest_active - trans->tra_oldest >
-		 dbb->dbb_sweep_interval) && oldest_state != tra_limbo) {
+		 dbb->dbb_sweep_interval) && oldest_state != tra_limbo)
+	{
 #ifndef SWEEP_THREAD
 
 		/* force a sweep */
@@ -1772,7 +1773,8 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
    by removing the test for TDBB_sweeper. */
 
 	if (trans->tra_flags & TRA_readonly &&
-		trans->tra_flags & TRA_read_committed) {
+		trans->tra_flags & TRA_read_committed)
+	{
 		TRA_set_state(tdbb, trans, trans->tra_number, tra_committed);
 		LCK_release(tdbb, trans->tra_lock);
 		delete trans->tra_lock;

@@ -1016,7 +1016,8 @@ static bool validate_dsc_tables()
 
 			/* Multiplication operator must be commutative */
 			if (DSC_multiply_result[op1][op2] !=
-				DSC_multiply_result[op2][op1]) {
+				DSC_multiply_result[op2][op1])
+			{
 /*
 	fprintf (stderr,
 "Not commutative: DSC_multiply_result [%d][%d] = %d,\n\t... [%d][%d] = %d\n",
@@ -1028,7 +1029,8 @@ static bool validate_dsc_tables()
 
 			/* Multiplication operator must be communitive */
 			if (DSC_multiply_blr4_result[op1][op2] !=
-				DSC_multiply_blr4_result[op2][op1]) {
+				DSC_multiply_blr4_result[op2][op1])
+			{
 /*
 	fprintf (stderr,
 "Not commutative: DSC_multiply_blr4_result [%d][%d] = %d\n\

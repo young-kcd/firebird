@@ -113,7 +113,8 @@ class codepage_map {
 
 		for (i = 0; i <= 255; i++) {
 			if (from_unicode_map[i] + 0xFF >=
-				sizeof_from_unicode_mapping_array) {
+				sizeof_from_unicode_mapping_array)
+			{
 				printf("From_unicode array bounds error at position %02x00\n",
 					   i);
 				continue;

@@ -746,7 +746,7 @@ static void readNextInputLine(const char* prompt)
 			size_t lineSize = strlen(buffer);
 
 			while (lineSize > 0 &&
-				   (buffer[lineSize-1] == '\n' || buffer[lineSize-1] == '\r'))
+				   (buffer[lineSize - 1] == '\n' || buffer[lineSize - 1] == '\r'))
 			{
 				buffer[--lineSize] = '\0';
 			}

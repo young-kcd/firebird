@@ -307,7 +307,8 @@ void HSH_insert( SYM symbol)
 
 	for (old = hash_table[h]; old; old = old->sym_collision)
 		if (scompare(symbol->sym_string, symbol->sym_length,
-					 old->sym_string, old->sym_length)) {
+					 old->sym_string, old->sym_length))
+		{
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
 			return;

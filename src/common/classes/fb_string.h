@@ -391,7 +391,7 @@ namespace Firebird
 	protected:
 		inline StringBase<Comparator>(const_pointer p1, size_type n1, 
 						  const_pointer p2, size_type n2) :
-			   AbstractString(p1, n1, p2, n2) {;}
+			   AbstractString(p1, n1, p2, n2) {}
 	private:
 		inline StringType add(const_pointer s, size_type n) const {
 			return StringBase<Comparator>(c_str(), length(), s, n);

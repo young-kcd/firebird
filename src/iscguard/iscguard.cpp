@@ -623,7 +623,8 @@ void start_and_watch_server(const char* server_name)
 							(LPARAM) hWndGbl);
 				if (
 					(procHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE,
-								 ServerPid)) == NULL) {
+								 ServerPid)) == NULL)
+				{
 					error = GetLastError();
 					success = FALSE;
 				}

@@ -1418,7 +1418,8 @@ static bool grantor_can_grant(	Global*		gbl,
 			if (!strcmp(field_name, G_FLD.RDB$FIELD_NAME))
 				if (!grantor_can_grant
 					(gbl, grantor, privilege, G_VIEW.RDB$RELATION_NAME,
-					 G_FLD.RDB$BASE_FIELD, FALSE)) {
+					 G_FLD.RDB$BASE_FIELD, FALSE))
+				{
 					return false;
 				}
 		}

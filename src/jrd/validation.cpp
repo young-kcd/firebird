@@ -1044,7 +1044,8 @@ static RTN walk_blob(thread_db* tdbb,
 				fetch_page(tdbb, control, *pages2, pag_blob, &window2,
 						   &page2);
 				if (page2->blp_lead_page != header->blh_lead_page
-					|| page2->blp_sequence != sequence) {
+					|| page2->blp_sequence != sequence)
+				{
 					corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation,
 							number);
 					CCH_RELEASE(tdbb, &window1);

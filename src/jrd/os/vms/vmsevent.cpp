@@ -837,7 +837,8 @@ static EVNT make_event(USHORT length,
 	SLONG parent_id;
 	if (parent) {
 		ptr = &parent->evnt_offspring;
-		parent_id = parent->evnt_lksb.lksb_lock_id;}
+		parent_id = parent->evnt_lksb.lksb_lock_id;
+	}
 	else
 	{
 		ptr = &global_parent_events; 
@@ -867,8 +868,9 @@ static EVNT make_event(USHORT length,
 	event->evnt_count = lksb->lksb_value[0];
 /* If the lock block is invalid, clean it up immediately */
 	if ((status & 1) &&
-		event->evnt_lksb.lksb_status == SS$_VALNOTVALID) {
-	status = sys$enqw(0,	/* event flag */
+		event->evnt_lksb.lksb_status == SS$_VALNOTVALID)
+	{
+		status = sys$enqw(0,	/* event flag */
 					  LCK$K_PWMODE,	/* lock mode */
 					  lksb,	/* Lock status block */
 					  LCK$M_CONVERT,	/* flags */
@@ -879,8 +881,8 @@ static EVNT make_event(USHORT length,
 					  blocking_ast,	/* blocking ast */
 					  0,	/* access mode */
 					  0);
-	event->evnt_count = lksb->lksb_value[0] = 0;
-	status = sys$enqw(0,	/* event flag */
+		event->evnt_count = lksb->lksb_value[0] = 0;
+		status = sys$enqw(0,	/* event flag */
 					  LCK$K_PRMODE,	/* lock mode */
 					  lksb,	/* Lock status block */
 					  LCK$M_CONVERT | LCK$M_VALBLK,	/* flags */
@@ -890,7 +892,8 @@ static EVNT make_event(USHORT length,
 					  event,	/* ast argument */
 					  blocking_ast,	/* blocking ast */
 					  0,	/* access mode */
-					  0);}
+					  0);
+	}
 
 	return event;
 }

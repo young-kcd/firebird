@@ -51,7 +51,7 @@ public:
 	AutoPtr<Where, Clear>(Where* v = NULL) {ptr = v;}
 	AutoPtr<Where, Clear>& operator= (Where* v) { Clear::clear(ptr); ptr = v; return *this; }
 	operator Where*() {return ptr;}
-	bool operator !() {return ptr ? false : true;}
+	bool operator !() const {return ptr ? false : true;}
 	Where* operator->() {return ptr;}
 	~AutoPtr<Where, Clear>() {Clear::clear(ptr);}
 private:

@@ -461,7 +461,8 @@ int yyparse()
 				while (yy_ps >= yys) {
 					yy_n = yypact[*yy_ps] + YYERRCODE;
 					if (yy_n >= 0 && yy_n < YYLAST &&
-						yychk[yyact[yy_n]] == YYERRCODE) {
+						yychk[yyact[yy_n]] == YYERRCODE)
+					{
 						/*
 						   ** simulate shift of "error"
 						 */
@@ -555,7 +556,8 @@ int yyparse()
 				yyval = (yy_pv -= yy_len)[1];	/* $$ = $1 */
 				yy_state = yypgo[yy_n = yyr1[yy_n]] + *(yy_ps -= yy_len) + 1;
 				if (yy_state >= YYLAST ||
-					yychk[yy_state = yyact[yy_state]] != -yy_n) {
+					yychk[yy_state = yyact[yy_state]] != -yy_n)
+				{
 					yy_state = yyact[yypgo[yy_n]];
 				}
 				goto yy_stack;
@@ -564,7 +566,8 @@ int yyparse()
 			yyval = (yy_pv -= yy_len)[1];	/* $$ = $1 */
 			yy_state = yypgo[yy_n = yyr1[yy_n]] + *(yy_ps -= yy_len) + 1;
 			if (yy_state >= YYLAST ||
-				yychk[yy_state = yyact[yy_state]] != -yy_n) {
+				yychk[yy_state = yyact[yy_state]] != -yy_n)
+			{
 				yy_state = yyact[yypgo[yy_n]];
 			}
 		}

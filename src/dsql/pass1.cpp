@@ -2796,7 +2796,8 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 
 	if (node1->nod_type == nod_field) {
 		if (node1->nod_arg[e_fld_field] != node2->nod_arg[e_fld_field] ||
-			node1->nod_arg[e_fld_context] != node2->nod_arg[e_fld_context]) {
+			node1->nod_arg[e_fld_context] != node2->nod_arg[e_fld_context])
+		{
 			return false;
 		}
 		if (node1->nod_arg[e_fld_indices] || node2->nod_arg[e_fld_indices]) {
@@ -2809,7 +2810,8 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 	if (node1->nod_type == nod_constant) {
 		if (node1->nod_desc.dsc_dtype != node2->nod_desc.dsc_dtype ||
 			node1->nod_desc.dsc_length != node2->nod_desc.dsc_length ||
-			node1->nod_desc.dsc_scale != node2->nod_desc.dsc_scale) {
+			node1->nod_desc.dsc_scale != node2->nod_desc.dsc_scale)
+		{
 			return false;
 		}
 		const UCHAR* p1 = node1->nod_desc.dsc_address;

@@ -253,7 +253,8 @@ TEXT* FMT_format(qli_lls* stack)
 			if (item2->itm_type != item_value)
 				continue;
 			if (item2->itm_print_offset <
-				item->itm_print_offset + item->itm_print_length) {
+				item->itm_print_offset + item->itm_print_length)
+			{
 				item->itm_flags |= ITM_overlapped;
 				break;
 			}

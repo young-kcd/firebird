@@ -5650,7 +5650,8 @@ static RecordSource* gen_sort(thread_db* tdbb,
 			}
 			desc->dsc_length =
 				INTL_key_length(tdbb, INTL_INDEX_TYPE(desc),
-								desc->dsc_length);}
+								desc->dsc_length);
+		}
 
 		/* Make key for null flag */
 

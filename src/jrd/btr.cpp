@@ -5147,7 +5147,8 @@ static SLONG insert_node(thread_db* tdbb,
 
 		// check if the inserted node has the same value as the next node
 		if (newPrefix != key->key_length ||
-			newPrefix != beforeInsertNode.length + beforeInsertNode.prefix) {
+			newPrefix != beforeInsertNode.length + beforeInsertNode.prefix)
+		{
 			break;
 		}
 		else {

@@ -224,7 +224,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
-				OsVersionInfo.dwMajorVersion < 4) {
+				OsVersionInfo.dwMajorVersion < 4)
+			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hGrayBrush;
 			}
