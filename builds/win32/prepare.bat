@@ -1,9 +1,6 @@
 
 @echo off
 
-set ISC_USER=sysdba
-set ISC_PASSWORD=s
-
 @echo.
 @echo    !!  Warning !!
 @echo    This script no longer requires the 

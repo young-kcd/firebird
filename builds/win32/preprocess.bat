@@ -10,7 +10,7 @@
 ::  o License boiler plate, copyright and authorship acknowledgements
 ::
 
-: @echo off
+@echo off
 
 ::===========
 :MAIN
@@ -35,12 +35,12 @@
 
 ::===========
 :GPRE_M
-%GPRE% -n -m -raw %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b %SERVER_NAME%:%DB_PATH%/gen/dbs/
+@%GPRE% -n -m -raw %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b %SERVER_NAME%:%DB_PATH%/gen/dbs/
 @goto :EOF
 
 ::===========
 :GPRE_GDS
-%GPRE% -n -gds -raw -ids %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b %SERVER_NAME%:%DB_PATH%/gen/dbs/
+@%GPRE% -n -gds -raw -ids %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b %SERVER_NAME%:%DB_PATH%/gen/dbs/
 goto :EOF
 
 ::===========

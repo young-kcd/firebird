@@ -10,8 +10,6 @@
 :SET_DB_DIR
 
 @SET SERVER_NAME=localhost
-@SET ISC_USER=sysdba
-@SET ISC_PASSWORD=s
 
 @cd ..\..
 @for /f "delims=" %%a in ('@cd') do (set ROOT_PATH=%%a)
