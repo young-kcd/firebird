@@ -34,7 +34,7 @@
  *    compatibility with Kylix
  * 
  *
- *  $Id: config_root.cpp,v 1.8 2003-08-09 22:52:35 brodsom Exp $
+ *  $Id: config_root.cpp,v 1.9 2004-02-08 18:47:47 skidder Exp $
  */
 
 #include "firebird.h"
@@ -49,7 +49,7 @@
 #include "../jrd/os/config_root.h"
 #include "../jrd/os/path_utils.h"
 
-typedef Firebird::string string;
+typedef Firebird::PathName string;
 
 static const char *CONFIG_FILE = "firebird.conf";
 

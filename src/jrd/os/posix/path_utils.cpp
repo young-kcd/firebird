@@ -7,24 +7,24 @@
 /// The POSIX implementation of the path_utils abstraction.
 
 const char PathUtils::dir_sep = '/';
-const Firebird::string PathUtils::up_dir_link = "..";
+const char* PathUtils::up_dir_link = "..";
 
 class PosixDirItr : public PathUtils::dir_iterator
 {
 public:
-	PosixDirItr(const Firebird::string&);
+	PosixDirItr(const Firebird::PathName&);
 	~PosixDirItr();
 	const PosixDirItr& operator++();
-	const Firebird::string& operator*() { return file; }
+	const Firebird::PathName& operator*() { return file; }
 	operator bool() { return !done; }
 	
 private:
 	DIR *dir;
-	Firebird::string file;
+	Firebird::PathName file;
 	int done;
 };
 
-PosixDirItr::PosixDirItr(const Firebird::string& path)
+PosixDirItr::PosixDirItr(const Firebird::PathName& path)
 	: dir_iterator(path), dir(0), done(0)
 {
 	dir = opendir(dirPrefix.c_str());
@@ -58,18 +58,18 @@ const PosixDirItr& PosixDirItr::operator++()
 	return *this;
 }
 
-PathUtils::dir_iterator *PathUtils::newDirItr(MemoryPool& p, const Firebird::string& path)
+PathUtils::dir_iterator *PathUtils::newDirItr(MemoryPool& p, const Firebird::PathName& path)
 {
 	return FB_NEW(p) PosixDirItr(path);
 }
 
-void PathUtils::splitLastComponent(Firebird::string& path, Firebird::string& file,
-		const Firebird::string& orgPath)
+void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName& file,
+		const Firebird::PathName& orgPath)
 {
-	Firebird::string::size_type pos;
+	Firebird::PathName::size_type pos;
 	
 	pos = orgPath.rfind(dir_sep);
-	if (pos == Firebird::string::npos)
+	if (pos == Firebird::PathName::npos)
 	{
 		path = "";
 		file = orgPath;
@@ -82,9 +82,9 @@ void PathUtils::splitLastComponent(Firebird::string& path, Firebird::string& fil
 	file.append(orgPath, pos+1, orgPath.length() - pos - 1);
 }
 
-void PathUtils::concatPath(Firebird::string& result,
-		const Firebird::string& first,
-		const Firebird::string& second)
+void PathUtils::concatPath(Firebird::PathName& result,
+		const Firebird::PathName& first,
+		const Firebird::PathName& second)
 {
 	if (second.length() == 0)
 	{
@@ -114,14 +114,14 @@ void PathUtils::concatPath(Firebird::string& result,
 	result = first + second;
 }
 
-bool PathUtils::isRelative(const Firebird::string& path)
+bool PathUtils::isRelative(const Firebird::PathName& path)
 {
 	if (path.length() > 0)
 		return path[0] != dir_sep;
 	return false;
 }
 
-bool PathUtils::isSymLink(const Firebird::string& path)
+bool PathUtils::isSymLink(const Firebird::PathName& path)
 {
 	struct stat st, lst;
 	if (stat(path.c_str(), &st) != 0)
@@ -131,11 +131,11 @@ bool PathUtils::isSymLink(const Firebird::string& path)
 	return st.st_ino != lst.st_ino;
 }
 
-bool PathUtils::comparePaths(const Firebird::string& path1, 
- 							 const Firebird::string& path2) {
+bool PathUtils::comparePaths(const Firebird::PathName& path1, 
+ 							 const Firebird::PathName& path2) {
  	return path1 == path2;
 }
 
-bool PathUtils::canAccess(const Firebird::string& path, int mode) {
+bool PathUtils::canAccess(const Firebird::PathName& path, int mode) {
 	return access(path.c_str(), mode) == 0;
 }

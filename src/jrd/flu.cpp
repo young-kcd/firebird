@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.43 2004-02-08 17:08:31 alexpeshkoff Exp $
+$Id: flu.cpp,v 1.44 2004-02-08 18:47:44 skidder Exp $
 */
 
 #include "firebird.h"
@@ -483,7 +483,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 		}
 
         if (!mod) {  // Start looking for "libxxxx.so" module names
-			FireBird::PathName moduleName = "lib";
+			Firebird::PathName moduleName = "lib";
             moduleName += (const char*) absolute_module;
 			mod = search_for_module((TEXT*) moduleName.c_str(), name, ShowAccessError);
         }
