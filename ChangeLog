@@ -1,3 +1,14 @@
+2002-10-23 17:23  skidder
+
+	* firebird2/: configure.in, src/dsql/ddl.cpp, src/dsql/dsql.tab.h,
+	src/dsql/gen.cpp, src/dsql/keywords.cpp, src/dsql/node.h,
+	src/dsql/parse.y, src/dsql/pass1.cpp, src/dsql/pass1_proto.h,
+	src/include/gen/blrtable.h, src/jrd/blr.h, src/jrd/blrtable.cpp,
+	src/jrd/cmp.cpp, src/jrd/exe.cpp, src/jrd/exe.h, src/jrd/nod.h,
+	src/jrd/par.cpp, src/jrd/vio.cpp, src/jrd/vio_proto.h:
+	
+	Explicit locking changes
+
 2002-10-22 10:05  dimitr
 
 	* firebird2/src/burp/restore.epp:
