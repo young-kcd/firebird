@@ -162,11 +162,11 @@ int by descriptor, int by descriptor
 returns parameter 2
 entry_point 'fbround' module_name 'fbudf';
 
---FBUDF_API paramdsc* round(paramdsc* v, paramdsc* rc)
+--FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc)
 declare external function i64Round
 numeric(18, 4) by descriptor, numeric(18, 4) by descriptor
 returns parameter 2
-entry_point 'round' module_name 'fbudf';
+entry_point 'fbround' module_name 'fbudf';
 
 --FBUDF_API paramdsc* power(paramdsc* v, paramdsc* v2, paramdsc* rc)
 declare external function dPower
