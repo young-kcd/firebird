@@ -1,6 +1,11 @@
   **************
   * v2.0 Alpha 1
   **************
+  
+    * Cleanup
+        Command line switch L for SuperServer is no longer recognized as the old local protocol was deleted.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
 
     * Security improvement
         Another layout of security.fdb
@@ -52,6 +57,13 @@
         Supported UDFs to be called as procedures (i.e. ignoring their output) in PSQL
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * ISQL improvement:
+        Command line switch -b to bail out on error when used in non-interactive mode.
+        Also, return an error code to the operating system.
+      Contributor(s):
+        Damyan Ivanov <divanov at creditreform.bg>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Context variables
         Added support for context variables via RDB$GET_CONTEXT and RDB$SET_CONTEXT system functions
