@@ -954,10 +954,10 @@ int common_main(int		argc,
 				break;
 
 			case (IN_SW_BURP_MODE):
+				tdgbl->gbl_sw_mode = true;
 				break;
 
 			case (IN_SW_BURP_N):
-				tdgbl->gbl_sw_mode = true;
 				tdgbl->gbl_sw_novalidity = true;
 				break;
 
