@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	DEV	$(PLATFORM)
-#$Id: makefile.old,v 1.2 2002-09-08 07:56:51 dimitr Exp $
+#$Id: makefile.old,v 1.1 2003-07-10 23:01:08 brodsom Exp $
 #Revision 1.6  2000/12/01 11:20:31  fsg
 #Added SHRLIB_EXT to  prefix.linux
 #

@@ -22,7 +22,7 @@
  *
  */
 /*
-$Id: align.h,v 1.6 2003-02-14 02:50:10 brodsom Exp $
+$Id: align.h,v 1.1 2003-07-10 23:04:39 brodsom Exp $
 */
 
 #ifdef VMS
