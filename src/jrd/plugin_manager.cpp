@@ -139,7 +139,7 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::string& n
 			
 			if (ModuleLoader::isLoadableModule(checkPath))
 			{
-				return FB_NEW(*getDefaultMemoryPool()) PluginModule(checkPath,
+				return FB_NEW(*getDefaultMemoryPool()) PluginModule(name,
 						ModuleLoader::loadModule(checkPath));
 			}
 			ModuleLoader::doctorModuleExtention(checkPath);
