@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.24 2003-06-30 10:42:49 brodsom Exp $
+$Id: backup.epp,v 1.25 2003-07-17 11:49:04 eku Exp $
 */
 
 #include "firebird.h"
@@ -230,7 +230,7 @@ static const SCHAR limbo_nau_tpb[] =
 };
 
 
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(SINIXZ)
 
 // TMN: Microsoft provide __int64, but for MSVC6 provide no ostream
 // operator<< for it. :-/
