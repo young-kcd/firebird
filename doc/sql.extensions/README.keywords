@@ -1,0 +1,100 @@
+----------------------------------------------------
+SQL keywords introduced in different server versions
+----------------------------------------------------
+
+An asterisk (*) mark shows that a keyword doesn't exist in the SQL specification
+and hence should be considered a non-standard language extention.
+
+Firebird 1.0:
+
+  Added as reserved words:
+
+    CURRENT_USER
+    CURRENT_ROLE
+    BREAK *
+    DESCRIPTOR
+    FIRST
+    RECREATE *
+    SKIP *
+    SUBSTRING
+
+Firebird 1.5:
+
+  Added as reserved words:
+
+    CURRENT_CONNECTION *
+    CURRENT_TRANSACTION *
+    BIGINT
+    CASE
+    RELEASE
+    ROW_COUNT
+    SAVEPOINT
+
+  Added as non-reserved words:
+
+    COALESCE
+    DELETING *
+    INSERTING *
+    LAST
+    LEAVE
+    LOCK *
+    NULLIF
+    NULLS
+    STATEMENT
+    UPDATING *
+    USING
+
+  Moved from reserved words to non-reserved:
+
+    BREAK *
+    DESCRIPTOR
+    FIRST
+    SKIP *
+    SUBSTRING
+
+Firebird 2.0:
+
+  Added as reserved words:
+
+    CLOSE
+    CROSS
+    FETCH
+    OPEN
+    ROWS
+
+  Moved from non-reserved words to reserved:
+
+    USING
+
+  Added as non-reserved words:
+
+    BACKUP *
+    BLOCK *
+    DIFFERENCE *
+    IIF *
+    NEXT
+    SCALAR_ARRAY *
+    SEQUENCE
+    RESTART
+
+  Moved from reserved words to non-reserved:
+
+    ACTION
+    CASCADE
+    FREE_IT *
+    RESTRICT
+    ROLE
+    TYPE
+    WEEKDAY *
+    YEARDAY *
+
+  Removed reserved words:
+
+    BASENAME *
+    CACHE *
+    CHECK_POINT_LEN *
+    GROUP_COMMIT_WAIT *
+    LOGFILE *
+    LOG_BUF_SIZE *
+    NUM_LOG_BUFS *
+    RAW_PARTITIONS *
