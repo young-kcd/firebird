@@ -1,3 +1,33 @@
+2003-05-22 18:59  alexpeshkoff
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Use transaction pool for storing rpb chains.  Bug in commit, which
+	I tried to fix using permanent pool here, was caused by another
+	reason and already fixed.
+
+2003-05-22 14:42  paul_reeves
+
+	* firebird2/: builds/win32/prepare.bat,
+	src/install/arch-specific/win32/BuildExecutableInstall.bat,
+	src/install/arch-specific/win32/FirebirdInstall_15.iss,
+	src/install/arch-specific/win32/Readme.txt,
+	src/install/arch-specific/win32/installation_readme.txt:
+	
+	Update Win32 install script and associated files
+
+2003-05-22 13:13  alexpeshkoff
+
+	* firebird2/src/jrd/: ibase.h, y_handle.h, y_ref.h:
+	
+	Some cosmetic cleanup to follow __ standard. Comments added.
+
+2003-05-22 08:39  alexpeshkoff
+
+	* firebird2/src/common/config/config_file.cpp:
+	
+	Fixed problem with fbclient on 9x
+
 2003-05-20 17:39  dimitr
 
 	* firebird2/src/include/gen/autoconfig_msvc.h:
