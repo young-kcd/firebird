@@ -36,7 +36,8 @@
 
 typedef Firebird::string string;
 
-const char *CONFIG_FILE = "firebird.conf";
+static const char *REGISTRY_KEY = "RootDirectory";
+static const char *CONFIG_FILE = "firebird.conf";
 
 /******************************************************************************
  *
@@ -54,7 +55,7 @@ void getRootFromRegistry(TEXT *buffer, DWORD buffer_length)
 		return;
 	}
 
-	RegQueryValueEx(hkey, "RootDirectory", NULL, &type,
+	RegQueryValueEx(hkey, REGISTRY_KEY, NULL, &type,
 		reinterpret_cast<UCHAR*>(buffer), &buffer_length);
 	RegCloseKey(hkey);
 }
@@ -89,12 +90,13 @@ ConfigRoot::ConfigRoot()
 	root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
 }
 
-string ConfigRoot::getRootDirectory() const
+const char *ConfigRoot::getRootDirectory() const
 {
-	return root_dir;
+	return root_dir.c_str();
 }
 
-string ConfigRoot::getConfigFile() const
+const char *ConfigRoot::getConfigFile() const
 {
-	return root_dir + CONFIG_FILE;
+	static string file = root_dir + string(CONFIG_FILE);
+	return file.c_str();
 }

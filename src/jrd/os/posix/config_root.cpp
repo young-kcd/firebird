@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: config_root.cpp,v 1.3 2002-12-02 13:06:06 eku Exp $
+ *  $Id: config_root.cpp,v 1.4 2002-12-06 12:04:38 dimitr Exp $
  */
 
 #include "firebird.h"
@@ -49,7 +49,7 @@
 
 typedef Firebird::string string;
 
-const char *CONFIG_FILE = "firebird.conf";
+static const char *CONFIG_FILE = "firebird.conf";
 
 /******************************************************************************
  *
@@ -80,7 +80,6 @@ static string getRootPathFromExePath()
 {
 	// get the pathname of the running executable
 	string bin_dir;
-
 
 #ifdef HAVE__PROC_SELF_EXE
     bin_dir = getExePathViaProcEntry();
@@ -115,7 +114,6 @@ static string getRootPathFromEnvVar()
 
 static string getRootPathFromInstallDir()
 {
-
     // Need to speak to Erik about this one, as the variable
     // needs to come from the autoconf file.
 
@@ -126,13 +124,11 @@ static string getRootPathFromInstallDir()
 
 ConfigRoot::ConfigRoot()
 {
-
 	// Try getting the root path from the executable
 	root_dir = getRootPathFromExePath();
     if (root_dir.length() != 0) {
         return;
     }
-
 
     // Try getting the root path from environment variable
     root_dir = getRootPathFromEnvVar();
@@ -144,12 +140,13 @@ ConfigRoot::ConfigRoot()
     root_dir = FB_PREFIX;    
 }
 
-string ConfigRoot::getRootDirectory() const
+const char *ConfigRoot::getRootDirectory() const
 {
-	return root_dir;
+	return root_dir.c_str();
 }
 
-string ConfigRoot::getConfigFile() const
+const char *ConfigRoot::getConfigFile() const
 {
-	return root_dir + CONFIG_FILE;
+	static string file = root_dir + string(CONFIG_FILE);
+	return file.c_str();
 }

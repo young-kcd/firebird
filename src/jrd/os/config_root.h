@@ -55,17 +55,17 @@ public:
 	ConfigRoot();
 	virtual ~ConfigRoot() {}
 
-	string getRootDirectory() const;
+	const char *getRootDirectory() const;
 
 protected:
-	string getConfigFile() const;
+	const char *getConfigFile() const;
 	
 private:
 	string root_dir;	
 
 	// copy prohibition
-    ConfigRoot(const ConfigRoot&);
-    void operator=(const ConfigRoot&);
+	ConfigRoot(const ConfigRoot&);
+	void operator=(const ConfigRoot&);
 };
 
 #endif // CONFIG_ROOT_H

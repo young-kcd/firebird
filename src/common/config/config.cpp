@@ -75,7 +75,7 @@ ConfigImpl::ConfigImpl()
 	/* Prepare some stuff */
 
 	ConfigFile file;
-	root_dir = getRootDirectory().c_str();
+	root_dir = getRootDirectory();
 	MemoryPool *pool = getDefaultMemoryPool();
 	int size = FB_NELEM(entries);
 	values = FB_NEW(*pool) ConfigValue[size];
