@@ -1306,7 +1306,6 @@ static void gds_alloc_validate(ALLOC p)
  *
  **************************************/
  // JMB:  Need to rework the code for the new pools
- #ifdef NOT_USED_OR_REPLACED
 	USHORT errors = 0;
 
 /* This might be a garbage pointer, so try and validate it first */
@@ -1372,7 +1371,6 @@ static void gds_alloc_validate(ALLOC p)
 		DEV_REPORT(buffer);
 		BREAKPOINT(__LINE__);
 	}
-#endif
 }
 #endif // DEBUG_GDS_ALLOC
 
@@ -1396,7 +1394,6 @@ static BOOLEAN gds_alloc_validate_free_pattern(UCHAR* ptr,
  *
  **************************************/
  // JMB: Need to rework the code for the new pool
- #ifdef NOT_USED_OR_REPLACED
 	while (len--)
 	{
 		if (*ptr++ != ALLOC_FREED_PATTERN)
@@ -1410,10 +1407,9 @@ static BOOLEAN gds_alloc_validate_free_pattern(UCHAR* ptr,
 			return FALSE;
 		}
 	}
-#endif
 	return TRUE;
 }
-#endif /* DEBUG_GDS_ALLOC */
+#endif // DEBUG_GDS_ALLOC 
 
 
 #ifdef DEBUG_GDS_ALLOC
@@ -1430,7 +1426,6 @@ static void gds_alloc_validate_freed(ALLOC p)
  *
  **************************************/
  // JMB: need to rework this code for the new pool
- #ifdef NOT_USED_OR_REPLACED
 	USHORT errors = 0;
 
 /* This might be a garbage pointer, so try and validate it first */
@@ -1465,9 +1460,8 @@ static void gds_alloc_validate_freed(ALLOC p)
 		DEV_REPORT(buffer);
 		BREAKPOINT(__LINE__);
 	}
-#endif
 }
-#endif
+#endif // DEBUG_GDS_ALLOC
 #endif // NOT_USED_OR_REPLACED
 
 #ifdef DEBUG_GDS_ALLOC
@@ -4321,7 +4315,7 @@ static ULONG free_memory(void *blk)
 
 	return length - ALLOC_OVERHEAD;
 }
-#endif
+#endif // NOT_USED_OR_REPLACED
 
 static void init(void)
 {
