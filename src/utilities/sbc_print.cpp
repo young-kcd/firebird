@@ -719,7 +719,7 @@ static void print_page_header( SDB sdb)
 }
 
 
-// CVC: This PRB doesn't match jrd/event/h's prc struct.
+// CVC: This PRB doesn't match jrd/event/h's prb struct.
 static void print_process( PRB process)
 {
 /**************************************
