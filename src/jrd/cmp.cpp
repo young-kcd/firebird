@@ -127,7 +127,7 @@ rel_MAX} RIDS;
 
 static UCHAR* alloc_map(TDBB, CSB, USHORT);
 static JRD_NOD catenate_nodes(TDBB, LLS);
-static JRD_NOD copy(TDBB, CSB, JRD_NOD, UCHAR *, USHORT, bool);
+static JRD_NOD copy(TDBB, CSB, JRD_NOD, UCHAR *, USHORT, JRD_NOD, bool);
 static void expand_view_nodes(TDBB, CSB, USHORT, LLS *, NOD_T);
 static void ignore_dbkey(TDBB, CSB, RSE, JRD_REL);
 static JRD_NOD make_defaults(TDBB, CSB, USHORT, JRD_NOD);
@@ -225,7 +225,7 @@ JRD_NOD CMP_clone_node(TDBB tdbb, CSB csb, JRD_NOD node)
 	if (node->nod_type == nod_argument)
 		return node;
 
-	clone = copy(tdbb, csb, node, NULL, 0, false);
+	clone = copy(tdbb, csb, node, NULL, 0, NULL, false);
 	pass2(tdbb, csb, clone, 0);
 
 	return clone;
@@ -2380,6 +2380,7 @@ static JRD_NOD copy(TDBB tdbb,
 					JRD_NOD input,
 					UCHAR * remap,
 					USHORT field_id,
+					JRD_NOD message,
 					bool remap_fld)
 {
 /**************************************
@@ -2397,7 +2398,6 @@ static JRD_NOD copy(TDBB tdbb,
 	USHORT stream, new_stream;
 
 	SET_TDBB(tdbb);
-
 
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(input, type_nod);
@@ -2430,16 +2430,20 @@ static JRD_NOD copy(TDBB tdbb,
 		node->nod_flags = input->nod_flags;
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_arg_number] = input->nod_arg[e_arg_number];
-		node->nod_arg[e_arg_message] = input->nod_arg[e_arg_message];
+		// dimitr:	IMPORTANT!!!
+		//			nod_message copying must be done in the only place
+		//			(the nod_procedure code below). Hence we don't call
+		//			copy() here to keep argument->nod_arg[e_arg_message]
+		//			and procedure->nod_arg[e_prc_in_msg] in sync. The
+		//			message is passed to copy() as a parameter.
+		node->nod_arg[e_arg_message] = message;
 		node->nod_arg[e_arg_flag] =
 			copy(tdbb, csb, input->nod_arg[e_arg_flag], remap, field_id,
-				 remap_fld);
+				 message, remap_fld);
 		node->nod_arg[e_arg_indicator] =
 			copy(tdbb, csb, input->nod_arg[e_arg_indicator], remap, field_id,
-				 remap_fld);
-		return (node);
-
-		break;
+				 message, remap_fld);
+		return node;
 
 	case nod_assignment:
 		args = e_asgn_length;
@@ -2497,7 +2501,7 @@ static JRD_NOD copy(TDBB tdbb,
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_fun_args] =
 			copy(tdbb, csb, input->nod_arg[e_fun_args], remap, field_id,
-				 remap_fld);
+				 message, remap_fld);
 		node->nod_arg[e_fun_function] = input->nod_arg[e_fun_function];
 		return (node);
 
@@ -2509,7 +2513,7 @@ static JRD_NOD copy(TDBB tdbb,
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_gen_value] =
 			copy(tdbb, csb, input->nod_arg[e_gen_value], remap, field_id,
-				 remap_fld);
+				 message, remap_fld);
 		node->nod_arg[e_gen_relation] = input->nod_arg[e_gen_relation];
 		return (node);
 
@@ -2519,7 +2523,7 @@ static JRD_NOD copy(TDBB tdbb,
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_cast_source] =
 			copy(tdbb, csb, input->nod_arg[e_cast_source], remap, field_id,
-				 remap_fld);
+				 message, remap_fld);
 		node->nod_arg[e_cast_fmt] = input->nod_arg[e_cast_fmt];
 		return (node);
 
@@ -2529,7 +2533,7 @@ static JRD_NOD copy(TDBB tdbb,
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_extract_value] =
 			copy(tdbb, csb, input->nod_arg[e_extract_value], remap, field_id,
-				 remap_fld);
+				 message, remap_fld);
 		node->nod_arg[e_extract_part] = input->nod_arg[e_extract_part];
 		return (node);
 
@@ -2555,24 +2559,24 @@ static JRD_NOD copy(TDBB tdbb,
 			arg1 = old_rse->rse_relation;
 			arg2 = new_rse->rse_relation;
 			for (end = arg1 + old_rse->rse_count; arg1 < end; arg1++, arg2++)
-				*arg2 = copy(tdbb, csb, *arg1, remap, field_id, remap_fld);
+				*arg2 = copy(tdbb, csb, *arg1, remap, field_id, message, remap_fld);
 			new_rse->rse_jointype = old_rse->rse_jointype;
 			new_rse->rse_writelock = old_rse->rse_writelock;
 			new_rse->rse_first =
 				copy(tdbb, csb, old_rse->rse_first, remap, field_id,
-					 remap_fld);
+					 message, remap_fld);
 			new_rse->rse_skip =
-				copy (tdbb, csb, old_rse->rse_skip, remap, field_id,
-					remap_fld);
+				copy(tdbb, csb, old_rse->rse_skip, remap, field_id,
+					 message, remap_fld);
 			new_rse->rse_boolean =
 				copy(tdbb, csb, old_rse->rse_boolean, remap, field_id,
-					 remap_fld);
+					 message, remap_fld);
 			new_rse->rse_sorted =
 				copy(tdbb, csb, old_rse->rse_sorted, remap, field_id,
-					 remap_fld);
+					 message, remap_fld);
 			new_rse->rse_projection =
 				copy(tdbb, csb, old_rse->rse_projection, remap, field_id,
-					 remap_fld);
+					 message, remap_fld);
 			return (JRD_NOD) new_rse;
 		}
 
@@ -2652,10 +2656,17 @@ static JRD_NOD copy(TDBB tdbb,
 			node = PAR_make_node(tdbb, e_prc_length);
 			node->nod_type = input->nod_type;
 			node->nod_count = input->nod_count;
+			
+			// dimitr:	see the appropriate code and comment above (in nod_argument).
+			//			We must copy the message first and only then use the new
+			//			pointer to copy the inputs properly.
+			node->nod_arg[e_prc_in_msg] =
+				copy(tdbb, csb, input->nod_arg[e_prc_in_msg], remap, field_id,
+					 message, remap_fld);
 			node->nod_arg[e_prc_inputs] =
 				copy(tdbb, csb, input->nod_arg[e_prc_inputs], remap, field_id,
-					 remap_fld);
-			node->nod_arg[e_prc_in_msg] = input->nod_arg[e_prc_in_msg];
+					 node->nod_arg[e_prc_in_msg], remap_fld);
+
 			stream = (USHORT)(ULONG) input->nod_arg[e_prc_stream];
 			new_stream = csb->csb_n_stream++;
 			fb_assert(new_stream <= MAX_STREAMS);
@@ -2669,6 +2680,7 @@ static JRD_NOD copy(TDBB tdbb,
 
 			csb->csb_rpt[new_stream].csb_flags |=
 				csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
+
 			return node;
 		}
 
@@ -2691,13 +2703,13 @@ static JRD_NOD copy(TDBB tdbb,
 			csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
 		node->nod_arg[e_agg_rse] =
 			copy(tdbb, csb, input->nod_arg[e_agg_rse], remap, field_id,
-				 remap_fld);
+				 message, remap_fld);
 		node->nod_arg[e_agg_group] =
 			copy(tdbb, csb, input->nod_arg[e_agg_group], remap, field_id,
-				 remap_fld);
+				 message, remap_fld);
 		node->nod_arg[e_agg_map] =
 			copy(tdbb, csb, input->nod_arg[e_agg_map], remap, field_id,
-				 remap_fld);
+				 message, remap_fld);
 		return node;
 
 	case nod_union:
@@ -2718,7 +2730,21 @@ static JRD_NOD copy(TDBB tdbb,
 			csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
 		node->nod_arg[e_uni_clauses] =
 			copy(tdbb, csb, input->nod_arg[e_uni_clauses], remap, field_id,
-				 remap_fld);
+				 message, remap_fld);
+		return node;
+
+	case nod_message:
+		if (!remap)
+			BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
+		node = PAR_make_node(tdbb, e_msg_length);
+		node->nod_type = input->nod_type;
+		node->nod_count = input->nod_count;
+		node->nod_arg[e_msg_number] = input->nod_arg[e_msg_number];
+		node->nod_arg[e_msg_format] = input->nod_arg[e_msg_format];
+		// dimitr: hmmm, cannot find where the following one is used...
+		node->nod_arg[e_msg_next] =
+			copy(tdbb, csb, input->nod_arg[e_msg_next], remap, field_id,
+				 message, remap_fld);
 		return node;
 
 	case nod_sort:
@@ -2741,7 +2767,7 @@ static JRD_NOD copy(TDBB tdbb,
 
 	for (end = arg1 + input->nod_count; arg1 < end; arg1++, arg2++)
 		if (*arg1)
-			*arg2 = copy(tdbb, csb, *arg1, remap, field_id, remap_fld);
+			*arg2 = copy(tdbb, csb, *arg1, remap, field_id, message, remap_fld);
 
 	// finish off sort
 
@@ -2901,7 +2927,7 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB csb, USHORT stream, JRD_NOD statemen
 			node = PAR_make_node(tdbb, e_asgn_length);
 			node->nod_type = nod_assignment;
 			node->nod_arg[e_asgn_from] =
-				copy(tdbb, csb, value, map, (USHORT) (field_id + 1), false);
+				copy(tdbb, csb, value, map, (USHORT) (field_id + 1), NULL, false);
 			node->nod_arg[e_asgn_to] = PAR_gen_field(tdbb, stream, field_id);
 			LLS_PUSH(node, &stack);
 		}
@@ -2963,7 +2989,7 @@ static JRD_NOD make_validation(TDBB tdbb, CSB csb, USHORT stream)
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
 				copy(tdbb, csb, validation, map, (USHORT) (field_id + 1),
-					 false);
+					 NULL, false);
 			node->nod_arg[e_val_value] =
 				PAR_gen_field(tdbb, stream, field_id);
 			LLS_PUSH(node, &stack);
@@ -2974,7 +3000,7 @@ static JRD_NOD make_validation(TDBB tdbb, CSB csb, USHORT stream)
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
 				copy(tdbb, csb, validation, map, (USHORT) (field_id + 1),
-					 false);
+					 NULL, false);
 			node->nod_arg[e_val_value] =
 				PAR_gen_field(tdbb, stream, field_id);
 			LLS_PUSH(node, &stack);
@@ -3180,7 +3206,7 @@ static JRD_NOD pass1(TDBB tdbb,
 				map[1] = stream + 1;
 				map[2] = stream + 2;
 			}
-			sub = copy(tdbb, csb, sub, map, 0, false);
+			sub = copy(tdbb, csb, sub, map, 0, NULL, false);
 			return pass1(tdbb, csb, sub, view, view_stream, validate_expr);
 		}
 
@@ -3456,7 +3482,7 @@ static void pass1_erase(TDBB tdbb, CSB csb, JRD_NOD node)
 
 		map = csb->csb_rpt[stream].csb_map;
 		if (trigger) {
-			view_node = copy(tdbb, csb, node, map, 0, false);
+			view_node = copy(tdbb, csb, node, map, 0, NULL, false);
 			node->nod_arg[e_erase_sub_erase] = view_node;
 			node->nod_count =
 				MAX(node->nod_count, (USHORT) e_erase_sub_erase + 1);
@@ -3631,10 +3657,10 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 			map =
 				alloc_map(tdbb, csb,
 						  (SSHORT)(SLONG) node->nod_arg[e_mod_new_stream]);
-			source = copy(tdbb, csb, source, map, 0, false);
+			source = copy(tdbb, csb, source, map, 0, NULL, false);
 			fb_assert((int) (IPTR) source->nod_arg[e_rel_stream] <= MAX_STREAMS);
 			map[new_stream] = (UCHAR)(ULONG) source->nod_arg[e_rel_stream];
-			view_node = copy(tdbb, csb, node, map, 0, true);
+			view_node = copy(tdbb, csb, node, map, 0, NULL, true);
 			view_node->nod_arg[e_mod_org_stream] = (JRD_NOD) (SLONG) stream;
 			view_node->nod_arg[e_mod_new_stream] =
 				source->nod_arg[e_rel_stream];
@@ -3661,7 +3687,7 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 			map =
 				alloc_map(tdbb, csb,
 						  (SSHORT)(SLONG) node->nod_arg[e_mod_new_stream]);
-			source = copy(tdbb, csb, source, map, 0, false);
+			source = copy(tdbb, csb, source, map, 0, NULL, false);
 			node->nod_arg[e_mod_new_stream] = source->nod_arg[e_rel_stream];
 		}
 	}
@@ -3981,7 +4007,7 @@ static void pass1_source(TDBB     tdbb,
 	if ((view_rse->rse_projection)
 	//if ((view_rse->rse_projection && rse->rse_projection)
 		|| rse->rse_jointype) {
-		node = copy(tdbb, csb, (JRD_NOD) view_rse, map, 0, false);
+		node = copy(tdbb, csb, (JRD_NOD) view_rse, map, 0, NULL, false);
 		DEBUG;
 		LLS_PUSH(pass1(tdbb, csb, node, view, stream, false), stack);
 		DEBUG;
@@ -4003,7 +4029,7 @@ static void pass1_source(TDBB     tdbb,
 		 arg < end; arg++) {
 		// this call not only copies the node, it adds any streams it finds to the map
 
-		node = copy(tdbb, csb, *arg, map, 0, false);
+		node = copy(tdbb, csb, *arg, map, 0, NULL, false);
 
 		// Now go out and process the base table itself. This table might also be a view, 
 		// in which case we will continue the process by recursion.
@@ -4022,7 +4048,7 @@ static void pass1_source(TDBB     tdbb,
 	if (view_rse->rse_projection)
 		rse->rse_projection =
 			pass1(tdbb, csb,
-				  copy(tdbb, csb, view_rse->rse_projection, map, 0, false),
+				  copy(tdbb, csb, view_rse->rse_projection, map, 0, NULL, false),
 				  view, stream, false);
 
 	// if we encounter a boolean, copy it and retain it by ANDing it in with the 
@@ -4031,8 +4057,8 @@ static void pass1_source(TDBB     tdbb,
 	if (view_rse->rse_boolean) {
 		node =
 			pass1(tdbb, csb,
-				  copy(tdbb, csb, view_rse->rse_boolean, map, 0, false), view,
-				  stream, false);
+				  copy(tdbb, csb, view_rse->rse_boolean, map, 0, NULL, false),
+				  view, stream, false);
 		if (*boolean) {
 			JRD_NOD additional;
 
@@ -4131,7 +4157,7 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB csb, JRD_NOD node)
 		if (!trigger) {
 			csb->csb_rpt[stream].csb_flags &= ~csb_view_update;
 			node->nod_arg[e_sto_relation] =
-				copy(tdbb, csb, source, map, 0, false);
+				copy(tdbb, csb, source, map, 0, NULL, false);
 			if (!trigger_seen)
 				very_orig = node->nod_arg[e_sto_relation];
 		}
@@ -4139,21 +4165,21 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB csb, JRD_NOD node)
 			CMP_post_resource(tdbb, &csb->csb_resources, (BLK) relation,
 							  rsc_relation, relation->rel_id);
 			trigger_seen = true;
-			view_node = copy(tdbb, csb, node, map, 0, false);
+			view_node = copy(tdbb, csb, node, map, 0, NULL, false);
 			node->nod_arg[e_sto_sub_store] = view_node;
 			node->nod_count =
 				MAX(node->nod_count, (USHORT) e_sto_sub_store + 1);
 			view_node->nod_arg[e_sto_sub_store] = 0;
 			node = view_node;
 			node->nod_arg[e_sto_relation] =
-				copy(tdbb, csb, source, map, 0, false);
+				copy(tdbb, csb, source, map, 0, NULL, false);
 			new_stream =
 				(USHORT)(ULONG) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 			node->nod_arg[e_sto_statement] =
 				pass1_expand_view(tdbb, csb, stream, new_stream, true);
 			node->nod_arg[e_sto_statement] =
 				copy(tdbb, csb, node->nod_arg[e_sto_statement],
-					 NULL, 0, false);
+					 NULL, 0, NULL, false);
 
 			// bug 8150: use of blr_store2 against a view with a trigger was causing 
 			// the second statement to be executed, which is not desirable
