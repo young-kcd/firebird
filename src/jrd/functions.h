@@ -30,20 +30,20 @@
 
 FUNCTION(get_context, "RDB$GET_CONTEXT", "system_module", "get_context", 0)
   // Result, variable value
-  FUNCTION_ARGUMENT(-FUN_ref_with_null, blr_varying, 0, 257, 0, 0, 0, 255)
+  FUNCTION_ARGUMENT(-FUN_ref_with_null, blr_varying, 0, 255, 0, 0, 0, 255)
   // Namespace
-  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 82, 0, 0, 0, 80)
+  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 80, 0, 0, 0, 80)
   // Variable name
-  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 82, 0, 0, 0, 80)
+  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 80, 0, 0, 0, 80)
 END_FUNCTION
 
 FUNCTION(set_context, "RDB$SET_CONTEXT", "system_module", "set_context", 0)
   // Result
   FUNCTION_ARGUMENT(FUN_value, blr_long, 0, 4, 0, 0, 0, 0)
   // Namespace
-  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 82, 0, 0, 0, 80)
+  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 80, 0, 0, 0, 80)
   // Variable name
-  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 82, 0, 0, 0, 80)
+  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 80, 0, 0, 0, 80)
   // Variable, value
-  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 257, 0, 0, 0, 255)
+  FUNCTION_ARGUMENT(FUN_ref_with_null, blr_varying, 0, 255, 0, 0, 0, 255)
 END_FUNCTION
