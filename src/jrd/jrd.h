@@ -45,6 +45,7 @@
 #include "fb_string.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
+#include "../common/classes/timestamp.h"
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
@@ -486,7 +487,7 @@ public:
 	vcl*		att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
-	time_t		att_timestamp;		// connection date and time
+	Firebird::TimeStamp	att_timestamp;		// connection date and time
 };
 
 

@@ -906,9 +906,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_top_view_erase = NULL;
 
 	// Store request start time for timestamp work
-	if (!request->req_timestamp) {
-		request->req_timestamp = time(NULL);
-	}
+	request->req_timestamp.validate();
 
 	// Set all invariants to not computed.
 	jrd_nod **ptr, **end;
@@ -1001,7 +999,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;
-	request->req_timestamp = 0;
+	request->req_timestamp.invalidate();
 }
 
 
@@ -1486,7 +1484,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_attachment = NULL;
 		proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
-		proc_request->req_timestamp = 0;
+		proc_request->req_timestamp.invalidate();
 		delete temp_buffer;
 		throw;
 	}
@@ -1508,7 +1506,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	delete temp_buffer;
 	proc_request->req_attachment = NULL;
 	proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
-	proc_request->req_timestamp = 0;
+	proc_request->req_timestamp.invalidate();
 }
 
 
@@ -1558,7 +1556,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 			EXE_start(tdbb, trigger, transaction);
 			trigger->req_attachment = NULL;
 			trigger->req_flags &= ~req_in_use;
-			trigger->req_timestamp = 0;
+			trigger->req_timestamp.invalidate();
 			if (trigger->req_operation == jrd_req::req_unwind) {
 				result = trigger;
 				break;
@@ -2838,7 +2836,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		}
 
 		request->req_flags &= ~(req_active | req_reserved);
-		request->req_timestamp = 0;
+		request->req_timestamp.invalidate();
 		release_blobs(tdbb, request);
 	}
 
@@ -4145,7 +4143,7 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 
 	trigger->req_attachment = NULL;
 	trigger->req_flags &= ~req_in_use;
-	trigger->req_timestamp = 0;
+	trigger->req_timestamp.invalidate();
 
 	if (trigger->req_flags & req_leave)
 	{

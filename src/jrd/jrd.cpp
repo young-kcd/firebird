@@ -679,8 +679,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	attachment->att_charset = options.dpb_interp;
 
-	attachment->att_timestamp = time(NULL);
-
 	if (options.dpb_lc_messages) {
 		attachment->att_lc_messages = options.dpb_lc_messages;
 	}
@@ -1819,8 +1817,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	attachment->att_charset = options.dpb_interp;
-
-	attachment->att_timestamp = time(NULL);
 
 	if (options.dpb_lc_messages) {
 		attachment->att_lc_messages = options.dpb_lc_messages;

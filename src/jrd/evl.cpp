@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.116 2004-10-28 23:26:15 skidder Exp $ 
+  * $Id: evl.cpp,v 1.117 2004-10-30 19:41:53 dimitr Exp $ 
  */
 
 /*
@@ -112,16 +112,8 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/misc_func_ids.h"
-//#include "../jrd/authenticate.h"
 #include "../common/config/config.h"
 #include "../jrd/evl_string.h"
-
-#ifdef HAVE_SYS_TIMES_H
-# include <sys/times.h>
-#endif
-#ifdef HAVE_SYS_TIMEB_H
-# include <sys/timeb.h>
-#endif
 
 const int TEMP_LENGTH	= 128;
 
@@ -949,40 +941,25 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 	case nod_current_date:
 	case nod_current_timestamp:
 		{
-			time_t clock;
-			// Use the request timestamp, if there is one.  Otherwise
-			//   fetch the current clock in order to keep running 
+			// Use the request timestamp
 
-			if (request->req_timestamp)
-			{
-				clock = request->req_timestamp;
-			}
-			else
-			{
-				fb_assert(false);
-				clock = time(NULL);
-			}
-			const tm* ptimes = localtime(&clock);
-			if (!ptimes)
+			ISC_TIMESTAMP enc_times;
+			if (!request->req_timestamp.encode(&enc_times))
 			{
 				ERR_post(isc_date_range_exceeded, 0);
 			}
-			tm times = *ptimes;
 
 			memset(&impure->vlu_desc, 0, sizeof(impure->vlu_desc));
 			impure->vlu_desc.dsc_address =
-				(UCHAR *) & impure->vlu_misc.vlu_timestamp;
-			if (node->nod_type == nod_current_time)
-				times.tm_year = times.tm_mon = times.tm_mday = 0;
-			else if (node->nod_type == nod_current_date)
-				times.tm_hour = times.tm_min = times.tm_sec = 0;
-			GDS_TIMESTAMP enc_times;
-			isc_encode_timestamp(&times, &enc_times);
+				(UCHAR *) &impure->vlu_misc.vlu_timestamp;
 
 			switch (node->nod_type) {
 			case nod_current_time:
 				impure->vlu_desc.dsc_dtype = dtype_sql_time;
 				impure->vlu_desc.dsc_length = type_lengths[dtype_sql_time];
+				// remove milliseconds, as declared by the SQL spec
+				enc_times.timestamp_time -=
+					enc_times.timestamp_time % ISC_TIME_SECONDS_PRECISION;
 				*(ULONG *) impure->vlu_desc.dsc_address =
 					enc_times.timestamp_time;
 				break;
@@ -995,19 +972,11 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			case nod_current_timestamp:
 				impure->vlu_desc.dsc_dtype = dtype_timestamp;
 				impure->vlu_desc.dsc_length = type_lengths[dtype_timestamp];
-#ifdef HAVE_GETTIMEOFDAY
-				struct timeval tp;
-				GETTIMEOFDAY(&tp);
-				enc_times.timestamp_time += tp.tv_usec / 100;
-#else
-				struct timeb time_buffer;
-				ftime(&time_buffer);
-				enc_times.timestamp_time += time_buffer.millitm * 10;
-#endif
-				*((GDS_TIMESTAMP *) impure->vlu_desc.dsc_address) = enc_times;
+				// keep milliseconds, as declared by the SQL spec
+				*((ISC_TIMESTAMP *) impure->vlu_desc.dsc_address) = enc_times;
 				break;
 			default:
-				fb_assert(FALSE);
+				fb_assert(false);
 				break;
 			}
 		}
@@ -1140,7 +1109,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 				part = times.tm_wday;
 				break;
 			default:
-				fb_assert(FALSE);
+				fb_assert(false);
 				part = 0;
 			}
 			*(USHORT *) impure->vlu_desc.dsc_address = part;
@@ -1945,7 +1914,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	case dtype_cstring:
 		break;
 	default:
-		fb_assert(FALSE);
+		fb_assert(false);
 		break;
 	}
 

@@ -56,28 +56,11 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/thd.h"
+#include "../common/classes/timestamp.h"
 
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#endif
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-
-#ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
-#endif
-#ifdef HAVE_SYS_TIMEB_H
-# include <sys/timeb.h>
 #endif
 
 #if !(defined REQUESTER && defined SUPERCLIENT)
@@ -1382,7 +1365,6 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			/* Per SQL Specs, we need to set the DATE
 			   portion to the current date */
 			{
-				time_t clock;
 				/** Cannot call JRD_get_thread_data because that macro calls
 				BUGCHECK i.e. ERR_bugcheck() which is not part of
 				client library **/
@@ -1395,38 +1377,29 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				   Otherwise, take the CURRENT date to populate the 
 				   date portion of the timestamp */
 
+				ISC_TIMESTAMP enc_times;
 				if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
 					tdbb->tdbb_request)
 				{
-					if (tdbb->tdbb_request->req_timestamp)
+					if(!tdbb->tdbb_request->req_timestamp.encode(&enc_times))
 					{
-						clock = tdbb->tdbb_request->req_timestamp;
-					}
-					else
-					{
-						// all requests should have a timestamp
-						fb_assert(false);
-						clock = time(NULL);
+						(*err)(isc_date_range_exceeded, 0);
 					}
 				}
 				else
 				{
-					clock = time(NULL);
+					if(!Firebird::TimeStamp().encode(&enc_times))
+					{
+						(*err)(isc_date_range_exceeded, 0);
+					}
 				}
-				const tm* times = localtime(&clock);
-				if (!times)
-				{
-					(*err)(isc_date_range_exceeded, 0);
-				}
-				GDS_TIMESTAMP enc_times;
-				isc_encode_timestamp(times, &enc_times);
 				((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_date =
 					enc_times.timestamp_date;
 			}
 			return;
 
 		default:
-			fb_assert(FALSE);		/* Fall into ... */
+			fb_assert(false);		/* Fall into ... */
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
@@ -1484,7 +1457,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			return;
 
 		default:
-			fb_assert(FALSE);		/* Fall into ... */
+			fb_assert(false);		/* Fall into ... */
 		case dtype_sql_time:
 		case dtype_short:
 		case dtype_long:
@@ -1518,7 +1491,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			return;
 
 		default:
-			fb_assert(FALSE);		/* Fall into ... */
+			fb_assert(false);		/* Fall into ... */
 		case dtype_sql_date:
 		case dtype_short:
 		case dtype_long:
@@ -1688,7 +1661,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			return;
 
 		default:
-			fb_assert(FALSE);		/* Fall into ... */
+			fb_assert(false);		/* Fall into ... */
 		case dtype_blob:
 			conversion_error(from, err);
 			return;
@@ -1853,7 +1826,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		date = *(GDS_TIMESTAMP *) from->dsc_address;
 		break;
 	default:
-		fb_assert(FALSE);
+		fb_assert(false);
 		(*err) (isc_badblk, 0);	/* internal error */
 		break;
 	}
@@ -2439,7 +2412,7 @@ static void string_to_datetime(
 	USHORT position_day = 2;
 	bool have_english_month = false;
 	bool dot_separator_seen = false;
-	tm times, times2, *ptimes;
+	tm times, times2;
 	TEXT buffer[100];			/* arbitrarily large */
 
 	const char* string;
@@ -2527,33 +2500,19 @@ static void string_to_datetime(
 
 					/* fetch the current time */
 
-					const time_t clock = time(NULL);
-					ptimes = localtime(&clock);
-					if (!ptimes)
+					if (!Firebird::TimeStamp().encode(date))
 					{
 						(err)(isc_date_range_exceeded, 0);
 					}
-					times2 = *ptimes;
 
 					if (strcmp(temp, NOW) == 0) {
-						isc_encode_timestamp(&times2, date);
-#ifdef HAVE_GETTIMEOFDAY
-						struct timeval tp;
-						GETTIMEOFDAY(&tp);
-						date->timestamp_time += tp.tv_usec / 100;
-#else
-						struct timeb time_buffer;
-						ftime(&time_buffer);
-						date->timestamp_time += time_buffer.millitm * 10;
-#endif
 						return;
 					}
 					if (expect_type == expect_sql_time) {
 						conversion_error(desc, err);
 						return;
 					}
-					times2.tm_hour = times2.tm_min = times2.tm_sec = 0;
-					isc_encode_timestamp(&times2, date);
+					date->timestamp_time = 0;
 					if (strcmp(temp, TODAY) == 0)
 						return;
 					if (strcmp(temp, TOMORROW) == 0) {
@@ -2672,13 +2631,10 @@ static void string_to_datetime(
 		times.tm_mon = components[position_month];
 		times.tm_mday = components[position_day];
 
-		const time_t clock = time(NULL);
-		ptimes = localtime(&clock);
-		if (!ptimes)
+		if (!Firebird::TimeStamp().encode(&times2))
 		{
 			(err)(isc_date_range_exceeded, 0);
 		}
-		times2 = *ptimes;
 
 		/* Handle defaulting of year */
 

@@ -28,7 +28,6 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/jrd_time.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
@@ -38,6 +37,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/mov_proto.h"
 #include "gen/iberror.h"
+#include "../common/classes/timestamp.h"
 
 
 int MOV_compare(const dsc* arg1, const dsc* arg2)
@@ -585,12 +585,8 @@ void MOV_time_stamp(GDS_TIMESTAMP* date)
  *	Get the current timestamp in gds format.
  *
  **************************************/
-	const time_t clock = time(NULL);
-	const tm* times = localtime(&clock);
-	if (!times)
+	if (!Firebird::TimeStamp().encode(date))
 	{
 		ERR_post(isc_date_range_exceeded, 0);
 	}
-	isc_encode_timestamp(times, date);
 }
-

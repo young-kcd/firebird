@@ -33,6 +33,7 @@
 
 #include "../jrd/exe.h"
 #include "../jrd/RecordNumber.h"
+#include "../common/classes/timestamp.h"
 
 #include <vector>
 
@@ -152,7 +153,9 @@ class jrd_req : public pool_alloc_rpt<record_param, type_req>
 public:
 	jrd_req(JrdMemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_fors(*pool), req_invariants(*pool) { };
+		req_fors(*pool), req_invariants(*pool)
+		{ req_timestamp.invalidate(); };
+
 	Attachment*	req_attachment;		// database attachment
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
@@ -202,7 +205,7 @@ public:
 	USHORT		req_label;			/* label for leave */
 	ULONG		req_flags;			/* misc request flags */
 	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
-	time_t		req_timestamp;		/* Start time of request */
+	Firebird::TimeStamp	req_timestamp;		/* Start time of request */
 
 	enum req_ta {
 		req_trigger_insert = 1,
