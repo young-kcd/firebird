@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.8 2002-06-30 09:58:20 dimitr Exp $
+$Id: flu.cpp,v 1.9 2002-07-04 06:08:51 eku Exp $
 */
 
 #include "firebird.h"
@@ -84,7 +84,7 @@ static int condition_handler(int *, int *, int *);
 
 /* SGI, UNIXWARE, DECOSF specific stuff */
 
-#if (defined SOLARIS || defined sgi || defined UNIXWARE || defined DECOSF || defined SCO_EV || defined linux || defined AIX_PPC)
+#if (defined SOLARIS || defined sgi || defined UNIXWARE || defined DECOSF || defined SCO_EV || defined linux || defined AIX_PPC || defined SINIXZ)
 #include <dlfcn.h>
 #define DYNAMIC_SHARED_LIBRARIES
 #include <unistd.h>
@@ -284,7 +284,7 @@ void FLU_unregister_module(MOD module)
 	shl_unload(module->mod_handle);
 #endif
 
-#if defined(SOLARIS) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined (AIX_PPC)
+#if defined(SOLARIS) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined (AIX_PPC) || defined(SINIXZ)
 	dlclose(module->mod_handle);
 #endif
 #ifdef WIN_NT
