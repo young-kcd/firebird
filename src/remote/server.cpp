@@ -128,7 +128,9 @@ static ISC_STATUS	allocate_statement(PORT, P_RLSE*, PACKET*);
 static SLONG	append_request_chain(SERVER_REQ, SERVER_REQ*);
 static SLONG	append_request_next(SERVER_REQ, SERVER_REQ*);
 static ISC_STATUS	attach_database(PORT, P_OP, P_ATCH*, PACKET*);
+#ifdef NOT_USED_OR_REPLACED
 static void		aux_connect(PORT, P_REQ*, PACKET*);
+#endif
 static void		aux_request(PORT, P_REQ*, PACKET*);
 static ISC_STATUS	cancel_events(PORT, P_EVENT*, PACKET*);
 
@@ -822,6 +824,7 @@ static ISC_STATUS attach_database(
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static void aux_connect( PORT port, P_REQ * request, PACKET* send)
 {
 /**************************************
@@ -841,6 +844,7 @@ static void aux_connect( PORT port, P_REQ * request, PACKET* send)
 	partner = (PORT) request->p_req_partner;
 	partner->port_async = port;
 }
+#endif
 
 
 static void aux_request( PORT port, P_REQ * request, PACKET* send)
@@ -3207,9 +3211,11 @@ BOOLEAN process_packet(PORT port,
 			aux_request(port, &receive->p_req, send);
 			break;
 
+#ifdef NOT_USED_OR_REPLACED
 		case op_aux_connect:
 			aux_connect(port, &receive->p_req, send);
 			break;
+#endif
 
 		case op_ddl:
 			port->ddl(&receive->p_ddl, send);
