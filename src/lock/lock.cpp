@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.44 2003-04-02 11:03:31 brodsom Exp $
+$Id: lock.cpp,v 1.45 2003-04-08 01:02:29 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -2212,7 +2212,7 @@ static USHORT create_owner(STATUS*	status_vector,
 	QUE_LOOP(LOCK_header->lhb_owners, que)
 	{
 		owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
-		if (owner->own_owner_id == owner_id &&
+		if (owner->own_owner_id == (ULONG) owner_id &&
 			(UCHAR)owner->own_owner_type == owner_type)
 		{
 			purge_owner(DUMMY_OWNER_CREATE, owner);	/* purging owner_offset has not been set yet */
