@@ -46,7 +46,7 @@
 #define START_CHECK_FOR_EXCEPTIONS(err)	{ \
 					SIGJMP_BUF	sigenv; \
 					int		sig; \
-					tdbb->tdbb_sigsetjmp = sigenv; \
+					memcpy(&tdbb->tdbb_sigsetjmp, &sigenv, sizeof sigenv); \
 					if (sig = SIGSETJMP (sigenv, 1)) \
 					    ISC_exception_post(sig, err); \
 					ISC_sync_signals_set();
