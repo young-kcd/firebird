@@ -1119,6 +1119,7 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
 
 	if (val || initialize) {
 		if (dbb->dbb_flags & DBB_read_only) {
+			CCH_RELEASE(tdbb, &window);
 			ERR_post(isc_read_only_database, 0);
 		}
 		CCH_MARK(tdbb, &window);
