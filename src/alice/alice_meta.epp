@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.40 2004-08-16 12:28:13 alexpeshkoff Exp $
+ *	$Id: alice_meta.epp,v 1.41 2004-08-26 18:22:40 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -336,7 +336,7 @@ static TDR get_description(ISC_QUAD* blob_id)
 //  skip version number 
 	++p;
 	
-	TDR ptr;
+	TDR ptr = NULL; // silence uninitialized warning
 	SLONG id_length, id;
 
 	while (*p) {
