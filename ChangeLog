@@ -1,3 +1,34 @@
+2004-09-24 17:48  hvlad
+
+	* firebird2/src/jrd/why.cpp (1.78):
+	
+	Don't rollback prepared 2PC sub-transaction
+
+2004-09-24 08:48  robocop
+
+	* firebird2/src/dsql/utld.cpp (1.30):
+	
+	Style
+
+2004-09-24 08:46  robocop
+
+	* firebird2/src/remote/server.cpp (1.95):
+	
+	Nonsense cast
+
+2004-09-24 08:42  robocop
+
+	* firebird2/src/remote/inet.cpp (1.123):
+	
+	Put some assertions, a strncpy and a correction of a debug msg
+
+2004-09-24 08:40  robocop
+
+	* firebird2/src/: common/fb_exception.cpp (1.12), jrd/iberr.h
+	(1.10):
+	
+	Totally misc
+
 2004-09-24 02:11  arnobrinkman
 
 	* firebird2/src/jrd/: btn.cpp (1.14), btn.h (1.12), btr.cpp
