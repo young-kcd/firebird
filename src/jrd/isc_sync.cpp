@@ -68,6 +68,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
+#include "../common/config/config.h"
 
 #if defined(SIG_RESTART) || defined(UNIX) 
 static ULONG inhibit_restart;
@@ -1654,8 +1655,19 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 
 	if (is_critical)
 	{
-		// Pass exception to outer handler in case debugger is present to collect memory dump
-		return EXCEPTION_CONTINUE_SEARCH;
+		if(Config::getBugcheckAbort()) {
+			// Pass exception to outer handler in case debugger is present to collect memory dump
+			return EXCEPTION_CONTINUE_SEARCH;
+		}
+		else {
+			// Silently exit so guardian or service manager can restart the server.
+			// If exception is getting out of the application Windows displays a message
+			// asking if you want to send report to Microsoft or attach debugger,
+			// application is not terminated until you press some button on resulting window.
+			// This happens even if you run application as non-interactive service on 
+			// "server" OS like Windows Server 2003.
+			exit(3);
+		}
 	}
 	else
 	{
