@@ -55,16 +55,9 @@ for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 @call :SED yachts.lnk %DB_PATH% metadata.fdb
 @call :SED ODS.RDB %DB_PATH% jrd/security.fdb
 @call :SED msg.fdb %DB_PATH% msgs/msg.fdb
-@call :SED master_msg_db %DB_PATH% msgs/msg.fdb
-@call :SED yachts.link %DB_PATH% jrd/security.fdb
-@call :SED master_help_db %DB_PATH% qli/help.fdb
 @call :SED help.fdb %DB_PATH% qli/help.fdb
-@call :SED yachts.gdb %DB_PATH% jrd/security.fdb
-@call :SED isc.gdb %DB_PATH% jrd/security.fdb
-@call :SED isc4.gdb %DB_PATH% jrd/security.fdb
 @call :SED security.fdb %DB_PATH% jrd/security.fdb
 @call :SED empbuild.gdb %DB_PATH% example5/employee.fdb
-@call :SED source/msgs/msg.fdb %DB_PATH% msgs/msg.fdb
 
 @echo.
 @echo Completed Preparations for build
