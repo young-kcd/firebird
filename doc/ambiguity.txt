@@ -1,7 +1,7 @@
 Alias handling and ambiguous field detecting has been improved in FB2.0.
 
 Changes:
-a) When a alias is present on a table, that alias must be used or no alias at 
+a) When an alias is present on a table, that alias must be used or no alias at 
    all, the tablename only is not valid anymore.
 b) Fields without qualifier can now be used in a higher scope level. Own scope 
    level is checked first and ambiguous field checking is done on scope level.
@@ -12,7 +12,7 @@ Author:
 Examples:
 a)
   1. 
-    When a alias is present it must be used or no alias at all must be used.
+    When an alias is present it must be used or no alias at all must be used.
     This query was allowed in FB1.5 and earlier versions:
     
     SELECT
@@ -23,7 +23,7 @@ a)
     but will now correctly report an error that the field
     "RDB$RELATIONS.RDB$RELATION_NAME" couldn't be found.
     
-    Use this (preffered):
+    Use this (preferred):
     
     SELECT
       R.RDB$RELATION_NAME
@@ -39,7 +39,7 @@ a)
     
   2. 
     The statement below will now correctly use the FieldID from the subselect 
-    and from the updating table.
+    and from the updating table:
     
     UPDATE
       TableA
@@ -48,10 +48,10 @@ a)
     
     In firebird it's possible to give an alias by an update statement, but by 
     many other database vendors this isn't supported. These SQL statements are
-    now better interchangable between other SQL database products.
+    now better interchangeable between other SQL database products.
 
   3. 
-    This example didn't run correctly in FB1.5 and earlier :
+    This example didn't run correctly in FB1.5 and earlier:
     
     SELECT
       RDB$RELATIONS.RDB$RELATION_NAME,
@@ -77,7 +77,7 @@ b)
 
   2.
     Ambiguity checking in sub-selects. The query below did run on FB1.5 
-    without reporting an ambiguity, but will report it in FB2.0
+    without reporting an ambiguity, but will report it in FB2.0:
 
     SELECT
       (SELECT

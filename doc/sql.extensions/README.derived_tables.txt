@@ -35,9 +35,9 @@ Notes:
     constants should be added with an alias or the column list should be used.
     The number of columns in the column list should be the same as the number of 
     columns from the query expression.
-    The optimizer can handle an derived table very efficiently, but if the 
+    The optimizer can handle a derived table very efficiently, but if the 
     derived table contains a sub-select then no join order can be made (if the 
-    derived table is included in a inner join).
+    derived table is included in an inner join).
     
 
 Example(s):
@@ -53,7 +53,7 @@ a) Simple derived table:
        RDB$RELATIONS) AS R (RELATION_NAME, RELATION_ID)
 
 
-b) Aggregate on a derived table which also contains a aggregate
+b) Aggregate on a derived table which also contains an aggregate
 
   SELECT
     DT.FIELDS,
