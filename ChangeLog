@@ -1,3 +1,19 @@
+2004-07-04 02:00  skidder
+
+	* firebird2/src/include/fb_string.h (1.25):
+	
+	Fix small inconsistency in string class
+
+2004-07-03 04:32  brodsom
+
+	* firebird2/src/: alice/alice.cpp (1.68), alice/alice.h (1.41),
+	burp/burp.cpp (1.83), burp/burp.h (1.55), jrd/svc.h (1.31),
+	utilities/gsec/gsec.cpp (1.33), utilities/gsec/gsec.h (1.18),
+	utilities/gstat/dba.epp (1.43):
+	
+	-Put thread functions into thread class -Comment
+	SVC_PUTSPECIFIC_DATA
+
 2004-07-03 02:13  brodsom
 
 	* firebird2/src/: alice/all.cpp (1.26), burp/backup.epp (1.62),
