@@ -312,31 +312,33 @@ typedef srl *SRL;
 class Opt : public pool_alloc<type_opt>
 {
     public:
-	class Csb *opt_csb;		/* Compiler scratch block */
-	SLONG opt_combinations;		/* Number of partial orders considered */
-	double opt_best_cost;		/* Cost of best join order */
-	SSHORT opt_count;			/* Number of conjuncts */
-	SSHORT opt_parent_count;	/* Number of conjuncts in parent rse */
-	USHORT opt_best_count;		/* Longest length of indexable streams */
-	USHORT opt_g_flags;			/* global flags */
+	class Csb *opt_csb; /* Compiler scratch block */
+	SLONG opt_combinations; /* Number of partial orders considered */
+	double opt_best_cost; /* Cost of best join order */
+	SSHORT opt_count; /* Number of conjuncts */
+	SSHORT opt_parent_count; /* Number of conjuncts in parent rse */
+	USHORT opt_best_count; /* Longest length of indexable streams */
+	USHORT opt_g_flags; /* global flags */
 	struct opt_repeat {
-		struct nod *opt_conjunct;	/* Conjunction */
-		struct nod *opt_lower;	/* Lower bound on index value */
-		struct nod *opt_upper;	/* Upper bound on index value */
-		struct nod *opt_match;	/* Conjunct which matches index segment */
-		IRL opt_relationships;	/* Streams directly reachable by index */
+		struct nod *opt_conjunct; /* Conjunction */
+		struct nod *opt_lower; /* Lower bound on index value */
+		struct nod *opt_upper; /* Upper bound on index value */
+		struct nod *opt_match; /* Conjunct which matches index segment */
+		IRL opt_relationships; /* Streams directly reachable by index */
 		ULONG opt_dependencies[MAX_OPT_ITEMS / 32];
 		/* Stream dependencies to compute conjunct */
-		double opt_best_stream_cost;	/* best cost of retrieving first n streams */
-		USHORT opt_best_stream;	/* stream in best join order seen so far */
+		double opt_best_stream_cost; /* best cost of retrieving first n = streams */
+		USHORT opt_best_stream; /* stream in best join order seen so far */
 		USHORT opt_flags;
-		USHORT opt_stream;		/* Stream in position of join order */
+		USHORT opt_stream; /* Stream in position of join order */
+		ULONG opt_can_use_idx[MAX_OPT_ITEMS / 32]; 
+		/* Bitmap for if conjunct is used in index */
+		BOOLEAN opt_idx_full_match; 
+		/* Does the conjunct match all fields in index. */
 	};
-
 	struct opt_repeat opt_rpt[MAX_OPT_ITEMS];
 };
 typedef Opt *OPT;
-
 /* stream-dependent bits used in opt_flags */
 
 #define opt_used	1
