@@ -288,7 +288,6 @@ void IDX_create_index(
 			CCH_RELEASE(tdbb, &primary.rpb_window);
 		else {
 			primary.rpb_record = gc_record;
-			// JrdMemoryPool and its parent MemoryPool are unrelated to blk.
 			VIO_data(tdbb, &primary, dbb->dbb_permanent);
 			gc_record = primary.rpb_record;
 			stack.push(primary.rpb_record);
