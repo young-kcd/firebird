@@ -85,11 +85,11 @@ public:
 	void clear() { count = 0; };
 protected:
 	const T& getElement(size_t index) const {
-  		fb_assert(index >= 0 && index < count);
+  		fb_assert(index < count);
   		return data[index];
 	}
 	T& getElement(size_t index) {
-  		fb_assert(index >= 0 && index < count);
+  		fb_assert(index < count);
   		return data[index];
 	}
 	void freeData()
@@ -132,13 +132,13 @@ public:
 	T* begin() { return data; }
 	T* end() { return data + count; }
 	void insert(size_t index, const T& item) {
-		fb_assert(index >= 0 && index <= count);
+		fb_assert(index <= count);
 		ensureCapacity(count + 1);
 		memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 		data[index] = item;
 	}
 	void insert(size_t index, const Array<T, Storage>& L) {
-		fb_assert(index >= 0 && index <= count);
+		fb_assert(index <= count);
 		ensureCapacity(count + L.count);
 		memmove(data + index + L.count, data + index, sizeof(T) * (count - index));
 		memcpy(data + index, L.data, L.count);
@@ -150,12 +150,12 @@ public:
   		return count;
 	};
 	void remove(size_t index) {
-  		fb_assert(index >= 0 && index < count);
+  		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 	}
 	void remove(T* itr) {
-		size_t index = itr - begin();
-  		fb_assert(index >= 0 && index < count);
+		const size_t index = itr - begin();
+  		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 	}
 	void shrink(size_t newCount) {
@@ -236,7 +236,7 @@ public:
 	bool find(const Key& item, size_t& pos) const {
 		size_t highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {
-			size_t temp = (highBound + lowBound) >> 1;
+			const size_t temp = (highBound + lowBound) >> 1;
 			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
 				lowBound = temp + 1;
 			else

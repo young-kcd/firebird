@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: vector.h,v 1.11 2004-07-16 23:06:04 skidder Exp $
+ *  $Id: vector.h,v 1.12 2004-07-22 07:17:58 robocop Exp $
  *
  */
  
@@ -43,13 +43,13 @@ public:
 	Vector() : count(0) {}
 	void clear() { count = 0; };
 	T& operator[](size_t index) {
-  		fb_assert(index >= 0 && index < count);
+  		fb_assert(index < count);
   		return data[index];
 	}
 	T* begin() { return data; }
 	T* end() { return data + count; }
 	void insert(size_t index, const T& item) {
-	  fb_assert(index >= 0 && index <= count);
+	  fb_assert(index <= count);
 	  fb_assert(count < Capacity);
 	  memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 	  data[index] = item;
@@ -61,7 +61,7 @@ public:
   		return count;
 	};
 	void remove(size_t index) {
-  		fb_assert(index >= 0 && index < count);
+  		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 	}
 	void shrink(size_t newCount) {

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.37 2004-07-17 00:13:07 skidder Exp $
+ *  $Id: tree.h,v 1.38 2004-07-22 07:17:58 robocop Exp $
  *
  */
 
@@ -321,7 +321,7 @@ public:
 			}
 
 			curr = (ItemList *)list;
-			bool found = curr->find(key, curPos);
+			const bool found = curr->find(key, curPos);
 			switch (lt) {
 			case locEqual: return found;
 			case locGreatEqual:
@@ -400,7 +400,8 @@ public:
 					curPos = 0;
 					return false;
 				}
-			} else
+			}
+			else
 				curPos--;
 			return true;
 		}
@@ -686,7 +687,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 #ifndef DEV_BUILD
 		list->find(NodeList::generate(list, node), pos);
 #else
-		bool found = list->find(NodeList::generate(list, node), pos);
+		const bool found = list->find(NodeList::generate(list, node), pos);
 		fb_assert(found);
 #endif
 		list->remove(pos);
