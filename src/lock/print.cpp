@@ -44,7 +44,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_s_proto.h"
-#include "../lock/prtv3_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -555,13 +554,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (LOCK_header->lhb_secondary != LHB_PATTERN)
 		prt_history(outfile, LOCK_header, shb->shb_history, "Event log");
-
-#if !(defined WIN_NT)
-	if (!sw_nobridge) {
-		FPRINTF(outfile, "\nBRIDGE RESOURCES\n\n");
-		V3_lock_print(orig_argc, (UCHAR**) orig_argv);
-	}
-#endif
 
 	if (header)
 		gds__free(header);

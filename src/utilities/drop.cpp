@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.14 2002-12-07 13:32:34 dimitr Exp $
+ * $Id: drop.cpp,v 1.15 2003-02-11 15:22:59 brodsom Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -42,7 +42,6 @@
 #include "../jrd/license.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../utilities/drpv3_proto.h"
 #include "../common/config/config.h"
 
 #ifdef HAVE_SYS_TYPES_H
@@ -163,13 +162,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 #ifdef MANAGER_PROCESS
 	if (sw_shutmngr)
 		shut_manager("lock manager");
-#endif
-
-#if !(defined WIN_NT || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN)
-	if (!sw_nobridge) {
-		ib_printf("\nBRIDGE RESOURCES\n\n");
-		V3_drop(orig_argc, (UCHAR **)orig_argv);
-	}
 #endif
 
 	exit(FINI_OK);
