@@ -367,11 +367,11 @@ public:
 typedef Opt *OPT;
 
 // Values for opt_stream_flags
-const opt_stream_used = 1; // Stream is used
+const USHORT opt_stream_used = 1; // Stream is used
 
 // Values for opt_conjunct_flags
-const opt_conjunct_used = 1; // conjunct is used
-const opt_conjunct_matched = 2;	// conjunct matches an index segment
+const USHORT opt_conjunct_used = 1; // conjunct is used
+const USHORT opt_conjunct_matched = 2;	// conjunct matches an index segment
 
 /* global optimizer bits used in opt_g_flags */
 
