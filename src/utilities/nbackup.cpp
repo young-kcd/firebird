@@ -928,17 +928,18 @@ int main( int argc, char *argv[] )
 	fprintf(stderr, "Using %d-bit UNIX IO\n", sizeof(off_t) * 8);
 #endif
 	// Do not constify. GCC 3.4.0 chokes on minus below in this case
-	char **end = argv + argc, **argp;
+	char **end = argv + argc;
 
 	NbOperation op = nbNone;
-	char *username = NULL, *password = NULL, *database = NULL, 
-		*filename = NULL, **backup_files;
+	const char *username = NULL, *password = NULL, *database = NULL, 
+		*filename = NULL;
+	const char* const* backup_files = NULL;
 	int level;
 	int filecount;
 	
 	try {
 		// Read global command line parameters
-		for (argp = argv + 1; argp < end; argp++) {
+		for (char** argp = argv + 1; argp < end; argp++) {
 			// We must recognize all parameters here
 			if (**argp != '-') {
 				fprintf(stderr, "ERROR: Unrecognized parameter %s.\n\n", *argp);
@@ -1035,6 +1036,7 @@ int main( int argc, char *argv[] )
 				break;
 			}
 		}
+		
 		switch (op) {
 			case nbNone:
 				usage();
