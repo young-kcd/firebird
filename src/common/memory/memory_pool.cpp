@@ -80,6 +80,9 @@ static const int  BEFORE_RED_ZONE_SIZE = 3;		// The size of the red zone BEFORE 
 												//  0 if red zones are disabled.
 static const int AFTER_RED_ZONE_SIZE = 3;		// The size of the red zone AFTER the memory,
 												//  in ALLOCATION UNITS!  Does NOT need to be set to
+
+static const size_t DEFAULT_EXTEND_INC = 16 * 1024;
+
 #if (defined SOLARIS )
 
 #include "../../jrd/gds_proto.h"
@@ -421,6 +424,8 @@ void* MemoryPool::allocate(size_t size, SSHORT type, char* file, int line)
 void* MemoryPool::allocate(size_t size, SSHORT type)
 #endif
 {
+	if (extend_inc == 0)
+		extend_inc = DEFAULT_EXTEND_INC;
 	if (type < 0)
 		type = 0;
 	if (!pimpl)
@@ -663,8 +668,8 @@ void* FBMemoryPool::allocate(size_t size, SSHORT type)
 {
 	Segment::FreeBlock** best;
 	Segment::FreeBlock** ptr;
-	size_t		best_tail;
-	size_t		tail;
+	SLONG		best_tail;
+	SLONG		tail;
 	size_t		units;
 	size_t		headerUnits;
 	void*		obj;
@@ -706,7 +711,7 @@ void* FBMemoryPool::allocate(size_t size, SSHORT type)
 					BUGCHECK(152);
 					/* msg 152 memory pool free list is invalid */
 				}
-				if ((tail = (*ptr)->length - units) >= 0U &&
+				if ((tail = (*ptr)->length - units) >= 0 &&
                                        tail < best_tail)
 				{
 					best = ptr;
