@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.13.2.4 2003-12-15 04:32:46 skywalker Exp $
+#   $Id: makeInstallImage.sh.in,v 1.13.2.5 2003-12-23 23:21:17 skywalker Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -65,6 +65,27 @@ copyIfExists() {
      then
        cp $OldFile $NewFile
    fi
+
+}
+
+
+#------------------------------------------------------------------------
+# patchAccess
+# This routine alters the firebird.conf file to restrict usage to those
+# entries in the aliases.conf file.  It would be better if this was the 
+# default, or if not then done as part of a configure.in firebird.conf.in
+# processing - but that's not the current setup.
+#
+
+patchAccess() {
+
+    ed -s $1 <<EOF
+/^#DatabaseAccess/
+a
+DatabaseAccess = None
+.
+wq
+EOF
 
 }
 
@@ -122,6 +143,8 @@ copyFiles() {
     cp $BuildRootDir/gen/install/bin/CSchangeRunUser.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/CSrestoreRootRunUser.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/changeDBAPassword.sh $DestDir/bin
+    cp $BuildRootDir/gen/install/bin/changeGdsLibraryCompatibleLink.sh $DestDir/bin
+    cp $BuildRootDir/gen/install/bin/createAliasDB.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/fb_config $DestDir/bin
 
     # Copy examples only if we have them
@@ -177,15 +200,9 @@ copyFiles() {
 
     cp $BuildRootDir/gen/install/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf
+    cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
 
-    echo "#" >> $DestDir/aliases.conf
-    echo "# List of known database aliases" >> $DestDir/aliases.conf
-    echo "# ------------------------------" >> $DestDir/aliases.conf
-    echo "#" >> $DestDir/aliases.conf
-    echo "# Examples:" >> $DestDir/aliases.conf
-    echo "#" >> $DestDir/aliases.conf
-    echo "# employee = /$FBRootDir/examples/employee.fdb" >> $DestDir/aliases.conf
-    echo "#" >> $DestDir/aliases.conf
+    patchAccess $DestDir/firebird.conf
     
 
 # Create links from /usr/lib to install area.
