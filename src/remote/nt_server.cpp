@@ -28,6 +28,7 @@
 #include "gen/codes.h"
 #include "../jrd/license.h"
 #include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 #include "../utilities/install_nt.h"
 #include "../remote/cntl_proto.h"
 #include "../remote/inet_proto.h"
@@ -268,11 +269,11 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
 		gds__thread_enable(-1);
 
 	if (server_flag & SRVR_inet)
-		gds__thread_start((FPTR_INT) inet_connect_wait_thread, 0, THREAD_high,
-						  0, 0);
+		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(inet_connect_wait_thread),
+			0, THREAD_high, 0, 0);
 	if (server_flag & SRVR_pipe)
-		gds__thread_start((FPTR_INT) wnet_connect_wait_thread, 0, THREAD_high,
-						  0, 0);
+		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(wnet_connect_wait_thread),
+			0, THREAD_high, 0, 0);
 }
 
 
@@ -299,14 +300,14 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
 		port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
 		THREAD_EXIT;
 		if (!port) {
-			if (status_vector[1] != gds__io_error ||
+			if (status_vector[1] != gds_io_error ||
 				status_vector[6] != gds_arg_win32 ||
 				status_vector[7] != ERROR_CALL_NOT_IMPLEMENTED)
 					gds__log_status(0, status_vector);
 			break;
 		}
-		gds__thread_start((FPTR_INT) process_connection_thread, port, 0, 0,
-						  0);
+		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(process_connection_thread),
+			port, 0, 0, 0);
 	}
 
 	if (!(server_flag & SRVR_non_service))

@@ -520,21 +520,6 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					*pserver_flag |= SRVR_no_icon;
 					break;
 
-#ifndef SUPERSERVER
-/* Remove this because we are now conrtolling this by the LICENSE file */
-				case 'I':
-					*pserver_flag |= SRVR_inet;
-					break;
-
-				case 'N':
-					*pserver_flag |= SRVR_pipe;
-					break;
-
-				case 'L':
-					*pserver_flag |= SRVR_ipc;
-					break;
-#endif /* SUPERSERVER */
-
 #ifdef  XNET
 				case 'X':
 					*pserver_flag |= SRVR_xnet;

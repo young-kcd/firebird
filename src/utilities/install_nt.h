@@ -37,7 +37,7 @@
 #else
 #define REMOTE_SERVICE		"InterBaseRemoteService"
 #define REMOTE_DISPLAY_NAME	"Firebird Remote Service"
-#define REMOTE_EXECUTABLE	"bin\\fbremote"
+#define REMOTE_EXECUTABLE	"bin\\fb_inet_server"
 #endif
 #define REMOTE_DEPENDENCIES	"Tcpip\0\0"
 

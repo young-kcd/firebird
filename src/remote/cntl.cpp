@@ -299,6 +299,7 @@ static void control_thread( DWORD action)
 	case SERVICE_CONTROL_INTERROGATE:
 		break;
 
+#if (defined SUPERCLIENT || defined SUPERSERVER)
 	case SERVICE_CREATE_GUARDIAN_MUTEX:
 		hMutex = OpenMutex(SYNCHRONIZE, FALSE, GUARDIAN_MUTEX);
 		if (hMutex) {
@@ -309,6 +310,8 @@ static void control_thread( DWORD action)
 			WaitForSingleObject(hMutex, INFINITE);
 		}
 		break;
+#endif
+
 	default:
 		break;
 	}

@@ -159,6 +159,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	case COMMAND_INSTALL:
 		/* First, lets do the Guardian, if it has been specified. */
+#if (defined SUPERCLIENT || defined SUPERSERVER)
 		if (sw_guardian) {
 			status =
 				SERVICES_install(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
@@ -179,6 +180,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				knows it is configured correctly. */	
 			guardian_setup(svc_error);
 		}
+#endif
 
 		/* do the install of IBServer */
 		status =
@@ -195,6 +197,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		break;
 
 	case COMMAND_REMOVE:
+#if (defined SUPERCLIENT || defined SUPERSERVER)
 		if (sw_guardian) {
 			status = SERVICES_remove(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 									 svc_error);
@@ -218,6 +221,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			else	      
 		    	ib_printf ("Service \"%s\" not deleted.\n", ISCGUARD_DISPLAY_NAME);
 		}
+#endif
 
 		status = SERVICES_remove(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 								 svc_error);
@@ -246,6 +250,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	case COMMAND_START:
 		/* Test for use of Guardian. If so, start the guardian else start ib-server */
 		if (using_guardian(svc_error) == 1) {
+#if (defined SUPERCLIENT || defined SUPERSERVER)
 			status = SERVICES_start(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 									sw_mode, svc_error);
 			if (status == SUCCESS)
@@ -253,6 +258,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			    		  ISCGUARD_DISPLAY_NAME);
 			else
 		    	ib_printf("Service \"%s\" not started.\n", ISCGUARD_DISPLAY_NAME);
+#endif
 		}
 		else {
 			status = SERVICES_start(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
@@ -268,6 +274,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	case COMMAND_STOP:
 		/* Test for use of Guardian. If so, stop the guardian else stop ib-server */
 		if (using_guardian(svc_error) == 1) {
+#if (defined SUPERCLIENT || defined SUPERSERVER)
 			status = SERVICES_stop(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 								   svc_error);
 
@@ -276,6 +283,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			    		  ISCGUARD_DISPLAY_NAME);
 			else
 				ib_printf("Service \"%s\" not stopped.\n", ISCGUARD_DISPLAY_NAME);
+#endif
 		}
 		else {
 			status = SERVICES_stop(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
