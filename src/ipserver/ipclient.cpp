@@ -71,17 +71,17 @@ static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static SSHORT init(ISC_STATUS *, ICC *);
 static ITR make_transaction(ISC_STATUS *, IDB, FRBRD *);
 static SSHORT name_length(TEXT *);
-static BOOL pack_strings(ICC);
+static bool pack_strings(ICC);
 static void release_blob(IBL);
 static void release_database(IDB);
 static void release_event(IVNT);
 static void release_request(IRQ);
 static void release_sql_request(IPSERVER_ISR);
 static void release_transaction(ITR);
-static BOOL send_and_wait(ICC);
+static bool send_and_wait(ICC);
 static void server_shutdown(void);
 static void server_watcher(void);
-static BOOL unpack_strings(ICC);
+static bool unpack_strings(ICC);
 
 
 #define RETURN_ERROR(e)         { THD_mutex_unlock( &mapsect);\
@@ -149,7 +149,7 @@ static MUTX_T clisect;
 static MUTX_T evtsect;
 static MUTX_T mapsect;
 static LONG interlock = -1;
-static BOOLEAN initialized = FALSE;
+static bool initialized = false;
 static SLONG eventID = 0;
 static HANDLE event_semaphore = 0;
 static HWND event_window = 0;
@@ -3804,7 +3804,7 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 			THD_mutex_init(&clisect);
 			THD_mutex_init(&evtsect);
 			THD_mutex_init(&mapsect);
-			initialized = TRUE;
+			initialized = true;
 			gds__register_cleanup(reinterpret_cast<void(*)(void*)>(IPC_release_all),
 									NULL);
 			gds__register_cleanup(reinterpret_cast<void(*)(void*)>(XNET_release_all),
@@ -4044,7 +4044,7 @@ static SSHORT name_length( TEXT * name)
 }
 
 
-static BOOL pack_strings( ICC icc)
+static bool pack_strings( ICC icc)
 {
 /**************************************
  *
@@ -4105,14 +4105,14 @@ static BOOL pack_strings( ICC icc)
 
 				if (!size_left && string->ips_cl_copied < string->ips_cl_size) {
 					if (!send_and_wait(icc))
-						return FALSE;
+						return false;
 					size_left = (ULONG) (IPS_USEFUL_SPACE(pages_per_user));
 					acursor = (TEXT *) comm->ips_data;
 				}
 			}
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 
@@ -4348,7 +4348,7 @@ static void release_sql_request( IPSERVER_ISR stmt)
 }
 
 
-static BOOL send_and_wait( ICC icc)
+static bool send_and_wait( ICC icc)
 {
 /**************************************
  *
@@ -4367,13 +4367,13 @@ static BOOL send_and_wait( ICC icc)
 /* dead server means no point in sending */
 
 	if (icc->icc_flags & ICCF_SERVER_SHUTDOWN)
-		return FALSE;
+		return false;
 
 /* first, signal the server that the communications
    area in mapped memory is filed and ready */
 
 	if (!ReleaseSemaphore(icc->icc_server_sem, 1L, NULL))
-		return FALSE;
+		return false;
 
 /* next, wait for the server to signal us back or die */
 
@@ -4384,10 +4384,10 @@ static BOOL send_and_wait( ICC icc)
 
 	if (result != WAIT_OBJECT_0) {
 		icc->icc_flags |= ICCF_UNMAP_CLIENT;
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -4481,7 +4481,7 @@ static void server_watcher(void)
 }
 
 
-static BOOL unpack_strings( ICC icc)
+static bool unpack_strings( ICC icc)
 {
 /**************************************
  *
@@ -4531,11 +4531,11 @@ static BOOL unpack_strings( ICC icc)
 
 				if (string->ips_cl_copied < string->ips_cl_size)
 					if (!send_and_wait(icc))
-						return FALSE;
+						return false;
 			}
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 
@@ -4723,7 +4723,7 @@ void IPC_release_all(void)
 		THD_mutex_destroy(&clisect);
 		THD_mutex_destroy(&evtsect);
 		THD_mutex_destroy(&mapsect);
-		initialized = FALSE;
+		initialized = false;
 	}
 }
 #endif

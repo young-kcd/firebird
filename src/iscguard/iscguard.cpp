@@ -69,7 +69,7 @@ static int WINDOW_main(int);
 #ifdef NOT_USED_OR_REPLACED
 static void StartGuardian(HWND);
 #endif
-static unsigned short parse_args(LPSTR, USHORT *);
+static bool parse_args(LPSTR, bool *);
 #ifdef NOT_USED_OR_REPLACED
 static void HelpCmd(HWND, HINSTANCE, WPARAM);
 #endif
@@ -87,7 +87,7 @@ HINSTANCE hInstance_gbl;
 HWND hPSDlg, hWndGbl;
 static DWORD ServerPid = 0;
 static int nRestarts = 0;		/* the number of times the server was restarted */
-unsigned short service_flag = TRUE;
+bool service_flag = true;
 /* unsigned short shutdown_flag = FALSE; */
 struct log_info *log_entry;
 
@@ -122,11 +122,10 @@ int WINAPI WinMain(
 	GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo);
 
 /* service_flag is TRUE for NT false for 95 */
-	service_flag =
-		((OsVersionInfo.
-		  dwPlatformId == VER_PLATFORM_WIN32_NT) ? TRUE : FALSE);
+	service_flag = ((OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) 
+					? true : false);
 
-	if (service_flag == TRUE)
+	if (service_flag == true)
 		service_flag = parse_args(lpszCmdLine, &service_flag);
 
 /* set the global HINSTANCE as we need it in WINDOW_main */
@@ -138,7 +137,7 @@ int WINAPI WinMain(
 	log_entry->next = NULL;
 
 /* since the flag is set we run as a service */
-	if (service_flag == TRUE) {
+	if (service_flag == true) {
 		CNTL_init((FPTR_VOID) WINDOW_main, ISCGUARD_SERVICE);
 		if (!StartServiceCtrlDispatcher(service_table)) {
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
@@ -154,7 +153,7 @@ int WINAPI WinMain(
 
 }
 
-static unsigned short parse_args(LPSTR lpszArgs, unsigned short *pserver_flag)
+static bool parse_args(LPSTR lpszArgs, bool *pserver_flag)
 {
 /**************************************
 *
@@ -173,7 +172,7 @@ static unsigned short parse_args(LPSTR lpszArgs, unsigned short *pserver_flag)
 *
 **************************************/
 	char *p, c;
-	int return_value = TRUE;
+	bool return_value = true;
 
 	for (p = lpszArgs; *p; p++) {
 		if (*p++ == '-')
@@ -181,16 +180,16 @@ static unsigned short parse_args(LPSTR lpszArgs, unsigned short *pserver_flag)
 				switch (c) {
 				case 'a':
 				case 'A':
-					return_value = FALSE;
+					return_value = false;
 					break;
 
 				default:
-					return_value = TRUE;
+					return_value = true;
 					break;
 				}
 			}
 	}
-	return (return_value);
+	return return_value;
 }
 
 static int WINDOW_main(int option)
@@ -268,10 +267,10 @@ static int WINDOW_main(int option)
 		MessageBox(NULL, szMsgString, GUARDIAN_APP_LABEL, MB_OK);
 		gds__log(szMsgString);
 		DestroyWindow(hWnd);
-		return (FALSE);
+		return 0;
 	}
 
-	if (service_flag == FALSE) {
+	if (service_flag == false) {
 		SendMessage(hWnd, WM_COMMAND, IDM_CANCEL, 0);
 		UpdateWindow(hWnd);
 	}
@@ -313,8 +312,8 @@ static LRESULT CALLBACK WindowFunc(
  *
  **************************************/
 
-	static BOOLEAN bInTaskBar = FALSE;
-	static BOOLEAN bStartup = FALSE;
+	static BOOL bInTaskBar = FALSE;
+	static bool bStartup = false;
 	static HINSTANCE hInstance = NULL;
 	static unsigned long thread_id;
 
@@ -427,7 +426,7 @@ static LRESULT CALLBACK WindowFunc(
 		break;
 
 	case WM_CREATE:
-		if (service_flag == FALSE) {
+		if (service_flag == false) {
 			HICON hIcon;
 			NOTIFYICONDATA nid;
 
@@ -541,7 +540,7 @@ void start_and_watch_server(char *server_name)
 	char path[MAXPATHLEN];
 	short option;
 	HANDLE procHandle = NULL;
-	unsigned short done = TRUE;
+	bool done = true;
 	UINT error_mode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
 		SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT;
 	UINT old_error_mode;
@@ -566,7 +565,7 @@ void start_and_watch_server(char *server_name)
 		int error = 0;
 		int ret_val;			/* return value from the WaitForSingleObject call */
 
-		if (service_flag == TRUE) {
+		if (service_flag == true) {
 			if (hService) {
 				while ((QueryServiceStatus(hService, &ServiceStatus) == TRUE)
 					   && (ServiceStatus.dwCurrentState != SERVICE_STOPPED))
@@ -614,9 +613,8 @@ void start_and_watch_server(char *server_name)
 				sa.nLength = sizeof(sa);
 				sa.lpSecurityDescriptor = NULL;
 				sa.bInheritHandle = TRUE;
-				success =
-					CreateProcess(NULL, prog_name, &sa, NULL, FALSE, 0, NULL,
-								  NULL, &si, &pi);
+				success = CreateProcess(NULL, prog_name, &sa, NULL, FALSE, 0, 
+										NULL, NULL, &si, &pi);
 				if (success != TRUE)
 					error = GetLastError();
 
@@ -628,8 +626,7 @@ void start_and_watch_server(char *server_name)
 				SendMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_GUARDED,
 							(LPARAM) hWndGbl);
 				if (
-					(procHandle =
-					 OpenProcess(PROCESS_ALL_ACCESS, FALSE,
+					(procHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE,
 								 ServerPid)) == NULL) {
 					error = GetLastError();
 					success = FALSE;
@@ -642,20 +639,18 @@ void start_and_watch_server(char *server_name)
 		if (success != TRUE) {
 			/* error creating new process */
 			char szMsgString[256];
-			LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString,
-					   256);
+			LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
 			sprintf(out_buf, "%s : %s errno : %d", path, szMsgString, error);
 			write_log(IDS_CANT_START_THREAD, out_buf);
 
-			if (service_flag == TRUE) {
+			if (service_flag == true) {
 				SERVICE_STATUS status_info;
 				/* wait a second to get the mutex handle (just in case) and
 				   then close it
 				 */
 				WaitForSingleObject(procHandle, 1000);
 				CloseHandle(procHandle);
-				hService =
-					OpenService(hScManager, REMOTE_SERVICE, SERVICE_STOP);
+				hService = OpenService(hScManager, REMOTE_SERVICE, SERVICE_STOP);
 				ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
 				CloseServiceHandle(hScManager);
 				CloseServiceHandle(hService);
@@ -675,7 +670,7 @@ void start_and_watch_server(char *server_name)
 		}
 
 		/* wait for process to terminate */
-		if (service_flag == TRUE) {
+		if (service_flag == true) {
 			while (WaitForSingleObject(procHandle, 500) == WAIT_OBJECT_0) {
 				ReleaseMutex(procHandle);
 				Sleep(100);
@@ -698,27 +693,25 @@ void start_and_watch_server(char *server_name)
 			/* check for startup error */
 			if (exit_status == STARTUP_ERROR) {
 				char szMsgString[256];
-				LoadString(hInstance_gbl, IDS_STARTUP_ERROR, szMsgString,
-						   256);
+				LoadString(hInstance_gbl, IDS_STARTUP_ERROR, szMsgString, 256);
 				sprintf(out_buf, "%s: %s (%lu)\n", path, szMsgString,
 						exit_status);
 				write_log(IDS_STARTUP_ERROR, out_buf);
-				done = TRUE;
+				done = true;
 
 			}
 			else {
 				char szMsgString[256];
-				LoadString(hInstance_gbl, IDS_ABNORMAL_TERM, szMsgString,
-						   256);
+				LoadString(hInstance_gbl, IDS_ABNORMAL_TERM, szMsgString, 256);
 				sprintf(out_buf, "%s: %s (%lu)\n", path, szMsgString,
 						exit_status);
 				write_log(IDS_LOG_TERM, out_buf);
 
 				/* switch the icons if the server restarted */
-				if (service_flag == FALSE)
+				if (service_flag == false)
 					PostMessage(hWndGbl, WM_SWITCHICONS, 0, 0);
 				if (option == START_FOREVER)
-					done = FALSE;
+					done = false;
 			}
 		}
 		else {
@@ -727,16 +720,16 @@ void start_and_watch_server(char *server_name)
 			LoadString(hInstance_gbl, IDS_NORMAL_TERM, szMsgString, 256);
 			sprintf(out_buf, "%s: %s\n", path, szMsgString);
 			write_log(IDS_LOG_STOP, out_buf);
-			done = TRUE;
+			done = true;
 		}
 
 		if (option == START_ONCE)
-			done = TRUE;
+			done = true;
 	} while (!done);
 
 
 /* If on WINNT */
-	if (service_flag == TRUE) {
+	if (service_flag == true) {
 		CloseServiceHandle(hScManager);
 		CloseServiceHandle(hService);
 		CNTL_stop_service(ISCGUARD_SERVICE);
@@ -1061,7 +1054,7 @@ void write_log(int log_action, char *buff)
 		log_temp->next = tmp;
 	}
 
-	if (service_flag == TRUE) {	/* on NT */
+	if (service_flag == true) {	/* on NT */
 		HANDLE hLog;
 		hLog = RegisterEventSource(NULL, ISCGUARD_SERVICE);
 		if (!hLog)

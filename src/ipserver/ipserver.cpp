@@ -80,7 +80,7 @@ static void release_request(IRQ);
 static void release_sql_request(IPSERVER_ISR);
 static void release_transaction(ITR);
 static void seek_blob(ICC);
-static BOOL send_and_wait(ICC);
+static bool send_and_wait(ICC);
 static void send_msg(ICC);
 static void send_no_wait(ICC);
 static void send_response(ICC, ISC_STATUS *);
@@ -93,9 +93,9 @@ static void start(ICC);
 static void start_and_send(ICC);
 static void start_transaction(ICC);
 static void transact_request(ICC);
-static BOOL transfer_buffers(ICC, ips_comm_area *);
+static bool transfer_buffers(ICC, ips_comm_area *);
 static void unwind(ICC);
-static BOOL wait_no_send(ICC);
+static bool wait_no_send(ICC);
 
 static HWND IPSVR_window = NULL;
 static UCHAR sql_info[] = { isc_info_sql_batch_fetch };
@@ -1055,13 +1055,13 @@ static USHORT check_statement_type( IPSERVER_ISR statement)
 	ISC_STATUS_ARRAY local_status;
 	ISC_STATUS result;
 	USHORT ret;
-	BOOLEAN done;
+	bool done;
 
 
 	/* init to no batch allowed */
 
 	ret = 0;
-	done = FALSE;
+	done = false;
 	result = GDS_DSQL_SQL_INFO(local_status,
 							   &statement->isr_handle,
 							   sizeof(sql_info),
@@ -1082,12 +1082,12 @@ static USHORT check_statement_type( IPSERVER_ISR statement)
 			{
 			case isc_info_sql_batch_fetch:
 				ret = type;
-				done = TRUE;
+				done = true;
 				break;
 
 			case isc_info_error:
 			case isc_info_truncated:
-				done = TRUE;
+				done = true;
 				break;
 			}
 			info += 3 + l;
@@ -3120,7 +3120,7 @@ static void seek_blob( ICC icc)
 }
 
 
-static BOOL send_and_wait( ICC icc)
+static bool send_and_wait( ICC icc)
 {
 /**************************************
  *
@@ -3140,7 +3140,7 @@ static BOOL send_and_wait( ICC icc)
 	/* already in shutdown mode */
 
 	if (icc->icc_flags & ICCF_SHUTDOWN)
-		return FALSE;
+		return false;
 
 	/* first, signal the client that the communications
 	   area in mapped memory is filed and ready */
@@ -3152,7 +3152,7 @@ static BOOL send_and_wait( ICC icc)
 		gds__log("ipserver send of send and wait failed %lX %ld",
 				 (long) icc, (long) GetLastError());
 #endif
-		return FALSE;
+		return false;
 	}
 
 	/* next, wait for the client to signal us back */
@@ -3166,10 +3166,10 @@ static BOOL send_and_wait( ICC icc)
 		gds__log("ipserver wait of send and wait failed %lX %ld",
 				 (long) icc, (long) GetLastError());
 #endif
-		return FALSE;
+		return false;
 	}
 	else
-		return TRUE;
+		return true;
 }
 
 
@@ -3937,7 +3937,7 @@ static void transact_request( ICC icc)
 }
 
 
-static BOOL transfer_buffers( ICC icc, ips_comm_area * comm)
+static bool transfer_buffers( ICC icc, ips_comm_area * comm)
 {
 /**************************************
  *
@@ -3989,12 +3989,12 @@ static BOOL transfer_buffers( ICC icc, ips_comm_area * comm)
 				{
 					comm->ips_sequence++;
 					if (!send_and_wait(icc))
-						return FALSE;
+						return false;
 				}
 			}
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 
@@ -4033,7 +4033,7 @@ static void unwind( ICC icc)
 }
 
 
-static BOOL wait_no_send( ICC icc)
+static bool wait_no_send( ICC icc)
 {
 /**************************************
  *
@@ -4050,17 +4050,17 @@ static BOOL wait_no_send( ICC icc)
 	DWORD result2;
 	DWORD error1;
 	DWORD error2;
-	USHORT ret;
+	bool ret;
 
 
 	/* already in shutdown mode */
 
 	if (icc->icc_flags & ICCF_SHUTDOWN)
-		return FALSE;
+		return false;
 
 	/* wait for the server to signal us back */
 
-	ret = TRUE;
+	ret = true;
 	while (ret)
 	{
 
@@ -4084,7 +4084,7 @@ static BOOL wait_no_send( ICC icc)
 			gds__log("ipserver ids %lX %lX",
 					 icc->icc_waits[0], icc->icc_waits[1]);
 #endif
-			ret = 0;
+			ret = false;
 			break;
 		}
 
@@ -4101,7 +4101,7 @@ static BOOL wait_no_send( ICC icc)
 			gds__log("ip server wait no send failed again %lX %ld %ld",
 					 (long) icc, result2, error2);
 #endif
-			ret = 0;
+			ret = false;
 			break;
 		}
 	}
