@@ -2000,7 +2000,8 @@ alter_column_name  : keyword_or_column
 						NULL, $1); }
 		   ;
 
-/* below are reserved words that could be used as identifiers in the previous versions */
+/* below are reserved words that could be used as column identifiers
+   in the previous versions */
 
 keyword_or_column	: valid_symbol_name
 		| COLUMN				/* added in IB 6.0 */
