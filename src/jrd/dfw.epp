@@ -3682,7 +3682,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					{
 						put_summary_record(blob,
 											RSR_field_not_null,
-											(UCHAR*)nonnull_validation_blr,
+											nonnull_validation_blr,
 											sizeof(nonnull_validation_blr));
 					}
 

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.79 2004-09-25 10:27:42 robocop Exp $
+$Id: why.cpp,v 1.80 2004-09-26 07:45:19 robocop Exp $
 */
 
 #include "firebird.h"
@@ -5427,15 +5427,12 @@ static int get_database_info(ISC_STATUS * status,
  *	description record.
  *
  **************************************/
-	TEXT *p, *q;
-	WHY_DBB database;
+	TEXT* p = *ptr;
 
-	p = *ptr;
-
-	database = transaction->parent;
-	q = database->db_path;
+	WHY_DBB database = transaction->parent;
+	const TEXT* q = database->db_path;
 	*p++ = TDR_DATABASE_PATH;
-	*p++ = (TEXT) strlen(reinterpret_cast<SCHAR *>(q));
+	*p++ = (TEXT) strlen(q);
 	while (*q)
 		*p++ = *q++;
 
@@ -5560,10 +5557,9 @@ static ISC_STATUS get_transaction_info(ISC_STATUS * status,
  *	description record.
  *
  **************************************/
-	TEXT *p, *q, buffer[16];
-	USHORT length;
+	TEXT buffer[16];
 
-	p = *ptr;
+	TEXT* p = *ptr;
 
 	if (CALL(PROC_TRANSACTION_INFO, transaction->implementation) (status,
 																  &transaction->
@@ -5573,15 +5569,16 @@ static ISC_STATUS get_transaction_info(ISC_STATUS * status,
 																  prepare_tr_info,
 																  sizeof
 																  (buffer),
-																  buffer)) {
+																  buffer)) 
+	{
 		CHECK_STATUS(status);
 		return status[1];
 	}
 
-	q = buffer + 3;
+	TEXT* q = buffer + 3;
 	*p++ = TDR_TRANSACTION_ID;
 
-	length = (USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
+	USHORT length = (USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
 	*p++ = length;
 	if (length) {
 		do {
@@ -5947,7 +5944,7 @@ static ISC_STATUS prepare(ISC_STATUS * status,
 
 	ISC_get_host(p + 2, length - 16);
 	*p++ = TDR_HOST_SITE;
-	*p = (UCHAR) strlen(reinterpret_cast<SCHAR *>(p) + 1);
+	*p = (UCHAR) strlen(p + 1);
 
 	while (*++p);
 
