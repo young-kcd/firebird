@@ -2653,13 +2653,13 @@ static bool estimate_cost(thread_db* tdbb,
 	// Compute index selectivity.  This involves finding the indices
 	// to be utilized and making a crude guess of selectivities.
 
-	if (opt->opt_base_conjuncts) {
+	if (opt->opt_conjuncts.getCount()) {
 		index_desc* idx = csb_tail->csb_idx->items;
 		for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
 			SSHORT n = 0;
 			clear_bounds(opt, idx);
 			const OptimizerBlk::opt_conjunct* const opt_end =
-				opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
+				opt->opt_conjuncts.end();
 			for (const OptimizerBlk::opt_conjunct* tail = opt->opt_conjuncts.begin();
 				tail < opt_end; tail++)
 			{
@@ -2716,7 +2716,7 @@ static bool estimate_cost(thread_db* tdbb,
    or not they were the result of index operations. */
 
 	const OptimizerBlk::opt_conjunct* const opt_end =
-		opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
+		opt->opt_conjuncts.end();
 
 	for (OptimizerBlk::opt_conjunct* tail = opt->opt_conjuncts.begin();
 		tail < opt_end; tail++)
@@ -3503,7 +3503,7 @@ static void find_best(thread_db* tdbb,
 	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> 
 		stream_flags(*tdbb->getDefaultPool()), conjunct_flags(*tdbb->getDefaultPool());
 	stream_flags.grow(csb->csb_n_stream);
-	conjunct_flags.grow(opt->opt_base_conjuncts);
+	conjunct_flags.grow(opt->opt_conjuncts.getCount());
 	size_t i;
 	for (i = 0; i < stream_flags.getCount(); i++)
 		stream_flags[i] = opt->opt_streams[i].opt_stream_flags & opt_stream_used;
