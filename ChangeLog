@@ -1,3 +1,52 @@
+2003-12-24 16:43  dimitr
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	burp.dsp, burp_classic.dsp, common.dsp, common_classic.dsp,
+	dsql_server.dsp, dsql_server_classic.dsp, engine.dsp,
+	engine_classic.dsp, engine_embed.dsp, fb2control.dsp,
+	fb_inet_server.dsp, fb_lock_print.dsp, fbclient.dsp, fbembed.dsp,
+	fbguard.dsp, fbserver.dsp, fbudf.dsp, gbak.dsp, gdef.dsp,
+	gds32.dsp, gfix.dsp, gpre.dsp, gsec.dsp, gsplit.dsp, gstat.dsp,
+	ib_udf.dsp, ib_util.dsp, instclient.dsp, instreg.dsp, instsvc.dsp,
+	intl.dsp, intlcpp.dsp, ipserver.dsp, isql.dsp, lock.dsp,
+	lock_classic.dsp, qli.dsp, remote.dsp, remote_classic.dsp,
+	utilities.dsp, utilities_classic.dsp, v5_examples.dsp, wal.dsp,
+	wal_classic.dsp:
+	
+	Let's create PDB files as a part of the release builds.
+
+2003-12-24 16:09  dimitr
+
+	* firebird2/src/ipserver/ipserver.cpp:
+	
+	Fixed one more server crash.
+
+2003-12-24 15:53  dimitr
+
+	* firebird2/src/ipserver/ipserver.cpp:
+	
+	Fixed one more server crash.
+
+2003-12-24 14:02  dimitr
+
+	* firebird2/src/jrd/: rse.cpp, sort.cpp, sort.h, rse.cpp, sort.cpp,
+	sort.h:
+	
+	Fixed server crashes in sort finilization. Thanks to Vlad Horsun
+	and Oleg Loa.
+
+2003-12-24 13:23  dimitr
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp:
+	
+	Fixed internal window issue.
+
+2003-12-24 13:19  dimitr
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	Fixed internal window issue.
+
 2003-12-24 00:23  skywalker
 
 	* firebird2/configure.in:
