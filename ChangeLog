@@ -1,3 +1,1251 @@
+2002-10-02 14:43  eku
+
+	* firebird2/src/: jrd/build_no.h (1.164), jrd/build_no.h (1.163),
+	misc/writeBuildNum.sh (1.865), misc/writeBuildNum.sh (1.864):
+	
+	increment build number
+
+2002-10-02 14:43  eku
+
+	* firebird2/: builds/posix/Makefile.in.firebird (1.9),
+	src/install/arch-specific/sinixz/prototype.in (1.6):
+	
+	Build and distribute 'gdef'.
+
+2002-10-02 11:41  eku
+
+	* firebird2/src/remote/inet.cpp (1.23):
+	
+	Found a last occurance of NOINITGROUPS :-(
+
+2002-10-02 11:40  eku
+
+	* firebird2/src/: jrd/build_no.h (1.161), misc/writeBuildNum.sh
+	(1.862), jrd/build_no.h (1.162), misc/writeBuildNum.sh (1.863):
+	
+	increment build number
+
+2002-10-02 11:40  eku
+
+	* firebird2/src/intl/ld.h (1.8):
+	
+	Fixed compiler warning 'No newline at end of file'.
+
+2002-10-01 14:03  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.159), misc/writeBuildNum.sh
+	(1.860), jrd/build_no.h (1.160), misc/writeBuildNum.sh (1.861):
+	
+	increment build number
+
+2002-10-01 14:03  dimitr
+
+	* firebird2/src/: make.new/config/config.h.in (1.38),
+	include/gen/autoconfig_msvc.h (1.34):
+	
+	Fixed wrong alignment of double for i386.
+
+2002-10-01 12:38  eku
+
+	* firebird2/src/: jrd/build_no.h (1.158), misc/writeBuildNum.sh
+	(1.859):
+	
+	increment build number
+
+2002-10-01 12:38  eku
+
+	* firebird2/configure.in (1.51):
+	
+	Autoconf: the usage of the readline library can be turned off with 
+		 '--without-readline'.
+
+2002-10-01 09:56  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.157), misc/writeBuildNum.sh
+	(1.858):
+	
+	increment build number
+
+2002-10-01 09:56  dimitr
+
+	* firebird2/doc/WhatsNew (1.7):
+	
+	no message
+
+2002-10-01 07:47  eku
+
+	* firebird2/: configure.in (1.50),
+	src/include/gen/autoconfig_msvc.h (1.33),
+	src/install/arch-specific/sinixz/prototype.in (1.5),
+	src/jrd/jrd.cpp (1.27), src/jrd/unix.cpp (1.12),
+	src/make.new/config/config.h.in (1.37):
+	
+	Merged the support for databases on raw devices from FB1 into FB2. 
+	Added switch '--enable-raw-devices' to configure to enable this
+	feature (default=off). Currently only supported on UNIX platforms.
+
+2002-10-01 07:47  eku
+
+	* firebird2/src/: jrd/build_no.h (1.153), jrd/build_no.h (1.152),
+	misc/writeBuildNum.sh (1.854), misc/writeBuildNum.sh (1.853),
+	jrd/build_no.h (1.156), jrd/build_no.h (1.155), jrd/build_no.h
+	(1.154), misc/writeBuildNum.sh (1.857), misc/writeBuildNum.sh
+	(1.856), misc/writeBuildNum.sh (1.855):
+	
+	increment build number
+
+2002-10-01 02:34  arnobrinkman
+
+	* firebird2/src/: jrd/build_no.h (1.151), misc/writeBuildNum.sh
+	(1.852):
+	
+	increment build number
+
+2002-10-01 02:34  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.22):
+	
+	AB: Fix error-message bug with aggregate only in sub-select
+
+2002-09-30 22:32  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.150), misc/writeBuildNum.sh
+	(1.851):
+	
+	increment build number
+
+2002-09-30 22:32  dimitr
+
+	* firebird2/doc/WhatsNew (1.6):
+	
+	Oops.
+
+2002-09-30 22:25  dimitr
+
+	* firebird2/doc/: WhatsNew (1.4), WhatsNew (1.5):
+	
+	Mentioned the invisible work that's done by our heroes ;-) Most of
+	these things cannot be seen by our users but its importance cannot
+	be overstressed.
+
+2002-09-30 22:25  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.148), misc/writeBuildNum.sh
+	(1.849), jrd/build_no.h (1.149), misc/writeBuildNum.sh (1.850):
+	
+	increment build number
+
+2002-09-30 22:22  dimitr
+
+	* firebird2/doc/WhatsNew (1.3):
+	
+	Mentioned the invisible work that's done by our heroes ;-) Most of
+	these things cannot be seen by our users but its importance cannot
+	be overstressed.
+
+2002-09-30 22:22  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.147), misc/writeBuildNum.sh
+	(1.848):
+	
+	increment build number
+
+2002-09-30 21:19  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.146), misc/writeBuildNum.sh
+	(1.847):
+	
+	increment build number
+
+2002-09-30 21:19  skidder
+
+	* firebird2/src/jrd/met.epp (1.24):
+	
+	Fixed my own dropped procedure handling error
+
+2002-09-30 21:13  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.145), misc/writeBuildNum.sh
+	(1.846):
+	
+	increment build number
+
+2002-09-30 21:13  dimitr
+
+	* firebird2/doc/WhatsNew (1.2):
+	
+	Removed unfinished stuff and added credits.
+
+2002-09-30 20:24  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.144), misc/writeBuildNum.sh
+	(1.845):
+	
+	increment build number
+
+2002-09-30 20:24  skidder
+
+	* firebird2/src/jrd/met.epp (1.23):
+	
+	Fixed possible coredump while dropping procedure and in some other
+	cases
+
+2002-09-30 17:21  skidder
+
+	* firebird2/src/jrd/dyn_def.epp (1.17):
+	
+	Fixed resource leaks which caused recursive definition error
+
+2002-09-30 17:21  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.143), misc/writeBuildNum.sh
+	(1.844):
+	
+	increment build number
+
+2002-09-30 17:18  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.142), misc/writeBuildNum.sh
+	(1.843):
+	
+	increment build number
+
+2002-09-30 17:18  dimitr
+
+	* firebird2/doc/WhatsNew (1.1):
+	
+	Added new file which describes all changes that are visible for
+	end-users.
+
+2002-09-30 16:21  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.141), misc/writeBuildNum.sh
+	(1.842):
+	
+	increment build number
+
+2002-09-30 16:21  skidder
+
+	* firebird2/src/jrd/: dfw.epp (1.18), met.epp (1.22), met_proto.h
+	(1.8):
+	
+	Fixed FB1/FB2/IB6 possibility of deferred database corruption (just
+	reported or rarely real) when deleting foreign constraint
+
+2002-09-30 09:41  eku
+
+	* firebird2/src/: jrd/build_no.h (1.140), misc/writeBuildNum.sh
+	(1.841):
+	
+	increment build number
+
+2002-09-30 09:41  eku
+
+	* firebird2/src/intl/langdrv.h (1.5):
+	
+	Avoid compiler warning 'No newline at end of file'.
+
+2002-09-30 08:00  eku
+
+	* firebird2/src/: jrd/build_no.h (1.138), misc/writeBuildNum.sh
+	(1.839), misc/writeBuildNum.sh (1.840), jrd/build_no.h (1.139):
+	
+	increment build number
+
+2002-09-30 08:00  eku
+
+	* firebird2/src/: jrd/arg.h (1.2), jrd/pwd.h (1.5), lock/fparamv3.h
+	(1.2):
+	
+	Don't hard-code the installation path. Use ISC_PREFIX whereever
+	possible.
+
+2002-09-29 17:44  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.137), misc/writeBuildNum.sh
+	(1.838):
+	
+	increment build number
+
+2002-09-29 17:44  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.14):
+	
+	Fixed one reason of the well-known "decompression overran buffer"
+	error.
+
+2002-09-29 01:52  arnobrinkman
+
+	* firebird2/src/: jrd/build_no.h (1.136), misc/writeBuildNum.sh
+	(1.837):
+	
+	increment build number
+
+2002-09-29 01:52  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.21):
+	
+	AB: Adding better error-handeling and support for subqueries with
+	group_by clause
+
+2002-09-29 00:42  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.135), misc/writeBuildNum.sh
+	(1.836):
+	
+	increment build number
+
+2002-09-29 00:42  skidder
+
+	* firebird2/src/jrd/dfw.epp (1.17):
+	
+	Fixed resource/memory leak which caused some DDL to fail
+
+2002-09-29 00:37  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.134), misc/writeBuildNum.sh
+	(1.835):
+	
+	increment build number
+
+2002-09-29 00:37  skidder
+
+	* firebird2/src/jrd/dfw.epp (1.16):
+	
+	Fixed resource/memory leak which caused some DDL to fail
+
+2002-09-28 22:58  skidder
+
+	* firebird2/src/jrd/met.epp (1.21):
+	
+	Fixed one more DDL coredump
+
+2002-09-28 22:56  skidder
+
+	* firebird2/builds/posix/make.shared.variables (1.2):
+	
+	Make it build on posix again
+
+2002-09-28 22:56  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.132), misc/writeBuildNum.sh
+	(1.833), jrd/build_no.h (1.133), misc/writeBuildNum.sh (1.834):
+	
+	increment build number
+
+2002-09-28 16:08  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.131), misc/writeBuildNum.sh
+	(1.832):
+	
+	increment build number
+
+2002-09-28 16:08  dimitr
+
+	* firebird2/builds/win32/msvc6/: dsql_server.dsp (1.4),
+	fbserver.dsp (1.4):
+	
+	Added new files to the projects.
+
+2002-09-28 16:03  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.129), misc/writeBuildNum.sh
+	(1.830), jrd/build_no.h (1.130), misc/writeBuildNum.sh (1.831):
+	
+	increment build number
+
+2002-09-28 16:03  dimitr
+
+	* firebird2/src/: dsql/dsql.cpp (1.24), dsql/dsql.tab.h (1.6),
+	dsql/gen.cpp (1.12), dsql/keywords.cpp (1.8), dsql/make.cpp (1.11),
+	dsql/misc_func.cpp (1.1), dsql/misc_func.h (1.1), dsql/node.h
+	(1.13), dsql/parse.cpp (1.27), dsql/parse.y (1.27), dsql/pass1.cpp
+	(1.20), jrd/blr.h (1.6), jrd/cmp.cpp (1.14), jrd/evl.cpp (1.18),
+	jrd/exe.cpp (1.20), jrd/exe.h (1.6), jrd/misc_func_ids.h (1.1),
+	jrd/par.cpp (1.13), jrd/req.h (1.5):
+	
+	1. Reworked internal_info implementation in both DSQL and JRD.	New
+	helper class created to serve it properly.  2. Added exception
+	re-raise semantics.  Syntax: EXCEPTION; If there was handled
+	exception, re-initiate it, otherwise evaluate to no-op.  3.
+	Implemented run-time exception messages.  Syntax: EXCEPTION
+	<exception_name> [<value>]; If <value> is specified, evaluate it
+	and use instead of RDB$EXCEPTION_MESSAGE.  4. Added new SQLCODE and
+	GDSCODE system variables.  Available in procedures/triggers only. 
+	If there wasn't any exception raised, return zero (success),
+	otherwise return an error code.  5. Implemented ROWS_AFFECTED
+	system variable.  Available in procedures/triggers only.  Count
+	rows affected by the last INSERT/UPDATE/DELETE statement.  For any
+	other statement, result is always zero.
+
+2002-09-28 00:59  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.128), misc/writeBuildNum.sh
+	(1.829):
+	
+	increment build number
+
+2002-09-28 00:59  skidder
+
+	* firebird2/src/jrd/: cmp.cpp (1.13), dfw.epp (1.15), jrd.cpp
+	(1.26), jrd.h (1.18), met.epp (1.20), met_proto.h (1.7):
+	
+	Fix several mostly DDL-related coredumps and locking failures
+
+2002-09-27 17:21  alexpeshkoff
+
+	* firebird2/src/: jrd/build_no.h (1.127), misc/writeBuildNum.sh
+	(1.828):
+	
+	increment build number
+
+2002-09-27 17:21  alexpeshkoff
+
+	* firebird2/builds/win32/msvc6/alice.dsp (1.3):
+	
+	Missed DEV_BUILD in Debug configuration
+
+2002-09-27 15:12  kkuznetsov
+
+	* firebird2/src/: include/firebird.h (1.4), jrd/common.h (1.34):
+	
+	[no log message]
+
+2002-09-27 15:12  kkuznetsov
+
+	* firebird2/src/: jrd/build_no.h (1.126), jrd/build_no.h (1.125),
+	misc/writeBuildNum.sh (1.827), misc/writeBuildNum.sh (1.826):
+	
+	increment build number
+
+2002-09-27 11:05  eku
+
+	* firebird2/src/: jrd/build_no.h (1.124), misc/writeBuildNum.sh
+	(1.825):
+	
+	increment build number
+
+2002-09-27 11:05  eku
+
+	* firebird2/src/dsql/dsql.h (1.5):
+	
+	Fixed compiler warning about redefinition of 'assert'.
+
+2002-09-27 03:31  bellardo
+
+	* firebird2/src/jrd/jrd_math.h (1.1):
+	
+	Finished header file renaming cleanup.
+
+2002-09-27 03:29  bellardo
+
+	* firebird2/src/isql/isql.epp (1.14):
+	
+	Cleaned up include directives after renaming math.h to jrd_math.h.
+
+2002-09-27 03:28  bellardo
+
+	* firebird2/src/jrd/: cvt.cpp (1.13), evl.cpp (1.17), exe.cpp
+	(1.19), gds.cpp (1.23), jrd_time.h (1.1):
+	
+	Cleaned up some include directives after renaming jrd_time.h.
+
+2002-09-27 03:28  bellardo
+
+	* firebird2/src/: jrd/build_no.h (1.121), misc/writeBuildNum.sh
+	(1.822), jrd/build_no.h (1.122), misc/writeBuildNum.sh (1.823),
+	misc/writeBuildNum.sh (1.824), jrd/build_no.h (1.123):
+	
+	increment build number
+
+2002-09-27 02:20  bellardo
+
+	* firebird2/src/: jrd/build_no.h (1.116), jrd/build_no.h (1.115),
+	jrd/build_no.h (1.114), misc/writeBuildNum.sh (1.817),
+	misc/writeBuildNum.sh (1.816), misc/writeBuildNum.sh (1.815),
+	jrd/build_no.h (1.119), jrd/build_no.h (1.118), jrd/build_no.h
+	(1.117), misc/writeBuildNum.sh (1.821), misc/writeBuildNum.sh
+	(1.820), misc/writeBuildNum.sh (1.819), misc/writeBuildNum.sh
+	(1.818), jrd/build_no.h (1.120):
+	
+	increment build number
+
+2002-09-27 02:20  bellardo
+
+	* firebird2/src/: burp/burp.cpp (1.11), isql/isql.epp (1.13),
+	jrd/cvt.cpp (1.12), jrd/evl.cpp (1.16), jrd/gds.cpp (1.22),
+	jrd/isc_sync.cpp (1.20), jrd/jrd.cpp (1.25), jrd/jrn.cpp (1.6),
+	jrd/math.cpp (1.3), jrd/mov.cpp (1.5), jrd/perf.cpp (1.12),
+	jrd/svc.cpp (1.20), jrd/utl.cpp (1.11), lock/lock.cpp (1.13),
+	qli/format.cpp (1.4), qli/mov.cpp (1.8), qli/picstr.cpp (1.7),
+	remote/inet.cpp (1.22), wal/wal.cpp (1.7), wal/walc.cpp (1.5),
+	wal/walw.cpp (1.10):
+	
+	renamed header files jrd/math.h and jrd/time.h to jrd/jrd_math.h
+	and jrd/jrd_time.h.
+
+2002-09-26 20:14  skidder
+
+	* firebird2/src/jrd/vio.cpp (1.13):
+	
+	Fixed nasty memory corruption problem which caused server to crash
+	quasi-randomly under high load (seems to be very old bug)
+
+2002-09-26 20:13  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.112), misc/writeBuildNum.sh
+	(1.813), jrd/build_no.h (1.113), misc/writeBuildNum.sh (1.814):
+	
+	increment build number
+
+2002-09-26 20:13  skidder
+
+	* firebird2/src/jrd/: cmp.cpp (1.12), dfw.epp (1.14), jrd.cpp
+	(1.24), met.epp (1.19):
+	
+	Fixed some memory leaks
+
+2002-09-26 15:32  kkuznetsov
+
+	* firebird2/src/: jrd/build_no.h (1.111), misc/writeBuildNum.sh
+	(1.812):
+	
+	increment build number
+
+2002-09-26 15:32  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solx86 (1.5):
+	
+	[no log message]
+
+2002-09-26 11:53  kkuznetsov
+
+	* firebird2/src/: jrd/build_no.h (1.110), misc/writeBuildNum.sh
+	(1.811):
+	
+	increment build number
+
+2002-09-26 11:53  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solx86 (1.4):
+	
+	[no log message]
+
+2002-09-26 11:26  eku
+
+	* firebird2/src/: jrd/build_no.h (1.108), misc/writeBuildNum.sh
+	(1.809), jrd/build_no.h (1.109), misc/writeBuildNum.sh (1.810):
+	
+	increment build number
+
+2002-09-26 11:26  eku
+
+	* firebird2/src/: isql/isql.epp (1.12), jrd/blb.cpp (1.11),
+	jrd/dls.cpp (1.4), jrd/dpm.epp (1.6), jrd/isc_file.cpp (1.12),
+	jrd/isc_sync.cpp (1.19), jrd/jrd.cpp (1.23), jrd/svc.cpp (1.19):
+	
+	Fixed compiler warnings.
+
+2002-09-25 19:12  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.99), misc/writeBuildNum.sh
+	(1.800), jrd/build_no.h (1.100), misc/writeBuildNum.sh (1.801),
+	jrd/build_no.h (1.102), jrd/build_no.h (1.101),
+	misc/writeBuildNum.sh (1.803), misc/writeBuildNum.sh (1.802),
+	jrd/build_no.h (1.105), jrd/build_no.h (1.104), jrd/build_no.h
+	(1.103), misc/writeBuildNum.sh (1.806), misc/writeBuildNum.sh
+	(1.805), misc/writeBuildNum.sh (1.804), jrd/build_no.h (1.107),
+	jrd/build_no.h (1.106), misc/writeBuildNum.sh (1.808),
+	misc/writeBuildNum.sh (1.807):
+	
+	increment build number
+
+2002-09-25 19:12  skidder
+
+	* firebird2/src/: alice/alice_meta.epp (1.6), alice/all.cpp (1.6),
+	alice/tdr.cpp (1.8), common/memory/allocators.cpp (1.8),
+	common/memory/allocators.h (1.7), common/memory/memory_pool.h
+	(1.6), dsql/alld.cpp (1.7), dsql/ddl.cpp (1.19), dsql/dsql.cpp
+	(1.23), dsql/gen.cpp (1.11), dsql/make.cpp (1.10), dsql/metd.epp
+	(1.11), dsql/parse.cpp (1.26), dsql/parse.y (1.26), dsql/pass1.cpp
+	(1.19), include/fb_blk.h (1.4), jrd/ail.cpp (1.5), jrd/all.cpp
+	(1.5), jrd/blb.cpp (1.10), jrd/blob_filter.epp (1.5),
+	jrd/block_cache.h (1.2), jrd/bookmark.cpp (1.5), jrd/btr.cpp (1.7),
+	jrd/cch.cpp (1.13), jrd/cmp.cpp (1.11), jrd/cvt2.cpp (1.7),
+	jrd/dfw.epp (1.13), jrd/dyn_def.epp (1.16), jrd/dyn_del.epp (1.11),
+	jrd/evl.cpp (1.15), jrd/exe.cpp (1.18), jrd/exe.h (1.5),
+	jrd/ext.cpp (1.10), jrd/extvms.cpp (1.4), jrd/fun.epp (1.9),
+	jrd/grant.epp (1.7), jrd/idx.cpp (1.6), jrd/ini.epp (1.6),
+	jrd/intl.cpp (1.14), jrd/intl_builtin.cpp (1.4), jrd/jrd.cpp
+	(1.22), jrd/jrd.h (1.17), jrd/log.cpp (1.4), jrd/met.epp (1.18),
+	jrd/netware.cpp (1.6), jrd/opt.cpp (1.13), jrd/os2.cpp (1.6),
+	jrd/pag.cpp (1.20), jrd/par.cpp (1.12), jrd/plugin_manager.cpp
+	(1.7), jrd/rec.cpp (1.5), jrd/rlck.cpp (1.6), jrd/rng.cpp (1.5),
+	jrd/rse.cpp (1.8), jrd/sbm.cpp (1.5), jrd/scl.epp (1.12),
+	jrd/sdw.cpp (1.7), jrd/sort.cpp (1.12), jrd/sort_mem.cpp (1.3),
+	jrd/sqz.cpp (1.4), jrd/svc.cpp (1.18), jrd/tpc.cpp (1.5),
+	jrd/tra.cpp (1.17), jrd/unix.cpp (1.11), jrd/val.cpp (1.7),
+	jrd/val.h (1.5), jrd/vio.cpp (1.12), jrd/vms.cpp (1.5),
+	jrd/windows.cpp (1.5), jrd/winnt.cpp (1.12),
+	jrd/os/darwin/mod_loader.cpp (1.2), jrd/os/posix/mod_loader.cpp
+	(1.4), jrd/os/posix/path_utils.cpp (1.2),
+	jrd/os/win32/mod_loader.cpp (1.2), jrd/os/win32/path_utils.cpp
+	(1.2), utilities/dba.epp (1.10):
+	
+	Changed engine to store source file name/line number information
+	for EVERY allocation when DEBUG_GDS_ALLOC is defined. All
+	allocation should be done using FB_NEW or FB_NEW_RPT macros instead
+	of keyword new since now
+
+2002-09-25 15:08  eku
+
+	* firebird2/src/: jrd/build_no.h (1.97), misc/writeBuildNum.sh
+	(1.798), jrd/build_no.h (1.98), misc/writeBuildNum.sh (1.799):
+	
+	increment build number
+
+2002-09-25 15:08  eku
+
+	* firebird2/src/: burp/burp.h (1.7), msgs/build_file.epp (1.7),
+	msgs/modify_msgs.epp (1.4):
+	
+	Fixed compiler warnings.
+
+2002-09-25 13:20  kkuznetsov
+
+	* firebird2/src/: misc/writeBuildNum.sh (1.797), jrd/build_no.h
+	(1.96):
+	
+	increment build number
+
+2002-09-25 13:20  kkuznetsov
+
+	* firebird2/builds/posix/: make.rules (1.7), prefix.solx86 (1.3):
+	
+	[no log message]
+
+2002-09-25 13:12  kkuznetsov
+
+	* firebird2/src/: jrd/build_no.h (1.95), misc/writeBuildNum.sh
+	(1.796):
+	
+	increment build number
+
+2002-09-25 13:12  kkuznetsov
+
+	* firebird2/src/common/memory/memory_pool.cpp (1.10):
+	
+	fixed some compile errors
+
+2002-09-25 09:18  eku
+
+	* firebird2/src/: jrd/build_no.h (1.94), misc/writeBuildNum.sh
+	(1.795):
+	
+	increment build number
+
+2002-09-25 09:18  eku
+
+	* firebird2/src/jrd/intl_builtin.cpp (1.3):
+	
+	Undone previous changes.
+
+2002-09-25 08:41  eku
+
+	* firebird2/src/: jrd/build_no.h (1.93), misc/writeBuildNum.sh
+	(1.794):
+	
+	increment build number
+
+2002-09-25 08:41  eku
+
+	* firebird2/src/jrd/intl_builtin.cpp (1.2):
+	
+	Fixed compiler warnings about nested comments.
+
+2002-09-25 08:22  kkuznetsov
+
+	* firebird2/src/: jrd/build_no.h (1.92), misc/writeBuildNum.sh
+	(1.793):
+	
+	increment build number
+
+2002-09-25 08:22  kkuznetsov
+
+	* firebird2/src/jrd/: common.h (1.33), ib_stdio.h (1.2), thd.h
+	(1.7):
+	
+	Some work on Solaris port
+
+2002-09-25 07:56  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.91), misc/writeBuildNum.sh
+	(1.792):
+	
+	increment build number
+
+2002-09-25 07:56  dimitr
+
+	* firebird2/src/jrd/plugin_manager.cpp (1.6):
+	
+	Commited John's fix for PluginManager::Module class destructor.
+
+2002-09-24 21:53  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.89), misc/writeBuildNum.sh
+	(1.790), misc/writeBuildNum.sh (1.791), jrd/build_no.h (1.90):
+	
+	increment build number
+
+2002-09-24 21:53  skidder
+
+	* firebird2/src/: jrd/isc_i_proto.h (1.4), jrd/isc_ipc.cpp (1.22),
+	jrd/isc_sync.cpp (1.18), remote/inet.cpp (1.21):
+	
+	Make engine compileable on Linux again after Erik's signal cleanup
+
+2002-09-24 19:53  bellardo
+
+	* firebird2/src/: jrd/build_no.h (1.88), misc/writeBuildNum.sh
+	(1.789):
+	
+	increment build number
+
+2002-09-24 19:53  bellardo
+
+	* firebird2/src/jrd/jrd.h (1.16):
+	
+	Fixed the "typename" error message.  The fix involved adding the
+	typename keyname to a declaration.  It is possible that older
+	compilers don't support typename, so in the future we may have to
+	use autoconf to detect compiler support.
+
+2002-09-24 16:17  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.87), misc/writeBuildNum.sh
+	(1.788):
+	
+	increment build number
+
+2002-09-24 16:17  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.32):
+	
+	DEBUG_GDS_ALLOC macro is now defined by autoconf.
+
+2002-09-24 15:01  eku
+
+	* firebird2/src/: misc/writeBuildNum.sh (1.787), jrd/build_no.h
+	(1.86):
+	
+	increment build number
+
+2002-09-24 15:01  eku
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.4),
+	Makefile.in.client.gbak (1.3), Makefile.in.client.gdef (1.3),
+	Makefile.in.client.gfix (1.3), Makefile.in.client.gpre (1.3),
+	Makefile.in.client.isql (1.3), Makefile.in.client.util (1.3),
+	Makefile.in.embed.gbak (1.3), Makefile.in.embed.gdef (1.3),
+	Makefile.in.embed.gfix (1.3), Makefile.in.embed.gpre (1.3),
+	Makefile.in.embed.isql (1.3), Makefile.in.embed.qli (1.3),
+	Makefile.in.embed.util (1.3), Makefile.in.example5 (1.3),
+	Makefile.in.extlib (1.3), Makefile.in.fbserver (1.3),
+	Makefile.in.inet_server (1.3), Makefile.in.intl (1.4),
+	Makefile.in.jrd (1.3), Makefile.in.libfbclient (1.3),
+	Makefile.in.libfbembed (1.3), Makefile.in.msgs (1.5),
+	Makefile.in.static.gpre (1.4), Makefile.in.static.isql (1.3),
+	make.defaults (1.3), make.rules (1.6):
+	
+	Call linker with $(LD) (and not $(CC) to link C++ programs.  Don't
+	hard-code linker path (rpath option).
+
+2002-09-24 14:59  eku
+
+	* firebird2/builds/posix/prefix.sinixz (1.6):
+	
+	Activate memory debugging and a few more compiler warnings.
+
+2002-09-24 14:58  eku
+
+	* firebird2/src/install/arch-specific/sinixz/: postinstall.in
+	(1.4), prototype.in (1.4):
+	
+	Fixed installation issues.
+
+2002-09-24 14:57  eku
+
+	* firebird2/src/: misc/writeBuildNum.sh (1.779), jrd/build_no.h
+	(1.79), jrd/build_no.h (1.78), misc/writeBuildNum.sh (1.780),
+	jrd/build_no.h (1.81), jrd/build_no.h (1.80), misc/writeBuildNum.sh
+	(1.782), misc/writeBuildNum.sh (1.781), jrd/build_no.h (1.83),
+	jrd/build_no.h (1.82), misc/writeBuildNum.sh (1.784),
+	misc/writeBuildNum.sh (1.783), jrd/build_no.h (1.84),
+	misc/writeBuildNum.sh (1.785), jrd/build_no.h (1.85),
+	misc/writeBuildNum.sh (1.786):
+	
+	increment build number
+
+2002-09-24 14:57  eku
+
+	* firebird2/src/: alice/alice.cpp (1.16), burp/burp.cpp (1.10),
+	common/memory/memory_pool.cpp (1.9), gpre/c_cxx.cpp (1.6),
+	gpre/cmp.cpp (1.6), gpre/cob.cpp (1.6), gpre/int.cpp (1.4),
+	jrd/btr.cpp (1.6), jrd/cch.cpp (1.12), jrd/fil.h (1.3), jrd/gds.cpp
+	(1.21), jrd/isc_cray.cpp (1.6), jrd/isc_i_proto.h (1.3),
+	jrd/isc_ipc.cpp (1.21), jrd/isc_sync.cpp (1.17), remote/inet.cpp
+	(1.20):
+	
+	Removed compiler warnings. Fixed more SIG_FPTR issues. Use GNU C to
+	check format strings against arguments.
+
+2002-09-24 10:05  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.77), misc/writeBuildNum.sh
+	(1.778):
+	
+	increment build number
+
+2002-09-24 10:05  dimitr
+
+	* firebird2/src/jrd/met.epp (1.17):
+	
+	Fixed lack of member variable initialization.
+
+2002-09-24 02:27  bellardo
+
+	* firebird2/src/: jrd/build_no.h (1.76), misc/writeBuildNum.sh
+	(1.777):
+	
+	increment build number
+
+2002-09-24 02:27  bellardo
+
+	* firebird2/src/jrd/: jrd.cpp (1.21), plugin_manager.cpp (1.5),
+	plugin_manager.h (1.5):
+	
+	Added support for a single, generic "plugins" directory.  Where
+	possible, this new plugins directory should be used for engine
+	modules.  Note the old separate directories intl and UDF still
+	exist and have the same usage as before.
+
+2002-09-24 01:19  bellardo
+
+	* firebird2/src/jrd/: plugin_manager.cpp (1.4), plugin_manager.h
+	(1.4):
+	
+	Added some class documentation and move module cleanup to
+	PluginManager destructor, including verifing reference counts in
+	the debug build.
+
+2002-09-24 01:19  bellardo
+
+	* firebird2/src/: misc/writeBuildNum.sh (1.776), jrd/build_no.h
+	(1.75):
+	
+	increment build number
+
+2002-09-23 20:02  skidder
+
+	* firebird2/src/: misc/writeBuildNum.sh (1.775), jrd/build_no.h
+	(1.74):
+	
+	increment build number
+
+2002-09-23 20:02  skidder
+
+	* firebird2/src/common/memory/: allocators.cpp (1.7), allocators.h
+	(1.6):
+	
+	Added FB_NEW macro
+
+2002-09-23 19:58  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.73), misc/writeBuildNum.sh
+	(1.774):
+	
+	increment build number
+
+2002-09-23 19:58  skidder
+
+	* firebird2/src/jrd/plugin_manager.h (1.3):
+	
+	Fixed memory corruption problem which forbad build with
+	DEBUG_GDS_ALLOC turned on
+
+2002-09-23 19:18  bellardo
+
+	* firebird2/src/: jrd/build_no.h (1.72), misc/writeBuildNum.sh
+	(1.773):
+	
+	increment build number
+
+2002-09-23 19:18  bellardo
+
+	* firebird2/src/jrd/: jrd.cpp (1.20), jrd.h (1.15):
+	
+	Fixed an infinite recursion problem with the new compilation
+	delayed triggers.
+
+2002-09-23 17:08  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.71), misc/writeBuildNum.sh
+	(1.772):
+	
+	increment build number
+
+2002-09-23 17:08  skidder
+
+	* firebird2/src/common/memory/allocators.cpp (1.6):
+	
+	gds__alloc_debug stores line number information in the memory pool
+
+2002-09-23 12:41  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.70), misc/writeBuildNum.sh
+	(1.771):
+	
+	increment build number
+
+2002-09-23 12:41  dimitr
+
+	* firebird2/src/jrd/: common.h (1.32), isc_ipc.cpp (1.20):
+	
+	Fixed wrong SIG_FPTR definition for win32.
+
+2002-09-23 09:49  eku
+
+	* firebird2/src/: jrd/build_no.h (1.69), misc/writeBuildNum.sh
+	(1.770):
+	
+	increment build number
+
+2002-09-23 09:49  eku
+
+	* firebird2/configure.in (1.49):
+	
+	Fixed syntax error introduced with previous check-in.
+
+2002-09-22 22:41  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.68), jrd/build_no.h (1.67),
+	jrd/build_no.h (1.66), jrd/build_no.h (1.65), misc/writeBuildNum.sh
+	(1.769), misc/writeBuildNum.sh (1.768), misc/writeBuildNum.sh
+	(1.767), misc/writeBuildNum.sh (1.766):
+	
+	increment build number
+
+2002-09-22 22:41  skidder
+
+	* firebird2/: builds/posix/prefix.linux (1.5),
+	src/common/memory/memory_pool.cpp (1.8),
+	src/common/memory/memory_pool.h (1.5), src/jrd/common.h (1.31),
+	src/remote/inet_server.cpp (1.11):
+	
+	Added file name/line number information to debug memory manager.
+	Dumps memory state to memdebug.log on exit
+
+2002-09-22 21:08  bellardo
+
+	* firebird2/src/: jrd/build_no.h (1.64), misc/writeBuildNum.sh
+	(1.765):
+	
+	increment build number
+
+2002-09-22 21:08  bellardo
+
+	* firebird2/src/jrd/: jrd.cpp (1.19), jrd.h (1.14):
+	
+	Fixed an order of operations error in the first dbb destructor
+	implementation.
+
+2002-09-22 19:25  bellardo
+
+	* firebird2/src/: jrd/build_no.h (1.63), misc/writeBuildNum.sh
+	(1.764):
+	
+	increment build number
+
+2002-09-22 19:25  bellardo
+
+	* firebird2/src/jrd/: jrd.cpp (1.18), jrd.h (1.13):
+	
+	Patch a rather large dbb memory leak created during the c++
+	porting.
+
+2002-09-22 15:29  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.62), misc/writeBuildNum.sh
+	(1.763):
+	
+	increment build number
+
+2002-09-22 15:29  dimitr
+
+	* firebird2/src/jrd/scl.epp (1.11):
+	
+	Added initialization of the local variable.
+
+2002-09-22 14:52  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.61), misc/writeBuildNum.sh
+	(1.762):
+	
+	increment build number
+
+2002-09-22 14:52  dimitr
+
+	* firebird2/src/jrd/intl_classes.h (1.2):
+	
+	Don't know why, but it fixes the current linking problem.
+
+2002-09-21 11:53  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.31):
+	
+	We definitely don't need extra tons of warnings regarding
+	unrecognized preprocessor directive.
+
+2002-09-21 11:53  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.60), misc/writeBuildNum.sh
+	(1.761):
+	
+	increment build number
+
+2002-09-21 10:00  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.59), misc/writeBuildNum.sh
+	(1.760):
+	
+	increment build number
+
+2002-09-21 10:00  dimitr
+
+	* firebird2/src/jrd/isc_ipc.cpp (1.19):
+	
+	Fixed wrong (at least for win32) function pointer cast.
+
+2002-09-20 22:59  bellardo
+
+	* firebird2/src/: jrd/build_no.h (1.58), misc/writeBuildNum.sh
+	(1.759):
+	
+	increment build number
+
+2002-09-20 22:59  bellardo
+
+	* firebird2/builds/mac_os_x/CS/CS.pbproj/: bellardo.pbxuser (1.2),
+	john.pbxuser (1.2):
+	
+	Removed two personal IDE settings files that should have never been
+	committed.
+
+2002-09-20 21:01  skidder
+
+	* firebird2/src/install/classic/install.sh.in (1.3):
+	
+	Fixed to make install work after interbase.msg->firebird.msg change
+
+2002-09-20 20:58  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.56), misc/writeBuildNum.sh
+	(1.757), misc/writeBuildNum.sh (1.758), jrd/build_no.h (1.57):
+	
+	increment build number
+
+2002-09-20 20:58  skidder
+
+	* firebird2/configure.in (1.48):
+	
+	Fixed to make build work w/o config file
+
+2002-09-20 12:23  eku
+
+	* firebird2/src/: jrd/build_no.h (1.55), jrd/build_no.h (1.54),
+	jrd/build_no.h (1.53), jrd/build_no.h (1.52), jrd/build_no.h
+	(1.51), misc/writeBuildNum.sh (1.756), misc/writeBuildNum.sh
+	(1.755), misc/writeBuildNum.sh (1.754), misc/writeBuildNum.sh
+	(1.753), misc/writeBuildNum.sh (1.752):
+	
+	increment build number
+
+2002-09-20 12:23  eku
+
+	* firebird2/: builds/posix/Makefile.in.firebird (1.8),
+	builds/posix/Makefile.in.msgs (1.4), builds/posix/make.defaults
+	(1.2), builds/posix/prefix.sinixz (1.5),
+	src/install/arch-specific/sinixz/prototype.in (1.3),
+	src/jrd/cch.cpp (1.11), src/jrd/err.cpp (1.11), src/jrd/isc_ipc.cpp
+	(1.18), src/remote/interface.cpp (1.12), src/utilities/srvrmgr.cpp
+	(1.6):
+	
+	Fixed the naming of some files:  interbase.msg => firebird.msg 
+	interbase.log => firebird.log
+	
+	SINIX-Z: don't distribute build programms
+
+2002-09-20 12:10  dimitr
+
+	* firebird2/src/: jrd/version.rc (1.3), remote/window.rc (1.3),
+	jrd/jrd_ver.h (1.2), jrd/jrd_ver.rc (1.2), jrd/version_95.rc (1.4),
+	remote/window.aps (1.2):
+	
+	Get rid of unnecessary files.
+
+2002-09-20 12:10  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.47), misc/writeBuildNum.sh
+	(1.748), jrd/build_no.h (1.48), misc/writeBuildNum.sh (1.749),
+	jrd/build_no.h (1.49), misc/writeBuildNum.sh (1.750),
+	jrd/build_no.h (1.50), misc/writeBuildNum.sh (1.751):
+	
+	increment build number
+
+2002-09-20 12:07  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.45), misc/writeBuildNum.sh
+	(1.746), jrd/build_no.h (1.46), misc/writeBuildNum.sh (1.747):
+	
+	increment build number
+
+2002-09-20 12:07  dimitr
+
+	* firebird2/: builds/win32/msvc6/fbclient.dsp (1.4),
+	builds/win32/msvc6/fbserver.dsp (1.3), src/iscguard/iscguard.rc
+	(1.3):
+	
+	Get rid of unnecessary files.
+
+2002-09-20 10:31  eku
+
+	* firebird2/src/install/arch-specific/sinixz/postinstall.in (1.3):
+	
+	Fixed typo.
+
+2002-09-20 10:28  eku
+
+	* firebird2/src/: jrd/build_no.h (1.41), misc/writeBuildNum.sh
+	(1.742), jrd/build_no.h (1.42), misc/writeBuildNum.sh (1.743),
+	jrd/build_no.h (1.43), misc/writeBuildNum.sh (1.744),
+	jrd/build_no.h (1.44), misc/writeBuildNum.sh (1.745):
+	
+	increment build number
+
+2002-09-20 10:28  eku
+
+	* firebird2/: configure.in (1.47), src/jrd/file_params.h (1.10),
+	src/make.new/config/config.h.in (1.36):
+	
+	Do not hard-code the value of ISC_PREFIX, but set it to
+	installation prefix (--prefix option).
+
+2002-09-19 18:02  skidder
+
+	* firebird2/src/: misc/writeBuildNum.sh (1.741), jrd/build_no.h
+	(1.40):
+	
+	increment build number
+
+2002-09-19 18:02  skidder
+
+	* firebird2/src/jrd/: cmp.cpp (1.10), dfw.epp (1.12), exe.cpp
+	(1.17), jrd.cpp (1.17), jrd.h (1.12), met.epp (1.16), met_proto.h
+	(1.6):
+	
+	Deferred user trigger compilation added. Solves some, but not all
+	DDL issues and speeds things up
+
+2002-09-19 17:25  skidder
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.3),
+	Makefile.in.client.gbak (1.2), Makefile.in.client.gdef (1.2),
+	Makefile.in.client.gfix (1.2), Makefile.in.client.gpre (1.2),
+	Makefile.in.client.isql (1.2), Makefile.in.client.util (1.2),
+	Makefile.in.embed.gbak (1.2), Makefile.in.embed.gdef (1.2),
+	Makefile.in.embed.gfix (1.2), Makefile.in.embed.gpre (1.2),
+	Makefile.in.embed.isql (1.2), Makefile.in.embed.lockmgr (1.2),
+	Makefile.in.embed.qli (1.2), Makefile.in.embed.util (1.2),
+	Makefile.in.example5 (1.2), Makefile.in.extlib (1.2),
+	Makefile.in.fbserver (1.2), Makefile.in.fbutil (1.3),
+	Makefile.in.firebird (1.7), Makefile.in.gpre (1.2),
+	Makefile.in.inet_server (1.2), Makefile.in.install (1.3),
+	Makefile.in.intl (1.3), Makefile.in.jrd (1.2),
+	Makefile.in.libfbclient (1.2), Makefile.in.libfbcommon (1.2),
+	Makefile.in.libfbembed (1.2), Makefile.in.libfbserver (1.2),
+	Makefile.in.libfbstatic (1.3), Makefile.in.msgs (1.3),
+	Makefile.in.refDatabases (1.5), Makefile.in.static.gbak (1.2),
+	Makefile.in.static.gpre (1.3), Makefile.in.static.isql (1.2),
+	Makefile.in.v5_examples (1.3), make.rules (1.5), prefix.linux
+	(1.4), prefix.sinixz (1.4):
+	
+	Fix build engine to make PROD_BUILD compile
+
+2002-09-19 17:25  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.39), misc/writeBuildNum.sh
+	(1.740):
+	
+	increment build number
+
+2002-09-19 17:22  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.38), misc/writeBuildNum.sh
+	(1.739):
+	
+	increment build number
+
+2002-09-19 17:22  skidder
+
+	* firebird2/src/install/super/: SSTarInstall.sh (1.2), SSinstall.sh
+	(1.2), SSpostinstall.sh (1.2), SSpostuninstall.sh (1.2),
+	SSpreinstall.sh (1.2), SSpreuninstall.sh (1.2), SSrpmfiles.txt
+	(1.2), SSrpmheader.txt (1.2), install.sh.in (1.1),
+	postinstall.sh.in (1.1), postuninstall.sh.in (1.1),
+	preinstall.sh.in (1.1), preuninstall.sh.in (1.1), rpmfiles.txt.in
+	(1.1), rpmheader.txt.in (1.1), tarInstall.sh.in (1.1):
+	
+	Fix build engine to make PROD_BUILD compile
+
+2002-09-19 12:51  eku
+
+	* firebird2/src/: jrd/build_no.h (1.36), jrd/build_no.h (1.35),
+	jrd/build_no.h (1.34), misc/writeBuildNum.sh (1.737),
+	misc/writeBuildNum.sh (1.736), misc/writeBuildNum.sh (1.735),
+	jrd/build_no.h (1.37), misc/writeBuildNum.sh (1.738):
+	
+	increment build number
+
+2002-09-19 12:51  eku
+
+	* firebird2/: configure.in (1.46),
+	src/include/gen/autoconfig_msvc.h (1.30), src/jrd/common.h (1.30),
+	src/make.new/config/config.h.in (1.35):
+	
+	Autoconf:  o check for the function initgroups (replaces
+	NOINITGROUPS define)  o the define INTL (common.h) has been
+	removed, since it is only set but not	 used anywhere
+
+2002-09-19 11:35  eku
+
+	* firebird2/src/: jrd/build_no.h (1.33), misc/writeBuildNum.sh
+	(1.734):
+	
+	increment build number
+
+2002-09-19 11:35  eku
+
+	* firebird2/src/install/arch-specific/sinixz/postinstall.in (1.2):
+	
+	gds_inet_server is now called fb_inet_server
+
+2002-09-18 16:47  fsg
+
+	* firebird2/src/: jrd/build_no.h (1.32), misc/writeBuildNum.sh
+	(1.733):
+	
+	increment build number
+
 2002-09-18 14:50  eku
 
 	* firebird2/src/: jrd/build_no.h (1.19), misc/writeBuildNum.sh
