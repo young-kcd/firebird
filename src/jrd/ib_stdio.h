@@ -97,6 +97,9 @@
 #define ib_fileno	fileno
 #define IB_FILE         FILE
 
+#define ib_gets		gets
+#define ib_sprintf	sprintf
+
 #else /* NEED_IB_STDIO */
 
 /* @#$% Solaris doesn't let you fopen() a FILE if the underlying open()
