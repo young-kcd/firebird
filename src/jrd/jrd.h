@@ -646,9 +646,6 @@ private:
 
 		static inline const SLONG generate(void const*, const TranGarbage& Item) 
 		{ return Item.tran; }
-
-		static inline const bool greaterThan(const TranGarbage& i1, const TranGarbage& i2) 
-		{ return i1.tran > i2.tran; }
 	};
 
 	typedef	Firebird::SortedArray<
