@@ -466,18 +466,18 @@ struct symb dbt_symbols[] = {
 	{"bdbs", &dbg_bdbs, symb_routine, 0},
 	{"verify", &dbg_verify, symb_routine, 0},
 
-/*
-#define SYM(struct, name)	"name", OFFSET (struct, name), 0, symb_offset, sizeof (((struct) NULL)->name),
-    "Database", &Database, symb_absolute, sizeof(Database),
-    SYM (Database*, dbb_bcb)
-    SYM (Database*, dbb_relations)
-    SYM (Database*, dbb_pools)
-    SYM (Database*, dbb_requests)
-    SYM (REL, rel_formats)
-    SYM (REL, rel_pages)
-    SYM (jrd_req*, req_top_node)
-    SYM (jrd_req*, req_next)
-*/
+//
+//#define SYM(struct, name)	"name", OFFSET (struct, name), 0, symb_offset, sizeof (((struct) NULL)->name),
+//    "Database", &Database, symb_absolute, sizeof(Database),
+//    SYM (Database*, dbb_bcb)
+//    SYM (Database*, dbb_relations)
+//    SYM (Database*, dbb_pools)
+//    SYM (Database*, dbb_requests)
+//    SYM (REL, rel_formats)
+//    SYM (REL, rel_pages)
+//    SYM (jrd_req*, req_top_node)
+//    SYM (jrd_req*, req_next)
+//
 	{NULL, 0, symb_routine, 0}
 };
 
