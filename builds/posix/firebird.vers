@@ -131,11 +131,9 @@ global:
 	gds__vtof;
 	gds__vtov;
 
-
-#KLK	gds__default_printer;
-#        gds__alloc_debug;
-#	gds_alloc_flag_unfreed;
-#        gds_alloc_report;
+	gds__alloc_debug;
+	gds_alloc_flag_unfreed;
+	gds_alloc_report;
 
 	perf_format;
 	perf_get_info;

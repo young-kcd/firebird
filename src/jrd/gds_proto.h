@@ -48,13 +48,15 @@
 extern "C" {
 #endif
 
-
-#ifdef DEBUG_GDS_ALLOC
-
-#define gds__alloc(s)		gds__alloc_debug ((s),(TEXT*)__FILE__,(ULONG)__LINE__)
 void*	API_ROUTINE gds__alloc_debug(SLONG, TEXT*, ULONG);
 void	API_ROUTINE gds_alloc_flag_unfreed(void*);
 void	API_ROUTINE gds_alloc_report(ULONG, char*, int);
+
+void*	API_ROUTINE gds__alloc(SLONG);
+
+#ifdef DEBUG_GDS_ALLOC
+#define gds__alloc(s)		gds__alloc_debug ((s),(TEXT*)__FILE__,(ULONG)__LINE__)
+#endif /* DEBUG_GDS_ALLOC */
 
 #define	ALLOC_dont_report	(1L << 0)	/* Don't report this block */
 #define	ALLOC_silent		(1L << 1)	/* Don't report new leaks */
@@ -62,12 +64,6 @@ void	API_ROUTINE gds_alloc_report(ULONG, char*, int);
 #define	ALLOC_mark_current	(1L << 3)	/* Mark all current leaks */
 #define ALLOC_check_each_call	(1L << 4)	/* Check memory integrity on each alloc/free call */
 #define ALLOC_dont_check	(1L << 5)	/* Stop checking integrity on each call */
-
-#else /* DEBUG_GDS_ALLOC */
-
-extern void*	API_ROUTINE gds__alloc(SLONG);
-
-#endif /* DEBUG_GDS_ALLOC */
 
 #if !defined(__cplusplus)
 typedef GDS_QUAD GDS__QUAD;
