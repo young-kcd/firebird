@@ -36,10 +36,12 @@ EXPORTS
 	IB_UDF_log
 	IB_UDF_log10
 	IB_UDF_lower
+	IB_UDF_lpad
 	IB_UDF_ltrim
 	IB_UDF_mod
 	IB_UDF_pi
 	IB_UDF_rand
+	IB_UDF_rpad
 	IB_UDF_rtrim
 	IB_UDF_sign
 	IB_UDF_sin
