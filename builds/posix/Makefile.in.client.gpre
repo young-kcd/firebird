@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gpre,v 1.4 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.client.gpre,v 1.5 2002-11-21 10:08:42 eku Exp $
 #
 ROOT=..
 ObjModuleName=client.gpre
@@ -44,7 +44,8 @@ include     $(ROOT)/gen/make.shared.variables
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
-		pat.cpp pretty.cpp sqe.cpp sql.cpp cob.cpp noform.cpp
+		pat.cpp pretty.cpp sqe.cpp sql.cpp cob.cpp noform.cpp \
+		ftn.cpp ada.cpp con.cpp
 
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
 GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))

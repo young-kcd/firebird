@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.gpre,v 1.3 2002-11-20 13:38:13 kkuznetsov Exp $
+#  $Id: Makefile.in.gpre,v 1.4 2002-11-21 10:08:42 eku Exp $
 #
 ROOT=../..
 
@@ -45,7 +45,8 @@ include     $(ROOT)/src/make.shared.variables
 
 GPRECommon_Sources += cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
-		pat.cpp pretty.cpp sqe.cpp sql.cpp cob.cpp noform.cpp
+		pat.cpp pretty.cpp sqe.cpp sql.cpp noform.cpp \
+		ftn.cpp ada.cpp cob.cpp
 
 GPREBoot_Sources=  gpre_meta_boot.cpp ../common/fb_exception.cpp
 GPRE_Sources=	   gpre_meta.cpp
