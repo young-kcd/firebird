@@ -209,7 +209,7 @@ void TimeStamp::generate()
 	struct timeval tp;
 	GETTIMEOFDAY(&tp);
 	seconds = tp.tv_sec;
-	millis = tp.tv_usec / 1000;
+	fractions = tp.tv_usec / 1000;
 #else
 	struct timeb time_buffer;
 	ftime(&time_buffer);
