@@ -1758,12 +1758,20 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
 
-		if (ISC_check_if_remote(expanded_name, true)) {
+		if (ISC_check_if_remote(expanded_name, true)) 
+		{
 			ERR_post(isc_unavailable, 0);
 		}
 	}
 
-	if (options.dpb_key) {
+	// Check for DatabaseAccess
+	if (!is_alias && !verify_database_name(expanded_name, user_status)) 
+	{
+		ERR_punt();
+	}
+
+	if (options.dpb_key) 
+	{
 		dbb->dbb_encrypt_key = options.dpb_key;
 	}
 
@@ -1859,11 +1867,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	initing_security = false;
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
-	if (!is_alias && !verify_database_name(expanded_name, user_status)) {
-		JRD_SS_MUTEX_UNLOCK; // CVC: Added this line.
-		JRD_restore_context();
-		return user_status[1];
-	}
 	dbb->dbb_file =
 		PIO_create(dbb, expanded_name.c_str(), expanded_name.length(), 
 				   options.dpb_overwrite);
