@@ -259,3 +259,6 @@
 #define KW_DELETING 515
 #define BACKUP 516
 #define KW_DIFFERENCE 517
+#define OPEN 518
+#define CLOSE 519
+#define FETCH 520

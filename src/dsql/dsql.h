@@ -428,6 +428,8 @@ public:
 	USHORT	req_message_number;	//!< Next available message number
 	USHORT	req_loop_level;		//!< Loop level
 	DLLS	req_labels;			//!< Loop labels
+	USHORT	req_cursor_number;	//!< Cursor number
+	DLLS	req_cursors;		//!< Cursors
 	USHORT	req_in_select_list;	//!< now processing "select list"
 	USHORT	req_in_where_clause;	//!< processing "where clause"
 	USHORT	req_in_group_by_clause;	//!< processing "group by clause"

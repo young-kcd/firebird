@@ -130,6 +130,8 @@
  * 2003.08.14 Arno Brinkman: Added derived table support.
  *
  * 2003.08.16 Arno Brinkman: Changed ambiguous column name checking.
+ *
+ * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL.
  */
 
 #include "firebird.h"
@@ -178,8 +180,9 @@ static void pass1_blob(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_coalesce(DSQL_REQ, DSQL_NOD, bool);
 static DSQL_NOD pass1_collate(DSQL_REQ, DSQL_NOD, STR);
 static DSQL_NOD pass1_constant(DSQL_REQ, DSQL_NOD);
-static DSQL_NOD pass1_cursor(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static DSQL_CTX pass1_cursor_context(DSQL_REQ, DSQL_NOD, DSQL_NOD);
+static DSQL_NOD pass1_cursor_name(DSQL_REQ, STR, bool);
+static DSQL_NOD pass1_cursor_reference(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static DSQL_NOD pass1_dbkey(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_delete(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_derived_table(DSQL_REQ, DSQL_NOD, bool);
@@ -271,7 +274,7 @@ DSQL_CTX PASS1_make_context(DSQL_REQ request, DSQL_NOD relation_node)
 
     // CVC: Let's skim the context, too.
     if (relation_name && relation_name->str_data) {
-        pass_exact_name ( (TEXT*) relation_name->str_data);
+        pass_exact_name((TEXT*) relation_name->str_data);
 	}
 
 	DEV_BLKCHK(relation_name, dsql_type_str);
@@ -966,7 +969,7 @@ DSQL_NOD PASS1_rse(DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQL_NOD up
  **/
 DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 {
-	DSQL_NOD node, *ptr, *end, *ptr2, *end2, into_in, into_out, procedure,
+	DSQL_NOD node, *ptr, *end, *ptr2, *end2, into_in, into_out,
 		cursor, temp, parameters, variables;
 	DLLS base;
 	DSQL_FLD field, field2;
@@ -1026,10 +1029,10 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 		request->req_type = REQ_DDL;
 		return input;
 
+	case nod_del_trigger:
 	case nod_def_trigger:
 	case nod_mod_trigger:
 	case nod_replace_trigger:
-	case nod_del_trigger:
 		request->req_type = REQ_DDL;
 		request->req_flags |= REQ_procedure;
 		request->req_flags |= REQ_trigger;
@@ -1047,35 +1050,48 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 		request->req_type = REQ_DDL;
 		request->req_flags |= REQ_procedure;
 
-		/* Insure that variable names do not duplicate parameter names */
-
 		if (variables = input->nod_arg[e_prc_dcls]) {
+
+			// insure that variable names do not duplicate parameter names
+
 			for (ptr = variables->nod_arg, end = ptr + variables->nod_count;
-				 ptr < end; ptr++) {
-				field = (DSQL_FLD) (*ptr)->nod_arg[e_dfl_field];
-				DEV_BLKCHK(field, dsql_type_fld);
-				if (parameters = input->nod_arg[e_prc_inputs])
-					for (ptr2 = parameters->nod_arg, end2 =
-						 ptr2 + parameters->nod_count; ptr2 < end2; ptr2++) {
-						field2 = (DSQL_FLD) (*ptr2)->nod_arg[e_dfl_field];
-						DEV_BLKCHK(field2, dsql_type_fld);
-						if (!strcmp(field->fld_name, field2->fld_name))
-							ERRD_post(gds_sqlerr, gds_arg_number,
-									  (SLONG) - 901, gds_arg_gds,
-									  gds_dsql_var_conflict, gds_arg_string,
-									  field->fld_name, 0);
+				 ptr < end; ptr++)
+			{
+				if ((*ptr)->nod_type == nod_def_field) {
+
+					field = (DSQL_FLD) (*ptr)->nod_arg[e_dfl_field];
+					DEV_BLKCHK(field, dsql_type_fld);
+
+					if (parameters = input->nod_arg[e_prc_inputs]) {
+
+						for (ptr2 = parameters->nod_arg, end2 =
+							 ptr2 + parameters->nod_count; ptr2 < end2; ptr2++)
+						{
+							field2 = (DSQL_FLD) (*ptr2)->nod_arg[e_dfl_field];
+							DEV_BLKCHK(field2, dsql_type_fld);
+							if (!strcmp(field->fld_name, field2->fld_name))
+								ERRD_post(gds_sqlerr, gds_arg_number,
+										  (SLONG) - 901, gds_arg_gds,
+										  gds_dsql_var_conflict, gds_arg_string,
+										  field->fld_name, 0);
+						}
 					}
-				if (parameters = input->nod_arg[e_prc_outputs])
-					for (ptr2 = parameters->nod_arg, end2 =
-						 ptr2 + parameters->nod_count; ptr2 < end2; ptr2++) {
-						field2 = (DSQL_FLD) (*ptr2)->nod_arg[e_dfl_field];
-						DEV_BLKCHK(field2, dsql_type_fld);
-						if (!strcmp(field->fld_name, field2->fld_name))
-							ERRD_post(gds_sqlerr, gds_arg_number,
-									  (SLONG) - 901, gds_arg_gds,
-									  gds_dsql_var_conflict, gds_arg_string,
-									  field->fld_name, 0);
+
+					if (parameters = input->nod_arg[e_prc_outputs]) {
+
+						for (ptr2 = parameters->nod_arg, end2 =
+							 ptr2 + parameters->nod_count; ptr2 < end2; ptr2++)
+						{
+							field2 = (DSQL_FLD) (*ptr2)->nod_arg[e_dfl_field];
+							DEV_BLKCHK(field2, dsql_type_fld);
+							if (!strcmp(field->fld_name, field2->fld_name))
+								ERRD_post(gds_sqlerr, gds_arg_number,
+										  (SLONG) - 901, gds_arg_gds,
+										  gds_dsql_var_conflict, gds_arg_string,
+										  field->fld_name, 0);
+						}
 					}
+				}
 			}
 		}
 		return input;
@@ -1147,26 +1163,19 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 
 	case nod_for_select:
 		{
-		const int arg_cursors =
-			(request->req_flags & REQ_trigger) ? e_trg_cursors : e_prc_cursors;
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_flags = input->nod_flags;
 		cursor = node->nod_arg[e_flp_cursor] = input->nod_arg[e_flp_cursor];
-		if (cursor && (procedure = request->req_ddl_node) &&
-			(procedure->nod_type == nod_def_procedure ||
-			 procedure->nod_type == nod_redef_procedure ||
-			 procedure->nod_type == nod_mod_procedure ||
-			 procedure->nod_type == nod_replace_procedure ||
-			 procedure->nod_type == nod_def_trigger || 
-			 procedure->nod_type == nod_mod_trigger ||
-			 procedure->nod_type == nod_replace_trigger )) {
-			cursor->nod_arg[e_cur_next] = procedure->nod_arg[arg_cursors];
-			procedure->nod_arg[arg_cursors] = cursor;
-			cursor->nod_arg[e_cur_context] = node;
+		if (cursor) {
+			pass1_cursor_name(request, (STR) cursor->nod_arg[e_cur_name], false);
+			cursor->nod_arg[e_cur_rse] = node;
+			cursor->nod_arg[e_cur_number] = (DSQL_NOD) (IPTR) request->req_cursor_number++;
+			LLS_PUSH(cursor, &request->req_cursors);
 		}
-		node->nod_arg[e_flp_select] = PASS1_statement(request,
-													  input->nod_arg[e_flp_select],
-													  proc_flag);
+
+		node->nod_arg[e_flp_select] =
+			PASS1_statement(request, input->nod_arg[e_flp_select], proc_flag);
+
 		into_in = input->nod_arg[e_flp_into];
 		node->nod_arg[e_flp_into] = into_out =
 			MAKE_node(into_in->nod_type, into_in->nod_count);
@@ -1177,9 +1186,10 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 			*ptr2++ = PASS1_node(request, *ptr, proc_flag);
 			DEV_BLKCHK(*(ptr2 - 1), dsql_type_nod);
 		}
+
 		if (input->nod_arg[e_flp_action]) {
-            /* CVC: Let's add the ability to BREAK the for_select same as the while.
-               but only if the command is FOR SELECT, otherwise we have singular SELECT. */
+            // CVC: Let's add the ability to BREAK the for_select same as the while,
+            // but only if the command is FOR SELECT, otherwise we have singular SELECT
 			request->req_loop_level++;
 			node->nod_arg[e_flp_label] = pass1_label(request, input);
 			node->nod_arg[e_flp_action] =
@@ -1188,15 +1198,10 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 			LLS_POP(&request->req_labels);
         }
 
-		if (cursor && procedure
-			&& (procedure->nod_type == nod_def_procedure ||
-				procedure->nod_type == nod_redef_procedure ||
-				procedure->nod_type == nod_mod_procedure ||
-				procedure->nod_type == nod_replace_procedure ||
-				procedure->nod_type == nod_def_trigger ||
-				procedure->nod_type == nod_mod_trigger ||
-				procedure->nod_type == nod_replace_trigger))
-			procedure->nod_arg[arg_cursors] = cursor->nod_arg[e_cur_next];
+		if (cursor) {
+			request->req_cursor_number--;
+			LLS_POP(&request->req_cursors);
+		}
 
 		if (input->nod_flags & NOD_SINGLETON_SELECT) {
 			node = pass1_savepoint(request, node);
@@ -1446,6 +1451,41 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 				  gds_arg_gds, gds_union_err,	/* union not supported */
 				  0);
 		break;
+
+	case nod_cursor:
+		{
+		// make sure the cursor doesn't exist
+		pass1_cursor_name(request, (STR) input->nod_arg[e_cur_name], false);
+		// temporarily hide unnecessary contexts and process our RSE
+		DLLS base_context = request->req_context;
+		request->req_context = NULL;
+		input->nod_arg[e_cur_rse] =
+			PASS1_rse(request, input->nod_arg[e_cur_rse],
+					  input->nod_arg[e_cur_rse]->nod_arg[e_sel_order], NULL);
+		while (request->req_context)
+			LLS_POP(&request->req_context);
+		request->req_context = base_context;
+		// assign number and store in the request stack
+		input->nod_arg[e_cur_number] = (DSQL_NOD) (IPTR) request->req_cursor_number++;
+		LLS_PUSH(input, &request->req_cursors);
+		}
+		return input;
+
+	case nod_cursor_open:
+	case nod_cursor_close:
+	case nod_cursor_fetch:
+		// resolve the cursor
+		input->nod_arg[e_cur_stmt_id] =
+			pass1_cursor_name(request, (STR) input->nod_arg[e_cur_stmt_id], true);
+		// process a seek node, if exists
+		if (input->nod_arg[e_cur_stmt_seek])
+			input->nod_arg[e_cur_stmt_seek] =
+				PASS1_node(request, input->nod_arg[e_cur_stmt_seek], proc_flag);
+		// process an assignment node, if exists
+		if (input->nod_arg[e_cur_stmt_into])
+			input->nod_arg[e_cur_stmt_into] =
+				PASS1_node(request, input->nod_arg[e_cur_stmt_into], proc_flag);
+		return input;
 
 	default:
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
@@ -1783,39 +1823,39 @@ static DSQL_NOD ambiguity_check(DSQL_REQ request, DSQL_NOD node,
 		DEV_BLKCHK(context, dsql_type_ctx);
 		DSQL_REL relation = context->ctx_relation;
 		DSQL_PRC procedure = context->ctx_procedure;
-        if (strlen (b) > (sizeof (buffer) - 50)) {
+        if (strlen(b) > (sizeof(buffer) - 50)) {
 			// Buffer full
             break;
 		}
 		// if this is the second loop add "and " before relation.
         if (++loop > 2) {
-            strcat (buffer, "and ");
+            strcat(buffer, "and ");
 		}
 		// Process relation when present.
 		if (relation) {
 			if (!(relation->rel_flags & REL_view)) {
-		        strcat (buffer, "table ");
+		        strcat(buffer, "table ");
 			}
 			else {
-				strcat (buffer, "view ");
+				strcat(buffer, "view ");
 			}
-	        strcat (buffer, relation->rel_name);
+	        strcat(buffer, relation->rel_name);
 		}
 		else if (procedure) {
 			// Process procedure when present.		
-			strcat (b, "procedure ");
-			strcat (b, procedure->prc_name);
+			strcat(b, "procedure ");
+			strcat(b, procedure->prc_name);
 		}
 		else {
 			// When there's no relation and no procedure it's a derived table.
-			strcat (b, "derived table ");
+			strcat(b, "derived table ");
 			if (context->ctx_alias) {
-				strcat (b, context->ctx_alias);
+				strcat(b, context->ctx_alias);
 			}
 		}
-		strcat (buffer, " ");
+		strcat(buffer, " ");
 		if (!p) {
-			p = b + strlen (b);
+			p = b + strlen(b);
 		}
 	}
 
@@ -2079,7 +2119,6 @@ static void field_error(const TEXT* qualifier_name, const TEXT* field_name,
                   gds_arg_string, linecol,
                   0);
 }
-
 
 
 /**
@@ -2980,7 +3019,7 @@ static DSQL_NOD pass1_constant( DSQL_REQ request, DSQL_NOD constant)
 
 /**
   
- 	pass1_cursor
+ 	pass1_cursor_context
   
     @brief	Turn a cursor reference into a record selection expression.
  
@@ -2990,7 +3029,126 @@ static DSQL_NOD pass1_constant( DSQL_REQ request, DSQL_NOD constant)
     @param relation_name
 
  **/
-static DSQL_NOD pass1_cursor( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relation_name)
+static DSQL_CTX pass1_cursor_context( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relation_name)
+{
+	DSQL_NOD temp, *ptr, *end;
+
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(cursor, dsql_type_nod);
+	DEV_BLKCHK(relation_name, dsql_type_nod);
+
+	STR rname = (STR) relation_name->nod_arg[e_rln_name];
+	DEV_BLKCHK(rname, dsql_type_str);
+
+	STR string = (STR) cursor->nod_arg[e_cur_name];
+	DEV_BLKCHK(string, dsql_type_str);
+
+	DSQL_CTX context = NULL;
+
+	// this function must throw an error if no cursor was found
+	DSQL_NOD node = pass1_cursor_name(request, string, true);
+	assert(node);
+
+	temp = node->nod_arg[e_cur_rse];
+	if (temp->nod_type == nod_for_select)
+		temp = temp->nod_arg[e_flp_select];
+	else
+		ERRD_post(gds_sqlerr, gds_arg_number,
+				  (SLONG) - 504, gds_arg_gds,
+				  gds_dsql_cursor_err,
+				  gds_arg_string, string->str_data,
+				  gds_arg_string, "is not updatable",
+				  0);
+	temp = temp->nod_arg[e_rse_streams];
+
+	for (ptr = temp->nod_arg, end = ptr + temp->nod_count;
+		 ptr < end; ptr++)
+	{
+		DEV_BLKCHK(*ptr, dsql_type_nod);
+		DSQL_NOD r_node = *ptr;
+		if (r_node->nod_type == nod_relation) {
+			DSQL_CTX candidate = (DSQL_CTX) r_node->nod_arg[e_rel_context];
+			DEV_BLKCHK(candidate, dsql_type_ctx);
+			DSQL_REL relation = candidate->ctx_relation;
+			DEV_BLKCHK(rname, dsql_type_str);
+			if (!strcmp
+				(reinterpret_cast < const char *>(rname->str_data),
+				 relation->rel_name))
+			{
+				if (context)
+					ERRD_post(gds_sqlerr, gds_arg_number,
+							  (SLONG) - 504, gds_arg_gds,
+							  gds_dsql_cursor_err,
+							  gds_arg_string, string->str_data,
+							  gds_arg_string, "is ambiguous",
+							  0);
+				else
+					context = candidate;
+			}
+		}
+	}
+
+	if (!context)
+		ERRD_post(gds_sqlerr, gds_arg_number,
+				  (SLONG) - 504, gds_arg_gds,
+				  gds_dsql_cursor_err,
+				  gds_arg_string, string->str_data,
+				  gds_arg_string, "cannot be matched",
+				  0);
+
+	return context;
+}
+
+
+/**
+  
+ 	pass1_cursor_name
+  
+    @brief	Find a cursor.
+ 
+
+    @param request
+    @param string
+
+ **/
+static DSQL_NOD pass1_cursor_name(DSQL_REQ request, STR string, bool existance_flag)
+{
+	DEV_BLKCHK(string, dsql_type_str);
+	DSQL_NOD cursor = NULL;
+
+	for (DLLS itr = request->req_cursors; itr; itr = itr->lls_next) {
+		cursor = (DSQL_NOD) itr->lls_object;
+		STR cname = (STR) cursor->nod_arg[e_cur_name];
+		if (!strcmp(string->str_data, cname->str_data))
+			break;
+		cursor = NULL;
+	}
+
+	if ((!cursor && existance_flag) || (cursor && !existance_flag)) {
+		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
+				  gds_arg_gds, gds_dsql_cursor_err,
+				  gds_arg_string, string->str_data,
+				  gds_arg_string, (existance_flag) ? "is not defined" : "already exists",
+				  0);
+	}
+
+	return cursor;
+}
+
+
+/**
+  
+ 	pass1_cursor_reference
+  
+    @brief	Turn a cursor reference into a record selection expression.
+ 
+
+    @param request
+    @param cursor
+    @param relation_name
+
+ **/
+static DSQL_NOD pass1_cursor_reference( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relation_name)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(cursor, dsql_type_nod);
@@ -3010,7 +3168,10 @@ static DSQL_NOD pass1_cursor( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relati
 	if (!symbol)
 		/* cursor is not defined */
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
-				  gds_arg_gds, gds_dsql_cursor_err, 0);
+				  gds_arg_gds, gds_dsql_cursor_err,
+				  gds_arg_string, string->str_data,
+				  gds_arg_string, "is not defined",
+				  0);
 
 	DSQL_REQ parent = (DSQL_REQ) symbol->sym_object;
 
@@ -3070,84 +3231,6 @@ static DSQL_NOD pass1_cursor( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relati
 	}
 
 	return rse;
-}
-
-
-/**
-  
- 	pass1_cursor_context
-  
-    @brief	Turn a cursor reference into a record selection expression.
- 
-
-    @param request
-    @param cursor
-    @param relation_name
-
- **/
-static DSQL_CTX pass1_cursor_context( DSQL_REQ request, DSQL_NOD cursor,
-	DSQL_NOD relation_name)
-{
-	DEV_BLKCHK(request, dsql_type_req);
-	DEV_BLKCHK(cursor, dsql_type_nod);
-	DEV_BLKCHK(relation_name, dsql_type_nod);
-
-	STR string = (STR) cursor->nod_arg[e_cur_name];
-	DEV_BLKCHK(string, dsql_type_str);
-
-	DSQL_NOD procedure = request->req_ddl_node;
-	DSQL_CTX context = NULL;
-	const int arg_cursors =
-		(request->req_flags & REQ_trigger) ? e_trg_cursors : e_prc_cursors;
-		
-	for (DSQL_NOD node = procedure->nod_arg[arg_cursors]; node;
-		 node = node->nod_arg[e_cur_next])
-	{
-		DEV_BLKCHK(node, dsql_type_nod);
-		STR cname = (STR) node->nod_arg[e_cur_name];
-		DEV_BLKCHK(cname, dsql_type_str);
-		if (!strcmp
-			(reinterpret_cast<const char*>(string->str_data),
-			 reinterpret_cast<const char*>(cname->str_data)))
-		{
-			DSQL_NOD temp = node->nod_arg[e_cur_context];
-			temp = temp->nod_arg[e_flp_select];
-			temp = temp->nod_arg[e_rse_streams];
-			DSQL_NOD* ptr = temp->nod_arg;
-			for (DSQL_NOD* end = ptr + temp->nod_count;
-				 ptr < end; ptr++)
-			{
-				DEV_BLKCHK(*ptr, dsql_type_nod);
-				DSQL_NOD r_node = *ptr;
-				if (r_node->nod_type == nod_relation) {
-					DSQL_CTX candidate = (DSQL_CTX) r_node->nod_arg[e_rel_context];
-					DEV_BLKCHK(candidate, dsql_type_ctx);
-					DSQL_REL relation = candidate->ctx_relation;
-					STR rname = (STR) relation_name->nod_arg[e_rln_name];
-					DEV_BLKCHK(rname, dsql_type_str);
-					if (!strcmp
-						(reinterpret_cast<const char*>(rname->str_data),
-						 relation->rel_name))
-					{
-						if (context)
-							ERRD_post(gds_sqlerr, gds_arg_number,
-									  (SLONG) - 504, gds_arg_gds,
-									  gds_dsql_cursor_err, 0);
-						else
-							context = candidate;
-					}
-				}
-			}
-			if (context)
-				return context;
-			else
-				break;
-		}
-	}
-
-	ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
-			  gds_arg_gds, gds_dsql_cursor_err, 0);
-	return (NULL);				/* Added to remove compiler warnings */
 }
 
 
@@ -3250,7 +3333,7 @@ static DSQL_NOD pass1_delete( DSQL_REQ request, DSQL_NOD input)
 
 	DSQL_NOD rse, temp;
 	if (cursor)
-		rse = pass1_cursor(request, cursor, relation);
+		rse = pass1_cursor_reference(request, cursor, relation);
 	else {
 		rse = MAKE_node(nod_rse, e_rse_count);
 		rse->nod_arg[e_rse_streams] = temp = MAKE_node(nod_list, 1);
@@ -3505,7 +3588,7 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
 
     // CVC: Let's strip trailing blanks or comparisons may fail in dialect 3.
 	if (name && name->str_data) {
-		pass_exact_name ( (TEXT*) name->str_data);
+		pass_exact_name((TEXT*) name->str_data);
 	}
 
     /* CVC: PLEASE READ THIS EXPLANATION IF YOU NEED TO CHANGE THIS CODE.
@@ -4405,18 +4488,21 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 
 	// look for a label, if specified
 
-	TEXT* label_string = NULL;
+	STR string = NULL;
 
 	if (label) {
 		assert(label->nod_type == nod_label);
-		STR str = (STR) label->nod_arg[e_label_name];
-		label_string = (TEXT*) str->str_data;
+		string = (STR) label->nod_arg[e_label_name];
+		TEXT* label_string = (TEXT*) string->str_data;
 		int index = request->req_loop_level;
 		for (DLLS stack = request->req_labels; stack; stack = stack->lls_next) {
-			TEXT* temp_string = (TEXT*) stack->lls_object;
-			if (temp_string && !strcmp(label_string, temp_string)) {
-				position = index;
-				break;
+			STR obj = (STR) stack->lls_object;
+			if (obj) {
+				TEXT* obj_string = (TEXT*) obj->str_data;
+				if (!strcmp(label_string, obj_string)) {
+					position = index;
+					break;
+				}
 			}
 			index--;
 		}
@@ -4432,7 +4518,7 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 				gds_arg_gds, gds_dsql_command_err,
 				gds_arg_gds, gds_dsql_invalid_label,
-				gds_arg_string, label_string,
+				gds_arg_string, string->str_data,
 				gds_arg_string, "is not found", 0);
 		}
 		else {
@@ -4446,13 +4532,12 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 				gds_arg_gds, gds_dsql_command_err,
 				gds_arg_gds, gds_dsql_invalid_label,
-				gds_arg_string, label_string,
+				gds_arg_string, string->str_data,
 				gds_arg_string, "already exists", 0);
 		}
 		else {
 			// store label name, if specified
-#pragma message("BRS Cast from char* to blk* ??")
-			LLS_PUSH((blk*) label_string, &request->req_labels);
+			LLS_PUSH(string, &request->req_labels);
 			number = request->req_loop_level;
 		}
 	}
@@ -5950,7 +6035,7 @@ static DSQL_NOD pass1_update( DSQL_REQ request, DSQL_NOD input)
 
 	DSQL_NOD rse;
 	if (cursor)
-		rse = pass1_cursor(request, cursor, relation);
+		rse = pass1_cursor_reference(request, cursor, relation);
 	else {
 		rse = MAKE_node(nod_rse, e_rse_count);
 		DSQL_NOD temp1 = MAKE_node(nod_list, 1);
@@ -6001,25 +6086,14 @@ static DSQL_NOD pass1_variable( DSQL_REQ request, DSQL_NOD input)
 	}
 	else
 		var_name = (STR) input->nod_arg[e_vrn_name];
+
 	DEV_BLKCHK(var_name, dsql_type_str);
 
-	if ((procedure_node = request->req_ddl_node) &&
-		(procedure_node->nod_type == nod_def_procedure ||
-		 procedure_node->nod_type == nod_redef_procedure ||
-		 procedure_node->nod_type == nod_mod_procedure ||
-		 procedure_node->nod_type == nod_replace_procedure ||
-		 procedure_node->nod_type == nod_def_trigger ||
-		 procedure_node->nod_type == nod_mod_trigger ||
-		 procedure_node->nod_type == nod_replace_trigger))
-	{
-		if (procedure_node->nod_type == nod_def_procedure ||
-			procedure_node->nod_type == nod_redef_procedure ||
-			procedure_node->nod_type == nod_mod_procedure ||
-			procedure_node->nod_type == nod_replace_procedure)
-		{
-			/* Try to resolve variable name against input, output
-			   and local variables */
-
+	if (request->req_flags & REQ_procedure) {
+		procedure_node = request->req_ddl_node;
+		assert(procedure_node);
+		if (!(request->req_flags & REQ_trigger)) {
+			// try to resolve variable name against input and output parameters
 			if (var_nodes = procedure_node->nod_arg[e_prc_inputs])
 				for (position = 0, ptr = var_nodes->nod_arg, end =
 					 ptr + var_nodes->nod_count; ptr < end; ptr++, position++)
@@ -6051,21 +6125,25 @@ static DSQL_NOD pass1_variable( DSQL_REQ request, DSQL_NOD input)
 			var_nodes = procedure_node->nod_arg[e_prc_dcls];
 		}
 		else
-			var_nodes = procedure_node->nod_arg[e_trg_actions]->nod_arg[0];
+			var_nodes = procedure_node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_dcls];
 
 		if (var_nodes)
 		{
+			// try to resolve variable name against local variables
 			for (position = 0, ptr = var_nodes->nod_arg, end =
 				 ptr + var_nodes->nod_count; ptr < end; ptr++, position++)
 			{
 				var_node = *ptr;
-				var = (VAR) var_node->nod_arg[e_var_variable];
-				DEV_BLKCHK(var, dsql_type_var);
-				if (!strcmp
-					(reinterpret_cast<const char*>(var_name->str_data),
-					 var->var_name))
+				if (var_node->nod_type == nod_variable)
 				{
-					return var_node;
+					var = (VAR) var_node->nod_arg[e_var_variable];
+					DEV_BLKCHK(var, dsql_type_var);
+					if (!strcmp
+						(reinterpret_cast<const char*>(var_name->str_data),
+						 var->var_name))
+					{
+						return var_node;
+					}
 				}
 			}
 		}
@@ -6076,9 +6154,9 @@ static DSQL_NOD pass1_variable( DSQL_REQ request, DSQL_NOD input)
     // CVC: That's all [the fix], folks!
 
     if (var_name)
-        field_error (0, (TEXT*) var_name->str_data, input);
+        field_error(0, (TEXT*) var_name->str_data, input);
     else 
-        field_error (0, 0, input);
+        field_error(0, 0, input);
 
 	return NULL;
 }
@@ -6678,6 +6756,7 @@ static void set_parameter_name( DSQL_NOD par_node, DSQL_NOD fld_node,
 		return;
 	}
 }
+
 
 /**
   

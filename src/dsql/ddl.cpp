@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.73 2003-11-01 10:26:37 robocop Exp $
+ * $Id: ddl.cpp,v 1.74 2003-11-02 12:28:20 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -155,7 +155,7 @@ static void put_descriptor(dsql_req*, const dsc*);
 static void put_dtype(dsql_req*, const dsql_fld*, bool);
 static void put_field(dsql_req*, dsql_fld*, bool);
 static void put_local_variable(dsql_req*, var*, dsql_nod*);
-static SSHORT put_local_variables(dsql_req*, dsql_nod*, SSHORT);
+static void put_local_variables(dsql_req*, dsql_nod*, SSHORT);
 static void put_msg_field(dsql_req*, dsql_fld*);
 static dsql_nod* replace_field_names(dsql_nod*, dsql_nod*, dsql_nod*, bool);
 static void reset_context_stack(dsql_req*);
@@ -2319,7 +2319,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 								source->str_length);
 	}
 
-/* Fill req_procedure to allow procedure to self reference */
+	// fill req_procedure to allow procedure to self reference
+
 	const size_t nExtra = strlen(procedure_name->str_data);
 	procedure = FB_NEW_RPT(*tdsql->tsql_default, nExtra) dsql_prc;
 	procedure->prc_name = procedure->prc_data;
@@ -2329,8 +2330,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	*procedure->prc_owner = '\0';
 	request->req_procedure = procedure;
 
-
-/* now do the input parameters */
+	// now do the input parameters
 
 	dsql_fld** field_ptr = &procedure->prc_inputs;
 
@@ -2354,8 +2354,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			*ptr = MAKE_variable(field, field->fld_name,
 								 VAR_input, 0, (USHORT) (2 * position),
 								 locals);
-			/* Put the field in a field list which will be stored to allow
-			   procedure self referencing */
+			// put the field in a field list which will be stored to allow
+			// procedure self referencing
 			*field_ptr = field;
 			field_ptr = &field->fld_next;
 			position++;
@@ -2366,11 +2366,12 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 		inputs = position;
 	}
 
-/* Terminate the input list */
+	// terminate the input list
 
 	*field_ptr = NULL;
 
-/* now do the output parameters */
+	// now do the output parameters
+
 	field_ptr = &procedure->prc_outputs;
 
 	if (parameters = procedure_node->nod_arg[e_prc_outputs])
@@ -2441,7 +2442,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 		}
 	}
 
-/* add slot for EOS */
+	// add slot for EOS
 
 	request->append_uchar(blr_short);
 	request->append_uchar(0);
@@ -2464,15 +2465,15 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 		}
 	}
 
-	locals = put_local_variables(request, procedure_node->nod_arg[e_prc_dcls],
-								 locals);
+	put_local_variables(request, procedure_node->nod_arg[e_prc_dcls], locals);
 
 	request->append_uchar(blr_stall);
-/* Put a label before body of procedure, so that
-   any exit statement can get out */
+	// put a label before body of procedure,
+	// so that any EXIT statement can get out
 	request->append_uchar(blr_label);
 	request->append_uchar(0);
 	request->req_loop_level = 0;
+	request->req_cursor_number = 0;
 	GEN_statement(request,
 		PASS1_statement(request, procedure_node->nod_arg[e_prc_body], true));
 	request->req_type = REQ_DDL;
@@ -2790,7 +2791,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 
 	const str* source = (str*) node->nod_arg[e_trg_source];
 	dsql_nod* actions = (node->nod_arg[e_trg_actions]) ?
-		node->nod_arg[e_trg_actions]->nod_arg[1] : NULL;
+		node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_body] : NULL;
 
 	if (source && actions) {
 		assert(source->str_length <= MAX_USHORT);
@@ -2857,19 +2858,20 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 		request->append_uchar(blr_begin);
 
 		put_local_variables(request,
-							node->nod_arg[e_trg_actions]->nod_arg[0], 0);
+			node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_dcls], 0);
 
 		request->req_scope_level++;
 		// dimitr: I see no reason to deny EXIT command in triggers,
 		//		   hence I've added zero label at the beginning.
-		//		   My first suspicion regarding obvious conflict
+		//		   My first suspicion regarding an obvious conflict
 		//		   with trigger messages (nod_abort) is wrong,
 		//		   although the fact that they use the same BLR code
-		//		   is still a potential dangerous and must be fixed.
+		//		   is still a potential danger and must be fixed.
 		//		   Hopefully, system triggers are never recompiled.
 		request->append_uchar(blr_label);
 		request->append_uchar(0);
 		request->req_loop_level = 0;
+		request->req_cursor_number = 0;
 		GEN_statement(request, PASS1_statement(request, actions, true));
 		request->req_scope_level--;
 		request->append_uchar(blr_end);
@@ -5400,7 +5402,7 @@ static void put_local_variable( dsql_req* request, var* variable,
 }
 
 
-static SSHORT put_local_variables(dsql_req* request, dsql_nod* parameters,
+static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 	SSHORT locals)
 {
 /**************************************
@@ -5421,34 +5423,41 @@ static SSHORT put_local_variables(dsql_req* request, dsql_nod* parameters,
 		for (dsql_nod** end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
-			dsql_fld* field     = (dsql_fld*) parameter->nod_arg[e_dfl_field];
-			dsql_nod** rest     = ptr;
-			while ((++rest) != end)
+			if (parameter->nod_type == nod_def_field)
 			{
-				dsql_fld* rest_field = (dsql_fld*) (*rest)->nod_arg[e_dfl_field];
-				if (!strcmp(field->fld_name, rest_field->fld_name))
+				dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
+				dsql_nod** rest = ptr;
+				while ((++rest) != end)
 				{
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -637,
-							  gds_arg_gds, gds_dsql_duplicate_spec,
-							  gds_arg_string, field->fld_name, 0);
+					if ((*rest)->nod_type == nod_def_field)
+					{
+						dsql_fld* rest_field = (dsql_fld*) (*rest)->nod_arg[e_dfl_field];
+						if (!strcmp(field->fld_name, rest_field->fld_name))
+							ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -637,
+									  gds_arg_gds, gds_dsql_duplicate_spec,
+									  gds_arg_string, field->fld_name, 0);
+					}
 				}
+
+				dsql_nod* var_node =
+					MAKE_variable(field, field->fld_name, VAR_output, 0, 0,
+									  locals);
+				*ptr = var_node;
+				VAR variable = (VAR) var_node->nod_arg[e_var_variable];
+				put_local_variable(request, variable, parameter);
+
+				// fld_length is calculated inside put_local_variable(),
+				// so we copy here the length
+				var_node->nod_desc.dsc_length = field->fld_length;
+				locals++;
 			}
-
-			dsql_nod* var_node =
-				MAKE_variable(field, field->fld_name, VAR_output, 0, 0,
-							  locals);
-			*ptr = var_node;
-			var* variable = (var*) var_node->nod_arg[e_var_variable];
-			put_local_variable(request, variable, parameter);
-
-			/* fld_length is calculated inside put_local_variable
-			   so we copy here the length */
-			var_node->nod_desc.dsc_length = field->fld_length;
-			locals++;
+			else if (parameter->nod_type == nod_cursor)
+			{
+				PASS1_statement(request, parameter, true);
+				GEN_statement(request, parameter);
+			}
 		}
 	}
-
-	return locals;
 }
 
 

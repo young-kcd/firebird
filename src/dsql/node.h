@@ -322,9 +322,12 @@ typedef enum nod_t
 	nod_begin_backup,
 	nod_end_backup,
 	nod_derived_table, // Derived table support
-	nod_derived_field  // Derived table support
+	nod_derived_field,  // Derived table support
+	nod_cursor_open,
+	nod_cursor_fetch,
+	nod_cursor_close,
+	nod_fetch_seek
 } NOD_TYPE;
-
 
 
 /* definition of a syntax node created both
@@ -504,8 +507,8 @@ enum node_args {
 	e_flp_count,
 
 	e_cur_name = 0,			// nod_cursor
-	e_cur_context,
-	e_cur_next,
+	e_cur_rse,
+	e_cur_number,
 	e_cur_count,
 
 	e_prc_name = 0,			// nod_procedure
@@ -514,7 +517,6 @@ enum node_args {
 	e_prc_dcls,
 	e_prc_body,
 	e_prc_source,
-	e_prc_cursors,
 	e_prc_count,
 
 	e_exe_procedure = 0,	// nod_exec_procedure
@@ -710,8 +712,11 @@ enum node_args {
 	e_trg_actions,
 	e_trg_source,
 	e_trg_messages,
-	e_trg_cursors,
 	e_trg_count,
+
+	e_trg_act_dcls = 0,
+	e_trg_act_body,
+	e_trg_act_count,
 
 	e_abrt_number = 0,		// nod_abort
 	e_abrt_count,
@@ -863,7 +868,12 @@ enum node_args {
 	e_derived_field_value = 0,		// Contains the source expression
 	e_derived_field_name,			// Name for derived table field
 	e_derived_field_scope,			// Scope-level
-	e_derived_field_count = 4
+	e_derived_field_count = 4,
+
+	e_cur_stmt_id = 0,
+	e_cur_stmt_seek,
+	e_cur_stmt_into,
+	e_cur_stmt_count
 };
 
 #endif // DSQL_NODE_H

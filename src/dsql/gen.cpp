@@ -27,6 +27,7 @@
  *                            implemented ROWS_AFFECTED system variable
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
  */
 
 #include "firebird.h"
@@ -1181,6 +1182,55 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		gen_error_condition(request, node);
 		return;
 
+	case nod_cursor:
+		stuff(request, blr_dcl_cursor);
+		stuff_word(request, (int) (IPTR) node->nod_arg[e_cur_number]);
+		GEN_expr(request, node->nod_arg[e_cur_rse]);
+		return;
+
+	case nod_cursor_open:
+	case nod_cursor_close:
+	case nod_cursor_fetch:
+		{
+		// op-code
+		stuff(request, blr_cursor_stmt);
+		if (node->nod_type == nod_cursor_open)
+			stuff(request, blr_cursor_open);
+		else if (node->nod_type == nod_cursor_close)
+			stuff(request, blr_cursor_close);
+		else
+			stuff(request, blr_cursor_fetch);
+		// cursor reference
+		dsql_nod* cursor = node->nod_arg[e_cur_stmt_id];
+		stuff_word(request, (int) (IPTR) cursor->nod_arg[e_cur_number]);
+		// preliminary navigation
+		dsql_nod* seek = node->nod_arg[e_cur_stmt_seek];
+		if (seek) {
+			stuff(request, blr_seek);
+			GEN_expr(request, seek->nod_arg[0]);
+			GEN_expr(request, seek->nod_arg[1]);
+		}
+		// assignment
+		dsql_nod* list_into = node->nod_arg[e_cur_stmt_into];
+		if (list_into) {
+			dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
+			if (list->nod_count != list_into->nod_count)
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 313,
+						  gds_arg_gds, gds_dsql_count_mismatch, 0);
+			stuff(request, blr_begin);
+			ptr = list->nod_arg;
+			end = ptr + list->nod_count;
+			dsql_nod** ptr_to = list_into->nod_arg;
+			while (ptr < end) {
+				stuff(request, blr_assignment);
+				GEN_expr(request, *ptr++);
+				GEN_expr(request, *ptr_to++);
+			}
+			stuff(request, blr_end);
+		}
+		}
+		return;
+
 	default:
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
 				  gds_arg_gds, gds_dsql_internal_err,
@@ -1633,8 +1683,6 @@ static void gen_field( dsql_req* request, const dsql_ctx* context,
 			break;
 		}
 	}
-
-
 
 	if (indices)
 		stuff(request, blr_index);
@@ -2409,14 +2457,9 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		case nod_concatenate:
 			name_alias = "CONCATENATION";
 			break;
-        case nod_substr: {
-            // CVC: SQL starts at 1 but C starts at zero.
-            //dsql_nod* node = item->nod_arg [e_substr_start];
-            //  --(*(SLONG *) (node->nod_desc.dsc_address));
-            //  FIXED IN PARSE.Y; here it doesn't catch expressions: Bug 450301.
+        case nod_substr:
             name_alias = "SUBSTRING";
 			break;
-			}
         case nod_cast:
             name_alias	= "CAST";
 			break;
@@ -2446,7 +2489,6 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		if (name_alias)
 			parameter->par_name = parameter->par_alias = name_alias;
 	} // for (ptr = list->nod_arg
-
 
 // Set up parameter to handle EOF 
 
@@ -2549,7 +2591,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 	if (!(request->req_dbb->dbb_flags & DBB_v3))
 		stuff(request, blr_stall);
 	gen_rse(request, rse);	
-	
+
 	stuff(request, blr_send);
 	stuff(request, message->msg_number);
 	stuff(request, blr_begin);

@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.20 2003-08-06 20:21:38 skidder Exp $
+ *  $Id: keywords.cpp,v 1.21 2003-11-02 12:28:20 dimitr Exp $
  *
  */
 
@@ -87,6 +87,7 @@ static const TOK tokens [] = {
 	{CHARACTER, "CHARACTER", 1},
 	{CHECK, "CHECK", 1},
 	{CHECK_POINT_LEN, "CHECK_POINT_LENGTH", 1},
+	{CLOSE, "CLOSE", 2},
 	{COALESCE, "COALESCE", 2},
 	{COLLATE, "COLLATE", 1},
 	{COLUMN, "COLUMN", 2},
@@ -137,6 +138,7 @@ static const TOK tokens [] = {
 	{EXIT, "EXIT", 1},
 	{EXTERNAL, "EXTERNAL", 1},
 	{EXTRACT, "EXTRACT", 2},
+	{FETCH, "FETCH", 2},
 	{KW_FILE, "FILE", 1},
 	{FILTER, "FILTER", 1},
 	{FIRST, "FIRST", 2},
@@ -203,6 +205,7 @@ static const TOK tokens [] = {
 	{OF, "OF", 1},
 	{ON, "ON", 1},
 	{ONLY, "ONLY", 1},
+	{OPEN, "OPEN", 2},
 	{OPTION, "OPTION", 1},
 	{OR, "OR", 1},
 	{ORDER, "ORDER", 1},
