@@ -1153,7 +1153,12 @@ int common_main(int		argc,
 	case (QUIT):
 		tdgbl->service_blk->svc_started();
 		BURP_abort();
-		break;
+		return 0;
+	
+	default:
+		// result undefined
+		fb_assert(false);
+		return 0;
 	}
 	if (result != FINI_OK && result != FINI_DB_NOT_ONLINE)
 		BURP_abort();
