@@ -1866,9 +1866,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 /* count2
     case nod_agg_distinct: verb = "agg_distinct";	break;
 */
-	case nod_agg_item:
-		verb = "agg_item";
-		break;
 	case nod_agg_max:
 		verb = "agg_max";
 		break;
@@ -1909,9 +1906,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		break;
 	case nod_cast:
 		verb = "cast";
-		break;
-	case nod_close:
-		verb = "close";
 		break;
 	case nod_collate:
 		verb = "collate";
@@ -2050,14 +2044,8 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	case nod_extract:
 		verb = "extract";
 		break;
-	case nod_fetch:
-		verb = "fetch";
-		break;
 	case nod_flag:
 		verb = "flag";
-		break;
-	case nod_for:
-		verb = "for";
 		break;
 	case nod_foreign:
 		verb = "foreign key";
@@ -2153,9 +2141,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	case nod_null:
 		verb = "null";
 		break;
-	case nod_open:
-		verb = "open";
-		break;
 	case nod_or:
 		verb = "or";
 		break;
@@ -2176,9 +2161,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		break;
 	case nod_rel_proc_name:
 		verb = "rel/proc name";
-		break;
-	case nod_retrieve:
-		verb = "retrieve";
 		break;
 	case nod_return:
 		verb = "return";
@@ -2231,9 +2213,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
         /* CVC: New node current_role. */
     case nod_current_role: 
         verb = "current_role";  
-        break;
-	case nod_values:
-		verb = "values";
         break;
 	case nod_via:
 		verb = "via";
@@ -2409,9 +2388,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	case nod_end_savepoint:
 		verb = "end_savepoint";
 		break;
-	case nod_name:
-		verb = "name";
-		break;
 	case nod_dom_value:
 		verb = "dom_value";
 		break;
@@ -2420,9 +2396,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		break;
 	case nod_from:
 		verb = "from";
-		break;
-	case nod_average2:
-		verb = "average2";
 		break;
 	case nod_agg_average2:
 		verb = "agg_average2";
@@ -2687,11 +2660,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 			trace_line("%s   position %d\n", buffer, map->map_position);
 			DSQL_pretty(map->map_node, column + 1);
 		}
-		return;
-
-	case nod_position:
-		// nod_position is an ULONG according to pass1.cpp
-		trace_line("%sposition %"ULONGFORMAT"\n", buffer, (ULONG) *ptr);
 		return;
 
 	case nod_relation:

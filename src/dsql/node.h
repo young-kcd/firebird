@@ -45,103 +45,96 @@ typedef enum nod_t
 	nod_commit = 1,	/* Commands, not executed. */
 	nod_rollback,
 	nod_trans,
-	//nod_prepare, // Not used
-	//nod_create,
-	//nod_define,
 	nod_def_default,
 	nod_del_default,
 	nod_def_database,
-	nod_def_domain,	/* 10 */
+	nod_def_domain,	
 	nod_mod_domain,
 	nod_del_domain,
-	nod_mod_database,
+	nod_mod_database, /* 10 */
 	nod_def_relation,
 	nod_mod_relation,
 	nod_del_relation,
 	nod_def_field,
 	nod_mod_field,
 	nod_del_field,
-	nod_def_index,	/* 20 */
+	nod_def_index,
 	nod_del_index,
 	nod_def_view,
-	nod_def_constraint,
+	nod_def_constraint, /* 20 */
 	nod_def_trigger,
 	nod_mod_trigger,
 	nod_del_trigger,
 	nod_def_trigger_msg,
 	nod_mod_trigger_msg,
 	nod_del_trigger_msg,
-	nod_def_procedure,	/* 30 */
+	nod_def_procedure,	
 	nod_mod_procedure,
 	nod_del_procedure,
-	nod_def_exception,
+	nod_def_exception,  /* 30 */
 	nod_mod_exception,
 	nod_del_exception,
 	nod_def_generator,
 	nod_del_generator,
 	nod_def_filter,
 	nod_del_filter,
-	nod_def_shadow,	/* 40 */
+	nod_def_shadow,	
 	nod_del_shadow,
 	nod_def_udf,
-	nod_del_udf,
+	nod_del_udf,    /* 40 */
 	nod_grant,
 	nod_revoke,
 	nod_rel_constraint,
 	nod_delete_rel_constraint,
 	nod_primary,
 	nod_foreign,
-	nod_abort,	/* 50 */
+	nod_abort,	
 	nod_references,
 	nod_proc_obj,
-	nod_trig_obj,
+	nod_trig_obj, /* 50 */
 	nod_view_obj,
 	nod_list,	/* SQL statements, mapped into GDML statements */
-	nod_retrieve,
 	nod_select,
 	nod_insert,
 	nod_delete,
-	nod_update,	/* 60 */
-	nod_fetch,
+	nod_update,	
 	nod_close,
 	nod_open,
 	nod_all,	/* ALL privileges */
-	nod_execute,				/* EXECUTE privilege */
-	nod_for,					/* created in context recognition phase to map to blr */
+	nod_execute, /* 60 */		/* EXECUTE privilege */
 	nod_store,
 	nod_modify,
 	nod_erase,
-	nod_assign,	/* 70 */
+	nod_assign,	
 	nod_exec_procedure,
 	nod_return,	/* Procedure statements */
 	nod_exit,
 	nod_while,
 	nod_if,
-	nod_for_select,
+	nod_for_select, /* 70 */
 	nod_erase_current,
 	nod_modify_current,
 	nod_post,
-	nod_block,	/* 80 */
+	nod_block,	
 	nod_on_error,
 	nod_sqlcode,
 	nod_gdscode,
 	nod_exception,
 	nod_exception_stmt,
-	nod_default,
+	nod_default, /* 80 */
 	nod_start_savepoint,
 	nod_end_savepoint,
 	nod_cursor,	/* used to create record streams */
-	nod_relation,				/* 90 */
+	nod_relation,				
 	nod_relation_name,
 	nod_procedure_name,
 	nod_rel_proc_name,
-	nod_name,
 	nod_rse,
-	nod_select_expr,
-	nod_union,
+	nod_select_expr,            
+	nod_union,                  /* 90 */
 	nod_aggregate,
 	nod_order,
-	nod_flag,	/* 100 */
+	nod_flag,	
 	nod_join,
 /* NOTE: when adding an expression node, be sure to
    test various combinations; in particular, think 
@@ -154,7 +147,7 @@ typedef enum nod_t
 	nod_gtr,
 	nod_geq,
 	nod_leq,
-	nod_lss,
+	nod_lss,         /* 100 */
 	nod_between,
 	nod_like,
 	nod_missing,
@@ -169,11 +162,8 @@ typedef enum nod_t
 	nod_field,	/* values */
 	nod_dom_value,
 	nod_field_name,
-	nod_agg_item,
 	nod_parameter,
 	nod_constant,
-	nod_position,
-	nod_values,
 	nod_map,
 	nod_alias,
 	nod_user_name,
@@ -213,7 +203,6 @@ typedef enum nod_t
 	nod_agg_min,
 	nod_agg_total,
 	nod_agg_count,
-	nod_average2,	/* aggregates different for dialect >= V6_TRANSITION */
 	nod_agg_average2,
 	nod_agg_total2,
 	nod_get_segment,	/* blobs */
