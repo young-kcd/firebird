@@ -1,3 +1,54 @@
+2003-11-28 07:47  robocop
+
+	* firebird2/: builds/win32/msvc6/build_msg.dsp,
+	builds/win32/msvc6/codes.dsp, src/alice/alice.cpp,
+	src/dsql/array.epp, src/dsql/ddl.cpp, src/dsql/dsql.cpp,
+	src/dsql/dsql_proto.h, src/dsql/errd.cpp, src/dsql/gen.cpp,
+	src/dsql/hsh.cpp, src/dsql/keywords.cpp, src/dsql/make.cpp,
+	src/dsql/metd.epp, src/dsql/parse.cpp, src/dsql/parse.sed,
+	src/dsql/parse.y, src/dsql/parse_proto.h, src/dsql/pass1.cpp,
+	src/dsql/prepa_proto.h, src/dsql/preparse.cpp,
+	src/dsql/user__proto.h, src/dsql/user_dsql.cpp, src/dsql/utld.cpp,
+	src/gpre/ada.cpp, src/gpre/c_cxx.cpp, src/gpre/cmd.cpp,
+	src/gpre/cme.cpp, src/gpre/cmp.cpp, src/gpre/cob.cpp,
+	src/gpre/exp.cpp, src/gpre/exp_proto.h, src/gpre/ftn.cpp,
+	src/gpre/gpre.cpp, src/gpre/gpre.h, src/gpre/gpre_meta.epp,
+	src/gpre/gpre_meta_boot.cpp, src/gpre/gpre_proto.h,
+	src/gpre/int.cpp, src/gpre/int_cxx.cpp, src/gpre/msc.cpp,
+	src/gpre/par.cpp, src/gpre/pas.cpp, src/gpre/pat.cpp,
+	src/gpre/pretty.cpp, src/gpre/sqe.cpp, src/gpre/sql.cpp,
+	src/include/gen/msg_facs.h, src/ipserver/alli.cpp,
+	src/ipserver/alli_proto.h, src/ipserver/ipapi_proto.h,
+	src/ipserver/ipcevent.cpp, src/ipserver/ipcli_proto.h,
+	src/ipserver/ipclient.cpp, src/ipserver/ipevt_proto.h,
+	src/ipserver/ips.h, src/ipserver/ipserver.cpp,
+	src/ipserver/ipsrv_proto.h, src/iscguard/cntl_guard.cpp,
+	src/iscguard/cntlg_proto.h, src/iscguard/iscguard.cpp,
+	src/iscguard/iscguard.h, src/isql/extract.epp, src/isql/isql.epp,
+	src/isql/isql_proto.h, src/isql/isql_win.cpp, src/isql/isql_win.h,
+	src/isql/isqlw_proto.h, src/isql/show.epp, src/journal/server.epp,
+	src/jrd/ExecuteStatement.cpp, src/jrd/alt.cpp, src/jrd/alt_proto.h,
+	src/jrd/entry.h, src/jrd/event.cpp, src/jrd/event_proto.h,
+	src/jrd/gds.cpp, src/jrd/gdsold.h, src/jrd/ibase.h,
+	src/jrd/isc_s_proto.h, src/jrd/isc_sync.cpp, src/jrd/jrd.cpp,
+	src/jrd/jrd_proto.h, src/jrd/rpb_chain.cpp,
+	src/jrd/scroll_cursors.h, src/jrd/svc.cpp, src/jrd/svc_proto.h,
+	src/jrd/svc_undoc.h, src/jrd/utl.cpp, src/jrd/utl_proto.h,
+	src/jrd/why.cpp, src/jrd/why_proto.h, src/lock/lock.cpp,
+	src/lock/lock_proto.h, src/lock/print.cpp,
+	src/remote/inter_proto.h, src/remote/interface.cpp,
+	src/remote/remote.h, src/remote/remote_def.h,
+	src/remote/server.cpp, src/remote/xnet.h,
+	src/utilities/print_pool.cpp,
+	src/utilities/common/cmd_util_proto.h,
+	src/utilities/gsec/gsecswi.h, src/utilities/gstat/dba.epp,
+	src/utilities/gstat/dbaswi.h, src/utilities/ibmgr/ibmgr.h,
+	src/utilities/ibmgr/ibmgrswi.h, src/utilities/install/install_nt.h,
+	src/utilities/rebuild/rebuild.h, src/wal/walc.cpp:
+	
+	const correctness vars in scope minimal interface cleanup small bug
+	fixes
+
 2003-11-27 12:39  dimitr
 
 	* firebird2/src/jrd/: cmp.cpp, jrd.h, met.epp:
