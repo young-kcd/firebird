@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.33 2003-02-18 06:39:26 eku Exp $
+$Id: lock.cpp,v 1.34 2003-03-01 17:43:55 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -195,10 +195,14 @@ extern SCHAR *sys_errlist[];
 static void acquire(PTR);
 static UCHAR *alloc(SSHORT, STATUS *);
 static LBL alloc_lock(USHORT, STATUS *);
+#ifdef STATIC_SEMAPHORES
 static USHORT alloc_semaphore(OWN, STATUS *);
+#endif
 static void blocking_action(PTR);
 static void blocking_action2(PTR, PTR);
+#if (defined WIN_NT && !defined SUPERSERVER) || (defined SOLARIS_MT && !defined SUPERSERVER)
 static void THREAD_ROUTINE blocking_action_thread(PTR *);
+#endif
 static void bug(STATUS *, const TEXT *);
 #ifdef DEV_BUILD
 static void bug_assert(const TEXT *, ULONG);
@@ -217,14 +221,18 @@ static void debug_delay(ULONG);
 #endif
 static void exit_handler(void *);
 static LBL find_lock(PTR, USHORT, UCHAR *, USHORT, USHORT *);
+#ifdef MANAGER_PROCESS
 static USHORT fork_lock_manager(STATUS *);
 static OWN get_manager(BOOLEAN);
+#endif
 static LRQ get_request(PTR);
 static void grant(LRQ, LBL);
 static PTR grant_or_que(LRQ, LBL, SSHORT);
 static STATUS init_lock_table(STATUS *);
 static void init_owner_block(OWN, UCHAR, ULONG, USHORT);
+#ifdef USE_EVENTS
 static void lock_alarm_handler(EVENT);
+#endif
 static void lock_initialize(void *, SH_MEM, int);
 static void insert_data_que(LBL);
 static void insert_tail(SRQ, SRQ);
@@ -242,7 +250,9 @@ static void remove_que(SRQ);
 static void release(PTR);
 static void release_mutex(void);
 static void release_request(LRQ);
+#ifdef STATIC_SEMAPHORES
 static void release_semaphore(OWN);
+#endif
 static void shutdown_blocking_thread(STATUS *);
 static int signal_owner(OWN, PTR);
 #ifdef VALIDATE_LOCK_TABLE

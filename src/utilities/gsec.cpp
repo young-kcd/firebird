@@ -77,8 +77,9 @@ static BOOLEAN get_switches(int, TEXT **, IN_SW_TAB, TSEC, BOOLEAN *);
 static SSHORT parse_cmd_line(int, TEXT **, TSEC);
 static void printhelp(void);
 int output_svc(SLONG, UCHAR *);
+#ifndef SUPERSERVER
 static int output_main(SLONG, UCHAR *);
-
+#endif
 
 #ifdef SUPERSERVER
 int main_gsec( SVC service)
