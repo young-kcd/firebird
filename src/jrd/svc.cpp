@@ -528,15 +528,21 @@ SVC SVC_attach(USHORT	service_length,
 			   by any of the client tools, so it seems that in fact
 			   it's not used at all. Hence I ignore this situation. */
 	if (p++ < end) {
+		USHORT ignored_length = 0;
+		if (!strncmp(p, "-svc ", 5))
+			ignored_length = 5;
+		else if (!strncmp(p, "-svc_thd ", 9))
+			ignored_length = 9;
 		USHORT param_length = sizeof(SERVICE_THD_PARAM) - 1;
-		USHORT spb_buf_length = spb_length + param_length + 1;
+		USHORT spb_buf_length = spb_length + param_length - ignored_length + 1;
 		SCHAR *q = spb_buf = (TEXT*) gds__alloc(spb_buf_length + 1);
 		memcpy(q, spb, p - spb);
 		q += p - spb - 1;
-		*q++ += param_length + 1;
+		*q++ += param_length - ignored_length + 1;
 		memcpy(q, SERVICE_THD_PARAM, param_length);
 		q += param_length;
 		*q++ = ' ';
+		p += ignored_length;
 		memcpy(q, p, end - p);
 		spb = spb_buf;
 		spb_length = spb_buf_length;
