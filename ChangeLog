@@ -1,3 +1,28 @@
+2004-10-20 20:37  dimitr
+
+	* firebird2/doc/WhatsNew (1.36.2.28):
+	
+	Added latest commits
+
+2004-10-20 20:17  dimitr
+
+	* firebird2/src/jrd/fun.epp (1.22.2.6):
+	
+	Backported a couple of Claudio's fixes.
+
+2004-10-20 19:25  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.70.2.6):
+	
+	Second attempt to fix that damned events issues.
+
+2004-10-20 18:50  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.fbserver (1.11.2.6),
+	Makefile.in.libfbserver (1.6.2.4):
+	
+	fixed posix SS build
+
 2004-10-18 22:50  skidder
 
 	* firebird2/src/install/misc/firebird.conf (1.28.2.7):
