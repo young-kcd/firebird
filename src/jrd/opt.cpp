@@ -36,6 +36,9 @@
  *             which most are foreign_keys with a reference to a few records.
  * 2002.11.01: Arno Brinkman: Added match_indices for better support of OR handling
  *             in INNER JOIN (gen_join) statements.
+ * 2002.12.15: Arno Brinkman: Added find_used_streams, so that inside opt_compile all the
+ *             streams are marked active. This causes that more indices can be used for
+ *             an retrieval. With this change BUG SF #219525 is solved too. 
  *
  */
 
@@ -101,6 +104,7 @@ static void find_best(TDBB, register OPT, USHORT, USHORT, UCHAR *, JRD_NOD,
 static JRD_NOD find_dbkey(JRD_NOD, USHORT, SLONG *);
 static USHORT find_order(TDBB, register OPT, UCHAR *, JRD_NOD);
 static void find_rsbs(RSB, LLS *, LLS *);
+static void find_used_streams(RSB , UCHAR *);
 static void form_rivers(TDBB, OPT, UCHAR *, LLS *, JRD_NOD *, JRD_NOD *, JRD_NOD);
 static BOOLEAN form_river(TDBB, OPT, USHORT, UCHAR *, UCHAR *, LLS *, JRD_NOD *,
 						  JRD_NOD *, JRD_NOD);
@@ -300,9 +304,9 @@ RSB OPT_compile(TDBB tdbb,
 #ifndef STACK_REDUCTION
 	UCHAR *p, *q, streams[MAX_STREAMS], beds[MAX_STREAMS],
 		*k, *b_end, *k_end, key_streams[MAX_STREAMS],
-		local_streams[MAX_STREAMS];
+		local_streams[MAX_STREAMS], used_streams[MAX_STREAMS];
 #else
-	UCHAR *local_streams;
+	UCHAR *local_streams, *used_streams;
 	UCHAR *p, *q, *streams, *beds, *k, *b_end, *k_end, *key_streams;
 #endif
 
@@ -344,6 +348,8 @@ RSB OPT_compile(TDBB tdbb,
 		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
 	local_streams =
 		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
+	used_streams =
+		(UCHAR *) ALLOC_LIB_MEMORY((DWORD) (sizeof(UCHAR) * MAX_STREAMS));
 	opt_ = (OPT) ALLOC_LIB_MEMORY((DWORD) (sizeof(Opt)));
 	if (streams == NULL || beds == NULL || key_streams == NULL ||
 		local_streams == NULL || opt_ == NULL) {
@@ -377,7 +383,7 @@ RSB OPT_compile(TDBB tdbb,
 	if (rse->nod_flags & rse_stream)
 		opt_->opt_g_flags |= opt_g_stream;
 
-	beds[0] = streams[0] = key_streams[0] = 0;
+	beds[0] = streams[0] = key_streams[0] = used_streams[0] = 0;
 	conjunct_stack = rivers_stack = NULL;
 	conjunct_count = 0;
 
@@ -475,6 +481,7 @@ RSB OPT_compile(TDBB tdbb,
 			river->riv_count = (UCHAR) i;
 			river->riv_rsb = rsb;
 			MOVE_FAST(local_streams + 1, river->riv_streams, i);
+			find_used_streams(rsb, used_streams);
 			set_made_river(opt_, river);
 			set_inactive(opt_, river);
 			LLS_PUSH(river, &rivers_stack);
@@ -562,11 +569,18 @@ RSB OPT_compile(TDBB tdbb,
 	else
 		rse->rse_aggregate = aggregate = NULL;
 
+/* mark the previous used streams (sub-rse's) as active */
+
+	for (i = 1; i <= used_streams[0]; i++) {
+		csb->csb_rpt[used_streams[i]].csb_flags |= csb_active;			
+	}
+
 /* outer joins require some extra processing */
 
 	if (rse->rse_jointype != blr_inner)
 		rsb = gen_outer(tdbb, opt_, rse, rivers_stack, &sort, &project);
 	else {
+
 		/* attempt to form joins in decreasing order of desirability */
 
 		gen_join(tdbb, opt_, streams, &rivers_stack, &sort, &project,
@@ -595,8 +609,9 @@ RSB OPT_compile(TDBB tdbb,
 /* check index usage in all the base streams to ensure
    that any user-specified access plan is followed */
 
-	for (i = 1; i <= streams[0]; i++)
+	for (i = 1; i <= streams[0]; i++) {
 		check_indices(&csb->csb_rpt[streams[i]]);
+	}
 
 	if (project || sort) {
 		/* Eliminate any duplicate dbkey streams */
@@ -612,13 +627,15 @@ RSB OPT_compile(TDBB tdbb,
 
 		/* Handle project clause, if present. */
 
-		if (project)
+		if (project) {
 			rsb = gen_sort(tdbb, opt_, beds, key_streams, rsb, project, TRUE);
+		}
 
 		/* Handle sort clause if present */
 
-		if (sort)
+		if (sort) {
 			rsb = gen_sort(tdbb, opt_, beds, key_streams, rsb, sort, FALSE);
+		}
 	}
 
     /* Handle first and/or skip.  The skip MUST (if present)
@@ -627,11 +644,13 @@ RSB OPT_compile(TDBB tdbb,
      * gen_skip before gen_first.
      **/
 
-    if (rse->rse_skip)
+    if (rse->rse_skip) {
         rsb = gen_skip(tdbb, opt_, rsb, rse->rse_skip);
+	}
 
-	if (rse->rse_first)
+	if (rse->rse_first) {
 		rsb = gen_first(tdbb, opt_, rsb, rse->rse_first);
+	}
 
 /* release memory allocated for index descriptions */
 
@@ -680,6 +699,7 @@ RSB OPT_compile(TDBB tdbb,
 			csb->csb_rpt[stream].csb_idx_allocation = 0;
 		}
 #ifdef STACK_REDUCTION
+		FREE_LIB_MEMORY(used_streams);
 		FREE_LIB_MEMORY(local_streams);
 		FREE_LIB_MEMORY(key_streams);
 		FREE_LIB_MEMORY(beds);
@@ -2888,6 +2908,93 @@ static void find_rsbs(RSB rsb, LLS * stream_list, LLS * rsb_list)
 }
 
 
+static void find_used_streams(RSB rsb, UCHAR * streams)
+{
+/**************************************
+ *
+ *	f i n d _ u s e d _ s t r e a m s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find all streams through the given rsb
+ *	and add them to the stream list.
+ *
+ **************************************/
+	RSB *ptr, *end;
+	USHORT i, stream;
+	BOOLEAN found;
+
+	if (!(rsb)) {
+		return;
+	}
+
+	found = FALSE;
+
+	switch (rsb->rsb_type) {
+
+		case rsb_navigate:
+			stream = rsb->rsb_stream;
+			found = TRUE;
+			break;
+
+
+		case rsb_cross:
+			for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count; ptr < end; ptr++) {
+				find_used_streams(*ptr, streams);
+			}
+			break;
+
+		case rsb_union:
+			for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count; ptr < end; ptr++) {
+				find_used_streams(*ptr, streams);
+			}
+			break;
+
+		case rsb_merge:
+			for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count * 2; ptr < end;	ptr += 2) {
+				find_used_streams(*ptr, streams);
+			}
+			break;
+
+		case rsb_left_cross:
+			find_used_streams(rsb->rsb_arg[RSB_LEFT_inner], streams);
+			find_used_streams(rsb->rsb_arg[RSB_LEFT_outer], streams);
+			break;
+
+		case rsb_indexed:
+			stream = rsb->rsb_stream;
+			found = TRUE;
+			break;
+
+		case rsb_sequential:
+			stream = rsb->rsb_stream;
+			found = TRUE;
+			break;
+
+        default:    /* Shut up compiler warnings */
+			break;
+	}
+
+	if (rsb->rsb_next) {
+		find_used_streams(rsb->rsb_next, streams);
+	}
+
+	if (found) {
+		found = FALSE;
+		for (i = 1; i <= streams[0]; i++) {
+			if (stream == streams[i]) {
+				found = TRUE;
+				break;
+			}
+		}
+		if (!found) {
+			streams[++streams[0]] = stream;
+		}
+	}
+}
+
+
 static void form_rivers(TDBB tdbb,
 						OPT opt,
 						UCHAR * streams,
@@ -3942,9 +4049,12 @@ static RSB gen_retrieval(TDBB tdbb,
 				if (!(tail->opt_flags & opt_matched)) {
 					/* Setting opt_lower and/or opt_upper values */
 					node = tail->opt_conjunct;
-					if (match_index(tdbb, opt, stream, node, idx)) {
-						matching_nodes[j++] = tail;
-						count = j;
+					if (!(tail->opt_flags & opt_used) && 
+						 computable(csb, node, -1, (BOOLEAN) (inner_flag || outer_flag) ? TRUE : FALSE)) {
+						if (match_index(tdbb, opt, stream, node, idx)) {
+							matching_nodes[j++] = tail;
+							count = j;
+						}
 					}
 				}
 			}
