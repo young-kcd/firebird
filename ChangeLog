@@ -1,3 +1,16 @@
+2004-05-03 15:15  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/Readme.txt (1.2.2.5):
+	
+	Supply updated readme.txt for Fb 1.5.1 on Win32
+
+2004-04-30 06:59  paul_reeves
+
+	* firebird2/src/utilities/dba.epp (1.27.2.6):
+	
+	Allow gstat to use local host name with database aliases. Update
+	build number.
+
 2004-04-28 16:44  paul_reeves
 
 	* firebird2/: builds/win32/make_all.bat (1.4.2.13), doc/WhatsNew
