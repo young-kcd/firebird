@@ -15,10 +15,13 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.13 2003-11-13 01:13:25 bellardo Exp $
+#$Id: prefix.darwin,v 1.8.2.14 2003-11-13 01:20:04 tmcsys Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 LD=@CXX@
+
+MACOSX_DEPLOYMENT_TARGET=10.2
+export MACOSX_DEPLOYMENT_TARGET
 
 OS_ServerFiles=inet_server.cpp
 
