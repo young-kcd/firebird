@@ -34,8 +34,6 @@
 #include "../dudley/lex_proto.h"
 #include "../dudley/parse_proto.h"
 
-extern jmp_buf parse_env;
-
 static CON make_numeric_constant(TEXT *, USHORT);
 static DUDLEY_NOD parse_add(USHORT *, bool *);
 static DUDLEY_NOD parse_and(USHORT *);
@@ -361,7 +359,7 @@ static CON make_numeric_constant( TEXT * string, USHORT length)
 	p = string;
 	l = length;
 
-	constant = (CON) DDL_alloc(CON_LEN + sizeof(SLONG));
+	constant = (CON) DDL_alloc(sizeof(con) + sizeof(SLONG));
 	constant->con_desc.dsc_dtype = dtype_long;
 	constant->con_desc.dsc_length = sizeof(SLONG);
 	number = (SLONG *) constant->con_data;
@@ -395,7 +393,7 @@ static CON make_numeric_constant( TEXT * string, USHORT length)
 
 	if (l) {
 		length++;
-		constant = (CON) DDL_alloc(CON_LEN + length);
+		constant = (CON) DDL_alloc(sizeof(con) + length);
 		constant->con_desc.dsc_dtype = dtype_text;
 		constant->con_desc.dsc_ttype = ttype_ascii;
 		constant->con_desc.dsc_length = length;
@@ -671,7 +669,7 @@ static CON parse_literal(void)
 	if (DDL_token.tok_type == tok_quoted) {
 		q++;
 		l -= 2;
-		constant = (CON) DDL_alloc(CON_LEN + l);
+		constant = (CON) DDL_alloc(sizeof(con) + l);
 		constant->con_desc.dsc_dtype = dtype_text;
 		constant->con_desc.dsc_ttype = ttype_ascii;
 		p = (TEXT *) constant->con_data;
@@ -886,7 +884,7 @@ static DUDLEY_CTX parse_relation(void)
 	SYM symbol;
 	DUDLEY_CTX context;
 
-	context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
+	context = (DUDLEY_CTX) DDL_alloc(sizeof(dudley_ctx));
 	context->ctx_name = symbol = PARSE_symbol(tok_ident);
 	symbol->sym_type = SYM_context;
 	symbol->sym_object = context;
@@ -1111,7 +1109,7 @@ static DUDLEY_NOD parse_statistical(void)
  *	Parse statistical expression.
  *
  **************************************/
-	struct nod_types *types;
+	nod_types* types;
 	DUDLEY_NOD node;
 	enum kwwords keyword;
 

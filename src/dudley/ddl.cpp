@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../dudley/ddl.h"
+#include "../dudley/parse.h"
 #include "../jrd/gds.h"
 #include "../jrd/license.h"
 #include "../dudley/ddl_proto.h"
@@ -78,7 +79,7 @@ static TEXT DDL_message[256];
 #define IN_SW_GDEF_USER		17	/* user name for PC security */
 #define IN_SW_GDEF_PASSWORD	18	/* password for PC security */
 
-static struct in_sw_tab_t gdef_in_sw_table[] = {
+static in_sw_tab_t gdef_in_sw_table[] = {
 	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, FALSE, 0, 0,
 		"\t\textract definition from database"}, 	/* extract DDL from database */
 	{ IN_SW_GDEF_R, 0, "REPLACE", 0, 0, 0, FALSE, 0, 0,
@@ -654,7 +655,7 @@ void DDL_push( DUDLEY_NOD object, LLS * pointer)
 		free_stack = stack->lls_next;
 	}
 	else
-		stack = (LLS) DDL_alloc(LLS_LEN);
+		stack = (LLS) DDL_alloc(sizeof(lls));
 
 	stack->lls_object = object;
 	stack->lls_next = *pointer;

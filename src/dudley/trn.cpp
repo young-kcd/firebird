@@ -26,6 +26,7 @@
 #include <string.h>
 #include "../jrd/gds.h"
 #include "../dudley/ddl.h"
+#include "../dudley/parse.h"
 #include "../jrd/license.h"
 #include "../dudley/gener_proto.h"
 #include "../dudley/lex_proto.h"
@@ -106,7 +107,8 @@ void TRN_translate(void)
  **************************************/
 	ACT action;
 	USHORT length;
-	struct str d, *dyn;
+	str d;
+	str* dyn;
 
 /* Start by reversing the set of actions */
 	dyn = &d;

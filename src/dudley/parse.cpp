@@ -91,8 +91,6 @@ static TRG_T trig_table[] = {
 	trg_erase
 };
 
-jmp_buf parse_env;
-
 extern TEXT *DDL_prompt;
 
 static bool check_filename(SYM, bool);
@@ -253,7 +251,7 @@ FUNC PARSE_function( int flag)
 	if (flag)
 		PARSE_error(114, DDL_token.tok_string, 0);	/* msg 114: expected function, encountered \"%s\" */
 	else {
-		function = (FUNC) DDL_alloc(FUNC_LEN);
+		function = (FUNC) DDL_alloc(sizeof(func));
 		function->func_name = symbol = PARSE_symbol(tok_ident);
 		symbol->sym_type = SYM_function;
 		symbol->sym_object = (DUDLEY_CTX) function;
@@ -437,7 +435,7 @@ DUDLEY_REL PARSE_relation(void)
 		return relation;
 	}
 
-	relation = (DUDLEY_REL) DDL_alloc(REL_LEN);
+	relation = (DUDLEY_REL) DDL_alloc(sizeof(dudley_rel));
 	relation->rel_name = symbol = PARSE_symbol(tok_ident);
 	symbol->sym_type = SYM_relation;
 	symbol->sym_object = (DUDLEY_CTX) relation;
@@ -599,7 +597,7 @@ static DUDLEY_FLD create_global_field( DUDLEY_FLD local_field)
 	DUDLEY_FLD global_field;
 	SYM old_name, new_name;
 
-	global_field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+	global_field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 	global_field->fld_dtype = local_field->fld_dtype;
 	global_field->fld_length = local_field->fld_length;
 	global_field->fld_scale = local_field->fld_scale;
@@ -653,7 +651,7 @@ static FIL define_cache(void)
  **************************************/
 	FIL file;
 
-	file = (FIL) DDL_alloc(sizeof(struct fil));
+	file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(file->fil_name, false))
 		PARSE_error(322, 0, 0);	/* msg 322: a node name is not permitted in a shared cache file name */
@@ -688,7 +686,7 @@ static void define_database( enum act_t action_type)
 	if (database)
 		DDL_error_abort(0, 120, NULL, NULL, NULL, NULL, NULL);	/* msg 120: GDEF processes only one database at a time */
 
-	database = (DBB) DDL_alloc(DBB_LEN);
+	database = (DBB) DDL_alloc(sizeof(dbb));
 	database->dbb_name = PARSE_symbol(tok_quoted);
 	DB_file_name = database->dbb_name->sym_name;
 	database->dbb_grp_cmt_wait = -1;	/* Initialized for default value */
@@ -842,7 +840,7 @@ static void define_field(void)
  **************************************/
 	DUDLEY_FLD field;
 
-	field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+	field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 	parse_field(field);
 	field->fld_database = database;
 
@@ -872,7 +870,7 @@ static FIL define_file(void)
  **************************************/
 	FIL file;
 
-	file = (FIL) DDL_alloc(sizeof(struct fil));
+	file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(file->fil_name, false))
 		PARSE_error(297, 0, 0);	/* msg 297: A node name is not permitted in a shadow or secondary file name */
@@ -907,39 +905,39 @@ static void define_filter(void)
  *	Parse a DEFINE FILTER statement.
  *
  **************************************/
-	FILTER filter;
+	FILTER new_filter;
 
 	if (DDL_token.tok_type != tok_ident)
 		PARSE_error(126, DDL_token.tok_string, 0);	/* msg 126: expected filter name, encountered \"%s\" */
 
-	filter = (FILTER) DDL_alloc(sizeof(struct filter));
-	filter->filter_name = PARSE_symbol(tok_ident);
+	new_filter = (FILTER) DDL_alloc(sizeof(filter));
+	new_filter->filter_name = PARSE_symbol(tok_ident);
 
 	while (true) {
 		if (KEYWORD(KW_DESCRIPTION))
-			filter->filter_description = parse_description();
+			new_filter->filter_description = parse_description();
 		else if (MATCH(KW_INPUT_TYPE))
-			filter->filter_input_sub_type = PARSE_number();
+			new_filter->filter_input_sub_type = PARSE_number();
 		else if (MATCH(KW_OUTPUT_TYPE))
-			filter->filter_output_sub_type = PARSE_number();
+			new_filter->filter_output_sub_type = PARSE_number();
 		else if (MATCH(KW_FUNCTION_MODULE_NAME))
-			filter->filter_module_name = PARSE_symbol(tok_quoted);
+			new_filter->filter_module_name = PARSE_symbol(tok_quoted);
 		else if (MATCH(KW_FUNCTION_ENTRY_POINT))
-			filter->filter_entry_point = PARSE_symbol(tok_quoted);
+			new_filter->filter_entry_point = PARSE_symbol(tok_quoted);
 		else
 			break;
 	}
 
-	if (!filter->filter_entry_point)
+	if (!new_filter->filter_entry_point)
 		PARSE_error(127, 0, 0);	/* msg 127: Filter entry point must be specified */
 
 #if (defined WIN_NT)
-	if (!filter->filter_module_name)
+	if (!new_filter->filter_module_name)
 		PARSE_error(128, 0, 0);	/* msg 128: Filter module name must be specified */
 #endif
 
 	parse_end();
-	make_action(act_a_filter, (DBB) filter);
+	make_action(act_a_filter, (DBB) new_filter);
 }
 
 
@@ -1114,7 +1112,7 @@ static FIL define_log_file( USHORT log_type)
  **************************************/
 	FIL file;
 
-	file = (FIL) DDL_alloc(sizeof(struct fil));
+	file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(file->fil_name, false))
 		PARSE_error(297, 0, 0);	/* msg 297: A node name is not permitted in a shadow or secondary file name */
@@ -1176,7 +1174,7 @@ static void define_old_trigger(void)
 	relation = PARSE_relation();
 
 	while (!MATCH(KW_END_TRIGGER)) {
-		trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
+		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 		trigger->trg_relation = relation;
 
 		if (MATCH(KW_STORE))
@@ -1263,7 +1261,7 @@ static void define_relation(void)
 	while (true) {
 		MATCH(KW_ADD);
 		MATCH(KW_FIELD);
-		field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+		field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 		parse_field(field);
 		field->fld_relation = relation;
 		field->fld_database = database;
@@ -1327,7 +1325,7 @@ static void define_security_class(void)
 	SCL class_;
 	SCE element, *next;
 
-	class_ = (SCL) DDL_alloc(sizeof(struct scl));
+	class_ = (SCL) DDL_alloc(sizeof(scl));
 	class_->scl_name = PARSE_symbol(tok_ident);
 	if (KEYWORD(KW_DESCRIPTION))
 		class_->scl_description = parse_description();
@@ -1367,7 +1365,7 @@ static void define_shadow(void)
 	FIL shadow, file;
 	int number;
 
-	shadow = (FIL) DDL_alloc(sizeof(struct fil));
+	shadow = (FIL) DDL_alloc(sizeof(fil));
 
 /* get the shadow number, defaulting to 1 */
 
@@ -1441,7 +1439,7 @@ static void define_trigger(void)
 		return;
 	}
 
-	trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
+	trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 	trigger->trg_name = PARSE_symbol(tok_ident);
 
 	MATCH(KW_FOR);
@@ -1473,7 +1471,7 @@ static void define_trigger(void)
 			action = true;
 		}
 		else if (MATCH(KW_MESSAGE)) {
-			trigmsg = (TRGMSG) DDL_alloc(sizeof(struct trgmsg));
+			trigmsg = (TRGMSG) DDL_alloc(sizeof(trgmsg));
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
@@ -1527,7 +1525,7 @@ static void define_type(void)
 	fldname = PARSE_symbol(tok_ident);
 
 	while (true) {
-		fldtype = (TYP) DDL_alloc(sizeof(struct typ));
+		fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = fldname;
 		fldtype->typ_name = PARSE_symbol(tok_ident);
 		MATCH(KW_COLON);
@@ -1616,7 +1614,7 @@ static void define_view(void)
 	while (true) {
 		MATCH(KW_ADD);
 		MATCH(KW_FIELD);
-		field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+		field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 		field->fld_flags |= fld_local;
 		field->fld_relation = relation;
 		*ptr = field;
@@ -1706,13 +1704,13 @@ static void drop_filter(void)
  *	Parse the DROP (DELETE) filter statement.
  *
  **************************************/
-	FILTER filter;
+	FILTER filter_to_drop;
 
-	filter = (FILTER) DDL_alloc(sizeof(struct filter));
-	filter->filter_name = PARSE_symbol(tok_ident);
+	filter_to_drop = (FILTER) DDL_alloc(sizeof(filter));
+	filter_to_drop->filter_name = PARSE_symbol(tok_ident);
 	parse_end();
 
-	make_action(act_d_filter, (DBB) filter);
+	make_action(act_d_filter, (DBB) filter_to_drop);
 }
 
 
@@ -1730,7 +1728,7 @@ static void drop_function(void)
  **************************************/
 	FUNC function;
 
-	function = (FUNC) DDL_alloc(FUNC_LEN);
+	function = (FUNC) DDL_alloc(sizeof(func));
 	function->func_name = PARSE_symbol(tok_ident);
 	parse_end();
 
@@ -1752,7 +1750,7 @@ static void drop_gfield(void)
  **************************************/
 	DUDLEY_FLD field;
 
-	field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+	field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 	field->fld_name = PARSE_symbol(tok_ident);
 	parse_end();
 
@@ -1820,7 +1818,7 @@ static void drop_security_class(void)
  **************************************/
 	SCL class_;
 
-	class_ = (SCL) DDL_alloc(sizeof(struct scl));
+	class_ = (SCL) DDL_alloc(sizeof(scl));
 	class_->scl_name = PARSE_symbol(tok_ident);
 	parse_end();
 
@@ -1878,7 +1876,7 @@ static void drop_trigger(void)
 
 	if (old_style) {
 		while (!MATCH(KW_END_TRIGGER)) {
-			trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
+			trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 			if (MATCH(KW_STORE))
 				trigger->trg_type = trg_store;
 			else if (MATCH(KW_MODIFY))
@@ -1895,7 +1893,7 @@ static void drop_trigger(void)
 		}
 	}
 	else {
-		trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
+		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 		trigger->trg_name = name;
 		make_action(act_d_trigger, (DBB) trigger);
 	}
@@ -1921,7 +1919,7 @@ static void drop_type(void)
 
 	MATCH(KW_FOR);
 	if (MATCH(KW_ALL)) {
-		fldtype = (TYP) DDL_alloc(sizeof(struct typ));
+		fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = PARSE_symbol(tok_ident);
 		fldtype->typ_name->sym_length = 3;
 		strncpy(fldtype->typ_name->sym_string, "ALL", 3);
@@ -1930,7 +1928,7 @@ static void drop_type(void)
 	else {
 		fldname = PARSE_symbol(tok_ident);
 		while (true) {
-			fldtype = (TYP) DDL_alloc(sizeof(struct typ));
+			fldtype = (TYP) DDL_alloc(sizeof(typ));
 			fldtype->typ_field_name = fldname;
 			fldtype->typ_name = PARSE_symbol(tok_ident);
 			make_action(act_d_type,(DBB)  fldtype);
@@ -2133,7 +2131,7 @@ static void grant_user_privilege(void)
 	UPFE upf;
 	USRE usr;
 
-	upriv = (USERPRIV) DDL_alloc(sizeof(struct userpriv));
+	upriv = (USERPRIV) DDL_alloc(sizeof(userpriv));
 	upriv->userpriv_flags = 0;
 
 	while (true) {
@@ -2173,7 +2171,7 @@ static void grant_user_privilege(void)
 				if (KEYWORD(KW_SELECT) || KEYWORD(KW_INSERT) ||
 					KEYWORD(KW_DELETE) || KEYWORD(KW_UPDATE))
 					break;
-				upf = (UPFE) DDL_alloc(sizeof(struct upfe));
+				upf = (UPFE) DDL_alloc(sizeof(upfe));
 				upf->upfe_fldname = PARSE_symbol(tok_ident);
 				upf->upfe_next = upriv->userpriv_upflist;
 				upriv->userpriv_upflist = upf;
@@ -2201,7 +2199,7 @@ static void grant_user_privilege(void)
 /* get the userlist */
 
 	while (true) {
-		usr = (USRE) DDL_alloc(sizeof(struct usre));
+		usr = (USRE) DDL_alloc(sizeof(usre));
 		usr->usre_name = PARSE_symbol(tok_ident);
 		usr->usre_next = upriv->userpriv_userlist;
 		upriv->userpriv_userlist = usr;
@@ -2306,7 +2304,7 @@ static ACT make_action( enum act_t type, DBB object)
  **************************************/
 	ACT action;
 
-	action = (ACT) DDL_alloc(ACT_LEN);
+	action = (ACT) DDL_alloc(sizeof(act));
 	action->act_type = type;
 	action->act_next = DDL_actions;
 	action->act_object = object;
@@ -2371,7 +2369,7 @@ static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation)
 	DUDLEY_CTX context;
 	SYM symbol;
 
-	context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
+	context = (DUDLEY_CTX) DDL_alloc(sizeof(dudley_ctx));
 	context->ctx_relation = relation;
 
 	if (string) {
@@ -2441,7 +2439,7 @@ static void mod_old_trigger(void)
 		get_trigger_attributes(&flags, &type, &sequence);
 		if (!type)
 			PARSE_error(165, DDL_token.tok_string, 0);	/* msg 165: expected STORE, MODIFY, ERASE, END_TRIGGER, encountered \"%s\"  */
-		trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
+		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 		trigger->trg_relation = relation;
 		trigger->trg_mflag = flags & ~trg_mflag_order;
 		if (trigger->trg_mflag & trg_mflag_type)
@@ -2476,7 +2474,7 @@ static void modify_field(void)
 	DUDLEY_FLD field;
 
 	if (!local_context)
-		LLS_PUSH(DDL_alloc(CTX_LEN), &local_context);
+		LLS_PUSH(DDL_alloc(sizeof(dudley_ctx)), &local_context);
 
 /* Lookup global field */
 
@@ -2620,7 +2618,7 @@ static void modify_relation(void)
 			if (MATCH(KW_ADD)) {
 				MATCH(KW_FIELD);
 				{
-					field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+					field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					parse_field(field);
 					field->fld_relation = relation;
 					field->fld_database = database;
@@ -2646,7 +2644,7 @@ static void modify_relation(void)
 			}
 			else if (MATCH(KW_MODIFY)) {
 				MATCH(KW_FIELD);
-				field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+				field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
 				field->fld_relation = relation;
@@ -2676,7 +2674,7 @@ static void modify_relation(void)
 				}
 				else {
 					MATCH(KW_FIELD);
-					field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+					field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
 					field->fld_database = database;
@@ -2717,7 +2715,7 @@ static void modify_security_class(void)
 
 	PARSE_error(247, 0, 0);		/* msg 247: action not implemented yet */
 
-	class_ = (SCL) DDL_alloc(sizeof(struct scl));
+	class_ = (SCL) DDL_alloc(sizeof(scl));
 	class_->scl_name = PARSE_symbol(tok_ident);
 	if (KEYWORD(KW_DESCRIPTION))
 		class_->scl_description = parse_description();
@@ -2806,7 +2804,7 @@ static void modify_trigger(void)
 			msg_type = trgmsg_drop;
 		}
 		if (msg_type) {
-			trigmsg = (TRGMSG) DDL_alloc(sizeof(struct trgmsg));
+			trigmsg = (TRGMSG) DDL_alloc(sizeof(trgmsg));
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
@@ -2879,7 +2877,7 @@ static void modify_type(void)
 	MATCH(KW_FOR);
 	fldname = PARSE_symbol(tok_ident);
 	while (true) {
-		fldtype = (TYP) DDL_alloc(sizeof(struct typ));
+		fldtype = (TYP) DDL_alloc(sizeof(typ));
 		fldtype->typ_field_name = fldname;
 		fldtype->typ_name = PARSE_symbol(tok_ident);
 		MATCH(KW_COLON);
@@ -2937,7 +2935,7 @@ static void modify_view(void)
 		while (true) {
 			if (MATCH(KW_MODIFY)) {
 				MATCH(KW_FIELD);
-				field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+				field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
 				field->fld_relation = relation;
@@ -2967,7 +2965,7 @@ static void modify_view(void)
 				}
 				else {
 					MATCH(KW_FIELD);
-					field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+					field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
 					field->fld_database = database;
@@ -3605,8 +3603,8 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
 	FUNCARG func_arg;
 	DUDLEY_FLD field;
 
-	func_arg = (FUNCARG) DDL_alloc(FUNCARG_LEN);
-	field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+	func_arg = (FUNCARG) DDL_alloc(sizeof(funcarg));
+	field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 	parse_field_dtype(field);
 	func_arg->funcarg_dtype = field->fld_dtype;
 	func_arg->funcarg_scale = field->fld_scale;
@@ -3782,7 +3780,7 @@ static SCE parse_identifier(void)
 
 /* Build access control element */
 
-	element = (SCE) DDL_alloc(sizeof(struct sce) + (p - strings));
+	element = (SCE) DDL_alloc(sizeof(sce) + (p - strings));
 	p = (TEXT *) element->sce_strings;
 
 	for (s = idents, end = s + 10, s1 = (TEXT **) element->sce_idents;
@@ -3966,7 +3964,7 @@ static void revoke_user_privilege(void)
 	USERPRIV upriv;
 	USRE usr;
 
-	upriv = (USERPRIV) DDL_alloc(sizeof(struct userpriv));
+	upriv = (USERPRIV) DDL_alloc(sizeof(userpriv));
 
 	while (true) {
 		if (MATCH(KW_ALL)) {
@@ -4000,7 +3998,7 @@ static void revoke_user_privilege(void)
 				if (KEYWORD(KW_SELECT) || KEYWORD(KW_INSERT) ||
 					KEYWORD(KW_DELETE) || KEYWORD(KW_UPDATE))
 					break;
-				upf = (UPFE) DDL_alloc(sizeof(struct upfe));
+				upf = (UPFE) DDL_alloc(sizeof(upfe));
 				upf->upfe_fldname = PARSE_symbol(tok_ident);
 				upf->upfe_next = upriv->userpriv_upflist;
 				upriv->userpriv_upflist = upf;
@@ -4027,7 +4025,7 @@ static void revoke_user_privilege(void)
 
 /* get the userlist */
 	while (true) {
-		usr = (USRE) DDL_alloc(sizeof(struct usre));
+		usr = (USRE) DDL_alloc(sizeof(usre));
 		usr->usre_name = PARSE_symbol(tok_ident);
 		usr->usre_next = upriv->userpriv_userlist;
 		upriv->userpriv_userlist = usr;
@@ -4185,7 +4183,7 @@ static TXT start_text(void)
  **************************************/
 	TXT text;
 
-	text = (TXT) DDL_alloc(TXT_LEN);
+	text = (TXT) DDL_alloc(sizeof(txt));
 	text->txt_position = DDL_token.tok_position - DDL_token.tok_length;
 	text->txt_start_line = DDL_line;
 

@@ -24,6 +24,7 @@
 #include "firebird.h"
 #include <string.h>
 #include "../dudley/ddl.h"
+#include "../dudley/parse.h"
 #include "../jrd/license.h"
 #include "../jrd/gds.h"
 #include "../jrd/flags.h"
@@ -1966,7 +1967,7 @@ static void alloc_file_name( FIL * start_file, UCHAR * file_name)
 		if (!strcmp(temp->fil_name->sym_name, (char*) file_name))
 			return;
 
-	file = (FIL) DDL_alloc(FIL_LEN);
+	file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_next = *start_file;
 	*start_file = file;
 	string = (SYM) DDL_alloc(SYM_LEN + strlen((char*) file_name));
@@ -2857,7 +2858,7 @@ static void get_global_fields(void)
 	SYM symbol;
 
 	FOR X IN RDB$FIELDS 
-		field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+		field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 		field->fld_name = symbol =
 			get_symbol(SYM_global, X.RDB$FIELD_NAME, (DUDLEY_CTX) field);
 		HSH_insert(symbol);
@@ -3014,7 +3015,7 @@ static void get_relations( DBB database)
 	SYM symbol;
 
 	FOR R IN RDB$RELATIONS 
-		relation = (DUDLEY_REL) DDL_alloc(REL_LEN);
+		relation = (DUDLEY_REL) DDL_alloc(sizeof(dudley_rel));
 		relation->rel_name = symbol =
 			get_symbol(SYM_relation, R.RDB$RELATION_NAME, (DUDLEY_CTX) relation);
 		HSH_insert(symbol);
@@ -3025,7 +3026,7 @@ static void get_relations( DBB database)
 		FOR RFR IN RDB$RELATION_FIELDS WITH 
 			RFR.RDB$RELATION_NAME = R.RDB$RELATION_NAME 
 
-			field = (DUDLEY_FLD) DDL_alloc(FLD_LEN);
+			field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 			field->fld_name = get_symbol(SYM_field, RFR.RDB$FIELD_NAME, (DUDLEY_CTX) field);
 			HSH_insert(field->fld_name);
 			field->fld_relation = relation;
@@ -3154,7 +3155,7 @@ static void get_triggers( DBB database)
 	FOR T IN RDB$TRIGGERS WITH T.RDB$SYSTEM_FLAG MISSING OR 
 		T.RDB$SYSTEM_FLAG = 0 
 
-		trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
+		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 		trigger->trg_name = symbol =
 			get_symbol(SYM_trigger, T.RDB$TRIGGER_NAME, (DUDLEY_CTX) trigger);
 		HSH_insert(symbol);
@@ -3191,12 +3192,12 @@ static void get_udfs( DBB dbb)
 	FOR FUN IN RDB$FUNCTIONS CROSS ARG IN RDB$FUNCTION_ARGUMENTS WITH
 		FUN.RDB$FUNCTION_NAME EQ ARG.RDB$FUNCTION_NAME AND
 		FUN.RDB$RETURN_ARGUMENT EQ ARG.RDB$ARGUMENT_POSITION
-		function = (FUNC) DDL_alloc(FUNC_LEN);
+		function = (FUNC) DDL_alloc(sizeof(func));
 		function->func_database = dbb;
 		function->func_name = symbol =
 			get_symbol(SYM_function, FUN.RDB$FUNCTION_NAME, (DUDLEY_CTX) function);
 		HSH_insert(symbol);
-		function->func_return = arg = (FUNCARG) DDL_alloc(FUNCARG_LEN);
+		function->func_return = arg = (FUNCARG) DDL_alloc(sizeof(funcarg));
 		arg->funcarg_dtype = ARG.RDB$FIELD_TYPE;
 		arg->funcarg_scale = ARG.RDB$FIELD_SCALE;
 		arg->funcarg_length = ARG.RDB$FIELD_LENGTH;
@@ -3958,7 +3959,7 @@ static void set_generator( DUDLEY_NOD node)
 	SLONG *number;
 	SLONG new_val;
 	SSHORT l;
-	struct str current_blr, new_blr;
+	str current_blr, new_blr;
 	UCHAR *blr;
 	SLONG gen_value;
 	CON constant;
@@ -4085,7 +4086,7 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
  *	a blob.
  *
  **************************************/
-	struct str blr;
+	str blr;
 	USHORT length;
 	ISC_STATUS_ARRAY status_vector;
 	FRBRD *handle;

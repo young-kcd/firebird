@@ -270,7 +270,7 @@ static void expand_global_field( DUDLEY_FLD field)
 	DUDLEY_CTX context;
 
 	if (!request_context || !(context = lookup_context(0, request_context))) {
-		context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
+		context = (DUDLEY_CTX) DDL_alloc(sizeof(dudley_ctx));
 		LLS_PUSH(context, &request_context);
 	}
 
@@ -695,7 +695,7 @@ static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation, USHORT id)
 	DUDLEY_CTX context;
 	SYM symbol;
 
-	context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
+	context = (DUDLEY_CTX) DDL_alloc(sizeof(dudley_ctx));
 	context->ctx_context_id = id;
 	context->ctx_relation = relation;
 
@@ -800,7 +800,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, LLS right, LLS left)
 		if (!(old_context = lookup_context(symbol, right)))
 			expand_error(108, symbol->sym_string, 0, 0, 0, 0);	/* msg 108: context %s is not defined */
 		node->nod_arg[s_mod_old_ctx] = (DUDLEY_NOD) old_context;
-		context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
+		context = (DUDLEY_CTX) DDL_alloc(sizeof(dudley_ctx));
 		node->nod_arg[s_mod_new_ctx] = (DUDLEY_NOD) context;
 		context->ctx_name = symbol;
 		context->ctx_context_id = ++context_id;

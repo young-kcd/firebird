@@ -241,7 +241,7 @@ enum tok_t {
 
 typedef struct tok {
 	enum tok_t tok_type;		/* type of token */
-	struct sym *tok_symbol;		/* hash block if recognized */
+	sym* tok_symbol;			/* hash block if recognized */
 	enum kwwords tok_keyword;	/* keyword number, if recognized */
 	SLONG tok_position;			/* byte number in input stream */
 	USHORT tok_length;
@@ -254,7 +254,7 @@ typedef struct tok {
 #define EXTERN	extern
 #endif
 
-EXTERN struct tok DDL_token;
+EXTERN tok DDL_token;
 
 #undef EXTERN
 

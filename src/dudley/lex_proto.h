@@ -24,13 +24,13 @@
 #ifndef _DUDLEY_LEX_PROTO_H_
 #define _DUDLEY_LEX_PROTO_H_
 
-extern struct tok *LEX_filename(void);
+extern tok* LEX_filename(void);
 extern void LEX_fini(void);
 extern void LEX_flush(void);
 extern void LEX_get_text(UCHAR *, TXT);
 extern void LEX_init(void *);
 extern void LEX_put_text(FRBRD *, TXT);
 extern void LEX_real(void);
-extern struct tok *LEX_token(void);
+extern tok* LEX_token(void);
 
 #endif /* _DUDLEY_LEX_PROTO_H_ */
