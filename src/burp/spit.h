@@ -42,7 +42,6 @@
 #define	MAX_NUM_OF_FILES		9999
 #define	MIN_FILE_SIZE			M_BYTES
 #define	NEW_LINE				'\n'
-#define	NULL_B_FIL				((B_FIL) NULL)
 #define	TERMINAL				'\0'
 
 typedef	int	FILE_DESC;

@@ -189,7 +189,7 @@ int main( int argc, char *argv[])
 *************************
 */
 
-	file_ptr = file_list = prev_file = NULL_B_FIL;
+	file_ptr = file_list = prev_file = NULL;
 	file_size = -1;
 	sw_replace = FALSE;
 	end = argv + argc;
@@ -258,7 +258,7 @@ int main( int argc, char *argv[])
 					file_nm_sw = TRUE;
 					file_ptr->b_fil_number = file_num;
 
-					if (file_list == NULL_B_FIL)
+					if (file_list == NULL)
 						file_list = prev_file = file_ptr;
 					else {
 						prev_file->b_fil_next = file_ptr;
@@ -289,7 +289,7 @@ int main( int argc, char *argv[])
 				file_num = file_num + 1;
 				file_ptr->b_fil_number = file_num;
 
-				if (file_list == NULL_B_FIL)
+				if (file_list == NULL)
 					file_list = prev_file = file_ptr;
 				else {
 					prev_file->b_fil_next = file_ptr;
@@ -310,7 +310,7 @@ int main( int argc, char *argv[])
 		}						/* processing function specific command line options */
 	}							/* while (argv < end) */
 
-	if ((file_list == NULL_B_FIL) && (sw_replace != FALSE)) {
+	if ((file_list == NULL) && (sw_replace != FALSE)) {
 		ib_fprintf(ib_stderr,
 				   "%s: invalid option '%s', rest of parameters is missing\n",
 				   prog_name, string);
@@ -517,7 +517,7 @@ static int get_file_name( SCHAR * string, double file_size, B_FIL * file_ptr)
 	*file_ptr = temp_ptr = (B_FIL) malloc(B_FIL_LEN);
 	temp_ptr->b_fil_name = (TEXT *) malloc(strlen(string) + 1);
 
-	temp_ptr->b_fil_next = NULL_B_FIL;
+	temp_ptr->b_fil_next = NULL;
 	strcpy(temp_ptr->b_fil_name, string);
 	temp_ptr->b_fil_number = 0;
 	temp_ptr->b_fil_size = file_size;
@@ -634,10 +634,10 @@ static int gen_multy_bakup_files(B_FIL file_list,
 		hdr_rec.fl_name[indx] = BLANK;
 
 	while (TRUE) {
-		if (fl_ptr != NULL_B_FIL) {
+		if (fl_ptr != NULL) {
 			byte_read = 0;
 			byte_write = 0;
-			if ((fl_ptr->b_fil_next == NULL_B_FIL)
+			if ((fl_ptr->b_fil_next == NULL)
 				&& (fl_ptr->b_fil_size == 0)) fl_ptr->b_fil_size =
 					MIN_FILE_SIZE;
 
@@ -670,7 +670,7 @@ static int gen_multy_bakup_files(B_FIL file_list,
 		else
 			io_size = IO_BUFFER_SIZE;
 
-		if (fl_ptr == NULL_B_FIL) {
+		if (fl_ptr == NULL) {
 			while (end_of_input == FALSE) {
 				ret_cd = final_read_and_write(input_file_desc, output_fl_desc,
 											  file_name, io_size, &io_buffer,
@@ -687,7 +687,7 @@ static int gen_multy_bakup_files(B_FIL file_list,
 			}
 		}
 		else {
-			while ((file_size > byte_read) && (fl_ptr != NULL_B_FIL)) {
+			while ((file_size > byte_read) && (fl_ptr != NULL)) {
 				ret_cd = read_and_write(input_file_desc, output_fl_desc,
 										file_name, io_size, file_size,
 										&io_buffer, &end_of_input,
@@ -709,8 +709,8 @@ static int gen_multy_bakup_files(B_FIL file_list,
 						remaining_io_len = IO_BUFFER_SIZE - byte_write;
 
 						while ((flush_done == FALSE)
-							   && (fl_ptr != NULL_B_FIL)) {
-							if ((fl_ptr->b_fil_next == NULL_B_FIL)
+							   && (fl_ptr != NULL)) {
+							if ((fl_ptr->b_fil_next == NULL)
 								&& (fl_ptr->b_fil_size == 0))
 								fl_ptr->b_fil_size = MIN_FILE_SIZE;
 
@@ -737,7 +737,7 @@ static int gen_multy_bakup_files(B_FIL file_list,
 							}
 
 							fl_ptr = fl_ptr->b_fil_next;
-							if (fl_ptr == NULL_B_FIL) {
+							if (fl_ptr == NULL) {
 								ret_cd = final_flush_io_buff(remaining_io,
 															 remaining_io_len,
 															 output_fl_desc);
@@ -1449,7 +1449,7 @@ static int free_file_list( B_FIL file_list)
 
 	B_FIL file_ptr, next_file;
 
-	for (file_ptr = file_list; file_ptr != NULL_B_FIL; file_ptr = next_file) {
+	for (file_ptr = file_list; file_ptr != NULL; file_ptr = next_file) {
 		next_file = file_ptr->b_fil_next;
 		free(file_ptr->b_fil_name);
 		free(file_ptr);
