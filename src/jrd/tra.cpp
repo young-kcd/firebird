@@ -1104,7 +1104,7 @@ void TRA_release_transaction(TDBB tdbb, JRD_TRA transaction)
 	SBM_release(transaction->tra_commit_sub_trans);
 
 	if (transaction->tra_flags & TRA_precommitted)
-		(void) TRA_precommited(tdbb, transaction->tra_number, 0);
+		TRA_precommited(tdbb, transaction->tra_number, 0);
 
 /* Unlink the transaction from the database block */
 
@@ -1774,7 +1774,7 @@ JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	}
 
 	if (trans->tra_flags & TRA_precommitted)
-		(void) TRA_precommited(tdbb, 0, trans->tra_number);
+		TRA_precommited(tdbb, 0, trans->tra_number);
 
 	return trans;
 }
@@ -2770,7 +2770,7 @@ static void retain_context(TDBB tdbb, JRD_TRA transaction, USHORT commit)
 			transaction->tra_flags |= TRA_precommitted;
 		}
 
-		(void) TRA_precommited(tdbb, old_number, new_number);
+		TRA_precommited(tdbb, old_number, new_number);
 	}
 }
 

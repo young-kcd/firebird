@@ -1459,7 +1459,7 @@ void VIO_fini(TDBB tdbb)
 		dbb->dbb_flags &= ~DBB_garbage_collector;
 		ISC_event_post(dbb->dbb_gc_event); /* Wake up running thread */
 		THREAD_EXIT;
-		(void) ISC_event_wait(1, &gc_event_fini, &count, 0, (FPTR_VOID) 0, 0);
+		ISC_event_wait(1, &gc_event_fini, &count, 0, (FPTR_VOID) 0, 0);
 		THREAD_ENTER;
 		/* Cleanup finalization event */
 		ISC_event_fini(gc_event_fini);
@@ -1935,7 +1935,7 @@ void VIO_init(TDBB tdbb)
 			ERR_bugcheck_msg("cannot start thread");
 		}
 		THREAD_EXIT;
-		(void) ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+		ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
 		THREAD_ENTER;
 		/* Clean up initialization event */
 		ISC_event_fini(gc_event_init);
@@ -2708,7 +2708,7 @@ BOOLEAN VIO_sweep(TDBB tdbb, JRD_TRA transaction)
 						break;
 #ifdef SUPERSERVER
 					if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
-						(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
+						JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
 					}
 					transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
 #endif
@@ -3368,7 +3368,7 @@ static void garbage_collect(
 		   back version chains. */
 
 		if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
-			(void) JRD_reschedule(tdbb, 0, TRUE);
+			JRD_reschedule(tdbb, 0, TRUE);
 #endif
 	}
 
@@ -3610,7 +3610,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 								goto rel_exit;
 							}
 							if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
-								(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
+								JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
 							}
 							if (rpb.rpb_number >= last) {
 								break;
@@ -3640,7 +3640,7 @@ rel_exit:
 			   Otherwise, wait for event notification. */
 
 			if (found) {
-				(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
+				JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
 			}
 			else {
 				dbb->dbb_flags &= ~DBB_gc_pending;
@@ -3823,7 +3823,7 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 			   back version chains. */
 
 			if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
-				(void) JRD_reschedule(tdbb, 0, TRUE);
+				JRD_reschedule(tdbb, 0, TRUE);
 			}
 #endif
 		}

@@ -138,7 +138,7 @@ void DYN_delete_dimensions(
 
 	while (*(*ptr)++ != gds_dyn_end) {
 		--(*ptr);
-		DYN_execute(gbl, ptr, (TEXT*)NULL_PTR, f, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+		DYN_execute(gbl, ptr, NULL, f, NULL, NULL, NULL);
 	}
 }
 
@@ -473,13 +473,7 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 
 	while (*(*ptr)++ != gds_dyn_end) {
 		--(*ptr);
-		DYN_execute(gbl,
-					ptr,
-					(TEXT*)NULL_PTR,
-					f,
-					(TEXT*)NULL_PTR,
-					(TEXT*)NULL_PTR,
-					(TEXT*)NULL_PTR);
+		DYN_execute(gbl, ptr, NULL, f, NULL, NULL, NULL);
 	}
 }
 
@@ -544,13 +538,7 @@ void DYN_delete_index( GBL gbl, UCHAR ** ptr)
 
 	while (*(*ptr)++ != gds_dyn_end) {
 		--(*ptr);
-		DYN_execute(gbl,
-					ptr,
-					r,
-					(TEXT*)NULL_PTR,
-					(TEXT*)NULL_PTR,
-					(TEXT*)NULL_PTR,
-					(TEXT*)NULL_PTR);
+		DYN_execute(gbl, ptr, r, NULL, NULL, NULL, NULL);
 	}
 }
 
@@ -767,7 +755,7 @@ void DYN_delete_local_field(
 		while (*(*ptr)++ != gds_dyn_end) {
 			--(*ptr);
 			DYN_execute(gbl, ptr, RFR.RDB$RELATION_NAME,
-						RFR.RDB$FIELD_SOURCE, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+						RFR.RDB$FIELD_SOURCE, NULL, NULL, NULL);
 		}
 	END_FOR;
 	if (!DYN_REQUEST(drq_e_lfield)) {
@@ -1275,13 +1263,7 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 	while (*(*ptr)++ != gds_dyn_end)
 	{
 		--(*ptr);
-		DYN_execute(gbl,
-					ptr,
-					relation_name,
-					(TEXT*)NULL_PTR,
-					(TEXT*)NULL_PTR,
-					(TEXT*)NULL_PTR,
-					(TEXT*)NULL_PTR);
+		DYN_execute(gbl, ptr, relation_name, NULL, NULL, NULL, NULL);
 	}
 
 	return;
@@ -1450,8 +1432,7 @@ void DYN_delete_security_class( GBL gbl, UCHAR ** ptr)
 
 	while (*(*ptr)++ != gds_dyn_end) {
 		--(*ptr);
-		DYN_execute(gbl, ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
-					(TEXT*)NULL_PTR);
+		DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, NULL);
 	}
 }
 

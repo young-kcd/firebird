@@ -1607,7 +1607,7 @@ static JRD_REQ execute_triggers(TDBB tdbb,
 				result = trigger;
 				break;
 			}
-			trigger = (JRD_REQ)NULL_PTR;
+			trigger = NULL;
 		}
 
 		if (vector != *triggers) {
@@ -1875,7 +1875,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		if (request->req_operation == jrd_req::req_evaluate &&
 			(--tdbb->tdbb_quantum < 0) && !tdbb->tdbb_inhibit)
-			(void) JRD_reschedule(tdbb, 0, TRUE);
+			JRD_reschedule(tdbb, 0, TRUE);
 
 #endif
 
@@ -2667,7 +2667,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				DSC *desc;
 
 				desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
-				(void) DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
+				DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
 								  MOV_get_int64(desc, 0));
 				request->req_operation = jrd_req::req_return;
 			}
@@ -2679,7 +2679,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				DSC *desc;
 
 				desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
-				(void) DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
+				DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
 								  MOV_get_int64(desc, 0));
 				request->req_operation = jrd_req::req_return;
 			}

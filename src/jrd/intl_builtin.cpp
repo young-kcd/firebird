@@ -1330,10 +1330,10 @@ CsConvertAllocFunc INTL_csconvert_alloc_func(short from, short to)
 	cache->texttype_fn_str_to_upper =       (FPTR_short) internal_str_to_upper; \
 	cache->texttype_fn_mbtowc =             (FPTR_short) internal_nc_mbtowc; \
 	cache->texttype_collation_table =       (BYTE *) " "; \
-	cache->texttype_toupper_table =         (BYTE *) NULL; \
-	cache->texttype_tolower_table =         (BYTE *) NULL; \
-	cache->texttype_compress_table =        (BYTE *) NULL; \
-	cache->texttype_expand_table =          (BYTE *) NULL; \
+	cache->texttype_toupper_table =         NULL; \
+	cache->texttype_tolower_table =         NULL; \
+	cache->texttype_compress_table =        NULL; \
+	cache->texttype_expand_table =          NULL; \
 	cache->texttype_name =                  const_cast<char*>(POSIX);
 
 
@@ -1456,7 +1456,7 @@ BYTE * from_unicode_tbl2)
 	csptr->charset_max_bytes_per_char = 1;
 	csptr->charset_space_length = 1;
 	csptr->charset_space_character = (BYTE *) " ";
-	csptr->charset_well_formed = (FPTR_SHORT) NULL;
+	csptr->charset_well_formed = NULL;
 }
 
 
@@ -1551,7 +1551,7 @@ static USHORT cs_unicode_ucs2_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 2;
 	csptr->charset_space_character = (BYTE *) & space;	/* 0x0020 */
-	csptr->charset_well_formed = (FPTR_SHORT) NULL;
+	csptr->charset_well_formed = NULL;
 	CHARSET_RETURN;
 }
 

@@ -1510,7 +1510,7 @@ void THD_sleep(ULONG milliseconds)
 	ISC_event_init(&timer, 0, 0);
 	count = ISC_event_clear(&timer);
 
-	(void) ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000,
+	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000,
 						  (FPTR_VOID) 0, 0);
 	ISC_event_fini(&timer);
 #else /* !ANY_THREADING */
@@ -1695,7 +1695,7 @@ static void init(void)
 		 * Note that we don't care if this thr_min_stack() is called or
 		 * not, we just need to have a reference to it to force a link error.
 		 */
-		(void) thr_min_stack();
+		thr_min_stack();
 		ib_perror("thr_keycreate");
 		exit(1);
 	}
@@ -1966,8 +1966,8 @@ static int thread_start(
 	thread_t thread_id;
 	sigset_t new_mask, orig_mask;
 
-	(void) sigfillset(&new_mask);
-	(void) sigdelset(&new_mask, SIGALRM);
+	sigfillset(&new_mask);
+	sigdelset(&new_mask, SIGALRM);
 	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
 		return rval;
 #if (defined SUPERCLIENT || defined SUPERSERVER)
@@ -1977,7 +1977,7 @@ static int thread_start(
 		thr_create(NULL, 0, (void* (*)(void*) ) routine, arg, (THR_BOUND | THR_DETACHED),
 				   &thread_id);
 #endif
-	(void) thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
+	thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
 
 	return rval;
 }

@@ -113,7 +113,7 @@ STR GRANT_realloc_acl(STR		start_ptr,
 
 
 /* realloc the new length, ERR_punt incase of no memory */
-	// (void) plb::ALL_extend((BLK*)&start_ptr, realloc_length);
+	// plb::ALL_extend((BLK*)&start_ptr, realloc_length);
 	str::extend(start_ptr, realloc_length);
 
 /* the write_ptr is set back to the same offset in the new buffer*/
@@ -208,7 +208,7 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 				/* If we have the space to copy the acl list 
 				   no need to realloc */
 				if (length > default_length) {
-					//(void) plb::ALL_extend((BLK*)&str_default_buffer, length);
+					//plb::ALL_extend((BLK*)&str_default_buffer, length);
 					str::extend(str_default_buffer, length);
 					default_length = length;
 				}

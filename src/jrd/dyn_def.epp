@@ -691,7 +691,7 @@ void DYN_define_dimension(GBL		gbl,
 			default:
 				--(*ptr);
 				DYN_execute(gbl, ptr, relation_name, field_name,
-							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+							NULL, NULL, NULL);
 			}
 		}
 
@@ -1156,8 +1156,8 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
-								(TEXT*)NULL_PTR, X.RDB$FUNCTION_NAME, (TEXT*)NULL_PTR);
+					DYN_execute(gbl, ptr, NULL, NULL, NULL, X.RDB$FUNCTION_NAME,
+								NULL);
 				}
 			}
 
@@ -1274,7 +1274,7 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
 			case gds_dyn_fld_char_length:
 				if (private_getODS() < ODS_10_0)
 				{
-					(void) DYN_get_number(ptr);
+					DYN_get_number(ptr);
 				}
 				else
 				{
@@ -1591,7 +1591,7 @@ void DYN_define_global_field(GBL		gbl,
 				--(*ptr);
 				DYN_execute(gbl, ptr, relation_name,
 							(field_name) ? field_name : FLD.RDB$FIELD_NAME,
-							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+							NULL, NULL, NULL);
 			}
 		}
 
@@ -2399,7 +2399,7 @@ void DYN_define_local_field(GBL		gbl,
 			default:
 				--(*ptr);
 				DYN_execute(gbl, ptr, relation_name, RFR.RDB$FIELD_SOURCE,
-							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+							NULL, NULL, NULL);
 			}
 
 		if (RFR.RDB$FIELD_POSITION.NULL == TRUE) {
@@ -2805,8 +2805,7 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 
 			default:
 				--(*ptr);
-				DYN_execute(gbl, ptr, (TEXT*)NULL_PTR,
-							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, procedure_name);
+				DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, procedure_name);
 			}
 		if (P.RDB$FIELD_SOURCE.NULL) {
 			/* Need to store dummy global field */
@@ -2967,9 +2966,7 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 
 			default:
 				--(*ptr);
-				DYN_execute(gbl, ptr,
-							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
-							procedure_name);
+				DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, procedure_name);
 			}
 
 	END_STORE;
@@ -3147,7 +3144,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 			default:
 				--(*ptr);
 				DYN_execute(gbl, ptr, REL.RDB$RELATION_NAME, field_name,
-							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+							NULL, NULL, NULL);
 			}
 
 		if (sql_prot) {
@@ -3692,7 +3689,7 @@ void DYN_define_sql_field(GBL		gbl,
 				default:
 					--(*ptr);
 					DYN_execute(gbl, ptr, relation_name, RFR.RDB$FIELD_SOURCE,
-								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+								NULL, NULL, NULL);
 				}
 
 			if (RFR.RDB$FIELD_POSITION.NULL == TRUE) {
@@ -3940,8 +3937,8 @@ void DYN_define_trigger(GBL		gbl,
 
 			default:
 				--(*ptr);
-				DYN_execute(gbl, ptr, X.RDB$RELATION_NAME, (TEXT*)NULL_PTR,
-							t, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+				DYN_execute(gbl, ptr, X.RDB$RELATION_NAME, NULL,
+							t, NULL, NULL);
 			}
 		}
 
@@ -4128,8 +4125,8 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, VRL.RDB$RELATION_NAME, (TEXT*)NULL_PTR,
-								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+					DYN_execute(gbl, ptr, VRL.RDB$RELATION_NAME, NULL,
+								NULL, NULL, NULL);
 				}
 			}
 

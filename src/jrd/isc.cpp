@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.36 2003-07-04 15:17:47 dimitr Exp $
+$Id: isc.cpp,v 1.37 2003-08-28 13:15:23 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -1277,7 +1277,7 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 
 	if (!InitializeSecurityDescriptor(	p_security_desc,
 										SECURITY_DESCRIPTOR_REVISION) ||
-		!SetSecurityDescriptorDacl(p_security_desc, TRUE, (PACL) NULL, FALSE))
+		!SetSecurityDescriptorDacl(p_security_desc, TRUE, NULL, FALSE))
 	{
 		gds__free(p_security_desc);
 		return NULL;

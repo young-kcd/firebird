@@ -165,7 +165,7 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
 	strcpy(new_dls->dls_directory, dir_name);
 	new_dls->dls_size = size;
 	new_dls->dls_inuse = 0;
-	new_dls->dls_next = (DLS) NULL;
+	new_dls->dls_next = NULL;
 
 /* get access to directory list object */
 

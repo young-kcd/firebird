@@ -141,15 +141,11 @@ int PCMET_expression_index(
 
 				if (!IDX.RDB$EXPRESSION_BLR.NULL)
 					idx.idx_expression = MET_get_dependencies(tdbb, relation,
-															  NULL_PTR,
-															  NULL_PTR,
-															  &IDX.
-															  RDB$EXPRESSION_BLR,
-															  &idx.
-															  idx_expression_request,
+															  NULL, NULL, 
+															  &IDX.RDB$EXPRESSION_BLR,
+															  &idx.idx_expression_request,
 															  &csb,
-															  IDX.
-															  RDB$INDEX_NAME,
+															  IDX.RDB$INDEX_NAME,
 															  obj_expression_index);
 				tdbb->tdbb_default = default_pool;
 
@@ -179,7 +175,7 @@ int PCMET_expression_index(
 
 		current_request = tdbb->tdbb_request;
 		tdbb->tdbb_request = idx.idx_expression_request;
-		IDX_create_index(tdbb, relation, &idx, work->dfw_name, NULL_PTR,
+		IDX_create_index(tdbb, relation, &idx, work->dfw_name, NULL,
 						 transaction, &selectivity);
 		tdbb->tdbb_request = current_request;
 

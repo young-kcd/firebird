@@ -1057,7 +1057,7 @@ int ISC_expand_share(TEXT * file_name, TEXT * expanded_name)
 	if (i != nument)			/* i.e. we found the drive in the resources list */
 		share_name_from_resource(expanded_name, file_name, res);
 
-	(void) WNetCloseEnum(handle);
+	WNetCloseEnum(handle);
 
 /* Win95 doesn't seem to return shared drives, so the following
    has been added... */

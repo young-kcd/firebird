@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.47 2003-08-15 00:32:07 arnobrinkman Exp $
+$Id: par.cpp,v 1.48 2003-08-28 13:16:03 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1274,7 +1274,7 @@ static JRD_NOD par_function(TDBB tdbb, CSB * csb)
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {
 			node = PAR_make_node(tdbb, e_fun_length);
 			node->nod_count = 1;
-			node->nod_arg[e_fun_function] = (JRD_NOD) NULL;
+			node->nod_arg[e_fun_function] = NULL;
 			node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 			return node;
 		}
@@ -2683,7 +2683,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 					syntax_error(*csb, "blr_receive");
 				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
 			}
-			(void) BLR_BYTE;
+			BLR_BYTE;
 			node = PAR_make_list(tdbb, stack);
 		}
 		break;
@@ -2695,7 +2695,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 			node->nod_arg[e_blk_action] = parse(tdbb, csb, sub_type);
 			while (BLR_PEEK != (UCHAR) blr_end)
 				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
-			(void) BLR_BYTE;
+			BLR_BYTE;
 			node->nod_arg[e_blk_handlers] = PAR_make_list(tdbb, stack);
 		}
 		break;
@@ -2721,7 +2721,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected, USHORT expected_opti
 		node->nod_arg[e_if_true] = parse(tdbb, csb, sub_type);
 		if (BLR_PEEK == (UCHAR) blr_end) {
 			node->nod_count = 2;
-			(void) BLR_BYTE;
+			BLR_BYTE;
 			break;
 		}
 		node->nod_arg[e_if_false] = parse(tdbb, csb, sub_type);

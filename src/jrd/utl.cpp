@@ -461,7 +461,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 			break;
 
 		default:
-			(void) va_arg(args, int);
+			va_arg(args, int);
 			break;
 		}
 	}
@@ -525,7 +525,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 			break;
 
 		default:
-			(void) va_arg(args, int);
+			va_arg(args, int);
 			break;
 		}
 	}

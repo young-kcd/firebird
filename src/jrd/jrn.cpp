@@ -171,7 +171,7 @@ int JRN_archive_begin(
  **************************************/
 	LTJA record;
 
-	*ret_journal = (JRN) NULL;
+	*ret_journal = NULL;
 
 	record.ltja_header.jrnh_type = JRN_ARCHIVE_BEGIN;
 	record.ltja_db_id = db_id;
@@ -207,7 +207,7 @@ int JRN_archive_end(
 	int ret_val;
 
 	journal = *ret_journal;
-	*ret_journal = (JRN) NULL;
+	*ret_journal = NULL;
 
 /* If there is either a null journal block or
    a zero channel, there is no connection to
@@ -266,7 +266,7 @@ int JRN_archive_error(
 	int ret_val;
 
 	journal = *ret_journal;
-	*ret_journal = (JRN) NULL;
+	*ret_journal = NULL;
 
 	if (!(journal))
 		return FB_SUCCESS;
@@ -382,7 +382,7 @@ int JRN_fini(ISC_STATUS * status_vector, JRN * jrn)
 	int ret_val;
 
 	journal = *jrn;
-	*jrn = (JRN) NULL;
+	*jrn = NULL;
 
 /* If there is either a null journal block or
    a zero channel, there is no connection to
@@ -446,7 +446,7 @@ int JRN_init(
 	LTJC control;
 
 	if (!journal_dir) {
-		*ret_journal = (JRN) NULL;
+		*ret_journal = NULL;
 		return FB_FAILURE;
 	}
 
@@ -872,7 +872,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 			if (retry) {
 				close((int) journal->jrn_channel);
 				gds__free(journal);
-				*ret_jrn = (JRN) NULL;
+				*ret_jrn = NULL;
 				return FB_SUCCESS;
 			}
 			error(status_vector, journal, errno, "connect (journal server)");
@@ -946,7 +946,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 			CloseHandle((HANDLE) journal->jrn_channel);
 #endif
 			gds__free(journal);
-			*ret_jrn = (JRN) NULL;
+			*ret_jrn = NULL;
 			return FB_SUCCESS;
 		}
 		gds__free(journal);
@@ -1225,7 +1225,7 @@ LTJC * control, USHORT control_length, UCHAR * data, USHORT d_length)
 								  d_length, count)) != FB_SUCCESS)
 			return ret_val;
 
-		if (*journal != (JRN) NULL)
+		if (*journal != NULL)
 			break;
 	}
 

@@ -518,7 +518,7 @@ void DPM_create_relation( TDBB tdbb, JRD_REL relation)
 			record.jrnda_type = JRNP_DB_HDR_PAGES;
 			record.jrnda_data = window.win_page;
 			CCH_journal_record(tdbb, &root_window, (UCHAR*)&record, JRNDA_SIZE,
-							   (UCHAR*) NULL_PTR, 0);
+							   NULL, 0);
 		}
 		CCH_RELEASE(tdbb, &root_window);
 	}
@@ -788,7 +788,7 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 		journal.jrnp_type = JRNP_POINTER_SLOT;
 		journal.jrnp_index = slot;
 		journal.jrnp_length = 0;
-		CCH_journal_record(tdbb, &pwindow, (UCHAR*)&journal, JRNP_SIZE, (UCHAR*) NULL_PTR, 0);
+		CCH_journal_record(tdbb, &pwindow, (UCHAR*)&journal, JRNP_SIZE, NULL, 0);
 	}
 
 	CCH_RELEASE(tdbb, &pwindow);
@@ -1189,7 +1189,7 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
 			journal.jrng_type = JRNP_GENERATOR;
 			journal.jrng_offset = offset;
 			journal.jrng_genval = *ptr;
-			CCH_journal_record(tdbb, &window, (UCHAR*)&journal, JRNG_SIZE, (UCHAR*) NULL_PTR,
+			CCH_journal_record(tdbb, &window, (UCHAR*)&journal, JRNG_SIZE, NULL,
 							   0);
 		}
 
@@ -1878,7 +1878,7 @@ void DPM_store( TDBB tdbb, RPB * rpb, LLS * stack, USHORT type)
 		fill = 0;
 
 	length = RHD_SIZE + size + fill;
-	header = locate_space(tdbb, rpb, (SSHORT)length, stack, (REC) NULL_PTR, type);
+	header = locate_space(tdbb, rpb, (SSHORT)length, stack, NULL, type);
 
 	header->rhd_flags = rpb->rpb_flags;
 	header->rhd_transaction = rpb->rpb_transaction;
@@ -3261,12 +3261,8 @@ static void store_big_record(
 	size =
 		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, in - (SCHAR *) rpb->rpb_address,
 				   head_dcc);
-	header = (RHDF)locate_space(tdbb,
-								rpb,
-								(SSHORT)(RHDF_SIZE + size),
-								stack,
-								(REC) NULL_PTR,
-								DPM_other);
+	header = (RHDF)locate_space(tdbb, rpb, (SSHORT)(RHDF_SIZE + size), stack,
+								NULL, DPM_other);
 
 	header->rhdf_flags = rhd_incomplete | rhd_large | rpb->rpb_flags;
 	header->rhdf_transaction = rpb->rpb_transaction;

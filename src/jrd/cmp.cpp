@@ -572,7 +572,7 @@ FMT DLL_EXPORT CMP_format(TDBB tdbb, CSB csb, USHORT stream)
 		return tail->csb_format = tail->csb_procedure->prc_format;
 
 	IBERROR(222);				/* msg 222 bad blr -- invalid stream */
-	return ((FMT) NULL);
+	return NULL;
 }
 
 
@@ -4127,7 +4127,7 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB * csb, JRD_NOD node)
 				pass1_expand_view(tdbb, *csb, stream, new_stream, TRUE);
 			node->nod_arg[e_sto_statement] =
 				copy(tdbb, csb, node->nod_arg[e_sto_statement],
-					 (UCHAR *) NULL, 0, FALSE);
+					 NULL, 0, FALSE);
 
 			/* bug 8150: use of blr_store2 against a view with a trigger was causing 
 			   the second statement to be executed, which is not desirable */
@@ -4209,7 +4209,7 @@ USHORT update_stream, USHORT priv, JRD_REL view, USHORT view_stream)
 		else {
 			ERR_post(gds_read_only_view,
 					 gds_arg_string, relation->rel_name, 0);
-			return ((JRD_NOD) NULL);	/* Added to remove compiler warnings */
+			return NULL;	/* Added to remove compiler warnings */
 		}
 	}
 	else {

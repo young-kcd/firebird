@@ -331,7 +331,7 @@ RSB OPT_compile(TDBB tdbb,
    memory will then be in csb->csb_rpt[stream].csb_idx_allocation, which
    gets cleaned up before this function exits. */
 
-	idx = (IDX *) NULL;
+	idx = NULL;
 	idx_size = 0;
 
 	opt_ = FB_NEW(*dbb->dbb_permanent) Opt();

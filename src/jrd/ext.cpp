@@ -176,7 +176,7 @@ EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
 		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
 	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 	file->ext_flags = 0;
-	file->ext_ifi = (int *) NULL;
+	file->ext_ifi = NULL;
 
 /* If the database is updateable, then try opening the external files in
  * RW mode. If the DB is ReadOnly, then open the external files only in

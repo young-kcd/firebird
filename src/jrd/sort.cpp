@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.39 2003-08-11 01:19:16 brodsom Exp $
+ * $Id: sort.cpp,v 1.40 2003-08-28 13:16:03 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -1151,8 +1151,8 @@ int SORT_sort(ISC_STATUS * status_vector, SCB scb)
 			(*m1)->rmh_parent = merge;
 			merge->mrg_stream_b = *m1++;
 
-			merge->mrg_record_a = (SORT_RECORD *) NULL;
-			merge->mrg_record_b = (SORT_RECORD *) NULL;
+			merge->mrg_record_a = NULL;
+			merge->mrg_record_b = NULL;
 
 			*m2++ = (RMH) merge;
 			count -= 2;
@@ -2091,7 +2091,7 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
 				continue;
 			}
 			else if ( (record = merge->mrg_record_a) ) {
-				merge->mrg_record_a = (SORT_RECORD *) NULL;
+				merge->mrg_record_a = NULL;
 				merge = merge->mrg_header.rmh_parent;
 				continue;
 			}
@@ -2130,7 +2130,7 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
 				(*scb->scb_dup_callback) (merge->mrg_record_a,
 										  merge->mrg_record_b,
 										  scb->scb_dup_callback_arg)) {
-				merge->mrg_record_a = (SORT_RECORD *) NULL;
+				merge->mrg_record_a = NULL;
 #ifdef SCROLLABLE_CURSORS
 				SORT_diddle_key((UCHAR *) merge->mrg_record_b, scb, TRUE);
 #else
@@ -2154,11 +2154,11 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
 #endif
 		{
 			record = merge->mrg_record_a;
-			merge->mrg_record_a = (SORT_RECORD *) NULL;
+			merge->mrg_record_a = NULL;
 		}
 		else {
 			record = merge->mrg_record_b;
-			merge->mrg_record_b = (SORT_RECORD *) NULL;
+			merge->mrg_record_b = NULL;
 		}
 
 		merge = merge->mrg_header.rmh_parent;
@@ -2406,8 +2406,8 @@ static void merge_runs(SCB scb, USHORT n)
 			(*m1)->rmh_parent = merge;
 			merge->mrg_stream_b = *m1++;
 
-			merge->mrg_record_a = (SORT_RECORD *) NULL;
-			merge->mrg_record_b = (SORT_RECORD *) NULL;
+			merge->mrg_record_a = NULL;
+			merge->mrg_record_b = NULL;
 			*m2++ = (RMH) merge;
 			merge++;
 			count -= 2;
@@ -2744,8 +2744,7 @@ static ULONG order(SCB scb)
 
 		if (((SORTP *) output) + scb->scb_longs - 1 <= (SORTP *) lower_limit) {
 			/* null the bckptr for this record */
-			record->sr_bckptr =
-				reinterpret_cast < sort_record ** >((SR **) NULL);
+			record->sr_bckptr = NULL;
 			MOVE_32(length, record->sr_sort_record.sort_record_key, output);
 			output =
 				reinterpret_cast < sort_record * >((SORTP *) output + length);

@@ -239,8 +239,7 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
-								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+					DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, NULL);
 				}
 		END_MODIFY;
 	END_FOR;
@@ -704,7 +703,7 @@ void DYN_modify_global_field(
 			default:
 				--(*ptr);
 				DYN_execute(gbl, ptr, relation_name, field_name,
-							(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+							NULL, NULL, NULL);
 			}
 		}
 
@@ -1058,8 +1057,7 @@ void DYN_modify_local_field(
 
 		default:
 			--(*ptr);
-			DYN_execute(gbl, ptr, relation_name, field_name,
-						(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+			DYN_execute(gbl, ptr, relation_name, field_name, NULL, NULL, NULL);
 		}
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
@@ -1252,8 +1250,7 @@ void DYN_modify_procedure( GBL gbl, UCHAR ** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
-								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, procedure_name);
+					DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, procedure_name);
 				}
 
 		END_MODIFY;
@@ -1354,8 +1351,7 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, name, field_name,
-								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+					DYN_execute(gbl, ptr, name, field_name, NULL, NULL, NULL);
 				}
 		END_MODIFY;
 	END_FOR;
@@ -1491,8 +1487,7 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
-								trigger_name, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+					DYN_execute(gbl, ptr, NULL, NULL, trigger_name, NULL, NULL);
 				}
 		END_MODIFY;
 	END_FOR;
@@ -1662,8 +1657,8 @@ void DYN_modify_view( GBL gbl, UCHAR ** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, REL.RDB$RELATION_NAME, (TEXT*)NULL_PTR,
-								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+					DYN_execute(gbl, ptr, REL.RDB$RELATION_NAME, NULL,
+								NULL, NULL, NULL);
 				}
 		END_MODIFY;
 	END_FOR;
@@ -2441,7 +2436,7 @@ void DYN_modify_sql_field(GBL		gbl,
 				default:
 					--(*ptr);
 					DYN_execute(gbl, ptr, relation_name, RFR.RDB$FIELD_SOURCE,
-								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+								NULL, NULL, NULL);
 				}
 			}
 		END_FOR; /* FLD in RDB$FIELDS */

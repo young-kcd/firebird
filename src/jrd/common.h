@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.77 2003-08-22 10:56:53 aafemt Exp $
+$Id: common.h,v 1.78 2003-08-28 13:14:37 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -728,7 +728,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define NULL            0L
 #endif
 
-#define NULL_PTR        ((void*) 0)
 #ifndef TRUE
 #define TRUE            1
 #endif

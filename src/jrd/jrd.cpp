@@ -252,8 +252,7 @@ void trig::compile(tdbb* _tdbb)
 		_tdbb->tdbb_default = new_pool;
 		// Trigger request is not compiled yet. Lets do it now
 		try {
-			PAR_blr(_tdbb, relation, blr->str_data, 
-					(CSB)NULL_PTR, (CSB*)NULL_PTR, &request, TRUE, 
+			PAR_blr(_tdbb, relation, blr->str_data,  NULL, NULL, &request, TRUE,
 					(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
 			_tdbb->tdbb_default = old_pool;
 		}
@@ -4918,7 +4917,7 @@ static JRD_TRA find_transaction(TDBB tdbb, JRD_TRA transaction, ISC_STATUS error
 		}
 
 	ERR_post(error_code, 0);
-	return ((JRD_TRA) NULL);		/* Added to remove compiler warnings */
+	return NULL;		/* Added to remove compiler warnings */
 }
 
 
@@ -5073,7 +5072,7 @@ static void get_options(UCHAR*	dpb,
 				 */
 #ifndef WIN_NT
 				if (!options->dpb_working_directory[0]) {
-					struct passwd *passwd = (struct passwd *) NULL;
+					struct passwd *passwd = NULL;
 
 					if (t_data)
 						passwd = getpwnam(t_data);
@@ -6029,7 +6028,7 @@ static void setup_NT_handlers()
  *
  **************************************/
 
-	(void) SetConsoleCtrlHandler((PHANDLER_ROUTINE) handler_NT, TRUE);
+	SetConsoleCtrlHandler((PHANDLER_ROUTINE) handler_NT, TRUE);
 }
 #endif
 

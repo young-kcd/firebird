@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.66 2003-08-22 10:56:53 aafemt Exp $
+$Id: met.epp,v 1.67 2003-08-28 13:15:23 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1214,9 +1214,9 @@ void MET_load_trigger(
 			if ((TRG.RDB$FLAGS & TRG_ignore_perm) &&
 				!verify_TRG_ignore_perm(tdbb, trigger_name))
 			{
-				gds__msg_format(NULL_PTR, JRD_BUGCHK, 304, sizeof(errmsg),
-								errmsg, trigger_name, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR,
-								(TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+				gds__msg_format(NULL, JRD_BUGCHK, 304, sizeof(errmsg),
+								errmsg, trigger_name, NULL, NULL,
+								NULL, NULL);
 				ERR_log(JRD_BUGCHK, 304, errmsg);
 
 				trig_flags &= ~TRG_ignore_perm;
@@ -1847,15 +1847,15 @@ int MET_lookup_partner(
 
 		if (references->frgn_reference_ids) {
 			delete references->frgn_reference_ids;
-			references->frgn_reference_ids = (VEC) NULL_PTR;
+			references->frgn_reference_ids = NULL;
 		}
 		if (references->frgn_relations) {
 			delete references->frgn_relations;
-			references->frgn_relations = (VEC) NULL_PTR;
+			references->frgn_relations = NULL;
 		}
 		if (references->frgn_indexes) {
 			delete references->frgn_indexes;
-			references->frgn_indexes = (VEC) NULL_PTR;
+			references->frgn_indexes = NULL;
 		}
 
 		FOR(REQUEST_HANDLE request)
@@ -1917,15 +1917,15 @@ int MET_lookup_partner(
 
 		if (dependencies->prim_reference_ids) {
 			delete dependencies->prim_reference_ids;
-			dependencies->prim_reference_ids = (VEC) NULL_PTR;
+			dependencies->prim_reference_ids = NULL;
 		}
 		if (dependencies->prim_relations) {
 			delete dependencies->prim_relations;
-			dependencies->prim_relations = (VEC) NULL_PTR;
+			dependencies->prim_relations = NULL;
 		}
 		if (dependencies->prim_indexes) {
 			delete dependencies->prim_indexes;
-			dependencies->prim_indexes = (VEC) NULL_PTR;
+			dependencies->prim_indexes = NULL;
 		}
 
 /*
@@ -1996,7 +1996,7 @@ int MET_lookup_partner(
 			   keys. */
 
 			found = FALSE;
-			request = (BLK) NULL_PTR;
+			request = NULL;
 
 			FOR(REQUEST_HANDLE request)
 				IDX IN RDB$INDICES CROSS
@@ -2424,14 +2424,8 @@ JRD_NOD MET_parse_blob(TDBB		tdbb,
 	temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 
-	node = PAR_blr(	tdbb,
-					relation,
-					temp->str_data,
-					(CSB)NULL_PTR,
-					csb_ptr,
-					request_ptr,
-					trigger,
-					(USHORT)(ignore_perm ? csb_ignore_perm : 0));
+	node = PAR_blr(tdbb, relation, temp->str_data, NULL, csb_ptr, request_ptr,
+					trigger, (USHORT)(ignore_perm ? csb_ignore_perm : 0));
 
 	delete temp;
 
@@ -2534,14 +2528,8 @@ void MET_parse_sys_trigger(TDBB tdbb, JRD_REL relation)
 
 			old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = JrdMemoryPool::createPool();
-			PAR_blr(tdbb,
-					relation,
-					const_cast<UCHAR*>(blr),
-					(CSB) NULL_PTR,
-					(CSB*) NULL_PTR,
-					&request,
-					TRUE,
-					par_flags);
+			PAR_blr(tdbb, relation, const_cast<UCHAR*>(blr), NULL, NULL,
+					&request, TRUE, par_flags);
 
 			tdbb->tdbb_default = old_pool;
 
@@ -3144,7 +3132,7 @@ void MET_remove_procedure( TDBB tdbb, int id, JRD_PRC procedure)
    to it by other procedures via pointer to current meta
    data structure, so don't loose the structure or the pointer. */
 	if ((procedure == (JRD_PRC) (*vector)[id]) && !(procedure->prc_flags & PRC_being_altered))
-	    (*vector)[id] = (BLK) NULL_PTR;
+	    (*vector)[id] = NULL;
 
 /* deallocate all structure which were allocated.  The procedure
  * blr is originally read into a new pool from which all request
@@ -3350,7 +3338,7 @@ void MET_scan_relation( TDBB tdbb, JRD_REL relation)
 	sys_triggers = (relation->rel_flags & REL_sys_triggers) ? TRUE : FALSE;
 	relation->rel_flags &= ~(REL_get_dependencies | REL_sys_triggers);
 	for (n = 0; n < TRIGGER_MAX; n++)
-		triggers[n] = (TRIG_VEC) NULL_PTR;
+		triggers[n] = NULL;
 	old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = dbb->dbb_permanent;
 
@@ -3397,26 +3385,17 @@ void MET_scan_relation( TDBB tdbb, JRD_REL relation)
 			if (dependencies)
 			{
 				relation->rel_view_rse =
-				(RSE) MET_get_dependencies(	tdbb,
-											relation,
-											(TEXT*)NULL_PTR,
-											(CSB) NULL_PTR,
-											(SLONG*)&REL.RDB$VIEW_BLR,
-											(JRD_REQ*) NULL_PTR,
-											&csb_,
-											REL.RDB$RELATION_NAME,
+				(RSE) MET_get_dependencies(tdbb, relation, NULL, NULL,
+											(SLONG*)&REL.RDB$VIEW_BLR, NULL, 
+											&csb_, REL.RDB$RELATION_NAME,
 											obj_view);
 			}
 			else
 			{
 				relation->rel_view_rse =
-					(RSE) MET_parse_blob(tdbb,
-										relation,
-										(SLONG*)&REL.RDB$VIEW_BLR,
-										&csb_,
-										(JRD_REQ*) NULL_PTR,
-										FALSE,
-										FALSE);
+					(RSE) MET_parse_blob(tdbb, relation,
+										(SLONG*)&REL.RDB$VIEW_BLR, &csb_,
+										NULL, FALSE, FALSE);
 			}
 
 			/* retrieve the view context names */
@@ -3516,39 +3495,31 @@ void MET_scan_relation( TDBB tdbb, JRD_REL relation)
 
 			case RSR_computed_blr:
 				field->fld_computation = (dependencies) ?
-					MET_get_dependencies(tdbb, relation,
-										 (TEXT*) p,
-										 csb_,
-										 (SLONG*) NULL_PTR,
-										 (JRD_REQ*) NULL_PTR,
-										 (CSB*) NULL_PTR,
-										 field->fld_name,
+					MET_get_dependencies(tdbb, relation, (TEXT*) p, csb_, NULL,
+										 NULL, NULL, field->fld_name,
 										 obj_computed) :
-					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (JRD_REQ*) NULL_PTR, FALSE,
-							0);
+					PAR_blr(tdbb, relation, p, csb_, NULL, NULL, FALSE, 0);
 				break;
 
 			case RSR_missing_value:
 				field->fld_missing_value =
-					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (JRD_REQ*) NULL_PTR, FALSE,
-							0);
+					PAR_blr(tdbb, relation, p, csb_, NULL, NULL, FALSE, 0);
 				break;
 
 			case RSR_default_value:
 				field->fld_default_value =
-					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (JRD_REQ*) NULL_PTR, FALSE,
-							0);
+					PAR_blr(tdbb, relation, p, csb_, NULL, NULL, FALSE, 0);
 				break;
 
 			case RSR_validation_blr:
 				field->fld_validation =
-					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (JRD_REQ*) NULL_PTR, FALSE,
+					PAR_blr(tdbb, relation, p, csb_, NULL, NULL, FALSE,
 							csb_validation);
 				break;
 
 			case RSR_field_not_null:
 				field->fld_not_null =
-					PAR_blr(tdbb, relation, p, csb_, (CSB*) NULL_PTR, (JRD_REQ*) NULL_PTR, FALSE,
+					PAR_blr(tdbb, relation, p, csb_, NULL, NULL, FALSE,
 							csb_validation);
 				break;
 
@@ -4090,7 +4061,7 @@ static JRD_NOD parse_procedure_blr(
 	(*csb_ptr)->csb_blr = temp->str_data;
 	par_messages(tdbb, temp->str_data, (USHORT) length, procedure, csb_ptr);
 	node =
-		PAR_blr(tdbb, (JRD_REL) NULL_PTR, temp->str_data, (CSB) NULL_PTR, csb_ptr,
+		PAR_blr(tdbb, NULL, temp->str_data, NULL, csb_ptr,
 				&procedure->prc_request, FALSE, 0);
 	delete temp;
 

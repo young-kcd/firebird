@@ -3064,7 +3064,7 @@ static void btc_remove(BDB bdb)
 
 /* initialize the node for next usage */
 
-	bdb->bdb_left = bdb->bdb_right = bdb->bdb_parent = (BDB) NULL;
+	bdb->bdb_left = bdb->bdb_right = bdb->bdb_parent = NULL;
 	BTC_MUTEX_RELEASE;
 }
 
@@ -3220,7 +3220,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 		   Otherwise, wait for event notification. */
 
 		if (found)
-			(void) JRD_reschedule(tdbb, 0, TRUE);
+			JRD_reschedule(tdbb, 0, TRUE);
 		else if (bcb->bcb_flags & BCB_free_pending &&
 				 (bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1))) {
 			/* In our spare time, help writer clean the cache. */
@@ -3420,7 +3420,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 
 			if ((bcb->bcb_flags & BCB_free_pending) ||
 				bcb->bcb_checkpoint || dbb->dbb_flush_cycle) {
-				(void) JRD_reschedule(tdbb, 0, TRUE);
+				JRD_reschedule(tdbb, 0, TRUE);
 			}
 #ifdef CACHE_READER
 			else if (SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) {

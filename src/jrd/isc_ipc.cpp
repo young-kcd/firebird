@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.37 2003-04-10 06:49:12 aafemt Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.38 2003-08-28 13:15:23 brodsom Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -324,7 +324,7 @@ void DLL_EXPORT ISC_enter(void)
 #ifdef DEBUG_FPE_HANDLING
 /* Debug code to simulate an FPE occuring during DB Operation */
 	if (overflow_count < 100)
-		(void) kill(getpid(), SIGFPE);
+		kill(getpid(), SIGFPE);
 #endif
 }
 
@@ -1045,7 +1045,7 @@ static void CLIB_ROUTINE signal_handler(int number,
 
 /* if there are no signals, who cares? */
 
-	if (signals == (SIG) NULL)
+	if (signals == NULL)
 		return;
 
 /* This should never happen, but if it does might as well not crash */

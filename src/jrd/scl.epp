@@ -487,8 +487,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 
 	s_class = FB_NEW_RPT(*dbb->dbb_permanent, strlen(string)) scl();
 	strcpy(s_class->scl_name, string);
-	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, (JRD_REL)NULL_PTR,
-												 (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, NULL, NULL, NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 	{
@@ -862,9 +861,8 @@ SCL SCL_recompute_class(TDBB tdbb, TEXT * string)
 	if (!(s_class = SCL_get_class(string)))
 		return NULL;
 
-	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class,
-												 (JRD_REL) NULL_PTR, (TEXT*) NULL_PTR,
-												 (TEXT*) NULL_PTR);
+	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, NULL, NULL,
+												 NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 		return s_class;

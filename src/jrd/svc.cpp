@@ -3344,7 +3344,7 @@ static void conv_switches(
 		return;					/* error action not defined */
 
 /* Calculate the total length */
-	if ((total = process_switches(spb_length, p, (TEXT *) NULL)) == 0)
+	if ((total = process_switches(spb_length, p, NULL)) == 0)
 		return;
 
 	*switches =
@@ -3380,7 +3380,7 @@ static TEXT *find_switch(int in_spb_sw, IN_SW_TAB table)
 			return in_sw_tab->in_sw_name;
 	}
 
-	return ((TEXT *) NULL);
+	return NULL;
 }
 
 

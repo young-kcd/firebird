@@ -90,7 +90,7 @@ void REC_recover(
 			 dbname, walname);
 
 	scan_and_apply_logs(dbname, walname, cp1, sbm_rec,
-						activate_shadow, (SLONG *) NULL, -1, (PAG) NULL);
+						activate_shadow, NULL, -1, NULL);
 	REC_update_next_transid();
 
 /* Should do the equivalent of 2 control point flush to write
@@ -130,7 +130,7 @@ void REC_recover_page(
 
 	MOV_time_stamp(reinterpret_cast < ISC_TIMESTAMP * >(date));
 
-	scan_and_apply_logs(dbname, walname, cp1, (SBM *) NULL,
+	scan_and_apply_logs(dbname, walname, cp1, NULL,
 						0, date, page_no, page);
 }
 

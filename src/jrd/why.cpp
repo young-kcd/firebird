@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.23 2003-06-16 15:42:58 alexpeshkoff Exp $
+$Id: why.cpp,v 1.24 2003-08-28 13:16:03 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -3437,7 +3437,7 @@ ISC_STATUS API_ROUTINE GDS_EVENT_WAIT(ISC_STATUS * user_status,
 		 buffer)) return error2(status, local);
 
 	event_ptr = why_event;
-	ISC_event_wait(1, &event_ptr, &value, -1, 0, NULL_PTR);
+	ISC_event_wait(1, &event_ptr, &value, -1, 0, NULL);
 
 	CHECK_STATUS_SUCCESS(status);
 	return FB_SUCCESS;
@@ -5990,7 +5990,7 @@ static void subsystem_enter(void)
 		if (((counter++) % 10) == 0)
 		{
 			ib_fprintf(ib_stderr, "Forcing FPE to occur within engine\n");
-			(void) kill(getpid(), SIGFPE);
+			kill(getpid(), SIGFPE);
 		}
 	}
 #endif /* DEBUG_FPE_HANDLING */

@@ -1054,7 +1054,7 @@ int ISC_event_wait(
 			ret = FB_SUCCESS;
 			break;
 		}
-		(void) semaphore_wait_isc_sync(count, semid, semnums);
+		semaphore_wait_isc_sync(count, semid, semnums);
 		if (micro_seconds > 0) {
 			/* semaphore_wait_isc_sync() routine may return FB_SUCCESS if our timeout
 			   handler poked the semaphore.  So make sure that the event

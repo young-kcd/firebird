@@ -1444,7 +1444,7 @@ static void internal_dequeue(TDBB tdbb, LCK lock)
 
 /* check for a potential downgrade */
 
-	(void) internal_downgrade(tdbb, match);
+	internal_downgrade(tdbb, match);
 }
 
 

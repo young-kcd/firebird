@@ -1774,7 +1774,7 @@ static bool create_index(	TDBB	tdbb,
 
 		/* Actually create the index */
 
-		partner_relation = (JRD_REL) NULL_PTR;
+		partner_relation = NULL;
 		if (idx.idx_flags & idx_foreign)
 		{
 			/* Get an exclusive lock on the database if the index being
@@ -2182,7 +2182,7 @@ static bool delete_exception(	TDBB	tdbb,
 		return false;
 
 	case 1:
-		check_dependencies(tdbb, work->dfw_name, (TEXT*)NULL_PTR,
+		check_dependencies(tdbb, work->dfw_name, NULL,
 						   obj_exception, transaction);
 		return true;
 
@@ -2662,7 +2662,7 @@ static bool delete_procedure(	TDBB	tdbb,
 		return false;
 
 	case 1:
-		check_dependencies(tdbb, work->dfw_name, (TEXT*)NULL_PTR,
+		check_dependencies(tdbb, work->dfw_name, NULL,
 						   obj_procedure, transaction);
 		return true;
 
@@ -2713,8 +2713,7 @@ static bool delete_procedure(	TDBB	tdbb,
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
 			}
-			(*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id] =
-				(BLK) NULL_PTR;
+			(*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id] = NULL;
 			return false;
 		}
 
@@ -2817,7 +2816,7 @@ static bool delete_relation(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transacti
 					gds_arg_number, (SLONG) view_count,
 					0);	/* Msg310: there are %ld dependencies */
 		}
-		check_dependencies(tdbb, work->dfw_name, (TEXT*)NULL_PTR,
+		check_dependencies(tdbb, work->dfw_name, NULL,
 						   obj_relation, transaction);
 		return true;
 
@@ -3379,15 +3378,8 @@ static void get_procedure_dependencies(DFW work)
 		old_pool = tdbb->tdbb_default;
 		/* Nickolay Samofatov: allocate statement memory pool... */
 		tdbb->tdbb_default = JrdMemoryPool::createPool();
-		MET_get_dependencies(tdbb,
-							(struct jrd_rel*)NULL_PTR,
-							(TEXT*)NULL_PTR,
-							(CSB)NULL_PTR,
-							(SLONG*)&blob_id,
-							&request,
-							(CSB*)NULL_PTR,
-							work->dfw_name,
-							obj_procedure);
+		MET_get_dependencies(tdbb, NULL, NULL, NULL, (SLONG*)&blob_id, &request,
+							NULL, work->dfw_name, obj_procedure);
 		if (request)
 			CMP_release(tdbb, request);
 		else
@@ -3450,14 +3442,8 @@ static void get_trigger_dependencies( DFW work)
 		JrdMemoryPool *old_pool = tdbb->tdbb_default;
 		/* Nickolay Samofatov: allocate statement memory pool... */
 		tdbb->tdbb_default = JrdMemoryPool::createPool();
-		MET_get_dependencies(tdbb, relation,
-							 (TEXT*)NULL_PTR,
-							 (CSB)NULL_PTR,
-							 (SLONG*)&blob_id,
-							 &request,
-							 (CSB*)NULL_PTR,
-							 work->dfw_name,
-							 obj_trigger);
+		MET_get_dependencies(tdbb, relation, NULL, NULL, (SLONG*)&blob_id,
+							 &request, NULL, work->dfw_name, obj_trigger);
 		if (request)
 			CMP_release(tdbb, request);
 		else
@@ -3702,7 +3688,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
 		computed_field = FALSE;
 
 		for (n = 0; n < TRIGGER_MAX; n++) {
-			triggers[n] = (TRIG_VEC) NULL_PTR;
+			triggers[n] = NULL;
 		}
 
 		request_fmt1 =
@@ -3949,8 +3935,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
 		}
 
 		relation->rel_flags &= ~REL_scanned;
-		DFW_post_work(transaction, dfw_scan_relation, (DSC*) NULL_PTR,
-					  relation->rel_id);
+		DFW_post_work(transaction, dfw_scan_relation, NULL, relation->rel_id);
 		break;
 	}
 
@@ -4074,8 +4059,7 @@ static bool modify_procedure(	TDBB	tdbb,
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
 			}
-			(*tdbb->tdbb_database->dbb_procedures)
-				[procedure->prc_id] = (BLK) NULL_PTR;
+			(*tdbb->tdbb_database->dbb_procedures) [procedure->prc_id] = NULL;
 
 			if (!(procedure = MET_lookup_procedure_id(tdbb,
 														work->dfw_id,

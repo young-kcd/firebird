@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.31 2003-08-22 10:56:53 aafemt Exp $
+ * $Id: rse.cpp,v 1.32 2003-08-28 13:16:03 brodsom Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -1825,7 +1825,7 @@ static BOOLEAN get_merge_join(
 	}
 
 	while (best_tails) {
-		(void) LLS_POP(&best_tails);
+		LLS_POP(&best_tails);
 	}
 
 	return TRUE;
@@ -2018,7 +2018,7 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 	}
 
 	while (best_tails) {
-		(void) LLS_POP(&best_tails);
+		LLS_POP(&best_tails);
 	}
 
 	return TRUE;
@@ -2197,7 +2197,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 
 	if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
 	{
-		(void) JRD_reschedule(tdbb, 0, TRUE);
+		JRD_reschedule(tdbb, 0, TRUE);
 	}
 
 #endif
@@ -2353,7 +2353,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 				}
 				else
 				{
-					select_node = (JRD_NOD) NULL;
+					select_node = NULL;
 				}
 			}
 			if (column_node && (request->req_flags & req_ansi_any))
@@ -2411,7 +2411,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 								/* see if any nulls */
 
 								request->req_flags &= ~req_null;
-								(void) EVL_boolean(tdbb, column_node);
+								EVL_boolean(tdbb, column_node);
 
 								/* see if any record is null */
 

@@ -144,7 +144,7 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 		VIO_start_save_point(tdbb, transaction);
 		transaction->tra_save_point->sav_verb_count++;
 
-		DYN_execute(&gbl, &ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
+		DYN_execute(&gbl, &ptr, NULL, NULL, NULL, NULL, NULL);
 		transaction->tra_save_point->sav_verb_count--;
 		VIO_verb_cleanup(tdbb, transaction);
 
@@ -222,7 +222,7 @@ void DYN_error(USHORT	status_flag,
 	TEXT error_buffer[BUFFER_MEDIUM];
 
 	if (number)
-		gds__msg_format(NULL_PTR, DYN_MSG_FAC, number,
+		gds__msg_format(NULL, DYN_MSG_FAC, number,
 						sizeof(TEXT) * BUFFER_MEDIUM, error_buffer, arg1,
 						arg2, arg3, arg4, arg5);
 

@@ -879,10 +879,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 
 		/* hand the text off to the next stage of the filter */
 
-		status = caller(ACTION_put_segment,
-						control,
-						result_length,
-						(SCHAR *) aux->ctlaux_buffer1, (USHORT *) NULL);
+		status = caller(ACTION_put_segment, control, result_length,
+						(SCHAR *) aux->ctlaux_buffer1, NULL);
 
 		if (status)
 			return status;

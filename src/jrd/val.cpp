@@ -828,7 +828,7 @@ static FETCH_CODE fetch_page(TDBB tdbb,
 
 #ifdef SUPERSERVER
 	if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
-		(void) JRD_reschedule(tdbb, 0, TRUE);
+		JRD_reschedule(tdbb, 0, TRUE);
 #endif
 
 	window->win_page = page_number;
@@ -1163,7 +1163,7 @@ static void walk_database(TDBB tdbb, VDR control)
 	walk_header(tdbb, control, page->hdr_next_page);
 	walk_log(tdbb, control);
 	walk_pip(tdbb, control);
-	(void) walk_tip(tdbb, control, page->hdr_next_transaction);
+	walk_tip(tdbb, control, page->hdr_next_transaction);
 	walk_generators(tdbb, control);
 
 	for (i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++) {
@@ -1172,7 +1172,7 @@ static void walk_database(TDBB tdbb, VDR control)
 			VAL_debug_level = 2;
 #endif
 		if ( (relation = (JRD_REL) (*vector)[i]) )
-			(void) walk_relation(tdbb, control, relation);
+			walk_relation(tdbb, control, relation);
 	}
 
 	CCH_RELEASE(tdbb, &window);
@@ -1919,7 +1919,7 @@ static RTN walk_relation(TDBB tdbb, VDR control, JRD_REL relation)
 	}
 
 	// Walk indices for the relation
-	(void) walk_root(tdbb, control, relation);
+	walk_root(tdbb, control, relation);
 
 	// See if the counts of backversions match
 	if (control && (control->vdr_flags & vdr_records) &&
@@ -1982,7 +1982,7 @@ static RTN walk_root(TDBB tdbb, VDR control, JRD_REL relation)
 
 	for (i = 0; i < page->irt_count; i++)
 		if ( (page_number = page->irt_rpt[i].irt_root) )
-			(void) walk_index(tdbb, control, relation, page_number, i);
+			walk_index(tdbb, control, relation, page_number, i);
 
 	CCH_RELEASE(tdbb, &window);
 

@@ -998,7 +998,7 @@ static void add_index_set(DBB		dbb,
 			}
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_flags;
-			IDX_create_index(tdbb, relation, &idx, (UCHAR*)string, (USHORT*) NULL_PTR, (JRD_TRA) NULL_PTR,
+			IDX_create_index(tdbb, relation, &idx, (UCHAR*)string, NULL, NULL,
 							 &selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;
 		END_STORE;

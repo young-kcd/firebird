@@ -1144,7 +1144,7 @@ int API_ROUTINE gds__msg_close(void *handle)
 		message = default_msg;
 	}
 
-	default_msg = (GDS_MSG) NULL;
+	default_msg = NULL;
 
 	int fd = message->msg_file;
 
@@ -1389,7 +1389,7 @@ int API_ROUTINE gds__msg_open(void **handle, TEXT * filename)
 		return -2;
 
 	if (read(n, &header, sizeof(header)) < 0) {
-		(void) close(n);
+		close(n);
 		return -3;
 	}
 	// Trick to silence compiler when MSG_MINOR_VERSION == 0
@@ -1397,7 +1397,7 @@ int API_ROUTINE gds__msg_open(void **handle, TEXT * filename)
 
 	if (header.msghdr_major_version != MSG_MAJOR_VERSION ||
 		header.msghdr_minor_version < minor) {
-		(void) close(n);
+		close(n);
 		return -4;
 	}
 
@@ -1406,7 +1406,7 @@ int API_ROUTINE gds__msg_open(void **handle, TEXT * filename)
 							   header.msghdr_bucket_size - 1);
 /* FREE: in gds__msg_close */
 	if (!message) {				/* NOMEM: return non-open error */
-		(void) close(n);
+		close(n);
 		return -5;
 	}
 
