@@ -331,11 +331,17 @@ installInitdScript() {
     fi
 
     # Suse (& Debian ?) specific 
-    if [ -x /sbin/insserv ]
+    elif [ -x /sbin/insserv ]
       then
         /sbin/insserv /etc/init.d/firebird
     fi
-
+	
+	# One more way to register service - used in Knoppix (& Debian ?)
+    elif [ -x /usr/sbin/update-rc.d ]
+      then
+		/usr/sbin/update-rc.d firebird start 14 2 3 5 . stop 7 2 3 5 .
+    fi
+	
     # More SuSE - rc.config fillup
     if [ -f /etc/rc.config ]
       then
@@ -635,7 +641,7 @@ EOF
     # make examples writable by firebird
     for i in examples/*.fdb
       do
-	MakeFileFirebirdWritable $i
+        MakeFileFirebirdWritable $i
       done
 
     # Set up Firebird for run with init.d
