@@ -68,7 +68,12 @@ static struct {
 /* dtype_sql_date	*/ {SQL_TYPE_DATE, sizeof(SLONG)},
 /* dtype_sql_time	*/ {SQL_TYPE_TIME, sizeof(SLONG)},
 /* dtype_timestamp	*/ {SQL_TIMESTAMP, sizeof(SLONG) * 2},
-/* dtype_blob		*/ {SQL_BLOB, 0}, 
+/* dtype_blob		*/ {SQL_BLOB, 
+#ifdef NATIVE_QUAD
+		sizeof(SQUAD)},
+#else
+		sizeof(SLONG) * 2},
+#endif
 /* dtype_array		*/ {SQL_ARRAY, -1}, // Not supported for a while
 /* dtype_int64		*/ {SQL_INT64, sizeof(SINT64)},
 };
@@ -222,8 +227,12 @@ rec_err:
 		}
 		if (DscType2SqlType[d->dsc_dtype].SqlType < 0)
 			goto rec_err;
-        if ((var->sqltype & ~1) != DscType2SqlType[d->dsc_dtype].SqlType)
-			goto rec_err;
+
+		// Added to quickly fix problems with returning BLOB's from the statement
+		if (!((d->dsc_dtype == dtype_quad || d->dsc_dtype == dtype_blob) && 
+			  ((var->sqltype & ~1) == SQL_QUAD || (var->sqltype & ~1) == SQL_BLOB)))
+			if ((var->sqltype & ~1) != DscType2SqlType[d->dsc_dtype].SqlType)
+				goto rec_err;
         if ((var->sqltype & 1) && (*var->sqlind < 0)) {
             d->dsc_flags |= DSC_null;
             continue;
