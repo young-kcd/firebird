@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.38 2004-11-10 04:25:51 robocop Exp $
+ *  $Id: nbackup.cpp,v 1.39 2004-11-15 00:32:04 skidder Exp $
  *
  */
  
@@ -64,6 +64,12 @@
 
 const int EXIT_OK		= 0;
 const int EXIT_ERROR	= 1;
+
+// How much we align memory when reading database header.
+// Sector alignment of memory is necessary to use unbuffered IO on Windows.
+// Actually, sectors may be bigger than 1K, but let's be consistent with
+// JRD regarding the matter for the moment.
+const size_t SECTOR_ALIGNMENT = MIN_PAGE_SIZE;
 
 void usage()
 {
@@ -297,8 +303,17 @@ void nbackup::open_database_write()
 void nbackup::open_database_scan()
 {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 
-		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	// On Windows we use unbuffered IO to work around bug in Windows Server 2003
+	// which has little problems with managing size of disk cache. If you read
+	// very large file (5 GB or more) on this platform filesystem page cache 
+	// consumes all RAM of machine and causes excessive paging of user programs
+	// and OS itself. Basically, reading any large file brings the whole system
+	// down for extended period of time. Documented workaround is to avoid using
+	// system cache when reading large files.
+	dbase = CreateFile(dbname.c_str(),
+		GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
+		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN | FILE_FLAG_NO_BUFFERING,
+		NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
 #else
@@ -606,20 +621,31 @@ void nbackup::backup_database(int level, const char* fname)
 		open_database_scan();
 		
 		// Read database header
-		Ods::header_page header;	
-		if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
+		char unaligned_header_buffer[SECTOR_ALIGNMENT * 2];
+
+		Ods::header_page *header = 
+			reinterpret_cast<Ods::header_page*>(
+				FB_ALIGN((IPTR) unaligned_header_buffer, SECTOR_ALIGNMENT));	
+		if (read_file(dbase, header, SECTOR_ALIGNMENT/*sizeof(*header)*/) != SECTOR_ALIGNMENT/*sizeof(*header)*/)
 			b_error::raise("Unexpected end of file when reading header of database file");
-		if ((header.hdr_flags & Ods::hdr_backup_mask) != Jrd::nbak_state_stalled)
+		if ((header->hdr_flags & Ods::hdr_backup_mask) != Jrd::nbak_state_stalled)
 		{
 			b_error::raise("Internal error. Database file is not locked. Flags are %d",
-				header.hdr_flags);
+				header->hdr_flags);
 		}
 	
-		page_buff = reinterpret_cast<Ods::pag*>(FB_NEW(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size]);
+		Firebird::Array<UCHAR> unaligned_page_buffer;
+		page_buff = reinterpret_cast<Ods::pag*>(
+			FB_ALIGN(
+				(IPTR) unaligned_page_buffer.getBuffer(
+					header->hdr_page_size + SECTOR_ALIGNMENT), 
+				SECTOR_ALIGNMENT
+			)
+		);
 		
 		seek_file(dbase, 0);
 		
-		if (read_file(dbase, page_buff, header.hdr_page_size) != header.hdr_page_size)
+		if (read_file(dbase, page_buff, header->hdr_page_size) != header->hdr_page_size)
 			b_error::raise("Unexpected end of file when reading header of database file (stage 2)");
 		
 		FB_GUID backup_guid;
@@ -645,7 +671,7 @@ void nbackup::backup_database(int level, const char* fname)
 	
 	
 		// Write data to backup file
-		ULONG backup_scn = header.hdr_header.pag_scn - 1;
+		ULONG backup_scn = header->hdr_header.pag_scn - 1;
 		if (level) {
 			inc_header bh;
 			memcpy(bh.signature, backup_signature, sizeof(backup_signature));
@@ -653,7 +679,7 @@ void nbackup::backup_database(int level, const char* fname)
 			bh.level = level;
 			bh.backup_guid = backup_guid;
 			StringToGuid(&bh.prev_guid, prev_guid);
-			bh.page_size = header.hdr_page_size;
+			bh.page_size = header->hdr_page_size;
 			bh.backup_scn = backup_scn;
 			bh.prev_scn = prev_scn;
 			write_file(backup, &bh, sizeof(bh));
@@ -668,15 +694,15 @@ void nbackup::backup_database(int level, const char* fname)
 			if (level) {
 				if (page_buff->pag_scn > prev_scn) {
 					write_file(backup, &curPage, sizeof(curPage));
-					write_file(backup, page_buff, header.hdr_page_size);
+					write_file(backup, page_buff, header->hdr_page_size);
 				}
 			}
 			else
-				write_file(backup, page_buff, header.hdr_page_size);
-			const size_t bytesDone = read_file(dbase, page_buff, header.hdr_page_size);
+				write_file(backup, page_buff, header->hdr_page_size);
+			const size_t bytesDone = read_file(dbase, page_buff, header->hdr_page_size);
 			if (bytesDone == 0)
 				break;
-			if (bytesDone != header.hdr_page_size)
+			if (bytesDone != header->hdr_page_size)
 				b_error::raise("Database file size is not a multiply of page size");
 			curPage++;
 		}		
@@ -733,7 +759,6 @@ void nbackup::backup_database(int level, const char* fname)
 		if (typeid(ex) != typeid(b_error)) {
 			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
 		}
-		delete[] reinterpret_cast<UCHAR*>(page_buff);
 		if (delete_backup)
 			unlink(bakname.c_str());
 		if (trans) {
@@ -745,7 +770,6 @@ void nbackup::backup_database(int level, const char* fname)
 		detach_database();
 		throw;
 	}
-	delete[] reinterpret_cast<UCHAR*>(page_buff);
 	internal_unlock_database();
 	detach_database();
 }
