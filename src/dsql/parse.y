@@ -3920,7 +3920,6 @@ static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static void	prepare_console_debug (int, int  *);
 static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);
 static void	stack_nodes (DSQL_NOD, DLLS *);
-static int 	swallow_single_line_comment (void);
 static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
 static void	yyabandon (SSHORT, STATUS);
 static void	check_log_file_attrs (void);
@@ -4460,49 +4459,6 @@ for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
 }
 
 
-static int swallow_single_line_comment (void)
-{
-/**************************************
- *
- *	s w a l l o w _ s i n g l e _ l i n e _ c o m m e n t
- *
- **************************************
- *
- * Functional description:
- *  Discard single line comments (SLC) starting with --
- *  and takes care of end of input if necessary.
- *  There may be multiple consecutive SLC, multiple SLC
- *  separated by valid commands or by LF.
- *
- **************************************/
-	SSHORT	c;
-	
-	if (ptr >= end)
-		return -1;
-	while (ptr + 1 < end) {
-		c = *ptr++;
-		if (c == '-' && *ptr == '-') {
-			ptr++;
-			while (ptr < end) {
-				if ((c = *ptr++) == '\n') {
-					lines++;
-					line_start = ptr;
-					break;
-				}
-				if (ptr >= end) {
-					return -1;
-                }
-            }
-		}
-		else {
-			--ptr;
-			break;
-		}
-	}
-	return 0;
-}
-
-
 static int yylex (
     USHORT	client_dialect,
     USHORT	db_dialect,
@@ -4532,17 +4488,6 @@ STR	delimited_id_str;
 
 /* Find end of white space and skip comments */
 
-/* CVC: Experiment to see if -- can be implemented as one-line comment. 
-This is almost the same block than below in the loop when \n is detected,
-but here we should "unget" the first character if there're not 2 hyphens.
-
-if (first_time) {
-	first_time = FALSE;
-	if (swallow_single_line_comment() < 0)
-		return -1;
-}
-*/
-
 for (;;)
     {
     if (ptr >= end)
@@ -4551,6 +4496,12 @@ for (;;)
     c = *ptr++;
 
 	/* Process comments */
+    
+    if (c == '\n') {
+	lines++;
+	line_start = ptr;
+	continue;
+    }
 
     if ((c == '-') && (*ptr == '-')) {
 		
