@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.10.2.9 2003-12-27 23:13:23 skidder Exp $
+#   $Id: postinstall.sh.in,v 1.10.2.10 2004-01-03 12:35:25 skywalker Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -667,21 +667,25 @@ createLinksForBackCompatibility() {
     #newLibrary=$FBRootDir/lib/libfbclient.so
     newLibrary=$FBRootDir/lib/libfbembed.so
 
+    # Remove if only a link
+    if [ -L /usr/lib/libgds.so ]
+      then
+        rm -f /usr/lib/libgds.so
+    fi
+
     if [ ! -e /usr/lib/libgds.so ]
       then
-        if [ -L /usr/lib/libgds.so ]
-          then
-            rm -f /usr/lib/libgds.so
-        fi
         ln -s $newLibrary /usr/lib/libgds.so
+    fi
+
+    # Remove if only a link
+    if [ -L /usr/lib/libgds.so.0 ]
+      then
+        rm -f /usr/lib/libgds.so.0
     fi
 
     if [ ! -e /usr/lib/libgds.so.0 ]
       then
-        if [ -L /usr/lib/libgds.so.0 ]
-          then
-            rm -f /usr/lib/libgds.so.0
-        fi
         ln -s $newLibrary /usr/lib/libgds.so.0
     fi
 
