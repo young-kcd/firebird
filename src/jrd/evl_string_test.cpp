@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string_test.cpp,v 1.1 2003-11-16 22:10:26 skidder Exp $
+ *  $Id: evl_string_test.cpp,v 1.2 2003-11-18 20:36:35 skidder Exp $
  *
  */
 
@@ -41,7 +41,7 @@
 const gds_like_escape_invalid = 1;
 
 void ERR_post(...) {
-	abort();
+	throw std::exception();
 }
 
 #include "evl_string.h"
@@ -50,10 +50,9 @@ using namespace Firebird;
 
 class StringLikeEvaluator : public LikeEvaluator<char> {
 public:
-	StringLikeEvaluator(MemoryPool *pool) : LikeEvaluator<char>(pool) {}
-	void prepare(const char *pattern, char escape_char) {
-		LikeEvaluator<char>::prepare(pattern, (SSHORT)strlen(pattern), escape_char, '%', '_');
-	}
+	StringLikeEvaluator(MemoryPool *pool, const char *pattern, char escape_char) : 
+	  LikeEvaluator<char>(pool, pattern, (SSHORT)strlen(pattern), escape_char, '%', '_') {}
+
 	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);
 		if (len) {
@@ -65,40 +64,87 @@ public:
 };
 
 int main() {
-	MemoryPool *testPool = MemoryPool::createPool();
-	StringLikeEvaluator t(testPool);
+	MemoryPool *p = MemoryPool::createPool();
 
 	// The tests below attempt to do full code coverage for the LikeEvaluator
-	// Not finished, only 92,89% of evl_string.h is covered
+	// Every line of evl_string.h code is covered by the tests
 
 	// '' LIKE ''
-	t.prepare("", 0);
-	t.process("", true, true);
-	t.process("something", false, false);
+	StringLikeEvaluator t1(p, "", 0);
+	t1.process("", true, true);
+	t1.process("something", false, false);
 
 	// 'test' LIKE 'test'
-	t.prepare("test", 0);
-	t.process("test", true, true);
-	t.process("a", false, false);
+	StringLikeEvaluator t2(p, "test", 0);
+	t2.process("test", true, true);
+	t2.process("a", false, false);
 
 	// '_%test' LIKE 'test'
-	t.prepare("_%test", 0);
-	t.process("test", true, false);
-	t.reset();
-	t.process("ntest", true, true);
-	t.process("yep?", true, false);
+	StringLikeEvaluator t3(p, "_%test", 0);
+	t3.process("test", true, false);
+	t3.reset();
+	t3.process("ntest", true, true);
+	t3.process("yep?", true, false);
 
 	// Tests for escaped patterns
-	t.prepare("\\%\\_%some_text_", '\\');
-	t.process("%_(is it nice?)some!text?", true, true);
-	t.reset();
-	t.process("%_some text", true, false);
-	t.process(".", true, true);
+	StringLikeEvaluator t4(p, "\\%\\_%some_text_", '\\');
+	t4.process("%_(is it nice?)some!text?", true, true);
+	t4.reset();
+	t4.process("%_some text", true, false);
+	t4.process(".", true, true);
 	
 	// More escaped patterns
-	t.prepare("%sosome_\\%text%", '\\');
-	t.process("sosomso", true, false);
-	t.process("sosome.%text", false, true);
+	StringLikeEvaluator t5(p, "%sosome_\\%text%", '\\');
+	t5.process("sosomso", true, false);
+	t5.process("sosome.%text", false, true);
+
+	// More escaped patterns
+	StringLikeEvaluator t6(p, "%sosome_text\\%%", '\\');
+	t6.process("sosomso", true, false);
+	t6.process("sosome.text%", false, true);
+
+	// Check for invalid escapes
+	try {
+		StringLikeEvaluator t7(p, "%sosome_text\\?", '\\');
+		assert(false);
+	} catch (const std::exception&) {
+	}
+
+	// Test single '%' pattern
+	StringLikeEvaluator t8(p, "%%%%%", 0);
+	t8.process("something", false, true);
+	t8.process("something else", false, true);
+
+	// Test optimization of consequitive "_" and "%" subpatterns
+	StringLikeEvaluator t9(p, "%__%%_A", 0);
+	t9.process("ABAB", true, false);
+	t9.process("ABA", true, true);
+
+	// Check multi-branch search
+	StringLikeEvaluator t10(p, "%test____test%", 0);
+	t10.process("test1234", true, false);
+	t10.process("test...", false, true);
+	t10.reset();
+	t10.process("testestestestetest", false, true);
+
+	// Check simple matching
+	StringLikeEvaluator t11(p, "test%", 0);
+	t11.process("test11", false, true);
+	t11.reset();
+	t11.process("nop", false, false);
+
+	// Check skip counting
+	StringLikeEvaluator t12(p, "test___", 0);
+	t12.process("test1", true, false);
+    t12.process("23", true, true);
+	t12.process("45", false, false);
+	t12.reset();
+	t12.process("test1234", false, false);
+
+    // Check simple search
+	StringLikeEvaluator t13(p, "%test%", 0);
+	t13.process("1234tetes", true, false);
+    t13.process("t", false, true);
 	//MemoryPool::deletePool(testPool);
 	return 0;
 }

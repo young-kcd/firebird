@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.1 2003-11-16 22:10:26 skidder Exp $
+ *  $Id: evl_string.h,v 1.2 2003-11-18 20:36:35 skidder Exp $
  *
  */
 
@@ -78,9 +78,9 @@ enum MatchType {
 template <typename CharType>
 class LikeEvaluator {
 public:
-	LikeEvaluator(MemoryPool* _pool) : pool(_pool), patternItems(_pool), 
-		branches(_pool), chunksToFree(_pool), allocated(0), match_type(MATCH_NONE)
-	{ }
+	LikeEvaluator(MemoryPool* _pool, const CharType* pattern_str, 
+		SSHORT pattern_len, CharType escape_char, CharType sql_match_any, 
+		CharType sql_match_one);
 
 	~LikeEvaluator() {
 		for (int i=0; i < chunksToFree.getCount(); i++)
@@ -102,9 +102,6 @@ public:
 	bool getResult() {
 		return match_type != MATCH_NONE;
 	}
-
-	void prepare(const CharType* pattern_str, SSHORT pattern_len, CharType escape_char, 
-		CharType sql_match_any, CharType sql_match_one);
 
 	// Returns true if more data can change the result of evaluation
 	bool processNextChunk(const CharType* data, SSHORT data_len);
@@ -169,14 +166,15 @@ private:
 };
 
 template <typename CharType>
-void LikeEvaluator<CharType>::prepare(const CharType* pattern_str, 
-		SSHORT pattern_len, CharType escape_char, CharType sql_match_any, CharType sql_match_one)
+LikeEvaluator<CharType>::LikeEvaluator(
+	MemoryPool* _pool, const CharType* pattern_str, SSHORT pattern_len, 
+	CharType escape_char, CharType sql_match_any, CharType sql_match_one)
+: pool(_pool), patternItems(_pool), branches(_pool), chunksToFree(_pool), 
+	allocated(0), match_type(MATCH_NONE)
 {
+	patternItems.grow(1);
 	// PASS1. Parse pattern.
 	SSHORT pattern_pos = 0;
-	patternItems.shrink(0);
-	PatternItem temp = {piNone, 0};
-	patternItems.add(temp);
 	PatternItem *item = patternItems.begin();
 	while (pattern_pos < pattern_len) {
 		CharType c = pattern_str[pattern_pos++];
@@ -414,8 +412,6 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 					}
 				}
 				break;
-			default:
-				assert(false);
 			}
 			branch_number++;
 		}
