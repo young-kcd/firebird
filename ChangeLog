@@ -1,3 +1,15 @@
+2004-10-31 10:28  robocop
+
+	* firebird2/src/jrd/: cvt.cpp (1.54), pag.cpp (1.84):
+	
+	Misc.
+
+2004-10-31 06:40  dimitr
+
+	* firebird2/src/common/classes/timestamp.h (1.2):
+	
+	Removed unused code.
+
 2004-10-30 21:41  dimitr
 
 	* firebird2/src/jrd/: cvt.cpp (1.53), evl.cpp (1.117), exe.cpp
