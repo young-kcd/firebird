@@ -1,3 +1,97 @@
+2003-07-03 17:47  brodsom
+
+	* firebird2/: builds/posix/Makefile.in.msgs, clean.sh:
+	
+	add extension to identify type
+
+2003-07-03 16:44  brodsom
+
+	* firebird2/configure.in:
+	
+	Remove unused directory creation
+
+2003-07-03 16:29  brodsom
+
+	* firebird2/clean.sh:
+	
+	Add script to clean build generated files
+
+2003-07-03 15:08  brodsom
+
+	* firebird2/builds/win32/clean_all.bat:
+	
+	Add batch to remove build created files and directories
+
+2003-07-03 14:44  brodsom
+
+	* firebird2/builds/win32/clean_all.bat:
+	
+	Add batch to remove build created files and directories
+
+2003-07-03 14:36  brodsom
+
+	* firebird2/builds/win32/: build6_all.bat, build_all.bat,
+	build_msg.bat, build_msg.mak, codes.mak, fbclient_boot.mak,
+	gpre.mak, make6_debug_examples.bat, prepare.bat, preprocess.bat,
+	msvc6/alice.dsp, msvc6/alice_classic.dsp, msvc6/build_msg.dsp,
+	msvc6/burp.dsp, msvc6/burp_classic.dsp, msvc6/codes.dsp,
+	msvc6/dsql_server.dsp, msvc6/dsql_server_classic.dsp,
+	msvc6/engine.dsp, msvc6/engine_classic.dsp, msvc6/engine_embed.dsp,
+	msvc6/fb_inet_server.dsp, msvc6/fbclient.dsp,
+	msvc6/fbclient_static.dsp, msvc6/fbembed.dsp, msvc6/fbserver.dsp,
+	msvc6/gbak.dsp, msvc6/gdef.dsp, msvc6/gfix.dsp, msvc6/gpre.dsp,
+	msvc6/gpre_static.dsp, msvc6/gsec.dsp, msvc6/gstat.dsp,
+	msvc6/isql.dsp, msvc6/qli.dsp, msvc6/utilities.dsp,
+	msvc6/utilities_classic.dsp, msvc6/v5_examples.dsp,
+	msvc7/alice.vcproj, msvc7/alice_classic.vcproj, msvc7/burp.vcproj,
+	msvc7/burp_classic.vcproj, msvc7/dsql_server.vcproj,
+	msvc7/dsql_server_classic.vcproj, msvc7/engine.vcproj,
+	msvc7/engine_classic.vcproj, msvc7/engine_embed.vcproj,
+	msvc7/fb_inet_server.vcproj, msvc7/fbclient.vcproj,
+	msvc7/fbembed.vcproj, msvc7/fbserver.vcproj, msvc7/gbak.vcproj,
+	msvc7/gdef.vcproj, msvc7/gfix.vcproj, msvc7/gpre.vcproj,
+	msvc7/gsec.vcproj, msvc7/gstat.vcproj, msvc7/isql.vcproj,
+	msvc7/qli.vcproj, msvc7/utilities.vcproj,
+	msvc7/utilities_classic.vcproj:
+	
+	Move generated source from 'generated' to 'gen'. So we don't use a
+	CVS and obsolete directory for build output and it will be easier
+	to do a clean build.
+
+2003-07-03 13:04  brodsom
+
+	* firebird2/builds/win32/: blrtable.bat, build6_all.bat, parse.bat,
+	prepare.bat, preprocess.bat:
+	
+	minor changes
+
+2003-07-03 04:13  brodsom
+
+	* firebird2/builds/win32/preprocess.bat:
+	
+	Remove sed test since the normal build (without parse) doesn't need
+	sed or any other unix command.
+
+2003-07-03 04:12  brodsom
+
+	* firebird2/builds/win32/build6_all.bat:
+	
+	Minor changes
+
+2003-07-03 04:12  brodsom
+
+	* firebird2/builds/win32/parse.bat:
+	
+	-Change parse.bat to verify yacc/bison and sed and work with the
+	two parser generators.
+
+2003-07-03 02:22  brodsom
+
+	* firebird2/src/jrd/codes.epp:
+	
+	Solve a bug. mv can't be used in win32.  Replace cmp with a native
+	compare on win32
+
 2003-07-02 21:02  brodsom
 
 	* firebird2/: src/jrd/dyn_def.epp, src/jrd/dyn_def.sed,
