@@ -231,12 +231,12 @@ static SLONG SVC_working_set_min;
 static SLONG SVC_working_set_max;
 
 static struct ipccfg SVC_hdrtbl[] = {
-	ISCCFG_DBCACHE, 0, &SVC_cache_default, 0, 0,
-	ISCCFG_PRIORITY, 0, &SVC_priority_class, 0, 0,
-	ISCCFG_IPCMAP, 0, &SVC_client_map, 0, 0,
-	ISCCFG_MEMMIN, 0, &SVC_working_set_min, 0, 0,
-	ISCCFG_MEMMAX, 0, &SVC_working_set_max, 0, 0,
-	NULL, 0, NULL, 0, 0
+	{ISCCFG_DBCACHE, 0, &SVC_cache_default, 0, 0},
+	{ISCCFG_PRIORITY, 0, &SVC_priority_class, 0, 0},
+	{ISCCFG_IPCMAP, 0, &SVC_client_map, 0, 0},
+	{ISCCFG_MEMMIN, 0, &SVC_working_set_min, 0, 0},
+	{ISCCFG_MEMMAX, 0, &SVC_working_set_max, 0, 0},
+	{NULL, 0, NULL, 0, 0}
 };
 #else
 static SLONG SVC_conn_timeout;

@@ -124,8 +124,8 @@ static TEXT protocol_wnet[128];
 static USHORT server_flag;
 
 static SERVICE_TABLE_ENTRY service_table[] = {
-	REMOTE_SERVICE, (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread,
-	NULL, NULL
+	{REMOTE_SERVICE, (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread},
+	{NULL, NULL}
 };
 
 static const int SIGSHUT = 666;
