@@ -40,7 +40,7 @@
 static QLI_NOD compile_any(QLI_NOD, QLI_REQ, bool);
 static QLI_NOD compile_assignment(QLI_NOD, QLI_REQ, bool);
 static void compile_context(QLI_NOD, QLI_REQ, bool);
-static void compile_control_break(BRK, QLI_REQ);
+static void compile_control_break(QLI_BRK, QLI_REQ);
 static QLI_NOD compile_edit(QLI_NOD, QLI_REQ);
 static QLI_NOD compile_erase(QLI_NOD, QLI_REQ);
 static QLI_NOD compile_expression(QLI_NOD, QLI_REQ, bool);
@@ -71,7 +71,7 @@ static int string_length(const dsc*);
 
 static LLS print_items;
 static TEXT** print_header;
-static BRK report_control_break;
+static QLI_BRK report_control_break;
 
 
 QLI_NOD CMPQ_compile( QLI_NOD node)
@@ -365,7 +365,7 @@ static void compile_context( QLI_NOD node, QLI_REQ request, bool internal_flag)
 }
 
 
-static void compile_control_break( BRK control, QLI_REQ request)
+static void compile_control_break( QLI_BRK control, QLI_REQ request)
 {
 /**************************************
  *
@@ -1139,7 +1139,7 @@ static QLI_NOD compile_report( QLI_NOD node, QLI_REQ request)
  *	Compile the body of a report specification.
  *
  **************************************/
-	BRK control;
+	QLI_BRK control;
 	QLI_NOD list;
 
 	RPT report = (RPT) node->nod_arg[e_prt_list];
@@ -1160,7 +1160,7 @@ static QLI_NOD compile_report( QLI_NOD node, QLI_REQ request)
 		compile_control_break(control, request);
 		report->rpt_bottom_breaks = NULL;
 		while (control) {
-			BRK temp = control;
+			QLI_BRK temp = control;
 			control = control->brk_next;
 			temp->brk_next = report->rpt_bottom_breaks;
 			report->rpt_bottom_breaks = temp;

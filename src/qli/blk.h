@@ -43,7 +43,7 @@ BLKDEF (type_con, con, 1)				/* Constant block */
 BLKDEF (type_itm, itm, 0)				/* Print item */
 BLKDEF (type_par, par, 0)				/* Parameter block */
 BLKDEF (type_line, line, 1)				/* Input line block */
-BLKDEF (type_brk, brk, 0)
+BLKDEF (type_brk, qli_brk, 0) 
 BLKDEF (type_rpt, rpt, 0)
 BLKDEF (type_pic, pics, 0)
 BLKDEF (type_prt, prt, 0)

@@ -64,7 +64,7 @@ static bool match_expr(const qli_nod*, const qli_nod*);
 static void print_blobs(PRT, itm**, itm**);
 static int print_line(itm*, TEXT**);
 static void put_line(PRT, TEXT**, TEXT*, TEXT);
-static void report_break(BRK, VEC*, const bool);
+static void report_break(QLI_BRK, VEC*, const bool);
 static void report_item(ITM, VEC*, USHORT*);
 static void report_line(QLI_NOD, VEC*);
 
@@ -1331,7 +1331,7 @@ static void put_line( PRT print, TEXT** ptr, TEXT* buffer, TEXT terminator)
 }
 
 
-static void report_break( BRK control, VEC* columns_vec, const bool bottom_flag)
+static void report_break( QLI_BRK control, VEC* columns_vec, const bool bottom_flag)
 {
 /**************************************
  *

@@ -26,25 +26,25 @@
 
 /* Control break block */
 
-typedef struct brk {
+typedef struct qli_brk {
     blk		brk_header;
-    brk*	brk_next;		/* Next break */
+    qli_brk*	brk_next;		/* Next break */
     SYN		brk_field;		/* Field expression for break */
     SYN		brk_line;		/* Print line */
     LLS		brk_statisticals;	/* Statistical expressions */
-} *BRK;
+} *QLI_BRK;
 
 /* Report block */
 
 typedef struct rpt {
     blk		rpt_hdr;
     qli_nod*	rpt_detail_line;	/* Detail line print list */
-    BRK		rpt_top_page;		/* Top of page print list */
-    BRK		rpt_bottom_page;	/* Bottom of page print list */
-    BRK		rpt_top_rpt;		/* Top of report print list */
-    BRK		rpt_bottom_rpt;		/* Bottom of report print list */
-    BRK		rpt_top_breaks;		/* Top of <field> break list */
-    BRK		rpt_bottom_breaks;	/* Bottom of <field> break list */
+    QLI_BRK		rpt_top_page;		/* Top of page print list */
+    QLI_BRK		rpt_bottom_page;	/* Bottom of page print list */
+    QLI_BRK		rpt_top_rpt;		/* Top of report print list */
+    QLI_BRK		rpt_bottom_rpt;		/* Bottom of report print list */
+    QLI_BRK		rpt_top_breaks;		/* Top of <field> break list */
+    QLI_BRK		rpt_bottom_breaks;	/* Bottom of <field> break list */
     TEXT	*rpt_column_header;
     TEXT	*rpt_name;		/* Parsed report name */
     TEXT	*rpt_header;		/* Expanded report header */

@@ -50,7 +50,7 @@ static NAM decompile_symbol(SYM);
 static QLI_NOD expand_assignment(SYN, LLS, LLS);
 static QLI_NOD expand_any(SYN, LLS);
 static QLI_NOD expand_boolean(SYN, LLS);
-static void expand_control_break(BRK*, LLS);
+static void expand_control_break(QLI_BRK*, LLS);
 static void expand_distinct(QLI_NOD, QLI_NOD);
 static void expand_edit_string(QLI_NOD, ITM);
 static QLI_NOD expand_erase(SYN, LLS, LLS);
@@ -607,7 +607,7 @@ static QLI_NOD expand_boolean( SYN input, LLS stack)
 }
 
 
-static void expand_control_break( BRK* ptr, LLS right)
+static void expand_control_break( QLI_BRK* ptr, LLS right)
 {
 /**************************************
  *
@@ -620,9 +620,9 @@ static void expand_control_break( BRK* ptr, LLS right)
  *	to handle multiple breaks.
  *
  **************************************/
-	BRK control;
+	QLI_BRK control;
 
-	BRK list = NULL;
+	QLI_BRK list = NULL;
 
 	while (control = *ptr) {
 		*ptr = control->brk_next;

@@ -3353,7 +3353,7 @@ static SYN parse_report(void)
  *
  **************************************/
 	SYN flds, qli_fld, rse_fld;
-	BRK control, *ptr, tmpptr, tmpptr1;
+	QLI_BRK control, *ptr, tmpptr, tmpptr1;
 	USHORT top, i, srt_syn, ctl_syn, syn_count;
 	NAM name1, name2;
 
@@ -3390,7 +3390,7 @@ static SYN parse_report(void)
 				SYNTAX_ERROR(382);	// Msg382 TOP or BOTTOM
 			MATCH(KW_OF);
 			if (MATCH(KW_REPORT)) {
-				control = (BRK) ALLOCD(type_brk);
+				control = (QLI_BRK) ALLOCD(type_brk);
 				ptr = (top) ? &report->rpt_top_rpt : &report->rpt_bottom_rpt;
 				control->brk_next = *ptr;
 				*ptr = control;
@@ -3398,7 +3398,7 @@ static SYN parse_report(void)
 				control->brk_line = parse_print_list();
 			}
 			else if (MATCH(KW_PAGE)) {
-				control = (BRK) ALLOCD(type_brk);
+				control = (QLI_BRK) ALLOCD(type_brk);
 				ptr =
 					(top) ? &report->rpt_top_page : &report->rpt_bottom_page;
 				control->brk_next = *ptr;
@@ -3417,7 +3417,7 @@ static SYN parse_report(void)
 						SYNTAX_ERROR(383);	// Msg383 sort field
 					tmpptr = *ptr;
 					for (i = 0; i < flds->syn_count; i += 2) {
-						control = (BRK) ALLOCD(type_brk);
+						control = (QLI_BRK) ALLOCD(type_brk);
 						control->brk_field = flds->syn_arg[i];
 						control->brk_line = NULL;
 						control->brk_statisticals = NULL;

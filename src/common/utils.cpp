@@ -30,6 +30,13 @@
 // =====================================
 // Utility functions
 
+
+#ifdef LINUX
+#define __need_size_t
+#include <stddef.h>
+#undef __need_size_t
+#endif
+
 namespace fb_utils {
 
 char* fb_exact_name(char* const str)

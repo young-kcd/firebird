@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.27 2003-11-08 16:31:07 brodsom Exp $
+$Id: gener.cpp,v 1.28 2004-01-03 14:12:45 fsg Exp $
 */
 
 #include "firebird.h"
@@ -50,7 +50,7 @@ static void explain_printf(SSHORT, const TEXT*, const TEXT*);
 
 static void gen_any(QLI_NOD, QLI_REQ);
 static void gen_assignment(QLI_NOD, QLI_REQ);
-static void gen_control_break(BRK, QLI_REQ);
+static void gen_control_break(QLI_BRK, QLI_REQ);
 static void gen_compile(QLI_REQ);
 static void gen_descriptor(const dsc*, QLI_REQ);
 static void gen_erase(QLI_NOD, QLI_REQ);
@@ -561,7 +561,7 @@ static void gen_assignment( QLI_NOD node, QLI_REQ request)
 }
 
 
-static void gen_control_break( BRK control, QLI_REQ request)
+static void gen_control_break( QLI_BRK control, QLI_REQ request)
 {
 /**************************************
  *

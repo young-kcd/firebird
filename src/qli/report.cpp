@@ -34,11 +34,11 @@
 #include "../qli/mov_proto.h"
 #include "../qli/repor_proto.h"
 
-static void bottom_break(BRK, PRT);
-static void increment_break(BRK);
-static void initialize_break(BRK);
-static bool test_break(BRK, RPT, QLI_MSG);
-static void top_break(BRK, PRT);
+static void bottom_break(QLI_BRK, PRT);
+static void increment_break(QLI_BRK);
+static void initialize_break(QLI_BRK);
+static bool test_break(QLI_BRK, RPT, QLI_MSG);
+static void top_break(QLI_BRK, PRT);
 static void top_of_page(PRT, bool);
 
 //#define SWAP(a,b)	{temp = a; a = b; b = temp;}
@@ -106,7 +106,7 @@ void RPT_report( QLI_NOD loop)
 	MOVQ_fast((SCHAR*) message->msg_buffer, (SCHAR*) report->rpt_buffer,
 			  (SLONG) message->msg_length);
 
-	BRK control;
+	QLI_BRK control;
 	if (control = report->rpt_top_rpt)
 		FMT_print((QLI_NOD) control->brk_line, print);
 
@@ -178,7 +178,7 @@ void RPT_report( QLI_NOD loop)
 }
 
 
-static void bottom_break( BRK control, PRT print)
+static void bottom_break( QLI_BRK control, PRT print)
 {
 /**************************************
  *
@@ -205,7 +205,7 @@ static void bottom_break( BRK control, PRT print)
 }
 
 
-static void increment_break( BRK control)
+static void increment_break( QLI_BRK control)
 {
 /**************************************
  *
@@ -225,7 +225,7 @@ static void increment_break( BRK control)
 }
 
 
-static void initialize_break( BRK control)
+static void initialize_break( QLI_BRK control)
 {
 /**************************************
  *
@@ -245,7 +245,7 @@ static void initialize_break( BRK control)
 }
 
 
-static bool test_break(BRK control,
+static bool test_break(QLI_BRK control,
 					   RPT report,
 					   QLI_MSG message)
 {
@@ -300,7 +300,7 @@ static bool test_break(BRK control,
 }
 
 
-static void top_break( BRK control, PRT print)
+static void top_break( QLI_BRK control, PRT print)
 {
 /**************************************
  *
@@ -338,7 +338,7 @@ static void top_of_page(PRT print,
  *	Handle top of page condition.
  *
  **************************************/
-	BRK control;
+	QLI_BRK control;
 
 	++print->prt_page_number;
 	RPT report = print->prt_report;
