@@ -113,6 +113,8 @@ class tdbb;
 class dbb : private pool_alloc<type_dbb>
 {
 public:
+	typedef int (*crypt_routine) (char*, void*, int, void*);
+
 	static dbb* newDbb(MemoryPool& p) {		
 		return FB_NEW(p) dbb(p);
 	}
@@ -170,9 +172,7 @@ public:
 	USHORT dbb_prefetch_pages;	/* prefetch pages per request */
 	class str *dbb_spare_string;	/* random buffer */
 	class str *dbb_filename;	/* filename string */
-#ifdef ISC_DATABASE_ENCRYPTION
 	class str *dbb_encrypt_key;	/* encryption key */
-#endif
 
 	JrdMemoryPool* dbb_permanent;
 	JrdMemoryPool* dbb_bufferpool;
@@ -215,12 +215,10 @@ public:
 	SLONG dbb_lock_owner_handle;	/* Handle for the lock manager */
 
 	USHORT unflushed_writes;	/* unflushed writes */
-	time_t last_flushed_write; /* last flushed write time */
+	time_t last_flushed_write;	/* last flushed write time */
 
-#ifdef ISC_DATABASE_ENCRYPTION
-	int (*dbb_encrypt) ();		/* External encryption routine */
-	int (*dbb_decrypt) ();		/* External decryption routine */
-#endif
+	crypt_routine dbb_encrypt;		/* External encryption routine */
+	crypt_routine dbb_decrypt;		/* External decryption routine */
 
 	class map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */

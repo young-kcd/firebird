@@ -302,9 +302,7 @@ typedef struct dpb
 	TEXT*	dpb_password_enc;
 	TEXT*	dpb_role_name;
 	TEXT*	dpb_journal;
-#ifdef ISC_DATABASE_ENCRYPTION
 	TEXT*	dpb_key;
-#endif
 	TEXT*	dpb_log;
 	TEXT*	dpb_wal_backup_dir;
 	USHORT	dpb_wal_action;
@@ -562,11 +560,16 @@ BOOLEAN invalid_client_SQL_dialect = FALSE;
 
 /* External hook definitions */
 
-#ifdef ISC_DATABASE_ENCRYPTION
-#define ENCRYPT_IMAGE	"ISCCRYPT"
-#define ENCRYPT			"ISC_ENCRYPT"
-#define DECRYPT			"ISC_DECRYPT"
-#endif
+/* dimitr: just uncomment the following line to use this feature.
+		   Requires support from the PIO modules. Only Win32 is 100% ready
+		   for this so far. Note that the database encryption code in the
+		   PIO layer seems to be incompatible with the SUPERSERVER_V2 code.
+		   2003.02.09 */
+//#define ISC_DATABASE_ENCRYPTION
+
+static const char* CRYPT_IMAGE = "fbcrypt";
+static const char* ENCRYPT = "encrypt";
+static const char* DECRYPT = "decrypt";
 
 
 #ifdef SHLIB_DEFS
@@ -733,26 +736,24 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 			ERR_post(gds_unavailable, 0);
 	}
 
-#ifdef ISC_DATABASE_ENCRYPTION
 /* Worry about encryption key */
 
 	if (dbb->dbb_decrypt) {
-		if (dbb->dbb_filename) {
+		if (dbb->dbb_filename && (dbb->dbb_encrypt_key || options.dpb_key)) {
 			if ((dbb->dbb_encrypt_key && !options.dpb_key) ||
 				(!dbb->dbb_encrypt_key && options.dpb_key) ||
-				strcmp(options.dpb_key, dbb->dbb_encrypt_key->str_data))
+				strcmp(options.dpb_key, reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data)))
 				ERR_post(gds_no_priv,
 						 gds_arg_string, "encryption",
 						 gds_arg_string, "database",
 						 gds_arg_string, 
-                         ERR_string(reinterpret_cast< char *>(file_name), fl), 
+                         ERR_string(reinterpret_cast<char*>(file_name), fl), 
                          0);
 		}
 		else if (options.dpb_key)
 			dbb->dbb_encrypt_key =
 				copy_string(options.dpb_key, strlen(options.dpb_key));
 	}
-#endif
 
 	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
@@ -1864,11 +1865,9 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 			 TRUE)) ERR_post(gds_unavailable, 0);
 	}
 
-#ifdef ISC_DATABASE_ENCRYPTION
 	if (options.dpb_key)
 		dbb->dbb_encrypt_key =
 			copy_string(options.dpb_key, strlen(options.dpb_key));
-#endif
 
 	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
@@ -5621,14 +5620,16 @@ static DBB init(TDBB	tdbb,
 
 	TRA_init(tdbb);
 
-#ifdef ISC_DATABASE_ENCRYPTION
 /* Lookup some external "hooks" */
 
-	if (dbb_->dbb_encrypt = ISC_lookup_entrypoint(ENCRYPT_IMAGE, ENCRYPT, NULL))
-	{
-		dbb_->dbb_decrypt = ISC_lookup_entrypoint(ENCRYPT_IMAGE, DECRYPT, NULL);
+	PluginManager::Plugin crypt_lib =
+		PluginManager::getEnginePluginManager().findPlugin(CRYPT_IMAGE);
+	if (crypt_lib) {
+		dbb_->dbb_encrypt =
+			(dbb::crypt_routine) crypt_lib.lookupSymbol(Firebird::string(ENCRYPT));
+		dbb_->dbb_decrypt =
+			(dbb::crypt_routine) crypt_lib.lookupSymbol(Firebird::string(DECRYPT));
 	}
-#endif
 
 	INTL_init(tdbb);
 
