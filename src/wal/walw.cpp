@@ -1935,7 +1935,7 @@ static SSHORT setup_log(ISC_STATUS * status_vector,
 			WAL_segment->wals_flushed_log_seqno = log_header->walfh_seqno;
 		}
 
-		const LOGF* logf;
+		const logf* logfile;
 		if (WAL_segment->wals_max_logfiles > 0) {
 			/* Get the index of this logfile in the list of pre-allocated
 			   log files. */
@@ -1944,16 +1944,16 @@ static SSHORT setup_log(ISC_STATUS * status_vector,
 				get_logfile_index(WAL_segment, logname);
 			if (WAL_segment->wals_cur_logfile == -1)
 				/* we are using an overflow log */
-				logf = &WAL_segment->wals_log_ovflow_file_info;
+				logfile = &WAL_segment->wals_log_ovflow_file_info;
 			else
-				logf = LOGF_INFO(WAL_segment->wals_cur_logfile);
+				logfile = LOGF_INFO(WAL_segment->wals_cur_logfile);
 		}
 		else
-			logf = &WAL_segment->wals_log_serial_file_info;
+			logfile = &WAL_segment->wals_log_serial_file_info;
 
-		WAL_segment->wals_rollover_threshold = (logf->logf_max_size ?
-						logf->logf_max_size : WAL_segment->wals_max_log_length);
-		WAL_segment->wals_roundup_size = logf->logf_roundup_size;
+		WAL_segment->wals_rollover_threshold = (logfile->logf_max_size ?
+						logfile->logf_max_size : WAL_segment->wals_max_log_length);
+		WAL_segment->wals_roundup_size = logfile->logf_roundup_size;
 
 		if ((PRINT_DEBUG_MSGS) && rollover) {
 			PRINT_TIME(DEBUG_FD, LOCAL_TIME);
