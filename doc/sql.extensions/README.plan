@@ -14,10 +14,10 @@ PLAN clause
     <indexed_retrieval> ::= <stream_alias> INDEX ( <index_name> [, <index_name> ...] )
     <navigational_scan> ::= <stream_alias> ORDER <index_name> [ INDEX ( <index_name> [, <index_name> ...] ) ]
 
+    <sorted_streams> ::= SORT ( <stream_retrieval> )
+
     <joined_streams> ::= JOIN ( <stream_retrieval>, <stream_retrieval> [, <stream_retrieval> ...] )
     	| [SORT] MERGE ( <sorted_streams>, <sorted_streams> )
-
-    <sorted_streams> ::= SORT ( <stream_retrieval> )
 
   Description:
     Natural scan means that all rows are fetched in their natural storage order,
@@ -37,14 +37,14 @@ PLAN clause
     Then a data page is read and required row is fetched. Note that navigational scan produces
     random page I/O as reads are not optimized.
     
+    A sort operation performs an external sort of the given stream retrieval.
+
     A join can be performed either via the nested loops algorithm (JOIN plan) or via
     the sort merge algorithm (MERGE plan). An inner nested loop join may contain as many
     streams as required to be joined (as all of them are equivalent), whilst an outer
     nested loops join always operates with two (outer and inner) streams, so you'll see
     nested JOIN clauses in the case of 3 or more outer streams joined. A sort merge operates
     with two input streams which are sorted beforehand, then they're merged in a single run.
-
-    A sort operation performs an external sort of the given stream retrieval.
 
   Example(s):
     SELECT RDB$RELATION_NAME

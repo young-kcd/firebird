@@ -11,7 +11,7 @@ Sequence generators
     CREATE { SEQUENCE | GENERATOR } <name>
     DROP { SEQUENCE | GENERATOR } <name>
     SET GENERATOR <name> TO <start_value>
-    ALTER SEQUENCE RESTART WITH <start_value>
+    ALTER SEQUENCE <name> RESTART WITH <start_value>
     GEN_ID (<name>, <increment_value>)
     NEXT VALUE FOR <name>
 
