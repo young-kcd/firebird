@@ -79,6 +79,9 @@ DATABASE DB = FILENAME "ODS.RDB";
 #define HIGH_WATER(x)	((SSHORT) sizeof (data_page) + (SSHORT) sizeof (data_page::dpg_repeat) * (x - 1))
 #define SPACE_FUDGE	RHDF_SIZE
 
+using namespace Jrd;
+using namespace Ods;
+
 static void delete_tail(thread_db*, RHDF, USHORT);
 static void fragment(thread_db*, record_param*, SSHORT, Dcc*, SSHORT, const jrd_tra*);
 static void extend_relation(thread_db*, jrd_rel*, WIN *);
@@ -849,7 +852,7 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 
 /* Next, cancel out stuff from RDB$PAGES */
 
-	blk* handle = NULL;
+	jrd_req* handle = NULL;
 
 	FOR(REQUEST_HANDLE handle) X IN RDB$PAGES WITH
 		X.RDB$RELATION_ID EQ relation->rel_id ERASE X;
@@ -1652,7 +1655,7 @@ void DPM_pages(
 	}
 #endif
 
-	blk* request = CMP_find_request(tdbb, irq_s_pages, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_s_pages, IRQ_REQUESTS);
 
 	STORE(REQUEST_HANDLE request)
 		X IN RDB$PAGES X.RDB$RELATION_ID = rel_id;
@@ -1773,7 +1776,7 @@ void DPM_scan_pages( thread_db* tdbb)
 
 	CCH_RELEASE(tdbb, &window);
 
-	blk* request = CMP_find_request(tdbb, irq_r_pages, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_r_pages, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) X IN RDB$PAGES
 
