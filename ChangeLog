@@ -1,3 +1,93 @@
+2003-03-03 20:14  dimitr
+
+	* firebird2/src/jrd/dyn_def.epp:
+	
+	Allowed UK to be created on nullable columns (SQL-99 spec).  The
+	index management code isn't ready for this yet, but appropriate
+	changes will follow shortly.
+
+2003-03-03 20:10  dimitr
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Fixed bug in RECREATE/ALTER VIEW.
+
+2003-03-03 15:35  dimitr
+
+	* firebird2/builds/win32/msvc6/: remote.dsp, remote_classic.dsp:
+	
+	Fixed connects via local protocol after Blas' changes.
+
+2003-03-03 10:22  brodsom
+
+	* firebird2/src/jrd/: sort.cpp, sdw.cpp, isc.cpp, isc_ipc.cpp,
+	grant.epp, ini.epp, intl.cpp, ail.cpp, exe.cpp, gds.cpp:
+	
+	Put declarations and definitions inside the same ifdef condition
+	under which is used. (for not used ones NOT_USED_OR_REPLACED)
+
+2003-03-03 09:48  brodsom
+
+	* firebird2/src/jrd/: rlck.cpp, tra.cpp:
+	
+	Put some declaration definitions only used when PC_ENGINE is
+	defined, inside PC_ENGINE ifdef.
+
+2003-03-03 09:46  brodsom
+
+	* firebird2/src/jrd/event.cpp:
+	
+	EVENT_PROCESS is only used when SOLARIS_MT is defined.
+
+2003-03-03 09:42  brodsom
+
+	* firebird2/src/remote/: xnet.cpp, interface.cpp, merge.cpp:
+	
+	Put declarations and definitions inside correct macros(when the
+	function is not used NOT_USED_OR_DEFINED).
+
+2003-03-03 09:37  brodsom
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Put alarm_handler inside HAVE_SETITIMER, is only used when this
+	macro is defined.
+
+2003-03-03 09:36  brodsom
+
+	* firebird2/src/gpre/: gpre_meta_boot.cpp, int.cpp, int_cxx.cpp,
+	sqe.cpp, gpre_meta.epp:
+	
+	Put unused function declaration and definition inside
+	NOT_USED_OR_REPLACED ifdef.
+
+2003-03-03 09:29  brodsom
+
+	* firebird2/src/dsql/: ddl.cpp, utld.cpp:
+	
+	Put unused functions declaration and definition inside
+	NOT_USED_OR_REPLACED ifdef.
+
+2003-03-03 09:27  brodsom
+
+	* firebird2/src/gpre/par.cpp:
+	
+	Put par_quoted string inside PYXIS. function is only used when
+	PYXIS is defined
+
+2003-03-03 09:26  brodsom
+
+	* firebird2/src/gpre/sql.cpp:
+	
+	Put define_cache inside FLINT_CACHE. function is only used when
+	FLINT_CACHE is defined
+
+2003-03-03 07:02  aafemt
+
+	* firebird2/configure.in:
+	
+	Let config.status make directories
+
 2003-03-02 21:48  skidder
 
 	* firebird2/src/jrd/vio.cpp:
