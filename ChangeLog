@@ -1,3 +1,42 @@
+2004-10-01 23:29  skidder
+
+	* firebird2/src/: jrd/common.h (1.125), lock/lock.h (1.31),
+	lock/print.cpp (1.42):
+	
+	Small lock manager fixes.
+	
+	Use 64-bit lock manager performance counters. 32-bit counters
+	overflowed every few hours under load and this was considerably
+	reduced their usefulness.  Use separate version for 64-bit lock
+	manager tables. While you can have both 32-bit and 64-bit versions
+	of engine running on the same machine lock manager structures have
+	different layout and mismatch is not desireable.
+
+2004-10-01 23:12  skidder
+
+	* firebird2/src/jrd/: blb.cpp (1.90), blb.h (1.20), dfw.epp
+	(1.129), tra.h (1.38):
+	
+	Implement BID constructor as Claudio suggested
+
+2004-10-01 11:45  dimitr
+
+	* firebird2/src/jrd/cch.cpp (1.109):
+	
+	Some minor corrections, as suggested by Claudio.
+
+2004-10-01 08:27  hvlad
+
+	* firebird2/src/common/classes/sparse_bitmap.h (1.4):
+	
+	Make new class SparseBitmap compile by MSVC6
+
+2004-10-01 08:21  robocop
+
+	* firebird2/src/jrd/tra.h (1.37):
+	
+	Misc
+
 2004-09-30 19:45  skidder
 
 	* firebird2/src/jrd/: blb.cpp (1.89), blb.h (1.19):
