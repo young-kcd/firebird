@@ -29,7 +29,7 @@
  *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.15 2002-10-12 19:46:29 skidder Exp $
+$Id: opt.cpp,v 1.16 2002-10-12 20:27:25 skidder Exp $
 */
 
 #include "firebird.h"
@@ -3352,14 +3352,14 @@ static RSB gen_navigation(TDBB tdbb,
 		if (node->nod_type != nod_field
 			|| (USHORT) node->nod_arg[e_fld_stream] != stream
 			|| (USHORT) node->nod_arg[e_fld_id] != idx_tail->idx_field
+			|| ptr[2*sort->nod_count] /* do not use index if NULLS FIRST is used */
 #ifdef SCROLLABLE_CURSORS
 			)
 #else
 			|| (ptr[sort->nod_count]
 				&& !(idx->idx_flags & idx_descending))
 			|| (!ptr[sort->nod_count]
-				&& (idx->idx_flags & idx_descending))
-			|| ptr[2*sort->nod_count] /* do not use index if NULLS FIRST is used */ )
+				&& (idx->idx_flags & idx_descending)) )
 #endif
 			return NULL;
 #ifdef SCROLLABLE_CURSORS
