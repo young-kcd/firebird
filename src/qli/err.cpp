@@ -280,7 +280,7 @@ void ERRQ_pending(void)
  **************************************/
 
 	if (QLI_error) {
-		ib_printf("%s\n", QLI_error);
+		ib_printf("%s\n", (const char*)QLI_error);
 		QLI_error = NULL;
 	}
 }
