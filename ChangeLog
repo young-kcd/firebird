@@ -1,3 +1,36 @@
+2005-02-21 21:32  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.226):
+	
+	Fixed SEGV related to explicit plans.
+
+2005-02-21 21:07  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp (1.138):
+	
+	Fix segment-selectivity values for descending indexes, reported by
+	Dmitry Yemanov
+
+2005-02-21 14:18  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.128), pass1.cpp (1.195):
+	
+	Simplify code paths a bit.
+
+2005-02-21 13:46  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h (1.50), parse.cpp (1.143),
+	parse.y (1.169), pass1.cpp (1.194):
+	
+	Simplify code paths a bit.
+
+2005-02-21 07:00  robocop
+
+	* firebird2/: doc/README.Optimizer.txt (1.2), src/jrd/isc_file.cpp
+	(1.91), src/jrd/opt.cpp (1.225), src/jrd/Optimizer.cpp (1.9):
+	
+	Misc.
+
 2005-02-20 09:35  dimitr
 
 	* firebird2/src/common/classes/timestamp.cpp (1.8):
