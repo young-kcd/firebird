@@ -455,9 +455,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 	TDBB tdbb;
 	DBB dbb;
 	SCL s_class;
-	TEXT name[32], *p, *q;
 	ATT attachment;
-	USHORT name_length = 0;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -468,13 +466,8 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 		return NULL;
 
 	MET_exact_name(string);
-	name_length = strlen(string);
-	p = name;
-	while (name_length--)
-		*p++ = *string++;
-	*p = 0;
 
-	if (!name[0])
+	if (!string[0])
 		return NULL;
 
 	attachment = tdbb->tdbb_attachment;
@@ -485,18 +478,15 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 		 s_class;
 		 s_class = s_class->scl_next)
 	{
-		if (!strcmp(name, s_class->scl_name)) {
+		if (!strcmp(string, s_class->scl_name)) {
 			return s_class;
 		}
 	}
 
 /* Class isn't known.  So make up a new security class block */
 
-	s_class = FB_NEW_RPT(*dbb->dbb_permanent, p - name) scl();
-	p = name;
-	q = s_class->scl_name;
-	while ( (*q++ = *p++) )
-		;
+	s_class = FB_NEW_RPT(*dbb->dbb_permanent, strlen(string)) scl();
+	strcpy(s_class->scl_name, string);
 	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, (JRD_REL)NULL_PTR,
 												 (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
 
