@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
+ *
  */
 
 /* ------------NOTE NOTE NOTE -----------
@@ -369,7 +372,6 @@ typedef UINT16 PDXResult;
 #define AIX_CP                    8
 #define AUX_CP                    9
 #define XENIX_CP                 10
-#define MAC_CP                   11
 
 /*
 // SHIFT-JIS (JAPANESE DBCS)
@@ -1019,62 +1021,65 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.1.1.1 2001-05-23 13:25:50 tamlin Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.2 2002-02-16 01:58:24 seanleyne Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.1.1.1  2001/05/23 13:25:50  tamlin
+//	First steps towards a C++ conversion.
+//
 //	Revision 1.1.1.1  2000/08/03 20:49:08  skywalker
 //	Save the whale, feed the poor, and set the sources free.
-//	
+//
 //	Revision 1.1.1.1  2000/07/29 04:25:02  root
 //	interbase initial import
-//	
+//
 //	Revision 1.2.2.2  2000/07/24 20:33:16  chrisj
 //	Changing the wording of the license boilerplate in all the source files
 //	to match new changes required by Inprise legal dept on 24 July 2000.
 //	        --Changed by Chris Jewell, not reviewed.
-//	
+//
 //	Revision 1.2.2.1  2000/07/21 23:02:08  chrisj
 //	Globally changing the wording of the copyright and license text
 //	in the headers of all the source files.  2000-07-21 by chrisj
-//	
+//
 //	Revision 1.2  2000/06/06 22:50:18  stsikin
 //	Removing #ifdef _ANSI_PROTOTYPES stuff.
 //	Adding new license/Copyright text.
-//	
+//
 //	Stanislav Tsikin, 06-JUN-2000.
-//	
+//
 //	Revision 1.1.1.1  2000/03/05 00:23:55  rkumar
 //	InterBase 6.0 sources
-//	
-// 
+//
+//
 //    Rev 1.8   23 Nov 1992 16:46:24   MLEVY
 // LD.DLL => LD01.DLL
-// 
+//
 //    Rev 1.7   10 Nov 1992 17:26:48   MLEVY
 // version info modified
-// 
+//
 //    Rev 1.6   10 Nov 1992 15:24:48   MLEVY
 // new defines for CANADA
-// 
+//
 //    Rev 1.5   10 Nov 1992 11:38:46   MLEVY
 // LD_MINOR bumped to 1
-// 
+//
 //    Rev 1.4   20 Oct 1992 16:40:54   MLEVY
 // PIRANHA_CREATE_RESTRUCTURE ifndef added around 3 typedefs
-// 
+//
 //    Rev 1.3   20 Oct 1992 14:05:58   MLEVY
 // LOCAL_EXPAND and LOCAL_SECONDARY added. EXPAND and SECONDARY values changed
 // revision bumped. REVERSE replaces REVERSE_DIRECTION
-// 
+//
 //    Rev 1.2   20 Aug 1992 12:04:34   MLEVY
 // LdLibraryName is now a pointer
-// 
+//
 //    Rev 1.1   08 Aug 1992 14:33:56   MLEVY
 // expose LdExit()
-// 
+//
 //    Rev 1.0   16 Jun 1992 16:37:50   MLEVY
 // Initial revision.
-// 
+//
 //    Rev 1.5   16 Jun 1992 16:01:02   MLEVY
 
 //-----------------------------------------------------------------

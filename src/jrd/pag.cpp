@@ -36,6 +36,9 @@
  *
  * 2001.08.07 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, second attempt
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
+ *
  */
 
 #include "firebird.h"
@@ -128,10 +131,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 #else
 #define CLASS		2
 #endif
-#endif
-
-#ifdef MAC
-#define CLASS		9
 #endif
 
 #ifdef hpux

@@ -25,9 +25,12 @@
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
+ *
  */
 /*
-$Id: common.h,v 1.6 2001-12-24 02:50:51 tamlin Exp $
+$Id: common.h,v 1.7 2002-02-16 01:58:24 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -106,7 +109,7 @@ $Id: common.h,v 1.6 2001-12-24 02:50:51 tamlin Exp $
 #endif /* LINUX */
 
 /* Darwin Platforms */
-#ifdef DARWIN  
+#ifdef DARWIN
 #define __LINE__IS_INT
 #define SLONGFORMAT	"ld"
 #define ALIGNMENT       4
@@ -332,21 +335,6 @@ $Id: common.h,v 1.6 2001-12-24 02:50:51 tamlin Exp $
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 #endif /* sun */
-
-
-
-/* MAC AUX--this port was never completed */
-
-#ifdef MAC
-#define NO_PYXIS
-#define SETPGRP         setpgrp (0, 0)
-#define UNIX            1
-#define FB_ALIGN(n,b)      ((n+1) & ~1)
-#define IMPLEMENTATION  34
-#define                 IEEE
-#define ATEXIT(c)       atexit (c)
-#endif
-
 
 
 /* HP/UX platforms */

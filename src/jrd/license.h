@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.3 2001-12-24 02:50:51 tamlin Exp $
+ * $Id: license.h,v 1.4 2002-02-16 01:58:24 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -33,6 +33,8 @@
  * from 'jrd/build_no.h'.
  * So all changes to version numbers, build types etc. can
  * now be done in 'builds_win32/original/build_no.ksh'.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
  *
  */
 
@@ -95,10 +97,6 @@
 #else
 #define FB_PLATFORM	"VM"
 #endif
-#endif
-
-#ifdef MAC
-#define FB_PLATFORM	"MA"
 #endif
 
 #ifdef PC_PLATFORM

@@ -1,3 +1,7 @@
+/*
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
+ */
+
 #ifndef AUTOCONFIG_H
 #define AUTOCONFIG_H
 
@@ -36,7 +40,6 @@
 #undef apollo
 #undef sun
 #undef SOLARIS
-#undef MAC
 #undef NeXT
 #undef hpux
 #undef ultrix
