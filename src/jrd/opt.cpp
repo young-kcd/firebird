@@ -67,6 +67,7 @@
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/ext_proto.h"
+#include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
 
 #include "../jrd/lck_proto.h"
@@ -3197,7 +3198,7 @@ static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 			{
 				const dsc* desc1 = EVL_expr(tdbb, node1);
 				const dsc* desc2 = EVL_expr(tdbb, node2);
-				if (!MOV_compare(desc1, desc2)) {
+				if (desc1 && desc2 && !MOV_compare(desc1, desc2)) {
 					return true;
 				}
 			}
@@ -6472,7 +6473,7 @@ static SSHORT match_index(thread_db* tdbb,
 			match_index(tdbb, opt, stream, boolean->nod_arg[1], idx);
 	}
 	bool forward = true;
-	const jrd_nod* match = boolean->nod_arg[0];
+	jrd_nod* match = boolean->nod_arg[0];
 	jrd_nod* value = boolean->nod_arg[1];
 #ifdef EXPRESSION_INDICES
 	if (idx->idx_expression) {

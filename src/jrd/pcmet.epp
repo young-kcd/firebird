@@ -56,9 +56,8 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 
 #ifdef EXPRESSION_INDICES
-int PCMET_expression_index(
-						   thread_db* tdbb, SSHORT phase, DeferredWork* work,
-						   jrd_tra* transaction)
+bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
+							jrd_tra* transaction)
 {
 /**************************************
  *
@@ -72,47 +71,64 @@ int PCMET_expression_index(
  **************************************/
 	jrd_rel* relation;
 	index_desc idx;
-	PLB default_pool, new_pool = NULL;
+	JrdMemoryPool* new_pool = NULL;
 	CompilerScratch* csb;
-	jrd_req* current_request;
+	jrd_req* current_request, *request;
+	jrd_tra* current_transaction;
 
 	SET_TDBB(tdbb);
-	//const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 
-	switch (phase) {
+	switch (phase)
+	{
 	case 1:
 	case 2:
-		return TRUE;
+		return true;
 
 	case 3:
+
 		relation = NULL;
 		MOVE_CLEAR(&idx, sizeof(index_desc));
-
-		if (REQUEST(irq_c_exp_index))
-			EXE_unwind(tdbb, REQUEST(irq_c_exp_index));
-		FOR(REQUEST_HANDLE REQUEST(irq_c_exp_index))
+		
+		request = CMP_find_request(tdbb, irq_c_exp_index, IRQ_REQUESTS);
+/*
+		if (request)
+		{
+			EXE_unwind(tdbb, request);
+		}
+*/
+		FOR(REQUEST_HANDLE request)
 			IDX IN RDB$INDICES CROSS
 				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
 				IDX.RDB$EXPRESSION_BLR NOT MISSING AND
 				IDX.RDB$INDEX_NAME EQ work->dfw_name 
 
-            if (!relation) {
+			if (!REQUEST(irq_c_exp_index))
+			{
+				REQUEST(irq_c_exp_index) = request;
+			}
+
+            if (!relation)
+            {
 				relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
-				if (!relation->rel_name) {
+				if (!relation->rel_name)
+				{
 					relation->rel_name =
 						MET_save_name(tdbb, REL.RDB$RELATION_NAME);
 					relation->rel_length = strlen(relation->rel_name);
 				}
-				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0) {
-					SelectivityList selectivity(tdbb->getDefaultPool());
+				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
+				{
+					SelectivityList selectivity(*tdbb->getDefaultPool());
 					const USHORT id = IDX.RDB$INDEX_ID - 1;
 					IDX_statistics(tdbb, relation, id, selectivity);
 					DFW_update_index(work->dfw_name, id, selectivity);
 
-					EXE_unwind(tdbb, REQUEST(irq_c_exp_index));
-					return FALSE;
+					EXE_unwind(tdbb, request);
+					return false;
 				}
-				if (IDX.RDB$INDEX_ID) {
+				if (IDX.RDB$INDEX_ID)
+				{
 					IDX_delete_index(tdbb, relation, IDX.RDB$INDEX_ID - 1);
 					MET_delete_dependencies(tdbb, work->dfw_name,
 											obj_expression_index);
@@ -120,14 +136,15 @@ int PCMET_expression_index(
 						IDX.RDB$INDEX_ID.NULL = TRUE;
 					END_MODIFY;
 				}
-				if (IDX.RDB$INDEX_INACTIVE) {
-					EXE_unwind(tdbb, REQUEST(irq_c_exp_index));
-					return FALSE;
+				if (IDX.RDB$INDEX_INACTIVE)
+				{
+					EXE_unwind(tdbb, request);
+					return false;
 				}
 
 				if (IDX.RDB$SEGMENT_COUNT)
-					ERR_post(gds__no_meta_update,
-							 isc_arg_gds, gds__no_segments_err,
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_no_segments_err,
 							 isc_arg_string, ERR_cstring(work->dfw_name), 0);
 				/* Msg359: segments not allowed in expression index %s */
 				if (IDX.RDB$UNIQUE_FLAG)
@@ -138,8 +155,9 @@ int PCMET_expression_index(
 				/* allocate a new pool to contain the expression tree 
 				   for the expression index */
 
-				default_pool = tdbb->getDefaultPool();
-				tdbb->setDefaultPool(new_pool = ALL_pool(&jrd_alloc_info));
+				JrdMemoryPool* const old_pool = tdbb->getDefaultPool();
+				new_pool = JrdMemoryPool::createPool();
+				tdbb->setDefaultPool(new_pool);
 				MET_scan_relation(tdbb, relation);
 
 				if (!IDX.RDB$EXPRESSION_BLR.NULL)
@@ -150,7 +168,7 @@ int PCMET_expression_index(
 															  &csb,
 															  IDX.RDB$INDEX_NAME,
 															  obj_expression_index);
-				tdbb->setDefaultPool(default_pool);
+				tdbb->setDefaultPool(old_pool);
 
 				/* fake a description of the index */
 
@@ -163,44 +181,54 @@ int PCMET_expression_index(
 										  idx.idx_expression_desc.dsc_dtype,
 										  0);
 				idx.idx_rpt[0].idx_selectivity = 0;
-
-				ALL_release(csb);
+				idx.idx_expression_request->req_transaction = transaction;
+		
+				delete csb;
 			}
 
 		END_FOR;
 
+		if (!REQUEST(irq_c_exp_index))
+		{
+			REQUEST(irq_c_exp_index) = request;
+		}
+
 		if (!relation)
-			ERR_post(gds__no_meta_update,
-					 isc_arg_gds, gds__idx_create_err,
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_idx_create_err,
 					 isc_arg_string, ERR_cstring(work->dfw_name), 0);
-		/* Msg308: can't create index %s */
+		// Msg308: can't create index %s
 
-		/* Actually create the index */
+		// Actually create the index
 
-		SelectivityList selectivity(tdbb->getDefaultPool());
+		SelectivityList selectivity(*tdbb->getDefaultPool());
 
 		current_request = tdbb->tdbb_request;
+		current_transaction = tdbb->tdbb_transaction;
 		tdbb->tdbb_request = idx.idx_expression_request;
 		IDX_create_index(tdbb, relation, &idx, work->dfw_name, NULL,
-						 transaction, &selectivity);
+						 transaction, selectivity);
 		tdbb->tdbb_request = current_request;
+		tdbb->tdbb_transaction = current_transaction; 
+	
+		DFW_update_index(work->dfw_name, idx.idx_id, selectivity);
 
-		DFW_update_index(work, idx.idx_id, selectivity);
-
-		/* get rid of the pool containing the expression tree */
+		// Get rid of the pool containing the expression tree
 
 		if (new_pool)
-			ALL_rlpool(new_pool);
+		{
+			JrdMemoryPool::deletePool(new_pool);
+		}
 		break;
 	}
 
-	return FALSE;
+	return false;
 }
 #endif
 
 
 #ifdef EXPRESSION_INDICES
-void PCMET_lookup_index( jrd_rel* relation, index_desc* idx)
+void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 {
 /**************************************
  *
@@ -215,11 +243,12 @@ void PCMET_lookup_index( jrd_rel* relation, index_desc* idx)
  **************************************/
 	CompilerScratch* csb = NULL;
 
-	thread_db* tdbb = JRD_get_thread_data();
-	//const Database* dbb = tdbb->tdbb_database;
+	SET_TDBB(tdbb);
+	const Database* dbb = tdbb->tdbb_database;
 
-/* check the index blocks for the relation to see if we 
-   have a cached block */
+	// Check the index blocks for the relation to see if we 
+	// have a cached block
+
 	IndexBlock* index_block;
 	for (index_block = relation->rel_index_blocks; index_block;
 		 index_block = index_block->idb_next)
@@ -228,7 +257,8 @@ void PCMET_lookup_index( jrd_rel* relation, index_desc* idx)
 			break;
 	}
 
-	if (index_block && index_block->idb_expression) {
+	if (index_block && index_block->idb_expression)
+	{
 		idx->idx_expression = index_block->idb_expression;
 		idx->idx_expression_request = index_block->idb_expression_request;
 		MOVE_FAST(&index_block->idb_expression_desc,
@@ -236,21 +266,30 @@ void PCMET_lookup_index( jrd_rel* relation, index_desc* idx)
 		return;
 	}
 
-	FOR(REQUEST_HANDLE REQUEST(irq_l_exp_index))
+	jrd_req* request = CMP_find_request(tdbb, irq_l_exp_index, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request)
 		IDX IN RDB$INDICES WITH
 			IDX.RDB$RELATION_NAME EQ relation->rel_name AND
 			IDX.RDB$INDEX_ID EQ idx->idx_id + 1
 
+		if (!REQUEST(irq_l_exp_index))
+		{
+			REQUEST(irq_l_exp_index) = request;
+		}
+
         if (idx->idx_expression_request)
-				CMP_release(tdbb, idx->idx_expression_request);
-		idx->idx_expression_request = NULL;
+        {
+			CMP_release(tdbb, idx->idx_expression_request);
+			idx->idx_expression_request = NULL;
+		}
 
 		/* parse the blr, making sure to create the resulting expression 
 		   tree and request in its own pool so that it may be cached
 		   with the index block in the "permanent" metadata cache */
 
-		plb* const old_pool = tdbb->getDefaultPool();
-		tdbb->setDefaultPool(ALL_pool(&jrd_alloc_info));
+		JrdMemoryPool* const old_pool = tdbb->getDefaultPool();
+		tdbb->setDefaultPool(JrdMemoryPool::createPool());
 		idx->idx_expression =
 			MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
 						   &idx->idx_expression_request, false, false);
@@ -258,11 +297,17 @@ void PCMET_lookup_index( jrd_rel* relation, index_desc* idx)
 
 	END_FOR;
 
-	if (csb) {
+	if (!REQUEST(irq_l_exp_index))
+	{
+		REQUEST(irq_l_exp_index) = request;
+	}
+
+	if (csb)
+	{
 		CMP_get_desc(tdbb, csb, idx->idx_expression,
 					 &idx->idx_expression_desc);
-		ALL_release(csb);
 	}
+	delete csb;
 
 /* if there is no existing index block for this index, create
    one and link it in with the index blocks for this relation */

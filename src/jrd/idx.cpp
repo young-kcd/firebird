@@ -135,9 +135,8 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 			index_root_page* referenced_root =
 				(index_root_page*) CCH_FETCH(tdbb, &referenced_window, LCK_read, pag_root);
 			index_desc referenced_idx;
-			if (!BTR_description
-				(referenced_relation, referenced_root, &referenced_idx,
-				 index_id)) 
+			if (!BTR_description(tdbb, referenced_relation, referenced_root,
+								 &referenced_idx, index_id)) 
 			{
 				BUGCHECK(173);	/* msg 173 referenced index description not found */
 			}
@@ -610,7 +609,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 
 	for (USHORT i = 0; i < root->irt_count; i++) {
-		if (BTR_description(rpb->rpb_relation, root, &idx, i)) {
+		if (BTR_description(tdbb, rpb->rpb_relation, root, &idx, i)) {
 			for (RecordStack::iterator stack1(going); stack1.hasData(); ++stack1) {
 				Record* rec1 = stack1.object();
 				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0);
@@ -648,7 +647,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 				if (stack1.hasMore(1))
 				{
-					BTR_description(rpb->rpb_relation, root, &idx, i);
+					BTR_description(tdbb, rpb->rpb_relation, root, &idx, i);
 				}
 			}
 		}
@@ -1088,7 +1087,7 @@ static IDX_E check_partner_index(
 
 /* get the description of the partner index */
 
-	if (!BTR_description(partner_relation, root, &partner_idx, index_id))
+	if (!BTR_description(tdbb, partner_relation, root, &partner_idx, index_id))
 		BUGCHECK(175);			/* msg 175 partner index description not found */
 
 /* get the key in the original index */

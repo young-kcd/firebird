@@ -509,6 +509,15 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 		fb_utils::fb_exact_name(rel_name);
 		found = true;
 		ERASE IDX;
+
+#ifdef EXPRESSION_INDICES
+		if (IDX.RDB$EXPRESSION_BLR.NULL)
+#endif
+		if (!delete_index_segment_records(gbl, idx_name))
+		{
+			DYN_error_punt(false, 50, NULL, NULL, NULL, NULL, NULL);
+			/* msg 50: "No segments found for index" */
+		}
 	END_FOR;
 	if (!DYN_REQUEST(drq_e_indices))
 		DYN_REQUEST(drq_e_indices) = request;
@@ -524,12 +533,6 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 	{
 		DYN_error_punt(false, 48, NULL, NULL, NULL, NULL, NULL);
 		/* msg 48: "Index not found" */
-	}
-
-	if (!delete_index_segment_records(gbl, idx_name))
-	{
-		DYN_error_punt(false, 50, NULL, NULL, NULL, NULL, NULL);
-		/* msg 50: "No segments found for index" */
 	}
 
 	while (*(*ptr)++ != isc_dyn_end) {

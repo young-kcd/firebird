@@ -233,7 +233,6 @@ USHORT BTR_all(thread_db*		tdbb,
 	CHECK_DBB(dbb);
 	WIN window(-1);
 
-	
 	index_root_page* root = fetch_root(tdbb, &window, relation);
 	if (!root) {
 		return 0;
@@ -244,7 +243,7 @@ USHORT BTR_all(thread_db*		tdbb,
 	index_desc* buffer = (*csb_idx)->items;
 	USHORT count = 0;
 	for (USHORT i = 0; i < root->irt_count; i++) {
-		if (BTR_description(relation, root, &buffer[count], i)) {
+		if (BTR_description(tdbb, relation, root, &buffer[count], i)) {
 			count++;
 		}
 	}
@@ -333,7 +332,7 @@ void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
 }
 
 
-bool BTR_description(jrd_rel* relation, index_root_page* root, index_desc* idx, SSHORT id)
+bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, index_desc* idx, SSHORT id)
 {
 /**************************************
  *
@@ -346,8 +345,10 @@ bool BTR_description(jrd_rel* relation, index_root_page* root, index_desc* idx, 
  *  Index id's must fit in a short - formerly a UCHAR.
  *
  **************************************/
-	const Database* dbb = GET_DBB();
-	
+
+	SET_TDBB(tdbb);
+	const Database* dbb = tdbb->tdbb_database;
+
 	if (id >= root->irt_count) {
 		return false;
 	}
@@ -393,7 +394,7 @@ bool BTR_description(jrd_rel* relation, index_root_page* root, index_desc* idx, 
 
 #ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn) {
-		PCMET_lookup_index(relation, idx);
+		PCMET_lookup_index(tdbb, relation, idx);
 	}
 #endif
 
@@ -566,8 +567,8 @@ btree_page* BTR_find_page(thread_db* tdbb,
 	window->win_page = retrieval->irb_relation->rel_index_root;
 	index_root_page* rpage = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
 
-	if (!BTR_description
-		(retrieval->irb_relation, rpage, idx, retrieval->irb_index))
+	if (!BTR_description(tdbb, retrieval->irb_relation, rpage,
+						 idx, retrieval->irb_index))
 	{
 		CCH_RELEASE(tdbb, window);
 		IBERROR(260);	// msg 260 index unexpectedly deleted
@@ -822,21 +823,31 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 #ifdef EXPRESSION_INDICES
 			// for expression indices, compute the value of the expression
 			if (idx->idx_expression) {
+
 				// 15 June 2004. Nickolay Samofatov.
 				// This code doesn't look correct. It should get broken in
 				// case of reentrance due to recursion or multi-threading
 				fb_assert(idx->idx_expression_request->req_caller == NULL);
 				idx->idx_expression_request->req_caller = tdbb->tdbb_request;
+				if (tdbb->tdbb_request)
+				{
+					idx->idx_expression_request->req_transaction = tdbb->tdbb_request->req_transaction;
+				}
 				tdbb->tdbb_request = idx->idx_expression_request;
-
 				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
+
+				JrdMemoryPool* current_default_pool = tdbb->getDefaultPool();
+				tdbb->setDefaultPool(tdbb->tdbb_request->req_pool);
+
+				tdbb->tdbb_request->req_flags &= ~req_null;
 
 				if (!(desc_ptr = EVL_expr(tdbb, idx->idx_expression))) {
 					desc_ptr = &idx->idx_expression_desc;
 				}
 
-				isNull = ((tdbb->tdbb_request->req_flags & req_null) == req_null);
+				isNull = (tdbb->tdbb_request->req_flags & req_null);
 
+				tdbb->setDefaultPool(current_default_pool);
 				tdbb->tdbb_request = idx->idx_expression_request->req_caller;
 				idx->idx_expression_request->req_caller = NULL;
 			}
@@ -962,9 +973,12 @@ USHORT BTR_key_length(jrd_rel* relation, index_desc* idx)
 		// function that declared return type being USHORT.
 		size_t length;
 #ifdef EXPRESSION_INDICES
-		if (idx->idx_expression) {
+		if (idx->idx_expression)
+		{
+			fb_assert(idx->idx_expression != NULL);
 			length = idx->idx_expression_desc.dsc_length;
-			if (idx->idx_expression_desc.dsc_dtype == dtype_varying) {
+			if (idx->idx_expression_desc.dsc_dtype == dtype_varying)
+			{
 				length = length - sizeof(SSHORT);
 			}
 		}
@@ -1146,7 +1160,7 @@ USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buf
 	}
 
 	if ((id >= root->irt_count)
-		|| !BTR_description(relation, root, buffer, id)) 
+		|| !BTR_description(tdbb, relation, root, buffer, id)) 
 	{
 		CCH_RELEASE(tdbb, &window);
 		return FB_FAILURE;
@@ -1300,7 +1314,7 @@ bool BTR_next_index(thread_db* tdbb,
 				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
 			}
 		}
-		if (BTR_description(relation, root, idx, id)) {
+		if (BTR_description(tdbb, relation, root, idx, id)) {
 			return true;
 		}
 	}
