@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.40 2002-10-16 08:38:04 eku Exp $"
+#ident "$Id: config.h.in,v 1.41 2002-10-29 03:31:19 seanleyne Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -8,6 +8,7 @@
  *
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  */
 
 #ifndef AUTOCONFIG_H
@@ -117,18 +118,12 @@
 #undef sun
 #undef SOLARIS
 #undef hpux
-#undef ultrix
 #undef PC_PLATFORM
 #undef NETWARE_386
 #undef VMS
 #undef AIX
 #undef WIN_NT
 #undef SCO_EV
-#undef DGUX
-#undef DECOSF
-#undef sgi
-#undef mpexl
-#undef UNIXWARE
 #undef SINIXZ
 
 #define ISC_PREFIX /usr/local/firebird

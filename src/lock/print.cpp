@@ -23,6 +23,8 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
+ *
  */
 
 #include "firebird.h"
@@ -50,9 +52,6 @@
 #include <unistd.h>
 #endif
 
-#if (defined sgi)
-#include <sys/types.h>
-#endif
 #include <sys/stat.h>
 #if !(defined WIN_NT)
 #include <sys/param.h>

@@ -22,6 +22,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
+ *
  */
 
 #include "firebird.h"
@@ -61,21 +63,12 @@ int (*_libgds_shmdt) () = 0;
 int (*_libgds_memcmp) () = 0;
 int (*_libgds_fprintf) () = 0;
 int (*_libgds_printf) () = 0;
-#ifdef sgi
-void **_libgds__sproced = 0;
-#endif
 int (*_libgds_errno) = 0;
 IB_FILE *(*_libgds_fopen) () = 0;
 int (*_libgds_fclose) () = 0;
-#ifdef sgi
-int (*_libgds__semgetc) () = 0;
-#endif
 int (*_libgds__filbuf) () = 0;
 void (*_libgds_rewind) () = 0;
 int (*_libgds_fseek) () = 0;
-#ifdef sgi
-int (*_libgds__semputc) () = 0;
-#endif
 int (*_libgds__flsbuf) () = 0;
 SCHAR(**_libgds_sys_errlist) = 0;
 int *_libgds_sys_nerr = 0;
@@ -176,9 +169,6 @@ int *(*_libgds_getppid) () = 0;
 #ifndef SCO
 int (*_libgds_initgroups) () = 0;
 #endif
-#ifdef sgi
-int (*_libgds_sysid) () = 0;
-#endif
 int (*_libgds_setitimer) () = 0;
 void ((*_libgds_sigset) ()) = 0;
 SLONG(*_libgds_ftell) () = 0;
@@ -192,9 +182,6 @@ struct mntent *(*_libgds_getmntent) () = 0;
 int (*_libgds_endmntent) () = 0;
 #endif
 int (*_libgds_pause) () = 0;
-#ifdef sgi
-int *_libgds__us_rsthread_stdio = 0;
-#endif
 SCHAR **(*_libgds_environ) () = 0;
 IB_FILE *(*_libgds_fdopen) () = 0;
 int (*_libgds_dup) () = 0;

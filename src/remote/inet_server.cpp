@@ -24,10 +24,11 @@
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 /*
-$Id: inet_server.cpp,v 1.13 2002-10-29 03:17:45 seanleyne Exp $
+$Id: inet_server.cpp,v 1.14 2002-10-29 03:31:19 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -36,7 +37,7 @@ $Id: inet_server.cpp,v 1.13 2002-10-29 03:17:45 seanleyne Exp $
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
 #include "../common/memory/memory_pool.h"
-#if !(defined VMS || defined sgi || defined PC_PLATFORM)
+#if !(defined VMS || defined PC_PLATFORM)
 #include <sys/param.h>
 #endif
 

@@ -18,9 +18,11 @@
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
+ *
  */
 /*
-$Id: align.h,v 1.3 2002-10-29 03:17:45 seanleyne Exp $
+$Id: align.h,v 1.4 2002-10-29 03:31:19 seanleyne Exp $
 */
 
 #ifdef VMS
@@ -34,10 +36,6 @@ $Id: align.h,v 1.3 2002-10-29 03:17:45 seanleyne Exp $
 #endif
 
 #ifdef hpux
-#define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
-#endif
-
-#ifdef sgi
 #define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
 #endif
 

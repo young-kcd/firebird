@@ -27,10 +27,12 @@
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 /*
-$Id: y-valve.cpp,v 1.11 2002-10-29 03:17:44 seanleyne Exp $
+$Id: y-valve.cpp,v 1.12 2002-10-29 03:31:18 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -514,8 +516,7 @@ static CONST_IMAGE IMAGE images[] =
 #endif
 
 #ifdef PIPE_BRIDGE_TO_V3
-#if !(defined HM300 || defined BACKEND) && \
-    (defined hpux || defined sgi /* platforms with a shared V3 bridge */)
+#if !(defined BACKEND) && (defined hpux)
 #undef PIPE_BRIDGE_TO_V3
 #define V3
 #define V3_PATH		"lib/bridge5"

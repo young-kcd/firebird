@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.12 2002-10-29 02:45:07 seanleyne Exp $
+ * $Id: gpre.h,v 1.13 2002-10-29 03:31:17 seanleyne Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -49,6 +49,7 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
  *
  */
 
@@ -86,10 +87,6 @@ extern "C" {
 #ifdef SCO_UNIX
 #define ADA             1
 #define ALSYS_ADA	1
-#endif
-
-#ifdef sgi
-#define FORTRAN		1
 #endif
 
 #ifdef sun

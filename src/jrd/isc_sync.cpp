@@ -31,6 +31,7 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 
@@ -185,10 +186,6 @@ union semun {
 
 #ifndef SIGURG
 #define SIGURG		SIGINT
-#endif
-
-#ifdef sgi
-#define SEMUN
 #endif
 
 #ifdef SEMUN

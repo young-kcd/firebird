@@ -23,6 +23,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 
@@ -130,10 +131,8 @@ static STR gfloat_buffer;
 #  define xdr_long	(*_libgds_xdr_long)
 #  define xdr_opaque	(*_libgds_xdr_opaque)
 #  define xdr_string	(*_libgds_xdr_string)
-#  ifndef sgi
-#    define xdr_float       (*_libgds_xdr_float)
-#    define xdr_double      (*_libgds_xdr_double)
-#  endif
+#  define xdr_float       (*_libgds_xdr_float)
+#  define xdr_double      (*_libgds_xdr_double)
 #  define	xdr_wrapstring	(*_libgds_xdr_wrapstring)
 #   define xdr_free    (*_libgds_xdr_free)
 
@@ -148,10 +147,8 @@ extern bool_t xdr_u_short();
 extern bool_t xdr_long();
 extern bool_t xdr_opaque();
 extern bool_t xdr_string();
-# ifndef sgi
 extern bool_t xdr_float();
 extern bool_t xdr_double();
-# endif	// sgi
 extern bool_t xdr_wrapstring();
 extern bool_t xdr_free();
 

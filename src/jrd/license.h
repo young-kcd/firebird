@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.22 2002-10-29 03:17:44 seanleyne Exp $
+ * $Id: license.h,v 1.23 2002-10-29 03:31:18 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -51,6 +51,7 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 
@@ -116,10 +117,6 @@
 
 #ifdef AIX_PPC
 #define FB_PLATFORM	"PA"
-#endif
-
-#ifdef sgi
-#define FB_PLATFORM	"SG"
 #endif
 
 #ifdef WIN_NT

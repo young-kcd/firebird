@@ -11,6 +11,7 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 
@@ -144,8 +145,6 @@
 #undef AIX
 #define WIN_NT
 #undef SCO_EV
-#undef DECOSF
-#undef sgi
 #undef SINIXZ
 
 #endif

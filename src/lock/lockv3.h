@@ -29,6 +29,7 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 
@@ -53,10 +54,6 @@
 #endif
 #endif
 
-#ifdef sgi
-#define SEMUN
-#endif
-
 #ifdef SEMUN
 #undef SEMUN
 #else
@@ -72,10 +69,6 @@ union semun {
 
 #ifndef EXTEND_SIZE
 #define EXTEND_SIZE	32768
-#endif
-
-#ifdef sgi
-#define SEMAPHORES	25
 #endif
 
 #ifdef SINIXZ

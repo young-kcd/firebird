@@ -24,9 +24,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.7 2002-10-29 02:45:07 seanleyne Exp $
+//	$Id: ftn.cpp,v 1.8 2002-10-29 03:31:17 seanleyne Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+// 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
 //
 //
 
@@ -308,25 +309,6 @@ static ADL array_decl_list;
 #define COMMENT         "*     "
 #define INLINE_COMMENT  "\n*                "
 #define COMMA           ","
-#endif
-
-#ifdef sgi
-#define INCLUDE_ISC_FTN  "       INCLUDE  '%s\' \n\n"
-#define INCLUDE_FTN_FILE "include/gds.f"
-#define DOUBLE_DCL      "DOUBLE PRECISION"
-#define I2CONST_1	""
-#define I2CONST_2	""
-#define I2_1		""
-#define I2_2		""
-#define VAL_1		""
-#define VAL_2		""
-#define REF_1		""
-#define REF_2		""
-#define I4CONST_1	""
-#define I4CONST_2	""
-#define COMMENT		"C     "
-#define INLINE_COMMENT  "!"
-#define COMMA		","
 #endif
 
 #ifdef hpux

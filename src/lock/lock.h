@@ -32,6 +32,7 @@
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 
@@ -84,10 +85,6 @@
 #endif
 
 #ifdef SCO_UNIX
-#define SEMAPHORES      25
-#endif
-
-#ifdef sgi
 #define SEMAPHORES      25
 #endif
 

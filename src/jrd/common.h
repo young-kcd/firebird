@@ -41,10 +41,11 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 /*
-$Id: common.h,v 1.41 2002-10-29 03:17:44 seanleyne Exp $
+$Id: common.h,v 1.42 2002-10-29 03:31:18 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -745,26 +746,6 @@ typedef unsigned long UATOM;
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* DECOSF */
-
-
-
-#ifdef sgi
-#define KILLER_SIGNALS
-#define UNIX            1
-#define CURSES_KEYPAD   1
-#define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-/*#define ALIGNMENT       8*/
-/*#define DOUBLE_ALIGN    8*/
-#define IMPLEMENTATION  isc_info_db_impl_isc_sgi  /* 41 */
-#define                 IEEE
-#define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
-typedef RETSIGTYPE (*SIG_FPTR) ();
-#endif /* sgi */
 
 
 #ifdef NETWARE_386

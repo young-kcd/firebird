@@ -30,6 +30,7 @@
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
 
@@ -62,10 +63,6 @@
 
 #if (defined AIX || defined AIX_PPC)
 #define ARCHITECTURE		arch_rt
-#endif
-
-#ifdef sgi
-#define ARCHITECTURE		arch_sgi
 #endif
 
 #ifdef SCO_EV
