@@ -218,6 +218,7 @@ public:
 #else
 		sw_outfile = 0;
 #endif
+		memset(dba_status_vector, 0, sizeof (dba_status_vector));
 		dba_status = dba_status_vector;
 	}
 
