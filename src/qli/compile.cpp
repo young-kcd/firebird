@@ -666,6 +666,15 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 	case nod_variable:
 		field = (qli_fld*) node->nod_arg[e_fld_field];
 		node->nod_desc.dsc_address = field->fld_data;
+		make_descriptor(node, &node->nod_desc);
+		if (internal_flag)
+		{
+			node->nod_export = parm = make_parameter(request->req_send, node);
+			parm->par_value = node;
+			parm->par_desc = node->nod_desc;
+		}
+		return node;
+
 	case nod_upcase:
 		value = node->nod_arg[0];
 		node->nod_arg[0] = compile_field(value, request, internal_flag);
