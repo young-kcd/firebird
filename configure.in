@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.153 2003-08-12 10:06:11 eku Exp $
+dnl $Id: configure.in,v 1.154 2003-08-22 10:26:06 aafemt Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -613,7 +613,7 @@ mkdir -p temp/client.util/utilities/install
 mkdir -p temp/client.util/iscguard
 mkdir -p temp/client.util/remote/os/win32
 mkdir -p temp/client.util/jrd/os/win32
-mkdir -p temp/intl/intl
+mkdir -p temp/intl
 
 mkdir -p temp/libfbcommon/common/classes
 mkdir -p temp/libfbcommon/common/config
