@@ -1060,7 +1060,7 @@ static void prt_owner_wait_cycle(
 		FPRINTF(outfile, "\n");
 		owner_request = (LRQ) ABS_PTR(owner->own_pending_request);
 		assert(owner_request->lrq_type == type_lrq);
-		owner_conversion = (owner_request->lrq_state > LCK_null) ? true : false;
+		owner_conversion = (owner_request->lrq_state > LCK_null);
 
 		lock = (LBL) ABS_PTR(owner_request->lrq_lock);
 		assert(lock->lbl_type == type_lbl);

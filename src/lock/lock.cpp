@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.68 2003-09-04 21:22:22 brodsom Exp $
+$Id: lock.cpp,v 1.69 2003-09-07 00:53:59 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1327,7 +1327,7 @@ bool LOCK_shut_manager(void)
 	}
 
 	release_mutex();
-	return (manager ? false : true);
+	return (!manager);
 #else
 	return true;
 #endif
@@ -2480,7 +2480,7 @@ static LRQ deadlock_walk(LRQ request,
 
 /* Check if this is a conversion request. */
 
-	conversion = (request->lrq_state > LCK_null) ? true : false;
+	conversion = (request->lrq_state > LCK_null);
 
 /* Find the parent lock of the request */
 
