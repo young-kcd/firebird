@@ -42,6 +42,7 @@
 #define COMMAND_START		3
 #define COMMAND_STOP		4
 #define COMMAND_CONFIG		5
+#define COMMAND_QUERY		6
 
 #define STARTUP_DEMAND		0
 #define STARTUP_AUTO		1
@@ -49,7 +50,7 @@
 #define NO_GUARDIAN			0
 #define USE_GUARDIAN		1
 
-#define DEFAULT_CLIENT		0
+#define DEFAULT_PRIORITY	0
 #define NORMAL_PRIORITY		1
 #define HIGH_PRIORITY		2
 

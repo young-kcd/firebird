@@ -52,7 +52,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
  **************************************/
 	HKEY hkey_kit;
 	DWORD disp;
-	TEXT path_name[260], *p;
+	TEXT path_name[MAXPATHLEN], *p;
 	USHORT len;
 	SLONG status;
 
@@ -176,7 +176,7 @@ static USHORT remove_subkeys(
  *	Remove all sub-keys of an InterBase key from the registry.
  *
  **************************************/
-	TEXT *sub_key, buffer[260], *p;
+	TEXT *sub_key, buffer[MAXPATHLEN], *p;
 	DWORD n_sub_keys, max_sub_key, sub_key_len, buf_len, i, status;
 	FILETIME last_write_time;
 	HKEY hkey_sub;

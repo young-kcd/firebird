@@ -24,6 +24,7 @@
 #ifndef _UTILITIES_SERVI_PROTO_H_
 #define _UTILITIES_SERVI_PROTO_H_
 
+/*
 extern USHORT	SERVICES_config (SC_HANDLE,
 				TEXT *,
 				TEXT *,
@@ -33,6 +34,7 @@ extern USHORT	SERVICES_delete (SC_HANDLE,
 				TEXT *,
 				TEXT *,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+*/
 extern USHORT	SERVICES_install (SC_HANDLE manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
