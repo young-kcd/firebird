@@ -25,7 +25,7 @@
 #define WAL_WALW_PROTO_H
 
 #ifdef SUPERSERVER
-extern int main_walw(SCHAR **);
+int main_walw(SCHAR **);
 #endif
 
-#endif /* WAL_WALW_PROTO_H */
+#endif // WAL_WALW_PROTO_H

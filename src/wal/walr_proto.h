@@ -21,14 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _WAL_WALR_PROTO_H_
-#define _WAL_WALR_PROTO_H_
+#ifndef WAL_WALR_PROTO_H
+#define WAL_WALR_PROTO_H
 
-extern SSHORT	WALR_close (ISC_STATUS *, struct walrs **);
-extern SSHORT	WALR_fixup_log_header (ISC_STATUS *, struct walrs *);
-extern SSHORT	WALR_get (ISC_STATUS *, struct walrs *, UCHAR *, USHORT *, SLONG *, SLONG *);
-extern SSHORT	WALR_get_blk_timestamp (struct walrs *, SLONG *);
-extern SSHORT	WALR_open (ISC_STATUS *, struct walrs **, SCHAR *, int, SCHAR **,
+SSHORT	WALR_close (ISC_STATUS *, struct walrs **);
+SSHORT	WALR_fixup_log_header (ISC_STATUS *, struct walrs *);
+SSHORT	WALR_get (ISC_STATUS *, struct walrs *, UCHAR *, USHORT *, SLONG *, SLONG *);
+SSHORT	WALR_get_blk_timestamp (struct walrs *, SLONG *);
+SSHORT	WALR_open (ISC_STATUS *, struct walrs **, SCHAR *, int, SCHAR **,
 						   SLONG *, SLONG, SLONG *, bool);
 
-#endif /* _WAL_WALR_PROTO_H_ */ 
+#endif // WAL_WALR_PROTO_H

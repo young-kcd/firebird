@@ -24,11 +24,11 @@
  *
  */
 
-#ifndef _WAL_WSTAT_PROTO_H_
-#define _WAL_WSTAT_PROTO_H_
+#ifndef WAL_WSTAT_PROTO_H
+#define WAL_WSTAT_PROTO_H
 
 #include "../jrd/ib_stdio.h"
-extern void	WSTATUS_dump_wal_segment (WAL, int, IB_FILE *);
+void	WSTATUS_dump_wal_segment (WAL, int, IB_FILE *);
 
-#endif	/* _WAL_WSTAT_PROTO_H_ */
+#endif	//  WAL_WSTAT_PROTO_H
 

@@ -21,20 +21,20 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _WAL_WALC_PROTO_H_
-#define _WAL_WALC_PROTO_H_
+#ifndef WAL_WALC_PROTO_H
+#define WAL_WALC_PROTO_H
 
-extern void	WALC_acquire (struct wal *, struct wals **);
-extern void	WALC_alarm_handler (void *);
-extern SSHORT	WALC_bug (ISC_STATUS *, TEXT *, TEXT *);
-extern void	WALC_build_dbg_filename (TEXT *, TEXT *);
-extern void	WALC_build_logname (TEXT *, TEXT *, SLONG);
-extern SSHORT	WALC_check_writer (struct wal *);
-extern void	WALC_fini (ISC_STATUS *, struct wal **);
-extern SSHORT	WALC_init (ISC_STATUS *, struct wal **, TEXT *, USHORT, TEXT *,
+void	WALC_acquire (struct wal *, struct wals **);
+void	WALC_alarm_handler (void *);
+SSHORT	WALC_bug (ISC_STATUS *, TEXT *, TEXT *);
+void	WALC_build_dbg_filename (TEXT *, TEXT *);
+void	WALC_build_logname (TEXT *, TEXT *, SLONG);
+SSHORT	WALC_check_writer (struct wal *);
+void	WALC_fini (ISC_STATUS *, struct wal **);
+SSHORT	WALC_init (ISC_STATUS *, struct wal **, TEXT *, USHORT, TEXT *,
 						   SLONG, bool, SLONG, SSHORT, UCHAR *, bool);
-extern void	WALC_release (struct wal *);
-extern void	WALC_save_status_strings (ISC_STATUS *);
-extern void	WALC_setup_buffer_block (struct wals *, struct walblk *, bool);
+void	WALC_release (struct wal *);
+void	WALC_save_status_strings (ISC_STATUS *);
+void	WALC_setup_buffer_block (struct wals *, struct walblk *, bool);
 
-#endif	/* _WAL_WALC_PROTO_H_ */
+#endif	// WAL_WALC_PROTO_H
