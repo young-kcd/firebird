@@ -373,7 +373,7 @@ DSQL_CTX PASS1_make_context(DSQL_REQ request, DSQL_NOD relation_node)
 	}
 
 	DEV_BLKCHK(string, dsql_type_str);
-	if (request->req_alias_relation_prefix) {
+	if (request->req_alias_relation_prefix && !(relation_node->nod_type == nod_derived_table)) {
 		if (string) {
 			string = pass1_alias_concat(request->req_alias_relation_prefix, string);
 		}
@@ -3286,7 +3286,7 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 
 	request->req_context = NULL;
 	request->req_union_context = NULL;
-	request->req_alias_relation_prefix = pass1_alias_concat(alias, req_alias_relation_prefix);
+	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
 	
 	request->req_scope_level--;
 	DSQL_NOD rse = 
