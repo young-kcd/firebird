@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.10 2003-02-04 15:36:46 dimitr Exp $
+ * $Id: show.epp,v 1.11 2003-02-10 23:46:42 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -495,138 +495,6 @@ BOOLEAN SHOW_dbb_parameters(FRBRD * db_handle,
 				sprintf(info, "Transaction in limbo = %ld %s",
 						value_out, NEWLINE);
 			break;
-
-#ifdef UNUSED_FOR_ISQL
-
-		case isc_info_reads:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Number of reads = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_writes:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Number of writes = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_fetches:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Number of fetches = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_marks:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Number of marks = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_num_buffers:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Number of buffers = %ld%s", value_out, NEWLINE);
-			break;
-
-		case isc_info_wal_num_io:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Wal number of io = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_wal_avg_io_size:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Wal average io size = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_wal_num_commits:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Wal number of commits = %ld %s",
-					value_out, NEWLINE);
-			break;
-
-		case isc_info_wal_avg_grpc_size:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Wal average group commit size = %ld %s",
-					value_out NEWLINE);
-			break;
-
-		case isc_info_current_memory:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Current memory size = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_max_memory:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Max memory size = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_attachment_id:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "DB attachment id = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_ods_version:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "ODS version = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_ods_minor_version:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Minor ODS version = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_read_seq_count:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Reads sequential count = %ld %s",
-					value_out, NEWLINE);
-			break;
-
-		case isc_info_read_idx_count:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Reads via index count = %ld %s",
-					value_out, NEWLINE);
-			break;
-
-		case isc_info_update_count:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Number of updates = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_insert_count:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Number of inserts = %ld %s", value_out NEWLINE);
-			break;
-
-		case isc_info_delete_count:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Number of deletes = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_backout_count:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Backout count = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_purge_count:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Purge count = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_expunge_count:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Expunge count = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_implementation:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Implementation = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_version:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "Info version number = %ld %s", value_out, NEWLINE);
-			break;
-
-		case isc_info_no_reserve:
-			value_out = isc_vax_integer(d, length);
-			sprintf(info, "No reserve = %s %s", value_out, NEWLINE);
-			break;
-#endif /* UNUSED_FOR_ISQL */
 		}
 
 		d += length;
