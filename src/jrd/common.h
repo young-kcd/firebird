@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.101 2004-01-27 11:06:05 aafemt Exp $
+$Id: common.h,v 1.102 2004-01-27 18:19:21 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -792,10 +792,17 @@ typedef struct
 
 
 #ifndef SLONGFORMAT
+#if SIZEOF_LONG == 4
+#define SLONGFORMAT "ld"
+#define ULONGFORMAT "lu"
+#define XLONGFORMAT "lX"
+#define xLONGFORMAT "lx"
+#else
 #define SLONGFORMAT	"d"
 #define ULONGFORMAT	"u"
 #define XLONGFORMAT "X"
 #define xLONGFORMAT "x"
+#endif
 #endif
 
 //format for __LINE__

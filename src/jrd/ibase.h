@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.65 2004-01-21 07:18:25 skidder Exp $
+$Id: ibase.h,v 1.66 2004-01-27 18:19:22 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -56,13 +56,17 @@ $Id: ibase.h,v 1.65 2004-01-21 07:18:25 skidder Exp $
 // It is difficult to detect 64-bit long from the redistributable header
 // we do not care of 16-bit platforms anymore thus we may use plain "int"
 // which is 32-bit on all platforms we support
-//#if SIZEOF_LONG == 8
+//
+// Temporarly restrict new definition until ULONG clash with Windows
+// type is solved. Win64 port is not possible before that point.
+// Cannot use SIZEOF_LONG define here because we are in a public header
+#if __WORDSIZE == 64
 typedef	int		ISC_LONG;
 typedef	unsigned int	ISC_ULONG;
-//#else
-//typedef	signed long	ISC_LONG;
-//typedef	unsigned long	ISC_ULONG;
-//#endif
+#else
+typedef	signed long	ISC_LONG;
+typedef	unsigned long	ISC_ULONG;
+#endif
 
 typedef	signed short	ISC_SHORT;
 typedef	unsigned short	ISC_USHORT;
