@@ -3519,7 +3519,7 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input)
 
 	const dsql_nod* cursor = input->nod_arg[e_del_cursor];
 	dsql_nod* relation = input->nod_arg[e_del_relation];
-	if (cursor && (request->req_flags & REQ_procedure)) {
+	if (cursor && (request->req_flags & (REQ_procedure | REQ_exec_block))) {
 		dsql_nod* anode = MAKE_node(nod_erase_current, e_erc_count);
 		anode->nod_arg[e_erc_context] =
 			(dsql_nod*) pass1_cursor_context(request, cursor, relation);
@@ -6350,7 +6350,7 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input)
 
 	dsql_nod* cursor = input->nod_arg[e_upd_cursor];
 	dsql_nod* relation = input->nod_arg[e_upd_relation];
-	if (cursor && (request->req_flags & REQ_procedure)) {
+	if (cursor && (request->req_flags & (REQ_procedure | REQ_exec_block))) {
 		dsql_nod* anode = MAKE_node(nod_modify_current, e_mdc_count);
 		anode->nod_arg[e_mdc_context] =
 			(dsql_nod*) pass1_cursor_context(request, cursor, relation);
