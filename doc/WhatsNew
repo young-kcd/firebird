@@ -10,6 +10,11 @@
         Claudio Varderrama <cvalde at usa.net>
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
+    * Fixed bug SF #1065511
+        XP SP2 slow to connect to Linux server
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
     * Fixed unregistered bug.
         Possible server crash when execute_immediate is used to release or rollback transaction to non-existing savepoint
       Contributor(s):
