@@ -32,64 +32,46 @@
 #ifndef JRD_FILE_PARAMS_H
 #define JRD_FILE_PARAMS_H
 
-#define EVENT_DEFAULT_SIZE	32768
-#define EVENT_EXTEND_SIZE	32768
-#define EVENT_VERSION		2
-#define EVENT_SEMAPHORES	1
+const int EVENT_DEFAULT_SIZE	= 32768;
+const int EVENT_EXTEND_SIZE		= 32768;
+const int EVENT_VERSION		= 2;
+const int EVENT_SEMAPHORES	= 1;
 
 #ifdef NOHOSTNAME
-#define EVENT_FILE		"isc_event1"
-#define LOCK_FILE		"isc_lock1.gbl"
-#define INIT_FILE		"isc_init1"
-#define GUARD_FILE		"isc_guard1"
+static const char* EVENT_FILE	= "isc_event1";
+static const char* LOCK_FILE	= "isc_lock1.gbl";
+static const char* LOCK_HEADER	= "isc_config";
+static const char* INIT_FILE	= "isc_init1";
+static const char* GUARD_FILE	= "isc_guard1";
+#elif defined(SMALL_FILE_NAMES)
+static const char* EVENT_FILE	= "isce1.%s";
+static const char* LOCK_FILE	= "iscl1.%s";
+static const char* LOCK_HEADER	= "isc_config";
+static const char* INIT_FILE	= "isci1.%s";
+static const char* GUARD_FILE	= "iscg1.%s";
+#elif defined(VMS)
+static const char* EVENT_FILE	= "[000000]isc_event1.%s";
+static const char* LOCK_FILE	= "[000000]isc_lock1.%s";
+static const char* LOCK_HEADER	= "[000000]isc_config";
+static const char* INIT_FILE	= "[000000]isc_init1.%s";
+static const char* GUARD_FILE	= "[000000]isc_guard1.%s";
+#elif WIN_NT
+static const char* EVENT_FILE	= "%s.evn";
+static const char* LOCK_FILE	= "%s.lck";
+static const char* LOCK_HEADER	= "ibconfig";
+static const char* INIT_FILE	= "%s.int";
+static const char* GUARD_FILE	= "%s.grd";
 #else
-#ifdef SMALL_FILE_NAMES
-#define EVENT_FILE		"isce1.%s"
-#define LOCK_FILE		"iscl1.%s"
-#define INIT_FILE		"isci1.%s"
-#define GUARD_FILE		"iscg1.%s"
-#endif
-#endif
-
-
-#ifdef VMS
-#define EVENT_FILE		"[000000]isc_event1.%s"
-#define INIT_FILE		"[000000]isc_init1.%s"
-#define GUARD_FILE		"[000000]isc_guard1.%s"
-#endif
-
-#ifdef WIN_NT
-#define EVENT_FILE		"%s.evn"
-#define LOCK_FILE		"%s.lck"
-#define LOCK_HEADER		"ibconfig"
-#define INIT_FILE		"%s.int"
-#define GUARD_FILE		"%s.grd"
-#endif
-
-#ifndef EVENT_FILE
-#define EVENT_FILE		"isc_event1.%s"
-#endif
-
-#ifndef LOCK_FILE
-#define LOCK_FILE		"isc_lock1.%s"
-#endif
-
-#ifndef LOCK_HEADER
-#define LOCK_HEADER		"isc_config"
-#endif
-
-#ifndef INIT_FILE
-#define INIT_FILE		"isc_init1.%s"
-#endif
-
-#ifndef GUARD_FILE
-#define GUARD_FILE		"isc_guard1.%s"
+static const char* EVENT_FILE	= "isc_event1.%s";
+static const char* LOCK_FILE	= "isc_lock1.%s";
+static const char* LOCK_HEADER	= "isc_config";
+static const char* INIT_FILE	= "isc_init1.%s";
+static const char* GUARD_FILE	= "isc_guard1.%s";
 #endif
 
 #ifdef sun
 #include <sys/types.h>
 #include <sys/ipc.h>
-#define SUNOS4
 #endif
 
 #ifdef LINUX
@@ -102,35 +84,38 @@
 #include <sys/ipc.h>
 #endif
 
-#ifdef UNIX
-#define WORKFILE	"/tmp/"
 #ifdef DARWIN
 #undef FB_PREFIX
 #define FB_PREFIX		"/all/files/are/in/framework/resources"
 #define DARWIN_GEN_DIR		"var"
 #define DARWIN_FRAMEWORK_ID	"com.firebirdsql.Firebird"
 #endif
-#endif
 
 /* keep MSG_FILE_LANG in sync with build_file.e */
-
-#ifdef WIN_NT
-#define WORKFILE	"c:\\temp\\"
-#define MSG_FILE	"firebird.msg"
-#define MSG_FILE_LANG	"intl/%.8s.msg"
-#define LOCALE_MAX	6
-#define LOGFILE		"firebird.log"
+#ifdef UNIX
+static const char* WORKFILE		= "/tmp/";
+static const char* MSG_FILE		= "firebird.msg";
+static const char* MSG_FILE_LANG= "intl/%.10s.msg";
+const int LOCALE_MAX	= 10;
+static const char* LOGFILE		= "firebird.log";
+#define TEMP_PATTERN	"_XXXXXX"
+#elif defined(WIN_NT)
+static const char* WORKFILE		= "c:\\temp\\";
+static const char* MSG_FILE		= "firebird.msg";
+static const char* MSG_FILE_LANG= "intl/%.8s.msg";
+const int LOCALE_MAX	= 6;
+static const char* LOGFILE		= "firebird.log";
 #define TEMP_PATTERN	"XXXXXX"
-#endif
+#elif defined(VMS)
+static const char* WORKFILE		= "SYS$SCRATCH:";
+static const char* MSG_FILE		= "[sysmsg]firebird_msg.dat";
+static const char* MSG_FILE_LANG= "[sysmsg]firebird_%.10s.dat";
+const int LOCALE_MAX	= 10;
+static const char* LOGFILE		= "[syserr]firebird.log";
+#define TEMP_PATTERN	"_XXXXXX"
 
-#ifdef VMS
-#define MSG_FILE	"[sysmsg]firebird_msg.dat"
-#define MSG_FILE_LANG	"[sysmsg]firebird_%.10s.dat"
-#define LOCALE_MAX	10
-#define LOGFILE		"[syserr]firebird.log"
-#define WORKFILE	"SYS$SCRATCH:"
-#define ISC_LOGICAL	"interbase:"
-#define ISC_LOGICAL_LOCK	"interbase_lock:"
+static const char* ISC_LOGICAL	= "interbase:";
+static const char* ISC_LOGICAL_LOCK	= "interbase_lock:";
 
 typedef struct isc_vms_prefix
 {
@@ -149,19 +134,12 @@ static struct isc_vms_prefix trans_prefix[] =
 	"[000000]", "SYS$SYSTEM:",
 	NULL, NULL
 };
-#endif
-
-#ifndef MSG_FILE
-#define MSG_FILE	"firebird.msg"
-#define MSG_FILE_LANG	"intl/%.10s.msg"
-#define LOCALE_MAX	10
-#endif
-
-#ifndef LOGFILE
-#define LOGFILE		"firebird.log"
-#endif
-
-#ifndef TEMP_PATTERN
+#else
+static const char* WORKFILE		= "/tmp/";
+static const char* MSG_FILE		= "firebird.msg";
+static const char* MSG_FILE_LANG= "intl/%.10s.msg";
+const int LOCALE_MAX	= 10;
+static const char* LOGFILE		= "firebird.log";
 #define TEMP_PATTERN	"_XXXXXX"
 #endif
 
