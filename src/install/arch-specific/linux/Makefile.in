@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in,v 1.3 2001-12-24 02:50:50 tamlin Exp $
+#   $Id: Makefile.in,v 1.4 2002-11-11 13:09:18 eku Exp $
 # 
 
 #RedhatPackageDir=/usr/src/redhat/RPMS/i386
@@ -112,3 +112,56 @@ SSrpmscript:
 	echo "%postun" >> $@
 	cat $(SuperSrcDir)/SSpostuninstall.sh >> $@
 
+# EKU: taken from Makefile.in.firebird, please adjust
+
+#____________________________________________________________________________
+# The installations need to find a better and possibly linux
+# specific home.  The tar installs should probably work with
+# other unix type of systems.
+
+# I have seperated super and classic out since I needed different
+# files in each case.
+
+miscFiles:	force
+	$(QUIET_ECHO) "Building miscellaneous install files..."
+	mkdir -p $(OBJS)/firebird/misc
+	-$(CP) $(SOURCE)/makefiles/install.unix $(OBJS)/firebird/install
+	-$(CP) $(SOURCE)/makefiles/servers.isc $(OBJS)/firebird
+	-$(CP) $(SOURCE)/makefiles/inetd.conf.unx $(OBJS)/firebird/inetd.conf.isc
+	-$(CP) $(SOURCE)/makefiles/services.isc $(OBJS)/firebird
+	-$(CP) $(SOURCE)/makefiles/sys.conf.isc $(OBJS)/firebird
+	-$(CP) $(SOURCE)/sandbox/skywalker/install/misc/firebird.xinetd $(OBJS)/firebird/misc
+
+superMiscFiles:	force
+	$(QUIET_ECHO) "Building miscellaneous install files..."
+	$(CP) source/$(SYSTEM)/install source/interbase
+	-$(CP) source/$(SYSTEM)/servers.isc source/interbase
+	$(CP) source/$(SYSTEM)/inetd.conf.isc source/interbase
+	$(CP) source/$(SYSTEM)/original/services.isc source/interbase
+	-$(CP) source/$(SYSTEM)/sys.conf.isc source/interbase
+	mkdir -p source/interbase/misc
+	$(CP) firebird/skywalker/install/misc/firebird.init.d.* source/interbase/misc
+
+#install: force
+#	$(MAKE) -f firebird/skywalker/install/Makefile install
+
+runclassicinstall: force
+	$(MAKE) -f firebird/skywalker/install/Makefile runclassicinstall
+
+classicpackages: force
+	$(MAKE) -f firebird/skywalker/install/Makefile classicpackages
+
+classictarfile: force
+	$(MAKE) -f firebird/skywalker/install/Makefile classictarfile
+
+classicrpmfile: force
+	$(MAKE) -f firebird/skywalker/install/Makefile classicrpmfile
+
+superpackages: force
+	$(MAKE) -f firebird/skywalker/install/Makefile superpackages
+
+supertarfile: force
+	$(MAKE) -f firebird/skywalker/install/Makefile supertarfile
+
+superrpmfile: force
+	$(MAKE) -f firebird/skywalker/install/Makefile superrpmfile

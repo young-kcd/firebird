@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.73 2002-11-11 05:54:24 skywalker Exp $
+dnl $Id: configure.in,v 1.74 2002-11-11 13:09:16 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -39,6 +39,7 @@ i*-sni-sysv4)       MAKEFILE_PREFIX=sinixz  ; PLATFORM="SINIX-Z" ; AC_DEFINE(SIN
 *-*-mingw*)         MAKEFILE_PREFIX=mingw   ; PLATFORM=win32     ; AC_DEFINE(WIN_NT)  ;;
 esac
 
+AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
 
 
@@ -507,7 +508,7 @@ dnl I've used AC_CONFIG_COMMMANDS since it seems to work
 dnl but I did think I wanted AC_CONFIG_COMMANDS_POST, but I couldn't get
 dnl it to work as I expected. MOD 10-Nov-2002
 
-AC_CONFIG_COMMANDS([posttinstall],
+AC_CONFIG_COMMANDS([postinstall],
 [
 chmod a+x gen/install/scripts/*.sh
 chmod a+x gen/install/sinixz/*

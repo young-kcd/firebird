@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.install,v 1.5 2002-11-11 05:55:18 skywalker Exp $
+#  $Id: Makefile.in.install,v 1.6 2002-11-11 13:09:17 eku Exp $
 #
 ROOT=..
 
@@ -39,140 +39,9 @@ include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 
-FirebirdInstallPrefix=@prefix@
-
  @SET_MAKE@
 
-FIREBIRD=$(FirebirdInstallPrefix)
+.PHONY: install package packages dist
 
-export -n FIREBIRD
-export -n INTERBASE
-
-.PHONY: install dist packages tarfile rpmfile 
-.PHONY: buildTarDir buildImageDir
-
-# Some of these targets are run from the root tree of the build.
-# those need to know where the install subdirectory is kept.
-# Others are run locally these need to know the path back to the
-# root of the build tree.
-
-BuildRoot=$(GEN_ROOT)
-
-InstallRoot=.
-
-
-FirebirdBuildPrefix=$(GEN_ROOT)
-
-#export FirebirdBuildPrefix
-#export FirebirdInstallPrefix
-#export PackageVersion
-
-BuildVersion=@FIREBIRD_VERSION@.@FB_BUILD_NUM@
-PackageVersion=@FIREBIRD_PACKAGE_VERSION@
-
-Version=$(BuildVersion)-$(PackageVersion)
-
-
-
-# This means something like: FirebirdCS-2.0.0-1.i386.tar.gz
-
-TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
-TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar.gz
-RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
-
-
-# Determine where the packages are built.  Each distribution builds them in
-# their own spot.
-# This should be moved to configure.in file
-RedhatPackageDir=/usr/src/redhat/RPMS/$(CpuType)
-MandrakePackageDir=/usr/src/RPM/RPMS/$(CpuType)
-SuSEPackageDir=/usr/src/packages/RPMS/$(CpuType)
-
-PackageDir:=$(shell if [ -d $(RedhatPackageDir) ]; then echo $(RedhatPackageDir); \
-		           elif [ -d $(MandrakePackageDir) ]; then echo $(MandrakePackageDir); \
-		           elif [ -d $(SuSEPackageDir) ]; then echo $(SuSEPackageDir); \
-				   fi)
-
-
-
-PkgSrcDir=$(InstallRoot)/$(ArchType)
-ScriptDir=$(GEN_ROOT)/install/scripts/
-RPMSrcDir=$(GEN_ROOT)/install/scripts
-
-
-TarInstallDir=$(GEN_ROOT)/install
-
-
-
-dist : packages
-
-packages: tarfile rpmfile
-
-tarfile:  $(TarFile)
-
-#
-#$(TarFile) :  buildInstallDir
-#	(cd $(GEN_ROOT); tar -czf $(TarFile) install)
-
-$(TarFile) :  buildTarDir
-	(cd $(GEN_ROOT); tar -czf $(TarFile) $(TarDir))
-
-
-# No longer needed: MOD 7-Nov-2002
-#buildInstallDir:
-#	(cd $(GEN_ROOT); tar -czf install/firebird.tar.gz firebird)
-
-buildImageDir:
-	(cd $(GEN_ROOT); ./install/makeInstallImage.sh)
-
-
-buildTarDir: buildImageDir
-	mkdir -p $(GEN_ROOT)/$(TarDir)
-	cp -r $(GEN_ROOT)/install/scripts $(GEN_ROOT)/$(TarDir)
-	cp -r $(GEN_ROOT)/install/scripts/tarMainInstall.sh $(GEN_ROOT)/$(TarDir)/install.sh
-	chmod a+x $(GEN_ROOT)/$(TarDir)/install.sh $(GEN_ROOT)/$(TarDir)/scripts/*sh
-	(cd $(GEN_ROOT)/$(TarDir); tar -C ../buildroot -czf buildroot.tar.gz . )
-	(cd $(GEN_ROOT)/$(TarDir); tar -tzf buildroot.tar.gz > manifest.txt )
-
-
-install: buildTarDir
-	(cd $(GEN_ROOT)/$(TarDir); ./install.sh)
-
-
-rpmfile: $(RPMFile)
-
-$(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir
-	rpm -bb $(GEN_ROOT)/install/rpmscript
-#	rpm -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
-	cp $(PackageDir)/$(RPMFile) .
-
-
-.PHONY: $(GEN_ROOT)/install/rpmscript
-
-$(GEN_ROOT)/install/rpmscript :
-	echo $@
-	cat $(RPMSrcDir)/rpmheader.txt > $@
-	echo "" >> $@
-	echo "%prep" >> $@
-#	cat $(ClassicSrcDir)/prepinstall.sh >> $@
-	echo "" >> $@
-	echo "%build" >> $@
-#	cat $(ScriptDir)/buildinstall.sh >> $@
-	echo "" >> $@
-	echo "%install" >> $@
-#	cat $(ScriptDir)/install.sh >> $@
-	echo "" >> $@
-	echo "%files" >> $@
-	cat $(RPMSrcDir)/rpmfiles.txt >> $@
-	echo "" >> $@
-	echo "%pre" >> $@
-	cat $(ScriptDir)/preinstall.sh >> $@
-	echo "" >> $@
-	echo "%post" >> $@
-	cat $(ScriptDir)/postinstall.sh >> $@
-	echo "" >> $@
-	echo "%preun" >> $@
-	cat $(ScriptDir)/preuninstall.sh >> $@
-	echo "" >> $@
-	echo "%postun" >> $@
-	cat $(ScriptDir)/postuninstall.sh >> $@
+install package packages dist:
+	$(MAKE) -C $(MAKE_ROOT)/install/@MAKEFILE_PREFIX@ $@

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.14 2002-11-07 16:54:47 skywalker Exp $
+#  $Id: Makefile.in.firebird,v 1.15 2002-11-11 13:09:17 eku Exp $
 #
 
 ROOT=..
@@ -531,33 +531,18 @@ $(BIN)/% :: $(SRC_ROOT)/install/misc/%
 	$(CP) $^ $@
 	chmod ugo=rx $@
 
-# Just a note that some of the script files (xinetd/firebird etc) need to h
-# have their paths changed in their shell scripts.
+
 #___________________________________________________________________________
 #
 
-.PHONY: install
+.PHONY: install package packages dist
 
-install:
+install package packages dist:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.install $@
-
-
-packages:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.install $@
-
-
-installclassic:
-	$(SRC_ROOT)/install/classic/CSpreinstall.sh
-#	$(SRC_ROOT)/install/classic/CSinstall.sh
-#	$(SRC_ROOT)/install/classic/CSpostinstall.sh
-
-dist:
-	$(MAKE) -C install $@
 
 
 #___________________________________________________________________________
 # 
-
 
 clean: clean_objects clean_dependancies clean_extern_objects clean_build
 
@@ -589,100 +574,5 @@ clean_build:
 	rm -f `find $(GEN_ROOT)/firebird -type f -print`
 #	rm -f $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-darwin_installer_common: force
-	$(QUIET_ECHO) "Building Firebird Installer..."
-	mkdir -p $(OBJS)/firebird/installer_tmp
-	$(MV) $(OBJS)/firebird/Firebird.framework $(OBJS)/firebird/installer_tmp
-	$(CP) $(SOURCE)/sandbox/bellardo/darwin/makefile \
-		$(OBJS)/firebird/installer_tmp
-	ln -s $(OBJS)/firebird/bellardo/darwin \
-		$(OBJS)/firebird/installer_tmp/files
-	ln -s ../.. $(OBJS)/firebird/installer_tmp/source
-	$(CD) $(OBJS)/firebird/installer_tmp && $(MAKE) install_package
-	$(RM) -rf $(OBJS)/firebird/installer_tmp
-	-$(RM) -rf $(OBJS)/firebird/Firebird.framework
-
-darwin_installer: darwin_installer_common darwin_framework
-super_darwin_installer: darwin_installer_common ss_darwin_framework
-
-darwin_framework: force
-	$(QUIET_ECHO) "Building Classic Firebird Framework..."
-	$(RM) -rf $(OBJS)/firebird/Firebird2.framework
-	$(MAKE) -f $(SOURCE)/sandbox/bellardo/darwin/FirebirdFramework.make \
-		framework
-
-ss_darwin_framework: force
-	$(QUIET_ECHO) "Building Super Server Firebird Framework..."
-	$(RM) -rf $(OBJS)/firebird/Firebird.framework
-	$(MAKE) -f $(SOURCE)/sandbox/bellardo/darwin/FirebirdFramework.make \
-		super_framework
-
-
-#____________________________________________________________________________
-# The installations need to find a better and possibly linux
-# specific home.  The tar installs should probably work with
-# other unix type of systems.
-
-# I have seperated super and classic out since I needed different
-# files in each case.
-
-miscFiles:	force
-	$(QUIET_ECHO) "Building miscellaneous install files..."
-	mkdir -p $(OBJS)/firebird/misc
-	-$(CP) $(SOURCE)/makefiles/install.unix $(OBJS)/firebird/install
-	-$(CP) $(SOURCE)/makefiles/servers.isc $(OBJS)/firebird
-	-$(CP) $(SOURCE)/makefiles/inetd.conf.unx $(OBJS)/firebird/inetd.conf.isc
-	-$(CP) $(SOURCE)/makefiles/services.isc $(OBJS)/firebird
-	-$(CP) $(SOURCE)/makefiles/sys.conf.isc $(OBJS)/firebird
-	-$(CP) $(SOURCE)/sandbox/skywalker/install/misc/firebird.xinetd $(OBJS)/firebird/misc
-
-superMiscFiles:	force
-	$(QUIET_ECHO) "Building miscellaneous install files..."
-	$(CP) source/$(SYSTEM)/install source/interbase
-	-$(CP) source/$(SYSTEM)/servers.isc source/interbase
-	$(CP) source/$(SYSTEM)/inetd.conf.isc source/interbase
-	$(CP) source/$(SYSTEM)/original/services.isc source/interbase
-	-$(CP) source/$(SYSTEM)/sys.conf.isc source/interbase
-	mkdir -p source/interbase/misc
-	$(CP) firebird/skywalker/install/misc/firebird.init.d.* source/interbase/misc
-
-#install: force
-#	$(MAKE) -f firebird/skywalker/install/Makefile install
-
-runclassicinstall: force
-	$(MAKE) -f firebird/skywalker/install/Makefile runclassicinstall
-
-classicpackages: force
-	$(MAKE) -f firebird/skywalker/install/Makefile classicpackages
-
-classictarfile: force
-	$(MAKE) -f firebird/skywalker/install/Makefile classictarfile
-
-classicrpmfile: force
-	$(MAKE) -f firebird/skywalker/install/Makefile classicrpmfile
-
-superpackages: force
-	$(MAKE) -f firebird/skywalker/install/Makefile superpackages
-
-supertarfile: force
-	$(MAKE) -f firebird/skywalker/install/Makefile supertarfile
-
-superrpmfile: force
-	$(MAKE) -f firebird/skywalker/install/Makefile superrpmfile
+#___________________________________________________________________________
+# 
