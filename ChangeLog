@@ -1,3 +1,121 @@
+2004-05-15 03:22  brodsom
+
+	* firebird2/src/: include/gen/ids.h (1.7), misc/ids.m (1.2):
+	
+	Macro cleaning
+
+2004-05-15 02:59  brodsom
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.28):
+	
+	rename local macro to ease cleaning
+
+2004-05-15 02:58  brodsom
+
+	* firebird2/src/remote/: inet.cpp (1.106), inet_server.cpp (1.40),
+	interface.cpp (1.81), server.cpp (1.80), xnet.cpp (1.45),
+	os/win32/cntl.cpp (1.7), os/win32/srvr_w32.cpp (1.16),
+	os/win32/window.cpp (1.7), os/win32/winmain.cpp (1.7),
+	os/win32/wnet.cpp (1.21):
+	
+	Macro cleaning (THREAD_*)
+
+2004-05-15 02:55  brodsom
+
+	* firebird2/src/: jrd/cch.cpp (1.89), jrd/dfw.epp (1.109),
+	jrd/dyn.epp (1.60), jrd/event.cpp (1.49), jrd/execute_statement.cpp
+	(1.10), jrd/fun.epp (1.54), jrd/isc_sync.cpp (1.87), jrd/jrd.cpp
+	(1.163), jrd/met.epp (1.119), jrd/nbak.cpp (1.32), jrd/pwd.cpp
+	(1.29), jrd/qatest.cpp (1.12), jrd/shut.cpp (1.26), jrd/sort.cpp
+	(1.67), jrd/svc.cpp (1.120), jrd/thd.h (1.23), jrd/tra.cpp (1.73),
+	jrd/val.cpp (1.49), jrd/vio.cpp (1.96), jrd/why.cpp (1.69),
+	jrd/os/win32/ibinitdll.cpp (1.4), jrd/os/win32/thd_priority.cpp
+	(1.17), lock/lock.cpp (1.97):
+	
+	Macro cleaning (THREAD_*)
+
+2004-05-15 02:52  brodsom
+
+	* firebird2/src/: alice/all.cpp (1.21), alice/alice.cpp (1.62),
+	dsql/alld.cpp (1.23), dsql/ddl.cpp (1.100), dsql/dsql.cpp (1.108),
+	dsql/metd.epp (1.60), ipserver/ipclient.cpp (1.44):
+	
+	Macro cleaning (THREAD_*)
+
+2004-05-15 00:59  brodsom
+
+	* firebird2/src/jrd/: thd.cpp (1.30), os/thd_priority.h (1.11):
+	
+	Macro cleaning
+
+2004-05-14 21:20  brodsom
+
+	* firebird2/src/jrd/vio.cpp (1.95):
+	
+	-Avoid gcc -pedantic warnings
+
+2004-05-14 21:15  brodsom
+
+	* firebird2/src/dsql/dsql.cpp (1.107):
+	
+	-Avoid gcc -pedantic warnings
+
+2004-05-14 20:43  brodsom
+
+	* firebird2/src/jrd/: btr.cpp (1.89), dfw.epp (1.108), dpm.epp
+	(1.48), inf.cpp (1.45), jrd.cpp (1.162), met.epp (1.118), tra.cpp
+	(1.72), val.cpp (1.48), vio.cpp (1.94):
+	
+	-Remove casts unneeded after macro cleaning
+
+2004-05-14 19:03  brodsom
+
+	* firebird2/src/jrd/: cch.cpp (1.88), cch_proto.h (1.23):
+	
+	-Correct parameter type (page_type) -Macro cleaning
+
+2004-05-14 19:01  brodsom
+
+	* firebird2/src/jrd/ods.h (1.23):
+	
+	-Fix constant types. (Pointed by Claudio)
+
+2004-05-14 18:21  brodsom
+
+	* firebird2/src/: dsql/sqlda_pub.h (1.2), include/fb_types.h
+	(1.45), jrd/dsc_pub.h (1.4), jrd/ibase.h (1.78):
+	
+	-Removing c++ comments from public headers
+
+2004-05-14 16:29  brodsom
+
+	* firebird2/src/include/fb_string.h (1.18):
+	
+	-Fix last C++ ISO error (now FB can be built with -pedantic
+	-Wno-long-long)
+
+2004-05-14 15:08  brodsom
+
+	* firebird2/src/jrd/lck.cpp (1.43):
+	
+	Macro cleaning
+
+2004-05-14 01:19  brodsom
+
+	* firebird2/src/: jrd/cch_proto.h (1.22), jrd/lck.cpp (1.42),
+	jrd/nbak.h (1.15), jrd/os/guid.h (1.6), jrd/os/thd_priority.h
+	(1.10), jrd/os/posix/isc_ipc.cpp (1.13), jrd/os/win32/isc_ipc.cpp
+	(1.11), jrd/os/win32/winnt.cpp (1.19), utilities/nbackup.cpp
+	(1.26), utilities/gstat/ppg.cpp (1.17):
+	
+	Macro cleaning
+
+2004-05-14 00:34  brodsom
+
+	* firebird2/src/gpre/: c_cxx.cpp (1.47), gpre.cpp (1.59):
+	
+	bad if
+
 2004-05-13 21:46  brodsom
 
 	* firebird2/src/: jrd/svc.cpp (1.119), lock/lock.cpp (1.96):
