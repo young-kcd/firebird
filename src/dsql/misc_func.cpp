@@ -23,18 +23,27 @@
  * 2002.09.20 Dmitry Yemanov: Created all this stuff
  */
 
+#include "firebird.h"
+#include "../dsql/dsql.h"
 #include "../dsql/misc_func.h"
 
-char* InternalInfo::alias_array[max_internal_id] = {
-	"<UNKNOWN>",
-	"CONNECTION_ID",
-	"TRANSACTION_ID",
-	"GDSCODE",
-	"SQLCODE",
-	"ROWS_AFFECTED"
+const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] = {
+	{"<UNKNOWN>", 0},
+	{"CONNECTION_ID", 0},
+	{"TRANSACTION_ID", 0},
+	{"GDSCODE", REQ_procedure},
+	{"SQLCODE", REQ_procedure},
+	{"ROWS_AFFECTED", REQ_procedure},
+	{"INSERTING/UPDATING/DELETING", REQ_trigger}
 };
 
 char *InternalInfo::getAlias(internal_info_id info_id)
 {
-	return alias_array[info_id];
+	return attr_array[info_id].alias_name;
 }
+
+USHORT InternalInfo::getMask(internal_info_id info_id)
+{
+	return attr_array[info_id].req_mask;
+}
+

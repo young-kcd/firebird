@@ -30,9 +30,14 @@
 
 class InternalInfo {
 private:
-	static char *alias_array[max_internal_id];
+	struct InfoAttr {
+		char *alias_name;
+		unsigned short req_mask;
+	};
+	const static InfoAttr attr_array[max_internal_id];
 public:
 	static char *getAlias(internal_info_id);
+	static USHORT getMask(internal_info_id);
 };
 
 #endif // _DSQL_MISC_FUNC_H_

@@ -2037,7 +2037,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		verb = "insert";
 		break;
 	case nod_internal_info:
-	case nod_proc_internal_info:
 		verb = "internal info";
 		break;
 	case nod_join:
