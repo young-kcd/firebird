@@ -123,7 +123,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	to ib_stdout.
  *
  **************************************/
-	SLONG redir_in, redir_out, redir_err;
+#ifdef SERVICE_REDIRECT
+	SLONG redir_in;
+	SLONG redir_out;
+	SLONG redir_err;
+#endif
 
 	OUTFILE outfile = ib_stdout;
 
