@@ -60,6 +60,7 @@
 #include "../jrd/grant_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd.h"
+#include "../jrd/constants.h"
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
 
@@ -585,8 +586,9 @@ void SCL_init(bool create,
  *
  **************************************/
 	jrd_req* request;
-	TEXT name[129], project[33], organization[33], *p;
-	TEXT role_name[33], login_name[129], *q;
+	TEXT name[129], project[33], organization[33];
+	TEXT login_name[129];
+	SqlIdentifier role_name;
     bool preODS9;
 
 	SET_TDBB(tdbb);
@@ -663,7 +665,8 @@ void SCL_init(bool create,
 
 		if (strlen(name) != 0)
 		{
-			for (p = login_name, q = name; (*p++ = UPPER7(*q)); q++)
+			const char* q = name;
+			for (char* p = login_name; (*p++ = UPPER7(*q)); q++)
 			{
 				;
 			}
@@ -693,9 +696,10 @@ void SCL_init(bool create,
         // CVC: If this is ODS>=ODS_9_0 and we aren't creating a db and sql_role was specified,
         // then verify it against rdb$roles and rdb$user_privileges
         
-        if (!create && sql_role && *sql_role && strcmp(sql_role, "NONE")) {
+        if (!create && sql_role && *sql_role && strcmp(sql_role, NULL_ROLE)) {
             bool found = false;
-            for (p = login_name, q = name; *p++ = UPPER7 (*q); q++);
+            const char* q = name;
+            for (char* p = login_name; *p++ = UPPER7 (*q); q++);
             
             request = CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
 
@@ -728,7 +732,7 @@ void SCL_init(bool create,
                 REQUEST (irq_verify_role_name) = request;
 
             if (!found)
-                strcpy(role_name, "NONE");
+                strcpy(role_name, NULL_ROLE);
         }
     }
     // CVC: Let's clean any role in pre-ODS9 attachments
@@ -737,21 +741,22 @@ void SCL_init(bool create,
     }
 
 	if (sql_role) {
-        if (!preODS9 && strcmp (role_name, "NONE")) {
-            strcpy(role_name, sql_role);
+        if (!preODS9 && strcmp (role_name, NULL_ROLE)) {
+            strncpy(role_name, sql_role, MAX_SQL_IDENTIFIER_LEN);
+            role_name[MAX_SQL_IDENTIFIER_LEN];
         }
         /* CVC: Role is an identifier, it may have embedded blanks. */
         fb_utils::exact_name(role_name);
 	}
 	else {
-		strcpy(role_name, "NONE");
+		strcpy(role_name, NULL_ROLE);
 	}
 
 	const USHORT length = strlen(name) + strlen(role_name) + strlen(project) +
 		strlen(organization) + 4;   /* for the terminating nulls */
 	UserId* user = FB_NEW_RPT(*dbb->dbb_permanent, length) UserId();
 	tdbb->tdbb_attachment->att_user = user;
-	p = user->usr_data;
+	char* p = user->usr_data;
 	user->usr_user_name = save_string(name, &p);
 	user->usr_project_name = save_string(project, &p);
 	user->usr_org_name = save_string(organization, &p);
