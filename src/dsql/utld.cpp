@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: utld.cpp,v 1.4 2002-04-04 05:34:10 bellardo Exp $
+$Id: utld.cpp,v 1.5 2002-04-04 16:22:14 bellardo Exp $
 */
 
 #include "firebird.h"
@@ -605,11 +605,9 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 
 			/* Copy data - unless known to be NULL */
-			// JMB: These next two lines got added in during the c++ conversion.
-			// They weren't in FB1 and cause problems with FB2, so I've commented them out.
-			// I couldn't determine the original intent of the code.
-			//if ((offset + len) <= sizeof(msg_buf))
-			//	return error_dsql_804(status, gds_dsql_sqlda_value_err);
+			if ((offset + len) > dasup->dasup_clauses[clause].dasup_msg_buf_len)
+				return error_dsql_804(status, gds_dsql_sqlda_value_err);
+
 			if (!*null_ind)
 				memcpy(msg_buf + offset, xvar->sqldata, len);
 		}
