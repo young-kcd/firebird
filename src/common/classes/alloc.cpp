@@ -654,6 +654,7 @@ void* operator new(size_t s) {
 #if defined(DEV_BUILD)
 	printf("You MUST allocate all memory from a pool.  Don't use the default global new().\n");
 #endif	// DEV_BUILD
+	if (!Firebird::processMemoryPool) Firebird::processMemoryPool = MemoryPool::createPool();
 //	return Firebird::processMemoryPool->calloc(s, 0
 	return Firebird::processMemoryPool->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
@@ -666,6 +667,7 @@ void* operator new[](size_t s) {
 #if defined(DEV_BUILD)
 	printf("You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
 #endif	// DEV_BUILD
+	if (!Firebird::processMemoryPool) Firebird::processMemoryPool = MemoryPool::createPool();
 //	return Firebird::processMemoryPool->calloc(s, 0
 	return Firebird::processMemoryPool->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
