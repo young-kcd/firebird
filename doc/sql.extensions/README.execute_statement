@@ -101,8 +101,8 @@ statement should be performed before EXECUTE STATEMENT.
 EXECUTE STATEMENT is potentially dangerous, because:
 
   1. At compile time there is no checking for the correctness of the SQL 
-     statement.  No checking can be done of returned values (in syntax forms
-     2 & 3 ) can be done.
+     statement.  No checking of returned values (in syntax forms 2 & 3 )
+     can be done.
   2. There can be no dependency checks to ensure that objects referred to in
      the SQL statement string are not dropped from the database or modified 
      in a manner that would break your statement. For example, a DROP TABLE
