@@ -30,8 +30,9 @@
 #endif //GDS_ALLOC_DEBUG
 
 int traRpbList::PushRpb(struct rpb *value) {
-	if (value->rpb_relation->rel_view_rse) {	// this is view
-		return -1;
+	if (value->rpb_relation->rel_view_rse ||	// this is view
+		value->rpb_relation->rel_file) {		// this is external file
+				return -1;
 	}
 	int pos = add(traRpbListElement(value, ~0));
 	int level = -1;
