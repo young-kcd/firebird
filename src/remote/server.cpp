@@ -1712,15 +1712,15 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
  *     Dialect * 10 + parser_version
  *
  * and is extracted in dsql8_execute_immediate as follows:
- *      parser_version = ((dialect *10)+parser_version)%10
- *      client_dialect = ((dialect *10)+parser_version)/10
+ *      parser_version = ((dialect * 10) + parser_version) % 10
+ *      client_dialect = ((dialect * 10) + parser_version) / 10
  *
  * For example, parser_version = 1 and client dialect = 1
  *
  *  combined = (1 * 10) + 1 == 11
  *
- *  parser = (combined) %10 == 1
- *  dialect = (combined) / 19 == 1
+ *  parser = (combined) % 10 == 1
+ *  dialect = (combined) / 10 == 1
  */
 
 	parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
@@ -2868,15 +2868,15 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
  *     Dialect * 10 + parser_version
  *
  * and is extracted in dsql8_prepare_statement as follows:
- *      parser_version = ((dialect *10)+parser_version)%10
- *      client_dialect = ((dialect *10)+parser_version)/10
+ *      parser_version = ((dialect * 10) + parser_version) % 10
+ *      client_dialect = ((dialect * 10) + parser_version) / 10
  *
  * For example, parser_version = 1 and client dialect = 1
  *
  *  combined = (1 * 10) + 1 == 11
  *
- *  parser = (combined) %10 == 1
- *  dialect = (combined) / 19 == 1
+ *  parser = (combined) % 10 == 1
+ *  dialect = (combined) / 10 == 1
  */
 	const USHORT parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
 
