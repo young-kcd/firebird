@@ -127,6 +127,7 @@
 #include "../jrd/flags.h"
 
 #include "../fbutil/FirebirdConfig.h"
+#include "../jrd/plugin_manager.h"
 
 #ifdef GARBAGE_THREAD
 #include "vio_proto.h"
@@ -5555,6 +5556,7 @@ static DBB init(TDBB	tdbb,
 		THREAD_EXIT;
 		THD_GLOBAL_MUTEX_LOCK;
 		THREAD_ENTER;
+		PluginManager::load_engine_plugins();
 		if (!initialized) {
 			V4_MUTEX_INIT(databases_mutex);
 			JRD_SS_INIT_MUTEX;

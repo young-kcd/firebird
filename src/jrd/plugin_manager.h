@@ -22,10 +22,35 @@
   *   loading to specific search paths, ignore certain modules in a
   *   search path, and automatically load all the modules in the search
   *   paths.
+  *
+  * In addition, the PluginManager provides for a single, unified way of
+  *   handling loadable modules.  This is to prevent an explosion of
+  *   separate PluginManager objects as the engine grows.  The pre-existing
+  *   subsystems that used loadable modules (for example: intl, flu) will still
+  *   have their own PluginManager instance.  But other subsystems should try
+  *   to stay within the boundries of the new, more generic, plugin interface.
+  *
+  * This interface is divided into two parts: enginge and plugin.  The engine
+  *   interface consists of a single function: load_engine_plugins.  This
+  *   function searches through the plugin directory (XXX) and loads all the
+  *   plugins it finds.  After loading it calls the plugin's "register" function.
+  *   This function has the signature "extern "C" void register_plugin(void *parm)".
+  *   This function is, in turn, responsible for registering the plugin with the
+  *   various parts of the engine as required.  To do this each engine subsystem
+  *   that wants to make use of plugins needs to provide a "registration" function.
+  *   This function can take any parameters as necessary to establish the link between
+  *   the plugin and the subsystem, but it must accept the void* parameter given to
+  *   the plugin's register function.  This parameter is a Plugin pointer which allows
+  *   the subsystem to access the plugin's symbols.
+  *
+  * The exact semantics of the register function the plugin needs to call varies by 
+  *    subsystem.  Please refer to the subsystem documentation for details.
   **/
 class PluginManager
 {
 public:
+	static void load_engine_plugins();
+
 	class iterator;
 	
 private:
