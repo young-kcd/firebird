@@ -434,6 +434,10 @@ SOURCE=..\..\..\src\dsql\hsh.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\dsql\keywords.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\dsql\make.cpp
 # End Source File
 # Begin Source File

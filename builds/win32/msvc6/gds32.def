@@ -291,3 +291,6 @@ EXPORTS
     _isc_start_transaction=gds32.isc_start_transaction
     _isc_expand_dpb=gds32.isc_expand_dpb
     _isc_event_block=gds32.isc_event_block
+	KEYWORD_stringIsAToken
+	KEYWORD_getTokens
+

@@ -294,3 +294,5 @@ EXPORTS
     gds__alloc_debug		@900
     gds_alloc_flag_unfreed	@901
     gds_alloc_report		@902
+	KEYWORD_stringIsAToken
+	KEYWORD_getTokens

@@ -64,9 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "release\dsql_server"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "DEBUG" /D "NDEBUG" /D "_LIB" /D "_WINDOWS" /D "SUPERSERVER" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
-# SUBTRACT BASE CPP /Z<none>
 # ADD CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "DEBUG" /D "NDEBUG" /D "_LIB" /D "_WINDOWS" /D "SUPERSERVER" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
-# SUBTRACT CPP /Z<none>
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -140,6 +138,10 @@ SOURCE=..\..\..\src\dsql\gen.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\dsql\hsh.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\dsql\keywords.cpp
 # End Source File
 # Begin Source File
 
