@@ -26,6 +26,7 @@ AC_CHECK_HEADERS(ctype.h)
 AC_CHECK_HEADERS(time.h)
 AC_CHECK_HEADERS(sys/time.h)
 AC_CHECK_HEADERS(string.h)
+AC_CHECK_HEADERS(signal.h)
 
 AC_C_BIGENDIAN
 
