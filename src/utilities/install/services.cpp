@@ -82,8 +82,9 @@ USHORT SERVICES_install(SC_HANDLE manager,
 		if (nt_user_password == 0)
 			nt_user_password = "";
 	}
-	else
-		dwServiceType |= SERVICE_INTERACTIVE_PROCESS;
+	// OM : commmented out after security discussions Sept 2003.
+	//else
+	//	dwServiceType |= SERVICE_INTERACTIVE_PROCESS;
 
 	service = CreateService(manager,
 							service_name,
