@@ -111,18 +111,13 @@ SOURCE=..\..\..\src\jrd\dsc.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\enc.cpp
-# End Source File
-# Begin Source File
 
-SOURCE=..\..\..\src\jrd\err.cpp
-# End Source File
-# Begin Source File
+!IF  "$(CFG)" == "fbclient - Win32 Debug"
 
-SOURCE=..\..\..\src\jrd\flu.cpp
-# End Source File
-# Begin Source File
+!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
 
-SOURCE=..\..\..\src\jrd\functions.cpp
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -297,53 +292,9 @@ SOURCE=..\..\..\src\jrd\utl_proto.h
 SOURCE=..\..\..\src\jrd\why_proto.h
 # End Source File
 # End Group
-# Begin Group "Resource Files"
-
-# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-# End Group
-# Begin Group "OS2 specific files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\lan.cpp
-
-!IF  "$(CFG)" == "fbclient - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
-
-# PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os2.cpp
-
-!IF  "$(CFG)" == "fbclient - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
-
-# PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
-
-!ENDIF 
-
-# End Source File
-# End Group
 # Begin Group "Utilities files"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\utilities\gsec.cpp
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\generated\utilities\security.cpp
@@ -383,27 +334,51 @@ SOURCE=..\..\..\src\remote\remote.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\spxnet32.cpp
+
+!IF  "$(CFG)" == "fbclient - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\wnet.cpp
+
+!IF  "$(CFG)" == "fbclient - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\xdr.cpp
+
+!IF  "$(CFG)" == "fbclient - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\xnet.cpp
+
+!IF  "$(CFG)" == "fbclient - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
+
+!ENDIF 
+
 # End Source File
 # End Group
 # Begin Group "dsql Source Files"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\alld.cpp
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\generated\dsql\array.cpp
@@ -414,47 +389,7 @@ SOURCE=..\..\..\generated\dsql\blob.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\dsql\ddl.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\dsql.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\errd.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\gen.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\hsh.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\dsql\keywords.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\make.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\generated\dsql\metd.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\movd.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\parse.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\pass1.cpp
 # End Source File
 # Begin Source File
 
