@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.79 2004-10-25 01:09:13 skidder Exp $
+ * $Id: rse.cpp,v 1.80 2004-10-29 00:29:17 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2272,37 +2272,36 @@ static bool get_record(thread_db*	tdbb,
 
 	case rsb_indexed:
 		{
+			RecordBitmap **pbitmap = ((IRSB_INDEX) impure)->irsb_bitmap, *bitmap;
+			if (!pbitmap || !(bitmap = *pbitmap))
+				return false;
 			bool result = false;
 
-			RecordBitmap* bitmap = ((IRSB_INDEX) impure)->irsb_bitmap;
-			if (bitmap)
-			{
-				// NS: Original code was the following:
-				// while (SBM_next(*bitmap, &rpb->rpb_number, mode))
-				// We assume mode = RSE_get_forward because we do not support
-				// scrollable cursors at the moment.
-				if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext()) do {
-					rpb->rpb_number.setValue(bitmap->current());
+			// NS: Original code was the following:
+			// while (SBM_next(*bitmap, &rpb->rpb_number, mode))
+			// We assume mode = RSE_get_forward because we do not support
+			// scrollable cursors at the moment.
+			if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext()) do {
+				rpb->rpb_number.setValue(bitmap->current());
 #ifdef SUPERSERVER_V2
-					/* Prefetch next set of data pages from bitmap. */
+				/* Prefetch next set of data pages from bitmap. */
 
-					if (rpb->rpb_number >
-						((IRSB_INDEX) impure)->irsb_prefetch_number &&
-						(mode == RSE_get_forward))
-					{
-						((IRSB_INDEX) impure)->irsb_prefetch_number =
-							DPM_prefetch_bitmap(tdbb, rpb->rpb_relation,
-												*bitmap, rpb->rpb_number);
-					}
+				if (rpb->rpb_number >
+					((IRSB_INDEX) impure)->irsb_prefetch_number &&
+					(mode == RSE_get_forward))
+				{
+					((IRSB_INDEX) impure)->irsb_prefetch_number =
+						DPM_prefetch_bitmap(tdbb, rpb->rpb_relation,
+											*bitmap, rpb->rpb_number);
+				}
 #endif
-					if (VIO_get(tdbb, rpb, rsb, request->req_transaction,
-								request->req_pool))
-					{
-						result = true;
-						break;
-					}
-				} while (bitmap->getNext());
-			}
+				if (VIO_get(tdbb, rpb, rsb, request->req_transaction,
+							request->req_pool))
+				{
+					result = true;
+					break;
+				}
+			} while (bitmap->getNext());
 
 			if (result)
 				break;
