@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.71 2004-10-07 09:59:02 robocop Exp $
+ * $Id: gpre.h,v 1.72 2004-10-30 05:30:08 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -192,8 +192,8 @@ const size_t FIL_LEN = sizeof(fil);
 
 typedef struct fltr {
 	TEXT *fltr_name;
-	TEXT *fltr_entry_point;
-	TEXT *fltr_module_name;
+	const TEXT *fltr_entry_point;
+	const TEXT *fltr_module_name;
 	SSHORT fltr_input_type;
 	SSHORT fltr_output_type;
 } *FLTR;
@@ -1242,7 +1242,7 @@ class ref {
 	gpre_nod* ref_expr;			/* expression, if node is expression */
 	const TEXT* ref_value;		/* value string if host language value */
 	val* ref_values;			/* linked list of values */
-	TEXT* ref_null_value;		/* value string if host language value */
+	const TEXT* ref_null_value;	/* value string if host language value */
 	UCHAR* ref_sdl;				/* Raw slice description language for an array */
 	UCHAR* ref_sdl_base;		/* base of sdl string during generation */
 	int ref_sdl_length;			/* sdl length for this reference */
@@ -1309,9 +1309,9 @@ enum bas_flags_vals {
 /* declare udf block */
 
 struct decl_udf {
-	TEXT *decl_udf_name;
-	TEXT *decl_udf_entry_point;
-	TEXT *decl_udf_module_name;
+	const TEXT *decl_udf_name;
+	const TEXT *decl_udf_entry_point;
+	const TEXT *decl_udf_module_name;
 	gpre_fld* decl_udf_arg_list;
 	gpre_fld* decl_udf_return_type;
 	USHORT decl_udf_return_mode;	/* BY VALUE or BY REFERENCE */
@@ -1489,7 +1489,7 @@ struct GpreGlobals{
 	DBB isc_databases;
 	TEXT* default_user;
 	TEXT* default_password;
-	TEXT* default_lc_ctype;
+	const TEXT* default_lc_ctype;
 	gpre_req* requests;
 	gpre_lls* events;
 	FILE *out_file;

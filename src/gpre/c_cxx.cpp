@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.55 2004-10-04 04:59:05 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.56 2004-10-30 05:30:08 robocop Exp $
 //
 
 #include "firebird.h"
@@ -132,7 +132,7 @@ static const TEXT* status_vector(const act*);
 static void t_start_auto(const act*, const gpre_req*, const TEXT*, int, bool);
 
 static bool global_first_flag = false;
-static const TEXT* global_status_name;
+static const TEXT* global_status_name = 0;
 
 const int INDENT	= 3;
 
@@ -1393,7 +1393,7 @@ static void gen_database( const act* action, int column)
 
 	printa(column, "static %sISC_QUAD", CONST_STR);
 	printa(column + INDENT,
-		   "isc_blob_null = {0,0};\t/* initializer for blobs */");
+		   "isc_blob_null = {0, 0};\t/* initializer for blobs */");
 	if (gpreGlob.sw_language == lang_c)
 		printa(column,
 			   "static %slong *gds__null = 0;\t/* dummy status vector */",
@@ -2230,7 +2230,7 @@ static void gen_finish( const act* action, int column)
 	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) &&
 					(action->act_type != ACT_disconnect)))
 	{
-		args.pat_string1 = (TEXT*)
+		args.pat_string1 =
 		   ((action->act_type != ACT_rfinish) ? "commit" : "rollback");
 		PATTERN_expand((USHORT) column, pattern1, &args);
 	}

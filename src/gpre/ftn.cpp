@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.50 2004-09-25 10:27:32 robocop Exp $
+//	$Id: ftn.cpp,v 1.51 2004-10-30 05:30:08 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -3558,7 +3558,7 @@ static void gen_trans(const act* action)
 	if (action->act_type == ACT_commit_retain_context)
 		printa(COLUMN, "CALL ISC_COMMIT_RETAINING (%s, %s)",
 			   status_vector(action),
-			   (action->act_object) ? (TEXT*) (action->
+			   (action->act_object) ? (const TEXT*) (action->
 												act_object) : "GDS__TRANS");
 	else
 		printa(COLUMN, "CALL ISC_%s_TRANSACTION (%s, %s)",
@@ -3566,7 +3566,7 @@ static void gen_trans(const act* action)
 				ACT_commit) ? "COMMIT" : (action->act_type ==
 										  ACT_rollback) ? "ROLLBACK" :
 			   "PREPARE", status_vector(action),
-			   (action->act_object) ? (TEXT*) (action->
+			   (action->act_object) ? (const TEXT*) (action->
 												act_object) : "GDS__TRANS");
 	status_and_stop(action);
 

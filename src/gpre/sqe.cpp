@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.33 2004-06-03 07:31:10 robocop Exp $
+//	$Id: sqe.cpp,v 1.34 2004-10-30 05:30:08 robocop Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -80,7 +80,7 @@ static GPRE_NOD merge_fields(GPRE_NOD, GPRE_NOD, int, bool);
 static GPRE_NOD negate(GPRE_NOD);
 static void pair(GPRE_NOD, GPRE_NOD);
 static gpre_ctx* par_alias_list(gpre_req*, GPRE_NOD);
-static gpre_ctx* par_alias(gpre_req*, TEXT *);
+static gpre_ctx* par_alias(gpre_req*, const TEXT*);
 static GPRE_NOD par_and(gpre_req*, USHORT *);
 static gpre_rel* par_base_table(gpre_req*, const gpre_rel*, const TEXT*);
 static GPRE_NOD par_collate(gpre_req*, GPRE_NOD);
@@ -1680,7 +1680,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, GPRE_NOD alias_list)
 //  in the current context for a match 
 
 	gpre_rel* relation = 0; // unreliable test many lines below without initializing.
-	gpre_ctx* context = par_alias(request, (TEXT *) * arg);
+	gpre_ctx* context = par_alias(request, (const TEXT*) * arg);
 	if (context) {
 		if (alias_list->nod_count == 1)
 			return context;
@@ -1701,7 +1701,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, GPRE_NOD alias_list)
 				continue;
 			if (relation =
 				par_base_table(request, context->ctx_relation,
-							   (TEXT *) * arg))
+							   (const TEXT*) * arg))
 			{
 				break;
 			}
@@ -1718,7 +1718,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, GPRE_NOD alias_list)
 //  since we already matched it to the context 
 
 	for (arg++; arg < end; arg++)
-		if (!(relation = par_base_table(request, relation, (TEXT *) * arg)))
+		if (!(relation = par_base_table(request, relation, (const TEXT*) * arg)))
 			break;
 
 	if (!relation) {
@@ -1767,7 +1767,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, GPRE_NOD alias_list)
 //		proper context.
 //  
 
-static gpre_ctx* par_alias( gpre_req* request, TEXT * alias)
+static gpre_ctx* par_alias( gpre_req* request, const TEXT* alias)
 {
 	SCHAR error_string[ERROR_LENGTH];
 
@@ -1787,8 +1787,9 @@ static gpre_ctx* par_alias( gpre_req* request, TEXT * alias)
 		// check for matching alias 
 
 		if (context->ctx_alias) {
-			TEXT *p, *q;
-			for (p = context->ctx_alias, q = alias; *p && *q; p++, q++)
+			const TEXT* p = context->ctx_alias;
+			const TEXT* q = alias;
+			for (; *p && *q; p++, q++)
 				if (UPPER(*p) != UPPER(*q))
 					break;
 			if (!*p && !*q)

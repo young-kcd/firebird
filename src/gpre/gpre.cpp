@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.64 2004-10-07 09:59:01 robocop Exp $
+//  $Id: gpre.cpp,v 1.65 2004-10-30 05:30:08 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -1957,7 +1957,7 @@ static bool get_switches(int			argc,
 			{
 				return false;
 			}
-			gpreGlob.default_lc_ctype = (TEXT *) * ++argv;
+			gpreGlob.default_lc_ctype = (const TEXT*) * ++argv;
 			break;
 
 		}

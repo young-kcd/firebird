@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.42 2004-09-25 10:27:33 robocop Exp $
+//	$Id: pas.cpp,v 1.43 2004-10-30 05:30:08 robocop Exp $
 //
 
 #include "firebird.h"
@@ -797,8 +797,8 @@ static void gen_blob_close( const act* action, USHORT column)
 	else
 		blob = (blb*) action->act_object;
 
-	const TEXT* command = (action->act_type == ACT_blob_cancel) ? (TEXT*) "CANCEL" : 
-	                                                          (TEXT*) "CLOSE";
+	const TEXT* command = (action->act_type == ACT_blob_cancel) ? "CANCEL" :
+	                                                          "CLOSE";
 	printa(column, "GDS__%s_BLOB (%s, gds__%d);",
 		   command, status_vector(action), blob->blb_ident);
 
@@ -1581,8 +1581,8 @@ static void gen_dyn_execute( const act* action, int column)
 
 	printa(column,
 		   (statement->dyn_sqlda2) ?
-		   (TEXT*) "isc_embed_dsql_execute2 (gds__status, %s, %s, %d, %s %s, %s %s);"
-		   : (TEXT*) "isc_embed_dsql_execute (gds__status, %s, %s, %d, %s %s);",
+		   "isc_embed_dsql_execute2 (gds__status, %s, %s, %d, %s %s, %s %s);"
+		   : "isc_embed_dsql_execute (gds__status, %s, %s, %d, %s %s);",
 		   transaction, make_name(s, statement->dyn_statement_name),
 		   gpreGlob.sw_sql_dialect, REF_PAR,
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^",
@@ -1647,9 +1647,9 @@ static void gen_dyn_immediate( const act* action, int column)
 	database = statement->dyn_database;
 	printa(column,
 		   (statement->dyn_sqlda2) ?
-		   (TEXT*) "isc_embed_dsql_execute_immed2 (gds__status, %s, %s, %s(%s), %s, %d, %s %s, %s %s);"
+		   "isc_embed_dsql_execute_immed2 (gds__status, %s, %s, %s(%s), %s, %d, %s %s, %s %s);"
 		   :
-		   (TEXT*) "isc_embed_dsql_execute_immed (gds__status, %s, %s, %s(%s), %s, %d, %s %s);",
+		   "isc_embed_dsql_execute_immed (gds__status, %s, %s, %s(%s), %s, %d, %s %s);",
 		   database->dbb_name->sym_string, transaction, SIZEOF,
 		   statement->dyn_string, statement->dyn_string, gpreGlob.sw_sql_dialect,
 		   REF_PAR,
@@ -1725,8 +1725,8 @@ static void gen_dyn_open( const act* action, int column)
 
 	printa(column,
 		   (statement->dyn_sqlda2) ?
-		   (TEXT*) "isc_embed_dsql_open2 (gds__status, %s, %s, %d, %s %s, %s %s);" :
-		   (TEXT*) "isc_embed_dsql_open (gds__status, %s, %s, %d, %s %s);",
+		   "isc_embed_dsql_open2 (gds__status, %s, %s, %d, %s %s, %s %s);" :
+		   "isc_embed_dsql_open (gds__status, %s, %s, %d, %s %s);",
 		   s,
 		   transaction,
 		   gpreGlob.sw_sql_dialect,
@@ -2237,9 +2237,9 @@ static void gen_get_or_put_slice(const act* action,
 {
 	PAT args;
 	TEXT s1[25], s2[10], s3[10], s4[10];
-	TEXT *pattern1 =
+	const TEXT *pattern1 =
 		"GDS__GET_SLICE (%V1, %RF%DH%RE, %RF%S1%RE, %S2, %N1, %S3, %N2, %S4, %L1, %S5, %S6);\n";
-	TEXT *pattern2 =
+	const TEXT *pattern2 =
 		"GDS__PUT_SLICE (%V1, %RF%DH%RE, %RF%S1%RE, %S2, %N1, %S3, %N2, %S4, %L1, %S5);\n";
 
 	if (!(reference->ref_flags & REF_fetch_array))
@@ -2293,7 +2293,7 @@ static void gen_get_segment( const act* action, int column)
 	blb* blob;
 	PAT args;
 	const ref* into;
-	TEXT *pattern1 =
+	const TEXT *pattern1 =
 		"%IFgds__status[2] := %ENGDS__GET_SEGMENT (%V1, %BH, %I1, %S1 (%I2), %RF%I2);";
 
 	if (action->act_error && (action->act_type != ACT_blob_for))
@@ -2467,7 +2467,7 @@ static void gen_put_segment( const act* action, int column)
 	blb* blob;
 	PAT args;
 	const ref* from;
-	TEXT *pattern1 =
+	const TEXT *pattern1 =
 		"%IFgds__status[2] := %ENGDS__PUT_SEGMENT (%V1, %BH, %I1, %I2);";
 
 	if (!action->act_error)
@@ -3270,7 +3270,7 @@ static void gen_trans( const act* action, int column)
 	if (action->act_type == ACT_commit_retain_context)
 		fprintf(gpreGlob.out_file, "GDS__COMMIT_RETAINING (%s, %s);",
 				   status_vector(action),
-				   (action->act_object) ? (TEXT *) action->
+				   (action->act_object) ? (const TEXT*) action->
 				   act_object : "gds__trans");
 	else
 		fprintf(gpreGlob.out_file, "GDS__%s_TRANSACTION (%s, %s);",
@@ -3278,7 +3278,7 @@ static void gen_trans( const act* action, int column)
 					ACT_commit) ? "COMMIT" : (action->act_type ==
 											  ACT_rollback) ? "ROLLBACK" :
 				   "PREPARE", status_vector(action),
-				   (action->act_object) ? (TEXT *) action->
+				   (action->act_object) ? (const TEXT*) action->
 				   act_object : "gds__trans");
 
 	set_sqlcode(action, column);
@@ -3607,11 +3607,11 @@ static const TEXT* request_trans( const act* action, const gpre_req* request)
 	if (action->act_type == ACT_open) {
 		const TEXT* trname = ((open_cursor*) action->act_object)->opn_trans;
 		if (!trname)
-			trname = (TEXT*) "gds__trans";
+			trname = "gds__trans";
 		return trname;
 	}
 	else
-		return (request) ? request->req_trans : (TEXT*) "gds__trans";
+		return (request) ? request->req_trans : "gds__trans";
 }
 
 

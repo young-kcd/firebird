@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.49 2004-09-25 10:27:32 robocop Exp $
+//	$Id: cob.cpp,v 1.50 2004-10-30 05:30:08 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -1104,7 +1104,6 @@ static void gen_based( const act* action)
 
 static void gen_blob_close( const act* action)
 {
-	TEXT *command, buffer[80];
 	blb* blob;
 
 	if (action->act_flags & ACT_sql) {
@@ -1114,7 +1113,8 @@ static void gen_blob_close( const act* action)
 	else
 		blob = (blb*) action->act_object;
 
-	command = (action->act_type == ACT_blob_cancel) ? (TEXT*) CANCEL : (TEXT*) CLOSE;
+	const TEXT* command = (action->act_type == ACT_blob_cancel) ? CANCEL : CLOSE;
+	TEXT buffer[80];
 	sprintf(buffer, ISC_BLOB, command);
 
 	printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s%d",
@@ -1177,14 +1177,14 @@ static void gen_blob_for( const act* action)
 static void gen_blob_open( const act* action)
 {
 #ifdef VMS
-	TEXT *pattern1 =
-		"CALL \"ISC_%IFCREATE%ELOPEN%EN_BLOB2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF%N1%VE, %RF%I1%RE\n",
-		*pattern2 =
+	const TEXT* pattern1 =
+		"CALL \"ISC_%IFCREATE%ELOPEN%EN_BLOB2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF%N1%VE, %RF%I1%RE\n";
+	const TEXT* pattern2 =
 		"CALL \"ISC_%IFCREATE%ELOPEN%EN_BLOB2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF0%VE, %VF0%VE\n";
 #else
-	TEXT *pattern1 =
-		"CALL \"isc_%IFcreate%ELopen%EN_blob2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF%N1%VE, %RF%I1%RE\n",
-		*pattern2 =
+	const TEXT* pattern1 =
+		"CALL \"isc_%IFcreate%ELopen%EN_blob2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF%N1%VE, %RF%I1%RE\n";
+	const TEXT* pattern2 =
 		"CALL \"isc_%IFcreate%ELopen%EN_blob2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF0%VE, %VF0%VE\n";
 #endif
 
@@ -2034,8 +2034,8 @@ static void gen_dyn_execute( const act* action)
 
 	printa(names[COLUMN], true,
 		   (statement->dyn_sqlda2) ?
-		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s, %s%s" :
-		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s",
+		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s, %s%s" :
+		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s",
 		   (statement->dyn_sqlda2) ? ISC_EXECUTE2 : ISC_EXECUTE,
 		   status_vector(action),
 		   BY_REF, transaction,
@@ -2128,8 +2128,8 @@ static void gen_dyn_immediate( const act* action)
 
 	printa(names[COLUMN], true,
 		   (statement->dyn_sqlda2) ?
-		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s,%s %s%s, %s%d%s, %s%s, %s%s" :
-		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s,%s %s%s, %s%d%s, %s%s",
+		    "CALL \"%s\" USING %s, %s%s, %s%s,%s %s%s, %s%d%s, %s%s, %s%s" :
+		    "CALL \"%s\" USING %s, %s%s, %s%s,%s %s%s, %s%d%s, %s%s",
 		   (statement->dyn_sqlda2) ?
 				ISC_EXECUTE_IMMEDIATE2 : ISC_EXECUTE_IMMEDIATE,
 		   status_vector(action), BY_REF, database->dbb_name->sym_string,
@@ -2213,8 +2213,8 @@ static void gen_dyn_open( const act* action)
 
 	printa(names[COLUMN], true,
 		   (statement->dyn_sqlda2) ?
-		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s, %s%s" :
-		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s",
+		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s, %s%s" :
+		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s",
 		   (statement->dyn_sqlda2) ? ISC_OPEN2 : ISC_OPEN,
 		   status_vector(action),
 		   BY_REF, transaction,
@@ -2431,15 +2431,15 @@ static void gen_event_init( const act* action)
 	TEXT variable[20];
 	SSHORT column, count;
 #ifdef GIVING_SUPPORTED
-	TEXT *pattern1 =
+	const TEXT *pattern1 =
 		"CALL \"%S1\" USING %RF%S4%N1A%RE, %RF%S4%N1B%RE, %VF%N2%VE, %RF%S6%RE GIVING %S4%N1L";
 #else
-	TEXT *pattern1 =
+	const TEXT *pattern1 =
 		"CALL \"%S1\" USING %RF%S4%N1A%RE, %RF%S4%N1B%RE, %VF%N2%VE, %RF%S6%RE, %RF%S4%N1L%RE";
 #endif
-	TEXT *pattern2 =
+	const TEXT *pattern2 =
 		"CALL \"%S2\" USING %V1, %RF%DH%RE, %VF%S4%N1L%VE, %VF%S4%N1A%VE, %VF%S4%N1B%VE";
-	TEXT *pattern3 =
+	const TEXT *pattern3 =
 		"CALL \"%S3\" USING %S5, %VF%S4%N1L%VE, %VF%S4%N1A%VE, %VF%S4%N1B%VE";
 
 	init = (GPRE_NOD) action->act_object;
@@ -2461,7 +2461,8 @@ static void gen_event_init( const act* action)
 //  generate call to dynamically generate event blocks 
 
 	for (ptr = event_list->nod_arg, count = 0, end =
-		 ptr + event_list->nod_count; ptr < end; ptr++) {
+		 ptr + event_list->nod_count; ptr < end; ptr++)
+	{
 		count++;
 		node = *ptr;
 		if (node->nod_type == nod_field) {
@@ -2508,9 +2509,9 @@ static void gen_event_wait( const act* action)
 	SSHORT column;
 	int ident;
 	TEXT s[64];
-	TEXT *pattern1 =
+	const TEXT *pattern1 =
 		"CALL \"%S2\" USING %V1, %RF%DH%RE, %VF%S4%N1L%VE, %VF%S4%N1A%VE, %VF%S4%N1B%VE";
-	TEXT *pattern2 =
+	const TEXT *pattern2 =
 		"CALL \"%S3\" USING %S5, %VF%S4%N1L%VE, %VF%S4%N1A%VE, %VF%S4%N1B%VE";
 
 	event_name = (gpre_sym*) action->act_object;
@@ -2834,9 +2835,9 @@ static void gen_get_or_put_slice(const act* action,
 	int column;
 	PAT args;
 	TEXT s1[25], s2[10], s4[10];
-	TEXT *pattern1 =
+	const TEXT* pattern1 =
 		"CALL \"%S7\" USING %V1, %RF%DH%RE, %RF%S1%RE, %RF%S2%RE, %VF%N1%VE, %RF%S3%RE, %VF%N2%VE, %VF%S4%VE, %VF%L1%VE, %RF%S5%RE, %RF%S6%RE";
-	TEXT *pattern2 =
+	const TEXT* pattern2 =
 		"CALL \"%S7\" USING %V1, %RF%DH%RE, %RF%S1%RE, %RF%S2%RE, %VF%N1%VE, %RF%S3%RE, %VF%N2%VE, %VF%S4%VE, %VF%L1%VE, %RF%S5%RE";
 
 	if (!(reference->ref_flags & REF_fetch_array))
@@ -2873,7 +2874,7 @@ static void gen_get_or_put_slice(const act* action,
 	}
 
 	args.pat_string6 = names[ISC_ARRAY_LENGTH];	//  return length 
-	args.pat_string7 = (get) ? (TEXT*) ISC_GET_SLICE : (TEXT*) ISC_PUT_SLICE;
+	args.pat_string7 = (get) ? ISC_GET_SLICE : ISC_PUT_SLICE;
 
 	PATTERN_expand(column, (get) ? pattern1 : pattern2, &args);
 	fprintf(gpreGlob.out_file, "\n");
@@ -3516,9 +3517,7 @@ static void gen_s_start( const act* action)
 
 static void gen_send( const act* action, gpre_port* port)
 {
-	gpre_req* request;
-
-	request = action->act_request;
+	gpre_req* request = action->act_request;
 
 	sprintf(output_buffer,
 			"%sCALL \"%s\" USING %s, %s%s, %s%d%s, %s%d%s, %s%s%d, %s%s%s\n",
@@ -3548,9 +3547,9 @@ static void gen_slice( const act* action)
 	USHORT column;
 	PAT args;
 	slc::slc_repeat *tail, *end;
-	TEXT *pattern1 =
+	const TEXT *pattern1 =
 		"CALL \"%S7\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%FR%RE, %VF%N1%VE, %RF%I1%RE, %VF%N2%VE, %RF%I1v%RE, %VF%I1s%VE, %RF%S5%RE, %RF%S6%RE";
-	TEXT *pattern2 =
+	const TEXT *pattern2 =
 		"CALL \"%S7\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%FR%RE, %VF%N1%VE, %RF%I1%RE, %VF%N2%VE, %RF%I1v%RE, %VF%I1s%VE, %RF%S5%RE";
 
 	column = strlen(names[COLUMN]);
@@ -3600,7 +3599,7 @@ static void gen_slice( const act* action)
 	args.pat_string5 = reference->ref_value;	// array name 
 	args.pat_string6 = names[ISC_ARRAY_LENGTH];
 	args.pat_string7 =
-		(action->act_type == ACT_get_slice) ? (TEXT*) ISC_GET_SLICE : (TEXT*) ISC_PUT_SLICE;
+		(action->act_type == ACT_get_slice) ? ISC_GET_SLICE : ISC_PUT_SLICE;
 
 	PATTERN_expand(column,
 				   (action->act_type == ACT_get_slice) ? pattern1 : pattern2,

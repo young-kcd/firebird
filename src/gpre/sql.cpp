@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.48 2004-09-22 08:52:47 robocop Exp $
+//	$Id: sql.cpp,v 1.49 2004-10-30 05:30:08 robocop Exp $
 //
 
 #include "firebird.h"
@@ -2466,8 +2466,9 @@ static act* act_declare_udf(void)
 			("Can only DECLARE EXTERNAL FUNCTION in context of single database");
 
 	decl_udf* udf_declaration = (decl_udf*) MSC_alloc(DECL_UDF_LEN);
-	udf_declaration->decl_udf_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
-	SQL_resolve_identifier("<identifier>", udf_declaration->decl_udf_name);
+	TEXT* udf_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
+	SQL_resolve_identifier("<identifier>", udf_name);
+	udf_declaration->decl_udf_name = udf_name;
 	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("external function name too long");
 	PAR_get_token();

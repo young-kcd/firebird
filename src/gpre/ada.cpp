@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.44 2004-09-25 10:27:31 robocop Exp $
+//	$Id: ada.cpp,v 1.45 2004-10-30 05:30:07 robocop Exp $
 //
 
 #include "firebird.h"
@@ -3197,7 +3197,7 @@ static void gen_trans( const act* action, int column)
 		printa(column, "interbase.COMMIT_RETAINING (%s %s%s);",
 			   status_vector(action),
 			   gpreGlob.ada_package,
-			   (action->act_object) ? (TEXT *) action->
+			   (action->act_object) ? (const TEXT*) action->
 			   act_object : "gds_trans");
 	else
 		printa(column, "interbase.%s_TRANSACTION (%s %s%s);",
@@ -3205,7 +3205,7 @@ static void gen_trans( const act* action, int column)
 				ACT_commit) ? "COMMIT" : (action->act_type ==
 										  ACT_rollback) ? "ROLLBACK" :
 			   "PREPARE", status_vector(action), gpreGlob.ada_package,
-			   (action->act_object) ? (TEXT *) action->
+			   (action->act_object) ? (const TEXT*) action->
 			   act_object : "gds_trans");
 
 	set_sqlcode(action, column);
@@ -3674,7 +3674,7 @@ static const TEXT* request_trans( const act* action, const gpre_req* request)
 		return trname;
 	}
 	else
-		return (request) ? request->req_trans : (TEXT*) "gds_trans";
+		return (request) ? request->req_trans : "gds_trans";
 }
 
 
