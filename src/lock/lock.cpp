@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.32 2003-02-14 14:23:43 eku Exp $
+$Id: lock.cpp,v 1.33 2003-02-18 06:39:26 eku Exp $
 */
 
 #include "firebird.h"
@@ -582,7 +582,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 	}
 
 	owner = (OWN) ABS_PTR(owner_offset);	/* Re-init after a potential remap */
-	post_history(his_enq, owner_offset, NULL, REL_PTR(request), TRUE);
+	post_history(his_enq, owner_offset, (PTR)0, REL_PTR(request), TRUE);
 
 	request->lrq_type = type_lrq;
 	request->lrq_flags = 0;
@@ -2995,7 +2995,7 @@ static PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
 	release_request(request);
 	release(owner_offset);
 
-	return NULL;
+	return (PTR)0;
 }
 
 
