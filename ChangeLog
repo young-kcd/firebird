@@ -1,3 +1,36 @@
+2002-12-31 20:32  nmcc
+
+	* firebird2/src/jrd/common.h:
+	
+	Only need ib_stdio/sfio with superserver.
+
+2002-12-31 19:52  nmcc
+
+	* firebird2/src/install/arch-specific/solaris/Makefile.in:
+	
+	keep configure happy.
+
+2002-12-31 19:15  nmcc
+
+	* firebird2/: configure.in, builds/posix/prefix.solaris:
+	
+	Move sfio test to Solaris specific location.  Change to
+	--with-sfio=path_to_sfio defaulting to no and substitute values in
+	to makefiles.
+	
+	This allows Classic to be built and run without sfio using standard
+	Solaris stdio while problems between sfio, ib_stdio etc and C++ are
+	sorted out for superserver.
+
+2002-12-31 01:12  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	more cosmetic changes to opt.cpp
+	
+	bugfix: When UNIONS where used in a VIEW and that VIEW was used in
+	the where clause inside an sub-select then the engine crashed !!
+
 2002-12-30 19:53  skidder
 
 	* firebird2/src/remote/xdr.cpp:
