@@ -637,7 +637,6 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
  *	Common part of prepare and execute a statement.
  *
  **************************************/
-	ISC_STATUS status;
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -715,7 +714,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 		}	// try
 		catch (const std::exception& ex) {
 			Firebird::stuff_exception(tdsql->tsql_status, ex);
-			status = error();
+			ISC_STATUS status = error();
 			release_request(request, true);
 			return status;
 		}
@@ -936,8 +935,6 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 #endif
 							)
 {
-	dsql_msg* message;
-	dsql_par* parameter;
 	ISC_STATUS s;
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
@@ -1033,7 +1030,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 			{
 				DSC desc;
 
-				message = (dsql_msg*) request->req_async;
+				dsql_msg* message = (dsql_msg*) request->req_async;
 
 				desc.dsc_dtype = dtype_short;
 				desc.dsc_scale = 0;
@@ -1042,7 +1039,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 				desc.dsc_address = (UCHAR*) & direction;
 
 				dsql_par* offset_parameter = message->msg_parameters;
-				parameter = offset_parameter->par_next;
+				dsql_par* parameter = offset_parameter->par_next;
 				MOVD_move(&desc, &parameter->par_desc);
 
 				desc.dsc_dtype = dtype_long;
@@ -1066,7 +1063,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 		}
 #endif
 
-		message = (dsql_msg*) request->req_receive;
+		dsql_msg* message = (dsql_msg*) request->req_receive;
 
 /* Insure that the blr for the message is parsed, regardless of
    whether anything is found by the call to receive. */
@@ -1079,7 +1076,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 		{
 			// For get segment, use the user buffer and indicator directly.
 	
-			parameter = request->req_blob->blb_segment;
+			dsql_par* parameter = request->req_blob->blb_segment;
 			dsql_par* null = parameter->par_null;
 			USHORT* ret_length =
 				(USHORT *) (dsql_msg_buf + (IPTR) null->par_user_desc.dsc_address);
@@ -1148,7 +1145,6 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 						 dsql_req**		req_handle,
 						 USHORT		option)
 {
-	dsql_req* request;
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -1156,7 +1152,7 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 	{
 		init(0);
 
-		request = *req_handle;
+		dsql_req* request = *req_handle;
 		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
 		if (option & DSQL_drop) {
@@ -1291,7 +1287,6 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 							USHORT			buffer_length,
 							UCHAR*			buffer)
 {
-	ISC_STATUS status;
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -1417,7 +1412,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 		}	// try
 		catch(const std::exception& ex) {
 			Firebird::stuff_exception(tdsql->tsql_status, ex);
-			status = error();
+			ISC_STATUS status = error();
 			release_request(request, true);
 			return status;
 		}
@@ -1556,7 +1551,6 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 								UCHAR*		info)
 {
 	UCHAR buffer[256];
-	USHORT length, number, first_index;
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -1576,10 +1570,11 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 		// CVC: Is it the idea that this pointer remains with its previous value
 		// in the loop or should it be made NULL in each iteration?
 		dsql_msg** message = NULL;
-		first_index = 0;
+		USHORT first_index = 0;
 
 		while (items < end_items && *items != isc_info_end)
 		{
+			USHORT length, number;
 			UCHAR item = *items++; // cannot be const
 			if (item == isc_info_sql_select || item == isc_info_sql_bind)
 			{
@@ -1785,11 +1780,7 @@ static void trace_line(const char* message, ...) {
  **/
 void DSQL_pretty(const dsql_nod* node, int column)
 {
-	const dsql_str* string;
-
 	TEXT buffer[1024];
-
-	TEXT s[64];
 
 	TEXT* p = buffer;
 	p += sprintf(p, "%p ", (void*) node);
@@ -1829,6 +1820,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		return;
 	}
 
+	TEXT s[64];
+	const dsql_str* string;
 	const TEXT* verb;
 	const dsql_nod* const* ptr = node->nod_arg;
 	const dsql_nod* const* const end = ptr + node->nod_count;
@@ -3044,7 +3037,6 @@ static void execute_blob(	dsql_req*		request,
 							UCHAR*	out_msg)
 {
 	UCHAR bpb[24];
-	ISC_STATUS s;
 
 	tsql* tdsql = DSQL_get_thread_data();
 
@@ -3075,6 +3067,7 @@ static void execute_blob(	dsql_req*		request,
 
 	dsql_par* parameter = blob->blb_blob_id;
 	const dsql_par* null = parameter->par_null;
+	ISC_STATUS s;
 
 	if (request->req_type == REQ_GET_SEGMENT)
 	{
@@ -4791,9 +4784,6 @@ static UCHAR* put_item(	UCHAR	item,
  **/
 static void release_request(dsql_req* request, bool top_level)
 {
-
-	ISC_STATUS_ARRAY status_vector;
-
 	tsql* tdsql = DSQL_get_thread_data();
 
 	// If request is parent, orphan the children and
@@ -4845,6 +4835,7 @@ static void release_request(dsql_req* request, bool top_level)
 
 	if (request->req_handle) {
 		THREAD_EXIT();
+		ISC_STATUS_ARRAY status_vector;
 		isc_release_request(status_vector, &request->req_handle);
 		THREAD_ENTER();
 	}
@@ -4918,7 +4909,8 @@ static UCHAR* var_info(
 	for (const dsql_par* param = message->msg_par_ordered; param;
 		param = param->par_ordered)
 	{
-		if (param->par_index && param->par_index >= first_index) {
+		if (param->par_index && param->par_index >= first_index)
+		{
 			sql_len = param->par_desc.dsc_length;
 			sql_sub_type = 0;
 			sql_scale = 0;
