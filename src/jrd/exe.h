@@ -21,6 +21,9 @@
  * Contributor(s): ______________________________________.
  *
  * 2001.07.28: Added rse_skip to struct rse to support LIMIT.
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
 
 #ifndef _JRD_EXE_H_
@@ -522,11 +525,11 @@ struct csb_repeat
 
 	struct idx* csb_idx;		/* Packed description of indices */
 	struct str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
-	nod*		csb_message;	/* Msg for send/receive */
+	nod* csb_message;			/* Msg for send/receive */
 	struct fmt* csb_format;		/* Default fmt for stream */
 	struct sbm* csb_fields;		/* Fields referenced */
 	float csb_cardinality;		/* Cardinality of relation */
-	nod*		csb_plan;		/* user-specified plan for this relation */
+	nod* csb_plan;				/* user-specified plan for this relation */
 	UCHAR* csb_map;				/* Stream map for views */
 	struct rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
 };
@@ -607,12 +610,13 @@ typedef Csb* CSB;
 #define csb_update	16384		/* Erase or modify for relation */
 #define csb_made_river	32768	/* stream has been included in a river */
 
-
 /* Exception condition list */
-	struct xcp_repeat {
-		SSHORT xcp_type;
-		SLONG xcp_code;
-	};
+
+struct xcp_repeat {
+	SSHORT xcp_type;
+	SLONG xcp_code;
+	class str *xcp_msg;
+};
 
 class xcp : public pool_alloc_rpt<xcp_repeat, type_xcp>
 {

@@ -29,9 +29,12 @@
  * being reported instead of one.
  * 2001.12.03 Claudio Valderrama: new visit to the same issue: views need
  * to count virtual operations, not real I/O on the underlying tables.
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
 /*
-$Id: exe.cpp,v 1.19 2002-09-27 01:28:26 bellardo Exp $
+$Id: exe.cpp,v 1.20 2002-09-28 14:04:35 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -129,10 +132,10 @@ static void seek_rsb(TDBB, REQ, RSB, USHORT, SLONG);
 #endif
 static NOD selct(TDBB, register NOD);
 static NOD send_msg(TDBB, register NOD);
-static void set_error(TDBB, XCP);
+static void set_error(TDBB, XCP, NOD);
 static NOD stall(TDBB, register NOD);
 static NOD store(TDBB, register NOD, SSHORT);
-static BOOLEAN test_error(TDBB, const XCP);
+static BOOLEAN test_and_fixup_error(TDBB, const XCP, REQ);
 static void trigger_failure(TDBB, REQ);
 static void validate(TDBB, NOD);
 
@@ -213,7 +216,6 @@ private:
 	void operator=(const LCK_RAII_wrapper&);	// no impl.
 };
 #endif
-
 
 
 void EXE_assignment(TDBB tdbb, NOD node)
@@ -1234,10 +1236,12 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 	if (relation == request->req_top_view_erase) {
 		if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
 			request->req_records_deleted++;
+			request->req_records_affected++;
 		}
 	}
 	else if (relation->rel_file || !relation->rel_view_rse) {
 		request->req_records_deleted++;
+		request->req_records_affected++;
 	}
 
 	if (transaction != dbb->dbb_sys_trans) {
@@ -1293,6 +1297,7 @@ static void execute_looper(
 
 	request->req_flags &= ~req_stall;
 	request->req_operation = next_state;
+
 	looper(tdbb, request, request->req_next);
 
 /* If any requested modify/delete/insert ops have completed, forget them */
@@ -1806,6 +1811,8 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 	// Execute stuff until we drop
 
+	request->req_records_affected = 0;
+
 	while (node && !(request->req_flags & req_stall))
 	{
 	try {
@@ -1820,6 +1827,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 #if defined(DEBUG_GDS_ALLOC) && FALSE
 		int node_type = node->nod_type;
 #endif
+
 		switch (node->nod_type) {
 		case nod_asn_list:
 			if (request->req_operation == req::req_evaluate) {
@@ -1936,7 +1944,34 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 		case nod_abort:
 			switch (request->req_operation) {
 			case req::req_evaluate:
-				set_error(tdbb, reinterpret_cast < xcp * >(node->nod_arg[0]));
+				{
+				XCP xcp_node = reinterpret_cast<XCP>(node->nod_arg[0]);
+				if (xcp_node)
+				{
+					/* XCP is defined,
+					   so throw an exception */
+					set_error(tdbb, xcp_node, node->nod_arg[1]);
+				}
+				else if (request->req_last_xcp.xcp_type != 0)
+				{
+					/* XCP is undefined, but there was a known exception before,
+					   so re-initiate it */
+					struct xcp last_error;
+					last_error.xcp_count = 1;
+					last_error.xcp_rpt[0].xcp_type = request->req_last_xcp.xcp_type;
+					last_error.xcp_rpt[0].xcp_code = request->req_last_xcp.xcp_code;
+					last_error.xcp_rpt[0].xcp_msg = request->req_last_xcp.xcp_msg;
+					request->req_last_xcp.xcp_type = 0;
+					request->req_last_xcp.xcp_msg = 0;
+					set_error(tdbb, &last_error, node->nod_arg[1]);
+				}
+				else
+				{
+					/* XCP is undefined and there weren't any exceptions before,
+					   so just do nothing */
+					request->req_operation = req::req_return;
+				}
+				}
 
 			default:
 				node = node->nod_parent;
@@ -2051,16 +2086,18 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 							 end = ptr + handlers->nod_count; ptr < end;
 							 ptr++)
 						{
-							const XCP pXcp =
+							const XCP xcp_node =
 								reinterpret_cast<XCP>((*ptr)->nod_arg[e_err_conditions]);
-							if (test_error(tdbb, pXcp))
+							if (test_and_fixup_error(tdbb, xcp_node, request))
 							{
 								request->req_operation = req::req_evaluate;
 								node = (*ptr)->nod_arg[e_err_action];
 								error_pending = FALSE;
+
 								/* On entering looper old_request etc. are saved.
 								   On recursive calling we will loose the actual old
 								   request for that invocation of looper. Avoid this. */
+
 								tdbb->tdbb_default = old_pool;
 								tdbb->tdbb_request = old_request;
 
@@ -2091,8 +2128,10 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 								tdbb->tdbb_default = request->req_pool;
 								tdbb->tdbb_request = request;
+
 								/* The error is dealt with by the application, cleanup
 								   this block's savepoint. */
+
 								if (transaction != dbb->dbb_sys_trans)
 								{
 									for (save_point = transaction->tra_save_point;
@@ -2144,6 +2183,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 			node = node->nod_parent;
 			if (request->req_operation == req::req_unwind)
 				node = node->nod_parent;
+			request->req_last_xcp.xcp_type = 0;
 			break;
 
 		case nod_label:
@@ -2788,10 +2828,12 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 		if (relation == request->req_top_view_modify) {
 			if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
 				request->req_records_updated++;
+				request->req_records_affected++;
 			}
 		}
 		else if (relation->rel_file || !relation->rel_view_rse) {
 			request->req_records_updated++;
+			request->req_records_affected++;
 		}
 
 		if (which_trig != PRE_TRIG) {
@@ -3374,7 +3416,7 @@ static NOD set_bookmark(TDBB tdbb, NOD node)
 #endif
 
 
-static void set_error(TDBB tdbb, XCP condition)
+static void set_error(TDBB tdbb, XCP condition, NOD node)
 {
 /**************************************
  *
@@ -3388,9 +3430,32 @@ static void set_error(TDBB tdbb, XCP condition)
  *
  **************************************/
 	register REQ request;
-	TEXT name[32], relation_name[32], message[82], *s, *r;
-
+	TEXT name[32], relation_name[32], message[82], temp[82], *s, *r;
+	UCHAR *string = 0;
+	USHORT length = 0;
+	
 	SET_TDBB(tdbb);
+
+	if (condition->xcp_rpt[0].xcp_msg)
+	{
+		/* pick up message from already initiated exception */
+		length = condition->xcp_rpt[0].xcp_msg->str_length;
+		memcpy(message, condition->xcp_rpt[0].xcp_msg->str_data, length);
+		delete condition->xcp_rpt[0].xcp_msg;
+		condition->xcp_rpt[0].xcp_msg = 0;
+	}
+	else if (node)
+	{
+		/* evaluate exception message and convert it to string */
+		length = MOV_make_string(EVL_expr(tdbb, node),
+								 ttype_none,
+								 &string,
+								 reinterpret_cast<VARY*>(temp),
+								 sizeof(temp));
+		memcpy(message, string, length);
+	}
+	message[length] = 0;
+
 	request = tdbb->tdbb_request;
 
 	switch (condition->xcp_rpt[0].xcp_type) {
@@ -3414,9 +3479,11 @@ static void set_error(TDBB tdbb, XCP condition)
 
 	case xcp_xcp_code:
 		MET_lookup_exception(tdbb, condition->xcp_rpt[0].xcp_code,
-							 name, message);
+							 name, temp);
 		if (message[0])
 			s = message;
+		else if (temp[0])
+			s = temp;
 		else if (name[0])
 			s = name;
 		else
@@ -3629,10 +3696,12 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 		if (relation == request->req_top_view_store) {
 			if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
 				request->req_records_inserted++;
+				request->req_records_affected++;
 			}
 		}
 		else if (relation->rel_file || !relation->rel_view_rse) {
 			request->req_records_inserted++;
+			request->req_records_affected++;
 		}
 
 		if (transaction != dbb->dbb_sys_trans) {
@@ -3729,29 +3798,48 @@ static NOD stream(TDBB tdbb, register NOD node)
 #endif
 
 
-static BOOLEAN test_error(TDBB tdbb, const XCP conditions)
+static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, REQ request)
 {
 /**************************************
  *
- *	t e s t _ e r r o r
+ *	t e s t _ a n d _ f i x u p _ e r r o r
  *
  **************************************
  *
  * Functional description
  *	Test for match of current state with list of error conditions.
+ *  Fix type and code of the exception.
  *
  **************************************/
+	SSHORT i, sqlcode;
+	STATUS *status_vector;
 
 	SET_TDBB(tdbb);
-	STATUS* status_vector = tdbb->tdbb_status_vector;
-	SSHORT  sqlcode       = gds__sqlcode(status_vector);
+	status_vector = tdbb->tdbb_status_vector;
+	sqlcode = gds__sqlcode(status_vector);
 
-	for (SSHORT i = 0; i < conditions->xcp_count; ++i)
+	const SLONG XCP_SQLCODE = -836;
+
+	delete request->req_last_xcp.xcp_msg;
+	request->req_last_xcp.xcp_msg = 0;
+
+	for (i = 0; i < conditions->xcp_count; i++)
 	{
 		switch (conditions->xcp_rpt[i].xcp_type)
 		{
 		case xcp_sql_code:
-			if (sqlcode == conditions->xcp_rpt[i].xcp_code) {
+			if (sqlcode == conditions->xcp_rpt[i].xcp_code)
+			{
+				if ((sqlcode != XCP_SQLCODE) || (status_vector[1] != gds_except))
+				{
+					request->req_last_xcp.xcp_type = xcp_sql_code;
+					request->req_last_xcp.xcp_code = sqlcode;
+				}
+				else
+				{
+					request->req_last_xcp.xcp_type = xcp_xcp_code;
+					request->req_last_xcp.xcp_code = status_vector[3];
+				}              
 				status_vector[0] = 0;
 				status_vector[1] = 0;
 				return TRUE;
@@ -3759,7 +3847,10 @@ static BOOLEAN test_error(TDBB tdbb, const XCP conditions)
 			break;
 
 		case xcp_gds_code:
-			if (status_vector[1] == conditions->xcp_rpt[i].xcp_code) {
+			if (status_vector[1] == conditions->xcp_rpt[i].xcp_code)
+			{
+				request->req_last_xcp.xcp_type = xcp_gds_code;
+				request->req_last_xcp.xcp_code = status_vector[1];
 				status_vector[0] = 0;
 				status_vector[1] = 0;
 				return TRUE;
@@ -3770,6 +3861,16 @@ static BOOLEAN test_error(TDBB tdbb, const XCP conditions)
 			if ((status_vector[1] == gds_except) &&
 				(status_vector[3] == conditions->xcp_rpt[i].xcp_code))
 			{
+				request->req_last_xcp.xcp_type = xcp_xcp_code;
+				request->req_last_xcp.xcp_code = status_vector[3];
+				TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
+				if (msg)
+				{
+					USHORT len = strlen(msg);
+					request->req_last_xcp.xcp_msg = FB_NEW_RPT(*getDefaultMemoryPool(), len + 1) str();
+					request->req_last_xcp.xcp_msg->str_length = len;
+					memcpy(request->req_last_xcp.xcp_msg->str_data, msg, len + 1);
+				}
 				status_vector[0] = 0;
 				status_vector[1] = 0;
 				return TRUE;
@@ -3777,11 +3878,37 @@ static BOOLEAN test_error(TDBB tdbb, const XCP conditions)
 			break;
 
 		case xcp_default:
+			if (sqlcode && (sqlcode != XCP_SQLCODE))
+			{
+				request->req_last_xcp.xcp_type = xcp_sql_code;
+				request->req_last_xcp.xcp_code = sqlcode;
+			}
+			else
+			{
+				if (status_vector[1] != gds_except) 
+				{
+					request->req_last_xcp.xcp_type = xcp_gds_code;
+					request->req_last_xcp.xcp_code = status_vector[1];
+				}
+				else
+				{
+					request->req_last_xcp.xcp_type = xcp_xcp_code;
+					request->req_last_xcp.xcp_code = status_vector[3];
+					TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
+					if (msg)
+					{
+						USHORT len = strlen(msg);
+						request->req_last_xcp.xcp_msg = FB_NEW_RPT(*getDefaultMemoryPool(), len + 1) str();
+						request->req_last_xcp.xcp_msg->str_length = len;
+						memcpy(request->req_last_xcp.xcp_msg->str_data, msg, len + 1);
+					}
+				}
+			}
 			status_vector[0] = 0;
 			status_vector[1] = 0;
 			return TRUE;
 		}
-	}
+    }
 
 	return FALSE;
 }

@@ -20,12 +20,14 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________
  * 2001.6.21 Claudio Valderrama: BREAK and SUBSTRING.
- * 2001.07.28: John Bellardo:  Added code to generate blr_skip.
- * 2002.07.30: Arno Brinkman:  Added code, procedures to generate COALESCE, CASE
- *
+ * 2001.07.28 John Bellardo:  Added code to generate blr_skip.
+ * 2002.07.30 Arno Brinkman:  Added code, procedures to generate COALESCE, CASE
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
 /*
-$Id: gen.cpp,v 1.11 2002-09-25 17:12:06 skidder Exp $
+$Id: gen.cpp,v 1.12 2002-09-28 14:03:39 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -43,6 +45,7 @@ $Id: gen.cpp,v 1.11 2002-09-25 17:12:06 skidder Exp $
 #include "../dsql/gen_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
+#include "../dsql/misc_func.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "gen/iberror.h"
@@ -82,15 +85,6 @@ static CONST SCHAR db_key_name[] = "DB_KEY";
 /* The following are passed as the third argument to gen_constant */
 #define NEGATE_VALUE TRUE
 #define USE_VALUE    FALSE
-
-/* Internal info request types */
-
-enum internal_info_req
-{
-	connection_id = 1,
-	transaction_id = 2
-};
-
 
 UCHAR GEN_expand_buffer( REQ request, UCHAR byte)
 {
@@ -440,6 +434,7 @@ void GEN_expr( REQ request, NOD node)
 		break;
 
 	case nod_internal_info:
+	case nod_proc_internal_info:
 		operator_ = blr_internal_info;
 		break;
 	case nod_upcase:
@@ -889,8 +884,7 @@ void GEN_statement( REQ request, NOD node)
 	NOD temp, *ptr, *end;
 	CTX context;
 	MSG message;
-	STR name;
-	STR string;
+	STR name, string;
 	TEXT *p;
 	ULONG id_length;
 
@@ -1048,8 +1042,8 @@ void GEN_statement( REQ request, NOD node)
 		return;
 
     case nod_breakleave:
-        STUFF (blr_leave);
-        STUFF ((int) node->nod_arg [e_break_number]);
+        STUFF(blr_leave);
+        STUFF((int) node->nod_arg[e_break_number]);
         return;
 	
 	case nod_store:
@@ -1077,17 +1071,46 @@ void GEN_statement( REQ request, NOD node)
 
 	case nod_exception_stmt:
 		STUFF(blr_abort);
-		STUFF(blr_exception);
-		string = (STR) node->nod_arg[0];
-		if (!(string->str_flags & STR_delimited_id)) {
+		string = (STR) node->nod_arg[e_xcp_name];
+		temp = node->nod_arg[e_xcp_msg];
+		/* if exception name is undefined,
+		   it means we have re-initiate semantics here,
+		   so blr_raise verb should be generated */
+		if (!string)
+		{
+			STUFF(blr_raise);
+			return;
+		}
+		/* if exception value is defined,
+		   it means we have user-defined exception message here,
+		   so blr_exception_msg verb should be generated */
+		if (temp)
+		{
+			STUFF(blr_exception_msg);
+		}
+		/* otherwise go usual way,
+		   i.e. generate blr_exception */
+		else
+		{
+			STUFF(blr_exception);
+		}
+		if (!(string->str_flags & STR_delimited_id))
+		{
 			id_length = string->str_length;
-			for (p = reinterpret_cast < char *>(string->str_data); *p;
-				 id_length--) {
+			for (p = reinterpret_cast<char*>(string->str_data); *p;
+				 id_length--)
+			{
 				*p = UPPER(*p);
 				*p++;
 			}
 		}
 		STUFF_CSTRING(string->str_data);
+		/* if exception value is defined,
+		   generate appropriate BLR verbs */
+		if (temp)
+		{
+			GEN_expr(request, temp);
+		}
 		return;
 
 	case nod_while:
@@ -2198,20 +2221,11 @@ static void gen_select( REQ request, NOD rse)
             parameter->par_name = parameter->par_alias  = "USER";
         else if (item->nod_type == nod_current_role)
             parameter->par_name = parameter->par_alias  = "ROLE";
-        else if (item->nod_type == nod_internal_info)
+        else if (item->nod_type == nod_internal_info || item->nod_type == nod_proc_internal_info)
 		{
-			internal_info_req request =
-				*reinterpret_cast<internal_info_req*>(item->nod_arg[0]->nod_desc.dsc_address);
-
-			switch (request)
-			{
-			case connection_id:
-				parameter->par_name = parameter->par_alias  = "CONNECTION_ID";
-				break;
-			case transaction_id:
-				parameter->par_name = parameter->par_alias  = "TRANSACTION_ID";
-				break;
-			}
+			internal_info_id id =
+				*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);
+			parameter->par_name = parameter->par_alias = InternalInfo::getAlias(id);
 		}
         else if (item->nod_type == nod_substr) {
             /* CVC: SQL starts at 1 but C starts at zero. */

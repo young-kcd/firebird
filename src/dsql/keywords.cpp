@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.7 2002-09-10 18:28:19 skidder Exp $
+ *  $Id: keywords.cpp,v 1.8 2002-09-28 14:03:39 dimitr Exp $
  *
  */
 
@@ -232,6 +232,7 @@ static CONST TOK tokens [] = {
 	{RIGHT, "RIGHT", 1},
 	{ROLE, "ROLE", 1}, 
 	{ROLLBACK, "ROLLBACK", 1}, 
+	{ROWS_AFFECTED, "ROWS_AFFECTED", 2},
 	{DATABASE, "SCHEMA", 1},	/* Alias of DATABASE */
 	{SECOND, "SECOND", 2},
 	{SEGMENT, "SEGMENT", 1},

@@ -95,6 +95,10 @@
  * 2002.08.07 Dmitry Yemanov: Disabled BREAK statement in triggers
  *
  * 2002.08.10 Dmitry Yemanov: ALTER VIEW
+ *
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
 
 #include "firebird.h"
@@ -116,6 +120,7 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
+#include "../dsql/misc_func.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/thd_proto.h"
 
@@ -753,6 +758,16 @@ NOD PASS1_node(REQ request, NOD input, USHORT proc_flag)
 		node->nod_desc = input->nod_desc;
 		return node;
 
+	case nod_proc_internal_info:
+		{
+		internal_info_id id =
+			*reinterpret_cast<internal_info_id*>(input->nod_arg[0]->nod_desc.dsc_address);
+		if (!(request->req_flags & REQ_procedure))
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
+				gds_arg_gds, gds_random, gds_arg_string, InternalInfo::getAlias(id), 0);
+		}
+		break;
+
 	default:
 		break;
 	}
@@ -1173,7 +1188,20 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 
 	case nod_exception_stmt:
 		node = input;
-		if (request->req_error_handlers) {
+		/* if exception value is defined,
+		   pass value node */
+		if (input->nod_arg[e_xcp_msg])
+		{
+			node->nod_arg[e_xcp_msg] = PASS1_node(request,
+												  input->nod_arg[e_xcp_msg],
+												  proc_flag);
+		}
+		else
+		{
+			node->nod_arg[e_xcp_msg] = 0;
+		}
+		if (request->req_error_handlers)
+		{
 			temp = MAKE_node(nod_list, 3);
 			temp->nod_arg[0] = MAKE_node(nod_start_savepoint, 0);
 			temp->nod_arg[1] = input;
@@ -1756,6 +1784,7 @@ static NOD copy_field( NOD field, CTX context)
 	case nod_subtract2:
 	case nod_upcase:
 	case nod_internal_info:
+	case nod_proc_internal_info:
 	case nod_extract:
 	case nod_list:
 		temp = MAKE_node(field->nod_type, field->nod_count);
@@ -2254,6 +2283,7 @@ static BOOLEAN invalid_reference(REQ request, NOD node, NOD list, BOOLEAN exact_
 			case nod_user_name:
             case nod_current_role:
 			case nod_internal_info:
+			case nod_proc_internal_info:
 				return FALSE;
 		}
 

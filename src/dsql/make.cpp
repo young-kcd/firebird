@@ -929,6 +929,7 @@ void MAKE_desc( DSC * desc, NOD node)
 		return;
 
 	case nod_internal_info:
+	case nod_proc_internal_info:
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;

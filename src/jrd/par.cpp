@@ -23,9 +23,12 @@
  * 27-May-2001 Claudio Valderrama: par_plan() no longer uppercases
  *			an index's name before doing a lookup of such index.
  * 2001.07.28: Added parse code for blr_skip to support LIMIT.
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
 /*
-$Id: par.cpp,v 1.12 2002-09-25 17:12:10 skidder Exp $
+$Id: par.cpp,v 1.13 2002-09-28 14:04:35 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -783,9 +786,18 @@ static XCP par_condition(TDBB tdbb, CSB * csb)
 
 /* allocate a node to represent the conditions list */
 
+	code_type = BLR_BYTE;
+
+	/* don't create XCP if blr_raise is used,
+	   just return NULL */
+	if (code_type == blr_raise)
+	{
+		return NULL;
+	}
+
 	exception_list = FB_NEW_RPT(*tdbb->tdbb_default, 1) xcp();
 	exception_list->xcp_count = 1;
-	code_type = BLR_BYTE;
+	
 	switch (code_type) {
 	case blr_sql_code:
 		exception_list->xcp_rpt[0].xcp_type = xcp_sql_code;
@@ -805,6 +817,7 @@ static XCP par_condition(TDBB tdbb, CSB * csb)
 		break;
 
 	case blr_exception:
+	case blr_exception_msg:
 		exception_list->xcp_rpt[0].xcp_type = xcp_xcp_code;
 		par_name(csb, name);
 		if (!(exception_list->xcp_rpt[0].xcp_code =
@@ -822,6 +835,8 @@ static XCP par_condition(TDBB tdbb, CSB * csb)
 		assert(FALSE);
 		break;
 	}
+
+	exception_list->xcp_rpt[0].xcp_msg = 0;
 
 	return exception_list;
 }
@@ -2632,8 +2647,15 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 		break;
 
 	case blr_abort:
+		{
+		bool flag = (BLR_PEEK == blr_exception_msg);
 		node->nod_arg[0] = (NOD) par_condition(tdbb, csb);
+		if (flag)
+		{
+			node->nod_arg[1] = parse(tdbb, csb, sub_type);
+		}
 		break;
+		}
 
 	case blr_if:
 		node->nod_arg[e_if_boolean] = parse(tdbb, csb, BOOL);

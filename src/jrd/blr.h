@@ -21,6 +21,9 @@
  * Contributor(s): ______________________________________.
  *
  * Claudio Valderrama: 2001.6.18: Add blr_current_role.
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
 
 #ifndef _JRD_BLR_H_
@@ -65,6 +68,8 @@
 #define blr_exception		(unsigned char)2
 #define blr_trigger_code 	(unsigned char)3
 #define blr_default_code 	(unsigned char)4
+#define blr_raise			(unsigned char)5
+#define blr_exception_msg	(unsigned char)6
 
 #define blr_version4		(unsigned char)4
 #define blr_version5		(unsigned char)5

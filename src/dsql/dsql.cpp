@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.23 2002-09-25 17:12:06 skidder Exp $
+$Id: dsql.cpp,v 1.24 2002-09-28 14:03:39 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -2046,6 +2046,7 @@ void DSQL_pretty(NOD node, int column)
 		verb = "insert";
 		break;
 	case nod_internal_info:
+	case nod_proc_internal_info:
 		verb = "internal info";
 		break;
 	case nod_join:

@@ -315,6 +315,7 @@ typedef ENUM nod_t
     nod_redef_procedure, /* allows silent creation/overwriting of a procedure. */
 	nod_exec_sql, /* EXECUTE VARCHAR */
 	nod_internal_info, /* internal engine info */
+	nod_proc_internal_info, 
 	nod_searched_case, /* searched CASE function */
 	nod_simple_case, /* simple CASE function */
 	nod_coalesce, /* COALESCE function */
@@ -435,6 +436,10 @@ typedef nod *NOD;
 
 #define e_internal_info	0		/* nod_internal_info */
 #define e_internal_info_count	1
+
+#define e_xcp_name	0			/* nod_exception_stmt */
+#define e_xcp_msg	1
+#define e_xcp_count	2
 
 #define e_rtn_procedure 0		/* nod_procedure */
 #define e_rtn_count	1

@@ -246,3 +246,4 @@
 #define USING 502
 #define NULLS 503
 #define LAST 504
+#define ROWS_AFFECTED 505

@@ -51,8 +51,10 @@
  * 2002.08.07 Dmitry Yemanov: INT64/LARGEINT are replaced with BIGINT and available in dialect 3 only
  * 2002.08.31 Dmitry Yemanov: allowed user-defined index names for PK/FK/UK constraints
  * 2002.09.01 Dmitry Yemanov: RECREATE VIEW
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
-
 
 #if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
 #include <windows.h>
@@ -78,9 +80,9 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/parse_proto.h"
 #include "../dsql/keywords.h"
+#include "../dsql/misc_func.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
-/* #include "../jrd/err_proto.h" */
 #include "../wal/wal.h"
 
 /* Can't include ../jrd/err_proto.h here because it pulls jrd.h. */
@@ -408,6 +410,7 @@ static void	yyerror (TEXT *);
 %token USING
 %token NULLS
 %token LAST
+%token ROWS_AFFECTED
 
 /* precedence declarations for expression evaluation */
 
@@ -1434,22 +1437,17 @@ proc_block	: proc_statement
 		| full_proc_block
 		;
 
-full_proc_block	: BEGIN
-		  END
-			{ $$ = make_node (nod_block, e_blk_count,
-					NULL, NULL);}
-		| BEGIN
-		  proc_statements
-		  END
-			{ $$ = make_node (nod_block, e_blk_count,
-					make_list ($2), NULL);}
-		| BEGIN
-		  proc_statements
-		  excp_statements
-		  END
-			{ $$ = make_node (nod_block, e_blk_count,
-					make_list ($2), make_list ($3));}
+full_proc_block	: BEGIN full_proc_block_body END
+			{ $$ = $2; }
 		;
+
+full_proc_block_body	: proc_statements
+			{ $$ = make_node (nod_block, e_blk_count, make_list ($1), NULL); }
+		| proc_statements excp_hndl_statements
+			{ $$ = make_node (nod_block, e_blk_count, make_list ($1), make_list ($2)); }
+		|
+			{ $$ = make_node (nod_block, e_blk_count, NULL, NULL);}
+		;							
 
 proc_statements	: proc_block
 		| proc_statements proc_block
@@ -1458,8 +1456,8 @@ proc_statements	: proc_block
 
 proc_statement	: assignment ';'
 		| delete ';'
-		| EXCEPTION symbol_exception_name ';'
-			{ $$ = make_node (nod_exception_stmt, 1, $2); }
+		| excp_statement
+		| raise_statement
 		| exec_procedure
 		| exec_sql
 		| for_select
@@ -1477,6 +1475,16 @@ proc_statement	: assignment ';'
 		| KW_BREAK ';'
 			{ $$ = make_node (nod_breakleave, e_break_count, NULL); }
 		;
+
+excp_statement	: EXCEPTION symbol_exception_name ';'
+			{ $$ = make_node (nod_exception_stmt, e_xcp_count, $2, NULL); }
+		| EXCEPTION symbol_exception_name value ';'
+			{ $$ = make_node (nod_exception_stmt, e_xcp_count, $2, $3); }
+		;
+
+raise_statement	: EXCEPTION ';'
+			{ $$ = make_node (nod_exception_stmt, e_xcp_count, NULL, NULL); }
+    	;
 
 exec_procedure	: EXECUTE PROCEDURE symbol_procedure_name proc_inputs proc_outputs ';'
 			{ $$ = make_node (nod_exec_procedure, e_exe_count, $3,
@@ -1542,12 +1550,12 @@ cursor_def	: AS CURSOR symbol_cursor_name
 		|
 			{ $$ = NULL; }
 		;
-excp_statements	: excp_statement
-		| excp_statements excp_statement
+excp_hndl_statements	: excp_hndl_statement
+		| excp_hndl_statements excp_hndl_statement
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-excp_statement	: WHEN errors DO proc_block
+excp_hndl_statement	: WHEN errors DO proc_block
 			{ $$ = make_node (nod_on_error, e_err_count,
 					make_list ($2), $4); }
 		;
@@ -3319,6 +3327,8 @@ value		: column_name
 		| current_role
 		| internal_info
 			{ $$ = $1; }
+		| proc_internal_info
+			{ $$ = $1; }
 		| DB_KEY
 			{ $$ = make_node (nod_dbkey, 1, NULL); }
 		| symbol_table_alias_name '.' DB_KEY
@@ -3433,24 +3443,6 @@ u_constant	: u_numeric_constant
 			{ $$ = MAKE_constant ((STR) $2, CONSTANT_TIMESTAMP); }
 		;
 
-
-constant_list	: constant
-		| parameter
-		| current_user
-        | current_role
-		| internal_info
-		| constant_list ',' constant
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| constant_list ',' parameter
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| constant_list ',' current_user
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| constant_list ',' current_role
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| constant_list ',' internal_info
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
-
 parameter	: '?'
 			{ $$ = make_node (nod_parameter, 0, NULL); }
 		;
@@ -3467,10 +3459,21 @@ current_role	: CURRENT_ROLE
 
 internal_info	: CONNECTION_ID
 			{ $$ = make_node (nod_internal_info, e_internal_info_count,
-						MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
+						MAKE_constant ((STR) internal_connection_id, CONSTANT_SLONG)); }
 		| TRANSACTION_ID
 			{ $$ = make_node (nod_internal_info, e_internal_info_count,
-						MAKE_constant ((STR) 2, CONSTANT_SLONG)); }
+						MAKE_constant ((STR) internal_transaction_id, CONSTANT_SLONG)); }
+		;
+		
+proc_internal_info	: GDSCODE
+			{ $$ = make_node (nod_proc_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) internal_gdscode, CONSTANT_SLONG)); }
+		| SQLCODE
+			{ $$ = make_node (nod_proc_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) internal_sqlcode, CONSTANT_SLONG)); }
+		| ROWS_AFFECTED
+			{ $$ = make_node (nod_proc_internal_info, e_internal_info_count,
+						MAKE_constant ((STR) internal_rows_affected, CONSTANT_SLONG)); }
 		;
 
 sql_string	: STRING			/* string in current charset */

@@ -28,9 +28,12 @@
  *   if source is blob and should check implementation limits on field lengths.
  * 2002.02.25 Claudio Valderrama: concatenate() should be a civilized function.
  *   This closes the heart of SF Bug #518282.
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
 /*
-$Id: cmp.cpp,v 1.13 2002-09-27 22:59:23 skidder Exp $
+$Id: cmp.cpp,v 1.14 2002-09-28 14:04:34 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -299,6 +302,9 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 	clone->req_top_node = request->req_top_node;
 	clone->req_trg_name = request->req_trg_name;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
+	clone->req_last_xcp.xcp_type = request->req_last_xcp.xcp_type;
+	clone->req_last_xcp.xcp_code = request->req_last_xcp.xcp_code;
+	clone->req_last_xcp.xcp_msg = request->req_last_xcp.xcp_msg;
 
 	rpb1 = clone->req_rpb;
 	end = rpb1 + clone->req_count;
@@ -1736,6 +1742,8 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 	request->req_access = csb->csb_access;
 	request->req_variables = csb->csb_variables;
 	request->req_resources = csb->csb_resources;
+	request->req_last_xcp.xcp_type = 0;
+	request->req_last_xcp.xcp_msg = 0;
 	if (csb->csb_g_flags & csb_blr_version4) {
 		request->req_flags |= req_blr_version4;
 	}
@@ -2150,6 +2158,8 @@ void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
 				*next = request->req_request;
 				break;
 			}
+
+	delete request->req_last_xcp.xcp_msg;
 
 	delete request->req_pool;
 }

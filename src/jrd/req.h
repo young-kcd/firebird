@@ -19,6 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
 
 #ifndef _JRD_REQ_H_
@@ -26,6 +30,8 @@
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
+
+#include "../jrd/exe.h"
 
 #include <vector>
 
@@ -151,6 +157,8 @@ public:
 	ULONG req_records_updated;	/* count of records updated by request */
 	ULONG req_records_deleted;	/* count of records deleted by request */
 
+	ULONG req_records_affected; /* count of records affected by the last statement */
+
 	USHORT req_view_flags;		/* special flags for virtual ops on views */
 	struct rel* req_top_view_store;	/* the top view in store(), if any */
 	struct rel* req_top_view_modify;	/* the top view in modify(), if any */
@@ -174,6 +182,8 @@ public:
 		req_sync,
 		req_unwind
 	} req_operation;	/* operation for next node */
+
+    struct xcp_repeat req_last_xcp;	/* last known exception */
 
 	rpb req_rpb[1];		/* record parameter blocks */
 };

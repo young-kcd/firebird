@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.17 2002-09-27 01:28:26 bellardo Exp $ 
+  * $Id: evl.cpp,v 1.18 2002-09-28 14:04:35 dimitr Exp $ 
  */
 
 /*
@@ -54,6 +54,9 @@
  * 2002.2.15 Claudio Valderrama: divide2() should not mangle negative values.
  * 2002.04.16 Paul Beach HP10 Port - (UCHAR*) desc.dsc_address = p; modified for HP 
  *	Compiler
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
  */
 
 #include "firebird.h"
@@ -105,6 +108,7 @@
 #include "../jrd/align.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/cvt_proto.h"
+#include "../jrd/misc_func_ids.h"
 //#include "../jrd/authenticate.h"
 
 #if defined(WIN_NT) && defined(_MSC_VER)
@@ -125,15 +129,6 @@
 #ifdef VMS
 extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
-
-/* Internal info request types */
-
-enum internal_info_req
-{
-	connection_id = 1,
-	transaction_id = 2
-};
-
 
 /*  *** DANGER DANGER WILL ROBINSON ***
  *  add(), multiply(), and divide() all take the same three arguments, but
@@ -3931,7 +3926,6 @@ static DSC *lock_state(TDBB tdbb, NOD node, VLU impure)
 			struct lck temp_lock;
 			/* fill out a lock block, zeroing it out first */
 
-			MOVE_CLEAR(&temp_lock, sizeof(struct lck));
 			temp_lock.lck_parent = dbb->dbb_lock;
 			temp_lock.lck_type = LCK_attachment;
 			temp_lock.lck_owner_handle =
@@ -5035,16 +5029,29 @@ static DSC *internal_info(TDBB tdbb, DSC * value, VLU impure)
  **************************************/
 	EVL_make_value(tdbb, value, impure);
 
-	internal_info_req request =
-		*reinterpret_cast<internal_info_req*>(impure->vlu_desc.dsc_address);
+	internal_info_id id =
+		*reinterpret_cast<internal_info_id*>(impure->vlu_desc.dsc_address);
 
-	switch (request)
+	switch (id)
 	{
-	case connection_id:
+	case internal_connection_id:
 		impure->vlu_misc.vlu_long = PAG_attachment_id();
 		break;
-	case transaction_id:
+	case internal_transaction_id:
 		impure->vlu_misc.vlu_long = tdbb->tdbb_transaction->tra_number;
+		break;
+	case internal_gdscode:
+		impure->vlu_misc.vlu_long =
+			(tdbb->tdbb_request->req_last_xcp.xcp_type == xcp_gds_code) ?
+				tdbb->tdbb_request->req_last_xcp.xcp_code : 0;
+		break;
+	case internal_sqlcode:
+		impure->vlu_misc.vlu_long =
+			(tdbb->tdbb_request->req_last_xcp.xcp_type == xcp_sql_code) ?
+				tdbb->tdbb_request->req_last_xcp.xcp_code : 0;
+		break;
+	case internal_rows_affected:
+		impure->vlu_misc.vlu_long = tdbb->tdbb_request->req_records_affected;
 		break;
 	default:
 		BUGCHECK(232);	/* msg 232 EVL_expr: invalid operation */
