@@ -1,3 +1,9 @@
+2004-06-23 08:33  kkuznetsov
+
+	* firebird2/configure.in (1.141.2.22):
+	
+	Putting some Solaris changes from HEAD to hear (B1_5_Release)
+
 2004-06-21 07:24  paul_reeves
 
 	* firebird2/src/jrd/isc_version.h (1.1.2.18):
