@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.45 2004-03-25 23:12:39 skidder Exp $
+ *  $Id: alloc.cpp,v 1.46 2004-03-25 23:36:03 skidder Exp $
  *
  */
 
@@ -132,7 +132,7 @@ void pool_out_of_memory()
 #if defined(WIN_NT)
 size_t get_page_size() {
 	SYSTEM_INFO info;
-	GetSysemInfo(&info);
+	GetSystemInfo(&info);
 	return info.dwPageSize;
 }
 #elif defined(HAVE_MMAP)

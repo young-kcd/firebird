@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.14 2004-03-25 23:12:39 skidder Exp $
+ *  $Id: rwlock.h,v 1.15 2004-03-25 23:36:03 skidder Exp $
  *
  */
 
@@ -90,13 +90,13 @@ public:
 	}
 	void unblockWaiting()
 	{
-		if (blockedWriters) {
+		if (blockedWriters.value()) {
 			if (!SetEvent(writers_event))
 				system_call_failed::raise("SetEvent");
 		}
 		else
-			if (blockedReaders) {
-				if (!ReleaseSemaphore(readers_semaphore, blockedReaders, NULL))
+			if (blockedReaders.value()) {
+				if (!ReleaseSemaphore(readers_semaphore, blockedReaders.value(), NULL))
 					system_call_failed::raise("ReleaseSemaphore");
 			}
 	}
@@ -121,21 +121,21 @@ public:
 	void beginRead()
 	{
 		if (!tryBeginRead()) {
-			InterlockedIncrement_uni(&blockedReaders);
+			--blockedReaders;
 			while (!tryBeginRead())
 				if (WaitForSingleObject(readers_semaphore, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
-			InterlockedDecrement_uni(&blockedReaders); 
+			--blockedReaders; 
 		}
 	}
 	void beginWrite()
 	{
 		if (!tryBeginWrite()) {
-			InterlockedIncrement_uni(&blockedWriters);
+			++blockedWriters;
 			while (!tryBeginWrite())
 				if (WaitForSingleObject(writers_event, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
-			InterlockedDecrement_uni(&blockedWriters);
+			--blockedWriters;
 		}
 	}
 	void endRead()
