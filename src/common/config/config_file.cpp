@@ -26,14 +26,12 @@
 #include "firebird.h"
 
 #include "../../common/config/config_file.h"
+#include "../../common/classes/auto.h"
 #include "../jrd/os/fbsyslog.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-
-#include <fstream>
-#include <iostream>
 
 // Invalid or missing CONF_FILE may lead to severe errors
 // in applications. That's why for regular SERVER builds
@@ -213,18 +211,32 @@ void ConfigFile::checkLoadConfig()
  *	Load file immediately
  */
 
+namespace {
+	class FileClose
+	{
+	public:
+		static void clear(FILE *f)
+		{
+			if (f) {
+				fclose(f);
+			}
+		}
+	};
+} // namespace
+
 void ConfigFile::loadConfig()
 {
 	isLoadedFlg = true;
 
 	parameters.clear();
 
-    std::ifstream configFileStream(configFile.c_str());
+	// Note we request file in "binary" form. We'll handle line breaks ourselves
+	Firebird::AutoPtr<FILE, FileClose> ifile(fopen(configFile.c_str(), "rb"));
 	
 #ifdef EXIT_ON_NO_CONF
 	int BadLinesCount = 0;
 #endif
-    if (!configFileStream)
+    if (!ifile)
     {
         // config file does not exist
 #ifdef INFORM_ON_NO_CONF
@@ -248,9 +260,67 @@ void ConfigFile::loadConfig()
     }
     string inputLine;
 
-    while (!configFileStream.eof())
+	// Variables are placed outside of the loop to work around GCC bug with 
+	// debug info generation
+	char buffer[100];
+	int bytesRead;
+	bool prevCR;
+
+    while (true)
     {
-		std::getline(configFileStream, inputLine);
+		// Nickolay Samofatov, 14-Sep-2004.
+		// std::getline doesn't work with vanilla GCC 3.3.2 and 3.3.3 (see GCC/14720)
+		// Implement something similar inline (code logic stolen from 
+		// Firebird::FileObject in my private Firebird 2.0 tree). Use stdio because 
+		// ifstream::readsome is broken in GCC since version 3.1 (still broken in 
+		// 3.3.2, not tested further)
+
+		// This code is not very efficient, but is still much better then reading
+		// characters one-by-one. Plus it should be able to handle line breaks in
+		// Windows, Linux and Macintosh format nicely on all platforms
+		inputLine.resize(0);
+		prevCR = false;
+		do {
+			bytesRead = fread(buffer, 1, sizeof(buffer), ifile);
+			for (int pos = 0; pos < bytesRead; pos++) {
+				switch(buffer[pos]) {
+					case '\n':
+						// Unix or Windows line break
+						inputLine.append(buffer, pos);
+						// Adjust file pointer
+						fseek(ifile, pos - bytesRead + 1, SEEK_CUR);
+						// Kill trailing CR if present (Windows)
+						if (prevCR)
+							inputLine.resize(inputLine.length() - 1);
+						goto line_finished;
+
+					case '\r':
+						//  Mac line break or portion of Windows line break
+						prevCR = true;
+						break;
+
+					default:
+						if (prevCR) {
+							// Mac line break
+							inputLine.append(buffer, pos);
+							// Adjust file pointer
+							fseek(ifile, pos - bytesRead, SEEK_CUR);
+							goto line_finished; 
+						}
+				}
+			}
+			inputLine.append(buffer, bytesRead);
+		} while (bytesRead == sizeof(buffer));
+
+		// Kill trailing CR if present
+		if (prevCR)
+			inputLine.resize(inputLine.length() - 1);
+
+		// Check if we reached end of file
+		if (!inputLine.length() && !bytesRead)
+			break;
+
+line_finished:
 
 		stripComments(inputLine);
 		stripLeadingWhiteSpace(inputLine);
