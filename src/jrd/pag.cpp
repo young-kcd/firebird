@@ -121,7 +121,7 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
        20             LINUX on sparc systems
 	   21             FreeBSD/i386
 	   22             NetBSD/i386
-	23		Darwin/PowerPC
+       23		Darwin/PowerPC
 
 */
 

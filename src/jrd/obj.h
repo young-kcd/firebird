@@ -41,5 +41,8 @@
 #define obj_count               11
 #define obj_user_group          12
 #define obj_sql_role            13
+#define obj_generator		    14
+#define obj_udf       	        15
+#define obj_blob_filter		    16
 
 #endif /* _JRD_OBJ_H_ */

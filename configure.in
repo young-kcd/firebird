@@ -54,6 +54,9 @@ AC_TRY_COMPILE([#include <stdlib.h>
 [AC_DEFINE(socklen_t, int) AC_MSG_RESULT(no)])
 
 
+AC_DEFINE(UNIX_64_BIT_IO)
+
+
 AC_C_BIGENDIAN
 AC_C_CONST
 

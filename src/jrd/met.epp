@@ -21,10 +21,21 @@
  * Contributor(s): ______________________________________.
  *
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
+ * 2001.6.25 Claudio Valderrama: Finish MET_lookup_generator_id() by
+ *	assigning it a number in the compiled requests table.
+ *
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
+ * 2001.10.03 Claudio Valderrama: MET_relation_owns_trigger() determines if
+ *   there's a row in rdb$triggers with the given relation's and trigger's names.
+ * 2001.10.04 Claudio Valderrama: MET_relation_default_class() determines if the
+ *   given security class name is the default security class for a relation.
+ *   Modify MET_lookup_field() so it can verify the field's security class, too.
  *
  */
 /*
-$Id: met.epp,v 1.10 2002-06-14 12:09:36 dimitr Exp $
+$Id: met.epp,v 1.11 2002-07-01 16:59:09 skywalker Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -955,8 +966,7 @@ void MET_load_trigger(
 
 
 
-void DLL_EXPORT MET_lookup_cnstrt_for_index(
-											TDBB tdbb,
+void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB tdbb,
 											TEXT * constraint_name,
 											TEXT * index_name)
 {
@@ -1156,7 +1166,7 @@ SLONG MET_lookup_exception_number(TDBB tdbb, TEXT * name)
 }
 
 
-int MET_lookup_field(TDBB tdbb, REL relation, CONST TEXT* name)
+int MET_lookup_field(TDBB tdbb, REL relation, CONST TEXT* name, CONST TEXT* security_name)
 {
 /**************************************
  *
@@ -1166,6 +1176,9 @@ int MET_lookup_field(TDBB tdbb, REL relation, CONST TEXT* name)
  *
  * Functional description
  *      Look up a field name.
+ *	Additinally, if security_name is a not null pointer,
+ *	it's used to include the condition that it should match
+ *	the field's security class name, too.
  *
  **************************************/
 	DBB			dbb;
@@ -1185,21 +1198,28 @@ int MET_lookup_field(TDBB tdbb, REL relation, CONST TEXT* name)
 	if ( (vector = relation->rel_fields) )
 	{
 		length = strlen(name);
-		for (field = vector->begin(),
-				id = 0,
-				end = vector->end();
-			field < end;
-			field++, id++)
-		{
-			if (*field &&
-				((FLD)(*field))->fld_length == length &&
-				(p = ((FLD)(*field))->fld_name))
-			{
+		for (field = vector->begin(), id = 0, end = vector->end(); field < end; field++, id++) {
+			if (*field && ((FLD)(*field))->fld_length == length &&
+				(p = ((FLD)(*field))->fld_name)) {
+
 				q = name;
-				while (*p++ == *q)
-				{
+				while (*p++ == *q) {
+
 					if (!*q++) {
-						return id;
+
+                        USHORT nl, nl2;
+
+                        if (!security_name) {
+                            return id;
+                        }
+
+                        nl2 = name_length (security_name);
+
+                        if ((*field)->fld_security_name
+                            && (nl = name_length ((*field)->fld_security_name)) == nl2
+                            && !strncmp ((*field)->fld_security_name, security_name, nl)) {
+                            return id;
+                        }
 					}
 				}
 			}
@@ -1222,15 +1242,27 @@ int MET_lookup_field(TDBB tdbb, REL relation, CONST TEXT* name)
 			X.RDB$RELATION_NAME EQ relation->rel_name AND
 			X.RDB$FIELD_NAME EQ name 
 
-        if (!REQUEST(irq_l_field))
-		{
+        if (!REQUEST(irq_l_field)) {
             REQUEST(irq_l_field) = request;
 		}
-        id = X.RDB$FIELD_ID;
+
+        if (!security_name) {
+            id = X.RDB$FIELD_ID;
+        }
+        else {
+            USHORT nl, nl2;
+            nl2 = name_length (security_name);
+            if (!X.RDB$SECURITY_CLASS.NULL
+                && (nl = name_length (X.RDB$SECURITY_CLASS)) == nl2
+                && !strncmp (X.RDB$SECURITY_CLASS, security_name, nl)) {
+
+                id = X.RDB$FIELD_ID;
+            }
+        }
+
 	END_FOR;
 
-	if (!REQUEST(irq_l_field))
-	{
+	if (!REQUEST(irq_l_field)) {
 		REQUEST(irq_l_field) = request;
 	}
 
@@ -1252,7 +1284,6 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
 	DBB dbb;
 	BLK request;
 	PTR filter;
-	//TEXT *p;
 	MOD module;
 	LLS stack;
 	BLF blf_;
@@ -1338,6 +1369,8 @@ SLONG MET_lookup_generator(TDBB tdbb, TEXT * name)
  *
  * Functional description
  *      Lookup generator (aka gen_id).  If we can't find it, make a new one.
+ * CVC: I don't see how this function "makes" a new generator; it simply
+ *		returns -1 if the name is not found.
  *
  **************************************/
 	DBB dbb;
@@ -1369,9 +1402,47 @@ SLONG MET_lookup_generator(TDBB tdbb, TEXT * name)
 	return gen_id;
 }
 
+void MET_lookup_generator_id (TDBB tdbb, SLONG gen_id, TEXT *name)
+{
+/**************************************
+ *
+ *      M E T _ l o o k u p _ g e n e r a t o r _ i d
+ *
+ **************************************
+ *
+ * Functional description
+ *      Lookup generator (aka gen_id) by ID. It will load
+ *		the name in the third parameter.
+ *
+ **************************************/
+    DBB     dbb;
+    BLK     request;
 
-void DLL_EXPORT MET_lookup_index(
-								 TDBB tdbb,
+    SET_TDBB (tdbb);
+    dbb  = tdbb->tdbb_database;
+    
+    if (!gen_id) {
+        strcpy (name, "RDB$GENERATORS");
+        return;
+    }
+
+    *name = 0;
+    
+    request = (BLK) CMP_find_request (tdbb, irq_r_gen_id_num, IRQ_REQUESTS);
+    
+    FOR (REQUEST_HANDLE request)
+        X IN RDB$GENERATORS WITH X.RDB$GENERATOR_ID EQ gen_id
+
+        if (!REQUEST (irq_r_gen_id_num))
+            REQUEST (irq_r_gen_id_num) = request;
+	    name_copy (name, X.RDB$GENERATOR_NAME);
+    END_FOR;
+
+    if (!REQUEST (irq_r_gen_id_num))
+        REQUEST (irq_r_gen_id_num) = request;
+}
+
+void DLL_EXPORT MET_lookup_index(TDBB tdbb,
 								 TEXT * index_name,
 								 TEXT * relation_name, USHORT number)
 {
@@ -2638,6 +2709,114 @@ REL MET_relation(TDBB tdbb, USHORT id)
 }
 
 
+BOOLEAN MET_relation_owns_trigger (TDBB tdbb, TEXT *relation_name, 
+                                   TEXT *trigger_name)
+{
+/**************************************
+ *
+ *      M E T _ r e l a t i o n _ o w n s _ t r i g g e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Checks that a given trigger is defined for a
+ *      given relation, returning TRUE if there's a match.
+ *      It's almost a subset of MET_load_trigger().
+ *
+ **************************************/
+    DBB     dbb;
+    BLK     trigger_request;
+    BOOLEAN found = FALSE;
+    
+    SET_TDBB (tdbb);
+    dbb = tdbb->tdbb_database;
+    CHECK_DBB (dbb);
+
+    /* No need to load triggers for ReadOnly databases,
+       since INSERT/DELETE/UPDATE statements are not going to be allowed;
+       but we do not care of this flag here. We do not load, we only check. */
+    /*if (dbb->dbb_flags & DBB_read_only)
+      return;*/
+
+    /* Scan RDB$TRIGGERS next */
+
+    /* CVC: Notice that we'll use the request irq_s_triggers2 that was found
+       to be unused at this time. */
+
+    trigger_request = (BLK) CMP_find_request (tdbb, irq_s_triggers2, IRQ_REQUESTS);
+
+    FOR (REQUEST_HANDLE trigger_request)
+        TRG IN RDB$TRIGGERS WITH TRG.RDB$RELATION_NAME = relation_name AND
+	    TRG.RDB$TRIGGER_NAME EQ trigger_name
+
+        if (!REQUEST (irq_s_triggers2))
+            REQUEST (irq_s_triggers2) = trigger_request;
+
+        found = TRUE;
+
+        /* Notice we do not care whether the trigger is valid or not. We assume
+           the caller wants to verify already validated entities.
+           if (TRG.RDB$TRIGGER_TYPE > 0 && TRG.RDB$TRIGGER_TYPE < TRIGGER_MAX)
+        */
+
+    END_FOR;
+
+    if (!REQUEST (irq_s_triggers2))
+        REQUEST (irq_s_triggers2) = trigger_request;
+
+    return found;
+}
+
+BOOLEAN MET_relation_default_class (TDBB tdbb, TEXT *relation_name,
+                                    TEXT *default_security_class_name)
+{
+/**************************************
+ *
+ *      M E T _ r e l a t i o n _ d e f a u l t _ c l a s s
+ *
+ **************************************
+ *
+ * Functional description
+ *      Checks that a given security class is the default for
+ *      a given relation, returning TRUE if there's a match.
+ *      It can be made obsolete in the future if REL struct
+ *	gets another field, although metadata loading order
+ *	would not be safe when compared with this function.
+ *
+ **************************************/
+    DBB     dbb;
+    BLK     request;
+    BOOLEAN found = FALSE;
+
+    SET_TDBB (tdbb);
+    dbb = tdbb->tdbb_database;
+    CHECK_DBB (dbb);
+    
+    request = (BLK) CMP_find_request (tdbb, irq_l_relation_defsec, IRQ_REQUESTS);
+    
+    FOR (REQUEST_HANDLE request)
+        REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ relation_name
+
+        if (!REQUEST (irq_l_relation_defsec))
+            REQUEST (irq_l_relation_defsec) = request;
+
+        if (!REL.RDB$DEFAULT_CLASS.NULL) {
+            USHORT nl = name_length (REL.RDB$DEFAULT_CLASS),
+                nl2 = name_length (default_security_class_name);
+            if (nl == nl2 && !strncmp (REL.RDB$DEFAULT_CLASS, default_security_class_name, nl)) {
+                found = TRUE;
+            }
+        }
+
+    END_FOR;
+
+    if (!REQUEST (irq_l_relation_defsec))
+        REQUEST (irq_l_relation_defsec) = request;
+
+    return found;
+}
+
+
 void MET_release_existence( REL relation)
 {
 /**************************************
@@ -3053,6 +3232,14 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 				 */
 				strcpy((char*)field->fld_name, (char*)p);
 				field->fld_length = strlen(field->fld_name);
+
+                // CVC: Be paranoid and allow the possible trigger(s) to have a
+                //   not null security class to work on, even if we only take it
+                //   from the relation itself.
+                if (!field->fld_security_name && !REL.RDB$DEFAULT_CLASS.NULL) {
+                    field->fld_security_name = MET_save_name (tdbb, REL.RDB$DEFAULT_CLASS);
+                }
+
 				break;
 
 			case RSR_view_context:
@@ -3681,7 +3868,6 @@ static BOOLEAN par_messages(TDBB	tdbb,
  *      a format (fmt) block.
  *
  **************************************/
-	//UCHAR *end;
 	fmt::fmt_desc_iterator desc;
 	FMT format;
 	USHORT count, offset, align, msg_number;
@@ -3992,30 +4178,35 @@ static void store_dependencies(TDBB			tdbb,
 		if (!node->nod_arg[e_dep_object])
 			continue;
 		dpdo_type = (SSHORT) node->nod_arg[e_dep_object_type];
-		if (dpdo_type == obj_relation)
-		{
+        relation = NULL;
+        procedure = NULL;
+        switch (dpdo_type) {
+        case obj_relation:
 			relation = (REL) node->nod_arg[e_dep_object];
 			dpdo_name = relation->rel_name;
-		}
-		else
-		{
-			relation = NULL;
-		}
-		if (dpdo_type == obj_procedure)
-		{
-			procedure = (PRC) node->nod_arg[e_dep_object];
-			dpdo_name = (TEXT*) procedure->prc_name->str_data;
-		}
-		else
-		{
-			procedure = NULL;
-		}
-		if (dpdo_type == obj_exception)
-		{
-			number = (SLONG) node->nod_arg[e_dep_object];
-			MET_lookup_exception(tdbb, number, name, NULL);
-			dpdo_name = name;
-		}
+            break;
+        case obj_procedure:
+            procedure = (PRC) node->nod_arg [e_dep_object];
+            dpdo_name = procedure->prc_name->str_data;
+            break;
+        case obj_exception:
+            number = (SLONG) node->nod_arg [e_dep_object];
+            MET_lookup_exception (tdbb, number, name, NULL);
+            dpdo_name = name;
+            break;
+            /* CVC: Here I'm going to track those pesky things named generators and UDFs. */
+        case obj_generator:
+            number = (SLONG) node->nod_arg [e_dep_object];
+            MET_lookup_generator_id (tdbb, number, name);
+            dpdo_name = name;
+            break;
+        case obj_udf: {
+			    FUN udf = (FUN) node->nod_arg [e_dep_object];
+                dpdo_name = udf->fun_symbol->sym_string;
+		    }
+            break;
+        }
+
 		field_node = node->nod_arg[e_dep_field];
 
 		field_name = NULL;

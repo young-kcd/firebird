@@ -4,8 +4,8 @@
 #
 # jrd
 
-# to get at the database.  why.cpp is the normal one whybk.cpp is the one 
-# compiled with a BACKEND flag, it seems to be (from a quick look at 
+# to get at the database.  why.cpp is the normal one whybk.cpp is the one
+# compiled with a BACKEND flag, it seems to be (from a quick look at
 # the code) to allow the use of another library to talk to data from
 # and earlier version data file.  (Good way to achieve back portability)
 # In the current builds only why.cpp is used, to build using whybk.cpp you
@@ -17,19 +17,21 @@ WHY_BACKEND_Sources= whybk.c
 
 # why.c does the switch to determine the actual implementation to use
 JRD_Sources=	ail.cpp all.cpp alt.cpp bookmark.cpp blb.cpp blob_filter.cpp btr.cpp builtin.cpp \
-		cch.cpp cmp.cpp cvt.cpp cvt2.cpp \
+		cch.cpp cmp.cpp cvt.cpp cvt2.cpp db_alias.cpp \
 		dfw.cpp divorce.cpp dls.cpp dpm.cpp dsc.cpp dyn.cpp dyn_def.cpp dyn_del.cpp \
 		dyn_mod.cpp dyn_util.cpp enc.cpp err.cpp iberr.cpp \
 		event.cpp evl.cpp exe.cpp ext.cpp filters.cpp flu.cpp fun.cpp functions.cpp \
-		gds.cpp grant.cpp idx.cpp inf.cpp ini.cpp intl.cpp inuse.cpp \
+		gds.cpp grant.cpp idx.cpp inf.cpp ini.cpp intl.cpp intl_builtin.cpp inuse.cpp \
 		isc.cpp isc_file.cpp isc_ipc.cpp isc_sync.cpp \
 		jrd.cpp jrn.cpp lck.cpp llio.cpp log.cpp met.cpp \
 		misc.cpp mov.cpp nav.cpp old.cpp opt.cpp pag.cpp par.cpp pcmet.cpp \
-		perf.cpp pwd.cpp rec.cpp rlck.cpp \
+		perf.cpp plugin_manager.cpp pwd.cpp rec.cpp rlck.cpp \
 		rng.cpp rse.cpp sbm.cpp sch.cpp scl.cpp \
-		sdl.cpp sdw.cpp shut.cpp sort.cpp sqz.cpp status.cpp svc.cpp sym.cpp thd.cpp tpc.cpp \
-		tra.cpp utl.cpp val.cpp vio.cpp \
-		$(IO_Sources) $(DEBUG_Sources) $(WHY_Sources)
+		sdl.cpp sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp status.cpp svc.cpp sym.cpp  \
+		thd.cpp tpc.cpp tra.cpp utl.cpp val.cpp vio.cpp \
+		$(IO_Sources) $(DEBUG_Sources) $(WHY_Sources) \
+		../common/fb_exception.cpp
+
 
 JRD_ObjectsX = $(JRD_Sources:%.cpp=$(GEN_ROOT)/jrd/%.o)
 JRD_Objects = $(JRD_ObjectsX:%.c=$(GEN_ROOT)/jrd/%.o)   # One extra rule for why.c
@@ -146,8 +148,17 @@ FBUTIL_SharedObjects = $(FBUTIL_Objects:.o=.lo)
 FBMemory_Sources=allocators.cpp memory_pool.cpp
 
 FBMemory_Objects = $(FBMemory_Sources:%.cpp=$(GEN_ROOT)/common/memory/%.o)
-FBMemory_SharedObjects = $(FB_Objects:.o=.lo)
+FBMemory_SharedObjects = $(FB_MemoryObjects:.o=.lo)
 
+
+#________________________________________________________________________
+#
+# Platform Manager
+
+OS_SPECIFIC_Sources=	$(PLATFORM_PATH)/path_utils.cpp $(PLATFORM_PATH)/mod_loader.cpp
+
+OS_SPECIFIC_Objects       =$(OS_SPECIFIC_Sources:%.cpp=$(GEN_ROOT)/%.o)
+OS_SPECIFIC_SharedObjects =$(OS_SPECIFIC_Objects:.o=.lo)
 
 
 #________________________________________________________________________
@@ -156,7 +167,8 @@ FBMemory_SharedObjects = $(FB_Objects:.o=.lo)
 # These are the lists of object/shared object files that will go into libgds.a
 # and libgds.so.
 
-GDSLIB_Objects = $(JRD_Objects) \
+GDSLIB_Objects =$(OS_SPECIFIC_Objects) \
+                $(JRD_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
@@ -170,7 +182,8 @@ GDSLIB_Objects = $(JRD_Objects) \
 # Notice that $(SECURITY_Objects) are missing, because that file can't be
 # compiled until later in the build process.
 
-BOOT_GDSLIB_Objects = $(JRD_Objects) \
+BOOT_GDSLIB_Objects = $(OS_SPECIFIC_Objects) \
+				$(JRD_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
@@ -178,4 +191,5 @@ BOOT_GDSLIB_Objects = $(JRD_Objects) \
                 $(WAL_Objects) \
                 $(GPRELIB_Objects) \
                 $(FBUTIL_Objects) \
-				$(FBMemory_Objects)
+				$(FBMemory_Objects)\
+

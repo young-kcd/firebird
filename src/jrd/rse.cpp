@@ -19,10 +19,14 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * $Id: rse.cpp,v 1.6 2002-07-01 16:59:09 skywalker Exp $
+ *
+ * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
+ *                              seekable streams.
+ * 2002.02.22 Claudio Valderrama: Fix SF Bugs #225283, #518279, #514186 & #221925.
+ *
  */
-/*
-$Id: rse.cpp,v 1.5 2001-12-28 05:16:31 tamlin Exp $
-*/
 
 #include "firebird.h"
 #include <errno.h>
@@ -183,6 +187,7 @@ void RSE_close(TDBB tdbb, RSB rsb)
 #endif
 
 		case rsb_first:
+        case rsb_skip:
 		case rsb_boolean:
 		case rsb_aggregate:
 			rsb = rsb->rsb_next;
@@ -714,12 +719,27 @@ void RSE_open(TDBB tdbb, RSB rsb)
 			open_procedure(tdbb, rsb, (IRSB_PROCEDURE) impure);
 			return;
 
-		case rsb_first:
-			impure->irsb_number =
-				MOV_get_long(EVL_expr(tdbb, (NOD) rsb->rsb_arg[0]), 0);
-			rsb = rsb->rsb_next;
-			break;
+        case rsb_first:
+            ((IRSB_FIRST)impure)->irsb_count =
+                MOV_get_int64 (EVL_expr (tdbb, (NOD) rsb->rsb_arg [0]), 0);
+            
+            if (((IRSB_FIRST)impure)->irsb_count < 1)
+                ERR_post (gds_bad_limit_param, 0);
+            
+            rsb = rsb->rsb_next;
+            break;
 
+        case rsb_skip:
+            ((IRSB_SKIP)impure)->irsb_count =
+                MOV_get_int64 (EVL_expr (tdbb, (NOD) rsb->rsb_arg [0]), 0);
+            
+            if (((IRSB_SKIP)impure)->irsb_count < 0)
+                ERR_post (gds_bad_skip_param, 0);
+            ((IRSB_SKIP)impure)->irsb_count++;
+            
+            rsb = rsb->rsb_next;
+            break;
+	
 		case rsb_boolean:
 			rsb = rsb->rsb_next;
 			break;
@@ -2565,13 +2585,79 @@ static BOOLEAN get_record(TDBB			tdbb,
 			}
 		}
 
+        /******
+         ***     IMPORTANT!!
+         *
+         *   If the RSB list contains both a rsb_first node and a rsb_skip node
+         *     the rsb_skip node MUST be after the rsb_first node in the list.
+         *     The reason is the rsb_skip calls get_record in a loop to skip
+         *     over the first n records in the stream.  If the rsb_first node
+         *     was down stream the counter associated with rsb_first would
+         *     be decremented by the calls to get_record that never return a
+         *     record to the user.  Possible symptoms of this are erroneous
+         *     empty result sets (when skip >= first) and too small result sets
+         *     (when first > skip, first - skip records will be returned).
+         *******/
+        
 	case rsb_first:
-		if ((--((IRSB_FIRST) impure)->irsb_number) < 0)
-			return FALSE;
-		if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
-			return FALSE;
+        switch(mode) {
+        case RSE_get_forward:
+	        if (((IRSB_FIRST) impure)->irsb_count <= 0)
+                return FALSE;
+	        ((IRSB_FIRST) impure)->irsb_count--;
+	        if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
+	            return FALSE;
+            break;
+            
+        case RSE_get_current:
+	        if (((IRSB_FIRST) impure)->irsb_count <= 0)
+                return FALSE;
+	        if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
+	            return FALSE;
+            break;
+            
+        case RSE_get_backward:
+	        ((IRSB_FIRST) impure)->irsb_count++;
+	        if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
+	            return FALSE;
+            break;
+        }
 		break;
 
+    case rsb_skip:
+        switch(mode) {
+        case RSE_get_backward:
+            if (((IRSB_SKIP) impure)->irsb_count > 0)
+                return FALSE;
+            if (((IRSB_SKIP) impure)->irsb_count == 0) {
+                ((IRSB_SKIP) impure)->irsb_count++;
+                get_record (tdbb, rsb->rsb_next, NULL, mode);
+                return FALSE;
+            }
+            ((IRSB_SKIP) impure)->irsb_count++;
+            if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
+                return FALSE;
+            break;
+            
+        case RSE_get_forward:
+            while(((IRSB_SKIP) impure)->irsb_count > 1) {
+                ((IRSB_SKIP) impure)->irsb_count--;
+                if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
+                    return FALSE;
+            }
+            ((IRSB_SKIP) impure)->irsb_count--;
+            if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
+                return FALSE;
+            break;
+            
+        case RSE_get_current:
+            if (((IRSB_SKIP) impure)->irsb_count >= 1)
+                return FALSE;
+            else if (!get_record (tdbb, rsb->rsb_next, NULL, mode))
+                return FALSE;
+        }
+        break;
+        
 	case rsb_merge:
 		if (!get_merge_join(tdbb, rsb, (IRSB_MRG) impure
 #ifdef SCROLLABLE_CURSORS
@@ -2864,6 +2950,7 @@ static void join_to_nulls(TDBB tdbb, RSB rsb, USHORT streams)
 		}
 
 #ifndef GATEWAY
+        record->rec_fmt_bk = record->rec_format;
 		record->rec_format = NULL;
 #else
 		/* A null format pointer in the record block is used to indicate
@@ -2934,7 +3021,13 @@ static void map_sort_data(REQ request, SMB map, UCHAR * data)
 			continue;
 		}
 		record = rpb->rpb_record;
+
+        if (record && !flag && !record->rec_format && record->rec_fmt_bk) {
+            record->rec_format = record->rec_fmt_bk; // restore the format
+        }
+
 		EVL_field(0, record, id, &to);
+
 		if (flag)
 			SET_NULL(record, id);
 		else {
@@ -3371,6 +3464,7 @@ static void pop_rpbs(REQ request, RSB rsb)
 		}
 
 	case rsb_first:
+    case rsb_skip:
 	case rsb_boolean:
 		pop_rpbs(request, rsb->rsb_next);
 		return;
@@ -3484,6 +3578,7 @@ static void push_rpbs(TDBB tdbb, REQ request, RSB rsb)
 		}
 
 	case rsb_first:
+    case rsb_skip:
 	case rsb_boolean:
 		push_rpbs(tdbb, request, rsb->rsb_next);
 		return;

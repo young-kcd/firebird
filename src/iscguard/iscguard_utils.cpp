@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include "../iscguard/iscguard.h"
+#include "../utilities/registry.h"
 
 int GetGuardStartupInfo(char *svrpath, char *opt)
 {
@@ -50,20 +51,26 @@ int GetGuardStartupInfo(char *svrpath, char *opt)
  **************************************/
 
 	HKEY hKeyResult;
-	LPCSTR lpSubKey = "Software\\Borland\\InterBase\\CurrentVersion";
+    //	LPCSTR lpSubKey = "Software\\Borland\\InterBase\\CurrentVersion";
 	DWORD buffSize, retval;
 
 	buffSize = MAX_PATH - 2;	/* reserve place for null and the \ */
 
-	retval =
-		RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpSubKey, 0, KEY_QUERY_VALUE,
-					 &hKeyResult);
-	retval =
-		RegQueryValueEx(hKeyResult, "ServerDirectory", NULL, NULL,
+    retval = RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_CUR_VER, 
+					  0, KEY_QUERY_VALUE, &hKeyResult);
+    if (retval != ERROR_SUCCESS) {
+        return 0;
+    }
+
+	retval = RegQueryValueEx(hKeyResult, "ServerDirectory", NULL, NULL,
 						reinterpret_cast < LPBYTE > (svrpath), &buffSize);
-/* if there is a value check for the last charecter if it is not a \ then
- * add a \ 
- */
+    if (retval != ERROR_SUCCESS) {
+        return 0;
+    }
+
+    /* if there is a value check for the last charecter if it is not a \ then
+     * add a \ 
+     */
 	if (buffSize) {
 		/* buffSize includes the null character in its size hence it is strlen + 1 */
 		if (svrpath[buffSize - 2] != '\\') {

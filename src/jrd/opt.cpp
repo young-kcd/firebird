@@ -19,9 +19,15 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.28: John Bellardo: Added code to handle rse_skip nodes.
+ * 2001.07.17 Claudio Valderrama: Stop crash with indices and recursive calls
+ *            of OPT_compile: indicator csb_indices set to zero after used memory is
+ *            returned to the free pool.
+ * 2001.02.15: Claudio Valderrama: Don't obfuscate the plan output if a selectable
+ *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.8 2002-06-20 10:10:27 dimitr Exp $
+$Id: opt.cpp,v 1.9 2002-07-01 16:59:09 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -104,6 +110,7 @@ static RSB gen_residual_boolean(TDBB, register OPT, RSB);
 static RSB gen_retrieval(TDBB, OPT, SSHORT, NOD *, NOD *, BOOLEAN, BOOLEAN,
 						 NOD *);
 static RSB gen_rsb(TDBB, OPT, RSB, NOD, SSHORT, REL, STR, NOD, float);
+static RSB	gen_skip (TDBB, OPT, RSB, NOD);
 static RSB gen_sort(TDBB, OPT, UCHAR *, UCHAR *, RSB, NOD, USHORT);
 static BOOLEAN gen_sort_merge(TDBB, OPT, LLS *);
 static RSB gen_union(TDBB, OPT, NOD, UCHAR *, USHORT);
@@ -595,7 +602,14 @@ RSB OPT_compile(TDBB tdbb,
 			rsb = gen_sort(tdbb, opt_, beds, key_streams, rsb, sort, FALSE);
 	}
 
-/* If there's a FIRST n clause, handle it */
+    /* Handle first and/or skip.  The skip MUST (if present)
+     * appear in the rsb list AFTER the first.  Since the gen_first and gen_skip
+     * functions add their nodes at the beginning of the rsb list we MUST call
+     * gen_skip before gen_first.
+     **/
+
+    if (rse->rse_skip)
+        rsb = gen_skip(tdbb, opt_, rsb, rse->rse_skip);
 
 	if (rse->rse_first)
 		rsb = gen_first(tdbb, opt_, rsb, rse->rse_first);
@@ -607,6 +621,13 @@ RSB OPT_compile(TDBB tdbb,
 		if (csb->csb_rpt[stream].csb_idx_allocation)
 			delete csb->csb_rpt[stream].csb_idx_allocation;
 		csb->csb_rpt[stream].csb_idx_allocation = 0;
+
+        // CVC: The following line added because OPT_compile is recursive, both directly
+        //   and through gen_union(), too. Otherwise, we happen to step on deallocated memory
+        //   and this is the cause of the crashes with indices that have plagued IB since v4.
+
+        csb->csb_rpt [stream].csb_indices = 0;
+
 	}
 
 	DEBUG
@@ -1458,6 +1479,9 @@ static BOOLEAN computable(CSB csb,
 	if ((sub = rse->rse_first) && !computable(csb, sub, stream, idx_use))
 		return FALSE;
 
+    if ((sub = rse->rse_skip) && !computable (csb, sub, stream, idx_use))
+        return FALSE;
+    
 /* Set sub-streams of rse active */
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
@@ -2035,6 +2059,30 @@ static BOOLEAN dump_rsb(REQ request,
 		procedure = rsb->rsb_procedure;
 		if (!procedure || !procedure->prc_request)
 			return FALSE;
+
+        /* CVC: This is becoming trickier. There are procedures that don't have a plan
+           because they don't access tables. In this case, the engine gives up and swallows
+           the whole plan. Not acceptable. */
+
+        if (!procedure->prc_request->req_fors) {
+            STR n = procedure->prc_name;
+            length = (n && n->str_data) ? n->str_length : 0;
+            *buffer_length -= 5 + length;
+            if (*buffer_length < 0)
+                return FALSE;
+            *buffer++ = gds_info_rsb_begin;
+            *buffer++ = gds_info_rsb_relation;
+            *buffer++ = (SCHAR) length;
+            name = (SCHAR*) n->str_data;
+            while (length--)
+                *buffer++ = *name++;
+            *buffer++ = gds_info_rsb_type;
+            *buffer++ = gds_info_rsb_sequential;
+            /* *buffer++ = gds__info_rsb_unknown; */
+            *buffer++ = gds_info_rsb_end;
+            break;
+        }
+
 		if (!OPT_access_path
 			(procedure->prc_request, buffer, *buffer_length,
 			 reinterpret_cast < USHORT * >(&return_length)))
@@ -2048,6 +2096,10 @@ static BOOLEAN dump_rsb(REQ request,
 		*buffer++ = gds_info_rsb_first;
 		break;
 
+    case rsb_skip:
+        *buffer++ = gds_info_rsb_skip;
+        break;
+        
 	case rsb_boolean:
 		*buffer++ = gds_info_rsb_boolean;
 		break;
@@ -3065,6 +3117,11 @@ static RSB gen_first(TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
  *	Compile and optimize a record selection expression into a
  *	set of record source blocks (rsb's).
  *
+ *
+ *      NOTE: The rsb_first node MUST appear in the rsb list before the
+ *          rsb_skip node.  The calling code MUST call gen_first after
+ *          gen_skip.
+ *
  **************************************/
 	register CSB csb;
 	register RSB rsb;
@@ -3865,6 +3922,43 @@ static RSB gen_rsb(TDBB tdbb,
 /* retain the cardinality for use at runtime by blr_cardinality */
 	rsb->rsb_cardinality = (ULONG) cardinality;
 	return rsb;
+}
+
+static RSB gen_skip (TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
+{
+/**************************************
+ *
+ *	g e n _ s k i p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compile and optimize a record selection expression into a
+ *	set of record source blocks (rsb's).
+ *
+ *      NOTE: The rsb_skip node MUST appear in the rsb list after the
+ *          rsb_first node.  The calling code MUST call gen_skip before
+ *          gen_first.
+ *
+ **************************************/
+    register CSB	csb;
+    register RSB	rsb;
+
+    DEV_BLKCHK (opt, type_opt);
+    DEV_BLKCHK (prior_rsb, type_rsb);
+    DEV_BLKCHK (node, type_nod);
+    
+    SET_TDBB (tdbb);
+    
+    csb = opt->opt_csb;
+    rsb = new(*tdbb->tdbb_default, 0) Rsb();   // was : rsb = (RSB) ALLOCDV (type_rsb, 1);
+    rsb->rsb_count = 1;
+    rsb->rsb_type = rsb_skip;
+    rsb->rsb_next = prior_rsb;
+    rsb->rsb_arg [0] = (RSB) node;
+    rsb->rsb_impure = CMP_impure (csb, sizeof (struct irsb_skip_n));
+    
+    return rsb;
 }
 
 

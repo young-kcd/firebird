@@ -19,9 +19,13 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 27-May-2001 Claudio Valderrama: par_plan() no longer uppercases
+ *			an index's name before doing a lookup of such index.
+ * 2001.07.28: Added parse code for blr_skip to support LIMIT.
  */
 /*
-$Id: par.cpp,v 1.8 2002-06-14 12:09:37 dimitr Exp $
+$Id: par.cpp,v 1.9 2002-07-01 16:59:09 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -385,7 +389,7 @@ NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context, TEXT * base_field)
  **************************************/
 	SSHORT id;
 	USHORT stream;
-	TEXT name[32], *p;
+	TEXT name[32];
 	FLD field;
 	REL temp_rel;
 	NOD temp_node;
@@ -394,11 +398,19 @@ NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context, TEXT * base_field)
 
 	stream = csb->csb_rpt[context].csb_stream;
 
-	for (p = name; *base_field && *base_field != ' ';)
-		*p++ = *base_field++;
-	*p = 0;
+    /* CVC: This is just another case of a custom function that isn't prepared
+       for quoted identifiers and that causes views with fields names like "z x"
+       to fail miserably. Since this function was truncating field names like "z x",
+       MET_lookup_field() call below failed and hence the function returned NULL
+       so only caller MET_scan_relation() did field->fld_source = 0;
+       This means a field without entry in rdb$fields. This is the origin of the
+       mysterious message "cannot access column z x in view VF" when selecting from
+       such view that has field "z x". This closes Firebird Bug #227758. */
 
-	id = MET_lookup_field(tdbb, csb->csb_rpt[stream].csb_relation, name);
+    strcpy (name, base_field);
+    MET_exact_name (name);
+
+    id = MET_lookup_field (tdbb, csb->csb_rpt [stream].csb_relation, name, 0);
 
 	if (id < 0)
 		return NULL;
@@ -1163,7 +1175,7 @@ static NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 					MET_scan_relation(tdbb, relation);
 
 			par_name(csb, name);
-			if ((id = MET_lookup_field(tdbb, relation, name)) < 0)
+			if ((id = MET_lookup_field(tdbb, relation, name, 0)) < 0)
 				if ((*csb)->csb_g_flags & csb_validation) {
 					id = 0;
 					flags |= nod_id;
@@ -1272,6 +1284,15 @@ static NOD par_function(TDBB tdbb, CSB * csb)
 	node->nod_count = 1;
 	node->nod_arg[e_fun_function] = (NOD) function;
 	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
+
+    /* CVC: I will track ufds only if a proc is not being dropped. */
+    if ((*csb)->csb_g_flags & csb_get_dependencies) {
+        NOD dep_node = PAR_make_node (tdbb, e_dep_length);
+        dep_node->nod_type = nod_dependency;
+        dep_node->nod_arg [e_dep_object] = (NOD) function;
+        dep_node->nod_arg [e_dep_object_type] = (NOD) obj_udf;
+        LLS_PUSH (dep_node, &(*csb)->csb_dependencies);
+    }
 
 	return node;
 }
@@ -1630,10 +1651,11 @@ static NOD par_plan(TDBB tdbb, CSB * csb)
 			/* pick up the index name and look up the appropriate ids */
 
 			par_name(csb, name);
-			for (p = name; *p; *p++)
-				*p = UPPER(*p);
-			index_id =
-				MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
+            /* CVC: We can't do this. Index names are identifiers.
+               for (p = name; *p; *p++)
+               *p = UPPER (*p);
+               */
+			index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
 
 			if (idx_status == MET_object_unknown ||
 				idx_status == MET_object_inactive)
@@ -2014,6 +2036,12 @@ static NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
 			rse->rse_first = parse(tdbb, csb, VALUE);
 			break;
 
+        case blr_skip:
+            if (rse_op == blr_rs_stream)
+                syntax_error (*csb, "rse stream clause");
+            rse->rse_skip = parse (tdbb, csb, VALUE);
+            break;
+
 		case blr_sort:
 			if (rse_op == blr_rs_stream)
 				syntax_error(*csb, "rse stream clause");
@@ -2222,11 +2250,10 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 
 	operator_ = BLR_BYTE;
 
-	if (!
-		(operator_ >= 0
-		 && operator_ <
-		 sizeof(type_table) / sizeof(type_table[0]))) syntax_error(*csb,
-																   "Invalid BLR code");
+	if (! (operator_ >= 0 && 
+           operator_ < sizeof(type_table) / sizeof(type_table[0]))) {
+        syntax_error(*csb, "Invalid BLR code");
+    }
 
 	sub_type = sub_type_table[operator_];
 
@@ -2322,6 +2349,7 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 	case blr_null:
 	case blr_agg_count:
 	case blr_user_name:
+    case blr_current_role:
 	case blr_current_date:
 	case blr_current_time:
 	case blr_current_timestamp:
@@ -2456,6 +2484,19 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 					  gds_arg_string, ERR_cstring(name), 0);
 			node->nod_arg[e_gen_relation] = (NOD) tmp;
 			node->nod_arg[e_gen_value] = parse(tdbb, csb, VALUE);
+
+            /* CVC: There're thousand ways to go wrong, but I don't see any value
+               in posting dependencies with set generator since it's DDL, so I will
+               track only gen_id() in both dialects. */
+            if ((operator_ == blr_gen_id || operator_ == blr_gen_id2)
+                && ((*csb)->csb_g_flags & csb_get_dependencies)) {
+                NOD dep_node = PAR_make_node (tdbb, e_dep_length);
+                dep_node->nod_type = nod_dependency;
+                dep_node->nod_arg [e_dep_object] = (NOD) tmp;
+                dep_node->nod_arg [e_dep_object_type] = (NOD) obj_generator;
+                LLS_PUSH (dep_node, &(*csb)->csb_dependencies);
+            }
+
 		}
 		break;
 #else

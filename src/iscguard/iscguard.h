@@ -16,7 +16,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#define APP_NAME        "InterBase Guardian"
+#define APP_NAME        "Firebird Guardian"
+#define APP_LABEL       "Firebird Guardian"
 #define CLASS_NAME      "IB_Guard"
 #define	IBSERVER	    "ibserver.exe"
 #define GUARDIAN_HELP_FILE "ibserver.hlp"

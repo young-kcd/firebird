@@ -64,7 +64,7 @@ static int translate_status(STATUS *, STATUS *, SCHAR **);
 
 static SLONG user_codes[] = {
 	1,
-#include "../jrd/rdb_codes.h"
+#include "../include/gen/rdb_codes.h"
 };
 
 static SCHAR workbuf[1024];

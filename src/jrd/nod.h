@@ -189,6 +189,9 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_set_generator2, set_generator, "")
 		  NODE(nod_total2, total, "SUM")
 
+          NODE (nod_current_role, current_role, "")
+          NODE (nod_breakleave, breakleave, "")
+
 /* EXECUTE VARCHAR */
 		  NODE(nod_exec_sql, exec_sql, "EXECUTE VARCHAR")
 

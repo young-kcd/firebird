@@ -42,6 +42,8 @@
 /* types */
 #undef socklen_t
 
+/* Are we doing 64bit IO on unix */
+#undef UNIX_64_BIT_IO 
 
 /* Is the platform big endian? */
 #define WORDS_BIGENDIAN 0

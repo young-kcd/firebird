@@ -35,7 +35,21 @@
 
 /* Record Source Block (RSB) types */
 
-typedef ENUM rsb_t { rsb_boolean, rsb_cross, rsb_dbkey, rsb_first, rsb_skip, rsb_indexed, rsb_merge, rsb_multiple, rsb_project, rsb_sequential, rsb_sort, rsb_union, rsb_aggregate, rsb_ext_sequential,	/* External sequential access */
+typedef ENUM rsb_t { 
+    rsb_boolean, 
+    rsb_cross, 
+    rsb_dbkey, 
+    rsb_first, 
+    rsb_skip, 
+    rsb_indexed, 
+    rsb_merge, 
+    rsb_multiple, 
+    rsb_project, 
+    rsb_sequential, 
+    rsb_sort, 
+    rsb_union, 
+    rsb_aggregate, 
+    rsb_ext_sequential,	/* External sequential access */
 	rsb_ext_indexed,			/* External indexed access */
 	rsb_ext_dbkey,				/* External dbkey access */
 	rsb_navigate,				/* Walk navigational index */
