@@ -1065,7 +1065,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	while (true) {
 		if (trace_file_handle == INVALID_HANDLE_VALUE) {
 			TEXT name[MAXPATHLEN];
-			gds__prefix(name, LOGFILE);
+			gds__prefix(name, LOGFILE); // B.O.
 			// We do not care to close this file. 
 			// It will be closed automatically when our process terminates.
 			trace_file_handle = CreateFile(name, GENERIC_WRITE, 
@@ -1093,7 +1093,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	// This function is not truly signal safe now.
 	// It calls string::c_str() and may call getenv(), not good.
 	// We can only hope that failure is unlikely in it...
-	gds__prefix(name, LOGFILE);
+	gds__prefix(name, LOGFILE); // B.O.
 
 	// Note: signal-safe code
 	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
@@ -1189,7 +1189,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	now = time((time_t *)0);
 #endif
 
-	gds__prefix(name, LOGFILE);
+	gds__prefix(name, LOGFILE); // B.O.
 
 	const int oldmask = umask(0111);
 #ifdef WIN_NT
@@ -1239,7 +1239,7 @@ void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
 	now = time((time_t *)0);
 #endif
 
-	gds__prefix(name, LOGFILE);
+	gds__prefix(name, LOGFILE); // B.O.
 
 	const int oldmask = umask(0111);
 #ifdef WIN_NT
@@ -1388,27 +1388,25 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 
 	if (n > 0 && n < length)
 	{
-		sprintf(formatted, buffer, arg1, arg2, arg3, arg4, arg5);
+		fb_utils::snprintf(formatted, size, buffer, arg1, arg2, arg3, arg4, arg5);
 	}
 	else
 	{
-		sprintf(formatted, "can't format message %d:%d -- ", facility,
-				number);
-		TEXT* p;
+		Firebird::string s;
+		s.printf("can't format message %d:%d -- ", facility, number);
 		if (n == -1)
-			strcat(formatted, "message text not found");
+			s += "message text not found";
 		else if (n == -2) {
-			strcat(formatted, "message file ");
-			for (p = formatted; *p;)
-				p++;
-			gds__prefix_msg(p, MSG_FILE);
-			strcat(p, " not found");
+			s += "message file ";
+			gds__prefix_msg(formatted, MSG_FILE); // B.O.
+			s += formatted;
+			s += " not found";
 		}
 		else {
-			for (p = formatted; *p;)
-				p++;
-			sprintf(p, "message system code %d", n);
+			fb_utils::snprintf(formatted, size, "message system code %d", n);
+			s += formatted;
 		}
+		s.copy_to(formatted, size);
 	}
 
 	const USHORT l = strlen(formatted);
@@ -1467,8 +1465,9 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			p = getenv("LC_MESSAGES");
 			if (p != NULL) {
 				sanitize(p); // CVC: Sanitizing environment variable???
-				sprintf(translated_msg_file, MSG_FILE_LANG, p);
-				gds__prefix_msg(msg_file, translated_msg_file);
+				fb_utils::snprintf(translated_msg_file,
+					sizeof(translated_msg_file), MSG_FILE_LANG, p);
+				gds__prefix_msg(msg_file, translated_msg_file); // B.O.
 				status =
 					gds__msg_open(reinterpret_cast<void**>(&messageL),
 								  msg_file);
@@ -1478,7 +1477,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			if (status) {
 				/* Default to standard message file */
 
-				gds__prefix_msg(msg_file, MSG_FILE);
+				gds__prefix_msg(msg_file, MSG_FILE); // B.O.
 				status =
 					gds__msg_open(reinterpret_cast<void**>(&messageL),
 								  msg_file);
@@ -1627,9 +1626,9 @@ void API_ROUTINE gds__msg_put(
  *	as fits in callers buffer.
  *
  **************************************/
-	TEXT formatted[512];
+	TEXT formatted[BUFFER_MEDIUM];
 
-	gds__msg_format(handle, facility, number, sizeof(TEXT) * BUFFER_MEDIUM,
+	gds__msg_format(handle, facility, number, sizeof(formatted),
 					formatted, arg1, arg2, arg3, arg4, arg5);
 	gds__put_error(formatted);
 }
@@ -1800,7 +1799,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 		if (!(ib_prefix_lock = getenv(FB_LOCK_ENV))) {
 #ifdef EMBEDDED
 			ib_prefix_lock = ib_prefix_lock_val;
-			gds__temp_dir(ib_prefix_lock);
+			gds__temp_dir(ib_prefix_lock); // B.O.
 			// Generate filename based on the current PID
 			TEXT tmp_buf[MAXPATHLEN];
 			sprintf(tmp_buf, FB_PID_FILE, getpid());
@@ -1808,7 +1807,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 			root = tmp_buf;
 #else
 			ib_prefix_lock = ib_prefix_lock_val;
-			gds__prefix(ib_prefix_lock, "");
+			gds__prefix(ib_prefix_lock, ""); // B.O.
 #endif
 		}
 		else {
@@ -1891,7 +1890,7 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 	if (ib_prefix_msg == NULL) {
 		if (!(ib_prefix_msg = getenv(FB_MSG_ENV))) {
 			ib_prefix_msg = ib_prefix_msg_val;
-			gds__prefix(ib_prefix_msg, "");
+			gds__prefix(ib_prefix_msg, ""); // B.O.
 		}
 		else {
 			strcat(ib_prefix_msg_val, ib_prefix_msg);
@@ -2419,7 +2418,7 @@ void* API_ROUTINE gds__temp_file(
 
 	const TEXT* directory = dir;
 	if (!directory) {
-		gds__temp_dir(temp_dir);
+		gds__temp_dir(temp_dir); // B.O.
 		directory = temp_dir;
 	}
 	if (strlen(directory) >= MAXPATHLEN - strlen(string) - strlen(TEMP_PATTERN) - 2)
@@ -3722,10 +3721,12 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
 	resultString[len + alen] = 0;
 }
 
+
 void gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
 {
 	printf("%4d %s\n", offset, line);
 }
+
 
 void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 {
