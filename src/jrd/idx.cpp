@@ -1232,7 +1232,8 @@ static IDX_E check_partner_index(
 			retrieval.irb_generic |= irb_descending;
 		}
 		if ((idx->idx_flags & idx_descending) != 
-						(partner_idx.idx_flags & idx_descending)) {
+						(partner_idx.idx_flags & idx_descending))
+		{
 			BTR_complement_key(&key);
 		}
 
