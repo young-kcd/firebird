@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.11 2003-01-18 19:36:11 dimitr Exp $
+ *  $Id: fb_types.h,v 1.12 2003-01-19 14:42:17 dimitr Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -43,7 +43,7 @@
 #endif
 
 
-#if defined(WIN_NT)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #  define  GDS_EXPORT	__stdcall
 #else
 #  define  GDS_EXPORT
