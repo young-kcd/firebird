@@ -1733,6 +1733,7 @@ static void show_db()
 	if (SHOW_dbb_parameters(DB, info_buf, db_items, sizeof(db_items), translate)) {
 		ISQL_printf(isqlGlob.Out, info_buf);
 	}
+	ISQL_FREE(info_buf);
 
 // IGNORE WAL
 //
@@ -1805,12 +1806,12 @@ static void show_db()
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		if (info_buf)
-			ISQL_FREE(info_buf);
+//		if (info_buf)
+//			ISQL_FREE(info_buf);
 		return;
 	END_ERROR;
 
-	ISQL_FREE(info_buf);
+//	ISQL_FREE(info_buf);
 }
 
 
@@ -1858,10 +1859,10 @@ static processing_state show_domains(const SCHAR* domain_name)
 * Functional description
 *	Show all domains or the named domain
 ************************************/
-	bool odd = true;
 	bool first = true;
 
 	if (!*domain_name) {
+		bool odd = true;
 		//  List all domain names in columns
 		FOR FLD IN RDB$FIELDS WITH
 			FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
@@ -2144,11 +2145,11 @@ static processing_state show_filters(const SCHAR* object)
  *	Show blob filters in general or  for the named filters
  *
  **************************************/
-	bool odd = true;
 	bool first = true;
 
 // Show all functions
 	if (!*object) {
+		bool odd = true;
 		FOR FIL IN RDB$FILTERS
 		SORTED BY FIL.RDB$FUNCTION_NAME
 
@@ -2215,11 +2216,11 @@ static processing_state show_functions(const SCHAR* object)
  *
  **************************************/
 	bool first = true;
-	bool odd = true;
 
 // Show all functions
 	if (!*object)
 	{
+		bool odd = true;
 		FOR FUN IN RDB$FUNCTIONS
 			WITH FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING
 			SORTED BY FUN.RDB$FUNCTION_NAME
@@ -2242,6 +2243,7 @@ static processing_state show_functions(const SCHAR* object)
 		else
 			return OBJECT_NOT_FOUND;
 	}
+	
 	FOR FUN IN RDB$FUNCTIONS CROSS
 		FNA IN RDB$FUNCTION_ARGUMENTS WITH
 		FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
@@ -2737,7 +2739,7 @@ static processing_state show_proc(const SCHAR* procname)
 			// Get column type name to print
 			// Look through types array
 
-			for (SSHORT i = 0; Column_types[i].type; i++)
+			for (int i = 0; Column_types[i].type; i++)
 				if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
 					bool precision_known = false;
 
@@ -3061,7 +3063,7 @@ static processing_state show_table(
 
 		// Look through types array
 
-		for (SSHORT i = 0; Column_types[i].type; i++)
+		for (int i = 0; Column_types[i].type; i++)
 			if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
 				bool precision_known = false;
 
@@ -3284,6 +3286,7 @@ static processing_state show_table(
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
+				ISQL_FREE(collist);
 				return ERR;
 			END_ERROR;
 		}
@@ -3291,8 +3294,12 @@ static processing_state show_table(
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
+		ISQL_FREE(collist);
 		return ERR;
 	END_ERROR;
+
+	if (collist)
+		ISQL_FREE(collist);
 
 	FOR R_C IN RDB$RELATION_CONSTRAINTS CROSS
 		C_C IN RDB$CHECK_CONSTRAINTS
@@ -3313,12 +3320,8 @@ static processing_state show_table(
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		ISQL_FREE(collist);
 		return ERR;
 	END_ERROR;
-
-	if (collist)
-		ISQL_FREE(collist);
 
 	// Do check constraints
 
@@ -3350,7 +3353,6 @@ static processing_state show_trigger(
  *
  **************************************/
 	bool first = true;
-	bool skip = false;
 
 	// Show all triggers
 	if (!*object)
@@ -3412,7 +3414,7 @@ static processing_state show_trigger(
 		SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_TYPE,
 		TRG.RDB$TRIGGER_SEQUENCE, TRG.RDB$TRIGGER_NAME;
 
-		skip = false;
+		bool skip = false;
 		// Skip triggers for check constraints
 		FOR FIRST 1 CHK IN RDB$CHECK_CONSTRAINTS WITH
 			TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME

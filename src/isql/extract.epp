@@ -106,10 +106,7 @@ int EXTRACT_ddl(int flag,
  *	0 flag means SQL only tables. 1 flag means all tables
  *
  **************************************/
-	SCHAR errbuf[MSG_LENGTH];
-	int ret_code = FINI_OK;
 	bool did_attach = false;
-	bool did_start = false;
 
 	if (!DB)
 	{
@@ -163,6 +160,7 @@ int EXTRACT_ddl(int flag,
 	sprintf(Print_buffer, " %s", NEWLINE);
 	ISQL_printf(isqlGlob.Out, Print_buffer);
 
+	bool did_start = false;
 	if (!gds_trans)
 	{
 		if (isc_start_transaction(gds_status, &gds_trans, 1, &DB, 0, NULL))
@@ -174,6 +172,8 @@ int EXTRACT_ddl(int flag,
 	}
 
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
+	SCHAR errbuf[MSG_LENGTH];
+	int ret_code = FINI_OK;
 
 // If a table name was passed, extract only that table and domains 
 	if (*tabname)
@@ -310,11 +310,12 @@ int EXTRACT_list_table(const SCHAR* relation_name,
  **************************************/
 
 	bool first = true;
-	SSHORT i;
 	SCHAR char_sets[86];
 	SSHORT subtype;
-	bool intchar = false;
+	//bool intchar = false;
 	// CVC: shouldn't this var be initialized inside the FOR statement instead?
+	// CVC: 2004.12.03: I discovered someone made this variable obsolete;
+	// it's set but never used. Hope the change was right. I commented it.
 
 // Query to obtain relation detail information 
 
@@ -422,7 +423,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		else
 		{
 			// Look through types array 
-			for (i = 0; Column_types[i].type; i++)
+			for (int i = 0; Column_types[i].type; i++)
 				if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
 				{
 					bool precision_known = false;
@@ -545,8 +546,10 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					ISQL_get_character_sets (char_set_id, 0, false, char_sets);
 				if (char_sets[0])
 					ISQL_printf (isqlGlob.Out, char_sets);
-				if (!char_set_id)
-					intchar = true;
+				// CVC: Someone deleted the code that checks intchar when handling collations
+				// several lines below, so it didn't have any effect. Commented it.
+				//if (!char_set_id)
+				//	intchar = true;
 			}
 		}
 
@@ -595,7 +598,6 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				ISQL_errmsg (gds_status);
 				return (SSHORT)FINI_ERROR;
 			END_ERROR;
-
 
 			ISQL_printf (isqlGlob.Out, " NOT NULL");
 		}
@@ -1072,7 +1074,6 @@ static void list_all_procs()
  *
  **************************************/
 	bool header = true;
-	TEXT msg[MSG_LENGTH];
 	static const SCHAR* create_procedure_str1 = "CREATE PROCEDURE %s ";
 	static const SCHAR* create_procedure_str2 = "BEGIN EXIT; END %s%s";
 
@@ -1121,6 +1122,8 @@ static void list_all_procs()
 
 /* This query gets the procedure name and the source.  We then nest a query
    to retrieve the parameters. Alter is used, because the procedures are already there*/
+	TEXT msg[MSG_LENGTH];
+
 	FOR PRC IN RDB$PROCEDURES
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 
@@ -1226,7 +1229,6 @@ static void list_all_triggers()
  *
  **************************************/
 	bool header = true;
-
 
 /* Query gets the trigger info for non-system triggers with
    source that are not part of an SQL constraint */
@@ -1762,9 +1764,7 @@ static void list_domain_table(const SCHAR* table_name,
  *
  **************************************/
 	bool first = true;
-	SSHORT i;
 	SCHAR char_sets[86];
-	SSHORT subtype;
 
 	FOR FLD IN RDB$FIELDS CROSS
 		RFR IN RDB$RELATION_FIELDS WITH
@@ -1791,7 +1791,7 @@ static void list_domain_table(const SCHAR* table_name,
 		sprintf (Print_buffer, "CREATE DOMAIN %s AS ", FLD.RDB$FIELD_NAME);
 		ISQL_printf (isqlGlob.Out, Print_buffer);
 
-		for (i = 0; Column_types[i].type; i++)
+		for (int i = 0; Column_types[i].type; i++)
 			if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
 			{
 				bool precision_known = false;
@@ -1856,7 +1856,7 @@ static void list_domain_table(const SCHAR* table_name,
 
 		if (FLD.RDB$FIELD_TYPE == BLOB)
 		{
-			subtype = FLD.RDB$FIELD_SUB_TYPE;
+			const int subtype = FLD.RDB$FIELD_SUB_TYPE;
 			ISQL_printf (isqlGlob.Out, " SUB_TYPE ");
 			if ((subtype > 0) && (subtype <= MAX_BLOBSUBTYPES))
 			{
@@ -1956,9 +1956,7 @@ static void list_domains(SSHORT default_char_set_id)
  *
  **************************************/
 	bool first = true;
-	SSHORT i;
 	SCHAR char_sets[86];
-	SSHORT subtype;
 
 	FOR FLD IN RDB$FIELDS WITH
 		FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
@@ -1984,7 +1982,7 @@ static void list_domains(SSHORT default_char_set_id)
 		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		// Get domain type 
-		for (i = 0; Column_types[i].type; i++)
+		for (int i = 0; Column_types[i].type; i++)
 			if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
 			{
 				bool precision_known = false;
@@ -2048,7 +2046,7 @@ static void list_domains(SSHORT default_char_set_id)
 
 		if (FLD.RDB$FIELD_TYPE == BLOB)
 		{
-			subtype = FLD.RDB$FIELD_SUB_TYPE;
+			const int subtype = FLD.RDB$FIELD_SUB_TYPE;
 			ISQL_printf (isqlGlob.Out, " SUB_TYPE ");
 
 			if ((subtype > 0) && (subtype <= MAX_BLOBSUBTYPES))
@@ -2373,10 +2371,6 @@ static void list_functions()
  *               RETURNS INTEGER BY VALUE
  *               ENTRY_POINT entrypoint MODULE_NAME module;
  **************************************/
-	bool first = true;
-	bool firstarg = true;
-	bool printarg = true;
-
 	char* buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH360);
 	if (!buffer)
 	{
@@ -2410,6 +2404,8 @@ static void list_functions()
 		return;
 	}
 
+	bool first = true;
+
 	FOR FUN IN RDB$FUNCTIONS
 		WITH FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING
 		SORTED BY FUN.RDB$FUNCTION_NAME
@@ -2432,7 +2428,7 @@ static void list_functions()
 				 NEWLINE);
 		ISQL_printf (isqlGlob.Out, Print_buffer);
 
-		firstarg = true;
+		bool firstarg = true;
 
 		FOR FNA IN RDB$FUNCTION_ARGUMENTS WITH
 			FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME
@@ -2547,8 +2543,7 @@ static void list_functions()
 			if (ptype > MAX_UDFPARAM_TYPES)
 				ptype = MAX_UDFPARAM_TYPES;
 
-			printarg = true;
-
+			bool printarg = true;
 
 			if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
 				if (FUN.RDB$RETURN_ARGUMENT) {
@@ -2563,7 +2558,6 @@ static void list_functions()
 				}
 
 			}
-
 
 			if (printarg) {
 				// First arg needs no comma 
