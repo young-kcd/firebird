@@ -317,7 +317,7 @@ const Firebird::PathName TempDirectoryList::GetConfigString() const
 	if (!(value = Config::getTempDirectories()) &&
 		// Temporary directory configuration has not been defined.
 		// Let's make default configuration.
-		!(value = getenv("INTERBASE_TMP")) && // shouldn't it be FIREBIRD_TMP???
+		!(value = getenv("FIREBIRD_TMP")) &&
 		!(value = getenv("TMP")) &&
 		!(value = getenv("TEMP")))
 	{

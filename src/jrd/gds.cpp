@@ -2253,7 +2253,7 @@ void * API_ROUTINE gds__temp_file(
 
 	TEXT temp_dir[MAXPATHLEN];
 	TEXT *directory = dir;
-	if (!directory && !(directory = getenv("INTERBASE_TMP"))) {
+	if (!directory && !(directory = getenv("FIREBIRD_TMP"))) {
 		DWORD len;
 		// This checks "TEMP" and "TMP" environment variables
 		if ((len = GetTempPath(sizeof(temp_dir), temp_dir)) &&
@@ -2296,14 +2296,13 @@ void * API_ROUTINE gds__temp_file(
 	}
 	if ((int)result == -1) return result;
 	if (stdio_flag) {
-		result = ib_fdopen((int)result,
-			expanded_string && !unlink_flag ? "w+b" : "Dw+b");
-		if (!result) result = (void*)-1;
+		if (!(result = ib_fdopen((int) result, "w+b")))
+			return (void *)-1;
 	}
 	return result;
 #else
 	TEXT *directory = dir;
-	if (!directory && !(directory = getenv("INTERBASE_TMP")) && !(directory = getenv("TMP")))
+	if (!directory && !(directory = getenv("FIREBIRD_TMP")) && !(directory = getenv("TMP")))
 		directory = WORKFILE;
 	TEXT file_name[MAXPATHLEN];
 	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-2)

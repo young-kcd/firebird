@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.34 2003-04-12 17:06:44 alexpeshkoff Exp $
+$Id: isc.cpp,v 1.35 2003-06-25 07:43:33 dimitr Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -471,7 +471,7 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 		{
 			/* Temp. directory configuration has not been defined.
 			   Let's make default configuration */
-			if (!(q = getenv("INTERBASE_TMP")) &&
+			if (!(q = getenv("FIREBIRD_TMP")) &&
 				!(q = getenv("TMP")) &&
 				!(q = getenv("TEMP")))
 			{
