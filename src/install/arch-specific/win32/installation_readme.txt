@@ -29,6 +29,7 @@ Contents
 
 o Before installation
 o New features of the installer
+o Deprecated Features related to installation
 o Uninstallation
 o Other Notes
 o Installation from a batch file
@@ -51,13 +52,32 @@ o This installer now combines the super server and
   but not both. To switch server type you need to 
   uninstall and re-install.
   
-o Libraries are no longer installed into the Windows 
-  system directory. This applies to both Firebird's 
-  own libraries and the Microsoft C run-time 
-  libraries. They are installed into the Firebird bin 
-  directory. This should resolve all installation 
-  conflicts, expecially on Windows 2000 and Windows 
-  XP.
+o The rules for library installation have changed 
+  considerably. They are explained in detail in
+    .\docs\README.Win32LibraryInstallation.txt
+  which will be available to you after installation.
+
+  As a result of these new rules the installer 
+  checks for an existing install of Firebird or
+  InterBase. 
+  
+  - If Firebird 1.5 is already installed
+    it will attempt to install over it. If 
+    the server is running it will halt the install.
+
+  - If another version of Firebird or InterBase is
+    already installed it will warn the user. If
+    the user continues the installer will install
+    Firebird and set up registry entries but it 
+    will not configure Firebird to run, either as
+    a service or as an application. This must
+    be done manually.
+
+  - The installer has a new commandline option
+      /force
+    which allows those with a 'devil may care'
+    attitude to override the above.
+
 
 o If firebird.conf exists in the installation 
   directory it is saved as:
@@ -68,6 +88,28 @@ o If firebird.conf exists in the installation
   the installer would have to parse the existing (and 
   possibly broken) configuration file.
 
+
+Deprecated Features related to installation
+-------------------------------------------
+
+o Firebird 1.0 reserved a new registry key for 
+  Firebird use. It was:
+  
+    HKLM\SOFTWARE\FirebirdSQL 
+  This is now deprecated and will be deleted by the
+  installer. If you have applications which rely 
+  on this key you should add it back manually. 
+  However, it is preferable if you rebuild your 
+  application to read the new key.
+  
+o Firebird 1.5 release candidates installed the 
+  fbclient.dll in the <system> directory. This
+  practice is now deprecated. The installer will
+  remove the fbclient.dll during the install. Again, 
+  you can copy it back if you need it. However 
+  it is preferable if you rebuild your applications 
+  to work with the new usage of fbclient.
+  
 
 Uninstallation
 --------------
@@ -167,4 +209,18 @@ following parameters may be passed:
                DevAdminComponent, ClientComponent"
   
   would be required for a full install.
+
+
+/FORCE
+
+  Tells the installer to ignore its analysis of the 
+  existing environment. It will attempt to install
+  and configure Firebird 1.5 as if no previous
+  version of Firebird or InterBase was installed.
+  
+  This can be useful if you have a seriously broken 
+  installation that you cannot uninstall. Or it
+  could be another way to aggravate your users by 
+  breaking a perfectly good working install of 
+  InterBase. Its your choice.
 

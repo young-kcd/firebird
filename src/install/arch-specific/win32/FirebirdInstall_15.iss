@@ -136,6 +136,14 @@ Root: HKLM; Subkey: SOFTWARE\Microsoft\Windows\CurrentVersion\Run; ValueType: st
 ;This doesn't seem to get cleared automatically by instreg on uninstall, so lets make sure of it
 Root: HKLM; Subkey: "SOFTWARE\Firebird Project"; Flags: uninsdeletekeyifempty; Components: ClientComponent DevAdminComponent ServerComponent
 
+;Clean up Invalid registry entries from previous installs.
+Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs"; ValueType: none; ValueName: ExpandConstant('{sys}')+'\fbclient.dll'; flags: deletevalue;
+
+;User _may_ be installing over an existing 1.5 install, and it may have been set to run as application on startup
+;so we had better delete this entry unless they have chosen to autostart as application
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; Valuetype: none; ValueName: 'Firebird'; flags: deletevalue; Check: IsNotAutoStart;
+
 [Icons]
 Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0; Tasks: MenuGroupTask; Check: InstallServerIcon; IconIndex: 0; Components: ClassicServerComponent; Comment: Run Firebird classic server (without guardian)
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0; Tasks: MenuGroupTask; Check: InstallServerIcon; IconIndex: 0; Components: SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
@@ -223,12 +231,6 @@ program Setup;
 //Var
 //  ProductVersion = '1.5.0';
 
-{To Do
-
---remove old, incorrect registry entries that exist from RC installs
-
-}
-
 
 Var
   InstallRootDir: String;
@@ -237,8 +239,6 @@ Var
 
 #include "FirebirdInstallSupportFunctions.inc"
 #include "FirebirdInstallEnvironmentChecks.inc"
-
-
 
 function SummarizeInstalledProducts: String;
 var
@@ -321,11 +321,20 @@ begin
 
   //We've got all this information. What do we do with it?
 
-  if ProductsInstalledCount = 0 then begin
-    result := true;
-    exit;
+  if ProductsInstalledCount = 0 then
+    //There is a possibility that all our efforts to detect an
+    //install were in vain and Firebird 1.5 _is_ running...
+    if ( FirebirdOneFiveRunning ) then begin
+      result := false;
+      MsgBox('An existing Firebird 1.5 Server is running. You must close the '+
+             'application or stop the service before continuing.', mbError, MB_OK);
+      exit;
+      end
+    else begin
+      result := true;
+      exit;
   end;
-  
+
   //If Fb15 RC is installed then we can install over it.
   //unless we find the server running.
   if (ProductsInstalledCount = 1) AND
@@ -357,6 +366,7 @@ begin
     If ((InstallAndConfigure AND Configure) = Configure) then
       InstallAndConfigure := InstallAndConfigure - Configure;
 end;
+
 
 function InitializeSetup(): Boolean;
 var
@@ -439,21 +449,11 @@ begin
     if (InstallRootDir = '') then
       InstallRootDir := Default;
 
-  end // if InstallRootDir = '' then begin
+  end; // if InstallRootDir = '' then begin
 
-    Result := ExpandConstant(InstallRootDir);
+  Result := ExpandConstant(InstallRootDir);
 
 end;
-
-(*
-function UseGuardian(Default: String): String;
-begin
-if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srYes then
-  Result := '1'
-else
-  Result := '0';
-end;
-*)
 
 
 function ServiceStartFlags(Default: String): String;
@@ -510,6 +510,17 @@ begin
       Result := GetAppPath+'\bin\fb_inet_server.exe'
     else
       Result := GetAppPath+'\bin\fbserver.exe';
+      
+      
+end;
+
+function IsNotAutoStartApp: boolean;
+//Support function to help remove unwanted registry entry.
+begin
+  result := true;
+  if ( ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes) and
+    ( ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes ) then
+  result := false;
 end;
 
 procedure UpdateFirebirdConf;
@@ -528,6 +539,17 @@ begin
     if ShouldProcessEntry('ServerComponent', 'UseGuardianTask') = srNo  then
       ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
   end;
+end;
+
+
+procedure CleanUpFB15RCInstalls;
+begin
+//Remove fbclient
+if FileExists(GetSysPath+'fbclient.dll') then
+  if FireBirdOneFiveRunning then
+    RestartReplace(GetSysPath+'fbclient.dll','')
+  else
+    DeleteFile(GetSysPath+'fbclient.dll');
 end;
 
 
@@ -560,13 +582,12 @@ begin
         AppStr := StartApp('')+' -a';
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
-
+      
       UpdateFirebirdConf;
       CheckSharedLibCountAtEnd;
-
-      end;
-   end;
-
+      CleanUpFB15RCInstalls;
+    end;
+  end;
 end;
 
 function StartEngine: boolean;
@@ -575,20 +596,6 @@ begin
     result := not FirebirdOneRunning;
 end;
 
-(*
-//Not currently in use
-function RemoveThisVersion: boolean;
-//check if we are still the current version before removing
-var
-  VersionStr: string;
-begin
-  result := false;
-  if RegQueryStringValue(HKEY_LOCAL_MACHINE,
-    'SOFTWARE\FirebirdSQL\Firebird\CurrentVersion','Version', VersionStr ) then
-    if (pos(ProductVersion,VersionStr)>0) then
-      result := true;
-end;
-*)
 
 function ChooseUninstallIcon(Default: String): String;
 begin

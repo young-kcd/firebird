@@ -46,8 +46,9 @@
 function GetAppPath: String;
 begin
   Result := ExpandConstant('{app}');
-  Result := '"' + Result +'"';
+//  Result := '"' + Result +'"';
 end;
+
 
 //Registry keys for Firebird and InterBase
 Const
@@ -119,7 +120,6 @@ Var
                                 // configure. Default is to install and configure only if
                                 // no other working installation is found (unless we are installing 
                                 // over the same version)
-                                
   InstallAndConfigure: Integer;
 
 Type
