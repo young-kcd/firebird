@@ -30,7 +30,7 @@
  *
  */
 /*
-$Id: why.c,v 1.7 2002-02-23 22:15:23 seanleyne Exp $
+$Id: why.c,v 1.8 2002-02-25 11:41:54 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -5260,7 +5260,6 @@ static void check_status_vector(STATUS * status, STATUS expected)
 		case gds_arg_number:
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_domain:
 		case gds_arg_dos:
 		case gds_arg_mpexl:
 		case gds_arg_mpexl_ipc:
