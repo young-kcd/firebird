@@ -1,3 +1,16 @@
+2004-09-08 14:01  alexpeshkoff
+
+	* firebird2/src/dsql/: ddl.cpp (1.113), parse.y (1.146):
+	
+	fixed AV in DECLARE FILTER
+
+2004-09-08 11:38  robocop
+
+	* firebird2/src/jrd/idx.cpp (1.70):
+	
+	Delete a comment that I put to signal an ugly cast when calling
+	some VIO functions. Solved by Alex.
+
 2004-09-07 10:35  robocop
 
 	* firebird2/src/common/classes/alloc.h (1.51):
