@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.151 2003-08-03 23:17:48 brodsom Exp $
+dnl $Id: configure.in,v 1.152 2003-08-07 17:10:19 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -498,7 +498,7 @@ case "$PLATFORM" in
       [FB_PIPE_NAME=${withval}])
     AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
-    XE_PREPEND(-lmpr -lversion -lws2_32,LIBS)
+    XE_PREPEND(-lmpr -lversion -lws2_32 -lole32,LIBS)
     ;;
 
   *)
