@@ -2696,12 +2696,6 @@ nulls_placement : NULLS FIRST
 			{ $$ = 0; }
 		;
 
-lock_clause : WITH LOCK
-			{ $$ = make_node (nod_flag, 0, NULL); }
-		|
-			{ $$ = 0; }
-		;
-		
 for_update_clause : FOR UPDATE for_update_list lock_clause
 			{ $$ = make_node (nod_for_update, 2, $3, $4); }
 		|
@@ -2714,6 +2708,12 @@ for_update_list	: OF column_list
 			{ $$ = make_node (nod_flag, 0, NULL); }
 		;
 
+lock_clause : WITH LOCK
+			{ $$ = make_node (nod_flag, 0, NULL); }
+		|
+			{ $$ = 0; }
+		;
+		
 
 /* SELECT expression */
 
@@ -2729,6 +2729,31 @@ select_expr	: SELECT limit_clause
 					$2, $3, $4, $5, $6, $7, $8, $9, NULL); }
 		;                                               
 
+limit_clause	: first_clause skip_clause
+			{ $$ = make_node (nod_limit, e_limit_count, $2, $1); }
+		|   first_clause
+			{ $$ = make_node (nod_limit, e_limit_count, NULL, $1); }
+		|   skip_clause 
+			{ $$ = make_node (nod_limit, e_limit_count, $1, NULL); }
+		| 
+			{ $$ = 0; }
+		;
+
+first_clause	: FIRST long_integer
+			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
+		| FIRST '(' value ')'
+			{ $$ = $3; }
+		| FIRST parameter
+			{ $$ = $2; }
+		;
+
+skip_clause	: SKIP long_integer
+			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
+		| SKIP '(' value ')'
+			{ $$ = $3; }
+		| SKIP parameter
+			{ $$ = $2; }
+		;
 
 distinct_clause	: DISTINCT
 			{ $$ = make_node (nod_flag, 0, NULL); }
@@ -2833,31 +2858,6 @@ join_type	: INNER
 
 
 /* other clauses in the select expression */
-first_clause	: FIRST long_integer
-			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
-		| FIRST '(' value ')'
-			{ $$ = $3; }
-		| FIRST parameter
-			{ $$ = $2; }
-		;
-
-skip_clause	: SKIP long_integer
-			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
-		| SKIP '(' value ')'
-			{ $$ = $3; }
-		| SKIP parameter
-			{ $$ = $2; }
-		;
-
-limit_clause	: first_clause skip_clause
-			{ $$ = make_node (nod_limit, e_limit_count, $2, $1); }
-		|   first_clause
-			{ $$ = make_node (nod_limit, e_limit_count, NULL, $1); }
-		|   skip_clause 
-			{ $$ = make_node (nod_limit, e_limit_count, $1, NULL); }
-		| 
-			{ $$ = 0; }
-		;
 
 group_clause	: GROUP BY grp_column_list
 			{ $$ = make_list ($3); }
