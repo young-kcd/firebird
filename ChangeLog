@@ -1,3 +1,9 @@
+2004-04-13 00:22  skidder
+
+	* firebird2/builds/win32/msvc7/gstat.vcproj (1.11.2.4):
+	
+	Adjust MSVC7 makefiles for the latest Dmitry changes
+
 2004-04-11 16:37  alexpeshkoff
 
 	* firebird2/src/common/config/config_file.cpp (1.11.2.2):
