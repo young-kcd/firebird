@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.23 2004-04-30 22:47:16 brodsom Exp $
+ *  $Id: nbackup.cpp,v 1.24 2004-05-02 23:06:12 skidder Exp $
  *
  */
  
@@ -153,8 +153,8 @@ public:
 		database = _database;
 		dbase = 0;
 		backup = 0;
-		newdb = NULL;
-		trans = NULL;
+		newdb = 0;
+		trans = 0;
 		// Recognition of local prefix allows to work with
 		// database using TCP/IP loopback while reading file locally.
 		// This makes NBACKUP compatible with Windows CS with XNET disabled
@@ -491,7 +491,7 @@ void nbackup::backup_database(int level, const char* fname)
 			out_sqlda->version = SQLDA_VERSION1;
 			out_sqlda->sqln = 2;
 		
-			isc_stmt_handle stmt = NULL;
+			isc_stmt_handle stmt = 0;
 			if (isc_dsql_allocate_statement(status, &newdb, &stmt))
 				pr_error(status, "allocate statement");
 			char str[200];
@@ -655,7 +655,7 @@ void nbackup::backup_database(int level, const char* fname)
 		XSQLDA *in_sqlda = (XSQLDA *)in_sqlda_data;
 		in_sqlda->version = SQLDA_VERSION1;
 		in_sqlda->sqln = 4;
-		isc_stmt_handle stmt = NULL;
+		isc_stmt_handle stmt = 0;
 		if (isc_dsql_allocate_statement(status, &newdb, &stmt))
 			pr_error(status, "allocate statement");
 		if (isc_dsql_prepare(status, &trans, &stmt, 0, 

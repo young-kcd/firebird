@@ -21,13 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.33 2004-04-28 22:26:43 brodsom Exp $
+$Id: gener.cpp,v 1.34 2004-05-02 23:06:03 skidder Exp $
 */
 
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../jrd/align.h"

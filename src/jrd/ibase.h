@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.73 2004-04-30 22:45:38 brodsom Exp $
+$Id: ibase.h,v 1.74 2004-05-02 23:05:00 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -77,17 +77,13 @@ typedef	unsigned char	ISC_UCHAR;
 /* InterBase Handle Definitions */
 /********************************/
 
-#ifndef JRD_Y_REF_H
-#define FRBRD void
-#endif
-
-typedef FRBRD * isc_att_handle;
-typedef FRBRD * isc_blob_handle;
-typedef FRBRD * isc_db_handle;
-typedef FRBRD * isc_req_handle;
-typedef FRBRD * isc_stmt_handle;
-typedef FRBRD * isc_svc_handle;
-typedef FRBRD * isc_tr_handle;
+typedef FB_API_HANDLE isc_att_handle;
+typedef FB_API_HANDLE isc_blob_handle;
+typedef FB_API_HANDLE isc_db_handle;
+typedef FB_API_HANDLE isc_req_handle;
+typedef FB_API_HANDLE isc_stmt_handle;
+typedef FB_API_HANDLE isc_svc_handle;
+typedef FB_API_HANDLE isc_tr_handle;
 typedef void (* isc_callback) ();
 typedef ISC_LONG isc_resv_handle;
 

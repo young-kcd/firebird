@@ -35,7 +35,6 @@
 #include "firebird.h"
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
@@ -287,7 +286,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_dbb* dbb;
 	dsql_intlsym* iname;
 	dsql_sym* symbol;
@@ -378,7 +377,7 @@ USHORT METD_get_col_default(dsql_req*    request,
  *    Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
  *
  **************************************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_dbb* dbb;
 	ISC_STATUS_ARRAY status_vect;
 
@@ -387,7 +386,7 @@ USHORT METD_get_col_default(dsql_req*    request,
 
 	ISC_STATUS stat;
 	USHORT length, result = 0;
-	isc_blob_handle blob_handle = NULL;
+	isc_blob_handle blob_handle = 0;
 
 	*has_default = false;
 
@@ -491,7 +490,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_dbb* dbb;
 	dsql_intlsym* iname;
 	dsql_sym* symbol;
@@ -580,7 +579,7 @@ USHORT METD_get_charset_bpc (dsql_req* request,
  *	charset' id, not by name.
  *
  **************************************/
-    FRBRD *DB, *gds_trans;
+    FB_API_HANDLE DB, gds_trans;
     dsql_dbb*	dbb;
     isc_req_handle handle;
     USHORT	bpc = 0;
@@ -633,7 +632,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
  *	Find the default character set for a database
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_dbb* dbb;
 	isc_req_handle handle;
 	USHORT length;
@@ -712,8 +711,8 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 	bool found = false;
 
 	dsql_dbb*    dbb       = request->req_dbb;
-	FRBRD* DB        = dbb->dbb_database_handle;
-	FRBRD* gds_trans = request->req_trans;
+	FB_API_HANDLE DB        = dbb->dbb_database_handle;
+	FB_API_HANDLE gds_trans = request->req_trans;
 
 	THREAD_EXIT;
 
@@ -778,8 +777,8 @@ USHORT METD_get_domain_default(dsql_req* request,
 	*has_default = false;
 
 	dsql_dbb* dbb = request->req_dbb;
-	FRBRD* DB = dbb->dbb_database_handle;
-	FRBRD* gds_trans = request->req_trans;
+	FB_API_HANDLE DB = dbb->dbb_database_handle;
+	FB_API_HANDLE gds_trans = request->req_trans;
 	USHORT result = 0;
 
 // V4.x multi threading requirements 
@@ -801,7 +800,7 @@ USHORT METD_get_domain_default(dsql_req* request,
         if (*has_default) {
             // open the blob 
             THREAD_EXIT;
-            isc_blob_handle blob_handle = NULL;
+            isc_blob_handle blob_handle = 0;
             ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
                                   &blob_handle, blob_id, sizeof(blr_bpb),
                                   blr_bpb);
@@ -878,7 +877,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
  *	return NULL.
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_udf* userFunc;
 	dsql_udf* temp;
     dsql_nod* udf_param_node;
@@ -1143,7 +1142,7 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
  *	node of the fields.
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 
 	dsql_dbb* dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
@@ -1200,7 +1199,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
  *	If it is marked dropped, try to read from system tables
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_dbb* dbb;
 	dsql_fld* parameter;
 	dsql_fld** ptr;
@@ -1400,7 +1399,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
  *	If it does, fetch field information as well.
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_dbb* dbb;
 	dsql_fld* field;
 	dsql_fld** ptr;
@@ -1677,7 +1676,7 @@ dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USH
  *	Look up a trigger's relation and return it's current type
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_dbb* dbb;
 	dsql_str* relation;
 
@@ -1723,7 +1722,7 @@ USHORT METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHOR
  *	Look up a symbolic name in RDB$TYPES
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_dbb* dbb;
 	USHORT found;
 
@@ -1777,8 +1776,8 @@ dsql_rel* METD_get_view_relation(dsql_req*    request,
 	dsql_rel* relation = 0;
 
 	dsql_dbb*    dbb       = request->req_dbb;
-	FRBRD* DB        = dbb->dbb_database_handle;
-	FRBRD* gds_trans = request->req_trans;
+	FB_API_HANDLE DB        = dbb->dbb_database_handle;
+	FB_API_HANDLE gds_trans = request->req_trans;
 
 	THREAD_EXIT;
 
@@ -1833,7 +1832,7 @@ static void check_array( dsql_req* request, const TEXT* field_name, dsql_fld* fi
  *	so in the database block to avoid wasting further effort.
  *
  **************************************/
-	FRBRD *DB, *gds_trans;
+	FB_API_HANDLE DB, gds_trans;
 	dsql_dbb* dbb;
 
 	dbb = request->req_dbb;

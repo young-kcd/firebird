@@ -27,13 +27,12 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.34 2004-03-19 06:14:29 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.35 2004-05-02 23:03:22 skidder Exp $
  */
 
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/license.h"
 #include "../alice/alice.h"
@@ -94,7 +93,7 @@ static inline void return_error(const ISC_STATUS* user_status)
 
 void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 {
-	FRBRD* request = NULL;
+	FB_API_HANDLE request = 0;
 	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = handle))
@@ -124,7 +123,7 @@ void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 
 void MET_get_state(ISC_STATUS* user_status, TDR trans)
 {
-	FRBRD* request = NULL;
+	FB_API_HANDLE request = 0;
 	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = trans->tdr_db_handle) ||
@@ -169,7 +168,7 @@ void MET_get_state(ISC_STATUS* user_status, TDR trans)
 
 TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 {
-	FRBRD* request = NULL;
+	FB_API_HANDLE request = 0;
 	TDR trans = NULL;
 	Tgbl* tdgbl = GET_THREAD_DATA;
 
@@ -278,7 +277,7 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
 	Tgbl* tdgbl = GET_THREAD_DATA;
 
 //  Look for desired fields in system relations 
-	FRBRD* req = NULL;
+	FB_API_HANDLE req = 0;
 
 	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation;
 		rel_field_table++)
@@ -481,7 +480,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 	if (buffer_length > 1)
 		buffer[1] = 0;
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	if (isc_open_blob(gds_status, &DB, &gds_trans, &blob, blob_id))
 	{
 		ALICE_print_status(gds_status);

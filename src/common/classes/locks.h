@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: locks.h,v 1.12 2004-03-14 13:40:09 alexpeshkoff Exp $
+ *  $Id: locks.h,v 1.13 2004-05-02 23:03:47 skidder Exp $
  *
  */
 
@@ -178,6 +178,17 @@ public:
 };
 
 #endif /* MULTI_THREAD */
+
+// RAII holder of mutex lock
+class MutexLockGuard {
+public:
+	MutexLockGuard(Mutex &alock) : lock(&alock) { lock->enter(); }
+	~MutexLockGuard() { lock->leave(); };
+private:
+	// Forbid copy constructor
+	MutexLockGuard(const MutexLockGuard& source);
+	Mutex *lock;
+};
 
 } //namespace Firebird
 

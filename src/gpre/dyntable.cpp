@@ -24,12 +24,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: dyntable.cpp,v 1.7 2004-04-28 22:05:56 brodsom Exp $
+//	$Id: dyntable.cpp,v 1.8 2004-05-02 23:04:16 skidder Exp $
 //
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
 #define NODE(dyn) dyn, "dyn",

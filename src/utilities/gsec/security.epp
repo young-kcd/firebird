@@ -28,7 +28,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/enc_proto.h"
@@ -44,7 +43,7 @@ DATABASE DB = STATIC FILENAME "security.fdb";
 
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
-						  FRBRD* DB,
+						  FB_API_HANDLE DB,
 						  internal_user_data* io_user_data,
 						  FPTR_SECURITY_CALLBACK display_func,
 						  void* callback_arg)
@@ -112,7 +111,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 	SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
 	SCHAR encrypted2[MAX_PASSWORD_LENGTH + 2];
 	ISC_STATUS_ARRAY tmp_status;
-	FRBRD *gds_trans = NULL;
+	FB_API_HANDLE gds_trans = 0;
 	bool found;
 	SSHORT ret = 0;
 
@@ -363,7 +362,7 @@ void SECURITY_get_db_path(const TEXT* server, TEXT* buffer)
  **************************************/
 #define RESPBUF	256
 	ISC_STATUS_ARRAY status;
-	isc_svc_handle svc_handle = NULL;
+	isc_svc_handle svc_handle = 0;
 	TEXT svc_name[256];
 	const TEXT sendbuf[] = { isc_info_svc_user_dbpath };
 	TEXT respbuf[RESPBUF], *p = respbuf;

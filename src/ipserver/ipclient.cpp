@@ -65,7 +65,7 @@ static void event_thread(void);
 static void extract_status(ICC, ISC_STATUS *);
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static SSHORT init(ISC_STATUS *, ICC *);
-static ITR make_transaction(ISC_STATUS *, IDB, FRBRD *);
+static ITR make_transaction(ISC_STATUS *, IDB, FB_API_HANDLE);
 static SSHORT name_length(const TEXT*);
 static bool pack_strings(ICC);
 static void release_blob(IBL);
@@ -301,7 +301,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(
 	idb->idb_next = icc->icc_databases;
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
-	idb->idb_handle = (FRBRD *) (ips->ips_handle);
+	idb->idb_handle = (FB_API_HANDLE) (ips->ips_handle);
 	RETURN_SUCCESS;
 }
 
@@ -648,7 +648,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	request = (IRQ) ALLOC(type_irq);
 	*req_handle = request;
 	NOT_NULL(request);
-	request->irq_handle = (FRBRD *) ips->ips_rq_handle;
+	request->irq_handle = (FB_API_HANDLE) ips->ips_rq_handle;
 	request->irq_idb = idb;
 	request->irq_next = idb->idb_requests;
 	idb->idb_requests = request;
@@ -705,7 +705,7 @@ ISC_STATUS GDS_CREATE_BLOB(ISC_STATUS * user_status,
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (FRBRD *) ips->ips_bl_handle;
+	blob->ibl_handle = (FB_API_HANDLE) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -772,7 +772,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (FRBRD *) ips->ips_bl_handle;
+	blob->ibl_handle = (FB_API_HANDLE) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -867,7 +867,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	idb->idb_next = icc->icc_databases;
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
-	idb->idb_handle = (FRBRD *) (ips->ips_handle);
+	idb->idb_handle = (FB_API_HANDLE) (ips->ips_handle);
 	RETURN_SUCCESS;
 }
 
@@ -1156,7 +1156,7 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
 	statement = (IPSERVER_ISR) ALLOC(type_ipserver_isr);
 	*stmt_handle = statement;
 	NOT_NULL(statement);
-	statement->isr_handle = (FRBRD *) ips->ips_st_handle;
+	statement->isr_handle = (FB_API_HANDLE) ips->ips_st_handle;
 	statement->isr_idb = idb;
 	statement->isr_next = idb->idb_sql_requests;
 	statement->isr_batch_flag = 0;
@@ -1189,7 +1189,7 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
 	IDB idb;
 	ITR transaction;
 	IPSERVER_ISR statement;
-	FRBRD * handle;
+	FB_API_HANDLE handle;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -1227,7 +1227,7 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
 
 	// take care of transactions 
 
-	handle = (FRBRD *) ips->ips_tr_handle;
+	handle = (FB_API_HANDLE) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1266,7 +1266,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 	IDB idb;
 	ITR transaction;
 	IPSERVER_ISR statement;
-	FRBRD * handle;
+	FB_API_HANDLE handle;
 	ips_dsql *ips;
 	ips_string *ips_blr_in;
 	ips_string *ips_blr_out;
@@ -1311,7 +1311,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 
 	// take care of transactions 
 
-	handle = (FRBRD *) ips->ips_tr_handle;
+	handle = (FB_API_HANDLE) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1347,7 +1347,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
  **************************************/
 	IDB idb;
 	ITR transaction;
-	FRBRD * handle;
+	FB_API_HANDLE handle;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -1388,7 +1388,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
 
 	// take care of transacion handles 
 
-	handle = (FRBRD *) ips->ips_tr_handle;
+	handle = (FB_API_HANDLE) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1429,7 +1429,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
  **************************************/
 	IDB idb;
 	ITR transaction;
-	FRBRD * handle;
+	FB_API_HANDLE handle;
 	ips_dsql *ips;
 	ips_string *ips_blr_in;
 	ips_string *ips_msg_in;
@@ -1479,7 +1479,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 
 	// handle transactions 
 
-	handle = (FRBRD *) ips->ips_tr_handle;
+	handle = (FB_API_HANDLE) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1684,7 +1684,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status,
 
 	// free statement resources 
 
-	statement->isr_handle = (FRBRD *) ips->ips_handle;
+	statement->isr_handle = (FB_API_HANDLE) ips->ips_handle;
 	if (!statement->isr_handle) {
 		release_sql_request(statement);
 		*stmt_handle = NULL;
@@ -2087,7 +2087,7 @@ ISC_STATUS GDS_OPEN_BLOB(ISC_STATUS* user_status,
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (FRBRD *) ips->ips_bl_handle;
+	blob->ibl_handle = (FB_API_HANDLE) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -2153,7 +2153,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (FRBRD *) ips->ips_bl_handle;
+	blob->ibl_handle = (FB_API_HANDLE) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -2536,7 +2536,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
-		make_transaction(user_status, idb, (FRBRD *) ips->ips_tr_handle);
+		make_transaction(user_status, idb, (FB_API_HANDLE) ips->ips_tr_handle);
 	RETURN_SUCCESS;
 }
 
@@ -2888,7 +2888,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	idb->idb_next = icc->icc_databases;
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
-	idb->idb_handle = (FRBRD *) (ips->ips_handle);
+	idb->idb_handle = (FB_API_HANDLE) (ips->ips_handle);
 	RETURN_SUCCESS;
 }
 
@@ -3223,7 +3223,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
-		make_transaction(user_status, idb, (FRBRD *) ips->ips_tr_handle);
+		make_transaction(user_status, idb, (FB_API_HANDLE) ips->ips_tr_handle);
 	RETURN_SUCCESS;
 }
 
@@ -3301,7 +3301,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
-		make_transaction(user_status, idb, (FRBRD *) ips->ips_tr_handle);
+		make_transaction(user_status, idb, (FB_API_HANDLE) ips->ips_tr_handle);
 	RETURN_SUCCESS;
 }
 
@@ -3996,7 +3996,7 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 }
 
 
-static ITR make_transaction( ISC_STATUS * user_status, IDB idb, FRBRD * handle)
+static ITR make_transaction( ISC_STATUS * user_status, IDB idb, FB_API_HANDLE handle)
 {
 /**************************************
  *

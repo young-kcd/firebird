@@ -29,7 +29,6 @@
 
 #include "../ipserver/ipc.h"
 #include "../jrd/license.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../ipserver/alli_proto.h"
@@ -66,7 +65,7 @@ static void insert(ICC);
 static void ipi_end_thread(ICC);
 static void ipi_server(ICC);
 static IPM make_map(USHORT);
-static ITR make_transaction(IDB, FRBRD *);
+static ITR make_transaction(IDB, FB_API_HANDLE);
 static void open_blob(ICC, P_OP);
 static void prepare_statement(ICC);
 static void put_segment(ICC);
@@ -856,7 +855,7 @@ static void allocate_statement( ICC icc)
  **************************************/
 	IDB idb;
 	IPSERVER_ISR statement;
-	FRBRD* handle;
+	FB_API_HANDLE handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_dsql *ips;
@@ -910,7 +909,7 @@ static void attach_database( ICC icc, P_OP operation)
 	USHORT dpb_length, expanded_length;
 	UCHAR file_buf[256], *dpb, dpb_buf[256];
 	UCHAR *expanded, expanded_buf[256];
-	FRBRD* handle;
+	FB_API_HANDLE handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	IDB idb;
@@ -1115,7 +1114,7 @@ static void compile( ICC icc)
 	IRQ request;
 	USHORT blr_length;
 	UCHAR *blr;
-	FRBRD* handle;
+	FB_API_HANDLE handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	ips_compile_req *ips;
@@ -1576,7 +1575,7 @@ static void execute_immediate( ICC icc, P_OP operation)
  **************************************/
 	IDB idb;
 	ITR transaction;
-	FRBRD* handle;
+	FB_API_HANDLE handle;
 	USHORT length, dialect, in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length, parser_version;
 	UCHAR *in_msg, *out_blr, *out_msg;
@@ -1730,7 +1729,7 @@ static void execute_statement( ICC icc, P_OP operation)
  **************************************/
 	ITR transaction;
 	IPSERVER_ISR statement;
-	FRBRD* handle;
+	FB_API_HANDLE handle;
 	USHORT in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length;
 	UCHAR *in_blr, *in_msg, *out_blr, *out_msg;
@@ -2095,7 +2094,7 @@ static void info( ICC icc, P_OP operation)
  *      Issue information.
  *
  **************************************/
-	FRBRD* handle;
+	FB_API_HANDLE handle;
 	ISC_STATUS_ARRAY status_vector;
 	USHORT item_length, recv_item_length, buffer_length, incarnation;
 	UCHAR items_buf[128], recv_items_buf[128];
@@ -2117,7 +2116,7 @@ static void info( ICC icc, P_OP operation)
 	GET_COMM_OBJECT;
 	comm->ips_operation = op_info_blob;
 	ips = &comm->ips_operations.ips_op_object;
-	handle = (FRBRD *)ips->ips_handle;
+	handle = (FB_API_HANDLE)ips->ips_handle;
 	if (operation == op_info_request)
 		incarnation = (USHORT) ips->ips_parameter;
 
@@ -2350,7 +2349,7 @@ static IPM make_map(USHORT map_number)
 }
 
 
-static ITR make_transaction( IDB idb, FRBRD * handle)
+static ITR make_transaction( IDB idb, FB_API_HANDLE handle)
 {
 /**************************************
  *
@@ -2392,7 +2391,7 @@ static void open_blob( ICC icc, P_OP op)
 	IDB idb;
 	IBL blob;
 	ITR transaction;
-	FRBRD * handle;
+	FB_API_HANDLE handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	USHORT bpb_length;
@@ -2504,7 +2503,7 @@ static void prepare_statement( ICC icc)
 	USHORT length, item_length, buffer_length, dialect, parser_version;
 	UCHAR *string, *items, items_buf[128], *buffer;
 	ISC_STATUS_ARRAY status_vector;
-	FRBRD * handle;
+	FB_API_HANDLE handle;
 	ips_dsql *ips;
 	ips_string *ips_prep_string;
 	ips_string *ips_prep_items;
@@ -2894,7 +2893,7 @@ static void reconnect( ICC icc)
 	ITR transaction;
 	USHORT length;
 	UCHAR *buffer;
-	FRBRD * handle;
+	FB_API_HANDLE handle;
 	ISC_STATUS_ARRAY status_vector;
 	ips_reconnect *ips;
 	ips_string *ips_recon;
@@ -2932,7 +2931,7 @@ static void reconnect( ICC icc)
 		else
 		{
 			gds__handle_cleanup(status_vector,
-								(FRBRD **) &handle);
+								(FB_API_HANDLE*) &handle);
 			NOT_NULL(transaction, TRUE);
 		}
 	}
@@ -3440,7 +3439,7 @@ static void service_attach( ICC icc)
  **************************************/
 	USHORT service_length, spb_length;
 	UCHAR service_name[256], *spb, spb_buf[256];
-	FRBRD * handle;
+	FB_API_HANDLE handle;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS result;
 	IDB idb;
@@ -3681,7 +3680,7 @@ static void shutdown_attachments( ICC icc)
 					GDS_ROLLBACK(status_vector, &idb->idb_transactions->itr_handle);
 				else
 					gds__handle_cleanup(status_vector,
-									(FRBRD **) &idb->idb_transactions->itr_handle);
+									(FB_API_HANDLE*) &idb->idb_transactions->itr_handle);
 
 				release_transaction(idb->idb_transactions);
 			}
@@ -3819,7 +3818,7 @@ static void start_transaction( ICC icc)
 	ITR transaction;
 	USHORT count, c;
 	UCHAR *buffer;
-	FRBRD * handle;
+	FB_API_HANDLE handle;
 	ULONG **v, *vector[3 * 16];
 	ISC_STATUS_ARRAY status_vector;
 	ips_start_trans *ips;

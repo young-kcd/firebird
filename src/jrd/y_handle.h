@@ -34,7 +34,6 @@
  * to avoid multiple definition of struct why_hndl in why.cpp
  * and dsql.cpp
  *
- * This file (or y_ref.h) must be included BEFORE ibase.h !
  */
 
 namespace Jrd {
@@ -55,6 +54,7 @@ typedef struct why_hndl
 	UCHAR				type;
 	UCHAR				flags;
 	USHORT				implementation;
+	FB_API_HANDLE		public_handle;
 	union any_handle	handle;
 	struct why_hndl*	parent;
 	struct why_hndl*	next;
@@ -64,7 +64,7 @@ typedef struct why_hndl
 	};
 	struct why_hndl*	statements;
 	struct why_hndl*	blobs;
-	struct why_hndl**	user_handle;
+	FB_API_HANDLE*		user_handle;
 	struct clean*		cleanup;
 	TEXT*				db_path;
 } *WHY_HNDL, *WHY_REQ, *WHY_DBB, *WHY_TRA, 
@@ -81,7 +81,5 @@ typedef struct why_hndl
 #define HANDLE_TRANSACTION_limbo	1
 #define HANDLE_BLOB_filter			2	/* Blob is locally filtered */
 #define	HANDLE_STATEMENT_local		4	/* Process DSQL statement locally */
-
-#include "../jrd/y_ref.h"
 
 #endif // JRD_Y_HANDLE_H

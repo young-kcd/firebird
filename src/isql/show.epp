@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.45 2004-04-30 22:42:10 brodsom Exp $
+ * $Id: show.epp,v 1.46 2004-05-02 23:04:56 skidder Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -43,7 +43,6 @@
 
 #include "../jrd/gds_proto.h"
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../isql/isql.h"
 #include "../jrd/intl.h"
@@ -272,7 +271,7 @@ const char* trigger_action(int type)
 }
 
 
-bool SHOW_dbb_parameters(FRBRD* db_handle,
+bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 						 SCHAR* info_buf,
 						 const SCHAR* db_items,
 						 USHORT item_length,
@@ -994,7 +993,7 @@ void SHOW_print_metadata_text_blob(FILE* fp,
 	if (blobid->gds_quad_high == 0 && blobid->gds_quad_low == 0)
 		return;
 
-	isc_blob_handle blob_handle = NULL;
+	isc_blob_handle blob_handle = 0;
 	if (isc_open_blob2(isc_status, &DB, &gds_trans, &blob_handle, blobid,
 					   sizeof(metadata_text_bpb), metadata_text_bpb))
 	{

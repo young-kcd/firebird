@@ -26,11 +26,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.16 2004-04-30 22:41:33 brodsom Exp $
+//	$Id: jrdmet.cpp,v 1.17 2004-05-02 23:04:17 skidder Exp $
 //
 
 #include "firebird.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../jrd/ods.h"

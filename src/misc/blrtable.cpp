@@ -25,7 +25,6 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 

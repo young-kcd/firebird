@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../qli/dtr.h"
@@ -48,7 +47,7 @@ static DSC* execute_function(qli_nod*);
 static DSC* execute_prompt(qli_nod*);
 static DSC* execute_statistical(qli_nod*);
 static bool like(const UCHAR*, SSHORT, const UCHAR*, SSHORT, const UCHAR);
-static TEXT* make_blob_buffer(FRBRD *, USHORT *);
+static TEXT* make_blob_buffer(FB_API_HANDLE, USHORT *);
 static bool matches(const TEXT*, SSHORT, const TEXT*, SSHORT);
 static bool sleuth(qli_nod*, const dsc*, const dsc*, const dsc*);
 static bool sleuth_check(USHORT, const UCHAR*, const UCHAR* const,
@@ -860,7 +859,7 @@ static bool like(
 }
 
 
-static TEXT* make_blob_buffer( FRBRD* blob, USHORT* length)
+static TEXT* make_blob_buffer(FB_API_HANDLE blob, USHORT* length)
 {
 /**************************************
  *
@@ -971,7 +970,7 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
 
 	bool result = false;
 
-	FRBRD* blob = EXEC_open_blob(node->nod_arg[0]);
+	FB_API_HANDLE blob = EXEC_open_blob(node->nod_arg[0]);
 
 	TEXT fixed_buffer[512];
 	USHORT buffer_length = sizeof(fixed_buffer);
@@ -1285,7 +1284,7 @@ static bool string_boolean( qli_nod* node)
 // Source string is a blob, things get interesting
 
 	bool result = false;
-	FRBRD* blob = EXEC_open_blob(node->nod_arg[0]);
+	FB_API_HANDLE blob = EXEC_open_blob(node->nod_arg[0]);
 
     TEXT fixed_buffer[512];
 	USHORT buffer_length = sizeof(fixed_buffer);

@@ -28,7 +28,6 @@
 #define BURP_BURPSWI_H
 
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
 /* Local copies of global variables.  They will be copied into

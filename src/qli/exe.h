@@ -69,7 +69,7 @@ struct qli_req {
     blk				req_header;
     qli_req*		req_next;		// Next request in statement 
     dbb*			req_database;	// Database for request 
-    FRBRD*			req_handle;		// Database request handle 
+    FB_API_HANDLE	req_handle;		// Database request handle 
     qli_rlb*		req_blr;
     struct qli_msg*	req_messages;	// Messages associated with request 
     struct qli_msg*	req_receive;	// Current receive message, if any  
@@ -183,7 +183,7 @@ struct qli_print_item {
     USHORT		itm_header_segments;
     USHORT		itm_count;			// Number of lines to skip 
     USHORT		itm_column;			// Logical column number 
-    FRBRD*		itm_stream;
+    FB_API_HANDLE itm_stream;
     USHORT		itm_kanji_fragment;	// JPN: last kanji on line border 
     ISC_STATUS	itm_blob_status;	// JPN: status of the last blob fetch 
 };

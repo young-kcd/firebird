@@ -28,7 +28,6 @@
 #include lckdef
 
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"

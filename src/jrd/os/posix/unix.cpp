@@ -52,7 +52,6 @@
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "gen/iberror.h"
 #include "../jrd/all_proto.h"

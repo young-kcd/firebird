@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.50 2004-04-30 22:45:38 brodsom Exp $
+$Id: fun.epp,v 1.51 2004-05-02 23:05:00 skidder Exp $
 */
 
 #include "firebird.h"
@@ -42,7 +42,6 @@ $Id: fun.epp,v 1.50 2004-04-30 22:45:38 brodsom Exp $
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/req.h"
 #include "../jrd/lls.h"

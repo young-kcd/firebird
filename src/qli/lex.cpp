@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
@@ -566,7 +565,7 @@ void LEX_init(void)
 	QLI_line->line_size = sizeof(QLI_line->line_data);
 	QLI_line->line_ptr = QLI_line->line_data;
 	QLI_line->line_type = line_stdin;
-	QLI_line->line_source = (FRBRD *) stdin;
+	QLI_line->line_source_file = stdin;
 
 	QLI_semi = false;
 	input_file = stdin;
@@ -621,15 +620,15 @@ void LEX_pop_line(void)
 	QLI_line = temp->line_next;
 
 	if (temp->line_type == line_blob)
-		PRO_close(temp->line_database, temp->line_source);
+		PRO_close(temp->line_database, temp->line_source_blob);
 	else if (temp->line_type == line_file)
-		fclose((FILE *) temp->line_source);
+		fclose(temp->line_source_file);
 
 	ALL_release((FRB) temp);
 }
 
 
-void LEX_procedure( DBB database, FRBRD *blob)
+void LEX_procedure( DBB database, FB_API_HANDLE blob)
 {
 /**************************************
  *
@@ -643,7 +642,7 @@ void LEX_procedure( DBB database, FRBRD *blob)
  *
  **************************************/
 	qli_line* temp = (qli_line*) ALLOCPV(type_line, QLI_token->tok_length);
-	temp->line_source = blob;
+	temp->line_source_blob = blob;
 	strncpy(temp->line_source_name, QLI_token->tok_string,
 			QLI_token->tok_length);
 	temp->line_type = line_blob;
@@ -685,7 +684,7 @@ bool LEX_push_file(const TEXT* filename,
 
 	qli_line* line = (qli_line*) ALLOCPV(type_line, strlen(filename));
 	line->line_type = line_file;
-	line->line_source = (FRBRD *) file;
+	line->line_source_file = file;
 	line->line_size = sizeof(line->line_data);
 	line->line_ptr = line->line_data;
 	*line->line_ptr = 0;
@@ -722,7 +721,7 @@ bool LEX_push_string(const TEXT* const string)
 }
 
 
-void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
+void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 {
 /**************************************
  *
@@ -1050,7 +1049,7 @@ static void next_line(const bool eof_ok)
 				p = QLI_line->line_data;
 				QLI_line->line_ptr = QLI_line->line_data;
 
-				flag = PRO_get_line(QLI_line->line_source, p,
+				flag = PRO_get_line(QLI_line->line_source_blob, p,
 								 QLI_line->line_size);
 				if (flag && QLI_echo)
 					printf("%s", QLI_line->line_data);
@@ -1065,7 +1064,7 @@ static void next_line(const bool eof_ok)
 			if (QLI_line->line_type == line_stdin)
 				flag = LEX_get_line(QLI_prompt, p, (int) QLI_line->line_size);
 			else if (QLI_line->line_type == line_file) {
-				flag = get_line((FILE*) QLI_line->line_source, p, QLI_line->line_size);
+				flag = get_line(QLI_line->line_source_file, p, QLI_line->line_size);
 				if (QLI_echo)
 					printf("%s", QLI_line->line_data);
 			}

@@ -26,7 +26,6 @@
 
 #include <stdio.h>
 
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/thd.h"
 #include "../alice/all.h"
@@ -98,8 +97,8 @@ typedef struct tdr : public pool_alloc<alice_type_tdr>
 	const TEXT* tdr_filename;	// filename within full pathname 
 	alice_str* tdr_host_site;			// host for transaction 
 	alice_str* tdr_remote_site;		// site for remote transaction 
-	FRBRD* tdr_handle;			// reconnected transaction handle 
-	FRBRD* tdr_db_handle;		// reattached database handle 
+	FB_API_HANDLE tdr_handle;			// reconnected transaction handle 
+	FB_API_HANDLE tdr_db_handle;		// reattached database handle 
 	USHORT tdr_db_caps;			// capabilities of database 
 	USHORT tdr_state;			// see flags below 
 } *TDR;

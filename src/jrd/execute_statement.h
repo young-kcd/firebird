@@ -31,16 +31,15 @@
 #include "../include/fb_blk.h"
 #include "../include/fb_vector.h"
 #include "../jrd/exe.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
 #define MAX_CALLBACKS	50
 
 class ExecuteStatement {
 private:
-	FRBRD	* Attachment;
-	FRBRD	* Transaction;
-	FRBRD	* Statement;
+	FB_API_HANDLE Attachment;
+	FB_API_HANDLE Transaction;
+	FB_API_HANDLE Statement;
 	XSQLDA	* Sqlda;
 	SCHAR	* Buffer;
 	bool	SingleMode;

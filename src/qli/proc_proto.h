@@ -24,16 +24,16 @@
 #ifndef QLI_PROC_PROTO_H
 #define QLI_PROC_PROTO_H
 
-void	PRO_close(dbb*, FRBRD*);
+void	PRO_close(dbb*, FB_API_HANDLE);
 void	PRO_commit(dbb*);
 void	PRO_copy_procedure(dbb*, const TEXT*, dbb*, const TEXT*);
 void	PRO_create(dbb*, const TEXT*);
 int		PRO_delete_procedure(dbb*, const TEXT*);
 void	PRO_edit_procedure(dbb*, const TEXT*);
-FRBRD*	PRO_fetch_procedure(dbb*, const TEXT*);
-bool	PRO_get_line (FRBRD*, TEXT*, USHORT);
+FB_API_HANDLE	PRO_fetch_procedure(dbb*, const TEXT*);
+bool	PRO_get_line (FB_API_HANDLE, TEXT*, USHORT);
 void	PRO_invoke(dbb*, const TEXT*);
-FRBRD*	PRO_open_blob(dbb*, ISC_QUAD*);
+FB_API_HANDLE	PRO_open_blob(dbb*, ISC_QUAD*);
 int		PRO_rename_procedure(dbb*, const TEXT*, const TEXT*);
 void	PRO_rollback(dbb*);
 
@@ -42,7 +42,7 @@ typedef void (*extract_fn_t)(void* file, const TEXT* name,
 void	PRO_scan(dbb*, extract_fn_t, void*);
 
 void	PRO_setup(dbb*);
-FRBRD*	PRO_transaction(dbb*, bool);
+FB_API_HANDLE	PRO_transaction(dbb*, bool);
 
 #endif // QLI_PROC_PROTO_H
 

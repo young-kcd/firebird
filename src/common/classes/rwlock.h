@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.17 2004-03-28 09:10:08 robocop Exp $
+ *  $Id: rwlock.h,v 1.18 2004-05-02 23:03:47 skidder Exp $
  *
  */
 
@@ -64,6 +64,8 @@ private:
 	AtomicCounter blockedWriters;
 	HANDLE writers_event, readers_semaphore;
 
+	// Forbid copy constructor
+	RWLock(RWLock& source);
 public:
 	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
 	{ 
@@ -174,6 +176,8 @@ class RWLock
 {
 private:
 	rwlock_t lock;
+	// Forbid copy constructor
+	RWLock(const RWLock& source);
 public:
 	RWLock()
 	{		
@@ -244,6 +248,8 @@ class RWLock
 {
 private:
 	pthread_rwlock_t lock;
+	// Forbid copy constructor
+	RWLock(const RWLock& source);
 public:
 	RWLock() {		
 #ifdef LINUX
@@ -309,9 +315,60 @@ public:
 } // namespace Firebird
 
 #endif /*solaris*/
+
+#else
+
+namespace Firebird {
+
+// Non-threaded version
+class RWLock
+{
+private:
+	// Forbid copy constructor
+	RWLock(const RWLock& source);
+public:
+	RWLock() {		
+	}
+	~RWLock() {	}
+	void beginRead() { }
+	bool tryBeginRead() { return true; }
+	void endRead() { }
+	bool tryBeginWrite() { return true; }
+	void beginWrite() {	}
+	void endWrite() { }
+};
+
+}
+
 #endif /*MULTI_THREAD*/
 
 #endif /*!WIN_NT*/
+
+namespace Firebird {
+
+// RAII holder of read lock
+class ReadLockGuard {
+public:
+	ReadLockGuard(RWLock &alock) : lock(&alock) { lock->beginRead(); }
+	~ReadLockGuard() { lock->endRead(); };
+private:
+	// Forbid copy constructor
+	ReadLockGuard(const ReadLockGuard& source);
+	RWLock *lock;
+};
+
+// RAII holder of write lock
+class WriteLockGuard {
+public:
+	WriteLockGuard(RWLock &alock) : lock(&alock) { lock->beginWrite(); }
+	~WriteLockGuard() { lock->endWrite(); };
+private:
+	// Forbid copy constructor
+	WriteLockGuard(const WriteLockGuard& source);
+	RWLock *lock;
+};
+
+}
 
 #endif // #ifndef CLASSES_RWLOCK_H
 

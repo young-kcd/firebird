@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.31 2004-04-28 21:52:39 brodsom Exp $
+//	$Id: exe.cpp,v 1.32 2004-05-02 23:03:22 skidder Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../alice/alice.h"
@@ -98,7 +97,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 	const USHORT dpb_length = build_dpb(dpb, switches);
 
 	bool error = false;
-	FRBRD* handle = NULL;
+	FB_API_HANDLE handle = 0;
 	isc_attach_database(tdgbl->status, 0, database, &handle, dpb_length,
 						 reinterpret_cast<SCHAR*>(dpb));
 
@@ -115,7 +114,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 	if (tdgbl->status[2] == isc_arg_warning)
 		ALICE_print_status(tdgbl->status);
 
-	if (handle != NULL) {
+	if (handle != 0) {
 		UCHAR error_string[128];
 		if ((switches & sw_validate) && (tdgbl->status[1] != isc_bug_check)) {
 			isc_database_info(tdgbl->status, &handle, sizeof(val_errors),
@@ -157,7 +156,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 	const USHORT dpb_length = build_dpb(dpb, switches);
 
 	bool error = false;
-	FRBRD* handle = NULL;
+	FB_API_HANDLE handle = 0;
 	isc_attach_database(tdgbl->status, 0, database, &handle,
 						 dpb_length,  reinterpret_cast<char*>(dpb));
 

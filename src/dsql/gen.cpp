@@ -36,7 +36,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "../dsql/dsql.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"

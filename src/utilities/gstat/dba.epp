@@ -39,7 +39,6 @@
 #include <fcntl.h>
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/jrd_time.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/btn.h"
@@ -281,7 +280,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	bool sw_log = false;
 	bool sw_record = false;
 	bool sw_relation = false;
-	isc_db_handle db_handle = NULL;
+	isc_db_handle db_handle = 0;
 	UCHAR buf[256];
 	UCHAR pass_buff[128], user_buff[128], *password = pass_buff, *username =
 		user_buff;
@@ -658,9 +657,9 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		dba_exit(FINI_ERROR, tddba);
 	END_ERROR
 
-	isc_req_handle request1 = NULL;
-	isc_req_handle request2 = NULL;
-	isc_req_handle request3 = NULL;
+	isc_req_handle request1 = 0;
+	isc_req_handle request2 = 0;
+	isc_req_handle request3 = 0;
 
 	FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request1)
 		X IN RDB$RELATIONS SORTED BY DESC X.RDB$RELATION_NAME

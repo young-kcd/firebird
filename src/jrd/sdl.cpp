@@ -28,7 +28,6 @@
 #ifndef REQUESTER
 #include "../jrd/jrd.h"
 #endif
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../jrd/sdl.h"

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.60 2004-04-28 22:05:56 brodsom Exp $
+ * $Id: gpre.h,v 1.61 2004-05-02 23:04:16 skidder Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -63,7 +63,6 @@
 
 #include <stdio.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
@@ -755,8 +754,8 @@ typedef struct dbb {
 	USHORT dbb_id;				/* database id in program */
 	USHORT dbb_flags;			/* Misc flag bytes */
 	gpre_sym* dbb_name;			/* database name */
-	FRBRD *dbb_handle;			/* OUR db handle */
-	FRBRD *dbb_transaction;		/* default transaction */
+	FB_API_HANDLE dbb_handle;			/* OUR db handle */
+	FB_API_HANDLE dbb_transaction;		/* default transaction */
 	rrl* dbb_rrls;				/* temporary list of relation locks */
 	tpb* dbb_tpbs;				/* real tpbs for this db */
 	const TEXT* dbb_filename;
@@ -774,22 +773,22 @@ typedef struct dbb {
 	TEXT *dbb_def_charset;		/* charset for CREATE DATABASE */
 	SSHORT dbb_know_subtype;	/* Use an charset subtype id on messages */
 	SSHORT dbb_char_subtype;	/* subtype to use for all SCHAR messages */
-	FRBRD *dbb_field_request;
-	FRBRD *dbb_flds_request;
-	FRBRD *dbb_relation_request;
-	FRBRD *dbb_procedure_request;
-	FRBRD *dbb_udf_request;
-	FRBRD *dbb_trigger_request;
-	FRBRD *dbb_proc_prms_request;
-	FRBRD *dbb_proc_prm_fld_request;
-	FRBRD *dbb_index_request;
-	FRBRD *dbb_type_request;
-	FRBRD *dbb_array_request;
-	FRBRD *dbb_dimension_request;
-	FRBRD *dbb_domain_request;
-	FRBRD *dbb_generator_request;
-	FRBRD *dbb_view_request;
-	FRBRD *dbb_primary_key_request;
+	FB_API_HANDLE dbb_field_request;
+	FB_API_HANDLE dbb_flds_request;
+	FB_API_HANDLE dbb_relation_request;
+	FB_API_HANDLE dbb_procedure_request;
+	FB_API_HANDLE dbb_udf_request;
+	FB_API_HANDLE dbb_trigger_request;
+	FB_API_HANDLE dbb_proc_prms_request;
+	FB_API_HANDLE dbb_proc_prm_fld_request;
+	FB_API_HANDLE dbb_index_request;
+	FB_API_HANDLE dbb_type_request;
+	FB_API_HANDLE dbb_array_request;
+	FB_API_HANDLE dbb_dimension_request;
+	FB_API_HANDLE dbb_domain_request;
+	FB_API_HANDLE dbb_generator_request;
+	FB_API_HANDLE dbb_view_request;
+	FB_API_HANDLE dbb_primary_key_request;
 	int dbb_scope;				/* scope of the database handle */
 	int dbb_allocation;
 	int dbb_pagesize;

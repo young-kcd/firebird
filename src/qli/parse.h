@@ -24,6 +24,8 @@
 #ifndef QLI_PARSE_H
 #define QLI_PARSE_H
 
+#include <stdio.h>
+
 #define MAXSYMLEN	256
 
 #define MATCH(kw) 	PAR_match (kw)
@@ -77,7 +79,8 @@ struct qli_line {
     USHORT		line_length;
     TEXT*		line_ptr;
     SLONG		line_position;
-    FRBRD*		line_source;			// File or blob handle 
+    FB_API_HANDLE line_source_blob;			// Blob handle
+	FILE*		line_source_file;			// File handle
     enum line_t	line_type;
     TEXT		line_data[256];
     TEXT		line_source_name[2];

@@ -59,7 +59,7 @@ enum name_type {
 	NAME_cursor = 2
 };
 
-typedef FRBRD* HNDL;
+typedef FB_API_HANDLE HNDL;
 
 /* declare a structure which enables us to associate a cursor with a 
    statement and vice versa */
@@ -88,13 +88,13 @@ struct dsql_name
 
 
 static void		cleanup(void*);
-static void		cleanup_database(FRBRD**, void*);
+static void		cleanup_database(FB_API_HANDLE*, void*);
 static ISC_STATUS	error(const std::exception& ex);
 static ISC_STATUS	error();
 static void		error_post(ISC_STATUS, ...);
 static dsql_name*		lookup_name(const SCHAR*, dsql_name*);
 static stmt*		lookup_stmt(const SCHAR*, dsql_name*, name_type);
-static void		init(FRBRD**);
+static void		init(FB_API_HANDLE*);
 static dsql_name*		insert_name(const SCHAR*, dsql_name**, stmt*);
 static USHORT	name_length(const SCHAR*);
 static void		remove_name(dsql_name*, dsql_name**);
@@ -269,7 +269,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_describe_bind(ISC_STATUS*	user_status,
 //	Execute a non-SELECT dynamic SQL statement.
 //
 ISC_STATUS API_ROUTINE isc_embed_dsql_execute(ISC_STATUS*	user_status,
-										  FRBRD**	trans_handle,
+										  FB_API_HANDLE*	trans_handle,
 										  const SCHAR*	stmt_name,
 										  USHORT	dialect,
 										  XSQLDA*	sqlda)
@@ -288,7 +288,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_execute(ISC_STATUS*	user_status,
 //	Execute a non-SELECT dynamic SQL statement.
 //
 ISC_STATUS API_ROUTINE isc_embed_dsql_execute2(ISC_STATUS*	user_status,
-										   FRBRD**	trans_handle,
+										   FB_API_HANDLE*	trans_handle,
 										   const SCHAR*	stmt_name,
 										   USHORT	dialect,
 										   XSQLDA*	in_sqlda,
@@ -322,8 +322,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_execute2(ISC_STATUS*	user_status,
 //	isc_embed_dsql_exec_immed
 //
 ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed(ISC_STATUS*	user_status,
-											 FRBRD**	db_handle,
-											 FRBRD**	trans_handle,
+											 FB_API_HANDLE*	db_handle,
+											 FB_API_HANDLE*	trans_handle,
 											 USHORT		length,
 											 const SCHAR*		string,
 											 USHORT		dialect,
@@ -344,8 +344,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed(ISC_STATUS*	user_status,
 //	Prepare a statement for execution.
 //
 ISC_STATUS API_ROUTINE isc_embed_dsql_execute_immed(ISC_STATUS*	user_status,
-												FRBRD**	db_handle,
-												FRBRD**	trans_handle,
+												FB_API_HANDLE*	db_handle,
+												FB_API_HANDLE*	trans_handle,
 												USHORT	length,
 												const SCHAR*	string,
 												USHORT	dialect,
@@ -367,8 +367,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_execute_immed(ISC_STATUS*	user_status,
 //	Prepare a statement for execution.
 //
 ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed2(	ISC_STATUS*	user_status,
-												FRBRD**	db_handle,
-												FRBRD**	trans_handle,
+												FB_API_HANDLE*	db_handle,
+												FB_API_HANDLE*	trans_handle,
 												USHORT	length,
 												const SCHAR*	string,
 												USHORT	dialect,
@@ -392,8 +392,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed2(	ISC_STATUS*	user_status,
 //	An execute immediate for COBOL to call
 //
 ISC_STATUS API_ROUTINE isc_embed_dsql_execute_immed_d(ISC_STATUS* user_status,
-												  FRBRD** db_handle,
-												  FRBRD** trans_handle,
+												  FB_API_HANDLE* db_handle,
+												  FB_API_HANDLE* trans_handle,
 												  struct dsc$descriptor_s *
 												  string, USHORT dialect,
 												  XSQLDA* sqlda)
@@ -411,8 +411,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_execute_immed_d(ISC_STATUS* user_status,
 //	An execute immediate for COBOL to call
 //
 ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed2_d(ISC_STATUS* user_status,
-												FRBRD** db_handle,
-												FRBRD** trans_handle,
+												FB_API_HANDLE* db_handle,
+												FB_API_HANDLE* trans_handle,
 												struct dsc$descriptor_s *
 												string, USHORT dialect,
 												XSQLDA* in_sqlda,
@@ -606,7 +606,7 @@ void API_ROUTINE isc_embed_dsql_length(const UCHAR* string, USHORT* length)
 
 
 ISC_STATUS API_ROUTINE isc_embed_dsql_open(ISC_STATUS* user_status,
-									   FRBRD** trans_handle,
+									   FB_API_HANDLE* trans_handle,
 									   const SCHAR* cursor_name,
 									   USHORT dialect, XSQLDA* sqlda)
 {
@@ -627,7 +627,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_open(ISC_STATUS* user_status,
 
 
 ISC_STATUS API_ROUTINE isc_embed_dsql_open2(ISC_STATUS* user_status,
-										FRBRD** trans_handle,
+										FB_API_HANDLE* trans_handle,
 										const SCHAR* cursor_name,
 										USHORT dialect,
 										XSQLDA* in_sqlda, XSQLDA* out_sqlda)
@@ -665,8 +665,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_open2(ISC_STATUS* user_status,
 
 
 ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
-										  FRBRD**	db_handle,
-										  FRBRD**	trans_handle,
+										  FB_API_HANDLE*	db_handle,
+										  FB_API_HANDLE*	trans_handle,
 										  const SCHAR*	stmt_name,
 										  USHORT	length,
 										  const SCHAR*	string,
@@ -712,7 +712,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 			isc_embed_dsql_release(user_status, stmt_name);
 		}
 		statement = NULL;
-		stmt_handle = NULL;
+		stmt_handle = 0;
 		s = isc_dsql_allocate_statement(user_status,
 										db_handle,
 										&stmt_handle);
@@ -778,8 +778,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 
 #ifdef VMS
 ISC_STATUS API_ROUTINE isc_embed_dsql_prepare_d(ISC_STATUS* user_status,
-											FRBRD** db_handle,
-											FRBRD** trans_handle,
+											FB_API_HANDLE* db_handle,
+											FB_API_HANDLE* trans_handle,
 											SCHAR* stmt_name,
 											struct dsc$descriptor_s * string,
 											USHORT dialect, XSQLDA* sqlda)
@@ -905,9 +905,8 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_a(ISC_STATUS* user_status,
  **************************************/
 	*sqlcode = 0;
 
-#pragma FB_COMPILER_MESSAGE("reinterpret_cast<> changes level of indirection.")
 	const ISC_STATUS s = isc_dsql_fetch(	user_status,
-						reinterpret_cast<why_hndl**>(stmt_handle),
+						reinterpret_cast<FB_API_HANDLE*>(stmt_handle),
 						dialect,
 						reinterpret_cast<XSQLDA*>(sqlda));
 	if (s == 100)
@@ -1022,7 +1021,7 @@ ISC_STATUS API_ROUTINE isc_dsql_finish(HNDL* db_handle)
 }
 
 ISC_STATUS API_ROUTINE isc_execute(ISC_STATUS* status_vector,
-							   FRBRD** tra_handle,
+							   FB_API_HANDLE* tra_handle,
 							   const SCHAR* statement_name, SQLDA* sqlda)
 {
 	return isc_embed_dsql_execute(status_vector,
@@ -1033,8 +1032,8 @@ ISC_STATUS API_ROUTINE isc_execute(ISC_STATUS* status_vector,
 }
 
 ISC_STATUS API_ROUTINE isc_execute_immediate(ISC_STATUS* status_vector,
-										 FRBRD** db_handle,
-										 FRBRD** tra_handle,
+										 FB_API_HANDLE* db_handle,
+										 FB_API_HANDLE* tra_handle,
 										 SSHORT* sql_length, const SCHAR* sql)
 {
 	return isc_embed_dsql_execute_immed(status_vector,
@@ -1081,7 +1080,7 @@ ISC_STATUS API_ROUTINE isc_fetch_a(ISC_STATUS* status_vector,
 }
 
 ISC_STATUS API_ROUTINE isc_open(ISC_STATUS* status_vector,
-							FRBRD** tra_handle,
+							FB_API_HANDLE* tra_handle,
 							const SCHAR* cursor_name, SQLDA* sqlda)
 {
 	return isc_embed_dsql_open(status_vector,
@@ -1092,8 +1091,8 @@ ISC_STATUS API_ROUTINE isc_open(ISC_STATUS* status_vector,
 }
 
 ISC_STATUS API_ROUTINE isc_prepare(	ISC_STATUS*	status_vector,
-								FRBRD**	db_handle,
-								FRBRD**	tra_handle,
+								FB_API_HANDLE*	db_handle,
+								FB_API_HANDLE*	tra_handle,
 								const SCHAR*	statement_name,
 								SSHORT*	sql_length,
 								const SCHAR*	sql,
@@ -1187,7 +1186,7 @@ ISC_STATUS API_ROUTINE gds__dsql_finish(HNDL* db_handle)
 }
 
 ISC_STATUS API_ROUTINE gds__execute(ISC_STATUS*	status_vector,
-								FRBRD**	tra_handle,
+								FB_API_HANDLE*	tra_handle,
 								const SCHAR*	statement_name,
 								SQLDA*	sqlda)
 {
@@ -1195,8 +1194,8 @@ ISC_STATUS API_ROUTINE gds__execute(ISC_STATUS*	status_vector,
 }
 
 ISC_STATUS API_ROUTINE gds__execute_immediate(ISC_STATUS*	status_vector,
-										  FRBRD**	db_handle,
-										  FRBRD**	tra_handle,
+										  FB_API_HANDLE*	db_handle,
+										  FB_API_HANDLE*	tra_handle,
 										  SSHORT*	sql_length,
 										  const SCHAR*	sql)
 {
@@ -1234,7 +1233,7 @@ ISC_STATUS API_ROUTINE gds__fetch_a(ISC_STATUS*	status_vector,
 }
 
 ISC_STATUS API_ROUTINE gds__open(ISC_STATUS*	status_vector,
-							 FRBRD**	tra_handle,
+							 FB_API_HANDLE*	tra_handle,
 							 const SCHAR*		cursor_name,
 							 SQLDA*		sqlda)
 {
@@ -1242,8 +1241,8 @@ ISC_STATUS API_ROUTINE gds__open(ISC_STATUS*	status_vector,
 }
 
 ISC_STATUS API_ROUTINE gds__prepare(ISC_STATUS*	status_vector,
-								FRBRD**	db_handle,
-								FRBRD**	tra_handle,
+								FB_API_HANDLE*	db_handle,
+								FB_API_HANDLE*	tra_handle,
 								const SCHAR*	statement_name,
 								SSHORT*	sql_length,
 								const SCHAR*	sql,
@@ -1344,7 +1343,7 @@ static void cleanup(void* arg)
 //
 //		the cleanup handler called when a database is closed
 //
-static void cleanup_database(FRBRD** db_handle, void* dummy)
+static void cleanup_database(FB_API_HANDLE* db_handle, void* dummy)
 {
 	if (!db_handle || !databases) {
 		return;
@@ -1489,7 +1488,7 @@ static void error_post(ISC_STATUS status, ...)
 //
 //	Initialize dynamic SQL.  This is called only once.
 //
-static void init(FRBRD** db_handle)
+static void init(FB_API_HANDLE* db_handle)
 {
 	// If we haven't been initialized yet, do it now
 	if (!init_flag)

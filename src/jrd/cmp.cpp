@@ -42,7 +42,6 @@
 #include <string.h>
 #include <stdlib.h>				// abort
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sym.h"

@@ -41,7 +41,6 @@
 #include "../remote/os/win32/ibconfig.h"
 #include "../remote/os/win32/property.rh"
 
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
 #include "../remote/os/win32/ibsvrhlp.h"

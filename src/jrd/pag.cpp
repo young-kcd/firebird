@@ -68,7 +68,6 @@
 #include "../jrd/pag.h"
 #include "../jrd/ods.h"
 #include "../jrd/os/pio.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/license.h"

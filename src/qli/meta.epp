@@ -29,7 +29,6 @@
 #include "../qli/exe.h"
 #include "../jrd/license.h"
 #include "../jrd/flags.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../qli/reqs.h"
 #include "../qli/all_proto.h"
@@ -1019,7 +1018,7 @@ void MET_index_info(const SCHAR* relation_name,
  *	Get info about a particular index.
  *
  **************************************/
-	FRBRD* request_handle = NULL;
+	FB_API_HANDLE request_handle = 0;
 
 	SCHAR* b = buffer;
 	FOR(REQUEST_HANDLE request_handle)
@@ -1107,7 +1106,7 @@ void MET_meta_rollback( DBB database)
 }
 
 
-FRBRD* MET_meta_transaction(DBB database, bool update_flag)
+FB_API_HANDLE MET_meta_transaction(DBB database, bool update_flag)
 {
 /**************************************
  *
@@ -1135,8 +1134,8 @@ FRBRD* MET_meta_transaction(DBB database, bool update_flag)
 	if (!database)
 		IBERROR(243);			// Msg243 no active database for operation
 
-	FRBRD* transaction = (database->dbb_capabilities & DBB_cap_multi_trans) ?
-		database->dbb_meta_trans : NULL;
+	FB_API_HANDLE transaction = (database->dbb_capabilities & DBB_cap_multi_trans) ?
+		database->dbb_meta_trans : 0;
 
 	DB = database->dbb_handle;
 
@@ -1675,7 +1674,7 @@ void MET_sql_revoke( qli_syntax* node)
 }
 
 
-FRBRD *MET_transaction( NOD_T node_type, DBB database)
+FB_API_HANDLE MET_transaction( NOD_T node_type, DBB database)
 {
 /**************************************
  *
@@ -1894,7 +1893,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
 	DBB source_dbb =
 		(source->rel_database) ? source->rel_database : QLI_databases;
 	DB = source_dbb->dbb_handle;
-	FRBRD* source_blob = NULL;
+	FB_API_HANDLE source_blob = 0;
 
 	if (isc_open_blob(status_vector, &DB, &source_dbb->dbb_meta_trans,
 					   &source_blob, source_blob_id))
@@ -2104,7 +2103,7 @@ static bool check_relation( qli_rel* relation)
  *
  **************************************/
 	bool previously_defined = false;
-	FRBRD* spare = DB;
+	FB_API_HANDLE spare = DB;
 	DB = relation->rel_database->dbb_handle;
 
 	FOR(REQUEST_HANDLE relation->rel_database->dbb_requests[REQ_relation_def]
@@ -2143,10 +2142,10 @@ static void clone_fields( qli_rel* target, qli_rel* source)
  *	fields and the SQL fields.
  *
  **************************************/
-	FRBRD *req1, *req2;
-	FRBRD *t_trans, *s_trans;
+	FB_API_HANDLE req1, req2;
+	FB_API_HANDLE t_trans, s_trans;
 
-	req1 = req2 = NULL;
+	req1 = req2 = 0;
 	s_trans = t_trans = gds_trans;
 	DB = DB1 = target->rel_database->dbb_handle;
 
@@ -2335,11 +2334,11 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
  *	SQL defined fields for the same reason.
  *
  **************************************/
-	FRBRD *req1, *req2, *req3;
-	req1 = req2 = req3 = NULL;
+	FB_API_HANDLE req1, req2, req3;
+	req1 = req2 = req3 = 0;
 
-	FRBRD* s_trans = source->rel_database->dbb_meta_trans;
-	FRBRD* t_trans = target->rel_database->dbb_meta_trans;
+	FB_API_HANDLE s_trans = source->rel_database->dbb_meta_trans;
+	FB_API_HANDLE t_trans = target->rel_database->dbb_meta_trans;
 	DB = source->rel_database->dbb_handle;
 	DB1 = target->rel_database->dbb_handle;
 
@@ -2783,7 +2782,7 @@ static TEXT *get_query_header( DBB database, ISC_QUAD* blob_id)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	TEXT header[1024], buffer[1024];
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 
 	if (isc_open_blob(status_vector, &database->dbb_handle,
 					   &gds_trans, &blob, blob_id))
@@ -2890,7 +2889,7 @@ static void install( DBB old_dbb)
    relation block, make up a symbol block, and insert the symbol
    into the hash table. */
 
-	FRBRD* request = NULL;
+	FB_API_HANDLE request = 0;
 
 	FOR(REQUEST_HANDLE request) X IN DB.RDB$RELATIONS
 		SORTED BY DESCENDING X.RDB$RELATION_NAME
@@ -2923,7 +2922,7 @@ static void install( DBB old_dbb)
 // Pick up functions, if appropriate
 
 	if (new_dbb->dbb_capabilities & DBB_cap_functions) {
-		FRBRD* request2 = NULL;
+		FB_API_HANDLE request2 = 0;
 		FOR(REQUEST_HANDLE request) X IN DB.RDB$FUNCTIONS
 		    qli_symbol* fsymbol = make_symbol(X.RDB$FUNCTION_NAME, sizeof(X.RDB$FUNCTION_NAME));
 			if (!fsymbol)
@@ -3352,7 +3351,7 @@ static qli_syntax* parse_blr_blob(ISC_QUAD* blob_id, qli_symbol* symbol)
 	if (isNullBlob(blob_id))
 		return NULL;
 
-	FRBRD* handle = NULL;
+	FB_API_HANDLE handle = 0;
 
 	if (isc_open_blob(status_vector, &DB, &gds_trans, &handle, blob_id))
 		return NULL;
@@ -3476,7 +3475,7 @@ static void rollback_update( DBB database)
 		// Note: No message given if rollback fails
 	}
 
-	gds_trans = NULL;
+	gds_trans = 0;
 }
 
 
@@ -3497,7 +3496,7 @@ static void set_capabilities( DBB database)
  *	capabilities bits.
  *
  **************************************/
-	FRBRD* req = NULL;
+	FB_API_HANDLE req = 0;
 
 // Look for desireable fields in system relations
 

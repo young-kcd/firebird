@@ -547,7 +547,6 @@ VI. ADDITIONAL NOTES
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/pag.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"

@@ -37,12 +37,12 @@ namespace Jrd {
 
 class dsql_req;
 
-ISC_STATUS dsql8_allocate_statement(ISC_STATUS*, FRBRD**, dsql_req**);
-ISC_STATUS dsql8_execute(ISC_STATUS*, FRBRD**, dsql_req**,
+ISC_STATUS dsql8_allocate_statement(ISC_STATUS*, FB_API_HANDLE*, dsql_req**);
+ISC_STATUS dsql8_execute(ISC_STATUS*, FB_API_HANDLE*, dsql_req**,
 									   USHORT, const SCHAR*, USHORT, USHORT,
 									   SCHAR*, USHORT, SCHAR*, USHORT,
 									   USHORT, SCHAR*);
-ISC_STATUS dsql8_execute_immediate(ISC_STATUS*, FRBRD**, FRBRD**,
+ISC_STATUS dsql8_execute_immediate(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 												 USHORT, const TEXT*, USHORT,
 												 USHORT, const SCHAR*, USHORT,
 												 USHORT, SCHAR*, USHORT,
@@ -59,7 +59,7 @@ ISC_STATUS dsql8_free_statement(ISC_STATUS*, dsql_req**,
 											  USHORT);
 ISC_STATUS dsql8_insert(ISC_STATUS*, dsql_req**, USHORT,
 									  const SCHAR*, USHORT, USHORT, const SCHAR*);
-ISC_STATUS dsql8_prepare(ISC_STATUS*, FRBRD**, dsql_req**,
+ISC_STATUS dsql8_prepare(ISC_STATUS*, FB_API_HANDLE*, dsql_req**,
 									   USHORT, const TEXT*, USHORT, USHORT,
 									   const SCHAR*, USHORT, SCHAR*);
 ISC_STATUS dsql8_set_cursor(ISC_STATUS*, dsql_req**, const TEXT*,

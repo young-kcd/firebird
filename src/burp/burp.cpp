@@ -36,7 +36,6 @@
 #include <string.h>
 #include <signal.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include <stdarg.h>
 #include "../jrd/ibsetjmp.h"
@@ -455,7 +454,7 @@ static int api_gbak(int argc,
 
 	USHORT spblen = spb_ptr - spb;
 
-	FRBRD *svc_handle = NULL;
+	FB_API_HANDLE svc_handle = 0;
 	if (isc_service_attach(status, 0, svc_name, (&svc_handle), spblen, spb))
 	{
 		BURP_print_status(status);

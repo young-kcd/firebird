@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.81 2004-04-30 22:45:38 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.82 2004-05-02 23:04:59 skidder Exp $ 
  */
 
 /*
@@ -64,7 +64,6 @@
 #include <string.h>
 #include <math.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
 #include "../jrd/jrd.h"

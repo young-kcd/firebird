@@ -25,26 +25,7 @@
 #ifndef JRD_JRD_PROTO_H
 #define JRD_JRD_PROTO_H
 
-#ifndef __cplusplus
-
-/* included for the bid structure */
-#ifndef WIN_NT
-#include "../jrd/blb.h"
-#endif
-
-/* included for the svc structure */
-#ifndef WIN_NT
-#include "../jrd/svc.h"
-#endif
-
-#endif	/* __cplusplus */
-
-#ifdef __cplusplus
-
 #include "fb_string.h"
-
-extern "C" {
-#endif
 
 namespace Jrd {
 	class Attachment;
@@ -57,6 +38,8 @@ namespace Jrd {
 	struct thread_db;
 	struct teb;
 }
+
+extern "C" {
 
 ISC_STATUS jrd8_attach_database(ISC_STATUS*, SSHORT, const TEXT*,
 											  Jrd::Attachment**, SSHORT,
@@ -151,9 +134,10 @@ ISC_STATUS jrd8_transact_request(ISC_STATUS*, Jrd::Attachment**,
 											   USHORT, SCHAR*, USHORT,
 											   SCHAR*);
 ISC_STATUS jrd8_unwind_request(ISC_STATUS *, Jrd::jrd_req**, SSHORT);
-void jrd_vtof(const char*, char*, SSHORT);
 
-// CVC: It looks to me that these JRD_ functions should be outside the extern "C" directive.
+} // extern "C"
+
+void jrd_vtof(const char*, char*, SSHORT);
 
 #ifdef SERVER_SHUTDOWN
 /* Defines for paramater 3 of JRD_num_attachments */
@@ -174,6 +158,7 @@ void	JRD_set_context(Jrd::thread_db*);
 void	JRD_unblock(Jrd::BlockingThread**);
 void	JRD_wlck_lock(struct mutx_t *);
 void	JRD_wlck_unlock(struct mutx_t *);
+void	JRD_thread_security_disable(bool disable);
 
 #ifdef SUPERSERVER
 void	JRD_print_all_counters(const TEXT*);
@@ -183,11 +168,6 @@ bool	JRD_getdir(Firebird::PathName&);
 #ifdef DEBUG_PROCS
 void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 #endif
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 
 #ifdef WIN_NT
 #include <direct.h>

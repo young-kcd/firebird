@@ -23,7 +23,6 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 // Those includes until the END comment comes from everything.h and was moved
 // here when the file was removed. 

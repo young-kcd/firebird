@@ -82,7 +82,6 @@
 
 #include "gen/iberror.h"
 #include "../dsql/dsql.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../dsql/alld_proto.h"

@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
@@ -42,7 +41,7 @@
 #include <descrip.h>
 #endif
 
-static void dump_procedure(DBB, FILE*, const TEXT*, USHORT, FRBRD *);
+static void dump_procedure(DBB, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
 static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD*);
 
 extern USHORT QLI_lines, QLI_columns, QLI_form_mode, QLI_name_columns;
@@ -193,7 +192,7 @@ void CMD_extract( qli_syntax* node)
 			if (!(database = proc->qpr_database))
 				database = QLI_databases;
 			NAM name = proc->qpr_name;
-			FRBRD* blob = PRO_fetch_procedure(database, name->nam_string);
+			FB_API_HANDLE blob = PRO_fetch_procedure(database, name->nam_string);
 			if (!blob) {
 				ERRQ_msg_put(89,	// Msg89 Procedure %s not found in database %s
 							 name->nam_string,
@@ -567,7 +566,7 @@ void CMD_transaction( qli_syntax* node)
 static void dump_procedure(
 						   DBB database,
 						   FILE* file,
-						   const TEXT* name, USHORT length, FRBRD *blob)
+						   const TEXT* name, USHORT length, FB_API_HANDLE blob)
 {
 /**************************************
  *
@@ -607,7 +606,7 @@ static void extract_procedure(
  *	Extract a procedure from a database.
  *
  **************************************/
-	FRBRD* blob = PRO_open_blob(database, blob_id);
+	FB_API_HANDLE blob = PRO_open_blob(database, blob_id);
 	dump_procedure(database, static_cast<FILE*>(file), name, length, blob);
 }
 

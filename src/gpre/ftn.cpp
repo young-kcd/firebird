@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.42 2004-04-28 22:05:56 brodsom Exp $
+//	$Id: ftn.cpp,v 1.43 2004-05-02 23:04:16 skidder Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../gpre/gpre.h"

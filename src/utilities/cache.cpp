@@ -27,7 +27,6 @@
 #include <string.h>
 #include <signal.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/license.h"
 #include "../jrd/gds_proto.h"

@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.36 2004-04-28 22:25:51 brodsom Exp $
+$Id: inet_server.cpp,v 1.37 2004-05-02 23:06:05 skidder Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -88,7 +88,6 @@ $Id: inet_server.cpp,v 1.36 2004-04-28 22:25:51 brodsom Exp $
 #include <unistd.h>
 #endif
 #include <errno.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd_pwd.h"
 #endif

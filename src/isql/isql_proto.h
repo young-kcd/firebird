@@ -59,7 +59,7 @@ int		ISQL_main(int, char**);
 void	ISQL_make_upper(TEXT*);
 void	ISQL_msg_get(USHORT, TEXT*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, const TEXT*);
-void	ISQL_print_validation(FILE*, ISC_QUAD*, bool, FRBRD*);
+void	ISQL_print_validation(FILE*, ISC_QUAD*, bool, FB_API_HANDLE);
 void	ISQL_printf(FILE*, const char*);
 void	ISQL_query_database(SSHORT*, FILE*, FILE*, FILE*);
 void	ISQL_remove_and_unescape_quotes(TEXT* string, const char quote);

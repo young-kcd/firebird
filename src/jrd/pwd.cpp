@@ -27,7 +27,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/jrd_pwd.h"
@@ -36,6 +35,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/jrd_proto.h"
 
 using namespace Jrd;
 
@@ -210,34 +210,6 @@ bool SecurityDatabase::prepare()
 		return true;
 	}
 
-	// Register as internal database handle
-
-	ihndl* ihandle;
-	for (ihandle = internal_db_handles; ihandle; ihandle = ihandle->ihndl_next)
-	{
-		if (ihandle->ihndl_object == NULL)
-		{
-			ihandle->ihndl_object = &lookup_db;
-			break;
-		}
-	}
-
-	if (!ihandle)
-	{
-		ihandle = (ihndl*) gds__alloc ((SLONG) sizeof(struct ihndl));
-		if (!ihandle)
-		{
-			THREAD_EXIT;
-			status[0] = isc_arg_gds;
-			status[1] = isc_virmemexh;
-			status[2] = isc_arg_end;
-			return false;
-		}
-		ihandle->ihndl_object = &lookup_db;
-		ihandle->ihndl_next = internal_db_handles;
-		internal_db_handles = ihandle;
-	}
-
 	THREAD_EXIT;
 
 	lookup_db = lookup_req = 0;
@@ -275,8 +247,13 @@ bool SecurityDatabase::prepare()
 	*dpb++ = TRUE;					// Parameter value
 
 	dpb_len = dpb - dpb_buffer;
+	
+	// Temporarily disable security checks for this thread
+	JRD_thread_security_disable(true);
 
 	isc_attach_database(status, 0, user_info_name, &lookup_db, dpb_len, dpb_buffer);
+	
+	JRD_thread_security_disable(false);
 
 	if (status[1] == isc_login)
 	{
@@ -285,9 +262,6 @@ bool SecurityDatabase::prepare()
 
 		isc_attach_database(status, 0, user_info_name, &lookup_db, 0, 0);
 	}
-
-	fb_assert(ihandle->ihndl_object == &lookup_db);
-	ihandle->ihndl_object = NULL;
 
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
 						reinterpret_cast<const char*>(PWD_REQUEST));

@@ -41,7 +41,6 @@
 #include <ctype.h>
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"

@@ -41,7 +41,6 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../jrd/align.h"

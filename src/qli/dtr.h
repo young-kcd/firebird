@@ -26,7 +26,6 @@
 
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
-#include "../jrd/y_ref.h"
 
 #define QLI_MSG_FAC		1
 #define BUGCHECK(number)	ERRQ_bugcheck (number)
@@ -288,27 +287,27 @@ typedef struct dbb {
     dbb*			dbb_next;			// Next database in system 
     struct qli_rel*	dbb_relations;		// Linked list of relations 
     struct qli_fun*	dbb_functions;		// Known functions in database 
-    FRBRD*			dbb_handle;			// database handle 
-    FRBRD*			dbb_transaction;	// transaction handle 
-    FRBRD*			dbb_proc_trans;		// procedure transaction 
-    FRBRD*			dbb_meta_trans;		// metadata update transaction 
-    FRBRD*			dbb_field_request;	// "get fields" request handle 
+    FB_API_HANDLE	dbb_handle;			// database handle 
+    FB_API_HANDLE	dbb_transaction;	// transaction handle 
+    FB_API_HANDLE	dbb_proc_trans;		// procedure transaction 
+    FB_API_HANDLE	dbb_meta_trans;		// metadata update transaction 
+    FB_API_HANDLE	dbb_field_request;	// "get fields" request handle 
     qli_symbol*		dbb_symbol;			// Database variable 
     qli_const*		dbb_user;			// user name 
     qli_const*		dbb_password;		// password 
     USHORT			dbb_filename_length;	// Length of filename 
-    FRBRD*			dbb_lookup_blob;	// Request to look up blob 
-    FRBRD*			dbb_store_blob;		// Request to store blob 
-    FRBRD*			dbb_edit_blob;
-    FRBRD*			dbb_edit_store;
-    FRBRD*			dbb_scan_blobs;
-    FRBRD*			dbb_delete_blob;
+    FB_API_HANDLE	dbb_lookup_blob;	// Request to look up blob 
+    FB_API_HANDLE	dbb_store_blob;		// Request to store blob 
+    FB_API_HANDLE	dbb_edit_blob;
+    FB_API_HANDLE	dbb_edit_store;
+    FB_API_HANDLE	dbb_scan_blobs;
+    FB_API_HANDLE	dbb_delete_blob;
     USHORT			dbb_flags;
     USHORT			dbb_type;			/* Friend or foe? */
     USHORT			dbb_pagesize;		// For SQL metadata 
     ULONG			dbb_capabilities;	// Special characteristics to look out for 
     int*			dbb_statistics;		// Statistics memory 
-    FRBRD*			dbb_requests [96];	// Misc meta-data requests 
+    FB_API_HANDLE	dbb_requests [96];	// Misc meta-data requests 
     TEXT			dbb_filename [2];	// Filename of database 
 } *DBB;
 

@@ -31,7 +31,6 @@
 
 #include <stdio.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/dsc.h"
 #include "../burp/misc_proto.h"

@@ -29,7 +29,6 @@
 #include <errno.h>
 #include <stdarg.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/msg_encode.h"
@@ -287,7 +286,7 @@ int common_main(int argc,
 	}
 
 	const SSHORT dpb_length = dpb - dpb_buffer;
-	FRBRD* db_handle = NULL;		/* user info database handle */
+	FB_API_HANDLE db_handle = 0;		/* user info database handle */
 
 	if (isc_attach_database(status, 0, u, &db_handle, dpb_length, dpb_buffer))
 		GSEC_error_redirect(status, GsecMsg15, NULL, NULL);

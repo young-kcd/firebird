@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.35 2004-04-30 22:42:12 brodsom Exp $
+ * $Id: extract.epp,v 1.36 2004-05-02 23:04:54 skidder Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -47,7 +47,6 @@
 #include <math.h>
 #include <ctype.h>				// isdigit 
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../isql/isql.h"
@@ -235,7 +234,7 @@ int EXTRACT_ddl(int flag,
 			ISQL_errmsg(gds_status);
 			return FINI_ERROR;
 		}
-		DB = NULL;
+		DB = 0;
 	}
 
 	return ret_code;

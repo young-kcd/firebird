@@ -31,7 +31,6 @@
  */
 
 #include "firebird.h"
-#include "../jrd/y_ref.h"
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd_time.h"

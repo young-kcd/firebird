@@ -1094,7 +1094,6 @@ extern Jrd::thread_db* gdbb;
 #if !defined(REQUESTER)
 
 extern int debug;
-extern Jrd::ihndl* internal_db_handles;
 
 #endif /* REQUESTER */
 

@@ -66,7 +66,6 @@ nested FOR loops are added.
 #include <stdlib.h>
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/thd.h"
 #include "../jrd/align.h"
@@ -99,14 +98,14 @@ nested FOR loops are added.
 #endif
 
 static void		cleanup(void*);
-static void		cleanup_database(FRBRD**, void*);
-static void		cleanup_transaction(FRBRD*, void*);
+static void		cleanup_database(FB_API_HANDLE*, void*);
+static void		cleanup_transaction(FB_API_HANDLE, void*);
 static void		close_cursor(dsql_req*);
 static USHORT	convert(SLONG, UCHAR*);
 static ISC_STATUS	error();
 static void		execute_blob(dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
-static ISC_STATUS	execute_request(dsql_req*, FRBRD**, USHORT, const UCHAR*,
+static ISC_STATUS	execute_request(dsql_req*, FB_API_HANDLE*, USHORT, const UCHAR*,
 	USHORT, UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
 static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
 static bool		get_indices(SSHORT*, const SCHAR**, SSHORT*, SCHAR**);
@@ -114,7 +113,7 @@ static USHORT	get_plan_info(dsql_req*, SSHORT, SCHAR**);
 static USHORT	get_request_info(dsql_req*, SSHORT, SCHAR*);
 static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
-static dsql_dbb*	init(FRBRD**);
+static dsql_dbb*	init(FB_API_HANDLE*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static USHORT	name_length(const TEXT*);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
@@ -176,12 +175,12 @@ IMPLEMENT_TRACE_ROUTINE(dsql_trace, "DSQL");
 
 static
 ISC_STATUS GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*	user_status,
-								FRBRD**	db_handle,
+								FB_API_HANDLE*	db_handle,
 								dsql_req**	req_handle);
 
 static
 ISC_STATUS GDS_DSQL_EXECUTE_CPP(   ISC_STATUS*			user_status,
-							   FRBRD**			trans_handle,
+							   FB_API_HANDLE*			trans_handle,
 							   dsql_req**		req_handle,
 							   USHORT			in_blr_length,
 							   const UCHAR*			in_blr,
@@ -224,7 +223,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 
 static
 ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
-							WHY_TRA*		trans_handle,
+							FB_API_HANDLE*		trans_handle,
 							dsql_req**		req_handle,
 							USHORT			length,
 							const TEXT*			string,
@@ -258,7 +257,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*		user_status,
 
 ISC_STATUS	dsql8_allocate_statement(
 				ISC_STATUS*    user_status,
-				FRBRD**    db_handle,
+				FB_API_HANDLE*    db_handle,
 				dsql_req** req_handle)
 {
 	return GDS_DSQL_ALLOCATE_CPP(user_status, db_handle, req_handle);
@@ -268,7 +267,7 @@ ISC_STATUS	dsql8_allocate_statement(
 
 ISC_STATUS	dsql8_execute(
 				ISC_STATUS*    user_status,
-				WHY_TRA*   trans_handle,
+				FB_API_HANDLE*   trans_handle,
 				dsql_req** req_handle,
 				USHORT     in_blr_length,
 				const SCHAR*     in_blr,
@@ -358,7 +357,7 @@ ISC_STATUS	dsql8_insert(
 
 ISC_STATUS	dsql8_prepare(
 				ISC_STATUS*				user_status,
-				WHY_TRA*			trans_handle,
+				FB_API_HANDLE*			trans_handle,
 				dsql_req**	req_handle,
 				USHORT				length,
 				const TEXT*				string,
@@ -435,7 +434,7 @@ ISC_STATUS	dsql8_set_cursor(
  **/
 static ISC_STATUS
 GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
-						FRBRD**    db_handle,
+						FB_API_HANDLE*    db_handle,
 						dsql_req** req_handle)
 {
 	tsql thd_context;
@@ -498,7 +497,7 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
  **/
 ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 				ISC_STATUS*		user_status,
-				FRBRD**		trans_handle,
+				FB_API_HANDLE*		trans_handle,
 				dsql_req**	req_handle,
 				USHORT		in_blr_length,
 				const UCHAR*		in_blr,
@@ -534,7 +533,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 
 // Only allow NULL trans_handle if we're starting a transaction 
 
-		if (*trans_handle == NULL && request->req_type != REQ_START_TRANS)
+		if (*trans_handle == 0 && request->req_type != REQ_START_TRANS)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  	isc_arg_gds, isc_bad_trans_handle, 0);
@@ -625,8 +624,8 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 
 
 static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
-											 WHY_DBB*	db_handle,
-											 WHY_TRA*	trans_handle,
+											 FB_API_HANDLE*	db_handle,
+											 FB_API_HANDLE*	trans_handle,
 											 USHORT		length,
 											 const TEXT*		string,
 											 USHORT		dialect,
@@ -753,8 +752,8 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 
 ISC_STATUS	dsql8_execute_immediate(
 				ISC_STATUS*	user_status,
-				WHY_DBB*	db_handle,
-				WHY_TRA*	trans_handle,
+				FB_API_HANDLE*	db_handle,
+				FB_API_HANDLE*	trans_handle,
 				USHORT		length,
 				const TEXT*		string,
 				USHORT		dialect,
@@ -858,7 +857,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	dsql_dbb* database;
 	for (database = databases; database; database = database->dbb_next)
 	{
-	    if (database->dbb_database_handle->handle.h_dbb == jrd_attachment_handle)
+	    if (WHY_translate_handle(database->dbb_database_handle)->handle.h_dbb == jrd_attachment_handle)
 		{
 			break;
 		}
@@ -871,27 +870,24 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
         THREAD_ENTER;
     	return status[1];
     }
-	WHY_DBB	why_db_handle = (WHY_DBB) (database->dbb_database_handle);
+	WHY_DBB	why_db_handle = WHY_translate_handle(database->dbb_database_handle);
 
 	/* 2. Create why_trans_handle - it's new, but points to the same jrd
     	  transaction as original before callback. */
-	why_hndl w;
-	WHY_TRA	why_trans_handle = &w;
-	memset (why_trans_handle, 0, sizeof(why_hndl));
-	why_trans_handle->implementation = why_db_handle->implementation;
+	WHY_TRA why_trans_handle = WHY_alloc_handle(why_db_handle->implementation, HANDLE_transaction);
 	why_trans_handle->handle.h_tra = jrd_transaction_handle;
-	why_trans_handle->type = HANDLE_transaction;
 	why_trans_handle->parent = why_db_handle;
 	THD_MUTEX_UNLOCK (&databases_mutex);
     THREAD_ENTER;
 
 	// 3. Call execute... function 
 	const ISC_STATUS rc = dsql8_execute_immediate_common(status,
-						&why_db_handle, &why_trans_handle,
+						&database->dbb_database_handle, &why_trans_handle->public_handle,
 						sql_operator.length(), sql_operator.c_str(), 
 						database->dbb_db_SQL_dialect,
 						0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
 	WHY_cleanup_transaction(why_trans_handle);
+	WHY_free_handle(why_trans_handle->public_handle);
 	return rc;
 }
 
@@ -902,9 +898,11 @@ WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
 	THREAD_EXIT;
 	THD_MUTEX_LOCK (&databases_mutex);
 	dsql_dbb* database;
+	WHY_DBB db_handle;
 	for (database = databases; database; database = database->dbb_next)
 	{
-	    if (database->dbb_database_handle->handle.h_dbb == jrd_attachment_handle)
+		db_handle = WHY_translate_handle(database->dbb_database_handle);
+	    if (db_handle->handle.h_dbb == jrd_attachment_handle)
 		{
 			break;
 		}
@@ -916,7 +914,7 @@ WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
 	}
 	THD_MUTEX_UNLOCK (&databases_mutex);
     THREAD_ENTER;
-	return database ? database->dbb_database_handle : 0;
+	return database ? db_handle : 0;
 }
 
 
@@ -1316,7 +1314,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 
  **/
 ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
-							WHY_TRA*		trans_handle,
+							FB_API_HANDLE*		trans_handle,
 							dsql_req**		req_handle,
 							USHORT			length,
 							const TEXT*			string,
@@ -2840,7 +2838,7 @@ static void cleanup( void *arg)
     @param flag
 
  **/
-static void cleanup_database(FRBRD ** db_handle, void* flag)
+static void cleanup_database(FB_API_HANDLE* db_handle, void* flag)
 {
 	if (flag)
 		Firebird::fatal_exception::raise("Illegal call to cleanup_database");
@@ -2900,7 +2898,7 @@ static void cleanup_database(FRBRD ** db_handle, void* flag)
     @param arg
 
  **/
-static void cleanup_transaction (FRBRD * tra_handle, void* arg)
+static void cleanup_transaction (FB_API_HANDLE tra_handle, void* arg)
 {
 	ISC_STATUS_ARRAY local_status;
 
@@ -3125,7 +3123,7 @@ static void execute_blob(	dsql_req*		request,
 	}
 	else
 	{
-		request->req_handle = NULL;
+		request->req_handle = 0;
 		ISC_QUAD* blob_id = (ISC_QUAD*) parameter->par_desc.dsc_address;
 		memset(blob_id, 0, sizeof(ISC_QUAD));
 		THREAD_EXIT;
@@ -3165,7 +3163,7 @@ static void execute_blob(	dsql_req*		request,
 
  **/
 static ISC_STATUS execute_request(dsql_req*			request,
-								  WHY_TRA*			trans_handle,
+								  FB_API_HANDLE*	trans_handle,
 								  USHORT			in_blr_length,
 								  const UCHAR*			in_blr,
 								  USHORT			in_msg_length,
@@ -3210,7 +3208,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		THREAD_ENTER;
 		if (s)
 			punt();
-		*trans_handle = NULL;
+		*trans_handle = 0;
 		return FB_SUCCESS;
 
 	case REQ_COMMIT_RETAIN:
@@ -3229,7 +3227,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		THREAD_ENTER;
 		if (s)
 			punt();
-		*trans_handle = NULL;
+		*trans_handle = 0;
 		return FB_SUCCESS;
 
 	case REQ_DDL:
@@ -4127,7 +4125,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
     @param db_handle
 
  **/
-static dsql_dbb* init(FRBRD** db_handle)
+static dsql_dbb* init(FB_API_HANDLE* db_handle)
 {
 
 #ifdef ANY_THREADING

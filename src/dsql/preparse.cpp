@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../dsql/chars.h"
 #include "../dsql/sqlda.h"
@@ -125,8 +124,8 @@ enum token_vals {
  **/
 bool PREPARSE_execute(
 		ISC_STATUS* user_status,
-		FRBRD** db_handle,
-		FRBRD** trans_handle,
+		FB_API_HANDLE* db_handle,
+		FB_API_HANDLE* trans_handle,
 		USHORT stmt_length,
 		const SCHAR* stmt,
 		bool* stmt_eaten,
@@ -324,7 +323,7 @@ bool PREPARSE_execute(
 	const USHORT dpb_len = dpb - dpb_array;
 
 // This code is because 3.3 server does not recognize isc_dpb_overwrite. 
-	FRBRD* temp_db_handle = NULL;
+	FB_API_HANDLE temp_db_handle = 0;
 	if (!isc_attach_database(user_status, 0, file_name, &temp_db_handle,
 							 dpb_len, dpb_array) ||
 		user_status[1] != isc_io_error) {

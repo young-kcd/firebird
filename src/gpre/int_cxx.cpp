@@ -25,14 +25,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.32 2004-04-28 22:05:56 brodsom Exp $
+//	$Id: int_cxx.cpp,v 1.33 2004-05-02 23:04:17 skidder Exp $
 //
 
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"

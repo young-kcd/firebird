@@ -100,7 +100,6 @@ enum literal_string_type
 #if defined(WIN_NT)
 #include <windows.h>
 #endif
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../isql/isql.h"
 #include "../jrd/perf.h"
@@ -192,7 +191,7 @@ static processing_state newsize(const TEXT*, const TEXT*);
 static processing_state newtrans(const TEXT*);
 static processing_state parse_arg(int, SCHAR**, SCHAR*, FILE**);
 static SSHORT print_item(TEXT**, XSQLVAR*, SLONG);
-static processing_state print_item_blob(FILE*, const XSQLVAR*, FRBRD*);
+static processing_state print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE);
 static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT*);
 static processing_state print_line(XSQLDA*, const SLONG*, TEXT*);
 static int process_statement(const TEXT*, XSQLDA**);
@@ -1454,12 +1453,12 @@ void ISQL_disconnect_database(bool nQuietMode)
 	Quiet = false;
 
 // Zero database handle and transaction handles 
-	global_Stmt = NULL;
-	DB = NULL;
+	global_Stmt = 0;
+	DB = 0;
 	global_Db_name[0] = '\0';
-	D__trans = NULL;
-	M__trans = NULL;
-	gds_trans = NULL;
+	D__trans = 0;
+	M__trans = 0;
+	gds_trans = 0;
 	
 	// CVC: If we aren't connected to a db anymore, then the db's dialect is reset.
 	// This should fix SF Bug #910430.
@@ -1559,7 +1558,7 @@ void ISQL_msg_get(USHORT number,
 void ISQL_print_validation(FILE* fp,
 						   ISC_QUAD* blobid,
 						   bool isComputedField,
-						   FRBRD* trans)
+						   FB_API_HANDLE trans)
 {
 /**************************************
  *
@@ -1583,7 +1582,7 @@ void ISQL_print_validation(FILE* fp,
 
 	TEXT* buffer = (TEXT*) ISQL_ALLOC(BUFFER_LENGTH512);
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	if (isc_open_blob(isc_status, &DB, &trans, &blob, blobid)) {
 		ISQL_errmsg(isc_status);
 		if (buffer)
@@ -2642,7 +2641,7 @@ static void do_isql()
 
 // Initialized user transactions 
 
-	M__trans = NULL;
+	M__trans = 0;
 
 // File used to edit sessions 
 
@@ -2806,12 +2805,12 @@ static void do_isql()
 		}
 	}
 
-	global_Stmt = NULL;
-	DB = NULL;
+	global_Stmt = 0;
+	DB = 0;
 	global_Db_name[0] = '\0';
-	D__trans = NULL;
-	M__trans = NULL;
-	gds_trans = NULL;
+	D__trans = 0;
+	M__trans = 0;
+	gds_trans = 0;
 
 // Should have a valid Temp file pointer 
 	fb_assert(Ofp != (FILE*) - 1);
@@ -2863,10 +2862,10 @@ static processing_state drop_db()
 
 // The database got dropped with or without errors 
 
-	M__trans = NULL;
-	gds_trans = NULL;
-	global_Stmt = NULL;
-	D__trans = NULL;
+	M__trans = 0;
+	gds_trans = 0;
+	global_Stmt = 0;
+	D__trans = 0;
 	
 	// CVC: If we aren't connected to a db anymore, then the db's dialect is reset.
 	// This should fix SF Bug #910430.
@@ -2877,7 +2876,7 @@ static processing_state drop_db()
 // Zero database name 
 
 	global_Db_name[0] = '\0';
-	DB = NULL;
+	DB = 0;
 
 	return (SKIP);
 }
@@ -5092,8 +5091,8 @@ static processing_state newdb(TEXT* dbname,
 			isc_detach_database(isc_status, &DB);
 			DB = 0;
 			global_Db_name[0] = '\0';
-			M__trans = NULL;
-			D__trans = NULL;
+			M__trans = 0;
+			D__trans = 0;
 			if (save_database)
 				ISQL_FREE(save_database);
 			if (local_psw)
@@ -5273,7 +5272,7 @@ static processing_state newtrans(const TEXT* statement)
 	if (end_trans())
 		return FAIL;
 
-	M__trans = NULL;
+	M__trans = 0;
 
 // M__trans = 0 after the commit or rollback. ready for a new transaction 
 
@@ -6006,7 +6005,7 @@ static SSHORT print_item(TEXT** s,
 
 static processing_state print_item_blob(FILE* fp,
 						   const XSQLVAR* var,
-						   FRBRD* trans)
+						   FB_API_HANDLE trans)
 {
 /**************************************
  *
@@ -6079,7 +6078,7 @@ static processing_state print_item_blob(FILE* fp,
 		set_bpb_for_translation(blob_subtype);
 	}
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	if (isc_open_blob2(isc_status, &DB, &trans, &blob, blobid, bpb_length,
 					   bpb))
 	{
@@ -6323,7 +6322,7 @@ static int process_statement(const TEXT* string,
 	But put this on the DDL transaction to get maximum visibility of
 	metadata. */
 
-    FRBRD* prepare_trans;
+	FB_API_HANDLE prepare_trans;
 	if (Autocommit)
 		prepare_trans = D__trans;
 	else

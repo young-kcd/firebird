@@ -26,12 +26,11 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.40 2004-04-30 22:41:33 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.41 2004-05-02 23:04:17 skidder Exp $
  */
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../jrd/license.h"
@@ -237,10 +236,10 @@ gpre_lls* MET_get_primary_key(DBB db, const TEXT* relation_name)
 	if (db == NULL)
 		return NULL;
 
-	if ((db->dbb_handle == NULL) && !MET_database(db, FALSE))
+	if ((db->dbb_handle == 0) && !MET_database(db, FALSE))
 		CPR_exit(FINI_ERROR);
 
-	fb_assert(db->dbb_transaction == NULL);
+	fb_assert(db->dbb_transaction == 0);
 	fb_assert(0);
 	return 0;
 }

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.43 2004-04-20 05:57:21 skidder Exp $
+ *  $Id: fb_types.h,v 1.44 2004-05-02 23:04:19 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -73,9 +73,12 @@ typedef unsigned long long int	ISC_UINT64;
 	// EKU: Firebird requires (S)LONG to be 32 bit
 	typedef int SLONG;
 	typedef unsigned int ULONG;
+	typedef unsigned int FB_API_HANDLE;
+//	typedef void* FB_API_HANDLE;
 #else
 	typedef long SLONG;
 	typedef unsigned long ULONG;
+	typedef void* FB_API_HANDLE;
 #endif
 
 typedef struct {

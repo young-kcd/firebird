@@ -141,7 +141,6 @@
 #include <string.h>
 #include <memory>
 #include <stdio.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../dsql/dsql.h"
 #include "../jrd/thd.h"

@@ -25,13 +25,12 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.25 2004-04-28 22:05:57 brodsom Exp $
+//	$Id: cme.cpp,v 1.26 2004-05-02 23:04:15 skidder Exp $
 //
 
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../jrd/intl.h"

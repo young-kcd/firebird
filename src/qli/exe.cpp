@@ -26,7 +26,6 @@
 #include <setjmp.h>
 
 #define REQUESTS_MAIN
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
@@ -203,7 +202,7 @@ void EXEC_execute( qli_nod* node)
 }
 
 
-FRBRD *EXEC_open_blob( qli_nod* node)
+FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 {
 /**************************************
  *
@@ -217,7 +216,7 @@ FRBRD *EXEC_open_blob( qli_nod* node)
  **************************************/
 	dsc* desc = EVAL_value(node);
 	if (!desc)
-		return NULL;
+		return 0;
 
 // Starting from the print item, work our way back to the database block
 
@@ -230,7 +229,7 @@ FRBRD *EXEC_open_blob( qli_nod* node)
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
 	qli_req* request = context->ctx_request;
 	DBB dbb = request->req_database;
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 
 // Format blob parameter block
 	UCHAR bpb[20];
@@ -678,8 +677,8 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 		return true;
 	}
 
-	FRBRD* to_blob = NULL;
-	FRBRD* from_blob = NULL;
+	FB_API_HANDLE to_blob = 0;
+	FB_API_HANDLE from_blob = 0;
 
 // Format blob parameter block for the existing blob
 

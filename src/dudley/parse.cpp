@@ -29,7 +29,6 @@
 #include <stdio.h> // a single call to sprintf()
 #include <string.h>
 #define PARSER_MAIN
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../dudley/ddl.h"

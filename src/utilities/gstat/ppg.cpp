@@ -29,7 +29,6 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/jrd_time.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/os/guid.h"

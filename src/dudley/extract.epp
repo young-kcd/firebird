@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../dudley/ddl.h"
 #include "../jrd/acl.h"
@@ -1782,7 +1781,7 @@ static void print_blob(ISC_QUAD* blob_id, TEXT type)
 	ISC_STATUS status;
 	UCHAR bpb_buffer[20], *bpb, *r;
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	// This logic was never finished: bpb_length (6th param) is always zero,
 	// so this call might be reduced to isc_open_blob().
 	bpb = r = bpb_buffer;
@@ -1923,7 +1922,7 @@ static void set_capabilities(void)
  *	unpleasantness later.
  *
  **************************************/
-	FRBRD* req = NULL;
+	FB_API_HANDLE req = 0;
 
 /* Look for desireable fields in system relations */
 

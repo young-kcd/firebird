@@ -32,7 +32,6 @@
 #include <limits.h>
 #include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/perf.h"
 #include "../jrd/gds_proto.h"
@@ -204,7 +203,7 @@ int API_ROUTINE perf_format(
 }
 
 
-void API_ROUTINE perf_get_info(FRBRD** handle, PERF* perf)
+void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 {
 /**************************************
  *

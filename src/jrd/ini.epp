@@ -28,7 +28,6 @@
 #include "../jrd/flags.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"

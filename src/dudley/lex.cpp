@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
@@ -252,7 +251,7 @@ void LEX_init( void *file)
 }
 
 
-void LEX_put_text (FRBRD *blob, TXT text)
+void LEX_put_text (FB_API_HANDLE blob, TXT text)
 {
 /**************************************
  *

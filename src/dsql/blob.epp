@@ -32,7 +32,6 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../dsql/blob_proto.h"
@@ -126,8 +125,8 @@ ISC_STATUS API_ROUTINE isc_blob_gen_bpb(
 
 
 ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
-										FRBRD** db_handle,
-										FRBRD** trans_handle,
+										FB_API_HANDLE* db_handle,
+										FB_API_HANDLE* trans_handle,
 										const UCHAR* relation_name,
 										const UCHAR* field_name,
 										ISC_BLOB_DESC* desc, UCHAR* global)

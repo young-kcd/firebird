@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include descrip
 #include ssdef
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/rdb.h"
 #include "../jrd/common.h"

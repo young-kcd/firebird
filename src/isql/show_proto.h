@@ -24,7 +24,7 @@
 #ifndef ISQL_SHOW_PROTO_H
 #define ISQL_SHOW_PROTO_H
 
-bool	SHOW_dbb_parameters (FRBRD*, SCHAR*, const SCHAR*, USHORT, bool);
+bool	SHOW_dbb_parameters (FB_API_HANDLE, SCHAR*, const SCHAR*, USHORT, bool);
 processing_state	SHOW_grants (SCHAR*, const SCHAR*, USHORT);
 processing_state	SHOW_grants2 (SCHAR*, const SCHAR*, USHORT, const TEXT*);
 void	SHOW_grant_roles (const SCHAR*, bool*);

@@ -25,7 +25,6 @@
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/cch_proto.h"

@@ -30,7 +30,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "../remote/remote.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/thd.h"
 #include "../jrd/iberr.h"

@@ -25,13 +25,12 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.31 2004-02-02 11:01:26 robocop Exp $
+//	$Id: exp.cpp,v 1.32 2004-05-02 23:04:16 skidder Exp $
 //
 
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../gpre/gpre.h"

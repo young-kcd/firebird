@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.47 2004-04-28 22:36:25 brodsom Exp $
+$Id: isc.cpp,v 1.48 2004-05-02 23:05:00 skidder Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -51,7 +51,6 @@ $Id: isc.cpp,v 1.47 2004-04-28 22:36:25 brodsom Exp $
 
 #include "gen/iberror.h"
 #include "../jrd/isc.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"

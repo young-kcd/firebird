@@ -29,7 +29,7 @@ void	LEX_fini(void);
 void	LEX_flush(void);
 void	LEX_get_text(UCHAR*, TXT);
 void	LEX_init(void*);
-void	LEX_put_text(FRBRD*, TXT);
+void	LEX_put_text(FB_API_HANDLE, TXT);
 void	LEX_real(void);
 tok*	LEX_token(void);
 

@@ -50,7 +50,6 @@
 #include "../jrd/jrd_time.h"
 #include "../jrd/gdsassert.h"
 
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/msg.h"
 #include "../jrd/event.h"
@@ -140,11 +139,11 @@
 #define BSTR_output	1
 #define BSTR_alloc	2
 
-static int dump(ISC_QUAD*, FRBRD*, FRBRD*, FILE*);
-static int edit(ISC_QUAD*, FRBRD*, FRBRD*, SSHORT, const SCHAR*);
-static int get_ods_version(FRBRD**, USHORT*, USHORT*);
+static int dump(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
+static int edit(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, SSHORT, const SCHAR*);
+static int get_ods_version(FB_API_HANDLE*, USHORT*, USHORT*);
 static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...);
-static int load(ISC_QUAD*, FRBRD*, FRBRD*, FILE*);
+static int load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
 
 
 #ifdef VMS
@@ -282,7 +281,7 @@ ISC_STATUS API_ROUTINE gds__attach_database_d(
 
 
 int API_ROUTINE gds__blob_size(
-							   FRBRD** b,
+							   FB_API_HANDLE* b,
 							   SLONG* size,
 							   SLONG* seg_count, SLONG* max_seg)
 {
@@ -1221,7 +1220,7 @@ static void print_version(void* dummy, const char* version)
 }
 
 
-int API_ROUTINE isc_version(FRBRD** handle,
+int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 							 FPTR_VERSION_CALLBACK routine, void* user_arg)
 {
 /**************************************
@@ -1483,8 +1482,8 @@ int API_ROUTINE BLOB_close(BSTREAM* bstream)
 
 int API_ROUTINE blob__display(
 							  SLONG blob_id[2],
-							  FRBRD** database,
-							  FRBRD** transaction,
+							  FB_API_HANDLE* database,
+							  FB_API_HANDLE* transaction,
 							  const TEXT* field_name, const SSHORT* name_length)
 {
 /**************************************
@@ -1518,8 +1517,8 @@ int API_ROUTINE blob__display(
 
 
 int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
-							 FRBRD* database,
-							 FRBRD* transaction, 
+							 FB_API_HANDLE database,
+							 FB_API_HANDLE transaction, 
 							 const TEXT* field_name)
 {
 /**************************************
@@ -1550,8 +1549,8 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 
 int API_ROUTINE blob__dump(
 						   SLONG blob_id[2],
-						   FRBRD** database,
-						   FRBRD** transaction,
+						   FB_API_HANDLE* database,
+						   FB_API_HANDLE* transaction,
 						   const TEXT* file_name, const SSHORT* name_length)
 {
 /**************************************
@@ -1586,8 +1585,8 @@ int API_ROUTINE blob__dump(
 
 
 int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
-							   FRBRD* database,
-							   FRBRD* transaction, 
+							   FB_API_HANDLE database,
+							   FB_API_HANDLE transaction, 
 							   const SCHAR* file_name)
 {
 /**************************************
@@ -1613,8 +1612,8 @@ int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
 
 
 int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
-						  FRBRD* database,
-						  FRBRD* transaction, 
+						  FB_API_HANDLE database,
+						  FB_API_HANDLE transaction, 
 						  const SCHAR* file_name)
 {
 /**************************************
@@ -1640,8 +1639,8 @@ int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
 
 int API_ROUTINE blob__edit(
 						   SLONG blob_id[2],
-						   FRBRD** database,
-						   FRBRD** transaction,
+						   FB_API_HANDLE* database,
+						   FB_API_HANDLE* transaction,
 						   const TEXT* field_name, const SSHORT* name_length)
 {
 /**************************************
@@ -1676,8 +1675,8 @@ int API_ROUTINE blob__edit(
 
 
 int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
-						  FRBRD* database,
-						  FRBRD* transaction, 
+						  FB_API_HANDLE database,
+						  FB_API_HANDLE transaction, 
 						  const SCHAR* field_name)
 {
 /**************************************
@@ -1736,8 +1735,8 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 
 int API_ROUTINE blob__load(
 						   SLONG blob_id[2],
-						   FRBRD** database,
-						   FRBRD** transaction,
+						   FB_API_HANDLE* database,
+						   FB_API_HANDLE* transaction,
 						   const TEXT* file_name, const SSHORT* name_length)
 {
 /**************************************
@@ -1772,8 +1771,8 @@ int API_ROUTINE blob__load(
 
 
 int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
-							   FRBRD* database,
-							   FRBRD* transaction, 
+							   FB_API_HANDLE database,
+							   FB_API_HANDLE transaction, 
 							   const TEXT* file_name)
 {
 /**************************************
@@ -1801,8 +1800,8 @@ int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
 
 
 int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
-						  FRBRD* database, 
-						  FRBRD* transaction, 
+						  FB_API_HANDLE database, 
+						  FB_API_HANDLE transaction, 
 						  const TEXT* file_name)
 {
 /**************************************
@@ -1828,8 +1827,8 @@ int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
 
 
 BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
-						   FRBRD* database, 
-						   FRBRD* transaction,
+						   FB_API_HANDLE database, 
+						   FB_API_HANDLE transaction,
 						   const SCHAR* mode)
 {
 /**************************************
@@ -1846,7 +1845,7 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 	const USHORT bpb_length = 0;
 	const UCHAR* bpb = NULL;
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	ISC_STATUS_ARRAY status_vector;
 
 	if (*mode == 'w' || *mode == 'W') {
@@ -1885,7 +1884,7 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 
 
 // CVC: This routine doesn't open a blob really!
-BSTREAM* API_ROUTINE BLOB_open(FRBRD* blob, SCHAR* buffer, int length)
+BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 {
 /**************************************
  *
@@ -2024,8 +2023,8 @@ static display(ISC_QUAD* blob_id, void* database, void* transaction)
 
 
 static int dump(ISC_QUAD* blob_id,
-				FRBRD* database, 
-				FRBRD* transaction, 
+				FB_API_HANDLE database, 
+				FB_API_HANDLE transaction, 
 				FILE* file)
 {
 /**************************************
@@ -2046,7 +2045,7 @@ static int dump(ISC_QUAD* blob_id,
 
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id,
 						bpb_length, bpb)) {
@@ -2083,8 +2082,8 @@ static int dump(ISC_QUAD* blob_id,
 
 
 static int edit(ISC_QUAD* blob_id,
-				FRBRD* database,
-				FRBRD* transaction, 
+				FB_API_HANDLE database,
+				FB_API_HANDLE transaction, 
 				SSHORT type, 
 				const SCHAR* field_name)
 {
@@ -2175,7 +2174,7 @@ static int edit(ISC_QUAD* blob_id,
 
 
 static int get_ods_version(
-						   FRBRD** handle,
+						   FB_API_HANDLE* handle,
 						   USHORT* ods_version, USHORT* ods_minor_version)
 {
 /**************************************
@@ -2385,8 +2384,8 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 
 
 static int load(ISC_QUAD* blob_id,
-				FRBRD* database, 
-				FRBRD* transaction, 
+				FB_API_HANDLE database, 
+				FB_API_HANDLE transaction, 
 				FILE* file)
 {
 /**************************************
@@ -2403,7 +2402,7 @@ static int load(ISC_QUAD* blob_id,
 
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	if (isc_create_blob(status_vector, &database, &transaction, &blob,
 						 blob_id)) {
 		isc_print_status(status_vector);

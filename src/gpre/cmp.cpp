@@ -25,13 +25,12 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.27 2004-02-02 11:01:26 robocop Exp $
+//	$Id: cmp.cpp,v 1.28 2004-05-02 23:04:15 skidder Exp $
 //
 
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../jrd/align.h"

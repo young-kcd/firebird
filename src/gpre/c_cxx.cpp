@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.44 2004-04-28 22:05:57 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.45 2004-05-02 23:04:15 skidder Exp $
 //
 
 #include "firebird.h"
@@ -35,7 +35,6 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../gpre/pat.h"
@@ -1162,7 +1161,7 @@ static void gen_compile( const act* action, int column)
 {
 	PAT args;
 	const TEXT* pattern1 =
-		"isc_compile_request%IF2%EN (%V1, (FRBRD**) &%DH, (FRBRD**) &%RH, (short) sizeof (%RI), (char *) %RI);";
+		"isc_compile_request%IF2%EN (%V1, (FB_API_HANDLE*) &%DH, (FB_API_HANDLE*) &%RH, (short) sizeof (%RI), (char *) %RI);";
 	const TEXT* pattern2 = "if (!%RH%IF && %S1%EN)";
 
 	const gpre_req* request = action->act_request;
@@ -1263,7 +1262,7 @@ static void gen_create_database( const act* action, int column)
 	column += INDENT;
 	begin(column);
 	printa(column,
-		   "isc_start_transaction (%s, (FRBRD**) &%s, (short) 1, &%s, (short) 0, (char*) 0);",
+		   "isc_start_transaction (%s, (FB_API_HANDLE*) &%s, (short) 1, &%s, (short) 0, (char*) 0);",
 		   status_vector(action), trname, db->dbb_name->sym_string);
 	printa(column, "if (%s)", trname);
 	column += INDENT;
@@ -1274,10 +1273,10 @@ static void gen_create_database( const act* action, int column)
 			   trname, request->req_length, request->req_ident);
 	column -= INDENT;
 	printa(column, "if (!%s [1])", global_status_name);
-	printa(column + INDENT, "isc_commit_transaction (%s, (FRBRD**) &%s);",
+	printa(column + INDENT, "isc_commit_transaction (%s, (FB_API_HANDLE*) &%s);",
 		   status_vector(action), trname);
 	printa(column, "if (%s [1])", global_status_name);
-	printa(column + INDENT, "isc_rollback_transaction (%s, (FRBRD**) &%s);",
+	printa(column + INDENT, "isc_rollback_transaction (%s, (FB_API_HANDLE*) &%s);",
 		   status_vector(NULL), trname);
 	set_sqlcode(action, column);
 	endp(column);
@@ -1536,10 +1535,10 @@ static void gen_ddl( const act* action, int column)
 	if (sw_auto) {
 		column -= INDENT;
 		printa(column, "if (!%s [1])", global_status_name);
-		printa(column + INDENT, "isc_commit_transaction (%s, (FRBRD**) &%s);",
+		printa(column + INDENT, "isc_commit_transaction (%s, (FB_API_HANDLE*) &%s);",
 			   status_vector(action), transaction_name);
 		printa(column, "if (%s [1])", global_status_name);
-		printa(column + INDENT, "isc_rollback_transaction (%s, (FRBRD**) &%s);",
+		printa(column + INDENT, "isc_rollback_transaction (%s, (FB_API_HANDLE*) &%s);",
 			   status_vector(NULL), transaction_name);
 	}
 
@@ -2216,7 +2215,7 @@ static void gen_finish( const act* action, int column)
 {
 	PAT args;
 	const TEXT* pattern1 = "if (%S2)\n\
-    isc_%S1_transaction (%V1, (FRBRD**) &%S2);";
+    isc_%S1_transaction (%V1, (FB_API_HANDLE*) &%S2);";
 
 	args.pat_vector1 = status_vector(action);
 	args.pat_string2 = transaction_name;
@@ -2754,7 +2753,7 @@ static void gen_receive( const act* action, int column, gpre_port* port)
 {
 	PAT args;
 	const TEXT* pattern =
-		"isc_receive (%V1, (FRBRD**) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
+		"isc_receive (%V1, (FB_API_HANDLE*) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
 
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
@@ -3154,7 +3153,7 @@ static void gen_send( const act* action, gpre_port* port, int column)
 {
 	PAT args;
 	const TEXT* pattern =
-		"isc_send (%V1, (FRBRD**) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
+		"isc_send (%V1, (FB_API_HANDLE*) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
 
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
@@ -3253,8 +3252,8 @@ static void gen_start(const act* action,
 {
 	PAT args;
 	const TEXT* pattern1 =
-		"isc_start_and_send (%V1, (FRBRD**) &%RH, (FRBRD**) &%S1, (short) %PN, (short) %PL, &%PI, (short) %RL);";
-	const TEXT* pattern2 = "isc_start_request (%V1, (FRBRD**) &%RH, (FRBRD**) &%S1, (short) %RL);";
+		"isc_start_and_send (%V1, (FB_API_HANDLE*) &%RH, (FB_API_HANDLE*) &%S1, (short) %PN, (short) %PL, &%PI, (short) %RL);";
+	const TEXT* pattern2 = "isc_start_request (%V1, (FB_API_HANDLE*) &%RH, (FB_API_HANDLE*) &%S1, (short) %RL);";
 	REF reference;
 
 	if (port && sending) {
@@ -3344,7 +3343,7 @@ static void gen_t_start( const act* action, int column)
 			}
 		}
 
-	printa(column, "isc_start_transaction (%s, (FRBRD**) &%s, (short) %d",
+	printa(column, "isc_start_transaction (%s, (FB_API_HANDLE*) &%s, (short) %d",
 		   vector,
 		   (trans->tra_handle) ? trans->tra_handle : transaction_name,
 		   trans->tra_db_count);
@@ -3434,13 +3433,13 @@ static void gen_trans( const act* action, int column)
 {
 
 	if (action->act_type == ACT_commit_retain_context)
-		printa(column, "isc_commit_retaining (%s, (FRBRD**) &%s);",
+		printa(column, "isc_commit_retaining (%s, (FB_API_HANDLE*) &%s);",
 			   status_vector(action),
 			   (action->act_object) ? (TEXT* ) (action->
 												act_object) :
 			   transaction_name);
 	else
-		printa(column, "isc_%s_transaction (%s, (FRBRD**) &%s);",
+		printa(column, "isc_%s_transaction (%s, (FB_API_HANDLE*) &%s);",
 			   (action->act_type ==
 				ACT_commit) ? "commit" : (action->act_type ==
 										  ACT_rollback) ? "rollback" :
@@ -3962,7 +3961,7 @@ static void t_start_auto(const act* action,
 	else
 		for (count = 0, db = isc_databases; db; db = db->dbb_next, count++);
 
-	printa(column, "isc_start_transaction (%s, (FRBRD**) &%s, (short) %d",
+	printa(column, "isc_start_transaction (%s, (FB_API_HANDLE*) &%s, (short) %d",
 		   vector, trname, count);
 
 //  Some systems don't like infinitely long lines.  Limit them to 256. 

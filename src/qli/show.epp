@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
@@ -49,7 +48,7 @@ static void display_acl(DBB, ISC_QUAD*);
 static void display_blob(DBB, ISC_QUAD*, const TEXT*, USHORT, const UCHAR*, bool);
 static void display_blr(DBB, ISC_QUAD*);
 static void display_text(DBB, ISC_QUAD*, const TEXT*, bool);
-static void display_procedure(DBB, const UCHAR*, FRBRD*);
+static void display_procedure(DBB, const UCHAR*, FB_API_HANDLE);
 static USHORT get_window_size(int);
 static void show_blob_info(ISC_QUAD*, ISC_QUAD*, USHORT, USHORT, DBB, const TEXT*);
 static void show_blr(DBB, USHORT, ISC_QUAD*, USHORT, ISC_QUAD*);
@@ -498,7 +497,7 @@ static void display_blob(
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 
 	if (isc_open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_meta_trans,
 						&blob, blob_id, bpb_length,
@@ -570,7 +569,7 @@ static void display_text( DBB dbb, ISC_QUAD* blob_id, const TEXT* prefix, bool s
 }
 
 
-static void display_procedure( DBB database, const UCHAR* name, FRBRD *blob)
+static void display_procedure( DBB database, const UCHAR* name, FB_API_HANDLE blob)
 {
 /**************************************
  *
@@ -2013,7 +2012,7 @@ static void show_proc( QPR proc)
  *	with that name.
  *
  **************************************/
-	FRBRD* blob;
+	FB_API_HANDLE blob;
 	NAM name = proc->qpr_name;
 
 	DBB database = proc->qpr_database;

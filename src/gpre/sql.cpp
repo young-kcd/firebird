@@ -25,14 +25,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.42 2004-04-29 17:47:42 brodsom Exp $
+//	$Id: sql.cpp,v 1.43 2004-05-02 23:04:17 skidder Exp $
 //
 
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../gpre/gpre.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../gpre/parse.h"
 #include "../jrd/intl.h"

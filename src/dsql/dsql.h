@@ -35,7 +35,6 @@
 
 #include "../jrd/common.h"
 #include "../dsql/all.h"
-#include "../jrd/y_ref.h"
 #include "../common/classes/array.h"
 #include "../common/classes/stack.h"
 
@@ -155,8 +154,8 @@ public:
 	class dsql_prc*	dbb_procedures;		//!< known procedures in database
 	class dsql_udf*	dbb_functions;		//!< known functions in database
 	DsqlMemoryPool*	dbb_pool;			//!< The current pool for the dbb
-	FRBRD*			dbb_database_handle;
-	FRBRD*			dbb_requests[irq_MAX];
+	FB_API_HANDLE	dbb_database_handle;
+	FB_API_HANDLE	dbb_requests[irq_MAX];
 	dsql_str*		dbb_dfl_charset;
 	USHORT			dbb_base_level;		//!< indicates the version of the engine code itself
 	USHORT			dbb_flags;
@@ -421,12 +420,12 @@ public:
 	dsql_sym* req_name;			//!< Name of request
 	dsql_sym* req_cursor;		//!< Cursor symbol, if any
 	dsql_dbb*	req_dbb;			//!< Database handle
-	FRBRD*	req_trans;			//!< Database transaction handle
+	FB_API_HANDLE	req_trans;			//!< Database transaction handle
 	dsql_opn* req_open_cursor;
 	dsql_nod* req_ddl_node;		//!< Store metadata request
 	dsql_nod* req_blk_node;		//!< exec_block node 
 	class dsql_blb* req_blob;			//!< Blob info for blob requests
-	FRBRD*	req_handle;				//!< OSRI request handle
+	FB_API_HANDLE	req_handle;				//!< OSRI request handle
 	//dsql_str*	req_blr_string;			//!< String block during BLR generation
 	Firebird::HalfStaticArray<BLOB_PTR, 256> req_blr_data;
 	class dsql_msg* req_send;		//!< Message to be sent to start request
@@ -513,7 +512,7 @@ class dsql_opn : public pool_alloc<dsql_type_opn>
 public:
 	dsql_opn*	opn_next;			//!< Next open cursor
 	dsql_req*	opn_request;		//!< Request owning the cursor
-	FRBRD*		opn_transaction;	//!< Transaction executing request
+	FB_API_HANDLE		opn_transaction;	//!< Transaction executing request
 };
 
 

@@ -32,7 +32,6 @@
 #include "../jrd/common.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/remote.h"
@@ -150,7 +149,7 @@ static REM_MSG		dump_cache(rrq::rrq_repeat*);
 #endif
 
 static bool		get_next_msg_no(rrq*, USHORT, USHORT*);
-static RTR		make_transaction(RDB, FRBRD*);
+static RTR		make_transaction(RDB, FB_API_HANDLE);
 
 static void	release_blob(RBL);
 static void	release_event(RVNT);
@@ -650,7 +649,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = port->port_context;
-	FRBRD* handle = NULL;
+	FB_API_HANDLE handle = 0;
 
 	THREAD_EXIT;
 	GDS_DSQL_ALLOCATE(status_vector, &rdb->rdb_handle, &handle);
@@ -756,7 +755,7 @@ static ISC_STATUS attach_database(
 	ISC_STATUS_ARRAY status_vector;
 
 	send->p_operation = op_accept;
-	FRBRD* handle = NULL;
+	FB_API_HANDLE handle = 0;
 	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT l = attach->p_atch_file.cstr_length;
 	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
@@ -978,7 +977,7 @@ static void cancel_operation( rem_port* port)
 		{
 			THREAD_EXIT;
 			ISC_STATUS_ARRAY status_vector;
-			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
+			gds__cancel_operation(status_vector, (FB_API_HANDLE*) &rdb->rdb_handle,
 								  CANCEL_raise);
 			THREAD_ENTER;
 		}
@@ -1081,7 +1080,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compile, PACKET* send)
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
-	FRBRD* handle = NULL;
+	FB_API_HANDLE handle = 0;
 	const UCHAR* blr = compile->p_cmpl_blr.cstr_address;
 	USHORT blr_length = compile->p_cmpl_blr.cstr_length;
 
@@ -1233,7 +1232,7 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 			   a good, clean detach from the database. */
 
 			THREAD_EXIT;
-			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
+			gds__cancel_operation(status_vector, (FB_API_HANDLE*) &rdb->rdb_handle,
 								  CANCEL_disable);
 			THREAD_ENTER;
 #endif
@@ -1257,7 +1256,7 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 
 				else
 					gds__handle_cleanup(status_vector,
-										(FRBRD **) &transaction->rtr_handle);
+										(FB_API_HANDLE*) &transaction->rtr_handle);
 #endif
 				THREAD_ENTER;
 				release_transaction(rdb->rdb_transactions);
@@ -1703,7 +1702,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
 		in_msg_type = out_msg_type = 0;
 	}
 
-	FRBRD* handle = (transaction) ? transaction->rtr_handle : NULL;
+	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
 /* Since the API to GDS_DSQL_EXECUTE_IMMED is public and can not be changed, there needs to
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
@@ -1843,7 +1842,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	}
 	statement->rsr_flags &= ~RSR_fetched;
 
-	FRBRD* handle = (transaction) ? transaction->rtr_handle : NULL;
+	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
 	THREAD_EXIT;
 	GDS_DSQL_EXECUTE(status_vector,
@@ -2677,7 +2676,7 @@ ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* send)
 }
 
 
-static RTR make_transaction (RDB rdb, FRBRD *handle)
+static RTR make_transaction (RDB rdb, FB_API_HANDLE handle)
 {
 /**************************************
  *
@@ -2728,7 +2727,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
 						isc_bad_trans_handle);
 
 	RDB rdb = this->port_context;
-	FRBRD* handle = NULL;
+	FB_API_HANDLE handle = 0;
 	USHORT bpb_length = 0;
 	const UCHAR* bpb = NULL;
 
@@ -2856,7 +2855,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* send)
 	else
 		buffer = local_buffer;
 
-	FRBRD* handle = (transaction) ? transaction->rtr_handle : NULL;
+	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
 
 /* Since the API to GDS_DSQL_PREPARE is public and can not be changed, there needs to
@@ -4248,7 +4247,7 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* send)
  *
  **************************************/
 	send->p_operation = op_accept;
-	FRBRD* handle = NULL;
+	FB_API_HANDLE handle = 0;
 	const UCHAR* service_name = attach->p_atch_file.cstr_address;
 	const USHORT service_length = attach->p_atch_file.cstr_length;
 	const UCHAR* spb = attach->p_atch_dpb.cstr_address;
@@ -4552,7 +4551,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
-	FRBRD *handle = NULL;
+	FB_API_HANDLE handle = 0;
 
 	THREAD_EXIT;
 	if (operation == op_reconnect)
@@ -4598,7 +4597,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 			   release the y-valve handle. */
 
 			else {
-				gds__handle_cleanup(status_vector, (FRBRD **) &handle);
+				gds__handle_cleanup(status_vector, &handle);
 			}
 #endif
 			THREAD_ENTER;

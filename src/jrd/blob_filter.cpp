@@ -38,7 +38,6 @@
 #include "../common/config/config.h"
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/blob_filter.h"
 #include "../jrd/tra.h"

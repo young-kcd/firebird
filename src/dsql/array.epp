@@ -36,7 +36,6 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../dsql/array_proto.h"
 #include "../jrd/gds_proto.h"
@@ -59,7 +58,7 @@ static ISC_STATUS copy_status(const ISC_STATUS*, ISC_STATUS*);
 static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
 static ISC_STATUS gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*, SSHORT*, UCHAR**,
 					  SSHORT*, bool);
-static ISC_STATUS lookup_desc(ISC_STATUS*, FRBRD**, FRBRD**, const SCHAR*,
+static ISC_STATUS lookup_desc(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, const SCHAR*,
 						const SCHAR*, ISC_ARRAY_DESC*, SCHAR*);
 static ISC_STATUS stuff_args(gen_t*, SSHORT, ...);
 static ISC_STATUS stuff_literal(gen_t*, SLONG);
@@ -104,8 +103,8 @@ ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS* status,
  
  
 ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
-									   FRBRD** db_handle,
-									   FRBRD** trans_handle,
+									   FB_API_HANDLE* db_handle,
+									   FB_API_HANDLE* trans_handle,
 									   ISC_QUAD* array_id,
 									   const ISC_ARRAY_DESC* desc,
 									   void* array, 
@@ -142,8 +141,8 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
 
 
 ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
-										   FRBRD** db_handle,
-										   FRBRD** trans_handle,
+										   FB_API_HANDLE* db_handle,
+										   FB_API_HANDLE* trans_handle,
 										   const SCHAR* relation_name,
 										   const SCHAR* field_name,
 										   ISC_ARRAY_DESC* desc)
@@ -183,8 +182,8 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
 
 
 ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS* status,
-										 FRBRD** db_handle,
-										 FRBRD** trans_handle,
+										 FB_API_HANDLE* db_handle,
+										 FB_API_HANDLE* trans_handle,
 										 const SCHAR* relation_name,
 										 const SCHAR* field_name,
 										 ISC_ARRAY_DESC* desc)
@@ -205,8 +204,8 @@ ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS* status,
 
 
 ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS* status,
-									   FRBRD** db_handle,
-									   FRBRD** trans_handle,
+									   FB_API_HANDLE* db_handle,
+									   FB_API_HANDLE* trans_handle,
 									   ISC_QUAD* array_id,
 									   const ISC_ARRAY_DESC* desc,
 									   void* array, 
@@ -519,8 +518,8 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 
 
 static ISC_STATUS lookup_desc(ISC_STATUS* status,
-						  FRBRD** db_handle,
-						  FRBRD** trans_handle,
+						  FB_API_HANDLE* db_handle,
+						  FB_API_HANDLE* trans_handle,
 						  const SCHAR* field_name,
 						  const SCHAR* relation_name,
 						  ISC_ARRAY_DESC* desc,

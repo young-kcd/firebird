@@ -32,7 +32,6 @@
 #include "../jrd/common.h"
 #include "../remote/remote_def.h"
 #include "../jrd/thd_proto.h"
-#include "../jrd/y_ref.h"
 
 /* Include some apollo include files for tasking */
 
@@ -86,7 +85,7 @@ typedef struct rdb
 	blk				rdb_header;
 	USHORT			rdb_id;
 	USHORT			rdb_flags;
-	FRBRD*			rdb_handle;			/* database handle */
+	FB_API_HANDLE	rdb_handle;			/* database handle */
 	rem_port*		rdb_port;			/* communication port */
 	struct rtr*		rdb_transactions;	/* linked list of transactions */
 	struct rrq*		rdb_requests;		/* compiled requests */
@@ -104,7 +103,7 @@ typedef struct rtr
 	rdb*		rtr_rdb;
 	rtr*		rtr_next;
 	struct rbl*	rtr_blobs;
-	FRBRD*		rtr_handle;
+	FB_API_HANDLE rtr_handle;
 	USHORT		rtr_flags;
 	USHORT		rtr_id;
 } *RTR;
@@ -117,7 +116,7 @@ typedef struct rbl
 	rdb*		rbl_rdb;
 	rtr*		rbl_rtr;
 	rbl*		rbl_next;
-	FRBRD*		rbl_handle;
+	FB_API_HANDLE rbl_handle;
 	SLONG		rbl_offset;			/* Apparent (to user) offset in blob */
 	USHORT		rbl_id;
 	USHORT		rbl_flags;
@@ -218,7 +217,7 @@ typedef struct rpr
 	blk			rpr_header;
 	rdb*		rpr_rdb;
 	rtr*		rpr_rtr;
-	FRBRD*		rpr_handle;
+	FB_API_HANDLE rpr_handle;
 	message*	rpr_in_msg;		/* input message */
 	message*	rpr_out_msg;	/* output message */
 	rem_fmt*	rpr_in_format;	/* Format of input message */
@@ -235,7 +234,7 @@ struct rrq
 	rtr*	rrq_rtr;
 	rrq*	rrq_next;
 	rrq*	rrq_levels;		/* RRQ block for next level */
-	FRBRD*		rrq_handle;
+	FB_API_HANDLE rrq_handle;
 	USHORT		rrq_id;
 	USHORT		rrq_max_msg;
 	USHORT		rrq_level;
@@ -272,7 +271,7 @@ typedef struct rsr
 	rsr*			rsr_next;
 	rdb*			rsr_rdb;
 	rtr*			rsr_rtr;
-	FRBRD*			rsr_handle;
+	FB_API_HANDLE	rsr_handle;
 	rem_fmt*		rsr_bind_format;		/* Format of bind message */
 	rem_fmt*		rsr_select_format;		/* Format of select message */
 	rem_fmt*		rsr_user_select_format; /* Format of user's select message */

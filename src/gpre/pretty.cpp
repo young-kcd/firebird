@@ -25,14 +25,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.23 2004-04-28 22:05:55 brodsom Exp $
+//	$Id: pretty.cpp,v 1.24 2004-05-02 23:04:17 skidder Exp $
 //
 
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/constants.h"
 #include "../gpre/prett_proto.h"

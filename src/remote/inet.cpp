@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.101 2004-04-28 22:25:51 brodsom Exp $
+$Id: inet.cpp,v 1.102 2004-05-02 23:06:05 skidder Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -104,7 +104,6 @@ extern "C" int innetgr(const char*, const char*, const char*, const char*);
 #define INET_RETRY_CALL		5
 
 #include "../remote/remote.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/iberr.h"
 #include "../jrd/thd.h"

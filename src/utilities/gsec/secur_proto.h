@@ -25,7 +25,7 @@
 #define UTILITIES_SECUR_PROTO_H
 
 typedef void (*FPTR_SECURITY_CALLBACK)(void*, const internal_user_data*, bool);
-SSHORT	SECURITY_exec_line (ISC_STATUS*, FRBRD*, internal_user_data*,
+SSHORT	SECURITY_exec_line (ISC_STATUS*, FB_API_HANDLE, internal_user_data*,
 									FPTR_SECURITY_CALLBACK, void*);
 void	SECURITY_msg_get (USHORT, TEXT*);
 void	SECURITY_get_db_path (const TEXT*, TEXT*);

@@ -101,17 +101,16 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	Firebird::string SqlText;
 	getString(SqlText, EVL_expr(tdbb, sql), tdbb->tdbb_request);
 
-	Attachment = GetWhyAttachment(tdbb->tdbb_status_vector,
+	WHY_DBB temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
 								  tdbb->tdbb_attachment);
-	if (! Attachment)
+	if (!temp_dbb)
 		ERR_punt();
 
-	Transaction = FB_NEW(*tdbb->tdbb_transaction->tra_pool) why_hndl;
-	memset (Transaction, 0, sizeof(why_hndl));
-	Transaction->implementation = Attachment->implementation;
-	Transaction->handle.h_tra = tdbb->tdbb_transaction;
-	Transaction->type = HANDLE_transaction;
-	Transaction->parent = Attachment;
+	Attachment = temp_dbb->public_handle;
+
+	WHY_TRA temp_tra = WHY_alloc_handle(temp_dbb->implementation, HANDLE_transaction);
+	temp_tra->handle.h_tra = tdbb->tdbb_transaction;
+	temp_tra->parent = temp_dbb;
 
 	Statement = 0;
 	Sqlda = MakeSqlda(tdbb, nVars ? nVars : 1);
@@ -299,8 +298,8 @@ void ExecuteStatement::Close(thread_db* tdbb)
 	char* p = reinterpret_cast<char*>(Sqlda);
 	delete[] p;
 	Sqlda = 0;
-	WHY_cleanup_transaction(Transaction);
-	delete Transaction;
+	WHY_cleanup_transaction(WHY_translate_handle(Transaction));
+	WHY_free_handle(Transaction);
 	Transaction = 0;
 	delete[] Buffer;
 	Buffer = 0;

@@ -25,6 +25,7 @@
 #define DUDLEY_DDL_H
 
 #include "../jrd/common.h"
+#include "../jrd/ibase.h"
 
 #ifdef VMS
 const int BLOCK_SIZE = 512;
@@ -116,8 +117,8 @@ typedef struct dbb {
 	struct gfl* dbb_fields;
 	dbb* dbb_next;
 	struct sym* dbb_security_class;
-	SLONG* dbb_handle;
-	SLONG* dbb_transaction;
+	isc_db_handle dbb_handle;
+	isc_tr_handle dbb_transaction;
 	struct txt* dbb_description;
 	USHORT dbb_flags;
 	struct sym* dbb_file_name;

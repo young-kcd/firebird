@@ -33,7 +33,6 @@
 #include "../jrd/ods.h"
 #include "../jrd/pag.h"
 #include "../jrd/lck.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
@@ -2691,7 +2690,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
  **************************************/
 	UCHAR	sweep_dpb[100];
 
-	isc_db_handle db_handle = NULL;
+	isc_db_handle db_handle = 0;
 
 	UCHAR* dpb = sweep_dpb;
 
@@ -2721,37 +2720,17 @@ static void THREAD_ROUTINE sweep_database(char* database)
 	/* Register as internal database handle */
 	ihndl*	ihandle;
 
-	THREAD_ENTER;
-	for (ihandle = internal_db_handles; ihandle; ihandle = ihandle->ihndl_next)
-	{
-		if (ihandle->ihndl_object == NULL)
-		{
-			ihandle->ihndl_object = &db_handle;
-			break;
-		}
-	}
-
-	if (!ihandle)
-	{
-		ihandle = (ihndl*) gds__alloc ((SLONG) sizeof (struct ihndl));
-		if (!ihandle) {
-			THREAD_EXIT;
-			ERR_log(0, 0, "cannot start sweep thread: out of memory");
-			return;
-		}
-		ihandle->ihndl_object = &db_handle;
-		ihandle->ihndl_next = internal_db_handles;
-		internal_db_handles = ihandle;
-	}
-	THREAD_EXIT;
 
 	ISC_STATUS_ARRAY status_vector;
+
+	// Temporary disable security for this thread to proceed with internal attachment
+	JRD_thread_security_disable(true);
+
 	isc_attach_database(status_vector, 0, database,
 						 &db_handle, dpb_length,
 						 reinterpret_cast<char*>(sweep_dpb));
 
-	fb_assert (ihandle->ihndl_object == &db_handle);
-	ihandle->ihndl_object = NULL;
+	JRD_thread_security_disable(false);
 
 	if (db_handle)
 	{

@@ -26,7 +26,6 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
@@ -65,7 +64,7 @@ static const UCHAR dyn_gdl4[] = {
 };
 
 
-void PRO_close( DBB database, FRBRD *blob)
+void PRO_close( DBB database, FB_API_HANDLE blob)
 {
 /**************************************
  *
@@ -129,7 +128,7 @@ void PRO_copy_procedure(
 	if (!new_database)
 		new_database = QLI_databases;
 
-	FRBRD *old_blob;
+	FB_API_HANDLE old_blob;
 	if (!old_database) {
 		for (old_database = QLI_databases; old_database;
 			 old_database = old_database->dbb_next)
@@ -148,8 +147,8 @@ void PRO_copy_procedure(
 	if (new_database != old_database)
 		PRO_setup(new_database);
 
-	FRBRD* new_blob = NULL;
-	FRBRD* store_request = NULL;
+	FB_API_HANDLE new_blob = 0;
+	FB_API_HANDLE store_request = 0;
 	probe(new_database, new_name);
 
 	DB1 = new_database->dbb_handle;
@@ -211,7 +210,7 @@ void PRO_create( DBB database, const TEXT* name)
 
 	probe(database, name);
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	const SLONG start = QLI_token->tok_position;
 	SLONG stop = start;
 
@@ -263,7 +262,7 @@ int PRO_delete_procedure( DBB database, const TEXT* name)
  *	Delete a procedure.
  *
  **************************************/
-	FRBRD* request = NULL;
+	FB_API_HANDLE request = 0;
 	USHORT count = 0;
 
 	PRO_setup(database);
@@ -329,7 +328,7 @@ void PRO_edit_procedure( DBB database, const TEXT* name)
 }
 
 
-FRBRD* PRO_fetch_procedure( DBB database, const TEXT* proc)
+FB_API_HANDLE PRO_fetch_procedure( DBB database, const TEXT* proc)
 {
 /**************************************
  *
@@ -346,7 +345,7 @@ FRBRD* PRO_fetch_procedure( DBB database, const TEXT* proc)
 
 	upcase_name(proc, name);
 	PRO_setup(database);
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_lookup_blob) X IN DB.QLI$PROCEDURES WITH
 		X.QLI$PROCEDURE_NAME EQ name
@@ -357,7 +356,7 @@ FRBRD* PRO_fetch_procedure( DBB database, const TEXT* proc)
 }
 
 
-bool PRO_get_line(FRBRD* blob,
+bool PRO_get_line(FB_API_HANDLE blob,
 				  TEXT* buffer,
 				  USHORT size)
 {
@@ -405,7 +404,7 @@ void PRO_invoke( DBB database, const TEXT* name)
  *	we may have to loop through databases.  Whatever...
  *
  **************************************/
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	if (database) {
 		if (!(blob = PRO_fetch_procedure(database, name)))
 		{
@@ -431,7 +430,7 @@ void PRO_invoke( DBB database, const TEXT* name)
 }
 
 
-FRBRD *PRO_open_blob( DBB database, ISC_QUAD* blob_id)
+FB_API_HANDLE PRO_open_blob( DBB database, ISC_QUAD* blob_id)
 {
 /**************************************
  *
@@ -446,7 +445,7 @@ FRBRD *PRO_open_blob( DBB database, ISC_QUAD* blob_id)
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR bpb[20];
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	UCHAR* p = bpb;
 
 	USHORT bpb_length = p - bpb;
@@ -476,7 +475,7 @@ int PRO_rename_procedure( DBB database, const TEXT* old_name, const TEXT* new_na
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	FRBRD* request = NULL;
+	FB_API_HANDLE request = 0;
 	PRO_setup(database);
 
 	probe(database, new_name);
@@ -521,7 +520,7 @@ void PRO_rollback( DBB database)
 	if (database->dbb_capabilities & DBB_cap_multi_trans) {
 		isc_rollback_transaction(status_vector, &database->dbb_proc_trans);
 
-		gds_trans = NULL;
+		gds_trans = 0;
 	}
 }
 
@@ -599,7 +598,7 @@ void PRO_setup( DBB dbb)
 }
 
 
-FRBRD* PRO_transaction( DBB database, bool update_flag)
+FB_API_HANDLE PRO_transaction( DBB database, bool update_flag)
 {
 /**************************************
  *
@@ -620,8 +619,8 @@ FRBRD* PRO_transaction( DBB database, bool update_flag)
 	if (!database)
 		IBERROR(248);			// Msg248 no active database for operation
 
-	FRBRD* transaction = (database->dbb_capabilities & DBB_cap_multi_trans) ?
-		database->dbb_proc_trans : NULL;
+	FB_API_HANDLE transaction = (database->dbb_capabilities & DBB_cap_multi_trans) ?
+		database->dbb_proc_trans : 0;
 
 	DB = database->dbb_handle;
 
@@ -687,7 +686,7 @@ static int clear_out_qli_procedures( DBB dbb)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	FRBRD* req = NULL;
+	FB_API_HANDLE req = 0;
 	int count = 0;
 
 	FOR(REQUEST_HANDLE req) R IN DB.RDB$RELATIONS CROSS
@@ -850,7 +849,7 @@ static void probe( DBB database, const TEXT* name)
  **************************************/
 // Probe to see if procedure is already in use
 
-	FRBRD* blob = PRO_fetch_procedure(database, name);
+	FB_API_HANDLE blob = PRO_fetch_procedure(database, name);
 	if (blob) {
 		ISC_STATUS_ARRAY status_vector;
 		isc_close_blob(status_vector, &blob);

@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.72 2004-04-28 21:54:06 brodsom Exp $
+$Id: restore.epp,v 1.73 2004-05-02 23:03:43 skidder Exp $
 */
 
 #include "firebird.h"
@@ -242,8 +242,8 @@ int RESTORE_restore (const TEXT* file_name,
  *	Recreate a database from a backup.
  *
  **************************************/
-	isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle3 = NULL;
-	isc_req_handle	req_handle4 = NULL;
+	isc_req_handle  req_handle1 = 0, req_handle2 = 0, req_handle3 = 0;
+	isc_req_handle	req_handle4 = 0;
 	BASED_ON RDB$INDICES.RDB$INDEX_NAME index_name;
 
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -576,14 +576,13 @@ int RESTORE_restore (const TEXT* file_name,
 	// set forced writes to the value which was in the header
 
 	SSHORT l = d - dpb;
-	// long? Are you sure? Why not FRBRD* ???
-	long db_handle = 0;
+	FB_API_HANDLE db_handle = 0;
 	if (isc_attach_database (tdgbl->status_vector, 0, database_name,
-				  (isc_db_handle*) &db_handle, l, (SCHAR*) dpb))
+				  &db_handle, l, (SCHAR*) dpb))
 	{
 		general_on_error();
 	}
-	if (isc_detach_database (tdgbl->status_vector, (isc_db_handle*) &db_handle))
+	if (isc_detach_database (tdgbl->status_vector, &db_handle))
 		general_on_error();
 
 	FINISH
@@ -633,11 +632,11 @@ int RESTORE_restore (const TEXT* file_name,
 		l = d - dpb;
 		db_handle = 0;
 		if (isc_attach_database (tdgbl->status_vector, 0, database_name,
-					  (isc_db_handle*) &db_handle, l, (SCHAR*) dpb))
+					  &db_handle, l, (SCHAR*) dpb))
 		{
 			general_on_error();
 		}
-		if (isc_detach_database (tdgbl->status_vector, (isc_db_handle*) &db_handle))
+		if (isc_detach_database (tdgbl->status_vector, &db_handle))
 			general_on_error();
 
 	}
@@ -662,7 +661,7 @@ void add_files (const UCHAR* file_name)
  *	addresses & commit this much.
  *
  **************************************/
-	isc_req_handle  req_handle1 = NULL;
+	isc_req_handle  req_handle1 = 0;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -786,7 +785,7 @@ USHORT check_db_version()
  *	Find the version number of the database.
  *
  **************************************/
-	isc_req_handle  req_handle1 = NULL, req_handle2 = NULL;
+	isc_req_handle  req_handle1 = 0, req_handle2 = 0;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -1193,7 +1192,7 @@ bool get_acl (const TEXT	*owner_nm,
 	ISC_STATUS_ARRAY	status_vector;
 	// Open the blob and get it's vital statistics 
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 
 	if (isc_open_blob (status_vector, &DB,  &gds_trans, &blob, blob_id))
 	{
@@ -1322,7 +1321,7 @@ bool get_acl (const TEXT	*owner_nm,
 		new_len++;
 	}
 
-	isc_blob_handle	blob_handle = NULL;
+	isc_blob_handle	blob_handle = 0;
 	if (isc_create_blob2 (status_vector, &DB, &gds_trans,
 						  &blob_handle, new_blob_id, 0, NULL))
 	{
@@ -1935,7 +1934,7 @@ void get_blob (const burp_fld* fields,
 	// Create new blob 
 
 	ISC_QUAD* blob_id = (ISC_QUAD*) ((UCHAR*) record_buffer + field->fld_offset);
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	ISC_STATUS_ARRAY status_vector;
 	const char blob_desc[] = {isc_bpb_version1, isc_bpb_type, 1, blob_type};
 
@@ -2010,7 +2009,7 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 	else
 		local_trans = gds_trans;
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	if (isc_create_blob (status_vector, &DB, &local_trans, &blob, blob_id))
 	{
 		BURP_error_redirect (status_vector, 37, 0, 0);
@@ -2300,7 +2299,7 @@ rec_type get_data (burp_rel*	relation)
  *	Write data records for a relation.
  *
  **************************************/
-	isc_req_handle  req_handle = NULL;
+	isc_req_handle  req_handle = 0;
 	BASED_ON RDB$INDICES.RDB$INDEX_NAME index_name;
 
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -2474,7 +2473,7 @@ rec_type get_data (burp_rel*	relation)
 	isc_print_blr (reinterpret_cast<const char*>(blr_buffer), NULL, NULL, 0);
 	#endif
 
-	FRBRD* request = NULL;
+	FB_API_HANDLE request = 0;
 	ISC_STATUS_ARRAY status_vector;
 	USHORT blr_length = blr - blr_buffer;
 
@@ -4244,7 +4243,7 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 	else
 		local_trans = gds_trans;
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	USHORT bpb_length = 0;
 	UCHAR* bpb = NULL;
 	if (isc_create_blob2 (status_vector, &DB, &local_trans, &blob,
@@ -5199,7 +5198,7 @@ void get_source_blob (
 
 	// Create new blob
 
-	FRBRD* blob = NULL;
+	FB_API_HANDLE blob = 0;
 	isc_tr_handle	local_trans;
 	if (glb_trans && tdgbl->global_trans)
 		local_trans = tdgbl->global_trans;
@@ -5777,7 +5776,7 @@ bool get_user_privilege()
 	}
 
 	// Check if object exists 
-	isc_tr_handle	local_trans = NULL;
+	isc_tr_handle	local_trans = 0;
 	bool exists = false;
 	switch (object_type)
 	{
@@ -6307,8 +6306,8 @@ bool restore (const TEXT* file_name,
  **************************************/
 	rec_type	record;
 	ATT_TYPE	attribute;
-	isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle3 = NULL,
-					req_handle5 = NULL;
+	isc_req_handle  req_handle1 = 0, req_handle2 = 0, req_handle3 = 0,
+					req_handle5 = 0;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -6638,7 +6637,7 @@ void restore_security_class (const TEXT	*owner_nm,
  *	restore the ownership of the relation in the ACL list
  *
  **************************************/
-	isc_req_handle  req_handle2 = NULL;
+	isc_req_handle  req_handle2 = 0;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 	isc_tr_handle local_trans = gds_trans;
@@ -6692,7 +6691,7 @@ USHORT get_view_base_relation_count (const TEXT* current_view_name,
 		return 0;
 	}
 
-	isc_req_handle  req_handle1 = NULL;
+	isc_req_handle  req_handle1 = 0;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -6758,7 +6757,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	}
 
 
-	FRBRD* gen_id_reqh = NULL;
+	FB_API_HANDLE gen_id_reqh = 0;
 	UCHAR blr_buffer[100];  // enough to fit blr
 	UCHAR* blr = blr_buffer;
 
@@ -6872,7 +6871,7 @@ void update_global_field()
  *
  **************************************/
 	USHORT		length;
-	isc_req_handle  req_handle1 = NULL;
+	isc_req_handle  req_handle1 = 0;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -6959,7 +6958,7 @@ void update_view_dbkey_lengths()
  *  numeric overflow, or string truncation" error.
  *
  **************************************/
-	isc_req_handle  req_handle2 = NULL;
+	isc_req_handle  req_handle2 = 0;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 

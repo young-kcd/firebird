@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.34 2004-04-28 21:52:39 brodsom Exp $
+//	$Id: tdr.cpp,v 1.35 2004-05-02 23:03:22 skidder Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -35,7 +35,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../alice/alice.h"
@@ -54,7 +53,7 @@ static ULONG ask(void);
 static void print_description(const tdr*);
 static void reattach_database(TDR);
 static void reattach_databases(TDR);
-static bool reconnect(FRBRD*, SLONG, const TEXT*, ULONG);
+static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, ULONG);
 
 
 const char* const NEWLINE = "\n";
@@ -220,7 +219,7 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 	if (dpb_length == 1)
 		dpb_length = 0;
 
-	trans->tdr_db_handle = NULL;
+	trans->tdr_db_handle = 0;
 
 	isc_attach_database(status_vector, 0, pathname,
 						 &trans->tdr_db_handle, dpb_length,
@@ -288,7 +287,7 @@ void TDR_shutdown_databases(TDR trans)
 //		prompt for commit, rollback, or leave well enough alone.
 //
 
-void TDR_list_limbo(FRBRD* handle, const TEXT* name, const ULONG switches)
+void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches)
 {
 	UCHAR buffer[1024];
 	ISC_STATUS_ARRAY status_vector;
@@ -380,7 +379,7 @@ void TDR_list_limbo(FRBRD* handle, const TEXT* name, const ULONG switches)
 //		gfix user.
 //
 
-bool TDR_reconnect_multiple(FRBRD* handle,
+bool TDR_reconnect_multiple(FB_API_HANDLE handle,
 							SLONG id,
 							const TEXT* name,
 							ULONG switches)
@@ -872,7 +871,7 @@ static void reattach_databases(TDR trans)
 //		Commit or rollback a named transaction.
 //
 
-static bool reconnect(FRBRD* handle,
+static bool reconnect(FB_API_HANDLE handle,
 					  SLONG number,
 					  const TEXT* name,
 					  ULONG switches)
@@ -880,7 +879,7 @@ static bool reconnect(FRBRD* handle,
 	ISC_STATUS_ARRAY status_vector;
 
 	const SLONG id = gds__vax_integer(reinterpret_cast<const UCHAR*>(&number), 4);
-	FRBRD* transaction = NULL;
+	FB_API_HANDLE transaction = 0;
 	if (isc_reconnect_transaction(status_vector, &handle, &transaction,
 								   sizeof(id),
 								   reinterpret_cast<const char*>(&id)))

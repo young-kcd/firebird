@@ -49,7 +49,6 @@
 #include <errno.h>
 
 #define JRD_MAIN
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/irq.h"
@@ -124,6 +123,7 @@
 #include "../common/config/config.h"
 #include "../jrd/plugin_manager.h"
 #include "../jrd/db_alias.h"
+#include "../common/classes/fb_tls.h"
 
 
 #ifdef GARBAGE_THREAD
@@ -404,7 +404,6 @@ static ULONG num_attached = 0;
 #if !defined(REQUESTER)
 
 int		debug;
-ihndl*	internal_db_handles = 0;
 
 #endif	// !REQUESTER
 
@@ -572,6 +571,28 @@ static const char* CRYPT_IMAGE = "fbcrypt";
 static const char* ENCRYPT = "encrypt";
 static const char* DECRYPT = "decrypt";
 
+
+namespace {
+
+TLS_DECLARE(bool, thread_security_disabled);
+
+}
+
+
+void	JRD_thread_security_disable(bool disable)
+{
+/**************************************
+ *
+ *	J R D _ t h r e a d _ s e c u r i t y _ d i s a b l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Disable database attache security for this thread for the purposes of database attach
+ *
+ **************************************/
+	TLS_SET(thread_security_disabled, disable);
+}
 
 
 ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
@@ -961,18 +982,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	// Don't run internal handles thru the security gauntlet.
 
-	bool internal = false;
-
-	for (ihndl* ihandle = internal_db_handles;
-		 ihandle;
-		 ihandle = ihandle->ihndl_next)
-	{
-		if (ihandle->ihndl_object == (isc_db_handle *) handle)
-		{
-			internal = true;
-			break;
-		}
-	}
+	bool internal = TLS_GET(thread_security_disabled);
 
 	SCL_init(false,
 			 options.dpb_sys_user_name,
@@ -1896,18 +1906,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	// Don't run internal handles thru the security gauntlet.
 
-	bool internal = false;
-
-	for (ihndl* ihandle = internal_db_handles;
-		 ihandle;
-		 ihandle = ihandle->ihndl_next)
-	{
-		if (ihandle->ihndl_object == (isc_db_handle *) handle)
-		{
-			internal = true;
-			break;
-		}
-	}
+	bool internal = TLS_GET(thread_security_disabled);
 
 	SCL_init(true,
 			 options.dpb_sys_user_name,

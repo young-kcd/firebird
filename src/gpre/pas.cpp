@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.36 2004-04-28 23:29:25 brodsom Exp $
+//	$Id: pas.cpp,v 1.37 2004-05-02 23:04:17 skidder Exp $
 //
 
 #include "firebird.h"
@@ -32,7 +32,6 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../gpre/pat.h"

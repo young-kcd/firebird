@@ -27,7 +27,6 @@
 #include "../jrd/jrd_time.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../qli/compile.h"
 #include "../qli/report.h"

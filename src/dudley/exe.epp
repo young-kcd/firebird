@@ -26,7 +26,6 @@
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
 #include "../jrd/license.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../jrd/acl.h"
@@ -74,8 +73,8 @@ static DUDLEY_FLD check_field(SYM, SYM);
 static bool check_function(SYM);
 static bool check_range(DUDLEY_FLD);
 static bool check_relation(SYM);
-static void close_blob(FRBRD *);
-static FRBRD* create_blob(ISC_QUAD*, USHORT, const UCHAR*);
+static void close_blob(FB_API_HANDLE);
+static FB_API_HANDLE create_blob(ISC_QUAD*, USHORT, const UCHAR*);
 static void drop_cache(DBB);
 static void drop_field(DUDLEY_FLD);
 static void drop_filter(FILTER);
@@ -292,8 +291,8 @@ void EXE_create_database( DBB dbb)
 		DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
 		// msg 32: database version is too old to modify: use GBAK first */
 
-	dbb->dbb_handle = (SLONG*) DB;
-	dbb->dbb_transaction = (SLONG*) gds_trans;
+	dbb->dbb_handle = DB;
+	dbb->dbb_transaction = gds_trans;
 
 /* Don't allow cache and WAL configurations for pre-ODS8 databases */
 
@@ -762,8 +761,8 @@ void EXE_modify_database( DBB dbb)
 		}
 	}
 
-	dbb->dbb_handle = (SLONG*) DB;
-	dbb->dbb_transaction = (SLONG*) gds_trans;
+	dbb->dbb_handle = DB;
+	dbb->dbb_transaction = gds_trans;
 
 /* erase log files and commit transaction */
 
@@ -2059,7 +2058,7 @@ static bool check_relation( SYM name)
 }
 
 
-static void close_blob(FRBRD *blob)
+static void close_blob(FB_API_HANDLE blob)
 {
 /**************************************
  *
@@ -2079,7 +2078,7 @@ static void close_blob(FRBRD *blob)
 }
 
 
-static FRBRD* create_blob( ISC_QUAD* blob_id, USHORT bpb_length, const UCHAR* bpb)
+static FB_API_HANDLE create_blob( ISC_QUAD* blob_id, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -2092,7 +2091,7 @@ static FRBRD* create_blob( ISC_QUAD* blob_id, USHORT bpb_length, const UCHAR* bp
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	FRBRD *blob = NULL;
+	FB_API_HANDLE blob = 0;
 
 	if (isc_create_blob2(status_vector, &DB, &gds_trans, &blob,
 						 blob_id, bpb_length,
@@ -2100,7 +2099,7 @@ static FRBRD* create_blob( ISC_QUAD* blob_id, USHORT bpb_length, const UCHAR* bp
 	{
 		DDL_db_error(status_vector, 59, NULL, NULL, NULL, NULL, NULL);
 		/* msg 59: isc_create_blob failed */
-		return NULL;
+		return 0;
 	}
 
 	return blob;
@@ -2894,7 +2893,7 @@ static USHORT get_prot_mask( TEXT * relation, TEXT * field)
 		blr_end,
 		blr_eoc
 	};
-	static FRBRD* req_handle;
+	static FB_API_HANDLE req_handle;
 	struct {
 		SCHAR relation_name[32];
 		SCHAR field_name[32];
@@ -3767,7 +3766,7 @@ static void set_generator( DUDLEY_NOD node)
  *	else is interfering.
  *
  **************************************/
-	FRBRD *req_handle1, *req_handle2;
+	FB_API_HANDLE req_handle1, req_handle2;
 	USHORT prot_mask, i;
 	SLONG *number;
 	SLONG new_val;
@@ -3881,7 +3880,7 @@ static void store_acl( SCL scl_class, ISC_QUAD* blob_id)
 
 	const USHORT length = GENERATE_acl(scl_class, (UCHAR*) buffer);
 
-	FRBRD* blob = create_blob(blob_id, 0, NULL);
+	FB_API_HANDLE blob = create_blob(blob_id, 0, NULL);
 
 	if (isc_put_segment(status_vector, &blob, length, buffer)) {
 		DDL_db_error(status_vector, 92, NULL, NULL, NULL, NULL, NULL);
@@ -3909,7 +3908,7 @@ static void store_blr( DUDLEY_NOD node, ISC_QUAD* blob_id, DUDLEY_REL relation)
 	str blr;
 	USHORT length;
 	ISC_STATUS_ARRAY status_vector;
-	FRBRD *handle;
+	FB_API_HANDLE handle;
 
 	blr.str_current = blr.str_start = 
 		reinterpret_cast<UCHAR*>(gds__alloc(4096));
@@ -3959,7 +3958,7 @@ static void store_query_header( DUDLEY_NOD node, ISC_QUAD* blob_id)
 
 	bpb_length = 0;
 
-	FRBRD* blob = create_blob(blob_id, bpb_length, bpb);
+	FB_API_HANDLE blob = create_blob(blob_id, bpb_length, bpb);
 
 	for (int pos = 0; pos < node->nod_count; pos++) {
 		const sym* symbol = (SYM) node->nod_arg[pos];
@@ -4029,7 +4028,7 @@ static void store_text( TXT text, ISC_QUAD* blob_id)
 
 	USHORT bpb_length = 0;
 
-	FRBRD* blob = create_blob(blob_id, bpb_length, bpb);
+	FB_API_HANDLE blob = create_blob(blob_id, bpb_length, bpb);
 	LEX_put_text(blob, text);
 	close_blob(blob);
 }

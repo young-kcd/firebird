@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <string.h>
 #include "../dudley/ddl.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../dudley/parse.h"
 #include "../dudley/ddl_proto.h"

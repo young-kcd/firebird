@@ -26,7 +26,6 @@
 #include ssdef
 #include descrip
 
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../jrd/gdsassert.h"

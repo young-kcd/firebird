@@ -26,12 +26,11 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.40 2004-04-30 22:41:33 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.41 2004-05-02 23:04:17 skidder Exp $
  */
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../jrd/license.h"
@@ -145,7 +144,7 @@ bool MET_database(dbb* database, bool print_version)
 	}
 #endif
 
-	DB = NULL;
+	DB = 0;
 
 	if (!database->dbb_filename) {
 		CPR_error("No database specified");
@@ -465,13 +464,13 @@ bool MET_get_domain_default(dbb* database,
 	if (database == NULL)
 		return false;
 
-	if ((database->dbb_handle == NULL) && !MET_database(database, false))
+	if ((database->dbb_handle == 0) && !MET_database(database, false))
 		CPR_exit(FINI_ERROR);
 
-	fb_assert(database->dbb_transaction == NULL);
-	FRBRD* gds_trans = NULL;
+	fb_assert(database->dbb_transaction == 0);
+	FB_API_HANDLE gds_trans = 0;
 
-	FRBRD* DB = database->dbb_handle; // Overrides global DB
+	FB_API_HANDLE DB = database->dbb_handle; // Overrides global DB
 
 	START_TRANSACTION;
 
@@ -483,7 +482,7 @@ bool MET_get_domain_default(dbb* database,
 			ISC_QUAD* blob_id = &GLOB_FLD.RDB$DEFAULT_VALUE;
 
 			// open the blob 
-			isc_blob_handle blob_handle = NULL;
+			isc_blob_handle blob_handle = 0;
 			ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 									&blob_handle, blob_id, sizeof(blr_bpb),
 									blr_bpb);
@@ -562,13 +561,13 @@ bool MET_get_column_default(const gpre_rel* relation,
 	if (database == NULL)
 		return false;
 
-	if ((database->dbb_handle == NULL) && !MET_database(database, false))
+	if ((database->dbb_handle == 0) && !MET_database(database, false))
 		CPR_exit(FINI_ERROR);
 
-	fb_assert(database->dbb_transaction == NULL);
-	FRBRD* gds_trans = NULL;
+	fb_assert(database->dbb_transaction == 0);
+	FB_API_HANDLE gds_trans = 0;
 
-	FRBRD* DB = database->dbb_handle; // Overrides global DB
+	FB_API_HANDLE DB = database->dbb_handle; // Overrides global DB
 
 	START_TRANSACTION;
 
@@ -591,7 +590,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 
 		if (has_default) {
 			// open the blob 
-			isc_blob_handle blob_handle = NULL;
+			isc_blob_handle blob_handle = 0;
 			ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 								  &blob_handle, blob_id, sizeof(blr_bpb),
 								  blr_bpb);
@@ -659,13 +658,13 @@ gpre_lls* MET_get_primary_key(dbb* database, const TEXT* relation_name)
 	if (database == NULL)
 		return NULL;
 
-	if ((database->dbb_handle == NULL) && !MET_database(database, false))
+	if ((database->dbb_handle == 0) && !MET_database(database, false))
 		CPR_exit(FINI_ERROR);
 
-	fb_assert(database->dbb_transaction == NULL);
-	FRBRD* gds_trans = NULL;
+	fb_assert(database->dbb_transaction == 0);
+	FB_API_HANDLE gds_trans = 0;
 
-	FRBRD* DB = database->dbb_handle; // Overrides global DB
+	FB_API_HANDLE DB = database->dbb_handle; // Overrides global DB
 
 	START_TRANSACTION;
 
@@ -949,25 +948,25 @@ void MET_fini(dbb* end)
 			if (gds_trans = database->dbb_transaction)
 				COMMIT;
 			FINISH;
-			database->dbb_handle = NULL;
-			database->dbb_transaction = NULL;
+			database->dbb_handle = 0;
+			database->dbb_transaction = 0;
 
-			database->dbb_field_request = NULL;
-			database->dbb_flds_request = NULL;
-			database->dbb_relation_request = NULL;
-			database->dbb_procedure_request = NULL;
-			database->dbb_udf_request = NULL;
-			database->dbb_trigger_request = NULL;
-			database->dbb_proc_prms_request = NULL;
-			database->dbb_proc_prm_fld_request = NULL;
-			database->dbb_index_request = NULL;
-			database->dbb_type_request = NULL;
-			database->dbb_array_request = NULL;
-			database->dbb_dimension_request = NULL;
-			database->dbb_domain_request = NULL;
-			database->dbb_generator_request = NULL;
-			database->dbb_view_request = NULL;
-			database->dbb_primary_key_request = NULL;
+			database->dbb_field_request = 0;
+			database->dbb_flds_request = 0;
+			database->dbb_relation_request = 0;
+			database->dbb_procedure_request = 0;
+			database->dbb_udf_request = 0;
+			database->dbb_trigger_request = 0;
+			database->dbb_proc_prms_request = 0;
+			database->dbb_proc_prm_fld_request = 0;
+			database->dbb_index_request = 0;
+			database->dbb_type_request = 0;
+			database->dbb_array_request = 0;
+			database->dbb_dimension_request = 0;
+			database->dbb_domain_request = 0;
+			database->dbb_generator_request = 0;
+			database->dbb_view_request = 0;
+			database->dbb_primary_key_request = 0;
 		}
 	}
 }
@@ -1466,7 +1465,7 @@ void MET_load_hash_table(dbb* database)
 		return;
 	}
 
-	gds_trans = NULL;
+	gds_trans = 0;
 	DB = database->dbb_handle;
 
 	START_TRANSACTION;
@@ -1476,7 +1475,7 @@ void MET_load_hash_table(dbb* database)
 //  Determine if the database is V3.  
 
 	bool post_v3_flag = false;
-	FRBRD* handle = NULL;
+	FB_API_HANDLE handle = 0;
 	FOR(REQUEST_HANDLE handle)
 	X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME = 'RDB$PROCEDURES' AND
 		X.RDB$SYSTEM_FLAG = 1 
@@ -1574,7 +1573,7 @@ void MET_load_hash_table(dbb* database)
  *  this may fail
  */
 
-	FRBRD* handle2 = NULL;
+	FB_API_HANDLE handle2 = 0;
 
 	FOR(REQUEST_HANDLE handle)
 	FUN IN RDB$FUNCTIONS CROSS ARG IN RDB$FUNCTION_ARGUMENTS WITH
@@ -2129,7 +2128,7 @@ static bool resolve_charset_and_collation(
 		return false;
 
 	bool found = false;
-	FRBRD* request = NULL;
+	FB_API_HANDLE request = 0;
 	
 	if (collation == NULL) {
 		if (charset == NULL) {

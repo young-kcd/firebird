@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 

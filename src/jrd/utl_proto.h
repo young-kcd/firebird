@@ -32,11 +32,7 @@
 extern "C" {
 #endif
 
-#ifndef FRBRD
-#define FRBRD void
-#endif
-
-int		API_ROUTINE gds__blob_size(FRBRD **, SLONG *, SLONG *, SLONG *);
+int		API_ROUTINE gds__blob_size(FB_API_HANDLE*, SLONG *, SLONG *, SLONG *);
 void	API_ROUTINE_VARARG isc_expand_dpb(SCHAR**, SSHORT*, ...);
 int		API_ROUTINE isc_modify_dpb(SCHAR**, SSHORT*, USHORT, const SCHAR*, SSHORT);
 int		API_ROUTINE gds__edit(const TEXT*, USHORT);
@@ -53,29 +49,29 @@ void	API_ROUTINE isc_set_debug(int);
 void	API_ROUTINE isc_set_login(const UCHAR**, SSHORT*);
 BOOLEAN	API_ROUTINE isc_set_path(TEXT*, USHORT, TEXT*);
 void	API_ROUTINE isc_set_single_user(const UCHAR**, SSHORT*, const TEXT*);
-int		API_ROUTINE isc_version(FRBRD**, FPTR_VERSION_CALLBACK, void*);
+int		API_ROUTINE isc_version(FB_API_HANDLE*, FPTR_VERSION_CALLBACK, void*);
 void	API_ROUTINE isc_format_implementation(USHORT, USHORT, TEXT *,
 												  USHORT, USHORT, TEXT *);
 U_IPTR	API_ROUTINE isc_baddress(SCHAR*);
 void	API_ROUTINE isc_baddress_s(const SCHAR*, U_IPTR*);
 int		API_ROUTINE BLOB_close(struct bstream *);
-int		API_ROUTINE blob__display(SLONG*, FRBRD**, FRBRD**, const TEXT*,
+int		API_ROUTINE blob__display(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*,
 									 const SSHORT*);
-int		API_ROUTINE BLOB_display(ISC_QUAD*, FRBRD*, FRBRD*, const TEXT*);
-int		API_ROUTINE blob__dump(SLONG*, FRBRD**, FRBRD**, const TEXT*,
+int		API_ROUTINE BLOB_display(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const TEXT*);
+int		API_ROUTINE blob__dump(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*,
 								  const SSHORT*);
-int		API_ROUTINE BLOB_dump(ISC_QUAD*, FRBRD*, FRBRD*, const SCHAR*);
-int		API_ROUTINE blob__edit(SLONG*, FRBRD**, FRBRD**, const TEXT*,
+int		API_ROUTINE BLOB_dump(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
+int		API_ROUTINE blob__edit(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*,
 								  const SSHORT*);
-int		API_ROUTINE BLOB_edit(ISC_QUAD*, FRBRD*, FRBRD*, const SCHAR*);
+int		API_ROUTINE BLOB_edit(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
 int		API_ROUTINE BLOB_get(struct bstream*);
-int		API_ROUTINE blob__load(SLONG*, FRBRD**, FRBRD**, const TEXT*,
+int		API_ROUTINE blob__load(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*,
 								  const SSHORT*);
-int		API_ROUTINE BLOB_load(ISC_QUAD*, FRBRD*, FRBRD*, const TEXT*);
-int		API_ROUTINE BLOB_text_dump(ISC_QUAD*, FRBRD*, FRBRD*, const SCHAR*);
-int		API_ROUTINE BLOB_text_load(ISC_QUAD*, FRBRD*, FRBRD*, const TEXT*);
-struct	bstream* API_ROUTINE Bopen(ISC_QUAD*, FRBRD*, FRBRD*, const SCHAR*);
-struct  bstream* API_ROUTINE BLOB_open(FRBRD*, SCHAR*, int);
+int		API_ROUTINE BLOB_load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const TEXT*);
+int		API_ROUTINE BLOB_text_dump(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
+int		API_ROUTINE BLOB_text_load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const TEXT*);
+struct	bstream* API_ROUTINE Bopen(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
+struct  bstream* API_ROUTINE BLOB_open(FB_API_HANDLE, SCHAR*, int);
 int		API_ROUTINE BLOB_put(SCHAR, struct bstream*);
 
 #ifdef VMS

@@ -30,7 +30,6 @@
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_s_proto.h"

@@ -54,7 +54,6 @@
 #include "../ipserver/ipsrv_proto.h"
 #include "../remote/os/win32/ibconfig.h"
 
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
 #include "../remote/os/win32/ibsvrhlp.h"
