@@ -2,6 +2,32 @@
   * v1.5.1
   **************
 
+    * Fixed v1.5 bug.
+        Problem with /etc/init.d/firebird modification.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+	* Fixed unregistered bug.
+        GSTAT doesn't work with remote connection strings.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed v1.5 limitation.
+        Allowed Services API in CS builds.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bug SF #750659.
+        Broken soname for libib_util.so.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Charset improvement.
+        Allowed using NONE as a fully transparent charset everywhere.
+      Contributor(s):
+      	Jim Beesley <jim.beesley at sas.com>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
     * Added new collation.
         LT_LT for ISO8859_13 charset (Lithuanian language).
       Contributor(s):
