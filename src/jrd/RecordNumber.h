@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: RecordNumber.h,v 1.1 2004-09-28 06:33:53 skidder Exp $
+ *  $Id: RecordNumber.h,v 1.2 2004-10-02 09:33:02 robocop Exp $
  *
  */
 
@@ -87,14 +87,14 @@ public:
 
 	inline void setValue(SINT64 value) { this->value = value; }
 
-	bool isBof() { return value == BOF_NUMBER; }
+	bool isBof() const { return value == BOF_NUMBER; }
 
-	bool isEmpty() { return value == EMPTY_NUMBER; }
+	bool isEmpty() const { return value == EMPTY_NUMBER; }
 
 	inline bool checkNumber(
 		USHORT records_per_page, // ~400 (8k page)
 		USHORT data_pages_per_pointer_page  // ~2000 (8k page)
-	)
+	) const
 	{
 		// We limit record number value to 40 bits and make sure decomposed value
 		// fits into 3 USHORTs. This all makes practical table size limit (not 

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.41 2004-09-28 06:27:16 skidder Exp $
+ *  $Id: tree.h,v 1.42 2004-10-02 09:33:06 robocop Exp $
  *
  */
 
@@ -150,7 +150,7 @@ public:
 		clear();
 	}
 
-	bool isEmpty() {
+	bool isEmpty() const {
 		return 
 			root == NULL || 
 			(level == 0 && ((ItemList*)root)->getCount() == 0);
@@ -193,7 +193,7 @@ public:
 	}
 
 	// Compute approximate number of leafs in the tree
-	size_t approxCount() {
+	size_t approxCount() const {
 		if (!root) return 0;
 
 		if (level == 0) return ((ItemList*)root)->getCount();
@@ -207,11 +207,12 @@ public:
 		for (int i = 1; i < level; i++)
 			items_per_node *= NodeCount * 3 / 5;
 
+		fb_assert(items_per_node);
 		return ((NodeList*)root)->getCount() * items_per_node;
 	}
 	
 	// Compute approximate memory consumption for tree in bytes
-	size_t approxSize() {
+	size_t approxSize() const {
 		if (!root) return 0;
 
 		if (level == 0)
@@ -224,6 +225,7 @@ public:
 		for (int i = 1; i < level; i++)
 			bytes_per_node *= NodeCount * 3 / 5;
 
+		fb_assert(bytes_per_node);
 		return ((NodeList*)root)->getCount() * bytes_per_node;
 	}
 	
