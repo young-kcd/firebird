@@ -1,3 +1,52 @@
+2004-01-07 17:49  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/super/postinstall.sh.in:
+	
+	Fixed problems: 1. ex couldn't write to file with 0550 (even under
+	root) 2. don't run gsec twice for tar-install
+
+2004-01-07 11:22  dimitr
+
+	* firebird2/src/: utilities/gsec/gsec.cpp, jrd/svc.cpp:
+	
+	Removed handle leaks in the service manager.
+
+2004-01-07 11:18  dimitr
+
+	* firebird2/src/: alice/alice.cpp, burp/burp.cpp,
+	utilities/gstat/dba.epp:
+	
+	Removed handle leaks in the service manager.
+
+2004-01-07 11:09  dimitr
+
+	* firebird2/src/: alice/alice.cpp, burp/burp.cpp,
+	utilities/dba.epp, utilities/gsec.cpp, jrd/svc.cpp:
+	
+	Removed handle leaks in the service manager.
+
+2004-01-07 01:32  brodsom
+
+	* firebird2/src/common/utils.cpp:
+	
+	Fix MINGW build
+
+2004-01-07 01:31  brodsom
+
+	* firebird2/: builds/posix/Makefile.in.client.journal,
+	builds/posix/Makefile.in.embed.archive,
+	builds/posix/Makefile.in.embed.journal,
+	builds/posix/Makefile.in.client.archive,
+	builds/posix/Makefile.in.client.gdef,
+	builds/posix/Makefile.in.client.qli,
+	builds/posix/Makefile.in.firebird,
+	builds/posix/Makefile.in.libfbclient,
+	builds/posix/Makefile.in.refDatabases, builds/posix/make.defaults,
+	builds/posix/make.shared.variables, configure.in:
+	
+	Fix Posix build after - utils.cpp creation - WAL/JOURNAL removal
+
 2004-01-06 11:54  robocop
 
 	* firebird2/src/utilities/sbc_print.cpp:
