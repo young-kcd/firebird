@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.13 2003-09-10 19:48:53 brodsom Exp $
+//	$Id: hsh.cpp,v 1.14 2003-09-13 12:22:11 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -206,8 +206,8 @@ void HSH_remove( SYM symbol)
 				return;
 			}
 		else
-			for (ptr = &(*next)->sym_homonym; *ptr;
-				 ptr = &(*ptr)->sym_homonym) if (symbol == *ptr) {
+			for (ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
+				if (symbol == *ptr) {
 					*ptr = symbol->sym_homonym;
 					return;
 				}

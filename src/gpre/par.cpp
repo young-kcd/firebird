@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.31 2003-09-12 16:35:39 brodsom Exp $
+//  $Id: par.cpp,v 1.32 2003-09-13 12:22:11 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -1891,8 +1891,11 @@ static ACT par_end_store(bool special)
 
 		count = 0;
 		for (reference = request->req_references; reference;
-			 reference = reference->ref_next) if (!reference->ref_master)
+			 reference = reference->ref_next)
+		{
+			if (!reference->ref_master)
 				count++;
+		}
 
 		request->req_node = assignments = MAKE_NODE(nod_list, (SSHORT) count);
 		count = 0;
@@ -2558,9 +2561,11 @@ static ACT par_ready()
 	if (action->act_object) {
 		if (default_buffers)
 			for (ready = (RDY) action->act_object; ready;
-				 ready = ready->rdy_next) if (!ready->rdy_request)
-					request =
-						PAR_set_up_dpb_info(ready, action, default_buffers);
+				 ready = ready->rdy_next)
+			{
+				if (!ready->rdy_request)
+					request = PAR_set_up_dpb_info(ready, action, default_buffers);
+			}
 		return action;
 	}
 
@@ -2636,8 +2641,11 @@ static ACT par_returning_values()
 
 	count = 0;
 	for (reference = request->req_references; reference;
-		 reference = reference->ref_next) if (!reference->ref_master)
+		 reference = reference->ref_next)
+	{
+		if (!reference->ref_master)
 			count++;
+	}
 
 	request->req_node = assignments = MAKE_NODE(nod_list, (SSHORT) count);
 	count = 0;

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.27 2003-09-12 09:06:50 robocop Exp $
+//	$Id: cob.cpp,v 1.28 2003-09-13 12:22:11 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -1756,10 +1756,11 @@ static void gen_database( ACT action)
 		if (act->act_type == ACT_create_database) {
 		}
 		else if (act->act_type == ACT_ready) {
-			for (ready = (RDY) act->act_object; ready;
-				 ready = ready->rdy_next) if ((s = ready->rdy_filename)
-											  && ((*s == '\'')
-												  || (*s == '\''))) {
+			for (ready = (RDY) act->act_object; ready; ready = ready->rdy_next)
+			{
+				if ((s = ready->rdy_filename) && ((*s == '\'')
+												  || (*s == '\'')))
+				{
 					strcpy(fname, ++s);
 					s = fname + strlen(fname) - 1;
 					*s = 0;
@@ -1768,13 +1769,15 @@ static void gen_database( ACT action)
 						   "01  %s%ddb PIC X(%d) VALUE IS \"%s\".",
 						   names[isc_], ready->rdy_id, strlen(fname), fname);
 				}
+			}
 		}
 		else if ((act->act_flags & ACT_sql) &&
 				 (act->act_type == ACT_dyn_cursor ||
 				  act->act_type == ACT_dyn_prepare ||
 				  act->act_type == ACT_open ||
 				  act->act_type == ACT_blob_open ||
-				  act->act_type == ACT_blob_create)) {
+				  act->act_type == ACT_blob_create))
+		{
 			if (act->act_type == ACT_dyn_cursor)
 				cur_stmt = ((DYN) act->act_object)->dyn_cursor_name;
 			else if (act->act_type == ACT_dyn_prepare)
@@ -2768,10 +2771,11 @@ static void gen_for( ACT action)
 
 	if (port = action->act_request->req_primary)
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
-					gen_get_or_put_slice(action, reference, true);
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
+				gen_get_or_put_slice(action, reference, true);
+		}
 }
 
 
@@ -2862,10 +2866,11 @@ static void gen_function( ACT function)
 
 	for (port = request->req_ports; port; port = port->por_next)
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
-					gen_get_or_put_slice(action, reference, true);
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
+				gen_get_or_put_slice(action, reference, true);
+		}
 
 	port = request->req_primary;
 	ib_fprintf(out_file, "\nreturn %s;\n}\n",
@@ -3438,7 +3443,9 @@ static void gen_request( GPRE_REQ request)
 
 	for (port = request->req_ports; port; port = port->por_next)
 		for (reference = port->por_references; reference;
-			 reference = reference->ref_next) if (reference->ref_sdl) {
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_sdl) {
 				printa(names[COLUMN_0], false, "01  %s%d.", names[ISC_],
 					   reference->ref_sdl_ident);
 				gen_raw((UCHAR*) reference->ref_sdl, REQ_slice,
@@ -3452,6 +3459,7 @@ static void gen_request( GPRE_REQ request)
 					   "END OF SDL STRING FOR %s%d */\n", names[ISC_],
 					   reference->ref_sdl_ident);
 			}
+		}
 
 //  Print out any blob parameter blocks required 
 	for (blob = request->req_blobs; blob; blob = blob->blb_next)

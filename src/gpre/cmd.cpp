@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.15 2003-09-12 16:35:40 brodsom Exp $
+//	$Id: cmd.cpp,v 1.16 2003-09-13 12:22:11 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1309,12 +1309,13 @@ static void get_referred_fields( ACT action, cnstrt* constraint)
 				}
 			if (!constraint->cnstrt_referred_fields && rel->rel_fields)
 				for (cns = rel->rel_fields->fld_constraints; cns;
-					 cns =
-					 cns->cnstrt_next) if (cns->cnstrt_type ==
-										   CNSTRT_PRIMARY_KEY) {
+					 cns = cns->cnstrt_next)
+				{
+					if (cns->cnstrt_type == CNSTRT_PRIMARY_KEY) {
 						constraint->cnstrt_referred_fields = cns->cnstrt_fields;
 						break;
 					}
+				}
 			if (constraint->cnstrt_referred_fields)
 				break;
 		}

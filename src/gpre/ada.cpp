@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.22 2003-09-12 16:35:40 brodsom Exp $
+//	$Id: ada.cpp,v 1.23 2003-09-13 12:22:11 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1228,12 +1228,13 @@ static void gen_database( ACT action, int column)
 		/*  Array declarations  */
 		if (port = request->req_primary)
 			for (reference = port->por_references; reference;
-				 reference =
-				 reference->ref_next) if (reference->
-										  ref_flags & REF_fetch_array) {
+				 reference = reference->ref_next)
+			{
+				if (reference->ref_flags & REF_fetch_array) {
 					make_array_declaration(reference, column);
 					array_flag = true;
 				}
+			}
 	}
 	if (array_flag) {
 		printa(column, "isc_array_length\t: %s;\t-- slice return value --",
@@ -2132,10 +2133,11 @@ static void gen_for( ACT action, int column)
 
 	if (port = action->act_request->req_primary)
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
-					gen_get_or_put_slice(action, reference, true, column);
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
+				gen_get_or_put_slice(action, reference, true, column);
+		}
 }
 
 
@@ -2225,10 +2227,11 @@ static void gen_function( ACT function, int column)
 
 	for (port = request->req_ports; port; port = port->por_next)
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
-					gen_get_or_put_slice(action, reference, true, column);
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
+				gen_get_or_put_slice(action, reference, true, column);
+		}
 
 	port = request->req_primary;
 	ib_fprintf(out_file, "\nreturn %s;\n}\n",
@@ -2746,7 +2749,9 @@ static void gen_request( GPRE_REQ request, int column)
 //   Print out slice description language if there are arrays associated with request  
 	for (port = request->req_ports; port; port = port->por_next)
 		for (reference = port->por_references; reference;
-			 reference = reference->ref_next) if (reference->ref_sdl) {
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_sdl) {
 				printa(column,
 					   "isc_%d\t: CONSTANT interbase.blr (1..%d) := (",
 					   reference->ref_sdl_ident, reference->ref_sdl_length);
@@ -2760,10 +2765,11 @@ static void gen_request( GPRE_REQ request, int column)
 						   "--- FORMATTED REQUEST SDL FOR GDS_%d = \n",
 						   reference->ref_sdl_ident);
 					if (PRETTY_print_sdl(reference->ref_sdl,
-                                               ( int(*)() ) gen_blr, 0, 1))
+										 ( int(*)() ) gen_blr, 0, 1))
 						IBERROR("internal error during SDL generation");
 				}
 			}
+		}
 
 //  Print out any blob parameter blocks required 
 
@@ -3117,10 +3123,11 @@ static void gen_start( ACT action, POR port, int column)
 
 	if (port) {
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
 					gen_get_or_put_slice(action, reference, false, column);
+		}
 
 		printa(column,
 			   "interbase.START_AND_SEND (%s %s, %s%s, %d, %d, isc_%d'address, %s);",

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.18 2003-09-12 16:35:39 brodsom Exp $
+//	$Id: pas.cpp,v 1.19 2003-09-13 12:22:11 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1287,12 +1287,13 @@ static void gen_database( ACT action, int column)
 
 		if (port = request->req_primary)
 			for (reference = port->por_references; reference;
-				 reference =
-				 reference->ref_next) if (reference->
-										  ref_flags & REF_fetch_array) {
+				 reference = reference->ref_next)
+			{
+				if (reference-> ref_flags & REF_fetch_array) {
 					make_array_declaration(reference);
 					array_flag = true;
 				}
+			}
 	}
 
 #ifdef VMS
@@ -2217,10 +2218,11 @@ static void gen_for( ACT action, int column)
 
 	if (port = action->act_request->req_primary)
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
-					gen_get_or_put_slice(action, reference, true, column);
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
+				gen_get_or_put_slice(action, reference, true, column);
+		}
 }
 
 
@@ -2734,7 +2736,9 @@ static void gen_request( GPRE_REQ request, int column)
 
 	for (port = request->req_ports; port; port = port->por_next)
 		for (reference = port->por_references; reference;
-			 reference = reference->ref_next) if (reference->ref_sdl) {
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_sdl) {
 				printa(column, "gds__%d\t: %s [1..%d] of char := %s",
 					   reference->ref_sdl_ident, PACKED_ARRAY,
 					   reference->ref_sdl_length, OPEN_BRACKET);
@@ -2748,6 +2752,7 @@ static void gen_request( GPRE_REQ request, int column)
 				printa(column, "%s; \t(* end of SDL string for gds__%d *)\n",
 					   CLOSE_BRACKET, reference->ref_sdl_ident);
 			}
+		}
 
 //  Print out any blob parameter blocks required 
 
@@ -3105,10 +3110,11 @@ static void gen_start( ACT action, POR port, int column)
 
 	if (port) {
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
 					gen_get_or_put_slice(action, reference, false, column);
+		}
 
 		ib_fprintf(out_file,
 				   "GDS__START_AND_SEND (%s, %s, %s, %d, %d, gds__%d, %s);",

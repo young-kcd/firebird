@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.27 2003-09-12 16:35:40 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.28 2003-09-13 12:22:11 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -2341,10 +2341,11 @@ static void gen_for( ACT action, int column)
 
 	if (port = action->act_request->req_primary)
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
-					gen_get_or_put_slice(action, reference, true, column);
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
+				gen_get_or_put_slice(action, reference, true, column);
+		}
 
 }
 
@@ -2453,10 +2454,11 @@ static void gen_function( ACT function, int column)
 
 	for (port = request->req_ports; port; port = port->por_next)
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
-					gen_get_or_put_slice(action, reference, true, column);
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
+				gen_get_or_put_slice(action, reference, true, column);
+		}
 
 	port = request->req_primary;
 	ib_fprintf(out_file, "\nreturn %s;\n}\n",
@@ -3352,10 +3354,11 @@ static void gen_start(ACT action,
 
 	if (port && sending) {
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field->fld_array_info)
 					gen_get_or_put_slice(action, reference, false, column);
+		}
 	}
 
 	args.pat_request = action->act_request;
