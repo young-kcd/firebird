@@ -262,7 +262,7 @@
 				RelativePath="..\..\..\src\remote\remote.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\wnet.cpp">
+				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.cpp">

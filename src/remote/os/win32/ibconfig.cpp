@@ -38,16 +38,16 @@
 #include "../jrd/svc_undoc.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
-#include "../remote/window_proto.h"
+#include "../remote/os/win32/window_proto.h"
 #include "../ipserver/ipsrv_proto.h"
 
-#include "../remote/ibconfig.h"
-#include "../remote/property.rh"
+#include "../remote/os/win32/ibconfig.h"
+#include "../remote/os/win32/property.rh"
 
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
-#include "../remote/ibsvrhlp.h"
+#include "../remote/os/win32/ibsvrhlp.h"
 
 #include "../common/config/config.h"
 
@@ -90,22 +90,22 @@ static void FillSysdbaSPB(char *, char *);
 // where the first of each pair is the control ID,
 // and the second is the context ID for a help topic,
 // which is used in the help file.
-static DWORD aMenuHelpIDs1[] = {
-	IDC_MODRES, ibs_modify,		// This has to be the first entry because
+static DWORD aMenuHelpIDs1[][2] = {
+	{IDC_MODRES, ibs_modify},		// This has to be the first entry because
 	// we modify the value of ibs_modify to 
 	// ibs_reset when the button text changes.
 
-	IDC_MINSIZETEXT, ibs_min_process_work_set,
-	IDC_MAXSIZETEXT, ibs_min_process_work_set,
-	IDC_CACHETEXT, ibs_db_cache,
-	IDC_DBPAGES, ibs_db_cache,
-	IDC_MAPSIZE, ibs_client_map_size,
-	IDC_MAPTEXT, ibs_client_map_size,
-	IDC_MINSIZE, ibs_min_process_work_set,
-	IDC_MAXSIZE, ibs_min_process_work_set,
-	IDC_PRIORITYHIGH, ibs_process_priority,
-	IDC_PRIORITYNORM, ibs_process_priority,
-	0, 0
+	{IDC_MINSIZETEXT, ibs_min_process_work_set},
+	{IDC_MAXSIZETEXT, ibs_min_process_work_set},
+	{IDC_CACHETEXT, ibs_db_cache},
+	{IDC_DBPAGES, ibs_db_cache},
+	{IDC_MAPSIZE, ibs_client_map_size},
+	{IDC_MAPTEXT, ibs_client_map_size},
+	{IDC_MINSIZE, ibs_min_process_work_set},
+	{IDC_MAXSIZE, ibs_min_process_work_set},
+	{IDC_PRIORITYHIGH, ibs_process_priority},
+	{IDC_PRIORITYNORM, ibs_process_priority},
+	{0, 0}
 };
 
 // IB Parameters to get/set
@@ -272,7 +272,7 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				// the appropriate help topic based on whether the text 
 				// is "Modify..." or "Reset".  It assumes that the first 
 				// entry is the first one.
-				aMenuHelpIDs1[0, 1] = bModifyMode ? ibs_reset : ibs_modify;
+				aMenuHelpIDs1[0][1] = bModifyMode ? ibs_reset : ibs_modify;
 				break;
 			}
 		case PSN_APPLY:		// When 'OK' or 'Apply Now' are clicked
@@ -382,7 +382,7 @@ BOOL ReadIBSettings(HWND hDlg)
 
 // Select the right Map Size, inserting it if necessary
 	wsprintf(pchTmp, "%d", lMapSize);
-	if (SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, -1,
+	if (SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, (unsigned int) -1,
 						   (LPARAM) pchTmp) == CB_ERR) {
 		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0,
 						   (LPARAM) pchTmp);
@@ -436,7 +436,7 @@ void RefreshIBControls(HWND hDlg, BOOL bEnable)
 // This modifies the bubble help table to bring up the appropriate help 
 // topic based on whether the text is "Modify..." or "Reset".  It assumes
 // that the first entry is the first one.
-	aMenuHelpIDs1[0, 1] = bEnable ? ibs_reset : ibs_modify;
+	aMenuHelpIDs1[0][1] = bEnable ? ibs_reset : ibs_modify;
 
 }
 

@@ -47,21 +47,21 @@
 #include "../jrd/isc.h"
 #include "../jrd/file_params.h"
 #include "../remote/remote_def.h"
-#include "../remote/window.rh"
-#include "../remote/property.rh"
+#include "../remote/os/win32/window.rh"
+#include "../remote/os/win32/property.rh"
 #include "../ipserver/ips.h"
 
 #include "../jrd/svc_proto.h"
-#include "../remote/window_proto.h"
-#include "../remote/propty_proto.h"
+#include "../remote/os/win32/window_proto.h"
+#include "../remote/os/win32/propty_proto.h"
 #include "../ipserver/ipsrv_proto.h"
-#include "../remote/ibconfig.h"
+#include "../remote/os/win32/ibconfig.h"
 
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
-#include "../remote/ibsvrhlp.h"
-#include "../remote/chop_proto.h"
+#include "../remote/os/win32/ibsvrhlp.h"
+#include "../remote/os/win32/chop_proto.h"
 
 #include "../jrd/thd.h"			/* get jrd_proto.h to declare the function */
 #include "../jrd/jrd_proto.h"	/* JRD_num_attachments() */

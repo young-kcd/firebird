@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.147 2003-07-14 09:45:18 brodsom Exp $
+dnl $Id: configure.in,v 1.148 2003-07-14 23:20:24 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -544,7 +544,7 @@ mkdir -p gen/utilities
 mkdir -p gen/examples
 
 dnl # some .o and .d in this directory (to be removed)
-mkdir -p gen/remote
+mkdir -p gen/remote/os/win32
 
 dnl # databases and output
 mkdir -p gen/refDatabases
@@ -574,7 +574,7 @@ mkdir -p temp/libfbserver/jrd
 mkdir -p temp/libfbserver/dsql
 mkdir -p temp/libfbserver/lock
 mkdir -p temp/libfbserver/misc
-mkdir -p temp/libfbserver/remote
+mkdir -p temp/libfbserver/remote/os/win32
 mkdir -p temp/libfbserver/pipe
 mkdir -p temp/libfbserver/gpre
 mkdir -p temp/libfbserver/alice
@@ -586,12 +586,12 @@ mkdir -p temp/libfbserver/common/classes
 mkdir -p temp/libfbserver/common/config
 mkdir -p temp/libfbserver/jrd/os/posix
 mkdir -p temp/libfbserver/jrd/os/win32
-mkdir -p temp/fbserver/remote
+mkdir -p temp/fbserver/remote/os/win32
 mkdir -p temp/fbserver/ipserver
 mkdir -p temp/libfbclient/jrd
 mkdir -p temp/libfbclient/dsql
 mkdir -p temp/libfbclient/gpre
-mkdir -p temp/libfbclient/remote
+mkdir -p temp/libfbclient/remote/os/win32
 mkdir -p temp/libfbclient/utilities
 mkdir -p temp/libfbclient/common/classes
 mkdir -p temp/libfbclient/common/config
@@ -604,7 +604,7 @@ mkdir -p temp/client.gdef/dudley
 mkdir -p temp/client.isql/isql
 mkdir -p temp/client.util/utilities
 mkdir -p temp/client.util/iscguard
-mkdir -p temp/client.util/remote
+mkdir -p temp/client.util/remote/os/win32
 mkdir -p temp/client.util/jrd/os/win32
 mkdir -p temp/intl/intl
 
@@ -622,7 +622,7 @@ mkdir -p temp/libfbstatic/jrd
 mkdir -p temp/libfbstatic/dsql
 mkdir -p temp/libfbstatic/lock
 mkdir -p temp/libfbstatic/misc
-mkdir -p temp/libfbstatic/remote
+mkdir -p temp/libfbstatic/remote/os/win32
 mkdir -p temp/libfbstatic/gpre
 mkdir -p temp/libfbstatic/jrd/os/posix
 mkdir -p temp/libfbstatic/jrd/os/darwin
@@ -638,7 +638,7 @@ mkdir -p temp/embed.isql/isql
 mkdir -p temp/embed.gdef/dudley
 mkdir -p temp/embed.qli/qli
 mkdir -p temp/embed.gpre/gpre
-mkdir -p temp/inet_server/remote
+mkdir -p temp/inet_server/remote/os/win32
 mkdir -p temp/inet_server/ipserver
 mkdir -p temp/msgs/msgs
 mkdir -p temp/extlib/extlib
@@ -649,7 +649,7 @@ mkdir -p temp/libfbembed/jrd
 mkdir -p temp/libfbembed/dsql
 mkdir -p temp/libfbembed/lock
 mkdir -p temp/libfbembed/misc
-mkdir -p temp/libfbembed/remote
+mkdir -p temp/libfbembed/remote/os/win32
 mkdir -p temp/libfbembed/pipe
 mkdir -p temp/libfbembed/gpre
 mkdir -p temp/libfbembed/alice

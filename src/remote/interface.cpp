@@ -71,7 +71,7 @@
 #if defined(WIN_NT)
 #define XNET
 #include "../jrd/isc_proto.h"
-#include "../remote/wnet_proto.h"
+#include "../remote/os/win32/wnet_proto.h"
 #include "../remote/xnet_proto.h"
 #endif
 

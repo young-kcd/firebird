@@ -28,7 +28,7 @@ produced by Borland Resource Workshop
 
 #include <windows.h>
 #include "window.rh"
-#include "../jrd/version.rc"
+#include "../../../jrd/version.rc"
 #include "property.rc"
 
 STRINGTABLE 

@@ -43,7 +43,7 @@
 #include "../remote/remot_proto.h"
 #include "../remote/serve_proto.h"
 #ifdef WIN_NT
-#include "../remote/cntl_proto.h"
+#include "../remote/os/win32/cntl_proto.h"
 #include <stdlib.h>
 #endif
 #include "../jrd/gds_proto.h"

@@ -109,15 +109,15 @@ SOURCE=..\..\..\src\utilities\ppg.cpp
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\caution.ico
+SOURCE=..\..\..\src\remote\os\win32\caution.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\server.ico
+SOURCE=..\..\..\src\remote\os\win32\server.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\window.rc
+SOURCE=..\..\..\src\remote\os\win32\window.rc
 # End Source File
 # End Group
 # End Target

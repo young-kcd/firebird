@@ -99,7 +99,7 @@ REMOTE_ClientFiles =  allr.cpp inet.cpp interface.cpp merge.cpp \
             parser.cpp protocol.cpp remote.cpp xdr.cpp
 
 ifeq ($(PLATFORM),win32)
-REMOTE_ClientFiles += wnet.cpp xnet.cpp
+REMOTE_ClientFiles += os/win32/wnet.cpp xnet.cpp
 endif
 
 INTERFACE_Files=	$(REMOTE_ClientFiles)

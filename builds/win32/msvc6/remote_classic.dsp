@@ -90,15 +90,15 @@ SOURCE=..\..\..\src\remote\allr.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\chop.cpp
+SOURCE=..\..\..\src\remote\os\win32\chop.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\cntl.cpp
+SOURCE=..\..\..\src\remote\os\win32\cntl.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\ibconfig.cpp
+SOURCE=..\..\..\src\remote\os\win32\ibconfig.cpp
 # End Source File
 # Begin Source File
 
@@ -118,7 +118,7 @@ SOURCE=..\..\..\src\remote\parser.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\property.cpp
+SOURCE=..\..\..\src\remote\os\win32\property.cpp
 # End Source File
 # Begin Source File
 
@@ -134,15 +134,15 @@ SOURCE=..\..\..\src\remote\server.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\srvr_w32.cpp
+SOURCE=..\..\..\src\remote\os\win32\srvr_w32.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\window.cpp
+SOURCE=..\..\..\src\remote\os\win32\window.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\wnet.cpp
+SOURCE=..\..\..\src\remote\os\win32\wnet.cpp
 # End Source File
 # Begin Source File
 
@@ -186,7 +186,7 @@ SOURCE=..\..\..\src\remote\spxnet32_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\wnet_proto.h
+SOURCE=..\..\..\src\remote\os\win32\wnet_proto.h
 # End Source File
 # Begin Source File
 

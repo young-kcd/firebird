@@ -109,7 +109,7 @@ SOURCE=..\..\..\src\iscguard\iscguard.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\chop.cpp
+SOURCE=..\..\..\src\remote\os\win32\chop.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

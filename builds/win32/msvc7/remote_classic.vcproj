@@ -112,13 +112,13 @@
 				RelativePath="..\..\..\src\remote\allr.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\chop.cpp">
+				RelativePath="..\..\..\src\remote\os\win32\chop.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\cntl.cpp">
+				RelativePath="..\..\..\src\remote\os\win32\cntl.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\ibconfig.cpp">
+				RelativePath="..\..\..\src\remote\os\win32\ibconfig.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\inet.cpp">
@@ -133,7 +133,7 @@
 				RelativePath="..\..\..\src\remote\parser.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\property.cpp">
+				RelativePath="..\..\..\src\remote\os\win32\property.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\protocol.cpp">
@@ -145,13 +145,13 @@
 				RelativePath="..\..\..\src\remote\server.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\srvr_w32.cpp">
+				RelativePath="..\..\..\src\remote\os\win32\srvr_w32.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\window.cpp">
+				RelativePath="..\..\..\src\remote\os\win32\window.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\wnet.cpp">
+				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.cpp">
@@ -185,7 +185,7 @@
 				RelativePath="..\..\..\src\remote\spxnet32_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\wnet_proto.h">
+				RelativePath="..\..\..\src\remote\os\win32\wnet_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.h">

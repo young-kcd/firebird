@@ -38,7 +38,7 @@
 
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../remote/wnet_proto.h"
+#include "../remote/os/win32/wnet_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"

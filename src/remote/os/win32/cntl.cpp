@@ -28,7 +28,7 @@
 #include "../jrd/os/thd_priority.h"
 #include "../jrd/thd.h"
 #include "../utilities/install_nt.h"
-#include "../remote/cntl_proto.h"
+#include "../remote/os/win32/cntl_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"

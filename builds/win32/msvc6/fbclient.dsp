@@ -272,7 +272,7 @@ SOURCE=..\..\..\src\remote\remote.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\wnet.cpp
+SOURCE=..\..\..\src\remote\os\win32\wnet.cpp
 # End Source File
 # Begin Source File
 

@@ -31,8 +31,8 @@
 #include "../jrd/isc.h"
 #include "../jrd/file_params.h"
 #include "../remote/remote_def.h"
-#include "../remote/window.rh"
-#include "../remote/property.rh"
+#include "../remote/os/win32/window.rh"
+#include "../remote/os/win32/property.rh"
 #include "../remote/xnet.h"
 #ifdef IPSERVER
 #include "../ipserver/ips.h"
@@ -41,14 +41,14 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/jrd_proto.h"
-#include "../remote/window_proto.h"
-#include "../remote/propty_proto.h"
+#include "../remote/os/win32/window_proto.h"
+#include "../remote/os/win32/propty_proto.h"
 #ifdef IPSERVER
 #include "../ipserver/ipsrv_proto.h"
 #endif
 #include "../jrd/gds_proto.h"
 
-#include "../remote/window.h"
+#include "../remote/os/win32/window.h"
 #include "../jrd/isc_proto.h"
 
 #define NO_PORT

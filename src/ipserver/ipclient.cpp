@@ -48,7 +48,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../remote/window.h"
+#include "../remote/os/win32/window.h"
 #include "../common/config/config.h"
 #define NO_PORT
 #include "../remote/xnet_proto.h"

@@ -148,13 +148,13 @@
 			Name="Resource files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File
-				RelativePath="..\..\..\src\remote\caution.ico">
+				RelativePath="..\..\..\src\remote\os\win32\caution.ico">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\server.ico">
+				RelativePath="..\..\..\src\remote\os\win32\server.ico">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\window.rc">
+				RelativePath="..\..\..\src\remote\os\win32\window.rc">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
