@@ -1125,12 +1125,13 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT* file_name,
 
 	if (!file_length)
 		file_length = strlen(file_name);
-	file_name[file_length] = 0;
+	else
+		file_name[file_length] = 0;
 
 /* if the file already contains a remote node
    or any path at all forget it */
 
-	TEXT *p;
+	const TEXT* p;
 
 	for (p = file_name; *p; p++)
 		if (*p == ':' || *p == '/' || *p == '\\')
