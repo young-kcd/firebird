@@ -1,3 +1,27 @@
+2002-12-23 18:10  dimitr
+
+	* firebird2/src/jrd/dfw.epp:
+	
+	Fixed bug in my previous commit.
+
+2002-12-23 16:50  dimitr
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Changed default values.
+
+2002-12-23 16:49  dimitr
+
+	* firebird2/src/jrd/: dfw.epp, dfw_proto.h, tra.h:
+	
+	Internal support for deferred work arguments.
+
+2002-12-23 12:23  dimitr
+
+	* firebird2/src/jrd/: blr.h, par.cpp:
+	
+	Removed unused BLR codes. This code space should be reused later.
+
 2002-12-22 20:45  nmcc
 
 	* firebird2/builds/posix/Makefile.in.firebird:
