@@ -32,13 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.32 2003-09-08 20:23:32 skidder Exp $
+ *  $Id: alloc.cpp,v 1.33 2003-10-27 22:27:26 skidder Exp $
  *
  */
 
 #include "../../include/firebird.h"
 #include "alloc.h"
-#include <new>
 
 // Size in bytes, must be aligned according to ALLOC_ALIGNMENT
 #define MIN_EXTENT_SIZE  16384
@@ -647,6 +646,8 @@ Firebird::MemoryPool* getDefaultMemoryPool() {
 	return Firebird::processMemoryPool;
 }
 
+#ifndef __GNUC__
+
 void* operator new(size_t s) THROW_BAD_ALLOC {
 #if defined(DEV_BUILD)
 // Do not complain here. It causes client tools to crash on Red Hat 8.0
@@ -680,5 +681,7 @@ void operator delete(void* mem) throw() {
 void operator delete[](void* mem) throw() {
 	Firebird::MemoryPool::globalFree(mem);
 }
+
+#endif
 
 #endif

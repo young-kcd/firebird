@@ -34,13 +34,14 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.26 2003-10-10 23:56:54 skidder Exp $
+ *  $Id: alloc.h,v 1.27 2003-10-27 22:27:26 skidder Exp $
  *
  */
 
 #ifndef ALLOC_H
 #define ALLOC_H
 
+#include <cstddef>
 #include "../../include/fb_types.h"
 #include "../../include/firebird.h"
 #include "../jrd/common.h"
@@ -243,27 +244,87 @@ using Firebird::MemoryPool;
 
 MemoryPool* getDefaultMemoryPool();
 
+#ifdef __GNUC__
+// All this crappy code below under __GNUC__ conditional is to avoid replacing 
+// STL operator new as this replacement causes crashes if client library is 
+// loaded by host application using STL
+
+// This is to prevent inclusion of <new> header
+#ifdef __NEW__
+#error "alloc.h must be included before <new>"
+#endif
+#define __NEW__
+namespace std {
+	class bad_alloc : public exception {};
+}
+// Define operators as static inline to prevent replacement of STL versions
+static inline void* operator new(size_t s) {
+#if defined(DEV_BUILD)
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new().\n");
+#endif	// DEV_BUILD
+//	return getDefaultMemoryPool()->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__,__LINE__
+#endif
+	);
+}
+
+static inline void* operator new[](size_t s) {
+#if defined(DEV_BUILD)
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
+#endif	// DEV_BUILD
+//	return getDefaultMemoryPool()->->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__,__LINE__
+#endif
+	);
+}
+
+static inline void operator delete(void* mem) throw() {
+	Firebird::MemoryPool::globalFree(mem);
+}
+
+static inline void operator delete[](void* mem) throw() {
+	Firebird::MemoryPool::globalFree(mem);
+}
+
+// Default placement versions of operator new.
+static inline void* operator new(size_t, void* __p) throw() { return __p; }
+static inline void* operator new[](size_t, void* __p) throw() { return __p; }
+
+#else
 // Global versions of operator new() for compatibility with crappy libraries
 void* operator new(size_t) THROW_BAD_ALLOC;
 void* operator new[](size_t) THROW_BAD_ALLOC;
 
+// We cannot use inline versions because we have to replace STL delete defined in <new> header
+// One more performance pain we have to take because of STL usage :((
+void operator delete(void* mem) throw();
+
+void operator delete[](void* mem) throw();
+#endif
+
 #ifdef DEBUG_GDS_ALLOC
-inline void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+static inline void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {
 	return pool.allocate(s, 0, file, line);
 //	return pool.calloc(s, 0, file, line);
 }
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+static inline void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, int line) {
 	return pool.allocate(s, 0, file, line);
 //	return pool.calloc(s, 0, file, line);
 }
 #define FB_NEW(pool) new(pool,__FILE__,__LINE__)
 #define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)
 #else
-inline void* operator new(size_t s, Firebird::MemoryPool& pool) {
+static inline void* operator new(size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
 //	return pool.calloc(s);
 }
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
+static inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
 //	return pool.calloc(s);
 }
@@ -272,11 +333,6 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 #endif
 
 
-// We cannot use inline versions because we have to replace STL delete defined in <new> header
-// One more performance pain we have to take because of STL usage :((
-void operator delete(void* mem) throw();
-
-void operator delete[](void* mem) throw();
 
 /**
 	This is the allocator template provided to be used with the STL.
