@@ -1,3 +1,21 @@
+2004-12-05 12:57  alexpeshkoff
+
+	* firebird2/src/dsql/preparse.cpp (1.33):
+	
+	use new classes to preparse 'create database' statement
+
+2004-12-05 12:56  alexpeshkoff
+
+	* firebird2/src/include/fb_string.h (1.36):
+	
+	misc
+
+2004-12-05 12:51  alexpeshkoff
+
+	* firebird2/src/dsql/: dsql.cpp (1.134), dsql.h (1.70):
+	
+	a bit better approach to setup dsql thread context
+
 2004-12-04 09:30  robocop
 
 	* firebird2/src/isql/: extract.epp (1.51), show.epp (1.63):
