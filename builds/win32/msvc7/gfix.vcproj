@@ -176,6 +176,9 @@
 			<File
 				RelativePath="..\..\..\src\common\classes\locks.cpp">
 			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\thd.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
