@@ -112,7 +112,7 @@ ISC_STATUS	API_ROUTINE gds__print_status(const ISC_STATUS*);
 USHORT	API_ROUTINE gds__parse_bpb(USHORT, const UCHAR*, USHORT*, USHORT*);
 USHORT	API_ROUTINE gds__parse_bpb2(USHORT, const UCHAR*, SSHORT*, SSHORT*,
 									  USHORT*, USHORT*);
-SLONG	API_ROUTINE gds__ftof(const SCHAR*, const USHORT length1, SCHAR*,
+SLONG API_ROUTINE gds__ftof(const SCHAR*, const USHORT length1, SCHAR*,
 							   const USHORT length2);
 int		API_ROUTINE gds__print_blr(const UCHAR*,
 							FPTR_PRINT_CALLBACK, 

@@ -248,7 +248,7 @@ ISC_STATUS GDS_EXPORT gds__unwind_request(ISC_STATUS  *,
 										  FRBRD  **,
 										  short);
 
-ISC_STATUS GDS_EXPORT gds__ftof(const char*,
+SLONG GDS_EXPORT gds__ftof(const char*,
 							  const unsigned short,
 							  char*,
 							  const unsigned short);
@@ -269,7 +269,7 @@ int GDS_EXPORT gds__enable_subsystem(char  *);
 
 ISC_STATUS GDS_EXPORT gds__print_status(const ISC_STATUS*);
 
-ISC_STATUS GDS_EXPORT gds__sqlcode(const ISC_STATUS*);
+SLONG GDS_EXPORT gds__sqlcode(const ISC_STATUS*);
 
 ISC_STATUS GDS_EXPORT gds__ddl(ISC_STATUS*,
 							   FRBRD**,
