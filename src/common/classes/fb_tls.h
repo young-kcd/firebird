@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: fb_tls.h,v 1.8 2004-06-30 01:26:06 skidder Exp $
+ *  $Id: fb_tls.h,v 1.9 2004-07-14 21:49:03 skidder Exp $
  *
  */
  
@@ -50,8 +50,6 @@
 # define TLS_SET(NAME,VALUE) NAME=(VALUE)
 #elif defined(WIN_NT)
 
-#ifdef __GNUC__
-// this is gcc, but it does not support __thread, as checked above
 namespace Firebird {
 
 template <typename T>
@@ -84,11 +82,17 @@ private:
 # define TLS_GET(NAME) NAME.get()
 # define TLS_SET(NAME,VALUE) NAME.set(VALUE)
 
-#else // MSVC or Intel
-# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
-# define TLS_GET(NAME) NAME
-# define TLS_SET(NAME,VALUE) NAME=(VALUE)
-#endif
+// 14-Jul-2004 Nickolay Samofatov.
+//
+// Unfortunately, compiler-assisted TLS doesn't work with dynamic link libraries
+// loaded via LoadLibrary - it intermittently crashes and these crashes are 
+// documented by MS. We may still use it for server binaries, but it requires
+// some changes in build environment. Let's defer this till later point and 
+// think of reliable mean to prevent linking of DLL with code below (if enabled).
+//
+//# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
+//# define TLS_GET(NAME) NAME
+//# define TLS_SET(NAME,VALUE) NAME=(VALUE)
 #else
 
 #if not (defined SOLARIS)
