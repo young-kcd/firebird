@@ -19,11 +19,18 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.4 2001-12-24 02:50:50 tamlin Exp $
+ * $Id: extract.epp,v 1.5 2002-06-29 13:39:10 skywalker Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
  * ...pat
+ *
+ * 2001.09.09 Claudio Valderrama: procedure's parameter names may need 
+ *   double quotes if they are in dialect 3 and have special characters.
+ * 2001.09.21 Claudio Valderrama: Show correct mechanism for UDF parameters
+ *   and support the RETURNS PARAMETER <n> syntax.
+ * 2001.10.01 Claudio Valderrama: list_all_grants2() and EXTRACT_list_grants()
+ *   to better organize the code that should be called to handle SHOW GRANTS.
  *
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
@@ -50,6 +57,7 @@
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/obj.h"
 #include "../jrd/ods.h"
 
 DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
@@ -59,6 +67,7 @@ extern USHORT minor_ods;
 extern SSHORT V33;
 
 static void list_all_grants(void);
+static int	list_all_grants2 (BOOLEAN, SCHAR *);
 static void list_all_procs(void);
 static void list_all_tables(SSHORT, SSHORT);
 static void list_all_triggers(void);
@@ -78,6 +87,7 @@ static void get_procedure_args(char*);
 
 #define MAX_INTSUBTYPES	2
 #define MAXSUBTYPES	8
+#define MAX_UDFPARAM_TYPES 4
 #define BLANK		'\040'
 #define DBL_QUOTE	'\042'
 #define SINGLE_QUOTE	'\''
@@ -90,6 +100,7 @@ extern "C" CONST SQLTYPES Column_types[];
 extern CONST SCHAR *Integral_subtypes[];
 extern CONST SCHAR *Sub_types[];
 extern CONST SCHAR *Trigger_types[];
+extern SCHAR	*UDF_param_types [];
 
 static SCHAR *Procterm = "^";	/* TXNN: script use only */
 
@@ -208,11 +219,11 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
 		list_create_db();
 		list_filters();
 		list_functions();
+        list_generators();
 		list_domains(default_char_set_id);
 		list_all_tables(flag, default_char_set_id);
 		list_index();
 		list_foreign();
-		list_generators();
 		list_views();
 		list_check();
 		list_exception();
@@ -241,6 +252,23 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
 	return (SSHORT) ret_code;
 }
 
+int EXTRACT_list_grants (SCHAR *terminator)
+{
+/**************************************
+ *
+ *	E X T R A C T _ l i s t _ g r a n t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shows columns, types, info for a given table name
+ *	and text of views.
+ *	Use a GDML query to get the info and print it.
+ *	If a new_name is passed, substitute it for relation_name
+ *
+ **************************************/
+    return list_all_grants2 (FALSE, terminator);
+}
 
 SSHORT EXTRACT_list_table(SCHAR * relation_name,
 						  SCHAR * new_name,
@@ -344,9 +372,9 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
             if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
                 if (new_name)
-                    ISQL_copy_SQL_id (new_name, (TEXT**) &SQL_identifier, DBL_QUOTE);
+                    ISQL_copy_SQL_id (new_name, SQL_identifier, DBL_QUOTE);
                 else
-                    ISQL_copy_SQL_id (relation_name, (TEXT**) &SQL_identifier, DBL_QUOTE);
+                    ISQL_copy_SQL_id (relation_name, SQL_identifier, DBL_QUOTE);
                 sprintf (Print_buffer, "CREATE TABLE %s ", SQL_identifier);
             }
             else
@@ -355,7 +383,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
             ISQL_printf (Out, Print_buffer);
             if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
-                ISQL_copy_SQL_id (REL.RDB$EXTERNAL_FILE, (TEXT**) &SQL_identifier2, 
+                ISQL_copy_SQL_id (REL.RDB$EXTERNAL_FILE, SQL_identifier2, 
                                   SINGLE_QUOTE);
                 sprintf (Print_buffer, "EXTERNAL FILE %s ", SQL_identifier2);
                 ISQL_printf (Out, Print_buffer);
@@ -371,7 +399,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
         if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
             ISQL_copy_SQL_id (ISQL_blankterm (RFR.RDB$FIELD_NAME),
-                              (TEXT**) &SQL_identifier, DBL_QUOTE);
+                              SQL_identifier, DBL_QUOTE);
             sprintf (Print_buffer, "%s ", SQL_identifier);
         }
 	    else
@@ -398,7 +426,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
             ISQL_blankterm (FLD.RDB$FIELD_NAME);
             if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-                ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+                ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
                 sprintf (Print_buffer, "%s", SQL_identifier);
             }
             else
@@ -580,7 +608,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
                     if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
 
-                        ISQL_copy_SQL_id (CON.RDB$CONSTRAINT_NAME, (TEXT**) &SQL_identifier,
+                        ISQL_copy_SQL_id (CON.RDB$CONSTRAINT_NAME, SQL_identifier,
                                           DBL_QUOTE);
                         sprintf (Print_buffer, " CONSTRAINT %s", SQL_identifier);
                     }
@@ -657,7 +685,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
             ISQL_blankterm(RELC.RDB$CONSTRAINT_NAME);
             if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-                ISQL_copy_SQL_id (RELC.RDB$CONSTRAINT_NAME, (TEXT**) &SQL_identifier,
+                ISQL_copy_SQL_id (RELC.RDB$CONSTRAINT_NAME, SQL_identifier,
                                   DBL_QUOTE);
                 sprintf (Print_buffer, "CONSTRAINT %s ", SQL_identifier);
             }
@@ -740,7 +768,7 @@ void EXTRACT_list_view( SCHAR * viewname)
         ISQL_blankterm (REL.RDB$RELATION_NAME);
 	
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-            ISQL_copy_SQL_id (REL.RDB$RELATION_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+            ISQL_copy_SQL_id (REL.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 	    else
             strcpy (SQL_identifier, REL.RDB$RELATION_NAME);
         
@@ -807,7 +835,7 @@ static void get_procedure_args(char* proc_name)
  *	extract file
  *
  **************************************/
-	SSHORT ptype, first_time, i, header = TRUE;
+	SSHORT ptype, first_time, i;
 	SCHAR char_sets[86];
 
 /* query to retrieve the parameters. */
@@ -852,7 +880,15 @@ static void get_procedure_args(char* proc_name)
                 }
             
                 ISQL_blankterm (PRM.RDB$PARAMETER_NAME);
-                sprintf (Print_buffer, "%s ", PRM.RDB$PARAMETER_NAME);
+
+                /* CVC: Parameter names need check for dialect 3, too. */
+
+                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+                    ISQL_copy_SQL_id (PRM.RDB$PARAMETER_NAME, SQL_identifier, DBL_QUOTE);
+                else
+                    strcpy (SQL_identifier, PRM.RDB$PARAMETER_NAME);
+
+                sprintf (Print_buffer, "%s ", SQL_identifier);
                 ISQL_printf (Out, Print_buffer);
             
                 /* Get column type name to print */
@@ -981,9 +1017,24 @@ static void get_procedure_args(char* proc_name)
 	}
 }
 
+static void list_all_grants ()
+{
+/**************************************
+ *
+ *	l i s t _ a l l _ g r a n t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Print the permissions on all user tables.
+ *
+ *	Wrapper around list_all_grants2().
+ *
+ **************************************/
+    list_all_grants2 (TRUE, Term);
+}
 
-
-static void list_all_grants(void)
+static int list_all_grants2 (BOOLEAN show_role_list, SCHAR *terminator)
 {
 /**************************************
  *
@@ -999,6 +1050,7 @@ static void list_all_grants(void)
  **************************************/
 	SSHORT first = TRUE;
 	TEXT prev_owner[44];
+    int rc = 0;
 
 /******************************************************************
 **
@@ -1006,7 +1058,7 @@ static void list_all_grants(void)
 **
 *******************************************************************/
 
-	if (major_ods >= ODS_VERSION9)
+    if (major_ods >= ODS_VERSION9 && show_role_list)
 	{
 		prev_owner[0] = '\0';
 
@@ -1041,7 +1093,7 @@ static void list_all_grants(void)
             if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
                 
-                ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+                ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
                 sprintf (Print_buffer, "CREATE ROLE %s;%s",
                          SQL_identifier, NEWLINE);
             }
@@ -1053,7 +1105,7 @@ static void list_all_grants(void)
         END_FOR
 		ON_ERROR 
             ISQL_errmsg(gds_status);
-		    return;
+		    return NOT_FOUND;
 		END_ERROR;
 	}
 
@@ -1067,62 +1119,76 @@ static void list_all_grants(void)
         REL.RDB$SECURITY_CLASS STARTING "SQL$"
         SORTED BY REL.RDB$RELATION_NAME
         
-	    if (first)
-		{
+	    if (first) {
             sprintf (Print_buffer, "%s/* Grant permissions for this database */%s",
                      NEWLINE, 
                      NEWLINE);
-            ISQL_printf (Out, Print_buffer);
+            if (show_role_list) {
+                ISQL_printf (Out, Print_buffer);
+                first = FALSE;
+            }
         }
-        first = FALSE;
 	
         /* Null terminate name string */
         
 	    ISQL_blankterm (REL.RDB$RELATION_NAME);
-        
-	    SHOW_grants (REL.RDB$RELATION_NAME, Term);
-        
+
+        rc = SHOW_grants2 (REL.RDB$RELATION_NAME, terminator, obj_relation, 
+                           first ? Print_buffer : 0);
+        if (rc == SKIP) {
+            first = FALSE;
+        }
+
 	END_FOR
 	ON_ERROR 
         ISQL_errmsg(gds_status);
-	    return;
+	    return NOT_FOUND;
 	END_ERROR;
 
-	if (first)
-	{
+	if (first) {
 		sprintf(Print_buffer, "%s/* Grant permissions for this database */%s",
 				NEWLINE, NEWLINE);
-		ISQL_printf(Out, Print_buffer);
-		first = FALSE;
-	}
-    
-	SHOW_grant_roles(Term);
+        if (show_role_list) {
+            ISQL_printf (Out, Print_buffer);
+            first = FALSE;
+        }
+    }
+
+    if (first)
+        SHOW_grant_roles2 (terminator, &first, Print_buffer);
+    else
+        SHOW_grant_roles (terminator, 0);
+
 
 /* Again for stored procedures */
 	FOR PRC IN RDB$PROCEDURES 
         SORTED BY PRC.RDB$PROCEDURE_NAME
 	
-	    if (first)
-		{
+	    if (first) {
             sprintf (Print_buffer, "%s/* Grant permissions for this database */%s",
-                     NEWLINE, 
-                     NEWLINE);
-            ISQL_printf (Out, Print_buffer);
+                     NEWLINE, NEWLINE);
+            if (show_role_list) {
+                ISQL_printf (Out, Print_buffer);
+                first = FALSE;
+            }
         }
-        first = FALSE;
         
         /* Null terminate name string */
         
 	    ISQL_blankterm (PRC.RDB$PROCEDURE_NAME);
-        
-	    SHOW_grants (PRC.RDB$PROCEDURE_NAME, Term);
+
+        rc = SHOW_grants2 (PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure, 
+                           first ? Print_buffer: 0);
+        if (rc == SKIP)
+            first = FALSE;
         
     END_FOR
 	ON_ERROR 
         ISQL_errmsg(gds_status);
-	    return;
+	    return NOT_FOUND;
 	END_ERROR;
 
+    return first ? NOT_FOUND : SKIP;
 }
 
 
@@ -1171,7 +1237,7 @@ static void list_all_procs()
 	    ISQL_blankterm (PRC.RDB$PROCEDURE_NAME);
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-            ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+            ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
             sprintf (Print_buffer, create_procedure_str1, 
                      SQL_identifier);
 	        ISQL_printf (Out, Print_buffer);
@@ -1206,7 +1272,7 @@ static void list_all_procs()
 	
         if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-            ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+            ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
             sprintf (Print_buffer, "%sALTER PROCEDURE %s ", NEWLINE, 
                      SQL_identifier);
         }
@@ -1271,7 +1337,7 @@ static void list_all_tables( SSHORT flag, SSHORT default_char_set_id)
 	   SORTED BY REL.RDB$RELATION_NAME
 	
 	    /* If this is not an SQL table and we aren't doing ALL objects */
-	    if ((REL.RDB$FLAGS != REL_sql) && (flag != ALL_objects))
+	    if ((REL.RDB$FLAGS.NULL || !(REL.RDB$FLAGS & REL_sql)) && (flag != ALL_objects) )
             continue;
         /* Null terminate name string */
 	
@@ -1338,8 +1404,8 @@ static void list_all_triggers()
         
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-            ISQL_copy_SQL_id (TRG.RDB$TRIGGER_NAME,  (TEXT**) &SQL_identifier,  DBL_QUOTE);
-            ISQL_copy_SQL_id (TRG.RDB$RELATION_NAME, (TEXT**) &SQL_identifier2, DBL_QUOTE);
+            ISQL_copy_SQL_id (TRG.RDB$TRIGGER_NAME, SQL_identifier,  DBL_QUOTE);
+            ISQL_copy_SQL_id (TRG.RDB$RELATION_NAME, SQL_identifier2, DBL_QUOTE);
         }
 	    else
 		{
@@ -1416,7 +1482,7 @@ static void list_check(void)
 	
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-            ISQL_copy_SQL_id (TRG.RDB$RELATION_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+            ISQL_copy_SQL_id (TRG.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
             sprintf (Print_buffer, "ALTER TABLE %s ADD %s%s", 
                      SQL_identifier, NEWLINE, TAB_AS_SPACES);
         }
@@ -1431,7 +1497,7 @@ static void list_check(void)
             ISQL_blankterm(CHK.RDB$CONSTRAINT_NAME);
             if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-                ISQL_copy_SQL_id (CHK.RDB$CONSTRAINT_NAME, (TEXT**) &SQL_identifier, 
+                ISQL_copy_SQL_id (CHK.RDB$CONSTRAINT_NAME, SQL_identifier, 
                                   DBL_QUOTE);
                 sprintf (Print_buffer, "CONSTRAINT %s ", SQL_identifier);
             }
@@ -1527,11 +1593,12 @@ static void list_create_db(void)
 	sprintf(Print_buffer, "CREATE DATABASE '%s'", Target_db);
 	ISQL_printf(Out, Print_buffer);
 
-/* Get the page size from db_info call */
-	SHOW_dbb_parameters((SLONG*) DB, info_buf, const_cast<char*>(page_items), sizeof(page_items),
-						translate);
-	sprintf(Print_buffer, " %s", info_buf);
-	ISQL_printf(Out, Print_buffer);
+    /* Get the page size from db_info call */
+	if (!SHOW_dbb_parameters((SLONG*) DB, info_buf, const_cast<char*>(page_items), sizeof(page_items),
+						translate)) {
+        sprintf(Print_buffer, " %s", info_buf);
+        ISQL_printf(Out, Print_buffer);
+    }
 
 	FOR DBP IN RDB$DATABASE 
 	    WITH DBP.RDB$CHARACTER_SET_NAME NOT MISSING
@@ -2050,7 +2117,7 @@ static void list_domains( SSHORT default_char_set_id)
 	
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-            ISQL_copy_SQL_id(FLD.RDB$FIELD_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+            ISQL_copy_SQL_id(FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
             sprintf (Print_buffer, "CREATE DOMAIN %s AS ", SQL_identifier);
         }
 	    else   
@@ -2233,10 +2300,10 @@ static void list_exception(void)
         first = FALSE;
         ISQL_blankterm (EXC.RDB$EXCEPTION_NAME);
         
-	    ISQL_copy_SQL_id (EXC.RDB$MESSAGE, (TEXT**) &SQL_identifier2, SINGLE_QUOTE);
+	    ISQL_copy_SQL_id (EXC.RDB$MESSAGE, SQL_identifier2, SINGLE_QUOTE);
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-            ISQL_copy_SQL_id (EXC.RDB$EXCEPTION_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+            ISQL_copy_SQL_id (EXC.RDB$EXCEPTION_NAME, SQL_identifier, DBL_QUOTE);
             sprintf (Print_buffer, "CREATE EXCEPTION %s %s%s%s", 
                      SQL_identifier, SQL_identifier2, Term, NEWLINE);
         }
@@ -2353,7 +2420,7 @@ static void list_foreign()
         
         if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-            ISQL_copy_SQL_id (RELC1.RDB$RELATION_NAME, (TEXT**) &SQL_identifier,
+            ISQL_copy_SQL_id (RELC1.RDB$RELATION_NAME, SQL_identifier,
                               DBL_QUOTE);
             sprintf (Print_buffer, "ALTER TABLE %s ADD ", SQL_identifier);
         }
@@ -2371,7 +2438,7 @@ static void list_foreign()
                                 strlen(RELC1.RDB$CONSTRAINT_NAME));
             if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{ 
-                ISQL_copy_SQL_id (RELC1.RDB$CONSTRAINT_NAME, (TEXT**) &SQL_identifier,
+                ISQL_copy_SQL_id (RELC1.RDB$CONSTRAINT_NAME, SQL_identifier,
                                   DBL_QUOTE);
                 sprintf (Print_buffer, "CONSTRAINT %s ", SQL_identifier);
             }
@@ -2383,7 +2450,7 @@ static void list_foreign()
         
         if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-            ISQL_copy_SQL_id (RELC2.RDB$RELATION_NAME, (TEXT**) &SQL_identifier,
+            ISQL_copy_SQL_id (RELC2.RDB$RELATION_NAME, SQL_identifier,
                               DBL_QUOTE);
             sprintf (Print_buffer, "FOREIGN KEY (%s) REFERENCES %s ", 
                      collist, SQL_identifier);
@@ -2449,8 +2516,8 @@ static void list_functions(void)
  *               RETURNS INTEGER BY VALUE
  *               ENTRY_POINT entrypoint MODULE_NAME module;
  **************************************/
-	SSHORT first = TRUE, firstarg = TRUE;
-	SSHORT i;
+	SSHORT first = TRUE, firstarg = TRUE, printarg = TRUE;
+	SSHORT i, ptype;
 	SCHAR *return_buffer;
 	SCHAR *type_buffer;
 	SCHAR *buffer;
@@ -2614,36 +2681,45 @@ static void list_functions(void)
             
 	        /* If a return argument, save it for the end, otherwise print */
 	
-    /* 
-	 * Changed the following to not return a BLOB by value.
-	 * To be sincere, this code doesn't cater for the RETURNS PARAMETER syntax but
-	 * it would require more surgery than I'm willing to do, since I'm sick of isql
-	 * so I started my own metadata extraction utility based on IBO that does this
-	 * trick and others.
-	 * Claudio Valderrama (by way of) MOD 23-Apr-2001
-	 */ 
+            /* 
+             * Changed the following to not return a BLOB by value.
+             * To be sincere, this code doesn't cater for the RETURNS PARAMETER syntax but
+             * it would require more surgery than I'm willing to do, since I'm sick of isql
+             * so I started my own metadata extraction utility based on IBO that does this
+             * trick and others.
+             * Claudio Valderrama (by way of) MOD 23-Apr-2001
+             
+             CVC: Finally enhanced the UDF metadata extraction.
+            */
+
+            ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
+            if (ptype > MAX_UDFPARAM_TYPES + 1 || ptype < 0)
+                ptype = MAX_UDFPARAM_TYPES + 1;
+            
+            printarg = TRUE;
+
 	
-	        if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION)
-			{
-				const char* pszA2 =
-					(((SSHORT)abs(FNA.RDB$MECHANISM) == FUN_reference ||
-                           FNA.RDB$FIELD_TYPE == BLOB) ? "" : "BY VALUE");
+	        if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
+                if (FUN.RDB$RETURN_ARGUMENT) {
+                    sprintf (return_buffer, "RETURNS PARAMETER %d",
+                             FUN.RDB$RETURN_ARGUMENT);
+                }
+                else {
+                    sprintf (return_buffer, "RETURNS %s%s %s", type_buffer,
+                             UDF_param_types[ptype],
+                             (FNA.RDB$MECHANISM < 0 ? "FREE_IT" : ""));
+                    printarg = FALSE;
+                }
 
-				const char* pszA3 =
-					(FNA.RDB$MECHANISM < 0 ? "FREE_IT" : "");
-
-	            sprintf(return_buffer,
-						 "RETURNS %s %s %s",
-						  type_buffer,
-						  pszA2, 
-						  pszA3);
 			}
-	        else
-			 {
+
+
+            if (printarg) {
                 /* First arg needs no comma */
-                sprintf (Print_buffer, "%s%s", (firstarg ? "" : ", "), type_buffer);
-	            ISQL_printf (Out, Print_buffer);
-	            firstarg = FALSE;
+                sprintf (Print_buffer, "%s%s%s", (firstarg ? "" : ", "), type_buffer, 
+                         UDF_param_types[ptype]);
+                ISQL_printf (Out, Print_buffer);
+                firstarg = FALSE;
             }
             
         END_FOR
@@ -2712,7 +2788,7 @@ static void list_generators(void)
 	    ISQL_blankterm (GEN.RDB$GENERATOR_NAME);
 	
         if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-            ISQL_copy_SQL_id (GEN.RDB$GENERATOR_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+            ISQL_copy_SQL_id (GEN.RDB$GENERATOR_NAME, SQL_identifier, DBL_QUOTE);
 	    else
             strcpy (SQL_identifier, GEN.RDB$GENERATOR_NAME);
 	
@@ -2785,8 +2861,8 @@ static void list_index()
         
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-            ISQL_copy_SQL_id (IDX.RDB$INDEX_NAME,    (TEXT**) &SQL_identifier,  DBL_QUOTE);
-            ISQL_copy_SQL_id (IDX.RDB$RELATION_NAME, (TEXT**) &SQL_identifier2, DBL_QUOTE);
+            ISQL_copy_SQL_id (IDX.RDB$INDEX_NAME,    SQL_identifier,  DBL_QUOTE);
+            ISQL_copy_SQL_id (IDX.RDB$RELATION_NAME, SQL_identifier2, DBL_QUOTE);
             sprintf (Print_buffer, "CREATE%s%s INDEX %s ON %s(",
                      (IDX.RDB$UNIQUE_FLAG ? " UNIQUE" : ""),
                      (IDX.RDB$INDEX_TYPE ? " DESCENDING" : ""),
@@ -2848,7 +2924,7 @@ static void list_views()
 	    ISQL_blankterm (REL.RDB$RELATION_NAME);
 	
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-            ISQL_copy_SQL_id (REL.RDB$RELATION_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+            ISQL_copy_SQL_id (REL.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 	    else
             strcpy (SQL_identifier, REL.RDB$RELATION_NAME);
         
@@ -2871,7 +2947,7 @@ static void list_views()
             ISQL_blankterm (RFR.RDB$FIELD_NAME);
         
             if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                ISQL_copy_SQL_id (RFR.RDB$FIELD_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+                ISQL_copy_SQL_id (RFR.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
             else
                 strcpy (SQL_identifier, RFR.RDB$FIELD_NAME);
             

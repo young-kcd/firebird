@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.4 2001-12-24 02:50:50 tamlin Exp $
+ * $Id: isql.h,v 1.5 2002-06-29 13:39:11 skywalker Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -217,6 +217,8 @@
 #define USAGE3 			104		/* Usage message 3 */
 #define INCOMPLETE_STR  105		/* Incomplete string in %s */
 #define HLP_SETSQLDIALECT	106	/* \tSET SQL DIALECT <n>    -- set sql dialect to <n> */
+#define NO_GRANT_ON_ANY 107 /* There is no privilege granted in this database. */
+#define HLP_SETPLANONLY 108 /* Toggle display of query plan without executing */
 
 #ifndef DEBUG
 #define Trace		0

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.4 2001-12-24 02:50:50 tamlin Exp $
+ * $Id: show.epp,v 1.5 2002-06-29 13:39:11 skywalker Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -27,11 +27,18 @@
  * 19-May-2001 Claudio Valderrama.
  * Change to be in sync with extract.e: BLOB is not returned
  * by value but by descriptor.
+ * 2001.09.21 Claudio Valderrama: Show correct mechanism for UDF parameters.
+ * 2001.10.01 Claudio Valderrama: SHOW GRANTS works without any argument, too.
+ *   Metadata extraction is slightly faster if SHOW_grants() knows the obj_type.
+ *   Keyword USER is written when the grantee is a user and since the engine
+ *   now supports GRANT...to ROLE role_name, ROLE is written when the grantee is
+ *   indeed a role. When the grantee is a group, it's shown, too.
  *
  */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
+#include "../jrd/license.h"
 #include <string.h>
 
 #ifdef GUI_TOOLS
@@ -50,6 +57,7 @@
 #include "../jrd/utl_proto.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
+#include "../isql/extra_proto.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -105,7 +113,12 @@ static CONST SCHAR *Object_types[] = {
 	"Exception",
 	"User",
 	"Domain",
-	"Index"
+	"Index",
+    "Count [error if used]",
+    "User group",
+    "SQL role",
+    "Generator",
+    "User Defined Function"
 };
 
 extern "C" CONST SQLTYPES Column_types[] = {
@@ -162,6 +175,22 @@ CONST SCHAR *Trigger_types[] = {
 	"AFTER DELETE"				/* NTX: keyword */
 };
 
+/* CVC: Notice that
+BY REFERENCE is the default for scalars and can't be specified explicitly;
+BY ISC_DESCRIPTOR is the default for BLOBs and can't be used explicitly;
+BY SCALAR_ARRAY_DESCRIPTOR should be supported in DSQL in the future, since
+the server has already the capability to deliver arrays to UDFs. */
+#define MAX_UDFPARAM_TYPES 4
+CONST SCHAR	*UDF_param_types[] = {
+	" BY VALUE",			/* NTX: keyword */
+	"",						/* BY REFERENCE */
+	" BY DESCRIPTOR",		/* NTX: keyword in FB */
+	"",						/* BY ISC_DESCRIPTOR => BLOB */
+	" BY SCALAR ARRAY DESCRIPTOR"	/* Should be NTX: keyword */
+	" ERROR-type-unknown"
+};
+
+
 #define priv_UNKNOWN	1
 #define priv_SELECT	2
 #define priv_INSERT	4
@@ -194,11 +223,18 @@ static CONST SCHAR db_dialect_info[] = {
 	isc_info_end
 };
 
+/* Added support to display FORCED WRITES status. - PR 27-NOV-2001 */
+/* Added support to display transaction info when next_transaction id is fixed. */
 static CONST SCHAR db_items[] = {
 	isc_info_page_size,
 	isc_info_db_size_in_pages,
 	isc_info_sweep_interval,
 	isc_info_limbo,
+	isc_info_forced_writes,
+	isc_info_oldest_transaction,
+	isc_info_oldest_active,
+	isc_info_oldest_snapshot,
+	isc_info_next_transaction,
 	isc_info_end
 };
 
@@ -226,7 +262,7 @@ static CONST UCHAR metadata_text_bpb[] = {
 
 
 
-void SHOW_dbb_parameters(SLONG * db_handle,
+BOOLEAN SHOW_dbb_parameters(SLONG * db_handle,
 						 SCHAR * info_buf,
 						 SCHAR * db_items,
 						 USHORT item_length, USHORT translate)
@@ -258,7 +294,7 @@ void SHOW_dbb_parameters(SLONG * db_handle,
 		isc_status[1] = isc_virmemexh;
 		isc_status[2] = isc_arg_end;
 		ISQL_errmsg(isc_status);
-		return;
+		return FALSE;
 	}
 	msg = (SCHAR *) ISQL_ALLOC(MSG_LENGTH);
 	if (!msg) {
@@ -267,15 +303,16 @@ void SHOW_dbb_parameters(SLONG * db_handle,
 		isc_status[2] = isc_arg_end;
 		ISQL_errmsg(isc_status);
 		ISQL_FREE(buffer);
-		return;
+		return FALSE;
 	}
 
-	if (isc_database_info(status_vector,
-						  (void**) &db_handle,
-						  item_length,
-						  db_items,
-						  BUFFER_LENGTH128,
-						  buffer)) ISQL_errmsg(status_vector);
+	if (isc_database_info(status_vector, (void**) &db_handle, item_length,
+						  db_items, BUFFER_LENGTH128, buffer)) {
+        ISQL_errmsg(status_vector);
+        ISQL_FREE (buffer);
+        ISQL_FREE (msg);
+        return FALSE;
+    }
 
 	*info_buf = '\0';
 	for (d = buffer, info = info_buf; *d != isc_info_end;) {
@@ -322,6 +359,31 @@ void SHOW_dbb_parameters(SLONG * db_handle,
 			else
 				sprintf(info, "Sweep interval = %ld %s", value_out, NEWLINE);
 			break;
+
+        case isc_info_forced_writes:
+            value_out = isc_vax_integer (d, length);
+            sprintf (info, "Forced Writes are %s %s", (value_out==1 ? "ON" : "OFF"), NEWLINE);
+            break;
+
+        case isc_info_oldest_transaction :
+            value_out = isc_vax_integer (d, length);
+            sprintf (info, "Transaction - oldest = %ld %s", value_out, NEWLINE);
+            break;
+            
+        case isc_info_oldest_active :
+            value_out = isc_vax_integer (d, length);
+            sprintf (info, "Transaction - oldest active = %ld %s", value_out, NEWLINE);
+            break;
+ 	
+        case isc_info_oldest_snapshot :
+            value_out = isc_vax_integer (d, length);
+            sprintf (info, "Transaction - oldest snapshot = %ld %s", value_out, NEWLINE);
+            break;
+ 	
+        case isc_info_next_transaction :
+            value_out = isc_vax_integer (d, length);
+            sprintf (info, "Transaction - Next = %ld %s", value_out, NEWLINE);
+            break;
 
 		case isc_info_num_wal_buffers:
 			value_out = isc_vax_integer(d, length);
@@ -543,14 +605,33 @@ void SHOW_dbb_parameters(SLONG * db_handle,
 	}
 	ISQL_FREE(buffer);
 	ISQL_FREE(msg);
+
+    return TRUE;
 }
 
 
-int SHOW_grants( SCHAR * object, SCHAR * terminator)
+int SHOW_grants( SCHAR * object, SCHAR * terminator, USHORT obj_type)
 {
 /**************************************
  *
  *	S H O W _ g r a n t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Placeholder for SHOW_grants2 without additional message.
+ *
+ **************************************/
+    return SHOW_grants2 (object, terminator, obj_type, 0);
+}
+
+
+int SHOW_grants2 (SCHAR *object, SCHAR *terminator, USHORT obj_type,
+                  TEXT *optional_msg)
+{
+/**************************************
+ *
+ *	S H O W _ g r a n t s 2
  *
  **************************************
  *
@@ -562,6 +643,9 @@ int SHOW_grants( SCHAR * object, SCHAR * terminator)
  *	Grant execute privilege on procedures to users
  *	Grant various privilegs to procedures.
  *	All privileges may have the with_grant option set.
+ *	The optional msg is to display a customized message. When the
+ *	new feature of all grants is used, there's no way to print the
+ *	header message after this routine, so it should be printed here.
  *
  **************************************/
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER prev_user;
@@ -590,43 +674,49 @@ int SHOW_grants( SCHAR * object, SCHAR * terminator)
 	prev_field_null = -1;
 	prev_field[0] = '\0';
 
-/* Find the user specified relation and show its privileges */
+    if (obj_type == obj_relation || obj_type == 255) {
 
-	FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ object;
+        /* Find the user specified relation and show its privileges */
+
+        FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ object;
 	
-	    /* This query only finds tables, eliminating owner privileges */
+	        /* This query only finds tables, eliminating owner privileges */
 	
-	    FOR PRV IN RDB$USER_PRIVILEGES CROSS
-	       REL IN RDB$RELATIONS WITH
-	       PRV.RDB$RELATION_NAME EQ object AND
-	       REL.RDB$RELATION_NAME EQ object AND
-	       PRV.RDB$PRIVILEGE     NE 'M'    AND
-	       REL.RDB$OWNER_NAME    NE PRV.RDB$USER
-	       SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
+	        FOR PRV IN RDB$USER_PRIVILEGES CROSS
+                REL IN RDB$RELATIONS WITH
+                PRV.RDB$RELATION_NAME EQ object AND
+                REL.RDB$RELATION_NAME EQ object AND
+                PRV.RDB$PRIVILEGE     NE 'M'    AND
+                REL.RDB$OWNER_NAME    NE PRV.RDB$USER
+                SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
 	
-	        ISQL_blankterm (PRV.RDB$USER);
+	            ISQL_blankterm (PRV.RDB$USER);
 	
-	        /* Sometimes grant options are null, sometimes 0.  Both same */
+                /* Sometimes grant options are null, sometimes 0.  Both same */
 	
-	        if (PRV.RDB$GRANT_OPTION.NULL)
-                PRV.RDB$GRANT_OPTION = 0;
+                if (PRV.RDB$GRANT_OPTION.NULL)
+                    PRV.RDB$GRANT_OPTION = 0;
 	
-	        if (PRV.RDB$FIELD_NAME.NULL)
-                PRV.RDB$FIELD_NAME [0] = '\0';
+                if (PRV.RDB$FIELD_NAME.NULL)
+                    PRV.RDB$FIELD_NAME [0] = '\0';
 	
-	        /* Print a new grant statement for each new user or change of option */
+                /* Print a new grant statement for each new user or change of option */
 	
-	        if ((prev_user [0] && strcmp (prev_user, PRV.RDB$USER)) || 
-                (prev_field_null != -1 &&
-                 prev_field_null != PRV.RDB$FIELD_NAME.NULL) ||
-                (!prev_field_null && strcmp (prev_field, PRV.RDB$FIELD_NAME)) ||
-                (prev_option != -1 && prev_option != PRV.RDB$GRANT_OPTION)) {
+                if ((prev_user [0] && strcmp (prev_user, PRV.RDB$USER)) || 
+                    (prev_field_null != -1 &&
+                     prev_field_null != PRV.RDB$FIELD_NAME.NULL) ||
+                    (!prev_field_null && strcmp (prev_field, PRV.RDB$FIELD_NAME)) ||
+                    (prev_option != -1 && prev_option != PRV.RDB$GRANT_OPTION)) {
+
                     make_priv_string (priv_flags, (UCHAR*) priv_string);
-	
+
+                    if (first && optional_msg)
+                        ISQL_printf (Out, optional_msg);
+
                     first = FALSE;
 	
                     if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                        ISQL_copy_SQL_id (object, (TEXT**) &SQL_identifier, DBL_QUOTE);
+                        ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
                     else
                         strcpy (SQL_identifier, object);
                     
@@ -641,262 +731,312 @@ int SHOW_grants( SCHAR * object, SCHAR * terminator)
                     with_option [0] = '\0';
                     col_string[0] = '\0';
                     priv_flags = 0;
-            }
-	
-	        /* At each row, store this value for the next compare of contol break */
-            
-	        strcpy (prev_user, PRV.RDB$USER);
-	        prev_option = PRV.RDB$GRANT_OPTION;
-	        prev_field_null = PRV.RDB$FIELD_NAME.NULL;
-	        strcpy (prev_field, PRV.RDB$FIELD_NAME);
-            
-	        switch (PRV.RDB$USER_TYPE) {
-            case obj_relation:
-            case obj_view:
-            case obj_trigger:
-            case obj_procedure:
-            case obj_sql_role:
-                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-                    ISQL_copy_SQL_id (PRV.RDB$USER, (TEXT**) &SQL_identifier, DBL_QUOTE);
                 }
-                else
+	
+                /* At each row, store this value for the next compare of contol break */
+            
+                strcpy (prev_user, PRV.RDB$USER);
+                prev_option = PRV.RDB$GRANT_OPTION;
+                prev_field_null = PRV.RDB$FIELD_NAME.NULL;
+                strcpy (prev_field, PRV.RDB$FIELD_NAME);
+            
+                switch (PRV.RDB$USER_TYPE) {
+                case obj_relation:
+                case obj_view:
+                case obj_trigger:
+                case obj_procedure:
+                case obj_sql_role:
+                    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+                        ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+                    }
+                    else
+                        strcpy (SQL_identifier, PRV.RDB$USER);
+                    break;
+                default:
                     strcpy (SQL_identifier, PRV.RDB$USER);
-                break;
-            default:
-                strcpy (SQL_identifier, PRV.RDB$USER);
-                break;
-            }
-	
-	        switch (PRV.RDB$USER_TYPE) {
-            case obj_view:
-                sprintf (user_string, "VIEW %s", SQL_identifier);
-                break;
-            case obj_trigger:
-                sprintf (user_string, "TRIGGER %s", SQL_identifier);
-                break;
-            case obj_procedure:
-                sprintf (user_string, "PROCEDURE %s", SQL_identifier);
-                break;
-            default:
-                strcpy (user_string, SQL_identifier);
-                break;
-            }
-            
-	        /* Only the first character is used for permissions */
-            
-	        c = PRV.RDB$PRIVILEGE [0];
-            
-	        switch (c) { 
-            case 'S':
-                priv_flags |= priv_SELECT;
-                break;
-            case 'I':
-                priv_flags |= priv_INSERT;
-                break;
-	       case 'U':
-	           priv_flags |= priv_UPDATE;
-	           break;
-            case 'D':
-                priv_flags |= priv_DELETE;
-                break;
-            case 'R':
-                priv_flags |= priv_REFERENCES;
-	           break;
-            case 'X':
-                /* Execute should not be here -- special handling below */
-                break;
-            default:
-                priv_flags |= priv_UNKNOWN;
-            }
-	
-	        /* Column level privileges for update only */
-	        if (PRV.RDB$FIELD_NAME.NULL)
-			{
-                *col_string = '\0';
-			}
-	        else
-			{
-                ISQL_blankterm (PRV.RDB$FIELD_NAME);
-                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-				{
-                    ISQL_copy_SQL_id (PRV.RDB$FIELD_NAME, (TEXT**) &SQL_identifier, 
-                                      DBL_QUOTE);
-                    sprintf(col_string, " (%s)", SQL_identifier);
+                    break;
                 }
-                else
-				{
-                    sprintf(col_string, " (%s)", PRV.RDB$FIELD_NAME);
-				}
-            }
 	
-	        if (PRV.RDB$GRANT_OPTION)
-                strcpy (with_option, " WITH GRANT OPTION");
+                switch (PRV.RDB$USER_TYPE) {
+                case obj_view:
+                    sprintf (user_string, "VIEW %s", SQL_identifier);
+                    break;
+                case obj_trigger:
+                    sprintf (user_string, "TRIGGER %s", SQL_identifier);
+                    break;
+                case obj_procedure:
+                    sprintf (user_string, "PROCEDURE %s", SQL_identifier);
+                    break;
+                case obj_user:
+                    if (strcmp(SQL_identifier, "PUBLIC"))
+                        sprintf (user_string, "USER %s", SQL_identifier);
+                    else
+                        strcpy (user_string, SQL_identifier);
+                    break;
+                case obj_user_group:
+                    sprintf (user_string, "GROUP %s", SQL_identifier);
+                    break;
+                case obj_sql_role:
+                    sprintf (user_string, "ROLE %s", SQL_identifier);
+                    break;
+                default:
+                    strcpy (user_string, SQL_identifier);
+                    break;
+                }
             
+                /* Only the first character is used for permissions */
+            
+                c = PRV.RDB$PRIVILEGE [0];
+            
+                switch (c) { 
+                case 'S':
+                    priv_flags |= priv_SELECT;
+                break;
+                case 'I':
+                    priv_flags |= priv_INSERT;
+                    break;
+                case 'U':
+                    priv_flags |= priv_UPDATE;
+                    break;
+                case 'D':
+                    priv_flags |= priv_DELETE;
+                    break;
+                case 'R':
+                    priv_flags |= priv_REFERENCES;
+                    break;
+                case 'X':
+                    /* Execute should not be here -- special handling below */
+                    break;
+                default:
+                    priv_flags |= priv_UNKNOWN;
+                }
+	
+                /* Column level privileges for update and references only */
+                if (PRV.RDB$FIELD_NAME.NULL) {
+                    *col_string = '\0';
+                }
+                else {
+                    ISQL_blankterm (PRV.RDB$FIELD_NAME);
+                    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+                        ISQL_copy_SQL_id (PRV.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+                        sprintf(col_string, " (%s)", SQL_identifier);
+                    }
+                    else {
+                        sprintf(col_string, " (%s)", PRV.RDB$FIELD_NAME);
+                    }
+                }
+	
+                if (PRV.RDB$GRANT_OPTION)
+                    strcpy (with_option, " WITH GRANT OPTION");
+                
+            END_FOR
+            ON_ERROR
+                ISQL_errmsg (isc_status);
+	            return ERR;
+            END_ERROR;
+	
+            /* Print last case if there was anything to print */
+	
+            if (prev_option != -1) {
+                make_priv_string (priv_flags, (UCHAR*) priv_string);
+                if (first && optional_msg)
+                    ISQL_printf (Out, optional_msg);
+                first = FALSE;
+            
+                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+                    ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+                else
+                    strcpy (SQL_identifier, object);
+            
+                sprintf (Print_buffer, "GRANT %s%s ON %s TO %s%s%s%s", 
+                         priv_string, col_string,
+                         SQL_identifier, user_string, with_option, terminator, NEWLINE);
+                ISQL_printf (Out, Print_buffer);
+            }
+        
         END_FOR
-        ON_ERROR
-            ISQL_errmsg (isc_status);
+        ON_ERROR 
+            ISQL_errmsg(isc_status);
 	        return ERR;
 	    END_ERROR;
-	
-	    /* Print last case if there was anything to print */
-	
-	    if (prev_option != -1) {
-	        make_priv_string (priv_flags, (UCHAR*) priv_string);
-            first = FALSE;
-            
-            if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                ISQL_copy_SQL_id (object, (TEXT**) &SQL_identifier, DBL_QUOTE);
-            else
-                strcpy (SQL_identifier, object);
-            
-	        sprintf (Print_buffer, "GRANT %s%s ON %s TO %s%s%s%s", 
-                     priv_string, col_string,
-                     SQL_identifier, user_string, with_option, terminator, NEWLINE);
-	        ISQL_printf (Out, Print_buffer);
-        }
-        
-    END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
-	    return ERR;
-	END_ERROR;
 
-	if (!first)
-		return (SKIP);
+        if (!first)
+            return (SKIP);
+    }
 
 /* No relation called "object" was found, try procedure "object" */
+    if (obj_type == obj_procedure || obj_type == 255) {
 
-	FOR FIRST 1 P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ object;
+        FOR FIRST 1 P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ object
 	
-	    /* Part two is for stored procedures only */
+	        /* Part two is for stored procedures only */
 	
-	    FOR PRV IN RDB$USER_PRIVILEGES CROSS
-            PRC IN RDB$PROCEDURES WITH
-            PRV.RDB$OBJECT_TYPE = obj_procedure AND
-            PRV.RDB$RELATION_NAME EQ object AND
-            PRC.RDB$PROCEDURE_NAME EQ object AND
-            PRV.RDB$PRIVILEGE EQ 'X' AND
-            PRC.RDB$OWNER_NAME NE PRV.RDB$USER
-            SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
+	        FOR PRV IN RDB$USER_PRIVILEGES CROSS
+                PRC IN RDB$PROCEDURES WITH
+                PRV.RDB$OBJECT_TYPE = obj_procedure AND
+                PRV.RDB$RELATION_NAME EQ object AND
+                PRC.RDB$PROCEDURE_NAME EQ object AND
+                PRV.RDB$PRIVILEGE EQ 'X' AND
+                PRC.RDB$OWNER_NAME NE PRV.RDB$USER
+                SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
          
-            first = FALSE;
-            ISQL_blankterm (PRV.RDB$USER);
+                if (first && optional_msg)
+                    ISQL_printf (Out, optional_msg);
+
+                first = FALSE;
+                ISQL_blankterm (PRV.RDB$USER);
             
-            switch (PRV.RDB$USER_TYPE) {
-            case obj_relation:
-            case obj_view:
-            case obj_trigger:
-            case obj_procedure:
-            case obj_sql_role:
-                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-                    ISQL_copy_SQL_id (PRV.RDB$USER, (TEXT**) &SQL_identifier, DBL_QUOTE);
+                switch (PRV.RDB$USER_TYPE) {
+                case obj_relation:
+                case obj_view:
+                case obj_trigger:
+                case obj_procedure:
+                case obj_sql_role:
+                    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+                        ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+                    }
+                    else
+                        strcpy (SQL_identifier, PRV.RDB$USER);
+                    break;
+                default:
+                    strcpy (SQL_identifier, PRV.RDB$USER);
+                    break;
+                }
+            
+                switch (PRV.RDB$USER_TYPE) {
+                case obj_view:
+                    sprintf (user_string, "VIEW %s", SQL_identifier);
+                    break;
+                case obj_trigger:
+                    sprintf (user_string, "TRIGGER %s", SQL_identifier);
+                    break;
+                case obj_procedure:
+                    sprintf (user_string, "PROCEDURE %s", SQL_identifier);
+                    break;
+                case obj_user:
+                    if (strcmp(SQL_identifier, "PUBLIC"))
+                        sprintf (user_string, "USER %s", SQL_identifier);
+                    else
+                        strcpy (user_string, SQL_identifier);
+                    break;
+                case obj_user_group:
+                    sprintf (user_string, "GROUP %s", SQL_identifier);
+                    break;
+                case obj_sql_role:
+                    sprintf (user_string, "ROLE %s", SQL_identifier);
+                    break;
+                default:
+                    strcpy (user_string, SQL_identifier);
+                    break;
+                }
+            
+                if (PRV.RDB$GRANT_OPTION)
+                    strcpy (with_option, " WITH GRANT OPTION");
+                else 
+                    with_option[0] = '\0';
+                
+                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {                    
+                    ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
                 }
                 else
-                    strcpy (SQL_identifier, PRV.RDB$USER);
-                break;
-            default:
-                strcpy (SQL_identifier, PRV.RDB$USER);
-                break;
-            }
-            
-            switch (PRV.RDB$USER_TYPE) {
-            case obj_view:
-                sprintf (user_string, "VIEW %s", SQL_identifier);
-                break;
-	       case obj_trigger:
-	           sprintf (user_string, "TRIGGER %s", SQL_identifier);
-	           break;
-            case obj_procedure:
-                sprintf (user_string, "PROCEDURE %s", SQL_identifier);
-                break;
-            default:
-	           strcpy (user_string, SQL_identifier);
-	           break;
-            }
-            
-            if (PRV.RDB$GRANT_OPTION)
-                strcpy (with_option, " WITH GRANT OPTION");
-            else 
-                with_option[0] = '\0';
-            
-            if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-                
-                ISQL_copy_SQL_id (object, (TEXT**) &SQL_identifier, DBL_QUOTE);
-            }
-            else
-                strcpy (SQL_identifier, object);
+                    strcpy (SQL_identifier, object);
 	
-            sprintf (Print_buffer, "GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s", 
-                     SQL_identifier, user_string, with_option, terminator, NEWLINE);
-            first = FALSE;
-           ISQL_printf (Out, Print_buffer);
+                sprintf (Print_buffer, "GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s", 
+                         SQL_identifier, user_string, with_option, terminator, NEWLINE);
+                first = FALSE;
+                ISQL_printf (Out, Print_buffer);
            
-       END_FOR
-	   ON_ERROR
-	       ISQL_errmsg (isc_status);
-	       return (ERR);
-	   END_ERROR
-	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
-        return (ERR);
-	END_ERROR;
+            END_FOR
+	        ON_ERROR
+                ISQL_errmsg (isc_status);
+                return (ERR);
+	        END_ERROR
+	    END_FOR
+	    ON_ERROR 
+            ISQL_errmsg(isc_status);
+            return (ERR);
+	    END_ERROR;
 
-	if (!first)
-		return (SKIP);
+        if (!first)
+            return (SKIP);
+    }
 
 /* No procedure called "object" was found, try role "object" */
 
-	FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object;
+    if (obj_type == obj_sql_role || obj_type == 255) {
+        /* No procedure called "object" was found, try role "object" */
+        /* CVC: This code could be superseded by SHOW_grant_roles() below
+           with the sole difference of the sort fields. */
+
+        FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object
 	
-	    FOR PRV IN RDB$USER_PRIVILEGES WITH
-            PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
-            PRV.RDB$USER_TYPE     EQ obj_user     AND
-            PRV.RDB$RELATION_NAME EQ object       AND
-            PRV.RDB$PRIVILEGE     EQ 'M'
-            SORTED BY  PRV.RDB$USER
+            FOR PRV IN RDB$USER_PRIVILEGES WITH
+                PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
+                PRV.RDB$USER_TYPE     EQ obj_user     AND
+                PRV.RDB$RELATION_NAME EQ object       AND
+                PRV.RDB$PRIVILEGE     EQ 'M'
+                SORTED BY  PRV.RDB$USER
 	
-            ISQL_blankterm (PRV.RDB$RELATION_NAME);
-	        strcpy (role_name, PRV.RDB$RELATION_NAME);
-            if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                ISQL_copy_SQL_id (role_name, (TEXT**) &SQL_identifier, DBL_QUOTE);
-            else
-                strcpy (SQL_identifier, role_name);
+                ISQL_blankterm (PRV.RDB$RELATION_NAME);
+                strcpy (role_name, PRV.RDB$RELATION_NAME);
+                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+                    ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
+                else
+                    strcpy (SQL_identifier, role_name);
             
-            ISQL_blankterm (PRV.RDB$USER);
-            strcpy (user_string, PRV.RDB$USER);
+                ISQL_blankterm (PRV.RDB$USER);
+                strcpy (user_string, PRV.RDB$USER);
             
-            if (PRV.RDB$GRANT_OPTION)
-                strcpy (with_option, " WITH ADMIN OPTION");
-            else
-                with_option [0] = '\0';
+                if (PRV.RDB$GRANT_OPTION)
+                    strcpy (with_option, " WITH ADMIN OPTION");
+                else
+                    with_option [0] = '\0';
             
-            sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
-                     user_string, with_option, terminator, NEWLINE);
+                sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
+                         user_string, with_option, terminator, NEWLINE);
             
-            first = FALSE;
-            ISQL_printf (Out, Print_buffer);
+                if (first && optional_msg)
+                    ISQL_printf (Out, optional_msg);
+
+                first = FALSE;
+                ISQL_printf (Out, Print_buffer);
             
-        END_FOR
-	    ON_ERROR
-	        ISQL_errmsg (isc_status);
+            END_FOR
+	        ON_ERROR
+	            ISQL_errmsg (isc_status);
+	            return (ERR);
+	        END_ERROR;
+	
+	    END_FOR
+	    ON_ERROR 
+            ISQL_errmsg(isc_status);
 	        return (ERR);
 	    END_ERROR;
-	
-	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
-	    return (ERR);
-	END_ERROR;
 
-	if (first)
-		return (NOT_FOUND);
-    
-	return (SKIP);
+        if (!first)
+            return (SKIP);
+    }
+
+    return NOT_FOUND;
 }
 
 
-void SHOW_grant_roles( SCHAR * terminator)
+void SHOW_grant_roles( SCHAR * terminator, SSHORT *first)
+{
+/**************************************
+ *
+ *	S H O W _ g r a n t _ r o l e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Placeholder for SHOW_grant_roles2 without additional message.
+ *
+ **************************************/
+    SHOW_grant_roles2 (terminator, first, 0);
+}
+
+void SHOW_grant_roles2 (SCHAR *terminator, SSHORT *first, TEXT *optional_msg)
 {
 /**************************************
  *
@@ -920,6 +1060,13 @@ void SHOW_grant_roles( SCHAR * terminator)
 	    PRV.RDB$USER_TYPE     EQ obj_user     AND
 	    PRV.RDB$PRIVILEGE     EQ 'M'
 	    SORTED BY  PRV.RDB$RELATION_NAME, PRV.RDB$USER
+
+        if (first) {
+            if (*first && optional_msg) {
+                ISQL_printf (Out, optional_msg);
+            }
+            *first = FALSE;
+        }
 	
 	    ISQL_blankterm (PRV.RDB$USER);
 	    strcpy (user_string, PRV.RDB$USER);
@@ -931,7 +1078,7 @@ void SHOW_grant_roles( SCHAR * terminator)
 	
 	    ISQL_blankterm (PRV.RDB$RELATION_NAME);
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-            ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
+            ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
             sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
                      user_string, with_option, terminator, NEWLINE);
         }
@@ -1058,7 +1205,7 @@ int SHOW_metadata( SCHAR ** cmd, SCHAR ** lcmd)
 
 	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER"))) {
 		gds__msg_format(NULL_PTR, ISQL_MSG_FAC, VERSION, sizeof(msg_string),
-						msg_string, GDS_VERSION, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
+						msg_string, FB_VERSION, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
 						(TEXT*) NULL_PTR);
 		sprintf(Print_buffer, "%s%s", msg_string, NEWLINE);
 		ISQL_printf(Out, Print_buffer);
@@ -1271,40 +1418,48 @@ int SHOW_metadata( SCHAR ** cmd, SCHAR ** lcmd)
 			}
 			else
 				strcpy(SQL_id_for_grant, cmd[2]);
+            ret = SHOW_grants (SQL_id_for_grant, "", 255);
 		}
-		else
+		else {
 			strcpy(SQL_id_for_grant, cmd[2]);
-
-		ret = SHOW_grants(SQL_id_for_grant, "");
+            ret = EXTRACT_list_grants ("");
+        }
 
 		if (ret == NOT_FOUND) {
-	      FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ 
-	                     SQL_id_for_grant;
-	     key = NO_GRANT_ON_REL;
-	      END_FOR
-			ON_ERROR
-				/* Ignore any error */
-				END_ERROR;
-			if (!key) {
-                FOR FIRST 1 P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ 
-	                        SQL_id_for_grant;
-                    key = NO_GRANT_ON_PROC;
+            if (*cmd[2]) {
+                FOR FIRST 1 R IN RDB$RELATIONS 
+                    WITH R.RDB$RELATION_NAME EQ SQL_id_for_grant;
+
+                    key = NO_GRANT_ON_REL;
                 END_FOR
-				ON_ERROR
-					/* Ignore any error */
+			    ON_ERROR
+                    /* Ignore any error */
 				END_ERROR;
-			}
-			if (!key) {
-                FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ SQL_id_for_grant;
-                    key = NO_GRANT_ON_ROL;
-                END_FOR
-				ON_ERROR
-					/* Ignore any error */
-				END_ERROR;
-			}
-			if (!key)
-				key = NO_REL_OR_PROC_OR_ROLE;
-		}
+                if (!key) {
+                    FOR FIRST 1 P IN RDB$PROCEDURES 
+                        WITH P.RDB$PROCEDURE_NAME EQ SQL_id_for_grant;
+
+                        key = NO_GRANT_ON_PROC;
+                    END_FOR
+                    ON_ERROR
+                        /* Ignore any error */
+				    END_ERROR;
+                }
+                if (!key) {
+                    FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ SQL_id_for_grant;
+                        key = NO_GRANT_ON_ROL;
+                    END_FOR
+				    ON_ERROR
+                        /* Ignore any error */
+				    END_ERROR;
+                }
+                if (!key)
+                    key = NO_REL_OR_PROC_OR_ROLE;
+            }
+            else {
+                key = NO_GRANT_ON_ANY;
+            }
+        }
 	}
 	else if ((!strcmp(cmd[1], "PROCEDURE")) ||
 			 (!strcmp(cmd[1], "PROC")) || (!strcmp(cmd[1], "PROCEDURES"))) {
@@ -1961,8 +2116,9 @@ static void show_db(void)
 
 /* First general database parameters */
 
-	SHOW_dbb_parameters((SLONG*) DB, info_buf, const_cast<char*>(db_items), sizeof(db_items), translate);
-	ISQL_printf(Out, info_buf);
+	if (SHOW_dbb_parameters((SLONG*) DB, info_buf, const_cast<char*>(db_items), sizeof(db_items), translate)) {
+        ISQL_printf(Out, info_buf);
+    }
 
 /* Only v4 databases have log_files */
 
@@ -2022,9 +2178,9 @@ static void show_db(void)
 
 /* And now for Rich's show db parameters */
 
-	if (is_wal) {
-		SHOW_dbb_parameters((SLONG*) DB, info_buf, const_cast<char*>(wal_items), sizeof(wal_items),
-							translate);
+	if (is_wal 
+        && SHOW_dbb_parameters((SLONG*) DB, info_buf, const_cast<char*>(wal_items), 
+                            sizeof(wal_items), translate)) {
 		ISQL_printf(Out, info_buf);
 	}
 
@@ -2467,7 +2623,7 @@ static int show_functions( SCHAR * object)
  **************************************/
 	SSHORT first = TRUE;
 	SSHORT odd = 1;
-	SSHORT i;
+	SSHORT i, ptype;
 
 /* Show all functions */
 	if (!*object)
@@ -2517,21 +2673,22 @@ static int show_functions( SCHAR * object)
                      NEWLINE);
             ISQL_printf (Out, Print_buffer);
         }
+
+        ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
+		if (ptype > MAX_UDFPARAM_TYPES + 1 || ptype < 0) {
+			ptype = MAX_UDFPARAM_TYPES + 1;
+        }
+
         first = FALSE;
-        if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION)
-		{
-            sprintf (Print_buffer, "Returns %s %s ", 
-	                 ((SSHORT) abs(FNA.RDB$MECHANISM) == FUN_reference ? 
-                      "BY REFERENCE " :
-                      (FNA.RDB$FIELD_TYPE == BLOB ?
-                        "BY DESCRIPTOR " :
-                        "BY VALUE ")), 
-	                 (FNA.RDB$MECHANISM < 0 ? "FREE_IT " : ""));
+        if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
+            sprintf (Print_buffer, "Returns %s%s ",
+                     UDF_param_types[ptype],
+                     (FNA.RDB$MECHANISM < 0 ? "FREE_IT " : ""));
             ISQL_printf (Out, Print_buffer);
         }
-        else
-		{
-            sprintf (Print_buffer, "Argument %d: ", FNA.RDB$ARGUMENT_POSITION);
+        else {
+            sprintf (Print_buffer, "Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION,
+                     UDF_param_types[ptype]);
             ISQL_printf (Out, Print_buffer);
         }
         for (i = 0; Column_types [i].type; i++)
@@ -3160,7 +3317,7 @@ static int show_role( SCHAR * object)
                 ISQL_blankterm (PRV.RDB$RELATION_NAME);
                 strcpy (role_name, PRV.RDB$RELATION_NAME);
                 if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                    ISQL_copy_SQL_id (role_name, (TEXT**) &SQL_identifier, DBL_QUOTE);
+                    ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
                 else
                     strcpy (SQL_identifier, role_name);
                 

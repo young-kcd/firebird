@@ -87,7 +87,7 @@ isql MENU
 
 STRINGTABLE
 {
-    IDS_NAME,          "InterBase SQL"
+    IDS_NAME,          "Firebird SQL"
     IDS_MENUNAME,      "ISQL"
     IDS_ICONNAME,      "ISQL"
     IDS_ERROR,         "ISQL Error"

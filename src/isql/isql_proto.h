@@ -29,7 +29,7 @@ extern SCHAR *ISQL_blankterm(TEXT *);
 extern void ISQL_build_table_list(void **, IB_FILE *, IB_FILE *, IB_FILE *);
 extern void ISQL_build_view_list(void **, IB_FILE *, IB_FILE *, IB_FILE *);
 extern int ISQL_commit_work(int, IB_FILE *, IB_FILE *, IB_FILE *);
-extern void ISQL_copy_SQL_id(TEXT *, TEXT **, TEXT);
+extern void ISQL_copy_SQL_id(TEXT *, TEXT *, TEXT);
 extern int ISQL_create_database(TEXT *,
 								SCHAR **,
 								SCHAR *,
