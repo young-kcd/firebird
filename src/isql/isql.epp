@@ -570,7 +570,10 @@ int ISQL_main(int argc,
 /* As ISQL can run under windows, all memory should be freed before
  * returning.  In debug mode this call will report unfreed blocks.
  */
-	gds_alloc_report(0, __FILE__, __LINE__);
+	//gds_alloc_report(0, __FILE__, __LINE__);
+	char fn[] = __FILE__;
+	fn[strlen(fn) - 8] = 0; // all isql files in gen dir
+	gds_alloc_report(0, fn, 0);
 #endif
 
 	return Exit_value;
@@ -714,14 +717,14 @@ static void readNextInputLine(const char* prompt)
 		}
 
 		if (Ifp == stdin) {
-	#ifdef HAVE_EDITLINE_H
+#ifdef HAVE_EDITLINE_H
 			lastInputLine = readline((char*) prompt);
 
 			if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
 				add_history(lastInputLine);
 			}
 
-	#else
+#else
 			// Write the prompt out.
 			fprintf(stdout, prompt);
 			fflush(stdout);
@@ -736,7 +739,7 @@ static void readNextInputLine(const char* prompt)
 				lastInputLine = (char*) malloc(lineSize + 1);
 				strncpy(lastInputLine, inputLine.c_str(), lineSize + 1);
 			}
-	#endif
+#endif
 		}
 		else {
 			// Write the prompt out, only if !Interactive && Echo
@@ -2518,8 +2521,12 @@ static processing_state create_db(const TEXT* statement,
 				(TEXT*) ISQL_ALLOC(arglength + 1);
 
 			if (!new_local_statement)
+			{
+				ISQL_FREE(local_statement);
+				ISQL_FREE(usr);
+				ISQL_FREE(psw);
 				return (FAIL);
-
+			}
 		}
 		
 		TEXT errbuf[MSG_LENGTH];
@@ -2543,6 +2550,11 @@ static processing_state create_db(const TEXT* statement,
 								"create database statement",
 								NULL, NULL, NULL, NULL);
 				STDERROUT(errbuf, 1);
+				ISQL_FREE(local_statement);
+				ISQL_FREE(usr);
+				ISQL_FREE(psw);
+				if (new_local_statement)
+					ISQL_FREE(new_local_statement);
 				return (FAIL);
 			}
 			copy_str(&temp_str, &temp_local_stmt_str, &done,
@@ -2583,6 +2595,11 @@ static processing_state create_db(const TEXT* statement,
 									"create database statement",
 									NULL, NULL, NULL, NULL);
 					STDERROUT(errbuf, 1);
+					ISQL_FREE(local_statement);
+					ISQL_FREE(usr);
+					ISQL_FREE(psw);
+					if (new_local_statement)
+						ISQL_FREE(new_local_statement);
 					return (FAIL);
 				}
 				copy_str(&temp_str, &temp_local_stmt_str, &done2,
@@ -2591,7 +2608,10 @@ static processing_state create_db(const TEXT* statement,
 		}
 
 		if (new_local_statement)
+		{
+			ISQL_FREE(local_statement);
 			local_statement = new_local_statement;
+		}
 	}
 
 	/* execute the create statement
@@ -3786,7 +3806,6 @@ static processing_state get_statement(TEXT* const statement,
 
 		case '\n':
 //		case '\0': // In particular with readline the \n is removed
-			// the context of string literals should not extend past eoln 
 			if (state == in_single_line_comment)
 			{
 				state = normal;

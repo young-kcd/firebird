@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.38 2004-11-17 12:20:49 hvlad Exp $
+ * $Id: isql.h,v 1.39 2004-11-22 08:00:49 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -343,8 +343,12 @@ inline void STDERROUT(char* st, bool cr) {
 	fflush (isqlGlob.Errfp);
 }
 
-#define ISQL_ALLOC(x)     gds__alloc (x)
-#define ISQL_FREE(x)     {isc_free ((char*) x); x = NULL;}
+#ifdef DEBUG_GDS_ALLOC
+#define ISQL_ALLOC(x)     gds__alloc_debug(x, __FILE__, __LINE__)
+#else
+#define ISQL_ALLOC(x)     gds__alloc(x)
+#endif
+#define ISQL_FREE(x)     {gds__free(x); x = NULL;}
 
 static const char* NEWLINE			= "\n";
 static const char* TAB_AS_SPACES	= "        ";
