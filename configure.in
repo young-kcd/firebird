@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.165 2003-10-27 01:14:44 brodsom Exp $
+dnl $Id: configure.in,v 1.166 2003-10-27 17:53:30 alexpeshkoff Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -722,7 +722,6 @@ case "$PLATFORM" in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
                      gen/firebird/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
                      gen/firebird/bin/changeDBAPassword.sh:builds/install/arch-specific/linux/misc/changeDBAPassword.sh.in
-            	     gen/firebird/bin/SSchangePasswd.sh:builds/install/arch-specific/linux/super/SSchangePasswd.sh.in
             	     gen/firebird/bin/CSchangeRunUser.sh:builds/install/misc/CSchangeRunUser.sh.in
                      gen/firebird/bin/CSrestoreRootRunUser.sh:builds/install/misc/CSrestoreRootRunUser.sh.in
                      gen/firebird/bin/SSchangeRunUser.sh:builds/install/misc/SSchangeRunUser.sh.in
