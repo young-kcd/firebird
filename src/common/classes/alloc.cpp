@@ -61,7 +61,6 @@ int MemoryPool::process_current_memory = 0;
 // generate quite a bit of code at the point of the throw.
 static void pool_out_of_memory()
 {
-	// FIXME: this is a temporary solution until we switch out of using STL exceptions
 	throw std::bad_alloc();
 }
 

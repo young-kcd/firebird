@@ -183,7 +183,8 @@ public:
 	void print_contents(IB_FILE *, bool = false);
 	
 	static void globalFree(void *block) {
-		((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->pool->deallocate(block);
+	    if (block)
+		  ((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->pool->deallocate(block);
 	}
 	
 	void* calloc(size_t size, SSHORT type = 0
