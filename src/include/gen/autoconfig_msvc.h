@@ -1,4 +1,4 @@
-#ident "$Id: autoconfig_msvc.h,v 1.22 2002-08-24 10:53:42 dimitr Exp $"
+#ident "$Id: autoconfig_msvc.h,v 1.23 2002-08-26 11:59:01 eku Exp $"
 
 /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -62,6 +62,7 @@
 #define HAVE_DIRNAME
 #undef HAVE_SIGACTION
 #define HAVE_SNPRINTF
+#undef HAVE_MMAP
 
 /* Types */
 #undef socklen_t
