@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.14 2004-05-24 17:30:00 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.15 2004-05-29 13:34:19 brodsom Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -296,7 +296,7 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 }
 
 
-void API_ROUTINE ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
+void ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
 {
 /**************************************
  *
@@ -382,7 +382,7 @@ static void isc_signal2(
 }
 
 
-void API_ROUTINE ISC_signal_cancel(
+void ISC_signal_cancel(
 								   int signal_number,
 								   FPTR_VOID_PTR handler, void* arg)
 {

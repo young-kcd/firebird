@@ -139,7 +139,7 @@ void DLS_put_temp_space(sort_work_file* sfb)
 }
 
 
-bool API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
+bool DLS_add_dir(ULONG size, const TEXT* dir_name)
 {
 /**************************************
  *

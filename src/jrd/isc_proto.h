@@ -31,15 +31,15 @@ void	ISC_ast_exit(void);
 bool	ISC_check_process_existence(SLONG, SLONG, bool);
 void	ISC_get_config(TEXT *, struct ipccfg *);
 int		ISC_set_config(TEXT *, struct ipccfg *);
-TEXT*	INTERNAL_API_ROUTINE ISC_get_host(TEXT *, USHORT);
-int		INTERNAL_API_ROUTINE ISC_get_user(TEXT*, int*, int*, TEXT*,
+TEXT*	ISC_get_host(TEXT *, USHORT);
+int		ISC_get_user(TEXT*, int*, int*, TEXT*,
 											 TEXT*, int*, const TEXT*);
 SLONG	ISC_get_user_group_id(const TEXT*);
 void	ISC_set_user(const TEXT*);
-SLONG	API_ROUTINE ISC_get_prefix(const TEXT*);
-void	API_ROUTINE ISC_prefix(TEXT*, const TEXT*);
-void	API_ROUTINE ISC_prefix_lock(TEXT*, const TEXT*);
-void	API_ROUTINE ISC_prefix_msg(TEXT*, const TEXT*);
+SLONG	ISC_get_prefix(const TEXT*);
+void	ISC_prefix(TEXT*, const TEXT*);
+void	ISC_prefix_lock(TEXT*, const TEXT*);
+void	ISC_prefix_msg(TEXT*, const TEXT*);
 
 #ifdef VMS
 int		ISC_expand_logical_once(const TEXT*, USHORT, TEXT*);

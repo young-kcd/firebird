@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.12 2004-05-24 17:31:47 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.13 2004-05-29 13:34:54 brodsom Exp $ */
 
 #include <windows.h>
 #include <process.h>
@@ -142,7 +142,7 @@ void ISC_exit(void)
 }
 
 
-int API_ROUTINE ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
+int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 {
 /**************************************
  *

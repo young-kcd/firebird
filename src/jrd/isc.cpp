@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.49 2004-05-05 21:53:37 brodsom Exp $
+$Id: isc.cpp,v 1.50 2004-05-29 13:33:08 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -282,7 +282,7 @@ int ISC_expand_logical_once(const TEXT* file_name,
 
 
 #if (defined SOLARIS || defined SCO_EV)
-TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
+TEXT* ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
  *
@@ -306,7 +306,7 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 
 #elif defined (VMS)
 
-TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
+TEXT* ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
  *
@@ -337,7 +337,7 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 
 #elif defined(WIN_NT)
 
-TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
+TEXT* ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
  *
@@ -366,7 +366,7 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 
 #else
 
-TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
+TEXT* ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
  *
@@ -386,7 +386,7 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 #endif
 
 #ifdef UNIX
-int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
+int ISC_get_user(TEXT*	name,
 									  int*	id,
 									  int*	group,
 									  TEXT*	project,
@@ -460,7 +460,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 
 
 #ifdef VMS
-int INTERNAL_API_ROUTINE ISC_get_user(
+int ISC_get_user(
 									  TEXT* name,
 									  int* id,
 									  int* group,
@@ -562,7 +562,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(
 #endif
 
 #ifdef WIN_NT
-int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
+int ISC_get_user(TEXT*	name,
 									  int*	id,
 									  int*	group,
 									  TEXT*	project,
@@ -779,7 +779,7 @@ int ISC_make_desc(const TEXT* string, struct dsc$descriptor* desc, USHORT length
 #endif
 
 
-SLONG API_ROUTINE ISC_get_prefix(const TEXT* passed_string)
+SLONG ISC_get_prefix(const TEXT* passed_string)
 {
 /**************************************
  *
@@ -818,7 +818,7 @@ SLONG API_ROUTINE ISC_get_prefix(const TEXT* passed_string)
 }
 
 
-void API_ROUTINE ISC_prefix(TEXT* string, const TEXT* root)
+void ISC_prefix(TEXT* string, const TEXT* root)
 {
 /**************************************
  *
@@ -836,7 +836,7 @@ void API_ROUTINE ISC_prefix(TEXT* string, const TEXT* root)
 }
 
 
-void API_ROUTINE ISC_prefix_lock(TEXT* string, const TEXT* root)
+void ISC_prefix_lock(TEXT* string, const TEXT* root)
 {
 /**************************************
  *
@@ -854,7 +854,7 @@ void API_ROUTINE ISC_prefix_lock(TEXT* string, const TEXT* root)
 }
 
 
-void API_ROUTINE ISC_prefix_msg(TEXT* string, const TEXT* root)
+void ISC_prefix_msg(TEXT* string, const TEXT* root)
 {
 /**************************************
  *

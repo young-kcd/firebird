@@ -160,7 +160,7 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 }
 
 
-ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS* status_vector,
+ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 							const UCHAR* sdl, sdl_info* info, SLONG* vector)
 {
 /**************************************

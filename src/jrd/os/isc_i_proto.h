@@ -30,17 +30,17 @@ void	ISC_exit(void);
 
 #ifdef WIN_NT
 // This will poke event
-int		API_ROUTINE ISC_kill(SLONG, SLONG, void *);
+int		ISC_kill(SLONG, SLONG, void *);
 // And this will do nothing
-inline void API_ROUTINE ISC_enable() throw() {}
-inline void API_ROUTINE ISC_inhibit() throw() {}
+inline void ISC_enable() throw() {}
+inline void ISC_inhibit() throw() {}
 #else
 // And that are functions to manage UNIX signals
 int		ISC_kill(SLONG, SLONG);
-void API_ROUTINE ISC_signal(int, FPTR_VOID_PTR, void *);
-void API_ROUTINE ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
-void API_ROUTINE ISC_enable() throw();
-void API_ROUTINE ISC_inhibit() throw();
+void ISC_signal(int, FPTR_VOID_PTR, void *);
+void ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
+void ISC_enable() throw();
+void ISC_inhibit() throw();
 #endif
 
 void	ISC_signal_init(void);
