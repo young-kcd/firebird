@@ -75,7 +75,7 @@ namespace {
 } // namespace
 
 namespace Firebird {
-	const AbstractString::size_type AbstractString::npos = ~0;
+	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(-1);
 
 	AbstractString::AbstractString(const AbstractString& v) {
 		initialize(v.length());
@@ -114,8 +114,7 @@ namespace Firebird {
 	}
 
 	AbstractString::pointer AbstractString::baseAssign(size_type n) {
-		checkLength(n);
-		reserveBuffer(n + 1);
+		reserveBuffer(n);
 		stringLength = n;
 		stringBuffer[stringLength] = 0;
 		shrinkBuffer(); // Shrink buffer if it is unneeded anymore
@@ -123,8 +122,7 @@ namespace Firebird {
 	}
 
 	AbstractString::pointer AbstractString::baseAppend(size_type n) {
-		checkLength(stringLength + n);
-		reserveBuffer(stringLength + n + 1);
+		reserveBuffer(stringLength + n);
 		stringLength += n;
 		stringBuffer[stringLength] = 0; // Set null terminator inside the new buffer
 		return stringBuffer + stringLength - n;
@@ -134,8 +132,7 @@ namespace Firebird {
 		if (p0 >= length()) {
 			return baseAppend(n);
 		}
-		checkLength(stringLength + n);
-		reserveBuffer(stringLength + n + 1);
+		reserveBuffer(stringLength + n);
 		memmove(stringBuffer + p0 + n, stringBuffer + p0, 
 				stringLength - p0 + 1); // Do not forget to move null terminator too
 		stringLength += n;
@@ -151,7 +148,11 @@ namespace Firebird {
 	}
 
 	void AbstractString::reserve(size_type n) {
-		reserveBuffer(n + 1);
+		// Do not allow to reserve huge buffers
+		if (n > max_length())
+			n = max_length();
+
+		reserveBuffer(n);
 	}
 
 	void AbstractString::resize(size_type n, char_type c) {
@@ -159,8 +160,7 @@ namespace Firebird {
 			return;
 		}
 		if (n > stringLength) {
-			checkLength(n);
-			reserveBuffer(n + 1);
+			reserveBuffer(n);
 			memset(stringBuffer + stringLength, c, n - stringLength);
 		}
 		stringLength = n;

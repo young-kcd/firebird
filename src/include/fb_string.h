@@ -42,8 +42,8 @@ namespace Firebird
 	class AbstractString : private AutoStorage {
 	public:
 		typedef char char_type;
-		typedef unsigned int size_type;
-		typedef int difference_type;
+		typedef size_t size_type;
+		typedef ptrdiff_t difference_type;
 		typedef char* pointer;
 		typedef const char* const_pointer;
 		typedef char& reference;
@@ -54,9 +54,10 @@ namespace Firebird
 		static const size_type npos;
 		enum {INLINE_BUFFER_SIZE = 32, INIT_RESERVE = 16/*, KEEP_SIZE = 512*/};
 	protected:
+		typedef USHORT internal_size_type; // 16 bits!
 		char_type inlineBuffer[INLINE_BUFFER_SIZE];
 		char_type* stringBuffer;
-		unsigned short stringLength, bufferSize;
+		internal_size_type stringLength, bufferSize;
 	private:
 		inline void checkPos(size_type pos) const {
 			if (pos >= length()) {
@@ -69,38 +70,62 @@ namespace Firebird
 			}
 		}
 
-		// Make sure we can store at least newSize characters in our buffer 
-		// (including null terminator). Existing contents of our string are preserved.
-		void reserveBuffer(size_type newSize) {
+		// Reserve buffer to allow storing at least newLen characters there
+		// (not including null terminator). Existing contents of our string are preserved.
+		void reserveBuffer(size_type newLen) {
+			size_type newSize = newLen + 1;
 			if (newSize > bufferSize) {
+				// Make sure we do not exceed string length limit
+				checkLength(newLen);
+
 				// Order of assignments below is important in case of low memory conditions
 
 				// Grow buffer exponentially to prevent memory fragmentation
 				if (newSize < bufferSize * 2)
 					newSize = bufferSize * 2;
+
+				// Do not grow buffer beyond string length limit
+				if (newSize > max_length() + 1)
+					newSize = max_length() + 1;
+
+				// Allocate new buffer
 				char_type *newBuffer = FB_NEW(getPool()) char_type[newSize];
+
 				// Carefully copy string data including null terminator
 				memcpy(newBuffer, stringBuffer, sizeof(char_type) * (stringLength + 1));
+
+				// Deallocate old buffer if needed
+				if (stringBuffer != inlineBuffer)
+					delete[] stringBuffer;
+
 				stringBuffer = newBuffer;
-				bufferSize = newSize;
+				bufferSize = static_cast<internal_size_type>(newSize);
 			}
 		}
 
 		// Make sure our buffer is large enough to store at least <length> characters in it
 		// (not including null terminator). Resulting buffer is not initialized. 
-		// Use in constructors only when stringBuffer is not assigned yet.
+		// Use it in constructors only when stringBuffer is not assigned yet.
 		void initialize(size_type len) {
-			size_type newSize = len + 1;
-			if (newSize <= INLINE_BUFFER_SIZE) {
+			if (len < INLINE_BUFFER_SIZE) {
 				stringBuffer = inlineBuffer;
 				bufferSize = INLINE_BUFFER_SIZE;
-			} else {
+			} else {				
 				stringBuffer = NULL; // Be safe in case of exception
 				checkLength(len);
+
+				// Reserve a few extra bytes in the buffer
+				size_type newSize = len + 1 + INIT_RESERVE;
+
+				// Do not grow buffer beyond string length limit
+				if (newSize > max_length() + 1)
+					newSize = max_length() + 1;
+
+				// Allocate new buffer
 				stringBuffer = FB_NEW(getPool()) char_type[newSize];
-				bufferSize = newSize;
+				bufferSize = static_cast<internal_size_type>(newSize);
 			}
-			stringLength = len;
+			stringLength = static_cast<internal_size_type>(len);
 			stringBuffer[stringLength] = 0;
 		}
 
@@ -280,7 +305,7 @@ namespace Firebird
 			return length();
 		}
 		static inline size_type max_length() {
-			return 0xffff; // Max length of character field in Firebird
+			return 0xfffe; // Max length of character field in Firebird
 		}
 		inline size_type capacity() const {
 			return bufferSize - 1;
