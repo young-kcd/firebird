@@ -1160,8 +1160,8 @@ static int accept_connection(rem_port* port,
 		   check_host first */
 
 		TEXT host[MAXHOSTLEN];
-		const struct passwd* passwd = getpwnam(name);
-		const int trusted = check_host(port, host, name, passwd);
+		const struct passwd* passwd = getpwnam( name.c_str());
+		const int trusted = check_host(port, host, name.c_str(), passwd);
 		if (!trusted) {
 			return FALSE;
 		}
@@ -1172,8 +1172,8 @@ static int accept_connection(rem_port* port,
 		}
 		else
 		{
-			if (check_proxy(port, host, name))
-				passwd = getpwnam(name);
+			if (check_proxy(port, host, (TEXT*) name.c_str()))
+				passwd = getpwnam(name.c_str());
 			if (!passwd)
 				return FALSE;
 #ifndef HAVE_INITGROUPS
