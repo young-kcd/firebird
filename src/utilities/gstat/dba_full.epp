@@ -169,9 +169,11 @@ static struct tdba *gddba;
 				tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA
 #define RESTORE_THREAD_DATA
 
-#define EXIT(code)	            {  tddba->exit_code = code;        \
-                                   Firebird::status_exception::raise(1);  }
-
+void inline dba_full_exit(int code, TDBA tddba)
+{
+	tddba->exit_code = code;
+	Firebird::status_exception::raise(1);
+}
 
 int CLIB_ROUTINE main( int argc, char **argv)
 {
@@ -316,7 +318,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 			default:
 				FPRINTF(sw_outfile, "%s\n", help_text);
-				EXIT(FINI_ERROR);
+				dba_full_exit(FINI_ERROR, tddba);
 			}
 		else
 			name = p;
@@ -324,7 +326,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	if (!name) {
 		FPRINTF(sw_outfile, "please retry, giving a database name\n");
-		EXIT(FINI_ERROR);
+		dba_full_exit(FINI_ERROR, tddba);
 	}
 
 	if (!sw_data && !sw_index)
@@ -359,7 +361,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		FPRINTF(sw_outfile,
 				"Wrong ODS version, expected %d, encountered %d?\n",
 				ODS_VERSION, header->hdr_ods_version);
-		EXIT(FINI_ERROR);
+		dba_full_exit(FINI_ERROR, tddba);
 	}
 
 #if defined (WIN95)
@@ -416,7 +418,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	while (page = header->hdr_next_page);
 
 	if (sw_header)
-		EXIT(FINI_OK);
+		dba_full_exit(FINI_OK, tddba);
 
 /* print continuation file sequence */
 
@@ -440,7 +442,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	while (page = logp->log_next_page);
 
 	if (sw_log)
-		EXIT(FINI_OK);
+		dba_full_exit(FINI_OK, tddba);
 
 #if (defined WIN_NT)
 	dpb = dpb_string;
@@ -464,11 +466,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	isc_attach_database(status_vector, 0, GDS_VAL(name), &DB, dpb_length,
 						dpb_string);
 	if (status_vector[1])
-		EXIT(FINI_ERROR);
+		dba_full_exit(FINI_ERROR, tddba);
 #else
 	READY GDS_VAL(name) AS DB;
 	ON_ERROR
-		EXIT(FINI_ERROR);
+		dba_full_exit(FINI_ERROR, tddba);
 	END_ERROR
 #endif
 
@@ -477,7 +479,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	transact1 = 0;
 	START_TRANSACTION transact1 READ_ONLY;
 	ON_ERROR
-		EXIT(FINI_ERROR);
+		dba_full_exit(FINI_ERROR, tddba);
 	END_ERROR
 
 	request1 = NULL;
@@ -505,7 +507,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				relation->rel_index_root = Y.RDB$PAGE_NUMBER;
 		END_FOR;
 		ON_ERROR
-			EXIT(FINI_ERROR);
+			dba_full_exit(FINI_ERROR, tddba);
 		END_ERROR
 		if (sw_index)
 		FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request3)
@@ -521,11 +523,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			index->idx_id = Y.RDB$INDEX_ID - 1;
         END_FOR;
 		ON_ERROR
-			EXIT(FINI_ERROR);
+			dba_full_exit(FINI_ERROR, tddba);
 		END_ERROR
 	END_FOR;
 	ON_ERROR
-		EXIT(FINI_ERROR);
+		dba_full_exit(FINI_ERROR, tddba);
 	END_ERROR
 
 	if (request1)
@@ -537,11 +539,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	COMMIT transact1;
 	ON_ERROR
-		EXIT(FINI_ERROR);
+		dba_full_exit(FINI_ERROR, tddba);
 	END_ERROR
 	FINISH
 	ON_ERROR
-		EXIT(FINI_ERROR);
+		dba_full_exit(FINI_ERROR, tddba);
 	END_ERROR
 
 	FPRINTF(sw_outfile, "\nAnalyzing database pages ...\n\n");
@@ -593,7 +595,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 	}
 
-	EXIT(FINI_OK);
+	dba_full_exit(FINI_OK, tddba);
 
 	return 0;
 }
@@ -1000,7 +1002,7 @@ static void db_error( SLONG status)
 			sprintf(s, "unknown Windows NT error %ld", status);
 
 	FPRINTF(tddba->sw_outfile, "%s\n", s);
-	EXIT(FINI_ERROR);
+	dba_full_exit(FINI_ERROR, tddba);
 }
 
 
@@ -1091,7 +1093,7 @@ static PAG db_read( SLONG page_number)
 		 &actual_length, NULL)) db_error(GetLastError());
 	if (actual_length != tddba->page_size) {
 		FPRINTF(tddba->sw_outfile, "Unexpected end of database file.\n");
-		EXIT(FINI_ERROR);
+		dba_full_exit(FINI_ERROR, tddba);
 	}
 
 	return tddba->global_buffer;
@@ -1132,7 +1134,7 @@ static void db_error( int status)
 		FPRINTF(tddba->sw_outfile, "uninterpreted code %x\n", status);
 #endif
 #endif
-	EXIT(FINI_ERROR);
+	dba_full_exit(FINI_ERROR, tddba);
 }
 
 
@@ -1217,7 +1219,7 @@ static PAG db_read( SLONG page_number)
 			db_error(errno);
 		if (!l) {
 			FPRINTF(tddba->sw_outfile, "Unexpected end of database file.\n");
-			EXIT(FINI_ERROR);
+			dba_full_exit(FINI_ERROR, tddba);
 		}
 		p += l;
 		length -= l;
