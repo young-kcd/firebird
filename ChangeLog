@@ -1,3 +1,69 @@
+2003-08-09 23:57  brodsom
+
+	* firebird2/src/dsql/parse.y:
+	
+	-Fix cast warnings.  -Remove unneeded casts
+
+2003-08-09 23:55  brodsom
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	-Fix cast warnings.
+
+2003-08-09 23:51  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	-Fix format warning.  -Remove unneeded cast -Add ifdef
+
+2003-08-09 23:15  brodsom
+
+	* firebird2/src/jrd/: idx.cpp, isc_sync.cpp, jrd.cpp, llio.cpp,
+	met.epp, nbak.cpp, old.cpp, opt.cpp, par.cpp, rse.cpp:
+	
+	-Fix cast warnings -Fix signed/unsigned comparison warnings -Fix
+	format warnings -Add MinGW 3.0 rc header
+
+2003-08-09 22:58  brodsom
+
+	* firebird2/src/jrd/: evl.cpp, evl_like.cpp, exe.cpp, ext.cpp,
+	gds.cpp, blb.cpp, cch.cpp, dbg.cpp, dfw.epp, dls.cpp:
+	
+	-Fix cast warnings -Fix signed/unsigned comparison warnings
+
+2003-08-09 21:20  brodsom
+
+	* firebird2/src/common/config/dir_list.cpp:
+	
+	Fix cast warnings
+
+2003-08-09 21:19  brodsom
+
+	* firebird2/src/misc/codes.epp:
+	
+	Fix macro redefinition warning
+
+2003-08-09 21:01  brodsom
+
+	* firebird2/src/jrd/os/win32/: winnt.cpp, thd_priority.cpp:
+	
+	-Fix cast warnings
+
+2003-08-09 20:49  brodsom
+
+	* firebird2/src/wal/: wal.cpp, walc.cpp, walw.cpp:
+	
+	-Fix format warnings -Remove unneeded casts
+
+2003-08-09 20:00  brodsom
+
+	* firebird2/src/gpre/: cob.cpp, exp.cpp, ftn.cpp, int_cxx.cpp,
+	msc_proto.h, par.cpp, par_proto.h, pas.cpp, ada.cpp, c_cxx.cpp,
+	cmd.cpp:
+	
+	-Format & casts warning fixes -Isolate unused code with ifdefs
+	-Code style corrections -Remove two unneeded NULL casts
+
 2003-08-08 23:33  arnobrinkman
 
 	* firebird2/src/jrd/: opt.cpp, opt.cpp:
