@@ -536,7 +536,12 @@ RSB OPT_compile(TDBB tdbb,
 	SLONG saved_conjunct_count = conjunct_count;
 	*stack_end = parent_stack;
 	conjunct_count += distribute_equalities(&conjunct_stack, csb);
-	*stack_end = NULL;
+	if (parent_stack) {
+		// Find parent_stack position and reset it to NULL
+		for (stack_end = &conjunct_stack; *stack_end && !(*stack_end == parent_stack);
+			stack_end = &(*stack_end)->lls_next) ;
+		*stack_end = NULL;
+	}
 
 	if (conjunct_count > MAX_CONJUNCTS)
 		ERR_post(isc_optimizer_blk_exc, 0);
