@@ -46,6 +46,7 @@
 #include "../utilities/gsec/secur_proto.h"
 
 #include "../jrd/event.h"
+#include "../jrd/alt_proto.h"
 
 #if !defined(BOOT_BUILD)
 bool is_valid_server(ISC_STATUS* status, const TEXT* server);
@@ -389,13 +390,13 @@ ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS* status_vector,
 							   dpb_length, dpb, db_type);
 }
 
-ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS * status_vector,
 										FRBRD **db_handle,
-										DatabaseCleanupRoutine *routine, SCHAR * arg)
+										DatabaseCleanupRoutine *routine, SLONG arg)
 {
 
-	return gds__database_cleanup(status_vector, (FRBRD **) db_handle,
-								 routine, (SLONG) arg);
+	return isc_database_cleanup(status_vector, (FRBRD **) db_handle,
+								 routine, (SCHAR*) arg);
 }
 
 ISC_STATUS API_ROUTINE gds__database_info(ISC_STATUS* status_vector,
@@ -616,12 +617,12 @@ ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS* status_vector,
 	return isc_ddl(status_vector, db_handle, tra_handle, ddl_length, ddl);
 }
 
-void API_ROUTINE isc_event_counts(
+void API_ROUTINE gds__event_counts(
 								  ULONG * result_vector,
 								  SSHORT length,
 								  SCHAR * before, SCHAR * after)
 {
-	gds__event_counts(result_vector, length, before, after);
+	isc_event_counts(result_vector, length, before, after);
 }
 
 SLONG API_ROUTINE isc_free(SCHAR * blk)
@@ -637,19 +638,19 @@ SLONG API_ROUTINE isc_ftof(const SCHAR* string1,
 	return gds__ftof(string1, length1, string2, length2);
 }
 
-void API_ROUTINE isc_get_client_version(SCHAR * buffer)
+void API_ROUTINE gds__get_client_version(SCHAR * buffer)
 {
-	gds__get_client_version(buffer);
+	isc_get_client_version(buffer);
 }
 
-int API_ROUTINE isc_get_client_major_version()
+int API_ROUTINE gds__get_client_major_version()
 {
-	return gds__get_client_major_version();
+	return isc_get_client_major_version();
 }
 
-int API_ROUTINE isc_get_client_minor_version()
+int API_ROUTINE gds__get_client_minor_version()
 {
-	return gds__get_client_minor_version();
+	return isc_get_client_minor_version();
 }
 
 ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR* blr,
@@ -708,13 +709,14 @@ SLONG API_ROUTINE isc_vax_integer(const SCHAR* input, SSHORT length)
 }
 
 #ifndef REQUESTER
-ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS * status_vector,
 									  FRBRD **db_handle,
 									  SSHORT events_length,
-									  SCHAR * events, SCHAR * events_update)
+									  UCHAR * events,
+									  UCHAR * events_update)
 {
-	return gds__event_wait(status_vector, db_handle, events_length,
-						   (UCHAR*) events, (UCHAR*) events_update);
+	return isc_wait_for_event(status_vector, db_handle, events_length,
+						   (SCHAR*) events, (SCHAR*) events_update);
 }
 #endif
 
@@ -731,18 +733,18 @@ SLONG API_ROUTINE isc_interprete_cpp(SCHAR* const buffer,
 	return gds__interprete(buffer, const_cast<ISC_STATUS**>(status_vector_p));
 }
 
-int API_ROUTINE isc_version(
+int API_ROUTINE gds__version(
 							FRBRD **db_handle,
 							void (*callback) (), void *callback_argument)
 {
-	return gds__version(db_handle, callback, callback_argument);
+	return isc_version(db_handle, callback, callback_argument);
 }
 
-void API_ROUTINE isc_set_debug(int flag)
+void API_ROUTINE gds__set_debug(int flag)
 {
 #ifndef SUPERCLIENT
 #ifndef REQUESTER
-	gds__set_debug(flag);
+	isc_set_debug(flag);
 #endif
 #endif
 }

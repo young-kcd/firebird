@@ -892,11 +892,11 @@ SCHAR ** name_buffer, SSHORT * return_count)
 }
 
 
-void API_ROUTINE gds__event_counts(
-								   ULONG * result_vector,
-								   SSHORT buffer_length,
-								   SCHAR * event_buffer,
-SCHAR * result_buffer)
+void API_ROUTINE isc_event_counts(
+					ULONG * result_vector,
+					SSHORT buffer_length,
+					SCHAR * event_buffer,
+					SCHAR * result_buffer)
 {
 /**************************************
  *
@@ -954,7 +954,7 @@ SCHAR * result_buffer)
 }
 
 
-void API_ROUTINE gds__get_client_version(SCHAR *buffer)
+void API_ROUTINE isc_get_client_version(SCHAR *buffer)
 {
 /**************************************
  *
@@ -971,7 +971,7 @@ void API_ROUTINE gds__get_client_version(SCHAR *buffer)
 }
 
 
-int API_ROUTINE gds__get_client_major_version()
+int API_ROUTINE isc_get_client_major_version()
 {
 /**************************************
  *
@@ -987,7 +987,7 @@ int API_ROUTINE gds__get_client_major_version()
 }
 
 
-int API_ROUTINE gds__get_client_minor_version()
+int API_ROUTINE isc_get_client_minor_version()
 {
 /**************************************
  *
@@ -1034,7 +1034,7 @@ void API_ROUTINE gds__map_blobs(int *handle1, int *handle2)
 
 
 #if !(defined REQUESTER)
-void API_ROUTINE gds__set_debug(int value)
+void API_ROUTINE isc_set_debug(int value)
 {
 /**************************************
  *
@@ -1225,7 +1225,7 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 }
 
 
-int API_ROUTINE gds__version(FRBRD** handle,
+int API_ROUTINE isc_version(FRBRD** handle,
 							 FPTR_VOID routine, void* user_arg)
 {
 /**************************************

@@ -45,16 +45,16 @@ USHORT	API_ROUTINE gds__event_block_a(SCHAR **, SCHAR **, SSHORT,
 											 SCHAR **);
 void	API_ROUTINE gds__event_block_s(SCHAR **, SCHAR **, SSHORT,
 										   SCHAR **, SSHORT *);
-void	API_ROUTINE gds__event_counts(ULONG *, SSHORT, SCHAR *, SCHAR *);
-void	API_ROUTINE gds__get_client_version(SCHAR *);
-int		API_ROUTINE gds__get_client_major_version();
-int		API_ROUTINE gds__get_client_minor_version();
+void	API_ROUTINE isc_event_counts(ULONG *, SSHORT, SCHAR *, SCHAR *);
+void	API_ROUTINE isc_get_client_version(SCHAR *);
+int		API_ROUTINE isc_get_client_major_version();
+int		API_ROUTINE isc_get_client_minor_version();
 void	API_ROUTINE gds__map_blobs(int*, int*);
-void	API_ROUTINE gds__set_debug(int);
+void	API_ROUTINE isc_set_debug(int);
 void	API_ROUTINE isc_set_login(const UCHAR**, SSHORT*);
 BOOLEAN	API_ROUTINE isc_set_path(TEXT*, USHORT, TEXT*);
 void	API_ROUTINE isc_set_single_user(const UCHAR**, SSHORT*, const TEXT*);
-int		API_ROUTINE gds__version(FRBRD **, FPTR_VOID, void *);
+int		API_ROUTINE isc_version(FRBRD **, FPTR_VOID, void *);
 void	API_ROUTINE isc_format_implementation(USHORT, USHORT, TEXT *,
 												  USHORT, USHORT, TEXT *);
 U_IPTR	API_ROUTINE isc_baddress(SCHAR *);

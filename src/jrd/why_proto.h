@@ -240,6 +240,11 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS*, FRBRD**, SSHORT,
 											const SCHAR*, SSHORT, UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS*, FRBRD**, SSHORT);
+#ifndef REQUESTER
+ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FRBRD**, USHORT, SCHAR*,
+										SCHAR*);
+#endif
+
 #endif
 
 typedef void DatabaseCleanupRoutine(FRBRD**, SLONG);
@@ -251,15 +256,10 @@ typedef void DatabaseCleanupRoutine(FRBRD**, SLONG);
 ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FRBRD**, USHORT);
 #endif
 
-ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS*, FRBRD**,
-												DatabaseCleanupRoutine*, SLONG);
+ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS*, FRBRD**,
+												DatabaseCleanupRoutine*, SCHAR*);
 int API_ROUTINE gds__disable_subsystem(TEXT*);
 int API_ROUTINE gds__enable_subsystem(TEXT*);
-
-#ifndef REQUESTER
-ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS*, FRBRD**, USHORT, UCHAR*,
-										UCHAR*);
-#endif
 
 ISC_STATUS gds__handle_cleanup(ISC_STATUS*, FRBRD**);
 typedef void TransactionCleanupRoutine(FRBRD*, SLONG);

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.37 2003-11-08 16:40:16 brodsom Exp $
+$Id: why.cpp,v 1.38 2003-11-09 15:38:31 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -323,7 +323,7 @@ static const TEXT glbunknown[10] = "<unknown>";
 #define GDS_DDL					isc_ddl
 #define GDS_DETACH				isc_detach_database
 #define GDS_DROP_DATABASE		isc_drop_database
-#define GDS_EVENT_WAIT			gds__event_wait
+//#define GDS_EVENT_WAIT			gds__event_wait
 #define GDS_GET_SEGMENT			isc_get_segment
 #define GDS_GET_SLICE			isc_get_slice
 #define GDS_OPEN_BLOB			isc_open_blob
@@ -1457,10 +1457,10 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS * user_status,
+ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
 											 WHY_ATT * handle,
 											 DatabaseCleanupRoutine * routine,
-											 SLONG arg)
+											 SCHAR* arg)
 {
 /**************************************
  *
@@ -1491,7 +1491,7 @@ ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS * user_status,
 	clean->clean_next = database->cleanup;
 	database->cleanup = clean;
 	clean->DatabaseRoutine = routine;
-	clean->clean_arg = arg;
+	clean->clean_arg = (SLONG) arg;
 
 	status[0] = gds_arg_gds;
 	status[1] = 0;
@@ -3447,11 +3447,11 @@ int API_ROUTINE gds__enable_subsystem(TEXT * subsystem)
 
 
 #ifndef REQUESTER
-ISC_STATUS API_ROUTINE GDS_EVENT_WAIT(ISC_STATUS * user_status,
+ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 									  WHY_ATT * handle,
 									  USHORT length,
-									  UCHAR * events,
-									  UCHAR * buffer)
+									  SCHAR * events,
+									  SCHAR * buffer)
 {
 /**************************************
  *
@@ -3479,7 +3479,7 @@ ISC_STATUS API_ROUTINE GDS_EVENT_WAIT(ISC_STATUS * user_status,
 	value = ISC_event_clear(why_event);
 
 	if (GDS_QUE_EVENTS
-		(status, handle, &id, length, events, event_ast, buffer))
+		(status, handle, &id, length, (UCHAR*) events, event_ast, (UCHAR*) buffer))
 	{
 		 return error2(status, local);
 	}
