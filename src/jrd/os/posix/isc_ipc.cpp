@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.11 2004-04-28 22:35:33 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.12 2004-05-02 22:48:16 brodsom Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -84,7 +84,7 @@
 #include <fcntl.h>
 #endif
 
-#define LOCAL_SEMAPHORES 4
+//#define LOCAL_SEMAPHORES 4
 
 typedef struct sig {
 	struct sig* sig_next;
