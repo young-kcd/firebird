@@ -3928,7 +3928,6 @@ static TEXT	*ptr, *end, *last_token, *line_start;
 static TEXT	*last_token_bk, *line_start_bk;
 static SSHORT	lines, att_charset;
 static SSHORT	lines_bk;
-static BOOLEAN	first_time;
 static USHORT   param_number;
 
 
@@ -3990,7 +3989,6 @@ void LEX_string (
     att_charset = character_set;
     line_start_bk = line_start;
     lines_bk = lines;
-    first_time = TRUE;
 	param_number = 1;
 #ifdef DEV_BUILD
     if (DSQL_debug & 32)
