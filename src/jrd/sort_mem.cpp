@@ -33,7 +33,7 @@
 #include "../jrd/sort_mem.h"
 
 const size_t DEFAULT_BLOCK_SIZE = 1048576;				// 1MB
-const size_t DEFAULT_UPPER_LIMIT = (size_t) -1;			// ~4GB
+const size_t DEFAULT_UPPER_LIMIT = 1048576 * 256;		// 256MB
 
 bool SortMem::is_initialized = false;
 
