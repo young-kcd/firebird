@@ -1,3 +1,21 @@
+2004-01-04 15:12  dimitr
+
+	* firebird2/src/dsql/utld.cpp:
+	
+	Fixed old FB2 bug.
+
+2004-01-04 05:43  robocop
+
+	* firebird2/src/isql/isql.h:
+	
+	Misc change, style
+
+2004-01-04 05:41  robocop
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fixing wrong indentation, nothing else.
+
 2004-01-03 15:12  fsg
 
 	* firebird2/src/: common/utils.cpp, isql/isql.h, qli/blk.h,
