@@ -25,6 +25,7 @@
 // =====================================
 // Utility functions
 
+#include "../jrd/common.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -34,6 +35,7 @@
 #undef __need_size_t
 #endif
 
+#include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
 
 namespace fb_utils
@@ -125,6 +127,24 @@ int name_length(const TEXT* const name)
 
 	return (q + 1) - name;
 }
+
+
+int snprintf(char* buffer, size_t count, const char* format...)
+{
+	va_list args;
+	va_start(args, format);
+	const int rc = VSNPRINTF(buffer, count, format, args);
+	buffer[count - 1] = 0;
+	va_end(args);
+#if defined(DEV_BUILD) && !defined(HAVE_VSNPRINTF)
+	// We don't have the safe functions, then check if we overflowed the buffer.
+	// I would prefer to make this functionality available in prod build, too.
+	// If the docs are right, the null terminator is not counted => rc < count.
+	fb_assert_and_continue(rc >= 0 && rc < count);
+#endif
+	return rc;
+}
+
 
 } // namespace fb_utils
 
