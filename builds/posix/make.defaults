@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.36 2004-05-20 09:55:35 kkuznetsov Exp $
+#   $Id: make.defaults,v 1.37 2004-10-24 09:10:56 skidder Exp $
 # 
 
 
@@ -182,8 +182,8 @@ LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
 # LINKER OPTIONS
 #
 
-LINK_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
-LIB_LINK_OPTIONS = -shared
+LINK_OPTS = $(LDFLAGS) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
+LIB_LINK_OPTIONS = $(LDFLAGS) -shared
 LIB_LINK_RPATH = -Wl,-rpath,
 LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,

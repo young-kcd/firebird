@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.206 2004-10-17 23:48:46 skidder Exp $
+dnl $Id: configure.in,v 1.207 2004-10-24 09:06:43 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -21,7 +21,7 @@ sinclude(acx_pthread.m4)
 dnl ############################# ADD TESTS BELOW ##############################
 
 AC_CANONICAL_SYSTEM
-CPU_TYPE=$host_cpu dnl EKU: Should this be target_cpu ???
+CPU_TYPE=$target_cpu
 AC_SUBST(CPU_TYPE)
 
 

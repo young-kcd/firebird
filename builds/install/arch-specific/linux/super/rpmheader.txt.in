@@ -8,7 +8,7 @@ Source: FirebirdSS1.5src.tar.gz
 URL: http://firebird.sourceforge.net 
 # Prefix: /
 AutoReqProv: no 
-BuildArchitectures: @CPU_TYPE@
+# BuildArchitectures: @CPU_TYPE@
 # BuildRoot: /var/tmp/%{name}-buildroot
 BuildRoot: @BUILD_ROOT_DIR@/gen/buildroot
 
