@@ -58,7 +58,11 @@ int CLIB_ROUTINE main( int argc, SCHAR ** argv)
 	WAL WAL_handle;
 	SCHAR dbname[256];
 	int ret;
-	SLONG redir_in, redir_out, redir_err;
+#ifdef SERVICE_REDIRECT
+	SLONG redir_in;
+	SLONG redir_out;
+	SLONG redir_err;
+#endif
 	outfile = ib_stdout;
 
 /* Perform some special handling when run as an Interbase service.  The
