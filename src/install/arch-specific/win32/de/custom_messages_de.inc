@@ -16,38 +16,38 @@ de.UseServiceTask=Server als &Dienst starten?
 de.AutoStartTask=&Firebird nach jedem Rechnerneustart automatisch starten?
 de.CopyFbClientToSysTask=Die Firebird &Client-Bibliothek ins <system>-Verzeichnis kopieren?
 de.CopyFbClientAsGds32Task=Die Client-Bibliothek als &GDS32.DLL ins <system>-Verzeichnis kopieren?
-de.InstallCPLAppletTask=Installieren eines &Symbols im Infobereich der Taskleiste?
+de.InstallCPLAppletTask="Installieren eines &Symbols im Infobereich der Taskleiste?"
 de.instreg=Die Registry wird aktualisiert
 de.instclientCopyFbClient=Kopiere fbclient in das <sys> Verzeichnis
 de.instclientGenGds32=Erstelle gds32.dll für das <sys> Verzeichnis
-de.instclientDecLibCountGds32=Verringert den Zähler für die gemeinsam genutzten Bibliotheken um gds32 und entfernt die Bibliothek wenn angebracht.
-de.instclientDecLibCountFbClient=Verringert den Zähler für die gemeinsam genutzten Bibliotheken um fbclient und entfernt die Bibliothek wenn angebracht.
+de.instclientDecLibCountGds32="Verringert den Zähler von gemeinsam benutzten Bibliotheken von gds32 und entfernt die Bibliothek wenn angebracht."
+de.instclientDecLibCountFbClient="Verringert den Zähler von gemeinsam benutzten Bibliotheken von fbclient und entfernt die Bibliothek wenn angebracht."
 de.instsvcSetup=Der Dienst wird eingerichtet
 de.instsvcStartQuestion=Firebird jetzt als Dienst starten?
 de.instsvcStartMsg=Der Dienst wird gestartet
-de.instsvcStopMsg=Der Dienst wird gestoppt
-de.instsvcRemove=Der Dienst wird entfernt
+de.instsvcStopMsg="Der Dienst wird gestoppt"
+de.instsvcRemove="Der Dienst wird entfernt"
 de.instappStartQuestion=Firebird jetzt starten?
 de.instappStartMsg=Der Server wird gestartet
 
 de.InstallSummarySuffix1=Diese Firebird Version wird die Standard Installation.
 de.InstallSummarySuffix2=Beachten Sie, dass die Installation dieser Version von Firebird
-de.InstallSummarySuffix3=zu unvorhersehbaren Ergebnissen führen kann, wenn eine neuere
-de.InstallSummarySuffix4=           Version bereits installiert war.
+de.InstallSummarySuffix3= zu unvorhersehbaren Ergebnissen führen kann, wenn eine neuere
+de.InstallSummarySuffix4=           Version bereits installiert ist.
 
 de.InstallSummaryCancel1= Wenn sie mit dieser Installation fortfahren, wird Firebird installiert aber nicht konfiguriert.
-de.InstallSummaryCancel2= Sie müssen die Installation von Hand fertig stellen.
-de.InstallSummaryCancel3= Möchten Sie die Installation ABBRECHEN?
+de.InstallSummaryCancel2= Sie müssen die Installation manuell fertig stellen.
+de.InstallSummaryCancel3= Möchten Sie diese Installation ABBRECHEN?
 
 de.InstalledProducts=Die Neuinstallations-Analyse ergibt, dass %s existierende Firebird oder Interbase %s
 de.InstalledProdCountSingular=Version gefunden wurde.
 de.InstalledProdCountPlural=Versionen gefunden wurden.
 
 de.Fb15Running1=Ein existierender Firebird 1.5 Server läuft.
-de.Fb15Running2=Sie müssen die Anwendung schließen oder den Dienst
-de.Fb15Running3=    beenden bevor Sie fortfahren können.
+de.Fb15Running2= Sie müssen die Anwendung schließen oder den Dienst
+de.Fb15Running3=         beenden, bevor Sie fortfahren können.
 
-de.PreviousInstallBroken=   (Die Installation scheint fehlerhaft zu haben wegen eines Versionskonflikts.)
+de.PreviousInstallBroken=   (Die Installation scheint wegen eines Versionskonflikts fehlerhaft zu sein.)
 de.PreviousInstallGood=   (Die Installation scheint korrekt sein.)
 
 ;neu hinzugefügt
