@@ -39,7 +39,7 @@ DATABASE DB = FILENAME "msg.fdb";
 
 #define CODES_PAS	"gds_codes.pas"
 #define CODES_FTN	"gds_codes.ftn"
-#define CODES_H		"codes.h"
+//#define CODES_H		"codes.h"
 #define IBERROR_H	"iberror.h"
 #define CODETEXT_H	"codetext.h"
 #define MSGS_H		"msgs.h"
@@ -57,7 +57,7 @@ enum formatStyle
 };
 
 
-static void build_codes_h(void);
+//static void build_codes_h(void);
 static void build_iberror_h(void);
 static void build_other_headers(void);
 static void build_msgfac_h(void);
@@ -299,7 +299,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	START_TRANSACTION;
 
 	build_iberror_h();
-	build_codes_h();
+//	build_codes_h();
 	build_msgfac_h();
 	build_other_headers();
 
@@ -484,189 +484,189 @@ static void build_iberror_h(void)
 }
 
 
-static void build_codes_h(void)
-{
-/*******************************************
-*
-*	b u i l d _ c o d e s _ h
-*
-*******************************************
-*
-* Functional desciption
-*	Function creates the codes.h
-*	file which contains c and isc_
-*	style error codes.
-*
-*******************************************/
-	FILE *c_codes = NULL;
-	int i, code = 1, last_code = code - 1;
-	unsigned long new_code = 0L;
-
+//static void build_codes_h(void)
+//{
+///*******************************************
+//*
+//*	b u i l d _ c o d e s _ h
+//*
+//*******************************************
+//*
+//* Functional desciption
+//*	Function creates the codes.h
+//*	file which contains c and isc_
+//*	style error codes.
+//*
+//*******************************************/
+//	FILE *c_codes = NULL;
+//	int i, code = 1, last_code = code - 1;
+//	unsigned long new_code = 0L;
+//
 // Open codes.h in the current directory.
-
-	check_open(c_codes, CODES_H, "tmpcode3", "w");
-	add_text(c_codes, CSTYLE, license);
-	add_text(c_codes, CSTYLE, warn);
-
-	fprintf(c_codes, "\n#ifndef JRD_GEN_CODES_H\n");
-	fprintf(c_codes, "#define JRD_GEN_CODES_H\n");
-
-	fprintf(c_codes, "\n#ifdef __cplusplus /* c++ definitions */\n\n");
-
-	fprintf(c_codes, "const SLONG gds_facility	= %d;\n", gds_facility_local);
-	fprintf(c_codes, "const SLONG gds_err_base = %ldL;\n", gds_base_local);
-	fprintf(c_codes, "const SLONG gds_err_factor = %ld;\n", gds_factor_local);
-
-	// Append the C++ boiler plate
-	int numLines = FB_NELEM(gds_cpp_boiler_plate);
-	for (i = 0; i < numLines; i++) {
-		fprintf(c_codes, "%s\n", gds_cpp_boiler_plate[i]);
-	}
-
-
-	FOR S IN SYSTEM_ERRORS CROSS N IN MESSAGES OVER NUMBER WITH
-		N.FAC_CODE = S.FAC_CODE SORTED BY N.FAC_CODE, S.NUMBER
-		// The only facility that is guaranteed to have all codes in
-		// system errors is JRD
-		if (last_code + 1 != N.CODE && N.FAC_CODE == 0)
-		{
-			fprintf(stderr,
-					   "Warning: missing codes between %d and %d (exclusive)\n",
-					   last_code, (int) N.CODE);
-		}
-		last_code = N.CODE;
-		new_code = ENCODE_ISC_MSG(S.NUMBER, N.FAC_CODE);
-		fprintf(c_codes, "const SLONG gds_%-32.32s = %luL;\n", S.GDS_SYMBOL,
-				   new_code);
-		++code;
-
-		/* make sure that the SQL code is also present in the SQLERR facility */
-
-	/**** this part really should be done via a trigger on the database--
-		  commented out for now - deej
-	got_it = 0;
-	if (S.SQL_CODE < 0)
-	{
-		srchnum = 1000 + S.SQL_CODE;
-		**FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_NEGATIVE
-		AND M.NUMBER = srchnum
-			got_it = 1;
-		**END_FOR;
-	}
-	else
-	{
-		srchnum = S.SQL_CODE;
-		**FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_POSITIVE
-		AND M.NUMBER = srchnum
-			got_it = 1;
-		**END_FOR;
-	}
-	if (!got_it)
-	{
- 		printf ("codes: msg %d: sql-code %d, is not in the SQLERR facility\n",
-					N.NUMBER, S.SQL_CODE);
-		ROLLBACK;
-		FINISH;
-		exit (FINI_ERROR);
-	} ****/
-
-	END_FOR;
-
-	--code;
-	fprintf(c_codes, "const SLONG gds_%-32.32s = %dL;\n", "err_max", code);
-	fprintf(c_codes, "\n");
-
-
-	fprintf(c_codes, "#else /* c definitions */\n\n");
-
-
-	fprintf(c_codes, "#define gds_facility	%d\n", gds_facility_local);
-	fprintf(c_codes, "#define gds_err_base	%ldL\n", gds_base_local);
-	fprintf(c_codes, "#define gds_err_factor	%ld\n", gds_factor_local);
-
-	// Reset the variables for another trip round the loop.
-	code = 1;
-	last_code = code - 1;
-	new_code = 0L;
-
-	// Append the C boiler plate
-	numLines = FB_NELEM(gds_c_boiler_plate);
-	for (i = 0; i < numLines; i++) {
-		fprintf(c_codes, "%s\n", gds_c_boiler_plate[i]);
-	}
-
-
-	FOR S IN SYSTEM_ERRORS CROSS N IN MESSAGES OVER NUMBER WITH
-		N.FAC_CODE = S.FAC_CODE SORTED BY N.FAC_CODE, S.NUMBER
-		// The only facility that is guaranteed to have all codes in
-		// system errors is JRD
-		if (last_code + 1 != N.CODE && N.FAC_CODE == 0)
-		{
-			fprintf(stderr,
-					   "Warning: missing codes between %d and %d (exclusive)\n",
-					   last_code, (int) N.CODE);
-		}
-		last_code = N.CODE;
-		new_code = ENCODE_ISC_MSG(S.NUMBER, N.FAC_CODE);
-		fprintf(c_codes, "#define gds__%-32.32s %luL\n", S.GDS_SYMBOL,
-				   new_code);
-		++code;
-
-		/* make sure that the SQL code is also present in the SQLERR facility */
-
-	/**** this part really should be done via a trigger on the database--
-		  commented out for now - deej
-	got_it = 0;
-	if (S.SQL_CODE < 0)
-	{
-		srchnum = 1000 + S.SQL_CODE;
-		**FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_NEGATIVE
-			AND M.NUMBER = srchnum
-			got_it = 1;
-		**END_FOR;
-	}
-	else
-	{
-		srchnum = S.SQL_CODE;
-		**FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_POSITIVE
-			AND M.NUMBER = srchnum
-			got_it = 1;
-		**END_FOR;
-	}
-	if (!got_it)
-	{
-		printf ("codes: msg %d: sql-code %d, is not in the SQLERR facility\n",
-					 N.NUMBER, S.SQL_CODE);
-		ROLLBACK;
-		FINISH;
-		exit (FINI_ERROR);
-	} ****/
-
-	END_FOR;
-
-	--code;
-	fprintf(c_codes, "#define gds_%-32.32s %d\n", "err_max", code);
-	fprintf(c_codes, "\n");
-
-
-	fprintf(c_codes, "#endif\n\n");
-
-
-
+//
+//	check_open(c_codes, CODES_H, "tmpcode3", "w");
+//	add_text(c_codes, CSTYLE, license);
+//	add_text(c_codes, CSTYLE, warn);
+//
+//	fprintf(c_codes, "\n#ifndef JRD_GEN_CODES_H\n");
+//	fprintf(c_codes, "#define JRD_GEN_CODES_H\n");
+//
+//	fprintf(c_codes, "\n#ifdef __cplusplus /* c++ definitions */\n\n");
+//
+//	fprintf(c_codes, "const SLONG gds_facility	= %d;\n", gds_facility_local);
+//	fprintf(c_codes, "const SLONG gds_err_base = %ldL;\n", gds_base_local);
+//	fprintf(c_codes, "const SLONG gds_err_factor = %ld;\n", gds_factor_local);
+//
+//	// Append the C++ boiler plate
+//	int numLines = FB_NELEM(gds_cpp_boiler_plate);
+//	for (i = 0; i < numLines; i++) {
+//		fprintf(c_codes, "%s\n", gds_cpp_boiler_plate[i]);
+//	}
+//
+//
+//	FOR S IN SYSTEM_ERRORS CROSS N IN MESSAGES OVER NUMBER WITH
+//		N.FAC_CODE = S.FAC_CODE SORTED BY N.FAC_CODE, S.NUMBER
+//		// The only facility that is guaranteed to have all codes in
+//		// system errors is JRD
+//		if (last_code + 1 != N.CODE && N.FAC_CODE == 0)
+//		{
+//			fprintf(stderr,
+//					   "Warning: missing codes between %d and %d (exclusive)\n",
+//					   last_code, (int) N.CODE);
+//		}
+//		last_code = N.CODE;
+//		new_code = ENCODE_ISC_MSG(S.NUMBER, N.FAC_CODE);
+//		fprintf(c_codes, "const SLONG gds_%-32.32s = %luL;\n", S.GDS_SYMBOL,
+//				   new_code);
+//		++code;
+//
+//		/* make sure that the SQL code is also present in the SQLERR facility */
+//
+//	/**** this part really should be done via a trigger on the database--
+//		  commented out for now - deej
+//	got_it = 0;
+//	if (S.SQL_CODE < 0)
+//	{
+//		srchnum = 1000 + S.SQL_CODE;
+//		**FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_NEGATIVE
+//		AND M.NUMBER = srchnum
+//			got_it = 1;
+//		**END_FOR;
+//	}
+//	else
+//	{
+//		srchnum = S.SQL_CODE;
+//		**FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_POSITIVE
+//		AND M.NUMBER = srchnum
+//			got_it = 1;
+//		**END_FOR;
+//	}
+//	if (!got_it)
+//	{
+//		printf ("codes: msg %d: sql-code %d, is not in the SQLERR facility\n",
+//					N.NUMBER, S.SQL_CODE);
+//		ROLLBACK;
+//		FINISH;
+//		exit (FINI_ERROR);
+//	} ****/
+//
+//	END_FOR;
+//
+//	--code;
+//	fprintf(c_codes, "const SLONG gds_%-32.32s = %dL;\n", "err_max", code);
+//	fprintf(c_codes, "\n");
+//
+//
+//	fprintf(c_codes, "#else /* c definitions */\n\n");
+//
+//
+//	fprintf(c_codes, "#define gds_facility	%d\n", gds_facility_local);
+//	fprintf(c_codes, "#define gds_err_base	%ldL\n", gds_base_local);
+//	fprintf(c_codes, "#define gds_err_factor	%ld\n", gds_factor_local);
+//
+//	// Reset the variables for another trip round the loop.
+//	code = 1;
+//	last_code = code - 1;
+//	new_code = 0L;
+//
+//	// Append the C boiler plate
+//	numLines = FB_NELEM(gds_c_boiler_plate);
+//	for (i = 0; i < numLines; i++) {
+//		fprintf(c_codes, "%s\n", gds_c_boiler_plate[i]);
+//	}
+//
+//
+//	FOR S IN SYSTEM_ERRORS CROSS N IN MESSAGES OVER NUMBER WITH
+//		N.FAC_CODE = S.FAC_CODE SORTED BY N.FAC_CODE, S.NUMBER
+//		// The only facility that is guaranteed to have all codes in
+//		// system errors is JRD
+//		if (last_code + 1 != N.CODE && N.FAC_CODE == 0)
+//		{
+//			fprintf(stderr,
+//					   "Warning: missing codes between %d and %d (exclusive)\n",
+//					   last_code, (int) N.CODE);
+//		}
+//		last_code = N.CODE;
+//		new_code = ENCODE_ISC_MSG(S.NUMBER, N.FAC_CODE);
+//		fprintf(c_codes, "#define gds__%-32.32s %luL\n", S.GDS_SYMBOL,
+//				   new_code);
+//		++code;
+//
+//		/* make sure that the SQL code is also present in the SQLERR facility */
+//
+//	/**** this part really should be done via a trigger on the database--
+//		  commented out for now - deej
+//	got_it = 0;
+//	if (S.SQL_CODE < 0)
+//	{
+//		srchnum = 1000 + S.SQL_CODE;
+//		**FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_NEGATIVE
+//			AND M.NUMBER = srchnum
+//			got_it = 1;
+//		**END_FOR;
+//	}
+//	else
+//	{
+//		srchnum = S.SQL_CODE;
+//		**FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_POSITIVE
+//			AND M.NUMBER = srchnum
+//			got_it = 1;
+//		**END_FOR;
+//	}
+//	if (!got_it)
+//	{
+//		printf ("codes: msg %d: sql-code %d, is not in the SQLERR facility\n",
+//					 N.NUMBER, S.SQL_CODE);
+//		ROLLBACK;
+//		FINISH;
+//		exit (FINI_ERROR);
+//	} ****/
+//
+//	END_FOR;
+//
+//	--code;
+//	fprintf(c_codes, "#define gds_%-32.32s %d\n", "err_max", code);
+//	fprintf(c_codes, "\n");
+//
+//
+//	fprintf(c_codes, "#endif\n\n");
+//
+//
+//
 // Append the ISC error codes
-
-/*  I have removed the isc errors from codes.h since they are all now placed
-	into iberror.h - If it needs to be replaced then it can be copied back
-	from gen iberror routine.  I now do the include of that file.
-	MOD 17-07-2001
-*/
-	fprintf(c_codes, "#include \"iberror.h\"\n\n");
-
-
-	fprintf(c_codes, "#endif /* JRD_GEN_CODES_H */\n");
-
-	check_close(c_codes, CODES_H, "tmpcode3", "w", genDirectory);
-}
+//
+///*  I have removed the isc errors from codes.h since they are all now placed
+//	into iberror.h - If it needs to be replaced then it can be copied back
+//	from gen iberror routine.  I now do the include of that file.
+//	MOD 17-07-2001
+//*/
+//	fprintf(c_codes, "#include \"iberror.h\"\n\n");
+//
+//
+//	fprintf(c_codes, "#endif /* JRD_GEN_CODES_H */\n");
+//
+//	check_close(c_codes, CODES_H, "tmpcode3", "w", genDirectory);
+//}
 
 
 static void build_other_headers(void)
