@@ -1965,7 +1965,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
         verb = "redefine procedure"; 
         break;
 	case nod_del_procedure:
-		verb = "delete porcedure";
+		verb = "delete procedure";
 		break;
 	case nod_def_trigger:
 		verb = "define trigger";
@@ -2114,9 +2114,6 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	case nod_order:
 		verb = "order";
 		break;
-	case nod_parameter:
-		verb = "parameter";
-		break;
 	case nod_primary:
 		verb = "primary key";
 		break;
@@ -2224,13 +2221,42 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	case nod_subtract2:
 		verb = "subtract2";
 		break;
-    case nod_limit:    
-        verb = "limit";     
-        break;
-    /* CVC: New node breakleave. */
-    case nod_breakleave:   
-        verb = "breakleave";    
-        break;
+	case nod_limit:	   
+		verb = "limit";		
+		break;
+	/* CVC:	New	node breakleave. */
+	case nod_breakleave:   
+		verb = "breakleave";	
+		break;
+	/* IOL:	missing	node types */
+	case nod_on_error:
+		verb="on error";  
+		break;
+	case nod_block:
+		verb="block";  
+		break;
+	case nod_default:
+		verb="default";	 
+		break;
+	case nod_plan_expr:
+		verb="plan";  
+		break;
+	case nod_index:
+		verb="index";  
+		break;
+	case nod_index_order:
+		verb="order";  
+		break;
+	case nod_plan_item:
+		verb="item";  
+		break;
+	case nod_natural:
+		verb="natural";	 
+		break;
+	case nod_join_inner:
+		verb="join_inner";	
+		break;
+
 	case nod_aggregate:
 		verb = "aggregate";
 		PRINTF("%s%s\n", buffer, verb);
@@ -2331,6 +2357,16 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		string = (STR) node->nod_arg[e_vrn_name];
 		PRINTF("%s\"\n", string->str_data);
 		FREE_MEM_RETURN;
+
+	case nod_parameter:
+		if (node->nod_column){
+			PRINTF("%sparameter: %d\n",	buffer,(USHORT)node->nod_arg[e_par_parameter]);
+		}else{
+			PAR	par=(PAR)node->nod_arg[e_par_parameter];
+			PRINTF("%sparameter: %d\n",	buffer,par->par_index);
+		}
+		FREE_MEM_RETURN;
+
 
     case nod_udf:
         PRINTF ("%sfunction: \"", buffer);  
