@@ -475,7 +475,7 @@ int ISQL_main(int argc,
 // Detect if stdin is redirected
 #ifdef WIN_NT
 	HANDLE in = GetStdHandle (STD_INPUT_HANDLE);
-	if (GetFileType (in) != FILE_TYPE_CHAR)
+	if (GetFileType (in) == FILE_TYPE_DISK)
 		Interactive = false;
 #else
 	if (!isatty(fileno(stdin)))
