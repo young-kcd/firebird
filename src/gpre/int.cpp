@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.14 2003-09-12 16:35:39 brodsom Exp $
+//	$Id: int.cpp,v 1.15 2003-09-16 14:01:55 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -75,6 +75,15 @@ static int first_flag = 0;
 #define JRD_VTOF	"jrd_vtof"
 #define VTO_CALL	"%s ((const char*)%s, (char*)%s, %d);"
 
+static inline void begin(int column)
+{
+	printa(column, "{");
+}
+
+static inline void endp(int column)
+{
+	printa(column, "}");
+}
 
 //____________________________________________________________
 //  
@@ -92,7 +101,7 @@ void INT_action( ACT action, int column)
 	case ACT_store:
 	case ACT_s_fetch:
 	case ACT_s_start:
-		printa(column, "{");
+		begin(column);
 		align(column);
 	}
 
@@ -149,7 +158,7 @@ void INT_action( ACT action, int column)
 
 //  Put in a trailing brace for those actions still with us 
 
-	printa(column, "}");
+	endp(column);
 }
 
 
@@ -385,7 +394,7 @@ static void gen_endfor( ACT action, int column)
 	if (request->req_sync)
 		gen_send(request, request->req_sync, column, false);
 
-	printa(column, "}");
+	endp(column);
 }
 
 
@@ -419,7 +428,7 @@ static void gen_for( ACT action, int column)
 	request = action->act_request;
 	ib_fprintf(out_file, "while (1)");
 	column += INDENT;
-	printa(column, "{");
+	begin(column);
 	align(column);
 	gen_receive(action->act_request, request->req_primary);
 	align(column);
