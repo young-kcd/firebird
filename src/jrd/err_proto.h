@@ -39,9 +39,12 @@ typedef enum idx_e {
     idx_e_foreign
 } IDX_E;
 
+// In dsql BUGCHECK are defined by errd_proto.h
+#ifndef BUGCHECK
 #define BUGCHECK(number)        ERR_bugcheck (number)
 #define CORRUPT(number)         ERR_corrupt (number)
 #define IBERROR(number)         ERR_error (number)
+#endif
 
 BOOLEAN DLL_EXPORT ERR_post_warning(ISC_STATUS, ...);
 void ERR_assert(const TEXT*, int);
