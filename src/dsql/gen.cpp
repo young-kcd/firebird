@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.19 2002-11-30 17:36:40 hippoman Exp $
+$Id: gen.cpp,v 1.20 2002-12-11 09:45:59 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -216,11 +216,6 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 
     case nod_current_role:
         STUFF (blr_current_role);
-        return;
-
-    case nod_breakleave:
-        STUFF (blr_leave);
-        STUFF (0);
         return;
 
 	case nod_udf:
