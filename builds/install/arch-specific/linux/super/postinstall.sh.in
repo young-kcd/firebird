@@ -59,24 +59,45 @@ replaceLineInFile() {
 #------------------------------------------------------------------------
 #  Add new user and group
 
+TryAddGroup() {
+
+	AdditionalParameter=$1
+	testStr=`grep firebird /etc/group`
+	
+    if [ -z "$testStr" ]
+      then
+        groupadd $AdditionalParameter firebird
+    fi
+	
+}
+
+
+TryAddUser() {
+
+	AdditionalParameter=$1
+    testStr=`grep firebird /etc/passwd`
+	
+    if [ -z "$testStr" ]
+      then
+        useradd $AdditionalParameter -M -d $IBRootDir -s /bin/false \
+            -c "Firebird Database Owner" -g firebird firebird 
+    fi
+
+}
+
 
 addFirebirdUser() {
 
-    testStr=`grep firebird /etc/group`
+	TryAddGroup "-g 84 -r" >/dev/null 2>&1
+	TryAddGroup "-g 84" >/dev/null 2>&1
+	TryAddGroup "-r" >/dev/null 2>&1
+	TryAddGroup " "
+	
+	TryAddUser "-u 84 -r" >/dev/null 2>&1
+	TryAddUser "-u 84" >/dev/null 2>&1
+	TryAddUser "-r" >/dev/null 2>&1
+	TryAddUser " "
 
-    if [ -z "$testStr" ]
-      then
-        groupadd firebird
-    fi
-
-    testStr=`grep firebird /etc/passwd`
-    if [ -z "$testStr" ]
-      then
-        useradd -M -d $IBRootDir -s /bin/sh \
-            -c "Firebird Database Owner" -g firebird firebird 
-
-        # >/dev/null 2>&1 
-    fi
 }
 
 
@@ -332,14 +353,25 @@ startInetService() {
         initScript=/etc/rc.d/init.d/firebird
     fi
 
-    if [ -f $initScript ]
+	if [ -f $initScript ]
       then
         #don't start at install time if running SuSE
-        if [ ! -r /etc/SuSE-release ]; then
+        if [ ! -r /etc/SuSE-release ]
+		  then
     	    $initScript start
+			checkString=`ps -efww| grep fbserver |grep -v grep`
+
+			if [ -z "$checkString" ]
+			  then
+				# server didn't start - possible reason bad shell /bin/false
+				echo
+				echo Fixing firebird\'s shell to /bin/sh
+				echo
+				usermod -s /bin/sh firebird
+				$initScript start
+			fi
+		fi
 	fi
-	
-    fi
 }
 
 

@@ -55,6 +55,8 @@ stopServerIfRunning() {
       then 
         cp $SecurityDatabase /tmp 
         echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp" 
+		chown root:root /tmp/$SecurityDatabase
+		chmod 0600 /tmp/$SecurityDatabase
     fi 
         
 
@@ -69,4 +71,14 @@ stopServerIfRunning() {
 
     rm -f $IBBin/fbmgr
 
-    userdel firebird
+	testStr=`grep firebird /etc/passwd`
+	if [ ! -z "$testStr" ]
+	  then
+		userdel firebird
+	fi
+
+	testStr=`grep firebird /etc/group`
+	if [ ! -z "$testStr" ]
+	  then
+		groupdel firebird
+	fi
