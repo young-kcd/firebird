@@ -66,7 +66,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 75},			// pages
 #endif
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
-	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 60},			// seconds
+	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 262144},		// bytes
 #ifdef SINIXZ
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores

@@ -362,11 +362,14 @@ void DLL_EXPORT REMOTE_get_timeout_params(
 					got_dpb_connect_timeout = TRUE;
 					break;
 
-				case gds_dpb_dummy_packet_interval:
-					port->port_dummy_packet_interval = get_parameter(&p);
-					got_dpb_dummy_packet_interval = TRUE;
-					port->port_flags |= PORT_dummy_pckt_set;
-					break;
+// 22 Aug 2003. Do not receive this parameter from the client as dummy packets
+//   either kill idle client process or cause unexpected disconnections. 
+//   This applies to all IB/FB versions.
+//				case gds_dpb_dummy_packet_interval:
+//					port->port_dummy_packet_interval = get_parameter(&p);
+//					got_dpb_dummy_packet_interval = TRUE;
+//					port->port_flags |= PORT_dummy_pckt_set;
+//					break;
 
 				case isc_dpb_sys_user_name:
 			/** Store the user name in thread specific storage.
