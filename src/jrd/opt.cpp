@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2002.10.12: Nickolay Samofatov: Fixed problems with wrong results produced by 
+ *            outer joins
  * 2001.07.28: John Bellardo: Added code to handle rse_skip nodes.
  * 2001.07.17 Claudio Valderrama: Stop crash with indices and recursive calls
  *            of OPT_compile: indicator csb_indices set to zero after used memory is
@@ -27,7 +29,7 @@
  *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.14 2002-10-12 19:39:19 skidder Exp $
+$Id: opt.cpp,v 1.15 2002-10-12 19:46:29 skidder Exp $
 */
 
 #include "firebird.h"
