@@ -109,7 +109,7 @@ if "%ERRLEV%"=="1" goto :END
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  %CLEAN% /OUT boot1.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% debug /OUT boot1.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% release /OUT boot1.log
 )
 if errorlevel 1 goto :gpre_boot2
 goto :EOF
