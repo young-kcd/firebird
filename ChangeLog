@@ -1,3 +1,15 @@
+2004-10-30 02:16  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.32):
+	
+	Adjust doco for Arno fix once again
+
+2004-10-29 21:44  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.31):
+	
+	Add description for Arno fix
+
 2004-10-26 01:22  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.73.2.25):
