@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.35 2003-08-19 21:34:22 skidder Exp $
+  $Id: isql.epp,v 1.36 2003-08-20 19:47:07 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -5696,17 +5696,43 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 #endif
 
 		case SQL_FLOAT:
-			sprintf(p, "% #*.*g ",
-					(int) length,
-					(int) MIN(8, (length - 6)),
+//
+// BRS 08 Aug 2003
+// MSVC6 have a bug in the g format when used with # and display 
+// one digit more than the specified precision when the value is 0
+// The bug appears in TCS DSQL_DOMAIN_12 and 13
+//
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200))
+			if ((double) *(float *) (var->sqldata)==0){
+				sprintf(p, "% #*.*g ", (int) length, 
+						(int) MIN(8, (length - 6))-1,
+						(double) *(float *) (var->sqldata));
+				if (List) {
+					sprintf(Print_buffer, "%.*g%s", FLOAT_LEN - 6 -1, 
+							*(float *) (var->sqldata), NEWLINE);
+					ISQL_printf(Out, Print_buffer);
+				}
+			}
+			else {
+				sprintf(p, "% #*.*g ", (int) length,
+						(int) MIN(8, (length - 6)),
+						(double) *(float *) (var->sqldata));
+				if (List) {
+					sprintf(Print_buffer, "%.*g%s", FLOAT_LEN - 6, 
+							*(float *) (var->sqldata), NEWLINE);
+					ISQL_printf(Out, Print_buffer);
+				}
+			}
+#else
+			sprintf(p, "% #*.*g ", (int) length, (int) MIN(8, (length - 6)),
 					(double) *(float *) (var->sqldata));
 			if (List) {
-				sprintf(Print_buffer, "%.*g%s",
-						FLOAT_LEN - 6, *(float *) (var->sqldata), NEWLINE);
+				sprintf(Print_buffer, "%.*g%s", FLOAT_LEN - 6, 
+						*(float *) (var->sqldata), NEWLINE);
 				ISQL_printf(Out, Print_buffer);
 			}
+#endif
 			break;
-
 		case SQL_DOUBLE:
 			/* Don't let numeric/decimal doubles overflow print length */
 			/* Special handling for 0 -- don't test log for length */
@@ -5724,6 +5750,30 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 				}
 			}
 			else {
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200))
+				if (*(double *) (var->sqldata)==0){
+					sprintf(p, "% #*.*g ", (int) length,
+							(int) MIN(16, (int) (length - 7)) - 1,
+							*(double *) (var->sqldata));
+					if (List) {
+						sprintf(Print_buffer, "%#.*g%s",
+								DOUBLE_LEN - 7 - 1,
+								*(double *) (var->sqldata), NEWLINE);
+						ISQL_printf(Out, Print_buffer);
+					}
+				}
+				else {
+					sprintf(p, "% #*.*g ", (int) length,
+							(int) MIN(16, (int) (length - 7)),
+							*(double *) (var->sqldata));
+					if (List) {
+						sprintf(Print_buffer, "%#.*g%s",
+								DOUBLE_LEN - 7,
+								*(double *) (var->sqldata), NEWLINE);
+						ISQL_printf(Out, Print_buffer);
+					}
+				}
+#else
 				sprintf(p, "% #*.*g ", (int) length,
 						(int) MIN(16, (int) (length - 7)),
 						*(double *) (var->sqldata));
@@ -5733,6 +5783,7 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 							*(double *) (var->sqldata), NEWLINE);
 					ISQL_printf(Out, Print_buffer);
 				}
+#endif
 			}
 			break;
 
