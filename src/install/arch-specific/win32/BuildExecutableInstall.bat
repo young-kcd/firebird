@@ -15,6 +15,7 @@
 ::  All Rights Reserved.
 ::
 ::=============================================================================
+@echo off
 
 ::Check if on-line help is required
 @if /I "%1"=="-h" (goto :HELP & goto :EOF)
@@ -39,7 +40,6 @@ for %%v in ( %1 %2 )  do (
   ( if /I "%%v"=="DEBUG" (set BUILDTYPE=debug) )
   ( if /I "%%v"=="CS"  ( (set PACKAGE_TYPE=classic_server_install) & (set PACKAGE_DESC=Classic) ) )
 )
-
 @if not defined MSVC_VERSION (set MSVC_VERSION=6)
 @goto :EOF
 
@@ -53,7 +53,7 @@ for %%v in ( %1 %2 )  do (
 ::========================================================
 sed /"#define PRODUCT_VER_STRING"/!d ..\..\..\..\src\jrd\build_no.h > %temp%.\b$1.bat
 sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.bat %temp%.\b$1.bat
-for /f "tokens=*" %%a in ('cat %temp%.\b$2.bat') do set PRODUCT_VER_STRING=%%a
+for /f "tokens=*" %%a in ('type %temp%.\b$2.bat') do set PRODUCT_VER_STRING=%%a
 @echo s/1.5.0/%PRODUCT_VER_STRING%/ > %temp%.\b$3.bat
 @echo s/define super_server_install/define %PACKAGE_TYPE%/ >> %temp%.\b$3.bat
 @echo s/define server_architecture \"SuperServer\"/define server_architecture \"%PACKAGE_DESC%\"/ >> %temp%.\b$3.bat
@@ -69,32 +69,32 @@ del %temp%.\b$?.bat
 :COPY_XTRA
 :: system dll's we need
 ::=====================
-copy %SystemRoot%\System32\msvcrt.dll .
-copy %SystemRoot%\System32\msvcp%msvc_version%0.dll .
+copy %SystemRoot%\System32\msvcrt.dll . >nul
+copy %SystemRoot%\System32\msvcp%msvc_version%0.dll . >nul
 
 :: grab some missing bits'n'pieces  from different parts of the source tree
 ::=========================================================================
-copy ..\..\..\..\src\install\misc\firebird.conf ..\..\..\..\builds\win32\output\
+copy ..\..\..\..\src\install\misc\firebird.conf ..\..\..\..\builds\win32\output\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed ) & (goto :EOF))
 
-mkdir ..\..\..\..\builds\win32\output\examples 2>nul
+mkdir ..\..\..\..\builds\win32\output\examples 2>nul 
 @if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for examples dir failed ) & (goto :EOF))
 
-copy ..\..\..\..\src\v5_examples\*.* ..\..\..\..\builds\win32\output\examples\ 
+copy ..\..\..\..\src\v5_examples\*.* ..\..\..\..\builds\win32\output\examples\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY examples failed  ) & (goto :EOF))
 
-copy ..\..\..\..\builds\win32\msvc%msvc_version%\%BUILDTYPE%\fbclient\fbclient.lib ..\..\..\..\builds\win32\output\lib\fbclient_ms.lib
+copy ..\..\..\..\builds\win32\msvc%msvc_version%\%BUILDTYPE%\fbclient\fbclient.lib ..\..\..\..\builds\win32\output\lib\fbclient_ms.lib > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
 
-copy ..\..\..\..\builds\win32\msvc%msvc_version%\%BUILDTYPE%\gds32\gds32.lib ..\..\..\..\builds\win32\output\lib\gds32_ms.lib
+copy ..\..\..\..\builds\win32\msvc%msvc_version%\%BUILDTYPE%\gds32\gds32.lib ..\..\..\..\builds\win32\output\lib\gds32_ms.lib > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
 
-copy ..\..\..\..\doc\*.* ..\..\..\..\builds\win32\output\doc\ 
+copy ..\..\..\..\doc\*.* ..\..\..\..\builds\win32\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY doc failed  ) & (goto :EOF))
 
-copy ..\..\..\..\ChangeLog ..\..\..\..\builds\win32\output\doc\ChangeLog.txt
+copy ..\..\..\..\ChangeLog ..\..\..\..\builds\win32\output\doc\ChangeLog.txt > nul
 
-copy ..\..\..\..\builds\win32\output\doc\install_win32.txt ..\..\..\..\builds\win32\output\doc\InstallNotes.txt
+copy ..\..\..\..\builds\win32\output\doc\install_win32.txt ..\..\..\..\builds\win32\output\doc\InstallNotes.txt > nul
 del ..\..\..\..\builds\win32\output\doc\install_win32.txt
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Rename install_win32.txt failed ) & (goto :EOF))
 
@@ -104,13 +104,13 @@ del ..\..\..\..\builds\win32\output\doc\install_win32.txt
   (@del ..\..\..\..\builds\win32\output\doc\%%v 2>nul)
 )
 
-copy ..\..\..\..\builds\win32\output\doc\WhatsNew ..\..\..\..\builds\win32\output\doc\WhatsNew.txt
+copy ..\..\..\..\builds\win32\output\doc\WhatsNew ..\..\..\..\builds\win32\output\doc\WhatsNew.txt > nul
 del ..\..\..\..\builds\win32\output\doc\WhatsNew
 
 mkdir ..\..\..\..\builds\win32\output\doc\sql.extensions 2>nul
 @if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for doc\sql.extensions dir failed ) & (goto :EOF))
 
-copy ..\..\..\..\doc\sql.extensions\*.* ..\..\..\..\builds\win32\output\doc\sql.extensions\ 
+copy ..\..\..\..\doc\sql.extensions\*.* ..\..\..\..\builds\win32\output\doc\sql.extensions\  > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY doc\sql.extensions failed  ) & (goto :EOF))
 
 @goto :EOF
@@ -133,7 +133,7 @@ copy ..\..\..\..\doc\sql.extensions\*.* ..\..\..\..\builds\win32\output\doc\sql.
 :GBAK_SEC_DB
 :: let's make sure that we have a backup of the security database handy.
 ::======================================================================
-copy ..\..\..\misc\security.gbak ..\..\..\..\builds\win32\output\security.fbk
+copy ..\..\..\misc\security.gbak ..\..\..\..\builds\win32\output\security.fbk > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security.fbk failed ) & (goto :EOF))
 
 :: Make sure that qli's help.gdb is available
@@ -157,7 +157,7 @@ if not exist ..\..\..\..\builds\win32\output\help\help.fdb (copy ..\..\..\..\bui
 						echo You need to run the build_msg scriptfile.
 						)
 						) else (
-						copy ..\..\..\..\builds\win32\firebird.msg ..\..\..\..\builds\win32\output\firebird.msg
+						copy ..\..\..\..\builds\win32\firebird.msg ..\..\..\..\builds\win32\output\firebird.msg > nul
 						)
 @goto :EOF
 
@@ -209,13 +209,27 @@ start FirebirdInstall_%PRODUCT_VER_STRING%_%PACKAGE_DESC%.iss
 
 :MAIN
 ::====
+@Echo.
+@Echo reading parameters
 @(@call :SET_PARAMS %1 %2 )|| (@goto :EOF) 
+@Echo.
+@Echo Setting version number
 @(@call :SED_MAGIC ) || (@goto :EOF)
+@Echo.
+@Echo copy Xtra
 @(@call :COPY_XTRA ) || (@goto :EOF)
+@Echo.
+@Echo alias conf
 @(@call :ALIAS_CONF ) || (@goto :EOF)
+@Echo.
+@Echo gbak_sec_db
 @(@call :GBAK_SEC_DB ) || (@goto :EOF)
+@Echo.
+@Echo fb_msg
 @(@call :FB_MSG ) || (@goto :EOF)
 ::@(@call :TOUCH_ALL ) || (@goto :EOF)
+@Echo.
+@Echo run isx
 @(@call :RUN_ISX ) || (@goto :EOF)
 @goto :EOF
 
