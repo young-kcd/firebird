@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.10 2002-12-05 16:15:04 kkuznetsov Exp $
+#   $Id: make.rules,v 1.11 2002-12-29 01:38:20 nmcc Exp $
 #
 
 #____________________________________________________________________________
@@ -137,7 +137,7 @@ ifdef UseLibToolForLink
     STATICEXE_LINK = libtool @CC@ -all-static
 else
 
-    LIB_LINK= @CC@ -shared 
+    LIB_LINK= @CC@
     STATICLIB_LINK= ar cruvs
 #    LIB_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib
 #    LIB_LINK_OPTIONS = -soname libgds.so.2 -rpath /usr/lib

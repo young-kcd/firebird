@@ -17,7 +17,7 @@
 #
 # Erik Kunze, Philosys GmbH, <kunze@philosys.de>
 #
-# $Id: prefix.sinixz,v 1.12 2002-12-10 11:53:43 eku Exp $
+# $Id: prefix.sinixz,v 1.13 2002-12-29 01:38:20 nmcc Exp $
 #
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
@@ -34,7 +34,7 @@ DEV_WARNINGS=-Wall -W -Wno-parentheses -Wno-switch
 PROD_FLAGS=$(PROD_WARNINGS) -DNDEBUG $(COMMON_FLAGS) -pipe -fPIC
 DEV_FLAGS=$(DEV_WARNINGS) -ggdb -DDEBUG_GDS_ALLOC $(COMMON_FLAGS) -pipe -fPIC
 
-LIB_LINK_OPTIONS:=
+LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
 
