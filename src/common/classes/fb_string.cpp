@@ -363,22 +363,31 @@ extern "C" {
 	}
 
 	void AbstractString::printf(const char* format,...) {
+#ifndef HAVE_VSNPRINTF
+#error NS: I'm lazy to implement version of this routine based on plain vsprintf.
+#error Please find an implementation of vsnprintf function for your platform.
+#error For example, consider importing library from http://www.ijs.si/software/snprintf/
+#error to Firebird src\extern repository
+#endif
 		enum {tempsize = 256};
 		char temp[tempsize];
 		va_list params;
 		va_start(params, format);
 		int l = VSNPRINTF(temp, tempsize, format, params);
 		if (l < 0) {
-			int n = sizeof(temp);
+			size_type n = sizeof(temp);
 			do {
 				n *= 2;
+				if (n > max_length())
+					n = max_length();
 				l = VSNPRINTF(baseAssign(n), n + 1, format, params);
-				if (l > 16 * 1024) {
-					const char *errLine = "String size overflow in .printf()";
-					memcpy(baseAssign(strlen(errLine)), errLine, strlen(errLine));
+				if (l >= 0)
+					break;
+				if (n >= max_length()) {
+					stringBuffer[max_length()] = 0;
 					return;
 				}
-			} while (l < 0);
+			} while (true);
 			resize(l);
 			return;	
 		}
