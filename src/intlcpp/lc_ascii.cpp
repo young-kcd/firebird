@@ -23,18 +23,7 @@
 
 #include "firebird.h"
 #include "../intlcpp/ldcommon.h"
-
-
-USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen);
-USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar
-							, USHORT partial);
-SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
-
-USHORT famasc_to_upper(TEXTTYPE obj, BYTE ch);
-USHORT famasc_to_lower(TEXTTYPE obj, BYTE ch);
-SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
-
-SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR *wc, UCHAR *ptr, USHORT count);
+#include "lc_ascii.h"
 
 #define FAMILY_ASCII(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \
