@@ -766,7 +766,8 @@ recreate_clause	: PROCEDURE rprocedure_clause
 			{ $$ = $2; }
 		| VIEW rview_clause
 			{ $$ = $2; }
-/*		| TRIGGER def_trigger_clause
+/*
+		| TRIGGER def_trigger_clause
 			{ $$ = $2; }
 		| DOMAIN rdomain_clause
 			{ $$ = $2; }             
@@ -781,8 +782,10 @@ replace_clause	: PROCEDURE replace_procedure_clause
 			{ $$ = $2; }
 		| TRIGGER replace_trigger_clause
 			{ $$ = $2; }
+/*
 		| VIEW replace_view_clause
 			{ $$ = $2; }
+*/
 		;
 
 
@@ -1803,8 +1806,10 @@ alter_clause	: EXCEPTION symbol_exception_name sql_string
 		| TABLE simple_table_name alter_ops
 			{ $$ = make_node (nod_mod_relation, (int) e_alt_count, 
 						$2, make_list ($3)); }
+/*
  		| VIEW alter_view_clause
  			{ $$ = $2; }
+*/
 		| TRIGGER alter_trigger_clause
 			{ $$ = $2; }
 		| PROCEDURE alter_procedure_clause
