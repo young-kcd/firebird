@@ -1,3 +1,117 @@
+2004-03-01 18:14  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	fixed blr printing - thanks to Nickolay S.
+
+2004-03-01 17:50  alexpeshkoff
+
+	* firebird2/src/: common/fb_exception.cpp, include/fb_exception.h:
+	
+	don't start variables names with underscore - _syscall caused
+	problems with MSVC6
+
+2004-03-01 17:37  alexpeshkoff
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	archive.dsp, build_msg.dsp, burp.dsp, burp_classic.dsp, codes.dsp,
+	common.dsp, common_classic.dsp, common_static.dsp, dsql_server.dsp,
+	dsql_server_classic.dsp, empbuild.dsp, engine.dsp,
+	engine_classic.dsp, engine_embed.dsp, fb_inet_server.dsp,
+	fb_lock_print.dsp, fbclient.dsp, fbclient_static.dsp, fbembed.dsp,
+	fbguard.dsp, fbserver.dsp, fbudf.dsp, gbak.dsp, gdef.dsp,
+	gds32.dsp, gfix.dsp, gpre.dsp, gpre_boot.dsp, gpre_static.dsp,
+	gsec.dsp, gsplit.dsp, gstat.dsp, gstat_full.dsp, ib_udf.dsp,
+	ib_util.dsp, instclient.dsp, instreg.dsp, instsvc.dsp, intl.dsp,
+	intlbld.dsp, ipserver.dsp, isql.dsp, journal.dsp, lock.dsp,
+	lock_classic.dsp, nbackup.dsp, qli.dsp, remote.dsp,
+	remote_classic.dsp, utilities.dsp, utilities_classic.dsp, wal.dsp,
+	wal_classic.dsp, walw.dsp:
+	
+	fixed MSVC6 build with RTTI
+
+2004-03-01 05:57  skidder
+
+	* firebird2/src/: burp/burp.cpp, common/classes/locks.cpp,
+	gpre/gpre.cpp, gpre/par.cpp, remote/allr.cpp,
+	utilities/gsec/gsec.cpp, utilities/gstat/dba.epp,
+	utilities/gstat/dba_full.epp:
+	
+	Fix MSVC build
+
+2004-03-01 05:54  skidder
+
+	* firebird2/builds/win32/msvc7/: alice.vcproj,
+	alice_classic.vcproj, build_msg.vcproj, burp.vcproj,
+	burp_classic.vcproj, codes.vcproj, common.vcproj,
+	common_classic.vcproj, common_static.vcproj, dsql_server.vcproj,
+	dsql_server_classic.vcproj, engine.vcproj, engine_classic.vcproj,
+	engine_embed.vcproj, fb_inet_server.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbclient_static.vcproj, fbembed.vcproj,
+	fbguard.vcproj, fbserver.vcproj, fbudf.vcproj, gbak.vcproj,
+	gdef.vcproj, gds32.vcproj, gfix.vcproj, gpre.vcproj,
+	gpre_boot.vcproj, gpre_static.vcproj, gsec.vcproj, gsplit.vcproj,
+	gstat.vcproj, ib_udf.vcproj, ib_util.vcproj, instreg.vcproj,
+	instsvc.vcproj, intl.vcproj, isql.vcproj, lock.vcproj,
+	lock_classic.vcproj, qli.vcproj, remote.vcproj,
+	remote_classic.vcproj, utilities.vcproj, utilities_classic.vcproj:
+	
+	Enable RTTI, remove fb_exception.cpp from utilities
+
+2004-03-01 05:27  skidder
+
+	* firebird2/builds/win32/msvc7/: alice.vcproj,
+	alice_classic.vcproj, burp.vcproj, burp_classic.vcproj,
+	common.vcproj, common_classic.vcproj, dsql_server.vcproj,
+	dsql_server_classic.vcproj, engine.vcproj, engine_classic.vcproj,
+	engine_embed.vcproj, fb_inet_server.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbembed.vcproj, fbguard.vcproj, fbserver.vcproj,
+	fbudf.vcproj, gbak.vcproj, gdef.vcproj, gds32.vcproj, gfix.vcproj,
+	gpre.vcproj, gpre_boot.vcproj, gsec.vcproj, gsplit.vcproj,
+	gstat.vcproj, ib_udf.vcproj, ib_util.vcproj, instreg.vcproj,
+	instsvc.vcproj, intl.vcproj, isql.vcproj, lock.vcproj,
+	lock_classic.vcproj, qli.vcproj, remote.vcproj,
+	remote_classic.vcproj, utilities.vcproj, utilities_classic.vcproj:
+	
+	Enable RTTI, remove fb_exception.cpp from utilities
+
+2004-03-01 04:34  skidder
+
+	* firebird2/src/: alice/alice.cpp, alice/alice_meta.epp,
+	burp/burp.cpp, common/fb_exception.cpp, common/classes/locks.h,
+	common/classes/rwlock.h, common/classes/semaphore.h,
+	common/config/config.cpp, dsql/ddl.cpp, dsql/dsql.cpp,
+	dsql/errd.cpp, dsql/user_dsql.cpp, dudley/expand.cpp,
+	dudley/parse.cpp, gpre/gpre.cpp, gpre/par.cpp,
+	include/fb_exception.h, jrd/ExecuteStatement.cpp, jrd/blb.cpp,
+	jrd/btr.cpp, jrd/cch.cpp, jrd/cmp.cpp, jrd/dfw.epp, jrd/dyn.epp,
+	jrd/dyn_def.epp, jrd/dyn_del.epp, jrd/dyn_mod.epp,
+	jrd/dyn_util.epp, jrd/err.cpp, jrd/exe.cpp, jrd/fun.epp,
+	jrd/gds.cpp, jrd/grant.epp, jrd/iberr.cpp, jrd/jrd.cpp,
+	jrd/met.epp, jrd/nav.cpp, jrd/nbak.cpp, jrd/nbak.h, jrd/opt.cpp,
+	jrd/pag.cpp, jrd/sch.cpp, jrd/scl.epp, jrd/sdw.cpp, jrd/shut.cpp,
+	jrd/svc.cpp, jrd/tra.cpp, jrd/val.cpp, jrd/os/posix/guid.cpp,
+	jrd/os/win32/guid.cpp, jrd/os/win32/thd_priority.cpp,
+	misc/align.cpp, qli/err.cpp, remote/allr.cpp, remote/interface.cpp,
+	remote/server.cpp, utilities/gsec/gsec.cpp,
+	utilities/gstat/dba.epp, utilities/gstat/dba_full.epp:
+	
+	Fix up exception handling. Handle (do not ignore) std::bad_alloc
+	and generic exceptions, provide syscall and error information in
+	system_call_failed
+
+2004-03-01 04:18  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h:
+	
+	Memory pages manager
+
+2004-03-01 02:29  skidder
+
+	* firebird2/src/burp/: backup.epp, restore.epp:
+	
+	Fix 64-bitness warnings
+
 2004-02-29 07:15  skidder
 
 	* firebird2/src/jrd/jrd.h:
