@@ -584,7 +584,7 @@ TEXT * function_name, TEXT * procedure_name)
 			DYN_delete_dimensions(gbl, ptr, relation_name, field_name);
 			break;
 
-		case gds_dyn_delete_generator:
+		case isc_dyn_delete_generator:
 			DYN_delete_generator(gbl, ptr);
 			break;
 

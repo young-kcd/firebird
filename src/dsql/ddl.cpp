@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.61 2003-09-20 23:28:11 brodsom Exp $
+ * $Id: ddl.cpp,v 1.62 2003-09-21 13:33:41 skidder Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1280,7 +1280,7 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 
 			switch (element->nod_type) {
 			case nod_difference_file:
-				request->append_cstring(gds_dyn_def_difference, 
+				request->append_cstring(isc_dyn_def_difference, 
 					((STR)element->nod_arg[0])->str_data);
 				break;
 			case nod_file_desc:
@@ -4119,7 +4119,7 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 
 	case nod_del_generator:
 		string = (STR) node->nod_arg[0];
-        request->append_cstring(gds_dyn_delete_generator, string->str_data);
+        request->append_cstring(isc_dyn_delete_generator, string->str_data);
         request->append_uchar(gds_dyn_end);
 		break;
 
@@ -4530,7 +4530,7 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 		request->append_uchar(gds_dyn_drop_cache);
 	}
 	if (drop_difference) {
-		request->append_uchar(gds_dyn_drop_difference);
+		request->append_uchar(isc_dyn_drop_difference);
 	}
 
 	elements = ddl_node->nod_arg[e_adb_all];
@@ -4612,14 +4612,14 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 			request->append_ushort_with_length(temp_short);
 			break;
 		case nod_difference_file:
-			request->append_cstring(gds_dyn_def_difference, 
+			request->append_cstring(isc_dyn_def_difference, 
 				((STR)element->nod_arg[0])->str_data);
 			break;
 		case nod_begin_backup:
-			request->append_uchar(gds_dyn_begin_backup);
+			request->append_uchar(isc_dyn_begin_backup);
 			break;
 		case nod_end_backup:
-			request->append_uchar(gds_dyn_end_backup);
+			request->append_uchar(isc_dyn_end_backup);
 			break;
 		case nod_drop_log:
 		case nod_drop_cache:

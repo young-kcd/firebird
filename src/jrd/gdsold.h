@@ -1273,10 +1273,6 @@ const char gds_dyn_eoc = -1;
 #define gds__dyn_drop_log                  194
 #define gds__dyn_drop_cache                195
 #define gds__dyn_def_default_log           202
-#define gds__dyn_def_difference            211
-#define gds__dyn_drop_difference           212
-#define gds__dyn_begin_backup              213
-#define gds__dyn_end_backup                214
 
 #else /* c++ definitions */
 
@@ -1339,10 +1335,6 @@ const unsigned char gds_dyn_del_exception = 183;
 const unsigned char gds_dyn_drop_log = 194;
 const unsigned char gds_dyn_drop_cache = 195;
 const unsigned char gds_dyn_def_default_log = 202;
-const unsigned char gds_dyn_def_difference = 211;
-const unsigned char gds_dyn_drop_difference = 212;
-const unsigned char gds_dyn_begin_backup = 213;
-const unsigned char gds_dyn_end_backup = 214;
 
 #endif
 

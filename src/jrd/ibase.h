@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.44 2003-08-29 11:13:12 aafemt Exp $
+$Id: ibase.h,v 1.45 2003-09-21 13:33:45 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -2005,10 +2005,10 @@ enum info_db_provider
 #define isc_dyn_drop_log                  194
 #define isc_dyn_drop_cache                195
 #define isc_dyn_def_default_log           202
-#define isc_dyn_def_difference            211
-#define isc_dyn_drop_difference           212
-#define isc_dyn_begin_backup              213
-#define isc_dyn_end_backup                214
+#define isc_dyn_def_difference            220
+#define isc_dyn_drop_difference           221
+#define isc_dyn_begin_backup              222
+#define isc_dyn_end_backup                223
 
 /***********************/
 /* View specific stuff */
@@ -2245,17 +2245,13 @@ enum info_db_provider
 /* Generators again                           */
 /**********************************************/
 
-#ifndef __cplusplus                     /* c definitions */
-#define gds_dyn_delete_generator          217
-#else                                   /* c++ definitions */
-const unsigned char gds_dyn_delete_generator       = 217;
-#endif
+#define isc_dyn_delete_generator          217
 
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            219
+#define isc_dyn_last_dyn_value            223
 
 /******************************************/
 /* Array slice description language (SDL) */

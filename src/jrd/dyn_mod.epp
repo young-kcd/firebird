@@ -175,7 +175,7 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 					DYN_define_file(gbl, ptr, (SLONG) 0, &start, 158);
 					break;
 					
-				case gds_dyn_def_difference:
+				case isc_dyn_def_difference:
 					DYN_define_difference(gbl, ptr);
 					break;
 
@@ -218,9 +218,9 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 					drop_cache(gbl);
 					break;
 
-				case gds_dyn_drop_difference:
-				case gds_dyn_begin_backup:
-				case gds_dyn_end_backup:
+				case isc_dyn_drop_difference:
+				case isc_dyn_begin_backup:
+				case isc_dyn_end_backup:
 					change_backup_mode(gbl, verb);
 					break;
 
@@ -1731,10 +1731,10 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 		if (X.RDB$FILE_FLAGS & FILE_difference) {
 			found = true;
 			switch (verb) {
-			case gds_dyn_drop_difference:
+			case isc_dyn_drop_difference:
 				ERASE X;
 				break;
-			case gds_dyn_begin_backup:
+			case isc_dyn_begin_backup:
 				if (X.RDB$FILE_FLAGS & FILE_backing_up) {
 					invalid_state = true;
 				} else {
@@ -1743,7 +1743,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 					END_MODIFY;
 				}
 				break;
-			case gds_dyn_end_backup:
+			case isc_dyn_end_backup:
 				if (X.RDB$FILE_FLAGS & FILE_backing_up) {
 					if (X.RDB$FILE_NAME.NULL) {
 						ERASE X;
@@ -1773,7 +1773,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 		/* msg 63: ERASE RDB$FILE failed */
 	}
 	
-	if (!found && verb == gds_dyn_begin_backup) try {
+	if (!found && verb == isc_dyn_begin_backup) try {
 		request = (BLK) CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FILES 
@@ -1800,7 +1800,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 	}
 	
 	if (invalid_state) {
-		DYN_error_punt(FALSE, verb == gds_dyn_begin_backup ? 217 : 218, 
+		DYN_error_punt(FALSE, verb == isc_dyn_begin_backup ? 217 : 218, 
 					   NULL, NULL, NULL, NULL, NULL);
 		/* msg 217: "Database is already in the physical backup mode" */
 		/* msg 218: "Database is not in the physical backup mode" */
@@ -1808,7 +1808,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 
 	if (!found)
 	{
-		DYN_error_punt(FALSE, verb == gds_dyn_end_backup ? 218 : 215, 
+		DYN_error_punt(FALSE, verb == isc_dyn_end_backup ? 218 : 215, 
 					   NULL, NULL, NULL, NULL, NULL);
 		/* msg 218: "Database is not in the physical backup mode" */
 		/* msg 215: "Difference file is not defined" */
