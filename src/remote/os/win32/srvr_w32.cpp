@@ -109,13 +109,13 @@
 #include "../jrd/file_params.h"
 #include "../common/config/config.h"
 
-static void THREAD_ROUTINE process_connection_thread(PORT);
 static void THREAD_ROUTINE inet_connect_wait_thread(void *);
 static void THREAD_ROUTINE ipc_connect_wait_thread(void *);
-static void service_connection(PORT);
 static void THREAD_ROUTINE start_connections_thread(int);
 static void THREAD_ROUTINE wnet_connect_wait_thread(void *);
+static void THREAD_ROUTINE xnet_connect_wait_thread(void *);
 static HANDLE parse_args(LPSTR, USHORT *);
+static void service_connection(PORT);
 
 static HINSTANCE hInst;
 
@@ -205,8 +205,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
 			server_flag |= SRVR_wnet;
 		server_flag |= SRVR_inet;
-#ifdef SUPERSERVER
 		server_flag |= SRVR_xnet;
+#ifdef SUPERSERVER
 		server_flag |= SRVR_ipc;
 #endif
 	}
@@ -247,6 +247,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			port = INET_reconnect(connection_handle, 0, status_vector);
 		else if (server_flag & SRVR_wnet)
 			port = WNET_reconnect(connection_handle, 0, status_vector);
+		else if (server_flag & SRVR_xnet)
+			port = XNET_reconnect((ULONG) connection_handle, 0, status_vector);
 		THREAD_EXIT;
 		if (port) {
 			service_connection(port);
@@ -270,6 +272,11 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		if (server_flag & SRVR_wnet) {
 			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
 							  (wnet_connect_wait_thread), 0, THREAD_medium, 0,
+							  0);
+		}
+		if (server_flag & SRVR_xnet) {
+			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
+							  (xnet_connect_wait_thread), 0, THREAD_medium, 0,
 							  0);
 		}
 		/* No need to waste a thread if we are running as a window.  Just start
@@ -306,52 +313,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 }
 
 
-ULONG SRVR_xnet_start_thread(ULONG client_pid)
-{
-/**************************************
- *
- *      S R V R _ x n e t _ s t a r t _ t h r e a d
- *
- **************************************
- *
- * Functional description
- *      Start an interprocess thread.   This allocates
- *      the next available chunk of the mapped file and
- *      tells the client where it is.
- *
- **************************************/
-	PORT port;
-	ULONG response;
-
-/* get a port */
-	port = XNET_start_thread(client_pid, &response);
-
-/* Ensure that the main port is set with this new port if we are the first
- * XNET connection 
- */
-	if (!xnet_server_set) {
-		USHORT flags = ((USHORT) SRVR_xnet | (USHORT) SRVR_multi_client |
-						(USHORT) SRVR_thread_per_port);
-		PORT xnet_header_port = (PORT) ALLR_alloc(sizeof(struct port));
-		if (xnet_header_port)
-			*xnet_header_port = *port;
-		else
-			return FALSE;
-		xnet_server_set = TRUE;
-		set_server(xnet_header_port, flags);
-	}
-
-/* start the thread for this client */
-	gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-					  (process_connection_thread), port,
-					  THREAD_medium, 0, 0);
-
-/* return combined mapped area and number */
-	return response;
-}
-
-
-static void THREAD_ROUTINE process_connection_thread( PORT port)
+void THREAD_ROUTINE process_connection_thread( PORT port)
 {
 /**************************************
  *
@@ -472,6 +434,32 @@ static void THREAD_ROUTINE ipc_connect_wait_thread( void *dummy)
 }
 
 
+static void THREAD_ROUTINE xnet_connect_wait_thread(void *dummy)
+{
+/**************************************
+ *
+ *      x n e t _ c o n n e c t _ w a i t _ t h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *   Starts xnet server side interprocess thread
+ *
+ **************************************/
+	void *thread;
+
+	if (!(server_flag & SRVR_non_service))
+		thread = CNTL_insert_thread();
+
+	THREAD_ENTER;
+	XNET_srv(server_flag);
+	THREAD_EXIT;
+
+	if (!(server_flag & SRVR_non_service))
+		CNTL_remove_thread(thread);
+}
+
+
 static void service_connection( PORT port)
 {
 /**************************************
@@ -508,6 +496,10 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
 	if (server_flag & SRVR_wnet) {
 		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
 						  (wnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
+	}
+	if (server_flag & SRVR_xnet) {
+		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
+						  (xnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
 	}
 	if (server_flag & SRVR_ipc) {
 		const int bFailed =

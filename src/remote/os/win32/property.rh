@@ -92,6 +92,5 @@ produced by Borland Resource Workshop
 #define IDS_NP          12
 #define IDS_IPC         13
 
-
 #define IDS_SERVERPROD_NAME     76
 #define IDS_LOCALPROD_NAME      77

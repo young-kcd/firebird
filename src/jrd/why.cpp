@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.24 2003-08-28 13:16:03 brodsom Exp $
+$Id: why.cpp,v 1.25 2003-09-08 14:09:34 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -548,14 +548,14 @@ static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rdb},
 #include "../jrd/entry.h"
 #endif
-
+/*
 #ifdef IPSERV
 #ifndef XNET
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, winipi},
 #include "../jrd/entry.h"
 #endif
 #endif
-
+*/
 };
 
 #ifndef SUPERCLIENT

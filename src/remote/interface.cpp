@@ -4873,7 +4873,24 @@ static PORT analyze(TEXT*	file_name,
 			}
 #endif
 		}
-	}	// if (!port)
+	}
+
+#if defined(XNET) && !defined(IPSERV)
+
+/* all remote attempts have failed, so access locally through the
+   interprocess server */
+
+	if (!port)
+	{
+		return XNET_analyze(file_name,
+							file_length,
+							status_vector,
+							node_name,
+							user_string,
+							uv_flag);
+	}
+
+#endif /* XNET */
 
 #if defined(SUPERCLIENT) && !defined(EMBEDDED)
 /* Coerce host connections to loopback to SUPERSERVER. */
@@ -4903,23 +4920,6 @@ static PORT analyze(TEXT*	file_name,
 	}
 #endif /* IPSERV */
 #endif /* WIN_NT */
-
-#if defined(XNET) && !defined(IPSERV)
-
-/* all remote attempts have failed, so access locally through the
-   interprocess server */
-
-	if (!port)
-	{
-		return XNET_analyze(file_name,
-							file_length,
-							status_vector,
-							node_name,
-							user_string,
-							uv_flag);
-	}
-
-#endif /* XNET */
 
 #ifdef UNIX
 

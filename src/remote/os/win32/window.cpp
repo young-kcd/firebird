@@ -30,7 +30,6 @@
 #include "../remote/remote_def.h"
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
-#include "../remote/xnet.h"
 #ifdef IPSERVER
 #include "../ipserver/ips.h"
 #endif
@@ -51,7 +50,6 @@
 #define NO_PORT
 #include "../remote/protocol.h"
 #include "../remote/serve_proto.h"
-#include "../remote/xnet_proto.h"
 #undef NO_PORT
 
 #include "../common/config/config.h"
@@ -139,29 +137,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 			return 0;
 		}
 #endif
-		if (!XNET_init(hWnd, 0, 0, 0)) {
-			char szMsgString[TMP_STRINGLEN];
-			hWnd = FindWindow(szClassName, APP_NAME);
-			if (hWnd) {
-				LoadString(hInstance, IDS_ALREADYSTARTED, szMsgString,
-						   TMP_STRINGLEN);
-				if (usServerFlagMask & SRVR_non_service) {
-				   	MessageBox(NULL, szMsgString, APP_LABEL,
-				   			   MB_OK | MB_ICONHAND);
-				}
-				gds__log(szMsgString);
-			}
-			else {
-				LoadString(hInstance, IDS_MAPERROR, szMsgString,
-						   TMP_STRINGLEN);
-				if (usServerFlagMask & SRVR_non_service) {
-				   	MessageBox(NULL, szMsgString, APP_LABEL,
-				   			   MB_OK | MB_ICONHAND);
-				}
-				gds__log(szMsgString);
-			}
-			return 0;
-		}
 	}
 
 /* initialize main window */

@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2003.05.01 Victor Seryodkin, Dmitry Yemanov: Completed XNET implementation
  */
 
 #ifndef _REMOTE_XNET_PROTO_H_
@@ -32,11 +34,13 @@ extern "C" {
 #define PORT void*
 #endif
 
-extern PORT     XNET_analyze( TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
-extern PORT     XNET_connect( TEXT *, struct packet *, ISC_STATUS *, USHORT);
-extern USHORT   XNET_init( HWND, USHORT, USHORT, USHORT);
-extern void		XNET_release_all(void);
-extern PORT     XNET_start_thread( ULONG, ULONG *);
+extern PORT XNET_analyze(TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
+extern PORT XNET_connect(TEXT *, struct packet *, ISC_STATUS *, USHORT);
+
+#ifndef SUPERCLIENT
+extern void XNET_srv(USHORT flag);
+extern PORT XNET_reconnect(ULONG, TEXT *, ISC_STATUS *);
+#endif
 
 #ifdef __cplusplus
 }	/* extern "C" */

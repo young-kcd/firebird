@@ -20,13 +20,11 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- *
+ * 2003.05.01 Victor Seryodkin, Dmitry Yemanov: Completed XNET implementation
  */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include <string.h>
 #include "../remote/remote.h"
 #include "../jrd/gds.h"
 #include "../jrd/thd.h"
@@ -36,33 +34,17 @@
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/xnet_proto.h"
+#include "../remote/serve_proto.h"
 #include "../remote/os/win32/window.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/isc_f_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../remote/inet_proto.h"	/* for INET_alloc_port */
-#include "../common/config/config.h"
-
-#include <stdarg.h>
+#include <time.h>
 
 #ifdef WIN_NT
 #include <windows.h>
 #endif /* WIN_NT */
-
-#if !(defined VMS || defined WIN_NT)
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <errno.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#include <sys/param.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#endif
 
 extern "C" {
 
@@ -78,61 +60,42 @@ extern "C" {
 #define SYS_ERR		gds_arg_win32
 #endif
 
-#ifndef MAX_DATA
-#define MAX_DATA	2048
-#endif
-
 #define MAX_SEQUENCE	256
 
-/* see inet.c for platforms other that UNIX */
-#ifdef UNIX
-#define XNET_RETRY_CALL 5
-#define SOCKET int
-#define INVALID_SOCKET -1
-#endif
-
-extern int xdrmem_create();
-
 static int accept_connection(PORT, P_CNCT *);
-static PORT alloc_port(PORT, UCHAR *, USHORT, UCHAR *, ULONG);
+static PORT xnet_alloc_port(PORT, UCHAR *, ULONG, UCHAR *, ULONG);
 static PORT aux_connect(PORT, PACKET *, XDR_INT(*)(void));
 static PORT aux_request(PORT, PACKET *);
-#ifdef UNIX
-static ULONG connection_setup(TEXT *, PACKET *, ISC_STATUS *);
-#endif
-static void cleanup_comm(XCC);
-static void cleanup_port(PORT);
+
+static void xnet_cleanup_comm(XCC);
+static void xnet_cleanup_port(PORT);
 static void disconnect(PORT);
 static void exit_handler(PORT);
-static XPM make_map(USHORT);
-static int packet_receive(PORT, USHORT *);
-static int packet_send(PORT, SSHORT);
+static XPM xnet_make_xpm(ULONG, time_t);
+
 static PORT receive(PORT, PACKET *);
 static int send_full(PORT, PACKET *);
 static int send_partial(PORT, PACKET *);
+
 #ifdef SUPERCLIENT
-#ifdef WIN_NT
-static void server_shutdown(void);
-static void server_watcher(void);
-#endif
-#endif
+static HANDLE server_process_handle = 0;
+static void xnet_on_server_shutdown(PORT port);
+#else
+static TEXT XNET_command_line[MAXPATHLEN + 32], *XNET_p;
+#endif // SUPERCLIENT
+
 static int xdrxnet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
-static bool_t xdrxnet_endofrecord(XDR *, int);
-#ifdef NOT_USED_OR_REPLACED
-static void xnet_copy(SCHAR *, SCHAR *, int);
-#endif
+
 static int xnet_destroy(XDR *);
-static int xnet_error(PORT, TEXT *, ISC_STATUS, int);
-static void xnet_gen_error(PORT, ISC_STATUS, ...);
 static bool_t xnet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t xnet_getlong(XDR *, SLONG *);
 static u_int xnet_getpostn(XDR *);
 static caddr_t xnet_inline(XDR *, u_int);
 static bool_t xnet_putlong(XDR *, SLONG *);
 static bool_t xnet_putbytes(XDR *, SCHAR *, u_int);
-static bool_t xnet_read(XDR *);
 static bool_t xnet_setpostn(XDR *, u_int);
-static bool_t xnet_write(XDR *, int);
+static bool_t xnet_read(XDR * xdrs);
+static bool_t xnet_write(XDR * xdrs);
 
 static xdr_t::xdr_ops xnet_ops = {
 	xnet_getlong,
@@ -149,22 +112,91 @@ static xdr_t::xdr_ops xnet_ops = {
 #define MAX_PTYPE	ptype_out_of_band
 #endif
 
-static USHORT pages_per_user = XPS_DEF_PAGES_PER_CLI;
-static USHORT users_per_map = XPS_DEF_NUM_CLI;
-static USHORT num_maps = XPS_DEF_NUM_MAPS;
-static XPM xpms = NULL;
-static XPM first_xpm = NULL;
-static XCC client_threads = NULL;
+static ULONG pages_per_slot = XPS_DEF_PAGES_PER_CLI;
+static ULONG slots_per_map = XPS_DEF_NUM_CLI;
 static XPM client_maps = NULL;
+
 #ifdef WIN_NT
-#ifdef SUPERCLIENT
-static HANDLE server_process_handle = 0;
+
+static HANDLE xnet_connect_mutex = 0;
+static HANDLE xnet_connect_map_h = 0;
+static CADDR_T xnet_connect_map = 0;
+
+static HANDLE xnet_connect_event = 0;
+static HANDLE xnet_response_event = 0;
+static DWORD CurrentProcessId;
+
+#endif  /* WIN_NT */
+
+static bool_t xnet_initialized = FALSE;
+static bool_t xnet_shutdown = FALSE;
+static bool_t xnet_mutex_ready = FALSE;
+
+static bool_t xnet_connect_init();
+static void xnet_connect_fini();
+static void xnet_release_all(void);
+
+#ifdef XNET_LOCK
+#undef XNET_LOCK
 #endif
-static HANDLE server_watcher_handle = 0;
+
+#ifdef XNET_UNLOCK
+#undef XNET_UNLOCK
 #endif
-static USHORT exit_flag = 0;
-static bool initialized = false;
+
 static MUTX_T xnet_mutex;
+
+#if defined(SUPERCLIENT)
+
+#define XNET_LOCK		THD_mutex_lock(&xnet_mutex)
+#define XNET_UNLOCK		THD_mutex_unlock(&xnet_mutex)
+
+#elif defined(SUPERSERVER)
+
+#define XNET_LOCK		if (!xnet_shutdown)					\
+							THREAD_EXIT;					\
+							THD_mutex_lock(&xnet_mutex);	\
+							if (!xnet_shutdown)				\
+								THREAD_ENTER;
+
+#define XNET_UNLOCK		THD_mutex_unlock(&xnet_mutex)
+
+#else // CS
+
+#define XNET_LOCK
+#define XNET_UNLOCK
+
+#endif
+
+static int xnet_error(PORT, TEXT *, ISC_STATUS, int, ULONG);
+
+#define XNET_ERROR(po,fu,op,st) xnet_error(po,fu,op,st,__LINE__);
+#define XNET_LOG_ERROR(msg) xnet_log_error(__LINE__,msg)
+#define XNET_LOG_ERRORC(msg) xnet_log_error(__LINE__,msg,ERRNO)
+
+static void xnet_log_error(int source_line_num, char* err_msg, ULONG err_code=0)
+{ 
+/**************************************
+ *
+ *  x n e t _ l o g _ e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *  Error logging when port isn;t yet allocated
+ *
+ **************************************/
+	char err_msg_buff[256];
+
+	if (err_code)
+		sprintf(err_msg_buff, "XNET error (xnet:%d)  %s  Win32 error = %d\n",
+			source_line_num,err_msg,err_code);
+	else
+		sprintf(err_msg_buff, "XNET error (xnet:%d)  %s\n",
+			source_line_num,err_msg);
+
+	gds__log(err_msg_buff);
+}
 
 
 PORT XNET_analyze(
@@ -180,11 +212,10 @@ PORT XNET_analyze(
  **************************************
  *
  * Functional description
- *	Determine whether the file name has a "\\nodename".
- *	If so, establish an external connection to the node.
- *
- *	If a connection is established, return a port block, otherwise
- *	return NULL.
+ *  Client performs attempt to establish connection
+ *  based on the set of protocols.
+ *	If a connection is established, return a port block,
+ *	otherwise return NULL.
  *
  **************************************/
 	RDB rdb;
@@ -244,7 +275,7 @@ PORT XNET_analyze(
    was created in 4.0 so this does not apply */
 
 	cnct->p_cnct_user_id.cstr_length = user_length;
-	cnct->p_cnct_user_id.cstr_address = (UCHAR *) user_id;
+	cnct->p_cnct_user_id.cstr_address = (UCHAR*) user_id;
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
@@ -262,7 +293,8 @@ PORT XNET_analyze(
 		cnct->p_cnct_versions[i] = protocols_to_try1[i];
 	}
 
-/* If we can't talk to a server, punt. Let somebody else generate an error. */
+/* If we can't talk to a server, punt.  Let somebody else generate
+   an error. */
 
 	if (!(port = XNET_connect(node_name, packet, status_vector, FALSE))) {
 		ALLR_release((BLK) rdb);
@@ -287,7 +319,7 @@ PORT XNET_analyze(
 		/* try again with next set of known protocols */
 
 		cnct->p_cnct_user_id.cstr_length = user_length;
-		cnct->p_cnct_user_id.cstr_address = (UCHAR *) user_id;
+		cnct->p_cnct_user_id.cstr_address = (UCHAR*) user_id;
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
@@ -324,7 +356,7 @@ PORT XNET_analyze(
 		/* try again with next set of known protocols */
 
 		cnct->p_cnct_user_id.cstr_length = user_length;
-		cnct->p_cnct_user_id.cstr_address = (UCHAR *) user_id;
+		cnct->p_cnct_user_id.cstr_address = (UCHAR*) user_id;
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
@@ -351,7 +383,7 @@ PORT XNET_analyze(
 	if (packet->p_operation != op_accept) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_connect_reject;
-		*status_vector++ = 0;
+		*status_vector++ = gds_arg_end;
 		disconnect(port);
 		return NULL;
 	}
@@ -379,8 +411,8 @@ PORT XNET_analyze(
 }
 
 
-PORT XNET_connect(TEXT * name,
-				  PACKET * packet, ISC_STATUS * status_vector, USHORT flag)
+PORT XNET_connect(TEXT * name, PACKET * packet,
+                  ISC_STATUS * status_vector, USHORT flag)
 {
 /**************************************
  *
@@ -389,519 +421,415 @@ PORT XNET_connect(TEXT * name,
  **************************************
  *
  * Functional description
- *	Establish half of a communication link.  If a connect packet is given,
- *	the connection is on behalf of a remote interface.  Otherwise the
- *	connect is for a server process.
+ *	Establish half of a communication link.
  *
  **************************************/
+
 #ifdef SUPERCLIENT
+
+	PORT port = NULL;
 	XCC xcc = NULL;
-	XPM xpm;
-	ULONG number;
-	USHORT mapped_area, mapped_position;
+	XPM xpm = NULL;
+	XPS xps = NULL;
+
+	XNET_RESPONSE response;
+	ULONG map_num, slot_num;
+	time_t timestamp;
+
 	TEXT name_buffer[128];
-#ifdef WIN_NT
-	DWORD last_error;
-#endif
-	FILE_ID file_handle;
-	CADDR_T mapped_address;
-	PID_T client_pid;
-#ifdef WIN_NT
-	DWORD current_thread_id;
-#endif
+	FILE_ID file_handle = 0;
+	CADDR_T mapped_address = 0;
 	UCHAR *start_ptr;
-	USHORT espace;
-	XPS xps;
-	USHORT avail;
-	PORT port;
-#endif
 
-	if (!initialized) {
-		initialized = true;
-		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
-		THD_mutex_init(&xnet_mutex);
-	}
+	ULONG avail;
 
-/* set up for unavailable server */
+#endif // SUPERCLIENT
 
-	status_vector[0] = isc_arg_gds;
-	status_vector[1] = isc_unavailable;
-	status_vector[2] = isc_arg_end;
+	if (xnet_shutdown)
+		return NULL;
 
-/* server can't do jumps */
+	// set up for unavailable server
+	status_vector[0] = gds_arg_gds;
+	status_vector[1] = gds_unavailable;
+	status_vector[2] = gds_arg_end;
 
 #ifndef SUPERCLIENT
-
+	// We'll come here on handling op_service_attach packet on server.
+	// Server shouldn't do jumps.
 	return NULL;
-
-#else /* SUPERCLIENT */
-/* see if this thread has been connected yet, and if not, do so */
-
-	THREAD_EXIT;
-	THD_mutex_lock(&xnet_mutex);
-	THREAD_ENTER;
-#ifdef WIN_NT
-	current_thread_id = GetCurrentThreadId();
 #else
-/* STUB : need to have a equivalent function, should be stored 
-   and passed around , I donot think we need thread id */
-#endif
 /*
-for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
-    if (xcc->xcc_thread_handle == current_thread_id &&
-	!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
-	break;
+	LONG test_xnet_initialized;
+
+	InterlockedExchange((LPLONG) &test_xnet_initialized, xnet_initialized);
+	if (!test_xnet_initialized) {
+		InterlockedExchange((LPLONG) &xnet_initialized, TRUE);
+		THD_mutex_init(&xnet_mutex);
+		CurrentProcessId = GetCurrentProcessId();
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
+		InterlockedExchange((LPLONG) &xnet_mutex_ready, (LONG) TRUE);
+	}
+	else {
+		while (!xnet_mutex_ready)
+			Sleep(10);
+	}
 */
-	if (!xcc)
-	{
-		/* send a message to the server to get the next available
-		   attachment, a 32 bit value with a mapped memory file
-		   ID in the high order and an allocated area in that
-		   mapped file in the low order */
+	if (!xnet_initialized) {
+		xnet_initialized = TRUE;
+		THD_mutex_init(&xnet_mutex);
+		CurrentProcessId = GetCurrentProcessId();
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
+	}
 
-#ifdef WIN_NT
-		client_pid = GetCurrentProcessId();
-		HWND hWndServer = FindWindow(szClassName, APP_NAME);
-		number = (ULONG) SendMessage(hWndServer,
-									 XPI_CONNECT_MESSAGE, 0,
-									 (LPARAM) client_pid);
-#else /* WIN_NT */
-		client_pid = getpid();
-		number = connection_setup(name, packet, *status_vector);
-		/* STUB need to inform the server for connection and receive the
-		   return value */
-#endif
-		if (!number || number == (ULONG) - 1) {
-			THD_mutex_unlock(&xnet_mutex);
-			return 0;
+	XNET_LOCK;
+	if (!xnet_connect_init()) {
+		XNET_UNLOCK;
+		return NULL;
+	}
+
+	// waiting for xnet connect lock to release
+	if (WaitForSingleObject(xnet_connect_mutex, XNET_CONNECT_TIMEOUT) != WAIT_OBJECT_0) {
+		xnet_connect_fini();
+		XNET_UNLOCK;
+		return NULL;
+	}
+
+	/* writing connect request */
+
+	// mark connect area with XNET_INVALID_MAP_NUM to
+	// detect server faults on response
+	PXNET_RESPONSE(xnet_connect_map)->map_num = XNET_INVALID_MAP_NUM;
+	PXNET_RESPONSE(xnet_connect_map)->proc_id = CurrentProcessId; 
+
+	SetEvent(xnet_connect_event);
+
+	// waiting for server response
+	if (WaitForSingleObject(xnet_response_event, XNET_CONNECT_TIMEOUT) != WAIT_OBJECT_0) {
+		ReleaseMutex(xnet_connect_mutex);
+		xnet_connect_fini();
+		XNET_UNLOCK;
+		return NULL;
+	}
+
+	memcpy(&response, xnet_connect_map, XNET_CONNECT_RESPONZE_SIZE);
+	ReleaseMutex(xnet_connect_mutex);
+	xnet_connect_fini();
+
+	XNET_UNLOCK;
+
+	if (response.map_num == XNET_INVALID_MAP_NUM) {
+		XNET_LOG_ERROR("server failed to response on connect request");
+		return NULL;
+	}
+
+	pages_per_slot = response.pages_per_slot;
+	slots_per_map = response.slots_per_map;
+	map_num = response.map_num;
+	slot_num = response.slot_num;
+	timestamp = response.timestamp;
+
+	try {
+
+		XNET_LOCK;
+
+		// see if area is already mapped for this client
+		for (xpm = client_maps; xpm; xpm = xpm->xpm_next) {
+			if (xpm->xpm_number == map_num &&
+					xpm->xpm_timestamp == timestamp &&
+					!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
+			{
+				break;
+			}
 		}
-		pages_per_user = (USHORT) XPS_UNPACK_PAGES(number);
-		users_per_map = (USHORT) XPS_UNPACK_MAX_SLOTS(number);
-		mapped_area = (SSHORT) XPS_UNPACK_MAPNUM(number);
-		mapped_position = (SSHORT) XPS_UNPACK_SLOTNUM(number);
-
-		/* see if area is already mapped for this client */
-
-		for (xpm = client_maps; xpm; xpm = xpm->xpm_next)
-			if (xpm->xpm_number == mapped_area &&
-				!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)) break;
 
 		if (!xpm) {
-			/* add new mapping */
 
-			sprintf(name_buffer, XPI_MAPPED_FILE_NAME, XPI_PREFIX, mapped_area);
-#ifdef WIN_NT
+			// Area hasn't been mapped. Open new file mapping.
+			sprintf(name_buffer, XNET_MAPPED_FILE_NAME, XNET_PREFIX, map_num, (ULONG) timestamp);
+
 			file_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE, name_buffer);
 			if (!file_handle) {
-				THD_mutex_unlock(&xnet_mutex);
-				return 0;
+				XNET_UNLOCK;
+				throw -1;
 			}
-			mapped_address =
-				MapViewOfFile(file_handle, FILE_MAP_WRITE, 0L, 0L,
-							  XPS_MAPPED_SIZE(users_per_map, pages_per_user));
+
+			mapped_address = MapViewOfFile(file_handle, FILE_MAP_WRITE, 0L, 0L,
+										   XPS_MAPPED_SIZE(slots_per_map, pages_per_slot));
 			if (!mapped_address) {
-				last_error = ERRNO;
-				CloseHandle(file_handle);
-				THD_mutex_unlock(&xnet_mutex);
-				return 0;
+				XNET_UNLOCK;
+				throw -1;
 			}
+
 			xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
 			if (!xpm) {
-				UnmapViewOfFile(mapped_address);
-				CloseHandle(file_handle);
-				THD_mutex_unlock(&xnet_mutex);
-				return 0;
+				XNET_UNLOCK;
+				throw -1;
 			}
-#else /* WIN_NT */
-			/* STUB : need to have mapping for the SOlaris client/server here */
-#endif
+
 			xpm->xpm_next = client_maps;
 			client_maps = xpm;
 			xpm->xpm_count = 0;
-			xpm->xpm_number = mapped_area;
+			xpm->xpm_number = map_num;
 			xpm->xpm_handle = file_handle;
 			xpm->xpm_address = mapped_address;
+			xpm->xpm_timestamp = timestamp;
 			xpm->xpm_flags = 0;
 		}
 
-		/* there's no thread structure, so make one  */
+		XNET_UNLOCK;
 
+		// there's no thread structure, so make one
 		xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
 		if (!xcc) {
-#ifdef WIN_NT
-			UnmapViewOfFile(mapped_address);
-			CloseHandle(file_handle);
-#else
-			/* STUB : unmap shared memory here */
-#endif
-			THD_mutex_unlock(&xnet_mutex);
-			return 0;
+			throw -1;
 		}
-		xcc->xcc_file_handle = xpm->xpm_handle;
-		xcc->xcc_mapped_addr = (UCHAR *) xpm->xpm_address +
-			XPS_MAPPED_FOR_CLI(pages_per_user, mapped_position);
-		xcc->xcc_file = mapped_area;
-		xcc->xcc_slot = mapped_position;
+
+		xcc->xcc_map_handle = xpm->xpm_handle;
+		xcc->xcc_mapped_addr =
+			(UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(pages_per_slot, slot_num);
+		xcc->xcc_map_num = map_num;
+		xcc->xcc_slot = slot_num;
 		xcc->xcc_xpm = xpm;
 		xcc->xcc_flags = 0;
-		xcc->xcc_send_channel_locked = FALSE;
+		xcc->xcc_proc_h = 0;
+
 		xps = (XPS) xcc->xcc_mapped_addr;
 
-		/* only speak if server has correct protocol */
-
-		if (xps->xps_server_protocol != 2L) {
-#ifdef WIN_NT
-			UnmapViewOfFile(mapped_address);
-			CloseHandle(file_handle);
-#else
-			/* STUB : unmap shared memory file here */
-#endif
-			THD_mutex_unlock(&xnet_mutex);
-			return 0;
+		// only speak if server has correct protocol
+		if (xps->xps_server_protocol != XPI_SERVER_PROTOCOL_VERSION) {
+			throw -1;
 		}
-		xps->xps_client_protocol = 2L;
-#ifdef WIN_NT
-		xps->xps_server_proc =
-			OpenProcess(SYNCHRONIZE, 0, xps->xps_server_id);
-		xcc->xcc_server_proc = xps->xps_server_proc;
-#else
-		/* STUB : we need to use use some other means to figure out hte server has
-		   died */
-#endif
-		xcc->xcc_server_id = xps->xps_server_id;
+
+		xps->xps_client_protocol = XPI_CLIENT_PROTOCOL_VERSION;
+
+		// open server process handle to watch server health during communication session
+		xcc->xcc_proc_h = OpenProcess(SYNCHRONIZE, 0, xps->xps_server_proc_id);
+		if (!xcc->xcc_proc_h) {
+			throw -1;
+		}
+
 		xpm->xpm_count++;
 
-		/* get handles of semaphores */
+#ifdef WIN_NT
 
-		sprintf(name_buffer, XPI_S_TO_C_SEM_NAME, XPI_PREFIX,
-				mapped_area, mapped_position);
-#ifdef WIN_NT
-		xcc->xcc_recv_sem =
-			OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, name_buffer);
+		sprintf(name_buffer, XNET_E_C2S_DATA_CHAN_FILLED,
+				XNET_PREFIX, map_num, slot_num, (ULONG) timestamp);
+		xcc->xcc_event_send_channel_filled =
+			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xcc->xcc_event_send_channel_filled) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_C2S_DATA_CHAN_EMPTED,
+				XNET_PREFIX, map_num, slot_num, (ULONG) timestamp);
+		xcc->xcc_event_send_channel_empted =
+			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xcc->xcc_event_send_channel_empted) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_S2C_DATA_CHAN_FILLED,
+				XNET_PREFIX, map_num, slot_num, (ULONG) timestamp);
+		xcc->xcc_event_recv_channel_filled =
+				OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xcc->xcc_event_recv_channel_filled) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_S2C_DATA_CHAN_EMPTED,
+				XNET_PREFIX, map_num, slot_num, (ULONG) timestamp);
+		xcc->xcc_event_recv_channel_empted =
+				OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xcc->xcc_event_recv_channel_empted) {
+			throw -1;
+		}
+
 #else
-		/* STUB : need to call event init for Unix */
-#endif
-		sprintf(name_buffer, XPI_C_TO_S_SEM_NAME, XPI_PREFIX, mapped_area,
-				mapped_position);
-#ifdef WIN_NT
-		xcc->xcc_send_sem =
-			OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, name_buffer);
-#else
-		/* STUB : need to call event init for Unix */
+		// STUB : need to call event init for unix
 #endif
 
 		/* added this here from the server side as this part is called by the client 
 		   and the server address need not be valid for the client -smistry 10/29/98 */
+		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_S2C_DATA];
+		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_C2S_DATA];
 
 		/* we also need to add client side flags or channel pointer as they 
 		   differ from the server side */
 
-		if (pages_per_user < 4)
-			espace = 50;
-		else
-			espace = 100;
-
-		avail =
-			(USHORT) (XPS_USEFUL_SPACE(pages_per_user) - (espace * 2)) / 2;
-
-		start_ptr = (UCHAR *) xps + (sizeof(struct xps) + (2 * espace));
+		avail =	(ULONG) (XPS_USEFUL_SPACE(pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
+		start_ptr = (UCHAR*) xps + (sizeof(struct xps) + (XNET_EVENT_SPACE * 2));
 
 		/* send channel */
-		xps->xps_channels[0].xch_client_ptr = start_ptr;
+		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_client_ptr = start_ptr;
 		/* receive channel */
-		xps->xps_channels[1].xch_client_ptr = (start_ptr + avail);
+		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_client_ptr = (start_ptr + avail);
 
-		xcc->xcc_receive_channel = &xps->xps_channels[1];
-		xcc->xcc_send_channel = &xps->xps_channels[0];
-
-		/* if we're not watching the server yet, do so now */
+	}
+	catch (...) {
 
 #ifdef WIN_NT
-		if (!server_watcher_handle) {
-			server_process_handle = xcc->xcc_server_proc;
-			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
-							  (server_watcher), NULL,
-							  THREAD_high, 0, &server_watcher_handle);
-		}
-#else
-		/* STUB : we need just the server id, we donot have this thread */
-#endif
 
-		/* link to xcc chain */
-
-		xcc->xcc_next = client_threads;
-		client_threads = xcc;
-	}
-
-	THD_mutex_unlock(&xnet_mutex);
-	port = alloc_port(0, xcc->xcc_send_channel->xch_client_ptr,
-					  xcc->xcc_send_channel->xch_size,
-					  xcc->xcc_receive_channel->xch_client_ptr,
-					  xcc->xcc_receive_channel->xch_size);
-	port->port_xcc = (void *) xcc;
-	port->port_status_vector = status_vector;
-	send_full(port, packet);
-	return port;
-#endif /* SUPERCLIENT */
-}
-
-
-#if defined(SUPERSERVER) && defined(WIN_NT)
-extern "C" {
-	static void atexit_close_handles()
-	{
-		for (XPM pXpm = first_xpm; pXpm; pXpm = pXpm->xpm_next) {
-			if (pXpm->xpm_address) {
-				UnmapViewOfFile(pXpm->xpm_address);
-				pXpm->xpm_address = 0;
+			if (file_handle) {
+				if (mapped_address) {
+					UnmapViewOfFile(mapped_address);
+				}
+				CloseHandle(file_handle);
 			}
-			if (pXpm->xpm_handle) {
-				CloseHandle(pXpm->xpm_handle);
-				pXpm->xpm_handle = 0;
+
+			if (xpm) {
+				ALLR_free(xpm);
 			}
-		}
-	}
-}
-#endif	// SUPERSERVER && WIN_NT
 
-
-USHORT XNET_init(HWND hwnd,
-				 USHORT usrs_pr_mp, USHORT pgs_pr_usr, USHORT mx_mps)
-{
-/**************************************
- *
- *      X N E T _ i n i t
- *
- **************************************
- *
- * Functional description
- *      Init mapped file stuff.   Returns 1 if successful,
- *      -1 if the map already exists, and 0 otherwise.
- *
- **************************************/
-	XPM xpm;
-
-	if (!initialized) {
-		initialized = true;
-		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
-		THD_mutex_init(&xnet_mutex);
-	}
-
-/* init the limits */
-
-	if (usrs_pr_mp &&
-		usrs_pr_mp >= XPS_MIN_NUM_CLI &&
-		usrs_pr_mp <= XPS_MIN_NUM_CLI)
-	{
-		users_per_map = usrs_pr_mp;
-	}
-
-	if (pgs_pr_usr &&
-		pgs_pr_usr >= XPS_MIN_PAGES_PER_CLI &&
-		pgs_pr_usr <= XPS_MAX_PAGES_PER_CLI)
-	{
-		pages_per_user = pgs_pr_usr;
-	}
-
-	if (mx_mps && mx_mps >= XPS_MIN_NUM_MAPS && mx_mps <= XPS_MAX_NUM_MAPS) {
-		num_maps = mx_mps;
-	}
-
-/* init mapped chain and critical regions */
-
-	xpms = NULL;
-
-/* create the first map (failure means it's already there )*/
-
-	xpm = make_map(0);
-	if (xpm && (xpm != (XPM) -1)) {
-		first_xpm = xpm;
-#if defined(SUPERSERVER) && defined(WIN_NT)
-		// TMN: 2003-03-11: Close the handles at server shutdown
-		// Possibly this is also needed for CS, but since I can't test that
-		// I decided to only do it for SS.
-		atexit(&atexit_close_handles);
-#endif
-		return (USHORT) 1;
-	}
-
-	return (USHORT)(ULONG) xpm;
-}
-
-
-PORT XNET_start_thread(ULONG client_pid, ULONG * response)
-{
-/**************************************
- *
- *      X N E T _ s t a r t _ t h r e a d
- *
- **************************************
- *
- * Functional description
- *	Start an interprocess thread.   This allocates
- *	the next available chunk of the mapped file and
- *	tells the client where it is.
- *
- **************************************/
-	XCC xcc;
-	PORT port;
-	USHORT mapped_area, mapped_position;
-	TEXT name_buffer[128];
-	XPM xpm;
-	USHORT i, j;
-	UCHAR *p;
-	XPS xps;
-	USHORT avail;
-	USHORT espace;
-
-/* go through list of maps */
-
-	THD_mutex_lock(&xnet_mutex);
-	j = 0;
-	for (xpm = xpms; xpm; xpm = xpm->xpm_next) {
-		/* find an available unused comm area */
-
-		for (i = 0; i < users_per_map; i++)
-			if (!xpm->xpm_ids[i])
-				break;
-
-		if (i < users_per_map) {
-			xpm->xpm_count++;
-			xpm->xpm_ids[i]++;
-			j = xpm->xpm_number;
-			break;
-		}
-		j++;
-	}
-
-/* if the mapped file structure has not yet been initialized,
-   make one now */
-
-	if (!xpm) {
-		/* allocate new map file and first slot */
-
-		xpm = make_map(j);
-
-		/* check for errors in creation of mapped file */
-
-		if (!xpm || xpm == (XPM) - 1) {
-			THD_mutex_unlock(&xnet_mutex);
-			return (PORT) - 1;
-		}
-		i = 0;
-		xpm->xpm_ids[0]++;
-		xpm->xpm_count++;
-	}
-
-	mapped_area = j;
-	mapped_position = i;
-
-/* allocate a communications control structure and fill it in */
-
-	xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
-	if (!xcc) {
-		THD_mutex_unlock(&xnet_mutex);
-		return (PORT) - 1;
-	}
-	p = (UCHAR *) xpm->xpm_address;
-	p += XPS_MAPPED_FOR_CLI(pages_per_user, mapped_position);
-	memset(p, (char) 0, XPS_MAPPED_PER_CLI(pages_per_user));
-	xcc->xcc_next = NULL;
-	xcc->xcc_mapped_addr = p;
-	xcc->xcc_xpm = xpm;
-	xcc->xcc_slot = mapped_position;
-	xcc->xcc_flags = 0;
-	xcc->xcc_client_id = (PID_T) client_pid;
-#ifdef WIN_NT
-	xcc->xcc_client_proc = OpenProcess(SYNCHRONIZE, 0, xcc->xcc_client_id);
+			if (xcc) {
+				if (xcc->xcc_event_send_channel_filled) {
+					CloseHandle(xcc->xcc_event_send_channel_filled);
+				}
+				if (xcc->xcc_event_send_channel_empted) {
+					CloseHandle(xcc->xcc_event_send_channel_empted);
+				}
+				if (xcc->xcc_event_recv_channel_filled) {
+					CloseHandle(xcc->xcc_event_recv_channel_filled);
+				}
+				if (xcc->xcc_event_recv_channel_empted) {
+					CloseHandle(xcc->xcc_event_recv_channel_empted);
+				}
+				ALLR_free(xcc);
+			}
+		
 #else
-/* STUB : need something for Solaris ?? I donot think so */
-#endif
-	xcc->xcc_file = mapped_area;
-	xcc->xcc_slot = mapped_position;
-	xcc->xcc_send_channel_locked = FALSE;
-	xps = (XPS) xcc->xcc_mapped_addr;
-	xps->xps_client_id = xcc->xcc_client_id;
-#ifdef WIN_NT
-	xps->xps_client_proc = xcc->xcc_client_proc;
-	xps->xps_server_id = GetCurrentProcessId();
-#else
-/* STUB : need something for Solaris ?? I donot think so */
-	xps->xps_server_id = getpid();
+		// Something for Unix ...
 #endif
 
-/* make sure client knows what this server speaks */
+		return NULL;
+	}
 
-	xps->xps_server_protocol = 2L;
-	xps->xps_client_protocol = 0L;
-
-#ifdef WIN_NT
-/* create the semaphores and put the handles into the xcc */
-
-	sprintf(name_buffer, XPI_S_TO_C_SEM_NAME, XPI_PREFIX, mapped_area, mapped_position);
-	xcc->xcc_send_sem = CreateSemaphore(ISC_get_security_desc(),
-										0L, 2L, name_buffer);
-	sprintf(name_buffer, XPI_C_TO_S_SEM_NAME, XPI_PREFIX, mapped_area, mapped_position);
-	xcc->xcc_recv_sem = CreateSemaphore(ISC_get_security_desc(),
-										0L, 2L, name_buffer);
-
-#else
-/* STUB : add create events here */
-#endif
-	xcc->xcc_receive_channel = &xps->xps_channels[0];
-	xcc->xcc_send_channel = &xps->xps_channels[1];
-
-#ifdef WIN_NT
-/* make sure semaphores are "empty" */
-
-	while (WaitForSingleObject(xcc->xcc_send_sem, 1) == WAIT_OBJECT_0);
-	while (WaitForSingleObject(xcc->xcc_recv_sem, 1) == WAIT_OBJECT_0);
-#else
-/* STUB this should be event clear */
-#endif
-
-/* set up the channel structures */
-
-	if (pages_per_user < 4)
-		espace = 50;
-	else
-		espace = 100;
-
-	p += sizeof(struct xps);
-	avail = (USHORT) XPS_USEFUL_SPACE(pages_per_user);
-	xps->xps_channels[2].xch_buffer = p;	/* client to server events */
-	xps->xps_channels[2].xch_size = espace;
-	p += espace;
-	xps->xps_channels[3].xch_buffer = p;	/* server to client events */
-	xps->xps_channels[3].xch_size = espace;
-	p += espace;
-	avail = (avail - (espace * 2)) / 2;	/* split remainer in half */
-	xps->xps_channels[0].xch_buffer = p;	/* client to server data */
-	xps->xps_channels[0].xch_size = avail;
-	p += avail;
-	xps->xps_channels[1].xch_buffer = p;	/* server to client data */
-	xps->xps_channels[1].xch_size = avail;
-
-/* finally, allocate and set the port structure for this client */
-
-	port = alloc_port(0, xcc->xcc_send_channel->xch_buffer,
-					  xcc->xcc_send_channel->xch_size,
-					  xcc->xcc_receive_channel->xch_buffer,
-					  xcc->xcc_receive_channel->xch_size);
-	if (port)
+	port = xnet_alloc_port(0, xcc->xcc_send_channel->xch_client_ptr,
+						   xcc->xcc_send_channel->xch_size,
+						   xcc->xcc_recv_channel->xch_client_ptr,
+						   xcc->xcc_recv_channel->xch_size);
+	if (port) {
+		status_vector[1] = FB_SUCCESS;
+		port->port_status_vector = status_vector;
 		port->port_xcc = (void *) xcc;
-
-/* return combined mapped area and number */
-
-	THD_mutex_unlock(&xnet_mutex);
-	*response =
-		XPS_PACK_PARAMS(users_per_map, pages_per_user, mapped_area,
-						mapped_position);
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
+		send_full(port, packet);
+	}
 	return port;
+
+#endif //SUPERCLIENT
 }
 
 
-static int accept_connection( PORT port, P_CNCT * cnct)
+static bool_t xnet_connect_init()
+{
+/**************************************
+ *
+ *  x n e t _ c o n n e c t _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *  Initialization of client side resources used
+ *  when client performs connect to server
+ *
+ **************************************/
+	TEXT name_buffer[128];
+
+	xnet_connect_mutex = 0;
+	xnet_connect_map_h = 0;
+	xnet_connect_map = 0;
+
+	xnet_connect_event = 0;
+	xnet_response_event = 0;
+
+	try {
+		sprintf(name_buffer, XNET_MU_CONNECT_MUTEX, XNET_PREFIX);
+		xnet_connect_mutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, name_buffer);
+		if (!xnet_connect_mutex) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_CONNECT_EVENT, XNET_PREFIX);
+		xnet_connect_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xnet_connect_event) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_RESPONSE_EVENT, XNET_PREFIX);
+		xnet_response_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xnet_response_event) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_MA_CONNECT_MAP, XNET_PREFIX);
+		xnet_connect_map_h = OpenFileMapping(FILE_MAP_WRITE, TRUE, name_buffer);
+		if (!xnet_connect_map_h) {
+			throw -1;
+		}
+
+		xnet_connect_map =
+			MapViewOfFile(xnet_connect_map_h, FILE_MAP_WRITE, 0, 0,
+						  XNET_CONNECT_RESPONZE_SIZE);
+		if (!xnet_connect_map) {
+			throw -1;
+		}
+
+		return TRUE;
+	}
+	catch (...) {
+		xnet_connect_fini();
+		return FALSE;
+	}
+
+}
+
+
+static void xnet_connect_fini()
+{
+/**************************************
+ *
+ *  x n e t _ c o n n e c t _ f i n i
+ *
+ **************************************
+ *
+ * Functional description
+ *  Release resources allocated in
+ *  xnet_connect_init() / xnet_srv_init()
+ *
+ **************************************/
+
+#ifdef WIN_NT
+
+	if (xnet_connect_mutex){
+		CloseHandle(xnet_connect_mutex);
+		xnet_connect_mutex = 0;
+	}
+
+	if (xnet_connect_event){
+		CloseHandle(xnet_connect_event);
+		xnet_connect_event = 0;
+	}
+
+	if (xnet_response_event){
+		CloseHandle(xnet_response_event);
+		xnet_response_event = 0;
+	}
+
+	if (xnet_connect_map){
+		UnmapViewOfFile(xnet_connect_map);
+		xnet_connect_map = 0;
+	}
+
+	if (xnet_connect_map_h){
+		CloseHandle(xnet_connect_map_h);
+		xnet_connect_map_h = 0;
+	}
+
+#endif // WIN_NT
+}
+
+
+static int accept_connection(PORT port, P_CNCT * cnct)
 {
 /**************************************
  *
@@ -910,24 +838,22 @@ static int accept_connection( PORT port, P_CNCT * cnct)
  **************************************
  *
  * Functional description
- *	Accept an incoming request for connection.  This is purely a lower
- *	level handshaking function, and does not constitute the server
- *	response for protocol selection.
+ *	Accept an incoming request for connection.
  *
  **************************************/
 	return TRUE;
 }
 
 
-static PORT alloc_port(
-					   PORT parent,
-					   UCHAR * send_buffer,
-					   USHORT send_length,
-					   UCHAR * receive_buffer, ULONG receive_length)
+static PORT xnet_alloc_port(PORT parent,
+							UCHAR * send_buffer,
+							ULONG send_length,
+							UCHAR * receive_buffer,
+							ULONG receive_length)
 {
 /**************************************
  *
- *	a l l o c _ p o r t
+ *	x n e t _ a l l o c _ p o r t
  *
  **************************************
  *
@@ -939,11 +865,7 @@ static PORT alloc_port(
 	PORT port;
 	TEXT buffer[64];
 
-
 	port = (PORT) ALLOCV(type_port, 0);
-/*
-port->port_type = port_ipserver;
-*/
 	port->port_type = port_xnet;
 	port->port_state = state_pending;
 	ISC_get_host(buffer, sizeof(buffer));
@@ -969,18 +891,20 @@ port->port_type = port_ipserver;
 	port->port_receive_packet = receive;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
-	port->port_connect =
+	port->port_connect = 
 		reinterpret_cast<PORT(*)(PORT, PACKET *, void (*)())>(aux_connect);
 	port->port_request = aux_request;
 	port->port_buff_size = send_length;
-	xdrxnet_create(&port->port_send, port, send_buffer, send_length,
-				   XDR_ENCODE);
+	port->port_status_vector = NULL;
+
+	xdrxnet_create(&port->port_send, port, send_buffer,	send_length, XDR_ENCODE);
 	xdrxnet_create(&port->port_receive, port, receive_buffer, 0, XDR_DECODE);
+
 	return port;
 }
 
 
-static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
+static PORT aux_connect(PORT port, PACKET * packet, XDR_INT(*ast) (void))
 {
 /**************************************
  *
@@ -989,101 +913,148 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
  **************************************
  *
  * Functional description
- *	Try to establish an alternative connection.
- *      Somebody has already done a successfull connect request.
- *      This uses the existing xcc for the parent port to more
- *      or less duplicate a new xcc for the new aux port pointing
- *      to the event stuff in the map.
+ *	Try to establish an alternative connection for handling events.
+ *  Somebody has already done a successfull connect request.
+ *  This uses the existing xcc for the parent port to more
+ *  or less duplicate a new xcc for the new aux port pointing
+ *  to the event stuff in the map.
  *
  **************************************/
-	PORT new_port;
-	XCC oxcc;
-	XCC xcc;
-	TEXT name_buffer[128];
-	XPS xps;
-	XPM xpm;
-
-	USHORT espace;
 
 	if (port->port_server_flags) {
 		port->port_flags |= PORT_async;
 		return port;
 	}
 
-/* make a new xcc */
+ 	PORT new_port = NULL;
+	XCC parent_xcc = NULL;
+	XCC xcc = NULL;
+	TEXT name_buffer[128];
+	XPS xps = NULL;
+	XPM xpm = NULL;
 
-	oxcc = (XCC) port->port_xcc;
-	xps = (XPS) oxcc->xcc_mapped_addr;
-	xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
-	if (!xcc)
-		return NULL;
-	xpm = (XPM) xcc->xcc_xpm = oxcc->xcc_xpm;
-	xcc->xcc_file = oxcc->xcc_file;
-	xcc->xcc_slot = oxcc->xcc_slot;
+	try {
+
+		// make a new xcc
+		parent_xcc = (XCC) port->port_xcc;
+		xps = (XPS) parent_xcc->xcc_mapped_addr;
+
+		xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
+		if (!xcc) {
+			throw -1;
+		}
+
+		xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
+		xcc->xcc_map_num = parent_xcc->xcc_map_num;
+		xcc->xcc_slot = parent_xcc->xcc_slot;
+
 #ifdef WIN_NT
-	xcc->xcc_server_proc = oxcc->xcc_server_proc;
-	xcc->xcc_client_proc = oxcc->xcc_client_proc;
+		xcc->xcc_proc_h = parent_xcc->xcc_proc_h;
 #endif
-	xcc->xcc_server_id = oxcc->xcc_server_id;
-	xcc->xcc_client_id = oxcc->xcc_client_id;
-	xcc->xcc_flags = 0;
-	xcc->xcc_file_handle = oxcc->xcc_file_handle;
-	xcc->xcc_mapped_addr = oxcc->xcc_mapped_addr;
-	xcc->xcc_xpm->xpm_count++;
+
+		xcc->xcc_flags = 0;
+		xcc->xcc_map_handle = parent_xcc->xcc_map_handle;
+		xcc->xcc_mapped_addr = parent_xcc->xcc_mapped_addr;
+		xcc->xcc_xpm->xpm_count++;
+
+		sprintf(name_buffer, XNET_E_C2S_EVNT_CHAN_FILLED,
+				XNET_PREFIX, xcc->xcc_map_num, xcc->xcc_slot,
+				(ULONG) xpm->xpm_timestamp);
+		xcc->xcc_event_send_channel_filled =
+			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xcc->xcc_event_send_channel_filled) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_C2S_EVNT_CHAN_EMPTED,
+				XNET_PREFIX, xcc->xcc_map_num, xcc->xcc_slot,
+				(ULONG) xpm->xpm_timestamp);
+		xcc->xcc_event_send_channel_empted =
+			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xcc->xcc_event_send_channel_empted) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_S2C_EVNT_CHAN_FILLED,
+				XNET_PREFIX, xcc->xcc_map_num, xcc->xcc_slot,
+				(ULONG) xpm->xpm_timestamp);
+		xcc->xcc_event_recv_channel_filled =
+			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xcc->xcc_event_recv_channel_filled) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_S2C_EVNT_CHAN_EMPTED,
+				XNET_PREFIX, xcc->xcc_map_num, xcc->xcc_slot,
+				(ULONG) xpm->xpm_timestamp);
+		xcc->xcc_event_recv_channel_empted =
+			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xcc->xcc_event_recv_channel_empted) {
+			throw -1;
+		}
+
+		// send events channel
+		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+
+		// receive events channel
+		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+
+		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];		
+		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];
+
+		// alloc new port and link xcc to it
+		new_port = xnet_alloc_port(NULL,
+								   xcc->xcc_send_channel->xch_client_ptr,
+								   xcc->xcc_send_channel->xch_size,
+								   xcc->xcc_recv_channel->xch_client_ptr,
+								   xcc->xcc_recv_channel->xch_size);
+		if (!new_port) {
+			throw -1;
+		}
+
+		port->port_async = new_port;
+		new_port->port_flags = port->port_flags & PORT_no_oob;
+		new_port->port_flags |= PORT_async;
+		new_port->port_xcc = (void *) xcc;
+
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, new_port);
+
+		return new_port;
+	}
+	catch (...) {
+
+		XNET_LOG_ERROR("aux_connect() failed");
 
 #ifdef WIN_NT
-/* get handles of semaphores */
 
-	sprintf(name_buffer, XPI_S_TO_C_EVT_SEM_NAME,XPI_PREFIX, 
-			xcc->xcc_file, xcc->xcc_slot);
-	xcc->xcc_recv_sem = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE,
-									  name_buffer);
-	sprintf(name_buffer, XPI_C_TO_S_EVT_SEM_NAME, XPI_PREFIX, 
-			xcc->xcc_file, xcc->xcc_slot);
-	xcc->xcc_send_sem = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE,
-									  name_buffer);
+		if (xcc) {
+			if (xcc->xcc_event_send_channel_filled) {
+				CloseHandle(xcc->xcc_event_send_channel_filled);
+			}
+			if (xcc->xcc_event_send_channel_empted) {
+				CloseHandle(xcc->xcc_event_send_channel_empted);
+			}
+			if (xcc->xcc_event_recv_channel_filled) {
+				CloseHandle(xcc->xcc_event_recv_channel_filled);
+			}
+			if (xcc->xcc_event_recv_channel_empted) {
+				CloseHandle(xcc->xcc_event_recv_channel_empted);
+			}
+			ALLR_free(xcc);
+		}
+		
 #else
-/* STUB : This should be event_init() calls ? */
+		// Something for Unix ...
 #endif
-/* the address mapping is not the same in the client and the server hence set 
-   the client event channels correctly  correctly  - smistry 10/29/98*/
-	if (pages_per_user < 4)
-		espace = 50;
-	else
-		espace = 100;
 
-/* receive events channel */
-	xps->xps_channels[3].xch_client_ptr = ((UCHAR *) xpm->xpm_address +
-										   sizeof(struct xps) + (espace));
-/* send events channel */
-	xps->xps_channels[2].xch_client_ptr = ((UCHAR *) xpm->xpm_address +
-										   sizeof(struct xps));
-	xcc->xcc_receive_channel = &xps->xps_channels[3];
-	xcc->xcc_send_channel = &xps->xps_channels[2];
-
-/* link to xcc chain */
-
-	THREAD_EXIT;
-	THD_mutex_lock(&xnet_mutex);
-	THREAD_ENTER;
-	xcc->xcc_next = client_threads;
-	client_threads = xcc;
-	THD_mutex_unlock(&xnet_mutex);
-
-/* alloc new port and link xcc to it */
-
-	new_port = alloc_port(0, xcc->xcc_send_channel->xch_client_ptr,
-						  xcc->xcc_send_channel->xch_size,
-						  xcc->xcc_receive_channel->xch_client_ptr,
-						  xcc->xcc_receive_channel->xch_size);
-	port->port_async = new_port;
-	new_port->port_flags = port->port_flags & PORT_no_oob;
-	new_port->port_xcc = (void *) xcc;
-	return new_port;
+		return NULL;
+	}
 }
 
 
-static PORT aux_request( PORT port, PACKET * packet)
+static PORT aux_request(PORT port, PACKET * packet)
 {
 /**************************************
  *
@@ -1092,396 +1063,268 @@ static PORT aux_request( PORT port, PACKET * packet)
  **************************************
  *
  * Functional description
- *      A remote interface has requested the server to
- *      prepare an auxiliary connection.   This is done
- *      by allocating a new port and comm (xcc) structure,
- *      using the event stuff in the map rather than the
- *      normal database channels.
+ *  A remote interface has requested the server to
+ *  prepare an auxiliary connection.   This is done
+ *  by allocating a new port and comm (xcc) structure,
+ *  using the event stuff in the map rather than the
+ *  normal database channels.
  *
  **************************************/
-	PORT new_port;
-	XCC oxcc;
-	XCC xcc;
-	XPS xps;
+
+ 	PORT new_port = NULL;
+	XCC parent_xcc = NULL;
+	XCC xcc = NULL;
 	TEXT name_buffer[128];
+	XPS xps = NULL;
+	XPM xpm = NULL;
 
+	try {
 
-/* allocate a communications control structure and fill it in */
+		// make a new xcc
+		parent_xcc = (XCC) port->port_xcc;
+		xps = (XPS) parent_xcc->xcc_mapped_addr;
 
-	oxcc = (XCC) port->port_xcc;
-	xps = (XPS) oxcc->xcc_mapped_addr;
-	xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
-	if (!xcc)
-		return NULL;
-	xcc->xcc_next = NULL;
-	xcc->xcc_xpm = oxcc->xcc_xpm;
-	xcc->xcc_file = oxcc->xcc_file;
-	xcc->xcc_slot = oxcc->xcc_slot;
+		xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
+		if (!xcc) {
+			throw -1;
+		}
+
+		xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
+		xcc->xcc_map_num = parent_xcc->xcc_map_num;
+		xcc->xcc_slot = parent_xcc->xcc_slot;
+
 #ifdef WIN_NT
-	xcc->xcc_server_proc = oxcc->xcc_server_proc;
-	xcc->xcc_client_proc = oxcc->xcc_client_proc;
+		xcc->xcc_proc_h = parent_xcc->xcc_proc_h;
 #endif
-	xcc->xcc_server_id = oxcc->xcc_server_id;
-	xcc->xcc_client_id = oxcc->xcc_client_id;
-	xcc->xcc_flags = 0;
-	xcc->xcc_mapped_addr = oxcc->xcc_mapped_addr;
-	xcc->xcc_file_handle = oxcc->xcc_file_handle;
-	xcc->xcc_xpm->xpm_count++;
-	xps = (XPS) xcc->xcc_mapped_addr;
 
-/* create the event semaphores and put the handles into the xcc */
+		xcc->xcc_flags = 0;
+		xcc->xcc_map_handle = parent_xcc->xcc_map_handle;
+		xcc->xcc_mapped_addr = parent_xcc->xcc_mapped_addr;
+		xcc->xcc_xpm->xpm_count++;
 
 #ifdef WIN_NT
-	sprintf(name_buffer, XPI_S_TO_C_EVT_SEM_NAME, XPI_PREFIX, 
-			xcc->xcc_file, xcc->xcc_slot);
-	xcc->xcc_send_sem = CreateSemaphore(ISC_get_security_desc(),
-										0L, 2L, name_buffer);
-	sprintf(name_buffer, XPI_C_TO_S_EVT_SEM_NAME, XPI_PREFIX, 
-			xcc->xcc_file, xcc->xcc_slot);
-	xcc->xcc_recv_sem = CreateSemaphore(ISC_get_security_desc(),
-										0L, 2L, name_buffer);
+
+		sprintf(name_buffer, XNET_E_C2S_EVNT_CHAN_FILLED,
+				XNET_PREFIX, xcc->xcc_map_num, xcc->xcc_slot,
+				(ULONG) xpm->xpm_timestamp);
+		xcc->xcc_event_recv_channel_filled =
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
+		if (!xcc->xcc_event_recv_channel_filled ||
+			(xcc->xcc_event_recv_channel_filled && ERRNO == ERROR_ALREADY_EXISTS)) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_C2S_EVNT_CHAN_EMPTED,
+				XNET_PREFIX, xcc->xcc_map_num, xcc->xcc_slot,
+				(ULONG) xpm->xpm_timestamp);
+		xcc->xcc_event_recv_channel_empted =
+			CreateEvent(ISC_get_security_desc(), TRUE, TRUE, name_buffer);
+		if (!xcc->xcc_event_recv_channel_empted ||
+			(xcc->xcc_event_recv_channel_empted && ERRNO == ERROR_ALREADY_EXISTS)) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_S2C_EVNT_CHAN_FILLED,
+				XNET_PREFIX, xcc->xcc_map_num, xcc->xcc_slot,
+				(ULONG) xpm->xpm_timestamp);
+		xcc->xcc_event_send_channel_filled =
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
+		if (!xcc->xcc_event_send_channel_filled ||
+			(xcc->xcc_event_send_channel_filled && ERRNO == ERROR_ALREADY_EXISTS)) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_S2C_EVNT_CHAN_EMPTED,
+				XNET_PREFIX, xcc->xcc_map_num, xcc->xcc_slot,
+				(ULONG) xpm->xpm_timestamp);
+		xcc->xcc_event_send_channel_empted =
+			CreateEvent(ISC_get_security_desc(), TRUE, TRUE, name_buffer);
+		if (!xcc->xcc_event_send_channel_empted ||
+			(xcc->xcc_event_send_channel_empted && ERRNO == ERROR_ALREADY_EXISTS)) {
+			throw -1;
+		}
+
 #else
-/* STUB : Should be Event_init() calls. */
+	// STUB : This should be event_init() calls ?
 #endif
-	xcc->xcc_receive_channel = &xps->xps_channels[2];
-	xcc->xcc_send_channel = &xps->xps_channels[3];
+
+		// send events channel
+		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+
+		// receive events channel
+		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+
+		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];		
+		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];
+
+		// alloc new port and link xcc to it
+		new_port = xnet_alloc_port(NULL,
+								   xcc->xcc_send_channel->xch_client_ptr,
+								   xcc->xcc_send_channel->xch_size,
+								   xcc->xcc_recv_channel->xch_client_ptr,
+								   xcc->xcc_recv_channel->xch_size);
+		if (!new_port) {
+			throw -1;
+		}
+
+		port->port_async = new_port;
+		new_port->port_xcc = (void *) xcc;
+		new_port->port_flags = port->port_flags & PORT_no_oob;
+		new_port->port_server_flags = port->port_server_flags;
+
+		return new_port;
+	}
+	catch (...) {
+
+		XNET_LOG_ERROR("aux_request() failed");
 
 #ifdef WIN_NT
-/* make sure semaphores are "empty" */
 
-	while (WaitForSingleObject(xcc->xcc_send_sem, 1) == WAIT_OBJECT_0);
-	while (WaitForSingleObject(xcc->xcc_recv_sem, 1) == WAIT_OBJECT_0);
-#else
-/* STUB : should be event clear */
-#endif
+		if (xcc) {
 
-/* get a new port structure and link it to the one passed in */
-
-	new_port = alloc_port(0, xcc->xcc_send_channel->xch_buffer,
-						  xcc->xcc_send_channel->xch_size,
-						  xcc->xcc_receive_channel->xch_buffer,
-						  xcc->xcc_receive_channel->xch_size);
-	port->port_async = new_port;
-	new_port->port_server_flags = port->port_server_flags;
-	new_port->port_flags = port->port_flags & PORT_no_oob;
-	new_port->port_xcc = (void *) xcc;
-	return new_port;
-}
-
-
-#ifdef UNIX
-ULONG connection_setup(TEXT * name, PACKET * packet, ISC_STATUS * status_vector)
- {
-/**************************************
- *
- *      c o n n e c t i o n _ s e t u p
- *
- **************************************
- *
- * Functional description
- *      Setup the socket and send request to the other server for client.
- *
- **************************************/
-	struct sockaddr_in address;
-	PORT port;
-	TEXT *protocol, temp[128], *p;
-	struct hostent *host;
-	struct servent *service;
-	TEXT msg[128];
-	int sock_id;
-	SOCKET sock;
-
-
-	port = INET_alloc_port(0);
-	port->port_status_vector = status_vector;
-/* this just for connection set all the timeouts to 0 */
-	port->port_dummy_packet_interval = port->port_connect_timeout = 0;
-	status_vector[0] = gds_arg_gds;
-	status_vector[1] = 0;
-	status_vector[2] = gds_arg_end;
-	protocol = Config::getRemoteServiceName();
-
-/* Set up Inter-Net socket address */
-
-	memset((SCHAR *) & address, 0, sizeof(address));
-
-/* U N I X style sockets */
-	THREAD_EXIT;
-	host = gethostbyname(name);
-
-/* On Windows NT/9x, gethostbyname can only accomodate
- * 1 call at a time.  In this case it returns the error
- * WSAEINPROGRESS. On UNIX systems, this call may not succeed
- * because of a temporary error.  In this case, it returns
- * h_error set to TRY_AGAIN.  When these errors occur,
- * retry the operation a few times.
- * NOTE: This still does not guarantee success, but helps.
- */
-	if (!host) {
-		int retry;
-		if (h_errno == TRY_AGAIN) {
-			for (retry = 0; retry < XNET_RETRY_CALL; retry++) {
-				host = gethostbyname(name);
-				if (host)
-					break;
+			if (xcc->xcc_event_send_channel_filled) {
+				CloseHandle(xcc->xcc_event_send_channel_filled);
 			}
+			if (xcc->xcc_event_send_channel_empted) {
+				CloseHandle(xcc->xcc_event_send_channel_empted);
+			}
+			if (xcc->xcc_event_recv_channel_filled) {
+				CloseHandle(xcc->xcc_event_recv_channel_filled);
+			}
+			if (xcc->xcc_event_recv_channel_empted) {
+				CloseHandle(xcc->xcc_event_recv_channel_empted);
+			}
+			ALLR_free(xcc);
 		}
-	}
-	THREAD_ENTER;
-	if (!host) {
-		sprintf(msg,
-				"XNET/XNET_connection_setup: gethostbyname failed, error code = %d",
-				h_errno);
-		gds__log(msg, 0);
-		xnet_gen_error(port,
-					   isc_network_error,
-					   isc_arg_string,
-					   port->port_connection->str_data,
-					   isc_arg_gds,
-					   isc_net_lookup_err, isc_arg_gds, isc_host_unknown, 0);
+		
+#else
+		// Something for Unix ...
+#endif
+
 		return NULL;
-	}
-
-	address.sin_family = host->h_addrtype;
-	if (packet)
-		memcpy(&address.sin_addr, host->h_addr, sizeof(address.sin_addr));
-	else
-		address.sin_addr.s_addr = INADDR_ANY;
-
-	THREAD_EXIT;
-	service = getservbyname(protocol, "tcp");
-	THREAD_ENTER;
-	if (!service) {
-		sprintf(msg,
-				"INET/INET_connect: getservbyname failed, error code = %d",
-				h_errno);
-		gds__log(msg, 0);
-		xnet_gen_error(port,
-					   isc_network_error,
-					   isc_arg_string,
-					   port->port_connection->str_data,
-					   isc_arg_gds,
-					   isc_net_lookup_err,
-					   isc_arg_gds,
-					   isc_service_unknown,
-					   isc_arg_string, protocol, isc_arg_string, "tcp", 0);
-		return NULL;
-	}
-	address.sin_port = service->s_port;
-
-/* Allocate a port block and initialize a socket for communications */
-
-	port->port_handle = (HANDLE) socket(AF_INET, SOCK_STREAM, 0);
-
-	if ((SOCKET) port->port_handle == INVALID_SOCKET) {
-		xnet_error(port, "socket", isc_net_connect_err, ERRNO);
-		return NULL;
-	}
-
-/* If we're a host, just make the connection */
-
-	if (packet) {
-		THREAD_EXIT;
-		sock_id = connect((SOCKET) port->port_handle,
-						  (struct sockaddr *) &address, sizeof(address));
-		THREAD_ENTER;
-		if (sock_id != -1 && send_full(port, packet))
-			return port;
-		else {
-			xnet_error(port, "connect", isc_net_connect_err, ERRNO);
-			disconnect(port);
-			return NULL;
-		}
-	}
-
-	sock_id = bind((SOCKET) port->port_handle,
-				   (struct sockaddr *) &address, sizeof(address));
-
-	if (sock_id == -1) {
-		xnet_error(port, "bind", isc_net_connect_listen_err, ERRNO);
-		disconnect(port);
-		return NULL;
-	}
-
-	sock_id = listen((SOCKET) port->port_handle, 5);
-
-	if (sock_id == -1) {
-		xnet_error(port, "listen", isc_net_connect_listen_err, ERRNO);
-		return NULL;
-	}
-
-	if (flag & SRVR_multi_client) {
-		/* Prevent the generation of dummy keepalive packets on the
-		   connect port. */
-
-		port->port_dummy_packet_interval = 0;
-		port->port_dummy_timeout = 0;
-		port->port_server_flags |= (SRVR_server | SRVR_multi_client);
-		gds__register_cleanup(exit_handler, (void *) port);
-		return port;
-	}
-
-	while (TRUE) {
-		int l;
-		THREAD_EXIT;
-		l = sizeof(address);
-		sock = accept((SOCKET) port->port_handle,
-					  (struct sockaddr *) &address, &l);
-		if (sock == INVALID_SOCKET) {
-			THREAD_ENTER;
-			xnet_error(port, "accept", isc_net_connect_err, ERRNO);
-			disconnect(port);
-			return NULL;
-		}
-		if (!fork()) {
-			THREAD_ENTER;
-			close((SOCKET) port->port_handle);
-			port->port_handle = (HANDLE) sock;
-			port->port_server_flags |= SRVR_server;
-			return port;
-		}
-		THREAD_ENTER;
-		close(sock);
 	}
 }
-#endif /* UNIX */
 
 
-static void cleanup_comm( XCC xcc)
+static void xnet_cleanup_comm(XCC xcc)
 {
 /**************************************
  *
- *      c l e a n u p _ c o m m
+ *  x n e t _ c l e a n u p _ c o m m
  *
  **************************************
  *
  * Functional description
- *      Clean up an xcc structure, close its handles,
- *      unmap its file, and free it.
+ *  Clean up an xcc structure, close its handles,
+ *  unmap its file, and free it.
  *
  **************************************/
-	XCC pxcc;
 	XPM xpm;
-#ifdef SUPERCLIENT
 	XPM pxpm;
-#endif /* SUPERCLIENT */
 
-#ifdef SUPERSERVER
-	SSHORT slot_number = (SSHORT) xcc->xcc_slot;
-#endif /* SUPERSERVER */
+#ifdef WIN_NT
 
-/* free up semaphores */
+	if (xcc->xcc_event_send_channel_filled) {
+		CloseHandle(xcc->xcc_event_send_channel_filled);
+	}
+	if (xcc->xcc_event_send_channel_empted) {
+		CloseHandle(xcc->xcc_event_send_channel_empted);
+	}
+	if (xcc->xcc_event_recv_channel_filled) {
+		CloseHandle(xcc->xcc_event_recv_channel_filled);
+	}
+	if (xcc->xcc_event_recv_channel_empted) {
+		CloseHandle(xcc->xcc_event_recv_channel_empted);
+	}
+	if (xcc->xcc_proc_h) {
+		CloseHandle(xcc->xcc_proc_h);
+	}
+
+#endif // WIN_NT
 
 	xpm = xcc->xcc_xpm;
-#ifdef WIN_NT
-	if (xcc->xcc_send_sem)
-		CloseHandle(xcc->xcc_send_sem);
-	if (xcc->xcc_recv_sem)
-		CloseHandle(xcc->xcc_recv_sem);
-#ifdef SUPERCLIENT
-	if (xcc->xcc_server_proc)
-		CloseHandle(xcc->xcc_server_proc);
-#endif /* SUPERCLIENT */
-#else /* WIN_NT */
-/* STUB : this should be event_fini */
-#endif /* WIN_NT */
 
-/* find xcc in chain and release */
-
-	THD_mutex_lock(&xnet_mutex);
-	if (client_threads == xcc)
-		client_threads = xcc->xcc_next;
-	else {
-		for (pxcc = client_threads; pxcc && pxcc->xcc_next;
-			 pxcc = pxcc->xcc_next) if (pxcc->xcc_next == xcc) {
-				pxcc->xcc_next = xcc->xcc_next;
-				break;
-			}
-	}
-
-	THD_mutex_unlock(&xnet_mutex);
 	ALLR_free((UCHAR *) xcc);
 
-/* if this was the last area for this map, unmap it */
+	// if this was the last area for this map, unmap it
+	if (xpm) {
+		xpm->xpm_count--;
 
-	xpm->xpm_count--;
-#ifdef SUPERCLIENT
-	if (!xpm->xpm_count && client_maps) {
-#ifdef WIN_NT
-		UnmapViewOfFile(xpm->xpm_address);
-		CloseHandle(xpm->xpm_handle);
-#else
-		/* STUB : unmap the shared memory segment. */
-#endif
+		if (!xpm->xpm_count && client_maps) {
+			UnmapViewOfFile(xpm->xpm_address);
+			CloseHandle(xpm->xpm_handle);
 
-		/* find in chain and release */
-
-		THD_mutex_lock(&xnet_mutex);
-		if (client_maps == xpm)
-			client_maps = xpm->xpm_next;
-		else {
-			for (pxpm = client_maps; pxpm->xpm_next; pxpm = pxpm->xpm_next)
-				if (pxpm->xpm_next == xpm) {
-					pxpm->xpm_next = xpm->xpm_next;
-					break;
+			// find xpm in chain and release
+			if (xpm == client_maps) {
+				client_maps = xpm->xpm_next;
+			}
+			else {
+				for (pxpm = client_maps; pxpm->xpm_next; pxpm = pxpm->xpm_next) {
+					if (pxpm->xpm_next == xpm) {
+						pxpm->xpm_next = xpm->xpm_next;
+						break;
+					}
 				}
+			}
+			ALLR_free((UCHAR *) xpm);
 		}
-		THD_mutex_unlock(&xnet_mutex);
-		ALLR_free((UCHAR *) xpm);
 	}
-#endif /* SUPERCLIENT */
-
-#ifdef SUPERSERVER
-/* free the slot for use by other clients */
-	xpm->xpm_ids[slot_number] = 0;
-#endif
-	return;
 }
 
 
-static void cleanup_port( PORT port)
+static void xnet_cleanup_port(PORT port)
 {
 /**************************************
  *
- *      c l e a n u p _ p o r t
+ *  c l e a n u p _ p o r t
  *
  **************************************
  *
  * Functional description
- *      Walk through the port structure freeing
- *      allocated memory and then free the port.
+ *  Walk through the port structure freeing
+ *  allocated memory and then free the port.
  *
  **************************************/
 
-	if (port->port_xcc)
-		cleanup_comm((XCC) port->port_xcc);
-
-	if (port->port_version)
+	if (port->port_xcc) {
+		XNET_LOCK;
+		xnet_cleanup_comm((XCC) port->port_xcc);
+		XNET_UNLOCK;
+	}
+	
+	if (port->port_version) {
 		ALLR_free((UCHAR *) port->port_version);
+	}
 
-	if (port->port_connection)
+	if (port->port_connection) {
 		ALLR_free((UCHAR *) port->port_connection);
+	}
 
-	if (port->port_user_name)
+	if (port->port_user_name) {
 		ALLR_free((UCHAR *) port->port_user_name);
+	}
 
-	if (port->port_host)
+	if (port->port_host) {
 		ALLR_free((UCHAR *) port->port_host);
+	}
 
-	if (port->port_object_vector)
+	if (port->port_object_vector) {
 		ALLR_free((UCHAR *) port->port_object_vector);
+	}
 
-#ifdef DEBUG_XDR_MEMORY
-	if (port->port_packet_vector)
-		ALLR_free((UCHAR *) port->port_packet_vector);
+#ifdef SUPERSERVER
+	if (port->port_status_vector) {
+		ALLR_free(port->port_status_vector);
+	}
 #endif
 
-	ALLR_release((BLK) port);
-	return;
+	ALLR_free((BLK) port);
 }
 
 
-static void disconnect( PORT port)
+static void disconnect(PORT port)
 {
 /**************************************
  *
@@ -1498,17 +1341,20 @@ static void disconnect( PORT port)
 /* If this is a sub-port, unlink it from it's parent */
 
 	if ((parent = port->port_parent) != NULL) {
+
 		if (port->port_async) {
 			disconnect(port->port_async);
 			port->port_async = NULL;
 		}
-		for (ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
+
+		for (ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next){
 			if (*ptr == port) {
 				*ptr = port->port_next;
 				if (ptr == &parent->port_clients)
 					parent->port_next = *ptr;
 				break;
 			}
+		}
 	}
 	else if (port->port_async) {
 		/* If we're MULTI_THREAD then we cannot free the port because another
@@ -1516,7 +1362,7 @@ static void disconnect( PORT port)
 		 * port to avoid a memory leak.  What we really need to know is if we
 		 * have multi-threaded events, but this is transport specific.
 		 * -smistry 10/29/98 */
-#if     (defined (MULTI_THREAD) && !defined (SUPERSERVER))
+#if (defined (MULTI_THREAD) && !defined (SUPERSERVER))
 		port->port_async->port_flags |= PORT_disconnect;
 #else
 		disconnect(port->port_async);
@@ -1524,11 +1370,13 @@ static void disconnect( PORT port)
 #endif
 	}
 
-	cleanup_port(port);
+	gds__unregister_cleanup((FPTR_VOID_PTR)(exit_handler),port);
+		
+	xnet_cleanup_port(port);
 }
 
 
-static void exit_handler( PORT main_port)
+static void exit_handler(PORT main_port)
 {
 /**************************************
  *
@@ -1537,197 +1385,95 @@ static void exit_handler( PORT main_port)
  **************************************
  *
  * Functional description
- *	Shutdown all active connections
- *	to allow restart.
+ *	Free port resources or everything
  *
  **************************************/
-	PORT port;
-
-	for (port = main_port; port; port = port->port_next);
+	xnet_shutdown = TRUE;
+	if (main_port) {
+		disconnect(main_port);
+	}
+	else {
+		xnet_release_all();
+	}
 }
 
 
-static XPM make_map( USHORT map_number)
+static bool_t xnet_make_map(ULONG map_number, time_t timestamp,
+							FILE_ID* map_handle, CADDR_T* map_address)
 {
 /**************************************
  *
- *      m a k e _ m a p
+ *	x n e t _ m a k e _ m a p
  *
  **************************************
  *
  * Functional description
- *      Create a mapped file.   This
- *	returns -
- *	    0 - mapped file already exists
- *	   -1 - mapping  or creation error
- *	other - pointer to new structure
+ *	Create mamory map
  *
  **************************************/
-	XPM xpm;
-	FILE_ID map_handle;
-	CADDR_T map_address;
-	USHORT i;
 	TEXT name_buffer[128];
 
-	// create the mapped file name and try to open it
-	sprintf(name_buffer, XPI_MAPPED_FILE_NAME, XPI_PREFIX, map_number);
+	sprintf(name_buffer, XNET_MAPPED_FILE_NAME, XNET_PREFIX, map_number, (ULONG) timestamp);
+	*map_handle = CreateFileMapping((HANDLE) 0xFFFFFFFF,
+		                              ISC_get_security_desc(),
+		                              PAGE_READWRITE,
+		                              0L,
+		                              XPS_MAPPED_SIZE(slots_per_map, pages_per_slot),
+		                              name_buffer);
+	if (!(*map_handle) || (*map_handle && ERRNO == ERROR_ALREADY_EXISTS))
+		return FALSE;
 
-#ifdef WIN_NT
-	map_handle = CreateFileMapping((HANDLE) 0xFFFFFFFF, NULL,
-								   PAGE_READWRITE, 0L,
-								   XPS_MAPPED_SIZE(users_per_map,
-												   pages_per_user),
-								   name_buffer);
-	if (map_handle && ERRNO == ERROR_ALREADY_EXISTS) {
+	*map_address = MapViewOfFile(*map_handle, FILE_MAP_WRITE, 0, 0,
+								 XPS_MAPPED_SIZE(slots_per_map, pages_per_slot));
+	if (!(*map_address)) {
+		CloseHandle(*map_handle);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+
+static XPM xnet_make_xpm(ULONG map_number, time_t timestamp)
+{
+/**************************************
+ *
+ *      x n e t _ m a k e _ x p m
+ *
+ **************************************
+ *
+ * Functional description
+ *      Create new xpm structure
+ *
+ **************************************/
+	XPM xpm = NULL;
+	FILE_ID map_handle = 0;
+	CADDR_T map_address = 0;
+	USHORT i;
+
+	if (!xnet_make_map(map_number, timestamp, &map_handle, &map_address))
 		return NULL;
-	}
-	if (!map_handle) {
-		return (XPM) - 1;
-	}
-
-	map_address = MapViewOfFile(map_handle, FILE_MAP_WRITE, 0L, 0L,
-								XPS_MAPPED_SIZE(users_per_map,
-												pages_per_user));
-	if (!map_address) {
-		CloseHandle(map_handle);
-	}
-
-#else
-/* STUB : need to do same thing for solaris */
-	map_address = 0;
-#endif
-
-	if (!map_address) {
-		return (XPM) - 1;
-	}
 
 /* allocate a structure and initialize it */
-
 	xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
-	if (!xpm) {
-		return (XPM) - 1;
-	}
+	if (!xpm)
+		return NULL;
+
 	xpm->xpm_handle = map_handle;
 	xpm->xpm_address = map_address;
 	xpm->xpm_number = map_number;
 	xpm->xpm_count = 0;
-	for (i = 0; i < users_per_map; i++) {
-		xpm->xpm_ids[i] = 0;
+	xpm->xpm_timestamp = timestamp;
+
+	for (i = 0; i < slots_per_map; i++) {
+		xpm->xpm_ids[i] = XPM_FREE;
 	}
-	xpm->xpm_next = xpms;
 	xpm->xpm_flags = 0;
-	xpms = xpm;
+
+	xpm->xpm_next = client_maps;
+	client_maps = xpm;
+
 	return xpm;
-}
-
-
-static int packet_receive( PORT port, USHORT * length)
-{
-/**************************************
- *
- *	p a c k e t _ r e c e i v e
- *
- **************************************
- *
- * Functional description
- *      Receive a packet, unpacking it from the map as
- *      often as necessary until it's all in.
- *
- **************************************/
-	USHORT errres;
-	XCC xcc;
-	XPS xps;
-	XCH xch;
-	USHORT n;
-
-	xcc = reinterpret_cast<XCC>(port->port_xcc);
-	xps = (XPS) (xcc->xcc_mapped_addr);
-	xch = xcc->xcc_receive_channel;
-	THREAD_EXIT;
-
-/* first, wait for the other side to signal that
-   the map is full */
-
-	xch->xch_flags &= ~(XCHFLAG_data_overrun | XCHFLAG_more_data);
-	errres = FALSE;
-	n = 0;
-/* signal the other side that the communications area in mapped memory is emptied */
-#ifdef WIN_NT
-	if (!ReleaseSemaphore(xcc->xcc_send_sem, 1L, NULL))
-#else
-/* STUB will be event_post */
-	if (0)
-#endif
-		errres = TRUE;
-	else {
-#ifdef WIN_NT
-		if (WaitForSingleObject(xcc->xcc_recv_sem, INFINITE) == WAIT_FAILED)
-			errres = TRUE;
-#else
-/* STUB will be event_wait */
-		if (0) {
-		}
-#endif
-		else {
-			n = xch->xch_length;
-		}
-	}
-	THREAD_ENTER;
-	if (errres)
-		return xnet_error(port, "read from map failed",
-						  isc_net_read_err, ERRNO);
-	if (!n)
-		return xnet_error(port, "read from map end-of-file",
-						  isc_net_read_err, ERRNO);
-	*length = n;
-	return TRUE;
-}
-
-
-static int packet_send( PORT port, SSHORT length)
-{
-/**************************************
- *
- *	p a c k e t _ s e n d
- *
- **************************************
- *
- * Functional description:
- *      Pack data into map and send it, repeating
- *      as often as necessary until it's all sent.
- *
- **************************************/
-	XCC xcc;
-	XPS xps;
-	XCH xch;
-	USHORT errres;
-
-	xcc = reinterpret_cast<XCC>(port->port_xcc);
-	xps = (XPS) (xcc->xcc_mapped_addr);
-	xch = xcc->xcc_send_channel;
-
-/* first, signal the other side that the communications
-   area in mapped memory is filed and ready */
-
-	xch->xch_flags &= ~(XCHFLAG_data_overrun | XCHFLAG_more_data);
-	xch->xch_length = length;
-	errres = FALSE;
-/* release the send channel lock, if we need to send more data we should wait
- * for the receiver to complete emptying the comm. channel area. */
-	xcc->xcc_send_channel_locked = FALSE;
-#ifdef WIN_NT
-	if (!ReleaseSemaphore(xcc->xcc_send_sem, 1L, NULL))
-#else
-/* STUB add ISC_event_post here */
-	if (1)
-#endif
-		errres = TRUE;
-	if (errres)
-		return xnet_error(port, "write to map error",
-						  isc_net_write_err, ERRNO);
-
-	port->port_flags &= ~PORT_pend_ack;
-	return TRUE;
 }
 
 
@@ -1740,14 +1486,13 @@ static PORT receive( PORT main_port, PACKET * packet)
  **************************************
  *
  * Functional description
- *	Receive a message from a port or clients of a port.  If the process
- *	is a server and a connection request comes in, generate a new port
- *	block for the client.
+ *	Receive a message from a port.
  *
  **************************************/
 
 	if (!xdr_protocol(&main_port->port_receive, packet))
 		packet->p_operation = op_exit;
+
 	return main_port;
 }
 
@@ -1762,17 +1507,24 @@ static int send_full( PORT port, PACKET * packet)
  *
  * Functional description
  *	Send a packet across a port to another process.
+ *  Flush data to remote interface
  *
  **************************************/
 
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
-	return xdrxnet_endofrecord(&port->port_send, TRUE);
+
+	if (xnet_write(&port->port_send))
+		return TRUE;
+	else{
+		XNET_ERROR(port, "SetEvent()", isc_net_write_err, ERRNO);
+		return FALSE;
+	}
 }
 
 
 static int send_partial( PORT port, PACKET * packet)
-{
+{													
 /**************************************
  *
  *	s e n d _ p a r t i a l
@@ -1789,7 +1541,7 @@ static int send_partial( PORT port, PACKET * packet)
 
 #ifdef SUPERCLIENT
 #ifdef WIN_NT
-static void server_shutdown(void)
+static void xnet_on_server_shutdown(PORT port)
 {
 /**************************************
  *
@@ -1798,105 +1550,46 @@ static void server_shutdown(void)
  **************************************
  *
  * Functional description
- *      Server shutdown detected, so mark
- *      everything and release handles.
+ *   Server shutdown handler (client side only).
  *
  **************************************/
-	XCC xcc;
-	XPM xpm;
+	XCC xcc = (XCC)port->port_xcc;
+	XPM xpm = xcc->xcc_xpm;
 
+	XNET_LOG_ERROR("Server shutdown detected");
 
-/* for each xcc structure, shut it and its database */
+	XNET_LOCK;
 
-	for (xcc = client_threads; xcc; xcc = xcc->xcc_next) {
-		xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
+	xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 
-		/* free up semaphores */
+	ULONG dead_proc_id = XPS(xpm->xpm_address)->xps_server_proc_id;
 
-#ifdef WIN_NT
-		if (xcc->xcc_send_sem) {
-			CloseHandle(xcc->xcc_send_sem);
-		}
-		if (xcc->xcc_recv_sem) {
-			CloseHandle(xcc->xcc_recv_sem);
-		}
-		if (xcc->xcc_server_proc) {
-			CloseHandle(xcc->xcc_server_proc);
-		}
-		xcc->xcc_send_sem = 0;
-		xcc->xcc_recv_sem = 0;
-		xcc->xcc_server_proc = 0;
-#else
-/* STUB : Similar event_fini() etc for Solaris */
-#endif /* WIN_NT */
-	}
-
-/* unmap all mapped files */
-
+/* mark all mapped areas connected to server with dead_proc_id */
 	for (xpm = client_maps; xpm; xpm = xpm->xpm_next) {
-		xpm->xpm_flags |= XPMF_SERVER_SHUTDOWN;
-#ifdef WIN_NT
-		UnmapViewOfFile(xpm->xpm_address);
-		CloseHandle(xpm->xpm_handle);
-#else
-		/* STUB : un map shared mmap file */
-#endif
-		xpm->xpm_handle = 0;
+		if (XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id){
+			xpm->xpm_flags |= XPMF_SERVER_SHUTDOWN;
+			xpm->xpm_handle = 0;
+			xpm->xpm_address = NULL;
+		}
 	}
+
+	XNET_UNLOCK;
 }
 #endif	// WIN_NT
 #endif	// SUPERCLIENT
 
-#ifdef SUPERCLIENT
-#ifdef WIN_NT
-static void server_watcher(void)
+
+static int xdrxnet_create(XDR * xdrs, PORT port, UCHAR * buffer,
+						  USHORT length, enum xdr_op x_op)
 {
 /**************************************
  *
- *      s e r v e r _ w a t c h e r
+ *  x d r x n e t _ c r e a t e
  *
  **************************************
  *
  * Functional description
- *      This thread just waits for the server
- *      process.   If that process goes away,
- *      this gets triggered and unmaps any
- *      currently mapped maps.
- *
- **************************************/
-	DWORD result;
-
-	for (;;) {
-		if (exit_flag) {
-			break;
-		}
-		result = WaitForSingleObject(server_process_handle, INFINITE);
-		if (result == WAIT_OBJECT_0) {
-			/* unmap and close all maps */
-
-			server_shutdown();
-			server_process_handle = 0;
-			server_watcher_handle = 0;
-			break;
-		}
-	}
-}
-#endif // WIN_NT
-#endif // SUPERCLIENT
-
-static int xdrxnet_create(
-						  XDR * xdrs,
-						  PORT port,
-						  UCHAR * buffer, USHORT length, enum xdr_op x_op)
-{
-/**************************************
- *
- *      x d r x n e t _ c r e a t e
- *
- **************************************
- *
- * Functional description
- *      Initialize an XDR stream.
+ *  Initialize an XDR stream.
  *
  **************************************/
 
@@ -1906,44 +1599,10 @@ static int xdrxnet_create(
 	xdrs->x_handy = length;
 	xdrs->x_ops = &xnet_ops;
 	xdrs->x_op = x_op;
+
 	return TRUE;
 }
 
-
-static bool_t xdrxnet_endofrecord( XDR * xdrs, bool_t flushnow)
-{
-/**************************************
- *
- *      x d r x n e t _ e n d o f r e c o r d
- *
- **************************************
- *
- * Functional description
- *	Write out the rest of a record.
- *
- **************************************/
-
-	return xnet_write(xdrs, flushnow);
-}
-
-#ifdef NOT_USED_OR_REPLACED
-static void xnet_copy( SCHAR * from, SCHAR * to, int length)
-{
-/**************************************
- *
- *      x n e t _ c o p y
- *
- **************************************
- *
- * Functional description
- *      Copy a number of bytes;
- *
- **************************************/
-
-	if (length)
-		memcpy(to, from, length);
-}
-#endif
 
 static int xnet_destroy( XDR * xdrs)
 {
@@ -1962,51 +1621,6 @@ static int xnet_destroy( XDR * xdrs)
 }
 
 
-static int xnet_error(
-					  PORT port,
-					  TEXT * function, ISC_STATUS operation, int status)
-{
-/**************************************
- *
- *      x n e t _ e r r o r
- *
- **************************************
- *
- * Functional description
- *	An I/O error has occurred.  If a status vector is present,
- *	generate an error return.  In any case, return NULL, which
- *	is used to indicate and error.
- *
- **************************************/
-	TEXT msg[64];
-	TEXT node_name[MAXPATHLEN];
-	TEXT *p;
-
-	strcpy(node_name, ((SCHAR *) port->port_connection->str_data) + 2);
-	p = strchr(node_name, '\\');
-	if (p != NULL)
-		*p = '\0';
-	if (status) {
-		xnet_gen_error(port, isc_network_error,
-					   gds_arg_string, (ISC_STATUS) node_name,
-					   isc_arg_gds, operation, SYS_ERR, status, 0);
-#ifdef WIN_NT
-		if (status != ERROR_CALL_NOT_IMPLEMENTED)
-#endif
-		{
-			sprintf(msg, "XNET/xnet_error: %s errno = %d", function, status);
-			gds__log(msg, 0, 0, 0, 0);
-		}
-	}
-	else {
-		xnet_gen_error(port, isc_network_error,
-					   gds_arg_string, (ISC_STATUS) node_name,
-					   isc_arg_gds, operation, 0);
-	}
-	return 0;
-}
-
-
 static void xnet_gen_error( PORT port, ISC_STATUS status, ...)
 {
 /**************************************
@@ -2021,23 +1635,48 @@ static void xnet_gen_error( PORT port, ISC_STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	ISC_STATUS *status_vector;
+	ISC_STATUS *status_vector = NULL;
 
 	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;
-	status_vector = NULL;
+
 	if (port->port_context != NULL)
 		status_vector = port->port_context->rdb_status_vector;
 	if (status_vector == NULL)
 		status_vector = port->port_status_vector;
 	if (status_vector != NULL) {
 		STUFF_STATUS(status_vector, status)
-			REMOTE_save_status_strings(status_vector);
+		REMOTE_save_status_strings(status_vector);
 	}
 }
 
 
-static bool_t xnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
+static int xnet_error(PORT port,TEXT * function, ISC_STATUS operation,
+											int status, ULONG source_line_num)
+{
+/**************************************
+ *
+ *      x n e t _ e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	An I/O error has occurred.  If a status vector is present,
+ *	generate an error return.  In any case, return NULL, which
+ *	is used to indicate and error.
+ *
+ **************************************/
+	xnet_log_error(source_line_num, function, status);
+
+	if (status)
+		xnet_gen_error(port, operation, SYS_ERR, status, 0);
+	else
+		xnet_gen_error(port, operation, 0);
+	return 0;
+}
+
+
+static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 {
 /**************************************
  *
@@ -2046,31 +1685,68 @@ static bool_t xnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
  **************************************
  *
  * Functional description
- *	Fetch a bunch of bytes into a memory stream if it fits.
+ *	Fetch a bunch of bytes from remote interface.
  *
  **************************************/
+
 	SLONG bytecount = count;
 	SLONG to_copy;
 
-	while (bytecount) {
+	PORT port = (PORT)xdrs->x_public;
+	XCC xcc = (XCC)port->port_xcc;
+	XCH xch = (XCH)xcc->xcc_recv_channel;
+	XPM xpm = xcc->xcc_xpm;
+
+	while (bytecount && !xnet_shutdown) {
+
+#ifdef SUPERCLIENT
+		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
+			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
+				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
+				XNET_ERROR(port, "connection lost: another side is dead", 
+						   isc_lost_db_connection, 0);
+			}
+			return FALSE;
+		}
+#endif
+
 		if (xdrs->x_handy >= bytecount)
 			to_copy = bytecount;
 		else
 			to_copy = xdrs->x_handy;
-		memcpy(buff, xdrs->x_private, to_copy);
-		xdrs->x_handy -= to_copy;
-		bytecount -= to_copy;
-		xdrs->x_private += to_copy;
-		buff += to_copy;
-		if (bytecount && !xnet_read(xdrs))
-			return FALSE;
+		
+		if (xdrs->x_handy) {
+			if (to_copy == sizeof(SLONG))
+				*((SLONG*)buff)	= *((SLONG*)xdrs->x_private);
+			else
+				memcpy(buff, xdrs->x_private,to_copy);
+
+			xdrs->x_handy -= to_copy;
+			xdrs->x_private += to_copy;
+		}
+		else {
+			THREAD_EXIT;
+			if (!xnet_read(xdrs)) {
+				THREAD_ENTER;
+				return FALSE;
+			};
+			THREAD_ENTER;
+		}
+
+		if (to_copy) {
+			bytecount -= to_copy;
+			buff += to_copy;
+		}
 	}
 
-	return TRUE;
+	if (xnet_shutdown)
+		return FALSE;
+	else
+		return TRUE;
 }
 
 
-static bool_t xnet_getlong( XDR * xdrs,  SLONG * lp)
+static bool_t xnet_getlong(XDR * xdrs,  SLONG * lp)
 {
 /**************************************
  *
@@ -2079,19 +1755,15 @@ static bool_t xnet_getlong( XDR * xdrs,  SLONG * lp)
  **************************************
  *
  * Functional description
- *	Fetch a longword into a memory stream if it fits.
+ *	Fetch a longword from memory stream.
  *
  **************************************/
-	SLONG l;
 
-	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<SCHAR*>(&l), 4))
-		return FALSE;
-	*lp = ntohl(l);
-	return TRUE;
+	return (*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<SCHAR*>(lp), 4);
 }
 
 
-static u_int xnet_getpostn( XDR * xdrs)
+static u_int xnet_getpostn(XDR * xdrs)
 {
 /**************************************
  *
@@ -2108,7 +1780,7 @@ static u_int xnet_getpostn( XDR * xdrs)
 }
 
 
-static caddr_t xnet_inline( XDR * xdrs, u_int bytecount)
+static caddr_t xnet_inline(XDR * xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -2123,11 +1795,12 @@ static caddr_t xnet_inline( XDR * xdrs, u_int bytecount)
 
 	if (bytecount > (u_int) xdrs->x_handy)
 		return FALSE;
+
 	return xdrs->x_base + bytecount;
 }
 
 
-static bool_t xnet_putbytes( XDR * xdrs, SCHAR * buff, u_int count)
+static bool_t xnet_putbytes(XDR * xdrs, SCHAR * buff, u_int count)
 {
 /**************************************
  *
@@ -2136,62 +1809,109 @@ static bool_t xnet_putbytes( XDR * xdrs, SCHAR * buff, u_int count)
  **************************************
  *
  * Functional description
- *	Fetch a bunch of bytes into a memory stream if it fits.
+ *	Put a bunch of bytes into a memory stream.
  *
  **************************************/
 	SLONG bytecount = count;
 	SLONG to_copy;
+	DWORD wait_result;
 
-	THREAD_EXIT;
-	while (bytecount) {
+	PORT port = (PORT)xdrs->x_public;
+	XCC xcc = (XCC)port->port_xcc;
+	XCH xch = (XCH)xcc->xcc_send_channel;
+	XPM xpm = xcc->xcc_xpm;
+
+
+	while (bytecount && !xnet_shutdown) {
+
+#ifdef SUPERCLIENT
+		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
+			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
+				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
+				XNET_ERROR(port, "connection lost: another side is dead", 
+						   isc_lost_db_connection, 0);
+				}
+			return FALSE;
+		}
+#endif
+		
 		if (xdrs->x_handy >= bytecount)
 			to_copy = bytecount;
 		else
 			to_copy = xdrs->x_handy;
-		/* need to have some kind of locking with the read process 
-		 * ie. we cannot write once again to this are till last data has been
-		 * received */
-		if (to_copy) {
-			PORT port = (PORT) xdrs->x_public;
-			XCC xcc = (XCC) port->port_xcc;
 
-			/* check to see that we have the send channel area, if not then wait for the
-			 * receiver to finish reading from the common area */
-			if (!xcc->xcc_send_channel_locked) {
-				/* wait for receiver to read the last sent packet */
-#ifdef WIN_NT
-				if (WaitForSingleObject(xcc->xcc_recv_sem, INFINITE) ==
-					WAIT_FAILED)
+		if (xdrs->x_handy) {
+
+			if (xdrs->x_handy == xch->xch_size) {
+
+				THREAD_EXIT;
+				while(!xnet_shutdown) {
+
+					wait_result = WaitForSingleObject(xcc->xcc_event_send_channel_empted,
+													  XNET_SEND_WAIT_TIMEOUT);
+					if (wait_result == WAIT_OBJECT_0)
+						break;
+
+					if (wait_result == WAIT_TIMEOUT) {
+
+						/* Check if another side is alive */
+						if (WaitForSingleObject(xcc->xcc_proc_h,1) == WAIT_TIMEOUT)
+							continue; /* Another side is alive */			
+						else {
+
+							/* Another side is dead or somthing bad has happaned*/
+#ifdef SUPERCLIENT
+							xnet_on_server_shutdown(port);
+							XNET_ERROR(port, "connection lost: another side is dead", 
+							           isc_lost_db_connection, 0);								
 #else
-				/* SEAN add ISC_event_wait here */
-				if (0)
+							XNET_ERROR(port, "connection lost: another side is dead",
+								       isc_conn_lost, 0);
 #endif
-				{
-					THREAD_ENTER;
-					xnet_error(port, "write to map error", isc_net_write_err,
-							   ERRNO);
-					return FALSE;
+
+							THREAD_ENTER;
+							return FALSE;
+						}
+					}
+					else {
+						XNET_ERROR(port, "WaitForSingleObject()", isc_net_write_err, ERRNO);
+						THREAD_ENTER;
+						return FALSE; /* a non-timeout result is an error */
+					}
 				}
-				xcc->xcc_send_channel_locked = TRUE;
+
+				THREAD_ENTER;
 			}
-			memcpy(xdrs->x_private, buff, to_copy);
+
+			if (to_copy == sizeof(SLONG))
+				*((SLONG*)xdrs->x_private) = *((SLONG*)buff);
+			else
+				memcpy(xdrs->x_private, buff, to_copy);
+
 			xdrs->x_handy -= to_copy;
-			bytecount -= to_copy;
 			xdrs->x_private += to_copy;
-			buff += to_copy;
 		}
-		if (bytecount && !xnet_write(xdrs, 0)) {
-			THREAD_ENTER;
-			return FALSE;
+		else {
+			if (!xnet_write(xdrs)) {
+				XNET_ERROR(port, "SetEvent()", isc_net_write_err, ERRNO);
+				return FALSE;
+			}
+		}
+
+		if (to_copy) {
+			bytecount -= to_copy;
+			buff += to_copy;
 		}
 	}
 
-	THREAD_ENTER;
-	return TRUE;
+	if (xnet_shutdown)
+		return FALSE;
+	else
+		return TRUE;
 }
 
 
-static bool_t xnet_putlong( XDR * xdrs, SLONG * lp)
+static bool_t xnet_putlong(XDR * xdrs, SLONG * lp)
 {
 /**************************************
  *
@@ -2200,17 +1920,15 @@ static bool_t xnet_putlong( XDR * xdrs, SLONG * lp)
  **************************************
  *
  * Functional description
- *	Fetch a longword into a memory stream if it fits.
+ *	Fit a longword into a memory stream if it fits.
  *
  **************************************/
-	SLONG l;
 
-	l = htonl(*lp);
-	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<SCHAR*>(AOF32L(l)), 4);
+	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<SCHAR*>(AOF32L(*lp)), 4);
 }
 
 
-static bool_t xnet_read( XDR * xdrs)
+static bool_t xnet_read(XDR * xdrs)
 {
 /**************************************
  *
@@ -2219,26 +1937,107 @@ static bool_t xnet_read( XDR * xdrs)
  **************************************
  *
  * Functional description
- *	Read a buffer full of data.  If we receive a bad packet,
- *	send the moral equivalent of a NAK and retry.  ACK all
- *	partial packets.  Don't ACK the last packet -- the next
- *	message sent will handle this.
+ *	Read a buffer full of data.
  *
  **************************************/
-	PORT port;
-	USHORT length;
+	DWORD wait_result;
+	PORT port = (PORT)xdrs->x_public;
+	XCC xcc = (XCC)port->port_xcc;
+	XCH xch = (XCH)xcc->xcc_recv_channel;
+	XPM xpm = xcc->xcc_xpm;
 
-	port = (PORT) xdrs->x_public;
-	if (!packet_receive(port, &length))
+	if (xnet_shutdown)
 		return FALSE;
-	port->port_flags |= PORT_pend_ack;
-	xdrs->x_handy = length;
-	xdrs->x_private = xdrs->x_base;
-	return TRUE;
+
+	if (!SetEvent(xcc->xcc_event_recv_channel_empted)) {
+		XNET_ERROR(port, "SetEvent()", isc_net_read_err, ERRNO);
+		return FALSE;
+	}
+
+	while (!xnet_shutdown) {
+
+#ifdef SUPERCLIENT
+		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
+			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
+				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
+				XNET_ERROR(port, "connection lost: another side is dead", 
+						   isc_lost_db_connection, 0);
+			}
+		}
+#endif
+
+		wait_result = WaitForSingleObject(xcc->xcc_event_recv_channel_filled,
+		                                  XNET_RECV_WAIT_TIMEOUT);
+		if (wait_result == WAIT_OBJECT_0) {
+			/* Client wrote some data for us(for server) to read*/
+			xdrs->x_handy = xch->xch_length;
+			xdrs->x_private = xdrs->x_base;
+			return TRUE;
+		}
+
+		if (wait_result == WAIT_TIMEOUT) {
+
+			/* Check if another side is alive */
+			if (WaitForSingleObject(xcc->xcc_proc_h,1) == WAIT_TIMEOUT)
+				continue; /* Another side is alive */			
+			else {
+
+				/* Another side is dead or somthing bad has happaned*/
+#ifdef SUPERCLIENT
+				xnet_on_server_shutdown(port);
+				XNET_ERROR(port, "connection lost: another side is dead", 
+						   isc_lost_db_connection, 0);								
+#else
+				XNET_ERROR(port, "connection lost: another side is dead",
+				           isc_conn_lost, 0);
+#endif
+
+				return FALSE;
+			}
+		}
+		else {
+			XNET_ERROR(port, "WaitForSingleObject()", isc_net_read_err, ERRNO);
+			return FALSE; /* a non-timeout result is an error */
+		}
+	}
+
+	return FALSE;
+	
 }
 
 
-static bool_t xnet_setpostn( XDR * xdrs, u_int bytecount)
+static bool_t xnet_write(XDR * xdrs)
+{
+/**************************************
+ *
+ *      x n e t _ w r i t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Signal remote interface that memory stream is
+ *  filled and ready for reading.
+ *
+ **************************************/
+	PORT port = (PORT)xdrs->x_public;
+	XCC xcc = (XCC)(port)->port_xcc;
+	XCH xch = (XCH)xcc->xcc_send_channel;
+
+	xch->xch_length = xdrs->x_private - xdrs->x_base;
+	if (SetEvent(xcc->xcc_event_send_channel_filled)) {
+		port->port_misc1 = (port->port_misc1 + 1) % MAX_SEQUENCE;
+		xdrs->x_private = xdrs->x_base;
+		xdrs->x_handy = xch->xch_size;
+
+		return TRUE;
+	}
+	else
+		return FALSE;
+
+}
+
+
+static bool_t xnet_setpostn(XDR * xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -2258,43 +2057,11 @@ static bool_t xnet_setpostn( XDR * xdrs, u_int bytecount)
 }
 
 
-static bool_t xnet_write( XDR * xdrs, bool_t end_flag)
+void xnet_release_all()
 {
 /**************************************
  *
- *      x n e t _ w r i t e
- *
- **************************************
- *
- * Functional description
- *	Write a buffer fulll of data.  If the end_flag isn't set, indicate
- *	that the buffer is a fragment, and reset the XDR for another buffer
- *	load.
- *
- **************************************/
-	PORT port;
-	SSHORT length;
-	XCC xcc;
-
-/* Encode the data portion of the packet */
-
-	port = (PORT) xdrs->x_public;
-	xcc = (XCC) port->port_xcc;
-	length = xdrs->x_private - xdrs->x_base;
-	if (!packet_send(port, length))
-		return FALSE;
-	port->port_misc1 = (port->port_misc1 + 1) % MAX_SEQUENCE;
-	xdrs->x_private = xdrs->x_base;
-	xdrs->x_handy = xcc->xcc_receive_channel->xch_size;
-	return TRUE;
-}
-
-
-void XNET_release_all(void)
-{
-/**************************************
- *
- *      X N E T _ r e l e a s e _ a l l
+ *      x n e t _ r e l e a s e _ a l l
  *
  **************************************
  *
@@ -2302,76 +2069,638 @@ void XNET_release_all(void)
  *      Release all connections and dependant stuff.
  *
  **************************************/
-	XCC xcc, nxcc;
-	XPM xpm, nxpm;
-	XPS xps;
 
-/* get stuff to release and clear list heads */
-
-	exit_flag++;
-	if (exit_flag > 1) {
+	if (!xnet_initialized)
 		return;
-	}
-	xcc = client_threads;
-	nxcc = xcc;
-	client_threads = NULL;
-	xpm = client_maps;
-	client_maps = NULL;
 
-#ifdef WIN_NT
-	if (server_watcher_handle) {
-		TerminateThread(server_watcher_handle, 0);
-		server_watcher_handle = 0;
-	}
+	XPM xpm, nextxpm;
+
+#ifndef SUPERCLIENT
+	xnet_connect_fini();
 #endif
 
-/* disconnect each thread */
+	THD_mutex_lock(&xnet_mutex);
 
-	for (; xcc; xcc = xcc->xcc_next) {
-		if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
-			xps = (XPS) xcc->xcc_mapped_addr;
-		}
-	}
-
-	xcc = nxcc;
-
-/* for each xcc structure, release its database and close it down */
-
-	for (; xcc; xcc = nxcc) {
-		nxcc = xcc->xcc_next;
-
-#ifdef WIN_NT
-		/* free up semaphores */
-
-		if (xcc->xcc_send_sem) {
-			CloseHandle(xcc->xcc_send_sem);
-		}
-		if (xcc->xcc_send_sem) {
-			CloseHandle(xcc->xcc_send_sem);
-		}
-		if (xcc->xcc_server_proc) {
-			CloseHandle(xcc->xcc_server_proc);
-		}
-#else
-		/* SEAN : Similar event_fini() for Solaris */
-#endif
-		ALLR_free((UCHAR *) xcc);
-	}
-
-/* unmap all mapped files */
-
-	for (; xpm; xpm = nxpm) {
-		nxpm = xpm->xpm_next;
-		if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)) {
-#ifdef WIN_NT
-			UnmapViewOfFile(xpm->xpm_address);
-			CloseHandle(xpm->xpm_handle);
-#else
-			/* SEAN : unmap shared memory file */
-#endif /* WIN_NT */
-		}
+/* release all map stuf left not released by broken ports */
+	for (xpm = nextxpm = client_maps; nextxpm; xpm = nextxpm) {
+		nextxpm = nextxpm->xpm_next;
+		UnmapViewOfFile(xpm->xpm_address);
+		CloseHandle(xpm->xpm_handle);
 		ALLR_free((UCHAR *) xpm);
 	}
+
+	client_maps = NULL;
+
+	THD_mutex_unlock(&xnet_mutex);
+
+#if defined(SUPERSERVER) || defined(SUPERCLIENT)
+	THD_mutex_destroy(&xnet_mutex);
+#endif
+
+	xnet_initialized = FALSE;
 }
+
+
+/***********************************************************************/
+/********************** ONLY SERVER CODE FROM HERE *********************/
+/***********************************************************************/
+
+#ifndef SUPERCLIENT
+
+static bool_t xnet_srv_init()
+{
+/**************************************
+ *
+ *  X N E T _ s r v _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *  Initialization of server side resources used
+ *  when clients perform connect to server
+ *
+ **************************************/
+	TEXT name_buffer[128];
+
+	// init the limits
+#ifdef SUPERSERVER
+	slots_per_map = XPS_MAX_NUM_CLI;
+	pages_per_slot = XPS_MAX_PAGES_PER_CLI;
+#else
+	// For classic server there is always only 1 connection and 1 slot
+	slots_per_map = 1;
+	pages_per_slot = XPS_MAX_PAGES_PER_CLI;
+#endif
+
+	xnet_connect_mutex = 0;
+	xnet_connect_map_h = 0;
+	xnet_connect_map = 0;
+
+	xnet_connect_event = 0;
+	xnet_response_event = 0;
+
+	THD_mutex_init(&xnet_mutex);
+
+	try {
+		sprintf(name_buffer, XNET_MU_CONNECT_MUTEX, XNET_PREFIX);
+		xnet_connect_mutex =
+			CreateMutex(ISC_get_security_desc(), FALSE, name_buffer);
+		if (!xnet_connect_mutex || (xnet_connect_mutex && ERRNO == ERROR_ALREADY_EXISTS)) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_CONNECT_EVENT, XNET_PREFIX);
+		xnet_connect_event =
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
+		if (!xnet_connect_event || (xnet_connect_event && ERRNO == ERROR_ALREADY_EXISTS)) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_RESPONSE_EVENT, XNET_PREFIX);
+		xnet_response_event =
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
+		if (!xnet_response_event || (xnet_response_event && ERRNO == ERROR_ALREADY_EXISTS)) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_MA_CONNECT_MAP, XNET_PREFIX);
+		xnet_connect_map_h = CreateFileMapping((HANDLE)0xFFFFFFFF,
+												ISC_get_security_desc(),
+												PAGE_READWRITE,
+												0,
+												XNET_CONNECT_RESPONZE_SIZE,
+												name_buffer);
+		if (!xnet_connect_map_h || (xnet_connect_map_h && ERRNO == ERROR_ALREADY_EXISTS)) {
+			throw -1;
+		}
+
+		xnet_connect_map = MapViewOfFile(xnet_connect_map_h, FILE_MAP_WRITE, 0L, 0L,
+										 XNET_CONNECT_RESPONZE_SIZE);
+		if (!xnet_connect_map) {
+			throw -1;
+		}
+	
+		return TRUE;
+	}
+	catch (...) {
+		xnet_connect_fini();
+		return FALSE;
+	}
+	
+}
+
+#ifndef SUPERSERVER
+
+static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
+{
+/**************************************
+ *
+ *  x n e t _ f o r k
+ *
+ **************************************
+ *
+ * Functional description
+ *  Create child process to serve client connection
+ *  It's for classic server only
+ *
+ **************************************/
+
+	STARTUPINFO start_crud;
+	PROCESS_INFORMATION pi;
+	bool_t cp_result;
+
+	if (!XNET_command_line[0]) {
+
+#ifdef CMDLINE_VIA_SERVICE_MANAGER
+
+		SC_HANDLE manager, service;
+
+		if ((manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT)) &&
+			(service = OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG))) {
+			LPQUERY_SERVICE_CONFIG config;
+			SCHAR buffer[1024];
+			DWORD config_len;
+
+			config = (LPQUERY_SERVICE_CONFIG) buffer;
+			THREAD_EXIT;
+			if (!QueryServiceConfig(service, config, sizeof(buffer), &config_len)) {
+				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
+				/* NOMEM: ALLR_alloc handled */
+				/* FREE:  later in this block */
+				QueryServiceConfig(service, config, config_len, &config_len);
+			}
+			strcpy(XNET_command_line, config->lpBinaryPathName);
+			if ((SCHAR *) config != buffer) {
+				ALLR_free(config);
+			}
+			CloseServiceHandle(service);
+			THREAD_ENTER;
+		}
+		else {
+			strcpy(XNET_command_line, GetCommandLine());
+		}
+		CloseServiceHandle(manager);
+#else
+		strcpy(XNET_command_line, GetCommandLine());
+#endif
+		XNET_p = XNET_command_line + strlen(XNET_command_line);
+	}
+
+	sprintf(XNET_p, " -s -x -h %d", (ULONG) client_pid);
+	start_crud.cb = sizeof(STARTUPINFO);
+	start_crud.lpReserved = NULL;
+	start_crud.lpReserved2 = NULL;
+	start_crud.cbReserved2 = 0;
+	start_crud.lpDesktop = NULL;
+	start_crud.lpTitle = NULL;
+	start_crud.dwFlags = 0;
+	cp_result = CreateProcess(NULL,
+							  XNET_command_line,
+							  NULL,
+							  NULL,
+							  TRUE,
+							  (flag & SRVR_high_priority ? HIGH_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS)
+								|DETACHED_PROCESS | CREATE_SUSPENDED | STARTF_FORCEOFFFEEDBACK,
+							  NULL, NULL, &start_crud, &pi);
+
+	// Child process ID (forken_pid) used as map number
+
+	if (cp_result) {
+		*forken_pid = pi.dwProcessId;
+		ResumeThread(pi.hThread);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+	}
+	else
+		XNET_LOG_ERRORC("CreateProcess() failed");
+
+	return cp_result;
+}
+
+#endif // SUPERSERVER
+
+#ifdef SUPERSERVER
+
+static XPM xnet_get_free_slot(ULONG* map_num, ULONG* slot_num, time_t* timestamp)
+{
+/**************************************
+ *
+ *  x n e t _ g e t _ f r e e _ s l o t
+ *
+ **************************************
+ *
+ * Functional description
+ *  Search for free slot in map stuff
+  *
+ **************************************/
+
+	XPM xpm = NULL;
+	ULONG i = 0, j = 0;
+
+	/* go through list of maps */
+	for (xpm = client_maps; xpm; xpm = xpm->xpm_next) {
+		/* find an available unused comm area */
+
+		for (i = 0; i < slots_per_map; i++)
+			if (xpm->xpm_ids[i] == XPM_FREE)
+				break;
+
+		if (i < slots_per_map) {
+			xpm->xpm_count++;
+			xpm->xpm_ids[i] = XPM_BUSY;
+			j = xpm->xpm_number;
+			break;
+		}
+		j++;
+	}
+
+/* if the mapped file structure has not yet been initialized,
+   make one now */
+
+	if (!xpm) {
+		/* allocate new map file and first slot */
+
+		xpm = xnet_make_xpm(j, *timestamp);
+
+		/* check for errors in creation of mapped file */
+		if (!xpm) {
+			XNET_UNLOCK;
+			return NULL;
+		}
+
+		i = 0;
+		xpm->xpm_ids[0] = XPM_BUSY;
+		xpm->xpm_count++;
+	}
+	else
+		*timestamp = xpm->xpm_timestamp;
+
+	*map_num = j;
+	*slot_num = i;
+
+	return xpm;
+}
+
+#endif // SUPERSERVER
+
+
+static PORT xnet_get_srv_port(ULONG client_pid, XPM xpm,
+                              ULONG map_num, ULONG slot_num,
+															time_t timestamp,
+															ISC_STATUS* status_vector)
+{
+/**************************************
+ *
+ *  X N E T _ g e t s r v _ p o r t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Allocates	new PORT for server side communication .
+ *
+ **************************************/
+	XCC xcc = NULL;
+	PORT port = NULL;
+	TEXT name_buffer[128];
+	UCHAR *p;
+	XPS xps;
+	ULONG avail;
+
+	// allocate a communications control structure and fill it in
+	if (!(xcc = (XCC) ALLR_alloc(sizeof(struct xcc))))
+		return NULL;
+
+	try {
+		p = (UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(pages_per_slot, slot_num);
+		memset(p, (char) 0, XPS_MAPPED_PER_CLI(pages_per_slot));
+		xcc->xcc_next = NULL;
+		xcc->xcc_mapped_addr = p;
+		xcc->xcc_xpm = xpm;
+		xcc->xcc_slot = slot_num;
+		xcc->xcc_flags = 0;
+
+		// Open client process handle to watch clients health during communication session
+		xcc->xcc_proc_h = OpenProcess(SYNCHRONIZE, 0, client_pid);
+		if (!xcc->xcc_proc_h) {
+			throw -1;
+		}
+
+		xcc->xcc_map_num = map_num;
+		xps = (XPS) xcc->xcc_mapped_addr;
+		xps->xps_client_proc_id = client_pid;
+
+#ifdef WIN_NT
+		xps->xps_server_proc_id = CurrentProcessId;
+#else
+		// STUB : need something special for Solaris? I don't think so.
+		xps->xps_server_proc_id = getpid();
+#endif
+
+		// make sure client knows what this server speaks
+
+		xps->xps_server_protocol = XPI_SERVER_PROTOCOL_VERSION;
+		xps->xps_client_protocol = 0L;
+
+#ifdef WIN_NT
+
+		sprintf(name_buffer, XNET_E_C2S_DATA_CHAN_FILLED,
+				XNET_PREFIX, map_num, slot_num, (ULONG) timestamp);
+		xcc->xcc_event_recv_channel_filled =
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
+		if (!xcc->xcc_event_recv_channel_filled) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_C2S_DATA_CHAN_EMPTED,
+				XNET_PREFIX, map_num, slot_num, (ULONG) timestamp);
+		xcc->xcc_event_recv_channel_empted =
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
+		if (!xcc->xcc_event_recv_channel_empted) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_S2C_DATA_CHAN_FILLED,
+				XNET_PREFIX, map_num, slot_num, (ULONG) timestamp);
+		xcc->xcc_event_send_channel_filled =
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
+		if (!xcc->xcc_event_send_channel_filled) {
+			throw -1;
+		}
+
+		sprintf(name_buffer, XNET_E_S2C_DATA_CHAN_EMPTED,
+				XNET_PREFIX, map_num, slot_num, (ULONG) timestamp);
+		xcc->xcc_event_send_channel_empted =
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
+		if (!xcc->xcc_event_send_channel_empted) {
+			throw -1;
+		}
+
+#else
+		// STUB : add create events here
+#endif
+
+		// set up the channel structures
+
+		p += sizeof(struct xps);
+
+		avail =	(USHORT) (XPS_USEFUL_SPACE(pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
+
+		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_buffer = p;	/* client to server events */
+		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_size = XNET_EVENT_SPACE;
+
+		p += XNET_EVENT_SPACE;
+		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_buffer = p;	/* server to client events */
+		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_size = XNET_EVENT_SPACE;
+
+		p += XNET_EVENT_SPACE;
+		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_buffer = p;	/* client to server data */
+		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_size = avail;
+
+		p += avail;
+		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_buffer = p;	/* server to client data */
+		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_size = avail;
+
+		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_C2S_DATA];
+		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_S2C_DATA];
+
+	/* finally, allocate and set the port structure for this client */
+		port = xnet_alloc_port(0,
+			                   xcc->xcc_send_channel->xch_buffer,
+			                   xcc->xcc_send_channel->xch_size,
+			                   xcc->xcc_recv_channel->xch_buffer,
+			                   xcc->xcc_recv_channel->xch_size);
+		if (port) {
+			port->port_xcc = (void *) xcc;
+			port->port_server_flags |= SRVR_server;
+
+			status_vector[0] = gds_arg_gds;
+			status_vector[1] = FB_SUCCESS;
+			status_vector[2] = gds_arg_end;
+			port->port_status_vector = status_vector;
+		}
+		else {
+			throw -1;
+		}
+
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
+
+	}
+	catch (...) {
+		if (xcc) {
+			if (xcc->xcc_proc_h) {
+				CloseHandle(xcc->xcc_proc_h);
+			}
+
+			if (xcc->xcc_event_recv_channel_filled) {
+				CloseHandle(xcc->xcc_event_recv_channel_filled);
+			}
+			if (xcc->xcc_event_recv_channel_empted) {
+				CloseHandle(xcc->xcc_event_recv_channel_empted);
+			}
+			if (xcc->xcc_event_send_channel_filled) {
+				CloseHandle(xcc->xcc_event_send_channel_filled);
+			}
+			if (xcc->xcc_event_send_channel_empted) {
+				CloseHandle(xcc->xcc_event_send_channel_empted);
+			}
+
+			ALLR_free(xcc);
+		}
+		return NULL;
+	}
+
+	return port;
+}
+
+
+void XNET_srv(USHORT flag)
+{
+/**************************************
+ *
+ *  X N E T _ s r v
+ *
+ **************************************
+ *
+ * Functional description
+ *	XNET server main thread
+ *
+ **************************************/
+
+#ifdef WIN_NT
+
+#ifdef SUPERSERVER
+	PORT port;
+	ULONG map_num, slot_num;
+	XPM xpm;
+	time_t timestamp;
+
+	ISC_STATUS* status_vector;
+#endif
+
+	DWORD wait_res;
+	ULONG client_pid;
+
+	PXNET_RESPONSE presponse;
+
+	CurrentProcessId = GetCurrentProcessId();
+	XNET_command_line[0] = 0;
+
+	if (xnet_srv_init()) {
+		xnet_initialized = TRUE;
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
+	}
+	else {
+		XNET_LOG_ERROR("XNET server initialization failed");
+		return;
+	}
+
+	presponse = (PXNET_RESPONSE)xnet_connect_map;
+
+	while (!xnet_shutdown) {
+
+		// mark connect area as untouched
+//		presponse->proc_id = CurrentProcessId;
+
+		THREAD_EXIT;
+		wait_res = WaitForSingleObject(xnet_connect_event,INFINITE);
+		THREAD_ENTER;
+
+		if (wait_res != WAIT_OBJECT_0) {
+			XNET_LOG_ERRORC("WaitForSingleObject() failed");
+			break;
+		}
+
+		if (xnet_shutdown)
+			break;
+
+		// read client process id
+		if ((client_pid = presponse->proc_id) == CurrentProcessId)
+			continue; // dummy xnet_connect_event fire -  no connect request
+			
+		presponse->slots_per_map = slots_per_map;
+		presponse->pages_per_slot = pages_per_slot;
+		presponse->timestamp = time_t(0);
+
+#ifdef SUPERSERVER
+
+		timestamp = time(NULL);
+		// searhing for free slot
+		XNET_LOCK;
+		xpm = xnet_get_free_slot(&map_num, &slot_num, &timestamp);
+		XNET_UNLOCK;
+
+		// pack combined mapped area and number
+		if (xpm) {
+			presponse->proc_id = CurrentProcessId;
+			presponse->map_num = map_num;
+			presponse->slot_num = slot_num;
+			presponse->timestamp = timestamp;
+
+			status_vector = (ISC_STATUS*) ALLR_alloc(ISC_STATUS_LENGTH);
+			port = xnet_get_srv_port(client_pid, xpm, map_num, slot_num,
+				                     timestamp, status_vector);
+		}
+		else {
+			XNET_LOG_ERROR("xnet_get_free_slot() failed");
+		}
+					
+		if (xpm && port) {
+			// start the thread for this client
+			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(process_connection_thread),
+				              port, THREAD_medium, 0, 0);
+		}
+		else {
+			XNET_LOG_ERROR("failed to allocate server port for communication");
+		}
+
+		SetEvent(xnet_response_event);
+
+#else // CS
+
+		// in case process we'll fail to start child process
+		presponse->slot_num = 0;
+
+		// child process ID (presponse->map_num) used as map number
+		if (!xnet_fork(client_pid, flag, &(presponse->map_num)))
+			SetEvent(xnet_response_event);// if xnet_fork successfully creats child process
+		                                // child process will call SetEvent(xnet_response_event)
+		                                // by itself
+#endif //SUPERSERVER
+
+	}
+
+#else
+
+#endif // WIN_NT
+}
+
+
+PORT XNET_reconnect(ULONG client_pid, TEXT* name, ISC_STATUS* status_vector)
+{
+/**************************************
+ *
+ *  X N E T _ r e c o n n e c t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Classic server initialization code
+ *
+ **************************************/
+
+	PORT port = NULL;
+	XPM xpm = NULL;
+	TEXT name_buffer[128];
+
+	slots_per_map = 1;
+	pages_per_slot = XPS_MAX_PAGES_PER_CLI;
+	xnet_response_event = 0;
+
+	// CurrentProcessId used as map number
+	CurrentProcessId = GetCurrentProcessId();
+	try {
+
+		sprintf(name_buffer, XNET_E_RESPONSE_EVENT, XNET_PREFIX);
+		xnet_response_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
+		if (!xnet_response_event) {
+			throw -1;
+		}
+
+		xpm = xnet_make_xpm(CurrentProcessId, time_t(0));
+		if (!xpm) {
+			throw -1;
+		}
+
+		port = xnet_get_srv_port(client_pid, xpm, CurrentProcessId, 0, 0,status_vector);
+		if (!port) {
+			throw -1;
+		}
+
+		//make signal for client
+		SetEvent(xnet_response_event);
+		if (xnet_response_event) {
+			CloseHandle(xnet_response_event);
+		}
+
+	}
+	catch (...) {
+		XNET_LOG_ERROR("Unable to initialize child process");
+		status_vector[1] = isc_unavailable;
+
+		if (port) {
+			xnet_cleanup_port(port);
+			port = NULL;
+		}
+
+		if (xnet_response_event) {
+			SetEvent(xnet_response_event); // To prevent client blocking
+			CloseHandle(xnet_response_event);
+		}
+	}
+
+	return port;
+}
+
+#endif // SUPERCLINET
 
 } // extern "C"

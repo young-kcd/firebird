@@ -171,9 +171,6 @@ Package=<4>
     Project_Dep_Name dsql_server_classic
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name ipserver
-    End Project Dependency
-    Begin Project Dependency
     Project_Dep_Name lock_classic
     End Project Dependency
     Begin Project Dependency
@@ -310,9 +307,6 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name engine
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name ipserver
     End Project Dependency
 }}}
 
@@ -536,18 +530,6 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name fbclient
     End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "ipserver"=.\ipserver.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
 }}}
 
 ###############################################################################

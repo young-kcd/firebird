@@ -24,20 +24,29 @@
 #ifndef _REMOTE_SERVE_PROTO_H_
 #define _REMOTE_SERVE_PROTO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #ifdef WINDOWS_ROUTER
-extern void	SRVR_WinMain (struct port *, USHORT, HINSTANCE, HINSTANCE, int);
+extern void SRVR_WinMain(struct port *, USHORT, HINSTANCE, HINSTANCE, int);
 #else	/* WINDOWS_ROUTER */
-extern void	SRVR_main (struct port *, USHORT);
+extern void SRVR_main(struct port *, USHORT);
 #endif	/* WINDOWS_ROUTER */
 
 #ifdef NO_PORT
 #define PORT void*
 #endif
 
-extern void	SRVR_multi_thread (struct port *, USHORT);
-extern ULONG SRVR_xnet_start_thread(ULONG);
-extern SLONG	check_license (void);
-extern BOOLEAN	process_packet (PORT, PACKET *, PACKET *, PORT *);
-extern void	set_server (PORT, USHORT);
+extern void SRVR_multi_thread(struct port *, USHORT);
+extern BOOLEAN process_packet(PORT, PACKET *, PACKET *, PORT *);
+extern void set_server(PORT, USHORT);
+extern void THREAD_ROUTINE process_connection_thread(PORT);
+
+#ifdef __cplusplus
+} 
+#endif
+
 
 #endif	/* _REMOTE_SERVE_PROTO_H_ */

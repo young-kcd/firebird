@@ -51,9 +51,6 @@
 #include "../jrd/sch_proto.h"
 #include "../remote/os/win32/window.h"
 #include "../common/config/config.h"
-#define NO_PORT
-#include "../remote/xnet_proto.h"
-#undef NO_PORT
 
 #define statistics      stat
 
@@ -3807,8 +3804,6 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 			initialized = true;
 			gds__register_cleanup(reinterpret_cast<void(*)(void*)>(IPC_release_all),
 									NULL);
-			gds__register_cleanup(reinterpret_cast<void(*)(void*)>(XNET_release_all),
-									NULL);
 		}
 		else
 		{
@@ -4580,7 +4575,6 @@ void IPC_process_event(
 }
 
 
-#ifndef XNET
 void IPC_release_all(void)
 {
 /**************************************
@@ -4726,7 +4720,6 @@ void IPC_release_all(void)
 		initialized = false;
 	}
 }
-#endif
 
 
 } // extern "C"
