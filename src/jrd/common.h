@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.114 2004-05-06 22:09:17 brodsom Exp $
+$Id: common.h,v 1.115 2004-05-07 06:36:34 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -246,6 +246,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define ULONGFORMAT "lu"
 #define XLONGFORMAT "lX"
 #define xLONGFORMAT "lx"*/
+
+#define O_BINARY 0
 #endif /* SINIXZ */
 
 /*****************************************************
