@@ -38,6 +38,7 @@
 #include "../iscguard/iscguard.h"
 #include "../iscguard/cntlg_proto.h"
 #include "../utilities/install_nt.h"
+#include "../remote/window.h"
 #include "../remote/chop_proto.h"
 #include "../common/config/config.h"
 
@@ -368,7 +369,7 @@ static LRESULT CALLBACK WindowFunc(
 		case IDM_SHUTDOWN:
 			{
 				HWND hTmpWnd;
-				hTmpWnd = FindWindow("IB_Server", "InterBase Server");
+				hTmpWnd = FindWindow(szClassName, szWindowName);
 				PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_SHUTDOWN, 0);
 			}
 			return TRUE;
@@ -386,7 +387,7 @@ static LRESULT CALLBACK WindowFunc(
 		case IDM_SVRPROPERTIES:
 			{
 				HWND hTmpWnd;
-				hTmpWnd = FindWindow("IB_Server", "InterBase Server");
+				hTmpWnd = FindWindow(szClassName, szWindowName);
 				PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_PROPERTIES, 0);
 			}
 			return TRUE;
@@ -475,7 +476,7 @@ static LRESULT CALLBACK WindowFunc(
 			case IDM_SHUTDOWN:
 				{
 					HWND hTmpWnd;
-					hTmpWnd = FindWindow("IB_Server", "InterBase Server");
+					hTmpWnd = FindWindow(szClassName, szWindowName);
 					PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_SHUTDOWN,
 								0);
 				}
@@ -491,7 +492,7 @@ static LRESULT CALLBACK WindowFunc(
 			case IDM_SVRPROPERTIES:
 				{
 					HWND hTmpWnd;
-					hTmpWnd = FindWindow("IB_Server", "InterBase Server");
+					hTmpWnd = FindWindow(szClassName, szWindowName);
 					PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_PROPERTIES,
 								0);
 				}
@@ -600,7 +601,7 @@ void start_and_watch_server(char *server_name)
 			}
 		}
 		else {
-			HWND hTmpWnd = FindWindow("IB_Server", "InterBase Server");
+			HWND hTmpWnd = FindWindow(szClassName, szWindowName);
 			if (hTmpWnd == NULL) {
 				STARTUPINFO si;
 				SECURITY_ATTRIBUTES sa;
