@@ -926,11 +926,7 @@ typedef struct tdbb
 	struct iuo	tdbb_rw_locks;
 	struct iuo	tdbb_pages;
 
-    // ansi c want's sigsetjmp to be a different type. So I've used that
-    // for unix implementations. MOD 12-July-2002
-#ifdef WIN_NT
-	void*		tdbb_sigsetjmp;
-#else
+#if defined(UNIX) && defined(SUPERSERVER)
     jmp_buf tdbb_sigsetjmp;
 #endif
 } *TDBB;
