@@ -71,7 +71,7 @@ void ConfigFile::stripLeadingWhiteSpace(string& s)
 		return;
 	}
 
-	const string::size_type startPos = s.find_first_not_of(" \t");
+	const string::size_type startPos = s.find_first_not_of(" \t\r");
 	if (startPos == string::npos)
 	{
 		s.erase();	// nothing but air
@@ -94,7 +94,7 @@ void ConfigFile::stripTrailingWhiteSpace(string& s)
 		return;
 	}
 
-	string::size_type endPos = s.find_last_not_of(" \t");
+	string::size_type endPos = s.find_last_not_of(" \t\r");
 	if (endPos != string::npos)
 	{
 		// Note that endPos is the index to the last non-ws char
