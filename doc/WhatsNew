@@ -2,6 +2,11 @@
   * v1.5.2
   **************
 
+    * Fixed unregistered bug.
+        Possible server crash when execute_immediate is used to release or rollback transaction to non-existing savepoint
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
     * Fixed v1.5.0 regression.
         Fix bugs in distribution of conjunctions to components of outer joins by optimizer.
         Wrong outer join results could have been returned. The fix also makes engine use better plans for outer joins in a number of cases.
