@@ -423,7 +423,6 @@ SOURCE=..\..\..\src\jrd\version.rc
 !ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
 
 # PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
 
 !ENDIF 
 
