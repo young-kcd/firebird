@@ -163,7 +163,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	QLI_default_password[0] = 0;
 	QLI_charset[0] = 0;
 
-#ifdef DEVBUILD
+#ifdef DEV_BUILD
 	QLI_hex_output = 0;
 #endif
 
