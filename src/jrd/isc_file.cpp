@@ -343,7 +343,7 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
  * Functional description
  *	Analyze a filename for a named pipe node name on the front.
  *	If one is found, extract the node name, compute the residual
- *	file name, and return TRUE.  Otherwise return FALSE.
+ *	file name, and return true.  Otherwise return false.
  *
  **************************************/
 	if ((expanded_name[0] != '\\' && expanded_name[0] != '/') ||
