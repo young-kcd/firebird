@@ -230,13 +230,25 @@ void* operator new(size_t);
 void* operator new[](size_t);
 
 #ifdef DEBUG_GDS_ALLOC
-void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line);
-void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, int line);
+inline void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+	return pool.allocate(s, 0, file, line);
+//	return pool.calloc(s, 0, file, line);
+}
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+	return pool.allocate(s, 0, file, line);
+//	return pool.calloc(s, 0, file, line);
+}
 #define FB_NEW(pool) new(pool,__FILE__,__LINE__)
 #define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)
 #else
-void* operator new(size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc);
-void* operator new[](size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc);
+inline void* operator new(size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc) {
+	return pool.allocate(s);
+//	return pool.calloc(s);
+}
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc) {
+	return pool.allocate(s);
+//	return pool.calloc(s);
+}
 #define FB_NEW(pool) new(pool)
 #define FB_NEW_RPT(pool,count) new(pool,count)
 #endif

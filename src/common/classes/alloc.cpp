@@ -41,31 +41,6 @@
 #define PATTERN_FILL(ptr,size,pattern) ((void)0)
 #endif
 
-// Moved from header
-#ifndef TESTING_ONLY
-
-#ifdef DEBUG_GDS_ALLOC
-void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {
-	return pool.allocate(s, 0, file, line);
-//	return pool.calloc(s, 0, file, line);
-}
-void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, int line) {
-	return pool.allocate(s, 0, file, line);
-//	return pool.calloc(s, 0, file, line);
-}
-#else
-void* operator new(size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc) {
-	return pool.allocate(s);
-//	return pool.calloc(s);
-}
-void* operator new[](size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc) {
-	return pool.allocate(s);
-//	return pool.calloc(s);
-}
-#endif
-
-#endif
-
 // TODO (in order of importance):
 // 1. local pool locking +
 // 2. line number debug info +
