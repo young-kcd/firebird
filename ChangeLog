@@ -1,3 +1,24 @@
+2004-01-10 19:04  arnobrinkman
+
+	* firebird2/src/dsql/: ddl.cpp, dsql.h, pass1.cpp:
+	
+	Fix check constraint bug caused by my previously commit
+
+2004-01-10 16:15  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Fixed bug with computed fields referenced in a trigger context.
+
+2004-01-10 02:48  skidder
+
+	* firebird2/src/jrd/: cmp.cpp, exe.cpp, exe.h, opt.cpp, req.h:
+	
+	Fix resource leak for recursive procedures when procedure request
+	is closed at SUSPEND statement. This leak prevented more then 1000
+	such operations for one connection.  This bug was reported by Claus
+	Holst
+
 2004-01-09 23:34  arnobrinkman
 
 	* firebird2/src/burp/: burp.h, restore.epp:
