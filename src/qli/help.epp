@@ -98,7 +98,7 @@ void HELP_help( SYN node)
 		gds__prefix(target, TARGET);
 		READY
 		ON_ERROR
-			ERRQ_database_error((struct dbb*) NULL_PTR, gds_status);
+			ERRQ_database_error(NULL, gds_status);
 		END_ERROR;
 		START_TRANSACTION;
 	}

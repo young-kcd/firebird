@@ -169,7 +169,7 @@ void SHOW_stuff( SYN node)
 					 relation = relation->rel_next) {
 					if (!(relation->rel_flags & REL_system)) {
 						show_rel(relation);
-						show_fields(relation, (QLI_FLD) NULL_PTR);
+						show_fields(relation, NULL);
 					}
 					if (QLI_abort)
 						return;
@@ -196,7 +196,7 @@ void SHOW_stuff( SYN node)
 				 relation = relation->rel_next)
 					if (!(relation->rel_flags & REL_system)) {
 					show_rel(relation);
-					show_fields(relation,(QLI_FLD)  NULL_PTR);
+					show_fields(relation, NULL);
 				}
 			ib_printf("\n");
 			break;
@@ -218,7 +218,7 @@ void SHOW_stuff( SYN node)
 				 relation = relation->rel_next) {
 				if (!(relation->rel_flags & REL_system)) {
 					show_rel(relation);
-					show_fields(relation, (QLI_FLD) NULL_PTR);
+					show_fields(relation, NULL);
 				}
 				if (QLI_abort)
 					return;
@@ -258,7 +258,7 @@ void SHOW_stuff( SYN node)
 
 		case show_relation:
 			show_rel((QLI_REL) value);
-			show_fields((QLI_REL) value, (QLI_FLD) NULL_PTR);
+			show_fields((QLI_REL) value, NULL);
 			show_view((QLI_REL) value);
 			show_rel_detail((QLI_REL) value);
 			break;
@@ -533,7 +533,7 @@ static void display_text( DBB dbb, SLONG blob_id[2], const TEXT * prefix, bool s
  *
  **************************************/
 
-	display_blob(dbb, blob_id, prefix, 0, (UCHAR*) NULL_PTR, strip);
+	display_blob(dbb, blob_id, prefix, 0, NULL, strip);
 }
 
 
@@ -633,8 +633,7 @@ static void show_blr(
  **************************************/
 
 	if (source[0] || source[1])
-		show_text_blob(database, "\t", source_msg, source, 0, NULL,
-					   false);
+		show_text_blob(database, "\t", source_msg, source, 0, NULL, false);
 	else if (blr[0] || blr[1]) {
 		if (blr_msg)
 			ERRQ_msg_put(blr_msg, NULL, NULL, NULL, NULL, NULL);
@@ -846,7 +845,7 @@ static void show_dbb_parameters( DBB database)
 	if (database->dbb_capabilities & DBB_cap_security) {
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_dbb])
 			D IN RDB$DATABASE
-				show_string(260, D.RDB$SECURITY_CLASS, 0, (TEXT*) NULL_PTR);
+				show_string(260, D.RDB$SECURITY_CLASS, 0, NULL);
 			show_text_blob(database, "\t", 261, (SLONG*) &D.RDB$DESCRIPTION, 0,
 						   NULL, false);
 		END_FOR;
@@ -971,7 +970,7 @@ static int show_field_detail(
 				 (SLONG*) &F.RDB$COMPUTED_BLR);
 		show_blr(database, 342, (SLONG*)&F.RDB$VALIDATION_SOURCE, 342,
 				 (SLONG*) &F.RDB$VALIDATION_BLR);
-		show_string(270, RFR.RDB$SECURITY_CLASS, 0, (TEXT*) NULL_PTR);
+		show_string(270, RFR.RDB$SECURITY_CLASS, 0, NULL);
 		show_string(271, RFR.RDB$QUERY_NAME, 271, F.RDB$QUERY_NAME);
 		show_string(273, RFR.RDB$EDIT_STRING, 273, F.RDB$EDIT_STRING);
 		show_text_blob(database, "\t", 275, (SLONG*) &RFR.RDB$QUERY_HEADER, 275,
@@ -1290,7 +1289,7 @@ static void show_fld( SYN field_node)
 	int count = 0;
 	if (database) {
 		count += show_field_detail(database, string,
-								   field_name->nam_string, (SYN) NULL_PTR);
+								   field_name->nam_string, NULL);
 		if (!count)
 			ERRQ_msg_put(117, s, database->dbb_symbol->sym_string, NULL, NULL, NULL);
 			// Msg117 Field %s does not exist in database %s
@@ -1668,8 +1667,8 @@ static int show_gbl_field_detail( DBB database, const TEXT * field_name)
 				 (SLONG*) &F.RDB$COMPUTED_BLR);
 		show_blr(database, 280, (SLONG*) &F.RDB$VALIDATION_SOURCE, 342,
 				 (SLONG*) &F.RDB$VALIDATION_BLR);
-		show_string(281, F.RDB$QUERY_NAME, 0, (TEXT*) NULL_PTR);
-		show_string(282, F.RDB$EDIT_STRING, 0, (TEXT*) NULL_PTR);
+		show_string(281, F.RDB$QUERY_NAME, 0, NULL);
+		show_string(282, F.RDB$EDIT_STRING, 0, NULL);
 		show_text_blob(database, "\t", 283, (SLONG*) &F.RDB$QUERY_HEADER, 0, NULL,
 					   false);
 	END_FOR;
@@ -2025,7 +2024,7 @@ static void show_rel_detail( QLI_REL relation)
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_secur])
 			S IN RDB$RELATIONS WITH S.RDB$RELATION_NAME = R.RDB$RELATION_NAME
 				AND S.RDB$SECURITY_CLASS NOT MISSING
-            show_string(292, S.RDB$SECURITY_CLASS, 0, (TEXT*) NULL_PTR);
+            show_string(292, S.RDB$SECURITY_CLASS, 0, NULL);
 		END_FOR;
 
 		if (database->dbb_capabilities & DBB_cap_extern_file)
@@ -2624,7 +2623,7 @@ static void show_vars(void)
  **************************************/
 
 	ERRQ_msg_put(132, NULL, NULL, NULL, NULL, NULL);	/* Msg132 Variables: */
-	show_fields((QLI_REL) NULL_PTR, QLI_variables);
+	show_fields(NULL, QLI_variables);
 }
 
 
@@ -2644,7 +2643,7 @@ static void show_versions(void)
 
 	for (DBB dbb = QLI_databases; dbb; dbb = dbb->dbb_next) {
 		ERRQ_msg_put(134, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg134 Version(s) for database %s */
-		gds__version(&dbb->dbb_handle, (FPTR_VOID) NULL_PTR, NULL_PTR);
+		gds__version(&dbb->dbb_handle, NULL, NULL);
 	}
 }
 

@@ -206,7 +206,7 @@ void MET_define_field( DBB database, QLI_FLD field)
 
 	database = setup_update(database);
 
-	if (check_global_field(database, (QLI_FLD) NULL_PTR, field->fld_name->sym_string)) {
+	if (check_global_field(database, NULL, field->fld_name->sym_string)) {
 		rollback_update(database);
 		ERRQ_print_error(233, field->fld_name->sym_string, NULL, NULL, NULL, NULL);	/* Msg233 global field %s already exists */
 	}
@@ -973,7 +973,7 @@ void MET_finish( DBB dbb)
 		BUGCHECK(231);			/* Msg231 database block not found for removal */
 
 	if (status_vector[1])
-		ERRQ_database_error((struct dbb*) NULL_PTR, status_vector);
+		ERRQ_database_error(NULL, status_vector);
 }
 
 
@@ -2041,7 +2041,7 @@ static void change_field( QLI_REL relation, QLI_FLD field)
 
 	if (global_field
 		&&
-		!(check_global_field(database, (QLI_FLD) NULL_PTR, global_field->sym_string))) {
+		!(check_global_field(database, NULL, global_field->sym_string))) {
 		rollback_update(database);
 		ERRQ_print_error(253, global_field->sym_string, NULL, NULL, NULL, NULL);	/* Msg253 global field %s does not exist */
 	}
@@ -3825,7 +3825,7 @@ static void sql_grant_revoke( SYN node, USHORT type)
 		}
 		else
 			stuff_priv(rlb, type, relation_name, privileges,
-					   (*name)->nam_string, (TEXT*) NULL_PTR);
+					   (*name)->nam_string, NULL);
 
 	STUFF(gds_dyn_end);
 	STUFF(gds_dyn_eoc);
