@@ -1,3 +1,83 @@
+2003-08-25 17:09  alexpeshkoff
+
+	* firebird2/src/jrd/ExecuteStatement.cpp:
+	
+	Fixed bug with returning BLOBs from statement, reported privately
+	by Dmitry Y.  Don't front-port to HEAD, because ExecuteStatement is
+	to be reworked in 1.6.
+
+2003-08-25 14:09  robocop
+
+	* firebird2/src/qli/: err.cpp, err_proto.h:
+	
+	Still seems to work after changes.  :-)
+
+2003-08-25 14:00  robocop
+
+	* firebird2/src/qli/show.epp:
+	
+	Still seems to work after changes.  :-)
+
+2003-08-25 10:36  dimitr
+
+	* firebird2/lang_helpers/: gds_codes.ftn, gds_codes.pas:
+	
+	Added new error message for Arno.
+
+2003-08-25 10:33  dimitr
+
+	* firebird2/src/: include/gen/codes.h, include/gen/codetext.h,
+	include/gen/gds_codes.ftn, include/gen/gds_codes.pas,
+	include/gen/iberror.h, include/gen/msgs.h, include/gen/rdb_codes.h,
+	include/gen/sql_code.h, msgs/msg.gbak:
+	
+	Added new error message for Arno.
+
+2003-08-25 10:16  dimitr
+
+	* firebird2/: src/include/gen/codes.h, src/include/gen/codetext.h,
+	src/include/gen/iberror.h, src/include/gen/msgs.h,
+	src/include/gen/rdb_codes.h, src/include/gen/sql_code.h,
+	builds/misc/msg.gbak:
+	
+	Added new error message for Arno.
+
+2003-08-25 09:26  eku
+
+	* firebird2/src/: jrd/gds.cpp, lock/lock.cpp,
+	utilities/analyse.cpp, utilities/sbc_print.cpp,
+	utilities/gstat/dba.epp, utilities/gstat/dba_full.epp,
+	utilities/rebuild/rebuild.cpp:
+	
+	Since all supported platforms provide the function strerror(), get
+	rid of sys_errlist[]. It's not portable anyway.
+
+2003-08-25 00:15  arnobrinkman
+
+	* firebird2/src/dsql/: make.cpp, make_proto.h, pass1.cpp:
+	
+	Already fix COALESCE/CASE output-descriptor behaviour inside HEAD
+	branch to conform with SQL-standard.  FB1.5_RELEASE will follow
+	when error-message is added
+
+2003-08-24 17:22  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	fix bad behaviour with auto-union-cast
+
+2003-08-24 04:56  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	added comment and nested derived table fix
+
+2003-08-24 04:36  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	fix some derived tables problems
+
 2003-08-23 11:26  dimitr
 
 	* firebird2/src/jrd/dpm.epp:
