@@ -636,7 +636,8 @@ Firebird::MemoryPool* getDefaultMemoryPool() {
 
 void* operator new(size_t s) {
 #if defined(DEV_BUILD)
-	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new().\n");
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new().\n");
 #endif	// DEV_BUILD
 //	return getDefaultMemoryPool()->calloc(s, 0
 	return getDefaultMemoryPool()->allocate(s, 0
@@ -648,7 +649,8 @@ void* operator new(size_t s) {
 
 void* operator new[](size_t s) {
 #if defined(DEV_BUILD)
-	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
 #endif	// DEV_BUILD
 //	return getDefaultMemoryPool()->->calloc(s, 0
 	return getDefaultMemoryPool()->allocate(s, 0
