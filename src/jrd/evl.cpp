@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.107 2004-10-02 09:29:48 robocop Exp $ 
+  * $Id: evl.cpp,v 1.108 2004-10-03 12:10:19 dimitr Exp $ 
  */
 
 /*
@@ -311,6 +311,11 @@ RecordBitmap* EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
+
+#ifdef SUPERSERVER
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+#endif
 
 	switch (node->nod_type) {
 	case nod_bit_and:
@@ -808,6 +813,11 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		BUGCHECK(303);			/* msg 303 Invalid expression for evaluation */
 
 	SET_TDBB(tdbb);
+
+#ifdef SUPERSERVER
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+#endif
 
 	jrd_req* request = tdbb->tdbb_request;
 	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
@@ -1422,6 +1432,11 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* node, USHORT state
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
+
+#ifdef SUPERSERVER
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+#endif
 
 /* if we found the last record last time, we're all done  */
 

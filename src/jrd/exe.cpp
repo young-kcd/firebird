@@ -613,6 +613,11 @@ void EXE_receive(thread_db*		tdbb,
 
 	DEV_BLKCHK(request, type_req);
 
+#ifdef SUPERSERVER
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+#endif
+
 	jrd_tra* transaction = request->req_transaction;
 
 	if (!(request->req_flags & req_active)) {
@@ -751,6 +756,11 @@ void EXE_send(thread_db*		tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(request, type_req);
+
+#ifdef SUPERSERVER
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+#endif
 
 	if (!(request->req_flags & req_active))
 		ERR_post(isc_req_sync, 0);
