@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-
+#ifdef PYXIS
 
 #include "firebird.h"
 #include "../qli/dtr.h"
@@ -225,3 +225,5 @@ void FORM_update( QLI_NOD node)
  **************************************/
 
 }
+
+#endif

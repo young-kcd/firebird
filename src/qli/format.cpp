@@ -40,8 +40,10 @@
 #include "../qli/mov_proto.h"
 #include "../qli/picst_proto.h"
 
-extern USHORT QLI_columns, QLI_lines, sw_forms;
-
+extern USHORT QLI_columns, QLI_lines;
+#ifdef PYXIS
+extern USHORT sw_forms;
+#endif
 #ifdef DEV_BUILD
 extern USHORT QLI_hex_output;
 
@@ -594,8 +596,10 @@ void FMT_put( TEXT * line, PRT print)
 			ib_fprintf((IB_FILE *) print->prt_file, "%s", buffer);
 		}
 	else {
+#ifdef PYXIS
 		if (sw_forms)
 			FORM_reset();
+#endif
 		while (*q) {
 			for (p = buffer; p < end && *q;)
 				*p++ = *q++;

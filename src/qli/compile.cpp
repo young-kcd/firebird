@@ -296,7 +296,11 @@ static QLI_NOD compile_assignment( QLI_NOD node, QLI_REQ request, int statement_
 /* If the assignment is to a variable, the assignment is
    completely local */
 
-	if (to->nod_type == nod_variable || to->nod_type == nod_form_field) {
+	if (to->nod_type == nod_variable 
+#ifdef PYXIS
+		|| to->nod_type == nod_form_field
+#endif
+		) {
 		statement_internal = FALSE;
 		node->nod_flags |= NOD_local;
 	}
@@ -670,7 +674,7 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
 	case nod_variable:
 		field = (QLI_FLD) node->nod_arg[e_fld_field];
 		node->nod_desc.dsc_address = field->fld_data;
-
+#ifdef PYXIS
 	case nod_form_field:
 		make_descriptor(node, &node->nod_desc);
 		if (internal_flag) {
@@ -679,7 +683,7 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
 			parm->par_desc = node->nod_desc;
 		}
 		return node;
-
+#endif
 	case nod_upcase:
 		value = node->nod_arg[0];
 		node->nod_arg[0] = compile_field(value, request, internal_flag);
@@ -1376,7 +1380,7 @@ static QLI_NOD compile_statement( QLI_NOD node, QLI_REQ request, int internal_fl
 
 	case nod_if:
 		return compile_if(node, request, internal_flag);
-
+#ifdef PYXIS
 	case nod_form_for:
 		compile_statement(node->nod_arg[e_ffr_statement], request, FALSE);
 		return node;
@@ -1385,7 +1389,7 @@ static QLI_NOD compile_statement( QLI_NOD node, QLI_REQ request, int internal_fl
 		if (node->nod_arg[e_fup_tag])
 			compile_expression(node->nod_arg[e_fup_tag], 0, FALSE);
 		return node;
-
+#endif
 	case nod_abort:
 		if (node->nod_count)
 			compile_expression(node->nod_arg[0], 0, FALSE);
@@ -1605,8 +1609,10 @@ static int computable( QLI_NOD node, QLI_REQ request)
 	case nod_edit_blob:
 	case nod_prompt:
 	case nod_variable:
+#ifdef PYXIS
 	case nod_form_field:
 	case nod_form_for:
+#endif
 	case nod_format:
 		return FALSE;
 
@@ -1718,7 +1724,9 @@ static void make_descriptor( QLI_NOD node, DSC * desc)
 	QLI_FLD field;
 	PAR parameter;
 	MAP map;
+#ifdef PYXIS
 	FFL ffield;
+#endif
 	FUN function;
 	USHORT dtype;
 
@@ -1888,14 +1896,14 @@ static void make_descriptor( QLI_NOD node, DSC * desc)
 	case nod_negate:
 		make_descriptor(node->nod_arg[0], desc);
 		return;
-
+#ifdef PYXIS
 	case nod_form_field:
 		ffield = (FFL) node->nod_arg[e_ffl_field];
 		desc->dsc_dtype = ffield->ffl_dtype;
 		desc->dsc_scale = ffield->ffl_scale;
 		desc->dsc_length = ffield->ffl_length;
 		return;
-
+#endif
 	case nod_user_name:
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_scale = 0;

@@ -937,11 +937,11 @@ void MET_finish( DBB dbb)
 	}
 
 /* Get rid of any forms */
-
+#ifdef PYXIS
 	if (dbb->dbb_forms) {
 		FORM_finish(dbb);
 	}
-
+#endif
 /* Finally, actually close down database connection. */
 
 	detach(status_vector, dbb);

@@ -157,7 +157,7 @@ void EXEC_execute( QLI_NOD node)
 		case nod_for:
 			execute_for(node);
 			return;
-
+#ifdef PYXIS
 		case nod_form_for:
 			FORM_display(node);
 			return;
@@ -165,7 +165,7 @@ void EXEC_execute( QLI_NOD node)
 		case nod_form_update:
 			FORM_update(node);
 			return;
-
+#endif
 		case nod_list:
 			ptr = node->nod_arg;
 			for (i = 0; i < node->nod_count; i++)
@@ -670,10 +670,10 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT bpb_length, length, buffer_length;
 	UCHAR bpb[20], *p, fixed_buffer[4096], *buffer;
-
+#ifdef PYXIS
 	if (value->nod_type == nod_form_field)
 		return FORM_get_blob(value, parameter);
-
+#endif
 /* If assignment isn't from a field, there isn't a blob copy, so
    do a dumb assignment. */
 
@@ -849,10 +849,12 @@ static void execute_assignment( QLI_NOD node)
 			from->nod_desc.dsc_dtype == dtype_blob &&
 			copy_blob(from, parameter)) return;
 	}
+#ifdef PYXIS
 	else if (to->nod_type == nod_form_field) {
 		FORM_put_field(from, to);
 		return;
 	}
+#endif
 	else
 		parameter = node->nod_import;
 

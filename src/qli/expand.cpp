@@ -59,16 +59,22 @@ static QLI_NOD expand_erase(SYN, LLS, LLS);
 static QLI_NOD expand_expression(SYN, LLS);
 static QLI_NOD expand_field(SYN, LLS, SYN);
 static QLI_NOD expand_for(SYN, LLS, LLS);
+#ifdef PYXIS
 static FRM expand_form(SYN, QLI_REL);
 static QLI_NOD expand_form_for(SYN, LLS, LLS);
 static QLI_NOD expand_form_update(SYN, LLS, LLS);
+#endif
 static QLI_NOD expand_function(SYN, LLS);
 static QLI_NOD expand_group_by(SYN, LLS, QLI_CTX);
+#ifdef PYXIS
 static QLI_NOD expand_menu(SYN, LLS, LLS);
+#endif
 static QLI_NOD expand_modify(SYN, LLS, LLS);
 static QLI_NOD expand_output(SYN, LLS, PRT *);
 static QLI_NOD expand_print(SYN, LLS, LLS);
+#ifdef PYXIS
 static QLI_NOD expand_print_form(SYN, LLS, LLS);
+#endif
 static ITM expand_print_item(SYN, LLS);
 static QLI_NOD expand_print_list(SYN, LLS);
 static QLI_NOD expand_report(SYN, LLS, LLS);
@@ -86,8 +92,10 @@ static int invalid_nod_field(QLI_NOD, QLI_NOD);
 static int invalid_syn_field(SYN, SYN);
 static QLI_NOD make_and(QLI_NOD, QLI_NOD);
 static QLI_NOD make_assignment(QLI_NOD, QLI_NOD, LLS);
+#ifdef PYXIS
 static QLI_NOD make_form_body(LLS, LLS, SYN);
 static QLI_NOD make_form_field(FRM, FFL);
+#endif
 static QLI_NOD make_field(QLI_FLD, QLI_CTX);
 static QLI_NOD make_list(LLS);
 static QLI_NOD make_node(NOD_T, USHORT);
@@ -114,7 +122,9 @@ QLI_NOD EXP_expand( SYN node)
  *
  **************************************/
 	QLI_NOD expanded, output;
+#ifdef PYXIS
 	NAM name;
+#endif
 	QLI_CTX context;
 	LLS right, left;
 
@@ -177,12 +187,12 @@ QLI_NOD EXP_expand( SYN node)
 	case nod_edit_proc:
 		CMD_edit_proc(node);
 		return NULL;
-
+#ifdef PYXIS
 	case nod_edit_form:
 		name = (NAM) node->syn_arg[1];
 		FORM_edit((DBB)node->syn_arg[0], name->nam_string);
 		return NULL;
-
+#endif
 	case nod_extract:
 		node->syn_arg[1] = (SYN) expand_output(node->syn_arg[1], 0, 0);
 		CMD_extract(node);
@@ -1047,7 +1057,11 @@ static QLI_NOD expand_field( SYN input, LLS stack, SYN subs)
 	LLS save_stack;
 
 	if (!(field = resolve(input, stack, &context)) ||
-		(subs && (context->ctx_type == CTX_FORM || context->ctx_variable))) {
+		(subs && (
+#ifdef PYXIS
+		context->ctx_type == CTX_FORM || 
+#endif
+		context->ctx_variable))) {
 		p = s;
 		for (i = 0; i < input->syn_count; i++) {
 			name = (NAM) input->syn_arg[i];
@@ -1064,10 +1078,10 @@ static QLI_NOD expand_field( SYN input, LLS stack, SYN subs)
 		else
 			ERRQ_print_error(142, s, NULL, NULL, NULL, NULL);	/* Msg142 "%s" is undefined or used out of context */
 	}
-
+#ifdef PYXIS
 	if (context->ctx_type == CTX_FORM)
 		return make_form_field(context->ctx_form, (FFL) field);
-
+#endif
 	node = make_field(field, context);
 	if (subs)
 		node->nod_arg[e_fld_subs] = expand_expression(subs, stack);
@@ -1130,6 +1144,7 @@ static QLI_NOD expand_for( SYN input, LLS right, LLS left)
 }
 
 
+#ifdef PYXIS
 static FRM expand_form( SYN input, QLI_REL relation)
 {
 /**************************************
@@ -1192,8 +1207,8 @@ static FRM expand_form( SYN input, QLI_REL relation)
 	ERRQ_print_error(145, string, database->dbb_filename, NULL, NULL, NULL);	/* Msg145 form is not defined in database */
 	return NULL;
 }
-
-
+#endif
+#ifdef PYXIS
 static QLI_NOD expand_form_for( SYN input, LLS right, LLS left)
 {
 /**************************************
@@ -1239,8 +1254,8 @@ static QLI_NOD expand_form_for( SYN input, LLS right, LLS left)
 
 	return node;
 }
-
-
+#endif
+#ifdef PYXIS
 static QLI_NOD expand_form_update( SYN input, LLS right, LLS left)
 {
 /**************************************
@@ -1297,7 +1312,7 @@ static QLI_NOD expand_form_update( SYN input, LLS right, LLS left)
 
 	return node;
 }
-
+#endif
 
 static QLI_NOD expand_function( SYN input, LLS stack)
 {
@@ -1433,7 +1448,10 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
  *
  **************************************/
 	QLI_NOD node, loop, list, *ptr;
-	SYN value, syn_list, *syn_ptr;
+#ifdef PYXIS
+	SYN value;
+#endif
+	SYN syn_list, *syn_ptr;
 	LLS contexts;
 	QLI_CTX new_context, context;
 	USHORT count, i;
@@ -1491,9 +1509,11 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 	if (input->syn_arg[s_mod_statement])
 		node->nod_arg[e_mod_statement] =
 			expand_statement(input->syn_arg[s_mod_statement], right, left);
+#ifdef PYXIS
 	else if ((value = input->syn_arg[s_mod_form]) ||
 			 (QLI_form_mode && !input->syn_arg[s_mod_list]))
 		node->nod_arg[e_mod_statement] = make_form_body(right, left, value);
+#endif
 	else if (syn_list = input->syn_arg[s_mod_list]) {
 		node->nod_arg[e_mod_statement] = list =
 			MAKE_NODE(nod_list, syn_list->syn_count);
@@ -1578,14 +1598,14 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 	syn_rse = input->syn_arg[s_prt_rse];
 
 /* Check to see if form mode is appropriate */
-
+#ifdef PYXIS
 	if (input->syn_arg[s_prt_form] ||
 		(QLI_form_mode &&
 		 !input->syn_arg[s_prt_list] &&
 		 !input->syn_arg[s_prt_output] &&
 		 !(syn_rse && syn_rse->syn_count != 1)))
 			return expand_print_form(input, right, left);
-
+#endif
 	loop = NULL;
 	items = NULL;
 	rse = NULL;
@@ -1699,7 +1719,7 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 	return node;
 }
 
-
+#ifdef PYXIS
 static QLI_NOD expand_print_form( SYN input, LLS right, LLS left)
 {
 /**************************************
@@ -1747,7 +1767,7 @@ static QLI_NOD expand_print_form( SYN input, LLS right, LLS left)
 
 	return node;
 }
-
+#endif
 
 static ITM expand_print_item( SYN syn_item, LLS right)
 {
@@ -2251,7 +2271,7 @@ static QLI_NOD expand_statement( SYN input, LLS right, LLS left)
 	case nod_erase:
 		routine = expand_erase;
 		break;
-
+#ifdef PYXIS
 	case nod_form_for:
 		routine = expand_form_for;
 		break;
@@ -2259,7 +2279,7 @@ static QLI_NOD expand_statement( SYN input, LLS right, LLS left)
 	case nod_form_update:
 		routine = expand_form_update;
 		break;
-
+#endif
 	case nod_for:
 		routine = expand_for;
 		break;
@@ -2357,7 +2377,10 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
  *
  **************************************/
 	QLI_NOD node, assignment, loop;
-	SYN sub, rel_node;
+#ifdef PYXIS
+	SYN sub;
+#endif
+	SYN rel_node;
 	QLI_REL relation;
 	QLI_FLD field;
 	SYM symbol;
@@ -2415,8 +2438,10 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
 		node->nod_arg[e_sto_statement] =
 			expand_statement(input->syn_arg[s_sto_statement], right, left);
 	}
+#ifdef PYXIS
 	else if ((sub = input->syn_arg[s_sto_form]) || QLI_form_mode)
 		node->nod_arg[e_sto_statement] = make_form_body(0, left, sub);
+#endif
 	else {
 		stack = NULL;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
@@ -2951,7 +2976,7 @@ static QLI_NOD make_assignment( QLI_NOD target, QLI_NOD initial, LLS right)
 	return assignment;
 }
 
-
+#ifdef PYXIS
 static QLI_NOD make_form_body( LLS right, LLS left, SYN form_node)
 {
 /**************************************
@@ -3033,8 +3058,8 @@ static QLI_NOD make_form_body( LLS right, LLS left, SYN form_node)
 
 	return node;
 }
-
-
+#endif
+#ifdef PYXIS
 static QLI_NOD make_form_field( FRM form, FFL field)
 {
 /**************************************
@@ -3056,7 +3081,7 @@ static QLI_NOD make_form_field( FRM form, FFL field)
 
 	return node;
 }
-
+#endif
 
 static QLI_NOD make_field( QLI_FLD field, QLI_CTX context)
 {
@@ -3276,8 +3301,10 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 	QLI_CTX context;
 	QLI_REL relation;
 	QLI_FLD field;
+#ifdef PYXIS
 	FRM form;
 	FFL ffield;
+#endif
 
 /* Look thru context stack looking for a context that will resolve
    all name segments.  If the context is a secondary context, require
@@ -3292,6 +3319,7 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 		name = *--ptr;
 
 		switch (context->ctx_type) {
+#ifdef PYXIS
 		case CTX_FORM:
 			if (context->ctx_primary)
 				*out_context = context = context->ctx_primary;
@@ -3312,7 +3340,7 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 					break;
 				}
 			break;
-
+#endif
 		case CTX_VARIABLE:
 			if (ptr == base)
 				for (field = context->ctx_variable; field;
@@ -3377,9 +3405,10 @@ static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 	QLI_CTX context;
 	QLI_REL relation;
 	QLI_FLD field;
+#ifdef PYXIS
 	FRM form;
 	FFL ffield;
-
+#endif
 /* Look thru context stack looking for a context that will resolve
    all name segments.  If the context is a secondary context, require
    that the context name be given explicitly (used for special STORE
@@ -3389,6 +3418,7 @@ static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 	for (; stack; stack = stack->lls_next) {
 		*out_context = context = (QLI_CTX) stack->lls_object;
 		switch (context->ctx_type) {
+#ifdef PYXIS
 		case CTX_FORM:
 			if (context->ctx_primary)
 				*out_context = context = context->ctx_primary;
@@ -3397,7 +3427,7 @@ static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 				if (compare_symbols(name, ffield->ffl_symbol))
 					return (QLI_FLD) ffield;
 			break;
-
+#endif
 		case CTX_VARIABLE:
 			for (field = context->ctx_variable; field;
 				 field =

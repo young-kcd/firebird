@@ -24,6 +24,8 @@
 #ifndef _QLI_FORM_H_
 #define _QLI_FORM_H_
 
+#ifdef PYXIS
+
 /* Form block */
 
 typedef struct frm {
@@ -58,5 +60,7 @@ typedef struct men {
     int		*men_handle;		/* Internal menu handle */
     TEXT	men_menu[2];
 } *MEN;
+
+#endif
 
 #endif /* _QLI_FORM_H_ */

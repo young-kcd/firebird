@@ -72,7 +72,10 @@
 jmp_buf QLI_env;					/* Error return environment */
 
 TEXT *QLI_error;
-USHORT sw_verify, sw_trace, sw_forms, sw_buffers;
+USHORT sw_verify, sw_trace, sw_buffers;
+#ifdef PYXIS
+USHORT sw_forms;
+#endif
 USHORT QLI_lines = 60, QLI_prompt_count, QLI_reprompt, QLI_name_columns = 0;
 
 /* Let's define the default number of columns on a machine by machine basis */
@@ -301,12 +304,15 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 		temp = QLI_default_pool = ALLQ_pool();
 		flush_flag = process_statement(flush_flag);
 		ERRQ_pending();
+#ifdef PYXIS
 		if (sw_forms)
 			FORM_reset();
+#endif
 		ALLQ_rlpool(temp);
 	}
-
+#ifdef PYXIS
 	FORM_fini();
+#endif
 	HELP_fini();
 	MET_shutdown();
 	LEX_fini();

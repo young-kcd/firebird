@@ -24,6 +24,7 @@
 #ifndef _QLI_FORM_PROTO_H_
 #define _QLI_FORM_PROTO_H_
 
+#ifdef PYXIS
 extern struct frm	*FORM_default_form (struct dbb *, TEXT *);
 extern void		FORM_display (struct qli_nod *);
 extern void		FORM_edit (struct dbb *, TEXT *);
@@ -36,5 +37,6 @@ extern struct ffl	*FORM_lookup_field (struct frm *, TEXT *);
 extern int		FORM_put_field (struct qli_nod *, struct qli_nod *);
 extern void		FORM_reset (void);
 extern void		FORM_update (struct qli_nod *);
+#endif
 
 #endif /* _QLI_FORM_PROTO_H_ */
