@@ -41,7 +41,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/utl_proto.h"
-#include "../wal/walf_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -66,9 +65,6 @@ static ISC_STATUS detach(ISC_STATUS *, DBB);
 static void execute_dynamic_ddl(DBB, RLB);
 static int field_length(USHORT, USHORT);
 static void get_database_type(DBB);
-static void get_log_names(DBB, SCHAR *, LLS *, SCHAR *, SLONG, SSHORT,
-						  SSHORT);
-static void get_log_names_serial(LLS *);
 static TEXT *get_query_header(DBB, SLONG[2]);
 static void install(DBB);
 static SYN make_node(NOD_T, USHORT);
@@ -572,9 +568,6 @@ void MET_delete_database( DBB dbb)
 	SLONG part_offset, log = 0;
 	wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
-	if (log)
-		get_log_names_serial(&log_stack);
-
 	MET_transaction(nod_commit, dbb);
 
 	if (isc_detach_database(gds_status, &dbb->dbb_handle))
@@ -585,12 +578,6 @@ void MET_delete_database( DBB dbb)
 		next = database->dbb_next;
 		if (!strcmp(database->dbb_filename, dbb->dbb_filename))
 			MET_finish(database);
-	}
-
-	if (log) {
-		TEXT db_name[512];
-		ISC_expand_filename(dbb->dbb_filename, 0, db_name);
-		get_log_names(dbb, db_name, &log_stack, cur_log, part_offset, 0, 1);
 	}
 
 	while (stack) {
@@ -2771,134 +2758,6 @@ static void get_database_type( DBB new_dbb)
 }
 
 
-static void get_log_names(
-						  DBB dbb,
-						  SCHAR * db_name,
-						  LLS * log_stack,
-						  SCHAR * cur_log,
-						  SLONG part_offset, SSHORT force, SSHORT skip_delete)
-{
-/**************************************
- *
- *	g e t _ l o g _ n a m e s
- *
- **************************************
- *
- * Functional description
- *	Walk through list of log files and add to link list.
- *
- **************************************/
-	SCHAR next_log[512];
-	int log_count;
-	bool not_archived;
-	SLONG last_log_flag, next_offset;
-
-	SSHORT loop = 0;
-
-// loop up to 10 times to allow the file to be archived
-
-	while (true) {
-		loop++;
-		if (!WALF_get_linked_logs_info
-			(gds_status, db_name, cur_log, part_offset, &log_count, next_log,
-			 &next_offset, &last_log_flag, &not_archived))
-		{
-			ERRQ_database_error(dbb, gds_status);
-		}
-
-		if ((!not_archived) || force)
-			break;
-
-		if (not_archived && skip_delete) {
-			*log_stack = NULL;
-			return;
-		}
-
-		if (loop >= 10)
-			ERRQ_print_error(431, dbb->dbb_filename, NULL, NULL, NULL, NULL);
-	}
-
-	STR string;
-	if (log_count) {
-		string = (STR) ALLOCDV(type_str, strlen(next_log));
-		LLS_PUSH(string, log_stack);
-		strcpy(string->str_data, next_log);
-	}
-	else {
-		string = (STR) ALLOCDV(type_str, strlen(cur_log));
-		LLS_PUSH(string, log_stack);
-		strcpy(string->str_data, cur_log);
-	}
-
-	SCHAR* cl = next_log;
-	SCHAR* nl = cur_log;
-	part_offset = next_offset;
-
-    SLONG log_seqno, log_length;
-	while (log_count) {
-		int ret_val = WALF_get_next_log_info(gds_status,
-										 db_name,
-										 cl, part_offset,
-										 nl, &next_offset,
-										 &log_seqno, &log_length,
-										 &last_log_flag, 1);
-
-		if (ret_val == FB_FAILURE)
-			ERRQ_database_error(dbb, gds_status);
-
-		if (ret_val < 0)
-			break;
-
-		string = (STR) ALLOCDV(type_str, strlen(nl));
-		LLS_PUSH(string, log_stack);
-		strcpy(string->str_data, nl);
-
-		// switch files
-
-		if (cl == next_log) {
-			cl = cur_log;
-			nl = next_log;
-		}
-		else {
-			cl = next_log;
-			nl = cur_log;
-		}
-		part_offset = next_offset;
-	}
-}
-
-
-static void get_log_names_serial( LLS * log_stack)
-{
-/**************************************
- *
- *	g e t _ l o g _ n a m e s _ s e r i a l
- *
- **************************************
- *
- * Functional description
- *	Walk through list of serial log files and add to link list.
- *
- **************************************/
-	SCHAR next_log[512];
-
-// for round robin log files, some of the log files may not have been used
-// when the database is dropped or log is dropped. Add them to the list
-
-
-	FOR L IN DB.RDB$LOG_FILES
-		if (L.RDB$FILE_FLAGS & LOG_serial)
-			continue;
-		ISC_expand_filename(L.RDB$FILE_NAME, 0, next_log);
-		STR string = (STR) ALLOCDV(type_str, strlen(next_log));
-		strcpy(string->str_data, next_log);
-		LLS_PUSH(string, log_stack);
-	END_FOR
-	ON_ERROR
-	END_ERROR;
-}
-
-
 static TEXT *get_query_header( DBB database, SLONG blob_id[2])
 {
 /**************************************
@@ -3848,11 +3707,10 @@ static void wal_info(
 	*part_offset = 0;
 	cur_log[0] = 0;
 
-	UCHAR* p = db_info_buffer;
+	const UCHAR* p = db_info_buffer;
 	UCHAR item;
-	UCHAR* d;
 	while ((item = *p++) != isc_info_end) {
-		SLONG length = gds__vax_integer(p, 2);
+		const SLONG length = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
 		case isc_info_logfile:
@@ -3861,12 +3719,14 @@ static void wal_info(
 			break;
 
 		case isc_info_cur_logfile_name:
-			d = p;
-			p += length;
-			length = *d++;
-			memcpy(cur_log, d, length);
-			cur_log[length] = 0;
-			break;
+			{
+				const UCHAR* d = p;
+				p += length;
+				const SLONG log_length = *d++;
+				memcpy(cur_log, d, log_length);
+				cur_log[log_length] = 0;
+				break;
+			}
 
 		case isc_info_cur_log_part_offset:
 			*part_offset = gds__vax_integer(p, length);

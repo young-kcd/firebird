@@ -84,8 +84,8 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 #define TRA_ignore_limbo	2048L	/* ignore transactions in limbo */
 #define TRA_invalidated 	4096L	/* transaction invalidated by failed write */
 #define TRA_deferred_meta 	8192L	/* deferred meta work posted */
-#define TRA_add_log		16384L	/* write ahead log file was added */
-#define TRA_delete_log		32768L	/* write ahead log file was deleted */
+//#define TRA_add_log		16384L	/* write ahead log file was added */
+//#define TRA_delete_log		32768L	/* write ahead log file was deleted */
 #define TRA_read_committed	65536L	/* can see latest committed records */
 #define TRA_autocommit		131072L	/* autocommits all updates */
 #define TRA_perform_autocommit	262144L	/* indicates autocommit is necessary */
@@ -175,8 +175,6 @@ enum dfw_t {
 	dfw_scan_relation,
 	dfw_create_expression_index,
 	dfw_delete_expression_index,
-	dfw_delete_log,
-	dfw_create_log,
 	dfw_create_procedure,
 	dfw_modify_procedure,
 	dfw_delete_procedure,

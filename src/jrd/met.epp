@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.85 2004-01-04 04:41:56 robocop Exp $
+$Id: met.epp,v 1.86 2004-01-06 10:33:12 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -599,20 +599,6 @@ void MET_activate_shadow( TDBB tdbb)
 		CMP_release(tdbb, (jrd_req*)handle2);
 	}
 	CMP_release(tdbb, (jrd_req*)handle);
-
-/* Get rid of WAL after activation.  For V4.0, we are not allowing
-   WAL and Shadowing to be configured together.  So the following
-   (commented out) code should be re-visited when we do allow 
-   such configuration. */
-
-	/***********************
-	handle = 0;
-		FOR(REQUEST_HANDLE handle) X IN RDB$LOG_FILES
-			ERASE X;
-		END_FOR;
-		CMP_release(tdbb, handle);
-		AIL_modify_log();
-	************************/
 }
 
 
@@ -1120,64 +1106,6 @@ void MET_get_shadow_files( TDBB tdbb, bool deleteVar)
 	}
 
 	SDW_check();
-}
-
-
-ULONG MET_get_walinfo(
-					TDBB tdbb,
-					LGFILE ** logfiles_, ULONG* number, LGFILE ** over_flow)
-{
-/**************************************
- *
- *      M E T _ g e t _ w a l i n f o
- *
- **************************************
- *
- * Functional description
- *      Get WAL information from RDB$LOG_FILES
- *      Initialize over_flow pointer if over flow file is specified.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-
-    ULONG num = 0;
-	blk* handle = NULL;
-	FOR(REQUEST_HANDLE handle)
-		LOG IN RDB$LOG_FILES SORTED BY LOG.RDB$FILE_SEQUENCE
-			logfiles_[num] = FB_NEW_RPT(*dbb->dbb_permanent,
-											   LGFILE_SIZE + MAXPATHLEN) logfiles();
-		strcpy(logfiles_[num]->lg_name, LOG.RDB$FILE_NAME);
-		logfiles_[num]->lg_size = LOG.RDB$FILE_LENGTH;
-		logfiles_[num]->lg_partitions = LOG.RDB$FILE_PARTITIONS;
-		logfiles_[num]->lg_flags = LOG.RDB$FILE_FLAGS;
-		logfiles_[num]->lg_sequence = LOG.RDB$FILE_SEQUENCE;
-
-		++num;
-	END_FOR;
-
-	if (handle)
-	{
-		CMP_release(tdbb, (jrd_req*)handle);
-	}
-
-	if (num)
-	{
-		*over_flow = logfiles_[num - 1];
-
-		/* The overflow file will be passed separately */
-
-		if (over_flow[0]->lg_flags & LOG_overflow) {
-			num--;
-		}
-		else {
-			*over_flow = NULL;
-		}
-	}
-
-	*number = num;
-
-	return num;
 }
 
 

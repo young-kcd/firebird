@@ -25,7 +25,6 @@
 #define JRD_MET_PROTO_H
 
 #include "../jrd/exe.h"
-#include "../jrd/jrn.h"
 #include "../jrd/blob_filter.h"
 
 void		MET_activate_shadow(TDBB);
@@ -42,7 +41,6 @@ struct jrd_nod*	MET_get_dependencies(TDBB, struct jrd_rel*, TEXT*,
 								class Csb **, const TEXT*, USHORT);
 struct jrd_fld*	MET_get_field(struct jrd_rel *, USHORT);
 void		MET_get_shadow_files(TDBB, bool);
-ULONG		MET_get_walinfo(TDBB, struct logfiles **, ULONG *, struct logfiles **);
 void		MET_load_trigger(TDBB, struct jrd_rel*, const TEXT*, TRIG_VEC*);
 void		MET_lookup_cnstrt_for_index(TDBB, TEXT* constraint, const TEXT* index_name);
 void		MET_lookup_cnstrt_for_trigger(TDBB, TEXT*, TEXT*, const TEXT*);

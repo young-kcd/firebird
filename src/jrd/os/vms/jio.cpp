@@ -37,7 +37,6 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"
-#include "../jrd/jrn.h"
 #include "gen/iberror.h"
 
 #ifdef VMS

@@ -1383,9 +1383,6 @@ void VIO_erase(TDBB tdbb, RPB * rpb, jrd_tra* transaction)
 			DFW_post_work(transaction, dfw_grant, &desc, id);
 			break;
 
-		case rel_log:
-			DFW_post_work(transaction, dfw_delete_log, 0, 0);
-			break;
 		default:    /* Shut up compiler warnings */
 			break;
 		}
@@ -2676,9 +2673,6 @@ void VIO_store(TDBB tdbb, RPB * rpb, jrd_tra* transaction)
 			DFW_post_work(transaction, dfw_grant, &desc, id);
 			break;
 
-		case rel_log:
-			DFW_post_work(transaction, dfw_create_log, 0, 0);
-			break;
 		default:    /* Shut up compiler warnings */
 			break;
 		}

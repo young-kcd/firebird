@@ -174,7 +174,7 @@ public:
     USHORT dbb_next_pool_id;
 	vec*		dbb_internal;	/* internal requests */
 	vec*		dbb_dyn_req;	/* internal dyn requests */
-	struct jrn *dbb_journal;	/* journal block */
+//	struct jrn *dbb_journal;	/* journal block */
 
 	SLONG dbb_oldest_active;	/* Cached "oldest active" transaction */
 	SLONG dbb_oldest_transaction;	/* Cached "oldest interesting" transaction */
@@ -218,7 +218,7 @@ public:
 	struct log *dbb_log;		/* log file for REPLAY */
 	Firebird::vector<class TextType*>		dbb_text_objects;	/* intl text type descriptions */
 	Firebird::vector<class CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
-	struct wal *dbb_wal;		/* WAL handle for WAL API */
+//	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	struct tpc *dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
 	class BackupManager *backup_manager; /* physical backup manager */
@@ -909,11 +909,6 @@ struct win_for_array: public win
 #define WIN_secondary		2	/* secondary stream */
 #define	WIN_garbage_collector	4	/* garbage collector's window */
 #define WIN_garbage_collect	8	/* scan left a page for garbage collector */
-
-
-/* define used for journaling start transaction */
-
-#define MOD_START_TRAN  100
 
 
 /* Thread specific database block */

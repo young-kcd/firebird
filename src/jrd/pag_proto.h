@@ -39,7 +39,6 @@ void	PAG_header(const TEXT*, USHORT);
 void	PAG_init(void);
 void	PAG_init2(USHORT);
 SLONG	PAG_last_page(void);
-void	PAG_modify_log(SLONG, SLONG);
 void	PAG_release_page(SLONG, SLONG);
 void	PAG_set_force_write(struct dbb*, SSHORT);
 void	PAG_set_no_reserve(struct dbb*, USHORT);

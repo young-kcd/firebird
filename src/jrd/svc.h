@@ -45,7 +45,7 @@
 #define SVC_STDOUT_BUFFER_SIZE	1024
 
 /* Flag of capabilities supported by the server */
-#define WAL_SUPPORT					  0x1L	/* Write Ahead Log */
+//#define WAL_SUPPORT					  0x1L	/* Write Ahead Log */
 #define MULTI_CLIENT_SUPPORT		  0x2L	/* SuperServer model (vs. multi-inet) */
 #define REMOTE_HOP_SUPPORT			  0x4L	/* Server can connect to other server */
 #define NO_SVR_STATS_SUPPORT		  0x8L	/* Does not support statistics */

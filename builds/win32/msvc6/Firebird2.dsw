@@ -27,24 +27,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "archive"=.\archive.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name fbclient
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "burp"=.\burp.dsp - Package Owner=<4>
 
 Package=<5>
@@ -198,9 +180,6 @@ Package=<4>
     Project_Dep_Name utilities_classic
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name wal_classic
-    End Project Dependency
-    Begin Project Dependency
     Project_Dep_Name common_classic
     End Project Dependency
 }}}
@@ -261,9 +240,6 @@ Package=<4>
     Project_Dep_Name utilities
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name wal
-    End Project Dependency
-    Begin Project Dependency
     Project_Dep_Name dsql_server
     End Project Dependency
     Begin Project Dependency
@@ -316,9 +292,6 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name utilities
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name wal
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name remote
@@ -597,24 +570,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "journal"=.\journal.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name fbclient
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "lock"=.\lock.dsp - Package Owner=<4>
 
 Package=<5>
@@ -669,9 +624,6 @@ Package=<4>
     Project_Dep_Name fbclient
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name wal
-    End Project Dependency
-    Begin Project Dependency
     Project_Dep_Name common
     End Project Dependency
 }}}
@@ -722,48 +674,6 @@ Package=<5>
 
 Package=<4>
 {{{
-}}}
-
-###############################################################################
-
-Project: "wal"=.\wal.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "wal_classic"=.\wal_classic.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "walw"=.\walw.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name fbclient
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name common_classic
-    End Project Dependency
 }}}
 
 ###############################################################################

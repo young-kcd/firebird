@@ -358,8 +358,6 @@ int DBG_precedence(void)
 				ib_fprintf(dbg_file, ", must_write");
 			if (bdb->bdb_flags & BDB_faked)
 				ib_fprintf(dbg_file, ", faked");
-			if (bdb->bdb_flags & BDB_journal)
-				ib_fprintf(dbg_file, ", journal");
 			if (bdb->bdb_flags & BDB_system_dirty)
 				ib_fprintf(dbg_file, ", system_dirty");
 			if (bdb->bdb_flags & BDB_io_error)

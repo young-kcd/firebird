@@ -37,7 +37,6 @@
 #include "../jrd/os/pio.h"
 #include "../jrd/cch.h"
 #include "gen/iberror.h"
-#include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/req.h"
 #include "../jrd/sdw.h"
@@ -68,8 +67,6 @@
 #include "../jrd/shut_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/tra_proto.h"
-#include "../jrd/ail.h"
-#include "../wal/wal_proto.h"
 #include "../common/config/config.h"
 #include "../jrd/jrd_time.h"
 
@@ -128,7 +125,6 @@ static void down_grade(TDBB, BDB);
 #endif
 static void expand_buffers(TDBB, ULONG);
 static BDB get_buffer(TDBB, SLONG, LATCH, SSHORT);
-static void journal_buffer(ISC_STATUS *, BDB);
 static SSHORT latch_bdb(TDBB, LATCH, BDB, SLONG, SSHORT);
 static SSHORT lock_buffer(TDBB, BDB, SSHORT, SSHORT);
 static ULONG memory_init(TDBB, BCB, ULONG);
@@ -282,9 +278,6 @@ void CCH_flush_database(TDBB tdbb) {
 	BCB_MUTEX_ACQUIRE; 
 	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
 		BDB bdb = bcb->bcb_rpt[i].bcb_bdb;
-		if (bdb->bdb_length) {
-			continue;
-		}
 		if (bdb->bdb_write_direction != BDB_write_normal &&
 			bdb->bdb_write_direction != BDB_write_both)
 		{
@@ -303,10 +296,7 @@ void CCH_flush_database(TDBB tdbb) {
 	dbb->dbb_bcb->bcb_flags |= BCB_keep_pages;
 	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
 		BDB bdb = bcb->bcb_rpt[i].bcb_bdb;
-		if (bdb->bdb_length) {
-			continue;
-		}
-		if (!(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) || 
+		if (!(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) ||
 			bdb->bdb_write_direction == BDB_write_diff)
 		{
 			continue;
@@ -384,45 +374,6 @@ USHORT CCH_checksum(BDB bdb)
 
 	return 12345;
 #endif
-}
-
-void CCH_do_log_shutdown(TDBB tdbb, bool force_archive)
-{
-/**************************************
- *
- *    C C H _ d o _ l o g _ s h u t d o w n
- *
- **************************************
- *
- * Functional description
- *    Clear recover flag in the log page and flush buffers
- *
- **************************************/
-	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-
-	if (!dbb->dbb_wal) {
-		return;
-	}
-
-	WIN window(LOG_PAGE);
-	log_info_page* logp =
-		(log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
-	logp->log_flags &= ~log_recover;
-
-	SCHAR walname[MAXPATHLEN];
-	SLONG seqno, offset, p_offset;
-	AIL_shutdown(walname, &seqno, &offset, &p_offset, force_archive);
-
-	const SSHORT w_len = strlen(walname);
-
-/* This will update control points and current file */
-
-	AIL_upd_cntrl_pt(walname, w_len, seqno, offset, p_offset);
-	AIL_upd_cntrl_pt(walname, w_len, seqno, offset, p_offset);
-
-	CCH_MARK_MUST_WRITE(tdbb, &window);
-	CCH_RELEASE(tdbb, &window);
 }
 
 
@@ -1244,9 +1195,6 @@ void CCH_fini(TDBB tdbb)
                                tail < end; tail++)
 			{
 				BDB bdb = tail->bcb_bdb;
-				if (bdb->bdb_length) {
-					continue;
-				}
 				if (bdb->bdb_expanded_buffer) {
 					delete bdb->bdb_expanded_buffer;
 					bdb->bdb_expanded_buffer = NULL;
@@ -1259,13 +1207,6 @@ void CCH_fini(TDBB tdbb)
 		}
 	}
 
-
-/* If this is the last user, cleanup the log page. */
-
-	if (dbb->dbb_wal) {
-		if (CCH_exclusive(tdbb, LCK_EX, LCK_NO_WAIT))
-			CCH_do_log_shutdown(tdbb, false);
-	}
 
 #ifdef CACHE_READER
 
@@ -1371,9 +1312,9 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 		}
 
 #ifdef SUPERSERVER_V2
-		if (!dbb->dbb_wal && !(dbb->dbb_flags & DBB_force_write)
-			&& transaction_mask)
-		{
+//		if (!dbb->dbb_wal && A && B) becomes
+//		if (true && A && B) then finally (A && B)
+		if (!(dbb->dbb_flags & DBB_force_write) && transaction_mask) {
 			dbb->dbb_flush_cycle |= transaction_mask;
 			if (!(bcb->bcb_flags & BCB_writer_active))
 				ISC_event_post(dbb->dbb_writer_event);
@@ -1391,8 +1332,6 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 
 		for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
 			BDB bdb = bcb->bcb_rpt[i].bcb_bdb;
-			if (bdb->bdb_length)
-				continue;
 			if (!release_flag
 				&& !(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)))
 			{
@@ -1790,160 +1729,6 @@ void CCH_init(TDBB tdbb, ULONG number)
 }
 
 
-void CCH_journal_page(TDBB tdbb, WIN * window)
-{
-/**************************************
- *
- *	C C H _ j o u r n a l _ p a g e
- *
- **************************************
- *
- * Functional description
- *	Mark a page to be journalled.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-
-/* If the database isn't journalled, don't bother */
-
-	if (!dbb->dbb_wal) {
-		return;
-	}
-
-/* If there is a journal buffer allocated, release it */
-
-	BDB bdb = window->win_bdb;
-
-	BDB journal = bdb->bdb_jrn_bdb;
-	if (journal) {
-		bdb->bdb_jrn_bdb = NULL;
-		journal->bdb_length = 0;
-		BCB_MUTEX_ACQUIRE;
-		BCB bcb = dbb->dbb_bcb;
-		QUE_INSERT(bcb->bcb_empty, journal->bdb_que);
-		BCB_MUTEX_RELEASE;
-	}
-
-	bdb->bdb_flags |= BDB_journal;
-}
-
-
-void CCH_journal_record(TDBB	tdbb,
-						WIN*	window,
-						const UCHAR*	header,
-						USHORT	h_length,
-						const UCHAR*	data,
-						USHORT	d_length)
-{
-/**************************************
- *
- *	C C H _ j o u r n a l _ r e c o r d
- *
- **************************************
- *
- * Functional description
- *	Add a record to the journal for a page.  If the journal buffer
- *	for the page overflows, prepare to journal the entire page.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-
-/* If the database isn't journalled, don't bother */
-
-	if (!dbb->dbb_wal) {
-		return;
-	}
-
-	BDB bdb = window->win_bdb;
-
-/* If the entire page is marked for journalling, don't bother, either */
-	BDB journal = 0;
-	if (bdb->bdb_flags & BDB_journal) {
-		journal = bdb->bdb_jrn_bdb;
-		if (!journal) {
-			return;
-		}
-		else {
-#ifdef DEV_BUILD
-			if (journal->bdb_sequence !=
-				MISC_checksum_log_rec((UCHAR *) journal->bdb_buffer,
-									  journal->bdb_length, 0, 0))
-			{
-				DEBUG_PRINTF("Checksum error in journal buffer\n");
-			}
-#endif
-			/* If we are journaling a b-tree segment, this new journal
-			 * segment replaces all the previous records for this page.
-			 * So get rid of previous records.
-			 */
-			if ((h_length)
-				&& (((jrnh*) header)->jrnh_type == JRNP_BTREE_SEGMENT))
-			{
-				journal->bdb_length = 0;
-			}
-		}
-	}
-	else {
-		/* Get the journal bdb in exclusive mode and wait for any other thread
-		   interested in this bdb (for a different page number) to loose interest
-		   in this bdb */
-		journal = bdb->bdb_jrn_bdb =
-			get_buffer(tdbb, (SLONG) JOURNAL_PAGE, LATCH_exclusive, 1);
-		if (latch_bdb(tdbb, LATCH_mark, journal, journal->bdb_page, 1) == -1) {
-			cache_bugcheck(302);	/* msg 302 unexpected page change */
-		}
-
-		/* Now we can safely release this bdb to clear its bdb_io, bdb_exclusive and
-		   bdb_use_count fields.  */
-		release_bdb(tdbb, journal, false, false, false);
-
-		journal->bdb_length = 0;
-#ifdef DEV_BUILD
-		journal->bdb_sequence = 0;
-#endif
-		bdb->bdb_flags |= BDB_journal;
-	}
-
-/* If we're about to overflow the journal buffer, punt and journal the
-   whole page instead. */
-
-	UCHAR* p = (UCHAR *) journal->bdb_buffer + journal->bdb_length;
-	journal->bdb_length += h_length + d_length;
-
-	if (journal->bdb_length >= dbb->dbb_page_size) {
-		CCH_journal_page(tdbb, window);
-		return;
-	}
-
-/* Move pad byte, header, and data into journal buffer */
-
-	if (h_length) {
-		do {
-			*p++ = *header++;
-		} while (--h_length);
-	}
-
-	if (d_length) {
-		do {
-			*p++ = *data++;
-		} while (--d_length);
-	}
-
-	if (journal->bdb_length & 1) {
-		++journal->bdb_length;
-		*p = JRNP_NULL;
-	}
-
-#ifdef DEV_BUILD
-	journal->bdb_sequence =
-		MISC_checksum_log_rec((UCHAR *) journal->bdb_buffer,
-							  journal->bdb_length, 0, 0);
-#endif
-}
-
-
 void CCH_mark(TDBB tdbb, WIN * window, USHORT mark_system)
 {
 /**************************************
@@ -2214,106 +1999,6 @@ BOOLEAN CCH_prefetch_pages(TDBB tdbb)
    is idle to help satisfy the prefetch demand. */
 
 	return FALSE;
-}
-
-
-void CCH_recover_shadow(TDBB tdbb, SBM sbm_rec)
-{
-/**************************************
- *
- *	C C H _ r e c o v e r _ s h a d o w
- *
- **************************************
- *
- * Functional description
- *	Walk through the sparse bit map created during recovery and
- *	write all changed pages to all the shadows.
- *
- **************************************/
-	SLONG page_no = -1;
-	SLONG seqno, offset, p_offset;
-	SCHAR walname[257];
-
-	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
-
-	WIN window(-1);
-	if (!sbm_rec) {
-		/* Now that shadows are initialized after WAL, write the header
-		   page with the recover bit to shadow. */
-
-		if (dbb->dbb_wal) {
-			window.win_page = LOG_PAGE;
-			CCH_FETCH(tdbb, &window, LCK_write, pag_log);
-			CCH_write_all_shadows(tdbb, 0, window.win_bdb, status, 1, false);
-			CCH_RELEASE(tdbb, &window);
-		}
-		return;
-	}
-
-	int result = TRUE;
-
-	if (dbb->dbb_shadow) {
-		while (SBM_next(sbm_rec, &page_no, RSE_get_forward)) {
-			window.win_page = page_no;
-			CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
-
-			result =
-				CCH_write_all_shadows(tdbb, 0, window.win_bdb, status, 1,
-									  false);
-			CCH_RELEASE(tdbb, &window);
-		}
-	}
-
-	if (result == FALSE)
-		ERR_punt();
-/*
- * do 2 control points after a recovery to flush all the pages to the
- * database and shadow. Note that this has to be doen after the shadows
- * are updated.
- */
-
-	if (dbb->dbb_wal) {
-		/* Flush cache to write all changes to disk */
-
-		CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
-
-		/* Inform wal writer about check point (actually a fake check point) */
-
-		if (WAL_checkpoint_force
-			(tdbb->tdbb_status_vector, dbb->dbb_wal, &seqno, walname,
-			 &p_offset, &offset) != FB_SUCCESS)
-		{
-			ERR_punt();
-		}
-
-		/* Update the log page */
-
-		AIL_upd_cntrl_pt(walname, (USHORT) strlen(walname), seqno, offset,
-						 p_offset);
-		AIL_upd_cntrl_pt(walname, (USHORT) strlen(walname), seqno, offset,
-						 p_offset);
-
-		/* Get the log page changes to disk */
-
-		CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
-
-		/* Inform wal writer that older log files are no longer required */
-
-		if (WAL_checkpoint_recorded(tdbb->tdbb_status_vector, dbb->dbb_wal)
-			!= FB_SUCCESS)
-		{
-			ERR_punt();
-		}
-	}
-	else {
-		CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
-	}
-
-/* release the bit map */
-
-	SBM_release(sbm_rec);
 }
 
 
@@ -2593,55 +2278,6 @@ void CCH_release_exclusive(TDBB tdbb)
 }
 
 
-void CCH_release_journal(TDBB tdbb, SLONG number)
-{
-/**************************************
- *
- *	C C H _ r e l e a s e _ j o u r n a l
- *
- **************************************
- *
- * Functional description
- *	Get rid of journal buffer for a page which has been released.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-	if (!dbb->dbb_wal) {
-		return;
-	}
-
-	WIN window(number);
-	CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
-
-/* if there is still a journal buffer, zero it out */
-
-	BDB bdb = window.win_bdb;
-	if (!(bdb->bdb_flags & BDB_journal)) {
-		CCH_RELEASE(tdbb, &window);
-		return;
-	}
-
-	bdb->bdb_flags &= ~BDB_journal;
-
-	BDB journal = bdb->bdb_jrn_bdb;
-	if (!journal) {
-		CCH_RELEASE(tdbb, &window);
-		return;
-	}
-
-	journal->bdb_length = 0;
-
-	BCB_MUTEX_ACQUIRE;
-	BCB bcb = dbb->dbb_bcb;
-	QUE_INSERT(bcb->bcb_empty, journal->bdb_que);
-	BCB_MUTEX_RELEASE;
-
-	bdb->bdb_jrn_bdb = NULL;
-	CCH_RELEASE(tdbb, &window);
-}
-
-
 bool CCH_rollover_to_shadow(DBB dbb, FIL file, const bool inAst)
 {
 /**************************************
@@ -2687,9 +2323,6 @@ void CCH_shutdown_database(DBB dbb)
 			tail < end; tail++)
 		{
 			BDB bdb = tail->bcb_bdb;
-			if (bdb->bdb_length) {
-				continue;
-			}
 			bdb->bdb_flags &= ~(BDB_dirty | BDB_db_dirty);
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 		}
@@ -2718,7 +2351,7 @@ void CCH_unwind(TDBB tdbb, BOOLEAN punt)
 
 /* CCH_unwind is called when any of the following occurs:
 	- IO error
-	- journaling error
+	- journaling error => obsolete
 	- bad page checksum
 	- wrong page type
 	- page locking (not latching) deadlock (doesn't happen on Netware) */
@@ -2741,7 +2374,8 @@ void CCH_unwind(TDBB tdbb, BOOLEAN punt)
 	{
 		BDB bdb = tail->bcb_bdb;
 #ifndef SUPERSERVER
-		if (bdb->bdb_length || !bdb->bdb_use_count) {
+//		if (bdb->bdb_length || !bdb->bdb_use_count) becomes (false || expr)
+		if (!bdb->bdb_use_count) {
 			continue;
 		}
 		if (bdb->bdb_flags & BDB_marked) {
@@ -3203,10 +2837,6 @@ static void btc_flush(
 		/* this code replicates code in CCH_flush() --
 		   changes should be made in both places */
 
-		if (bdb->bdb_length) {
-			continue;
-		}
-
 		const SLONG page = bdb->bdb_page;
 		BTC_MUTEX_RELEASE;
 
@@ -3636,8 +3266,6 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 	}
 
 	try {
-		SCHAR walname[256];
-		
 		while (bcb->bcb_flags & BCB_cache_writer)
 		{
 			SLONG count = ISC_event_clear(writer_event);
@@ -3689,60 +3317,6 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 						ISC_event_post(dbb->dbb_gc_event);
 				}
 #endif
-			}
-
-			if (dbb->dbb_wal) {
-				if (bcb->bcb_checkpoint) {
-					BDB bdb = get_buffer(tdbb, CHECKPOINT_PAGE, LATCH_none, 1);
-					if (bdb) {
-						write_buffer(tdbb, bdb, bdb->bdb_page, true, status_vector, true);
-						bcb = dbb->dbb_bcb;
-					}
-					else {
-						bcb->bcb_checkpoint = 0;
-					}
-				}
-
-				if (!bcb->bcb_checkpoint && !(bcb->bcb_flags & BCB_checkpoint_db)) {
-					bool start_chkpt;
-					if (WAL_checkpoint_start(status_vector, dbb->dbb_wal, 
-						&start_chkpt) != FB_SUCCESS)
-					{
-						gds__log_status(dbb->dbb_file->fil_string, status_vector);
-					}
-					else {
-						if (start_chkpt) {
-							bcb->bcb_flags |= BCB_checkpoint_db;
-						}
-					}
-				}
-
-				if ((bcb->bcb_flags & BCB_checkpoint_db) && !bcb->bcb_checkpoint) {
-					SLONG seq, p_off, off;
-					if (WAL_checkpoint_finish(status_vector, dbb->dbb_wal,
-						&seq, walname, &p_off, &off) != FB_SUCCESS)
-					{
-						gds__log_status(dbb->dbb_file->fil_string, status_vector);
-					}
-					else {
-						AIL_checkpoint_finish(status_vector, dbb, seq, walname, p_off, off);
-						bcb = dbb->dbb_bcb;
-						bcb->bcb_flags &= ~BCB_checkpoint_db;
-						bcb_repeat* tail = bcb->bcb_rpt;
-						for (const bcb_repeat* const end = tail + bcb->bcb_count;
-							 tail < end; tail++)
-						{
-							BDB bdb = tail->bcb_bdb;
-							if (bdb->bdb_length) {
-								continue;
-							}
-							if (bdb->bdb_flags & BDB_db_dirty) {
-								bdb->bdb_flags |= BDB_checkpoint;
-								++bcb->bcb_checkpoint;
-							}
-						}
-					}
-				}
 			}
 
 			/* If there's more work to do voluntarily ask to be rescheduled.
@@ -4280,7 +3854,7 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
  *	to the page.  Otherwise get one from the free list or pick
  *	the least recently used buffer to be reused.
  *	Note the following special page numbers:
- *	     -1 indicates that a buffer is required for journaling
+ *	     -1 indicates that a buffer is required for journaling => obsolete
  *	     -2 indicates a special scratch buffer for shadowing
  *
  * input
@@ -4573,69 +4147,6 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 #endif
 		}
 	}
-}
-
-
-static void journal_buffer(ISC_STATUS * status, BDB bdb)
-{
-/**************************************
- *
- *	j o u r n a l _ b u f f e r
- *
- **************************************
- *
- * Functional description
- *	Write buffer (or associated record buffer) to journal pending
- *	write of page.
- *
- **************************************/
-	DBB dbb = bdb->bdb_dbb;
-	bdb->bdb_flags &= ~BDB_journal;
-
-	ULONG seqno = 0, offset = 0;
-
-/* If the whole page is to go, let somebody else do the work */
-
-	BDB journal = bdb->bdb_jrn_bdb;
-	if (!journal) {
-		bdb->bdb_buffer->pag_seqno = seqno;
-		bdb->bdb_buffer->pag_offset = offset;
-		return;
-	}
-
-/* Format header and write journal record */
-
-#ifdef DEV_BUILD
-	if (journal->bdb_sequence !=
-		MISC_checksum_log_rec(reinterpret_cast<const UCHAR*>(journal->bdb_buffer),
-							  journal->bdb_length, 0, 0))
-	{
-		DEBUG_PRINTF("Checksum error in journal buffer during AIL_put()\n");
-	}
-#endif
-
-	jrnd header;
-	header.jrnd_header.jrnh_type = JRN_PAGE;
-	header.jrnd_page = bdb->bdb_page;
-	header.jrnd_length = journal->bdb_length;
-
-	AIL_put(dbb, status, &header.jrnd_header, JRND_SIZE,
-			(UCHAR *) journal->bdb_buffer,
-			journal->bdb_length, bdb->bdb_buffer->pag_seqno,
-			bdb->bdb_buffer->pag_offset, &seqno, &offset);
-
-	bdb->bdb_buffer->pag_seqno = seqno;
-	bdb->bdb_buffer->pag_offset = offset;
-
-/* Release journal record buffer */
-
-	journal->bdb_length = 0;
-
-	BCB_MUTEX_ACQUIRE;
-	BCB bcb = dbb->dbb_bcb;
-	QUE_INSERT(bcb->bcb_empty, journal->bdb_que);
-	BCB_MUTEX_RELEASE;
-	bdb->bdb_jrn_bdb = NULL;
 }
 
 
@@ -5973,26 +5484,13 @@ static bool write_page(
 	}
 
 	page->pag_generation++;
-	if (bdb->bdb_flags & BDB_journal) {
-		const ISC_STATUS saved_status = status[1];
-		status[1] = 0;
-		journal_buffer(status, bdb);
-		if (!status[1]) {
-			status[1] = saved_status;
-		}
-		else {
-			return false;
-		}
-	}
 
-	if (!dbb->dbb_wal || write_thru) {
+//	if (!dbb->dbb_wal || write_thru) becomes
+//	if (true || write_thru) then finally if (true)
+// I won't wipe out the if() itself to allow my changes be verified easily by others
+	if (true) {
 		AST_CHECK;
 		dbb->dbb_writes++;
-		if (dbb->dbb_wal) {
-			WAL_flush(status, dbb->dbb_wal,
-					  reinterpret_cast < long *>(&page->pag_seqno),
-					  reinterpret_cast < long *>(&page->pag_offset), true);
-		}
 
 #ifdef DEBUG_SAVE_BDB_PAGE
 		/* Save page number into page->pag_offset before computing the checksum */

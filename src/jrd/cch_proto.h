@@ -24,11 +24,10 @@
 #ifndef JRD_CCH_PROTO_H
 #define JRD_CCH_PROTO_H
 
-void		CCH_do_log_shutdown(TDBB, bool);
 void		CCH_shutdown_database(dbb*);
 
 USHORT		CCH_checksum(bdb*);
-int			CCH_down_grade_dbb(void *ast_argument);
+int			CCH_down_grade_dbb(void* ast_argument);
 BOOLEAN		CCH_exclusive(TDBB, USHORT, SSHORT);
 BOOLEAN		CCH_exclusive_attachment(TDBB, USHORT, SSHORT);
 void		CCH_expand(TDBB, ULONG);
@@ -42,8 +41,6 @@ BOOLEAN		CCH_free_page(TDBB);
 SLONG		CCH_get_incarnation(win*);
 pag*		CCH_handoff(TDBB, win*, SLONG, SSHORT, SSHORT, SSHORT, SSHORT);
 void		CCH_init(TDBB, ULONG);
-void		CCH_journal_page(TDBB, win*);
-void		CCH_journal_record(TDBB, win*, const UCHAR*, USHORT, const UCHAR*, USHORT);
 void		CCH_mark(TDBB, win*, USHORT);
 void		CCH_mark_must_write(TDBB, win*);
 void		CCH_must_write(win*);
@@ -51,11 +48,9 @@ lck*		CCH_page_lock(TDBB);
 void		CCH_precedence(TDBB, win*, SLONG);
 void		CCH_prefetch(tdbb*, SLONG*, SSHORT);
 BOOLEAN		CCH_prefetch_pages(TDBB);
-void		CCH_recover_shadow(TDBB, sbm*);
 void		CCH_release(TDBB, win*, BOOLEAN);
 void		CCH_release_and_free(win*);
 void		CCH_release_exclusive(TDBB);
-void		CCH_release_journal(TDBB, SLONG);
 bool		CCH_rollover_to_shadow(dbb*, fil*, const bool);
 void		CCH_unwind(TDBB, BOOLEAN);
 BOOLEAN		CCH_validate(win*);
@@ -91,3 +86,4 @@ bool		CCH_write_all_shadows(TDBB, sdw*, bdb*,
 #define FLUSH_FINI	(FLUSH_ALL | FLUSH_RLSE)
 
 #endif /* JRD_CCH_PROTO_H */
+

@@ -92,7 +92,6 @@
 #include "../dsql/misc_func.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../wal/wal.h"
 #include "../jrd/err_proto.h"
 
 static void	yyerror(const TEXT*);
@@ -158,7 +157,6 @@ static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 static void	stack_nodes (dsql_nod*, dsql_lls**);
 inline static int	yylex (USHORT, USHORT, USHORT, bool*);
 static void	yyabandon (SSHORT, ISC_STATUS);
-static void	check_log_file_attrs (void);
 
 inline void check_bound(const char* const to, const char* const string)
 {
@@ -1149,7 +1147,6 @@ logfiles	: logfile_desc
 		;
 logfile_desc	: logfile_name logfile_attrs 
 			{ 
-				 check_log_file_attrs(); 
 			 $$ = (dsql_nod*) make_node (nod_log_file_desc, (int) 1,
 												(dsql_nod*) lex.g_file); }
 		;
@@ -4206,40 +4203,6 @@ void LEX_string (
 	if (DSQL_debug & 32)
 		dsql_trace("Source DSQL string:\n%.*s", (int)length, string);
 #endif
-}
-
-
-static void check_log_file_attrs (void)
-{
-/**********************************************
- *
- *	c h e c k _ l o g _ f i l e _ a t t r s
- *
- **********************************************
- *
- * Functional description
- *	Check if log file attributes are valid
- *
- *********************************************/
-
-	if (lex.g_file->fil_partitions) {
-		if (!lex.g_file->fil_length) {
-			yyabandon (-261, isc_log_length_spec);
-			/* Total length of a partitioned log must be specified */
-		}
-		
-		if (PARTITION_SIZE (OneK * lex.g_file->fil_length, lex.g_file->fil_partitions) <
-			(OneK * MIN_LOG_LENGTH))
-		{
-			yyabandon (-239, isc_partition_too_small);
-			/* Log partition size too small */
-		}
-	}
-	else {
-		if ((lex.g_file->fil_length) && (lex.g_file->fil_length < MIN_LOG_LENGTH)) {
-			yyabandon (-239, isc_log_too_small);   /* Log size too small */
-		}
-	}	 
 }
 
 

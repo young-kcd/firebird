@@ -73,7 +73,6 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/dsc_proto.h"
-#include "../jrd/ail.h"
 #include "../common/utils_proto.h"
 
 #ifdef SUPERSERVER
@@ -122,9 +121,6 @@ void DYN_modify_database( GBL gbl, const UCHAR** ptr)
  *
  **************************************/
 	UCHAR verb, s[128];
-	SSHORT num_log_buffers = 0;
-	USHORT log_buffer_size = 0;
-	SLONG check_point_len = 0, group_commit_wait = -1;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -144,7 +140,6 @@ void DYN_modify_database( GBL gbl, const UCHAR** ptr)
 
 	const SSHORT length = gds__vax_integer(s + 1, 2);
 	SLONG start = gds__vax_integer(s + 3, length);
-	bool log_params_defined = false;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		DBB IN RDB$DATABASE 
@@ -198,23 +193,19 @@ void DYN_modify_database( GBL gbl, const UCHAR** ptr)
 					break;
 
 				case isc_dyn_log_group_commit_wait:
-					group_commit_wait = DYN_get_number(ptr);
-					log_params_defined = true;
+					DYN_get_number(ptr); // ignore
 					break;
 
 				case isc_dyn_log_buffer_size:
-					log_buffer_size = DYN_get_number(ptr);
-					log_params_defined = true;
+					DYN_get_number(ptr); // ignore
 					break;
 
 				case isc_dyn_log_check_point_length:
-					check_point_len = DYN_get_number(ptr);
-					log_params_defined = true;
+					DYN_get_number(ptr); // ignore
 					break;
 
 				case isc_dyn_log_num_of_buffers:
-					num_log_buffers = DYN_get_number(ptr);
-					log_params_defined = true;
+					DYN_get_number(ptr); // ignore
 					break;
 
 				case isc_dyn_drop_cache:
@@ -244,10 +235,6 @@ void DYN_modify_database( GBL gbl, const UCHAR** ptr)
 				}
 		END_MODIFY;
 	END_FOR;
-
-	if (log_params_defined)
-		AIL_set_log_options(check_point_len, num_log_buffers, log_buffer_size,
-							group_commit_wait);
 
 	if (!DYN_REQUEST(drq_m_database))
 		DYN_REQUEST(drq_m_database) = request;

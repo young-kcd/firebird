@@ -161,8 +161,6 @@ static bool delete_shadow(TDBB, SSHORT, DFW, jrd_tra*);
 static bool compute_security(TDBB, SSHORT, DFW, jrd_tra*);
 static bool create_index(TDBB, SSHORT, DFW, jrd_tra*);
 static bool delete_index(TDBB, SSHORT, DFW, jrd_tra*);
-static bool create_log(TDBB, SSHORT, DFW, jrd_tra*);
-static bool delete_log(TDBB, SSHORT, DFW, jrd_tra*);
 static bool create_procedure(TDBB, SSHORT, DFW, jrd_tra*);
 static bool delete_procedure(TDBB, SSHORT, DFW, jrd_tra*);
 static bool modify_procedure(TDBB, SSHORT, DFW, jrd_tra*);
@@ -207,7 +205,6 @@ static void	setup_trigger_details(TDBB, jrd_rel*, BLB, TRIG_VEC*, const TEXT*,
 //static void	setup_trigger_details(TDBB, jrd_rel*, BLB, VEC *, UCHAR *, UCHAR *, BOOLEAN);
 static bool shadow_defined(TDBB);
 static bool validate_text_type (TDBB, ISC_STATUS *, TFB);
-static bool wal_defined(TDBB);
 
 static const UCHAR nonnull_validation_blr[] =
 {
@@ -247,8 +244,6 @@ static const TASK task_table[] =
 	{ dfw_create_trigger, create_trigger },
 	{ dfw_delete_trigger, delete_trigger },
 	{ dfw_modify_trigger, modify_trigger },
-	{ dfw_create_log, create_log },
-	{ dfw_delete_log, delete_log },
 	{ dfw_create_procedure, create_procedure },
 	{ dfw_delete_procedure, delete_procedure },
 	{ dfw_modify_procedure, modify_procedure },
@@ -899,13 +894,6 @@ static bool add_shadow( TDBB tdbb, SSHORT phase, DFW work, jrd_tra* transaction)
 		return true;
 
 	case 4:
-		if (wal_defined(tdbb))
-		{
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_wal_shadow_err, 0);
-		}
-		/* Msg309: Write-Ahead Log with Shadowing configuration not allowed */
-
 		check_filename(work->dfw_name, work->dfw_name_length);
 
 		/* could have two cases: 
@@ -1165,13 +1153,6 @@ static bool begin_backup(	TDBB	tdbb,
 	case 2:
 		return true;
 	case 3:
-		if (wal_defined(tdbb))
-		{
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_wal_backup_err, 0);
-		}
-		/* Msg513: Physical backup is not allowed while Write-Ahead Log is in use */
-		
 		dbb->backup_manager->begin_backup();
 		return false;
 	}
@@ -1810,83 +1791,6 @@ static bool create_index(	TDBB	tdbb,
 	return false;
 }
 
-
-static bool create_log(TDBB tdbb, SSHORT phase, DFW work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	c r e a t e _ l o g
- *
- **************************************
- *
- * Functional description
- *	Do work associated with the addition of records to RDB$LOG_FILES
- *
- **************************************/
-	BLK handle;
-	TEXT temp[MAXPATHLEN];
-
-	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-
-	switch (phase)
-	{
-	case 0:
-		CCH_release_exclusive(tdbb);
-		return false;
-
-	case 1:
-	case 2:
-		return true;
-
-	case 3:
-		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-			return true;
-		else
-		{
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_lock_timeout,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
-					 0);
-			return false;
-		}
-	case 4:
-
-		handle = NULL;
-		if (shadow_defined(tdbb))
-		{
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_wal_shadow_err,
-					 0);
-		}
-		/* Msg309: Write-Ahead Log with Shadowing configuration not allowed */
-		check_filename(work->dfw_name, work->dfw_name_length);
-
-		FOR(REQUEST_HANDLE handle) X IN RDB$LOG_FILES
-
-			ISC_expand_filename(X.RDB$FILE_NAME, 0, temp);
-
-			MODIFY X USING
-				strcpy(X.RDB$FILE_NAME, temp);
-			END_MODIFY;
-		END_FOR;
-
-		CMP_release(tdbb, (jrd_req*)handle);
-
-		transaction->tra_flags |= TRA_add_log;
-		PAG_modify_log(transaction->tra_number, TRA_add_log);
-		return true;
-
-	case 5:
-		CCH_release_exclusive(tdbb);
-		break;
-	}
-
-	return false;
-}
-
-
 static bool create_procedure(	TDBB	tdbb,
 								SSHORT	phase,
 								DFW		work,
@@ -2498,51 +2402,6 @@ static bool delete_index(TDBB tdbb, SSHORT phase, DFW work, jrd_tra* transaction
 				}
 			}
 		}
-		break;
-	}
-
-	return false;
-}
-
-
-static bool delete_log(TDBB tdbb, SSHORT phase, DFW work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	d e l e t e _ l o g
- *
- **************************************
- *
- * Functional description
- *	Do work associated with the deletion of records in RDB$LOG_FILES
- *
- **************************************/
-	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-
-	switch (phase)
-	{
-	case 1:
-	case 2:
-		return true;
-
-	case 3:
-		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
-			return true;
-		}
-		ERR_post(isc_no_meta_update,
-				 isc_arg_gds, isc_lock_timeout,
-				 isc_arg_gds, isc_obj_in_use,
-				 isc_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
-				 0);
-		return false;
-	case 4:
-		transaction->tra_flags |= TRA_delete_log;
-		PAG_modify_log(transaction->tra_number, TRA_delete_log);
-		return true;
-
-	case 5:
-		CCH_release_exclusive(tdbb);
 		break;
 	}
 
@@ -4597,33 +4456,4 @@ static bool validate_text_type(TDBB tdbb, ISC_STATUS * status, TFB tfb)
 	}
 }
 
-
-static bool wal_defined(TDBB tdbb)
-{
-/**************************************
- *
- *	w a l _ d e f i n e d
- *
- **************************************
- *
- * Functional description
- *	Return TRUE if Writ_ahead Log (WAL) has been defined 
- *      for the database else return FALSE.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-
-	bool result = false;
-	BLK  handle = NULL;
-
-	FOR(REQUEST_HANDLE handle) FIRST 1 X IN RDB$LOG_FILES
-		result = true;
-	END_FOR
-
-	CMP_release(tdbb, (jrd_req*)handle);
-
-	return result;
-}
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.55 2003-11-28 06:48:12 robocop Exp $
+ * $Id: gpre.h,v 1.56 2004-01-06 10:33:11 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -174,7 +174,6 @@ typedef struct fil {
 	TEXT *fil_name;				/* File name */
 	fil* fil_next;				/* next file */
 	USHORT fil_shadow_number;	/* shadow number if part of shadow */
-	USHORT fil_partitions;		/* number of log file partitions */
 	USHORT fil_flags;
 } *FIL;
 
@@ -800,14 +799,9 @@ typedef struct dbb {
 	int dbb_users;
 	ULONG dbb_length;			/* Length of database in pages, if known */
 	fil* dbb_logfiles;
-	fil* dbb_overflow;			/* overflow log files */
-	SLONG dbb_chkptlen;
-	SSHORT dbb_numbufs;			/* log buffers */
-	SSHORT dbb_bufsize;			/* log buffer size */
 #ifdef SCROLLABLE_CURSORS
 	SSHORT dbb_base_level;		/* code level of the engine we are talking to */
 #endif
-	SLONG dbb_grp_cmt_wait;
 	fil* dbb_cache_file;
 	fil* dbb_files;
 } *DBB;
@@ -818,9 +812,9 @@ enum dbb_flags_valss {
 	DBB_no_arrays	= 1,
 	DBB_sqlca		= 2,	/* Created as default for a sqlca */
 	DBB_in_trans	= 4,	/* included in this transaction */
-	DBB_drop_log	= 8,
+//	DBB_drop_log	= 8,
 	DBB_log_serial	= 16,
-	DBB_log_default	= 32,
+//	DBB_log_default	= 32,
 	DBB_cascade		= 64,
 	DBB_drop_cache	= 128,
 	DBB_create_database	= 256,

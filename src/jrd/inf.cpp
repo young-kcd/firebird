@@ -51,7 +51,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/license.h"
-#include "../wal/wal.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../jrd/isc_proto.h"
@@ -198,28 +197,20 @@ int INF_database_info(const SCHAR* items,
  *	Process requests for database info.
  *
  **************************************/
-	STR str;
 	FIL file;
-	SCHAR item, buffer[256], *p;
+	SCHAR item, buffer[256];
 	SCHAR site[256];
 	SSHORT length, l;
 	SLONG id;
-	SCHAR wal_name[256];
-	SLONG wal_p_offset;
-	WALS WAL_segment;
 	ATT err_att, att;
 	USR user;
 	SLONG err_val;
-	BOOLEAN	header_refreshed = FALSE;	
+	bool header_refreshed = false;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	if (dbb->dbb_wal)
-		WAL_segment = dbb->dbb_wal->wal_segment;
-	else
-		WAL_segment = NULL;
 	jrd_tra* transaction = NULL;
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
@@ -228,7 +219,7 @@ int INF_database_info(const SCHAR* items,
 	const SCHAR* q;
 
 	while (items < end_items && *items != isc_info_end) {
-		p = buffer;
+		SCHAR* p = buffer;
 		switch ((item = *items++)) {
 		case isc_info_end:
 			break;
@@ -262,78 +253,41 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_logfile:
-			length = INF_convert((dbb->dbb_wal) ? TRUE : FALSE, buffer);
+			length = INF_convert(FALSE, buffer);
 			break;
 
 		case isc_info_cur_logfile_name:
-			wal_name[0] = 0;
-			if (WAL_segment) {
-				strncpy(wal_name, WAL_segment->wals_logname, sizeof(wal_name));
-				wal_name[sizeof(wal_name) - 1] = 0;
-			}
-			*p++ = l = strlen(wal_name);
-			for (q = wal_name; l; l--)
-				*p++ = *q++;
+			*p++ = 0;
 			length = p - buffer;
 			break;
 
 		case isc_info_cur_log_part_offset:
-			wal_p_offset = 0;
-			if (WAL_segment)
-				wal_p_offset = WAL_segment->wals_log_partition_offset;
-			length = INF_convert(wal_p_offset, buffer);
+			length = INF_convert(0, buffer);
 			break;
 
 		case isc_info_num_wal_buffers:
-			if (WAL_segment)
-				length = INF_convert(WAL_segment->wals_maxbufs, buffer);
-			else
-				length = 0;
+			length = 0;
 			break;
 
 		case isc_info_wal_buffer_size:
-			if (WAL_segment)
-				length = INF_convert(WAL_segment->wals_bufsize, buffer);
-			else
-				length = 0;
+			length = 0;
 			break;
 
 		case isc_info_wal_ckpt_length:
-			if (WAL_segment)
-				/* User specified checkpoint length multiplied by 1024 (OneK)
-				   is kept in WAL_segment */
-				length =
-					INF_convert(WAL_segment->wals_max_ckpt_intrvl / OneK,
-								buffer);
-			else
-				length = 0;
+			length = 0;
 			break;
 
 		case isc_info_wal_cur_ckpt_interval:
-			if (WAL_segment)
-				length =
-					INF_convert(WAL_segment->wals_cur_ckpt_intrvl, buffer);
-			else
-				length = 0;
+			length = 0;
 			break;
 
 		case isc_info_wal_prv_ckpt_fname:
-			wal_name[0] = 0;
-			if (WAL_segment) {
-				strncpy(wal_name, WAL_segment->wals_ckpt_logname, sizeof(wal_name));
-				wal_name[sizeof(wal_name) - 1] = 0;
-			}
-			*p++ = l = strlen(wal_name);
-			for (q = wal_name; l; l--)
-				*p++ = *q++;
+			*p++ = 0;
 			length = p - buffer;
 			break;
 
 		case isc_info_wal_prv_ckpt_poffset:
-			wal_p_offset = 0;
-			if (WAL_segment)
-				wal_p_offset = WAL_segment->wals_ckpt_log_p_offset;
-			length = INF_convert(wal_p_offset, buffer);
+			length = INF_convert(0, buffer);
 			break;
 
 		case isc_info_wal_recv_ckpt_fname:
@@ -347,45 +301,23 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_wal_grpc_wait_usecs:
-			if (WAL_segment)
-				length =
-					INF_convert(WAL_segment->wals_grpc_wait_usecs, buffer);
-			else
-				length = 0;
+			length = 0;
 			break;
 
 		case isc_info_wal_num_io:
-			if (WAL_segment)
-				length = INF_convert(WAL_segment->wals_IO_count, buffer);
-			else
-				length = 0;
+			length = 0;
 			break;
 
 		case isc_info_wal_avg_io_size:
-			if (WAL_segment)
-				length = INF_convert(WAL_segment->wals_total_IO_bytes /
-									 (WAL_segment->wals_IO_count ?
-									  WAL_segment->wals_IO_count : 1),
-									 buffer);
-			else
-				length = 0;
+			length = 0;
 			break;
 
 		case isc_info_wal_num_commits:
-			if (WAL_segment)
-				length = INF_convert(WAL_segment->wals_commit_count, buffer);
-			else
-				length = 0;
+			length = 0;
 			break;
 
 		case isc_info_wal_avg_grpc_size:
-			if (WAL_segment)
-				length = INF_convert(WAL_segment->wals_commit_count /
-									 (WAL_segment->wals_grpc_count ?
-									  WAL_segment->wals_grpc_count : 1),
-									 buffer);
-			else
-				length = 0;
+			length = 0;
 			break;
 
 #ifdef SUPERSERVER
@@ -525,17 +457,19 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_db_id:
-			str = tdbb->tdbb_attachment->att_filename;
-			STUFF(p, 2);
-			*p++ = l = str->str_length;
-			for (q = reinterpret_cast<const SCHAR*>(str->str_data); *q;)
-				*p++ = *q++;
-			ISC_get_host(site, sizeof(site));
-			*p++ = l = strlen(site);
-			for (q = site; *q;)
-				*p++ = *q++;
-			length = p - buffer;
-			break;
+			{
+				const str* str_fn = tdbb->tdbb_attachment->att_filename;
+				STUFF(p, 2);
+				*p++ = l = str_fn->str_length;
+				for (q = reinterpret_cast<const SCHAR*>(str_fn->str_data); *q;)
+					*p++ = *q++;
+				ISC_get_host(site, sizeof(site));
+				*p++ = l = strlen(site);
+				for (q = site; *q;)
+					*p++ = *q++;
+				length = p - buffer;
+				break;
+			}
 
 		case isc_info_no_reserve:
 			*p++ = (dbb->dbb_flags & DBB_no_reserve) ? 1 : 0;
@@ -547,7 +481,7 @@ int INF_database_info(const SCHAR* items,
 			{
 				file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
-				header_refreshed = TRUE;
+				header_refreshed = true;
 			}
 			*p++ = (dbb->dbb_flags & DBB_force_write) ? 1 : 0;
 			length = p - buffer;
@@ -558,6 +492,7 @@ int INF_database_info(const SCHAR* items,
 				transaction = TRA_start(tdbb, 0, NULL);
 			for (id = transaction->tra_oldest;
 				 id < transaction->tra_number; id++)
+			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_limbo &&
 					TRA_wait(tdbb, transaction, id, TRUE) == tra_limbo)
 				{
@@ -571,6 +506,7 @@ int INF_database_info(const SCHAR* items,
 						return FALSE;
 					}
 				}
+			}
 			continue;
 
 		case isc_info_active_transactions:
@@ -578,6 +514,7 @@ int INF_database_info(const SCHAR* items,
 				transaction = TRA_start(tdbb, 0, NULL);
 			for (id = transaction->tra_oldest_active;
 				 id < transaction->tra_number; id++)
+			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_active) {
 					length = INF_convert(id, buffer);
 					if (!
@@ -589,6 +526,7 @@ int INF_database_info(const SCHAR* items,
 						return FALSE;
 					}
 				}
+			}
 			continue;
 
 		case isc_info_user_names:
@@ -774,7 +712,7 @@ int INF_database_info(const SCHAR* items,
 			{
 				file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
-				header_refreshed = TRUE;
+				header_refreshed = true;
 			}
 			length = INF_convert(dbb->dbb_oldest_transaction, buffer);
 			break;
@@ -784,7 +722,7 @@ int INF_database_info(const SCHAR* items,
 			{
 				file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
-				header_refreshed = TRUE;
+				header_refreshed = true;
 			}
 		    length = INF_convert(dbb->dbb_oldest_active, buffer);
 		    break;
@@ -794,7 +732,7 @@ int INF_database_info(const SCHAR* items,
 			{
 				file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
-				header_refreshed = TRUE;
+				header_refreshed = true;
 			}
 			length = INF_convert(dbb->dbb_oldest_snapshot, buffer);
 			break;
@@ -804,7 +742,7 @@ int INF_database_info(const SCHAR* items,
 			{
 				file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
-				header_refreshed = TRUE;
+				header_refreshed = true;
 			}
 			length = INF_convert(dbb->dbb_next_transaction, buffer);
 			break;

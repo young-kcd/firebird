@@ -32,7 +32,7 @@
 #define WAKEUP_SIGNAL		1100	/* Lock manager */
 #define EVENT_SIGNAL		1200	/* Event manager */
 #define CACHE_SIGNALS		1300	/* Shared cache */
-#define WAL_SIGNALS		1400	/* Write ahead log */
 #endif
 
 #endif /* JRD_ISC_SIGNAL_H */
+

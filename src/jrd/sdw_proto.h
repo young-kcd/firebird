@@ -31,7 +31,7 @@ bool	SDW_check_conditional(void);
 void	SDW_close(void);
 void	SDW_dump_pages(void);
 void	SDW_get_shadows(void);
-void	SDW_init(bool, bool, struct sbm*);
+void	SDW_init(bool, bool);
 bool	SDW_lck_update(SLONG);
 void	SDW_notify(void);
 bool	SDW_rollover_to_shadow(struct fil *, const bool);

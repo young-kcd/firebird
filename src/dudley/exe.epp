@@ -39,7 +39,6 @@
 #include "../dudley/lex_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
-#include "../wal/walf_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -93,8 +92,6 @@ static void drop_user_privilege(USERPRIV);
 static void erase_userpriv(USERPRIV, TEXT *, USRE, UPFE);
 static void get_field_desc(DUDLEY_FLD);
 static void get_global_fields(void);
-static void get_log_names(SCHAR *, FIL *, SCHAR *, SLONG, SSHORT, SSHORT);
-static void get_log_names_serial(FIL *);
 static void get_relations(DBB);
 static USHORT get_prot_mask(TEXT *, TEXT *);
 static SYM get_symbol(enum sym_t, TEXT *, DUDLEY_CTX);
@@ -349,14 +346,6 @@ void EXE_create_database( DBB dbb)
 		log = 0;
 
 		wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
-
-		if (log)
-			get_log_names_serial(&dbb->dbb_files);
-
-		if (log) {
-			get_log_names(dbb->dbb_name->sym_string, &dbb->dbb_files, cur_log,
-						  part_offset, dbb->dbb_flags & DBB_cascade, 0);
-		}
 	}
 }
 
@@ -426,17 +415,9 @@ void EXE_drop_database( DBB dbb)
 
 	wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
-	if (log)
-		get_log_names_serial(&dbb->dbb_files);
-
 	if (isc_detach_database(gds_status, &DB))
 		DDL_error_abort(gds_status, 27, NULL, NULL, NULL, NULL, NULL);
 		/* msg 27: Couldn't release database */
-
-	if (log) {
-		get_log_names(dbb->dbb_name->sym_string, &dbb->dbb_files, cur_log,
-					  part_offset, dbb->dbb_flags & DBB_cascade, 0);
-	}
 
 	for (file = dbb->dbb_files; file; file = file->fil_next)
 		if (unlink(file->fil_name->sym_name))
@@ -797,9 +778,6 @@ void EXE_modify_database( DBB dbb)
 
 		wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
-		if (log)
-			get_log_names_serial(&log_files);
-
 		FOR X IN RDB$LOG_FILES ERASE X;
 		END_FOR;
 		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);
@@ -807,11 +785,6 @@ void EXE_modify_database( DBB dbb)
 		ROLLBACK;
 		END_ERROR;
 		START_TRANSACTION;
-
-		if (log) {
-			get_log_names(dbb->dbb_name->sym_string, &log_files, cur_log,
-						  part_offset, dbb->dbb_flags & DBB_cascade, 1);
-		}
 
 		for (file = log_files; file; file = file->fil_next)
 			if (unlink(file->fil_name->sym_name))
@@ -2858,132 +2831,6 @@ static void get_global_fields(void)
 		field->fld_segment_length = X.RDB$SEGMENT_LENGTH;
 		field->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
 	END_FOR;
-}
-
-
-static void get_log_names(SCHAR * db_name,
-						  FIL * start_file,
-						  SCHAR * cur_log,
-						  SLONG part_offset, SSHORT force, SSHORT skip_delete)
-{
-/**************************************
- *
- *	g e t _ l o g _ n a m e s
- *
- **************************************
- *
- * Functional description
- *	Walk through list of log files and add to link list.
- *
- **************************************/
-	SCHAR next_log[512], expanded_name[512];
-	SCHAR *cl, *nl;
-	int log_count;
-	int ret_val;
-	bool not_archived;
-	SLONG last_log_flag, next_offset;
-	SLONG log_seqno, log_length;
-	SSHORT loop;
-
-	ISC_expand_filename(db_name, 0, expanded_name);
-
-	loop = 0;
-
-/* loop up to 10 times to allow the file to be archived */
-
-	while (true) {
-		loop++;
-		if (!WALF_get_linked_logs_info(gds_status, expanded_name, cur_log,
-									  part_offset, &log_count, next_log,
-									  &next_offset, &last_log_flag,
-									  &not_archived))
-		{
-			DDL_error_abort(gds_status, 328, NULL, NULL, NULL, NULL, NULL);
-			// msg 328: error in reading list of log files
-		}
-
-		if ((!not_archived) || force)
-			break;
-
-		if (not_archived && skip_delete) {
-			*start_file = NULL;
-			return;
-		}
-
-		if (loop >= 10)
-			DDL_error_abort(NULL, 329, NULL, NULL, NULL, NULL, NULL);
-			// msg 329: use CASCADE option to remove log files before archive is done
-	}
-
-	if (log_count)
-		alloc_file_name(start_file, (UCHAR*) next_log);
-	else
-		alloc_file_name(start_file, (UCHAR*) cur_log);
-
-	cl = next_log;
-	nl = cur_log;
-	part_offset = next_offset;
-
-	while (log_count) {
-		ret_val = WALF_get_next_log_info(gds_status, expanded_name, cl,
-										 part_offset, nl, &next_offset,
-										 &log_seqno, &log_length,
-										 &last_log_flag, 1);
-
-		if (ret_val == FB_FAILURE)
-			DDL_error_abort(gds_status, 328, NULL, NULL, NULL, NULL, NULL);
-			// msg 328: error in reading list of log files
-
-		if (ret_val < 0)
-			break;
-
-		alloc_file_name(start_file, (UCHAR*) nl);
-
-		/* switch files */
-
-		if (cl == next_log) {
-			cl = cur_log;
-			nl = next_log;
-		}
-		else {
-			cl = next_log;
-			nl = cur_log;
-		}
-		part_offset = next_offset;
-	}
-}
-
-
-static void get_log_names_serial( FIL * start_file)
-{
-/**************************************
- *
- *	g e t _ l o g _ n a m e s _ s e r i a l
- *
- **************************************
- *
- * Functional description
- *	Walk through list of serial log files and add to link list.
- *
- **************************************/
-	SLONG *tr1 = 0;
-
-/* 
- * for round robin log files, some of the log files may not have been used
- * when the database is dropped or log is dropped. Add them to the list
- */
-
-	START_TRANSACTION tr1;
-
-	FOR(TRANSACTION_HANDLE tr1) L IN RDB$LOG_FILES
-		if (L.RDB$FILE_FLAGS & LOG_serial) 
-			continue;
-		alloc_file_name(start_file, (UCHAR*) L.RDB$FILE_NAME);
-	END_FOR;
-
-	COMMIT tr1 
-	ON_ERROR 
-	END_ERROR;
 }
 
 

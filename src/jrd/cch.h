@@ -78,7 +78,6 @@ class bdb : public pool_alloc<type_bdb>
 	struct que	bdb_in_use;				/* queue of buffers in use */
 	struct pag*	bdb_buffer;				/* Actual buffer */
 	struct jrd_exp*	bdb_expanded_buffer;	/* expanded index buffer */
-	bdb*		bdb_jrn_bdb;			/* BDB containing journal records */
 	struct btb*	bdb_blocked;			/* Blocked attachments block */
 	SLONG		bdb_page;				/* Database page number in buffer */
 	ULONG		bdb_sequence;
@@ -95,7 +94,6 @@ class bdb : public pool_alloc<type_bdb>
 	struct tdbb*bdb_io;					/* thread holding io latch */
 	UATOM		bdb_ast_flags;			/* flags manipulated at AST level */
 	USHORT		bdb_flags;
-	USHORT		bdb_length;				/* Length of journal records */
 	SSHORT		bdb_use_count;			/* Number of active users */
 	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
 	USHORT		bdb_write_direction;    /* Where to write buffer */
@@ -115,7 +113,7 @@ typedef bdb *BDB;
 #define BDB_marked			8		/* page has been updated */
 #define BDB_must_write		16		/* forces a write as soon as the page is released */
 #define BDB_faked			32		/* page was just allocated */
-#define BDB_journal			64		/* Journal buffer */
+//#define BDB_journal			64		/* Journal buffer */
 #define BDB_system_dirty 	128		/* system transaction has marked dirty */
 #define BDB_io_error	 	256		/* page i/o error */
 #define BDB_read_pending 	512		/* read is pending */

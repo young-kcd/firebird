@@ -34,7 +34,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
 #include "../jrd/btr.h"
@@ -70,7 +69,6 @@
 #include "../lock/lock_proto.h"
 #endif
 
-#include "../jrd/ail.h"
 
 #define DYN_MSG_FAC	8
 
@@ -385,12 +383,6 @@ void TRA_commit(TDBB tdbb, jrd_tra* transaction, const bool retaining_flag)
 	}
 #endif
 
-	if (transaction->tra_flags & TRA_delete_log)
-		AIL_drop_log();
-
-	if (transaction->tra_flags & TRA_add_log)
-		AIL_add_log();
-
 /* signal refresh range relations for ExpressLink */
 
 #ifdef PC_ENGINE
@@ -462,16 +454,6 @@ void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
 	if (sequence) {
 		CCH_MARK_MUST_WRITE(tdbb, &prior_window);
 		prior_tip->tip_next = window.win_page;
-		if (dbb->dbb_wal) {
-			jrni record;
-			record.jrni_type = JRNP_NEXT_TIP;
-			record.jrni_position = 0;
-			record.jrni_states = 0;
-			record.jrni_transaction = prior_tip->tip_next;
-			CCH_journal_record(tdbb, &prior_window,
-							   reinterpret_cast<const UCHAR*>(&record),
-							   JRNI_SIZE, 0, 0);
-		}
 		CCH_RELEASE(tdbb, &prior_window);
 	}
 
@@ -1276,19 +1258,6 @@ void TRA_set_state(TDBB tdbb, jrd_tra* transaction, SLONG number, SSHORT state)
 	if (dbb->dbb_tip_cache)
 		TPC_set_state(tdbb, number, state);
 
-/* If journalling is enabled, journal the change */
-
-	if ((dbb->dbb_wal) && (state == tra_committed)) {
-		jrni record;
-		record.jrni_type = JRNP_TRANSACTION;
-		record.jrni_position = byte;
-		record.jrni_states = *address;
-		record.jrni_transaction = number;
-		CCH_journal_record(tdbb, &window,
-						   reinterpret_cast<const UCHAR*>(&record),
-						   sizeof(record), 0, 0);
-	}
-
 	CCH_RELEASE(tdbb, &window);
 
 #ifdef SUPERSERVER_V2
@@ -1309,9 +1278,6 @@ void TRA_set_state(TDBB tdbb, jrd_tra* transaction, SLONG number, SSHORT state)
 	}
 #endif
 
-	if ((dbb->dbb_wal) && (state == tra_committed)) {
-		AIL_commit(number);
-	}
 }
 
 
@@ -1770,7 +1736,6 @@ int TRA_sweep(TDBB tdbb, jrd_tra* trans)
 	USHORT shift;
 	ULONG byte, active, base;
 	SLONG transaction_oldest_active;
-	JRNDH journal;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -1888,15 +1853,6 @@ int TRA_sweep(TDBB tdbb, jrd_tra* trans)
 			CCH_MARK_MUST_WRITE(tdbb, &window);
 			header->hdr_oldest_transaction =
 				MIN(active, (ULONG) transaction_oldest_active);
-			if (dbb->dbb_wal) {
-				journal.jrndh_type = JRNP_DB_HEADER;
-				journal.jrndh_nti = header->hdr_next_transaction;
-				journal.jrndh_oit = header->hdr_oldest_transaction;
-				journal.jrndh_oat = header->hdr_oldest_active;
-				CCH_journal_record(tdbb, &window,
-								   reinterpret_cast<const UCHAR*>(&journal),
-								   JRNDH_SIZE, 0, 0);
-			}
 		}
 
 		CCH_RELEASE(tdbb, &window);
@@ -2071,32 +2027,6 @@ static SLONG bump_transaction_id(TDBB tdbb, WIN * window)
 					   (ULONG) (number / dbb->dbb_pcontrol->pgc_tpt), window);
 	}
 
-/* Transaction start will be logged every MOD_START_TRAN or when a
- * new tip page is allocated.
- * Make sure that the fake_tid does not roll over to the next tip page.
- * If that is the case, use last tid in this page.
- */
-	if (dbb->dbb_wal) {
-		if ((number % MOD_START_TRAN == 0) || new_tip) {
-			ULONG fake_tid = number + MOD_START_TRAN;
-			const SLONG sequence = number / dbb->dbb_pcontrol->pgc_tpt;
-			if (sequence != ((fake_tid + 1) / dbb->dbb_pcontrol->pgc_tpt))
-				fake_tid = ((sequence + 1) * dbb->dbb_pcontrol->pgc_tpt) - 1;
-			hdr* header = (HDR) CCH_FETCH(tdbb, window, LCK_write, pag_header);
-			CCH_MARK_MUST_WRITE(tdbb, window);
-			header->hdr_bumped_transaction = fake_tid;
-
-			jrndh journal;
-			journal.jrndh_type = JRNP_DB_HEADER;
-			journal.jrndh_nti = header->hdr_bumped_transaction;
-			journal.jrndh_oit = dbb->dbb_oldest_transaction;
-			journal.jrndh_oat = dbb->dbb_oldest_active;
-			CCH_journal_record(tdbb, window,
-				reinterpret_cast<const UCHAR*>(&journal), JRNDH_SIZE, 0, 0);
-			CCH_RELEASE(tdbb, window);
-		}
-	}
-
 	return number;
 }
 #else
@@ -2156,30 +2086,6 @@ static HDR bump_transaction_id(TDBB tdbb, WIN * window)
 
 	if (dbb->dbb_oldest_snapshot > header->hdr_oldest_snapshot)
 		header->hdr_oldest_snapshot = dbb->dbb_oldest_snapshot;
-
-/* Transaction start will be logged every MOD_START_TRAN or when a
- * new tip page is allocated.
- * Make sure that the fake_tid does not roll over to the next tip page.
- * If that is the case, use last tid in this page.
- */
-	if (dbb->dbb_wal) {
-		if ((number % MOD_START_TRAN == 0) || new_tip) {
-			ULONG fake_tid = number + MOD_START_TRAN;
-			const SLONG sequence = number / dbb->dbb_pcontrol->pgc_tpt;
-			if (sequence != (SLONG) ((fake_tid + 1) / dbb->dbb_pcontrol->pgc_tpt))
-				fake_tid = ((sequence + 1) * dbb->dbb_pcontrol->pgc_tpt) - 1;
-			header->hdr_bumped_transaction = fake_tid;
-
-			jrndh journal;
-			journal.jrndh_type = JRNP_DB_HEADER;
-			journal.jrndh_nti = header->hdr_bumped_transaction;
-			journal.jrndh_oit = header->hdr_oldest_transaction;
-			journal.jrndh_oat = header->hdr_oldest_active;
-			CCH_journal_record(tdbb, window,
-							   reinterpret_cast<const UCHAR*>(&journal),
-							   JRNDH_SIZE, 0, 0);
-		}
-	}
 
 	return header;
 }

@@ -26,6 +26,7 @@
 
 #include "firebird.h"
 #include <stdlib.h>
+#include <stdio.h> // a single call to sprintf()
 #include <string.h>
 #define PARSER_MAIN
 #include "../jrd/y_ref.h"
@@ -34,7 +35,6 @@
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
 #include "../jrd/acl.h"
-#include "../wal/wal.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/exe_proto.h"
 #include "../dudley/expr_proto.h"
@@ -1140,17 +1140,6 @@ static FIL define_log_file( USHORT log_type)
 		if (!file->fil_length)
 			PARSE_error(335, file->fil_name->sym_string, 0);
 			// msg 335: Total length of the partitioned log <logname> must be specified
-		if (PARTITION_SIZE(OneK * file->fil_length, file->fil_partitions) <
-			(OneK * MIN_LOG_LENGTH))
-		{
-			PARSE_error(334, file->fil_name->sym_string, 0);
-		}
-		// msg 334: log partition size too small for <logname>
-	}
-	else {
-		if ((file->fil_length) && (file->fil_length < MIN_LOG_LENGTH))
-			PARSE_error(336, (TEXT *) MIN_LOG_LENGTH, 0);
-		// msg 336: Minimum log length should be MIN_LOG_LENGTH Kbytes
 	}
 
 	return file;

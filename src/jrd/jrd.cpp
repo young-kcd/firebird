@@ -65,7 +65,6 @@
 #include "../jrd/exe.h"
 #include "../jrd/val.h"
 #include "../jrd/rse.h"
-#include "../jrd/jrn.h"
 #include "../jrd/all.h"
 #include "../jrd/log.h"
 #include "../jrd/fil.h"
@@ -99,7 +98,6 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/jrn_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/log_proto.h"
@@ -119,9 +117,7 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 #include "../jrd/file_params.h"
-#include "../jrd/ail.h"
 #include "../jrd/event_proto.h"
-#include "../jrd/old_proto.h"
 #include "../jrd/flags.h"
 
 #include "../common/config/config.h"
@@ -295,21 +291,10 @@ typedef struct dpb
 	TEXT*	dpb_role_name;
 	TEXT*	dpb_journal;
 	TEXT*	dpb_key;
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	TEXT*	dpb_log;
-	TEXT*	dpb_wal_backup_dir;
+#endif
 	USHORT	dpb_wal_action;
-	USHORT	dpb_online_dump;
-	ULONG	dpb_old_file_size;
-	USHORT	dpb_old_num_files;
-	ULONG	dpb_old_start_page;
-	ULONG	dpb_old_start_seqno;
-	USHORT	dpb_old_start_file;
-	TEXT*	dpb_old_file[MAX_OLD_FILES];
-	USHORT	dpb_old_dump_id;
-	SLONG	dpb_wal_chkpt_len;
-	SSHORT	dpb_wal_num_bufs;
-	USHORT	dpb_wal_bufsize;
-	SLONG	dpb_wal_grp_cmt_wait;
 	SLONG	dpb_sweep_interval;
 	ULONG	dpb_page_buffers;
 	BOOLEAN	dpb_set_page_buffers;
@@ -324,7 +309,9 @@ typedef struct dpb
 	bool	dpb_activate_shadow;
 	bool	dpb_delete_shadow;
 	USHORT	dpb_no_garbage;
-	USHORT	dpb_quit_log;
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+	bool	dpb_quit_log;
+#endif
 	USHORT	dpb_shutdown;
 	SSHORT	dpb_shutdown_delay;
 	USHORT	dpb_online;
@@ -378,8 +365,6 @@ static BOOLEAN	handler_NT(SSHORT);
 #endif	// WIN_NT
 
 static DBB		init(TDBB, ISC_STATUS*, const TEXT*, bool);
-static void		make_jrn_data(UCHAR*, USHORT*, const TEXT*, USHORT,
-	const TEXT*, USHORT);
 static ISC_STATUS	prepare(TDBB, jrd_tra*, ISC_STATUS*, USHORT, const UCHAR*);
 static void		release_attachment(ATT);
 static ISC_STATUS	return_success(TDBB);
@@ -676,10 +661,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 /* Allocate buffer space */
 	TEXT	opt_buffer[DPB_EXPAND_BUFFER];
 	TEXT*	opt_ptr = opt_buffer;
-	TEXT	archive_name[MAXPATHLEN];
-	TEXT	journal_name[MAXPATHLEN];
-	TEXT	journal_dir[MAXPATHLEN];
-	UCHAR	data[MAXPATHLEN];
 
 /* Process database parameter block */
 	DPB options;
@@ -801,37 +782,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		
 		PAG_init2(0);		
 		
-		if (options.dpb_disable_wal) {
-			/* Forcibly disable WAL before the next step.
-			   We have an exclusive access to the database. */
-			AIL_drop_log_force();
-			options.dpb_disable_wal = FALSE;	/* To avoid further processing below */
-		}
-		
-
-		SBM sbm_recovery = NULL;
-
-		AIL_init(expanded_name,
-				length_expanded,
-				0,
-				options.dpb_activate_shadow,
-				&sbm_recovery);
-
-		AIL_set_log_options(options.dpb_wal_chkpt_len,
-							options.dpb_wal_num_bufs,
-							options.dpb_wal_bufsize,
-							options.dpb_wal_grp_cmt_wait);
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_init(expanded_name, length_expanded);
 #endif
 
 		/* initialize shadowing as soon as the database is ready for it
 		   but before any real work is done */
-
 		SDW_init(options.dpb_activate_shadow,
-				options.dpb_delete_shadow,
-				sbm_recovery);
+				options.dpb_delete_shadow);
 
 		/* dimitr: disabled due to unreliable behaviour of minor ODS upgrades
 			a) in the case of any failure it's impossible to attach the database
@@ -1100,10 +1058,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				ERR_string(file_name, file_length), 0);
 	}
 
-	if (options.dpb_disable) {
-		AIL_disable();
-	}
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	if (options.dpb_quit_log) {
 		LOG_disable();
@@ -1143,52 +1097,16 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	if (options.dpb_journal) {
-		if (first)
-		{
-			archive_name[0] = 0;
-
-			if (options.dpb_wal_backup_dir) {
-				ISC_expand_filename(options.dpb_wal_backup_dir, 0,
-									archive_name);
-			}
-			USHORT d_len = 0;
-			make_jrn_data(data, &d_len, expanded_name, length_expanded,
-						  archive_name, (USHORT) strlen(archive_name));
-
-			ISC_expand_filename(options.dpb_journal, 0, journal_name);
-
-			AIL_enable(journal_name, (USHORT) strlen(journal_name),
-					   data, d_len, (SSHORT) strlen(archive_name));
-		}
-		else {
-			ERR_post(isc_bad_dpb_content,
-					 isc_arg_gds, isc_cant_start_journal,
-					 0);
-		}
+		ERR_post(isc_bad_dpb_content,
+				 isc_arg_gds, isc_cant_start_journal,
+				 0);
 	}
 
 	if (options.dpb_wal_action)
 	{
 		/* Make sure WAL enabled before taking any WAL action. */
 
-		if (!dbb->dbb_wal) {
-			ERR_post(isc_no_wal, 0);
-		}
-		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
-			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, 
-                     ERR_string(file_name, file_length), 0);
-		}
-
-		/* journal has to be disabled before dropping WAL */
-
-		USHORT jd_len = 0;
-		if (PAG_get_clump(	HEADER_PAGE,
-							HDR_journal_server,
-							&jd_len,
-							reinterpret_cast<UCHAR*>(journal_dir))) {
-			AIL_disable();
-		}
+		ERR_post(isc_no_wal, 0);
 	}
 
 /*
@@ -1206,26 +1124,15 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		ERR_post(isc_adm_task_denied, 0);
 	}
 
-	if (options.dpb_online_dump) {
-		CCH_release_exclusive(tdbb);
-
-		OLD_dump(expanded_name, length_expanded,
-				 options.dpb_old_dump_id,
-				 options.dpb_old_file_size,
-				 options.dpb_old_start_page,
-				 options.dpb_old_start_seqno,
-				 options.dpb_old_start_file,
-				 options.dpb_old_num_files, options.dpb_old_file);
-	}
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	if (options.dpb_log) {
 		if (first) {
-			if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
+			if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 				ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 						 isc_arg_string, 
                          ERR_string(file_name, file_length),
                          0);
+			}
 			LOG_enable(options.dpb_log, strlen(options.dpb_log));
 		}
 		else {
@@ -2045,12 +1952,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 /* initialize shadowing semaphore as soon as the database is ready for it
    but before any real work is done */
 
-	SDW_init(options.dpb_activate_shadow, options.dpb_delete_shadow, 0);
-
-	AIL_set_log_options(options.dpb_wal_chkpt_len,
-						options.dpb_wal_num_bufs,
-						options.dpb_wal_bufsize,
-						options.dpb_wal_grp_cmt_wait);
+	SDW_init(options.dpb_activate_shadow, options.dpb_delete_shadow);
 
 #ifdef GARBAGE_THREAD
 	VIO_init(tdbb);
@@ -2543,8 +2445,6 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 #endif
 	const fil* file = dbb->dbb_file;
 	const sdw* shadow = dbb->dbb_shadow;
-
-	AIL_drop_log();
 
 	tdbb->tdbb_default = NULL;
 
@@ -5001,7 +4901,6 @@ static void get_options(const UCHAR*	dpb,
 
 	options->dpb_buffers = JRD_cache_default;
 	options->dpb_sweep_interval = -1;
-	options->dpb_wal_grp_cmt_wait = -1;
 	options->dpb_overwrite = TRUE;
 	options->dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = FALSE;
@@ -5123,7 +5022,7 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_wal_backup_dir:
-		    options->dpb_wal_backup_dir = get_string_parameter(&p, scratch, &buf_size);
+		    get_string_parameter(&p, scratch, &buf_size); // ignore, skip
 			break;
 
 		case isc_dpb_drop_walfile:
@@ -5131,56 +5030,55 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_old_dump_id:
-			options->dpb_old_dump_id = (USHORT) get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_online_dump:
-			options->dpb_online_dump = (USHORT) get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_old_file_size:
-			options->dpb_old_file_size = get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_old_num_files:
-			options->dpb_old_num_files = (USHORT) get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_old_start_page:
-			options->dpb_old_start_page = get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_old_start_seqno:
-			options->dpb_old_start_seqno = get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_old_start_file:
-			options->dpb_old_start_file = (USHORT) get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_old_file:
-			if (num_old_files >= MAX_OLD_FILES)
+			//if (num_old_files >= MAX_OLD_FILES) complain here, for now.
 				ERR_post(isc_num_old_files, 0);
 
-		    options->dpb_old_file [num_old_files] =
-				get_string_parameter(&p, scratch, &buf_size);
+			get_string_parameter(&p, scratch, &buf_size); // ignore, skip
 			num_old_files++;
 			break;
 
 		case isc_dpb_wal_chkptlen:
-			options->dpb_wal_chkpt_len = get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_wal_numbufs:
-			options->dpb_wal_num_bufs = (SSHORT) get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_wal_bufsize:
-			options->dpb_wal_bufsize = (USHORT) get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_wal_grp_cmt_wait:
-			options->dpb_wal_grp_cmt_wait = get_parameter(&p);
+			get_parameter(&p); // skip
 			break;
 
 		case isc_dpb_dbkey_scope:
@@ -5249,11 +5147,17 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_begin_log:
-		    options->dpb_log = get_string_parameter(&p, scratch, &buf_size);
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+			options->dpb_log = get_string_parameter(&p, scratch, &buf_size);
+#else
+			get_string_parameter(&p, scratch, &buf_size); // skip
+#endif
 			break;
 
 		case isc_dpb_quit_log:
-			options->dpb_quit_log = TRUE;
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+			options->dpb_quit_log = true;
+#endif
 			l = *p++;
 			p += l;
 			break;
@@ -5420,9 +5324,9 @@ static TEXT* get_string_parameter(const UCHAR** dpb_ptr, TEXT** opt_ptr,
 			return 0;
 		}
 		*buf_avail -= l;
-		do
+		do {
 			*opt++ = *dpb++;
-		while (--l);
+		} while (--l);
 	}
 
 	--*buf_avail;
@@ -5650,50 +5554,6 @@ static DBB init(TDBB	tdbb,
 	}
 }
 
-
-static void make_jrn_data(UCHAR*	data,
-						  USHORT*	ret_len,
-						  const TEXT*		db_name,
-						  USHORT	db_len,
-						  const TEXT*		backup_dir,
-						  USHORT	b_length)
-{
-/**************************************
- *
- *	m a k e _ j r n _ d a t a
- *
- **************************************
- *
- * Functional description
- *	Encode the database and backup information into a string.
- *	Returns the length of the string.
- *
- **************************************/
-	int		len = b_length;
-	UCHAR*	t   = data;
-
-	if (len) {
-		*t++ = isc_dpb_wal_backup_dir;
-		*t++ = (UCHAR) b_length;
-		const UCHAR* q = reinterpret_cast<const UCHAR*>(backup_dir);
-		do {
-			*t++ = *q++;
-		} while (--len);
-	}
-
-	len = db_len;
-	if (len) {
-		*t++ = JRNW_DB_NAME;
-		*t++ = (UCHAR) db_len;
-		const UCHAR* q = reinterpret_cast<const UCHAR*>(db_name);
-		do {
-			*t++ = *q++;
-		} while (--len);
-	}
-	*t++ = JRNW_END;
-
-	*ret_len = t - data;
-}
 
 
 static ISC_STATUS prepare(TDBB		tdbb,
@@ -6017,12 +5877,6 @@ static void shutdown_database(DBB dbb, const bool release_pools)
 
 	if (dbb->dbb_lock)
 		LCK_release(tdbb, dbb->dbb_lock);
-
-	if (dbb->dbb_wal)
-		AIL_fini();
-
-	if (dbb->dbb_journal)
-		JRN_fini(tdbb->tdbb_status_vector, &dbb->dbb_journal);
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	if (dbb->dbb_log)

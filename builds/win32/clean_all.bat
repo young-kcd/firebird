@@ -16,3 +16,4 @@
 @del %ROOT_PATH%\builds\win32\msvc7\*.plg 2>nul
 @del %ROOT_PATH%\builds\install\arch-specific\win32\*.dll 2>nul
 @rmdir /s /q %ROOT_PATH%\builds\win32\install_image 2>nul
+

@@ -147,10 +147,6 @@ SOURCE=..\..\..\gen\jrd\scl.cpp
 # End Group
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ail.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\all.cpp
 # End Source File
 # Begin Source File
@@ -339,10 +335,6 @@ SOURCE=..\..\..\src\jrd\jrd.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\jrn.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\lck.cpp
 # End Source File
 # Begin Source File
@@ -384,10 +376,6 @@ SOURCE=..\..\..\src\jrd\nodebug.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\old.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\opt.cpp
 
 !IF  "$(CFG)" == "engine - Win32 Release"
@@ -414,10 +402,6 @@ SOURCE=..\..\..\src\jrd\plugin_manager.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\pwd.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\rec.cpp
 # End Source File
 # Begin Source File
 
@@ -562,10 +546,6 @@ SOURCE=..\..\..\src\jrd\acl.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\aif_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\ail_proto.h
 # End Source File
 # Begin Source File
 
@@ -981,14 +961,6 @@ SOURCE=..\..\..\src\jrd\jrd_time.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\jrn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\jrn_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\kanji.h
 # End Source File
 # Begin Source File
@@ -1121,14 +1093,6 @@ SOURCE=..\..\..\src\jrd\ods.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\old.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\old_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\opt_proto.h
 # End Source File
 # Begin Source File
@@ -1186,10 +1150,6 @@ SOURCE=..\..\..\src\jrd\quad_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\que.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\rec_proto.h
 # End Source File
 # Begin Source File
 

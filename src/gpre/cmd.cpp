@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.25 2003-11-28 06:48:11 robocop Exp $
+//	$Id: cmd.cpp,v 1.26 2004-01-06 10:33:11 robocop Exp $
 //
 
 #include "firebird.h"
@@ -60,7 +60,6 @@ typedef void (*pfn_local_trigger_cb) (GPRE_NOD, GPRE_REQ);
 
 
 static void add_cache(GPRE_REQ, const act*, DBB);
-static void add_log_files(GPRE_REQ, const act*, DBB);
 static void alter_database(GPRE_REQ, ACT);
 static void alter_domain(GPRE_REQ, const act*);
 static void alter_index(GPRE_REQ, const act*);
@@ -291,68 +290,6 @@ static void add_cache( GPRE_REQ request, const act* action, dbb* database)
 
 //____________________________________________________________
 //  
-//		Add log files to a database.
-//  
-
-static void add_log_files( GPRE_REQ request, const act* action, DBB db)
-{
-	FIL file, next;
-
-//  Reverse the order of files (parser left them backwards) 
-
-	for (file = db->dbb_logfiles, db->dbb_logfiles = NULL; file; file = next) {
-		next = file->fil_next;
-		file->fil_next = db->dbb_logfiles;
-		db->dbb_logfiles = file;
-	}
-
-	SSHORT number = 0;
-
-//  generate values for default log 
-
-	if (db->dbb_flags & DBB_log_default)
-		STUFF(isc_dyn_def_default_log);
-
-	for (file = db->dbb_logfiles; file; file = file->fil_next) {
-		put_cstring(request, isc_dyn_def_log_file, file->fil_name);
-		STUFF(isc_dyn_file_length);
-		STUFF_WORD(4);
-		STUFF_INT(file->fil_length);
-		STUFF(isc_dyn_log_file_sequence);
-		STUFF_WORD(2);
-		STUFF_WORD(number);
-		number++;
-		STUFF(isc_dyn_log_file_partitions);
-		STUFF_WORD(2);
-		STUFF_WORD(file->fil_partitions);
-		if (file->fil_flags & FIL_raw)
-			STUFF(isc_dyn_log_file_raw);
-		if (db->dbb_flags & DBB_log_serial)
-			STUFF(isc_dyn_log_file_serial);
-		STUFF_END;
-	}
-
-	if (file = db->dbb_overflow) {
-		put_cstring(request, isc_dyn_def_log_file, file->fil_name);
-		STUFF(isc_dyn_file_length);
-		STUFF_WORD(4);
-		STUFF_INT(file->fil_length);
-		STUFF(isc_dyn_log_file_sequence);
-		STUFF_WORD(2);
-		STUFF_WORD(number);
-		number++;
-		STUFF(isc_dyn_log_file_partitions);
-		STUFF_WORD(2);
-		STUFF_WORD(file->fil_partitions);
-		STUFF(isc_dyn_log_file_serial);
-		STUFF(isc_dyn_log_file_overflow);
-		STUFF_END;
-	}
-}
-
-
-//____________________________________________________________
-//  
 //		Generate dynamic DDL for modifying database.
 //  
 
@@ -385,44 +322,13 @@ static void alter_database( GPRE_REQ request, ACT action)
 		STUFF_END;
 	}
 
-//  Drop log and cache 
+//  Drop cache
 
-	if (db->dbb_flags & DBB_drop_log)
-		STUFF(isc_dyn_drop_log);
 	if (db->dbb_flags & DBB_drop_cache)
 		STUFF(isc_dyn_drop_cache);
 
-// **** Add log files ****
-
-	if ((db->dbb_flags & DBB_log_default) || (db->dbb_logfiles))
-		add_log_files(request, action, db);
-
 	if (db->dbb_cache_file)
 		add_cache(request, action, db);
-
-	if (db->dbb_chkptlen) {
-		STUFF(isc_dyn_log_check_point_length);
-		STUFF_WORD(4);
-		STUFF_INT(db->dbb_chkptlen);
-	}
-	if (db->dbb_numbufs) {
-		STUFF(isc_dyn_log_num_of_buffers);
-		STUFF_WORD(2);
-		STUFF_WORD(db->dbb_numbufs);
-	}
-
-	if (db->dbb_bufsize) {
-		STUFF(isc_dyn_log_buffer_size);
-		STUFF_WORD(2);
-		STUFF_WORD(db->dbb_bufsize);
-	}
-
-
-	if (db->dbb_grp_cmt_wait != -1) {
-		STUFF(isc_dyn_log_group_commit_wait);
-		STUFF_WORD(4);
-		STUFF_INT(db->dbb_grp_cmt_wait);
-	}
 
 	if (db->dbb_def_charset)
 		put_cstring(request, isc_dyn_fld_character_set_name,
@@ -1519,31 +1425,6 @@ static void create_database( GPRE_REQ request, const act* action)
 			STUFF(*ch++);
 	}
 
-	if (db->dbb_chkptlen) {
-		STUFF(isc_dpb_wal_chkptlen);
-		STUFF(4);
-		STUFF_INT(db->dbb_chkptlen);
-	}
-
-	if (db->dbb_numbufs) {
-		STUFF(isc_dpb_wal_numbufs);
-		STUFF(2);
-		STUFF_WORD(db->dbb_numbufs);
-	}
-
-	if (db->dbb_bufsize) {
-		STUFF(isc_dpb_wal_bufsize);
-		STUFF(2);
-		STUFF_WORD(db->dbb_bufsize);
-	}
-
-
-	if (db->dbb_grp_cmt_wait != -1) {
-		STUFF(isc_dpb_wal_grp_cmt_wait);
-		STUFF(4);
-		STUFF_INT(db->dbb_grp_cmt_wait);
-	}
-
 	*request->req_blr = 0;
 	request->req_length = request->req_blr - request->req_base;
 	if (request->req_length == 1)
@@ -1587,11 +1468,6 @@ static void create_database_modify_dyn( GPRE_REQ request, act* action)
 		STUFF_END;
 		start += file->fil_length;
 	}
-
-//  Add log files 
-
-	if ((db->dbb_flags & DBB_log_default) || (db->dbb_logfiles))
-		add_log_files(request, action, db);
 
 	if (db->dbb_cache_file)
 		add_cache(request, action, db);

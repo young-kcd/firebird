@@ -47,7 +47,6 @@
 #include "../jrd/sqz.h"
 #include "../jrd/blb.h"
 #include "../jrd/btr.h"
-#include "../jrd/jrn.h"
 #include "../jrd/scl.h"
 #include "../jrd/ext.h"
 #include "../jrd/met.h"
@@ -346,7 +345,6 @@ ctl[] = {
 	"BLOB CONTROL", 0
 };
 
-static TEXT_PTR jrn[] = {	"JOURNAL", 0};
 static TEXT_PTR scl[] = {	"SECURITY CLASS", 0};
 static TEXT_PTR fld[] = {	"FIELD", 0};
 static TEXT_PTR ext[] = {	"EXTERNAL FILE", 0};
@@ -437,7 +435,6 @@ static TEXT_PTR tdbb[] = {
 		FLD(TDBB, "Default: %x", tdbb_default),
 		0
 };
-static TEXT_PTR logfiles[] = {	"WRITE AHEAD LOG FILE", 0};
 static TEXT_PTR svc[] =		{	"SERVICE MANAGER BLOCK", 0};
 static TEXT_PTR lwt[] =		{	"LATCH WAIT BLOCK", 0};
 static TEXT_PTR vcx[] =		{	"VIEW CONTEXT BLOCK", 0};

@@ -719,6 +719,7 @@ static void print_page_header( SDB sdb)
 }
 
 
+// CVC: This PRB doesn't match jrd/event/h's prc struct.
 static void print_process( PRB process)
 {
 /**************************************
@@ -742,8 +743,6 @@ static void print_process( PRB process)
 			  process->prb_physical_reads, process->prb_logical_reads);
 
 	ib_printf("\tLogical Writes: %d\n", process->prb_logical_writes);
-
-	ib_printf("\tWAL puts: %d\n", process->prb_ail_puts);
 
 	ib_printf("\n");
 }

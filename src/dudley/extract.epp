@@ -30,7 +30,6 @@
 #include "../jrd/acl.h"
 #include "../jrd/flags.h"
 #include "../jrd/obj.h"
-#include "../wal/wal.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/extra_proto.h"
 #include "../jrd/gds_proto.h"
@@ -474,6 +473,7 @@ static void extract_database(const TEXT * DB_file_name)
  *	and write it to the output file.
  *
  **************************************/
+	const int OneK = 1024;
 	TEXT s[32], buffer[256];
 	SLONG page_size;
 	ISC_STATUS_ARRAY status_vector;

@@ -68,8 +68,8 @@ goto :EOF
 @for %%i in (dba, dba_full) do @call :PREPROCESS utilities/gstat %%i
 @for %%i in (security) do @call :PREPROCESS utilities/gsec %%i
 @for %%i in (stats) do @call :PREPROCESS utilities %%i
-@for %%i in (server, rebuild) do @call :PREPROCESS journal %%i
 
 @goto :EOF
 
 :END
+

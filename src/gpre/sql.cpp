@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.37 2003-12-22 10:00:14 robocop Exp $
+//	$Id: sql.cpp,v 1.38 2004-01-06 10:33:11 robocop Exp $
 //
 
 #include "firebird.h"
@@ -36,7 +36,6 @@
 #include "../jrd/ibase.h"
 #include "../gpre/parse.h"
 #include "../jrd/intl.h"
-#include "../wal/wal.h"
 #include "../jrd/constants.h"
 #include "../gpre/cme_proto.h"
 #include "../gpre/cmp_proto.h"
@@ -1087,7 +1086,6 @@ static ACT act_alter_database(void)
 	ACT action = MSC_action(request, ACT_alter_database);
 	action->act_whenever = gen_whenever();
 	DBB database = (DBB) MSC_alloc(DBB_LEN);
-	database->dbb_grp_cmt_wait = -1;
 	action->act_object = (REF) database;
 
 	bool logdefined = false;	// this var was undefined
@@ -1095,7 +1093,7 @@ static ACT act_alter_database(void)
 	while (true) {
 		if (MSC_match(KW_DROP)) {
 			if (MSC_match(KW_LOG_FILE))
-				database->dbb_flags |= DBB_drop_log;
+				; // ignore DROP LOG database->dbb_flags |= DBB_drop_log;
 			else if (MSC_match(KW_CASCADE))
 				database->dbb_flags |= DBB_cascade;
 #ifdef FLINT_CACHE
@@ -1133,7 +1131,7 @@ static ACT act_alter_database(void)
 					}
 
 					if (MSC_match(KW_OVERFLOW))
-						database->dbb_overflow = define_log_file(true);
+						define_log_file(true); // skip
 					else
 						PAR_error
 							("Overflow log specification required for this configuration");
@@ -1143,8 +1141,6 @@ static ACT act_alter_database(void)
 					database->dbb_flags |= DBB_log_serial;
 					database->dbb_logfiles = define_log_file(true);
 				}
-				else
-					database->dbb_flags |= DBB_log_default;
 			}
 #ifdef FLINT_CACHE
 			else if (MSC_match(KW_CACHE))
@@ -1155,22 +1151,22 @@ static ACT act_alter_database(void)
 			while (true) {
 				if (MSC_match(KW_CHECK_POINT_LEN)) {
 					MSC_match(KW_EQUALS);
-					database->dbb_chkptlen = EXP_ULONG_ordinal(true);
+					EXP_ULONG_ordinal(true); // skip
 					MSC_match(KW_COMMA);
 				}
 				else if (MSC_match(KW_NUM_LOG_BUFS)) {
 					MSC_match(KW_EQUALS);
-					database->dbb_numbufs = EXP_USHORT_ordinal(true);
+					EXP_USHORT_ordinal(true); // skip
 					MSC_match(KW_COMMA);
 				}
 				else if (MSC_match(KW_LOG_BUF_SIZE)) {
 					MSC_match(KW_EQUALS);
-					database->dbb_bufsize = EXP_USHORT_ordinal(true);
+					EXP_USHORT_ordinal(true); // skip
 					MSC_match(KW_COMMA);
 				}
 				else if (MSC_match(KW_GROUP_COMMIT_WAIT)) {
 					MSC_match(KW_EQUALS);
-					database->dbb_grp_cmt_wait = EXP_ULONG_ordinal(true);
+					EXP_ULONG_ordinal(true); // skip
 					MSC_match(KW_COMMA);
 				}
 				else
@@ -4841,44 +4837,8 @@ static FIL define_log_file(bool log_serial)
 			MSC_match(KW_EQUALS);
 			file->fil_length = EXP_ULONG_ordinal(true);
 		}
-// **** REMOVED for now from the product.
-//   else if (MSC_match (KW_RAW_PARTITIONS))
-// { 
-// if (log_serial)
-//    PAR_error ("Partitions not supported in series of log file specification");
-// MSC_match (KW_EQUALS);
-// file->fil_partitions = EXP_USHORT_ordinal (true);
-// file->fil_flags |= FIL_raw;
-// } 
-//***
 		else
 			break;
-	}
-
-	TEXT err_string[256];
-	if (file->fil_partitions) {
-		if (!file->fil_length) {
-			sprintf(err_string,
-					"Total length of the partitioned log %s must be specified",
-					file->fil_name);
-			PAR_error(err_string);
-		}
-
-		if (PARTITION_SIZE(OneK * file->fil_length, file->fil_partitions) <
-			OneK * MIN_LOG_LENGTH)
-		{
-			sprintf(err_string, "log partition size too small for %s",
-					file->fil_name);
-			PAR_error(err_string);
-		}
-	}
-	else {
-		if ((file->fil_length) && (file->fil_length < MIN_LOG_LENGTH)) {
-			// msg 336: Minimum log length should be MIN_LOG_LENGTH Kbytes 
-			sprintf(err_string,
-					"Minimum log length should be %d Kbytes", MIN_LOG_LENGTH);
-			PAR_error(err_string);
-		}
 	}
 
 	return file;
@@ -6073,7 +6033,6 @@ static bool tail_database(enum act_t action_type,
 
 	bool logdefined = false;
 	bool extend_dpb = false;
-	database->dbb_grp_cmt_wait = -1;
 
 	while (true) {
 		if (MSC_match(KW_LENGTH)) {
@@ -6158,7 +6117,7 @@ static bool tail_database(enum act_t action_type,
 		MSC_match(KW_ADD);
 		if (MSC_match(KW_DROP)) {
 			if (MSC_match(KW_LOG_FILE))
-				database->dbb_flags |= DBB_drop_log;
+				; // Ignore DROP LOG database->dbb_flags |= DBB_drop_log;
 			else if (MSC_match(KW_CASCADE))
 				database->dbb_flags |= DBB_cascade;
 #ifdef FLINT_CACHE
@@ -6196,19 +6155,19 @@ static bool tail_database(enum act_t action_type,
 		}
 		else if (MSC_match(KW_CHECK_POINT_LEN)) {
 			MSC_match(KW_EQUALS);
-			database->dbb_chkptlen = EXP_ULONG_ordinal(true);
+			EXP_ULONG_ordinal(true); // skip
 		}
 		else if (MSC_match(KW_NUM_LOG_BUFS)) {
 			MSC_match(KW_EQUALS);
-			database->dbb_numbufs = EXP_USHORT_ordinal(true);
+			EXP_USHORT_ordinal(true); // skip
 		}
 		else if (MSC_match(KW_LOG_BUF_SIZE)) {
 			MSC_match(KW_EQUALS);
-			database->dbb_bufsize = EXP_USHORT_ordinal(true);
+			EXP_USHORT_ordinal(true); // skip
 		}
 		else if (MSC_match(KW_GROUP_COMMIT_WAIT)) {
 			MSC_match(KW_EQUALS);
-			database->dbb_grp_cmt_wait = EXP_ULONG_ordinal(true);
+			EXP_ULONG_ordinal(true); // skip
 		}
 		else if (MSC_match(KW_LOG_FILE)) {
 			if (logdefined)
@@ -6226,7 +6185,7 @@ static bool tail_database(enum act_t action_type,
 				}
 
 				if (MSC_match(KW_OVERFLOW))
-					database->dbb_overflow = define_log_file(true);
+					define_log_file(true); // skip
 				else
 					PAR_error
 						("Overflow log specification required for this configuration");
@@ -6235,8 +6194,6 @@ static bool tail_database(enum act_t action_type,
 				database->dbb_flags |= DBB_log_serial;
 				database->dbb_logfiles = define_log_file(true);
 			}
-			else
-				database->dbb_flags |= DBB_log_default;
 		}
 #ifdef FLINT_CACHE
 		else if (MSC_match(KW_CACHE))

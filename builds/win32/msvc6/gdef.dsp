@@ -168,14 +168,6 @@ SOURCE=..\..\..\src\jrd\status.cpp
 SOURCE=..\..\..\src\gpre\pretty.cpp
 # End Source File
 # End Group
-# Begin Group "WAL files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\wal\walf.cpp
-# End Source File
-# End Group
 # Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"

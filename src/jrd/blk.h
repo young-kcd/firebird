@@ -56,7 +56,6 @@ BLKDEF(type_sbm, sbm, sizeof(((SBM) NULL)->sbm_segments[0]))	/* done sparse bit 
 BLKDEF(type_smb, smb, sizeof(((SMB) NULL)->smb_rpt[0]))	/* done sort map block */
 BLKDEF(type_blb, blb, 1)
 BLKDEF(type_irb, irb, sizeof(((IRB) NULL)->irb_value[0]))	/* Done Index retrieval */
-BLKDEF(type_jrn, jrn, 1)
 BLKDEF(type_scl, scl, 1)
 BLKDEF(type_fld, fld, 1)
 BLKDEF(type_ext, ext, 1)	/* External file */

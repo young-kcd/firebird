@@ -30,7 +30,6 @@
 #include "../jrd/ods.h"
 #include "../jrd/cch.h"
 #include "gen/iberror.h"
-#include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/req.h"
 #include "../jrd/os/pio.h"
@@ -560,7 +559,7 @@ void SDW_get_shadows(void)
 
 
 
-void SDW_init(bool activate, bool delete_, SBM sbm_rec)
+void SDW_init(bool activate, bool delete_)
 {
 /**************************************
  *
@@ -607,7 +606,6 @@ void SDW_init(bool activate, bool delete_, SBM sbm_rec)
 	CCH_RELEASE(tdbb, &window);
 
 	MET_get_shadow_files(tdbb, delete_);
-	CCH_recover_shadow(tdbb, sbm_rec);
 }
 
 
@@ -712,14 +710,6 @@ void SDW_notify(void)
 
 	lock->lck_key.lck_long = ++(header->hdr_shadow_count);
 	LCK_lock(tdbb, lock, LCK_SR, TRUE);
-	if (dbb->dbb_wal) {
-		jrnda record;
-		record.jrnda_type = JRNP_DB_HDR_SDW_COUNT;
-		record.jrnda_data = header->hdr_shadow_count;
-		CCH_journal_record(tdbb, &window,
-						   reinterpret_cast<const UCHAR*>(&record), JRNDA_SIZE,
-						   0, 0);
-	}
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -1151,14 +1141,7 @@ static void activate_shadow(void)
 	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_flags &= ~hdr_active_shadow;
-	if (dbb->dbb_wal) {
-		jrnda record;
-		record.jrnda_type = JRNP_DB_HDR_FLAGS;
-		record.jrnda_data = header->hdr_flags;
-		CCH_journal_record(tdbb, &window,
-						   reinterpret_cast<const UCHAR*>(&record), JRNDA_SIZE,
-						   0, 0);
-	}
+
 	CCH_RELEASE(tdbb, &window);
 }
 
@@ -1298,8 +1281,6 @@ static void copy_header(void)
 	WIN window(HEADER_PAGE);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
-	if (dbb->dbb_wal)
-		CCH_journal_page(tdbb, &window);
 	CCH_RELEASE(tdbb, &window);
 }
 

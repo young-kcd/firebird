@@ -71,7 +71,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/license.h"
-#include "../jrd/jrn.h"
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"
 #include "../jrd/cch.h"
@@ -93,7 +92,6 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../jrd/ail.h"
 #include "../jrd/isc_f_proto.h"
 
 static void find_clump_space(SLONG, WIN*, PAG*, USHORT, SSHORT, const UCHAR*,
@@ -274,9 +272,6 @@ void PAG_add_clump(
 					*entry_p++ = *r++;
 				} while (--l);
 
-				if (dbb->dbb_wal) {
-					CCH_journal_page(tdbb, &window);
-				}
 			}
 			CCH_RELEASE(tdbb, &window);
 			return; // true;
@@ -302,9 +297,6 @@ void PAG_add_clump(
 			} while (--l);
 		}
 
-		if (dbb->dbb_wal)
-			CCH_journal_page(tdbb, &window);
-
 		CCH_RELEASE(tdbb, &window);
 
 		/* refetch the page */
@@ -326,9 +318,6 @@ void PAG_add_clump(
 /* Add the entry */
 
 	find_clump_space(page_num, &window, &page, type, len, entry, must_write);
-
-	if (dbb->dbb_wal)
-		CCH_journal_page(tdbb, &window);
 
 	CCH_RELEASE(tdbb, &window);
 	return; // true;
@@ -436,30 +425,6 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 					  (UCHAR *) & start, CLUMP_REPLACE, 1);
 	}
 
-	if (dbb->dbb_wal) {
-		if (!(file->fil_min_page))
-			CCH_journal_page(tdbb, &window);
-
-		jrnf journal;
-		journal.jrnf_header.jrnh_type = JRN_NEW_FILE;
-		journal.jrnf_start = start + 1;
-		journal.jrnf_sequence = sequence;
-		journal.jrnf_length = strlen(file_name);
-		tdbb->tdbb_status_vector[1] = 0;
-
-		ULONG seqno;
-		ULONG offset;
-		AIL_put(dbb,
-				tdbb->tdbb_status_vector,
-				reinterpret_cast < jrnh * >(&journal),
-				JRNF_SIZE,
-				reinterpret_cast<const UCHAR*>(file_name),
-				journal.jrnf_length, 0, 0, &seqno, &offset);
-
-		if (tdbb->tdbb_status_vector[1])
-			ERR_punt();
-	}
-
 	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
 	PIO_write(dbb->dbb_file, window.win_bdb, window.win_buffer,
 			  tdbb->tdbb_status_vector);
@@ -484,7 +449,7 @@ int PAG_add_header_entry(HDR header, USHORT type, SSHORT len, const UCHAR* entry
  *	This will be used mainly for the shadow header page and adding
  *	secondary files.
  *	Will not follow to hdr_next_page
- *	Will not journal changes made to page.
+ *	Will not journal changes made to page. => obsolete
  *	RETURNS
  *		TRUE - modified page
  *		FALSE - nothing done
@@ -553,7 +518,7 @@ int PAG_replace_entry_first(HDR header, USHORT type, SSHORT len, const UCHAR* en
  *	This will be used mainly for the clumplets used for backup purposes
  *  because they are needed to be read without page lock
  *	Will not follow to hdr_next_page
- *	Will not journal changes made to page.
+ *	Will not journal changes made to page. => obsolete
  *	RETURNS
  *		TRUE - modified page
  *		FALSE - nothing done
@@ -567,9 +532,10 @@ int PAG_replace_entry_first(HDR header, USHORT type, SSHORT len, const UCHAR* en
 
 	const UCHAR* q = entry;
 
-	UCHAR* p;
-	for (p = header->hdr_data; ((*p != HDR_end) && (*p != type));
-		 p += 2 + p[1]);
+	UCHAR* p = header->hdr_data;
+	while ((*p != HDR_end) && (*p != type)) {
+		p += 2 + p[1];
+	}
 
 	// Remove item if found it somewhere
 	if (*p != HDR_end) {
@@ -580,11 +546,14 @@ int PAG_replace_entry_first(HDR header, USHORT type, SSHORT len, const UCHAR* en
 	}
 	
 	
-	if (!entry) return FALSE; // We were asked just to remove item. We finished.
+	if (!entry) {
+		return FALSE; // We were asked just to remove item. We finished.
+	}
 	
 	// Check if we got enough space
-	if (dbb->dbb_page_size - header->hdr_end <= len + 2)
+	if (dbb->dbb_page_size - header->hdr_end <= len + 2) {
 		BUGCHECK(251);
+	}
 		
 	// Actually add the item
 	memmove(header->hdr_data + len + 2, header->hdr_data, header->hdr_end - HDR_SIZE + 1);
@@ -663,16 +632,6 @@ PAG PAG_allocate(WIN * window)
 	CCH_MARK(tdbb, &pip_window);
 	*bytes &= ~bit;
 
-	if (dbb->dbb_wal) {
-		jrna record;
-		record.jrna_type = JRNP_PIP;
-		record.jrna_allocate = TRUE;
-		record.jrna_slot = relative_bit;
-		CCH_journal_record(tdbb, &pip_window,
-						   reinterpret_cast<const UCHAR*>(&record),
-						   sizeof(record), 0, 0);
-	}
-
 	if (relative_bit != control->pgc_ppp - 1) {
 		CCH_RELEASE(tdbb, &pip_window);
 		CCH_precedence(tdbb, window, pip_window.win_page);
@@ -694,9 +653,6 @@ PAG PAG_allocate(WIN * window)
 	const UCHAR* end = (UCHAR *) new_pip_page + dbb->dbb_page_size;
 	for (bytes = new_pip_page->pip_bits; bytes < end;)
 		*bytes++ = 0xff;
-
-	if (dbb->dbb_wal)
-		CCH_journal_page(tdbb, window);
 
 	CCH_must_write(window);
 	CCH_RELEASE(tdbb, window);
@@ -742,15 +698,6 @@ SLONG PAG_attachment_id(void)
 		CCH_MARK(tdbb, &window);
 		attachment->att_attachment_id = ++header->hdr_attachment_id;
 
-		/* If journalling is enabled, journal the change */
-		if (dbb->dbb_wal) {
-			jrnda record;
-			record.jrnda_type = JRNP_DB_ATTACHMENT;
-			record.jrnda_data = header->hdr_attachment_id;
-			CCH_journal_record(tdbb, &window,
-							   reinterpret_cast<const UCHAR*>(&record),
-							   JRNDA_SIZE, 0, 0);
-		}
 		CCH_RELEASE(tdbb, &window);
 	}
 
@@ -829,8 +776,6 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 		} while (--l);
 	}
 
-	if (dbb->dbb_wal)
-		CCH_journal_page(tdbb, &window);
 	CCH_RELEASE(tdbb, &window);
 
 	return TRUE;
@@ -874,8 +819,9 @@ void PAG_format_header(void)
 	header->hdr_flags |= hdr_force_write;
 #endif
 
-	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
+	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3) {
 		header->hdr_flags |= hdr_SQL_dialect_3;
+	}
 
 	dbb->dbb_ods_version = header->hdr_ods_version;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
@@ -885,6 +831,8 @@ void PAG_format_header(void)
 }
 
 
+// CVC: This function is mostly obsolete. Ann requested to keep it and the code that calls it.
+// We won't read the log, anyway.
 void PAG_format_log(void)
 {
 /***********************************************
@@ -903,8 +851,6 @@ void PAG_format_log(void)
 	WIN window(LOG_PAGE);
 	log_info_page* logp = (log_info_page*) CCH_fake(tdbb, &window, 1);
 	logp->log_header.pag_type = pag_log;
-
-	AIL_init_log_page(logp, (SLONG) 0);
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -1442,51 +1388,6 @@ SLONG PAG_last_page(void)
 }
 
 
-void PAG_modify_log(SLONG tid, SLONG flag)
-{
-/***********************************************
- *
- *	P A G _ m o d i f y _ l o g
- *
- ***********************************************
- *
- * Functional description
- *	Will set the flag in the log page.
- *	Set the transaction id and tip for the transaction.
- *	Journal change to page.
- **************************************/
-	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
-	CHECK_DBB(dbb);
-
-	WIN window(LOG_PAGE);
-	log_info_page* page = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
-	CCH_MARK_MUST_WRITE(tdbb, &window);
-
-/* get the TIP page for this transaction */
-
-	if (flag & TRA_add_log)
-		page->log_flags |= log_add;
-	else if (flag & TRA_delete_log)
-		page->log_flags |= log_delete;
-
-	page->log_mod_tid = tid;
-
-	if (dbb->dbb_wal) {
-		jrnl record;
-		record.jrnl_type = JRNP_LOG_PAGE;
-		record.jrnl_flags = page->log_flags;
-		record.jrnl_tip = 0;
-		record.jrnl_tid = page->log_mod_tid;
-		CCH_journal_record(tdbb, &window,
-						   reinterpret_cast<const UCHAR*>(&record), JRNL_SIZE,
-						   0, 0);
-	}
-
-	CCH_RELEASE(tdbb, &window);
-}
-
-
 void PAG_release_page(SLONG number, SLONG prior_page)
 {
 /**************************************
@@ -1515,34 +1416,11 @@ void PAG_release_page(SLONG number, SLONG prior_page)
 	WIN pip_window((sequence == 0) ?
 		control->pgc_pip : sequence * control->pgc_ppp - 1);
 
-/* if shared cache is being used, the page which is being freed up
- * may have a journal buffer which in no longer valid after the
- * page has been freed up.  Zero out the journal buffer.
- * It is possible that the shared cache manager will write out the
- * record as part of a scan.
-
- * A similar problem can happen without shared cache.
- */
-
-/*******************************
-CCH_release_journal (tdbb, number);
-********************************/
-
 	pip* pages = (PIP) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
 	CCH_precedence(tdbb, &pip_window, prior_page);
 	CCH_MARK(tdbb, &pip_window);
 	pages->pip_bits[relative_bit >> 3] |= 1 << (relative_bit & 7);
 	pages->pip_min = MIN(pages->pip_min, relative_bit);
-
-	if (dbb->dbb_wal) {
-		jrna record;
-		record.jrna_type = JRNP_PIP;
-		record.jrna_allocate = FALSE;
-		record.jrna_slot = relative_bit;
-		CCH_journal_record(tdbb, &pip_window,
-						   reinterpret_cast<const UCHAR*>(&record),
-						   sizeof(record), 0, 0);
-	}
 
 	CCH_RELEASE(tdbb, &pip_window);
 
@@ -1588,16 +1466,6 @@ void PAG_set_force_write(DBB dbb, SSHORT flag)
 		dbb->dbb_flags &= ~DBB_force_write;
 	}
 
-/* If journalling is enabled, journal the change */
-
-	if (dbb->dbb_wal) {
-		jrnda record;
-		record.jrnda_type = JRNP_DB_HDR_FLAGS;
-		record.jrnda_data = header->hdr_flags;
-		CCH_journal_record(tdbb, &window,
-						   reinterpret_cast<const UCHAR*>(&record), JRNDA_SIZE,
-						   0, 0);
-	}
 	CCH_RELEASE(tdbb, &window);
 
 	for (fil* file = dbb->dbb_file; file; file = file->fil_next) {

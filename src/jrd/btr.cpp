@@ -40,7 +40,6 @@
 #include "../jrd/intl.h"
 #include "gen/iberror.h"
 #include "../jrd/common.h"
-#include "../jrd/jrn.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/sbm.h"
@@ -176,7 +175,6 @@ static SLONG find_page(BTR, const KEY*, UCHAR, SLONG = NO_VALUE, bool = false);
 static CONTENTS garbage_collect(TDBB, WIN *, SLONG);
 static void generate_jump_nodes(TDBB, BTR, jumpNodeList*, USHORT, USHORT*, USHORT*, USHORT*);
 static SLONG insert_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *, SLONG *);
-static void journal_btree_segment(TDBB, WIN *, BTR);
 static INT64_KEY make_int64_key(SINT64, SSHORT);
 #ifdef DEBUG_INDEXKEY
 static void print_int64_key(SINT64, SSHORT, INT64_KEY);
@@ -280,10 +278,6 @@ void BTR_create(TDBB tdbb,
 	root->irt_rpt[idx->idx_id].irt_flags &= ~irt_in_progress;
 	update_selectivity(root, idx->idx_id, selectivity);
 
-	if (dbb->dbb_wal) {
-		CCH_journal_page(tdbb, &window);
-	}
-
 	CCH_RELEASE(tdbb, &window);
 }
 
@@ -324,11 +318,6 @@ void BTR_delete_index(TDBB tdbb, WIN * window, USHORT id)
 		irt_desc->irt_flags = 0;
 		prior = window->win_page;
 		relation_id = root->irt_relation;
-
-		// Journal update of index root page
-		if (dbb->dbb_wal) {
-			CCH_journal_page(tdbb, window);
-		}
 
 		CCH_RELEASE(tdbb, window);
 		delete_tree(tdbb, relation_id, id, next, prior);
@@ -748,16 +737,6 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 	CCH_MARK(tdbb, root_window);
 	root->irt_rpt[idx->idx_id].irt_root = new_window.win_page;
 
-	// journal root page change
-	if (dbb->dbb_wal) {
-		jrnrp journal;
-		journal.jrnrp_type = JRNP_ROOT_PAGE;
-		journal.jrnrp_id = idx->idx_id;
-		journal.jrnrp_page = new_window.win_page;
-		CCH_journal_record(tdbb, root_window, (const UCHAR*)&journal,
-						   JRNRP_SIZE, 0, 0);
-	}
-
 	CCH_RELEASE(tdbb, root_window);
 
 }
@@ -1091,10 +1070,6 @@ BTR BTR_left_handoff(TDBB tdbb, WIN * window, BTR page, SSHORT lock_level)
 	CCH_MARK(tdbb, &fix_win);
 	fix_page->btr_left_sibling = window->win_page;
 
-	if (dbb->dbb_journal) {
-		CCH_journal_page(tdbb, &fix_win);
-	}
-
 	CCH_RELEASE(tdbb, &fix_win);
 
 	return page;
@@ -1398,17 +1373,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 		CCH_MARK(tdbb, root_window);
 		root->irt_rpt[idx->idx_id].irt_root = number;
 
-		// journal root page change
-		if (dbb->dbb_wal) {
-			jrnrp journal;
-			journal.jrnrp_type = JRNP_ROOT_PAGE;
-			journal.jrnrp_id = idx->idx_id;
-			journal.jrnrp_page = number;
-			CCH_journal_record(tdbb, root_window, (const UCHAR*) &journal,
-							   JRNRP_SIZE, 0, 0);
-		}
-
-		// release the pages, and place the page formerly at the top level 
+		// release the pages, and place the page formerly at the top level
 		// on the free list, making sure the root page is written out first 
 		// so that we're not pointing to a released page
 		CCH_RELEASE(tdbb, root_window);
@@ -1533,10 +1498,6 @@ retry:
 	else {
 		// Exploit the fact idx_repeat structure matches ODS IRTD one
 		memcpy(desc, idx->idx_rpt, l);
-	}
-
-	if (dbb->dbb_wal) {
-		CCH_journal_page(tdbb, &window);
 	}
 
 	CCH_RELEASE(tdbb, &window);
@@ -2429,22 +2390,6 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 		}
 		jumpNodes->clear();
 		delete jumpNodes;
-	}
-
-	// Journal b-tree page - logical log of delete
-	if (dbb->dbb_wal) {
-		// AB: Because very often the complete page changes this
-		// is changed to journal_btree_segment()
-		journal_btree_segment(tdbb, window, page);
-		/*JRNB journal;
-		fb_assert(nodeOffset <= MAX_USHORT);
-		journal.jrnb_type = JRNP_BTREE_DELETE;
-		journal.jrnb_prefix_total = page->btr_prefix_total;
-		journal.jrnb_offset = nodeOffset;
-		journal.jrnb_delta = delta;				// DEBUG ONLY
-		journal.jrnb_length = page->btr_length;	// DEBUG ONLY
-		CCH_journal_record(tdbb, window, (const UCHAR*) &journal,
-						   JRNB_SIZE, 0, 0);*/
 	}
 
 	// check to see if the page is now empty
@@ -4465,9 +4410,6 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 			CCH_MARK(tdbb, &right_window);
 			right_page->btr_left_sibling = left_window.win_page;
 
-			if (dbb->dbb_journal) {
-				CCH_journal_page(tdbb, &right_window);
-			}
 			CCH_RELEASE(tdbb, &right_window);
 		}
 
@@ -4537,9 +4479,6 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 			CCH_MARK(tdbb, &right_window);
 			right_page->btr_left_sibling = left_window.win_page;
 
-			if (dbb->dbb_journal) {
-				CCH_journal_page(tdbb, &right_window);
-			}
 			CCH_RELEASE(tdbb, &right_window);
 		}
 
@@ -4597,9 +4536,6 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	}
 #endif
 
-	if (dbb->dbb_journal) {
-		CCH_journal_page(tdbb, &left_window);
-	}
 	CCH_RELEASE(tdbb, &left_window);
 
 	// finally, release the page, and indicate that we should write the 
@@ -5121,31 +5057,6 @@ static SLONG insert_node(TDBB tdbb,
 			memcpy(window->win_buffer, newBucket, newBucket->btr_length);
 		}
 
-		// journal the page
-		if (dbb->dbb_wal) {
-			// AB: Because very often the complete page changes this
-			// is changed to journal_btree_segment()
-			journal_btree_segment(tdbb, window, bucket);
-
-			/*
-			// Journal new node added. The node is journalled as the compressed
-			// new node and the BTN of the re compressed next node.
-			JRNB journal;
-			journal.jrnb_type = JRNP_BTREE_NODE;
-			journal.jrnb_prefix_total = newBucket->btr_prefix_total;
-			journal.jrnb_offset = nodeOffset;
-			journal.jrnb_delta = delta;
-			//journal.jrnb_length = BTN_SIZE + BTN_SIZE + BTN_LENGTH(new_node);
-			journal.jrnb_length = beforeInsertSize - beforeInsertNode.length + 
-				BTreeNode::getNodeSize(&newNode, flags, leafPage);
-			CCH_journal_record(tdbb,
-							   window,
-							   (const UCHAR*) & journal, JRNB_SIZE,
-							   (const UCHAR*) newBucket + nodeOffset,
-							   journal.jrnb_length);
-			*/
-		}
-
 		CCH_RELEASE(tdbb, window);
 
 		jumpNodes->clear();
@@ -5412,11 +5323,6 @@ static SLONG insert_node(TDBB tdbb,
 	// split page we just created will be lost.
 	bucket->btr_header.pag_flags |= btr_dont_gc;
 
-	// journal the split page
-	if (dbb->dbb_wal) {
-		journal_btree_segment(tdbb, window, bucket);
-	}
-
 	if (original_page) {
 		*original_page = window->win_page;
 	}
@@ -5427,9 +5333,6 @@ static SLONG insert_node(TDBB tdbb,
 		bucket = (BTR) CCH_HANDOFF(tdbb, window, right_sibling, LCK_write, pag_index);
 		CCH_MARK(tdbb, window);
 		bucket->btr_left_sibling = split_window.win_page;
-		if (dbb->dbb_journal) {
-			CCH_journal_page(tdbb, window);
-		}
 	}
 	CCH_RELEASE(tdbb, window);
 
@@ -5443,32 +5346,6 @@ static SLONG insert_node(TDBB tdbb,
 
 	return split_page;
 }
-
-
-static void journal_btree_segment(TDBB tdbb, WIN * window, BTR bucket)
-{
-/**************************************
- *
- *    j o u r n a l _ b t r e e _ s e g m e n t
- *
- **************************************
- *
- * Functional description
- *    Journal valid part of btree segment.
- *
- **************************************/
-	JRNB journal;
-
-	SET_TDBB(tdbb);
-
-	journal.jrnb_type = JRNP_BTREE_SEGMENT;
-	journal.jrnb_offset = 0;
-	journal.jrnb_delta = 0;
-	journal.jrnb_length = bucket->btr_length;
-
-	CCH_journal_record(tdbb, window, (const UCHAR*) &journal, JRNB_SIZE,
-					(const UCHAR*) bucket, journal.jrnb_length);
-} 
 
 
 static INT64_KEY make_int64_key(SINT64 q, SSHORT scale)

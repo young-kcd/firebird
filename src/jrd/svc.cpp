@@ -248,7 +248,6 @@ static BOOLEAN svc_initialized = FALSE, thd_initialized = FALSE;
 #include "../burp/burp_proto.h"
 //int main_gfix(SVC service);
 #include "../alice/alice_proto.h"
-int main_wal_print();
 int main_lock_print();
 int main_gstat(SVC service);
 //int main_gsec(SVC service);
@@ -256,14 +255,12 @@ int main_gstat(SVC service);
 
 #define MAIN_GBAK		BURP_main
 #define MAIN_GFIX		ALICE_main
-#define MAIN_WAL_PRINT	main_wal_print
 #define MAIN_LOCK_PRINT	main_lock_print
 #define MAIN_GSTAT		main_gstat
 #define MAIN_GSEC		GSEC_main
 #else
 #define MAIN_GBAK		NULL
 #define MAIN_GFIX		NULL
-#define MAIN_WAL_PRINT	NULL
 #define MAIN_LOCK_PRINT	NULL
 #define MAIN_GSTAT		NULL
 #define MAIN_GSEC		NULL

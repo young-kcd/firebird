@@ -99,7 +99,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	do {--p;} while (*p != '\\' && *p != ':');
 	*p = '\0';
 
-	TEXT** end = argv + argc;
+	const TEXT* const* const end = argv + argc;
 	while (++argv < end)
 	{
 		if (**argv != '-')
