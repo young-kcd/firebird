@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  * Toni Martir: Verbose records restored as RESTORE_VERBOSE_INTERVAL,
  * also verbose restoring indexes as DEFERRED when verbose
- *
+ * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.34 2003-08-15 10:23:42 aafemt Exp $
+$Id: restore.epp,v 1.35 2003-08-21 11:02:33 robocop Exp $
 */
 
 #include "firebird.h"
@@ -3562,13 +3562,12 @@ static BOOLEAN get_generator (void)
  *	nicely.
  *
  **************************************/
-SINT64		value;
+SINT64		value = 0;
 BASED_ON RDB$GENERATORS.RDB$GENERATOR_NAME name;
+name[0] = 0; // just in case.
 ATT_TYPE	attribute;
 UCHAR	    scan_next_attr;
-TGBL	    tdgbl;
-
-tdgbl = GET_THREAD_DATA;
+TGBL	    tdgbl = GET_THREAD_DATA;
 
 SKIP_INIT;
 while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
@@ -3579,18 +3578,18 @@ while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
 	    break;
 
 	case att_gen_value:
-	    /* IB v5 or earlier, gen_id value is an SLONG */
+	    // IB v5 or earlier, gen_id value is an SLONG
 	    value = (SINT64) get_numeric();
 	    break;
 
 	case att_gen_value_int64:
-	    /* IB v6 or later, gen_id value is an SINT64 */
+	    // IB v6 or later, gen_id value is an SINT64
 	    value = get_int64();
 	    break;
 
 	default:
 	    bad_attribute (scan_next_attr, attribute, 93); 
-	    /* msg 93 index */
+	    // msg 93 index
 	    break;
 	}
 

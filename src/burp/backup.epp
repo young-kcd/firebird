@@ -33,10 +33,11 @@
  * and sizeof() works because the strings are local to the functions. This
  * eliminates the problem with harcoded limits in each call.
  * 2002.10.29 Mike Nordell: UINT64 backup message.
+ * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 
 /*
-$Id: backup.epp,v 1.31 2003-08-19 11:09:00 brodsom Exp $
+$Id: backup.epp,v 1.32 2003-08-21 11:02:33 robocop Exp $
 */
 
 #include "firebird.h"
@@ -3231,8 +3232,10 @@ static void write_generators(void)
 	    X IN RDB$GENERATORS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
 	    PUT (rec_generator);
         l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
-        value = get_gen_id (X.RDB$GENERATOR_NAME, l);
-        PUT_INT64 (att_gen_value_int64, value);
+		if (!tdgbl->gbl_sw_meta) {
+			value = get_gen_id (X.RDB$GENERATOR_NAME, l);
+			PUT_INT64 (att_gen_value_int64, value);
+		}
         PUT (att_end);
         MISC_terminate ( (UCHAR*) X.RDB$GENERATOR_NAME, (UCHAR*) temp, l, sizeof (temp));
 #pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
