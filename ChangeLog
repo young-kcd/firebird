@@ -1,3 +1,28 @@
+2004-02-29 07:15  skidder
+
+	* firebird2/src/jrd/jrd.h:
+	
+	Fix problem in non-Linux/FreeBSD/WIN_NT SuperServer builds
+
+2004-02-29 06:46  skidder
+
+	* firebird2/src/: common/classes/fb_pair.h,
+	common/classes/objects_array.h, jrd/plugin_manager.h:
+	
+	Fix POSIX build
+
+2004-02-29 06:41  skidder
+
+	* firebird2/src/jrd/os/posix/config_root.cpp:
+	
+	Fix POSIX build
+
+2004-02-29 03:00  arnobrinkman
+
+	* firebird2/src/jrd/btn.cpp:
+	
+	Change bug in index-node decompression, to many shifts
+
 2004-02-28 20:43  alexpeshkoff
 
 	* firebird2/src/: common/classes/fb_pair.h,
