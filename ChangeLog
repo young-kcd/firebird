@@ -1,3 +1,22 @@
+2004-02-05 12:17  aafemt
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Fix couple of warnings
+
+2004-02-05 11:16  paul_reeves
+
+	* firebird2/src/: jrd/isc_version.h, misc/security.gbak:
+	
+	Restore SYSDBA grants to tables in security database. Update build
+	number.
+
+2004-02-05 07:58  alexpeshkoff
+
+	* firebird2/src/isql/isql.epp:
+	
+	Forward porting
+
 2004-02-04 16:30  alexpeshkoff
 
 	*
