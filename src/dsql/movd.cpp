@@ -1,6 +1,6 @@
 /*
 *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		movd.c
+ *	MODULE:		movd.cpp
  *	DESCRIPTION:	Data mover and converter and comparator, etc.
  *
  * The contents of this file are subject to the Interbase Public

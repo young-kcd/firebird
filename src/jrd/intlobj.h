@@ -94,6 +94,9 @@ typedef struct texttype {
 	/* MUST BE ALIGNED */
 	FPTR_SHORT texttype_fn_init;
 	FPTR_SHORT texttype_fn_key_length;
+	// CVC: Consider giving it the correct signature and not one that demands
+	// lots of ugly casts. The signature appears to be:
+	// <USHORT(*)(TEXTTYPE, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
 	FPTR_SHORT texttype_fn_string_to_key;
 	FPTR_short texttype_fn_compare;
 	FPTR_SHORT texttype_fn_to_upper;	/* convert one ch to uppercase */

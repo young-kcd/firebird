@@ -566,7 +566,7 @@ static FPTR_SHORT lookup_init_function(
 }
 
 
-CHARSET_ID INTL_charset(TDBB tdbb, USHORT ttype, FPTR_STATUS err)
+CHARSET_ID INTL_charset(TDBB tdbb, USHORT ttype, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -601,7 +601,7 @@ CHARSET_ID INTL_charset(TDBB tdbb, USHORT ttype, FPTR_STATUS err)
 int INTL_compare(TDBB tdbb,
 				const dsc* pText1,
 				const dsc* pText2,
-				FPTR_STATUS err)
+				FPTR_ERROR err)
 {
 /**************************************
  *
@@ -675,12 +675,12 @@ int INTL_compare(TDBB tdbb,
 
 USHORT INTL_convert_bytes(TDBB tdbb,
 						CHARSET_ID dest_type,
-						BYTE * dest_ptr,
+						BYTE* dest_ptr,
 						USHORT dest_len,
 						CHARSET_ID src_type,
-						BYTE * src_ptr,
+						BYTE* src_ptr,
 						USHORT src_len,
-						FPTR_STATUS err)
+						FPTR_ERROR err)
 {
 /**************************************
  *
@@ -855,7 +855,7 @@ CsConvert INTL_convert_lookup(TDBB tdbb,
 }
 
 
-int INTL_convert_string(dsc* to, const dsc* from, FPTR_STATUS err)
+int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -1145,7 +1145,7 @@ USHORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
 	return (key_length);
 }
 
-CharSet INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS *status)
+CharSet INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS* status)
 {
 /**************************************
  *
@@ -1176,8 +1176,8 @@ CharSet INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS *status)
 
 TextType INTL_texttype_lookup(TDBB tdbb,
 								SSHORT parm1,
-								FPTR_STATUS err,
-								ISC_STATUS * status)
+								FPTR_ERROR err,
+								ISC_STATUS* status)
 {
 /**************************************
  *
@@ -1243,8 +1243,8 @@ void INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT length)
 
 USHORT INTL_string_to_key(TDBB tdbb,
 						USHORT idxType,
-						DSC * pString,
-						DSC * pByte,
+						const dsc* pString,
+						DSC* pByte,
 						USHORT partial)
 {
 /**************************************
@@ -1312,17 +1312,18 @@ USHORT INTL_string_to_key(TDBB tdbb,
 		while (len--)
 			*dest++ = *src++;
 		/* strip off ending pad characters */
-		while (dest > (const char*)pByte->dsc_address)
+		while (dest > (const char*)pByte->dsc_address) {
 			if (*(dest - 1) == pad_char)
 				dest--;
 			else
 				break;
+		}
 		outlen = (dest - (const char*)pByte->dsc_address);
 		break;
 	default:
 		TextType obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
 		outlen = obj.string_to_key(len,
-									reinterpret_cast<unsigned char*>(const_cast<char*>(src)),
+									reinterpret_cast<const unsigned char*>(src),
 									pByte->dsc_length,
 									reinterpret_cast<unsigned char*>(dest),
 									partial);

@@ -1209,7 +1209,7 @@ static void ddl( ICC icc)
 	/* perform operation and return response */
 
 	GDS_DDL(status_vector, &idb->idb_handle, &transaction->itr_handle,
-			length, reinterpret_cast < char *>(buffer));
+			length, reinterpret_cast<const char*>(buffer));
 	send_response(icc, status_vector);
 }
 

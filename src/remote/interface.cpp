@@ -1064,7 +1064,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS*	user_status,
 			   RDB*		db_handle,
 			   RTR*		rtr_handle,
 			   USHORT	blr_length,
-			   UCHAR*	blr)
+			   const UCHAR*	blr)
 {
 /**************************************
  *

@@ -122,7 +122,7 @@ void status_xcp::init(const ISC_STATUS* vector)
 	memcpy(status, vector, sizeof(ISC_STATUS_ARRAY));
 }
 
-void status_xcp::copy(ISC_STATUS* vector) const
+void status_xcp::copyTo(ISC_STATUS* vector) const
 {
 	memcpy(vector, status, sizeof(ISC_STATUS_ARRAY));
 }
@@ -144,7 +144,8 @@ SLONG status_xcp::as_sqlcode() const
 
 extern "C" {
 
-static void assign_xcp_message(TDBB, STR *, const TEXT *);
+
+static void assign_xcp_message(TDBB, STR*, const TEXT*);
 static void cleanup_rpb(TDBB, RPB *);
 static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);
 static void execute_looper(TDBB, JRD_REQ, JRD_TRA, enum jrd_req::req_s);
@@ -1017,7 +1018,7 @@ void EXE_unwind(TDBB tdbb, JRD_REQ request)
 }
 
 
-void assign_xcp_message(TDBB tdbb, STR *xcp_msg, const TEXT *msg)
+void assign_xcp_message(TDBB tdbb, STR* xcp_msg, const TEXT* msg)
 {
 /**************************************
  *
@@ -2023,7 +2024,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		case nod_dcl_cursor:
 			if (request->req_operation == jrd_req::req_evaluate) {
-				USHORT number = (USHORT) (IPTR) node->nod_arg[e_dcl_cursor_number];
+				const USHORT number = (USHORT) (IPTR) node->nod_arg[e_dcl_cursor_number];
 				// set up the cursors vector
 				request->req_cursors = vec::newVector(*request->req_pool,
 					request->req_cursors, number + 1);
@@ -2036,8 +2037,8 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		case nod_cursor_stmt:
 			{
-			UCHAR op = (UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op];
-			USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
+			const UCHAR op = (UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op];
+			const USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
 			// get RSB and the impure area
 			fb_assert(request->req_cursors && number < request->req_cursors->count());
 			RSB rsb = (RSB) (*request->req_cursors)[number];
@@ -3731,7 +3732,7 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, JRD_NOD msg_node)
 
 	if (!exception) {
 		// retrieve the status vector and punt
-		request->req_last_xcp.copy(tdbb->tdbb_status_vector);
+		request->req_last_xcp.copyTo(tdbb->tdbb_status_vector);
 		request->req_last_xcp.clear();
 		ERR_punt();
 	}
@@ -4308,3 +4309,4 @@ static void validate(TDBB tdbb, JRD_NOD list)
 }
 
 } // extern "C"
+

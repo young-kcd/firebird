@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: msg.h,v 1.3 2003-10-03 01:47:25 brodsom Exp $
+$Id: msg.h,v 1.4 2003-11-05 09:02:26 robocop Exp $
 */
 
 #ifndef JRD_MSG_H
@@ -35,12 +35,12 @@ $Id: msg.h,v 1.3 2003-10-03 01:47:25 brodsom Exp $
 /* Message file header block */
 
 typedef struct isc_msghdr {
-	UCHAR msghdr_major_version;	/* Version number */
-	UCHAR msghdr_minor_version;	/* Version number */
-	USHORT msghdr_bucket_size;	/* Bucket size of B-tree */
-	ULONG msghdr_top_tree;		/* Start address of first index bucket */
-	ULONG msghdr_origin;		/* Origin for data records */
-	USHORT msghdr_levels;		/* Levels in tree */
+	UCHAR msghdr_major_version;	// Version number
+	UCHAR msghdr_minor_version;	// Version number
+	USHORT msghdr_bucket_size;	// Bucket size of B-tree
+	ULONG msghdr_top_tree;		// Start address of first index bucket
+	ULONG msghdr_origin;		// Origin for data records, unused.
+	USHORT msghdr_levels;		// Levels in tree
 } ISC_MSGHDR;
 
 /* Index node */
@@ -63,3 +63,4 @@ typedef struct msgrec {
 	((SCHAR*) leaf + FB_ALIGN(OFFSETA (MSGREC, msgrec_text) + leaf->msgrec_length, sizeof (SLONG)))
 
 #endif /* JRD_MSG_H */
+

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.53 2003-11-01 10:26:39 robocop Exp $
+$Id: ibase.h,v 1.54 2003-11-05 09:02:25 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -795,11 +795,11 @@ ISC_STATUS ISC_EXPORT isc_compile_request2(ISC_STATUS *,
 										   short,
 										   char *);
 
-ISC_STATUS ISC_EXPORT isc_ddl(ISC_STATUS *,
-							  isc_db_handle *,
-							  isc_tr_handle *,
+ISC_STATUS ISC_EXPORT isc_ddl(ISC_STATUS*,
+							  isc_db_handle*,
+							  isc_tr_handle*,
 							  short,
-							  char *);
+							  const char*);
 
 ISC_STATUS ISC_EXPORT isc_prepare_transaction(ISC_STATUS *,
 											  isc_tr_handle *);

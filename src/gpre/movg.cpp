@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: movg.cpp,v 1.5 2003-11-03 17:14:41 skidder Exp $
+//	$Id: movg.cpp,v 1.6 2003-11-05 09:02:13 robocop Exp $
 //
 
 #include "firebird.h"
@@ -36,7 +36,7 @@
 #include "../jrd/iberr.h"
 #include "../jrd/dsc.h"
 #include "../gpre/movg_proto.h"
-//  TMN: Unfortunately we need to include gpre.h before grep_proto.h since
+//  TMN: Unfortunately we need to include gpre.h before gpre_proto.h since
 //  the latter references a macro from the former, and doesn't include that
 //  header file itself. We need to include gpre_proto.h since we use gpre
 //  functions.

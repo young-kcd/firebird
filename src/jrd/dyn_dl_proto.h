@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		dyn_dl_proto.h
- *	DESCRIPTION:	Prototype Header file for dyn_delete.e
+ *	DESCRIPTION:	Prototype Header file for dyn_del.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,22 +24,23 @@
 #ifndef JRD_DYN_DL_PROTO_H
 #define JRD_DYN_DL_PROTO_H
 
-void	DYN_delete_constraint(GBL, UCHAR **, TEXT *);
-void	DYN_delete_dimensions(GBL, UCHAR **, TEXT *, TEXT *);
-void	DYN_delete_exception(GBL, UCHAR **);
-void	DYN_delete_filter(GBL, UCHAR **);
-void	DYN_delete_function(GBL, UCHAR **);
-void	DYN_delete_generator(GBL, UCHAR **);
-void	DYN_delete_global_field(GBL, UCHAR **);
-void	DYN_delete_index(GBL, UCHAR **);
-void	DYN_delete_local_field(GBL, UCHAR **, TEXT *, TEXT *);
-void	DYN_delete_parameter(GBL, UCHAR **, TEXT *);
-void	DYN_delete_procedure(GBL, UCHAR **);
-void	DYN_delete_relation(GBL, UCHAR **, TEXT *);
-void	DYN_delete_role(GBL, UCHAR **);
-void	DYN_delete_security_class(GBL, UCHAR **);
-void	DYN_delete_shadow(GBL, UCHAR **);
-void	DYN_delete_trigger(GBL, UCHAR **);
-void	DYN_delete_trigger_msg(GBL, UCHAR **, TEXT *);
+void	DYN_delete_constraint(GBL, const UCHAR**, const TEXT*);
+void	DYN_delete_dimensions(GBL, const UCHAR**, const TEXT*, TEXT*);
+void	DYN_delete_exception(GBL, const UCHAR**);
+void	DYN_delete_filter(GBL, const UCHAR**);
+void	DYN_delete_function(GBL, const UCHAR**);
+void	DYN_delete_generator(GBL, const UCHAR**);
+void	DYN_delete_global_field(GBL, const UCHAR**);
+void	DYN_delete_index(GBL, const UCHAR**);
+void	DYN_delete_local_field(GBL, const UCHAR**, const TEXT*, TEXT*);
+void	DYN_delete_parameter(GBL, const UCHAR**, TEXT*);
+void	DYN_delete_procedure(GBL, const UCHAR**);
+void	DYN_delete_relation(GBL, const UCHAR**, const TEXT*);
+void	DYN_delete_role(GBL, const UCHAR**);
+void	DYN_delete_security_class(GBL, const UCHAR**);
+void	DYN_delete_shadow(GBL, const UCHAR**);
+void	DYN_delete_trigger(GBL, const UCHAR**);
+void	DYN_delete_trigger_msg(GBL, const UCHAR**, TEXT*);
 
 #endif // JRD_DYN_DL_PROTO_H
+

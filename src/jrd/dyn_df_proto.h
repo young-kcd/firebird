@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		dyn_df_proto.h
- *	DESCRIPTION:	Prototype Header file for dyn_define.e
+ *	DESCRIPTION:	Prototype Header file for dyn_def.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,30 +24,31 @@
 #ifndef JRD_DYN_DF_PROTO_H
 #define JRD_DYN_DF_PROTO_H
 
-void DYN_define_cache(GBL, UCHAR **);
-void DYN_define_constraint(GBL, UCHAR **, TEXT *, TEXT *);
-void DYN_define_dimension(GBL, UCHAR **, TEXT *, TEXT *);
-void DYN_define_exception(GBL, UCHAR **);
-void DYN_define_file(GBL, UCHAR **, SLONG, SLONG *, USHORT);
-void DYN_define_filter(GBL, UCHAR **);
-void DYN_define_function(GBL, UCHAR **);
-void DYN_define_function_arg(GBL, UCHAR **, TEXT *);
-void DYN_define_generator(GBL, UCHAR **);
-void DYN_define_global_field(GBL, UCHAR **, TEXT *, TEXT *);
-void DYN_define_index(GBL, UCHAR **, TEXT *, UCHAR, TEXT *, TEXT *,
-							 TEXT *, UCHAR *);
-void DYN_define_local_field(GBL, UCHAR **, TEXT *, TEXT *);
-void DYN_define_log_file(GBL, UCHAR **, USHORT, USHORT);
-void DYN_define_parameter(GBL, UCHAR **, TEXT *);
-void DYN_define_procedure(GBL, UCHAR **);
-void DYN_define_relation(GBL, UCHAR **);
-void DYN_define_role(GBL, UCHAR **);
-void DYN_define_security_class(GBL, UCHAR **);
-void DYN_define_shadow(GBL, UCHAR **);
-void DYN_define_sql_field(GBL, UCHAR **, TEXT *, TEXT *);
-void DYN_define_trigger(GBL, UCHAR **, TEXT *, TEXT *, BOOLEAN);
-void DYN_define_trigger_msg(GBL, UCHAR **, TEXT *);
-void DYN_define_view_relation(GBL, UCHAR **, TEXT *);
-void DYN_define_difference(GBL, UCHAR **);
+void DYN_define_cache(GBL, const UCHAR**);
+void DYN_define_constraint(GBL, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_dimension(GBL, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_exception(GBL, const UCHAR**);
+void DYN_define_file(GBL, const UCHAR**, SLONG, SLONG*, USHORT);
+void DYN_define_filter(GBL, const UCHAR**);
+void DYN_define_function(GBL, const UCHAR**);
+void DYN_define_function_arg(GBL, const UCHAR**, TEXT*);
+void DYN_define_generator(GBL, const UCHAR**);
+void DYN_define_global_field(GBL, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_index(GBL, const UCHAR**, const TEXT*, UCHAR, TEXT*, TEXT*,
+							 TEXT*, UCHAR *);
+void DYN_define_local_field(GBL, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_log_file(GBL, const UCHAR**, bool, bool);
+void DYN_define_parameter(GBL, const UCHAR**, TEXT*);
+void DYN_define_procedure(GBL, const UCHAR**);
+void DYN_define_relation(GBL, const UCHAR**);
+void DYN_define_role(GBL, const UCHAR**);
+void DYN_define_security_class(GBL, const UCHAR**);
+void DYN_define_shadow(GBL, const UCHAR**);
+void DYN_define_sql_field(GBL, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_trigger(GBL, const UCHAR**, const TEXT*, TEXT*, const bool);
+void DYN_define_trigger_msg(GBL, const UCHAR**, const TEXT*);
+void DYN_define_view_relation(GBL, const UCHAR**, const TEXT*);
+void DYN_define_difference(GBL, const UCHAR**);
 
 #endif // JRD_DYN_DF_PROTO_H
+

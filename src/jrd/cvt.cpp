@@ -92,7 +92,7 @@
 double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
-/* ERR_post is used to flag whether we were called from mov.c or
+/* ERR_post is used to flag whether we were called from mov.cpp or
    anywhere else CVT is used from (by comparing with param err) */
 
 /* normally the following two definitions are part of limits.h
@@ -175,13 +175,13 @@ static TEXT* cvt_failures_ptr = NULL;
 static TEXT* error_string(const char*, SSHORT);
 #endif
 
-static void conversion_error(const dsc*, FPTR_STATUS);
-static void datetime_to_text(const dsc*, dsc*, FPTR_STATUS);
-static SSHORT decompose(const char*, USHORT, SSHORT, SLONG*, FPTR_STATUS);
-static void float_to_text(const dsc*, dsc*, FPTR_STATUS);
-static void integer_to_text(const dsc*, dsc*, FPTR_STATUS);
+static void conversion_error(const dsc*, FPTR_ERROR);
+static void datetime_to_text(const dsc*, dsc*, FPTR_ERROR);
+static SSHORT decompose(const char*, USHORT, SSHORT, SLONG*, FPTR_ERROR);
+static void float_to_text(const dsc*, dsc*, FPTR_ERROR);
+static void integer_to_text(const dsc*, dsc*, FPTR_ERROR);
 static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, EXPECT_DATETIME,
-							   FPTR_STATUS);
+							   FPTR_ERROR);
 static double power_of_ten(const int);
 
 #ifndef NATIVE_QUAD
@@ -214,12 +214,8 @@ static const TEXT *const months[] = {
 #include "../jrd/quad.cpp"
 #endif
 
-#pragma FB_COMPILER_MESSAGE("Fix this! Ugly function pointer cast!")
-typedef void (*pfn_cvt_private_cludge) (int, int);
-typedef void (*pfn_cvt_private_cludge2) (int, int, ...);
 
-
-double CVT_date_to_double(const dsc* desc, FPTR_STATUS err)
+double CVT_date_to_double(const dsc* desc, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -281,7 +277,7 @@ to FPU register being 80 bits long and double being 64 bits long */
 }
 
 
-void CVT_double_to_date(double real, SLONG fixed[2], FPTR_STATUS err)
+void CVT_double_to_date(double real, SLONG fixed[2], FPTR_ERROR err)
 {
 /**************************************
  *
@@ -303,7 +299,7 @@ void CVT_double_to_date(double real, SLONG fixed[2], FPTR_STATUS err)
 }
 
 
-double CVT_get_double(const dsc* desc, FPTR_STATUS err)
+double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -505,7 +501,7 @@ double CVT_get_double(const dsc* desc, FPTR_STATUS err)
 }
 
 
-SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_STATUS err)
+SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -686,7 +682,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_STATUS err)
 
 UCHAR CVT_get_numeric(const UCHAR* string,
 					  const USHORT length,
-					  SSHORT* scale, double* ptr, FPTR_STATUS err)
+					  SSHORT* scale, double* ptr, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -799,7 +795,7 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 }
 
 
-SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_STATUS err)
+SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -955,7 +951,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_STATUS err)
 }
 
 
-SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_STATUS err)
+SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -1104,7 +1100,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_STATUS err)
 USHORT CVT_get_string_ptr(const dsc* desc,
 						  USHORT* ttype,
 						  UCHAR** address,
-						  vary* temp, USHORT length, FPTR_STATUS err)
+						  vary* temp, USHORT length, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -1172,7 +1168,7 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 }
 
 
-GDS_DATE CVT_get_sql_date(const dsc* desc, FPTR_STATUS err)
+GDS_DATE CVT_get_sql_date(const dsc* desc, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -1198,7 +1194,7 @@ GDS_DATE CVT_get_sql_date(const dsc* desc, FPTR_STATUS err)
 }
 
 
-GDS_TIME CVT_get_sql_time(const dsc* desc, FPTR_STATUS err)
+GDS_TIME CVT_get_sql_time(const dsc* desc, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -1224,7 +1220,7 @@ GDS_TIME CVT_get_sql_time(const dsc* desc, FPTR_STATUS err)
 }
 
 
-GDS_TIMESTAMP CVT_get_timestamp(const dsc* desc, FPTR_STATUS err)
+GDS_TIMESTAMP CVT_get_timestamp(const dsc* desc, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -1255,7 +1251,7 @@ USHORT CVT_make_string(const dsc*          desc,
 					   const char**  address,
 					   VARY*         temp,
 					   USHORT        length,
-					   FPTR_STATUS   err)
+					   FPTR_ERROR    err)
 {
 /**************************************
  *
@@ -1305,7 +1301,7 @@ USHORT CVT_make_string(const dsc*          desc,
 }
 
 
-void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
+void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -1698,7 +1694,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 		}
 
 		if (to->dsc_dtype != from->dsc_dtype)
-			(*err) (gds_wish_list, gds_arg_gds, gds_blobnotsup, gds_arg_string, "move", 0);
+			(*err) (gds_wish_list, gds_arg_gds, gds_blobnotsup,
+					gds_arg_string, "move", 0);
 
 		/* Note: DSC_EQUIV failed above as the blob sub_types were different,
 		 * or their character sets were different.  In V4 we aren't trying
@@ -1758,13 +1755,16 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 	}
 
 	if (from->dsc_dtype == dtype_array || from->dsc_dtype == dtype_blob)
-		(*err) (gds_wish_list, gds_arg_gds, gds_blobnotsup, gds_arg_string, "move", 0);
+	{
+		(*err) (gds_wish_list, gds_arg_gds, gds_blobnotsup,
+		        gds_arg_string, "move", 0);
+	}
 
 	(*err) (gds_badblk, 0);	/* internal error */
 }
 
 
-static void conversion_error(const dsc* desc, FPTR_STATUS err)
+static void conversion_error(const dsc* desc, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -1800,7 +1800,7 @@ static void conversion_error(const dsc* desc, FPTR_STATUS err)
 }
 
 
-static void datetime_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
+static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -1845,7 +1845,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
 		date = *(GDS_TIMESTAMP *) from->dsc_address;
 		break;
 	default:
-		fb_assert(false);
+		fb_assert(FALSE);
 		(*err) (gds_badblk, 0);	/* internal error */
 		break;
 	}
@@ -1930,7 +1930,7 @@ static SSHORT decompose(const char* string,
 						USHORT      length,
 						SSHORT      dtype,
 						SLONG*      return_value,
-						FPTR_STATUS err)
+						FPTR_ERROR  err)
 {
 /**************************************
  *
@@ -1985,7 +1985,9 @@ static SSHORT decompose(const char* string,
 					(*err) (gds_arith_except, 0);
 				else if (((*p > '8') && (sign == -1))
 						 || ((*p > '7') && (sign != -1)))
+				{
 					(*err) (gds_arith_except, 0);
+				}
 			}
 
 			value = value * 10 + *p - '0';
@@ -2097,7 +2099,7 @@ static TEXT* error_string(const char* in_string, SSHORT length)
 #endif
 
 
-static void float_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
+static void float_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -2212,7 +2214,7 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
 }
 
 
-static void integer_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
+static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -2357,7 +2359,7 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
 static void string_to_datetime(
 							   const dsc* desc,
 							   GDS_TIMESTAMP* date,
-							   EXPECT_DATETIME expect_type, FPTR_STATUS err)
+							   EXPECT_DATETIME expect_type, FPTR_ERROR err)
 {
 /**************************************
  *

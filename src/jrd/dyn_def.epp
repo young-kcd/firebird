@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		dyn_define.e
+ *	MODULE:		dyn_define.epp
  *	DESCRIPTION:	Dynamic data definition DYN_define_<x>
  *
  * The contents of this file are subject to the Interbase Public
@@ -117,7 +117,7 @@ static const UCHAR who_blr[] =
 
 static void check_unique_name(TDBB, GBL, const TEXT*, bool);
 static bool find_field_source(TDBB, GBL, const TEXT*, USHORT, const TEXT*, TEXT*);
-static bool get_who(TDBB, GBL, SCHAR *);
+static bool get_who(TDBB, GBL, SCHAR*);
 static bool is_it_user_name(GBL, const TEXT*, TDBB);
 
 
@@ -134,7 +134,7 @@ static int private_getODS()
 }
 
 
-void DYN_define_cache( GBL gbl, UCHAR ** ptr)
+void DYN_define_cache( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -148,8 +148,7 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
  **************************************/
 	UCHAR verb;
 	volatile BLK request;
-	USHORT found = FALSE;
-	volatile SSHORT id;
+	volatile SSHORT id = -1;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -157,13 +156,12 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 
 	try {
 
-	id = -1;
-
+	bool found = false;
 	id = drq_l_cache;
 	request = (BLK) CMP_find_request(tdbb, drq_l_cache, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache 
-        found = TRUE;
+        found = true;
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_l_cache)) {
@@ -206,18 +204,18 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_s_cache) = request;
 	}
 
-	}
+	} // try
 	catch (const std::exception&) {
 		if (id == drq_s_cache)
 		{
 			DYN_rundown_request(request, drq_s_cache);
-			DYN_error_punt(TRUE, 150, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 150, NULL, NULL, NULL, NULL, NULL);
 			/* msg 150: STORE RDB$FILES failed */
 		}
 		else
 		{
 			DYN_rundown_request(request, drq_l_cache);
-			DYN_error_punt(TRUE, 156, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 156, NULL, NULL, NULL, NULL, NULL);
 			/* msg 156: Shared cache lookup failed */
 		}
 	}
@@ -225,14 +223,14 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 	return;
 
 dyn_punt_148:
-	DYN_error_punt(FALSE, 148, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 148, NULL, NULL, NULL, NULL, NULL);
 	/* msg 148: "Shared cache file already exists" */
 }
 
 
 void DYN_define_constraint(GBL		gbl,
-						   UCHAR**	ptr,
-						   TEXT*	relation_name,
+						   const UCHAR**	ptr,
+						   const TEXT*	relation_name,
 						   TEXT*	field_name)
 {
 /**************************************
@@ -250,12 +248,12 @@ void DYN_define_constraint(GBL		gbl,
 	volatile BLK request;
 	volatile SSHORT id, old_id;
 	UCHAR verb;
-	TEXT constraint_name[32], index_name[32], referred_index_name[32];
-	TEXT null_field_name[32], trigger_name[32];
+	SqlIdentifier constraint_name, index_name, referred_index_name;
+	SqlIdentifier null_field_name, trigger_name;
 	int all_count, unique_count;
 	LLS field_list = NULL, list_ptr;
 	STR str_;
-	USHORT found, primary_flag = FALSE, foreign_flag = FALSE, not_null;
+	USHORT primary_flag = FALSE, foreign_flag = FALSE, not_null;
 	UCHAR ri_action = 0;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -270,7 +268,7 @@ void DYN_define_constraint(GBL		gbl,
 		MET_exact_name(constraint_name);
 	}
 	if (!constraint_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = NULL;
@@ -357,7 +355,7 @@ void DYN_define_constraint(GBL		gbl,
 
 		DYN_rundown_request(request, local_id);
 		
-		DYN_error_punt(TRUE,
+		DYN_error_punt(true,
 						number,
 						number == 124 ? constraint_name : NULL,
 						NULL,
@@ -369,7 +367,7 @@ void DYN_define_constraint(GBL		gbl,
 	if (verb == gds_dyn_def_trigger)
 	{
 		do {
-			DYN_define_trigger(gbl, ptr, relation_name, trigger_name, FALSE);
+			DYN_define_trigger(gbl, ptr, relation_name, trigger_name, false);
 			DYN_UTIL_store_check_constraints(tdbb, gbl, constraint_name,
 											 trigger_name);
 		} while ((verb = *(*ptr)++) == gds_dyn_def_trigger);
@@ -435,7 +433,7 @@ void DYN_define_constraint(GBL		gbl,
 	}
 
 	if (not_null == FALSE) {
-		DYN_error_punt(FALSE, 123, null_field_name, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 123, null_field_name, NULL, NULL, NULL, NULL);
 		/* msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY/UNIQUE constraint definition" */
 	}
 
@@ -468,7 +466,7 @@ void DYN_define_constraint(GBL		gbl,
 
 		index_name[0] = 0;
 		list_ptr = NULL;
-		found = FALSE;
+		bool found  = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			CRT IN RDB$RELATION_CONSTRAINTS CROSS
 				IDS IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME
@@ -484,7 +482,7 @@ void DYN_define_constraint(GBL		gbl,
 			if (strcmp(index_name, CRT.RDB$INDEX_NAME))
 			{
 				if (list_ptr) {
-					found = FALSE;
+					found = false;
 				}
 				if (found) {
 					EXE_unwind(tdbb,(JRD_REQ)request);
@@ -492,7 +490,7 @@ void DYN_define_constraint(GBL		gbl,
 				}
 				list_ptr = field_list;
 				strcpy(index_name, CRT.RDB$INDEX_NAME);
-				found = TRUE;
+				found = true;
 			}
 
 			if (list_ptr)
@@ -500,12 +498,12 @@ void DYN_define_constraint(GBL		gbl,
 				if (strcmp((char*)((STR) list_ptr->lls_object)->str_data,
 							IDS.RDB$FIELD_NAME))
 				{
-					found = FALSE;
+					found = false;
 				}
 				list_ptr = list_ptr->lls_next;
 			}
 			else {
-				found = FALSE;
+				found = false;
 			}
 		END_FOR;
 		if (!DYN_REQUEST(drq_c_dup_con)) {
@@ -513,7 +511,7 @@ void DYN_define_constraint(GBL		gbl,
 		}
 
 		if (list_ptr) {
-			found = FALSE;
+			found = false;
 		}
 
 		if (found) {
@@ -607,7 +605,7 @@ void DYN_define_constraint(GBL		gbl,
 
 		DYN_rundown_request(request, local_id);
 		
-		DYN_error_punt(TRUE,
+		DYN_error_punt(true,
 						number,
 						number == 124 ? constraint_name : NULL,
 						NULL,
@@ -619,19 +617,19 @@ void DYN_define_constraint(GBL		gbl,
 	return;
 
 dyn_punt_false_124:
-	DYN_error_punt(FALSE, 124, constraint_name, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 124, constraint_name, NULL, NULL, NULL, NULL);
 	/* msg 124: "A column name is repeated in the definition of constraint: %s" */
 	return;
 
 dyn_punt_false_126:
-	DYN_error_punt(FALSE, 126, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 126, NULL, NULL, NULL, NULL, NULL);
 	/* msg 126: "Same set of columns cannot be used in more than one PRIMARY KEY and/or UNIQUE constraint definition" */
 }
 
 
 void DYN_define_dimension(GBL		gbl,
-						  UCHAR**	ptr,
-						  TEXT*		relation_name,
+						  const UCHAR**	ptr,
+						  const TEXT*		relation_name,
 						  TEXT*		field_name)
 {
 /**************************************
@@ -700,7 +698,7 @@ void DYN_define_dimension(GBL		gbl,
 	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_dims);
-			DYN_error_punt(TRUE, 3, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 3, NULL, NULL, NULL, NULL, NULL);
 			/* msg 3: "STORE RDB$FIELD_DIMENSIONS failed" */
 		}
 		throw;
@@ -712,7 +710,7 @@ void DYN_define_dimension(GBL		gbl,
 }
 
 
-void DYN_define_exception( GBL gbl, UCHAR ** ptr)
+void DYN_define_exception( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -727,7 +725,7 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 
 	volatile BLK request;
 	UCHAR verb;
-	TEXT exception_name[32];
+	SqlIdentifier exception_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
@@ -737,7 +735,7 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 
 	MET_exact_name(exception_name);
 	if (!exception_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
@@ -776,7 +774,7 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
-			DYN_error_punt(TRUE, 142, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 142, NULL, NULL, NULL, NULL, NULL);
 			/* msg 142: "DEFINE EXCEPTION failed" */
 		}
 		throw;
@@ -785,7 +783,7 @@ void DYN_define_exception( GBL gbl, UCHAR ** ptr)
 
 
 void DYN_define_file(GBL		gbl,
-					 UCHAR**	ptr,
+					 const UCHAR**	ptr,
 					 SLONG		shadow_number,
 					 SLONG*		start,
 					 USHORT		msg)
@@ -821,12 +819,12 @@ void DYN_define_file(GBL		gbl,
 	GET_STRING(ptr, temp_f1);
 	ISC_expand_filename(temp_f1, 0, temp_f);
 	if (!strcmp((char*)dbb->dbb_filename->str_data, temp_f)) {
-		DYN_error_punt(FALSE, 166, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1 X IN RDB$FILES WITH X.RDB$FILE_NAME EQ temp_f
-            DYN_error_punt(FALSE, 166, NULL, NULL, NULL, NULL, NULL);
+            DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	END_FOR;
 
 	request = (BLK) CMP_find_request(tdbb, id = drq_s_files, DYN_REQUESTS);
@@ -883,12 +881,12 @@ void DYN_define_file(GBL		gbl,
 		if (id == drq_l_files)
 		{
 			DYN_rundown_request(request, drq_l_files);
-			DYN_error_punt(FALSE, 166, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 		}
 		else
 		{
 			DYN_rundown_request(request, drq_s_files);
-			DYN_error_punt(TRUE, msg, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, msg, NULL, NULL, NULL, NULL, NULL);
 		}
 	}
 
@@ -896,7 +894,7 @@ void DYN_define_file(GBL		gbl,
 
 
 void DYN_define_difference(GBL		gbl,
-						   UCHAR**	ptr)
+						   const UCHAR**	ptr)
 {
 /**************************************
  *
@@ -909,8 +907,7 @@ void DYN_define_difference(GBL		gbl,
  *
  **************************************/
 	volatile BLK request;
-	USHORT found = FALSE;
-	volatile SSHORT id;
+	volatile SSHORT id = -1;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -918,14 +915,13 @@ void DYN_define_difference(GBL		gbl,
 
 	try {
 
-	id = -1;
-
+	bool found = false;
 	id = drq_l_difference;
 	request = (BLK) CMP_find_request(tdbb, drq_l_difference, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIL IN RDB$FILES
 		if (FIL.RDB$FILE_FLAGS & FILE_difference)
-      		found = TRUE;
+      		found = true;
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_l_difference)) {
@@ -959,13 +955,13 @@ void DYN_define_difference(GBL		gbl,
 		if (id == drq_s_difference)
 		{
 			DYN_rundown_request(request, drq_s_difference);
-			DYN_error_punt(TRUE, 150, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 150, NULL, NULL, NULL, NULL, NULL);
 			/* msg 150: STORE RDB$FILES failed */
 		}
 		else
 		{
 			DYN_rundown_request(request, drq_l_difference);
-			DYN_error_punt(TRUE, 156, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 156, NULL, NULL, NULL, NULL, NULL);
 			/* msg 156: Shared cache lookup failed */
 		}
 	}
@@ -973,12 +969,12 @@ void DYN_define_difference(GBL		gbl,
 	return;
 
 dyn_punt_216:
-	DYN_error_punt(FALSE, 216, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 216, NULL, NULL, NULL, NULL, NULL);
 	/* msg 216: "Difference file is already defined" */
 }
 
 
-void DYN_define_filter( GBL gbl, UCHAR ** ptr)
+void DYN_define_filter( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -992,7 +988,7 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
  **************************************/
 
 	UCHAR verb;
-	TEXT filter_name[32];
+	SqlIdentifier filter_name;
 	volatile BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -1003,7 +999,7 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
 
 	MET_exact_name(filter_name);
 	if (!filter_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_filters, DYN_REQUESTS);
@@ -1064,7 +1060,7 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
 	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_filters);
-			DYN_error_punt(TRUE, 7, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 7, NULL, NULL, NULL, NULL, NULL);
 			/* msg 7: "DEFINE BLOB FILTER failed" */
 		}
 		throw;
@@ -1072,7 +1068,7 @@ void DYN_define_filter( GBL gbl, UCHAR ** ptr)
 }
 
 
-void DYN_define_function( GBL gbl, UCHAR ** ptr)
+void DYN_define_function( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1086,7 +1082,7 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
  **************************************/
 
 	UCHAR verb;
-	TEXT function_name[32];
+	SqlIdentifier function_name;
 	volatile BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -1097,7 +1093,7 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 
 	MET_exact_name(function_name);
 	if (!function_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
@@ -1123,7 +1119,7 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 					X.RDB$RETURN_ARGUMENT = (SSHORT)DYN_get_number(ptr);
 					X.RDB$RETURN_ARGUMENT.NULL = FALSE;
 					if (X.RDB$RETURN_ARGUMENT > MAX_UDF_ARGUMENTS)
-						DYN_error_punt(TRUE, 10, NULL, NULL, NULL, NULL, NULL);
+						DYN_error_punt(true, 10, NULL, NULL, NULL, NULL, NULL);
 					/* msg 10: "DEFINE FUNCTION failed" */
 					break;
 
@@ -1164,7 +1160,7 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_funcs);
-			DYN_error_punt(TRUE, 10, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 10, NULL, NULL, NULL, NULL, NULL);
 			/* msg 10: "DEFINE FUNCTION failed" */
 		}
 		throw;
@@ -1172,7 +1168,7 @@ void DYN_define_function( GBL gbl, UCHAR ** ptr)
 }
 
 
-void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
+void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
 {
 /**************************************
  *
@@ -1199,7 +1195,7 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
         X.RDB$ARGUMENT_POSITION = (SSHORT)DYN_get_number(ptr);
 
 		if (X.RDB$ARGUMENT_POSITION > MAX_UDF_ARGUMENTS)
-			DYN_error_punt(TRUE, 12, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 12, NULL, NULL, NULL, NULL, NULL);
 		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
 
 		if (function_name) {
@@ -1289,13 +1285,13 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
 		if (request) {
 			DYN_rundown_request(request, drq_s_func_args);
 		}
-		DYN_error_punt(TRUE, 12, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 12, NULL, NULL, NULL, NULL, NULL);
 		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
 	}
 }
 
 
-void DYN_define_generator( GBL gbl, UCHAR ** ptr)
+void DYN_define_generator( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1312,14 +1308,14 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 	DBB  dbb  = tdbb->tdbb_database;
 
 	volatile BLK request;
-	TEXT generator_name[32];
+	SqlIdentifier generator_name;
 
 	generator_name[0] = 0;
 	GET_STRING(ptr, generator_name);
 	MET_exact_name(generator_name);
 
 	if (!generator_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
@@ -1344,7 +1340,7 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gens);
-			DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 8, NULL, NULL, NULL, NULL, NULL);
 			/* msg 8: "DEFINE GENERATOR failed" */
 		}
 		throw;
@@ -1352,15 +1348,15 @@ void DYN_define_generator( GBL gbl, UCHAR ** ptr)
 
 	if (*(*ptr)++ != gds_dyn_end)
 	{
-		DYN_error_punt(TRUE, 9, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 9, NULL, NULL, NULL, NULL, NULL);
 		/* msg 9: "DEFINE GENERATOR unexpected dyn verb" */
 	}
 }
 
 
 void DYN_define_global_field(GBL		gbl,
-							 UCHAR**	ptr,
-							 TEXT*		relation_name,
+							 const UCHAR**	ptr,
+							 const TEXT*		relation_name,
 							 TEXT*		field_name)
 {
 /**************************************
@@ -1378,7 +1374,7 @@ void DYN_define_global_field(GBL		gbl,
 	DBB  dbb  = tdbb->tdbb_database;
 
 	UCHAR verb;
-	TEXT global_field_name[32];
+	SqlIdentifier global_field_name;
 	volatile BLK request;
 	USHORT dtype;
 
@@ -1392,7 +1388,7 @@ void DYN_define_global_field(GBL		gbl,
 		MET_exact_name(global_field_name);
 	}
 	if (!global_field_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
@@ -1598,7 +1594,7 @@ void DYN_define_global_field(GBL		gbl,
 	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gfields);
-			DYN_error_punt(TRUE, 13, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 13, NULL, NULL, NULL, NULL, NULL);
 			/* msg 13: "STORE RDB$FIELDS failed" */
 		}
 		throw;
@@ -1607,8 +1603,8 @@ void DYN_define_global_field(GBL		gbl,
 
 
 void DYN_define_index(GBL		gbl,
-					  UCHAR**	ptr,
-					  TEXT*		relation_name,
+					  const UCHAR**	ptr,
+					  const TEXT*		relation_name,
 					  UCHAR		index_type,
 					  TEXT*		new_index_name,
 					  TEXT*		referred_index_name,
@@ -1629,9 +1625,8 @@ void DYN_define_index(GBL		gbl,
 
 	volatile BLK request;
 	volatile SSHORT id, old_id;
-	const size_t field_name_size = 32;
-	TEXT index_name[32];
-	TEXT referenced_relation[32];
+	SqlIdentifier index_name;
+	SqlIdentifier referenced_relation;
 	UCHAR verb;
 	UCHAR seg_count;
 	UCHAR fld_count;
@@ -1639,8 +1634,8 @@ void DYN_define_index(GBL		gbl,
 	LLS seg_list = NULL;
 	LLS list_ptr;
 	STR str_;
-	USHORT found, key_length, length, referred_cols = 0;
-	TEXT trigger_name[32];
+	USHORT key_length, length, referred_cols = 0;
+	SqlIdentifier trigger_name;
 
 	if (ri_actionP != NULL) {
 		(*ri_actionP) = 0;
@@ -1659,7 +1654,7 @@ void DYN_define_index(GBL		gbl,
 		MET_exact_name(index_name);
 	}
 	if (!index_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = NULL;
@@ -1694,7 +1689,7 @@ void DYN_define_index(GBL		gbl,
 		else if (*(*ptr)++ == gds_dyn_rel_name)
 			GET_STRING(ptr, IDX.RDB$RELATION_NAME);
 		else
-			DYN_error_punt(FALSE, 14, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 14, NULL, NULL, NULL, NULL, NULL);
 		/* msg 14: "No relation specified for index" */
 
 		IDX.RDB$RELATION_NAME.NULL = FALSE;
@@ -1710,7 +1705,7 @@ void DYN_define_index(GBL		gbl,
 			VREL IN RDB$RELATIONS WITH VREL.RDB$RELATION_NAME EQ
 				IDX.RDB$RELATION_NAME 
             if (!VREL.RDB$VIEW_BLR.NULL)
-                DYN_error_punt(FALSE, 181, NULL, NULL, NULL, NULL, NULL);
+                DYN_error_punt(false, 181, NULL, NULL, NULL, NULL, NULL);
 			/* msg 181: "attempt to index a view" */
 
 		END_FOR;
@@ -1748,8 +1743,9 @@ void DYN_define_index(GBL		gbl,
 				break;
 				
 			case gds_dyn_fld_name:
-				str_ = FB_NEW_RPT(*tdbb->tdbb_default, field_name_size - 1) str();
-				DYN_get_string((TEXT**)ptr, (TEXT*)str_->str_data, field_name_size, TRUE);
+				str_ = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
+				DYN_get_string(reinterpret_cast<const TEXT**>(ptr),
+					(TEXT*)str_->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
 				LLS_PUSH(str_, &seg_list);
 				seg_count++;
 
@@ -1766,19 +1762,19 @@ void DYN_define_index(GBL		gbl,
 					fld_count++;
 					if (GF.RDB$FIELD_TYPE == blr_blob)
 					{
-						DYN_error_punt(FALSE, 116, IDX.RDB$INDEX_NAME, NULL,
+						DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME, NULL,
 									   NULL, NULL, NULL);
 						/* msg 116 "attempt to index blob field in index %s" */
 					}
 					else if (!GF.RDB$DIMENSIONS.NULL)
 					{
-						DYN_error_punt(FALSE, 117, IDX.RDB$INDEX_NAME, NULL,
+						DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME, NULL,
 									   NULL, NULL, NULL);
 						/* msg 117 "attempt to index array field in index %s" */
 					}
 					else if (!GF.RDB$COMPUTED_BLR.NULL)
 					{
-						DYN_error_punt(FALSE, 179, IDX.RDB$INDEX_NAME, NULL,
+						DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME, NULL,
 									   NULL, NULL, NULL);
 						/* msg 179 "attempt to index COMPUTED BY field in index %s" */
 					}
@@ -1851,13 +1847,14 @@ void DYN_define_index(GBL		gbl,
 				GET_STRING(ptr, referenced_relation);
 				MET_exact_name(referenced_relation);
 				if (!referenced_relation[0])
-					DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 				/* msg 212: "Zero length identifiers not allowed" */
 				break;
 
 			case gds_dyn_idx_ref_column:
-				str_ = FB_NEW_RPT(*tdbb->tdbb_default, field_name_size - 1) str();
-				DYN_get_string((TEXT**)ptr, (TEXT*)str_->str_data, field_name_size, TRUE);
+				str_ = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
+				DYN_get_string(reinterpret_cast<const TEXT**>(ptr),
+					(TEXT*)str_->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
 				LLS_PUSH(str_, &field_list);
 				referred_cols++;
 				break;
@@ -1876,7 +1873,7 @@ void DYN_define_index(GBL		gbl,
 					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
-										   trigger_name, TRUE);
+										   trigger_name, true);
 						DYN_UTIL_store_check_constraints(tdbb, gbl, cnst_name,
 														 trigger_name);
 					}
@@ -1888,7 +1885,7 @@ void DYN_define_index(GBL		gbl,
 					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
-										   trigger_name, TRUE);
+										   trigger_name, true);
 						DYN_UTIL_store_check_constraints(tdbb, gbl, cnst_name,
 														 trigger_name);
 					}
@@ -1900,7 +1897,7 @@ void DYN_define_index(GBL		gbl,
 					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
-										   trigger_name, TRUE);
+										   trigger_name, true);
 						DYN_UTIL_store_check_constraints(tdbb, gbl, cnst_name,
 														 trigger_name);
 					}
@@ -1925,7 +1922,7 @@ void DYN_define_index(GBL		gbl,
 					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
-										   trigger_name, TRUE);
+										   trigger_name, true);
 						DYN_UTIL_store_check_constraints(tdbb, gbl, cnst_name,
 														 trigger_name);
 					}
@@ -1937,7 +1934,7 @@ void DYN_define_index(GBL		gbl,
 					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
-										   trigger_name, TRUE);
+										   trigger_name, true);
 						DYN_UTIL_store_check_constraints(tdbb, gbl, cnst_name,
 														 trigger_name);
 					}
@@ -1949,7 +1946,7 @@ void DYN_define_index(GBL		gbl,
 					if ((verb = *(*ptr)++) == gds_dyn_def_trigger)
 					{
 						DYN_define_trigger(gbl, ptr, relation_name,
-										   trigger_name, TRUE);
+										   trigger_name, true);
 						DYN_UTIL_store_check_constraints(tdbb, gbl, cnst_name,
 														 trigger_name);
 					}
@@ -1972,13 +1969,13 @@ void DYN_define_index(GBL		gbl,
 
 		key_length = ROUNDUP(key_length, sizeof(SLONG));
 		if (key_length >= MAX_KEY)
-			DYN_error_punt(FALSE, 118, IDX.RDB$INDEX_NAME, NULL, NULL, NULL,
+			DYN_error_punt(false, 118, IDX.RDB$INDEX_NAME, NULL, NULL, NULL,
 						   NULL);
 		/* msg 118 "key size too big for index %s" */
 
 		if (seg_count) {
 			if (seg_count != fld_count)
-				DYN_error_punt(FALSE, 120, IDX.RDB$INDEX_NAME, NULL, NULL,
+				DYN_error_punt(false, 120, IDX.RDB$INDEX_NAME, NULL, NULL,
 							   NULL, NULL);
 			/* msg 118 "Unknown fields in index %s" */
 
@@ -2006,7 +2003,7 @@ void DYN_define_index(GBL		gbl,
 #ifdef EXPRESSION_INDICES
 		if (IDX.RDB$EXPRESSION_BLR.NULL)
 #endif
-			DYN_error_punt(FALSE, 119, IDX.RDB$INDEX_NAME, NULL, NULL, NULL,
+			DYN_error_punt(false, 119, IDX.RDB$INDEX_NAME, NULL, NULL, NULL,
 						   NULL);
 		/* msg 119 "no keys for index %s" */
 
@@ -2014,7 +2011,7 @@ void DYN_define_index(GBL		gbl,
 			/* If referring columns count <> referred columns return error */
 
 			if (seg_count != referred_cols)
-				DYN_error_punt(TRUE, 133, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(true, 133, NULL, NULL, NULL, NULL, NULL);
 			/* msg 133: "Number of referencing columns do not equal number of referenced columns */
 
 			/* lookup a unique index in the referenced relation with the
@@ -2028,7 +2025,7 @@ void DYN_define_index(GBL		gbl,
 
 			index_name[0] = 0;
 			list_ptr = NULL;
-			found = FALSE;
+			bool found = false;
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			    X IN RDB$RELATION_CONSTRAINTS CROSS
 				Y IN RDB$INDICES OVER RDB$INDEX_NAME CROSS
@@ -2049,14 +2046,14 @@ void DYN_define_index(GBL		gbl,
 				DYN_terminate(Y.RDB$INDEX_NAME, sizeof(Y.RDB$INDEX_NAME));
 				if (strcmp((char*)index_name, (char*)Y.RDB$INDEX_NAME)) {
 					if (list_ptr)
-						found = FALSE;
+						found = false;
 					if (found) {
 						EXE_unwind(tdbb,(JRD_REQ)request);
 						break;
 					}
 					list_ptr = field_list;
 					strcpy((char*)index_name, (char*)Y.RDB$INDEX_NAME);
-					found = TRUE;
+					found = true;
 				}
 
 				/* if there are no more fields or the field name doesn't
@@ -2070,12 +2067,12 @@ void DYN_define_index(GBL		gbl,
 					if (strcmp((char*)((STR) list_ptr->lls_object)->str_data,
 								(char*)Z.RDB$FIELD_NAME))
 					{
-						found = FALSE;
+						found = false;
 					}
 					list_ptr = list_ptr->lls_next;
 				}
 				else
-					found = FALSE;
+					found = false;
 
 			END_FOR;
 			if (!DYN_REQUEST(drq_l_unq_idx))
@@ -2084,7 +2081,7 @@ void DYN_define_index(GBL		gbl,
 			id = old_id;
 
 			if (list_ptr)
-				found = FALSE;
+				found = false;
 
 			if (found) {
 				strcpy((char*)IDX.RDB$FOREIGN_KEY, (char*)index_name);
@@ -2093,7 +2090,7 @@ void DYN_define_index(GBL		gbl,
 					strcpy(referred_index_name, (char*)index_name);
 			}
 			else
-				DYN_error_punt(FALSE, 18, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(false, 18, NULL, NULL, NULL, NULL, NULL);
 			/* msg 18: "could not find unique index with specified fields" */
 		}
 		else if (referenced_relation[0]) {
@@ -2116,7 +2113,7 @@ void DYN_define_index(GBL		gbl,
 				   of columns in referring index */
 
 				if (seg_count != IND.RDB$SEGMENT_COUNT)
-					DYN_error_punt(TRUE, 133, NULL, NULL, NULL, NULL, NULL);
+					DYN_error_punt(true, 133, NULL, NULL, NULL, NULL, NULL);
 				/* msg 133: "Number of referencing columns do not equal number of referenced columns" */
 
 				DYN_terminate(IND.RDB$INDEX_NAME, sizeof(IND.RDB$INDEX_NAME));
@@ -2132,7 +2129,7 @@ void DYN_define_index(GBL		gbl,
 			id = old_id;
 
 			if (IDX.RDB$FOREIGN_KEY.NULL)
-				DYN_error_punt(FALSE, 20, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(false, 20, NULL, NULL, NULL, NULL, NULL);
 			/* msg 20: "could not find primary key index in specified relation" */
 		}
 
@@ -2147,35 +2144,35 @@ void DYN_define_index(GBL		gbl,
 	catch (const std::exception&) {
 		if (id == drq_s_indices) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 21, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 21, NULL, NULL, NULL, NULL, NULL);
 			/* msg 21: "STORE RDB$INDICES failed" */
 		}
 		else if (id == drq_s_idx_segs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 15, NULL, NULL, NULL, NULL, NULL);
 			/* msg 15: "STORE RDB$INDICES failed" */
 		}
 
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_lfield)
-			DYN_error_punt(TRUE, 15, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 15, NULL, NULL, NULL, NULL, NULL);
 		/* msg 15: "STORE RDB$INDICES failed" */
 		else if (id == drq_l_unq_idx)
-			DYN_error_punt(TRUE, 17, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 17, NULL, NULL, NULL, NULL, NULL);
 		/* msg 17: "Primary Key field lookup failed" */
 		else if (id == drq_l_view_idx)
-			DYN_error_punt(TRUE, 180, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 180, NULL, NULL, NULL, NULL, NULL);
 		/* msg 180: "Table Name lookup failed" */
 		else
-			DYN_error_punt(TRUE, 19, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 19, NULL, NULL, NULL, NULL, NULL);
 		/* msg 19: "Primary Key lookup failed" */
 	}
 }
 
 
 void DYN_define_local_field(GBL		gbl,
-							UCHAR**	ptr,
-							TEXT*	relation_name,
+							const UCHAR**	ptr,
+							const TEXT*	relation_name,
 							TEXT*	field_name)
 {
 /**************************************
@@ -2190,14 +2187,13 @@ void DYN_define_local_field(GBL		gbl,
  **************************************/
 	volatile BLK request;
 	volatile SSHORT id, old_id;
-	UCHAR verb, *blr;
-	TEXT local_field_name[32];
+	UCHAR verb;
+	SqlIdentifier local_field_name;
 	USHORT dtype, length,
 		lflag, sflag, slflag, scflag, clflag, clength, prflag, precision;
 	SSHORT stype, scale;
 	SSHORT charset_id;
 	USHORT charset_id_flag;
-	TEXT *source;
 	SLONG fld_pos;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -2208,7 +2204,7 @@ void DYN_define_local_field(GBL		gbl,
 
 	MET_exact_name(local_field_name);
 	if (!local_field_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = NULL;
@@ -2221,8 +2217,8 @@ void DYN_define_local_field(GBL		gbl,
 
 	scflag = lflag = sflag = slflag = clflag = prflag = FALSE;
 	charset_id_flag = FALSE;
-	blr = NULL;
-	source = NULL;
+	const UCHAR* blr = NULL;
+	const UCHAR* source = NULL;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS 
 	    /* GET_STRING(ptr, RFR.RDB$FIELD_NAME); */
@@ -2321,7 +2317,7 @@ void DYN_define_local_field(GBL		gbl,
 				break;
 
 			case gds_dyn_fld_computed_source:
-				source = (TEXT *) * ptr;
+				source = *ptr;
 				DYN_skip_attribute(ptr);
 				break;
 
@@ -2413,7 +2409,7 @@ void DYN_define_local_field(GBL		gbl,
                 strcpy(FLD.RDB$FIELD_NAME, RFR.RDB$FIELD_SOURCE);
 				DYN_put_blr_blob(gbl, &blr, &FLD.RDB$COMPUTED_BLR);
 				if (source) {
-					DYN_put_text_blob(gbl, (UCHAR**)&source, &FLD.RDB$COMPUTED_SOURCE);
+					DYN_put_text_blob(gbl, &source, &FLD.RDB$COMPUTED_SOURCE);
 				}
 				FLD.RDB$FIELD_TYPE = dtype;
 				if (lflag) {
@@ -2481,12 +2477,12 @@ void DYN_define_local_field(GBL		gbl,
 	catch (const std::exception&) {
 		if (id == drq_s_lfields) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 23, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 23, NULL, NULL, NULL, NULL, NULL);
 			/* msg 23: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 22, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 22, NULL, NULL, NULL, NULL, NULL);
 			/* msg 22: "STORE RDB$FIELDS failed" */
 		}
 	}
@@ -2495,8 +2491,8 @@ void DYN_define_local_field(GBL		gbl,
 
 void DYN_define_log_file(
 						 GBL gbl,
-						 UCHAR ** ptr,
-						 USHORT first_log_file, USHORT default_log)
+						 const UCHAR** ptr,
+						 bool first_log_file, bool default_log)
 {
 /**************************************
  *
@@ -2510,7 +2506,6 @@ void DYN_define_log_file(
  **************************************/
 	UCHAR verb;
 	volatile BLK request;
-	USHORT found = FALSE;
 	volatile SSHORT id;
 	STR db_filename;
 
@@ -2524,10 +2519,12 @@ void DYN_define_log_file(
 	
 	if (first_log_file)
 	{
+	    bool found = false;
 		id = drq_l_log_files;
 		request = (BLK) CMP_find_request(tdbb, drq_l_log_files, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			FIL IN RDB$LOG_FILES found = TRUE;
+			FIL IN RDB$LOG_FILES
+			found = true;
 		END_FOR
 
 		if (!DYN_REQUEST(drq_l_log_files))
@@ -2550,7 +2547,7 @@ void DYN_define_log_file(
 		if (default_log) {
 			db_filename = dbb->dbb_filename;
 			if (db_filename->str_length >= sizeof(X.RDB$FILE_NAME))
-				DYN_error_punt(FALSE, 159, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
 			memcpy(X.RDB$FILE_NAME, db_filename->str_data,
 				   (int) db_filename->str_length);
 			X.RDB$FILE_NAME[db_filename->str_length] = '\0';
@@ -2606,12 +2603,12 @@ void DYN_define_log_file(
 	catch (const std::exception&) {
 		if (id == drq_s_log_files) {
 			DYN_rundown_request(request, drq_s_log_files);
-			DYN_error_punt(TRUE, 154, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 154, NULL, NULL, NULL, NULL, NULL);
 			/* msg 154: STORE RDB$LOG_FILES failed */
 		}
 		else {
 			DYN_rundown_request(request, drq_l_log_files);
-			DYN_error_punt(TRUE, 155, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 155, NULL, NULL, NULL, NULL, NULL);
 			/* msg 155: Write ahead log lookup failed */
 		}
 	}
@@ -2619,12 +2616,12 @@ void DYN_define_log_file(
 	return;
 
 local_punt_false_151:
-	DYN_error_punt(FALSE, 151, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 151, NULL, NULL, NULL, NULL, NULL);
 	/* msg 151: "Write ahead log already exists" */
 }
 
 
-void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
+void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 {
 /**************************************
  *
@@ -2637,7 +2634,7 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
  *
  **************************************/
 	UCHAR verb;
-	TEXT parameter_name[32];
+	SqlIdentifier parameter_name;
 	volatile BLK request;
 	BLK request2;
 	USHORT f_length, f_type, f_charlength, f_seg_length,
@@ -2655,7 +2652,7 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 
 	MET_exact_name(parameter_name);
 	if (!parameter_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_prms, DYN_REQUESTS);
@@ -2834,12 +2831,12 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 	catch (const std::exception&) {
 		if (id == drq_s_prms) {
 			DYN_rundown_request(request, drq_s_prms);
-			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 136, NULL, NULL, NULL, NULL, NULL);
 			/* msg 163: "STORE RDB$PROCEDURE_PARAMETERS failed" */
 		}
 		else if (id == drq_s_prm_src) {
 			DYN_rundown_request(request, drq_s_prm_src);
-			DYN_error_punt(TRUE, 136, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 136, NULL, NULL, NULL, NULL, NULL);
 			/* msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed" */
 		}
 		DYN_rundown_request(request, -1);
@@ -2847,12 +2844,12 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 		/* Control should never reach this point,
 		   because id should always have one of the values tested above.  */
 		fb_assert(0);
-		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 0, NULL, NULL, NULL, NULL, NULL);
 	}
 }
 
 
-void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
+void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -2868,7 +2865,8 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	UCHAR verb;
 	USHORT sql_prot;
 	volatile SSHORT id;
-	TEXT procedure_name[PROC_NAME_SIZE], owner_name[32], *p;
+	SqlIdentifier procedure_name;
+	SqlIdentifier owner_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -2878,7 +2876,7 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 
 	MET_exact_name(procedure_name);
 	if (!procedure_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	sql_prot = FALSE;
@@ -2959,10 +2957,10 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 
 	if (sql_prot) {
 		if (!get_who(tdbb, gbl, owner_name))
-			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
 		/* msg 134: "STORE RDB$PROCEDURES failed" */
 
-		for (p = ALL_PROC_PRIVILEGES; *p; p++) {
+		for (const TEXT* p = ALL_PROC_PRIVILEGES; *p; p++) {
 			request =
 				(BLK) CMP_find_request(tdbb, drq_s_prc_usr_prvs,
 									   DYN_REQUESTS);
@@ -2987,30 +2985,30 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	catch (const std::exception&) {
 		if (id == drq_s_prcs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
 		}
 		else if (id == drq_s_prc_usr_prvs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 25, NULL, NULL, NULL, NULL, NULL);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_prc_name) {
-			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
 		}
 
 		/* Control should never reach this point, because id should have
 		   one of the values tested-for above. */
 		fb_assert(0);
-		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 0, NULL, NULL, NULL, NULL, NULL);
 	}
 }
 
 
-void DYN_define_relation( GBL gbl, UCHAR ** ptr)
+void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3027,7 +3025,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	USHORT sql_prot, is_a_view, priv;
 	volatile SSHORT id, old_id;
 	ISC_STATUS *s;
-	TEXT relation_name[32], owner_name[32], field_name[32], *p;
+	SqlIdentifier relation_name, owner_name, field_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -3039,7 +3037,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 
 	MET_exact_name(relation_name);
 	if (!relation_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = NULL;
@@ -3102,7 +3100,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 			case gds_dyn_rel_ext_file:
 				GET_STRING(ptr, REL.RDB$EXTERNAL_FILE);
 				if (ISC_check_if_remote(REL.RDB$EXTERNAL_FILE, FALSE))
-					DYN_error_punt(TRUE, 163, NULL, NULL, NULL, NULL, NULL);
+					DYN_error_punt(true, 163, NULL, NULL, NULL, NULL, NULL);
 
 				// Check for any path, present in filename.
 				// If miss it, file will be searched in External Tables Dirs,
@@ -3129,7 +3127,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 
 		if (sql_prot) {
 			if (!get_who(tdbb, gbl, owner_name))
-				DYN_error_punt(TRUE, 115, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(true, 115, NULL, NULL, NULL, NULL, NULL);
 			/* msg 115: "CREATE VIEW failed" */
 
 			if (is_a_view) {
@@ -3151,9 +3149,9 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 							so I included a call to strip trailing blanks. */
 					DYN_terminate(PREL.RDB$OWNER_NAME, sizeof(PREL.RDB$OWNER_NAME));
 					if (strcmp(PREL.RDB$OWNER_NAME, owner_name)) {
-						if (DYN_UTIL_get_prot
+						if (!DYN_UTIL_get_prot
 							(tdbb, gbl, PREL.RDB$RELATION_NAME, "", &priv))
-							DYN_error_punt(TRUE, 115, NULL, NULL, NULL, NULL,
+							DYN_error_punt(true, 115, NULL, NULL, NULL, NULL,
 										   NULL);
 						/* msg 115: "CREATE VIEW failed" */
 
@@ -3170,7 +3168,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 								(ISC_STATUS) ERR_cstring(REL.RDB$RELATION_NAME);
 							*s = 0;
 							/* msg 32: no permission for %s access to %s %s */
-							DYN_error_punt(TRUE, 115, NULL, NULL, NULL, NULL,
+							DYN_error_punt(true, 115, NULL, NULL, NULL, NULL,
 										   NULL);
 							/* msg 115: "CREATE VIEW failed" */
 						}
@@ -3188,7 +3186,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_s_rels) = request;
 
 	if (sql_prot)
-		for (p = ALL_PRIVILEGES; *p; p++) {
+		for (const TEXT* p = ALL_PRIVILEGES; *p; p++) {
 			request =
 				(BLK) CMP_find_request(tdbb, drq_s_usr_prvs, DYN_REQUESTS);
 			id = drq_s_usr_prvs;
@@ -3212,32 +3210,32 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	catch (const std::exception&) {
 		if (id == drq_s_rels) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
 			/* msg 24: "STORE RDB$RELATIONS failed" */
 		}
 		else if (id == drq_s_usr_prvs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 25, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 25, NULL, NULL, NULL, NULL, NULL);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_rel_name)
-			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
 		/* msg 24: "STORE RDB$RELATIONS failed" */
 		else if (id == drq_l_view_rels)
-			DYN_error_punt(TRUE, 115, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 115, NULL, NULL, NULL, NULL, NULL);
 		/* msg 115: "CREATE VIEW failed" */
 
 		/* Control should never reach this point, because id should
 		   always have one of the values test-for above. */
 		fb_assert(0);
-		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 0, NULL, NULL, NULL, NULL, NULL);
 	}
 }
 
 
-void DYN_define_role( GBL gbl, UCHAR ** ptr)
+void DYN_define_role( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3252,22 +3250,25 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
  *
  **************************************/
 	volatile BLK request = NULL;
-	TEXT dummy_name[32], owner_name[32], role_name[32], *p;
+	SqlIdentifier dummy_name, owner_name, role_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	if (private_getODS() < ODS_9_0)
 	{
-		DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
+		DYN_error(false, 196, NULL, NULL, NULL, NULL, NULL);
 		ERR_punt();
 	}
 
 	strcpy(owner_name, tdbb->tdbb_attachment->att_user->usr_user_name);
 
+	{ // scope block
+	TEXT* p;
 	for (p = owner_name; *p; p++)
 		*p = UPPER7(*p);
 	*p = '\0';
+	} // end scope block
 
 	GET_STRING(ptr, role_name);
 
@@ -3277,7 +3278,7 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 		** user name could not be used for SQL role
 		**
 		*************************************************/
-		DYN_error(FALSE, 193, owner_name, NULL, NULL, NULL, NULL);
+		DYN_error(false, 193, owner_name, NULL, NULL, NULL, NULL);
 		ERR_punt();
 	}
 
@@ -3287,7 +3288,7 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 		** keyword NONE could not be used as SQL role name
 		**
 		*************************************************/
-		DYN_error(FALSE, 195, role_name, NULL, NULL, NULL, NULL);
+		DYN_error(false, 195, role_name, NULL, NULL, NULL, NULL);
 		ERR_punt();
 	}
 
@@ -3299,7 +3300,7 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 			** user name could not be used for SQL role
 			**
 			*************************************************/
-			DYN_error(FALSE, 193, role_name, NULL, NULL, NULL, NULL);
+			DYN_error(false, 193, role_name, NULL, NULL, NULL, NULL);
 			goto do_err_punt;
 		}
 
@@ -3309,7 +3310,7 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 			** SQL role already exist
 			**
 			*************************************************/
-			DYN_error(FALSE, 194, role_name, NULL, NULL, NULL, NULL);
+			DYN_error(false, 194, role_name, NULL, NULL, NULL, NULL);
 			goto do_err_punt;
 		}
 
@@ -3334,7 +3335,7 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
 		if (request) {
 			DYN_rundown_request(request, drq_role_gens);
 		}
-		DYN_error_punt(TRUE, 8, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 8, NULL, NULL, NULL, NULL, NULL);
 		/* msg 8: "DEFINE ROLE failed" */
 	}
 
@@ -3345,12 +3346,12 @@ do_err_punt:
 	return;
 
 do_error_punt_9:
-	DYN_error_punt(TRUE, 9, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(true, 9, NULL, NULL, NULL, NULL, NULL);
 	/* msg 9: "DEFINE ROLE unexpected dyn verb" */
 }
 
 
-void DYN_define_security_class( GBL gbl, UCHAR ** ptr)
+void DYN_define_security_class( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3410,7 +3411,7 @@ void DYN_define_security_class( GBL gbl, UCHAR ** ptr)
 	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_classes);
-			DYN_error_punt(TRUE, 27, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 27, NULL, NULL, NULL, NULL, NULL);
 			/* msg 27: "STORE RDB$RELATIONS failed" */
 		}
 		throw;
@@ -3419,8 +3420,8 @@ void DYN_define_security_class( GBL gbl, UCHAR ** ptr)
 
 
 void DYN_define_sql_field(GBL		gbl,
-						  UCHAR**	ptr,
-						  TEXT*		relation_name,
+						  const UCHAR**	ptr,
+						  const TEXT*		relation_name,
 						  TEXT*		field_name)
 {
 /**************************************
@@ -3437,7 +3438,7 @@ void DYN_define_sql_field(GBL		gbl,
 	volatile BLK request;
 	volatile SSHORT id, old_id;
 	UCHAR verb;
-	TEXT sql_field_name[32];
+	SqlIdentifier sql_field_name;
 	USHORT dtype;
 	SLONG fld_pos;
 
@@ -3449,7 +3450,7 @@ void DYN_define_sql_field(GBL		gbl,
 
 	MET_exact_name(sql_field_name);
 	if (!sql_field_name[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = NULL;
@@ -3694,19 +3695,19 @@ void DYN_define_sql_field(GBL		gbl,
 	catch (const std::exception&) {
 		if (id == drq_s_sql_lfld) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 29, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 29, NULL, NULL, NULL, NULL, NULL);
 			/* msg 29: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(TRUE, 28, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 28, NULL, NULL, NULL, NULL, NULL);
 			/* msg 28: "STORE RDB$FIELDS failed" */
 		}
 	}
 }
 
 
-void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
+void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3726,7 +3727,7 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 	volatile BLK request;
 	bool found = false;
 
-	SLONG shadow_number = DYN_get_number(ptr);
+	const SLONG shadow_number = DYN_get_number(ptr);
 
 /* If a shadow set identified by the
    shadow number already exists return error.  */
@@ -3746,12 +3747,12 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_l_shadow);
-		DYN_error_punt(TRUE, 164, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 164, NULL, NULL, NULL, NULL, NULL);
 		/* msg 164: "Shadow lookup failed" */
 	}
 
 	if (found) {
-		DYN_error_punt(FALSE, 165, (TEXT *) shadow_number, NULL, NULL, NULL,
+		DYN_error_punt(false, 165, (TEXT*) shadow_number, NULL, NULL, NULL,
 					   NULL);
 		/* msg 165: "Shadow %ld already exists" */
 	}
@@ -3773,10 +3774,10 @@ void DYN_define_shadow( GBL gbl, UCHAR ** ptr)
 
 
 void DYN_define_trigger(GBL		gbl,
-						UCHAR**	ptr,
-						TEXT*	relation_name,
+						const UCHAR**	ptr,
+						const TEXT*	relation_name,
 						TEXT*	trigger_name,
-						BOOLEAN	ignore_perm)
+						const bool	ignore_perm)
 {
 /**************************************
  *
@@ -3788,7 +3789,7 @@ void DYN_define_trigger(GBL		gbl,
  *	Define a trigger for a relation.
  *
  *
- * if the ignore_perm flag is TRUE, then this trigger must be defined
+ * if the ignore_perm flag is true, then this trigger must be defined
  * now (and fired at run time) without making SQL permissions checks.
  * In particular, one should not need control permissions on the table
  * to define this trigger. Currently used to define triggers for
@@ -3801,7 +3802,7 @@ void DYN_define_trigger(GBL		gbl,
 
 	volatile BLK request;
 	UCHAR	verb;
-	TEXT	t[32];
+	SqlIdentifier t;
 
 	GET_STRING(ptr, t);
 	MET_exact_name(t);
@@ -3812,15 +3813,12 @@ void DYN_define_trigger(GBL		gbl,
 	}
 
 	if (!t[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	if (trigger_name) {
 		strcpy(trigger_name, t);
 	}
-
-	TEXT*	source = 0;
-	UCHAR*	blr    = 0;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
 
@@ -3886,18 +3884,22 @@ void DYN_define_trigger(GBL		gbl,
 				break;
 
 			case gds_dyn_trg_blr:
-				blr = *ptr;
-				DYN_skip_attribute(ptr);
-				DYN_put_blr_blob(gbl, &blr, &X.RDB$TRIGGER_BLR);
-				X.RDB$TRIGGER_BLR.NULL = FALSE;
-				break;
+				{
+					const UCHAR* blr = *ptr;
+					DYN_skip_attribute(ptr);
+					DYN_put_blr_blob(gbl, &blr, &X.RDB$TRIGGER_BLR);
+					X.RDB$TRIGGER_BLR.NULL = FALSE;
+					break;
+				}
 
 			case gds_dyn_trg_source:
-				source = (TEXT *) * ptr;
-				DYN_skip_attribute(ptr);
-				DYN_put_text_blob(gbl, (UCHAR**)&source, &X.RDB$TRIGGER_SOURCE);
-				X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-				break;
+				{
+					const UCHAR* source = *ptr;
+					DYN_skip_attribute(ptr);
+					DYN_put_text_blob(gbl, &source, &X.RDB$TRIGGER_SOURCE);
+					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
+					break;
+				}
 
 			case gds_dyn_description:
 				DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
@@ -3940,7 +3942,7 @@ void DYN_define_trigger(GBL		gbl,
 	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_triggers);
-			DYN_error_punt(TRUE, 31, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 31, NULL, NULL, NULL, NULL, NULL);
 			/* msg 31: "DEFINE TRIGGER failed" */
 		}
 		throw;
@@ -3948,7 +3950,7 @@ void DYN_define_trigger(GBL		gbl,
 }
 
 
-void DYN_define_trigger_msg(GBL gbl, UCHAR** ptr, TEXT* trigger_name)
+void DYN_define_trigger_msg(GBL gbl, const UCHAR** ptr, const TEXT* trigger_name)
 {
 /**************************************
  *
@@ -4015,7 +4017,7 @@ void DYN_define_trigger_msg(GBL gbl, UCHAR** ptr, TEXT* trigger_name)
 	catch (const std::exception&) {
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
-			DYN_error_punt(TRUE, 33, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 33, NULL, NULL, NULL, NULL, NULL);
 			/* msg 33: "DEFINE TRIGGER MESSAGE failed" */
 		}
 		throw;
@@ -4023,7 +4025,7 @@ void DYN_define_trigger_msg(GBL gbl, UCHAR** ptr, TEXT* trigger_name)
 }
 
 
-void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
+void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
 {
 /**************************************
  *
@@ -4043,9 +4045,12 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 	UCHAR verb;
 	volatile SSHORT id;
 
-	MET_exact_name(view);
-	if (!view[0])
-		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
+	SqlIdentifier view_name;
+	strncpy(view_name, view, sizeof(view_name));
+	view_name[sizeof(view_name) - 1] = 0;
+	MET_exact_name(view_name);
+	if (!view_name[0])
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_view_rels, DYN_REQUESTS);
@@ -4066,7 +4071,7 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 		id = drq_e_view_rels;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			VRL IN RDB$VIEW_RELATIONS WITH VRL.RDB$VIEW_NAME EQ view
+			VRL IN RDB$VIEW_RELATIONS WITH VRL.RDB$VIEW_NAME EQ view_name
 
 			if (!DYN_REQUEST(drq_e_view_rels))
 				DYN_REQUEST(drq_e_view_rels) = request;
@@ -4081,7 +4086,7 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 */
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			VRL IN RDB$VIEW_RELATIONS 
-			strcpy(VRL.RDB$VIEW_NAME, view);
+			strcpy(VRL.RDB$VIEW_NAME, view_name);
 			GET_STRING(ptr, VRL.RDB$RELATION_NAME);
 			VRL.RDB$CONTEXT_NAME.NULL = TRUE;
 			VRL.RDB$VIEW_CONTEXT.NULL = TRUE;
@@ -4118,12 +4123,12 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 			DYN_rundown_request(request, id);
 			if (id == drq_s_view_rels)
 			{
-				DYN_error_punt(TRUE, 34, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(true, 34, NULL, NULL, NULL, NULL, NULL);
 				/* msg 34: "STORE RDB$VIEW_RELATIONS failed" */
 			}
 			else if (id == drq_e_view_rels)
 			{
-				DYN_error_punt(TRUE, 59, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(true, 59, NULL, NULL, NULL, NULL, NULL);
 				/* msg 59: "ERASE RDB$VIEW_RELATIONS failed" */
 			}
 		}
@@ -4151,7 +4156,7 @@ static void check_unique_name(	TDBB	tdbb,
  **************************************/
 
 	volatile BLK request;
-	bool found;
+	bool found = false;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -4194,19 +4199,19 @@ static void check_unique_name(	TDBB	tdbb,
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		if (!proc_flag)
-			DYN_error_punt(TRUE, 24, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
 		/* msg 24: "STORE RDB$RELATIONS failed" */
-		DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	if (found) {
-		DYN_error_punt(FALSE, 135, object_name, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 135, object_name, NULL, NULL, NULL, NULL);
 	}
 
 	return;
 
 local_punt_false_132:
-	DYN_error_punt(FALSE, 132, object_name, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 132, object_name, NULL, NULL, NULL, NULL);
 }
 
 
@@ -4266,7 +4271,7 @@ that can be used against rdb$fields' rdb$field_name. */
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 80, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 80, NULL, NULL, NULL, NULL, NULL);
 		/* msg 80: "Specified domain or source field does not exist" */
 	}
 
@@ -4298,7 +4303,8 @@ static bool get_who( TDBB tdbb, GBL gbl, SCHAR* output_name)
 			request = (BLK) CMP_compile2(tdbb, const_cast<UCHAR*>(who_blr), TRUE);
 		}
 		EXE_start(tdbb, (JRD_REQ) request, gbl->gbl_transaction);
-		EXE_receive(tdbb, (JRD_REQ) request, 0, 32, (UCHAR*) output_name);
+		EXE_receive(tdbb, (JRD_REQ) request, 0, MAX_SQL_IDENTIFIER_SIZE,
+			(UCHAR*) output_name);
 
 		DYN_rundown_request(request, drq_l_user_name);
 	}

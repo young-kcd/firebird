@@ -97,7 +97,8 @@ static const BYTE compare_priority[] = { dtype_null,	/* dtype_null through dtype
 	dtype_long + 1
 };								/* int64 goes right after long       */
 
-SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
+
+SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -109,7 +110,6 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
  *	Compare two descriptors.  Return (-1, 0, 1) if a<b, a=b, or a>b.
  *
  **************************************/
-	UCHAR *p1, *p2;
 	USHORT length, length2;
 	SSHORT fill;
 	USHORT t1, t2;
@@ -125,9 +125,10 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 /* Handle the simple (matched) ones first */
 
 	if (arg1->dsc_dtype == arg2->dsc_dtype &&
-		arg1->dsc_scale == arg2->dsc_scale) {
-		p1 = arg1->dsc_address;
-		p2 = arg2->dsc_address;
+		arg1->dsc_scale == arg2->dsc_scale) 
+	{
+		const UCHAR* p1 = arg1->dsc_address;
+		const UCHAR* p2 = arg2->dsc_address;
 
 		switch (arg1->dsc_dtype) {
 		case dtype_short:
@@ -318,6 +319,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 			)
 			return INTL_compare(tdbb, arg1, arg2, err);
 
+		UCHAR* p1 = NULL;
+		UCHAR* p2 = NULL;
 		length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0, err);
 		length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0, err);
 
@@ -488,11 +491,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 		return CVT2_blob_compare(arg1, arg2, err);
 
 	case dtype_array:
-		(*err) (gds_wish_list,
-				gds_arg_gds,
-				gds_blobnotsup,
-				gds_arg_string, "compare",
-				0);
+		(*err) (gds_wish_list, gds_arg_gds, gds_blobnotsup,
+				gds_arg_string, "compare", 0);
 		break;
 
 	default:
@@ -503,7 +503,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 }
 
 
-SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
+SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -780,7 +780,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 }
 
 
-void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_STATUS err)
+void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -808,7 +808,7 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_STATUS err)
 USHORT CVT2_make_string2(const dsc* desc,
 						 USHORT to_interp,
 						 UCHAR** address,
-						 VARY* temp, USHORT length, STR* ptr, FPTR_STATUS err)
+						 VARY* temp, USHORT length, STR* ptr, FPTR_ERROR err)
 {
 /**************************************
  *

@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         quad.c
+ *      MODULE:         quad.cpp
  *      DESCRIPTION:    Quad arithmetic simulation
  *
  * The contents of this file are subject to the Interbase Public
@@ -34,7 +34,7 @@
 extern "C" {
 
 
-SQUAD QUAD_add(SQUAD * arg1, SQUAD * arg2, FPTR_STATUS err)
+SQUAD QUAD_add(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -55,7 +55,7 @@ SQUAD QUAD_add(SQUAD * arg1, SQUAD * arg2, FPTR_STATUS err)
 }
 
 
-SSHORT QUAD_compare(SQUAD * arg1, SQUAD * arg2)
+SSHORT QUAD_compare(const SQUAD* arg1, const SQUAD* arg2)
 {
 /**************************************
  *
@@ -80,7 +80,7 @@ SSHORT QUAD_compare(SQUAD * arg1, SQUAD * arg2)
 }
 
 
-SQUAD QUAD_from_double(double *d, FPTR_STATUS err)
+SQUAD QUAD_from_double(const double* d, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -103,7 +103,7 @@ SQUAD QUAD_from_double(double *d, FPTR_STATUS err)
 }
 
 
-SQUAD QUAD_multiply(SQUAD * arg1, SQUAD * arg2, FPTR_STATUS err)
+SQUAD QUAD_multiply(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -124,7 +124,7 @@ SQUAD QUAD_multiply(SQUAD * arg1, SQUAD * arg2, FPTR_STATUS err)
 }
 
 
-SQUAD QUAD_negate(SQUAD * arg1, FPTR_STATUS err)
+SQUAD QUAD_negate(const SQUAD* arg1, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -145,7 +145,7 @@ SQUAD QUAD_negate(SQUAD * arg1, FPTR_STATUS err)
 }
 
 
-SQUAD QUAD_subtract(SQUAD * arg1, SQUAD * arg2, FPTR_STATUS err)
+SQUAD QUAD_subtract(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
 {
 /**************************************
  *

@@ -45,7 +45,8 @@ ISC_STATUS	REM_create_database(ISC_STATUS*, SSHORT, const SCHAR*, struct rdb**,
 	SSHORT, const SCHAR*, SSHORT, UCHAR*);
 ISC_STATUS	REM_database_info(ISC_STATUS*, struct rdb**, SSHORT, const SCHAR*,
 	SSHORT, SCHAR*);
-ISC_STATUS	REM_ddl(ISC_STATUS *, struct rdb **, struct rtr **, USHORT, UCHAR *);
+ISC_STATUS	REM_ddl(ISC_STATUS*, struct rdb**, struct rtr**,
+	USHORT, const UCHAR*);
 ISC_STATUS	REM_detach_database(ISC_STATUS *, struct rdb **);
 ISC_STATUS	REM_detach_service(ISC_STATUS *, struct rdb **);
 ISC_STATUS	REM_drop_database(ISC_STATUS *, struct rdb **);

@@ -26,35 +26,35 @@
 
 #include "../jrd/intl_classes.h"
 
-CHARSET_ID	INTL_charset(TDBB, USHORT, FPTR_STATUS);
-int			INTL_compare(TDBB, const struct dsc*, const struct dsc*, FPTR_STATUS);
-USHORT		INTL_convert_bytes(TDBB, CHARSET_ID, UCHAR *, USHORT, CHARSET_ID, 
-								BYTE *, USHORT, FPTR_STATUS);
+CHARSET_ID	INTL_charset(TDBB, USHORT, FPTR_ERROR);
+int			INTL_compare(TDBB, const struct dsc*, const struct dsc*, FPTR_ERROR);
+USHORT		INTL_convert_bytes(TDBB, CHARSET_ID, UCHAR*, USHORT, CHARSET_ID,
+								BYTE*, USHORT, FPTR_ERROR);
 CsConvert	INTL_convert_lookup(TDBB, CHARSET_ID, CHARSET_ID);
-int			INTL_convert_string(struct dsc*, const struct dsc*, FPTR_STATUS);
+int			INTL_convert_string(struct dsc*, const struct dsc*, FPTR_ERROR);
 int			INTL_data(const struct dsc*);
 int			INTL_data_or_binary(const struct dsc*);
-int			INTL_defined_type(TDBB, ISC_STATUS *, SSHORT);
+int			INTL_defined_type(TDBB, ISC_STATUS*, SSHORT);
 unsigned short	INTL_getch(TDBB, TextType*, SSHORT,
-											UCHAR **, USHORT *);
+											UCHAR**, USHORT*);
 void		INTL_init(TDBB);
 USHORT		INTL_key_length(TDBB, USHORT, USHORT);
-CharSet		INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS * status);
-TextType	INTL_texttype_lookup(TDBB tdbb, SSHORT parm1, FPTR_STATUS err, 
-								ISC_STATUS * status);
-void		INTL_pad_spaces(TDBB, struct dsc *, UCHAR *, USHORT);
-USHORT		INTL_string_to_key(TDBB, USHORT, struct dsc *, struct dsc *, USHORT);
-int			INTL_str_to_upper(TDBB, struct dsc *);
+CharSet		INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS* status);
+TextType	INTL_texttype_lookup(TDBB tdbb, SSHORT parm1, FPTR_ERROR err, 
+								ISC_STATUS* status);
+void		INTL_pad_spaces(TDBB, struct dsc*, UCHAR*, USHORT);
+USHORT		INTL_string_to_key(TDBB, USHORT, const struct dsc*, struct dsc*, USHORT);
+int			INTL_str_to_upper(TDBB, struct dsc*);
 UCHAR		INTL_upper(TDBB, USHORT, UCHAR);
 
 // Built-in charsets interface
 FPTR_SHORT INTL_builtin_lookup(USHORT, SSHORT, SSHORT);
 SSHORT INTL_builtin_nc_mbtowc(TEXTTYPE obj,
-							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count);
+							  UCS2_CHAR* wc, UCHAR* ptr, USHORT count);
 SSHORT INTL_builtin_mb_mbtowc(TEXTTYPE obj,
-							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count);
+							  UCS2_CHAR* wc, UCHAR* ptr, USHORT count);
 SSHORT INTL_builtin_wc_mbtowc(TEXTTYPE obj,
-							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count);
+							  UCS2_CHAR* wc, UCHAR* ptr, USHORT count);
 
 #endif // JRD_INTL_PROTO_H
 

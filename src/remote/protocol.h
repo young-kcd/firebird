@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: protocol.h,v 1.15 2003-10-29 10:53:37 robocop Exp $
+$Id: protocol.h,v 1.16 2003-11-05 09:02:31 robocop Exp $
 */
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
@@ -277,7 +277,7 @@ typedef struct cstring
 	UCHAR*	cstr_address;
 } CSTRING;
 
-// CVC: Only used in p_blob and p_sgmt, to validate constness.
+// CVC: Only used in p_blob, p_sgmt & p_ddl, to validate constness.
 // We want to ensure our original bpb is not overwritten.
 // In turn, p_blob is used only to create and open a blob, so it's correct
 // to demand that those functions do not change the bpb.
@@ -506,7 +506,7 @@ typedef struct p_req {
 typedef struct p_ddl {
      OBJCT	p_ddl_database;		/* Database object id */
      OBJCT	p_ddl_transaction;	/* Transaction */
-     CSTRING	p_ddl_blr;		/* Request blr */
+     CSTRING_CONST	p_ddl_blr;		/* Request blr */
 } P_DDL;
 
 /* Slice Operation */

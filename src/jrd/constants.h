@@ -54,22 +54,26 @@
 
 #define	MAX_COLUMN_SIZE	32767	/* Bytes */
 
-
-
-
 /* Misc constant values */
 
 #define USERNAME_LENGTH		31	/* Bytes */
+
+const int MAX_SQL_IDENTIFIER_SIZE = 32;
+const int MAX_SQL_IDENTIFIER_LEN = 31;
+typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
 /* literal strings in rdb$ref_constraints to be used to identify
    the cascade actions for referential constraints. Used
    by isql/show and isql/extract for now. */
 
-#define RI_ACTION_CASCADE "CASCADE"
-#define RI_ACTION_NULL    "SET NULL"
-#define RI_ACTION_DEFAULT "SET DEFAULT"
-#define RI_ACTION_NONE    "NO ACTION"
-#define RI_RESTRICT       "RESTRICT"
+const char* const RI_ACTION_CASCADE = "CASCADE";
+const char* const RI_ACTION_NULL    = "SET NULL";
+const char* const RI_ACTION_DEFAULT = "SET DEFAULT";
+const char* const RI_ACTION_NONE    = "NO ACTION";
+const char* const RI_RESTRICT       = "RESTRICT";
+
+const char* const IMPLICIT_DOMAIN_PREFIX = "RDB$";
+const int IMPLICIT_DOMAIN_PREFIX_LEN = 4;
 
 
 /******************************************/

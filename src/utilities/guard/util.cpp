@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        InterBase Utility programs
- *      MODULE:         util.c
+ *      MODULE:         util.cpp
  *      DESCRIPTION:    Utility routines for fbguard & fbserver
  *
  * The contents of this file are subject to the Interbase Public
@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.2 2003-11-03 23:56:38 brodsom Exp $
+$Id: util.cpp,v 1.3 2003-11-05 09:02:33 robocop Exp $
 */
 
 #include "firebird.h"
@@ -87,18 +87,18 @@ pid_t UTIL_start_process(char *process, char **argv)
  *
  **************************************/
 	TEXT string[MAXPATHLEN];
-	pid_t pid;
 
 	fb_assert(process != NULL);
 	fb_assert(argv != NULL);
 
-/* prepend InterBase home directory to the program name */
+/* prepend Firebird home directory to the program name */
 	gds__prefix(string, process);
 
 /* add place in argv for visibility to "ps" */
 	strcpy(argv[0], string);
 
-	if (!(pid = vfork())) {
+	pid_t pid = vfork();
+	if (!pid) {
 		execv(string, argv);
 		_exit(FINI_ERROR);
 	}
@@ -174,17 +174,14 @@ int UTIL_ex_lock( TEXT * file)
  **************************************/
 
 	TEXT expanded_filename[MAXPATHLEN], tmp[MAXPATHLEN], hostname[64];
-	int fd_file;				/* file fd for the opened and locked file */
-
-#ifndef HAVE_FLOCK
-	struct flock lock;
-#endif
 
 /* get the file name and prepend the complete path etc */
 	gds__prefix_lock(tmp, file);
 	sprintf(expanded_filename, tmp, ISC_get_host(hostname, sizeof(hostname)));
 
-	if ((fd_file = open(expanded_filename, O_RDWR | O_CREAT, 0666)) == -1) {
+/* file fd for the opened and locked file */
+	int fd_file = open(expanded_filename, O_RDWR | O_CREAT, 0666);
+	if (fd_file == -1) {
 		ib_fprintf(ib_stderr, "Could not open %s for write\n",
 				   expanded_filename);
 		return (-1);
@@ -194,6 +191,7 @@ int UTIL_ex_lock( TEXT * file)
 
 #ifndef HAVE_FLOCK
 /* get an exclusive lock on the GUARD file without blocking on the call */
+	struct flock lock;
 	lock.l_type = F_WRLCK;
 	lock.l_whence = 0;
 	lock.l_start = 0;
@@ -240,3 +238,4 @@ void UTIL_ex_unlock( int fd_file)
 #endif
 	close(fd_file);
 }
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_narrow.c
+ *	MODULE:		lc_narrow.cpp
  *	DESCRIPTION:	Common base for Narrow language drivers
  *			(full International collation)
  *
@@ -110,7 +110,7 @@ static ULONG do_debug = 0;
  * RETURN:
  *		Length, in bytes, of returned key
  */
-USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar,
+USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
 							   USHORT partial)
 {
 	USHORT lprimary;
@@ -124,7 +124,7 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHOR
 	USHORT i, j;
 
 	BYTE *outbuff;
-	BYTE *inbuff;
+	const BYTE *inbuff;
 	SortOrderTblEntry* coll;
 
 	fb_assert(pOutChar != NULL);

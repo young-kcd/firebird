@@ -159,9 +159,10 @@
 extern void DSQL_pretty(const dsql_nod*, int);
 #endif
 
-static bool aggregate_found(DSQL_REQ, DSQL_NOD);
-static bool aggregate_found2(DSQL_REQ, DSQL_NOD, USHORT*, USHORT*, bool);
-static DSQL_NOD ambiguity_check(DSQL_REQ, DSQL_NOD, STR, DLLS);
+static bool aggregate_found(const dsql_req*, const dsql_nod*);
+static bool aggregate_found2(const dsql_req*, const dsql_nod*, USHORT*,
+	USHORT*, bool);
+static DSQL_NOD ambiguity_check(DSQL_REQ, dsql_nod*, const str*, DLLS);
 static void assign_fld_dtype_from_dsc(DSQL_FLD, const dsc*);
 static DSQL_NOD compose(DSQL_NOD, DSQL_NOD, NOD_TYPE);
 static void explode_asterisk(DSQL_REQ, DSQL_NOD, DSQL_NOD, DLLS*);
@@ -173,7 +174,7 @@ static bool invalid_reference(DSQL_CTX, DSQL_NOD, DSQL_NOD, bool, bool);
 static bool node_match(DSQL_NOD, DSQL_NOD, bool);
 static DSQL_NOD pass1_alias_list(DSQL_REQ, DSQL_NOD);
 static DSQL_CTX pass1_alias(DSQL_REQ, DLLS, STR);
-static STR pass1_alias_concat(STR, STR);
+static STR pass1_alias_concat(const str*, const str*);
 static DSQL_NOD pass1_any(DSQL_REQ, DSQL_NOD, NOD_TYPE);
 static DSQL_REL pass1_base_table(DSQL_REQ, DSQL_REL, STR);
 static void pass1_blob(DSQL_REQ, DSQL_NOD);
@@ -181,14 +182,14 @@ static DSQL_NOD pass1_coalesce(DSQL_REQ, DSQL_NOD, bool);
 static DSQL_NOD pass1_collate(DSQL_REQ, DSQL_NOD, STR);
 static DSQL_NOD pass1_constant(DSQL_REQ, DSQL_NOD);
 static DSQL_CTX pass1_cursor_context(DSQL_REQ, DSQL_NOD, DSQL_NOD);
-static DSQL_NOD pass1_cursor_name(DSQL_REQ, STR, bool);
+static DSQL_NOD pass1_cursor_name(const dsql_req*, const str*, bool);
 static DSQL_NOD pass1_cursor_reference(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static DSQL_NOD pass1_dbkey(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_delete(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_derived_table(DSQL_REQ, DSQL_NOD, bool);
 static DSQL_NOD pass1_field(DSQL_REQ, DSQL_NOD, USHORT);
-static bool pass1_found_aggregate(DSQL_NOD, USHORT, USHORT, bool);
-static bool pass1_found_field(DSQL_NOD, USHORT, USHORT, bool*);
+static bool pass1_found_aggregate(const dsql_nod*, USHORT, USHORT, bool);
+static bool pass1_found_field(const dsql_nod*, USHORT, USHORT, bool*);
 static DSQL_NOD pass1_group_by_list(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static DSQL_NOD pass1_insert(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_join(DSQL_REQ, DSQL_NOD, bool);
@@ -1524,7 +1525,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
     @param node
 
  **/
-static bool aggregate_found( DSQL_REQ request, DSQL_NOD node)
+static bool aggregate_found( const dsql_req* request, const dsql_nod* node)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(node, dsql_type_nod);
@@ -1557,7 +1558,8 @@ static bool aggregate_found( DSQL_REQ request, DSQL_NOD node)
     @param ignore_sub_selects
 
  **/
-static bool aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT* current_level,
+static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
+								USHORT* current_level,
 								USHORT* deepest_level, bool ignore_sub_selects)
 {
 	DEV_BLKCHK(request, dsql_type_req);
@@ -1611,7 +1613,8 @@ static bool aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT* current_le
 
 		case nod_field:
 			{
-				DSQL_CTX lcontext = reinterpret_cast<DSQL_CTX>(node->nod_arg[e_fld_context]);
+				const dsql_ctx* lcontext =
+					reinterpret_cast<DSQL_CTX>(node->nod_arg[e_fld_context]);
 				if (*deepest_level < lcontext->ctx_scope_level) {
 					*deepest_level = lcontext->ctx_scope_level;
 				}
@@ -1740,8 +1743,10 @@ static bool aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT* current_le
 		case nod_join_right:
 		case nod_join_full:
 			{
-				DSQL_NOD* ptr = node->nod_arg;
-				for (DSQL_NOD* end = ptr + node->nod_count; ptr < end; ++ptr) {
+				const dsql_nod* const* ptr = node->nod_arg;
+				for (const dsql_nod* const* const end = ptr + node->nod_count;
+					ptr < end; ++ptr)
+				{
 					if (*ptr) {
 						DEV_BLKCHK(*ptr, dsql_type_nod);
 						aggregate |= aggregate_found2(request, *ptr, current_level,
@@ -1768,7 +1773,7 @@ static bool aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT* current_le
 
 		case nod_relation:
 			{
-				DSQL_CTX lrelation_context = reinterpret_cast<DSQL_CTX>(node->nod_arg[e_rel_context]);
+				const dsql_ctx* lrelation_context = reinterpret_cast<DSQL_CTX>(node->nod_arg[e_rel_context]);
 				// Check if relation is a procedure
 				if (lrelation_context->ctx_procedure) {
 					// If input parameters exists check if a aggregate is buried inside
@@ -1802,8 +1807,8 @@ static bool aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT* current_le
     @param ambiguous_contexts
 
  **/
-static DSQL_NOD ambiguity_check(DSQL_REQ request, DSQL_NOD node, 
-								STR name, DLLS ambiguous_contexts)
+static DSQL_NOD ambiguity_check(DSQL_REQ request, dsql_nod* node,
+								const str* name, DLLS ambiguous_contexts)
 {
     // If there are no relations or only 1 there's no ambiguity, thus return.
 	if (!ambiguous_contexts || (ambiguous_contexts && !ambiguous_contexts->lls_next)) {
@@ -3040,7 +3045,7 @@ static DSQL_CTX pass1_cursor_context( DSQL_REQ request, DSQL_NOD cursor, DSQL_NO
 	STR rname = (STR) relation_name->nod_arg[e_rln_name];
 	DEV_BLKCHK(rname, dsql_type_str);
 
-	STR string = (STR) cursor->nod_arg[e_cur_name];
+	const str* string = (STR) cursor->nod_arg[e_cur_name];
 	DEV_BLKCHK(string, dsql_type_str);
 
 	DSQL_CTX context = NULL;
@@ -3111,14 +3116,15 @@ static DSQL_CTX pass1_cursor_context( DSQL_REQ request, DSQL_NOD cursor, DSQL_NO
     @param string
 
  **/
-static DSQL_NOD pass1_cursor_name(DSQL_REQ request, STR string, bool existance_flag)
+static DSQL_NOD pass1_cursor_name(const dsql_req* request, const str* string,
+	bool existance_flag)
 {
 	DEV_BLKCHK(string, dsql_type_str);
-	DSQL_NOD cursor = NULL;
+	dsql_nod* cursor = NULL;
 
 	for (DLLS itr = request->req_cursors; itr; itr = itr->lls_next) {
 		cursor = (DSQL_NOD) itr->lls_object;
-		STR cname = (STR) cursor->nod_arg[e_cur_name];
+		const str* cname = (STR) cursor->nod_arg[e_cur_name];
 		if (!strcmp(string->str_data, cname->str_data))
 			break;
 		cursor = NULL;
@@ -3148,7 +3154,8 @@ static DSQL_NOD pass1_cursor_name(DSQL_REQ request, STR string, bool existance_f
     @param relation_name
 
  **/
-static DSQL_NOD pass1_cursor_reference( DSQL_REQ request, DSQL_NOD cursor, DSQL_NOD relation_name)
+static DSQL_NOD pass1_cursor_reference( DSQL_REQ request, DSQL_NOD cursor,
+	DSQL_NOD relation_name)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(cursor, dsql_type_nod);
@@ -3156,12 +3163,12 @@ static DSQL_NOD pass1_cursor_reference( DSQL_REQ request, DSQL_NOD cursor, DSQL_
 
 /* Lookup parent request */
 
-	STR string = (STR) cursor->nod_arg[e_cur_name];
+	const str* string = (STR) cursor->nod_arg[e_cur_name];
 	DEV_BLKCHK(string, dsql_type_str);
 
-	DSQL_SYM symbol =
+	const dsql_sym* symbol =
 		HSHD_lookup(request->req_dbb,
-					reinterpret_cast<char*>(string->str_data),
+					reinterpret_cast<const char*>(string->str_data),
 					static_cast<SSHORT>(string->str_length), SYM_cursor,
 					0);
 
@@ -3833,7 +3840,7 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
     @param current_scope_level_equal
 
  **/
-static bool pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level, 
+static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level,
 									 USHORT match_type, bool current_scope_level_equal)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
@@ -3909,8 +3916,10 @@ static bool pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 		case nod_join_right:
 		case nod_join_full:
 			{
-				DSQL_NOD* ptr = node->nod_arg;
-				for (DSQL_NOD* end = ptr + node->nod_count; ptr < end; ++ptr) {
+				const dsql_nod* const* ptr = node->nod_arg;
+				for (const dsql_nod* const* const end = ptr + node->nod_count;
+					ptr < end; ++ptr)
+				{
 					found |= pass1_found_aggregate(*ptr, check_scope_level, 
 						match_type, current_scope_level_equal);
 				}
@@ -3986,7 +3995,8 @@ static bool pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 
 		case nod_map:
 			{
-				DSQL_MAP map =  reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
+				const dsql_map* map =
+					reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
 				found |= pass1_found_aggregate(map->map_node,
 					check_scope_level, match_type, current_scope_level_equal);
 				break;
@@ -4030,7 +4040,7 @@ static bool pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
     @param field
 
  **/
-static bool pass1_found_field(DSQL_NOD node, USHORT check_scope_level, 
+static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 								 USHORT match_type, bool* field)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
@@ -4128,8 +4138,10 @@ static bool pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 		case nod_starting:
 		case nod_list:
 			{
-				DSQL_NOD *ptr, *end;
-				for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++) {
+				const dsql_nod* const* ptr = node->nod_arg;
+				for (const dsql_nod* const* const end = ptr + node->nod_count;
+					ptr < end; ptr++)
+				{
 					found |= pass1_found_field(*ptr, check_scope_level, 
 						match_type, field);
 				}
@@ -4181,7 +4193,8 @@ static bool pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 
 		case nod_map:
 			{
-				DSQL_MAP map =  reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
+				const dsql_map* map =
+					reinterpret_cast <DSQL_MAP>(node->nod_arg[e_map_map]);
 				found |= pass1_found_field(map->map_node, check_scope_level, 
 					match_type, field);
 				break;
@@ -4912,7 +4925,7 @@ static DSQL_CTX pass1_alias(DSQL_REQ request, DLLS stack, STR alias)
     @param input2
 
  **/
-static STR pass1_alias_concat(STR input1, STR input2)
+static str* pass1_alias_concat(const str* input1, const str* input2)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 

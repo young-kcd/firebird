@@ -1166,10 +1166,8 @@ ISC_STATUS port::ddl(P_DDL* ddl, PACKET* send)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	UCHAR *blr;
 	USHORT blr_length;
 	RTR transaction;
-	RDB rdb;
 
 	CHECK_HANDLE_MEMBER(transaction,
 						RTR,
@@ -1177,13 +1175,13 @@ ISC_STATUS port::ddl(P_DDL* ddl, PACKET* send)
 						ddl->p_ddl_transaction,
 						isc_bad_trans_handle);
 
-	rdb = this->port_context;
-	blr = ddl->p_ddl_blr.cstr_address;
+	RDB rdb = this->port_context;
+	const UCHAR* blr = ddl->p_ddl_blr.cstr_address;
 	blr_length = ddl->p_ddl_blr.cstr_length;
 
 	THREAD_EXIT;
 	isc_ddl(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
-			blr_length, reinterpret_cast<char*>(blr));
+			blr_length, reinterpret_cast<const char*>(blr));
 	THREAD_ENTER;
 
 	return this->send_response(send, 0, 0, status_vector);

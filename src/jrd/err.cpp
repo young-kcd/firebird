@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		err.c
+ *	MODULE:		err.cpp
  *	DESCRIPTION:	Bug check routine
  *
  * The contents of this file are subject to the Interbase Public
@@ -500,17 +500,13 @@ void ERR_punt(void)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	UCHAR* dbname;
-
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		dbname = ((tdbb->tdbb_attachment->att_filename) ?
+		const UCHAR* dbname = ((tdbb->tdbb_attachment->att_filename) ?
 			tdbb->tdbb_attachment->att_filename->str_data : NULL);
 		gds__log_status(reinterpret_cast<const char*>(dbname),
 			tdbb->tdbb_status_vector);
 	}
-
-#pragma FB_COMPILER_MESSAGE("FIXME! C functions can not throw! FIXME!")
 
 	Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 }

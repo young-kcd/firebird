@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_ksc.c
+ *	MODULE:		lc_ksc.cpp
  *	DESCRIPTION:	Language Drivers in the KSC-5601.
  *
  * The contents of this file are subject to the Interbase Public
@@ -27,7 +27,7 @@
 #include "cv_ksc.h"
 #include "ld_proto.h"
 
-static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar);
+static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar);
 static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);
 static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
 
@@ -139,11 +139,11 @@ unsigned char gen_han[18][2] = {
 #define		ASCII_SPACE	32
 
 
-static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar)
+static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar)
 {
 	USHORT i;
 	int idx;
-	BYTE *inbuff;
+	const BYTE *inbuff;
 	BYTE *outbuff;
 
 	fb_assert(pOutChar != NULL);

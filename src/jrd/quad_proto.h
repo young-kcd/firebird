@@ -30,7 +30,7 @@
 /*
  *      PROGRAM:        JRD Access Method
  *      MODULE:         quad_proto.h
- *      DESCRIPTION:    Prototype header file for quad.c
+ *      DESCRIPTION:    Prototype header file for quad.cpp
  *
  * copyright (c) 1993 by Borland International
  */
@@ -42,15 +42,16 @@
 extern "C" {
 #endif
 
-SQUAD	QUAD_add(SQUAD *, SQUAD *, FPTR_STATUS);
-SSHORT	QUAD_compare(SQUAD *, SQUAD *);
-SQUAD	QUAD_from_double(double *, FPTR_STATUS);
-SQUAD	QUAD_multiply(SQUAD *, SQUAD *, FPTR_STATUS);
-SQUAD	QUAD_negate(SQUAD *, FPTR_STATUS);
-SQUAD	QUAD_subtract(SQUAD *, SQUAD *, FPTR_STATUS);
+SQUAD	QUAD_add(const SQUAD*, const SQUAD*, FPTR_ERROR);
+SSHORT	QUAD_compare(const SQUAD*, const SQUAD*);
+SQUAD	QUAD_from_double(const double*, FPTR_ERROR);
+SQUAD	QUAD_multiply(const SQUAD*, const SQUAD*, FPTR_ERROR);
+SQUAD	QUAD_negate(const SQUAD*, FPTR_ERROR);
+SQUAD	QUAD_subtract(const SQUAD*, const SQUAD*, FPTR_ERROR);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
 #endif // JRD_QUAD_PROTO_H
+

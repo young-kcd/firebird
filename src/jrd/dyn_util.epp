@@ -108,7 +108,7 @@ static const SCHAR prot_blr[] = {
 SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
 							  GBL		gbl,
 							  SSHORT	id,
-							  SCHAR*	generator_name,
+							  const SCHAR*	generator_name,
 							  BLK*		request)
 {
 /**************************************
@@ -131,10 +131,12 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
 	if (!req_handle)
 	{
 		/* 32 bytes allocated for size of of a metadata name */
-		SCHAR blr[sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1 + 32], *p;
-		fb_assert(strlen(generator_name) < 32);
+		const size_t blr_size = sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1
+			+ MAX_SQL_IDENTIFIER_SIZE;
+		SCHAR blr[blr_size];
+		fb_assert(strlen(generator_name) < MAX_SQL_IDENTIFIER_SIZE);
 
-		p = blr;
+		char* p = blr;
 		memcpy(p, gen_id_blr1, sizeof(gen_id_blr1));
 		p += sizeof(gen_id_blr1);
 		*p++ = strlen(generator_name);
@@ -158,7 +160,7 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
 }
 
 
-void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT * buffer)
+void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -213,13 +215,13 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	}	// try
 	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
-		DYN_error_punt(TRUE, 131, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 131, NULL, NULL, NULL, NULL, NULL);
 		/* msg 131: "Generation of constraint name failed" */
 	}
 }
 
 
-void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
+void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -273,7 +275,7 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	}	// try
 	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
-		DYN_error_punt(TRUE, 81, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 81, NULL, NULL, NULL, NULL, NULL);
 		/* msg 81: "Generation of field name failed" */
 	}
 }
@@ -283,7 +285,7 @@ void DYN_UTIL_generate_field_position(
 									  TDBB tdbb,
 									  GBL gbl,
 									  const TEXT* relation_name,
-									  SLONG * field_pos)
+									  SLONG* field_pos)
 {
 /**************************************
  *
@@ -328,14 +330,14 @@ void DYN_UTIL_generate_field_position(
 	}	// try
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 162, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 162, NULL, NULL, NULL, NULL, NULL);
 		/* msg 162: "Looking up field position failed" */
 	}
 }
 
 
 void DYN_UTIL_generate_index_name(TDBB tdbb,
-								  GBL gbl, TEXT * buffer, UCHAR verb)
+								  GBL gbl, TEXT* buffer, UCHAR verb)
 {
 /**************************************
  *
@@ -349,7 +351,6 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
  **************************************/
 	volatile BLK request;
 	volatile SSHORT id;
-	SCHAR *format;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -362,6 +363,7 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 	bool found = false;
 
 	do {
+		const SCHAR* format;
 		if (verb == gds_dyn_def_primary_key)
 			format = "RDB$PRIMARY%" QUADFORMAT "d";
 		else if (verb == gds_dyn_def_foreign_key)
@@ -395,13 +397,13 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 	}	// try
 	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
-		DYN_error_punt(TRUE, 82, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 82, NULL, NULL, NULL, NULL, NULL);
 		/* msg 82: "Generation of index name failed" */
 	}
 }
 
 
-void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
+void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -454,16 +456,16 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 	}	// try
 	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
-		DYN_error_punt(TRUE, 83, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 83, NULL, NULL, NULL, NULL, NULL);
 		/* msg 83: "Generation of trigger name failed" */
 	}
 }
 
 
-BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
+bool DYN_UTIL_get_prot(TDBB		tdbb,
 						  GBL		gbl,
-						  SCHAR*	rname,
-						  SCHAR*	fname,
+						  const SCHAR*	rname,
+						  const SCHAR*	fname,
 						  USHORT*	prot_mask)
 {
 /**************************************
@@ -479,8 +481,8 @@ BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
 	volatile JRD_REQ request;
 	struct
 	{
-		SCHAR relation_name[32];
-		SCHAR field_name[32];
+		SqlIdentifier relation_name;
+		SqlIdentifier field_name;
 	} in_msg;
 
 	SET_TDBB(tdbb);
@@ -505,24 +507,23 @@ BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
 	 * The "(BLK)" cast, casts away volatile AND changes
 	 * type at the same time - bad
 	 */
-	DYN_rundown_request( (BLK)request,
-						drq_l_prot_mask);
+	DYN_rundown_request( (BLK)request, drq_l_prot_mask);
 
 	}	// try
 	catch (const std::exception&) {
 		// Note that the following cast to BLK not only changes
 		// the type, it also casts away volatile!
 		DYN_rundown_request((BLK)request, drq_l_prot_mask);
-		return FB_FAILURE;
+		return false;
 	}
-	return FB_SUCCESS;
+	return true;
 }
 
 
 void DYN_UTIL_store_check_constraints(TDBB	tdbb,
 									  GBL	gbl,
-									  TEXT*	constraint_name,
-									  TEXT*	trigger_name)
+									  const TEXT*	constraint_name,
+									  const TEXT*	trigger_name)
 {
 /**************************************
  *
@@ -555,7 +556,7 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
 	}	// try
 	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_s_chk_con);
-		DYN_error_punt(TRUE, 122, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 122, NULL, NULL, NULL, NULL, NULL);
 		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */
 	}
 }

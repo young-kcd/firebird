@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		dyn_ut_proto.h
- *	DESCRIPTION:	Prototype Header file for dyn_util.e
+ *	DESCRIPTION:	Prototype Header file for dyn_util.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,14 +25,14 @@
 #ifndef JRD_DYN_UT_PROTO_H
 #define JRD_DYN_UT_PROTO_H
 
-void	DYN_UTIL_store_check_constraints(TDBB, GBL, TEXT *, TEXT *);
-BOOLEAN	DYN_UTIL_get_prot(TDBB, GBL, SCHAR *, SCHAR *, USHORT *);
-void	DYN_UTIL_generate_trigger_name(TDBB, GBL, TEXT *);
-void	DYN_UTIL_generate_index_name(TDBB, GBL, TEXT *, UCHAR);
-void	DYN_UTIL_generate_field_position(TDBB, GBL, const TEXT*, SLONG *);
-void	DYN_UTIL_generate_field_name(TDBB, GBL, TEXT *);
-void	DYN_UTIL_generate_constraint_name(TDBB, GBL, TEXT *);
-SINT64	DYN_UTIL_gen_unique_id(TDBB, GBL, SSHORT, SCHAR *, BLK *);
+void	DYN_UTIL_store_check_constraints(TDBB, GBL, const TEXT*, const TEXT*);
+bool	DYN_UTIL_get_prot(TDBB, GBL, const SCHAR*, const SCHAR*, USHORT*);
+void	DYN_UTIL_generate_trigger_name(TDBB, GBL, TEXT*);
+void	DYN_UTIL_generate_index_name(TDBB, GBL, TEXT*, UCHAR);
+void	DYN_UTIL_generate_field_position(TDBB, GBL, const TEXT*, SLONG*);
+void	DYN_UTIL_generate_field_name(TDBB, GBL, TEXT*);
+void	DYN_UTIL_generate_constraint_name(TDBB, GBL, TEXT*);
+SINT64	DYN_UTIL_gen_unique_id(TDBB, GBL, SSHORT, const SCHAR*, BLK*);
 
 #endif // JRD_DYN_UT_PROTO_H
 

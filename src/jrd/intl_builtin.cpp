@@ -287,9 +287,9 @@ static USHORT internal_keylength(TEXTTYPE obj, USHORT iLength)
 static USHORT internal_string_to_key(
 									 TEXTTYPE obj,
 									 USHORT inLen,
-									 UCHAR * src,
+									 const UCHAR* src,
 									 USHORT outLen,
-UCHAR * dest, USHORT partial)
+	UCHAR* dest, USHORT partial)
 {
 /**************************************
  *
@@ -1196,3 +1196,4 @@ FPTR_SHORT INTL_builtin_lookup(USHORT objtype, SSHORT parm1, SSHORT parm2) {
 	}
 	return NULL;
 }
+

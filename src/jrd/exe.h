@@ -55,7 +55,7 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 #define CMP_TRACE(args) /* nothing */
 #endif
 
-// NOTE: The definition of structures rse and it must be defined in
+// NOTE: The definition of structures rse and lit must be defined in
 //       exactly the same way as structure jrd_nod through item nod_count.
 //       If you change one, be sure to change all of them.
 
@@ -671,7 +671,7 @@ public:
 
 	void clear();
 	void init(const ISC_STATUS*);
-	void copy(ISC_STATUS*) const;
+	void copyTo(ISC_STATUS*) const;
 	bool success() const;
 	SLONG as_gdscode() const;
 	SLONG as_sqlcode() const;

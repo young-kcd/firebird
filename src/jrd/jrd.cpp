@@ -378,6 +378,7 @@ static void		get_options(const UCHAR*, USHORT, TEXT**, ULONG, DPB*);
 static SLONG	get_parameter(const UCHAR**);
 static TEXT*	get_string_parameter(const UCHAR**, TEXT**, ULONG*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, TDBB);
+static void		verify_request_synchronization(jrd_req*& request, SSHORT level);
 static bool		verify_database_name(const TEXT*, ISC_STATUS*);
 
 #if defined (WIN_NT)
@@ -2198,11 +2199,11 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
-					ATT * db_handle,
-					JRD_TRA * tra_handle,
+ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
+					ATT* db_handle,
+					JRD_TRA* tra_handle,
 					USHORT ddl_length,
-					SCHAR * ddl)
+					const SCHAR* ddl)
 {
 /**************************************
  *
@@ -2235,7 +2236,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
 		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
 
 		DYN_ddl(attachment, transaction, ddl_length,
-				reinterpret_cast<UCHAR*>(ddl));
+				reinterpret_cast<const UCHAR*>(ddl));
 
 	}	// try
 	catch (const std::exception&) {
@@ -3027,15 +3028,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-	    const USHORT lev = level;
-		if (lev) {
-		    const vec* vector = request->req_sub_requests;
-			if (!vector || lev >= vector->count() ||
-				!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
-			{
-					ERR_post(gds_req_sync, 0);
-			}
-		}
+		verify_request_synchronization(request, level);
 	
 	#ifdef SCROLLABLE_CURSORS
 		if (direction)
@@ -3194,15 +3187,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-	    const USHORT lev = level;
-		if (lev) {
-			const vec* vector = request->req_sub_requests;
-			if (!vector || lev >= vector->count() ||
-				!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
-			{
-					ERR_post(gds_req_sync, 0);
-			}
-		}
+		verify_request_synchronization(request, level);
 
 		INF_request_info(request, items, item_length, buffer, buffer_length);
 	}
@@ -3367,15 +3352,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-	    const USHORT lev = level;
-		if (lev) {
-		    const vec* vector = request->req_sub_requests;
-			if (!vector || lev >= vector->count() ||
-				!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
-			{
-					ERR_post(gds_req_sync, 0);
-			}
-		}
+		verify_request_synchronization(request, level);
 	
 		EXE_send(tdbb, request, msg_type, msg_length,
 				reinterpret_cast<UCHAR*>(msg));
@@ -4122,31 +4099,23 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 	try {
 
 /* Pick up and validate request level */
-		const USHORT lev = level;
-		if (lev) {
-		    const vec* vector = request->req_sub_requests;
-			if (!vector || lev >= vector->count() ||
-				!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
-			{
-				ERR_post(gds_req_sync, 0);
-			}
-		}
+		verify_request_synchronization(request, level);
 
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
+		tdbb->tdbb_request = NULL;
+		tdbb->tdbb_transaction = NULL;
 
 /* Unwind request.  This just tweaks some bits */
 
-	EXE_unwind(tdbb, request);
+		EXE_unwind(tdbb, request);
 
 /* Restore old state and get out */
 
-	JRD_restore_context();
+		JRD_restore_context();
 
-	user_status[0] = gds_arg_gds;
-	user_status[2] = gds_arg_end;
+		user_status[0] = gds_arg_gds;
+		user_status[2] = gds_arg_end;
 
-	return (user_status[1] = FB_SUCCESS);
+		return (user_status[1] = FB_SUCCESS);
 
 	}	// try
 	catch (const std::exception&) {
@@ -6623,6 +6592,32 @@ static void purge_attachment(TDBB		tdbb,
 		}
 	}
 }
+
+
+// verify_request_synchronization
+//
+// @brief Finds the sub-requests at the given level and replaces with it the
+// original passed request (note the pointer by reference). If that specific
+// sub-request is not found, throw the dreaded "request synchronization error".
+// Notice that at this time, the calling function's "request" pointer has been
+// set to null, so remember that if you write a debugging routine.
+// This function replaced a chunk of code repeated four times.
+//
+// @param request The incoming, parent request to be replaced.
+// @param level The level of the sub-request we need to find.
+static void verify_request_synchronization(jrd_req*& request, SSHORT level)
+{
+	const USHORT lev = level;
+	if (lev) {
+		const vec* vector = request->req_sub_requests;
+		if (!vector || lev >= vector->count() ||
+			!(request = reinterpret_cast<jrd_req*>((*vector)[lev])))
+		{
+			ERR_post(gds_req_sync, 0);
+		}
+	}
+}
+
 
 /**
   

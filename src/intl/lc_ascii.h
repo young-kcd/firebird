@@ -23,7 +23,7 @@
 
 
 USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen);
-USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar
+USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar
 							, USHORT partial);
 SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
 

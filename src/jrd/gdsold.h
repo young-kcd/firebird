@@ -271,11 +271,11 @@ ISC_STATUS GDS_EXPORT gds__print_status(const ISC_STATUS*);
 
 ISC_STATUS GDS_EXPORT gds__sqlcode(const ISC_STATUS*);
 
-ISC_STATUS GDS_EXPORT gds__ddl(ISC_STATUS  *,
-							   FRBRD  **,
-							   FRBRD  **,
+ISC_STATUS GDS_EXPORT gds__ddl(ISC_STATUS*,
+							   FRBRD**,
+							   FRBRD**,
 							   short,
-							   char  *);
+							   const char*);
 
 ISC_STATUS GDS_EXPORT gds__commit_retaining(ISC_STATUS  *,
 											FRBRD  **);

@@ -609,9 +609,10 @@ ISC_STATUS API_ROUTINE gds__unwind_request(ISC_STATUS * status_vector,
 	return isc_unwind_request(status_vector, req_handle, req_level);
 }
 
-ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS * status_vector,
-							FRBRD **db_handle,
-							FRBRD **tra_handle, SSHORT ddl_length, SCHAR * ddl)
+ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS* status_vector,
+							FRBRD** db_handle,
+							FRBRD** tra_handle,
+							SSHORT ddl_length, const SCHAR* ddl)
 {
 	return isc_ddl(status_vector, db_handle, tra_handle, ddl_length, ddl);
 }

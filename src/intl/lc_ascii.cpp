@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_ascii.c
+ *	MODULE:		lc_ascii.cpp
  *	DESCRIPTION:	Language Drivers in the binary collation family.
  *
  * The contents of this file are subject to the Interbase Public
@@ -552,11 +552,11 @@ USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen)
  * RETURN:
  *		Length, in bytes, of returned key
  */
-USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar
+USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar
 	, USHORT partial)
 {
 	BYTE *outbuff;
-	BYTE *inbuff;
+	const BYTE *inbuff;
 
 	fb_assert(pOutChar != NULL);
 	fb_assert(pInChar != NULL);

@@ -125,7 +125,7 @@ DATABASE DB = COMPILETIME "yachts.lnk";
 #define STUFF_INT(x)  {STUFF (x); STUFF ((x) >> 8); STUFF ((x) >> 16); STUFF ((x) >> 24);}
 
 #define DIGIT(c)		((c) >= '0' && (c) <= '9')
-#define INT64_LIMIT	 ((((SINT64) 1) << 62) / 5)	/* same as in cvt.c */
+#define INT64_LIMIT	 ((((SINT64) 1) << 62) / 5)	/* same as in cvt.cpp */
 
 /*  Print lengths of numeric values */
 
@@ -158,9 +158,9 @@ struct collist {
 };
 
 struct ri_actions {
-	SCHAR* ri_action_name;
-	SCHAR* ri_action_print_caps;
-	SCHAR* ri_action_print_mixed;
+	const SCHAR* ri_action_name;
+	const SCHAR* ri_action_print_caps;
+	const SCHAR* ri_action_print_mixed;
 };
 
 static SSHORT add_row(TEXT*);
@@ -681,7 +681,7 @@ static void readNextInputLine(const char* prompt) {
  *  Otherwise return the line up to EOF (excluded) or '\n' (included)
  **************************************/
 
-	while(true){
+	while(true) {
 
 		if (lastInputLine != NULL) {
 			free(lastInputLine);

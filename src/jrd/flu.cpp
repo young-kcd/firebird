@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.36 2003-11-03 23:53:50 brodsom Exp $
+$Id: flu.cpp,v 1.37 2003-11-05 09:02:25 robocop Exp $
 */
 
 #include "firebird.h"
@@ -192,11 +192,6 @@ void FLU_unregister_module(MOD module)
  *
  **************************************/
 	MOD *mod;
-	#ifdef DARWIN
-	NSSymbol symbol;
-	void (*fini)(void);
-	#endif
-
 
 /* Module is in-use by other databases.*/
 
@@ -227,9 +222,10 @@ void FLU_unregister_module(MOD module)
 
 #ifdef DARWIN
 	/* Make sure the fini function gets called, if there is one */
-	symbol = NSLookupSymbolInModule(module->mod_handle, "__fini");
+	NSSymbol symbol = NSLookupSymbolInModule(module->mod_handle, "__fini");
 	if (symbol != NULL)
 	{
+		void (*fini)(void);
 		fini = (void (*)(void)) NSAddressOfSymbol(symbol);
 		fini();
 	}
@@ -242,8 +238,9 @@ void FLU_unregister_module(MOD module)
 
 #ifdef VMS
 #define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var,
+FPTR_INT ISC_lookup_entrypoint(TEXT* module,
+							   TEXT* name,
+							   const TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -307,7 +304,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   TEXT* ib_path_env_var,
+							   const TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -359,8 +356,9 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 
 #ifdef HP10
 #define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var,
+FPTR_INT ISC_lookup_entrypoint(TEXT* module,
+							   TEXT* name,
+							   const TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -439,7 +437,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   TEXT* ib_path_env_var,
+							   const TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -525,7 +523,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   TEXT* ib_path_env_var,
+							   const TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -636,10 +634,10 @@ HMOD AdjustAndLoad(Firebird::string name) {
 NSModule ISC_link_with_module (TEXT*);
 
 FPTR_INT ISC_lookup_entrypoint (
-    TEXT        *module,
-    TEXT        *name,
-    TEXT        *ib_path_env_var,
-	bool		ShowAccessError)
+    TEXT* module,
+    TEXT* name,
+    const TEXT* ib_path_env_var,
+	bool ShowAccessError)
 {
 /**************************************
  *
@@ -803,7 +801,7 @@ NSModule ISC_link_with_module (
 #ifndef LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   TEXT* ib_path_env_var,
+							   const TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -905,3 +903,4 @@ static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
 }
 
 } // extern "C"
+

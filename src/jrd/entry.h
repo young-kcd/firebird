@@ -436,17 +436,18 @@ ENTRYPOINT("gds_cancel_events",
 			   (ISC_STATUS*, struct att**, SLONG*))
 
 ENTRYPOINT("gds_ddl",
-		   jrd8_ddl,
+			jrd8_ddl,
    /****   "jrd5_ddl"   ***/ NULL,
-			   REM_ddl,
-			   "_REM_ddl",
-			   CSI_ddl,
+			REM_ddl,
+			"_REM_ddl",
+			CSI_ddl,
    /****     RDB_ddl    ***/ y_valve_no_entrypoint,
-			   PSI_ddl,
-			   PSI5_ddl,
-			   "_jrd8_ddl",
-			   IPI_ddl,
-			   (ISC_STATUS*, struct att**, struct jrd_tra**, USHORT, SCHAR*))
+			PSI_ddl,
+			PSI5_ddl,
+			"_jrd8_ddl",
+			IPI_ddl,
+			(ISC_STATUS*, struct att**, struct jrd_tra**,
+				USHORT, const SCHAR*))
 
 ENTRYPOINT("gds_open_blob2",
 		   jrd8_open_blob2,

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.32 2003-11-03 23:53:49 brodsom Exp $
+$Id: why.cpp,v 1.33 2003-11-05 09:02:26 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1537,11 +1537,11 @@ ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS * user_status,
-							   WHY_ATT * db_handle,
-							   WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
+							   WHY_ATT* db_handle,
+							   WHY_TRA* tra_handle,
 							   USHORT length,
-							   UCHAR * ddl)
+							   const UCHAR* ddl)
 {
 /**************************************
  *
@@ -1557,11 +1557,6 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS * user_status,
 	ISC_STATUS_ARRAY local;
 	WHY_ATT database;
 	WHY_TRA transaction;
-
-#if !defined(SUPERCLIENT)
-	TEXT *image;
-	PTR entrypoint;
-#endif
 
 	GET_STATUS;
 	database = *db_handle;
@@ -1593,7 +1588,9 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS * user_status,
 
 #ifndef SUPERCLIENT
 	char DYN_ddl[] = "DYN_ddl";
-	if ((image = images[database->implementation].path) != NULL &&
+	PTR entrypoint;
+	TEXT* image = images[database->implementation].path;
+	if (image != NULL &&
 		((entrypoint = (PTR) ISC_lookup_entrypoint(image, DYN_ddl, NULL, false)) !=
 		 NULL ||
 		 FALSE) &&
@@ -5386,11 +5383,6 @@ static const PTR get_entrypoint(int proc,
  *
  **************************************/
 
-#if !defined(SUPERCLIENT)
-	const TEXT *name;
-	TEXT *image;
-#endif
-
 	const ENTRY *ent = entrypoints + implementation * PROC_count + proc;
 	const PTR entrypoint = ent->address;
 
@@ -5400,8 +5392,8 @@ static const PTR get_entrypoint(int proc,
 	}
 
 #ifndef SUPERCLIENT
-	image = images[implementation].path;
-	name = ent->name;
+	TEXT* image = images[implementation].path;
+	const TEXT* name = ent->name;
 	if (!name)
 	{
 		name = generic[proc];

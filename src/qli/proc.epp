@@ -48,16 +48,16 @@ static const UCHAR tpb[] = { gds_tpb_version1, gds_tpb_write,
 	gds_tpb_concurrency
 };
 
-static UCHAR dyn_gdl1[] = {
+static const UCHAR dyn_gdl1[] = {
 #include "../qli/procddl1.h"
 };
-static UCHAR dyn_gdl2[] = {
+static const UCHAR dyn_gdl2[] = {
 #include "../qli/procddl2.h"
 };
-static UCHAR dyn_gdl3[] = {
+static const UCHAR dyn_gdl3[] = {
 #include "../qli/procddl3.h"
 };
-static UCHAR dyn_gdl4[] = {
+static const UCHAR dyn_gdl4[] = {
 #include "../qli/procddl4.h"
 };
 
@@ -781,28 +781,28 @@ static void create_qli_procedures( DBB dbb)
 		return;
 
 	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl1),
-				 (char*) dyn_gdl1)) {
+				 reinterpret_cast<const char*>(dyn_gdl1))) {
 		PRO_rollback(dbb);
 		IBERROR(73);
 		/* Msg 73 Could not create QLI$PROCEDURE_NAME field */
 	}
 
 	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl2),
-				 (char*) dyn_gdl2)) {
+				 reinterpret_cast<const char*>(dyn_gdl2))) {
 		PRO_rollback(dbb);
 		IBERROR(74);
 		/* Msg 74 Could not create QLI$PROCEDURE field */
 	}
 
 	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl3),
-				 (char*) dyn_gdl3)) {
+				 reinterpret_cast<const char*>(dyn_gdl3))) {
 		PRO_rollback(dbb);
 		IBERROR(75);
 		/* Msg 75 Could not create QLI$PROCEDURES relation */
 	}
 
 	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl4),
-				 (char*) dyn_gdl4)) {
+				 reinterpret_cast<const char*>(dyn_gdl4))) {
 		PRO_rollback(dbb);
 		IBERROR(409);
 		/* msg 409  Could not create QLI$PROCEDURES index */

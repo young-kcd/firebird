@@ -915,9 +915,9 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
-			   IDB * db_handle,
-			   ITR * itr_handle, USHORT length, UCHAR * msg)
+ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
+			   IDB* db_handle,
+			   ITR* itr_handle, USHORT length, const UCHAR* msg)
 {
 /**************************************
  *

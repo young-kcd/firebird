@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.29 2003-11-03 17:14:42 skidder Exp $
+ *  $Id: fb_types.h,v 1.30 2003-11-05 09:02:15 robocop Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -133,7 +133,11 @@ typedef void (*FPTR_VOID_PTR) (void*);
 typedef int (*FPTR_INT) ();
 typedef int (*FPTR_INT_VOID_PTR) (void*);
 typedef void (*FPTR_PRINT_CALLBACK) (void*, SSHORT, const char*);
-typedef void (*FPTR_STATUS) (ISC_STATUS, ...);
+
+// The type of JRD's ERR_post, DSQL's ERRD_post & post_error,
+// REMOTE's move_error & GPRE's post_error.
+typedef void (*FPTR_ERROR) (ISC_STATUS, ...);
+
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
 typedef int (*lock_ast_t)(void*);
@@ -141,8 +145,9 @@ typedef int (*lock_ast_t)(void*);
 #define ISC_STATUS_LENGTH	20
 typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
 
-/* Number of elements in an arry */
+/* Number of elements in an array */
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
-#define FB_ALIGN(n,b) ((n + b - 1) & ~(b - 1))
+#define FB_ALIGN(n, b) ((n + b - 1) & ~(b - 1))
 
 #endif /* INCLUDE_FB_TYPES_H */
+

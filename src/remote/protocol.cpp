@@ -68,7 +68,7 @@ static bool alloc_cstring(XDR *, CSTRING *);
 static void free_cstring(XDR *, CSTRING *);
 static RSR get_statement(XDR *, SSHORT);
 static bool_t xdr_cstring(XDR*, CSTRING*);
-static inline bool_t xdr_cstring_bpb(XDR*, CSTRING_CONST*);
+static inline bool_t xdr_cstring_const(XDR*, CSTRING_CONST*);
 static bool_t xdr_datum(XDR *, DSC *, BLOB_PTR *);
 #ifdef DEBUG_XDR_MEMORY
 static bool_t xdr_debug_packet(XDR *, enum xdr_op, PACKET *);
@@ -432,7 +432,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_open_blob2:
 	case op_create_blob2:
 		blob = &p->p_blob;
-		MAP(xdr_cstring_bpb, blob->p_blob_bpb);
+		MAP(xdr_cstring_const, blob->p_blob_bpb);
 		// fall into:
 
 	case op_open_blob:
@@ -450,7 +450,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		segment = &p->p_sgmt;
 		MAP(xdr_short, reinterpret_cast < SSHORT & >(segment->p_sgmt_blob));
 		MAP(xdr_short, reinterpret_cast < SSHORT & >(segment->p_sgmt_length));
-		MAP(xdr_cstring_bpb, segment->p_sgmt_segment);
+		MAP(xdr_cstring_const, segment->p_sgmt_segment);
 		DEBUG_PRINTSIZE(p->p_operation);
 		return P_TRUE;
 
@@ -548,7 +548,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		ddl = &p->p_ddl;
 		MAP(xdr_short, reinterpret_cast < SSHORT & >(ddl->p_ddl_database));
 		MAP(xdr_short, reinterpret_cast < SSHORT & >(ddl->p_ddl_transaction));
-		MAP(xdr_cstring, ddl->p_ddl_blr);
+		MAP(xdr_cstring_const, ddl->p_ddl_blr);
 		DEBUG_PRINTSIZE(p->p_operation);
 		return P_TRUE;
 
@@ -886,7 +886,8 @@ static void free_cstring( XDR* xdrs, CSTRING* cstring)
 // The layout of CSTRING and CSTRING_CONST is exactly the same.
 // Changing CSTRING to use cstr_address as const pointer would upset other
 // places of the code, so only P_BLOB was changed to use CSTRING_CONST.
-static inline bool_t xdr_cstring_bpb(XDR* xdrs, CSTRING_CONST* cstring)
+// The same function is being used to check P_SGMT & P_DDL.
+static inline bool_t xdr_cstring_const(XDR* xdrs, CSTRING_CONST* cstring)
 {
 #ifdef SUPERCLIENT
 #ifdef DEV_BUILD

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		err_proto.h
- *	DESCRIPTION:	Prototype header file for err.c
+ *	DESCRIPTION:	Prototype header file for err.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -43,11 +43,11 @@ void	ERR_bugcheck_msg(const TEXT*);
 void	ERR_corrupt(int);
 void	ERR_duplicate_error(enum idx_e, class jrd_rel*, USHORT);
 void	ERR_error(int);
-void	ERR_error_msg(const TEXT *);
+void	ERR_error_msg(const TEXT*);
 void	ERR_post(ISC_STATUS, ...);
 void	ERR_punt(void);
 void	ERR_warning(ISC_STATUS, ...);
-void	ERR_log(int, int, const TEXT *);
+void	ERR_log(int, int, const TEXT*);
 
 #endif /* REQUESTER */
 
@@ -55,3 +55,4 @@ const TEXT*		ERR_cstring(const TEXT*);
 const TEXT*		ERR_string(const TEXT*, int);
 
 #endif /* JRD_ERR_PROTO_H */
+

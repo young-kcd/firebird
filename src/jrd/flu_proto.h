@@ -1,8 +1,8 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		flu_proto.h
- *	DESCRIPTION:	Prototype header file for flu.c, functions.c, builtin.c,
- *			and qatest.c
+ *	DESCRIPTION:	Prototype header file for flu.cpp, functions.cpp,
+ *			builtin.cpp and qatest.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,11 +29,11 @@
 extern "C" {
 #endif
 
-struct mod*	FLU_lookup_module(TEXT *);
-void		FLU_unregister_module(struct mod *);
-int (*ISC_lookup_entrypoint(TEXT *, TEXT *, TEXT *, bool)) (void);
-int (*FUNCTIONS_entrypoint(TEXT *, TEXT *)) (void);
-int (*BUILTIN_entrypoint(TEXT *, TEXT *)) (void);
+struct mod*	FLU_lookup_module(TEXT*);
+void		FLU_unregister_module(struct mod*);
+int (*ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool)) (void);
+int (*FUNCTIONS_entrypoint(TEXT*, TEXT*)) (void);
+int (*BUILTIN_entrypoint(TEXT*, TEXT*)) (void);
 
 /*
    This shouldn't be in a production server,

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		dyn_proto.h
- *	DESCRIPTION:	Prototype Header file for dyn.e
+ *	DESCRIPTION:	Prototype Header file for dyn.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -28,12 +28,13 @@
 extern "C" {
 #endif
 
-void	DYN_ddl(struct att *, struct jrd_tra *, USHORT, UCHAR *);
-void	DYN_terminate(TEXT *, int);
-
+void	DYN_ddl(struct att*, struct jrd_tra*, USHORT, const UCHAR*);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
+void	DYN_terminate(TEXT*, int);
+
 #endif // JRD_DYN_PROTO_H
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		dyn_delete.e
+ *	MODULE:		dyn_delete.epp
  *	DESCRIPTION:	Dynamic data definition - DYN_delete_<x>
  *
  * The contents of this file are subject to the Interbase Public
@@ -67,16 +67,16 @@
 
 DATABASE DB = STATIC "ODS.RDB";
 
-static BOOLEAN delete_constraint_records(GBL, TEXT *, TEXT *);
-static BOOLEAN delete_dimension_records(GBL, TEXT *);
-static void delete_f_key_constraint(TDBB, GBL, TEXT *, TEXT *,
-									TEXT *, TEXT *);
-static void delete_gfield_for_lfield(GBL, TEXT *);
-static BOOLEAN delete_index_segment_records(GBL, TEXT *);
-static BOOLEAN delete_security_class2(GBL, TEXT *);
+static bool delete_constraint_records(GBL, const TEXT*, const TEXT*);
+static bool delete_dimension_records(GBL, const TEXT*);
+static void delete_f_key_constraint(TDBB, GBL, const TEXT*, const TEXT*,
+									const TEXT*, const TEXT*);
+static void delete_gfield_for_lfield(GBL, const TEXT*);
+static bool delete_index_segment_records(GBL, const TEXT*);
+static bool delete_security_class2(GBL, const TEXT*);
 
 
-void DYN_delete_constraint( GBL gbl, UCHAR ** ptr, TEXT * relation)
+void DYN_delete_constraint( GBL gbl, const UCHAR** ptr, const TEXT* relation)
 {
 /**************************************
  *
@@ -88,7 +88,7 @@ void DYN_delete_constraint( GBL gbl, UCHAR ** ptr, TEXT * relation)
  *	Execute ddl to DROP an Integrity Constraint
  *
  **************************************/
-	TEXT rel_name[32], constraint[32];
+	SqlIdentifier rel_name, constraint;
 
 /* GET name of the constraint to be deleted  */
 
@@ -97,22 +97,22 @@ void DYN_delete_constraint( GBL gbl, UCHAR ** ptr, TEXT * relation)
 	if (relation)
 		strcpy(rel_name, relation);
 	else if (*(*ptr)++ != gds_dyn_rel_name) {
-		DYN_error_punt(FALSE, 128, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 128, NULL, NULL, NULL, NULL, NULL);
 		/* msg 128: "No relation specified in delete_constraint" */
 	}
 	else
 		GET_STRING(ptr, rel_name);
 
 	if (!delete_constraint_records(gbl, constraint, rel_name))
-		DYN_error_punt(FALSE, 130, constraint, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 130, constraint, NULL, NULL, NULL, NULL);
 	/* msg 130: "CONSTRAINT %s does not exist." */
 }
 
 
 void DYN_delete_dimensions(
 						   GBL gbl,
-						   UCHAR ** ptr,
-						   TEXT * relation_name, TEXT * field_name)
+						   const UCHAR** ptr,
+						   const TEXT* relation_name, TEXT* field_name)
 {
 /**************************************
  *
@@ -130,7 +130,7 @@ void DYN_delete_dimensions(
  *	you.
  *
  **************************************/
-	TEXT f[32];
+	SqlIdentifier f;
 
 	GET_STRING(ptr, f);
 
@@ -143,7 +143,7 @@ void DYN_delete_dimensions(
 }
 
 
-void DYN_delete_exception( GBL gbl, UCHAR ** ptr)
+void DYN_delete_exception( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -156,8 +156,7 @@ void DYN_delete_exception( GBL gbl, UCHAR ** ptr)
  *	deletes an exception.
  *
  **************************************/
-	USHORT found;
-	TEXT t[32];
+	SqlIdentifier t;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -166,16 +165,18 @@ void DYN_delete_exception( GBL gbl, UCHAR ** ptr)
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_xcp, DYN_REQUESTS);
 
+	bool found = false;
+
 	try {
 
-	found = FALSE;
+	found = false;;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$EXCEPTIONS
         WITH X.RDB$EXCEPTION_NAME EQ t
         if (!DYN_REQUEST(drq_e_xcp)) 
             DYN_REQUEST(drq_e_xcp) = request;
 
-		found = TRUE;
+		found = true;
 		ERASE X;
 	END_FOR;
 	if (!DYN_REQUEST(drq_e_xcp))
@@ -184,18 +185,18 @@ void DYN_delete_exception( GBL gbl, UCHAR ** ptr)
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 143, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 143, NULL, NULL, NULL, NULL, NULL);
 		/* msg 143: "ERASE EXCEPTION failed" */
 	}
 
 	if (!found) {
-		DYN_error_punt(FALSE, 144, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 144, NULL, NULL, NULL, NULL, NULL);
 		/* msg 144: "Exception not found" */
 	}
 }
 
 
-void DYN_delete_filter( GBL gbl, UCHAR ** ptr)
+void DYN_delete_filter( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -208,38 +209,39 @@ void DYN_delete_filter( GBL gbl, UCHAR ** ptr)
  *	deletes a blob filter.
  *
  **************************************/
-	USHORT found;
-	TEXT f[32];
+	SqlIdentifier f;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_filters, DYN_REQUESTS);
 
+	bool found = false;
+
 	try {
 
 	GET_STRING(ptr, f);
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILTERS WITH X.RDB$FUNCTION_NAME = f
         if (!DYN_REQUEST(drq_e_filters))
             DYN_REQUEST(drq_e_filters) = request;
 
 		ERASE X;
-		found = TRUE;
+		found = true;
 	END_FOR;
 	if (!DYN_REQUEST(drq_e_filters))
 		DYN_REQUEST(drq_e_filters) = request;
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 36, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 36, NULL, NULL, NULL, NULL, NULL);
 		/* msg 36: "ERASE BLOB FILTER failed" */
 	}
 
 	if (!found) {
-		DYN_error_punt(FALSE, 37, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 37, NULL, NULL, NULL, NULL, NULL);
 		/* msg 37: "Blob Filter not found" */
 	}
 
@@ -249,7 +251,7 @@ void DYN_delete_filter( GBL gbl, UCHAR ** ptr)
 }
 
 
-void DYN_delete_function( GBL gbl, UCHAR ** ptr)
+void DYN_delete_function( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -262,14 +264,16 @@ void DYN_delete_function( GBL gbl, UCHAR ** ptr)
  *	deletes a user defined function.
  *
  **************************************/
-	volatile USHORT id, found;
-	TEXT f[32];
+	volatile USHORT id;
+	SqlIdentifier f;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_func_args, DYN_REQUESTS);
 	id = drq_e_func_args;
+	
+	bool found = false;
 
 	try {
 	GET_STRING(ptr, f);
@@ -287,14 +291,14 @@ void DYN_delete_function( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_e_funcs, DYN_REQUESTS);
 	id = drq_e_funcs;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FUNCTIONS WITH X.RDB$FUNCTION_NAME EQ f
         if (!DYN_REQUEST(drq_e_funcs)) 
             DYN_REQUEST(drq_e_funcs) = request;
 
 		ERASE X;
-		found = TRUE;
+		found = true;
 	END_FOR;
 	if (!DYN_REQUEST(drq_e_funcs))
 		DYN_REQUEST(drq_e_funcs) = request;
@@ -303,19 +307,19 @@ void DYN_delete_function( GBL gbl, UCHAR ** ptr)
 		DYN_rundown_request(request, -1);
 		if (id == drq_e_func_args)
 		{
-			DYN_error_punt(TRUE, 39, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 39, NULL, NULL, NULL, NULL, NULL);
 			/* msg 39: "ERASE RDB$FUNCTION_ARGUMENTS failed" */
 		}
 		else
 		{
-			DYN_error_punt(TRUE, 40, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 40, NULL, NULL, NULL, NULL, NULL);
 			/* msg 40: "ERASE RDB$FUNCTIONS failed" */
 		}
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(FALSE, 41, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 41, NULL, NULL, NULL, NULL, NULL);
 		/* msg 41: "Function not found" */
 	}
 
@@ -325,7 +329,7 @@ void DYN_delete_function( GBL gbl, UCHAR ** ptr)
 }
 
 
-void DYN_delete_generator(GBL gbl, UCHAR **ptr)
+void DYN_delete_generator(GBL gbl, const UCHAR**ptr)
 {
 /**************************************
  *
@@ -339,13 +343,14 @@ void DYN_delete_generator(GBL gbl, UCHAR **ptr)
  *  space allocated in the page won't be released.
  *
  **************************************/
-	USHORT found;
-	TEXT t[32];
+	SqlIdentifier t;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	BLK request = NULL;
+	
+	bool found = false;
 	
 	try {
         GET_STRING(ptr, t);
@@ -353,7 +358,7 @@ void DYN_delete_generator(GBL gbl, UCHAR **ptr)
         request = (BLK) CMP_find_request(tdbb, drq_e_gens, DYN_REQUESTS);
         
         
-        found = FALSE;
+        found = false;
         FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
             X IN RDB$GENERATORS
             WITH X.RDB$GENERATOR_NAME EQ t
@@ -361,7 +366,7 @@ void DYN_delete_generator(GBL gbl, UCHAR **ptr)
             if (!DYN_REQUEST(drq_e_gens))
                 DYN_REQUEST(drq_e_gens) = request;
 
-		    found = TRUE;
+		    found = true;
             ERASE X;
         END_FOR;
 
@@ -371,18 +376,18 @@ void DYN_delete_generator(GBL gbl, UCHAR **ptr)
     }
 	catch (const std::exception&) {
 	    DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 213, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 213, NULL, NULL, NULL, NULL, NULL);
 		/* msg 213: "ERASE GENERATOR failed" */
     }
 
 	if (!found) {
-		DYN_error_punt(FALSE, 214, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 214, NULL, NULL, NULL, NULL, NULL);
 	    /* msg 214: "Generator not found" */
 	}
 }
 
 
-void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
+void DYN_delete_global_field( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -395,14 +400,16 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
  *	deletes a global field.
  *
  **************************************/
-	volatile USHORT id, found;
-	TEXT f[32];
+	volatile USHORT id;
+	SqlIdentifier f;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_l_fld_src, DYN_REQUESTS);
 	id = drq_l_fld_src;
+	
+	bool found = false;
 
 	try {
 	GET_STRING(ptr, f);
@@ -416,7 +423,7 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 		DYN_terminate(Y.RDB$RELATION_NAME, sizeof(Y.RDB$RELATION_NAME));
 		DYN_terminate(Y.RDB$FIELD_NAME, sizeof(Y.RDB$FIELD_NAME));
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(FALSE, 43, Y.RDB$FIELD_SOURCE, Y.RDB$RELATION_NAME,
+		DYN_error_punt(false, 43, Y.RDB$FIELD_SOURCE, Y.RDB$RELATION_NAME,
 					   Y.RDB$FIELD_NAME, NULL, NULL);
 		/* msg 43: "field %s is used in relation %s (local name %s) and can not be dropped" */
 	END_FOR;
@@ -426,7 +433,7 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_e_gfields, DYN_REQUESTS);
 	id = drq_e_gfields;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ f
         if (!DYN_REQUEST(drq_e_gfields))
@@ -434,7 +441,7 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 
 		delete_dimension_records(gbl, f);
 		ERASE X;
-		found = TRUE;
+		found = true;
 	END_FOR
 	if (!DYN_REQUEST(drq_e_gfields))
 		DYN_REQUEST(drq_e_gfields) = request;
@@ -443,18 +450,18 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_fld_src)
 		{
-			DYN_error_punt(TRUE, 44, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 44, NULL, NULL, NULL, NULL, NULL);
 			/* msg 44: "ERASE RDB$FIELDS failed" */
 		}
 		else
 		{
-			DYN_error_punt(TRUE, 45, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 45, NULL, NULL, NULL, NULL, NULL);
 			/* msg 45: "ERASE RDB$FIELDS failed" */
 		}
 	}
 
 	if (!found) {
-		DYN_error_punt(FALSE, 46, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 46, NULL, NULL, NULL, NULL, NULL);
 		/* msg 46: "Field not found" */
 	}
 
@@ -465,7 +472,7 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
 }
 
 
-void DYN_delete_index( GBL gbl, UCHAR ** ptr)
+void DYN_delete_index( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -478,25 +485,27 @@ void DYN_delete_index( GBL gbl, UCHAR ** ptr)
  *	deletes an index.
  *
  **************************************/
-	USHORT found;
-	TEXT i[32], r[32];
+	SqlIdentifier idx_name, rel_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_indices, DYN_REQUESTS);
 
-	try {
-	GET_STRING(ptr, i);
+	bool found = false;
 
-	found = FALSE;
+	try {
+	GET_STRING(ptr, idx_name);
+
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ i
+		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ idx_name
         if (!DYN_REQUEST(drq_e_indices))
             DYN_REQUEST(drq_e_indices) = request;
 
-		strcpy(r, IDX.RDB$RELATION_NAME);
-		found = TRUE;
+		strcpy(rel_name, IDX.RDB$RELATION_NAME);
+		MET_exact_name(rel_name);
+		found = true;
 		ERASE IDX;
 	END_FOR;
 	if (!DYN_REQUEST(drq_e_indices))
@@ -504,33 +513,33 @@ void DYN_delete_index( GBL gbl, UCHAR ** ptr)
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 47, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 47, NULL, NULL, NULL, NULL, NULL);
 		/* msg 47: "ERASE RDB$INDICES failed" */
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(FALSE, 48, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 48, NULL, NULL, NULL, NULL, NULL);
 		/* msg 48: "Index not found" */
 	}
 
-	if (!delete_index_segment_records(gbl, i))
+	if (!delete_index_segment_records(gbl, idx_name))
 	{
-		DYN_error_punt(FALSE, 50, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 50, NULL, NULL, NULL, NULL, NULL);
 		/* msg 50: "No segments found for index" */
 	}
 
 	while (*(*ptr)++ != gds_dyn_end) {
 		--(*ptr);
-		DYN_execute(gbl, ptr, r, NULL, NULL, NULL, NULL);
+		DYN_execute(gbl, ptr, rel_name, NULL, NULL, NULL, NULL);
 	}
 }
 
 
 void DYN_delete_local_field(
 							GBL gbl,
-							UCHAR ** ptr,
-							TEXT * relation_name, TEXT * field_name)
+							const UCHAR** ptr,
+							const TEXT* relation_name, TEXT* field_name)
 {
 /**************************************
  *
@@ -567,8 +576,8 @@ void DYN_delete_local_field(
  *  delete_f_key_constraint function for detail.
  *
  **************************************/
-	volatile USHORT id, found;
-	TEXT tbl_nm[32], col_nm[32], constraint[32], index_name[32];
+	volatile USHORT id;
+	SqlIdentifier tbl_nm, col_nm, constraint, index_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -578,7 +587,7 @@ void DYN_delete_local_field(
 	if (relation_name)
 		strcpy(tbl_nm, relation_name);
 	else if (*(*ptr)++ != gds_dyn_rel_name) {
-		DYN_error_punt(FALSE, 51, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 51, NULL, NULL, NULL, NULL, NULL);
 		/* msg 51: "No relation specified in ERASE RFR" */
 	}
 	else
@@ -586,6 +595,8 @@ void DYN_delete_local_field(
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_l_dep_flds, DYN_REQUESTS);
 	id = drq_l_dep_flds;
+	
+	bool found;
 
 	try {
 
@@ -610,7 +621,7 @@ void DYN_delete_local_field(
             DYN_REQUEST(drq_l_dep_flds) = request;
 
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(FALSE, 52, col_nm, tbl_nm, Y.RDB$RELATION_NAME, NULL,
+		DYN_error_punt(false, 52, col_nm, tbl_nm, Y.RDB$RELATION_NAME, NULL,
 					   NULL);
 		/* msg 52: "field %s from relation %s is referenced in view %s" */
 	END_FOR;
@@ -657,7 +668,7 @@ void DYN_delete_local_field(
 		}
 		else {
 			DYN_rundown_request(request, -1);
-			DYN_error_punt(FALSE, 187, col_nm, tbl_nm,
+			DYN_error_punt(false, 187, col_nm, tbl_nm,
 						   IDX.RDB$INDEX_NAME, NULL, NULL);
 			/* msg 187: "field %s from relation %s is referenced in index %s" */
 		}
@@ -684,15 +695,17 @@ void DYN_delete_local_field(
 	
 	BLK old_request = NULL;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES
 			WITH IDX.RDB$RELATION_NAME EQ tbl_nm
         if (!DYN_REQUEST(drq_e_l_idx)) 
             DYN_REQUEST(drq_e_l_idx) = request;
 
-		found = FALSE;
-		if (strncmp("RDB$", IDX.RDB$INDEX_NAME, 4) != 0) {
+		found = false;
+		if (strncmp(IMPLICIT_DOMAIN_PREFIX, IDX.RDB$INDEX_NAME,
+			IMPLICIT_DOMAIN_PREFIX_LEN) != 0)
+		{
 			old_request = request;
 
 			id = drq_l_idx_seg;
@@ -704,7 +717,7 @@ void DYN_delete_local_field(
 					IDX_SEG.RDB$FIELD_NAME = col_nm
                 if (!DYN_REQUEST(drq_l_idx_seg))
                     DYN_REQUEST(drq_l_idx_seg) = request;
-				found = TRUE;
+				found = true;
 			END_FOR;
 			if (!DYN_REQUEST(drq_l_idx_seg))
 				DYN_REQUEST(drq_l_idx_seg) = request;
@@ -713,7 +726,7 @@ void DYN_delete_local_field(
 		}
 		if (found) {
 			DYN_rundown_request(request, -1);
-			DYN_error_punt(FALSE, 187, col_nm, tbl_nm, IDX.RDB$INDEX_NAME,
+			DYN_error_punt(false, 187, col_nm, tbl_nm, IDX.RDB$INDEX_NAME,
 						   NULL, NULL);
 			/* msg 187: "field %s from relation %s is referenced in index %s" */
 		}
@@ -724,7 +737,7 @@ void DYN_delete_local_field(
 	request = (BLK) CMP_find_request(tdbb, drq_e_lfield, DYN_REQUESTS);
 	id = drq_e_lfield;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS
 			WITH RFR.RDB$FIELD_NAME EQ col_nm
@@ -733,7 +746,7 @@ void DYN_delete_local_field(
             DYN_REQUEST(drq_e_lfield) = request;
 
 		ERASE RFR;
-		found = TRUE;
+		found = true;
 		delete_gfield_for_lfield(gbl, RFR.RDB$FIELD_SOURCE);
 		while (*(*ptr)++ != gds_dyn_end) {
 			--(*ptr);
@@ -749,24 +762,24 @@ void DYN_delete_local_field(
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_dep_flds)
 		{
-			DYN_error_punt(TRUE, 53, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 53, NULL, NULL, NULL, NULL, NULL);
 			/* msg 53: "ERASE RDB$RELATION_FIELDS failed" */
 		}
 		else
 		{
-			DYN_error_punt(TRUE, 54, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 54, NULL, NULL, NULL, NULL, NULL);
 			/* msg 54: "ERASE RDB$RELATION_FIELDS failed" */
 		}
 	}
 
 	if (!found) {
-		DYN_error_punt(FALSE, 55, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 55, NULL, NULL, NULL, NULL, NULL);
 		/* msg 55: "Field not found for relation" */
 	}
 }
 
 
-void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
+void DYN_delete_parameter( GBL gbl, const UCHAR** ptr, TEXT* proc_name)
 {
 /**************************************
  *
@@ -779,12 +792,13 @@ void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
  *	deletes a stored procedure parameter.
  *
  **************************************/
-	volatile USHORT old_id, id, found;
-	TEXT name[32];
+	volatile USHORT old_id, id;
+	SqlIdentifier name;
 
 	GET_STRING(ptr, name);
 	if (**ptr == gds_dyn_prc_name) {
-		DYN_get_string((TEXT**)++ptr, proc_name, PROC_NAME_SIZE, TRUE);
+		DYN_get_string(reinterpret_cast<const TEXT**>(++ptr), proc_name,
+			MAX_SQL_IDENTIFIER_SIZE, true);
 	}
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -793,16 +807,18 @@ void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_prm, DYN_REQUESTS);
 	id = drq_e_prms;
 
+	bool found = false;
+	
 	try {
 
 	BLK old_request = NULL;
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PP IN RDB$PROCEDURE_PARAMETERS WITH PP.RDB$PROCEDURE_NAME EQ proc_name
 			AND PP.RDB$PARAMETER_NAME EQ name 
         if (!DYN_REQUEST(drq_e_prm))
             DYN_REQUEST(drq_e_prm) = request;
-		found = TRUE;
+		found = true;
 
 		/* get rid of parameters in rdb$fields */
 
@@ -838,17 +854,17 @@ void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
 		if (id == drq_e_prms) {
-			DYN_error_punt(TRUE, 138, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 138, NULL, NULL, NULL, NULL, NULL);
 			/* msg 138: "ERASE RDB$PROCEDURE_PARAMETERS failed" */
 		}
 		else {
-			DYN_error_punt(TRUE, 35, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 35, NULL, NULL, NULL, NULL, NULL);
 			/* msg 35: "ERASE RDB$FIELDS failed" */
 		}
 	}
 
 	if (!found) {
-		DYN_error_punt(FALSE, 146, name, proc_name, NULL, NULL, NULL);
+		DYN_error_punt(false, 146, name, proc_name, NULL, NULL, NULL);
 		/* msg 146: "Parameter %s in procedure %s not found" */
 	}
 
@@ -858,7 +874,7 @@ void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
 }
 
 
-void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
+void DYN_delete_procedure( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -871,8 +887,8 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
  *	deletes a stored procedure.
  *
  **************************************/
-	volatile USHORT old_id, id, found;
-	TEXT name[32];
+	volatile USHORT old_id, id;
+	SqlIdentifier name;
 
 	GET_STRING(ptr, name);
 	TDBB tdbb = GET_THREAD_DATA;
@@ -882,7 +898,7 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 	if (MET_lookup_procedure(tdbb, name, TRUE) == 0)
 	{
 		tdbb->tdbb_flags &= ~TDBB_prc_being_dropped;
-		DYN_error_punt(FALSE, 140, name, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 140, name, NULL, NULL, NULL, NULL);
 		/* msg 140: "Procedure %s not found" */
 	}
 
@@ -891,6 +907,7 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_prms, DYN_REQUESTS);
 	id = drq_e_prms;
 
+	bool found = false;
 
 	try {
 	
@@ -937,7 +954,7 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_e_prcs, DYN_REQUESTS);
 	id = drq_e_prcs;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ name
 
@@ -951,7 +968,7 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 			delete_security_class2(gbl, P.RDB$SECURITY_CLASS);
 		}
 
-		found = TRUE;
+		found = true;
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_e_prcs)) {
@@ -983,22 +1000,22 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 		DYN_rundown_request(request, -1);
 		if (id == drq_e_prms)
 		{
-			DYN_error_punt(TRUE, 138, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 138, NULL, NULL, NULL, NULL, NULL);
 			/* msg 138: "ERASE RDB$PROCEDURE_PARAMETERS failed" */
 		}
 		else if (id == drq_e_prcs)
 		{
-			DYN_error_punt(TRUE, 139, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 139, NULL, NULL, NULL, NULL, NULL);
 			/* msg 139: "ERASE RDB$PROCEDURES failed" */
 		}
 		else if (id == drq_d_gfields)
 		{
-			DYN_error_punt(TRUE, 35, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 35, NULL, NULL, NULL, NULL, NULL);
 			/* msg 35: "ERASE RDB$FIELDS failed" */
 		}
 		else
 		{
-			DYN_error_punt(TRUE, 62, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 62, NULL, NULL, NULL, NULL, NULL);
 			/* msg 62: "ERASE RDB$USER_PRIVILEGES failed" */
 		}
 	}
@@ -1010,12 +1027,12 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 	return;
 
 dyn_punt_140:
-	DYN_error_punt(FALSE, 140, name, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 140, name, NULL, NULL, NULL, NULL);
 	/* msg 140: "Procedure %s not found" */
 }
 
 
-void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
+void DYN_delete_relation( GBL gbl, const UCHAR** ptr, const TEXT* relation)
 {
 /**************************************
  *
@@ -1029,8 +1046,8 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
  *	and fields.
  *
  **************************************/
-	volatile USHORT id, found;
-	TEXT relation_name[32];
+	volatile USHORT id;
+	SqlIdentifier relation_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -1042,6 +1059,8 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_rel_con2, DYN_REQUESTS);
 	id = drq_e_rel_con2;
+	
+	bool found = false;
 
 	try {
 
@@ -1134,7 +1153,7 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 	request = (BLK) CMP_find_request(tdbb, drq_e_relation, DYN_REQUESTS);
 	id = drq_e_relation;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ relation_name
         if (!DYN_REQUEST(drq_e_relation))
@@ -1146,7 +1165,7 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 			&& !strncmp(R.RDB$SECURITY_CLASS, "SQL$", 4))
 			delete_security_class2(gbl, R.RDB$SECURITY_CLASS);
 
-		found = TRUE;
+		found = true;
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_e_relation))
@@ -1179,7 +1198,7 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 	request = (BLK) CMP_find_request(tdbb, drq_e_trigger2, DYN_REQUESTS);
 	id = drq_e_trigger2;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$RELATION_NAME EQ relation_name
 
@@ -1236,7 +1255,7 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 			default:				number = 62;	break;
 		}
 
-		DYN_error_punt(TRUE, number, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, number, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	while (*(*ptr)++ != gds_dyn_end)
@@ -1248,12 +1267,12 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
 	return;
 
 dyn_punt_61:
-	DYN_error_punt(FALSE, 61, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 61, NULL, NULL, NULL, NULL, NULL);
 	/* msg 61: "Relation not found" */
 }
 
 
-void DYN_delete_role( GBL gbl, UCHAR ** ptr)
+void DYN_delete_role( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1268,9 +1287,7 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
  *
  **************************************/
 	volatile USHORT id;
-	//volatile USHORT err_num;
-	TEXT role_name[32], role_owner[32], user[32];
-        //TEXT security_class[32];
+	SqlIdentifier role_name, role_owner, user;
 	TEXT *ptr1, *ptr2;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -1280,7 +1297,7 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 	const USHORT minor_original = dbb->dbb_minor_original;
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-		DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
+		DYN_error(false, 196, NULL, NULL, NULL, NULL, NULL);
 		ERR_punt();
 		return;	// never reached
 	}
@@ -1364,7 +1381,7 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
     **  only owner of SQL role or USR_locksmith could drop SQL role
     **
     *****************************************************/
-			DYN_error(FALSE, 191, user, role_name, NULL, NULL, NULL);
+			DYN_error(false, 191, user, role_name, NULL, NULL, NULL);
 			goto do_punt;
 		}
 
@@ -1374,7 +1391,7 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 		const USHORT number = (id == drq_drop_role ? 191 : 62);
 		// msg 191: "ERASE RDB$ROLES failed"
 		// msg  62: "ERASE RDB$USER_PRIVILEGES failed"
-		DYN_error_punt(TRUE, number, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, number, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	return;
@@ -1384,7 +1401,7 @@ do_punt:	// ugly, rethink logic of this function
 }
 
 
-void DYN_delete_security_class( GBL gbl, UCHAR ** ptr)
+void DYN_delete_security_class( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1397,12 +1414,12 @@ void DYN_delete_security_class( GBL gbl, UCHAR ** ptr)
  *	deletes a security class.
  *
  **************************************/
-	TEXT security_class[32];
+	SqlIdentifier security_class;
 
 	GET_STRING(ptr, security_class);
 
 	if (!delete_security_class2(gbl, security_class))
-		DYN_error_punt(FALSE, 75, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 75, NULL, NULL, NULL, NULL, NULL);
 	/* msg 75: "Security class not found" */
 
 	while (*(*ptr)++ != gds_dyn_end) {
@@ -1412,7 +1429,7 @@ void DYN_delete_security_class( GBL gbl, UCHAR ** ptr)
 }
 
 
-void DYN_delete_shadow( GBL gbl, UCHAR ** ptr)
+void DYN_delete_shadow( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1465,7 +1482,7 @@ files = NULL;
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: "ERASE RDB$FILES failed" */
 	}
 
@@ -1484,7 +1501,7 @@ while (files)
 }
 
 
-void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
+void DYN_delete_trigger( GBL gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1494,17 +1511,19 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
  *
  * Functional description
  *	Execute a dynamic ddl statement that
- *	deletes an trigger.
+ *	deletes a trigger.
  *
  **************************************/
-	USHORT id, found;
-	TEXT r[32], t[32];
+	USHORT id;
+	SqlIdentifier r, t;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
 	id = drq_e_trg_msgs;
+
+	bool found = false;
 
 	try {
 
@@ -1525,7 +1544,7 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_e_trigger, DYN_REQUESTS);
 	id = drq_e_trigger;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ t
 
@@ -1534,7 +1553,7 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
 
 		gds__vtov(X.RDB$RELATION_NAME, r, sizeof(r));
 		ERASE X;
-		found = TRUE;
+		found = true;
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_e_trigger))
@@ -1550,7 +1569,7 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_l_view_rel2, DYN_REQUESTS);
 	id = drq_l_view_rel2;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1 V IN RDB$VIEW_RELATIONS
 			CROSS F IN RDB$RELATION_FIELDS CROSS T IN RDB$TRIGGERS
@@ -1561,7 +1580,7 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
         if (!DYN_REQUEST(drq_l_view_rel2))
             DYN_REQUEST(drq_l_view_rel2) = request;
 
-		found = TRUE;
+		found = true;
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_l_view_rel2))
@@ -1591,17 +1610,17 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
 		DYN_rundown_request(request, -1);
 		if (id == drq_e_trg_msgs)
 		{
-			DYN_error_punt(TRUE, 65, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 65, NULL, NULL, NULL, NULL, NULL);
 			/* msg 65: "ERASE RDB$TRIGGER_MESSAGES failed" */
 		}
 		else if (id == drq_e_trigger)
 		{
-			DYN_error_punt(TRUE, 66, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 66, NULL, NULL, NULL, NULL, NULL);
 			/* msg 66: "ERASE RDB$TRIGGERS failed" */
 		}
 		else
 		{
-			DYN_error_punt(TRUE, 68, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 68, NULL, NULL, NULL, NULL, NULL);
 			/* msg 68: "MODIFY RDB$VIEW_RELATIONS failed" */
 		}
 	}
@@ -1613,12 +1632,12 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
 	return;
 
 dyn_punt_67:
-	DYN_error_punt(FALSE, 67, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 67, NULL, NULL, NULL, NULL, NULL);
 	/* msg 67: "Trigger not found" */
 }
 
 
-void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
+void DYN_delete_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 {
 /**************************************
  *
@@ -1631,9 +1650,8 @@ void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
  *	deletes an trigger message.
  *
  **************************************/
-	USHORT found;
 	int number;
-	TEXT t[32];
+	SqlIdentifier t;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -1644,14 +1662,16 @@ void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 	else if (*(*ptr)++ == gds_dyn_trg_name)
 		GET_STRING(ptr, t);
 	else
-		DYN_error_punt(FALSE, 70, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 70, NULL, NULL, NULL, NULL, NULL);
 	/* msg 70: "TRIGGER NAME expected" */
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_trg_msg, DYN_REQUESTS);
 
+	bool found = false;
+
 	try {
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGER_MESSAGES
 			WITH X.RDB$TRIGGER_NAME EQ t AND X.RDB$MESSAGE_NUMBER EQ number
@@ -1659,7 +1679,7 @@ void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
         if (!DYN_REQUEST(drq_e_trg_msg))
             DYN_REQUEST(drq_e_trg_msg) = request;
 
-		found = TRUE;
+		found = true;
 		ERASE X;
 	END_FOR;
 
@@ -1669,13 +1689,13 @@ void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 71, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 71, NULL, NULL, NULL, NULL, NULL);
 		/* msg 71: "ERASE TRIGGER MESSAGE failed" */
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(FALSE, 72, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 72, NULL, NULL, NULL, NULL, NULL);
 		/* msg 72: "Trigger Message not found" */
 	}
 
@@ -1685,9 +1705,9 @@ void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 }
 
 
-static BOOLEAN delete_constraint_records(GBL	gbl,
-										 TEXT*	constraint_name,
-										 TEXT*	relation_name)
+static bool delete_constraint_records(GBL	gbl,
+										 const TEXT*	constraint_name,
+										 const TEXT*	relation_name)
 {
 /**************************************
  *
@@ -1700,16 +1720,16 @@ static BOOLEAN delete_constraint_records(GBL	gbl,
  *	based on a constraint name.
  *
  **************************************/
-	BOOLEAN found;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_rel_con, DYN_REQUESTS);
 
+	bool found = false;
+
 	try {
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RC IN RDB$RELATION_CONSTRAINTS
 			WITH RC.RDB$CONSTRAINT_NAME EQ constraint_name AND
@@ -1718,7 +1738,7 @@ static BOOLEAN delete_constraint_records(GBL	gbl,
         if (!DYN_REQUEST(drq_e_rel_con))
             DYN_REQUEST(drq_e_rel_con) = request;
 
-		found = TRUE;
+		found = true;
 		ERASE RC;
 	END_FOR;
 
@@ -1728,7 +1748,7 @@ static BOOLEAN delete_constraint_records(GBL	gbl,
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 129, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 129, NULL, NULL, NULL, NULL, NULL);
 		/* msg 129: "ERASE RDB$RELATION_CONSTRAINTS failed" */
 	}
 
@@ -1736,7 +1756,7 @@ static BOOLEAN delete_constraint_records(GBL	gbl,
 }
 
 
-static BOOLEAN delete_dimension_records(GBL gbl, TEXT* field_name)
+static bool delete_dimension_records(GBL gbl, const TEXT* field_name)
 {
 /**************************************
  *
@@ -1749,23 +1769,23 @@ static BOOLEAN delete_dimension_records(GBL gbl, TEXT* field_name)
  *	pertaining to a field.
  *
  **************************************/
-	BOOLEAN found;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_dims, DYN_REQUESTS);
+	
+	bool found = false;
 
 	try {
 
-		found = FALSE;
+		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FIELD_DIMENSIONS WITH X.RDB$FIELD_NAME EQ field_name
 
 			if (!DYN_REQUEST(drq_e_dims))
 				DYN_REQUEST(drq_e_dims) = request;
 
-			found = TRUE;
+			found = true;
 			ERASE X;
 		END_FOR;
 
@@ -1775,7 +1795,7 @@ static BOOLEAN delete_dimension_records(GBL gbl, TEXT* field_name)
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 35, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 35, NULL, NULL, NULL, NULL, NULL);
 		/* msg 35: "ERASE RDB$FIELDS failed" */
 	}
 
@@ -1785,10 +1805,10 @@ static BOOLEAN delete_dimension_records(GBL gbl, TEXT* field_name)
 
 static void delete_f_key_constraint(TDBB	tdbb,
 									GBL		gbl,
-									TEXT*	tbl_nm,
-									TEXT*	col_nm,
-									TEXT*	constraint_nm,
-									TEXT*	index_name)
+									const TEXT*	tbl_nm,
+									const TEXT*	col_nm, // unused
+									const TEXT*	constraint_nm,
+									const TEXT*	index_name)
 {
 /**************************************
  *
@@ -1819,8 +1839,6 @@ static void delete_f_key_constraint(TDBB	tdbb,
  *                               RDB$RELATION_CONSTRAINTS.RDB$INDEX_NAME
  *  
  **************************************/
-	BOOLEAN found;
-
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
@@ -1828,7 +1846,7 @@ static void delete_f_key_constraint(TDBB	tdbb,
 
 	try {
 
-		found = FALSE;
+		bool found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			RC IN RDB$RELATION_CONSTRAINTS
 				WITH RC.RDB$CONSTRAINT_NAME EQ constraint_nm
@@ -1839,7 +1857,7 @@ static void delete_f_key_constraint(TDBB	tdbb,
 			if (!DYN_REQUEST(drq_e_rel_const))
 				DYN_REQUEST(drq_e_rel_const) = request;
 
-			found = TRUE;
+			found = true;
 			ERASE RC;
 		END_FOR;
 
@@ -1848,19 +1866,19 @@ static void delete_f_key_constraint(TDBB	tdbb,
 
 		if (!found)
 		{
-			DYN_error_punt(FALSE, 130, constraint_nm, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 130, constraint_nm, NULL, NULL, NULL, NULL);
 			/* msg 130: "CONSTRAINT %s does not exist." */
 		}
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 129, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 129, NULL, NULL, NULL, NULL, NULL);
 		/* msg 49: "ERASE RDB$RELATION_CONSTRAINTS failed" */
 	}
 }
 
 
-static void delete_gfield_for_lfield( GBL gbl, TEXT * lfield_name)
+static void delete_gfield_for_lfield( GBL gbl, const TEXT* lfield_name)
 {
 /**************************************
  *
@@ -1883,7 +1901,7 @@ static void delete_gfield_for_lfield( GBL gbl, TEXT * lfield_name)
 			AND FLD.RDB$VALIDATION_SOURCE MISSING AND
 			FLD.RDB$NULL_FLAG MISSING AND
 			FLD.RDB$DEFAULT_SOURCE MISSING AND
-			FLD.RDB$FIELD_NAME STARTING WITH "RDB$" AND
+			FLD.RDB$FIELD_NAME STARTING WITH IMPLICIT_DOMAIN_PREFIX AND
 			NOT ANY RFR IN RDB$RELATION_FIELDS WITH
 			RFR.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
 
@@ -1901,7 +1919,7 @@ static void delete_gfield_for_lfield( GBL gbl, TEXT * lfield_name)
 }
 
 
-static BOOLEAN delete_index_segment_records( GBL gbl, TEXT * index_name)
+static bool delete_index_segment_records( GBL gbl, const TEXT* index_name)
 {
 /**************************************
  *
@@ -1914,23 +1932,23 @@ static BOOLEAN delete_index_segment_records( GBL gbl, TEXT * index_name)
  *	pertaining to an index.
  *
  **************************************/
-	BOOLEAN found;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_idx_segs, DYN_REQUESTS);
+	
+	bool found = false;
 
 	try {
 
-		found = FALSE;
+		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			I_S IN RDB$INDEX_SEGMENTS WITH I_S.RDB$INDEX_NAME EQ index_name
 
 			if (!DYN_REQUEST(drq_e_idx_segs))
 				DYN_REQUEST(drq_e_idx_segs) = request;
 
-			found = TRUE;
+			found = true;
 			ERASE I_S;
 		END_FOR;
 
@@ -1939,7 +1957,7 @@ static BOOLEAN delete_index_segment_records( GBL gbl, TEXT * index_name)
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 49, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 49, NULL, NULL, NULL, NULL, NULL);
 		/* msg 49: "ERASE RDB$INDEX_SEGMENTS failed" */
 	}
 
@@ -1947,7 +1965,7 @@ static BOOLEAN delete_index_segment_records( GBL gbl, TEXT * index_name)
 }
 
 
-static BOOLEAN delete_security_class2( GBL gbl, TEXT * security_class)
+static bool delete_security_class2( GBL gbl, const TEXT* security_class)
 {
 /**************************************
  *
@@ -1966,7 +1984,7 @@ static BOOLEAN delete_security_class2( GBL gbl, TEXT * security_class)
 
 	BLK request = (BLK) CMP_find_request(tdbb, drq_e_class, DYN_REQUESTS);
 
-	BOOLEAN found = FALSE;
+	bool found = false;
 
 	try {
 
@@ -1977,7 +1995,7 @@ static BOOLEAN delete_security_class2( GBL gbl, TEXT * security_class)
         if (!DYN_REQUEST(drq_e_class))
             DYN_REQUEST(drq_e_class) = request;
 
-		found = TRUE;
+		found = true;
 		ERASE SC;
 
 	END_FOR;
@@ -1989,7 +2007,7 @@ static BOOLEAN delete_security_class2( GBL gbl, TEXT * security_class)
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(TRUE, 74, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 74, NULL, NULL, NULL, NULL, NULL);
 		/* msg 74: "ERASE RDB$SECURITY_CLASSES failed" */
 	}
 

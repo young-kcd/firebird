@@ -68,8 +68,8 @@ ISC_STATUS jrd8_create_database(ISC_STATUS*, USHORT, const TEXT*,
 											  const UCHAR*, USHORT, TEXT*);
 ISC_STATUS jrd8_database_info(ISC_STATUS*, struct att**, SSHORT,
 											const SCHAR*, SSHORT, SCHAR*);
-ISC_STATUS jrd8_ddl(ISC_STATUS *, struct att **, struct jrd_tra **,
-								  USHORT, SCHAR *);
+ISC_STATUS jrd8_ddl(ISC_STATUS*, struct att**, struct jrd_tra**,
+								  USHORT, const SCHAR*);
 ISC_STATUS jrd8_detach_database(ISC_STATUS *, struct att **);
 ISC_STATUS jrd8_drop_database(ISC_STATUS *, struct att **);
 ISC_STATUS jrd8_get_segment(ISC_STATUS *, struct blb **, USHORT *,

@@ -2673,7 +2673,7 @@ static void execute_dynamic_ddl( DBB database, RLB rlb)
 		PRETTY_print_dyn(rlb->rlb_base, NULL, NULL, 0);
 
 	if (gds__ddl(gds_status, &database->dbb_handle, &database->dbb_meta_trans,
-				 length, (char*) rlb->rlb_base)) {
+				 length, (const char*) rlb->rlb_base)) {
 		rollback_update(database);
 		ERRQ_database_error(database, gds_status);
 	}

@@ -45,7 +45,7 @@ public:
 	}
 
 	USHORT string_to_key(USHORT a,
-						 UCHAR *b,
+						 const UCHAR *b,
 						 USHORT c,
 						 UCHAR *d,
 						 USHORT e)
@@ -53,7 +53,7 @@ public:
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_string_to_key);
 		return (*(reinterpret_cast
-			<USHORT(*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
+			<USHORT(*)(TEXTTYPE,USHORT,const UCHAR*,USHORT,UCHAR*,USHORT)>
 				(tt->texttype_fn_string_to_key)))
 					(tt,a,b,c,d,e);
 	}
@@ -300,3 +300,4 @@ static inline bool operator !=(const CharSet& cs1, const CharSet& cs2) {
 }
 
 #endif /* JRD_INTL_CLASSES_H */
+

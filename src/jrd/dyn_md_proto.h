@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		dyn_md_proto.h
- *	DESCRIPTION:	Prototype Header file for dyn_modify.e
+ *	DESCRIPTION:	Prototype Header file for dyn_mod.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,17 +24,18 @@
 #ifndef JRD_DYN_MD_PROTO_H
 #define JRD_DYN_MD_PROTO_H
 
-void DYN_modify_database(GBL, UCHAR **);
-void DYN_modify_exception(GBL, UCHAR **);
-void DYN_modify_global_field(GBL, UCHAR **, TEXT *, TEXT *);
-void DYN_modify_index(GBL, UCHAR **);
-void DYN_modify_local_field(GBL, UCHAR **, TEXT *, TEXT *);
-void DYN_modify_procedure(GBL, UCHAR **);
-void DYN_modify_relation(GBL, UCHAR **);
-void DYN_modify_trigger(GBL, UCHAR **);
-void DYN_modify_trigger_msg(GBL, UCHAR **, TEXT *);
-void DYN_modify_sql_field(GBL, UCHAR**, TEXT*, TEXT*);
-void DYN_modify_view(GBL, UCHAR **);
+void DYN_modify_database(GBL, const UCHAR**);
+void DYN_modify_exception(GBL, const UCHAR**);
+void DYN_modify_global_field(GBL, const UCHAR**, const TEXT*, TEXT*);
+void DYN_modify_index(GBL, const UCHAR**);
+void DYN_modify_local_field(GBL, const UCHAR**, const TEXT*, TEXT*);
+void DYN_modify_procedure(GBL, const UCHAR**);
+void DYN_modify_relation(GBL, const UCHAR**);
+void DYN_modify_trigger(GBL, const UCHAR**);
+void DYN_modify_trigger_msg(GBL, const UCHAR**, TEXT*);
+void DYN_modify_sql_field(GBL, const UCHAR**, const TEXT*, TEXT*);
+void DYN_modify_view(GBL, const UCHAR**);
 
 
 #endif // JRD_DYN_MD_PROTO_H
+

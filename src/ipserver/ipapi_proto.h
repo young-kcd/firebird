@@ -51,8 +51,8 @@ ISC_STATUS IPI_create_database(ISC_STATUS*, SSHORT, const SCHAR*,
 											 SSHORT);
 ISC_STATUS IPI_database_info(ISC_STATUS*, struct idb**, SSHORT,
 										   const UCHAR*, SSHORT, UCHAR*);
-ISC_STATUS IPI_ddl(ISC_STATUS *, struct idb **, struct itr **,
-								 SSHORT, UCHAR *);
+ISC_STATUS IPI_ddl(ISC_STATUS*, struct idb**, struct itr**,
+								 SSHORT, const UCHAR*);
 ISC_STATUS IPI_detach_database(ISC_STATUS *, struct idb **);
 ISC_STATUS IPI_drop_database(ISC_STATUS *, struct idb **);
 ISC_STATUS IPI_get_segment(ISC_STATUS *, struct ibl **, USHORT *,
