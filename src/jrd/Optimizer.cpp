@@ -1704,6 +1704,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		return NULL;
 	}
 
+	const jrd_nod* const plan = csb->csb_rpt[stream].csb_plan;
+
 	InversionCandidate* invCandidate = NULL;
 	int i = 0;
 	double totalSelectivity = 1; // worst selectivity
@@ -1755,7 +1757,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->matches.join(matches);
 					return invCandidate;
 				}
-							
+		
 				// Look if a match is already used by previous matches
 				bool anyMatchAlreadyUsed = false;
 				for (int j = 0; j < inversion[currentPosition]->matches.getCount(); j++) {
@@ -1823,7 +1825,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		// If we have a candidate which is interesting build the inversion
 		// else we're done.
 		if (bestPosition >= 0) {
-			if (bestSelectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD)) {
+			if (plan || bestSelectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD)) {
 
 				// Estimate new selectivity
 				// Assign selectivity for the formula
