@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: apifull.c,v 1.1 2003-07-10 22:59:25 brodsom Exp $
+$Id: apifull.c,v 1.2 2003-07-11 03:08:30 brodsom Exp $
 */
 
 #include <stdlib.h>
@@ -48,10 +48,10 @@ process_statement (XSQLDA ** sqlda, char *query);
 void print_column (XSQLVAR * var);
 int get_statement (char * buf);
 
-typedef struct vary {
+typedef struct vary2 {
     short          vary_length;
     char           vary_string [1];
-} VARY;
+} VARY2;
 
 isc_db_handle      db = NULL;
 isc_tr_handle      trans = NULL;
@@ -310,7 +310,7 @@ ARGLIST(XSQLVAR    *var)
     short       dtype;
     char        data[MAXLEN], *p;
     char        blob_s[20], date_s[25];
-    VARY        *vary;
+    VARY2        *vary2;
     short       len; 
     struct tm   times;
     ISC_QUAD    bid;
@@ -374,9 +374,9 @@ ARGLIST(XSQLVAR    *var)
                 break;
 
             case SQL_VARYING:
-                vary = (VARY*) var->sqldata;
-                vary->vary_string[vary->vary_length] = '\0';
-                sprintf(p, "%-*s ", var->sqllen, vary->vary_string);
+                vary2 = (VARY2*) var->sqldata;
+                vary2->vary_string[vary2->vary_length] = '\0';
+                sprintf(p, "%-*s ", var->sqllen, vary2->vary_string);
                 break;
 
             case SQL_SHORT:
@@ -486,7 +486,7 @@ ARGLIST(XSQLVAR    *var)
             case SQL_ARRAY:
                 /* Print the blob id on blobs or arrays */
                 bid = *(ISC_QUAD *) var->sqldata;
-                sprintf(blob_s, "%08x:%08x", bid.isc_quad_high, bid.isc_quad_low);
+                sprintf(blob_s, "%08x:%08x", bid.gds_quad_high, bid.gds_quad_low);
                 sprintf(p, "%17s ", blob_s);
                 break;
 

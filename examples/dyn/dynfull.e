@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: dynfull.e,v 1.1 2003-07-10 23:02:18 brodsom Exp $
+$Id: dynfull.e,v 1.2 2003-07-11 03:08:44 brodsom Exp $
 */
 
 #include "example.h"
@@ -34,16 +34,16 @@ $Id: dynfull.e,v 1.1 2003-07-10 23:02:18 brodsom Exp $
 #include "align.h"
 
 #define	MAXLEN	1024
-#define EOF -1
+#define EOFIND -1
 
 void process_statement (XSQLDA **sqlda, char *query);
 void print_column (XSQLVAR *var);
 int get_statement (char *buf);
 
-typedef struct vary {
+typedef struct vary2 {
 	short       vary_length;
 	char        vary_string [1];
-} VARY;
+} VARY2;
 
 #ifndef ISC_INT64_FORMAT
 
@@ -256,7 +256,7 @@ ARGLIST(XSQLVAR	*var)
 	short		dtype;
 	char		data[MAXLEN], *p;
 	char		blob_s[20], date_s[25];
-	VARY		*vary;
+	VARY2		*vary2;
 	short		len; 
 	struct tm	times;
 	ISC_QUAD	bid;
@@ -319,9 +319,9 @@ ARGLIST(XSQLVAR	*var)
 				break;
 
 			case SQL_VARYING:
-				vary = (VARY*) var->sqldata;
-				vary->vary_string[vary->vary_length] = '\0';
-				sprintf(p, "%-*s ", var->sqllen, vary->vary_string);
+				vary2 = (VARY2*) var->sqldata;
+				vary2->vary_string[vary2->vary_length] = '\0';
+				sprintf(p, "%-*s ", var->sqllen, vary2->vary_string);
 				break;
 
 			case SQL_SHORT:
@@ -465,7 +465,7 @@ int get_statement(ARG(char *, buf))
 
 	for (;;)
 	{
-		if ((c = getchar()) == EOF)
+		if ((c = getchar()) == EOFIND)
 			return 0;
 
 		if (c == '\n')
