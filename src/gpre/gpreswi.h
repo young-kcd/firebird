@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+ * $Id: gpreswi.h,v 1.5 2002-12-02 11:17:03 eku Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -114,7 +114,7 @@ typedef struct sw_tab_t
 
 static struct in_sw_tab_t gpre_in_sw_table[] =
 {
-#ifdef ADA
+#ifdef GPRE_ADA
 	{IN_SW_GPRE_ADA		, 0, "ADA"			, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program"},
 #ifdef ALSYS_ADA
 	{IN_SW_GPRE_ALSYS	, 0, "ALSYS"		, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program"},
@@ -128,7 +128,7 @@ static struct in_sw_tab_t gpre_in_sw_table[] =
      
 	{IN_SW_GPRE_D_FLOAT	, 0, "D_FLOAT"		, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate blr_d_float for doubles"},
 	{IN_SW_GPRE_E		, 0, "EITHER_CASE"	, 0, 0, 0, FALSE, 0, 0, "\taccept upper or lower case DML in C"},
-#ifdef FORTRAN
+#ifdef GPRE_FORTRAN
 	{IN_SW_GPRE_F		, 0, "FORTRAN"		, 0, 0, 0, FALSE, 0, 0, "\t\textended FORTRAN program"},
 #endif
 	{IN_SW_GPRE_G		, 0, "GDS"			, 0, 0, 0, FALSE, 0, 0, NULL},
@@ -141,7 +141,7 @@ static struct in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_M		, 0, "MANUAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tdo not automatically ATTACH to a database"},
 	{IN_SW_GPRE_N		, 0, "NO_LINES"		, 0, 0, 0, FALSE, 0, 0, "\tdo not generate C debug lines"},
 	{IN_SW_GPRE_O		, 0, "OUTPUT"		, 0, 0, 0, FALSE, 0, 0, "\t\tsend output to standard out"},
-#ifdef PASCAL
+#ifdef GPRE_PASCAL
 	{IN_SW_GPRE_P		, 0, "PASCAL"		, 0, 0, 0, FALSE, 0, 0, "\t\textended PASCAL program"},
 #endif
 	{IN_SW_GPRE_PASSWORD	, 0, "PASSWORD"		, 0, 0, 0, FALSE, 0, 0, "\tdefault password"},
@@ -158,13 +158,13 @@ static struct in_sw_tab_t gpre_in_sw_table[] =
 #else
 	{IN_SW_GPRE_X		, 0, "X"			, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with -DATABASE)"},
 #endif
-#ifdef BASIC
+#ifdef GPRE_BASIC
 	{IN_SW_GPRE_BAS		, 0, "BASIC"		, 0, 0, 0, FALSE, 0, 0, "\t\textended BASIC program"},
 #endif
 #ifdef PLI
 	{IN_SW_GPRE_PLI		, 0, "PLI"			, 0, 0, 0, FALSE, 0, 0, "\t\textended PLI program"},
 #endif
-#ifdef COBOL
+#ifdef GPRE_COBOL
 	{IN_SW_GPRE_COB		, 0, "COB"			, 0, 0, 0, FALSE, 0, 0, "\t\textended COBOL program"},
 	{IN_SW_GPRE_ANSI		, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL"},
 #endif

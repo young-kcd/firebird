@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.21 2002-12-02 10:25:01 kkuznetsov Exp $
+ * $Id: gpre.h,v 1.22 2002-12-02 11:17:03 eku Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -68,53 +68,29 @@
 extern "C" {
 #endif
 
-#if (defined AIX || defined AIX_PPC)
-#define FORTRAN		1
+#ifdef GPRE_FORTRAN
+#if defined AIX || defined AIX_PPC || defined sun
 #define FTN_BLK_DATA    1
-#define COBOL		1
+#endif
 #endif
 
-#ifdef LINUX
-#define COBOL		1
-#endif
-
-#ifdef hpux
-#ifdef HP10
-#define ADA             1
+#ifdef GPRE_ADA
+#if (defined hpux && defined HP10) || defined SCO_UNIX
 #define ALSYS_ADA       1
-#define COBOL		1
-#endif
-#define FORTRAN		1
-#endif
-
-#ifdef SCO_UNIX
-#define ADA             1
-#define ALSYS_ADA	1
-#endif
-
-#ifdef sun
-#define ADA		1
-#define FORTRAN		1
-#define FTN_BLK_DATA	1
-#ifdef sparc
-#define COBOL		1
 #endif
 #endif
 
 #ifdef VMS
-#define ADA		1
-#define PASCAL		1
-#define FORTRAN		1
-#define COBOL		1
 #define EITHER_CASE	1
 #endif
 
+/* EKU: we don't need additional languages in gpre_boot. */
 #ifdef BOOT_BUILD
-#undef ADA
-#undef BASIC
-#undef COBOL
-#undef FORTRAN
-#undef PASCAL
+#undef GPRE_ADA
+#undef GPRE_BASIC
+#undef GPRE_COBOL
+#undef GPRE_FORTRAN
+#undef GPRE_PASCAL
 #undef FTN_BLK_DATA
 #endif
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.5 2002-07-04 09:34:19 skywalker Exp $
+//	$Id: pat.cpp,v 1.6 2002-12-02 11:17:03 eku Exp $
 //
 
 #include "firebird.h"
@@ -419,7 +419,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 
 	*p = 0;
 	switch (sw_language) {
-#ifdef ADA
+#ifdef GPRE_ADA
 		/*  Ada lines can be up to 120 characters long.  ADA_print_buffer
 		   handles this problem and ensures that GPRE output is <=120 characters.
 		 */
@@ -428,7 +428,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 		break;
 #endif
 
-#ifdef BASIC
+#ifdef GPRE_BASIC
 	case lang_basic:
 		/*  Basic lines can be up to 72 characters long.  BAS_print_buffer
 		   handles this problem and ensures that GPRE output is <= 72 characters.
@@ -437,7 +437,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 		break;
 #endif
 
-#ifdef COBOL
+#ifdef GPRE_COBOL
 		/*  COBOL lines can be up to 72 characters long.  COB_print_buffer
 		   handles this problem and ensures that GPRE output is <= 72 characters.
 		 */
@@ -446,7 +446,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 		break;
 #endif
 
-#ifdef FORTRAN
+#ifdef GPRE_FORTRAN
 		/*  In FORTRAN, characters beyond column 72 are ignored.  FTN_print_buffer
 		   handles this problem and ensures that GPRE output does not exceed this
 		   limit.

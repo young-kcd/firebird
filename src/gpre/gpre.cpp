@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.14 2002-11-30 17:40:24 hippoman Exp $
+//  $Id: gpre.cpp,v 1.15 2002-12-02 11:17:03 eku Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.14 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: gpre.cpp,v 1.15 2002-12-02 11:17:03 eku Exp $
 //
 
 #define GPRE_MAIN
@@ -171,7 +171,7 @@ static struct ext_table_t dml_ext_table[] =
 	{ lang_internal_cxx, IN_SW_GPRE_0, ".epp", ".cpp" },
 	{ lang_pascal, IN_SW_GPRE_P, ".epas", ".pas" },
 
-#ifdef FORTRAN
+#ifdef GPRE_FORTRAN
 #ifdef VMS
 #define FORTRAN_EXTENSIONS
 	{ lang_fortran, IN_SW_GPRE_F, ".efor", ".for" },
@@ -182,7 +182,7 @@ static struct ext_table_t dml_ext_table[] =
 #endif
 #endif
 
-#ifdef COBOL
+#ifdef GPRE_COBOL
 #ifdef VMS
 #define COBOL_EXTENSIONS
 	{ lang_cobol, IN_SW_GPRE_COB, ".ecob", ".cob" },
@@ -194,7 +194,7 @@ static struct ext_table_t dml_ext_table[] =
 #endif
 #endif
 
-#ifdef BASIC
+#ifdef GPRE_BASIC
 	{ lang_basic, IN_SW_GPRE_BAS, ".ebas", ".bas" },
 #endif
 
@@ -526,7 +526,7 @@ int main(int argc, char* argv[])
 			sw_case = TRUE;
 			break;
 
-#ifdef ADA
+#ifdef GPRE_ADA
 		case IN_SW_GPRE_ADA:
 #ifdef VMS
 			ada_null_address = "system.address_zero";
@@ -571,7 +571,7 @@ int main(int argc, char* argv[])
 #endif
 
 
-#ifdef FORTRAN
+#ifdef GPRE_FORTRAN
 		case IN_SW_GPRE_F:
 			sw_case = TRUE;
 			sw_language = lang_fortran;
@@ -594,7 +594,7 @@ int main(int argc, char* argv[])
 			break;
 #endif
 
-#ifdef COBOL
+#ifdef GPRE_COBOL
 		case IN_SW_GPRE_ANSI:
 			sw_ansi = TRUE;
 			break;
@@ -609,7 +609,7 @@ int main(int argc, char* argv[])
 			break;
 #endif
 
-#ifdef BASIC
+#ifdef GPRE_BASIC
 		case IN_SW_GPRE_BAS:
 			sw_case = TRUE;
 			sw_language = lang_basic;
@@ -633,7 +633,7 @@ int main(int argc, char* argv[])
 			break;
 #endif
 
-#ifdef PASCAL
+#ifdef GPRE_PASCAL
 		case IN_SW_GPRE_P:
 			sw_case			= TRUE;
 			sw_language		= lang_pascal;
@@ -774,7 +774,7 @@ int main(int argc, char* argv[])
 	input_file = temp;
 #endif
 
-#ifdef COBOL
+#ifdef GPRE_COBOL
 //  if cobol is defined we need both sw_cobol and sw_ansi to
 //  determine how the string substitution table is set up
 //  
@@ -2010,7 +2010,7 @@ static TOK get_token()
 	if (sw_sql && sw_language == lang_basic)
 		classes['\n'] = CHR_WHITE;
 
-#ifdef BASIC
+#ifdef GPRE_BASIC
 //  if BASIC language using SQL, '\n' = ';' unless preceeded by & 
 	if ((c == '\n') && (sw_language == lang_basic)) {
 		token.tok_string[0] = ';';
@@ -2024,7 +2024,7 @@ static TOK get_token()
 	}
 #endif
 
-#ifdef COBOL
+#ifdef GPRE_COBOL
 //  Skip over cobol line continuation characters 
 	if (sw_language == lang_cobol && !sw_ansi)
 		while (line_position == 1) {
@@ -2320,7 +2320,7 @@ static TOK get_token()
 			token.tok_keyword = KW_none;
 	}
 
-#ifdef BASIC
+#ifdef GPRE_BASIC
 	if (sw_language == lang_basic) {
 		if ((int) token.tok_keyword == (int) KW_REM)
 			for (CPR_token;
@@ -2398,7 +2398,7 @@ static int nextchar()
 	if (sw_language == lang_fortran && line_position == 6 && c != ' '
 		&& c != '0') first_position = FALSE;
 
-#ifdef COBOL
+#ifdef GPRE_COBOL
 	if (sw_language == lang_cobol &&
 		(!sw_ansi && line_position == 1 && c == '-') ||
 		(sw_ansi && line_position == 7 && c == '-'))
@@ -2847,7 +2847,7 @@ static SSHORT skip_white()
 			continue;
 		}
 
-#ifdef COBOL
+#ifdef GPRE_COBOL
 		/* skip sequence numbers when ansi COBOL */
 
 		if (sw_language == lang_cobol && sw_ansi) {

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.99 2002-12-02 08:25:14 eku Exp $
+dnl $Id: configure.in,v 1.100 2002-12-02 11:17:01 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -78,7 +78,6 @@ case "$target" in
     AC_DEFINE(solx86)
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
-    RAW_DEVICES_FLG=Y
     ;;
 
   sparc-sun-solaris*)
@@ -209,6 +208,49 @@ AC_DEFINE_UNQUOTED(FB_SERVICE_NAME,"$FB_SERVICE_NAME")
 AC_DEFINE_UNQUOTED(FB_SERVICE_PORT,$FB_SERVICE_PORT)
 AC_SUBST(FB_SERVICE_NAME)
 AC_SUBST(FB_SERVICE_PORT)
+
+dnl gpre built-in language support (C/C++ are mandatory)
+GPRE_LANGUAGE_MODULES=""
+AC_ARG_WITH(gpre-ada,
+  [  --with-gpre-ada         support ADA in gpre (default=no)],
+  [case "$withval" in
+     yes) XE_APPEND(ada.cpp,GPRE_LANGUAGE_MODULES)
+          AC_DEFINE(GRPE_ADA);;
+     no)  ;;
+     *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-ada);;
+   esac])
+AC_ARG_WITH(gpre-basic,
+  [  --with-gpre-basic       support BASIC in gpre (default=no)],
+  [case "$withval" in
+     yes) AC_DEFINE(GRPE_BASIC);;
+     no)  ;;
+     *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-basic);;
+   esac])
+AC_ARG_WITH(gpre-cobol,
+  [  --with-gpre-cobol       support COBOL in gpre (default=no)],
+  [case "$withval" in
+     yes) XE_APPEND(cob.cpp,GPRE_LANGUAGE_MODULES)
+          AC_DEFINE(GRPE_COBOL);;
+     no)  ;;
+     *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-cobol);;
+   esac])
+AC_ARG_WITH(gpre-fortran,
+  [  --with-gpre-fortran     support FORTRAN in gpre (default=no)],
+  [case "$withval" in
+     yes) XE_APPEND(ftn.cpp,GPRE_LANGUAGE_MODULES)
+          AC_DEFINE(GRPE_FORTRAN);;
+     no)  ;;
+     *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-fortran);;
+   esac])
+AC_ARG_WITH(gpre-pascal,
+  [  --with-gpre-pascal      support PASCAL in gpre (default=no)],
+  [case "$withval" in
+     yes) XE_APPEND(pas.cpp,GPRE_LANGUAGE_MODULES)
+          AC_DEFINE(GRPE_PASCAL);;
+     no)  ;;
+     *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-pascal);;
+   esac])
+AC_SUBST(GPRE_LANGUAGE_MODULES)
 
 
 dnl Check for system header files
@@ -700,13 +742,6 @@ case $FIREBIRD_ARCH_TYPE in
  classic) echo "Architecture : ClassicServer";;
 esac
 
-echo           "Service name : $FB_SERVICE_NAME"
-echo           "Service port : $FB_SERVICE_PORT"
-
-case "$PLATFORM" in
- win32)   echo "   Pipe name : $FB_PIPE_NAME";;
-esac
-
 case $PROD_BUILD_FLG in
  Y)       echo "       Debug : disabled";;
  N)       echo "       Debug : enabled";;
@@ -728,6 +763,16 @@ if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
    N)     echo "Lock manager : disabled";;
   esac
 fi
+
+echo           "Service name : $FB_SERVICE_NAME"
+echo           "Service port : $FB_SERVICE_PORT"
+
+case "$PLATFORM" in
+ win32)   echo "   Pipe name : $FB_PIPE_NAME";;
+esac
+
+echo           "GPRE modules : c_cxx.cpp$GPRE_LANGUAGE_MODULES"
+echo
 
 echo           " Install Dir : $prefix"
 echo

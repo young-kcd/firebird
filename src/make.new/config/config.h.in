@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.62 2002-12-02 08:25:18 eku Exp $"
+#ident "$Id: config.h.in,v 1.63 2002-12-02 11:17:04 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -142,6 +142,13 @@
 
 /* Wnet pipe name (Windows only) */
 #define FB_PIPE_NAME "interbas"
+
+/* gpre built-in language support (C/C++ are mandatory) */
+#undef GPRE_ADA
+#undef GPRE_BASIC
+#undef GPRE_COBOL
+#undef GPRE_FORTRAN
+#undef GPRE_PASCAL
 
 /* Support /proc/self/exe as link to current executable 
    enables us to find path to install directory (Linux only) */
