@@ -1,3 +1,34 @@
+2004-03-16 19:01  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/Makefile.in:
+	
+	Fix small bug in makefile
+
+2004-03-16 18:34  alexpeshkoff
+
+	* firebird2/src/jrd/: os/posix/path_utils.cpp, isc_file.cpp,
+	jrd.cpp:
+	
+	fixed posix build - it's buildable now
+
+2004-03-16 07:16  skidder
+
+	* firebird2/src/utilities/nbackup.cpp:
+	
+	Zero-terminate buffer
+
+2004-03-16 07:11  skidder
+
+	* firebird2/src/utilities/nbackup.cpp:
+	
+	Fix possible buffer overrun
+
+2004-03-16 06:54  skidder
+
+	* firebird2/src/utilities/nbackup.cpp:
+	
+	Fix MSVC7 build
+
 2004-03-15 22:19  arnobrinkman
 
 	* firebird2/src/jrd/isc_file.cpp:
