@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70 2003-06-30 11:26:38 brodsom Exp $
+$Id: inet.cpp,v 1.70.2.1 2003-09-24 14:54:48 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -2172,7 +2172,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 	start_crud.cbReserved2 = 0;
 	start_crud.lpDesktop = NULL;
 	start_crud.lpTitle = NULL;
-	start_crud.dwFlags = 0;
+	start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
 	if (ret = CreateProcess(NULL,
 							INET_command_line,
 							NULL,
