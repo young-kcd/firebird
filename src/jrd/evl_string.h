@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.2 2003-11-18 20:36:35 skidder Exp $
+ *  $Id: evl_string.h,v 1.3 2003-11-20 17:32:20 skidder Exp $
  *
  */
 
@@ -53,10 +53,107 @@
 #ifdef TESTING_ONLY
 #define STATIC_PATTERN_BUFFER 16
 #else
-#define STATIC_PATTERN_BUFFER 1024
+#define STATIC_PATTERN_BUFFER 256
 #endif
 
 namespace Firebird {
+
+template <typename CharType>
+class StartsEvaluator {
+public:
+	StartsEvaluator(const CharType* _pattern_str, SSHORT _pattern_len) : 
+		pattern_str(_pattern_str), pattern_len(_pattern_len)
+	{
+		reset();
+	}
+	void reset() {
+		result = true;
+		offset = 0;
+	}
+	bool getResult() {
+		return offset >= pattern_len && result;
+	}
+	bool processNextChunk(const CharType* data, SSHORT data_len) {
+		assert(data_len);
+		if (!result || offset >= pattern_len) return false;
+		SSHORT comp_length = data_len < pattern_len - offset ? data_len : pattern_len-offset;
+		if (memcmp(data, pattern_str + offset, sizeof(CharType)*comp_length)!=0) {
+			result = false;
+			return false;
+		}
+		offset += comp_length;
+		return offset < pattern_len;
+	}
+private:
+	SSHORT offset;
+	const CharType* pattern_str;
+	SSHORT pattern_len;
+	bool result;
+};
+
+template <typename CharType>
+static void preKmp(const CharType *x, int m, SSHORT kmpNext[]) {
+   SSHORT i, j;
+
+   i = 0;
+   j = kmpNext[0] = -1;
+   while (i < m) {
+      while (j > -1 && x[i] != x[j])
+         j = kmpNext[j];
+      i++;
+      j++;
+      if (x[i] == x[j])
+         kmpNext[i] = kmpNext[j];
+      else
+         kmpNext[i] = j;
+   }
+}
+
+template <typename CharType>
+class ContainsEvaluator {
+public:
+	ContainsEvaluator(MemoryPool* _pool, const CharType* _pattern_str, SSHORT _pattern_len) : 
+		pool(_pool), pattern_str(_pattern_str), pattern_len(_pattern_len), kmpNext(_pool)
+	{
+		kmpNext.grow(_pattern_len+1);
+		preKmp<CharType>(_pattern_str, _pattern_len, kmpNext.begin());
+		reset();
+	}
+
+	void reset() {
+		offset = 0;
+		result = false;
+	}
+
+	bool getResult() {
+		return result;
+	}
+
+	bool processNextChunk(const CharType* data, SSHORT data_len) {		
+		assert(data_len);
+		if (result) return false;
+		SSHORT data_pos = 0;
+		while (data_pos < data_len) {
+			while (offset > -1 && pattern_str[offset] != data[data_pos])
+				offset = kmpNext[offset];
+			offset++;
+			data_pos++;
+			if (offset >= pattern_len) {
+				result = true;
+				return false;
+			}
+		}
+		return true;
+	}
+
+private:
+	MemoryPool *pool;
+	const CharType* pattern_str;
+	SSHORT pattern_len;
+	SSHORT offset;
+	bool result;
+	HalfStaticArray<SSHORT,STATIC_PATTERN_BUFFER/2> kmpNext;
+};
 
 enum PatternItemType {
 	piNone = 0,
@@ -145,23 +242,6 @@ private:
 			chunksToFree.add(result);
 			return result;
 		}
-	}
-
-	static void preKmp(CharType *x, int m, SSHORT kmpNext[]) {
-	   SSHORT i, j;
-
-	   i = 0;
-	   j = kmpNext[0] = -1;
-	   while (i < m) {
-	      while (j > -1 && x[i] != x[j])
-	         j = kmpNext[j];
-	      i++;
-	      j++;
-	      if (x[i] == x[j])
-	         kmpNext[i] = kmpNext[j];
-	      else
-	         kmpNext[i] = j;
-	   }
 	}
 };
 
@@ -286,7 +366,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			else {
 				item->str.kmpNext = 
 					reinterpret_cast<SSHORT*>(alloc((item->str.length+1)*sizeof(SSHORT)));
-				preKmp(item->str.data, item->str.length, item->str.kmpNext);
+				preKmp<CharType>(item->str.data, item->str.length, item->str.kmpNext);
 				directMatch = true;
 			}
 			break;

@@ -32,11 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string_test.cpp,v 1.2 2003-11-18 20:36:35 skidder Exp $
+ *  $Id: evl_string_test.cpp,v 1.3 2003-11-20 17:32:20 skidder Exp $
  *
  */
 
 #include "../common/classes/alloc.h"
+#include <assert.h>
 
 const gds_like_escape_invalid = 1;
 
@@ -56,7 +57,37 @@ public:
 	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);
 		if (len) {
-			bool needMore = LikeEvaluator<char>::processNextChunk(data, len);
+			bool needMore = processNextChunk(data, len);
+			assert(more == needMore);
+		}
+		assert(getResult() == result);
+	}
+};
+
+class StringStartsEvaluator : public StartsEvaluator<char> {
+public:
+	StringStartsEvaluator(const char *pattern) : 
+	  StartsEvaluator<char>(pattern, (SSHORT)strlen(pattern)) {}
+
+	void process(const char *data, bool more, bool result) {
+		SSHORT len = (SSHORT)strlen(data);
+		if (len) {
+			bool needMore = processNextChunk(data, len);
+			assert(more == needMore);
+		}
+		assert(getResult() == result);
+	}
+};
+
+class StringContainsEvaluator : public ContainsEvaluator<char> {
+public:
+	StringContainsEvaluator(MemoryPool *pool, const char *pattern) : 
+	  ContainsEvaluator<char>(pool, pattern, (SSHORT)strlen(pattern)) {}
+
+	void process(const char *data, bool more, bool result) {
+		SSHORT len = (SSHORT)strlen(data);
+		if (len) {
+			bool needMore = processNextChunk(data, len);
 			assert(more == needMore);
 		}
 		assert(getResult() == result);
@@ -145,6 +176,21 @@ int main() {
 	StringLikeEvaluator t13(p, "%test%", 0);
 	t13.process("1234tetes", true, false);
     t13.process("t", false, true);
-	//MemoryPool::deletePool(testPool);
+
+	// Test STARTS
+	StringStartsEvaluator t14("test");
+	t14.process("test", false, true);
+	t14.reset();
+	t14.process("te!", false, false);
+	t14.reset();
+	t14.process("te", true, false);
+	t14.process("st!", false, true);
+
+	// Test CONTAINS
+	StringContainsEvaluator t15(p, "test");
+	t15.process("123test456", false, true);
+	t15.reset();
+	t15.process("1234tetes", true, false);
+    t15.process("t", false, true);
 	return 0;
 }
