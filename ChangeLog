@@ -1,3 +1,16 @@
+2004-02-04 16:30  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/super/postinstall.sh.in:
+	
+	Fixed syntax error Thanks to Andreas Bentele
+
+2004-02-04 12:12  aafemt
+
+	* firebird2/src/jrd/alt.cpp:
+	
+	Fix few warnings
+
 2004-02-03 12:25  aafemt
 
 	* firebird2/src/jrd/: why.cpp, why_proto.h:
