@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
  */
 
 #include "firebird.h"
@@ -41,9 +44,6 @@ static int fpe_count;
 static void fpe_handler(int);
 LRESULT FAR PASCAL inet_wndproc(HWND hwnd, UINT message, WPARAM wParam,
 								LPARAM lParam);
-LRESULT FAR PASCAL spxnet_wndproc(HWND hwnd, UINT message, WPARAM wParam,
-								  LPARAM lParam);
-void spx_cleanup(void *arg);
 void wfwnp_cleanup(void *arg);
 void inet_cleanup(void *arg);
 
@@ -52,10 +52,6 @@ int FAR PASCAL LibMain(HINSTANCE hInst, WORD wDataSegment,
 					   WORD wHeapSize, LPSTR lpszCmdLine)
 {
 	WNDCLASS wndclass_tcp;
-#ifdef SPX
-	WNDCLASS wndclass_spx;
-#endif
-
 	hInstance = hInst;
 
 	// The startup code for the DLL initializes the local heap (if there is one)
@@ -78,23 +74,6 @@ int FAR PASCAL LibMain(HINSTANCE hInst, WORD wDataSegment,
 	/* ***CM - Add error handling here! */
 	RegisterClass(&wndclass_tcp);
 
-#ifdef SPX
-	/* Define an invisible window class used for receiving winsock messages */
-	wndclass_spx.style = CS_HREDRAW;
-	wndclass_spx.lpfnWndProc = spxnet_wndproc;
-	wndclass_spx.cbClsExtra = 0;
-	wndclass_spx.cbWndExtra = sizeof(void FAR *);
-	wndclass_spx.hInstance = hInstance;
-	wndclass_spx.hIcon = NULL;
-	wndclass_spx.hCursor = NULL;
-	wndclass_spx.hbrBackground = NULL;
-	wndclass_spx.lpszMenuName = NULL;
-	wndclass_spx.lpszClassName = "RemoteMsgClassSpx";
-
-	/* ***CM - Add error handling here! */
-	RegisterClass(&wndclass_spx);
-#endif /* SPX */
-
 	/* init the floating point exception count and set the handler */
 
 	fpe_count = 0;
@@ -106,14 +85,12 @@ int FAR PASCAL LibMain(HINSTANCE hInst, WORD wDataSegment,
 int FAR PASCAL WEP(int bSystemExit)
 {
 /* 
-** Until the gds__cleanup processing is fixed, at least clean up SPX
+** Until the gds__cleanup processing is fixed,
 ** or Windows will crash when we exit.
 ** Same for named pipes under Windows.
 ** For TCP/IP we must unload Winsock.dll.
 */
 	TRACE("Called remote\\dllshell.c WEP()...\n");
-	TRACE("remote\\dllshell.c WEP:  calling spx_cleanup()\n");
-	spx_cleanup(NULL);
 	TRACE("remote\\dllshell.c WEP:  calling wfwnp_cleanup()\n");
 	wfwnp_cleanup(NULL);
 	TRACE("remote\\dllshell.c WEP:  calling inet_cleanup()\n");

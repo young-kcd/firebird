@@ -28,9 +28,12 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
  */
 /*
-$Id: ibase.h,v 1.15 2002-10-29 20:20:38 skidder Exp $
+$Id: ibase.h,v 1.16 2002-10-30 05:04:56 seanleyne Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -779,7 +782,6 @@ ISC_INT64 ISC_EXPORT isc_portable_integer(unsigned char ISC_FAR*,
 
 #define sec_protocol_tcpip            1
 #define sec_protocol_netbeui          2
-#define sec_protocol_spx              3
 #define sec_protocol_local            4
 
 typedef struct {

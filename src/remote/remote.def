@@ -17,6 +17,8 @@
 ;------------------------------------------------------------
 ;  REMOTE DLL MODULE DEFINITION FILE
 ;------------------------------------------------------------
+; 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+;
 
 LIBRARY     REMOTE                        
 
@@ -36,8 +38,6 @@ SEGMENTS
         NTOH_TEXT       DISCARDABLE
         CVT_TEXT        DISCARDABLE
         DLLSHELL_TEXT   PRELOAD
-        SPXWIN_TEXT     PRELOAD 
-        SPXESR_TEXT     FIXED
         WNET_TEXT       DISCARDABLE
         WFWNP_TEXT      PRELOAD
 EXPORTS

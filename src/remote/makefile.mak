@@ -30,6 +30,9 @@
 #
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
+#
+# 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+#
 #--------------------------- PC REMOTE MAKEFILE ---------------------------
 ROOT=..
 .path.c=$(ROOT)\remote
@@ -45,7 +48,7 @@ LINCLUDEPATH=$(TPATH)\clisdk\include;$(TPATH)\wfwdev\include
 
 # CRM - temporarily disabled until warnings are cleaned up!!!
 #LCFLAGS=-wpro
-LCFLAGS=$(LCFLAGS) -DWINDOWS -DNWWIN -DREQUESTER -DSPX 
+LCFLAGS=$(LCFLAGS) -DWINDOWS -DNWWIN -DREQUESTER
 
 # These are C flags if you want to enable useful warnings.
 #LCFLAGS=$(LCFLAGS) -w -w-ucp -w-sus -w-par -w-stu -w-aus -w-pia
@@ -63,7 +66,7 @@ SRCS = $(S1) $(S2)
 JRDSRCS = cvt.c 
 TSTSRCS = server.c inet_ser.c winmain.c
 
-WINSRCS = dllshell.c spxwin.c spxesr.c wnet.c wfwnp.c
+WINSRCS = dllshell.c wnet.c wfwnp.c
 
 # Extra files which are used to build the product
 XFILES   = remote.def makefile.mak nlmtst.def

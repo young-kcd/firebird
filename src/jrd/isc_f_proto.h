@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
  */
 
 #ifndef _JRD_ISC_FILE_PROTO_H_
@@ -30,7 +33,6 @@ extern "C" {
 
 extern int ISC_analyze_nfs(TEXT *, TEXT *);
 extern int ISC_analyze_pclan(TEXT *, TEXT *);
-extern int DLL_EXPORT ISC_analyze_spx(TEXT *, TEXT *);
 extern int DLL_EXPORT ISC_analyze_tcp(TEXT *, TEXT *);
 extern BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT *, BOOLEAN);
 extern int ISC_expand_filename(TEXT *, USHORT, TEXT *);

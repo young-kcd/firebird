@@ -15,6 +15,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
 */
 
 
@@ -196,7 +199,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			SetDlgItemText(hDlg, IDC_LICENSE, szText);
 
-			if (usServerFlags & (SRVR_inet | SRVR_pipe | SRVR_spx))
+			if (usServerFlags & (SRVR_inet | SRVR_pipe)
 				LoadString(hInstance,
 						   IDS_SERVERPROD_NAME, szText, MSG_STRINGLEN);
 			else

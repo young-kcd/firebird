@@ -32,6 +32,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
  */
 
 #ifndef _REMOTE_REMOTE_DEF_H_
@@ -96,10 +98,8 @@
 #define SRVR_server		1	/* 0x0001 server */
 #define SRVR_multi_client	2	/* 0x0002 multi-client server */
 #define SRVR_debug		4	/* 0x0004 */
-#define SRVR_mpexl		8	/* 0x0008 NetIPC protocol (MPE/XL) */
 #define SRVR_inet		8	/* 0x0008 Inet protocol */
 #define SRVR_pipe		16	/* 0x0010 Named pipe protocol (NT) */
-#define SRVR_spx		32	/* 0x0020 SPX protocol (NetWare) */
 #define SRVR_ipc		64	/* 0x0040 IPC protocol for Win95 */
 #define SRVR_non_service	128	/* 0x0080 Not running as an NT service */
 #define SRVR_high_priority	256	/* 0x0100 fork off server at high priority */

@@ -25,6 +25,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
  */
 
 #include "firebird.h"
@@ -75,16 +77,10 @@
 #ifdef  XNET
 #include "../remote/xnet_proto.h"
 #endif
-#include "../remote/spxnet32_proto.h"
 #endif
 
 #ifdef VMS
 #include "../remote/decne_proto.h"
-#endif
-
-#ifdef SPX
-/* SPX is defined only for 16bit windows */
-#include "../remote/spxwi_proto.h"
 #endif
 
 #ifdef WIN_NT
@@ -4832,23 +4828,6 @@ static PORT analyze(TEXT*	file_name,
 							node_name, user_string, uv_flag);
 #endif
 
-#ifdef WIN_NT
-/* 32 bit SPX protocol analyze */
-	if (ISC_analyze_spx(file_name, node_name))
-		return SPXNET32_analyze(file_name, file_length, status_vector,
-								node_name, user_string, uv_flag, dpb,
-								dpb_length);
-#else
-#ifdef SPX
-/* SPX is defined only for 16bit windows */
-	if (ISC_analyze_spx(file_name, node_name))
-	{
-		return SPXNET_analyze(file_name, file_length, status_vector,
-							  node_name, user_string, uv_flag);
-	}
-#endif
-#endif /* WIN_NT */
-
 	if (!port)
 	{
 		if (ISC_analyze_tcp(file_name, node_name))
@@ -5015,21 +4994,6 @@ TEXT * user_string, USHORT uv_flag, SCHAR * dpb, SSHORT dpb_length)
 		return WNET_analyze(service_name, service_length, status_vector,
 							node_name, user_string, uv_flag);
 #endif
-#ifdef WIN_NT
-/* Analyze for a 32bit SPX protocol request */
-	if (ISC_analyze_spx(service_name, node_name))
-		return SPXNET32_analyze(service_name, service_length, status_vector,
-								node_name, user_string, uv_flag, dpb,
-								dpb_length);
-#else
-#ifdef SPX
-/* SPX is defined only for 16bit windows */
-	if (ISC_analyze_spx(service_name, node_name))
-		return SPXNET_analyze(service_name, service_length, status_vector,
-							  node_name, user_string, uv_flag);
-#endif /* SPX */
-#endif /* WIN_NT */
-
 	if (!port)
 		if (ISC_analyze_tcp(service_name, node_name))
 			port = INET_analyze(service_name, service_length, status_vector,
@@ -5533,7 +5497,7 @@ static void disconnect( PORT port)
 		 */
 
 		packet = &rdb->rdb_packet;
-		if ((port->port_type != port_pipe) && (port->port_type != port_spx)) {
+		if (port->port_type != port_pipe) {
 			packet->p_operation = op_disconnect;
 			(void) port->send(packet);
 		}

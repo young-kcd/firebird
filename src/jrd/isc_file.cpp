@@ -33,6 +33,8 @@
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -274,7 +276,7 @@ static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
 #endif
 #endif
 static BOOLEAN get_server(TEXT *, TEXT *);
-#if (defined SPX) || ((defined PC_PLATFORM) && !(defined NETWARE_386))
+#if ((defined PC_PLATFORM) && !(defined NETWARE_386))
 static void string_parse(TEXT *, TEXT **, TEXT **, TEXT **, TEXT *);
 static void convert_slashes(char oldslash, char newslash, char *string);
 #endif
@@ -549,50 +551,6 @@ int ISC_analyze_pclan(TEXT * expanded_name, TEXT * node_name)
 }
 #endif	// WIN_NT
 
-
-int DLL_EXPORT ISC_analyze_spx(TEXT * expanded_name, TEXT * node_name)
-{
-/**************************************
- *
- *	I S C _ a n a l y z e _ s p x
- *
- **************************************
- *
- * Functional description
- *	Analyze a filename for a SPX separator.
- *	If one is found, extract the node name, compute the residual
- *	file name, and return TRUE.  Otherwise return FALSE.
- *
- **************************************/
-	TEXT *p;
-
-	p = expanded_name;
-
-/* Scan looking for the SPX node separator character (node@path).
-   Also check for an INET separator before the SPX separator in case
-   this is a network hop (e.g. tcp_node:spx_node@path). */
-
-	for (p = expanded_name; *p && *p != '@' && *p != INET_FLAG; p++);
-
-/* If we didn't find an SPX separator or found a TCP one first, return. */
-
-	if (!*p || *p == INET_FLAG)
-		return FALSE;
-
-/* We found a valid SPX separator.  Copy left of separator into node_name
-   output variable & increment p to point to remaining path. */
-
-	*p++ = 0;
-	strcpy(node_name, expanded_name);
-
-/* Shift the filename over in the string to strip off the node name */
-
-	while (*expanded_name++ = *(p++));
-
-	return TRUE;
-}
-
-
 int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
 {
 /**************************************
@@ -738,13 +696,12 @@ BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
 #endif /* STACK_EFFICIENT */
 
 		/* Check for a file on a shared drive.  First try to expand
-		   the path.  Then check the expanded path for a TCP,
-		   named pipe or SPX node name. */
+		   the path.  Then check the expanded path for a TCP or
+		   named pipe. */
 
 		ISC_expand_share(temp_name, temp_name2);
 		if (ISC_analyze_tcp(temp_name2, host_name) ||
-			ISC_analyze_pclan(temp_name2, host_name) ||
-			ISC_analyze_spx(temp_name2, host_name)) {
+			ISC_analyze_pclan(temp_name2, host_name) {
 #ifdef STACK_EFFICIENT
 			gds__free((SLONG *) temp_name2);
 			gds__free((SLONG *) temp_name);
@@ -804,7 +761,6 @@ int ISC_expand_filename(
  *
  *          host:[\|/]path[\|/]          - TCP/IP node
  *          host:vol:[\|/]path[\|/]      - Netware node
- *          host@vol[:][\|/]path[\|/]    - SPX node
  *
  *      If no host is specified, it checks for an ISC_DATABASE
  *      environment variable and uses that.
@@ -1085,11 +1041,6 @@ int ISC_expand_filename(
 	USHORT dtype;
 	BOOLEAN fully_qualified_path = FALSE;
 	BOOLEAN drive_letter_present = FALSE;
-#ifdef SPX
-	TEXT c;
-	TEXT *colon, *colon2, *atsign;
-#endif
-
 	if (!file_length)
 		file_length = strlen(file_name);
 
@@ -1113,24 +1064,7 @@ int ISC_expand_filename(
 		return file_length;
 	}
 
-#ifdef SPX
-/* If the filename contains a SPX node name, don't even try to expand it.
-   But first make sure that the node name is not a drive letter. */
-	c = 0;
-	colon2 = NULL;
-	string_parse(file_name, &colon, &colon2, &atsign, &c);
-
-	if (atsign || colon2) {
-		strcpy(expanded_name, temp);
-		return (file_length);
-	}
-/* If the filename contains a TCP node name, don't even try to expand it.
-   But first make sure that the node name is not a drive letter. */
-
-	if (q = colon)
-#else
 	if (q = strchr(temp, INET_FLAG))
-#endif
 	{
 		strcpy(expanded_name, temp);
 		if (q - temp != 1)
@@ -2294,7 +2228,7 @@ static void share_name_from_unc(
 #endif /* WIN_NT */
 
 
-#if (defined SPX) || ((defined PC_PLATFORM) && !(defined NETWARE_386))
+#if ((defined PC_PLATFORM) && !(defined NETWARE_386))
 static void string_parse(
 						 TEXT * string,
 						 TEXT ** colon,

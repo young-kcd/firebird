@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
  */
 
 #ifndef _REMOTE_NETERR_H_
@@ -26,8 +29,6 @@
 
 #define TCP_ERROR_BEG   WSABASEERR
 #define TCP_ERROR_END   (TCP_ERROR_BEG + 10000L)
-#define SPX_ERROR_BEG   20000L
-#define SPX_ERROR_END   (SPX_ERROR_BEG + 10000L)
 #define WNP_ERROR_BEG   30000L
 #define WNP_ERROR_END   (WNP_ERROR_BEG + 10000L)
 
@@ -80,21 +81,6 @@
 #define dos_tcp_wsavernotsupported               27
 #define dos_tcp_wsanotinitialised                28
 
-#define dos_spx_name_not_found                   29
-#define dos_spx_not_initialized                  30
-#define dos_spx_connection_terminated            31
-#define dos_spx_no_answer_from_target            32
-#define dos_spx_invalid_connection               33
-#define dos_spx_connection_table_full            34
-#define dos_spx_socket_closed                    35
-#define dos_spx_malformed_packet                 36
-#define dos_spx_socket_not_opened                37
-#define dos_spx_no_dos_memory                    49
-#define dos_spx_no_free_ecb                      50
-#define dos_spx_lock_failed                      51
-#define dos_spx_over_max_limit                   52
-#define dos_spx_prev_init                        53
-
 #define dos_wnp_bad_pipe                         38
 #define dos_wnp_invalid_handle                   -1
 #define dos_wnp_not_enough_memory                39
@@ -130,8 +116,6 @@
 #define MAP_NETWORK_ERROR(code)                                              \
    (((code) >= TCP_ERROR_BEG && (code) <= TCP_ERROR_END) ?                   \
                                  MAP_TCP_ERROR((code))                     : \
-    ((code) >= SPX_ERROR_BEG && (code) <= SPX_ERROR_END) ?                   \
-                                 MAP_SPX_ERROR((code) - SPX_ERROR_BEG)     : \
     ((code) >= WNP_ERROR_BEG && (code) <= WNP_ERROR_END) ?                   \
                                  MAP_WNP_ERROR((code) - WNP_ERROR_BEG)     : \
                                  -2)
@@ -139,8 +123,6 @@
 #define SUB_NETWORK_BASE(code)                                               \
    (((code) >= TCP_ERROR_BEG && (code) <= TCP_ERROR_END) ?                   \
                                  ((code))                                  : \
-    ((code) >= SPX_ERROR_BEG && (code) <= SPX_ERROR_END) ?                   \
-                                 ((code) - SPX_ERROR_BEG)                  : \
     ((code) >= WNP_ERROR_BEG && (code) <= WNP_ERROR_END) ?                   \
                                  ((code) - WNP_ERROR_BEG)                  : \
                                  0)
@@ -187,29 +169,6 @@
     code == WSAVERNOTSUPPORTED             ? dos_tcp_wsavernotsupported    : \
     code == WSANOTINITIALISED              ? dos_tcp_wsanotinitialised     : \
                                              -1)
-
-#define MAP_SPX_ERROR(code)                                                  \
-   (code == (INVALID_CONNECTION - 30000)   ? dos_spx_name_not_found        : \
-    code == (NO_SUCH_SEGMENT    - 30000)   ? dos_spx_name_not_found        : \
-    code == (NO_SUCH_PROPERTY   - 30000)   ? dos_spx_name_not_found        : \
-    code == (NO_SUCH_OBJECT     - 30000)   ? dos_spx_name_not_found        : \
-    code == IPXSPX_NOT_INIT                ? dos_spx_not_initialized       : \
-    code == SPX_CONNECTION_TERMINATED      ? dos_spx_connection_terminated : \
-    code == SPX_NO_ANSWER_FROM_TARGET      ? dos_spx_no_answer_from_target : \
-    code == SPX_INVALID_CONNECTION         ? dos_spx_invalid_connection    : \
-    code == SPX_CONNECTION_TABLE_FULL      ? dos_spx_connection_table_full : \
-    code == 0xFC /* SPX_SOCKET_CLOSED */   ? dos_spx_socket_closed         : \
-    code == SPX_MALFORMED_PACKET           ? dos_spx_malformed_packet      : \
-    code == SPX_SOCKET_NOT_OPENED          ? dos_spx_socket_not_opened     : \
-    code == NO_DOS_MEMORY                  ? dos_spx_no_dos_memory         : \
-    code == NO_FREE_ECB                    ? dos_spx_no_free_ecb           : \
-    code == WINLOCK_FAILED                 ? dos_spx_lock_failed           : \
-    code == OVER_MAX_LIMIT                 ? dos_spx_over_max_limit        : \
-    code == IPXSPX_PREV_INIT               ? dos_spx_prev_init             : \
-                                             -1)
-
-/* Note:  The constant for SPX_SOCKET_CLOSED was not found in the headers,
-   but the value 0xFC is described in the documentation */
 
 #define MAP_WNP_ERROR(code)                                                  \
    (code == ERROR_BAD_PIPE                 ? dos_wnp_bad_pipe              : \

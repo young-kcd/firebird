@@ -144,10 +144,6 @@ SOURCE=..\..\..\src\remote\server.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\spxnet32.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\remote\srvr_w32.cpp
 # End Source File
 # Begin Source File
@@ -290,22 +286,6 @@ SOURCE=..\..\..\src\remote\remote_def.h
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\serve_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\spxne_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\spxnet32_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\spxwi_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\spxwin.h
 # End Source File
 # Begin Source File
 

@@ -22,6 +22,9 @@
  *
  * 23-May-2001 Claudio Valderrama - isc_add_user allowed user names
  *                           up to 32 characters length; changed to 31.
+ *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
  */
 
 #include "firebird.h"
@@ -1326,13 +1329,6 @@ return 0;
 	case sec_protocol_netbeui:
 		IS_VALID_SERVER(server);
 		sprintf(sec_server, "\\\\%s\\", server);
-		SECURITY_get_db_path(sec_server, default_security_db);
-		sprintf(connect_string, "%s%s", sec_server, default_security_db);
-		break;
-
-	case sec_protocol_spx:
-		IS_VALID_SERVER(server);
-		sprintf(sec_server, "%s@", server);
 		SECURITY_get_db_path(sec_server, default_security_db);
 		sprintf(connect_string, "%s%s", sec_server, default_security_db);
 		break;

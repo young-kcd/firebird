@@ -326,10 +326,6 @@ SOURCE=..\..\..\src\remote\remote.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\spxnet32.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\remote\wnet.cpp
 # End Source File
 # Begin Source File
