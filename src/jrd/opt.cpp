@@ -271,9 +271,9 @@ BOOLEAN OPT_access_path(JRD_REQ request,
 	*return_length = buffer - begin;
 
 	if (i >= request->req_fors.getCount())
-		return FALSE;
-	else
 		return TRUE;
+	else
+		return FALSE;
 }
 
 
