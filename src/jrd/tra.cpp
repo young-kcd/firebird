@@ -821,7 +821,7 @@ void TRA_post_resources(TDBB tdbb, JRD_TRA transaction, RSC resources)
 			for (tra_rsc = transaction->tra_resources; tra_rsc;
 				 tra_rsc = tra_rsc->rsc_next)
 			{
-				if (rsc->rsc_id == tra_rsc->rsc_id)
+				if (rsc->rsc_type == tra_rsc->rsc_type && rsc->rsc_id == tra_rsc->rsc_id)
 					break;
 			}
 			if (!tra_rsc) {
@@ -848,8 +848,8 @@ void TRA_post_resources(TDBB tdbb, JRD_TRA transaction, RSC resources)
 					}
 #endif
 					break;
-                                default:   /* Shut up compiler warning */
-                                        break;
+				default:   // shut up compiler warning
+					break;
 				}
 			}
 		}
