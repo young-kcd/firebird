@@ -74,9 +74,9 @@ static void add_user_privilege(USERPRIV);
 static void add_view(DUDLEY_REL);
 static void alloc_file_name(FIL *, UCHAR *);
 static DUDLEY_FLD check_field(SYM, SYM);
-static BOOLEAN check_function(SYM);
-static BOOLEAN check_range(DUDLEY_FLD);
-static BOOLEAN check_relation(SYM);
+static bool check_function(SYM);
+static bool check_range(DUDLEY_FLD);
+static bool check_relation(SYM);
 static void close_blob(FRBRD *);
 static FRBRD *create_blob(SLONG *, USHORT, UCHAR *);
 static void drop_cache(DBB);
@@ -2006,7 +2006,7 @@ static DUDLEY_FLD check_field( SYM relation, SYM field)
 }
 
 
-static BOOLEAN check_function( SYM name)
+static bool check_function( SYM name)
 {
 /**************************************
  *
@@ -2018,19 +2018,19 @@ static BOOLEAN check_function( SYM name)
  *	Check function for existence.  
  *
  **************************************/
-	BOOLEAN if_any;
+	bool if_any;
 
-	if_any = FALSE;
+	if_any = false;
 
 	FOR X IN RDB$FUNCTIONS WITH X.RDB$FUNCTION_NAME EQ name->sym_string
-		if_any = TRUE;
+		if_any = true;
 	END_FOR;
 
 	return if_any;
 }
 
 
-static BOOLEAN check_range( DUDLEY_FLD field)
+static bool check_range(DUDLEY_FLD field)
 {
 /**************************************
  *
@@ -2049,10 +2049,10 @@ static BOOLEAN check_range( DUDLEY_FLD field)
 	SLONG *range;
 	USHORT dims;
 	BASED ON RDB$FIELD_DIMENSIONS.RDB$FIELD_NAME name;
-	BOOLEAN if_any, match;
+	bool if_any = false;
+	bool match = false;
 
 	MOVE_SYMBOL(field->fld_name, name);
-	if_any = match = FALSE;
 	dims = field->fld_dimension;
 
 /* existance: if neither is an array, life is good
@@ -2064,24 +2064,24 @@ static BOOLEAN check_range( DUDLEY_FLD field)
                 DDL_err(302, name, NULL, NULL, NULL, NULL);
             /* msg 302: Include complete field specification to change datatype of array %s */
             else
-                match = TRUE;
+                match = true;
         }
         else if (dims == X.RDB$DIMENSIONS)
-            if_any = TRUE;
+            if_any = true;
 	END_FOR;
 
 	if (match)
 		return match;
 
 	if (!dims)
-		return FALSE;
+		return false;
 
 	if (if_any) {
 		range = field->fld_ranges;
 		FOR X IN RDB$FIELD_DIMENSIONS WITH X.RDB$FIELD_NAME EQ name
 			SORTED BY ASCENDING X.RDB$DIMENSION
-			if ((*range++ != X.RDB$LOWER_BOUND)
-				|| (*range++ != X.RDB$UPPER_BOUND)) if_any = FALSE;
+			if ((*range++ != X.RDB$LOWER_BOUND) || (*range++ != X.RDB$UPPER_BOUND))
+				if_any = false;
 		END_FOR;
 	}
 
@@ -2091,7 +2091,7 @@ static BOOLEAN check_range( DUDLEY_FLD field)
 }
 
 
-static BOOLEAN check_relation( SYM name)
+static bool check_relation( SYM name)
 {
 /**************************************
  *
@@ -2103,12 +2103,12 @@ static BOOLEAN check_relation( SYM name)
  *	Check relation for existence.  
  *
  **************************************/
-	BOOLEAN if_any;
+	bool if_any;
 
-	if_any = FALSE;
+	if_any = false;
 
 	FOR X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->sym_string
-		if_any = TRUE;
+		if_any = true;
 	END_FOR;
 
 	return if_any;

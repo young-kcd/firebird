@@ -35,7 +35,7 @@ extern "C" {
 #define HASH_SIZE	101
 
 static USHORT hash(SCHAR *, USHORT);
-static BOOLEAN scompare(SCHAR *, USHORT, SCHAR *,
+static bool scompare(SCHAR *, USHORT, SCHAR *,
 						USHORT);
 
 static SYM hash_table[HASH_SIZE];
@@ -448,10 +448,10 @@ static USHORT hash( SCHAR * string, USHORT length)
 }
 
 
-static BOOLEAN scompare(
-						SCHAR * string1,
-						USHORT length1,
-						SCHAR * string2, USHORT length2)
+static bool scompare(SCHAR * string1,
+					 USHORT length1,
+					 SCHAR * string2,
+					 USHORT length2)
 {
 /**************************************
  *
@@ -466,13 +466,13 @@ static BOOLEAN scompare(
 	SCHAR c1, c2;
 
 	if (length1 != length2)
-		return FALSE;
+		return false;
 
 	while (length1--)
 		if ((c1 = *string1++) != (c2 = *string2++) && UPPER(c1) != UPPER(c2))
-			return FALSE;
+			return false;
 
-	return TRUE;
+	return true;
 }
 
 

@@ -25,6 +25,6 @@
 #define _DUDLEY_TRN_PROTO_H_
 
 extern void TRN_translate(void);
-extern BOOLEAN TRN_get_buffer(STR, USHORT);
+extern bool TRN_get_buffer(STR, USHORT);
 
 #endif /* _DUDLEY_TRN_PROTO_H_ */

@@ -95,7 +95,7 @@ jmp_buf parse_env;
 
 extern TEXT *DDL_prompt;
 
-static BOOLEAN check_filename(SYM, USHORT);
+static bool check_filename(SYM, USHORT);
 static SYM copy_symbol(SYM);
 static DUDLEY_FLD create_global_field(DUDLEY_FLD);
 #ifdef FLINT_CACHE
@@ -145,7 +145,7 @@ static void modify_trigger(void);
 static void modify_trigger_action(DUDLEY_TRG, DUDLEY_REL);
 static void modify_type(void);
 static void modify_view(void);
-static BOOLEAN parse_action(void);
+static bool parse_action(void);
 static void parse_array(DUDLEY_FLD);
 static TXT parse_description(void);
 static void parse_end(void);
@@ -509,7 +509,7 @@ SYM PARSE_symbol(enum tok_t type)
 }
 
 
-static BOOLEAN check_filename( SYM name, USHORT decnet_flag)
+static bool check_filename( SYM name, USHORT decnet_flag)
 {
 /**************************************
  *
@@ -526,7 +526,7 @@ static BOOLEAN check_filename( SYM name, USHORT decnet_flag)
 	TEXT file_name[256], *p, *q;
 
 	if (!(l = name->sym_length))
-		return TRUE;
+		return true;
 	l = MIN(l, sizeof(file_name) - 1);
 	for (p = file_name, q = name->sym_string; l--; *p++ = *q++);
 	*p = 0;
@@ -534,15 +534,18 @@ static BOOLEAN check_filename( SYM name, USHORT decnet_flag)
 	for (p = file_name; *p; p++)
 		if (p[0] == ':' && p[1] == ':')
 			if (!decnet_flag)
-				return FALSE;
+				return false;
 			else {
 				for (p = file_name; *p;)
 					if (*p++ == '^')
-						return FALSE;
-				return TRUE;
+						return false;
+				return true;
 			}
 
-	return !ISC_check_if_remote(file_name, FALSE);
+	if (!ISC_check_if_remote(file_name, FALSE))
+		return true;
+	else
+		return false;
 }
 
 
@@ -2979,7 +2982,7 @@ static void modify_view(void)
 }
 
 
-static BOOLEAN parse_action(void)
+static bool parse_action(void)
 {
 /**************************************
  *
@@ -3001,54 +3004,54 @@ static BOOLEAN parse_action(void)
 	LEX_token();
 	DDL_prompt = CONTINUATION;
 	if (DDL_eof)
-		return TRUE;
+		return true;
 
 	if (MATCH(KW_DEFINE))
 		switch (parse_object()) {
 		case obj_database:
 			define_database(act_c_database);
-			return TRUE;
+			return true;
 		case obj_relation:
 			define_relation();
-			return TRUE;
+			return true;
 		case obj_view:
 			define_view();
-			return TRUE;
+			return true;
 		case obj_field:
 			define_field();
-			return TRUE;
+			return true;
 		case obj_index:
 			define_index();
-			return TRUE;
+			return true;
 		case obj_security_class:
 			define_security_class();
-			return TRUE;
+			return true;
 		case obj_trigger:
 			define_trigger();
-			return TRUE;
+			return true;
 		case obj_file:
 			define_file();
-			return TRUE;
+			return true;
 		case obj_function:
 			define_function();
-			return TRUE;
+			return true;
 		case obj_type:
 			define_type();
-			return TRUE;
+			return true;
 		case obj_filter:
 			define_filter();
-			return TRUE;
+			return true;
 		case obj_shadow:
 			define_shadow();
-			return TRUE;
+			return true;
 		case obj_generator:
 			define_generator();
-			return TRUE;
+			return true;
 
 		default:
 			if (database) {
 				define_relation();
-				return TRUE;
+				return true;
 			}
 			PARSE_error(183, DDL_token.tok_string, 0);	/* msg 183: expected object for DEFINE, encountered \"%s\" */
 		}
@@ -3056,30 +3059,30 @@ static BOOLEAN parse_action(void)
 		switch (parse_object()) {
 		case obj_database:
 			define_database(act_m_database);
-			return TRUE;
+			return true;
 		case obj_relation:
 			modify_relation();
-			return TRUE;
+			return true;
 		case obj_view:
 			modify_view();
-			return TRUE;
+			return true;
 		case obj_field:
 			modify_field();
-			return TRUE;
+			return true;
 		case obj_index:
 			modify_index();
-			return TRUE;
+			return true;
 		case obj_security_class:
 			modify_security_class();
-			return TRUE;
+			return true;
 		case obj_trigger:
 			modify_trigger();
-			return TRUE;
+			return true;
 		case obj_function:
 			PARSE_error(233, 0, 0);	/* msg 233: action not implemented yet */
 		case obj_type:
 			modify_type();
-			return TRUE;
+			return true;
 		case obj_filter:
 			PARSE_error(231, 0, 0);	/* msg 231: action not implemented yet */
 		case obj_shadow:
@@ -3092,64 +3095,64 @@ static BOOLEAN parse_action(void)
 		switch (parse_object()) {
 		case obj_database:
 			define_database(act_d_database);
-			return TRUE;
+			return true;
 		case obj_relation:
 		case obj_view:
 			drop_relation();
-			return TRUE;
+			return true;
 		case obj_field:
 			drop_gfield();
-			return TRUE;
+			return true;
 		case obj_index:
 			drop_index();
-			return TRUE;
+			return true;
 		case obj_security_class:
 			drop_security_class();
-			return TRUE;
+			return true;
 		case obj_trigger:
 			drop_trigger();
-			return TRUE;
+			return true;
 		case obj_function:
 			drop_function();
-			return TRUE;
+			return true;
 		case obj_type:
 			drop_type();
-			return TRUE;
+			return true;
 		case obj_filter:
 			drop_filter();
-			return TRUE;
+			return true;
 		case obj_shadow:
 			drop_shadow();
-			return TRUE;
+			return true;
 		default:
 			PARSE_error(185, DDL_token.tok_string, 0);
 			/* msg 185: expected object for DROP, encountered \"%s\" */
 		}
 	else if (MATCH(KW_GRANT)) {
 		grant_user_privilege();
-		return TRUE;
+		return true;
 	}
 	else if (MATCH(KW_REVOKE)) {
 		revoke_user_privilege();
-		return TRUE;
+		return true;
 	}
 	else if (MATCH(KW_SET_GENERATOR)) {
 		set_generator();
-		return TRUE;
+		return true;
 	}
 	else if (MATCH(KW_SET)) {
 		if (!MATCH(KW_GENERATOR))
 			PARSE_error(318, DDL_token.tok_string, 0);	/* msg 318: expected GENERATOR, encountered \"%s\" */
 		set_generator();
-		return TRUE;
+		return true;
 	}
 	else if (DDL_interactive && KEYWORD(KW_EXIT)) {
 		DDL_eof = TRUE;
-		return FALSE;
+		return false;
 	}
 	else if (DDL_interactive && KEYWORD(KW_QUIT)) {
 		DDL_quit = DDL_eof = TRUE;
-		return FALSE;
+		return false;
 	}
 
 	PARSE_error(186, DDL_token.tok_string, 0);	/* msg 186: expected command, encountered \"%s\" */
@@ -3162,7 +3165,7 @@ static BOOLEAN parse_action(void)
 		else
 			while (!DDL_eof && !KEYWORD(KW_SEMI))
 				LEX_token();
-		return TRUE;
+		return true;
 	}
 }
 

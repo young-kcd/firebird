@@ -807,7 +807,7 @@ static void add_view( STR dyn, DUDLEY_REL relation)
 }
 
 
-BOOLEAN TRN_get_buffer(STR dyn, USHORT length)
+bool TRN_get_buffer(STR dyn, USHORT length)
 {
 /**************************************
  *
@@ -832,13 +832,13 @@ BOOLEAN TRN_get_buffer(STR dyn, USHORT length)
 /* If we're in danger of blowing the limit, stop right here */
 
 	if (n < len + length)
-		return FALSE;
+		return false;
 
 	q = old = dyn->str_start;
 	dyn->str_start = p = (SCHAR *) gds__alloc((SLONG) n);
 
 	if (!p)
-		return FALSE;
+		return false;
 
 	dyn->str_length = n;
 	dyn->str_current = dyn->str_start + len;
@@ -850,7 +850,7 @@ BOOLEAN TRN_get_buffer(STR dyn, USHORT length)
 
 	memmove(p, q, len);
 	gds__free(old);
-	return TRUE;
+	return true;
 }
 
 
