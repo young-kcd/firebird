@@ -4786,6 +4786,11 @@ int LexerState::yylex (
 					gds__free (buffer);
 				return -1;
 			}
+			// Care about multi-line constants and identifiers
+			if (*ptr == '\n') {
+				lines++;
+				line_start = ptr+1;
+			}
 			/* *ptr is quote - if next != quote we're at the end */
 			if ((*ptr == c) && ((++ptr == end) || (*ptr != c)))
 				break;
