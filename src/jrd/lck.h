@@ -68,7 +68,7 @@ class lck : public pool_alloc_rpt<SCHAR, type_lck>
 {
 public:
 	lck()
-	:	lck_test_field(666)/*,
+	:	lck_test_field(666),
 		lck_parent(0),
 		lck_next(0),
 		lck_att_next(0),
@@ -89,13 +89,13 @@ public:
 		lck_length(0),
 		lck_logical(0),
 		lck_physical(0),
-		lck_data(0)*/
+		lck_data(0)
 	{
-/*		lck_key.lck_long = 0;
-		lck_tail[0] = 0;*/
+		lck_key.lck_long = 0;
+		lck_tail[0] = 0;
 	}
 
-	int			lck_test_field;
+	int		lck_test_field;
 	lck*	lck_parent;
 	lck*	lck_next;		/* Next lock in chain owned by dbb */
 	lck*	lck_att_next;	/* Next in chain owned by attachment */
