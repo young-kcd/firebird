@@ -1199,46 +1199,54 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 	// 
 	// Check if flush needed
 	//
-	time_t now;
 	int max_unflushed_writes = Config::getMaxUnflushedWrites();
 	time_t max_unflushed_write_time = Config::getMaxUnflushedWriteTime();
-	now = time(0);
-	BOOLEAN doFlush = FALSE;
-	BOOLEAN max_time = max_unflushed_writes >= 0;
-	BOOLEAN max_num = max_unflushed_write_time >= 0;
-	if (!(dbb->dbb_file->fil_flags & FIL_force_write) 
-	&& (max_num || max_time))
+	bool max_num = (max_unflushed_writes >= 0);
+	bool max_time = (max_unflushed_write_time >= 0);
+
+	bool doFlush = false;
+
+	if (!(dbb->dbb_file->fil_flags & FIL_force_write) && (max_num || max_time))
 	{
+		time_t now = time(0);
+
 		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_flush_count);
+		
 		// If this is the first commit set last_flushed_write to now
 		if (!dbb->last_flushed_write)
 		{
 			dbb->last_flushed_write = now;
 		}
+
 		// test max_num condition and max_time condition
 		max_num = max_num 
 			&& (dbb->unflushed_writes == max_unflushed_writes);
 		max_time = max_time
 			&& (now - dbb->last_flushed_write > max_unflushed_write_time);
-		// 
+
 		if (max_num || max_time)
 		{
-			doFlush = TRUE;
+			doFlush = true;
 			dbb->unflushed_writes = 0;
 			dbb->last_flushed_write = now;
 		}
-		else {
+		else
+		{
 			dbb->unflushed_writes++;
 		}
+
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_flush_count);
 	}
 
 	if (doFlush)
 	{
-		PIO_flush (dbb->dbb_file);
+		PIO_flush(dbb->dbb_file);
 		if (dbb->dbb_shadow)
-			PIO_flush (dbb->dbb_shadow->sdw_file);
+		{
+			PIO_flush(dbb->dbb_shadow->sdw_file);
+		}
 	}
+
 /* take the opportunity when we know there are no pages
    in cache to check that the shadow(s) have not been
    scheduled for shutdown or deletion */
