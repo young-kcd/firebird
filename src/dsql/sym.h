@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_SYM_H_
-#define _DSQL_SYM_H_
+#ifndef DSQL_SYM_H
+#define DSQL_SYM_H
 
 #include "../jrd/common.h"
 
@@ -59,4 +59,4 @@ public:
 };
 typedef sym *SYM;
 
-#endif /* _DSQL_SYM_H_ */
+#endif // DSQL_SYM_H

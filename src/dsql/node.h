@@ -32,8 +32,8 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
-#ifndef _DSQL_NODE_H_
-#define _DSQL_NODE_H_
+#ifndef DSQL_NODE_H
+#define DSQL_NODE_H
 
 #include "../dsql/dsql.h"
 
@@ -42,9 +42,9 @@
 typedef enum nod_t 
 {
 	nod_unknown_type = 0,
-    nod_commit = 1,	/* Commands, not executed. */
-    nod_rollback,
-    nod_trans,
+	nod_commit = 1,	/* Commands, not executed. */
+	nod_rollback,
+	nod_trans,
 	nod_prepare,
 	nod_create,
 	nod_define,
@@ -107,7 +107,7 @@ typedef enum nod_t
 	nod_open,
 	nod_all,	/* ALL privileges */
 	nod_execute,				/* EXECUTE privilege */
-    nod_for,					/* created in context recognition phase to map to blr */
+	nod_for,					/* created in context recognition phase to map to blr */
 	nod_store,
 	nod_modify,
 	nod_erase,
@@ -304,16 +304,16 @@ typedef enum nod_t
 	nod_mod_domain_type,
 	nod_mod_field_name,
 	nod_mod_field_type,
-    nod_mod_field_pos,
+	nod_mod_field_pos,
 
-    /* CVC: SQL requires that DROP VIEW and DROP table are independent. */
-    nod_del_view,
-    nod_current_role, /* nod_role_name is already taken but only for DDL. */
-    nod_breakleave,
-    nod_redef_relation, /* allows silent creation/overwriting of a relation. */
-    nod_udf_param, /* there should be a way to signal a param by descriptor! */
-    nod_limit, /* limit support */
-    nod_redef_procedure, /* allows silent creation/overwriting of a procedure. */
+	/* CVC: SQL requires that DROP VIEW and DROP table are independent. */
+	nod_del_view,
+	nod_current_role, /* nod_role_name is already taken but only for DDL. */
+	nod_breakleave,
+	nod_redef_relation, /* allows silent creation/overwriting of a relation. */
+	nod_udf_param, /* there should be a way to signal a param by descriptor! */
+	nod_limit, /* limit support */
+	nod_redef_procedure, /* allows silent creation/overwriting of a procedure. */
 	nod_exec_sql, /* EXECUTE STATEMENT */
 	nod_internal_info, /* internal engine info */
 	nod_searched_case, /* searched CASE function */
@@ -348,8 +348,8 @@ class dsql_nod : public pool_alloc_rpt<class dsql_nod*, dsql_type_nod>
 public:
 	NOD_TYPE nod_type;			/* Type of node */
 	DSC nod_desc;				/* Descriptor */
-    USHORT nod_line;			/* Source line of the statement. */
-    USHORT nod_column;			/* Source column of the statement. */
+	USHORT nod_line;			/* Source line of the statement. */
+	USHORT nod_column;			/* Source column of the statement. */
 	USHORT nod_count;			/* Number of arguments */
 	USHORT nod_flags;
 	struct dsql_nod *nod_arg[1];
@@ -874,4 +874,4 @@ typedef dsql_nod* DSQL_NOD;
 #define e_derived_field_scope			2  // Scope-level
 #define e_derived_field_count			4  
 
-#endif /* _DSQL_NODE_H_ */
+#endif // DSQL_NODE_H

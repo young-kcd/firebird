@@ -23,8 +23,8 @@
  * 2002.09.20 Dmitry Yemanov: Created all this stuff
  */
 
-#ifndef _DSQL_MISC_FUNC_H_
-#define _DSQL_MISC_FUNC_H_
+#ifndef DSQL_MISC_FUNC_H
+#define DSQL_MISC_FUNC_H
 
 #include "../jrd/misc_func_ids.h"
 
@@ -40,4 +40,4 @@ public:
 	static USHORT getMask(internal_info_id);
 };
 
-#endif // _DSQL_MISC_FUNC_H_
+#endif // DSQL_MISC_FUNC_H

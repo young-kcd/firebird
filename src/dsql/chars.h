@@ -21,13 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#define CHR_LETTER	1
-#define CHR_DIGIT	2
-#define CHR_IDENT	4
-#define CHR_QUOTE	8
-#define CHR_WHITE	16
-#define CHR_HEX		32
-#define CHR_INTRODUCER	64
+const SCHAR CHR_LETTER		= 1;
+const SCHAR CHR_DIGIT		= 2;
+const SCHAR CHR_IDENT		= 4;
+const SCHAR CHR_QUOTE		= 8;
+const SCHAR CHR_WHITE		= 16;
+const SCHAR CHR_HEX			= 32;
+const SCHAR CHR_INTRODUCER	= 64;
 
 static const SCHAR classes[] = {
 /* 000     */ 0,

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_SQLDA_H_
-#define _DSQL_SQLDA_H_
+#ifndef DSQL_SQLDA_H
+#define DSQL_SQLDA_H
 
 /* SQLDA dialects */
 
@@ -144,4 +144,4 @@ typedef struct dasup
 #define DASUP_CLAUSE_select	0
 #define DASUP_CLAUSE_bind	1
 
-#endif /* _DSQL_SQLDA_H_ */
+#endif // DSQL_SQLDA_H
