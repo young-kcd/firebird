@@ -105,6 +105,8 @@
  *   which are in an lower level. 
  *   Modified functions pass1_field, pass1_rse, copy_field, pass1_sort.
  *   Functions pass1_found_aggregate and pass1_found_field added.
+ *
+ * 2002.10.25 Dmitry Yemanov: Re-allowed plans in triggers
  */
 
 #include "firebird.h"
@@ -4328,9 +4330,16 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 		/* disallow plans in a trigger for the short term,
 		   until we can figure out why they don't work: bug #6057 */
 
+		/* dimitr: I've commented out the following protection, because it's proven
+				   by Ignacio J. Ortega and myself that now triggers work
+				   with indexes in plans as expected, so it seems that the reason
+				   for the mentioned bug #6057 is already fixed (2002-10-25)
+
 		if (request->req_flags & REQ_trigger)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,
 					  gds_arg_gds, gds_random, gds_arg_string, "PLAN", 0);
+		
+		*/
 
 		rse->nod_arg[e_rse_plan] = PASS1_node(request, node, 0);
 	}
