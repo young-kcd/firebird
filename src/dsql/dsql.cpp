@@ -110,7 +110,7 @@ static ISC_STATUS	execute_request(dsql_req*, FB_API_HANDLE*, USHORT, const UCHAR
 static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
 static bool		get_indices(SSHORT*, const SCHAR**, SSHORT*, SCHAR**);
 static USHORT	get_plan_info(dsql_req*, SSHORT, SCHAR**);
-static USHORT	get_request_info(dsql_req*, SSHORT, SCHAR*);
+static USHORT	get_request_info(dsql_req*, SSHORT, UCHAR*);
 static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
 static dsql_dbb*	init(FB_API_HANDLE*);
@@ -1581,7 +1581,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 								USHORT		info_length,
 								UCHAR*		info)
 {
-	UCHAR buffer[256], *buffer_ptr;
+	UCHAR buffer[256];
 	USHORT length, number, first_index;
 	tsql thd_context(user_status);
 	tsql* tdsql;
@@ -1702,7 +1702,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 			}
 			else if (item == isc_info_sql_records) {
 				length = get_request_info(request, (SSHORT) sizeof(buffer),
-										  reinterpret_cast<SCHAR*>(buffer));
+										  buffer);
 				if (length && !(info = put_item(item, length, buffer, info, 
 												end_info))) 
 				{
@@ -1713,7 +1713,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 			/* be careful, get_plan_info() will reallocate the buffer to a
 			   larger size if it is not big enough */
 
-				buffer_ptr = buffer;
+				UCHAR* buffer_ptr = buffer;
 				length =
 					get_plan_info(request, (SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
 
@@ -3714,27 +3714,25 @@ static USHORT get_plan_info(
  **/
 static USHORT get_request_info(
 							   dsql_req* request,
-							   SSHORT buffer_length, SCHAR* buffer)
+							   SSHORT buffer_length, UCHAR* buffer)
 {
-	ISC_STATUS s;
-
 	tsql* tdsql = DSQL_get_thread_data();
 
 // get the info for the request from the engine 
 
 	THREAD_EXIT();
-	s = isc_request_info(tdsql->tsql_status,
+	const ISC_STATUS s = isc_request_info(tdsql->tsql_status,
 						 &request->req_handle,
 						 0,
 						 sizeof(record_info),
 						 record_info,
-						 buffer_length, buffer);
+						 buffer_length, reinterpret_cast<char*>(buffer));
 	THREAD_ENTER();
 
 	if (s)
 		return 0;
 
-	SCHAR* data = buffer;
+	const UCHAR* data = buffer;
 
 	request->req_updates = request->req_deletes = 0;
 	request->req_selects = request->req_inserts = 0;
@@ -3742,33 +3740,24 @@ static USHORT get_request_info(
 	UCHAR p;
 	while ((p = *data++) != isc_info_end) {
 		const USHORT data_length =
-			static_cast < USHORT >
-			(gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
+			static_cast<USHORT>(gds__vax_integer(data, 2));
 		data += 2;
 
 		switch (p) {
 		case isc_info_req_update_count:
-			request->req_updates =
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
-								 data_length);
+			request->req_updates = gds__vax_integer(data, data_length);
 			break;
 
 		case isc_info_req_delete_count:
-			request->req_deletes =
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
-								 data_length);
+			request->req_deletes = gds__vax_integer(data, data_length);
 			break;
 
 		case isc_info_req_select_count:
-			request->req_selects =
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
-								 data_length);
+			request->req_selects = gds__vax_integer(data, data_length);
 			break;
 
 		case isc_info_req_insert_count:
-			request->req_inserts =
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
-								 data_length);
+			request->req_inserts = gds__vax_integer(data, data_length);
 			break;
 
 		default:
@@ -4200,13 +4189,11 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
    and if not then emulate pre-patch actions. */
 	database->dbb_att_charset = 127;
 
-	SCHAR* data = buffer;
+	const UCHAR* data = reinterpret_cast<UCHAR*>(buffer);
 	UCHAR p;
 	while ((p = *data++) != isc_info_end)
 	{
-		SSHORT l =
-			static_cast<SSHORT>(
-				gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
+		const SSHORT l = static_cast<SSHORT>(gds__vax_integer(data, 2));
 		data += 2;
 
 		switch (p)
@@ -4216,7 +4203,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 			break;
 
 		case isc_info_ods_version:
-			if (gds__vax_integer(reinterpret_cast<UCHAR*>(data), l) > 7)
+			if (gds__vax_integer(data, l) > 7)
 				database->dbb_flags &= ~DBB_v3;
 			break;
 
@@ -4248,9 +4235,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 			break;
 
 		case frb_info_att_charset:
-			database->dbb_att_charset =
-				static_cast<SSHORT>(
-					gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
+			database->dbb_att_charset = static_cast<SSHORT>(gds__vax_integer(data, 2));
 			break;
 
 		default:
@@ -4739,7 +4724,7 @@ static dsql_req* prepare(
 		request->req_blr_string = FB_NEW_RPT(*DSQL_permanent_pool, 980) dsql_str;
 	}
 	request->req_blr_string->str_length = 980;
-	request->req_blr = reinterpret_cast<BLOB_PTR*>(request->req_blr_string->str_data);
+	request->req_blr = request->req_blr_string->str_data;
 	request->req_blr_yellow =
 		request->req_blr + request->req_blr_string->str_length;
 #endif
