@@ -36,6 +36,10 @@ extern "C" {
 #endif
 
 
+#ifdef HAVE_SETJMP_H
+#include <setjmp.h>
+#endif
+
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
 #define VIO_DEBUG				/* remove this for production build */
@@ -54,13 +58,24 @@ extern "C" {
 #define IBERROR(number)         ERR_error (number)
 */
 
+
 #define BLKCHK(blk, type)       if (MemoryPool::blk_type(blk) != (USHORT) (type)) BUGCHECK (147)
 
 /* DEV_BLKCHK is used for internal consistency checking - where
  * the performance hit in production build isn't desired.
  * (eg: scatter this everywhere)
+ *
+ * This causes me a problem DEV_BLKCHK fails when the data seems valid
+ * After talking to John this could be because the memory is from the local
+ * stack rather than the heap.  However I found to continue I needed to 
+ * turn it off by dfining the macro to be empty.  But In thinking about
+ * it I think that it would be more helful for a mode where these extra 
+ * DEV checks just gave warnings rather than being fatal.
+ * MOD 29-July-2002
+ *
  */
 #ifdef DEV_BUILD
+// #define DEV_BLKCHK(blk,type)
 #define DEV_BLKCHK(blk,type)    if (blk) {BLKCHK (blk, type);}
 #else
 #define DEV_BLKCHK(blk,type)	/* nothing */
@@ -831,7 +846,14 @@ typedef struct tdbb
 	struct iuo	tdbb_mutexes;
 	struct iuo	tdbb_rw_locks;
 	struct iuo	tdbb_pages;
+
+    // ansi c want's sigsetjmp to be a different type. So I've used that
+    // for unix implementations. MOD 12-July-2002
+#ifdef WIN32
 	void*		tdbb_sigsetjmp;
+#else
+    jmp_buf tdbb_sigsetjmp;
+#endif
 } *TDBB;
 
 #define	TDBB_sweeper			1	/* Thread sweeper or garbage collector */

@@ -24,7 +24,7 @@
  * to signal NULL by testing the flags of the parameter's descriptor.
  */
 /*
-$Id: fun.epp,v 1.5 2002-06-30 10:44:49 dimitr Exp $
+$Id: fun.epp,v 1.6 2002-07-29 15:37:53 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -157,7 +157,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, NOD node, VLU value)
 	try {
 #endif
 
-	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message);
+	START_CHECK_FOR_EXCEPTIONS( (TEXT*) function->fun_exception_message);
 
 	// If the return data type is any of the string types,
 	// allocate space to hold value

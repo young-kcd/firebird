@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.3 2001-12-24 02:50:53 tamlin Exp $
+$Id: util.cpp,v 1.4 2002-07-29 15:37:55 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -35,11 +35,19 @@ $Id: util.cpp,v 1.3 2001-12-24 02:50:53 tamlin Exp $
 #include <sys/file.h>			/* for flock() */
 #endif
 
-#include <unistd.h>				/* for fork() */
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
-#ifdef SOLARIS
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>				/* for fork() */
+#endif
+
+#ifdef HAVE_WAIT_H
 #include <wait.h>				/* for waitpid() */
-#else
+#endif
+
+#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>			/* for waitpid() */
 #endif
 
@@ -48,6 +56,7 @@ $Id: util.cpp,v 1.3 2001-12-24 02:50:53 tamlin Exp $
 #include "../jrd/gdsassert.h"
 #include "../utilities/util_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN      1024

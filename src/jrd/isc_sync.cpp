@@ -49,7 +49,7 @@
 #include <assert.h>
 #endif
 
-#ifdef DARWIN
+#ifdef HAVE_SETJMP_H
 #include <setjmp.h>
 #endif
 
@@ -4853,7 +4853,7 @@ void longjmp_sig_handler(int sig_num)
 
 	tdbb = GET_THREAD_DATA;
 
-	siglongjmp((sigjmp_buf)tdbb->tdbb_sigsetjmp, sig_num);
+	siglongjmp(tdbb->tdbb_sigsetjmp, sig_num);
 }
 #endif /* UNIX */
 #endif /* SUPERSERVER */

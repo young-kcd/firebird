@@ -25,24 +25,28 @@
 #define _JRD_IBSETJMP_H_
 
 
+#ifdef HAVE_SETJMP_H
 #include <setjmp.h>
+#endif
 
 #define SETJMP	setjmp
 #define LONGJMP	longjmp
 #define	JMP_BUF	jmp_buf
 
-#ifdef UNIX
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
 
 #define SIGSETJMP 	sigsetjmp
 #define SIGLONGJMP 	siglongjmp
 #define	SIGJMP_BUF	sigjmp_buf
 
+#ifdef UNIX
 #ifdef SUPERSERVER
 #define START_CHECK_FOR_EXCEPTIONS(err)	{ \
 					SIGJMP_BUF	sigenv; \
 					int		sig; \
-					tdbb->tdbb_sigsetjmp = (UCHAR*) sigenv; \
+					tdbb->tdbb_sigsetjmp = sigenv; \
 					if (sig = SIGSETJMP (sigenv, 1)) \
 					    ISC_exception_post(sig, err); \
 					ISC_sync_signals_set();

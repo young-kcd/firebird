@@ -27,7 +27,7 @@
  *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.9 2002-07-01 16:59:09 skywalker Exp $
+$Id: opt.cpp,v 1.10 2002-07-29 15:37:54 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -1694,8 +1694,9 @@ static SLONG decompose(TDBB tdbb,
 	NOD arg, node;
 
 	DEV_BLKCHK(boolean_node, type_nod);
-	DEV_BLKCHK(*stack, type_lls);
+    DEV_BLKCHK(*stack, type_lls);
 	DEV_BLKCHK(csb, type_csb);
+
 
 	if (boolean_node->nod_type == nod_and)
 		return decompose(tdbb, boolean_node->nod_arg[0], stack, csb) +

@@ -1,33 +1,33 @@
 /*
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * You may obtain a copy of the Licence at
+ * http://www.gnu.org/licences/lgpl.html
+ * 
+ * As a special exception this file can also be included in modules
+ * with other source code as long as that source code has been 
+ * released under an Open Source Initiative certificed licence.  
+ * More information about OSI certification can be found at: 
+ * http://www.opensource.org 
+ * 
+ * This module is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public Licence for more details.
+ * 
+ * This module was created by members of the firebird development 
+ * team.  All individual contributions remain the Copyright (C) of 
+ * those individuals and all rights are reserved.  Contributors to 
+ * this file are either listed below or can be obtained from a CVS 
+ * history command.
  *
- *  The contents of this file are subject to the Mozilla Public
- *  License Version 1.1 (the "License"); you may not use this file
- *  except in compliance with the License. You may obtain a copy of
- *  the License at http://www.mozilla.org/MPL/
- *  Alternatively, the contents of this file may be used under the
- *  terms of the GNU General Public License Version 2 or later (the
- *  "GPL"), in which case the provisions of the GPL are applicable
- *  instead of those above. You may obtain a copy of the Licence at
- *  http://www.gnu.org/copyleft/gpl.html
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  Relevant for more details.
- *
- *  This file was created by members of the firebird development team.
- *  All individual contributions remain the Copyright (C) of those
- *  individuals.  Contributors to this file are either listed here or
- *  can be obtained from a CVS history command.
- *
- *  All rights reserved.
+ *  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *  Contributor(s):
- *       Tom Coleman TMC Systems <tcoleman@autowares.com>
- *       Reed Mideke <rfm@cruzers.com>
- *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+ * 
  *
- *
- *  $Id: fb_boilerplate.h,v 1.2 2001-12-24 02:50:52 tamlin Exp $
+ *  $Id: fb_boilerplate.h,v 1.3 2002-07-29 15:37:55 skywalker Exp $
  *
  */

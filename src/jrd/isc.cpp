@@ -28,7 +28,7 @@
  * 01-Feb-2002 Paul Reeves: Removed hard-coded registry path
  */
 /*
-$Id: isc.cpp,v 1.11 2002-07-09 14:41:37 dimitr Exp $
+$Id: isc.cpp,v 1.12 2002-07-29 15:37:54 skywalker Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -452,7 +452,7 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 				/* There is external file directory definition */
 				if (!edls_init)
 					if (1 == sscanf(buf + sizeof(ISCCFG_EXT_FILE_DIR) - 1,
-						" \"%[^\"]", dir_name))
+                                    " \"%[^\"]", dir_name))
 					{
 						if (DLS_add_file_dir(dir_name))
 							edls_flag = TRUE;

@@ -69,7 +69,6 @@ void STUFF_STATUS_function(STATUS* status_vector, STATUS status, va_list args)
 
 			case gds_arg_vms:
 			case gds_arg_unix:
-			case gds_arg_domain:
 			case gds_arg_dos:
 			case gds_arg_mpexl:
 			case gds_arg_next_mach:
@@ -91,11 +90,12 @@ void STUFF_STATUS_function(STATUS* status_vector, STATUS status, va_list args)
 
 void PARSE_STATUS(STATUS * status_vector, int &length, int &warning)
 {
-        int i;
 	warning = 0;
 	length = 0;
 
-	for (i = 0; status_vector[i] != gds_arg_end; i++, length++)
+    int i = 0;
+
+	for (; status_vector[i] != gds_arg_end; i++, length++)
 	{
 		switch (status_vector[i])
 		{
@@ -108,7 +108,6 @@ void PARSE_STATUS(STATUS * status_vector, int &length, int &warning)
 		case gds_arg_number:
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_domain:
 		case gds_arg_dos:
 		case gds_arg_mpexl:
 		case gds_arg_next_mach:

@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.13 2002-06-29 08:48:31 dimitr Exp $
+$Id: inet.cpp,v 1.14 2002-07-29 15:37:55 skywalker Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -266,7 +266,7 @@ static struct ipccfg INET_tcp_buffer[] =
 
 
 #ifdef SET_TCP_NO_DELAY
-USHORT INET_no_nagle;
+SLONG INET_no_nagle;
 
 static struct ipccfg INET_tcp_delay[] =
 {

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.13 2002-06-29 05:33:02 skywalker Exp $
+//	$Id: alice.cpp,v 1.14 2002-07-29 15:37:51 skywalker Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -83,8 +83,15 @@ static const USHORT val_err_table[] = {
 	61				// msg 61: \tNumber of database page errors\t: %ld
 };
 
+
+// The following structure in only needed if we are building a local exe
+// I've commented it out to make it clear since this global variable is
+// defined in burp.cpp as well, and is not relevant for SUPERSERVER
+
+#ifndef SUPERSERVER
 #ifndef NETWARE_386
 struct tgbl *gdgbl;
+#endif
 #endif
 
 #define	ALICE_MSG_FAC	3

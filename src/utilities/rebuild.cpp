@@ -96,7 +96,7 @@ static ULONG PPG_NUMBERS[] = { 5897, 6058, 5409, 6199, 6200, 6220, 6221,
 };
 
 
-void main( int argc, char *argv[])
+int main( int argc, char *argv[])
 {
 /**************************************
  *
@@ -276,6 +276,8 @@ void main( int argc, char *argv[])
 		gds__free(rbdb);
 		rbdb = next_db;
 	}
+
+    return 0;
 }
 
 

@@ -28,7 +28,6 @@
 #include <string.h>
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
-#include "../jrd/alt_use_sec.h"
 
 #define IS_VALID_SERVER(server) if (!server || !*server) \
 				    { \
@@ -898,7 +897,7 @@ int API_ROUTINE isc_add_user(STATUS * status, USER_SEC_DATA * user_data)
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-#ifdef PHASE_1_BUILD_NO_SECURITY_DB
+#ifdef BOOT_BUILD
 return 1;
 #else
 	USHORT retval = 0, l;
@@ -1083,7 +1082,7 @@ int API_ROUTINE isc_delete_user(STATUS * status, USER_SEC_DATA * user_data)
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-#ifdef PHASE_1_BUILD_NO_SECURITY_DB
+#ifdef BOOT_BUILD
 return 1;
 #else
 	USHORT retval = 0, l;
@@ -1148,7 +1147,7 @@ int API_ROUTINE isc_modify_user(STATUS * status, USER_SEC_DATA * user_data)
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-#ifdef PHASE_1_BUILD_NO_SECURITY_DB
+#ifdef BOOT_BUILD
 return 1;
 #else
 	USHORT retval = 0, l;
@@ -1305,7 +1304,7 @@ void *open_security_db(
  * Returns NULL otherwise
  *
  **************************************/
-#ifdef PHASE_1_BUILD_NO_SECURITY_DB
+#ifdef BOOT_BUILD
 return 0;
 #else
 	short dpb_length, l = 0;

@@ -30,7 +30,7 @@
  *
  */
 /*
-$Id: why.c,v 1.11 2002-07-06 05:31:56 skywalker Exp $
+$Id: why.c,v 1.12 2002-07-29 15:37:54 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -79,12 +79,17 @@ $Id: why.c,v 1.11 2002-07-06 05:31:56 skywalker Exp $
 #include "../dsql/prepa_proto.h"
 #include "../dsql/utld_proto.h"
 
-#ifdef UNIX
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
-#include <fcntl.h>
-#if !(defined SEEK_END && defined F_OK)
-#include <unistd.h>
 #endif
+
+
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
 #ifdef WIN_NT

@@ -24,10 +24,10 @@
 #ifndef _UTIL_PROTO_H_
 #define _UTIL_PROTO_H_
 
-extern pid_t 	UTIL_fork_process   (char *process, char **arguments); 
-extern int 	UTIL_wait_for_child (pid_t child_pid); 
-extern int 	UTIL_ex_lock 	    (char *file); 
-extern void 	UTIL_ex_unlock      (int fd_file); 
+extern pid_t UTIL_start_process(char *process, char **argv);
+extern int 	UTIL_wait_for_child(pid_t child_pid); 
+extern int 	UTIL_ex_lock(char *file); 
+extern void UTIL_ex_unlock(int fd_file); 
 
 #endif /* _UTIL_PROTO_H_ */
 

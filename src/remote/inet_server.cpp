@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.5 2002-06-29 08:48:31 dimitr Exp $
+$Id: inet_server.cpp,v 1.6 2002-07-29 15:37:55 skywalker Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -270,7 +270,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					break;
 #endif /* SUPERSERVER */
 
-				case 'H':
+				case 'E':
 					if (ISC_get_prefix(p) == -1)
 						ib_printf("Invalid argument Ignored\n");
 					else
@@ -283,6 +283,32 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					sprintf(protocol, "/%s", *argv++);
 					break;
 
+                case 'H':
+				case '?':
+					ib_printf("Firebird TCP/IP server options are:\n");
+					ib_printf("  -d           : debug on\n");
+                   
+#ifdef SUPERSERVER
+                    // These options only applicable to super server
+					ib_printf("  -m           : multiclient - on\n");
+					ib_printf("  -s           : standalone - true\n");
+					ib_printf("  -i           : standalone - false\n");
+
+					ib_printf("  -t           : multithread - true  (non pc only)\n");
+					ib_printf("  -u           : multithread - false (pc only)\n");
+					ib_printf("  -t           : multithread (non pc only\n");
+#endif
+
+					ib_printf("  -p<protocol> : specify protocol\n");
+					ib_printf("  -h|? : print this help\n");
+                    ib_printf("\n");
+                    ib_printf("  (The following -e options used to be -h options)\n");
+					ib_printf("  -e<firebird_root_dir>   : set firebird_root path\n");            
+					ib_printf("  -el<firebird_lock_dir>   : set runtime firebird_lock dir\n");            
+					ib_printf("  -em<firebird_msg_dir>   : set firebird_msg dir path\n");            
+					ib_printf("  -z   : print version\n");            
+
+					exit(FINI_OK);
 				case 'Z':
 					ib_printf("Firebird TCP/IP server version %s\n",
 							  GDS_VERSION);
@@ -322,6 +348,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (standalone) {
 		if (multi_client) {
 #ifdef SUPERSERVER
+
+            // Remove restriction on username, for DEV builds
+            // restrict only for production builds.  MOD 21-July-2002
+#ifndef DEV_BUILD
 			TEXT user_name[256];	/* holds the user name */
 			/* check user id */
 			ISC_get_user(user_name, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -337,6 +367,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 						   INTERBASE_USER_NAME, INTERBASE_USER_SHORT);
 				exit(STARTUP_ERROR);
 			}
+#endif
 #else
 			if (setreuid(0, 0) < 0)
 				ib_printf("Inet_server: couldn't set uid to superuser.\n");

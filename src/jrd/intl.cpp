@@ -205,8 +205,8 @@ static void* intl_back_compat_obj_init_lookup(USHORT, SSHORT, SSHORT);
 
 #ifndef INTL_MODULE1
 /* prefixed with $INTERBASE */
-#define INTL_MODULE1 "gdsintl"
-#define INTL_MODULE2 "gdsintl2"
+#define INTL_MODULE1 "fbintl"
+#define INTL_MODULE2 "fbintl2"
 #endif
 
 #ifndef __BORLANDC__

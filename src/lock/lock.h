@@ -57,12 +57,10 @@
 #ifdef UNIX
 #ifndef SOLARIS_MT
 /* RITTER - replaced symbol HP10 with HPUX in the line below */
-#if !(defined(HPUX) && defined(SUPERSERVER))
-#if !(defined(LINUX) && defined(SUPERSERVER))
+#if !(defined(SUPERCLIENT) || defined(SUPERSERVER))
 #ifndef DARWIN
 #ifndef SINIXZ
 #define MANAGER_PROCESS
-#endif
 #endif
 #endif
 #endif

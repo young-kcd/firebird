@@ -29,6 +29,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
+#include "../common/memory/allocators.h"
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
@@ -931,7 +932,7 @@ static SCHAR *alloc( SLONG size)
 
 	TDBA tddba = GET_THREAD_DATA;
 
-	block = p = (SCHAR*) malloc(size);
+	block = p = new(*getDefaultMemoryPool()) SCHAR[size];
 	if (!p) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
@@ -941,7 +942,7 @@ static SCHAR *alloc( SLONG size)
 		*p++ = 0;
 	while (--size);
 
-	mem* mem_list = (mem*)malloc(sizeof(mem));
+	mem* mem_list = new(*getDefaultMemoryPool()) mem;
 	if (!mem_list) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
@@ -1360,7 +1361,8 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 		db_error(errno);
 	}
 
-	if (!(file_list = malloc(sizeof(*file_list)))) {
+	file_list = new(*getDefaultMemoryPool()) open_files;
+	if (!file_list) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
 	}
@@ -1543,7 +1545,8 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 	}
 
 #ifdef SUPERSERVER
-	open_files* file_list = reinterpret_cast<open_files*>(malloc(sizeof(*file_list)));
+	open_files* file_list = new(*getDefaultMemoryPool()) open_files;
+	if (file_list == 0) {
 	if (!file_list) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
@@ -1732,7 +1735,8 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 	}
 
 #ifdef SUPERSERVER
-	if (!(file_list = malloc(sizeof(*file_list)))) {
+	file_list = new(*getDefaultMemoryPool()) open_files;
+	if (!file_list) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
 	}

@@ -20,10 +20,19 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.cpp,v 1.3 2001-12-24 02:50:53 tamlin Exp $
+ * $Id: ibmgr.cpp,v 1.4 2002-07-29 15:37:55 skywalker Exp $
  */
 
 #include "firebird.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +44,7 @@
 #include "../utilities/ibmgrswi.h"
 #include "../jrd/license.h"
 #include "../utilities/srvrmgr_proto.h"
+
 
 
 #define MAXARGS		20			/* max number of args allowed on command line */
@@ -211,7 +221,7 @@ host = getenv ("ISC_HOST");
 }
 
 
-static get_line( int *argc, SCHAR ** argv, TEXT * stuff)
+static int get_line( int *argc, SCHAR ** argv, TEXT * stuff)
 {
 /**************************************
  *
@@ -816,7 +826,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv)
 	ibmgr_data.par_entered = 0;
 
 	ret =
-		get_switches(argc, argv, &ibmgr_in_sw_table, &ibmgr_data, &quitflag);
+		get_switches(argc, argv, (IN_SW_TAB ) &ibmgr_in_sw_table, &ibmgr_data, &quitflag);
 	if (ret != SUCCESS) {
 		if (ret == ERR_SYNTAX) {
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);

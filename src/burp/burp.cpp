@@ -110,10 +110,17 @@
 #include <sys/file.h>
 #endif
 
+// The following structure in only needed if we are building a local exe
+// I've commented it out to make it clear since this global variable is
+// defined in burp.cpp as well, and is not relevant for SUPERSERVER
+// MOD 23-July-2002
+
+#ifndef SUPERSERVER
 #ifdef NETWARE_386
 #define OPEN_MASK		    0
 #else
 struct tgbl *gdgbl;
+#endif
 #endif
 
 #ifndef FOPEN_WRITE_TYPE

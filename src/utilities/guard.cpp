@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.3 2001-12-24 02:50:53 tamlin Exp $
+ * $Id: guard.cpp,v 1.4 2002-07-29 15:37:55 skywalker Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -24,7 +24,7 @@
 #define IGNORE          3
 #define NORMAL_EXIT	0
 
-#define SUPER_SERVER_BINARY	"bin/ibserver"
+#define SUPER_SERVER_BINARY	"bin/fbserver"
 
 #define INTERBASE_USER		"interbase"
 #define FIREBIRD_USER		"firebird"
@@ -32,9 +32,18 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
 
-
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 
 #include "../jrd/common.h"
 #include "../jrd/isc_proto.h"

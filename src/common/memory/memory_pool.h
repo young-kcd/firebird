@@ -27,7 +27,7 @@
 #ifndef MEMORY_POOL_H
 #define MEMORY_POOL_H
 
-#include "../../include/firebird.h"
+#include "firebird.h"
 #include "../../include/fb_types.h"
 #include "../jrd/ib_stdio.h"
 

@@ -43,6 +43,10 @@
 #include "../include/fb_blk.h"
 #endif
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 

@@ -4763,19 +4763,19 @@ static void init(void)
 		/* Increase max open files to hard limit for Unix
 		   platforms which are known to have low soft limits. */
 
-		struct rlimit old, new;
+		struct rlimit old, new_;
 
 		if (!getrlimit(RLIMIT_NOFILE, &old) && old.rlim_cur < old.rlim_max) {
-			new.rlim_cur = new.rlim_max = old.rlim_max;
-			if (!setrlimit(RLIMIT_NOFILE, &new))
+			new_.rlim_cur = new_.rlim_max = old.rlim_max;
+			if (!setrlimit(RLIMIT_NOFILE, &new_))
 #if (defined UNIX_64_BIT_IO && defined SOLARIS)
 				gds__log("64 bit i/o support is on.");
 				gds__log("Open file limit increased from %lld to %lld",
-						 old.rlim_cur, new.rlim_cur);
+						 old.rlim_cur, new_.rlim_cur);
 		       
 #else
 				gds__log("Open file limit increased from %d to %d",
-						 old.rlim_cur, new.rlim_cur);
+						 old.rlim_cur, new_.rlim_cur);
 #endif
 		}
 	}

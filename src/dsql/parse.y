@@ -65,6 +65,7 @@
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/parse_proto.h"
+#include "../dsql/keywords.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 /* #include "../jrd/err_proto.h" */
@@ -442,7 +443,7 @@ statement	: alter
 		| select
 		| set
 		| update
-		| DEBUG_KEYWORD signed_short_integer
+		| KW_DEBUG signed_short_integer
 			{ prepare_console_debug ((int) $2, &yydebug);
 			  $$ = make_node (nod_null, (int) 0, NULL); }
 		;
@@ -3620,42 +3621,6 @@ static SSHORT	lines, att_charset;
 static SSHORT	lines_bk;
 static BOOLEAN	first_time;
 
-// TMN: Temp hack
-#if (defined(_MSC_VER) || defined(__BORLANDC__)) && defined(CONST)
-#undef CONST
-#define CONST
-#endif
-
-typedef struct tok {
-    USHORT	tok_ident;
-    CONST SCHAR	*tok_string;
-    CONST USHORT tok_version;
-} TOK;
-
-static CONST TOK tokens [] = {
-#include "../dsql/keywords.h"
-    {0, 0, 0}
-    };
-
-
-/* This method is currently used in isql/isql.epp to check if a 
-   user field is a reserved word, and hence needs to be quoted.
-   Obviously a hash table would make this a little quicker 
-   MOD 29-June-2002
-*/
-
-bool LEX_StringIsAToken(const char*in_str)
-{
-    CONST TOK *tok_ptr = tokens;
-    while (tok_ptr -> tok_string) {
-        if (!strcmp(tok_ptr -> tok_string, in_str)) {
-            return true;
-        }
-        ++tok_ptr;
-    }
-    return false;
-}
-
 
 void LEX_dsql_init (void)
 {
@@ -3672,7 +3637,7 @@ void LEX_dsql_init (void)
  **************************************/
 CONST TOK	*token;
 
-for (token = tokens; token->tok_string; ++token)
+for (token = KEYWORD_getTokens(); token->tok_string; ++token)
     {
     SYM         symbol;
     STR         str_;

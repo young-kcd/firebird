@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.10 2002-07-11 14:25:19 dimitr Exp $
+  $Id: isql.epp,v 1.11 2002-07-29 15:37:53 skywalker Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -50,7 +50,7 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../dsql/parse_proto.h"
+#include "../dsql/keywords.h"
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
@@ -850,7 +850,7 @@ void ISQL_copy_SQL_id( TEXT * in_str, TEXT * output_str, TEXT escape_char)
             *q1 = *p1;
         }
         if (!need_quotes) {
-            if (LEX_StringIsAToken(in_str)) {
+            if (KEYWORD_stringIsAToken(in_str)) {
                 need_quotes = TRUE;
             }
 

@@ -3464,10 +3464,22 @@ rel_exit:
 			}
 		}
 	}
+    }
+	catch (...) {
+		/* Perfunctory error reporting -- got any better ideas ? */
+
+		gds__log_status(dbb->dbb_file->fil_string, status_vector);
+		if (relation && relation->rel_sweep_count) {
+			--relation->rel_sweep_count;
+		}
+    }
+
 
 gc_exit:
 
-	if (rpb.rpb_record)
+    try {
+
+    if (rpb.rpb_record)
 		delete rpb.rpb_record;	/* Possibly allocated from permanent pool. */
 	if (transaction)
 		TRA_commit(tdbb, transaction, FALSE);
@@ -3488,9 +3500,6 @@ gc_exit:
 		/* Perfunctory error reporting -- got any better ideas ? */
 
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
-		if (relation && relation->rel_sweep_count) {
-			--relation->rel_sweep_count;
-		}
 	}
 }
 #endif

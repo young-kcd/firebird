@@ -111,7 +111,7 @@ STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 	callback = next->ctl_source;
 	status = SUCCESS;
 
-	START_CHECK_FOR_EXCEPTIONS(next->ctl_exception_message)
+	START_CHECK_FOR_EXCEPTIONS( (TEXT*) next->ctl_exception_message)
 
 /* Sign off from filter */
 /* Walk the chain again, telling each filter stage to close */
@@ -190,7 +190,7 @@ STATUS DLL_EXPORT BLF_get_segment(TDBB tdbb,
 	control->ctl_buffer = buffer;
 	control->ctl_buffer_length = buffer_length;
 
-	START_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message)
+	START_CHECK_FOR_EXCEPTIONS((TEXT*) control->ctl_exception_message)
 
 		user_status[0] = gds_arg_gds;
 	user_status[1] = SUCCESS;
@@ -302,7 +302,7 @@ STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
 	control->ctl_buffer = buffer;
 	control->ctl_buffer_length = length;
 
-	START_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message)
+	START_CHECK_FOR_EXCEPTIONS( (TEXT*) control->ctl_exception_message)
 
 		user_status[0] = gds_arg_gds;
 	user_status[1] = SUCCESS;
@@ -413,7 +413,7 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 	control->ctl_bpb = bpb;
 	control->ctl_bpb_length = bpb_length;
 
-	START_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message)
+	START_CHECK_FOR_EXCEPTIONS( (TEXT*) control->ctl_exception_message)
 
 /* Initialize filter */
 		status = (*filter->blf_filter) (action, control);

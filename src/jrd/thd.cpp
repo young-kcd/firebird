@@ -2065,7 +2065,7 @@ static int thread_start(
 
 #else
 #ifdef linux
-		if (state = pthread_create(&thread, NULL, routine, arg))
+		if (state = pthread_create(&thread, NULL, (void*(*)(void*))routine, arg))
 		return state;
 	return pthread_detach(thread);
 #else
