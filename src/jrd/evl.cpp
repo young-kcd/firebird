@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.35 2003-08-09 20:58:33 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.36 2003-08-12 09:56:50 robocop Exp $ 
  */
 
 /*
@@ -57,6 +57,7 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
+ * 2003.08.10 Claudio Valderrama: Fix SF bug# 784121.
  */
 
 #include "firebird.h"
@@ -864,8 +865,8 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 			struct tm times;
 			GDS_TIMESTAMP enc_times;
 
-			/* Use the request timestamp, if there is one.  Otherwise
-			   fetch the current clock in order to keep running */
+			// Use the request timestamp, if there is one.  Otherwise
+			//   fetch the current clock in order to keep running 
 
 			if (request->req_timestamp)
 				clock = request->req_timestamp;
@@ -873,7 +874,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 				assert(FALSE);
 				clock = time(0);
 			}
-			times = *localtime(reinterpret_cast < time_t * >(&clock));
+			times = *localtime(reinterpret_cast<time_t*>(&clock));
 
 			memset(&impure->vlu_desc, 0, sizeof(impure->vlu_desc));
 			impure->vlu_desc.dsc_address =
@@ -927,7 +928,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 		}
 		return &impure->vlu_desc;
 
-	/* CVC: Current role will get a validated role; IE one that exists. */
+	// CVC: Current role will get a validated role; IE one that exists.
 	case nod_current_role:
 		impure->vlu_desc.dsc_dtype = dtype_text;
 		impure->vlu_desc.dsc_sub_type = 0;
@@ -966,7 +967,8 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 			impure->vlu_desc.dsc_address =
 				reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_short);
 			impure->vlu_desc.dsc_length = sizeof(SSHORT);
-			if (!value) {
+			// CVC: Borland used special signaling for nulls in outer joins.
+			if (!value || (request->req_flags & req_null)) {
 				request->req_flags |= req_null;
 				impure->vlu_misc.vlu_short = 0;
 				return &impure->vlu_desc;
@@ -4156,9 +4158,10 @@ static DSC *multiply2(DSC * desc, VLU value, JRD_NOD node)
    need a trial-division to be sure the multiply won't overflow.
  */
 
-	const UINT64 u1 = (i1 >= 0) ? i1 : -i1;	/* abs(i1) */
-	const UINT64 u2 = (i2 >= 0) ? i2 : -i2;	/* abs(i2) */
-	const UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : MAX_SINT64 + 1;	/* largest product */
+	const UINT64 u1 = (i1 >= 0) ? i1 : -i1;	// abs(i1)
+	const UINT64 u2 = (i2 >= 0) ? i2 : -i2;	// abs(i2)
+	// largest product
+	const UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : (UINT64) MAX_SINT64 + 1;
 
 	if ((u1 != 0) && ((u_limit / u1) < u2)) {
 		ERR_post(isc_exception_integer_overflow, 0);
