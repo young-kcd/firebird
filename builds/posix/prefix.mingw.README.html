@@ -11,20 +11,18 @@
 <BODY>
 <H2>MINGW Notes</H2>
 <hr/>
-Date: March 06 2003<br>
+Date: March 25 2003<br>
 Author: Blas Rodriguez Somoza<br>
 
-
 <h3>0.-Introduction</h3>
-<p>This is the first available MSYS/MINGW and there are still some thinks to be solved,
-some in mingw libraries some in the FB sources and some in the building process.<p>
+<p>The 1.5 beta 4 is the first available MSYS/MINGW build.<p>
 <p>The only difference between the msvc build and the mingw build, is that the later one does not support the ms SEH exception handling. This is an important difference because some exceptions will not be catched and thus FB will abort, the sources using this exception handling are jrd/blob_filter.cpp, jrd/exe.cpp and jrd/fun.epp.</p>
 
 <h3>1.-TODO</h3>
 <ul>
 <li>Add rc files to the build of fbserver, fb_inet_server and ibguard (with windres).</li>
-<li>Solve create_db and gbak_static breaks.</li>
 <li>Support for ms SEH, now _try is a no-op.</li>
+<li>Installer definition</li>
 </ul>
 
 <h3>2.-INSTALLING MSYS and MINGW</h3>
@@ -51,7 +49,7 @@ some in mingw libraries some in the FB sources and some in the building process.
 </ol>
 </p>
 
-<h3>PATCHES TO BUILD FILES AND MINGW HEADERS</h3>
+<h3>3.- PATCHES TO BUILD FILES</h3>
 
 <ul>
 <li>The MSYS environment can't process yacc files as delivered, it is necessary to comment out yacc 
@@ -60,25 +58,19 @@ in 'make.shared.targets'</li>
 <li>The fb_util target in Make.in.extlib is not valid remove it.</li>
 </ul>
 
-<h3>BUILD PROCESS</h3>
+<h3>4.- BUILD PROCESS</h3>
 
 <ol>
 <li>Start msys with the icon.</li>
 <li>Go to the firebird2 root directory. For instance, if your root is d:\cvs\firebird you must do cd /d/cvs/firebird2.</li>
-<li>Start configure<br>autogen.sh --enable-superserver</li>
-<li>Make the build. For instance<br> make > make.log 2>&1</li>
-<li>There are some problems in the build and the make process stop five times with errors
-before the process is complete, but it can be more if there are some stackdump. 
-Also there are sometimes when the g++ hang and then g++ and make must be killed in the 
-windows task manager.<br>
-Known failures when building in their order
-<ul>
-<li>A.- failure create_db</li>
-<li>B.- failure gbak_static</li>
-<li>C.- failure gbak_static</li>
-<li>D.- failure gbak_static</li>
-<li>E.- failure gbak_static</li>
+<li>Start configure with the switches to get super/classic and production/development build, for instance:<br>
+autogen.sh --enable-superserver<br>
+The valid switches for autogen are<br>
+--enable-superserver    Select superserver build, default classic build.<br>
+--enable-debug          Select debug build, default production build.<br>
 </li>
+<li>Make the build. For instance<br> make > make.log 2>&1</li>
+<li>After the build finish, the firebird directory with the binaries is created as gen/firebird.</li> 
 </ol>
 </BODY>
 </HTML>
