@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.60 2003-02-18 10:00:11 eku Exp $
+$Id: common.h,v 1.61 2003-02-19 04:08:09 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -335,7 +335,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 	file descriptor number limit. nmcc Dec2002
 */
 #if (!defined(SFIO) && defined(SUPERSERVER))
-#define NEED_IB_STDIO
+#error "need to use SFIO"
 #endif
 
 #ifdef SOLX86
