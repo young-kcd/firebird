@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: fb_tls.h,v 1.4 2004-05-02 23:03:47 skidder Exp $
+ *  $Id: fb_tls.h,v 1.5 2004-05-03 12:20:01 brodsom Exp $
  *
  */
  
@@ -73,10 +73,11 @@ public:
 	 	LPVOID value = TlsGetValue(key);
 		if ((value == NULL) && (GetLastError() != NO_ERROR))
 			system_call_failed::raise("TlsGetValue");
-		return reinterpret_cast<T>(value);
+//		return reinterpret_cast<T>(value);
+		return (T)value;
 	}
 	void set(const T value) {
-		if (TlsSetValue(key, value) == 0)
+		if (TlsSetValue(key, (LPVOID)value) == 0)
 			system_call_failed::raise("TlsSetValue");
 	}
 	~Win32Tls() {
