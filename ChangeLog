@@ -1,3 +1,25 @@
+2004-07-22 09:17  robocop
+
+	* firebird2/src/common/classes/: array.h (1.29), tree.h (1.38),
+	vector.h (1.12):
+	
+	Style and simplification
+
+2004-07-22 09:17  robocop
+
+	* firebird2/src/dudley/trn.cpp (1.34):
+	
+	Fix annoying warnings that appeared when Blas dropped a file with
+	C++ typed constants for the isc_dyn_ values and others.
+
+2004-07-22 09:15  robocop
+
+	* firebird2/src/: jrd/btr.cpp (1.101), jrd/cvt.cpp (1.49),
+	remote/os/win32/cntl.cpp (1.15), remote/os/win32/ibconfig.cpp
+	(1.8), remote/os/win32/window.cpp (1.10):
+	
+	Style and misc
+
 2004-07-21 13:02  brodsom
 
 	* firebird2/doc/README.build.mingw.html (1.13):
