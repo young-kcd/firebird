@@ -130,7 +130,7 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\ibinitdll.cpp
+SOURCE=..\..\..\src\jrd\ibinitdll.cpp
 # End Source File
 # Begin Source File
 
@@ -272,7 +272,7 @@ SOURCE=..\..\..\src\remote\remote.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\wnet.cpp
+SOURCE=..\..\..\src\remote\wnet.cpp
 # End Source File
 # Begin Source File
 
@@ -288,7 +288,7 @@ SOURCE=..\..\..\src\remote\xnet.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\gsec\security.cpp
+SOURCE=..\..\..\gen\utilities\security.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

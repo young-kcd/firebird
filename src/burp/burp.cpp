@@ -70,7 +70,7 @@
 #endif
 
 #ifdef SUPERSERVER
-#include "../utilities/common/cmd_util_proto.h"
+#include "../utilities/cmd_util_proto.h"
 #endif
 
 

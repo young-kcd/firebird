@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.27 2003-07-11 02:23:58 brodsom Exp $
+#   $Id: make.defaults,v 1.25 2003-07-08 10:45:47 brodsom Exp $
 # 
 
 
@@ -44,9 +44,6 @@
 TMP_ROOT=$(ROOT)/temp
 GEN_ROOT=$(ROOT)/gen
 SRC_ROOT=$(ROOT)/src
-BLD_ROOT=$(ROOT)/builds
-LNG_ROOT=$(ROOT)/lang_helpers
-EXA_ROOT=$(ROOT)/examples
 
 FIREBIRD=$(GEN_ROOT)/firebird
 INTERBASE=$(FIREBIRD)
@@ -142,7 +139,7 @@ BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 
 
 # The shared library name for the embedded (or classic) library
-# SD: This name is also hard-coded in builds/install/.../linux/classic scripts.
+# SD: This name is also hard-coded in src/install/.../linux/classic scripts.
 #     Scold me, but I don't want library names to be in configure.in
 # 
 

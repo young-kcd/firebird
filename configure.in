@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.148 2003-07-14 23:20:24 brodsom Exp $
+dnl $Id: configure.in,v 1.141 2003-07-08 01:04:52 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -541,10 +541,10 @@ mkdir -p gen/jrd
 mkdir -p gen/msgs
 mkdir -p gen/qli
 mkdir -p gen/utilities
-mkdir -p gen/examples
+mkdir -p gen/v5_examples
 
 dnl # some .o and .d in this directory (to be removed)
-mkdir -p gen/remote/os/win32
+mkdir -p gen/remote
 
 dnl # databases and output
 mkdir -p gen/refDatabases
@@ -552,14 +552,7 @@ mkdir -p gen/firebird/include
 mkdir -p gen/firebird/intl
 mkdir -p gen/firebird/UDF
 mkdir -p gen/firebird/bin
-mkdir -p gen/firebird/examples/api
-mkdir -p gen/firebird/examples/build_win32
-mkdir -p gen/firebird/examples/build_unix
-mkdir -p gen/firebird/examples/dyn
-mkdir -p gen/firebird/examples/empbuild
-mkdir -p gen/firebird/examples/include
-mkdir -p gen/firebird/examples/stat
-mkdir -p gen/firebird/examples/udf
+mkdir -p gen/firebird/examples/v5
 mkdir -p gen/firebird/lib
 mkdir -p gen/firebird/misc
 mkdir -p gen/firebird/help
@@ -570,11 +563,11 @@ mkdir -p gen/RPM/BUILD
 dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
 
+mkdir -p temp/libfbserver
 mkdir -p temp/libfbserver/jrd
 mkdir -p temp/libfbserver/dsql
 mkdir -p temp/libfbserver/lock
-mkdir -p temp/libfbserver/misc
-mkdir -p temp/libfbserver/remote/os/win32
+mkdir -p temp/libfbserver/remote
 mkdir -p temp/libfbserver/pipe
 mkdir -p temp/libfbserver/gpre
 mkdir -p temp/libfbserver/alice
@@ -586,12 +579,12 @@ mkdir -p temp/libfbserver/common/classes
 mkdir -p temp/libfbserver/common/config
 mkdir -p temp/libfbserver/jrd/os/posix
 mkdir -p temp/libfbserver/jrd/os/win32
-mkdir -p temp/fbserver/remote/os/win32
+mkdir -p temp/fbserver/remote
 mkdir -p temp/fbserver/ipserver
 mkdir -p temp/libfbclient/jrd
 mkdir -p temp/libfbclient/dsql
 mkdir -p temp/libfbclient/gpre
-mkdir -p temp/libfbclient/remote/os/win32
+mkdir -p temp/libfbclient/remote
 mkdir -p temp/libfbclient/utilities
 mkdir -p temp/libfbclient/common/classes
 mkdir -p temp/libfbclient/common/config
@@ -604,7 +597,7 @@ mkdir -p temp/client.gdef/dudley
 mkdir -p temp/client.isql/isql
 mkdir -p temp/client.util/utilities
 mkdir -p temp/client.util/iscguard
-mkdir -p temp/client.util/remote/os/win32
+mkdir -p temp/client.util/remote
 mkdir -p temp/client.util/jrd/os/win32
 mkdir -p temp/intl/intl
 
@@ -618,11 +611,11 @@ mkdir -p temp/static.gpre/gpre
 mkdir -p temp/static.gbak/burp
 mkdir -p temp/static.isql/isql
 
+mkdir -p temp/libfbstatic
 mkdir -p temp/libfbstatic/jrd
 mkdir -p temp/libfbstatic/dsql
 mkdir -p temp/libfbstatic/lock
-mkdir -p temp/libfbstatic/misc
-mkdir -p temp/libfbstatic/remote/os/win32
+mkdir -p temp/libfbstatic/remote
 mkdir -p temp/libfbstatic/gpre
 mkdir -p temp/libfbstatic/jrd/os/posix
 mkdir -p temp/libfbstatic/jrd/os/darwin
@@ -638,18 +631,18 @@ mkdir -p temp/embed.isql/isql
 mkdir -p temp/embed.gdef/dudley
 mkdir -p temp/embed.qli/qli
 mkdir -p temp/embed.gpre/gpre
-mkdir -p temp/inet_server/remote/os/win32
+mkdir -p temp/inet_server/remote
 mkdir -p temp/inet_server/ipserver
 mkdir -p temp/msgs/msgs
 mkdir -p temp/extlib/extlib
 mkdir -p temp/extlib/extlib/fbudf
-mkdir -p temp/examples
+mkdir -p temp/v5_examples/v5_examples
 
+mkdir -p temp/libfbembed
 mkdir -p temp/libfbembed/jrd
 mkdir -p temp/libfbembed/dsql
 mkdir -p temp/libfbembed/lock
-mkdir -p temp/libfbembed/misc
-mkdir -p temp/libfbembed/remote/os/win32
+mkdir -p temp/libfbembed/remote
 mkdir -p temp/libfbembed/pipe
 mkdir -p temp/libfbembed/gpre
 mkdir -p temp/libfbembed/alice
@@ -661,7 +654,7 @@ mkdir -p temp/libfbembed/burp
 mkdir -p temp/libfbembed/wal
 mkdir -p temp/libfbembed/common/classes
 mkdir -p temp/libfbembed/common/config
-mkdir -p temp/codes/misc
+mkdir -p temp/codes
 mkdir -p temp/codes/jrd
 
 mkdir -p temp/editline/extern/editline
@@ -679,7 +672,7 @@ case "$PLATFORM" in
     AC_CONFIG_COMMANDS(,,[
         mkdir -p gen/install/scripts
         mkdir -p gen/install/misc])
-    INSTALL_SRC_DIR=builds/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
+    INSTALL_SRC_DIR=src/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
                      gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
                      gen/install/scripts/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
@@ -691,17 +684,17 @@ case "$PLATFORM" in
                      gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-                     gen/firebird/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
-                     gen/firebird/bin/changeDBAPassword.sh:builds/install/arch-specific/linux/misc/changeDBAPassword.sh.in
+                     gen/firebird/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
+                     gen/firebird/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 
   SINIX-Z)
-    AC_CONFIG_FILES([gen/install/pkginfo:builds/install/arch-specific/sinixz/pkginfo.in
-                     gen/install/prototype:builds/install/arch-specific/sinixz/prototype.in
-                     gen/install/preinstall:builds/install/arch-specific/sinixz/preinstall.in
-                     gen/install/postinstall:builds/install/arch-specific/sinixz/postinstall.in
-                     gen/install/postremove:builds/install/arch-specific/sinixz/postremove.in
+    AC_CONFIG_FILES([gen/install/pkginfo:src/install/arch-specific/sinixz/pkginfo.in
+                     gen/install/prototype:src/install/arch-specific/sinixz/prototype.in
+                     gen/install/preinstall:src/install/arch-specific/sinixz/preinstall.in
+                     gen/install/postinstall:src/install/arch-specific/sinixz/postinstall.in
+                     gen/install/postremove:src/install/arch-specific/sinixz/postremove.in
       ],[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
     ;;
 esac
@@ -713,7 +706,7 @@ gen/make.defaults:${MAKE_SRC_DIR}/make.defaults
 gen/make.platform:${MAKE_SRC_DIR}/prefix.${MAKEFILE_PREFIX}
 gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
 gen/make.shared.targets:${MAKE_SRC_DIR}/make.shared.targets
-gen/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
+src/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
 gen/Makefile.libfbcommon:${MAKE_SRC_DIR}/Makefile.in.libfbcommon
 gen/Makefile.codes:${MAKE_SRC_DIR}/Makefile.in.codes
 gen/Makefile.boot.gpre:${MAKE_SRC_DIR}/Makefile.in.boot.gpre
@@ -734,6 +727,7 @@ gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util
 gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl
 gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs
 gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
+gen/Makefile.v5_examples:${MAKE_SRC_DIR}/Makefile.in.v5_examples
 gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
 gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
 gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr
@@ -744,7 +738,8 @@ gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
 gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
-gen/Makefile.install:builds/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
+src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
+gen/Makefile.install:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
 Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 )

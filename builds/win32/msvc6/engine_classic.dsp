@@ -510,7 +510,7 @@ SOURCE=..\..\..\src\jrd\why.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\winnt.cpp
+SOURCE=..\..\..\src\jrd\winnt.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -1106,11 +1106,11 @@ SOURCE=..\..\..\src\jrd\perf_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\pio.h
+SOURCE=..\..\..\src\jrd\pio.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\pio_proto.h
+SOURCE=..\..\..\src\jrd\pio_proto.h
 # End Source File
 # Begin Source File
 
@@ -1135,6 +1135,18 @@ SOURCE=..\..\..\src\jrd\quad_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\que.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rdb.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rdb_codes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rdbcodes.h
 # End Source File
 # Begin Source File
 

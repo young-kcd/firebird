@@ -191,7 +191,7 @@ typedef lwt *LWT;
 
 #define LWT_pending	1			/* latch request is pending */
 
-#include "../jrd/os/pio.h"
+#include "../jrd/pio.h"
 
 /* Constants used by prefetch mechanism */
 

@@ -97,11 +97,11 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\gstat\dba.cpp
+SOURCE=..\..\..\gen\utilities\dba.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gstat\ppg.cpp
+SOURCE=..\..\..\src\utilities\ppg.cpp
 # End Source File
 # End Group
 # Begin Group "Resource files"
@@ -109,15 +109,15 @@ SOURCE=..\..\..\src\utilities\gstat\ppg.cpp
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\caution.ico
+SOURCE=..\..\..\src\remote\caution.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\server.ico
+SOURCE=..\..\..\src\remote\server.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\window.rc
+SOURCE=..\..\..\src\remote\window.rc
 # End Source File
 # End Group
 # End Target

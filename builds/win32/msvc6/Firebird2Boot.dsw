@@ -33,21 +33,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "relations"=.\relations.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name fbclient_static
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "common_static"=.\common_static.dsp - Package Owner=<4>
 
 Package=<5>

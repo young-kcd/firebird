@@ -147,7 +147,7 @@
 			Name="JRD files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
+				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\perf.cpp">
@@ -262,7 +262,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp">
+				RelativePath="..\..\..\src\remote\wnet.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
 					<Tool
@@ -311,10 +311,10 @@
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
+				RelativePath="..\..\..\gen\utilities\dba.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
+				RelativePath="..\..\..\src\utilities\ppg.cpp">
 			</File>
 		</Filter>
 		<Filter

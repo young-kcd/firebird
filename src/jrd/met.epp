@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.63 2003-07-14 10:33:35 brodsom Exp $
+$Id: met.epp,v 1.61 2003-06-30 13:11:40 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -69,7 +69,7 @@ $Id: met.epp,v 1.63 2003-07-14 10:33:35 brodsom Exp $
 #include "../jrd/scl.h"
 #include "../jrd/blb.h"
 #include "../jrd/met.h"
-#include "../jrd/os/pio.h"
+#include "../jrd/pio.h"
 #include "../jrd/sdw.h"
 #include "../jrd/flags.h"
 #include "../jrd/all.h"
@@ -98,7 +98,7 @@ $Id: met.epp,v 1.63 2003-07-14 10:33:35 brodsom Exp $
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/pcmet_proto.h"
-#include "../jrd/os/pio_proto.h"
+#include "../jrd/pio_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/thd_proto.h"
@@ -116,7 +116,7 @@ $Id: met.epp,v 1.63 2003-07-14 10:33:35 brodsom Exp $
 #define END_RELATION
 
 typedef ENUM rids {
-#include "gen/relations.h"
+#include "../jrd/relations.h"
 	rel_MAX
 } RIDS;
 

@@ -18,12 +18,6 @@
  *
  * 2001.07.28: John Bellardo: Added skip and current_role to table.
  */
-static const struct
-{
-	const char *blr_string;
-	const UCHAR *blr_operators;
-} blr_table[] =
-{
 	{NULL, NULL},
 	{"assignment", two},
 	{"begin", begin},
@@ -152,5 +146,3 @@ static const struct
 /* New BLR in FB2 */
 	{"execute_varchar", one},
 	{"internal_info", one},
-	{0, 0}
-};

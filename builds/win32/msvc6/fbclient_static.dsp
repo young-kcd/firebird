@@ -205,7 +205,7 @@ SOURCE=..\..\..\src\remote\remote.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\wnet.cpp
+SOURCE=..\..\..\src\remote\wnet.cpp
 # End Source File
 # Begin Source File
 
@@ -289,7 +289,7 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\ibinitdll.cpp
+SOURCE=..\..\..\src\jrd\ibinitdll.cpp
 # End Source File
 # Begin Source File
 

@@ -105,7 +105,7 @@ SOURCE=..\..\..\src\jrd\os\win32\config_root.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\ibinitdll.cpp
+SOURCE=..\..\..\src\jrd\ibinitdll.cpp
 # End Source File
 # Begin Source File
 
@@ -229,7 +229,7 @@ SOURCE=..\..\..\src\remote\remote.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\wnet.cpp
+SOURCE=..\..\..\src\remote\wnet.cpp
 
 !IF  "$(CFG)" == "fbembed - Win32 Release"
 
@@ -281,11 +281,11 @@ SOURCE=..\..\..\src\remote\xnet.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\gstat\dba.cpp
+SOURCE=..\..\..\gen\utilities\dba.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gstat\ppg.cpp
+SOURCE=..\..\..\src\utilities\ppg.cpp
 # End Source File
 # End Group
 # Begin Group "Resource files"

@@ -95,7 +95,6 @@ static bool computable(CSB, JRD_NOD, SSHORT, bool);
 static void compute_dependencies(JRD_NOD, ULONG *);
 static void compute_dbkey_streams(CSB, JRD_NOD, UCHAR *);
 static void compute_rse_streams(CSB, RSE, UCHAR *);
-static bool check_for_nod_from(JRD_NOD);
 static SLONG decompose(TDBB, JRD_NOD, LLS *, CSB);
 static USHORT distribute_equalities(LLS *, CSB);
 static BOOLEAN dump_index(JRD_NOD, SCHAR **, SSHORT *);
@@ -1924,24 +1923,6 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
 	}
 }
 
-static bool check_for_nod_from(JRD_NOD node)
-{
-/**************************************
- *
- *	c h e c k _ f o r _ n o d _ f r o m
- *
- **************************************
- *
- * Functional description
- *	Check for nod_from under >=0 nod_cast nodes.
- *
- **************************************/
-	if (node->nod_type == nod_from)
-		return true;
-	if (node->nod_type == nod_cast)
-		return check_for_nod_from(node->nod_arg[e_cast_source]);
-	return false;
-}
 
 static SLONG decompose(TDBB tdbb,
 					   JRD_NOD boolean_node, LLS * stack, CSB csb)
@@ -1972,7 +1953,7 @@ static SLONG decompose(TDBB tdbb,
 
 	if (boolean_node->nod_type == nod_between) {
 		arg = boolean_node->nod_arg[0];
-		if (check_for_nod_from(arg)) {
+		if (arg->nod_type == nod_from) {
 			/* Without this ERR_punt(), server was crashing with sub queries 
 			 * under "between" predicate, Bug No. 73766 */
 			ERR_post(isc_optimizer_between_err, 0);

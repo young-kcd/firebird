@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.15 2003-07-14 23:21:39 brodsom Exp $
+#  $Id: make.shared.targets,v 1.13 2003-07-08 01:05:22 brodsom Exp $
 #
 
 
@@ -46,8 +46,8 @@
 
 $(SRC_ROOT)/dsql/parse.cpp: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/parse.sed
 	$(YACC) -l -d $<
-	$(MV) $(GEN_ROOT)/y.tab.c $(SRC_ROOT)/dsql/dsql.tab.c
-	$(MV) $(GEN_ROOT)/y.tab.h $(SRC_ROOT)/dsql/dsql.tab.h
+	$(MV) $(SRC_ROOT)/y.tab.c $(SRC_ROOT)/dsql/dsql.tab.c
+	$(MV) $(SRC_ROOT)/y.tab.h $(SRC_ROOT)/dsql/dsql.tab.h
 	sed -e 's/\\r//g' $(SRC_ROOT)/dsql/parse.sed > $(SRC_ROOT)/dsql/parse2.sed
 	sed -f $(SRC_ROOT)/dsql/parse2.sed <$(SRC_ROOT)/dsql/dsql.tab.c > $@  
 	-$(RM) $(SRC_ROOT)/dsql/parse2.sed
@@ -93,12 +93,12 @@ $(BLRTABLE): $(BLRTABLE_Objects)
 # Adding resources as prerequisite for some files
 
 $(FilesToAddVersionInfo): $(GEN_ROOT)/jrd/version.res
-$(FilesToAddDialog): $(GEN_ROOT)/remote/os/win32/window.res
+$(FilesToAddDialog): $(GEN_ROOT)/remote/window.res
 
 # Explicit dependence of resource script
-$(GEN_ROOT)/remote/os/win32/window.res: $(SRC_ROOT)/remote/os/win32/window.rc $(SRC_ROOT)/remote/os/win32/window.rh \
- $(SRC_ROOT)/jrd/version.rc $(SRC_ROOT)/jrd/build_no.h $(SRC_ROOT)/remote/os/win32/property.rc \
- $(SRC_ROOT)/remote/os/win32/property.rh $(SRC_ROOT)/remote/os/win32/ibconfig.rc
+$(GEN_ROOT)/remote/window.res: $(SRC_ROOT)/remote/window.rc $(SRC_ROOT)/remote/window.rh \
+ $(SRC_ROOT)/jrd/version.rc $(SRC_ROOT)/jrd/build_no.h $(SRC_ROOT)/remote/property.rc \
+ $(SRC_ROOT)/remote/property.rh $(SRC_ROOT)/remote/ibconfig.rc
 
 .PHONY: clean FORCE
 

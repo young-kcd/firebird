@@ -50,11 +50,6 @@
 #define SCRATCH		"fb_query_"
 #endif
 
-// needed for unlink in MinGW 3.0 rc2
-#ifdef MINGW
-#include <io.h>
-#endif
-
 extern TEXT *DDL_prompt;
 
 
