@@ -507,11 +507,40 @@ SVC SVC_attach(USHORT	service_length,
 /* If anything goes wrong, we want to be able to free any memory
    that may have been allocated. */
 
-	TEXT* switches = 0;
-	TEXT* misc     = 0;
-	SVC   service  = 0;
+	SCHAR *spb_buf = 0;
+	TEXT *switches = 0;
+	TEXT *misc = 0;
+	SVC service = 0;
 
 	try {
+
+/* Insert internal switch SERVICE_THD_PARAM in the service parameter block. */
+
+	SCHAR *p = spb, *end = spb + spb_length;
+	while (p < end) {
+		if (*p++ == isc_spb_command_line)
+			break;
+	}
+
+	/* dimitr: it looks that we shouldn't execute the below code
+	           if the first switch of the command line is "-svc_re",
+			   but I couldn't find where such a switch is specified
+			   by any of the client tools, so it seems that in fact
+			   it's not used at all. Hence I ignore this situation. */
+	if (p++ < end) {
+		USHORT param_length = sizeof(SERVICE_THD_PARAM) - 1;
+		USHORT spb_buf_length = spb_length + param_length + 1;
+		SCHAR *q = spb_buf = (TEXT*) gds__alloc(spb_buf_length + 1);
+		memcpy(q, spb, p - spb);
+		q += p - spb - 1;
+		*q++ += param_length + 1;
+		memcpy(q, SERVICE_THD_PARAM, param_length);
+		q += param_length;
+		*q++ = ' ';
+		memcpy(q, p, end - p);
+		spb = spb_buf;
+		spb_length = spb_buf_length;
+	}
 
 /* Process the service parameter block. */
 
@@ -678,12 +707,18 @@ SVC SVC_attach(USHORT	service_length,
 #endif
 	}
 
+	if (spb_buf) {
+		gds__free((SLONG *) spb_buf);
+	}
 	if (misc != misc_buf) {
 		gds__free((SLONG *) misc);
 	}
 
 	}	// try
 	catch (...) {
+		if (spb_buf) {
+			gds__free((SLONG *) spb_buf);
+		}
 		if (misc && misc != misc_buf) {
 			gds__free((SLONG *) misc);
 		}

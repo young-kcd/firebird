@@ -2061,7 +2061,7 @@ static int api_gbak(int argc,
  *
  **********************************************/
 	STATUS status[ISC_STATUS_LENGTH];
-	TEXT **end, *x, *p, *usr, *pswd;
+	TEXT **begin, **end, *x, *p, *usr, *pswd;
 	USHORT spblen, thdlen;
 	char sendbuf[] = { isc_info_svc_line };
 	char respbuf[1024];
@@ -2086,7 +2086,7 @@ static int api_gbak(int argc,
 
 	spb = (char *) gds__alloc((SLONG) (2 + 2 + ((usr) ? strlen(usr) : 0) +
 									   2 + ((pswd) ? strlen(pswd) : 0)) +
-							  2 + length + strlen(SERVICE_THD_PARAM));
+									   2 + length);
 	/* 'isc_spb_version'
 	   'isc_spb_current_version'
 	   'isc_spb_user_name'
@@ -2147,17 +2147,15 @@ static int api_gbak(int argc,
 	}
 
 
-/* Fill command line options started with internal switch SERVICE_THD_PARAM */
+/* Fill command line options */
 
 	*spb_ptr++ = isc_spb_command_line;
-	end = argv + argc;
+	begin = argv, end = argv + argc;
 	argv++;
 
-	*spb_ptr++ = length + strlen(SERVICE_THD_PARAM);
-	for (x = SERVICE_THD_PARAM; *x;)
-		*spb_ptr++ = *x++;
+	*spb_ptr++ = length;
 	while (argv < end) {
-		if (**argv)
+		if (**argv && argv > begin + 1)
 			*spb_ptr++ = ' ';
 		for (x = *argv++; *x;)
 			*spb_ptr++ = *x++;
