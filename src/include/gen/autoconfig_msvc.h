@@ -159,7 +159,7 @@
 #undef GETMNTENT_TAKES_TWO_ARGUMENTS
 #undef HAVE_TCGETATTR
 #define HAVE_STRDUP
-#define HAVE_MKSTEMP
+#undef HAVE_MKSTEMP
 
 
 /* Types */
