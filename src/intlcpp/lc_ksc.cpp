@@ -28,7 +28,6 @@
 
 #define		ASCII_SPACE	32
 
-
 STATIC USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar
 									, USHORT iOutLen, BYTE *pOutChar);
 STATIC USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);

@@ -48,6 +48,7 @@
 	cache->texttype_name =			POSIX;
 
 
+
 TEXTTYPE_ENTRY(BIG5_init)
 {
 	static const ASCII POSIX[] = "C.BIG5";

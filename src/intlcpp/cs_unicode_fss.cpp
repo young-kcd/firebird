@@ -26,7 +26,7 @@
 #include "firebird.h"
 #include "../intlcpp/ldcommon.h"
 #include "cv_narrow.h"
-#include "cs_unicode_fss.h"
+#include "cv_unicode_fss.h"
 
 CHARSET_ENTRY(CS_unicode_fss)
 {

@@ -29,8 +29,8 @@
 #include "cv_jis.h"
 
 STATIC USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
-STATIC SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
 STATIC USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
+STATIC SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
 
 #define FAMILY_MULTIBYTE(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \

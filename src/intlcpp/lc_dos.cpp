@@ -635,8 +635,6 @@ STATIC SSHORT fam1_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iO
 
 
 STATIC USHORT fam1_to_lower(TEXTTYPE obj, BYTE ch)
-//	 TEXTTYPE obj;
-//	 BYTE ch;
 {
 	return (LOCALE_LOWER(ch));
 }

@@ -25,12 +25,9 @@
 
 #include "firebird.h"
 #include "../intlcpp/ldcommon.h"
-#include "cs_unicode_fss.h"
+#include "cv_unicode_fss.h"
 
-typedef USHORT fss_wchar_t;
-typedef SLONG fss_size_t;
-
-
+static fss_size_t fss_mbtowc( fss_wchar_t * p, NCHAR *s, fss_size_t n);
 
 SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 {
@@ -183,6 +180,8 @@ SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
  * checks, some of which may not be necessary for conformance:
  *
  */
+
+
 
 static fss_size_t fss_mbtowc( fss_wchar_t * p, UCHAR *s, fss_size_t n)
 {
