@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.13 2002-11-05 01:51:23 nmcc Exp $
+#  $Id: Makefile.in.firebird,v 1.14 2002-11-07 16:54:47 skywalker Exp $
 #
 
 ROOT=..
@@ -490,8 +490,8 @@ rebuild_codes :
 #___________________________________________________________________________
 # Install generic files.
 
-CLASSIC_MiscFiles = firebird.xinetd
-SUPER_MiscFiles =  firebird.init.d.generic firebird.init.d.mandrake README
+CLASSIC_MiscFiles = firebird.xinetd firebird.conf
+SUPER_MiscFiles =  firebird.init.d.generic firebird.init.d.mandrake README firebird.conf
 
 INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(CLASSIC_MiscFiles))
 #INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(SUPER_MiscFiles))
