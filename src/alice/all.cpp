@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.10 2003-02-12 12:42:41 brodsom Exp $
+//	$Id: all.cpp,v 1.11 2003-03-19 11:33:46 skidder Exp $
 //
 
 #include "../alice/all.h"
@@ -192,7 +192,7 @@ void AliceMemoryPool::deletePool(AliceMemoryPool* pool) {
 		if (*curr == pool)
 		{
 			*curr = 0;
-			return;
+			break;
 		}
 	}
 	pool->lls_cache.~BlockCache<lls>();
