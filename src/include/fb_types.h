@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.17 2003-02-28 13:20:36 brodsom Exp $
+ *  $Id: fb_types.h,v 1.18 2003-03-18 02:13:08 brodsom Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -147,11 +147,11 @@ typedef struct lstring LSTRING;
 
 
 typedef unsigned char BOOLEAN;
-typedef char TEXT;				/* To be expunged over time */
-typedef unsigned char STEXT;	/* Signed text - very rare */
-typedef unsigned char UTEXT;	/* Unsigned text - common */
-typedef unsigned char BYTE;		/* Unsigned byte - common */
-typedef char SBYTE;				/* Signed byte - rare usage */
+typedef char TEXT;				// To be expunged over time
+//typedef unsigned char STEXT;	Signed text - not used
+//typedef unsigned char UTEXT;	Unsigned text - not used
+typedef unsigned char BYTE;		// Unsigned byte - common
+//typedef char SBYTE;			Signed byte - not used
 typedef long STATUS;
 typedef long IPTR;
 typedef unsigned long U_IPTR;
