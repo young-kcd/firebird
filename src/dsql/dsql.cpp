@@ -1458,48 +1458,45 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 		dsql_req* request = *req_handle;
 		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
-		TEXT cursor[132];
+		const size_t MAX_CURSOR_LENGTH = 132 - 1;
+		Firebird::string cursor = input_cursor;
 
-		if (input_cursor[0] == '\"')
+		if (cursor[0] == '\"')
 		{
 			// Quoted cursor names eh? Strip'em.
 			// Note that "" will be replaced with ".
-			//
-			int index;
-			for (index = 0; *input_cursor; input_cursor++) {
-				if (*input_cursor == '\"') {
-					input_cursor++;
+			for (Firebird::string::iterator i = cursor.begin(); 
+							i < cursor.end(); ++i) {
+				if (*i == '\"') {
+					cursor.erase(i);
 				}
-				cursor[index++] = *input_cursor;
-				// CVC: Prevent B.O.
-				if (index == sizeof(cursor) - 1)
-					break;
 			}
-			cursor[index] = 0;
 		}
 		else	// not quoted name
 		{
-			size_t i;
-			for (i = 0; i < sizeof(cursor) - 1	// PJPG 20001013 
-			 	&& input_cursor[i]	// PJPG 20001013 
-			 	&& input_cursor[i] != ' '; ++i)	// PJPG 20001013 
+			Firebird::string::size_type i = cursor.find(' ');
+			if (i != Firebird::string::npos)
 			{
-				cursor[i] = UPPER7(input_cursor[i]);
+				cursor.resize(i);
 			}
-			cursor[i] = '\0';
+			cursor.upper();
 		}
-		const USHORT length = (USHORT) fb_utils::name_length(cursor);
+		USHORT length = (USHORT) fb_utils::name_length(cursor.c_str());
 	
 		if (length == 0) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
 					  isc_arg_gds, isc_dsql_decl_err,
 					  isc_arg_gds, isc_dsql_cursor_invalid, 0);
 		}
+		if (length > MAX_CURSOR_LENGTH) {
+			length = MAX_CURSOR_LENGTH;
+		}
+		cursor.resize(length);
 
 // If there already is a different cursor by the same name, bitch 
 
 		const dsql_sym* symbol = 
-			HSHD_lookup(request->req_dbb, cursor, length, SYM_cursor, 0);
+			HSHD_lookup(request->req_dbb, cursor.c_str(), length, SYM_cursor, 0);
 		if (symbol) {
 			if (request->req_cursor == symbol) {
 				return return_success();
@@ -1515,7 +1512,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
    We already know there is no cursor by this name in the hash table */
 
 		if (!request->req_cursor) {
-			request->req_cursor = MAKE_symbol(request->req_dbb, cursor,
+			request->req_cursor = MAKE_symbol(request->req_dbb, cursor.c_str(),
 										  length, SYM_cursor, request);
 		}
 		else {
