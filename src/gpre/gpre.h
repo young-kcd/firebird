@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.7 2002-03-11 16:34:01 skywalker Exp $
+ * $Id: gpre.h,v 1.8 2002-04-12 01:55:52 bellardo Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -189,7 +189,8 @@ typedef enum lang_t
 	lang_cxx,
 	lang_scxx,
 	lang_cplusplus,
-	lang_cpp
+	lang_cpp,
+	lang_internal_cxx
 } LANG_T;
 
 //___________________________________________________________________

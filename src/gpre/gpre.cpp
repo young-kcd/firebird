@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.8 2002-01-04 11:34:15 skywalker Exp $
+//  $Id: gpre.cpp,v 1.9 2002-04-12 01:55:52 bellardo Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.8 2002-01-04 11:34:15 skywalker Exp $
+//	$Id: gpre.cpp,v 1.9 2002-04-12 01:55:52 bellardo Exp $
 //
 
 #define GPRE_MAIN
@@ -168,7 +168,8 @@ static struct ext_table_t dml_ext_table[] =
 
 	{ lang_cxx, IN_SW_GPRE_CXX, ".exx", ".cxx" },
 	{ lang_cpp, IN_SW_GPRE_CXX, ".epp", ".cpp" },
-	{ lang_internal, IN_SW_GPRE_G, ".epp", ".cpp" },
+	{ lang_internal, IN_SW_GPRE_G, ".e", ".c" },
+	{ lang_internal_cxx, IN_SW_GPRE_0, ".epp", ".cpp" },
 	{ lang_pascal, IN_SW_GPRE_P, ".epas", ".pas" },
 
 #ifdef FORTRAN
@@ -264,7 +265,9 @@ int main(int argc, char* argv[])
 	TEXT temp_name[256];
 	SSHORT c;
 #endif
+	BOOLEAN use_lang_internal_gxx_output;
 
+	use_lang_internal_gxx_output = FALSE;
 	strcpy(ada_package, "");
 	ada_flags = 0;
 	input_char = input_buffer;
@@ -659,6 +662,7 @@ int main(int argc, char* argv[])
 			 * done with it.
 			 */
 			gen_routine			= INT_CXX_action;
+			use_lang_internal_gxx_output = TRUE;
 			break;
 
 		case IN_SW_GPRE_LANG_INTERNAL:
@@ -828,13 +832,21 @@ int main(int argc, char* argv[])
 //  
 
 	if (!sw_standard_out) {
+		EXT_TAB out_src_ext_tab = src_ext_tab;
+		if (use_lang_internal_gxx_output) {
+			out_src_ext_tab = dml_ext_table;
+    		while (out_src_ext_tab->ext_language != lang_internal_cxx) {
+        		++out_src_ext_tab;
+    		}
+		}
+
 		renamed = explicit_ = TRUE;
 		if (!out_file_name) {
 			out_file_name = spare_out_file_name;
 			strcpy(spare_out_file_name, file_name);
 			if (renamed =
-				file_rename(spare_out_file_name, src_ext_tab->in,
-							src_ext_tab->out)) explicit_ = FALSE;
+				file_rename(spare_out_file_name, out_src_ext_tab->in,
+							out_src_ext_tab->out)) explicit_ = FALSE;
 		}
 
 		if (renamed) {
@@ -851,7 +863,7 @@ int main(int argc, char* argv[])
 			if (*p != '.') {
 				strcpy(spare_out_file_name, out_file_name);
 				out_file_name = spare_out_file_name;
-				file_rename(out_file_name, src_ext_tab->out, NULL);
+				file_rename(out_file_name, out_src_ext_tab->out, NULL);
 			}
 		}
 
