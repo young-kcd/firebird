@@ -3477,8 +3477,8 @@ static SLONG insert_node(TDBB tdbb,
 	// move the initialized hunk of the bucket to an overflow area big
 	// enough to hold the split.  If the bucket isn't going to split,
 	// mark the buffer as dirty.
+	SLONG overflow_page[OVERSIZE];
 	if (bucket->btr_length + delta > dbb->dbb_page_size) {
-		SLONG overflow_page[OVERSIZE];
 		MOVE_FASTER(bucket, overflow_page, bucket->btr_length);
 		node = (BTN) ((UCHAR *) overflow_page + node_offset);
 		bucket = (BTR) overflow_page;
