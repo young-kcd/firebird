@@ -1,3 +1,132 @@
+2003-09-01 19:38  brodsom
+
+	* firebird2/src/qli/: blk.h, meta.epp:
+	
+	-Use NULL instead 0 for null pointers -Remove unneeded casts
+
+2003-09-01 16:22  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults:
+	
+	fix posix SS client library name
+
+2003-09-01 16:18  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults:
+	
+	fix posix SS client library name
+
+2003-09-01 16:17  brodsom
+
+	* firebird2/builds/win32/msvc6/gds32.dsp:
+	
+	-Remove build warning (warning LNK4098: defaultlib MSVCRTD
+	conflicts with use of other libs)
+
+2003-09-01 16:04  skidder
+
+	* firebird2/builds/win32/msvc7/fbclient_static.vcproj:
+	
+	Adjust MSVC7 makefiles
+
+2003-09-01 15:55  skidder
+
+	* firebird2/builds/win32/msvc7/fbclient_static.vcproj:
+	
+	Adjust MSVC7 makefiles
+
+2003-09-01 15:53  brodsom
+
+	* firebird2/src/ipserver/ipserver.cpp:
+	
+	-Fix error removing GDS_VAL (Thanks to Claudio)
+
+2003-09-01 14:06  brodsom
+
+	* firebird2/: builds/posix/make.shared.variables,
+	builds/win32/msvc7/wal.vcproj,
+	builds/win32/msvc7/wal_classic.vcproj,
+	builds/win32/msvc6/Firebird2.dsw, builds/win32/msvc6/wal.dsp,
+	builds/win32/msvc6/wal_classic.dsp, builds/win32/msvc6/walw.dsp,
+	builds/win32/make_all.bat, src/wal/wal.cpp, src/wal/walw.cpp,
+	src/wal/walw_main.cpp:
+	
+	-Corrections to wal build -Add walw.exe build to msvc6
+
+2003-09-01 13:09  brodsom
+
+	* firebird2/src/jrd/enc.cpp:
+	
+	-Remove NULL define
+
+2003-09-01 13:06  brodsom
+
+	* firebird2/src/jrd/: os/win32/winnt.cpp, os/vms/vms.cpp,
+	os/posix/unix.cpp, cvt.cpp, cvt2.cpp, dmp.cpp, filters.cpp,
+	jrd.cpp, jrd.h, lck.cpp, old.cpp, rlck.cpp, sbm.cpp, utl.cpp:
+	
+	-Replace NULL_TDBB, NULL_DBB with NULL
+
+2003-09-01 12:06  aafemt
+
+	* firebird2/src/jrd/: gds.hxx, os/vms/dfloat_stub.cpp:
+	
+	No more isc_array_gen_sdl() in public API
+
+2003-09-01 09:58  brodsom
+
+	* firebird2/src/jrd/: utl.cpp, vio.cpp, blb.cpp, blk.h,
+	blob_filter.cpp, cch.cpp, cmp.cpp, common.h, dbt.cpp, dfw.epp,
+	exe.cpp, exe.h, jrd.cpp, jrn.cpp, met.epp, pag.cpp, par.cpp, req.h,
+	shut.cpp, svc.cpp, thd.cpp, tpc.cpp:
+	
+	-Use NULL instead 0 for null pointers -Remove unneeded casts
+
+2003-09-01 09:54  brodsom
+
+	* firebird2/src/: remote/allr.cpp, remote/server.cpp,
+	remote/xnet.cpp, utilities/run_service.cpp,
+	utilities/sbc_print.cpp, wal/wal.cpp:
+	
+	-Use NULL instead 0 for null pointers -Remove unneeded casts
+
+2003-09-01 09:49  brodsom
+
+	* firebird2/src/: isql/extract.epp, isql/isql.epp,
+	journal/rebuild.e, journal/server.e, journal/archive.cpp,
+	lock/lock.cpp, misc/align.cpp:
+	
+	-Use NULL instead 0 for null pointers -Remove unneeded casts
+
+2003-09-01 09:46  brodsom
+
+	* firebird2/src/: dsql/blk.h, dsql/pass1.cpp, dudley/ddl.h,
+	dudley/exe.epp, gpre/par.cpp:
+	
+	-Use NULL instead 0 for null pointers -Remove unneeded casts
+
+2003-09-01 09:41  brodsom
+
+	* firebird2/src/alice/blk.h:
+	
+	-Use NULL instead 0 for null pointers -Remove unneeded casts
+
+2003-09-01 09:39  brodsom
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Correction
+
+2003-09-01 00:41  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	1) fix: Unique index must be complete used else we keep on looking
+	for another one.  2) MERGE can also handle expressions, stupid
+	example :   SELECT     *   FROM     RDB$RELATIONS r,	
+	RDB$RELATION_FIELDS rf	 WHERE	   rf.RDB$RELATION_NAME || 'A' =
+	r.RDB$RELATION_NAME || 'A' 3) Do some code style issues
+
 2003-08-31 21:38  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
