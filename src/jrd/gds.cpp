@@ -2271,8 +2271,8 @@ void * API_ROUTINE gds__temp_file(
 	for (int tryCount = 0; tryCount < MAX_TMPFILE_TRIES; tryCount++) {
 		char file_name[MAXPATHLEN];
 		strcpy(file_name, directory);
-		if (file_name[strlen(file_name)-1] != '/')
-			strcat(file_name, "/");
+		if (file_name[strlen(file_name)-1] != '\\')
+			strcat(file_name, "\\");
 		strcat(file_name, string);
 		char suffix[] = TEMP_PATTERN;
 		__int64 temp = randomness;
@@ -2293,8 +2293,8 @@ void * API_ROUTINE gds__temp_file(
 	}
 	if ((int)result == -1) return result;
 	if (stdio_flag) {
-		result = ib_fdopen((int)result, 
-			expanded_string && !unlink_flag ? "Tw+b" : "DTw+b");
+		result = ib_fdopen((int)result,
+			expanded_string && !unlink_flag ? "w+b" : "Dw+b");
 		if (!result) result = (void*)-1;
 	}
 	return result;
