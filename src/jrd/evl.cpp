@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.126 2004-11-17 19:45:28 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.127 2004-11-18 09:14:20 dimitr Exp $ 
  */
 
 /*
@@ -1342,7 +1342,6 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 							(UCHAR *) relation->rel_owner_name;
 						desc->dsc_length =
 							strlen(reinterpret_cast<const char*>(desc->dsc_address));
-						return true;
 					}
 					else if (temp_nod_type == nod_current_database)
 					{
@@ -1357,7 +1356,6 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 							(UCHAR *) tdbb->tdbb_database->dbb_database_name.c_str();
 						desc->dsc_length =
 							tdbb->tdbb_database->dbb_database_name.length();
-						return true;
 					}
 					else if (temp_nod_type == nod_current_date ||
 					    temp_nod_type == nod_current_time ||
@@ -1371,7 +1369,6 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 							reinterpret_cast<UCHAR*>(
 								const_cast<ISC_TIMESTAMP*>(&temp_timestamp));
 						desc->dsc_length = sizeof(temp_timestamp);
-						return true;
 					}
 					else if (temp_nod_type == nod_internal_info)
 					{
@@ -1382,7 +1379,6 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						desc->dsc_address =
 							(UCHAR*) const_cast<SLONG*>(&temp_long);
 						desc->dsc_length = sizeof(temp_long);
-						return true;
 					}
 					else
 					{
@@ -1406,8 +1402,8 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						desc->dsc_sub_type = default_desc->dsc_sub_type;
 						desc->dsc_flags    = default_desc->dsc_flags;
 						desc->dsc_address  = default_desc->dsc_address;
-						return true;
 					}
+					return true;
 				}
 				else
 				{
