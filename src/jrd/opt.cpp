@@ -3658,14 +3658,14 @@ static RSB gen_retrieval(TDBB tdbb,
 	REL relation;
 	STR alias;
 	RSB rsb;
-	IDX *idx;
+	IDX *idx, *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
 	NOD node, opt_boolean, inversion;
-	SSHORT i, j, count;
-	USHORT idx_field_count[MAX_INDICES];
-	USHORT max_field_count = 0;
+	SSHORT i, j, count, last_idx, idx_walk_count;
+	SLONG idx_priority_level[MAX_INDICES], last_priority_level;
+	USHORT idx_field_count, idx_eql_count;
 	register Opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end, *matching_nodes[MAX_INDICES];
 	csb_repeat *csb_tail;
-	BOOLEAN full = FALSE, accept_index, idx_begin_equal[MAX_INDICES];
+	BOOLEAN full = FALSE;
 	SET_TDBB(tdbb);
 #ifdef DEV_BUILD
 	DEV_BLKCHK(opt, type_opt);
@@ -3742,8 +3742,8 @@ static RSB gen_retrieval(TDBB tdbb,
 		for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices;
 			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count)) {
 
-			idx_field_count[i] = 0;
-			idx_begin_equal[i] = FALSE;
+			idx_csb[i] = idx;
+			idx_priority_level[i] = 0;
 			/* skip this part if the index wasn't specified for indexed 
 			   retrieval (still need to look for navigational retrieval) */
 			if ((idx->idx_runtime_flags & idx_plan_dont_use) &&
@@ -3757,7 +3757,6 @@ static RSB gen_retrieval(TDBB tdbb,
 			if (outer_flag)
 				tail += opt->opt_count;
 			for (; tail < opt_end; tail++) {
-				CLEAR_DEP_BIT(tail->opt_can_use_idx, i);
 				if (tail->opt_flags & opt_matched)
 					continue;
 				node = tail->opt_conjunct;
@@ -3767,7 +3766,6 @@ static RSB gen_retrieval(TDBB tdbb,
 					if (count = match_index(tdbb, opt, stream, node, idx)) {
 						/* mark the index in the bitmap and if this conjunct
 						   has a own index mark this also */
-						SET_DEP_BIT(tail->opt_can_use_idx, i);
 						if (idx->idx_count == count) {
 							tail->opt_idx_full_match = TRUE;
 						}	
@@ -3809,77 +3807,111 @@ static RSB gen_retrieval(TDBB tdbb,
 	            }***/
 			}
 
-			/* Count the real number of fields that could be matched */
 			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+
+				/* Count how many fields matches */
+				idx_field_count = 0;
 				idx_tail = opt->opt_rpt;
 				idx_end = idx_tail + idx->idx_count;
-				node = idx_tail->opt_match;
-				if (node->nod_type == nod_eql) {
-					idx_begin_equal[i] = TRUE;
-				}					
 				for (;idx_tail < idx_end && (idx_tail->opt_lower || 
 					idx_tail->opt_upper); idx_tail++) {
-					idx_field_count[i]++;
-					max_field_count = MAX(max_field_count, idx_field_count[i]);
+					idx_field_count++;
+					/*max_field_count = MAX(max_field_count, idx_field_count[i]);*/
 				}
+
+				/* Count the maximum equals that matches at the begin */
+				idx_eql_count = 0;
+				idx_tail = opt->opt_rpt;
+				idx_end = idx_tail + idx->idx_count;
+				for (;idx_tail < idx_end && (idx_tail->opt_lower || 
+					idx_tail->opt_upper); idx_tail++) {
+					node = idx_tail->opt_match;
+					if (node->nod_type == nod_eql) {
+						idx_eql_count++;
+					}
+					else {
+						break;
+					}
+				}
+
+				/* Calculate our priority level */
+				idx_priority_level[i] =
+					(idx_eql_count * MAX_IDX * MAX_IDX) + 
+					(idx_field_count * MAX_IDX) + (idx->idx_count);
 			}
 
 		}
 
+		/* Sort indices based on the priority level into idx_walk */
+		idx_walk_count = 0;
+		for (i = 0; i < csb_tail->csb_indices; i++) {
+			last_idx = -1;
+			last_priority_level = 0;
+			for (j = csb_tail->csb_indices - 1; j >= 0; j--) {
+				if (!(idx_priority_level[j] == 0) && 
+					(idx_priority_level[j] >= last_priority_level)) {
+					last_priority_level = idx_priority_level[j];
+					last_idx = j;
+				}
+			}
+			if (last_idx >= 0) {
+				idx_priority_level[last_idx] = 0; /* Mark as used by setting priority_level to 0 */
+				idx_walk[idx_walk_count] = idx_csb[last_idx];
+				idx_walk_count++;
+			}
+		}
+
+
 		/* Walk through the indicies based on earlier calculated count and
 		   when necessary build the index */
-		for (; max_field_count; max_field_count--) {
-			for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices; i++,
-				idx = NEXT_IDX(idx->idx_rpt, idx->idx_count)) {
-				if (idx->idx_runtime_flags & idx_plan_dont_use) {
-					continue;
-				}
-				if ((idx_field_count[i] == max_field_count) ||
-					((csb_tail->csb_plan) && !(idx->idx_runtime_flags & idx_plan_dont_use)) ) {
-					j = 0;
-					clear_bounds(opt, idx);
-					for (tail = opt->opt_rpt; tail < opt_end; tail++) {
-					/* Test if this conjunction is available for this index. */
-						if (TEST_DEP_BIT(tail->opt_can_use_idx, i) &&
-							!(tail->opt_flags & opt_matched)) {
-							/* Setting opt_lower and/or opt_upper values */
-							node = tail->opt_conjunct;
-							match_index(tdbb, opt, stream, node, idx);
-							matching_nodes[j++] = tail;
-							count = j;
-						}
+
+		for (i = 0; i < idx_walk_count; i++) {
+
+			idx = idx_walk[i];
+			if (idx->idx_runtime_flags & idx_plan_dont_use) {
+				continue;
+			}
+
+			j = 0;
+			clear_bounds(opt, idx);
+			for (tail = opt->opt_rpt; tail < opt_end; tail++) {
+			/* Test if this conjunction is available for this index. */
+				if (!(tail->opt_flags & opt_matched)) {
+					/* Setting opt_lower and/or opt_upper values */
+					node = tail->opt_conjunct;
+					if (match_index(tdbb, opt, stream, node, idx)) {
+						matching_nodes[j++] = tail;
+						count = j;
 					}
-					if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
-						accept_index = TRUE;
-						/* If all fields in this index can also use a own index
-						   and the first field isn't compared as equality
-						   than don't accept create this index */
-						if (!idx_begin_equal[i]) {
-							if (idx->idx_count > 1) {
-								accept_index = FALSE;
-								for (j = 0; j < count; j++) {
-									if (!matching_nodes[j]->opt_idx_full_match) {
-										accept_index = TRUE;
-									}
-								}
+				}
+			}
+			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+
+				/* Use a different marking if a PLAN was specified, this is
+				   for backwards compatibility.  Juck... */
+				if (csb_tail->csb_plan) {
+					/* Mark only used conjuncts in this index as used */
+					idx_end = idx_tail + idx->idx_count;
+					for (idx_tail = opt->opt_rpt ;idx_tail < idx_end && 
+						 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++) {
+						for (tail = opt->opt_rpt; tail < opt_end; tail++) {
+							if (idx_tail->opt_match == tail->opt_conjunct) {
+								tail->opt_flags |= opt_matched;
 							}
-						}
-						if (accept_index) {
-							/* Mark all nodes that could be matched in this index as
-							   used, so that no unnecessary duplicated indicies are build. */
-							for (j = 0; j < count; j++) {
-								if (idx_begin_equal[i] || 
-									idx->idx_count == 1 ||
-									!matching_nodes[j]->opt_idx_full_match) {
-									matching_nodes[j]->opt_flags |= opt_matched;
-								}
-							}
-							compose(&inversion, OPT_make_index(tdbb, opt, relation, idx),
-								nod_bit_and);
-							idx->idx_runtime_flags |= idx_used_with_and;
 						}
 					}
 				}
+				else {
+					/* Mark all conjuncts that could be calculated against the 
+					   index as used. For example if you have nod1 >= con2 and nod2 <= con2 */
+					for (j = 0; j < count; j++) {
+						matching_nodes[j]->opt_flags |= opt_matched;
+					}
+				}
+
+				compose(&inversion, OPT_make_index(tdbb, opt, relation, idx),
+						nod_bit_and);
+				idx->idx_runtime_flags |= idx_used_with_and;
 			}
 		}
 	}
@@ -4606,7 +4638,7 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 				/* match_index(tdbb, opt, stream, node, idx); */
 				match_indices(tdbb, opt, stream, node, idx);
 				/* AB: Why should we look further ? */
-				if (tail->opt_lower || tail->opt_upper) {
+				if (opt->opt_rpt->opt_lower || opt->opt_rpt->opt_upper) {
 					break;
 				}
 			}
@@ -4961,6 +4993,7 @@ static NOD make_inversion(TDBB tdbb,
 			/* skip this part if the index wasn't specified for indexed 
 			   retrieval (still need to look for navigational retrieval) */
 			if (idx->idx_runtime_flags & idx_plan_dont_use) {
+				idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
 				continue;
 			}
 

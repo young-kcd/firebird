@@ -331,8 +331,6 @@ class Opt : public pool_alloc<type_opt>
 		USHORT opt_best_stream; /* stream in best join order seen so far */
 		USHORT opt_flags;
 		USHORT opt_stream; /* Stream in position of join order */
-		ULONG opt_can_use_idx[MAX_OPT_ITEMS / 32]; 
-		/* Bitmap for if conjunct is used in index */
 		BOOLEAN opt_idx_full_match; 
 		/* Does the conjunct match all fields in index. */
 	};
