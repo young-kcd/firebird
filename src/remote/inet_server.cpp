@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.45 2004-11-07 14:44:56 alexpeshkoff Exp $
+$Id: inet_server.cpp,v 1.46 2004-11-08 07:08:06 robocop Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -381,7 +381,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		isc_db_handle db_handle = 0L;
 
 		SecurityDatabase::getPath(path);
-		char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1};
+		const char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1};
 		isc_attach_database(status, strlen(path), path, &db_handle, sizeof dpb, dpb);
 		if (status[0] == 1 && status[1] > 0) {
 			gds__log_status(path, status);
