@@ -19,11 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.6 2002-04-29 12:06:19 dimitr Exp $
+ * $Id: sort.cpp,v 1.7 2002-06-04 13:07:51 dimitr Exp $
  */
 
-// dimitr: uncomment to use new memory-based sort I/O
-//#define SORT_MEM
+#define SORT_MEM
 
 #include "firebird.h"
 #include <errno.h>
