@@ -160,7 +160,9 @@ static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 
 static void	server_ast(RVNT, USHORT, UCHAR *);
 static void		success(ISC_STATUS *);
+#ifdef MULTI_THREAD
 static int THREAD_ROUTINE thread(void *);
+#endif
 static void		zap_packet(PACKET*, bool);
 
 
@@ -173,7 +175,9 @@ static SERVER_REQ	free_requests		= NULL;
 static SERVER_REQ	active_requests		= NULL;
 static SRVR			servers;
 
+#ifdef MULTI_THREAD
 static Firebird::Semaphore requests_semaphore;
+#endif
 
 
 static const UCHAR request_info[] =
@@ -245,6 +249,7 @@ void SRVR_main(PORT main_port, USHORT flags)
 
 void SRVR_multi_thread( PORT main_port, USHORT flags)
 {
+#ifdef MULTI_THREAD
 /**************************************
  *
  *	S R V R _ m u l t i _ t h r e a d
@@ -537,6 +542,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 
 /* Why isn't this inside the #endif above? */
 	RESTORE_THREAD_DATA;
+#endif
 }
 
 
@@ -4671,7 +4677,7 @@ static void success( ISC_STATUS * status_vector)
 	status_vector[2] = gds_arg_end;
 }
 
-
+#ifdef MULTI_THREAD
 static int THREAD_ROUTINE thread(void* flags)
 {
 /**************************************
@@ -4836,6 +4842,7 @@ static int THREAD_ROUTINE thread(void* flags)
 
 	return 0;
 }
+#endif
 
 
 ISC_STATUS port::transact_request(P_TRRQ * trrq, PACKET* send)
