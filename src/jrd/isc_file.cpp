@@ -646,7 +646,7 @@ BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
 
 		ISC_expand_share(temp_name, temp_name2);
 		if (ISC_analyze_tcp(temp_name2, host_name) ||
-			ISC_analyze_pclan(temp_name2, host_name) {
+			ISC_analyze_pclan(temp_name2, host_name)) {
 #ifdef STACK_EFFICIENT
 			gds__free((SLONG *) temp_name2);
 			gds__free((SLONG *) temp_name);

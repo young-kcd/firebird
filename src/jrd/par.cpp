@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.17 2002-10-30 06:40:49 seanleyne Exp $
+$Id: par.cpp,v 1.18 2002-10-31 11:58:40 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -663,6 +663,8 @@ static void error(CSB csb, ...)
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:
+			*p++ = va_arg(args, int);   
+			break; 
 		}
 	}
 
@@ -2980,6 +2982,8 @@ static void warning(CSB csb, ...)
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:
+			*p++ = va_arg(args, int);   
+			break; 
 		}
 	}
 }

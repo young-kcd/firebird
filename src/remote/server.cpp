@@ -3039,10 +3039,9 @@ BOOLEAN process_packet(PORT port,
 							string->str_data);
 					gds__log(msg, 0);
 				}
-				if (port->port_server->srvr_flags & SRVR_multi_client)
+				if (port->port_server->srvr_flags & SRVR_multi_client) {
 					port->port_state = state_broken;
-				else if (port->port_server->srvr_flags & SRVR_mpexl)
-					port->port_state = state_pending;
+				}
 				else {
 					gds__log
 						("SERVER/process_packet: connect reject, server exiting",

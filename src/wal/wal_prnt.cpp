@@ -37,20 +37,6 @@
 #include <io.h>
 #endif
 
-#include "../jrd/svc.h"
-#include "../jrd/svc_proto.h"
-#define exit(code)	{service->svc_handle = 0;                           \
-                                                                            \
-                    /* Mark service thread as finished. */                  \
-		    /* If service is detached, cleanup memory being used    \
-		       by service. */                                       \
-		    SVC_finish (service, SVC_finished);			    \
-                                                                            \
-                    return (code);}
-
-#define FPRINTF		SVC_netware_fprintf
-#endif
-
 #ifndef FPRINTF
 #define FPRINTF 	ib_fprintf
 #endif
