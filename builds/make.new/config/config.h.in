@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.1 2003-07-06 01:07:48 brodsom Exp $"
+#ident "$Id: config.h.in,v 1.2 2003-08-12 10:06:12 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -85,6 +85,7 @@
 #undef HAVE_SIGACTION
 #undef HAVE_SETITIMER
 #undef HAVE_SNPRINTF
+#undef HAVE_VSNPRINTF
 #undef HAVE_SWAB
 #undef HAVE__SWAB
 #undef HAVE_MMAP

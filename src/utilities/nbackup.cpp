@@ -59,7 +59,7 @@
 #define vsnprintf _vsnprintf
 #endif
 
-#if defined(FREEBSD)
+#ifndef O_LARGEFILE
 #define O_LARGEFILE 0
 #endif
 
@@ -95,7 +95,11 @@ public:
 		char temp[1024];		
 		va_list params;
 		va_start(params, message);
+#ifdef HAVE_VSNPRINTF
 		vsnprintf(temp, sizeof(temp), message, params);
+#else
+		vsprintf(temp, message, params);
+#endif
 		va_end(params);
 		throw b_error(temp);
 	}

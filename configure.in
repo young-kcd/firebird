@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.152 2003-08-07 17:10:19 brodsom Exp $
+dnl $Id: configure.in,v 1.153 2003-08-12 10:06:11 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -358,7 +358,7 @@ fi
 AC_SEARCH_LIBS(dirname,gen)
 AC_CHECK_FUNCS(dirname)
 AC_CHECK_FUNCS(sigaction setitimer)
-AC_CHECK_FUNCS(snprintf)
+AC_CHECK_FUNCS(snprintf vsnprintf)
 AC_CHECK_FUNCS(swab _swab)
 AC_FUNC_MMAP 
 AC_FUNC_FORK
