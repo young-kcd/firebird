@@ -284,7 +284,7 @@ typedef struct own
 	UCHAR own_type;				/* memory tag - always type_own */
 	UCHAR own_owner_type;		/* type of owner */
 	SSHORT own_count;			/* init count for the owner */
-	ULONG own_owner_id;			/* Owner ID */
+	LOCK_OWNER_T own_owner_id;	/* Owner ID */
 	UATOM own_ast_flags;		/* flags shared by main and ast codes */
 	UATOM own_ast_hung_flags;	/* unprotected - OWN_hung flag */
 	srq own_lhb_owners;			/* Owner que */

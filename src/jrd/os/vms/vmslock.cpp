@@ -208,7 +208,7 @@ void LOCK_fini(ISC_STATUS* status_vector, PTR * owner_offset)
 
 int LOCK_init(ISC_STATUS* status_vector,
 							 bool owner_flag,
-							 SLONG owner_id,
+							 LOCK_OWNER_T owner_id,
 							 UCHAR owner_type, SLONG * owner_handle)
 {
 /**************************************

@@ -806,7 +806,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 		dep_node->nod_type = nod_dependency;
 		dep_node->nod_arg[e_dep_object] =
 			(jrd_nod*)(IPTR) exception_list->xcp_rpt[0].xcp_code;
-		dep_node->nod_arg[e_dep_object_type] = (jrd_nod*) obj_exception;
+		dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
 		csb->csb_dependencies.push(dep_node);
 		break;
 
@@ -873,7 +873,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 			dep_node->nod_type = nod_dependency;
 			dep_node->nod_arg[e_dep_object] =
 				(jrd_nod*) (IPTR)exception_list->xcp_rpt[0].xcp_code;
-			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*) obj_exception;
+			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
 			csb->csb_dependencies.push(dep_node);
 			break;
 
@@ -953,12 +953,12 @@ static void par_dependency(thread_db*   tdbb,
 	if (csb->csb_rpt[stream].csb_relation) {
 		node->nod_arg[e_dep_object] =
 			(jrd_nod*) csb->csb_rpt[stream].csb_relation;
-		node->nod_arg[e_dep_object_type] = (jrd_nod*) obj_relation;
+		node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_relation;
 	}
 	else if (csb->csb_rpt[stream].csb_procedure) {
 		node->nod_arg[e_dep_object] =
 			(jrd_nod*) csb->csb_rpt[stream].csb_procedure;
-		node->nod_arg[e_dep_object_type] = (jrd_nod*) obj_procedure;
+		node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_procedure;
 	}
 
 	if (! field_name.empty()) {
@@ -1023,7 +1023,7 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
 	dep_node->nod_type = nod_dependency;
 	dep_node->nod_arg[e_dep_object] = (jrd_nod*) procedure;
-	dep_node->nod_arg[e_dep_object_type] = (jrd_nod*) obj_procedure;
+	dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_procedure;
 
 	csb->csb_dependencies.push(dep_node);
 
@@ -1262,7 +1262,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
         jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
         dep_node->nod_type = nod_dependency;
         dep_node->nod_arg [e_dep_object] = (jrd_nod*) function;
-        dep_node->nod_arg [e_dep_object_type] = (jrd_nod*) obj_udf;
+        dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_udf;
         csb->csb_dependencies.push(dep_node);
     }
 
@@ -2576,7 +2576,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
                 jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
                 dep_node->nod_type = nod_dependency;
                 dep_node->nod_arg [e_dep_object] = (jrd_nod*) (IPTR) tmp;
-                dep_node->nod_arg [e_dep_object_type] = (jrd_nod*) obj_generator;
+                dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_generator;
                 csb->csb_dependencies.push(dep_node);
             }
 

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.45 2004-05-14 16:22:33 brodsom Exp $
+ *  $Id: fb_types.h,v 1.46 2004-05-20 21:58:04 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -155,6 +155,7 @@ typedef void (*FPTR_ERROR) (ISC_STATUS, ...);
 
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
+typedef IPTR LOCK_OWNER_T; /* Data type for the Owner ID for the lock manager */
 /* CVC: internal usage. I suspect the only reason to return int is that
 vmslock.cpp:LOCK_convert() calls VMS' sys$enq that may require this signature,
 but our code never uses the return value. */

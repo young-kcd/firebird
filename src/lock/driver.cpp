@@ -85,7 +85,7 @@ void main( int argc, char **argv)
 	printf("\n");
 
 	if (LOCK_init(status_vector, true,
-				  (SLONG) getpid(), 1, &lck_owner_handle)) {
+				  getpid(), 1, &lck_owner_handle)) {
 		printf("LOCK_init failed\n");
 		isc_print_status(status_vector);
 		exit(0);

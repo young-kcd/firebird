@@ -93,14 +93,14 @@ static SLONG process_lck_owner_handle = 0;
 
 #ifdef SUPERSERVER
 
-inline SLONG LCK_OWNER_ID_PROCESS(){
-	return (SLONG) getpid();
+inline LOCK_OWNER_T LCK_OWNER_ID_PROCESS(){
+	return getpid();
 }
-inline SLONG LCK_OWNER_ID_DBB(Database* dbb){
-	return (SLONG) dbb;
+inline LOCK_OWNER_T LCK_OWNER_ID_DBB(Database* dbb){
+	return (LOCK_OWNER_T) dbb;
 }
-inline SLONG LCK_OWNER_ID_ATT(Attachment* attachment){
-	return (SLONG) attachment;
+inline LOCK_OWNER_T LCK_OWNER_ID_ATT(Attachment* attachment){
+	return (LOCK_OWNER_T) attachment;
 }
 
 const lck_owner_t LCK_OWNER_TYPE_PROCESS	= LCK_OWNER_process;
@@ -121,14 +121,14 @@ inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment){
 
 /* This is not a SUPERSERVER build */
 
-inline SLONG LCK_OWNER_ID_PROCESS(){
-	return (SLONG) getpid();
+inline LOCK_OWNER_T LCK_OWNER_ID_PROCESS(){
+	return getpid();
 }
-inline SLONG LCK_OWNER_ID_DBB(Database* dbb){
-	return (SLONG) getpid();
+inline LOCK_OWNER_T LCK_OWNER_ID_DBB(Database* dbb){
+	return getpid();
 }
-inline SLONG LCK_OWNER_ID_ATT(Attachment* attachment){
-	return (SLONG) getpid();
+inline LOCK_OWNER_T LCK_OWNER_ID_ATT(Attachment* attachment){
+	return getpid();
 }
 
 const lck_owner_t LCK_OWNER_TYPE_PROCESS	= LCK_OWNER_process;
@@ -574,7 +574,7 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
  *	Initialize the locking stuff for the given owner.
  *
  **************************************/
-	SLONG owner_id;
+	LOCK_OWNER_T owner_id;
 	SLONG* owner_handle_ptr = 0;
 
 	SET_TDBB(tdbb);

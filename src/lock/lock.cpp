@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.101 2004-05-18 09:44:40 kkuznetsov Exp $
+$Id: lock.cpp,v 1.102 2004-05-20 21:58:15 skidder Exp $
 */
 
 #include "firebird.h"
@@ -176,7 +176,7 @@ static void bug(ISC_STATUS *, const TEXT *);
 static void bug_assert(const TEXT *, ULONG);
 #endif
 static bool convert(SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*, ISC_STATUS*);
-static USHORT create_owner(ISC_STATUS *, SLONG, UCHAR, SLONG *);
+static USHORT create_owner(ISC_STATUS *, LOCK_OWNER_T, UCHAR, SLONG *);
 #ifdef DEV_BUILD
 static void current_is_active_owner(bool, ULONG);
 #endif
@@ -197,7 +197,7 @@ static LRQ get_request(SRQ_PTR);
 static void grant(LRQ, LBL);
 static SRQ_PTR grant_or_que(LRQ, LBL, SSHORT);
 static ISC_STATUS init_lock_table(ISC_STATUS *);
-static void init_owner_block(OWN, UCHAR, ULONG, USHORT);
+static void init_owner_block(OWN, UCHAR, LOCK_OWNER_T, USHORT);
 #ifdef USE_WAKEUP_EVENTS
 static void lock_alarm_handler(void *event);
 #endif
@@ -707,7 +707,7 @@ void LOCK_fini( ISC_STATUS* status_vector, SRQ_PTR * owner_offset)
 int LOCK_init(
 			  ISC_STATUS* status_vector,
 			  bool owner_flag,
-			  SLONG owner_id, UCHAR owner_type, SLONG * owner_handle)
+			  LOCK_OWNER_T owner_id, UCHAR owner_type, SLONG * owner_handle)
 {
 /**************************************
  *
@@ -2109,7 +2109,7 @@ static bool convert(SRQ_PTR		request_offset,
 
 
 static USHORT create_owner(ISC_STATUS*	status_vector,
-						   SLONG	owner_id,
+						   LOCK_OWNER_T	owner_id,
 						   UCHAR	owner_type,
 						   SLONG*	owner_handle)
 {
@@ -2140,7 +2140,7 @@ static USHORT create_owner(ISC_STATUS*	status_vector,
 	SRQ_LOOP(LOCK_header->lhb_owners, lock_srq)
 	{
 		own* owner = (OWN) ((UCHAR *) lock_srq - OFFSET(OWN, own_lhb_owners));
-		if (owner->own_owner_id == (ULONG) owner_id &&
+		if (owner->own_owner_id == owner_id &&
 			(UCHAR)owner->own_owner_type == owner_type)
 		{
 			purge_owner(DUMMY_OWNER_CREATE, owner);	/* purging owner_offset has not been set yet */
@@ -3023,7 +3023,7 @@ static ISC_STATUS init_lock_table( ISC_STATUS * status_vector)
 static void init_owner_block(
 							 OWN owner,
 							 UCHAR owner_type,
-							 ULONG owner_id, USHORT new_block)
+							 LOCK_OWNER_T owner_id, USHORT new_block)
 {
 /**************************************
  *
