@@ -140,7 +140,7 @@ changeXinetdServiceUser() {
     InitFile=/etc/xinetd.d/firebird
     if [ -f $InitFile ] 
       then
-        ed -s $InitFile <<EOF
+        ex -s $InitFile <<EOF
 /	user	/s/=.*$/= $RunUser/g
 w
 q

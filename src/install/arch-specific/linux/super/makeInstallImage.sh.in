@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.1.2.7 2003-12-23 23:22:40 skywalker Exp $
+#   $Id: makeInstallImage.sh.in,v 1.1.2.8 2003-12-28 04:53:17 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -68,26 +68,6 @@ copyIfExists() {
 
 }
 
-
-#------------------------------------------------------------------------
-# patchAccess
-# This routine alters the firebird.conf file to restrict usage to those
-# entries in the aliases.conf file.  It would be better if this was the 
-# default, or if not then done as part of a configure.in firebird.conf.in
-# processing - but that's not the current setup.
-#
-
-patchAccess() {
-
-    ed -s $1 <<EOF
-/^#DatabaseAccess/
-a
-DatabaseAccess = None
-.
-wq
-EOF
-
-}
 
 #------------------------------------------------------------------------
 #  copyFiles
@@ -186,8 +166,6 @@ copyFiles() {
     cp $BuildRootDir/gen/install/misc/firebird.init.d.gentoo $DestDir/misc
     cp $BuildRootDir/gen/install/misc/rc.config.firebird $DestDir/misc
     cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
-
-    patchAccess $DestDir/firebird.conf
 
 # Create links from /usr/lib to install area.
     origDir=`pwd`
