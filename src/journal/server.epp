@@ -222,8 +222,8 @@ static void divorce_terminal(fd_set *);
 #endif
 
 static void enable(CNCT, LTJC *);
-static void error(ISC_STATUS, TEXT *);
-static void error_exit(ISC_STATUS, TEXT *);
+static void error(ISC_STATUS, TEXT*);
+static void error_exit(ISC_STATUS, TEXT*);
 static void free_database_entry(DJB);
 static void get_message(JRNH *, int);
 
@@ -239,12 +239,12 @@ static void open_mailbox(SCHAR *, USHORT);
 static void post_address(USHORT, sockaddr_in);
 #endif
 
-static void process_command(CNCT, TEXT *);
+static void process_command(CNCT, TEXT*);
 static void process_archive_begin(CNCT, LTJA *);
 static void process_archive_end(CNCT, LTJA *);
 static void process_archive_error(CNCT, LTJA *);
 static void process_control_point(CNCT, LTJW *);
-static void process_disable_database(CNCT, TEXT *);
+static void process_disable_database(CNCT, TEXT*);
 static void process_drop_database(CNCT, SCHAR *);
 static void process_dump_file(CNCT, LTJW *);
 static void process_end_dump(CNCT, LTJW *);
@@ -288,7 +288,7 @@ static HANDLE *wait_vec;
 static USHORT wait_vec_length;
 #endif
 
-static TEXT *address_files[2] = { CONSOLE_ADDR, JOURNAL_ADDR };
+static TEXT*address_files[2] = { CONSOLE_ADDR, JOURNAL_ADDR };
 static USHORT state;
 static SSHORT archives_running = 0;
 static SLONG max_retry = MAX_RETRY;
@@ -504,7 +504,7 @@ static void backup_wal(DJB database,
 
 	archives_running++;
 
-	put_line(NULL, 107, (TEXT *) file_id, (TEXT *) file_name, 0);
+	put_line(NULL, 107, (TEXT*) file_id, (TEXT*) file_name, 0);
 
 // If there is space in the array, add it to the array.  Otherwise return
 
@@ -803,17 +803,17 @@ static void delete_history_files(CNCT connection,
 		OD.DUMP_ID LT last_dump AND
 		OD.END_SEQNO NE 0
 		FOR ODF IN ONLINE_DUMP_FILES WITH ODF.DUMP_ID EQ OD.DUMP_ID
-			put_line(connection, 145, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+			put_line(connection, 145, (TEXT*) ODF.DUMP_FILE_NAME, 0, 0);
 			ret = unlink(ODF.DUMP_FILE_NAME);
 			if ((ret == -1) && (errno != ENOENT)) {
-				put_line(connection, 147, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+				put_line(connection, 147, (TEXT*) ODF.DUMP_FILE_NAME, 0, 0);
 				ROLLBACK;
 				START_TRANSACTION;
 				return;
 			}
 			ERASE ODF
 			ON_ERROR
-				put_line(connection, 144, (TEXT *) dbname, 0, 0);
+				put_line(connection, 144, (TEXT*) dbname, 0, 0);
 				ROLLBACK;
 				START_TRANSACTION;
 				return;
@@ -822,7 +822,7 @@ static void delete_history_files(CNCT connection,
 
 		ERASE OD
 		ON_ERROR
-			put_line(connection, 144, (TEXT *) dbname, 0, 0);
+			put_line(connection, 144, (TEXT*) dbname, 0, 0);
 			ROLLBACK;
 			START_TRANSACTION;
 			return;
@@ -831,17 +831,17 @@ static void delete_history_files(CNCT connection,
 		FOR JF IN JOURNAL_FILES WITH JF.DB_ID EQ db_id AND
 			JF.FILE_SEQUENCE LT start_seqno AND
 			JF.ARCHIVE_NAME NOT MISSING
-			put_line(connection, 145, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
+			put_line(connection, 145, (TEXT*) JF.ARCHIVE_NAME, 0, 0);
 			ret = unlink(JF.ARCHIVE_NAME);
 			if ((ret == -1) && (errno != ENOENT)) {
-				put_line(connection, 147, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
+				put_line(connection, 147, (TEXT*) JF.ARCHIVE_NAME, 0, 0);
 				ROLLBACK;
 				START_TRANSACTION;
 				return;
 			}
 			ERASE JF
 			ON_ERROR
-				put_line(connection, 144, (TEXT *) dbname, 0, 0);
+				put_line(connection, 144, (TEXT*) dbname, 0, 0);
 				ROLLBACK;
 				START_TRANSACTION;
 				return;
@@ -859,17 +859,17 @@ static void delete_history_files(CNCT connection,
 	FOR OD IN ONLINE_DUMP WITH OD.DB_ID EQ db_id AND OD.DUMP_ID GT last_dump
 		AND OD.END_SEQNO NE 0
 		FOR ODF IN ONLINE_DUMP_FILES WITH ODF.DUMP_ID EQ OD.DUMP_ID
-			put_line(connection, 145, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+			put_line(connection, 145, (TEXT*) ODF.DUMP_FILE_NAME, 0, 0);
 			ret = unlink(ODF.DUMP_FILE_NAME);
 			if ((ret == -1) && (errno != ENOENT)) {
-				put_line(connection, 147, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+				put_line(connection, 147, (TEXT*) ODF.DUMP_FILE_NAME, 0, 0);
 				ROLLBACK;
 				START_TRANSACTION;
 				return;
 			}
 			ERASE ODF
 			ON_ERROR
-				put_line(connection, 144, (TEXT *) dbname, 0, 0);
+				put_line(connection, 144, (TEXT*) dbname, 0, 0);
 				ROLLBACK;
 				START_TRANSACTION;
 				return;
@@ -878,7 +878,7 @@ static void delete_history_files(CNCT connection,
 
 		ERASE OD
 		ON_ERROR
-			put_line(connection, 144, (TEXT *) dbname, 0, 0);
+			put_line(connection, 144, (TEXT*) dbname, 0, 0);
 			ROLLBACK;
 			START_TRANSACTION;
 			return;
@@ -1137,7 +1137,7 @@ static void enable(CNCT connection,
 
 #ifdef BSD_SOCKETS
 static void error(ISC_STATUS status,
-				  TEXT * string)
+				  TEXT* string)
 {
 /**************************************
  *
@@ -1150,7 +1150,7 @@ static void error(ISC_STATUS status,
  *
  **************************************/
 
-	put_line(NULL, GEN_ERR, (TEXT *) string, 0, 0);
+	put_line(NULL, GEN_ERR, (TEXT*) string, 0, 0);
 	perror(string);
 }
 #endif
@@ -1158,7 +1158,7 @@ static void error(ISC_STATUS status,
 
 #ifdef WIN_NT
 static void error(ISC_STATUS status,
-				  TEXT * string)
+				  TEXT* string)
 {
 /**************************************
  *
@@ -1173,21 +1173,21 @@ static void error(ISC_STATUS status,
 	TEXT buffer[MAX_PATH_LENGTH];
 	SSHORT l;
 
-	put_line(NULL, GEN_ERR, (TEXT *) string, 0, 0);
+	put_line(NULL, GEN_ERR, (TEXT*) string, 0, 0);
 
 	if(!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, status,
 						   GetUserDefaultLangID(), buffer, sizeof(buffer), NULL)))
 	{
-		put_line(NULL, 211, (TEXT *) status, 0, 0);
+		put_line(NULL, 211, (TEXT*) status, 0, 0);
 	}
 	else
-		put_line(NULL, 212, (TEXT *) buffer, 0, 0);
+		put_line(NULL, 212, (TEXT*) buffer, 0, 0);
 }
 #endif
 
 
 static void error_exit(ISC_STATUS status,
-					   TEXT * string)
+					   TEXT* string)
 {
 /**************************************
  *
@@ -1728,7 +1728,7 @@ static void post_address(USHORT slot,
 
 
 static void process_command(CNCT connection,
-							TEXT * string)
+							TEXT* string)
 {
 /**************************************
  *
@@ -1794,38 +1794,38 @@ static void process_command(CNCT connection,
 		break;
 
 	case cmd_drop:
-		put_line(connection, 114, (TEXT *) operand1, 0, 0);
+		put_line(connection, 114, (TEXT*) operand1, 0, 0);
 		process_drop_database(connection, operand1);
 		break;
 
 	case cmd_erase:
 		db_id = atoi(operand1);
-		put_line(connection, 162, (TEXT *) db_id, 0, 0);
+		put_line(connection, 162, (TEXT*)(SLONG) db_id, 0, 0);
 		process_erase_database(connection, db_id);
 		break;
 
 	case cmd_reset:
-		put_line(connection, 151, (TEXT *) operand2, 0, 0);
+		put_line(connection, 151, (TEXT*) operand2, 0, 0);
 		process_reset_database(connection, operand2);
 		break;
 
 	case cmd_set:
-		put_line(connection, 115, (TEXT *) operand2, 0, 0);
+		put_line(connection, 115, (TEXT*) operand2, 0, 0);
 		process_set_database(connection, operand2);
 		break;
 
 	case cmd_disable:
-		put_line(connection, 159, (TEXT *) operand1, 0, 0);
+		put_line(connection, 159, (TEXT*) operand1, 0, 0);
 		process_disable_database(connection, operand1);
 		break;
 
 	case cmd_archive:
-		put_line(connection, 240, (TEXT *) operand1, 0, 0);
+		put_line(connection, 240, (TEXT*) operand1, 0, 0);
 		process_restart_archive(connection, operand1);
 		break;
 
 	default:
-		put_line(connection, 116, (TEXT *) string, 0, 0);
+		put_line(connection, 116, (TEXT*) string, 0, 0);
 	}
 
 	response.jrnr_response = jrnr_end_msg;
@@ -1958,7 +1958,7 @@ static void process_archive_end(CNCT connection,
 
 	put_message(99, database);
 
-	put_line(NULL, 178, file_name, (TEXT *) file_id, 0);
+	put_line(NULL, 178, file_name, (TEXT*) file_id, 0);
 
 	delete_connection(connection);
 	archives_running--;
@@ -1985,7 +1985,7 @@ static void process_archive_error(CNCT connection,
 
 	database = connection->cnct_database;
 
-	put_line(NULL, 179, (TEXT *) file_id, 0, 0);
+	put_line(NULL, 179, (TEXT*) file_id, 0, 0);
 	put_line(NULL, (SSHORT) msg->ltja_error_code, 0, 0, 0);
 
 	put_message(99, database);
@@ -2045,8 +2045,8 @@ static void process_control_point(CNCT connection,
 
 	database = connection->cnct_database;
 
-	put_line(NULL, 117, (TEXT *) msg->ltjw_seqno,
-			 (TEXT *) msg->ltjw_offset, 0);
+	put_line(NULL, 117, (TEXT*) msg->ltjw_seqno,
+			 (TEXT*) msg->ltjw_offset, 0);
 
 	commit();
 
@@ -2070,7 +2070,7 @@ static void process_control_point(CNCT connection,
 
 
 static void process_disable_database(CNCT connection,
-									 TEXT * dbname)
+									 TEXT* dbname)
 {
 /**************************************
  *
@@ -2087,12 +2087,12 @@ static void process_disable_database(CNCT connection,
 	commit();
 
 	if (!(database = lookup_database(dbname, 0, 0))) {
-		put_line(connection, 143, (TEXT *) dbname, 0, 0);
+		put_line(connection, 143, (TEXT*) dbname, 0, 0);
 		return;
 	}
 
 	if (database->djb_use_count) {
-		put_line(connection, 161, (TEXT *) database->djb_id, 0, 0);
+		put_line(connection, 161, (TEXT*)(ULONG) database->djb_id, 0, 0);
 		return;
 	}
 
@@ -2146,14 +2146,14 @@ static void process_drop_database(CNCT connection,
 	commit();
 
 	if (!(database = lookup_database(dbname, 0, 0))) {
-		put_line(connection, 143, (TEXT *) dbname, 0, 0);
+		put_line(connection, 143, (TEXT*) dbname, 0, 0);
 		return;
 	}
 
 	db_id = database->djb_id;
 
 	if (database->djb_use_count) {
-		put_line(connection, 161, (TEXT *) db_id, 0, 0);
+		put_line(connection, 161, (TEXT*)(SLONG) db_id, 0, 0);
 		return;
 	}
 
@@ -2195,7 +2195,7 @@ static void process_dump_file(CNCT connection,
 
 	commit();
 
-	put_line(NULL, 120, (TEXT *) msg->ltjw_mode, (TEXT *) msg->ltjw_data,
+	put_line(NULL, 120, (TEXT*)(ULONG) msg->ltjw_mode, (TEXT*) msg->ltjw_data,
 			 0);
 
 	reply.jrnr_response = jrnr_ack;
@@ -2239,7 +2239,7 @@ static void process_end_dump(CNCT connection,
 
 	commit();
 
-	put_line(NULL, 122, (TEXT *) msg->ltjw_mode, 0, 0);
+	put_line(NULL, 122, (TEXT*)(ULONG) msg->ltjw_mode, 0, 0);
 
 	reply.jrnr_response = jrnr_end_dump;
 	send_reply(connection, (JRNH *) & reply, sizeof(reply));
@@ -2275,7 +2275,7 @@ static void process_erase_database(CNCT connection,
 		END_FOR;
 
 		if (!found) {
-			put_line(connection, 177, (TEXT *) db_id, 0, 0);
+			put_line(connection, 177, (TEXT*)(ULONG) db_id, 0, 0);
 			return;
 		}
 	}
@@ -2283,7 +2283,7 @@ static void process_erase_database(CNCT connection,
 		strcpy(dbname, (const char*)database->djb_db_name);
 
 		if (database->djb_use_count) {
-			put_line(connection, 161, (TEXT *) db_id, 0, 0);
+			put_line(connection, 161, (TEXT*)(ULONG) db_id, 0, 0);
 			return;
 		}
 
@@ -2299,17 +2299,17 @@ static void process_erase_database(CNCT connection,
 	FOR D IN DATABASES WITH D.DB_ID EQ db_id
 		FOR OD IN ONLINE_DUMP WITH OD.DB_ID EQ D.DB_ID
 			FOR ODF IN ONLINE_DUMP_FILES WITH ODF.DUMP_ID EQ OD.DUMP_ID
-				put_line(connection, 145, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+				put_line(connection, 145, (TEXT*) ODF.DUMP_FILE_NAME, 0, 0);
 				ret = unlink(ODF.DUMP_FILE_NAME);
 				if ((ret == -1) && (errno != ENOENT)) {
-					put_line(connection, 147, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+					put_line(connection, 147, (TEXT*) ODF.DUMP_FILE_NAME, 0, 0);
 					ROLLBACK;
 					START_TRANSACTION;
 					return;
 				}
 				ERASE ODF
 				ON_ERROR
-				   put_line(connection, 144, (TEXT *) dbname, 0, 0);
+				   put_line(connection, 144, (TEXT*) dbname, 0, 0);
 				   ROLLBACK;
 				   START_TRANSACTION;
 				   return;
@@ -2318,7 +2318,7 @@ static void process_erase_database(CNCT connection,
 
 		   ERASE OD
 		   ON_ERROR
-			   put_line(connection, 144, (TEXT *) dbname, 0, 0);
+			   put_line(connection, 144, (TEXT*) dbname, 0, 0);
 			   ROLLBACK;
 			   START_TRANSACTION;
 			   return;
@@ -2328,10 +2328,10 @@ static void process_erase_database(CNCT connection,
 
 	   FOR JF IN JOURNAL_FILES WITH JF.DB_ID = D.DB_ID
 		   if (strlen(JF.ARCHIVE_NAME)) {
-			   put_line(connection, 145, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
+			   put_line(connection, 145, (TEXT*) JF.ARCHIVE_NAME, 0, 0);
 			   ret = unlink(JF.ARCHIVE_NAME);
 			   if ((ret == -1) && (errno != ENOENT)) {
-				   put_line(connection, 147, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
+				   put_line(connection, 147, (TEXT*) JF.ARCHIVE_NAME, 0, 0);
 				   ROLLBACK;
 				   START_TRANSACTION;
 				   return;
@@ -2339,7 +2339,7 @@ static void process_erase_database(CNCT connection,
 		   }
 		   ERASE JF
 		   ON_ERROR
-			   put_line(connection, 144, (TEXT *) dbname, 0, 0);
+			   put_line(connection, 144, (TEXT*) dbname, 0, 0);
 			   ROLLBACK;
 			   START_TRANSACTION;
 			   return;
@@ -2348,7 +2348,7 @@ static void process_erase_database(CNCT connection,
 
 	   ERASE D
 	   ON_ERROR
-		   put_line(connection, 144, (TEXT *) dbname, 0, 0);
+		   put_line(connection, 144, (TEXT*) dbname, 0, 0);
 		   ROLLBACK;
 		   START_TRANSACTION;
 		   return;
@@ -2373,7 +2373,7 @@ static void process_message(CNCT connection,
  *	Process a journal message.
  *
  **************************************/
-	TEXT *p;
+	TEXT*p;
 
 	switch (msg->jrnh_type) {
 	case JRN_ENABLE:
@@ -2397,9 +2397,9 @@ static void process_message(CNCT connection,
 		break;
 
 	case JRN_CONSOLE:
-		p = (TEXT *) msg;
+		p = (TEXT*) msg;
 		p[length] = 0;
-		process_command(connection, (TEXT *) (p + sizeof(JRNH)));
+		process_command(connection, (TEXT*) (p + sizeof(JRNH)));
 		break;
 
 	case JRN_START_ONLINE_DMP:
@@ -2431,7 +2431,7 @@ static void process_message(CNCT connection,
 		break;
 
 	default:
-		put_line(NULL, 123, (TEXT *) msg->jrnh_type, 0, 0);
+		put_line(NULL, 123, (TEXT*)(ULONG) msg->jrnh_type, 0, 0);
 	}
 }
 
@@ -2455,7 +2455,7 @@ static void process_reset_database(CNCT connection,
 	commit();
 
 	if (!(database = lookup_database(dbname, 0, 0))) {
-		put_line(connection, 143, (TEXT *) dbname, 0, 0);
+		put_line(connection, 143, (TEXT*) dbname, 0, 0);
 		return;
 	}
 	else {
@@ -2500,7 +2500,7 @@ static void process_restart_archive(CNCT connection,
 	commit();
 
 	if (!(database = lookup_database(dbname, 0, 0))) {
-		put_line(connection, 143, (TEXT *) dbname, 0, 0);
+		put_line(connection, 143, (TEXT*) dbname, 0, 0);
 		return;
 	}
 	else {
@@ -2537,7 +2537,7 @@ static void process_set_database(CNCT connection,
 	commit();
 
 	if (!(database = lookup_database(dbname, 0, 0))) {
-		put_line(connection, 143, (TEXT *) dbname, 0, 0);
+		put_line(connection, 143, (TEXT*) dbname, 0, 0);
 		return;
 	}
 	else {
@@ -2613,7 +2613,7 @@ static void process_start_dump(CNCT connection,
 
 	END_FOR;
 
-	put_line(NULL, 125, (TEXT *) dump_id, 0, 0);
+	put_line(NULL, 125, (TEXT*) dump_id, 0, 0);
 
   end_proc:
 
@@ -2701,9 +2701,9 @@ static void process_wal_file(CNCT connection,
 	END_FOR;
 
 	if (msg->ltjw_mode == JRNW_OPEN)
-		put_line(NULL, 127, (TEXT *) msg->ltjw_data, 0, 0);
+		put_line(NULL, 127, (TEXT*) msg->ltjw_data, 0, 0);
 	else
-		put_line(NULL, 128, (TEXT *) msg->ltjw_data, 0, 0);
+		put_line(NULL, 128, (TEXT*) msg->ltjw_data, 0, 0);
 
 	commit();
 
@@ -2910,8 +2910,8 @@ static void report_status(CNCT connection)
 			continue;
 
 		put_line(connection, 132,
-				 (char*) database->djb_db_name, (TEXT *) database->djb_id,
-				 (TEXT *) database->djb_use_count);
+				 (char*) database->djb_db_name, (TEXT*)(ULONG) database->djb_id,
+				 (TEXT*)(ULONG) database->djb_use_count);
 	}
 }
 
@@ -3385,7 +3385,7 @@ static bool start_server(UCHAR * journal_dir,
 		if (X.USE_COUNT) {
 			put_line(NULL, 136, 0, 0, 0);
 			FOR D IN DATABASES WITH D.STATUS EQ DB_ACTIVE AND D.USE_COUNT NE 0
-				put_line(NULL, 137, (TEXT *) D.DB_NAME, (TEXT *) D.DB_ID, 0);
+				put_line(NULL, 137, (TEXT*) D.DB_NAME, (TEXT*) D.DB_ID, 0);
 				MODIFY D USING
 					D.USE_COUNT = 0;
 				END_MODIFY;

@@ -169,7 +169,7 @@ static void disable(DRB, LTJC *);
 static int error(const TEXT*, ISC_STATUS, const TEXT*, ISC_STATUS);
 static void expand_num_alloc(SCHAR ***, SSHORT *);
 static void fixup_header(DRB);
-static void format_time(SLONG[2], TEXT *);
+static void format_time(SLONG[2], TEXT*);
 static CACHE get_free_buffer(DRB, SLONG);
 static void get_log_files(SLONG, SSHORT, SCHAR ***, SLONG **, SSHORT *,
 						  SLONG);
@@ -412,8 +412,8 @@ bool REBUILD_start_restore(int argc,
 		GJRN_printf(207, NULL, NULL, NULL, NULL);
 
 		for (i = 0; i < (JRNP_MAX - JRN_PAGE); i++)
-			GJRN_printf(208, table[i], (TEXT *) totals[i].num_recs,
-						(TEXT *) totals[i].num_bytes, NULL);
+			GJRN_printf(208, table[i], (TEXT*) totals[i].num_recs,
+						(TEXT*) totals[i].num_bytes, NULL);
 	}
 
 	if (msg_file != stdout)
@@ -513,7 +513,7 @@ static void apply_data(DRB database,
 	dpg::dpg_repeat* end;
 
 	if (sw_debug)
-		GJRN_printf(21, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
+		GJRN_printf(21, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
 
 // Process clumps
 
@@ -521,7 +521,7 @@ static void apply_data(DRB database,
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNP_SIZE);
 
 		if (temp.jrnp_type != JRNP_DATA_SEGMENT) {
-			GJRN_printf(55, (TEXT *) temp.jrnp_type, NULL, NULL, NULL);
+			GJRN_printf(55, (TEXT*)(ULONG) temp.jrnp_type, NULL, NULL, NULL);
 			rebuild_abort(72);
 		}
 
@@ -611,7 +611,7 @@ static void apply_header(HDR page,
 	JRNDA temp2;
 
 	if (sw_debug)
-		GJRN_printf(22, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
+		GJRN_printf(22, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
 
 	for (clump = NULL; clump = (JRNDH *) next_clump(record, clump);) {
 		if (clump->jrndh_type == JRNP_DB_HEADER)
@@ -620,8 +620,8 @@ static void apply_header(HDR page,
 			memcpy((SCHAR *) & temp2, (SCHAR *) clump, JRNDA_SIZE);
 
 		if ((sw_debug) && (clump->jrndh_type == JRNP_DB_HEADER))
-			GJRN_printf(203, (TEXT *) temp1.jrndh_nti,
-						(TEXT *) temp1.jrndh_oat, (TEXT *) temp1.jrndh_oit,
+			GJRN_printf(203, (TEXT*) temp1.jrndh_nti,
+						(TEXT*) temp1.jrndh_oat, (TEXT*) temp1.jrndh_oit,
 						NULL);
 
 		if (sw_trace)
@@ -675,7 +675,7 @@ static void apply_ids(PPG page,
 	SLONG *ptr;
 
 	if (sw_debug)
-		GJRN_printf(23, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
+		GJRN_printf(23, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
 
 	for (clump = NULL; clump = (JRNG *) next_clump(record, clump);) {
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNG_SIZE);
@@ -684,8 +684,8 @@ static void apply_ids(PPG page,
 			rebuild_abort(59);
 
 		if (sw_debug)
-			GJRN_printf(204, (TEXT *) temp.jrng_offset,
-						(TEXT *) temp.jrng_genval, NULL, NULL);
+			GJRN_printf(204, (TEXT*) temp.jrng_offset,
+						(TEXT*) temp.jrng_genval, NULL, NULL);
 
 		if (sw_trace)
 			continue;
@@ -716,7 +716,7 @@ static void apply_index(BTR page,
 	BTN node, next;
 
 	if (sw_debug)
-		GJRN_printf(24, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
+		GJRN_printf(24, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
 
 	for (clump = NULL; clump = (JRNB *) next_clump(record, clump);) {
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNB_SIZE);
@@ -727,9 +727,9 @@ static void apply_index(BTR page,
 		switch (clump->jrnb_type) {
 		case JRNP_BTREE_NODE:
 			if (sw_debug) {
-				GJRN_printf(25, (TEXT *) temp.jrnb_offset,
-							(TEXT *) temp.jrnb_length, NULL, NULL);
-				GJRN_printf(27, (TEXT *) page->btr_length, NULL, NULL, NULL);
+				GJRN_printf(25, (TEXT*)(ULONG) temp.jrnb_offset,
+							(TEXT*)(ULONG) temp.jrnb_length, NULL, NULL);
+				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
 
 			// slide down upper part by delta
@@ -757,15 +757,15 @@ static void apply_index(BTR page,
 			page->btr_prefix_total = temp.jrnb_prefix_total;
 
 			if (sw_debug) {
-				GJRN_printf(26, (TEXT *) temp.jrnb_offset,
-							(TEXT *) temp.jrnb_length, NULL, NULL);
-				GJRN_printf(27, (TEXT *) page->btr_length, NULL, NULL, NULL);
+				GJRN_printf(26, (TEXT*)(ULONG) temp.jrnb_offset,
+							(TEXT*)(ULONG) temp.jrnb_length, NULL, NULL);
+				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
 			break;
 
 		case JRNP_BTREE_SEGMENT:
 			if (sw_debug) {
-				GJRN_printf(28, (TEXT *) page->btr_length, NULL, NULL, NULL);
+				GJRN_printf(28, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
 
 			// apply change directly
@@ -778,8 +778,8 @@ static void apply_index(BTR page,
 				} while (--l);
 
 			if (sw_debug) {
-				GJRN_printf(29, (TEXT *) temp.jrnb_length, NULL, NULL, NULL);
-				GJRN_printf(27, (TEXT *) page->btr_length, NULL, NULL, NULL);
+				GJRN_printf(29, (TEXT*)(ULONG) temp.jrnb_length, NULL, NULL, NULL);
+				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
 			break;
 
@@ -830,8 +830,8 @@ static void apply_index(BTR page,
 			}
 
 			if (sw_debug) {
-				GJRN_printf(30, (TEXT *) temp.jrnb_offset, NULL, NULL, NULL);
-				GJRN_printf(27, (TEXT *) page->btr_length, NULL, NULL, NULL);
+				GJRN_printf(30, (TEXT*)(ULONG) temp.jrnb_offset, NULL, NULL, NULL);
+				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
 
 			break;
@@ -860,7 +860,7 @@ static void apply_log(LIP page,
 
 	if (sw_debug)
 
-		GJRN_printf(86, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
+		GJRN_printf(86, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
 
 	for (clump = NULL; clump = (JRNL *) next_clump(record, clump);) {
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNL_SIZE);
@@ -893,7 +893,7 @@ static void apply_pip(PIP page,
 
 	if (sw_debug)
 
-		GJRN_printf(31, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
+		GJRN_printf(31, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
 
 	for (clump = NULL; clump = (JRNA *) next_clump(record, clump);) {
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, sizeof(jrna));
@@ -906,11 +906,11 @@ static void apply_pip(PIP page,
 
 		if (sw_debug) {
 			if (temp.jrna_allocate)
-				GJRN_printf(183, (TEXT *) temp.jrna_slot,
-							(TEXT *) record->jrnd_page, NULL, NULL);
+				GJRN_printf(183, (TEXT*) temp.jrna_slot,
+							(TEXT*) record->jrnd_page, NULL, NULL);
 			else
-				GJRN_printf(184, (TEXT *) temp.jrna_slot,
-							(TEXT *) record->jrnd_page, NULL, NULL);
+				GJRN_printf(184, (TEXT*) temp.jrna_slot,
+							(TEXT*) record->jrnd_page, NULL, NULL);
 		}
 		if (sw_trace)
 			continue;
@@ -944,7 +944,7 @@ static void apply_pointer(PPG page,
 
 	if (sw_debug)
 
-		GJRN_printf(32, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
+		GJRN_printf(32, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
 
 	for (clump = NULL; clump = next_clump(record, clump);) {
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNP_SIZE);
@@ -985,7 +985,7 @@ static void apply_root(IRT page,
 
 	if (sw_debug)
 
-		GJRN_printf(33, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
+		GJRN_printf(33, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
 
 	for (clump = NULL; clump = (JRNRP *) next_clump(record, clump);) {
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNRP_SIZE);
@@ -994,8 +994,8 @@ static void apply_root(IRT page,
 			rebuild_abort(65);
 
 		if (sw_debug)
-			GJRN_printf(205, (TEXT *) temp.jrnrp_id,
-						(TEXT *) temp.jrnrp_page, NULL, NULL);
+			GJRN_printf(205, (TEXT*) temp.jrnrp_id,
+						(TEXT*) temp.jrnrp_page, NULL, NULL);
 
 		if (sw_trace)
 			continue;
@@ -1023,7 +1023,7 @@ static void apply_transaction(TIP page,
 
 	if (sw_debug)
 
-		GJRN_printf(34, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
+		GJRN_printf(34, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
 
 	memcpy((SCHAR *) & rec, (SCHAR *) record, JRND_SIZE);
 
@@ -1038,10 +1038,10 @@ static void apply_transaction(TIP page,
 		if (sw_debug) {
 			if (temp.jrni_type == JRNP_TRANSACTION)
 				GJRN_printf(181,
-							(TEXT *) temp.jrni_transaction, NULL, NULL, NULL);
+							(TEXT*) temp.jrni_transaction, NULL, NULL, NULL);
 			else if (temp.jrni_type == JRNP_NEXT_TIP)
 				GJRN_printf(202,
-							(TEXT *) temp.jrni_transaction, NULL, NULL, NULL);
+							(TEXT*) temp.jrni_transaction, NULL, NULL, NULL);
 		}
 		if (sw_trace) {
 			// transaction loop does not use next_clump!!
@@ -1316,8 +1316,8 @@ static void disable(DRB database,
 	format_time(date, ctime);
 
 	if (sw_verbose)
-		GJRN_printf(35, (TEXT *) record->ltjc_length, dbname,
-					(TEXT *) record->ltjc_header.jrnh_handle, ctime);
+		GJRN_printf(35, (TEXT*)(ULONG) record->ltjc_length, dbname,
+					(TEXT*) record->ltjc_header.jrnh_handle, ctime);
 
 	sw_disable = 1;
 	close_database(database);
@@ -1503,7 +1503,7 @@ static void fixup_header(DRB database)
 
 
 static void format_time(SLONG date[2],
-						TEXT * string)
+						TEXT* string)
 {
 /**************************************
  *
@@ -2335,7 +2335,7 @@ static SLONG process_new_file(DRB database,
 	FIL file, next;
 	HDR header;
 	SLONG sequence;
-	TEXT *file_name;
+	TEXT*file_name;
 	SLONG start;
 	CACHE cch;
 	SSHORT file_len;
@@ -2359,7 +2359,7 @@ static SLONG process_new_file(DRB database,
 
 
 		GJRN_printf(180, file_name,
-					(TEXT *) record->jrnf_sequence, NULL, NULL);
+					(TEXT*)(ULONG) record->jrnf_sequence, NULL, NULL);
 
 	if (sw_trace)
 		return 0;
@@ -2502,8 +2502,8 @@ static void process_page(DRB database,
 // Print out info
 
 	if (sw_debug)
-		GJRN_printf(182, (TEXT *) rec.jrnd_page,
-					(TEXT *) seqno, (TEXT *) offset, NULL);
+		GJRN_printf(182, (TEXT*) rec.jrnd_page,
+					(TEXT*) seqno, (TEXT*) offset, NULL);
 
 // Handle zero length record.  This is an off shoot of PAG_release_page ()
 
@@ -2537,9 +2537,9 @@ static void process_page(DRB database,
 			release_page(database, cch);
 			if (sw_debug) {
 				if (clump->jrnp_type <= pag_max)
-					GJRN_printf(41, (TEXT *) rec.jrnd_page, NULL, NULL, NULL);
+					GJRN_printf(41, (TEXT*) rec.jrnd_page, NULL, NULL, NULL);
 				else
-					GJRN_printf(43, (TEXT *) rec.jrnd_page, NULL, NULL, NULL);
+					GJRN_printf(43, (TEXT*) rec.jrnd_page, NULL, NULL, NULL);
 			}
 			return;
 		}
@@ -2572,7 +2572,7 @@ static void process_page(DRB database,
 
 	if (clump->jrnp_type <= pag_max) {
 		if (sw_debug)
-			GJRN_printf(42, (TEXT *) rec.jrnd_page, NULL, NULL, NULL);
+			GJRN_printf(42, (TEXT*) rec.jrnd_page, NULL, NULL, NULL);
 
 		if (sw_trace) {
 			totals[0].num_recs++;
@@ -2636,7 +2636,7 @@ static void process_page(DRB database,
 
 		default:
 			if (sw_debug)
-				GJRN_printf(44, (TEXT *) rec.jrnd_page, NULL, NULL, NULL);
+				GJRN_printf(44, (TEXT*) rec.jrnd_page, NULL, NULL, NULL);
 			rebuild_abort(72);
 		}
 	}
@@ -2677,7 +2677,7 @@ static void process_page(DRB database,
 
 		default:
 			if (sw_debug)
-				GJRN_printf(44, (TEXT *) rec.jrnd_page, NULL, NULL, NULL);
+				GJRN_printf(44, (TEXT*) rec.jrnd_page, NULL, NULL, NULL);
 			rebuild_abort(72);
 		}
 	}
@@ -2817,7 +2817,7 @@ static bool process_record(JRNH * record,
 		break;
 	case JRN_START_ONLINE_DMP:
 		if (sw_debug)
-			GJRN_printf(45, (TEXT *) seqno, (TEXT *) offset, NULL, NULL);
+			GJRN_printf(45, (TEXT*) seqno, (TEXT*) offset, NULL, NULL);
 		break;
 	case JRN_END_ONLINE_DMP:
 
@@ -2827,10 +2827,10 @@ static bool process_record(JRNH * record,
 		if (rec->ltjw_seqno == dump_id)
 			end_reached = true;
 		if (sw_debug)
-			GJRN_printf(46, (TEXT *) seqno, (TEXT *) offset, NULL, NULL);
+			GJRN_printf(46, (TEXT*) seqno, (TEXT*) offset, NULL, NULL);
 		break;
 	default:
-		GJRN_printf(45, (TEXT *) record->jrnh_type, NULL, NULL, NULL);
+		GJRN_printf(45, (TEXT*)(ULONG) record->jrnh_type, NULL, NULL, NULL);
 		rebuild_abort(0);
 	}
 
@@ -3419,10 +3419,10 @@ static void rec_restore(SCHAR * journal_name,
 	elapsed_time = et_sec + et_msec / 1000000;
 	if ((sw_verbose) || (sw_trace)) {
 		GJRN_printf(155, NULL, NULL, NULL, NULL);
-		GJRN_printf(156, (TEXT *)
+		GJRN_printf(156, (TEXT*)
 					bytes_processed, NULL, NULL, NULL);
-		GJRN_printf(157, (TEXT *) bytes_applied, NULL, NULL, NULL);
-		GJRN_printf(158, (TEXT *) elapsed_time, NULL, NULL, NULL);
+		GJRN_printf(157, (TEXT*) bytes_applied, NULL, NULL, NULL);
+		GJRN_printf(158, (TEXT*) elapsed_time, NULL, NULL, NULL);
 	}
 
 	while (databases)
@@ -3514,7 +3514,7 @@ static void rec_restore_manual(SCHAR * dbn)
 	}
 
 	if (sw_verbose)
-		GJRN_printf(190, db_name, (TEXT *) page_size, NULL, NULL);
+		GJRN_printf(190, db_name, (TEXT*)(SLONG) page_size, NULL, NULL);
 	open_database(db_name, page_size, true);
 	if (num_files) {
 		if (process_online_dump(old_db_name, files, num_files) < 0)
@@ -3554,10 +3554,10 @@ static void rec_restore_manual(SCHAR * dbn)
 	elapsed_time = et_sec + et_msec / 1000000;
 	if ((sw_verbose) || (sw_trace)) {
 		GJRN_printf(155, NULL, NULL, NULL, NULL);
-		GJRN_printf(156, (TEXT *)
+		GJRN_printf(156, (TEXT*)
 					bytes_processed, NULL, NULL, NULL);
-		GJRN_printf(157, (TEXT *) bytes_applied, NULL, NULL, NULL);
-		GJRN_printf(158, (TEXT *) elapsed_time, NULL, NULL, NULL);
+		GJRN_printf(157, (TEXT*) bytes_applied, NULL, NULL, NULL);
+		GJRN_printf(158, (TEXT*) elapsed_time, NULL, NULL, NULL);
 	}
 
 	for (; num_files; num_files--)
@@ -3676,7 +3676,7 @@ static FIL setup_file(const UCHAR* file_name,
 	FIL file = (FIL) MISC_alloc_jrnl(sizeof(fil) + file_length + 1);
 	file->fil_desc = desc;
 	file->fil_length = file_length;
-	file->fil_max_page = -1;
+	file->fil_max_page = (ULONG) -1;
 	MOVE_FAST(file_name, file->fil_string, file_length);
 	file->fil_string[file_length] = '\0';
 	return file;
