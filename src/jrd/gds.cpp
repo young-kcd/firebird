@@ -389,10 +389,6 @@ static ULONG	free_memory(void *);
 static void		init(void);
 static int		yday(struct tm *);
 
-/*#if (defined SOLARIS )
-static UCHAR*	mmap_anon(SLONG);
-#endif
-*/
 static void		ndate(SLONG, struct tm *);
 static GDS_DATE	nday(struct tm *);
 static void		sanitize(TEXT *);
@@ -4689,7 +4685,7 @@ UCHAR *mmap_anon(SLONG size)
  **************************************/
 	char *memory, *va, *va_end, *va1;
 	ULONG chunk, errno1;
-	int     anon_fd, page_size;
+	int     anon_fd=-1, page_size=-1;
 /* Choose SYS_ALLOC_CHUNK such that it is always valid for the
    underlying mapped file and is a multiple of any conceivable
    memory page size that a hardware platform might support. */
@@ -4713,7 +4709,7 @@ UCHAR *mmap_anon(SLONG size)
 
 /* Get memory page size for virtual memory checking. */
 
-	if (page_size == -1 && (page_size = sysconf(_SC_PAGESIZE)) == -1)
+	if ((page_size = sysconf(_SC_PAGESIZE)) == -1)
 		ERR_post(isc_sys_request, isc_arg_string, "sysconf", isc_arg_unix,
 				 errno, 0);
 
