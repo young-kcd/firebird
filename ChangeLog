@@ -1,3 +1,12 @@
+2004-07-05 16:21  kkuznetsov
+
+	* firebird2/builds/posix/: Makefile.in.fbserver (1.11.2.4),
+	Makefile.in.libfbserver (1.6.2.2), make.defaults (1.25.2.7),
+	prefix.solx86gcc (1.1.2.4):
+	
+	Maked "-pthreads" gcc Super flags platform specific to compile
+	super on SolX86
+
 2004-07-02 16:43  kkuznetsov
 
 	* firebird2/: builds/posix/prefix.solx86gcc (1.1.2.3),
