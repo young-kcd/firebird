@@ -1,3 +1,64 @@
+2002-02-23  dimitr
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/dsql/errd.cpp:
+	* src/dsql/user_dsql.cpp:
+	* src/jrd/err.cpp:
+	* src/jrd/par.cpp:
+	* src/jrd/sdl.cpp:
+	* src/misc/status.cpp:
+		Correction to the clean up of the Apollo port
+
+	* src/jrd/dfw.epp:
+	* src/jrd/event.cpp:
+	* src/jrd/event.h:
+	* src/jrd/event_proto.h:
+	* src/jrd/utl.cpp:
+	* src/jrd/why.c:
+		Introduced the wildcarding of event names.
+		Since the work is not finished yet, so far the changes are protected by a macro.
+
+2002-02-23  seanleyne
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/jrd/flu.cpp:
+	* src/jrd/isc_file.cpp:
+	* src/jrd/isc_sync.cpp:
+	* src/jrd/why.c:
+	* src/jrd/y-valve.cpp:
+	* src/pipe/head.cpp:
+	* src/remote/inet.cpp:
+		More code cleanup of old NCR3000 and M88K ports
+
+	* src/dsql/parse.cpp:
+	* src/dsql/utld_proto.h:
+	* src/include/gen/autoconfig_msvc.h:
+	* src/jrd/event.h:
+	* src/jrd/why.c:
+	* src/jrd/y-valve.cpp:
+		Code cleanup, removed old Windows 3.1 (WINDOWS_ONLY) port
+
+2002-02-20  dimitr
+	* src/jrd/license.h:
+		Removed an ambiguity in nested #ifdef's
+
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+2002-02-19  pcisar
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
 2002-02-19  seanleyne
 	* src/misc/writeBuildNum.sh:
 		increment build number
