@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.39 2003-10-14 22:21:49 brodsom Exp $
+//  $Id: gpre.cpp,v 1.40 2003-10-15 01:18:01 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -1212,7 +1212,7 @@ void CPR_s_error(const TEXT* string)
 
 TXT CPR_start_text()
 {
-	TXT text = (TXT) ALLOC(TXT_LEN);
+	TXT text = (TXT) MSC_alloc(TXT_LEN);
 	text->txt_position = token.tok_position - 1;
 
 	return text;

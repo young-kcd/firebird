@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.18 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: cmd.cpp,v 1.19 2003-10-15 01:18:01 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -120,7 +120,7 @@ CMD_compile_ddl(GPRE_REQ request)
 //  Initialize the blr string 
 
 	action = request->req_actions;
-	request->req_blr = request->req_base = ALLOC(250);
+	request->req_blr = request->req_base = MSC_alloc(250);
 	request->req_length = 250;
 	request->req_flags |= REQ_exp_hand;
 	STUFF(gds_dyn_version_1);
@@ -451,7 +451,7 @@ static void alter_domain( GPRE_REQ request, ACT action)
 					field->fld_default_value,
 					reinterpret_cast < pfn_local_trigger_cb > (CME_expr));
 			default_source =
-				(TEXT *) ALLOC(field->fld_default_source->txt_length + 1);
+				(TEXT *) MSC_alloc(field->fld_default_source->txt_length + 1);
 			CPR_get_text(default_source, field->fld_default_source);
 			put_cstring(request, gds_dyn_fld_default_source, default_source);
 		}
@@ -532,7 +532,7 @@ static void alter_table( GPRE_REQ request, ACT action)
 						field->fld_default_value,
 						reinterpret_cast < pfn_local_trigger_cb > (CME_expr));
 				default_source = (TEXT *)
-					ALLOC(field->fld_default_source->txt_length + 1);
+					MSC_alloc(field->fld_default_source->txt_length + 1);
 				CPR_get_text(default_source, field->fld_default_source);
 				put_cstring(request, gds_dyn_fld_default_source,
 							default_source);
@@ -574,7 +574,7 @@ static void create_check_constraint( GPRE_REQ request, ACT action, cnstrt* const
 {
 	GPRE_TRG trigger;
 
-	trigger = (GPRE_TRG) ALLOC(TRG_LEN);
+	trigger = (GPRE_TRG) MSC_alloc(TRG_LEN);
 
 //  create the INSERT trigger 
 
@@ -584,7 +584,7 @@ static void create_check_constraint( GPRE_REQ request, ACT action, cnstrt* const
 
 	trigger->trg_message = NULL;
 	trigger->trg_boolean = constraint->cnstrt_boolean;
-	trigger->trg_source = (STR) ALLOC(constraint->cnstrt_text->txt_length + 1);
+	trigger->trg_source = (STR) MSC_alloc(constraint->cnstrt_text->txt_length + 1);
 	CPR_get_text((TEXT *) trigger->trg_source, constraint->cnstrt_text);
 	create_trigger(request, action, trigger,
 				   reinterpret_cast < pfn_local_trigger_cb > (CME_expr));
@@ -1653,7 +1653,7 @@ static void create_domain( GPRE_REQ request, ACT action)
 		put_blr(request, gds_dyn_fld_default_value, field->fld_default_value,
 				reinterpret_cast < pfn_local_trigger_cb > (CME_expr));
 		default_source = (TEXT *)
-			ALLOC(field->fld_default_source->txt_length + 1);
+			MSC_alloc(field->fld_default_source->txt_length + 1);
 		CPR_get_text(default_source, field->fld_default_source);
 		put_cstring(request, gds_dyn_fld_default_source, default_source);
 	}
@@ -1683,7 +1683,7 @@ static void create_domain_constraint(GPRE_REQ request, ACT action, cnstrt* const
 //***
 
 		if (constraint->cnstrt_type == CNSTRT_CHECK) {
-			source = (TEXT *) ALLOC(constraint->cnstrt_text->txt_length + 1);
+			source = (TEXT *) MSC_alloc(constraint->cnstrt_text->txt_length + 1);
 			CPR_get_text(source, constraint->cnstrt_text);
 			if (source != NULL)
 				put_cstring(request, gds_dyn_fld_validation_source, source);
@@ -1829,7 +1829,7 @@ static void create_table( GPRE_REQ request, ACT action)
 					field->fld_default_value,
 					reinterpret_cast < pfn_local_trigger_cb > (CME_expr));
 			default_source = (TEXT *)
-				ALLOC(field->fld_default_source->txt_length + 1);
+				MSC_alloc(field->fld_default_source->txt_length + 1);
 			CPR_get_text(default_source, field->fld_default_source);
 			put_cstring(request, gds_dyn_fld_default_source, default_source);
 		}
@@ -1936,7 +1936,7 @@ static bool create_view(GPRE_REQ request,
 
 //  write out view source   
 
-	view_source = (TEXT *) ALLOC(relation->rel_view_text->txt_length + 1);
+	view_source = (TEXT *) MSC_alloc(relation->rel_view_text->txt_length + 1);
 	CPR_get_text(view_source, relation->rel_view_text);
 	put_cstring(request, gds_dyn_view_source, view_source);
 
@@ -2016,7 +2016,7 @@ static bool create_view(GPRE_REQ request,
 			return false;
 		}
 
-		trigger = (GPRE_TRG) ALLOC(TRG_LEN);
+		trigger = (GPRE_TRG) MSC_alloc(TRG_LEN);
 
 		/* For the triggers, the OLD, NEW contexts are reserved  */
 
@@ -2078,7 +2078,7 @@ static bool create_view(GPRE_REQ request,
 			set_item = MSC_node(nod_assignment, 2);
 			set_item->nod_arg[1] = value;
 			set_item->nod_arg[0] = new_view_field;
-			PUSH(set_item, &stack);
+			MSC_push(set_item, &stack);
 			count++;
 
 			if (!or_node)
@@ -2094,7 +2094,7 @@ static bool create_view(GPRE_REQ request,
 		set_list = MSC_node(nod_list, count);
 		ptr = set_list->nod_arg + count;
 		while (stack)
-			*--ptr = (GPRE_NOD) POP(&stack);
+			*--ptr = (GPRE_NOD) MSC_pop(&stack);
 
 		/* Modify the context of fields in boolean to be that of the
 		   sub-relation. */
@@ -2565,7 +2565,7 @@ static void put_computed_source( GPRE_REQ request, GPRE_FLD field)
 
 	if (field->fld_computed->cmpf_text != NULL) {
 		computed_source = (TEXT *)
-			ALLOC(field->fld_computed->cmpf_text->txt_length + 1);
+			MSC_alloc(field->fld_computed->cmpf_text->txt_length + 1);
 		CPR_get_text(computed_source, field->fld_computed->cmpf_text);
 		put_cstring(request, gds_dyn_fld_computed_source, computed_source);
 	}

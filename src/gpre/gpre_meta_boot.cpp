@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.27 2003-10-14 22:21:49 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.28 2003-10-15 01:18:01 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -300,7 +300,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 		node = MSC_node(nod_list, procedure->prc_out_count);
 		//int count = 0;
 		for (field = procedure->prc_outputs; field; field = field->fld_next) {
-			reference = (REF) ALLOC(REF_LEN);
+			reference = (REF) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
 			field_node = MSC_unary(nod_field, (GPRE_NOD)reference);
@@ -319,7 +319,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 		node = MSC_node(nod_list, count);
 		//count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
-			reference = (REF) ALLOC(REF_LEN);
+			reference = (REF) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
 			field_node = MSC_unary(nod_field, (GPRE_NOD)reference);
@@ -644,7 +644,7 @@ GPRE_FLD MET_make_field(const SCHAR* name,
 						SSHORT length,
 						bool insert_flag)
 {
-	GPRE_FLD field = (GPRE_FLD) ALLOC(FLD_LEN);
+	GPRE_FLD field = (GPRE_FLD) MSC_alloc(FLD_LEN);
 	field->fld_length = length;
 	field->fld_dtype = dtype;
 	SYM symbol = MSC_symbol(SYM_field, name, strlen(name), (GPRE_CTX)field);
@@ -664,7 +664,7 @@ GPRE_FLD MET_make_field(const SCHAR* name,
 
 IND MET_make_index(const SCHAR* name)
 {
-	IND index = (IND) ALLOC(IND_LEN);
+	IND index = (IND) MSC_alloc(IND_LEN);
 	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (GPRE_CTX)index);
 
 	return index;
@@ -678,7 +678,7 @@ IND MET_make_index(const SCHAR* name)
 
 GPRE_REL MET_make_relation(const SCHAR* name)
 {
-	GPRE_REL relation = (GPRE_REL) ALLOC(REL_LEN);
+	GPRE_REL relation = (GPRE_REL) MSC_alloc(REL_LEN);
 	relation->rel_symbol =
 		MSC_symbol(SYM_relation, name, strlen(name), (GPRE_CTX)relation);
 

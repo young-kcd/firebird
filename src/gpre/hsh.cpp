@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.16 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: hsh.cpp,v 1.17 2003-10-15 01:18:01 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -66,7 +66,7 @@ void HSH_fini(void)
 		symbol = key_symbols;
 		key_symbols = (SYM) key_symbols->sym_object;
 		HSH_remove(symbol);
-		FREE((UCHAR *) symbol);
+		MSC_free((UCHAR *) symbol);
 	}
 }
 
@@ -90,7 +90,7 @@ void HSH_init(void)
 	fflush(stdout);
 	for (i = 0, a_word = keywords; i < FB_NELEM(keywords); i++, a_word++) {
 		for (string = a_word->keyword; *string; string++);
-		symbol = (SYM) ALLOC(SYM_LEN);
+		symbol = (SYM) MSC_alloc(SYM_LEN);
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_string = a_word->keyword;
 		symbol->sym_keyword = (int) a_word->id;

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.13 2003-10-06 09:48:44 robocop Exp $
+//	$Id: msc.cpp,v 1.14 2003-10-15 01:18:01 brodsom Exp $
 //
 //  
 //  
@@ -77,7 +77,7 @@ ACT MSC_action( GPRE_REQ request, enum act_t type)
 {
 	ACT action;
 
-	action = (ACT) ALLOC(ACT_LEN);
+	action = (ACT) MSC_alloc(ACT_LEN);
 	action->act_type = type;
 
 	if (request) {
@@ -193,7 +193,7 @@ GPRE_CTX MSC_context(GPRE_REQ request)
 
 //  allocate and initialize 
 
-	context = (GPRE_CTX) ALLOC(CTX_LEN);
+	context = (GPRE_CTX) MSC_alloc(CTX_LEN);
 	context->ctx_request = request;
 	context->ctx_internal = request->req_internal++;
 	context->ctx_scope_level = request->req_scope_level;
@@ -363,7 +363,7 @@ GPRE_NOD MSC_node(enum nod_t type, SSHORT count)
 {
 	GPRE_NOD node;
 
-	node = (GPRE_NOD) ALLOC(NOD_LEN(count));
+	node = (GPRE_NOD) MSC_alloc(NOD_LEN(count));
 	node->nod_count = count;
 	node->nod_type = type;
 
@@ -401,7 +401,7 @@ PRV MSC_privilege_block(void)
 {
 	PRV privilege_block;
 
-	privilege_block = (PRV) ALLOC(PRV_LEN);
+	privilege_block = (PRV) MSC_alloc(PRV_LEN);
 	privilege_block->prv_privileges = PRV_no_privs;
 	privilege_block->prv_username = 0;
 	privilege_block->prv_relation = 0;
@@ -424,7 +424,7 @@ void MSC_push( GPRE_NOD object, LLS * pointer)
 	if (stack = free_lls)
 		free_lls = stack->lls_next;
 	else
-		stack = (LLS) ALLOC(LLS_LEN);
+		stack = (LLS) MSC_alloc(LLS_LEN);
 
 	stack->lls_object = object;
 	stack->lls_next = *pointer;
@@ -442,7 +442,7 @@ REF MSC_reference(REF * link)
 {
 	REF reference;
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 
 	if (link) {
 		reference->ref_next = *link;
@@ -463,7 +463,7 @@ GPRE_REQ MSC_request(enum req_t type)
 {
 	GPRE_REQ request;
 
-	request = (GPRE_REQ) ALLOC(REQ_LEN);
+	request = (GPRE_REQ) MSC_alloc(REQ_LEN);
 	request->req_type = type;
 	request->req_next = requests;
 	requests = request;
@@ -487,7 +487,7 @@ GPRE_REQ MSC_request(enum req_t type)
 
 SCHAR* MSC_string(const TEXT* input)
 {
-	TEXT* string = (TEXT*) ALLOC(strlen(input) + 1);
+	TEXT* string = (TEXT*) MSC_alloc(strlen(input) + 1);
 	strcpy(string, input);
 
 	return string;
@@ -501,7 +501,7 @@ SCHAR* MSC_string(const TEXT* input)
 
 SYM MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, GPRE_CTX object)
 {
-	SYM symbol = (SYM) ALLOC(SYM_LEN + length);
+	SYM symbol = (SYM) MSC_alloc(SYM_LEN + length);
 	symbol->sym_type = type;
 	symbol->sym_object = object;
 	TEXT* p = symbol->sym_name;

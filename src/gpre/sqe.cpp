@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.23 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: sqe.cpp,v 1.24 2003-10-15 01:18:01 brodsom Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -389,7 +389,7 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 	if (!request || !request->req_contexts || request->req_in_select_list) {
 		node = MSC_node(nod_defered, 3);
 		node->nod_count = 0;
-		f_token = (TOK) ALLOC(TOK_LEN);
+		f_token = (TOK) MSC_alloc(TOK_LEN);
 		node->nod_arg[0] = (GPRE_NOD) f_token;
 		f_token->tok_length = token.tok_length;
 		SQL_resolve_identifier("<identifier>", f_token->tok_string);
@@ -404,7 +404,7 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 			}
 			else {
 				node->nod_arg[1] = node->nod_arg[0];
-				f_token = (TOK) ALLOC(TOK_LEN);
+				f_token = (TOK) MSC_alloc(TOK_LEN);
 				node->nod_arg[0] = (GPRE_NOD) f_token;
 				f_token->tok_length = token.tok_length;
 				SQL_resolve_identifier("<identifier>", f_token->tok_string);
@@ -419,27 +419,27 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 				do {
 					count++;
 					tail = par_subscript(slice_req);
-					PUSH(tail, &lower_dim);
+					MSC_push(tail, &lower_dim);
 					if (MSC_match(KW_COLON)) {
 						// if (!MSC_match (KW_DOT))
 						// CPR_s_error ("<period>");
 						tail = par_subscript(slice_req);
-						PUSH(tail, &upper_dim);
+						MSC_push(tail, &upper_dim);
 					}
 					else
-						PUSH(tail, &upper_dim);
+						MSC_push(tail, &upper_dim);
 				} while (MSC_match(KW_COMMA));
 
 				if (!MSC_match(KW_R_BRCKET))
 					CPR_s_error("<right bracket>");
-				slice_req->req_slice = slice = (SLC) ALLOC(SLC_LEN(count));
+				slice_req->req_slice = slice = (SLC) MSC_alloc(SLC_LEN(count));
 				tail_ptr = &slice->slc_rpt[count];
 				slice->slc_dimensions = count;
 				slice->slc_parent_request = request;
 				while (lower_dim) {
 					--tail_ptr;
-					tail_ptr->slc_lower = POP(&lower_dim);
-					tail_ptr->slc_upper = POP(&upper_dim);
+					tail_ptr->slc_lower = MSC_pop(&lower_dim);
+					tail_ptr->slc_upper = MSC_pop(&upper_dim);
 				}
 				node->nod_arg[2] = (GPRE_NOD) slice_req;
 
@@ -451,7 +451,7 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 				node->nod_count = 3;
 			}
 			else {
-				slice_req = (GPRE_REQ) ALLOC(REQ_LEN);
+				slice_req = (GPRE_REQ) MSC_alloc(REQ_LEN);
 				slice_req->req_type = REQ_slice;
 				node->nod_arg[2] = (GPRE_NOD) slice_req;
 			}
@@ -460,7 +460,7 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 		return node;
 	}
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 	node = MSC_unary(nod_field, (GPRE_NOD) reference);
 
 	if (symbol = token.tok_symbol) {
@@ -676,7 +676,7 @@ GPRE_NOD SQE_list(pfn_SQE_list_cb routine,
 
 	do {
 		count++;
-		PUSH((*routine) (request, aster_ok, NULL, NULL), &stack);
+		MSC_push((*routine) (request, aster_ok, NULL, NULL), &stack);
 	}
 	while (MSC_match(KW_COMMA));
 
@@ -684,7 +684,7 @@ GPRE_NOD SQE_list(pfn_SQE_list_cb routine,
 	ptr = &list->nod_arg[count];
 
 	while (stack)
-		*--ptr = (GPRE_NOD) POP(&stack);
+		*--ptr = (GPRE_NOD) MSC_pop(&stack);
 
 	return list;
 }
@@ -709,9 +709,9 @@ REF SQE_parameter(GPRE_REQ request,
 	assert_IS_REQ(request);
 
 	if (token.tok_type == tok_number) {
-		reference = (REF) ALLOC(REF_LEN);
-		string = (TEXT *) ALLOC(token.tok_length + 1);
-		COPY(token.tok_string, token.tok_length, string);
+		reference = (REF) MSC_alloc(REF_LEN);
+		string = (TEXT *) MSC_alloc(token.tok_length + 1);
+		MSC_copy(token.tok_string, token.tok_length, string);
 		reference->ref_value = string;
 		reference->ref_flags |= REF_literal;
 		CPR_token();
@@ -725,10 +725,10 @@ REF SQE_parameter(GPRE_REQ request,
     so that the host language will interpret it correctly as a string 
     literal.
     ***/
-		reference = (REF) ALLOC(REF_LEN);
-		string = (TEXT *) ALLOC(token.tok_length + 3);
+		reference = (REF) MSC_alloc(REF_LEN);
+		string = (TEXT *) MSC_alloc(token.tok_length + 3);
 		string[0] = '\"';
-		COPY(token.tok_string, token.tok_length, string + 1);
+		MSC_copy(token.tok_string, token.tok_length, string + 1);
 		string[token.tok_length + 1] = '\"';
 		string[token.tok_length + 2] = 0;
 		reference->ref_value = string;
@@ -744,11 +744,11 @@ REF SQE_parameter(GPRE_REQ request,
 		CPR_token();
 		if (token.tok_type != tok_number)
 			CPR_s_error("<host variable> or <constant>");
-		reference = (REF) ALLOC(REF_LEN);
-		s = string = (TEXT *) ALLOC(token.tok_length + 1 + sign);
+		reference = (REF) MSC_alloc(REF_LEN);
+		s = string = (TEXT *) MSC_alloc(token.tok_length + 1 + sign);
 		if (sign)
 			*s++ = '-';
-		COPY(token.tok_string, token.tok_length, s);
+		MSC_copy(token.tok_string, token.tok_length, s);
 		reference->ref_value = string;
 		reference->ref_flags |= REF_literal;
 		CPR_token();
@@ -761,7 +761,7 @@ REF SQE_parameter(GPRE_REQ request,
 	if (token.tok_type != tok_ident)
 		CPR_s_error("<host variable> or <constant>");
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 
 	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_variable) {
@@ -872,7 +872,7 @@ REF SQE_post_reference(GPRE_REQ request, GPRE_FLD field, GPRE_CTX context, GPRE_
 //  If there isn't a field given, make one up 
 
 	if (!field) {
-		field = (GPRE_FLD) ALLOC(FLD_LEN);
+		field = (GPRE_FLD) MSC_alloc(FLD_LEN);
 		CME_get_dtype(node, field);
 		if (field->fld_dtype && (field->fld_dtype <= dtype_any_text))
 			field->fld_flags |= FLD_text;
@@ -880,7 +880,7 @@ REF SQE_post_reference(GPRE_REQ request, GPRE_FLD field, GPRE_CTX context, GPRE_
 
 //  No reference -- make one 
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 	reference->ref_context = context;
 	reference->ref_field = field;
 	reference->ref_expr = node;
@@ -1015,7 +1015,7 @@ bool SQE_resolve(GPRE_NOD node,
 		 (dtype_int64 == field->fld_dtype)))
 			dialect1_bad_type(field->fld_dtype);
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 	reference->ref_field = field;
 	reference->ref_context = context;
 	reference->ref_slice = (SLC) slice_action;
@@ -1067,7 +1067,7 @@ GPRE_RSE SQE_select(GPRE_REQ request,
 		if (!MSC_match(KW_SELECT))
 			CPR_s_error("SELECT");
 
-		PUSH((GPRE_NOD) request->req_contexts, &context_stack);
+		MSC_push((GPRE_NOD) request->req_contexts, &context_stack);
 		request->req_contexts = NULL;
 		request->req_map = NULL;
 		rse2 = par_select(request, rse1);
@@ -1075,17 +1075,17 @@ GPRE_RSE SQE_select(GPRE_REQ request,
 		/* We've got a bona fide union.  Make a union node to hold sub-rse
 		   and then a new rse to point to it. */
 
-		select = (GPRE_RSE) ALLOC(RSE_LEN(1));
+		select = (GPRE_RSE) MSC_alloc(RSE_LEN(1));
 		select->rse_context[0] = context = MSC_context(request);
 		select->rse_union = node = MSC_node(nod_union, 2);
 		node->nod_arg[0] = (GPRE_NOD) rse1;
 		node->nod_arg[1] = (GPRE_NOD) rse2;
 
-		rse1->rse_map = new_map = (map*) ALLOC(sizeof(map));
+		rse1->rse_map = new_map = (map*) MSC_alloc(sizeof(map));
 		new_map->map_context = context;
 		select->rse_fields = post_select_list(rse1->rse_fields, new_map);
 
-		rse2->rse_map = new_map = (map*) ALLOC(sizeof(map));
+		rse2->rse_map = new_map = (map*) MSC_alloc(sizeof(map));
 		new_map->map_context = context;
 		post_select_list(rse2->rse_fields, new_map);
 
@@ -1104,7 +1104,7 @@ GPRE_RSE SQE_select(GPRE_REQ request,
 	while (context_stack) {
 		while (context->ctx_next)
 			context = context->ctx_next;
-		context->ctx_next = (GPRE_CTX) POP(&context_stack);
+		context->ctx_next = (GPRE_CTX) MSC_pop(&context_stack);
 	}
 
 //  Pick up any dangling ORDER clause 
@@ -1212,7 +1212,7 @@ GPRE_NOD SQE_variable(GPRE_REQ request,
 	if (isQuoted(token.tok_type))
 		CPR_s_error("<host variable>");
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 
 	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_variable) {
@@ -1385,7 +1385,7 @@ static GPRE_FLD get_ref( GPRE_NOD expr)
 	assert_IS_NOD(expr);
 
 	if (expr->nod_type == nod_via || expr->nod_type == nod_cast) {
-		field = (GPRE_FLD) ALLOC(FLD_LEN);
+		field = (GPRE_FLD) MSC_alloc(FLD_LEN);
 		CME_get_dtype(expr, field);
 		if (field->fld_dtype && (field->fld_dtype <= dtype_any_text))
 			field->fld_flags |= FLD_text;
@@ -1732,7 +1732,7 @@ static GPRE_CTX par_alias_list( GPRE_REQ request, GPRE_NOD alias_list)
 
 //  make up a dummy context to hold the resultant relation 
 
-	new_context = (GPRE_CTX) ALLOC(CTX_LEN);
+	new_context = (GPRE_CTX) MSC_alloc(CTX_LEN);
 	new_context->ctx_request = request;
 	new_context->ctx_internal = context->ctx_internal;
 	new_context->ctx_relation = relation;
@@ -1744,7 +1744,7 @@ static GPRE_CTX par_alias_list( GPRE_REQ request, GPRE_NOD alias_list)
 	for (arg = alias_list->nod_arg; arg < end; arg++)
 		alias_length += strlen((TEXT *) * arg);
 
-	alias = (TEXT *) ALLOC(alias_length);
+	alias = (TEXT *) MSC_alloc(alias_length);
 
 	p = new_context->ctx_alias = alias;
 	for (arg = alias_list->nod_arg; arg < end; arg++) {
@@ -1865,7 +1865,7 @@ static GPRE_NOD par_collate( GPRE_REQ request, GPRE_NOD arg)
 	node = MSC_node(nod_cast, 2);
 	node->nod_count = 1;
 	node->nod_arg[0] = arg;
-	field = (GPRE_FLD) ALLOC(FLD_LEN);
+	field = (GPRE_FLD) MSC_alloc(FLD_LEN);
 	node->nod_arg[1] = (GPRE_NOD) field;
 	CME_get_dtype(arg, field);
 	if (field->fld_dtype > dtype_any_text) {
@@ -1994,7 +1994,7 @@ static GPRE_CTX par_join_clause( GPRE_REQ request, GPRE_CTX context1)
 
 	node = SQE_boolean(request, NULL);
 
-	selection = (gpre_rse*) ALLOC(RSE_LEN(2));
+	selection = (gpre_rse*) MSC_alloc(RSE_LEN(2));
 	selection->rse_count = 2;
 	selection->rse_context[0] = context1;
 	selection->rse_context[1] = context2;
@@ -2197,8 +2197,8 @@ static void par_order(GPRE_REQ request,
 		else if (MSC_match(KW_DESCENDING))
 			direction = TRUE;
 		count++;
-		PUSH((GPRE_NOD) direction, &directions);
-		PUSH(sort, &items);
+		MSC_push((GPRE_NOD) direction, &directions);
+		MSC_push(sort, &items);
 		if (!MSC_match(KW_COMMA))
 			break;
 	}
@@ -2208,8 +2208,8 @@ static void par_order(GPRE_REQ request,
 	ptr = sort->nod_arg + count * 2;
 
 	while (items) {
-		*--ptr = (GPRE_NOD) POP(&items);
-		*--ptr = (GPRE_NOD) POP(&directions);
+		*--ptr = (GPRE_NOD) MSC_pop(&items);
+		*--ptr = (GPRE_NOD) MSC_pop(&directions);
 	}
 }
 
@@ -2294,7 +2294,7 @@ static GPRE_NOD par_plan_item(GPRE_REQ request,
 			break;
 		}
 
-		PUSH((GPRE_NOD) upcase_string(token.tok_string), &stack);
+		MSC_push((GPRE_NOD) upcase_string(token.tok_string), &stack);
 		PAR_get_token();
 	}
 
@@ -2303,7 +2303,7 @@ static GPRE_NOD par_plan_item(GPRE_REQ request,
 
 	alias_list = MSC_node(nod_list, (SSHORT) count);
 	for (ptr = &alias_list->nod_arg[count]; stack;)
-		*--ptr = (GPRE_NOD) POP(&stack);
+		*--ptr = (GPRE_NOD) MSC_pop(&stack);
 
 //  lookup the contexts for the aliases 
 
@@ -2334,7 +2334,7 @@ static GPRE_NOD par_plan_item(GPRE_REQ request,
 
 		stack = NULL;
 		for (count = 0; token.tok_type == tok_ident;) {
-			PUSH((GPRE_NOD) upcase_string(token.tok_string), &stack);
+			MSC_push((GPRE_NOD) upcase_string(token.tok_string), &stack);
 			PAR_get_token();
 
 			count++;
@@ -2348,7 +2348,7 @@ static GPRE_NOD par_plan_item(GPRE_REQ request,
 		access_type->nod_arg[0] = index_list =
 			MSC_node(nod_list, (SSHORT) count);
 		for (ptr = &index_list->nod_arg[count]; stack;)
-			*--ptr = (GPRE_NOD) POP(&stack);
+			*--ptr = (GPRE_NOD) MSC_pop(&stack);
 
 		if (!EXP_match_paren())
 			return NULL;
@@ -2707,7 +2707,7 @@ static GPRE_RSE par_rse(GPRE_REQ request,
 
 	do
 		if (context = par_joined_relation(request, NULL)) {
-			PUSH((GPRE_NOD) context, &stack);
+			MSC_push((GPRE_NOD) context, &stack);
 			count++;
 		}
 		else
@@ -2717,11 +2717,11 @@ static GPRE_RSE par_rse(GPRE_REQ request,
 //  Now allocate a record select expression
 //  block for the beast and fill in what we already know.  
 
-	select = (GPRE_RSE) ALLOC(RSE_LEN(count));
+	select = (GPRE_RSE) MSC_alloc(RSE_LEN(count));
 	select->rse_count = count;
 
 	while (count--)
-		select->rse_context[count] = (GPRE_CTX) POP(&stack);
+		select->rse_context[count] = (GPRE_CTX) MSC_pop(&stack);
 
 //  If a field list has been presented, resolve references now 
 
@@ -2784,11 +2784,11 @@ static GPRE_RSE par_rse(GPRE_REQ request,
 			PAR_error
 				("simple column reference not allowed in aggregate context");
 		sub_rse = select;
-		sub_rse->rse_map = subselect_map = (map*) ALLOC(sizeof(map));
+		sub_rse->rse_map = subselect_map = (map*) MSC_alloc(sizeof(map));
 		if (select->rse_group_by)
 			request->req_map = subselect_map;
 		subselect_map->map_context = MSC_context(request);
-		select = (GPRE_RSE) ALLOC(RSE_LEN(0));
+		select = (GPRE_RSE) MSC_alloc(RSE_LEN(0));
 		select->rse_aggregate = sub_rse;
 
 		if (fields)
@@ -2922,15 +2922,15 @@ static GPRE_NOD par_subscript( GPRE_REQ request)
 
 	assert_IS_REQ(request);
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 	node = MSC_unary(nod_value, (GPRE_NOD) reference);
 
 //  Special case literals 
 
 	if (token.tok_type == tok_number) {
 		node->nod_type = nod_literal;
-		reference->ref_value = string = (TEXT *) ALLOC(token.tok_length + 1);
-		COPY(token.tok_string, token.tok_length, string);
+		reference->ref_value = string = (TEXT *) MSC_alloc(token.tok_length + 1);
+		MSC_copy(token.tok_string, token.tok_length, string);
 		PAR_get_token();
 		return node;
 	}
@@ -3053,7 +3053,7 @@ static GPRE_NOD par_udf( GPRE_REQ request)
 
 //  Check for GEN_ID () 
 	if (MSC_match(KW_GEN_ID)) {
-		gen_name = (TEXT *) ALLOC(NAME_SIZE);
+		gen_name = (TEXT *) MSC_alloc(NAME_SIZE);
 		node = MSC_node(nod_gen_id, 2);
 		node->nod_count = 1;
 		EXP_left_paren(0);
@@ -3121,7 +3121,7 @@ static GPRE_NOD par_udf( GPRE_REQ request)
 		node->nod_arg[0] = SQE_value_or_null(request, FALSE, 0, 0);
 		if (!MSC_match(KW_AS))
 			CPR_s_error("AS");
-		field = (GPRE_FLD) ALLOC(FLD_LEN);
+		field = (GPRE_FLD) MSC_alloc(FLD_LEN);
 		node->nod_arg[1] = (GPRE_NOD) field;
 		SQL_par_field_dtype(request, field, false);
 		SQL_par_field_collate(request, field);
@@ -3267,7 +3267,7 @@ static GPRE_NOD post_map( GPRE_NOD node, map* to_map)
 
 //  We need to make up a new map reference 
 
-	element = (MEL) ALLOC(sizeof(mel));
+	element = (MEL) MSC_alloc(sizeof(mel));
 	element->mel_next = to_map->map_elements;
 	to_map->map_elements = element;
 	element->mel_position = to_map->map_count++;
@@ -3575,7 +3575,7 @@ static char *upcase_string( char *p)
 	USHORT l;
 
 	l = 0;
-	s = (char *) ALLOC(strlen(p) + 1);
+	s = (char *) MSC_alloc(strlen(p) + 1);
 	q = s;
 
 	while ((c = *p++) && (++l <= NAME_SIZE)) {

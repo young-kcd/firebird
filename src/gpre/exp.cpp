@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.22 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: exp.cpp,v 1.23 2003-10-15 01:18:01 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -135,7 +135,7 @@ GPRE_FLD EXP_cast(GPRE_FLD field)
 		else if (MSC_match(dtype->dtype_keyword))
 			break;
 
-	cast = (GPRE_FLD) ALLOC(FLD_LEN);
+	cast = (GPRE_FLD) MSC_alloc(FLD_LEN);
 	cast->fld_symbol = field->fld_symbol;
 
 	switch (cast->fld_dtype = dtype->dtype_dtype) {
@@ -228,7 +228,7 @@ GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
 	if (!(symbol = initial_symbol)) {
 		symbol = PAR_symbol(SYM_context);
 		if (!MSC_match(KW_IN)) {
-			FREE((UCHAR *) symbol);
+			MSC_free((UCHAR *) symbol);
 			CPR_s_error("IN");
 		}
 	}
@@ -323,18 +323,18 @@ GPRE_NOD EXP_literal(void)
 			return NULL;
 	}
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 	node = MSC_unary(nod_literal, (GPRE_NOD) reference);
 	if (isQuoted(token.tok_type)) {
-		reference->ref_value = string = (TEXT *) ALLOC(token.tok_length + 3);
+		reference->ref_value = string = (TEXT *) MSC_alloc(token.tok_length + 3);
 		strcat(string, "\'");
-		COPY(token.tok_string, token.tok_length, string + 1);
+		MSC_copy(token.tok_string, token.tok_length, string + 1);
 		strcat((string + token.tok_length + 1), "\'");
 		token.tok_length += 2;
 	}
 	else {
-		reference->ref_value = string = (TEXT *) ALLOC(token.tok_length + 1);
-		COPY(token.tok_string, token.tok_length, string);
+		reference->ref_value = string = (TEXT *) MSC_alloc(token.tok_length + 1);
+		MSC_copy(token.tok_string, token.tok_length, string);
 	}
 
 // ** Begin date/time/timestamp *
@@ -551,7 +551,7 @@ void EXP_post_array( REF reference)
 	array_reference->ref_level = request->req_level;
 	field->fld_array_info->ary_ident = CMP_next_ident();
 
-	blob = (BLB) ALLOC(BLB_LEN);
+	blob = (BLB) MSC_alloc(BLB_LEN);
 	blob->blb_symbol = field->fld_symbol;
 	blob->blb_reference = reference;
 
@@ -754,7 +754,7 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 
 //  build rse node 
 
-	rec_expr = (GPRE_RSE) ALLOC(RSE_LEN(count));
+	rec_expr = (GPRE_RSE) MSC_alloc(RSE_LEN(count));
 	rec_expr->rse_count = count;
 	rec_expr->rse_first = first;
 	rec_expr->rse_boolean = boolean;
@@ -807,11 +807,11 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 					upcase->nod_arg[0] = item;
 				}
 				count++;
-				PUSH((GPRE_NOD) (ULONG) ((direction) ? 1 : 0), &directions);
+				MSC_push((GPRE_NOD) (ULONG) ((direction) ? 1 : 0), &directions);
 				if (insensitive)
-					PUSH(upcase, &items);
+					MSC_push(upcase, &items);
 				else
-					PUSH(item, &items);
+					MSC_push(item, &items);
 				if (!MSC_match(KW_COMMA))
 					break;
 			}
@@ -820,8 +820,8 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 			sort->nod_count = count;
 			ptr = sort->nod_arg + count * 2;
 			while (--count >= 0) {
-				*--ptr = (GPRE_NOD) POP(&items);
-				*--ptr = (GPRE_NOD) POP(&directions);
+				*--ptr = (GPRE_NOD) MSC_pop(&items);
+				*--ptr = (GPRE_NOD) MSC_pop(&directions);
 			}
 		}
 
@@ -834,7 +834,7 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 			while (true) {
 				item = par_value(request, 0);
 				count++;
-				PUSH(item, &items);
+				MSC_push(item, &items);
 				if (!MSC_match(KW_COMMA))
 					break;
 			}
@@ -842,7 +842,7 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 			sort->nod_count = count;
 			ptr = sort->nod_arg + count;
 			while (--count >= 0)
-				*--ptr = (GPRE_NOD) POP(&items);
+				*--ptr = (GPRE_NOD) MSC_pop(&items);
 		}
 		else
 			break;
@@ -897,15 +897,15 @@ GPRE_NOD EXP_subscript(GPRE_REQ request)
 	REF reference;
 	TEXT *string;
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 	node = MSC_unary(nod_value, (GPRE_NOD) reference);
 
 //  Special case literals 
 
 	if (token.tok_type == tok_number) {
 		node->nod_type = nod_literal;
-		reference->ref_value = string = (TEXT *) ALLOC(token.tok_length + 1);
-		COPY(token.tok_string, token.tok_length, string);
+		reference->ref_value = string = (TEXT *) MSC_alloc(token.tok_length + 1);
+		MSC_copy(token.tok_string, token.tok_length, string);
 		PAR_get_token();
 		return node;
 	}
@@ -964,7 +964,7 @@ static GPRE_NOD lookup_field( GPRE_CTX context)
 	if (!(field = MET_field(context->ctx_relation, token.tok_string)))
 		return NULL;
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 	reference->ref_field = field;
 	reference->ref_context = context;
 
@@ -1009,7 +1009,7 @@ static GPRE_NOD make_list( LLS stack)
 	node = MSC_node(nod_list, count);
 
 	for (ptr = node->nod_arg + count; stack;)
-		*--ptr = POP(&stack);
+		*--ptr = MSC_pop(&stack);
 
 	return node;
 }
@@ -1048,8 +1048,8 @@ static GPRE_NOD normalize_index( DIM dimension, GPRE_NOD user_index, USHORT arra
 		return user_index;
 	}
 
-	reference = (REF) ALLOC(REF_LEN);
-	reference->ref_value = (TEXT *) ALLOC(strlen(string));
+	reference = (REF) MSC_alloc(REF_LEN);
+	reference->ref_value = (TEXT *) MSC_alloc(strlen(string));
 	strcpy(reference->ref_value, string);
 	adjustment_node = MSC_unary(nod_literal, (GPRE_NOD) reference);
 
@@ -1247,7 +1247,7 @@ static GPRE_NOD par_field( GPRE_REQ request)
 		prefix_node->nod_arg[0] = node;
 
 	if (context->ctx_request == request) {
-		reference = (REF) ALLOC(REF_LEN);
+		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_field = field;
 		reference->ref_context = context;
 		if (node->nod_type == nod_array)
@@ -1329,7 +1329,7 @@ static GPRE_NOD par_native_value( GPRE_REQ request, GPRE_FLD field)
 		return node;
 	}
 
-	reference = (REF) ALLOC(REF_LEN);
+	reference = (REF) MSC_alloc(REF_LEN);
 	node = MSC_unary(nod_value, (GPRE_NOD) reference);
 
 //  Handle general native value references.  Since these values will need
@@ -1591,7 +1591,7 @@ static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, GPRE_FLD field)
 				EXP_left_paren(0);
 			stack = NULL;
 			for (;;) {
-				PUSH(par_value(request, field), &stack);
+				MSC_push(par_value(request, field), &stack);
 				if (!MSC_match(KW_COMMA))
 					break;
 			}

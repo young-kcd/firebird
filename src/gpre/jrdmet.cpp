@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.11 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: jrdmet.cpp,v 1.12 2003-10-15 01:18:01 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -56,12 +56,12 @@ void JRDMET_init( DBB db)
 	const UCHAR* relfld = relfields;
 
 	while (relfld[RFLD_R_NAME]) {
-		GPRE_REL relation = (GPRE_REL) ALLOC(REL_LEN);
+		GPRE_REL relation = (GPRE_REL) MSC_alloc(REL_LEN);
 		relation->rel_database = db;
 		relation->rel_next = db->dbb_relations;
 		relation->rel_id = relfld[RFLD_R_ID];
 		db->dbb_relations = relation;
-		relation->rel_symbol = symbol = (SYM) ALLOC(SYM_LEN);
+		relation->rel_symbol = symbol = (SYM) MSC_alloc(SYM_LEN);
 		symbol->sym_type = SYM_relation;
 		symbol->sym_object = (GPRE_CTX) relation;
 
@@ -74,7 +74,7 @@ void JRDMET_init( DBB db)
 			const gfld* gfield = (fld[RFLD_F_UPD_MINOR]) ?
 										   &gfields[fld[RFLD_F_UPD_ID]] :
 										   &gfields[fld[RFLD_F_ID]];
-			GPRE_FLD field = (GPRE_FLD) ALLOC(FLD_LEN);
+			GPRE_FLD field = (GPRE_FLD) MSC_alloc(FLD_LEN);
 			relation->rel_fields = field;
 			field->fld_relation = relation;
 			field->fld_next = relation->rel_fields;
@@ -107,13 +107,13 @@ void JRDMET_init( DBB db)
 					field->fld_charset_id = CS_METADATA;
 			}
 
-			field->fld_symbol = symbol = (SYM) ALLOC(SYM_LEN);
+			field->fld_symbol = symbol = (SYM) MSC_alloc(SYM_LEN);
 			symbol->sym_type = SYM_field;
 			symbol->sym_object = (GPRE_CTX) field;
 			symbol->sym_string = names[fld[RFLD_F_NAME]];
 			HSH_insert(symbol);
 
-			field->fld_global = symbol = (SYM) ALLOC(SYM_LEN);
+			field->fld_global = symbol = (SYM) MSC_alloc(SYM_LEN);
 			symbol->sym_type = SYM_field;
 			symbol->sym_object = (GPRE_CTX) field;
 			symbol->sym_string = names[gfield->gfld_name];
@@ -122,8 +122,8 @@ void JRDMET_init( DBB db)
 	}
 
 	for (const RTYP* rtype = types; rtype->rtyp_name; rtype++) {
-		TYP type = (TYP) ALLOC(TYP_LEN);
-		type->typ_symbol = symbol = (SYM) ALLOC(SYM_LEN);
+		TYP type = (TYP) MSC_alloc(TYP_LEN);
+		type->typ_symbol = symbol = (SYM) MSC_alloc(SYM_LEN);
 		type->typ_value = rtype->rtyp_value;
 		symbol->sym_type = SYM_type;
 		symbol->sym_object = (GPRE_CTX) type;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.47 2003-10-14 22:21:49 brodsom Exp $
+ * $Id: gpre.h,v 1.48 2003-10-15 01:18:01 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -94,14 +94,6 @@ static const char* CONST_STR	= "";
 const int MAXSYMLEN		= 512;		// max length of symbol + terminator
 const int NAME_SIZE 	= 32;
 #define SQL_DIALECT_V5 	1		/* pre 6.0 dialect */
-
-#define ALLOC(size) 			MSC_alloc (size)
-#define COPY(from, length, to)	MSC_copy (from, length, to)
-#define COPY_CAT(from1, length1, from2, length2,to)		MSC_copy_cat(from1, length1, from2, length2,to)
-#define FREE(block)				MSC_free (block)
-#define POP(stack)				MSC_pop (stack)
-#define PUSH(object, stack)		MSC_push (object, stack)
-#define REALLOC(block, size)	MSC_realloc (block, size)
 
 /* Language options */
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.33 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: ftn.cpp,v 1.34 2003-10-15 01:18:01 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -905,7 +905,7 @@ static void gen_based(const act* action)
 	bool first = true;
 
 	while (based_on->bas_variables) {
-		const TEXT* variable = (const TEXT*) POP(&based_on->bas_variables);
+		const TEXT* variable = (const TEXT*) MSC_pop(&based_on->bas_variables);
 		if (!first)
 			ib_fprintf(out_file, ",\n%s", CONTINUE);
 		ib_fprintf(out_file, "%s", variable);
@@ -3664,7 +3664,7 @@ static void make_array_declaration( const ref* reference)
     }
 
 //   If not, add it to the "declared" list and declare it  
-	ADL this_array = (ADL) ALLOC(ADL_LEN);
+	ADL this_array = (ADL) MSC_alloc(ADL_LEN);
 	this_array->adl_gds_ident = field->fld_array_info->ary_ident;
 	if (array_decl_list)
 		this_array->adl_next = array_decl_list;

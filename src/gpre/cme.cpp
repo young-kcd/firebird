@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.14 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: cme.cpp,v 1.15 2003-10-15 01:18:01 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1232,7 +1232,7 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 		/*  Header stuff  */
 
 		reference->ref_sdl = reference->ref_sdl_base = 
-			reinterpret_cast<UCHAR*>(ALLOC(500));
+			reinterpret_cast<UCHAR*>(MSC_alloc(500));
 		reference->ref_sdl_length = 500;
 		reference->ref_sdl_ident = CMP_next_ident();
 		STUFF_SDL(gds_sdl_version1);

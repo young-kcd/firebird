@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.34 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.35 2003-10-15 01:18:01 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -859,7 +859,7 @@ static void gen_based( const act* action, int column)
 	bool first = true;
 
 	while (based_on->bas_variables) {
-		variable = (TEXT *) POP(&based_on->bas_variables);
+		variable = (TEXT *) MSC_pop(&based_on->bas_variables);
 		if (!first)
 			ib_fprintf(out_file, ",");
 		first = false;

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.21 2003-10-14 22:21:49 brodsom Exp $
+//	$Id: cmp.cpp,v 1.22 2003-10-15 01:18:01 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -105,7 +105,7 @@ void CMP_check( GPRE_REQ request, SSHORT min_reqd)
 		length + min_reqd + 100 : request->req_length * 2;
 
 	q = old = request->req_base;
-	request->req_base = p = (UCHAR *) ALLOC(n);
+	request->req_base = p = (UCHAR *) MSC_alloc(n);
 	request->req_length = n;
 	request->req_blr = request->req_base + length;
 
@@ -113,7 +113,7 @@ void CMP_check( GPRE_REQ request, SSHORT min_reqd)
 		*p++ = *q++;
 	while (--length);
 
-	FREE(old);
+	MSC_free(old);
 }
 
 
@@ -138,7 +138,7 @@ void CMP_compile_request( GPRE_REQ request)
 //  if there isn't a request handle specified, make one! 
 
 	if (!request->req_handle && (request->req_type != REQ_procedure)) {
-		request->req_handle = (TEXT *) ALLOC(20);
+		request->req_handle = (TEXT *) MSC_alloc(20);
 		sprintf(request->req_handle, ident_pattern, CMP_next_ident());
 	}
 
@@ -167,11 +167,11 @@ void CMP_compile_request( GPRE_REQ request)
 		count_field = MET_make_field(count_name, dtype_long, sizeof(SLONG),
 									 false);
 		slack_byte_field = MET_make_field(slack_name, dtype_text, 1, false);
-		reference = (REF) ALLOC(REF_LEN);
+		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_value = "0";
 		lit0 = MSC_unary(nod_literal, (GPRE_NOD) reference);
 
-		reference = (REF) ALLOC(REF_LEN);
+		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_value = "1";
 		lit1 = MSC_unary(nod_literal, (GPRE_NOD) reference);
 	}
@@ -201,7 +201,7 @@ void CMP_compile_request( GPRE_REQ request)
 
 //  Initialize the blr string 
 
-	request->req_blr = request->req_base = (UCHAR *) ALLOC(500);
+	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 	if (request->req_flags & REQ_blr_version4)
 		STUFF(blr_version4);
@@ -238,12 +238,12 @@ void CMP_compile_request( GPRE_REQ request)
 
 	if (request->req_type == REQ_for ||
 		request->req_type == REQ_cursor || request->req_type == REQ_any) {
-		reference = (REF) ALLOC(REF_LEN);
+		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_field = eof_field;
 		reference->ref_next = request->req_references;
 	}
 	else if (request->req_type == REQ_mass_update) {
-		reference = (REF) ALLOC(REF_LEN);
+		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_field = count_field;
 		reference->ref_next = request->req_references;
 	}
@@ -442,7 +442,7 @@ void CMP_t_start( GPRE_TRA trans)
 
 		if (trans->tra_flags & TRA_inc) {
 			if (database->dbb_flags & DBB_in_trans) {
-				new_tpb = (tpb*) ALLOC(TPB_LEN(tpb_len));
+				new_tpb = (tpb*) MSC_alloc(TPB_LEN(tpb_len));
 				new_tpb->tpb_length = tpb_len;
 				database->dbb_flags &= ~DBB_in_trans;
 			}
@@ -450,7 +450,7 @@ void CMP_t_start( GPRE_TRA trans)
 				continue;
 		}
 		else if (!(trans->tra_flags & TRA_rrl)) {
-			new_tpb = (tpb*) ALLOC(TPB_LEN(tpb_len));
+			new_tpb = (tpb*) MSC_alloc(TPB_LEN(tpb_len));
 			new_tpb->tpb_length = tpb_len;
 		}
 		else if (database->dbb_rrls) {
@@ -466,7 +466,7 @@ void CMP_t_start( GPRE_TRA trans)
 			}
 			*p = 0;
 			buff_len = (p - rrl_buffer);
-			new_tpb = (tpb*) ALLOC(TPB_LEN(buff_len + tpb_len));
+			new_tpb = (tpb*) MSC_alloc(TPB_LEN(buff_len + tpb_len));
 			new_tpb->tpb_length = buff_len + tpb_len;
 			database->dbb_rrls = NULL;
 		}
@@ -530,7 +530,7 @@ static void cmp_any( GPRE_REQ request)
 	if (port = request->req_vport)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next) {
-			reference->ref_source = source = (REF) ALLOC(REF_LEN);
+			reference->ref_source = source = (REF) MSC_alloc(REF_LEN);
 			source->ref_ident = CMP_next_ident();
 		}
 }
@@ -1128,7 +1128,7 @@ static void cmp_procedure( GPRE_REQ request)
 	outputs = NULL;
 	if (reference = request->req_references)
 		for (list = &outputs; reference; reference = reference->ref_next) {
-			PUSH((GPRE_NOD) reference, list);
+			MSC_push((GPRE_NOD) reference, list);
 			list = &(*list)->lls_next;
 		}
 
@@ -1137,7 +1137,7 @@ static void cmp_procedure( GPRE_REQ request)
 	expand_references(request->req_values);
 	expand_references(request->req_references);
 
-	request->req_blr = request->req_base = (UCHAR *) ALLOC(500);
+	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 	if (request->req_flags & REQ_blr_version4)
 		STUFF(blr_version4);
@@ -1216,7 +1216,7 @@ static void cmp_ready( GPRE_REQ request)
 	DBB db = request->req_database;
 
 	ACT action = request->req_actions;
-	request->req_blr = request->req_base = ALLOC(250);
+	request->req_blr = request->req_base = MSC_alloc(250);
 	request->req_length = 250;
 	request->req_flags |= REQ_exp_hand;
 
@@ -1506,7 +1506,7 @@ static void cmp_slice( GPRE_REQ request)
 		 reference = reference->ref_next) reference->ref_id =
 			slice->slc_parameters++;
 
-	request->req_blr = request->req_base = (UCHAR *) ALLOC(500);
+	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 
 	STUFF(gds_sdl_version1);
@@ -1610,7 +1610,7 @@ static void expand_references( REF reference)
 
 	for (; reference; reference = reference->ref_next) {
 		if (reference->ref_null_value && !reference->ref_null) {
-			flag = (REF) ALLOC(REF_LEN);
+			flag = (REF) MSC_alloc(REF_LEN);
 			flag->ref_next = reference->ref_next;
 			reference->ref_next = reference->ref_null = flag;
 			flag->ref_master = reference;
@@ -1634,7 +1634,7 @@ static POR make_port( GPRE_REQ request, REF reference)
 	REF misc, temp, alignments[3];
 	SSHORT i;
 
-	port = (POR) ALLOC(POR_LEN);
+	port = (POR) MSC_alloc(POR_LEN);
 	port->por_ident = CMP_next_ident();
 	port->por_msg_number = request->req_count++;
 	port->por_next = request->req_ports;
@@ -1644,7 +1644,7 @@ static POR make_port( GPRE_REQ request, REF reference)
 //  Make up a dummy reference. 
 
 	if (!reference) {
-		reference = (REF) ALLOC(REF_LEN);
+		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_field = eof_field;
 	}
 
