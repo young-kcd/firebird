@@ -46,7 +46,8 @@
 @mkdir %ROOT_PATH%\gen\dbs 2>nul
 
 @echo create database '%SERVER_NAME%:%DB_PATH%\gen\dbs\security2.fdb'; | "%FIREBIRD%\bin\isql" -q
-@set SEC_ISQL=@"%FIREBIRD%\bin\isql" -q %SERVER_NAME%:%DB_PATH%\gen\dbs\security2.fdb -i %ROOT_PATH%\src\dbs\@%SEC_ISQL%security.sql
+@set SEC_ISQL=@"%FIREBIRD%\bin\isql" -q %SERVER_NAME%:%DB_PATH%\gen\dbs\security2.fdb -i %ROOT_PATH%\src\dbs\
+@%SEC_ISQL%security.sql
 
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\metadata.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\metadata.fdb
 
