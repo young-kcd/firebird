@@ -1,3 +1,48 @@
+2004-04-06 17:46  dimitr
+
+	* firebird2/src/intl/collations/xx885913lt.h (1.1):
+	
+	file xx885913lt.h was initially added on branch B1_5_Release.
+
+2004-04-06 17:44  dimitr
+
+	* firebird2/src/intl/lc_iso8859_13.c (1.1):
+	
+	file lc_iso8859_13.c was initially added on branch B1_5_Release.
+
+2004-04-06 09:25  skidder
+
+	* firebird2/: builds/install/misc/firebird.conf (1.4),
+	src/common/config/config.cpp (1.51), src/common/config/config.h
+	(1.29), src/jrd/blob_filter.cpp (1.25), src/jrd/err.cpp (1.39),
+	src/jrd/fun.epp (1.46), src/jrd/ibsetjmp.h (1.6),
+	src/jrd/isc_sync.cpp (1.81):
+	
+	Add BugcheckAbort option to produce coredumps on BUGCHECKs and
+	structured exceptions
+
+2004-04-06 07:53  aafemt
+
+	* firebird2/src/common/classes/fb_tls.h (1.3):
+	
+	TLS for win32 gcc
+
+2004-04-06 07:47  skidder
+
+	* firebird2/src/jrd/gdsold.h (1.42):
+	
+	Fix broken definition noted while backporting changes to
+	B1_5_Release
+
+2004-04-06 04:45  skidder
+
+	* firebird2/builds/install/arch-specific/linux/Makefile.in (1.4):
+	
+	A couple versions of eu-strip I tried produce broken debug info.
+	Let's standartize on binutils objcopy for now as it seems to be
+	more reliable. I hope an official binutils version with needed
+	feature aka 2.15 will be released soon
+
 2004-04-04 19:58  skidder
 
 	* firebird2/src/jrd/dpm.epp (1.40):
