@@ -1,3 +1,58 @@
+2005-03-31 17:33  dimitr
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj (1.47),
+	engine_classic.vcproj (1.47), engine_embed.vcproj (1.35):
+	
+	Let's see whether VC71 produces better code than VC60.	Previously,
+	these modules couldn't be globally optimized (causing to server
+	crashes).
+
+2005-03-31 17:27  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.199):
+	
+	Removed the feature that was never used for the last years.  An
+	intention was to disallow batch fetches from procedures, but this
+	code never worked due to recursion in PASS1_rse().  Accidentally,
+	I've fixed the reason in FB2 and now users observe noticable
+	performance degradation. To keep the performance, let's do batch
+	fetches again. Those who are not sure what their procedures do
+	between suspends may use a FOR UPDATE clause anyway.
+
+2005-03-31 09:50  robocop
+
+	* firebird2/src/isql/: extract.epp (1.54), isql.epp (1.135),
+	isql_proto.h (1.21), show.epp (1.67):
+	
+	1.- Replacing raw call to gds__msg_format by ISQL_msg_get; the
+	routine was there for years and almost unused.	2.- UDFs are still
+	created by sys_flag being NULL, so show_functions() should
+	acknowledge that fact.	3.- Implement naive code to show an
+	approximate script-related line number when a failure happens.
+	(Unlike my private FB1's isql, it doesn't rely on strings subject
+	to localization.) 4.- With SET PLANONLY ON, PLAN was activated, but
+	with SET PLAN OFF, PLANONLY wasn't deactivated.  5.- Include
+	isc_info_sql_stmt_get_segment among statements that are like
+	SELECT.  6.- Solve a bad interaction between PLANONLY and
+	SQLDA_DISPLAY, where the first being activated didn't allow to see
+	the output XSQLDA.  7.- More error detection.
+
+2005-03-31 08:21  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.144):
+	
+	Misc.
+
+2005-03-31 08:19  robocop
+
+	* firebird2/src/dsql/: dsql.tab.h (1.53), parse.cpp (1.147),
+	parse.y (1.172):
+	
+	1.- Disambiguate rules between READ BLOB/INSERT BLOB and metadata
+	definitions involving blob fields.  2.- Fix the source of DSQL
+	crash with READ BLOB.  3.- Fix (1) has the side effect of stopping
+	invalid DDL like create table t(b blob 0);
+
 2005-03-30 20:10  arnobrinkman
 
 	* firebird2/doc/ods11-index-structure.html (1.1):
