@@ -1,3 +1,24 @@
+2005-02-08 22:23  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.136), idx.cpp (1.88):
+	
+	Fix bug SF #1076858
+
+2005-02-08 15:59  paul_reeves
+
+	* firebird2/builds/win32/: make_all.bat (1.28), make_boot.bat
+	(1.26), make_examples.bat (1.12), prepare.bat (1.38), setenvvar.bat
+	(1.7):
+	
+	Some enhancements and fixes for the Win32 build scripts.
+
+2005-02-08 15:55  paul_reeves
+
+	* firebird2/examples/empbuild/: empbld.sql (1.2), empbuild.e (1.5),
+	empddl.sql (1.2), intlbld.e (1.4):
+	
+	Bring employee database up to dialect 3
+
 2005-02-07 10:00  robocop
 
 	* firebird2/src/isql/isql.epp (1.130):
