@@ -28,39 +28,39 @@
 
 /* switch definitions */
 
-const long sw_list			=	0x00000001L;	/* Byte 0, Bit 0 */
-const long sw_prompt		=	0x00000002L;
-const long sw_commit		=	0x00000004L;
-const long sw_rollback		=	0x00000008L;
-const long sw_sweep			=	0x00000010L;
-const long sw_validate		=	0x00000020L;
-const long sw_no_update		=	0x00000040L;
-const long sw_full			=	0x00000080L;
-const long sw_mend			=	0x00000100L;	/* Byte 1, Bit 0 */
-const long sw_all			=	0x00000200L;
-const long sw_enable		=	0x00000400L;
-const long sw_disable		=	0x00000800L;
-const long sw_ignore		=	0x00001000L;
-const long sw_activate		=	0x00002000L;
-const long sw_two_phase		=	0x00004000L;
-const long sw_housekeeping	=	0x00008000L;
-const long sw_kill			=	0x00010000L;	/* Byte 2, Bit 0 */
-const long sw_begin_log		=	0x00020000L;
-const long sw_quit_log		=	0x00040000L;
-const long sw_write			=	0x00080000L;
-const long sw_use			=	0x00100000L;
-const long sw_user			=	0x00200000L;
-const long sw_password		=	0x00400000L;
-const long sw_shut			=	0x00800000L;
-const long sw_online		=	0x01000000L;	/* Byte 3, Bit 0 */
-const long sw_cache			=	0x02000000L;
-const long sw_attach		=	0x04000000L;
-const long sw_force			=	0x08000000L;
-const long sw_tran			=	0x10000000L;
-const long sw_buffers		=	0x20000000L;
-const long sw_mode			=	0x40000000L;
-const long sw_set_db_dialect=	0x80000000L;
-const long sw_z				=	0x0L;
+const unsigned long sw_list				= 0x00000001L;	/* Byte 0, Bit 0 */
+const unsigned long sw_prompt			= 0x00000002L;
+const unsigned long sw_commit			= 0x00000004L;
+const unsigned long sw_rollback			= 0x00000008L;
+const unsigned long sw_sweep			= 0x00000010L;
+const unsigned long sw_validate			= 0x00000020L;
+const unsigned long sw_no_update		= 0x00000040L;
+const unsigned long sw_full				= 0x00000080L;
+const unsigned long sw_mend				= 0x00000100L;	/* Byte 1, Bit 0 */
+const unsigned long sw_all				= 0x00000200L;
+const unsigned long sw_enable			= 0x00000400L;
+const unsigned long sw_disable			= 0x00000800L;
+const unsigned long sw_ignore			= 0x00001000L;
+const unsigned long sw_activate			= 0x00002000L;
+const unsigned long sw_two_phase		= 0x00004000L;
+const unsigned long sw_housekeeping		= 0x00008000L;
+const unsigned long sw_kill				= 0x00010000L;	/* Byte 2, Bit 0 */
+const unsigned long sw_begin_log		= 0x00020000L;
+const unsigned long sw_quit_log			= 0x00040000L;
+const unsigned long sw_write			= 0x00080000L;
+const unsigned long sw_use				= 0x00100000L;
+const unsigned long sw_user				= 0x00200000L;
+const unsigned long sw_password			= 0x00400000L;
+const unsigned long sw_shut				= 0x00800000L;
+const unsigned long sw_online			= 0x01000000L;	/* Byte 3, Bit 0 */
+const unsigned long sw_cache			= 0x02000000L;
+const unsigned long sw_attach			= 0x04000000L;
+const unsigned long sw_force			= 0x08000000L;
+const unsigned long sw_tran				= 0x10000000L;
+const unsigned long sw_buffers			= 0x20000000L;
+const unsigned long sw_mode				= 0x40000000L;
+const unsigned long sw_set_db_dialect	= 0x80000000L;
+const unsigned long sw_z				= 0x0L;
 
 enum alice_switches
 {
