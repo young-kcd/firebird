@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.17 2004-10-04 05:23:56 skidder Exp $
+#  $Id: Makefile.in.extlib,v 1.18 2004-11-02 07:15:55 skidder Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -43,7 +43,7 @@ include     $(ROOT)/gen/make.shared.variables
 UDF=	$(FIREBIRD)/UDF
 
 
-UDF_Files = ib_udf.c
+UDF_Files = ib_udf.cpp
 UDF_Sources = $(addprefix extlib/, $(UDF_Files))
 UDF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UDF_Sources))))
 
