@@ -846,7 +846,7 @@ SCHAR *INF_put_item(SCHAR item,
  *
  **************************************/
 
-	if (ptr + length + 4 >= end) {
+	if (ptr + length + 4 > end) {
 		*ptr = gds_info_truncated;
 		return NULL;
 	}

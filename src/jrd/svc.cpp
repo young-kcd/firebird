@@ -1358,7 +1358,10 @@ void SVC_putc(SVC service, UCHAR ch)
 			   to store a read to eof, return the data that was read along
 			   with an indication that more is available. */
 
-			info = INF_put_item(item, length, info + 3, info, end);
+			if (!(info = INF_put_item(item, length, info + 3, info, end))) {
+				THREAD_ENTER;
+				return 0;
+			}
 
 			if (service->svc_flags & SVC_timeout)
 			{
