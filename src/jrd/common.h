@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.91 2003-10-28 13:43:45 eku Exp $
+$Id: common.h,v 1.92 2003-11-03 01:13:29 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -616,10 +616,6 @@ typedef unsigned __int64 UINT64;
 
 #define SYNC_WRITE_DEFAULT      1
 
-#ifndef DLL_EXPORT
-#define DLL_EXPORT
-#endif
-
 #ifndef MAXPATHLEN
 #ifdef MAX_PATH
 #define MAXPATHLEN MAX_PATH
@@ -970,12 +966,6 @@ void GDS_breakpoint(int);
 #define TRACE(msg)				/* nothing */
 #endif
 #endif
-
-
-#ifndef DLL_EXPORT
-#define DLL_EXPORT
-#endif
-
 
 
 /* commonly used buffer sizes for dynamic buffer allocation */
