@@ -1241,7 +1241,7 @@ table_element	: column_def
 
 /* column definition */
 
-column_def	: column_def_name data_type_or_domain default_opt 
+column_def	: column_def_name data_type_or_domain domain_default_opt
 			end_trigger column_constraint_clause collate_clause
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
 					$1, $3, $4, make_list ($5), $6, $2, NULL); }   
@@ -5052,8 +5052,8 @@ int LexerState::yylex (
 				 prev_prev_keyword == OR || prev_prev_keyword == ON || prev_prev_keyword == HAVING ||
 				 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
 			{			
-				LexerState savedState = lex;
-				int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+				const LexerState savedState = lex;
+				const int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 				lex = savedState;
 				if (nextToken == OR || nextToken == AND) {
 					switch (sym->sym_keyword) {
@@ -5081,8 +5081,8 @@ int LexerState::yylex (
 				sym->sym_keyword == SKIP)
 			{
 				if (prev_keyword == SELECT || limit_clause) {
-					LexerState savedState = lex;
-					int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+					const LexerState savedState = lex;
+					const int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 					lex = savedState;
 					if (nextToken != NUMBER && nextToken != '?' && nextToken != '(') {
 						yylval = (dsql_nod*) MAKE_string(string, p - string);
@@ -5175,7 +5175,7 @@ int LexerState::yylex (
 					 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
 				{
 					savedState = lex;
-					int token = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+					const int token = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 					lex = savedState;
 					if (token == OR || token == AND) {
 						switch (nextToken) {

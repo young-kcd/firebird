@@ -4096,11 +4096,31 @@ static void delete_relation_view (
 }
 
 
+/**
+
+ 	fix_default_source
+
+    @brief Get rid of newlines between DEFAULT and the value.
+
+    @param string the source text to be fixed if necessary.
+
+ **/
 static void fix_default_source(dsql_str* string)
 {
 	// CVC: I know this is not very brilliant, but some people are annoyed
 	// at this for years.
 	// We assume the first position is used by "default"
+#ifdef DEV_BUILD
+	// Verify that assumption about "default"
+	const char* token = "default\0DEFAULT";
+	for (int t = 0; t < 7; ++t)
+	{
+		const char c = string->str_data[t];
+		if (c != token[t] && c != token[t + 8])
+			return; // something is screwed, skip town.
+	}
+#endif
+
 	for (int i = 7; i < string->str_length; ++i)
 	{
 		switch (string->str_data[i])
@@ -4108,6 +4128,7 @@ static void fix_default_source(dsql_str* string)
 		case ' ':
 		case '\n':
 		case '\r':
+		case '\t':
 			string->str_data[i] = ' ';
 			break;
 		default:
