@@ -153,7 +153,7 @@ void DirectoryList::initialize(bool simple_mode)
 
 	unsigned int last = 0;
 	PathName root = Config::getRootDirectory();
-	int i;
+	size_t i;
 	for (i = 0; i < val.length(); i++) {
 		if (val[i] == ';') {
 			PathName dir = "";
@@ -247,7 +247,7 @@ void TempDirectoryList::initTemp()
 
 	// Iterate through directories to parse them
 	// and fill the "items" vector
-	for (size_t i = 0; i < getCount(); i++) {
+	for (int i = 0; i < getCount(); i++) {
 		PathName dir = (*(inherited*)this)[i];
 		size_t pos = dir.rfind(" ");
 		long size = atol(dir.substr(pos + 1, PathName::npos).c_str());
