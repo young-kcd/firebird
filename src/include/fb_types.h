@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.38 2004-01-13 09:52:12 robocop Exp $
+ *  $Id: fb_types.h,v 1.39 2004-01-26 16:32:54 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -61,14 +61,18 @@ typedef long long int			ISC_INT64;
 typedef unsigned long long int	ISC_UINT64;
 #endif
 
-#if SIZEOF_LONG == 8
+// Nickolay: it is easier to assume that integer is at least 32-bit.
+// This comes from limitation that we cannot reliably detect datatype size at
+// compile time in cases when we do not control compilation (public headers) 
+// We are not going to support 16-bit platforms, right?
+//#if SIZEOF_LONG == 8
 	// EKU: Firebird requires (S)LONG to be 32 bit
 	typedef int SLONG;
 	typedef unsigned int ULONG;
-#else
+/*#else
 	typedef long SLONG;
 	typedef unsigned long ULONG;
-#endif // SIZEOF_LONG == 8
+#endif // SIZEOF_LONG == 8*/
 
 typedef struct {
 	SLONG high;
