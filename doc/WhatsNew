@@ -2,6 +2,26 @@
   * v1.5.2
   **************
 
+    * Fixed unregistered bug.
+        Backported fixes for a few memory access problems detected when testing HEAD under Valgrind
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Standard UDF library registration script changed
+        Declarations of string manipulation routines in ib_udf.sql are altered to accept strings with lengths up to 255 characters
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Run-time errors in 64-bit SuperServer builds on platforms such as Linux/AMD64/NPTL which use high-order bits of 64-bit thread ID
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        CURRENT_TIMESTAMP yielding unpredictable results on 64-bit platforms
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
     * Fixed v1.5.1 regression
         Broken support for multi-dimensional array fields
       Contributor(s):
@@ -27,7 +47,7 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * POSIX build and packaging change
-        Various build and packaging fixes
+        Various build and packaging issues
       Contributor(s):
         Erik S. LaBianca <labiance at users.sourceforge.net>
         Dale Mullins <dale_mullins at users.sourceforge.net>

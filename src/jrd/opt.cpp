@@ -3747,7 +3747,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 	{
 		/* generate a sort block which the optimizer will try to map to an index */
 
-		JRD_NOD aggregate = PAR_make_node(tdbb, 2);
+		JRD_NOD aggregate = PAR_make_node(tdbb, 3);
 		aggregate->nod_type = nod_sort;
 		aggregate->nod_count = 1;
 		aggregate->nod_arg[0] = operator_->nod_arg[e_asgn_from];
@@ -3755,6 +3755,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 		if (operator_->nod_type == nod_agg_max) {
 			aggregate->nod_arg[1] = (JRD_NOD) TRUE;
 		}
+		aggregate->nod_arg[2] = (jrd_nod*) FALSE;
 		rse->rse_aggregate = aggregate;
 	}
 
@@ -5316,12 +5317,16 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number)))
 			continue;
 		stream_cnt += river1->riv_count;
-		sort = FB_NEW_RPT(*tdbb->tdbb_default, class_cnt * 2) jrd_nod();
+		sort = FB_NEW_RPT(*tdbb->tdbb_default, class_cnt * 3) jrd_nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = class_cnt;
 		for (selected_class = selected_classes, ptr = sort->nod_arg;
 			 *selected_class; selected_class++)
+		{
+ 			ptr[sort->nod_count] = (jrd_nod*) FALSE; // Ascending sort
+ 			ptr[sort->nod_count * 2] = (jrd_nod*) FALSE; // Default nulls placement
 			*ptr++ = (*selected_class)[river1->riv_number];
+		}
 		rsb =
 			gen_sort(tdbb, opt, &river1->riv_count, NULL, river1->riv_rsb,
 					 sort, FALSE);

@@ -1360,10 +1360,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		   ** list. In these cases all of stored procedure is executed under
 		   ** savepoint for open cursor.
 		 */
-		if (((temp = node->nod_arg[e_rse_streams])
-			 && (temp->nod_type == nod_union)
-			 && temp->nod_arg[e_rse_reduced]) ||
-			node->nod_arg[e_rse_sort] || node->nod_arg[e_rse_reduced])
+		if (node->nod_arg[e_rse_sort] || node->nod_arg[e_rse_reduced])
 			request->req_flags &= ~REQ_no_batch;
 
 		break;

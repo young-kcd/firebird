@@ -2929,7 +2929,7 @@ static JRD_NOD copy(TDBB tdbb,
 		return node;
 
 	case nod_sort:
-		args += args;
+		args += 2 * args;
 		break;
 
 	default:
@@ -2953,7 +2953,7 @@ static JRD_NOD copy(TDBB tdbb,
 /* Finish off sort */
 
 	if (input->nod_type == nod_sort)
-		for (end = arg1 + input->nod_count; arg1 < end; arg1++, arg2++)
+		for (end = arg1 + input->nod_count * 2; arg1 < end; arg1++, arg2++)
 			*arg2 = *arg1;
 
 	return node;
