@@ -206,9 +206,6 @@ XSQLDA** global_sqldap;
 USHORT dialect_spoken = 0;
 USHORT requested_SQL_dialect = SQL_DIALECT_V6;
 bool connecting_to_pre_v6_server = false;
-bool V45 = false;
-bool V4 = false;
-bool V33 = false;
 USHORT major_ods = 0;
 USHORT minor_ods = 0;
 SCHAR server_version[256];
@@ -1015,7 +1012,7 @@ SSHORT ISQL_get_field_length(const TEXT* field_name)
  *
  **************************************
  *
- *	Retrieve character or field length of V4 character types.
+ *	Retrieve character or field length of character types.
  *
  **************************************/
 
@@ -1027,40 +1024,28 @@ SSHORT ISQL_get_field_length(const TEXT* field_name)
 		};
 
 	SSHORT l = 0;
-	if (V33) {
-		FOR FLD IN RDB$FIELDS WITH
-			FLD.RDB$FIELD_NAME EQ field_name
+	FOR FLD IN RDB$FIELDS WITH
+		FLD.RDB$FIELD_NAME EQ field_name
 
+		if (FLD.RDB$CHARACTER_LENGTH.NULL)
 			l = FLD.RDB$FIELD_LENGTH;
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(isc_status);
-			return 0;
-		END_ERROR;
-	}
-	else {
-		FOR FLD IN RDB$FIELDS WITH
-			FLD.RDB$FIELD_NAME EQ field_name
-
-			if (FLD.RDB$CHARACTER_LENGTH.NULL)
-				l = FLD.RDB$FIELD_LENGTH;
-			else
-				l = FLD.RDB$CHARACTER_LENGTH;
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(isc_status);
-			return 0;
-		END_ERROR;
-	}
+		else
+			l = FLD.RDB$CHARACTER_LENGTH;
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
+		return 0;
+	END_ERROR;
 
 	return l;
 }
 
 
-void ISQL_get_character_sets(SSHORT char_set_id,
-							 SSHORT collation,
-							 bool collate_only,
-							 TEXT* string)
+void ISQL_get_character_sets(
+	SSHORT char_set_id,
+	SSHORT collation,
+	bool collate_only,
+	TEXT* string)
 {
 /**************************************
  *
@@ -1084,7 +1069,7 @@ void ISQL_get_character_sets(SSHORT char_set_id,
 			return;
 		};
 
-	if (!V33 && collation) {
+	if (collation) {
 		FOR FIRST 1 COL IN RDB$COLLATIONS CROSS
 			CST IN RDB$CHARACTER_SETS WITH
 			COL.RDB$CHARACTER_SET_ID EQ CST.RDB$CHARACTER_SET_ID AND
@@ -1123,7 +1108,7 @@ void ISQL_get_character_sets(SSHORT char_set_id,
 		}
 #endif
 	}
-	else if (!V33) {
+	else {
 		FOR FIRST 1 CST IN RDB$CHARACTER_SETS WITH
 			CST.RDB$CHARACTER_SET_ID EQ char_set_id
 			SORTED BY CST.RDB$CHARACTER_SET_NAME
@@ -1141,8 +1126,7 @@ void ISQL_get_character_sets(SSHORT char_set_id,
 		END_ERROR;
 #ifdef DEV_BUILD
 		if (!found) {
-			sprintf(Print_buffer,
-					"ISQL_get_character_set: charset %d not found.\n",
+			sprintf(Print_buffer, "ISQL_get_character_set: charset %d not found.\n",
 					char_set_id);
 			STDERROUT(Print_buffer, 1);
 		}
@@ -2614,9 +2598,7 @@ static processing_state create_db(const TEXT* statement,
 				ISQL_errmsg(isc_status);
 			if (D__trans)
 				COMMIT_TRANS(&D__trans);
-			if (isc_start_transaction(isc_status, &D__trans, 1, &DB,
-									  (V4) ? 5 : 0,
-									  (V4) ? default_tpb : NULL))
+			if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 					ISQL_errmsg(isc_status);
 		}
 
@@ -2863,16 +2845,6 @@ static processing_state drop_db()
  *
  **************************************/
 	if (global_Db_name[0]) {
-		if (!V4) {
-			TEXT* errbuf = (TEXT*) ISQL_ALLOC((SLONG) MSG_LENGTH);
-			if (errbuf) {
-				gds__msg_format(NULL, ISQL_MSG_FAC, SERVER_TOO_OLD, MSG_LENGTH,
-								errbuf, NULL, NULL, NULL, NULL, NULL);
-				STDERROUT(errbuf, 1);
-				ISQL_FREE(errbuf);
-			}
-			return (FAIL);
-		}
 		if (isc_drop_database(isc_status, &DB)) {
 			ISQL_errmsg(isc_status);
 			return (FAIL);
@@ -4187,7 +4159,7 @@ void ISQL_get_version(bool call_by_create_db)
  *
  * Functional description
  *	finds out if the database we just attached to is
- *	V4, V3.3 or earlier, as well as other info.
+ *	V4 or newer as well as other info.
  *
  **************************************/
 	static const UCHAR db_version_info[] = {
@@ -4217,8 +4189,6 @@ void ISQL_get_version(bool call_by_create_db)
 	char bad_dialect_buf[512];
 	bool print_warning = false;
 
-	V4 = false;
-	V33 = false;
 	dialect_spoken = 0;
 
 	if (isc_database_info(isc_status, &DB, sizeof(db_version_info),
@@ -4343,13 +4313,12 @@ void ISQL_get_version(bool call_by_create_db)
 		p += length;
 	}
 
-	if (major_ods >= ODS_VERSION8) {
-		V4 = true;
-		if (major_ods >= ODS_VERSION9)
-			V45 = true;
+	if (major_ods < ODS_VERSION8) {
+		TEXT message[100];
+		sprintf(message,
+		"This version of ISQL needs IB 4.0 or newer\n");
+		ISQL_printf(Out, message);
 	}
-	else if (major_ods == ODS_VERSION7 && minor_ods == ODS_CURRENT7)
-		V33 = true;
 
 /* If the remote server did not respond to our request for
    "dialects spoken", then we can assume it can only speak
@@ -5085,27 +5054,6 @@ static processing_state newdb(TEXT* dbname,
 		}
 	}
 
-	if (!V4 && !V33) {
-		gds__msg_format(NULL, ISQL_MSG_FAC, SERVER_TOO_OLD, MSG_LENGTH,
-						errbuf, NULL, NULL, NULL, NULL, NULL);
-		STDERROUT(errbuf, 1);
-		isc_detach_database(isc_status, &DB);
-		DB = 0;
-		global_Db_name[0] = '\0';
-		global_Stmt = 0;
-		if (save_database)
-			ISQL_FREE(save_database);
-		if (local_psw)
-			ISQL_FREE(local_psw);
-		if (local_usr)
-			ISQL_FREE(local_usr);
-		if (dpb_buffer)
-			ISQL_FREE(dpb_buffer);
-		if (errbuf)
-			ISQL_FREE(errbuf);
-		return FAIL;
-	}
-
 	/* CVC: We do not require those pesky transactions for -x or -a options.
 	   Metadata extraction works exclusively with default transaction gds__trans. */
 
@@ -5118,8 +5066,7 @@ static processing_state newdb(TEXT* dbname,
 				ISQL_errmsg(isc_status);
 			if (D__trans)
 				COMMIT_TRANS(&D__trans);
-			if (isc_start_transaction(isc_status, &D__trans, 1, &DB,
-									  (V4) ? 5 : 0, (V4) ? default_tpb : NULL))
+			if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 				ISQL_errmsg(isc_status);
 		}
 
@@ -6353,8 +6300,7 @@ static int process_statement(const TEXT* string,
 // No need to start a default transaction unless there is no current one 
 
 	if (!D__trans)
-		if (isc_start_transaction(isc_status, &D__trans, 1, &DB,
-								  (V4) ? 5 : 0, (V4) ? default_tpb : NULL))
+		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 		{
 			ISQL_errmsg(isc_status);
 		}
