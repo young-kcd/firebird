@@ -131,6 +131,11 @@ typedef rse* RSE;
 
 #define rse_delta	(sizeof(struct rse)-sizeof(struct jrd_nod))/sizeof(((JRD_NOD) NULL)->nod_arg[0])
 
+// Types of nulls placement for each column in sort order
+#define rse_nulls_default 0
+#define rse_nulls_first 1
+#define rse_nulls_last 2
+
 
 /* Literal value */
 

@@ -144,7 +144,8 @@ static const struct
     {"divide2", two},
 	{"agg_total2", one},
 	{"agg_total_distinct2", one}, {"agg_average2", one}, {"agg_average_distinct2", one},	/* 170 */
-	{"average2", two}, {"gen_id2", gen_id}, 
+	{"average2", two}, 
+	{"gen_id2", gen_id}, 
     {"set_generator2", gen_id},
 /* New BLR in FB1 */
     {"current_role", zero},
@@ -154,5 +155,6 @@ static const struct
 	{"internal_info", one},
 	{"nullsfirst", zero},
 	{"writelock", zero},
+	{"nullslast", zero}, /* 180 */
 	{0, 0}
 };

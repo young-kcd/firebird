@@ -2189,17 +2189,21 @@ static JRD_NOD par_sort(TDBB tdbb, CSB csb, BOOLEAN flag)
 	while (--count >= 0) {
 		if (flag) {
 			UCHAR code = BLR_BYTE;
-			if (code == blr_nullsfirst) {
-				*ptr3++ = (JRD_NOD) (SLONG) TRUE;
+			switch (code) {
+			case blr_nullsfirst:
+				*ptr3++ = (JRD_NOD) (IPTR) rse_nulls_first;
 				code = BLR_BYTE;
-			} else {
-				if (code == blr_nullslast)
-					code = BLR_BYTE;
-				*ptr3++ = (JRD_NOD) (SLONG) FALSE;
+				break;
+			case blr_nullslast:
+				*ptr3++ = (JRD_NOD) (IPTR) rse_nulls_last;
+				code = BLR_BYTE;
+				break;
+			default:
+				*ptr3++ = (JRD_NOD) (IPTR) rse_nulls_default;
 			}
 			  
 			*ptr2++ =
-				(JRD_NOD) (SLONG) ((code == blr_descending) ? TRUE : FALSE);
+				(JRD_NOD) (IPTR) ((code == blr_descending) ? TRUE : FALSE);
 		}
 		*ptr++ = parse(tdbb, csb, VALUE);
 	}

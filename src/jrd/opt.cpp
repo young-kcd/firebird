@@ -3775,6 +3775,8 @@ static RSB gen_navigation(TDBB tdbb,
 	DEV_BLKCHK(alias, type_str);
 	DEV_BLKCHK(*sort_ptr, type_nod);
 
+	DBB dbb = tdbb->tdbb_database;
+
 	// Check sort order against index.  If they don't match, give up and
 	// go home.  Also don't bother if we have a non-unique index.
 	// This is because null values aren't placed in a "good" spot in
@@ -3819,9 +3821,16 @@ static RSB gen_navigation(TDBB tdbb,
 		 idx->idx_rpt; ptr < end; ptr++, idx_tail++) {
 		node = *ptr;
 		if (node->nod_type != nod_field
-			|| (USHORT)(ULONG) node->nod_arg[e_fld_stream] != stream
-			|| (USHORT)(ULONG) node->nod_arg[e_fld_id] != idx_tail->idx_field
-			|| ptr[2*sort->nod_count] // do not use index if NULLS FIRST is used
+			|| (USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream
+			|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field
+			// for ODS11 default nulls placement always may be matched to index
+			|| (dbb->dbb_ods_version >= ODS_VERSION11 && (
+			  (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_first && ptr[sort->nod_count])
+			  || (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_last && !ptr[sort->nod_count])))
+			// for ODS10 and earlier indices always placed nulls at the end of dataset
+			|| (dbb->dbb_ods_version < ODS_VERSION11 && (
+			  (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_first)
+			  || (reinterpret_cast<IPTR>(ptr[2*sort->nod_count]) == rse_nulls_default && !ptr[sort->nod_count])))
 #ifdef SCROLLABLE_CURSORS
 			)
 #else
@@ -4741,9 +4750,13 @@ static RSB gen_sort(TDBB tdbb,
 		sort_key->skd_offset = map_item->smb_flag_offset =
 			(USHORT) map_length++; sort_key->skd_dtype = SKD_text;
 		sort_key->skd_length = 1;
+		// Handle nulls placement
 		sort_key->skd_flags = SKD_ascending;
-		if (*(node_ptr + sort->nod_count*2))
-		  sort_key->skd_flags |= SKD_descending;
+		if (((IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
+			(IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_first)
+		{
+			sort_key->skd_flags |= SKD_descending;
+		}
 		++sort_key;
 		/* Make key for sort key proper */
 #ifndef WORDS_BIGENDIAN
