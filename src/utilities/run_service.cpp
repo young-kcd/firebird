@@ -44,8 +44,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	Initialize lock manager for process.
  *
  **************************************/
-	SCHAR send_buffer[2048];
-
 	if (argc < 2) {
 		printf("usage: run_service service_path [args]\n");
 		exit(FINI_ERROR);
@@ -60,7 +58,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		*spb++ = isc_spb_command_line;
 		spb++;
 		for (argv += 2, argc -= 2; argc--;) {
-			for (p = *argv++; *spb = *p++; spb++);
+			for (const char* p = *argv++; *spb = *p++; spb++);
 			*spb++ = ' ';
 		}
 		*--spb = 0;
@@ -71,6 +69,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	isc_service_attach(NULL, 0, service_path, &handle,
 					   (SSHORT) (spb - spb_buffer), spb_buffer);
 
+	SCHAR send_buffer[2048];
+
 	const char* send_items;
 	SSHORT send_item_length;
 	if (strstr(service_path, "start_cache")) {
@@ -78,9 +78,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		send_item_length = sizeof(send_timeout);
 	}
 	else {
-	    // CVC: What's the idea of pointing to a random-filled buffer if its
-	    // length is set to zero. Doesn't isc_service_query check the lengths
-	    // first like other API functions?
 		send_items = send_buffer;
 		send_item_length = 0;
 	}
