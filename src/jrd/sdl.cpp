@@ -36,7 +36,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/sdl_proto.h"
 
-#define COMPILE_SIZE	256
+const int COMPILE_SIZE	= 256;
 
 using namespace Jrd;
 
@@ -74,18 +74,18 @@ static const UCHAR* sdl_desc(const UCHAR*, DSC*);
 static IPTR* stuff(IPTR, sdl_arg*);
 
 
-#define op_literal	1
-#define op_variable	2
-#define op_add		3
-#define op_subtract	4
-#define op_multiply	5
-#define op_divide	6
-#define op_iterate	7
-#define op_goto		8
-#define op_element	9
-#define op_loop		10
-#define op_exit		11
-#define op_scalar	12
+const int op_literal	= 1;
+const int op_variable	= 2;
+const int op_add		= 3;
+const int op_subtract	= 4;
+const int op_multiply	= 5;
+const int op_divide		= 6;
+const int op_iterate	= 7;
+const int op_goto		= 8;
+const int op_element	= 9;
+const int op_loop		= 10;
+const int op_exit		= 11;
+const int op_scalar		= 12;
 
 /*
    The structure for a loop is:

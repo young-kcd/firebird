@@ -118,21 +118,21 @@ const USHORT rsb_writelock = 16;		// records should be locked for writing
 
 // special argument positions within the RecordSource
 
-#define RSB_PRC_inputs			0
-#define RSB_PRC_in_msg			1
-#define RSB_PRC_count			2
+const int RSB_PRC_inputs		= 0;
+const int RSB_PRC_in_msg		= 1;
+const int RSB_PRC_count			= 2;
 
-#define RSB_NAV_index			0
-#define RSB_NAV_inversion		1
-#define RSB_NAV_key_length		2
-#define RSB_NAV_idx_offset		3
-#define RSB_NAV_count			4
+const int RSB_NAV_index			= 0;
+const int RSB_NAV_inversion		= 1;
+const int RSB_NAV_key_length	= 2;
+const int RSB_NAV_idx_offset	= 3;
+const int RSB_NAV_count			= 4;
 
-#define RSB_LEFT_outer			0
-#define RSB_LEFT_inner			1
-#define RSB_LEFT_boolean		2
-#define RSB_LEFT_inner_boolean	3
-#define RSB_LEFT_count			4
+const int RSB_LEFT_outer		= 0;
+const int RSB_LEFT_inner		= 1;
+const int RSB_LEFT_boolean		= 2;
+const int RSB_LEFT_inner_boolean	= 3;
+const int RSB_LEFT_count			= 4;
 
 
 // Merge (equivalence) file block
@@ -147,7 +147,7 @@ struct merge_file {
 	UCHAR*	mfb_block_data;				// merge block I/O buffer
 };
 
-#define MERGE_BLOCK_SIZE	65536
+const ULONG MERGE_BLOCK_SIZE	= 65536;
 
 
 // Impure area formats for the various RecordSource types
@@ -301,24 +301,24 @@ public:
 
 
 // Must be less then MAX_SSHORT. Not used for static arrays.
-#define MAX_CONJUNCTS	32000
+const int MAX_CONJUNCTS	= 32000;
 
 // Note that MAX_STREAMS currently MUST be <= MAX_UCHAR.
 // Here we should really have a compile-time fb_assert, since this hard-coded
 // limit is NOT negotiable so long as we use an array of UCHAR, where index 0
 // tells how many streams are in the array (and the streams themselves are
 // identified by a UCHAR).
-#define MAX_STREAMS	255
+const int MAX_STREAMS	= 255;
 
 // This is number of ULONG's needed to store bit-mapped flags for all streams
 // OPT_STREAM_BITS = (MAX_STREAMS + 1) / sizeof(ULONG)
 // This value cannot be increased simple way. Decrease is possible, but it is also
 // hardcoded in several places such as TEST_DEP_ARRAYS macro
-#define OPT_STREAM_BITS 8
+const int OPT_STREAM_BITS	= 8;
 
 // Number of streams, conjuncts, indices that will be statically allocated 
 // in various arrays. Larger numbers will have to be allocated dynamically
-#define OPT_STATIC_ITEMS 16
+const int OPT_STATIC_ITEMS = 16;
 
 
 // General optimizer block

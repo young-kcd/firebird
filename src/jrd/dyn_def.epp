@@ -91,14 +91,14 @@ typedef Firebird::Array<TEXT*> TextStack;
 #define V4_THREADING
 #endif
 
-#define FOR_KEY_UPD_CASCADE  0x01
-#define FOR_KEY_UPD_NULL     0x02
-#define FOR_KEY_UPD_DEFAULT  0x04
-#define FOR_KEY_UPD_NONE     0x08
-#define FOR_KEY_DEL_CASCADE  0x10
-#define FOR_KEY_DEL_NULL     0x20
-#define FOR_KEY_DEL_DEFAULT  0x40
-#define FOR_KEY_DEL_NONE     0x80
+const int FOR_KEY_UPD_CASCADE	= 0x01;
+const int FOR_KEY_UPD_NULL	= 0x02;
+const int FOR_KEY_UPD_DEFAULT	= 0x04;
+const int FOR_KEY_UPD_NONE	= 0x08;
+const int FOR_KEY_DEL_CASCADE	= 0x10;
+const int FOR_KEY_DEL_NULL	= 0x20;
+const int FOR_KEY_DEL_DEFAULT	= 0x40;
+const int FOR_KEY_DEL_NONE	= 0x80;
 
 DATABASE DB = STATIC "ODS.RDB";
 

@@ -418,7 +418,7 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
 // Allocate request block
 
 	ACQUIRE;
-	EVT_REQ request = (EVT_REQ) alloc_global(type_req, sizeof(evt_req), false);
+	EVT_REQ request = (EVT_REQ) alloc_global(type_reqb, sizeof(evt_req), false);
 	SES session = (SES) ABS_PTR(session_id);
 	insert_tail(&session->ses_requests, &request->req_requests);
 	request->req_session = session_id;

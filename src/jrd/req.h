@@ -82,32 +82,32 @@ struct record_param {
 
 /* Record flags must be an exact replica of ODS record header flags */
 
-#define rpb_deleted	1
-#define rpb_chained	2
-#define rpb_fragment	4
-#define rpb_incomplete	8
-#define rpb_blob	16
-#define rpb_delta	32			/* prior version is a differences record */
-#define rpb_damaged	128			/* record is busted */
-#define rpb_gc_active	256		/* garbage collecting dead record version */
+const int rpb_deleted	= 1;
+const int rpb_chained	= 2;
+const int rpb_fragment	= 4;
+const int rpb_incomplete= 8;
+const int rpb_blob		= 16;
+const int rpb_delta		= 32;		/* prior version is a differences record */
+const int rpb_damaged	= 128;		/* record is busted */
+const int rpb_gc_active	= 256;		/* garbage collecting dead record version */
 
 /* Stream flags */
 
-#define RPB_s_refetch	0x1		/* re-fetch required due to sort */
-#define RPB_s_update	0x2		/* input stream fetched for update */
+const int RPB_s_refetch	= 0x1;		/* re-fetch required due to sort */
+const int RPB_s_update	= 0x2;		/* input stream fetched for update */
 
 #define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
 #define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
 #define TEST_NULL(record, id)	record->rec_data [id >> 3] &   (1 << (id & 7))
 
-#define MAX_DIFFERENCES		1024	/* Max length of generated Differences string 
+const int MAX_DIFFERENCES	= 1024;	/* Max length of generated Differences string 
 									   between two records */
 
 /* Store allocation policy types.  Parameter to DPM_store() */
 
-#define DPM_primary	1			/* New primary record */
-#define DPM_secondary	2		/* Chained version of primary record */
-#define DPM_other	3			/* Independent (or don't care) record */
+const int DPM_primary	= 1;		/* New primary record */
+const int DPM_secondary	= 2;		/* Chained version of primary record */
+const int DPM_other		= 3;		/* Independent (or don't care) record */
 
 /* Record block (holds data, remember data?) */
 
@@ -126,9 +126,9 @@ public:
 	UCHAR rec_data[1];			/* THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY */
 };
 
-#define REC_same_tx	1			/* record inserted/updated and deleted by same tx */
-#define REC_gc_active	2		/* relation garbage collect record block in use */
-#define REC_new_version 4		/* savepoint created new record version and deleted it */
+const int REC_same_tx		= 1;		/* record inserted/updated and deleted by same tx */
+const int REC_gc_active		= 2;		/* relation garbage collect record block in use */
+const int REC_new_version	= 4;		/* savepoint created new record version and deleted it */
 
 /* save record_param block */
 
@@ -226,31 +226,31 @@ public:
 const size_t REQ_SIZE = sizeof (jrd_req) - sizeof (jrd_req::blk_repeat_type);
 
 /* Flags for req_flags */
-#define req_active				0x1L
-#define req_stall				0x2L
-#define req_leave				0x4L
+const ULONG req_active			= 0x1L;
+const ULONG req_stall			= 0x2L;
+const ULONG req_leave			= 0x4L;
 #ifdef SCROLLABLE_CURSORS
-#define req_async_processing	0x8L
+const ULONG req_async_processing= 0x8L;
 #endif
-#define req_null			   0x10L
-#define req_broken			   0x20L
-#define req_abort			   0x40L
-#define req_internal		   0x80L
-#define req_warning			  0x100L
-#define req_in_use			  0x200L
-#define req_sys_trigger		  0x400L	/* request is a system trigger */
-#define req_count_records	  0x800L	/* count records accessed */
-#define req_proc_fetch		 0x1000L	/* Fetch from procedure in progress */
-#define req_ansi_any		 0x2000L	/* Request is processing ANSI ANY */
-#define req_same_tx_upd		 0x4000L	/* record was updated by same transaction */
-#define req_ansi_all		 0x8000L	/* Request is processing ANSI ANY */
-#define req_ansi_not		0x10000L	/* Request is processing ANSI ANY */
-#define req_reserved		0x20000L	/* Request reserved for client */
-#define req_ignore_perm	        0x40000L	/* ignore permissions checks */
-#define req_fetch_required	0x80000L	/* need to fetch next record */
-#define req_error_handler      0x100000L	/* looper is called to handle error */
-#define req_clone_data_from_default_clause \
-                               0x200000L	/* This flag is marked in the
+const ULONG req_null			= 0x10L;
+const ULONG req_broken			= 0x20L;
+const ULONG req_abort			= 0x40L;
+const ULONG req_internal		= 0x80L;
+const ULONG req_warning			= 0x100L;
+const ULONG req_in_use			= 0x200L;
+const ULONG req_sys_trigger		= 0x400L;	/* request is a system trigger */
+const ULONG req_count_records	= 0x800L;	/* count records accessed */
+const ULONG req_proc_fetch		= 0x1000L;	/* Fetch from procedure in progress */
+const ULONG req_ansi_any		= 0x2000L;	/* Request is processing ANSI ANY */
+const ULONG req_same_tx_upd		= 0x4000L;	/* record was updated by same transaction */
+const ULONG req_ansi_all		= 0x8000L;	/* Request is processing ANSI ANY */
+const ULONG req_ansi_not		= 0x10000L;	/* Request is processing ANSI ANY */
+const ULONG req_reserved		= 0x20000L;	/* Request reserved for client */
+const ULONG req_ignore_perm		= 0x40000L;	/* ignore permissions checks */
+const ULONG req_fetch_required	= 0x80000L;	/* need to fetch next record */
+const ULONG req_error_handler	= 0x100000L;	/* looper is called to handle error */
+const ULONG req_clone_data_from_default_clause \
+								= 0x200000L;	/* This flag is marked in the
 											   **   req_flags if and only if the
 											   **   the column that was created or
 											   **   added as "DEFAULT xx NOT NULL"
@@ -259,12 +259,12 @@ const size_t REQ_SIZE = sizeof (jrd_req) - sizeof (jrd_req::blk_repeat_type);
 											   **   The data of this column was
 											   **   cloned from the default clause.
 											 */
-#define req_blr_version4      0x400000L	/* Request is of blr_version4 */
+const ULONG req_blr_version4	= 0x400000L;	/* Request is of blr_version4 */
 /* Mask for flags preserved in a clone of a request */
-#define REQ_FLAGS_CLONE_MASK	(req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4)
+const ULONG REQ_FLAGS_CLONE_MASK	= (req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4);
 
 /* Mask for flags preserved on initialization of a request */
-#define REQ_FLAGS_INIT_MASK	(req_in_use | req_internal | req_sys_trigger | req_ignore_perm | req_blr_version4)
+const ULONG REQ_FLAGS_INIT_MASK	= (req_in_use | req_internal | req_sys_trigger | req_ignore_perm | req_blr_version4);
 
 /* Flags for req_view_flags */
 enum {

@@ -26,18 +26,18 @@
 
 /* I/O macros */
 
-#define LLIO_OPEN_RW		1
-#define LLIO_OPEN_WITH_SYNC_RW	2
-#define LLIO_OPEN_EXISTING_RW	3
-#define LLIO_OPEN_WITH_SYNC_W	4
-#define LLIO_OPEN_WITH_TRUNC_RW	5
-#define LLIO_OPEN_R		6
-#define LLIO_OPEN_NEW_RW        7
+const int LLIO_OPEN_RW				= 1;
+const int LLIO_OPEN_WITH_SYNC_RW	= 2;
+const int LLIO_OPEN_EXISTING_RW		= 3;
+const int LLIO_OPEN_WITH_SYNC_W		= 4;
+const int LLIO_OPEN_WITH_TRUNC_RW	= 5;
+const int LLIO_OPEN_R				= 6;
+const int LLIO_OPEN_NEW_RW			= 7;
 
-#define LLIO_SEEK_NONE		0
-#define LLIO_SEEK_BEGIN		1
-#define LLIO_SEEK_CURRENT	2
-#define LLIO_SEEK_END		3
+const int LLIO_SEEK_NONE			= 0;
+const int LLIO_SEEK_BEGIN			= 1;
+const int LLIO_SEEK_CURRENT			= 2;
+const int LLIO_SEEK_END				= 3;
 
 
 #endif /* JRD_LLIO_H */

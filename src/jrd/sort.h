@@ -106,7 +106,7 @@ struct sort_record
 
 };
 
-#define MAX_SORT_RECORD		65535	/* bytes */
+const ULONG MAX_SORT_RECORD		= 65535;	/* bytes */
 
 /* the record struct actually contains the keyids etc, and the back_pointer
    which points to the sort_record structure. */
@@ -146,38 +146,38 @@ struct sort_key_def
 
 /* skd_dtype */
 
-#define SKD_long		1
-#define SKD_ulong		2
-#define SKD_short		3
-#define SKD_ushort		4
-#define SKD_text		5
-#define SKD_float		6
-#define SKD_double		7
-#define SKD_quad		8
-#define SKD_timestamp1	9		/* Timestamp as Float */
-#define SKD_bytes		10
-#define SKD_d_float		11
-#define SKD_varying		12		/* non-international */
-#define SKD_cstring		13		/* non-international */
+const int SKD_long			= 1;
+const int SKD_ulong			= 2;
+const int SKD_short			= 3;
+const int SKD_ushort		= 4;
+const int SKD_text			= 5;
+const int SKD_float			= 6;
+const int SKD_double		= 7;
+const int SKD_quad			= 8;
+const int SKD_timestamp1	= 9;		/* Timestamp as Float */
+const int SKD_bytes			= 10;
+const int SKD_d_float		= 11;
+const int SKD_varying		= 12;		/* non-international */
+const int SKD_cstring		= 13;		/* non-international */
 
-#define SKD_sql_time	14
-#define SKD_sql_date	15
-#define SKD_timestamp2	16		/* Timestamp as Quad */
+const int SKD_sql_time		= 14;
+const int SKD_sql_date		= 15;
+const int SKD_timestamp2	= 16;		/* Timestamp as Quad */
 
-#define SKD_int64	17
+const int SKD_int64			= 17;
 
 /* Historical alias for pre V6 code */
-#define SKD_date	SKD_timestamp1
+const int SKD_date	= SKD_timestamp1;
 
 /* skd_flags */
 
-#define SKD_ascending	0		/* default initializer */
-#define SKD_descending	1
-#define SKD_insensitive	2
-#define SKD_binary		4
+const int SKD_ascending		= 0;	/* default initializer */
+const int SKD_descending	= 1;
+const int SKD_insensitive	= 2;
+const int SKD_binary		= 4;
 
-#define TYPE_RUN	0
-#define TYPE_MRG	1
+const int TYPE_RUN	= 0;
+const int TYPE_MRG	= 1;
 
 /* Run/merge common block header */
 
@@ -286,8 +286,8 @@ struct sort_context
 
 /* flags as set in scb_flags */
 
-#define scb_initialized		1
-#define scb_sorted		2		/* stream has been sorted */
+const int scb_initialized	= 1;
+const int scb_sorted		= 2;	/* stream has been sorted */
 
 #define SCB_LEN(n_k)	(sizeof (sort_context) + (SLONG)(n_k) * sizeof (sort_key_def))
 

@@ -59,10 +59,10 @@ typedef struct thread {
 	USHORT thread_flags;		/* Flags */
 } *THREAD;
 
-#define THREAD_hiber		1	/* Thread is hibernating */
-#define THREAD_ast_disabled	2	/* Disable AST delivery */
-#define THREAD_ast_active	4	/* Disable AST preemption while AST active */
-#define	THREAD_ast_pending	8	/* AST waiting to be delivered */
+const int THREAD_hiber			= 1;	/* Thread is hibernating */
+const int THREAD_ast_disabled	= 2;	/* Disable AST delivery */
+const int THREAD_ast_active		= 4;	/* Disable AST preemption while AST active */
+const int THREAD_ast_pending	= 8;	/* AST waiting to be delivered */
 
 static THREAD alloc_thread(void);
 static bool ast_enable(void);
@@ -80,8 +80,6 @@ static THREAD ast_thread = NULL;
 static MUTX_T thread_mutex[1];
 volatile static bool init_flag = false;
 static USHORT enabled = FALSE;
-
-#define ABORT	abort()
 
 
 #ifdef VMS
@@ -621,7 +619,7 @@ bool SCH_validate(void)
 	if (!init_flag || !active_thread) {
 		gds__log("SCH_validate -- not entered");
 		if (getenv("ISC_PUNT"))
-			ABORT;
+			abort();
 		return false;
 	}
 
@@ -856,7 +854,7 @@ static void mutex_bugcheck(const TEXT* string, int mutex_state)
 	gds__log(msg);
 	fprintf(stderr, "%s\n", msg);
 
-	ABORT;
+	abort();
 }
 
 

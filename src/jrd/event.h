@@ -49,8 +49,8 @@
 	que != &header; que = (SRQ*) QUE_NEXT ((*que)))
 
 
-#define SIZE_SHIFT	2
-#define FAST_ALLOC	16
+const int SIZE_SHIFT	= 2;
+const int FAST_ALLOC	= 16;
 
 /* Self-relative que block.  Offsets are from the block itself. */
 
@@ -61,7 +61,7 @@ typedef struct srq {
 
 /* Global section header */
 
-#define EVH_HASH_SIZE	7
+const int EVH_HASH_SIZE	= 7;
 
 typedef struct evh {
 	SLONG evh_length;			/* Current length of global section */
@@ -77,14 +77,14 @@ typedef struct evh {
 
 /* Common block header */
 
-#define type_hdr	1			/* Event header */
-#define type_frb	2			/* Free block */
-#define type_prb	3			/* Process block */
-#define type_rint	4			/* Request interest block */
-#define type_req	5			/* Request block */
-#define type_evnt	6			/* Event */
-#define type_ses	7			/* Session */
-#define type_max	8
+const int type_hdr	= 1;		// Event header
+const int type_frb	= 2;		// Free block
+const int type_prb	= 3;		// Process block
+const int type_rint	= 4;		// Request interest block
+const int type_reqb	= 5;		// Request block previously req_type also used in blk.h
+const int type_evnt	= 6;		// Event 
+const int type_ses	= 7;		// Session
+const int type_max	= 8;
 
 struct event_hdr // CVC: previous clash with ods.h's hdr
 {
@@ -115,11 +115,11 @@ struct prb
 };
 typedef prb *PRB;
 
-#define PRB_wakeup	1			/* Schedule a wakeup for process */
-#define PRB_pending	2			/* Wakeup has been requested, and is dangling */
-#define PRB_remap	4			/* need to remap shared memory */
-#define	PRB_remap_over	8		/* remap is over */
-#define PRB_exiting	16			/* Process is exiting */
+const int PRB_wakeup	= 1;		/* Schedule a wakeup for process */
+const int PRB_pending	= 2;		/* Wakeup has been requested, and is dangling */
+const int PRB_remap		= 4;		/* need to remap shared memory */
+const int PRB_remap_over= 8;		/* remap is over */
+const int PRB_exiting	= 16;		/* Process is exiting */
 
 /* Session block */
 
@@ -177,7 +177,7 @@ struct rint {
 };
 typedef rint *RINT;
 
-#define EPB_version1 1
+const int EPB_version1 = 1;
 
 #endif // JRD_EVENT_H
 

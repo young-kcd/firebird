@@ -63,29 +63,29 @@ class TemporaryField : public pool_alloc<type_tfb>
 	DSC				tfb_desc;
 };
 
-#define TFB_computed		1
-#define TFB_array			2
+const int TFB_computed			= 1;
+const int TFB_array				= 2;
 
-#define MET_object_active	0
-#define MET_object_inactive	1
-#define MET_object_unknown	2
+const int MET_object_active		= 0;
+const int MET_object_inactive	= 1;
+const int MET_object_unknown	= 2;
 
-#define TRIGGER_PRE_STORE	1
-#define TRIGGER_POST_STORE	2
-#define TRIGGER_PRE_MODIFY	3
-#define TRIGGER_POST_MODIFY	4
-#define TRIGGER_PRE_ERASE	5
-#define TRIGGER_POST_ERASE	6
-#define TRIGGER_MAX			7
+const int TRIGGER_PRE_STORE		= 1;
+const int TRIGGER_POST_STORE	= 2;
+const int TRIGGER_PRE_MODIFY	= 3;
+const int TRIGGER_POST_MODIFY	= 4;
+const int TRIGGER_PRE_ERASE		= 5;
+const int TRIGGER_POST_ERASE	= 6;
+const int TRIGGER_MAX			= 7;
 
 // trigger type prefixes
-#define TRIGGER_PRE			0
-#define TRIGGER_POST		1
+const int TRIGGER_PRE			= 0;
+const int TRIGGER_POST			= 1;
 
 // trigger type suffixes
-#define TRIGGER_STORE		1
-#define TRIGGER_MODIFY		2
-#define TRIGGER_ERASE		3
+const int TRIGGER_STORE			= 1;
+const int TRIGGER_MODIFY		= 2;
+const int TRIGGER_ERASE			= 3;
 
 // that's how trigger action types are encoded
 /*
@@ -121,7 +121,7 @@ example #3:
 #define TRIGGER_ACTION_SLOT(value, slot) \
 	TRIGGER_ACTION(value, (slot * 2 - 1) )
 
-#define TRIGGER_COMBINED_MAX 128
+const int TRIGGER_COMBINED_MAX	= 128;
 
 #include "../jrd/obj.h"
 
