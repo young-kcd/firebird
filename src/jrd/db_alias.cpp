@@ -34,12 +34,17 @@
 #include "../fbutil/FirebirdConfigFile.h"
 #include "../jrd/os/path_utils.h"
 
+#define ALIAS_FILE "aliases.conf"
+
 extern "C" {
 
 bool ResolveDatabaseAlias(const char* alias, char* database)
 {
 	static FirebirdConfigFile aliasConfig;
-	aliasConfig.setConfigFile(FirebirdConfig::getSysString("RootDirectory") + "/aliases.conf");
+//	aliasConfig.setConfigFile(FirebirdConfig::getSysString("RootDirectory") + "/aliases.conf");
+	TEXT alias_filename[MAXPATHLEN];
+	gds__prefix(alias_filename, ALIAS_FILE);
+	aliasConfig.setConfigFile(alias_filename);
 
 	const char correct_dir_sep = PathUtils::dir_sep;
 	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
