@@ -107,7 +107,7 @@
  * for stdio.
  */
 
-#ifdef SOLX86
+#ifdef SOLARIS
 #error SUN
 #endif
 
