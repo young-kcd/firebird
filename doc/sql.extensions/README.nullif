@@ -1,6 +1,6 @@
 Function:
-    Speicify an alternative value for a column to return when it has a NULL 
-    value.
+    Return a NULL value for a sub-expression if it has a specific value 
+    otherwise return the value of the sub-expression
 
 Author:
     Arno Brinkman <firebird@abvisie.nl>
