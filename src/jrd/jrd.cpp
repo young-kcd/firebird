@@ -2438,16 +2438,18 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 			ERR_post(gds_no_priv,
 					gds_arg_string, "drop",
 					gds_arg_string, "database",
-					gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string), 0);
-	
+					gds_arg_string,
+					ERR_cstring((SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
+
 		if (attachment->att_flags & ATT_shutdown)
 			ERR_post(gds_shutdown, gds_arg_string,
-					ERR_cstring(dbb->dbb_file->fil_string), 0);
-	
+					ERR_cstring((SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
+
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
 			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-					gds_arg_string, ERR_cstring(dbb->dbb_file->fil_string), 0);
-	
+					gds_arg_string,
+					ERR_cstring((SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
+
 		JRD_SS_MUTEX_LOCK;
 		V4_JRD_MUTEX_LOCK(databases_mutex);
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -4883,7 +4885,8 @@ static BOOLEAN drop_files(FIL file)
 		{
 			IBERR_build_status(status, isc_io_error,
 							   gds_arg_string, "unlink",
-							   gds_arg_string, ERR_cstring(file->fil_string),
+							   gds_arg_string,
+							   ERR_cstring(file->fil_string),
 							   isc_arg_gds, isc_io_delete_err,
 							   SYS_ERR, errno,
 							   0);

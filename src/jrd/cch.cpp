@@ -1446,7 +1446,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 	if (count != (SLONG) bcb_->bcb_count)
 		gds__log
 			("Database: %s\n\tAllocated %ld page buffers of %ld requested",
-			 dbb->dbb_file->fil_string, bcb_->bcb_count, count);
+			 tdbb->tdbb_attachment->att_filename->str_data, bcb_->bcb_count, count);
 
 	if (dbb->dbb_lock->lck_logical != LCK_EX)
 		dbb->dbb_ast_flags |= DBB_assert_locks;
