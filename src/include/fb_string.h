@@ -38,27 +38,33 @@ namespace Firebird
 		inline PathName(void) : string() {}
 		inline bool operator<(const PathName &r) const {
 			return CASE_SENSITIVITY ?
-			  (*this < r) : (STRCASECMP(this->c_str(), r.c_str()) < 0);
+				(string(*this) < string(r)) : 
+				(STRCASECMP(c_str(), r.c_str()) < 0);
 		}
 		inline bool operator<=(const PathName &r) const {
 			return CASE_SENSITIVITY ?
-			  (*this <= r) : (STRCASECMP(this->c_str(), r.c_str()) <= 0);
+				(string(*this) <= string(r)) : 
+				(STRCASECMP(c_str(), r.c_str()) <= 0);
 		}
 		inline bool operator==(const PathName &r) const {
 			return CASE_SENSITIVITY ?
-			  (*this == r) : (STRCASECMP(this->c_str(), r.c_str()) == 0);
+				(string(*this) == string(r)) : 
+				(STRCASECMP(this->c_str(), r.c_str()) == 0);
 		}
 		inline bool operator>=(const PathName &r) const {
 			return CASE_SENSITIVITY ?
-			  (*this >= r) : (STRCASECMP(this->c_str(), r.c_str()) >= 0);
+				(string(*this) >= string(r)) : 
+				(STRCASECMP(this->c_str(), r.c_str()) >= 0);
 		}
 		inline bool operator>(const PathName &r) const {
 			return CASE_SENSITIVITY ?
-			  (*this > r) : (STRCASECMP(this->c_str(), r.c_str()) > 0);
+				(string(*this) > string(r)) : 
+				(STRCASECMP(this->c_str(), r.c_str()) > 0);
 		}
 		inline bool operator!=(const PathName &r) const {
 			return CASE_SENSITIVITY ?
-			  (*this != r) : (STRCASECMP(this->c_str(), r.c_str()) != 0);
+				(string(*this) != string(r)) : 
+				(STRCASECMP(this->c_str(), r.c_str()) != 0);
 		}
 	};
 }
