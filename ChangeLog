@@ -1,3 +1,17 @@
+2005-01-15 00:52  skidder
+
+	* firebird2/src/utilities/nbackup.cpp (1.44):
+	
+	Fix a couple parameter parse errors in NBACKUP utility noted by
+	Vlad
+
+2005-01-14 10:56  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.h (1.59):
+	
+	fixed multi-threaded client and Win32 embedded problems after
+	introducing context memory pools
+
 2005-01-13 11:29  kkuznetsov
 
 	* firebird2/src/install/misc/firebird.init.d.Solaris.in (1.1):
