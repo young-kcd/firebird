@@ -24,23 +24,36 @@
 #ifndef DSQL_ARRAY_PROTO_H
 #define DSQL_ARRAY_PROTO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*,
-										SSHORT*, UCHAR*, SSHORT*);
+					 SSHORT*, UCHAR*, SSHORT*);
+
 ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS*, void**, void**,
-											ISC_QUAD*, const ISC_ARRAY_DESC*,
-											void*, SLONG*);
+					   ISC_QUAD*, const ISC_ARRAY_DESC*,
+					   void*, SLONG*);
+
 ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS*, void**, void**,
-												SCHAR*, SCHAR*,
-												ISC_ARRAY_DESC*);
+						const SCHAR*, const SCHAR*,
+						ISC_ARRAY_DESC*);
+
 ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS*, void**, void**,
-												SCHAR*, SCHAR*,
-												ISC_ARRAY_DESC*);
+						const SCHAR*, const SCHAR*,
+						ISC_ARRAY_DESC*);
+
 ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS*, void**, void**,
-											ISC_QUAD*, const ISC_ARRAY_DESC*,
-											void*, SLONG*);
-ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS*, SCHAR*, SCHAR*,
-											SSHORT*, SSHORT*, SSHORT*,
-											ISC_ARRAY_DESC*);
+    					   	ISC_QUAD*, const ISC_ARRAY_DESC*,
+						void*, SLONG*);
+
+ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS*, const SCHAR*, const SCHAR*,
+ 						const SSHORT*, const SSHORT*, const SSHORT*,
+						ISC_ARRAY_DESC*);
+#ifdef __cplusplus
+}   /* extern "C"  */
+#endif
+											
 
 #endif // DSQL_ARRAY_PROTO_H
 

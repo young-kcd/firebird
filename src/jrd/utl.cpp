@@ -233,6 +233,12 @@ static const TEXT* const impl_implementation[] = {
 };
 
 
+#if (defined SOLARIS ) || (defined __cplusplus) 
+extern "C" {
+#endif
+/* Avoid C++ linkage API functions*/
+
+
 #ifdef VMS
 ISC_STATUS API_ROUTINE gds__attach_database_d(
 										  ISC_STATUS* user_status,
@@ -1999,6 +2005,10 @@ static display(ISC_QUAD* blob_id, void* database, void* transaction)
 	return TRUE;
 }
 #endif /* VMS */
+
+#if (defined SOLARIS ) || (defined __cplusplus) 
+} //extern "C" {
+#endif
 
 
 static int dump(ISC_QUAD* blob_id,

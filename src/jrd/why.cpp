@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.74 2004-05-24 17:28:33 brodsom Exp $
+$Id: why.cpp,v 1.75 2004-06-04 14:36:45 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -90,6 +90,7 @@ $Id: why.cpp,v 1.74 2004-05-24 17:28:33 brodsom Exp $
 #include "../jrd/why_proto.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/auto.h"
+
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -4171,8 +4172,11 @@ ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	RETURN_SUCCESS;
 }
 
+#if defined (SOLARIS)
+extern "C" 
+#endif
 
-SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
+SLONG ISC_EXPORT isc_reset_fpe(USHORT fpe_status)
 {
 /**************************************
  *
