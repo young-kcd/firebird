@@ -36,25 +36,19 @@
 #include "../jrd/perf_proto.h"
 #include "../jrd/gdsassert.h"
 
-#ifdef NETWARE_386
-#define NO_TIMES
-#define TIMEZONE	timezon
+#ifdef HAVE_SYS_TIMEB_H
 #include <sys/timeb.h>
-#undef timeszone
-
-#else
-#if (defined WIN_NT || defined PC_PLATFORM)
-#include <sys/timeb.h>
-#define NO_TIMES
 #endif
-#endif /* NETWARE_386 */
+#ifdef HAVE_SYS_TIMES_H
+#include <sys/times.h>
+#endif
 
 
 extern "C" {
 
 
 static SLONG get_parameter(SCHAR **);
-#ifdef NO_TIMES
+#ifndef HAVE_TIMES
 static void times(struct tms *);
 #endif
 
@@ -389,7 +383,7 @@ static SLONG get_parameter(SCHAR ** ptr)
 }
 
 
-#ifdef NO_TIMES
+#ifndef HAVE_TIMES
 static void times(struct tms *buffer)
 {
 /**************************************

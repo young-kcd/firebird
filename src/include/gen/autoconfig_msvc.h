@@ -56,6 +56,7 @@
 #undef HAVE_STRLCAT
 #define HAVE_GETTIMEOFDAY
 #undef HAVE_TIME
+#undef HAVE_TIMES
 
 /* Types */
 #undef socklen_t

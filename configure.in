@@ -87,7 +87,7 @@ AC_CHECK_LIB(curses, main)
 AC_CHECK_LIB(readline, main,,,$LIBS)
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
-AC_CHECK_FUNCS(strlcpy strlcat gettimeofday time)
+AC_CHECK_FUNCS(strlcpy strlcat gettimeofday time times)
 
 AC_C_BIGENDIAN
 AC_C_CONST
