@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70.2.5 2004-09-25 19:32:33 dimitr Exp $
+$Id: inet.cpp,v 1.70.2.6 2004-10-20 17:25:14 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -3722,7 +3722,11 @@ static int packet_receive(
 	}
 
 	if (n <= 0 && (port->port_flags & PORT_async))
+	{
+		port->port_flags |= PORT_broken;
+		port->port_state = state_broken;
 		return FALSE;
+	}
 
 	if (n == -1)
 		return inet_error(port, "read", isc_net_read_err, ERRNO);
