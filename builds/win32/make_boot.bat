@@ -176,7 +176,7 @@ goto :EOF
 :: BUILD messages
 :msgs
 @echo.
-@echo Building build_msg and codes...
+@echo Building build_msg...
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" /REBUILD /OUT boot3.log
 ) else (
@@ -196,7 +196,7 @@ goto :EOF
 :: BUILD codes
 :codes
 @echo.
-@echo Building build_msg and codes...
+@echo Building codes...
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "codes - Win32 Release" /REBUILD /OUT boot4.log
 ) else (
