@@ -381,9 +381,9 @@ class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
 	// begin - member functions that should be private
-	void		append_uchar(UCHAR byte);
-	void		append_ushort(USHORT val);
-	void		append_ulong(ULONG val);
+	inline void		append_uchar(UCHAR byte);
+	inline void		append_ushort(USHORT val);
+	inline void		append_ulong(ULONG val);
 	void		append_cstring(UCHAR verb, const char* string);
 	void		append_string(UCHAR verb, const char* string, USHORT len);
 	void		append_number(UCHAR verb, SSHORT number);

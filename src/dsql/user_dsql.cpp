@@ -114,13 +114,13 @@ static NAME		statement_names	= NULL;
 static NAME		cursor_names	= NULL;
 static DBB		databases		= NULL;
 
-static void set_global_private_status(STATUS* user_status, STATUS* local_status)
+static inline void set_global_private_status(STATUS* user_status, STATUS* local_status)
 {
 	UDSQL_error->dsql_user_status = user_status;
 	UDSQL_error->dsql_status = (user_status) ? user_status : local_status;
 }
 
-static void INIT_DSQL(STATUS* user_status, STATUS* local_status)
+static inline void INIT_DSQL(STATUS* user_status, STATUS* local_status)
 {
 	init(0);
 	set_global_private_status(user_status, local_status);

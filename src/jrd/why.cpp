@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.15 2003-02-15 00:55:10 brodsom Exp $
+$Id: why.cpp,v 1.16 2003-02-25 00:05:04 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -195,17 +195,17 @@ typedef struct teb
 } TEB;
 
 static WHY_HNDL allocate_handle(int, int);
-WHY_HNDL allocate_handle(int implementation, why_hndl *h, int handle_type) {
+inline WHY_HNDL allocate_handle(int implementation, why_hndl *h, int handle_type) {
 	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_why = h;
 	return handle;
 }
-WHY_HNDL allocate_handle(int implementation, dsql_req *h, int handle_type) {
+inline WHY_HNDL allocate_handle(int implementation, dsql_req *h, int handle_type) {
 	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_dsql = h;
 	return handle;
 }
-WHY_HNDL allocate_handle(int implementation, class jrd_tra *h, int handle_type) {
+inline WHY_HNDL allocate_handle(int implementation, class jrd_tra *h, int handle_type) {
 	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_tra = h;
 	return handle;
