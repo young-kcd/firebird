@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.4 2004-01-17 16:41:52 alexpeshkoff Exp $
+  $Id: isql.epp,v 1.32.2.5 2004-02-10 18:46:28 dimitr Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -332,7 +332,8 @@ static IB_FILE * create_temp_file(TEXT * string, TEXT * expanded_string)
 	strcat(expanded_string, string);
 	strcat(expanded_string, TEMP_PATTERN);
 	mktemp(expanded_string);
-	return ib_fopen(expanded_string, "w+b");
+	IB_FILE* result = ib_fopen(expanded_string, "w+b");
+	return (result == NULL) ? (IB_FILE*) -1 : result;
 }
 #define gds__temp_file(flag, string, expanded_string) create_temp_file(string, expanded_string)
 #endif
