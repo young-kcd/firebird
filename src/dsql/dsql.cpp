@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.32 2002-11-17 00:00:39 hippoman Exp $
+$Id: dsql.cpp,v 1.33 2002-11-19 12:35:28 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -145,7 +145,7 @@ static USHORT	get_request_info(DSQL_REQ, SSHORT, SCHAR*);
 static BOOLEAN	get_rsb_item(SSHORT*, SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
 static DBB		init(SLONG**);
-static void		map_in_out(DSQL_REQ, MSG, USHORT, UCHAR*, USHORT, UCHAR*);
+static void		map_in_out(DSQL_REQ, DSQL_MSG, USHORT, UCHAR*, USHORT, UCHAR*);
 static USHORT	name_length(TEXT*);
 static USHORT	parse_blr(USHORT, UCHAR*, USHORT, PAR);
 static DSQL_REQ		prepare(DSQL_REQ, USHORT, TEXT*, USHORT, USHORT);
@@ -153,7 +153,7 @@ static void		punt(void);
 static SCHAR*	put_item(SCHAR, USHORT, SCHAR*, SCHAR*, SCHAR*);
 static void		release_request(DSQL_REQ, USHORT);
 static STATUS	return_success(void);
-static SCHAR*	var_info(MSG, SCHAR*, SCHAR*, SCHAR*, SCHAR*, USHORT);
+static SCHAR*	var_info(DSQL_MSG, SCHAR*, SCHAR*, SCHAR*, SCHAR*, USHORT);
 
 extern DSQL_NOD DSQL_parse;
 
@@ -218,7 +218,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*		user_status,
 							 UCHAR*		blr,
 							 USHORT		msg_type,
 							 USHORT		msg_length,
-							 UCHAR*		msg
+							 UCHAR*		dsql_msg
 #ifdef SCROLLABLE_CURSORS
 							 , USHORT direction, SLONG offset)
 #else
@@ -237,7 +237,7 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 							UCHAR*	blr,
 							USHORT	msg_type,
 							USHORT	msg_length,
-							UCHAR*	msg);
+							UCHAR*	dsql_msg);
 
 static
 STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
@@ -337,7 +337,7 @@ GDS_DSQL_FETCH(	STATUS*				user_status,
 				 UCHAR*				blr,
 				 USHORT				msg_type,
 				 USHORT				msg_length,
-				 UCHAR*				msg
+				 UCHAR*				dsql_msg
 #ifdef SCROLLABLE_CURSORS
 				 , USHORT direction, SLONG offset
 #endif
@@ -349,7 +349,7 @@ GDS_DSQL_FETCH(	STATUS*				user_status,
 								blr,
 								msg_type,
 								msg_length,
-								msg
+								dsql_msg
 #ifdef SCROLLABLE_CURSORS
 								 , direction, offset
 #endif
@@ -377,7 +377,7 @@ GDS_DSQL_INSERT(STATUS*				user_status,
 				UCHAR*				blr,
 				USHORT				msg_type,
 				USHORT				msg_length,
-				UCHAR*				msg)
+				UCHAR*				dsql_msg)
 {
 	return GDS_DSQL_INSERT_CPP(	user_status,
 								reinterpret_cast<req**>(req_handle),
@@ -385,7 +385,7 @@ GDS_DSQL_INSERT(STATUS*				user_status,
 								blr,
 								msg_type,
 								msg_length,
-								msg);
+								dsql_msg);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -926,7 +926,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 							UCHAR*	blr,
 							USHORT	msg_type,
 							USHORT	msg_length,
-							UCHAR*	msg
+							UCHAR*	dsql_msg
 #ifdef SCROLLABLE_CURSORS
 							, USHORT direction, SLONG offset
 #endif
@@ -943,7 +943,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
  *
  **************************************/
 	DSQL_REQ request;
-	MSG message;
+	DSQL_MSG message;
 	PAR eof, parameter, null;
 	STATUS s;
 	USHORT *ret_length;
@@ -1040,7 +1040,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 				PAR offset_parameter;
 				DSC desc;
 
-				message = (MSG) request->req_async;
+				message = (DSQL_MSG) request->req_async;
 
 				desc.dsc_dtype = dtype_short;
 				desc.dsc_scale = 0;
@@ -1075,7 +1075,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 		}
 #endif
 
-		message = (MSG) request->req_receive;
+		message = (DSQL_MSG) request->req_receive;
 
 /* Insure that the blr for the message is parsed, regardless of
    whether anything is found by the call to receive. */
@@ -1089,8 +1089,8 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 			parameter = request->req_blob->blb_segment;
 			null = parameter->par_null;
 			ret_length =
-				(USHORT *) (msg + (SLONG) null->par_user_desc.dsc_address);
-			buffer = msg + (SLONG) parameter->par_user_desc.dsc_address;
+				(USHORT *) (dsql_msg + (SLONG) null->par_user_desc.dsc_address);
+			buffer = dsql_msg + (SLONG) parameter->par_user_desc.dsc_address;
 			THREAD_EXIT;
 			s = isc_get_segment(tdsql->tsql_status,
 							reinterpret_cast <
@@ -1131,7 +1131,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 				return 100;
 			}
 
-		map_in_out(NULL, message, 0, blr, msg_length, msg);
+		map_in_out(NULL, message, 0, blr, msg_length, dsql_msg);
 	}  // try
 	catch(...)
 	{
@@ -1204,7 +1204,7 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 							UCHAR*	blr,
 							USHORT	msg_type,
 							USHORT	msg_length,
-							UCHAR*	msg)
+							UCHAR*	dsql_msg)
 {
 /**************************************
  *
@@ -1217,7 +1217,7 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
  *
  **************************************/
 	DSQL_REQ request;
-	MSG message;
+	DSQL_MSG message;
 	PAR parameter;
 	SCHAR *buffer;
 	STATUS s;
@@ -1242,7 +1242,7 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
 					  gds_arg_gds, gds_dsql_cursor_err, 0);
 
-		message = (MSG) request->req_receive;
+		message = (DSQL_MSG) request->req_receive;
 
 /* Insure that the blr for the message is parsed, regardless of
    whether anything is found by the call to receive. */
@@ -1256,7 +1256,7 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 			parameter = request->req_blob->blb_segment;
 			buffer =
 				reinterpret_cast <
-				SCHAR * >(msg + (SLONG) parameter->par_user_desc.dsc_address);
+				SCHAR * >(dsql_msg + (SLONG) parameter->par_user_desc.dsc_address);
 			THREAD_EXIT;
 			s = isc_put_segment(tdsql->tsql_status,
 							reinterpret_cast <
@@ -1552,7 +1552,7 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
  *
  **************************************/
 	DSQL_REQ request;
-	MSG *message;
+	DSQL_MSG *message;
 	SCHAR item, *end_items, *end_info, *end_describe, buffer[256],
 		*buffer_ptr;
 	USHORT length, number, first_index;
@@ -2761,7 +2761,7 @@ static STATUS execute_request(DSQL_REQ				request,
  *	Execute a dynamic SQL statement.
  *
  **************************************/
-	MSG message;
+	DSQL_MSG message;
 	USHORT use_msg_length;
 	UCHAR *use_msg;
 	SCHAR buffer[20];
@@ -2847,7 +2847,7 @@ static STATUS execute_request(DSQL_REQ				request,
 		return FB_SUCCESS;
 
 	case REQ_EXEC_PROCEDURE:
-		if (message = (MSG) request->req_send) {
+		if (message = (DSQL_MSG) request->req_send) {
 			map_in_out(request, message, in_blr_length, in_blr,
 					   in_msg_length, in_msg);
 			in_msg_length = message->msg_length;
@@ -2857,7 +2857,7 @@ static STATUS execute_request(DSQL_REQ				request,
 			in_msg_length = 0;
 			in_msg = NULL;
 		}
-		if (out_msg_length && (message = (MSG) request->req_receive)) {
+		if (out_msg_length && (message = (DSQL_MSG) request->req_receive)) {
 			if (out_blr_length) {
 				parse_blr(out_blr_length, out_blr, out_msg_length,
 						  message->msg_parameters);
@@ -2912,7 +2912,7 @@ static STATUS execute_request(DSQL_REQ				request,
 
 /* If there is no data required, just start the request */
 
-	message = (MSG) request->req_send;
+	message = (DSQL_MSG) request->req_send;
 	if (!message)
 	{
 		THREAD_EXIT;
@@ -2948,7 +2948,7 @@ static STATUS execute_request(DSQL_REQ				request,
 		}
 	}
 
-	if (out_msg_length && (message = (MSG) request->req_receive)) {
+	if (out_msg_length && (message = (DSQL_MSG) request->req_receive)) {
 		/* Insure that the blr for the message is parsed, regardless of
 		   whether anything is found by the call to receive. */
 
@@ -3794,11 +3794,11 @@ static DBB init( SLONG ** db_handle)
 
 
 static void map_in_out(	DSQL_REQ		request,
-						MSG		message,
+						DSQL_MSG		message,
 						USHORT	blr_length,
 						UCHAR*	blr,
 						USHORT	msg_length,
-						UCHAR*	msg)
+						UCHAR*	dsql_msg)
 {
 /**************************************
  *
@@ -3840,16 +3840,16 @@ static void map_in_out(	DSQL_REQ		request,
 					break;
 
 				if (!request) {
-					flag = (SSHORT *) (msg + null_offset);
+					flag = (SSHORT *) (dsql_msg + null_offset);
 					*flag = *((SSHORT *) null->par_desc.dsc_address);
 				}
 				else {
 					flag = (SSHORT *) null->par_desc.dsc_address;
-					*flag = *((SSHORT *) (msg + null_offset));
+					*flag = *((SSHORT *) (dsql_msg + null_offset));
 				}
 			}
 
-			desc.dsc_address = msg + (SLONG) desc.dsc_address;
+			desc.dsc_address = dsql_msg + (SLONG) desc.dsc_address;
 			if (!request)
 				MOVD_move(&parameter->par_desc, &desc);
 			else if (!flag || *flag >= 0)
@@ -4110,7 +4110,7 @@ static DSQL_REQ prepare(
  **************************************/
 	STATUS status;
 	DSQL_NOD node;
-	MSG message;
+	DSQL_MSG message;
 	TEXT *p;
 	USHORT length;
 	TSQL tdsql;
@@ -4152,8 +4152,8 @@ static DSQL_REQ prepare(
 
 /* allocate the send and receive messages */
 
-	request->req_send = FB_NEW(*tdsql->tsql_default) msg;
-	request->req_receive = message = FB_NEW(*tdsql->tsql_default) msg;
+	request->req_send = FB_NEW(*tdsql->tsql_default) dsql_msg;
+	request->req_receive = message = FB_NEW(*tdsql->tsql_default) dsql_msg;
 	message->msg_number = 1;
 
 #ifdef SCROLLABLE_CURSORS
@@ -4161,7 +4161,7 @@ static DSQL_REQ prepare(
 		/* allocate a message in which to send scrolling information
 		   outside of the normal send/receive protocol */
 
-		request->req_async = message = FB_NEW(*tdsql->tsql_default) msg;
+		request->req_async = message = FB_NEW(*tdsql->tsql_default) dsql_msg;
 		message->msg_number = 2;
 	}
 #endif
@@ -4478,7 +4478,7 @@ static STATUS return_success(void)
 
 
 static SCHAR *var_info(
-					   MSG message,
+					   DSQL_MSG message,
 					   SCHAR * items,
 					   SCHAR * end_describe,
 					   SCHAR * info, SCHAR * end, USHORT first_index)

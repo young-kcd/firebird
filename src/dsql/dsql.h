@@ -425,9 +425,9 @@ public:
 	class blb* req_blob;		// Blob info for blob requests
 	int*	req_handle;			// OSRI request handle
 	str*	req_blr_string;	// String block during BLR generation
-	class msg* req_send;		// Message to be sent to start request
-	class msg* req_receive;	// Per record message to be received
-	class msg* req_async;		// Message for sending scrolling information
+	class dsql_msg* req_send;		// Message to be sent to start request
+	class dsql_msg* req_receive;	// Per record message to be received
+	class dsql_msg* req_async;		// Message for sending scrolling information
 	class par* req_eof;		// End of file parameter
 	class par* req_dbkey;		// Database key for current of
 	class par* req_rec_version;	// Record Version for current of
@@ -485,9 +485,9 @@ public:
 	class par*	blb_segment;		// Parameter for segments
 	struct nod* blb_from;
 	struct nod* blb_to;
-	class msg*	blb_open_in_msg;	// Input message to open cursor
-	class msg*	blb_open_out_msg;	// Output message from open cursor
-	class msg*	blb_segment_msg;	// Segment message
+	class dsql_msg*	blb_open_in_msg;	// Input message to open cursor
+	class dsql_msg*	blb_open_out_msg;	// Output message from open cursor
+	class dsql_msg*	blb_segment_msg;	// Segment message
 };
 typedef blb* BLB;
 
@@ -552,7 +552,7 @@ typedef map* MAP;
 
 #ifndef GUI_TOOLS
 
-class msg : public pool_alloc<dsql_type_msg>
+class dsql_msg : public pool_alloc<dsql_type_msg>
 {
 public:
 	class par*	msg_parameters;	// Parameter list
@@ -563,7 +563,8 @@ public:
 	USHORT	msg_parameter;		// Next parameter number
 	USHORT	msg_index;			// Next index into SQLDA
 };
-typedef msg* MSG;
+typedef dsql_msg *DSQL_MSG;
+
 #endif
 
 // Parameter block used to describe a parameter of a message
@@ -571,7 +572,7 @@ typedef msg* MSG;
 class par : public pool_alloc<dsql_type_par>
 {
 public:
-	msg*	par_message;		// Parent message
+	dsql_msg*	par_message;		// Parent message
 	class par*	par_next;			// Next parameter in linked list
 	class par*	par_ordered;		// Next parameter in order of index
 	class par*	par_null;			// Null parameter, if used

@@ -1366,7 +1366,7 @@ DSQL_NOD MAKE_node(NOD_TYPE type, int count)
 }
 
 
-PAR MAKE_parameter(MSG message, USHORT sqlda_flag, USHORT null_flag)
+PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag)
 {
 /**************************************
  *

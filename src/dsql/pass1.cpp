@@ -2089,7 +2089,7 @@ static PAR find_dbkey( DSQL_REQ request, DSQL_NOD relation_name)
  *
  **************************************/
 	DSQL_CTX context;
-	MSG message;
+	DSQL_MSG message;
 	PAR parameter, candidate;
 	DSQL_REL relation;
 	STR rel_name;
@@ -2134,7 +2134,7 @@ static PAR find_record_version( DSQL_REQ request, DSQL_NOD relation_name)
  *
  **************************************/
 	DSQL_CTX context;
-	MSG message;
+	DSQL_MSG message;
 	PAR parameter, candidate;
 	DSQL_REL relation;
 	STR rel_name;
@@ -2690,7 +2690,7 @@ static void pass1_blob( DSQL_REQ request, DSQL_NOD input)
 	request->req_blob = blob = FB_NEW(*tdsql->tsql_default) blb;
 	blob->blb_field = field;
 	blob->blb_open_in_msg = request->req_send;
-	blob->blb_open_out_msg = FB_NEW(*tdsql->tsql_default) msg;
+	blob->blb_open_out_msg = FB_NEW(*tdsql->tsql_default) dsql_msg;
 	blob->blb_segment_msg = request->req_receive;
 
 /* Create a parameter for the blob segment */

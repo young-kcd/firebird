@@ -37,7 +37,7 @@ void MAKE_desc_from_list(struct dsc* , struct nod*);
 struct nod* MAKE_field(class ctx* , class fld* , struct nod*);
 struct nod* MAKE_list(class dsql_lls*);
 struct nod* MAKE_node(ENUM nod_t, int);
-class par* MAKE_parameter(class msg* , USHORT, USHORT);
+class par* MAKE_parameter(class dsql_msg* , USHORT, USHORT);
 class str* MAKE_string(CONST UCHAR* , int);
 struct sym* MAKE_symbol(class dbb* , CONST TEXT* , USHORT,
 						   ENUM sym_type, class req*);

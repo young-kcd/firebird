@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.16 2002-11-18 20:27:21 skidder Exp $
+$Id: gen.cpp,v 1.17 2002-11-19 12:35:28 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -562,7 +562,7 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 }
 
 
-void GEN_port( DSQL_REQ request, MSG message)
+void GEN_port( DSQL_REQ request, DSQL_MSG message)
 {
 /**************************************
  *
@@ -691,7 +691,7 @@ void GEN_request( DSQL_REQ request, DSQL_NOD node)
  *	Generate complete blr for a request.
  *		       
  **************************************/
-	MSG message;
+	DSQL_MSG message;
 
 	if (request->req_type == REQ_DDL) {
 		DDL_generate(request, node);
@@ -898,7 +898,7 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
  **************************************/
 	DSQL_NOD temp, *ptr, *end;
 	DSQL_CTX context;
-	MSG message;
+	DSQL_MSG message;
 	STR name, string;
 	TEXT *p;
 	ULONG id_length;
@@ -1774,7 +1774,7 @@ static void gen_parameter( DSQL_REQ request, PAR parameter)
  *	Generate a parameter reference.
  *
  **************************************/
-	MSG message;
+	DSQL_MSG message;
 	PAR null;
 
 	message = parameter->par_message;
@@ -2139,7 +2139,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
  **************************************/
 	DSQL_NOD list, *ptr, *end, item, alias, map_node;
 	PAR parameter;
-	MSG message;
+	DSQL_MSG message;
 	FLD field;
 	DSC constant_desc;
 	DSQL_REL relation;
