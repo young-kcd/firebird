@@ -1,3 +1,9 @@
+2004-04-13 12:41  aafemt
+
+	* firebird2/configure.in (1.195):
+	
+	Another dir for win32 in temp
+
 2004-04-11 16:47  alexpeshkoff
 
 	* firebird2/src/common/config/config_file.cpp (1.20):
