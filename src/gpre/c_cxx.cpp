@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.42 2004-02-02 11:01:25 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.43 2004-02-03 11:20:51 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -151,7 +151,7 @@ static const char* const GDS_INCLUDE	= "<Firebird/ibase.h>";
 static const char* const GDS_INCLUDE	= "<ibase.h>";
 #endif
 
-static const char* const DCL_LONG	= "int";
+static const char* const DCL_LONG	= "ISC_LONG";
 static const char* const DCL_QUAD	= "ISC_QUAD";
 
 static inline void begin(const int column)
