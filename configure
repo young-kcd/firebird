@@ -3310,9 +3310,93 @@ EOF
  ;;
 esac
 
-ln -s ../src/makefiles/${MAKEFILE_PREFIX} generated/.prefix.platform
+ln -fs ../src/makefiles/${MAKEFILE_PREFIX} generated/.prefix.platform
 
-ac_config_files="$ac_config_files generated/alice/Makefile:generated/.prefix.platform:src/makefiles/sfx.alice generated/burp/Makefile:generated/.prefix.platform:src/makefiles/sfx.burp generated/csv/Makefile:generated/.prefix.platform:src/makefiles/sfx.csv generated/dbs/Makefile:generated/.prefix.platform:src/makefiles/sfx.dbs generated/dsql/Makefile:generated/.prefix.platform:src/makefiles/sfx.dsql generated/dudley/Makefile:generated/.prefix.platform:src/makefiles/sfx.dudley generated/extlib/Makefile:generated/.prefix.platform:src/makefiles/sfx.extlib generated/gpre/Makefile:generated/.prefix.platform:src/makefiles/sfx.gpre generated/intl/Makefile:generated/.prefix.platform:src/makefiles/sfx.intl generated/isql/Makefile:generated/.prefix.platform:src/makefiles/sfx.isql generated/journal/Makefile:generated/.prefix.platform:src/makefiles/sfx.journal generated/jrd/Makefile:generated/.prefix.platform:src/makefiles/sfx.jrd generated/lock/Makefile:generated/.prefix.platform:src/makefiles/sfx.lock generated/msgs/Makefile:generated/.prefix.platform:src/makefiles/sfx.msgs generated/pipe/Makefile:generated/.prefix.platform:src/makefiles/sfx.pipe generated/pyxis/Makefile:generated/.prefix.platform:src/makefiles/sfx.pyxis generated/qli/Makefile:generated/.prefix.platform:src/makefiles/sfx.qli generated/remote/Makefile:generated/.prefix.platform:src/makefiles/sfx.remote generated/utilities/Makefile:generated/.prefix.platform:src/makefiles/sfx.utilities generated/wal/Makefile:generated/.prefix.platform:src/makefiles/sfx.wal generated/Makefile:generated/.prefix.platform:src/makefiles/sfx.firebird Makefile:src/makefiles/config/Makefile.in"
+ac_config_commands="$ac_config_commands default-1"
+
+ac_config_commands="$ac_config_commands default-2"
+
+ac_config_commands="$ac_config_commands default-3"
+
+ac_config_commands="$ac_config_commands default-4"
+
+ac_config_commands="$ac_config_commands default-5"
+
+ac_config_commands="$ac_config_commands default-6"
+
+ac_config_commands="$ac_config_commands default-7"
+
+ac_config_commands="$ac_config_commands default-8"
+
+ac_config_commands="$ac_config_commands default-9"
+
+ac_config_commands="$ac_config_commands default-10"
+
+ac_config_commands="$ac_config_commands default-11"
+
+ac_config_commands="$ac_config_commands default-12"
+
+ac_config_commands="$ac_config_commands default-13"
+
+ac_config_commands="$ac_config_commands default-14"
+
+ac_config_commands="$ac_config_commands default-15"
+
+ac_config_commands="$ac_config_commands default-16"
+
+ac_config_commands="$ac_config_commands default-17"
+
+ac_config_commands="$ac_config_commands default-18"
+
+ac_config_commands="$ac_config_commands default-19"
+
+ac_config_commands="$ac_config_commands default-20"
+
+ac_config_commands="$ac_config_commands default-21"
+
+ac_config_commands="$ac_config_commands default-22"
+
+ac_config_commands="$ac_config_commands default-23"
+
+ac_config_commands="$ac_config_commands default-24"
+
+ac_config_commands="$ac_config_commands default-25"
+
+ac_config_commands="$ac_config_commands default-26"
+
+ac_config_commands="$ac_config_commands default-27"
+
+ac_config_commands="$ac_config_commands default-28"
+
+ac_config_commands="$ac_config_commands default-29"
+
+ac_config_commands="$ac_config_commands default-30"
+
+ac_config_commands="$ac_config_commands default-31"
+
+ac_config_commands="$ac_config_commands default-32"
+
+ac_config_commands="$ac_config_commands default-33"
+
+ac_config_commands="$ac_config_commands default-34"
+
+ac_config_commands="$ac_config_commands default-35"
+
+ac_config_commands="$ac_config_commands default-36"
+
+ac_config_commands="$ac_config_commands default-37"
+
+ac_config_commands="$ac_config_commands default-38"
+
+ac_config_commands="$ac_config_commands default-39"
+
+ac_config_commands="$ac_config_commands default-40"
+
+ac_config_commands="$ac_config_commands default-41"
+
+ac_config_commands="$ac_config_commands default-42"
+
+ac_config_files="$ac_config_files generated/alice/Makefile:generated/.prefix.platform:src/makefiles/sfx.alice generated/burp/Makefile:generated/.prefix.platform:src/makefiles/sfx.burp generated/csv/Makefile:generated/.prefix.platform:src/makefiles/sfx.csv generated/dbs/Makefile:generated/.prefix.platform:src/makefiles/sfx.dbs generated/dsql/Makefile:generated/.prefix.platform:src/makefiles/sfx.dsql generated/dudley/Makefile:generated/.prefix.platform:src/makefiles/sfx.dudley generated/example5/Makefile:generated/.prefix.platform:src/makefiles/sfx.example5 generated/extlib/Makefile:generated/.prefix.platform:src/makefiles/sfx.extlib generated/gpre/Makefile:generated/.prefix.platform:src/makefiles/sfx.gpre generated/intl/Makefile:generated/.prefix.platform:src/makefiles/sfx.intl generated/isql/Makefile:generated/.prefix.platform:src/makefiles/sfx.isql generated/journal/Makefile:generated/.prefix.platform:src/makefiles/sfx.journal generated/jrd/Makefile:generated/.prefix.platform:src/makefiles/sfx.jrd generated/lock/Makefile:generated/.prefix.platform:src/makefiles/sfx.lock generated/msgs/Makefile:generated/.prefix.platform:src/makefiles/sfx.msgs generated/pipe/Makefile:generated/.prefix.platform:src/makefiles/sfx.pipe generated/pyxis/Makefile:generated/.prefix.platform:src/makefiles/sfx.pyxis generated/qli/Makefile:generated/.prefix.platform:src/makefiles/sfx.qli generated/remote/Makefile:generated/.prefix.platform:src/makefiles/sfx.remote generated/utilities/Makefile:generated/.prefix.platform:src/makefiles/sfx.utilities generated/wal/Makefile:generated/.prefix.platform:src/makefiles/sfx.wal generated/Makefile:generated/.prefix.platform:src/makefiles/sfx.firebird Makefile:src/makefiles/config/Makefile.in"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -3392,7 +3476,7 @@ DEFS=-DHAVE_CONFIG_H
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
 ac_clean_files="$ac_clean_files $CONFIG_STATUS"
-{ echo "$as_me:3395: creating $CONFIG_STATUS" >&5
+{ echo "$as_me:3479: creating $CONFIG_STATUS" >&5
 echo "$as_me: creating $CONFIG_STATUS" >&6;}
 cat >$CONFIG_STATUS <<_ACEOF
 #! $SHELL
@@ -3515,6 +3599,9 @@ $config_files
 Configuration headers:
 $config_headers
 
+Configuration commands:
+$config_commands
+
 Report bugs to <bug-autoconf@gnu.org>."
 EOF
 
@@ -3564,7 +3651,7 @@ cat >>$CONFIG_STATUS <<\EOF
     echo "$ac_cs_version"; exit 0 ;;
   --he | --h)
     # Conflict between --help and --header
-    { { echo "$as_me:3567: error: ambiguous option: $1
+    { { echo "$as_me:3654: error: ambiguous option: $1
 Try \`$0 --help' for more information." >&5
 echo "$as_me: error: ambiguous option: $1
 Try \`$0 --help' for more information." >&2;}
@@ -3589,6 +3676,7 @@ Try \`$0 --help' for more information." >&2;}
   'generated/dbs/Makefile' ) CONFIG_FILES="$CONFIG_FILES generated/dbs/Makefile:generated/.prefix.platform:src/makefiles/sfx.dbs" ;;
   'generated/dsql/Makefile' ) CONFIG_FILES="$CONFIG_FILES generated/dsql/Makefile:generated/.prefix.platform:src/makefiles/sfx.dsql" ;;
   'generated/dudley/Makefile' ) CONFIG_FILES="$CONFIG_FILES generated/dudley/Makefile:generated/.prefix.platform:src/makefiles/sfx.dudley" ;;
+  'generated/example5/Makefile' ) CONFIG_FILES="$CONFIG_FILES generated/example5/Makefile:generated/.prefix.platform:src/makefiles/sfx.example5" ;;
   'generated/extlib/Makefile' ) CONFIG_FILES="$CONFIG_FILES generated/extlib/Makefile:generated/.prefix.platform:src/makefiles/sfx.extlib" ;;
   'generated/gpre/Makefile' ) CONFIG_FILES="$CONFIG_FILES generated/gpre/Makefile:generated/.prefix.platform:src/makefiles/sfx.gpre" ;;
   'generated/intl/Makefile' ) CONFIG_FILES="$CONFIG_FILES generated/intl/Makefile:generated/.prefix.platform:src/makefiles/sfx.intl" ;;
@@ -3605,15 +3693,57 @@ Try \`$0 --help' for more information." >&2;}
   'generated/wal/Makefile' ) CONFIG_FILES="$CONFIG_FILES generated/wal/Makefile:generated/.prefix.platform:src/makefiles/sfx.wal" ;;
   'generated/Makefile' ) CONFIG_FILES="$CONFIG_FILES generated/Makefile:generated/.prefix.platform:src/makefiles/sfx.firebird" ;;
   'Makefile' ) CONFIG_FILES="$CONFIG_FILES Makefile:src/makefiles/config/Makefile.in" ;;
+  'default-1' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
+  'default-2' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-2" ;;
+  'default-3' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-3" ;;
+  'default-4' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-4" ;;
+  'default-5' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-5" ;;
+  'default-6' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-6" ;;
+  'default-7' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-7" ;;
+  'default-8' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-8" ;;
+  'default-9' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-9" ;;
+  'default-10' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-10" ;;
+  'default-11' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-11" ;;
+  'default-12' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-12" ;;
+  'default-13' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-13" ;;
+  'default-14' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-14" ;;
+  'default-15' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-15" ;;
+  'default-16' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-16" ;;
+  'default-17' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-17" ;;
+  'default-18' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-18" ;;
+  'default-19' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-19" ;;
+  'default-20' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-20" ;;
+  'default-21' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-21" ;;
+  'default-22' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-22" ;;
+  'default-23' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-23" ;;
+  'default-24' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-24" ;;
+  'default-25' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-25" ;;
+  'default-26' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-26" ;;
+  'default-27' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-27" ;;
+  'default-28' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-28" ;;
+  'default-29' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-29" ;;
+  'default-30' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-30" ;;
+  'default-31' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-31" ;;
+  'default-32' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-32" ;;
+  'default-33' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-33" ;;
+  'default-34' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-34" ;;
+  'default-35' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-35" ;;
+  'default-36' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-36" ;;
+  'default-37' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-37" ;;
+  'default-38' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-38" ;;
+  'default-39' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-39" ;;
+  'default-40' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-40" ;;
+  'default-41' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-41" ;;
+  'default-42' ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-42" ;;
   'generated/jrd/autoconfig.h' ) CONFIG_HEADERS="$CONFIG_HEADERS generated/jrd/autoconfig.h:src/makefiles/config/config.h.in" ;;
 
   # This is an error.
-  -*) { { echo "$as_me:3611: error: unrecognized option: $1
+  -*) { { echo "$as_me:3741: error: unrecognized option: $1
 Try \`$0 --help' for more information." >&5
 echo "$as_me: error: unrecognized option: $1
 Try \`$0 --help' for more information." >&2;}
    { (exit 1); exit 1; }; } ;;
-  *) { { echo "$as_me:3616: error: invalid argument: $1" >&5
+  *) { { echo "$as_me:3746: error: invalid argument: $1" >&5
 echo "$as_me: error: invalid argument: $1" >&2;}
    { (exit 1); exit 1; }; };;
   esac
@@ -3642,6 +3772,7 @@ cat >>$CONFIG_STATUS <<\EOF
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
   test "${CONFIG_HEADERS+set}" = set || CONFIG_HEADERS=$config_headers
+  test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
 # Create a temporary directory, and hook for its removal unless debugging.
@@ -3665,6 +3796,55 @@ $debug ||
    echo "$me: cannot create a temporary directory in $TMPDIR" >&2
    { (exit 1); exit 1; }
 }
+
+EOF
+
+cat >>$CONFIG_STATUS <<EOF
+#
+# INIT-COMMANDS section.
+#
+
+rm -f generated/objs
+
+rm -f generated/alice/objs
+
+rm -f generated/burp/objs
+
+rm -f generated/csv/objs
+
+rm -f generated/dbs/objs
+
+rm -f generated/dsql/objs
+
+rm -f generated/dudley/objs
+
+rm -f generated/extlib/objs
+
+rm -f generated/gpre/objs
+
+rm -f generated/intl/objs
+
+rm -f generated/isql/objs
+
+rm -f generated/journal/objs
+
+rm -f generated/jrd/objs
+
+rm -f generated/lock/objs
+
+rm -f generated/msgs/objs
+
+rm -f generated/pipe/objs
+
+rm -f generated/pyxis/objs
+
+rm -f generated/qli/objs
+
+rm -f generated/remote/objs
+
+rm -f generated/utilities/objs
+
+rm -f generated/wal/objs
 
 EOF
 
@@ -3849,7 +4029,7 @@ done; }
   esac
 
   if test x"$ac_file" != x-; then
-    { echo "$as_me:3852: creating $ac_file" >&5
+    { echo "$as_me:4032: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
     rm -f "$ac_file"
   fi
@@ -3867,7 +4047,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:3870: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:4050: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -3880,7 +4060,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:3883: error: cannot find input file: $f" >&5
+           { { echo "$as_me:4063: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -3940,7 +4120,7 @@ for ac_file in : $CONFIG_HEADERS; do test "x$ac_file" = x: && continue
   * )   ac_file_in=$ac_file.in ;;
   esac
 
-  test x"$ac_file" != x- && { echo "$as_me:3943: creating $ac_file" >&5
+  test x"$ac_file" != x- && { echo "$as_me:4123: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
 
   # First look for the input files in the build tree, otherwise in the
@@ -3951,7 +4131,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:3954: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:4134: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -3964,7 +4144,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:3967: error: cannot find input file: $f" >&5
+           { { echo "$as_me:4147: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -4081,7 +4261,7 @@ cat >>$CONFIG_STATUS <<\EOF
   rm -f $tmp/in
   if test x"$ac_file" != x-; then
     if cmp -s $ac_file $tmp/config.h 2>/dev/null; then
-      { echo "$as_me:4084: $ac_file is unchanged" >&5
+      { echo "$as_me:4264: $ac_file is unchanged" >&5
 echo "$as_me: $ac_file is unchanged" >&6;}
     else
       ac_dir=`$as_expr X"$ac_file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
@@ -4120,6 +4300,61 @@ done; }
     cat $tmp/config.h
     rm -f $tmp/config.h
   fi
+done
+EOF
+cat >>$CONFIG_STATUS <<\EOF
+
+#
+# CONFIG_COMMANDS section.
+#
+for ac_file in : $CONFIG_COMMANDS; do test "x$ac_file" = x: && continue
+  ac_dest=`echo "$ac_file" | sed 's,:.*,,'`
+  ac_source=`echo "$ac_file" | sed 's,[^:]*:,,'`
+
+  case $ac_dest in
+    default-1 ) ln -sf . generated/objs ;;
+    default-2 ) ln -sf ../src generated/source ;;
+    default-3 ) ln -sf .. generated/alice/objs ;;
+    default-4 ) ln -sf ../../src generated/alice/source ;;
+    default-5 ) ln -sf .. generated/burp/objs ;;
+    default-6 ) ln -sf ../../src generated/burp/source ;;
+    default-7 ) ln -sf .. generated/csv/objs ;;
+    default-8 ) ln -sf ../../src generated/csv/source ;;
+    default-9 ) ln -sf .. generated/dbs/objs ;;
+    default-10 ) ln -sf ../../src generated/dbs/source ;;
+    default-11 ) ln -sf .. generated/dsql/objs ;;
+    default-12 ) ln -sf ../../src generated/dsql/source ;;
+    default-13 ) ln -sf .. generated/dudley/objs ;;
+    default-14 ) ln -sf ../../src generated/dudley/source ;;
+    default-15 ) ln -sf .. generated/extlib/objs ;;
+    default-16 ) ln -sf ../../src generated/extlib/source ;;
+    default-17 ) ln -sf .. generated/gpre/objs ;;
+    default-18 ) ln -sf ../../src generated/gpre/source ;;
+    default-19 ) ln -sf .. generated/intl/objs ;;
+    default-20 ) ln -sf ../../src generated/intl/source ;;
+    default-21 ) ln -sf .. generated/isql/objs ;;
+    default-22 ) ln -sf ../../src generated/isql/source ;;
+    default-23 ) ln -sf .. generated/journal/objs ;;
+    default-24 ) ln -sf ../../src generated/journal/source ;;
+    default-25 ) ln -sf .. generated/jrd/objs ;;
+    default-26 ) ln -sf ../../src generated/jrd/source ;;
+    default-27 ) ln -sf .. generated/lock/objs ;;
+    default-28 ) ln -sf ../../src generated/lock/source ;;
+    default-29 ) ln -sf .. generated/msgs/objs ;;
+    default-30 ) ln -sf ../../src generated/msgs/source ;;
+    default-31 ) ln -sf .. generated/pipe/objs ;;
+    default-32 ) ln -sf ../../src generated/pipe/source ;;
+    default-33 ) ln -sf .. generated/pyxis/objs ;;
+    default-34 ) ln -sf ../../src generated/pyxis/source ;;
+    default-35 ) ln -sf .. generated/qli/objs ;;
+    default-36 ) ln -sf ../../src generated/qli/source ;;
+    default-37 ) ln -sf .. generated/remote/objs ;;
+    default-38 ) ln -sf ../../src generated/remote/source ;;
+    default-39 ) ln -sf .. generated/utilities/objs ;;
+    default-40 ) ln -sf ../../src generated/utilities/source ;;
+    default-41 ) ln -sf .. generated/wal/objs ;;
+    default-42 ) ln -sf ../../src generated/wal/source ;;
+  esac
 done
 EOF
 
