@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"  /* For MAXPATHLEN Bug #126614 */
+#include "../jrd/dsc_proto.h"
 
 /* defined in common.h, which is included by stdio.h: typedef int (*FPTR_INT)(); */
 
@@ -43,6 +44,7 @@ struct FN {
 // FPTR_INT FUNCTIONS_entrypoint(char*, char*);
 static int test(long, char*);
 static DSC* ni(DSC*, DSC*);
+static SLONG* byteLen(const dsc*);
 
 
 #pragma FB_COMPILER_MESSAGE("Fix! function pointer cast!")
@@ -52,6 +54,7 @@ static const FN isc_functions[] = {
 	{"test_module", "ni", (FPTR_INT) ni},
 	{"test_module", "ns", (FPTR_INT) ni},
 	{"test_module", "nn", (FPTR_INT) ni},
+	{"test_module", "byte_len", (FPTR_INT) byteLen},
 	{0, 0, 0}
 };
 
@@ -140,6 +143,51 @@ static dsc* ni(dsc* v, dsc* v2)
 	else
 		return v2;
 }
+
+
+// byteLen: return the length in bytes of a given argument. For NULL, return NULL, too.
+// v = input descriptor
+// rc = return value, allocated dynamically. To be freed by the engine.
+// The declaration through SQL is:
+// declare external function sys_byte_len
+// int by descriptor
+// returns int free_it
+// entry_point 'byte_len' module_name 'test_module';
+static SLONG* byteLen(const dsc* v)
+{
+	if (!v || !v->dsc_address || (v->dsc_flags & DSC_null))
+		return 0;
+	else
+	{
+		SLONG& rc = *(SLONG*) malloc(sizeof(SLONG));
+		switch (v->dsc_dtype)
+		{
+		case dtype_text:
+			{
+				const UCHAR* const ini = v->dsc_address;
+				const UCHAR* end = ini + v->dsc_length;
+				while (ini < end && *--end == ' '); // empty loop body
+				rc = end - ini + 1;
+				break;
+			}
+		case dtype_cstring:
+			{
+				rc = 0;
+				for (const UCHAR* p = v->dsc_address; *p; ++p, ++rc); // empty loop body
+				break;
+			}
+		case dtype_varying:
+			rc = reinterpret_cast<const vary*>(v->dsc_address)->vary_length;
+			break;
+		default:
+			rc = DSC_string_length(v);
+			break;
+		}
+		
+		return &rc;
+	}
+}
+
 
 } // extern "C"
 
