@@ -497,7 +497,10 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
  *      INVALID_HANDLE_VALUE otherwise.
  *
  **************************************/
-	TEXT *p, c, port[32];
+	TEXT *p, c;
+#ifndef SUPERSERVER
+	TEXT port[32];
+#endif
 	HANDLE connection_handle;
 
 	connection_handle = INVALID_HANDLE_VALUE;
