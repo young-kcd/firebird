@@ -1,3 +1,78 @@
+2003-09-09 21:00  skidder
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, fbclient.vcproj,
+	fbclient_static.vcproj, ipserver.vcproj, remote.vcproj,
+	remote_classic.vcproj:
+	
+	Adjust MSVC7 makefiles for XNET support
+
+2003-09-09 18:47  skidder
+
+	* firebird2/src/: jrd/nbak.cpp, utilities/nbackup.cpp:
+	
+	Fix engine breakage on Win32 caused by my commits.
+
+2003-09-09 18:43  skidder
+
+	* firebird2/builds/win32/msvc7/nbackup.vcproj:
+	
+	Update MSVC7 makefiles
+
+2003-09-09 13:36  robocop
+
+	* firebird2/src/qli/hsh_proto.h:
+	
+	No more underscore + uppercase
+
+2003-09-09 13:21  robocop
+
+	* firebird2/src/wal/: wal.cpp, wal.h, wal_proto.h, walc.cpp,
+	walw.cpp, walw_proto.h:
+	
+	const correctness, bool, variables in scope, etc.
+
+2003-09-09 13:14  robocop
+
+	* firebird2/src/dudley/: extract.epp, hsh_proto.h:
+	
+	const correctness, bool, etc.
+
+2003-09-09 13:08  robocop
+
+	* firebird2/examples/: include/example.h, udf/udflib.c:
+	
+	clean a bit this old example
+
+2003-09-09 13:07  robocop
+
+	* firebird2/src/jrd/: dsc.cpp, dsc_proto.h, dyn.epp, dyn.h,
+	dyn_def.epp, dyn_del.epp, dyn_mod.epp, dyn_ut_proto.h,
+	dyn_util.epp, shut.cpp, os/vms/vmsevent.cpp:
+	
+	const correctness, bool, etc.  locksmith is harmless =>
+	root/administrator/sysdba, nothing mysterious.
+
+2003-09-09 13:03  robocop
+
+	* firebird2/src/isql/: extra_proto.h, extract.epp, isql.epp,
+	isql.h, isql_proto.h, show.epp, show_proto.h:
+	
+	const correctness, bool, etc.
+
+2003-09-09 09:51  brodsom
+
+	* firebird2/builds/win32/run_all.bat:
+	
+	Add a script to build from scratch to installer
+
+2003-09-09 09:49  brodsom
+
+	* firebird2/builds/win32/msvc6/: engine.dsp, engine_classic.dsp,
+	engine_embed.dsp, fb_lock_print.dsp, fbclient.dsp,
+	fbclient_static.dsp, gpre_boot.dsp, gstat.dsp, walw.dsp:
+	
+	Update msvc6 build after Nickolay changes
+
 2003-09-08 23:44  skidder
 
 	* firebird2/src/: dsql/parse.cpp, dsql/parse.y, jrd/cch.cpp,
