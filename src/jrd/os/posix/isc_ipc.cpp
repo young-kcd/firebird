@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.5 2003-11-03 23:54:55 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.6 2003-11-06 03:02:24 brodsom Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -140,9 +140,7 @@ static void CLIB_ROUTINE signal_handler(int number,
 
 // Not thread-safe 
 
-extern "C" {
-	ULONG isc_enter_count = 0;
-}
+ULONG isc_enter_count = 0;
 
 void ISC_enter(void)
 {

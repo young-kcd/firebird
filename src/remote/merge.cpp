@@ -36,11 +36,6 @@ static SSHORT convert(ULONG, UCHAR *);
 #endif
 static ISC_STATUS merge_setup(const UCHAR**, UCHAR**, const UCHAR* const, USHORT);
 
-#if (defined __cplusplus) && (defined SOLX86)
-/* Who else got mixed c and C++ linkage error - let join me. KLK
-*/
-extern "C" {
-#endif
 
 USHORT MERGE_database_info(const UCHAR* in,
 							UCHAR* out,

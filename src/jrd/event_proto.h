@@ -27,10 +27,6 @@
 #ifndef JRD_EVENT_PROTO_H
 #define JRD_EVENT_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void EVENT_cancel(SLONG);
 SLONG EVENT_create_session(ISC_STATUS*);
 void EVENT_delete_session(SLONG);
@@ -40,8 +36,5 @@ int EVENT_post(ISC_STATUS*, USHORT, TEXT*, USHORT, TEXT*, USHORT);
 SLONG EVENT_que(ISC_STATUS*, SLONG, USHORT, TEXT*, USHORT, UCHAR*, FPTR_VOID,
 				void*);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+#endif // JRD_EVENT_PROTO_H
 
-#endif /* JRD_EVENT_PROTO_H */

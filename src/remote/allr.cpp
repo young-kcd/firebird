@@ -58,8 +58,6 @@ static const struct
 };
 
 
-extern "C" {
-
 
 #ifdef SUPERSERVER
 SLONG allr_delta_alloc = 0;
@@ -273,4 +271,3 @@ VEC ALLR_vector(VEC* ptr, ULONG count)
 }
 
 
-} // extern "C"

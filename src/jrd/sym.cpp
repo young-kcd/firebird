@@ -30,8 +30,6 @@
 #include "../jrd/thd_proto.h"
 
 
-extern "C" {
-
 
 static SSHORT hash_func(SCHAR *);
 
@@ -168,4 +166,3 @@ static SSHORT hash_func(SCHAR * string)
 }
 
 
-} // extern "C"

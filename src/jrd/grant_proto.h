@@ -24,15 +24,8 @@
 #ifndef JRD_GRANT_PROTO_H
 #define JRD_GRANT_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int GRANT_privileges(TDBB, SSHORT, struct dfw *);
 STR GRANT_realloc_acl(STR, UCHAR **, ULONG *);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 #endif // JRD_GRANT_PROTO_H
+

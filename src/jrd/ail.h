@@ -29,10 +29,6 @@
 #ifndef JRD_AIL_H
 #define JRD_AIL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void	AIL_add_log(void);
 void	AIL_checkpoint_finish(ISC_STATUS*, dbb*, SLONG, TEXT*,
 								  SLONG, SLONG);
@@ -54,9 +50,5 @@ void	AIL_set_log_options(SLONG, SSHORT, USHORT, SLONG);
 void	AIL_shutdown(SCHAR *, SLONG *, SLONG *, SLONG *, SSHORT);
 void	AIL_upd_cntrl_pt(TEXT *, USHORT, ULONG, ULONG, ULONG);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
-#endif /* JRD_AIL_H */
+#endif // JRD_AIL_H
 

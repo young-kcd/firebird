@@ -24,10 +24,6 @@
 #ifndef REMOTE_ALLR_PROTO_H
 #define REMOTE_ALLR_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef DEBUG_GDS_ALLOC
 #define ALLR_alloc(s)	  ALLR_alloc_debug((s),(TEXT*)__FILE__,(ULONG)__LINE__)
 #define ALLR_block(s, sz) ALLR_block_debug((s), (sz), (TEXT*)__FILE__,(ULONG)__LINE__)
@@ -43,8 +39,5 @@ void		ALLR_free (void *);
 void		ALLR_release (void *);
 struct vec*	ALLR_vector (struct vec **, ULONG);
 
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
-
 #endif // REMOTE_ALLR_PROTO_H
+

@@ -26,10 +26,6 @@
 
 #include "../jrd/req.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 BOOLEAN	TRA_active_transactions(TDBB, struct dbb *);
 void	TRA_cleanup(TDBB);
 void	TRA_commit(TDBB, struct jrd_tra*, const bool);
@@ -37,6 +33,7 @@ void	TRA_extend_tip(TDBB, ULONG, struct win *);
 int		TRA_fetch_state(TDBB, SLONG);
 void	TRA_get_inventory(TDBB, UCHAR *, ULONG, ULONG);
 int		TRA_get_state(TDBB, SLONG);
+
 #ifdef SUPERSERVER_V2
 void	TRA_header_write(TDBB, struct dbb *, SLONG);
 #endif
@@ -57,10 +54,6 @@ int		TRA_state(UCHAR *, ULONG, ULONG);
 int		TRA_sweep(TDBB, struct jrd_tra *);
 struct lck*	TRA_transaction_lock(TDBB, struct blk *);
 int		TRA_wait(TDBB, struct jrd_tra *, SLONG, USHORT);
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 #endif // JRD_TRA_PROTO_H
 

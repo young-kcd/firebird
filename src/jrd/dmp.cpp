@@ -44,8 +44,6 @@
 #include "../jrd/thd_proto.h"
 
 
-extern "C" {
-
 
 int (*dbg_block) ();
 
@@ -1095,4 +1093,3 @@ static void dmp_transactions(TIP page, ULONG sequence)
 }
 
 
-} // extern "C"

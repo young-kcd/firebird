@@ -183,8 +183,6 @@ static const char * FB_PID_FILE = "fb_%d";
 #define TEXT		SCHAR
 #endif /* WIN_NT */
 
-extern "C" {
-
 // Number of times to try to generate new name for temporary file
 #define MAX_TMPFILE_TRIES 256
 
@@ -3721,6 +3719,4 @@ void* API_ROUTINE gds__alloc(SLONG size)
 	return gds__alloc_debug(size, "-- Unknown --", 0);
 }
 #endif
-
-} // extern "C"
 

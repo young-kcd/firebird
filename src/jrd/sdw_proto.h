@@ -24,10 +24,6 @@
 #ifndef JRD_SDW_PROTO_H
 #define JRD_SDW_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void	SDW_add(TEXT *, USHORT, USHORT);
 int		SDW_add_file(TEXT *, SLONG, USHORT);
 void	SDW_check(void);
@@ -42,9 +38,5 @@ BOOLEAN	SDW_rollover_to_shadow(struct fil *, BOOLEAN);
 void	SDW_shutdown_shadow(struct sdw *);
 void	SDW_start(TEXT *, USHORT, USHORT, USHORT);
 int		SDW_start_shadowing(void *ast_object);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* JRD_SDW_PROTO_H */

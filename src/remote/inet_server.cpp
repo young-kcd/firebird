@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.29 2003-10-29 10:53:35 robocop Exp $
+$Id: inet_server.cpp,v 1.30 2003-11-06 03:03:17 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -145,9 +145,6 @@ $Id: inet_server.cpp,v 1.29 2003-10-29 10:53:35 robocop Exp $
 #define INTERBASE_USER_SHORT    "interbas"
 #define FIREBIRD_USER_NAME	"firebird"
 #endif
-
-
-extern "C" {
 
 
 #ifdef VMS
@@ -625,6 +622,4 @@ static void signal_sigpipe_handler(int)
 }
 #endif
 
-
-} // extern "C"
 

@@ -385,9 +385,6 @@ static const serv services[] =
 #endif /* SERVER_CAPABILITIES */
 
 
-extern "C" {
-
-
 SVC SVC_attach(USHORT	service_length,
 			   TEXT*	service_name,
 			   USHORT	spb_length,
@@ -2112,8 +2109,6 @@ int SVC_read_ib_log(SVC service)
 	return (FINI_OK);
 }
 
-
-}	// extern "C"
 
 static void get_options(UCHAR*	spb,
 						USHORT	spb_length,

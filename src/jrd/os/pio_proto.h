@@ -24,10 +24,6 @@
 #ifndef JRD_PIO_PROTO_H
 #define JRD_PIO_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int		PIO_add_file(struct dbb*, struct fil*, const TEXT*, SLONG);
 void	PIO_close(struct fil*);
 struct fil*	PIO_create(struct dbb*, const TEXT*, SSHORT, BOOLEAN);
@@ -50,10 +46,6 @@ int		PIO_status(struct piob*, ISC_STATUS*);
 
 int		PIO_unlink(const TEXT*);
 int		PIO_write(struct fil*, struct bdb*, struct pag*, ISC_STATUS*);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif // JRD_PIO_PROTO_H
 

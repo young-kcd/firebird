@@ -26,10 +26,6 @@
 #ifndef JRD_DSC_H
 #define JRD_DSC_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 /* Descriptor format */
 
@@ -195,9 +191,5 @@ typedef struct alt_dsc {
 
 #define ISC_TIME_SECONDS_PRECISION		10000L
 #define ISC_TIME_SECONDS_PRECISION_SCALE	(-4)
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* JRD_DSC_H */

@@ -76,8 +76,6 @@
 #include "gen/blrtable.h"
 
 
-extern "C" {
-
 
 static const TEXT elements[][10] =
 	{ "", "statement", "boolean", "value", "RSE", "TABLE" };
@@ -3082,4 +3080,3 @@ static void warning(CSB csb, ...)
 }
 
 
-} // extern "C"

@@ -36,9 +36,6 @@
 #include "../jrd/dsc_proto.h"
 
 
-extern "C" {
-
-
 /* When converting non-text values to text, how many bytes to allocate
    for holding the text image of the value.  */
 
@@ -1050,4 +1047,3 @@ static BOOLEAN validate_dsc_tables(void)
 #endif /* DEV_BUILD */
 
 
-} // extern "C"

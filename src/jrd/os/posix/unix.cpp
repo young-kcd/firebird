@@ -78,9 +78,6 @@
 #endif
 
 
-extern "C" {
-
-
 #ifndef SUPERSERVER
 #undef THD_MUTEX_INIT
 #undef THD_MUTEX_LOCK
@@ -1339,6 +1336,4 @@ raw_devices_unlink_database (
 	return 0;
 }
 #endif /* SUPPORT_RAW_DEVICES */
-
-} // extern "C"
 

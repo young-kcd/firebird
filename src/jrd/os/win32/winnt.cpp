@@ -92,8 +92,6 @@ static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
 #endif
 
 
-extern "C" {
-
 
 int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
 {
@@ -852,8 +850,6 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 	return TRUE;
 }
 
-
-} // extern "C"
 
 
 static ULONG get_number_of_pages(const fil* file, const USHORT pagesize)

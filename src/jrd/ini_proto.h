@@ -24,21 +24,14 @@
 #ifndef JRD_INI_PROTO_H
 #define JRD_INI_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void INI_format(const TEXT *, TEXT *);
-USHORT INI_get_trig_flags(TEXT *);
-void INI_init(void);
-void INI_init2(void);
-struct jrd_trg *INI_lookup_sys_trigger(struct jrd_rel *, struct jrd_trg *,
+void	INI_format(const TEXT *, TEXT *);
+USHORT	INI_get_trig_flags(TEXT *);
+void	INI_init(void);
+void	INI_init2(void);
+struct jrd_trg*	INI_lookup_sys_trigger(struct jrd_rel *, struct jrd_trg *,
 										  const UCHAR**, UCHAR*, const SCHAR**,
 										  USHORT *);
 void INI_update_database(void);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 #endif // JRD_INI_PROTO_H
+

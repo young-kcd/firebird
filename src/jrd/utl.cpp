@@ -253,9 +253,6 @@ static const TEXT* const impl_implementation[] = {
 };
 
 
-extern "C" {
-
-
 #ifdef VMS
 ISC_STATUS API_ROUTINE gds__attach_database_d(
 										  ISC_STATUS * user_status,
@@ -1976,8 +1973,6 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM * bstream)
 	bstream->bstr_ptr = bstream->bstr_buffer;
 	return TRUE;
 }
-
-} // extern "C"
 
 
 #ifdef VMS

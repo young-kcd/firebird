@@ -65,8 +65,6 @@
 
 #define FLD(struct, string, field) string, (SCHAR*) OFFSET (struct, field), (SCHAR*) sizeof (((struct) NULL)->field)
 
-extern "C" {
-
 
 typedef SCHAR *TEXT_PTR;
 
@@ -497,8 +495,6 @@ TEXT* dbt_blocks[] = { 0,
 };
 #undef BLKDEF
 
-
-} // extern "C"
 
 
 const char* DBT_jrd_type_map(int type)

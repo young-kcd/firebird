@@ -24,14 +24,7 @@
 #ifndef CHOP_PATH_PROTO_H
 #define CHOP_PATH_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-char* ChopFileName(char*, char*, ULONG);
-
-#ifdef __cplusplus
-}; // extern "C"
-#endif
+char * ChopFileName	(char*, char*, ULONG);
 
 #endif // CHOP_PATH_PROTO_H
+

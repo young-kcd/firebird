@@ -175,8 +175,6 @@ static size_t getpagesize(void) {return PAGESIZE;}
 
 #endif
 
-extern "C" {
-
 static void		error(ISC_STATUS *, TEXT *, ISC_STATUS);
 
 #ifdef UNIX
@@ -4247,5 +4245,4 @@ static BOOLEAN semaphore_wait_isc_sync(int count, int semid, int *semnums)
 #endif
 
 
-} // extern "C"
 

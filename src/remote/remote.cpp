@@ -42,8 +42,6 @@ IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE");
 
 int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
 
-extern "C" {
-
 #define DUMMY_INTERVAL		60	/* seconds */
 #define ATTACH_FAILURE_SPACE	2048	/* bytes */
 
@@ -794,8 +792,6 @@ static SLONG get_parameter(const UCHAR** ptr)
 	return parameter;
 }
 
-
-} // extern "C"
 
 
 // TMN: Beginning of C++ port - ugly but a start

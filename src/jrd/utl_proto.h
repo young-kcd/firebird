@@ -38,6 +38,7 @@ extern "C" {
 
 int		API_ROUTINE gds__blob_size(FRBRD **, SLONG *, SLONG *, SLONG *);
 void	API_ROUTINE_VARARG isc_expand_dpb(SCHAR**, SSHORT*, ...);
+int		API_ROUTINE isc_modify_dpb(SCHAR**, SSHORT*, USHORT, const SCHAR*, SSHORT);
 int		API_ROUTINE gds__edit(TEXT *, USHORT);
 SLONG	API_ROUTINE gds__event_block(SCHAR **, SCHAR **, USHORT, ...);
 USHORT	API_ROUTINE gds__event_block_a(SCHAR **, SCHAR **, SSHORT,
@@ -61,22 +62,22 @@ void	API_ROUTINE isc_baddress_s(SCHAR *, U_IPTR *);
 int		API_ROUTINE BLOB_close(struct bstream *);
 int		API_ROUTINE blob__display(SLONG *, FRBRD **, FRBRD **, TEXT *,
 									 SSHORT *);
-//int API_ROUTINE BLOB_display(GDS_QUAD *, void *, void *, TEXT *);
+int		API_ROUTINE BLOB_display(GDS_QUAD *, FRBRD*, FRBRD*, TEXT*);
 int		API_ROUTINE blob__dump(SLONG *, FRBRD **, FRBRD **, TEXT *,
 								  SSHORT *);
-//int API_ROUTINE BLOB_dump(GDS_QUAD *, void *, void *, SCHAR *);
+int		API_ROUTINE BLOB_dump(GDS_QUAD *, FRBRD*, FRBRD*, SCHAR*);
 int		API_ROUTINE blob__edit(SLONG *, FRBRD **, FRBRD **, TEXT *,
 								  SSHORT *);
-//int API_ROUTINE BLOB_edit(GDS_QUAD *, void *, void *, SCHAR *);
+int		API_ROUTINE BLOB_edit(GDS_QUAD *, FRBRD*, FRBRD*, SCHAR *);
 int		API_ROUTINE BLOB_get(struct bstream *);
 int		API_ROUTINE blob__load(SLONG *, FRBRD **, FRBRD **, TEXT *,
 								  SSHORT *);
-//int API_ROUTINE BLOB_load(GDS_QUAD *, void *, void *, TEXT *);
-//int API_ROUTINE BLOB_text_dump(GDS_QUAD *, void *, void *, SCHAR *);
-//int API_ROUTINE BLOB_text_load(GDS_QUAD *, void *, void *, TEXT *);
-//struct bstream* API_ROUTINE Bopen(GDS_QUAD*, void*, void*, const SCHAR*);
-//struct bstream* API_ROUTINE BLOB_open(void *, SCHAR *, int);
-int		API_ROUTINE BLOB_put(SCHAR, struct bstream *);
+int		API_ROUTINE BLOB_load(GDS_QUAD *, FRBRD*, FRBRD*, TEXT *);
+int		API_ROUTINE BLOB_text_dump(GDS_QUAD *, FRBRD*, FRBRD*, SCHAR *);
+int		API_ROUTINE BLOB_text_load(GDS_QUAD *, FRBRD*, FRBRD*, TEXT *);
+struct	bstream* API_ROUTINE Bopen(GDS_QUAD*, FRBRD*, FRBRD*, const SCHAR*);
+struct  bstream* API_ROUTINE BLOB_open(FRBRD*, SCHAR*, int);
+int		API_ROUTINE BLOB_put(SCHAR, struct bstream*);
 
 #ifdef VMS
 ISC_STATUS API_ROUTINE gds__attach_database_d(ISC_STATUS*,

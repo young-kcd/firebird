@@ -44,8 +44,6 @@
 #include <windows.h>
 #endif
 
-extern "C" {
-
 
 /* must be careful with alignment on structures like this that are
    not run through the ALL routine */
@@ -1052,4 +1050,3 @@ static void stall_ast(THREAD thread)
 	}
 }
 
-} // extern "C"

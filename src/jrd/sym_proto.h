@@ -24,16 +24,9 @@
 #ifndef JRD_SYM_PROTO_H
 #define JRD_SYM_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void	SYM_insert(struct sym *);
+void		SYM_insert(struct sym *);
 struct sym*	SYM_lookup(TEXT *);
-void	SYM_remove(struct sym *);
+void		SYM_remove(struct sym *);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+#endif // JRD_SYM_PROTO_H
 
-#endif /* JRD_SYM_PROTO_H */

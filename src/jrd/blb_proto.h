@@ -52,9 +52,7 @@ void BLB_scalar(TDBB, jrd_tra*, bid*, USHORT, SLONG*, vlu*);
 
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-extern "C" {
 void BLB_map_blobs(TDBB, blb*, blb*);
-}
 #endif
 
 #endif	// JRD_BLB_PROTO_H

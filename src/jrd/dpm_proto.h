@@ -24,10 +24,6 @@
 #ifndef JRD_DPM_PROTO_H
 #define JRD_DPM_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // fwd. decl.
 class blb;
 
@@ -56,9 +52,5 @@ SLONG	DPM_store_blob(TDBB, blb*, struct rec *);
 void	DPM_rewrite_header(TDBB, struct rpb *);
 void	DPM_update(TDBB, struct rpb *, struct lls **,
 					   struct jrd_tra *);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* JRD_DPM_PROTO_H */

@@ -24,10 +24,6 @@
 #ifndef JRD_PAG_PROTO_H
 #define JRD_PAG_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int		PAG_add_clump(SLONG, USHORT, USHORT, UCHAR *, USHORT, USHORT);
 USHORT	PAG_add_file(TEXT *, SLONG);
 int		PAG_add_header_entry(struct hdr *, USHORT, SSHORT, UCHAR *);
@@ -53,8 +49,5 @@ void	PAG_set_page_buffers(ULONG);
 void	PAG_sweep_interval(SLONG);
 int		PAG_unlicensed(void);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+#endif // JRD_PAG_PROTO_H
 
-#endif /* JRD_PAG_PROTO_H */

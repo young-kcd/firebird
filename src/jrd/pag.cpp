@@ -95,8 +95,6 @@
 #include "../jrd/ail.h"
 #include "../jrd/isc_f_proto.h"
 
-extern "C" {
-
 static void find_clump_space(SLONG, WIN *, PAG *, USHORT, SSHORT, UCHAR *,
 							 USHORT);
 static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
@@ -2106,4 +2104,3 @@ static BOOLEAN find_type(
 	}
 }
 
-} // extern "C"

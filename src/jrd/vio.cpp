@@ -92,8 +92,6 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
 
-extern "C" {
-
 
 static void check_class(TDBB, JRD_TRA, RPB *, RPB *, USHORT);
 static void check_control(TDBB);
@@ -4755,4 +4753,3 @@ static void verb_post(
 }
 
 
-} // extern "C"

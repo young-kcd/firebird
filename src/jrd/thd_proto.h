@@ -26,12 +26,10 @@
 
 #include "../jrd/isc.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
 int		API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR, void*, int, int,
 										 void*);
+}
 
 struct thdd* THD_get_specific(void);
 void	THD_init(void);
@@ -70,8 +68,5 @@ void	THD_wlck_destroy_n(struct wlck_t*, USHORT);
 void	THD_wlck_init_n(struct wlck_t*, USHORT);
 void	THD_yield(void);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+#endif // JRD_THD_PROTO_H
 
-#endif /* JRD_THD_PROTO_H */

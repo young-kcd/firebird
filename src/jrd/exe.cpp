@@ -142,9 +142,6 @@ SLONG status_xcp::as_sqlcode() const
 	return gds__sqlcode(status);
 }
 
-extern "C" {
-
-
 static void assign_xcp_message(TDBB, STR*, const TEXT*);
 static void cleanup_rpb(TDBB, RPB *);
 static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);
@@ -4307,6 +4304,4 @@ static void validate(TDBB tdbb, JRD_NOD list)
 		}
 	}
 }
-
-} // extern "C"
 

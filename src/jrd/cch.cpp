@@ -104,8 +104,6 @@
 			 sizeof (struct lck) + (int) dbb->dbb_page_size)
 #endif
 
-extern "C" {
-
 
 static BDB alloc_bdb(TDBB, BCB, UCHAR **);
 #ifndef PAGE_LATCHING
@@ -382,7 +380,6 @@ USHORT CCH_checksum(BDB bdb)
 	return 12345;
 #endif
 }
-
 
 void CCH_do_log_shutdown(TDBB tdbb, SSHORT force_archive)
 {
@@ -6027,4 +6024,3 @@ static void unmark(TDBB tdbb, WIN * window)
 	}
 }
 
-} // extern "C"

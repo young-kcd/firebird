@@ -980,8 +980,8 @@ static void cancel_operation( PORT port)
 		if (!(rdb->rdb_flags & RDB_service))
 		{
 			THREAD_EXIT;
-			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
-								  CANCEL_raise);
+//			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
+//								  CANCEL_raise);
 			THREAD_ENTER;
 		}
 	}
@@ -1239,8 +1239,8 @@ void port::disconnect(PACKET* send, PACKET* receive)
 			   a good, clean detach from the database. */
 
 			THREAD_EXIT;
-			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
-								  CANCEL_disable);
+//			gds__cancel_operation(status_vector, (FRBRD **) &rdb->rdb_handle,
+//								  CANCEL_disable);
 			THREAD_ENTER;
 #endif
 			while (rdb->rdb_requests)
@@ -2548,7 +2548,7 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 		if (!status_vector[1]) {
 			sprintf(version, "%s/%s", GDS_VERSION,
 					this->port_version->str_data);
-		    MERGE_database_info(temp_buffer /*temp*/, buffer, stuff->p_info_buffer_length,
+			MERGE_database_info(temp_buffer /*temp*/, buffer, stuff->p_info_buffer_length,
 								IMPLEMENTATION, 4, 1,
 								reinterpret_cast<UCHAR*>(version),
 								reinterpret_cast<UCHAR*>(this->port_host->str_data),

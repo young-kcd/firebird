@@ -28,8 +28,6 @@
 #include "../jrd/common.h"
 
 
-extern "C" {
-
 
 #define PATHSEP(c) ((c) == '\\' || (c) == '/')
 char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
@@ -116,4 +114,3 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 }
 
 
-} // extern "C"

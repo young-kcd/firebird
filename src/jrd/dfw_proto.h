@@ -24,10 +24,6 @@
 #ifndef JRD_DFW_PROTO_H
 #define JRD_DFW_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 USHORT DFW_assign_index_type(dfw*, SSHORT, SSHORT);
 void DFW_delete_deferred(jrd_tra*, SLONG);
 void DFW_merge_work(jrd_tra*, SLONG, SLONG);
@@ -38,8 +34,4 @@ dfw* DFW_post_work(jrd_tra*, enum dfw_t, dsc*, USHORT);
 void DFW_post_work_arg(jrd_tra*, dfw*, dsc*, USHORT);
 void DFW_update_index(dfw*, USHORT, float);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
-#endif /* JRD_DFW_PROTO_H */
+#endif // JRD_DFW_PROTO_H

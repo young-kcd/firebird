@@ -28,9 +28,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 int		MOV_compare(const struct dsc*, const struct dsc*);
 double	MOV_date_to_double(const struct dsc*);
@@ -57,9 +54,6 @@ int		MOV_make_string2(const struct dsc*, USHORT, UCHAR**, struct vary*,
 void	MOV_move(const struct dsc*, struct dsc*);
 void	MOV_time_stamp(GDS_TIMESTAMP*);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
-#endif /* JRD_MOV_PROTO_H */
+#endif // JRD_MOV_PROTO_H
 

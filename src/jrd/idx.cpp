@@ -67,8 +67,6 @@
 #include "../jrd/vio_proto.h"
 
 
-extern "C" {
-
 
 static const SCHAR NULL_STR = '\0';
 
@@ -1396,4 +1394,3 @@ static void signal_index_deletion(TDBB tdbb, JRD_REL relation, USHORT id)
 	index_block_flush(index_block);
 }
 
-} // extern "C"

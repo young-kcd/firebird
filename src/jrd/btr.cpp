@@ -64,8 +64,6 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/tra_proto.h"
 
-extern "C" {
-
 
 /*********************************************
       eliminate this conversion - kk
@@ -4218,6 +4216,4 @@ static bool scan(TDBB tdbb,
 	return false;	// superfluous return to shut lint up
 }
 
-
-} // extern "C"
 

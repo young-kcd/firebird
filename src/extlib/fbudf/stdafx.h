@@ -35,10 +35,6 @@
 #include "firebird.h"
 #include "../../jrd/common.h"
 
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
-
 #ifdef HAVE_MATH_H
 #include <math.h>
 #endif
@@ -70,10 +66,6 @@
 
 //#include "ib_util.h"
 //#include "ib_udf.h"
-
-//#ifdef __cplusplus
-//}
-//#endif
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>

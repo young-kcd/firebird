@@ -54,8 +54,6 @@
 #include "../jrd/thd_proto.h"
 
 
-extern "C" {
-
 
 static void activate_shadow(void);
 static SDW allocate_shadow(struct fil *, USHORT, USHORT);
@@ -1402,4 +1400,3 @@ static void update_dbb_to_sdw(DBB dbb)
 }
 
 
-} // extern "C"

@@ -59,8 +59,6 @@
 #include <process.h>
 #endif
 
-extern "C" {
-
 
 static void bug_lck(TEXT*);
 #ifdef MULTI_THREAD
@@ -1612,4 +1610,3 @@ static BOOLEAN internal_enqueue(
 }
 
 
-} // extern "C"

@@ -26,10 +26,6 @@
 
 /* Don't declare DBG_supervisor in _ANSI_PROTOTYPES_, it screws up val.c */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int DBG_supervisor(int);
 
 int DBG_all(void);
@@ -51,8 +47,5 @@ int DBG_verify(void);
 int DBG_window(int *);
 int DBG_memory(void);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+#endif // JRD_DBG_PROTO_H
 
-#endif /* JRD_DBG_PROTO_H */

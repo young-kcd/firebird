@@ -39,8 +39,6 @@
 #include "../include/fb_blk.h"
 
 
-extern "C" {
-
 
 #define SERVICE_VERSION		2
 
@@ -164,7 +162,6 @@ typedef struct serv
 #define SVC_evnt_fired	64
 
 
-} /* extern "C" */
 
 typedef int (*pfn_svc_output)(svc*, const UCHAR*);
 

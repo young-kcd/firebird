@@ -26,13 +26,19 @@
 
 #include "../jrd/isc.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 int		API_ROUTINE gds__thread_enable(int);
 void	API_ROUTINE gds__thread_enter(void);
 void	API_ROUTINE gds__thread_exit(void);
+#ifdef VMS
+int		API_ROUTINE gds__ast_active(void);
+void	API_ROUTINE gds__completion_ast(void);
+int		API_ROUTINE gds__thread_wait(int (*)(), SLONG);
+#endif // VMS
+
+} // extern "C"
+
 void	SCH_abort(void);
 void	SCH_ast(enum ast_t);
 struct thread*	SCH_current_thread(void);
@@ -44,14 +50,7 @@ int		SCH_schedule(void);
 BOOLEAN	SCH_thread_enter_check(void);
 BOOLEAN	SCH_validate(void);
 void	SCH_wake(struct thread *);
-#ifdef VMS
-int		API_ROUTINE gds__ast_active(void);
-void	API_ROUTINE gds__completion_ast(void);
-int		API_ROUTINE gds__thread_wait(int (*)(), SLONG);
-#endif /* VMS  */
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif // JRD_SCH_PROTO_H
+

@@ -33,8 +33,6 @@
 #include "../jrd/thd_proto.h"
 
 
-extern "C" {
-
 
 USHORT SQZ_apply_differences(REC record, SCHAR* differences, SCHAR* end)
 {
@@ -540,4 +538,3 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 	return length;
 }
 
-} // extern "C"

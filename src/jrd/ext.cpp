@@ -78,9 +78,6 @@ IB_FILE *ext_fopen(const char *filename, const char *mode) {
 }
 };
 
-extern "C" {
-
-
 #ifdef WIN_NT
 #include <windows.h>
 #include <stdlib.h>
@@ -602,5 +599,3 @@ void EXT_trans_start(JRD_TRA transaction)
  **************************************/
 }
 
-
-} // extern "C"

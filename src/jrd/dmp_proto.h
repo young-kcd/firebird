@@ -24,10 +24,6 @@
 #ifndef JRD_DMP_PROTO_H
 #define JRD_DMP_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void DMP_active(void);
 void DMP_btc(void);
 void DMP_btc_errors(void);
@@ -36,8 +32,5 @@ void DMP_dirty(void);
 void DMP_page(SLONG, USHORT);
 void DMP_fetched_page(struct pag *, ULONG, ULONG, USHORT);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+#endif // JRD_DMP_PROTO_H
 
-#endif /* JRD_DMP_PROTO_H */

@@ -24,22 +24,14 @@
 #ifndef JRD_PAR_PROTO_H
 #define JRD_PAR_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+struct jrd_nod*	PAR_blr(TDBB, struct jrd_rel *, UCHAR *, class Csb *, class Csb **,
+						struct jrd_req **, BOOLEAN, USHORT);
+int				PAR_desc(class Csb *, struct dsc *);
+struct jrd_nod*	PAR_gen_field(TDBB, USHORT, USHORT);
+struct jrd_nod*	PAR_make_field(TDBB, class Csb *, USHORT, TEXT *);
+struct jrd_nod*	PAR_make_list(TDBB, struct lls *);
+struct jrd_nod*	PAR_make_node(TDBB, int);
+class Csb *		PAR_parse(TDBB, UCHAR *, USHORT);
+SLONG			PAR_symbol_to_gdscode(const char*);
 
-struct jrd_nod *PAR_blr(TDBB, struct jrd_rel *, UCHAR *, class Csb *, class Csb **,
-					struct jrd_req **, BOOLEAN, USHORT);
-int PAR_desc(class Csb *, struct dsc *);
-struct jrd_nod *PAR_gen_field(TDBB, USHORT, USHORT);
-struct jrd_nod *PAR_make_field(TDBB, class Csb *, USHORT, TEXT *);
-struct jrd_nod *PAR_make_list(TDBB, struct lls *);
-struct jrd_nod *PAR_make_node(TDBB, int);
-class Csb *PAR_parse(TDBB, UCHAR *, USHORT);
-SLONG PAR_symbol_to_gdscode(const char*);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
-#endif /* JRD_PAR_PROTO_H */
+#endif // JRD_PAR_PROTO_H

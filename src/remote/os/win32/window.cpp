@@ -55,9 +55,6 @@
 #include "../common/config/config.h"
 
 
-extern "C" {
-
-
 #define JRD_info_drivemask 1	// TEMPORARY ONLY
 
 HWND hPSDlg = NULL;
@@ -626,4 +623,3 @@ BOOL CanEndServer(HWND hWnd, BOOL bSysExit)
 					   MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
 }
 
-} // extern "C"

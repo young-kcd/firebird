@@ -24,10 +24,6 @@
 #ifndef REMOTE_INET_PROTO_H
 #define REMOTE_INET_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PORT	INET_analyze(TEXT*, USHORT*, ISC_STATUS*, TEXT*, TEXT*, USHORT,
 	const SCHAR*, SSHORT);
 PORT	INET_connect(TEXT*, struct packet*, ISC_STATUS*, USHORT,
@@ -35,10 +31,6 @@ PORT	INET_connect(TEXT*, struct packet*, ISC_STATUS*, USHORT,
 PORT	INET_reconnect(HANDLE, ISC_STATUS*);
 PORT	INET_server(int);
 void	INET_set_clients(int);
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif // REMOTE_INET_PROTO_H
 

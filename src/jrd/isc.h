@@ -32,10 +32,6 @@
 #ifndef JRD_ISC_H
 #define JRD_ISC_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 /* Defines for semaphore and shared memory removal */
 
@@ -99,15 +95,7 @@ typedef struct sh_mem {
 #ifdef UNIX
 #define MTX_STRUCTURE_DEFINED
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 #include "../jrd/thd.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 #ifdef ANY_THREADING
@@ -267,8 +255,5 @@ enum ast_t
 #endif
 
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 #endif /* JRD_ISC_H */
+

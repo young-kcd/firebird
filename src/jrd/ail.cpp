@@ -69,8 +69,6 @@
 #endif
 
 
-extern "C" {
-
 #ifdef NOT_USED_OR_REPLACED
 static void build_wal_param(UCHAR *, LGFILE **, SLONG, LGFILE *, SLONG *);
 #endif
@@ -1648,5 +1646,3 @@ static void set_first_user(LGFILE ** log_files, LIP logp, TEXT * walname)
 	logp->log_cp_2.cp_p_offset = 0;
 }
 #endif
-
-} // extern "C"

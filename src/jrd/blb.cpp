@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.40 2003-10-29 10:53:13 robocop Exp $
+$Id: blb.cpp,v 1.41 2003-11-06 03:01:06 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -785,8 +785,6 @@ SLONG BLB_lseek(BLB blob, USHORT mode, SLONG offset)
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 
-extern "C" {
-
 void BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
 {
 /**************************************
@@ -815,8 +813,6 @@ void BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
 	new_map->map_next = dbb->dbb_blob_map;
 	dbb->dbb_blob_map = new_map;
 }
-
-}	// extern "C"
 
 #endif	// REPLAY_OSRI_API_CALLS_SUBSYSTEM
 

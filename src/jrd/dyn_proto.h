@@ -24,16 +24,7 @@
 #ifndef JRD_DYN_PROTO_H
 #define JRD_DYN_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void	DYN_ddl(struct att*, struct jrd_tra*, USHORT, const UCHAR*);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 void	DYN_terminate(TEXT*, int);
 
 #endif // JRD_DYN_PROTO_H

@@ -5,10 +5,6 @@
 
 #include "../jrd/common.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct blk
 {
 	UCHAR	blk_type;
@@ -16,10 +12,6 @@ typedef struct blk
 	USHORT	blk_length;
 } *BLK;
 
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif	/* INCLUDE_FB_BLK */
 

@@ -24,10 +24,6 @@
 #ifndef JRD_SCL_PROTO_H
 #define JRD_SCL_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void SCL_check_access(const struct scl*, SLONG, const TEXT*,
 					  const TEXT*, USHORT, const TEXT*, const TEXT*);
 void SCL_check_procedure(struct dsc*, USHORT);
@@ -40,9 +36,5 @@ struct scl* SCL_recompute_class(TDBB, TEXT*);
 void SCL_release(struct scl*);
 void SCL_check_index(TDBB, TEXT*, UCHAR, USHORT);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
-#endif /* JRD_SCL_PROTO_H */
+#endif // JRD_SCL_PROTO_H
 

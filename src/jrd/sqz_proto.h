@@ -27,10 +27,6 @@
 #include "../jrd/req.h"
 #include "../jrd/sqz.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 USHORT	SQZ_apply_differences(struct rec*, SCHAR*, SCHAR*);
 USHORT	SQZ_compress(class Dcc*, const SCHAR*, SCHAR*, int);
 USHORT	SQZ_compress_length(class Dcc*, SCHAR*, int);
@@ -40,8 +36,5 @@ USHORT	SQZ_no_differences(SCHAR*, int);
 void	SQZ_fast(class Dcc*, SCHAR*, SCHAR*);
 USHORT	SQZ_length(TDBB, SCHAR*, int, class Dcc*);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 #endif // JRD_SQZ_PROTO_H
+

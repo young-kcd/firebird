@@ -24,11 +24,6 @@
 #ifndef REMOTE_REMOT_PROTO_H
 #define REMOTE_REMOT_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 void		REMOTE_cleanup_transaction (struct rtr *);
 ULONG		REMOTE_compute_batch_size (struct port *, USHORT, P_OP, FMT);
 void		REMOTE_get_timeout_params (struct port*, const UCHAR*, USHORT);
@@ -41,10 +36,5 @@ void		REMOTE_reset_request (struct rrq *, struct message *);
 void		REMOTE_reset_statement (struct rsr *);
 void		REMOTE_save_status_strings (ISC_STATUS *);
 OBJCT		REMOTE_set_object (struct port *, struct blk *, OBJCT);
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
-
 
 #endif // REMOTE_REMOT_PROTO_H

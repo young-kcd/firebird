@@ -28,9 +28,6 @@
 #include "../jrd/exe.h"
 #include "../jrd/req.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void IDX_check_access(TDBB, class Csb *, struct jrd_rel *, struct jrd_rel *,
 							 struct jrd_fld *);
@@ -52,8 +49,5 @@ float IDX_statistics(TDBB, struct jrd_rel *, USHORT);
 enum idx_e IDX_store(struct tdbb *, struct rpb *, struct jrd_tra *,
 							struct jrd_rel **, USHORT *);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif // JRD_IDX_PROTO_H

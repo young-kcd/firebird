@@ -24,9 +24,6 @@
 #ifndef JRD_EXE_PROTO_H
 #define JRD_EXE_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void		EXE_assignment(TDBB, struct jrd_nod*);
 struct jrd_req*	EXE_find_request(TDBB, struct jrd_req *, BOOLEAN);
@@ -43,8 +40,5 @@ BOOLEAN EXE_crack(TDBB, Rsb*, USHORT);
 void		EXE_mark_crack(TDBB, Rsb*, USHORT);
 #endif
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* JRD_EXE_PROTO_H */

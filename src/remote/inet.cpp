@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.82 2003-11-01 10:26:41 robocop Exp $
+$Id: inet.cpp,v 1.83 2003-11-06 03:03:17 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -310,8 +310,6 @@ static ULONG inet_debug_timer(void)
 #error "vms implementation must be completed"
 #endif
 
-extern "C" {
-
 #define	SELECT_TIMEOUT	60		/* Dispatch thread select timeout (sec) */
 
 typedef struct slct
@@ -477,9 +475,7 @@ static TEXT INET_command_line[MAXPATHLEN + 32], *INET_p;
 #ifdef  SUPERSERVER
 /* TMN: 28 Jul 2000 - Added include to remove warnings */
 
-} // extern "C"
 #include "../jrd/thd_proto.h"
-extern "C" {
 
 static MUTX_T	port_mutex;
 static bool		port_mutex_inited = false;
@@ -3850,5 +3846,4 @@ static void unhook_disconnected_ports(PORT main_port)
 }
 #endif
 
-} // extern "C"
 

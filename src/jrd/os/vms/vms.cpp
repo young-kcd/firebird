@@ -53,8 +53,6 @@
 #endif
 
 
-extern "C" {
-
 
 extern gds__completion_ast();
 
@@ -964,4 +962,3 @@ static bool vms_io_error(
 }
 
 
-} // extern "C"

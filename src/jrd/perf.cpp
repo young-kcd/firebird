@@ -46,9 +46,6 @@
 #endif
 
 
-extern "C" {
-
-
 static SLONG get_parameter(SCHAR **);
 #ifndef HAVE_TIMES
 static void times(struct tms *);
@@ -381,6 +378,4 @@ static void times(struct tms *buffer)
 }
 #endif
 
-
-} // extern "C"
 

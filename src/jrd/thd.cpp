@@ -55,9 +55,6 @@
 #endif
 
 
-extern "C" {
-
-
 #ifndef ANY_THREADING
 THDD gdbb;
 #endif
@@ -2086,4 +2083,3 @@ static int thread_start(
 #endif
 
 
-} // extern "C"

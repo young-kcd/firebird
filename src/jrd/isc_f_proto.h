@@ -27,10 +27,6 @@
 #ifndef JRD_ISC_FILE_PROTO_H
 #define JRD_ISC_FILE_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int			ISC_analyze_nfs(TEXT*, TEXT*);
 int			ISC_analyze_pclan(TEXT*, TEXT*);
 int			ISC_analyze_tcp(TEXT*, TEXT*);
@@ -43,10 +39,6 @@ int			ISC_file_lock(SSHORT);
 int			ISC_file_unlock(SSHORT);
 int			ISC_strip_filename(TEXT*);
 bool		ISC_verify_database_access(const TEXT*);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif // JRD_ISC_FILE_PROTO_H
 

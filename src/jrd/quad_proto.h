@@ -38,20 +38,12 @@
 #ifndef JRD_QUAD_PROTO_H
 #define JRD_QUAD_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 SQUAD	QUAD_add(const SQUAD*, const SQUAD*, FPTR_ERROR);
 SSHORT	QUAD_compare(const SQUAD*, const SQUAD*);
 SQUAD	QUAD_from_double(const double*, FPTR_ERROR);
 SQUAD	QUAD_multiply(const SQUAD*, const SQUAD*, FPTR_ERROR);
 SQUAD	QUAD_negate(const SQUAD*, FPTR_ERROR);
 SQUAD	QUAD_subtract(const SQUAD*, const SQUAD*, FPTR_ERROR);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif // JRD_QUAD_PROTO_H
 

@@ -88,6 +88,14 @@ ISC_STATUS	REM_transaction_info(ISC_STATUS*, struct rtr**, SSHORT,
 	const UCHAR*, SSHORT, UCHAR*);
 ISC_STATUS	REM_unwind_request(ISC_STATUS *, struct rrq **, USHORT);
 
+ISC_STATUS	REM_rollback_retaining(ISC_STATUS *, RTR *);
+ISC_STATUS	REM_service_attach(ISC_STATUS *, USHORT, TEXT *, RDB *, USHORT, SCHAR *);
+ISC_STATUS	REM_service_detach(ISC_STATUS *, RDB *);
+ISC_STATUS	REM_service_query(ISC_STATUS *, RDB *, ULONG *, USHORT, const SCHAR *,
+									  USHORT, const SCHAR *, USHORT, SCHAR *);
+ISC_STATUS	REM_service_start(ISC_STATUS *, RDB *, ULONG *, USHORT, SCHAR *);
+
+
 #ifdef __cplusplus
 }	/* extern "C" */
 #endif

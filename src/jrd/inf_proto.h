@@ -24,10 +24,6 @@
 #ifndef JRD_INF_PROTO_H
 #define JRD_INF_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int		INF_blob_info(const struct blb*, const SCHAR*, const SSHORT,
 						SCHAR*, const SSHORT);
 USHORT	INF_convert(SLONG, SCHAR*);
@@ -37,10 +33,6 @@ int		INF_request_info(const struct jrd_req*, const SCHAR*, const SSHORT,
 						SCHAR*, const SSHORT);
 int		INF_transaction_info(const struct jrd_tra*, const SCHAR*, const SSHORT,
 						SCHAR*, const SSHORT);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif // JRD_INF_PROTO_H
 

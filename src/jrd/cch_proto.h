@@ -31,6 +31,10 @@ extern "C" {
 void		CCH_do_log_shutdown(TDBB, SSHORT);
 void		CCH_shutdown_database(dbb*);
 
+#ifdef __cplusplus
+} /* "C" */
+#endif
+
 USHORT		CCH_checksum(bdb*);
 int			CCH_down_grade_dbb(void *ast_argument);
 BOOLEAN		CCH_exclusive(TDBB, USHORT, SSHORT);
@@ -93,9 +97,5 @@ BOOLEAN		CCH_write_all_shadows(TDBB, sdw*, bdb*,
 #define FLUSH_SWEEP	8			/* flush dirty buffers from garbage collection */
 #define FLUSH_SYSTEM	16		/* flush system transaction only from dirty btree */
 #define FLUSH_FINI	(FLUSH_ALL | FLUSH_RLSE)
-
-#ifdef __cplusplus
-} /* "C" */
-#endif
 
 #endif /* JRD_CCH_PROTO_H */

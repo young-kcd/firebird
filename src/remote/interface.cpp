@@ -97,8 +97,6 @@ static USHORT ostype = 0;
 #define MAX_USER_LENGTH		33
 #define MAX_OTHER_PARAMS	(1 + 1 + sizeof(port->port_dummy_packet_interval))
 
-extern "C" {
-
 static RVNT add_event(PORT);
 static void add_other_params(PORT, UCHAR *, USHORT *);
 static void add_working_directory(UCHAR *, USHORT *, TEXT *);
@@ -7394,6 +7392,4 @@ static void zap_packet(PACKET* packet)
 
 	memset(packet, 0, sizeof(struct packet));
 }
-
-} // extern "C"
 

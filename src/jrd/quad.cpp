@@ -31,8 +31,6 @@
 #define HIGH_WORD       0
 #endif
 
-extern "C" {
-
 
 SQUAD QUAD_add(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
 {
@@ -165,5 +163,4 @@ SQUAD QUAD_subtract(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
 	return temp;				/* Added to remove compiler warnings */
 }
 
-}	// extern "C"
 

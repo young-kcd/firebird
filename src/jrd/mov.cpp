@@ -38,8 +38,6 @@
 #include "../jrd/mov_proto.h"
 
 
-extern "C" {
-
 
 int MOV_compare(const dsc* arg1, const dsc* arg2)
 {
@@ -591,7 +589,4 @@ void MOV_time_stamp(GDS_TIMESTAMP* date)
 	const tm times = *localtime(&clock);
 	isc_encode_timestamp(&times, date);
 }
-
-
-} // extern "C"
 

@@ -131,14 +131,11 @@
 #endif
 
 #ifdef SERVER_SHUTDOWN
-extern "C" {
 typedef struct dbf {
 	struct dbf *dbf_next;
 	USHORT dbf_length;
 	TEXT dbf_data[2];
 } *DBF;
-
-} // extern "C"
 
 #include "../jrd/sort.h"
 #endif /* SERVER_SHUTDOWN */
@@ -151,13 +148,6 @@ typedef struct dbf {
 
 #ifdef SUPERSERVER
 #define V4_THREADING
-
-/*TMN: fwd. decl. SHOULD BE IN A HEADER FILE*/
-void ALL_print_memory_pool_info(IB_FILE * fptr, DBB databases);
-void ALLD_print_memory_pool_info(IB_FILE * fptr);
-extern "C" {
-void gds_print_delta_counters(IB_FILE *);
-} // extern "C"
 
 #endif /* SUPERSERVER */
 
@@ -197,10 +187,8 @@ void gds_print_delta_counters(IB_FILE *);
 
 #ifdef SUPERSERVER
 
-extern "C" {
 extern SLONG trace_pools;
 static REC_MUTX_T databases_rec_mutex;
-} // extern "C"
 
 // BRS. 03/23/2003
 // Those empty defines was substituted with #if defined(V4_THREADING) && !defined(SUPERSERVER)
@@ -283,9 +271,6 @@ BOOLEAN trig::release(tdbb* _tdbb)
 	request = NULL;
 	return TRUE;
 }
-
-extern "C" {
-
 
 #ifdef WIN_NT
 #define	SYS_ERR		gds_arg_win32
@@ -6658,6 +6643,4 @@ static bool verify_database_name(const TEXT* name, ISC_STATUS* status)
 	}
 	return true;
 }
-
-} // extern "C"
 

@@ -54,8 +54,6 @@
 
 #define statistics      stat
 
-extern "C" {
-
 typedef void (*PTR) ();
 
 static ISC_STATUS check_response(ICC, ISC_STATUS *);
@@ -4723,6 +4721,4 @@ void IPC_release_all(void)
 	}
 }
 
-
-} // extern "C"
 

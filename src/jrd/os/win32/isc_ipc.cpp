@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.5 2003-10-03 01:48:58 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.6 2003-11-06 03:02:52 brodsom Exp $ */
 
 #include <windows.h>
 #include <process.h>
@@ -95,9 +95,7 @@ static void overflow_handler(int, int) throw();
 
 // Not thread-safe 
 
-extern "C" {
-	ULONG isc_enter_count = 0;
-}
+ULONG isc_enter_count = 0;
 
 void ISC_enter(void)
 {

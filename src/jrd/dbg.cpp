@@ -52,8 +52,6 @@
 /* Given pointer a field in the block, find the block */
 #define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
 
-extern "C" {
-
 
 #ifndef DEBUG
 int debug;
@@ -858,7 +856,6 @@ int DBG_pretty(JRD_NOD node, int column)
     return FALSE;
 }
 
-extern "C"
 int DBG_supervisor(int arg)
 {
 /**************************************
@@ -1278,5 +1275,3 @@ int yywrap(void)
 	return (1);
 }
 
-
-} // extern "C"

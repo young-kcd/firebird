@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.33 2003-11-05 09:02:26 robocop Exp $
+$Id: why.cpp,v 1.34 2003-11-06 03:00:40 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -210,7 +210,6 @@ inline WHY_HNDL allocate_handle(int implementation, class jrd_tra *h, int handle
 // CVC: Just don't get the idea of private functions with C linkage.
 // Probably a finer grain would be better here.
 // There's an exported variable several lines below.
-extern "C" {
 static ISC_STATUS bad_handle(ISC_STATUS *, ISC_STATUS);
 static SCHAR *alloc(SLONG);
 
@@ -231,7 +230,6 @@ static ISC_STATUS get_transaction_info(ISC_STATUS *, WHY_TRA, TEXT **);
 
 static void iterative_sql_info(ISC_STATUS *, WHY_STMT *, SSHORT, const SCHAR *, SSHORT,
 							   SCHAR *, USHORT, XSQLDA *);
-static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 static ISC_STATUS open_blob(ISC_STATUS*, WHY_ATT*, WHY_TRA*, WHY_BLB*, SLONG*,
 						USHORT, const UCHAR*, SSHORT, SSHORT);
 #ifdef UNIX
@@ -470,6 +468,10 @@ typedef struct
 
 /* Define complicated table for multi-subsystem world */
 
+extern "C" {
+
+static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
+
 #ifdef VMS
 #define RDB
 #endif
@@ -564,6 +566,8 @@ static const TEXT *generic[] = {
 #include "../jrd/entry.h"
 };
 #endif
+
+} // extern "C"
 
 /* Information items for two phase commit */
 
@@ -1540,7 +1544,7 @@ ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS* user_status,
 ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
 							   WHY_ATT* db_handle,
 							   WHY_TRA* tra_handle,
-							   USHORT length,
+							   SSHORT length,
 							   const UCHAR* ddl)
 {
 /**************************************
@@ -4626,8 +4630,9 @@ ISC_STATUS API_ROUTINE GDS_START(ISC_STATUS * user_status,
 
 ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 										  WHY_TRA * tra_handle,
-										  USHORT count,
-										  TEB * vector)
+										  SSHORT count,
+//										  TEB * vector)
+										  void* vec)
 {
 /**************************************
  *
@@ -4644,6 +4649,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	WHY_TRA transaction, sub, *ptr;
 	WHY_DBB database;
 	USHORT n;
+	TEB* vector = (TEB*) vec;
 
 	GET_STATUS;
 	NULL_CHECK(tra_handle, isc_bad_trans_handle, HANDLE_transaction);
@@ -5809,6 +5815,7 @@ static ISC_STATUS open_marker_file(ISC_STATUS * status,
 }
 #endif
 
+extern "C" {
 
 static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...)
 {
@@ -5830,6 +5837,7 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...)
 	return isc_unavailable;
 }
 
+} // extern "C"
 
 static ISC_STATUS prepare(ISC_STATUS * status,
 						  WHY_TRA transaction)
@@ -6151,8 +6159,6 @@ BOOLEAN WHY_get_shutdown()
 	return shutdown_flag;
 }
 #endif /* SERVER_SHUTDOWN && !SUPERCLIENT && !REQUESTER */
-
-} // "C"
 
 static WHY_HNDL allocate_handle(int		implementation,
 								int		handle_type)

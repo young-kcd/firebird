@@ -83,8 +83,6 @@
 #define MAX_EVENT_BUFFER	65500
 
 
-extern "C" {
-
 
 static EVH acquire(void);
 static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse);
@@ -1686,4 +1684,3 @@ static void THREAD_ROUTINE watcher_thread(void *dummy)
 #endif
 
 
-} // extern "C"

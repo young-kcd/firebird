@@ -26,10 +26,6 @@
 #ifndef REMOTE_XNET_PROTO_H
 #define REMOTE_XNET_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef NO_PORT
 #define PORT void*
 #endif
@@ -40,10 +36,6 @@ PORT	XNET_connect(TEXT*, struct packet*, ISC_STATUS*, USHORT);
 #ifndef SUPERCLIENT
 void	XNET_srv(USHORT flag);
 PORT	XNET_reconnect(ULONG, ISC_STATUS*);
-#endif
-
-#ifdef __cplusplus
-}	/* extern "C" */
 #endif
 
 #endif // REMOTE_XNET_PROTO_H

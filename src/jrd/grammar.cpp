@@ -24,8 +24,6 @@
 # line 44 "grammar.y"
 #include "../jrd/dbg.h"
 
-extern "C" {
-
 void yyerror(const char *string);	// defined in dbg.cpp
 
 void DMP_active(void);
@@ -702,4 +700,3 @@ int yyparse()
 }
 
 
-} // extern "C"

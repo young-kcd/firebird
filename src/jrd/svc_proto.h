@@ -24,10 +24,6 @@
 #ifndef JRD_SVC_PROTO_H
 #define JRD_SVC_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 class svc* SVC_attach(USHORT, TEXT *, USHORT, SCHAR *);
 void   SVC_cleanup(class svc *);
 void   SVC_detach(class svc *);
@@ -47,10 +43,6 @@ int SVC_output(class svc*, const UCHAR*);
 typedef void (*shutdown_fct_t) (ULONG);
 void SVC_shutdown_init(shutdown_fct_t, ULONG);
 #endif /* SERVER_SHUTDOWN */
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* JRD_SVC_PROTO_H */
 

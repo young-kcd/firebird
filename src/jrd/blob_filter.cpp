@@ -71,18 +71,8 @@ static PTR filters[] = {
 };
 
 
-extern "C" {
-
-static ISC_STATUS open_blob(TDBB,
-							JRD_TRA,
-							CTL*,
-							SLONG*,
-							USHORT,
-							const UCHAR*,
-							PTR,
-							USHORT,
-							BLF);
-
+static ISC_STATUS open_blob(TDBB, JRD_TRA, CTL*, SLONG*, USHORT, const UCHAR*, PTR,
+							USHORT,BLF);
 
 ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 {
@@ -161,7 +151,7 @@ ISC_STATUS BLF_create_blob(TDBB tdbb,
  **************************************/
 
 	return open_blob(tdbb, tra_handle, filter_handle,
-					 blob_id, bpb_length, bpb,
+					 blob_id, bpb_length, const_cast<UCHAR*>(bpb),
 					 (ISC_STATUS (*)(USHORT, CTL)) callback, ACTION_create,
 					 filter);
 }
@@ -278,7 +268,7 @@ ISC_STATUS BLF_open_blob(TDBB tdbb,
  **************************************/
 
 	return open_blob(tdbb, tra_handle, filter_handle,
-					 blob_id, bpb_length, bpb,
+					 blob_id, bpb_length, const_cast<UCHAR*>(bpb),
 					 (ISC_STATUS (*)(USHORT, CTL)) callback,
 					 ACTION_open, filter);
 }
@@ -330,7 +320,6 @@ ISC_STATUS BLF_put_segment(TDBB tdbb,
 
 	return status;
 }
-
 
 static ISC_STATUS open_blob(
 					TDBB tdbb,
@@ -459,6 +448,4 @@ static ISC_STATUS open_blob(
 
 	return status;
 }
-
-}	// extern "C"
 

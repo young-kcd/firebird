@@ -29,18 +29,7 @@
 
 #ifdef DEV_BUILD
 #include "../jrd/ib_stdio.h"
-#ifdef __cplusplus
-extern "C" {
-#endif
 void SBM_dump(IB_FILE *, SBM);
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 struct sbm**	SBM_and(struct sbm **, struct sbm **);
@@ -55,8 +44,6 @@ void		SBM_set(TDBB, struct sbm **, SLONG);
 int			SBM_test(struct sbm *, SLONG);
 SLONG		SBM_size(struct sbm **);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
-#endif /* JRD_SBM_PROTO_H */
+#endif // JRD_SBM_PROTO_H
+
