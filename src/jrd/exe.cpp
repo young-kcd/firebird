@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.52 2003-04-22 08:45:52 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.53 2003-04-24 05:46:49 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1861,6 +1861,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			(void) JRD_reschedule(tdbb, 0, TRUE);
 
 #endif
+
 #if defined(DEBUG_GDS_ALLOC) && FALSE
 		int node_type = node->nod_type;
 #endif
@@ -1953,6 +1954,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 		case nod_for:
 			switch (request->req_operation) {
 			case jrd_req::req_evaluate:
+				request->req_records_affected = 0;
 				RSE_open(tdbb, (RSB) node->nod_arg[e_for_rsb]);
 			case jrd_req::req_return:
 				if (node->nod_arg[e_for_stall]) {
