@@ -2230,7 +2230,8 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 				relation->rel_use_count = 0;
 			}
 			for (index = relation->rel_index_locks; index;
-				 index = index->idl_next) if (index->idl_lock) {
+				 index = index->idl_next)
+				if (index->idl_lock) {
 					LCK_release(tdbb, index->idl_lock);
 					index->idl_count = 0;
 				}
@@ -2249,7 +2250,6 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 				procedure->prc_use_count = 0;
 			}
 		}
-
 }
 
 
@@ -3145,7 +3145,11 @@ static JRD_NOD pass1(
 			 */
 
 			if (tail->csb_flags & (csb_view_update | csb_trigger)) {
-				if (!(field->fld_computation))
+			// dimitr:	this code is rollbacked to its previous state
+			//			to allow computed fields in views to be updatable
+			//			via triggers
+			//												2003.11.05
+			//	if (!(field->fld_computation))
 					break;
 			}
 
@@ -3495,7 +3499,9 @@ static JRD_NOD pass1_expand_view(
 
 	for (ptr = fields->begin(), end = fields->end(), id = 0;
 			ptr < end; ptr++, id++)
-		if (*ptr && !((JRD_FLD)(*ptr))->fld_computation) {
+		// dimitr: let's make computed fields updatable in views
+		// if (*ptr && !((JRD_FLD)(*ptr))->fld_computation) {
+		if (*ptr) {
 			if (remap) {
 				field = MET_get_field(relation, id);
 				if (field->fld_source)
