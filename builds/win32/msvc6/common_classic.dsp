@@ -125,6 +125,10 @@ SOURCE=..\..\..\src\common\config\dir_list.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\os\win32\fbsyslog.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 # End Source File
 # Begin Source File
