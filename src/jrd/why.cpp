@@ -41,9 +41,6 @@
  * 							 2. renamed all specific objects to WHY_*
  *
  */
-/*
-$Id: why.cpp,v 1.86 2004-11-29 11:15:09 alexpeshkoff Exp $
-*/
 
 #include "firebird.h"
 
@@ -597,7 +594,7 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 #include "../jrd/entry.h"
 #endif
 
-static IMAGE images[] =
+static const IMAGE images[] =
 {
 	{"REMINT", "REMINT"},			/* Remote */
 
@@ -1658,11 +1655,10 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
 	no_entrypoint(status);
 
 #ifndef SUPERCLIENT
-	const char DYN_ddl[] = "DYN_ddl";
 	PTR entrypoint;
-	TEXT* image = images[database->implementation].path;
+	const TEXT* image = images[database->implementation].path;
 	if (image != NULL &&
-		((entrypoint = (PTR) Jrd::Module::lookup(image, DYN_ddl)) !=
+		((entrypoint = (PTR) Jrd::Module::lookup(image, "DYN_ddl")) !=
 		 NULL ||
 		 FALSE) &&
 		!((*entrypoint) (status, db_handle, tra_handle, length, ddl)))
@@ -5447,7 +5443,7 @@ static const PTR get_entrypoint(int proc,
 	}
 
 #ifndef SUPERCLIENT
-	TEXT* image = images[implementation].path;
+	const TEXT* image = images[implementation].path;
 	const TEXT* name = ent->name;
 	if (!name)
 	{
@@ -5456,13 +5452,7 @@ static const PTR get_entrypoint(int proc,
 
 	if (image && name)
 	{
-		const int BufSize = 128;
-		TEXT Buffer[BufSize];
-		const SLONG NameLength = strlen(name) + 1;
-		fb_assert(NameLength < BufSize);
-		TEXT *NamePointer = Buffer;
-		memcpy(NamePointer, name, NameLength);
-		PTR entry = (PTR) Jrd::Module::lookup(image, NamePointer);
+		PTR entry = (PTR) Jrd::Module::lookup(image, name);
 		if (entry)
 		{
 			ent->address = entry;
