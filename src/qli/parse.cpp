@@ -27,7 +27,7 @@
 #include <string.h>
 #define PARSER_MAIN
 #include "../qli/dtr.h"
-#include "../qli/exe.h"			/* This is only included to suppress a compiler warning */
+#include "../qli/exe.h"			// This is only included to suppress a compiler warning 
 #include "../qli/parse.h"
 #include "../qli/compile.h"
 #include "../qli/report.h"
@@ -172,7 +172,7 @@ The following flags are:
 */
 
 static USHORT sql_flag, else_count, sw_report, sw_statement, sw_sql_view;
-static SSHORT function_count;	/* indicates the depth of UDF calls */
+static SSHORT function_count;	// indicates the depth of UDF calls 
 
 static struct nod_types {
 	KWWORDS nod_t_keyword;
@@ -394,7 +394,7 @@ void PAR_token(void)
 
 	if (MATCH(KW_COLON)) {
 		if (!QLI_databases) {
-			ERRQ_error_format(159, NULL, NULL, NULL, NULL, NULL);	/* Msg159 no databases are ready */
+			ERRQ_error_format(159, NULL, NULL, NULL, NULL, NULL);	// Msg159 no databases are ready 
 			ERRQ_pending();
 			LEX_token();
 		}
@@ -426,7 +426,7 @@ static void check_end(void)
 		return;
 	}
 
-	SYNTAX_ERROR(161);			/* Msg161 end of statement */
+	SYNTAX_ERROR(161);			// Msg161 end of statement 
 }
 
 
@@ -448,7 +448,7 @@ static void command_end(void)
 		return;
 	}
 
-	SYNTAX_ERROR(162);			/* Msg162 end of command */
+	SYNTAX_ERROR(162);			// Msg162 end of command 
 }
 
 
@@ -711,7 +711,7 @@ static SYN parse_accept(void)
  *	Parse form update statement.
  *
  **************************************/
-	IBERROR(484);				/* FORMs not supported */
+	IBERROR(484);				// FORMs not supported 
 	return 0;
 }
 
@@ -938,13 +938,13 @@ static DBB parse_database(void)
 		database = (DBB) db_symbol->sym_object;
 		PAR_real_token();
 		if (!MATCH(KW_DOT))
-			SYNTAX_ERROR(158);	/* Msg158 period in qualified name */
+			SYNTAX_ERROR(158);	// Msg158 period in qualified name 
 		PAR_real();
 		return database;
 	}
 
 	if (!QLI_databases)
-		IBERROR(159);			/* Msg159 no databases are ready */
+		IBERROR(159);			// Msg159 no databases are ready 
 
 	return NULL;
 }
@@ -996,12 +996,12 @@ static SYN parse_declare(void)
 		case KW_CHAR:
 		case KW_VARYING:
 			if (dtype)
-				SYNTAX_ERROR(164);	/* Msg164 variable definition clause */
+				SYNTAX_ERROR(164);	// Msg164 variable definition clause 
 			dtype = parse_dtype(&length, &scale);
 			break;
 
 		case KW_BLOB:
-			IBERROR(160);		/* Msg160 blob variables are not supported */
+			IBERROR(160);		// Msg160 blob variables are not supported 
 			break;
 
 		case KW_SUB_TYPE:
@@ -1012,7 +1012,7 @@ static SYN parse_declare(void)
 		case KW_EDIT_STRING:
 			PAR_token();
 			if (QLI_token->tok_type != tok_quoted)
-				SYNTAX_ERROR(163);	/* Msg163 quoted edit string */
+				SYNTAX_ERROR(163);	// Msg163 quoted edit string 
 			edit_string =
 				make_string(QLI_token->tok_string + 1,
 							QLI_token->tok_length - 2);
@@ -1023,7 +1023,7 @@ static SYN parse_declare(void)
 			PAR_token();
 			MATCH(KW_IS);
 			if (QLI_token->tok_type != tok_ident)
-				SYNTAX_ERROR(199);	/* Msg199 identifier */
+				SYNTAX_ERROR(199);	// Msg199 identifier 
 			query_name = parse_symbol();
 			break;
 
@@ -1039,7 +1039,7 @@ static SYN parse_declare(void)
 			break;
 
 		default:
-			SYNTAX_ERROR(164);	/* Msg164 variable definition clause */
+			SYNTAX_ERROR(164);	// Msg164 variable definition clause 
 			break;
 		}
 	}
@@ -1060,9 +1060,9 @@ static SYN parse_declare(void)
 	}
 
 	if (!dtype && !field_node)
-		SYNTAX_ERROR(167);		/* Msg167 variable data type */
+		SYNTAX_ERROR(167);		// Msg167 variable data type 
 	if (field_node && (dtype || length || scale))
-		IBERROR(168);			/* Msg168 no datatype may be specified for a variable based on a field */
+		IBERROR(168);			// Msg168 no datatype may be specified for a variable based on a field 
 
 	node = SYNTAX_NODE(nod_declare, 2);
 	global_variable = (QLI_FLD) ALLOCDV(type_fld, length);
@@ -1127,7 +1127,7 @@ static SYN parse_define(void)
 	if (MATCH(KW_INDEX))
 		return parse_def_index();
 
-	SYNTAX_ERROR(169);			/* Msg169 object type for DEFINE */
+	SYNTAX_ERROR(169);			// Msg169 object type for DEFINE 
 	return NULL;
 }
 
@@ -1154,7 +1154,7 @@ static SYN parse_def_index(void)
 	MATCH(KW_FOR);
 
 	if (!(node->syn_arg[s_dfi_relation] = (SYN) parse_qualified_relation()))
-		SYNTAX_ERROR(170);		/* Msg170 relation name */
+		SYNTAX_ERROR(170);		// Msg170 relation name 
 
 	PAR_real();
 
@@ -1240,7 +1240,7 @@ static SYN parse_def_relation(void)
 			if (KEYWORD(KW_SEMI))
 				break;
 			if (!MATCH(KW_COMMA))
-				SYNTAX_ERROR(171);	/* Msg171 comma between field definitions */
+				SYNTAX_ERROR(171);	// Msg171 comma between field definitions 
 		}
 	}
 
@@ -1267,7 +1267,7 @@ static SYN parse_delete(void)
 	++sql_flag;
 
 	if (!MATCH(KW_FROM))
-		SYNTAX_ERROR(172);		/* Msg172 FROM */
+		SYNTAX_ERROR(172);		// Msg172 FROM 
 
 	node = SYNTAX_NODE(nod_erase, s_era_count);
 	node->syn_arg[s_era_rse] = rse =
@@ -1310,7 +1310,7 @@ static SYN parse_drop(void)
 	if (MATCH(KW_RELATION) || MATCH(KW_VIEW) || MATCH(KW_TABLE)) {
 		node = SYNTAX_NODE(nod_del_relation, 1);
 		if (!(node->syn_arg[0] = (SYN) parse_qualified_relation()))
-			SYNTAX_ERROR(173);	/* Msg173 relation or view name */
+			SYNTAX_ERROR(173);	// Msg173 relation or view name 
 		return node;
 	}
 
@@ -1330,7 +1330,7 @@ static SYN parse_drop(void)
 	case KW_DATABASE:
 		LEX_filename();
 		if (!(l = QLI_token->tok_length))
-			ERRQ_error(429, NULL, NULL, NULL, NULL, NULL);	/* Msg429 database file name required on DROP DATABASE */
+			ERRQ_error(429, NULL, NULL, NULL, NULL, NULL);	// Msg429 database file name required on DROP DATABASE 
 		q = QLI_token->tok_string;
 		if (QLI_token->tok_type == tok_quoted) {
 			l -= 2;
@@ -1344,7 +1344,7 @@ static SYN parse_drop(void)
 		while (--l);
 		PAR_token();
 
-		/* parse an optional user name and password if given */
+		// parse an optional user name and password if given 
 
 		for (;;) {
 			if (MATCH(KW_USER))
@@ -1521,7 +1521,7 @@ static SYN parse_edit(void)
 	if (KEYWORD(KW_SEMI) ||
 		(QLI_token->tok_type == tok_number) || (KEYWORD(KW_ASTERISK))) {
 		if (!(statement_list = LEX_statement_list()))
-			IBERROR(176);		/* Msg176 No statements issued yet */
+			IBERROR(176);		// Msg176 No statements issued yet 
 
 		if (MATCH(KW_ASTERISK))
 			LEX_edit((SLONG) 0, (SLONG) statement_list->lls_object);
@@ -1539,7 +1539,7 @@ static SYN parse_edit(void)
 	}
 #ifdef PYXIS
 	else if (MATCH(KW_FORM))
-		IBERROR(484);			/* FORMs not supported */
+		IBERROR(484);			// FORMs not supported 
 #endif
 	else {
 		type = nod_edit_proc;
@@ -1687,7 +1687,7 @@ static QLI_FLD parse_field( int global_flag)
 		case KW_VARYING:
 		case KW_BLOB:
 			if (dtype)
-				SYNTAX_ERROR(179);	/* Msg179 field definition clause */
+				SYNTAX_ERROR(179);	// Msg179 field definition clause 
 			dtype = parse_dtype(&length, &scale);
 			break;
 
@@ -1699,7 +1699,7 @@ static QLI_FLD parse_field( int global_flag)
 		case KW_EDIT_STRING:
 			PAR_token();
 			if (QLI_token->tok_type != tok_quoted)
-				SYNTAX_ERROR(178);	/* Msg178 quoted edit string */
+				SYNTAX_ERROR(178);	// Msg178 quoted edit string 
 			edit_string =
 				make_string(QLI_token->tok_string + 1,
 							QLI_token->tok_length - 2);
@@ -1710,7 +1710,7 @@ static QLI_FLD parse_field( int global_flag)
 			PAR_token();
 			MATCH(KW_IS);
 			if (QLI_token->tok_type != tok_ident)
-				SYNTAX_ERROR(199);	/* Msg199 identifier */
+				SYNTAX_ERROR(199);	// Msg199 identifier 
 			query_name = parse_symbol();
 			break;
 
@@ -1721,7 +1721,7 @@ static QLI_FLD parse_field( int global_flag)
 			break;
 
 		default:
-			SYNTAX_ERROR(179);	/* Msg179 field definition clause */
+			SYNTAX_ERROR(179);	// Msg179 field definition clause 
 			break;
 		}
 	}
@@ -1739,7 +1739,7 @@ static QLI_FLD parse_field( int global_flag)
 	if (!global_flag)
 		field->fld_based = based_on;
 	else if (based_on)
-		IBERROR(180);			/* Msg180 global fields may not be based on other fields */
+		IBERROR(180);			// Msg180 global fields may not be based on other fields 
 
 	return field;
 }
@@ -1766,7 +1766,7 @@ static SYN parse_field_name( SYN * fld_ptr)
 	while (TRUE) {
 		if (MATCH(KW_ASTERISK)) {
 			if (!stack)
-				SYNTAX_ERROR(181);	/* Msg181 field name or asterisk expression */
+				SYNTAX_ERROR(181);	// Msg181 field name or asterisk expression 
 			field = make_list(stack);
 			field->syn_type = nod_star;
 			return field;
@@ -1783,7 +1783,7 @@ static SYN parse_field_name( SYN * fld_ptr)
 	if (!(MATCH(KW_L_BRCKET)))
 		return field;
 
-/* Parse an array reference */
+// Parse an array reference 
 
 	stack = NULL;
 	for (;;) {
@@ -1791,7 +1791,7 @@ static SYN parse_field_name( SYN * fld_ptr)
 		if (MATCH(KW_R_BRCKET))
 			break;
 		if (!MATCH(KW_COMMA))
-			SYNTAX_ERROR(183);	/* Msg183 comma */
+			SYNTAX_ERROR(183);	// Msg183 comma 
 	}
 
 	node = SYNTAX_NODE(nod_index, s_idx_count);
@@ -1819,7 +1819,7 @@ static SYN parse_for(void)
 	PAR_token();
 #ifdef PYXIS
 	if (MATCH(KW_FORM))
-		IBERROR(484);			/* FORMs not supported */
+		IBERROR(484);			// FORMs not supported 
 #endif
 	node = SYNTAX_NODE(nod_for, s_for_count);
 	node->syn_arg[s_for_rse] = parse_rse();
@@ -1841,7 +1841,7 @@ static SYN parse_form(void)
  *	Parse qualified form name, returning a form block.
  *
  **************************************/
-	IBERROR(484);				/* FORMs not supported */
+	IBERROR(484);				// FORMs not supported 
 }
 #endif
 
@@ -1865,7 +1865,7 @@ static SYN parse_from( USHORT * paren_count, USHORT * bool_flag)
 		value = parse_primitive_value(0, 0);
 		PAR_real();
 		if (!MATCH(KW_FROM))
-			SYNTAX_ERROR(182);	/* Msg182 FROM rse clause */
+			SYNTAX_ERROR(182);	// Msg182 FROM rse clause 
 	}
 	else {
 		value = parse_primitive_value(paren_count, bool_flag);
@@ -1912,7 +1912,7 @@ static SYN parse_function(void)
 			if (MATCH(KW_RIGHT_PAREN))
 				break;
 			if (!MATCH(KW_COMMA))
-				SYNTAX_ERROR(183);	/* Msg183 comma */
+				SYNTAX_ERROR(183);	// Msg183 comma 
 		}
 
 	node->syn_arg[s_fun_args] = make_list(stack);
@@ -1943,7 +1943,7 @@ static TEXT *parse_header(void)
 	while (TRUE) {
 		PAR_real();
 		if ((QLI_token->tok_keyword != KW_MINUS) &&
-			(QLI_token->tok_type != tok_quoted)) SYNTAX_ERROR(184);	/* Msg184 quoted header segment */
+			(QLI_token->tok_type != tok_quoted)) SYNTAX_ERROR(184);	// Msg184 quoted header segment 
 		q = QLI_token->tok_string;
 		while (*q)
 			*p++ = *q++;
@@ -2039,9 +2039,9 @@ static SYN parse_in( SYN value, NOD_T operatr, USHORT all_flag)
 	PAR_real();
 
 	if (!MATCH(KW_LEFT_PAREN))
-		SYNTAX_ERROR(185);		/* Msg185 left parenthesis */
+		SYNTAX_ERROR(185);		// Msg185 left parenthesis 
 
-/* Time to chose between two forms of the expression */
+// Time to chose between two forms of the expression 
 
 	if (!MATCH(KW_SELECT)) {
 		node = SYNTAX_NODE(operatr, 2);
@@ -2101,7 +2101,7 @@ static SYN parse_insert(void)
 	MATCH(KW_INTO);
 	node = SYNTAX_NODE(nod_store, s_sto_count);
 
-/* Pick up relation name for insert */
+// Pick up relation name for insert 
 
 	node->syn_arg[s_sto_relation] = parse_sql_relation();
 
@@ -2116,22 +2116,22 @@ static SYN parse_insert(void)
 			if (MATCH(KW_RIGHT_PAREN))
 				break;
 			if (!MATCH(KW_COMMA))
-				SYNTAX_ERROR(186);	/* Msg186 comma or terminating right parenthesis */
+				SYNTAX_ERROR(186);	// Msg186 comma or terminating right parenthesis 
 		}
 
-/* Pick up value list or SELECT statement */
+// Pick up value list or SELECT statement 
 
 	PAR_real();
 
 	if (MATCH(KW_VALUES)) {
 		select_flag = FALSE;
 		if (!MATCH(KW_LEFT_PAREN))
-			SYNTAX_ERROR(187);	/* Msg187 left parenthesis */
+			SYNTAX_ERROR(187);	// Msg187 left parenthesis 
 	}
 	else if (MATCH(KW_SELECT))
 		select_flag = TRUE;
 	else
-		SYNTAX_ERROR(188);		/* Msg188 VALUES list or SELECT clause */
+		SYNTAX_ERROR(188);		// Msg188 VALUES list or SELECT clause 
 
 
 	while (TRUE) {
@@ -2195,7 +2195,7 @@ static NOD_T parse_join_type(void)
 		MATCH(KW_OUTER);
 
 	if (!MATCH(KW_JOIN))
-		SYNTAX_ERROR(489);		/* Msg489 JOIN */
+		SYNTAX_ERROR(489);		// Msg489 JOIN 
 
 	return operatr;
 }
@@ -2296,7 +2296,7 @@ static CON parse_literal(void)
 		constant = make_numeric_constant(QLI_token->tok_string,
 										 QLI_token->tok_length);
 	else
-		SYNTAX_ERROR(190);		/* Msg190 value expression */
+		SYNTAX_ERROR(190);		// Msg190 value expression 
 
 	PAR_token();
 
@@ -2356,7 +2356,7 @@ static void parse_matching_paren(void)
 	if (MATCH(KW_RIGHT_PAREN))
 		return;
 
-	SYNTAX_ERROR(191);			/* Msg191 right parenthesis */
+	SYNTAX_ERROR(191);			// Msg191 right parenthesis 
 }
 
 
@@ -2378,7 +2378,7 @@ static SYN parse_menu(void)
 	PAR_real_token();
 
 	if (QLI_token->tok_type != tok_quoted)
-		SYNTAX_ERROR(192);		/* Msg192 quoted string */
+		SYNTAX_ERROR(192);		// Msg192 quoted string 
 
 	node = SYNTAX_NODE(nod_menu, s_men_count);
 	node->syn_arg[s_men_string] = parse_primitive_value(0, 0);
@@ -2387,9 +2387,9 @@ static SYN parse_menu(void)
 
 	while (!MATCH(KW_END)) {
 		if (!MATCH(KW_ENTREE))
-			SYNTAX_ERROR(193);	/* Msg193 ENTREE or END */
+			SYNTAX_ERROR(193);	// Msg193 ENTREE or END 
 		if (QLI_token->tok_type != tok_quoted)
-			SYNTAX_ERROR(194);	/* Msg194 quoted string */
+			SYNTAX_ERROR(194);	// Msg194 quoted string 
 		LLS_PUSH(parse_primitive_value(0, 0), &labels);
 		MATCH(KW_COLON);
 		LLS_PUSH(parse_statement(), &statements);
@@ -2447,7 +2447,7 @@ static SYN parse_modify(void)
 	if (MATCH(KW_USING))
 #if PYXIS
 		if (MATCH(KW_FORM))
-			IBERROR(484);		/* FORMs not supported */
+			IBERROR(484);		// FORMs not supported 
 		else
 #endif
 			node->syn_arg[s_mod_statement] = parse_statement();
@@ -2513,7 +2513,7 @@ static SYN parse_modify_index(void)
 	}
 
 	if (!node->syn_flags)
-		SYNTAX_ERROR(195);		/* Msg195 index state option */
+		SYNTAX_ERROR(195);		// Msg195 index state option 
 
 	command_end();
 
@@ -2542,7 +2542,7 @@ static SYN parse_modify_relation(void)
 	node->syn_arg[0] = (SYN) relation;
 
 	if (!relation)
-		SYNTAX_ERROR(196);		/* Msg196 relation name */
+		SYNTAX_ERROR(196);		// Msg196 relation name 
 
 	for (;;) {
 		PAR_real();
@@ -2570,7 +2570,7 @@ static SYN parse_modify_relation(void)
 		if (KEYWORD(KW_SEMI))
 			break;
 		if (!MATCH(KW_COMMA))
-			SYNTAX_ERROR(198);	/* Msg198 comma between field definitions */
+			SYNTAX_ERROR(198);	// Msg198 comma between field definitions 
 	}
 
 	command_end();
@@ -2630,7 +2630,7 @@ static NAM parse_name(void)
 	PAR_real();
 
 	if (QLI_token->tok_type != tok_ident)
-		SYNTAX_ERROR(199);		/* Msg199 identifier */
+		SYNTAX_ERROR(199);		// Msg199 identifier 
 
 	l = QLI_token->tok_length;
 	name = (NAM) ALLOCDV(type_nam, l);
@@ -2693,11 +2693,11 @@ static int parse_ordinal(void)
 	PAR_real();
 
 	if (QLI_token->tok_type != tok_number)
-		SYNTAX_ERROR(200);		/* Msg200 positive number */
+		SYNTAX_ERROR(200);		// Msg200 positive number 
 
 	n = atoi(QLI_token->tok_string);
 	if (n < 0)
-		SYNTAX_ERROR(200);		/* Msg200 positive number */
+		SYNTAX_ERROR(200);		// Msg200 positive number 
 	PAR_token();
 
 	return n;
@@ -2838,7 +2838,7 @@ static SYN parse_primitive_value( USHORT * paren_count, USHORT * bool_flag)
 
 	case KW_RUNNING:
 		if (function_count > 0)
-			IBERROR(487);		/* Msg487 Invalid argument for UDF */
+			IBERROR(487);		// Msg487 Invalid argument for UDF 
 		PAR_real_token();
 		node = SYNTAX_NODE(nod_running_total, s_stt_count);
 		if (MATCH(KW_COUNT))
@@ -2987,7 +2987,7 @@ static SYN parse_print(void)
 	}
 
 	if (!node->syn_arg[s_prt_list] && MATCH(KW_USING)) {
-		IBERROR(484);			/* FORMs not supported */
+		IBERROR(484);			// FORMs not supported 
 	}
 	else
 		node->syn_arg[s_prt_output] = parse_output();
@@ -3138,7 +3138,7 @@ static QLI_REL parse_qualified_relation(void)
 		&& db_symbol->sym_type == SYM_database) {
 		PAR_real_token();
 		if (!MATCH(KW_DOT))
-			SYNTAX_ERROR(202);	/* Msg202 period in qualified relation name */
+			SYNTAX_ERROR(202);	// Msg202 period in qualified relation name 
 		PAR_real();
 		if (relation = resolve_relation(db_symbol, QLI_token->tok_symbol)) {
 			PAR_token();
@@ -3181,7 +3181,7 @@ static SYN parse_ready( NOD_T node_type)
 	while (TRUE) {
 		LEX_filename();
 		if (!(l = QLI_token->tok_length))
-			ERRQ_error(204, NULL, NULL, NULL, NULL, NULL);	/* Msg204 database file name required on READY */
+			ERRQ_error(204, NULL, NULL, NULL, NULL, NULL);	// Msg204 database file name required on READY 
 		q = QLI_token->tok_string;
 		if (QLI_token->tok_type == tok_quoted) {
 			l -= 2;
@@ -3200,7 +3200,7 @@ static SYN parse_ready( NOD_T node_type)
 				name = parse_name();
 				database->dbb_symbol = (SYM) name;
 				if (HSH_lookup(name->nam_string, name->nam_length))
-					ERRQ_error(408, name->nam_string, NULL, NULL, NULL, NULL);	/* Database handle is not unique */
+					ERRQ_error(408, name->nam_string, NULL, NULL, NULL, NULL);	// Database handle is not unique 
 			}
 			else
 				database->dbb_symbol = (SYM) make_name();
@@ -3208,7 +3208,7 @@ static SYN parse_ready( NOD_T node_type)
 		else if (node_type == nod_sql_database) {
 			if (MATCH(KW_PAGESIZE)) {
 				if (database->dbb_pagesize)
-					SYNTAX_ERROR(390);	/* Msg390 Multiple page size specifications */
+					SYNTAX_ERROR(390);	// Msg390 Multiple page size specifications 
 				if (!MATCH(KW_EQUALS))
 					SYNTAX_ERROR(396);	/* Msg396 = (equals) */
 				database->dbb_pagesize = parse_ordinal();
@@ -3400,7 +3400,7 @@ static SYN parse_relational( USHORT * paren_count)
 		for (rel_ops = relationals; *rel_ops != (NOD_T) 0; rel_ops++)
 			if (expr1->syn_type == *rel_ops)
 				return expr1;
-		SYNTAX_ERROR(206);		/* Msg206 relational operatr */
+		SYNTAX_ERROR(206);		// Msg206 relational operatr 
 	}
 
 /* If we haven't already built a node, it must be an ordinary binary operatr.
@@ -3472,12 +3472,12 @@ static SYN parse_relation(void)
 		node->syn_arg[s_rel_context] = (SYN) context;
 		if (sql_flag || !MATCH(KW_IN)) {
 			if (!QLI_databases)
-				IBERROR(207);	/* Msg207 a database has not been readied */
+				IBERROR(207);	// Msg207 a database has not been readied 
 			ERRQ_print_error(208, context->sym_string, NULL, NULL, NULL, NULL);	/* Msg208 expected \"relation_name\", encountered \"%s\ */
 		}
 		if (!
 			(node->syn_arg[s_rel_relation] =
-			 (SYN) parse_qualified_relation()))SYNTAX_ERROR(209);	/* Msg209 relation name */
+			 (SYN) parse_qualified_relation()))SYNTAX_ERROR(209);	// Msg209 relation name 
 	}
 
 	return node;
@@ -3501,7 +3501,7 @@ static SYN parse_rename(void)
 	PAR_real_token();
 
 	if (!MATCH(KW_PROCEDURE))
-		SYNTAX_ERROR(210);		/* Msg210 PROCEDURE */
+		SYNTAX_ERROR(210);		// Msg210 PROCEDURE 
 
 	node = SYNTAX_NODE(nod_rename_proc, 2);
 	node->syn_arg[0] = (SYN) parse_qualified_procedure();
@@ -3559,12 +3559,12 @@ static SYN parse_report(void)
 	node = SYNTAX_NODE(nod_report, s_prt_count);
 	node->syn_arg[s_prt_list] = (SYN) report;
 
-/* Pick up record select expression */
+// Pick up record select expression 
 
 	rse = node->syn_arg[s_prt_rse] = parse_rse();
 	node->syn_arg[s_prt_output] = parse_output();
 
-/* Pick up report clauses */
+// Pick up report clauses 
 
 	for (;;) {
 		PAR_real();
@@ -3583,7 +3583,7 @@ static SYN parse_report(void)
 			else if (MATCH(KW_BOTTOM))
 				top = FALSE;
 			else
-				SYNTAX_ERROR(382);	/* Msg382 TOP or BOTTOM */
+				SYNTAX_ERROR(382);	// Msg382 TOP or BOTTOM 
 			MATCH(KW_OF);
 			if (MATCH(KW_REPORT)) {
 				control = (BRK) ALLOCD(type_brk);
@@ -3610,7 +3610,7 @@ static SYN parse_report(void)
 					   of control breaks based on sorted fields and then add action (print)
 					   items to that list. */
 					if (!(flds = rse->syn_arg[s_rse_sort]))
-						SYNTAX_ERROR(383);	/* Msg383 sort field */
+						SYNTAX_ERROR(383);	// Msg383 sort field 
 					tmpptr = *ptr;
 					for (i = 0; i < flds->syn_count; i += 2) {
 						control = (BRK) ALLOCD(type_brk);
@@ -3656,7 +3656,7 @@ static SYN parse_report(void)
 						break;
 				}
 				if (!control)
-					SYNTAX_ERROR(383);	/* Msg383 sort field */
+					SYNTAX_ERROR(383);	// Msg383 sort field 
 				MATCH(KW_PRINT);
 				control->brk_field = qli_fld;
 				control->brk_line = parse_print_list();
@@ -3678,11 +3678,11 @@ static SYN parse_report(void)
 				report->rpt_name = (TEXT *) parse_header();
 			}
 			else
-				SYNTAX_ERROR(212);	/* Msg212 report writer SET option */
+				SYNTAX_ERROR(212);	// Msg212 report writer SET option 
 			break;
 
 		default:
-			SYNTAX_ERROR(213);	/* Msg213 report item */
+			SYNTAX_ERROR(213);	// Msg213 report item 
 		}
 		MATCH(KW_SEMI);
 	}
@@ -3750,7 +3750,7 @@ static SYN parse_rse(void)
 	while (stack)
 		*--ptr = (SYN) LLS_POP(&stack);
 
-/* Pick up various other clauses */
+// Pick up various other clauses 
 
 	while (TRUE) {
 		if (MATCH(KW_WITH)) {
@@ -3759,7 +3759,7 @@ static SYN parse_rse(void)
 				node->syn_arg[s_rse_boolean] = parse_boolean(0);
 			}
 			else
-				IBERROR(384);	/* Msg384 Too many WITHs */
+				IBERROR(384);	// Msg384 Too many WITHs 
 		}
 
 		else if (MATCH(KW_SORTED)) {
@@ -3823,7 +3823,7 @@ static SYN parse_select(void)
 	if (!MATCH(KW_ALL) && MATCH(KW_DISTINCT))
 		node->syn_arg[s_prt_distinct] = INT_CAST TRUE;
 
-/* Get list of items */
+// Get list of items 
 
 	if (!MATCH(KW_ASTERISK)) {
 		stack = NULL;
@@ -3917,7 +3917,7 @@ static SYN parse_set(void)
 #ifdef PYXIS
 		case KW_FORM:
 		case KW_FORMS:
-			IBERROR(484);		/* FORMs not supported */
+			IBERROR(484);		// FORMs not supported 
 			break;
 #endif
 		case KW_MATCHING_LANGUAGE:
@@ -3961,7 +3961,7 @@ static SYN parse_set(void)
 			sw = set_charset;
 			PAR_token();
 			MATCH(KW_SET);
-			if (value) {		/* allow for NO */
+			if (value) {		// allow for NO 
 				MATCH(KW_EQUALS);
 				value = (U_IPTR) parse_name();
 			}
@@ -3988,7 +3988,7 @@ static SYN parse_set(void)
 #endif
 
 		default:
-			SYNTAX_ERROR(214);	/* Msg214 set option */
+			SYNTAX_ERROR(214);	// Msg214 set option 
 		}
 		LLS_PUSH(sw, &stack);
 		LLS_PUSH(value, &stack);
@@ -4075,7 +4075,7 @@ static SYN parse_show(void)
 			sw = show_version;
 		else if (MATCH(KW_RELATION)) {
 			if (!(value = (BLK) parse_qualified_relation()))
-				SYNTAX_ERROR(216);	/* Msg216 relation name */
+				SYNTAX_ERROR(216);	// Msg216 relation name 
 			else
 				sw = show_relation;
 		}
@@ -4114,13 +4114,13 @@ static SYN parse_show(void)
 					if (value = (BLK) get_dbb(QLI_token->tok_symbol))
 						PAR_token();
 					else
-						SYNTAX_ERROR(221);	/* Msg221 database name */
+						SYNTAX_ERROR(221);	// Msg221 database name 
 					sw = show_db_fields;
 				}
 				else {
 					MATCH(KW_RELATION);
 					if (!(value = (BLK) parse_qualified_relation()))
-						SYNTAX_ERROR(218);	/* Msg218 relation name */
+						SYNTAX_ERROR(218);	// Msg218 relation name 
 					else
 						sw = show_relation;
 				}
@@ -4135,11 +4135,11 @@ static SYN parse_show(void)
 					if (value = (BLK) get_dbb(QLI_token->tok_symbol))
 						PAR_token();
 					else
-						SYNTAX_ERROR(221);	/* Msg221 database name */
+						SYNTAX_ERROR(221);	// Msg221 database name 
 					sw = show_db_indices;
 				}
 				else if (!(value = (BLK) parse_qualified_relation()))
-					SYNTAX_ERROR(220);	/* Msg220 relation name */
+					SYNTAX_ERROR(220);	// Msg220 relation name 
 		}
 		else if (MATCH(KW_SECURITY_CLASS)) {
 			sw = show_security_class;
@@ -4152,7 +4152,7 @@ static SYN parse_show(void)
 					if (value = (BLK) get_dbb(QLI_token->tok_symbol))
 						PAR_token();
 					else
-						SYNTAX_ERROR(221);	/* Msg221 database name */
+						SYNTAX_ERROR(221);	// Msg221 database name 
 				}
 				else {
 					MATCH(KW_RELATION);
@@ -4176,7 +4176,7 @@ static SYN parse_show(void)
 					 KEYWORD(KW_SEMI) || KEYWORD(KW_FOR))
 				sw = show_system_relations;
 			else
-				SYNTAX_ERROR(215);	/* Msg215 RELATIONS or TRIGGERS */
+				SYNTAX_ERROR(215);	// Msg215 RELATIONS or TRIGGERS 
 		}
 		else if (MATCH(KW_PROCEDURES))
 			sw = show_procedures;
@@ -4229,7 +4229,7 @@ static SYN parse_show(void)
 							 KEYWORD(KW_SEMI) || KEYWORD(KW_FOR))
 						sw = show_system_relations;
 					else
-						SYNTAX_ERROR(215);	/* Msg215 RELATIONS or TRIGGERS */
+						SYNTAX_ERROR(215);	// Msg215 RELATIONS or TRIGGERS 
 				}
 				else if (MATCH(KW_PROCEDURES))
 					sw = show_procedures;
@@ -4284,7 +4284,7 @@ static SYN parse_show(void)
 				if (value = (BLK) get_dbb(QLI_token->tok_symbol))
 					PAR_token();
 				else
-					SYNTAX_ERROR(221);	/* Msg221 database name */
+					SYNTAX_ERROR(221);	// Msg221 database name 
 			}
 		LLS_PUSH(value, &stack);
 		count++;
@@ -4387,7 +4387,7 @@ static SYN parse_sql_alter(void)
 	PAR_real_token();
 
 	if (!MATCH(KW_TABLE))
-		SYNTAX_ERROR(407);		/* Msg407 TABLE */
+		SYNTAX_ERROR(407);		// Msg407 TABLE 
 
 	node = SYNTAX_NODE(nod_sql_al_table, 2);
 	relation = parse_qualified_relation();
@@ -4403,7 +4403,7 @@ static SYN parse_sql_alter(void)
 			field->fld_flags |= FLD_drop;
 		}
 		else
-			SYNTAX_ERROR(405);	/* Msg405 ADD or DROP */
+			SYNTAX_ERROR(405);	// Msg405 ADD or DROP 
 
 		field->fld_next = (QLI_FLD) node->syn_arg[1];
 		node->syn_arg[1] = (SYN) field;
@@ -4451,7 +4451,7 @@ static SYN parse_sql_create(void)
 			else if (MATCH(KW_INDEX))
 				return parse_sql_index_create(unique, descending);
 			else
-				SYNTAX_ERROR(389);	/* Msg389 INDEX */
+				SYNTAX_ERROR(389);	// Msg389 INDEX 
 		}
 	}
 
@@ -4465,7 +4465,7 @@ if (MATCH (KW_VIEW))
 ***/
 #endif
 
-	SYNTAX_ERROR(386);			/* Msg386 object type for CREATE */
+	SYNTAX_ERROR(386);			// Msg386 object type for CREATE 
 	return NULL;
 }
 
@@ -4594,7 +4594,7 @@ static QLI_FLD parse_sql_field(void)
 		break;
 
 	default:
-		SYNTAX_ERROR(179);		/* Msg179 field definition clause */
+		SYNTAX_ERROR(179);		// Msg179 field definition clause 
 		break;
 	}
 
@@ -4609,7 +4609,7 @@ static QLI_FLD parse_sql_field(void)
 			field->fld_flags |= FLD_not_null;
 		}
 		else {
-			SYNTAX_ERROR(393);	/* Msg393 NULL */
+			SYNTAX_ERROR(393);	// Msg393 NULL 
 		}
 
 	return field;
@@ -4666,7 +4666,7 @@ static SYN parse_sql_grant_revoke( USHORT type)
 					break;
 
 				if (!MATCH(KW_LEFT_PAREN))
-					SYNTAX_ERROR(187);	/* Msg187 left parenthesis */
+					SYNTAX_ERROR(187);	// Msg187 left parenthesis 
 
 				do {
 					if (KEYWORD(KW_SELECT) || KEYWORD(KW_INSERT)
@@ -4678,7 +4678,7 @@ static SYN parse_sql_grant_revoke( USHORT type)
 				} while (MATCH(KW_COMMA));
 
 				if (!MATCH(KW_RIGHT_PAREN))
-					SYNTAX_ERROR(191);	/* Msg191 right parenthesis */
+					SYNTAX_ERROR(191);	// Msg191 right parenthesis 
 
 				continue;
 			}
@@ -4691,19 +4691,19 @@ static SYN parse_sql_grant_revoke( USHORT type)
 
 	PAR_real();
 	if (!MATCH(KW_ON))
-		SYNTAX_ERROR(397);		/* Msg397 ON */
+		SYNTAX_ERROR(397);		// Msg397 ON 
 
 	PAR_real();
 	if (!(node->syn_arg[s_grant_relation] = (SYN) parse_qualified_relation()))
-		SYNTAX_ERROR(170);		/* Msg170 relation name */
+		SYNTAX_ERROR(170);		// Msg170 relation name 
 
 	if (type == (USHORT) nod_sql_grant) {
 		if (!MATCH(KW_TO))
-			SYNTAX_ERROR(404);	/* Msg404 TO */
+			SYNTAX_ERROR(404);	// Msg404 TO 
 	}
 	else {
 		if (!MATCH(KW_FROM))
-			SYNTAX_ERROR(403);	/* Msg403 FROM */
+			SYNTAX_ERROR(403);	// Msg403 FROM 
 	}
 
 	stack = NULL;
@@ -4721,7 +4721,7 @@ static SYN parse_sql_grant_revoke( USHORT type)
 		if (MATCH(KW_WITH)) {
 			PAR_real();
 			if (!MATCH(KW_GRANT))
-				SYNTAX_ERROR(401);	/* Msg401 GRANT */
+				SYNTAX_ERROR(401);	// Msg401 GRANT 
 			MATCH(KW_OPTION);
 			privileges |= PRV_grant_option;
 		}
@@ -4759,15 +4759,15 @@ static SYN parse_sql_index_create( USHORT unique, USHORT descending)
 
 	PAR_real();
 	if (!MATCH(KW_ON))
-		SYNTAX_ERROR(397);		/* Msg397 ON */
+		SYNTAX_ERROR(397);		// Msg397 ON 
 
 	if (!(node->syn_arg[s_dfi_relation] = (SYN) parse_qualified_relation()))
-		SYNTAX_ERROR(170);		/* Msg170 relation name */
+		SYNTAX_ERROR(170);		// Msg170 relation name 
 
 	PAR_real();
 
 	if (!MATCH(KW_LEFT_PAREN))
-		SYNTAX_ERROR(185);		/* Msg185 left parenthesis */
+		SYNTAX_ERROR(185);		// Msg185 left parenthesis 
 
 	stack = NULL;
 
@@ -4776,7 +4776,7 @@ static SYN parse_sql_index_create( USHORT unique, USHORT descending)
 		if (MATCH(KW_RIGHT_PAREN))
 			break;
 		if (!MATCH(KW_COMMA))
-			SYNTAX_ERROR(171);	/* Msg171 comma between field definitions */
+			SYNTAX_ERROR(171);	// Msg171 comma between field definitions 
 	}
 
 	node->syn_arg[s_dfi_fields] = make_list(stack);
@@ -4832,10 +4832,10 @@ static SYN parse_sql_join_clause( SYN left)
 		return left;
 
 	if (!(right = parse_sql_joined_relation(left)))
-		SYNTAX_ERROR(490);		/* Msg490 joined relation clause */
+		SYNTAX_ERROR(490);		// Msg490 joined relation clause 
 
 	if (!MATCH(KW_ON))
-		SYNTAX_ERROR(492);		/* Msg492 ON */
+		SYNTAX_ERROR(492);		// Msg492 ON 
 
 	node = SYNTAX_NODE(nod_rse, (int) s_rse_count + 2 * 2);
 	node->syn_count = 2;
@@ -4874,7 +4874,7 @@ static SYN parse_sql_table_create(void)
 	ptr = &relation->rel_fields;
 
 	if (!MATCH(KW_LEFT_PAREN))
-		SYNTAX_ERROR(185);		/* Msg185 left parenthesis */
+		SYNTAX_ERROR(185);		// Msg185 left parenthesis 
 
 	PAR_real();
 
@@ -4884,7 +4884,7 @@ static SYN parse_sql_table_create(void)
 		if (MATCH(KW_RIGHT_PAREN))
 			break;
 		if (!MATCH(KW_COMMA))
-			SYNTAX_ERROR(171);	/* Msg171 comma between field definitions */
+			SYNTAX_ERROR(171);	// Msg171 comma between field definitions 
 	}
 
 	command_end();
@@ -4920,7 +4920,7 @@ static SYN parse_sql_view_create(void)
 	relation->rel_database = parse_database();
 	relation->rel_symbol = parse_symbol();
 
-/* if field list is present parse it and create corresponding field blocks */
+// if field list is present parse it and create corresponding field blocks 
 
 	if (MATCH(KW_LEFT_PAREN)) {
 		for (;;) {
@@ -4928,17 +4928,17 @@ static SYN parse_sql_view_create(void)
 			if (MATCH(KW_RIGHT_PAREN))
 				break;
 			if (!MATCH(KW_COMMA))
-				SYNTAX_ERROR(171);	/* Msg171 comma between field definitions */
+				SYNTAX_ERROR(171);	// Msg171 comma between field definitions 
 		}
 	}
 
 /* node->syn_arg [s_crv_fields] = make_list (stack); */
 
 	if (!MATCH(KW_AS))
-		SYNTAX_ERROR(394);		/* Msg394 As */
+		SYNTAX_ERROR(394);		// Msg394 As 
 
 	if (!KEYWORD(KW_SELECT))
-		SYNTAX_ERROR(395);		/* Msg395 Select */
+		SYNTAX_ERROR(395);		// Msg395 Select 
 
 	node->syn_arg[s_crv_rse] = parse_select();
 
@@ -4965,7 +4965,7 @@ static SYN parse_sql_relation(void)
 	node = SYNTAX_NODE(nod_relation, s_rel_count);
 
 	if (!(node->syn_arg[s_rel_relation] = (SYN) parse_qualified_relation()))
-		SYNTAX_ERROR(223);		/* Msg223 relation name */
+		SYNTAX_ERROR(223);		// Msg223 relation name 
 
 	if (!QLI_token->tok_symbol)
 		node->syn_arg[s_rel_context] = (SYN) parse_symbol();
@@ -4995,9 +4995,9 @@ static SYN parse_sql_rse(void)
 	PAR_real();
 
 	if (!MATCH(KW_FROM))
-		SYNTAX_ERROR(224);		/* Msg224 FROM clause */
+		SYNTAX_ERROR(224);		// Msg224 FROM clause 
 
-/* Parse FROM list of relations */
+// Parse FROM list of relations 
 
 	while (TRUE) {
 		count++;
@@ -5023,7 +5023,7 @@ static SYN parse_sql_rse(void)
 
 	if (MATCH(KW_GROUP)) {
 		if (sw_sql_view)
-			SYNTAX_ERROR(391);	/* Msg391 No group by in view def */
+			SYNTAX_ERROR(391);	// Msg391 No group by in view def 
 		PAR_real();
 		MATCH(KW_BY);
 		stack = NULL;
@@ -5088,7 +5088,7 @@ static SYN parse_sql_subquery(void)
 	KWWORDS keyword;
 
 	if (sw_sql_view)
-		SYNTAX_ERROR(392);		/* Msg392 No aggregates in view def */
+		SYNTAX_ERROR(392);		// Msg392 No aggregates in view def 
 
 	PAR_token();
 
@@ -5275,12 +5275,12 @@ static SYN parse_statistical(void)
 		if (types->nod_t_keyword == keyword)
 			break;
 
-/* Handle SQL statisticals a little differently */
+// Handle SQL statisticals a little differently 
 
 	if (sql_flag) {
 		node = SYNTAX_NODE(types->nod_t_sql_node, s_stt_count);
 		if (!MATCH(KW_LEFT_PAREN))
-			SYNTAX_ERROR(227);	/* Msg227 left parenthesis */
+			SYNTAX_ERROR(227);	// Msg227 left parenthesis 
 		if (node->syn_type != nod_agg_count || !MATCH(KW_ASTERISK)) {
 			if (MATCH(KW_DISTINCT))
 				node->syn_arg[s_prt_distinct] = INT_CAST TRUE;
@@ -5290,7 +5290,7 @@ static SYN parse_statistical(void)
 		return node;
 	}
 
-/* Handle GDML statisticals */
+// Handle GDML statisticals 
 
 	node = SYNTAX_NODE(types->nod_t_node, s_stt_count);
 
@@ -5300,13 +5300,13 @@ static SYN parse_statistical(void)
 	if (!MATCH(KW_OF)) {
 		if (sw_report) {
 			if (function_count > 0)
-				IBERROR(487);	/* Msg487 Invalid argument for UDF */
+				IBERROR(487);	// Msg487 Invalid argument for UDF 
 			node->syn_type = types->nod_t_rpt_node;
 			return node;
 		}
 		PAR_real();
 		if (!MATCH(KW_OF))
-			SYNTAX_ERROR(228);	/* Msg 228 OF */
+			SYNTAX_ERROR(228);	// Msg 228 OF 
 	}
 
 	node->syn_arg[s_stt_rse] = parse_rse();
@@ -5340,7 +5340,7 @@ static SYN parse_store(void)
 
 #ifdef PYXIS
 	if (MATCH(KW_FORM))
-		IBERROR(484);			/* FORMs not supported */
+		IBERROR(484);			// FORMs not supported 
 	else
 #endif
 		node->syn_arg[s_sto_statement] = parse_statement();
@@ -5452,7 +5452,7 @@ static SYN parse_transaction( NOD_T node_type)
 				 symbol = symbol->sym_homonym)
 					if (symbol->sym_type == SYM_database) break;
 			if (!symbol)
-				SYNTAX_ERROR(229);	/* Msg229 database name */
+				SYNTAX_ERROR(229);	// Msg229 database name 
 			LLS_PUSH(symbol->sym_object, &stack);
 			PAR_token();
 			if (!MATCH(KW_COMMA))
@@ -5512,9 +5512,9 @@ static SYN parse_update(void)
 	rse->syn_arg[s_rse_count] = parse_sql_relation();
 
 	if (!MATCH(KW_SET))
-		SYNTAX_ERROR(230);		/* Msg230 SET */
+		SYNTAX_ERROR(230);		// Msg230 SET 
 
-/* Pick up assignments */
+// Pick up assignments 
 
 	stack = NULL;
 

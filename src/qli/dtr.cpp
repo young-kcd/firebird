@@ -59,7 +59,7 @@
 #endif
 
 #ifndef STARTUP_FILE
-#define STARTUP_FILE    "HOME"	/* Assume its Unix */
+#define STARTUP_FILE    "HOME"	// Assume its Unix 
 #endif
 
 #ifndef SIGQUIT
@@ -67,9 +67,9 @@
 #define SIGPIPE		SIGINT
 #endif
 
-/* Program wide globals */
+// Program wide globals 
 
-jmp_buf QLI_env;					/* Error return environment */
+jmp_buf QLI_env;					// Error return environment 
 
 TEXT *QLI_error;
 USHORT sw_verify, sw_trace, sw_buffers;
@@ -101,8 +101,8 @@ typedef struct answer_t {
 
 static int yes_no_loaded = 0;
 static struct answer_t answer_table[] = {
-	{ "", FALSE },					/* NO   */
-	{ "", TRUE },					/* YES  */
+	{ "", FALSE },					// NO   
+	{ "", TRUE },					// YES  
 	{ NULL, 0 }
 };
 
@@ -258,7 +258,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	enable_signals();
 
 	if (banner_flag)
-		ERRQ_msg_put(24, NULL, NULL, NULL, NULL, NULL);	/* Msg24 Welcome to QLI Query Language Interpreter */
+		ERRQ_msg_put(24, NULL, NULL, NULL, NULL, NULL);	// Msg24 Welcome to QLI Query Language Interpreter 
 
 	if (version_flag)
 		ERRQ_msg_put(25, GDS_VERSION, NULL, NULL, NULL, NULL);	/* Msg25 qli version %s */
@@ -290,7 +290,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			PAR_token();
 		}
 		catch (const std::exception&) {
-			/* try again */
+			// try again 
 			got_started = 0;
 			ERRQ_pending();
 		}
@@ -298,7 +298,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	memset(QLI_env, 0, sizeof(QLI_env));
 	QLI_error = NULL;
 
-/* Loop until end of file or forced exit */
+// Loop until end of file or forced exit 
 
 	while (QLI_line) {
 		temp = QLI_default_pool = ALLQ_pool();
@@ -371,7 +371,7 @@ static USHORT process_statement( USHORT flush_flag)
 	TEXT buffer[512], report[256];
 	jmp_buf env;
 
-/* Clear database active flags in preparation for a new statement */
+// Clear database active flags in preparation for a new statement 
 
 	QLI_abort = FALSE;
 	execution_tree = NULL;
@@ -392,7 +392,7 @@ static USHORT process_statement( USHORT flush_flag)
 
 	enable_signals();
 
-/* Enable error unwinding and enable the unwinding environment */
+// Enable error unwinding and enable the unwinding environment 
 
 	try {
 
@@ -462,12 +462,12 @@ static USHORT process_statement( USHORT flush_flag)
 	if (!(expanded_tree = (BLK) EXP_expand(syntax_tree)))
 		return FALSE;
 
-/* Compile the statement */
+// Compile the statement 
 
 	if (!(execution_tree = (BLK) CMPQ_compile((qli_nod*) expanded_tree)))
 		return FALSE;
 
-/* Generate any BLR needed to support the request */
+// Generate any BLR needed to support the request 
 
 	if (!GEN_generate(( (qli_nod*) execution_tree)))
 		return FALSE;
@@ -509,7 +509,7 @@ static USHORT process_statement( USHORT flush_flag)
 		}
 	}
 
-/* Release resources associated with the request */
+// Release resources associated with the request 
 
 	GEN_release();
 
@@ -540,48 +540,48 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 	switch (code) {
 #ifdef FPE_INOVF_TRAP
 	case FPE_INTOVF_TRAP:
-		msg_number = 14;		/* Msg14 integer overflow */
+		msg_number = 14;		// Msg14 integer overflow 
 		break;
 #endif
 
 #ifdef FPE_INTDIV_TRAP
 	case FPE_INTDIV_TRAP:
-		msg_number = 15;		/* Msg15 integer division by zero */
+		msg_number = 15;		// Msg15 integer division by zero 
 		break;
 #endif
 
 #ifdef FPE_FLTOVF_TRAP
 	case FPE_FLTOVF_TRAP:
-		msg_number = 16;		/* Msg16 floating overflow trap */
+		msg_number = 16;		// Msg16 floating overflow trap 
 		break;
 #endif
 
 #ifdef FPE_FLTDIV_TRAP
 	case FPE_FLTDIV_TRAP:
-		msg_number = 17;		/* Msg17 floating division by zero */
+		msg_number = 17;		// Msg17 floating division by zero 
 		break;
 #endif
 
 #ifdef FPE_FLTUND_TRAP
 	case FPE_FLTUND_TRAP:
-		msg_number = 18;		/* Msg18 floating underflow trap */
+		msg_number = 18;		// Msg18 floating underflow trap 
 		break;
 #endif
 
 #ifdef FPE_FLTOVF_FAULT
 	case FPE_FLTOVF_FAULT:
-		msg_number = 19;		/* Msg19 floating overflow fault */
+		msg_number = 19;		// Msg19 floating overflow fault 
 		break;
 #endif
 
 #ifdef FPE_FLTUND_FAULT
 	case FPE_FLTUND_FAULT:
-		msg_number = 20;		/* Msg20 floating underflow fault */
+		msg_number = 20;		// Msg20 floating underflow fault 
 		break;
 #endif
 
 	default:
-		msg_number = 21;		/* Msg21 arithmetic exception */
+		msg_number = 21;		// Msg21 arithmetic exception 
 	}
 
 	signal(SIGFPE, (void(*)(int)) signal_arith_excp);
@@ -632,9 +632,9 @@ static BOOLEAN yes_no( USHORT number, TEXT * arg1)
 					NULL);
 	if (!yes_no_loaded) {
 		yes_no_loaded = 1;
-		if (!ERRQ_msg_get(498, answer_table[0].answer))	/* Msg498 NO    */
+		if (!ERRQ_msg_get(498, answer_table[0].answer))	// Msg498 NO    
 			strcpy(answer_table[0].answer, "NO");	/* default if msg_get fails */
-		if (!ERRQ_msg_get(497, answer_table[1].answer))	/* Msg497 YES   */
+		if (!ERRQ_msg_get(497, answer_table[1].answer))	// Msg497 YES   
 			strcpy(answer_table[1].answer, "YES");
 	}
 

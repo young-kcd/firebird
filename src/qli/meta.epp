@@ -387,7 +387,7 @@ void MET_define_relation( QLI_REL relation, QLI_REL source)
 	database->dbb_relations = relation;
 	relation->rel_database = database;
 
-/* Go back and pick up relation id */
+// Go back and pick up relation id 
 
 	setup_update(database);
 
@@ -465,7 +465,7 @@ void MET_define_sql_relation( QLI_REL relation)
 	database->dbb_relations = relation;
 	relation->rel_database = database;
 
-/* Go back and pick up relation id */
+// Go back and pick up relation id 
 
 	setup_update(database);
 
@@ -572,14 +572,14 @@ void MET_delete_database( DBB dbb)
 		ERRQ_database_error(dbb, gds_status);
 	END_ERROR;
 
-/* Get write ahead log information */
+// Get write ahead log information 
 
 	if (gds__database_info(status_vector, &DB, sizeof(db_log_info),
 						   (char*) db_log_info, sizeof(db_info_buffer),
 						   db_info_buffer)) 
 		ERRQ_database_error(dbb, status_vector);
 
-/* extract info from buffer */
+// extract info from buffer 
 
 	wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
@@ -610,7 +610,7 @@ void MET_delete_database( DBB dbb)
 
 	while (log_stack) {
 		string = (STR) LLS_POP(&log_stack);
-		unlink(string->str_data);	/* do not check for error */
+		unlink(string->str_data);	// do not check for error 
 	}
 
 	if (unlink(dbb->dbb_filename))
@@ -750,7 +750,7 @@ void MET_delete_relation( QLI_REL relation)
 	SYM symbol;
 	RLB rlb;
 
-/* Pass the mess off to dynamic DDL and let it worry */
+// Pass the mess off to dynamic DDL and let it worry 
 
 	symbol = relation->rel_symbol;
 	rlb = NULL;
@@ -765,7 +765,7 @@ void MET_delete_relation( QLI_REL relation)
 	execute_dynamic_ddl(relation->rel_database, rlb);
 	MET_meta_commit(relation->rel_database);
 
-/* Unlink and release various blocks */
+// Unlink and release various blocks 
 
 	purge_relation(relation);
 }
@@ -925,7 +925,7 @@ void MET_finish( DBB dbb)
 		purge_relation(relation);
 	}
 
-/* Get rid of any functions */
+// Get rid of any functions 
 
 	while (function = dbb->dbb_functions) {
 		dbb->dbb_functions = function->fun_next;
@@ -934,7 +934,7 @@ void MET_finish( DBB dbb)
 		ALL_release((FRB) function);
 	}
 
-/* Get rid of any forms */
+// Get rid of any forms 
 #ifdef PYXIS
 	if (dbb->dbb_forms) {
 		FORM_finish(dbb);
@@ -963,7 +963,7 @@ void MET_finish( DBB dbb)
 	}
 
 	if (!count)
-		BUGCHECK(231);			/* Msg231 database block not found for removal */
+		BUGCHECK(231);			// Msg231 database block not found for removal 
 
 	if (status_vector[1])
 		ERRQ_database_error(NULL, status_vector);
@@ -1066,7 +1066,7 @@ void MET_index_info(
 		if (gds__release_request(gds_status, &request_handle))
 			ERRQ_database_error(NULL, gds_status);
 
-/* back up over the last space and finish off */
+// back up over the last space and finish off 
 
 	b--;
 	*b++ = ')';
@@ -1144,7 +1144,7 @@ FRBRD *MET_meta_transaction(DBB database, int update_flag)
 	FRBRD *transaction;
 
 	if (!database)
-		IBERROR(243);			/* Msg243 no active database for operation */
+		IBERROR(243);			// Msg243 no active database for operation 
 
 	transaction = (database->dbb_capabilities & DBB_cap_multi_trans) ?
 		database->dbb_meta_trans : NULL;
@@ -1178,12 +1178,12 @@ FRBRD *MET_meta_transaction(DBB database, int update_flag)
 	if (!gds_trans && (database->dbb_capabilities & DBB_cap_single_trans))
 	{
 		if (update_flag)
-			IBERROR(244);		/* Msg244 Interactive metadata updates are not available on Rdb */
+			IBERROR(244);		// Msg244 Interactive metadata updates are not available on Rdb 
 		if (!(gds_trans = database->dbb_transaction))
 			gds_trans = MET_transaction(nod_start_trans, database);
 	}
 
-/* otherwise make one more effort to start the transaction */
+// otherwise make one more effort to start the transaction 
 
 	else if (!gds_trans)
 	{
@@ -1518,7 +1518,7 @@ void MET_ready( SYN node, USHORT create_flag)
 
 	end = node->syn_arg + node->syn_count;
 
-/* Start by attaching all databases */
+// Start by attaching all databases 
 
 	for (ptr = node->syn_arg; ptr < end; ptr++) {
 		dbb = (DBB) * ptr;
@@ -1662,7 +1662,7 @@ void MET_sql_cr_view( SYN node)
 	STUFF(gds_dyn_def_view);
 	STUFF_STRING(symbol->sym_string);
 
-/* The meat of the blr generation will go here */
+// The meat of the blr generation will go here 
 
 	STUFF(gds_dyn_end);
 	STUFF(gds_dyn_eoc);
@@ -1774,7 +1774,7 @@ static void add_field( QLI_REL relation, QLI_FLD field, USHORT position)
 	if (!(global_field = field->fld_based))
 		global_field = field_name;
 
-/* Check to see if it already exits in relation */
+// Check to see if it already exits in relation 
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_rfr_def])
 		X IN DB.RDB$RELATION_FIELDS WITH
@@ -1854,7 +1854,7 @@ static void add_sql_field( QLI_REL relation, QLI_FLD field, USHORT position, RLB
 	relation_name = relation->rel_symbol;
 	field_name = field->fld_name;
 
-/* Check to see if it already exits in relation */
+// Check to see if it already exits in relation 
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_rfr_def])
 		X IN DB.RDB$RELATION_FIELDS WITH
@@ -2008,7 +2008,7 @@ static void change_field( QLI_REL relation, QLI_FLD field)
 
 	if (field->fld_dtype) {
 		rollback_update(database);
-		ERRQ_print_error(252, NULL, NULL, NULL, NULL, NULL);	/* Msg252 datatype can not be changed locally */
+		ERRQ_print_error(252, NULL, NULL, NULL, NULL, NULL);	// Msg252 datatype can not be changed locally 
 	}
 
 	if (global_field
@@ -2018,7 +2018,7 @@ static void change_field( QLI_REL relation, QLI_FLD field)
 		ERRQ_print_error(253, global_field->sym_string, NULL, NULL, NULL, NULL);	/* Msg253 global field %s does not exist */
 	}
 
-/* Modify  RFR */
+// Modify  RFR 
 	count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_mdf_rfr])
@@ -2417,7 +2417,7 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
                 name = (TEXT *) ALLQ_malloc((SLONG) sizeof(Y.RDB$FIELD_NAME));
 				strcpy(name, Y.RDB$FIELD_NAME);
 				rollback_update(target->rel_database);
-				ERRQ_error(413, name, NULL, NULL, NULL, NULL);	/* conflicting previous definition */
+				ERRQ_error(413, name, NULL, NULL, NULL, NULL);	// conflicting previous definition 
 			}
 			else
 				  predefined = TRUE;
@@ -2806,7 +2806,7 @@ static void get_database_type( DBB new_dbb)
 			break;
 
 		default:
-			ERRQ_error(257, NULL, NULL, NULL, NULL, NULL);	/* Msg257 database info call failed */
+			ERRQ_error(257, NULL, NULL, NULL, NULL, NULL);	// Msg257 database info call failed 
 		}
 		p += l;
 	}
@@ -2841,7 +2841,7 @@ static void get_log_names(
 
 	loop = 0;
 
-/* loop up to 10 times to allow the file to be archived */
+// loop up to 10 times to allow the file to be archived 
 
 	while (TRUE) {
 		loop++;
@@ -2895,7 +2895,7 @@ static void get_log_names(
 		LLS_PUSH(string, log_stack);
 		strcpy(string->str_data, nl);
 
-		/* switch files */
+		// switch files 
 
 		if (cl == next_log) {
 			cl = cur_log;
@@ -3030,7 +3030,7 @@ static void install( DBB old_dbb)
 	FUN function;
 	TEXT *p, *q;
 
-/* Copy the database block to one out of the permanent pool */
+// Copy the database block to one out of the permanent pool 
 
 	l = old_dbb->dbb_filename_length;
 	new_dbb = (DBB) ALLOCPV(type_dbb, l);
@@ -3130,7 +3130,7 @@ static void install( DBB old_dbb)
 			symbol->sym_object = (BLK) function;
 			HSH_insert(symbol);
 
-			/* Insert another symbol if there is a function query name */
+			// Insert another symbol if there is a function query name 
 
 			if (symbol2 =
 				make_symbol(X.RDB$QUERY_NAME, sizeof(X.RDB$QUERY_NAME))) {
@@ -3694,7 +3694,7 @@ static void set_capabilities( DBB database)
 
 	req = NULL;
 
-/* Look for desireable fields in system relations */
+// Look for desireable fields in system relations 
 
 	for (rel_field_table = const_cast<RFR_TAB>(rfr_table); rel_field_table->relation;
 		 rel_field_table++) {
@@ -3771,8 +3771,8 @@ static void sql_grant_revoke( SYN node, USHORT type)
 	STUFF(gds_dyn_version_1);
 	STUFF(gds_dyn_begin);
 
-/* For each user create a separate grant string */
-/*      For each specified field create a separate grant string */
+// For each user create a separate grant string 
+//      For each specified field create a separate grant string 
 
 	names = node->syn_arg[s_grant_users];
 	fields = node->syn_arg[s_grant_fields];
@@ -3849,7 +3849,7 @@ static void stuff_priv(
 	rlb = CHECK_RLB(rlb);
 	STUFF(type);
 
-/* Stuff privileges first */
+// Stuff privileges first 
 
 	priv_count = 0;
 	if (privileges & PRV_select)

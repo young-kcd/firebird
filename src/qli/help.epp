@@ -197,12 +197,12 @@ static void print_more(
 
 	ERRQ_msg_get(502, prompt);	/* Msg502 "Subtopic? "  */
 
-/* Prompt the user for a line */
+// Prompt the user for a line 
 
 	if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 		return;
 
-/* Upcase the response and zap the blanks */
+// Upcase the response and zap the blanks 
 
 	topics[1] = p = topic;
 
@@ -242,7 +242,7 @@ static void print_topic(
 	TEXT string[128], banner[128], *next, *p, *q, *path, buffer[128],
 		prompt[80];
 
-/* Copy the parent string inserting a blank at the end */
+// Copy the parent string inserting a blank at the end 
 
 	p = string;
 

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.14 2003-04-16 10:18:15 aafemt Exp $
+$Id: all.cpp,v 1.15 2003-09-10 11:48:07 robocop Exp $
 */
 
 /***************************************************
@@ -88,9 +88,9 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 	SLONG best_tail, tail;
 
 	if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
-		BUGCHECK(1);			/* Msg1 bad block type */
+		BUGCHECK(1);			// Msg1 bad block type 
 
-/* Compute block length */
+// Compute block length 
 
 	size = block_sizes[type].typ_root_length;
 
@@ -104,7 +104,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 #endif
 
 	if (size <= 4 || size > 65535)
-		BUGCHECK(2);			/* Msg2 bad block size */
+		BUGCHECK(2);			// Msg2 bad block size 
 
 /* Find best fit.  Best fit is defined to be the free block of SHORTest
    tail.  If there isn't a fit, extend the pool and try, try again. */
@@ -115,7 +115,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 		for (ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
 			if (free->frb_next
 				&& (SCHAR *) free >=
-				(SCHAR *) free->frb_next) BUGCHECK(434);	/* memory pool free list is incorrect */
+				(SCHAR *) free->frb_next) BUGCHECK(434);	// memory pool free list is incorrect 
 			else if ((tail = free->frb_header.blk_length - size) >= 0
 					 && tail < best_tail) {
 				best = ptr;
@@ -301,7 +301,7 @@ PLB ALLQ_pool(void)
 	PLB pool;
 	int pool_id;
 
-/* Start by assigning a pool id */
+// Start by assigning a pool id 
 
 	for (pool_id = 0; pool_id < pools->vec_count; pool_id++)
 		if (!(pools->vec_object[pool_id]))
@@ -408,7 +408,7 @@ void ALLQ_release( FRB block)
 	pool_id = block->frb_header.blk_pool_id;
 
 	if (pool_id >= pools->vec_count ||
-		!(pool = (PLB) pools->vec_object[pool_id])) BUGCHECK(4);	/* Msg4 bad pool id */
+		!(pool = (PLB) pools->vec_object[pool_id])) BUGCHECK(4);	// Msg4 bad pool id 
 
 	prior = NULL;
 	for (ptr = &pool->plb_free; free = *ptr;
@@ -417,7 +417,7 @@ void ALLQ_release( FRB block)
 							  (SCHAR *) free) break;
 
 	if ((SCHAR *) block == (SCHAR *) free)
-		BUGCHECK(435);			/* block released twice */
+		BUGCHECK(435);			// block released twice 
 
 /* Merge block into list first, then try to combine blocks */
 
@@ -434,10 +434,10 @@ void ALLQ_release( FRB block)
 		}
 		else if ((SCHAR *) block + block->frb_header.blk_length >
 				 (SCHAR *) free)
-			BUGCHECK(436);		/* released block overlaps following free block */
+			BUGCHECK(436);		// released block overlaps following free block 
 	}
 
-/* Try and merge the block with the prior free block */
+// Try and merge the block with the prior free block 
 
 	if (prior) {
 		if ((SCHAR *) prior + prior->frb_header.blk_length ==
@@ -447,7 +447,7 @@ void ALLQ_release( FRB block)
 		}
 		else if ((SCHAR *) prior + prior->frb_header.blk_length >
 				 (SCHAR *) block)
-			BUGCHECK(437);		/* released block overlaps prior free block */
+			BUGCHECK(437);		// released block overlaps prior free block 
 	}
 }
 
@@ -498,7 +498,7 @@ static void extend_pool( PLB pool, USHORT count)
 															  1);
 
 	if ((USHORT) size < count)
-		IBERROR(481);			/* msg 481 unsuccessful attempt to extend pool beyond 64KB */
+		IBERROR(481);			// msg 481 unsuccessful attempt to extend pool beyond 64KB 
 
 	block = (BLK) ALLQ_malloc(size);
 	block->blk_length = size;

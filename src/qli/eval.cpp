@@ -226,7 +226,7 @@ void EVAL_break_increment( QLI_NOD node)
 
 	desc1 = &node->nod_desc;
 
-/* Knock off count as trivial */
+// Knock off count as trivial 
 
 	if (node->nod_type == nod_rpt_count) {
 		*(SLONG *) node->nod_desc.dsc_address += 1;
@@ -258,7 +258,7 @@ void EVAL_break_increment( QLI_NOD node)
 	node->nod_arg[e_stt_default] = (QLI_NOD) (SLONG) count;
 	desc1->dsc_missing = FALSE;
 
-/* Finish off as per operator */
+// Finish off as per operator 
 
 	switch (node->nod_type) {
 	case nod_rpt_min:
@@ -490,14 +490,14 @@ DSC *EVAL_value(QLI_NOD node)
 			break;
 
 		default:
-			IBERROR(30);		/* Msg30 data type not supported for arithmetic */
+			IBERROR(30);		// Msg30 data type not supported for arithmetic 
 		}
 		return desc;
 
 	case nod_prompt:
 		if (!prompt[0][0]) {
 			ERRQ_msg_get(499, prompt[0]);	/* Msg499 Re-enter */
-			ERRQ_msg_get(500, prompt[1]);	/* Msg500 Enter    */
+			ERRQ_msg_get(500, prompt[1]);	// Msg500 Enter    
 		}
 		return execute_prompt(node);
 
@@ -542,7 +542,7 @@ DSC *EVAL_value(QLI_NOD node)
 		return FORM_get_field(node);
 #endif
 	case nod_user_name:
-		IBERROR(31);			/* Msg31 user name is supported only in RSEs temporarily */
+		IBERROR(31);			// Msg31 user name is supported only in RSEs temporarily 
 
 	case nod_parameter:
 	case nod_position:
@@ -751,7 +751,7 @@ static DSC *execute_prompt( QLI_NOD node)
 			if (reprompt)
 				sprintf(string, "\07%s: ", prompt[0]);	/* Msg497 Re-enter */
 			else
-				sprintf(string, "%s: ", prompt[1]);	/* Msg498 Enter    */
+				sprintf(string, "%s: ", prompt[1]);	// Msg498 Enter    
 		}
 
 		if (!LEX_get_line(string, value, length)) {
@@ -781,7 +781,7 @@ static DSC *execute_prompt( QLI_NOD node)
 			return desc;
 		}
 
-		ERRQ_msg_put(32, NULL, NULL, NULL, NULL, NULL);	/* Msg32 Input value is too long */
+		ERRQ_msg_put(32, NULL, NULL, NULL, NULL, NULL);	// Msg32 Input value is too long 
 		reprompt = TRUE;
 	}
 }
@@ -959,11 +959,11 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 
 	l1 = MOVQ_get_string(desc3, &p1, (VARY*) temp1, TEMP_LENGTH);
 
-/* Get address and length of search string */
+// Get address and length of search string 
 
 	l2 = MOVQ_get_string(desc2, &p2, (VARY*) temp2, TEMP_LENGTH);
 
-/* Merge search and control strings */
+// Merge search and control strings 
 
 	l2 = sleuth_merge((UCHAR*) p2, (UCHAR*) (p2 + l2), (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control);
 
@@ -1188,7 +1188,7 @@ static int sleuth_merge(
 	v = vector;
 	t = temp;
 
-/* Parse control string into substitution strings and initializing string */
+// Parse control string into substitution strings and initializing string 
 
 	while (control < end_control) {
 		c = *control++;
@@ -1237,7 +1237,7 @@ static int sleuth_merge(
 		}
 	}
 
-/* Put in trailing stuff */
+// Put in trailing stuff 
 
 	while (control < end_control)
 		*comb++ = *control++;
@@ -1281,7 +1281,7 @@ static int string_boolean( QLI_NOD node)
 	if (node->nod_type == nod_sleuth)
 		return sleuth(node, desc1, desc2, desc3);
 
-/* Get address and length of strings */
+// Get address and length of strings 
 
 	l2 = MOVQ_get_string(desc2, &p2, (VARY*) temp2, TEMP_LENGTH);
 
@@ -1352,7 +1352,7 @@ static int string_function(
 		return TRUE;
 	}
 
-/* Handle CONTAINS */
+// Handle CONTAINS 
 
 	if (node->nod_type == nod_containing) {
 		while (l1 >= l2) {
@@ -1370,7 +1370,7 @@ static int string_function(
 		return FALSE;
 	}
 
-/* Handle LIKE */
+// Handle LIKE 
 
 	if (node->nod_type == nod_like) {
 		c1 = 0;
@@ -1382,7 +1382,7 @@ static int string_function(
 		return FALSE;
 	}
 
-/* Handle MATCHES */
+// Handle MATCHES 
 
 	if (node->nod_type == nod_matches)
 		if (matches(p1, l1, p2, l2))

@@ -233,7 +233,7 @@ void SHOW_stuff( SYN node)
 				for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 					count += show_security_classes_detail(dbb);
 			if (!count)
-				ERRQ_msg_put(90, NULL, NULL, NULL, NULL, NULL);	/* Msg90 No security classes defined */
+				ERRQ_msg_put(90, NULL, NULL, NULL, NULL, NULL);	// Msg90 No security classes defined 
 			break;
 
 		case show_security_class:
@@ -253,7 +253,7 @@ void SHOW_stuff( SYN node)
 				for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 					count += show_views_detail(dbb);
 			if (!count)
-				ERRQ_msg_put(92, NULL, NULL, NULL, NULL, NULL);	/* Msg92 No views defined */
+				ERRQ_msg_put(92, NULL, NULL, NULL, NULL, NULL);	// Msg92 No views defined 
 			break;
 
 		case show_relation:
@@ -267,7 +267,7 @@ void SHOW_stuff( SYN node)
 			if (value) {
 				show_rel((QLI_REL) value);
 				if (!show_indices_detail((QLI_REL) value))
-					ERRQ_msg_put(93, NULL, NULL, NULL, NULL, NULL);	/* Msg93 No indices defined */
+					ERRQ_msg_put(93, NULL, NULL, NULL, NULL, NULL);	// Msg93 No indices defined 
 				break;
 			}
 			for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next) {
@@ -277,7 +277,7 @@ void SHOW_stuff( SYN node)
 						if (!(relation->rel_flags & (REL_system | REL_view))) {
 						show_rel(relation);
 						if (!show_indices_detail(relation))
-							ERRQ_msg_put(94, NULL, NULL, NULL, NULL, NULL);	/* Msg94 No indices defined */
+							ERRQ_msg_put(94, NULL, NULL, NULL, NULL, NULL);	// Msg94 No indices defined 
 					}
 			}
 			break;
@@ -290,7 +290,7 @@ void SHOW_stuff( SYN node)
 					if (!(relation->rel_flags & (REL_system | REL_view))) {
 					show_rel(relation);
 					if (!show_indices_detail(relation))
-						ERRQ_msg_put(94, NULL, NULL, NULL, NULL, NULL);	/* Msg94 No indices defined */
+						ERRQ_msg_put(94, NULL, NULL, NULL, NULL, NULL);	// Msg94 No indices defined 
 				}
 			break;
 
@@ -383,7 +383,7 @@ void SHOW_stuff( SYN node)
 			break;
 
 		default:
-			BUGCHECK(7);		/* Msg7 show option not implemented */
+			BUGCHECK(7);		// Msg7 show option not implemented 
 		}
 	}
 }
@@ -699,7 +699,7 @@ static void show_datatype(
 		break;
 
 	case dtype_blob:
-		ERRQ_msg_partial(105, NULL, NULL, NULL, NULL, NULL);	/* Msg105 blob */
+		ERRQ_msg_partial(105, NULL, NULL, NULL, NULL, NULL);	// Msg105 blob 
 		if (segment_length)
 			ERRQ_msg_partial(106, (TEXT *) (ULONG) segment_length, NULL, NULL,
 							 NULL, NULL);	/* Msg106 , segment length %d */
@@ -743,7 +743,7 @@ static void show_datatype(
 	ERRQ_msg_partial(msg, (TEXT *) (ULONG) length, NULL, NULL, NULL, NULL);
 
 	if (dimensions)
-		ERRQ_msg_partial(433, NULL, NULL, NULL, NULL, NULL);	/* Msg433  array */
+		ERRQ_msg_partial(433, NULL, NULL, NULL, NULL, NULL);	// Msg433  array 
 
 	if (dtype == dtype_short || dtype == dtype_long || dtype == dtype_quad)
 		if (scale)
@@ -786,7 +786,7 @@ static void show_dbb( DBB database)
 			ERRQ_msg_put(114, database->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg114 Database %s */
 	}
 	else
-		ERRQ_msg_put(115, NULL, NULL, NULL, NULL, NULL);	/* Msg115 No databases are currently ready */
+		ERRQ_msg_put(115, NULL, NULL, NULL, NULL, NULL);	// Msg115 No databases are currently ready 
 }
 
 
@@ -1053,7 +1053,7 @@ static void show_fields( QLI_REL relation, QLI_FLD fields)
 		max_name = MAX(max_name, l);
 	}
 
-/* Now print the fields */
+// Now print the fields 
 
 	for (field = fields; field; field = field->fld_next) {
 		if (QLI_abort)
@@ -1400,7 +1400,7 @@ static int show_func_detail( DBB database, TEXT * func_name)
 			FA IN RDB$FUNCTION_ARGUMENTS WITH
 				FA.RDB$FUNCTION_NAME = func_name SORTED BY FA.RDB$ARGUMENT_POSITION 
             if (FA.RDB$ARGUMENT_POSITION == 0)
-				ERRQ_msg_partial(427, NULL, NULL, NULL, NULL, NULL);	/* Msg427 Return argument is */
+				ERRQ_msg_partial(427, NULL, NULL, NULL, NULL, NULL);	// Msg427 Return argument is 
 			else
 				ERRQ_msg_partial(428,
 								 (TEXT *) (SLONG) FA.RDB$ARGUMENT_POSITION,
@@ -1709,7 +1709,7 @@ static void show_gbl_fields( DBB database)
 			 database = database->dbb_next) count +=
 				show_gbl_fields_detail(database);
 		if (!count)
-			ERRQ_msg_put(125, NULL, NULL, NULL, NULL, NULL);	/* Msg125 There are no fields defined in any open database */
+			ERRQ_msg_put(125, NULL, NULL, NULL, NULL, NULL);	// Msg125 There are no fields defined in any open database 
 	}
 }
 
@@ -2230,13 +2230,13 @@ static void show_sys_trigs( DBB database)
 			X.RDB$TRIGGER_NAME 
 
         if (!X.RDB$TRIGGER_BLR.NULL) {
-			ERRQ_msg_put(379, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);	/* Msg379 System Triggers */
+			ERRQ_msg_put(379, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);	// Msg379 System Triggers 
 			show_trigger_header(X.RDB$TRIGGER_NAME, X.RDB$TRIGGER_TYPE,
 								X.RDB$TRIGGER_SEQUENCE,
 								X.RDB$TRIGGER_INACTIVE, (SLONG*) &X.RDB$DESCRIPTION,
 								database, X.RDB$RELATION_NAME);
 			show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	/* Msg377 Source for the trigger is not available.  Trigger BLR: */
-						   376,	/* Msg376 Source for the trigger */
+						   376,	// Msg376 Source for the trigger 
 						   database, X.RDB$RELATION_NAME);
 			show_trigger_messages(database, X.RDB$TRIGGER_NAME);
 			count++;
@@ -2244,7 +2244,7 @@ static void show_sys_trigs( DBB database)
 	END_FOR;
 
 	if (!count)
-		ERRQ_msg_put(378, NULL, NULL, NULL, NULL, NULL);	/* Msg378 No system triggers  */
+		ERRQ_msg_put(378, NULL, NULL, NULL, NULL, NULL);	// Msg378 No system triggers  
 }
 
 
@@ -2325,7 +2325,7 @@ static int show_trigger_detail( DBB database, const TEXT * relation_name)
 	MET_meta_transaction(database, FALSE);
 	int count = 0;
 
-/* New style triggers */
+// New style triggers 
 
 	if (database->dbb_capabilities & DBB_cap_new_triggers) {
 		ERRQ_msg_put(365, relation_name, NULL, NULL, NULL, NULL);	/* Msg365 Triggers for relation %s */
@@ -2342,7 +2342,7 @@ static int show_trigger_detail( DBB database, const TEXT * relation_name)
 									(SLONG*) &X.RDB$DESCRIPTION, database,
 									relation_name);
 				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	/* Msg377 Source for the trigger is not available.  Trigger BLR: */
-							   376,	/* Msg376 Source for the trigger */
+							   376,	// Msg376 Source for the trigger 
 							   database, relation_name);
 				show_trigger_messages(database, X.RDB$TRIGGER_NAME);
 				count++;
@@ -2351,7 +2351,7 @@ static int show_trigger_detail( DBB database, const TEXT * relation_name)
 		return count;
 	}
 
-/* Old style triggers */
+// Old style triggers 
 /* OBSOLETE - 1996-Aug-06 David Schnepper  */
 
 /* OBSOLETE - Msg298 Triggers for relation %s: */
@@ -2525,7 +2525,7 @@ static int show_triggers_detail( DBB database)
 
 	if (database->dbb_capabilities & DBB_cap_new_triggers) {
 
-/* New style triggers */
+// New style triggers 
 
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_new_triggers])
 			X IN RDB$TRIGGERS WITH X.RDB$SYSTEM_FLAG MISSING
@@ -2540,7 +2540,7 @@ static int show_triggers_detail( DBB database)
 									(SLONG*) &X.RDB$DESCRIPTION, database,
 									X.RDB$RELATION_NAME);
 				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	/* Msg377 Source for the trigger is not available.  Trigger BLR: */
-							   376,	/* Msg376 Source for the trigger */
+							   376,	// Msg376 Source for the trigger 
 							   database, X.RDB$RELATION_NAME);
 				show_trigger_messages(database, X.RDB$TRIGGER_NAME);
 				count++;
@@ -2549,7 +2549,7 @@ static int show_triggers_detail( DBB database)
 	}
 	else {
 
-/* Old style triggers */
+// Old style triggers 
 /* OBSOLETE - 1996-Aug-06 David Schnepper  */
 /* OBSOLETE - Msg305 Triggers for relation %s: */
 

@@ -89,7 +89,7 @@ PICS PIC_analyze( TEXT * string, DSC * desc)
 	picture = (PICS) ALLOCD(type_pic);
 	picture->pic_string = picture->pic_pointer = string;
 
-/* Make a first pass just counting characters */
+// Make a first pass just counting characters 
 
 	while ((c = generate(picture)) && c != '?') {
 
@@ -512,7 +512,7 @@ static void edit_alpha(
 			if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z'))
 				*out++ = *p++;
 			else
-				IBERROR(69);	/* Msg 69 conversion error */
+				IBERROR(69);	// Msg 69 conversion error 
 			break;
 
 		case 'B':
@@ -747,13 +747,13 @@ static void edit_float( DSC * desc, PICS picture, TEXT ** output)
 		sprintf(temp, "%.*f", f_digits, number);
 		w_digits = strlen(temp);
 		if (f_digits) {
-			p = temp + w_digits;	/* find the end */
+			p = temp + w_digits;	// find the end 
 			w_digits = w_digits - (f_digits + 1);
 			while (*--p == '0')
 				--f_digits;
 			if (*p != '.')
 				++p;
-			*p = 0;				/* move the end */
+			*p = 0;				// move the end 
 		}
 		if ((w_digits > width)
 			|| (!f_digits && w_digits == 1 && temp[0] == '0')) {

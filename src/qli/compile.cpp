@@ -241,7 +241,7 @@ static QLI_NOD compile_any( QLI_NOD node, QLI_REQ old_request, int internal_flag
 	}
 
 	if (old_request && request->req_database != old_request->req_database)
-		IBERROR(357);			/* Msg357 relations from multiple databases in single rse */
+		IBERROR(357);			// Msg357 relations from multiple databases in single rse 
 
 	if (old_request && (!receive || !receive->msg_parameters)) {
 		if (receive)
@@ -318,7 +318,7 @@ static QLI_NOD compile_assignment( QLI_NOD node, QLI_REQ request, int statement_
 			compile_expression(initial, request, FALSE);
 
 	if (statement_internal) {
-		node->nod_arg[e_asn_valid] = NULL;	/* Memory reclaimed in the main loop */
+		node->nod_arg[e_asn_valid] = NULL;	// Memory reclaimed in the main loop 
 		node->nod_flags |= NOD_remote;
 		node = NULL;
 	}
@@ -432,7 +432,7 @@ static QLI_NOD compile_edit( QLI_NOD node, QLI_REQ request)
 	if (value = node->nod_arg[e_edt_input]) {
 		field = (QLI_FLD) value->nod_arg[e_fld_field];
 		if (value->nod_type != nod_field || field->fld_dtype != dtype_blob)
-			IBERROR(356);		/* Msg356 EDIT argument must be a blob field */
+			IBERROR(356);		// Msg356 EDIT argument must be a blob field 
 		node->nod_arg[e_edt_input] =
 			compile_expression(value, request, FALSE);
 	}
@@ -713,7 +713,7 @@ static QLI_NOD compile_field( QLI_NOD node, QLI_REQ request, int internal_flag)
 	QLI_MSG message;
 	QLI_FLD field;
 
-/* Pick up field characteristics */
+// Pick up field characteristics 
 
 	node->nod_count = 0;
 	field = (QLI_FLD) node->nod_arg[e_fld_field];
@@ -1096,7 +1096,7 @@ static QLI_NOD compile_prompt( QLI_NOD node)
 	QLI_FLD field;
 	USHORT prompt_length;
 
-/* Make up a plausible prompt length */
+// Make up a plausible prompt length 
 
 	if (!(field = (QLI_FLD) node->nod_arg[e_prm_field]))
 		prompt_length = PROMPT_LENGTH;
@@ -1243,7 +1243,7 @@ static QLI_REQ compile_rse(
 		database = &local_dbb;
 	}
 
-/* Loop thru relations to make sure only a single database is presented */
+// Loop thru relations to make sure only a single database is presented 
 
 	ctx_ptr = (QLI_CTX *) node->nod_arg + e_rse_count;
 	ctx_end = ctx_ptr + node->nod_count;
@@ -1261,7 +1261,7 @@ static QLI_REQ compile_rse(
 			if (!*database)
 				*database = relation->rel_database;
 			else if (*database != relation->rel_database)
-				IBERROR(357);	/* Msg357 relations from multiple databases in single rse */
+				IBERROR(357);	// Msg357 relations from multiple databases in single rse 
 		}
 	}
 
@@ -1281,7 +1281,7 @@ static QLI_REQ compile_rse(
 
 	compile_context(node, request, internal_flag);
 
-/* Process various clauses */
+// Process various clauses 
 
 	if (node->nod_arg[e_rse_first])
 		compile_expression(node->nod_arg[e_rse_first], request, TRUE);
@@ -1492,7 +1492,7 @@ static QLI_NOD compile_store( QLI_NOD node, QLI_REQ request, int internal_flag)
 	QLI_REL relation;
 	QLI_MSG send;
 
-/* Find or make up request for statement */
+// Find or make up request for statement 
 
 	context = (QLI_CTX) node->nod_arg[e_sto_context];
 	relation = context->ctx_relation;
@@ -2014,9 +2014,9 @@ static QLI_NOD make_reference( QLI_NOD node, QLI_MSG message)
 	PAR parm;
 
 	if (!message)
-		BUGCHECK(363);			/* Msg363 missing message */
+		BUGCHECK(363);			// Msg363 missing message 
 
-/* Look for an existing field reference */
+// Look for an existing field reference 
 
 	for (parm = message->msg_parameters; parm; parm = parm->par_next)
 		if (CMP_node_match(parm->par_value, node))
@@ -2088,7 +2088,7 @@ static void release_message( QLI_MSG message)
 			break;
 
 	if (!*ptr)
-		BUGCHECK(364);			/* Msg 364 lost message */
+		BUGCHECK(364);			// Msg 364 lost message 
 
 	*ptr = message->msg_next;
 	ALL_release((FRB) message);

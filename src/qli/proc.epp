@@ -154,7 +154,7 @@ void PRO_copy_procedure(
 
 	DB1 = new_database->dbb_handle;
 
-/* create blob parameter block since procedure is a text blob */
+// create blob parameter block since procedure is a text blob 
 
 	p = bpb;
 
@@ -178,7 +178,7 @@ void PRO_copy_procedure(
 		PRO_close(new_database, new_blob);
 	END_STORE;
 
-/* Release the FOR and STORE requests */
+// Release the FOR and STORE requests 
 	gds__release_request(gds_status, &store_request);
 	PRO_commit(new_database);
 }
@@ -203,7 +203,7 @@ void PRO_create( DBB database, TEXT * name)
 	USHORT bpb_length;
 	UCHAR bpb[20], *p;
 
-/* See if procedure is already in use */
+// See if procedure is already in use 
 
 	probe(database, name);
 
@@ -567,7 +567,7 @@ void PRO_setup( DBB dbb)
 
 	if (!dbb)
 		IBERROR(77);
-/* Msg 77 database handle required */
+// Msg 77 database handle required 
 
 /* If we don't have a QLI$PROCEDURES relation, and can't get one, punt */
 
@@ -612,7 +612,7 @@ FRBRD *PRO_transaction( DBB database, int update_flag)
 	FRBRD *transaction;
 
 	if (!database)
-		IBERROR(248);			/* Msg248 no active database for operation */
+		IBERROR(248);			// Msg248 no active database for operation 
 
 	transaction = (database->dbb_capabilities & DBB_cap_multi_trans) ?
 		database->dbb_proc_trans : NULL;
@@ -639,12 +639,12 @@ FRBRD *PRO_transaction( DBB database, int update_flag)
 
 	if (!gds_trans && (database->dbb_capabilities & DBB_cap_single_trans)) {
 		if (update_flag)
-			IBERROR(249);		/* Msg249 Interactive metadata updates are not available on Rdb */
+			IBERROR(249);		// Msg249 Interactive metadata updates are not available on Rdb 
 		if (!(gds_trans = database->dbb_transaction))
 			gds_trans = MET_transaction(nod_start_trans, database);
 	}
 
-/* otherwise make one more effort to start the transaction */
+// otherwise make one more effort to start the transaction 
 
 	else if (!gds_trans) {
 		START_TRANSACTION
@@ -836,7 +836,7 @@ static void probe( DBB database, TEXT * name)
 	FRBRD *blob;
 	ISC_STATUS_ARRAY status_vector;
 
-/* Probe to see if procedure is already in use */
+// Probe to see if procedure is already in use 
 
 	if (blob = PRO_fetch_procedure(database, name)) {
 		gds__close_blob(status_vector, &blob);
@@ -871,7 +871,7 @@ static int upcase_name( TEXT * name, TEXT * buffer)
 		if (!c)
 			return l;
 		if (++l > 31)
-			IBERROR(79);		/* Msg 79 procedure name over 31 characters */
+			IBERROR(79);		// Msg 79 procedure name over 31 characters 
 
 	}
 }

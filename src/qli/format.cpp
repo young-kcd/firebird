@@ -133,7 +133,7 @@ TEXT *FMT_format(LLS stack)
 	TEXT *line, *p, *q, *segments[10], *bottom;
 	ULONG size;
 
-/* Start by inverting the item stack into an item que */
+// Start by inverting the item stack into an item que 
 
 	temp = stack;
 	stack = NULL;
@@ -245,7 +245,7 @@ TEXT *FMT_format(LLS stack)
 		max_offset = MAX(max_offset, offset);
 	}
 
-/* Make another pass checking for overlapping fields */
+// Make another pass checking for overlapping fields 
 
 	for (temp = stack; temp; temp = temp->lls_next) {
 		item = (ITM) temp->lls_object;
@@ -266,7 +266,7 @@ TEXT *FMT_format(LLS stack)
 	if (number_segments == 0)
 		return NULL;
 
-/* Allocate a string block big enough to hold all lines of the print header */
+// Allocate a string block big enough to hold all lines of the print header 
 
 	size = (max_offset + 1) * (number_segments + 1) + 2;
 
@@ -303,7 +303,7 @@ TEXT *FMT_format(LLS stack)
 		}
 	}
 
-/* Make one last pass to put in underlining of headers */
+// Make one last pass to put in underlining of headers 
 
 	if (l = bottom - BOTTOM_LINE) {
 		*p++ = '\n';
@@ -453,7 +453,7 @@ void FMT_print( QLI_NOD list, PRT print)
 	RPT report;
 	ISC_STATUS_ARRAY status_vector;
 
-/* Now go thru and make up the first line */
+// Now go thru and make up the first line 
 
 	if (!list)
 		return;
@@ -551,11 +551,11 @@ void FMT_print( QLI_NOD list, PRT print)
 
 	put_line(print, &p, buffer, '\n');
 
-/* Now go back until all blobs have been fetched */
+// Now go back until all blobs have been fetched 
 
 	print_blobs(print, (ITM*) list->nod_arg, (ITM*) end);
 
-/* Finish by closing all blobs */
+// Finish by closing all blobs 
 
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
 		item = (ITM) * ptr;
@@ -606,7 +606,7 @@ void FMT_put( TEXT * line, PRT print)
 			*p = 0;
 #ifdef DEV_BUILD
 			if (QLI_hex_output) {
-				/* Hex mode output to assist debugging of multicharset work */
+				// Hex mode output to assist debugging of multicharset work 
 
 				for (p = buffer; p < end && *p; p++)
 					if (PRINTABLE(*p))
@@ -712,7 +712,7 @@ static int decompose_header(
 
 	n = 0;
 
-/* Handle simple name first */
+// Handle simple name first 
 
 	if (*string != '"' && *string != '\'')
 		while (*string) {
@@ -960,7 +960,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 	if (number_segments == 0)
 		return NULL;
 
-/* Allocate a string block big enough to hold all lines of the print header */
+// Allocate a string block big enough to hold all lines of the print header 
 
 	l = bottom - BOTTOM_LINE;
 	header =
@@ -998,7 +998,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 			}
 	}
 
-/* Make one last pass to put in underlining of headers */
+// Make one last pass to put in underlining of headers 
 
 	if (l = bottom - BOTTOM_LINE) {
 		*p++ = '\n';
@@ -1140,7 +1140,7 @@ static int match_expr( QLI_NOD node1, QLI_NOD node2)
 	if (node2->nod_type == nod_reference)
 		node2 = node2->nod_arg[0];
 
-/* A constant more or less matches anything */
+// A constant more or less matches anything 
 
 	if (node1->nod_type == nod_constant)
 		return TRUE;

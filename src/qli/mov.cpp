@@ -205,7 +205,7 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 		}
 	}
 
-/* Handle mixed string comparisons */
+// Handle mixed string comparisons 
 
 	if (arg1->dsc_dtype <= dtype_varying && arg2->dsc_dtype <= dtype_varying) {
 		length = MOVQ_get_string(arg1, (TEXT**) &p1, 0, 0);
@@ -248,7 +248,7 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 		return 0;
 	}
 
-/* Handle hetergeneous compares */
+// Handle hetergeneous compares 
 
 	if (arg1->dsc_dtype < arg2->dsc_dtype)
 		return (-MOVQ_compare(arg2, arg1));
@@ -325,7 +325,7 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 		}
 
 	case dtype_blob:
-		IBERROR(48);			/* Msg 48 Blob conversion is not supported */
+		IBERROR(48);			// Msg 48 Blob conversion is not supported 
 
 	default:
 		mover_error(410, arg1->dsc_dtype, arg2->dsc_dtype);
@@ -536,7 +536,7 @@ double MOVQ_get_double( DSC * desc)
 			}
 			else if (*p == '.')
 				if (fraction)
-					IBERROR(52);	/* Msg 52 conversion error */
+					IBERROR(52);	// Msg 52 conversion error 
 				else
 					fraction = 1;
 			else if (!value && *p == '-')
@@ -546,7 +546,7 @@ double MOVQ_get_double( DSC * desc)
 			else if (*p == 'e' || *p == 'E')
 				break;
 			else if (*p != ' ')
-				IBERROR(53);	/* Msg 53 conversion error */
+				IBERROR(53);	// Msg 53 conversion error 
 		}
 
 		if (sign)
@@ -564,7 +564,7 @@ double MOVQ_get_double( DSC * desc)
 					sign = TRUE;
 				else if (*p == '+' && !exp);
 				else if (*p != ' ')
-					IBERROR(54);	/* Msg 54 conversion error */
+					IBERROR(54);	// Msg 54 conversion error 
 			}
 			if (sign)
 				scale += exp;
@@ -842,7 +842,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 			((SLONG *) to->dsc_address)[0] = ((SLONG *) from->dsc_address)[0];
 			return;
 		case dtype_sql_time:
-			/* Error situation */
+			// Error situation 
 			break;
 		}
 		break;
@@ -863,7 +863,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 			((SLONG *) to->dsc_address)[0] = ((SLONG *) from->dsc_address)[1];
 			return;
 		case dtype_sql_date:
-			/* Error situation */
+			// Error situation 
 			break;
 		}
 		break;
@@ -949,7 +949,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 	case dtype_short:
 		*(SSHORT *) p = l = MOVQ_get_long(from, to->dsc_scale);
 		if (*(SSHORT *) p != l)
-			IBERROR(14);		/* Msg14 integer overflow */
+			IBERROR(14);		// Msg14 integer overflow 
 		return;
 
 	case dtype_long:
@@ -966,7 +966,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 	}
 
 	if (to->dsc_dtype == dtype_blob || from->dsc_dtype == dtype_blob)
-		IBERROR(55);			/* Msg 55 Blob conversion is not supported */
+		IBERROR(55);			// Msg 55 Blob conversion is not supported 
 
 	mover_error(410, from->dsc_dtype, to->dsc_dtype);
 }
@@ -1249,7 +1249,7 @@ static void numeric_to_text( DSC * from, DSC * to)
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||
 		(to->dsc_dtype == dtype_varying
 		 && length > to->dsc_length - sizeof(SSHORT)))
-		IBERROR(57);			/* Msg 57 overflow during conversion */
+		IBERROR(57);			// Msg 57 overflow during conversion 
 
 	q =
 		(TEXT *) ((to->dsc_dtype == dtype_text) ? to->dsc_address : to->
@@ -1339,7 +1339,7 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
 
-/* Parse components */
+// Parse components 
 
 	for (i = 0; i < 7; i++) {
 
@@ -1351,7 +1351,7 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 		if (p == end)
 			break;
 
-		/* Handle digit or character strings */
+		// Handle digit or character strings 
 
 		c = UPPER(*p);
 		if (DIGIT(c)) {
@@ -1436,7 +1436,7 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 		times.tm_mday = components[1];
 	}
 
-/* Handle defaulting of year */
+// Handle defaulting of year 
 
 	if (((times.tm_year = components[2]) == 0) && !year)
 		times.tm_year = today->tm_year + 1900;
@@ -1501,7 +1501,7 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
 
-/* Parse components */
+// Parse components 
 
 	for (i = 3; i < 7; i++) {
 
@@ -1513,7 +1513,7 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
 		if (p == end)
 			break;
 
-		/* Handle digit or character strings */
+		// Handle digit or character strings 
 
 		c = UPPER(*p);
 		if (DIGIT(c)) {

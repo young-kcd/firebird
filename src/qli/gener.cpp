@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.18 2003-08-30 02:11:08 brodsom Exp $
+$Id: gener.cpp,v 1.19 2003-09-10 11:48:08 robocop Exp $
 */
 
 #include "firebird.h"
@@ -527,14 +527,14 @@ static void gen_assignment( QLI_NOD node, QLI_REQ request)
 
 	from = node->nod_arg[e_asn_from];
 
-/* Handle a local expression locally */
+// Handle a local expression locally 
 
 	if (node->nod_flags & NOD_local) {
 		gen_expression(from, 0);
 		return;
 	}
 
-/* Generate a remote assignment */
+// Generate a remote assignment 
 
 	rlb = CHECK_RLB(request->req_blr);
 
@@ -1127,7 +1127,7 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 	if (continuation)
 		STUFF(blr_end);
 
-/* Finish off by building a SEND to indicate end of file */
+// Finish off by building a SEND to indicate end of file 
 
 	if (message) {
 		gen_send_receive(message, blr_send);
@@ -1185,7 +1185,7 @@ static void gen_function( QLI_NOD node, QLI_REQ request)
 	else
 		rlb = CHECK_RLB(request->req_blr);
 
-/* Generate function body */
+// Generate function body 
 
 	STUFF(blr_function);
 	function = (FUN) node->nod_arg[e_fun_function];
@@ -1194,7 +1194,7 @@ static void gen_function( QLI_NOD node, QLI_REQ request)
 	for (p = (UCHAR *) symbol->sym_string; *p;)
 		STUFF(*p++);
 
-/* Generate function arguments */
+// Generate function arguments 
 
 	args = node->nod_arg[e_fun_args];
 	STUFF(args->nod_count);
@@ -1557,7 +1557,7 @@ static void gen_rse( QLI_NOD node, QLI_REQ request)
 		STUFF(blr_rs_stream);
 	STUFF(node->nod_count);
 
-/* Check for aggregate case */
+// Check for aggregate case 
 
 	context = (QLI_CTX) node->nod_arg[e_rse_count];
 
@@ -1587,7 +1587,7 @@ static void gen_rse( QLI_NOD node, QLI_REQ request)
 		return;
 	}
 
-/* Make relation clauses for all relations */
+// Make relation clauses for all relations 
 
 	for (ptr = &node->nod_arg[e_rse_count], end = ptr + node->nod_count;
 		 ptr < end; ptr++) {
@@ -1602,7 +1602,7 @@ static void gen_rse( QLI_NOD node, QLI_REQ request)
 		}
 	}
 
-/* Handle various clauses */
+// Handle various clauses 
 
 	if (list = node->nod_arg[e_rse_first]) {
 		STUFF(blr_first);

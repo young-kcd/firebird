@@ -406,7 +406,7 @@ static void declare_global( QLI_FLD variable, SYN field_node)
 			IBERROR(137);		/* Msg137 variables may not be based on blob fields. */
 	}
 
-/* Get rid of any other variables of the same name */
+// Get rid of any other variables of the same name 
 
 	for (ptr = &QLI_variables; field = *ptr; ptr = &field->fld_next)
 		if (!strcmp
@@ -451,7 +451,7 @@ static void declare_global( QLI_FLD variable, SYN field_node)
 		while (*p++ = *q++);
 	}
 
-/* Link new variable into variable chain */
+// Link new variable into variable chain 
 
 	new_fld->fld_next = QLI_variables;
 	QLI_variables = new_fld;
@@ -626,7 +626,7 @@ static QLI_NOD expand_boolean( SYN input, LLS stack)
 	QLI_FLD field;
 	SSHORT i;
 
-/* Make node and process arguments */
+// Make node and process arguments 
 
 	node = MAKE_NODE(input->syn_type, input->syn_count);
 	ptr = node->nod_arg;
@@ -636,7 +636,7 @@ static QLI_NOD expand_boolean( SYN input, LLS stack)
 		if (!(*ptr = possible_literal(input->syn_arg[i], stack, TRUE)))
 			*ptr = expand_expression(input->syn_arg[i], stack);
 
-/* Try to match any prompts against fields to determine prompt length */
+// Try to match any prompts against fields to determine prompt length 
 
 	if (value->nod_type != nod_field)
 		return node;
@@ -785,7 +785,7 @@ static void expand_edit_string( QLI_NOD node, ITM item)
 		return;
 	}
 
-/* Handle fields */
+// Handle fields 
 
 	field = (QLI_FLD) node->nod_arg[e_fld_field];
 
@@ -838,11 +838,11 @@ static QLI_NOD expand_erase( SYN input, LLS right, LLS left)
 	}
 
 	if (count == 0)
-		IBERROR(139);			/* Msg139 no context for ERASE */
+		IBERROR(139);			// Msg139 no context for ERASE 
 	else if (count > 1)
 		IBERROR(140);			/* Msg140 can't erase from a join */
 
-/* Make up node big enough to hold fixed fields plus all contexts */
+// Make up node big enough to hold fixed fields plus all contexts 
 
 	node = MAKE_NODE(nod_erase, e_era_count);
 	node->nod_arg[e_era_context] = (QLI_NOD) context;
@@ -913,7 +913,7 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
 			&& node->nod_arg[e_stt_value])
 			expand_distinct(node->nod_arg[e_stt_rse],
 							node->nod_arg[e_stt_value]);
-/* count2 next 2 lines go */
+// count2 next 2 lines go 
 		if (input->syn_type == nod_count)
 			node->nod_arg[e_stt_value] = 0;
 		return node;
@@ -930,7 +930,7 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
 				break;
 		}
 		if (!stack)
-			ERRQ_print_error(454, NULL, NULL, NULL, NULL, NULL);	/* could not resolve context for aggregate */
+			ERRQ_print_error(454, NULL, NULL, NULL, NULL, NULL);	// could not resolve context for aggregate 
 /* count2
 	if (value = input->syn_arg [s_stt_value])
 	    {
@@ -954,7 +954,7 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
 	case nod_index:
 		value = input->syn_arg[s_idx_field];
 		if (value->syn_type != nod_field)
-			IBERROR(466);		/* Msg466 Only fields may be subscripted */
+			IBERROR(466);		// Msg466 Only fields may be subscripted 
 		return expand_field(value, stack, input->syn_arg[s_idx_subs]);
 
 	case nod_list:
@@ -1165,16 +1165,16 @@ static FRM expand_form( SYN input, QLI_REL relation)
 	FRM form;
 	TEXT *string;
 
-/* Figure out form name */
+// Figure out form name 
 
 	if (input && (name = (NAM) input->syn_arg[s_frm_form]))
 		string = name->nam_string;
 	else if (relation)
 		string = relation->rel_symbol->sym_string;
 	else
-		IBERROR(143);			/* Msg143 no default form name */
+		IBERROR(143);			// Msg143 no default form name 
 
-/* Now figure out which database to look in */
+// Now figure out which database to look in 
 
 	database = NULL;
 
@@ -1184,7 +1184,7 @@ static FRM expand_form( SYN input, QLI_REL relation)
 	if (!database && relation)
 		database = relation->rel_database;
 
-/* Look for form either in explicit or any database */
+// Look for form either in explicit or any database 
 
 	if (database) {
 		if (form = FORM_lookup_form(database, string))
@@ -1196,7 +1196,7 @@ static FRM expand_form( SYN input, QLI_REL relation)
 												FORM_lookup_form(database,
 																 string))
 					return form;
-		ERRQ_print_error(144, string, NULL, NULL, NULL, NULL);	/* Msg144 No database for form */
+		ERRQ_print_error(144, string, NULL, NULL, NULL, NULL);	// Msg144 No database for form 
 	}
 
 /* Form doesn't exist, try to make up a default */
@@ -1206,7 +1206,7 @@ static FRM expand_form( SYN input, QLI_REL relation)
 		(form = FORM_default_form(database, string)))
 		return form;
 
-	ERRQ_print_error(145, string, database->dbb_filename, NULL, NULL, NULL);	/* Msg145 form is not defined in database */
+	ERRQ_print_error(145, string, database->dbb_filename, NULL, NULL, NULL);	// Msg145 form is not defined in database 
 	return NULL;
 }
 #endif
@@ -1287,7 +1287,7 @@ static QLI_NOD expand_form_update( SYN input, LLS right, LLS left)
 	}
 
 	if (!stack)
-		IBERROR(146);			/* Msg146 no context for form ACCEPT statement */
+		IBERROR(146);			// Msg146 no context for form ACCEPT statement 
 
 	form = context->ctx_form;
 	stack = NULL;
@@ -1298,7 +1298,7 @@ static QLI_NOD expand_form_update( SYN input, LLS right, LLS left)
 			name = (NAM) * ptr;
 			if (!(field = FORM_lookup_field(form, name->nam_string)))
 				ERRQ_print_error(147, name->nam_string, form->frm_name, NULL,
-								 NULL, NULL);	/* Msg147 field is not defined in form */
+								 NULL, NULL);	// Msg147 field is not defined in form 
 			LLS_PUSH(field, &stack);
 		}
 
@@ -1481,15 +1481,15 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 	}
 
 	if (!count)
-		IBERROR(148);			/* Msg148 no context for modify */
+		IBERROR(148);			// Msg148 no context for modify 
 
-/* Make up node big enough to hold fixed fields plus all contexts */
+// Make up node big enough to hold fixed fields plus all contexts 
 
 	node = MAKE_NODE(nod_modify, (int) e_mod_count + count);
 	node->nod_count = count;
 	ptr = &node->nod_arg[e_mod_count];
 
-/* Loop thru contexts augmenting left context */
+// Loop thru contexts augmenting left context 
 
 	for (contexts = right; contexts; contexts = contexts->lls_next) {
 		context = (QLI_CTX) contexts->lls_object;
@@ -1527,7 +1527,7 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 								right);
 	}
 	else
-		IBERROR(149);			/* Msg149 field list required for modify */
+		IBERROR(149);			// Msg149 field list required for modify 
 
 	if (!loop)
 		return node;
@@ -1599,7 +1599,7 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 
 	syn_rse = input->syn_arg[s_prt_rse];
 
-/* Check to see if form mode is appropriate */
+// Check to see if form mode is appropriate 
 #ifdef PYXIS
 	if (input->syn_arg[s_prt_form] ||
 		(QLI_form_mode &&
@@ -1682,7 +1682,7 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 /* If no print object showed up, complain! */
 
 	if (!count)
-		IBERROR(150);			/* Msg150 No items in print list */
+		IBERROR(150);			// Msg150 No items in print list 
 
 /* Build new print statement.  Unlike the syntax node, the print statement
    has only print items in it. */
@@ -1753,7 +1753,7 @@ static QLI_NOD expand_print_form( SYN input, LLS right, LLS left)
 /* If no print object showed up, complain! */
 
 	if (!new_right)
-		IBERROR(151);			/* Msg151 No items in print list */
+		IBERROR(151);			// Msg151 No items in print list 
 
 	node = make_form_body(new_right, 0, input->syn_arg[s_prt_form]);
 
@@ -1876,7 +1876,7 @@ static QLI_NOD expand_report( SYN input, LLS right, LLS left)
 	QLI_NOD node, loop;
 	PRT print;
 
-/* Start by processing record selection expression */
+// Start by processing record selection expression 
 
 	expand_output(input->syn_arg[s_prt_output], right, &print);
 	report = print->prt_report = (RPT) input->syn_arg[s_prt_list];
@@ -1894,7 +1894,7 @@ static QLI_NOD expand_report( SYN input, LLS right, LLS left)
 	node->nod_arg[e_prt_list] = (QLI_NOD) report;
 	node->nod_arg[e_prt_output] = (QLI_NOD) print;
 
-/* Process clauses where they exist */
+// Process clauses where they exist 
 
 	expand_control_break(&report->rpt_top_rpt, right);
 	expand_control_break(&report->rpt_top_page, right);
@@ -1930,7 +1930,7 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 	QLI_CTX context, ctx;
 	LLS stack, search;
 
-/* Make a FOR loop to drive the restructure */
+// Make a FOR loop to drive the restructure 
 
 	loop = MAKE_NODE(nod_for, e_for_count);
 	loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_asn_from], &right);
@@ -1961,7 +1961,7 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 			for (search = right; search; search = search->lls_next) {
 				ctx = (QLI_CTX) search->lls_object;
 
-				/* First look for an exact field name match */
+				// First look for an exact field name match 
 
 				for (fld = ctx->ctx_relation->rel_fields; fld;
 					 fld =
@@ -2072,13 +2072,13 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
 		parent_context->ctx_sub_rse = node;
 	}
 
-/* Process the FIRST clause before the context gets augmented */
+// Process the FIRST clause before the context gets augmented 
 
 	if (input->syn_arg[s_rse_first])
 		node->nod_arg[e_rse_first] =
 			expand_expression(input->syn_arg[e_rse_first], old_stack);
 
-/* Process relations */
+// Process relations 
 
 	ptr = input->syn_arg + s_rse_count;
 
@@ -2121,7 +2121,7 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
 		LLS_PUSH(context, &new_stack);
 	}
 
-/* Handle explicit boolean */
+// Handle explicit boolean 
 
 	if (input->syn_arg[e_rse_boolean])
 		boolean = make_and(boolean,
@@ -2222,7 +2222,7 @@ static QLI_NOD expand_sort( SYN input, LLS stack, QLI_NOD list)
 		if (expr->syn_type == nod_position) {
 			position = (USHORT) expr->syn_arg[0];
 			if (!list || !position || position > list->nod_count)
-				IBERROR(152);	/* Msg152 invalid ORDER BY ordinal */
+				IBERROR(152);	// Msg152 invalid ORDER BY ordinal 
 			item = (ITM) list->nod_arg[position - 1];
 			*ptr++ = item->itm_value;
 		}
@@ -2529,7 +2529,7 @@ static void expand_values( SYN input, LLS right)
 		}
 		else if (input->syn_arg[s_sto_rse] && (value->syn_type == nod_star)) {
 			if (!(context = find_context((NAM) value->syn_arg[0], right)))
-				IBERROR(154);	/* Msg154 unrecognized context */
+				IBERROR(154);	// Msg154 unrecognized context 
 			value_count +=
 				generate_fields(context, (LLS) &values, input->syn_arg[s_sto_rse]);
 		}
@@ -2539,10 +2539,10 @@ static void expand_values( SYN input, LLS right)
 		}
 	}
 
-/* Make assignments from values to fields */
+// Make assignments from values to fields 
 
 	if (field_count != value_count)
-		IBERROR(189);			/* Msg189 the number of values do not match the number of fields */
+		IBERROR(189);			// Msg189 the number of values do not match the number of fields 
 
 	list = (SYN) ALLOCDV(type_syn, value_count);
 	list->syn_type = nod_list;
@@ -2659,15 +2659,15 @@ static int generate_items( SYN symbol, LLS right, LLS items, QLI_NOD rse)
 	count = 0;
 	group_list = (rse) ? rse->nod_arg[e_rse_group_by] : NULL;
 
-/* first identify the relation or context */
+// first identify the relation or context 
 
 	if (symbol->syn_count == 1)
 		name = (NAM) symbol->syn_arg[0];
 	else
-		IBERROR(153);			/* Msg153 asterisk expressions require exactly one qualifying context */
+		IBERROR(153);			// Msg153 asterisk expressions require exactly one qualifying context 
 
 	if (!(context = find_context(name, right)))
-		IBERROR(154);			/* Msg154 unrecognized context */
+		IBERROR(154);			// Msg154 unrecognized context 
 
 	relation = context->ctx_relation;
 
@@ -3008,7 +3008,7 @@ static QLI_NOD make_form_body( LLS right, LLS left, SYN form_node)
 	relation = tmp_context->ctx_relation;
 	form = expand_form(form_node, relation);
 
-/* Get stack of database fields and form fields */
+// Get stack of database fields and form fields 
 
 	stack = fields = NULL;
 
@@ -3022,7 +3022,7 @@ static QLI_NOD make_form_body( LLS right, LLS left, SYN form_node)
 				LLS_PUSH(assignment, &stack);
 			}
 
-/* Build form update */
+// Build form update 
 
 	node = MAKE_NODE(nod_form_update, e_fup_count);
 	node->nod_count = 0;
@@ -3262,7 +3262,7 @@ static QLI_NOD post_map( QLI_NOD node, QLI_CTX context)
 	QLI_NOD new_node;
 	MAP map;
 
-/* Check to see if the item has already been posted */
+// Check to see if the item has already been posted 
 
 	for (map = context->ctx_map; map; map = map->map_next)
 		if (CMP_node_match(node, map->map_node))
@@ -3500,7 +3500,7 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
 			 symbol->sym_homonym) if (symbol->sym_type == SYM_database) {
 				dbb = (DBB) symbol->sym_object;
 				resolved = MET_declare(dbb, variable, fld_name);
-				break;			/* should be only one db in homonym list */
+				break;			// should be only one db in homonym list 
 			}
 
 		if (!resolved) {
@@ -3520,7 +3520,7 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
 														  (fld_name,
 														   field->
 														   fld_name)) break;
-						break;	/* should be only one rel in homonym list for each db */
+						break;	// should be only one rel in homonym list for each db 
 					}
 		}
 	}
@@ -3534,7 +3534,7 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
 	}
 
 	if (!resolved)
-		IBERROR(155);			/* Msg155 field referenced in BASED ON can not be resolved against readied databases */
+		IBERROR(155);			// Msg155 field referenced in BASED ON can not be resolved against readied databases 
 
 	if (local) {
 		variable->fld_dtype = field->fld_dtype;

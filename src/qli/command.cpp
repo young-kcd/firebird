@@ -68,7 +68,7 @@ int CMD_check_ready(void)
 	if (QLI_databases)
 		return FALSE;
 
-	ERRQ_msg_put(95, NULL, NULL, NULL, NULL, NULL);	/* Msg95 No databases are currently ready */
+	ERRQ_msg_put(95, NULL, NULL, NULL, NULL, NULL);	// Msg95 No databases are currently ready 
 
 	return TRUE;
 }
@@ -340,7 +340,7 @@ void CMD_set( SYN node)
 			break;
 
 		case set_form:
-			IBERROR(484);		/* FORMs not supported */
+			IBERROR(484);		// FORMs not supported 
 			break;
 
 		case set_password:
@@ -355,7 +355,7 @@ void CMD_set( SYN node)
 		case set_prompt:
 			string = (CON) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_prompt_string))
-				ERRQ_error(86, NULL, NULL, NULL, NULL, NULL);	/* Msg86 substitute prompt string too long */
+				ERRQ_error(86, NULL, NULL, NULL, NULL, NULL);	// Msg86 substitute prompt string too long 
 			strncpy(QLI_prompt_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_prompt_string[string->con_desc.dsc_length] = 0;
@@ -364,7 +364,7 @@ void CMD_set( SYN node)
 		case set_continuation:
 			string = (CON) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_cont_string))
-				ERRQ_error(87, NULL, NULL, NULL, NULL, NULL);	/* Msg87 substitute prompt string too long */
+				ERRQ_error(87, NULL, NULL, NULL, NULL, NULL);	// Msg87 substitute prompt string too long 
 			strncpy(QLI_cont_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_cont_string[string->con_desc.dsc_length] = 0;
@@ -424,7 +424,7 @@ void CMD_set( SYN node)
 #endif
 
 		default:
-			BUGCHECK(6);		/* Msg6 set option not implemented */
+			BUGCHECK(6);		// Msg6 set option not implemented 
 		}
 	}
 }
@@ -482,14 +482,14 @@ void CMD_shell( SYN node)
 		ptr = NULL;
 	return_status = 0;
 	mask = 1;
-	status = lib$spawn(ptr,		/* Command to be executed */
-					   NULL,	/* Command file */
-					   NULL,	/* Output file */
+	status = lib$spawn(ptr,		// Command to be executed 
+					   NULL,	// Command file 
+					   NULL,	// Output file 
 					   &mask,	/* sub-process characteristics mask */
 					   NULL,	/* sub-process name */
-					   NULL,	/* returned process id */
-					   &return_status,	/* completion status */
-					   &15);	/* event flag for completion */
+					   NULL,	// returned process id 
+					   &return_status,	// completion status 
+					   &15);	// event flag for completion 
 	if (status & 1)
 		while (!return_status)
 			sys$waitfr(15);

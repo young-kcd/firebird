@@ -298,7 +298,7 @@ TOK LEX_filename(void)
 		return NULL;
 	}
 
-/* notice if this looks like a quoted file name */
+// notice if this looks like a quoted file name 
 
 	if (classes[c] & CHR_quote) {
 		token->tok_type = tok_quoted;
@@ -337,10 +337,10 @@ TOK LEX_filename(void)
 		--p;
 	}
 
-/* complain on unterminated quoted string */
+// complain on unterminated quoted string 
 
 	if ((token->tok_type == tok_quoted) && (p[-1] != save))
-		IBERROR(60);			/* Msg 60 unterminated quoted string */
+		IBERROR(60);			// Msg 60 unterminated quoted string 
 
 	token->tok_length = p - token->tok_string;
 	*p = 0;
@@ -428,7 +428,7 @@ int LEX_get_line( TEXT * prompt, TEXT * buffer, int size)
 	USHORT overflow_flag;
 	SSHORT c;
 
-/* UNIX flavor */
+// UNIX flavor 
 
 	if (prompt)
 		ib_printf(prompt);
@@ -472,7 +472,7 @@ int LEX_get_line( TEXT * prompt, TEXT * buffer, int size)
 
 	if (overflow_flag) {
 		buffer[0] = 0;
-		IBERROR(476);			/* Msg 476 input line too long */
+		IBERROR(476);			// Msg 476 input line too long 
 	}
 
 	if (sw_verify)
@@ -529,7 +529,7 @@ int LEX_get_line( TEXT * prompt, TEXT * buffer, int size)
 		if (status != LIB$_INPSTRTRU)
 			return FALSE;
 		buffer[0] = 0;
-		IBERROR(476);			/* Msg 476 input line too long */
+		IBERROR(476);			// Msg 476 input line too long 
 	}
 	else if (length < size)
 		*p++ = '\n';
@@ -880,12 +880,12 @@ TOK LEX_token(void)
 		while (TRUE) {
 			if (!(next = nextchar(FALSE)) || next == '\n') {
 				retchar(next);
-				IBERROR(63);	/* Msg 63 unterminated quoted string */
+				IBERROR(63);	// Msg 63 unterminated quoted string 
 				break;
 			}
 			*p++ = next;
 			if ((p - token->tok_string) >= MAXSYMLEN)
-				ERRQ_msg_put(470, (TEXT *) MAXSYMLEN, NULL, NULL, NULL, NULL);	/* Msg 470 literal too long */
+				ERRQ_msg_put(470, (TEXT *) MAXSYMLEN, NULL, NULL, NULL, NULL);	// Msg 470 literal too long 
 
 			/* If there are 2 quotes in a row, interpret 2nd as a literal */
 
@@ -988,7 +988,7 @@ static BOOLEAN get_line( IB_FILE * file, TEXT * buffer, USHORT size)
 		return FALSE;
 
 	if (overflow_flag)
-		IBERROR(477);			/* Msg 477 input line too long */
+		IBERROR(477);			// Msg 477 input line too long 
 
 	if (sw_verify)
 		ib_fputs(buffer, ib_stdout);
@@ -1054,7 +1054,7 @@ static void next_line( BOOLEAN eof_ok)
 				&& p[-1] == '\n' && *p)
 				flag = TRUE;
 			else {
-				/* Initialize line block for retrieval */
+				// Initialize line block for retrieval 
 
 				p = QLI_line->line_data;
 				QLI_line->line_ptr = QLI_line->line_data;
@@ -1067,7 +1067,7 @@ static void next_line( BOOLEAN eof_ok)
 			}
 		}
 		else {
-			/* Initialize line block for retrieval */
+			// Initialize line block for retrieval 
 
 			QLI_line->line_ptr = QLI_line->line_data;
 			p = QLI_line->line_data;
@@ -1108,7 +1108,7 @@ static void next_line( BOOLEAN eof_ok)
 			return;
 		}
 
-		/* this is an unexpected end of file */
+		// this is an unexpected end of file 
 
 		if (QLI_line->line_type == line_blob)
 			ERRQ_print_error(64, QLI_line->line_source_name, NULL, NULL, NULL,
@@ -1121,7 +1121,7 @@ static void next_line( BOOLEAN eof_ok)
 		else {
 			if (QLI_line->line_type == line_string)
 				LEX_pop_line();
-			IBERROR(66);		/* Msg 66 unexpected eof */
+			IBERROR(66);		// Msg 66 unexpected eof 
 		}
 	}
 
@@ -1130,7 +1130,7 @@ static void next_line( BOOLEAN eof_ok)
 
 	QLI_line->line_position = QLI_position;
 
-/* Dump output to the trace file */
+// Dump output to the trace file 
 
 	if (QLI_line->line_type == line_blob)
 		while (*p)
@@ -1196,7 +1196,7 @@ static BOOLEAN scan_number( SSHORT c, TEXT ** ptr)
 		dot = TRUE;
 	}
 
-/* Gobble up digits up to a single decimal point */
+// Gobble up digits up to a single decimal point 
 
 	for (;;) {
 		c = nextchar(TRUE);
