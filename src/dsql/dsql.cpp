@@ -95,6 +95,10 @@ nested FOR loops are added.
 #include <ctype.h>
 #endif
 
+#if defined(WIN_NT)
+#define vsnprintf _vsnprintf
+#endif
+
 ASSERT_FILENAME
 #ifdef VMS
 #include <descrip.h>
@@ -1781,7 +1785,11 @@ static void trace_line(const char* message, ...) {
 	char *ptr = buffer;
 	va_list params;
 	va_start(params, message);
+#ifdef HAVE_VSNPRINTF
 	vsnprintf(ptr, sizeof(buffer), message, params);
+#else
+	vsprintf(ptr, message, params);
+#endif
 	va_end(params);
 	gds__trace_raw(buffer);
 }
