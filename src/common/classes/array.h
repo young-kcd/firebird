@@ -66,14 +66,26 @@ public:
 	{
 		ensureCapacity(InitialCapacity);
 	}
-	~Array() { if (data != getStorage()) pool->deallocate(data); }
+	~Array()
+	{
+		if (data != getStorage())
+			pool->deallocate(data);
+	}
 	void clear() { count = 0; };
-	T& operator[](int index) {
+	T& operator[](int index) const {
   		fb_assert(index >= 0 && index < count);
   		return data[index];
 	}
-	T* begin() { return data; }
-	T* end() { return data + count; }
+	T& front() const {
+  		fb_assert(count > 0);
+		return *data;
+	}
+	T& back() const {
+  		fb_assert(count > 0);
+		return *(data + (count ? count - 1 : 0));
+	}
+	T* begin() const { return data; }
+	T* end() const { return data + count; }
 	void insert(int index, const T& item) {
 		fb_assert(index >= 0 && index <= count);
 		ensureCapacity(count + 1);
