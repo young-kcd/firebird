@@ -957,6 +957,22 @@ static int compare_keys(
 		}
 
 		if (idx->idx_count > 1) {
+
+			// If we search for NULLs at the begin then we're done if the first 
+			// segment isn't the first one possible (0 for ASC, 255 for DESC).
+			if (length2 == 0) {
+				if (flags & irb_descending) {
+					if (*segment != 255) {
+						return 0;
+					}
+				}
+				else {
+					if (*segment != 0) {
+						return 0;
+					}
+				}
+			}
+
 			// if we've exhausted the segment, we've found a match
 			USHORT remainder = length2 % (Ods::STUFF_COUNT + 1);
 			if (!remainder && (*string1 != *segment)) 
