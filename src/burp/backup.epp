@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.16 2003-02-13 09:19:07 dimitr Exp $
+$Id: backup.epp,v 1.17 2003-03-04 00:00:31 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -103,7 +103,9 @@ static void put_numeric(SCHAR, SLONG);
 static void put_relation(BURP_REL);
 static int put_source_blob(SCHAR, SCHAR, ISC_QUAD *);
 static int put_text(SCHAR, TEXT *, SSHORT);
+#ifdef NOT_USED_OR_REPLACED
 static void put_trigger(enum trig_t, GDS__QUAD *, GDS__QUAD *, GDS_NAME);
+#endif
 static void set_capabilities(void);
 static int symbol_length(TEXT *, ULONG);
 static void write_character_sets(void);
@@ -2552,7 +2554,7 @@ static int put_text( SCHAR attribute, TEXT * text, SSHORT size_len)
 	return l;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void put_trigger(enum trig_t type,
 						GDS__QUAD * blob_ident,
 						GDS__QUAD * source_blob, GDS_NAME rel_name)
@@ -2582,7 +2584,7 @@ static void put_trigger(enum trig_t type,
 					(ISC_QUAD *) source_blob);
 	PUT(att_end);
 }
-
+#endif
 
 static void set_capabilities(void)
 {

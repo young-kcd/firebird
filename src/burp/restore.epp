@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.21 2003-02-17 23:22:30 brodsom Exp $
+$Id: restore.epp,v 1.22 2003-03-04 00:00:26 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -179,9 +179,12 @@ static void	store_blr_gen_id (GDS_NAME, SINT64);
 static void	stuff_string (SCHAR **, TEXT *);
 static void 	update_global_field (void);
 static void     general_on_error (void);
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN	bug_8183 (TGBL);
-
+#endif
+#ifdef DEBUG
 static UCHAR	debug_on = 0;   /* able to turn this on in the debugger */
+#endif
 
 static USHORT	flag_on_line = TRUE;	/* indicates whether we will bring
 					   the database on-line :
@@ -7129,6 +7132,7 @@ if (req_handle1)
 tdgbl->gbl_global_fields = (GFLD)0;
 }
 
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN bug_8183 (
     TGBL       tdgbl)
 {
@@ -7218,3 +7222,4 @@ BOOLEAN result = FALSE;
 
   return result;
 }
+#endif
