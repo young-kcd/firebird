@@ -144,9 +144,6 @@
 
 typedef unsigned char FILECHAR;
 
-typedef USHORT fss_wchar_t;
-typedef int fss_size_t;
-
 // extern declarations for the allocator functions for builtin charsets
 extern CharSetAllocFunc INTL_charset_alloc_func(short);
 extern TextTypeAllocFunc INTL_texttype_alloc_func(short);
