@@ -99,9 +99,6 @@ extern int errno;
 #include <sys/types.h>
 #include <sys/timeb.h>
 #include <winsock2.h>
-#include <windows.h>
-#undef TEXT
-#define TEXT		SCHAR
 #define SYS_ERROR	isc_arg_win32
 #define ERRNO		GetLastError()
 #endif

@@ -67,10 +67,6 @@
 
 #ifdef WIN_NT
 #include <windows.h>
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT		SCHAR
 #endif
 
 #ifndef O_SYNC

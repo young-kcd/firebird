@@ -61,11 +61,6 @@
 #endif
 
 #ifdef WIN_NT
-#include <windows.h>
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT		SCHAR
 #define SYS_ERROR	isc_arg_win32
 #endif
 

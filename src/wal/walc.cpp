@@ -56,17 +56,8 @@
 
 #ifdef WIN_NT
 #include <process.h>
-#include <windows.h>
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT		SCHAR
-
 #define WAL_MUTEX	WAL_handle->wal_mutex
-#endif
-
 #ifdef SUPERSERVER
-#ifdef WIN_NT
 #define getpid		GetCurrentThreadId
 #endif
 #endif

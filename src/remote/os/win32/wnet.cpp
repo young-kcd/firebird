@@ -48,12 +48,6 @@
 
 #include <stdarg.h>
 
-#include <windows.h>
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT		SCHAR
-
 #define ERRNO		GetLastError()
 
 #ifndef SYS_ERR

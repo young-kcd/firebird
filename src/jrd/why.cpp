@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.40 2003-11-16 01:44:51 brodsom Exp $
+$Id: why.cpp,v 1.41 2003-11-16 16:17:38 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -105,10 +105,6 @@ $Id: why.cpp,v 1.40 2003-11-16 01:44:51 brodsom Exp $
 
 #ifdef WIN_NT
 #include <windows.h>
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT		SCHAR
 #endif
 
 #ifndef F_OK

@@ -108,9 +108,6 @@
 
 #ifdef WIN_NT
 #include <process.h>
-#include <windows.h>
-#undef TEXT
-#define TEXT		SCHAR
 #endif
 
 #ifndef WIN_NT

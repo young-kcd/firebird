@@ -34,9 +34,7 @@
 #ifdef HAVE_SYS_TIMEB_H
 # include <sys/timeb.h>
 #endif
-#include <winsock2.h>
-#undef TEXT
-#define TEXT	SCHAR
+#include <winsock2.h> // timeval
 #endif
 
 #include "../jrd/ods.h"

@@ -41,9 +41,6 @@
 #include "../utilities/gsec/secur_proto.h"
 #include "../utilities/gsec/gsecswi.h"
 #include "../utilities/common/cmd_util_proto.h"
-#ifdef WIN_NT
-#include <windows.h>
-#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

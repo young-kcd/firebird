@@ -179,15 +179,6 @@ typedef struct mnt {
 } MNT;
 
 
-/* Windows NT stuff */
-#ifdef WIN_NT
-#include <windows.h>
-#ifndef TEXT
-#define TEXT		SCHAR
-#endif
-#endif
-
-
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64
 #endif

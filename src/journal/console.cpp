@@ -65,12 +65,6 @@
 #define HANDLE          int
 #endif
 
-#ifdef WIN_NT
-#include <windows.h>
-#undef TEXT
-#define TEXT		SCHAR
-#endif
-
 #define START_COMMAND	"status"
 
 static void close_connection(SLONG);

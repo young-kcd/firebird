@@ -165,17 +165,10 @@ static const char * FB_PID_FILE = "fb_%d";
 
 #ifdef WIN_NT
 #define _WINSOCKAPI_
-
-#include <windows.h>
 #include <share.h>
 #include "thd_proto.h"
 #include "err_proto.h"
-
 #undef leave
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT		SCHAR
 #endif /* WIN_NT */
 
 // Number of times to try to generate new name for temporary file

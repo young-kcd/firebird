@@ -52,14 +52,6 @@
 #include <sys/sem.h>
 #endif
 
-#ifdef WIN_NT
-#include <windows.h>
-#ifdef TEXT
-#undef TEXT
-#define TEXT            SCHAR
-#endif
-#endif
-
 #include "../jrd/common.h"
 #include "../jrd/file_params.h"
 

@@ -73,12 +73,6 @@
 
 #ifdef WIN_NT
 #include <process.h>
-#include <windows.h>
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT		SCHAR
-
 #define sleep(seconds)	Sleep ((seconds) * 1000)
 #endif
 
