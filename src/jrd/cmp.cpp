@@ -4415,10 +4415,29 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 /* Handle sub-expressions here */
 
+	if (node->nod_type == nod_modify) {
+		/* AB: Mark the streams involved with an UPDATE statement
+		   active. So that the optimizer can use indices for 
+		   eventually used sub-selects. */
+		stream = (USHORT) node->nod_arg[e_mod_org_stream];
+		csb->csb_rpt[stream].csb_flags |= csb_active;
+		stream = (USHORT) node->nod_arg[e_mod_new_stream];
+		csb->csb_rpt[stream].csb_flags |= csb_active;
+	}
+
 	ptr = node->nod_arg;
 
-	for (end = ptr + node->nod_count; ptr < end; ptr++)
+	for (end = ptr + node->nod_count; ptr < end; ptr++) {
 		pass2(tdbb, csb, *ptr, node);
+	}
+
+	if (node->nod_type == nod_modify) {
+		/* AB: Remove the previous flags */
+		stream = (USHORT) node->nod_arg[e_mod_org_stream];
+		csb->csb_rpt[stream].csb_flags &= ~csb_active;
+		stream = (USHORT) node->nod_arg[e_mod_new_stream];
+		csb->csb_rpt[stream].csb_flags &= ~csb_active;
+	}
 
 /* Handle any residual work */
 
