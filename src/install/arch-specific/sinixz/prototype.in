@@ -1,4 +1,4 @@
-# $Id: prototype.in,v 1.13 2003-03-11 07:35:45 eku Exp $
+# $Id: prototype.in,v 1.14 2003-03-17 12:06:08 eku Exp $
 #-------------------------------------------------------------------------------
 
 !SRCDIR=@NEW_FIREBIRD_DIR@
@@ -54,7 +54,7 @@ f none @prefix@/bin/qli=$SRCDIR/bin/qli  0755 root root
 #d none @prefix@/examples/v5  0755 root root
 
 d none @prefix@/help  0755 root root
-f none @prefix@/help/help.gdb=$SRCDIR/help/help.gdb  0444 root root
+f none @prefix@/help/help.fdb=$SRCDIR/help/help.fdb  0444 root root
 
 d none @prefix@/include  0755 root root
 f none @prefix@/include/blr.h=$SRCDIR/include/blr.h  0644 root root

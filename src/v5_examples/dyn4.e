@@ -41,7 +41,7 @@ int	Input_ptr = 0;
 char Db_name[128];
 
 EXEC SQL
-	SET DATABASE empdb = "employee.gdb" RUNTIME :Db_name;
+	SET DATABASE empdb = "employee.fdb" RUNTIME :Db_name;
 
 char *upd_str =
 	"UPDATE department SET budget = ? * budget + budget WHERE dept_no = ?";
@@ -59,7 +59,7 @@ ARGLIST(char **argv)
         if (argc > 1)
                 strcpy(Db_name, argv[1]);
         else
-                strcpy(Db_name, "employee.gdb");
+                strcpy(Db_name, "employee.fdb");
 
 
 	EXEC SQL

@@ -40,7 +40,7 @@
 
 
 
-DATABASE DB = "msg.gdb";
+DATABASE DB = "msg.fdb";
 
 static void ascii_str_upper(UCHAR *);
 static int get_sql_class(UCHAR *);

@@ -16,11 +16,11 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-define database "isc.gdb"
+define database "isc.fdb"
 	page_size 1024;
 
 /*
-	NOTE:  This file sets up the the isc_tmp.gdb database that
+	NOTE:  This file sets up the the isc_tmp.fdb database that
 	       will ultimately get shipped as isc.gbak in the 
 	       interbase/bin directory.  This file is part one of a 
 	       two step process.  The reason for this is that gdef

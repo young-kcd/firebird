@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.example5,v 1.3 2002-09-24 13:01:12 eku Exp $
+#   $Id: Makefile.in.example5,v 1.4 2003-03-17 12:05:47 eku Exp $
 # 
 
 ROOT=../..
@@ -69,8 +69,8 @@ all: v5_examples
 
 # PR 2002-06-23 - Temporarily removed intlemp from the build as it caused a segfault
 # The lines to change back are prefixed with ##
-##v5_examples: employee.gdb intlemp.gdb $(NT_EXAMPLES) makefile.example
-v5_examples: employee.gdb $(NT_EXAMPLES) makefile.example
+##v5_examples: employee.fdb intlemp.fdb $(NT_EXAMPLES) makefile.example
+v5_examples: employee.fdb $(NT_EXAMPLES) makefile.example
 	$(CP) $(EXAMPLES_SRC)readme $(EXAMPLES_DEST)README
 	$(CP) $(EXAMPLES_SRC)align.h $(EXAMPLES_DEST)align.h
 	$(CP) $(EXAMPLES_SRC)api1.c $(EXAMPLES_DEST)api1.c
@@ -100,14 +100,14 @@ v5_examples: employee.gdb $(NT_EXAMPLES) makefile.example
 	$(CP) $(EXAMPLES_SRC)dyn5.e $(EXAMPLES_DEST)dyn5.e
 	$(CP) $(EXAMPLES_SRC)dynfull.e $(EXAMPLES_DEST)dynfull.e
 	echo $(LD_LIBRARY_PATH)
-	$(GBAK) employee.gdb $(EXAMPLES_DEST)employee.gbk
-#	-$(RM) $(EXAMPLES_DEST)employee.gdb
-	$(GBAK) -r $(EXAMPLES_DEST)employee.gbk $(EXAMPLES_DEST)employee.gdb
+	$(GBAK) employee.fdb $(EXAMPLES_DEST)employee.gbk
+#	-$(RM) $(EXAMPLES_DEST)employee.fdb
+	$(GBAK) -r $(EXAMPLES_DEST)employee.gbk $(EXAMPLES_DEST)employee.fdb
 	$(CP) $(EXAMPLES_SRC)example.h $(EXAMPLES_DEST)example.h
 	$(CP) $(EXAMPLES_SRC)api9f.sql $(EXAMPLES_DEST)api9f.sql
-##	$(GBAK) intlemp.gdb $(EXAMPLES_DEST)intlemp.gbk
-#	-$(RM) $(EXAMPLES_DEST)intlemp.gdb
-##	$(GBAK) -r $(EXAMPLES_DEST)intlemp.gbk $(EXAMPLES_DEST)intlemp.gdb
+##	$(GBAK) intlemp.fdb $(EXAMPLES_DEST)intlemp.gbk
+#	-$(RM) $(EXAMPLES_DEST)intlemp.fdb
+##	$(GBAK) -r $(EXAMPLES_DEST)intlemp.gbk $(EXAMPLES_DEST)intlemp.fdb
 	$(CP) $(EXAMPLES_SRC)stat1.e $(EXAMPLES_DEST)stat1.e
 	$(CP) $(EXAMPLES_SRC)stat10.e $(EXAMPLES_DEST)stat10.e
 	$(CP) $(EXAMPLES_SRC)stat11.e $(EXAMPLES_DEST)stat11.e
@@ -131,13 +131,13 @@ nt_examples:
 	$(CP) $(EXAMPLES_SRC)makefile.bc $(EXAMPLES_DEST)Makefile.bc
 	$(CP) $(EXAMPLES_SRC)makefile.msc $(EXAMPLES_DEST)Makefile.msc
 
-# Ok the following little story is, first build empbuild.gdb an empty db
+# Ok the following little story is, first build empbuild.fdb an empty db
 # using a script file.  Then we can compile the empbuild.e file, then we 
-# can run it to create employee.gdb database populated with data by the
+# can run it to create employee.fdb database populated with data by the
 # program.  Thats how I found it.
 
-employee.gdb:	empbuild$(EXEC_EXT) $(INPUT_FILES)
-	-$(RM) employee.gdb
+employee.fdb:	empbuild$(EXEC_EXT) $(INPUT_FILES)
+	-$(RM) employee.fdb
 #	$(CP) $(SOURCE)/examples/empddl.sql .
 #	$(CP) $(SOURCE)/examples/indexoff.sql .
 #	$(CP) $(SOURCE)/examples/indexon.sql .
@@ -146,8 +146,8 @@ employee.gdb:	empbuild$(EXEC_EXT) $(INPUT_FILES)
 #	$(CP) $(SOURCE)/examples/proj.inp .
 #	$(CP) $(SOURCE)/examples/job.inp .
 #	$(CP) $(SOURCE)/examples/qtr.inp .
-	./empbuild employee.gdb
-	-$(CHMOD_6) employee.gdb
+	./empbuild employee.fdb
+	-$(CHMOD_6) employee.fdb
 
 empbuild: $(EMPBLD_OBJ) $(LIBGDS_DEP)
 	-$(RM) $@
@@ -158,29 +158,29 @@ empbuild.exe:	$(EMPBLD_OBJ)
 	-$(RM) empbuild.exe
 	$(LD) $(O_EXE_SWITCH)empbuild $(LINK_OPTS) empbuild.o $(GDS_LINK)
 
-empbuild.c:	empbuild.gdb empbuild.e
+empbuild.c:	empbuild.fdb empbuild.e
 
-empbuild.gdb : empddl.sql empbld.sql
+empbuild.fdb : empddl.sql empbld.sql
 	-$(RM) $@
 	$(ISQL) -i empbld.sql
 
 
-# The chain for intlemp.gdb is the same a script file to create an empty database
+# The chain for intlemp.fdb is the same a script file to create an empty database
 # to allow a .e program to be compiled, to then create and populate with data
-# the intlemp.gdb database.
+# the intlemp.fdb database.
 
-intlemp.gdb:	intlbld$(EXEC_EXT) $(INTL_FILES)
-	-$(RM) intlemp.gdb
+intlemp.fdb:	intlbld$(EXEC_EXT) $(INTL_FILES)
+	-$(RM) intlemp.fdb
 #	$(CP) $(SOURCE)/examples/intlddl.sql .
 #	$(CP) $(SOURCE)/examples/indexoff.sql .
 #	$(CP) $(SOURCE)/examples/indexon.sql .
 #	$(CP) $(SOURCE)/examples/intldml.sql .
 #	$(CP) $(SOURCE)/examples/lang.inp .
-	./intlbld intlemp.gdb
-	-$(CHMOD_6) intlemp.gdb
+	./intlbld intlemp.fdb
+	-$(CHMOD_6) intlemp.fdb
 
-intlbuild.gdb : intlddl.sql intlbld.sql 
-	-$(RM) intlbuild.gdb
+intlbuild.fdb : intlddl.sql intlbld.sql 
+	-$(RM) intlbuild.fdb
 	$(ISQL) -i intlbld.sql
 
 intlbld: $(INTLBLD_OBJ) $(LIBGDS_DEP)
@@ -193,7 +193,7 @@ intlbld.exe:	$(INTLBLD_OBJ)
 	$(LD) $(O_EXE_SWITCH)intlbld $(LINK_OPTS) intlbld.o $(GDS_LINK)
 
 
-intlbld.c:	intlbuild.gdb intlbld.e
+intlbld.c:	intlbuild.fdb intlbld.e
 
 
 

@@ -38,7 +38,7 @@
  *
  */
 
-define database "v33d_ods72.gdb"
+define database "v33d_ods72.fdb"
 	page_size 1024;
 
 

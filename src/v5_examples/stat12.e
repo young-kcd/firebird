@@ -44,7 +44,7 @@ EXEC SQL
 	BEGIN DECLARE SECTION;
 
 EXEC SQL
-	SET DATABASE empdb = "employee.gdb";
+	SET DATABASE empdb = "employee.fdb";
 
 long	*t1;
 long	*t2;

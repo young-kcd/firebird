@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-modify database 'yachts.gdb';
+modify database 'yachts.fdb';
 
 delete relation rdb$parameters;
 

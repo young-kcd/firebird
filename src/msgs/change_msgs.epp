@@ -34,7 +34,7 @@
 
 
 
-DATABASE DB = "msg.gdb";
+DATABASE DB = "msg.fdb";
 
 #define FAC_SQL_POSITIVE	14
 #define FAC_SQL_NEGATIVE	13

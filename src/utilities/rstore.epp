@@ -28,7 +28,7 @@
 #include "../utilities/rstor_proto.h"
 #include "../jrd/gds_proto.h"
 
-DATABASE DB = STATIC FILENAME "rebuild.gdb";
+DATABASE DB = STATIC FILENAME "rebuild.fdb";
 
 static void store_headers(RBDB);
 

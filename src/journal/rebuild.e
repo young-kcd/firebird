@@ -106,9 +106,9 @@ extern int errno;
 #define MOVE_BYTE(x_from,x_to)	*x_to++ = *x_from++;
 
 DATABASE DB =
-	STATIC COMPILETIME FILENAME "journal.gdb" RUNTIME FILENAME journal_dir;
+	STATIC COMPILETIME FILENAME "journal.fdb" RUNTIME FILENAME journal_dir;
 DATABASE DB_NEW =
-	STATIC COMPILETIME FILENAME "journal.gdb" RUNTIME FILENAME db_name;
+	STATIC COMPILETIME FILENAME "journal.fdb" RUNTIME FILENAME db_name;
 
 /* Page cache */
 
@@ -3273,7 +3273,7 @@ static void rec_restore(SCHAR * journal_name, SCHAR * dbn)
 	else if (journal_dir[size - 1] == '\\')
 		size--;
 #endif
-	strcpy(journal_dir + size, "/journal.gdb");
+	strcpy(journal_dir + size, "/journal.fdb");
 	READY journal_dir AS DB 
     ON_ERROR 
         rebuild_abort(152);

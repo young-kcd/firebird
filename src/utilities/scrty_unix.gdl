@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-modify database "isc.gdb";
+modify database "isc.fdb";
 
 /*
 	NOTE:  This file sets up the the platform specific

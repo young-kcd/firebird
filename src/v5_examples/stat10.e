@@ -32,7 +32,7 @@ int count_types (void);
 int count_records (void);
 long pr_error (void);
 
-char *dbname = "employee.gdb";
+char *dbname = "employee.fdb";
 
 EXEC SQL INCLUDE SQLCA;
 
@@ -45,17 +45,17 @@ int main  (void)
 	 */
 
 	EXEC SQL
-		SET DATABASE db1 = "employee.gdb";
+		SET DATABASE db1 = "employee.fdb";
 
 	EXEC SQL
-		SET DATABASE db2 = "employe2.gdb";
+		SET DATABASE db2 = "employe2.fdb";
 
 
 	/*
 	 *	Open a single database.
 	 */
 
-	printf("\n1. Opening database employee.gdb.\n");
+	printf("\n1. Opening database employee.fdb.\n");
 
 	EXEC SQL
 		CONNECT db1;

@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-/*create database "employee.gdb";*/
+/*create database "employee.fdb";*/
 /**
  **  Create a sample employee database.
  **

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.30 2003-03-12 12:39:56 eku Exp $
+#  $Id: Makefile.in.firebird,v 1.31 2003-03-17 12:05:48 eku Exp $
 #
 
 ROOT=..
@@ -476,7 +476,7 @@ $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 
 #___________________________________________________________________________
 
-# When the msgs.gdb dataabse has changed with new messages a number of header
+# When the msgs.fdb dataabse has changed with new messages a number of header
 # files need to be regenerated.  This is the target to do it.  These new
 # header files (placed in include/gen) then need to be committed since they
 # are not generally rebuilt from scratch
@@ -557,7 +557,7 @@ clean_config: clean clean_makefiles
 
 # Not sure if this one is still needed MOD 7-Oct-2002
 clean_dbs:
-	-rm -f refDatabases/*\.gdb
+	-rm -f refDatabases/*\.fdb
 
 
 clean_objects:

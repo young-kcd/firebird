@@ -61,7 +61,7 @@ ARGLIST(char **argv)
     if (argc > 1)
         strcpy(empdb, argv[1]);
     else
-        strcpy(empdb, "employee.gdb");
+        strcpy(empdb, "employee.fdb");
 
 
     strcpy(sel_str, "SELECT proj_name, proj_desc, product FROM project WHERE \

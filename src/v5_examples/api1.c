@@ -54,7 +54,7 @@ ARGLIST(char **argv)
     if (argc > 1)
         strcpy(new_dbname, argv[1]);
     else
-        strcpy(new_dbname, "new.gdb");
+        strcpy(new_dbname, "new.fdb");
 
     /*
      *    Construct a 'create database' statement.

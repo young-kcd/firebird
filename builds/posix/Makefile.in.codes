@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.codes,v 1.3 2003-02-28 05:22:09 aafemt Exp $
+#  $Id: Makefile.in.codes,v 1.4 2003-03-17 12:05:44 eku Exp $
 #
 ROOT=..
 ObjModuleName=codes
@@ -65,7 +65,7 @@ generated_headers: build_codes include/gen/ids.h
 
 # Rebuild error codes
 
-build_codes: $(BIN)/codes msg.gdb
+build_codes: $(BIN)/codes msg.fdb
 	$(BIN)/codes include/gen
 
 $(SRC)/jrd/codes.cpp: $(SRC)/jrd/codes.epp

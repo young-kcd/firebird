@@ -101,7 +101,7 @@ III.  OPERATION
    client server, validate gives up with the message:
 
    "Lock timeout during wait transaction
-   -- Object "database_filename.gdb" is in use"
+   -- Object "database_filename.fdb" is in use"
 
    If other processes or servers are attached to the database, validate 
    waits for the exclusive lock on the database (i.e. waits for every 

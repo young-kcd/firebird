@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-define database "rebuild.gdb" ;
+define database "rebuild.fdb" ;
 define relation full_pages
     number	long,
     type	short,

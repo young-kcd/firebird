@@ -52,7 +52,7 @@ extern int errno;
 #endif
 
 #ifndef JOURNAL_DB
-#define JOURNAL_DB	"journal.gdb"
+#define JOURNAL_DB	"journal.fdb"
 #endif
 
 typedef struct blk {
@@ -64,7 +64,7 @@ typedef struct blk {
 #include "../jrd/jrn.h"
 #include "../jrd/license.h"
 
-DATABASE DB = "journal.gdb";
+DATABASE DB = "journal.fdb";
 
 extern struct tm *localtime();
 extern UCHAR *gds__alloc();

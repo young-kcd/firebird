@@ -57,7 +57,7 @@ ARGLIST(char **argv)
     if (argc > 1)
         strcpy(Db_name, argv[1]);
     else
-        strcpy(Db_name, "employee.gdb");
+        strcpy(Db_name, "employee.fdb");
 
     if (isc_attach_database(status, 0, Db_name, &DB, 0, NULL))
     {

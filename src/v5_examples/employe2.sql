@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 set sql dialect 1;
-create database "employe2.gdb";
+create database "employe2.fdb";
 /*
  *	Currency cross rates:  convert one currency type into another.
  *

@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-define database "msg.gdb"
+define database "msg.fdb"
 	page_size 1024;
 
 

@@ -20,7 +20,7 @@
 #include "../jrd/gds.h"
 #include "../jrd/common.h"
 
-DATABASE DB = "msg.gdb";
+DATABASE DB = "msg.fdb";
 
 typedef struct {
 	SLONG value;

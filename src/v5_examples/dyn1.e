@@ -29,7 +29,7 @@
 
 void pr_error (char *operation);
 
-char    *new_dbname     = "new.gdb";
+char    *new_dbname     = "new.fdb";
 
 char    *create_tbl     = "CREATE TABLE dbinfo (when_created DATE)";
 char    *insert_date    = "INSERT INTO dbinfo VALUES ('NOW')";
@@ -39,7 +39,7 @@ char    *insert_date    = "INSERT INTO dbinfo VALUES ('NOW')";
  *  Declare a database handle, which will be used by the new database.
  */
 EXEC SQL
-	SET DATABASE db = COMPILETIME "employee.gdb";
+	SET DATABASE db = COMPILETIME "employee.fdb";
 
 int main(ARG(int, argc), ARG(char **, argv))
 ARGLIST(int argc)
@@ -54,7 +54,7 @@ ARGLIST(char **argv)
 	 */
 
 	EXEC SQL
-		EXECUTE IMMEDIATE "CREATE DATABASE 'new.gdb'";
+		EXECUTE IMMEDIATE "CREATE DATABASE 'new.fdb'";
 
 	if (SQLCODE)
 	{

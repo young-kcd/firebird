@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-modify database 'yachts.gdb';
+modify database 'yachts.fdb';
 
 define field RDB$PROCEDURE_BLR		blob sub_type 2;
 define field RDB$PROCEDURE_ID		short;

@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.jrd,v 1.8 2003-03-06 00:39:27 brodsom Exp $
+#  $Id: Makefile.in.jrd,v 1.9 2003-03-17 12:05:49 eku Exp $
 #
 ROOT=../..
 
@@ -707,12 +707,12 @@ build_alt_use_main: alt_use_sec.h.pre
 
 
 #$(SRC)/codes.cpp:	$(SRC)/codes.epp
-codes.cpp:	$(SRC)/codes.epp  msg.gdb
+codes.cpp:	$(SRC)/codes.epp  msg.fdb
 	$(GPRE) -n -manual -raw -string $< $@
 
 
-msg.gdb:
-	ln -fs $(SRC_ROOT)/refDatabases/msg.gdb msg.gdb
+msg.fdb:
+	ln -fs $(SRC_ROOT)/refDatabases/msg.fdb msg.fdb
 
 #$(SRC)/fun.cpp: $(SRC)/fun.epp
 #	$(GPRE) -n -gds -raw -ids $< $@

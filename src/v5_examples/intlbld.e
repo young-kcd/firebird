@@ -28,7 +28,7 @@
 
 /* 
 **  Intlbld.e   International version of Empbuild.e.  Default database
-**              name was changed to 'intlemp.gdb'.  Two of the files
+**              name was changed to 'intlemp.fdb'.  Two of the files
 **              executed as ISQL input files were modified: intlddl.sql
 **              and intldml.sql are used by this program.
 **
@@ -48,7 +48,7 @@ static FILE	*Fp;
 
 EXEC SQL INCLUDE SQLCA;
 
-EXEC SQL SET DATABASE DB = COMPILETIME "intlbuild.gdb" RUNTIME :Db_name;
+EXEC SQL SET DATABASE DB = COMPILETIME "intlbuild.fdb" RUNTIME :Db_name;
 
 int main (
     int		argc,
@@ -68,7 +68,7 @@ TEXT	cmd [140];
 if (argc > 1)
     strcpy (Db_name, argv[1]);
 else
-    strcpy (Db_name, "intlemp.gdb");
+    strcpy (Db_name, "intlemp.fdb");
 
 /* Create the database */
 

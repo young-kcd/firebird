@@ -60,11 +60,11 @@ ARGLIST(char **argv)
     if (argc > 1)
         strcpy(empdb, argv[1]);
     else
-        strcpy(empdb, "employee.gdb");
+        strcpy(empdb, "employee.fdb");
     if (argc > 2)
         strcpy(empdb2, argv[2]);
     else
-        strcpy(empdb2, "employe2.gdb");
+        strcpy(empdb2, "employe2.fdb");
 
 
     /* Open database 1. */

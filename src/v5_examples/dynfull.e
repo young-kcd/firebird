@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: dynfull.e,v 1.3 2003-02-28 13:20:00 brodsom Exp $
+$Id: dynfull.e,v 1.4 2003-03-17 12:06:47 eku Exp $
 */
 
 #include "example.h"
@@ -61,7 +61,7 @@ EXEC SQL
 	SET SQL DIALECT 3;
 
 EXEC SQL
-	SET DATABASE db = COMPILETIME "employee.gdb";
+	SET DATABASE db = COMPILETIME "employee.fdb";
 
 
 

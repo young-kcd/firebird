@@ -42,7 +42,7 @@
 
 #define MAX_LEVELS	4
 
-DATABASE DB = "msg.gdb";
+DATABASE DB = "msg.fdb";
 
 static void ascii_str_to_upper(TEXT *);
 static USHORT do_msgs(TEXT *, TEXT *, USHORT);
@@ -105,7 +105,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	SSHORT len;
 	BASED ON LOCALES.LOCALE this_locale;
 
-	strcpy(db_file, "msg.gdb");
+	strcpy(db_file, "msg.fdb");
 	strcpy(filename, FILENAME);
 	pathname = NULL;
 	locale = NULL;

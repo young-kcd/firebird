@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-define database "bar.gdb";
+define database "bar.fdb";
 
 /*
 define generator RDB$SECURITY_CLASS;

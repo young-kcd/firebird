@@ -235,7 +235,7 @@ void GJRN_get_msg(
  **************************************
  *
  * Functional description
- *	Gets a string from the msg.gdb filling in the required params.
+ *	Gets a string from the msg.fdb filling in the required params.
  *
  **************************************/
 

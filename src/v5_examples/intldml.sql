@@ -24,7 +24,7 @@
  *  Based on the file empdml.sql.
  *
  *  Changes for international example:
- *  SET NAMES must be done before a connect to the intlemp.gdb
+ *  SET NAMES must be done before a connect to the intlemp.fdb
  *  or we see transliteration errors on insert.  It is not enough 
  *  to do this in the C program that executes this script.
  *  - Added additional countries
@@ -39,7 +39,7 @@
  */
 COMMIT;
 SET NAMES ISO8859_1;
-CONNECT intlemp.gdb;
+CONNECT intlemp.fdb;
 
 INSERT INTO country (country, currency) VALUES ('USA',         'Dollar');
 INSERT INTO country (country, currency) VALUES ('UK',          'Pound'); 
@@ -368,7 +368,7 @@ COMMIT;
  *  The salaries initialized here are not final.  Employee salaries are
  *  updated below -- see salary_history.  
  */
-/*  Original data for the US employee.gdb example plus additional rows
+/*  Original data for the US employee.fdb example plus additional rows
     for Europe and Canada.  CEO name was changed.
 */
 

@@ -40,7 +40,7 @@ long *t3;
 char Db_name[128];
 
 EXEC SQL
-	SET DATABASE empdb = COMPILETIME "employee.gdb" RUNTIME :Db_name;
+	SET DATABASE empdb = COMPILETIME "employee.fdb" RUNTIME :Db_name;
 
 long		cust_no;
 long		tot;
@@ -59,7 +59,7 @@ ARGLIST(char **argv)
 	if (argc > 1)
 		strcpy (Db_name, argv[1]);
 	else
-		strcpy (Db_name, "employee.gdb");
+		strcpy (Db_name, "employee.fdb");
 	/* Connect to the database. */
 
 	EXEC SQL 

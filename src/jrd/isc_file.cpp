@@ -90,7 +90,7 @@
 
 
 #define LOGICAL_NAME_TABLE	"LNM$FILE_DEV"
-#define DEFAULT_FILE_NAME	".gdb"
+#define DEFAULT_FILE_NAME	".fdb"
 #define INET_FLAG		'^'
 
 typedef struct itm {
@@ -773,7 +773,7 @@ int ISC_expand_filename(
 		length = JRD_getdir(expanded_name, MAXPATHLEN);
 	if (length && length < MAXPATHLEN) {
 		/**
-	case where temp is of the form "c:foo.gdb" and
+	case where temp is of the form "c:foo.fdb" and
 	expanded_name is "c:\x\y".
         **/
 		if (drive_letter_present && device[0] == expanded_name[0]) {
@@ -781,7 +781,7 @@ int ISC_expand_filename(
 			strcat(expanded_name, temp + 2);
 		}
 		/**
-	case where temp is of the form "foo.gdb" and
+	case where temp is of the form "foo.fdb" and
 	expanded_name is "c:\x\y".
         **/
 		else if (!drive_letter_present) {
@@ -790,17 +790,17 @@ int ISC_expand_filename(
 		}
 		else {
 		/**
-	case where temp is of the form "d:foo.gdb" and
+	case where temp is of the form "d:foo.fdb" and
 	expanded_name is "c:\x\y".
 	Discard expanded_name and use temp as it is.
 	**/
 			/* in this case use the temp but we need to ensure that we expand to
-			 * temp from "d:foo.gdb" to "d:\foo.gdb" */
+			 * temp from "d:foo.fdb" to "d:\foo.gdb" */
 			if (_fullpath(expanded_name, temp, MAXPATHLEN) != NULL) {
 				TEXT expanded_name2[MAXPATHLEN];
 
 				/* convert then name to its shorter version ie. convert
-				 * longfilename.gdb to longfi~1.gdb */
+				 * longfilename.fdb to longfi~1.gdb */
 				length =
 					(USHORT) GetShortPathName(expanded_name, expanded_name2,
 											  MAXPATHLEN);
@@ -821,8 +821,8 @@ int ISC_expand_filename(
 		if (_fullpath(expanded_name, temp, MAXPATHLEN) != NULL) {
 			TEXT expanded_name2[MAXPATHLEN];
 
-			/* convert then name to its shorter version ie. convert longfilename.gdb
-			 * to longfi~1.gdb */
+			/* convert then name to its shorter version ie. convert longfilename.fdb
+			 * to longfi~1.fdb */
 			file_length =
 				(USHORT) GetShortPathName(expanded_name, expanded_name2,
 										  MAXPATHLEN);

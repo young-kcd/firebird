@@ -120,7 +120,7 @@
 
 DATABASE
 	DB =
-	STATIC COMPILETIME FILENAME "journal.gdb" RUNTIME FILENAME journal_db;
+	STATIC COMPILETIME FILENAME "journal.fdb" RUNTIME FILENAME journal_db;
 
 #define LOGFILE		"journal.log"
 #define MAX_CHANNEL	64
@@ -3294,7 +3294,7 @@ static int start_server(UCHAR * journal_dir,
 /* Check in with database */
 
 	strcpy(journal_db, journal_directory);
-	strcpy(journal_db + len - 1, "/journal.gdb");
+	strcpy(journal_db + len - 1, "/journal.fdb");
 
 	READY 
     ON_ERROR 

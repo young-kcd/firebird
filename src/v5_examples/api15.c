@@ -77,7 +77,7 @@ ARGLIST(char **argv)
 
     strcpy(user_name, "guest");
     strcpy(password, "guest");
-    strcpy(dbname, "employee.gdb");
+    strcpy(dbname, "employee.fdb");
 
     if (argc > 1)
         strcpy(dbname, argv[1]);

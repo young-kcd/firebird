@@ -82,7 +82,7 @@ ARGLIST(char **argv)
 	if (argc > 1)
                 strcpy(dbname, argv[1]);
         else
-		strcpy(dbname, "employee.gdb");
+		strcpy(dbname, "employee.fdb");
 
 
 	strcpy (ids[0], "new_order");

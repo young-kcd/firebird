@@ -58,7 +58,7 @@
  *
  */
 
-define database "ods_91.gdb"
+define database "ods_91.fdb"
 	page_size 1024;
 
 

@@ -33,7 +33,7 @@
 /* The MSG.GDB database is found under the /msgs component subdirectory. 
    Use links or logicals to point it there, thanks!   AMG */
 
-DATABASE DB = FILENAME "msg.gdb";
+DATABASE DB = FILENAME "msg.fdb";
 
 #define CODES_PAS	"gds_codes.pas"
 #define CODES_FTN	"gds_codes.ftn"

@@ -48,7 +48,7 @@ static FILE	*Fp;
 
 EXEC SQL INCLUDE SQLCA;
 
-EXEC SQL SET DATABASE DB = COMPILETIME "empbuild.gdb" RUNTIME :Db_name;
+EXEC SQL SET DATABASE DB = COMPILETIME "empbuild.fdb" RUNTIME :Db_name;
 
 int main (
     int		argc,
@@ -68,7 +68,7 @@ TEXT	cmd [140];
 if (argc > 1)
     strcpy (Db_name, argv[1]);
 else
-    strcpy (Db_name, "employee.gdb");
+    strcpy (Db_name, "employee.fdb");
 
 /* Create the database */
 

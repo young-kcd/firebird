@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.12 2003-02-10 11:54:30 dimitr Exp $
+#  $Id: Makefile.in.refDatabases,v 1.13 2003-03-17 12:05:50 eku Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -62,9 +62,9 @@ export INTERBASE
 # superuser.  You do not have to be root to build classic, it's just a warning
 # and the build process works fine. 
 
-empty_db : empty.gdb yachts.lnk
+empty_db : empty.fdb yachts.lnk
 
-empty.gdb : $(BIN)/create_db
+empty.fdb : $(BIN)/create_db
 	-$(RM) $@
 	$(BIN)/create_db $@
 	touch $@
@@ -73,9 +73,9 @@ empty.gdb : $(BIN)/create_db
 # Ok so Jim had/has a sailing theme, and the sample database that a lot
 # of .epp files require to compile is yachts.lnk. MOD 05-Aug-2002
 
-yachts.lnk: empty.gdb
+yachts.lnk: empty.fdb
 	$(RM) -f yachts.lnk
-	ln -fs $(SRC_ROOT)/empty.gdb yachts.lnk
+	ln -fs $(SRC_ROOT)/empty.fdb yachts.lnk
 
 
 
@@ -84,18 +84,18 @@ yachts.lnk: empty.gdb
 
 .PHONY: ref_databases
 
-ref_databases : msg.gdb help.gdb metadata.gdb security.fdb
+ref_databases : msg.fdb help.fdb metadata.fdb security.fdb
 
-msg.gdb:	$(SRC_ROOT)/msgs/msg.gbak
+msg.fdb:	$(SRC_ROOT)/msgs/msg.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
 	touch $@
 	chmod 444 $@
 
-help.gdb:	$(FIREBIRD)/help/help.gdb
+help.fdb:	$(FIREBIRD)/help/help.fdb
 	$(RM) -f $@
 	ln -fs $^ $@
 
-$(FIREBIRD)/help/help.gdb:	$(SRC_ROOT)/misc/help.gbak
+$(FIREBIRD)/help/help.fdb:	$(SRC_ROOT)/misc/help.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
 	touch $@
 	chmod 444 $@
@@ -109,7 +109,7 @@ $(FIREBIRD)/security.fdb:	$(SRC_ROOT)/misc/security.gbak
 	touch $@
 	chmod 666 $@
 
-metadata.gdb:	$(SRC_ROOT)/misc/metadata.gbak
+metadata.fdb:	$(SRC_ROOT)/misc/metadata.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
 	touch $@
 	chmod 444 $@
@@ -117,7 +117,7 @@ metadata.gdb:	$(SRC_ROOT)/misc/metadata.gbak
 # An alternative metadata creation method, this one is actually preferred
 # since it ensures the data is valid.
 
-metadata.gdb.x:	$(SRC_ROOT)/misc/metadata.sql
+metadata.fdb.x:	$(SRC_ROOT)/misc/metadata.sql
 	$(BIN)/isql -i $<
 	touch $@
 	chmod 444 $@

@@ -50,7 +50,7 @@ ARGLIST(char **argv)
     if (argc > 1)
         strcpy(empdb, argv[1]);
     else
-        strcpy(empdb, "employee.gdb");
+        strcpy(empdb, "employee.fdb");
 
     if (isc_attach_database(status, 0, empdb, &db, 0, NULL))
     {

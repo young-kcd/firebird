@@ -27,7 +27,7 @@
  *			by either V3 or V4!
  *
  *	This script can be used to re-create the development
- *	tool yachts.gdb, but must be edited as follows:
+ *	tool yachts.fdb, but must be edited as follows:
  *	   - Delete all DELETE's of global fields.
  *	   - Delete all MODIFY's of global fields.
  *	   - Delete all DROP/ADD (modify) pairs in MODIFY RELATION's
@@ -63,7 +63,7 @@
  *
  */
 
-modify database "v33d_ods72.gdb";
+modify database "v33d_ods72.fdb";
 
 
 /*	Global Field Definitions	*/

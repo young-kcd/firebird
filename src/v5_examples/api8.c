@@ -82,7 +82,7 @@ ARGLIST(char **argv)
     if (argc > 1)
         strcpy(empdb, argv[1]);
     else
-        strcpy(empdb, "employee.gdb");
+        strcpy(empdb, "employee.fdb");
 
     strcpy(upd_stmt, "UPDATE project SET proj_desc = ? WHERE proj_id = ?");
 

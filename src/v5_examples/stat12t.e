@@ -31,7 +31,7 @@
 EXEC SQL	
 	BEGIN DECLARE SECTION;
 EXEC SQL
-	SET DATABASE empdb = "employee.gdb";
+	SET DATABASE empdb = "employee.fdb";
 EXEC SQL	
 	END DECLARE SECTION;
 

@@ -47,7 +47,7 @@
 #include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 
-DATABASE DB = "msg.gdb";
+DATABASE DB = "msg.fdb";
 
 
 #define INCLUDE_INDICATOR	"indicator.incl"
@@ -73,7 +73,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	ISC_TIMESTAMP date_jrd, date_msg, date_loc;
 	struct stat file_stat;
 
-	strcpy(db_file, "msg.gdb");
+	strcpy(db_file, "msg.fdb");
 	do_locales = FALSE;
 
 	end_args = argv + argc;

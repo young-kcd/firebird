@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.5 2003-02-28 05:22:10 aafemt Exp $
+#  $Id: make.shared.targets,v 1.6 2003-03-17 12:05:51 eku Exp $
 #
 
 
@@ -72,16 +72,16 @@ $(SRC)/gpre/gpre_meta.cpp:  $(SRC)/gpre/gpre_meta.epp
 
 
 
-buildb: security.fdb yachts.lnk help.gdb
+buildb: security.fdb yachts.lnk help.fdb
 
 security.fdb : $(ISC_GDB)
 	-ln -sf $(ISC_GDB) $@
 
 yachts.lnk: 
-	-ln -fs $(SRC_ROOT)/refDatabases/empty.gdb yachts.lnk
+	-ln -fs $(SRC_ROOT)/refDatabases/empty.fdb yachts.lnk
 
-help.gdb:
-	-ln -fs $(SRC_ROOT)/refDatabases/help.gdb help.gdb
+help.fdb:
+	-ln -fs $(SRC_ROOT)/refDatabases/help.fdb help.fdb
 
 
 
@@ -89,7 +89,7 @@ help.gdb:
 $(SRC)/dudley/exe.cpp $(SRC)/dudley/extract.epp:      yachts.lnk
 
 $(SRC)/qli/meta.cpp $(SRC)/qli/proc.cpp $(SRC)/qli/show.cpp: yachts.lnk
-$(SRC)/qli/help.cpp:        help.gdb
+$(SRC)/qli/help.cpp:        help.fdb
 
 # Explicit dependence on generated header
 $(OBJ)/jrd/par.o:	$(SRC)/include/gen/blrtable.h

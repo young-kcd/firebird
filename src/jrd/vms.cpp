@@ -41,7 +41,7 @@
 #include "../jrd/pio_proto.h"
 #include "../jrd/thd_proto.h"
 
-#define DEFAULT_FILE_NAME	".gdb"
+#define DEFAULT_FILE_NAME	".fdb"
 #define EVENT_FLAG		15
 
 /***

@@ -16,13 +16,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-/*CREATE DATABASE "intl_emp.gdb" DEFAULT CHARACTER SET ISO8859_1; */
+/*CREATE DATABASE "intl_emp.fdb" DEFAULT CHARACTER SET ISO8859_1; */
 
 /**  18-July-1994:  Clare Taylor:  Created this file, intlddl.sql, from the
  **                 empddl.sql file.  It has been modified as shown below
  **                 to create an international version of the example database.
  **
- **  Create a sample international employee database (intlemp.gdb).
+ **  Create a sample international employee database (intlemp.fdb).
  **
  **  This database keeps track of employees, departments, projects, and sales
  **  for a small company and uses ISO8859_1 for the DEFAULT CHARACTER SET.

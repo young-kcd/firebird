@@ -5,7 +5,7 @@
  *
  *      Description:    This program does an asynchronous event wait
  *                      on a trigger set up in the sales table of
- *                      employee.gdb.  
+ *                      employee.fdb.  
  *                      Somebody must add a new sales order to alert
  *                      this program.  That role can be accomplished 
  *                      by running the api16t example program
@@ -43,7 +43,7 @@
 */
 #define USER     "guest"
 #define PASSWORD "guest"
-#define DATABASE "employee.gdb"
+#define DATABASE "employee.fdb"
 
 #define IDM_EXIT        1
 #define WM_DB_EVENT     WM_USER + 1
@@ -105,7 +105,7 @@ int                     CHK_ERR(long *gds__status);
  *
  * Functional description
  *      Description:    Setup the dpb with the username and password
- *			and attach to the database, employee.gdb.
+ *			and attach to the database, employee.fdb.
  *                      If the attach was successful, allocate an event
  *                      control block and register interest in the
  *			event "new_order".

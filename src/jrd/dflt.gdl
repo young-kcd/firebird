@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-modify database "bar.gdb";
+modify database "bar.fdb";
 
 define field default_no char[3] missing_value "NO";
 

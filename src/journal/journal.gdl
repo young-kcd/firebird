@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-define database "journal.gdb";
+define database "journal.fdb";
 
 define field db_id		long;
 define field file_id		long;

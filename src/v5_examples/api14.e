@@ -56,7 +56,7 @@ char	*where_str =
 char	Db_name[128];
 
 EXEC SQL
-	SET DATABASE db1 = "employee.gdb" RUNTIME :Db_name;
+	SET DATABASE db1 = "employee.fdb" RUNTIME :Db_name;
 
 
 
@@ -83,11 +83,11 @@ ARGLIST(char **argv)
         if (argc > 1)
                 strcpy(Db_name, argv[1]);
         else
-                strcpy(Db_name, "employee.gdb");
+                strcpy(Db_name, "employee.fdb");
         if (argc > 2)
                 strcpy(empdb2, argv[2]);
         else
-                strcpy(empdb2, "employe2.gdb");
+                strcpy(empdb2, "employe2.fdb");
 
 
 	EXEC SQL
@@ -147,7 +147,7 @@ ARGLIST(char **argv)
 	 */
 
 	EXEC SQL
-        	SET DATABASE db2 = "employe2.gdb";
+        	SET DATABASE db2 = "employe2.fdb";
 
 	if (isc_attach_database(status, 0, empdb2, &db2, 0, NULL))
 		isc_print_status(status);

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.qli,v 1.5 2002-10-10 19:32:03 eku Exp $
+#  $Id: Makefile.in.embed.qli,v 1.6 2003-03-17 12:05:45 eku Exp $
 #
 ROOT=..
 ObjModuleName=embed.qli
@@ -63,11 +63,11 @@ $(QLI): create_yachts $(QLI_Objects) $(LIBFBEMBED_SO)
 	$(LD) $(LINK_OPTS) $(QLI_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 	$(CHMOD_S7) $@
 
-# EKU: At this point yachts.lnk is a link to empty.gdb, but gpre will fail
-#      with it. metadata.gdb is what is needed here.
+# EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail
+#      with it. metadata.fdb is what is needed here.
 create_yachts:
 	-rm -f yachts.lnk
-	-ln -fs $(SRC_ROOT)/metadata.gdb yachts.lnk
+	-ln -fs $(SRC_ROOT)/metadata.fdb yachts.lnk
 
 
 # qli_help

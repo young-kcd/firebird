@@ -25,7 +25,7 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 
-DATABASE DB = "source/msgs/msg.gdb";
+DATABASE DB = "source/msgs/msg.fdb";
 
 IB_FILE *output;
 

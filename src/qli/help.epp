@@ -40,18 +40,18 @@
 #define RIGHT_MARGIN	70
 
 #ifdef VMS
-#define TARGET	"[syshlp]help.gdb"
+#define TARGET	"[syshlp]help.fdb"
 #endif
 
 #ifdef UNIX
-#define TARGET "help/help.gdb"
+#define TARGET "help/help.fdb"
 #endif
 
 #if (defined WIN_NT)
-#define TARGET "help/help.gdb"
+#define TARGET "help/help.fdb"
 #endif
 
-DATABASE HELP_DB = STATIC "help.gdb" RUNTIME target;
+DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
 
 static int additional_topics(TEXT *, TEXT *, TEXT *);
 static void print_more(USHORT, USHORT, TEXT **, USHORT *, TEXT *, USHORT);

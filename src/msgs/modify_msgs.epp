@@ -31,7 +31,7 @@
 
 
 
-DATABASE DB = "msg.gdb";
+DATABASE DB = "msg.fdb";
 
 static void explicit_print(TEXT *);
 

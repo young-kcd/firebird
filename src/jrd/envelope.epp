@@ -26,7 +26,7 @@
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
 
-database db = "source/jrd/gds_functions.gdb";
+database db = "source/jrd/gds_functions.fdb";
 
 typedef enum mech_t
 {
