@@ -83,6 +83,7 @@ static IDX_E check_duplicates(thread_db*, Record*, index_desc*, index_insertion*
 static IDX_E check_foreign_key(thread_db*, Record*, jrd_rel*, jrd_tra*, index_desc*, jrd_rel**, USHORT *);
 static IDX_E check_partner_index(thread_db*, jrd_rel*, Record*, jrd_tra*, index_desc*, jrd_rel*, SSHORT);
 static bool duplicate_key(const UCHAR*, const UCHAR*, void*);
+static const dsc* eval_expr_idx(thread_db*, const index_desc*, Record*, bool &);
 static SLONG get_root_page(thread_db*, const jrd_rel*);
 static int index_block_flush(void*);
 static IDX_E insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, index_insertion*, jrd_rel**, USHORT *);
@@ -911,20 +912,22 @@ static IDX_E check_duplicates(
 
 	jrd_rel* relation_1 = insertion->iib_relation;
 
+	str *temp_buf = NULL;
+
 	RecordBitmap::Accessor accessor(insertion->iib_duplicates);
 
 	if (accessor.getFirst())
 	do {
-		bool hasOldValues;
-		const bool isFK = (record_idx->idx_flags & idx_foreign) != 0;
+		bool has_old_values;
+		const bool is_fk = (record_idx->idx_flags & idx_foreign) != 0;
 
 		rpb.rpb_number.setValue(accessor.current());
 
 		if (rpb.rpb_number != insertion->iib_number
 			&& VIO_get_current(tdbb, &old_rpb, &rpb, insertion->iib_transaction,
 							   tdbb->getDefaultPool(),
-							   isFK, 
-							   hasOldValues) )
+							   is_fk, 
+							   has_old_values) )
 		{
 			// dimitr: we shouldn't ignore status exceptions which take place
 			//		   inside the lock manager. Namely, they are: isc_deadlock,
@@ -952,8 +955,8 @@ static IDX_E check_duplicates(
 				break;
 			}
 */
-			const bool hasCurValues = !(rpb.rpb_flags & rpb_deleted);
-			if (!hasCurValues && !hasOldValues) {
+			const bool has_cur_values = !(rpb.rpb_flags & rpb_deleted);
+			if (!has_cur_values && !has_old_values) {
 				result = idx_e_duplicate;
 				break;
 			}
@@ -964,62 +967,63 @@ static IDX_E check_duplicates(
 			
 			if (record_idx->idx_flags & idx_expressn)
 			{
-				fb_assert(insertion_idx->idx_expression != NULL);
-
-				fb_assert(insertion_idx->idx_expression_request->req_caller == NULL);
-				insertion_idx->idx_expression_request->req_caller = tdbb->tdbb_request;
+				UCHAR tmp[256];
+				bool flag_idx;
+				const dsc* desc_idx = eval_expr_idx(tdbb, record_idx, record, flag_idx);
 				
-				if (tdbb->tdbb_request)
-				{
-					insertion_idx->idx_expression_request->req_transaction =
-						tdbb->tdbb_request->req_transaction;
+				/*	hvlad: eval_expr_idx call EVL_expr which returns impure->vlu_desc. 
+					Since record_idx and insertion_idx are the same indexes second call 
+					to eval_expr_idx will overwrite value from first call. So we must 
+					save first result into another dsc
+				*/
+
+				desc1 = *desc_idx;
+				const USHORT idx_dsc_length = record_idx->idx_expression_desc.dsc_length;
+				if (idx_dsc_length < sizeof(tmp)) {
+					desc1.dsc_address = tmp;
 				}
+				else {
+					if (!temp_buf)
+						temp_buf = FB_NEW_RPT(*tdbb->getDefaultPool(), idx_dsc_length) str();
 
-				tdbb->tdbb_request = insertion_idx->idx_expression_request;
-				tdbb->tdbb_request->req_rpb[0].rpb_record = rpb.rpb_record;
-				tdbb->tdbb_request->req_flags &= ~req_null;
-				const dsc* desc_ptr1;
-				{
-					Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
-
-					if (!(desc_ptr1 = EVL_expr(tdbb, insertion_idx->idx_expression)))
-						desc_ptr1 = &insertion_idx->idx_expression_desc;
-	
+					desc1.dsc_address = temp_buf->str_data;
 				}
-				const bool flag1 = !(tdbb->tdbb_request->req_flags & req_null);
+				fb_assert(desc_idx->dsc_length <= idx_dsc_length);
+				memmove(desc1.dsc_address, desc_idx->dsc_address, desc_idx->dsc_length);
 
-				tdbb->tdbb_request = insertion_idx->idx_expression_request->req_caller;
-				insertion_idx->idx_expression_request->req_caller = NULL;
+				bool flag_rec = false;
+				const dsc* desc_rec = has_cur_values ? 
+					eval_expr_idx(tdbb, insertion_idx, rpb.rpb_record, flag_rec) : NULL;
 
-				fb_assert(record_idx->idx_expression != NULL);	
+				const bool equal_cur = has_cur_values && flag_rec && flag_idx && 
+					(MOV_compare(desc_rec, &desc1) == 0);
 
-				fb_assert(record_idx->idx_expression_request->req_caller == NULL);
-				record_idx->idx_expression_request->req_caller = tdbb->tdbb_request;
-
-				if (tdbb->tdbb_request)
-				{
-					record_idx->idx_expression_request->req_transaction =
-						tdbb->tdbb_request->req_transaction;
-				}
-
-				tdbb->tdbb_request = record_idx->idx_expression_request;
-				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
-				tdbb->tdbb_request->req_flags &= ~req_null;
-				const dsc* desc_ptr2;
-				{
-					Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
-
-					if (!(desc_ptr2 = EVL_expr(tdbb, record_idx->idx_expression)))
-						desc_ptr2 = &record_idx->idx_expression_desc;
-				}
-				const bool flag2 = !(tdbb->tdbb_request->req_flags & req_null);
-
-				tdbb->tdbb_request = record_idx->idx_expression_request->req_caller;
-				record_idx->idx_expression_request->req_caller = NULL;
-
-				if (flag1 && flag2 && !MOV_compare(desc_ptr1, desc_ptr2)) {
+				if (!is_fk && equal_cur) {
 					result = idx_e_duplicate;
+					break;
 				}
+
+				if (has_old_values)
+				{
+					desc_rec = eval_expr_idx(tdbb, insertion_idx, old_rpb.rpb_record, flag_rec);
+
+					const bool equal_old = flag_rec && flag_idx && 
+						(MOV_compare(desc_rec, &desc1) == 0);
+
+					if (is_fk) {
+						if (equal_cur && equal_old) {
+							result = idx_e_duplicate;
+							break;
+						}
+					}
+					else {
+						if (equal_cur || equal_old) {
+							result = idx_e_duplicate;
+							break;
+						}
+					}
+				}
+				
 			}
 			else
 			{
@@ -1031,7 +1035,7 @@ static IDX_E check_duplicates(
 					USHORT field_id = record_idx->idx_rpt[i].idx_field;
 					const bool flag_idx = EVL_field(relation_2, record, field_id, &desc2);
 
-					if (hasCurValues)
+					if (has_cur_values)
 					{
 						field_id = insertion_idx->idx_rpt[i].idx_field;
 						/* In order to "map a null to a default" value (in EVL_field()), 
@@ -1041,25 +1045,25 @@ static IDX_E check_duplicates(
 						flag_cur = EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
 					}
 
-					const bool notEqualCur = !hasCurValues || 
-						hasCurValues && ( (flag_cur != flag_idx) || (MOV_compare(&desc1, &desc2) != 0) );
+					const bool not_equal_cur = !has_cur_values || 
+						has_cur_values && ( (flag_cur != flag_idx) || (MOV_compare(&desc1, &desc2) != 0) );
 
-					if ((isFK || !hasOldValues) && notEqualCur)
+					if ((is_fk || !has_old_values) && not_equal_cur)
 						break;
 
-					if (hasOldValues)
+					if (has_old_values)
 					{
 						field_id = insertion_idx->idx_rpt[i].idx_field;
 						const bool flag_old = EVL_field(relation_1, old_rpb.rpb_record, field_id, &desc1);
 
-						const bool notEqualOld = (flag_old != flag_idx || MOV_compare(&desc1, &desc2) != 0);
+						const bool not_equal_old = (flag_old != flag_idx || MOV_compare(&desc1, &desc2) != 0);
 
-						if (isFK) {
-							if (notEqualCur || notEqualOld)
+						if (is_fk) {
+							if (not_equal_cur || not_equal_old)
 								break;
 						}
 						else {
-							if (notEqualCur && notEqualOld)
+							if (not_equal_cur && not_equal_old)
 								break;
 						}
 					}
@@ -1080,6 +1084,9 @@ static IDX_E check_duplicates(
 
 	if (old_rpb.rpb_record)
 		delete old_rpb.rpb_record;
+
+	if (temp_buf)
+		delete temp_buf;
 
 	return result;
 }
@@ -1283,6 +1290,42 @@ static bool duplicate_key(const UCHAR* record1, const UCHAR* record2, void* ifl_
 	}
 
 	return false;
+}
+
+
+static const dsc* eval_expr_idx(thread_db* tdbb, const index_desc* idx, Record* record, bool &not_null)
+{
+	fb_assert(idx->idx_expression != NULL);
+	fb_assert(idx->idx_expression_request->req_caller == NULL);
+
+	SET_TDBB(tdbb);
+
+	idx->idx_expression_request->req_caller = tdbb->tdbb_request;
+	
+	if (tdbb->tdbb_request)
+	{
+		idx->idx_expression_request->req_transaction =
+			tdbb->tdbb_request->req_transaction;
+	}
+
+	tdbb->tdbb_request = idx->idx_expression_request;
+	tdbb->tdbb_request->req_rpb[0].rpb_record = record;
+	tdbb->tdbb_request->req_flags &= ~req_null;
+
+	const dsc* result;
+	{
+		Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
+
+		if (!(result = EVL_expr(tdbb, idx->idx_expression)))
+			result = &idx->idx_expression_desc;
+	}
+
+	not_null = !(tdbb->tdbb_request->req_flags & req_null);
+
+	tdbb->tdbb_request = idx->idx_expression_request->req_caller;
+	idx->idx_expression_request->req_caller = NULL;
+
+	return result;
 }
 
 
