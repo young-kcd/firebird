@@ -27,7 +27,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <errno.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
@@ -200,7 +200,7 @@ THDD THD_get_specific(void)
 	THDD current_context;
 
 	if (thr_getspecific(specific_key, (void **) &current_context)) {
-		ib_perror("thr_getspecific");
+		perror("thr_getspecific");
 		exit(1);
 	}
 
@@ -906,14 +906,14 @@ int THD_wlck_destroy(WLCK_T * wlock)
 	int status;
 
 #ifdef DEBUG_THREAD
-	ib_fprintf(ib_stderr, "calling rwlock_destroy %x\n", wlock);
+	fprintf(stderr, "calling rwlock_destroy %x\n", wlock);
 #endif
 
 	status = rwlock_destroy(wlock);
 
 #ifdef DEBUG_THREAD
 	if (status)
-		ib_fprintf(ib_stderr, "status = %d errno = %d\n", status, errno);
+		fprintf(stderr, "status = %d errno = %d\n", status, errno);
 #endif
 
 	return status;
@@ -934,14 +934,14 @@ int THD_wlck_init(WLCK_T * wlock)
 	int status;
 
 #ifdef DEBUG_THREAD
-	ib_fprintf(ib_stderr, "calling rwlock_init %x\n", wlock);
+	fprintf(stderr, "calling rwlock_init %x\n", wlock);
 #endif
 
 	status = rwlock_init(wlock, USYNC_THREAD, NULL);
 
 #ifdef DEBUG_THREAD
 	if (status)
-		ib_fprintf(ib_stderr, "status = %d errno = %d\n", status, errno);
+		fprintf(stderr, "status = %d errno = %d\n", status, errno);
 #endif
 
 	return status;
@@ -963,9 +963,9 @@ int THD_wlck_lock(WLCK_T * wlock, USHORT type)
 
 #ifdef DEBUG_THREAD
 	if (type == WLCK_read)
-		ib_fprintf(ib_stderr, "calling rwlock_rdlock %x\n", wlock);
+		fprintf(stderr, "calling rwlock_rdlock %x\n", wlock);
 	else
-		ib_fprintf(ib_stderr, "calling rwlock_wrlock %x\n", wlock);
+		fprintf(stderr, "calling rwlock_wrlock %x\n", wlock);
 #endif
 
 	if (type == WLCK_read)
@@ -975,7 +975,7 @@ int THD_wlck_lock(WLCK_T * wlock, USHORT type)
 
 #ifdef DEBUG_THREAD
 	if (status)
-		ib_fprintf(ib_stderr, "status = %d errno = %d\n", status, errno);
+		fprintf(stderr, "status = %d errno = %d\n", status, errno);
 #endif
 
 	return status;
@@ -996,14 +996,14 @@ int THD_wlck_unlock(WLCK_T * wlock)
 	int status;
 
 #ifdef DEBUG_THREAD
-	ib_fprintf(ib_stderr, "calling rwlock_unlock %x\n", wlock);
+	fprintf(stderr, "calling rwlock_unlock %x\n", wlock);
 #endif
 
 	status = rw_unlock(wlock);
 
 #ifdef DEBUG_THREAD
 	if (status)
-		ib_fprintf(ib_stderr, "status = %d errno = %d\n", status, errno);
+		fprintf(stderr, "status = %d errno = %d\n", status, errno);
 #endif
 
 	return status;
@@ -1066,9 +1066,9 @@ int THD_wlck_lock(WLCK_T * wlock, USHORT type)
 
 #ifdef DEBUG_THREAD
 	if (type == WLCK_read)
-		ib_fprintf(ib_stderr, "calling rwlock_rdlock %x\n", wlock);
+		fprintf(stderr, "calling rwlock_rdlock %x\n", wlock);
 	else
-		ib_fprintf(ib_stderr, "calling rwlock_wrlock %x\n", wlock);
+		fprintf(stderr, "calling rwlock_wrlock %x\n", wlock);
 #endif
 
 	if (status = THD_mutex_lock(&wlock->wlck_cond.cond_mutex))
@@ -1683,7 +1683,7 @@ static void init(void)
 		 * not, we just need to have a reference to it to force a link error.
 		 */
 		thr_min_stack();
-		ib_perror("thr_keycreate");
+		perror("thr_keycreate");
 		exit(1);
 	}
 #endif /* SOLARIS _MT */
@@ -1777,7 +1777,7 @@ static void put_specific(THDD new_context)
  **************************************/
 
 	if (thr_setspecific(specific_key, new_context)) {
-		ib_perror("thr_setspecific");
+		perror("thr_setspecific");
 		exit(1);
 	}
 }

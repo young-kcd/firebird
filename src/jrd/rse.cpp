@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.68 2004-04-21 14:14:09 alexpeshkoff Exp $
+ * $Id: rse.cpp,v 1.69 2004-04-28 22:39:05 brodsom Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -35,7 +35,7 @@
 #include "firebird.h"
 #include <errno.h>
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"

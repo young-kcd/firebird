@@ -829,10 +829,6 @@ SOURCE=..\..\..\src\jrd\os\guid.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ib_stdio.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\ibase.h
 # End Source File
 # Begin Source File

@@ -4491,16 +4491,6 @@
 			path = grant_proto.h;
 			refType = 4;
 		};
-		F616C5FC0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ib_stdio.cpp;
-			refType = 4;
-		};
-		F616C5FD0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ib_stdio.h;
-			refType = 4;
-		};
 		F616C5FE0200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = ibase.h;

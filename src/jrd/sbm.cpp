@@ -228,7 +228,7 @@ bool SBM_clear(SparseBitmap* bitmap, SLONG number)
 
 
 #ifdef DEV_BUILD
-void SBM_dump(IB_FILE* f, SparseBitmap* bitmap1)
+void SBM_dump(FILE* f, SparseBitmap* bitmap1)
 {
 /**************************************
  *
@@ -244,12 +244,12 @@ void SBM_dump(IB_FILE* f, SparseBitmap* bitmap1)
 	bit1 = -1;
 	last_bit = bit1 - 1;
 
-	ib_fprintf(f, "State: %s", (bitmap1->sbm_state == SBM_EMPTY) ? "EMPTY" :
+	fprintf(f, "State: %s", (bitmap1->sbm_state == SBM_EMPTY) ? "EMPTY" :
 			   (bitmap1->sbm_state == SBM_SINGULAR) ? "Singular" :
 			   (bitmap1->sbm_state == SBM_PLURAL) ? "Plural" : "Bogus");
-	ib_fprintf(f, " Type: %s", (bitmap1->sbm_type == SBM_BUCKET) ? "Bucket" :
+	fprintf(f, " Type: %s", (bitmap1->sbm_type == SBM_BUCKET) ? "Bucket" :
 			   (bitmap1->sbm_type == SBM_ROOT) ? "root" : "Bogus");
-	ib_fprintf(f, " Count %d Used %d high %d\n",
+	fprintf(f, " Count %d Used %d high %d\n",
 			   bitmap1->sbm_count, bitmap1->sbm_used,
 			   bitmap1->sbm_high_water);
 
@@ -263,17 +263,17 @@ void SBM_dump(IB_FILE* f, SparseBitmap* bitmap1)
 			continue;
 		}
 		if (in_range)
-			ib_fprintf(f, "-%"SLONGFORMAT, last_bit);
+			fprintf(f, "-%"SLONGFORMAT, last_bit);
 		if ((++counter % 8) == 0)
-			ib_fprintf(f, "\n");
-		ib_fprintf(f, " %"SLONGFORMAT, bit1);
+			fprintf(f, "\n");
+		fprintf(f, " %"SLONGFORMAT, bit1);
 		last_bit = bit1;
 		in_range = false;
 	}
 
 	if (in_range)
-		ib_fprintf(f, "-%"SLONGFORMAT, last_bit);
-	ib_fprintf(f, "\n");
+		fprintf(f, "-%"SLONGFORMAT, last_bit);
+	fprintf(f, "\n");
 }
 #endif
 

@@ -44,7 +44,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -182,7 +182,7 @@ static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat*, index_desc*
 #define DEBUG_BEST		1
 #define DEBUG_NONE		0
 
-IB_FILE *opt_debug_file = 0;
+FILE *opt_debug_file = 0;
 static int opt_debug_flag = DEBUG_NONE;
 #endif
 
@@ -327,7 +327,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 #ifdef OPT_DEBUG
 	if (opt_debug_flag != DEBUG_NONE && !opt_debug_file)
-		opt_debug_file = ib_fopen("opt_debug.out", "w");
+		opt_debug_file = fopen("opt_debug.out", "w");
 #endif
 
 
@@ -806,8 +806,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 #ifdef OPT_DEBUG
 	if (opt_debug_file) {
-		ib_fflush(opt_debug_file);
-		//ib_fclose(opt_debug_file);
+		fflush(opt_debug_file);
+		//fclose(opt_debug_file);
 		//opt_debug_file = 0;
 	}
 #endif
@@ -3207,15 +3207,15 @@ static USHORT find_order(thread_db* tdbb,
 	if (opt_debug_flag >= DEBUG_BEST) {
 		const OptimizerBlk::opt_stream* const order_end =
 			opt->opt_streams.begin() + opt->opt_best_count;
-		ib_fprintf(opt_debug_file,
+		fprintf(opt_debug_file,
 				   "find_order()  -- best_count: %2.2d, best_streams: ",
 				   opt->opt_best_count); 
 		for (const OptimizerBlk::opt_stream* tail = opt->opt_streams.begin();
 			tail < order_end; tail++)
 		{
-			ib_fprintf(opt_debug_file, "%2.2d ", tail->opt_best_stream);
+			fprintf(opt_debug_file, "%2.2d ", tail->opt_best_stream);
 		}
-		ib_fprintf(opt_debug_file,
+		fprintf(opt_debug_file,
 				   "\n\t\t\tbest_cost: %g\tcombinations: %ld\n",
 				   opt->opt_best_cost, opt->opt_combinations);
 	}
@@ -3847,18 +3847,18 @@ static void gen_join(thread_db*		tdbb,
 
 #ifdef OPT_DEBUG
 		if (opt_debug_flag >= DEBUG_RELATIONSHIPS) {
-			ib_fprintf(opt_debug_file,
+			fprintf(opt_debug_file,
 					   "gen_join () -- relationships from stream %2.2d: ",
 					   *stream);
 			for (IndexedRelationship* relationship = tail->opt_relationships;
 			     relationship;
 			     relationship = relationship->irl_next)
 			{
-					ib_fprintf(opt_debug_file, "%2.2d %s ",
+					fprintf(opt_debug_file, "%2.2d %s ",
 							   relationship->irl_stream,
 							   (relationship->irl_unique) ? "(unique)" : "");
 			}
-			ib_fprintf(opt_debug_file, "\n");
+			fprintf(opt_debug_file, "\n");
 		}
 #endif
 	}
@@ -6481,14 +6481,14 @@ static void print_order(OptimizerBlk* opt,
  *
  **************************************/
 	DEV_BLKCHK(opt, type_opt);
-	ib_fprintf(opt_debug_file, "print_order() -- position %2.2d: ", position);
+	fprintf(opt_debug_file, "print_order() -- position %2.2d: ", position);
 	const OptimizerBlk::opt_stream* tail = opt->opt_streams.begin();
 	for (const OptimizerBlk::opt_stream* const order_end = opt->opt_streams.begin() + position;
 		tail < order_end; tail++)
 	{
-		ib_fprintf(opt_debug_file, "stream %2.2d, ", tail->opt_stream_number);
+		fprintf(opt_debug_file, "stream %2.2d, ", tail->opt_stream_number);
 	}
-	ib_fprintf(opt_debug_file, "\n\t\t\tcardinality: %g\tcost: %g\n",
+	fprintf(opt_debug_file, "\n\t\t\tcardinality: %g\tcost: %g\n",
 			   cardinality, cost);
 }
 #endif

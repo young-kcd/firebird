@@ -242,7 +242,7 @@ PluginManager::~PluginManager()
 #if defined(DEV_BUILD)
 		if (moduleList->refCnt != 1)
 		{
-			ib_printf("Freeing loadable module with reference count != 1: %s (%d)\n",
+			printf("Freeing loadable module with reference count != 1: %s (%d)\n",
 					moduleList->module_name.c_str(), moduleList->refCnt);
 		}
 #endif

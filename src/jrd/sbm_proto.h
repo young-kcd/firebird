@@ -28,8 +28,8 @@
 #include "../jrd/rse.h"
 
 #ifdef DEV_BUILD
-#include "../jrd/ib_stdio.h"
-void SBM_dump(IB_FILE*, Jrd::SparseBitmap*);
+#include <stdio.h>
+void SBM_dump(FILE*, Jrd::SparseBitmap*);
 #endif
 
 Jrd::SparseBitmap**	SBM_and(Jrd::SparseBitmap**, Jrd::SparseBitmap**);

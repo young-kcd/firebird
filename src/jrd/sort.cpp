@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.60 2004-03-28 09:10:15 robocop Exp $
+ * $Id: sort.cpp,v 1.61 2004-04-28 22:39:05 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -64,10 +64,10 @@
 #include <stdio.h>
 #endif
 
-/* RITTER - declare seek and off_t - :ATTENTION: for 64bit I/O we might need ib_stdio.h ! */
+/* RITTER - declare seek and off_t - :ATTENTION: for 64bit I/O we might need stdio.h ! */
 
 #ifdef SOLARIS
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #endif
 
 #ifdef WIN_NT
@@ -153,8 +153,8 @@ static void validate(sort_context*);
 
 #ifdef DEBUG_SORT_TRACE
 static void write_trace(UCHAR*, sort_work_file*, ULONG, BLOB_PTR*, ULONG);
-#include "../jrd/ib_stdio.h"
-IB_FILE *trace_file = NULL;
+#include <stdio.h>
+FILE *trace_file = NULL;
 #endif
 
 #ifdef SMALL_FILE_NAMES
@@ -2978,7 +2978,7 @@ static void write_trace(
 		trace_file = fdopen(fd, "w");
 #else
 		mktemp(file_name);
-		trace_file = ib_fopen(file_name, "w");
+		trace_file = fopen(file_name, "w");
 #endif
 	}
 
@@ -2992,7 +2992,7 @@ static void write_trace(
 
 	*p = 0;
 
-	ib_fprintf(trace_file, "Fid: %d, %.5s %.7ld - %.7ld\t/%s/\n",
+	fprintf(trace_file, "Fid: %d, %.5s %.7ld - %.7ld\t/%s/\n",
 			   sfb->sfb_file, operation, seek, seek + length, data);
 }
 #endif

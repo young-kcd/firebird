@@ -43,7 +43,7 @@ namespace Jrd {
 	class DataComprControl;
 }
 
-void ALL_print_memory_pool_info(IB_FILE*, Jrd::Database*);
+void ALL_print_memory_pool_info(FILE*, Jrd::Database*);
 
 #ifdef DEV_BUILD
 void ALL_check_memory(void);

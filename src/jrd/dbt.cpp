@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 // Those includes until the END comment comes from everything.h and was moved

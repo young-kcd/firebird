@@ -32,7 +32,7 @@
 
 #include "firebird.h"
 #include "../jrd/y_ref.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
@@ -2090,7 +2090,7 @@ int SVC_read_ib_log(Service* service)
 #endif
 
 	gds__prefix(name, LOGFILE);
-	IB_FILE* file = ib_fopen(name, "r");
+	FILE* file = fopen(name, "r");
 	if (file != NULL) {
 #ifdef SUPERSERVER
 		*status++ = FB_SUCCESS;
@@ -2098,8 +2098,8 @@ int SVC_read_ib_log(Service* service)
 #endif
 		service->svc_started();
 		svc_started = true;
-		while (!ib_feof(file) && !ib_ferror(file)) {
-			ib_fgets(buffer, sizeof(buffer), file);
+		while (!feof(file) && !ferror(file)) {
+			fgets(buffer, sizeof(buffer), file);
 #ifdef SUPERSERVER
 			SVC_fprintf(service, "%s", buffer);
 #else
@@ -2108,14 +2108,14 @@ int SVC_read_ib_log(Service* service)
 		}
 	}
 
-	if (!file || file && ib_ferror(file)) {
+	if (!file || file && ferror(file)) {
 #ifdef SUPERSERVER
 		*status++ = isc_sys_request;
 		if (!file) {
-			SVC_STATUS_ARG(status, isc_arg_string, (void*)"ib_fopen");
+			SVC_STATUS_ARG(status, isc_arg_string, (void*)"fopen");
 		}
 		else {
-			SVC_STATUS_ARG(status, isc_arg_string, (void*)"ib_fgets");
+			SVC_STATUS_ARG(status, isc_arg_string, (void*)"fgets");
 		}
 		*status++ = SYS_ARG;
 		*status++ = errno;
@@ -2128,7 +2128,7 @@ int SVC_read_ib_log(Service* service)
 	}
 
 	if (file)
-		ib_fclose(file);
+		fclose(file);
 
 #ifdef SUPERSERVER
 	SVC_finish(service, SVC_finished);
@@ -2302,8 +2302,8 @@ static void service_fork(TEXT* service_path, Service* service)
 	HANDLE my_input, my_output, pipe_input, pipe_output, pipe_error;
 	my_input = pipe_output = my_output = pipe_input = INVALID_HANDLE_VALUE;
 	if (windows_nt) {
-		/* Set up input and output pipes and make them the ib_stdin, ib_stdout,
-		   and ib_stderr of the forked process. */
+		/* Set up input and output pipes and make them the stdin, stdout,
+		   and stderr of the forked process. */
 
 		attr.nLength = sizeof(SECURITY_ATTRIBUTES);
 		attr.bInheritHandle = TRUE;
@@ -2936,8 +2936,8 @@ static void service_close(Service* service)
  *
  **************************************/
 
-	ib_fclose((IB_FILE *) service->svc_input);
-	ib_fclose((IB_FILE *) service->svc_output);
+	fclose((FILE *) service->svc_input);
+	fclose((FILE *) service->svc_output);
 }
 
 
@@ -3128,10 +3128,10 @@ static void service_fork(TEXT* service_path, Service* service)
 	if (argv_data != argv_data_buf)
 		gds__free(argv_data);
 
-	if (!(service->svc_input = (void *) ib_fdopen(pair1[0], "r")) ||
-		!(service->svc_output = (void *) ib_fdopen(pair2[1], "w")))
+	if (!(service->svc_input = (void *) fdopen(pair1[0], "r")) ||
+		!(service->svc_output = (void *) fdopen(pair2[1], "w")))
 	{
-		io_error("ib_fdopen", errno, "service path", isc_io_access_err,
+		io_error("fdopen", errno, "service path", isc_io_access_err,
 				 false);
 	}
 }
@@ -3171,7 +3171,7 @@ static void service_get(
 	}
 
 	while (!timeout || iter) {
-		const int c = ib_getc((IB_FILE *) service->svc_input);
+		const int c = getc((FILE *) service->svc_input);
 		if (c != EOF) {
 			*buf++ = c;
 			if (!(--length))
@@ -3195,7 +3195,7 @@ static void service_get(
 			if (timeout)
 				ISC_reset_timer(timeout_handler, service, (SLONG*)&sv_timr,
 								(void**)&sv_hndlr);
-			io_error("ib_getc", errno_save, "service pipe", isc_io_read_err,
+			io_error("getc", errno_save, "service pipe", isc_io_read_err,
 					 true);
 		}
 	}
@@ -3227,19 +3227,19 @@ static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 	is_service_running(service);
 
 	while (length--) {
-		if (ib_putc(*buffer, (IB_FILE *) service->svc_output) != EOF)
+		if (putc(*buffer, (FILE *) service->svc_output) != EOF)
 			buffer++;
 		else if (SYSCALL_INTERRUPTED(errno)) {
-			ib_rewind((IB_FILE *) service->svc_output);
+			rewind((FILE *) service->svc_output);
 			length++;
 		}
 		else
-			io_error("ib_putc", errno, "service pipe", isc_io_write_err,
+			io_error("putc", errno, "service pipe", isc_io_write_err,
 					 true);
 	}
 
-	if (ib_fflush((IB_FILE *) service->svc_output) == EOF)
-		io_error("ib_fflush", errno, "service pipe", isc_io_write_err, true);
+	if (fflush((FILE *) service->svc_output) == EOF)
+		io_error("fflush", errno, "service pipe", isc_io_write_err, true);
 }
 
 

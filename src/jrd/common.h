@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.110 2004-03-18 05:55:22 robocop Exp $
+$Id: common.h,v 1.111 2004-04-28 22:36:30 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -417,7 +417,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 **********/
 
 /* The following define is the prefix to go in front of a "d" or "u"
-   format item in a ib_printf() format string, to indicate that the argument
+   format item in a printf() format string, to indicate that the argument
    is an SINT64 or UINT64. */
 #define QUADFORMAT "ll"
 /* The following macro creates a quad-sized constant, possibly one
@@ -480,7 +480,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define setregid(rgid,egid)     setresgid (rgid, egid, -1)
 
 /* The following define is the prefix to go in front of a "d" or "u"
-   format item in a ib_printf() format string, to indicate that the argument
+   format item in a printf() format string, to indicate that the argument
    is an SINT64 or UINT64. */
 #define QUADFORMAT "ll"
 /* The following macro creates a quad-sized constant, possibly one
@@ -593,7 +593,7 @@ typedef unsigned __int64 UINT64;
 #define INT64_DEFINED
 
 /* The following define is the prefix to go in front of a "d" or "u"
-   format item in a ib_printf() format string, to indicate that the argument
+   format item in a printf() format string, to indicate that the argument
    is an SINT64 or UINT64. */
 #define QUADFORMAT "I64"
 /* The following macro creates a quad-sized constant, possibly one

@@ -28,7 +28,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "gen/iberror.h"

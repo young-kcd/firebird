@@ -26,7 +26,7 @@
 #endif
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 
 #define CHR_LETTER	1
@@ -71,7 +71,7 @@ static int yylex(void)
 	SLONG number;
 
 	SCHAR char_class;
-	while (((char_class = classes[c = ib_getchar()]) & CHR_WHITE) && c != -1);
+	while (((char_class = classes[c = getchar()]) & CHR_WHITE) && c != -1);
 
 	if (c == -1)
 		return c;
@@ -79,10 +79,10 @@ static int yylex(void)
 	if (char_class & CHR_LETTER) {
 		p = string;
 		*p++ = c;
-		while (classes[c = ib_getchar()] & CHR_IDENT)
+		while (classes[c = getchar()] & CHR_IDENT)
 			*p++ = c;
 		*p = 0;
-		ib_ungetc(c, ib_stdin);
+		ungetc(c, stdin);
 		for (symbol = dbt_symbols; q = symbol->symb_string; symbol++) {
 			for (p = string; *p;)
 				if (*p++ != *q++)
@@ -92,13 +92,13 @@ static int yylex(void)
 				return symb_types[(int) symbol->symb_type];
 			}
 		}
-		ib_printf("*** %s undefined ***\n", string);
+		printf("*** %s undefined ***\n", string);
 		return OTHER;
 	}
 
 	if (c == '0') {
 		number = 0;
-		while (classes[c = ib_getchar()] & CHR_HEX) {
+		while (classes[c = getchar()] & CHR_HEX) {
 			if (c >= 'a' && c <= 'f')
 				c = c - 'a' + 10;
 			else if (c >= 'A' && c <= 'F')
@@ -107,25 +107,25 @@ static int yylex(void)
 				c = c - '0';
 			number = number * 16 + c;
 		}
-		ib_ungetc(c, ib_stdin);
+		ungetc(c, stdin);
 		yylval = number;
 		return NUMBER;
 	}
 
 	if (char_class & CHR_DIGIT) {
 		number = c - '0';
-		while (classes[c = ib_getchar()] & CHR_DIGIT)
+		while (classes[c = getchar()] & CHR_DIGIT)
 			number = number * 10 + (c - '0');
-		ib_ungetc(c, ib_stdin);
+		ungetc(c, stdin);
 		yylval = number;
 		return NUMBER;
 	}
 
 	if (c == '-')
-		if ((c = ib_getchar()) == '>')
+		if ((c = getchar()) == '>')
 			return ARROW;
 		else
-			ib_ungetc(c, ib_stdin);
+			ungetc(c, stdin);
 
 	return c;
 }

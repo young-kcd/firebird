@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.61 2004-03-28 09:10:16 robocop Exp $
+$Id: why.cpp,v 1.62 2004-04-28 22:39:05 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -52,7 +52,7 @@ $Id: why.cpp,v 1.61 2004-03-28 09:10:16 robocop Exp $
 #include "../jrd/common.h"
 #include <stdarg.h>
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/gdsassert.h"
 
 #include "../jrd/y_handle.h"
@@ -5080,7 +5080,7 @@ static void check_status_vector(ISC_STATUS * status,
 	ISC_STATUS *s, code;
 	ULONG length;
 
-#define SV_MSG(x)	{ ib_fprintf (ib_stderr, "%s %d check_status_vector: %s\n", __FILE__, __LINE__, (x)); BREAKPOINT (__LINE__); }
+#define SV_MSG(x)	{ fprintf (stderr, "%s %d check_status_vector: %s\n", __FILE__, __LINE__, (x)); BREAKPOINT (__LINE__); }
 
 	s = status;
 	if (!s) {
@@ -6085,7 +6085,7 @@ static void subsystem_enter(void)
 		static ULONG counter = 0;
 		if (((counter++) % 10) == 0)
 		{
-			ib_fprintf(ib_stderr, "Forcing FPE to occur within engine\n");
+			fprintf(stderr, "Forcing FPE to occur within engine\n");
 			kill(getpid(), SIGFPE);
 		}
 	}

@@ -24,46 +24,14 @@
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 #include "gen/iberror.h"
-//#include "../jrd/common.h"
-//#include "../jrd/isc.h"
 #include "../jrd/jrd.h"
-//#include "../jrd/lck.h"
-//#include "../jrd/ods.h"
-//#include "../jrd/cch.h"
 #include "../jrd/all.h"
-//#include "../jrd/os/pio.h"
-//#include "../jrd/pag.h"
-//#include "../jrd/val.h"
-//#include "../jrd/exe.h"
-//#include "../jrd/req.h"
-//#include "../jrd/lls.h"
-//#include "../jrd/rse.h"
-//#include "../jrd/sbm.h"
 #include "../jrd/tra.h"
-//#include "../jrd/sqz.h"
-//#include "../jrd/blb.h"
-//#include "../jrd/btr.h"
-//#include "../jrd/scl.h"
-//#include "../jrd/ext.h"
-//#include "../jrd/met.h"
-//#include "../jrd/sdw.h"
-//#include "../jrd/log.h"
-//#include "../jrd/intl.h"
-//#include "../jrd/intl_classes.h"
-//#include "../jrd/fil.h"
-//#include "../jrd/tpc.h"
-//#include "../jrd/rng.h"
-//#include "../jrd/svc.h"
-//#include "../jrd/blob_filter.h"
-
-
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
-//#include "../jrd/gds_proto.h"
-//#include "../jrd/mov_proto.h"
 #include "../jrd/thd_proto.h"
 
 #include <algorithm>
@@ -244,7 +212,7 @@ void ALL_init(void)
 
 
 #ifdef SUPERSERVER
-void ALL_print_memory_pool_info(IB_FILE* fptr, Database* databases)
+void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 {
 #ifdef NOT_USED_OR_REPLACED
 /***********************************************************
@@ -265,27 +233,27 @@ void ALL_print_memory_pool_info(IB_FILE* fptr, Database* databases)
 	Attachment* att;
 	int i, j, k, col;
 
-	ib_fprintf(fptr, "\n\tALL_xx block types\n");
-	ib_fprintf(fptr, "\t------------------");
+	fprintf(fptr, "\n\tALL_xx block types\n");
+	fprintf(fptr, "\t------------------");
 	for (i = 0, col = 0; i < types->type_MAX; i++) {
 		if (types->all_block_type_count[i]) {
 			if (col % 5 == 0)
-				ib_fprintf(fptr, "\n\t");
-			ib_fprintf(fptr, "%s = %d  ", types->ALL_types[i],
+				fprintf(fptr, "\n\t");
+			fprintf(fptr, "%s = %d  ", types->ALL_types[i],
 					   types->all_block_type_count[i]);
 			++col;
 		}
 	}
-	ib_fprintf(fptr, "\n");
+	fprintf(fptr, "\n");
 
 	// TMN: Note. Evil code.
 	for (i = 0, dbb = databases; dbb; dbb = dbb->dbb_next, ++i);
-	ib_fprintf(fptr, "\tNo of dbbs = %d\n", i);
+	fprintf(fptr, "\tNo of dbbs = %d\n", i);
 
 	for (k = 1, dbb = databases; dbb; dbb = dbb->dbb_next, ++k)
 	{
 		string = dbb->dbb_filename;
-		ib_fprintf(fptr, "\n\t dbb%d -> %s\n", k, string->str_data);
+		fprintf(fptr, "\n\t dbb%d -> %s\n", k, string->str_data);
 		vector = (VEC) dbb->dbb_pools;
 		j = 0;
 		for (pool_vec_type::iterator itr = dbb->dbb_pools.begin();
@@ -296,26 +264,26 @@ void ALL_print_memory_pool_info(IB_FILE* fptr, Database* databases)
 				++j;
 			}
 		}
-		ib_fprintf(fptr, "\t    %s has %d pools", string->str_data, j);
+		fprintf(fptr, "\t    %s has %d pools", string->str_data, j);
 		for (j = 0, att = dbb->dbb_attachments; att; att = att->att_next)
 		{
 			j++;
 		}
-		ib_fprintf(fptr, " and %d attachment(s)", j);
+		fprintf(fptr, " and %d attachment(s)", j);
 		for (i = 0; i < (int) vector->vec_count; i++)
 		{
 			PLB myPool = (PLB) vector->vec_object[i];
 			if (!myPool) {
 				continue;
 			}
-			ib_fprintf(fptr, "\n\t    Pool %d", myPool->plb_pool_id);
+			fprintf(fptr, "\n\t    Pool %d", myPool->plb_pool_id);
 
 			// Count # of hunks
 			for (j = 0, hnk = myPool->plb_hunks; hnk; hnk = hnk->hnk_next) {
 				++j;
 			}
 			if (j) {
-				ib_fprintf(fptr, " has %d hunks", j);
+				fprintf(fptr, " has %d hunks", j);
 			}
 			j = 0;
 
@@ -325,18 +293,18 @@ void ALL_print_memory_pool_info(IB_FILE* fptr, Database* databases)
 				++j;
 			}
 			if (j) {
-				ib_fprintf(fptr, " and %d huge_hunks", j);
+				fprintf(fptr, " and %d huge_hunks", j);
 			}
-			ib_fprintf(fptr, " Extend size is %d", myPool->plb_extend_size);
+			fprintf(fptr, " Extend size is %d", myPool->plb_extend_size);
 			for (j = 0, col = 0; j < types->type_MAX; j++)
 			{
 				if (myPool->plb_blk_type_count[j])
 				{
 					if (col % 5 == 0)
 					{
-						ib_fprintf(fptr, "\n\t    ");
+						fprintf(fptr, "\n\t    ");
 					}
-					ib_fprintf(fptr, "%s = %d  ", types->ALL_types[j],
+					fprintf(fptr, "%s = %d  ", types->ALL_types[j],
 							   myPool->plb_blk_type_count[j]);
 					++col;
 				}

@@ -61,7 +61,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 
 #include "../jrd/jrd.h"
@@ -646,7 +646,7 @@ PAG PAG_allocate(WIN * window)
 		CCH_precedence(tdbb, window, pip_window.win_page);
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES_INFO)
-			ib_printf("\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
+			printf("\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
 					  window->win_page);
 #endif
 		return new_page;
@@ -1418,7 +1418,7 @@ void PAG_release_page(SLONG number, SLONG prior_page)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
-		ib_printf("\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number);
+		printf("\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number);
 #endif
 
 	PageControl* control = dbb->dbb_pcontrol;

@@ -42,7 +42,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
@@ -134,8 +134,8 @@ typedef struct itm {
 #define MTAB_OPEN(path,type)	setmntent(path, "r")
 #define MTAB_CLOSE(stream)	endmntent(stream)
 #else
-#define MTAB_OPEN(path,type)	ib_fopen(path, type)
-#define MTAB_CLOSE(stream)	ib_fclose(stream)
+#define MTAB_OPEN(path,type)	fopen(path, type)
+#define MTAB_CLOSE(stream)	fclose(stream)
 #endif
 #endif /* NO_NFS */
 
@@ -199,7 +199,7 @@ static bool get_full_path(const Firebird::PathName&, Firebird::PathName&);
 #if (defined AIX || defined AIX_PPC)
 static bool get_mounts(MNT *, TEXT *, TEXT **, int *);
 #else
-static bool get_mounts(MNT *, TEXT *, IB_FILE *);
+static bool get_mounts(MNT *, TEXT *, FILE *);
 #endif
 #endif
 
@@ -248,7 +248,7 @@ bool ISC_analyze_nfs(TEXT* expanded_filename, TEXT* node_name)
 #if (defined AIX || defined AIX_PPC)
 	while (get_mounts(&mount, mnt_buffer, &temp, &context))
 #else
-	IB_FILE* mtab = MTAB_OPEN(MTAB, "r");
+	FILE* mtab = MTAB_OPEN(MTAB, "r");
 	if (!mtab) {
 		return flag;
 	}
@@ -1349,7 +1349,7 @@ static bool get_mounts(
 #if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
 #if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) /* SYSV stylish */
-static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
+static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 {
 /**************************************
  *
@@ -1393,7 +1393,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 		return false;
 }
 #else // !GETMNTENT_TAKES_TWO_ARGUMENTS 
-static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
+static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 {
 /**************************************
  *
@@ -1442,7 +1442,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 
 #ifdef SCO_UNIX
 #define GET_MOUNTS
-static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
+static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 {
 /**************************************
  *
@@ -1465,10 +1465,10 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 		/* Sake of argument, inverted the mount_point, device */
 
 		int n =
-			ib_fscanf(file, "%s %s %s %s %s %s %s %s %s %s", mount_point,
+			fscanf(file, "%s %s %s %s %s %s %s %s %s %s", mount_point,
 					  foo1, device, rw, foo1, foo1, foo1, foo1, foo1, foo1);
 		if (!strcmp(rw, "read"))
-			n = ib_fscanf(file, "%s", foo1);
+			n = fscanf(file, "%s", foo1);
 
 		if (n < 0)
 			break;
@@ -1503,7 +1503,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 #endif // SCO_UNIX
 
 #ifndef GET_MOUNTS
-static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
+static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 {
 /**************************************
  *
@@ -1533,7 +1533,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 
 	for (;;) {
 		const int n =
-			ib_fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
+			fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
 #ifdef SOLARIS
 		if (n != 5)
 #else

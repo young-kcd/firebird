@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
@@ -854,7 +854,7 @@ static void mutex_bugcheck(const TEXT* string, int mutex_state)
 
 	sprintf(msg, "SCH: %s error, status = %d", string, mutex_state);
 	gds__log(msg);
-	ib_fprintf(ib_stderr, "%s\n", msg);
+	fprintf(stderr, "%s\n", msg);
 
 	ABORT;
 }

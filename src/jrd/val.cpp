@@ -541,7 +541,7 @@ VI. ADDITIONAL NOTES
 
 #include "firebird.h"
 #include "memory_routines.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
@@ -790,7 +790,7 @@ static RTN corrupt(thread_db* tdbb, VDR control, USHORT err_code, jrd_rel* relat
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level >= 0)
-		ib_fprintf(ib_stdout, "LOG:\t%s\n", s);
+		fprintf(stdout, "LOG:\t%s\n", s);
 #endif
 
 	if (control)
@@ -954,33 +954,33 @@ static void print_rhd(USHORT length, const rhd* header)
  *
  **************************************/
 	if (VAL_debug_level) {
-		ib_fprintf(ib_stdout, "rhd: len %d TX %d format %d ",
+		fprintf(stdout, "rhd: len %d TX %d format %d ",
 				   length, header->rhd_transaction, (int) header->rhd_format);
-		ib_fprintf(ib_stdout, "BP %d/%d flags 0x%x ",
+		fprintf(stdout, "BP %d/%d flags 0x%x ",
 				   header->rhd_b_page, header->rhd_b_line, header->rhd_flags);
 		if (header->rhd_flags & rhd_incomplete) {
 			RHDF fragment;
 			fragment = (RHDF) header;
-			ib_fprintf(ib_stdout, "FP %d/%d ",
+			fprintf(stdout, "FP %d/%d ",
 					   fragment->rhdf_f_page, fragment->rhdf_f_line);
 		};
-		ib_fprintf(ib_stdout, "%s ",
+		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_deleted) ? "DEL" : "   ");
-		ib_fprintf(ib_stdout, "%s ",
+		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_chain) ? "CHN" : "   ");
-		ib_fprintf(ib_stdout, "%s ",
+		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_fragment) ? "FRG" : "   ");
-		ib_fprintf(ib_stdout, "%s ",
+		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_incomplete) ? "INC" : "   ");
-		ib_fprintf(ib_stdout, "%s ",
+		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_blob) ? "BLB" : "   ");
-		ib_fprintf(ib_stdout, "%s ",
+		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_delta) ? "DLT" : "   ");
-		ib_fprintf(ib_stdout, "%s ",
+		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_large) ? "LRG" : "   ");
-		ib_fprintf(ib_stdout, "%s ",
+		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_damaged) ? "DAM" : "   ");
-		ib_fprintf(ib_stdout, "\n");
+		fprintf(stdout, "\n");
 	};
 }
 #endif
@@ -1003,11 +1003,11 @@ static RTN walk_blob(thread_db* tdbb,
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level) {
-		ib_fprintf(ib_stdout,
+		fprintf(stdout,
 				   "walk_blob: level %d lead page %d max pages %d max segment %d\n",
 				   header->blh_level, header->blh_lead_page,
 				   header->blh_max_sequence, header->blh_max_segment);
-		ib_fprintf(ib_stdout, "           count %d, length %d sub_type %d\n",
+		fprintf(stdout, "           count %d, length %d sub_type %d\n",
 				   header->blh_count, header->blh_length,
 				   header->blh_sub_type);
 	};
@@ -1093,7 +1093,7 @@ static RTN walk_chain(thread_db* tdbb,
 		const bool delta_flag = (header->rhd_flags & rhd_delta) ? true : false;
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
-			ib_fprintf(ib_stdout, "  BV %02d: ", ++counter);
+			fprintf(stdout, "  BV %02d: ", ++counter);
 #endif
 		control->vdr_rel_chain_counter++;
 		fetch_page(tdbb, control, page_number, pag_data, &window, &page);
@@ -1133,7 +1133,7 @@ static void walk_database(thread_db* tdbb, VDR control)
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level) {
-		ib_fprintf(ib_stdout,
+		fprintf(stdout,
 				   "walk_database: %s\nODS: %d.%d  (creation ods %d)\nPage size %d\n",
 				   dbb->dbb_filename->str_data, dbb->dbb_ods_version,
 				   dbb->dbb_minor_version, dbb->dbb_minor_original,
@@ -1191,7 +1191,7 @@ static RTN walk_data_page(thread_db* tdbb,
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level) {
-		ib_fprintf(ib_stdout,
+		fprintf(stdout,
 				   "walk_data_page: page %d rel %d seq %d count %d\n",
 				   page_number, page->dpg_relation, page->dpg_sequence,
 				   page->dpg_count);
@@ -1218,7 +1218,7 @@ static RTN walk_data_page(thread_db* tdbb,
 	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level) {
-			ib_fprintf(ib_stdout, "Slot %02d (%d,%d): ",
+			fprintf(stdout, "Slot %02d (%d,%d): ",
 					   line - page->dpg_rpt,
 					   line->dpg_offset, line->dpg_length);
 		}
@@ -1262,9 +1262,9 @@ static RTN walk_data_page(thread_db* tdbb,
 #ifdef DEBUG_VAL_VERBOSE
 			if (VAL_debug_level) {
 				if (header->rhd_flags & rhd_chain)
-					ib_fprintf(ib_stdout, "(backvers)");
+					fprintf(stdout, "(backvers)");
 				if (header->rhd_flags & rhd_fragment)
-					ib_fprintf(ib_stdout, "(fragment)");
+					fprintf(stdout, "(fragment)");
 				if (header->rhd_flags & (rhd_fragment | rhd_chain))
 					print_rhd(line->dpg_length, header);
 			}
@@ -1287,7 +1287,7 @@ static RTN walk_data_page(thread_db* tdbb,
 		}
 #ifdef DEBUG_VAL_VERBOSE
 		else if (VAL_debug_level)
-			ib_fprintf(ib_stdout, "(empty)\n");
+			fprintf(stdout, "(empty)\n");
 #endif
 	}
 
@@ -1295,7 +1295,7 @@ static RTN walk_data_page(thread_db* tdbb,
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
-		ib_fprintf(ib_stdout, "------------------------------------\n");
+		fprintf(stdout, "------------------------------------\n");
 #endif
 
 	return rtn_ok;
@@ -1326,7 +1326,7 @@ static void walk_generators(thread_db* tdbb, VDR control)
 			if (*ptr) {
 #ifdef DEBUG_VAL_VERBOSE
 				if (VAL_debug_level)
-					ib_fprintf(ib_stdout, "walk_generator: page %d\n", *ptr);
+					fprintf(stdout, "walk_generator: page %d\n", *ptr);
 #endif
 				fetch_page(tdbb, control, *ptr, pag_ids, &window, &page);
 				CCH_RELEASE(tdbb, &window);
@@ -1354,7 +1354,7 @@ static void walk_header(thread_db* tdbb, VDR control, SLONG page_num)
 	while (page_num) {
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
-			ib_fprintf(ib_stdout, "walk_header: page %d\n", page_num);
+			fprintf(stdout, "walk_header: page %d\n", page_num);
 #endif
 		WIN window(-1);
 		fetch_page(tdbb, control, page_num, pag_header, &window, &page);
@@ -1704,7 +1704,7 @@ static void walk_pip(thread_db* tdbb, VDR control)
 			(sequence) ? sequence * pgc->pgc_ppp - 1 : pgc->pgc_pip;
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
-			ib_fprintf(ib_stdout, "walk_pip: page %d\n", page_number);
+			fprintf(stdout, "walk_pip: page %d\n", page_number);
 #endif
 		WIN window(-1);
 		fetch_page(tdbb, control, page_number, pag_pages, &window, &page);
@@ -1752,7 +1752,7 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
-		ib_fprintf(ib_stdout,
+		fprintf(stdout,
 				   "walk_pointer_page: page %d relation %d sequence %d\n",
 				   (*vector)[sequence], relation->rel_id, sequence);
 #endif
@@ -1828,7 +1828,7 @@ static RTN walk_record(thread_db* tdbb,
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level) {
-		ib_fprintf(ib_stdout, "record: number %ld (%d/%d) ",
+		fprintf(stdout, "record: number %ld (%d/%d) ",
 				   number,
 				   (USHORT) number / tdbb->tdbb_database->dbb_max_records,
 				   (USHORT) number % tdbb->tdbb_database->dbb_max_records);
@@ -1912,7 +1912,7 @@ static RTN walk_record(thread_db* tdbb,
 		fragment = (RHDF) ((UCHAR *) page + line->dpg_offset);
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level) {
-			ib_fprintf(ib_stdout, "fragment: pg %d/%d ",
+			fprintf(stdout, "fragment: pg %d/%d ",
 					   page_number, line_number);
 			print_rhd(line->dpg_length, (RHD) fragment);
 		}
@@ -1980,7 +1980,7 @@ static RTN walk_relation(thread_db* tdbb, VDR control, jrd_rel* relation)
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
-		ib_fprintf(ib_stdout, "walk_relation: id %d Format %d %s %s\n",
+		fprintf(stdout, "walk_relation: id %d Format %d %s %s\n",
 				   relation->rel_id, relation->rel_current_fmt,
 				   relation->rel_name, relation->rel_owner_name);
 #endif
@@ -2035,7 +2035,7 @@ static RTN walk_relation(thread_db* tdbb, VDR control, jrd_rel* relation)
 		gds__log(s);
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
-			ib_fprintf(ib_stdout, "LOG:\t%s\n", s);
+			fprintf(stdout, "LOG:\t%s\n", s);
 #endif
 		throw;
 	}
@@ -2125,7 +2125,7 @@ static RTN walk_tip(thread_db* tdbb, VDR control, SLONG transaction)
 
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
-			ib_fprintf(ib_stdout, "walk_tip: page %d next %d\n",
+			fprintf(stdout, "walk_tip: page %d next %d\n",
 					   (*vector)[sequence], page->tip_next);
 #endif
 		if (page->tip_next && page->tip_next != (*vector)[sequence + 1])

@@ -41,7 +41,7 @@
 
 #include "firebird.h"
 #include <limits.h>
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
@@ -67,7 +67,7 @@
 
 #ifdef VMS
 #include <file.h>
-#include <ib_perror.h>
+#include <perror.h>
 #include <descrip.h>
 #include <types.h>
 #include <stat.h>
@@ -140,11 +140,11 @@
 #define BSTR_output	1
 #define BSTR_alloc	2
 
-static int dump(ISC_QUAD*, FRBRD*, FRBRD*, IB_FILE*);
+static int dump(ISC_QUAD*, FRBRD*, FRBRD*, FILE*);
 static int edit(ISC_QUAD*, FRBRD*, FRBRD*, SSHORT, const SCHAR*);
 static int get_ods_version(FRBRD**, USHORT*, USHORT*);
 static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...);
-static int load(ISC_QUAD*, FRBRD*, FRBRD*, IB_FILE*);
+static int load(ISC_QUAD*, FRBRD*, FRBRD*, FILE*);
 
 
 #ifdef VMS
@@ -1217,7 +1217,7 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 
 static void print_version(void* dummy, const char* version)
 {
-	ib_printf("\t%s\n", version);
+	printf("\t%s\n", version);
 }
 
 
@@ -1540,9 +1540,9 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 	return display(blob_id, database, transaction);
 #else
 
-/* On UNIX, just dump the file to ib_stdout */
+/* On UNIX, just dump the file to stdout */
 
-	return dump(blob_id, database, transaction, ib_stdout);
+	return dump(blob_id, database, transaction, stdout);
 
 #endif
 }
@@ -1601,12 +1601,12 @@ int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
  *      This call does CR/LF translation on NT.
  *
  **************************************/
-	IB_FILE* file = ib_fopen(file_name, FOPEN_WRITE_TYPE_TEXT);
+	FILE* file = fopen(file_name, FOPEN_WRITE_TYPE_TEXT);
 	if (!file)
 		return FALSE;
 
 	const int ret = dump(blob_id, database, transaction, file);
-	ib_fclose(file);
+	fclose(file);
 
 	return ret;
 }
@@ -1627,12 +1627,12 @@ int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
  *	Dump a blob into a file.
  *
  **************************************/
-	IB_FILE* file = ib_fopen(file_name, FOPEN_WRITE_TYPE);
+	FILE* file = fopen(file_name, FOPEN_WRITE_TYPE);
 	if (!file)
 		return FALSE;
 
 	const int ret = dump(blob_id, database, transaction, file);
-	ib_fclose(file);
+	fclose(file);
 
 	return ret;
 }
@@ -1788,13 +1788,13 @@ int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
  *      Return TRUE is successful.
  *
  **************************************/
-	IB_FILE* file = ib_fopen(file_name, FOPEN_READ_TYPE_TEXT);
+	FILE* file = fopen(file_name, FOPEN_READ_TYPE_TEXT);
 	if (!file)
 		return FALSE;
 
 	const int ret = load(blob_id, database, transaction, file);
 
-	ib_fclose(file);
+	fclose(file);
 
 	return ret;
 }
@@ -1815,13 +1815,13 @@ int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
  *	Load a blob with the contents of a file.  Return TRUE is successful.
  *
  **************************************/
-	IB_FILE* file = ib_fopen(file_name, FOPEN_READ_TYPE);
+	FILE* file = fopen(file_name, FOPEN_READ_TYPE);
 	if (!file)
 		return FALSE;
 
 	const int ret = load(blob_id, database, transaction, file);
 
-	ib_fclose(file);
+	fclose(file);
 
 	return ret;
 }
@@ -2026,7 +2026,7 @@ static display(ISC_QUAD* blob_id, void* database, void* transaction)
 static int dump(ISC_QUAD* blob_id,
 				FRBRD* database, 
 				FRBRD* transaction, 
-				IB_FILE* file)
+				FILE* file)
 {
 /**************************************
  *
@@ -2070,7 +2070,7 @@ static int dump(ISC_QUAD* blob_id,
 		const TEXT* p = buffer;
 		if (l)
 			do {
-				ib_fputc(*p++, file);
+				fputc(*p++, file);
 			} while (--l);
 	}
 
@@ -2128,7 +2128,7 @@ static int edit(ISC_QUAD* blob_id,
 */
 	sprintf(file_name, "%sXXXXXX", buffer);
 
-	IB_FILE* file;
+	FILE* file;
 
 #ifdef HAVE_MKSTEMP
 	const int fd = mkstemp(file_name);
@@ -2139,32 +2139,32 @@ static int edit(ISC_QUAD* blob_id,
 #else
 	if (mktemp(file_name) == (char *)0)
 		return FALSE;
-	if (!(file = ib_fopen(file_name, FOPEN_WRITE_TYPE)))
+	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE)))
 		return FALSE;
-	ib_fclose(file);
+	fclose(file);
 
-	if (!(file = ib_fopen(file_name, FOPEN_WRITE_TYPE_TEXT)))
+	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE_TEXT)))
 		return FALSE;
 #endif
 
 	if (!dump(blob_id, database, transaction, file)) {
-		ib_fclose(file);
+		fclose(file);
 		unlink(file_name);
 		return FALSE;
 	}
 
-	ib_fclose(file);
+	fclose(file);
 
 	if (type = gds__edit(file_name, type)) {
 
-		if (!(file = ib_fopen(file_name, FOPEN_READ_TYPE_TEXT))) {
+		if (!(file = fopen(file_name, FOPEN_READ_TYPE_TEXT))) {
 			unlink(file_name);
 			return FALSE;
 		}
 
 		load(blob_id, database, transaction, file);
 
-		ib_fclose(file);
+		fclose(file);
 
 	}
 
@@ -2387,7 +2387,7 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 static int load(ISC_QUAD* blob_id,
 				FRBRD* database, 
 				FRBRD* transaction, 
-				IB_FILE* file)
+				FILE* file)
 {
 /**************************************
  *
@@ -2416,8 +2416,8 @@ static int load(ISC_QUAD* blob_id,
 	const TEXT* const buffer_end = buffer + sizeof(buffer);
 
 	for (;;) {
-		const SSHORT c = ib_fgetc(file);
-		if (ib_feof(file))
+		const SSHORT c = fgetc(file);
+		if (feof(file))
 			break;
 		*p++ = static_cast<TEXT>(c);
 		if ((c != '\n') && p < buffer_end)

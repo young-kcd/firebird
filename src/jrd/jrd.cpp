@@ -34,7 +34,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
@@ -4220,7 +4220,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 	TEXT fname[MAXPATHLEN];
 
 	gds__prefix(fname, "proc_info.log");
-	IB_FILE* fptr = ib_fopen(fname, "a+");
+	FILE* fptr = fopen(fname, "a+");
 	if (!fptr) {
 		char buff[256];
 		sprintf(buff, "Failed to open %s\n", fname);
@@ -4229,8 +4229,8 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 	}
 
 	if (mesg)
-		ib_fputs(mesg, fptr);
-	ib_fprintf(fptr,
+		fputs(mesg, fptr);
+	fprintf(fptr,
 			   "Prc Name      , prc id , flags  ,  Use Count , Alter Count\n");
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -4245,7 +4245,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 		{
 			const jrd_prc* procedure = (jrd_prc*) *ptr;
 			if (procedure)
-				ib_fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
+				fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
 							(procedure->prc_name) ?
 								(char*) procedure->prc_name->str_data : "NULL",
 							procedure->prc_id,
@@ -4254,13 +4254,13 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 		}
 	}
 	else
-		ib_fprintf(fptr, "No Cached Procedures\n");
+		fprintf(fptr, "No Cached Procedures\n");
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
 #endif
 
-	ib_fclose(fptr);
+	fclose(fptr);
 
 }
 #endif /* DEBUG_PROCS */

@@ -31,7 +31,7 @@
 #include "memory_routines.h"
 #include "../jrd/common.h"
 #include "../common/classes/vector.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/val.h"
@@ -1988,7 +1988,7 @@ static void compress(thread_db* tdbb,
 		temp.temp_double = MOV_date_to_double(desc);
 		temp_is_negative = (temp.temp_double < 0);
 #ifdef DEBUG_INDEXKEY
-		ib_fprintf(ib_stderr, "TIMESTAMP1 %lf ", temp.temp_double);
+		fprintf(stderr, "TIMESTAMP1 %lf ", temp.temp_double);
 #endif
 	}
 	else if (itype == idx_timestamp2) {
@@ -2001,10 +2001,10 @@ static void compress(thread_db* tdbb,
 		temp_copy_length = sizeof(SINT64);
 		temp_is_negative = (temp.temp_sint64 < 0);
 #ifdef DEBUG_INDEXKEY
-		ib_fprintf(ib_stderr, "TIMESTAMP2: %d:%u ",
+		fprintf(stderr, "TIMESTAMP2: %d:%u ",
 				   ((const SLONG*) desc->dsc_address)[0],
 				   ((const ULONG*) desc->dsc_address)[1]);
-		ib_fprintf(ib_stderr, "TIMESTAMP2: %20" QUADFORMAT "d ",
+		fprintf(stderr, "TIMESTAMP2: %20" QUADFORMAT "d ",
 				   temp.temp_sint64);
 #endif
 	}
@@ -2013,7 +2013,7 @@ static void compress(thread_db* tdbb,
 		temp_copy_length = sizeof(SLONG);
 		temp_is_negative = (temp.temp_slong < 0);
 #ifdef DEBUG_INDEXKEY
-		ib_fprintf(ib_stderr, "DATE %d ", temp.temp_slong);
+		fprintf(stderr, "DATE %d ", temp.temp_slong);
 #endif
 	}
 	else if (itype == idx_sql_time) {
@@ -2021,7 +2021,7 @@ static void compress(thread_db* tdbb,
 		temp_copy_length = sizeof(ULONG);
 		temp_is_negative = false;
 #ifdef DEBUG_INDEXKEY
-		ib_fprintf(ib_stderr, "TIME %u ", temp.temp_ulong);
+		fprintf(stderr, "TIME %u ", temp.temp_ulong);
 #endif
 	}
 	else if (itype == idx_numeric2) {
@@ -2043,14 +2043,14 @@ static void compress(thread_db* tdbb,
 		temp.temp_double = MOV_date_to_double(desc);
 		temp_is_negative = (temp.temp_double < 0);
 #ifdef DEBUG_INDEXKEY
-		ib_fprintf(ib_stderr, "TIMESTAMP1 special %lg ", temp.temp_double);
+		fprintf(stderr, "TIMESTAMP1 special %lg ", temp.temp_double);
 #endif
 	}
 	else {
 		temp.temp_double = MOV_get_double(desc);
 		temp_is_negative = (temp.temp_double < 0);
 #ifdef DEBUG_INDEXKEY
-		ib_fprintf(ib_stderr, "NUMERIC %lg ", temp.temp_double);
+		fprintf(stderr, "NUMERIC %lg ", temp.temp_double);
 #endif
 	}
 
@@ -2165,10 +2165,10 @@ static void compress(thread_db* tdbb,
 	key->key_length = (p - key->key_data) + 1;
 #ifdef DEBUG_INDEXKEY
 	{
-		ib_fprintf(ib_stderr, "temporary_key: length: %d Bytes: ", key->key_length);
+		fprintf(stderr, "temporary_key: length: %d Bytes: ", key->key_length);
 		for (int i = 0; i < key->key_length; i++)
-			ib_fprintf(ib_stderr, "%02x ", key->key_data[i]);
-		ib_fprintf(ib_stderr, "\n");
+			fprintf(stderr, "%02x ", key->key_data[i]);
+		fprintf(stderr, "\n");
 	}
 #endif
 }
@@ -5457,16 +5457,16 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
  *	quantify.
  *
  **************************************/
-	ib_fprintf(ib_stderr,
+	fprintf(stderr,
 			   "%20" QUADFORMAT
 			   "d  %4d  %.15e  %6d  ", value, scale, key.d_part, key.s_part);
 
 	const UCHAR* p = (UCHAR*) &key;
 	for (int n = 10; n--; n > 0) {
-		ib_fprintf(ib_stderr, "%02x ", *p++);
+		fprintf(stderr, "%02x ", *p++);
 	}
 
-	ib_fprintf(ib_stderr, "\n");
+	fprintf(stderr, "\n");
 	return;
 }
 #endif /* DEBUG_INDEXKEY */

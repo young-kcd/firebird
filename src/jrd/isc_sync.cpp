@@ -38,7 +38,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -256,15 +256,15 @@ int ISC_event_blocked(USHORT count, event_t** events, SLONG* values)
 	for (; count > 0; --count, ++events, ++values)
 		if ((*events)->event_count >= *values) {
 #ifdef DEBUG_ISC_SYNC
-			ib_printf("ISC_event_blocked: FALSE (eg something to report)\n");
-			ib_fflush(ib_stdout);
+			printf("ISC_event_blocked: FALSE (eg something to report)\n");
+			fflush(stdout);
 #endif
 			return FALSE;
 		}
 
 #ifdef DEBUG_ISC_SYNC
-	ib_printf("ISC_event_blocked: TRUE (eg nothing happened yet)\n");
-	ib_fflush(ib_stdout);
+	printf("ISC_event_blocked: TRUE (eg nothing happened yet)\n");
+	fflush(stdout);
 #endif
 	return TRUE;
 }
@@ -470,15 +470,15 @@ int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 	for (; count > 0; --count, ++events, ++values)
 		if ((*events)->event_count >= *values) {
 #ifdef DEBUG_ISC_SYNC
-			ib_printf("ISC_event_blocked: FALSE (eg something to report)\n");
-			ib_fflush(ib_stdout);
+			printf("ISC_event_blocked: FALSE (eg something to report)\n");
+			fflush(stdout);
 #endif
 			return FALSE;
 		}
 
 #ifdef DEBUG_ISC_SYNC
-	ib_printf("ISC_event_blocked: TRUE (eg nothing happened yet)\n");
-	ib_fflush(ib_stdout);
+	printf("ISC_event_blocked: TRUE (eg nothing happened yet)\n");
+	fflush(stdout);
 #endif
 	return TRUE;
 }
@@ -738,15 +738,15 @@ int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 	for (; count > 0; --count, ++events, ++values)
 		if ((*events)->event_count >= *values) {
 #ifdef DEBUG_ISC_SYNC
-			ib_printf("ISC_event_blocked: FALSE (eg something to report)\n");
-			ib_fflush(ib_stdout);
+			printf("ISC_event_blocked: FALSE (eg something to report)\n");
+			fflush(stdout);
 #endif
 			return FALSE;
 		}
 
 #ifdef DEBUG_ISC_SYNC
-	ib_printf("ISC_event_blocked: TRUE (eg nothing happened yet)\n");
-	ib_fflush(ib_stdout);
+	printf("ISC_event_blocked: TRUE (eg nothing happened yet)\n");
+	fflush(stdout);
 #endif
 	return TRUE;
 }
@@ -1748,7 +1748,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	if (length == 0) {
 		/* Must be able to handle case where zero length passed in. */
 
-		ib_fprintf(ib_stderr, "Unimplemented feature in ISC_map_file.\n");
+		fprintf(stderr, "Unimplemented feature in ISC_map_file.\n");
 		abort();
 	}
 
@@ -2266,27 +2266,27 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 /* Write shared memory key into expanded_filename file */
 
-	IB_FILE* fp = ib_fopen(expanded_filename, "w");
+	FILE* fp = fopen(expanded_filename, "w");
 	umask(oldmask);
 
 	if (!fp) {
-		error(status_vector, "ib_fopen", errno);
+		error(status_vector, "fopen", errno);
 		return NULL;
 	}
 
-	ib_fprintf(fp, "%ld", key);
+	fprintf(fp, "%ld", key);
 
 /* Get an exclusive lock on the file until the initialization process
    is complete.  That way potential race conditions are avoided. */
 
 #ifndef HAVE_FLOCK
-	if (lockf(ib_fileno(fp), F_LOCK, 0)) {
+	if (lockf(fileno(fp), F_LOCK, 0)) {
 		error(status_vector, "lockf", errno);
 #else
-	if (flock(ib_fileno(fp), LOCK_EX)) {
+	if (flock(fileno(fp), LOCK_EX)) {
 		error(status_vector, "flock", errno);
 #endif
-		ib_fclose(fp);
+		fclose(fp);
 		return NULL;
 	}
 
@@ -2315,7 +2315,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 			if (pstat_getipc(&pst, sizeof(struct pst_ipcinfo), 1, 0) == -1) {
 				error(status_vector, "pstat_getipc", errno);
-				ib_fclose(fp);
+				fclose(fp);
 				return NULL;
 			}
 
@@ -2324,7 +2324,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 				   is still EINVAL, exactly what we want.
 				 */
 				error(status_vector, "shmget", errno);
-				ib_fclose(fp);
+				fclose(fp);
 				return NULL;
 			}
 #endif /* HP10 */
@@ -2343,13 +2343,13 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			 */
 			if ((shmid = shmget(key, 0, PRIV)) == -1) {
 				error(status_vector, "shmget", errno);
-				ib_fclose(fp);
+				fclose(fp);
 				return NULL;
 			}
 
 			if (shmctl(shmid, IPC_RMID, &buf) == -1) {
 				error(status_vector, "shmctl/IPC_RMID", errno);
-				ib_fclose(fp);
+				fclose(fp);
 				return NULL;
 			}
 
@@ -2363,7 +2363,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 				-1)
 			{
 				error(status_vector, "shmget", errno);
-				ib_fclose(fp);
+				fclose(fp);
 				return NULL;
 			}
 		}
@@ -2371,7 +2371,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #endif /* SUPERSERVER */
 		{
 			error(status_vector, "shmget", errno);
-			ib_fclose(fp);
+			fclose(fp);
 			return NULL;
 		}
 
@@ -2392,7 +2392,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 */
 	if (shmctl(shmid, IPC_STAT, &buf) == -1) {
 		error(status_vector, "shmctl/IPC_STAT", errno);
-		ib_fclose(fp);
+		fclose(fp);
 		return NULL;
 	}
 
@@ -2401,7 +2401,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		if (length) {
 			if (shmctl(shmid, IPC_RMID, &buf) == -1) {
 				error(status_vector, "shmctl/IPC_RMID", errno);
-				ib_fclose(fp);
+				fclose(fp);
 				return NULL;
 			}
 
@@ -2409,7 +2409,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 				-1)
 			{
 				error(status_vector, "shmget", errno);
-				ib_fclose(fp);
+				fclose(fp);
 				return NULL;
 			}
 		}
@@ -2417,7 +2417,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			length = buf.shm_segsz;
 			if ((shmid = shmget(key, length, PRIV)) == -1) {
 				error(status_vector, "shmget", errno);
-				ib_fclose(fp);
+				fclose(fp);
 				return NULL;
 			}
 		}
@@ -2429,7 +2429,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 		if (shmctl(shmid, IPC_STAT, &buf) == -1) {
 			error(status_vector, "shmctl/IPC_STAT", errno);
-			ib_fclose(fp);
+			fclose(fp);
 			return NULL;
 		}
 		length = buf.shm_segsz;
@@ -2438,7 +2438,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 		if ((shmid = shmget(key, length, PRIV)) == -1) {
 			error(status_vector, "shmget", errno);
-			ib_fclose(fp);
+			fclose(fp);
 			return NULL;
 		}
 	}
@@ -2462,7 +2462,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 	if ((U_IPTR) address == -1) {
 		error(status_vector, "shmat", errno);
-		ib_fclose(fp);
+		fclose(fp);
 		return NULL;
 	}
 
@@ -2470,7 +2470,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		error(status_vector, "shmctl/IPC_STAT", errno);
 		shmdt(address);
 		next_shared_memory -= length;
-		ib_fclose(fp);
+		fclose(fp);
 		return NULL;
 	}
 
@@ -2484,7 +2484,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		if (!init_routine) {
 			shmdt(address);
 			next_shared_memory -= length;
-			ib_fclose(fp);
+			fclose(fp);
 			*status_vector++ = isc_arg_gds;
 			*status_vector++ = isc_unavailable;
 			*status_vector++ = isc_arg_end;
@@ -2513,7 +2513,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	{
 		shmdt(address);
 		next_shared_memory -= length;
-		ib_fclose(fp);
+		fclose(fp);
 		return NULL;
 	}
 	shmem_data->sh_mem_mutex_arg = semid;
@@ -2527,7 +2527,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 /* When the mapped file is closed here, the lock we applied for
    synchronization will be released. */
 
-	ib_fclose(fp);
+	fclose(fp);
 
 	return address;
 }

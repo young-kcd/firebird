@@ -644,9 +644,6 @@
 				RelativePath="..\..\..\src\jrd\os\guid.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ib_stdio.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\ibase.h">
 			</File>
 			<File

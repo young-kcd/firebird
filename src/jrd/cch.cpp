@@ -28,7 +28,7 @@
  */
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/jrd.h"
@@ -149,7 +149,7 @@ static void update_write_direction(thread_db*, BufferDesc*);
 #define MIN_BUFFER_SEGMENT	65536L
 
 #ifndef DEBUG_PRINTF
-#define DEBUG_PRINTF(msg)	ib_fprintf (ib_stderr, (msg))
+#define DEBUG_PRINTF(msg)	fprintf (stderr, (msg))
 #endif
 
 /* Given pointer a field in the block, find the block */
@@ -1058,7 +1058,7 @@ void CCH_fetch_page(
 			}
 			else {
 				if (retryCount++ == 3) {
-					ib_fprintf(ib_stderr,
+					fprintf(stderr,
 							   "IO error loop Unwind to avoid a hang\n");
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					dbb->backup_manager->unlock_state();
@@ -1108,7 +1108,7 @@ void CCH_fetch_page(
 				}
 				else {
 					if (retryCount++ == 3) {
-						ib_fprintf(ib_stderr,
+						fprintf(stderr,
 								   "IO error loop Unwind to avoid a hang\n");
 						PAGE_LOCK_RELEASE(bdb->bdb_lock);
 						dbb->backup_manager->unlock_state();

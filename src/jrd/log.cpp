@@ -23,7 +23,7 @@
 
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
@@ -357,7 +357,7 @@ void LOG_fini(void)
 	if (dbb && (log = dbb->dbb_log)) {
 		if (log->log_file) {
 			log_flush();
-			ib_fclose(log->log_file);
+			fclose(log->log_file);
 		}
 		ALL_release(log->log_string);
 		ALL_release(log);
@@ -408,7 +408,7 @@ static void error(const TEXT* error_string)
  **************************************/
 	Database* dbb = GET_DBB;
 
-	ib_printf("ERROR in logging system: %s\n", error_string);
+	printf("ERROR in logging system: %s\n", error_string);
 
 	if (dbb->dbb_log && dbb->dbb_log->log_file) {
 		log_short(log_error);
@@ -468,11 +468,11 @@ static void log_flush(void)
 		return;
 
 	const UCHAR* buffer = log->log_buffer;
-	ib_fwrite(buffer, sizeof(*buffer), log->log_ptr - log->log_buffer,
+	fwrite(buffer, sizeof(*buffer), log->log_ptr - log->log_buffer,
 			  log->log_file);
 	log->log_ptr = log->log_buffer;
 
-	ib_fflush(log->log_file);
+	fflush(log->log_file);
 }
 
 
@@ -597,7 +597,7 @@ static void open_log(const TEXT* file_name, SSHORT file_length,
 	}
 
 	const int mask = umask(0111);
-	void* log_file = ib_fopen(log_name, mode);
+	void* log_file = fopen(log_name, mode);
 	umask(mask);
 
 	if (!log_file)
