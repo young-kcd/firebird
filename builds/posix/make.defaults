@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.25.2.3 2003-11-10 00:01:40 bellardo Exp $
+#   $Id: make.defaults,v 1.25.2.4 2003-11-10 02:09:33 bellardo Exp $
 # 
 
 
@@ -260,6 +260,10 @@ CHANGE_MESSAGES = $(BIN)/change_messages$(EXEC_EXT)
 fr_FR_MSG       = $(FIREBIRD)/fr_FR.msg
 de_DE_MSG       = $(FIREBIRD)/de_DE.msg
 ja_JP_MSG       = $(FIREBIRD)/ja_JP.msg
+
+#Define a variable that contains the fbclient link line.  It may vary from
+# platform to platform.  Current, it differs for DARWIN
+FBCLIENT_LINK	= -L$(LIB) -lfbclient
 
 #Platform Manager
 #For want of a better suggestion we may as well default to posix

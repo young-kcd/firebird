@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gdef,v 1.5 2003-03-27 11:21:43 aafemt Exp $
+#  $Id: Makefile.in.client.gdef,v 1.5.2.1 2003-11-10 02:09:33 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=client.gdef
@@ -62,7 +62,7 @@ all:	gdef
 gdef:   $(BIN)/gdef
 
 $(BIN)/gdef: $(GDEF_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 

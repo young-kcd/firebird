@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.9.2.1 2003-10-09 23:08:33 skidder Exp $
+#  $Id: Makefile.in.client.util,v 1.9.2.2 2003-11-10 02:09:33 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -112,53 +112,53 @@ all: $(CLIENT_UTIL_TARGETS)
 create_db: $(CREATE_DB)
 
 $(CREATE_DB):	$(CREATEDB_Objects) 
-	$(LD) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 fb_lock_print: $(LIBFBCLIENT_SO) $(LOCKPRINT)
 
 $(LOCKPRINT):  $(LOCKPRINT_Objects) 
-	$(LD) $(LINK_OPTS) $(LOCKPRINT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(LOCKPRINT_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 gstat : $(LIBFBCLIENT_SO) $(GSTAT)
 
 $(GSTAT):	$(GSTAT_Objects)
-	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 
 gds_drop: $(GDS_DROP)
 
 $(GDS_DROP):	$(DROP_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(DROP_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 gds_relay: $(GDS_RELAY)
 
 $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 gsec: $(LIBFBCLIENT_SO) $(GSEC)
 
 $(GSEC):	$(GSEC_Objects)
-	$(LD) $(LINK_OPTS) $(GSEC_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GSEC_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 fbguard: $(LIBFBCLIENT_SO) $(FBGUARD)
 
 $(FBGUARD):	$(FBGUARD_Objects)
-	$(LD) $(LINK_OPTS) $(FBGUARD_Objects) -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(FBGUARD_Objects) -o $@ $(FBCLIENT_LINK) $(LIB_GUI) $(LINK_LIBS)
 
 ibguard: $(LIBFBCLIENT_SO) $(IBGUARD)
 
 $(IBGUARD):	$(IBGUARD_A_Objects) $(IBGUARD_B_Objects)
-	$(LD) $(LINK_OPTS) $(IBGUARD_A_Objects) $(IBGUARD_B_Objects) -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS) 
+	$(LD) $(LINK_OPTS) $(IBGUARD_A_Objects) $(IBGUARD_B_Objects) -o $@ $(FBCLIENT_LINK) $(LIB_GUI) $(LINK_LIBS) 
 
 fbmgr_bin: $(FBMGR_BIN)
 
 $(FBMGR_BIN):	$(FBMGR_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(FBMGR_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(FBMGR_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 instreg: $(INSTREG)
 
@@ -175,7 +175,7 @@ $(INSTSVC):	$(INSTSVC_Objects) $(LIBFBCOMMON_A) $(OS_SPECIFIC_Objects)
 rebuild: $(GDS_REBUILD)
 
 $(GDS_REBUILD):	$(REBUILD_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(REBUILD_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(REBUILD_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 
