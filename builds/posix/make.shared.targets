@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.7 2003-03-28 11:29:18 aafemt Exp $
+#  $Id: make.shared.targets,v 1.8 2003-04-02 22:24:47 brodsom Exp $
 #
 
 
@@ -60,7 +60,10 @@ $(SRC)/jrd/dyn_def.cpp : $(SRC)/jrd/dyn_def.epp $(SRC)/jrd/dyn_def.sed
 
 $(SRC)/dsql/parse.cpp: $(SRC)/dsql/parse.y $(SRC)/dsql/parse.sed
 	$(YACC) -l -d -b $(SRC)/dsql/dsql $<
-	sed -f $(SRC)/dsql/parse.sed <$(SRC)/dsql/dsql.tab.c > $@  
+	sed -e 's/\\r//g' $(SRC)/dsql/parse.sed > $(SRC)/dsql/parse2.sed
+	sed -f $(SRC)/dsql/parse2.sed <$(SRC)/dsql/dsql.tab.c > $@  
+	-rm $(SRC)/dsql/parse2.sed
+
 
 
 
