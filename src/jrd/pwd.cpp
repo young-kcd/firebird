@@ -98,16 +98,10 @@ const UCHAR SecurityDatabase::TPB[4] = {
 	isc_tpb_wait
 };
 
-/******************************************************************************
- *
- *	Static instance of the database
- */
+/* Static instance of the database */
 
-SecurityDatabase& SecurityDatabase::instance()
-{
-	static SecurityDatabase db;
-	return db;
-}
+SecurityDatabase SecurityDatabase::instance;
+
 
 /******************************************************************************
  *
@@ -142,16 +136,13 @@ void SecurityDatabase::unlock()
 
 void SecurityDatabase::fini()
 {
+	counter -= (is_cached) ? 1 : 0;
 #ifndef EMBEDDED
-	if (is_cached && counter > 0)
+	if (counter == 1 && lookup_db)
 	{
-		if (--counter == 1)
-		{
-			counter = 0;
-			THREAD_EXIT;
-			isc_detach_database(status, &lookup_db);
-			THREAD_ENTER;
-		}
+		THREAD_EXIT;
+		isc_detach_database(status, &lookup_db);
+		THREAD_ENTER;
 	}
 #endif
 }
@@ -163,7 +154,7 @@ void SecurityDatabase::init()
 
 bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
 {
-	bool notfound = true;	// user found flag
+	bool found = false;		// user found flag
 	TEXT uname[129];		// user name buffer
 	user_record user;		// user record
 
@@ -207,7 +198,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 			isc_receive(status, &lookup_req, 1, sizeof(user), &user, 0);
 			if (!user.flag || status[1])
 				break;
-			notfound = false;
+			found = true;
 			if (uid)
 				*uid = user.uid;
 			if (gid)
@@ -225,7 +216,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	}
 	THREAD_ENTER;
 
-	return notfound;
+	return found;
 }
 
 bool SecurityDatabase::prepare()
@@ -239,7 +230,7 @@ bool SecurityDatabase::prepare()
 	/* dimitr: access to the class members in this routine should be synchronized
 			   when fine grained locking will be implemented for the SS architecture */
 
-	if (counter > 1)
+	if (lookup_db)
 	{
 		THREAD_EXIT;
 		return true;
@@ -336,12 +327,12 @@ void SecurityDatabase::getPath(TEXT* path_buffer)
 
 void SecurityDatabase::initialize()
 {
-	instance().init();
+	instance.init();
 }
 
 void SecurityDatabase::shutdown()
 {
-	instance().fini();
+	instance.fini();
 }
 
 void SecurityDatabase::verifyUser(TEXT* name,
@@ -352,7 +343,7 @@ void SecurityDatabase::verifyUser(TEXT* name,
 								  int* gid,
 								  int* node_id)
 {
-	bool notfound;
+	bool found;
 	TEXT *p, *q, pw1[33], pw2[33], pwt[33];
 
 	if (user_name)
@@ -372,10 +363,10 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	return;
 #else
 	THREAD_EXIT;
-	instance().lock();
+	instance.lock();
 	THREAD_ENTER;
-	notfound = instance().lookup_user(name, uid, gid, pw1);
-	instance().unlock();
+	found = instance.lookup_user(name, uid, gid, pw1);
+	instance.unlock();
 #endif
 
 	/* Punt if the user has specified neither a raw nor an encrypted password,
@@ -383,9 +374,7 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	   or if the user name specified was not in the password database
 	   (or if there was no password database - it's still not found) */
 
-	if ((!password && !password_enc) ||
-		(password && password_enc) ||
-		notfound)
+	if ((!password && !password_enc) || (password && password_enc) || !found)
 	{
 		ERR_post(gds_login, 0);
 	}
