@@ -2967,6 +2967,7 @@ static void service_fork(TEXT * service_path, SVC service)
 /* FREE: at procedure return */
 	if (!argv)					/* NOMEM: */
 		ERR_post(isc_virmemexh, 0);
+	service->svc_argc = argc;
 
 	len = strlen(service->svc_switches) + 1;
 	if (len > sizeof(argv_data_buf))
