@@ -132,10 +132,6 @@ extern STATUS DLL_EXPORT jrd8_transact_request(STATUS *, struct att **,
 extern STATUS DLL_EXPORT jrd8_unwind_request(STATUS *, struct jrd_req **, SSHORT);
 extern void jrd_vtof(const char*, char*, SSHORT);
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-extern void jrd_vtof2(SCHAR *, SCHAR *, SSHORT, USHORT);
-#endif
-
 #ifdef SERVER_SHUTDOWN
 /* Defines for paramater 3 of JRD_num_attachments */
 #define JRD_info_drivemask	1

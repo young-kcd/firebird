@@ -669,56 +669,6 @@ USHORT DYN_get_string(TEXT ** ptr, TEXT * field, USHORT size, USHORT err_flag)
 	return length;
 }
 
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-void DYN_get_string2( TEXT ** ptr, TEXT * field, USHORT size)
-{
-/**************************************
- *
- *	D Y N _ g e t _ s t r i n g 2
- *
- **************************************
- *
- * Functional description
- *	Pick up a string, convert to the interp of
- *	the engine.
- *	If the string expands beyond the field size, punt.
- *
- **************************************/
-	TEXT *p;
-	USHORT length;
-	USHORT from_interp;
-	USHORT to_interp;
-	DSC from, to;
-
-	to_interp = HOST_INTERP;
-
-	p = *ptr;
-
-	from_interp = *p++;
-	from_interp |= (*p++) << 8;
-
-	length = *p++;
-	length |= (*p++) << 8;
-
-	from.dsc_dtype = dtype_text;
-	from.dsc_scale = from_interp;
-	from.dsc_length = length;
-	from.dsc_address = (UCHAR *) p;
-
-	to.dsc_dtype = dtype_cstring;
-	to.dsc_scale = to_interp;
-	to.dsc_length = size;
-	to.dsc_address = (UCHAR *) field;
-
-	MOV_move(&from, &to);
-
-	p += length;
-	*ptr = p;
-}
-#endif
-
-
 USHORT DYN_put_blr_blob(GBL gbl, UCHAR** ptr, GDS__QUAD* blob_id)
 {
 /**************************************
@@ -761,77 +711,6 @@ USHORT DYN_put_blr_blob(GBL gbl, UCHAR** ptr, GDS__QUAD* blob_id)
 
 	return length;
 }
-
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-USHORT DYN_put_blr_blob2(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
-{
-/**************************************
- *
- *	D Y N _ p u t _ b l r _ b l o b 2
- *
- **************************************
- *
- * Functional description
- *	Write out a blob.
- *	Convert the string to local encoding.
- * 	Not sure why we call this blr blob	
- *	This routine is used to put query_header
- *	which is a text blob.
- *
- **************************************/
-	TDBB tdbb;
-	BLK blob;
-	USHORT length;
-	UCHAR *p;
-	USHORT bpb_length, from_interp;
-	UCHAR bpb[20], *p2;
-
-	tdbb = GET_THREAD_DATA;
-
-	p = *ptr;
-
-	from_interp = *p++;
-	from_interp |= (*p++) << 8;
-
-	length = *p++;
-	length |= (*p++) << 8;
-
-	if (!length) {
-		*ptr = p;
-		return length;
-	}
-
-	blob = NULL;
-
-	p2 = bpb;
-	*p2++ = gds__bpb_version1;
-	*p2++ = gds__bpb_source_interp;
-	*p2++ = 2;
-	*p2++ = from_interp;
-	*p2++ = from_interp >> 8;
-	bpb_length = p2 - bpb;
-
-	try {
-		blob =(BLK)BLB_create2(	tdbb,
-								gbl->gbl_transaction,
-								blob_id,
-								bpb_length,
-								bpb);
-		BLB_put_segment(tdbb, blob, p, length);
-		BLB_close(tdbb, blob);
-	}
-	catch (...) {
-		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
-		/* msg 106: "Create metadata blob failed" */
-	}
-
-	*ptr = p + length;
-
-	return length;
-}
-#endif
-
 
 USHORT DYN_put_text_blob(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 {
@@ -880,78 +759,6 @@ USHORT DYN_put_text_blob(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
 
 	return length;
 }
-
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-USHORT DYN_put_text_blob2(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
-{
-/**************************************
- *
- *	D Y N _ p u t _ t e x t _ b l o b 2
- *
- **************************************
- *
- * Functional description
- *	Write out a text blob.
- *	This one is similar to put_text_blob(),
- *	except that this one is for tagged description blobs.
- *
- **************************************/
-	TDBB tdbb;
-	USHORT length;
-	UCHAR *p, *end;
-	BLK blob;
-	USHORT bpb_length, from_interp;
-	UCHAR bpb[20], *p2;
-
-	tdbb = GET_THREAD_DATA;
-
-	p = *ptr;
-
-	from_interp = *p++;
-	from_interp |= (*p++) << 8;
-
-	length = *p++;
-	length |= (*p++) << 8;
-
-	if (!length) {
-		*ptr = p;
-		return length;
-	}
-
-	p2 = bpb;
-	*p2++ = gds__bpb_version1;
-	*p2++ = gds__bpb_source_interp;
-	*p2++ = 2;
-	*p2++ = from_interp;
-	*p2++ = from_interp >> 8;
-	bpb_length = p2 - bpb;
-
-	try {
-		blob = (BLK)BLB_create2(tdbb,
-								gbl->gbl_transaction,
-								blob_id,
-								bpb_length,
-								bpb);
-
-		for (end = p + length; p < end; p += TEXT_BLOB_LENGTH)
-		{
-			length = (p + TEXT_BLOB_LENGTH <= end) ? TEXT_BLOB_LENGTH : end - p;
-			BLB_put_segment(tdbb, blob, p, length);
-		}
-		BLB_close(tdbb, blob);
-	}
-	catch (...) {
-		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
-		/* msg 106: "Create metadata blob failed" */
-	}
-
-	*ptr = end;
-
-	return length;
-}
-#endif /* (defined JPN_SJIS || defined JPN_EUC) */
-
 
 void DYN_rundown_request(BLK handle, SSHORT id)
 {
@@ -1006,39 +813,6 @@ USHORT DYN_skip_attribute(UCHAR ** ptr)
 
 	return length;
 }
-
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-USHORT DYN_skip_attribute2(UCHAR ** ptr)
-{
-/**************************************
- *
- *	D Y N _ s k i p _ a t t r i b u t e 2
- *
- **************************************
- *
- * Functional description
- *	Skip over a tagged attribute returning length 
- *	(excluding size of count bytes and tag).
- *
- **************************************/
-	UCHAR *p;
-	USHORT length;
-	USHORT from_interp;
-
-	p = *ptr;
-
-	from_interp = *p++;
-	from_interp |= (*p++) << 8;
-
-	length = *p++;
-	length |= (*p++) << 8;
-	*ptr = p + length;
-
-	return length;
-}
-#endif
-
 
 void DYN_terminate( TEXT * string, int length)
 {

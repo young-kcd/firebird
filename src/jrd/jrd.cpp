@@ -4576,51 +4576,6 @@ void jrd_vtof(const char* string, char* field, SSHORT length)
 	}
 }
 
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-void jrd_vtof2(SCHAR * string, SCHAR * field, SSHORT length, USHORT interp)
-{
-/**************************************
- *
- *	j r d _ v t o f 2
- *
- **************************************
- *
- * Functional description
- *	Move a null terminated string to a fixed length
- *	field.  The call is primarily generated  by the
- *	preprocessor.
- *	Avoid truncation in between a double byte character.
- *
- *	This is the same code as gds__vtof but is used internally.
- *
- **************************************/
-	SSHORT bytes_copied;
-	SCHAR *saved_field;
-
-	bytes_copied = 0;
-	saved_field = field;
-
-	while (*string) {
-		*field++ = *string++;
-		bytes_copied++;
-		if (--length <= 0)
-			return;
-	}
-
-	if (interp == gds__interp_jpn_sjis &&
-		KANJI_check_sjis(saved_field, bytes_copied)) *(field - 1) = ' ';
-	else if (interp == gds__interp_jpn_euc &&
-			 KANJI_check_euc(saved_field, bytes_copied)) *(field - 1) = ' ';
-
-	if (length)
-		do
-			*field++ = ' ';
-		while (--length);
-}
-#endif
-
-
 static BLB check_blob(TDBB tdbb, STATUS * user_status, BLB * blob_handle)
 {
 /**************************************

@@ -172,14 +172,6 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 						DBB.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-				case gds_dyn_description2:
-					if (DYN_put_text_blob2(gbl, ptr, &DBB.RDB$DESCRIPTION))
-						DBB.RDB$DESCRIPTION.NULL = FALSE;
-					else
-						DBB.RDB$DESCRIPTION.NULL = TRUE;
-					break;
-#endif
 
 				case gds_dyn_def_file:
 					DYN_define_file(gbl, ptr, (SLONG) 0, &start, 158);
@@ -309,14 +301,6 @@ void DYN_modify_exception( GBL gbl, UCHAR ** ptr)
 					X.RDB$MESSAGE.NULL = FALSE;
 					break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-				case gds_dyn_xcp_msg2:
-					DYN_get_string2(ptr, X.RDB$MESSAGE,
-									sizeof(X.RDB$MESSAGE));
-					X.RDB$MESSAGE.NULL = FALSE;
-					break;
-#endif
-
 				default:
 					DYN_unsupported_verb();
 				}
@@ -368,13 +352,6 @@ void DYN_modify_global_field(
 	TEXT *qryname, *qryhdr, *edtstr, *missingval,
 		*fldvald, *fldvaldsrc, *desc,
 		*flddftval, *flddfltsrc;
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-	TEXT* edtstr2;
-	TEXT* qryhdr2;
-	TEXT* desc2;
-	TEXT* fldvaldsrc2;
-#endif
 
 	BOOLEAN bqryname, bqryhdr, bqryhdr2, bedtstr, bedtstr2, bmissingval,
 		bsingvald, bfldvald, bfldvaldsrc, bfldvaldsrc2, bdesc, bdesc2,
@@ -632,27 +609,12 @@ void DYN_modify_global_field(
 				DYN_skip_attribute(ptr);
 				break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-			case gds_dyn_fld_query_header2:
-				qryhdr2 = (TEXT *) * ptr;
-				bqryhdr2 = TRUE;
-				DYN_skip_attribute2(ptr);
-				break;
-#endif
-
 			case gds_dyn_fld_edit_string:
 				edtstr = (TEXT *) * ptr;
 				bedtstr = TRUE;
 				DYN_skip_attribute(ptr);
 				break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-			case gds_dyn_fld_edit_string2:
-				edtstr2 = (TEXT *) * ptr;
-				bedtstr2 = TRUE;
-				DYN_skip_attribute2(ptr);
-				break;
-#endif
 			case gds_dyn_fld_missing_value:
 				missingval = (TEXT *) * ptr;
 				bmissingval = TRUE;
@@ -691,27 +653,12 @@ void DYN_modify_global_field(
 				DYN_skip_attribute(ptr);
 				break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-			case gds_dyn_fld_validation_source2:
-				fldvaldsrc2 = (TEXT *) * ptr;
-				bfldvaldsrc2 = TRUE;
-				DYN_skip_attribute2(ptr);
-				break;
-#endif
-
 			case gds_dyn_description:
 				desc = (TEXT *) * ptr;
 				bdesc = TRUE;
 				DYN_skip_attribute(ptr);
 				break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-			case gds_dyn_description2:
-				desc2 = (TEXT *) * ptr;
-				bdesc2 = TRUE;
-				DYN_skip_attribute2(ptr);
-				break;
-#endif
 			case gds_dyn_del_validation:
 				bdelvald = TRUE;
 				break;
@@ -835,32 +782,12 @@ void DYN_modify_global_field(
 					FLD.RDB$QUERY_HEADER.NULL = TRUE;
 			}
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-			if (bqryhdr2) {
-				if (DYN_put_blr_blob2(gbl, (UCHAR**)&qryhdr2, &FLD.RDB$QUERY_HEADER))
-					FLD.RDB$QUERY_HEADER.NULL = FALSE;
-				else
-					FLD.RDB$QUERY_HEADER.NULL = TRUE;
-			}
-#endif
-
 			if (bedtstr) {
 				if (GET_STRING(&edtstr, FLD.RDB$EDIT_STRING))
 					FLD.RDB$EDIT_STRING.NULL = FALSE;
 				else
 					FLD.RDB$EDIT_STRING.NULL = TRUE;
 			}
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-			if (bedtstr2) {
-				if (DYN_get_string2
-					(&edtstr2, FLD.RDB$EDIT_STRING,
-					 sizeof(FLD.RDB$EDIT_STRING))) FLD.RDB$EDIT_STRING.NULL =
-						FALSE;
-				else
-					FLD.RDB$EDIT_STRING.NULL = TRUE;
-			}
-#endif
 
 			if (bmissingval) {
 				if (DYN_put_blr_blob
@@ -887,17 +814,6 @@ void DYN_modify_global_field(
 					FLD.RDB$VALIDATION_SOURCE.NULL = TRUE;
 			}
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-			if (bfldvaldsrc2) {
-				if (DYN_put_text_blob2
-					(gbl, (UCHAR**)&fldvaldsrc2,
-					 &FLD.RDB$VALIDATION_SOURCE)) FLD.RDB$VALIDATION_SOURCE.
-	 NULL = FALSE;
-				else
-					FLD.RDB$VALIDATION_SOURCE.NULL = TRUE;
-			}
-#endif
-
 			if (bdesc) {
 				if (DYN_put_text_blob(gbl, (UCHAR**)&desc, &FLD.RDB$DESCRIPTION))
 					FLD.RDB$DESCRIPTION.NULL = FALSE;
@@ -905,14 +821,6 @@ void DYN_modify_global_field(
 					FLD.RDB$DESCRIPTION.NULL = TRUE;
 			}
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-			if (bdesc2) {
-				if (DYN_put_text_blob2(gbl, (UCHAR**)&desc2, &FLD.RDB$DESCRIPTION))
-					FLD.RDB$DESCRIPTION.NULL = FALSE;
-				else
-					FLD.RDB$DESCRIPTION.NULL = TRUE;
-			}
-#endif
 			if (bdelvald) {
 				FLD.RDB$VALIDATION_BLR.NULL = TRUE;
 				FLD.RDB$VALIDATION_SOURCE.NULL = TRUE;
@@ -1023,15 +931,6 @@ void DYN_modify_index( GBL gbl, UCHAR ** ptr)
 						IDX.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-				case gds_dyn_description2:
-					if (DYN_put_text_blob2(gbl, ptr, &IDX.RDB$DESCRIPTION))
-						IDX.RDB$DESCRIPTION.NULL = FALSE;
-					else
-						IDX.RDB$DESCRIPTION.NULL = TRUE;
-					break;
-#endif
-
 					/* For V4 index selectivity can be set only to -1 */
 
 				case gds_dyn_idx_statistic:
@@ -1129,27 +1028,11 @@ void DYN_modify_local_field(
 			DYN_skip_attribute(ptr);
 			break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-		case gds_dyn_fld_query_header2:
-			query_header = (TEXT *) * ptr;
-			qhflag = TRUE;
-			DYN_skip_attribute2(ptr);
-			break;
-#endif
-
 		case gds_dyn_fld_edit_string:
 			edit_string = (TEXT *) * ptr;
 			esflag = TRUE;
 			DYN_skip_attribute(ptr);
 			break;
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-		case gds_dyn_fld_edit_string2:
-			edit_string = (TEXT *) * ptr;
-			esflag = TRUE;
-			DYN_skip_attribute2(ptr);
-			break;
-#endif
 
 		case gds_dyn_security_class:
 			security_class = (TEXT *) * ptr;
@@ -1162,14 +1045,6 @@ void DYN_modify_local_field(
 			dflag = TRUE;
 			DYN_skip_attribute(ptr);
 			break;
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-		case gds_dyn_description2:
-			description = (TEXT *) * ptr;
-			dflag = TRUE;
-			DYN_skip_attribute2(ptr);
-			break;
-#endif
 
 		default:
 			--(*ptr);
@@ -1229,25 +1104,14 @@ void DYN_modify_local_field(
 			}
 
 			if (qhflag) {
-#if ( !(defined JPN_SJIS || defined JPN_EUC))
 				if (DYN_put_blr_blob
 					(gbl, (UCHAR**)&query_header, &FLD.RDB$QUERY_HEADER))
-#else
-				if (DYN_put_blr_blob2
-					(gbl, (UCHAR**)&query_header, &FLD.RDB$QUERY_HEADER))
-#endif
 					FLD.RDB$QUERY_HEADER.NULL = FALSE;
 				else
 					FLD.RDB$QUERY_HEADER.NULL = TRUE;
 			}
 			if (esflag) {
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
 				if (GET_STRING(&edit_string, FLD.RDB$EDIT_STRING))
-#else
-				if (DYN_get_string2
-					(&edit_string, FLD.RDB$EDIT_STRING,
-					 sizeof(FLD.RDB$EDIT_STRING)))
-#endif
 					FLD.RDB$EDIT_STRING.NULL = FALSE;
 				else
 					FLD.RDB$EDIT_STRING.NULL = TRUE;
@@ -1259,13 +1123,8 @@ void DYN_modify_local_field(
 					FLD.RDB$SECURITY_CLASS.NULL = TRUE;
 			}
 			if (dflag) {
-#if (defined JPN_EUC || defined JPN_SJIS)
-				if (DYN_put_text_blob2
-					(gbl, (UCHAR**)&description, &FLD.RDB$DESCRIPTION))
-#else
 				if (DYN_put_text_blob
 					(gbl, (UCHAR**)&description, &FLD.RDB$DESCRIPTION))
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 					FLD.RDB$DESCRIPTION.NULL = FALSE;
 				else
 					FLD.RDB$DESCRIPTION.NULL = TRUE;
@@ -1483,14 +1342,6 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 						REL.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-				case gds_dyn_description2:
-					if (DYN_put_text_blob2(gbl, ptr, &REL.RDB$DESCRIPTION))
-						REL.RDB$DESCRIPTION.NULL = FALSE;
-					else
-						REL.RDB$DESCRIPTION.NULL = TRUE;
-					break;
-#endif
 				default:
 					--(*ptr);
 					DYN_execute(gbl, ptr, name, field_name,
@@ -1623,26 +1474,10 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
 					break;
 
-#if (defined JPN_SJIS || defined JPN_EUC)
-				case gds_dyn_trg_source2:
-					source = (TEXT *) * ptr;
-					DYN_skip_attribute2(ptr);
-					DYN_put_text_blob2(gbl, &source, &X.RDB$TRIGGER_SOURCE);
-					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-					break;
-#endif
-
 				case gds_dyn_description:
 					DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 					break;
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-				case gds_dyn_description2:
-					DYN_put_text_blob2(gbl, ptr, &X.RDB$DESCRIPTION);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
-#endif
 
 				default:
 					--(*ptr);
@@ -1723,14 +1558,6 @@ void DYN_modify_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 					GET_STRING(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
 					break;
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-				case gds_dyn_trg_msg2:
-					DYN_get_string2(ptr, X.RDB$MESSAGE,
-									sizeof(X.RDB$MESSAGE));
-					X.RDB$MESSAGE.NULL = FALSE;
-					break;
-#endif
 
 				default:
 					DYN_unsupported_verb();
@@ -1817,13 +1644,6 @@ void DYN_modify_view( GBL gbl, UCHAR ** ptr)
 					DYN_put_text_blob(gbl, ptr, &REL.RDB$VIEW_SOURCE);
 					REL.RDB$VIEW_SOURCE.NULL = FALSE;
 					break;
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-				case gds_dyn_view_source2:
-					DYN_put_text_blob2(gbl, ptr, &REL.RDB$VIEW_SOURCE);
-					REL.RDB$VIEW_SOURCE.NULL = FALSE;
-					break;
-#endif
 
 				case gds_dyn_security_class:
 					GET_STRING(ptr, REL.RDB$SECURITY_CLASS);
