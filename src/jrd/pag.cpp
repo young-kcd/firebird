@@ -402,7 +402,8 @@ USHORT PAG_add_file(TEXT * file_name, SLONG start)
 #ifdef SUPPORT_RAW_DEVICES
 /* The following lines (taken from PAG_format_header) are needed to identify
    this file in raw_devices_validate_database as a valid database attachment. */
-	MOV_time_stamp (header->hdr_creation_date);
+	MOV_time_stamp(reinterpret_cast <
+				   ISC_TIMESTAMP * >(header->hdr_creation_date));
 	header->hdr_ods_version        = ODS_VERSION;
 	header->hdr_implementation     = CLASS;
 	header->hdr_ods_minor          = ODS_CURRENT;
