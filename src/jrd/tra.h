@@ -221,7 +221,6 @@ public:
 };
 
 typedef Firebird::BePlusTree<UndoItem, SLONG, MemoryPool, UndoItem> UndoItemTree;
-//BePlusTree<int> shit;
 
 class vct : public pool_alloc<type_vct>
 {
