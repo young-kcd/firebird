@@ -1,3 +1,317 @@
+2003-02-10 21:15  brodsom
+
+	* firebird2/src/lock/fparamv3.h:
+	
+	Remove MSDOS define.
+
+2003-02-10 20:57  brodsom
+
+	* firebird2/src/dsql/gen.cpp:
+	
+	Remove SQL_DIALECT_1_NEW_DATATYPES_CONVERT_TO_TEXT define, code
+	only provisional for beta 6.0 and not used in 6.0
+
+2003-02-10 20:40  brodsom
+
+	* firebird2/src/: intl/collations/pd857turk.h,
+	intl/collations/db852hdc.h, intl/lc_dos.c, intl/ld.c,
+	jrd/intlnames.h:
+	
+	Remove BUG_6925 define and wrong (and not used) collations.
+
+2003-02-10 20:31  brodsom
+
+	* firebird2/src/intl/utils/mapcompare.cpp:
+	
+	remove source, not used and broken (headers don't exits)
+
+2003-02-10 20:27  brodsom
+
+	* firebird2/src/v5_examples/align.h:
+	
+	Remove osf & alpha, correct wrong ifdef
+
+2003-02-10 20:25  brodsom
+
+	* firebird2/src/intl/ld.h:
+	
+	Remove QLD and PIRANHA defines
+
+2003-02-10 19:23  skidder
+
+	* firebird2/src/install/arch-specific/linux/classic/:
+	makeInstallImage.sh.in, postinstall.sh.in, preuninstall.sh.in:
+	
+	isc4.gdb -> security.fdb change in RPM scripts
+
+2003-02-10 18:55  brodsom
+
+	* firebird2/src/jrd/val.cpp:
+	
+	Remove INTERNAL_DOCUMENTATION define (a really strange one)
+
+2003-02-10 18:41  brodsom
+
+	* firebird2/src/jrd/enc.cpp:
+	
+	Remove convex, gould, pdp11 and vax defines
+
+2003-02-10 18:37  brodsom
+
+	* firebird2/src/: remote/types.h, jrd/enc.cpp:
+	
+	Remove convex, gould, pdp11 and vax defines
+
+2003-02-10 18:01  brodsom
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	Remove DN10000 define (apollo)
+
+2003-02-10 17:28  alexpeshkoff
+
+	* firebird2/src/jrd/: alt.cpp, ibase.h:
+	
+	Fixed external tools building
+
+2003-02-10 16:59  skidder
+
+	* firebird2/configure.in:
+	
+	Mark linux packages as Beta2
+
+2003-02-10 16:05  brodsom
+
+	* firebird2/src/: lock/print.cpp, lock/lock.cpp, lock/manager.cpp,
+	lock/driver.cpp, jrd/common.h:
+	
+	Remove LINKS_EXISTS define, required header don't exist.
+
+2003-02-10 15:50  dimitr
+
+	* firebird2/builds/win32/msvc6/Firebird2.dsw:
+	
+	Fixed the workspace.
+
+2003-02-10 14:40  eku
+
+	* firebird2/src/remote/interface.cpp:
+	
+	Fixed a "search and replace" error from my previous check-in.
+
+2003-02-10 14:37  eku
+
+	* firebird2/src/burp/canonical.cpp:
+	
+	Fixed a "search and replace" error from my previous check-in.
+
+2003-02-10 14:28  eku
+
+	* firebird2/: builds/posix/prefix.sinixz, src/alice/all.cpp,
+	src/burp/canonical.cpp, src/csv/csi.cpp, src/csv/csi_proto.h,
+	src/csv/csv.cpp, src/dsql/alld.cpp, src/dsql/hsh.cpp,
+	src/dsql/parse.cpp, src/dsql/user_dsql.cpp, src/dudley/ddl.cpp,
+	src/dudley/ddl_proto.h, src/dudley/exe.epp, src/dudley/hsh.cpp,
+	src/dudley/hsh_proto.h, src/gpre/cmd.cpp, src/gpre/cmd_proto.h,
+	src/gpre/cmp.cpp, src/gpre/cmp_proto.h, src/gpre/hsh.cpp,
+	src/gpre/hsh_proto.h, src/gpre/par.cpp, src/gpre/sql.cpp,
+	src/ipserver/ipclient.cpp, src/jrd/all.cpp, src/jrd/all_old.cpp,
+	src/jrd/alt.cpp, src/jrd/blb.cpp, src/jrd/btr.cpp,
+	src/jrd/btr_proto.h, src/jrd/cch.cpp, src/jrd/cch_proto.h,
+	src/jrd/cmp.cpp, src/jrd/cmp_proto.h, src/jrd/cvt.cpp,
+	src/jrd/dbg.cpp, src/jrd/dmp.cpp, src/jrd/dmp_proto.h,
+	src/jrd/dpm.epp, src/jrd/dpm_proto.h, src/jrd/enc.cpp,
+	src/jrd/entry.h, src/jrd/evl.cpp, src/jrd/evl_proto.h,
+	src/jrd/exe.cpp, src/jrd/ext.cpp, src/jrd/ext_proto.h,
+	src/jrd/extvms.cpp, src/jrd/flu.cpp, src/jrd/fun.epp,
+	src/jrd/gds.cpp, src/jrd/grammar.cpp, src/jrd/ib_stdio.cpp,
+	src/jrd/ini.epp, src/jrd/jlx.c, src/jrd/jrd.cpp,
+	src/jrd/jrd_proto.h, src/jrd/memtest.cpp, src/jrd/met.epp,
+	src/jrd/met_proto.h, src/jrd/mov.cpp, src/jrd/mov_proto.h,
+	src/jrd/nav.cpp, src/jrd/nav_proto.h, src/jrd/opt.cpp,
+	src/jrd/opt_proto.h, src/jrd/pag.cpp, src/jrd/pag_proto.h,
+	src/jrd/par.cpp, src/jrd/pcsleep.cpp, src/jrd/plugin_manager.h,
+	src/jrd/rdb.cpp, src/jrd/rdbint.cpp, src/jrd/rec.cpp,
+	src/jrd/rse.cpp, src/jrd/rse_proto.h, src/jrd/sbm.cpp,
+	src/jrd/sbm_proto.h, src/jrd/sort.cpp, src/jrd/sqz.cpp,
+	src/jrd/sun_ftn.cpp, src/jrd/sym.cpp, src/jrd/sym_proto.h,
+	src/jrd/utl.cpp, src/jrd/vio.cpp, src/jrd/vio_proto.h,
+	src/jrd/why.cpp, src/jrd/y-valve.cpp, src/lock/pls.cpp,
+	src/pipe/allp.cpp, src/pipe/head.cpp, src/pipe/head_proto.h,
+	src/qli/all.cpp, src/qli/all_proto.h, src/qli/hsh.cpp,
+	src/qli/hsh_proto.h, src/qli/mov.cpp, src/qli/mov_proto.h,
+	src/remote/inter_proto.h, src/remote/interface.cpp,
+	src/remote/protocol.cpp, src/remote/xdr.cpp,
+	src/remote/xdr_proto.h, src/utilities/rebuild.cpp,
+	src/utilities/v2_dmp.cpp, src/v5_examples/api9f.c:
+	
+	Removed "register" variables from the source code. It's up to the
+	compiler to hold variables in CPU registers.
+
+2003-02-10 13:47  brodsom
+
+	* firebird2/src/jrd/vms.cpp:
+	
+	Rollback pio_flush change
+
+2003-02-10 13:47  eku
+
+	* firebird2/src/jrd/alt_use_sec.h.pre:
+	
+	Renamed isc4.gdb to security.fdb.
+
+2003-02-10 13:46  eku
+
+	* firebird2/src/install/misc/: CSchangeRunUser.sh,
+	CSrestoreRootRunUser.sh:
+	
+	Renamed isc4 in the installation files.
+
+2003-02-10 13:26  dimitr
+
+	* firebird2/builds/posix/: Makefile.in.libfbclient,
+	Makefile.in.libfbembed, Makefile.in.libfbserver:
+	
+	Renamed isc4 in the build files.
+
+2003-02-10 13:25  dimitr
+
+	* firebird2/src/utilities/gsec.cpp:
+	
+	Cleanup.
+
+2003-02-10 13:22  dimitr
+
+	* firebird2/builds/win32/: make6_debug.bat, make6_release.bat:
+	
+	Renamed isc4 in the build files.
+
+2003-02-10 13:10  dimitr
+
+	* firebird2/src/install/arch-specific/sinixz/prototype.in:
+	
+	Damn, my own typo caused another one. The extension should be
+	"fdb".
+
+2003-02-10 13:00  dimitr
+
+	* firebird2/builds/win32/prepare.bat:
+	
+	Batch file changed to use new extension of the database files.
+
+2003-02-10 12:54  dimitr
+
+	* firebird2/builds/posix/: Makefile.in.firebird,
+	Makefile.in.refDatabases, make.defaults, make.shared.targets:
+	
+	Damn, my own typo caused another one. The extension should be
+	"fdb".
+
+2003-02-10 12:51  dimitr
+
+	* firebird2/src/jrd/plugin_manager.cpp:
+	
+	Cleanup.
+
+2003-02-10 12:48  dimitr
+
+	* firebird2/src/: jrd/alt_use_sec.h, jrd/svc.cpp,
+	utilities/ibmgr.h, remote/inet_server.cpp, utilities/security.epp,
+	install/arch-specific/sinixz/prototype.in:
+	
+	Damn, my own typo caused another one. The extension should be
+	"fdb".
+
+2003-02-10 12:00  eku
+
+	* firebird2/: builds/posix/Makefile.in.firebird,
+	builds/posix/Makefile.in.refDatabases, builds/posix/make.defaults,
+	builds/posix/make.shared.targets,
+	src/install/arch-specific/sinixz/prototype.in,
+	src/jrd/alt_use_sec.h, src/jrd/svc.cpp, src/remote/inet_server.cpp,
+	src/utilities/ibmgr.h, src/utilities/security.epp:
+	
+	Renamed isc4.gdb to security.gdb (POSIX builds)
+
+2003-02-10 11:36  dimitr
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	burp.dsp, burp_classic.dsp, dsql_server.dsp,
+	dsql_server_classic.dsp, engine.dsp, engine_classic.dsp,
+	fb_inet_server.dsp, fb_lock_print.dsp, fbclient.dsp, Firebird2.dsw,
+	fbembed.dsp, fbguard.dsp, fbserver.dsp, fbudf.dsp, gbak.dsp,
+	gdef.dsp, gds32.dsp, gfix.dsp, gpre.dsp, gpre_boot.dsp, gsec.dsp,
+	gstat.dsp, ib_udf.dsp, ib_util.dsp, instreg.dsp, instsvc.dsp,
+	intl.dsp, ipserver.dsp, isql.dsp, lock.dsp, lock_classic.dsp,
+	qli.dsp, remote.dsp, remote_classic.dsp, utilities.dsp,
+	utilities_classic.dsp, wal.dsp, wal_classic.dsp:
+	
+	Changed options for the release configuration.
+
+2003-02-10 11:03  dimitr
+
+	* firebird2/builds/win32/msvc6/: common.dsp, common_classic.dsp:
+	
+	Changed options for the release configuration.
+
+2003-02-10 10:39  eku
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/make.new/config/config.h.in:
+	
+	Completed the changes made by Dmitri Sibiriak.
+
+2003-02-10 10:26  eku
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Fixed POSIX builds.
+
+2003-02-10 10:21  dimitr
+
+	* firebird2/: src/misc/isc4.gbak, src/misc/security.gbak,
+	builds/win32/prepare.bat:
+	
+	Rename.
+
+2003-02-10 08:38  dimitr
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Fixed POSIX builds (at least I hope so).
+
+2003-02-10 06:42  aafemt
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/make.new/config/config.h.in, src/remote/inet.cpp:
+	
+	Some cleanup
+
+2003-02-10 01:09  brodsom
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Remove unusable define (needed header don't exist)
+
+2003-02-10 01:03  brodsom
+
+	* firebird2/src/jrd/: btr.cpp, event.cpp:
+	
+	Change debug defines names to DEBUG_*
+
+2003-02-10 01:00  brodsom
+
+	* firebird2/src/jrd/: os/win32/thd_priority.cpp, thd.cpp,
+	isc_sync.cpp:
+	
+	Change debug defines names to DEBUG_*
+
+2003-02-10 00:31  brodsom
+
+	* firebird2/src/dsql/: parse.y, parse.cpp:
+	
+	Change wrong define
+
 2003-02-10 00:14  brodsom
 
 	* firebird2/src/: jrd/gdsold.h, gpre/dyntable.h:
