@@ -33,10 +33,10 @@
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/install_proto.h"
 
-#define GDSVER_MAJOR	6
-#define GDSVER_MINOR	3
+const DWORD GDSVER_MAJOR	= 6;
+const DWORD GDSVER_MINOR	= 3;
 
-#define SHARED_KEY	"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SharedDLLs"
+const char* SHARED_KEY	= "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SharedDLLs";
 
 namespace {
 

@@ -35,7 +35,7 @@
 #include "../utilities/install/regis_proto.h"
 #include "../utilities/install/registry.h"
 
-static void cleanup_key(HKEY, TEXT*);
+static void cleanup_key(HKEY, const char*);
 #ifdef THIS_CODE_IS_TEMPORARILY_NOT_USED_ANYMORE
 static USHORT remove_subkeys(HKEY, bool, USHORT(*)(SLONG, TEXT*, HKEY));
 #endif
@@ -139,7 +139,7 @@ USHORT REGISTRY_remove(HKEY hkey_rootnode,
 	return FB_SUCCESS;
 }
 
-static void cleanup_key(HKEY hkey_rootnode, TEXT * key)
+static void cleanup_key(HKEY hkey_rootnode, const char* key)
 {
 /**************************************
  *

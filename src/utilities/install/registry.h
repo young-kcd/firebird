@@ -25,9 +25,9 @@
 #ifndef REGISTRY_DEFINES
 #define REGISTRY_DEFINES
 
-#define REG_KEY_ROOT_COMPANY	"SOFTWARE\\Firebird Project"
-#define REG_KEY_ROOT_PRODUCT	"SOFTWARE\\Firebird Project\\Firebird Server"
-#define REG_KEY_ROOT_INSTANCES	"SOFTWARE\\Firebird Project\\Firebird Server\\Instances"
-#define FB_DEFAULT_INSTANCE	  	"DefaultInstance"
+static const char* REG_KEY_ROOT_COMPANY	= "SOFTWARE\\Firebird Project";
+static const char* REG_KEY_ROOT_PRODUCT	= "SOFTWARE\\Firebird Project\\Firebird Server";
+static const char* REG_KEY_ROOT_INSTANCES	= "SOFTWARE\\Firebird Project\\Firebird Server\\Instances";
+static const char* FB_DEFAULT_INSTANCE		= "DefaultInstance";
 
 #endif /* REGISTRY_DEFINES */

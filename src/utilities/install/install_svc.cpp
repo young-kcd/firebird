@@ -33,10 +33,9 @@
 #include "../utilities/install/registry.h"
 #include "../common/config/config.h"
 
-#define REMOTE_EXECUTABLE \
-	((sw_arch == ARCH_SS) ? REMOTE_SS_EXECUTABLE : REMOTE_CS_EXECUTABLE)
+#define REMOTE_EXECUTABLE ((sw_arch == ARCH_SS) ? REMOTE_SS_EXECUTABLE : REMOTE_CS_EXECUTABLE)
 
-static void svc_query(TEXT*, TEXT*, SC_HANDLE manager);
+static void svc_query(const char*, const char*, SC_HANDLE manager);
 static USHORT svc_error(SLONG, TEXT *, SC_HANDLE);
 static void usage(void);
 
@@ -372,7 +371,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	return (status == FB_SUCCESS) ? FINI_OK : FINI_ERROR;
 }
 
-static void svc_query(TEXT* name, TEXT* display_name, SC_HANDLE manager)
+static void svc_query(const char* name, const char* display_name, SC_HANDLE manager)
 {
 /**************************************
  *

@@ -27,19 +27,19 @@
 // OM Jan '04 : Huh ? Who decided to drop the parameters names from these proto ?
 // Is there a consensus that removing them makes the code more self-documenting ?
 
-USHORT	SERVICES_install(SC_HANDLE, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, USHORT,
+USHORT	SERVICES_install(SC_HANDLE, const char*, const char*, const char*, TEXT*, TEXT*, USHORT,
 						TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-USHORT	SERVICES_remove(SC_HANDLE, TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_remove(SC_HANDLE, const char*, const char*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-USHORT	SERVICES_start(SC_HANDLE, TEXT*, TEXT*, USHORT, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_start(SC_HANDLE, const char*, const char*, USHORT, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-USHORT	SERVICES_stop(SC_HANDLE, TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_stop(SC_HANDLE, const char*, const char*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-USHORT	SERVICES_status(TEXT*);
+USHORT	SERVICES_status(const char*);
 
 USHORT	SERVICES_grant_logon_right(TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
-USHORT	SERVICES_grant_access_rights(TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+USHORT	SERVICES_grant_access_rights(const char*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
 #endif // UTILITIES_SERVI_PROTO_H

@@ -39,9 +39,9 @@
 #define RUNAS_SERVICE " -s"
 
 USHORT SERVICES_install(SC_HANDLE manager,
-						TEXT * service_name,
-						TEXT * display_name,
-						TEXT * executable,
+						const char* service_name,
+						const char* display_name,
+						const char* executable,
 						TEXT * directory,
 						TEXT * dependencies,
 						USHORT sw_startup,
@@ -114,8 +114,8 @@ USHORT SERVICES_install(SC_HANDLE manager,
 
 
 USHORT SERVICES_remove(SC_HANDLE manager,
-					   TEXT * service_name,
-					   TEXT * display_name,
+					   const char* service_name,
+					   const char* display_name,
 					   USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
@@ -167,8 +167,8 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 
 
 USHORT SERVICES_start(SC_HANDLE manager,
-					  TEXT * service_name,
-					  TEXT * display_name,
+					  const char* service_name,
+					  const char* display_name,
 					  USHORT sw_mode,
 					  USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
@@ -233,8 +233,8 @@ USHORT SERVICES_start(SC_HANDLE manager,
 
 
 USHORT SERVICES_stop(SC_HANDLE manager,
-					 TEXT * service_name,
-					 TEXT * display_name,
+					 const char* service_name,
+					 const char* display_name,
 					 USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
@@ -282,7 +282,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 	return FB_SUCCESS;
 }
 
-USHORT	SERVICES_status (TEXT* service_name)
+USHORT	SERVICES_status (const char* service_name)
 {
 /**************************************
  *
@@ -448,7 +448,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 }
 
 
-USHORT SERVICES_grant_access_rights(TEXT* service_name, TEXT* account,
+USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 	USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /*********************************************************
@@ -479,7 +479,7 @@ USHORT SERVICES_grant_access_rights(TEXT* service_name, TEXT* account,
 
 	// Get Security Information on the service. Will of course fail if we're
 	// not allowed to do this. Administrators should be allowed, by default.
-	if (GetNamedSecurityInfo(service_name, SE_SERVICE,
+	if (GetNamedSecurityInfo((CHAR*) service_name, SE_SERVICE,
 		DACL_SECURITY_INFORMATION,
 		NULL /*Owner Sid*/, NULL /*Group Sid*/,
 		&pOldDACL, NULL /*Sacl*/, &pSD) != ERROR_SUCCESS)
@@ -506,7 +506,7 @@ USHORT SERVICES_grant_access_rights(TEXT* service_name, TEXT* account,
 	}
 
 	// Updates the new rights in the object
-	if (SetNamedSecurityInfo(service_name, SE_SERVICE,
+	if (SetNamedSecurityInfo((CHAR*) service_name, SE_SERVICE,
 		DACL_SECURITY_INFORMATION,
 		NULL /*Owner Sid*/, NULL /*Group Sid*/,
 		pNewDACL, NULL /*Sacl*/) != ERROR_SUCCESS)

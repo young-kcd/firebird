@@ -24,65 +24,70 @@
 #ifndef UTILITIES_INSTALL_NT_H
 #define UTILITIES_INSTALL_NT_H
 
-#define REMOTE_SERVICE			"FirebirdServerDefaultInstance"
-#define REMOTE_DISPLAY_NAME		"Firebird Server - DefaultInstance"
-#define REMOTE_SS_EXECUTABLE	"bin\\fbserver"
-#define REMOTE_CS_EXECUTABLE	"bin\\fb_inet_server"
+static const char* REMOTE_SERVICE			= "FirebirdServerDefaultInstance";
+static const char* REMOTE_DISPLAY_NAME		= "Firebird Server - DefaultInstance";
+static const char* REMOTE_SS_EXECUTABLE		= "bin\\fbserver";
+static const char* REMOTE_CS_EXECUTABLE		= "bin\\fb_inet_server";
 
-#define ISCGUARD_SERVICE		"FirebirdGuardianDefaultInstance"
-#define ISCGUARD_DISPLAY_NAME	"Firebird Guardian - DefaultInstance"
-#define ISCGUARD_EXECUTABLE		"bin\\fbguard"
-#define GUARDIAN_MUTEX			"FirebirdGuardianMutex"
-/* Starting with 128 the service prams are user defined */
-#define SERVICE_CREATE_GUARDIAN_MUTEX 128
-#define REMOTE_DEPENDENCIES		"Tcpip\0\0"
+static const char* ISCGUARD_SERVICE			= "FirebirdGuardianDefaultInstance";
+static const char* ISCGUARD_DISPLAY_NAME	= "Firebird Guardian - DefaultInstance";
+static const char* ISCGUARD_EXECUTABLE		= "bin\\fbguard";
+static const char* GUARDIAN_MUTEX			= "FirebirdGuardianMutex";
+// Starting with 128 the service prams are user defined
+const DWORD SERVICE_CREATE_GUARDIAN_MUTEX	= 128;
+//#define REMOTE_DEPENDENCIES		"Tcpip\0\0"
 
-#define COMMAND_NONE		0
-#define COMMAND_INSTALL		1
-#define COMMAND_REMOVE		2
-#define COMMAND_START		3
-#define COMMAND_STOP		4
-#define COMMAND_CONFIG		5
-#define COMMAND_QUERY		6
+// sw_command
+const USHORT COMMAND_NONE		= 0;
+const USHORT COMMAND_INSTALL	= 1;
+const USHORT COMMAND_REMOVE		= 2;
+const USHORT COMMAND_START		= 3;
+const USHORT COMMAND_STOP		= 4;
+const USHORT COMMAND_CONFIG		= 5;
+const USHORT COMMAND_QUERY		= 6;
 
-#define STARTUP_DEMAND		0
-#define STARTUP_AUTO		1
+// sw_startup
+const USHORT STARTUP_DEMAND		= 0;
+const USHORT STARTUP_AUTO		= 1;
 
-#define NO_GUARDIAN			0
-#define USE_GUARDIAN		1
+// sw_guardian
+const USHORT NO_GUARDIAN		= 0;
+const USHORT USE_GUARDIAN		= 1;
 
-#define DEFAULT_PRIORITY	0
-#define NORMAL_PRIORITY		1
-#define HIGH_PRIORITY		2
+// sw_mode
+const USHORT DEFAULT_PRIORITY	= 0;
+const USHORT NORMAL_PRIORITY	= 1;
+const USHORT HIGH_PRIORITY		= 2;
 
-#define ARCH_SS				0
-#define ARCH_CS				1
+// sw_arch
+const USHORT ARCH_SS			= 0;
+const USHORT ARCH_CS			= 1;
 
-// instclient constants
-#define CLIENT_NONE			0
-#define CLIENT_FB			1
-#define CLIENT_GDS			2
+// sw_client
+const USHORT CLIENT_NONE		= 0;
+const USHORT CLIENT_FB			= 1;
+const USHORT CLIENT_GDS			= 2;
 
-#define GDS32_NAME			"GDS32.DLL"
-#define FBCLIENT_NAME		"FBCLIENT.DLL"
+static const char* GDS32_NAME			= "GDS32.DLL";
+static const char* FBCLIENT_NAME		= "FBCLIENT.DLL";
 
 // instsvc status codes
-#define IB_SERVICE_ALREADY_DEFINED	100
-#define IB_SERVICE_RUNNING			101
-#define FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED	102
-#define FB_SERVICE_STATUS_RUNNING			100
-#define FB_SERVICE_STATUS_STOPPED			111
-#define FB_SERVICE_STATUS_PENDING			112
-#define FB_SERVICE_STATUS_NOT_INSTALLED		113
-#define FB_SERVICE_STATUS_UNKNOWN			114
+const USHORT IB_SERVICE_ALREADY_DEFINED			= 100;
+const USHORT IB_SERVICE_RUNNING					= 101;
+const USHORT FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED= 102;
+const USHORT FB_SERVICE_STATUS_RUNNING			= 100;
+const USHORT FB_SERVICE_STATUS_STOPPED			= 111;
+const USHORT FB_SERVICE_STATUS_PENDING			= 112;
+const USHORT FB_SERVICE_STATUS_NOT_INSTALLED	= 113;
+const USHORT FB_SERVICE_STATUS_UNKNOWN			= 114;
 
 // instclient status codes
-#define FB_INSTALL_COPY_REQUIRES_REBOOT		200
-#define FB_INSTALL_SAME_VERSION_FOUND		201
-#define FB_INSTALL_NEWER_VERSION_FOUND		202
-#define FB_INSTALL_FILE_NOT_FOUND 			203
-#define FB_INSTALL_CANT_REMOVE_ALIEN_VERSION	204
-#define FB_INSTALL_FILE_PROBABLY_IN_USE		205
-#define FB_INSTALL_SHARED_COUNT_ZERO  		206
+const USHORT FB_INSTALL_COPY_REQUIRES_REBOOT	= 200;
+const USHORT FB_INSTALL_SAME_VERSION_FOUND		= 201;
+const USHORT FB_INSTALL_NEWER_VERSION_FOUND		= 202;
+const USHORT FB_INSTALL_FILE_NOT_FOUND 			= 203;
+const USHORT FB_INSTALL_CANT_REMOVE_ALIEN_VERSION	= 204;
+const USHORT FB_INSTALL_FILE_PROBABLY_IN_USE	= 205;
+const USHORT FB_INSTALL_SHARED_COUNT_ZERO  		= 206;
 
 #endif /* _UTILITIES_INSTALL_NT_H_ */

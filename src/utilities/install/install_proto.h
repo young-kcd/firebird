@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef _UTILITIES_INSTALL_PROTO_H_
-#define _UTILITIES_INSTALL_PROTO_H_
+#ifndef UTILITIES_INSTALL_PROTO_H
+#define UTILITIES_INSTALL_PROTO_H
 
 USHORT CLIENT_install(const TEXT* rootdirectory, USHORT client,
 	bool sw_force, USHORT(*err_handler)(ULONG, const TEXT*));
@@ -37,4 +37,4 @@ USHORT CLIENT_remove(const TEXT* rootdirectory, USHORT client,
 USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
 	ULONG& sharedCount, USHORT(*err_handler)(ULONG, const TEXT *));
 
-#endif /* _UTILITIES_GDSCLIENT_PROTO_H_ */
+#endif /* UTILITIES_INSTALL_PROTO_H */
