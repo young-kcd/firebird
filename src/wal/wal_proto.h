@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef _WAL_WAL_PROTO_H_
-#define _WAL_WAL_PROTO_H_
+#ifndef WAL_WAL_PROTO_H
+#define WAL_WAL_PROTO_H
 
 extern SSHORT	WAL_attach (ISC_STATUS *, struct wal **, SCHAR *);
 extern SSHORT	WAL_checkpoint_finish (ISC_STATUS *, struct wal *, SLONG *, SCHAR *, SLONG *, SLONG *);
@@ -51,4 +51,4 @@ extern SSHORT	WAL_shutdown (ISC_STATUS *, struct wal *, SLONG *, SCHAR *, SLONG 
 extern SSHORT	WAL_shutdown_old_writer (ISC_STATUS *, SCHAR *);
 extern SSHORT	WAL_status (ISC_STATUS *, struct wal *, SLONG *, SCHAR *, SLONG *, SLONG *, SLONG *, SCHAR *, SLONG *, SLONG *);
 
-#endif /* _WAL_WAL_PROTO_H_ */
+#endif /* WAL_WAL_PROTO_H */

@@ -21,11 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _WAL_WALW_PROTO_H_
-#define _WAL_WALW_PROTO_H_
+#ifndef WAL_WALW_PROTO_H
+#define WAL_WALW_PROTO_H
 
 #ifdef SUPERSERVER
 extern int main_walw(SCHAR **);
 #endif
 
-#endif /* _WAL_WALW_PROTO_H_ */
+#endif /* WAL_WALW_PROTO_H */

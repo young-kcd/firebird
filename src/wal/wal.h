@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef _WAL_WAL_H_
-#define _WAL_WAL_H_
+#ifndef WAL_WAL_H
+#define WAL_WAL_H
 
 #include <stdio.h>
 #ifndef VMS
@@ -499,4 +499,4 @@ typedef struct walrs {
 
 #define STRING_DUP(s1,s2)	{s1 = (SCHAR*) gds__alloc (strlen (s2) + 1); if (s1) strcpy (s1, s2);}
 
-#endif /* _WAL_WAL_H_ */
+#endif /* WAL_WAL_H */

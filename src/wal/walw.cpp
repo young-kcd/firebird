@@ -156,14 +156,16 @@ static SSHORT setup_log(ISC_STATUS *, WAL, SCHAR *, SLONG, SLONG, SLONG *, WALFH
 						SSHORT, SCHAR *, SLONG);
 static SSHORT setup_log_header_info(ISC_STATUS *, WAL, SCHAR *, SLONG, SLONG,
 									SLONG *, WALFH, SSHORT, SCHAR *, SLONG,
-									SSHORT *);
+									bool*);
 static SSHORT write_log_header_and_reposition(ISC_STATUS *, SCHAR *, SLONG,
 											  WALFH);
 static SSHORT write_wal_block(ISC_STATUS *, WALBLK *, SCHAR *, SLONG);
 static void write_wal_statistics(WAL);
 
+static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle);
+
+// This is a variable's declaration
 static WAL_TERMINATOR(log_terminator_block);
-static SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle);
 
 #ifdef SUPERSERVER
 int main_walw( char **argv)
@@ -183,23 +185,19 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	WAL WAL_handle;
 	SCHAR dbg_file[MAXPATHLEN];
-	IB_FILE *debug_fd;
-	struct walwl local_info;
-	SCHAR *dbname, c, *p, **end;
 #ifdef SUPERSERVER
-	int argc;
-
-	argc = (int) argv[0];
+	int argc = (int) argv[0];
 #endif
 
-	dbname = "";
-	for (end = argv++ + argc; argv < end;) {
-		p = *argv++;
+	char* dbname = "";
+	char** end = argv++ + argc;
+	while (argv < end) {
+		char* p = *argv++;
 		if (*p != '-')
 			dbname = p;
 		else {
+			char c;
 			while (c = *++p)
 				switch (UPPER(c)) {
 				case 'D':
@@ -231,9 +229,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	WALC_build_dbg_filename(dbname, dbg_file);
 
-	debug_fd = ib_fopen(dbg_file, "a");	/* Do it after divorce_terminal() */
+	IB_FILE* debug_fd = ib_fopen(dbg_file, "a");	/* Do it after divorce_terminal() */
 
-	WAL_handle = NULL;
+	WAL WAL_handle = NULL;
 	if (WALC_init(status_vector, &WAL_handle, dbname, 0,
 				  NULL, 0L, FALSE, 1L, 0, NULL, FALSE) != FB_SUCCESS) {
 		gds__log_status(dbname, status_vector);
@@ -242,13 +240,15 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	ISC_signal_init();
+
+	walwl local_info;
 	WAL_handle->wal_local_info_ptr = (UCHAR *) & local_info;
 	JOURNAL_HANDLE = NULL;
 	LOCAL_FLAGS = 0L;
 
 	DEBUG_FD = debug_fd;
 
-	WALW_writer(status_vector, WAL_handle);
+	walw_writer(status_vector, WAL_handle);
 
 	WALC_fini(status_vector, &WAL_handle);
 
@@ -260,8 +260,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 }
 
 #ifdef VMS
-void ERR_post(stuff)
-	 ISC_STATUS stuff;
+void ERR_post(ISC_STATUS stuff)
 {
 /**************************************
  *
@@ -275,15 +274,14 @@ void ERR_post(stuff)
  *	trick to get the address of the argument vector.
  *
  **************************************/
-	ISC_STATUS *p, *q;
 	ISC_STATUS_ARRAY status_vector;
 	int type;
 
 /* Get the addresses of the argument vector and the status vector, and do
    word-wise copy. */
 
-	p = status_vector;
-	q = &stuff;
+	ISC_STATUS* p = status_vector;
+	const ISC_STATUS* q = &stuff;
 
 /* Copy first argument */
 
@@ -328,7 +326,7 @@ void ERR_post(stuff)
 #endif
 
 
-static SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
+static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
@@ -354,18 +352,16 @@ static SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 	WALBLK *wblk;
 	SSHORT bufnum;
 	SSHORT first_logfile;
-	WALFH log_header;
 	int buffer_full;
 	int journal_enable_or_disable;
 	int rollover_required;
-	bool acquired;
 	EVENT ptr;
 	SLONG value;
 	SLONG log_type;
 #define WALW_WRITER_RETURN(code) {gds__free((SLONG*)log_header); return(code);}
 
-	acquired = false;
-	log_header = (WALFH) gds__alloc(WALFH_LENGTH);
+	bool acquired = false;
+	WALFH log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: return failure, FREE: error returns & macro WALW_WRITER_RETURN */
 	if (!log_header) {
 		return FB_FAILURE;
@@ -648,20 +644,16 @@ static void close_log(
  *
  **************************************/
 	SSHORT ret;
-	WALS WAL_segment;
-
-	WAL_segment = WAL_handle->wal_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 	log_header->walfh_flags &= ~WALFH_OPEN;
 	log_header->walfh_data_len =
 		MISC_build_parameters_block(log_header->walfh_data,
 									PARAM_BYTE(WALFH_dbname),
 									PARAM_STRING(log_header->walfh_dbname),
 									PARAM_BYTE(WALFH_prev_logname),
-									PARAM_STRING(log_header->
-												 walfh_prev_logname),
+									PARAM_STRING(log_header->walfh_prev_logname),
 									PARAM_BYTE(WALFH_next_logname),
-									PARAM_STRING(log_header->
-												 walfh_next_logname),
+									PARAM_STRING(log_header->walfh_next_logname),
 									PARAM_BYTE(WALFH_end), 0);
 	if (log_header->walfh_dbname)
 		gds__free((SLONG *) log_header->walfh_dbname);
@@ -732,7 +724,6 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
  *
  **************************************/
 	SCHAR s_logname[MAXPATHLEN];
-	SLONG s_log_partition_offset;
 	SCHAR lognames_buffer[MAXLOGS * MAXPATHLEN];	/* To hold all the lognames */
 	SCHAR *logs_names[MAXLOGS];
 	SLONG log_partitions_offsets[MAXLOGS];
@@ -744,13 +735,12 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
 	SLONG log_partition_offset;
 	SLONG log_flag;
 	SSHORT ret;
-	SLONG old_seqno, new_seqno;
 
 	strcpy(s_logname, starting_logname);
-	s_log_partition_offset = starting_log_partition_offset;
+	SLONG s_log_partition_offset = starting_log_partition_offset;
 
-	old_seqno = 0;
-	while (TRUE) {
+	SLONG old_seqno = 0;
+	while (true) {
 		/* Exhaust checking all the previously linked log files */
 
 		log_count = 0;
@@ -777,7 +767,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
 
 		/* Now see if any old log files may be deleted. */
 		for (; count < log_count; count++) {
-			new_seqno = logs_seqnos[count];
+			const SLONG new_seqno = logs_seqnos[count];
 			if (new_seqno <= old_seqno)
 				return FB_SUCCESS;	/* We are done with the log list */
 			old_seqno = new_seqno;
@@ -870,21 +860,18 @@ static SSHORT flush_all_buffers( ISC_STATUS * status_vector, WAL WAL_handle)
  *	the records in those buffers.
  *
  **************************************/
-	WALS WAL_segment;
-	SSHORT bufnum, lastbuf, maxbufs;
-	WALBLK *wblk;
 	SSHORT ret;
 
-	WAL_segment = WAL_handle->wal_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 
-	maxbufs = WAL_segment->wals_maxbufs;
-	bufnum = (WAL_segment->wals_last_flushed_buf + 1) % maxbufs;
-	lastbuf = CUR_BUF;
+	SSHORT maxbufs = WAL_segment->wals_maxbufs;
+	SSHORT bufnum = (WAL_segment->wals_last_flushed_buf + 1) % maxbufs;
+	SSHORT lastbuf = CUR_BUF;
 	if (lastbuf == -1)			/* Meaning all the buffers are full */
 		lastbuf = (bufnum + maxbufs - 1) % maxbufs;
 
 	do {
-		wblk = WAL_BLOCK(bufnum);
+		WALBLK* wblk = WAL_BLOCK(bufnum);
 		if (wblk->walblk_cur_offset > BLK_HDROVHD) {
 			/* Prepare and flush the associated buffer to log file. */
 
@@ -928,7 +915,7 @@ static SSHORT get_logfile_index( WALS WAL_segment, SCHAR * logname)
  *
  **************************************/
 	LOGF *logf;
-	SSHORT i, j, count;
+	SSHORT i, j;
 
 	if (WAL_segment->wals_max_logfiles == 0)
 		return -1;
@@ -937,16 +924,14 @@ static SSHORT get_logfile_index( WALS WAL_segment, SCHAR * logname)
 
 	i = j =
 		(WAL_segment->wals_cur_logfile + 1) % WAL_segment->wals_max_logfiles;
-	count = 0;
 
-	while (TRUE) {
+	for (SSHORT count = 0; true; ++count) {
 		if ((j == i) && (count > 1))
 			return -1;			/* We have gone through the whole list */
 		logf = LOGF_INFO(j);
 		if (!strcmp(logname, LOGF_NAME(logf)))
 			return j;
 		j = (j + 1) % WAL_segment->wals_max_logfiles;
-		count++;
 	}
 }
 
@@ -967,13 +952,11 @@ static bool get_log_usability(
  *	If logname is usable, new_logname and new_offset are updated.
  *
  **************************************/
-	bool found;
 	SLONG log_seqno;
 	SLONG log_length;
-	SLONG log_flag;
 
-	found = false;
-	log_flag = 0;
+	bool found = false;
+	SLONG log_flag = 0;
 	if (WALF_get_log_info
 		(status_vector, dbname, logname, log_partition_offset, &log_seqno,
 		 &log_length, &log_flag) == FB_SUCCESS) {
@@ -1057,7 +1040,7 @@ SLONG * new_offset, SLONG * log_type)
 	found = false;
 	p_offset = 0L;
 
-	while (TRUE) {
+	while (true) {
 		if ((j == i) && (count > 1))	/* We have exhausted all the preallocated files */
 			break;
 		logf = LOGF_INFO(j);
@@ -1116,12 +1099,11 @@ SLONG * new_offset, SLONG * log_type)
 	SLONG last_log_partition_offset;
 	SLONG last_log_flags;
 	SSHORT any_log_to_be_archived;
-	LOGF *logf;
 	SLONG fd;
 	int retry_count;
 #define MAX_RETRIES	1000
 
-	logf = &WAL_segment->wals_log_serial_file_info;
+	LOGF* logf = &WAL_segment->wals_log_serial_file_info;
 	if (logf->logf_name_offset == 0)
 		return FB_FAILURE;
 
@@ -1208,13 +1190,12 @@ static bool get_next_usable_partition(
  *	new_logname and new_offset are updated in case of success.
  *
  **************************************/
-	P_LOGFH p_log_header;
 	SLONG p_log_fd;
 	int i, j, count;
 	bool found;
 	SLONG p_offset;
 
-	p_log_header = (P_LOGFH) gds__alloc(P_LOGFH_LENGTH);
+	P_LOGFH p_log_header = (P_LOGFH) gds__alloc(P_LOGFH_LENGTH);
 /* NOMEM: return failure, FREE: by returns in this procedure */
 	if (!p_log_header)
 		return FALSE;
@@ -1274,10 +1255,9 @@ SLONG * new_offset, SLONG * log_type)
  *	returns FB_FAILURE.
  *
  **************************************/
-	LOGF *logf;
 	SLONG fd;
 
-	logf = &WAL_segment->wals_log_ovflow_file_info;
+	LOGF* logf = &WAL_segment->wals_log_ovflow_file_info;
 	if (logf->logf_name_offset != 0) {
 		if (logf->logf_fname_seqno <= WAL_segment->wals_log_seqno)
 			logf->logf_fname_seqno = WAL_segment->wals_log_seqno + 1;
@@ -1329,11 +1309,10 @@ static void get_time_stamp( SLONG * date)
  *	(Copied from mov.c)
  *
  **************************************/
-	SLONG clock;
 	struct tm times;
 
-	clock = (SLONG) time(NULL);
-	times = *localtime((time_t *) & clock);
+	time_t clock = time(NULL);
+	times = *localtime(&clock);
 	isc_encode_date(&times, (GDS_QUAD *) date);
 }
 
@@ -1356,8 +1335,6 @@ static SSHORT increase_buffers(
  *	done before calling this routine.
  *
  **************************************/
-	WALS WAL_segment;
-	WALBLK *wblk;
 	SLONG old_wal_length, new_wal_length;
 	SSHORT i, old_num_buffers;
 	SSHORT ret;
@@ -1367,7 +1344,7 @@ static SSHORT increase_buffers(
 	if ((ret = flush_all_buffers(status_vector, WAL_handle)) != FB_SUCCESS)
 		return ret;
 
-	WAL_segment = WAL_handle->wal_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 
 	old_wal_length = WAL_segment->wals_length;
 	new_wal_length = old_wal_length + num_buffers * WAL_segment->wals_blksize;
@@ -1404,7 +1381,7 @@ static SSHORT increase_buffers(
 /* initialize the newly allocated buffer blocks. */
 
 	for (i = old_num_buffers; i < WAL_segment->wals_maxbufs; i++) {
-		wblk = WAL_BLOCK(i);
+		WALBLK* wblk = WAL_BLOCK(i);
 		wblk->walblk_number = i;
 		wblk->walblk_flags = 0;
 		wblk->walblk_cur_offset = 0;
@@ -1443,11 +1420,10 @@ static SSHORT init_raw_partitions( ISC_STATUS * status_vector, WAL WAL_handle)
  *	Initialize all the configured raw partitioned log files.
  *
  **************************************/
-	WALS WAL_segment;
 	LOGF *logf;
 	SSHORT i, ret_val;
 
-	WAL_segment = WAL_handle->wal_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 
 	for (i = 0; i < WAL_segment->wals_max_logfiles; i++) {
 		logf = LOGF_INFO(i);
@@ -1481,10 +1457,7 @@ static SSHORT journal_connect( ISC_STATUS * status_vector, WAL WAL_handle)
  *	Returns FB_SUCCESS or FB_FAILURE.
  *
  **************************************/
-	SSHORT ret;
-	WALS WAL_segment;
-
-	WAL_segment = WAL_handle->wal_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 
 	if (PRINT_DEBUG_MSGS) {
 		PRINT_TIME(DEBUG_FD, LOCAL_TIME);
@@ -1492,7 +1465,7 @@ static SSHORT journal_connect( ISC_STATUS * status_vector, WAL WAL_handle)
 	}
 
 	JOURNAL_HANDLE = NULL;
-	ret = JRN_init(status_vector,
+	SSHORT ret = JRN_init(status_vector,
 				   &(JOURNAL_HANDLE),
 				   WAL_segment->wals_dbpage_size,
 				   reinterpret_cast <
@@ -1533,8 +1506,6 @@ static void journal_disable(
  *	disable point.
  *
  **************************************/
-	WALS WAL_segment;
-
 	LOCAL_FLAGS |= WALW_DISABLING_JRN;
 	rollover_log(status_vector, WAL_handle, log_header);
 	LOCAL_FLAGS &= ~(WALW_DISABLING_JRN);
@@ -1543,7 +1514,7 @@ static void journal_disable(
 	if (!JOURNAL_HANDLE) {
 		/* Disable succeeded */
 
-		WAL_segment = WAL_handle->wal_segment;
+		WALS WAL_segment = WAL_handle->wal_segment;
 		WAL_segment->wals_flags &= ~WALS_JOURNAL_ENABLED;
 		WAL_segment->wals_flags &= ~WALS_DISABLE_JOURNAL;
 	}
@@ -1563,11 +1534,8 @@ static SSHORT journal_enable( ISC_STATUS * status_vector, WAL WAL_handle)
  *	info.  Returns FB_SUCCESS or FB_FAILURE.
  *
  **************************************/
-	SSHORT ret;
-	WALS WAL_segment;
-
-	WAL_segment = WAL_handle->wal_segment;
-	ret = journal_connect(status_vector, WAL_handle);
+	WALS WAL_segment = WAL_handle->wal_segment;
+	SSHORT ret = journal_connect(status_vector, WAL_handle);
 	if (ret == FB_SUCCESS) {
 		if (PRINT_DEBUG_MSGS) {
 			PRINT_TIME(DEBUG_FD, LOCAL_TIME);
@@ -1627,7 +1595,6 @@ static void prepare_wal_block( WALS WAL_segment, WALBLK * wblk)
  **************************************/
 	WALBLK_HDR header;
 	USHORT len;					/* The header and trailer length for the buffer block */
-	SCHAR *p, *q;
 
 	len = (USHORT) wblk->walblk_roundup_offset;	/* Already includes the block trailing bytes */
 
@@ -1640,8 +1607,8 @@ static void prepare_wal_block( WALS WAL_segment, WALBLK * wblk)
 	get_time_stamp(header.walblk_hdr_timestamp);
 	memcpy(wblk->walblk_buf, (SCHAR *) & header, BLK_HDROVHD);
 
-	p = (SCHAR *) & wblk->walblk_buf[(int) len - BLK_TAILOVHD];
-	q = (SCHAR *) & len;
+	SCHAR* p = (SCHAR *) & wblk->walblk_buf[(int) len - BLK_TAILOVHD];
+	const SCHAR* q = (SCHAR *) &len;
 	*p++ = *q++;
 	*p++ = *q++;
 }
@@ -1702,9 +1669,8 @@ static void report_walw_bug_or_error(
  **************************************/
 	ISC_STATUS_ARRAY local_status;
 	TEXT errbuf[MAX_ERRMSG_LEN];
-	WALS WAL_segment;
 
-	WAL_segment = WAL_handle->wal_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 
 /* First give a generic WAL writer error message */
 
@@ -1772,15 +1738,11 @@ static SSHORT rollover_log(
  *	is assumed to have already been acquired.
  *
  **************************************/
-	WALFH new_log_header;
 	SCHAR saved_logname[MAXPATHLEN];
 	SCHAR new_logname[MAXPATHLEN];
 	SLONG new_log_fd;
 	SSHORT ret;
-	SLONG saved_flushed_offset;
 	SLONG new_log_partition_offset;
-	WALS WAL_segment;
-	SLONG log_type;
 #define ROLLOVER_LOG_RETURN(code) {gds__free((SLONG*)new_log_header); return(code);}
 
 /* First flush all the filled buffer blocks to the current log file
@@ -1790,16 +1752,16 @@ static SSHORT rollover_log(
 	if ((ret = flush_all_buffers(status_vector, WAL_handle)) != FB_SUCCESS)
 		return ret;
 
-	WAL_segment = WAL_handle->wal_segment;
-	new_log_header = (WALFH) gds__alloc(WALFH_LENGTH);
+	WALS WAL_segment = WAL_handle->wal_segment;
+	WALFH new_log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: return failure, FREE: by macro ROLLOVER_LOG_RETURN() */
 	if (!new_log_header)
 		return FB_FAILURE;
 
-	saved_flushed_offset = WAL_segment->wals_flushed_offset;
+	SLONG saved_flushed_offset = WAL_segment->wals_flushed_offset;
 	strcpy(saved_logname, WAL_segment->wals_logname);
 
-	log_type = 0L;
+	SLONG log_type = 0L;
 	if (get_next_logname(status_vector, WAL_segment, new_logname,
 						 &new_log_partition_offset, &log_type) != FB_SUCCESS) {
 		WAL_ERROR_APPEND(status_vector, gds_wal_err_rollover, new_logname);
@@ -1941,14 +1903,10 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
  *	Returns FB_SUCCESS or an errno.
  *
  **************************************/
-	SSHORT ret;
-	LOGF *logf;
-	SSHORT takeover;
-	WALS WAL_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 
-	WAL_segment = WAL_handle->wal_segment;
-
-	ret = setup_log_header_info(status_vector, WAL_handle, logname,
+	bool takeover;
+	SSHORT ret = setup_log_header_info(status_vector, WAL_handle, logname,
 								log_partition_offset, log_type, logfile_fd,
 								log_header, rollover, prev_logname,
 								prev_log_partition_offset, &takeover);
@@ -1971,6 +1929,7 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 			WAL_segment->wals_flushed_log_seqno = log_header->walfh_seqno;
 		}
 
+		const logf* logf;
 		if (WAL_segment->wals_max_logfiles > 0) {
 			/* Get the index of this logfile in the list of pre-allocated
 			   log files. */
@@ -1987,9 +1946,7 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 			logf = &WAL_segment->wals_log_serial_file_info;
 
 		WAL_segment->wals_rollover_threshold = (logf->logf_max_size ?
-												logf->
-												logf_max_size : WAL_segment->
-												wals_max_log_length);
+						logf->logf_max_size : WAL_segment->wals_max_log_length);
 		WAL_segment->wals_roundup_size = logf->logf_roundup_size;
 
 		if ((PRINT_DEBUG_MSGS) && rollover) {
@@ -2006,15 +1963,17 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 
 
 static SSHORT setup_log_header_info(
-									ISC_STATUS * status_vector,
-									WAL WAL_handle,
-									SCHAR * logname,
-SLONG log_partition_offset,
-SLONG log_type,
-SLONG * logfile_fd,
-WALFH log_header,
-SSHORT rollover,
-SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
+						ISC_STATUS * status_vector,
+						WAL WAL_handle,
+						SCHAR * logname,
+	SLONG log_partition_offset,
+	SLONG log_type,
+	SLONG * logfile_fd,
+	WALFH log_header,
+	SSHORT rollover,
+	SCHAR * prev_logname,
+	SLONG prev_log_partition_offset,
+	bool* takeover)
 {
 /**************************************
  *
@@ -2038,12 +1997,11 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
  *	Returns FB_SUCCESS or FB_FAILURE.
  *
  **************************************/
-	WALS WAL_segment;
 	SLONG log_fd, read_len;
 	SCHAR prev_logfname[MAXPATHLEN];
 	SLONG prev_logfpartition_offset;
 
-	WAL_segment = WAL_handle->wal_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 
 /* Open the Log file */
 
@@ -2051,7 +2009,7 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 		(status_vector, logname, LLIO_OPEN_WITH_SYNC_RW, TRUE,
 		 &log_fd)) return FB_FAILURE;
 
-	*takeover = FALSE;
+	*takeover = false;
 
 	if (!rollover) {
 		/* Try to read the logfile header and take appropriate steps
@@ -2100,14 +2058,11 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 		log_header->walfh_data_len =
 			MISC_build_parameters_block(log_header->walfh_data,
 										PARAM_BYTE(WALFH_dbname),
-										PARAM_STRING(log_header->
-													 walfh_dbname),
+										PARAM_STRING(log_header->walfh_dbname),
 										PARAM_BYTE(WALFH_prev_logname),
-										PARAM_STRING(log_header->
-													 walfh_prev_logname),
+										PARAM_STRING(log_header->walfh_prev_logname),
 										PARAM_BYTE(WALFH_next_logname),
-										PARAM_STRING(log_header->
-													 walfh_next_logname),
+										PARAM_STRING(log_header->walfh_next_logname),
 										PARAM_BYTE(WALFH_end), 0);
 	}
 	else if (read_len < (SLONG) sizeof(struct walfh)) {
@@ -2126,7 +2081,7 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 			/* The file had been in use, may be the previous WAL writer process
 			   died.  So, take over.  Do some sanity checks though. */
 
-			*takeover = TRUE;
+			*takeover = true;
 			log_header->walfh_length = WAL_segment->wals_flushed_offset;
 			log_header->walfh_dbname = NULL;	/* will be updated below */
 			log_header->walfh_prev_logname = NULL;	/* will be updated below */
@@ -2273,12 +2228,9 @@ static void write_wal_statistics( WAL WAL_handle)
  *	since they are likely only to be seen by DBA's and technical types
  *
  **************************************/
-	WALS WAL_segment;
-	IB_FILE *stat_file;
-
-	WAL_segment = WAL_handle->wal_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 	if (PRINT_DEBUG_MSGS) {
-		stat_file = DEBUG_FD;
+		IB_FILE* stat_file = DEBUG_FD;
 
 		ib_fprintf(stat_file,
 				   "-----------------------------------------------\n");
@@ -2324,5 +2276,4 @@ static void write_wal_statistics( WAL WAL_handle)
 				   "-----------------------------------------------\n");
 	}
 }
-
 

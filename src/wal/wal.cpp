@@ -137,10 +137,9 @@ SSHORT WAL_attach( ISC_STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
  *	Return FB_SUCCESS if attachment succeeds else return FB_FAILURE.
  *
  **************************************/
-	int ret;
 	ISC_STATUS_ARRAY local_status;
 
-	ret = WALC_init(status_vector, WAL_handle, dbname, 0,
+	int ret = WALC_init(status_vector, WAL_handle, dbname, 0,
 					NULL, 0L, FALSE, 1L, 0, NULL, FALSE);
 	if (ret == FB_SUCCESS) {
 		if ((ret = WALC_check_writer(*WAL_handle)) != FB_SUCCESS)
@@ -159,7 +158,8 @@ SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
 							 WAL WAL_handle,
 							 SLONG * log_seqno,
 							 SCHAR * logname,
-							 SLONG * log_partition_offset, SLONG * log_offset)
+							 SLONG * log_partition_offset, 
+							 SLONG * log_offset)
 {
 /**************************************
  *
@@ -176,9 +176,6 @@ SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
  *
  ***************************************/
 	WALS WAL_segment;
-	UCHAR chkpt_rec[100];
-	SLONG dummy_seqno;
-	SLONG dummy_offset;
 
 /* Do some sanity check.  We may remove this code once we are
  * convinced that this call will never be made improperly, i.e.
@@ -200,6 +197,7 @@ SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
  * do not need to 'see' this record for recovery.   We are putting a
  * zero length record for this purpose. */
 
+	UCHAR chkpt_rec[100];
 	wal_put2(status_vector, WAL_handle, chkpt_rec, 0,
 			 NULL, 0, log_seqno, log_offset, TRUE);
 
@@ -213,6 +211,8 @@ SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
 	WAL_segment->wals_saved_ckpted_offset = *log_offset;
 	WALC_release(WAL_handle);
 
+	SLONG dummy_seqno;
+	SLONG dummy_offset;
 	WAL_flush(status_vector, WAL_handle, &dummy_seqno, &dummy_offset, FALSE);
 	WALC_acquire(WAL_handle, &WAL_segment);
 	*log_seqno = WAL_segment->wals_ckpted_log_seqno;
@@ -343,17 +343,12 @@ SSHORT WAL_commit(ISC_STATUS * status_vector,
  *
  **************************************/
 	WALS WAL_segment;
-	SSHORT grpc_blknum;
-	GRP_COMMIT *grpc;
-	SSHORT ret;
-	SLONG dummy_seqno;
-	SLONG dummy_offset;
 
 	if (len && wal_put2(status_vector, WAL_handle, commit_logrec, len,
 						NULL, 0, log_seqno, log_offset, 0) != FB_SUCCESS)
 		return FB_FAILURE;
 
-	ret = FB_SUCCESS;
+	SSHORT ret = FB_SUCCESS;
 
 	WALC_acquire(WAL_handle, &WAL_segment);
 	if (!len) {
@@ -382,12 +377,15 @@ SSHORT WAL_commit(ISC_STATUS * status_vector,
 
 	if (WAL_handle->wal_grpc_wait_usecs == 0L) {	/* No group-commit needs to be done */
 		WALC_release(WAL_handle);
+
+		SLONG dummy_seqno;
+		SLONG dummy_offset;
 		return WAL_flush(status_vector, WAL_handle,
 						 &dummy_seqno, &dummy_offset, FALSE);
 	}
 
-	grpc_blknum = WAL_segment->wals_cur_grpc_blknum;
-	grpc = &WAL_segment->wals_grpc_blks[grpc_blknum];
+	SSHORT grpc_blknum = WAL_segment->wals_cur_grpc_blknum;
+	grp_commit* grpc = &WAL_segment->wals_grpc_blks[grpc_blknum];
 	grpc->grp_commit_size++;
 
 	if (grpc->grp_commit_coordinator == 0) {
@@ -541,10 +539,9 @@ SSHORT WAL_init(ISC_STATUS * status_vector,
  *	Return FB_SUCCESS if initialization succeeds else return FB_FAILURE.
  *
  **************************************/
-	SSHORT ret;
 	ISC_STATUS_ARRAY local_status;
 
-	ret = WALC_init(status_vector,
+	SSHORT ret = WALC_init(status_vector,
 					WAL_handle,
 					dbname,
 					db_page_len,
@@ -720,12 +717,11 @@ bool WAL_rollover_happened(ISC_STATUS * status_vector,
  *
  ***************************************/
 	WALS WAL_segment;
-	bool happened;
-
-	happened = false;
 
 	WALC_acquire(WAL_handle, &WAL_segment);
 	WAL_CHECK_BUG(WAL_handle, WAL_segment);
+
+	bool happened = false;
 	if (WAL_segment->wals_flags & WALS_ROLLOVER_HAPPENED) {
 		happened = true;
 		*new_seqno = WAL_segment->wals_log_seqno;
@@ -1020,10 +1016,7 @@ static SLONG copy_buffer(
  *	Returns the offset in the WAL file where these bytes would endup.
  *
  **************************************/
-	UCHAR *p, *q;
 	WALREC_HDR header;
-	SLONG offset;
-	USHORT total_count;
 
 	if (wblk->walblk_cur_offset == 0) {
 		/* This buffer is being written from the beginning.  Account for
@@ -1033,15 +1026,17 @@ static SLONG copy_buffer(
 		WAL_segment->wals_buf_offset += BLK_HDROVHD;
 	}
 
-	offset = WAL_segment->wals_buf_offset;
+	// Current value is saved to be returned.
+	const SLONG offset = WAL_segment->wals_buf_offset;
 
 /* First build the record header */
 
-	total_count = count1 + count2;
+	USHORT total_count = count1 + count2;
 	header.walrec_len = total_count;
 	header.walrec_offset = wblk->walblk_cur_offset;
-	p = (UCHAR *) & header;
-	q = &wblk->walblk_buf[wblk->walblk_cur_offset];
+
+	const UCHAR* p = (UCHAR *) & header;
+	UCHAR* q = &wblk->walblk_buf[wblk->walblk_cur_offset];
 	memcpy(q, p, REC_HDROVHD);
 	q += REC_HDROVHD;
 
@@ -1188,12 +1183,11 @@ static SSHORT grpc_do_group_commit(
  **************************************/
 	SLONG dummy_seqno;
 	SLONG dummy_offset;
-	SSHORT ret;
 
 /* Wait for more grouping and for the other group-commit_block
    to be available. */
 
-	ret = grpc_wait_for_grouping(status_vector, WAL_handle, grpc_blknum);
+	SSHORT ret = grpc_wait_for_grouping(status_vector, WAL_handle, grpc_blknum);
 	if (ret != FB_SUCCESS)
 		return ret;
 
@@ -1223,11 +1217,10 @@ static void grpc_finish_group_commit( WAL WAL_handle, SSHORT grpc_blknum)
  *
  **************************************/
 	WALS WAL_segment;
-	GRP_COMMIT *grpc;
 
 	WALC_acquire(WAL_handle, &WAL_segment);
 	WAL_segment->wals_grpc_count++;
-	grpc = &WAL_segment->wals_grpc_blks[grpc_blknum];
+	grp_commit* grpc = &WAL_segment->wals_grpc_blks[grpc_blknum];
 	grpc->grp_commit_coordinator = 0;
 
 	if (grpc->grp_commit_size > 1)	/* Inform other participants */
@@ -1262,17 +1255,12 @@ static SSHORT grpc_wait_for_grouping(
  *	is acquired.
  *
  **************************************/
-	EVENT ptr;
-	SLONG value;
-	WALS WAL_segment;
-	SSHORT wait_count, other_grpc_blknum;
-	GRP_COMMIT *other_grpc;
 
-/* Previously, the semaphore was being set only when called from WAL_commit. */
+	/* Previously, the semaphore was being set only when called from WAL_commit. */
 
-	WAL_segment = WAL_handle->wal_segment;
-	ptr = &WAL_EVENTS[WAL_GCOMMIT_STALL_SEM];
-	value = ISC_event_clear(ptr);
+	WALS WAL_segment = WAL_handle->wal_segment;
+	EVENT ptr = &WAL_EVENTS[WAL_GCOMMIT_STALL_SEM];
+	SLONG value = ISC_event_clear(ptr);
 	WALC_release(WAL_handle);
 
 	ISC_event_wait(1,
@@ -1283,8 +1271,8 @@ static SSHORT grpc_wait_for_grouping(
 
 /* Now make sure that the other group-commit block is available */
 
-	other_grpc_blknum = (grpc_blknum + 1) % MAX_GRP_COMMITTERS;
-	wait_count = 0;
+	SSHORT other_grpc_blknum = (grpc_blknum + 1) % MAX_GRP_COMMITTERS;
+	SSHORT wait_count = 0;
 	WALC_acquire(WAL_handle, &WAL_segment);
 	while (WAL_segment->wals_flags & WALS_GRP_COMMIT_IN_PROGRESS) {
 		value = ISC_event_clear(ptr);
@@ -1299,11 +1287,12 @@ static SSHORT grpc_wait_for_grouping(
 			((wait_count++) > 5)) {
 			/* Time to check the other coordinator, what's going on ? */
 
-			other_grpc = &WAL_segment->wals_grpc_blks[other_grpc_blknum];
+			const grp_commit* other_grpc = 
+				&WAL_segment->wals_grpc_blks[other_grpc_blknum];
 			if (other_grpc->grp_commit_size == 1 &&
-				!ISC_check_process_existence(other_grpc->
-											 grp_commit_coordinator, 0,
-											 FALSE)) {
+				!ISC_check_process_existence(other_grpc->grp_commit_coordinator, 
+											0, FALSE))
+			{
 				/* Other coordinator is dead and there is no participant.
 				   So, clean up. */
 
@@ -1328,7 +1317,7 @@ static SSHORT grpc_wait_for_group_commit_finish(
 												ISC_STATUS * status_vector,
 												WAL WAL_handle,
 												SSHORT grpc_blknum,
-GRP_COMMIT * grpc)
+	GRP_COMMIT * grpc)
 {
 /**************************************
  *

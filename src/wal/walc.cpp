@@ -322,17 +322,15 @@ void WALC_fini( ISC_STATUS * status_vector, WAL * WAL_handle)
  *	the corresponding semaphores.
  *
  **************************************/
-	WALS WAL_segment;
-	WAL wal;
 	int flag;
 	TEXT wal_file[MAXPATHLEN];
 
-	wal = *WAL_handle;
+	WAL wal = *WAL_handle;
 	if ((wal == NULL) || ((--wal->wal_count) > 0))
 		return;
 
 	wal->wal_count = 0;
-	WAL_segment = wal->wal_segment;
+	WALS WAL_segment = wal->wal_segment;
 
 	if (WAL_segment) {
 		WAL_segment->wals_num_attaches--;
@@ -389,7 +387,6 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 	struct walc wal_args;
 	SLONG length;
 	WALS WAL_segment;
-	WAL wal;
 	void (*wal_init_routine) ();
 
 	if (*WAL_handle != NULL) {
@@ -427,7 +424,7 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 		wal_init_routine = NULL;
 	}
 
-	wal = wal_args.walc_wal = (WAL) gds__alloc(sizeof(struct wal));
+	WAL wal = wal_args.walc_wal = (WAL) gds__alloc(sizeof(struct wal));
 /* NOMEM: return error status, FREE: error returns & WAL_fini() */
 	if (!wal) {
 		status_vector[0] = gds_arg_gds;
@@ -507,9 +504,7 @@ void WALC_release( WAL WAL_handle)
  *	Release the mapped WAL lock file. 
  *
  **************************************/
-	WALS WAL_segment;
-
-	WAL_segment = WAL_handle->wal_segment;
+	WALS WAL_segment = WAL_handle->wal_segment;
 	WAL_segment->wals_last_pid = 0;
 	if (ISC_mutex_unlock(WAL_MUTEX)) {
 		WALC_bug(NULL, WAL_handle->wal_dbname, "WAL mutex unlock failed");
@@ -719,12 +714,8 @@ static SSHORT setup_wal_params(
  *	attributes like size and number of WAL buffers.
  *
  **************************************/
-	SSHORT buf_count;
-	USHORT buf_size;
-	SLONG ckpt_intrvl;
 	UCHAR *p, *q;
 	int i, j;
-	bool done;
 	LGFILE *log_file;
 	TEXT err_buffer[16];
 
@@ -747,14 +738,14 @@ static SSHORT setup_wal_params(
 
 	wal_args->walc_grpc_wait_usecs = GRPC_WAIT_USECS;
 
-	buf_count = 0;
-	buf_size = 0;
-	ckpt_intrvl = 0L;
+	SSHORT buf_count = 0;
+	USHORT buf_size = 0;
+	SLONG ckpt_intrvl = 0L;
 
 
 /* Now see if wal parameter block specifies any parameters */
 
-	done = false;
+	bool done = false;
 	if ((p = wpb) == NULL)
 		done = true; // Nothing to parse from the wal paramater block
 
@@ -960,25 +951,17 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
  *	to have an exclusive lock on the WAL file.
  *
  **************************************/
-	WALS WAL_segment;
-	SSHORT maxbufs;
 	SSHORT i;
-	WALBLK *wblk;
-	LOGF *logf;
 	UCHAR *p, *q;
-	LGFILE *log_file;
-#if (defined WIN_NT)
-	EVENT event, shared_event;
-#endif
 #ifdef UNIX
 	struct stat buf;
 #endif
 
-	WAL_segment = (WALS) shmem_data->sh_mem_address;
+	WALS WAL_segment = (WALS) shmem_data->sh_mem_address;
 
 #if (defined WIN_NT)
-	event = wal_args->walc_wal->wal_events + 1;
-	shared_event = WAL_segment->wals_events + 1;
+	EVENT event = wal_args->walc_wal->wal_events + 1;
+	EVENT shared_event = WAL_segment->wals_events + 1;
 	for (i = 1; i < MAX_WALSEMS; event++, shared_event++, i++)
 		ISC_event_init_shared(event, WAL_SIGNALS + i, wal_args->walc_mapfile,
 							  shared_event, (initialize) ? TRUE : FALSE);
@@ -1069,8 +1052,9 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 
 /* Now setup the serial log file info */
 
-	logf = &WAL_segment->wals_log_serial_file_info;
-	if (log_file = wal_args->walc_log_serial_file_info) {
+	LOGF* logf = &WAL_segment->wals_log_serial_file_info;
+	LGFILE* log_file = wal_args->walc_log_serial_file_info;
+	if (log_file) {
 		p = (UCHAR *) log_file->lg_name;
 		strcpy(reinterpret_cast < char *>(q),
 			   reinterpret_cast < const char *>(p));
@@ -1158,6 +1142,7 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 
 /* Now setup the WAL buffers info */
 
+	SSHORT maxbufs;
 	WAL_segment->wals_initial_maxbufs =
 		WAL_segment->wals_maxbufs = maxbufs = wal_args->walc_maxbufs;
 	WAL_segment->wals_curbuf = 0;	/* CUR_BUF */
@@ -1202,7 +1187,7 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 		WAL_segment->wals_flags |= WALS_FIRST_TIME_LOG;
 
 	for (i = 0; i < maxbufs; i++) {
-		wblk = WAL_BLOCK(i);
+		WALBLK* wblk = WAL_BLOCK(i);
 		wblk->walblk_number = i;
 		wblk->walblk_flags = 0;
 		wblk->walblk_roundup_offset = 0;
