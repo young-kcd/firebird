@@ -1,3 +1,9 @@
+2004-06-08 15:59  dimitr
+
+	* firebird2/doc/sql.extensions/README.universal_triggers (1.1.2.2):
+	
+	Corrected a typo.
+
 2004-06-07 11:21  paul_reeves
 
 	* firebird2/src/:
