@@ -1,7 +1,18 @@
 #!/bin/sh
 
-# A routine to change the user that runs interbase Firebird
+# A routine to change the user that runs Firebird SS.
+# Under all circumstances postinstall.sh script tries to create
+# user and group named firebird. We don't need to repeat this attempts here.
+# If one changes runUser to something specific for him (some like user293),
+# he must take care to add correct user before it!
 
+RunUser=$1
+RunGroup=$2
+if [ "$3" ]
+then
+    Usage: SSchangeRunUser.sh [RunUser] [RunGroup]
+    exit 100
+fi
 
 #------------------------------------------------------------------------
 # Prompt for response, store result in Answer
@@ -12,8 +23,12 @@ AskQuestion() {
     Test=$1
     DefaultAns=$2
     echo -n "${1}"
-    Answer="$DefaultAns"
+    Answer=""
     read Answer
+    if [ -z $Answer ]
+    then
+        Answer="$DefaultAns"
+    fi
 }
 
 
@@ -47,10 +62,7 @@ stopServerIfRunning() {
 
     if [ ! -z "$checkString" ] 
       then
-        if [ -f /etc/rc.d/init.d/firebird ]
-          then
-            /etc/rc.d/init.d/firebird stop
-        fi
+	$StartupScript stop
     fi
 }
 
@@ -77,7 +89,7 @@ checkIfServerRunning() {
 
     if [ ! -z "$checkString" ] 
       then
-        echo "An instance of the Firebird/InterBase server seems to be running." 
+        echo "An instance of the Firebird/InterBase Classic server seems to be running." 
         echo "Please quit all interbase applications and then proceed." 
         exit 1 
     fi
@@ -95,63 +107,6 @@ checkIfServerRunning() {
 
 
 #------------------------------------------------------------------------
-#  Add new user and group
-
-
-addFirebirdUser() {
-
-    groupadd -g 84 -o -r firebird
-
-    useradd -o -r -m -d /home/firebird -s /bin/bash \
-        -c "Firebird Database Administrator" -g firebird -u 84 firebird 
-
-# >/dev/null 2>&1 
-}
-
-
-#------------------------------------------------------------------------
-#  Delete new user and group
-
-
-deleteFirebirdUser() {
-
-    userdel firebird
- #   groupdel firebird
-
-}
-
-
-
-#------------------------------------------------------------------------
-# add a service line in the (usually) /etc/services or /etc/inetd.conf file
-# Here there are three cases, not found         => add service line,
-#                             found & different => ask user to check
-#                             found & same      => do nothing
-#                             
-
-replaceLineInFile() {
-    FileName=$1
-    newLine=$2
-    oldLine=$3
-
-    if [ -z "$oldLine" ] 
-      then
-        echo "$newLine" >> $FileName
-
-    elif [ "$oldLine" != "$newLine"  ]
-      then
-# We really expect this to be the case.
-
-        cat $FileName | grep -v "$oldLine" > ${FileName}.tmp
-        mv ${FileName}.tmp $FileName
-        echo "$newLine" >> $FileName
-        echo "Updated."
-
-    fi
-}
-
-
-#------------------------------------------------------------------------
 #  changeInitRunUser
 
 
@@ -159,110 +114,97 @@ changeInitRunUser() {
 
     NewUser=$1
 
-    InitFile=/etc/rc.d/init.d/firebird
-    if [ -f $InitFile ] 
-      then
-        ed $InitFile <<EOF
-/FBRunUser:=/s/FBRunUser:=.*\}/FBRunUser:=$NewUser\}/g
+    chmod u=rwx,g=rx,o= $StartupScript
+    ex $StartupScript <<EOF
+/FBRunUser/s/FBRunUser=.*/FBRunUser=$NewUser/g
 w
 q
 EOF
-    chmod u=rwx,g=rx,o= $InitFile
+    chmod u=rwx,g=rx,o= $StartupScript
+    
+}
 
+
+#------------------------------------------------------------------------
+#  check for RunUsetr and RunGroup
+
+checkIfUserIsPresent() {
+    checkString=`grep $RunUser /etc/passwd`
+    if [ -z "$checkString" ]
+    then
+	echo User $RunUser missing - script failed.
+	exit 20
+    fi
+    checkString=`grep $RunGroup /etc/group`
+    if [ -z "$checkString" ]
+    then
+	echo Group $RunGroup missing - script failed.
+	exit 21
     fi
 }
 
 
-IBRootDir=@prefix@
-IBBin=$IBRootDir/bin
-
-
-
-
-RunUser=firebird
-RunGroup=firebird
-
-# Well if you really insist, here it is ;-) - Mark.
-#RunUser=interbase
-#RunGroup=interbase
-
-
-# If you want to root user (server run restructed to group root)
-# RunUser=root
-# RunGroup=root
+#------------------------------------------------------------------------
+#  main code
 
 
 checkInstallUser
 
+IBRootDir=/opt/firebird
+IBBin=$IBRootDir/bin
 
+if [ -z "$RunUser" ]
+then
+    AskQuestion "Enter new RunUser for firebird super server [firebird]: " firebird
+    RunUser="$Answer"
+fi
+if [ -z "$RunGroup" ]
+then
+    AskQuestion "Enter new RunGroup for firebird super server [firebird]: " firebird
+    RunGroup="$Answer"
+fi
 
+checkIfUserIsPresent
+    
 echo ""
 echo "Change Firebird install for $IBRootDir to uid=$RunUser gid=$RunGroup"
-echo "(User or group options can be changed by editing this script)"
 echo ""
 AskQuestion "Press return to continue - or ^C to abort"
 
-
-checkIfServerRunning
-
-if [ $RunUser = "firebird" ]
+# Locating startup script
+StartupScript=""
+if [ -f /etc/rc.d/init.d/firebird ]
   then
-#    deleteFirebirdUser
-    addFirebirdUser
+    StartupScript=/etc/rc.d/init.d/firebird
+elif [ -f /etc/init.d/firebird ]
+  then
+    StartupScript=/etc/init.d/firebird
+fi
+if [ -z $StartupScript ]
+then
+    echo "Failed to locate startup script for firebird."
+    exit 10
 fi
 
-
-
+# Stop server if running
+checkIfServerRunning
 
 # Update ownership and SUID bits for programs.
 echo "Updating $IBRootDir"
+chown $RunUser.$RunGroup $IBRootDir/isc_* $IBRootDir/firebird.log $IBRootDir/security.fdb
 
-
-chown -R $RunUser.$RunGroup $IBRootDir
-
-# Turn everybody option off.
-chmod -R o= $IBRootDir
-
-# Now fix up the mess.
-
-# fix up directories 
-for i in `find $IBRootDir -print`
-  do
-    FileName=$i
-    if [ -d $FileName ]
-       then
-         chmod o=rx $FileName
-     fi
-  done
-
-
-
-cd $IBBin
-
-
-# User can run these programs, they need to talk to server though.
-# and they cannot actually create a database.
-
-chmod o=rx isql 
-chmod o=rx qli
-
-
-
-cd $IBRootDir
-
-touch firebird.log
-chmod ug=rw,o= firebird.log
-chmod ug=rw,o=r firebird.msg
-
-
-# make examples writable by group
-chmod ug=rw,o= examples/*.fdb
-
-
+# Update startup script
+echo "Updating startup script"
 changeInitRunUser $RunUser
 
-# start the db server so we can change the password
-
-(cd /etc/rc.d/init.d; ./firebird start)
-
-echo "Completed."
+# start the db server
+if $StartupScript start
+then
+    echo ""
+    echo "Completed."
+else
+    echo ""
+    echo "Firebird startup failed."
+    exit 11
+fi
+exit 0
