@@ -65,5 +65,5 @@ hu.RunSSWithGuardian=A Szuper Szerver futtatása (Guardian segítségével)
 hu.RunCSWithGuardian=A Hagyományos Szerver futtatása (Guardian segítségével)
 hu.RunISQL=A parancssoros Interaktív SQL eszköz futtatása
 
-hu.ReadmeFile=readme.txt
-hu.InstallationReadmeFile=installation_readme.txt
+hu.ReadmeFile=olvass_el.txt
+hu.InstallationReadmeFile=telepitesi_segedlet.txt

@@ -17,6 +17,16 @@
 ::=============================================================================
 @echo off
 
+if DEFINED VS71COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS71COMNTOOLS%vsvars32.bat") else ( echo "%VS71COMNTOOLS%vsvars32.bat has already been executed.")
+) else (
+@msdev /? >nul 2>nul
+@if errorlevel 9009 (call "C:\Program Files\Microsoft Visual Studio\VC98\Bin\vcvars32.bat") else (echo "MSVC6 vcvars.bat has already been executed")
+)
+
+
+
 ::Check if on-line help is required
 @if /I "%1"=="-h" (goto :HELP & goto :EOF)
 @if /I "%1"=="/h" (goto :HELP & goto :EOF)
