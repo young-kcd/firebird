@@ -74,7 +74,7 @@ DATABASE DB = STATIC "yachts.lnk";
 #define DB          db_handle
 #define isc_status  status_vector
 
-#define ALLOC(size)	alloc ((SLONG) size);
+#define ALLOC(size)	alloc ((size_t) size);
 #define BUCKETS		5
 #define WINDOW_SIZE	(1 << 17)
 
@@ -133,7 +133,7 @@ typedef struct dba_fil {
 	SCHAR fil_string[1];		/* Expanded file name */
 } *DBA_FIL;
 
-static SCHAR *alloc(SLONG);
+static SCHAR *alloc(size_t);
 static void analyze_data(DBA_REL, BOOLEAN);
 static BOOLEAN analyze_data_page(DBA_REL, DPG, BOOLEAN);
 static ULONG analyze_fragments(DBA_REL, RHDF);
@@ -181,10 +181,10 @@ typedef struct open_files {
 	struct open_files *open_files_next;
 } open_files;
 
-typedef struct mem {
-	void *memory;
-	struct mem *mem_next;
-} mem;
+typedef struct dba_mem {
+	char *memory;
+	struct dba_mem *mem_next;
+} ;
 #endif
 
 #ifndef FPRINTF
@@ -206,7 +206,7 @@ typedef struct tdba {
 	int exit_code;
 #ifdef SUPERSERVER
 	SVC sw_outfile;
-	mem *head_of_mem_list;
+	dba_mem *head_of_mem_list;
 	open_files *head_of_files_list;
 	SVC dba_service_blk;
 #else
@@ -287,7 +287,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	int argc;
 	char **argv;
 	open_files *open_file, *tmp1;
-	mem *alloced, *tmp2;
+	dba_mem *alloced, *tmp2;
 #else
 	IB_FILE *sw_outfile;
 #endif
@@ -863,7 +863,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		SVC_STARTED(service);
 		alloced = tddba->head_of_mem_list;
 		while (alloced != 0) {
-			delete alloced->memory;
+			delete[] alloced->memory;
 			alloced = alloced->mem_next;
 		}
 
@@ -913,7 +913,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 }
 
 
-static SCHAR *alloc( SLONG size)
+static char *alloc(size_t size)
 {
 /**************************************
  *
@@ -925,7 +925,7 @@ static SCHAR *alloc( SLONG size)
  *	Allocate and zero a piece of memory.
  *
  **************************************/
-	SCHAR *block, *p;
+	char *block, *p;
 
 #ifdef SUPERSERVER
 
@@ -941,7 +941,7 @@ static SCHAR *alloc( SLONG size)
 		*p++ = 0;
 	while (--size);
 
-	mem* mem_list = FB_NEW(*getDefaultMemoryPool()) mem;
+	dba_mem* mem_list = FB_NEW(*getDefaultMemoryPool()) dba_mem;
 	if (!mem_list) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
@@ -956,7 +956,7 @@ static SCHAR *alloc( SLONG size)
 		tddba->head_of_mem_list = mem_list;
 	}
 #else
-	block = p = (SCHAR*) gds__alloc(size);
+	block = p = (char*) gds__alloc(size);
 	if (!p) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
