@@ -88,6 +88,14 @@ LINK32=link.exe
 
 # Name "fbembed - Win32 Release"
 # Name "fbembed - Win32 Debug"
+# Begin Group "JRD files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\perf.cpp
+# End Source File
+# End Group
 # Begin Group "REMOTE files"
 
 # PROP Default_Filter ""
@@ -159,14 +167,6 @@ SOURCE=..\..\..\src\utilities\ppg.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\version.rc
-# End Source File
-# End Group
-# Begin Group "JRD files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\perf.cpp
 # End Source File
 # End Group
 # Begin Source File

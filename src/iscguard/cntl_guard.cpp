@@ -122,7 +122,6 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
  **************************************/
 	int flag;
 	TEXT *p;
-	TEXT default_mode[100] = { 0 };
 	DWORD last_error = 0;
 	DWORD temp;
 	int status;
@@ -140,11 +139,6 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 #else
 	flag = 0;
 #endif
-
-/* Get the default client mode from the registry. */
-
-	if (default_mode[0] == '-')
-		parse_switch(&default_mode[1], &flag);
 
 /* Parse the command line looking for any additional arguments. */
 
