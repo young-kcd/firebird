@@ -259,7 +259,9 @@ USHORT DFW_assign_index_type(DeferredWork* work, SSHORT field_type, SSHORT ttype
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	if (field_type == dtype_varying || field_type == dtype_text)
+	if (field_type == dtype_varying ||
+		field_type == dtype_cstring ||
+		field_type == dtype_text)
 	{
 	    switch (ttype)
 	    {
