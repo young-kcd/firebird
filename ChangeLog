@@ -1,3 +1,206 @@
+2003-09-15 23:21  arnobrinkman
+
+	* firebird2/src/dsql/: parse.cpp, parse.y, pass1.cpp:
+	
+	Added ORDER BY support on derived tables. (Suggested by Dmitry
+	Yemanov)
+
+2003-09-15 21:27  brodsom
+
+	* firebird2/src/remote/xnet.cpp:
+	
+	Fix unused function warning
+
+2003-09-15 21:26  brodsom
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Fix signed/unsigned warning
+
+2003-09-15 18:31  brodsom
+
+	* firebird2/src/utilities/gsec/gsec.cpp:
+	
+	-Remove msvc unused var warning.
+
+2003-09-15 18:30  brodsom
+
+	* firebird2/src/: qli/all.cpp, qli/everything.h, wal/wal.cpp,
+	wal/walc.cpp, wal/walw.cpp:
+	
+	-Cleaning headers
+
+2003-09-15 18:29  brodsom
+
+	* firebird2/src/lock/print.cpp:
+	
+	-Remove msvc unused var warning
+
+2003-09-15 18:25  brodsom
+
+	* firebird2/src/: alice/alice.cpp, alice/alice_proto.h,
+	alice/aliceswi.h, alice/all.cpp, alice/all.h, alice/all_proto.h,
+	alice/alloc.h, alice/exe_proto.h, alice/tdr.cpp, alice/tdr_proto.h,
+	burp/burp.cpp, burp/spit.cpp, dsql/dsql.h, dsql/errd_proto.h,
+	journal/console.cpp, journal/gjrn.cpp, jrd/all.cpp, jrd/dbt.cpp,
+	jrd/err_proto.h, jrd/everything.h, jrd/jrd.h:
+	
+	-Cleaning headers
+
+2003-09-15 18:23  brodsom
+
+	* firebird2/src/utilities/gsec/gsec_proto.h:
+	
+	no message
+
+2003-09-15 18:17  skidder
+
+	* firebird2/src/jrd/cch.cpp:
+	
+	Remove outdated comment
+
+2003-09-15 16:57  brodsom
+
+	* firebird2/src/dudley/ddl.cpp:
+	
+	Remove msvc unused variable warning.
+
+2003-09-15 16:49  brodsom
+
+	* firebird2/src/utilities/gstat/dba.epp:
+	
+	Remove msvc unused variable warning.
+
+2003-09-15 15:11  brodsom
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h,
+	alice/alice_meta.epp, alice/alice_proto.h, alice/exe.cpp,
+	burp/burp.cpp, burp/burp.h, burp/burp_proto.h, dudley/ddl.cpp,
+	journal/gjrn.cpp, jrd/svc.cpp, jrd/svc.h, jrd/svc_proto.h,
+	lock/print.cpp, utilities/cache.cpp, utilities/sbc_print.cpp,
+	utilities/gsec/gsec.cpp, utilities/gsec/gsec.h,
+	utilities/gstat/dba.epp, utilities/gstat/dba_full.epp,
+	wal/wal_prnt.cpp:
+	
+	Clean a bit services interface - Include service entrypoint in each
+	proto file and remove from it the private function common to
+	service and standalone. (burp, alice and gsec) - Replace functions
+	output_svc/output_thread/output_netware with SVC_output callback
+	common for all. (burp, alice and gsec) - Create typedef
+	pfn_svc_output common for all svc, and correct SVC_read_ib_log and
+	thread_test to be compatible with pfn_svc_output typedef. (svc.cpp)
+	- Put inside an ifdef code for '-svc_re' switch (in all sources).
+
+2003-09-15 14:50  dimitr
+
+	* firebird2/src/alice/alice_meta.epp:
+	
+	no message
+
+2003-09-15 14:30  robocop
+
+	* firebird2/src/qli/: all.cpp, command.cpp, compi_proto.h,
+	compile.cpp, dtr.cpp, eval.cpp, exe.cpp, exe.h, expand.cpp,
+	forma_proto.h, format.cpp, gener.cpp, gener_proto.h, help.epp,
+	hsh.cpp, lex.cpp, meta.epp, meta_proto.h, mov.cpp, mov_proto.h,
+	parse.cpp, picst_proto.h, picstr.cpp, proc.epp, report.cpp,
+	show.epp:
+	
+	const correctness, formatting, cleaning, etc.  Not a definitive
+	work, though.
+
+2003-09-15 14:19  robocop
+
+	* firebird2/src/jrd/why.cpp:
+	
+	Macro cleaning if() statements formatting fixed
+
+2003-09-15 13:30  brodsom
+
+	* firebird2/src/misc/relations.epp:
+	
+	Not used
+
+2003-09-15 13:17  robocop
+
+	* firebird2/src/jrd/alt.cpp:
+	
+	Replaced macro with function const correctness
+
+2003-09-15 13:14  robocop
+
+	* firebird2/src/jrd/utl.cpp:
+	
+	Style: got rid of spaces around C++ cast operators Put the static
+	(private) functions out of the extern "C" block.
+
+2003-09-15 13:06  robocop
+
+	* firebird2/src/ipserver/ipclient.cpp:
+	
+	Trivial change
+
+2003-09-15 12:14  skidder
+
+	* firebird2/src/utilities/nbackup.cpp:
+	
+	Added credits to NBACKUP usage info
+
+2003-09-15 11:36  dimitr
+
+	* firebird2/builds/win32/msvc6/nbackup.dsp:
+	
+	Updated project files.
+
+2003-09-15 11:33  dimitr
+
+	* firebird2/src/alice/: alice_meta.epp, alice_meta.epp:
+	
+	Fixed another problem in gfix. Thanks to Vlad Horsun.
+
+2003-09-15 11:04  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Fixed problems with security.fdb access, introduced in RC6 -
+	front-port to HEAD
+
+2003-09-15 10:56  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Fixed problems with security.fdb access, introduced in RC6
+
+2003-09-15 10:24  dimitr
+
+	* firebird2/src/jrd/par.cpp:
+	
+	Fixed bug introduced yesterday.
+
+2003-09-15 10:05  dimitr
+
+	* firebird2/src/alice/: tdr.cpp, tdr.cpp:
+	
+	Fixed very old typo. Thanks to Vlad Horsun.
+
+2003-09-15 04:15  brodsom
+
+	* firebird2/src/dudley/: ddl.h, exe.epp, parse.cpp, trn.cpp:
+	
+	Correction
+
+2003-09-15 04:03  brodsom
+
+	* firebird2/src/: qli/proc.epp, burp/burp.cpp:
+	
+	-Style
+
+2003-09-15 03:50  brodsom
+
+	* firebird2/src/burp/restore.epp:
+	
+	-Style
+
 2003-09-14 17:37  dimitr
 
 	* firebird2/src/jrd/: opt.cpp, par.cpp:
