@@ -1,3 +1,63 @@
+2003-09-30 21:26  brodsom
+
+	* firebird2/configure.in:
+	
+	Correction
+
+2003-09-30 19:48  brodsom
+
+	* firebird2/configure.in:
+	
+	Lost commit
+
+2003-09-30 19:21  skidder
+
+	* firebird2/src/jrd/par.cpp:
+	
+	Fix bug in my previous commit spotted by Blas
+
+2003-09-30 17:27  epocman
+
+	* firebird2/src/jrd/os/win32/config_root.cpp:
+	
+	Win32 getRootFromRegistry commented out. To be discussed with
+	Dmitry.
+
+2003-09-30 17:15  epocman
+
+	* firebird2/doc/README.instsvc:
+	
+	Updated documentation for the new instreg/instsvc Win32 setup
+	tools.
+
+2003-09-30 17:14  epocman
+
+	* firebird2/src/utilities/: install_nt.h, registry.cpp, registry.h:
+	
+	Paving the way for multi-instances support (simultaneously running
+	multiple distinct installations of the product - on Win32). We
+	introduce adequate defaults that will generalize nicely on a next
+	release.
+
+2003-09-30 12:39  aafemt
+
+	* firebird2/src/dudley/: ddl.cpp, ddl.h, exe.epp, expand.cpp,
+	expr.cpp, lex_proto.h, parse.cpp, parse.h, trn.cpp:
+	
+	'struct' cleanup
+
+2003-09-30 11:41  fsg
+
+	* firebird2/: configure.in, src/gpre/ftn.cpp:
+	
+	small fixes for ftn.cpp, include fbudf for the linux build FSG
+
+2003-09-30 00:06  brodsom
+
+	* firebird2/doc/README.build.mingw.html:
+	
+	Update
+
 2003-09-29 21:32  skidder
 
 	* firebird2/src/dsql/: dsql.cpp, node.h:
