@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.19 2002-08-03 15:27:20 dimitr Exp $
+$Id: dsql.cpp,v 1.20 2002-08-27 07:48:33 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -1929,6 +1929,12 @@ void DSQL_pretty(NOD node, int column)
 	case nod_def_view:
 		verb = "define view";
 		break;
+	case nod_mod_view:
+		verb = "modify view";
+		break;
+	case nod_replace_view:
+		verb = "replace view";
+		break;
 	case nod_delete:
 		verb = "delete";
 		break;
@@ -1954,6 +1960,12 @@ void DSQL_pretty(NOD node, int column)
 	case nod_def_procedure:
 		verb = "define procedure";
 		break;
+	case nod_mod_procedure:
+		verb = "modify procedure";
+		break;
+	case nod_replace_procedure:
+		verb = "replace procedure";
+		break;
     /* CVC: New node redef_procedure. */
     case nod_redef_procedure:  
         verb = "redefine procedure"; 
@@ -1966,6 +1978,9 @@ void DSQL_pretty(NOD node, int column)
 		break;
 	case nod_mod_trigger:
 		verb = "modify trigger";
+		break;
+	case nod_replace_trigger:
+		verb = "replace trigger";
 		break;
 	case nod_del_trigger:
 		verb = "delete trigger";

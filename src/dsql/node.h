@@ -318,7 +318,10 @@ typedef ENUM nod_t
 	nod_searched_case, /* searched CASE function */
 	nod_simple_case, /* simple CASE function */
 	nod_coalesce, /* COALESCE function */
-	nod_mod_view /* ALTER VIEW */
+	nod_mod_view, /* ALTER VIEW */
+	nod_replace_procedure, /* REPLACE PROCEDURE */
+	nod_replace_trigger, /* REPLACE TRIGGER */
+	nod_replace_view /* REPLACE VIEW */
 } NOD_TYPE;
 
 

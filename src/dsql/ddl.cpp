@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.11 2002-08-11 08:04:52 dimitr Exp $
+ * $Id: ddl.cpp,v 1.12 2002-08-27 07:48:33 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -367,13 +367,17 @@ int DDL_ids(REQ request)
 	}
 
 	if (ddl_node->nod_type == nod_def_view ||
+		ddl_node->nod_type == nod_mod_view ||
+		ddl_node->nod_type == nod_replace_view ||
 		ddl_node->nod_type == nod_def_constraint ||
 		ddl_node->nod_type == nod_def_trigger ||
 		ddl_node->nod_type == nod_mod_trigger ||
+		ddl_node->nod_type == nod_replace_trigger ||
 		ddl_node->nod_type == nod_def_procedure ||
 		ddl_node->nod_type == nod_def_computed ||
-        ddl_node->nod_type == nod_mod_procedure ||
-        ddl_node->nod_type == nod_redef_procedure) {
+		ddl_node->nod_type == nod_mod_procedure ||
+		ddl_node->nod_type == nod_replace_procedure ||
+		ddl_node->nod_type == nod_redef_procedure) {
 		return FALSE;
 	}
 
@@ -2258,12 +2262,25 @@ static void define_procedure( REQ request, NOD_TYPE op)
 	NOD procedure_node = request->req_ddl_node;
 	STR procedure_name = (STR) procedure_node->nod_arg[e_prc_name];
 
-    if (op == nod_def_procedure || op == nod_redef_procedure) {
+	if (op == nod_replace_procedure)
+	{
+		if (METD_get_procedure(request, procedure_name))
+		{
+			define_procedure(request, nod_mod_procedure);
+		}
+		else
+		{
+			define_procedure(request, nod_def_procedure);
+		}
+		return;
+	}
+	else if (op == nod_def_procedure || op == nod_redef_procedure)
+	{
 		request->append_cstring(gds_dyn_def_procedure,
 					reinterpret_cast<char*>(procedure_name->str_data));
 		request->append_number(gds_dyn_rel_sql_protection, 1);
 	}
-	else
+	else // op == nod_mod_procedure
 	{
 		request->append_cstring(gds_dyn_mod_procedure,
 					reinterpret_cast<char*>(procedure_name->str_data));
@@ -2709,7 +2726,22 @@ static void define_trigger( REQ request, NOD node)
 
 	STR trigger_name = (STR) node->nod_arg[e_trg_name];
 
-	if (node->nod_type == nod_def_trigger)
+	if (node->nod_type == nod_replace_view)
+	{
+		if (METD_get_trigger_relation(request,
+									  trigger_name,
+									  &trig_type))
+		{
+			node->nod_type = nod_mod_trigger;
+		}
+		else
+		{
+			node->nod_type = nod_def_trigger;
+		}
+		define_trigger(request, node);
+		return;
+	}
+	else if (node->nod_type == nod_def_trigger)
 	{
 		assert(trigger_name->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_def_trigger,
@@ -2723,9 +2755,8 @@ static void define_trigger( REQ request, NOD node)
 								(USHORT) relation_name->str_length);
 		request->append_uchar(gds_dyn_sql_object);
 	}
-	else
-	{						/* if (node->nod_type == nod_mod_trigger) */
-
+	else // nod_mod_trigger
+	{						
 		assert(node->nod_type == nod_mod_trigger);
 		assert(trigger_name->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_mod_trigger,
@@ -3295,14 +3326,26 @@ static void define_view( REQ request, NOD_TYPE op)
 	node = request->req_ddl_node;
 	view_name = (STR) node->nod_arg[e_view_name];
 
-	if (op == nod_def_view)
+	if (op == nod_replace_view)
+	{
+		if (METD_get_relation(request, view_name))
+		{
+			define_view(request, nod_mod_view);
+		}
+		else
+		{
+			define_view(request, nod_def_view);
+		}
+		return;
+	}
+	else if (op == nod_def_view)
 	{
 		request->append_cstring(gds_dyn_def_view,
 					reinterpret_cast<char*>(view_name->str_data));
 		request->append_number(gds_dyn_rel_sql_protection, 1);
 		save_relation(request, view_name);
 	}
-	else // nod_mod_view
+	else // op == nod_mod_view
 	{
 		request->append_cstring(gds_dyn_mod_view,
 					reinterpret_cast<char*>(view_name->str_data));
@@ -3982,6 +4025,7 @@ static void generate_dyn( REQ request, NOD node)
 
 	case nod_def_view:
 	case nod_mod_view:
+	case nod_replace_view:
 		define_view(request, node->nod_type);
 		break;
 
@@ -3993,6 +4037,7 @@ static void generate_dyn( REQ request, NOD node)
 
 	case nod_def_procedure:
 	case nod_mod_procedure:
+	case nod_replace_procedure:
 		define_procedure(request, node->nod_type);
 		break;
 
@@ -4010,6 +4055,7 @@ static void generate_dyn( REQ request, NOD node)
 
 	case nod_def_trigger:
 	case nod_mod_trigger:
+	case nod_replace_trigger:
 		define_trigger(request, node);
 		break;
 

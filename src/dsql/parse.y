@@ -450,6 +450,7 @@ statement	: alter
 		| insert
 		| invoke_procedure
         | recreate
+		| replace
 		| revoke
 		| rollback
 		| select
@@ -762,7 +763,20 @@ recreate_clause	: PROCEDURE rprocedure_clause
 		| DOMAIN rdomain_clause
 			{ $$ = $2; }             
 */
-                ;
+		;
+
+replace	: CREATE OR ALTER replace_clause
+			{ $$ = $4; }
+		;
+
+replace_clause	: PROCEDURE replace_procedure_clause
+			{ $$ = $2; }
+		| TRIGGER replace_trigger_clause
+			{ $$ = $2; }
+		| VIEW replace_view_clause
+			{ $$ = $2; }
+		;
+
 
 /* CREATE INDEX */
 
@@ -1327,6 +1341,17 @@ rprocedure_clause	: symbol_procedure_name input_parameters
 					          $1, $2, $3, $6, $7, $8, NULL); } 
 		;        
 
+replace_procedure_clause	: symbol_procedure_name input_parameters
+		     	  output_parameters
+		    	  AS begin_string
+			  var_declaration_list
+			  full_proc_block
+			  end_trigger
+				{ $$ = make_node (nod_replace_procedure,
+						  (int) e_prc_count, 
+					          $1, $2, $3, $6, $7, $8, NULL); } 
+		;        
+
 alter_procedure_clause	: symbol_procedure_name input_parameters
 		     	  output_parameters
 		    	  AS begin_string
@@ -1570,12 +1595,18 @@ rview_clause	: symbol_view_name column_parens_opt AS begin_string union_view
 		;        
 */
 
+replace_view_clause	: symbol_view_name column_parens_opt AS begin_string union_view 
+                                                            check_opt end_string
+			{ $$ = make_node (nod_replace_view, (int) e_view_count, 
+					  $1, $2, $5, $6, $7); }   
+		;        
+
 alter_view_clause	: symbol_view_name column_parens_opt AS begin_string union_view 
-                                                            end_string
+                                                            check_opt end_string
  			{ $$ = make_node (nod_mod_view, (int) e_view_count, 
- 					  $1, $2, $5, NULL, $6); }   
+					  $1, $2, $5, $6, $7); }   
  		;        
- 
+
 union_view      : union_view_expr
 			{ $$ = make_node (nod_select, (int) 2, $1, NULL); }
 		;
@@ -1662,6 +1693,17 @@ def_trigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_action
 		end_trigger
 			{ $$ = make_node (nod_def_trigger, (int) e_trg_count,
+				$1, $3, $4, $5, $6, $8, $9, NULL); }
+		;
+
+replace_trigger_clause : symbol_trigger_name FOR simple_table_name
+		trigger_active
+		trigger_type
+		trigger_position
+		begin_trigger
+		trigger_action
+		end_trigger
+			{ $$ = make_node (nod_replace_trigger, (int) e_trg_count,
 				$1, $3, $4, $5, $6, $8, $9, NULL); }
 		;
 

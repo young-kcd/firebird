@@ -934,6 +934,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 	case nod_def_exception:
 	case nod_mod_relation:
 	case nod_mod_view:
+	case nod_replace_view:
 	case nod_mod_exception:
 	case nod_del_relation:
     case nod_del_view:
@@ -963,6 +964,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 
 	case nod_def_trigger:
 	case nod_mod_trigger:
+	case nod_replace_trigger:
 	case nod_del_trigger:
 		request->req_type = REQ_DDL;
 		request->req_flags |= REQ_procedure;
@@ -977,6 +979,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 	case nod_def_procedure:
     case nod_redef_procedure:
 	case nod_mod_procedure:
+	case nod_replace_procedure:
 		request->req_type = REQ_DDL;
 		request->req_flags |= REQ_procedure;
 
@@ -1093,8 +1096,10 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 			(procedure->nod_type == nod_def_procedure ||
 			 procedure->nod_type == nod_redef_procedure ||
 			 procedure->nod_type == nod_mod_procedure ||
-             procedure->nod_type == nod_def_trigger || 
-             procedure->nod_type == nod_mod_trigger )) {
+			 procedure->nod_type == nod_replace_procedure ||
+			 procedure->nod_type == nod_def_trigger || 
+			 procedure->nod_type == nod_mod_trigger ||
+			 procedure->nod_type == nod_replace_trigger )) {
 			cursor->nod_arg[e_cur_next] = procedure->nod_arg[e_prc_cursors];
 			procedure->nod_arg[e_prc_cursors] = cursor;
 			cursor->nod_arg[e_cur_context] = node;
@@ -1126,10 +1131,12 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 
 		if (cursor && procedure
 			&& (procedure->nod_type == nod_def_procedure ||
-                procedure->nod_type == nod_redef_procedure ||
-                procedure->nod_type == nod_mod_procedure ||
-                procedure->nod_type == nod_def_trigger ||
-                procedure->nod_type == nod_mod_trigger))
+				procedure->nod_type == nod_redef_procedure ||
+				procedure->nod_type == nod_mod_procedure ||
+				procedure->nod_type == nod_replace_procedure ||
+				procedure->nod_type == nod_def_trigger ||
+				procedure->nod_type == nod_mod_trigger ||
+				procedure->nod_type == nod_replace_trigger))
 			procedure->nod_arg[e_prc_cursors] = cursor->nod_arg[e_cur_next];
 
 		if (request->req_error_handlers &&
@@ -4485,11 +4492,14 @@ static NOD pass1_variable( REQ request, NOD input)
 		(procedure_node->nod_type == nod_def_procedure ||
 		 procedure_node->nod_type == nod_redef_procedure ||
 		 procedure_node->nod_type == nod_mod_procedure ||
+		 procedure_node->nod_type == nod_replace_procedure ||
 		 procedure_node->nod_type == nod_def_trigger ||
-		 procedure_node->nod_type == nod_mod_trigger)) {
+		 procedure_node->nod_type == nod_mod_trigger ||
+		 procedure_node->nod_type == nod_replace_trigger)) {
 		if (procedure_node->nod_type == nod_def_procedure ||
-            procedure_node->nod_type == nod_redef_procedure ||
-			procedure_node->nod_type == nod_mod_procedure) {
+			procedure_node->nod_type == nod_redef_procedure ||
+			procedure_node->nod_type == nod_mod_procedure ||
+			procedure_node->nod_type == nod_replace_procedure) {
 			/* Try to resolve variable name against input, output
 			   and local variables */
 
