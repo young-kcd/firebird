@@ -180,7 +180,7 @@ static processing_state end_trans();
 static processing_state escape(const TEXT*);
 static processing_state frontend(const TEXT*);
 static void frontend_free_parms(TEXT*[], TEXT*[]);
-static processing_state get_statement(TEXT**, USHORT*, const TEXT*);
+static processing_state get_statement(TEXT*, USHORT, const TEXT*);
 static bool get_numeric(const UCHAR*, USHORT, SSHORT*, SINT64*);
 static void get_str(const TEXT* const, const TEXT**, const TEXT**,
 	literal_string_type*);
@@ -2707,7 +2707,7 @@ static void do_isql()
 **  code tells us we are done
 */
 
-	TEXT* statement = NULL;
+	TEXT statement[MAX_USHORT];
 	int ret;
 	
 	bool done = false;
@@ -2731,8 +2731,7 @@ static void do_isql()
 			break;
 		}
 
-        USHORT bufsize = 0; // unused after the call!
-		ret = get_statement(&statement, &bufsize, sql_prompt);
+		ret = get_statement(statement, sizeof(statement), sql_prompt);
 
 		// If there is no database yet, remind us of the need to connect 
 
@@ -2841,8 +2840,6 @@ static void do_isql()
 		ISQL_FREE(errbuf);
 	if (global_sqlda)
 		ISQL_FREE(global_sqlda);
-	if (statement)
-		ISQL_FREE(statement);
 	if (Filelist)
 		ISQL_FREE(Filelist);
 	while (global_Cols) {
@@ -3713,8 +3710,8 @@ static processing_state do_set_command(const TEXT* parm,
 }
 
 
-static processing_state get_statement(TEXT** statement_ref,
-							USHORT* statement_buffer,
+static processing_state get_statement(TEXT* statement,
+							USHORT bufsize,
 							const TEXT* statement_prompt)
 {
 /**************************************
@@ -3736,26 +3733,6 @@ static processing_state get_statement(TEXT** statement_ref,
 // Lookup the continuation prompt once 
 	TEXT con_prompt[MSG_LENGTH];
 	ISQL_msg_get(CON_PROMPT, con_prompt, NULL, NULL, NULL, NULL, NULL);
-
-	USHORT bufsize = *statement_buffer;
-
-/* Statement has no space so allocate some. The statement buffer just
-** grows throughout the program to the maximum command size
-*/
-	TEXT* statement;
-	if (!bufsize) {
-		bufsize = 512;
-		statement = (TEXT*) ISQL_ALLOC((SLONG) bufsize);
-#ifdef DEBUG_GDS_ALLOC
-		gds_alloc_flag_unfreed((void*) statement);
-#endif
-		*statement_ref = statement;
-		*statement_buffer = bufsize;
-	}
-	else {
-		// Otherwise just recall the address from last time 
-		statement = *statement_ref;
-	}
 
 	if (Interactive || Echo) {
 		ISQL_prompt(statement_prompt);
@@ -4009,10 +3986,8 @@ static processing_state get_statement(TEXT** statement_ref,
 		   **  Statement buffer, keeping track of where p is pointing
 		 */
 
-		if (count == bufsize) {
-			if ((USHORT) (bufsize + 512) < bufsize) {
-				/* If we allocate any more, we would be in danger of
-				   overflowing the variable bufsize */
+		if (count == bufsize)
+		{
 				TEXT* errbuf = (TEXT*) ISQL_ALLOC((SLONG) MSG_LENGTH);
 				if (errbuf) {
 					gds__msg_format(NULL, ISQL_MSG_FAC, BUFFER_OVERFLOW,
@@ -4022,36 +3997,12 @@ static processing_state get_statement(TEXT** statement_ref,
 					ISQL_FREE(errbuf);
 				}
 				ret = SKIP;
-				ISQL_FREE(statement);
 
 				ignore_this_stmt = true;
-				// now reallocate the buffer to hold the reminder of the statement 
-				bufsize = 512;
-				statement = (TEXT*) ISQL_ALLOC((SLONG) bufsize);
-#ifdef DEBUG_GDS_ALLOC
-				gds_alloc_flag_unfreed((void*) statement);
-#endif
-				*statement_ref = statement;
-				*statement_buffer = 512;
 				in_single_quoted_string = in_double_quoted_string = false;
 				count = 0;
 				p = statement;
 				*p = '\0';
-			}
-			else {
-				size_t bufsize2 = bufsize;
-				bufsize += 512;
-				TEXT* statement2 = (TEXT*) ISQL_ALLOC((SLONG) bufsize);
-#ifdef DEBUG_GDS_ALLOC
-				gds_alloc_flag_unfreed(statement2);
-#endif
-				memcpy(statement2, statement, bufsize2);
-				ISQL_FREE(statement);
-				statement = statement2;
-				*statement_ref = statement;
-				*statement_buffer = bufsize;
-				p = statement + count;
-			}
 		}
 
 		// Pass statement to frontend for processing 
@@ -6938,21 +6889,18 @@ static int process_statement(const TEXT* string,
 #ifdef SCROLLABLE_CURSORS
 			}
 			else {
-				TEXT* fetch_statement = NULL;
-				USHORT fetch_bufsize = 0;
+				TEXT fetch_statement[BUFFER_LENGTH80];
 
 				/* if not autofetching, sit and wait for user to input
 				   NEXT, PRIOR, FIRST, LAST, ABSOLUTE <n>, or RELATIVE <n> */
 
 				const SSHORT fetch_ret =
-					get_statement(&fetch_statement, &fetch_bufsize,
+					get_statement(fetch_statement, sizeof(fetch_statement),
 								  fetch_prompt);
 				if (fetch_ret == FETCH) {
 					if (isc_dsql_fetch2(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda,
 										fetch_direction, fetch_offset) == 100)
 					{
-						if (fetch_statement)
-							ISQL_FREE(fetch_statement);
 						break;
 					}
 				}
@@ -6969,8 +6917,6 @@ static int process_statement(const TEXT* string,
 					STDERROUT(errbuf, 1);
 				}
 
-				if (fetch_statement)
-					ISQL_FREE(fetch_statement);
 			}
 #endif
 
