@@ -388,9 +388,8 @@ void EXE_drop_database( DBB dbb)
  *	its files.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+
 	FIL file;
-	SYM string;
 	TEXT dpb[128], *d, *p;
 	USHORT dpb_length;
 	SLONG log, part_offset;
@@ -984,8 +983,6 @@ static void add_field( FLD field)
  **************************************/
 	DUDLEY_REL relation;
 	SYM source;
-	STATUS status_vector[ISC_STATUS_LENGTH];
-	SLONG *blob;
 
 	relation = field->fld_relation;
 	if (!(source = field->fld_source))
@@ -1260,8 +1257,6 @@ static void add_global_field( FLD field)
  **************************************/
 	SYM name;
 	DSC desc;
-	STATUS status_vector[ISC_STATUS_LENGTH];
-	SLONG *blob;
 
 	name = field->fld_name;
 
@@ -1365,10 +1360,7 @@ static void add_index( DUDLEY_IDX index)
  *
  **************************************/
 	SYM *symbol;
-	TEXT s[128];
 	USHORT i, size, error, if_any;
-	STATUS status_vector[ISC_STATUS_LENGTH];
-	SLONG *blob;
 	FLD field;
 
 	error = if_any = FALSE;
@@ -2872,8 +2864,6 @@ static void get_global_fields(void)
  **************************************/
 	FLD field;
 	SYM symbol;
-	USHORT l;
-	TEXT *p, *q;
 
 	FOR X IN RDB$FIELDS 
         field = (FLD) DDL_alloc(FLD_LEN);
@@ -3027,8 +3017,6 @@ static void get_relations( DBB database)
 	DUDLEY_REL relation;
 	FLD field;
 	SYM symbol;
-	USHORT l;
-	TEXT *p, *q;
 
 	FOR R IN RDB$RELATIONS 
         relation = (DUDLEY_REL) DDL_alloc(REL_LEN);
@@ -3168,8 +3156,6 @@ static void get_triggers( DBB database)
  **************************************/
 	DUDLEY_TRG trigger;
 	SYM symbol, rel_name;
-	USHORT l;
-	TEXT *p, *q;
 
 	FOR T IN RDB$TRIGGERS WITH T.RDB$SYSTEM_FLAG MISSING OR 
         T.RDB$SYSTEM_FLAG = 0 
@@ -3241,9 +3227,7 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
  *
  **************************************/
 	FLD field;
-	DUDLEY_REL relation;
 	DSC desc1, desc2;
-	DUDLEY_CTX context;
 	CON constant;
 	FUNC function;
 	USHORT dtype;
@@ -3543,7 +3527,6 @@ static void modify_field( FLD field)
  *
  **************************************/
 	SYM name;
-	TEXT *p;
 	USHORT if_any;
 	DUDLEY_REL relation;
 
@@ -3618,7 +3601,6 @@ static void modify_global_field( FLD field)
  *
  **************************************/
 	SYM name;
-	TEXT *p;
 	USHORT if_any;
 
 	name = field->fld_name;
@@ -3766,11 +3748,11 @@ static void modify_relation( DUDLEY_REL relation)
  *
  **************************************/
 	SYM name;
-	TEXT *p;
 	USHORT if_any;
 
-	if (!relation->rel_flags & rel_marked_for_modify)
+	if (!(relation->rel_flags & rel_marked_for_modify)) {
 		return;
+	}
 	name = relation->rel_name;
 	if_any = FALSE;
 
@@ -4079,7 +4061,7 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
  *	Generate and store an access control list.
  *
  **************************************/
-	TEXT buffer[4096], *p;
+	TEXT buffer[4096];
 	USHORT length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *blob;
@@ -4113,7 +4095,7 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
  *
  **************************************/
 	struct str blr;
-	USHORT length, base;
+	USHORT length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *handle;
 
@@ -4159,12 +4141,12 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	void *blob;
 	USHORT bpb_length;
-	UCHAR bpb[20], *p;
+	UCHAR bpb[20];
 
 #if (defined JPN_EUC || defined JPN_SJIS)
 /* always create bpb since query header is a text blob */
 
-	p = bpb;
+	UCHAR* p = bpb;
 	*p++ = gds__bpb_version1;
 	*p++ = gds__bpb_source_interp;
 	*p++ = 2;
@@ -4240,15 +4222,15 @@ static void store_text( TXT text, SLONG * blob_id)
  *	BLR expression in a blob.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+
 	void *blob;
 	USHORT bpb_length;
-	UCHAR bpb[20], *p;
+	UCHAR bpb[20];
 
 #if (defined JPN_EUC || defined JPN_SJIS)
 /* create bpb for text blob */
 
-	p = bpb;
+	UCHAR* p = bpb;
 	*p++ = gds__bpb_version1;
 	*p++ = gds__bpb_source_interp;
 	*p++ = 2;

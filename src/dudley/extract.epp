@@ -268,7 +268,7 @@ static void decompile_blr_literal(SCHAR * string)
  *	and write it to the output file.
  *
  **************************************/
-	SCHAR *p, *q, num_buffer[20], scale;
+	SCHAR *p, scale;
 	TEXT *b, buffer[256];
 	SSHORT size;
 	SLONG value;
@@ -891,7 +891,7 @@ static void extract_func_args(TEXT * function_name)
  *
  **************************************/
 	BOOLEAN first;
-	TEXT s[32], *p;
+	TEXT* p;
 
 	first = TRUE;
 	p = "";
@@ -1455,7 +1455,8 @@ static void extract_trig_msgs(TEXT * trigger_name)
  *
  **************************************/
 	BOOLEAN first;
-	TEXT s[32], *p, quote_char;
+	TEXT* p;
+	TEXT quote_char;
 
 	first = TRUE;
 	p = " ";
@@ -2008,7 +2009,6 @@ static void set_capabilities(void)
  *
  **************************************/
 	ULONG *req;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 	RFR_TAB rel_field_table;
 
 	req = NULL;
@@ -2202,7 +2202,7 @@ static void wal_info(UCHAR * db_info_buffer,
  *
  **************************************/
 	UCHAR item;
-	UCHAR *d, *p;
+	UCHAR* p;
 	SLONG length;
 
 	p = db_info_buffer;
