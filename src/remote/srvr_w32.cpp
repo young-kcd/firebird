@@ -198,8 +198,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		return 0;
 	}
 
-	if ((server_flag & SRVR_multi_client) ||
-		!(server_flag & (SRVR_inet | SRVR_wnet | SRVR_ipc | SRVR_xnet))) {
+	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_ipc | SRVR_xnet))==0) {
 
 		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
 			server_flag |= SRVR_wnet;
@@ -601,9 +600,11 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					}
 					break;
 
+#ifdef SUPERSERVER
 				case 'L':
 					*pserver_flag |= SRVR_ipc;
 					break;
+#endif
 
 				case 'N':
 					*pserver_flag |= SRVR_no_icon;
