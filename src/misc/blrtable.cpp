@@ -101,8 +101,7 @@ static const VERB verbs[] = {
 	PAIR2(nod_agg_total, blr_agg_total, 1, 1, VALUE, VALUE),
 	PAIR2(nod_agg_total_distinct, blr_agg_total_distinct, 2, 1, VALUE, VALUE),
 	PAIR2(nod_agg_average, blr_agg_average, 1, 1, VALUE, VALUE),
-	PAIR2(nod_agg_average_distinct, blr_agg_average_distinct, 2, 1, VALUE,
-		  VALUE),
+	PAIR2(nod_agg_average_distinct, blr_agg_average_distinct, 2, 1, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter2, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter3, e_arg_length, 0, VALUE, VALUE),
@@ -222,7 +221,7 @@ static const VERB verbs[] = {
 	PAIR(nod_current_time, blr_current_time, e_current_time_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp, e_current_timestamp_length, 0, VALUE, OTHER),
 	PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
-	0
+	{0}
 };
 
 const SCHAR *table[256], *table2[256], *lengths[256], *counts[256],

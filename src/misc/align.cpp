@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.8 2003-02-13 15:33:51 brodsom Exp $
+$Id: align.cpp,v 1.1 2003-07-14 09:29:10 brodsom Exp $
 */
 
 #include "firebird.h"
