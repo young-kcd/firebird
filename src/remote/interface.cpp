@@ -87,7 +87,7 @@
 #define	OSTYPE_NT	1
 #define	OSTYPE_WIN_95	2
 
-#ifndef IPSERV
+#if defined(SUPERCLIENT) && !defined(IPSERV) && defined(WIN_NT)
 static USHORT ostype = 0;
 #endif
 #endif // WIN_NT
