@@ -1718,28 +1718,9 @@ err	: SQLCODE signed_short_integer
 
 /* Direct EXECUTE PROCEDURE */
 
-invoke_procedure : EXECUTE PROCEDURE symbol_procedure_name prc_inputs
+invoke_procedure : EXECUTE PROCEDURE symbol_procedure_name proc_inputs
 			{ $$ = make_node (nod_exec_procedure, e_exe_count, $3,
 				  $4, make_node (nod_all, (int) 0, NULL)); }
-		;
-
-prc_inputs	: prm_const_list
-			{ $$ = make_list ($1); }
-		| '(' prm_const_list ')'
-			{ $$ = make_list ($2); }
-		|
-			{ $$ = NULL; }
-		;
-
-prm_const_list	: parameter
-		| constant
-		| null_value
-		| prm_const_list ',' parameter
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| prm_const_list ',' constant
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| prm_const_list ',' null_value
-			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
 
