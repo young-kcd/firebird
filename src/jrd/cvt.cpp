@@ -41,8 +41,8 @@
 #include "../jrd/jrd_time.h"
 #ifndef REQUESTER
 #include "../jrd/jrd.h"
-#else
-#include "../jrd/common.h"
+//#else
+//#include "../jrd/common.h"
 #endif
 #include "../jrd/req.h"
 #include "../jrd/val.h"

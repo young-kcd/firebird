@@ -92,12 +92,19 @@
  * contexts where it makes sense.  This macro checks a descriptor to
  * see if it is something that *could* represent a date value
  */
-#define COULD_BE_DATE(d)	((DTYPE_IS_DATE((d).dsc_dtype)) || ((d).dsc_dtype <= dtype_any_text))
+inline bool COULD_BE_DATE(const dsc desc) {
+	return ((DTYPE_IS_DATE(desc.dsc_dtype)) || (desc.dsc_dtype <= dtype_any_text));
+}
+//#define COULD_BE_DATE(d)	((DTYPE_IS_DATE((d).dsc_dtype)) || ((d).dsc_dtype <= dtype_any_text))
 
 /* One of d1,d2 is time, the other is date */
-#define IS_DATE_AND_TIME(d1,d2)	\
-  ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) || \
-   (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
+inline bool IS_DATE_AND_TIME(const dsc d1, const dsc d2) {
+	return (((d1.dsc_dtype == dtype_sql_time) && (d2.dsc_dtype == dtype_sql_date)) ||
+	((d2.dsc_dtype == dtype_sql_time) && (d1.dsc_dtype == dtype_sql_date)));
+}
+//#define IS_DATE_AND_TIME(d1,d2)	\
+//  ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) || \
+//   (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
 // size of req_rpb[0]
 const size_t REQ_TAIL = sizeof (Jrd::jrd_req::blk_repeat_type);

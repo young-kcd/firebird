@@ -135,7 +135,7 @@ const lck_owner_t LCK_OWNER_TYPE_PROCESS	= LCK_OWNER_process;
 const lck_owner_t LCK_OWNER_TYPE_DBB		= LCK_OWNER_process;
 const lck_owner_t LCK_OWNER_TYPE_ATT		= LCK_OWNER_process;
 
-inline SLONG* LCK_OWNER_HANDLE_PROCESS(){
+inline SLONG* LCK_OWNER_HANDLE_PROCESS() {
 	return &process_lck_owner_handle;
 }
 inline SLONG* LCK_OWNER_HANDLE_DBB(Database* dbb) {

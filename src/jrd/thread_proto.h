@@ -24,7 +24,7 @@ inline void THREAD_EXIT() {
 inline void THREAD_ENTER() {
 	gds__thread_enter();
 }
-inline void THREAD_EXIT(){
+inline void THREAD_EXIT() {
 	gds__thread_exit();
 }
 //inline bool THREAD_VALIDATE() {
