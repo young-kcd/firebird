@@ -3528,6 +3528,13 @@ static USHORT process_switches(
 				if (!get_action_svc_bitmask(&p, dba_in_sw_table,
 											&sw, &total, &len)) return 0;
 				break;
+
+			case isc_spb_command_line: 
+				++p;
+				--len;
+				get_action_svc_string(&p, &sw, &total, &len);
+				break;
+
 			default:
 				return 0;
 				break;

@@ -52,8 +52,8 @@ static struct in_sw_tab_t dba_in_sw_table [] = {
     {IN_SW_DBA_SYSTEM,		isc_spb_sts_sys_relations,	"SYSTEM",	0,0,0,	FALSE,	27,	0, NULL},	/* msg 27: -s      analyze system relations */
     {IN_SW_DBA_USERNAME,		0,				"USERNAME",	0,0,0,	FALSE,	32,	0, NULL},	/* msg 32: -u      username */
     {IN_SW_DBA_PASSWORD,		0,				"PASSWORD",	0,0,0,	FALSE,	33,	0, NULL},	/* msg 33: -p      password */
-    {IN_SW_DBA_RECORD,		0,				"RECORD",	0,0,0,	FALSE,	34,	0, NULL},	/* msg 34: -r      analyze average record and version length */
-    {IN_SW_DBA_RELATION,		0,				"TABLE",	0,0,0,	FALSE,	35,	0, NULL},	/* msg 35: -t      tablename */
+    {IN_SW_DBA_RECORD,		isc_spb_sts_record_versions,	"RECORD",	0,0,0,	FALSE,	34,	0, NULL},	/* msg 34: -r      analyze average record and version length */
+    {IN_SW_DBA_RELATION,	isc_spb_sts_table,	"TABLE",	0,0,0,	FALSE,	35,	0, NULL},	/* msg 35: -t      tablename */
     {IN_SW_DBA_VERSION,		0,				"Z",		0,0,0,	FALSE,	28,	0, NULL},	/* msg 28: -z      display version number */
     {IN_SW_DBA_0,		0,				NULL,		0,0,0,	FALSE,	0,	0, NULL}		/* End of List */
 };
