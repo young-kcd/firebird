@@ -1,3 +1,54 @@
+2004-10-29 02:29  skidder
+
+	* firebird2/src/jrd/rse.cpp (1.80):
+	
+	Go back to passing pointers to impure areas instead of direct
+	bitmap pointers. The approach I tried doesn't work with nod_bit_in
+	correctly and doesn't seem pretty to me anymore
+
+2004-10-29 01:23  skidder
+
+	* firebird2/src/: common/classes/sparse_bitmap.h (1.8), jrd/evl.cpp
+	(1.116), jrd/evl_proto.h (1.19), jrd/nav.cpp (1.47), jrd/rse.h
+	(1.36):
+	
+	Go back to passing pointers to impure areas instead of direct
+	bitmap pointers. The approach I tried doesn't work with nod_bit_in
+	correctly and doesn't seem pretty to me anymore
+
+2004-10-29 00:42  skidder
+
+	* firebird2/src/jrd/ibase.h (1.94):
+	
+	Add forgotten braces in preprocessor statement to prevent warnings
+	on some old compilers
+
+2004-10-28 07:23  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.182):
+	
+	Misc.
+
+2004-10-28 06:47  robocop
+
+	* firebird2/src/jrd/idx.cpp (1.79):
+	
+	Misc.
+
+2004-10-28 06:47  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.sql (1.7):
+	
+	Alternative addDay2 function (same usage, more orthodox handling). 
+	Same can be done for other Add<part> functions.
+
+2004-10-28 06:36  robocop
+
+	* firebird2/src/extlib/fbudf/: fbudf.cpp (1.20), fbudf.h (1.7):
+	
+	Alternative addDay2 function (same usage, more orthodox handling). 
+	Same can be done for other Add<part> functions.
+
 2004-10-27 20:17  asfernandes
 
 	* firebird2/src/jrd/all.cpp (1.42):
