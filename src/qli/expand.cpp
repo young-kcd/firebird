@@ -103,7 +103,9 @@ static QLI_NOD negate(QLI_NOD);
 static QLI_NOD possible_literal(SYN, LLS, USHORT);
 static QLI_NOD post_map(QLI_NOD, QLI_CTX);
 static QLI_FLD resolve(SYN, LLS, QLI_CTX *);
+#ifdef PYXIS
 static QLI_FLD resolve_name(SYM, LLS, QLI_CTX *);
+#endif
 static void resolve_really(QLI_FLD, SYN);
 
 static LLS output_stack;
@@ -2607,7 +2609,7 @@ static int generate_fields( QLI_CTX context, LLS values, SYN rse)
 	SYN value, group_list;
 
 	if (context->ctx_type == CTX_AGGREGATE)
-		return NULL;
+		return 0;
 	group_list = rse->syn_arg[s_rse_group_by];
 	relation = context->ctx_relation;
 	count = 0;
@@ -3388,6 +3390,7 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 }
 
 
+#ifdef PYXIS
 static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 {
 /**************************************
@@ -3405,10 +3408,8 @@ static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 	QLI_CTX context;
 	QLI_REL relation;
 	QLI_FLD field;
-#ifdef PYXIS
 	FRM form;
 	FFL ffield;
-#endif
 /* Look thru context stack looking for a context that will resolve
    all name segments.  If the context is a secondary context, require
    that the context name be given explicitly (used for special STORE
@@ -3418,7 +3419,6 @@ static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 	for (; stack; stack = stack->lls_next) {
 		*out_context = context = (QLI_CTX) stack->lls_object;
 		switch (context->ctx_type) {
-#ifdef PYXIS
 		case CTX_FORM:
 			if (context->ctx_primary)
 				*out_context = context = context->ctx_primary;
@@ -3427,7 +3427,6 @@ static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 				if (compare_symbols(name, ffield->ffl_symbol))
 					return (QLI_FLD) ffield;
 			break;
-#endif
 		case CTX_VARIABLE:
 			for (field = context->ctx_variable; field;
 				 field =
@@ -3454,7 +3453,7 @@ static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
 
 	return NULL;
 }
-
+#endif
 
 static void resolve_really( QLI_FLD variable, SYN field_node)
 {

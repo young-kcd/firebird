@@ -179,7 +179,7 @@ int EVAL_boolean( QLI_NOD node)
 
 	default:
 		BUGCHECK(28);			/* Msg28 EVAL_boolean: not finished */
-		return NULL;
+		return FALSE;
 	}
 }
 
@@ -665,7 +665,7 @@ static DSC *execute_edit( QLI_NOD node)
 		}
 	}
 	if (!desc)
-		id[0] = id[1] = NULL;
+		id[0] = id[1] = 0;
 
 	field_name = (TEXT *) node->nod_arg[e_edt_name];
 	BLOB_edit((GDS_QUAD_t*)id, dbb->dbb_handle, dbb->dbb_transaction, field_name);

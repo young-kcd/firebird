@@ -1703,7 +1703,7 @@ static int computable( QLI_NOD node, QLI_REQ request)
 
 	default:
 		BUGCHECK(361);			/* Msg361 computable: not yet implemented */
-		return NULL;
+		return FALSE;
 	}
 }
 

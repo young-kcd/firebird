@@ -1080,7 +1080,7 @@ static void sql_time_to_text( ULONG date[1], DSC * to)
 
 	isc_decode_date((GDS_QUAD*) date2, &times);
 
-	sprintf(temp, " %2d:%.2d:%.2d.%.4d", times.tm_hour, times.tm_min,
+	sprintf(temp, " %2d:%.2d:%.2d.%.4"SLONGFORMAT, times.tm_hour, times.tm_min,
 			times.tm_sec, date2[1] % PRECISION);
 
 	for (p = temp; *p; p++);
@@ -1117,7 +1117,7 @@ static void timestamp_to_text( SLONG date[2], DSC * to)
 			months[times.tm_mon], times.tm_year + 1900);
 
 	if (times.tm_hour || times.tm_min || times.tm_sec || date[1]) {
-		sprintf(time, " %2d:%.2d:%.2d.%.4d", times.tm_hour, times.tm_min,
+		sprintf(time, " %2d:%.2d:%.2d.%.4"SLONGFORMAT, times.tm_hour, times.tm_min,
 				times.tm_sec, date[1] % PRECISION);
 		strcat(temp, time);
 	}

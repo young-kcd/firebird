@@ -612,7 +612,7 @@ void FMT_put( TEXT * line, PRT print)
 					if (PRINTABLE(*p))
 						ib_fprintf(ib_stdout, "%c", *p);
 					else
-						ib_fprintf(ib_stdout, "[%02.2X]", *(UCHAR *) p);
+						ib_fprintf(ib_stdout, "[%2.2X]", *(UCHAR *) p);
 			}
 			else
 #endif

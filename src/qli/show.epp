@@ -412,11 +412,11 @@ static void array_dimensions( DBB database, TEXT * field_name)
 			SORTED BY D.RDB$DIMENSION 
 
         if (D.RDB$LOWER_BOUND != 1) {
-			sprintf(p, "%d:", D.RDB$LOWER_BOUND);
+			sprintf(p, "%ld:", D.RDB$LOWER_BOUND);
 			while (*++p);
 		} 
 
-        sprintf(p, "%d, ", D.RDB$UPPER_BOUND);
+        sprintf(p, "%ld, ", D.RDB$UPPER_BOUND);
 		while (*++p);
 	END_FOR;
 
@@ -994,9 +994,8 @@ static int show_field_instances( DBB database, TEXT * field_name)
  *	is used.
  *
  **************************************/
-	int count;
+	int count = 0;
 
-	count = NULL;
 	MET_meta_transaction(database, FALSE);
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_field_instance])
@@ -1477,9 +1476,8 @@ static int show_funcs_detail( DBB database)
  **************************************/
 	SSHORT width;
 	TEXT buffer[256];
-	int count;
+	int count = 0;
 
-	count = NULL;
 	width = get_window_size(sizeof(buffer) - 1);
 	buffer[0] = 0;
 	MET_meta_transaction(database, FALSE);
@@ -1517,9 +1515,7 @@ static int show_insecure_fields(
  *	defined.
  *
  **************************************/
-	int count;
-
-	count = NULL;
+	int count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_field])
 		RFR IN RDB$RELATION_FIELDS CROSS
@@ -1666,9 +1662,8 @@ static int show_gbl_field_detail( DBB database, TEXT * field_name)
  *	database. 
  *
  **************************************/
-	int count;
+	int count = 0;
 
-	count = NULL;
 	MET_meta_transaction(database, FALSE);
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_global_field])
@@ -1757,9 +1752,8 @@ static int show_gbl_fields_detail( DBB database)
  *	database. 
  *
  **************************************/
-	int count;
+	int count = 0;
 
-	count = NULL;
 	MET_meta_transaction(database, FALSE);
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_global_fields])

@@ -228,7 +228,7 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 	QLI_CTX context;
 	QLI_REQ request;
 	DBB dbb;
-	DSC *desc, static_desc;
+	DSC *desc;
 	UCHAR bpb[20], *p;
 	USHORT bpb_length;
 	FRBRD *blob;

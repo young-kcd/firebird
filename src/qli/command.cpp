@@ -46,9 +46,10 @@ static void extract_procedure(IB_FILE *, TEXT *, USHORT, DBB, SLONG *);
 
 extern USHORT QLI_lines, QLI_columns, QLI_form_mode, QLI_name_columns;
 
+#ifdef NOT_USED_OR_REPLACED
 static SCHAR db_items[] =
 	{ gds_info_page_size, gds_info_allocation, gds_info_end };
-
+#endif
 
 int CMD_check_ready(void)
 {

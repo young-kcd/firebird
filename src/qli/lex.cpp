@@ -105,7 +105,10 @@ static SLONG trans_limit;
 #define CHR_WHITE	CHR_white
 #define CHR_EOL		CHR_eol
 
-static SCHAR *eol_string = "*end_of_line*", *eof_string = "*end_of_file*";
+#ifdef NOT_USED_OR_REPLACED
+static SCHAR *eol_string = "*end_of_line*";
+#endif
+static SCHAR *eof_string = "*end_of_file*";
 
 static SCHAR classes[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0,

@@ -128,7 +128,9 @@ static SYN parse_sql_index_create(USHORT, USHORT);
 static SYN parse_sql_joined_relation(SYN);
 static SYN parse_sql_join_clause(SYN);
 static SYN parse_sql_table_create(void);
+#ifdef NOT_USED_OR_REPLACED
 static SYN parse_sql_view_create(void);
+#endif
 static SYN parse_sql_relation(void);
 static SYN parse_sql_rse(void);
 static SYN parse_sql_singleton_select(void);
@@ -4456,10 +4458,12 @@ static SYN parse_sql_create(void)
 	if (MATCH(KW_TABLE))
 		return parse_sql_table_create();
 
+#ifdef NOT_USED_OR_REPLACED
 /***
 if (MATCH (KW_VIEW))
     return parse_sql_view_create();
 ***/
+#endif
 
 	SYNTAX_ERROR(386);			/* Msg386 object type for CREATE */
 	return NULL;
@@ -4888,7 +4892,7 @@ static SYN parse_sql_table_create(void)
 	return node;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static SYN parse_sql_view_create(void)
 {
 /**************************************
@@ -4942,7 +4946,7 @@ static SYN parse_sql_view_create(void)
 
 	return node;
 }
-
+#endif
 
 static SYN parse_sql_relation(void)
 {
