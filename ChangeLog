@@ -1,3 +1,434 @@
+2004-12-09 20:18  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.embed.gbak (1.9),
+	builds/posix/Makefile.in.embed.gdef (1.8),
+	builds/posix/Makefile.in.embed.gfix (1.12),
+	builds/posix/Makefile.in.embed.gpre (1.17),
+	builds/posix/Makefile.in.embed.isql (1.9),
+	builds/posix/Makefile.in.embed.qli (1.15),
+	builds/posix/Makefile.in.embed.util (1.17),
+	builds/win32/msvc6/Firebird2.dsw (1.34),
+	builds/win32/msvc6/build_msg.dsp (1.8),
+	builds/win32/msvc6/common_static.dsp (1.7),
+	builds/win32/msvc6/fbserver.dsp (1.35), builds/win32/msvc6/isql.dsp
+	(1.23), src/alice/exe.cpp (1.41), src/alice/tdr.cpp (1.43),
+	src/burp/burp.cpp (1.93), src/burp/burp.h (1.64),
+	src/burp/restore.epp (1.86), src/common/classes/ClumpletReader.cpp
+	(1.7), src/common/classes/ClumpletReader.h (1.8),
+	src/common/classes/ClumpletWriter.cpp (1.6),
+	src/common/classes/ClumpletWriter.h (1.5),
+	src/common/classes/array.h (1.33), src/dsql/preparse.cpp (1.34),
+	src/dudley/exe.epp (1.57), src/gpre/gpre_meta.epp (1.49),
+	src/isql/isql.epp (1.120), src/jrd/pwd.cpp (1.37), src/jrd/tra.cpp
+	(1.95), src/jrd/utl.cpp (1.76), src/jrd/utl_proto.h (1.17),
+	src/jrd/why.cpp (1.88), src/qli/meta.epp (1.53),
+	src/utilities/create_db.cpp (1.9), src/utilities/nbackup.cpp
+	(1.43), src/utilities/gsec/gsec.cpp (1.43),
+	src/utilities/gstat/dba.epp (1.52):
+	
+	applied Clumplet* classes to dpb where possible
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/postinstall.in
+	(1.1):
+	
+	file postinstall.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/pkginfo.in
+	(1.1):
+	
+	file pkginfo.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/preinstall.in
+	(1.1):
+	
+	file preinstall.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/prototype.in
+	(1.1):
+	
+	file prototype.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/SS/postremove.in
+	(1.1):
+	
+	file postremove.in was initially added on branch B1_5_Release.
+
+2004-12-09 09:20  skidder
+
+	* firebird2/builds/win32/msvc7/regex.vcproj (1.1):
+	
+	file regex.vcproj was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 09:16  skidder
+
+	* firebird2/builds/win32/msvc7/fbtrace.vcproj (1.1):
+	
+	file fbtrace.vcproj was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 09:06  skidder
+
+	* firebird2/src/common/classes/perf_counter.h (1.1):
+	
+	file perf_counter.h was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 09:06  skidder
+
+	* firebird2/src/common/classes/perf_counter.cpp (1.1):
+	
+	file perf_counter.cpp was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:53  skidder
+
+	* firebird2/src/jrd/: PerformanceView.cpp (1.2), PerformanceView.h
+	(1.2), TraceManager.cpp (1.2), TraceManager.h (1.2):
+	
+	Correction of last commit
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/os/win32/platform.cpp (1.1):
+	
+	file platform.cpp was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/os/platform.h (1.1):
+	
+	file platform.h was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/ConfigFileReader.cpp (1.1):
+	
+	file ConfigFileReader.cpp was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/TracePluginConfig.h (1.1):
+	
+	file TracePluginConfig.h was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/fbtrace.conf (1.1):
+	
+	file fbtrace.conf was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/TraceConfigReader.h (1.1):
+	
+	file TraceConfigReader.h was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/ConfigFileReader.h (1.1):
+	
+	file ConfigFileReader.h was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/paramtable.h (1.1):
+	
+	file paramtable.h was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/traceplugin.cpp (1.1):
+	
+	file traceplugin.cpp was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.1):
+	
+	file TracePluginImpl.cpp was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/LogPacketBuilder.cpp (1.1):
+	
+	file LogPacketBuilder.cpp was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.h (1.1):
+	
+	file TracePluginImpl.h was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/LogPacketBuilder.h (1.1):
+	
+	file LogPacketBuilder.h was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:21  skidder
+
+	* firebird2/src/utilities/ntrace/TraceConfigReader.cpp (1.1):
+	
+	file TraceConfigReader.cpp was initially added on branch
+	B2_0_BV_Stable3.
+
+2004-12-09 08:20  skidder
+
+	* firebird2/src/jrd/os/win32/FileObject.cpp (1.1):
+	
+	file FileObject.cpp was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 08:20  skidder
+
+	* firebird2/src/jrd/os/FileObject.h (1.1):
+	
+	file FileObject.h was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 08:20  skidder
+
+	* firebird2/src/jrd/: PerformanceView.cpp (1.1), PerformanceView.h
+	(1.1), TraceManager.cpp (1.1), TraceManager.h (1.1):
+	
+	Server-side SQL Trace functionality. Also clean up NBACKUP code a
+	little bit
+
+2004-12-09 07:53  skidder
+
+	* firebird2/src/jrd/par.cpp (1.110):
+	
+	Fix the mistake in error message. The third time.
+
+2004-12-09 06:29  skidder
+
+	* firebird2/builds/win32/msvc7/btyacc.vcproj (1.1):
+	
+	file btyacc.vcproj was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:50  robocop
+
+	* firebird2/src/: burp/backup.epp (1.76), dsql/dsql.cpp (1.136),
+	gpre/gpre.cpp (1.68), iscguard/cntl_guard.cpp (1.18), isql/isql.epp
+	(1.119), jrd/enc.cpp (1.24), jrd/met.epp (1.149), jrd/met_proto.h
+	(1.43), jrd/os/thd_priority.h (1.21), jrd/os/posix/path_utils.cpp
+	(1.12), jrd/os/win32/thd_priority.cpp (1.24), qli/dtr.cpp (1.38),
+	remote/merge.cpp (1.19), gpre/gpre.cpp (1.69):
+	
+	Misc.
+
+2004-12-09 03:28  skidder
+
+	* firebird2/src/dsql/btyacc_fb.ske (1.1):
+	
+	file btyacc_fb.ske was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/test/t1.y (1.1):
+	
+	file t1.y was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/test/ansiC.y (1.1):
+	
+	file ansiC.y was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/test/t2.y (1.1):
+	
+	file t2.y was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/test/ansiC2.y (1.1):
+	
+	file ansiC2.y was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/test/test.y (1.1):
+	
+	file test.y was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/test/error.y (1.1):
+	
+	file error.y was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/test/ftp.y (1.1):
+	
+	file ftp.y was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/reader.c (1.1):
+	
+	file reader.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/readskel.c (1.1):
+	
+	file readskel.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/skel2c (1.1):
+	
+	file skel2c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/skeleton.c (1.1):
+	
+	file skeleton.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/verbose.c (1.1):
+	
+	file verbose.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/warshall.c (1.1):
+	
+	file warshall.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/symtab.c (1.1):
+	
+	file symtab.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/mkpar.c (1.1):
+	
+	file mkpar.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/README (1.1):
+	
+	file README was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/closure.c (1.1):
+	
+	file closure.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/makefile.dos (1.1):
+	
+	file makefile.dos was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/mstring.c (1.1):
+	
+	file mstring.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/main.c (1.1):
+	
+	file main.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/empty.y (1.1):
+	
+	file empty.y was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/defs.h (1.1):
+	
+	file defs.h was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/btyaccpa.ske (1.1):
+	
+	file btyaccpa.ske was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/manpage (1.1):
+	
+	file manpage was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/mstring.h (1.1):
+	
+	file mstring.h was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/error.c (1.1):
+	
+	file error.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/lalr.c (1.1):
+	
+	file lalr.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/push.skel (1.1):
+	
+	file push.skel was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/Makefile (1.1):
+	
+	file Makefile was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/README.BYACC (1.1):
+	
+	file README.BYACC was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/lr0.c (1.1):
+	
+	file lr0.c was initially added on branch B2_0_BV_Stable3.
+
+2004-12-09 03:15  skidder
+
+	* firebird2/extern/btyacc/output.c (1.1):
+	
+	file output.c was initially added on branch B2_0_BV_Stable3.
+
 2004-12-09 02:53  skidder
 
 	* firebird2/src/isql/isql.epp (1.118):
