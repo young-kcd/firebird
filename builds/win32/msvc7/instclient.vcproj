@@ -126,10 +126,10 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\utilities\install_client.cpp">
+				RelativePath="..\..\..\src\utilities\install\install_client.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\install.cpp">
+				RelativePath="..\..\..\src\utilities\install\install.cpp">
 			</File>
 		</Filter>
 		<Filter
