@@ -279,12 +279,12 @@ static USHORT PatchVersion(const TEXT* gds32, WORD major, WORD minor,
  **************************************/
 
 	DWORD dwUnused;
-	DWORD rsize = GetFileVersionInfoSize(gds32, &dwUnused);
+	DWORD rsize = GetFileVersionInfoSize(const_cast<char*>(gds32), &dwUnused);
 	if (rsize == 0)
 		return (*err_handler) (GetLastError(), "GetFileVersionInfoSize()");
 
 	BYTE* hver = new BYTE[rsize];
-	if (! GetFileVersionInfo(gds32, 0, rsize, hver))
+	if (! GetFileVersionInfo(const_cast<char*>(gds32), 0, rsize, hver))
 	{
 		ULONG werr = GetLastError();
 		delete [] hver;
