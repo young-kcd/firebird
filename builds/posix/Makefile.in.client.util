@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.9.2.2 2003-11-10 02:09:33 bellardo Exp $
+#  $Id: Makefile.in.client.util,v 1.9.2.3 2003-12-15 04:32:43 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -121,10 +121,10 @@ $(LOCKPRINT):  $(LOCKPRINT_Objects)
 	$(LD) $(LINK_OPTS) $(LOCKPRINT_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
-gstat : $(LIBFBCLIENT_SO) $(GSTAT)
+gstat : $(LIBFBCLIENT_SO) $(LIBFBSTATIC_A) $(GSTAT)
 
 $(GSTAT):	$(GSTAT_Objects)
-	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ $(FBCLIENT_LINK) -lfbstatic $(LINK_LIBS)
 
 
 

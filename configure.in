@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.18 2003-12-14 03:57:24 skywalker Exp $
+dnl $Id: configure.in,v 1.141.2.19 2003-12-15 04:32:42 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -729,6 +729,7 @@ case "$PLATFORM" in
                      gen/install/misc/firebird.init.d.gentoo:src/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
                      gen/install/misc/rc.config.firebird:src/install/arch-specific/linux/misc/rc.config.firebird.in
                      gen/install/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
+                     gen/install/bin/fb_config:src/install/misc/fb_config.in
                      gen/install/bin/CSchangeRunUser.sh:src/install/misc/CSchangeRunUser.sh.in
                      gen/install/bin/CSrestoreRootRunUser.sh:src/install/misc/CSrestoreRootRunUser.sh.in
                      gen/install/bin/SSchangeRunUser.sh:src/install/misc/SSchangeRunUser.sh.in

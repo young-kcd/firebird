@@ -7,7 +7,7 @@
 # to modify it.
 service gds_db
 {
-	flags			= REUSE KEEPALIVE
+	flags			= REUSE
 	socket_type		= stream
 	wait			= no
 	user			= firebird

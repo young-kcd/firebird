@@ -79,7 +79,7 @@ TryAddUser() {
 	
     if [ -z "$testStr" ]
       then
-        useradd $AdditionalParameter -M -d $IBRootDir -s /bin/false \
+        useradd $AdditionalParameter -M -d $FBRootDir -s /bin/false \
             -c "Firebird Database Owner" -g firebird firebird 
     fi
 
@@ -203,7 +203,7 @@ generateNewDBAPassword() {
 
     echo ""
     echo Running gsec to modify SYSDBA password
-    $IBBin/gsec -user sysdba -password masterkey <<EOF
+    $FBBin/gsec -user sysdba -password masterkey <<EOF
 modify sysdba -pw $NewPasswd
 EOF
     echo ""
@@ -228,7 +228,7 @@ askUserForNewDBAPassword() {
           NewPasswd=$Answer
           if [ ! -z "$NewPasswd" ]
             then
-             $IBBin/gsec -user sysdba -password masterkey <<EOF
+             $FBBin/gsec -user sysdba -password masterkey <<EOF
 modify sysdba -pw $NewPasswd
 EOF
               echo ""
@@ -311,7 +311,7 @@ installInitdScript() {
 
 
     # Install the firebird init.d script
-    cp  $IBRootDir/misc/$srcScript $initScript
+    cp  $FBRootDir/misc/$srcScript $initScript
     chown root:root $initScript
     chmod ug=rx,o= $initScript  # contains password hence no world read.
 
@@ -331,12 +331,12 @@ installInitdScript() {
     # More SuSE rc.config fillup
     if [ -x /bin/fillup ] 
       then
-        /bin/fillup -q -d = etc/rc.config $IBRootDir/misc/rc.config.firebird
+        /bin/fillup -q -d = etc/rc.config $FBRootDir/misc/rc.config.firebird
     fi
     
     if [ -d /etc/sysconfig ] 
       then
-      cp $IBRootDir/misc/rc.config.firebird /etc/sysconfig/firebird
+      cp $FBRootDir/misc/rc.config.firebird /etc/sysconfig/firebird
     fi
 
 }
@@ -423,10 +423,10 @@ buildUninstallFile() {
         return
     fi
 
-    cp manifest.txt $IBRootDir/misc
+    cp manifest.txt $FBRootDir/misc
 
-    cp -r scripts $IBRootDir/misc/
-    cp scripts/tarMainUninstall.sh $IBRootDir/bin/uninstall.sh
+    cp -r scripts $FBRootDir/misc/
+    cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
 
 }
 
@@ -510,13 +510,13 @@ removeLineFromFile() {
 
     origDir=`pwd`
 
-    IBRootDir=@prefix@
-    IBBin=$IBRootDir/bin
+    FBRootDir=@prefix@
+    FBBin=$FBRootDir/bin
 #    RunUser=root
     RunUser=firebird
-    DBAPasswordFile=$IBRootDir/SYSDBA.password
-    export IBRootDir
-    export IBBin
+    DBAPasswordFile=$FBRootDir/SYSDBA.password
+    export FBRootDir
+    export FBBin
     export RunUser
     export DBAPasswordFile
 
@@ -569,16 +569,16 @@ removeLineFromFile() {
     fi
 
     # For security reasons initially force all root:root non-writable
-    chown -R root:root $IBRootDir
-    chmod -R uga-w $IBRootDir
+    chown -R root:root $FBRootDir
+    chmod -R uga-w $FBRootDir
 
     # Prepare bin
-    cd $IBBin
+    cd $FBBin
 
     # Create the fbmgr shell script.
     cat > fbmgr <<EOF
 #!/bin/sh
-FIREBIRD=$IBRootDir
+FIREBIRD=$FBRootDir
 export FIREBIRD
 exec \$FIREBIRD/bin/fbmgr.bin \$@
 EOF
@@ -598,7 +598,7 @@ EOF
 
 
     # Lock files
-    cd $IBRootDir
+    cd $FBRootDir
 
     for i in isc_init1 isc_lock1 isc_event1 isc_guard1
       do
@@ -633,5 +633,5 @@ EOF
     startInetService
 
     # Change sysdba password
-    cd $IBRootDir
+    cd $FBRootDir
     changeDBAPassword

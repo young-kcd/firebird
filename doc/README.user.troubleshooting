@@ -29,9 +29,9 @@ your circumstance.
     A quick smoke test to see if it is all working is as follows:
 
     
-    $cd /usr/local/firebird/examples
+    $cd /opt/firebird/examples
 
-    $/usr/local/firebird/bin/isql
+    $/opt/firebird/bin/isql
     >connect employee.gdb;
     >select rdb$relation_name from rdb$relations;
     >exit;
@@ -39,20 +39,20 @@ your circumstance.
 
     (In some cases you may need to provide a password to isql)
 
-    $/usr/local/firebird/bin/isql
+    $/opt/firebird/bin/isql
     >connect employee.gdb user sysdba password <password>;
     >select rdb$relation_name from rdb$relations;
     > show tables;
     >exit;
 
     Where password will be either masterkey, or in the 
-    file /usr/local/firebird/SYSDBA.password.
+    file /opt/firebird/SYSDBA.password.
 
 
     For a test using networking.
 
-    $/usr/local/firebird/bin/isql
-    >connect 'localhost:/usr/local/firebird/examples/employee.gdb'; 
+    $/opt/firebird/bin/isql
+    >connect 'localhost:/opt/firebird/examples/employee.gdb'; 
     >select rdb$relation_name from rdb$relations;
     >exit;
 
@@ -220,8 +220,3 @@ your circumstance.
     of no suitable entry in /etc/host.equiv or some firewall blockage, or the
     most common one, the server is not running.
  
-
-3)  WHY ARE MY DATABASES OWNED BY ROOT
-
-
-4)  WHAT IS THE DIFFERENCE

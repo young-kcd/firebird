@@ -84,4 +84,4 @@ removeLinksForBackCompatibility() {
           then
             rm -f /etc/rc.d/init.d/firebird
         fi
-            
+    fi        

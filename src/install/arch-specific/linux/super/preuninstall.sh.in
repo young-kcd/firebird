@@ -43,14 +43,14 @@ stopServerIfRunning() {
 
 
 
-    IBRootDir=@prefix@
-    IBBin=$IBRootDir/bin
+    FBRootDir=@prefix@
+    FBBin=$FBRootDir/bin
     SecurityDatabase=security.fdb
 
 
     stopServerIfRunning
 
-    cd $IBRootDir
+    cd $FBRootDir
     if [ -f $SecurityDatabase ] 
       then 
         cp $SecurityDatabase /tmp 
@@ -69,7 +69,7 @@ stopServerIfRunning() {
       done
 
 
-    rm -f $IBBin/fbmgr
+    rm -f $FBBin/fbmgr
 
 	testStr=`grep firebird /etc/passwd`
 	if [ ! -z "$testStr" ]

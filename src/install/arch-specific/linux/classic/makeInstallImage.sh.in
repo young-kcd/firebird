@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.13.2.3 2003-12-14 04:03:33 skywalker Exp $
+#   $Id: makeInstallImage.sh.in,v 1.13.2.4 2003-12-15 04:32:46 skywalker Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -122,6 +122,7 @@ copyFiles() {
     cp $BuildRootDir/gen/install/bin/CSchangeRunUser.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/CSrestoreRootRunUser.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/changeDBAPassword.sh $DestDir/bin
+    cp $BuildRootDir/gen/install/bin/fb_config $DestDir/bin
 
     # Copy examples only if we have them
 

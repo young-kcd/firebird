@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.1.2.5 2003-12-14 04:05:41 skywalker Exp $
+#   $Id: makeInstallImage.sh.in,v 1.1.2.6 2003-12-15 04:32:49 skywalker Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -107,6 +107,8 @@ copyFiles() {
 
     cp $BuiltFBDir/bin/gbak $DestDir/bin/gbak 
     copyIfExists $BuiltFBDir/bin/gdef $DestDir/bin/gdef 
+    copyIfExists $BuiltFBDir/bin/fb_lock_print $DestDir/bin/fb_lock_print 
+    copyIfExists $BuiltFBDir/bin/gds_pipe $DestDir/bin/gds_pipe 
     cp $BuiltFBDir/bin/gfix $DestDir/bin/gfix 
     cp $BuiltFBDir/bin/gpre $DestDir/bin/gpre 
     cp $BuiltFBDir/bin/gsec $DestDir/bin/gsec 
@@ -119,6 +121,7 @@ copyFiles() {
     cp $BuildRootDir/gen/install/bin/SSchangeRunUser.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/SSrestoreRootRunUser.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/changeDBAPassword.sh $DestDir/bin
+    cp $BuildRootDir/gen/install/bin/fb_config $DestDir/bin
 
     # Copy examples only if we have them
 
