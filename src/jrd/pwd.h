@@ -73,9 +73,9 @@ private:
 };
 
 #ifdef VMS
-#define USER_INFO_NAME	"[sysmgr]isc4.gdb"
+#define USER_INFO_NAME	"[sysmgr]security.fdb"
 #else
-#define USER_INFO_NAME	"isc4.gdb"
+#define USER_INFO_NAME	"security.fdb"
 #endif
 
 #endif /* _JRD_PWD_H_ */

@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-CREATE DATABASE "isc4.gdb" ;
+CREATE DATABASE "security.fdb" ;
 
 /* Domain definitions */
 CREATE DOMAIN COMMENT AS BLOB SUB_TYPE TEXT SEGMENT SIZE 80 CHARACTER SET UNICODE_FSS;
