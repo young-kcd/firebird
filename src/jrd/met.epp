@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.145 2004-10-25 01:18:37 skidder Exp $
+$Id: met.epp,v 1.146 2004-11-01 03:18:42 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2267,7 +2267,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 
 	if (id < (int) rel_MAX)
 	{
-		fb_assert((USHORT)id < MAX_USHORT);
+		fb_assert(id < MAX_USHORT);
 		return MET_relation(tdbb, (USHORT) id);
 	}
 
