@@ -172,6 +172,7 @@
 #define GPRE_COBOL
 #undef GPRE_FORTRAN
 #define GPRE_PASCAL
+#undef GPRE_PLI
 
 /* Maximum allowed pathname length */
 #define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.15 2002-12-02 11:17:03 eku Exp $
+//  $Id: gpre.cpp,v 1.16 2002-12-03 13:58:40 eku Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.15 2002-12-02 11:17:03 eku Exp $
+//	$Id: gpre.cpp,v 1.16 2002-12-03 13:58:40 eku Exp $
 //
 
 #define GPRE_MAIN
@@ -198,7 +198,7 @@ static struct ext_table_t dml_ext_table[] =
 	{ lang_basic, IN_SW_GPRE_BAS, ".ebas", ".bas" },
 #endif
 
-#ifdef PLI
+#ifdef GPRE_PLI
 	{ lang_pli, IN_SW_GPRE_PLI, ".epli", ".pli" },
 #endif
 
@@ -621,7 +621,7 @@ int main(int argc, char* argv[])
 			break;
 #endif
 
-#ifdef PLI
+#ifdef GPRE_PLI
 		case IN_SW_GPRE_PLI:
 			sw_case = TRUE;
 			sw_language = lang_pli;

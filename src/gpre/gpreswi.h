@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.5 2002-12-02 11:17:03 eku Exp $
+ * $Id: gpreswi.h,v 1.6 2002-12-03 13:58:40 eku Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -161,7 +161,7 @@ static struct in_sw_tab_t gpre_in_sw_table[] =
 #ifdef GPRE_BASIC
 	{IN_SW_GPRE_BAS		, 0, "BASIC"		, 0, 0, 0, FALSE, 0, 0, "\t\textended BASIC program"},
 #endif
-#ifdef PLI
+#ifdef GPRE_PLI
 	{IN_SW_GPRE_PLI		, 0, "PLI"			, 0, 0, 0, FALSE, 0, 0, "\t\textended PLI program"},
 #endif
 #ifdef GPRE_COBOL

@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.63 2002-12-02 11:17:04 eku Exp $"
+#ident "$Id: config.h.in,v 1.64 2002-12-03 13:58:40 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -149,6 +149,7 @@
 #undef GPRE_COBOL
 #undef GPRE_FORTRAN
 #undef GPRE_PASCAL
+#undef GPRE_PLI
 
 /* Support /proc/self/exe as link to current executable 
    enables us to find path to install directory (Linux only) */

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.22 2002-12-02 11:17:03 eku Exp $
+ * $Id: gpre.h,v 1.23 2002-12-03 13:58:40 eku Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -91,6 +91,7 @@ extern "C" {
 #undef GPRE_COBOL
 #undef GPRE_FORTRAN
 #undef GPRE_PASCAL
+#undef GPRE_PLI
 #undef FTN_BLK_DATA
 #endif
 
