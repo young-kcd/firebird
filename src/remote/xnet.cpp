@@ -46,8 +46,6 @@
 #include <windows.h>
 #endif /* WIN_NT */
 
-extern "C" {
-
 #ifdef WIN_NT
 #define ERRNO		GetLastError()
 #endif
@@ -2702,5 +2700,3 @@ PORT XNET_reconnect(ULONG client_pid, TEXT* name, ISC_STATUS* status_vector)
 }
 
 #endif // SUPERCLINET
-
-} // extern "C"
