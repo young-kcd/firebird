@@ -334,7 +334,8 @@ typedef enum nod_t
 	nod_drop_difference,
 	nod_begin_backup,
 	nod_end_backup,
-	nod_derived_table // Derived table support
+	nod_derived_table, // Derived table support
+	nod_derived_field  // Derived table support
 } NOD_TYPE;
 
 
@@ -382,8 +383,6 @@ typedef dsql_nod* DSQL_NOD;
 #define NOD_PROTECTED	2
 #define NOD_READ	4
 #define NOD_WRITE	8
-
-#define NOD_DERIVED_TABLE	1 // flag used by nod_alias
 
 #define REF_ACTION_CASCADE 1
 #define REF_ACTION_SET_DEFAULT 2
@@ -869,5 +868,10 @@ typedef dsql_nod* DSQL_NOD;
 #define e_derived_table_alias			1  // Alias name for derived table
 #define e_derived_table_column_alias	2  // List with alias names from derived table columns
 #define e_derived_table_count			3  
+
+#define e_derived_field_value			0  // Contains the source expression
+#define e_derived_field_name			1  // Name for derived table field
+#define e_derived_field_scope			2  // Scope-level
+#define e_derived_field_count			4  
 
 #endif /* _DSQL_NODE_H_ */

@@ -397,6 +397,10 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		}
 		return;
 
+	case nod_derived_field:
+		MAKE_desc(desc, node->nod_arg[e_derived_field_value]);
+		return;
+
 	case nod_upcase:
     case nod_substr:
 		MAKE_desc(&desc1, node->nod_arg[0]);
