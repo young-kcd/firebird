@@ -54,19 +54,6 @@
 #include "../jrd/common.h"
 #include "../jrd/file_params.h"
 
-#ifdef UNIX
-#ifndef SOLARIS_MT
-/* RITTER - replaced symbol HP10 with HPUX in the line below */
-#if !(defined(SUPERCLIENT) || defined(SUPERSERVER))
-#ifndef DARWIN
-#ifndef SINIXZ
-#define MANAGER_PROCESS
-#endif
-#endif
-#endif
-#endif
-#endif
-
 #ifdef WIN_NT
 #define DEFAULT_SIZE    32768
 #include "../jrd/isc_signal.h"

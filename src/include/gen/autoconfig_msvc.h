@@ -1,4 +1,4 @@
-#ident "$Id: autoconfig_msvc.h,v 1.24 2002-08-28 06:50:33 eku Exp $"
+#ident "$Id: autoconfig_msvc.h,v 1.25 2002-09-03 13:24:21 eku Exp $"
 
 /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -86,6 +86,9 @@
 
 /* Are paths case sensitive? */
 #define CASE_SENSITIVITY false
+
+/* Do we build (need) the lock manager process? */
+#undef MANAGER_PROCESS
 
 /* CPU types */
 #undef PowerPC
