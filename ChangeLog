@@ -1,3 +1,84 @@
+2003-12-31 23:40  skidder
+
+	* firebird2/src/jrd/: btr.cpp, btr.h, dmp.cpp, ods.h:
+	
+	Fix ODS10 support after per-segment index selectivity was
+	introduced
+
+2003-12-31 22:18  skidder
+
+	* firebird2/src/jrd/dyn_def.epp:
+	
+	Fix bug that Claudio exposed
+
+2003-12-31 17:09  skidder
+
+	* firebird2/src/jrd/evl.cpp:
+	
+	Fix issues noted by Claudio
+
+2003-12-31 11:33  robocop
+
+	* firebird2/src/common/: utils.cpp, utils_proto.h:
+	
+	adding obviously missing files, thanks Arno.
+
+2003-12-31 06:35  robocop
+
+	* firebird2/: builds/win32/blrtable.bat,
+	builds/win32/make_boot.bat, builds/win32/msvc6/common.dsp,
+	builds/win32/msvc6/common_classic.dsp,
+	builds/win32/msvc6/engine.dsp, builds/win32/msvc6/isql.dsp,
+	src/burp/burp.cpp, src/common/fb_exception.cpp, src/dsql/metd.epp,
+	src/dsql/pass1.cpp, src/dudley/ddl.cpp, src/include/fb_exception.h,
+	src/include/fb_string.h, src/include/fb_types.h,
+	src/include/firebird.h, src/intl/lc_ascii.cpp, src/intl/lc_ascii.h,
+	src/intl/lc_big5.cpp, src/intl/lc_big5.h, src/intl/lc_dos.cpp,
+	src/intl/lc_dos.h, src/intl/lc_iso8859_1.cpp,
+	src/intl/lc_iso8859_2.cpp, src/intl/lc_jis.cpp,
+	src/ipserver/ipserver.cpp, src/isql/extract.epp, src/isql/isql.epp,
+	src/isql/isql_proto.h, src/isql/show.epp, src/journal/console.cpp,
+	src/journal/gjrn.cpp, src/journal/miscj.cpp,
+	src/journal/miscj_proto.h, src/journal/oldr.cpp,
+	src/journal/rebuild.epp, src/journal/server.epp, src/jrd/ail.cpp,
+	src/jrd/btr.cpp, src/jrd/cch.cpp, src/jrd/cch_proto.h,
+	src/jrd/common.h, src/jrd/cvt.cpp, src/jrd/dfw.epp,
+	src/jrd/dls.cpp, src/jrd/dls_proto.h, src/jrd/dmp.cpp,
+	src/jrd/dpm.epp, src/jrd/dyn.epp, src/jrd/dyn_def.epp,
+	src/jrd/dyn_del.epp, src/jrd/dyn_mod.epp, src/jrd/dyn_proto.h,
+	src/jrd/event.cpp, src/jrd/evl.cpp, src/jrd/exe.cpp, src/jrd/exe.h,
+	src/jrd/ext.cpp, src/jrd/fun.epp, src/jrd/grant.epp,
+	src/jrd/grant_proto.h, src/jrd/idx.cpp, src/jrd/ini.epp,
+	src/jrd/intl_builtin.cpp, src/jrd/isc_file.cpp, src/jrd/jrd.cpp,
+	src/jrd/jrd_pwd.h, src/jrd/jrn.cpp, src/jrd/jrn.h,
+	src/jrd/jrn_proto.h, src/jrd/lck.cpp, src/jrd/lck_proto.h,
+	src/jrd/log.cpp, src/jrd/met.epp, src/jrd/met_proto.h,
+	src/jrd/misc.cpp, src/jrd/nav.cpp, src/jrd/nbak.cpp,
+	src/jrd/old.cpp, src/jrd/old.h, src/jrd/pag.cpp,
+	src/jrd/pag_proto.h, src/jrd/par.cpp, src/jrd/pcmet.epp,
+	src/jrd/pcmet_proto.h, src/jrd/pwd.cpp, src/jrd/rec.cpp,
+	src/jrd/req.h, src/jrd/rlck.cpp, src/jrd/rng.cpp,
+	src/jrd/rpb_chain.cpp, src/jrd/rse.cpp, src/jrd/sbm.cpp,
+	src/jrd/sbm.h, src/jrd/sbm_proto.h, src/jrd/scl.epp,
+	src/jrd/scl_proto.h, src/jrd/sdw.cpp, src/jrd/sdw_proto.h,
+	src/jrd/shut.cpp, src/jrd/sqz.cpp, src/jrd/sqz.h,
+	src/jrd/sqz_proto.h, src/jrd/svc.cpp, src/jrd/sym.cpp,
+	src/jrd/sym_proto.h, src/jrd/tpc.cpp, src/jrd/tra.cpp,
+	src/jrd/vio.cpp, src/jrd/vio_proto.h, src/jrd/why.cpp,
+	src/jrd/os/pio_proto.h, src/jrd/os/posix/unix.cpp,
+	src/jrd/os/vms/extvms.cpp, src/jrd/os/vms/jio.cpp,
+	src/jrd/os/vms/vms.cpp, src/jrd/os/vms/vmslo_proto.h,
+	src/jrd/os/vms/vmslock.cpp, src/jrd/os/win32/path_utils.cpp,
+	src/jrd/os/win32/winnt.cpp, src/lock/lock.cpp, src/lock/lock.h,
+	src/lock/lock_proto.h, src/misc/blrtable.cpp, src/qli/mov.cpp,
+	src/qli/show.epp, src/remote/interface.cpp,
+	src/utilities/stats.epp, src/utilities/gsec/gsec.cpp,
+	src/utilities/gsec/security.epp, src/utilities/gstat/dba.epp,
+	src/utilities/gstat/dba_full.epp, src/utilities/gstat/ppg.cpp,
+	src/utilities/rebuild/rebuild.cpp:
+	
+	Cleanup
+
 2003-12-30 03:48  skidder
 
 	* firebird2/src/utilities/gsec/gsec.cpp:
