@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.47 2004-11-24 08:58:00 robocop Exp $
+ * $Id: extract.epp,v 1.48 2004-11-30 03:22:50 skidder Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -2415,6 +2415,7 @@ static void list_functions()
 	}
 
 	FOR FUN IN RDB$FUNCTIONS
+		WITH FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING
 		SORTED BY FUN.RDB$FUNCTION_NAME
 
 		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
