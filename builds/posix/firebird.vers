@@ -351,10 +351,12 @@ global:
 
 #--------------------------------------
 #functions needed by Solaris utilyties
-	THD_mutex_lock;
-	THD_mutex_unlock;
-	THD_mutex_destroy;
-	THD_mutex_init;
+#commented it out with new style of thd //Konstantin
+#
+#	THD_mutex_lock;
+#	THD_mutex_unlock;
+#	THD_mutex_destroy;
+#	THD_mutex_init;
 #--------------------------------------
 
 local:
