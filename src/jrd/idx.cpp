@@ -980,7 +980,7 @@ static IDX_E check_duplicates(
 						tdbb->tdbb_request->req_transaction;
 				}
 
-				tdbb->tdbb_request = insertion_idx->idx_expression_request;
+				tdbb->tdbb_request = record_idx->idx_expression_request;
 				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
 				tdbb->tdbb_request->req_flags &= ~req_null;
 				{
