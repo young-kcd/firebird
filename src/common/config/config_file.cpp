@@ -42,9 +42,7 @@
 #if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED) && (! defined(SUPERCLIENT)))
 #define EXIT_ON_NO_CONF
 #else
-#ifdef EXIT_ON_NO_CONF
 #undef EXIT_ON_NO_CONF
-#endif
 #endif
 
 typedef Firebird::string string;
