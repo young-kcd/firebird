@@ -1,3 +1,44 @@
+2003-01-30 23:14  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	bugfix: wrong context was used with FieldX IN (sub-select)
+	predicate.  Caused by me by an other bugfix SF BUG # [ 213859 ]
+
+2003-01-30 19:05  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h:
+	
+	Fixed a couple errors Mike Nordell pointed at
+
+2003-01-30 15:53  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Fixed bug with cyclic dependencies in the metadata cache.
+
+2003-01-30 14:30  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	bugfix: It wasn't possible to use non-aggregate related-fields from
+	a aggregate query inside an sub-query.	Example (this failed) :
+	SELECT	 Count(T1.F1),	 SUM((SELECT T2.F2 FROM Table2 T2 WHERE
+	T2.F1 = T1.F1)) FROM   Table1 T1
+
+2003-01-30 14:25  dimitr
+
+	* firebird2/src/common/: classes/alloc.cpp, classes/alloc.h,
+	config/config.cpp, config/config_file.h, config/config_impl.h:
+	
+	Fixed the errors pointed out by Mike.
+
+2003-01-30 08:07  dimitr
+
+	* firebird2/src/iscguard/cntl_guard.cpp:
+	
+	Fixed old hardcoded service name.
+
 2003-01-29 16:29  skidder
 
 	* firebird2/configure.in:
