@@ -57,11 +57,8 @@ class ConfigFile
 	class key_compare : public std::binary_function<const string&, const string&, bool>
 	{
 	public:
-		key_compare() : isCaseSensitive(CASE_SENSITIVITY) {}
+		key_compare() {}
 		bool operator()(const string&, const string&) const;
-	private:
-		bool isCaseSensitive;
-		void uppercase(string&) const;
 	};
 
     typedef std::map <string, string, key_compare,

@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.32 2003-04-14 07:23:14 alexpeshkoff Exp $
+$Id: flu.cpp,v 1.33 2003-05-30 12:17:47 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -854,13 +854,13 @@ static MOD search_for_module(TEXT* module, TEXT* name)
 	return NULL;
 #else
 	static class UdfDirectoryList : public DirectoryList {
-		const Firebird::string GetConfigString(void) const {
-			return Firebird::string(Config::getUdfAccess());
+		const Firebird::PathName GetConfigString(void) const {
+			return Firebird::PathName(Config::getUdfAccess());
 		}
 	} iUdfDirectoryList;
 
-	Firebird::string path, relative;
-	Firebird::string absolute_module = module;
+	Firebird::PathName path, relative;
+	Firebird::PathName absolute_module = module;
 
 	// Search for module name in UdfAccess restricted paths list
 	PathUtils::splitLastComponent(path, relative, absolute_module);

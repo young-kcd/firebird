@@ -57,24 +57,9 @@ typedef Firebird::string string;
  *	Allow case-insensitive comparison
  */
 
-void ConfigFile::key_compare::uppercase(string& x) const
-{
-	for (size_t pos = 0; pos < x.length(); pos++)
-	{
-		x[pos] = toupper(x[pos]);
-	}
-}
-
 bool ConfigFile::key_compare::operator()(const string& x, const string& y) const
 {
-	string s1 = x, s2 = y;
-
-	if (!isCaseSensitive)
-	{
-		uppercase(s1), uppercase(s2);
-	}
-
-	return (s1 < s2);
+	return Firebird::PathName(x) < Firebird::PathName(y);
 }
 
 /******************************************************************************

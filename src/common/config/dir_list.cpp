@@ -32,7 +32,7 @@ ParsedPath::ParsedPath(void) {
 	nElem = 0;
 }
 
-ParsedPath::ParsedPath(const Firebird::string& path) {
+ParsedPath::ParsedPath(const Firebird::PathName& path) {
 	PathElem = 0;
 	Parse(path);
 }
@@ -41,51 +41,51 @@ ParsedPath::~ParsedPath() {
 	delete[] PathElem;
 }
 
-void ParsedPath::Parse(const Firebird::string& path) {
-	delete PathElem;
+void ParsedPath::Parse(const Firebird::PathName& path) {
+	delete[] PathElem;
 
 	if (path.length() == 1) {
 		nElem = 1;
-		PathElem = New Firebird::string[1];
+		PathElem = New Firebird::PathName[1];
 		PathElem[0] = path;
 		return;
 	}
 
 	nElem = 0;
-	Firebird::string oldpath = path;
+	Firebird::PathName oldpath = path;
 	do {
-		Firebird::string newpath, elem;
+		Firebird::PathName newpath, elem;
 		PathUtils::splitLastComponent(newpath, elem, oldpath);
 		oldpath = newpath;
 		nElem++;
 	} while (oldpath.length() > 0);
 
-	PathElem = New Firebird::string[nElem];
+	PathElem = New Firebird::PathName[nElem];
 	oldpath = path;
 	for (int i = nElem; i--; ) {
-		Firebird::string newpath;
+		Firebird::PathName newpath;
 		PathUtils::splitLastComponent(newpath, PathElem[i], oldpath);
 		oldpath = newpath;
 	}
 }
 
 bool ParsedPath::operator==(const char* path) const {
-	return (Firebird::string(*this) == Firebird::string(path));
+	return (Firebird::PathName(*this) == Firebird::PathName(path));
 }
 
-Firebird::string ParsedPath::SubPath(int n) const {
-	Firebird::string rc = PathElem[0];
+Firebird::PathName ParsedPath::SubPath(int n) const {
+	Firebird::PathName rc = PathElem[0];
 	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
 		rc = PathUtils::dir_sep + rc;
 	for (int i = 1; i < n; i++) {
-		Firebird::string newpath;
+		Firebird::PathName newpath;
 		PathUtils::concatPath(newpath, rc, PathElem[i]);
 		rc = newpath;
 	}
 	return rc;
 }
 
-ParsedPath::operator Firebird::string() const {
+ParsedPath::operator Firebird::PathName() const {
 	if (!PathElem)
 		return "";
 	return SubPath(nElem);
@@ -106,7 +106,7 @@ bool ParsedPath::Contains(const ParsedPath& pPath) const {
 		}
 	}
 	for (i = nFullElem + 1; i <= pPath.nElem; i++) {
-		Firebird::string x = pPath.SubPath(i);
+		Firebird::PathName x = pPath.SubPath(i);
 		if (PathUtils::isSymLink(x)) {
 			return false;
 		}
@@ -126,14 +126,14 @@ DirectoryList::~DirectoryList() {
 
 bool DirectoryList::KeyWord(
 		const ListMode KeyMode, 
-		Firebird::string& Value, 
-		Firebird::string Key, 
-		Firebird::string Next
+		Firebird::PathName& Value, 
+		Firebird::PathName Key, 
+		Firebird::PathName Next
 ) {
 	if (Value.length() < Key.length()) {
 		return false;
 	}
-	Firebird::string KeyValue = Value.substr(0, Key.length());
+	Firebird::PathName KeyValue = Value.substr(0, Key.length());
 	if (KeyValue != Key) {
 		return false;
 	}
@@ -142,12 +142,12 @@ bool DirectoryList::KeyWord(
 			return false;
 		}
 		KeyValue = Value.substr(Key.length());
-		if (Next.find(KeyValue[0]) == Firebird::string::npos) {
+		if (Next.find(KeyValue[0]) == Firebird::PathName::npos) {
 			return false;
 		}
-		Firebird::string::size_type startPos = 
+		Firebird::PathName::size_type startPos = 
 			KeyValue.find_first_not_of(Next);
-		if (startPos == Firebird::string::npos) {
+		if (startPos == Firebird::PathName::npos) {
 			return false;
 		}
 		Value = KeyValue.substr(startPos);
@@ -168,7 +168,7 @@ void DirectoryList::Initialize(bool simple_mode) {
 
 	Clear();
 
-	Firebird::string val = GetConfigString();
+	Firebird::PathName val = GetConfigString();
 
 	if (simple_mode) {
 		Mode = SimpleList;
@@ -196,16 +196,16 @@ void DirectoryList::Initialize(bool simple_mode) {
 	ConfigDirs = New ParsedPath[nDirs];
 	unsigned int Last = 0;
 	nDirs = 0;
-	Firebird::string Root = Config::getRootDirectory();
+	Firebird::PathName Root = Config::getRootDirectory();
 	for (i = 0; i < val.length(); i++) {
 		if (val[i] == ';') {
-			Firebird::string dir = "";
+			Firebird::PathName dir = "";
 			if (i > Last) {
 				dir = val.substr(Last, i-Last);
 				Trim(dir);
 			}
 			if (PathUtils::isRelative(dir)) {
-				Firebird::string newdir;
+				Firebird::PathName newdir;
 				PathUtils::concatPath(newdir, Root, dir);
 				dir = newdir;
 			}
@@ -213,20 +213,20 @@ void DirectoryList::Initialize(bool simple_mode) {
 			Last = i + 1;
 		}
 	}
-	Firebird::string dir = "";
+	Firebird::PathName dir = "";
 	if (i > Last) {
 		dir = val.substr(Last, i - Last);
 		Trim(dir);
 	}
 	if (PathUtils::isRelative(dir)) {
-		Firebird::string newdir;
+		Firebird::PathName newdir;
 		PathUtils::concatPath(newdir, Root, dir);
 		dir = newdir;
 	}
 	ConfigDirs[nDirs++].Parse(dir);
 }
 
-bool DirectoryList::IsPathInList(const Firebird::string& path) {
+bool DirectoryList::IsPathInList(const Firebird::PathName& path) {
 #ifdef BOOT_BUILD
 	return true;
 #else  //BOOT_BUILD
@@ -247,13 +247,13 @@ bool DirectoryList::IsPathInList(const Firebird::string& path) {
 	// Example of IIS attack attempt:
 	// "GET /scripts/..%252f../winnt/system32/cmd.exe?/c+dir HTTP/1.0"
 	//								(live from apache access.log :)
-	if (path.find(PathUtils::up_dir_link) != Firebird::string::npos)
+	if (path.find(PathUtils::up_dir_link) != Firebird::PathName::npos)
 		return false;
 
-	Firebird::string varpath = path;
+	Firebird::PathName varpath = path;
 	if (PathUtils::isRelative(path)) {
 		PathUtils::concatPath(varpath, 
-			Firebird::string(Config::getRootDirectory()), path);
+			Firebird::PathName(Config::getRootDirectory()), path);
 	}
 
 	ParsedPath pPath = path;
@@ -269,8 +269,8 @@ bool DirectoryList::IsPathInList(const Firebird::string& path) {
 }
 
 void DirectoryList::ExpandFileName (
-					Firebird::string & Path, 
-					const Firebird::string & Name,
+					Firebird::PathName & Path, 
+					const Firebird::PathName & Name,
 					int Access
 ) {
 	if (Mode == NotInitialized)
@@ -295,11 +295,11 @@ TempDirectoryList::TempDirectoryList() : items(0)
 	// and fill the "items" vector
 	for (int i = 0; i < DirCount(); i++) {
 		Item item;
-		Firebird::string dir = dir_list[i];
+		Firebird::PathName dir = dir_list[i];
 		int pos = dir.rfind(" ");
-		long size = atol(dir.substr(pos + 1, Firebird::string::npos).c_str());
-		if (pos != Firebird::string::npos && !size) {
-			pos = Firebird::string::npos;
+		long size = atol(dir.substr(pos + 1, Firebird::PathName::npos).c_str());
+		if (pos != Firebird::PathName::npos && !size) {
+			pos = Firebird::PathName::npos;
 		}
 		if (size <= 0) {
 			size = ALLROOM;
@@ -311,7 +311,7 @@ TempDirectoryList::TempDirectoryList() : items(0)
 }
 
 
-const Firebird::string TempDirectoryList::GetConfigString() const
+const Firebird::PathName TempDirectoryList::GetConfigString() const
 {
 	const char* value;
 	if (!(value = Config::getTempDirectories()) &&
@@ -323,7 +323,7 @@ const Firebird::string TempDirectoryList::GetConfigString() const
 	{
 		value = WORKDIR;
 	}
-	return Firebird::string(value);
+	return Firebird::PathName(value);
 }
 
 size_t TempDirectoryList::Count() const

@@ -36,17 +36,17 @@
 // internally required subset of possible operators.
 //
 class ParsedPath {
-	Firebird::string * PathElem;
+	Firebird::PathName * PathElem;
 	int nElem;
-	Firebird::string SubPath(int n) const;
+	Firebird::PathName SubPath(int n) const;
 public:
 	ParsedPath(void);
-	ParsedPath(const Firebird::string& path);
+	ParsedPath(const Firebird::PathName& path);
 	~ParsedPath();
 	// Take new path inside
-	void Parse(const Firebird::string& path);
+	void Parse(const Firebird::PathName& path);
 	// Convert internal representation to traditional one
-	operator Firebird::string() const;
+	operator Firebird::PathName() const;
 	// Compare with path given by constant
 	bool operator==(const char* path) const;
 	// Check, whether pPath lies inside directory tree,
@@ -74,12 +74,12 @@ private:
 	// followed by any character from Next.
 	// If Next is empty, Value shoult exactly match Key.
 	// If Key found, sets Mode to KeyMode and returns true.
-	bool KeyWord(const ListMode KeyMode, Firebird::string& Value, 
-		Firebird::string Key, Firebird::string Next);
+	bool KeyWord(const ListMode KeyMode, Firebird::PathName& Value, 
+		Firebird::PathName Key, Firebird::PathName Next);
 protected:
 	// Used for various configuration parameters - 
-	// returns parameter string from Config Manager.
-	virtual const Firebird::string GetConfigString(void) const = 0;
+	// returns parameter PathName from Config Manager.
+	virtual const Firebird::PathName GetConfigString(void) const = 0;
 	// Initialize loads data from Config Manager.
 	// With simple mutex add-on may be easily used to 
 	// load them dynamically. Now called locally
@@ -98,19 +98,19 @@ public:
 	// of Config manager, thay have to call Initialize.
 
 	// Check, whether Path inside this DirectoryList
-	bool IsPathInList(const Firebird::string & Path);
+	bool IsPathInList(const Firebird::PathName & Path);
 	// Search for file Name in all direcories of DirectoryList.
 	// If found, return full path to it in Path. 
 	// Otherwise Path = Name.
 	// Last parameter defines required access rights
 	// to the file - like access().
-	void ExpandFileName(Firebird::string & Path, 
-						const Firebird::string & Name,
+	void ExpandFileName(Firebird::PathName & Path, 
+						const Firebird::PathName & Name,
 						int Access);
 
 	// Temporary - while we use STL basic_string 
-	// for string representation we don't have this
-	static void Trim(Firebird::string & s) {
+	// for PathName representation we don't have this
+	static void Trim(Firebird::PathName & s) {
 		ConfigFile::stripLeadingWhiteSpace(s);
 		ConfigFile::stripTrailingWhiteSpace(s);
 	}
@@ -120,7 +120,7 @@ class TempDirectoryList : private DirectoryList {
 public:
 	// directory list item
 	struct Item {
-		Firebird::string dir;
+		Firebird::PathName dir;
 		size_t size;
 	};
 
@@ -132,7 +132,7 @@ public:
 
 private:
 	// implementation of the inherited function
-	const Firebird::string GetConfigString() const;
+	const Firebird::PathName GetConfigString() const;
 	
 	// private data
 	Firebird::vector<Item> items;

@@ -62,8 +62,8 @@ namespace {
 IB_FILE *ext_fopen(const char *filename, const char *mode);
 
 class ExternalFileDirectoryList : public DirectoryList {
-	const Firebird::string GetConfigString(void) const {
-		return Firebird::string(Config::getExternalFileAccess());
+	const Firebird::PathName GetConfigString(void) const {
+		return Firebird::PathName(Config::getExternalFileAccess());
 	}
 } iExternalFileDirectoryList;
 
@@ -161,7 +161,7 @@ EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
 #endif
 
 	// If file_name has no path part, expand it in ExternalTablesDirs.
-	Firebird::string Path, Name;
+	Firebird::PathName Path, Name;
 	PathUtils::splitLastComponent(Path, Name, file_name);
 	if (Path.length() == 0)	{	// path component not present in file_name
 		iExternalFileDirectoryList.ExpandFileName(Path, Name, 4);
