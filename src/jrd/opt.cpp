@@ -1203,7 +1203,11 @@ static UINT64 calculate_priority_level(OPT opt, IDX * idx)
 		// Note: dbb->dbb_max_idx = 1022 for the largest supported page of 16K and
 		//						    62 for the smallest page of 1K
 		UINT64 max_idx = GET_THREAD_DATA->tdbb_database->dbb_max_idx + 1;
-		return ((idx_eql_count * max_idx * max_idx) + 
+		UINT64 unique_prefix = 0;
+		if ((idx->idx_flags & idx_unique) && (idx_eql_count == idx->idx_count)) {
+			unique_prefix = (max_idx - idx->idx_count) * max_idx * max_idx * max_idx;
+		}
+		return unique_prefix + ((idx_eql_count * max_idx * max_idx) + 
 			(idx_field_count * max_idx) + (max_idx - idx->idx_count));
 
 	}
@@ -4119,16 +4123,16 @@ static RSB gen_retrieval(TDBB     tdbb,
 
 			idx_walk[i] = idx;
 			idx_priority_level[i] = LOWEST_PRIORITY_LEVEL;
-			/* skip this part if the index wasn't specified for indexed 
-			   retrieval (still need to look for navigational retrieval) */
+			// skip this part if the index wasn't specified for indexed 
+			// retrieval (still need to look for navigational retrieval).
 			if ((idx->idx_runtime_flags & idx_plan_dont_use) &&
 				!(idx->idx_runtime_flags & idx_plan_navigate))
 			{
 				continue;
 			}
 
-			/* go through all the unused conjuncts and see if 
-			   any of them are computable using this index */
+			// go through all the unused conjuncts and see if 
+			// any of them are computable using this index.
 			clear_bounds(opt, idx);
 			tail = opt->opt_rpt;
 			if (outer_flag) {
@@ -4144,8 +4148,8 @@ static RSB gen_retrieval(TDBB     tdbb,
 				    computable(csb, node, -1, (inner_flag || outer_flag)))
 				{
 					if (count = match_index(tdbb, opt, stream, node, idx)) {
-						/* mark the index in the bitmap and if this conjunct
-						   has a own index mark this also */
+						// mark the index in the bitmap and if this conjunct
+						// has a own index mark this also.
 						if (idx->idx_count == count) {
 							tail->opt_idx_full_match = TRUE;
 						}	
@@ -4161,9 +4165,9 @@ static RSB gen_retrieval(TDBB     tdbb,
 										 stream, idx), nod_bit_and);
 			}
 
-			/* look for a navigational retrieval (unless one was already found or
-			   there is no sort block); if no navigational retrieval on this index,
-			   add an indexed retrieval to the inversion tree */
+			// look for a navigational retrieval (unless one was already found or
+			// there is no sort block); if no navigational retrieval on this index,
+			// add an indexed retrieval to the inversion tree.
 			if (!rsb)
 			{
 				if (sort_ptr && *sort_ptr)
@@ -4193,19 +4197,18 @@ static RSB gen_retrieval(TDBB     tdbb,
 
 			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
 
-				/* Calculate the priority level for this index */
+				// Calculate the priority level for this index.
 				idx_priority_level[i] = calculate_priority_level(opt, idx);
 			}
 
 		}
 
-		/* Sort indices based on the priority level into idx_walk */
-
+		// Sort indices based on the priority level into idx_walk.
 		SSHORT idx_walk_count =
 			sort_indices_by_priority(csb_tail, idx_walk, idx_priority_level);
 
-		/* Walk through the indicies based on earlier calculated count and
-		   when necessary build the index */
+		// Walk through the indicies based on earlier calculated count and
+		// when necessary build the index.
 
 		// TMN: Shouldn't this be allocated from the tdbb->tdbb_default pool?
 		Firebird::vector<SSHORT> conjunct_position_vector(MAX_INDICES);
@@ -4229,10 +4232,10 @@ static RSB gen_retrieval(TDBB     tdbb,
 			}
 			for (; tail < opt_end; tail++)
 			{
-				/* Test if this conjunction is available for this index. */
+				// Test if this conjunction is available for this index.
 				if (!(tail->opt_flags & opt_matched))
 				{
-					/* Setting opt_lower and/or opt_upper values */
+					// Setting opt_lower and/or opt_upper values.
 					node = tail->opt_conjunct;
 					if (!(tail->opt_flags & opt_used) && 
 						 computable(csb,
@@ -4257,11 +4260,13 @@ static RSB gen_retrieval(TDBB     tdbb,
 					}
 				}
 			}
+
+			// Finally compose our index
 			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper)
 			{
 
-				/* Use a different marking if a PLAN was specified, this is
-				   for backwards compatibility.  Juck... */
+				// Use a different marking if a PLAN was specified, this is
+				// for backwards compatibility.  Juck...
 				if (csb_tail->csb_plan)
 				{
 					/* Mark only used conjuncts in this index as used */
@@ -4280,10 +4285,10 @@ static RSB gen_retrieval(TDBB     tdbb,
 				else
 				{
 					// No plan
-					/* Mark all conjuncts that could be calculated against the 
-					   index as used. For example if you have :
-					   (node1 >= constant) and (node1 <= constant) be sure both
-					   conjuncts will be marked as opt_matched */
+					// Mark all conjuncts that could be calculated against the 
+					// index as used. For example if you have :
+					// (node1 >= constant) and (node1 <= constant) be sure both
+					// conjuncts will be marked as opt_matched
 					position = 0;
 					idx_tail = opt->opt_rpt;
 					idx_end = idx_tail + idx->idx_count;
@@ -4302,14 +4307,20 @@ static RSB gen_retrieval(TDBB     tdbb,
 				compose(&inversion, OPT_make_index(tdbb, opt, relation, idx),
 						nod_bit_and);
 				idx->idx_runtime_flags |= idx_used_with_and;
+
+				// When we composed a UNIQUE index stop composing, because
+				// this is the best we can get.
+				if ((idx->idx_flags & idx_unique) && !(csb_tail->csb_plan)) {
+					break; // Go out of idx_walk loop
+				}
 			}
 		}
 	}
 
 	if (outer_flag) {
-		/* Now make another pass thru the outer conjuncts only, finding unused,
-		   computable booleans.  When one is found, roll it into a final
-		   boolean and mark it used. */
+		// Now make another pass thru the outer conjuncts only, finding unused,
+		// computable booleans.  When one is found, roll it into a final
+		// boolean and mark it used.
 
 		*return_boolean = NULL;
 		opt_end = opt->opt_rpt + opt->opt_count;
@@ -4325,10 +4336,10 @@ static RSB gen_retrieval(TDBB     tdbb,
 		}
 	}
 
-/* Now make another pass thru the conjuncts finding unused, computable
-   booleans.  When one is found, roll it into a final boolean and mark
-   it used. If a computable boolean didn't match against an index then
-   mark the stream to denote unmatched booleans. */
+	// Now make another pass thru the conjuncts finding unused, computable
+	// booleans.  When one is found, roll it into a final boolean and mark
+	// it used. If a computable boolean didn't match against an index then
+	// mark the stream to denote unmatched booleans.
 
 	opt_boolean = NULL;
 	opt_end = opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
