@@ -2322,6 +2322,14 @@ bool CCH_rollover_to_shadow(Database* dbb, jrd_file* file, const bool inAst)
 	if (!dbb->dbb_shadow_lock) {
 		return false;
 	}
+
+	// hvlad: if there are no shadows can't rollover
+	// this is a temporary solution to prevent 100% CPU load
+	// in write_page in case of PIO_write failure
+	if (!dbb->dbb_shadow) {
+		return false;
+	}
+
 /* notify other process immediately to ensure all read from sdw
    file instead of db file */
 	return SDW_rollover_to_shadow(file, inAst);
