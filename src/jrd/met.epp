@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.144 2004-10-08 04:47:45 robocop Exp $
+$Id: met.epp,v 1.145 2004-10-25 01:18:37 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -595,7 +595,7 @@ void MET_activate_shadow( thread_db* tdbb)
 }
 
 
-ULONG MET_align(const dsc* desc, USHORT value)
+ULONG MET_align(Database* dbb, const dsc* desc, ULONG value)
 {
 /**************************************
  *
@@ -619,7 +619,9 @@ ULONG MET_align(const dsc* desc, USHORT value)
 		break;
 	}
 
-	alignment = MIN(alignment, ALIGNMENT);
+	alignment = MIN(alignment, 
+	  dbb->dbb_ods_version >= ODS_VERSION11 ?
+	  FORMAT_ALIGNMENT : ALIGNMENT);
 
 	return FB_ALIGN(value, alignment);
 }
@@ -825,21 +827,48 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
             REQUEST(irq_r_format) = request;
 		}
 		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$DESCRIPTOR);
-		const USHORT count = blob->blb_length / sizeof(struct dsc);
-		format = Format::newFormat(*dbb->dbb_permanent, count);
-		format->fmt_count = count;
-//		BLB_get_data(tdbb, blob, (UCHAR*) &*(format->fmt_desc.begin()), blob->blb_length);
-		BLB_get_data(tdbb, blob, (UCHAR*) &(format->fmt_desc[0]), blob->blb_length);
+		
+		if (sizeof(OdsDesc) == sizeof(struct dsc) || dbb->dbb_ods_version < ODS_VERSION11) {
+			// For ODS10 and earlier read descriptors in their in-memory representation
+			// This makes 64-bit and 32-bit ODS10 different for the same architecture.
+			
+			const USHORT count = blob->blb_length / sizeof(struct dsc);
+			format = Format::newFormat(*dbb->dbb_permanent, count);
+			format->fmt_count = count;
+			BLB_get_data(tdbb, blob, (UCHAR*) &(format->fmt_desc[0]), blob->blb_length);
 
-		for (Format::fmt_desc_const_iterator desc = format->fmt_desc.end() - 1;
-			 desc >= format->fmt_desc.begin();
-			 --desc)
-		{
-			if (desc->dsc_address)
+			for (Format::fmt_desc_const_iterator desc = format->fmt_desc.end() - 1;
+				 desc >= format->fmt_desc.begin();
+				 --desc)
 			{
-				format->fmt_length =
-					(IPTR) desc->dsc_address + desc->dsc_length;
-				break;
+	 			if (desc->dsc_address)
+				{
+					format->fmt_length =
+						(IPTR) desc->dsc_address + desc->dsc_length;
+					break;
+				}
+			}
+		} else {
+			// Use generic representation of formats with 32-bit offsets
+			
+			const USHORT count = blob->blb_length / sizeof(OdsDesc);
+			format = Format::newFormat(*dbb->dbb_permanent, count);
+			format->fmt_count = count;
+			Firebird::Array<OdsDesc> odsDescs;
+			OdsDesc *odsDesc = odsDescs.getBuffer(count);
+			BLB_get_data(tdbb, blob, (UCHAR*) odsDesc, blob->blb_length);
+		
+			for (Format::fmt_desc_iterator desc = format->fmt_desc.begin();
+				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
+			{
+				desc->dsc_dtype = odsDesc->dsc_dtype;
+				desc->dsc_scale = odsDesc->dsc_scale;
+				desc->dsc_length = odsDesc->dsc_length;
+				desc->dsc_sub_type = odsDesc->dsc_sub_type;
+				desc->dsc_flags = odsDesc->dsc_flags;
+				desc->dsc_address = (UCHAR*)(IPTR) odsDesc->dsc_offset;
+				if (desc->dsc_address)
+					format->fmt_length = (IPTR) desc->dsc_address + desc->dsc_length;
 			}
 		}
 	END_FOR;
@@ -2732,7 +2761,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					if (parameter)
 					{
 						*desc = parameter->prm_desc;
-						length = MET_align(&*desc, length);
+						length = MET_align(dbb, &(*desc), length);
 						desc->dsc_address = (UCHAR *) (IPTR) length;
 						length += desc->dsc_length;
 					}

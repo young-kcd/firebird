@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.126 2004-10-07 09:42:03 robocop Exp $
+$Id: common.h,v 1.127 2004-10-25 01:18:36 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -898,6 +898,12 @@ struct ISC_TIMESTAMP
 
 #ifndef ODS_ALIGNMENT
 #define ODS_ALIGNMENT           4
+#endif
+
+#ifndef FORMAT_ALIGNMENT
+// Alignment for items in record format. Used for databases after ODS11.
+// Always 64-bit to ensure ODS compatibility with 64-bit versions of the engine
+#define FORMAT_ALIGNMENT           8
 #endif
 
 #ifndef SYSCALL_INTERRUPTED

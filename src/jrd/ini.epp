@@ -699,7 +699,7 @@ void INI_init2(void)
 			{
 				if (n-- > 0)
 				{
-					format->fmt_length = (USHORT)MET_align(&*desc, format->fmt_length);
+					format->fmt_length = (USHORT)MET_align(dbb, &(*desc), format->fmt_length);
 					desc->dsc_address = (UCHAR*) (IPTR) format->fmt_length;
 					format->fmt_length += desc->dsc_length;
 				}

@@ -59,6 +59,16 @@ typedef struct dsc
 #endif
 } DSC;
 
+struct OdsDesc
+{
+	UCHAR	dsc_dtype;
+	SCHAR	dsc_scale;
+	USHORT	dsc_length;
+	SSHORT	dsc_sub_type;
+	USHORT	dsc_flags;
+	ULONG	dsc_offset;
+};
+
 
 inline SSHORT DSC_GET_CHARSET(const dsc* desc) {
 	return (desc->dsc_sub_type & 0x00FF);

@@ -3429,22 +3429,11 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		}
 		if (desc2->dsc_dtype)
 		{
-			const ULONG old_offset = offset;
-			offset = MET_align(&*desc2, (USHORT) offset);
-
-			/* see of record too big */
-
-			if (offset < old_offset)
-			{
-				offset += 65536L;
-				break;
-			}
+			offset = MET_align(dbb, &(*desc2), offset);
 			desc2->dsc_address = (UCHAR *) (IPTR) offset;
 			offset += desc2->dsc_length;
 		}
 	}
-
-	fb_assert(offset <= MAX_USHORT);
 
 	format->fmt_length = (USHORT)offset;
 
@@ -3496,11 +3485,34 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		FMTS.RDB$FORMAT = format->fmt_version;
 		FMTS.RDB$RELATION_ID = relation->rel_id;
 		blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &FMTS.RDB$DESCRIPTOR);
-		BLB_put_segment(tdbb,
-						blob,
-//						(UCHAR*) &*(format->fmt_desc.begin()),
-						reinterpret_cast<const UCHAR*>(&(format->fmt_desc[0])),
-						(USHORT)(format->fmt_count * sizeof(dsc)));
+
+		if (sizeof(OdsDesc) == sizeof(struct dsc) || dbb->dbb_ods_version < ODS_VERSION11) {
+			// For ODS10 and earlier put descriptors in their in-memory representation
+			// This makes 64-bit and 32-bit ODS10 different for the same architecture.
+			BLB_put_segment(tdbb,
+							blob,
+							reinterpret_cast<const UCHAR*>(&(format->fmt_desc[0])),
+							(USHORT)(format->fmt_count * sizeof(dsc)));
+		} else {
+			// Use generic representation of formats with 32-bit offsets
+			
+			Firebird::Array<OdsDesc> odsDescs;
+			OdsDesc *odsDesc = odsDescs.getBuffer(format->fmt_count);
+		
+			for (Format::fmt_desc_iterator desc = format->fmt_desc.begin();
+				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
+			{
+				odsDesc->dsc_dtype = desc->dsc_dtype;
+				odsDesc->dsc_length = desc->dsc_length;
+				odsDesc->dsc_sub_type = desc->dsc_sub_type;
+				odsDesc->dsc_flags = desc->dsc_flags;
+				odsDesc->dsc_scale = desc->dsc_scale;
+				odsDesc->dsc_offset = (ULONG) (IPTR) desc->dsc_address;
+			}
+		
+			BLB_put_segment(tdbb, blob,
+			  (UCHAR*) odsDescs.begin(), odsDescs.getCount() * sizeof(OdsDesc));
+		}
 		BLB_close(tdbb, blob);
     END_STORE;
 

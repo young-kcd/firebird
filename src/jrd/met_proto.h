@@ -37,12 +37,13 @@ namespace Jrd {
 	class jrd_rel;
 	class CompilerScratch;
 	class jrd_nod;
+	class Database;
 	struct bid;
 	struct index_desc;
 }
 
 void		MET_activate_shadow(Jrd::thread_db*);
-ULONG		MET_align(const dsc*, USHORT);
+ULONG		MET_align(Jrd::Database* dbb, const dsc*, ULONG);
 void		MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, const dsc*);
 Jrd::Format*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_delete_dependencies(Jrd::thread_db*, const TEXT*, USHORT);
