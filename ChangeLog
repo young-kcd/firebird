@@ -1,3 +1,12 @@
+2002-02-19  seanleyne
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/alice/tdr.cpp:
+		Correction, deleted a little too much code in my clean up of
+		the Appolo port.  Thanks to Claudio V. for the second set of
+		eyes.
+
 2002-02-16  seanleyne
 	* src/include/gen/autoconfig_msvc.h:
 	* src/jrd/common.h:
@@ -295,6 +304,10 @@
 	* src/remote/protocol.h:
 	* src/remote/remote_def.h:
 		Code cleanup of obsolete EPSON port
+
+2002-02-16  pcisar
+	* src/misc/writeBuildNum.sh:
+		increment build number
 
 2002-01-28  skywalker
 	* src/misc/writeBuildNum.sh:
