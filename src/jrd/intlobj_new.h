@@ -56,15 +56,17 @@ struct charset;
 #define INTL_BAD_KEY_LENGTH ((USHORT)(-1))
 #define INTL_BAD_STR_LENGTH ((ULONG)(-1))
 
-#define INTL_COMPARE_GREAT         1
-#define INTL_COMPARE_EQUAL         2
-#define INTL_COMPARE_GREAT_EQUAL   3
-
 /* Returned value of INTL_BAD_KEY_LENGTH means that proposed key is too long */
 typedef USHORT (*pfn_INTL_keylength) (
 	texttype* tt, 
 	USHORT len
 );
+
+/* Types of the keys which may be returned by str2key routine */
+
+#define INTL_KEY_SORT    0 /* Full sort key */
+#define INTL_KEY_PARTIAL 1 /* Starting portion of sort key for equality class */
+#define INTL_KEY_UNIQUE  2 /* Full key for the equality class of the string */
 
 /* Returned value of INTL_BAD_KEY_LENGTH means that key error happened during 
   key construction. When partial key is requested returned string should 
@@ -76,7 +78,7 @@ typedef USHORT (*pfn_INTL_str2key) (
 	const UCHAR* src, 
 	USHORT dstLen, 
 	UCHAR* dst, 
-	INTL_BOOL partial
+	USHORT key_type
 );
 
 /* Collate two potentially long strings. According to SQL 2003 standard 
@@ -119,8 +121,18 @@ typedef void (*pfn_INTL_tt_destroy) (
 );
 
 /* texttype flag values */
+
 #define TEXTTYPE_DIRECT_MATCH 1 /* Pattern-matching may be performed directly on
                                    string without going to canonical form */
+
+#define TEXTTYPE_SEPARATE_UNIQUE 2 /* Full key does not define equality class.
+                                      To be used with multi-level collations which are
+                                      case- or accent- insensitive */
+
+#define TEXTTYPE_UNSORTED_UNIQUE 4 /* Unique keys may not be used for ordered access,
+                                      such as for multi-level collation having weights 
+                                      (char, case, accent) which is case-insensitive, 
+                                      but accent-sensitive */
 
 
 typedef struct texttype {
