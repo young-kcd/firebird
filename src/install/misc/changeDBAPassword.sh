@@ -128,7 +128,7 @@ changeDBAPassword() {
 #= Main Post ===============================================================
 
 
-    IBRootDir=/opt/interbase
+    IBRootDir=@install@
     IBBin=$IBRootDir/bin
     RunUser=root
 
