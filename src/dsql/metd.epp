@@ -1031,7 +1031,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
                     }
                 }
                 
-                if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
+                if (X.RDB$MECHANISM != Jrd::FUN_value && X.RDB$MECHANISM != Jrd::FUN_reference)
 				{
                     d->dsc_flags = DSC_nullable;
                 }

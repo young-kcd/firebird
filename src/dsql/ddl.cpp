@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.109 2004-08-17 11:19:41 dimitr Exp $
+ * $Id: ddl.cpp,v 1.110 2004-08-27 04:52:21 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -3089,7 +3089,7 @@ static void define_udf( dsql_req* request)
         // CVC: This is case of "returns <type> [by value|reference]"
 		// Some data types can not be returned as value 
 
-		if (((int) (IPTR) (ret_val_ptr[1]->nod_arg[0]) == FUN_value) &&
+		if (((int) (IPTR) (ret_val_ptr[1]->nod_arg[0]) == Jrd::FUN_value) &&
 			(field->fld_dtype == dtype_text ||
 			 field->fld_dtype == dtype_varying ||
 			 field->fld_dtype == dtype_cstring ||
@@ -3159,10 +3159,10 @@ static void define_udf( dsql_req* request)
 		{
         /* CVC: I need to test returning blobs by descriptor before allowing the
 		change there. For now, I ignore the return type specification. */
-			bool free_it = ((SSHORT)(IPTR) ret_val_ptr[1]->nod_arg[0] < 0);
+			const bool free_it = ((SSHORT)(IPTR) ret_val_ptr[1]->nod_arg[0] < 0);
 			request->append_number(isc_dyn_def_function_arg, blob_position);
 			request->append_number(isc_dyn_func_mechanism,
-					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * FUN_blob_struct));
+					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * Jrd::FUN_blob_struct));
 			/* if we have the free_it set then the blob has
 			   to be freed on return */
 		}
@@ -3211,11 +3211,11 @@ static void define_udf( dsql_req* request)
             }
             else if (field->fld_dtype == dtype_blob) {
 				request->append_number(isc_dyn_func_mechanism, 
-                                       (SSHORT) FUN_blob_struct);
+                                       (SSHORT) Jrd::FUN_blob_struct);
             }
 			else {
 				request->append_number(isc_dyn_func_mechanism,
-						   (SSHORT) FUN_reference);
+						   (SSHORT) Jrd::FUN_reference);
 			}
 
 			request->append_cstring(isc_dyn_function_name, udf_name);

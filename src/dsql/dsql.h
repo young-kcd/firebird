@@ -37,6 +37,9 @@
 #include "../dsql/all.h"
 #include "../common/classes/array.h"
 #include "../common/classes/stack.h"
+#define REQUESTER
+#include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
+#undef REQUESTER
 
 #ifdef DEV_BUILD
 // This macro enables DSQL tracing code
@@ -291,19 +294,7 @@ public:
 	TEXT		udf_name[2];
 };
 
-//! these values are multiplied by -1 to indicate that server frees them
-//! on return from the udf
-// CVC: this enum is an exact duplication of the enum found in jrd/val.h
-enum FUN_T
-{
-	FUN_value,
-	FUN_reference,
-	FUN_descriptor,
-	FUN_blob_struct,
-	FUN_scalar_array
-};
-
-// udf_flags bits 
+// udf_flags bits
 
 enum udf_flags_vals {
 	UDF_new_udf		= 1, //!< udf is newly declared, not committed yet

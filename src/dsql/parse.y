@@ -507,6 +507,7 @@ static LexerState lex;
 %token ROWS
 %token BLOCK
 %token IIF
+%token SCALAR_ARRAY
 
 /* precedence declarations for expression evaluation */
 
@@ -781,37 +782,47 @@ arg_desc_list	: arg_desc
 
 /*arg_desc	: init_data_type udf_data_type
   { $$ = $1; } */
-arg_desc	: init_data_type udf_data_type
+arg_desc	: init_data_type udf_data_type param_mechanism
 			{ $$ = make_node (nod_udf_param, (int) e_udf_param_count,
-							  $1, NULL); }
-		| init_data_type udf_data_type BY KW_DESCRIPTOR
-			{ $$ = make_node (nod_udf_param, (int) e_udf_param_count,
-				$1, MAKE_constant ((dsql_str*) FUN_descriptor, CONSTANT_SLONG)); }
+							  $1, $3); }
 		;
 
+param_mechanism :
+			{ $$ = NULL; } /* Beware: ddl.cpp converts this to mean FUN_reference. */
+		| BY KW_DESCRIPTOR
+			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_descriptor, CONSTANT_SLONG); }
+		| BY SCALAR_ARRAY
+			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_scalar_array, CONSTANT_SLONG); }
+		| KW_NULL
+			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_ref_with_null, CONSTANT_SLONG); }
+		;
 
 return_value1	: return_value
 		| '(' return_value ')'
 			{ $$ = $2; }
 		;
-return_value	: init_data_type udf_data_type
-			{ $$ = make_node (nod_udf_return_value, (int) 2, $1, 
-				MAKE_constant ((dsql_str*) FUN_reference, CONSTANT_SLONG));}
-		| init_data_type udf_data_type FREE_IT
-			{ $$ = make_node (nod_udf_return_value, (int) 2, $1, 
-				MAKE_constant ((dsql_str*) (-1 * FUN_reference), CONSTANT_SLONG));}
-										 /* FUN_refrence with FREE_IT is -ve */
-		| init_data_type udf_data_type BY KW_VALUE
-			{ $$ = make_node (nod_udf_return_value, (int) 2, $1, 
-				MAKE_constant ((dsql_str*) FUN_value, CONSTANT_SLONG));}
-/* CVC: Enable return by descriptor for the future.*/
-		| init_data_type udf_data_type BY KW_DESCRIPTOR
-			{ $$ = make_node (nod_udf_return_value, (int) 2, $1,
-				MAKE_constant ((dsql_str*) FUN_descriptor, CONSTANT_SLONG));}
+		
+return_value	: init_data_type udf_data_type return_mechanism
+			{ $$ = make_node (nod_udf_return_value, (int) e_udf_param_count,
+							  $1, $3); }
 		| PARAMETER pos_short_integer
-			{ $$ = make_node (nod_udf_return_value, (int) 2, 
+			{ $$ = make_node (nod_udf_return_value, (int) e_udf_param_count,
 				NULL, MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG));}
 		;
+
+return_mechanism :
+			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_reference, CONSTANT_SLONG); }
+		| BY KW_VALUE
+			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_value, CONSTANT_SLONG); }
+		| BY KW_DESCRIPTOR
+			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_descriptor, CONSTANT_SLONG); }
+		| FREE_IT
+			{ $$ = MAKE_constant ((dsql_str*) (-1 * Jrd::FUN_reference), CONSTANT_SLONG); }
+										 /* FUN_refrence with FREE_IT is -ve */
+		| BY KW_DESCRIPTOR FREE_IT
+			{ $$ = MAKE_constant ((dsql_str*) (-1 * Jrd::FUN_descriptor), CONSTANT_SLONG); }
+		;
+
 
 filter_decl_clause : symbol_filter_name INPUT_TYPE blob_subtype OUTPUT_TYPE blob_subtype 
 			ENTRY_POINT sql_string MODULE_NAME sql_string
@@ -4178,6 +4189,7 @@ non_reserved_word :
 	| BACKUP				/* added in FB 2.0 */
 	| KW_DIFFERENCE
 	| IIF
+	| SCALAR_ARRAY
 	;
 
 %%
