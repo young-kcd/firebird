@@ -36,16 +36,13 @@
  */
 
 /*
-$Id: backup.epp,v 1.28 2003-08-12 17:32:01 skidder Exp $
+$Id: backup.epp,v 1.29 2003-08-13 11:07:32 robocop Exp $
 */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <memory.h>
 #include <string.h>
-#ifndef SOLX86
-#include <sstream>
-#endif
 #include "../burp/burp.h"
 #include "../jrd/ods.h"
 #include "../jrd/align.h"
