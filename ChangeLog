@@ -1,3 +1,17 @@
+2004-03-09 01:16  skidder
+
+	* firebird2/src/: alice/alice_meta.epp, common/fb_exception.cpp,
+	common/classes/alloc.cpp, common/classes/alloc.h, dsql/dsql.cpp,
+	dsql/hsh.cpp, dudley/exe.epp, dudley/trn.cpp, jrd/cch.cpp,
+	jrd/common.h, jrd/dfw.epp, jrd/gds.cpp, jrd/inf.cpp,
+	jrd/isc_sync.cpp, jrd/jrd.cpp, jrd/pag.cpp, jrd/pwd.cpp,
+	jrd/rse.cpp, jrd/sdw.cpp, jrd/sort.cpp, jrd/sort_mem.cpp,
+	jrd/svc.cpp, jrd/tra.cpp, jrd/why.cpp, utilities/nbackup.cpp,
+	utilities/gstat/dba_full.epp:
+	
+	Clean up.  1. gds__alloc doesn't throw 2. Add NOMEM handlers to a
+	couple places 3. kill HAVE_*SNPRINTF conditionals
+
 2004-03-08 19:44  skidder
 
 	* firebird2/src/jrd/common.h:
