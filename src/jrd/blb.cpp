@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.13 2002-10-29 16:27:46 tamlin Exp $
+$Id: blb.cpp,v 1.14 2002-10-31 10:38:03 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1241,7 +1241,7 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 		TRA transaction;
 
 		transaction = blob->blb_transaction;
-		blob->blb_pages = vcl::newVector(*transaction->tra_pool, blob->blb_max_pages+1);
+		blob->blb_pages = vcl::newVector(*transaction->tra_pool, 0);
 		l = dbb->dbb_page_size - BLP_SIZE;
 		blob->blb_space_remaining += l - blob->blb_clump_size;
 		blob->blb_clump_size = l;
@@ -2224,6 +2224,9 @@ static void insert_page(TDBB tdbb, BLB blob)
 		   the vector. */
 
 		if (blob->blb_sequence < blob->blb_max_pages) {
+			if (blob->blb_sequence >= vector->count()) {
+				vector->resize(blob->blb_sequence + 1);
+			}
 			(*vector)[blob->blb_sequence] = page_number;
 			return;
 		}
@@ -2237,7 +2240,7 @@ static void insert_page(TDBB tdbb, BLB blob)
 		page->blp_lead_page = blob->blb_lead_page;
 		page->blp_length = vector->count() << SHIFTLONG;
 		MOVE_FASTER(vector->memPtr(), page->blp_page, page->blp_length);
-		vector->clear();
+		vector->resize(1);
 		(*vector)[0] = window.win_page;
 		CCH_RELEASE(tdbb, &window);
 	}
@@ -2257,6 +2260,7 @@ static void insert_page(TDBB tdbb, BLB blob)
 		page->blp_header.pag_flags = blp_pointers;
 		page->blp_header.pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
+		vector->resize(l + 1);
 		(*vector)[l] = window.win_page;
 	}
 

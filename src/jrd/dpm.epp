@@ -1407,7 +1407,7 @@ ULONG DPM_get_blob(TDBB tdbb,
 
 			transaction = blob->blb_transaction;
 			vector = blob->blb_pages =
-				vcl::newVector(*transaction->tra_pool, blob->blb_max_pages);
+				vcl::newVector(*transaction->tra_pool, 0);
 		}
 		vector->resize(length / sizeof(SLONG));
 		MOVE_FASTER(q, vector->memPtr(), length);
@@ -1945,7 +1945,6 @@ SLONG DPM_store_blob(TDBB tdbb, BLB blob, REC record)
 	else {
 		vector = blob->blb_pages;
 		length = vector->count() * sizeof(SLONG);
-		//q = (UCHAR *) vector->vcl_long;
 		// JMB: Not such a good thing with std::vector
 		q = (UCHAR *) &*(vector->begin());
 //		q = (UCHAR *) &(vector->[0]);
