@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.192 2004-03-25 23:12:30 skidder Exp $
+dnl $Id: configure.in,v 1.193 2004-03-30 10:04:11 aafemt Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -712,6 +712,7 @@ mkdir -p temp/client.gdef/dudley
 mkdir -p temp/client.gdef/gpre
 mkdir -p temp/client.gdef/jrd
 mkdir -p temp/client.gdef/jrd/os/posix
+mkdir -p temp/client.gdef/jrd/os/win32
 mkdir -p temp/client.gdef/common/classes
 mkdir -p temp/client.gdef/common/config
 mkdir -p temp/client.qli/qli
@@ -761,6 +762,7 @@ mkdir -p temp/embed.util/utilities/gstat
 mkdir -p temp/embed.util/utilities/gsec
 mkdir -p temp/embed.util/lock
 mkdir -p temp/embed.util/jrd/os/posix
+mkdir -p temp/embed.util/jrd/os/win32
 mkdir -p temp/embed.util/common/classes
 mkdir -p temp/embed.util/common/config
 mkdir -p temp/embed.gbak/burp
