@@ -149,8 +149,15 @@ entry_point 'addHour' module_name 'fbudf';
 --It will work only with Win32 until it's ported to another OS.
 --FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc)
 declare external function getExactTimestamp
-timestamp returns parameter 1
+timestamp
+returns parameter 1
 entry_point 'getExactTimestamp' module_name 'fbudf';
+
+--FBUDF_API int isLeapYear(const ISC_TIMESTAMP* v);
+declare external function isLeapYear
+timestamp
+returns int by value
+entry_point 'isLeapYear' module_name 'fbudf';
 
 --FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc)
 declare external function Truncate

@@ -50,12 +50,14 @@ FBUDF_API paramdsc* testreflect(paramdsc* rc);
 #endif
 
 
+// BEGIN DEPRECATED FUNCTIONS.
 FBUDF_API paramdsc* idNvl(paramdsc* v, paramdsc* v2);
 FBUDF_API void sNvl(const paramdsc* v, const paramdsc* v2, paramdsc* rc);
 
 FBUDF_API paramdsc* iNullIf(paramdsc* v, paramdsc* v2);
 FBUDF_API paramdsc* dNullIf(paramdsc* v, paramdsc* v2);
 FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc);
+// END DEPRECATED FUNCTIONS.
 
 FBUDF_API void DOW(const ISC_TIMESTAMP* v, char* rc);
 FBUDF_API void SDOW(const ISC_TIMESTAMP* v, char* rc);
@@ -74,6 +76,8 @@ FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, const int& nminutes);
 FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const int& nhours);
 
 FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc);
+
+FBUDF_API int isLeapYear(const ISC_TIMESTAMP* v);
 
 FBUDF_API void fbtruncate(const paramdsc* v, paramdsc* rc);
 FBUDF_API void fbround(const paramdsc* v, paramdsc* rc);

@@ -292,6 +292,7 @@ namespace internal
 } // namespace internal
 
 
+// BEGIN DEPRECATED FUNCTIONS.
 FBUDF_API paramdsc* idNvl(paramdsc* v, paramdsc* v2)
 {
 	if (!internal::isnull(v))
@@ -370,6 +371,7 @@ FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 	internal::set_string_type(rc, len, sv);
 	return;
 }
+// END DEPRECATED FUNCTIONS.
 
 namespace internal
 {
@@ -475,15 +477,14 @@ FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const int& nmonths)
 		++times.tm_year;
 		times.tm_mon -= 12;
 	}
-	else if (times.tm_mon < 1)
+	else if (times.tm_mon < 0)
 	{
 		--times.tm_year;
 		times.tm_mon += 12;
 	}
-	int md[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 	const int ly = times.tm_year + 1900;
-	if (ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0)
-		++md[1];
+	const bool leap = ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0;
+	const int md[] = {31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 	if (times.tm_mday > md[times.tm_mon])
 		times.tm_mday = md[times.tm_mon];
 	isc_encode_timestamp(&times, v);
@@ -574,6 +575,14 @@ FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc)
 	rc->timestamp_time += tv.tv_usec / 100;
 #endif
 	return;
+}
+
+FBUDF_API int isLeapYear(const ISC_TIMESTAMP* v)
+{
+	tm times;
+	isc_decode_timestamp(v, &times);
+	const int ly = times.tm_year + 1900;
+	return ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0;
 }
 
 FBUDF_API void fbtruncate(const paramdsc* v, paramdsc* rc)
