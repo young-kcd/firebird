@@ -1,3 +1,73 @@
+2003-02-10 00:14  brodsom
+
+	* firebird2/src/: jrd/gdsold.h, gpre/dyntable.h:
+	
+	Remove JPN_ functions attributes
+
+2003-02-09 23:59  brodsom
+
+	* firebird2/src/qli/dtr.cpp:
+	
+	Correct wrong define
+
+2003-02-09 16:43  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Recent changes.
+
+2003-02-09 12:39  brodsom
+
+	* firebird2/src/jrd/codes.epp:
+	
+	Remove dontdothis define
+
+2003-02-09 12:22  brodsom
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Add newline at the end
+
+2003-02-09 12:21  brodsom
+
+	* firebird2/src/utilities/dba_full.epp:
+	
+	Remove unclosed comment
+
+2003-02-09 11:05  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp, jrd.h:
+	
+	Enabled generic support for the database encryption. The key part
+	of the feature is still protected by the macro. Proven to work on
+	win32.
+
+2003-02-09 10:52  dimitr
+
+	* firebird2/src/jrd/winnt.cpp:
+	
+	1. Cleanup.  2. Support for database encryption.
+
+2003-02-09 09:54  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Actual credits.
+
+2003-02-09 09:52  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	no message
+
+2003-02-09 03:07  arnobrinkman
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	bugfix: SF BUG # [ 523589 ] View is affecting the result of a
+	query. Problem was that rse's (inside the view) where not flagged
+	as variant
+
 2003-02-08 16:39  brodsom
 
 	* firebird2/src/intl/cv_jis.c:
