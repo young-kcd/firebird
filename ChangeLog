@@ -1,10 +1,660 @@
+2004-05-05 23:53  brodsom
+
+	* firebird2/src/: jrd/sort.cpp (1.63), jrd/svc.cpp (1.116),
+	jrd/svc_undoc.h (1.4), jrd/utl.cpp (1.65), jrd/common.h (1.113),
+	jrd/dyn_def.epp (1.67), jrd/dyn_del.epp (1.30), jrd/dyn_mod.epp
+	(1.46), jrd/dyn_util.epp (1.33), jrd/ext.cpp (1.50), jrd/flags.h
+	(1.4), jrd/isc.cpp (1.49), jrd/isc_sync.cpp (1.84), jrd/jrd.cpp
+	(1.157), jrd/jrd_proto.h (1.30), jrd/jrd_pwd.h (1.13),
+	jrd/jrd_time.h (1.5), jrd/msg_encode.h (1.2), lock/lock.cpp (1.93),
+	remote/inet.cpp (1.103), remote/inet_server.cpp (1.38),
+	remote/xnet.cpp (1.44), remote/os/win32/wnet.cpp (1.20):
+	
+	-Replace define with const -Move SYS_ERR, ERRNO, H_ERRNO and
+	INET_ERRNO(ERRNO in inet.cpp) macros to common.h -Remove unused
+	macros
+
+2004-05-05 23:49  brodsom
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.12):
+	
+	Fix warning
+
+2004-05-05 16:16  brodsom
+
+	* firebird2/src/jrd/iberr.h (1.8):
+	
+	Unused code
+
+2004-05-05 16:09  brodsom
+
+	* firebird2/src/jrd/dbt.cpp (1.28):
+	
+	Style
+
+2004-05-05 16:01  brodsom
+
+	* firebird2/src/jrd/cch.cpp (1.86):
+	
+	Unused macro
+
+2004-05-05 15:58  brodsom
+
+	* firebird2/src/: burp/mvol_proto.h (1.7), dsql/metd_proto.h
+	(1.21):
+	
+	Obsolete compiler message
+
+2004-05-05 07:28  skidder
+
+	* firebird2/src/jrd/: dfw.epp (1.106), jrd.cpp (1.156), lck.cpp
+	(1.39), lck.h (1.17), rlck.cpp (1.25), sdw.cpp (1.43):
+	
+	Carefully account attachment pointers used inside JRD lock
+	structure. This should cure crash reported by Nils Boedeker
+
+2004-05-05 06:47  skidder
+
+	* firebird2/src/extlib/ib_util.h (1.3):
+	
+	Make ib_util.h a valid C++ header
+
+2004-05-05 06:19  skidder
+
+	* firebird2/src/: jrd/execute_statement.cpp (1.8), dsql/dsql.cpp
+	(1.105):
+	
+	Fix bugs in my commit found by Claudio
+
+2004-05-05 01:27  skidder
+
+	* firebird2/src/jrd/que.h (1.4):
+	
+	Fix the error added during recent Blas' cleanup
+
+2004-05-04 21:37  brodsom
+
+	* firebird2/src/remote/xnet.cpp (1.43):
+	
+	Fix warning
+
+2004-05-04 21:23  brodsom
+
+	* firebird2/src/jrd/vio.cpp (1.92):
+	
+	Unused macro
+
+2004-05-04 21:16  brodsom
+
+	* firebird2/src/jrd/: cch.cpp (1.85), common.h (1.112):
+	
+	Remove values in defines used only for conditional compilation
+
+2004-05-04 19:51  brodsom
+
+	* firebird2/src/jrd/svc.cpp (1.115):
+	
+	Fix warnings
+
+2004-05-04 18:01  brodsom
+
+	* firebird2/src/burp/: burp.h (1.47), mvol.cpp (1.35):
+	
+	Fix warnings
+
+2004-05-04 17:57  brodsom
+
+	* firebird2/src/lock/lock.cpp (1.92):
+	
+	Lost commit
+
+2004-05-04 04:53  brodsom
+
+	* firebird2/src/isql/: isql.epp (1.80), isql.h (1.27):
+	
+	Fix warnings
+
+2004-05-04 00:42  brodsom
+
+	* firebird2/src/jrd/: jlx.c (1.7), jrd.h (1.95), met.h (1.10),
+	req.h (1.40), sch.cpp (1.25), sdw.h (1.7), sort.cpp (1.62), sort.h
+	(1.22), val.cpp (1.47), idx.h (1.12):
+	
+	Corrections suggested by Claudio
+
+2004-05-03 23:43  brodsom
+
+	* firebird2/src/: lock/lock.h (1.26), jrd/cmp.cpp (1.118),
+	jrd/dfw.epp (1.105), jrd/dyn.epp (1.59), jrd/dyn.h (1.20),
+	jrd/dyn_mod.epp (1.45), jrd/evl.cpp (1.83), jrd/evl_string.h
+	(1.11), jrd/exe.cpp (1.111), jrd/execute_statement.h (1.5),
+	jrd/ext.h (1.9), jrd/ini.epp (1.47), jrd/intl.cpp (1.62), jrd/isc.h
+	(1.13), jrd/isc_signal.h (1.5), jrd/opt.cpp (1.162), jrd/par.cpp
+	(1.93), jrd/qatest.cpp (1.11), jrd/scl.h (1.9),
+	jrd/scroll_cursors.h (1.7), jrd/svc.cpp (1.114), jrd/svc.h (1.27),
+	jrd/thd.h (1.20), jrd/tra.cpp (1.68), jrd/utl.cpp (1.64),
+	jrd/y_handle.h (1.9):
+	
+	Macro cleaning
+
+2004-05-03 23:39  brodsom
+
+	* firebird2/src/: alice/alice.cpp (1.61), burp/burp.cpp (1.74),
+	utilities/gsec/gsec.cpp (1.27), utilities/gstat/dba.epp (1.36),
+	misc/blrtable.cpp (1.12):
+	
+	Macro cleaning
+
+2004-05-03 21:12  brodsom
+
+	* firebird2/src/: utilities/print_event.cpp (1.1), misc/print.cpp
+	(1.8):
+	
+	Move misc/print.cpp to utilities/print_event.cpp
+
+2004-05-03 19:47  brodsom
+
+	* firebird2/src/jrd/: err.cpp (1.42), fil.h (1.10):
+	
+	Remove unused macros
+
+2004-05-03 19:35  brodsom
+
+	* firebird2/src/: jrd/event.cpp (1.48), jrd/event.h (1.16),
+	jrd/jrd.h (1.94), jrd/lck.cpp (1.38), jrd/que.h (1.3),
+	lock/lock.cpp (1.91), lock/lock.h (1.25), lock/print.cpp (1.35),
+	misc/print.cpp (1.7):
+	
+	-Unify 3 srq implementations and move it to que.h -Remove
+	duplicated lock constants between jrd.h and lock.h (naming fix and
+	srq move outside lock.h  was prerequisites for this change)
+
+2004-05-03 19:31  brodsom
+
+	* firebird2/src/jrd/jrd.cpp (1.155):
+	
+	-Fix another incredibly stupid legacy variable naming, variable
+	name = struct name.
+
+2004-05-03 19:05  skidder
+
+	* firebird2/src/common/classes/: auto.h (1.9), rwlock.h (1.19):
+	
+	Close a couple potential tins of worms spotted by Claudio in my
+	previous commits
+
+2004-05-03 15:35  brodsom
+
+	* firebird2/src/: jrd/cch.cpp (1.84), jrd/dbg.cpp (1.26),
+	remote/interface.cpp (1.79), remote/server.cpp (1.76):
+	
+	-Fix another incredibly stupid legacy variable naming, variable
+	name = struct name.
+
+2004-05-03 14:20  brodsom
+
+	* firebird2/src/common/classes/fb_tls.h (1.5):
+	
+	-Fix MinGW build
+
+2004-05-03 14:16  eku
+
+	* firebird2/src/jrd/execute_statement.cpp (1.7):
+	
+	Fixed warning: `static' is not at beginning of declaration
+
+2004-05-03 13:31  eku
+
+	* firebird2/: configure.in (1.198),
+	src/include/gen/autoconfig_msvc.h (1.93):
+	
+	Remainings of ib_stdio
+
+2004-05-03 12:08  eku
+
+	* firebird2/src/jrd/blob_filter.h (1.12):
+	
+	Fixed warning: `static' is not at beginning of declaration
+
+2004-05-03 11:20  eku
+
+	* firebird2/builds/posix/prefix.sinixz (1.23):
+	
+	Fixed compilation issues by changing compiler flags.
+
+2004-05-03 06:51  skidder
+
+	* firebird2/src/jrd/tra.cpp (1.67):
+	
+	Kill unused variable
+
+2004-05-03 06:29  skidder
+
+	* firebird2/src/dsql/: dsql.tab.h (1.36), parse.cpp (1.113):
+	
+	Regenerate parse.cpp
+
+2004-05-03 06:24  skidder
+
+	* firebird2/src/: common/classes/array.h (1.25),
+	common/classes/fb_pair.h (1.10), common/classes/init.h (1.2),
+	common/classes/objects_array.h (1.9), common/classes/stack.h (1.6),
+	common/classes/tree.h (1.28), common/classes/vector.h (1.8),
+	dsql/pass1.cpp (1.141), include/fb_exception.h (1.11),
+	jrd/event.cpp (1.47), jrd/event.h (1.15), jrd/gds.cpp (1.133),
+	jrd/vio.cpp (1.91), utilities/nbackup.cpp (1.25):
+	
+	Fixes needed to make GCC 3.4 happy
+
+2004-05-03 03:52  skidder
+
+	* firebird2/: builds/win32/msvc7/fbclient_static.vcproj (1.14),
+	src/common/classes/auto.h (1.8), src/dsql/parse.y (1.133),
+	src/jrd/why.cpp (1.64):
+	
+	Care about quirks of Windows platform
+
+2004-05-03 01:06  skidder
+
+	* firebird2/src/utilities/rebuild/: rebuild.cpp (1.13), rmet.epp
+	(1.7), rstore.epp (1.8):
+	
+	Y-Valve handle translation layer
+
+2004-05-03 01:03  skidder
+
+	* firebird2/src/: alice/alice.cpp (1.60), alice/alice.h (1.34),
+	alice/alice_meta.epp (1.35), alice/aliceswi.h (1.14), alice/exe.cpp
+	(1.32), alice/tdr.cpp (1.35), alice/tdr_proto.h (1.11),
+	burp/backup.epp (1.56), burp/burp.cpp (1.73), burp/burp.h (1.46),
+	burp/burpswi.h (1.12), burp/restore.epp (1.73),
+	common/classes/fb_tls.h (1.4), common/classes/locks.h (1.13),
+	common/classes/rwlock.h (1.18), dsql/array.epp (1.28),
+	dsql/blob.epp (1.14), dsql/ddl.cpp (1.98), dsql/dsql.cpp (1.104),
+	dsql/dsql.h (1.61), dsql/dsql_proto.h (1.17), dsql/gen.cpp (1.62),
+	dsql/hsh.cpp (1.27), dsql/make.cpp (1.60), dsql/metd.epp (1.57),
+	dsql/parse.y (1.132), dsql/pass1.cpp (1.140), dsql/prepa_proto.h
+	(1.12), dsql/preparse.cpp (1.30), dsql/user__proto.h (1.7),
+	dsql/user_dsql.cpp (1.38), dudley/ddl.cpp (1.34), dudley/ddl.h
+	(1.22), dudley/exe.epp (1.47), dudley/expand.cpp (1.22),
+	dudley/expr.cpp (1.20), dudley/extract.epp (1.32),
+	dudley/generate.cpp (1.13), dudley/lex.cpp (1.26),
+	dudley/lex_proto.h (1.8), dudley/parse.cpp (1.40), dudley/trn.cpp
+	(1.29), gpre/ada.cpp (1.39), gpre/c_cxx.cpp (1.45), gpre/cmd.cpp
+	(1.33), gpre/cme.cpp (1.26), gpre/cmp.cpp (1.28), gpre/cob.cpp
+	(1.41), gpre/dyntable.cpp (1.8), gpre/exp.cpp (1.32), gpre/ftn.cpp
+	(1.43), gpre/gpre.h (1.61), gpre/gpre_meta.epp (1.41),
+	gpre/gpre_meta_boot.cpp (1.41), gpre/int_cxx.cpp (1.33),
+	gpre/jrdmet.cpp (1.17), gpre/par.cpp (1.47), gpre/pas.cpp (1.37),
+	gpre/pretty.cpp (1.24), gpre/sql.cpp (1.43), include/fb_types.h
+	(1.44), include/gen/msgs.h (1.14), include/gen/sql_code.h (1.13),
+	ipserver/ipc.h (1.16), ipserver/ipclient.cpp (1.42),
+	ipserver/ipserver.cpp (1.42), isql/extract.epp (1.36),
+	isql/isql.epp (1.79), isql/isql_proto.h (1.19), isql/isql_win.cpp
+	(1.15), isql/show.epp (1.46), isql/show_proto.h (1.15), jrd/alt.cpp
+	(1.50), jrd/alt_proto.h (1.9), jrd/blb.cpp (1.73),
+	jrd/blob_filter.cpp (1.28), jrd/cmp.cpp (1.117), jrd/cvt2.cpp
+	(1.33), jrd/dbt.cpp (1.27), jrd/dfw.epp (1.104), jrd/dpm.epp
+	(1.46), jrd/dsc.cpp (1.20), jrd/dyn.epp (1.58), jrd/dyn_def.epp
+	(1.66), jrd/dyn_del.epp (1.29), jrd/dyn_mod.epp (1.44),
+	jrd/dyn_util.epp (1.32), jrd/evl.cpp (1.82),
+	jrd/execute_statement.cpp (1.6), jrd/execute_statement.h (1.4),
+	jrd/filters.cpp (1.35), jrd/fun.epp (1.51), jrd/grant.epp (1.35),
+	jrd/ibase.h (1.74), jrd/inf.cpp (1.44), jrd/ini.epp (1.46),
+	jrd/isc.cpp (1.48), jrd/jrd.cpp (1.154), jrd/jrd.h (1.93),
+	jrd/jrd_proto.h (1.29), jrd/met.epp (1.115), jrd/opt.cpp (1.161),
+	jrd/pag.cpp (1.72), jrd/par.cpp (1.92), jrd/pcmet.epp (1.20),
+	jrd/perf.cpp (1.33), jrd/perf_proto.h (1.6), jrd/pwd.cpp (1.28),
+	jrd/sch.cpp (1.24), jrd/scl.epp (1.50), jrd/sdl.cpp (1.36),
+	jrd/shut.cpp (1.24), jrd/svc.cpp (1.113), jrd/tra.cpp (1.66),
+	jrd/utl.cpp (1.63), jrd/utl_proto.h (1.14), jrd/val.cpp (1.46),
+	jrd/vio.cpp (1.90), jrd/why.cpp (1.63), jrd/why_proto.h (1.22),
+	jrd/y_handle.h (1.8), jrd/y_ref.h (1.3), jrd/os/posix/unix.cpp
+	(1.25), jrd/os/vms/map.cpp (1.10), jrd/os/vms/mblr.cpp (1.5),
+	jrd/os/vms/rdb.cpp (1.12), jrd/os/vms/rdbint.cpp (1.11),
+	jrd/os/vms/vmslock.cpp (1.7), lock/driver.cpp (1.15),
+	misc/blrtable.cpp (1.11), misc/codes.epp (1.12),
+	msgs/build_file.epp (1.20), msgs/change_msgs.epp (1.15),
+	msgs/check_msgs.epp (1.10), msgs/enter_msgs.epp (1.12),
+	msgs/load.epp (1.11), msgs/modify_msgs.epp (1.12), qli/command.cpp
+	(1.21), qli/dtr.cpp (1.34), qli/dtr.h (1.17), qli/eval.cpp (1.40),
+	qli/exe.cpp (1.43), qli/exe.h (1.21), qli/exe_proto.h (1.9),
+	qli/format.cpp (1.28), qli/gener.cpp (1.34), qli/help.epp (1.18),
+	qli/lex.cpp (1.28), qli/lex_proto.h (1.8), qli/meta.epp (1.44),
+	qli/meta_proto.h (1.11), qli/parse.h (1.8), qli/proc.epp (1.26),
+	qli/proc_proto.h (1.9), qli/show.epp (1.33), remote/inet.cpp
+	(1.102), remote/inet_server.cpp (1.37), remote/interface.cpp
+	(1.78), remote/merge.cpp (1.18), remote/mgr.cpp (1.9),
+	remote/parser.cpp (1.17), remote/remote.cpp (1.33), remote/remote.h
+	(1.31), remote/server.cpp (1.75), remote/xnet.cpp (1.42),
+	remote/os/win32/chop.cpp (1.7), remote/os/win32/ibconfig.cpp (1.6),
+	remote/os/win32/property.cpp (1.8), remote/os/win32/wnet.cpp
+	(1.19), utilities/cache.cpp (1.15), utilities/nbackup.cpp (1.24),
+	utilities/run_service.cpp (1.11), utilities/stats.epp (1.9),
+	utilities/common/cmd_util.cpp (1.8), utilities/gsec/gsec.cpp
+	(1.26), utilities/gsec/secur_proto.h (1.6),
+	utilities/gsec/security.epp (1.10), utilities/gstat/dba.epp (1.35),
+	utilities/gstat/dba_full.epp (1.24), utilities/gstat/ppg.cpp
+	(1.16), utilities/ibmgr/ibmgr.cpp (1.15),
+	utilities/ibmgr/srvrmgr.cpp (1.11):
+	
+	Y-Valve handle translation layer
+
+2004-05-03 00:50  brodsom
+
+	* firebird2/src/jrd/svc_undoc.h (1.3):
+	
+	Comment unused macros
+
+2004-05-03 00:46  brodsom
+
+	* firebird2/src/jrd/: isc_sync.cpp (1.83), os/posix/isc_ipc.cpp
+	(1.12):
+	
+	Comment unused macros
+
+2004-05-03 00:43  brodsom
+
+	* firebird2/src/jrd/inf.h (1.5):
+	
+	Remove wrong (and unused) constant definitions
+
+2004-05-03 00:40  brodsom
+
+	* firebird2/src/jrd/: cvt.cpp (1.40), cvt2.cpp (1.32), quad.cpp
+	(1.9), quad.h (1.3):
+	
+	Move triplicated macros to common header
+
+2004-05-03 00:36  brodsom
+
+	* firebird2/src/jrd/btr.h (1.32):
+	
+	Comment unused macro
+
+2004-05-02 10:53  skidder
+
+	* firebird2/configure.in (1.197):
+	
+	Fix POSIX build
+
+2004-05-01 16:15  brodsom
+
+	* firebird2/src/: include/gen/msgs.h (1.13), include/gen/sql_code.h
+	(1.12), remote/remote.cpp (1.32), utilities/run_service.cpp (1.10),
+	utilities/gstat/dba_full.epp (1.23), utilities/guard/guard.cpp
+	(1.5), utilities/ibmgr/ibmgr.cpp (1.14):
+	
+	-Remainings of ib_stdio  (Pointed by Claudio)
+
+2004-05-01 10:33  skidder
+
+	* firebird2/src/dsql/metd.epp (1.56):
+	
+	Please Claudio and do not return descriptors for VARCHAR(32767) for
+	UDFs
+
+2004-05-01 01:03  brodsom
+
+	* firebird2/configure.in (1.196):
+	
+	-Modify object generation to be dependent on type (boot, std,
+	superserver and superclient) not module. This saves 8% time in a
+	full build.
+
+2004-05-01 01:01  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.static.isql (1.7),
+	Makefile.in.firebird (1.53), Makefile.in.inet_server (1.14),
+	Makefile.in.intl (1.18), Makefile.in.libfbclient (1.22),
+	Makefile.in.libfbcommon (1.7), Makefile.in.libfbembed (1.13),
+	Makefile.in.libfbstatic (1.6), Makefile.in.msgs (1.14),
+	Makefile.in.refDatabases (1.21), Makefile.in.static.gbak (1.8),
+	Makefile.in.static.gpre (1.15), Makefile.in.boot.gpre (1.20),
+	Makefile.in.client.fbudf (1.2), Makefile.in.client.gbak (1.8),
+	Makefile.in.client.gdef (1.9), Makefile.in.client.gfix (1.9),
+	Makefile.in.client.gpre (1.14), Makefile.in.client.isql (1.8),
+	Makefile.in.client.qli (1.4), Makefile.in.client.util (1.20),
+	Makefile.in.codes (1.16), Makefile.in.embed.fbudf (1.3),
+	Makefile.in.embed.gbak (1.8), Makefile.in.embed.gdef (1.7),
+	Makefile.in.embed.gfix (1.9), Makefile.in.embed.gpre (1.14),
+	Makefile.in.embed.isql (1.8), Makefile.in.embed.lockmgr (1.7),
+	Makefile.in.embed.qli (1.14), Makefile.in.embed.util (1.13),
+	Makefile.in.examples (1.3), Makefile.in.extern.editline (1.3),
+	Makefile.in.extlib (1.16), Makefile.in.fbserver (1.14),
+	make.defaults (1.35):
+	
+	-Modify object generation to be dependent on type (boot, std,
+	superserver and superclient) not module. This saves 8% time in a
+	full build.  -Add sqlda_pub.h to monolithic ibase -Correct
+	refDatabases symbols to avoid repeated generation of executables.
+
+2004-05-01 00:48  brodsom
+
+	* firebird2/builds/: win32/make_all.bat (1.24),
+	mac_os_x/CS/Helpers.make (1.5):
+	
+	Add sqlda_pub.h to monolithic ibase
+
+2004-05-01 00:45  brodsom
+
+	* firebird2/src/: jrd/dyn_def.epp (1.65), jrd/evl.cpp (1.81),
+	jrd/fun.epp (1.50), jrd/ibase.h (1.73), jrd/ini.epp (1.45),
+	jrd/ini.h (1.15), jrd/intl_classes.h (1.18), jrd/intlobj.h (1.22),
+	jrd/met.epp (1.114), jrd/nav.cpp (1.39), jrd/nbak.cpp (1.30),
+	jrd/obj.h (1.4), jrd/ods.h (1.22), jrd/shut.cpp (1.23), jrd/tra.h
+	(1.29), jrd/blb.cpp (1.72), jrd/blob_filter.cpp (1.27), jrd/cmp.cpp
+	(1.116), jrd/cvt2.cpp (1.31), jrd/dbg.cpp (1.25), jrd/dfw.epp
+	(1.103), jrd/dpm.epp (1.45), jrd/dsc.cpp (1.19), jrd/dsc2.h (1.4),
+	dsql/sqlda_pub.h (1.1), jrd/os/posix/unix.cpp (1.24),
+	jrd/os/win32/winnt.cpp (1.18), utilities/nbackup.cpp (1.23):
+	
+	- Split sqlda.h to avoid duplicated definitions between ibase.h and
+	sqlda.h - Replace define for constants - Remove contants.h where
+	not used.
+
+2004-05-01 00:40  brodsom
+
+	* firebird2/src/: dsql/blob.epp (1.13), dsql/dsql.cpp (1.103),
+	dsql/metd.epp (1.55), dsql/sqlda.h (1.7), dsql/utld.cpp (1.29),
+	gpre/cmd.cpp (1.32), gpre/gpre_meta.epp (1.40),
+	gpre/gpre_meta_boot.cpp (1.40), gpre/jrdmet.cpp (1.16),
+	intl/ldcommon.h (1.17), isql/show.epp (1.45), isql/extract.epp
+	(1.35):
+	
+	- Split sqlda.h to avoid duplicated definitions between ibase.h and
+	sqlda.h - Replace define for constants - Remove contants.h where
+	not used.
+
+2004-04-30 20:43  skidder
+
+	* firebird2/src/jrd/thd.h (1.19):
+	
+	Disable GC thread
+
+2004-04-30 13:44  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solx86gcc (1.8):
+	
+	removed -fwritable-strings on so on to const char * instead of
+	char* for example cant compile config_file
+
+2004-04-29 19:47  brodsom
+
+	* firebird2/src/: dsql/blob.epp (1.12), dsql/ddl.cpp (1.97),
+	dsql/metd.epp (1.54), gpre/sql.cpp (1.42), gpre/cmd.cpp (1.31),
+	gpre/gpre_meta.epp (1.39), gpre/gpre_meta_boot.cpp (1.39),
+	gpre/jrdmet.cpp (1.15), isql/show.epp (1.44), isql/isql.epp (1.78),
+	jrd/blb.cpp (1.71), jrd/blob_filter.cpp (1.26), jrd/blob_filter.h
+	(1.11), jrd/constants.h (1.15), jrd/cvt2.cpp (1.30), jrd/dfw.epp
+	(1.102), jrd/dsc.cpp (1.18), jrd/dsc2.h (1.3), jrd/evl.cpp (1.80),
+	jrd/fields.h (1.5), jrd/filters.cpp (1.34), jrd/ibase.h (1.72),
+	jrd/ini.epp (1.44):
+	
+	Removing duplicated definitions between ibase.h and blob_filter.h
+	ibase.h and constants.h
+
+2004-04-29 16:49  brodsom
+
+	* firebird2/src/: jrd/cch.cpp (1.83), jrd/cch.h (1.20),
+	jrd/cch_proto.h (1.21), jrd/cmp.cpp (1.115), jrd/constants.h
+	(1.14), jrd/gds.cpp (1.132), jrd/idx.h (1.11), jrd/isc_signal.h
+	(1.4), jrd/jlx.c (1.6), jrd/jrd.h (1.92), jrd/val.cpp (1.45),
+	jrd/val.h (1.22), jrd/vio.cpp (1.89), jrd/btr.cpp (1.85), jrd/btr.h
+	(1.31), jrd/acl.h (1.3), jrd/all.cpp (1.31), jrd/alt.cpp (1.49),
+	jrd/blb.h (1.16), jrd/blob_filter.h (1.10), jrd/btn.h (1.10),
+	dsql/make.cpp (1.59), dsql/ddl.cpp (1.96):
+	
+	Replace defines for constants
+
+2004-04-29 13:16  brodsom
+
+	* firebird2/src/jrd/: dyn_def.epp (1.64), event.cpp (1.46), event.h
+	(1.14), irq.h (1.6), llio.h (1.3), met.h (1.9), req.h (1.39), rse.h
+	(1.31), sch.cpp (1.23), sdl.cpp (1.35), sdw.h (1.6), sort.h (1.21):
+	
+	Replace defines for constants
+
+2004-04-29 02:49  brodsom
+
+	* firebird2/src/jrd/: vio_debug.h (1.5), drq.h (1.6), exe.h (1.51),
+	par.cpp (1.91):
+	
+	Replace define for constants
+
+2004-04-29 01:29  brodsom
+
+	* firebird2/src/gpre/pas.cpp (1.36):
+	
+	Style
+
+2004-04-29 00:42  brodsom
+
+	* firebird2/: src/jrd/ib_stdio.h (1.17),
+	builds/mac_os_x/CS/CS.pbproj/project.pbxproj (1.6),
+	builds/win32/msvc6/engine.dsp (1.47),
+	builds/win32/msvc6/engine_classic.dsp (1.42),
+	builds/win32/msvc6/engine_embed.dsp (1.21),
+	builds/win32/msvc7/engine.vcproj (1.37),
+	builds/win32/msvc7/engine_classic.vcproj (1.36),
+	builds/win32/msvc7/engine_embed.vcproj (1.24):
+	
+	Removing ib_stdio.h
+
+2004-04-29 00:39  brodsom
+
+	* firebird2/src/jrd/: par.cpp (1.90), perf.cpp (1.32),
+	plugin_manager.cpp (1.18), qatest.cpp (1.10), rng.cpp (1.23),
+	rse.cpp (1.69), sbm.cpp (1.16), sbm_proto.h (1.11), sch.cpp (1.22),
+	sdw.cpp (1.42), sort.cpp (1.61), svc.cpp (1.112), thd.cpp (1.29),
+	utl.cpp (1.62), val.cpp (1.44), vio.cpp (1.88), why.cpp (1.62),
+	isc_file.cpp (1.76), isc_sync.cpp (1.82), jlx.c (1.5), jrd.cpp
+	(1.153), lck.cpp (1.37), llio.cpp (1.19), log.cpp (1.16), met.epp
+	(1.113), opt.cpp (1.160), pag.cpp (1.71), btr.cpp (1.84), all.cpp
+	(1.30), all.h (1.17), alt.cpp (1.48):
+	
+	Removing ib_stdio.h
+
+2004-04-29 00:34  brodsom
+
+	* firebird2/src/jrd/: os/win32/isc_ipc.cpp (1.10),
+	os/win32/thd_priority.cpp (1.16), os/vms/extvms.cpp (1.19),
+	os/vms/rdb.cpp (1.11), os/vms/vms.cpp (1.16), os/posix/isc_ipc.cpp
+	(1.11), os/posix/unix.cpp (1.23), isc.cpp (1.47), dsc.cpp (1.17),
+	dyn_mod.epp (1.43), err.cpp (1.41), event.cpp (1.45), ext.cpp
+	(1.49), filters.cpp (1.33), functions.cpp (1.12), gds.cpp (1.131),
+	gdsassert.h (1.11), grammar.cpp (1.7), ib_stdio.h (1.16), iberr.cpp
+	(1.13), intl.cpp (1.61), inuse.cpp (1.6), cch.cpp (1.82), common.h
+	(1.111), cvt.cpp (1.39), dbg.cpp (1.24), dbt.cpp (1.26), dfw.epp
+	(1.101), dmp.cpp (1.22), dpm.epp (1.44):
+	
+	Removing ib_stdio.h
+
+2004-04-29 00:31  brodsom
+
+	* firebird2/src/lock/: print.cpp (1.34), driver.cpp (1.14),
+	lock.cpp (1.90), manager.cpp (1.10):
+	
+	Removing ib_stdio.h
+
+2004-04-29 00:26  brodsom
+
+	* firebird2/src/: qli/eval.cpp (1.39), qli/exe.cpp (1.42),
+	qli/exe.h (1.20), qli/format.cpp (1.27), qli/gener.cpp (1.33),
+	qli/help.epp (1.17), qli/lex.cpp (1.27), qli/meta.epp (1.43),
+	qli/mov.cpp (1.33), qli/parse.cpp (1.31), qli/picstr.cpp (1.22),
+	qli/report.cpp (1.15), qli/show.epp (1.32), qli/command.cpp (1.20),
+	qli/dtr.cpp (1.33), qli/err.cpp (1.15), msgs/build_file.epp (1.19),
+	msgs/change_msgs.epp (1.14), msgs/check_msgs.epp (1.9),
+	msgs/enter_msgs.epp (1.11), msgs/include.epp (1.7),
+	msgs/modify_msgs.epp (1.11), misc/print.cpp (1.6), misc/align.cpp
+	(1.6), misc/blrtable.cpp (1.10), misc/codes.epp (1.11),
+	misc/memtest.cpp (1.3):
+	
+	Removing ib_stdio.h
+
+2004-04-29 00:22  brodsom
+
+	* firebird2/src/: utilities/gstat/dba.epp (1.34),
+	utilities/gstat/dba_full.epp (1.22), utilities/gstat/ppg.cpp
+	(1.15), utilities/gstat/ppg_proto.h (1.8), utilities/gsec/gsec.cpp
+	(1.25), utilities/gsec/gsec.h (1.12), utilities/gsec/security.epp
+	(1.9), utilities/common/cmd_util.cpp (1.7),
+	utilities/run_service.cpp (1.9), utilities/sbc_print.cpp (1.22),
+	utilities/stats.epp (1.8), utilities/analyse.cpp (1.9),
+	utilities/cache.cpp (1.14), utilities/drop.cpp (1.24),
+	utilities/print_pool.cpp (1.7), utilities/relay.cpp (1.6),
+	remote/os/win32/wnet.cpp (1.18), remote/os/win32/cntl.cpp (1.6),
+	remote/os/win32/srvr_w32.cpp (1.15), remote/xnet.cpp (1.41),
+	remote/server.cpp (1.74), remote/inet.cpp (1.101),
+	remote/inet_server.cpp (1.36), remote/interface.cpp (1.77),
+	remote/mgr.cpp (1.8), remote/parser.cpp (1.16), remote/protocol.cpp
+	(1.43), remote/remote.cpp (1.31):
+	
+	Removing ib_stdio.h
+
+2004-04-29 00:17  brodsom
+
+	* firebird2/src/utilities/: install/install.cpp (1.3),
+	install/install_client.cpp (1.3), install/install_reg.cpp (1.9),
+	install/install_svc.cpp (1.10), install/registry.cpp (1.9),
+	install/services.cpp (1.9), ibmgr/srvrmgr.cpp (1.10),
+	ibmgr/ibmgr.cpp (1.13), ibmgr/ibmgr.h (1.6), guard/guard.cpp (1.4),
+	guard/util.cpp (1.4):
+	
+	Removing ib_stdio.h
+
+2004-04-29 00:13  brodsom
+
+	* firebird2/src/: isql/show_proto.h (1.14), isql/isql_win.cpp
+	(1.14), isql/isql_win.h (1.6), isql/show.epp (1.43),
+	isql/extract.epp (1.34), isql/isql.epp (1.77), isql/isql.h (1.26),
+	isql/isql_proto.h (1.18), utilities/rebuild/rstore.epp (1.7),
+	utilities/rebuild/rebuild.cpp (1.12), utilities/rebuild/rmet.epp
+	(1.6):
+	
+	Removing ib_stdio.h
+
+2004-04-29 00:09  brodsom
+
+	* firebird2/src/: intl/utils/dtest.c (1.4), intl/utils/dtest2.c
+	(1.3), intl/utils/mapdump.c (1.3), intl/utils/mapgen4.c (1.4),
+	intl/utils/maptest.cpp (1.4), ipserver/ipserver.cpp (1.41),
+	ipserver/ipclient.cpp (1.41), iscguard/cntl_guard.cpp (1.14),
+	iscguard/iscguard.cpp (1.33):
+	
+	Removing ib_stdio.h
+
 2004-04-29 00:05  brodsom
 
-	* firebird2/src/gpre/: pas.cpp (1.35), pat.cpp (1.23), pretty.cpp
-	(1.23), cob.cpp (1.40), dyntable.cpp (1.7), ftn.cpp (1.42),
-	gpre.cpp (1.56), gpre.h (1.60), gpre_meta.epp (1.38), int_cxx.cpp
-	(1.32), msc.cpp (1.20), ada.cpp (1.38), c_cxx.cpp (1.44), cme.cpp
-	(1.25):
+	* firebird2/src/: gpre/pas.cpp (1.35), gpre/pat.cpp (1.23),
+	gpre/pretty.cpp (1.23), gpre/cob.cpp (1.40), gpre/dyntable.cpp
+	(1.7), gpre/ftn.cpp (1.42), gpre/gpre.cpp (1.56), gpre/gpre.h
+	(1.60), gpre/gpre_meta.epp (1.38), gpre/int_cxx.cpp (1.32),
+	gpre/msc.cpp (1.20), gpre/ada.cpp (1.38), gpre/c_cxx.cpp (1.44),
+	gpre/cme.cpp (1.25), include/fb_string.h (1.16), intl/cv_ksc.cpp
+	(1.9), intl/kanji.cpp (1.6), intl/lc_narrow.cpp (1.9), intl/ld.cpp
+	(1.9), intl/ld2.cpp (1.5):
 	
 	Removing ib_stdio.h
 
