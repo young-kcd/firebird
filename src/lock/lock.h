@@ -24,6 +24,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  *
  */
 
@@ -85,10 +86,6 @@
 
 #ifndef EXTEND_SIZE
 #define EXTEND_SIZE     32768
-#endif
-
-#ifdef M88K
-#define SEMAPHORES      10
 #endif
 
 #ifdef UNIXWARE

@@ -24,6 +24,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  *
  */
 
@@ -165,10 +166,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 #ifdef AIX_PPC
 #define CLASS		10
-#endif
-
-#ifdef M88K
-#define CLASS		2
 #endif
 
 #ifdef UNIXWARE

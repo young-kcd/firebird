@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Journal Server
  *	MODULE:		misc.c
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
+ *
  */
 
 #include "firebird.h"
@@ -58,9 +61,6 @@
 
 #ifndef WIN_NT
 #ifdef NETWARE_386
-#define GETTIMEOFDAY(time,tz)	gettimeofday (time)
-#endif
-#ifdef M88K
 #define GETTIMEOFDAY(time,tz)	gettimeofday (time)
 #endif
 

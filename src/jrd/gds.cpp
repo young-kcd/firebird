@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  *
  */
 
@@ -198,10 +199,6 @@ static CONST SCHAR *FAR_VARIABLE CONST messages[] = {
 #include "gen/msgs.h"
 	0							/* Null entry to terminate list */
 };
-
-#ifdef M88K
-#define GETTIMEOFDAY(time,tz)	gettimeofday (time)
-#endif
 
 #ifndef GETTIMEOFDAY
 #define GETTIMEOFDAY(time,tz)	gettimeofday ((struct timeval*)time, (struct timezone*)tz)

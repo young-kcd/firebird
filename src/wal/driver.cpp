@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
+ *
  */
 
 #include "firebird.h"
@@ -48,10 +51,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/misc_proto.h"
-
-#ifdef M88K
-#define GETTIMEOFDAY(tp,tzp)	gettimeofday (tp)
-#endif
 
 #ifndef GETTIMEOFDAY
 #define GETTIMEOFDAY(tp,tzp)	gettimeofday (tp, tzp)
@@ -353,7 +352,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				for (count = 0; count < log_count; count++) {
 					/* Check if the log file can be deleted, e.g. if journalling was
 					   enabled when this log file was created, make sure that the file
-					   has been backed up or it is no SLONGer needed because there is 
+					   has been backed up or it is no SLONGer needed because there is
 					   a newer online dump. etc... */
 					ib_printf
 						("log name=%s, log_partition_offset=%d, log_seqno=%d, log_length=%d, log_flags=%d\n",

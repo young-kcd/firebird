@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.9 2002-02-16 03:33:53 seanleyne Exp $
+ * $Id: license.h,v 1.10 2002-02-16 03:54:54 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -40,6 +40,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  *
  */
 
@@ -164,10 +165,6 @@
 
 #ifdef DECOSF
 #define	FB_PLATFORM	"AO"		/* Alpha OSF-1 */
-#endif
-
-#ifdef M88K
-#define	FB_PLATFORM	"M8"		/* Motorola 88k */
 #endif
 
 #ifdef UNIXWARE

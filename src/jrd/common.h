@@ -32,10 +32,12 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NT Power PC" port
  *
  */
 /*
-$Id: common.h,v 1.12 2002-02-16 03:33:52 seanleyne Exp $
+$Id: common.h,v 1.13 2002-02-16 03:54:54 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -605,13 +607,6 @@ typedef unsigned __int64 UINT64;
 #define IMPLEMENTATION  50
 #endif
 
-#ifdef _PPC_
-#define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT       8
-#define DOUBLE_ALIGN    8
-#define IMPLEMENTATION	57
-#endif
-
 #define ATEXIT(c)       atexit (c)
 #define                 IEEE
 #define INTL
@@ -861,36 +856,6 @@ typedef unsigned long DWORD;
 #define STACK_REDUCTION
 
 #endif /* NETWARE_386 */
-
-
-#ifdef M88K
-#define INTL
-#define SETPGRP         setpgrp()
-#define KILLER_SIGNALS
-#define SIGACTION_SUPPORTED
-#define MMAP_SUPPORTED
-#define NO_FLOCK
-#define UNIX            1
-#define CURSES_KEYPAD   1
-#define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define ALIGNMENT       8
-#define DOUBLE_ALIGN    8
-#define IMPLEMENTATION  48
-#define                 IEEE
-#define ATEXIT(c)       atexit (c)
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
-#define setreuid(ruid,euid)     setuid(euid)
-#define setregid(rgid,egid)     setgid(egid)
-
-#endif /* M88K */
-
 
 
 #ifdef UNIXWARE

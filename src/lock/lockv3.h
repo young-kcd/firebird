@@ -23,6 +23,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  *
  */
 
@@ -70,10 +71,6 @@ union semun {
 
 #ifdef UNIXWARE
 #define SEMAPHORES      10
-#endif
-
-#ifdef M88K
-#define SEMAPHORES	10
 #endif
 
 #ifdef sgi
