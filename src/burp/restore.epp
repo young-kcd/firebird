@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.4 2002-01-04 11:34:14 skywalker Exp $
+$Id: restore.epp,v 1.5 2002-04-04 05:32:02 bellardo Exp $
 */
 
 #include "firebird.h"
@@ -839,7 +839,8 @@ tdgbl = GET_THREAD_DATA;
 
 page_size = DEFAULT_PAGE_SIZE;
 // sweep_interval = -1;
-sweep_interval = 0xFFFFFFFF;
+// sweep_interval = 0xFFFFFFFF;
+sweep_interval = MAX_ULONG;
 no_reserve = FALSE;
 db_read_only = FALSE;
 forced_writes = 2; /* default for the current platform */
@@ -933,7 +934,7 @@ d = dpb;
     for (q = (UCHAR*) GDS_VERSION; *q;)
 	*d++ = *q++;
 
-if (sweep_interval != -1)
+if (sweep_interval != MAX_ULONG)
     {
     *d++ = (UCHAR) isc_dpb_sweep_interval;
     *d++ = 4;
@@ -2022,7 +2023,7 @@ if (isc_create_blob (status_vector,
 
 /* Allocate blob buffer is static buffer is too short */
 
-if (!length || length + 1 <= sizeof (static_buffer))
+if (!length || length + 1 <= (USHORT)(sizeof (static_buffer)) )
     buffer = static_buffer;
 else
     {
@@ -4458,7 +4459,7 @@ if (isc_create_blob2 (status_vector,
 
 /* Allocate blob buffer is static buffer is too short */
 
-if (!length || length <= sizeof (static_buffer))
+if (!length || length <= (USHORT)(sizeof (static_buffer)) )
     buffer = static_buffer;
 else
     buffer = BURP_ALLOC (length);
@@ -5437,7 +5438,7 @@ if (isc_create_blob (status_vector,
 
 /* Allocate blob buffer is static buffer is too short */
 
-if (!length || length <= sizeof (static_buffer))
+if (!length || length <= (USHORT)(sizeof (static_buffer)) )
     buffer = static_buffer;
 else
     buffer = BURP_ALLOC (length);
