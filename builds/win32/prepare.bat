@@ -17,8 +17,20 @@
 @if /I "%1"=="-?" (goto :HELP & goto :EOF)
 @if /I "%1"=="/?" (goto :HELP & goto :EOF)
 
-if "%1" NEQ "" (set FIREBIRD=%1)
-if "%FIREBIRD%"=="" (goto :HELP & goto :EOF)
+@if "%1" NEQ "" (set FIREBIRD=%1)
+:: BRS 
+:: Get all the file name when there are spaces
+:: this can be also achieved with %* but I don't know which versions of 
+:: windows allows it
+:LOOP
+	@shift
+	@if "%1"==""  (goto DONE)
+	@set FIREBIRD= %FIREBIRD% %1
+	@goto loop
+:DONE
+
+@echo      FIREBIRD=%FIREBIRD%
+@if "%FIREBIRD%"=="" (goto :HELP & goto :EOF)
 
 ::===========
 :MAIN
