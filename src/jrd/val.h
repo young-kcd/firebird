@@ -171,8 +171,10 @@ class arr : public pool_alloc_rpt<ads::ads_repeat, type_arr>
 	struct jrd_req* arr_request;	/* request */
 	SLONG		arr_effective_length;	/* Length of array instance */
 	USHORT		arr_desc_length;		/* Length of array descriptor */
-	struct ads	arr_desc;		/* Array descriptor */
-	ULONG arr_temp_id;          // Temporary ID for open array inside the transaction
+	ULONG		arr_temp_id;		// Temporary ID for open array inside the transaction
+
+	// Keep this field last as it is C-style open array !
+	struct ads	arr_desc;			/* Array descriptor. ! */
 };
 typedef arr *ARR;
 
