@@ -102,11 +102,11 @@ Firebird 1.5 installation notes
   - change the current directory to <root>\bin (here and below 
     <root> is the directory where v1.5 files are located)
   - run instreg.exe:
-      instreg.exe install <root>
+      instreg.exe install
     it causes the installation path to be written into the registry
-    (HKLM\Software\Firebird\FirebirdSQL\CurrentVersion)
+    (HKLM\Software\FirebirdSQL\Firebird\CurrentVersion)
   - if you want to register a service, run also instsvc.exe:
-      instsvc.exe install <root>
+      instsvc.exe install
   - optionally, you should copy both fbclient.dll and gds32.dll
     to the OS system directory
 
@@ -114,7 +114,7 @@ Firebird 1.5 installation notes
 
   To install the CS engine, the only difference is the additional
   option for instsvc.exe:
-      instsvc.exe install <root> -classic
+      instsvc.exe install -classic
 
   It means that you may have only one copy of the engine (either
   fbserver.exe or fb_inet_server.exe) to be installed as a service.
