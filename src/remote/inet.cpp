@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.109 2004-05-18 16:26:23 brodsom Exp $
+$Id: inet.cpp,v 1.110 2004-05-18 22:01:52 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -149,6 +149,7 @@ const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
 #endif // VMS
 
 #ifdef WIN_NT
+
 #include <fcntl.h>
 #include <process.h>
 #include <signal.h>
@@ -158,35 +159,25 @@ const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
 #define INET_ADDR_IN_USE	WSAEADDRINUSE
 #define sleep(seconds)  Sleep ((seconds) * 1000)
 
-/*
-** Winsock has a typedef for socket, so #define SOCKET to the typedef here
-** so that it won't be redefined below.
-*/
-/* TMN: 28 Jul 2000 - Fixed compiler warning */
-# ifndef SOCKET
-#  define SOCKET		SOCKET
-# endif	/* SOCKET */
-
-#endif /* WIN_NT */
-
-#ifndef INVALID_SOCKET
-#define INVALID_SOCKET  -1
-#endif
+#else // WIN_NT
 
 #ifndef SOCKET
 #define SOCKET  int
 #endif
-
 #ifndef SOCLOSE
 #define SOCLOSE	close
 #endif
-
 #ifndef INET_ADDR_IN_USE
 #define INET_ADDR_IN_USE EADDRINUSE
 #endif
-
 #ifndef INET_RETRY_ERRNO
 #define INET_RETRY_ERRNO TRY_AGAIN
+#endif
+
+#endif // WIN_NT
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET  -1
 #endif
 
 #ifndef SIGURG
@@ -201,9 +192,9 @@ SLONG INET_remote_buffer;
 SLONG INET_max_data;
 static bool first_time = true;
 
-/*
-#define DEBUG	1
-*/
+//
+//#define DEBUG	1
+//
 
 #ifndef REQUESTER
 #ifdef DEBUG

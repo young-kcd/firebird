@@ -49,8 +49,6 @@ typedef	char *	caddr_t;
 
 typedef int XDR_INT;
 typedef int bool_t;
-#define TRUE	1
-#define FALSE	0
 #ifndef enum_t
 #define enum_t	enum xdr_op
 #endif
