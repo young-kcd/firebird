@@ -1,3 +1,69 @@
+2003-12-28 14:42  arnobrinkman
+
+	* firebird2/src/jrd/: btn.cpp, btr.cpp:
+	
+	use standard memcpy / memmove functions and fix a bug with
+	large-key index
+
+2003-12-28 05:53  skidder
+
+	* firebird2/src/install/:
+	arch-specific/linux/classic/makeInstallImage.sh.in,
+	arch-specific/linux/super/makeInstallImage.sh.in,
+	misc/CSchangeRunUser.sh.in, misc/CSrestoreRootRunUser.sh.in,
+	misc/changeDBAPassword.sh.in:
+	
+	Since ed is not installed in most configurations, eradicate its
+	usage from Firebird 1.5 installer. ex dependency is still present
+	(for more than a year) and may be replaced with sed dependency if
+	creates problem
+
+2003-12-28 00:48  skidder
+
+	* firebird2/builds/posix/prefix.linux:
+	
+	Build debuggable release binaries on Linux
+
+2003-12-28 00:39  skidder
+
+	* firebird2/builds/posix/prefix.linux:
+	
+	Distribute debuggable PROD_BUILD
+
+2003-12-28 00:13  skidder
+
+	*
+	
+	Rollback recent changes and create normal user and group on
+	Mandrake. Usage of system users for non-system packages is likely
+	to create problems
+	firebird2/src/install/arch-specific/linux/classic/postinstall.sh.in
+	:
+
+2003-12-28 00:09  skidder
+
+	* firebird2/src/install/misc/aliases.conf.in:
+	
+	file aliases.conf.in was initially added on branch B1_5_Release.
+
+2003-12-28 00:09  skidder
+
+	* firebird2/src/install/misc/aliases.conf.in:
+	
+	Add file forgotten by Mark
+
+2003-12-28 00:07  skidder
+
+	* firebird2/doc/WhatsNew:
+	
+	Document my change
+
+2003-12-28 00:06  skidder
+
+	* firebird2/src/jrd/ibase.h:
+	
+	Add version to ibase.h
+
 2003-12-27 23:03  skidder
 
 	* firebird2/src/jrd/ibase.h:
