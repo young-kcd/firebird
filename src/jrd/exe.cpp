@@ -331,8 +331,11 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 			/* CVC: This is a case that has hurt me for years and I'm going to solve it.
 					It should be possible to copy a string to a blob, even if the charset is
 					lost as a result of this experimental implementation. */
-			if (from_desc->dsc_dtype <= dtype_varying)
+			if (from_desc->dsc_dtype <= dtype_varying
+				&& to_desc->dsc_dtype != dtype_array)
+			{
 				BLB_move_from_string(tdbb, from_desc, to_desc, to);
+			}
 			else 
 				BLB_move(tdbb, from_desc, to_desc, to);
 		}
