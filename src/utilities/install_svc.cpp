@@ -166,7 +166,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	if (sw_command == COMMAND_NONE ||
 		(!directory && sw_command == COMMAND_INSTALL) ||
-		(directory && sw_command != COMMAND_INSTALL))
+		(directory && sw_command != COMMAND_INSTALL) ||
+		(username && sw_command != COMMAND_INSTALL))
 		usage();
 
 	manager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
