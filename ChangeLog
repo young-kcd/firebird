@@ -1,3 +1,48 @@
+2004-10-09 05:58  robocop
+
+	* firebird2/src/jrd/err.cpp (1.59):
+	
+	Fix a possible buffer overrun after Arno's enhancement of
+	ERR_bugcheck and internal_error.
+
+2004-10-09 05:55  robocop
+
+	* firebird2/src/jrd/err.cpp (1.58):
+	
+	I don't see a reason to call ERR_cstring over the result of a
+	previous ERR_cstring.  Also, string literals are at fixed
+	addresses, so they survive the function that originated them.
+
+2004-10-09 05:52  robocop
+
+	* firebird2/src/jrd/exe.cpp (1.126):
+	
+	Misc
+
+2004-10-09 03:47  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.155):
+	
+	Fixed some possible buffer overruns and marked others.
+
+2004-10-09 03:40  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.112):
+	
+	Misc.
+
+2004-10-09 03:38  robocop
+
+	* firebird2/src/jrd/why.cpp (1.83):
+	
+	Getting rid of IPSERV.
+
+2004-10-09 03:37  robocop
+
+	* firebird2/src/remote/interface.cpp (1.92):
+	
+	Redundant casts.  Getting rid of IPSERV.
+
 2004-10-09 02:43  skidder
 
 	* firebird2/src/: common/classes/fb_string.cpp (1.25),
