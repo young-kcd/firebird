@@ -1,3 +1,28 @@
+2004-10-18 01:48  skidder
+
+	* firebird2/configure.in (1.206):
+	
+	Add support for daily builds
+
+2004-10-17 14:35  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.155):
+	
+	Fixed WITH CHECK issue for naturally updatable views.
+
+2004-10-17 10:47  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h (1.45), keywords.cpp (1.36),
+	parse.cpp (1.131), parse.y (1.154):
+	
+	Replaced "==" with a SQL-99 compliant distinct predicate.
+
+2004-10-17 05:35  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.95):
+	
+	Misc.
+
 2004-10-16 14:52  dimitr
 
 	* firebird2/src/jrd/nbak.cpp (1.44):
