@@ -456,7 +456,8 @@ typedef dsql_nod* DSQL_NOD;
 #define e_exec_into_stmnt	0	/* nod_exec_into */
 #define e_exec_into_block	1
 #define e_exec_into_list	2
-#define e_exec_into_count	3
+#define e_exec_into_number	3
+#define e_exec_into_count	4
 
 #define e_internal_info	0		/* nod_internal_info */
 #define e_internal_info_count	1

@@ -1294,11 +1294,13 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		node->nod_arg[e_exec_into_stmnt] = PASS1_node(request,
 					input->nod_arg[e_exec_into_stmnt],
 					proc_flag);
-		node->nod_arg[e_exec_into_block] = input->nod_arg[e_exec_into_block] ? 
-					PASS1_statement(request,
-						input->nod_arg[e_exec_into_block],
-						proc_flag) : 
-					0;
+		if (input->nod_arg[e_exec_into_block]) {
+			node->nod_arg[e_exec_into_number] =
+				(DSQL_NOD) (ULONG) ++request->req_loop_level;
+			node->nod_arg[e_exec_into_block] =
+				PASS1_statement(request, input->nod_arg[e_exec_into_block], proc_flag);
+			request->req_loop_level--;
+        }
 		node->nod_arg[e_exec_into_list] = PASS1_node(request,
 					input->nod_arg[e_exec_into_list], 
 					proc_flag);
