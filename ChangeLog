@@ -1,3 +1,119 @@
+2004-01-03 15:12  fsg
+
+	* firebird2/src/: common/utils.cpp, isql/isql.h, qli/blk.h,
+	qli/compile.cpp, qli/expand.cpp, qli/format.cpp, qli/gener.cpp,
+	qli/parse.cpp, qli/report.cpp, qli/report.h:
+	
+	Some changes to get it compiled under linux.  Use const
+	declarations for BLANK etc. in isql.h again.  FSG
+
+2004-01-03 13:39  epocman
+
+	* firebird2/src/jrd/os/win32/ibinitdll.cpp:
+	
+	More Win32 1.5 -> HEAD synchronisation.
+
+2004-01-03 13:36  skywalker
+
+	*
+	firebird2/src/install/arch-specific/linux/super/postinstall.sh.in:
+	
+	Change to remove libgds.so if it is a link, but not if it is an
+	actual file.
+
+2004-01-03 13:35  skywalker
+
+	*
+	
+	Change to remove existing links for libgds.so but not remove it if
+	it is a file.
+	firebird2/src/install/arch-specific/linux/classic/postinstall.sh.in
+	:
+
+2004-01-03 13:34  skywalker
+
+	*
+	
+	Change to use ex, and to write SYSDBA.password correctly (variable
+	was not set).
+	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
+	.in:
+
+2004-01-03 13:32  epocman
+
+	* firebird2/doc/: README.Win32LibraryInstallation.txt,
+	install_win32.txt:
+	
+	More Win32 1.5 -> HEAD synchronisation. Updated documentation
+	regarding gds32.dll and instclient.exe
+
+2004-01-03 13:20  epocman
+
+	* firebird2/: builds/win32/make_all.bat,
+	builds/win32/msvc6/Firebird2.dsw,
+	builds/win32/msvc6/instclient.dsp,
+	src/utilities/install/install.cpp,
+	src/utilities/install/install_client.cpp,
+	src/utilities/install/install_nt.h,
+	src/utilities/install/install_proto.h,
+	src/utilities/install/servi_proto.h,
+	src/utilities/install/services.cpp,
+	builds/win32/msvc7/instclient.vcproj:
+	
+	Win32 HEAD porting of 1.5 branch RC8 latest updates, to keep HEAD
+	in synch with about to be released 1.5.  Please someone check and
+	adjust MSVC7 compile, cause I only have MSVC6.
+
+2004-01-03 12:40  epocman
+
+	* firebird2/src/utilities/: install_nt.h, servi_proto.h,
+	services.cpp:
+	
+	New helper function to check NT services status easier from other
+	tools (like control panel applet).  Mainly for P.Reeves useage for
+	now. The whole install helper functions is pending a OO rewrite in
+	HEAD branch.
+
+2004-01-03 11:59  robocop
+
+	* firebird2/src/: alice/alice.h, alice/alice_meta.epp,
+	alice/tdr.cpp, gpre/gpre.cpp, gpre/int.cpp, gpre/int_cxx.cpp,
+	journal/archive.cpp, journal/console.cpp, journal/rebuild.epp,
+	journal/server.epp, jrd/ail.cpp, jrd/blb.cpp, jrd/blf_proto.h,
+	jrd/blk.h, jrd/blob_filter.cpp, jrd/btr.cpp, jrd/btr_proto.h,
+	jrd/cch.cpp, jrd/cch.h, jrd/cmp.cpp, jrd/cmp_proto.h, jrd/common.h,
+	jrd/dbg.cpp, jrd/dbt.cpp, jrd/dfw.epp, jrd/dpm.epp, jrd/dyn.epp,
+	jrd/dyn.h, jrd/dyn_def.epp, jrd/dyn_mod.epp, jrd/dyn_util.epp,
+	jrd/err.cpp, jrd/event.h, jrd/evl.cpp, jrd/exe.cpp, jrd/ext.cpp,
+	jrd/fun.epp, jrd/gds.cpp, jrd/grant.epp, jrd/idx.cpp, jrd/inf.cpp,
+	jrd/ini.epp, jrd/isc.h, jrd/isc_s_proto.h, jrd/isc_sync.cpp,
+	jrd/jrd.cpp, jrd/jrd.h, jrd/jrn.cpp, jrd/jrn.h, jrd/met.epp,
+	jrd/met_proto.h, jrd/nav.cpp, jrd/old.cpp, jrd/opt.cpp,
+	jrd/pag.cpp, jrd/par.cpp, jrd/pcmet.epp, jrd/rec.cpp, jrd/req.h,
+	jrd/rlck.cpp, jrd/rng.cpp, jrd/rse.cpp, jrd/sch.cpp, jrd/scl.epp,
+	jrd/scl_proto.h, jrd/sdw.cpp, jrd/svc.h, jrd/thd.cpp, jrd/tra.cpp,
+	jrd/tra.h, jrd/val.cpp, jrd/vio.cpp, jrd/why.cpp,
+	jrd/os/vms/extvms.cpp, jrd/os/vms/jio.cpp, lock/lock.cpp,
+	lock/lock.h, misc/print.cpp, remote/allr.cpp, remote/inet.cpp,
+	remote/protocol.cpp, remote/remot_proto.h, remote/remote.cpp,
+	remote/remote.h, remote/server.cpp, remote/os/vms/chuser.cpp,
+	remote/os/win32/property.cpp, remote/os/win32/window.h,
+	remote/os/win32/winmain.cpp, remote/os/win32/wnet.cpp, wal/wal.h:
+	
+	Cleanup: const correctness BOOLEAN -> bool Vars in scope Formatting
+	JRD_REQ -> jrd_req* JRD_TRA -> jrd_tra* JRD_REL -> jrd_rel* JRD_FLD
+	-> jrd_fld* event -> event_t, EVENT_T dropped, EVENT should go in
+	the future Frank's corrections alice's STR -> alice_str* remote's
+	STR -> rem_str* etc.  It creates entities and backups and restores
+	for me. :-)
+
+2004-01-03 02:29  skidder
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, common.vcproj,
+	common_classic.vcproj, isql.vcproj:
+	
+	Fix up MSVC7 makefiles
+
 2004-01-02 15:32  epocman
 
 	* firebird2/src/utilities/install.cpp:
