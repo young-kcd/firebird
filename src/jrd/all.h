@@ -28,8 +28,9 @@
 #include "../common/classes/alloc.h"
 #include "../jrd/block_cache.h"
 #include "../jrd/lls.h"
+#include "fb_string.h"
 
-TEXT* ALL_cstring(const TEXT* in_string);
+TEXT* ALL_cstring(const Firebird::string& in_string);
 void ALL_fini(void);
 void ALL_init(void);
 //void ALL_push(BLK , LLS *);

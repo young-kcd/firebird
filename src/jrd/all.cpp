@@ -161,7 +161,7 @@ void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {
 	MemoryPool::deletePool(pool);
 }
 
-TEXT* ALL_cstring(const TEXT* in_string)
+TEXT* ALL_cstring(const Firebird::string& in_string)
 {
 /**************************************
  *
@@ -190,9 +190,8 @@ TEXT* ALL_cstring(const TEXT* in_string)
 			return NULL;
 	}
 
-	const size_t length = strlen(in_string);
-	TEXT* p = FB_NEW(*pool) TEXT[length + 1];
-	strcpy(p, in_string);
+	TEXT* p = FB_NEW(*pool) TEXT[in_string.length()];
+	strcpy(p, in_string.c_str());
 	return p;
 }
 
