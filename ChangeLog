@@ -1,3 +1,33 @@
+2004-04-23 20:39  brodsom
+
+	* firebird2/src/isql/: show.epp (1.39), extract.epp (1.30),
+	isql.epp (1.73):
+	
+	-Fix bug #223126 (Misplaced collation when extracting metadadata
+	with isql) -Fix bug #223513 (Ambiguity between tables and views)
+	-Fix bug #518349 (isql show mangles relationship) -Remove V33 stuff
+
+2004-04-23 10:00  hvlad
+
+	* firebird2/src/: common/classes/stack.h (1.4), jrd/idx.cpp (1.55),
+	jrd/opt.cpp (1.157):
+	
+	Added Stack::iterator::hasMore method. Replaced getCount() and
+	notEmpty() with hasMore() when it's possible
+
+2004-04-23 03:53  brodsom
+
+	* firebird2/src/include/gen/msg_facs.h (1.6):
+	
+	Update generated header with the actual content
+
+2004-04-23 03:43  brodsom
+
+	* firebird2/src/: misc/codes.epp (1.10), msgs/build_file.epp
+	(1.18):
+	
+	Update comment
+
 2004-04-22 16:49  alexpeshkoff
 
 	* firebird2/src/jrd/: dpm.epp (1.43), dpm_proto.h (1.15), vio.cpp
