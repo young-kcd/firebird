@@ -1,3 +1,31 @@
+2004-05-31 23:39  skidder
+
+	* firebird2/src/utilities/gstat/dba.epp (1.40):
+	
+	Fix gstat crash recently added by Blas
+
+2004-05-31 04:37  robocop
+
+	* firebird2/src/extlib/fbudf/: fbudf.cpp (1.15), fbudf.h (1.4):
+	
+	Use the vary struct as the engine does to know the length of a
+	varchar Style
+
+2004-05-31 04:35  robocop
+
+	* firebird2/src/isql/isql.epp (1.86):
+	
+	Function ADD should not mangle date inputs
+
+2004-05-31 04:34  robocop
+
+	* firebird2/src/: gpre/cmd.cpp (1.37), dudley/generate.cpp (1.16),
+	jrd/ini.epp (1.50), jrd/met.epp (1.129), jrd/sdw.cpp (1.49),
+	dsql/make.cpp (1.66):
+	
+	Changing some variables that have a trailing underscore to allow
+	conflict with C++ keywords or engine structs.
+
 2004-05-29 15:33  brodsom
 
 	* firebird2/src/jrd/: dls.cpp (1.23), dls_proto.h (1.12), isc.cpp
