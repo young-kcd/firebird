@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.25 2003-03-22 06:18:04 dimitr Exp $
+$Id: restore.epp,v 1.26 2003-04-07 21:51:17 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -900,7 +900,7 @@ if (record != rec_database)
 if (tdgbl->gbl_sw_page_size &&
     (tdgbl->gbl_sw_page_size < page_size))
     {
-    BURP_print (110, (void*) page_size, (void*) tdgbl->gbl_sw_page_size, NULL_PTR, NULL_PTR, NULL_PTR);
+    BURP_print (110, (void*) page_size, (void*) (ULONG) tdgbl->gbl_sw_page_size, NULL_PTR, NULL_PTR, NULL_PTR);
 /* msg 110 Reducing the database page size from %ld bytes to %ld bytes */
     }
 
@@ -1067,7 +1067,8 @@ while (p < end)
 	{
 	if (end - p < count)
 	    {
-	    BURP_print (202, (void*) count, (void*) (end - p), NULL_PTR, NULL_PTR, NULL_PTR);
+	    BURP_print (202, (void*) (SLONG) count,
+					(void*) (ULONG) (end - p), NULL_PTR, NULL_PTR, NULL_PTR);
 	    /* msg 202: adjusting a decompression length error: invalid length  %d was adjusted to %d */
 	    count = end - p;
 	    }
@@ -1077,7 +1078,8 @@ while (p < end)
 	{
 	if (end + count < p)
 	    {
-	    BURP_print(202, (void*) count, (void*) (p - end), NULL_PTR, NULL_PTR, NULL_PTR);
+	    BURP_print(202, (void*) (SLONG) count,
+				   (void*) (ULONG) (p - end), NULL_PTR, NULL_PTR, NULL_PTR);
 	    /* msg 202: adjusting a decompression length error: invalid length %d was adjusted to %d */
 	    count = p - end;
 	    }
@@ -1257,7 +1259,7 @@ while ((item = *p++) != gds_info_end)
 
 	default:
 		/* msg 79 don't understand blob info item %ld  */
-	    BURP_print (79, (void*) item, NULL, NULL, NULL, NULL);
+	    BURP_print (79, (void*) (ULONG) item, NULL, NULL, NULL, NULL);
 	    return FALSE;
 	}
     }
@@ -2421,10 +2423,10 @@ for (field = relation->rel_fields; field; field = field->fld_next)
 	    
 	default:   
 #ifdef SUPERSERVER
-	    BURP_svc_error (26, isc_arg_number, (void*)field->fld_type,
+	    BURP_svc_error (26, isc_arg_number, (void*) (SLONG) field->fld_type,
 			    0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #else
-	    BURP_error (26, (void*) field->fld_type, 0, 0, 0, 0);
+	    BURP_error (26, (void*) (SLONG) field->fld_type, 0, 0, 0, 0);
             /* msg 26 datatype %ld not understood */
 #endif
 	    break;
@@ -2534,10 +2536,10 @@ while (TRUE)
 	if (l != old_length)
 #ifdef SUPERSERVER
 	    BURP_svc_error(40, isc_arg_number, (void*)length,
-						 isc_arg_number, (void*)l,
+						 isc_arg_number, (void*) (ULONG) l,
 						 0, NULL, 0, NULL, 0, NULL);
 #else
-	    BURP_error (40, (void*) length, (void*) l, 0, 0, 0);
+	    BURP_error (40, (void*) length, (void*)(ULONG) l, 0, 0, 0);
 /* msg 40 wrong length record, expected %ld encountered %ld */
 #endif
 	}
@@ -2582,7 +2584,7 @@ while (TRUE)
     records++;
     
     if ((records % RESTORE_VERBOSE_INTERVAL)==0) 
-     BURP_verbose(107,(void*) records,NULL_PTR,NULL_PTR,NULL_PTR,NULL_PTR);
+     BURP_verbose(107,(void*) (SLONG) records,NULL_PTR,NULL_PTR,NULL_PTR,NULL_PTR);
     
     for (field = relation->rel_fields; field; field = field->fld_next)
 	if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
@@ -2708,7 +2710,7 @@ if (tdgbl->gbl_sw_incremental)
     if (gds_status [1])
         EXEC SQL SET TRANSACTION;
     }
-BURP_verbose (107, (void*) records, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
+BURP_verbose (107, (void*) (SLONG) records, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 /* msg 107 %ld records restored */
 
 return record;
@@ -2822,8 +2824,9 @@ switch (dtype)
 	    {
 	    *character_set_id = CS_JIS_0208;
 	    *collation_id = 0;
-	    BURP_verbose (237, (void*) *scale, (void*) *character_set_id, 
-			   (void*) *collation_id, NULL_PTR, NULL_PTR);
+	    BURP_verbose (237, (void*) (SLONG) *scale,
+					  (void*) (SLONG) *character_set_id, 
+					  (void*) (SLONG) *collation_id, NULL_PTR, NULL_PTR);
 		    /* msg 237: Converted V3 scale: %d to 
 		       character_set_id: %d and callate_id: %d. */
 	    *scale = 0;
@@ -2835,8 +2838,9 @@ switch (dtype)
 	    {
 	    *character_set_id = CS_EUCJ;
 	    *collation_id = 0;
-	    BURP_verbose (237, (void*) *scale, (void*) *character_set_id, 
-			    (void*) *collation_id, NULL_PTR, NULL_PTR);
+	    BURP_verbose (237, (void*) (SLONG) *scale,
+					  (void*) (SLONG) *character_set_id, 
+					  (void*) (SLONG) *collation_id, NULL_PTR, NULL_PTR);
 		    /* msg 237: Converted V3 scale: %d to 
 		       character_set_id: %d and callate_id: %d. */
 	    *scale = 0;
@@ -2859,8 +2863,9 @@ switch (dtype)
 		*character_set_id = sub_type_cvtbl [i].character_set_id;
 		*collation_id = sub_type_cvtbl [i].collation_id;
 
-		BURP_verbose (236, (void*) *sub_type, (void*) *character_set_id, 
-				(void*) *collation_id, NULL_PTR, NULL_PTR);
+		BURP_verbose (236, (void*) (SLONG) *sub_type,
+					 (void*) (SLONG) *character_set_id, 
+					 (void*) (SLONG) *collation_id, NULL_PTR, NULL_PTR);
 			/* msg 236: Converted V3 sub_type: %d to 
 			   character_set_id: %d and callate_id: %d. */
 
@@ -6386,7 +6391,7 @@ while (TRUE)
 	break;
     }
 
-BURP_verbose (106, (void*) records, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
+BURP_verbose (106, (void*) (ULONG) records, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 /* msg 106 %ld records ignored */
 
 return record;
@@ -6563,10 +6568,10 @@ flag = FALSE;
 
 if (tdgbl->RESTORE_format < 1 || tdgbl->RESTORE_format > ATT_BACKUP_FORMAT)
 #ifdef SUPERSERVER
-    BURP_svc_error (44, isc_arg_number, (void*)tdgbl->RESTORE_format,
+    BURP_svc_error (44, isc_arg_number, (void*)(ULONG)tdgbl->RESTORE_format,
 		    0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #else
-    BURP_error (44, (void*) tdgbl->RESTORE_format, 0, 0, 0, 0);
+    BURP_error (44, (void*)(ULONG) tdgbl->RESTORE_format, 0, 0, 0, 0);
 /* msg 44 Expected backup version 1, 2, or 3.  Found %ld */
 #endif
 
@@ -6586,10 +6591,10 @@ EXEC SQL SET TRANSACTION NAME tdgbl->global_trans ISOLATION LEVEL READ COMMITTED
 db_version = check_db_version();
 if (db_version < DB_VERSION_CURRENT)
 #ifdef SUPERSERVER
-    BURP_svc_error (51, isc_arg_number, (void*)db_version,
+    BURP_svc_error (51, isc_arg_number, (void*) (ULONG) db_version,
 		    0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #else
-    BURP_error (51, (void*) db_version, 0, 0, 0, 0);
+    BURP_error (51, (void*) (ULONG) db_version, 0, 0, 0, 0);
 /* msg 51 database format %ld is too old to restore to */
 #endif
 

@@ -948,11 +948,12 @@ int DLL_EXPORT BURP_gbak(int		argc,
 							0, NULL, 0, NULL);
 #else
 			/* msg 3 Page size specified (%ld) greater than limit (MAX_PAGE_SIZE bytes) */
-			BURP_error(3, (void*)tdgbl->gbl_sw_page_size, 0, 0, 0, 0);
+			BURP_error(3, (void*) (ULONG) tdgbl->gbl_sw_page_size, 0, 0, 0, 0);
 #endif
 		}
 		if (temp != tdgbl->gbl_sw_page_size) {
-			BURP_print(103, (TEXT *) tdgbl->gbl_sw_page_size, (TEXT *) temp,
+			BURP_print(103, (TEXT *) (ULONG) tdgbl->gbl_sw_page_size
+					   , (TEXT *) (SLONG) temp,
 					   0, 0, 0);	/* msg 103 page size specified (%ld bytes) rounded up to %ld bytes */
 			tdgbl->gbl_sw_page_size = temp;
 		}
@@ -1415,7 +1416,7 @@ void BURP_verbose(USHORT number,
 	if (tdgbl->gbl_sw_verbose)
 		BURP_print(number, arg1, arg2, arg3, arg4, arg5);
 	else
-		burp_output("");
+		burp_output("%s","");
 }
 
 }	// extern "C"
@@ -1662,7 +1663,7 @@ static SSHORT open_files(TEXT * file1,
 								0, NULL, 0, NULL, 0, NULL);
 #else
 				BURP_error(271, (TEXT *) fil->fil_length,
-						   (TEXT *) MIN_SPLIT_SIZE, 0, 0, 0);
+						   (TEXT *) (SLONG) MIN_SPLIT_SIZE, 0, 0, 0);
 				/* msg file size given (%d) is less than minimum allowed (%d) */
 #endif
 				flag = QUIT;

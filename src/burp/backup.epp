@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.19 2003-03-22 06:18:03 dimitr Exp $
+$Id: backup.epp,v 1.20 2003-04-07 21:51:21 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1418,7 +1418,7 @@ static void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 			break;
 
 		default:
-			BURP_error_redirect((STATUS*) NULL_PTR, 21, (void *) item, NULL);
+			BURP_error_redirect((STATUS*) NULL_PTR, 21, (void*) (ULONG) item, NULL);
 			/* msg 21 don't understand blob info item %ld */
 		}
 	}
@@ -1535,7 +1535,7 @@ static int put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 			break;
 
 		default:
-			BURP_print(79, (void *) item, NULL, NULL, NULL, NULL);
+			BURP_print(79, (void *) (ULONG) item, NULL, NULL, NULL, NULL);
 			/* msg 79 don't understand blob info item %ld  */
 			return FALSE;
 		}
@@ -1717,7 +1717,7 @@ static void put_data(BURP_REL relation)
 			break;
 
 		default:
-			BURP_error_redirect((STATUS*) NULL_PTR, 26, (void *) field->fld_type, NULL);
+			BURP_error_redirect((STATUS*) NULL_PTR, 26, (void *) (SLONG) field->fld_type, NULL);
 			/* msg 26 datatype %ld not understood */
 			break;
 		}
@@ -1869,7 +1869,7 @@ static void put_data(BURP_REL relation)
 		records++;
 		/* Verbose records */
 		if ((records % BACKUP_VERBOSE_INTERVAL) == 0)
-			BURP_verbose(108, (void *) records, NULL, NULL, NULL, NULL);
+			BURP_verbose(108, (void *) (SLONG) records, NULL, NULL, NULL, NULL);
 
 		PUT(rec_data);
 		PUT_NUMERIC(att_data_length, record_length);
@@ -1919,7 +1919,7 @@ static void put_data(BURP_REL relation)
 	if (xdr_buffer.lstr_address)
 		BURP_FREE(xdr_buffer.lstr_address);
 
-	BURP_verbose(108, (void *) records, NULL, NULL, NULL, NULL);
+	BURP_verbose(108, (void *) (SLONG) records, NULL, NULL, NULL, NULL);
 /* msg 108 %ld records written */
 
 	if (isc_release_request(status_vector, GDS_REF(request)))
@@ -1979,7 +1979,7 @@ static void put_index( BURP_REL relation)
 	
 	        if (count != (ULONG) X.RDB$SEGMENT_COUNT) 
 	       {
-	       BURP_print (180, X.RDB$INDEX_NAME, (void*) count, (void*) X.RDB$SEGMENT_COUNT, NULL, NULL);
+	       BURP_print (180, X.RDB$INDEX_NAME, (void*) count, (void*)(ULONG) X.RDB$SEGMENT_COUNT, NULL, NULL);
 	       continue; 
 	       }
 	
@@ -2052,7 +2052,7 @@ static void put_index( BURP_REL relation)
 	
 	        if (count != (ULONG) X.RDB$SEGMENT_COUNT) 
 	       {
-	       BURP_print (180, X.RDB$INDEX_NAME, (void*) count, (void*) X.RDB$SEGMENT_COUNT, NULL, NULL);
+	       BURP_print (180, X.RDB$INDEX_NAME, (void*) count, (void*)(ULONG) X.RDB$SEGMENT_COUNT, NULL, NULL);
 	       continue; 
 	       }
 	
@@ -2472,7 +2472,7 @@ static int put_source_blob(SCHAR		attribute,
 			break;
 
 		default:
-			BURP_print(79, (void *) item, NULL, NULL, NULL, NULL);
+			BURP_print(79, (void *) (ULONG) item, NULL, NULL, NULL, NULL);
 			/* msg 79 don't understand blob info item %ld  */
 			return FALSE;
 		}
@@ -2895,7 +2895,7 @@ static void write_database( TEXT * dbb_file)
 
 	PUT_ASCIZ(att_file_name, dbb_file);
 
-	BURP_verbose(77, dbb_file, (void *) page_size, NULL, NULL, NULL);
+	BURP_verbose(77, dbb_file, (void *) (ULONG) page_size, NULL, NULL, NULL);
 /* msg 77 database %s has a page size of %ld bytes. */
 
 	PUT(att_end);
