@@ -1287,7 +1287,7 @@ CsConvertAllocFunc INTL_csconvert_alloc_func(short from, short to)
 	return NULL;
 }
 
-/*
+#if 0
 //========================================================================================
 //========================================================================================
 //========================================================================================
@@ -1315,7 +1315,7 @@ CsConvertAllocFunc INTL_csconvert_alloc_func(short from, short to)
 	cache->texttype_tolower_table =         (BYTE *) NULL; \
 	cache->texttype_compress_table =        (BYTE *) NULL; \
 	cache->texttype_expand_table =          (BYTE *) NULL; \
-	cache->texttype_name =                  const_cast<char*>(POSIX); \
+	cache->texttype_name =                  const_cast<char*>(POSIX);
 
 
 
@@ -1329,7 +1329,7 @@ static USHORT ttype_ascii_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  *
  * Functional description
  *
- *************************************
+ *************************************/
 	static CONST ASCII POSIX[] = "C.ASCII";
 
 	FAMILY_INTERNAL(ttype_ascii, ttype_ascii_init, CS_ASCII, CC_C);
@@ -1348,7 +1348,7 @@ static USHORT ttype_none_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  *
  * Functional description
  *
- *************************************
+ *************************************/
 	static CONST ASCII POSIX[] = "C";
 
 	FAMILY_INTERNAL(ttype_none, ttype_none_init, CS_NONE, CC_C);
@@ -1369,7 +1369,7 @@ static USHORT ttype_unicode_fss_init(
  *
  * Functional description
  *
- *************************************
+ *************************************/
 	static CONST ASCII POSIX[] = "C.UNICODE_FSS";
 
 	FAMILY_INTERNAL(ttype_unicode_fss, ttype_unicode_fss_init, CS_UNICODE_FSS,
@@ -1392,7 +1392,7 @@ static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  *
  * Functional description
  *
- *************************************
+ *************************************/
 	static CONST ASCII POSIX[] = "C.OCTETS";
 
 	FAMILY_INTERNAL(ttype_binary, ttype_binary_init, CS_BINARY, CC_C);
@@ -1407,7 +1407,7 @@ static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
 
 /*
  *      Start of Character set definitions 
- *
+ */
 
 #define CHARSET_RETURN          return (0)
 
@@ -1427,7 +1427,7 @@ BYTE * from_unicode_tbl2)
  *
  * Functional description
  *
- *************************************
+ *************************************/
 
 	csptr->charset_version = 40;
 	csptr->charset_id = id;
@@ -1451,7 +1451,7 @@ static USHORT cs_ascii_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
  *
  * Functional description
  *
- *************************************
+ *************************************/
 
 	common_8bit_init(csptr, CS_ASCII, (ASCII *) "ASCII", NULL, NULL, NULL);
 	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_ASCII,
@@ -1472,7 +1472,7 @@ static USHORT cs_none_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
  *
  * Functional description
  *
- *************************************
+ *************************************/
 
 	common_8bit_init(csptr, CS_NONE, (ASCII *) "NONE", NULL, NULL, NULL);
 /*
@@ -1497,7 +1497,7 @@ static USHORT cs_unicode_fss_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
  *
  * Functional description
  *
- *************************************
+ *************************************/
 
 	common_8bit_init(csptr, CS_UNICODE_FSS, (ASCII *) "UNICODE_FSS", NULL,
 					 NULL, NULL);
@@ -1521,7 +1521,7 @@ static USHORT cs_unicode_ucs2_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
  *
  * Functional description
  *
- *************************************
+ *************************************/
 	static CONST WCHAR space = 0x0020;
 
 	csptr->charset_version = 40;
@@ -1547,7 +1547,7 @@ static USHORT cs_binary_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
  *
  * Functional description
  *
- *************************************
+ *************************************/
 
 	common_8bit_init(csptr, CS_BINARY, (ASCII *) "BINARY", NULL, NULL, NULL);
 	csptr->charset_space_character = (BYTE *) "\0";
@@ -1578,10 +1578,10 @@ static USHORT cvt_ascii_utf_init(
  *
  * Functional description
  *
- *************************************
+ *************************************/
 
 	common_convert_init(csptr, dest_cs, source_cs,
 						(FPTR_SHORT) cvt_utffss_to_ascii, NULL, NULL);
 	CONVERT_RETURN;
 }
-*/
+#endif
