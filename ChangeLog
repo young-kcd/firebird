@@ -1,3 +1,68 @@
+2004-09-18 01:34  skidder
+
+	* firebird2/src/: include/fb_types.h (1.25.2.2), jrd/jrd.cpp
+	(1.76.2.9), jrd/jrd.h (1.42.2.6), jrd/sch.cpp (1.6.2.5),
+	jrd/thd.cpp (1.19.2.3), jrd/thd.h (1.12.2.4), jrd/thd_proto.h
+	(1.2.4.1):
+	
+	Merge B1_5_1_AMD64 with its support for 64-bit NPTL builds (NPTL
+	uses 64-bit thread IDs) into B1_5_Release branch
+
+2004-09-17 22:34  skidder
+
+	* firebird2/: configure.in (1.141.2.26),
+	builds/posix/Makefile.in.client.gbak (1.6.2.2),
+	builds/posix/Makefile.in.client.gdef (1.5.2.2),
+	builds/posix/Makefile.in.client.gfix (1.7.2.2),
+	builds/posix/Makefile.in.client.gpre (1.9.2.3),
+	builds/posix/Makefile.in.client.isql (1.6.2.2),
+	builds/posix/Makefile.in.client.qli (1.1.2.2),
+	builds/posix/Makefile.in.client.util (1.9.2.4),
+	builds/posix/Makefile.in.embed.gbak (1.6.2.2),
+	builds/posix/Makefile.in.embed.gdef (1.5.2.2),
+	builds/posix/Makefile.in.embed.gfix (1.7.2.2),
+	builds/posix/Makefile.in.embed.gpre (1.9.2.3),
+	builds/posix/Makefile.in.embed.isql (1.6.2.2),
+	builds/posix/Makefile.in.embed.qli (1.10.2.2),
+	builds/posix/Makefile.in.embed.util (1.8.2.3),
+	builds/posix/Makefile.in.inet_server (1.11.2.3),
+	builds/posix/Makefile.in.intl (1.11.2.3),
+	builds/posix/Makefile.in.libfbclient (1.14.2.4),
+	builds/posix/Makefile.in.libfbembed (1.10.2.4),
+	builds/posix/fbintl.vers (1.2.2.1), builds/posix/firebird.vers
+	(1.3.2.1), builds/posix/make.defaults (1.25.2.8),
+	builds/posix/prefix.solx86gcc (1.1.2.6), doc/WhatsNew (1.36.2.21),
+	src/common/classes/alloc.cpp (1.29.2.3), src/common/classes/alloc.h
+	(1.21.2.5), src/common/classes/tree.h (1.13.2.4),
+	src/dudley/exe.epp (1.18.2.3), src/jrd/btr.h (1.6.2.3),
+	src/jrd/btr_proto.h (1.7.2.1), src/jrd/cch.h (1.2.4.1),
+	src/jrd/event.cpp (1.27.2.1), src/jrd/event.h (1.7.2.1),
+	src/jrd/jrd.h (1.42.2.5), src/jrd/vmsevent.cpp (1.5.2.1),
+	src/qli/meta.epp (1.17.2.2), src/remote/inet_server.cpp (1.26.2.1),
+	src/remote/server_stub.cpp (1.1.2.1),
+	src/remote/os/sun/server_main_dummy.cpp (1.2.2.1), src/wal/wal.cpp
+	(1.16.2.1), src/wal/wal.h (1.6.2.1), src/wal/walc.cpp (1.14.2.1),
+	src/wal/walw.cpp (1.20.2.1), src/wal/wstatus.cpp (1.6.2.1):
+	
+	Support GCC 3.4 build, backport version script at the same time
+	because we want to allow linking of C++ programs with Firebird and
+	GCC 3.4 cannot build hack we used for this purpose earlier
+
+2004-09-17 00:25  skidder
+
+	* firebird2/src/remote/os/sun/server_main_dummy.cpp (1.2):
+	
+	Cleanup
+
+2004-09-15 10:31  kkuznetsov
+
+	* firebird2/src/remote/os/sun/server_main_dummy.cpp (1.1):
+	
+		os/sun/server_main_dummy.cpp is a file with noop routine
+		server_main to put into libfbclient
+		if it defined by firebird.vers mapfile while
+		linking libfbclient with Sun-like LD
+
 2004-09-15 00:01  skidder
 
 	* firebird2/src/: common/classes/alloc.h (1.21.2.4),
@@ -251,6 +316,12 @@
 	
 	Putting Solaris changes from HEAD to R1_5
 
+2004-06-30 03:26  skidder
+
+	* firebird2/builds/posix/fbintl.vers (1.2):
+	
+	Change license for source files which I wrote
+
 2004-06-23 08:33  kkuznetsov
 
 	* firebird2/configure.in (1.141.2.22):
@@ -269,6 +340,12 @@
 	
 	Rolled back my bugfix until a proper solution is found.  It fixes
 	the v1.5.1 regression with UDFs.
+
+2004-06-16 17:41  kkuznetsov
+
+	* firebird2/builds/posix/firebird.vers (1.3):
+	
+	Commented out THD_* functions if using new style of thd
 
 2004-06-16 12:40  paul_reeves
 
@@ -301,6 +378,12 @@
 	* firebird2/doc/sql.extensions/README.universal_triggers (1.1.2.2):
 	
 	Corrected a typo.
+
+2004-06-08 14:10  kkuznetsov
+
+	* firebird2/builds/posix/firebird.vers (1.2):
+	
+	Some more solx86 commits
 
 2004-06-07 11:21  paul_reeves
 
@@ -1034,9 +1117,17 @@
 	
 	fixed problem with searching firebird.conf in $FIREBIRD for win32
 
+2004-03-26 17:06  skidder
+
+	* firebird2/builds/posix/fbintl.vers (1.1):
+	
+	add forgotten file
+
 2004-03-26 00:12  skidder
 
-	* firebird2/builds/posix/prefix.linux_amd64 (1.4):
+	* firebird2/: builds/posix/firebird.vers (1.1),
+	builds/posix/prefix.linux_amd64 (1.4), src/remote/server_stub.cpp
+	(1.1):
 	
 	1. POSIX build libraries export only public API. 2. Unify exports
 	for PROD_BUILD and DEV_BUILD. 3. Support for context memory pools.
