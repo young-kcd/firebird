@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.26 2003-03-09 21:07:27 skidder Exp $
+$Id: btr.cpp,v 1.27 2003-03-18 02:03:46 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -4134,14 +4134,14 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
  *	quantify.
  *
  **************************************/
-	UTEXT *p;
+	UCHAR *p;
 	USHORT n;
 
 	ib_fprintf(ib_stderr,
 			   "%20" QUADFORMAT
 			   "d  %4d  %.15e  %6d  ", value, scale, key.d_part, key.s_part);
 
-	p = (UTEXT *) & key;
+	p = (UCHAR *) & key;
 	for (n = 10; n--; n > 0)
 		ib_fprintf(ib_stderr, "%02x ", *p++);
 
