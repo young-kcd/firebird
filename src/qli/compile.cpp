@@ -56,18 +56,18 @@ static QLI_NOD compile_print_list(QLI_NOD, QLI_REQ, LLS *);
 static QLI_NOD compile_prompt(QLI_NOD);
 static QLI_NOD compile_repeat(QLI_NOD, QLI_REQ, int);
 static QLI_NOD compile_report(QLI_NOD, QLI_REQ);
-static QLI_REQ compile_rse(QLI_NOD, QLI_REQ, int, MSG *, MSG *, DBB *);
+static QLI_REQ compile_rse(QLI_NOD, QLI_REQ, int, QLI_MSG *, QLI_MSG *, DBB *);
 static QLI_NOD compile_statement(QLI_NOD, QLI_REQ, int);
 static QLI_NOD compile_statistical(QLI_NOD, QLI_REQ, int);
 static QLI_NOD compile_store(QLI_NOD, QLI_REQ, int);
 static int computable(QLI_NOD, QLI_REQ);
 static void make_descriptor(QLI_NOD, DSC *);
-static MSG make_message(QLI_REQ);
+static QLI_MSG make_message(QLI_REQ);
 static void make_missing_reference(PAR);
-static PAR make_parameter(MSG, QLI_NOD);
-static QLI_NOD make_reference(QLI_NOD, MSG);
+static PAR make_parameter(QLI_MSG, QLI_NOD);
+static QLI_NOD make_reference(QLI_NOD, QLI_MSG);
 static QLI_REQ make_request(DBB);
-static void release_message(MSG);
+static void release_message(QLI_MSG);
 static int string_length(DSC *);
 
 static LLS print_items;
@@ -213,7 +213,7 @@ static QLI_NOD compile_any( QLI_NOD node, QLI_REQ old_request, int internal_flag
  *	Compile either an ANY or UNIQUE boolean expression.
  *
  **************************************/
-	MSG send, receive, old_send = NULL, old_receive = NULL, next;
+	QLI_MSG send, receive, old_send = NULL, old_receive = NULL, next;
 	QLI_REQ request;
 	PAR parameter;
 
@@ -707,7 +707,7 @@ static QLI_NOD compile_field( QLI_NOD node, QLI_REQ request, int internal_flag)
 	QLI_NOD reference;
 	QLI_CTX context;
 	PAR parm;
-	MSG message;
+	QLI_MSG message;
 	FLD field;
 
 /* Pick up field characteristics */
@@ -766,7 +766,7 @@ static QLI_NOD compile_for( QLI_NOD node, QLI_REQ old_request, int internal_flag
  *	request, dandy.
  *
  **************************************/
-	MSG send, receive, old_send = NULL, old_receive = NULL;
+	QLI_MSG send, receive, old_send = NULL, old_receive = NULL;
 	QLI_REQ request;
 	PAR parameter;
 
@@ -834,7 +834,7 @@ static QLI_NOD compile_function( QLI_NOD node, QLI_REQ old_request, int internal
  **************************************/
 	QLI_NOD value, *ptr, *end, list;
 	FUN function;
-	MSG send, receive, old_send = NULL, old_receive = NULL;
+	QLI_MSG send, receive, old_send = NULL, old_receive = NULL;
 	QLI_REQ request;
 	PAR parameter;
 
@@ -972,7 +972,7 @@ static QLI_NOD compile_modify( QLI_NOD node, QLI_REQ org_request, int internal_f
  **************************************/
 	QLI_REQ request;
 	QLI_CTX context;
-	MSG send, old_send;
+	QLI_MSG send, old_send;
 	QLI_NOD *ptr;
 	USHORT i;
 
@@ -1214,7 +1214,7 @@ static QLI_REQ compile_rse(
 					   QLI_NOD node,
 					   QLI_REQ old_request,
 					   int internal_flag,
-					   MSG * send, MSG * receive, DBB * database)
+					   QLI_MSG * send, QLI_MSG * receive, DBB * database)
 {
 /**************************************
  *
@@ -1415,7 +1415,7 @@ static QLI_NOD compile_statistical( QLI_NOD node, QLI_REQ old_request, int inter
  *
  **************************************/
 	QLI_NOD value;
-	MSG send, receive, old_send = NULL, old_receive = NULL;
+	QLI_MSG send, receive, old_send = NULL, old_receive = NULL;
 	QLI_REQ request;
 	PAR parameter;
 
@@ -1489,7 +1489,7 @@ static QLI_NOD compile_store( QLI_NOD node, QLI_REQ request, int internal_flag)
  **************************************/
 	QLI_CTX context;
 	QLI_REL relation;
-	MSG send;
+	QLI_MSG send;
 	QLI_REQ new_request;
 	PAR parameter;
 
@@ -1913,7 +1913,7 @@ static void make_descriptor( QLI_NOD node, DSC * desc)
 }
 
 
-static MSG make_message( QLI_REQ request)
+static QLI_MSG make_message( QLI_REQ request)
 {
 /**************************************
  *
@@ -1925,9 +1925,9 @@ static MSG make_message( QLI_REQ request)
  *	Allocate a message block for a request.
  *
  **************************************/
-	MSG message;
+	QLI_MSG message;
 
-	message = (MSG) ALLOCDV(type_msg, 0);
+	message = (QLI_MSG) ALLOCDV(type_msg, 0);
 	message->msg_request = request;
 	message->msg_next = request->req_messages;
 	request->req_messages = message;
@@ -1961,7 +1961,7 @@ static void make_missing_reference( PAR parameter)
 }
 
 
-static PAR make_parameter( MSG message, QLI_NOD node)
+static PAR make_parameter( QLI_MSG message, QLI_NOD node)
 {
 /**************************************
  *
@@ -1988,7 +1988,7 @@ static PAR make_parameter( MSG message, QLI_NOD node)
 }
 
 
-static QLI_NOD make_reference( QLI_NOD node, MSG message)
+static QLI_NOD make_reference( QLI_NOD node, QLI_MSG message)
 {
 /**************************************
  *
@@ -2062,7 +2062,7 @@ static QLI_REQ make_request( DBB dbb)
 }
 
 
-static void release_message( MSG message)
+static void release_message( QLI_MSG message)
 {
 /**************************************
  *
@@ -2074,7 +2074,7 @@ static void release_message( MSG message)
  *	A message block is unneeded, so release it.
  *
  **************************************/
-	MSG *ptr;
+	QLI_MSG *ptr;
 	QLI_REQ request;
 
 	request = message->msg_request;

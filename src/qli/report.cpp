@@ -37,7 +37,7 @@
 static void bottom_break(BRK, PRT);
 static void increment_break(BRK);
 static void initialize_break(BRK);
-static int test_break(BRK, RPT, MSG);
+static int test_break(BRK, RPT, QLI_MSG);
 static void top_break(BRK, PRT);
 static void top_of_page(PRT, BOOLEAN);
 
@@ -62,7 +62,7 @@ void RPT_report( QLI_NOD loop)
 	RPT report;
 	QLI_NOD node, output;
 	QLI_REQ request;
-	MSG message;
+	QLI_MSG message;
 	DSC *desc;
 	BRK control;
 	STR string;
@@ -83,14 +83,14 @@ void RPT_report( QLI_NOD loop)
    send a message slong with it. */
 
 	if (request = (QLI_REQ) loop->nod_arg[e_for_request])
-		EXEC_start_request(request, (MSG) loop->nod_arg[e_for_send]);
-	else if (message = (MSG) loop->nod_arg[e_for_send])
+		EXEC_start_request(request, (QLI_MSG) loop->nod_arg[e_for_send]);
+	else if (message = (QLI_MSG) loop->nod_arg[e_for_send])
 		EXEC_send(message);
 
 /* Receive messages in a loop until the end of file field comes up
    true. */
 
-	message = (MSG) loop->nod_arg[e_for_receive];
+	message = (QLI_MSG) loop->nod_arg[e_for_receive];
 
 /* Get the first record of the record.  If there isn't anything,
    don't worry about anything. */
@@ -241,7 +241,7 @@ static void initialize_break( BRK control)
 }
 
 
-static int test_break( BRK control, RPT report, MSG message)
+static int test_break( BRK control, RPT report, QLI_MSG message)
 {
 /**************************************
  *

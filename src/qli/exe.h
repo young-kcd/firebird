@@ -52,10 +52,10 @@ typedef struct req {
     struct dbb	*req_database;		/* Database for request */
     int		*req_handle;		/* Database request handle */
     struct rlb	*req_blr;
-    struct msg	*req_messages;		/* Messages associated with request */
-    struct msg	*req_receive;		/* Current receive message, if any  */
-    struct msg	*req_send;		/* Current send message, if any  */
-    struct msg	*req_continue;		/* Message to continue FOR loop after optional actions */
+    struct qli_msg	*req_messages;		/* Messages associated with request */
+    struct qli_msg	*req_receive;		/* Current receive message, if any  */
+    struct qli_msg	*req_send;		/* Current send message, if any  */
+    struct qli_msg	*req_continue;		/* Message to continue FOR loop after optional actions */
     USHORT	req_flags;		/* Flags for state of request compilation, etc. */
     USHORT	req_context;		/* Next available context */
     USHORT	req_msg_number;		/* Next available message number */
@@ -88,7 +88,7 @@ typedef struct ctx {
     struct frm	*ctx_form;		/* Form block, if any */
     struct fld	*ctx_variable;		/* Variable reference */
     struct req	*ctx_request;		/* Request block */
-    struct msg	*ctx_message;		/* Message for data */
+    struct qli_msg	*ctx_message;		/* Message for data */
     struct nod	*ctx_rse;		/* RSE node for root context */
     struct nod	*ctx_sub_rse;		/* RSE node aggregate */
     struct ctx	*ctx_parent;		/* Parent context for map */
@@ -107,17 +107,17 @@ typedef struct map {
 
 /* Message block */                                       
 
-typedef struct msg {
+typedef struct qli_msg {
     struct blk	msg_header;
     struct req	*msg_request;		/* Parent request */
     struct ctx	*msg_context;		/* Contexts in message */
-    struct msg	*msg_next;		/* Next message in request */
+    struct qli_msg	*msg_next;		/* Next message in request */
     struct par	*msg_parameters;	/* Field instances */
     USHORT	msg_number;		/* Message number */
     USHORT	msg_length;		/* Message length */
     USHORT	msg_parameter;		/* Next parameter number */
     UCHAR	*msg_buffer;		/* Message buffer */
-} *MSG;
+} *QLI_MSG;
 
 /* Field Instance */
 
@@ -125,7 +125,7 @@ typedef struct par {
     struct blk	par_header;
     DSC		par_desc;		/* Value descriptor */
     struct par	*par_next;		/* Next par block in context */
-    struct msg	*par_message;		/* Parent message */
+    struct qli_msg	*par_message;		/* Parent message */
     struct nod	*par_value;		/* Value */
     USHORT	par_parameter;		/* Parameter number */
     USHORT	par_offset;		/* Offset of parameter in message */

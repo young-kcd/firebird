@@ -225,7 +225,7 @@ int FORM_get_blob( NOD value, PAR parameter)
  *	Copy blob from form to database.
  *
  **************************************/
-	MSG message;
+	QLI_MSG message;
 	REQ request;
 	DBB dbb;
 	DSC *desc;

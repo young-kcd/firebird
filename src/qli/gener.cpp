@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.7 2002-11-17 00:12:51 hippoman Exp $
+$Id: gener.cpp,v 1.8 2002-11-19 12:38:35 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -63,7 +63,7 @@ static void gen_print_list(QLI_NOD, QLI_REQ);
 static void gen_report(QLI_NOD, QLI_REQ);
 static void gen_request(QLI_REQ);
 static void gen_rse(QLI_NOD, QLI_REQ);
-static void gen_send_receive(MSG, USHORT);
+static void gen_send_receive(QLI_MSG, USHORT);
 static void gen_sort(QLI_NOD, QLI_REQ, UCHAR);
 static void gen_statement(QLI_NOD, QLI_REQ);
 static void gen_statistical(QLI_NOD, QLI_REQ);
@@ -469,7 +469,7 @@ static void gen_any( QLI_NOD node, QLI_REQ request)
 	RLB rlb;
 	FLD field;
 	QLI_CTX context;
-	MSG send, receive;
+	QLI_MSG send, receive;
 	DSC desc;
 	USHORT i, value;
 
@@ -479,9 +479,9 @@ static void gen_any( QLI_NOD node, QLI_REQ request)
 	if (new_request = (QLI_REQ) node->nod_arg[e_any_request]) {
 		request = new_request;
 		gen_request(request);
-		if (receive = (MSG) node->nod_arg[e_any_send])
+		if (receive = (QLI_MSG) node->nod_arg[e_any_send])
 			gen_send_receive(receive, blr_receive);
-		send = (MSG) node->nod_arg[e_any_receive];
+		send = (QLI_MSG) node->nod_arg[e_any_receive];
 		gen_send_receive(send, blr_send);
 		rlb = CHECK_RLB(request->req_blr);
 		STUFF(blr_if);
@@ -750,10 +750,10 @@ static void gen_erase( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	QLI_CTX context;
-	MSG message;
+	QLI_MSG message;
 	RLB rlb;
 
-	if (message = (MSG) node->nod_arg[e_era_message]) {
+	if (message = (QLI_MSG) node->nod_arg[e_era_message]) {
 		request = (QLI_REQ) node->nod_arg[e_era_request];
 		gen_send_receive(message, blr_receive);
 	}
@@ -1064,7 +1064,7 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
  *	Generate BLR for a FOR loop, included synchronization messages.
  *
  **************************************/
-	MSG message, continuation;
+	QLI_MSG message, continuation;
 	PAR parameter, eof;
 	DSC desc;
 	STR string;
@@ -1086,13 +1086,13 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 /* If the statement requires an end of file marker, build a BEGIN/END around
    the whole statement. */
 
-	if (message = (MSG) node->nod_arg[e_for_receive])
+	if (message = (QLI_MSG) node->nod_arg[e_for_receive])
 		STUFF(blr_begin);
 
 /* If there is a message to be sent, build a receive for it */
 
 	if (node->nod_arg[e_for_send])
-		gen_send_receive((MSG) node->nod_arg[e_for_send], blr_receive);
+		gen_send_receive((QLI_MSG) node->nod_arg[e_for_send], blr_receive);
 
 /* Generate the FOR loop proper. */
 
@@ -1188,7 +1188,7 @@ static void gen_function( QLI_NOD node, QLI_REQ request)
 	FUN function;
 	SYM symbol;
 	QLI_CTX context;
-	MSG send, receive;
+	QLI_MSG send, receive;
 	USHORT i;
 	UCHAR *p;
 	RLB rlb;
@@ -1203,9 +1203,9 @@ static void gen_function( QLI_NOD node, QLI_REQ request)
 	else if (new_request = (QLI_REQ) node->nod_arg[e_fun_request]) {
 		request = new_request;
 		gen_request(request);
-		if (receive = (MSG) node->nod_arg[e_fun_send])
+		if (receive = (QLI_MSG) node->nod_arg[e_fun_send])
 			gen_send_receive(receive, blr_receive);
-		send = (MSG) node->nod_arg[e_fun_receive];
+		send = (QLI_MSG) node->nod_arg[e_fun_receive];
 		gen_send_receive(send, blr_send);
 		rlb = CHECK_RLB(request->req_blr);
 		STUFF(blr_assignment);
@@ -1394,7 +1394,7 @@ static void gen_modify( QLI_NOD node, QLI_REQ org_request)
 	rlb = CHECK_RLB(request->req_blr);
 
 	if (node->nod_arg[e_mod_send])
-		gen_send_receive((MSG) node->nod_arg[e_mod_send], blr_receive);
+		gen_send_receive((QLI_MSG) node->nod_arg[e_mod_send], blr_receive);
 
 	for (ptr = &node->nod_arg[e_mod_count], end = ptr + node->nod_count;
 		 ptr < end; ptr++) {
@@ -1422,7 +1422,7 @@ static void gen_parameter( PAR parameter, QLI_REQ request)
  *	Generate a simple parameter reference.
  *
  **************************************/
-	MSG message;
+	QLI_MSG message;
 	RLB rlb;
 
 	rlb = CHECK_RLB(request->req_blr);
@@ -1508,7 +1508,7 @@ static void gen_request( QLI_REQ request)
  *	Prepare to generation and compile a request.
  *
  **************************************/
-	MSG message;
+	QLI_MSG message;
 	PAR param, missing_param;
 	STR string;
 	DSC *desc;
@@ -1665,7 +1665,7 @@ static void gen_rse( QLI_NOD node, QLI_REQ request)
 }
 
 
-static void gen_send_receive( MSG message, USHORT operatr)
+static void gen_send_receive( QLI_MSG message, USHORT operatr)
 {
 /**************************************
  *
@@ -1822,7 +1822,7 @@ static void gen_statistical( QLI_NOD node, QLI_REQ request)
 	QLI_REQ new_request;
 	FLD field;
 	QLI_CTX context;
-	MSG send, receive;
+	QLI_MSG send, receive;
 	USHORT operatr, i;
 	RLB rlb;
 
@@ -1887,9 +1887,9 @@ static void gen_statistical( QLI_NOD node, QLI_REQ request)
 	if (new_request = (QLI_REQ) node->nod_arg[e_stt_request]) {
 		request = new_request;
 		gen_request(request);
-		if (receive = (MSG) node->nod_arg[e_stt_send])
+		if (receive = (QLI_MSG) node->nod_arg[e_stt_send])
 			gen_send_receive(receive, blr_receive);
-		send = (MSG) node->nod_arg[e_stt_receive];
+		send = (QLI_MSG) node->nod_arg[e_stt_receive];
 		gen_send_receive(send, blr_send);
 		rlb = CHECK_RLB(request->req_blr);
 		STUFF(blr_assignment);
@@ -1930,7 +1930,7 @@ static void gen_store( QLI_NOD node, QLI_REQ request)
  *	Generate code for STORE statement.
  *
  **************************************/
-	MSG message;
+	QLI_MSG message;
 	QLI_REL relation;
 	QLI_CTX context;
 	RLB rlb;
@@ -1948,7 +1948,7 @@ static void gen_store( QLI_NOD node, QLI_REQ request)
 /* If there is a message to be sent, build a receive for it */
 
 	if (node->nod_arg[e_sto_send])
-		gen_send_receive((MSG) node->nod_arg[e_sto_send], blr_receive);
+		gen_send_receive((QLI_MSG) node->nod_arg[e_sto_send], blr_receive);
 
 /* Generate the STORE statement proper. */
 

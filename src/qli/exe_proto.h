@@ -29,9 +29,9 @@ extern void		EXEC_execute (struct nod *);
 extern void		*EXEC_open_blob (struct nod *);
 extern struct file	*EXEC_open_output (struct nod *);
 extern void		EXEC_poll_abort (void);
-extern struct dsc	*EXEC_receive (struct msg *, struct par *);
-extern void		EXEC_send (struct msg *);
-extern void		EXEC_start_request (struct req *, struct msg *);
+extern struct dsc	*EXEC_receive (struct qli_msg *, struct par *);
+extern void		EXEC_send (struct qli_msg *);
+extern void		EXEC_start_request (struct req *, struct qli_msg *);
 extern void		EXEC_top (struct nod *);
 
 #endif /* _QLI_EXE_PROTO_H_ */

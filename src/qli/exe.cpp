@@ -75,9 +75,9 @@ static void execute_output(QLI_NOD);
 static void execute_print(QLI_NOD);
 static void execute_repeat(QLI_NOD);
 static void execute_store(QLI_NOD);
-static void map_data(MSG);
+static void map_data(QLI_MSG);
 static void print_counts(QLI_REQ);
-static void set_null(MSG);
+static void set_null(QLI_MSG);
 static void transaction_state(QLI_NOD, DBB);
 
 /* definitions for SET COUNT */
@@ -129,7 +129,7 @@ void EXEC_execute( QLI_NOD node)
  *	Execute a node.
  *
  **************************************/
-	MSG message;
+	QLI_MSG message;
 	QLI_NOD *ptr;
 	USHORT i;
 
@@ -150,7 +150,7 @@ void EXEC_execute( QLI_NOD node)
 			return;
 
 		case nod_erase:
-			if (message = (MSG) node->nod_arg[e_era_message])
+			if (message = (QLI_MSG) node->nod_arg[e_era_message])
 				EXEC_send(message);
 			return;
 
@@ -394,7 +394,7 @@ void EXEC_poll_abort(void)
 }
 
 
-DSC *EXEC_receive(MSG message, PAR parameter)
+DSC *EXEC_receive(QLI_MSG message, PAR parameter)
 {
 /**************************************
  *
@@ -425,7 +425,7 @@ DSC *EXEC_receive(MSG message, PAR parameter)
 }
 
 
-void EXEC_send( MSG message)
+void EXEC_send( QLI_MSG message)
 {
 /**************************************
  *
@@ -453,7 +453,7 @@ void EXEC_send( MSG message)
 }
 
 
-void EXEC_start_request( QLI_REQ request, MSG message)
+void EXEC_start_request( QLI_REQ request, QLI_MSG message)
 {
 /**************************************
  *
@@ -523,7 +523,7 @@ static DSC *assignment(	QLI_NOD		from_node,
  **************************************/
 	DSC *from_desc;
 	UCHAR *p;
-	MSG message;
+	QLI_MSG message;
 	USHORT l, *missing_flag, trash;
 	jmp_buf old_env;
 	jmp_buf env;
@@ -676,7 +676,7 @@ static int copy_blob( QLI_NOD value, PAR parameter)
  *
  **************************************/
 	QLI_CTX context;
-	MSG message;
+	QLI_MSG message;
 	QLI_REQ from_request, to_request;
 	DBB to_dbb, from_dbb;
 	DSC *from_desc, *to_desc;
@@ -933,21 +933,21 @@ static void execute_for( QLI_NOD node)
  *
  **************************************/
 	QLI_REQ request;
-	MSG message;
+	QLI_MSG message;
 	DSC *desc;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
 	if (request = (QLI_REQ) node->nod_arg[e_for_request])
-		EXEC_start_request(request, (MSG) node->nod_arg[e_for_send]);
-	else if (message = (MSG) node->nod_arg[e_for_send])
+		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_for_send]);
+	else if (message = (QLI_MSG) node->nod_arg[e_for_send])
 		EXEC_send(message);
 
 /* If there isn't a receive message, the body of the loop has been
    optimized out of existance.  So skip it. */
 
-	if (!(message = (MSG) node->nod_arg[e_for_receive]))
+	if (!(message = (QLI_MSG) node->nod_arg[e_for_receive]))
 		goto count;
 
 /* Receive messages in a loop until the end of file field comes up
@@ -981,13 +981,13 @@ static void execute_modify( QLI_NOD node)
  *	message to the running request and executing a sub-statement.
  *
  **************************************/
-	MSG message;
+	QLI_MSG message;
 
 
 	if (node->nod_flags & NOD_remote)
 		return;
 
-	if (message = (MSG) node->nod_arg[e_mod_send])
+	if (message = (QLI_MSG) node->nod_arg[e_mod_send])
 		set_null(message);
 
 	EXEC_execute(node->nod_arg[e_mod_statement]);
@@ -1101,9 +1101,9 @@ static void execute_store( QLI_NOD node)
  *
  **************************************/
 	QLI_REQ request;
-	MSG message;
+	QLI_MSG message;
 
-	if (message = (MSG) node->nod_arg[e_sto_send])
+	if (message = (QLI_MSG) node->nod_arg[e_sto_send])
 		set_null(message);
 
 	if (!(node->nod_flags & NOD_remote))
@@ -1113,7 +1113,7 @@ static void execute_store( QLI_NOD node)
    send a message along with it. */
 
 	if (request = (QLI_REQ) node->nod_arg[e_sto_request])
-		EXEC_start_request(request, (MSG) node->nod_arg[e_sto_send]);
+		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_sto_send]);
 	else if (message)
 		EXEC_send(message);
 
@@ -1122,7 +1122,7 @@ static void execute_store( QLI_NOD node)
 }
 
 
-static void map_data( MSG message)
+static void map_data( QLI_MSG message)
 {
 /**************************************
  *
@@ -1218,7 +1218,7 @@ static void print_counts( QLI_REQ request)
 }
 
 
-static void set_null( MSG message)
+static void set_null( QLI_MSG message)
 {
 /**************************************
  *

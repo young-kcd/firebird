@@ -36,7 +36,7 @@ BLKDEF (type_lls, lls, 0)				/* linked list stack */
 BLKDEF (type_str, str, 1)				/* random string block */
 BLKDEF (type_tok, tok, 1)				/* token block */
 BLKDEF (type_sym, sym, 1)				/* symbol block */
-BLKDEF (type_msg, msg, 0)				/* Message block */
+BLKDEF (type_msg, qli_msg, 0)				/* Message block */
 BLKDEF (type_nam, nam, 1)				/* Name node */
 BLKDEF (type_ctx, ctx, 0)				/* Context block */
 BLKDEF (type_con, con, 1)				/* Constant block */

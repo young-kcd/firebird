@@ -335,7 +335,7 @@ DSC *EVAL_parameter(PAR parameter)
  *
  **************************************/
 	DSC *desc;
-	MSG message;
+	QLI_MSG message;
 	PAR missing_parameter;
 	USHORT *missing_flag;
 
@@ -592,18 +592,18 @@ static SLONG execute_any( QLI_NOD node)
  *
  **************************************/
 	QLI_REQ request;
-	MSG message;
+	QLI_MSG message;
 	USHORT *flag;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
 	if (request = (QLI_REQ) node->nod_arg[e_any_request])
-		EXEC_start_request(request, (MSG) node->nod_arg[e_any_send]);
-	else if (message = (MSG) node->nod_arg[e_any_send])
+		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_any_send]);
+	else if (message = (QLI_MSG) node->nod_arg[e_any_send])
 		EXEC_send(message);
 
-	message = (MSG) node->nod_arg[e_any_receive];
+	message = (QLI_MSG) node->nod_arg[e_any_receive];
 	EXEC_receive(message, 0);
 
 	return MOVQ_get_long(EVAL_parameter(node->nod_import), 0);
@@ -713,18 +713,18 @@ static DSC *execute_function( QLI_NOD node)
  *
  **************************************/
 	QLI_REQ request;
-	MSG message;
+	QLI_MSG message;
 	PAR parameter;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
 	if (request = (QLI_REQ) node->nod_arg[e_fun_request])
-		EXEC_start_request(request, (MSG) node->nod_arg[e_fun_send]);
-	else if (message = (MSG) node->nod_arg[e_fun_send])
+		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_fun_send]);
+	else if (message = (QLI_MSG) node->nod_arg[e_fun_send])
 		EXEC_send(message);
 
-	return EXEC_receive((MSG) node->nod_arg[e_fun_receive], node->nod_import);
+	return EXEC_receive((QLI_MSG) node->nod_arg[e_fun_receive], node->nod_import);
 }
 
 
@@ -825,18 +825,18 @@ static DSC *execute_statistical( QLI_NOD node)
  *
  **************************************/
 	QLI_REQ request;
-	MSG message;
+	QLI_MSG message;
 	PAR parameter;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
 	if (request = (QLI_REQ) node->nod_arg[e_stt_request])
-		EXEC_start_request(request, (MSG) node->nod_arg[e_stt_send]);
-	else if (message = (MSG) node->nod_arg[e_stt_send])
+		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_stt_send]);
+	else if (message = (QLI_MSG) node->nod_arg[e_stt_send])
 		EXEC_send(message);
 
-	return EXEC_receive((MSG) node->nod_arg[e_stt_receive], node->nod_import);
+	return EXEC_receive((QLI_MSG) node->nod_arg[e_stt_receive], node->nod_import);
 }
 
 
