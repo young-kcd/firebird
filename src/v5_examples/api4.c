@@ -56,7 +56,7 @@ ARGLIST(char **argv)
     char            dept_no[4];
     double          percent_inc;
     short           flag0 = 0, flag1 = 0;
-    XSQLDA  ISC_FAR *sqlda;
+    XSQLDA         *sqlda;
     long            sqlcode;
     char            empdb[128];
 
@@ -71,12 +71,12 @@ ARGLIST(char **argv)
     }
 
     /* Allocate an input SQLDA.  There are two unknown parameters. */
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(2));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(2));
     sqlda->sqln = 2;
     sqlda->sqld = 2;
     sqlda->version = 1;
 
-    sqlda->sqlvar[0].sqldata = (char ISC_FAR *) &percent_inc;
+    sqlda->sqlvar[0].sqldata = (char *) &percent_inc;
     sqlda->sqlvar[0].sqltype = SQL_DOUBLE + 1;
     sqlda->sqlvar[0].sqllen  = sizeof(percent_inc);
     sqlda->sqlvar[0].sqlind  = &flag0;

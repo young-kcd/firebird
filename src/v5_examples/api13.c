@@ -52,7 +52,7 @@ ARGLIST(char **argv)
                         db2 = NULL;        /* handle for database 2 */
     isc_tr_handle       trans1 = NULL;     /* transaction handle */
     ISC_STATUS          status[ISC_STATUS_LENGTH];
-    XSQLDA ISC_FAR *    sel_sqlda;
+    XSQLDA *            sel_sqlda;
     isc_stmt_handle     stmt = NULL;
     long                stat1, stat2, stat3;
     char                empdb[128], empdb2[128];
@@ -93,7 +93,7 @@ ARGLIST(char **argv)
 
     sprintf(buf, "SELECT currency FROM country WHERE country = '%s'", country);
 
-    sel_sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+    sel_sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
     sel_sqlda->sqln = 1;
     sel_sqlda->version = 1;
  

@@ -33,12 +33,12 @@
 #include "example.h"
 #include <ibase.h>
 
-int pr_error (long ISC_FAR *, char ISC_FAR *);
+int pr_error (long *, char *);
 
 
 
-static char ISC_FAR *create_tbl  = "CREATE TABLE dbinfo (when_created DATE)";
-static char ISC_FAR *insert_date = "INSERT INTO dbinfo VALUES ('NOW')";
+static char *create_tbl  = "CREATE TABLE dbinfo (when_created DATE)";
+static char *insert_date = "INSERT INTO dbinfo VALUES ('NOW')";
 
 int main (ARG(int, argc), ARG(char **, argv))
 ARGLIST(int argc)
@@ -125,9 +125,9 @@ ARGLIST(char **argv)
  *    Print the status, the SQLCODE, and exit.
  *    Also, indicate which operation the error occured on.
  */
-int pr_error (ARG(long ISC_FAR *, status), ARG(char ISC_FAR *, operation))
-ARGLIST(long ISC_FAR * status)
-ARGLIST(char ISC_FAR * operation)                                         
+int pr_error (ARG(long *, status), ARG(char *, operation))
+ARGLIST(long * status)
+ARGLIST(char * operation)                                         
 {
     printf("[\n");
     printf("PROBLEM ON \"%s\".\n", operation);

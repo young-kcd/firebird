@@ -53,10 +53,10 @@ ARGLIST(char **argv)
     char            password[31];
 
     /* Query to find current user name */
-    static char ISC_FAR *query = "SELECT USER FROM RDB$DATABASE";
-    char ISC_FAR *  dpb = NULL,    /* DB parameter buffer */
+    static char *query = "SELECT USER FROM RDB$DATABASE";
+    char *  dpb = NULL,    /* DB parameter buffer */
                     *d, *p, *copy;
-    XSQLDA ISC_FAR  *sqlda;
+    XSQLDA *sqlda;
 
     short           dpb_length = 0;
     long            l,sweep_interval = 16384;
@@ -99,7 +99,7 @@ ARGLIST(char **argv)
     *p++ = '\1';
     *p++ = isc_dpb_sweep_interval;
     *p++ = '\4';
-    l = isc_vax_integer((char ISC_FAR *) &sweep_interval, 4);
+    l = isc_vax_integer((char *) &sweep_interval, 4);
     d = (char *) &l;
     *p++ = *d++;
     *p++ = *d++;
@@ -110,7 +110,7 @@ ARGLIST(char **argv)
     /* Add user and password to dpb, much easier.  The dpb will be
     **  new memory.
     */
-    isc_expand_dpb(&dpb, (short ISC_FAR *) &dpb_length,
+    isc_expand_dpb(&dpb, (short *) &dpb_length,
                    isc_dpb_user_name, user_name,
                    isc_dpb_password, password,  NULL);
 
@@ -132,7 +132,7 @@ ARGLIST(char **argv)
         isc_print_status(status);
     
     /* Prepare sqlda for singleton fetch */
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
     sqlda->sqln = sqlda->sqld = 1;
     sqlda->version = 1;
     sqlda->sqlvar[0].sqldata = uname;

@@ -50,7 +50,7 @@
 
 #define BUFLEN        512
     
-char ISC_FAR * more_orders (void);
+char * more_orders (void);
 int do_trans (void);
 int cleanup (void);
 
@@ -121,7 +121,7 @@ int do_trans (void)
     char            cust_str[BUFLEN + 1];
     char            cntry_str[BUFLEN + 1];
     char            sel_str[BUFLEN + 1];
-    XSQLDA  ISC_FAR *sqlda1, *sqlda2, *sqlda3;
+    XSQLDA          *sqlda1, *sqlda2, *sqlda3;
     isc_stmt_handle stmt0 = NULL,
                     stmt1 = NULL,
                     stmt2 = NULL;
@@ -147,7 +147,7 @@ int do_trans (void)
         ERREXIT(status, 1)
     }
 
-    sqlda1 = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+    sqlda1 = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
     sqlda1->sqln = 1;
     sqlda1->version = 1;
 
@@ -156,7 +156,7 @@ int do_trans (void)
         ERREXIT(status, 1)
     }
 
-    sqlda1->sqlvar[0].sqldata = (char ISC_FAR *) &cust_no;
+    sqlda1->sqlvar[0].sqldata = (char *) &cust_no;
     sqlda1->sqlvar[0].sqltype = SQL_LONG + 1;
     sqlda1->sqlvar[0].sqlind  = &flag0;
 
@@ -165,7 +165,7 @@ int do_trans (void)
     sprintf(sel_str, "SELECT country FROM country WHERE country = '%s'",
             country);
 
-    sqlda2 = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+    sqlda2 = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
     sqlda2->sqln = 1;
     sqlda2->version = 1;
 
@@ -179,7 +179,7 @@ int do_trans (void)
         ERREXIT(status, 1)
     }
 
-    sqlda2->sqlvar[0].sqldata = (char ISC_FAR *) country;
+    sqlda2->sqlvar[0].sqldata = (char *) country;
     sqlda2->sqlvar[0].sqltype = SQL_TEXT + 1;
     sqlda2->sqlvar[0].sqlind  = &flag1;
                              
@@ -214,12 +214,12 @@ int do_trans (void)
     
     /* Insert parameter (cust_no) used for sales insert */
 
-    sqlda3 = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+    sqlda3 = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
     sqlda3->sqln = 1;
     sqlda3->version = 1;
 
     isc_dsql_describe_bind(status, &stmt1, 1, sqlda3);
-    sqlda3->sqlvar[0].sqldata = (char ISC_FAR *) &cust_no;;
+    sqlda3->sqlvar[0].sqldata = (char *) &cust_no;;
     sqlda3->sqlvar[0].sqlind  = &flag0;
 
     isc_dsql_execute(status, &sales_trans, &stmt1, 1, sqlda3);

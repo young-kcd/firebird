@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: dynfull.e,v 1.2 2003-02-14 02:50:10 brodsom Exp $
+$Id: dynfull.e,v 1.3 2003-02-28 13:20:00 brodsom Exp $
 */
 
 #include "example.h"
@@ -114,8 +114,8 @@ ARGLIST(char **argv)
 }
 
 
-void process_statement(ARG(XSQLDA ISC_FAR * ISC_FAR *, sqldap), 
-		ARG(char ISC_FAR *, query))
+void process_statement(ARG(XSQLDA * *, sqldap), 
+		ARG(char *, query))
 	ARGLIST(XSQLDA	**sqldap)
 	ARGLIST(char	*query)
 {
@@ -250,7 +250,7 @@ Error:
 /*
  *	Print column's data.
  */
-void print_column(ARG(XSQLVAR ISC_FAR *, var))
+void print_column(ARG(XSQLVAR *, var))
 ARGLIST(XSQLVAR	*var)
 {
 	short		dtype;
@@ -452,7 +452,7 @@ ARGLIST(XSQLVAR	*var)
  *	Prompt for and get input.
  *	Statements are terminated by a semicolon.
  */
-int get_statement(ARG(char ISC_FAR *, buf))
+int get_statement(ARG(char *, buf))
 	ARGLIST(char	*buf)
 {
 	short	c;

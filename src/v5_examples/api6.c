@@ -73,8 +73,8 @@ ARGLIST(char **argv)
     ISC_STATUS          status[ISC_STATUS_LENGTH]; /* status vector */
     char                *cursor = "budget";     /* dynamic cursor name */
     isc_stmt_handle     stmt = NULL;            /* statement handle */
-    XSQLDA  ISC_FAR *   osqlda;                 /* output SQLDA */
-    XSQLDA  ISC_FAR *   isqlda;                 /* input SQLDA */
+    XSQLDA  *           osqlda;                 /* output SQLDA */
+    XSQLDA  *           isqlda;                 /* input SQLDA */
     long                fetch_stat;
     char                empdb[128];
 
@@ -145,11 +145,11 @@ ARGLIST(char **argv)
             WHERE CURRENT OF %s", cursor);
 
     /* Allocate an input SQLDA for the update statement. */
-    isqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+    isqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
     isqlda->sqln = isqlda->sqld = 1;
     isqlda->version = 1;
 
-    isqlda->sqlvar[0].sqldata = (char ISC_FAR *) &budget;
+    isqlda->sqlvar[0].sqldata = (char *) &budget;
     isqlda->sqlvar[0].sqltype = SQL_DOUBLE + 1;
     isqlda->sqlvar[0].sqllen  = sizeof(budget);
     isqlda->sqlvar[0].sqlind  = &flag3;
@@ -158,7 +158,7 @@ ARGLIST(char **argv)
     free(osqlda);
 
     /* Re-allocate the output SQLDA. */
-    osqlda = (XSQLDA ISC_FAR*) malloc(XSQLDA_LENGTH(3));
+    osqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(3));
     osqlda->sqln = 3;
     osqlda->sqld = 3;
     osqlda->version = 1;
@@ -169,7 +169,7 @@ ARGLIST(char **argv)
     osqlda->sqlvar[1].sqldata = dept_no;
     osqlda->sqlvar[1].sqlind  = &flag1;
 
-    osqlda->sqlvar[2].sqldata = (char ISC_FAR *) &budget;
+    osqlda->sqlvar[2].sqldata = (char *) &budget;
     osqlda->sqlvar[2].sqlind  = &flag2;
                               
     if (isc_start_transaction(status, &trans, 1, &DB, 0, NULL))

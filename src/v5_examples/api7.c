@@ -51,7 +51,7 @@ ARGLIST(char **argv)
     isc_tr_handle               trans = NULL;     /* transaction handle */
     ISC_STATUS                  status[ISC_STATUS_LENGTH]; /* status vector */
     isc_stmt_handle             stmt = NULL;      /* statement handle */
-    XSQLDA ISC_FAR *            sqlda;
+    XSQLDA *                    sqlda;
     long                        fetch_stat, blob_stat;
     short                       flag0 = 0,
                                 flag1 = 0,
@@ -86,7 +86,7 @@ ARGLIST(char **argv)
         ERREXIT(status, 1)
     }
     
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(3));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(3));
     sqlda->sqln = 3;
     sqlda->version = 1;
 
@@ -99,7 +99,7 @@ ARGLIST(char **argv)
     sqlda->sqlvar[0].sqltype = SQL_VARYING + 1;
     sqlda->sqlvar[0].sqlind  = &flag0;
 
-    sqlda->sqlvar[1].sqldata = (char ISC_FAR *) &blob_id;
+    sqlda->sqlvar[1].sqldata = (char *) &blob_id;
     sqlda->sqlvar[1].sqltype = SQL_BLOB + 1;
     sqlda->sqlvar[1].sqlind  = &flag1;
 
@@ -134,13 +134,13 @@ ARGLIST(char **argv)
 
         /* Get blob segments and their lengths and print each segment. */
         blob_stat = isc_get_segment(status, &blob_handle,
-                                    (unsigned short ISC_FAR *) &blob_seg_len,
+                                    (unsigned short *) &blob_seg_len,
                                     sizeof(blob_segment), blob_segment);
         while (blob_stat == 0 || status[1] == isc_segment)
         {
             printf("%*.*s", blob_seg_len, blob_seg_len, blob_segment);
             blob_stat = isc_get_segment(status, &blob_handle,
-                                        (unsigned short ISC_FAR *)&blob_seg_len,
+                                        (unsigned short *)&blob_seg_len,
                                         sizeof(blob_segment), blob_segment);
         }
         /* Close the blob.  Should be blob_stat to check */

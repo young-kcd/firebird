@@ -61,7 +61,7 @@ ARGLIST(char **argv)
     isc_tr_handle       trans = NULL;
     ISC_STATUS          status[ISC_STATUS_LENGTH];
     isc_stmt_handle     stmt = NULL;
-    XSQLDA ISC_FAR *    sqlda;
+    XSQLDA *            sqlda;
     long                fetch_stat;
     char                empdb[128];
 
@@ -89,7 +89,7 @@ ARGLIST(char **argv)
         ERREXIT(status, 1)
     }
 
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(4));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(4));
     sqlda->sqln = 4;
     sqlda->version = 1;
 
@@ -98,19 +98,19 @@ ARGLIST(char **argv)
         ERREXIT(status, 1)
     }
 
-    sqlda->sqlvar[0].sqldata = (char ISC_FAR *) &blob_id;
+    sqlda->sqlvar[0].sqldata = (char *) &blob_id;
     sqlda->sqlvar[0].sqltype = SQL_BLOB + 1;
     sqlda->sqlvar[0].sqlind  = &flag0;
 
-    sqlda->sqlvar[1].sqldata = (char ISC_FAR *) job_code;
+    sqlda->sqlvar[1].sqldata = (char *) job_code;
     sqlda->sqlvar[1].sqltype = SQL_TEXT + 1;
     sqlda->sqlvar[1].sqlind  = &flag1;
 
-    sqlda->sqlvar[2].sqldata = (char ISC_FAR *) &job_grade;
+    sqlda->sqlvar[2].sqldata = (char *) &job_grade;
     sqlda->sqlvar[2].sqltype = SQL_SHORT + 1;
     sqlda->sqlvar[2].sqlind  = &flag2;
 
-    sqlda->sqlvar[3].sqldata = (char ISC_FAR *) job_country;
+    sqlda->sqlvar[3].sqldata = (char *) job_country;
     sqlda->sqlvar[3].sqltype = SQL_TEXT + 1;
     sqlda->sqlvar[3].sqlind  = &flag3;
 
@@ -138,7 +138,7 @@ ARGLIST(char **argv)
 
         /* Get blob segments and their lengths and print each segment. */
         while (isc_get_segment(status, &blob_handle,
-               (unsigned short ISC_FAR *) &blob_seg_len, sizeof(blob_segment),
+               (unsigned short *) &blob_seg_len, sizeof(blob_segment),
                blob_segment) == 0)
             printf("  %*.*s", blob_seg_len, blob_seg_len, blob_segment);
 

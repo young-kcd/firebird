@@ -48,7 +48,7 @@
 #endif
 
 short 			event_flag = 0;
-isc_callback 	ast_routine (char ISC_FAR *, short, char ISC_FAR *);
+isc_callback 	ast_routine (char *, short, char *);
 
 int main(ARG(int, argc), ARG(char **, argv))
 ARGLIST(int argc)
@@ -59,13 +59,13 @@ ARGLIST(char **argv)
 	isc_tr_handle 	trans = NULL; 	/* transaction handle */
 	isc_stmt_handle stmt = NULL; 	/* transaction handle */
 	ISC_STATUS		status[ISC_STATUS_LENGTH];	/* status vector */
-	char ISC_FAR *	event_buffer; 
-	char ISC_FAR *	result_buffer;
+	char *			event_buffer; 
+	char *			result_buffer;
 	long		event_id;
 	short		length;
 	char		dbname[128];
 	char		po_number[9];
-	XSQLDA ISC_FAR * sqlda;
+	XSQLDA *	 sqlda;
 	short		nullind = 0;
 	char		query[128], update[128];
 	long		count[2], i = 0;
@@ -90,7 +90,7 @@ ARGLIST(char **argv)
 	count[0] = 0;
 	count[1] = 0;
 
-	sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+	sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
 	sqlda->sqln = 1;
 	sqlda->version = 1;
 	sqlda->sqlvar[0].sqldata = po_number;
@@ -121,8 +121,8 @@ ARGLIST(char **argv)
 	/* Allocate an event block and initialize its values 
 	**  This will wait on two named events 
 	*/
-	length = (short)  isc_event_block((char ISC_FAR * ISC_FAR *) &event_buffer,
-				(char ISC_FAR * ISC_FAR *) &result_buffer,
+	length = (short)  isc_event_block((char **) &event_buffer,
+				(char **) &result_buffer,
 
 				 2, ids[0], ids[1], 0);
 
@@ -163,8 +163,8 @@ ARGLIST(char **argv)
 			** in the counts in the two buffers.
 			*/
 
-			isc_event_counts(Vector, length, (char ISC_FAR *) event_buffer,
-				(char ISC_FAR *) result_buffer);
+			isc_event_counts(Vector, length, (char *) event_buffer,
+				(char *) result_buffer);
 
 			/* Look through the count array */
 			count[0] += Vector[0];
@@ -220,9 +220,9 @@ ARGLIST(char **argv)
 ** event will land us here .  PLus we get called once when the 
 ** program first starts.
 */
-isc_callback ast_routine(ARG(char ISC_FAR *, result), 
+isc_callback ast_routine(ARG(char *, result), 
 		ARG(short, length), 
-		ARG(char ISC_FAR *, updated))
+		ARG(char *, updated))
 ARGLIST(char  *result)
 ARGLIST(char  *updated)
 ARGLIST(short length)

@@ -32,7 +32,7 @@
 #define PROJLEN     5
 #define BUFLEN      512
 
-char ISC_FAR*    get_line (void);
+char *    get_line (void);
 
 static char *Proj_data[] =
 {
@@ -73,9 +73,9 @@ ARGLIST(char **argv)
     isc_db_handle       DB = NULL;           /* database handle */
     isc_tr_handle       trans = NULL;        /* transaction handle */
     ISC_STATUS          status[ISC_STATUS_LENGTH]; /* status vector */
-    XSQLDA ISC_FAR    * sqlda;
+    XSQLDA *            sqlda;
     unsigned short      len;
-    char ISC_FAR*       line;
+    char *              line;
     int                 rec_cnt = 0;
     char                empdb[128];
 
@@ -93,12 +93,12 @@ ARGLIST(char **argv)
      *  Set-up the SQLDA for the update statement.
      */
 
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(2));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(2));
     sqlda->sqln = 2;
     sqlda->sqld = 2;
     sqlda->version = 1;
 
-    sqlda->sqlvar[0].sqldata = (char ISC_FAR *) &blob_id;
+    sqlda->sqlvar[0].sqldata = (char *) &blob_id;
     sqlda->sqlvar[0].sqltype = SQL_BLOB;
     sqlda->sqlvar[0].sqllen  = sizeof(ISC_QUAD);
 

@@ -67,7 +67,7 @@ int main (void)
 	BASED_ON project.proj_id	proj_id;
 	ISC_QUAD	blob_id;
 	int		len;
-	char ISC_FAR *	line; 
+	char *		line; 
 	int		rec_cnt = 0;
 
 	EXEC SQL

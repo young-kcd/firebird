@@ -344,10 +344,10 @@ while (fgets (line, 100, Fp) != NULL)
 		job_country = :job_country;*/
     {
     if (!isc_50)
-       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_50, (short) sizeof (isc_51), (char ISC_FAR *) isc_51);
+       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_50, (short) sizeof (isc_51), (char *) isc_51);
     isc_vtov ((char*)job_country, (char*)isc_52.isc_53, 16);
     isc_52.isc_54 = isc_blob_null;
-    isc_put_slice (isc_status, &DB, &gds__trans, &isc_52.isc_54, (short) 37, (char ISC_FAR *) isc_59, 0, (long*) 0, (long) 80, (void ISC_FAR *)lang_array);
+    isc_put_slice (isc_status, &DB, &gds__trans, &isc_52.isc_54, (short) 37, (char *) isc_59, 0, (long*) 0, (long) 80, (void *)lang_array);
     SQLCODE = isc_sqlcode (isc_status);
     if (SQLCODE < 0) goto Error;
     isc_52.isc_55 = job_grade;
@@ -499,7 +499,7 @@ while (fgets (line, 100, Fp) != NULL)
 		job_country = :job_country;*/
     {
     if (!isc_34)
-       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_34, (short) sizeof (isc_35), (char ISC_FAR *) isc_35);
+       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_34, (short) sizeof (isc_35), (char *) isc_35);
     isc_vtov ((char*)job_country, (char*)isc_36.isc_37, 16);
     isc_36.isc_38 = job_blob;
     isc_36.isc_39 = job_grade;
@@ -648,7 +648,7 @@ while (fgets (line, 100, Fp) != NULL)
 	    WHERE proj_id = :proj_id;*/
     {
     if (!isc_20)
-       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_20, (short) sizeof (isc_21), (char ISC_FAR *) isc_21);
+       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_20, (short) sizeof (isc_21), (char *) isc_21);
     isc_22.isc_23 = proj_blob;
     isc_vtov ((char*)proj_id, (char*)isc_22.isc_24, 6);
     if (isc_20)
@@ -739,9 +739,9 @@ while (fgets (line, 100, Fp) != NULL)
 	    WHERE fiscal_year = :yr AND proj_id = :proj_id AND dept_no = :dept_no;*/
     {
     if (!isc_9)
-       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_9, (short) sizeof (isc_10), (char ISC_FAR *) isc_10);
+       isc_compile_request2 (isc_status, (void**) &DB, (void**) &isc_9, (short) sizeof (isc_10), (char *) isc_10);
     isc_11.isc_12 = isc_blob_null;
-    isc_put_slice (isc_status, &DB, &gds__trans, &isc_11.isc_12, (short) 51, (char ISC_FAR *) isc_18, 0, (long*) 0, (long) 16, (void ISC_FAR *)hcnt);
+    isc_put_slice (isc_status, &DB, &gds__trans, &isc_11.isc_12, (short) 51, (char *) isc_18, 0, (long*) 0, (long) 16, (void *)hcnt);
     SQLCODE = isc_sqlcode (isc_status);
     if (SQLCODE < 0) goto Error;
     isc_vtov ((char*)dept_no, (char*)isc_11.isc_13, 4);

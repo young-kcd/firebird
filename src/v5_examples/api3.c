@@ -54,7 +54,7 @@ ARGLIST(char **argv)
     isc_db_handle           DB = NULL;                  /* database handle */
     isc_tr_handle           trans = NULL;               /* transaction handle */
     ISC_STATUS              status[ISC_STATUS_LENGTH];  /* status vector */
-    XSQLDA  ISC_FAR *       sqlda;
+    XSQLDA  *               sqlda;
     long                    fetch_stat;
     char                    empdb[128];
     char                    *sel_str =
@@ -75,7 +75,7 @@ ARGLIST(char **argv)
     }
     
     /* Allocate an output SQLDA. */
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(3));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(3));
     sqlda->sqln = 3;
     sqlda->sqld = 3;
     sqlda->version = 1;
@@ -105,7 +105,7 @@ ARGLIST(char **argv)
     sqlda->sqlvar[1].sqltype = SQL_VARYING + 1;
     sqlda->sqlvar[1].sqlind  = &flag1;
 
-    sqlda->sqlvar[2].sqldata = (char ISC_FAR *) phone_ext;
+    sqlda->sqlvar[2].sqldata = (char *) phone_ext;
     sqlda->sqlvar[2].sqltype = SQL_TEXT + 1;
     sqlda->sqlvar[2].sqlind  = &flag2;
 

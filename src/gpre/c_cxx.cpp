@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.17 2003-02-27 21:43:11 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.18 2003-02-28 13:19:34 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1272,7 +1272,7 @@ static void gen_compile( ACT action, int column)
 	BLB blob;
 	PAT args;
 	TEXT *pattern1 =
-		"isc_compile_request%IF2%EN (%V1, (FRBRD**) &%DH, (FRBRD**) &%RH, (short) sizeof (%RI), (char ISC_FAR *) %RI);",
+		"isc_compile_request%IF2%EN (%V1, (FRBRD**) &%DH, (FRBRD**) &%RH, (short) sizeof (%RI), (char *) %RI);",
 		*pattern2 = "if (!%RH%IF && %S1%EN)";
 
 	args.pat_request = request = action->act_request;
@@ -2712,9 +2712,9 @@ static void gen_get_or_put_slice(
 	PAT args;
 	TEXT s1[25], s2[10], s4[10];
 	TEXT *pattern1 =
-		"isc_get_slice (%V1, &%DH, &%RT, &%S2, (short) %N1, (char ISC_FAR *) %S3, 0, (%S6*) 0, (%S6) %L1, %S5, &isc_array_length);";
+		"isc_get_slice (%V1, &%DH, &%RT, &%S2, (short) %N1, (char *) %S3, 0, (%S6*) 0, (%S6) %L1, %S5, &isc_array_length);";
 	TEXT *pattern2 =
-		"isc_put_slice (%V1, &%DH, &%RT, &%S2, (short) %N1, (char ISC_FAR *) %S3, 0, (%S6*) 0, (%S6) %L1, (void ISC_FAR *)%S5);";
+		"isc_put_slice (%V1, &%DH, &%RT, &%S2, (short) %N1, (char *) %S3, 0, (%S6*) 0, (%S6) %L1, (void *)%S5);";
 
 	if (!(reference->ref_flags & REF_fetch_array))
 		return;
@@ -3909,9 +3909,9 @@ static void gen_slice( ACT action, REF var_reference, int column)
 	PAT args;
 	slc::slc_repeat * tail, *end;
 	TEXT *pattern1 = "isc_get_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
-(char ISC_FAR *) %I1, (short) %N2, %I1v, %I1s, %S5, &isc_array_length);";
+(char *) %I1, (short) %N2, %I1v, %I1s, %S5, &isc_array_length);";
 	TEXT *pattern2 = "isc_put_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
-(char ISC_FAR *) %I1, (short) %N2, %I1v, %I1s, %S5);";
+(char *) %I1, (short) %N2, %I1v, %I1s, %S5);";
 
 	request = action->act_request;
 	slice = (SLC) action->act_object;

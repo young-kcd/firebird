@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.16 2003-02-27 21:09:51 brodsom Exp $
+ *  $Id: fb_types.h,v 1.17 2003-02-28 13:20:36 brodsom Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -42,10 +42,7 @@
 /* Define type, export and other stuff based on c/c++ and Windows */
 /******************************************************************/
 
-#define  ISC_FAR
-
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-#define  ISC_FAR
 #ifndef __GNUC__
 typedef __int64				ISC_INT64;
 typedef unsigned __int64	ISC_UINT64;

@@ -53,8 +53,8 @@ ARGLIST(char **argv)
     short           flag0 = 0, flag1 = 0;
     isc_stmt_handle stmt = NULL;
     isc_stmt_handle ustmt = NULL;
-    char ISC_FAR *  cursor = "S";
-    XSQLDA ISC_FAR *osqlda, *isqlda;
+    char *          cursor = "S";
+    XSQLDA *        osqlda, *isqlda;
     long            fetch_stat;
     short           i;
     char            empdb[128];
@@ -93,11 +93,11 @@ ARGLIST(char **argv)
     osqlda->sqln = 2;
     osqlda->version = 1;
 
-    osqlda->sqlvar[0].sqldata = (char ISC_FAR *) dept_no;
+    osqlda->sqlvar[0].sqldata = (char *) dept_no;
     osqlda->sqlvar[0].sqltype = SQL_TEXT + 1;
     osqlda->sqlvar[0].sqlind  = &flag0;
 
-    osqlda->sqlvar[1].sqldata = (char ISC_FAR *) &array_id;
+    osqlda->sqlvar[1].sqldata = (char *) &array_id;
     osqlda->sqlvar[1].sqltype = SQL_ARRAY + 1;
     osqlda->sqlvar[1].sqlind  = &flag1;
 
@@ -122,7 +122,7 @@ ARGLIST(char **argv)
      *    Set-up the update statement.
      */
 
-    isqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+    isqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
     isqlda->sqln = 1;
     isqlda->version = 1;
 
@@ -134,7 +134,7 @@ ARGLIST(char **argv)
     }
     isc_dsql_describe_bind(status, &ustmt, 1, isqlda);
 
-    isqlda->sqlvar[0].sqldata = (char ISC_FAR *) &array_id;
+    isqlda->sqlvar[0].sqldata = (char *) &array_id;
     isqlda->sqlvar[0].sqlind  = &flag1;
                               
     /*
@@ -150,10 +150,10 @@ ARGLIST(char **argv)
         {                     
             len = sizeof(hcnt);;
             if (isc_array_get_slice(status, &DB, &trans,
-                                    (ISC_QUAD ISC_FAR *) &array_id,
-                                    (ISC_ARRAY_DESC ISC_FAR *) &desc,
-                                    (void ISC_FAR *) hcnt,
-                                    (long ISC_FAR *) &len))
+                                    (ISC_QUAD *) &array_id,
+                                    (ISC_ARRAY_DESC *) &desc,
+                                    (void *) hcnt,
+                                    (long *) &len))
                                     {ERREXIT (status, 1)};
 
             dept_no [osqlda->sqlvar[0].sqllen] = '\0';
@@ -168,10 +168,10 @@ ARGLIST(char **argv)
 
             /* Save new array values. */
             if (isc_array_put_slice(status, &DB, &trans,
-                                    (ISC_QUAD ISC_FAR *) &array_id,
-                                    (ISC_ARRAY_DESC ISC_FAR *) &desc,
-                                    (void ISC_FAR *) hcnt,
-                                    (long ISC_FAR *) &len))
+                                    (ISC_QUAD *) &array_id,
+                                    (ISC_ARRAY_DESC *) &desc,
+                                    (void *) hcnt,
+                                    (long *) &len))
                                     {ERREXIT (status, 1)};
 
             /* Update the array handle. */

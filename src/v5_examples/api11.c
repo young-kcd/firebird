@@ -34,8 +34,8 @@
 #define    BUFLEN        128
 
 int select_projects (isc_db_handle db, int emp_no);
-int add_emp_proj (isc_db_handle db, int emp_no, char ISC_FAR * proj_id);
-int get_params (isc_db_handle db, int ISC_FAR * emp_no, char ISC_FAR * proj_id);
+int add_emp_proj (isc_db_handle db, int emp_no, char * proj_id);
+int get_params (isc_db_handle db, int * emp_no, char * proj_id);
 
 int main (ARG(int, argc), ARG(char **, argv))
 ARGLIST(int argc)
@@ -107,13 +107,13 @@ ARGLIST(int     emp_no)
     isc_tr_handle   trans = NULL;
     ISC_STATUS      status[ISC_STATUS_LENGTH];
     isc_stmt_handle stmt = NULL;
-    XSQLDA  ISC_FAR *sqlda;
+    XSQLDA          *sqlda;
     long            fetch_stat;
 
     sprintf(selstr, "SELECT proj_id FROM get_emp_proj (%d) ORDER BY proj_id",
             emp_no);
 
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
     sqlda->sqln = 1;
     sqlda->version = 1;
 
@@ -132,7 +132,7 @@ ARGLIST(int     emp_no)
         ERREXIT(status, 1)
     }
 
-    sqlda->sqlvar[0].sqldata = (char ISC_FAR *) proj_id;
+    sqlda->sqlvar[0].sqldata = (char *) proj_id;
     sqlda->sqlvar[0].sqlind  = &flag0;
     sqlda->sqlvar[0].sqltype = SQL_TEXT + 1;
 
@@ -171,7 +171,7 @@ ARGLIST(int     emp_no)
  *    Execute a stored procedure.
  *    Procedure 'add_emp_proj' adds an employee to a project.
  */
-int add_emp_proj (ARG(isc_db_handle, db), ARG(int, emp_no), ARG(char ISC_FAR *, proj_id))
+int add_emp_proj (ARG(isc_db_handle, db), ARG(int, emp_no), ARG(char *, proj_id))
 ARGLIST(void    *db)
 ARGLIST(int     emp_no)
 ARGLIST(char    *proj_id)
@@ -204,9 +204,9 @@ ARGLIST(char    *proj_id)
 /*
  *    Set-up procedure parameters and clean-up old data.
  */
-int get_params (ARG(void ISC_FAR *, db),
-                ARG(int ISC_FAR *, emp_no),
-                ARG(char ISC_FAR *, proj_id))
+int get_params (ARG(void *, db),
+                ARG(int *, emp_no),
+                ARG(char *, proj_id))
 ARGLIST(void    *db)
 ARGLIST(int     *emp_no)
 ARGLIST(char    *proj_id)

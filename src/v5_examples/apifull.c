@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: apifull.c,v 1.4 2003-02-14 02:50:10 brodsom Exp $
+$Id: apifull.c,v 1.5 2003-02-28 13:20:00 brodsom Exp $
 */
 
 #include <stdlib.h>
@@ -44,9 +44,9 @@ $Id: apifull.c,v 1.4 2003-02-14 02:50:10 brodsom Exp $
 
 #define    MAXLEN    1024
 
-process_statement (XSQLDA ISC_FAR * ISC_FAR * sqlda, char ISC_FAR *query);
-void print_column (XSQLVAR ISC_FAR * var);
-int get_statement (char ISC_FAR * buf);
+process_statement (XSQLDA ** sqlda, char *query);
+void print_column (XSQLVAR * var);
+int get_statement (char * buf);
 
 typedef struct vary {
     short          vary_length;
@@ -77,7 +77,7 @@ ARGLIST(int    argc)
 ARGLIST(char **argv)
 {
     long                   query[MAXLEN];
-    XSQLDA    ISC_FAR *    sqlda;
+    XSQLDA    *            sqlda;
     char                   db_name[128];
 
     if (argc < 2)
@@ -100,7 +100,7 @@ ARGLIST(char **argv)
     *    Allocate enough space for 20 fields.  
     *    If more fields get selected, re-allocate SQLDA later.
      */
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH (20));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH (20));
     sqlda->sqln = 20;
     sqlda->version = 1;
 
@@ -114,18 +114,18 @@ ARGLIST(char **argv)
     /*
      *    Process SQL statements.
      */
-    ret = get_statement((char ISC_FAR *) query);
+    ret = get_statement((char *) query);
     /* Use break on error or exit */
     while (ret != 1)
     {
         /* We must pass the address of sqlda, in case it
         ** gets re-allocated 
         */
-        ret = process_statement((XSQLDA ISC_FAR * ISC_FAR *) &sqlda,
-                                (char ISC_FAR *) query);
+        ret = process_statement((XSQLDA **) &sqlda,
+                                (char *) query);
             if (ret == 1)
                 break;
-        ret = get_statement((char ISC_FAR *) query);
+        ret = get_statement((char *) query);
     }
 
     free (sqlda);
@@ -151,14 +151,14 @@ ARGLIST(char **argv)
 **  which will print the error and continue.
 */
 
-process_statement (ARG(XSQLDA ISC_FAR * ISC_FAR *, sqldap),
-                   ARG(char ISC_FAR *, query))
+process_statement (ARG(XSQLDA **, sqldap),
+                   ARG(char *, query))
 ARGLIST(XSQLDA  **sqldap)
 ARGLIST(char    *query)
 {
     long            buffer[MAXLEN];
-    XSQLDA  ISC_FAR *sqlda;
-    XSQLVAR ISC_FAR *var;
+    XSQLDA          *sqlda;
+    XSQLVAR         *var;
     short           num_cols, i;
     short           length, alignment, type, offset;
     long            fetch_stat;
@@ -191,8 +191,8 @@ ARGLIST(char    *query)
     if (!isc_dsql_sql_info(status, &stmt, sizeof (stmt_info), stmt_info,
         sizeof (info_buffer), info_buffer))
     {
-        l = (short) isc_vax_integer((char ISC_FAR *) info_buffer + 1, 2);
-        statement_type = isc_vax_integer((char ISC_FAR *) info_buffer + 3, l);
+        l = (short) isc_vax_integer((char *) info_buffer + 1, 2);
+        statement_type = isc_vax_integer((char *) info_buffer + 3, l);
     }
 
 
@@ -229,7 +229,7 @@ ARGLIST(char    *query)
     /* Need more room. */
     if (sqlda->sqln < num_cols)
     {
-        *sqldap = sqlda = (XSQLDA ISC_FAR *) realloc(sqlda,
+        *sqldap = sqlda = (XSQLDA *) realloc(sqlda,
                                                 XSQLDA_LENGTH (num_cols));
         sqlda->sqln = num_cols;
         sqlda->version = 1;
@@ -262,10 +262,10 @@ ARGLIST(char    *query)
         **  word boundaries where appropriate
         */
         offset = FB_ALIGN(offset, alignment);
-        var->sqldata = (char ISC_FAR *) buffer + offset;
+        var->sqldata = (char *) buffer + offset;
         offset += length;
         offset = FB_ALIGN(offset, sizeof (short));
-        var->sqlind = (short*) ((char ISC_FAR *) buffer + offset);
+        var->sqlind = (short*) ((char *) buffer + offset);
         offset += sizeof  (short);
     }
 
@@ -282,7 +282,7 @@ ARGLIST(char    *query)
     {
         for (i = 0; i < num_cols; i++)
         {
-            print_column((XSQLVAR ISC_FAR *) &sqlda->sqlvar[i]);
+            print_column((XSQLVAR *) &sqlda->sqlvar[i]);
         }
         printf("\n");
     }
@@ -304,7 +304,7 @@ ARGLIST(char    *query)
 /*
  *    Print column's data.
  */
-void print_column (ARG(XSQLVAR ISC_FAR *, var))
+void print_column (ARG(XSQLVAR *, var))
 ARGLIST(XSQLVAR    *var)
 {
     short       dtype;
@@ -389,15 +389,15 @@ ARGLIST(XSQLVAR    *var)
 		switch (dtype)
 		    {
 		    case SQL_SHORT:
-			value = (ISC_INT64) *(short ISC_FAR *) var->sqldata;
+			value = (ISC_INT64) *(short *) var->sqldata;
 			field_width = 6;
 			break;
 		    case SQL_LONG:
-			value = (ISC_INT64) *(long ISC_FAR *) var->sqldata;
+			value = (ISC_INT64) *(long *) var->sqldata;
 			field_width = 11;
 			break;
 		    case SQL_INT64:
-			value = (ISC_INT64) *(ISC_INT64 ISC_FAR *) var->sqldata;
+			value = (ISC_INT64) *(ISC_INT64 *) var->sqldata;
 			field_width = 21;
 			break;
 		    }
@@ -443,15 +443,15 @@ ARGLIST(XSQLVAR    *var)
                 break;
 
             case SQL_FLOAT:
-                sprintf(p, "%15g ", *(float ISC_FAR *) (var->sqldata));
+                sprintf(p, "%15g ", *(float *) (var->sqldata));
                 break;
 
             case SQL_DOUBLE:
-		sprintf(p, "%24f ", *(double ISC_FAR *) (var->sqldata));
+		sprintf(p, "%24f ", *(double *) (var->sqldata));
                 break;
 
 	    case SQL_TIMESTAMP:
-		isc_decode_timestamp((ISC_TIMESTAMP ISC_FAR *)var->sqldata, &times);
+		isc_decode_timestamp((ISC_TIMESTAMP *)var->sqldata, &times);
 		sprintf(date_s, "%04d-%02d-%02d %02d:%02d:%02d.%04d",
 				times.tm_year + 1900,
 				times.tm_mon+1,
@@ -464,7 +464,7 @@ ARGLIST(XSQLVAR    *var)
 		break;
 
 	    case SQL_TYPE_DATE:
-		isc_decode_sql_date((ISC_DATE ISC_FAR *)var->sqldata, &times);
+		isc_decode_sql_date((ISC_DATE *)var->sqldata, &times);
 		sprintf(date_s, "%04d-%02d-%02d",
 				times.tm_year + 1900,
 				times.tm_mon+1,
@@ -473,7 +473,7 @@ ARGLIST(XSQLVAR    *var)
 		break;
 
 	    case SQL_TYPE_TIME:
-		isc_decode_sql_time((ISC_TIME ISC_FAR *)var->sqldata, &times);
+		isc_decode_sql_time((ISC_TIME *)var->sqldata, &times);
 		sprintf(date_s, "%02d:%02d:%02d.%04d",
 				times.tm_hour,
 				times.tm_min,
@@ -485,7 +485,7 @@ ARGLIST(XSQLVAR    *var)
             case SQL_BLOB:
             case SQL_ARRAY:
                 /* Print the blob id on blobs or arrays */
-                bid = *(ISC_QUAD ISC_FAR *) var->sqldata;
+                bid = *(ISC_QUAD *) var->sqldata;
                 sprintf(blob_s, "%08x:%08x", bid.isc_quad_high, bid.isc_quad_low);
                 sprintf(p, "%17s ", blob_s);
                 break;
@@ -507,7 +507,7 @@ ARGLIST(XSQLVAR    *var)
  *    Prompt for and get input.
  *    Statements are terminated by a semicolon.
  */
-int get_statement (ARG(char ISC_FAR *,buf))
+int get_statement (ARG(char *,buf))
 ARGLIST(char *buf)
 {
     short   c;

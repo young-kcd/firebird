@@ -35,7 +35,7 @@
 #define DNOLEN      3
 
 
-int getline (char ISC_FAR *, int);
+int getline (char *, int);
 int cleanup (void);
 
 
@@ -139,11 +139,11 @@ ARGLIST(char **argv)
  *  Construct an 'insert' statement from the supplied parameters.
  */
 
-int getline (ARG(char ISC_FAR*, line), ARG(int, line_no))
-ARGLIST(char ISC_FAR* line)
+int getline (ARG(char *, line), ARG(int, line_no))
+ARGLIST(char * line)
 ARGLIST(int           line_no)
 {
-    static char ISC_FAR * Dept_data[] =
+    static char * Dept_data[] =
         {
             "117", "Field Office: Hong Kong",   "110",
             "118", "Field Office: Australia",   "110",

@@ -47,7 +47,7 @@ ARGLIST(char **argv)
 {
     int                num_cols, i;
     isc_stmt_handle    stmt = NULL;
-    XSQLDA    ISC_FAR  *sqlda;
+    XSQLDA             *sqlda;
     char               empdb[128];
 
     if (argc > 1)
@@ -61,7 +61,7 @@ ARGLIST(char **argv)
     }
 
     /* Allocate SQLDA of an arbitrary size. */
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(3));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(3));
     sqlda->sqln = 3;
     sqlda->version = 1;
 
@@ -99,7 +99,7 @@ ARGLIST(char **argv)
     /* Reallocate SQLDA if necessary. */
     if (sqlda->sqln < sqlda->sqld)
     {
-        sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(num_cols));
+        sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(num_cols));
         sqlda->sqln = num_cols;
         sqlda->version = 1;
     

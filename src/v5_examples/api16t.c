@@ -48,7 +48,7 @@ ARGLIST(char **argv)
     isc_db_handle       DB = NULL;       /* database handle */
     isc_tr_handle       trans = NULL;    /* transaction handle */
     ISC_STATUS          status[ISC_STATUS_LENGTH];      /* status vector */
-    XSQLDA  ISC_FAR *   sqlda;
+    XSQLDA  *           sqlda;
     char                empdb[128];
     char                *delete_str =
         "DELETE FROM sales WHERE po_number LIKE 'VNEW%'";
@@ -72,7 +72,7 @@ ARGLIST(char **argv)
     }
 
     /* Allocate an input SQLDA for po_number in insert string. */
-    sqlda = (XSQLDA ISC_FAR *) malloc(XSQLDA_LENGTH(1));
+    sqlda = (XSQLDA *) malloc(XSQLDA_LENGTH(1));
     sqlda->sqln = 1;
     sqlda->sqld = 1;
     sqlda->version = 1;
