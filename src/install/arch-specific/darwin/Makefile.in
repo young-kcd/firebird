@@ -55,6 +55,7 @@ package_classic package_embedded:
 			> $(DIR)/$(INST_NM).pkg/Contents/Resources/Description.plist
 	cp -r install/arch-specific/darwin/Firebird.startupitem \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/StartupItem
+	rm -rf `find $(DIR)/$(INST_NM).pkg/Contents/Resources/StartupItem -name CVS`
 	cp install/arch-specific/darwin/installer_background.pdf \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/background.pdf
 	cp install/arch-specific/darwin/install-script \
@@ -121,6 +122,7 @@ package_super package_server:
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/postinstall
 	cp -r install/arch-specific/darwin/Firebird.startupitem \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/StartupItem
+	rm -rf `find $(DIR)/$(INST_NM).pkg/Contents/Resources/StartupItem -name CVS`
 	cp install/arch-specific/darwin/install-script \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/postupgrade
 	cp install/arch-specific/darwin/preinstall-script \

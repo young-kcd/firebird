@@ -89,7 +89,9 @@ chgrp -R firebird "$FB_FW"
 
 # set the permissions correctly
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	echo -n
+    chmod 777 "$FB_FW/Resources/English.lproj/var"
+    chmod 777 "$FB_FW/Resources/English.lproj/var/security.fdb"
+    chmod 777 "$FB_FW/Resources/English.lproj/var/help/help.fdb"
 else
     chmod 777 "$FB_FW/Resources/English.lproj/var"
     chmod 777 "$FB_FW/Resources/English.lproj/var/security.fdb"
@@ -98,6 +100,7 @@ else
     #chmod a+s "$FB_FW/Resources/bin/gds_drop"
     chmod a+s "$FB_FW/Resources/bin/fb_lock_mgr"
     chmod a+s "$FB_FW/Resources/bin/fb_inet_server"
+
     #chown root "$FB_FW/Resources/bin/gds_drop"
     chown root "$FB_FW/Resources/bin/fb_lock_mgr"
     chown root "$FB_FW/Resources/bin/fb_inet_server"
@@ -107,6 +110,7 @@ fi
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	if [ -e "$INST_RES/Firebird.startup" ]; then
 		mkdir -p /Library/StartupItems
+		rm -rf /Library/StartupItems/Firebird
 		cp -r "$INST_RES/Firebird.startup" /Library/StartupItems/Firebird
 	fi
 else

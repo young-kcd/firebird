@@ -19,6 +19,10 @@ if test -f "$2/Firebird.framework/Versions/A/Resources/English.lproj/var/securit
 fi
 
 
+if [ -f /Library/StartupItems/Firebird/Firebird ]; then
+	/Library/StartupItems/Firebird/Firebird stop
+fi
 rm -rf "$2/Firebird.framework"
+rm -rf /Library/StartupItems/Firebird
 
 exit 0

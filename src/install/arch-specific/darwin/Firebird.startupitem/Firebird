@@ -15,13 +15,13 @@ StartService ()
 StopService ()
 {
     ConsoleMessage "Stopping Firebird SQL Database server"
-    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -shut -user sysdba -password masterkey
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -shut -password masterkey
 }
 
 RestartService ()
 {
     ConsoleMessage "Restarting Firebird SQL Database server"
-    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -shut -user sysdba -password masterkey
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -shut -password masterkey
     /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -start
 }
 
