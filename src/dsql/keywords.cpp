@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.2 2002-07-30 07:23:40 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.3 2002-07-30 09:49:16 dimitr Exp $
  *
  */
 
@@ -47,7 +47,7 @@ static CONST TOK tokens [] = {
 	{NEQ, "!=", 1},
 	{NOT_GTR, "!>", 1},
 	{LPAREN, "(", 1},
-	{RPAREN, "}", 1}, 
+	{RPAREN, ")", 1}, 
 	{COMMA, ",", 1}, 
 	{LSS, "<", 1}, 
 	{LEQ, "<=", 1}, 
