@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.19 2003-10-06 09:48:44 robocop Exp $
+//	$Id: int.cpp,v 1.20 2003-10-07 09:59:28 robocop Exp $
 //
 
 #include "firebird.h"
@@ -211,11 +211,13 @@ static void asgn_from( REF reference, int column)
 		if (!field || field->fld_dtype == dtype_text)
 			ib_fprintf(out_file, VTO_CALL,
 					   JRD_VTOF,
-					   value, variable, field->fld_length);
+					   value, variable,
+					   field ? field->fld_length : 0);
 		else if (!field || field->fld_dtype == dtype_cstring)
 			ib_fprintf(out_file, VTO_CALL,
 					   GDS_VTOV,
-					   value, variable, field->fld_length);
+					   value, variable,
+					   field ? field->fld_length: 0);
 		else
 			ib_fprintf(out_file, "%s = %s;", variable, value);
 	}
@@ -237,14 +239,13 @@ static void asgn_to( REF reference)
 	GPRE_FLD field = source->ref_field;
 	gen_name(s, source);
 
-#pragma FB_COMPILER_MESSAGE("BUG: Checking for zero pointer - then using it!")
 	// Repeated later down in function gen_emodify, but then
 	// emitting jrd_ftof call.
 
 	if (!field || field->fld_dtype == dtype_text)
 		ib_fprintf(out_file, "gds__ftov (%s, %d, %s, sizeof (%s));",
 				   s,
-				   field->fld_length,
+				   field ? field->fld_length : 0,
 				   reference->ref_value, reference->ref_value);
 	else if (!field || field->fld_dtype == dtype_cstring)
 		ib_fprintf(out_file, "gds__vtov((const char*)%s, (char*)%s, sizeof (%s));",
