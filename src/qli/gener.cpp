@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.11 2002-12-17 14:58:20 skidder Exp $
+$Id: gener.cpp,v 1.12 2003-02-05 02:40:14 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -135,7 +135,7 @@ RLB GEN_rlb_extend(RLB rlb)
  *
  **************************************/
 	UCHAR *new_string, *old_string;
-	ULONG l, size;
+	ULONG l;
 
 	if (!rlb)
 		rlb = (RLB) ALLOCD(type_rlb);
@@ -467,11 +467,9 @@ static void gen_any( QLI_NOD node, QLI_REQ request)
  **************************************/
 	QLI_REQ new_request;
 	RLB rlb;
-	QLI_FLD field;
-	QLI_CTX context;
 	QLI_MSG send, receive;
 	DSC desc;
-	USHORT i, value;
+	USHORT value;
 
 /* If there is a request associated with the statement, prepare to
    generate BLR.  Otherwise assume that a request is alrealdy initialized. */
@@ -783,7 +781,6 @@ static void gen_expression( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	QLI_NOD *ptr, *end;
-	QLI_FLD field;
 	QLI_CTX context;
 	MAP map;
 	USHORT operatr;
@@ -1072,9 +1069,7 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 	QLI_MSG message, continuation;
 	PAR parameter, eof;
 	DSC desc;
-	STR string;
-	QLI_NOD sub, *ptr, *end;
-	RPT report;
+	QLI_NOD sub; 
 	USHORT value, label;
 	RLB rlb;
 
@@ -1192,9 +1187,7 @@ static void gen_function( QLI_NOD node, QLI_REQ request)
 	QLI_NOD args, *ptr, *end;
 	FUN function;
 	SYM symbol;
-	QLI_CTX context;
 	QLI_MSG send, receive;
-	USHORT i;
 	UCHAR *p;
 	RLB rlb;
 
@@ -1483,7 +1476,6 @@ static void gen_report( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	RPT report;
-	BRK control;
 	QLI_NOD list;
 
 	report = (RPT) node->nod_arg[e_prt_list];
@@ -1580,7 +1572,6 @@ static void gen_rse( QLI_NOD node, QLI_REQ request)
 	QLI_NOD list, *ptr, *end;
 	QLI_CTX context;
 	QLI_REL relation;
-	USHORT i;
 	RLB rlb;
 	NOD_T join_type;
 
@@ -1736,7 +1727,6 @@ static void gen_statement( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	QLI_NOD *ptr, *end;
-	RLB rlb;
 
 	if (request)
 		CHECK_RLB(request->req_blr);
@@ -1825,10 +1815,8 @@ static void gen_statistical( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	QLI_REQ new_request;
-	QLI_FLD field;
-	QLI_CTX context;
 	QLI_MSG send, receive;
-	USHORT operatr, i;
+	USHORT operatr;
 	RLB rlb;
 
 	switch (node->nod_type) {
@@ -1935,7 +1923,6 @@ static void gen_store( QLI_NOD node, QLI_REQ request)
  *	Generate code for STORE statement.
  *
  **************************************/
-	QLI_MSG message;
 	QLI_REL relation;
 	QLI_CTX context;
 	RLB rlb;

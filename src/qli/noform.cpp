@@ -41,8 +41,6 @@ FRM FORM_default_form(DBB database, TEXT * string)
  *	Generate a default for for a relation.
  *
  **************************************/
-	int *handle, *fields, *transaction;
-	FRM form;
 
 	return NULL;
 }
@@ -60,8 +58,6 @@ void FORM_display( QLI_NOD node)
  *	Given a FORM_FOR node, display an empty form.
  *
  **************************************/
-	FRM form;
-	FFL field;
 
 }
 
@@ -78,8 +74,6 @@ void FORM_edit( DBB database, TEXT * name)
  *	Edit a form.
  *
  **************************************/
-	FRM form;
-	int *transaction, *handle, *fields, *label;
 
 }
 
@@ -112,9 +106,6 @@ void FORM_finish( DBB database)
  *	Release forms in preparation for finishing a relation.
  *
  **************************************/
-	FRM form;
-	FFL field;
-	SYM symbol;
 
 }
 
@@ -131,16 +122,6 @@ int FORM_get_blob( QLI_NOD value, PAR parameter)
  *	Copy blob from form to database.
  *
  **************************************/
-	QLI_MSG message;
-	QLI_REQ request;
-	DBB dbb;
-	DSC *desc;
-	FFL field;
-	FRM form;
-	int *blob, *item;
-	TEXT buffer[4096], *p, *data;
-	STATUS status_vector[ISC_STATUS_LENGTH];
-	USHORT length, n;
 
 	return TRUE;
 }
@@ -158,11 +139,6 @@ DSC *FORM_get_field(QLI_NOD node)
  *	Get a value off a form.
  *
  **************************************/
-	FFL field;
-	FRM form;
-	STR string;
-	USHORT l;
-	TEXT *p, *q;
 
 	return NULL;
 }
@@ -180,11 +156,6 @@ FRM FORM_lookup_form(DBB database, TEXT * string)
  *	Lookup a form by name.
  *
  **************************************/
-	int *handle, *transaction;
-	STATUS status[ISC_STATUS_LENGTH];
-	FRM form;
-	SYM symbol;
-	USHORT l, width, height;
 
 	return NULL;
 }
@@ -202,7 +173,6 @@ FFL FORM_lookup_field(FRM form, TEXT * string)
  *	Lookup field name in form.  If we can't find it, return NULL.
  *
  **************************************/
-	FFL field;
 
 	return NULL;
 }
@@ -220,12 +190,6 @@ int FORM_put_field( QLI_NOD from, QLI_NOD node)
  *	Write data to a form.
  *
  **************************************/
-	DSC *desc, desc2;
-	FFL field;
-	TEXT buffer[1024], *p;
-	USHORT length, index;
-	int *blob;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	return TRUE;
 }
@@ -259,12 +223,5 @@ void FORM_update( QLI_NOD node)
  *	Execute "form update".
  *
  **************************************/
-	QLI_NOD list;
-	FRM form;
-	FFL *ptr, *end, field;
-	DSC *desc;
-	USHORT l;
-	TEXT *prompt, temp[256], *p, *q;
-	int *tag;
 
 }
