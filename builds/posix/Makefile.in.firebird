@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.45 2003-09-23 22:38:48 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.46 2003-09-27 23:29:07 brodsom Exp $
 #
 
 ROOT=..
@@ -336,7 +336,7 @@ otherfiles: misc_files
 .PHONY: embed_gpre embed_util
 
 classic_targets: libfbembed inet_server embed_gfix embed_gbak embed_isql \
-	embed_gpre embed_util embed_gdef embed_qli
+	embed_gpre embed_util embed_gdef embed_qli embed_fbudf
 
 libfbembed:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbembed $@
@@ -365,14 +365,16 @@ embed_gdef:
 embed_qli:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.qli
 
+embed_fbudf:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.fbudf
 
 #_ Firebird Server Targets (super and super client)__________________________
 
 .PHONY: libfbserver fbserver 
-.PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util
+.PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util client_fbudf
 
 super_targets: libfbserver fbserver libfbclient client_gfix client_gbak \
-			client_isql client_gpre client_util # client_gdef
+			client_isql client_gpre client_util client_fbudf # client_gdef
 
 libfbserver:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbserver $@
@@ -398,13 +400,14 @@ client_isql:
 client_util:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.util	
 
+client_fbudf:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.fbudf
+
 # Not sure we need this target in super - problems with WAL includes
 # MOD 04-Oct-2002
 
 client_gdef:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gdef
-
-
 
 
 #sysdba_user gstat:			# add sysdba user and build gstat program

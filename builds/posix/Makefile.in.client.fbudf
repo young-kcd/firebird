@@ -22,12 +22,12 @@
 # this file are either listed below or can be obtained from a CVS 
 # history command.
 #
-#  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#  Created by:  Blas Rodriguez Somoza
 #
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.14 2003-09-27 23:29:07 brodsom Exp $
+#  $Id: Makefile.in.client.fbudf,v 1.1 2003-09-27 23:29:07 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -42,22 +42,21 @@ include     $(ROOT)/gen/make.shared.variables
 UDF=	$(FIREBIRD)/UDF
 
 
-UDF_Files = ib_udf.c
-UDF_Sources = $(addprefix extlib/, $(UDF_Files))
-UDF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UDF_Sources))))
+FBUDF_Files = fbudf.cpp
+FBUDF_Sources = $(addprefix extlib/fbudf/, $(FBUDF_Files))
+FBUDF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUDF_Sources))))
 
 UTIL_Files = ib_util.c
 UTIL_Sources = $(addprefix extlib/, $(UTIL_Files))
 UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources))))
 
-
-AllObjects = $(UDF_Objects) $(UTIL_Objects) $(FBUDF_Objects)
+AllObjects = $(FBUDF_Objects) $(FBUTIL_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
-.PHONY: all lib_ib_udf lib_ib_util
+.PHONY: all lib_fbudf
 
-all: lib_ib_udf lib_ib_util
+all: lib_fbudf
 
 
 # The libraires in this directory could do with a bit more work, since they
@@ -69,34 +68,18 @@ all: lib_ib_udf lib_ib_util
 
 
 
-# ib_udf.$(SHRLIB_EXT)
 #
 # User defined functions.  (I've put the .$(SHRLIB_EXT) extension back onto the library)
 # 
 
-lib_ib_udf: $(UDF)/ib_udf.$(SHRLIB_EXT)
+lib_fbudf: $(UDF)/fbudf.$(SHRLIB_EXT) 
 
-#$(UDF)/ib_udf.$(SHRLIB_EXT)(%.o) : %.o
-#	ar crv $@  $%
-
-$(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects)
-#	$(LIB_LINK) $(LIB_LINK_SONAME)ib_udf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)/usr/lib -o $@ $^
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)ib_udf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
-#	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
-#	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
-
-
-# ib_util
-
-lib_ib_util: $(LIBIBUTIL_SO)
-
-$(LIBIBUTIL_SO):	$(UTIL_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
-#	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
-#	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
-
-#$(LIB)/ib_util.$(SHRLIB_EXT)(%.o) : %.o
-#	ar crv $@  $%
+$(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(FBUTIL_Objects)
+ifeq ($(PLATFORM),win32)
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) -L$(LIB) -lfbclient -o $@ $^
+else
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
+endif
 
 
 include $(ROOT)/gen/make.shared.targets
