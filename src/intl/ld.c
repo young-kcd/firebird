@@ -63,9 +63,6 @@ EXTERN_texttype(DOS107_c3_init);
 EXTERN_texttype(DOS852_c0_init);
 EXTERN_texttype(DOS852_c1_init);
 EXTERN_texttype(DOS852_c2_init);
-#ifdef BUG_6925
-EXTERN_texttype(DOS852_c3_init);
-#endif
 EXTERN_texttype(DOS852_c4_init);
 EXTERN_texttype(DOS852_c5_init);
 EXTERN_texttype(DOS852_c6_init);
@@ -74,9 +71,6 @@ EXTERN_texttype(DOS852_c8_init);
 
 EXTERN_texttype(DOS857_c0_init);
 EXTERN_texttype(DOS857_c1_init);
-#ifdef BUG_6925
-EXTERN_texttype(DOS857_c2_init);
-#endif
 
 EXTERN_texttype(DOS860_c0_init);
 EXTERN_texttype(DOS860_c1_init);

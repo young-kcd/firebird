@@ -433,22 +433,6 @@ TEXTTYPE_ENTRY(DOS852_c2_init)
 }
 
 #include "../intl/collations/undef.h"
-#ifdef BUG_6925
-
-
-TEXTTYPE_ENTRY(DOS852_c3_init)
-{
-	static CONST ASCII POSIX[] = "DBASE.DOS852";
-
-#include "../intl/collations/db852hdc.h"
-
-	FAMILY1(parm1, DOS852_c3_init, CS_DOS_852, CC_HUNGARY);
-
-	TEXTTYPE_RETURN;
-}
-
-#include "../intl/collations/undef.h"
-#endif /* BUG_6925 */
 
 
 TEXTTYPE_ENTRY(DOS852_c4_init)
@@ -533,22 +517,6 @@ TEXTTYPE_ENTRY(DOS857_c1_init)
 }
 
 #include "../intl/collations/undef.h"
-#ifdef BUG_6925
-
-
-TEXTTYPE_ENTRY(DOS857_c2_init)
-{
-	static CONST ASCII POSIX[] = "PDOX.DOS857";
-
-#include "../intl/collations/pd857turk.h"
-
-	FAMILY1(parm1, DOS857_c2_init, CS_DOS_857, CC_TURKEY);
-
-	TEXTTYPE_RETURN;
-}
-
-#include "../intl/collations/undef.h"
-#endif /* BUG_6925 */
 
 
 TEXTTYPE_ENTRY(DOS860_c1_init)
