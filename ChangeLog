@@ -1,3 +1,44 @@
+2004-09-02 16:53  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.190):
+	
+	Let's choose a reasonable join order for intermixed inner and outer
+	joins.
+
+2004-09-02 16:43  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.189):
+	
+	A few little fixes in the optimizer.
+
+2004-09-02 11:59  alexpeshkoff
+
+	* firebird2/src/utilities/gstat/dba.epp (1.47):
+	
+	fixed uninitialized status vector in gstat
+
+2004-09-02 11:09  alexpeshkoff
+
+	* firebird2/builds/install/misc/firebird.conf (1.8):
+	
+	Added firebird.conf parameter UsePriorityScheduler (requested by
+	Nickolay)
+
+2004-09-02 11:00  alexpeshkoff
+
+	* firebird2/src/: common/config/config.cpp (1.54),
+	common/config/config.h (1.31), jrd/os/win32/thd_priority.cpp
+	(1.23), jrd/os/thd_priority.h (1.20):
+	
+	Added firebird.conf parameter UsePriorityScheduler (requested by
+	Nickolay)
+
+2004-09-02 09:10  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.120):
+	
+	Fixed my mistake in the plan output. Noticed by Arno.
+
 2004-09-01 18:11  alexpeshkoff
 
 	* firebird2/: builds/install/misc/firebird.conf (1.7),
