@@ -1,3 +1,17 @@
+2004-09-25 21:38  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.28.2.4):
+	
+	Backported some fixes: - server crashes with complex (lots of
+	streams used in a sort/merge) queries
+
+2004-09-25 21:32  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.70.2.5):
+	
+	Backported some fixes: 1) Server crash in op_connect 2) Events
+	issues with NAT
+
 2004-09-24 17:45  hvlad
 
 	* firebird2/src/jrd/why.cpp (1.23.2.3):
