@@ -25,6 +25,7 @@
 #include "../jrd/ib_stdio.h"
 #include <ctype.h>
 #include <string.h>
+#include "memory_routines.h"
 
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
@@ -833,7 +834,7 @@ static void dmp_index(BTR page, USHORT page_size)
 
 	while (node < end)
 	{
-		const ULONG number = CTO32L(BTN_NUMBER(node));
+		const ULONG number = get_long(BTN_NUMBER(node));
 
 		/* compute running value */
 

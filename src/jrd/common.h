@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.74 2003-08-06 16:30:44 skidder Exp $
+$Id: common.h,v 1.75 2003-08-12 10:44:54 aafemt Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -480,7 +480,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define VAX_FLOAT       1
 /*#define ALIGNMENT       4*/
 #define NO_NFS
-#define CTO32L(p)       (*(long*)p)
 #define NO_CHECKSUM	1
 #define ISC_EXT_LIB_PATH_ENV	"interbase_ext_lib_path:"
 #define SYS_ARG		isc_arg_vms
@@ -877,14 +876,6 @@ typedef struct
 
 
 /* data conversion macros */
-
-#ifndef CTO32L
-#ifndef WORDS_BIGENDIAN
-#define CTO32L(p) ((((SCHAR*)(p))[3] << 24) | (((UCHAR*)(p))[2] << 16) | (((UCHAR*)(p))[1] << 8) | (((UCHAR*)(p)) [0]))
-#else
-#define CTO32L(p) ((((SCHAR*)(p))[0] << 24) | (((UCHAR*)(p))[1] << 16) | (((UCHAR*)(p))[2] << 8) | (((UCHAR*)(p)) [3]))
-#endif
-#endif
 
 #ifndef AOF32L
 #define AOF32L(l)               &l
