@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.8 2004-03-08 02:06:30 skidder Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.9 2004-03-08 18:06:20 skidder Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -355,19 +355,19 @@ static void isc_signal2(
 		sigaddset(&act.sa_mask, signal_number);
 		sigaction(signal_number, &act, &oact);
 
-		if (oact.sa_handler != signal_handler ||
-			(!(oact.sa_flags & SA_SIGINFO) &&
-			 oact.sa_handler != SIG_DFL &&
-			 oact.sa_handler != SIG_HOLD &&
-			 oact.sa_handler != SIG_IGN ) 
-		   )
-		{
+		if (
 #ifdef SA_SIGINFO
 			// Do not queue user handlers requesting information.
 			// There is no easy and portable way to support them.
 			// Either Firebird or application should be adjusted to use another signal
-			if (!(oact.sa_flags & SA_SIGINFO))
+			!(oact.sa_flags & SA_SIGINFO) &&
 #endif
+			 oact.sa_handler != signal_handler &&
+			 oact.sa_handler != SIG_DFL &&
+			 oact.sa_handler != SIG_HOLD &&
+			 oact.sa_handler != SIG_IGN
+		   )
+		{
 			que_signal(signal_number, reinterpret_cast<FPTR_VOID>(oact.sa_handler), 
 				NULL, SIG_client);
 		}
