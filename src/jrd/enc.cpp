@@ -341,7 +341,7 @@ STATIC void init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 					  unsigned char p[64], int chars_in, int chars_out);
 
 
-STATIC permute(unsigned char *cp, C_block * out, C_block * p, int chars_in)
+STATIC void permute(unsigned char *cp, C_block * out, C_block * p, int chars_in)
 {
 	register DCL_BLOCK(D, D0, D1);
 	register C_block *tp;
@@ -358,9 +358,6 @@ STATIC permute(unsigned char *cp, C_block * out, C_block * p, int chars_in)
 		p += (1 << CHUNKBITS);
 	} while (--chars_in > 0);
 	STORE(D, D0, D1, *out);
-
-/* function should return a value */
-	return 0;
 }
 #endif /* LARGEDATA */
 
@@ -990,7 +987,7 @@ int setkey(register const char *key)
 /*
  * "encrypt" routine (for backwards compatibility)
  */
-encrypt(char *block, int flag)
+int encrypt(char *block, int flag)
 {
 	register int i, j, k;
 	C_block cblock;

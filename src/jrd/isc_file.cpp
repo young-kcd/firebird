@@ -1833,7 +1833,7 @@ static void share_name_from_resource(
 
 		while (*q++ = *p++);
 		q -= 2;					/* after the above q points to the char AFTER the null */
-		if (*q == '\\' || *q == '//')	/* chop off any trailing \ or / */
+		if (*q == '\\' || *q == '/')	/* chop off any trailing \ or / */
 			*q = '\0';
 		strcat(expanded_name, filename + 2);
 

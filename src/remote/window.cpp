@@ -77,7 +77,7 @@ static char *MakeVersionString(char *, int, USHORT);
 static BOOL CanEndServer(HWND, BOOL);
 
 // Window Procedure
-void __stdcall WINDOW_shutdown(HANDLE);
+void WINDOW_shutdown(ULONG);
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 
 
@@ -203,12 +203,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 						  APP_HSIZE,
 						  APP_VSIZE, HWND_DESKTOP, NULL, hInstance, NULL);
 
-#ifdef  __BORLANDC__
-	SVC_shutdown_init((STDCALL_FPTR_VOID) WINDOW_shutdown, (UINT) hWnd);
-#else
-	SVC_shutdown_init(reinterpret_cast < void (__stdcall *) (UINT) >
-					  (WINDOW_shutdown), (UINT) hWnd);
-#endif
+	SVC_shutdown_init(WINDOW_shutdown, (ULONG) hWnd);
 
 // Do the proper ShowWindow depending on if the app is an icon on
 // the desktop, or in the task bar.
@@ -582,7 +577,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 }
 
 
-void __stdcall WINDOW_shutdown(HANDLE hWnd)
+void WINDOW_shutdown(ULONG hWnd)
 {
 /******************************************************************************
  *

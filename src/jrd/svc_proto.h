@@ -41,13 +41,8 @@ void   SVC_read_ib_log(class svc*);
 const TEXT* SVC_err_string(const TEXT*, USHORT);
 
 #ifdef SERVER_SHUTDOWN
-#ifdef WIN_NT
-#include <windows.h>
-typedef void (__stdcall * STDCALL_FPTR_VOID) (UINT);
-void SVC_shutdown_init(STDCALL_FPTR_VOID, ULONG);
-#else
-void SVC_shutdown_init(void (*)(), ULONG);
-#endif
+typedef void (*shutdown_fct_t) (ULONG);
+void SVC_shutdown_init(shutdown_fct_t, ULONG);
 #endif /* SERVER_SHUTDOWN */
 
 #ifdef __cplusplus

@@ -219,14 +219,10 @@ void test_cmd(USHORT, SCHAR *, TEXT **);
 #define TEST_CMD NULL
 #endif
 
-#ifdef  __BORLANDC__
-typedef void (__stdcall * shutdown_fct_t) (UINT);
-#else
-typedef void (*shutdown_fct_t) ();
-#endif
+#ifdef SERVER_SHUTDOWN
 static shutdown_fct_t shutdown_fct = 0;
-
 static ULONG shutdown_param = 0L;
+#endif
 
 #ifdef WIN_NT
 static SLONG SVC_cache_default;
@@ -763,7 +759,6 @@ void SVC_detach(SVC service)
 	if (service->svc_do_shutdown) {
 		JRD_shutdown_all();
 		if (shutdown_fct)
-			reinterpret_cast < void (*) (...) >
 				(shutdown_fct) (shutdown_param);
 		else
 			exit(0);
@@ -804,17 +799,9 @@ const TEXT* SVC_err_string(const TEXT* data, USHORT length)
 }
 
 
-// TMN: Fixed the macro magic to use what was declared in the header file.
-// I left the __BORLANDC__ macro here, but commented out, in case someone
-//  knows what the this was about.
-void SVC_shutdown_init(
-//#ifdef  __BORLANDC__
-#ifdef WIN_NT
-						  STDCALL_FPTR_VOID fptr,
-#else
-						  void (*fptr) (),
-#endif
-						  ULONG param)
+#ifdef SERVER_SHUTDOWN
+void SVC_shutdown_init(shutdown_fct_t fptr,
+			ULONG param)
 {
 /**************************************
  *
@@ -827,9 +814,10 @@ void SVC_shutdown_init(
  *
  **************************************/
 
-	shutdown_fct = reinterpret_cast < shutdown_fct_t > (fptr);
+	shutdown_fct = fptr;
 	shutdown_param = param;
 }
+#endif // SERVER_SHUTDOWN
 
 
 #ifdef SUPERSERVER
