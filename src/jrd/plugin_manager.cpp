@@ -9,7 +9,7 @@
 
 #include "../jrd/plugin_manager.h"
 #include "../jrd/os/path_utils.h"
-#include "../jrd/gds_proto.h"
+#include "../common/config/config.h"
 
 PluginManager::Plugin PluginManager::findPlugin(const Firebird::PathName &name)
 {
@@ -46,10 +46,8 @@ PluginManager::Plugin PluginManager::findPlugin(const Firebird::PathName &name)
 
 void PluginManager::loadAllPlugins()
 {
-	char fb_lib_path[MAXPATHLEN];
-	gds__prefix(fb_lib_path, "");
-	Firebird::PathName fbLibPath(fb_lib_path);
 	Firebird::PathName checkDir;
+	const Firebird::PathName fbLibPath = Config::getRootDirectory();
 	
 	for (spIterator pathItr = searchPaths.begin(); pathItr != searchPaths.end(); ++pathItr)
 	{
@@ -115,10 +113,8 @@ void PluginManager::loadAllPlugins()
 
 PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName& name)
 {
-	char fb_lib_path[MAXPATHLEN];
-	gds__prefix(fb_lib_path, "");
-	Firebird::PathName fbLibPath(fb_lib_path);
 	Firebird::PathName checkPath;
+	const Firebird::PathName fbLibPath = Config::getRootDirectory();
 	
 	// Check to see if the module name was specified as a relative path
 	//	from one of our search paths.  This only makes sense if the name
