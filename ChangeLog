@@ -1,3 +1,24 @@
+2004-04-11 16:37  alexpeshkoff
+
+	* firebird2/src/common/config/config_file.cpp (1.11.2.2):
+	
+	fixed problem with system log overflow in case of missing
+	aliases.conf
+
+2004-04-11 15:17  dimitr
+
+	* firebird2/doc/WhatsNew (1.36.2.17):
+	
+	More v1.5.1 changes.
+
+2004-04-11 14:44  alexpeshkoff
+
+	*
+	
+	fixed problem with /etc/init.d/firebird modification
+	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
+	.in (1.1.2.4):
+
 2004-04-10 19:25  skidder
 
 	* firebird2/src/jrd/blb.cpp (1.30.2.4):
