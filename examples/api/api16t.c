@@ -35,9 +35,7 @@
 #include <ibase.h>
 
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {        
     struct {
         short    len;
@@ -179,3 +177,4 @@ ARGLIST(char **argv)
 
     return 0;
 }
+

@@ -47,9 +47,7 @@ char *upd_str =
 	"UPDATE department SET budget = ? * budget + budget WHERE dept_no = ?";
 
 
-int main(ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main(int argc, char** argv)
 {
 	BASED_ON department.dept_no	dept_no;
 	double	percent_inc;
@@ -148,9 +146,7 @@ Error:
 /*
  *	Get the department and percent parameters.
  */
-int get_input(ARG(char *, dept_no), ARG(double *, percent))
-ARGLIST(char	*dept_no)
-ARGLIST(double	*percent)
+int get_input(char* dept_no, double* percent)
 {
 	if (Dept_data[Input_ptr] == 0)
 		return 0;
@@ -162,3 +158,4 @@ ARGLIST(double	*percent)
 
 	return(1);
 }
+

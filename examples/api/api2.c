@@ -45,9 +45,7 @@ isc_tr_handle    trans = NULL;          /* transaction handle */
 ISC_STATUS_ARRAY status;                /* status vector */
 char             Db_name[128];
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     int                 n = 0;
     char                exec_str[MAXLEN];
@@ -139,9 +137,7 @@ ARGLIST(char **argv)
  *  Construct an 'insert' statement from the supplied parameters.
  */
 
-int getline (ARG(char *, line), ARG(int, line_no))
-ARGLIST(char * line)
-ARGLIST(int           line_no)
+int getline (char* line, int line_no)
 {
     static char * Dept_data[] =
         {
@@ -191,3 +187,4 @@ int cleanup (void)
 
     return 0;
 }
+

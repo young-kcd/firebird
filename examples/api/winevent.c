@@ -78,7 +78,7 @@ ISC_STATUS_ARRAY status;
 ** FUNCTION PROTOTYPES 
 */
 
-long FAR PASCAL _export WndProc (HWND, UINT, UINT, LONG) ;
+LRESULT CALLBACK _export WndProc (HWND, UINT, WPARAM, LPARAM) ;
 HWND                    InitApplication(int nCmdShow, HINSTANCE hPrevInstance);
 int                     InitEvent(EVENTBLK *lpEvent, long *DB,
                                   HWND hWnd, char *event);
@@ -112,7 +112,7 @@ int                     CHK_ERR(long *gds__status);
  *      
  *
  ****************************************************************/
-int PASCAL WinMain (HINSTANCE hInst, HINSTANCE hPrevInstance,
+int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hPrevInstance,
                     LPSTR lpszCmdLine, int nCmdShow)
 {
     MSG                 msg;
@@ -301,8 +301,8 @@ void ReleaseEvents (EVENTBLK *lpEvent)
  *      results from DefWindowProc otherwise
  *
  *****************************************************************/
-long FAR PASCAL _export WndProc (HWND hWnd, UINT message, UINT wParam,
-                                 LONG lParam)
+LRESULT CALLBACK _export WndProc (HWND hWnd, UINT message, WPARAM wParam,
+                                 LPARAM lParam)
 {
     EVENTBLK   		*lpEvent;
     ISC_STATUS_ARRAY	Vector;
@@ -367,7 +367,7 @@ long FAR PASCAL _export WndProc (HWND hWnd, UINT message, UINT wParam,
  *      none
  *
  *****************************************************************/
-void far AstRoutine (EVENTBLK *lpEvent, short length, char *updated)
+void AstRoutine (EVENTBLK *lpEvent, short length, char *updated)
 {
     char *ResultBuf = lpEvent->ResultBuf;
 
@@ -420,3 +420,4 @@ int CHK_ERR (long *status)
 
     return FALSE;
 }
+

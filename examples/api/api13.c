@@ -40,9 +40,7 @@ char    *sel_str1 =
     "SELECT currency FROM country WHERE country = 'Canada'";
 
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     char                *country = "Canada";        /* passed as a parameter */
     char                *new_name = "CdnDollar";    /* passed as a parameter */
@@ -195,3 +193,4 @@ ARGLIST(char **argv)
 
     return 0;
 }
+

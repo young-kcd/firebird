@@ -36,9 +36,7 @@
 /* This macro is used to declare structures representing SQL VARCHAR types */
 #define SQL_VARCHAR(len) struct {short vary_length; char vary_string[(len)+1];}
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)                         
+int main (int argc, char** argv)
 {
     SQL_VARCHAR(PROJLEN + 2)    proj_name;
     char                        prod_type[TYPELEN + 2];
@@ -181,3 +179,4 @@ ARGLIST(char **argv)
 
     return 0;
 }
+

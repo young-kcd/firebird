@@ -50,10 +50,7 @@
 short 			event_flag = 0;
 void			ast_routine (void *, USHORT, const UCHAR *);
 
-int main(ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
-
+int main(int argc, char** argv)
 {
 	isc_db_handle	DB = NULL;  	/* database handle */
 	isc_tr_handle 	trans = NULL; 	/* transaction handle */
@@ -97,11 +94,11 @@ ARGLIST(char **argv)
 	sqlda->sqlvar[0].sqlind = &nullind;
 
 	if (isc_attach_database (status, 0, dbname, &DB, 0, NULL))
-		{ERREXIT(status, 1)};
+		{ERREXIT(status, 1)}
 
 	/* SET TRANSACTION ISOLATION LEVEL READ COMMITTED */
 	if (isc_start_transaction (status, &trans, 1, &DB, 5, isc_tpb))
-		{ERREXIT(status, 1)};
+		{ERREXIT(status, 1)}
 
 	/* Prepare the query to look at the result tables */
 	strcpy(query, " SELECT po_number FROM sales \
@@ -133,7 +130,7 @@ ARGLIST(char **argv)
 	*/
 	if(isc_que_events(status, &DB, &event_id, length,
 			 event_buffer, ast_routine, result_buffer))
-		{ERREXIT(status, 1)};
+		{ERREXIT(status, 1)}
 
 
 	while (!ret)
@@ -172,7 +169,7 @@ ARGLIST(char **argv)
 
 			/* Select query to look at triggered events */
 			if (isc_dsql_execute(status, &trans, &stmt, 1, NULL))
-				{ERREXIT(status, 1)};
+				{ERREXIT(status, 1)}
 
 			while (!isc_dsql_fetch(status, &stmt, 1, sqlda))
 			{
@@ -186,7 +183,7 @@ ARGLIST(char **argv)
 				/* Update current row */
 				if(isc_dsql_execute_immediate(status, &DB, 
 					&trans, 0, update, 1, NULL))
-					{ERREXIT(status, 1)};
+					{ERREXIT(status, 1)}
 			}
 			/* Close cursor */
 			isc_dsql_free_statement(status, &stmt, DSQL_close);
@@ -197,7 +194,7 @@ ARGLIST(char **argv)
 
 		 	if (isc_que_events(status, &DB, &event_id, length,
 		    	event_buffer, ast_routine, result_buffer))
-   		      {ERREXIT(status, 1)};
+   		      {ERREXIT(status, 1)}
 		}
 
 		/* This does not block, but as a sample program there is nothing
@@ -220,12 +217,7 @@ ARGLIST(char **argv)
 ** event will land us here .  PLus we get called once when the 
 ** program first starts.
 */
-void ast_routine(ARG(void *, result), 
-		ARG(USHORT, length), 
-		ARG(const UCHAR *, updated))
-ARGLIST(void  *result)
-ARGLIST(const UCHAR  *updated)
-ARGLIST(USHORT length)
+void ast_routine(void *result, USHORT length, /*const*/ UCHAR *updated)
 {
 	/* Set the global event flag */
 

@@ -49,9 +49,7 @@ isc_db_handle    DB = NULL;                       /* database handle */
 isc_tr_handle    trans = NULL;                    /* transaction handle */
 ISC_STATUS_ARRAY status;                          /* status vector */
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     char            dept_no[4];
     double          percent_inc;
@@ -152,9 +150,7 @@ ARGLIST(char **argv)
  *  Get the department and percent parameters.
  */
 
-int get_input (ARG(char *,dept_no), ARG(double *,percent))
-ARGLIST(char *dept_no)
-ARGLIST(double *percent)
+int get_input (char *dept_no, double *percent)
 {
     if (Dept_data[Input_ptr] == 0)
         return 0;
@@ -166,3 +162,4 @@ ARGLIST(double *percent)
  
     return 1;
 }
+

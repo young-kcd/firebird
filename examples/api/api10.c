@@ -38,9 +38,7 @@ char    *upd_str =
     "UPDATE proj_dept_budget SET quart_head_cnt = ? WHERE CURRENT OF S";
 
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     long            hcnt[4];
     ISC_QUAD        array_id;
@@ -154,7 +152,7 @@ ARGLIST(char **argv)
                                     (ISC_ARRAY_DESC *) &desc,
                                     (void *) hcnt,
                                     (long *) &len))
-                                    {ERREXIT (status, 1)};
+                                    {ERREXIT (status, 1)}
 
             dept_no [osqlda->sqlvar[0].sqllen] = '\0';
             printf("Department #:  %s\n\n", dept_no);
@@ -172,7 +170,7 @@ ARGLIST(char **argv)
                                     (ISC_ARRAY_DESC *) &desc,
                                     (void *) hcnt,
                                     (long *) &len))
-                                    {ERREXIT (status, 1)};
+                                    {ERREXIT (status, 1)}
 
             /* Update the array handle. */
             if (isc_dsql_execute(status, &trans, &ustmt, 1, isqlda))
@@ -210,3 +208,4 @@ ARGLIST(char **argv)
 
     return 0;
 }
+

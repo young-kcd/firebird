@@ -37,9 +37,7 @@ int select_projects (isc_db_handle db, int emp_no);
 int add_emp_proj (isc_db_handle db, int emp_no, char * proj_id);
 int get_params (isc_db_handle db, int * emp_no, char * proj_id);
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     int             emp_no;
     char            proj_id[PROJLEN + 2];
@@ -97,9 +95,7 @@ ARGLIST(char **argv)
  *    Select from a stored procedure.
  *    Procedure 'get_emp_proj' gets employee's projects.
  */
-int select_projects (ARG(isc_db_handle, db), ARG(int, emp_no))
-ARGLIST(void    *db)
-ARGLIST(int     emp_no)
+int select_projects (isc_db_handle db, int emp_no)
 {
     char            proj_id[PROJLEN + 2];
     char            selstr[BUFLEN];
@@ -171,10 +167,7 @@ ARGLIST(int     emp_no)
  *    Execute a stored procedure.
  *    Procedure 'add_emp_proj' adds an employee to a project.
  */
-int add_emp_proj (ARG(isc_db_handle, db), ARG(int, emp_no), ARG(char *, proj_id))
-ARGLIST(void    *db)
-ARGLIST(int     emp_no)
-ARGLIST(char    *proj_id)
+int add_emp_proj (isc_db_handle db, int emp_no, char *proj_id)
 {
     char            exec_str[BUFLEN];
     isc_tr_handle   trans = NULL;
@@ -204,12 +197,7 @@ ARGLIST(char    *proj_id)
 /*
  *    Set-up procedure parameters and clean-up old data.
  */
-int get_params (ARG(void *, db),
-                ARG(int *, emp_no),
-                ARG(char *, proj_id))
-ARGLIST(void    *db)
-ARGLIST(int     *emp_no)
-ARGLIST(char    *proj_id)
+int get_params (isc_db_handle db, int *emp_no, char *proj_id)
 {
     isc_tr_handle   trans = NULL;
     ISC_STATUS_ARRAY    status;
@@ -239,3 +227,4 @@ ARGLIST(char    *proj_id)
 
     return 0;
 }
+

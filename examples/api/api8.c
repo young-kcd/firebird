@@ -62,9 +62,7 @@ static char *Proj_data[] =
 
 int Inp_ptr = 0;
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)                         
+int main (int argc, char** argv)
 {
     char                proj_id[PROJLEN + 1];
     char                upd_stmt[BUFLEN + 1];
@@ -180,3 +178,4 @@ char *get_line (void)
 {
     return Proj_data[Inp_ptr++];
 }
+

@@ -39,9 +39,7 @@
 #include "example.h"
 #include <ibase.h>
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     isc_db_handle   db = NULL;      /* database handle */
     isc_tr_handle   trans = NULL;     /* transaction handle */
@@ -218,3 +216,4 @@ ARGLIST(char **argv)
 
     return 0;
 }
+

@@ -20,9 +20,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-/*
-$Id: dynfull.e,v 1.3 2004-01-21 07:16:05 skidder Exp $
-*/
 
 #include "example.h"
 #include <stdio.h>
@@ -65,9 +62,7 @@ EXEC SQL
 
 
 
-int main(ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main(int argc, char** argv)
 {
 	char	query[MAXLEN];
 	XSQLDA	*sqlda;
@@ -114,10 +109,7 @@ ARGLIST(char **argv)
 }
 
 
-void process_statement(ARG(XSQLDA * *, sqldap), 
-		ARG(char *, query))
-	ARGLIST(XSQLDA	**sqldap)
-	ARGLIST(char	*query)
+void process_statement(XSQLDA** sqldap, char* query)
 {
 	int	buffer[MAXLEN];
 	XSQLVAR	*var;
@@ -250,8 +242,7 @@ Error:
 /*
  *	Print column's data.
  */
-void print_column(ARG(XSQLVAR *, var))
-ARGLIST(XSQLVAR	*var)
+void print_column(XSQLVAR* var)
 {
 	short		dtype;
 	char		data[MAXLEN], *p;
@@ -384,7 +375,7 @@ ARGLIST(XSQLVAR	*var)
 				    sprintf (p, "%*" ISC_INT64_FORMAT "d%",
 					    field_width, 
 					    (ISC_INT64) value);
-				};
+				}
 				break;
 
 			case SQL_FLOAT:
@@ -452,8 +443,7 @@ ARGLIST(XSQLVAR	*var)
  *	Prompt for and get input.
  *	Statements are terminated by a semicolon.
  */
-int get_statement(ARG(char *, buf))
-	ARGLIST(char	*buf)
+int get_statement(char* buf)
 {
 	short	c;
 	char	*p;
@@ -497,3 +487,4 @@ int get_statement(ARG(char *, buf))
 		cnt++;
 	}
 }
+

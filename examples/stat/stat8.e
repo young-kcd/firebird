@@ -126,11 +126,11 @@ int main (void)
 		COMMIT RELEASE;
 
 	printf("\n\nAdded %d project descriptions.\n", rec_cnt);
-return 0;
+	return 0;
 		
 Error:
 	isc_print_sqlerror((short) SQLCODE, isc_status);
-return 1;
+	return 1;
 }
 
 

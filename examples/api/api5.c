@@ -41,9 +41,7 @@ isc_tr_handle    trans = 0;                    /* transaction handle */
 ISC_STATUS_ARRAY status;                       /* status vector */
 
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     int                num_cols, i;
     isc_stmt_handle    stmt = NULL;
@@ -140,3 +138,4 @@ ARGLIST(char **argv)
 
     return 0;
 }
+

@@ -34,7 +34,7 @@ EXEC SQL INCLUDE SQLCA;
 void select_projects (short emp_no);
 void get_params (short *emp_no, char* proj_id);
 void pr_error (long status);
-int add_emp_proj (short emp_no,char * proj_id);
+void add_emp_proj (short emp_no,char * proj_id);
 
 
 
@@ -73,8 +73,7 @@ int main (void)
  *	Select from a stored procedure.
  *	Procedure 'get_emp_proj' gets employee's projects.
  */
-void select_projects(ARG(short, emp_no))
-	ARGLIST(short emp_no)
+void select_projects(BASED_ON employee.emp_no emp_no)
 {
 	BASED_ON project.proj_id	proj_id;
 
@@ -118,10 +117,7 @@ SelError:
  *	Execute a stored procedure.
  *	Procedure 'add_emp_proj' adds an employee to a project.
  */
-add_emp_proj(ARG(short, emp_no),
-             ARG(char *, proj_id))
-	ARGLIST(BASED_ON employee.emp_no	emp_no)
-	ARGLIST(BASED_ON project.proj_id	proj_id)
+void add_emp_proj(BASED_ON employee.emp_no emp_no, BASED_ON project.proj_id proj_id)
 {
 	EXEC SQL
 		WHENEVER SQLERROR GO TO AddError;
@@ -141,10 +137,7 @@ AddError:
 /*
  *	Set-up procedure parameters and clean-up old data.
  */
-void get_params(ARG(short *, emp_no),
-                ARG(char *, proj_id))
-ARGLIST(BASED_ON employee.emp_no		*emp_no)
-ARGLIST(BASED_ON project.proj_id		proj_id)
+void get_params(BASED_ON employee.emp_no *emp_no, BASED_ON project.proj_id proj_id)
 {
 	*emp_no = 8;
 	strcpy(proj_id, "MAPDB");
@@ -165,8 +158,7 @@ CleanupError:
 /*
  *	Print an error message.
  */
-void pr_error(ARG(long, status))
-	ARGLIST(long	status)
+void pr_error(long status)
 {
 	isc_print_sqlerror(SQLCODE, gds__status);
 }

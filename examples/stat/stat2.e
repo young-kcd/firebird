@@ -85,6 +85,6 @@ int main (void)
 
 	EXEC SQL
 		COMMIT RELEASE;
-exit(0);
+	exit(0);
 }
 

@@ -101,10 +101,10 @@ int main (void)
 	EXEC SQL
 		COMMIT WORK;
 
-return 0;
+	return 0;
 		
 Error:
 	isc_print_sqlerror((short) SQLCODE, gds__status);
-return 1;
+	return 1;
 }
 

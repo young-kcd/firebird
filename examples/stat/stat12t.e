@@ -35,9 +35,7 @@ EXEC SQL
 EXEC SQL	
 	END DECLARE SECTION;
 
-int main(ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main(int argc, char** argv)
 {
         EXEC SQL
 		CONNECT empdb;
@@ -81,3 +79,4 @@ ARGLIST(char **argv)
         exit(0);
 
 }
+

@@ -55,9 +55,7 @@ char *tot_str =
 
 
 
-int main (ARG(int, argc), ARG(char **,argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     char                dept_no[DEPTLEN + 2];
     char                proj_id[PROJLEN + 2];
@@ -251,8 +249,7 @@ ARGLIST(char **argv)
 /*
  *    Determine a percent increase for the department's budget.
  */
-float increase_factor (ARG(double, budget))
-ARGLIST(double    budget)
+float increase_factor (double budget)
 {
     if (budget < 100000L)
         return (float)0.15;
@@ -261,3 +258,4 @@ ARGLIST(double    budget)
     else 
         return (float)0.5;
 }
+

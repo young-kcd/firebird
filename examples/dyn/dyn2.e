@@ -47,9 +47,7 @@ EXEC SQL
 	SET DATABASE empdb = "employee.fdb" RUNTIME :Db_name;
 
 
-int main(ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main(int argc, char** argv)
 {
 	BASED_ON department.department	dept_name;
 	BASED_ON department.dept_no		dept_id;
@@ -132,8 +130,7 @@ MainError:
 /*
  *  Construct an 'insert' statement from the supplied parameters.
  */
-int get_line(ARG(char *, line))
-ARGLIST(char	*line)
+int get_line(char* line)
 {
 	if (Dept_data[Dept_ptr] == 0)
 		return 0;
@@ -172,3 +169,4 @@ CleanErr:
 	printf("SQLCODE=%d\n", SQLCODE);
 	exit(1);
 }
+

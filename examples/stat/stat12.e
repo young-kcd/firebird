@@ -53,9 +53,7 @@ EXEC SQL
 	END DECLARE SECTION;
 
 
-int main(ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main(int argc, char** argv)
 {
 	int	ret = 0;
 	BASED_ON sales.po_number pon;
@@ -124,8 +122,7 @@ Error:
 /*
  *	Initiate order processing for a newly received sales order.
  */
-int process_order(ARG(char *, pon))
-ARGLIST(char * pon)
+int process_order(char* pon)
 {
 	/*
 	 *	This function would start a back-ground job, such as
@@ -141,3 +138,4 @@ ARGLIST(char * pon)
 	}
 	return 0;
 }
+

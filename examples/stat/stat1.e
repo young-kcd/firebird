@@ -67,7 +67,7 @@ int main (void)
 			ROLLBACK RELEASE;
 		printf("\nUNDONE.\n\n");
 	}
-return 0;
+	return 0;
 }
 
 
@@ -99,3 +99,4 @@ void clean_up (void)
 	EXEC SQL
 		COMMIT WORK;
 }
+

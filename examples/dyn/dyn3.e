@@ -43,9 +43,7 @@ EXEC SQL
 	SET DATABASE empdb = "employee.fdb" RUNTIME :Db_name;
 
 
-int main(ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main(int argc, char** argv)
 {
 
 	SQL_VARCHAR(15) first_name;
@@ -144,3 +142,4 @@ void print_error (void)
 	isc_print_status(gds__status);
 	printf("SQLCODE=%d\n", SQLCODE);
 }
+

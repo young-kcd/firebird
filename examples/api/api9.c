@@ -44,9 +44,7 @@ char    *sel_str =
 /* Blob parameter buffer. */
 char bpb[] = {1,2,2,-4,-1,1,2,1,0};
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     char                job_code[CODELEN + 2];
     short               job_grade;
@@ -178,3 +176,4 @@ ARGLIST(char **argv)
 
     return 0;
 }
+

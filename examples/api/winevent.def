@@ -31,3 +31,4 @@ STACKSIZE      15000
 EXPORTS
 		; This needs an "_" prefix since it is a cdecl function
 		_AstRoutine
+		

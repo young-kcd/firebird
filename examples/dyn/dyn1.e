@@ -41,9 +41,7 @@ char    *insert_date    = "INSERT INTO dbinfo VALUES ('NOW')";
 EXEC SQL
 	SET DATABASE db = COMPILETIME "employee.fdb";
 
-int main(ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main(int argc, char** argv)
 {
 
 	db = NULL;
@@ -133,8 +131,7 @@ ARGLIST(char **argv)
  *	Print the status, the SQLCODE, and exit.
  *	Also, indicate which operation the error occured on.
  */
-void pr_error(ARG(char *, operation))
-ARGLIST(char *operation)
+void pr_error(char* operation)
 {
 	printf("[\n");
 	printf("PROBLEM ON \"%s\".\n", operation);
@@ -145,3 +142,4 @@ ARGLIST(char *operation)
 	
 	printf("]\n");
 }
+

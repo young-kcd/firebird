@@ -92,13 +92,13 @@ AllDone:
 	EXEC SQL
 		COMMIT RELEASE;
 
-return 0;
+	return 0;
 
 	/*
 	 *	Print the error, and exit.
 	 */
 Error:
 	isc_print_sqlerror((short)SQLCODE, gds__status);
-return 1;
+	return 1;
 }
 

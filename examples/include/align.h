@@ -21,9 +21,6 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  */
-/*
-$Id: align.h,v 1.1 2003-07-10 23:04:39 brodsom Exp $
-*/
 
 #ifdef VMS
 #define FB_ALIGN(n,b)              (n)
@@ -50,3 +47,4 @@ $Id: align.h,v 1.1 2003-07-10 23:04:39 brodsom Exp $
 #ifndef FB_ALIGN
 #define FB_ALIGN(n,b)          ((n+1) & ~1)
 #endif
+

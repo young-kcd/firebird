@@ -177,7 +177,7 @@ int main  (void)
 
 	EXEC SQL
 		DISCONNECT ALL;
-return (0);
+	return (0);
 }
 
 
@@ -196,7 +196,7 @@ int count_types (void)
 	else 
 		if( pr_error())
 		    return 1;;
-return (0);
+	return (0);
 }
 
 
@@ -216,7 +216,7 @@ int count_records (void)
 	else 
 		if( pr_error())
 			return 1;;
-return (0);
+	return (0);
 }
 
 
@@ -230,5 +230,6 @@ long pr_error (void)
 		isc_print_sqlerror(SQLCODE, isc_status);
 		printf("\n");
 	}
-return (SQLCODE);
+	return (SQLCODE);
 }
+

@@ -50,7 +50,7 @@
 
 #define BUFLEN        512
     
-char * more_orders (void);
+char* more_orders (void);
 int do_trans (void);
 int cleanup (void);
 
@@ -71,9 +71,7 @@ int Inp_ptr = 0;
 char    *trans_str = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED";
 
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     char empdb[128];
 
@@ -375,7 +373,8 @@ int cleanup (void)
 /*
  *    Return the order number for the next sales order to be entered.
  */
-char *more_orders (void)
+char* more_orders (void)
 {
     return Sales[Inp_ptr++];
 }
+

@@ -16,6 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+
 #include <stdio.h>
 #include <ibase.h>
 #include "example.h"
@@ -63,9 +64,7 @@ extern int	fgetc();
 static char prevbuf[BUFFER_LENGTH + 1];
 static int width = 40;
 
-int EXPORT desc_filter (ARG(SHORT, action), ARG(ISC_BLOB_CTL, control))
-ARGLIST(SHORT action)
-ARGLIST(ISC_BLOB_CTL control)
+int EXPORT desc_filter (SHORT action, ISC_BLOB_CTL control)
 {
 /**************************************
  *
@@ -118,14 +117,8 @@ switch (action)
 	return FB_SUCCESS;
 }
 
-static int caller (ARG(SHORT, action), ARG(ISC_BLOB_CTL, control),
-                   ARG(SHORT, buffer_length), ARG(CHAR*, buffer),
-                   ARG(SHORT*, return_length))
-ARGLIST(SHORT action)
-ARGLIST(ISC_BLOB_CTL control)
-ARGLIST(SHORT buffer_length)
-ARGLIST(CHAR *buffer)
-ARGLIST(SHORT *return_length)
+static int caller (SHORT action, ISC_BLOB_CTL control, SHORT buffer_length,
+    CHAR *buffer, SHORT *return_length)
 {
 /**************************************
  *
@@ -156,9 +149,7 @@ return status;
 }
 
 
-static int dump_text (ARG(SHORT, action), ARG(ISC_BLOB_CTL, control))
-ARGLIST(SHORT action)
-ARGLIST(ISC_BLOB_CTL control)
+static int dump_text (SHORT action, ISC_BLOB_CTL control)
 {
 /**************************************
  *
@@ -229,9 +220,7 @@ ARGLIST(ISC_BLOB_CTL control)
 	return FB_SUCCESS;
 }
 
-static void set_statistics (ARG(char*, filename), ARG(ISC_BLOB_CTL, control))
-ARGLIST(char filename)
-ARGLIST(ISC_BLOB_CTL control)
+static void set_statistics (char* filename, ISC_BLOB_CTL control)
 {
 /*************************************
  *
@@ -293,9 +282,7 @@ control->ctl_number_segments = num_segs;
 control->ctl_total_length = length;
 }
 
-static int read_text (ARG(SHORT, action), ARG(ISC_BLOB_CTL, control))
-ARGLIST(SHORT action)
-ARGLIST(ISC_BLOB_CTL control)
+static int read_text (SHORT action, ISC_BLOB_CTL control)
 {
 /**************************************
  *
@@ -337,3 +324,4 @@ for (;;)
 
 return isc_segstr_eof;
 }
+

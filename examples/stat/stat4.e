@@ -87,11 +87,11 @@ int main (void)
 	EXEC SQL
 		COMMIT RELEASE;
 
-return 0;
+	return 0;
 
 Error1:
 		pr_error();
-return 1;
+	return 1;
 }
 
 
@@ -156,11 +156,11 @@ void build_tree (void)
 
 		if (SQLCODE == 100)
 			return;
-	};
+	}
 
 Error2:
 	pr_error();
-return ;
+	return;
 }
 
 
@@ -171,3 +171,4 @@ void pr_error (void)
 {
 	isc_print_sqlerror((short)SQLCODE, gds__status);
 }
+

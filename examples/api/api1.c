@@ -40,9 +40,7 @@ int pr_error (long *, char *);
 static char *create_tbl  = "CREATE TABLE dbinfo (when_created DATE)";
 static char *insert_date = "INSERT INTO dbinfo VALUES ('NOW')";
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv) 
+int main (int argc, char** argv)
 {
     isc_db_handle   newdb = NULL;          /* database handle */
     isc_tr_handle   trans = NULL;          /* transaction handle */
@@ -125,9 +123,7 @@ ARGLIST(char **argv)
  *    Print the status, the SQLCODE, and exit.
  *    Also, indicate which operation the error occured on.
  */
-int pr_error (ARG(long *, status), ARG(char *, operation))
-ARGLIST(long * status)
-ARGLIST(char * operation)                                         
+int pr_error (long* status, char* operation)
 {
     printf("[\n");
     printf("PROBLEM ON \"%s\".\n", operation);
@@ -140,3 +136,4 @@ ARGLIST(char * operation)
 
     return 1;
 }
+

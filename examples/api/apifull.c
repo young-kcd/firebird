@@ -20,9 +20,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-/*
-$Id: apifull.c,v 1.4 2004-01-21 07:16:04 skidder Exp $
-*/
 
 #include <stdlib.h>
 #include <string.h>
@@ -77,9 +74,7 @@ int                ret;
 #endif
 
 
-int main (ARG(int, argc), ARG(char **, argv))
-ARGLIST(int    argc)
-ARGLIST(char **argv)
+int main (int argc, char** argv)
 {
     int                   query[MAXLEN];
     XSQLDA    *            sqlda;
@@ -126,7 +121,7 @@ ARGLIST(char **argv)
         /* We must pass the address of sqlda, in case it
         ** gets re-allocated 
         */
-        ret = process_statement((XSQLDA **) &sqlda,
+        ret = process_statement(&sqlda,
                                 (char *) query);
             if (ret == 1)
                 break;
@@ -138,12 +133,12 @@ ARGLIST(char **argv)
         if (isc_commit_transaction(status, &trans))
 	{
 	    ERREXIT(status,1);
-	};
+	}
 
     if (isc_detach_database(status, &db))
     {
-	ERREXIT(status,1);
-    };
+		ERREXIT(status,1);
+    }
 
     return ret;
 }
@@ -156,10 +151,7 @@ ARGLIST(char **argv)
 **  which will print the error and continue.
 */
 
-process_statement (ARG(XSQLDA **, sqldap),
-                   ARG(char *, query))
-ARGLIST(XSQLDA  **sqldap)
-ARGLIST(char    *query)
+process_statement (XSQLDA **sqldap, char *query)
 {
     int            buffer[MAXLEN];
     XSQLDA          *sqlda;
@@ -295,8 +287,8 @@ ARGLIST(char    *query)
     /* Close cursor */
     if (isc_dsql_free_statement(status, &stmt, DSQL_close))
     {
-	ERREXIT (status,2);
-    };
+		ERREXIT (status,2);
+    }
 
     if (fetch_stat != 100L)
     {
@@ -309,8 +301,7 @@ ARGLIST(char    *query)
 /*
  *    Print column's data.
  */
-void print_column (ARG(XSQLVAR *, var))
-ARGLIST(XSQLVAR    *var)
+void print_column (XSQLVAR *var)
 {
     short       dtype;
     char        data[MAXLEN], *p;
@@ -444,7 +435,7 @@ ARGLIST(XSQLVAR    *var)
 		    sprintf (p, "%*" ISC_INT64_FORMAT "d%",
 			    field_width, 
 			    (ISC_INT64) value);
-		};
+		}
                 break;
 
             case SQL_FLOAT:
@@ -512,8 +503,7 @@ ARGLIST(XSQLVAR    *var)
  *    Prompt for and get input.
  *    Statements are terminated by a semicolon.
  */
-int get_statement (ARG(char *,buf))
-ARGLIST(char *buf)
+int get_statement (char *buf)
 {
     short   c;
     char    *p;

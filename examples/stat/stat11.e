@@ -51,9 +51,7 @@ EXEC SQL
 
 
 
-int main(ARG(int, argc), ARG(char **, argv))
-ARGLIST(int argc)
-ARGLIST(char **argv)
+int main(int argc, char** argv)
 {
 
 	if (argc > 1)
@@ -165,7 +163,7 @@ ARGLIST(char **argv)
 
 	EXEC SQL
 		DISCONNECT empdb;
-return (0);
+	return (0);
 err:
 	isc_print_status(isc_status);
 	return 1;
