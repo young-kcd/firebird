@@ -2762,7 +2762,10 @@ static void pass1_blob( DSQL_REQ request, DSQL_NOD input)
  	pass1_coalesce
   
     @brief	Handle a reference to a coalesce function.
- 
+
+	COALESCE(expr-1, expr-2 [, expr-n])
+	is the same as :
+	CASE WHEN (expr-1 IS NULL) THEN expr-2 ELSE expr-1 END
 
     @param request
     @param input
@@ -2778,20 +2781,33 @@ static DSQL_NOD pass1_coalesce( DSQL_REQ request, DSQL_NOD input, USHORT proc_fl
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
 
-	node = MAKE_node(nod_coalesce, 1);
+	node = MAKE_node(nod_coalesce, 2);
 
-	/* Pass list of arguments 2..n on stack and make a list from it */
+	// Pass list of arguments 2..n on stack and make a list from it
 	stack = NULL;
 	pass1_put_args_on_stack(request, input->nod_arg [0], &stack, proc_flag);
 	pass1_put_args_on_stack(request, input->nod_arg [1], &stack, proc_flag);
 	node->nod_arg[0] = MAKE_list(stack);
 
-	/* Set descriptor for output node */
+	// Parse the items again for the return values.
+	// We can't copy else we get an 'context in use error' with sub-selects.
+	stack = NULL;
+	pass1_put_args_on_stack(request, input->nod_arg [0], &stack, proc_flag);
+	pass1_put_args_on_stack(request, input->nod_arg [1], &stack, proc_flag);
+	node->nod_arg[1] = MAKE_list(stack);
+
+	// Set descriptor for output node
 	MAKE_desc(&node->nod_desc, node);
 
-	/* Set parameter-types if parameters are there */
-	for (ptr = node->nod_arg[0]->nod_arg, end = ptr + node->nod_arg[0]->nod_count; 
-	     ptr < end; ptr++) {
+	// Set parameter-types if parameters are there
+	ptr = node->nod_arg[0]->nod_arg;
+	end = ptr + node->nod_arg[0]->nod_count;
+	for (; ptr < end; ptr++) {
+		set_parameter_type(*ptr, node, FALSE);
+	}
+	ptr = node->nod_arg[1]->nod_arg;
+	end = ptr + node->nod_arg[1]->nod_count;
+	for (; ptr < end; ptr++) {
 		set_parameter_type(*ptr, node, FALSE);
 	}
 

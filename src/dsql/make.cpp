@@ -1414,7 +1414,7 @@ PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag, USHORT
 
 	DEV_BLKCHK(message, dsql_type_msg);
 	
-	if (sqlda_flag && sqlda_index && (sqlda_index < message->msg_index) && 
+	if (sqlda_flag && sqlda_index && (sqlda_index <= message->msg_index) && 
 		!Config::getOldParameterOrdering()) 
 	{
 		// This parameter possibly already here. Look for it

@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.29 2003-03-01 19:19:22 alexpeshkoff Exp $
+$Id: gen.cpp,v 1.30 2003-03-31 19:11:53 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -1223,7 +1223,17 @@ static void gen_cast( DSQL_REQ request, DSQL_NOD node)
  gen_coalesce
   
     @brief      Generate BLR for coalesce function
- 
+
+	Generate the blr values, begin with a cast and then :
+
+	blr_value_if
+	blr_missing
+	blr for expression 1
+		blr_value_if
+		blr_missing
+		blr for expression n
+		blr_null
+	blr for expression n-1
 
     @param request
     @param node
@@ -1233,19 +1243,24 @@ static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
 {
 	DSQL_NOD list, *ptr, *end;
 
-	/* blr_value_if is used for building the coalesce function */
-
+	// blr_value_if is used for building the coalesce function
 	list = node->nod_arg[0];
 	STUFF(blr_cast);
 	gen_descriptor(request, &node->nod_desc, TRUE);
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
 	{
+		// IF (expression IS NULL) THEN
 		STUFF(blr_value_if);
 		STUFF(blr_missing);
 		GEN_expr(request, *ptr);
 	}
+	// Return values
+	list = node->nod_arg[1];
+	end = list->nod_arg;
+	ptr = end + list->nod_count;
+	// if all expressions are NULL return NULL
 	STUFF(blr_null);
-	for (end = list->nod_arg, ptr = end + list->nod_count, ptr--; ptr >= end; ptr--)
+	for (ptr--; ptr >= end; ptr--)
 	{
 		GEN_expr(request, *ptr);
 	}
