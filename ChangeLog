@@ -1,3 +1,12 @@
+2004-03-23 12:07  aafemt
+
+	* firebird2/builds/posix/: prefix.darwin, prefix.freebsd,
+	prefix.linux, prefix.linux_amd64, prefix.linux_sparc32,
+	prefix.mingw, prefix.sinixz, prefix.solaris:
+	
+	Remove DEBUG_GDS_ALLOC from platform files since Alex's added it
+	into make.rules
+
 2004-03-22 18:33  epocman
 
 	* firebird2/src/utilities/: fbcpl/fbdialog.cpp, install_nt.h,
