@@ -640,7 +640,7 @@ static void internal_error(ISC_STATUS status, int number,
 				break;
 			}
 		}
-		sprintf(errmsg + strlen(errmsg), " (%d), file: %s line %d", number, ptr, line);
+		sprintf(errmsg + strlen(errmsg), " (%d), file: %s line: %d", number, ptr, line);
 	}
 	else {
 		sprintf(errmsg + strlen(errmsg), " (%d)", number);
