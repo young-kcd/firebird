@@ -1,3 +1,92 @@
+2003-08-04 23:54  skidder
+
+	* firebird2/doc/sql.extensions/: README.aggregate_tracking,
+	README.context_variables, README.data_types,
+	README.exception_handling, README.execute_statement,
+	README.explicit_locks, README.order_by_expressions_nulls,
+	README.savepoints, README.universal_triggers:
+	
+	Move docs to B1_5_Release
+
+2003-08-04 23:21  skidder
+
+	* firebird2/builds/posix/prefix.linux:
+	
+	Return Linux port to buildable state after fixup of Darwin port by
+	John Bellardo
+
+2003-08-04 17:32  skidder
+
+	* firebird2/: src/misc/ids.m, builds/posix/Makefile.in.codes:
+	
+	Clean up some recent shit after Blas to make engine compile
+
+2003-08-04 12:20  skidder
+
+	* firebird2/src/jrd/fun.epp:
+	
+	Fix string trunction bug when calling UDFs using BY DESCRIPTOR
+	convention with CHAR/VARCHAR octets parameters.  Found and fixed by
+	Fred Polizo.
+
+2003-08-04 10:13  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	no message
+
+2003-08-04 10:12  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added RC5 changes
+
+2003-08-04 10:08  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added RC5 changes
+
+2003-08-04 09:21  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	no message
+
+2003-08-04 09:20  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	A bit corrected GDSCODE handling + minor cleanup.
+
+2003-08-04 09:15  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	A bit corrected GDSCODE handling + minor cleanup.
+
+2003-08-04 01:54  brodsom
+
+	* firebird2/src/jrd/: cmp.cpp, dfw.epp, met.epp:
+	
+	Rollback generated metadata headers
+
+2003-08-04 01:25  brodsom
+
+	* firebird2/src/: jrd/idx.h, jrd/ini.epp, jrd/ini.h, jrd/types.h,
+	jrd/vio.cpp, jrd/fields.h, jrd/names.h, jrd/relations.h,
+	include/gen/fields.h, include/gen/ids.h, include/gen/names.h,
+	include/gen/relations.h:
+	
+	Rollback generated metadata headers change
+
+2003-08-04 01:17  brodsom
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.examples,
+	builds/posix/Makefile.in.firebird:
+	
+	Solve the examples failure in Linux build
+
 2003-08-03 21:20  skidder
 
 	* firebird2/builds/win32/parse.bat:
