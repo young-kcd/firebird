@@ -780,7 +780,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 						char buffer[256];
 						sprintf(buffer,
 								"Called from TRA_post_resources():\n\t Incrementing use count of %s\n",
-								rsc->rsc_prc->prc_name->str_data);
+								rsc->rsc_prc->prc_name->c_str());
 						JRD_print_procedure_info(tdbb, buffer);
 					}
 #endif

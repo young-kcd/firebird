@@ -1796,6 +1796,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			}
 			else
 			{
+				const USHORT extra_bytes =
+					(desc->dsc_dtype == dtype_varying) ? sizeof(USHORT) : 0;
 				if (offset_node->nod_type == nod_literal &&
 					desc1.dsc_dtype == dtype_long)
 				{
@@ -1807,7 +1809,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 						offset -= MOV_get_long(&desc3, 0);
 					}
 					// error() is a local routine in par.c, so we use plain ERR_post
-					if (offset < 0 || offset > MAX_COLUMN_SIZE - sizeof(USHORT))
+					if (offset < 0 || offset > MAX_COLUMN_SIZE - extra_bytes)
 					{
 						ERR_post(isc_bad_substring_param,
 								 isc_arg_string, "offset", 0);
@@ -1818,7 +1820,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				{
 					const SLONG lenght = MOV_get_long(&desc2, 0);
 					// error() is a local routine in par.c, so we use plain ERR_post
-					if (lenght < 0 || lenght > MAX_COLUMN_SIZE - sizeof(USHORT))
+					if (lenght < 0 || lenght > MAX_COLUMN_SIZE - extra_bytes)
 					{
 						ERR_post(isc_bad_substring_param,
 								 isc_arg_string, "length", 0);
@@ -2074,7 +2076,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 					char buffer[256];
 					sprintf(buffer,
 							"Called from CMP_make_request():\n\t Incrementing use count of %s\n",
-							procedure->prc_name->str_data);
+							procedure->prc_name->c_str());
 					JRD_print_procedure_info(tdbb, buffer);
 				}
 #endif
@@ -2274,7 +2276,7 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 		char buffer[256];
 		sprintf(buffer,
 				"Called from CMP_decrement():\n\t Decrementing use count of %s\n",
-				procedure->prc_name->str_data);
+				procedure->prc_name->c_str());
 		JRD_print_procedure_info(tdbb, buffer);
 	}
 #endif

@@ -2467,13 +2467,13 @@ static bool dump_rsb(const jrd_req* request,
 
         if (procedure->prc_request->req_fors.getCount() == 0) {
 			const Firebird::string& n = procedure->prc_name;
-            *buffer_length -= 6 + n.length();
+			*buffer_length -= 6 + n.length();
             if (*buffer_length < 0) {
                 return false;
 			}
             *buffer++ = isc_info_rsb_begin;
             *buffer++ = isc_info_rsb_relation;
-            *buffer++ = (SCHAR) n.length();
+			*buffer++ = (SCHAR) n.length();
 			memcpy(buffer, n.c_str(), n.length());
 			buffer += n.length();
             *buffer++ = isc_info_rsb_type;

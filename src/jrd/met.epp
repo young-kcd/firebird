@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.137 2004-08-30 18:10:41 alexpeshkoff Exp $
+$Id: met.epp,v 1.138 2004-09-13 21:06:40 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2639,6 +2639,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			if (procedure->prc_name.empty())
 			{
 				procedure->prc_name = P.RDB$PROCEDURE_NAME;
+				procedure->prc_name.resize(name_length(P.RDB$PROCEDURE_NAME));
 			}
 			procedure->prc_id = P.RDB$PROCEDURE_ID;
 			if (!P.RDB$SECURITY_CLASS.NULL)
