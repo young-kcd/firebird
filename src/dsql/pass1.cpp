@@ -3661,6 +3661,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
        continue neither the break if node is already allocated. If it isn't evident,
        but this variable is initialized to zero in the declaration above. You
        may write an explicit line to set it to zero here, before the loop.
+
        3.- Doesn't waste cycles if qualifier is not null. The problem is not the cycles
        themselves, but the fact that you'll detect an ambiguity that doesn't exist: if
        the field appears in more than one context but it's always qualified, then
@@ -3672,6 +3673,13 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
        the only allowed qualifier if the alias exists. Hopefully, we will eliminate
        some day this construction: "select table.field from table t" because it
        should be "t.field" instead.
+
+       AB: 2004-01-09
+       The explained query directly above doesn't work anymore, thus the day has come ;-)
+	   It's allowed to use the same fieldname between different scope levels (sub-queries)
+	   without being hit by the ambiguity check. The field uses the first match starting
+	   from it's own level (ofcourse ambiguity-check on each level is done).
+
        4.- Doesn't verify code derived automatically from check constraints. They are
        ill-formed by nature but making that code generation more orthodox is not a
        priority. Typically, they only check a field against a contant. The problem
@@ -3686,165 +3694,184 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 	dsql_lls* ambiguous_ctx_stack = NULL;
 	dsql_nod* node = 0; // This var must be initialized.
 	
-	for (dsql_lls* stack = request->req_context; stack; stack = stack->lls_next)
-	{
-		// resolve_context() checks the type of the
-		// given context, so the cast to dsql_ctx* is safe.
-		
-        dsql_ctx* context = reinterpret_cast<dsql_ctx*>(stack->lls_object);
+	// AB: Loop through the scope_levels starting by its own.
+	USHORT current_scope_level = request->req_scope_level + 1;
+	for (; current_scope_level > 0; current_scope_level--) {
 
-		dsql_fld* field;
-		if (request->req_alias_relation_prefix && qualifier) {
-			dsql_str* req_qualifier = pass1_alias_concat(request->req_alias_relation_prefix, qualifier);
-			field = resolve_context(request, req_qualifier, context);
-			delete req_qualifier;
+		// If we've found a node we're done.
+		if (node) {
+			break;
 		}
-		else {
-			field = resolve_context(request, qualifier, context);
-		}
-		// AB: When there's no relation and no procedure then we have a derived table.
-		bool is_derived_table = (!context->ctx_procedure && !context->ctx_relation && context->ctx_rse);		
 
-		if (field)
+		for (dsql_lls* stack = request->req_context; stack; stack = stack->lls_next)
 		{
-			// If there's no name then we have most probable an asterisk that
-			// needs to be exploded. This should be handled by the caller and
-			// when the caller can handle this, list is true.
-			if (!name) {
-				if (list) {
-					node = MAKE_node(nod_relation, e_rel_count);
-					node->nod_arg[e_rel_context] = reinterpret_cast<dsql_nod*>(stack->lls_object);
-					return node;
-				}
-				else {
-					break;
-				}
+			// resolve_context() checks the type of the
+			// given context, so the cast to dsql_ctx* is safe.
+		
+	        dsql_ctx* context = reinterpret_cast<dsql_ctx*>(stack->lls_object);
+
+			if (context->ctx_scope_level != (current_scope_level - 1)) {
+				continue;
 			}
 
-			for (; field; field = field->fld_next) {
-				if (!strcmp(reinterpret_cast<const char*>(name->str_data), field->fld_name)) {
-					if (!is_check_constraint && !qualifier) {
-						LLS_PUSH(context, &ambiguous_ctx_stack);
-					}
-					break;
-				}
+			dsql_fld* field;
+			if (request->req_alias_relation_prefix && qualifier) {
+				dsql_str* req_qualifier = 
+					pass1_alias_concat(request->req_alias_relation_prefix, qualifier);
+				field = resolve_context(request, req_qualifier, context);
+				delete req_qualifier;
 			}
-
-			if (qualifier && !field) {
-				break;
+			else {
+				field = resolve_context(request, qualifier, context);
 			}
+			// AB: When there's no relation and no procedure then we have a derived table.
+			bool is_derived_table = 
+				(!context->ctx_procedure && !context->ctx_relation && context->ctx_rse);		
 
-			if (field) {
-				// Intercept any reference to a field with datatype that
-				// did not exist prior to V6 and post an error
-
-				if (request->req_client_dialect <= SQL_DIALECT_V5 &&
-					(field->fld_dtype == dtype_sql_date ||
-                     field->fld_dtype == dtype_sql_time ||
-                     field->fld_dtype == dtype_int64))
-				{
-						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
-								  isc_arg_gds, isc_dsql_field_err,
-								  isc_arg_gds, isc_random,
-								  isc_arg_string, field->fld_name,
-								  isc_arg_gds,
-								  isc_sql_dialect_datatype_unsupport,
-								  isc_arg_number, request->req_client_dialect,
-								  isc_arg_string,
-								  DSC_dtype_tostring(static_cast < UCHAR >
-													 (field->fld_dtype)), 0);
-						return NULL;
-                };
-
-				// CVC: Stop here if this is our second or third iteration.
-				// Anyway, we can't report more than one ambiguity to the status vector.
-				if (node) {
-					continue;
-				}
-
-				if (indices) {
-					indices = PASS1_node(request, indices, false);
-				}
-				node = MAKE_field(context, field, indices);
-
-                if (is_check_constraint || qualifier) {
-                    break;
-                }
-			}
-		} 
-		else if (is_derived_table) {
-			// if an qualifier is present check if we have the same derived 
-			// table else continue;
-			if (qualifier) {
-				if (context->ctx_alias) {
-					if (strcmp(reinterpret_cast<const char*>(qualifier->str_data),
-							reinterpret_cast<const char*>(context->ctx_alias))) {
-						continue;
-					}
-				}
-				else {
-					continue;
-				}
-			}
-
-			// If there's no name then we have most probable a asterisk that
-			// needs to be exploded. This should be handled by the caller and
-			// when the caller can handle this, list is true.
-			if (!name) {
-				if (list) {
-					// Node is created so caller pass1_sel_list() can deal with it.
-					node = MAKE_node(nod_derived_table, e_derived_table_count);
-					node->nod_arg[e_derived_table_rse] = context->ctx_rse;
-					return node;
-				}
-				else {
-					break;
-				}				
-			}
-
-			// Because every select item has an alias we can just walk 
-			// through the list and return the correct node when found.
-			const dsql_nod* rse_items = context->ctx_rse->nod_arg[e_rse_items];
-			dsql_nod* const* ptr = rse_items->nod_arg;
-			for (const dsql_nod* const* const end = ptr + rse_items->nod_count;
-				ptr < end; ptr++)
+			if (field)
 			{
-				dsql_nod* node_select_item = *ptr;
-				// select-item should always be a alias!
-				if (node_select_item->nod_type == nod_derived_field) {
-					const dsql_str* string = (dsql_str*) node_select_item->nod_arg[e_derived_field_name];
-					if (!strcmp(reinterpret_cast<const char*>(name->str_data),
-							reinterpret_cast<const char*>(string->str_data)))
-					{
-
-						// This is a matching item so add the context to the ambiguous list.
-						if (!is_check_constraint && !qualifier) {
-							LLS_PUSH(context, &ambiguous_ctx_stack);
-						}
-
-						// Stop here if this is our second or more iteration.
-						if (node) {
-							break;
-						}
-
-						node = node_select_item;
+				// If there's no name then we have most probable an asterisk that
+				// needs to be exploded. This should be handled by the caller and
+				// when the caller can handle this, list is true.
+				if (!name) {
+					if (list) {
+						node = MAKE_node(nod_relation, e_rel_count);
+						node->nod_arg[e_rel_context] = reinterpret_cast<dsql_nod*>(stack->lls_object);
+						return node;
+					}
+					else {
 						break;
 					}
 				}
-				else {
-					// Internal dsql error: alias type expected by field.
-					//
-					// !!! THIS MESSAGE SHOULD BE CHANGED !!!
-					//
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_command_err, 0);
-				}
-			}
 
-			// If we found the field and qualifier is present or this
-			// is a check constraint we're done.
-			if (node && (is_check_constraint || qualifier)) {
-				break;
+				for (; field; field = field->fld_next) {
+					if (!strcmp(reinterpret_cast<const char*>(name->str_data), field->fld_name)) {
+						if (!is_check_constraint && !qualifier) {
+							LLS_PUSH(context, &ambiguous_ctx_stack);
+						}					
+						break;					
+					}
+				}
+
+				if (qualifier && !field) {
+					break;
+				}
+
+				if (field) {
+					// Intercept any reference to a field with datatype that
+					// did not exist prior to V6 and post an error
+
+					if (request->req_client_dialect <= SQL_DIALECT_V5 &&
+						(field->fld_dtype == dtype_sql_date ||
+						 field->fld_dtype == dtype_sql_time ||
+						 field->fld_dtype == dtype_int64))
+					{
+							ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
+									  isc_arg_gds, isc_dsql_field_err,
+									  isc_arg_gds, isc_random,
+									  isc_arg_string, field->fld_name,
+									  isc_arg_gds,
+									  isc_sql_dialect_datatype_unsupport,
+									  isc_arg_number, request->req_client_dialect,
+									  isc_arg_string,
+									  DSC_dtype_tostring(static_cast < UCHAR >
+														 (field->fld_dtype)), 0);
+							return NULL;
+					};
+
+					// CVC: Stop here if this is our second or third iteration.
+					// Anyway, we can't report more than one ambiguity to the status vector.
+					// AB: But only if we're on different scope level, because a
+					// node inside the same context should have priority.
+					if (node) {
+						continue;
+					}
+
+					if (indices) {
+						indices = PASS1_node(request, indices, false);
+					}
+					node = MAKE_field(context, field, indices);
+
+					if (is_check_constraint || qualifier) {
+						break;
+					}
+				}
+			} 
+			else if (is_derived_table) {
+				// if an qualifier is present check if we have the same derived 
+				// table else continue;
+				if (qualifier) {
+					if (context->ctx_alias) {
+						if (strcmp(reinterpret_cast<const char*>(qualifier->str_data),
+								reinterpret_cast<const char*>(context->ctx_alias))) {
+							continue;
+						}
+					}
+					else {
+						continue;
+					}
+				}
+
+				// If there's no name then we have most probable a asterisk that
+				// needs to be exploded. This should be handled by the caller and
+				// when the caller can handle this, list is true.
+				if (!name) {
+					if (list) {
+						// Node is created so caller pass1_sel_list() can deal with it.
+						node = MAKE_node(nod_derived_table, e_derived_table_count);
+						node->nod_arg[e_derived_table_rse] = context->ctx_rse;
+						return node;
+					}
+					else {
+						break;
+					}				
+				}
+
+				// Because every select item has an alias we can just walk 
+				// through the list and return the correct node when found.
+				const dsql_nod* rse_items = context->ctx_rse->nod_arg[e_rse_items];
+				dsql_nod* const* ptr = rse_items->nod_arg;
+				for (const dsql_nod* const* const end = ptr + rse_items->nod_count;
+					ptr < end; ptr++)
+				{
+					dsql_nod* node_select_item = *ptr;
+					// select-item should always be a alias!
+					if (node_select_item->nod_type == nod_derived_field) {
+						const dsql_str* string = 
+							(dsql_str*) node_select_item->nod_arg[e_derived_field_name];
+						if (!strcmp(reinterpret_cast<const char*>(name->str_data),
+								reinterpret_cast<const char*>(string->str_data)))
+						{
+
+							// This is a matching item so add the context to the ambiguous list.
+							if (!is_check_constraint && !qualifier) {
+								LLS_PUSH(context, &ambiguous_ctx_stack);
+							}
+
+							// Stop here if this is our second or more iteration.
+							if (node) {
+								break;
+							}
+
+							node = node_select_item;
+							break;
+						}
+					}
+					else {
+						// Internal dsql error: alias type expected by field.
+						//
+						// !!! THIS MESSAGE SHOULD BE CHANGED !!!
+						//
+						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+							  isc_arg_gds, isc_dsql_command_err, 0);
+					}
+				}
+
+				// If we found the field and qualifier is present or this
+				// is a check constraint we're done.
+				if (node && (is_check_constraint || qualifier)) {
+					break;
+				}
 			}
 		}
 	}
@@ -6732,31 +6759,29 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 		return NULL;
 	}
 
-/* if there is no qualifier, then we cannot match against
-   a context of a different scoping level */
-
-	if (!qualifier && context->ctx_scope_level != request->req_scope_level) {
-		return NULL;
-	}
+// if there is no qualifier, then we cannot match against
+// a context of a different scoping level
+// AB: Yes we can, but the scope level where the field is has priority.
+//	if (!qualifier && context->ctx_scope_level != request->req_scope_level) {
+//		return NULL;
+//	}
 
 	TEXT* table_name;
-	if (relation) {
-		table_name = relation->rel_name;
+	if (context->ctx_alias) {
+		table_name = context->ctx_alias;
 	}
 	else {
-		table_name = procedure->prc_name;
+		if (relation) {
+			table_name = relation->rel_name;
+		}
+		else {
+			table_name = procedure->prc_name;
+		}
 	}
 	fb_utils::fb_exact_name(table_name);
 
-/* If a context qualifier is present, make sure this is the
-   proper context */
-
-	if (qualifier &&
-		strcmp(reinterpret_cast<const char*>(qualifier->str_data), table_name)
-		&& (!context->ctx_alias
-			|| strcmp(reinterpret_cast<const char*>(qualifier->str_data),
-					context->ctx_alias)))
-	{
+// If a context qualifier is present, make sure this is the proper context
+	if (qualifier && strcmp(reinterpret_cast<const char*>(qualifier->str_data), table_name)) {
 		return NULL;
 	}
 
