@@ -262,7 +262,7 @@ USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_le
 	assert(err_position != NULL);
 	assert(obj != NULL);
 	assert(obj->csconvert_convert == (FPTR_SHORT) CS_UTFFSS_fss_to_unicode ||
-		   ((TEXTTYPE) obj)->texttype_fn_to_wc == CS_UTFFSS_fss_to_unicode);
+		   ((TEXTTYPE) obj)->texttype_fn_to_wc == (FPTR_SHORT) CS_UTFFSS_fss_to_unicode);
 
 	*err_code = 0;
 
