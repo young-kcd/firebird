@@ -31,9 +31,11 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "HM300" port
+ *
  */
 /*
-$Id: flu.cpp,v 1.17 2002-11-12 07:59:19 eku Exp $
+$Id: flu.cpp,v 1.18 2002-11-29 04:06:39 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -626,57 +628,6 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 		}
 	}							/* else module name includes a directory path, so ... */
 	return mod;
-}
-#endif
-
-
-#ifdef HM300
-#define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
-{
-/**************************************
- *
- *	I S C _ l o o k u p _ e n t r y p o i n t  ( H P 9 0 0 0 s 3 0 0 )
- *
- **************************************
- *
- * Functional description
- *	Lookup entrypoint of function.
- *
- **************************************/
-	FPTR_INT function;
-	shl_t handle;
-	TEXT buffer[256];
-	TEXT absolute_module[MAXPATHLEN];
-
-	if (function = FUNCTIONS_entrypoint(module, name))
-		return function;
-
-	terminate_at_space(module);
-
-	TEXT* p = buffer;
-	*p++ = '_';
-	for (; (*p = *name) && *name != ' '; p++, name++);
-	*p = 0;
-
-	if (ib_path_env_var == NULL)
-		strcpy(absolute_module, module);
-	else
-		if (!gds__validate_lib_path
-			(module, ib_path_env_var, absolute_module,
-			 sizeof(absolute_module))) return NULL;
-
-	REPLACE THIS COMPILER ERROR WITH CODE TO VERIFY THAT THE MODULE IS FOUND
-		EITHER IN $INTERBASE / UDF, OR $INTERBASE / intl,
-		OR IN ONE OF THE DIRECTORIES NAMED IN EXTERNAL_FUNCTION_DIRECTORY
-		LINES IN
-		ISC_CONFIG.
-	if (!(handle = shl_load(absolute_module, BIND_DEFERRED, 0L)) ||
-		shl_findsym(&handle, buffer, TYPE_PROCEDURE, &function))
-		return NULL;
-
-	return function;
 }
 #endif
 
