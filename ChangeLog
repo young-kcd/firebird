@@ -1,3 +1,22 @@
+2002-11-01 14:21  kkuznetsov
+
+	* firebird2/: builds/posix/Makefile.in.boot.gpre,
+	builds/posix/prefix.solx86, configure.in:
+	
+	[no log message]
+
+2002-11-01 14:21  kkuznetsov
+
+	* firebird2/src/jrd/: isc_sync.cpp, thd.cpp:
+	
+	for Solaris port steps
+
+2002-11-01 09:53  dimitr
+
+	* firebird2/src/dsql/parse.y:
+	
+	Cleanup.
+
 2002-10-31 17:07  alexpeshkoff
 
 	* firebird2/builds/win32/msvc6/fbserver.dsp:
