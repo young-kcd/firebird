@@ -43,14 +43,13 @@ cache), but it requires expensive equipment and time for testing.
 Another important thing. Engine AS IS already _is_ already suited for parallel 
 operation by initial design. Versioning is a great thing !
 We NEED:
-- just a few simple Java-like object-level mutexes
+- just a few simple Java-like object-level mutexes and a few
+  rw-locks
 - make it run just like CS, but using several shared subsystems
+- we should use constant objects with usage tracking 
 We do NOT NEED:
 - big amount of mutexes and mutex arrays
 - relation-level mutexes and other shit like this
-- multi-state mutexes as they are inherently deadlock-prone.
-  we should use constant objects with usage tracking or ordinary 
-  lock manager instead
 Mutexes should be aquired only for a very short periods of time.
 Linked lists usage should be discouraged. All classes touched
 by thread-safety cleanup (bdb, att, dbb) should be fixed to avoid
