@@ -558,7 +558,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 
 	try {
 
-		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+		new_pool = JrdMemoryPool::createPool();
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 		CompilerScratch* csb = PAR_parse(tdbb, blr, internal_flag);
