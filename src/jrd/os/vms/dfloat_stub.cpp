@@ -19,7 +19,7 @@
 #include "firebird.h"
 #include "gen/iberror.h"
 
-#define entry(r)	r(status) int	*status; {return error (status); };
+#define entry(r)	r(int* status) {return error (status); }
 
 entry(gds__attach_database)
 	entry(gds__blob_info)
@@ -300,8 +300,7 @@ entry(gds__attach_database)
 	entry(SCH_schedule)
 	entry(SCH_wake)
 
-	 static error(status)
-	 int *status;
+static error(int* status)
 {
 	*status++ = isc_arg_gds;
 	*status++ = isc_unavailable;
