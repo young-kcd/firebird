@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.boot.gpre,v 1.8 2002-11-14 13:53:37 dimitr Exp $
+#  $Id: Makefile.in.boot.gpre,v 1.9 2002-11-21 13:46:18 kkuznetsov Exp $
 #
 ROOT=..
 ObjModuleName=boot.gpre
@@ -49,7 +49,7 @@ JRDBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRDBOOT_Sour
 GPRECOMMON_Files += cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp \
 		gpre.cpp hsh.cpp int.cpp int_cxx.cpp jrdmet.cpp movg.cpp \
 		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp cob.cpp \
-		noform.cpp
+		noform.cpp ftn.cpp ada.cpp
 
 GPRE_Files = $(GPRECOMMON_Files) pretty.cpp gpre_meta_boot.cpp
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
