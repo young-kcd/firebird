@@ -50,7 +50,19 @@ typedef USHORT UNICODE;
 #include <stdlib.h> /* prototype for abort() */
 #define ERR_assert	LD_assert
 #define assert(ex)	{if (!(ex)){(void) LD_assert (__FILE__, __LINE__); abort();}}
+
+// Although LD_assert is not exported in win32, it is defined with DLL_EXPORT
+// most probably it could use C++ convention (see also ld_proto.h)
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void LD_assert(const SCHAR*, int);
+
+#ifdef __cplusplus
+} // extern C
+#endif
+
 #endif
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
