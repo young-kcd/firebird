@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.14 2003-02-13 09:55:51 dimitr Exp $
+ *  $Id: fb_types.h,v 1.15 2003-02-27 04:36:03 brodsom Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -43,11 +43,6 @@
 #else
 #  define  GDS_EXPORT
 #endif
-
-#ifndef GDS_FAR
-#define GDS_FAR
-#endif
-
 
 #if SIZEOF_LONG == 8
 	/* EKU: Firebird requires (S)LONG to be 32 bit */

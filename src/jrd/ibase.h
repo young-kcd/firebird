@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.28 2003-02-22 21:54:10 skidder Exp $
+$Id: ibase.h,v 1.29 2003-02-27 04:36:28 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -100,12 +100,10 @@ typedef unsigned __int64	ISC_UINT64;
 typedef FRBRD ISC_FAR* isc_att_handle;
 typedef FRBRD ISC_FAR* isc_blob_handle;
 typedef FRBRD ISC_FAR* isc_db_handle;
-typedef FRBRD ISC_FAR* isc_form_handle;
 typedef FRBRD ISC_FAR* isc_req_handle;
 typedef FRBRD ISC_FAR* isc_stmt_handle;
 typedef FRBRD ISC_FAR* isc_svc_handle;
 typedef FRBRD ISC_FAR* isc_tr_handle;
-typedef FRBRD ISC_FAR* isc_win_handle;
 typedef void (ISC_FAR* isc_callback) ();
 typedef ISC_LONG isc_resv_handle;
 
@@ -1243,112 +1241,6 @@ ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS ISC_FAR*,
 void ISC_EXPORT isc_get_client_version ( char ISC_FAR *);
 int  ISC_EXPORT isc_get_client_major_version ();
 int  ISC_EXPORT isc_get_client_minor_version ();
-
-
-/*******************************/
-/* Forms functions             */
-/*******************************/
-
-ISC_STATUS ISC_EXPORT isc_compile_map(ISC_STATUS ISC_FAR*,
-									  isc_form_handle ISC_FAR*,
-									  isc_req_handle ISC_FAR*,
-									  short ISC_FAR*,
-									  char ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_compile_menu(ISC_STATUS ISC_FAR*,
-									   isc_form_handle ISC_FAR*,
-									   isc_req_handle ISC_FAR*,
-									   short ISC_FAR*,
-									   char ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_compile_sub_map(ISC_STATUS ISC_FAR*,
-										  isc_win_handle ISC_FAR*,
-										  isc_req_handle ISC_FAR*,
-										  short ISC_FAR*,
-										  char ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_create_window(ISC_STATUS ISC_FAR*,
-										isc_win_handle ISC_FAR*,
-										short ISC_FAR*,
-										char ISC_FAR*,
-										short ISC_FAR*,
-										short ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_delete_window(ISC_STATUS ISC_FAR*,
-										isc_win_handle ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_drive_form(ISC_STATUS ISC_FAR*,
-									 isc_db_handle ISC_FAR*,
-									 isc_tr_handle ISC_FAR*,
-									 isc_win_handle ISC_FAR*,
-									 isc_req_handle ISC_FAR*,
-									 unsigned char ISC_FAR*,
-									 unsigned char ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_drive_menu(ISC_STATUS ISC_FAR*,
-									 isc_win_handle ISC_FAR*,
-									 isc_req_handle ISC_FAR*,
-									 short ISC_FAR*,
-									 char ISC_FAR*,
-									 short ISC_FAR*,
-									 char ISC_FAR*,
-									 short ISC_FAR*,
-									 short ISC_FAR*,
-									 char ISC_FAR*,
-									 ISC_LONG ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_form_delete(ISC_STATUS ISC_FAR*,
-									  isc_form_handle ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_form_fetch(ISC_STATUS ISC_FAR*,
-									 isc_db_handle ISC_FAR*,
-									 isc_tr_handle ISC_FAR*,
-									 isc_req_handle ISC_FAR*,
-									 unsigned char ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_form_insert(ISC_STATUS ISC_FAR*,
-									  isc_db_handle ISC_FAR*,
-									  isc_tr_handle ISC_FAR*,
-									  isc_req_handle ISC_FAR*,
-									  unsigned char ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_get_entree(ISC_STATUS ISC_FAR*,
-									 isc_req_handle ISC_FAR*,
-									 short ISC_FAR*,
-									 char ISC_FAR*,
-									 ISC_LONG ISC_FAR*,
-									 short ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_initialize_menu(ISC_STATUS ISC_FAR*,
-										  isc_req_handle ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_menu(ISC_STATUS ISC_FAR*,
-							   isc_win_handle ISC_FAR*,
-							   isc_req_handle ISC_FAR*,
-							   short ISC_FAR*,
-							   char ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_load_form(ISC_STATUS ISC_FAR*,
-									isc_db_handle ISC_FAR*,
-									isc_tr_handle ISC_FAR*,
-									isc_form_handle ISC_FAR*,
-									short ISC_FAR*,
-									char ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_pop_window(ISC_STATUS ISC_FAR*,
-									 isc_win_handle ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_put_entree(ISC_STATUS ISC_FAR*,
-									 isc_req_handle ISC_FAR*,
-									 short ISC_FAR*,
-									 char ISC_FAR*,
-									 ISC_LONG ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_reset_form(ISC_STATUS ISC_FAR*,
-									 isc_req_handle ISC_FAR*);
-
-ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
-										 isc_win_handle ISC_FAR*);
 
 #ifdef __cplusplus
 }	/* extern "C" */
