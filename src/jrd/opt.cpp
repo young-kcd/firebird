@@ -2439,13 +2439,6 @@ static bool dump_rsb(const jrd_req* request,
 	case rsb_procedure:
 		*buffer++ = isc_info_rsb_procedure;
 
-		// don't try to print out plans of procedures called by procedures, since 
-		// we could get into a recursive situation; if the customer wants to know 
-		// the plan produced by the sub-procedure, they can invoke it directly.
-		if (request->req_procedure) {
-			break;
-		}
-
 		procedure = rsb->rsb_procedure;
 		if (!procedure || !procedure->prc_request) {
 			return false;
@@ -2453,9 +2446,14 @@ static bool dump_rsb(const jrd_req* request,
 
         // CVC: This is becoming trickier. There are procedures that don't have a plan
         // because they don't access tables. In this case, the engine gives up and swallows
-        // the whole plan. Not acceptable.
+        // the whole plan. Not acceptable, let's show (<proc name> NATURAL) instead.
+		// Don't also try to print out plans of procedures called by procedures, since
+		// we could get into a recursive situation. If the customer wants to know
+		// the plan produced by the sub-procedure, they can invoke it directly.
 
-        if (procedure->prc_request->req_fors.getCount() == 0) {
+        if (request->req_procedure ||
+			procedure->prc_request->req_fors.getCount() == 0)
+		{
 			const Firebird::string& n = procedure->prc_name;
 			*buffer_length -= 6 + n.length();
             if (*buffer_length < 0) {
@@ -5060,8 +5058,9 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 	DEV_BLKCHK(boolean, type_nod);
 	SET_TDBB(tdbb);
 	if (rsb) {
-		if (rsb->rsb_type == rsb_navigate && inversion)
+		if (rsb->rsb_type == rsb_navigate && inversion) {
 			rsb->rsb_arg[RSB_NAV_inversion] = (RecordSource*) inversion;
+		}
 	}
 	else {
 		SSHORT size;
