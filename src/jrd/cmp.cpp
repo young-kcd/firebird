@@ -2146,6 +2146,12 @@ void DLL_EXPORT CMP_release(TDBB tdbb, JRD_REQ request)
 			if (*next == request) {
 				*next = request->req_request;
 #ifdef DEV_BUILD
+				// Once I've seen att_requests == 0x00000014,
+				// so some debugging code added to catch it earlier in dev_builds.
+				// This place is one of two, where att_requests modified.
+				// In another one (jrd.cpp/GDS_COMPILE()), it's value is used 
+				// right before pointer assignment. So make some use of pointer here
+				// to try to detect false in it earlier ...
 				if (*next) {
 					JRD_REQ req = (*next)->req_request;
 					req++;
