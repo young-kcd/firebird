@@ -19,9 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.60 2004-11-23 11:03:47 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
- * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
+ * Change in show.epp to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
  *
  * 19-May-2001 Claudio Valderrama.
@@ -312,7 +311,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 
 		case isc_info_forced_writes:
 			value_out = isc_vax_integer (d, length);
-			sprintf (info, "Forced Writes are %s %s", (value_out==1 ? "ON" : "OFF"), NEWLINE);
+			sprintf (info, "Forced Writes are %s %s", (value_out == 1 ? "ON" : "OFF"), NEWLINE);
 			break;
 
 		case isc_info_oldest_transaction :
@@ -2221,6 +2220,7 @@ static processing_state show_functions(const SCHAR* object)
 	if (!*object)
 	{
 		FOR FUN IN RDB$FUNCTIONS
+			WITH FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING
 			SORTED BY FUN.RDB$FUNCTION_NAME
 
 			first = false;
