@@ -1,3 +1,356 @@
+2002-09-09 13:40  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.662):
+	
+	increment build number
+
+2002-09-09 13:40  dimitr
+
+	* firebird2/src/jrd/dyn.epp (1.10):
+	
+	Fixed memory handling bug.
+
+2002-09-09 07:51  eku
+
+	* firebird2/builds/posix/Makefile.in.fbutil (1.2):
+	
+	Always use '$(MAKE)' instead of 'make' to call make, because it
+	could have been redefined.
+
+2002-09-09 07:48  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.660), writeBuildNum.sh
+	(1.661):
+	
+	increment build number
+
+2002-09-09 07:48  eku
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.5):
+	
+	Fixed C&P error that prevented ISQL from beeing compiled.
+
+2002-09-08 18:33  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.15):
+	
+	Don't allow sweeper to start if the database is shutdown.
+
+2002-09-08 18:32  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.658), writeBuildNum.sh
+	(1.659):
+	
+	increment build number
+
+2002-09-08 18:32  dimitr
+
+	* firebird2/src/msgs/load.epp (1.5):
+	
+	no message
+
+2002-09-08 09:56  dimitr
+
+	* firebird2/src/: iscguard/iscguard.cpp (1.5), iscguard/iscguard.h
+	(1.3), jrd/jrd.cpp (1.15), remote/ibconfig.h (1.2),
+	remote/inet_server.cpp (1.9), remote/window.h (1.3),
+	utilities/guard.cpp (1.5), utilities/util.cpp (1.5),
+	v5_examples/makefile.old (1.2):
+	
+	fbserver instead of ibserver.
+
+2002-09-08 09:56  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.656), writeBuildNum.sh
+	(1.655), writeBuildNum.sh (1.654), writeBuildNum.sh (1.653),
+	writeBuildNum.sh (1.657):
+	
+	increment build number
+
+2002-09-06 15:05  alexpeshkoff
+
+	* firebird2/src/misc/writeBuildNum.sh (1.652):
+	
+	increment build number
+
+2002-09-06 15:05  alexpeshkoff
+
+	* firebird2/src/jrd/fun.epp (1.8):
+	
+	Corrected bug with UDF's returning floating point by value
+
+2002-09-06 10:57  dimitr
+
+	* firebird2/src/jrd/db_alias.cpp (1.4):
+	
+	Proper location of the aliases config file.
+
+2002-09-06 10:57  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.651):
+	
+	increment build number
+
+2002-09-06 10:45  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.650):
+	
+	increment build number
+
+2002-09-06 10:45  eku
+
+	* firebird2/src/install/arch-specific/sinixz/: Makefile.in (1.1),
+	pkginfo.in (1.1), postinstall.in (1.1), postremove.in (1.1),
+	preinstall.in (1.1), prototype.in (1.1):
+	
+	SINIX-Z package files
+
+2002-09-06 09:51  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.649):
+	
+	increment build number
+
+2002-09-06 09:51  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.16), parse.cpp (1.24), parse.y
+	(1.24):
+	
+	More complete implementation of the INDEX subclause of a constraint
+	declaration.
+
+2002-09-06 09:13  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.648):
+	
+	increment build number
+
+2002-09-06 09:13  eku
+
+	* firebird2/configure.in (1.41):
+	
+	SINIX-Z packaging
+
+2002-09-06 06:49  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.646):
+	
+	First step to get build_no.h updated at commit-time
+
+2002-09-06 06:49  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.647):
+	
+	increment build number
+
+2002-09-05 13:48  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.645):
+	
+	increment build number
+
+2002-09-05 13:48  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.15):
+	
+	Fixed bug with wrong RDB$SYSTEM_FLAG values for the relation
+	constraint triggers.
+
+2002-09-05 11:00  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.644):
+	
+	increment build number
+
+2002-09-05 11:00  dimitr
+
+	* firebird2/src/jrd/isc_sync_win32.cpp (1.7):
+	
+	Corrected the exception handling logic:   - check asynchronous
+	(hardware) exceptions first   - proper memory management
+
+2002-09-04 20:17  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.643):
+	
+	increment build number
+
+2002-09-04 20:17  dimitr
+
+	* firebird2/src/jrd/isc_sync_win32.cpp (1.6):
+	
+	Fixed wrong exception handling logic.  Hope it's done correctly and
+	won't cause more errors.
+
+2002-09-04 16:37  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.642):
+	
+	increment build number
+
+2002-09-04 16:37  dimitr
+
+	* firebird2/src/jrd/isc_sync_win32.cpp (1.5):
+	
+	a) we're Firebird, not InterBase b) we shouldn't have such ugly
+	string handling bugs
+
+2002-09-04 15:34  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.640), writeBuildNum.sh
+	(1.641):
+	
+	increment build number
+
+2002-09-04 15:34  eku
+
+	* firebird2/src/: jrd/svc.cpp (1.15), utilities/security.epp (1.8):
+	
+	Fixed a typo that was introduced with the strcasecmp/stricmp
+	changes.
+
+2002-09-04 14:09  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.14), dsql.tab.h (1.4),
+	keywords.cpp (1.6), node.h (1.11), parse.cpp (1.23), parse.y
+	(1.23):
+	
+	Changed syntax of the INDEX subclause of a constraint declaration,
+	now it looks as: [USING [ASC[ENDING] | DESC[ENDING]] INDEX index]
+
+2002-09-04 14:09  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.639):
+	
+	increment build number
+
+2002-09-04 12:22  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.637), writeBuildNum.sh
+	(1.638):
+	
+	increment build number
+
+2002-09-04 12:22  dimitr
+
+	* firebird2/: src/jrd/intl.cpp (1.12), builds/win32/msvc6/intl.dsp
+	(1.5):
+	
+	Renamed gdsintl.dll to fbintl.dll.
+
+2002-09-04 11:12  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.636), writeBuildNum.sh
+	(1.635), writeBuildNum.sh (1.634):
+	
+	increment build number
+
+2002-09-04 11:12  dimitr
+
+	* firebird2/src/: jrd/file_params.h (1.9), msgs/build_file.epp
+	(1.6), utilities/install_nt.h (1.4), utilities/install_svc.cpp
+	(1.5):
+	
+	Make sure we're Firebird, both interbase.msg and interbase.log are
+	renamed.
+
+2002-09-04 10:19  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.633):
+	
+	increment build number
+
+2002-09-04 10:18  dimitr
+
+	* firebird2/src/utilities/registry.h (1.2):
+	
+	Changed the default registry key to the native Firebird one.
+
+2002-09-03 19:31  dimitr
+
+	* firebird2/builds/win32/msvc6/: ib_udf.def (1.1), ib_udf.dsp
+	(1.1):
+	
+	Added ib_udf project.
+
+2002-09-03 19:29  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.631), writeBuildNum.sh
+	(1.632):
+	
+	increment build number
+
+2002-09-03 19:29  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.26):
+	
+	Minor build changes in the UDF libraries.
+
+2002-09-03 19:25  dimitr
+
+	* firebird2/builds/win32/msvc6/Firebird2.dsw (1.5):
+	
+	Added ib_udf project.
+
+2002-09-03 19:23  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.629), writeBuildNum.sh
+	(1.628), writeBuildNum.sh (1.630):
+	
+	increment build number
+
+2002-09-03 19:23  dimitr
+
+	* firebird2/src/extlib/: fbudf/fbudf.cpp (1.4), fbudf/stdafx.h
+	(1.3), ib_udf.h (1.2):
+	
+	Minor build changes in the UDF libraries.
+
+2002-09-03 15:35  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.627):
+	
+	increment build number
+
+2002-09-03 15:35  eku
+
+	* firebird2/builds/posix/Makefile.in.refDatabases (1.4):
+	
+	Fixed more make problems.  Why do we touch the result here???
+
+2002-09-03 15:25  eku
+
+	* firebird2/configure.in (1.40):
+	
+	Added the new configure option '--with-lock-manager' that controlls
+	the build of the manager binary. This option is only valid for CS
+	architecture.  Replaced '#' with the correct M4 macro for comments
+	'dnl'.
+
+2002-09-03 15:24  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.625), writeBuildNum.sh
+	(1.624), writeBuildNum.sh (1.623), writeBuildNum.sh (1.622),
+	writeBuildNum.sh (1.626):
+	
+	increment build number
+
+2002-09-03 15:24  eku
+
+	* firebird2/: src/make.new/config/config.h.in (1.31),
+	builds/posix/Makefile.in.firebird (1.4),
+	src/include/gen/autoconfig_msvc.h (1.25), src/lock/lock.h (1.10):
+	
+	Added the new configure option '--with-lock-manager' that controlls
+	the build of the manager binary. This option is only valid for CS
+	architecture.
+
+2002-09-02 17:01  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.621):
+	
+	increment build number
+
 2002-09-01 17:49  dimitr
 
 	* firebird2/src/misc/writeBuildNum.sh (1.620):
