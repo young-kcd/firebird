@@ -657,7 +657,7 @@ bool_t xdr_string(XDR * xdrs,
  *
  **************************************/
 	SCHAR trash[4];
-	u_long length;
+	ULONG length;
 
 	switch (xdrs->x_op)
 	{
@@ -737,7 +737,7 @@ bool_t xdr_u_int(XDR * xdrs, u_int * ip)
 }
 
 
-bool_t xdr_u_long(XDR * xdrs, u_long * ip)
+bool_t xdr_u_long(XDR * xdrs, ULONG * ip)
 {
 /**************************************
  *
