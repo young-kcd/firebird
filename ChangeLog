@@ -1,3 +1,115 @@
+2004-08-27 19:39  skidder
+
+	* firebird2/src/jrd/thd.h (1.36):
+	
+	Temporary fix for frequent random crashes added to Firebird by Alex
+	a week or so ago.
+
+2004-08-27 11:24  robocop
+
+	* firebird2/src/dsql/ddl.cpp (1.111):
+	
+	BY SCALAR_ARRAY param can't be used as a return param.	There's no
+	support for that. It's only input param to the UDF.
+
+2004-08-27 10:34  robocop
+
+	* firebird2/src/isql/: isql.epp (1.98), isql.h (1.35):
+	
+	Add in the help the mention of SET HEADING that was introduced time
+	ago.
+
+2004-08-27 10:33  robocop
+
+	* firebird2/src/msgs/: facilities.sql (1.2), messages.sql (1.3):
+	
+	Add a new message for isql. I miss the triggers and utilities that
+	did the details for me previously
+
+2004-08-27 10:30  robocop
+
+	* firebird2/builds/win32/make_all.bat (1.27):
+	
+	Comment what seems to me a redundant copy
+
+2004-08-27 07:13  robocop
+
+	* firebird2/src/isql/isql.epp (1.97):
+	
+	Style
+
+2004-08-27 07:03  robocop
+
+	* firebird2/src/isql/show.epp (1.53):
+	
+	Show ODS as part of SHOW DATABASE command.
+
+2004-08-27 07:01  robocop
+
+	* firebird2/src/isql/isql.h (1.34):
+	
+	Support for new UDF mechanism
+
+2004-08-27 07:00  robocop
+
+	* firebird2/src/isql/isql.epp (1.96):
+	
+	Style and comment useless code
+
+2004-08-27 06:58  robocop
+
+	* firebird2/src/jrd/fun.epp (1.65):
+	
+	Enhance UDF support a bit
+
+2004-08-27 06:56  robocop
+
+	* firebird2/src/jrd/functions.cpp (1.16):
+	
+	Update the ancient example IUDF "test" to use reference with nulls
+	instead of value that can't be declared in DSQL and has
+	compatibility problems
+
+2004-08-27 06:54  robocop
+
+	* firebird2/src/jrd/types.h (1.5):
+	
+	Introduce sub_type BINARY as a synonym for sub_type 0 Document
+	reference with nulls mechanism in rdb$types
+
+2004-08-27 06:52  robocop
+
+	* firebird2/src/dsql/: ddl.cpp (1.110), dsql.h (1.66), dsql.tab.h
+	(1.40), keywords.cpp (1.32), metd.epp (1.68), parse.cpp (1.123),
+	parse.y (1.144):
+	
+	Bring DSQL up to date with UDF capabilities in the engine. 
+	Introduce SCALAR_ARRAY token.
+
+2004-08-27 06:50  robocop
+
+	* firebird2/src/gpre/cme.cpp (1.33):
+	
+	Style
+
+2004-08-27 06:48  robocop
+
+	* firebird2/src/jrd/val.h (1.27):
+	
+	The #define started before the namespace and ended inside the
+	namespace. Invalid.  Took FUN_T outside the #ifdef REQUESTER to be
+	able to use it in DSQL.
+
+2004-08-27 06:45  robocop
+
+	* firebird2/src/: jrd/btr.cpp (1.113), jrd/met.epp (1.136),
+	jrd/opt.cpp (1.187), common/config/dir_list.cpp (1.21):
+	
+	MSVC6 doesn't keep variables in a for() only in that scope. This
+	standard construction is rejected: for (int i = ...); for (int i =
+	...); Put the variable again before the loops to be able to
+	compile.
+
 2004-08-27 01:27  brodsom
 
 	* firebird2/src/remote/: remote.cpp (1.38), server.cpp (1.90),
