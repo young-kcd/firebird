@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.3 2002-08-13 10:02:13 eku Exp $
+#   $Id: make.rules,v 1.4 2002-09-10 06:08:56 eku Exp $
 #
 
 #____________________________________________________________________________
@@ -41,10 +41,11 @@ UseSharedLibraries = Yes   # If empty then we build static linked exe's
                            # in LIBGDS_LA and in Makefile.in.jrd where we do the
                            # creation of the libgds.a/so library.
 
-#UseLibToolForLink = Yes  # Currently we do not use it - but may in the future
+#UseLibToolForLink = Yes   # Currently we do not use it - but may in the future
 
-#IsProdTypeBuild =  Yes     # If this is defined then we are building a production
-                            # release with debug and optimization
+IsProdTypeBuild = @PROD_BUILD_FLG@
+                           # If this is defined then we are building a production
+                           # release with debug and optimization
 
 
 #____________________________________________________________________________
@@ -171,7 +172,7 @@ STATICLINK_LIBS = @LIBS@
 #SHLIB_LINK_OPTIONS = -shared
 
 
-ifdef IsProdTypeBuild
+ifeq ($(IsProdTypeBuild),Y)
     CXXFLAGS:=		-O3 -DPROD_BUILD  $(CXXFLAGS)
 
 else

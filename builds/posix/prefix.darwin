@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#$Id: prefix.darwin,v 1.2 2002-09-10 06:08:56 eku Exp $
 
 
 #_____________________________________________________________________________
@@ -39,7 +39,7 @@
 
 # use the following to define conditional DEV/PROD compile
     
-ifdef IsProdTypeBuild
+ifeq ($(IsProdTypeBuild),Y)
     DEBUG_Sources=      nodebug.cpp
     CFLAGS:=            -O3 -DPROD_BUILD $(CFLAGS)
 

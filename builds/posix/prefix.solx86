@@ -18,10 +18,10 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+# $Id: prefix.solx86,v 1.2 2002-09-10 06:08:56 eku Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
-ifdef IsProdTypeBuild
+ifeq ($(IsProdTypeBuild),Y)
 DEBUG_Sources= nodebug.cpp
 CFLAGS:=   -m486 -DPROD_BUILD $(CFLAGS)
 	
