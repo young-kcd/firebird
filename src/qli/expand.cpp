@@ -2939,7 +2939,8 @@ static void resolve_really( qli_fld* variable, const syn* field_node)
 	if (field_node->syn_count == 1)
 		resolved = MET_declare(0, variable, fld_name);
 	else if (field_node->syn_count == 2) {
-		for (qli_symbol* symbol = rel_name->nam_symbol; symbol;
+		qli_symbol *symbol;
+		for (symbol = rel_name->nam_symbol; symbol;
 			 symbol = symbol->sym_homonym)
 		{
 			if (symbol->sym_type == SYM_database) {

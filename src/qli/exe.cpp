@@ -309,16 +309,16 @@ file* EXEC_open_output(qli_nod* node)
 #else
 	TEXT* argv[20];
 	TEXT** arg = argv;
-	p = filename;
-	while (*p) {
-		*arg++ = p;
-		while (*p && *p != ' ')
-			p++;
-		if (!*p)
+	TEXT* pp = filename;
+	while (*pp) {
+		*arg++ = pp;
+		while (*pp && *pp != ' ')
+			pp++;
+		if (!*pp)
 			break;
-		*p++ = 0;
-		while (*p == ' ')
-			p++;
+		*pp++ = 0;
+		while (*pp == ' ')
+			pp++;
 	}
 	*arg = NULL;
 
