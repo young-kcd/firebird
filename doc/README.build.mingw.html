@@ -87,6 +87,18 @@ or<br>
 warning: unknown conversion type character `I' in format<br>
 warning: too many arguments for format</p>
 
+<h3>5.- TROUBLESHOOTING</h3>
 
+<p>AUTOGEN<p>
+<p>The autogen script creates an output file in the same directory where it is executed with the name config.out. If the autogen fails look at config.out first.</p>
+
+<p>Some permission problems, most probably related with the CVS client, has been reported. If the autogen gives a permission related error, like<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;autom4te: cannot open configure: Permission denied<br><br>
+execute in the same directory:<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;>chmod -R +uw *</p>
+
+<br>
+<br>
+<br>
 </BODY>
 </HTML>
