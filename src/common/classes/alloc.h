@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.29 2003-11-07 08:05:49 robocop Exp $
+ *  $Id: alloc.h,v 1.30 2003-12-05 10:35:29 robocop Exp $
  *
  */
 
@@ -90,7 +90,7 @@ struct MemoryBlock /* 16 bytes of block header is not too much I think */ {
 struct BlockInfo {
 	MemoryBlock* block;
 	size_t length;
-	static bool compare(const BlockInfo& i1, const BlockInfo& i2) {
+	static bool greaterThan(const BlockInfo& i1, const BlockInfo& i2) {
 		return (i1.length > i2.length) || 
 			(i1.length == i2.length && i1.block > i2.block);
 	}

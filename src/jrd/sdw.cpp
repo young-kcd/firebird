@@ -577,13 +577,13 @@ void SDW_get_shadows(void)
    to prevent missing any new ones later on, although it does not
    matter for the purposes of the current page being written */
 
-	MET_get_shadow_files(tdbb, FALSE);
+	MET_get_shadow_files(tdbb, false);
 }
 
 
 
 
-void SDW_init(USHORT activate, USHORT delete_, SBM sbm_rec)
+void SDW_init(bool activate, bool delete_, SBM sbm_rec)
 {
 /**************************************
  *
@@ -924,8 +924,8 @@ void SDW_shutdown_shadow(SDW shadow)
 
 
 void SDW_start(
-			   TEXT * file_name,
-			   USHORT shadow_number, USHORT file_flags, USHORT delete_)
+			   const TEXT* file_name,
+			   USHORT shadow_number, USHORT file_flags, bool delete_)
 {
 /**************************************
  *
@@ -1108,7 +1108,7 @@ void SDW_start(
 }
 
 
-int SDW_start_shadowing(void *ast_object)
+int SDW_start_shadowing(void* ast_object)
 {
 /**************************************
  *

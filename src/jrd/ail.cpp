@@ -72,22 +72,22 @@
 #ifdef NOT_USED_OR_REPLACED
 static void build_wal_param(UCHAR *, LGFILE **, SLONG, LGFILE *, SLONG *);
 #endif
-static void delete_log_files(TEXT *, SLONG, LLS);
+static void delete_log_files(const TEXT*, SLONG, lls*);
 #ifdef NOT_USED_OR_REPLACED
 static BOOLEAN get_walinfo(TEXT *);
 #endif
-static void initialize_wal(TDBB, TEXT *, WIN *, LIP, SSHORT, USHORT, SBM *);
+static void initialize_wal(TDBB, const TEXT*, WIN*, log_info_page*, SSHORT, bool, SBM*);
 #ifdef NOT_USED_OR_REPLACED
-static void process_log_updater(LIP);
-static void process_recovery(TDBB, TEXT *, WIN *, LIP *,
-							 SSHORT, USHORT, SBM *);
-static void set_first_user(LGFILE **, LIP, TEXT *);
+static void process_log_updater(log_info_page*);
+static void process_recovery(TDBB, const TEXT*, WIN*, log_info_page*,
+							 SSHORT, bool, SBM*);
+static void set_first_user(LGFILE **, log_info_page*, TEXT *);
 #endif
 
 #define MOVE_BYTE(x_from,x_to)	*x_to++ = *x_from++;
 
 
-void AIL_add_log(void)
+void AIL_add_log()
 {
 /**************************************
  *
@@ -99,15 +99,10 @@ void AIL_add_log(void)
  *	WAL is being enabled. 
  *
  **************************************/
-	DBB dbb;
 	WIN window;
-	LIP logp;
 	SCHAR db_name[MAXPATHLEN];
-	SBM sbm_rec;
-	TDBB tdbb;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* 
@@ -118,7 +113,7 @@ void AIL_add_log(void)
 	CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
-	logp = (LIP) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+	log_info_page* logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
 	if (logp->log_flags & log_add) {
@@ -128,7 +123,8 @@ void AIL_add_log(void)
 		logp->log_flags &= ~log_no_ail;
 		logp->log_mod_tid = 0;
 		logp->log_mod_tip = 0;
-		AIL_init(db_name, 0, &window, 0, &sbm_rec);
+		sbm* sbm_rec;
+		AIL_init(db_name, 0, &window, false, &sbm_rec);
 
 		/* With WAL, database write should be async */
 		PAG_set_force_write(dbb, FALSE);
@@ -140,9 +136,9 @@ void AIL_add_log(void)
 
 
 void AIL_checkpoint_finish(
-						   ISC_STATUS * status_vector,
+						   ISC_STATUS* status_vector,
 						   DBB dbb,
-						   SLONG seq, TEXT * walname, SLONG p_off, SLONG off)
+						   SLONG seq, const TEXT* walname, SLONG p_off, SLONG off)
 {
 /**************************************
  *
@@ -156,20 +152,18 @@ void AIL_checkpoint_finish(
  *
  **************************************/
 	WIN window;
-	PAG log_page;
-	TDBB tdbb;
-
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	PIO_flush(dbb->dbb_file);
-	if (dbb->dbb_shadow)
+	if (dbb->dbb_shadow) {
 		PIO_flush(dbb->dbb_shadow->sdw_file);
+	}
 
 	AIL_upd_cntrl_pt(walname, (USHORT) strlen(walname), seq, off, p_off);
 
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
-	log_page = CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+	pag* log_page = CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK(tdbb, &window);
 	log_page->pag_checksum = CCH_checksum(window.win_bdb);
 	PIO_write(dbb->dbb_file, window.win_bdb, window.win_buffer,
@@ -177,8 +171,9 @@ void AIL_checkpoint_finish(
 
 	CCH_write_all_shadows(tdbb, 0, window.win_bdb, status_vector, 1, FALSE);
 	PIO_flush(dbb->dbb_file);
-	if (dbb->dbb_shadow)
+	if (dbb->dbb_shadow) {
 		PIO_flush(dbb->dbb_shadow->sdw_file);
+	}
 
 	CCH_RELEASE(tdbb, &window);
 
@@ -205,19 +200,14 @@ void AIL_commit(SLONG number)
  *	A 0 length will be written out to flush the WAL.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	LTJC commit_rec;
-	SLONG seqno, offset;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	if (!dbb->dbb_wal)
 		return;
 
 /* Prepare WAL message */
-
+	LTJC commit_rec;
 	MOVE_CLEAR((SLONG*)&commit_rec, LTJC_SIZE);
 
 	commit_rec.ltjc_header.jrnh_type = JRN_COMMIT;
@@ -226,9 +216,11 @@ void AIL_commit(SLONG number)
 
 /* Write message to WAL */
 	THREAD_EXIT;
+	SLONG seqno, offset;
 	if (WAL_commit
 		(tdbb->tdbb_status_vector, dbb->dbb_wal, (UCHAR *) & commit_rec,
-		 /* LTJC_SIZE */ 0, &seqno, &offset) != FB_SUCCESS) {
+		 /* LTJC_SIZE */ 0, &seqno, &offset) != FB_SUCCESS) 
+	{
 		THREAD_ENTER;
 		ERR_punt();
 	}
@@ -236,7 +228,7 @@ void AIL_commit(SLONG number)
 }
 
 
-void AIL_disable(void)
+void AIL_disable()
 {
 /**************************************
  *
@@ -249,22 +241,15 @@ void AIL_disable(void)
  * 	Delete journal related entries from header page.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	LTJC record;
-	ULONG seqno;
-	ULONG offset;
-	TEXT journal_dir[MAXPATHLEN];
 	UCHAR data[MAXPATHLEN];
 	USHORT jd_len, d_len;
-	SLONG ret_val;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
+	UCHAR journal_dir[MAXPATHLEN];
 	PAG_get_clump(HEADER_PAGE, HDR_backup_info, &d_len, data);
-	PAG_get_clump(HEADER_PAGE, HDR_journal_server, &jd_len,
-				  reinterpret_cast < UCHAR * >(journal_dir));
+	PAG_get_clump(HEADER_PAGE, HDR_journal_server, &jd_len, journal_dir);
 	journal_dir[jd_len] = 0;
 
 	if (!jd_len)
@@ -273,15 +258,18 @@ void AIL_disable(void)
 	if (!dbb->dbb_wal)
 		ERR_post(isc_no_wal, 0);
 
-	if ((ret_val = JRN_init(tdbb->tdbb_status_vector, &dbb->dbb_journal,
+	const SLONG ret_val = JRN_init(tdbb->tdbb_status_vector, &dbb->dbb_journal,
 							dbb->dbb_page_size,
-							reinterpret_cast < UCHAR * >(journal_dir), jd_len,
-							data, d_len)) != FB_SUCCESS)
+							journal_dir, jd_len,
+							data, d_len);
+	if (ret_val != FB_SUCCESS) {
 		AIL_process_jrn_error(ret_val);
+	}
 
 	PAG_delete_clump_entry(HEADER_PAGE, HDR_journal_server);
 	PAG_delete_clump_entry(HEADER_PAGE, HDR_backup_info);
 
+	LTJC record;
 	record.ltjc_header.jrnh_type = JRN_DISABLE;
 	record.ltjc_page_size = 0;
 	record.ltjc_length = d_len;
@@ -289,11 +277,14 @@ void AIL_disable(void)
 	record.ltjc_offset = 0;
 
 	tdbb->tdbb_status_vector[1] = 0;
+	ULONG seqno;
+	ULONG offset;
 	AIL_put(dbb, tdbb->tdbb_status_vector,
-			reinterpret_cast < jrnh * >(&record), LTJC_SIZE, data, d_len,
+			reinterpret_cast<jrnh*>(&record), LTJC_SIZE, data, d_len,
 			(ULONG) 0, (ULONG) 0, &seqno, &offset);
-	if (tdbb->tdbb_status_vector[1])
+	if (tdbb->tdbb_status_vector[1]) {
 		ERR_punt();
+	}
 
 	record.ltjc_seqno = seqno;
 	record.ltjc_offset = offset;
@@ -303,19 +294,21 @@ void AIL_disable(void)
  * The WAL manager will roll over to a new file.
  */
 
-	if (WAL_journal_disable(tdbb->tdbb_status_vector, dbb->dbb_wal) !=
-		FB_SUCCESS) ERR_punt();
+	if (WAL_journal_disable(tdbb->tdbb_status_vector, dbb->dbb_wal) != FB_SUCCESS)
+	{
+		ERR_punt();
+	}
 
 	if (dbb->dbb_journal) {
-		if ((ret_val = JRN_disable(tdbb->tdbb_status_vector, dbb->dbb_journal,
-								   reinterpret_cast < jrnh * >(&record), data,
-								   d_len)) != FB_SUCCESS)
+		const SLONG ret_val2 = JRN_disable(tdbb->tdbb_status_vector, dbb->dbb_journal,
+							reinterpret_cast<jrnh*>(&record), data, d_len);
+		if (ret_val2 != FB_SUCCESS)
 			AIL_process_jrn_error(ret_val);
 	}
 }
 
 
-void AIL_drop_log(void)
+void AIL_drop_log()
 {
 /**************************************
  *
@@ -329,17 +322,8 @@ void AIL_drop_log(void)
  *	delete log files etc.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	WIN window;
-	LIP logp;
-	LLS stack = NULL;
-	TEXT latest_logname[MAXPATHLEN], journal_dir[MAXPATHLEN];
-	SLONG latest_log_p_offset;
-	USHORT jd_len;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 	if (!dbb->dbb_wal)
 		return;
 
@@ -355,24 +339,25 @@ void AIL_drop_log(void)
 	CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
 
 /* journal has to be disabled before dropping WAL */
-
-	if (PAG_get_clump
-		(HEADER_PAGE, HDR_journal_server, &jd_len,
-		 reinterpret_cast < UCHAR * >(journal_dir))) {
+	UCHAR journal_dir[MAXPATHLEN];
+	USHORT jd_len;
+	if (PAG_get_clump(HEADER_PAGE, HDR_journal_server, &jd_len, journal_dir)) {
 		AIL_disable();
 	}
 
 /* Now get a list of all the log files to be deleted. */
-
+	TEXT latest_logname[MAXPATHLEN];
+	SLONG latest_log_p_offset;
 	WAL_status(tdbb->tdbb_status_vector, dbb->dbb_wal, NULL,
 			   latest_logname, &latest_log_p_offset, NULL,
 			   NULL, NULL, NULL, NULL);
+	lls* stack = NULL;
 	AIL_get_file_list(&stack);
 
 /* Shutdown the WAL subsystem cleanly */
 
 	WAL_set_cleanup_flag(dbb->dbb_wal);
-	CCH_do_log_shutdown(tdbb, 1);
+	CCH_do_log_shutdown(tdbb, true);
 
 /* Turn on sync writes if WAL protocol is dropped */
 	PAG_set_force_write(dbb, TRUE);
@@ -388,9 +373,10 @@ void AIL_drop_log(void)
 
 /* Fetch the log page to reset WAL info on it */
 
+	WIN window;
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
-	logp = (LIP) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+	log_info_page* logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	AIL_init_log_page(logp, logp->log_file.cp_seqno);
 	CCH_RELEASE(tdbb, &window);
@@ -399,7 +385,7 @@ void AIL_drop_log(void)
 }
 
 
-void AIL_drop_log_force(void)
+void AIL_drop_log_force()
 {
 /**************************************
  *
@@ -413,12 +399,7 @@ void AIL_drop_log_force(void)
  *	are corrupted.
  *
  **************************************/
-	TDBB tdbb;
-	WIN window;
-	LIP logp;
-
-	tdbb = GET_THREAD_DATA;
-
+	TDBB tdbb = GET_THREAD_DATA;
 
 /* Get a protected write access to the database; only other
    process (thread) running during this step could be
@@ -427,10 +408,10 @@ void AIL_drop_log_force(void)
 	CCH_exclusive(tdbb, LCK_PW, LCK_WAIT);
 
 /* Fetch the log page to reset WAL info on it */
-
+	WIN window;
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
-	logp = (LIP) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+	log_info_page* logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 
 	if (logp->log_flags & log_no_ail) {	/* WAL already disabled */
 		CCH_RELEASE(tdbb, &window);
@@ -452,8 +433,8 @@ void AIL_drop_log_force(void)
 
 
 void AIL_enable(
-				TEXT * journal_name,
-				USHORT j_length, UCHAR * data, USHORT d_len, SSHORT archive)
+				const TEXT* journal_name,
+				USHORT j_length, const UCHAR* data, USHORT d_len, SSHORT archive)
 {
 /**************************************
  *
@@ -468,20 +449,13 @@ void AIL_enable(
  *		journal descriptor in ret_journal.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	LTJC jrecord;
-	ULONG seqno;
-	ULONG offset;
 	LGFILE *log_files[MAX_LOG_FILES];
 	LGFILE *log_ovflow;
-	SLONG ret_val;
-	ULONG number, i;
+	ULONG number;
 	USHORT jd_len;
-	TEXT journal_dir[MAXPATHLEN];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* Can enable journal only if wal sub system is in use */
 
@@ -489,10 +463,8 @@ void AIL_enable(
 		ERR_post(isc_no_wal_no_jrn, 0);
 
 /* check if journal is already enabled */
-
-	if (PAG_get_clump(HEADER_PAGE, HDR_journal_server, &jd_len,
-					  reinterpret_cast <UCHAR *>(journal_dir)))
-	{
+	UCHAR journal_dir[MAXPATHLEN];
+	if (PAG_get_clump(HEADER_PAGE, HDR_journal_server, &jd_len, journal_dir)) {
 		ERR_post(isc_jrn_present, 0);
 	}
 
@@ -504,16 +476,18 @@ void AIL_enable(
 	if (!archive) {
 		MET_get_walinfo(tdbb, log_files, &number, &log_ovflow);
 
-		for (i = 0; i < number; i++)
+		for (ULONG i = 0; i < number; i++) {
 			if (!(log_files[i]->lg_flags & LOG_serial)) {
 				for (i = 0; i < number; i++)
 					delete log_files[i];
 				ERR_post(isc_no_archive, 0);
 			}
+		}
 	}
 
 /* Put a enable record in the WAL and get the current seqno/offset pair */
 
+	LTJC jrecord;
 	jrecord.ltjc_header.jrnh_type = JRN_ENABLE;
 	jrecord.ltjc_page_size = dbb->dbb_page_size;
 	jrecord.ltjc_length = d_len;
@@ -521,8 +495,10 @@ void AIL_enable(
 	jrecord.ltjc_offset = 0;
 
 	tdbb->tdbb_status_vector[1] = 0;
+	ULONG seqno;
+	ULONG offset;
 	AIL_put(dbb, tdbb->tdbb_status_vector,
-			reinterpret_cast < jrnh * >(&jrecord), LTJC_SIZE, data, d_len,
+			reinterpret_cast<jrnh*>(&jrecord), LTJC_SIZE, data, d_len,
 			(ULONG) 0, (ULONG) 0, &seqno, &offset);
 
 	if (tdbb->tdbb_status_vector[1])
@@ -533,30 +509,34 @@ void AIL_enable(
 	jrecord.ltjc_seqno = seqno;
 	jrecord.ltjc_offset = offset;
 
-	if ((ret_val = JRN_enable(tdbb->tdbb_status_vector, &dbb->dbb_journal,
+	const SLONG ret_val = JRN_enable(tdbb->tdbb_status_vector, &dbb->dbb_journal,
 							  journal_name, j_length, data, d_len,
-							  &jrecord)) != FB_SUCCESS)
+							  &jrecord);
+	if (ret_val != FB_SUCCESS) {
 		AIL_process_jrn_error(ret_val);
+	}
 
 /* Inform wal subsystem about enable */
 
 	if (WAL_journal_enable(tdbb->tdbb_status_vector, dbb->dbb_wal,
 						   journal_name, d_len,
-						   reinterpret_cast < char *>(data)) != FB_SUCCESS)
-		  ERR_punt();
+						   reinterpret_cast<const char*>(data)) != FB_SUCCESS)
+	{
+		ERR_punt();
+	}
 
 /* Add journal entries to header page */
 
 	PAG_add_clump(HEADER_PAGE, HDR_journal_server, j_length,
-				  reinterpret_cast < UCHAR * >(journal_name), CLUMP_ADD, 0);
+				  reinterpret_cast<const UCHAR*>(journal_name), CLUMP_ADD, 0);
 	PAG_add_clump(HEADER_PAGE, HDR_backup_info, d_len, data, CLUMP_ADD, 1);
 	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal,
-			  reinterpret_cast < long *>(&seqno),
-			  reinterpret_cast < long *>(&offset), false);
+			  reinterpret_cast<SLONG*>(&seqno),
+			  reinterpret_cast<SLONG*>(&offset), false);
 }
 
 
-void AIL_fini(void)
+void AIL_fini()
 {
 /**************************************
  *
@@ -694,9 +674,9 @@ void AIL_get_file_list(LLS * stack)
 
 
 void AIL_init(
-			  TEXT * filename,
+			  const TEXT* filename,
 			  SSHORT file_len,
-			  WIN * in_win, USHORT activate_shadow, SBM * sbm_rec)
+			  WIN* in_win, bool activate_shadow, SBM* sbm_rec)
 {
 /**************************************
  *
@@ -714,7 +694,7 @@ void AIL_init(
 	TDBB tdbb;
 	DBB dbb;
 	WIN *win, window;
-	LIP logp;
+	log_info_page* logp;
 	TEXT dbname[MAXPATHLEN];
 
 /* null out the sparse bit map */
@@ -743,12 +723,12 @@ void AIL_init(
 	if (in_win) {
 		win = in_win;
 		win->win_flags = 0;
-		logp = (LIP) win->win_buffer;
+		logp = (log_info_page*) win->win_buffer;
 	}
 	else {
 		window.win_page = LOG_PAGE;
 		window.win_flags = 0;
-		logp = (LIP) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+		logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 		win = &window;
 	}
 
@@ -792,7 +772,7 @@ void AIL_init(
 }
 
 
-void AIL_init_log_page(LIP logp, SLONG seqno)
+void AIL_init_log_page(log_info_page* logp, SLONG seqno)
 {
 /**************************************
  *
@@ -856,7 +836,7 @@ void AIL_init_log_page(LIP logp, SLONG seqno)
 }
 
 
-void AIL_journal_tid(void)
+void AIL_journal_tid()
 {
 /**************************************
  *
@@ -929,11 +909,11 @@ void AIL_process_jrn_error(SLONG ret_val)
 void AIL_put(
 			 DBB dbb,
 			 ISC_STATUS * status,
-			 JRNH * header,
+			 JRNH* header,
 			 USHORT h_length,
-			 UCHAR * data,
-USHORT d_length,
-ULONG prev_seqno, ULONG prev_offset, ULONG * seqno, ULONG * offset)
+			 const UCHAR* data,
+	USHORT d_length,
+	ULONG prev_seqno, ULONG prev_offset, ULONG* seqno, ULONG* offset)
 {
 /**************************************
  *
@@ -981,7 +961,7 @@ ULONG prev_seqno, ULONG prev_offset, ULONG * seqno, ULONG * offset)
 /* Checksum the log record after zeroing out the field */
 
 	header->jrnh_series =
-		MISC_checksum_log_rec(reinterpret_cast < UCHAR * >(header), h_length,
+		MISC_checksum_log_rec(reinterpret_cast<UCHAR*>(header), h_length,
 							  data, d_length);
 #endif /* DEV_BUILD */
 
@@ -990,17 +970,17 @@ ULONG prev_seqno, ULONG prev_offset, ULONG * seqno, ULONG * offset)
 	THREAD_EXIT;
 	WAL_put(status,
 			dbb->dbb_wal,
-			(UCHAR *) header,
+			reinterpret_cast<UCHAR*>(header),
 			h_length,
 			data,
 			d_length,
-			reinterpret_cast < long *>(seqno),
-			reinterpret_cast < long *>(offset));
+			reinterpret_cast<SLONG*>(seqno),
+			reinterpret_cast<SLONG*>(offset));
 	THREAD_ENTER;
 }
 
 
-void AIL_recover_page(SLONG page_no, PAG page)
+void AIL_recover_page(SLONG page_no, pag* page)
 {
 /**************************************
  *
@@ -1012,27 +992,21 @@ void AIL_recover_page(SLONG page_no, PAG page)
  *	recovers a single page from the second last control point.
  *	assumes that the 'corrupt' page is not in the cache.
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	WIN window;
-	LIP logp;
-	CP cp1;
-	UCHAR *p;
 	SCHAR rwal[MAXPATHLEN];
-	SLONG seqno, offset;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* Flush the records on WAL buffer before trying to recover the
  * page
  */
-
+	SLONG seqno, offset;
 	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal, &seqno, &offset, false);
 
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
-	logp = (LIP) CCH_FETCH(tdbb, &window, LCK_read, pag_log);
+	log_info_page* logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_log);
 
 /* If there is no log, just return */
 
@@ -1041,13 +1015,17 @@ void AIL_recover_page(SLONG page_no, PAG page)
 		return;
 	}
 
+	CP cp1;
 	cp1.cp_seqno = logp->log_cp_1.cp_seqno;
 	cp1.cp_offset = logp->log_cp_1.cp_offset;
 	cp1.cp_p_offset = logp->log_cp_1.cp_p_offset;
 
-	for (p = logp->log_data; (*p != LOG_ctrl_file1); p += 2 + p[1]);
+	const UCHAR* p = logp->log_data;
+	while (*p != LOG_ctrl_file1) {
+		p += 2 + p[1];
+	}
 
-	MOVE_FAST((SCHAR*)(p + 2), rwal, logp->log_cp_1.cp_fn_length);
+	MOVE_FAST((const SCHAR*)(p + 2), rwal, logp->log_cp_1.cp_fn_length);
 
 	rwal[logp->log_cp_1.cp_fn_length] = 0;
 
@@ -1071,17 +1049,14 @@ void AIL_set_log_options(
  *	Set any log options if specified.
  *
  **************************************/
-	WIN window;
-	TDBB tdbb;
-	DBB dbb;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* why fetch log page if you don't need it */
 	if (!(chkpt_len || num_bufs || bufsize || (grp_cmt_wait >= 0)))
 		return;
 
+	WIN window;
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
 	CCH_FETCH(tdbb, &window, LCK_write, pag_log);
@@ -1089,34 +1064,38 @@ void AIL_set_log_options(
 	if (chkpt_len) {
 		PAG_add_clump(LOG_PAGE, LOG_chkpt_len, sizeof(SLONG),
 					  (UCHAR *) & chkpt_len, CLUMP_REPLACE, 0);
-		if (dbb->dbb_wal)
+		if (dbb->dbb_wal) {
 			WAL_set_checkpoint_length(tdbb->tdbb_status_vector, dbb->dbb_wal,
 									  chkpt_len);
+		}
 	}
 
-	if (num_bufs)
+	if (num_bufs) {
 		PAG_add_clump(LOG_PAGE, LOG_num_bufs, sizeof(SSHORT),
 					  (UCHAR *) & num_bufs, CLUMP_REPLACE, 0);
+	}
 
-	if (bufsize)
+	if (bufsize) {
 		PAG_add_clump(LOG_PAGE, LOG_bufsize, sizeof(USHORT),
 					  (UCHAR *) & bufsize, CLUMP_REPLACE, 0);
+	}
 
 	if (grp_cmt_wait >= 0) {
 		PAG_add_clump(LOG_PAGE, LOG_grp_cmt_wait, sizeof(SLONG),
 					  (UCHAR *) & grp_cmt_wait, CLUMP_REPLACE, 0);
-		if (dbb->dbb_wal)
+		if (dbb->dbb_wal) {
 			WAL_set_grpc_wait_time(tdbb->tdbb_status_vector, dbb->dbb_wal,
 								   grp_cmt_wait);
+		}
 	}
 	CCH_RELEASE(tdbb, &window);
 }
 
 
 void AIL_shutdown(
-				  SCHAR * walname,
-				  SLONG * seqno,
-				  SLONG * offset, SLONG * p_offset, SSHORT force_archive)
+				  SCHAR* walname,
+				  SLONG* seqno,
+				  SLONG* offset, SLONG* p_offset, bool force_archive)
 {
 /**************************************
  *
@@ -1128,22 +1107,19 @@ void AIL_shutdown(
  *	Shutdown wal subsystem after a flush.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal, seqno, offset, false);
 	WAL_shutdown(tdbb->tdbb_status_vector, dbb->dbb_wal, seqno, walname,
-				 p_offset, offset, (force_archive));
+				 p_offset, offset, force_archive);
 	AIL_fini();
 }
 
 
 void AIL_upd_cntrl_pt(
-					  TEXT * walname,
-					  USHORT w_len, ULONG seqno, ULONG offset, ULONG p_offset)
+					  const TEXT* walname,
+					  const USHORT w_len, ULONG seqno, ULONG offset, ULONG p_offset)
 {
 /***********************************************
  *
@@ -1160,9 +1136,9 @@ void AIL_upd_cntrl_pt(
  *		  :: All control point entries are contiguous.
  *
  **************************************/
-	LIP logp;
+	log_info_page* logp;
 	WIN window;
-	UCHAR *p1, *p2, *p3, *q, *p;
+	UCHAR *p1, *p2, *p3, *p;
 	USHORT len;
 	TDBB tdbb;
 
@@ -1171,7 +1147,7 @@ void AIL_upd_cntrl_pt(
 
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
-	logp = (LIP) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+	logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
 	p1 = p2 = p3 = 0;
@@ -1208,11 +1184,11 @@ void AIL_upd_cntrl_pt(
 	p = p1;
 	*p++ = LOG_ctrl_file2;
 	p++;
-	q = reinterpret_cast < UCHAR * >(walname);
+	const UCHAR* q = reinterpret_cast<const UCHAR*>(walname);
 	if ( (len = w_len) )
-		do
+		do {
 			*p++ = *q++;
-		while (--len);
+		} while (--len);
 
 	logp->log_cp_2.cp_seqno = seqno;
 	logp->log_cp_2.cp_offset = offset;
@@ -1222,11 +1198,12 @@ void AIL_upd_cntrl_pt(
 /* update the current file also */
 
 	p = p3 + 2;
-	q = reinterpret_cast < UCHAR * >(walname);
-	if ( (len = w_len) )
-		do
+	q = reinterpret_cast<const UCHAR*>(walname);
+	if ( (len = w_len) ) {
+		do {
 			*p++ = *q++;
-		while (--len);
+		} while (--len);
+	}
 
 	logp->log_file.cp_seqno = seqno;
 	logp->log_file.cp_offset = offset;
@@ -1256,15 +1233,13 @@ static void build_wal_param(
 	ULONG param1;
 	USHORT param2;
 	USHORT plen;
-	TEXT journal_dir[MAXPATHLEN];
 	USHORT jd_len, d_len;
 	UCHAR data[MAXPATHLEN], *p;
 
 /* Get journal information, if any */
-
+	UCHAR journal_dir[MAXPATHLEN];
 	PAG_get_clump(HEADER_PAGE, HDR_backup_info, &d_len, data);
-	PAG_get_clump(HEADER_PAGE, HDR_journal_server, &jd_len,
-				  reinterpret_cast < UCHAR * >(journal_dir));
+	PAG_get_clump(HEADER_PAGE, HDR_journal_server, &jd_len, journal_dir);
 	journal_dir[jd_len] = 0;
 
 /* Build the wal param block */
@@ -1341,9 +1316,9 @@ static void build_wal_param(
 #endif
 
 static void delete_log_files(
-							 TEXT * latest_logname,
+							 const TEXT* latest_logname, // unused
 							 SLONG latest_log_p_offset,
-							 LLS stack)
+							 lls* stack)
 {
 /**************************************
  *
@@ -1357,17 +1332,14 @@ static void delete_log_files(
  *	the last log file(s).
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	STR fname;
 	ISC_STATUS_ARRAY local_status;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	while (stack) {
-		fname = (STR) LLS_POP(&stack);
-		if (unlink(reinterpret_cast < const char *>(fname->str_data))) {
+		const str* fname = (STR) LLS_POP(&stack);
+		if (unlink(reinterpret_cast<const char*>(fname->str_data))) {
 			IBERR_build_status(local_status, isc_io_error,
 							   isc_arg_string, "unlink",
 							   isc_arg_string, fname->str_data,
@@ -1396,14 +1368,14 @@ static BOOLEAN get_walinfo(TEXT * walname)
  **************************************/
 	USHORT len;
 	WIN window;
-	LIP logp;
+	log_info_page* logp;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
 
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
-	logp = (LIP) CCH_FETCH(tdbb, &window, LCK_read, pag_log);
+	logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_log);
 
 	if (!PAG_get_clump
 		(LOG_PAGE, LOG_logfile, &len,
@@ -1423,12 +1395,12 @@ static BOOLEAN get_walinfo(TEXT * walname)
 
 static void initialize_wal(
 						   TDBB tdbb,
-						   TEXT * dbname,
-						   WIN * window,
-						   LIP logp,
+						   const TEXT* dbname, // unused
+						   WIN* window,
+						   log_info_page* logp,
 						   SSHORT release,
-						   USHORT activate_shadow,
-						   SBM * sbm_rec)
+						   bool activate_shadow, // unused
+						   SBM* sbm_rec)
 {
 /**************************************
  *
@@ -1464,7 +1436,7 @@ static void initialize_wal(
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static void process_log_updater(LIP logp)
+static void process_log_updater(log_info_page* logp)
 {
 /**************************************
  *
@@ -1505,11 +1477,11 @@ static void process_log_updater(LIP logp)
 
 static void process_recovery(
 							 TDBB tdbb,
-							 TEXT * dbname,
-							 WIN * window,
-							 LIP * logpp,
+							 const TEXT* dbname,
+							 WIN* window,
+							 log_info_page* logpp,
 							 SSHORT release,
-USHORT activate_shadow, SBM * sbm_rec)
+							bool activate_shadow, SBM* sbm_rec)
 {
 /**************************************
  *
@@ -1527,7 +1499,7 @@ USHORT activate_shadow, SBM * sbm_rec)
  **************************************/
 	TEXT root_db[MAXPATHLEN], rwal[MAXPATHLEN];
 	CP cp1;
-	LIP logp;
+	log_info_page* logp;
 	UCHAR *p;
 	WIN win;
 	HDR hdr;
@@ -1567,7 +1539,7 @@ USHORT activate_shadow, SBM * sbm_rec)
 		REC_recover(dbname, rwal, &cp1, sbm_rec, activate_shadow);
 
 	if (release) {
-		logp = (LIP) CCH_FETCH(tdbb, window, LCK_write, pag_log);
+		logp = (log_info_page*) CCH_FETCH(tdbb, window, LCK_write, pag_log);
 		CCH_MARK_MUST_WRITE(tdbb, window);
 	}
 
@@ -1588,7 +1560,7 @@ USHORT activate_shadow, SBM * sbm_rec)
 }
 
 
-static void set_first_user(LGFILE ** log_files, LIP logp, TEXT * walname)
+static void set_first_user(LGFILE ** log_files, log_info_page* logp, TEXT * walname)
 {
 /**************************************
  *
@@ -1646,3 +1618,4 @@ static void set_first_user(LGFILE ** log_files, LIP logp, TEXT * walname)
 	logp->log_cp_2.cp_p_offset = 0;
 }
 #endif
+

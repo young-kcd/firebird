@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: guid.h,v 1.4 2003-10-03 01:48:13 brodsom Exp $
+ *  $Id: guid.h,v 1.5 2003-12-05 10:35:38 robocop Exp $
  *
  */
 
@@ -47,10 +47,11 @@ struct FB_GUID {
 	USHORT data[8];
 };
 
-void GenerateGuid(FB_GUID *guid);
+void GenerateGuid(FB_GUID* guid);
 
 // This functions receive buffers of at least GUID_BUFF_SIZE length
-void GuidToString(char* buffer, FB_GUID *guid);
-void StringToGuid(FB_GUID *guid, char* buffer);
+void GuidToString(char* buffer, const FB_GUID* guid);
+void StringToGuid(FB_GUID* guid, const char* buffer);
 
 #endif
+

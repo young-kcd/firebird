@@ -65,8 +65,8 @@ static void build_msgfac_h(void);
 static void move_if_not_identical(const char *, const char *, const char*);
 static void add_text(IB_FILE*, formatStyle, const char **);
 
-static  char* genDirectory = NULL;
-static  char* genFtnPasDirectory = NULL;
+static const char* genDirectory = NULL;
+static const char* genFtnPasDirectory = NULL;
 
 static void check_open(FILE*& f, const char* name, const char* tmp, const char* mode)
 {

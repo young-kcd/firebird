@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		misc.c
+ *	MODULE:		misc.cpp
  *	DESCRIPTION:	Miscellaneous routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -40,7 +40,7 @@
 #define STUFF_LONG(p,value)	STUFF_BYTES (p, &value, sizeof (SLONG))
 
 
-SSHORT MISC_build_parameters_block(UCHAR * buffer, ...)
+SSHORT MISC_build_parameters_block(UCHAR* buffer, ...)
 {
 /**************************************
  *
@@ -55,12 +55,12 @@ SSHORT MISC_build_parameters_block(UCHAR * buffer, ...)
  *
  **************************************/
 	va_list ptr;
-	UCHAR *p, *q;
 	SCHAR arg_type, ch;
 	USHORT sh;
 	SLONG l;
 
-	p = buffer;
+	UCHAR* p = buffer;
+	const UCHAR* q = NULL;
 	VA_START(ptr, buffer);
 
 /* using the argument types in the parameter list, 
@@ -86,7 +86,7 @@ SSHORT MISC_build_parameters_block(UCHAR * buffer, ...)
 
 		case dtype_cstring:	/* null-terminated string */
 			q = va_arg(ptr, UCHAR *);
-			STUFF_BYTES(p, q, strlen(reinterpret_cast < char *>(q)) + 1);
+			STUFF_BYTES(p, q, strlen(reinterpret_cast<const char*>(q)) + 1);
 			break;
 
 		case dtype_varying:	/* short value followed by a value with that many bytes */
@@ -105,8 +105,8 @@ SSHORT MISC_build_parameters_block(UCHAR * buffer, ...)
 
 
 #ifdef DEV_BUILD
-ULONG MISC_checksum_log_rec(UCHAR * header,
-							SSHORT h_len, UCHAR * data, SSHORT d_len)
+ULONG MISC_checksum_log_rec(const UCHAR* header,
+							SSHORT h_len, const UCHAR* data, SSHORT d_len)
 {
 /**************************************
  *
@@ -118,23 +118,20 @@ ULONG MISC_checksum_log_rec(UCHAR * header,
  *      Checksum a log record - header and data are passed separately.
  *
  **************************************/
-	ULONG checksum;
-	UCHAR *p;
-
-	checksum = 0;
+	ULONG checksum = 0;
 
 	if (h_len) {
-		p = header;
-		do
+		const UCHAR* p = header;
+		do {
 			checksum += *p++;
-		while (--h_len);
+		} while (--h_len);
 	}
 
 	if (d_len) {
-		p = data;
-		do
+		const UCHAR* p = data;
+		do {
 			checksum += *p++;
-		while (--d_len);
+		} while (--d_len);
 	}
 
 	return checksum;
@@ -192,3 +189,4 @@ STK MISC_push(UCHAR * object, STK * stack)
 
 	return node;
 }
+

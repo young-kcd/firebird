@@ -1673,7 +1673,7 @@ static void walk_log(TDBB tdbb, VDR control)
  *
  **************************************/
 	WIN window;
-	LIP page;
+	log_info_page* page;
 	SLONG page_num = LOG_PAGE;
 
 	SET_TDBB(tdbb);

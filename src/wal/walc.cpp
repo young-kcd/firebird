@@ -1,6 +1,6 @@
 /*
  *        PROGRAM:        JRD Write Ahead Log Coordinator
- *        MODULE:         walc.c
+ *        MODULE:         walc.cpp
  *        DESCRIPTION:    Write Ahead Log low level routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -69,9 +69,9 @@
 /* Define a structure to hold WAL configuration variables */
 
 typedef struct walc {
-	TEXT *walc_dbname;
+	const TEXT* walc_dbname;
 	USHORT walc_db_page_len;
-	TEXT *walc_logname;
+	const TEXT* walc_logname;
 	SLONG walc_log_partition_offset;
 	bool walc_first_time_log;
 	SLONG walc_new_log_seqno;	// used when first_time_log is true
@@ -84,36 +84,37 @@ typedef struct walc {
 
 	SLONG walc_max_ckpt_intrvl;
 
-	LGFILE *walc_log_serial_file_info;
+	LGFILE* walc_log_serial_file_info;
 	SSHORT walc_log_names_count;
-	LGFILE **walc_log_rr_files_info;
-	LGFILE *walc_log_ovflow_file_info;
+	LGFILE** walc_log_rr_files_info;
+	LGFILE* walc_log_ovflow_file_info;
 	USHORT walc_log_names_buf_len;
 	USHORT walc_log_names_offset;
 	USHORT walc_logf_size;
 	USHORT walc_logf_offset;
 
-	TEXT *walc_jrn_dirname;
+	const TEXT* walc_jrn_dirname;
 	USHORT walc_jrn_data_len;
-	UCHAR *walc_jrn_data;
+	const UCHAR* walc_jrn_data;
 
 	SLONG walc_grpc_wait_usecs;
 
 	struct wal *walc_wal;
-	TEXT *walc_mapfile;
+	TEXT* walc_mapfile;
 } *WALC;
 
-static SSHORT check_base_name(ISC_STATUS *, TEXT *);
+static SSHORT check_base_name(ISC_STATUS*, const TEXT*);
 static void cleanup(void *);
 static void init_group_commit_blocks(GRP_COMMIT *);
-static SSHORT setup_wal_params(ISC_STATUS *, TEXT *, USHORT, WALC, SSHORT,
-							   UCHAR *);
+static SSHORT setup_wal_params(ISC_STATUS*, const TEXT*, USHORT, WALC, SSHORT,
+							   const UCHAR*);
 static void wals_initialize(WALC, SH_MEM, bool);
 
 /* these statics define a round-robin data area for storing
    textual error messages returned to the user */
 
-static TEXT *wal_failures = NULL, *wal_failures_ptr;
+static TEXT* wal_failures = NULL;
+static TEXT* wal_failures_ptr;
 
 #define WAL_FAILURE_SPACE	2048
 
@@ -184,7 +185,7 @@ void WALC_alarm_handler(void* _event)
 }
 
 
-SSHORT WALC_bug( ISC_STATUS * status_vector, TEXT * dbname, TEXT * string)
+SSHORT WALC_bug(ISC_STATUS* status_vector, const TEXT* dbname, const TEXT* string)
 {
 /**************************************
  *
@@ -215,7 +216,7 @@ SSHORT WALC_bug( ISC_STATUS * status_vector, TEXT * dbname, TEXT * string)
 }
 
 
-void WALC_build_dbg_filename( TEXT * dbname, TEXT * dbg_filename)
+void WALC_build_dbg_filename(const TEXT* dbname, TEXT* dbg_filename)
 {
 /**************************************
  *
@@ -233,7 +234,7 @@ void WALC_build_dbg_filename( TEXT * dbname, TEXT * dbg_filename)
 }
 
 
-void WALC_build_logname( TEXT * logname, TEXT * basename, SLONG seqno)
+void WALC_build_logname(TEXT* logname, const TEXT* basename, SLONG seqno)
 {
 /**************************************
  *
@@ -341,16 +342,16 @@ void WALC_fini( ISC_STATUS * status_vector, WAL * WAL_handle)
 }
 
 
-SSHORT WALC_init(ISC_STATUS * status_vector,
-				 WAL * WAL_handle,
-				 TEXT * dbname,
+SSHORT WALC_init(ISC_STATUS* status_vector,
+				 WAL* WAL_handle,
+				 const TEXT* dbname,
 				 USHORT db_page_len,
-				 TEXT * logname,
+				 const TEXT* logname,
 				 SLONG log_partition_offset,
 				 bool first_time_log,
 				 SLONG new_log_seqno,
 				 SSHORT wpb_length,
-				 UCHAR * wpb,
+				 const UCHAR* wpb,
 				 bool first_attach)
 {
 /**************************************
@@ -399,7 +400,8 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 		/* Now parse WAL paramater block (wpb) */
 
 		if (setup_wal_params(status_vector, dbname, db_page_len, &wal_args,
-							 wpb_length, wpb) != FB_SUCCESS) {
+							 wpb_length, wpb) != FB_SUCCESS)
+		{
 			WALC_save_status_strings(status_vector);
 			return FB_FAILURE;
 		}
@@ -426,7 +428,8 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 	if ((WAL_segment = (WALS) ISC_map_file(status_vector, wal_mapfile,
 										   wal_init_routine,
 										   (void *) &wal_args, length,
-										   &wal->wal_shmem_data)) == NULL) {
+										   &wal->wal_shmem_data)) == NULL)
+	{
 		WAL_ERROR_APPEND(status_vector, isc_wal_illegal_attach, dbname);
 		WALC_save_status_strings(status_vector);
 		gds__free((SLONG *) wal);
@@ -600,7 +603,7 @@ void WALC_setup_buffer_block(WALS WAL_segment,
 }
 
 
-static SSHORT check_base_name( ISC_STATUS * status_vector, TEXT * base_name)
+static SSHORT check_base_name( ISC_STATUS* status_vector, const TEXT* base_name)
 {
 /**************************************
  *
@@ -622,8 +625,9 @@ static SSHORT check_base_name( ISC_STATUS * status_vector, TEXT * base_name)
 
 /* Try to create a new file.  Delete it if we're successful. */
 
-	if (LLIO_open(status_vector, dummy_fname, LLIO_OPEN_NEW_RW, TRUE, &fd) ==
-		FB_SUCCESS) {
+	if (LLIO_open(status_vector, dummy_fname, LLIO_OPEN_NEW_RW, true, &fd) ==
+		FB_SUCCESS)
+	{
 		LLIO_close(status_vector, fd);
 		unlink(dummy_fname);
 		return FB_SUCCESS;
@@ -632,8 +636,9 @@ static SSHORT check_base_name( ISC_STATUS * status_vector, TEXT * base_name)
 /* Try to open an existing file */
 
 	if (LLIO_open
-		(status_vector, dummy_fname, LLIO_OPEN_EXISTING_RW, TRUE,
-		 &fd) == FB_SUCCESS) {
+		(status_vector, dummy_fname, LLIO_OPEN_EXISTING_RW, true,
+		 &fd) == FB_SUCCESS)
+	{
 		LLIO_close(status_vector, fd);
 		return FB_SUCCESS;
 	}
@@ -687,10 +692,10 @@ static void init_group_commit_blocks( GRP_COMMIT * grpc_blks)
 
 
 static SSHORT setup_wal_params(
-							   ISC_STATUS * status_vector,
-							   TEXT * dbname,
+							   ISC_STATUS* status_vector,
+							   const TEXT* dbname,
 							   USHORT db_page_len,
-							   WALC wal_args, SSHORT wpb_length, UCHAR * wpb)
+							   WALC wal_args, SSHORT wpb_length, const UCHAR* wpb)
  {
 /**************************************
  *
@@ -703,8 +708,6 @@ static SSHORT setup_wal_params(
  *	attributes like size and number of WAL buffers.
  *
  **************************************/
-	UCHAR *p, *q;
-	int i, j;
 	LGFILE *log_file;
 	TEXT err_buffer[16];
 
@@ -735,11 +738,13 @@ static SSHORT setup_wal_params(
 /* Now see if wal parameter block specifies any parameters */
 
 	bool done = false;
-	if ((p = wpb) == NULL)
+	const UCHAR* p = wpb;
+	if (p == NULL) {
 		done = true; // Nothing to parse from the wal paramater block
+	}
 
-	q = p + wpb_length;
-	while (!done && (p < q)) {
+	const UCHAR* end = p + wpb_length;
+	while (!done && (p < end)) {
 		switch (*p++) {
 		case WAL_PARAM_BUF_COUNT:
 			memcpy((SCHAR *) & buf_count, p, sizeof(USHORT));
@@ -787,7 +792,7 @@ static SSHORT setup_wal_params(
 			break;
 
 		case WAL_PARAM_JRN_DIRNAME:
-			wal_args->walc_jrn_dirname = (TEXT *) p;
+			wal_args->walc_jrn_dirname = reinterpret_cast<const TEXT*>(p);
 			p += (strlen(wal_args->walc_jrn_dirname) + 1);
 			break;
 
@@ -837,7 +842,8 @@ static SSHORT setup_wal_params(
 		/* Make sure that base path name is valid */
 
 		if (wal_args->walc_first_time_log &&
-			(check_base_name(status_vector, log_file->lg_name) != FB_SUCCESS)) {
+			(check_base_name(status_vector, log_file->lg_name) != FB_SUCCESS))
+		{
 			WALC_save_status_strings(status_vector);
 			return FB_FAILURE;
 		}
@@ -856,7 +862,8 @@ static SSHORT setup_wal_params(
 		/* Make sure that base path name is valid */
 
 		if (wal_args->walc_first_time_log &&
-			(check_base_name(status_vector, log_file->lg_name) != FB_SUCCESS)) {
+			(check_base_name(status_vector, log_file->lg_name) != FB_SUCCESS))
+		{
 			WALC_save_status_strings(status_vector);
 			return FB_FAILURE;
 		}
@@ -879,7 +886,7 @@ static SSHORT setup_wal_params(
 			return FB_FAILURE;
 		}
 
-		for (i = 0; i < wal_args->walc_log_names_count; i++) {
+		for (int i = 0; i < wal_args->walc_log_names_count; i++) {
 			log_file = wal_args->walc_log_rr_files_info[i];
 			wal_args->walc_log_names_buf_len += strlen(log_file->lg_name) + 1;
 
@@ -893,12 +900,13 @@ static SSHORT setup_wal_params(
 					continue;
 				if (WALF_init_p_log(status_vector, dbname, log_file->lg_name,
 									log_file->lg_size,
-									log_file->lg_partitions) != FB_SUCCESS) {
+									log_file->lg_partitions) != FB_SUCCESS)
+				{
 					WALC_save_status_strings(status_vector);
 
 					/* Remove the allocated files so far */
 
-					for (j = 0; j < i; j++) {
+					for (int j = 0; j < i; j++) {
 						log_file = wal_args->walc_log_rr_files_info[j];
 						if (!(log_file->lg_flags & LOG_raw))
 							unlink(log_file->lg_name);
@@ -1185,3 +1193,4 @@ static void wals_initialize(WALC wal_args, SH_MEM shmem_data, bool initialize)
 
 	return;
 }
+

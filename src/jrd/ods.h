@@ -502,7 +502,7 @@ typedef struct ctrl_pt {
 	SSHORT cp_fn_length;
 } CP;
 
-typedef struct log_info_page {
+struct log_info_page {
 	struct pag log_header;
 	SLONG log_flags;			/* flags            */
 	CP log_cp_1;				/* control point 1      */
@@ -515,9 +515,9 @@ typedef struct log_info_page {
 	SLONG log_free[4];			/* some extra space for later use */
 	USHORT log_end;				/* similar to hdr_end   */
 	UCHAR log_data[1];
-} *LIP;
+};
 
-#define LIP_SIZE	OFFSETA (LIP, log_data);
+#define LIP_SIZE	OFFSETA (log_info_page*, log_data);
 
 /* log flags */
 

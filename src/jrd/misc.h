@@ -44,3 +44,4 @@ typedef struct stk {
 #define PARAM_POINTER(PARAM)	(SCHAR) dtype_long, (UCHAR*) PARAM
 
 #endif /* JRD_MISC_H */
+

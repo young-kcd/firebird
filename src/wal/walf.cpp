@@ -35,9 +35,9 @@
 #include "../jrd/misc_proto.h"
 
 
-SSHORT WALF_delink_log(ISC_STATUS * status_vector,
-					   SCHAR * dbname,
-					   SCHAR * logname, SLONG log_partition_offset)
+SSHORT WALF_delink_log(ISC_STATUS* status_vector,
+					   const SCHAR* dbname,
+					   const SCHAR* logname, SLONG log_partition_offset)
 {
 /**************************************
  *
@@ -112,9 +112,9 @@ SSHORT WALF_delink_log(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WALF_delink_prev_log(ISC_STATUS * status_vector,
-							SCHAR * dbname,
-							SCHAR * logname, SLONG log_partition_offset)
+SSHORT WALF_delink_prev_log(ISC_STATUS* status_vector,
+							const SCHAR* dbname,
+							const SCHAR* logname, SLONG log_partition_offset)
 {
 /**************************************
  *
@@ -185,15 +185,15 @@ void WALF_dispose_log_header( WALFH log_header)
 }
 
 
-bool WALF_get_linked_logs_info(ISC_STATUS * status_vector,
-							   SCHAR * dbname,
-							   SCHAR * starting_logname,
+bool WALF_get_linked_logs_info(ISC_STATUS* status_vector,
+							   const SCHAR* dbname,
+							   const SCHAR* starting_logname,
 							   SLONG starting_log_partition_offset,
-							   int *prev_logs_count,
-							   SCHAR * last_logname,
-							   SLONG * last_log_partition_offset,
-							   SLONG * last_log_flags,
-							   bool * any_log_to_be_archived)
+							   int* prev_logs_count,
+							   SCHAR* last_logname,
+							   SLONG* last_log_partition_offset,
+							   SLONG* last_log_flags,
+							   bool* any_log_to_be_archived)
 {
 /**************************************
  *
@@ -274,13 +274,13 @@ bool WALF_get_linked_logs_info(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WALF_get_log_info(ISC_STATUS * status_vector,
-						 SCHAR * dbname,
-						 SCHAR * logname,
+SSHORT WALF_get_log_info(ISC_STATUS* status_vector,
+						 const SCHAR* dbname,
+						 const SCHAR* logname,
 						 SLONG log_partition_offset,
-						 SLONG * log_seqno,
-						 SLONG * log_length,
-						 SLONG * log_flag)
+						 SLONG* log_seqno,
+						 SLONG* log_length,
+						 SLONG* log_flag)
 {
 /**************************************
  *
@@ -321,15 +321,15 @@ SSHORT WALF_get_log_info(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WALF_get_next_log_info(ISC_STATUS * status_vector,
-							  SCHAR * dbname,
-							  SCHAR * logname,
+SSHORT WALF_get_next_log_info(ISC_STATUS* status_vector,
+							  const SCHAR* dbname,
+							  const SCHAR* logname,
 							  SLONG log_partition_offset,
-							  SCHAR * next_logname,
-							  SLONG * next_log_partition_offset,
-							  SLONG * next_log_seqno,
-							  SLONG * next_log_length,
-							  SLONG * next_log_flags,
+							  SCHAR* next_logname,
+							  SLONG* next_log_partition_offset,
+							  SLONG* next_log_seqno,
+							  SLONG* next_log_length,
+							  SLONG* next_log_flags,
 							  SSHORT direction)
 {
 /**************************************
@@ -399,18 +399,18 @@ SSHORT WALF_get_next_log_info(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WALF_get_all_next_logs_info(ISC_STATUS * status_vector,
-								   SCHAR * dbname,
-								   SCHAR * starting_logname,
+SSHORT WALF_get_all_next_logs_info(ISC_STATUS* status_vector,
+								   const SCHAR* dbname,
+								   const SCHAR* starting_logname,
 								   SLONG starting_log_partition_offset,
 								   int max_logs_count,
-								   SCHAR * lognames_buffer,
-								   int *next_logs_count,
-								   SCHAR ** next_logs_names,
-								   SLONG * next_log_partitions_offsets,
-								   SLONG * next_logs_seqnos,
-								   SLONG * next_logs_lengths,
-								   SLONG * next_logs_flags, SSHORT direction)
+								   SCHAR* lognames_buffer,
+								   int* next_logs_count,
+								   SCHAR** next_logs_names,
+								   SLONG* next_log_partitions_offsets,
+								   SLONG* next_logs_seqnos,
+								   SLONG* next_logs_lengths,
+								   SLONG* next_logs_flags, SSHORT direction)
 {
 /**************************************
  *
@@ -442,7 +442,6 @@ SSHORT WALF_get_all_next_logs_info(ISC_STATUS * status_vector,
  *
  **************************************/
 	STK stack;
-	SCHAR *curr_name;
 	SLONG curr_log_partition_offset;
 	SCHAR *next_name;
 	SLONG next_log_partition_offset;
@@ -458,7 +457,7 @@ SSHORT WALF_get_all_next_logs_info(ISC_STATUS * status_vector,
 		SLONG log_flags;
 	} *log_info;
 
-	curr_name = starting_logname;
+	const char* curr_name = starting_logname;
 	curr_log_partition_offset = starting_log_partition_offset;
 
 /* Now collect info about all the 'next' log names. */
@@ -474,7 +473,9 @@ SSHORT WALF_get_all_next_logs_info(ISC_STATUS * status_vector,
 								   &next_log_partition_offset,
 								   &next_log_seqno, &next_log_length,
 								   &next_log_flags, direction) != FB_SUCCESS)
+		{
 			break;
+		}
 
 		if (direction == 1) {
 			/* We are getting the names in the correct chronological order */
@@ -521,7 +522,7 @@ SSHORT WALF_get_all_next_logs_info(ISC_STATUS * status_vector,
 
 		curr_name = next_name;
 		curr_log_partition_offset = next_log_partition_offset;
-		next_name = curr_name + strlen(curr_name) + 1;	/* slide in the passed buffer */
+		next_name += strlen(curr_name) + 1;	/* slide in the passed buffer */
 	}
 
 	*next_logs_count = log_count;
@@ -546,9 +547,9 @@ SSHORT WALF_get_all_next_logs_info(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WALF_init_p_log(ISC_STATUS * status_vector,
-					   SCHAR * dbname,
-					   SCHAR * logname, SLONG logsize, SSHORT num_partitions)
+SSHORT WALF_init_p_log(ISC_STATUS* status_vector,
+					   const SCHAR* dbname,
+					   const SCHAR* logname, SLONG logsize, SSHORT num_partitions)
 {
 /**************************************
  *
@@ -569,7 +570,6 @@ SSHORT WALF_init_p_log(ISC_STATUS * status_vector,
  *
  **************************************/
 	SLONG p_log_fd;
-	int i;
 	P_LOGFH p_log_header;
 
 /* Since we allow partitions for the RAW devices only, it is
@@ -577,13 +577,15 @@ SSHORT WALF_init_p_log(ISC_STATUS * status_vector,
 
 	if (LLIO_allocate_file_space(status_vector, logname, logsize,
 								 (UCHAR) WAL_TERMINATOR_CHAR,
-								 (num_partitions) ? TRUE : FALSE) != FB_SUCCESS)
+								 (num_partitions > 0)) != FB_SUCCESS)
+	{
 		return FB_FAILURE;
+	}
 
 	if (num_partitions <= 0)
 		return FB_SUCCESS;
 
-	if (LLIO_open(status_vector, logname, LLIO_OPEN_RW, FALSE, &p_log_fd))
+	if (LLIO_open(status_vector, logname, LLIO_OPEN_RW, false, &p_log_fd))
 		return FB_FAILURE;
 
 	p_log_header = (P_LOGFH) gds__alloc(P_LOGFH_LENGTH);
@@ -601,11 +603,13 @@ SSHORT WALF_init_p_log(ISC_STATUS * status_vector,
 	p_log_header->p_logfh_flags = 0L;
 	strcpy(p_log_header->p_logfh_dbname, dbname);
 
-	for (i = 0; i < 10; i++)
+	for (int i = 0; i < 10; i++) {
 		p_log_header->p_logfh_reserved[i] = 0L;
+	}
 
 	if (LLIO_write(status_vector, p_log_fd, logname, 0L, LLIO_SEEK_NONE,
-				   (UCHAR *) p_log_header, P_LOGFH_LENGTH, 0)) {
+				   reinterpret_cast<const UCHAR*>(p_log_header), P_LOGFH_LENGTH, 0))
+	{
 		LLIO_close(0, p_log_fd);
 		gds__free((SLONG *) p_log_header);
 		return FB_FAILURE;
@@ -618,10 +622,10 @@ SSHORT WALF_init_p_log(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WALF_open_partitioned_log_file(ISC_STATUS * status_vector,
-									  SCHAR * dbname,
-									  SCHAR * logname,
-									  P_LOGFH p_log_header, SLONG * p_log_fd)
+SSHORT WALF_open_partitioned_log_file(ISC_STATUS* status_vector,
+									  const SCHAR* dbname,
+									  const SCHAR* logname,
+									  P_LOGFH p_log_header, SLONG* p_log_fd)
 {
 /**************************************
  *
@@ -644,7 +648,7 @@ SSHORT WALF_open_partitioned_log_file(ISC_STATUS * status_vector,
 
 /* Open and position at the beginning of the partitioned log file. */
 
-	if (LLIO_open(status_vector, logname, LLIO_OPEN_EXISTING_RW, FALSE, &fd))
+	if (LLIO_open(status_vector, logname, LLIO_OPEN_EXISTING_RW, false, &fd))
 		return FB_FAILURE;
 
 	*p_log_fd = fd;
@@ -657,8 +661,11 @@ SSHORT WALF_open_partitioned_log_file(ISC_STATUS * status_vector,
 				  logname,
 				  0L,
 				  LLIO_SEEK_NONE,
-				  reinterpret_cast < UCHAR * >(p_log_header),
-				  P_LOGFH_LENGTH, &read_len)) IO_ERROR_RETURN;
+				  reinterpret_cast<UCHAR*>(p_log_header),
+				  P_LOGFH_LENGTH, &read_len))
+	{
+		IO_ERROR_RETURN;
+	}
 
 	if (read_len < (SLONG) sizeof(struct p_logfh))
 		ERROR_RETURN(isc_logh_small);
@@ -674,9 +681,9 @@ SSHORT WALF_open_partitioned_log_file(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WALF_open_log_file(ISC_STATUS * status_vector,
-						  SCHAR * dbname,
-						  SCHAR * logname,
+SSHORT WALF_open_log_file(ISC_STATUS* status_vector,
+						  const SCHAR* dbname,
+						  const SCHAR* logname,
 						  SLONG log_partition_offset,
 						  WALFH log_header, SLONG * log_fd)
 {
@@ -699,7 +706,7 @@ SSHORT WALF_open_log_file(ISC_STATUS * status_vector,
                       return FB_FAILURE;}
 #define IO_ERROR_RETURN	{if (fd>0) LLIO_close(0,fd); return FB_FAILURE;}
 
-	if (LLIO_open(0, logname, LLIO_OPEN_EXISTING_RW, FALSE, &fd))
+	if (LLIO_open(0, logname, LLIO_OPEN_EXISTING_RW, false, &fd))
 		return FB_FAILURE;
 
 	*log_fd = fd;
@@ -708,8 +715,10 @@ SSHORT WALF_open_log_file(ISC_STATUS * status_vector,
 
 	if (LLIO_read(status_vector, fd, logname,
 				  log_partition_offset, LLIO_SEEK_BEGIN,
-				  (UCHAR *) log_header, WALFH_LENGTH, &read_len))
+				  reinterpret_cast<UCHAR*>(log_header), WALFH_LENGTH, &read_len))
+	{
 		IO_ERROR_RETURN;
+	}
 
 	if (read_len < (SLONG) sizeof(struct walfh))
 		ERROR_RETURN(isc_logh_small);
@@ -737,9 +746,9 @@ SSHORT WALF_open_log_file(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WALF_set_log_header_flag(ISC_STATUS * status_vector,
-								SCHAR * dbname,
-								SCHAR * logname,
+SSHORT WALF_set_log_header_flag(ISC_STATUS* status_vector,
+								const SCHAR* dbname,
+								const SCHAR* logname,
 								SLONG log_partition_offset,
 								SLONG flag,
 								bool set)
@@ -793,10 +802,10 @@ SSHORT WALF_set_log_header_flag(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WALF_update_log_header(ISC_STATUS * status_vector,
-							  SCHAR * logname,
+SSHORT WALF_update_log_header(ISC_STATUS* status_vector,
+							  const SCHAR* logname,
 							  SLONG log_partition_offset,
-							  WALFH log_header, SLONG log_fd)
+							  walfh* log_header, SLONG log_fd)
 {
 /**************************************
  *
@@ -817,27 +826,28 @@ SSHORT WALF_update_log_header(ISC_STATUS * status_vector,
 									PARAM_BYTE(WALFH_dbname),
 									PARAM_STRING(log_header->walfh_dbname),
 									PARAM_BYTE(WALFH_prev_logname),
-									PARAM_STRING(log_header->
-												 walfh_prev_logname),
+									PARAM_STRING(log_header->walfh_prev_logname),
 									PARAM_BYTE(WALFH_next_logname),
-									PARAM_STRING(log_header->
-												 walfh_next_logname),
+									PARAM_STRING(log_header->walfh_next_logname),
 									PARAM_BYTE(WALFH_end), 0);
 
 /* Position at the beginning of the logical log file. */
 
 	if (LLIO_write(status_vector, log_fd, logname,
 				   log_header->walfh_log_partition_offset, LLIO_SEEK_BEGIN,
-				   (UCHAR *) log_header, WALFH_LENGTH, 0))
+				   (const UCHAR*) log_header, WALFH_LENGTH, 0))
+	{
 		return FB_FAILURE;
+	}
 
 	return FB_SUCCESS;
 }
 
 
-SSHORT WALF_update_partitioned_log_hdr(ISC_STATUS * status_vector,
-									   SCHAR * logname,
-									   P_LOGFH p_log_header, SLONG p_log_fd)
+SSHORT WALF_update_partitioned_log_hdr(ISC_STATUS* status_vector,
+									   const SCHAR* logname,
+									   const p_logfh* p_log_header,
+									   SLONG p_log_fd)
 {
 /**************************************
  *
@@ -855,8 +865,11 @@ SSHORT WALF_update_partitioned_log_hdr(ISC_STATUS * status_vector,
 /* Position at the beginning of the partitioned log file. */
 
 	if (LLIO_write(status_vector, p_log_fd, logname, 0L, LLIO_SEEK_BEGIN,
-				   (UCHAR *) p_log_header, (ULONG) P_LOGFH_LENGTH, 0))
+				   reinterpret_cast<const UCHAR*>(p_log_header),
+				   (ULONG) P_LOGFH_LENGTH, 0))
+	{
 		return FB_FAILURE;
+	}
 
 	return FB_SUCCESS;
 }
@@ -913,3 +926,4 @@ void WALF_upd_log_hdr_frm_walfh_data( WALFH log_header, UCHAR * walfh_data)
 		}
 	}
 }
+

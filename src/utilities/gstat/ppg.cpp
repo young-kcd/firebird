@@ -63,7 +63,7 @@ static const TEXT months[][4] = {
 
 
 
-void PPG_print_header( HDR header, SLONG page,
+void PPG_print_header(const hdr* header, SLONG page,
 #ifdef SUPERSERVER
 					  SVC outfile)
 #else
@@ -80,7 +80,6 @@ void PPG_print_header( HDR header, SLONG page,
  *	Print database header page.
  *
  **************************************/
-	UCHAR *p, *end;
 	SLONG number;
 	struct tm time;
 	SSHORT flags;
@@ -142,7 +141,7 @@ void PPG_print_header( HDR header, SLONG page,
 			FPRINTF(outfile, "\tDatabase dialect\t1\n");
 
 
-		isc_decode_date(reinterpret_cast<ISC_QUAD* >(header->hdr_creation_date), 
+		isc_decode_date(reinterpret_cast<const ISC_QUAD*>(header->hdr_creation_date), 
 						&time);
 		FPRINTF(outfile, "\tCreation date\t\t%s %d, %d %d:%02d:%02d\n",
 				months[time.tm_mon], time.tm_mday, time.tm_year + 1900,
@@ -200,8 +199,10 @@ void PPG_print_header( HDR header, SLONG page,
 
 	FPRINTF(outfile, "\n    Variable header data:\n");
 
-	for (p = header->hdr_data, end = p + header->hdr_page_size;
+	const UCHAR* p = header->hdr_data;
+	for (const UCHAR* const end = p + header->hdr_page_size;
 		 p < end && *p != HDR_end; p += 2 + p[1])
+	{
 		switch (*p) {
 		case HDR_root_file_name:
 			memcpy(temp, p + 2, p[1]);
@@ -256,7 +257,7 @@ void PPG_print_header( HDR header, SLONG page,
 
 		case HDR_backup_guid: {
 			char buff[GUID_BUFF_SIZE];
-			GuidToString(buff, reinterpret_cast<FB_GUID*>(p+2));
+			GuidToString(buff, reinterpret_cast<const FB_GUID*>(p+2));
 			FPRINTF(outfile, "\tDatabase backup GUID:\t%s\n", buff);
 			break;
 		}
@@ -270,16 +271,17 @@ void PPG_print_header( HDR header, SLONG page,
 						p[1]);
 			break;
 		}
+	}
 
 	FPRINTF(outfile, "\t*END*\n");
 }
 
 
-void PPG_print_log( LIP logp, SLONG page,
+void PPG_print_log(const log_info_page* logp, SLONG page,
 #ifdef SUPERSERVER
 				   SVC outfile)
 #else
-				   IB_FILE * outfile)
+				   IB_FILE* outfile)
 #endif
 {
 /**************************************
@@ -292,7 +294,6 @@ void PPG_print_log( LIP logp, SLONG page,
  *	Print log page information
  *
  **************************************/
-	UCHAR *p;
 	SLONG flags;
 	SLONG ltemp;
 	SSHORT stemp;
@@ -300,7 +301,7 @@ void PPG_print_log( LIP logp, SLONG page,
 	struct tm time;
 	TEXT temp[257];
 
-	p = logp->log_data;
+	const UCHAR* p = logp->log_data;
 
 	if (page == LOG_PAGE)
 		FPRINTF(outfile, "Database log page information:\n");
@@ -320,7 +321,7 @@ void PPG_print_log( LIP logp, SLONG page,
 		}
 		else
 		{
-			isc_decode_date(reinterpret_cast<ISC_QUAD*>(logp->log_creation_date),
+			isc_decode_date(reinterpret_cast<const ISC_QUAD*>(logp->log_creation_date),
 								&time);
 			FPRINTF(outfile,
 					"\tCreation date\t%s %d, %d %d:%02d:%02d\n",

@@ -35,7 +35,7 @@
 static void dispose_walr_handle(WALR);
 static SSHORT get_next_logname(WALRS, SCHAR **, SLONG *);
 static SSHORT log_close(WALR);
-static SSHORT log_open(ISC_STATUS *, WALRS, SCHAR *, SLONG, SLONG);
+static SSHORT log_open(ISC_STATUS*, WALRS, const SCHAR*, SLONG, SLONG);
 static SSHORT read_next_block(ISC_STATUS *, WALRS);
 
 
@@ -91,8 +91,7 @@ SSHORT WALR_fixup_log_header(ISC_STATUS * status_vector, WALRS WALRS_handle)
 	WALR_handle->walr_log_header->walfh_flags &= ~WALFH_OPEN;
 
 	return WALF_update_log_header(status_vector, WALR_handle->walr_logname,
-								  WALR_handle->walr_log_header->
-								  walfh_log_partition_offset,
+								  WALR_handle->walr_log_header->walfh_log_partition_offset,
 								  WALR_handle->walr_log_header,
 								  WALR_handle->walr_fd);
 }
@@ -359,9 +358,9 @@ static SSHORT log_close( WALR WALR_handle)
 
 
 static SSHORT log_open(
-					   ISC_STATUS * status_vector,
+					   ISC_STATUS* status_vector,
 					   WALRS WALRS_handle,
-					   SCHAR * logname,
+					   const SCHAR* logname,
 					   SLONG log_partition_offset, SLONG offset)
 {
 /**************************************
@@ -582,7 +581,9 @@ static SSHORT read_next_block( ISC_STATUS * status_vector, WALRS WALRS_handle)
 
 		if (get_next_logname(WALRS_handle, &next_logname,
 							 &next_log_partition_offset) != FB_SUCCESS)
+		{
 			return -1;			/* end of log records */
+		}
 
 		ret = log_open(status_vector, WALRS_handle, next_logname,
 					   next_log_partition_offset, 0L);

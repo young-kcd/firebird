@@ -206,7 +206,7 @@ static void add_backup_entry(DJB, SLONG, SLONG);
 static CNCT alloc_connect(HANDLE, USHORT);
 static void backup_wal(DJB, SCHAR *, SLONG, SLONG, SLONG, SLONG);
 static void build_backup_array(DJB);
-static void build_indexed_name(SCHAR *, SCHAR *, SLONG);
+static void build_indexed_name(SCHAR*, const SCHAR*, SLONG);
 static void close_mailbox(int);
 static void commit(void);
 static void delete_backup_entry(DJB, SLONG);
@@ -455,7 +455,7 @@ static void backup_wal(DJB database,
 	sprintf(db_id, "%d", database->djb_id);
 	sprintf(csize, "%"SLONGFORMAT, file_size);
 	sprintf(cp_offset, "%"SLONGFORMAT, p_offset);
-	build_indexed_name(dname, (char*) database->djb_dir_name, file_seq);
+	build_indexed_name(dname, (const char*) database->djb_dir_name, file_seq);
 
 	gds__prefix(name, ARCHIVE);
 
@@ -545,8 +545,8 @@ static void build_backup_array(DJB dbb)
 }
 
 
-static void build_indexed_name(SCHAR * filename,
-							   SCHAR * basename,
+static void build_indexed_name(SCHAR* filename,
+							   const SCHAR* basename,
 							   SLONG seqno)
 {
 /**************************************
@@ -1105,7 +1105,7 @@ static void enable(CNCT connection,
 
 	if ((dir_name) && strlen(dir_name)) {
 		build_indexed_name(arch_name, dir_name, msg->ltjc_seqno);
-		if (LLIO_open(NULL, arch_name, LLIO_OPEN_NEW_RW, FALSE, &fd)) {
+		if (LLIO_open(NULL, arch_name, LLIO_OPEN_NEW_RW, false, &fd)) {
 			reply.jrnr_response = jrnr_archive_error;
 			send_reply(connection, (JRNH *) & reply, sizeof(reply));
 			delete_connection(connection);

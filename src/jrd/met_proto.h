@@ -42,7 +42,7 @@ struct jrd_nod*	MET_get_dependencies(TDBB, struct jrd_rel*, TEXT*,
 								class Csb*, SLONG[2], struct jrd_req**,
 								class Csb **, const TEXT*, USHORT);
 struct jrd_fld*	MET_get_field(struct jrd_rel *, USHORT);
-void		MET_get_shadow_files(TDBB, USHORT);
+void		MET_get_shadow_files(TDBB, bool);
 int			MET_get_walinfo(TDBB, struct logfiles **, ULONG *, struct logfiles **);
 void		MET_load_trigger(TDBB, struct jrd_rel *, TEXT *, TRIG_VEC *);
 void		MET_lookup_cnstrt_for_index(TDBB, TEXT* constraint, const TEXT* index_name);

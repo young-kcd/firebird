@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		misc_proto.h
- *	DESCRIPTION:	Prototype header file for misc.c
+ *	DESCRIPTION:	Prototype header file for misc.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,12 +24,13 @@
 #ifndef JRD_MISC_PROTO_H
 #define JRD_MISC_PROTO_H
 
-SSHORT MISC_build_parameters_block(UCHAR *, ...);
+SSHORT MISC_build_parameters_block(UCHAR*, ...);
 UCHAR *MISC_pop(struct stk **);
 struct stk *MISC_push(UCHAR *, struct stk **);
 
 #ifdef DEV_BUILD
-ULONG MISC_checksum_log_rec(UCHAR *, SSHORT, UCHAR *, SSHORT);
+ULONG MISC_checksum_log_rec(const UCHAR*, SSHORT, const UCHAR*, SSHORT);
 #endif
 
 #endif // JRD_MISC_PROTO_H
+

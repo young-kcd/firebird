@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		guid.h
+ *	MODULE:		guid.cpp
  *	DESCRIPTION:	Portable GUID (win32)
  *
  * This library is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: guid.cpp,v 1.3 2003-09-08 20:23:38 skidder Exp $
+ *  $Id: guid.cpp,v 1.4 2003-12-05 10:35:41 robocop Exp $
  *
  */
  
@@ -44,19 +44,20 @@
 #include "firebird.h"
 #include "fb_exception.h"
 
-void GenerateGuid(FB_GUID *guid) {
+void GenerateGuid(FB_GUID* guid) {
 	if (!SUCCEEDED(CoCreateGuid((GUID*)guid)))
 		Firebird::system_call_failed::raise();
 }
 
-void GuidToString(char* buffer, FB_GUID *guid) {
+void GuidToString(char* buffer, const FB_GUID* guid) {
 	sprintf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}", 
 		guid->data[0], guid->data[1], guid->data[2], guid->data[3],
 		guid->data[4], guid->data[5], guid->data[6], guid->data[7]);
 }
 
-void StringToGuid(FB_GUID *guid, char* buffer) {
+void StringToGuid(FB_GUID* guid, const char* buffer) {
 	sscanf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}", 
 		&guid->data[0], &guid->data[1], &guid->data[2], &guid->data[3],
 		&guid->data[4], &guid->data[5], &guid->data[6], &guid->data[7]);
 }
+

@@ -24,7 +24,7 @@
 #ifndef JRD_CCH_PROTO_H
 #define JRD_CCH_PROTO_H
 
-void		CCH_do_log_shutdown(TDBB, SSHORT);
+void		CCH_do_log_shutdown(TDBB, bool);
 void		CCH_shutdown_database(dbb*);
 
 USHORT		CCH_checksum(bdb*);

@@ -1,6 +1,6 @@
 /*
  *        PROGRAM:        JRD Write Ahead Log Writer
- *        MODULE:         walw.c
+ *        MODULE:         walw.cpp
  *        DESCRIPTION:    Write Ahead Log Writer
  *
  * The contents of this file are subject to the Interbase Public
@@ -90,7 +90,7 @@
 #define ERRNO	errno
 #endif
 
-typedef struct walwl
+struct walwl
 {
 	jmp_buf walwl_env;
 	SLONG walwl_log_fd;
@@ -98,36 +98,36 @@ typedef struct walwl
 	SLONG walwl_local_time[2];
 	SLONG walwl_flags;
 	IB_FILE *walwl_debug_fd;
-} *WALWL;
+};
 
 #define WALW_WRITER_TIMEOUT_USECS	3000000
 #define WALW_DISABLING_JRN		1
 #define MAXLOGS				32
 #define WALW_ERROR(status_vector)	IBERR_build_status (status_vector, isc_walw_err, 0)
 
-#define ENV			((WALWL)WAL_handle->wal_local_info_ptr)->walwl_env
-#define LOG_FD			((WALWL)WAL_handle->wal_local_info_ptr)->walwl_log_fd
-#define JOURNAL_HANDLE		((WALWL)WAL_handle->wal_local_info_ptr)->walwl_journal_handle
-#define LOCAL_TIME		((WALWL)WAL_handle->wal_local_info_ptr)->walwl_local_time
-#define LOCAL_FLAGS		((WALWL)WAL_handle->wal_local_info_ptr)->walwl_flags
-#define DEBUG_FD		((WALWL)WAL_handle->wal_local_info_ptr)->walwl_debug_fd
+#define ENV			((walwl*)WAL_handle->wal_local_info_ptr)->walwl_env
+#define LOG_FD			((walwl*)WAL_handle->wal_local_info_ptr)->walwl_log_fd
+#define JOURNAL_HANDLE		((walwl*)WAL_handle->wal_local_info_ptr)->walwl_journal_handle
+#define LOCAL_TIME		((walwl*)WAL_handle->wal_local_info_ptr)->walwl_local_time
+#define LOCAL_FLAGS		((walwl*)WAL_handle->wal_local_info_ptr)->walwl_flags
+#define DEBUG_FD		((walwl*)WAL_handle->wal_local_info_ptr)->walwl_debug_fd
 #define DBNAME			WAL_handle->wal_dbname
 #define PRINT_DEBUG_MSGS	(WAL_segment->wals_flags2 & WALS2_DEBUG_MSGS)
 
 #define PRINT_TIME(fd,t)	{ time((time_t*) t); ib_fprintf (fd, "%s", ctime((time_t*) t)); }
 
-static void close_log(ISC_STATUS *, WAL, SCHAR *, WALFH, bool);
-static SSHORT discard_prev_logs(ISC_STATUS *, SCHAR *, SCHAR *, SLONG, bool);
+static void close_log(ISC_STATUS*, WAL, const SCHAR*, WALFH, bool);
+static SSHORT discard_prev_logs(ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG, bool);
 static void finishup_checkpoint(WALS);
 static SSHORT flush_all_buffers(ISC_STATUS *, WAL);
-static SSHORT get_logfile_index(WALS, SCHAR *);
-static bool get_log_usability(ISC_STATUS *, SCHAR *, SCHAR *, SLONG);
+static SSHORT get_logfile_index(const wals*, const SCHAR*);
+static bool get_log_usability(ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG);
 static SSHORT get_next_logname(ISC_STATUS *, WALS, SCHAR *, SLONG *, SLONG *);
 static SSHORT get_next_prealloc_logname(ISC_STATUS *, WALS, SCHAR *, SLONG *,
 										SLONG *);
 static SSHORT get_next_serial_logname(ISC_STATUS *, WALS, SCHAR *, SLONG *,
 									  SLONG *);
-static bool get_next_usable_partition(ISC_STATUS *, SCHAR *, SCHAR *, SLONG *);
+static bool get_next_usable_partition(ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG*);
 static SSHORT get_overflow_logname(ISC_STATUS *, WALS, SCHAR *, SLONG *, SLONG *);
 static void get_time_stamp(SLONG *);
 static SSHORT increase_buffers(ISC_STATUS *, WAL, SSHORT);
@@ -137,18 +137,18 @@ static void journal_disable(ISC_STATUS *, WAL, WALFH);
 static SSHORT journal_enable(ISC_STATUS *, WAL);
 static void prepare_wal_block(WALS, WALBLK *);
 static void release_wal_block(WALS, WALBLK *);
-static void report_walw_bug_or_error(ISC_STATUS *, struct wal *, SSHORT, ISC_STATUS);
+static void report_walw_bug_or_error(ISC_STATUS*, wal*, SSHORT, ISC_STATUS);
 static SSHORT rollover_log(ISC_STATUS *, WAL, WALFH);
 static void setup_for_checkpoint(WALS);
-static SSHORT setup_log(ISC_STATUS *, WAL, SCHAR *, SLONG, SLONG, SLONG *, WALFH,
-						bool, SCHAR *, SLONG);
-static SSHORT setup_log_header_info(ISC_STATUS *, WAL, SCHAR *, SLONG, SLONG,
-									SLONG *, WALFH, bool, SCHAR *, SLONG,
+static SSHORT setup_log(ISC_STATUS*, WAL, SCHAR*, SLONG, SLONG, SLONG*, WALFH,
+						bool, const SCHAR*, SLONG);
+static SSHORT setup_log_header_info(ISC_STATUS*, WAL, SCHAR*, SLONG, SLONG,
+									SLONG*, WALFH, bool, const SCHAR*, SLONG,
 									bool*);
-static SSHORT write_log_header_and_reposition(ISC_STATUS *, SCHAR *, SLONG,
+static SSHORT write_log_header_and_reposition(ISC_STATUS*, const SCHAR*, SLONG,
 											  WALFH);
-static SSHORT write_wal_block(ISC_STATUS *, WALBLK *, SCHAR *, SLONG);
-static void write_wal_statistics(WAL);
+static SSHORT write_wal_block(ISC_STATUS*, const walblk*, const SCHAR*, SLONG);
+static void write_wal_statistics(const wal*);
 
 static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle);
 
@@ -396,8 +396,10 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 							 WAL_segment->wals_logname,
 							 &WAL_segment->wals_log_partition_offset,
 							 &log_type) != FB_SUCCESS)
+		{
 				report_walw_bug_or_error(status_vector, WAL_handle, FB_FAILURE,
 										 (ISC_STATUS) isc_wal_err_rollover2);
+		}
 	}
 
 	if (strlen(WAL_segment->wals_jrn_dirname))
@@ -496,11 +498,13 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 
 			if ((ret = write_wal_block(status_vector, wblk,
 									   WAL_segment->wals_logname,
-									   LOG_FD)) !=
-				FB_SUCCESS) report_walw_bug_or_error(status_vector, WAL_handle,
+									   LOG_FD)) != FB_SUCCESS)
+			{
+				report_walw_bug_or_error(status_vector, WAL_handle,
 												  ret,
 												  (ISC_STATUS)
 												  isc_wal_err_logwrite);
+			}
 
 			WALC_acquire(WAL_handle, &WAL_segment);
 			acquired = true;
@@ -615,9 +619,9 @@ static SSHORT walw_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 }
 
 
-static void close_log(ISC_STATUS * status_vector,
+static void close_log(ISC_STATUS* status_vector,
 					  WAL WAL_handle,
-					  SCHAR * logname,
+					  const SCHAR* logname,
 					  WALFH log_header,
 					  bool journal_flag)
 {
@@ -653,8 +657,10 @@ static void close_log(ISC_STATUS * status_vector,
 
 	if ((ret = write_log_header_and_reposition(status_vector, logname, LOG_FD,
 											   log_header)) != FB_SUCCESS)
+	{
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
 								 (ISC_STATUS) isc_wal_err_logwrite);
+	}
 	LLIO_close(0, LOG_FD);
 
 	if (PRINT_DEBUG_MSGS) {
@@ -683,16 +689,17 @@ static void close_log(ISC_STATUS * status_vector,
 					   log_header->walfh_seqno, ret);
 		}
 
-		if (ret != FB_SUCCESS)
+		if (ret != FB_SUCCESS) {
 			report_walw_bug_or_error(status_vector, WAL_handle, ret,
 									 (ISC_STATUS) isc_wal_err_jrn_comm);
+		}
 	}
 }
 
 
-static SSHORT discard_prev_logs(ISC_STATUS * status_vector,
-								SCHAR * dbname,
-								SCHAR * starting_logname,
+static SSHORT discard_prev_logs(ISC_STATUS* status_vector,
+								const SCHAR* dbname,
+								const SCHAR* starting_logname,
 								SLONG starting_log_partition_offset,
 								bool delete_flag)
 {
@@ -870,7 +877,8 @@ static SSHORT flush_all_buffers( ISC_STATUS * status_vector, WAL WAL_handle)
 			prepare_wal_block(WAL_segment, wblk);
 			if ((ret = write_wal_block(status_vector, wblk,
 									   WAL_segment->wals_logname,
-									   LOG_FD)) != FB_SUCCESS) {
+									   LOG_FD)) != FB_SUCCESS)
+			{
 				report_walw_bug_or_error(status_vector, WAL_handle, ret,
 										 isc_wal_err_logwrite);
 				return FB_FAILURE;
@@ -890,7 +898,7 @@ static SSHORT flush_all_buffers( ISC_STATUS * status_vector, WAL WAL_handle)
 }
 
 
-static SSHORT get_logfile_index( WALS WAL_segment, SCHAR * logname)
+static SSHORT get_logfile_index(const wals* WAL_segment, const SCHAR* logname)
 {
 /**************************************
  *
@@ -925,9 +933,9 @@ static SSHORT get_logfile_index( WALS WAL_segment, SCHAR * logname)
 }
 
 
-static bool get_log_usability(ISC_STATUS * status_vector,
-							  SCHAR * dbname,
-							  SCHAR * logname,
+static bool get_log_usability(ISC_STATUS* status_vector,
+							  const SCHAR* dbname,
+							  const SCHAR* logname,
 							  SLONG log_partition_offset)
 {
 /**************************************
@@ -1018,29 +1026,29 @@ SLONG * new_offset, SLONG * log_type)
  *	returns FB_FAILURE.
  *
  **************************************/
-	LOGF *logf;
 	SSHORT i, j, count;
-	bool found;
 	SLONG p_offset;
 
 	i = j =
 		(WAL_segment->wals_cur_logfile + 1) % WAL_segment->wals_max_logfiles;
 	count = 0;
-	found = false;
+	bool found = false;
 	p_offset = 0L;
 
 	while (true) {
 		if ((j == i) && (count > 1))	/* We have exhausted all the preallocated files */
 			break;
-		logf = LOGF_INFO(j);
-		if (logf->logf_flags & LOGF_PARTITIONED)
+		const LOGF* logf = LOGF_INFO(j);
+		if (logf->logf_flags & LOGF_PARTITIONED) {
 			found = get_next_usable_partition(status_vector,
 											  WAL_segment->wals_dbname,
 											  LOGF_NAME(logf), &p_offset);
-		else
+		}
+		else {
 			found = get_log_usability(status_vector,
 									  WAL_segment->wals_dbname,
 									  LOGF_NAME(logf), p_offset);
+		}
 		if (found) {
 			strcpy(new_logname, LOGF_NAME(logf));
 			*new_offset = p_offset;
@@ -1108,7 +1116,7 @@ static SSHORT get_next_serial_logname(ISC_STATUS * status_vector,
 		WALC_build_logname(new_logname, LOGF_NAME(logf),
 						   logf->logf_fname_seqno);
 		logf->logf_fname_seqno++;
-		if (LLIO_open(status_vector, new_logname, LLIO_OPEN_NEW_RW, TRUE, &fd)
+		if (LLIO_open(status_vector, new_logname, LLIO_OPEN_NEW_RW, true, &fd)
 			== FB_SUCCESS)
 		{
 			/* Found one */
@@ -1163,10 +1171,10 @@ static SSHORT get_next_serial_logname(ISC_STATUS * status_vector,
 
 
 static bool get_next_usable_partition(
-										ISC_STATUS * status_vector,
-										SCHAR * dbname,
-										SCHAR * master_logname,
-										SLONG * new_offset)
+										ISC_STATUS* status_vector,
+										const SCHAR* dbname,
+										const SCHAR* master_logname,
+										SLONG* new_offset)
 {
 /**************************************
  *
@@ -1184,7 +1192,6 @@ static bool get_next_usable_partition(
 	int i;
 	int j;
 	int count;
-	bool found;
 	SLONG p_offset;
 
 	P_LOGFH p_log_header = (P_LOGFH) gds__alloc(P_LOGFH_LENGTH);
@@ -1202,13 +1209,14 @@ static bool get_next_usable_partition(
 
 	i = j = (p_log_header->p_logfh_curp + 1) % p_log_header->p_logfh_maxp;
 	count = 0;
-	found = false;
+	bool found = false;
 	while (true) {
 		if ((j == i) && (count > 1))	/* We have exhausted all the partitions */
 			break;
 		p_offset = PARTITION_OFFSET(p_log_header, j);
 		if (found = get_log_usability(status_vector, dbname, master_logname,
-									  p_offset)) {
+									  p_offset))
+		{
 			p_log_header->p_logfh_curp = j;
 			*new_offset = p_offset;
 			WALF_update_partitioned_log_hdr(status_vector, master_logname,
@@ -1261,7 +1269,7 @@ SLONG * new_offset, SLONG * log_type)
 							   logf->logf_fname_seqno);
 			logf->logf_fname_seqno++;
 			if (LLIO_open
-				(status_vector, new_logname, LLIO_OPEN_NEW_RW, TRUE,
+				(status_vector, new_logname, LLIO_OPEN_NEW_RW, true,
 				 &fd) == FB_SUCCESS) 
 			{
 				LLIO_close(status_vector, fd);
@@ -1411,23 +1419,21 @@ static SSHORT init_raw_partitions( ISC_STATUS * status_vector, WAL WAL_handle)
  *	Initialize all the configured raw partitioned log files.
  *
  **************************************/
-	LOGF *logf;
 	SSHORT i, ret_val;
 
 	WALS WAL_segment = WAL_handle->wal_segment;
 
 	for (i = 0; i < WAL_segment->wals_max_logfiles; i++) {
-		logf = LOGF_INFO(i);
+		const LOGF* logf = LOGF_INFO(i);
 		if (logf->logf_flags & LOGF_RAW) {
+		    const SLONG part_log = PARTITIONED_LOG_TOTAL_SIZE(logf->logf_partitions,
+										 logf->logf_max_size);
 			ret_val = WALF_init_p_log(status_vector, DBNAME, LOGF_NAME(logf),
-									  PARTITIONED_LOG_TOTAL_SIZE(logf->
-																 logf_partitions,
-																 logf->
-																 logf_max_size),
-									  logf->logf_partitions);
-			if (ret_val != FB_SUCCESS)
+									  part_log, logf->logf_partitions);
+			if (ret_val != FB_SUCCESS) {
 				report_walw_bug_or_error(status_vector, WAL_handle, ret_val,
 										 (ISC_STATUS) isc_wal_err_logwrite);
+			}
 		}
 	}
 
@@ -1470,12 +1476,13 @@ static SSHORT journal_connect( ISC_STATUS * status_vector, WAL WAL_handle)
 		ib_fprintf(DEBUG_FD, "After calling JRN_init(), ret=%d\n", ret);
 	}
 
-	if (ret == FB_SUCCESS)
+	if (ret == FB_SUCCESS) {
 		WAL_segment->wals_flags |= WALS_JOURNAL_ENABLED;
-	else
+	}
+	else {
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
 								 (ISC_STATUS) isc_wal_err_jrn_comm);
-
+	}
 	return ret;
 }
 
@@ -1644,7 +1651,7 @@ static void release_wal_block( WALS WAL_segment, WALBLK * wblk)
 
 
 static void report_walw_bug_or_error(
-									 ISC_STATUS * status_vector,
+									 ISC_STATUS* status_vector,
 									 WAL WAL_handle,
 									 SSHORT failure_type, ISC_STATUS code)
 {
@@ -1872,15 +1879,15 @@ static void setup_for_checkpoint( WALS WAL_segment)
 }
 
 
-static SSHORT setup_log(ISC_STATUS * status_vector,
+static SSHORT setup_log(ISC_STATUS* status_vector,
 						WAL WAL_handle,
-						SCHAR * logname,
+						SCHAR* logname,
 						SLONG log_partition_offset,
 						SLONG log_type,
-						SLONG * logfile_fd,
+						SLONG* logfile_fd,
 						WALFH log_header,
 						bool rollover,
-						SCHAR * prev_logname,
+						const SCHAR* prev_logname,
 						SLONG prev_log_partition_offset)
 {
 /**************************************
@@ -1954,17 +1961,17 @@ static SSHORT setup_log(ISC_STATUS * status_vector,
 }
 
 
-static SSHORT setup_log_header_info(ISC_STATUS * status_vector,
+static SSHORT setup_log_header_info(ISC_STATUS* status_vector,
 									WAL WAL_handle,
-									SCHAR * logname,
+									SCHAR* logname,
 									SLONG log_partition_offset,
 									SLONG log_type,
-									SLONG * logfile_fd,
+									SLONG* logfile_fd,
 									WALFH log_header,
 									bool rollover,
-									SCHAR * prev_logname,
+									const SCHAR* prev_logname,
 									SLONG prev_log_partition_offset,
-									bool * takeover)
+									bool* takeover)
 {
 /**************************************
  *
@@ -1997,8 +2004,10 @@ static SSHORT setup_log_header_info(ISC_STATUS * status_vector,
 /* Open the Log file */
 
 	if (LLIO_open
-		(status_vector, logname, LLIO_OPEN_WITH_SYNC_RW, TRUE,
-		 &log_fd)) return FB_FAILURE;
+		(status_vector, logname, LLIO_OPEN_WITH_SYNC_RW, true, &log_fd))
+	{
+		return FB_FAILURE;
+	}
 
 	*takeover = false;
 
@@ -2122,8 +2131,8 @@ static SSHORT setup_log_header_info(ISC_STATUS * status_vector,
 			strcpy(logname, log_header->walfh_next_logname);
 			prev_logfpartition_offset = log_partition_offset;
 			return setup_log_header_info(status_vector, WAL_handle, logname,
-										 log_header->
-										 walfh_next_log_partition_offset, 0L,
+										 log_header->walfh_next_log_partition_offset,
+										 0L,
 										 logfile_fd, log_header, rollover,
 										 prev_logfname,
 										 prev_logfpartition_offset, takeover);
@@ -2143,8 +2152,8 @@ static SSHORT setup_log_header_info(ISC_STATUS * status_vector,
 
 
 static SSHORT write_log_header_and_reposition(
-											  ISC_STATUS * status_vector,
-											  SCHAR * logname,
+											  ISC_STATUS* status_vector,
+											  const SCHAR* logname,
 											  SLONG log_fd, WALFH log_header)
 {
 /**************************************
@@ -2162,7 +2171,7 @@ static SSHORT write_log_header_and_reposition(
 
 	if (LLIO_write(status_vector, log_fd, logname,
 				   log_header->walfh_log_partition_offset, LLIO_SEEK_BEGIN,
-				   (UCHAR *) log_header, WALFH_LENGTH, 0))
+				   (const UCHAR*) log_header, WALFH_LENGTH, 0))
 		return FB_FAILURE;
 
 /* Let's write an invalid block header at the end so that even if we
@@ -2171,7 +2180,7 @@ static SSHORT write_log_header_and_reposition(
 	if (LLIO_write(status_vector, log_fd, logname,
 				   log_header->walfh_log_partition_offset +
 				   log_header->walfh_length, LLIO_SEEK_BEGIN,
-				   (UCHAR *) log_terminator_block, WAL_TERMINATOR_BLKLEN, 0))
+				   (const UCHAR*) log_terminator_block, WAL_TERMINATOR_BLKLEN, 0))
 		return FB_FAILURE;
 
 	if (LLIO_seek(status_vector, log_fd, logname, -1 * WAL_TERMINATOR_BLKLEN,
@@ -2182,8 +2191,8 @@ static SSHORT write_log_header_and_reposition(
 
 
 static SSHORT write_wal_block(
-							  ISC_STATUS * status_vector,
-							  WALBLK * wblk, SCHAR * logname, SLONG log_fd)
+							  ISC_STATUS* status_vector,
+							  const walblk* wblk, const SCHAR* logname, SLONG log_fd)
 {
 /**************************************
  *
@@ -2198,13 +2207,15 @@ static SSHORT write_wal_block(
 
 	if (LLIO_write(status_vector, log_fd, logname, 0L, LLIO_SEEK_NONE,
 				   wblk->walblk_buf, wblk->walblk_roundup_offset, 0))
+	{
 		return FB_FAILURE;
+	}
 
 	return FB_SUCCESS;
 }
 
 
-static void write_wal_statistics( WAL WAL_handle)
+static void write_wal_statistics(const wal* WAL_handle)
 {
 /**************************************
  *
@@ -2219,7 +2230,7 @@ static void write_wal_statistics( WAL WAL_handle)
  *	since they are likely only to be seen by DBA's and technical types
  *
  **************************************/
-	WALS WAL_segment = WAL_handle->wal_segment;
+	const wals* WAL_segment = WAL_handle->wal_segment;
 	if (PRINT_DEBUG_MSGS) {
 		IB_FILE* stat_file = DEBUG_FD;
 

@@ -1,6 +1,6 @@
 /*
  *        PROGRAM:        JRD Write Ahead Log APIs
- *        MODULE:         wal.cpp
+ *        MODULE:         driver.cpp
  *        DESCRIPTION:    Simple driver for WAL routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -65,10 +65,10 @@ static void do_mem_benchmark(void);
 static void do_sem_benchmark(WAL);
 static SLONG get_tod(void);
 static bool get_word(SCHAR *);
-static void partitioned_logfile_create(ISC_STATUS *, SCHAR *);
-static void partitioned_logfile_info(ISC_STATUS *, SCHAR *);
+static void partitioned_logfile_create(ISC_STATUS*, const SCHAR*);
+static void partitioned_logfile_info(ISC_STATUS*, const SCHAR*);
 static void print_help(void);
-static SSHORT read_log(ISC_STATUS *, SCHAR *, SCHAR *, SLONG);
+static SSHORT read_log(ISC_STATUS*, const SCHAR*, SCHAR*, SLONG);
 static void toggle_debug_msg_flag(ISC_STATUS *, WAL);
 
 static ULONG base_seconds;
@@ -619,7 +619,7 @@ static bool get_word( SCHAR * buffer)
 
 
 static void partitioned_logfile_create(
-									   ISC_STATUS * status_vector, SCHAR * dbname)
+									   ISC_STATUS* status_vector, const SCHAR* dbname)
 {
 /**************************************
  *
@@ -651,7 +651,7 @@ static void partitioned_logfile_create(
 }
 
 
-static void partitioned_logfile_info( ISC_STATUS * status_vector, SCHAR * dbname)
+static void partitioned_logfile_info( ISC_STATUS* status_vector, const SCHAR* dbname)
 {
 /**************************************
  *
@@ -677,7 +677,8 @@ static void partitioned_logfile_info( ISC_STATUS * status_vector, SCHAR * dbname
 	ib_scanf("%s", master_logname);
 	ib_scanf("%c", &ret);		/* get rid of the trailing '\n' character */
 	if (WALF_open_partitioned_log_file(status_vector, dbname, master_logname,
-									   p_log_header, &p_log_fd) != FB_SUCCESS) {
+									   p_log_header, &p_log_fd) != FB_SUCCESS)
+	{
 		gds__free(p_log_header);
 		gds__print_status(status_vector);
 		return;
@@ -696,9 +697,9 @@ static void partitioned_logfile_info( ISC_STATUS * status_vector, SCHAR * dbname
 
 
 static SSHORT read_log(
-					   ISC_STATUS * status_vector,
-					   SCHAR * dbname,
-					   SCHAR * logname, SLONG log_partition_offset)
+					   ISC_STATUS* status_vector,
+					   const SCHAR* dbname,
+					   SCHAR* logname, SLONG log_partition_offset)
 {
 /**************************************
  *
@@ -734,7 +735,8 @@ log_count = 3;
 	WALRS_handle = NULL;
 	if ((ret = WALR_open(status_vector, &WALRS_handle, dbname,
 						 log_count, lognames, log_p_offsets,
-						 0L, NULL, false)) != FB_SUCCESS) {
+						 0L, NULL, false)) != FB_SUCCESS)
+	{
 		if (ret == -1) {
 			ib_printf("End of log...\n");
 			return FB_SUCCESS;
@@ -836,3 +838,4 @@ static void toggle_debug_msg_flag( ISC_STATUS * status_vector, WAL WAL_handle)
 		WAL_segment->wals_flags2 |= WALS2_DEBUG_MSGS;
 	WALC_release(WAL_handle);
 }
+

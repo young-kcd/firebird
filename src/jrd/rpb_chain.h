@@ -37,7 +37,7 @@ public:
 	traRpbListElement(struct rpb *r, USHORT l) : 
 			lr_rpb(r), level(l) {}
 	traRpbListElement() {}
-	static inline const bool compare(const traRpbListElement& i1, const traRpbListElement& i2) {
+	static inline const bool greaterThan(const traRpbListElement& i1, const traRpbListElement& i2) {
 		return i1.lr_rpb->rpb_relation->rel_id != i2.lr_rpb->rpb_relation->rel_id ? 
 			   i1.lr_rpb->rpb_relation->rel_id > i2.lr_rpb->rpb_relation->rel_id :
 			   i1.lr_rpb->rpb_number != i2.lr_rpb->rpb_number ?
@@ -59,3 +59,4 @@ public:
 	bool PopRpb(struct rpb* value, int Level);
 };
 #endif	//RPB_CHAIN_H
+

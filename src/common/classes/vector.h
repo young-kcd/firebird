@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: vector.h,v 1.4 2003-11-03 23:50:05 brodsom Exp $
+ *  $Id: vector.h,v 1.5 2003-12-05 10:35:29 robocop Exp $
  *
  */
  
@@ -92,7 +92,7 @@ protected:
 template <typename T>
 class DefaultComparator {
 public:
-	static bool compare(const T& i1, const T& i2) {
+	static bool greaterThan(const T& i1, const T& i2) {
 	    return i1 > i2;
 	}
 };
@@ -116,14 +116,14 @@ public:
 		int highBound=count, lowBound=0;
 		while (highBound > lowBound) {
 			int temp = (highBound + lowBound) >> 1;
-			if (Cmp::compare(item, KeyOfValue::generate(this,data[temp])))
+			if (Cmp::greaterThan(item, KeyOfValue::generate(this,data[temp])))
 				lowBound = temp+1;
 			else
 				highBound = temp;
 		}
 		pos = lowBound;
 		return highBound != count &&
-			!Cmp::compare(KeyOfValue::generate(this,data[lowBound]), item);
+			!Cmp::greaterThan(KeyOfValue::generate(this,data[lowBound]), item);
 	}
 	int add(const Value& item) {
 	    int pos;

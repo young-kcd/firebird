@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		ppg_proto.h
- *	DESCRIPTION:	Prototype header file for ppg.c
+ *	DESCRIPTION:	Prototype header file for ppg.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,11 +25,11 @@
 #define UTILITIES_PPG_PROTO_H
 
 #ifdef SUPERSERVER
-void	PPG_print_header (HDR, SLONG, SVC);
-void	PPG_print_log (LIP, SLONG, SVC);
+void	PPG_print_header (const hdr*, SLONG, SVC);
+void	PPG_print_log (const log_info_page*, SLONG, SVC);
 #else
-void	PPG_print_header (HDR, SLONG, IB_FILE*);
-void	PPG_print_log (LIP, SLONG, IB_FILE*);
+void	PPG_print_header (const hdr*, SLONG, IB_FILE*);
+void	PPG_print_log (const log_info_page*, SLONG, IB_FILE*);
 #endif
 
 #endif // UTILITIES_PPG_PROTO_H

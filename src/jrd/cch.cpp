@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		cch.c
+ *	MODULE:		cch.cpp
  *	DESCRIPTION:	Disk cache manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -382,7 +382,7 @@ USHORT CCH_checksum(BDB bdb)
 #endif
 }
 
-void CCH_do_log_shutdown(TDBB tdbb, SSHORT force_archive)
+void CCH_do_log_shutdown(TDBB tdbb, bool force_archive)
 {
 /**************************************
  *
@@ -395,7 +395,7 @@ void CCH_do_log_shutdown(TDBB tdbb, SSHORT force_archive)
  *
  **************************************/
 	DBB dbb;
-	LIP logp;
+	log_info_page* logp;
 	WIN window;
 	SLONG seqno, offset, p_offset;
 	SCHAR walname[MAXPATHLEN];
@@ -409,7 +409,7 @@ void CCH_do_log_shutdown(TDBB tdbb, SSHORT force_archive)
 
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
-	logp = (LIP) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+	logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	logp->log_flags &= ~log_recover;
 
 	AIL_shutdown(walname, &seqno, &offset, &p_offset, force_archive);
@@ -1250,7 +1250,7 @@ void CCH_fini(TDBB tdbb)
 
 	if (dbb->dbb_wal) {
 		if (CCH_exclusive(tdbb, LCK_EX, LCK_NO_WAIT))
-			CCH_do_log_shutdown(tdbb, 0);
+			CCH_do_log_shutdown(tdbb, false);
 	}
 
 #ifdef CACHE_READER
@@ -1844,7 +1844,9 @@ void CCH_journal_record(TDBB	tdbb,
 			if (journal->bdb_sequence !=
 				MISC_checksum_log_rec((UCHAR *) journal->bdb_buffer,
 									  journal->bdb_length, 0, 0))
+			{
 				DEBUG_PRINTF("Checksum error in journal buffer\n");
+			}
 #endif
 			/* If we are journaling a b-tree segment, this new journal
 			 * segment replaces all the previous records for this page.
@@ -1852,7 +1854,9 @@ void CCH_journal_record(TDBB	tdbb,
 			 */
 			if ((h_length)
 				&& (((JRNH *) header)->jrnh_type == JRNP_BTREE_SEGMENT))
+			{
 				journal->bdb_length = 0;
+			}
 		}
 	}
 	else {
@@ -4519,9 +4523,11 @@ static void journal_buffer(ISC_STATUS * status, BDB bdb)
 
 #ifdef DEV_BUILD
 	if (journal->bdb_sequence !=
-		MISC_checksum_log_rec((UCHAR *) journal->bdb_buffer,
+		MISC_checksum_log_rec(reinterpret_cast<const UCHAR*>(journal->bdb_buffer),
 							  journal->bdb_length, 0, 0))
+	{
 		DEBUG_PRINTF("Checksum error in journal buffer during AIL_put()\n");
+	}
 #endif
 
 	header.jrnd_header.jrnh_type = JRN_PAGE;

@@ -96,7 +96,7 @@
 #include "../jrd/ail.h"
 #include "../jrd/isc_f_proto.h"
 
-static void find_clump_space(SLONG, WIN *, PAG *, USHORT, SSHORT, UCHAR *,
+static void find_clump_space(SLONG, WIN*, PAG*, USHORT, SSHORT, const UCHAR*,
 							 USHORT);
 static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 						 UCHAR **);
@@ -197,7 +197,7 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 int PAG_add_clump(
 				  SLONG page_num,
 				  USHORT type,
-				  USHORT len, UCHAR * entry, USHORT mode, USHORT must_write)
+				  USHORT len, const UCHAR* entry, USHORT mode, USHORT must_write)
 {
 /***********************************************
  *
@@ -218,9 +218,9 @@ int PAG_add_clump(
  **************************************/
 	DBB dbb;
 	HDR header;
-	LIP logp;
+	log_info_page* logp;
 	WIN window;
-	UCHAR *entry_p, *clump_end, *r;
+	UCHAR *entry_p, *clump_end;
 	USHORT l;
 	int found;
 	USHORT *end_addr;
@@ -242,7 +242,7 @@ int PAG_add_clump(
 	}
 	else {
 		page = CCH_FETCH(tdbb, &window, LCK_write, pag_log);
-		logp = (LIP) page;
+		logp = (log_info_page*) page;
 		end_addr = &logp->log_end;
 	}
 
@@ -266,18 +266,19 @@ int PAG_add_clump(
 
 		if (entry_p[1] == len) {
 			entry_p += 2;
-			r = entry;
+			const UCHAR* r = entry;
 			if ( (l = len) ) {
 				if (must_write)
 					CCH_MARK_MUST_WRITE(tdbb, &window);
 				else
 					CCH_MARK(tdbb, &window);
-				do
+				do {
 					*entry_p++ = *r++;
-				while (--l);
+				} while (--l);
 
-				if (dbb->dbb_wal)
+				if (dbb->dbb_wal) {
 					CCH_journal_page(tdbb, &window);
+				}
 			}
 			CCH_RELEASE(tdbb, &window);
 			return TRUE;
@@ -294,13 +295,14 @@ int PAG_add_clump(
 
 		*end_addr -= (2 + entry_p[1]);
 
-		r = entry_p + 2 + entry_p[1];
+		const UCHAR* r = entry_p + 2 + entry_p[1];
 		l = clump_end - r + 1;
 
-		if (l)
-			do
+		if (l) {
+			do {
 				*entry_p++ = *r++;
-			while (--l);
+			} while (--l);
+		}
 
 		if (dbb->dbb_wal)
 			CCH_journal_page(tdbb, &window);
@@ -317,7 +319,7 @@ int PAG_add_clump(
 		}
 		else {
 			page = CCH_FETCH(tdbb, &window, LCK_write, pag_log);
-			logp = (LIP) page;
+			logp = (log_info_page*) page;
 			end_addr = &logp->log_end;
 		}
 		break;
@@ -799,7 +801,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 	WIN window;
 	UCHAR *entry_p, *clump_end, *r;
 	USHORT l;
-	LIP logp;
+	log_info_page* logp;
 	HDR header;
 	PAG page;
 	USHORT *end_addr;
@@ -830,7 +832,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 		end_addr = &header->hdr_end;
 	}
 	else {
-		logp = (LIP) page;
+		logp = (log_info_page*) page;
 		end_addr = &logp->log_end;
 	}
 
@@ -919,13 +921,13 @@ void PAG_format_log(void)
  *
  **************************************/
 	WIN window;
-	LIP logp;
+	log_info_page* logp;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
 
 	window.win_page = LOG_PAGE;
-	logp = (LIP) CCH_fake(tdbb, &window, 1);
+	logp = (log_info_page*) CCH_fake(tdbb, &window, 1);
 	logp->log_header.pag_type = pag_log;
 
 	AIL_init_log_page(logp, (SLONG) 0);
@@ -1490,7 +1492,7 @@ void PAG_modify_log(SLONG tid, SLONG flag)
  **************************************/
 	DBB dbb;
 	WIN window;
-	LIP page;
+	log_info_page* page;
 	JRNL record;
 	TDBB tdbb;
 
@@ -1500,7 +1502,7 @@ void PAG_modify_log(SLONG tid, SLONG flag)
 
 	window.win_page = LOG_PAGE;
 	window.win_flags = 0;
-	page = (LIP) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+	page = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
 /* get the TIP page for this transaction */
@@ -1897,10 +1899,10 @@ int PAG_unlicensed(void)
 
 static void find_clump_space(
 							 SLONG page_num,
-							 WIN * window,
-							 PAG * ppage,
+							 WIN* window,
+							 PAG* ppage,
 							 USHORT type,
-SSHORT len, UCHAR * entry, USHORT must_write)
+	SSHORT len, const UCHAR* entry, USHORT must_write)
 {
 /***********************************************
  *
@@ -1915,10 +1917,11 @@ SSHORT len, UCHAR * entry, USHORT must_write)
  *
  **************************************/
 	DBB dbb;
-	UCHAR *p, *ptr;
+	UCHAR *p;
 	WIN new_window;
 	HDR new_header, header;
-	LIP new_logp, logp;
+	log_info_page* new_logp;
+	log_info_page* logp;
 	PAG new_page, page;
 	USHORT *end_addr;
 	SLONG next_page;
@@ -1929,7 +1932,7 @@ SSHORT len, UCHAR * entry, USHORT must_write)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	ptr = entry;
+	const UCHAR* ptr = entry;
 	page = *ppage;
 
 	while (TRUE) {
@@ -1941,7 +1944,7 @@ SSHORT len, UCHAR * entry, USHORT must_write)
 			p = (UCHAR *) header + header->hdr_end;
 		}
 		else {
-			logp = (LIP) page;
+			logp = (log_info_page*) page;
 			next_page = logp->log_next_page;
 			free_space = dbb->dbb_page_size - logp->log_end;
 			end_addr = &logp->log_end;
@@ -1959,10 +1962,11 @@ SSHORT len, UCHAR * entry, USHORT must_write)
 			*p++ = static_cast < UCHAR > (type);
 			*p++ = static_cast < UCHAR > (len);
 
-			if (len)
-				do
+			if (len) {
+				do {
 					*p++ = *ptr++;
-				while (--len);
+				} while (--len);
+			}
 
 			*p = HDR_end;
 
@@ -2001,7 +2005,7 @@ SSHORT len, UCHAR * entry, USHORT must_write)
 		p = new_header->hdr_data;
 	}
 	else {
-		new_logp = (LIP) new_page;
+		new_logp = (log_info_page*) new_page;
 		new_logp->log_header.pag_type = pag_log;
 		new_logp->log_data[0] = LOG_end;
 		new_logp->log_end = LIP_SIZE;
@@ -2061,7 +2065,7 @@ static BOOLEAN find_type(
 	UCHAR *q, *p;
 	SLONG next_page;
 	HDR header;
-	LIP logp;
+	log_info_page* logp;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
@@ -2075,7 +2079,7 @@ static BOOLEAN find_type(
 			next_page = header->hdr_next_page;
 		}
 		else {
-			logp = (LIP) (*ppage);
+			logp = (log_info_page*) (*ppage);
 			p = logp->log_data;
 			next_page = logp->log_next_page;
 		}

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		jrn_proto.h		
- *	DESCRIPTION:	Prototype Header file for jrn.c
+ *	DESCRIPTION:	Prototype Header file for jrn.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,33 +24,35 @@
 #ifndef JRD_JRN_PROTO_H
 #define JRD_JRN_PROTO_H
 
+// CVC: The project "archive" didn't compile in Win32 if the extern is deleted.
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int JRN_archive_begin(ISC_STATUS *, struct jrn **, SLONG, SLONG, TEXT *,
+int JRN_archive_begin(ISC_STATUS*, struct jrn**, SLONG, SLONG, const TEXT*,
 							 USHORT);
-int JRN_archive_end(ISC_STATUS *, struct jrn **, SLONG, SLONG);
-int JRN_archive_error(ISC_STATUS *, struct jrn **, SLONG, SLONG, SLONG);
-int JRN_disable(ISC_STATUS *, struct jrn *, struct jrnh *, UCHAR *,
+int JRN_archive_end(ISC_STATUS*, struct jrn**, SLONG, SLONG);
+int JRN_archive_error(ISC_STATUS*, struct jrn**, SLONG, SLONG, SLONG);
+int JRN_disable(ISC_STATUS*, struct jrn*, struct jrnh*, const UCHAR*,
 					   USHORT);
 void JRN_dump_page(void);
-int JRN_enable(ISC_STATUS *, struct jrn **, TEXT *, USHORT, UCHAR *,
-					  USHORT, struct ltjc *);
-int JRN_fini(ISC_STATUS *, struct jrn **);
-int JRN_init(ISC_STATUS *, struct jrn **, USHORT, UCHAR *, USHORT, UCHAR *,
+int JRN_enable(ISC_STATUS*, struct jrn**, const TEXT*, USHORT, const UCHAR*,
+					  USHORT, struct ltjc*);
+int JRN_fini(ISC_STATUS*, struct jrn**);
+int JRN_init(ISC_STATUS*, struct jrn**, USHORT, const UCHAR*, USHORT, const UCHAR*,
 					USHORT);
 void JRN_make_init_data(UCHAR *, SSHORT *, UCHAR *, USHORT, UCHAR *,
 							   USHORT);
-int JRN_put_wal_name(ISC_STATUS *, struct jrn *, TEXT *, USHORT, SLONG,
+int JRN_put_wal_name(ISC_STATUS*, struct jrn*, const TEXT*, USHORT, SLONG,
 							SLONG, SLONG, USHORT);
-int JRN_put_wal_info(ISC_STATUS *, struct jrn *, TEXT *, USHORT, SLONG,
-							SLONG, SLONG, USHORT, USHORT, USHORT *, USHORT);
+int JRN_put_wal_info(ISC_STATUS*, struct jrn*, const TEXT*, USHORT, SLONG,
+							SLONG, SLONG, USHORT, USHORT, USHORT*, USHORT);
 int JRN_put_old_start(ISC_STATUS *, struct jrn *, SLONG, SLONG, SLONG,
 							 USHORT *);
 int JRN_put_old_end(ISC_STATUS *, struct jrn *, SLONG, SLONG, SLONG,
 						   USHORT);
-int JRN_put_old_file(ISC_STATUS *, struct jrn *, SCHAR *, USHORT, SLONG,
+int JRN_put_old_file(ISC_STATUS*, struct jrn*, const SCHAR*, USHORT, SLONG,
 							USHORT, USHORT);
 void JRN_sync(void);
 
@@ -59,3 +61,4 @@ void JRN_sync(void);
 #endif
 
 #endif // JRD_JRN_PROTO_H
+

@@ -56,25 +56,25 @@ static void apply_data(DPG, JRND *);
 static void apply_header(HDR, JRND *);
 static void apply_ids(PPG, JRND *);
 static void apply_index(BTR, JRND *);
-static void apply_log(LIP, JRND *);
+static void apply_log(log_info_page*, JRND *);
 static void apply_pip(PIP, JRND *);
 static void apply_pointer(PPG, JRND *);
 static void apply_root(IRT, JRND *);
 static void apply_transaction(TIP, JRND *);
 static void disable(void);
 static JRNP *next_clump(JRND *, JRNP *);
-static void process_page(TDBB, JRND *, SLONG, SLONG, PAG, SBM *, USHORT);
+static void process_page(TDBB, JRND*, SLONG, SLONG, PAG, SBM*, bool);
 static void quad_move(UCHAR *, UCHAR *);
-static void rec_process_record(TDBB, JRNH *, USHORT, ULONG,
-							   ULONG, PAG, SBM *, USHORT);
-static void scan_and_apply_logs(const TEXT*, TEXT*, CP*, SBM*, USHORT, SLONG*,
+static void rec_process_record(TDBB, JRNH*, USHORT, ULONG,
+							   ULONG, PAG, SBM*, bool);
+static void scan_and_apply_logs(const TEXT*, TEXT*, CP*, SBM*, bool, SLONG*,
 								SLONG, PAG);
 
 
 void REC_recover(
 				 const TEXT* dbname,
 				 TEXT* walname,
-				 CP* cp1, SBM* sbm_rec, USHORT activate_shadow)
+				 CP* cp1, SBM* sbm_rec, bool activate_shadow)
 {
 /**************************************
  *
@@ -133,7 +133,7 @@ void REC_recover_page(
 	MOV_time_stamp(reinterpret_cast < ISC_TIMESTAMP * >(date));
 
 	scan_and_apply_logs(dbname, walname, cp1, NULL,
-						0, date, page_no, page);
+						false, date, page_no, page);
 }
 
 
@@ -444,7 +444,7 @@ static void apply_index(BTR page, JRND * record)
 }
 
 
-static void apply_log(LIP page, JRND * record)
+static void apply_log(log_info_page* page, JRND * record)
 {
 /**************************************
  *
@@ -720,10 +720,10 @@ static JRNP *next_clump(JRND * record, JRNP * prior)
 
 static void process_page(
 						 TDBB tdbb,
-						 JRND * record,
+						 JRND* record,
 						 SLONG seqno,
 						 SLONG offset,
-						 PAG rec_page, SBM * sbm_rec, USHORT activate_shadow)
+						 PAG rec_page, SBM* sbm_rec, bool activate_shadow)
 {
 /**************************************
  *
@@ -743,7 +743,7 @@ static void process_page(
 	JRNP *clump;
 	UCHAR *p, *q;
 	WIN window;
-	LIP logp;
+	log_info_page* logp;
 	JRND rec;
 	HDR hdr;
 	USHORT hdr_end;
@@ -846,7 +846,7 @@ static void process_page(
 		/* If LOG_page is being replaced, set the flag log_rec_in_progress */
 
 		if (rec.jrnd_page == LOG_PAGE) {
-			logp = (LIP) page;
+			logp = (log_info_page*) page;
 			logp->log_flags |= log_rec_in_progress;
 		}
 		if (!rec_page)
@@ -883,7 +883,7 @@ static void process_page(
 		apply_ids(reinterpret_cast < PPG > (page), record);
 		break;
 	case pag_log:
-		apply_log(reinterpret_cast < LIP > (page), record);
+		apply_log(reinterpret_cast < log_info_page* > (page), record);
 		break;
 
 	default:
@@ -919,11 +919,11 @@ static void quad_move(UCHAR * a, UCHAR * b)
 
 static void rec_process_record(
 							   TDBB tdbb,
-							   JRNH * record,
+							   JRNH* record,
 							   USHORT length,
 							   ULONG seqno,
 							   ULONG offset,
-PAG page, SBM * sbm_rec, USHORT activate_shadow)
+PAG page, SBM* sbm_rec, bool activate_shadow)
 {
 /**************************************
  *
@@ -987,7 +987,7 @@ static void scan_and_apply_logs(
 								TEXT* start_logname,
 								CP* cp1,
 								SBM* sbm_rec,
-	USHORT activate_shadow, SLONG* timestamp, SLONG page_no, PAG page)
+	bool activate_shadow, SLONG* timestamp, SLONG page_no, PAG page)
 {
 /**************************************
  *
@@ -1060,8 +1060,9 @@ static void scan_and_apply_logs(
 		rec1.jrnd_header.jrnh_series = 0;
 		MOVE_FAST((SCHAR *) & rec1, (SCHAR *) wal_buff, JRND_SIZE);
 
-		if (checksum != (SLONG) MISC_checksum_log_rec(wal_buff, len, 0, 0))
+		if (checksum != (SLONG) MISC_checksum_log_rec(wal_buff, len, 0, 0)) {
 			BUGCHECK(283);
+		}
 
 		rec1.jrnd_header.jrnh_series = checksum;
 		MOVE_FAST((SCHAR *) & rec1, (SCHAR *) wal_buff, JRND_SIZE);

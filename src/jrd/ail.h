@@ -29,26 +29,26 @@
 #ifndef JRD_AIL_H
 #define JRD_AIL_H
 
-void	AIL_add_log(void);
-void	AIL_checkpoint_finish(ISC_STATUS*, dbb*, SLONG, TEXT*,
+void	AIL_add_log();
+void	AIL_checkpoint_finish(ISC_STATUS*, dbb*, SLONG, const TEXT*,
 								  SLONG, SLONG);
 void	AIL_commit(SLONG);
-void	AIL_disable(void);
-void	AIL_drop_log(void);
-void	AIL_drop_log_force(void);
-void	AIL_enable(TEXT *, USHORT, UCHAR *, USHORT, SSHORT);
-void	AIL_fini(void);
+void	AIL_disable();
+void	AIL_drop_log();
+void	AIL_drop_log_force();
+void	AIL_enable(const TEXT*, USHORT, const UCHAR*, USHORT, SSHORT);
+void	AIL_fini();
 void	AIL_get_file_list(lls**);
-void	AIL_init(TEXT*, SSHORT, win*, USHORT, sbm**);
+void	AIL_init(const TEXT*, SSHORT, win*, bool, sbm**);
 void	AIL_init_log_page(log_info_page*, SLONG);
-void	AIL_journal_tid(void);
+void	AIL_journal_tid();
 void	AIL_process_jrn_error(SLONG);
-void	AIL_put(dbb*, ISC_STATUS*, jrnh*, USHORT, UCHAR*,
+void	AIL_put(dbb*, ISC_STATUS*, jrnh*, USHORT, const UCHAR*,
 					USHORT, ULONG, ULONG, ULONG *, ULONG *);
 void	AIL_recover_page(SLONG, pag*);
 void	AIL_set_log_options(SLONG, SSHORT, USHORT, SLONG);
-void	AIL_shutdown(SCHAR *, SLONG *, SLONG *, SLONG *, SSHORT);
-void	AIL_upd_cntrl_pt(TEXT *, USHORT, ULONG, ULONG, ULONG);
+void	AIL_shutdown(SCHAR*, SLONG*, SLONG*, SLONG*, bool);
+void	AIL_upd_cntrl_pt(const TEXT*, const USHORT, ULONG, ULONG, ULONG);
 
 #endif // JRD_AIL_H
 

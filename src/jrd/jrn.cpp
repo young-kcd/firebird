@@ -82,17 +82,17 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/jrn_proto.h"
 
-static int do_connect(JRN *, ISC_STATUS *, TEXT *, USHORT, LTJC *, USHORT,
-					  UCHAR *, USHORT, USHORT);
-static void error(ISC_STATUS *, JRN, int, TEXT *);
+static int do_connect(JRN*, ISC_STATUS*, const TEXT*, USHORT, LTJC*, USHORT,
+					  const UCHAR*, USHORT, int);
+static void error(ISC_STATUS*, JRN, int, const TEXT*);
 #ifdef BSD_SOCKETS
 static int find_address(ISC_STATUS *, JRN, struct sockaddr_in *);
 #endif
 static int get_reply(ISC_STATUS *, JRN, JRNR *);
 static int journal_close(ISC_STATUS *, JRN);
-static int jrn_put(ISC_STATUS *, JRN, JRNH *, USHORT, UCHAR *, USHORT);
-static int retry_connect(ISC_STATUS *, JRN *, TEXT *, USHORT, LTJC *, USHORT,
-						 UCHAR *, USHORT);
+static int jrn_put(ISC_STATUS*, JRN, jrnh*, USHORT, const UCHAR*, USHORT);
+static int retry_connect(ISC_STATUS*, JRN*, const TEXT*, USHORT, LTJC*, USHORT,
+						 const UCHAR*, USHORT);
 
 
 /*************************************************************************
@@ -113,10 +113,10 @@ Error Handling:
 
 
 int JRN_archive_begin(
-					  ISC_STATUS * status_vector,
-					  JRN * ret_journal,
+					  ISC_STATUS* status_vector,
+					  JRN* ret_journal,
 					  SLONG db_id,
-					  SLONG file_id, TEXT * journal_name, USHORT j_length)
+					  SLONG file_id, const TEXT* journal_name, USHORT j_length)
 {
 /**************************************
  *
@@ -131,10 +131,9 @@ int JRN_archive_begin(
  *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
-	LTJA record;
-
 	*ret_journal = NULL;
-
+	
+	LTJA record;
 	record.ltja_header.jrnh_type = JRN_ARCHIVE_BEGIN;
 	record.ltja_db_id = db_id;
 	record.ltja_file_id = file_id;
@@ -164,11 +163,7 @@ int JRN_archive_end(
  *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
-	LTJA record;
-	JRN journal;
-	int ret_val;
-
-	journal = *ret_journal;
+	jrn* journal = *ret_journal;
 	*ret_journal = NULL;
 
 /* If there is either a null journal block or
@@ -183,17 +178,19 @@ int JRN_archive_end(
 		return FB_SUCCESS;
 	}
 
+	LTJA record;
 	record.ltja_header.jrnh_type = JRN_ARCHIVE_END;
 	record.ltja_db_id = db_id;
 	record.ltja_file_id = file_id;
 	record.ltja_error_code = 0;
 	record.ltja_length = 0;
 
-	if (
-		(ret_val =
-		 jrn_put(status_vector, journal, (JRNH *) & record, LTJA_SIZE,
-				 NULL, 0)) != FB_SUCCESS)
+	int ret_val = jrn_put(status_vector, journal, 
+		reinterpret_cast<jrnh*>(&record), LTJA_SIZE,
+				 NULL, 0);
+	if (ret_val != FB_SUCCESS) {
 		return ret_val;
+	}
 
 	if ((ret_val = journal_close(status_vector, journal)) != FB_SUCCESS)
 		return ret_val;
@@ -223,9 +220,7 @@ int JRN_archive_error(
  *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
-	LTJA record;
 	JRN journal;
-	int ret_val;
 
 	journal = *ret_journal;
 	*ret_journal = NULL;
@@ -238,17 +233,20 @@ int JRN_archive_error(
 		return FB_SUCCESS;
 	}
 
+	LTJA record;
 	record.ltja_header.jrnh_type = JRN_ARCHIVE_ERROR;
 	record.ltja_db_id = db_id;
 	record.ltja_file_id = file_id;
 	record.ltja_error_code = error_code;
 	record.ltja_length = 0;
 
-	if (
-		(ret_val =
-		 jrn_put(status_vector, journal, (JRNH *) & record, LTJA_SIZE,
-				 NULL, 0)) != FB_SUCCESS)
+	int ret_val =
+		 jrn_put(status_vector, journal, 
+			reinterpret_cast<jrnh*>(&record), LTJA_SIZE,
+				 NULL, 0);
+	if (ret_val != FB_SUCCESS) {
 		return ret_val;
+	}
 
 	if ((ret_val = journal_close(status_vector, journal)) != FB_SUCCESS)
 		return ret_val;
@@ -262,8 +260,8 @@ int JRN_archive_error(
 
 
 int JRN_disable(
-				ISC_STATUS * status_vector,
-				JRN journal, JRNH * header, UCHAR * data, USHORT d_len)
+				ISC_STATUS* status_vector,
+				JRN journal, jrnh* header, const UCHAR* data, USHORT d_len)
 {
 /**************************************
  *
@@ -277,9 +275,10 @@ int JRN_disable(
  *
  **************************************/
 
-	if (journal->jrn_channel)
+	if (journal->jrn_channel) {
 		return jrn_put(status_vector, journal, header, LTJC_SIZE, data,
 					   d_len);
+	}
 
 	return FB_SUCCESS;
 }
@@ -303,10 +302,10 @@ void JRN_dump_page(void)
 
 
 int JRN_enable(
-			   ISC_STATUS * status_vector,
-			   JRN * ret_journal,
-			   TEXT * journal_name,
-			   USHORT j_length, UCHAR * data, USHORT d_len, LTJC * control)
+			   ISC_STATUS* status_vector,
+			   JRN* ret_journal,
+			   const TEXT* journal_name,
+			   USHORT j_length, const UCHAR* data, USHORT d_len, LTJC* control)
 {
 /**************************************
  *
@@ -339,9 +338,7 @@ int JRN_fini(ISC_STATUS * status_vector, JRN * jrn)
  *	Check out with journal system.
  *
  **************************************/
-	LTJC record;
 	JRN journal;
-	int ret_val;
 
 	journal = *jrn;
 	*jrn = NULL;
@@ -359,15 +356,17 @@ int JRN_fini(ISC_STATUS * status_vector, JRN * jrn)
 	}
 
 /* Send a signoff record */
-
+	LTJC record;
 	record.ltjc_header.jrnh_type = JRN_SIGN_OFF;
 	record.ltjc_length = 0;
 
-	if (
-		(ret_val =
-		 jrn_put(status_vector, journal, (JRNH *) & record, LTJC_SIZE,
-				 NULL, 0)) != FB_SUCCESS)
+	int ret_val =
+		 jrn_put(status_vector, journal, 
+			reinterpret_cast<jrnh*>(&record), LTJC_SIZE,
+				 NULL, 0);
+	if (ret_val != FB_SUCCESS) {
 		return ret_val;
+	}
 
 /* Read reply.  This will fail since the server will break the connection.
    Don't worry about it. */
@@ -384,10 +383,11 @@ int JRN_fini(ISC_STATUS * status_vector, JRN * jrn)
 
 
 int JRN_init(
-			 ISC_STATUS * status_vector,
-			 JRN * ret_journal,
+			 ISC_STATUS* status_vector,
+			 JRN* ret_journal,
 			 USHORT page_size,
-			 UCHAR * journal_dir, USHORT jd_len, UCHAR * data, USHORT d_len)
+			 const UCHAR* journal_dir, USHORT jd_len,
+			 const UCHAR* data, USHORT d_len)
 {
 /**************************************
  *
@@ -477,11 +477,11 @@ void JRN_make_init_data(
 
 
 int JRN_put_wal_name(
-					 ISC_STATUS * status_vector,
+					 ISC_STATUS* status_vector,
 					 JRN journal,
-					 TEXT * walname,
+					 const TEXT* walname,
 					 USHORT w_length,
-SLONG seqno, SLONG offset, SLONG p_offset, USHORT mode)
+	SLONG seqno, SLONG offset, SLONG p_offset, USHORT mode)
 {
 /**************************************
  *
@@ -571,11 +571,11 @@ int JRN_put_old_end(
 
 
 int JRN_put_old_file(
-					 ISC_STATUS * status_vector,
+					 ISC_STATUS* status_vector,
 					 JRN journal,
-					 TEXT * old_file_name,
+					 const TEXT* old_file_name,
 					 USHORT file_length,
-SLONG file_size, USHORT file_seqno, USHORT dump_id)
+	SLONG file_size, USHORT file_seqno, USHORT dump_id)
 {
 /**************************************
  *
@@ -605,13 +605,13 @@ SLONG file_size, USHORT file_seqno, USHORT dump_id)
 
 
 int JRN_put_wal_info(
-					 ISC_STATUS * status_vector,
+					 ISC_STATUS* status_vector,
 					 JRN journal,
-					 TEXT * walname,
+					 const TEXT* walname,
 					 USHORT w_length,
-SLONG seqno,
-SLONG offset,
-SLONG p_offset, USHORT mode, USHORT file_count, USHORT * dump_id, USHORT type)
+					 SLONG seqno,
+					 SLONG offset,
+	SLONG p_offset, USHORT mode, USHORT file_count, USHORT* dump_id, USHORT type)
 {
 /**************************************
  *
@@ -639,7 +639,6 @@ SLONG p_offset, USHORT mode, USHORT file_count, USHORT * dump_id, USHORT type)
  **************************************/
 	LTJW jrnwal;
 	struct jrnr reply;
-	int ret_val;
 
 	fb_assert(type <= MAX_UCHAR);
 
@@ -651,9 +650,13 @@ SLONG p_offset, USHORT mode, USHORT file_count, USHORT * dump_id, USHORT type)
 	jrnwal.ltjw_count = file_count;
 	jrnwal.ltjw_length = w_length;
 
-	if ((ret_val = jrn_put(status_vector, journal, (JRNH *) & jrnwal,
-						   LTJW_SIZE, (UCHAR *) walname,
-						   w_length)) != FB_SUCCESS) return ret_val;
+	int ret_val = jrn_put(status_vector, journal, 
+		reinterpret_cast<jrnh*>(&jrnwal),
+						   LTJW_SIZE, (const UCHAR*) walname,
+						   w_length);
+	if (ret_val != FB_SUCCESS) {
+		return ret_val;
+	}
 
 #ifndef VMS
 	if ((ret_val = get_reply(status_vector, journal, &reply)) != FB_SUCCESS)
@@ -700,12 +703,12 @@ void JRN_sync(void)
 
 
 static int do_connect(
-					  JRN * ret_jrn,
-					  ISC_STATUS * status_vector,
-					  TEXT * journal_name,
+					  JRN* ret_jrn,
+					  ISC_STATUS* status_vector,
+					  const TEXT* journal_name,
 					  USHORT j_length,
-LTJC * control,
-USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
+					  LTJC* control,
+	USHORT control_length, const UCHAR* data, USHORT d_length, int retry)
 {
 /**************************************
  *
@@ -723,13 +726,9 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 #ifdef BSD_SOCKETS
 	struct sockaddr_in address;
 #endif
-	TEXT *p, *q, name[MAXPATHLEN];
 	SSHORT l;
 	JRN journal;
 	struct jrnr reply;
-#ifdef BSD_SOCKETS
-	int loop;
-#endif
 	int ret_val;
 
 
@@ -739,43 +738,51 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 
 /* Start by copying file name */
 
-	p = name;
+	TEXT name[MAXPATHLEN];
+	TEXT* p = name;
 
 #ifdef WIN_NT
 	strcpy(p, "\\\\.\\pipe");
 	p += strlen(p);
-	if (!j_length || (*journal_name != '/' && *journal_name != '\\'))
+	if (!j_length || (*journal_name != '/' && *journal_name != '\\')) {
 		*p++ = '\\';
+	}
 #endif
 
-	q = journal_name;
+	const TEXT* q = journal_name;
 	if (l = j_length)
-		do
+		do {
 			*p++ = *q++;
-		while (--l);
+		} while (--l);
 
 /* Generate connect string */
 
 #ifdef UNIX_JOURNALLING
-	if (j_length && p[-1] != '/')
+	if (j_length && p[-1] != '/') {
 		*p++ = '/';
+	}
 	strcpy(p, JOURNAL_ADDR);
 #endif
 
 #ifdef VMS
-	if (j_length && p[-1] != ':' && p[-1] != ']')
+	if (j_length && p[-1] != ':' && p[-1] != ']') {
 		*p++ = ':';
+	}
 	strcpy(p, JOURNAL_FILE);
 #endif
 
 #ifdef WIN_NT
-	for (q = name; q < p; q++)
-		if (*q == ':')
-			*q = '_';
-		else if (*q == '/')
-			*q = '\\';
-	if (p[-1] != '\\')
+	for (TEXT* np = name; np < p; np++) {
+		if (*np == ':') {
+			*np = '_';
+		}
+		else if (*np == '/') {
+			*np = '\\';
+		}
+	}
+	if (p[-1] != '\\') {
 		*p++ = '\\';
+	}
 	strcpy(p, JOURNAL_FILE);
 #endif
 
@@ -793,7 +800,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 	strcpy(journal->jrn_server, name);
 
 #ifdef BSD_SOCKETS
-	for (loop = 0; loop < 20; loop++) {
+	for (int loop = 0; loop < 20; loop++) {
 		for (;;) {
 			journal->jrn_channel = (int *) socket(AF_INET, SOCK_STREAM, 0);
 			if ((int) journal->jrn_channel != -1)
@@ -809,9 +816,9 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 
 		p = (TEXT *) & address;
 		l = sizeof(address);
-		do
+		do {
 			*p++ = 0;
-		while (--l);
+		} while (--l);
 
 		if ((ret_val = find_address(status_vector, journal, &address)) !=
 			FB_SUCCESS) {
@@ -862,8 +869,10 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 
 /* Send an enable message */
 
-	if ((ret_val = jrn_put(status_vector, journal, (JRNH *) control,
-						   control_length, data, d_length)) != FB_SUCCESS) {
+	if ((ret_val = jrn_put(status_vector, journal, 
+		reinterpret_cast<jrnh*>(control),
+						   control_length, data, d_length)) != FB_SUCCESS) 
+	{
 		gds__free(journal);
 		return ret_val;
 	}
@@ -921,8 +930,8 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 
 
 static void error(
-				  ISC_STATUS * status_vector,
-				  JRN journal, status_t status, TEXT * string)
+				  ISC_STATUS* status_vector,
+				  JRN journal, status_t status, const TEXT* string)
 {
 /**************************************
  *
@@ -1075,10 +1084,10 @@ static int journal_close(ISC_STATUS * status_vector, JRN journal)
 
 
 static int jrn_put(
-				   ISC_STATUS * status_vector,
+				   ISC_STATUS* status_vector,
 				   JRN journal,
-				   JRNH * header,
-				   USHORT h_length, UCHAR * data, USHORT d_length)
+				   jrnh* header,
+				   USHORT h_length, const UCHAR* data, USHORT d_length)
 {
 /**************************************
  *
@@ -1092,7 +1101,6 @@ static int jrn_put(
  **************************************/
 	USHORT length;
 	SLONG l;
-	UCHAR *p, *q;
 	UCHAR  buffer[MAX_RECORD];
 
 /* Prepare journal message for sending */
@@ -1108,16 +1116,17 @@ static int jrn_put(
 
 /* Concatenate header and data.  This is boring but necessary. */
 
-	p = buffer;
-	q = (UCHAR *) header;
-	do
+	UCHAR* p = buffer;
+	const UCHAR* q = (UCHAR *) header;
+	do {
 		*p++ = *q++;
-	while (--h_length);
+	} while (--h_length);
 
-	if (d_length)
-		do
+	if (d_length) {
+		do {
 			*p++ = *data++;
-		while (--d_length);
+		} while (--d_length);
+	}
 
 /* Send message */
 
@@ -1159,11 +1168,11 @@ static int jrn_put(
 
 
 static int retry_connect(
-						 ISC_STATUS * status_vector,
-						 JRN * journal,
-						 TEXT * journal_name,
+						 ISC_STATUS* status_vector,
+						 JRN* journal,
+						 const TEXT* journal_name,
 						 USHORT j_length,
-LTJC * control, USHORT control_length, UCHAR * data, USHORT d_length)
+	LTJC* control, USHORT control_length, const UCHAR* data, USHORT d_length)
 {
 /**************************************
  *
@@ -1176,13 +1185,11 @@ LTJC * control, USHORT control_length, UCHAR * data, USHORT d_length)
  *	If FB_SUCCESS and journal handle is still null, keep trying.
  *
  **************************************/
-	SSHORT count;
-	int ret_val;
-
-	for (count = 4; count >= 0; count--) {
-		if ((ret_val = do_connect(journal, status_vector, journal_name,
+	for (int count = 4; count >= 0; count--) {
+		const int ret_val = do_connect(journal, status_vector, journal_name,
 								  j_length, control, control_length, data,
-								  d_length, count)) != FB_SUCCESS)
+								  d_length, count);
+		if (ret_val != FB_SUCCESS)
 			return ret_val;
 
 		if (*journal != NULL)
@@ -1191,3 +1198,4 @@ LTJC * control, USHORT control_length, UCHAR * data, USHORT d_length)
 
 	return FB_SUCCESS;
 }
+

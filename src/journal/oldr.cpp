@@ -276,11 +276,17 @@ static SLONG oldr_open_file( OLD old)
 	hdr = ob->ob_hdr;
 
 	if (LLIO_open(0, old->old_files[old->old_cur_file], LLIO_OPEN_R,
-				  TRUE, &fd)) return FB_FAILURE;
+				  true, &fd))
+	{
+		return FB_FAILURE;
+	}
 
 	if (LLIO_read(0, fd, 0, 0L, LLIO_SEEK_NONE,
 				  (UCHAR *) hdr, OLD_HEADER_SIZE, &len) ||
-		len != OLD_HEADER_SIZE) return FB_FAILURE;
+		len != OLD_HEADER_SIZE)
+	{
+		return FB_FAILURE;
+	}
 
 	hp = (OLD_HDR_PAGE) hdr->oh_buf;
 	memcpy((SCHAR *) & header, (SCHAR *) hp, sizeof(hdr_page));

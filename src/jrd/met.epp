@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.78 2003-12-03 08:19:18 robocop Exp $
+$Id: met.epp,v 1.79 2003-12-05 10:35:36 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1004,7 +1004,7 @@ JRD_FLD MET_get_field(JRD_REL relation, USHORT id)
 }
 
 
-void MET_get_shadow_files( TDBB tdbb, USHORT deleteVar)
+void MET_get_shadow_files( TDBB tdbb, bool deleteVar)
 {
 /**************************************
  *

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Write Ahead Log APIs
- *	MODULE:		wal.c
+ *	MODULE:		wal.cpp
  *	DESCRIPTION:	Write Ahead Log subsystem interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -77,7 +77,7 @@
 #endif
 
 
-static SLONG copy_buffer(WALS, WALBLK *, UCHAR *, USHORT, UCHAR *, USHORT);
+static SLONG copy_buffer(WALS, WALBLK*, const UCHAR*, USHORT, const UCHAR*, USHORT);
 static SSHORT fork_writer(ISC_STATUS *, WAL);
 static SSHORT grpc_do_group_commit(ISC_STATUS *, WAL, SSHORT);
 static void grpc_finish_group_commit(WAL, SSHORT);
@@ -90,8 +90,8 @@ static void setup_buffer_for_writing(WAL, WALS, bool);
 static SSHORT shutdown_writer(ISC_STATUS *, WAL, bool);
 static SSHORT sync_with_wal_writer(ISC_STATUS *, WAL);
 static SSHORT wait_for_writer(ISC_STATUS *, WAL);
-static SSHORT wal_put2(ISC_STATUS *, WAL, UCHAR *, USHORT, UCHAR *, USHORT,
-					   SLONG *, SLONG *, bool);
+static SSHORT wal_put2(ISC_STATUS*, WAL, const UCHAR*, USHORT, const UCHAR*, USHORT,
+					   SLONG*, SLONG*, bool);
 
 #define WAL_WRITER	"bin/walw"
 #define WAIT_TIME	3000000
@@ -99,7 +99,7 @@ static SSHORT wal_put2(ISC_STATUS *, WAL, UCHAR *, USHORT, UCHAR *, USHORT,
 #define WALBLK_EFFECTIVE_OFFSET(wblk) (wblk->walblk_cur_offset?wblk->walblk_cur_offset:BLK_HDROVHD)
 
 
-SSHORT WAL_attach( ISC_STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
+SSHORT WAL_attach( ISC_STATUS* status_vector, WAL* WAL_handle, const SCHAR* dbname)
 {
 /**************************************
  *
@@ -130,12 +130,12 @@ SSHORT WAL_attach( ISC_STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
 }
 
 
-SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
+SSHORT WAL_checkpoint_finish(ISC_STATUS* status_vector,
 							 WAL WAL_handle,
-							 SLONG * log_seqno,
-							 SCHAR * logname,
-							 SLONG * log_partition_offset, 
-							 SLONG * log_offset)
+							 SLONG* log_seqno,
+							 SCHAR* logname,
+							 SLONG* log_partition_offset,
+							 SLONG* log_offset)
 {
 /**************************************
  *
@@ -201,11 +201,11 @@ SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WAL_checkpoint_force(ISC_STATUS * status_vector,
+SSHORT WAL_checkpoint_force(ISC_STATUS* status_vector,
 							WAL WAL_handle,
-							SLONG * log_seqno,
-							SCHAR * logname,
-							SLONG * log_partition_offset, SLONG * log_offset)
+							SLONG* log_seqno,
+							SCHAR* logname,
+							SLONG* log_partition_offset, SLONG* log_offset)
 {
 /**************************************
  *
@@ -490,16 +490,16 @@ SSHORT WAL_flush(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WAL_init(ISC_STATUS * status_vector,
-				WAL * WAL_handle,
-				SCHAR * dbname,
+SSHORT WAL_init(ISC_STATUS* status_vector,
+				WAL* WAL_handle,
+				const SCHAR* dbname,
 				USHORT db_page_len,
-				SCHAR * logname,
+				const SCHAR* logname,
 				SLONG log_partition_offset,
 				bool first_time_log,
 				SLONG new_log_seqno,
 				SSHORT wpb_length,
-				SCHAR * wpb)
+				const SCHAR* wpb)
 {
 /**************************************
  *
@@ -526,7 +526,7 @@ SSHORT WAL_init(ISC_STATUS * status_vector,
 	SSHORT ret = WALC_init(status_vector, WAL_handle, dbname, db_page_len,
 						   logname, log_partition_offset, first_time_log,
 						   new_log_seqno, wpb_length,
-						   reinterpret_cast < UCHAR * >(wpb), TRUE);
+						   reinterpret_cast<const UCHAR*>(wpb), true);
 	if (ret == FB_SUCCESS) {
 		if ((ret = fork_writer(status_vector, *WAL_handle)) != FB_SUCCESS)
 			WALC_fini(local_status, WAL_handle);
@@ -580,10 +580,10 @@ SSHORT WAL_journal_disable(ISC_STATUS * status_vector, WAL WAL_handle)
 }
 
 
-SSHORT WAL_journal_enable(ISC_STATUS * status_vector,
+SSHORT WAL_journal_enable(ISC_STATUS* status_vector,
 						  WAL WAL_handle,
-						  SCHAR * jrn_dirname,
-						  USHORT jrn_data_len, SCHAR * jrn_data)
+						  const SCHAR* jrn_dirname,
+						  USHORT jrn_data_len, const SCHAR* jrn_data)
 {
 /**************************************
  *
@@ -610,6 +610,7 @@ SSHORT WAL_journal_enable(ISC_STATUS * status_vector,
 		return FB_SUCCESS;
 	}
 
+	// Possible overflow in extreme cases?
 	strcpy(WAL_segment->wals_jrn_dirname, jrn_dirname);
 	WAL_segment->wals_jrn_init_data_len = jrn_data_len;
 	memcpy(WAL_segment->wals_jrn_init_data, jrn_data, jrn_data_len);
@@ -632,12 +633,12 @@ SSHORT WAL_journal_enable(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WAL_put(ISC_STATUS * status_vector,
+SSHORT WAL_put(ISC_STATUS* status_vector,
 			   WAL WAL_handle,
-			   UCHAR * logrec1,
+			   const UCHAR* logrec1,
 			   USHORT len1,
-			   UCHAR * logrec2,
-			   USHORT len2, SLONG * log_seqno, SLONG * log_offset)
+			   const UCHAR* logrec2,
+			   USHORT len2, SLONG* log_seqno, SLONG* log_offset)
 {
 /**************************************
  *
@@ -855,12 +856,12 @@ SSHORT WAL_set_rollover_log(ISC_STATUS * status_vector,
 }
 
 
-SSHORT WAL_shutdown(ISC_STATUS * status_vector,
+SSHORT WAL_shutdown(ISC_STATUS* status_vector,
 					WAL WAL_handle,
-					SLONG * log_seqno,
-					SCHAR * logname,
-					SLONG * log_partition_offset,
-					SLONG * shutdown_offset,
+					SLONG* log_seqno,
+					SCHAR* logname,
+					SLONG* log_partition_offset,
+					SLONG* shutdown_offset,
 					bool inform_close_to_jserver)
 {
 /**************************************
@@ -976,9 +977,9 @@ SSHORT WAL_status(ISC_STATUS * status_vector,
 
 static SLONG copy_buffer(
 						 WALS WAL_segment,
-						 WALBLK * wblk,
-						 UCHAR * source1,
-						 USHORT count1, UCHAR * source2, USHORT count2)
+						 WALBLK* wblk,
+						 const UCHAR* source1,
+						 USHORT count1, const UCHAR* source2, USHORT count2)
 {
 /**************************************
  *
@@ -994,8 +995,6 @@ static SLONG copy_buffer(
  *	Returns the offset in the WAL file where these bytes would endup.
  *
  **************************************/
-	WALREC_HDR header;
-
 	if (wblk->walblk_cur_offset == 0) {
 		/* This buffer is being written from the beginning.  Account for
 		   the block header bytes. */
@@ -1010,6 +1009,8 @@ static SLONG copy_buffer(
 /* First build the record header */
 
 	USHORT total_count = count1 + count2;
+	
+	WALREC_HDR header;
 	header.walrec_len = total_count;
 	header.walrec_offset = wblk->walblk_cur_offset;
 
@@ -1447,8 +1448,9 @@ static SSHORT shutdown_writer(ISC_STATUS * status_vector,
 
 	WALC_acquire(WAL_handle, &WAL_segment);
 	WAL_segment->wals_flags |= WALS_SHUTDOWN_WRITER;
-	if (inform_close_to_jserver)
+	if (inform_close_to_jserver) {
 		WAL_segment->wals_flags |= WALS_INFORM_CLOSE_TO_JOURNAL;
+	}
 	inform_wal_writer(WAL_handle);
 	WALC_release(WAL_handle);
 
@@ -1552,14 +1554,14 @@ static SSHORT wait_for_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 }
 
 
-static SSHORT wal_put2(ISC_STATUS * status_vector,
+static SSHORT wal_put2(ISC_STATUS* status_vector,
 					   WAL WAL_handle,
-					   UCHAR * logrec1,
+					   const UCHAR* logrec1,
 					   USHORT len1,
-					   UCHAR * logrec2,
+					   const UCHAR* logrec2,
 					   USHORT len2,
-					   SLONG * log_seqno,
-					   SLONG * log_offset,
+					   SLONG* log_seqno,
+					   SLONG* log_offset,
 					   bool ckpt)
  {
 /**************************************
@@ -1616,11 +1618,13 @@ static SSHORT wal_put2(ISC_STATUS * status_vector,
 	WAL_segment->wals_put_count++;
 	while (!done) {
 		while (CUR_BUF == -1
-			   || (WAL_segment->wals_flags & WALS_ROLLOVER_REQUIRED)) {
+			   || (WAL_segment->wals_flags & WALS_ROLLOVER_REQUIRED))
+		{
 			/* No buffer is available or rollover is in progress, wait */
 
 			if ((CUR_BUF == -1)
-				&& (++WAL_segment->wals_buf_waiting_count > MAX_WAITERS)) {
+				&& (++WAL_segment->wals_buf_waiting_count > MAX_WAITERS))
+			{
 				WAL_segment->wals_flags2 |= WALS2_EXPAND;
 				WAL_segment->wals_buf_waiting_count = 0;
 			}
@@ -1665,8 +1669,9 @@ static SSHORT wal_put2(ISC_STATUS * status_vector,
 			setup_buffer_for_writing(WAL_handle, WAL_segment, false);
 	}
 
-	if (ckpt)
+	if (ckpt) {
 		setup_buffer_for_writing(WAL_handle, WAL_segment, ckpt);
+	}
 	WALC_release(WAL_handle);
 
 	*log_seqno = lsn;
@@ -1674,5 +1679,4 @@ static SSHORT wal_put2(ISC_STATUS * status_vector,
 
 	return FB_SUCCESS;
 }
-
 

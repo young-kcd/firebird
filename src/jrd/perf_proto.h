@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		perf_proto.h
- *	DESCRIPTION:	Prototype header file for perf.c
+ *	DESCRIPTION:	Prototype header file for perf.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -30,11 +30,11 @@
 extern "C" {
 #endif
 
-int		API_ROUTINE perf_format(struct perf *, struct perf *, SCHAR *,
-								   SCHAR *, SSHORT *);
-void	API_ROUTINE perf_get_info(FRBRD **, struct perf *);
-void	API_ROUTINE perf_report(struct perf *, struct perf *, SCHAR *,
-									SSHORT *);
+int		API_ROUTINE perf_format(const struct perf*, const struct perf*, 
+								const SCHAR*, SCHAR*, SSHORT*);
+void	API_ROUTINE perf_get_info(FRBRD**, struct perf*);
+void	API_ROUTINE perf_report(const struct perf*, const struct perf*, SCHAR*,
+									SSHORT*);
 
 #ifdef __cplusplus
 } /* extern "C" */

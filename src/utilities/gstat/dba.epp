@@ -266,7 +266,6 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	DBA_REL relation;
 	DBA_IDX index;
 	HDR header;
-	LIP logp;
 	DBA_FIL current;
 	SCHAR **end, *p, temp[1024], file_name[1024];
 	double average;
@@ -278,7 +277,6 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	bool sw_log = false;
 	bool sw_record = false;
 	bool sw_relation = false;
-	SLONG page;
 #ifdef SERVICE_REDIRECT
 	SLONG redir_in;
 	SLONG redir_out;
@@ -554,7 +552,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 /* gather continuation files */
 
-	page = HEADER_PAGE;
+	SLONG page = HEADER_PAGE;
 	do {
 		if (page != HEADER_PAGE)
 			current = db_open(file_name, strlen(file_name));
@@ -580,8 +578,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		}
 		while (page = header->hdr_next_page);
 		page = current->fil_max_page + 1;	/* first page of next file */
-	}
-	while (*file_name);
+	} while (*file_name);
 
 /* Print header page */
 
@@ -589,8 +586,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	do {
 		header = (HDR) db_read((SLONG) page);
 		PPG_print_header(header, page, sw_outfile);
-	}
-	while (page = header->hdr_next_page);
+		page = header->hdr_next_page;
+	} while (page);
 
 	if (sw_header)
 		dba_exit(FINI_OK, tddba);
@@ -610,10 +607,10 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 	page = LOG_PAGE;
 	do {
-		logp = (LIP) db_read((SLONG) page);
+		const log_info_page* logp = (const log_info_page*) db_read((SLONG) page);
 		PPG_print_log(logp, page, sw_outfile);
-	}
-	while (page = logp->log_next_page);
+		page = logp->log_next_page;
+	} while (page);
 
 	if (sw_log)
 		dba_exit(FINI_OK, tddba);
@@ -1829,3 +1826,4 @@ static void truncate_name( SCHAR * string)
 			tail = string;
 	*++tail = 0;
 }
+

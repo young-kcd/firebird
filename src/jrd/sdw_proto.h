@@ -31,12 +31,13 @@ BOOLEAN	SDW_check_conditional(void);
 void	SDW_close(void);
 void	SDW_dump_pages(void);
 void	SDW_get_shadows(void);
-void	SDW_init(USHORT, USHORT, struct sbm *);
+void	SDW_init(bool, bool, struct sbm*);
 BOOLEAN	SDW_lck_update(SLONG);
 void	SDW_notify(void);
 BOOLEAN	SDW_rollover_to_shadow(struct fil *, BOOLEAN);
 void	SDW_shutdown_shadow(struct sdw *);
-void	SDW_start(TEXT *, USHORT, USHORT, USHORT);
-int		SDW_start_shadowing(void *ast_object);
+void	SDW_start(const TEXT*, USHORT, USHORT, bool);
+int		SDW_start_shadowing(void* ast_object);
 
 #endif /* JRD_SDW_PROTO_H */
+

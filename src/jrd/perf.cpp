@@ -47,9 +47,9 @@
 #endif
 
 
-static SLONG get_parameter(SCHAR **);
+static SLONG get_parameter(const SCHAR**);
 #ifndef HAVE_TIMES
-static void times(struct tms *);
+static void times(struct tms*);
 #endif
 
 static const SCHAR items[] = {
@@ -61,7 +61,7 @@ static const SCHAR items[] = {
 	isc_info_current_memory, isc_info_max_memory
 };
 
-static SCHAR *report =
+static const SCHAR* report =
 	"elapsed = !e cpu = !u reads = !r writes = !w fetches = !f marks = !m$";
 
 #ifdef VMS
@@ -84,9 +84,9 @@ extern void ftime();
 
 
 int API_ROUTINE perf_format(
-						PERF * before,
-						PERF * after,
-						SCHAR * string, SCHAR * buffer, SSHORT * buf_len)
+						const PERF* before,
+						const PERF* after,
+						const SCHAR* string, SCHAR* buffer, SSHORT* buf_len)
 {
 /**************************************
  *
@@ -100,16 +100,16 @@ int API_ROUTINE perf_format(
  *	formatting output.
  *
  **************************************/
-	SLONG delta, buffer_length, length;
-	SCHAR *p, c;
+	SCHAR c;
 
-	buffer_length = (buf_len) ? *buf_len : 0;
-	p = buffer;
+	SLONG buffer_length = (buf_len) ? *buf_len : 0;
+	SCHAR* p = buffer;
 
-	while ((c = *string++) && c != '$')
+	while ((c = *string++) && c != '$') {
 		if (c != '!')
 			*p++ = c;
 		else {
+			SLONG delta;
 			switch (c = *string++) {
 			case 'r':
 				delta = after->perf_reads - before->perf_reads;
@@ -155,6 +155,7 @@ int API_ROUTINE perf_format(
 				while (*p)
 					p++;
 			}
+
 			switch (c) {
 			case 'r':
 			case 'w':
@@ -189,19 +190,21 @@ int API_ROUTINE perf_format(
 				break;
 			}
 		}
+	}
 
 	*p = 0;
-	length = p - buffer;
-	if (buffer_length && (buffer_length -= length) >= 0)
-		do
+	const int length = p - buffer;
+	if (buffer_length && (buffer_length -= length) >= 0) {
+		do {
 			*p++ = ' ';
-		while (--buffer_length);
+		} while (--buffer_length);
+	}
 
 	return length;
 }
 
 
-void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
+void API_ROUTINE perf_get_info(FRBRD** handle, PERF* perf)
 {
 /**************************************
  *
@@ -214,8 +217,7 @@ void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
  *	from the system and some from the database.
  *
  **************************************/
-	SCHAR *p, buffer[256];
-	SSHORT l, buffer_length, item_length;
+	SSHORT buffer_length, item_length;
 	ISC_STATUS_ARRAY jrd_status;
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
@@ -227,11 +229,11 @@ void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
 /* If there isn't a database, zero everything out */
 
 	if (!*handle) {
-		p = (SCHAR *) perf;
-		l = sizeof(PERF);
-		do
+		char* p = (SCHAR *) perf;
+		size_t l = sizeof(PERF);
+		do {
 			*p++ = 0;
-		while (--l);
+		} while (--l);
 	}
 
 /* Get system times */
@@ -250,15 +252,16 @@ void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
 	if (!*handle)
 		return;
 
+	SCHAR buffer[256];
 	buffer_length = sizeof(buffer);
 	item_length = sizeof(items);
 	isc_database_info(jrd_status,
 					  handle,
 					  item_length, items, buffer_length, buffer);
 
-	p = buffer;
+	const char* p = buffer;
 
-	while (1)
+	while (true)
 		switch (*p++) {
 		case isc_info_reads:
 			perf->perf_reads = get_parameter(&p);
@@ -303,11 +306,10 @@ void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
 			else if (p[2] == isc_info_max_memory)
 				perf->perf_max_memory = 0;
 			{
-				SLONG temp = isc_vax_integer(p, 2);
+				const SLONG temp = isc_vax_integer(p, 2);
 				fb_assert(temp <= MAX_SSHORT);
-				l = (SSHORT) temp;
+				p += temp + 2;
 			}
-			p += l + 2;
 			perf->perf_marks = 0;
 			break;
 
@@ -318,8 +320,8 @@ void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
 
 
 void API_ROUTINE perf_report(
-							 PERF * before,
-							 PERF * after, SCHAR * buffer, SSHORT * buf_len)
+							 const PERF* before,
+							 const PERF* after, SCHAR* buffer, SSHORT* buf_len)
 {
 /**************************************
  *
@@ -336,7 +338,7 @@ void API_ROUTINE perf_report(
 }
 
 
-static SLONG get_parameter(SCHAR ** ptr)
+static SLONG get_parameter(const SCHAR** ptr)
 {
 /**************************************
  *
@@ -349,12 +351,9 @@ static SLONG get_parameter(SCHAR ** ptr)
  *	and return.
  *
  **************************************/
-	SLONG parameter;
-	SSHORT l;
-
-	l = *(*ptr)++;
+	SSHORT l = *(*ptr)++;
 	l += (*(*ptr)++) << 8;
-	parameter = isc_vax_integer(*ptr, l);
+	const SLONG parameter = isc_vax_integer(*ptr, l);
 	*ptr += l;
 
 	return parameter;
@@ -362,7 +361,7 @@ static SLONG get_parameter(SCHAR ** ptr)
 
 
 #ifndef HAVE_TIMES
-static void times(struct tms *buffer)
+static void times(struct tms* buffer)
 {
 /**************************************
  *

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Journal Server
- *	MODULE:		archive.c
+ *	MODULE:		archive.cpp
  *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
@@ -38,7 +38,7 @@
 
 static bool copy_file(SLONG, SLONG, SLONG);
 static void error_exit(ISC_STATUS *, JRN *, SLONG, SLONG, SLONG);
-static bool open_file(TEXT *, SLONG, USHORT, SLONG *);
+static bool open_file(const TEXT*, SLONG, USHORT, SLONG*);
 
 
 int CLIB_ROUTINE main(int argc,
@@ -183,10 +183,10 @@ static void error_exit(ISC_STATUS * status_vector,
 }
 
 
-static bool open_file(TEXT * full_name,
+static bool open_file(const TEXT* full_name,
 					  SLONG p_offset,
 					  USHORT mode,
-					  SLONG * fd)
+					  SLONG* fd)
 {
 /**************************************
  *
@@ -201,7 +201,7 @@ static bool open_file(TEXT * full_name,
  *
  **************************************/
 
-	if (LLIO_open(0, full_name, mode, FALSE, fd))
+	if (LLIO_open(0, full_name, mode, false, fd))
 		return false;
 
 	if (p_offset) {
@@ -211,3 +211,4 @@ static bool open_file(TEXT * full_name,
 
 	return true;
 }
+

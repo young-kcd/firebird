@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		enc_proto.h
- *	DESCRIPTION:	Prototype header file for enc.c
+ *	DESCRIPTION:	Prototype header file for enc.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-TEXT* ENC_crypt(TEXT *, TEXT *);
+TEXT* ENC_crypt(const TEXT*, const TEXT*);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Write Ahead LOG APIs 
  *	MODULE:		walf_proto.h
- *	DESCRIPTION:	Prototype header file for walf.c
+ *	DESCRIPTION:	Prototype header file for walf.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,20 +24,26 @@
 #ifndef WAL_WALF_PROTO_H
 #define WAL_WALF_PROTO_H
 
-SSHORT	WALF_delink_log (ISC_STATUS *, SCHAR *, SCHAR *, SLONG);
-SSHORT	WALF_delink_prev_log (ISC_STATUS *, SCHAR *, SCHAR *, SLONG);
+SSHORT	WALF_delink_log (ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG);
+SSHORT	WALF_delink_prev_log (ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG);
 void	WALF_dispose_log_header (struct walfh *);
-bool	WALF_get_linked_logs_info (ISC_STATUS *, SCHAR *, SCHAR *, SLONG,
-										   int *, SCHAR *, SLONG *, SLONG *, bool *);
-SSHORT	WALF_get_log_info (ISC_STATUS *, SCHAR *, SCHAR *, SLONG, SLONG *, SLONG *, SLONG *);
-SSHORT	WALF_get_next_log_info (ISC_STATUS *, SCHAR *, SCHAR *, SLONG, SCHAR *, SLONG *, SLONG *, SLONG *, SLONG *, SSHORT);
-SSHORT	WALF_get_all_next_logs_info (ISC_STATUS *, SCHAR *, SCHAR *, SLONG, int, SCHAR *, int *, SCHAR * *, SLONG *, SLONG *, SLONG *, SLONG *, SSHORT);
-SSHORT	WALF_init_p_log (ISC_STATUS *, SCHAR *, SCHAR *, SLONG, SSHORT);
-SSHORT	WALF_open_partitioned_log_file (ISC_STATUS *, SCHAR *, SCHAR *, struct p_logfh *, SLONG *);
-SSHORT	WALF_open_log_file (ISC_STATUS *, SCHAR *, SCHAR *, SLONG, struct walfh *, SLONG *);
-SSHORT	WALF_set_log_header_flag (ISC_STATUS *, SCHAR *, SCHAR *, SLONG, SLONG, bool);
-SSHORT	WALF_update_log_header (ISC_STATUS *, SCHAR *, SLONG, struct walfh *, SLONG);
+bool	WALF_get_linked_logs_info (ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG,
+	int*, SCHAR*, SLONG*, SLONG*, bool*);
+SSHORT	WALF_get_log_info (ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG,
+	SLONG*, SLONG*, SLONG*);
+SSHORT	WALF_get_next_log_info (ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG,
+	SCHAR*, SLONG*, SLONG*, SLONG*, SLONG*, SSHORT);
+SSHORT	WALF_get_all_next_logs_info (ISC_STATUS*, const SCHAR*, const SCHAR*,
+	SLONG, int, SCHAR*, int*, SCHAR**, SLONG*, SLONG*, SLONG*, SLONG*, SSHORT);
+SSHORT	WALF_init_p_log (ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG, SSHORT);
+SSHORT	WALF_open_partitioned_log_file (ISC_STATUS*, const SCHAR*, const SCHAR*,
+	struct p_logfh*, SLONG*);
+SSHORT	WALF_open_log_file (ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG,
+	struct walfh*, SLONG*);
+SSHORT	WALF_set_log_header_flag (ISC_STATUS*, const SCHAR*, const SCHAR*, SLONG, SLONG, bool);
+SSHORT	WALF_update_log_header (ISC_STATUS*, const SCHAR*, SLONG, struct walfh*, SLONG);
 void	WALF_upd_log_hdr_frm_walfh_data (struct walfh *, UCHAR *);
-SSHORT	WALF_update_partitioned_log_hdr (ISC_STATUS *, SCHAR *, struct p_logfh *, SLONG);
+SSHORT	WALF_update_partitioned_log_hdr (ISC_STATUS*, const SCHAR*, const struct p_logfh*, SLONG);
 
 #endif // WAL_WALF_PROTO_H
+

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.90 2003-12-03 08:19:20 robocop Exp $
+$Id: inet.cpp,v 1.91 2003-12-05 10:35:44 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -3623,7 +3623,12 @@ static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 	struct sigaction internal_handler, client_handler;
 #endif /* HAVE_SETITIMER */
 
+#ifdef WIN_NT
 	const char* data = buffer;
+#else
+// Please systems with ill-defined send() function, like SINIX-Z.
+	char* data = const_cast<char*>(buffer);
+#endif
 	SSHORT length = buffer_length;
 
 	while (length) {
@@ -3665,7 +3670,12 @@ static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 		THREAD_EXIT;
 		int count = 0;
 		SSHORT n;
-		while ((n = send((SOCKET) port->port_handle, buffer, 1, MSG_OOB)) == -1 &&
+#ifdef WIN_NT
+		const char* b = buffer;
+#else
+		char* b = const_cast<char*>(buffer);
+#endif
+		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB)) == -1 &&
 				(ERRNO == ENOBUFS || INTERRUPT_ERROR(ERRNO)))
 		{
 			if (count++ > 20) {
@@ -3678,7 +3688,7 @@ static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 #else
 			sleep(1);
 #endif
-		}
+		} // end of while() loop for systems without setitimer.
 #else /* HAVE_SETITIMER */
 			if (count == 1)
 			{
@@ -3699,7 +3709,7 @@ static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 			internal_timer.it_value.tv_usec = 50000;
 			setitimer(ITIMER_REAL, &internal_timer, NULL);
 			pause();
-		}
+		} // end of while() loop for systems with setitimer
 
 		if (count)
 		{
@@ -3725,7 +3735,7 @@ static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 		INET_count_send++;
 		INET_bytes_send += buffer_length;
 		if (INET_trace & TRACE_packets)
-			packet_print("send", (UCHAR*) buffer, buffer_length, INET_count_send);
+			packet_print("send", (const UCHAR*) buffer, buffer_length, INET_count_send);
 		INET_force_error--;
 		if (INET_force_error == 0) {
 			INET_force_error = 1;

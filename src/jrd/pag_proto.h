@@ -24,7 +24,7 @@
 #ifndef JRD_PAG_PROTO_H
 #define JRD_PAG_PROTO_H
 
-int		PAG_add_clump(SLONG, USHORT, USHORT, UCHAR *, USHORT, USHORT);
+int		PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
 USHORT	PAG_add_file(TEXT *, SLONG);
 int		PAG_add_header_entry(struct hdr *, USHORT, SSHORT, UCHAR *);
 int		PAG_replace_entry_first(struct hdr *, USHORT, SSHORT, UCHAR *);

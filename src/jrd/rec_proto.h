@@ -24,7 +24,7 @@
 #ifndef JRD_REC_PROTO_H
 #define JRD_REC_PROTO_H
 
-void	REC_recover(const TEXT*, TEXT*, struct ctrl_pt*, struct sbm**, USHORT);
+void	REC_recover(const TEXT*, TEXT*, struct ctrl_pt*, struct sbm**, bool);
 void	REC_recover_page(const TEXT*, TEXT*, struct ctrl_pt*, SLONG, struct pag*);
 void	REC_update_next_transid(void);
 

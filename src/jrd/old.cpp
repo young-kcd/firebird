@@ -272,9 +272,11 @@ static int close_cur_file(OLD old, USHORT code)
 	hdr->oh_seqno = 0;
 
 	if (LLIO_write(0, old->old_fd, 0, 0L, LLIO_SEEK_NONE,
-				   (UCHAR *) hdr, old->old_rec_size, &len) == FB_FAILURE ||
+				   (const UCHAR*) hdr, old->old_rec_size, &len) == FB_FAILURE ||
 		len != old->old_rec_size)
+	{
 		return FB_FAILURE;
+	}
 
 /* flush writes to disk and close file */
 
@@ -321,8 +323,10 @@ static int create_file(OLD old, SLONG * ret_fd)
 	hdr = ob->ob_hdr;
 
 	if (LLIO_open(tdbb->tdbb_status_vector, old->old_files[old->old_cur_file],
-				  LLIO_OPEN_NEW_RW, TRUE, &fd) == FB_FAILURE)
+				  LLIO_OPEN_NEW_RW, true, &fd) == FB_FAILURE)
+	{
 		ERR_punt();
+	}
 
 	MOVE_CLEAR((SCHAR *) hdr, OLD_HEADER_SIZE);
 
@@ -346,8 +350,9 @@ static int create_file(OLD old, SLONG * ret_fd)
 	MOVE_FAST(old->old_db, hp->hp_db, hp->hp_length);
 
 	if (LLIO_write(0, fd, 0, 0L, LLIO_SEEK_NONE,
-				   (UCHAR *) hdr, OLD_HEADER_SIZE, &len) == FB_FAILURE ||
-		len != OLD_HEADER_SIZE) {
+				   (const UCHAR*) hdr, OLD_HEADER_SIZE, &len) == FB_FAILURE ||
+		len != OLD_HEADER_SIZE)
+	{
 		LLIO_close(0, fd);
 		unlink(old->old_files[old->old_cur_file]);
 		return FB_FAILURE;
@@ -620,7 +625,7 @@ static int old_put(OLD OLD_handle, SCHAR * logrec, USHORT len)
 	*p++ = *q++;
 
 	ret = LLIO_write(0, OLD_handle->old_fd, 0, 0L, LLIO_SEEK_NONE,
-					 (UCHAR *) hdr, OLD_handle->old_rec_size, &l);
+					 (const UCHAR*) hdr, OLD_handle->old_rec_size, &l);
 	if (ret == FB_FAILURE || l != OLD_handle->old_rec_size) {
 		/* Not enough space */
 		/* backup to beginning of block and go on to next file */
@@ -711,7 +716,7 @@ static int old_put_rec(
 /* Checksum the log record after zeroing out the field */
 
 	header->jrnh_series =
-		MISC_checksum_log_rec(reinterpret_cast < UCHAR * >(header), h_length,
+		MISC_checksum_log_rec(reinterpret_cast<const UCHAR*>(header), h_length,
 							  data, d_length);
 #endif /* DEV_BUILD */
 

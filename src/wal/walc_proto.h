@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Write Ahead LOG APIs 
  *	MODULE:		walc_proto.h
- *	DESCRIPTION:	Prototype header file for walc.c
+ *	DESCRIPTION:	Prototype header file for walc.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -26,15 +26,16 @@
 
 void	WALC_acquire (struct wal *, struct wals **);
 void	WALC_alarm_handler (void *);
-SSHORT	WALC_bug (ISC_STATUS *, TEXT *, TEXT *);
-void	WALC_build_dbg_filename (TEXT *, TEXT *);
-void	WALC_build_logname (TEXT *, TEXT *, SLONG);
+SSHORT	WALC_bug (ISC_STATUS*, const TEXT*, const TEXT*);
+void	WALC_build_dbg_filename (const TEXT*, TEXT*);
+void	WALC_build_logname (TEXT*, const TEXT*, SLONG);
 SSHORT	WALC_check_writer (struct wal *);
 void	WALC_fini (ISC_STATUS *, struct wal **);
-SSHORT	WALC_init (ISC_STATUS *, struct wal **, TEXT *, USHORT, TEXT *,
-						   SLONG, bool, SLONG, SSHORT, UCHAR *, bool);
+SSHORT	WALC_init (ISC_STATUS*, struct wal**, const TEXT*, USHORT, const TEXT*,
+						   SLONG, bool, SLONG, SSHORT, const UCHAR*, bool);
 void	WALC_release (struct wal *);
 void	WALC_save_status_strings (ISC_STATUS *);
 void	WALC_setup_buffer_block (struct wals *, struct walblk *, bool);
 
 #endif	// WAL_WALC_PROTO_H
+

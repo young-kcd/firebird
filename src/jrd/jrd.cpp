@@ -319,8 +319,8 @@ typedef struct dpb
 	USHORT	dpb_disable;
 	USHORT	dpb_dbkey_scope;
 	USHORT	dpb_page_size;
-	USHORT	dpb_activate_shadow;
-	USHORT	dpb_delete_shadow;
+	bool	dpb_activate_shadow;
+	bool	dpb_delete_shadow;
 	USHORT	dpb_no_garbage;
 	USHORT	dpb_quit_log;
 	USHORT	dpb_shutdown;
@@ -5240,13 +5240,13 @@ static void get_options(const UCHAR*	dpb,
 			break;
 
 		case isc_dpb_activate_shadow:
-			options->dpb_activate_shadow = TRUE;
+			options->dpb_activate_shadow = true;
 			l = *p++;
 			p += l;
 			break;
 
 		case isc_dpb_delete_shadow:
-			options->dpb_delete_shadow = TRUE;
+			options->dpb_delete_shadow = true;
 			l = *p++;
 			p += l;
 			break;

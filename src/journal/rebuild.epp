@@ -143,12 +143,12 @@ typedef struct drb {
 	fil* drb_file;				// list of file pointers
 	ULONG drb_max_page;			// max page read
 	ULONG drb_age;
-	UCHAR *drb_buffers;
+	UCHAR* drb_buffers;
 	CACHE drb_cache;
 	TEXT drb_filename[1];
 } *DRB;
 
-extern FILE *msg_file;
+extern FILE* msg_file;
 
 static USHORT add_file(DRB, FIL, UCHAR*, SSHORT, SLONG, bool);
 static void add_time(timeval*, timeval*);
@@ -156,7 +156,7 @@ static void apply_data(DRB, DPG, JRND *);
 static void apply_header(HDR, JRND *);
 static void apply_ids(PPG, JRND *);
 static void apply_index(BTR, JRND *);
-static void apply_log(LIP, JRND *);
+static void apply_log(log_info_page*, JRND *);
 static void apply_pip(PIP, JRND *);
 static void apply_pointer(PPG, JRND *);
 static void apply_root(IRT, JRND *);
@@ -818,7 +818,7 @@ static void apply_index(BTR page,
 }
 
 
-static void apply_log(LIP page,
+static void apply_log(log_info_page* page,
 					  JRND * record)
 {
 /**************************************
@@ -1374,7 +1374,7 @@ static void fixup_header(DRB database)
  *	Fixup header page to not require recovery
  *
  **************************************/
-	LIP page;
+	log_info_page* page;
 	CACHE cch;
 	SCHAR *p;
 	USHORT len;
@@ -1410,7 +1410,7 @@ static void fixup_header(DRB database)
 // Now update the log page
 	cch = get_page(database, (SLONG) LOG_PAGE, true);
 	MARK_PAGE(cch);
-	page = (LIP) cch->cache_page;
+	page = (log_info_page*) cch->cache_page;
 
 	if (sw_interact || sw_until || sw_activate) {
 		p = (SCHAR*) page->log_data;
@@ -2045,14 +2045,18 @@ static bool open_database_file(DRB database,
 	ISC_STATUS_ARRAY status;
 
 	if (new_file) {
-		if (LLIO_open(status, name, LLIO_OPEN_NEW_RW, TRUE,
+		if (LLIO_open(status, name, LLIO_OPEN_NEW_RW, true,
 					  file_handle) == FB_FAILURE)
-		return false;
+		{
+			return false;
+		}
 	}
 	else {
-		if (LLIO_open(status, name, LLIO_OPEN_EXISTING_RW, TRUE,
+		if (LLIO_open(status, name, LLIO_OPEN_EXISTING_RW, true,
 			file_handle) == FB_FAILURE)
-		return false;
+		{
+			return false;
+		}
 	}
 
 	return true;
@@ -2606,7 +2610,7 @@ static void process_page(DRB database,
 			apply_ids((PPG) page, record);
 			break;
 		case JRNP_LOG_PAGE:
-			apply_log((LIP) page, record);
+			apply_log((log_info_page*) page, record);
 			break;
 
 		default:
@@ -2647,7 +2651,7 @@ static void process_page(DRB database,
 			apply_ids((PPG) page, record);
 			break;
 		case pag_log:
-			apply_log((LIP) page, record);
+			apply_log((log_info_page*) page, record);
 			break;
 
 		default:
@@ -3669,13 +3673,13 @@ static bool test_partial_db(SLONG expected_seqno)
  * Functional description
  *
  **************************************/
-	LIP page;
+	log_info_page* page;
 	CACHE cch;
 	bool ret;
 	DRB database;
 	database = databases;
 	cch = get_page(database, LOG_PAGE, true);
-	page = (LIP) cch->cache_page;
+	page = (log_info_page*) cch->cache_page;
 // At the end of a partial recovery, we will turn off log and
 // set the next seqno.
 
@@ -3761,7 +3765,7 @@ static void write_page(DRB database,
 	if (!fil)
 		rebuild_abort(49);
 	if (LLIO_write(status, fil->fil_desc, fil->fil_string, new_offset,
-				   LLIO_SEEK_NONE, (UCHAR*) buffer->cache_page,
+				   LLIO_SEEK_NONE, (const UCHAR*) buffer->cache_page,
 				   database->drb_page_size, &len_written) == FB_FAILURE)
 	{
 		gds__print_status(status);
