@@ -1,3 +1,102 @@
+2003-11-14 03:43  bellardo
+
+	* firebird2/builds/posix/postfix.darwin:
+	
+	Make sure we include the examples in our package
+
+2003-11-14 03:37  bellardo
+
+	* firebird2/builds/posix/postfix.darwin:
+	
+	Make sure extlib is compiled before we package everything up
+
+2003-11-14 02:16  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/install-script:
+	
+	Update installer script to handle xinetd
+
+2003-11-13 23:46  bellardo
+
+	* firebird2/src/isql/isql.epp:
+	
+	isql needs to understand '--' comments so as not to incorrectly
+	match the command termination string.
+
+2003-11-13 11:51  epocman
+
+	* firebird2/src/jrd/ibinitdll.cpp:
+	
+	Small fix to the logic finding fbclient from gds32, following
+	discussions with Dmitry Yemanov.
+
+2003-11-13 08:31  bellardo
+
+	* firebird2/src/isql/isql.epp:
+	
+	Fix isql bug that caused a mis-synchronization between stdout and
+	stderr.  The synchronization error resulted in incorrect output
+	ordering when stdout and stderr were tied to the same file
+	descriptor.
+
+2003-11-13 08:28  bellardo
+
+	* firebird2/src/extern/editline/editline.c:
+	
+	Fix editline bug that was reported to truncate redirected into to
+	isql at 80 characters.	In fact, it shouldn't have always been
+	exactly eighty characters, but that was how the bug manifested
+	itself.
+
+2003-11-13 05:57  tmcsys
+
+	* firebird2/configure.in:
+	
+	create directory for darwin SS build
+
+2003-11-13 05:51  tmcsys
+
+	* firebird2/builds/posix/: Makefile.in.fbserver,
+	Makefile.in.libfbclient:
+	
+	improved build for SS
+
+2003-11-13 05:46  tmcsys
+
+	* firebird2/builds/posix/prefix.darwin:
+	
+	change CLIENT_UTIL_TARGET from gds_delay to gds_relay
+
+2003-11-13 04:41  stryqx
+
+	* firebird2/configure.in:
+	
+	Fix build on FreeBSD 4.x
+
+2003-11-13 02:20  tmcsys
+
+	* firebird2/builds/posix/prefix.darwin:
+	
+	gcc 3.1 cpp-precomp is broken
+
+2003-11-13 02:13  bellardo
+
+	* firebird2/builds/posix/prefix.darwin:
+	
+	Use the darwin version specific compiler flags.
+
+2003-11-13 02:12  bellardo
+
+	* firebird2/configure.in:
+	
+	Set some compiler specific flags for darwin.
+
+2003-11-13 01:53  stryqx
+
+	* firebird2/configure.in:
+	
+	Fix build on FreeBSD 4.x
+
 2003-11-12 19:30  dimitr
 
 	* firebird2/src/jrd/opt.cpp:
