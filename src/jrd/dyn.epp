@@ -159,7 +159,7 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 	}
 	catch (const std::exception&) {
 		const sav* savepoint = transaction->tra_save_point;
-		if (savepoint && savepoint)
+		if (savepoint && savepoint->sav_verb_count)
 		{
 			// An error during undo is very bad and has to be dealt with
 			// by aborting the transaction.  The easiest way is to kill
