@@ -34,7 +34,7 @@
  *    compatibility with Kylix
  * 
  *
- *  $Id: config_root.cpp,v 1.7 2003-08-09 22:35:10 brodsom Exp $
+ *  $Id: config_root.cpp,v 1.8 2003-08-09 22:52:35 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -58,8 +58,8 @@ static const char *CONFIG_FILE = "firebird.conf";
  *	Platform-specific root locator
  */
 
+#if defined SUPERSERVER || defined EMBEDDED
 #ifdef HAVE__PROC_SELF_EXE
-
 static string getExePathViaProcEntry() 
 {
     char buffer[MAXPATHLEN];
@@ -70,7 +70,7 @@ static string getExePathViaProcEntry()
 	}
 	return "";
 }
-
+#endif
 #endif
 
 /******************************************************************************
