@@ -638,7 +638,7 @@ static const SCHAR * const messages[] = {
 	"expected data attribute",		/* 616, gbak_exp_data_type */
 	"Failed in store_blr_gen_id",		/* 617, gbak_gen_id_failed */
 	"do not recognize record type %ld",		/* 618, gbak_unk_rec_type */
-	"Expected backup version 1, 2, or 3.  Found %ld",		/* 619, gbak_inv_bkup_ver */
+	"Expected backup version 1, 2, 3, 4, 5, 6, or 7.  Found %ld",		/* 619, gbak_inv_bkup_ver */
 	"expected backup description record",		/* 620, gbak_missing_bkup_desc */
 	"string truncated",		/* 621, gbak_string_trunc */
 	" warning -- record could not be restored",		/* 622, gbak_cant_rest_record */
