@@ -730,7 +730,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}
 	else {
 		bool sort_present = (sort);
-		bool outer_rivers = false;
+		bool sort_can_be_used = true;
 		jrd_nod* const saved_sort_node = sort;
 
 		// AB: If previous rsb's are already on the stack we can't use
@@ -738,7 +738,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		// streams are JOINed to the previous ones
 		if (rivers_stack.hasData()) {
 			sort = NULL;
-			outer_rivers = true;
+			sort_can_be_used = false;
 			// AB: We could already have multiple rivers at this
 			// point so try to do some sort/merging now.
 			while (rivers_stack.hasMore(1)
@@ -766,6 +766,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		// the sort node to be used for index navigation.
 		if (dependent_streams[0] && free_streams[0]) {
 			sort = NULL;
+			sort_can_be_used = false;
 		}
 
 		if (dependent_streams[0]) {
@@ -831,7 +832,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		if ((rsb) && (rsb->rsb_type == rsb_boolean) && (rsb->rsb_next)) {
 			test_rsb = rsb->rsb_next;
 		}
-		if ((sort_present && outer_rivers) ||
+		if ((sort_present && !sort_can_be_used) ||
 			((test_rsb) && (test_rsb->rsb_type == rsb_merge) && !sort && sort_present)) {
 			sort = saved_sort_node;
 		}

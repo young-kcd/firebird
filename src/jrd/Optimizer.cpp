@@ -1052,7 +1052,10 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
 		case nod_field:
 		{
 			int fieldStream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-			if (fieldStream != stream) {
+			// dimitr: OLD/NEW contexts shouldn't create any stream dependencies
+			if (fieldStream != stream &&
+				!(csb->csb_rpt[fieldStream].csb_flags & csb_trigger))
+			{
 				size_t pos;
 				if (!streamList->find(fieldStream, pos)) {
 					streamList->add(fieldStream);
