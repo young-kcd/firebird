@@ -758,14 +758,9 @@ static ISC_STATUS attach_database(
 	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT l = attach->p_atch_file.cstr_length;
 
-	// CVC: A false sense of constness is worse than no const at all.
-	// Make "dpb" non const until we fix this instead of throwing constness later.
-	// NS: Claudio, could you please remove the comment if it doesn't apply anymore?
-
 	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
 	USHORT dl = attach->p_atch_dpb.cstr_length;
 
- 
 	Firebird::ClumpletWriter dpb_buffer(true, MAX_SSHORT);
 
 	if (dl)
