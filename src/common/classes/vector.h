@@ -100,17 +100,17 @@ class SortedVector : public Vector<Value, Capacity> {
 public:
 	SortedVector() : Vector<Value, Capacity>() {}
 	bool find(const Key& item, int& pos) {
-		int highBound=count, lowBound=0;
+		int highBound=this->count, lowBound=0;
 		while (highBound > lowBound) {
 			int temp = (highBound + lowBound) >> 1;
-			if (Cmp::compare(item, KeyOfValue::generate(this,data[temp])))
+			if (Cmp::compare(item, KeyOfValue::generate(this,this->data[temp])))
 				lowBound = temp+1;
 			else
 				highBound = temp;
 		}
 		pos = lowBound;
-		return highBound != count &&
-			!Cmp::compare(KeyOfValue::generate(this,data[lowBound]), item);
+		return highBound != this->count &&
+			!Cmp::compare(KeyOfValue::generate(this,this->data[lowBound]), item);
 	}
 	int add(const Value& item) {
 	    int pos;

@@ -60,15 +60,15 @@ template <typename T, typename Storage = EmptyStorage<T> >
 class Array : private Storage {
 public:
 	Array(MemoryPool* p) : 
-	  count(0), capacity(getStorageSize()), data(getStorage()), pool(p)  {}
+	  count(0), capacity(this->getStorageSize()), data(this->getStorage()), pool(p)  {}
 	Array(MemoryPool* p, int InitialCapacity) : count(0), 
-		capacity(getStorageSize()), data(getStorage()), pool(p)  
+		capacity(this->getStorageSize()), data(this->getStorage()), pool(p)  
 	{
 		ensureCapacity(InitialCapacity);
 	}
 	~Array()
 	{
-		if (data != getStorage())
+		if (data != this->getStorage())
 			pool->deallocate(data);
 	}
 	void clear() { count = 0; };
@@ -170,7 +170,7 @@ protected:
 #endif
 						));
 			memcpy(newdata, data, sizeof(T) * count);
-			if (data != getStorage())
+			if (data != this->getStorage())
 				pool->deallocate(data);
 			data = newdata;
 			capacity = newcapacity;
@@ -188,17 +188,17 @@ public:
 	SortedArray(MemoryPool* p, int s) : Array<Value>(p, s) {}
 	SortedArray(MemoryPool* p) : Array<Value>(p) {}
 	bool find(const Key& item, int& pos) {
-		int highBound = count, lowBound = 0;
+		int highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {
 			int temp = (highBound + lowBound) >> 1;
-			if (Cmp::compare(item, KeyOfValue::generate(this, data[temp])))
+			if (Cmp::compare(item, KeyOfValue::generate(this, this->data[temp])))
 				lowBound = temp + 1;
 			else
 				highBound = temp;
 		}
 		pos = lowBound;
-		return highBound != count &&
-			!Cmp::compare(KeyOfValue::generate(this, data[lowBound]), item);
+		return highBound != this->count &&
+			!Cmp::compare(KeyOfValue::generate(this, this->data[lowBound]), item);
 	}
 	int add(const Value& item) {
 	    int pos;

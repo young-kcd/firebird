@@ -215,7 +215,7 @@ public:
 	}
     Value& current() const { return (*curr)[curPos]; }
 	Value& getAddErrorValue() { return addErrorValue; }
-    int getCount() const { return count; }
+    int getCount() const { return this->count; }
 private:
 	BePlusTree(Allocator *_pool, void *rootPage) : 	pool(_pool), level(0), 
 		curr(new(rootPage) ItemList()), root(rootPage),	curPos(0)/*, count(0)*/  {};
@@ -260,7 +260,7 @@ private:
 		static const Key& generate(void *sender, void *item) { 
 			for (int lev = ((NodeList *)sender)->level; lev > 0; lev--)
 				item = *((NodeList *)item)->begin();
-			return KeyOfValue::generate(item,*((BePlusTree::ItemList *)item)->begin());
+			return KeyOfValue::generate(item,*((ItemList *)item)->begin());
 		}
 		static void setNodeParentAndLevel(void *node, int level, NodeList *parent) {
 			if (level) {
