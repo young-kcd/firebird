@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.4 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.client.util,v 1.5 2003-02-12 09:23:12 eku Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -46,7 +46,7 @@ CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
 CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_Sources))))
 
 
-DROP_Files= drop.cpp dropv3.cpp
+DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files))
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
