@@ -389,6 +389,10 @@ static ULONG	free_memory(void *);
 static void		init(void);
 static int		yday(struct tm *);
 
+/*#if (defined SOLARIS )
+static UCHAR*	mmap_anon(SLONG);
+#endif
+*/
 static void		ndate(SLONG, struct tm *);
 static GDS_DATE	nday(struct tm *);
 static void		sanitize(TEXT *);
@@ -2362,14 +2366,14 @@ void API_ROUTINE gds__prefix(TEXT *resultString, TEXT *file)
 #endif
 			{
               // Try and get value from config file
-              const Firebird::string regPrefix = Config::getRootDirectory();
+              const char *regPrefix = Config::getRootDirectory();
 
-              size_t len = regPrefix.length();
+              size_t len = strlen(regPrefix);
               if (len > 0) {
                   if (len > sizeof(ib_prefix_val)) {
                       ib_perror("ib_prefix path size too large - truncated");                      
                   }
-                  strncpy(ib_prefix_val, regPrefix.c_str(), sizeof(ib_prefix_val) -1);
+                  strncpy(ib_prefix_val, regPrefix, sizeof(ib_prefix_val) -1);
                   ib_prefix_val[sizeof(ib_prefix_val) -1] = 0;
                   ib_prefix = ib_prefix_val;
               }
@@ -4686,7 +4690,7 @@ UCHAR *mmap_anon(SLONG size)
  **************************************/
 	char *memory, *va, *va_end, *va1;
 	ULONG chunk, errno1;
-	int     anon_fd=-1, page_size=-1;
+	int     anon_fd, page_size;
 /* Choose SYS_ALLOC_CHUNK such that it is always valid for the
    underlying mapped file and is a multiple of any conceivable
    memory page size that a hardware platform might support. */
@@ -4710,8 +4714,7 @@ UCHAR *mmap_anon(SLONG size)
 
 /* Get memory page size for virtual memory checking. */
 
-	if ((page_size = sysconf(_SC_PAGESIZE)) == -1)
-	
+	if (page_size == -1 && (page_size = sysconf(_SC_PAGESIZE)) == -1)
 		ERR_post(isc_sys_request, isc_arg_string, "sysconf", isc_arg_unix,
 				 errno, 0);
 

@@ -35,45 +35,47 @@
 
 /******************************************************************************
  *
- *	Configuration keys (logical names)
- */
-
-enum ConfigKey
-{
-	ROOT_DIRECTORY,							// 0
-	SORT_MEM_BLOCK_SIZE,					// 1
-	SORT_MEM_UPPER_LIMIT,					// 2
-	REMOTE_FILE_OPEN_ABILITY,				// 3
-	TEMP_DIRECTORIES,						// 4
-	GUARDIAN_OPTION							// 5
-};
-
-/******************************************************************************
- *
  *	Main implementation class
  */
 
 class ConfigImpl : public ConfigRoot
 {
+	friend class Config;
+
 	typedef Firebird::string string;
-	typedef Firebird::vector<string> string_vector;
+
+	enum ConfigType
+	{
+		TYPE_BOOLEAN,
+		TYPE_INTEGER,
+		TYPE_STRING,
+		TYPE_STRING_VECTOR
+	};
+
+	typedef char* ConfigKey;
+	typedef void* ConfigValue;
+
+	struct ConfigEntry
+	{
+		ConfigType data_type;
+		ConfigKey key;
+		ConfigValue default_value;
+	};
 
 public:
 	ConfigImpl();
+    ~ConfigImpl();
 
-	static void validateKey(ConfigKey);
+	static string getValue(ConfigFile, ConfigKey);
 
-	void getValue(ConfigKey, string&);
-	void getValue(ConfigKey, int&);
-	void getValue(ConfigKey, bool&);
-
-	void getValueList(ConfigKey key, string_vector&);
-
-	static ConfigImpl& instance();
+	static int asInteger(const string&);
+	static bool asBoolean(const string&);
+	static const char* asString(const string&);
 
 private:
-	ConfigFile file;
-	string val_sep;
+	const static ConfigEntry entries[];
+	const char *root_dir;
+	ConfigValue *values;
 
     ConfigImpl(const ConfigImpl&);
     void operator=(const ConfigImpl&);

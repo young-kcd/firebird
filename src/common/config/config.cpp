@@ -27,6 +27,7 @@
 
 #ifdef _MSC_VER
 #pragma warning (disable: 4786)	// debug identifier truncated
+#pragma warning (disable: 4800)	// forcing value to bool 'true' or 'false'
 #endif
 
 #include "../../common/config/config.h"
@@ -40,20 +41,20 @@
 #include "../jrd/gdsassert.h"
 
 typedef Firebird::string string;
-typedef Firebird::vector<string> string_vector;
 
 /******************************************************************************
  *
- *	Configuration keys (physical names)
+ *	Configuration entries
  */
 
-const string keys[] = {
-	"RootDirectory",						// 0
-	"SortMemBlockSize",						// 1
-	"SortMemUpperLimit",					// 2
-	"RemoteFileOpenAbility",				// 3
-	"TempDirectories",						// 4
-	"GuardianOption"						// 5
+const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
+{
+	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
+	{TYPE_INTEGER,		"SortMemBlockSize",			(ConfigValue) 1048576},
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 268435456},
+	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
+	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
+	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1}
 };
 
 /******************************************************************************
@@ -61,11 +62,7 @@ const string keys[] = {
  *	Static instance of the system configuration file
  */
 
-ConfigImpl& ConfigImpl::instance()
-{
-	static ConfigImpl sysConfig;
-	return sysConfig;
-}
+const static ConfigImpl sysConfig;
 
 /******************************************************************************
  *
@@ -74,76 +71,96 @@ ConfigImpl& ConfigImpl::instance()
 
 ConfigImpl::ConfigImpl()
 {
+	/* Prepare some stuff */
+
+	ConfigFile file;
+	root_dir = getRootDirectory().c_str();
+	MemoryPool *pool = getDefaultMemoryPool();
+	int size = sizeof(entries) / sizeof(entries[0]);
+	values = FB_NEW(*pool) ConfigValue[size];
+
+	string val_sep = ",";
 	file.setConfigFile(getConfigFile());
-	val_sep = ",";
-}
 
-void ConfigImpl::validateKey(ConfigKey key)
-{
-	assert(key >= 0 && key < (sizeof(keys) / sizeof(string)));
-}
+	/* Iterate through the known configuration entries */
 
-void ConfigImpl::getValue(ConfigKey key, string &result)
-{
-	validateKey(key);
-	
-	if (file.doesKeyExist(keys[key]))
+	for (int i = 0; i < size; i++)
 	{
-		 result = file.getString(keys[key]);
-	}
-}
+		ConfigEntry entry = entries[i];
+		string value = getValue(file, entries[i].key);
 
-void ConfigImpl::getValue(ConfigKey key, int &result)
-{
-	validateKey(key);
-	
-	if (file.doesKeyExist(keys[key]))
-	{
-		result = atoi(file.getString(keys[key]).data());
-	}
-}
-
-void ConfigImpl::getValue(ConfigKey key, bool &result)
-{
-	validateKey(key);
-
-	if (file.doesKeyExist(keys[key]))
-	{
-		result = (atoi(file.getString(keys[key]).data()) != 0);
-	}
-}
-
-void ConfigImpl::getValueList(ConfigKey key, Firebird::vector<string> &result)
-{
-	validateKey(key);
-
-	string value = result[0];
-	if (file.doesKeyExist(keys[key]))
-	{
-		value = file.getString(keys[key]);
-	}
-
-	result.empty();
-
-	int index = value.find(val_sep);
-	while (index != string::npos)
-	{
-		string temp = value.substr(0, index);
-		ConfigFile::stripLeadingWhiteSpace(temp);
-		ConfigFile::stripTrailingWhiteSpace(temp);
-		if (temp.length())
+		if (!value.length())
 		{
-			result.push_back(temp);
+			/* Assign the default value */
+
+			values[i] = entries[i].default_value;
+			continue;
 		}
-		value = value.substr(index + 1, value.length());
-		index = value.find(val_sep);
+
+		/* Assign the actual value */
+
+		switch (entry.data_type)
+		{
+		case TYPE_BOOLEAN:
+			values[i] = (ConfigValue) asBoolean(value);
+			break;
+		case TYPE_INTEGER:
+			values[i] = (ConfigValue) asInteger(value);
+			break;
+		case TYPE_STRING:
+			{
+			const char *src = asString(value);
+			char *dst = FB_NEW(*pool) char[strlen(src) + 1];
+			strcpy(dst, src);
+			values[i] = (ConfigValue) dst;
+			}
+			break;
+		case TYPE_STRING_VECTOR:
+			;
+		}
 	}
-	ConfigFile::stripLeadingWhiteSpace(value);
-	ConfigFile::stripTrailingWhiteSpace(value);
-	if (value.length())
+}
+
+ConfigImpl::~ConfigImpl()
+{
+	/* Free allocated memory */
+
+	for (int i = 0; i < sizeof(entries) / sizeof(entries[0]); i++)
 	{
-		result.push_back(value);
+		if (values[i] == entries[i].default_value)
+			continue;
+
+		switch (entries[i].data_type)
+		{
+		case TYPE_STRING:
+			delete[] values[i];
+			break;
+		case TYPE_STRING_VECTOR:
+			;
+		}
 	}
+
+	delete[] values;
+}
+
+string ConfigImpl::getValue(ConfigFile file, ConfigKey key)
+{
+	return file.doesKeyExist(key) ? file.getString(key) : "";
+}
+
+int ConfigImpl::asInteger(const string &value)
+{
+	return atoi(value.data());
+}
+
+bool ConfigImpl::asBoolean(const string &value)
+{
+	return (atoi(value.data()) != 0);
+}
+
+const char* ConfigImpl::asString(const string &value)
+{
+	return value.c_str();
 }
 
 /******************************************************************************
@@ -151,45 +168,33 @@ void ConfigImpl::getValueList(ConfigKey key, Firebird::vector<string> &result)
  *	Public interface
  */
 
-string Config::getRootDirectory()
+const char* Config::getRootDirectory()
 {
-	string result = ConfigImpl::instance().getRootDirectory();
-	ConfigImpl::instance().getValue(ROOT_DIRECTORY, result);
-	return result;
+	const char* result = (char*) sysConfig.values[KEY_ROOT_DIRECTORY];
+	return result ? result : sysConfig.root_dir;
 }
 
-int Config::getSortMemBlockSize(int default_value)
+int Config::getSortMemBlockSize()
 {
-	int result = default_value;
-	ConfigImpl::instance().getValue(SORT_MEM_BLOCK_SIZE, result);
-	return result;
+	return (int) sysConfig.values[KEY_SORT_MEM_BLOCK_SIZE];
 }
 
-int Config::getSortMemUpperLimit(int default_value)
+int Config::getSortMemUpperLimit()
 {
-	int result = default_value;
-	ConfigImpl::instance().getValue(SORT_MEM_UPPER_LIMIT, result);
-	return result;
+	return (int) sysConfig.values[KEY_SORT_MEM_UPPER_LIMIT];
 }
 
-bool Config::getRemoteFileOpenAbility(bool default_value)
+bool Config::getRemoteFileOpenAbility()
 {
-	bool result = default_value;
-	ConfigImpl::instance().getValue(REMOTE_FILE_OPEN_ABILITY, result);
-	return result;
+	return (bool) sysConfig.values[KEY_REMOTE_FILE_OPEN_ABILITY];
 }
 
-string_vector Config::getTempDirectories(string default_value)
+int Config::getGuardianOption()
 {
-	string_vector result(0);
-	result.push_back(default_value);
-	ConfigImpl::instance().getValueList(TEMP_DIRECTORIES, result);
-	return result;
+	return (int) sysConfig.values[KEY_GUARDIAN_OPTION];
 }
 
-int Config::getGuardianOption(int default_value)
+int Config::getCpuAffinityMask()
 {
-	int result = default_value;
-	ConfigImpl::instance().getValue(GUARDIAN_OPTION, result);
-	return result;
+	return (int) sysConfig.values[KEY_CPU_AFFINITY_MASK];
 }

@@ -107,8 +107,8 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/isc_i_proto.h"
-#include "../jrd/isc.h"
 #include "../jrd/file_params.h"
+#include "../common/config/config.h"
 
 static void THREAD_ROUTINE process_connection_thread(PORT);
 static void THREAD_ROUTINE inet_connect_wait_thread(void *);
@@ -129,21 +129,10 @@ static SERVICE_TABLE_ENTRY service_table[] = {
 	NULL, NULL
 };
 
-/* CPU affinity setting - default is first CPU only */
-static SLONG g_CPU_affinity_mask = ISCCFG_CPU_AFFINITY_DEF;
-
-static struct ipccfg CPU_affinity_setting[] =
-{
-	{ ISCCFG_CPU_AFFINITY_TAG, 0, &g_CPU_affinity_mask, 0, 0 },
-	{ NULL, 0, NULL, 0, 0 }
-};
-
-
 #ifdef XNET
 /* put into ensure that we have a parent port for the XNET connections */
 static int xnet_server_set = FALSE;
 #endif /* XNET */
-
 
 
 int WINAPI WinMain(HINSTANCE	hThisInst,
@@ -186,9 +175,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "SetProcessAffinityMask");
 		if (SetProcessAffinityMask) {
 			/* Mike Nordell - 11 Jun 2001: CPU affinity. */
-			ISC_get_config (LOCK_HEADER, CPU_affinity_setting);
 			(*SetProcessAffinityMask)(GetCurrentProcess(),
-				static_cast<DWORD>(g_CPU_affinity_mask));
+				static_cast<DWORD>(Config::getCpuAffinityMask()));
 		}
 	}
 	else {

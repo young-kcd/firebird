@@ -544,8 +544,8 @@ void start_and_watch_server(char *server_name)
 	SC_HANDLE hScManager = 0, hService = 0;
 
 /* get the guardian startup information */
-	option = Config::getGuardianOption(START_FOREVER);
-	strcpy(path, Config::getRootDirectory().c_str());
+	option = Config::getGuardianOption();
+	strcpy(path, Config::getRootDirectory());
 	sprintf(prog_name, "%s%s%s -a -n", path, "bin\\", server_name);
 	sprintf(path, "%s%s%s", path, "bin\\", FBSERVER);
 

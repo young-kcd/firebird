@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "debug\dsql_server_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "DEBUG" /D "_DEBUG" /D "_LIB" /D "_WINDOWS" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "DEV_BUILD" /D "_MBCS" /D "_X86_" /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /Ob0 /I "../../../src/include" /D "DEBUG" /D "_DEBUG" /D "_LIB" /D "_WINDOWS" /D "SUPERSERVER" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "DEV_BUILD" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -166,13 +166,6 @@ SOURCE=..\..\..\src\dsql\pass1.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\dsql\preparse.cpp
-
-!IF  "$(CFG)" == "dsql_server - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "dsql_server - Win32 Release"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 

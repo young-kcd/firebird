@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.11 2002-11-20 23:13:21 hippoman Exp $
+//	$Id: ftn.cpp,v 1.12 2002-11-30 15:08:04 skidder Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -50,7 +50,9 @@
 #include <string.h>
 #endif
 
-extern UCHAR fortran_labels[];
+extern "C" {
+	extern UCHAR fortran_labels[];
+} /* extern "C" */
 extern DBB isc_databases;
 extern GPRE_REQ requests;
 extern IB_FILE *out_file;
@@ -256,6 +258,25 @@ static ADL array_decl_list;
 
 #ifdef linux
 #define INCLUDE_ISC_FTN  "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
+#define INCLUDE_FTN_FILE "include/gds.f"
+#define DOUBLE_DCL      "DOUBLE PRECISION"
+#define I2CONST_1       ""
+#define I2CONST_2       ""
+#define I2_1            ""
+#define I2_2            ""
+#define VAL_1           ""
+#define VAL_2           ""
+#define REF_1           ""
+#define REF_2           ""
+#define I4CONST_1       ""
+#define I4CONST_2       ""
+#define COMMENT         "*     "
+#define INLINE_COMMENT  "\n*                "
+#define COMMA           ","
+#endif
+
+#ifdef WIN_NT
+#define INCLUDE_ISC_FTN  "       INCLUDE  \'%s\' \n\n"
 #define INCLUDE_FTN_FILE "include/gds.f"
 #define DOUBLE_DCL      "DOUBLE PRECISION"
 #define I2CONST_1       ""

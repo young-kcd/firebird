@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "debug\dsql_server_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "DEBUG" /D "_DEBUG" /D "_LIB" /D "_WINDOWS" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "DEV_BUILD" /D "_MBCS" /D "_X86_" /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /Ob0 /I "../../../src/include" /D "DEBUG" /D "_DEBUG" /D "_LIB" /D "_WINDOWS" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "DEV_BUILD" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe

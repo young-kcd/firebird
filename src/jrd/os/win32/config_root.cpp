@@ -36,7 +36,7 @@
 
 typedef Firebird::string string;
 
-const string CONFIG_FILE = "firebird.conf";
+const char *CONFIG_FILE = "firebird.conf";
 
 /******************************************************************************
  *
@@ -98,4 +98,3 @@ string ConfigRoot::getConfigFile() const
 {
 	return root_dir + CONFIG_FILE;
 }
-

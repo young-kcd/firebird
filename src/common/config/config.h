@@ -39,7 +39,7 @@
 	functions. Each of these functions corresponds to one and only one key
 	and has one input argument - default value, which is used when the 
 	requested key is missing or the configuration file is not found. Supported
-	value datatypes are "string", "int" and "bool". Usual default values for
+	value datatypes are "const char*", "int" and "bool". Usual default values for
 	these datatypes are empty string, zero and false respectively. There are
 	two types of member functions - scalar and vector. The former ones return
 	single value of the given type. The latter ones return vector which
@@ -47,12 +47,13 @@
 
 	There's one exception - getRootDirectory() member function, which returns
 	root pathname of the current installation. This value isn't stored in the
-	configuration file, but is managed by the code itself.
+	configuration file, but is managed by the code itself. But there's a way
+	to override this value via the configuration file as well.
 
 	To add new configuration item, you have to take the following steps:
 
-		1. Add physical key to keys[] array (config.cpp)
-		2. Add logical key to ConfigKey enumeration (config_impl.h)
+		1. Add key description to ConfigImpl::entries[] array (config.cpp)
+		2. Add logical key to Config::ConfigKey enumeration (config.h)
 		   (note: both physical and logical keys MUST have the same ordinal
 				  position within appropriate structures)
 		3. Add member function to Config class (config.h) and implement it
@@ -61,40 +62,47 @@
 
 class Config
 {
-	typedef Firebird::string string;
-	typedef Firebird::vector<string> string_vector;
+	enum ConfigKey
+	{
+		KEY_ROOT_DIRECTORY,							// 0
+		KEY_SORT_MEM_BLOCK_SIZE,					// 1
+		KEY_SORT_MEM_UPPER_LIMIT,					// 2
+		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
+		KEY_GUARDIAN_OPTION,						// 4
+		KEY_CPU_AFFINITY_MASK						// 5
+	};
 
 public:
 
 	/*
 		Root directory of current installation
 	*/
-	static string getRootDirectory();
+	static const char* getRootDirectory();
 
 	/*
 		Block size for the sorting manager
 	*/
-	static int getSortMemBlockSize(int default_value = 0);
+	static int getSortMemBlockSize();
 
 	/*
 		Memory usage limit for the sorting manager
 	*/
-	static int getSortMemUpperLimit(int default_value = 0);
+	static int getSortMemUpperLimit();
 
 	/*
 		Whether remote (NFS) files can be opened
 	*/
-	static bool getRemoteFileOpenAbility(bool default_value = false);
-
-	/*
-		List of directories to store temporary files in
-	*/
-	static string_vector getTempDirectories(string default_value = "");
+	static bool getRemoteFileOpenAbility();
 
 	/*
 		Startup option for the guardian
 	*/
-	static int getGuardianOption(int default_value = 0);
+	static int getGuardianOption();
+
+	/*
+		CPU affinity mask
+	*/
+	static int getCpuAffinityMask();
 };
 
 #endif // CONFIG_H

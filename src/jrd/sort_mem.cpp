@@ -34,9 +34,6 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/sort_mem.h"
 
-const size_t DEFAULT_BLOCK_SIZE = 1048576;				// 1MB
-const size_t DEFAULT_UPPER_LIMIT = 1048576 * 256;		// 256MB
-
 bool SortMem::is_initialized = false;
 
 size_t SortMem::mem_block_size;
@@ -150,11 +147,11 @@ size_t SortMem::FileBlock::write(STATUS *status, size_t position, char *buffer, 
 SortMem::SortMem(struct sfb *blk, size_t size)
 	: internal(blk), logical_size(0), physical_size(0), file_size(0), head(0), tail(0)
 {
-	// Override defaults with the configuration values, if they exist
+	// Initialize itself
 	if (!is_initialized)
 	{
-		mem_block_size = Config::getSortMemBlockSize(DEFAULT_BLOCK_SIZE);
-		mem_upper_limit = Config::getSortMemUpperLimit(DEFAULT_UPPER_LIMIT);
+		mem_block_size = Config::getSortMemBlockSize();
+		mem_upper_limit = Config::getSortMemUpperLimit();
 		is_initialized = true;
 	}
 

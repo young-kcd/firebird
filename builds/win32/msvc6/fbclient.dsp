@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GDS32_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "GDS32_EXPORTS" /D "CLIENT" /D "SUPERCLIENT" /D "WIN32_LEAN_AND_MEAN" /D "SERVER_SHUTDOWN" /D "IPSERV" /D "GOVERNOR" /D "EXACT_NUMERICS" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /Ob0 /I "../../../src/include" /I "../../../src" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "GDS32_EXPORTS" /D "CLIENT" /D "SUPERCLIENT" /D "WIN32_LEAN_AND_MEAN" /D "SERVER_SHUTDOWN" /D "IPSERV" /D "GOVERNOR" /D "EXACT_NUMERICS" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
