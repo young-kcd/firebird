@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: apifull.c,v 1.2 2003-07-11 03:08:30 brodsom Exp $
+$Id: apifull.c,v 1.3 2003-08-13 11:06:02 robocop Exp $
 */
 
 #include <stdlib.h>
@@ -48,10 +48,15 @@ process_statement (XSQLDA ** sqlda, char *query);
 void print_column (XSQLVAR * var);
 int get_statement (char * buf);
 
-typedef struct vary2 {
-    short          vary_length;
+/* ibase.h contains PARAMVARY, with the handicap that vary_string is unsigned char*
+instead of plain char*.
+Maybe we should fix ibase.h for users but without affecting the engine */
+/* typedef struct vary2 {
+    unsigned short vary_length;
     char           vary_string [1];
 } VARY2;
+*/
+typedef PARAMVARY VARY2;
 
 isc_db_handle      db = NULL;
 isc_tr_handle      trans = NULL;
