@@ -212,7 +212,9 @@ namespace {
 				mount(getPool()), path(getPool()) { } */
 		bool ok() const { return mtab.ok(); }
 		bool get();
-		tstring node, mount, path;
+		tstring node,  /* remote server name */
+			mount, /* local mount point */
+			path;  /* path on remote server */
 	};
 #endif //NO_NFS
 } // anonymous namespace 
@@ -1536,6 +1538,47 @@ bool Mnt::get()
 	return false;
 }
 #endif // SCO_UNIX
+
+#ifdef SOLARIS
+#define GET_MOUNTS
+bool Mnt::get()
+{
+/**************************************
+ *
+ *	g e t _ m o u n t s	( SOLARIS)
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get ALL mount points.
+ *
+ **************************************/
+
+ /* This code is tested on Solaris 2.6 IA */
+ TEXT device[128], mount_point[128], type[16], opts[256], ftime[128];
+ 
+	const int n = fscanf(mtab.mtab, "%s %s %s %s %s ", device, mount_point, type, opts,ftime);
+	const char* start = device;
+	
+	if (n<5)
+	{ return false;}
+
+	const char* iflag = strchr(device, ':');
+	if (iflag)
+	{
+		node = tstring( start , size_t(iflag-start) );
+		path = tstring( ++iflag );
+	}
+	else {
+		node.erase();
+		path.erase();
+	}
+	mount = mount_point;
+	return true;
+
+
+}
+#endif //Solaris
 
 #ifndef GET_MOUNTS
 bool Mnt::get()
