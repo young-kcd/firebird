@@ -78,6 +78,7 @@ static void add_security_to_sys_rel(thread_db*, const TEXT*, const TEXT*, const 
 static void add_trigger(TEXT*, jrd_req**, jrd_req**);
 #endif
 //static void add_user_priv(thread_db*, TEXT*, TEXT*, TEXT*, TEXT);
+static int init2_helper(const UCHAR* fld, int n, jrd_rel* relation);
 static void modify_relation_field(thread_db*, const UCHAR*, const UCHAR*, jrd_req**);
 static void store_generator(thread_db*, const gen*, jrd_req**);
 static void store_global_field(thread_db*, const gfld*, jrd_req**);
@@ -670,67 +671,23 @@ void INI_init2(void)
 					 relfld[RFLD_R_NAME] == nam_args))
 				{
 					if (major_version >= ODS_VERSION10)
-					{
-						if (!fld[RFLD_F_MINOR])
-						{
-							n++;
-							if (fld[RFLD_F_UPD_MINOR])
-								relation->rel_flags |= REL_force_scan;
-						}
-						else
-						{
-							relation->rel_flags |= REL_force_scan;
-						}
-					}
+						n = init2_helper(fld, n, relation);
 				}
 				else if (fld[RFLD_F_NAME] == nam_statistics &&
 					 relfld[RFLD_R_NAME] == nam_i_segments)
 				{
 					if (major_version >= ODS_VERSION11)
-					{
-						if (!fld[RFLD_F_MINOR])
-						{
-							n++;
-							if (fld[RFLD_F_UPD_MINOR])
-								relation->rel_flags |= REL_force_scan;
-						}
-						else
-						{
-							relation->rel_flags |= REL_force_scan;
-						}
-					}
+						n = init2_helper(fld, n, relation);
 				}
 				else if ((fld[RFLD_F_NAME] == nam_description ||
 					fld[RFLD_F_NAME] == nam_sys_flag) &&
 					relfld[RFLD_R_NAME] == nam_roles)
 				{
 					if (major_version >= ODS_VERSION11)
-					{
-						if (!fld[RFLD_F_MINOR])
-						{
-							n++;
-							if (fld[RFLD_F_UPD_MINOR])
-								relation->rel_flags |= REL_force_scan;
-						}
-						else
-						{
-							relation->rel_flags |= REL_force_scan;
-						}
-					}
+						n = init2_helper(fld, n, relation);
 				}
 				else
-				{
-					if (!fld[RFLD_F_MINOR])
-					{
-						n++;
-						if (fld[RFLD_F_UPD_MINOR])
-							relation->rel_flags |= REL_force_scan;
-					}
-					else
-					{
-						relation->rel_flags |= REL_force_scan;
-					}
-				}
+					n = init2_helper(fld, n, relation);
 			}
 
 			relation->rel_fields->resize(n);
@@ -1333,6 +1290,23 @@ static void add_trigger(TEXT* trigger_name, jrd_req** handle1, jrd_req** handle2
 	}
 }
 #endif
+
+
+static int init2_helper(const UCHAR* fld, int n, jrd_rel* relation)
+{
+	if (!fld[RFLD_F_MINOR])
+	{
+		++n;
+		if (fld[RFLD_F_UPD_MINOR])
+			relation->rel_flags |= REL_force_scan;
+	}
+	else
+	{
+		relation->rel_flags |= REL_force_scan;
+	}
+	return n;
+}
+
 
 static void modify_relation_field(thread_db*	tdbb,
 								  const UCHAR*	fld,
