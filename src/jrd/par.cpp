@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.19 2002-11-04 15:12:33 skidder Exp $
+$Id: par.cpp,v 1.20 2002-11-06 20:26:59 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1704,8 +1704,10 @@ static NOD par_plan(TDBB tdbb, CSB * csb)
 
 			for (arg = access_type->nod_arg; count--;) {
 				par_name(csb, name);
-				for (p = name; *p; *p++)
-					*p = UPPER(*p);
+          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
+				 for (p = name; *p; *p++)
+				 *p = UPPER(*p);
+  	             */
 
 				index_id =
 					MET_lookup_index_name(tdbb, name, &relation_id,
