@@ -1,3 +1,75 @@
+2004-06-14 01:49  skidder
+
+	* firebird2/src/common/classes/: class_test.cpp (1.17), test.sh
+	(1.10), tree.h (1.31):
+	
+	Slightly refine BeePlusTree accessor semantics
+
+2004-06-14 01:46  brodsom
+
+	* firebird2/src/: dsql/dsql.cpp (1.113), jrd/cmp.cpp (1.131),
+	jrd/nbak.cpp (1.39), remote/remote.cpp (1.37):
+	
+	Removing wrong extra ;
+
+2004-06-14 01:43  brodsom
+
+	* firebird2/src/: jrd/os/posix/fbsyslog.cpp (1.2),
+	jrd/os/win32/config_root.cpp (1.15), jrd/os/win32/fbsyslog.cpp
+	(1.3), utilities/install/install.cpp (1.5):
+	
+	Looking for extra ; at namespace declaration end
+
+2004-06-14 01:39  brodsom
+
+	* firebird2/src/: extlib/fbudf/fbudf.cpp (1.16), include/fb_list.h
+	(1.4), include/fb_map.h (1.3), jrd/evl_string.h (1.13), jrd/ext.cpp
+	(1.55), jrd/ods.h (1.27), jrd/os/fbsyslog.h (1.3):
+	
+	Looking for extra ; at namespace declaration end
+
+2004-06-14 01:36  brodsom
+
+	* firebird2/src/common/: fb_exception.cpp (1.11), utils_proto.h
+	(1.3), classes/alloc.cpp (1.52), classes/array.h (1.27),
+	classes/fb_string.cpp (1.16), classes/objects_array.h (1.11),
+	classes/rwlock.h (1.20), classes/semaphore.h (1.13),
+	classes/stack.h (1.11), config/config_file.cpp (1.22):
+	
+	Looking for extra ; at namespace declaration end
+
+2004-06-14 01:27  skidder
+
+	* firebird2/src/dsql/array_proto.h (1.15):
+	
+	Fix 64-bit build
+
+2004-06-14 00:31  brodsom
+
+	* firebird2/src/jrd/event.cpp (1.53):
+	
+	Rollback
+
+2004-06-13 20:30  skidder
+
+	* firebird2/src/common/classes/class_test.cpp (1.16):
+	
+	Bring module up to date
+
+2004-06-13 05:09  brodsom
+
+	* firebird2/src/: common/classes/alloc.h (1.42),
+	common/classes/fb_pair.h (1.11), common/classes/tree.h (1.30),
+	common/classes/vector.h (1.9), include/fb_vector.h (1.6):
+	
+	Remove wrong semicolon
+
+2004-06-13 05:08  brodsom
+
+	* firebird2/src/common/classes/stack.h (1.10):
+	
+	-Correction for gcc 3.4
+
 2004-06-12 03:06  skidder
 
 	* firebird2/src/: burp/restore.epp (1.78), jrd/cch.cpp (1.98),
