@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.50 2004-05-12 19:17:09 brodsom Exp $
+ *  $Id: alloc.cpp,v 1.51 2004-05-13 14:04:51 kkuznetsov Exp $
  *
  */
 
@@ -339,8 +339,14 @@ void MemoryPool::external_free(void *blk, size_t &size) {
 		system_call_failed::raise("VirtualFree");
 #elif defined HAVE_MMAP
 	size = FB_ALIGN(size, map_page_size);
+#if (defined SOLARIS) and (defined HAVE_CADDR_T)
+	if (munmap((caddr_t) blk, size))
+		system_call_failed::raise("munmap");
+
+#else 
 	if (munmap(blk, size))
 		system_call_failed::raise("munmap");
+#endif /*Solaris*/
 #else
 	::free(blk);
 #endif

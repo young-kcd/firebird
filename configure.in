@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.198 2004-05-03 11:31:54 eku Exp $
+dnl $Id: configure.in,v 1.199 2004-05-13 14:04:47 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -553,6 +553,7 @@ case "$PLATFORM" in
     dnl kkuznetsov: Solaris always check for -lnsl
     AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
     AC_CHECK_LIB(thread, main) 
+    AC_CHECK_TYPES([caddr_t])
 
     AC_ARG_WITH(sfio,
       AC_HELP_STRING([--with-sfio=PATH],
