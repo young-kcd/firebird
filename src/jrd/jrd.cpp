@@ -5374,7 +5374,7 @@ static DBB init(TDBB	tdbb,
 
 	try {
 
-	JrdMemoryPool* perm = new(*FB_MemoryPool) JrdMemoryPool;
+	JrdMemoryPool* perm = new(*getDefaultMemoryPool()) JrdMemoryPool;
 	dbb_ = dbb::newDbb(*perm);
 	//temp.blk_type = type_dbb;
 	dbb_->dbb_permanent = perm;

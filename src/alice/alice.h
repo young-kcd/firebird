@@ -203,8 +203,8 @@ extern struct tgbl *gdgbl;
 
 #define GET_THREAD_DATA		(gdgbl)
 #ifdef __cplusplus
-#define SET_THREAD_DATA		gdgbl = tdgbl; \
-				tdgbl->tgbl_thd_data.thdd_type = const_cast<tgbl*>(THDD_TYPE_TGBL)
+#define SET_THREAD_DATA		gdgbl = const_cast<tgbl*>(tdgbl); \
+				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
 #else
 #define SET_THREAD_DATA		gdgbl = tdgbl; \
 				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL

@@ -34,7 +34,7 @@ void		ALLD_fini();				/* get rid of everything */
 class DsqlMemoryPool : public MemoryPool
 {
 public:
-	DsqlMemoryPool(int extSize = 0, MemoryPool& p = *FB_MemoryPool);
+	DsqlMemoryPool(int extSize = 0, MemoryPool& p = *getDefaultMemoryPool());
 	~DsqlMemoryPool();
 
 	static class blk* ALLD_pop(class dsql_lls**);

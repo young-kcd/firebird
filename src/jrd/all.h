@@ -43,7 +43,7 @@ void ALL_check_memory(void);
 class JrdMemoryPool : public MemoryPool
 {
 public:
-	JrdMemoryPool(int extSize = 0, MemoryPool* p = FB_MemoryPool)
+	JrdMemoryPool(int extSize = 0, MemoryPool* p = getDefaultMemoryPool())
 	:	MemoryPool(extSize, p),
 		plb_buckets(0),
 		plb_segments(0),

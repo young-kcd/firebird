@@ -27,10 +27,12 @@
 #ifndef MEMORY_POOL_H
 #define MEMORY_POOL_H
 
-#include "../include/fb_types.h"
+#include "../../include/firebird.h"
+#include "../../include/fb_types.h"
 #include "../jrd/ib_stdio.h"
 
-extern class MemoryPool *FB_MemoryPool;
+
+FB_DLL_EXPORT class MemoryPool* getDefaultMemoryPool();
 
 /**
 	For various reasons Firebird has chosen to do its own heap management.
@@ -79,7 +81,7 @@ extern class MemoryPool *FB_MemoryPool;
 
 	If any memory operation fail an exception is raised.
 **/
-class MemoryPool
+class FB_DLL_EXPORT MemoryPool
 {
 public:
 	MemoryPool(size_t = 0, MemoryPool* = 0);

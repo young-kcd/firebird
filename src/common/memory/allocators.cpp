@@ -31,6 +31,15 @@
 #include "../../jrd/gdsassert.h"
 #include <new>
 
+
+static MemoryPool* FB_MemoryPool = 0;
+
+MemoryPool* getDefaultMemoryPool()
+{
+	return FB_MemoryPool;
+}
+
+
 class InitMemoryPool
 {
 public:
@@ -57,7 +66,7 @@ private:
 	};
 };
 
-MemoryPool *FB_MemoryPool = 0;
+
 static InitMemoryPool poolLoader;
 static int badNewCount = 0;
 

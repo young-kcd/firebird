@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: rse.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
+$Id: rse.cpp,v 1.5 2001-12-28 05:16:31 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -3746,7 +3746,7 @@ static void write_merge_block(TDBB tdbb, MFB mfb, ULONG block)
 	SFB sfb_;
 
 	if (!(sfb_ = mfb->mfb_sfb)) {
-		sfb_ = mfb->mfb_sfb = new(*FB_MemoryPool) sfb;
+		sfb_ = mfb->mfb_sfb = new(*getDefaultMemoryPool()) sfb;
 	}
 	if (!sfb_->sfb_file_name) {
 		TEXT file_name[128];

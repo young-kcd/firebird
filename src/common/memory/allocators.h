@@ -42,18 +42,16 @@ void* API_ROUTINE gds__alloc(SLONG size_request);
 extern ULONG API_ROUTINE gds__free(void* blk);
 };
 
-extern MemoryPool *FB_MemoryPool;
-
 void* operator new(size_t);
 void* operator new[](size_t);
 
-void* operator new(size_t, MemoryPool&);
-void operator delete(void* mem, MemoryPool&);
-void* operator new[](size_t s, MemoryPool&);
-void operator delete[](void* mem, MemoryPool&);
+FB_DLL_EXPORT void* operator new(size_t, MemoryPool&);
+FB_DLL_EXPORT void  operator delete(void* mem, MemoryPool&);
+FB_DLL_EXPORT void* operator new[](size_t s, MemoryPool&);
+FB_DLL_EXPORT void  operator delete[](void* mem, MemoryPool&);
 
-void* operator new(size_t, MemoryPool*);
-void* operator new[](size_t s, MemoryPool*);
+FB_DLL_EXPORT void* operator new(size_t, MemoryPool*);
+FB_DLL_EXPORT void* operator new[](size_t s, MemoryPool*);
 
 void operator delete(void* mem);
 void operator delete[](void* mem);
@@ -100,7 +98,7 @@ namespace Firebird
 		typedef T			value_type;
 	
 		allocator(MemoryPool& p, SSHORT t = 0) : pool(&p), type(t) {}
-		allocator(MemoryPool *p = FB_MemoryPool, SSHORT t = 0) : pool(p), type(t) {}
+		allocator(MemoryPool *p = getDefaultMemoryPool(), SSHORT t = 0) : pool(p), type(t) {}
 	
 		pointer allocate(size_type s, const void * = 0)
 			{ return (pointer) (pool ? pool->allocate(sizeof(T) * s) : gds__alloc(sizeof(T)*s)); }

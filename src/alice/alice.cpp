@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.8 2001-12-25 08:01:58 tamlin Exp $
+//	$Id: alice.cpp,v 1.9 2001-12-28 05:14:41 tamlin Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -38,18 +38,18 @@
 
 #define FB_FROM_ALICE_CPP
 
-#include "../jrd/ib_stdio.h"
-#include "../jrd/gds.h"
-#include "../jrd/common.h"
-#include "../jrd/license.h"
-#include "../jrd/ibsetjmp.h"
-#include "../jrd/msg_encode.h"
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
 #include "../alice/all.h"
 #include "../alice/alice_proto.h"
 #include "../alice/all_proto.h"
 #include "../alice/exe_proto.h"
+#include "../jrd/ib_stdio.h"
+#include "../jrd/gds.h"
+#include "../jrd/common.h"
+#include "../jrd/license.h"
+#include "../jrd/ibsetjmp.h"
+#include "../jrd/msg_encode.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"

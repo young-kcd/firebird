@@ -26,16 +26,22 @@
  *
  *  Contributor(s):
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
- *       Mike Nordel    <tamlin@algonet.se>
+ *       Mike Nordell   <tamlin@algonet.se>
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.2 2001-12-24 02:50:49 tamlin Exp $
+ *  $Id: firebird.h,v 1.3 2001-12-28 05:15:46 tamlin Exp $
  *
  */
 
 
 #include "gen/autoconfig.h"
+
+#if defined(WIN32) || defined(_WIN32)
+#define FB_DLL_EXPORT __declspec(dllexport)
+#else
+#define FB_DLL_EXPORT
+#endif
 
 #ifdef __cplusplus
 #include "fb_exception.h"

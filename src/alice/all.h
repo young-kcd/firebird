@@ -39,7 +39,7 @@ public:
 //	:	MemoryPool(0, p),
 //		lls_cache(*this)
 //	{}
-	AliceMemoryPool(int extSize = 0, MemoryPool* p = FB_MemoryPool)
+	AliceMemoryPool(int extSize = 0, MemoryPool* p = getDefaultMemoryPool())
 	:	MemoryPool(extSize, p),
 		lls_cache(*this)
 	{

@@ -602,7 +602,7 @@ SVC SVC_attach(USHORT	service_length,
    we cannot use the JRD allocator. */
 
 //	service = (SVC) gds__alloc((SLONG) (sizeof(struct svc)));
-	service = new(*FB_MemoryPool) svc;
+	service = new(*getDefaultMemoryPool()) svc;
 /* FREE: by SETJMP handler */
 	if (!service)
 		ERR_post(isc_virmemexh, 0);
