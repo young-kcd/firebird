@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.61 2003-06-30 13:11:40 alexpeshkoff Exp $
+$Id: met.epp,v 1.61.2.1 2003-11-03 21:40:38 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -231,8 +231,6 @@ void adjust_dependencies(JRD_PRC procedure) {
 					// Mark it and all dependent procedures as undeletable
 					adjust_dependencies(procedure); 
 				}
-				else
-					procedure->prc_int_use_count=-1;
 			}
 		}
 	}
