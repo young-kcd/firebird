@@ -1123,7 +1123,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	
 /* Measure transaction savepoint size if there is one. We'll use it for undo
   only if it is small enough */
-	ssize_t count = SAV_LARGE;
+	IPTR count = SAV_LARGE;
 	if (tran_sav) {
 		for (const Savepoint* temp = transaction->tra_save_point; temp;
 			temp = temp->sav_next)

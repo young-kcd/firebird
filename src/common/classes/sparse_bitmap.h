@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.1 2004-09-28 06:28:38 skidder Exp $
+ *  $Id: sparse_bitmap.h,v 1.2 2004-09-28 21:50:07 skidder Exp $
  *
  */
 
@@ -192,11 +192,11 @@ public:
 	}
 
  	// Compute the union of two bitmaps. 
-	// Note: this method DEALLOCATES one of the bitmaps and returns another as result!
+	// Note: this method uses one of the bitmaps to return result
 	static SparseBitmap* bit_or(SparseBitmap* s1, SparseBitmap* s2);
 
  	// Compute the intersection of two bitmaps.
-	// Note: this method DEALLOCATES one of the bitmaps and returns another as result!
+	// Note: this method uses one of the bitmaps to return result
 	static SparseBitmap* bit_and(SparseBitmap* s1, SparseBitmap* s2);
 
 protected:
@@ -403,6 +403,7 @@ public:
 
 			// Bucket must contain one bit at least
 			fb_assert(false);
+			return false;
 		}
 
 		// If method returns false it means list is empty and 

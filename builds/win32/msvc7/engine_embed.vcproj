@@ -349,9 +349,6 @@
 				RelativePath="..\..\..\src\jrd\rse.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sbm.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\sch.cpp">
 			</File>
 			<File
@@ -906,9 +903,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sbm.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sbm_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sch_proto.h">

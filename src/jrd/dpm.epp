@@ -1278,7 +1278,6 @@ ULONG DPM_get_blob(thread_db* tdbb,
 #endif
 
 /* Find starting point */
-	SLONG sequence;
 	USHORT pp_sequence;
 	SSHORT slot, line;
 

@@ -152,7 +152,7 @@ inline void clearRecordStack(RecordStack& stack)
 	}
 }
 
-ssize_t VIO_savepoint_large(const Savepoint* savepoint, ssize_t size)
+IPTR VIO_savepoint_large(const Savepoint* savepoint, IPTR size)
 {
 /**************************************
  *
@@ -173,7 +173,7 @@ ssize_t VIO_savepoint_large(const Savepoint* savepoint, ssize_t size)
  *
  *  - Function stops counting when return value gets negative.
  *
- *  - We use ssize_t, not SLONG to care of case when user savepoint gets very,
+ *  - We use IPTR, not SLONG to care of case when user savepoint gets very,
  *   very big on 64-bit machine. Its size may overflow 32 significant bits of
  *   SLONG in this case
  *

@@ -173,6 +173,9 @@
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\utils.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
