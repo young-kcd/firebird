@@ -78,7 +78,7 @@ static void raw_ada(STR);
 static void raw_cobol(STR);
 static void raw_ftn(STR);
 
-static FILE *output_file;
+static FILE* output_file;
 
 static inline void check_dyn(str* dyn, const int l)
 {
@@ -88,6 +88,19 @@ static inline void check_dyn(str* dyn, const int l)
 		DDL_error_abort( NULL, 320, NULL, NULL, NULL, NULL, NULL );
 	}
 }
+
+// CVC: These two overloaded functions made to solve ugly warnings after Blas
+//  dropped gdsold.cpp and the typed isc_dyn_ constants disappeared.
+static inline void put_symbol(STR dyn, int attribute, SYM symbol)
+{
+	put_symbol(dyn, static_cast<TEXT>(attribute), symbol);
+}
+
+static inline void put_number( STR dyn, int attribute, SSHORT number)
+{
+	put_number(dyn, static_cast<TEXT>(attribute), number);
+}
+
 
 static const char* const FOPEN_WRITE_TYPE	= "w";
 
@@ -104,11 +117,9 @@ void TRN_translate(void)
  *	Translate from internal data structures into dynamic DDL.
  *
  **************************************/
-	ACT action;
-	USHORT length;
-	str d;
 
 /* Start by reversing the set of actions */
+	str d;
 	str* dyn = &d;
 	dyn->str_current = dyn->str_start =
 		reinterpret_cast<UCHAR*>(gds__alloc(8192));
@@ -133,7 +144,7 @@ void TRN_translate(void)
 	dyn->add_byte(isc_dyn_version_1);
 	dyn->add_byte(isc_dyn_begin);
 
-	for (action = dudleyGlob.DDL_actions; action; action = action->act_next)
+	for (ACT action = dudleyGlob.DDL_actions; action; action = action->act_next)
 		if (!(action->act_flags & ACT_ignore))
 			switch (action->act_type) {
 			case act_c_database:
@@ -260,6 +271,8 @@ void TRN_translate(void)
 	check_dyn(dyn, 2);
 	dyn->add_byte(isc_dyn_end);
 	dyn->add_byte(isc_dyn_eoc);
+
+	USHORT length;
 
 	switch (dudleyGlob.language) {
 	case lan_undef:
