@@ -1,3 +1,28 @@
+2004-07-17 02:13  skidder
+
+	* firebird2/src/: common/classes/tree.h (1.37), jrd/met.epp
+	(1.132):
+	
+	size_t is more correct type for container sizes and indices
+
+2004-07-17 01:06  skidder
+
+	* firebird2/src/: common/classes/array.h (1.28),
+	common/classes/objects_array.h (1.12), common/classes/tree.h
+	(1.36), common/classes/vector.h (1.11),
+	common/config/config_file.cpp (1.23), dsql/pass1.cpp (1.152),
+	jrd/cmp.cpp (1.137), jrd/intl.cpp (1.69), jrd/plugin_manager.cpp
+	(1.19), jrd/rpb_chain.cpp (1.10), jrd/tra.cpp (1.83):
+	
+	size_t is more correct type for container sizes and indices
+
+2004-07-16 03:30  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp (1.99):
+	
+	When we ignore NULLs in the index then we must already skip them
+	very efficiently from the start.
+
 2004-07-16 01:01  arnobrinkman
 
 	* firebird2/src/jrd/: btr.cpp (1.98), btr.h (1.33), opt.cpp
