@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: fb_tls.h,v 1.6 2004-05-09 05:47:44 robocop Exp $
+ *  $Id: fb_tls.h,v 1.7 2004-06-16 12:33:13 kkuznetsov Exp $
  *
  */
  
@@ -99,6 +99,8 @@ private:
 #endif
 #else
 
+#if not (defined SOLARIS)
+
 #include <pthread.h>
 
 namespace Firebird {
@@ -127,6 +129,51 @@ public:
 private:
 	pthread_key_t key;	
 };
+#else //SOLARIS
+#include <thread.h>
+#include <string.h>
+
+namespace Firebird {
+
+
+template <typename T>
+class TlsValue {
+public:
+	static void  TlsV_on_thread_exit (void * pval) {
+	/* Usually should delete pval like this
+		T * ptempT= (T*) pval ;
+		delete ptempT;
+	*/
+
+	}
+
+	TlsValue() {
+		if (thr_keycreate(&key, TlsV_on_thread_exit) )
+			system_call_failed::raise("thr_key_create");
+	}
+	const T get() {
+		// We use double C-style cast to allow using scalar datatypes
+		// with sizes up to size of pointer without warnings
+		T  * valuep;
+		if (thr_getspecific(key, (void **) &valuep) == 0)
+			return (T)(IPTR) (valuep) ;
+		else
+			system_call_failed::raise("thr_getspecific");
+			return (T)NULL;
+	}
+	void set(const T value) {
+		if (thr_setspecific(key, (void*)(IPTR)value))
+			system_call_failed::raise("thr_setspecific");
+	}
+	~TlsValue() {
+		/* Do nothing if no pthread_key_delete */
+	}
+private:
+	thread_key_t key;	
+};
+
+
+#endif //SOLARIS
 
 } // namespace Firebird
 
