@@ -252,7 +252,7 @@ void CNTL_shutdown_service( TEXT * message)
 	char *strings[2];
 	HANDLE event_source;
 
-	sprintf(buffer, "%s error: %d", "Firebird Server", GetLastError());
+	sprintf(buffer, "%s error: %lu", "Firebird Server", GetLastError());
 
 	event_source = RegisterEventSource(NULL, "Firebird Server");
 	if (event_source) {

@@ -653,7 +653,7 @@ BOOL CanEndServer(HWND hWnd, BOOL bSysExit)
 
 	JRD_num_attachments(NULL, 0, 0, &usNumAtt, &usNumDbs);
 
-	sprintf(szMsgString, "%lu ", usNumAtt);
+	sprintf(szMsgString, "%u ", usNumAtt);
 
 	if (!usNumAtt)				/* IF 0 CONNECTIONS, JUST SHUTDOWN */
 		return TRUE;

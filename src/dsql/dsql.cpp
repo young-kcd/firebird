@@ -2360,7 +2360,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 			if (node->nod_desc.dsc_dtype == dtype_text)
 				sprintf(s, "constant \"%s\"", node->nod_desc.dsc_address);
 			else
-				sprintf(s, "constant %d",
+				sprintf(s, "constant %ld",
 						*(SLONG *) (node->nod_desc.dsc_address));
 			verb = s;
 		}
@@ -2481,7 +2481,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	}
 
 	if (node->nod_desc.dsc_dtype) {
-		PRINTF("%s%s (%d,%d,%x)\n",
+		PRINTF("%s%s (%d,%d,%p)\n",
 			   buffer, verb,
 			   node->nod_desc.dsc_dtype,
 			   node->nod_desc.dsc_length, node->nod_desc.dsc_address);

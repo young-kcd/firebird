@@ -338,10 +338,10 @@ void PPG_print_log( LIP logp, SLONG page,
 			memcpy(temp, p + 2, logp->log_cp_1.cp_fn_length);
 			temp[logp->log_cp_1.cp_fn_length] = '\0';
 			FPRINTF(outfile, "\t\tFile name:\t%s\n", temp);
-			FPRINTF(outfile, "\t\tPartition offset: %ld ",
+			FPRINTF(outfile, "\t\tPartition offset: %"SLONGFORMAT" ",
 					logp->log_cp_1.cp_p_offset);
-			FPRINTF(outfile, "\tSeqno: %ld ", logp->log_cp_1.cp_seqno);
-			FPRINTF(outfile, "\tOffset: %ld ", logp->log_cp_1.cp_offset);
+			FPRINTF(outfile, "\tSeqno: %"SLONGFORMAT" ", logp->log_cp_1.cp_seqno);
+			FPRINTF(outfile, "\tOffset: %"SLONGFORMAT" ", logp->log_cp_1.cp_offset);
 			FPRINTF(outfile, "\n");
 
 			break;
@@ -351,10 +351,10 @@ void PPG_print_log( LIP logp, SLONG page,
 			memcpy(temp, p + 2, logp->log_cp_2.cp_fn_length);
 			temp[logp->log_cp_2.cp_fn_length] = '\0';
 			FPRINTF(outfile, "\t\tFile name:\t%s\n", temp);
-			FPRINTF(outfile, "\t\tPartition offset: %ld ",
+			FPRINTF(outfile, "\t\tPartition offset: %"SLONGFORMAT" ",
 					logp->log_cp_2.cp_p_offset);
-			FPRINTF(outfile, "\tSeqno: %ld ", logp->log_cp_2.cp_seqno);
-			FPRINTF(outfile, "\tOffset: %ld ", logp->log_cp_2.cp_offset);
+			FPRINTF(outfile, "\tSeqno: %"SLONGFORMAT" ", logp->log_cp_2.cp_seqno);
+			FPRINTF(outfile, "\tOffset: %"SLONGFORMAT" ", logp->log_cp_2.cp_offset);
 			FPRINTF(outfile, "\n");
 
 			break;
@@ -364,17 +364,17 @@ void PPG_print_log( LIP logp, SLONG page,
 			memcpy(temp, p + 2, logp->log_file.cp_fn_length);
 			temp[logp->log_file.cp_fn_length] = '\0';
 			FPRINTF(outfile, "\t\tFile name:\t\t%s\n", temp);
-			FPRINTF(outfile, "\t\tPartition offset: %ld ",
+			FPRINTF(outfile, "\t\tPartition offset: %"SLONGFORMAT" ",
 					logp->log_file.cp_p_offset);
-			FPRINTF(outfile, "\tSeqno: %ld ", logp->log_file.cp_seqno);
-			FPRINTF(outfile, "\tOffset: %ld ", logp->log_file.cp_offset);
+			FPRINTF(outfile, "\tSeqno: %"SLONGFORMAT" ", logp->log_file.cp_seqno);
+			FPRINTF(outfile, "\tOffset: %"SLONGFORMAT" ", logp->log_file.cp_offset);
 			FPRINTF(outfile, "\n");
 
 			break;
 
 		case LOG_chkpt_len:
 			memcpy(&ltemp, p + 2, p[1]);
-			FPRINTF(outfile, "\tCheck Point Length %ld\n", ltemp);
+			FPRINTF(outfile, "\tCheck Point Length %"SLONGFORMAT"\n", ltemp);
 			break;
 
 		case LOG_num_bufs:
@@ -384,12 +384,12 @@ void PPG_print_log( LIP logp, SLONG page,
 
 		case LOG_bufsize:
 			memcpy(&ustemp, p + 2, p[1]);
-			FPRINTF(outfile, "\tWAL buffer Size %ld\n", ustemp);
+			FPRINTF(outfile, "\tWAL buffer Size %u\n", ustemp);
 			break;
 
 		case LOG_grp_cmt_wait:
 			memcpy(&ltemp, p + 2, p[1]);
-			FPRINTF(outfile, "\tGroup Commit Wait Time %ld\n", ltemp);
+			FPRINTF(outfile, "\tGroup Commit Wait Time %"SLONGFORMAT"\n", ltemp);
 			break;
 
 		default:

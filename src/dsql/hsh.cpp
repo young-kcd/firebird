@@ -119,12 +119,12 @@ void HSHD_debug(void)
 			 collision = collision->sym_collision) {
 			/* check any homonyms first */
 
-			ib_fprintf(ib_stderr, "Symbol type %d: %s %x\n",
+			ib_fprintf(ib_stderr, "Symbol type %d: %s %p\n",
 					   collision->sym_type, collision->sym_string,
 					   collision->sym_dbb);
 			for (homptr = collision->sym_homonym; homptr;
 				 homptr = homptr->sym_homonym) {
-				ib_fprintf(ib_stderr, "Homonym Symbol type %d: %s %x\n",
+				ib_fprintf(ib_stderr, "Homonym Symbol type %d: %s %p\n",
 						   homptr->sym_type, homptr->sym_string,
 						   homptr->sym_dbb);
 			}

@@ -491,7 +491,7 @@ ULONG IPS_start_thread(ULONG client_pid)
 		CHAR szBuf[80];
 		DWORD dw = GetLastError();
 
-		sprintf(szBuf, "%s:%s failed: GetLastError returned %u\n",
+		sprintf(szBuf, "%s:%s failed: GetLastError returned %lu\n",
 				"ipserver.c", "DuplicateHandle(server_proc)", dw);
 		gds__log(szBuf);
 	}
@@ -503,7 +503,7 @@ ULONG IPS_start_thread(ULONG client_pid)
 		CHAR szBuf[80];
 		DWORD dw = GetLastError();
 
-		sprintf(szBuf, "%s:%s failed: GetLastError returned %u\n",
+		sprintf(szBuf, "%s:%s failed: GetLastError returned %lu\n",
 				"ipserver.c", "DuplicateHandle(ips_server_proc)", dw);
 		gds__log(szBuf);
 		comm->ips_server_proc = 0;
