@@ -230,9 +230,16 @@ static processing_state parse_arg(int, SCHAR**, SCHAR*, FILE**);
 static SSHORT print_item(TEXT**, XSQLVAR*, SLONG);
 static processing_state print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE);
 static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT*);
-static processing_state print_line(XSQLDA*, const SLONG*, TEXT*);
+static processing_state print_line(XSQLDA*, const SLONG*, TEXT line[]);
+static void print_performance(perf* perf_before);
 static processing_state print_sqlda_input(const bool is_selectable);
 static void print_sqlda_output(const XSQLDA& sqlda);
+static void process_header(const XSQLDA* sqlda, const SLONG pad[], TEXT header[], TEXT header2[]);
+static void process_plan();
+static SLONG process_record_count(const SSHORT statement_type);
+static SSHORT process_request_type();
+static SLONG* process_sqlda_buffer(XSQLDA* const sqlda, SSHORT nullind[]);
+static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], SLONG pad[]);
 static int process_statement(const TEXT*, XSQLDA**);
 static void CLIB_ROUTINE query_abort(int);
 static void strip_quotes(const TEXT*, TEXT*);
@@ -267,7 +274,6 @@ static bool Merge_stderr;
 //static USHORT minor_ods; CVC: We do nothing useful with it!
 
 static collist* global_Cols = NULL;
-static SCHAR statistics[256];
 static indev* Filelist;
 static TEXT Tmpfile[MAXPATHLEN];
 static bool Abort_flag = false;
@@ -375,16 +381,6 @@ static const UCHAR	batch_tpb[] =
 };
 #endif
 
-// InterBase Performance Statistic format Variables 
-
-static perf perf_before, perf_after;
-static bool have_report = false; // translation of report strings
-static TEXT report_1[MSG_LENGTH + MSG_LENGTH];
-#ifdef NOT_USED_OR_REPLACED
-static TEXT report_2[MSG_LENGTH];
-#endif
-static TEXT rec_count_msg[MSG_LENGTH];
-
 // if the action is restrict, do not print anything at all
 static const ri_actions ri_actions_all[] =
 {
@@ -448,9 +444,7 @@ int CLIB_ROUTINE main(int argc,
 	isqlGlob.major_ods = 0;
 	//minor_ods = 0;
 
-	Exit_value = ISQL_main(argc, argv);
-
-	return Exit_value;
+	return ISQL_main(argc, argv);
 }
 
 
@@ -511,8 +505,8 @@ int ISQL_main(int argc,
 
 // Detect if stdin is redirected
 #ifdef WIN_NT
-	HANDLE in = GetStdHandle (STD_INPUT_HANDLE);
-	if (GetFileType (in) == FILE_TYPE_DISK)
+	HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
+	if (GetFileType(in) == FILE_TYPE_DISK)
 		Interactive = false;
 #else
 	if (!isatty(fileno(stdin)))
@@ -1527,10 +1521,10 @@ void ISQL_disconnect_database(bool nQuietMode)
  *
  **************************************/
 
-// Ignore error msgs during disconnect 
+	// Ignore error msgs during disconnect
 	Quiet = nQuietMode;
 
-// If we were in a database, commit before proceding 
+	// If we were in a database, commit before proceding
 	if (DB && (M__trans || D__trans))
 		end_trans();
 
@@ -2010,9 +2004,6 @@ static processing_state add_row(TEXT* tabname)
 
 			readNextInputLine(msg);
 			getColumn = -1; // We are bypassing getNextInputChar().
-			//			ISQL_prompt(msg);
-			//			if (!fgets(buffer, BUFFER_LENGTH512, stdin)
-			//				|| !strlen(buffer)) {
 			if (lastInputLine == NULL || strlen(lastInputLine) == 0) {
 				done = true;
 				break;
@@ -2602,12 +2593,12 @@ static processing_state copy_table(TEXT* source,
 
 	TEXT errbuf[MSG_LENGTH];
 
-/* Call list_table with a temporary file, then hand that file to a
-   new version of isql */
+	// Call list_table with a temporary file, then hand that file to a
+	// new version of isql
 
 	FILE* const holdout = isqlGlob.Out;
 
-// If there is an alternate database, extract the domains 
+	// If there is an alternate database, extract the domains
 	const bool domain_flag = otherdb[0];
 
 	TEXT ftmp[MAXPATHLEN];
@@ -3101,12 +3092,11 @@ static void do_isql()
 			/* fb_assert (FALSE);  -- removed as finds too many problems */
 		case ERR:
 		case FAIL:
-			{
-				Exit_value = FINI_ERROR;
-				if (!Interactive && BailOnError)
-					Abort_flag = true;
-			}
+			Exit_value = FINI_ERROR;
+			if (!Interactive && BailOnError)
+				Abort_flag = true;
 			break;
+
 		case SKIP:
 			break;
 		}
@@ -3126,8 +3116,6 @@ static void do_isql()
 
 	if (global_sqlda)
 		ISQL_FREE(global_sqlda);
-	//if (Filelist)
-	//	ISQL_FREE(Filelist);
 	// CVC: If we were halt by an error and Bail, we have pending cleanup.
 	while (Filelist)
 	{
@@ -3148,8 +3136,6 @@ static void do_isql()
 		global_Cols = global_Cols->collist_next;
 		ISQL_FREE(p);
 	}
-	if (Exit_value == FINI_ERROR)
-		exit(Exit_value);
 }
 
 
@@ -3290,9 +3276,7 @@ static processing_state end_trans()
 			ISQL_msg_get(COMMIT_PROMPT, sizeof(infobuf), infobuf, NULL);
 			readNextInputLine(infobuf);
 			getColumn = -1; // We are bypassing getNextInputChar().
-			//			ISQL_prompt(infobuf);
-			//			fgets(buffer, BUFFER_LENGTH80, stdin);
-			if (lastInputLine && isyesno(lastInputLine)) {	// check for Yes answer 
+			if (lastInputLine && isyesno(lastInputLine)) {	// check for Yes answer
 				ISQL_msg_get(COMMIT_MSG, sizeof(infobuf), infobuf, NULL);
 				STDERROUT(infobuf);
 				if (DB && M__trans) {
@@ -3313,7 +3297,6 @@ static processing_state end_trans()
 					}
 				}
 			}
-			getColumn = -1;
 		}
 		else {					// No answer, just roll back by default 
 
@@ -3343,7 +3326,7 @@ static processing_state end_trans()
 			ret = FAIL;
 		}
 	}
-	return (ret);
+	return ret;
 }
 
 
@@ -3667,11 +3650,11 @@ static processing_state frontend(const TEXT* statement)
 	else						// Didn't match, it must be SQL 
 		ret = CONT;
 
-// In case any default transaction was started - commit it here 
+	// In case any default transaction was started - commit it here
 	if (gds_trans)
 		commit_trans(&gds_trans);
 
-// Free the frontend command 
+	// Free the frontend command
 	frontend_free_parms(parms, lparms);
 
 	if (ret == ERR) {
@@ -3682,7 +3665,7 @@ static processing_state frontend(const TEXT* statement)
 		STDERROUT(errbuf);
 	}
 
-	return (ret);
+	return ret;
 }
 
 
@@ -3983,7 +3966,7 @@ static processing_state get_statement(TEXT* const statement,
  * Functional description
  *	Get an SQL statement, or QUIT/EXIT command to process
  *
- *	Arguments:  Pointer to statement, and size of statement_buffer
+ *	Arguments:  Pointer to statement, size of statement_buffer and prompt msg.
  *
  **************************************/
 	processing_state ret = CONT;
@@ -3995,8 +3978,6 @@ static processing_state get_statement(TEXT* const statement,
 
 	if (Interactive && !Input_file || Echo) {
 		ISQL_prompt(statement_prompt);
-		//		fprintf(stdout, statement_prompt);
-		//		fflush(stdout);
 	}
 
 // Clear out statement buffer 
@@ -4113,11 +4094,10 @@ static processing_state get_statement(TEXT* const statement,
 			break;
 
 		case '*':
-			/* Could this the be start of a comment.  We can only look back,
-			   **   not forward
-			   * ignore possibilities of a comment beginning inside
-			   * quoted strings.
-			 */
+			// Could this the be start of a comment.  We can only look back,
+			// not forward.
+			// Ignore possibilities of a comment beginning inside
+			// quoted strings.
 			if (state == normal && count > 0 && (*(p - 1) == '/'))
 			{
 				state = in_comment;
@@ -4127,10 +4107,9 @@ static processing_state get_statement(TEXT* const statement,
 			break;
 
 		case '/':
-			/* Perhaps this is the end of a comment
-			   * ignore possibilities of a comment ending inside
-			   * quoted strings.
-			 */
+			// Perhaps this is the end of a comment.
+			// Ignore possibilities of a comment ending inside
+			// quoted strings.
 			if (state == in_comment && (*(p - 1) == '*'))
 			{
 				state = normal;
@@ -4219,9 +4198,8 @@ static processing_state get_statement(TEXT* const statement,
 
 	if (ret == CONT) {
 
-		/* Place each non frontend statement in the temp file if we are reading
-		   ** from stdin.  Add newline to make the file more readable
-		 */
+		// Place each non frontend statement in the temp file if we are reading
+		// from stdin.  Add newline to make the file more readable.
 
 		if (Ifp.indev_fpointer == stdin) {
 			fputs(statement, Ofp);
@@ -4295,7 +4273,8 @@ static void get_str(const TEXT* const input_str,
 		TEXT delimited_char = *b1;
 		b1++;
 		bool done = false;
-		while (!done) {
+		while (!done) 
+		{
 			if (*b1 == delimited_char) {
 				b1++;
 				if (*b1 == delimited_char)
@@ -4320,7 +4299,7 @@ static void get_str(const TEXT* const input_str,
 				*str_flag = INCOMPLETE_STRING;
 				done = true;
 			}
-		}						// end of while (!done) 
+		}
 	}
 }
 
@@ -4432,10 +4411,8 @@ void ISQL_get_version(bool call_by_create_db)
 			}
 			break;
 		case isc_info_error:
-			/*
-			   ** Error indicates an option was not understood by the
-			   ** remote server.
-			 */
+			// Error indicates an option was not understood by the
+			// remote server.
 			if (*p == isc_info_firebird_version) {
 				// must be an old or non Firebird server 
 				break;
@@ -4880,17 +4857,14 @@ static processing_state input(const TEXT* infile)
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
 
-// Set up editing command for shell
-	const TEXT* file = infile;
-
-// If there is no file name specified, return error
-	if (!file || !*file) {
-		return (ERR);
+	// If there is no file name specified, return error
+	if (!infile || !*infile) {
+		return ERR;
 	}
 
 	TEXT path[MAXPATHLEN];
 	strip_quotes(infile, path);
-	file = path;
+	const TEXT* file = path;
 
 /* filelist is a linked list of file pointers.  We must add a node to
 ** the linked list before discarding the current Ifp.
@@ -4912,7 +4886,7 @@ static processing_state input(const TEXT* infile)
 	}
 
 	Input_file = true;
-	return (SKIP);
+	return SKIP;
 }
 
 
@@ -5043,7 +5017,7 @@ static processing_state newdb(TEXT* dbname,
 	if (!(strlen(local_numbufs)) && has_global_numbufs)
 		strcpy(local_numbufs, global_Numbufs);
 
-// Build up a dpb
+	// Build up a dpb
 	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
 	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)) {
@@ -5183,7 +5157,7 @@ static processing_state newdb(TEXT* dbname,
 		global_Stmt = 0;
 	}
 
-	return (SKIP);
+	return SKIP;
 }
 
 
@@ -5331,7 +5305,7 @@ static processing_state newtrans(const TEXT* statement)
 
 	M__trans = 0;
 
-// M__trans = 0 after the commit or rollback. ready for a new transaction 
+	// M__trans = 0 after the commit or rollback. Ready for a new transaction
 
 	if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0, statement,
 								   isqlGlob.SQL_dialect, NULL))
@@ -6236,7 +6210,7 @@ static void print_item_numeric(SINT64 value,
 
 static processing_state print_line(XSQLDA* sqlda,
 					  const SLONG* pad,
-					  TEXT* line)
+					  TEXT line[])
 {
 /**************************************
  *
@@ -6309,7 +6283,36 @@ static processing_state print_line(XSQLDA* sqlda,
 			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 	}
-	return (CONT);
+	return CONT;
+}
+
+
+// *********************************
+// p r i n t _ p e r f o r m a n c e
+// *********************************
+// As the name implies, show performance as extracted from the API routines.
+static void print_performance(perf* perf_before)
+{
+	// Translation of report strings. Do not remove "static" modifier.
+	static bool have_report = false;
+	static TEXT report_1[MSG_LENGTH + MSG_LENGTH];
+	
+	perf perf_after;
+	perf_get_info(&DB, &perf_after);
+	if (!have_report) {
+		ISQL_msg_get(REPORT1, report_1, NULL);
+		// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n
+		ISQL_msg_get(REPORT2, &report_1[strlen(report_1)], NULL);
+		/* For GUI_TOOLS:  Buffers = !b\nReads = !r\nWrites = !w\nFetches
+		   = !f\n */
+		/* Else:  Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetch
+		   es = !f\n */
+		have_report = true;
+	}
+	SCHAR statistics[256];
+	perf_format(perf_before, &perf_after, report_1, statistics, NULL);
+	sprintf(Print_buffer, "%s%s", statistics, NEWLINE);
+	ISQL_printf(Diag, Print_buffer);
 }
 
 
@@ -6430,6 +6433,322 @@ static void print_sqlda_output(const XSQLDA& sqlda)
 }
 
 
+// ***************************
+// p r o c e s s _ h e a d e r
+// ***************************
+// Write into buffers the information that will be printed as page header for
+// statements that return data.
+static void process_header(const XSQLDA* sqlda, const SLONG pad[], TEXT header[], TEXT header2[])
+{
+	// Create the column header :  Left justify strings
+
+	TEXT* p = header;
+	TEXT* p2 = header2;
+	int i = 0;
+	const XSQLVAR* var = sqlda->sqlvar;
+	for (const XSQLVAR* const end = var + sqlda->sqld; var < end;
+		 var++, i++)
+	{
+		const SSHORT type = var->sqltype & ~1;
+		if (type == SQL_TEXT || type == SQL_VARYING)
+			sprintf(p, "%-*.*s ", (int) pad[i], (int) pad[i], var->aliasname);
+		else
+			sprintf(p, "%*s ", (int) pad[i], var->aliasname);
+		// Separators need not go on forever no more than a line
+		for (size_t j = 1; j < strlen(p) && j < 80; j++)
+			*p2++ = '=';
+		*p2++ = BLANK;
+		p += strlen(p);
+	}
+	*p2 = '\0';
+}
+
+
+// ***********************
+// p r o c e s s _ p l a n
+// ***********************
+// Retrieve and show the server's execution plan.
+// We don't consider critical a failure to get the plan, so we don't return
+// any result to the caller.
+static void process_plan()
+{
+	// Bug 7565: A plan larger than plan_buffer will not be displayed
+	// Bug 7565: Note also that the plan must fit into Print_Buffer
+
+	const SCHAR plan_info[] = { isc_info_sql_get_plan };
+	TEXT plan_buffer[PRINT_BUFFER_LENGTH];
+	memset(plan_buffer, 0, PRINT_BUFFER_LENGTH);
+	if (isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(plan_info), plan_info,
+						  PRINT_BUFFER_LENGTH, plan_buffer))
+	{
+		ISQL_errmsg(isc_status);
+	}
+	else if (plan_buffer[0] == isc_info_sql_get_plan) {
+		const int l =
+			gds__vax_integer(reinterpret_cast<const UCHAR*>(plan_buffer) + 1, 2);
+		sprintf(Print_buffer, "%.*s%s", l, plan_buffer + 3, NEWLINE);
+		ISQL_printf(Diag, Print_buffer);
+	}
+}
+
+
+// ***************************************
+// p r o c e s s _ r e c o r d _ c o u n t
+// ***************************************
+// Get number of records affected for updates, deletions and insertions.
+// Return -1 if the statement is not one of those or if there's an error
+// retrieving the information from the server.
+static SLONG process_record_count(const SSHORT statement_type)
+{
+	UCHAR count_type = 0;
+
+	// Skip selects, better to count records incoming later
+	switch (statement_type)
+	{
+	case isc_info_sql_stmt_update:
+		count_type = isc_info_req_update_count;
+		break;
+	case isc_info_sql_stmt_delete:
+		count_type = isc_info_req_delete_count;
+		break;
+	case isc_info_sql_stmt_insert:
+		count_type = isc_info_req_insert_count;
+		break;
+	}
+
+	if (count_type) {
+		const SCHAR count_info[] = { isc_info_sql_records };
+		SCHAR count_buffer[33];
+		if (isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(count_info),
+						  count_info, sizeof(count_buffer),
+						  count_buffer))
+		{
+			ISQL_errmsg(isc_status);
+			return -1;
+		}
+
+		const UCHAR* p = reinterpret_cast<const UCHAR*>(count_buffer + 3);
+		while (*p != isc_info_end)
+		{
+			const UCHAR count_is = *p++;
+			const SSHORT l = gds__vax_integer(p, 2);
+			p += 2;
+			const SLONG count = gds__vax_integer(p, l);
+			p += l;
+			if (count_is == count_type)
+				return count;
+		}
+	}
+	return -1;
+}
+
+
+// ***************************************
+// p r o c e s s _ r e q u e s t _ t y p e
+// ***************************************
+// Retrieve the statement type according to the DSQL layer.
+// A failure is indicated by returning zero.
+static SSHORT process_request_type()
+{
+	const SCHAR sqlda_info[] = { isc_info_sql_stmt_type };
+	SCHAR info_buffer[16];
+	if (isc_dsql_sql_info (isc_status, &global_Stmt, sizeof (sqlda_info), sqlda_info,
+						   sizeof (info_buffer), info_buffer))
+	{
+		ISQL_errmsg (isc_status);
+	}
+	else {
+		if (info_buffer[0] == isc_info_sql_stmt_type) {
+		    const UCHAR* b = reinterpret_cast<const UCHAR*>(info_buffer);
+			const SSHORT l = gds__vax_integer(b + 1, 2);
+			return (SSHORT) gds__vax_integer(b + 3, l);
+		}
+
+		//ISQL_msg_get(UNKNOWN_STATEMENT_TYPE, errmsg, NULL);
+		STDERROUT("Cannot determine statement type");
+	}
+	return 0;
+}
+
+
+// ***************************************
+// p r o c e s s _ s q l d a _ b u f f e r
+// ***************************************
+// Generate the buffer for sqlda output and assign the null indicators already created.
+// The caller should deallocate the returned buffer after using it.
+static SLONG* process_sqlda_buffer(XSQLDA* const sqlda, SSHORT nullind[])
+{
+	SLONG bufsize = 0;
+	SSHORT* nullp = nullind;
+	XSQLVAR* var = sqlda->sqlvar;
+	for (const XSQLVAR* const end = var + sqlda->sqld; var < end; var++) {
+		// Allocate enough space for all the sqldata and null pointers
+
+		const SSHORT type = var->sqltype & ~1;
+		USHORT alignment, data_length;
+		alignment = data_length = var->sqllen;
+
+		// special case db_key alignment which arrives as an SQL_TEXT
+		/* Bug 8562:  since DB_KEY arrives as SQL_TEXT, we need to account
+		   for the null character at the end of the string */
+		if (!strncmp(var->sqlname, "DB_KEY", 6)) {
+			alignment = 8;
+			// Room for null string terminator
+			data_length++;
+		}
+		else
+			// Special alignment cases
+		if (type == SQL_TEXT) {
+			alignment = 1;
+			// Room for null string terminator
+			data_length++;
+		}
+		else if (type == SQL_VARYING) {
+			alignment = sizeof(SSHORT);
+			// Room for a null string terminator for display
+			data_length += sizeof(SSHORT) + 1;
+		}
+
+		bufsize = FB_ALIGN(bufsize, alignment) + data_length;
+		var->sqlind = nullp++;
+	}
+
+	// Buffer for reading data from the fetch
+	if (bufsize) {
+		SLONG* buffer = (SLONG*) ISQL_ALLOC ((SLONG) bufsize);
+		memset(buffer, 0, (size_t) bufsize);
+		return buffer;
+	}
+	return 0;
+}
+
+
+// *****************************************
+// p r o c e s s _ s q l d a _ d i s p l a y
+// *****************************************
+// Calculate individual column widths and return total line width.
+// Assign previously allocated buffer in pieces to every XSQLVAR.
+static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], SLONG pad[])
+{
+	SLONG linelength = 0;
+	SLONG offset = 0;
+	int i = 0;
+	XSQLVAR* var = sqlda->sqlvar;
+	for (const XSQLVAR* const end = var + sqlda->sqld; var < end;
+		 var++, i++)
+	{
+		/* record the length of name and var, then convert to print
+		   **   length , later to be stored in pad array
+		 */
+
+		USHORT data_length, disp_length, alignment;
+		data_length = disp_length = alignment = var->sqllen;
+		SSHORT namelength = var->aliasname_length;
+
+		/* minimum display length should not be less than that needed
+		   ** for displaying null
+		 */
+
+		if (namelength < NULL_DISP_LEN)
+			namelength = NULL_DISP_LEN;
+
+		const SSHORT type = var->sqltype & ~1;
+
+		switch (type) {
+		case SQL_BLOB:
+		case SQL_ARRAY:
+			// enough room for the blob id to print
+
+			disp_length = 17;
+			break;
+		case SQL_TIMESTAMP:
+			if (Time_display || isqlGlob.SQL_dialect > SQL_DIALECT_V5)
+				disp_length = DATETIME_LEN;
+			else
+				disp_length = DATE_ONLY_LEN;
+			break;
+		case SQL_TYPE_TIME:
+			disp_length = TIME_ONLY_LEN;
+			break;
+		case SQL_TYPE_DATE:
+			disp_length = DATE_ONLY_LEN;
+			break;
+		case SQL_FLOAT:
+			disp_length = FLOAT_LEN;
+			break;
+		case SQL_DOUBLE:
+			disp_length = DOUBLE_LEN;
+			break;
+		case SQL_TEXT:
+			alignment = 1;
+			data_length++;
+			// OCTETS data is displayed in hex
+			if (var->sqlsubtype == 1)
+				disp_length = 2 * var->sqllen;
+			break;
+		case SQL_VARYING:
+			data_length += sizeof(USHORT) + 1;
+			alignment = sizeof(USHORT);
+			// OCTETS data is displayed in hex
+			if (var->sqlsubtype == 1)
+				disp_length = 2 * var->sqllen;
+			break;
+		case SQL_SHORT:
+			disp_length = SHORT_LEN;
+			break;
+		case SQL_LONG:
+			disp_length = LONG_LEN;
+			break;
+		case SQL_INT64:
+			disp_length = INT64_LEN;
+			break;
+#ifdef NATIVE_QUAD
+		case SQL_QUAD:
+			disp_length = QUAD_LEN;
+			break;
+#endif
+		default:
+			disp_length = UNKNOWN_LEN;
+			break;
+		}
+
+		// special case db_key alignment which arrives as an SQL_TEXT
+
+		if (!strncmp(var->sqlname, "DB_KEY", 6)) {
+			alignment = 8;
+			disp_length = 2 * var->sqllen;
+		}
+
+		// This is the print width of each column
+
+		pad[i] = (disp_length > namelength ? disp_length : namelength);
+
+		// Is there a collist entry, then use that width, but only for text
+		if (type == SQL_TEXT || type == SQL_VARYING)
+		{
+			collist* pc = global_Cols;
+			while (pc) {
+				if (!strcmp(var->aliasname, pc->col_name)) {
+					pad[i] = pc->col_len;
+					break;
+				}
+				pc = pc->collist_next;
+			}
+		}
+		// The total line length
+
+		linelength += pad[i] + 1;
+
+		// Allocate space in buffer for data
+
+		offset = FB_ALIGN(offset, alignment);
+		var->sqldata = (SCHAR*) buffer + offset;
+		offset += data_length;
+	}
+	return linelength;
+}
+
+
 static int process_statement(const TEXT* string,
 							 XSQLDA** sqldap)
 {
@@ -6445,12 +6764,9 @@ static int process_statement(const TEXT* string,
  *	than embedded dynamic statements.  The user request
  *	is placed on transaction M__trans, while all
  *	background work is on the default gds_trans.
- *	This function now returns CONT (success) or ERR
+ *	This function now returns CONT (success) or ERR.
  **************************************/
 	processing_state ret = CONT;
-	static const SCHAR sqlda_info[] = { isc_info_sql_stmt_type };
-	static const SCHAR plan_info[] = { isc_info_sql_get_plan };
-	static const SCHAR count_info[] = { isc_info_sql_records };
 
 // We received the address of the sqlda in case we realloc it 
 	XSQLDA* sqlda = *sqldap;
@@ -6471,6 +6787,7 @@ static int process_statement(const TEXT* string,
 
 // If statistics are requested, then reserve them here 
 
+	perf perf_before;
 	if (Stats)
 		perf_get_info(&DB, &perf_before);
 
@@ -6499,30 +6816,12 @@ static int process_statement(const TEXT* string,
 		return ERR;
 	}
 
-// check for warnings 
+	// check for warnings
 	if (isc_status[2] == isc_arg_warning)
 		ISQL_warning(isc_status);
 
 	// Find out what kind of statement this is 
-	SSHORT statement_type = 0;
-	SCHAR info_buffer[16];
-	if (isc_dsql_sql_info (isc_status, &global_Stmt, sizeof (sqlda_info), sqlda_info,
-						   sizeof (info_buffer), info_buffer))
-	{
-		ISQL_errmsg (isc_status);
-	}
-	else {
-		if (info_buffer[0] == isc_info_sql_stmt_type) {
-		    const UCHAR* b = reinterpret_cast<const UCHAR*>(info_buffer);
-			const SSHORT l = gds__vax_integer(b + 1, 2);
-			statement_type = gds__vax_integer(b + 3, l);
-		}
-		else
-		{
-			//ISQL_msg_get(UNKNOWN_STATEMENT_TYPE, errmsg, NULL);
-			STDERROUT("Cannot determine statement type");
-		}
-	}
+	const SSHORT statement_type = process_request_type();
 	if (!statement_type)
 		return ERR;
 
@@ -6549,27 +6848,10 @@ static int process_statement(const TEXT* string,
 	// if PLAN is set, print out the plan now 
 
 	if (Plan) {
-		// Bug 7565: A plan larger than plan_buffer will not be displayed 
-		// Bug 7565: Note also that the plan must fit into Print_Buffer 
-
-		TEXT* plan_buffer = (SCHAR*) ISQL_ALLOC(PRINT_BUFFER_LENGTH);
-		memset(plan_buffer, 0, PRINT_BUFFER_LENGTH);
-		if (isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(plan_info), plan_info,
-							  PRINT_BUFFER_LENGTH, plan_buffer))
-		{
-			ISQL_errmsg(isc_status);
-		}
-		else if (plan_buffer[0] == isc_info_sql_get_plan) {
-			const SSHORT l =
-				gds__vax_integer(reinterpret_cast<const UCHAR*>(plan_buffer) + 1, 2);
-			sprintf(Print_buffer, "%.*s%s", l, plan_buffer + 3, NEWLINE);
-			ISQL_printf(Diag, Print_buffer);
-		}
-		ISQL_FREE(plan_buffer);
-
+		process_plan();
 		if (Planonly && !is_selectable)
 		{
-			return ret;	// do not execute 
+			return ret;	// do not execute
 		}
 	}
 
@@ -6644,60 +6926,20 @@ static int process_statement(const TEXT* string,
 		// Print statistics report 
 
 		if (Docount) {
-			UCHAR count_type = 0;
-			SLONG count = 0;
-
-			if (statement_type == isc_info_sql_stmt_update)
-				count_type = isc_info_req_update_count;
-
-			if (statement_type == isc_info_sql_stmt_delete)
-				count_type = isc_info_req_delete_count;
-
-			// Skip selects, better to count records incoming later 
-
-			if (statement_type == isc_info_sql_stmt_insert)
-				count_type = isc_info_req_insert_count;
-
-			if (count_type) {
-				SCHAR count_buffer[33];
-				isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(count_info),
-								  count_info, sizeof(count_buffer),
-								  count_buffer);
-
-				const UCHAR* p = reinterpret_cast<const UCHAR*>(count_buffer + 3);
-				while (*p != isc_info_end) {
-					const UCHAR count_is = *p++;
-					const SSHORT l = gds__vax_integer(p, 2);
-					p += 2;
-					count = gds__vax_integer(p, l);
-					p += l;
-					if (count_is == count_type)
-						break;
-				}
+			const SLONG count = process_record_count(statement_type);
+			if (count >= 0)
+			{
+				TEXT rec_count_msg[MSG_LENGTH];
 				ISQL_msg_get(REC_COUNT, rec_count_msg, (TEXT*)(IPTR) count);
-				// Records affected: %ld 
+				// Records affected: %ld
 				sprintf(Print_buffer, "%s%s", rec_count_msg, NEWLINE);
 				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 		}
 
-		if (Stats) {
-			perf_get_info(&DB, &perf_after);
-			if (!have_report) {
-				ISQL_msg_get(REPORT1, report_1, NULL);
-				// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n 
-				ISQL_msg_get(REPORT2, &report_1[strlen(report_1)], NULL);
-				/* For GUI_TOOLS:  Buffers = !b\nReads = !r\nWrites = !w\nFetches
-				   = !f\n */
-				/* Else:  Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetch
-				   es = !f\n */
-				have_report = true;
-			}
-			perf_format(&perf_before, &perf_after, report_1, statistics, NULL);
-			sprintf(Print_buffer, "%s%s", statistics, NEWLINE);
-			ISQL_printf(Diag, Print_buffer);
-		}
-		return (ret);
+		if (Stats)
+			print_performance(&perf_before);
+		return ret;
 	}
 
 	const SSHORT n_cols = sqlda->sqld;
@@ -6766,179 +7008,18 @@ static int process_statement(const TEXT* string,
 		nullind = (SSHORT*) ISQL_ALLOC((SLONG) (n_cols * sizeof(SSHORT)));
 	}
 
-	SLONG* buffer = NULL;
-	{ // scope
-		SLONG bufsize = 0;
-		SSHORT* nullp = nullind;
-		XSQLVAR* var = sqlda->sqlvar;
-		for (const XSQLVAR* const end = var + sqlda->sqld; var < end; var++) {
-			// Allocate enough space for all the sqldata and null pointers
+	SLONG* buffer = process_sqlda_buffer(sqlda, nullind);
 
-			const SSHORT type = var->sqltype & ~1;
-			USHORT alignment, data_length;
-			alignment = data_length = var->sqllen;
-
-			// special case db_key alignment which arrives as an SQL_TEXT
-			/* Bug 8562:  since DB_KEY arrives as SQL_TEXT, we need to account
-			   for the null character at the end of the string */
-			if (!strncmp(var->sqlname, "DB_KEY", 6)) {
-				alignment = 8;
-				// Room for null string terminator
-				data_length++;
-			}
-			else
-				// Special alignment cases
-			if (type == SQL_TEXT) {
-				alignment = 1;
-				// Room for null string terminator
-				data_length++;
-			}
-			else if (type == SQL_VARYING) {
-				alignment = sizeof(SSHORT);
-				// Room for a null string terminator for display
-				data_length += sizeof(SSHORT) + 1;
-			}
-
-			bufsize = FB_ALIGN(bufsize, alignment) + data_length;
-			var->sqlind = nullp++;
-		}
-
-		// Buffer for reading data from the fetch
-		if (bufsize) {
-			buffer = (SLONG*) ISQL_ALLOC ((SLONG) bufsize);
-			memset(buffer, 0, (size_t) bufsize);
-		}
-	} // scope
-	
 	// Pad is an array of lengths to be passed to the print_item
 	SLONG* pad = NULL;
 	if (sqlda->sqld) {
 		pad = (SLONG*) ISQL_ALLOC ((SLONG) (sqlda->sqld * sizeof (SLONG)));
 	}
 
-    SLONG linelength = 0;
-	{ // scope
-		SLONG offset = 0;
-		int i = 0;
-		XSQLVAR* var = sqlda->sqlvar;
-		for (const XSQLVAR* const end = var + sqlda->sqld; var < end;
-			 var++, i++)
-		{
-			/* record the length of name and var, then convert to print
-			   **   length , later to be stored in pad array
-			 */
+	// Calculate display width and add a few for line termination, et al
+    const SLONG linelength = process_sqlda_display(sqlda, buffer, pad) + 10;
 
-			USHORT data_length, disp_length, alignment;
-			data_length = disp_length = alignment = var->sqllen;
-			SSHORT namelength = var->aliasname_length;
-
-			/* minimum display length should not be less than that needed
-			   ** for displaying null
-			 */
-
-			if (namelength < NULL_DISP_LEN)
-				namelength = NULL_DISP_LEN;
-
-			const SSHORT type = var->sqltype & ~1;
-
-			switch (type) {
-			case SQL_BLOB:
-			case SQL_ARRAY:
-				// enough room for the blob id to print
-
-				disp_length = 17;
-				break;
-			case SQL_TIMESTAMP:
-				if (Time_display || isqlGlob.SQL_dialect > SQL_DIALECT_V5)
-					disp_length = DATETIME_LEN;
-				else
-					disp_length = DATE_ONLY_LEN;
-				break;
-			case SQL_TYPE_TIME:
-				disp_length = TIME_ONLY_LEN;
-				break;
-			case SQL_TYPE_DATE:
-				disp_length = DATE_ONLY_LEN;
-				break;
-			case SQL_FLOAT:
-				disp_length = FLOAT_LEN;
-				break;
-			case SQL_DOUBLE:
-				disp_length = DOUBLE_LEN;
-				break;
-			case SQL_TEXT:
-				alignment = 1;
-				data_length++;
-				// OCTETS data is displayed in hex
-				if (var->sqlsubtype == 1)
-					disp_length = 2 * var->sqllen;
-				break;
-			case SQL_VARYING:
-				data_length += sizeof(USHORT) + 1;
-				alignment = sizeof(USHORT);
-				// OCTETS data is displayed in hex
-				if (var->sqlsubtype == 1)
-					disp_length = 2 * var->sqllen;
-				break;
-			case SQL_SHORT:
-				disp_length = SHORT_LEN;
-				break;
-			case SQL_LONG:
-				disp_length = LONG_LEN;
-				break;
-			case SQL_INT64:
-				disp_length = INT64_LEN;
-				break;
-	#ifdef NATIVE_QUAD
-			case SQL_QUAD:
-				disp_length = QUAD_LEN;
-				break;
-	#endif
-			default:
-				disp_length = UNKNOWN_LEN;
-				break;
-			}
-
-			// special case db_key alignment which arrives as an SQL_TEXT
-
-			if (!strncmp(var->sqlname, "DB_KEY", 6)) {
-				alignment = 8;
-				disp_length = 2 * var->sqllen;
-			}
-
-			// This is the print width of each column
-
-			pad[i] = (disp_length > namelength ? disp_length : namelength);
-
-			// Is there a collist entry, then use that width, but only for text
-			if (type == SQL_TEXT || type == SQL_VARYING)
-			{
-				collist* pc = global_Cols;
-				while (pc) {
-					if (!strcmp(var->aliasname, pc->col_name)) {
-						pad[i] = pc->col_len;
-						break;
-					}
-					pc = pc->collist_next;
-				}
-			}
-			// The total line length
-
-			linelength += pad[i] + 1;
-
-			// Allocate space in buffer for data
-
-			offset = FB_ALIGN(offset, alignment);
-			var->sqldata = (SCHAR*) buffer + offset;
-			offset += data_length;
-		}
-	} // scope
-
-// Add a few for line termination, et al 
-
-	linelength += 10;
-
-// Allocate the print line  and the header line  and the separator 
+	// Allocate the print line, the header line and the separator
 
 	TEXT* line = (TEXT*) ISQL_ALLOC((SLONG) linelength);
 	TEXT* header = 0;
@@ -6951,34 +7032,13 @@ static int process_statement(const TEXT* string,
 		*header = '\0';
 		*header2 = '\0';
 
-	// Create the column header :  Left justify strings
-
-		TEXT* p = header;
-		TEXT* p2 = header2;
-		int i = 0;
-		const XSQLVAR* var = sqlda->sqlvar;
-		for (const XSQLVAR* const end = var + sqlda->sqld; var < end;
-			 var++, i++)
-		{
-			const SSHORT type = var->sqltype & ~1;
-			if (type == SQL_TEXT || type == SQL_VARYING)
-				sprintf(p, "%-*.*s ", (int) (pad[i]), (int) (pad[i]),
-						var->aliasname);
-			else
-				sprintf(p, "%*s ", (int) (pad[i]), var->aliasname);
-			// Separators need not go on forever no more than a line
-			for (size_t j = 1; j < strlen(p) && j < 80; j++)
-				*p2++ = '=';
-			*p2++ = BLANK;
-			p += strlen(p);
-
-		}
-		*p2 = '\0';
+		process_header(sqlda, pad, header, header2);
 	}
 
-// If this is an exec procedure, execute into the sqlda with one fetch only 
+	// If this is an exec procedure, execute into the sqlda with one fetch only
 
-	if (statement_type == isc_info_sql_stmt_exec_procedure) {
+	if (statement_type == isc_info_sql_stmt_exec_procedure)
+	{
 		if (isc_dsql_execute2(isc_status, &M__trans, &global_Stmt,
 							  isqlGlob.SQL_dialect, NULL, sqlda))
 		{
@@ -6999,9 +7059,8 @@ static int process_statement(const TEXT* string,
 			}
 		}
 	}
-
-// Otherwise fetch and print records until EOF 
 	else {
+		// Otherwise fetch and print records until EOF
 		SLONG lines;
 		for (lines = 0; !Abort_flag; ++lines) {
 
@@ -7087,10 +7146,10 @@ static int process_statement(const TEXT* string,
 		// Record count printed here upon request 
 
 		if (Docount) {
+			TEXT rec_count_msg[MSG_LENGTH];
 			ISQL_msg_get(REC_COUNT, rec_count_msg, (TEXT*)(IPTR) lines);
-			// Total returned: %ld 
+			// Records affected: %ld
 			sprintf(Print_buffer, "%s%s", rec_count_msg, NEWLINE);
-
 			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 	}
@@ -7102,22 +7161,8 @@ static int process_statement(const TEXT* string,
 
 // Statistics printed here upon request 
 
-	if (Stats) {
-		perf_get_info(&DB, &perf_after);
-		if (!have_report) {
-			ISQL_msg_get(REPORT1, report_1, NULL);
-			// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n 
-			ISQL_msg_get(REPORT2, &report_1[strlen(report_1)], NULL);
-			/* For GUI_TOOLS:  Buffers = !b\nReads = !r\nWrites = !w\nFetches
-			   = !f\n */
-			/* Else:  Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetch
-			   es = !f\n */
-			have_report = true;
-		}
-		perf_format(&perf_before, &perf_after, report_1, statistics, NULL);
-		sprintf(Print_buffer, "%s%s", statistics, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
-	}
+	if (Stats)
+		print_performance(&perf_before);
 
 	if (pad)
 		ISQL_FREE(pad);

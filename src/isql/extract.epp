@@ -233,10 +233,7 @@ processing_state EXTRACT_list_grants(const SCHAR* terminator)
  **************************************
  *
  * Functional description
- *	Shows columns, types, info for a given table name
- *	and text of views.
- *	Use a GDML query to get the info and print it.
- *	If a new_name is passed, substitute it for relation_name
+ *	Print the permissions on all user tables, views and procedures.
  *
  **************************************/
 	return list_all_grants2(false, terminator);
@@ -662,7 +659,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		return FINI_ERROR;
 	END_ERROR;
 
-// Check constaints are now deferred
+	// Check constaints are now deferred
 
 	if (first) // we extracted nothing
 		return FINI_ERROR;
@@ -872,7 +869,7 @@ static void list_all_grants()
  **************************************
  *
  * Functional description
- *	Print the permissions on all user tables.
+ *	Print the permissions on all user tables, views and procedures.
  *
  *	Wrapper around list_all_grants2().
  *
@@ -893,7 +890,7 @@ static processing_state list_all_grants2(bool show_role_list,
  * Functional description
  *	Print the permissions on all user tables.
  *
- *	Get separate permissions on table/views and then procedures
+ *	Get separate permissions on table/views and then procedures.
  *
  **************************************/
 	bool first = true;

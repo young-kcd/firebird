@@ -26,8 +26,6 @@
 
 int	EXTRACT_ddl(int, const SCHAR*);
 int	EXTRACT_list_table(const SCHAR*, const SCHAR*, bool, SSHORT);
-// CVC: Not found.
-//void	EXTRACT_list_view(SCHAR*);
 processing_state	EXTRACT_list_grants (const SCHAR*);
 
 #endif // ISQL_EXTRA_PROTO_H
