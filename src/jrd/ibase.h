@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.92 2004-10-27 09:24:54 aafemt Exp $
+$Id: ibase.h,v 1.93 2004-10-27 10:19:56 aafemt Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -55,7 +55,7 @@ $Id: ibase.h,v 1.92 2004-10-27 09:24:54 aafemt Exp $
 
 #if defined _MSC_VER && _MSC_VER >= 1300
 #define FB_API_DEPRECATED __declspec(deprecated)
-#elif __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 2)
+#elif defined __GNUC__ && __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 2)
 #define FB_API_DEPRECATED __attribute__((__deprecated__))
 #else
 #define FB_API_DEPRECATED
