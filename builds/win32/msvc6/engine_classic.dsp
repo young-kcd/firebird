@@ -244,6 +244,10 @@ SOURCE=..\..\..\gen\jrd\grant.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\os\win32\guid.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\iberr.cpp
 # End Source File
 # Begin Source File
@@ -348,6 +352,10 @@ SOURCE=..\..\..\src\jrd\nav.cpp
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\nbak.cpp
 # End Source File
 # Begin Source File
 
@@ -634,6 +642,10 @@ SOURCE=..\..\..\src\jrd\cvt_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\db_alias.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\dbg.h
 # End Source File
 # Begin Source File
@@ -811,6 +823,10 @@ SOURCE=..\..\..\src\jrd\gdsold.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\grant_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\os\guid.h
 # End Source File
 # Begin Source File
 
