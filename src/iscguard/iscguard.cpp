@@ -582,7 +582,7 @@ void start_and_watch_server(char *server_name)
 			if (!hService)
 				hService =
 					OpenService(hScManager, REMOTE_SERVICE,
-								GENERIC_READ|GENERIC_EXECUTE);
+								GENERIC_READ | GENERIC_EXECUTE);
 			success = StartService(hService, 0, NULL);
 			if (success != TRUE)
 				error = GetLastError();
@@ -648,7 +648,8 @@ void start_and_watch_server(char *server_name)
 				 */
 				WaitForSingleObject(procHandle, 1000);
 				CloseHandle(procHandle);
-				hService = OpenService(hScManager, REMOTE_SERVICE, GENERIC_READ|GENERIC_EXECUTE);
+				hService = OpenService(hScManager, REMOTE_SERVICE,
+					GENERIC_READ | GENERIC_EXECUTE);
 				ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
 				CloseServiceHandle(hScManager);
 				CloseServiceHandle(hService);

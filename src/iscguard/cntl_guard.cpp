@@ -146,7 +146,8 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 		SC_HANDLE hScManager = 0, hService = 0;
 		hScManager =
 			OpenSCManager(NULL, NULL, GENERIC_READ);
-		hService = OpenService(hScManager, REMOTE_SERVICE, GENERIC_READ|GENERIC_EXECUTE);
+		hService = OpenService(hScManager, REMOTE_SERVICE,
+			GENERIC_READ | GENERIC_EXECUTE);
 		ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
 		CloseServiceHandle(hScManager);
 		CloseServiceHandle(hService);
@@ -218,7 +219,8 @@ void CNTL_stop_service( TEXT * service)
 	}
 
 	service_handle =
-		OpenService(servicemgr_handle, service_name, GENERIC_READ|GENERIC_EXECUTE);
+		OpenService(servicemgr_handle, service_name,
+			GENERIC_READ | GENERIC_EXECUTE);
 
 	if (service_handle == NULL) {
 		// return error
