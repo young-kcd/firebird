@@ -248,8 +248,9 @@
 #define ROW_COUNT 504
 #define LOCK 505
 #define SAVEPOINT 506
-#define STATEMENT 507
-#define LEAVE 508
-#define INSERTING 509
-#define UPDATING 510
-#define DELETING 511
+#define RELEASE 507
+#define STATEMENT 508
+#define LEAVE 509
+#define INSERTING 510
+#define UPDATING 511
+#define DELETING 512

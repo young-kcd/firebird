@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.64 2003-06-01 16:22:47 skidder Exp $
+$Id: exe.cpp,v 1.65 2003-06-10 13:40:16 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1819,8 +1819,6 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
  **************************************/
 
 	STA impure;
-	SLONG sav_number;
-	SAV savepoint;
 	SSHORT which_erase_trig = 0;
 	SSHORT which_sto_trig   = 0;
 	SSHORT which_mod_trig   = 0;
@@ -2041,48 +2039,80 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				node = node->nod_parent;
 			}
 			break;
-			
+
 		case nod_user_savepoint:
 			if (transaction != dbb->dbb_sys_trans) {
-				// Use the savepoint created by EXE_start
-				transaction->tra_save_point->sav_flags |= SAV_user;
-				strcpy(transaction->tra_save_point->sav_name, (TEXT*)node->nod_arg[e_sav_name]);
-			}
-			node = node->nod_parent;
-			request->req_operation = jrd_req::req_return;
-			break;
 
-		case nod_undo_savepoint:
+				UCHAR operation = (UCHAR) node->nod_arg[e_sav_operation];
+				TEXT * node_savepoint_name = (TEXT*) node->nod_arg[e_sav_name]; 
 
-			if (transaction != dbb->dbb_sys_trans) {
 				// Skip the savepoint created by EXE_start
-				savepoint = transaction->tra_save_point->sav_next;
+				SAV savepoint = transaction->tra_save_point->sav_next;
+				SAV previous = transaction->tra_save_point;
 
-				// Find savepoint to undo
-				while(TRUE) {
+				// Find savepoint
+				bool found = false;
+				while (true) {
 					if (!savepoint || !(savepoint->sav_flags & SAV_user))
-						ERR_post(gds_invalid_savepoint,
-							gds_arg_string, (TEXT*) node->nod_arg[e_sav_name], 0);
-								
-					if (!strcmp((TEXT*)node->nod_arg[e_sav_name],(TEXT*)savepoint->sav_name))
 						break;
 
+					if (!strcmp(node_savepoint_name, savepoint->sav_name)) {
+						found = true;
+						break;
+					}
+
+					previous = savepoint;
 					savepoint = savepoint->sav_next;
 				}
-				sav_number = savepoint->sav_number;
-
-				// Actually undo the savepoint
-				while ( transaction->tra_save_point && 
-					transaction->tra_save_point->sav_number >= sav_number ) 
-				{
-					transaction->tra_save_point->sav_verb_count++;
-					VERB_CLEANUP;
+				if (!found && operation != blr_savepoint_set) {
+					ERR_post(gds_invalid_savepoint,
+						gds_arg_string, node_savepoint_name, 0);
 				}
 
-				// Now set the savepoint again to allow to return to it later
-				VIO_start_save_point(tdbb, transaction);
-				transaction->tra_save_point->sav_flags |= SAV_user;
-				strcpy(transaction->tra_save_point->sav_name, (TEXT*)node->nod_arg[e_sav_name]);
+				SLONG sav_number = savepoint->sav_number;
+
+				if (operation == blr_savepoint_set) {
+
+					// Release the savepoint
+					if (found) {
+						previous->sav_next = savepoint->sav_next;
+						SAV current = transaction->tra_save_point;
+						transaction->tra_save_point = savepoint;
+						VERB_CLEANUP;
+						transaction->tra_save_point = current;
+					}
+
+					// Use the savepoint created by EXE_start
+					transaction->tra_save_point->sav_flags |= SAV_user;
+					strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
+				}
+				else if (operation == blr_savepoint_release) {
+
+					// Release the savepoint and all subsequent ones
+					while (transaction->tra_save_point &&
+						transaction->tra_save_point->sav_number >= sav_number) 
+					{
+						VERB_CLEANUP;
+					}
+				}
+				else if (operation == blr_savepoint_undo) {
+
+					// Undo the savepoint
+					while (transaction->tra_save_point &&
+						transaction->tra_save_point->sav_number >= sav_number) 
+					{
+						transaction->tra_save_point->sav_verb_count++;
+						VERB_CLEANUP;
+					}
+
+					// Now set the savepoint again to allow to return to it later
+					VIO_start_save_point(tdbb, transaction);
+					transaction->tra_save_point->sav_flags |= SAV_user;
+					strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
+				}
+				else {
+					BUGCHECK(232);
+				}
 			}
 			node = node->nod_parent;
 			request->req_operation = jrd_req::req_return;

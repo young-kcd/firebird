@@ -282,15 +282,16 @@
 #define blr_nullsfirst		(unsigned char)178
 #define blr_writelock		(unsigned char)179
 
-/* This codes are for user-defined savepoints 
-  as opposed to the system ones defined earlier */
-
-#define blr_user_savepoint	(unsigned char)180
-#define blr_undo_savepoint	(unsigned char)181
-
-/* This codes reuse BLR code space */
+/* These codes reuse BLR code space */
 
 #define blr_post_arg		(unsigned char)163
 #define blr_exec_into		(unsigned char)164
+#define blr_user_savepoint	(unsigned char)165
+
+/* These codes are actions for user-defined savepoints */
+
+#define blr_savepoint_set	(unsigned char)0
+#define blr_savepoint_release	(unsigned char)1
+#define blr_savepoint_undo	(unsigned char)2
 
 #endif /* _JRD_BLR_H_ */

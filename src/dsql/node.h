@@ -326,6 +326,7 @@ typedef ENUM nod_t
 	nod_redef_view, /* allows silent creation/overwriting of a view */
 	nod_for_update, /* FOR UPDATE clause */
 	nod_user_savepoint, /* savepoints support */
+	nod_release_savepoint,
 	nod_undo_savepoint,
 	nod_label, /* label support */
 	nod_exec_into /* EXECUTE STATEMENT INTO */

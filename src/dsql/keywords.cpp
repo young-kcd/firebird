@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.16 2003-04-06 11:20:03 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.17 2003-06-10 13:39:05 dimitr Exp $
  *
  */
 
@@ -226,7 +226,8 @@ static const TOK tokens [] = {
 	{REAL, "REAL", 1},
 	{VERSION, "RECORD_VERSION", 1},
 	{RECREATE, "RECREATE", 2},
-	{REFERENCES, "REFERENCES", 1}, 
+	{REFERENCES, "REFERENCES", 1},
+	{RELEASE, "RELEASE", 2},
 	{RESERVING, "RESERV", 1},	/* Alias of RESERVING */
 	{RESERVING, "RESERVING", 1},
 	{RESTRICT, "RESTRICT", 1},

@@ -1405,6 +1405,13 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		request->req_type = REQ_SAVEPOINT;	
 		return input;
 
+	case nod_release_savepoint:
+		if (request->req_flags & REQ_procedure)
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
+					  gds_arg_gds, gds_random, gds_arg_string, "RELEASE", 0);
+		request->req_type = REQ_SAVEPOINT;	
+		return input;
+
 	case nod_undo_savepoint:
 		if (request->req_flags & REQ_procedure)
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */

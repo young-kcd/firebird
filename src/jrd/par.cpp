@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.41 2003-04-10 06:49:14 aafemt Exp $
+$Id: par.cpp,v 1.42 2003-06-10 13:40:19 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2411,11 +2411,11 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 	case blr_start_savepoint:
 	case blr_end_savepoint:
 		break;
-		
+
 	case blr_user_savepoint:
-	case blr_undo_savepoint:
+		*arg++ = (JRD_NOD) BLR_BYTE;
 		par_name(csb, name);
-		*arg++ = (JRD_NOD)ALL_cstring(name);
+		*arg++ = (JRD_NOD) ALL_cstring(name);
 		break;
 
 	case blr_store:

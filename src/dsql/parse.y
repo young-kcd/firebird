@@ -489,6 +489,7 @@ static struct LexerState lex;
 %token ROW_COUNT
 %token LOCK
 %token SAVEPOINT
+%token RELEASE
 %token STATEMENT
 %token LEAVE
 %token INSERTING
@@ -543,8 +544,7 @@ statement	: alter
 		| replace
 		| revoke
 		| rollback
-		| user_savepoint
-		| undo_savepoint
+		| savepoint
 		| select
 		| set
 		| update
@@ -2639,8 +2639,17 @@ set_generator	: SET GENERATOR symbol_generator_name TO signed_long_integer
 
 /* transaction statements */
 
-user_savepoint : SAVEPOINT symbol_savepoint_name
+savepoint	: set_savepoint
+		| release_savepoint
+		| undo_savepoint
+		;
+
+set_savepoint : SAVEPOINT symbol_savepoint_name
 			{ $$ = make_node (nod_user_savepoint, 1, $2); }
+		;
+
+release_savepoint	: RELEASE SAVEPOINT symbol_savepoint_name
+			{ $$ = make_node (nod_release_savepoint, 1, $3); }
 		;
 		
 undo_savepoint : ROLLBACK optional_work TO optional_savepoint symbol_savepoint_name

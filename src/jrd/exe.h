@@ -263,9 +263,9 @@ typedef struct iasb {
 #define e_erase_rsb		3
 #define	e_erase_length		4
 
-/* used for both nod_user_savepoint and nod_undo_savepoint */
-#define e_sav_name			0
-#define e_sav_length		1
+#define e_sav_operation		0
+#define e_sav_name			1
+#define e_sav_length		2
 
 #define	e_mod_statement		0
 #define e_mod_sub_mod		1

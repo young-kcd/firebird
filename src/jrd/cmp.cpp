@@ -2412,7 +2412,6 @@ static JRD_NOD copy(
 		break;
 
 	case nod_user_savepoint:
-	case nod_undo_savepoint:
 		args = e_sav_length;
 		break;
 
