@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.39 2004-11-15 00:32:04 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.40 2004-11-23 05:36:37 skidder Exp $
  *
  */
  
@@ -740,13 +740,12 @@ void nbackup::backup_database(int level, const char* fname)
 		in_sqlda->sqlvar[1].sqlind = &null_flag;
 		in_sqlda->sqlvar[2].sqldata = (char*)&backup_scn;
 		in_sqlda->sqlvar[2].sqlind = &null_flag;
-		// Pad filename with spaces before storing
+
 		char buff[256]; // RDB$FILE_NAME has length of 253
 		size_t len = bakname.length();
 		if (len > 253)
 			len = 253;
-		buff[0] = len;
-		buff[1] = 0;
+		*(USHORT*) buff = len;
 		memcpy(buff + 2, bakname.c_str(), len);
 		in_sqlda->sqlvar[3].sqldata = buff;
 		in_sqlda->sqlvar[3].sqlind = &null_flag;
