@@ -2107,8 +2107,6 @@ keyword_or_column	: valid_symbol_name
 		| HOUR
 		| MINUTE
 		| SECOND
-		| WEEKDAY
-		| YEARDAY
 		| TIME
 		| TIMESTAMP
 		| CURRENT_DATE
@@ -4165,6 +4163,8 @@ non_reserved_word :
 	| KW_DIFFERENCE
 	| IIF
 	| SCALAR_ARRAY
+	| WEEKDAY
+	| YEARDAY
 	;
 
 %%
