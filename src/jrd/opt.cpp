@@ -3889,7 +3889,7 @@ static RSB gen_retrieval(TDBB tdbb,
 	RSB rsb;
 	IDX *idx, *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
 	JRD_NOD node, opt_boolean, inversion;
-	SSHORT i, j, count, last_idx, idx_walk_count;
+	SSHORT i, j, count, last_idx, idx_walk_count, position, conjunct_position[MAX_INDICES];
 	SLONG idx_priority_level[MAX_INDICES], last_priority_level;
 	register Opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end, *matching_nodes[MAX_INDICES];
 	csb_repeat *csb_tail;
@@ -4108,6 +4108,15 @@ static RSB gen_retrieval(TDBB tdbb,
 					if (!(tail->opt_flags & opt_used) && 
 						 computable(csb, node, -1, (BOOLEAN) (inner_flag || outer_flag) ? TRUE : FALSE)) {
 						if (match_index(tdbb, opt, stream, node, idx)) {
+							position = 0;
+							idx_tail = opt->opt_rpt;
+							idx_end = idx_tail + idx->idx_count;
+							for (; idx_tail < idx_end; idx_tail++, position++) {
+								if (idx_tail->opt_match == node) {
+									conjunct_position[j] = position;
+									break;
+								}
+							}
 							matching_nodes[j++] = tail;
 							count = j;
 						}
@@ -4133,13 +4142,16 @@ static RSB gen_retrieval(TDBB tdbb,
 				}
 				else {
 					/* Mark all conjuncts that could be calculated against the 
-					   index as used. For example if you have nod1 >= con2 and nod2 <= con2 */
+					   index as used. For example if you have :
+					   (node1 >= constant) and (node1 <= constant) be sure both
+					   conjuncts will be marked as opt_matched */
+					position = 0;
 					idx_tail = opt->opt_rpt;
 					idx_end = idx_tail + idx->idx_count;
 					for (; idx_tail < idx_end && 
-						 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++) {
+						 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++, position++) {
 						for (j = 0; j < count; j++) {
-							if (idx_tail->opt_match == matching_nodes[j]->opt_conjunct) {
+							if (conjunct_position[j] == position) {
 								matching_nodes[j]->opt_flags |= opt_matched;
 							}
 						}
