@@ -2652,8 +2652,12 @@ static jrd_nod* copy(thread_db* tdbb,
 		//			(the nod_procedure code below). Hence we don't call
 		//			copy() here to keep argument->nod_arg[e_arg_message]
 		//			and procedure->nod_arg[e_prc_in_msg] in sync. The
-		//			message is passed to copy() as a parameter.
-		node->nod_arg[e_arg_message] = message;
+		//			message is passed to copy() as a parameter. If the
+		//			passed message is NULL, it means nod_argument is
+		//			cloned outside nod_procedure (e.g. in the optimizer)
+		//			and we must keep the input message.
+		node->nod_arg[e_arg_message] =
+			message ? message : input->nod_arg[e_arg_message];
 		node->nod_arg[e_arg_flag] =
 			copy(tdbb, csb, input->nod_arg[e_arg_flag], remap, field_id,
 				 message, remap_fld);
@@ -2951,8 +2955,6 @@ static jrd_nod* copy(thread_db* tdbb,
 		return node;
 
 	case nod_message:
-		if (!remap)
-			BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
 		node = PAR_make_node(tdbb, e_msg_length);
 		node->nod_type = input->nod_type;
 		node->nod_count = input->nod_count;
