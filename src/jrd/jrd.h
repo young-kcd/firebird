@@ -34,6 +34,9 @@
 #include "../jrd/dsc.h"
 #include "../jrd/all.h"
 #include "../jrd/nbak.h"
+#if defined(UNIX) && defined(SUPERSERVER)
+#include <setjmp.h>
+#endif
 
 #include "../include/fb_vector.h"
 
