@@ -22,14 +22,18 @@ namespace Firebird {
 
 /* Process-local spinlock. Used to manage memory heaps in threaded environment. */
 // Windows version of the class
+
+typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
+	LPCRITICAL_SECTION lpCriticalSection,
+	DWORD dwSpinCount
+);
+
 class Spinlock {
 private:
 	CRITICAL_SECTION spinlock;
+	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
 public:
-	Spinlock() {
-		if (!InitializeCriticalSectionAndSpinCount(&spinlock, 4000))
-			system_call_failed::raise();
-	}
+	Spinlock();
 	~Spinlock() {
 		DeleteCriticalSection(&spinlock);
 	}
