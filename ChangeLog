@@ -1,3 +1,81 @@
+2004-11-29 21:27  skidder
+
+	* firebird2/src/burp/backup.epp (1.71):
+	
+	Do not store system functions in backup files
+
+2004-11-29 12:15  alexpeshkoff
+
+	* firebird2/src/jrd/: flu.cpp (1.48), flu.h (1.9), flu_proto.h
+	(1.11), fun.epp (1.68), fun_proto.h (1.13), jrd.cpp (1.197), jrd.h
+	(1.128), met.epp (1.147), why.cpp (1.86):
+	
+	1. rewritten flu.cpp using modern firebird classes library 2. fixed
+	diagnostic about missing/unusable UDF module
+
+2004-11-29 11:14  alexpeshkoff
+
+	* firebird2/src/jrd/common.h (1.130):
+	
+	completely dropped support for ignored since 1.5 environment
+	variable INTERBASE_EXT_LIB_PATH, firebird.conf UdfAccess is used
+	instead
+
+2004-11-29 11:12  alexpeshkoff
+
+	* firebird2/src/jrd/pwd.cpp (1.36):
+	
+	SortedObjectsArray related changes
+
+2004-11-29 11:11  alexpeshkoff
+
+	* firebird2/src/jrd/ext.cpp (1.58):
+	
+	always check for readability of file in DirectoryList
+
+2004-11-29 11:07  alexpeshkoff
+
+	* firebird2/src/common/: classes/fb_pair.h (1.14),
+	classes/objects_array.h (1.15), config/config_file.h (1.10),
+	config/dir_list.cpp (1.23), config/dir_list.h (1.13):
+	
+	make SortedObjectsArray easier to use in simple cases
+
+2004-11-29 11:06  alexpeshkoff
+
+	* firebird2/src/utilities/nbackup.cpp (1.41):
+	
+	fixed gcc warning
+
+2004-11-29 10:59  robocop
+
+	* firebird2/src/common/classes/stack.h (1.17):
+	
+	"elem" is size_t, assert on it.
+
+2004-11-29 10:09  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.118), jrd/constants.h (1.21),
+	jrd/dfw.epp (1.140), jrd/dyn_def.epp (1.87), jrd/dyn_mod.epp
+	(1.55):
+	
+	frb_sys_flag becomes fb_sys_flag
+
+2004-11-29 10:05  robocop
+
+	* firebird2/src/: jrd/inf_pub.h (1.3), dsql/pass1.cpp (1.180):
+	
+	Misc.
+
+2004-11-29 05:39  skidder
+
+	* firebird2/src/remote/: allr.cpp (1.29), server.cpp (1.106):
+	
+	Address the security issue in remote address handling code pointed
+	by Claudio. Hack REMOTE server-side exception handling to make it
+	not crash when exceptions actually happen. The latter seems to be
+	the very old problem, in IB6 code looks the same
+
 2004-11-29 02:08  skidder
 
 	* firebird2/src/common/classes/GenericMap.h (1.4):
