@@ -33,9 +33,12 @@
  *
  * 2001.11.20  Ann Harrison - make 64bitio.h conditional on not windows.
  * 2002.04.16  Paul Beach - HP10 and unistd.h
+ *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+ *
  */
 /*
-$Id: common.h,v 1.36 2002-10-24 09:01:29 eku Exp $
+$Id: common.h,v 1.37 2002-10-28 04:42:53 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -739,15 +742,8 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define UNIX            1
 #define KILLER_SIGNALS
 #define CURSES_KEYPAD   1
-#ifndef DG_X86
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-/*#define ALIGNMENT       8*/
-/*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_dg /* 38 */
-#else
-#define IMPLEMENTATION	isc_info_db_impl_dg_x86 /* 58 */
-#define I386          1
-#endif /* DG_X86 */
 #define                 IEEE
 #define INTL_BACKEND
 

@@ -24,6 +24,8 @@
  *                          - EPSON, DELTA, IMP, NCR3000, M88K
  *                          - HP9000 s300 and Apollo
  *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+ *
  */
 
 /*
@@ -162,11 +164,7 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 #endif
 
 #ifdef DGUX
-#ifdef DG_X86
-#define CLASS		2
-#else
 #define CLASS		11
-#endif /* DG_X86 */
 #endif /* DGUX */
 
 //

@@ -27,7 +27,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.6 2002-09-24 12:57:07 eku Exp $
+//	$Id: cob.cpp,v 1.7 2002-10-28 04:42:53 seanleyne Exp $
+//
+// 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+//
 //
 
 #include "firebird.h"
@@ -175,13 +178,8 @@
 #define END_VALUE		""
 #define BY_REF			"BY REFERENCE "
 #define BY_DESC 		"BY REFERENCE "
-#ifdef DG_X86
-#define RAW_BLR_TEMPLATE	"03  %s%d%s%d PIC XXXX USAGE COMP-5 VALUE IS %u."
-#define RAW_TPB_TEMPLATE	"03  %s%d%s%d PIC XXXX USAGE COMP-5 VALUE IS %u."
-#else
 #define RAW_BLR_TEMPLATE	"03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %u."
 #define RAW_TPB_TEMPLATE	"03  %s%d%s%d PIC XXXX USAGE COMP-X VALUE IS %u."
-#endif /* DG_X86 */
 #define COMP_VALUE		"COMP-5"
 #endif
 
@@ -290,11 +288,7 @@
 #endif
 
 #ifdef DGUX
-#ifdef DG_X86
-#define USAGE_COMP		" USAGE IS COMP-5"
-#else
 #define USAGE_COMP		" USAGE IS COMP"
-#endif /* DG_X86 */
 #endif
 
 /* RITTER - added HP11 to the line below */

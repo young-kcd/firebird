@@ -24,8 +24,9 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
- *
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
+ *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  *
  */
 
@@ -201,7 +202,7 @@ union semun {
 #endif
 
 #if !(defined M88K || defined hpux || defined DECOSF || defined SOLARIS || \
-      defined DG_X86 || defined linux || defined FREEBSD || defined NETBSD || defined SINIXZ)
+      defined linux || defined FREEBSD || defined NETBSD || defined SINIXZ)
 extern SLONG ftok();
 #endif
 #endif

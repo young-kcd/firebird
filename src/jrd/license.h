@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.16 2002-07-02 09:49:19 dimitr Exp $
+ * $Id: license.h,v 1.17 2002-10-28 04:42:54 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -42,6 +42,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "HP9000 s300" port
+ *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  *
  */
 
@@ -122,12 +124,7 @@
 #endif
 
 #ifdef DGUX
-#ifdef DG_X86
-#define FB_PLATFORM     "DI"	/* DG INTEL */
-#else
 #define FB_PLATFORM	"DA"		/* DG AViiON */
-#define M88K_DEFINED
-#endif /* DG_X86 */
 #endif /* DGUX */
 
 #ifdef WIN_NT

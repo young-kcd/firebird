@@ -26,6 +26,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
  * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
  *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -246,7 +248,7 @@ static const TEXT *const impl_implementation[] = {
     NULL, // "Firebird/imp",        /* 44 */
     NULL, // "Firebird/delta",      /* 45 */
     NULL, // "Firebird/NeXT",       /* 46 */
-    "Firebird/DOS",		/* 47 */
+    NULL, // "Firebird/DOS",		/* 47 */
     NULL, // "Firebird/m88k",       /* 48 */
     "Firebird/UNIXWARE",	/* 49 */
     "Firebird/x86/Windows NT",	/* 50 */
@@ -257,7 +259,7 @@ static const TEXT *const impl_implementation[] = {
     "Firebird/Windows",	/* 55 */
     NULL, // "Firebird/NCR3000",    /* 56 */
     NULL, // "Firebird/PPC/Windows NT", /* 57 */
-    "Firebird/DG_X86",		/* 58 */
+    NULL, // "Firebird/DG_X86",		/* 58 */
     "Firebird/SCO_SV Intel",	/* 59 *//* 5.5 SCO Port */
     "Firebird/linux Intel",	/* 60 */
     "Firebird/FreeBSD/i386",	/* 61 */

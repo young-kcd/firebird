@@ -24,6 +24,8 @@
  *                          - EPSON, XENIX, DELTA, IMP, NCR3000, M88K
  *                          - NT Power PC and HP9000 s300
  *
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+ *
  */
 
 #ifndef _REMOTE_REMOTE_DEF_H_
@@ -78,11 +80,7 @@
 #endif
 
 #ifdef DGUX
-#ifdef DG_X86
-#define ARCHITECTURE		arch_dg_x86
-#else
 #define ARCHITECTURE		arch_aviion
-#endif /* DG_X86 */
 #endif /* DGUX */
 
 #ifdef SCO_EV
