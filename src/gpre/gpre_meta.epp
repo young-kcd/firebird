@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.7 2002-10-24 09:01:26 eku Exp $
+ *	$Id: gpre_meta.epp,v 1.8 2002-11-03 22:22:52 tamlin Exp $
  */
 
 #include "firebird.h"
@@ -344,7 +344,6 @@ USHORT MET_domain_lookup(REQ request, FLD field, char *string)
 	DBB dbb;
 	SCHAR name[NAME_SIZE];
 	FLD d_field;
-	SSHORT length;
 	SSHORT found = FALSE;
 
 	strcpy(name, string);
@@ -1095,7 +1094,7 @@ PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
 	SYM symbol;
 	FLD *fld_list, field;
 	PRC procedure;
-	USHORT length, type, count;
+	USHORT type, count;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
 
 	strcpy(name, string);
@@ -1255,7 +1254,6 @@ UDF MET_get_udf(DBB dbb, TEXT * string)
 	SYM symbol;
 	FLD field;
 	UDF udf;
-	USHORT length, count;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
