@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.10 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.libfbembed,v 1.10.2.1 2003-07-19 05:52:49 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=libfbembed
@@ -57,9 +57,10 @@ Dependencies = $(AllObjects:.o=.d)
 
 libfbembed : $(LIBFBEMBED_SONAME)
 
+$(LIBFBEMBED_SO):	LINK_PROD=$(SharedLibrarySoName)
 $(LIBFBEMBED_SO):	$(LIBFBEMBED_Objects)
 #	$(LIB_LINK) -Wl,-soname,libfbembed.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK)  $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
+	$(LIB_LINK)  $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(SO_LINK_LIBS)
 
 $(LIBFBEMBED_SOBASENAME):	$(LIBFBEMBED_SO)
 	(cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )

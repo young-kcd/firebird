@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.10 2003-05-25 00:04:15 skidder Exp $
+#  $Id: Makefile.in.extlib,v 1.10.2.1 2003-07-19 05:52:49 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -83,9 +83,10 @@ lib_ib_udf: $(UDF)/ib_udf.$(SHRLIB_EXT)
 #$(UDF)/ib_udf.$(SHRLIB_EXT)(%.o) : %.o
 #	ar crv $@  $%
 
+$(UDF)/ib_udf.$(SHRLIB_EXT):	LINK_PROD=ib_udf.$(SHRLIB_EXT)
 $(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects)
-#	$(LIB_LINK) $(LIB_LINK_SONAME)ib_udf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)/usr/lib -o $@ $^
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)ib_udf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
+#	$(LIB_LINK) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
@@ -94,8 +95,9 @@ $(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects)
 
 lib_fb_udf: $(UDF)/fb_udf.$(SHRLIB_EXT)
 
+$(UDF)/fb_udf.$(SHRLIB_EXT):	fb_udf.$(SHRLIB_EXT)
 $(UDF)/fb_udf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(UTIL_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fb_udf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
@@ -104,8 +106,9 @@ $(UDF)/fb_udf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(UTIL_Objects)
 
 lib_ib_util: $(LIBIBUTIL_SO)
 
+$(LIBIBUTIL_SO):	LINK_PROD=$(LIBINUTIL_SO)
 $(LIBIBUTIL_SO):	$(UTIL_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 
