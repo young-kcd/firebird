@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.7 2002-02-23 22:15:23 seanleyne Exp $
+$Id: flu.cpp,v 1.8 2002-06-30 09:58:20 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -836,6 +836,9 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 			/* Module is in the standard UDF directory: load it. */
 			if (!(mod->mod_handle = dlopen(ib_lib_path, RTLD_LAZY)))
 			{
+#ifdef DEV_BUILD
+			    gds__log("%s: %s\n", ib_lib_path, dlerror());
+#endif
 				gds__free(mod);
 				return NULL;
 			}
@@ -851,6 +854,9 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 				mod->mod_handle = dlopen(ib_lib_path, RTLD_LAZY);
 				if (!mod->mod_handle)
 				{
+#ifdef DEV_BUILD
+					gds__log("%s: %s\n", ib_lib_path, dlerror());			
+#endif
 					gds__free(mod);
 					return NULL;
 				}
@@ -873,6 +879,9 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 						mod->mod_handle = dlopen(ib_lib_path, RTLD_LAZY);
 						if (!mod->mod_handle)
 						{
+#ifdef DEV_BUILD
+							gds__log("%s: %s\n", ib_lib_path, dlerror());							
+#endif
 							gds__free(mod);
 							return NULL;
 						}
@@ -882,6 +891,9 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 				}
 				if (!found_module)
 				{
+#ifdef DEV_BUILD
+					gds__log("%s: not in a valid UDF directory\n", module);
+#endif
 					gds__free(mod);
 					return NULL;
 				}
@@ -921,15 +933,35 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 		}
 		if (found_module)
 		{
-			found_module = (!access(module, R_OK)) &&
-				(0 != (mod->mod_handle = dlopen(module, RTLD_LAZY)));
-		}
-		if (!found_module)
+		    if (!access(module, R_OK)) 
+			{
+				if (!(mod->mod_handle = dlopen(module, RTLD_LAZY)))
+				{
+#ifdef DEV_BUILD
+					gds__log("%s: %s\n", module, dlerror());
+#endif
+					gds__free(mod);
+					return NULL;						
+				}
+			}
+			else
+			{
+#ifdef DEV_BUILD
+			    gds__log("%s: file access error\n", module);
+#endif
+			    gds__free(mod);
+				return NULL;
+			}
+		} /* else module name includes a directory path, so ... */
+	    else 
 		{
+#ifdef DEV_BUILD
+			gds__log("%s: not found in a valid UDF directory \n", module);
+#endif
 			gds__free(mod);
 			return NULL;
 		}
-	}							/* else module name includes a directory path, so ... */
+    }
 	return mod;
 }
 #endif

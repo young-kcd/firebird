@@ -123,6 +123,8 @@
 #define WORKFILE	"/tmp/"
 #ifdef LINUX
 #define ISC_PREFIX	"/usr/local/firebird/"
+#elif defined(SINIXZ)
+#define ISC_PREFIX	"/usr/apc/firebird/"
 #else
 #ifdef DARWIN
 #define ISC_PREFIX		"/all/files/are/in/framework/resources"

@@ -19,9 +19,19 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.6.21 Claudio Valderrama: Allow inserting strings into blob fields.
+ * 2001.6.28 Claudio Valderrama: Move code to cleanup_rpb() as directed
+ * by Ann Harrison and cleanup of new record in store() routine.
+ * 2001.10.11 Claudio Valderrama: Fix SF Bug #436462: From now, we only
+ * count real store, modify and delete operations either in an external
+ * file or in a table. Counting on a view caused up to three operations
+ * being reported instead of one.
+ * 2001.12.03 Claudio Valderrama: new visit to the same issue: views need
+ * to count virtual operations, not real I/O on the underlying tables.
  */
 /*
-$Id: exe.cpp,v 1.10 2002-04-18 03:54:35 bellardo Exp $
+$Id: exe.cpp,v 1.11 2002-06-30 09:58:20 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -97,6 +107,7 @@ IDX_E IDX_modify_check_constraints(TDBB tdbb,
 #endif
 
 
+static void cleanup_rpb(TDBB, RPB *);
 static NOD erase(TDBB, NOD, SSHORT);
 static void execute_looper(TDBB, REQ, TRA, ENUM req::req_s);
 static void exec_sql(TDBB, REQ, DSC *);
@@ -289,7 +300,15 @@ void EXE_assignment(TDBB tdbb, NOD node)
 		if (DTYPE_IS_BLOB(to_desc->dsc_dtype)
 			&& to_desc->dsc_dtype != dtype_d_float)
 #endif
-			BLB_move(tdbb, from_desc, to_desc, to);
+		{
+			/* CVC: This is a case that has hurt me for years and I'm going to solve it.
+					It should be possible to copy a string to a blob, even if the charset is
+					lost as a result of this experimental implementation. */
+			if (from_desc->dsc_dtype <= dtype_varying)
+				BLB_move_from_string(tdbb, from_desc, to_desc, to);
+			else 
+				BLB_move(tdbb, from_desc, to_desc, to);
+		}
 
 		else if (!DSC_EQUIV(from_desc, to_desc))
 			MOV_move(from_desc, to_desc);
@@ -894,6 +913,13 @@ void EXE_start(TDBB tdbb, REQ request, TRA transaction)
 	request->req_records_inserted = 0;
 	request->req_records_deleted = 0;
 
+/* CVC: set up to count virtual operations on SQL views. */
+
+	request->req_view_flags = 0;
+	request->req_top_view_store = NULL;
+	request->req_top_view_modify = NULL;
+	request->req_top_view_erase = NULL;
+
 /* Store request start time for timestamp work */
 	if (!request->req_timestamp)
 		request->req_timestamp = time(NULL);
@@ -991,6 +1017,66 @@ void EXE_unwind(TDBB tdbb, REQ request)
 #endif
 }
 
+
+/* CVC: Moved to its own routine, originally in store(). */
+static void cleanup_rpb(TDBB tdbb, RPB *rpb)
+{
+/**************************************
+ *
+ *	c l e a n u p _ r p b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Perform cleaning of rpb, zeroing unassigned fields and
+ * the impure tail of varying fields that we don't want to carry
+ * when the RLE algorithm is applied.
+ *
+ **************************************/
+	DSC *desc = 0;
+	SSHORT n;
+	USHORT length;
+	REC record = rpb->rpb_record;
+	FMT format = record->rec_format;
+	register UCHAR *p;
+
+	SET_TDBB(tdbb); /* Is it necessary? */
+
+/*
+    Starting from the format, walk through its
+    array of descriptors.  If the descriptor has
+    no address, its a computed field and we shouldn't
+    try to fix it.  Get a pointer to the actual data
+    and see if that field is null by indexing into
+    the null flags between the record header and the
+    record data.
+*/
+
+	for (n = 0; n < format->fmt_count; n++)
+	{
+		desc = &format->fmt_desc[n];
+		if (!desc->dsc_address)
+			continue;
+		p = record->rec_data + (SLONG) desc->dsc_address;
+		if (TEST_NULL(record, n))
+		{
+			if (length = desc->dsc_length)
+				do *p++ = 0; while (--length);
+		}
+		else if (desc->dsc_dtype == dtype_varying)
+		{
+			VARY *vary;
+			
+			vary = (VARY*) p;
+			if ((length = desc->dsc_length - sizeof (USHORT)) > vary->vary_length)
+			{
+				p = vary->vary_string + vary->vary_length;
+				length -= vary->vary_length;
+				do *p++ = 0; while (--length);
+			}
+		}
+	}
+}
 
 
 static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
@@ -1170,7 +1256,22 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 		}
 	}
 
-	request->req_records_deleted++;
+	/* CVC: Increment the counter only if we called VIO/EXT_erase() and
+			we were successful. */
+	if (!(request->req_view_flags & req_first_erase_return)) {
+		request->req_view_flags |= req_first_erase_return;
+		if (relation->rel_view_rse) {
+			request->req_top_view_erase = relation;
+		}
+	}
+	if (relation == request->req_top_view_erase) {
+		if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
+			request->req_records_deleted++;
+		}
+	}
+	else if (relation->rel_file || !relation->rel_view_rse) {
+		request->req_records_deleted++;
+	}
 
 	if (transaction != dbb->dbb_sys_trans) {
 		--transaction->tra_save_point->sav_verb_count;
@@ -2618,6 +2719,10 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 			return node->nod_arg[e_mod_statement];
 		}
 
+		/* CVC: This call made here to clear the record in each NULL field and
+				varchar field whose tail may contain garbage. */
+		cleanup_rpb(tdbb, new_rpb);
+
 #ifndef GATEWAY
 #ifdef PC_ENGINE
 		/* check to see if record locking has been initiated in this database;
@@ -2736,7 +2841,22 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 				   node->nod_arg[e_mod_sql]);
 #endif
 
-		request->req_records_updated++;
+		/* CVC: Increment the counter only if we called VIO/EXT_modify() and
+				we were successful. */
+		if (!(request->req_view_flags & req_first_modify_return)) {
+			request->req_view_flags |= req_first_modify_return;
+			if (relation->rel_view_rse) {
+				request->req_top_view_modify = relation;
+			}
+		}
+		if (relation == request->req_top_view_modify) {
+			if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
+				request->req_records_updated++;
+			}
+		}
+		else if (relation->rel_file || !relation->rel_view_rse) {
+			request->req_records_updated++;
+		}
 
 		if (which_trig != PRE_TRIG) {
 			org_record = org_rpb->rpb_record;
@@ -3561,36 +3681,10 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 		   fields. In addition, zero the tail of assigned varying fields
 		   so that previous remnants don't defeat compression efficiency. */
 
-		for (n = 0; n < format->fmt_count; n++)
-		{
-			desc = &format->fmt_desc[n];
-			if (!desc->dsc_address) {
-				continue;
-			}
-			p = record->rec_data + (SLONG) desc->dsc_address;
-			if (TEST_NULL(record, n))
-			{
-				length = desc->dsc_length;
-				if (length) {
-					do {
-						*p++ = 0;
-					} while (--length);
-				}
-			}
-			else if (desc->dsc_dtype == dtype_varying)
-			{
-				VARY* vary = (VARY *) p;
-				length = desc->dsc_length - sizeof(USHORT);
-				if (length > vary->vary_length)
-				{
-					p = reinterpret_cast<UCHAR*>(vary->vary_string + vary->vary_length);
-					length -= vary->vary_length;
-					do {
-						*p++ = 0;
-					} while (--length);
-				}
-			}
-		}
+		/* CVC: The code that was here was moved to its own routine: cleanup_rpb()
+				and replaced by the call shown above. */
+
+		cleanup_rpb(tdbb, rpb);
 
 #ifndef GATEWAY
 		if (relation->rel_file) {
@@ -3620,7 +3714,22 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 			trigger_failure(tdbb, trigger);
 		}
 
-		request->req_records_inserted++;
+		/* CVC: Increment the counter only if we called VIO/EXT_store() and
+				we were successful. */
+		if (!(request->req_view_flags & req_first_store_return)) {
+			request->req_view_flags |= req_first_store_return;
+			if (relation->rel_view_rse) {
+				request->req_top_view_store = relation;
+			}
+		}
+		if (relation == request->req_top_view_store) {
+			if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
+				request->req_records_inserted++;
+			}
+		}
+		else if (relation->rel_file || !relation->rel_view_rse) {
+			request->req_records_inserted++;
+		}
 
 		if (transaction != dbb->dbb_sys_trans) {
 			--transaction->tra_save_point->sav_verb_count;
@@ -3650,6 +3759,19 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 	rpb->rpb_address = record->rec_data;
 	rpb->rpb_length = format->fmt_length;
 	rpb->rpb_format_number = format->fmt_version;
+
+	/* CVC: This small block added by Ann Harrison to
+			start with a clean empty buffer and so avoid getting
+			new record buffer with misleading information. Fixes
+			bug with incorrect blob sharing during insertion in
+			a stored procedure. */
+
+	p = record->rec_data;
+	{
+		UCHAR *data_end = p + rpb->rpb_length;
+		while (p < data_end)
+			*p++ = 0;
+	}
 
 /* Initialize all fields to missing */
 

@@ -24,7 +24,8 @@
 #ifndef _JRD_FLU_H_
 #define _JRD_FLU_H_
 
-#if (defined HP700 || defined HP10)
+/* RITTER - changed HP10 to HPUX in the line below */
+#if (defined HP700 || defined HPUX)
 #define MODULE_HANDLE
 #include <dl.h>
 #include <shl.h>
