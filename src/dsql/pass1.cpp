@@ -2940,6 +2940,8 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 
 // AB: Check if this is an aggregate so we know where to add 
 // it to the where-clause. 
+// 2004-12-16 Optimizer is now clever enough to optimize 
+// this self, thus only correct mapping is needed.
 // SF BUG # [ 213859 ] Subquery connected with 'IN' clause
 	if (rse->nod_arg[e_rse_streams] && 
 		(rse->nod_arg[e_rse_streams]->nod_type == nod_list) &&
@@ -2948,22 +2950,9 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	{
 		dsql_nod* aggregate = rse->nod_arg[e_rse_streams]->nod_arg[0];
 		request->req_scope_level++;
-		if (!pass1_found_aggregate(rse->nod_arg[e_rse_items], 
-				request->req_scope_level, FIELD_MATCH_TYPE_EQUAL, true))
-		{
-			// If the item in the select-list isn't a aggregate we can put
-			// the boolean inside the rse borrowed in the aggregate. This
-			// will speed-up aggregate queries which don't have an 
-			// aggregate in there select-list.
-			rse = aggregate->nod_arg[e_agg_rse];
-		}
-		else {
-			// If the item in the select-list is a aggregate then this value
-			// was not parsed completly.
-			dsql_ctx* parent_context = (dsql_ctx*) aggregate->nod_arg[e_agg_context];
-			temp->nod_arg[1] = 
-				remap_field(request, temp->nod_arg[1], parent_context , request->req_scope_level);
-		}
+		dsql_ctx* parent_context = (dsql_ctx*) aggregate->nod_arg[e_agg_context];
+		temp->nod_arg[1] = 
+			remap_field(request, temp->nod_arg[1], parent_context , request->req_scope_level);
 		request->req_scope_level--;
 	} 
 
