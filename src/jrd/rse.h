@@ -303,7 +303,7 @@ typedef srl *SRL;
    can be used in an rse, since this is the space
    available in the opt block */
 
-#define MAX_OPT_ITEMS	256
+#define MAX_OPT_ITEMS	1024
 #define MAX_STREAMS	MAX_OPT_ITEMS
 #define MAX_CONJUNCTS	MAX_OPT_ITEMS
 #define MAX_INDICES	MAX_OPT_ITEMS
