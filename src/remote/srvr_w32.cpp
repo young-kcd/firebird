@@ -601,6 +601,10 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					}
 					break;
 
+				case 'L':
+					*pserver_flag |= SRVR_ipc;
+					break;
+
 				case 'N':
 					*pserver_flag |= SRVR_no_icon;
 					break;
