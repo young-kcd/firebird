@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.33 2003-06-26 10:44:15 dimitr Exp $
+$Id: gen.cpp,v 1.34 2003-08-13 11:09:57 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1923,12 +1923,8 @@ static void gen_plan( DSQL_REQ request, DSQL_NOD plan_expression)
  **/
 static void gen_relation( DSQL_REQ request, DSQL_CTX context)
 {
-	DSQL_REL relation;
-	DSQL_PRC procedure;
-	DSQL_NOD inputs, *ptr, *end;
-
-	relation = context->ctx_relation;
-	procedure = context->ctx_procedure;
+	DSQL_REL relation = context->ctx_relation;
+	DSQL_PRC procedure = context->ctx_procedure;
 
 /* if this is a trigger or procedure , don't want relation id used */
 	if (relation) {
@@ -1962,8 +1958,9 @@ static void gen_relation( DSQL_REQ request, DSQL_CTX context)
 		}
 		STUFF(context->ctx_context);
 		STUFF_WORD(procedure->prc_in_count);
-		if (inputs = context->ctx_proc_inputs)
-			for (ptr = inputs->nod_arg, end = ptr + inputs->nod_count;
+		DSQL_NOD inputs = context->ctx_proc_inputs;
+		if (inputs)
+			for (DSQL_NOD *ptr = inputs->nod_arg, *end = ptr + inputs->nod_count;
 				 ptr < end; ptr++)
 				GEN_expr(request, *ptr);
 	}
@@ -1984,10 +1981,6 @@ static void gen_relation( DSQL_REQ request, DSQL_CTX context)
  **/
 void GEN_return( DSQL_REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
 {
-	DSQL_NOD parameters, parameter, *ptr, *end;
-	VAR variable;
-	USHORT outputs;
-
 	if (!procedure)
 		return;
 
@@ -1996,13 +1989,15 @@ void GEN_return( DSQL_REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
 	STUFF(blr_send);
 	STUFF(1);
 	STUFF(blr_begin);
-	outputs = 0;
-	if (parameters = procedure->nod_arg[e_prc_outputs]) {
-		for (ptr = parameters->nod_arg, end = ptr + parameters->nod_count;
+
+	USHORT outputs = 0;
+	DSQL_NOD parameters = procedure->nod_arg[e_prc_outputs];
+	if (parameters) {
+		for (DSQL_NOD *ptr = parameters->nod_arg, *end = ptr + parameters->nod_count;
 			 ptr < end; ptr++) {
 			outputs++;
-			parameter = *ptr;
-			variable = (VAR) parameter->nod_arg[e_var_variable];
+			DSQL_NOD parameter = *ptr;
+			VAR variable = (VAR) parameter->nod_arg[e_var_variable];
 			STUFF(blr_assignment);
 			STUFF(blr_variable);
 			STUFF_WORD(variable->var_variable_number);
@@ -2044,16 +2039,14 @@ void GEN_return( DSQL_REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
  **/
 static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 {
-	DSQL_NOD node, list, *ptr, *end;
-
 	if (rse->nod_arg[e_rse_singleton]
 		&& !(request->req_dbb->dbb_flags & DBB_v3)) STUFF(blr_singular);
 
 	STUFF(blr_rse);
 
-	list = rse->nod_arg[e_rse_streams];
+	DSQL_NOD list = rse->nod_arg[e_rse_streams];
 
-/* Handle source streams */
+// Handle source streams
 
 	if (list->nod_type == nod_union) {
 		STUFF(1);
@@ -2061,9 +2054,9 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 	}
 	else if (list->nod_type == nod_list) {
 		STUFF(list->nod_count);
-		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
+		for (DSQL_NOD *ptr = list->nod_arg, *end = ptr + list->nod_count; ptr < end;
 			 ptr++) {
-			node = *ptr;
+			DSQL_NOD node = *ptr;
 			if (node->nod_type == nod_relation ||
 				node->nod_type == nod_aggregate || node->nod_type == nod_join)
 				GEN_expr(request, node);
@@ -2076,7 +2069,9 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 
 	if (rse->nod_arg[e_rse_lock])
 		STUFF(blr_writelock);
-	
+
+	DSQL_NOD node;
+
 	if ((node = rse->nod_arg[e_rse_first]) != NULL) {
 		STUFF(blr_first);
 		GEN_expr(request, node);
@@ -2098,7 +2093,7 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 	if ((list = rse->nod_arg[e_rse_reduced]) != NULL) {
 		STUFF(blr_project);
 		STUFF(list->nod_count);
-		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
+		for (DSQL_NOD *ptr = list->nod_arg, *end = ptr + list->nod_count; ptr < end;
 			 ptr++)
 			GEN_expr(request, *ptr);
 	}
@@ -2145,23 +2140,21 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
  **/
 static void gen_searched_case( DSQL_REQ request, DSQL_NOD node)
 {
-	DSQL_NOD boolean_list, results_list, *bptr, *rptr, *end;
-
-	/* blr_value_if is used for building the case expression */
+	// blr_value_if is used for building the case expression
 
 	STUFF(blr_cast);
 	gen_descriptor(request, &node->nod_desc, TRUE);
 	SSHORT count = node->nod_arg[e_searched_case_search_conditions]->nod_count;
-	boolean_list = node->nod_arg[e_searched_case_search_conditions];
-	results_list = node->nod_arg[e_searched_case_results];
-	for (bptr = boolean_list->nod_arg, end = bptr + count, rptr = results_list->nod_arg; 
+	DSQL_NOD boolean_list = node->nod_arg[e_searched_case_search_conditions];
+	DSQL_NOD results_list = node->nod_arg[e_searched_case_results];
+	for (DSQL_NOD *bptr = boolean_list->nod_arg, *end = bptr + count, *rptr = results_list->nod_arg; 
 			bptr < end; bptr++, rptr++)
 	{
 		STUFF(blr_value_if);
 		GEN_expr(request, *bptr);
 		GEN_expr(request, *rptr);
 	}
-	/* else_result */
+	// else_result
 	GEN_expr(request, node->nod_arg[e_searched_case_results]->nod_arg[count]);
 }
 
@@ -2179,17 +2172,11 @@ static void gen_searched_case( DSQL_REQ request, DSQL_NOD node)
  **/
 static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 {
-	DSQL_NOD list, *ptr, *end, item, alias, map_node;
-	PAR parameter;
-	DSQL_MSG message;
 	DSQL_FLD field;
 	DSC constant_desc;
 	DSQL_REL relation;
-	UDF udf;
 	DSQL_CTX context;
-	STR string;
 	SSHORT constant;
-	MAP map;
 
 	constant_desc.dsc_dtype = dtype_short;
 	constant_desc.dsc_scale = 0;
@@ -2200,15 +2187,18 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 
 /* Set up parameter for things in the select list */
 
-	list = rse->nod_arg[e_rse_items];
-	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-		item = *ptr;
-		parameter = MAKE_parameter(request->req_receive, TRUE, TRUE, 0);
+	DSQL_NOD list = rse->nod_arg[e_rse_items];
+	for (DSQL_NOD *ptr = list->nod_arg, *end = ptr + list->nod_count; ptr < end; ptr++) {
+		DSQL_NOD item = *ptr;
+		PAR parameter = MAKE_parameter(request->req_receive, TRUE, TRUE, 0);
 		parameter->par_node = item;
 		MAKE_desc(&parameter->par_desc, item);
-		if (item->nod_type == nod_field) {
+		char  *name_alias = NULL;
+
+		switch(item->nod_type) {
+		case nod_field: {
 			field = (DSQL_FLD) item->nod_arg[e_fld_field];
-			parameter->par_name = parameter->par_alias = field->fld_name;
+			name_alias = field->fld_name;
 			context = (DSQL_CTX) item->nod_arg[e_fld_context];
 			if (context->ctx_relation) {
 				parameter->par_rel_name = context->ctx_relation->rel_name;
@@ -2218,18 +2208,19 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 				parameter->par_rel_name = context->ctx_procedure->prc_name;
 				parameter->par_owner_name = context->ctx_procedure->prc_owner;
 			}
-		}
-		else if (item->nod_type == nod_dbkey) {
-			parameter->par_alias = const_cast < char *>(db_key_name);
-			parameter->par_name = const_cast < char *>(db_key_name);
+			break;
+			}
+		case nod_dbkey: {
+			parameter->par_name = parameter->par_alias = const_cast<char*>(db_key_name);
 			context = (DSQL_CTX) item->nod_arg[0]->nod_arg[0];
 			parameter->par_rel_name = context->ctx_relation->rel_name;
 			parameter->par_owner_name = context->ctx_relation->rel_owner;
-		}
-		else if (item->nod_type == nod_alias) {
-			string = (STR) item->nod_arg[e_alias_alias];
+			break;
+			}
+		case nod_alias: {
+			STR string = (STR) item->nod_arg[e_alias_alias];
 			parameter->par_alias = (TEXT *) string->str_data;
-			alias = item->nod_arg[e_alias_value];
+			DSQL_NOD alias = item->nod_arg[e_alias_value];
 			if (alias->nod_type == nod_field) {
 				field = (DSQL_FLD) alias->nod_arg[e_fld_field];
 				parameter->par_name = field->fld_name;
@@ -2247,99 +2238,148 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 				}
 			}
 			else if (alias->nod_type == nod_dbkey) {
-				parameter->par_name = const_cast < char *>(db_key_name);
+				parameter->par_name = const_cast<char*>(db_key_name);
 				context = (DSQL_CTX) alias->nod_arg[0]->nod_arg[0];
 				parameter->par_rel_name = context->ctx_relation->rel_name;
 				parameter->par_owner_name = context->ctx_relation->rel_owner;
 			}
-		}
-		else if (item->nod_type == nod_map) {
-			map = (MAP) item->nod_arg[e_map_map];
-			map_node = map->map_node;
+			break;
+			}
+		case nod_map: {
+			MAP map = (MAP) item->nod_arg[e_map_map];
+			DSQL_NOD map_node = map->map_node;
 			while (map_node->nod_type == nod_map) {
-				/* skip all the nod_map nodes */
+				// skip all the nod_map nodes
 				map = (MAP) map_node->nod_arg[e_map_map];
 				map_node = map->map_node;
 			}
-			if (map_node->nod_type == nod_field) {
+			switch(map_node->nod_type) {
+			case nod_field: {
 				field = (DSQL_FLD) map_node->nod_arg[e_fld_field];
-				parameter->par_name = parameter->par_alias = field->fld_name;
-			}
-			else if (map_node->nod_type == nod_alias) {
-				string = (STR) map_node->nod_arg[e_alias_alias];
+				name_alias = field->fld_name;
+				break;
+				}
+			case nod_alias: {
+				STR string = (STR) map_node->nod_arg[e_alias_alias];
 				parameter->par_alias = (TEXT *) string->str_data;
-				alias = map_node->nod_arg[e_alias_value];
+				DSQL_NOD alias = map_node->nod_arg[e_alias_value];
 				if (alias->nod_type == nod_field) {
 					field = (DSQL_FLD) alias->nod_arg[e_fld_field];
 					parameter->par_name = field->fld_name;
 				}
+				break;
+				}
+			case nod_agg_count:
+				name_alias = "COUNT";
+				break;
+			case nod_agg_total:
+				name_alias = "SUM";
+				break;
+			case nod_agg_average:
+				name_alias = "AVG";
+				break;
+			case nod_agg_total2:
+				name_alias = "SUM";
+				break;
+			case nod_agg_average2:
+				name_alias = "AVG";
+				break;
+			case nod_agg_min:
+				name_alias = "MIN";
+				break;
+			case nod_agg_max:
+				name_alias = "MAX";
+				break;
+			} // switch(map_node->nod_type)
+			break;
 			}
-			else if (map_node->nod_type == nod_agg_count)
-				parameter->par_name = parameter->par_alias = "COUNT";
-			else if (map_node->nod_type == nod_agg_total)
-				parameter->par_name = parameter->par_alias = "SUM";
-			else if (map_node->nod_type == nod_agg_average)
-				parameter->par_name = parameter->par_alias = "AVG";
-			else if (map_node->nod_type == nod_agg_total2)
-				parameter->par_name = parameter->par_alias = "SUM";
-			else if (map_node->nod_type == nod_agg_average2)
-				parameter->par_name = parameter->par_alias = "AVG";
-			else if (map_node->nod_type == nod_agg_min)
-				parameter->par_name = parameter->par_alias = "MIN";
-			else if (map_node->nod_type == nod_agg_max)
-				parameter->par_name = parameter->par_alias = "MAX";
-		}
-		else if (item->nod_type == nod_udf) {
-			udf = (UDF) item->nod_arg[0];
-			parameter->par_name = parameter->par_alias = udf->udf_name;
-		}
-		else if (item->nod_type == nod_gen_id)
-			parameter->par_name = parameter->par_alias = "GEN_ID";
-		else if (item->nod_type == nod_gen_id2)
-			parameter->par_name = parameter->par_alias = "GEN_ID";
-        else if (item->nod_type == nod_user_name)
-            parameter->par_name = parameter->par_alias  = "USER";
-        else if (item->nod_type == nod_current_role)
-            parameter->par_name = parameter->par_alias  = "ROLE";
-        else if (item->nod_type == nod_internal_info)
-		{
+		case nod_udf: {
+			UDF udf = (UDF) item->nod_arg[0];
+			name_alias = udf->udf_name;
+			break;
+			}
+		case nod_gen_id:
+			name_alias	= "GEN_ID";
+			break;
+		case nod_gen_id2:
+			name_alias	= "GEN_ID";
+			break;
+        case nod_user_name:
+            name_alias	= "USER";
+			break;
+        case nod_current_role:
+            name_alias	= "ROLE";
+			break;
+        case nod_internal_info: {
 			internal_info_id id =
 				*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);
-			parameter->par_name = parameter->par_alias = InternalInfo::getAlias(id);
-		}
-        else if (item->nod_type == nod_substr) {
-            /* CVC: SQL starts at 1 but C starts at zero. */
-            /*DSQL_NOD node = item->nod_arg [e_substr_start];
-              --(*(SLONG *) (node->nod_desc.dsc_address));
-              FIXED IN PARSE.Y; here it doesn't catch expressions: Bug 450301. */
-            parameter->par_name = parameter->par_alias  = "SUBSTRING";
-        }
-        else if (item->nod_type == nod_cast)
-            parameter->par_name = parameter->par_alias	= "CAST";
-        else if (item->nod_type == nod_upcase)
-            parameter->par_name = parameter->par_alias	= "UPPER";
+			name_alias = InternalInfo::getAlias(id);
+			break;
+			}
+		case nod_concatenate:
+			name_alias = "CONCATENATION";
+			break;
+        case nod_substr: {
+            // CVC: SQL starts at 1 but C starts at zero.
+            //DSQL_NOD node = item->nod_arg [e_substr_start];
+            //  --(*(SLONG *) (node->nod_desc.dsc_address));
+            //  FIXED IN PARSE.Y; here it doesn't catch expressions: Bug 450301.
+            name_alias = "SUBSTRING";
+			break;
+			}
+        case nod_cast:
+            name_alias	= "CAST";
+			break;
+        case nod_upcase:
+            name_alias	= "UPPER";
+			break;
+		case nod_current_date:
+			name_alias = "CURRENT_DATE";
+			break;
+		case nod_current_time:
+			name_alias = "CURRENT_TIME";
+			break;
+		case nod_current_timestamp:
+			name_alias = "CURRENT_TIMESTAMP";
+			break;
+		case nod_extract:
+			name_alias = "EXTRACT";
+			break;
+		case nod_searched_case:
+		case nod_simple_case:
+			name_alias = "CASE";
+			break;
+		case nod_coalesce:
+			name_alias = "COALESCE";
+			break;
+		} // end switch(item->nod_type)
+		if (name_alias)
+			parameter->par_name = parameter->par_alias = name_alias;
+	} // for (ptr = list->nod_arg
+
+
+// Set up parameter to handle EOF 
+
+	{
+		PAR parameter_eof = MAKE_parameter(request->req_receive, FALSE, FALSE, 0);
+		request->req_eof = parameter_eof;
+		parameter_eof->par_desc.dsc_dtype = dtype_short;
+		parameter_eof->par_desc.dsc_scale = 0;
+		parameter_eof->par_desc.dsc_length = sizeof(SSHORT);
 	}
 
-/* Set up parameter to handle EOF */
-
-	request->req_eof = parameter =
-		MAKE_parameter(request->req_receive, FALSE, FALSE, 0);
-	parameter->par_desc.dsc_dtype = dtype_short;
-	parameter->par_desc.dsc_scale = 0;
-	parameter->par_desc.dsc_length = sizeof(SSHORT);
-
-/* Save DBKEYs for possible update later */
+// Save DBKEYs for possible update later
 
 	list = rse->nod_arg[e_rse_streams];
 
 	if (!rse->nod_arg[e_rse_reduced]) {
-		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
-			 ptr++)
-			if ((item = *ptr) && (item->nod_type == nod_relation)) {
+		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
+			DSQL_NOD item = *ptr;
+			if (item && item->nod_type == nod_relation) {
 				context = (DSQL_CTX) item->nod_arg[e_rel_context];
 				if (relation = context->ctx_relation) {
-					/* Set up dbkey */
-					parameter =
+					// Set up dbkey
+					PAR parameter =
 						MAKE_parameter(request->req_receive, FALSE, FALSE, 0);
 					parameter->par_dbkey_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
@@ -2347,7 +2387,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 					parameter->par_desc.dsc_length =
 						relation->rel_dbkey_length;
 
-					/* Set up record version - for post v33 databases */
+					// Set up record version - for post v33 databases
 
 					if (!(request->req_dbb->dbb_flags & DBB_v3)) {
 						parameter =
@@ -2361,6 +2401,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 					}
 				}
 			}
+		}
 	}
 
 #ifdef SCROLLABLE_CURSORS
@@ -2369,7 +2410,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 
 	if (request->req_type == REQ_SELECT &&
 		request->req_dbb->dbb_base_level >= 5) {
-		parameter = MAKE_parameter(request->req_async, FALSE, FALSE, 0);
+		PAR parameter = MAKE_parameter(request->req_async, FALSE, FALSE, 0);
 		parameter->par_desc.dsc_dtype = dtype_short;
 		parameter->par_desc.dsc_length = sizeof(USHORT);
 		parameter->par_desc.dsc_scale = 0;
@@ -2385,10 +2426,10 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 	}
 #endif
 
-/* Generate definitions for the messages */
+// Generate definitions for the messages 
 
 	GEN_port(request, request->req_receive);
-	message = request->req_send;
+	DSQL_MSG message = request->req_send;
 	if (message->msg_parameter)
 		GEN_port(request, message);
 	else
@@ -2399,14 +2440,14 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 			GEN_port(request, request->req_async);
 #endif
 
-/* If there is a send message, build a RECEIVE */
+// If there is a send message, build a RECEIVE
 
 	if ((message = request->req_send) != NULL) {
 		STUFF(blr_receive);
 		STUFF(message->msg_number);
 	}
 
-/* Generate FOR loop */
+// Generate FOR loop
 
 	message = request->req_receive;
 
@@ -2419,16 +2460,16 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 	STUFF(message->msg_number);
 	STUFF(blr_begin);
 
-/* Build body of FOR loop */
+// Build body of FOR loop
 
-	/* Add invalid usage here */
+	// Add invalid usage here
 	
 	STUFF(blr_assignment);
 	constant = 1;
 	gen_constant(request, &constant_desc, USE_VALUE);
 	gen_parameter(request, request->req_eof);
 
-	for (parameter = message->msg_parameters; parameter;
+	for (PAR parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next) {
 		if (parameter->par_node) {
 			STUFF(blr_assignment);
@@ -2472,16 +2513,15 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
  **/
 static void gen_simple_case( DSQL_REQ request, DSQL_NOD node)
 {
-	DSQL_NOD when_list, results_list, *wptr, *rptr, *end;
-
 	/* blr_value_if is used for building the case expression */
 
 	STUFF(blr_cast);
 	gen_descriptor(request, &node->nod_desc, TRUE);
 	SSHORT count = node->nod_arg[e_simple_case_when_operands]->nod_count;
-	when_list = node->nod_arg[e_simple_case_when_operands];
-	results_list = node->nod_arg[e_simple_case_results];
-	for (wptr = when_list->nod_arg, end = wptr + count, rptr = results_list->nod_arg; 
+	DSQL_NOD when_list = node->nod_arg[e_simple_case_when_operands];
+	DSQL_NOD results_list = node->nod_arg[e_simple_case_results];
+
+	for (DSQL_NOD *wptr = when_list->nod_arg, *end = wptr + count, *rptr = results_list->nod_arg; 
 			wptr < end; wptr++, rptr++)
 	{
 		STUFF(blr_value_if);
@@ -2540,16 +2580,11 @@ static void gen_sort( DSQL_REQ request, DSQL_NOD list)
  **/
 static void gen_table_lock( DSQL_REQ request, DSQL_NOD tbl_lock, USHORT lock_level)
 {
-	DSQL_NOD tbl_names, *ptr, *end;
-	STR temp;
-	SSHORT flags;
-	USHORT lock_mode;
-
 	if ((!tbl_lock) || (tbl_lock->nod_type != nod_table_lock))
 		return;
 
-	tbl_names = tbl_lock->nod_arg[e_lock_tables];
-	flags = 0;
+	DSQL_NOD tbl_names = tbl_lock->nod_arg[e_lock_tables];
+	SSHORT flags = 0;
 
 	if (tbl_lock->nod_arg[e_lock_mode])
 		flags = tbl_lock->nod_arg[e_lock_mode]->nod_flags;
@@ -2559,9 +2594,9 @@ static void gen_table_lock( DSQL_REQ request, DSQL_NOD tbl_lock, USHORT lock_lev
 	else if (flags & NOD_SHARED)
 		lock_level = gds_tpb_shared;
 
-	lock_mode = (flags & NOD_WRITE) ? gds_tpb_lock_write : gds_tpb_lock_read;
+	USHORT lock_mode = (flags & NOD_WRITE) ? gds_tpb_lock_write : gds_tpb_lock_read;
 
-	for (ptr = tbl_names->nod_arg, end = ptr + tbl_names->nod_count;
+	for (DSQL_NOD *ptr = tbl_names->nod_arg, *end = ptr + tbl_names->nod_count;
 		 ptr < end; ptr++) {
 		if ((*ptr)->nod_type != nod_relation_name)
 			continue;
@@ -2569,7 +2604,7 @@ static void gen_table_lock( DSQL_REQ request, DSQL_NOD tbl_lock, USHORT lock_lev
 		STUFF(lock_mode);
 
 		/* stuff table name */
-		temp = (STR) ((*ptr)->nod_arg[e_rln_name]);
+		STR temp = (STR) ((*ptr)->nod_arg[e_rln_name]);
 		stuff_cstring(request, reinterpret_cast < char *>(temp->str_data));
 
 		STUFF(lock_level);
@@ -2590,10 +2625,9 @@ static void gen_table_lock( DSQL_REQ request, DSQL_NOD tbl_lock, USHORT lock_lev
  **/
 static void gen_udf( DSQL_REQ request, DSQL_NOD node)
 {
-	UDF udf;
 	DSQL_NOD list, *ptr, *end;
 
-	udf = (UDF) node->nod_arg[0];
+	UDF udf = (UDF) node->nod_arg[0];
 	STUFF(blr_function);
 	STUFF_CSTRING(udf->udf_name);
 
@@ -2621,30 +2655,25 @@ static void gen_udf( DSQL_REQ request, DSQL_NOD node)
  **/
 static void gen_union( DSQL_REQ request, DSQL_NOD union_node)
 {
-	DSQL_NOD sub_rse, *ptr, *end, streams;
-	DSQL_NOD items, *iptr, *iend;
-	USHORT count;
-	DSQL_CTX union_context;
-
 	STUFF(blr_union);
 
-/* Obtain the context for UNION from the first MAP node   */
-	items = union_node->nod_arg[e_rse_items];
-	union_context = (DSQL_CTX) items->nod_arg[0]->nod_arg[e_map_context];
+// Obtain the context for UNION from the first MAP node 
+	DSQL_NOD items = union_node->nod_arg[e_rse_items];
+	DSQL_CTX union_context = (DSQL_CTX) items->nod_arg[0]->nod_arg[e_map_context];
 	STUFF(union_context->ctx_context);
 
-	streams = union_node->nod_arg[e_rse_streams];
+	DSQL_NOD streams = union_node->nod_arg[e_rse_streams];
 	STUFF(streams->nod_count);	/* number of substreams */
 
-	for (ptr = streams->nod_arg, end = ptr + streams->nod_count; ptr < end;
+	for (DSQL_NOD *ptr = streams->nod_arg, *end = ptr + streams->nod_count; ptr < end;
 		 ptr++) {
-		sub_rse = *ptr;
+		DSQL_NOD sub_rse = *ptr;
 		gen_rse(request, sub_rse);
 		items = sub_rse->nod_arg[e_rse_items];
 		STUFF(blr_map);
 		STUFF_WORD(items->nod_count);
-		count = 0;
-		for (iptr = items->nod_arg, iend = iptr + items->nod_count;
+		USHORT count = 0;
+		for (DSQL_NOD *iptr = items->nod_arg, *iend = iptr + items->nod_count;
 			 iptr < iend; iptr++) {
 			STUFF_WORD(count);
 			GEN_expr(request, *iptr);
