@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.135 2003-05-25 10:44:56 fsg Exp $
+dnl $Id: configure.in,v 1.136 2003-06-13 01:17:49 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -593,6 +593,7 @@ mkdir -p gen/libfbclient/utilities
 mkdir -p gen/libfbclient/fbutil
 mkdir -p gen/libfbclient/common/classes
 mkdir -p gen/libfbclient/common/config
+mkdir -p gen/libfbclient/jrd/os/posix
 mkdir -p gen/libfbclient/jrd/os/win32
 mkdir -p gen/client.gbak/burp
 mkdir -p gen/client.gfix/alice
