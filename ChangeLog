@@ -1,3 +1,138 @@
+2004-05-19 00:01  brodsom
+
+	* firebird2/src/remote/: inet.cpp (1.110), xdr.h (1.8):
+	
+	Macro cleaning
+
+2004-05-19 00:00  brodsom
+
+	* firebird2/src/jrd/: intl.h (1.8), tra.h (1.31):
+	
+	Comment unused macros
+
+2004-05-18 23:59  brodsom
+
+	* firebird2/src/isql/isql.h (1.31):
+	
+	-Macro cleaning
+
+2004-05-18 23:58  brodsom
+
+	* firebird2/src/intl/: langdrv.h (1.11), lc_ascii.cpp (1.13),
+	lc_ksc.cpp (1.13), lc_narrow.cpp (1.11), ldcommon.h (1.18):
+	
+	-Macro cleaning -Remove langdrv.h
+
+2004-05-18 23:55  brodsom
+
+	* firebird2/src/include/firebird.h (1.20):
+	
+	Define macros for ifdefs without value
+
+2004-05-18 23:54  brodsom
+
+	* firebird2/src/gpre/pretty.cpp (1.25):
+	
+	Macro cleaning
+
+2004-05-18 23:54  brodsom
+
+	* firebird2/src/gpre/gpre.h (1.63):
+	
+	Avoid duplicated definition Define macros for ifdefs without value
+
+2004-05-18 18:48  brodsom
+
+	* firebird2/src/jrd/: isc_file.cpp (1.77), why.cpp (1.71):
+	
+	Macro cleaning
+
+2004-05-18 18:40  brodsom
+
+	* firebird2/src/jrd/: cmp.cpp (1.121), dfw.epp (1.111), ini.h
+	(1.17), met.epp (1.121), vio.cpp (1.98):
+	
+	Macro cleaning (use ini.h instead repeating the macros)
+
+2004-05-18 18:31  brodsom
+
+	* firebird2/src/: msgs/change_msgs.epp (1.16), msgs/check_msgs.epp
+	(1.11), msgs/enter_msgs.epp (1.13), msgs/include.epp (1.8),
+	jrd/os/config_root.h (1.7):
+	
+	Macro cleaning
+
+2004-05-18 18:26  brodsom
+
+	* firebird2/src/: remote/inet.cpp (1.109), remote/xnet.h (1.8),
+	misc/memtest.cpp (1.4):
+	
+	Macro cleaning
+
+2004-05-18 18:22  brodsom
+
+	* firebird2/src/: dsql/sqlda.h (1.8), dsql/user_dsql.cpp (1.40),
+	intl/lc_ascii.cpp (1.12), iscguard/iscguard.cpp (1.35),
+	iscguard/iscguard.h (1.9):
+	
+	Macro cleaning
+
+2004-05-18 18:21  brodsom
+
+	* firebird2/src/isql/: isql.h (1.30), isql.rc (1.3), isql.rh (1.1),
+	isql_res.h (1.2), isql_win.cpp (1.16):
+	
+	-Macro cleaning -Move isql_res.h to isql.rh
+
+2004-05-18 11:44  kkuznetsov
+
+	* firebird2/src/lock/lock.cpp (1.101):
+	
+	removed double definition of SOLARIS_MAX_STALL
+
+2004-05-18 03:20  brodsom
+
+	* firebird2/src/jrd/fun.epp (1.56):
+	
+	Fix
+
+2004-05-18 02:43  brodsom
+
+	* firebird2/src/: jrd/os/thd_priority.h (1.12), remote/remote.h
+	(1.34), remote/remote_def.h (1.26), utilities/ibmgr/ibmgr.h (1.8),
+	utilities/guard/guard.cpp (1.8):
+	
+	Correction
+
+2004-05-18 00:30  brodsom
+
+	* firebird2/src/remote/os/win32/: cntl.cpp (1.9), srvr_w32.cpp
+	(1.18), window.cpp (1.9), winmain.cpp (1.9), wnet.cpp (1.23):
+	
+	Move THREAD_ functions from thd.h to thread_proto.h (and fix unix
+	build)
+
+2004-05-18 00:26  brodsom
+
+	* firebird2/src/: dsql/alld.cpp (1.24), dsql/ddl.cpp (1.101),
+	dsql/dsql.cpp (1.109), dsql/metd.epp (1.61), ipserver/ipclient.cpp
+	(1.45), jrd/cch.cpp (1.91), jrd/dfw.epp (1.110), jrd/dyn.epp
+	(1.61), jrd/event.cpp (1.50), jrd/execute_statement.cpp (1.11),
+	jrd/fun.epp (1.55), jrd/isc_sync.cpp (1.88), jrd/jrd.cpp (1.164),
+	jrd/met.epp (1.120), jrd/nbak.cpp (1.33), jrd/pwd.cpp (1.30),
+	jrd/qatest.cpp (1.13), jrd/sch.cpp (1.26), jrd/shut.cpp (1.27),
+	jrd/sort.cpp (1.68), jrd/svc.cpp (1.122), jrd/thd.h (1.25),
+	jrd/tra.cpp (1.74), jrd/val.cpp (1.50), jrd/vio.cpp (1.97),
+	jrd/why.cpp (1.70), jrd/thread_proto.h (1.1),
+	jrd/os/win32/ibinitdll.cpp (1.5), jrd/os/win32/thd_priority.cpp
+	(1.18), lock/lock.cpp (1.100), remote/inet.cpp (1.108),
+	remote/inet_server.cpp (1.42), remote/interface.cpp (1.83),
+	remote/remote.cpp (1.35), remote/server.cpp (1.82), remote/xnet.cpp
+	(1.47):
+	
+	Move THREAD_ functions from thd.h to thread_proto.h (and fix unix
+	build)
+
 2004-05-17 17:14  brodsom
 
 	* firebird2/src/lock/: lock.cpp (1.99), lock.h (1.27), print.cpp
