@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.189 2004-01-07 00:31:32 brodsom Exp $
+dnl $Id: configure.in,v 1.190 2004-01-12 04:58:09 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -29,6 +29,7 @@ dnl      EDITLINE_FLG     : support fancy command line editing in isql
 dnl      SHRLIB_EXT       : suffix of shared library files
 
 RAW_DEVICES_FLG=Y
+INSTALL_PREFIX=""
 case "$target" in
   *-*-darwin*)
     MAKEFILE_PREFIX=darwin
@@ -48,8 +49,19 @@ case "$target" in
     SHRLIB_EXT=so
     ;;
 
+  x86_64*-*-linux-*)
+    MAKEFILE_PREFIX=linux_amd64
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    ;;
+
   sparc*-*-linux-*)
     MAKEFILE_PREFIX=linux_sparc32
+    INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     LOCK_MANAGER_FLG=Y
@@ -125,6 +137,10 @@ case "$target" in
     AC_MSG_ERROR(unsupported platform ${target})
     ;;
 esac
+
+if test "$INSTALL_PREFIX" = ""; then
+  INSTALL_PREFIX=$MAKEFILE_PREFIX
+fi
 
 AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
@@ -837,7 +853,7 @@ gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
 gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
-gen/Makefile.install:builds/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
+gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 )
