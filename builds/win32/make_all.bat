@@ -34,7 +34,7 @@
 :RELEASE
 @echo Building release
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "fbserver - Win32 Release" "fbguard - Win32 Release" "fb_lock_print - Win32 Release" "fb_inet_server - Win32 Release" "gbak - Win32 Release" "gpre - Win32 Release" "gsplit - Win32 Release" "gdef - Win32 Release" "gfix - Win32 Release" "gsec - Win32 Release" "gstat - Win32 Release" "instreg - Win32 Release" "instsvc - Win32 Release" "isql - Win32 Release" "qli - Win32 Release" "gds32 - Win32 Release" "fbclient - Win32 Release" "ib_udf - Win32 Release" "ib_util - Win32 Release" "intl - Win32 Release" "intlcpp - Win32 Release" %CLEAN% /OUT all.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "fbserver - Win32 Release" "fbguard - Win32 Release" "fb_lock_print - Win32 Release" "fb_inet_server - Win32 Release" "gbak - Win32 Release" "gpre - Win32 Release" "gsplit - Win32 Release" "gdef - Win32 Release" "gfix - Win32 Release" "gsec - Win32 Release" "gstat - Win32 Release" "instreg - Win32 Release" "instsvc - Win32 Release" "isql - Win32 Release" "qli - Win32 Release" "gds32 - Win32 Release" "fbclient - Win32 Release" "fbudf - Win32 Release" "ib_udf - Win32 Release" "ib_util - Win32 Release" "intl - Win32 Release" "intlcpp - Win32 Release" %CLEAN% /OUT all.log
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% release /OUT all.log
 )
@@ -44,7 +44,7 @@ if "%VS_VER%"=="msvc6" (
 :DEBUG
 @echo Building debug
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "fbserver - Win32 Debug" "fbguard - Win32 Debug" "fb_lock_print - Win32 Debug" "fb_inet_server - Win32 Debug" "gbak - Win32 Debug" "gpre - Win32 Debug" "gsplit - Win32 Debug" "gdef - Win32 Debug" "gfix - Win32 Debug" "gsec - Win32 Debug" "gstat - Win32 Debug" "instreg - Win32 Debug" "instsvc - Win32 Debug" "isql - Win32 Debug" "qli - Win32 Debug" "gds32 - Win32 Debug" "fbclient - Win32 Debug" "ib_udf - Win32 Debug" "ib_util - Win32 Debug" "intl - Win32 Debug" "intlcpp - Win32 Debug" %CLEAN% /OUT all.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "fbserver - Win32 Debug" "fbguard - Win32 Debug" "fb_lock_print - Win32 Debug" "fb_inet_server - Win32 Debug" "gbak - Win32 Debug" "gpre - Win32 Debug" "gsplit - Win32 Debug" "gdef - Win32 Debug" "gfix - Win32 Debug" "gsec - Win32 Debug" "gstat - Win32 Debug" "instreg - Win32 Debug" "instsvc - Win32 Debug" "isql - Win32 Debug" "qli - Win32 Debug" "gds32 - Win32 Debug" "fbclient - Win32 Debug" "fbudf - Win32 Debug" "ib_udf - Win32 Debug" "ib_util - Win32 Debug" "intl - Win32 Debug" "intlcpp - Win32 Debug" %CLEAN% /OUT all.log
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /OUT all.log
 )
@@ -115,6 +115,9 @@ copy %ROOT_PATH%\src\extlib\ib_util.h %ROOT_PATH%\output\include > nul
 copy %ROOT_PATH%\src\jrd\perf.h %ROOT_PATH%\output\include >nul
 copy %ROOT_PATH%\src\jrd\blr.h %ROOT_PATH%\output\include > nul
 copy %ROOT_PATH%\src\include\gen\iberror.h %ROOT_PATH%\output\include > nul
+:: UDF
+copy %ROOT_PATH%\src\extlib\ib_udf.sql %ROOT_PATH%\output\udf > nul
+copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\udf > nul
 :: Examples
 @copy %ROOT_PATH%\examples\* %ROOT_PATH%\output\examples > nul
 @copy %ROOT_PATH%\examples\api\* %ROOT_PATH%\output\examples\api > nul
@@ -125,6 +128,8 @@ copy %ROOT_PATH%\src\include\gen\iberror.h %ROOT_PATH%\output\include > nul
 @copy %ROOT_PATH%\examples\include\* %ROOT_PATH%\output\examples\include > nul
 @copy %ROOT_PATH%\examples\stat\* %ROOT_PATH%\output\examples\stat > nul
 @copy %ROOT_PATH%\examples\udf\* %ROOT_PATH%\output\examples\udf > nul
+@copy %ROOT_PATH%\src\extlib\ib_udf* %ROOT_PATH%\output\examples\udf > nul
+@copy %ROOT_PATH%\src\extlib\fbudf\* %ROOT_PATH%\output\examples\udf > nul
 ::
 @copy install_super.bat %ROOT_PATH%\output\bin >nul
 @copy install_classic.bat %ROOT_PATH%\output\bin >nul
