@@ -33,6 +33,9 @@
 /* 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ *
+ * 2001.08.07 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, second attempt
  */
 
 #include "firebird.h"
@@ -715,12 +718,10 @@ SLONG PAG_attachment_id(void)
 
 /* Get new attachment id */
 
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only) {
 		attachment->att_attachment_id = ++dbb->dbb_attachment_id;
 	}
 	else {
-#endif /* READONLY_DATABASE */
 		window.win_page = HEADER_PAGE;
 		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &window);

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.08.07 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, second attempt
  */
 
 #include "firebird.h"
@@ -172,13 +175,11 @@ void PPG_print_header( HDR header, SLONG page,
 			FPRINTF(outfile, "database shutdown");
 		}
 
-#ifdef READONLY_DATABASE
 		if (flags & hdr_read_only) {
 			if (flag_count++)
 				FPRINTF(outfile, ", ");
 			FPRINTF(outfile, "read only");
 		}
-#endif /* READONLY_DATABASE */
 		FPRINTF(outfile, "\n");
 	}
 

@@ -19,9 +19,13 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ *
+ * 2001.08.07 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, second attempt
  */
 
 #include "firebird.h"
@@ -133,7 +137,6 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 	strcpy(reinterpret_cast < char *>(file->ext_filename), file_name);
 
 	file->ext_flags = 0;
-#ifdef READONLY_DATABASE
 	file->ext_ifi = (int *) NULL;
 /* If the database is updateable, then try opening the external files in
  * RW mode. If the DB is ReadOnly, then open the external files only in
@@ -142,9 +145,6 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 	if (!(dbb->dbb_flags & DBB_read_only))
 		file->ext_ifi = (int *) ib_fopen(file_name, FOPEN_TYPE);
 	if (!(file->ext_ifi))
-#else
-	if (!(file->ext_ifi = (int *) ib_fopen(file_name, FOPEN_TYPE)))
-#endif
 	{
 		/* could not open the file as read write attempt as read only */
 		if (!(file->ext_ifi = (int *) ib_fopen(file_name, FOPEN_READ_ONLY)))
