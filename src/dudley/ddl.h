@@ -87,31 +87,33 @@ enum act_t {
 
 struct dbb;
 
-typedef struct act {
+struct act {
 	enum act_t act_type;		// what to do
 	act* act_next;				// next action in system
 	dbb* act_object;		// object in question (dudley_rel, dudley_fld, idx, etc.)
 	USHORT act_line;			// line the action started on
 	USHORT act_flags;
-} *ACT;
+};
+typedef act* ACT;
 
 const int ACT_ignore	= 1;	// Ignore the action
 
 
 /* Context block */
 
-typedef struct dudley_ctx {
+struct dudley_ctx {
 	struct sym* ctx_name;
 	struct dudley_rel* ctx_relation;
 	struct dudley_fld* ctx_field;
 	USHORT ctx_view_rse;
 	USHORT ctx_context_id;
-} *DUDLEY_CTX;
+};
+typedef dudley_ctx* DUDLEY_CTX;
 
 
 /* Database Definition Block */
 
-typedef struct dbb {
+struct dbb {
 	struct sym* dbb_name;
 	struct dudley_rel* dbb_relations;
 	struct gfl* dbb_fields;
@@ -131,8 +133,9 @@ typedef struct dbb {
 	SSHORT dbb_numbufs;
 	SSHORT dbb_bufsize;
 	SLONG dbb_grp_cmt_wait;
-	struct fil* dbb_cache_file;
-} *DBB;
+	fil* dbb_cache_file;
+};
+typedef dbb* DBB;
 
 enum dbb_flags_vals {
 	DBB_null_description = 1,
@@ -154,7 +157,7 @@ enum ods_versions {
 
 /* Field block.  Fields are what farms and databases are all about */
 
-typedef struct dudley_fld {
+struct dudley_fld {
 	SSHORT fld_dtype;			/* data type of field */
 	SSHORT fld_length;			/* field length in bytes */
 	SSHORT fld_scale;			/* scale factor */
@@ -185,7 +188,8 @@ typedef struct dudley_fld {
 	struct txt* fld_compute_src;	/* computed_by source */
 	struct txt* fld_valid_src;	/* validation source */
 	SLONG* fld_ranges;			/* ranges for multi-dim. array */
-} *DUDLEY_FLD;
+};
+typedef dudley_fld* DUDLEY_FLD;
 
 enum fld_flags_vals {
 	fld_explicit_position = 1,
@@ -204,7 +208,7 @@ enum fld_flags_vals {
 
 /* File description block */
 
-typedef struct fil {
+struct fil {
 	SLONG fil_length;			/* File length in pages */
 	SLONG fil_start;			/* Starting page */
 	struct sym* fil_name;		/* File name */
@@ -214,24 +218,26 @@ typedef struct fil {
 	SSHORT fil_partitions;		/* number of log file partitions */
 	SSHORT fil_raw;				/* on raw device? */
 	SSHORT fil_conditional;		/* flag to indicate conditional shadow */
-} *FIL;
+}; 
+typedef fil* FIL;
 
 
 /* Filter block */
 
-typedef struct filter {
+struct filter {
 	struct sym* filter_name;	/* symbol for filter name */
 	struct txt* filter_description;	/* description of filter */
 	struct sym* filter_module_name;	/* symbol for module name */
 	struct sym* filter_entry_point;	/* symbol for entrypoint */
 	SSHORT filter_input_sub_type;
 	SSHORT filter_output_sub_type;
-} *FILTER;
+};
+typedef filter* FILTER;
 
 
 /* Function argument block. */
 
-typedef struct funcarg {
+struct funcarg {
 	struct sym* funcarg_funcname;	/* symbol for function name */
 	SSHORT funcarg_position;	/* argument position */
 	SSHORT funcarg_mechanism;	/* argument passed by value, or by reference */
@@ -242,7 +248,8 @@ typedef struct funcarg {
 	SSHORT funcarg_sub_type;	/* sub_type of text */
 	SSHORT funcarg_has_sub_type;	/* null field for sub_type field */
 	funcarg* funcarg_next;		/* next field in function */
-} *FUNCARG;
+};
+typedef funcarg* FUNCARG;
 
 enum funcarg_mechanism_vals {
 	FUNCARG_mechanism_value = 0,
@@ -255,7 +262,7 @@ enum funcarg_mechanism_vals {
 
 /* Function description block */
 
-typedef struct func {
+struct func {
 	struct sym* func_name;		/* symbol for function name */
 	struct sym* func_query_name;	/* symbol for query name */
 	struct sym* func_module_name;	/* symbol for module name */
@@ -266,7 +273,8 @@ typedef struct func {
 	struct txt* func_description;	/* description of function */
 	funcarg* func_args;			/* Known function arguments */
 	funcarg* func_return;		/* Return argument */
-} *FUNC;
+};
+typedef func* FUNC;
 
 
 /* Index description block */
@@ -277,7 +285,7 @@ enum idx_direction
 	IDX_type_descend = 1
 };
 
-typedef struct dudley_idx {
+struct dudley_idx {
 	USHORT idx_count;			/* Number of fields */
 	bool idx_unique;			/* true if unique index */
 	bool idx_inactive;			/* false if index is active */
@@ -287,7 +295,8 @@ typedef struct dudley_idx {
 	struct sym* idx_relation;	/* Relation in question */
 	struct txt* idx_description;	/* Description pointer */
 	struct sym* idx_field[1];	/* Fields */
-} *DUDLEY_IDX;
+};
+typedef dudley_idx* DUDLEY_IDX;
 
 enum idx_flags_vals {
 	IDX_active_flag = 1,
@@ -339,12 +348,13 @@ enum nod_t {
 	nod_set_generator, nod_index
 };
 
-typedef struct dudley_nod {
+struct dudley_nod {
 	enum nod_t nod_type;		/* node type */
 	UCHAR* nod_blr;				/* symbolic blr string */
 	SSHORT nod_count;			/* number of sub-items */
 	dudley_nod* nod_arg[1];		/* argument */
-} *DUDLEY_NOD;
+};
+typedef dudley_nod* DUDLEY_NOD;
 
 static inline size_t NOD_LEN(const size_t cnt)
 {
@@ -354,7 +364,7 @@ static inline size_t NOD_LEN(const size_t cnt)
 
 /* Relation block, not to be confused with siblings or in-laws */
 
-typedef struct dudley_rel {
+struct dudley_rel {
 	dbb* rel_database;			/* parent database */
 	struct sym* rel_filename;	/* external filename */
 	dudley_fld* rel_fields;		/* linked list of known fields */
@@ -367,7 +377,8 @@ typedef struct dudley_rel {
 	USHORT rel_field_position;	/* highest used field position */
 	SSHORT rel_system;			/* 0 if relation is user defined */
 	USHORT rel_flags;
-} *DUDLEY_REL;
+};
+typedef dudley_rel* DUDLEY_REL;
 
 enum rel_flags_values {
 	rel_null_description = 1,
@@ -382,22 +393,24 @@ enum rel_flags_values {
 
 /* Security class handling */
 
-typedef struct scl {
+struct scl {
 	struct sym* scl_name;		/* name of security class */
 	struct txt* scl_description;	/* description of security class */
 	struct sce* scl_entries;	/* list of entries */
-} *SCL;
+};
+typedef scl* SCL;
 
 const int SCL_write = 2;
 
 /* Security entry */
 
-typedef struct sce {
+struct sce {
 	sce* sce_next;				/* next security item in list */
 	SLONG sce_privileges;		/* bitmask of privileges */
 	UCHAR* sce_idents[20];		/* misc identification stuff */
 	UCHAR sce_strings[1];
-} *SCE;
+};
+typedef sce* SCE;
 
 
 /* String block for build DYN & BLR strings */
@@ -430,7 +443,7 @@ enum sym_t {
 	SYM_trigger					/* any named element deserves to be hashed */
 };
 
-typedef struct sym {
+struct sym {
 	TEXT* sym_string;			/* address of asciz string */
 	SSHORT sym_length;			/* length of string (exc. term.) */
 	enum sym_t sym_type;		/* symbol type */
@@ -439,7 +452,8 @@ typedef struct sym {
 	sym* sym_collision;			/* collision pointer */
 	sym* sym_homonym;			/* homonym pointer */
 	TEXT sym_name[1];			/* space for name, if necessary */
-} *SYM;
+};
+typedef sym* SYM;
 
 const size_t SYM_LEN = sizeof(sym);
 
@@ -447,7 +461,7 @@ const size_t SYM_LEN = sizeof(sym);
 
 /* these are the externally visible trigger types */
 
-typedef enum {
+enum TRG_T {
 	trg_type_none = 0,			/* pre store */
 	trg_store = 1,				/* pre store */
 	trg_post_store = 2,
@@ -455,7 +469,7 @@ typedef enum {
 	trg_post_modify = 4,
 	trg_pre_erase = 5,
 	trg_erase = 6				/* post erase */
-} TRG_T;
+};
 
 /* these types are used in parsing */
 
@@ -468,7 +482,7 @@ enum parse_trig_types {
 	trig_inact = 16
 };
 
-typedef struct dudley_trg {
+struct dudley_trg {
 	TRG_T trg_type;
 	DUDLEY_REL trg_relation;
 	DUDLEY_NOD trg_statement;			/* blr */
@@ -478,7 +492,8 @@ typedef struct dudley_trg {
 	SSHORT trg_sequence;
 	SSHORT trg_inactive;		/* 0 = on, 1 = off */
 	USHORT trg_mflag;			/* modify attributes */
-} *DUDLEY_TRG;
+};
+typedef dudley_trg* DUDLEY_TRG;
 
 /* trg_modify_flag */
 
@@ -492,48 +507,52 @@ enum trg_modify_flag_vals {
 
 /* Trigger message block */
 
-typedef struct trgmsg {
+struct trgmsg {
 	sym* trgmsg_trg_name;		/* symbol for trigger */
 	SSHORT trgmsg_number;		/* abort code */
 	sym* trgmsg_text;
-} *TRGMSG;
+};
+typedef trgmsg* TRGMSG;
 
-typedef enum {
+enum  TRGMSG_T {
 	trgmsg_none = 0,
 	trgmsg_add = 1,
 	trgmsg_modify = 2,
 	trgmsg_drop = 3
-} TRGMSG_T;
+};
 
 
 /* Text block */
 
-typedef struct txt {
+struct txt {
 	TEXT* txt_file;
 	ULONG txt_position;
 	USHORT txt_length;
 	USHORT txt_start_line;
-} *TXT;
+};
+typedef txt* TXT;
 
 
 /* Type block */
 
-typedef struct typ {
+struct typ {
 	sym* typ_field_name;		/* field name */
 	sym* typ_name;				/* type name */
 	SSHORT typ_type;			/* type value */
 	txt* typ_description;		/* description of relation */
-} *TYP;
+};
+typedef typ* TYP;
 
 
 /* User privilege block */
 
-typedef struct userpriv {
+struct userpriv {
 	sym* userpriv_relation;
 	struct usre* userpriv_userlist;
 	struct upfe* userpriv_upflist;
 	USHORT userpriv_flags;
-} *USERPRIV;
+};
+typedef userpriv* USERPRIV;
 
 
 /* user privilege flags */
@@ -554,18 +573,19 @@ static const char* const UPRIV_UPDATE = "UPDATE";
 
 /* user name entry */
 
-typedef struct usre {
+struct usre {
 	usre* usre_next;
 	sym* usre_name;
-} *USRE;
-
+};
+typedef usre* USRE;
 
 /* update field entry */
 
-typedef struct upfe {
+struct upfe {
 	upfe* upfe_next;
 	sym* upfe_fldname;
-} *UPFE;
+};
+typedef upfe* UPFE;
 
 
 /* Data types */
@@ -575,10 +595,11 @@ typedef struct upfe {
 
 /* Constant block */
 
-typedef struct con {
+struct con {
 	dsc con_desc;
 	UCHAR con_data[1];
-} *CON;
+};
+typedef con* CON;
 
 
 /* Program globals */

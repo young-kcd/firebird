@@ -71,12 +71,13 @@ scrollkeys key2scroll[] = {
 
 // data initialized by first instance 
 
-typedef struct tagSETUPDATA {
+struct tagSETUPDATA {
 	SCHAR appName[20];
 	SCHAR menuName[20];
 	SCHAR iconName[20];
 	SCHAR errorString[20];
-} SETUPDATA;
+};
+typedef tagSETUPDATA SETUPDATA;
 
 // various temp file names 
 

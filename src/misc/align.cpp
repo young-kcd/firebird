@@ -17,17 +17,18 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.6 2004-04-28 22:29:19 brodsom Exp $
+$Id: align.cpp,v 1.7 2004-06-08 18:25:41 brodsom Exp $
 */
 
 #include "firebird.h"
 #include <signal.h>
 #include <stdio.h>
 
-typedef struct xyz {
+struct xyz {
 	char a;
 	double b;
-} *XYZ;
+};
+typedef xyz* XYZ;
 
 #define MAJOR_MINOR	"((n + b - 1) & ~(b - 1))"
 #define EVEN		"((n+1) & ~1)"

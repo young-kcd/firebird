@@ -148,10 +148,11 @@ static inline void commit_trans(isc_tr_handle* x)
 }
 
 
-typedef struct indev {
+struct indev {
 	indev* indev_next;
 	FILE* indev_fpointer;
-} *INDEV;
+};
+typedef indev* INDEV;
 
 struct collist {
 	collist* collist_next;
