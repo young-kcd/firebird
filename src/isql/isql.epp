@@ -239,7 +239,6 @@ static bool Echo = false;
 static bool Time_display = false;
 static bool Sqlda_display = false;
 static int Exit_value;
-static bool Continuation = false;
 static bool Interactive = true;
 static bool Input_file = false;
 static SSHORT Pagelength = 20;
@@ -2652,9 +2651,7 @@ static void do_isql()
  *	Process incoming SQL statements, using the global sqlda
  *
  **************************************/
-	TEXT* errbuf = (TEXT*) ISQL_ALLOC((SLONG) MSG_LENGTH);
-	if (!errbuf)
-		return;
+	TEXT errbuf[MSG_LENGTH];
 
 // Initialized user transactions 
 
@@ -2752,20 +2749,11 @@ static void do_isql()
 			{
 				Exit_value = FINI_ERROR;
 			}
-			Continuation = false;
 			break;
 
 		case END:
 		case EOF:
 		case EXIT:
-			// Quit upon EOF from top level file pointer 
-			if ((ret == EOF) && Continuation) {
-				gds__msg_format(NULL, ISQL_MSG_FAC, UNEXPECTED_EOF, MSG_LENGTH,
-								errbuf, NULL, NULL, NULL, NULL, NULL);
-				STDERROUT(errbuf, 1);
-				Exit_value = FINI_ERROR;
-			}
-
 			if (Abort_flag) {
 				if (D__trans)
 					isc_rollback_transaction(isc_status, &D__trans);
@@ -2836,8 +2824,6 @@ static void do_isql()
 	fclose(Ofp);
 	unlink(Tmpfile);
 
-	if (errbuf)
-		ISQL_FREE(errbuf);
 	if (global_sqlda)
 		ISQL_FREE(global_sqlda);
 	if (Filelist)
@@ -3156,34 +3142,7 @@ static processing_state frontend(const TEXT* statement)
 
 	const TEXT* p = statement;
 
-// Eat any whitespace at the beginning
-
-	while (*p && isspace(*p))
-		p++;
-
-// Is this a comment line -- chew until the last comment
-
-	while (*p == '/' && *(p + 1) == '*') {
-		p++;
-		p++;
-		while (*p && !(*p == '*' && *(p + 1) == '/'))
-			p++;
-		if (*p)
-			p += 2;
-		else {
-			/* If we hit the end of string before the close comment,
-			   ** raise an error
-			 */
-			gds__msg_format(NULL, ISQL_MSG_FAC, CMD_ERR, MSG_LENGTH,
-							errbuf, statement, NULL, NULL, NULL, NULL);
-			STDERROUT(errbuf, 1);
-			ISQL_FREE(errbuf);
-			ISQL_FREE(buffer);
-			return FAIL;
-		}
-		while (*p && isspace(*p))
-			p++;
-	}
+// Any whitespace and comments at the beginning are already swallowed by get_statement()
 
 	// Set beginning of statement past comment
 	const TEXT* cmd = p;
@@ -3726,7 +3685,6 @@ static processing_state get_statement(TEXT* statement,
  *	Arguments:  Pointer to statement, and size of statement_buffer
  *
  **************************************/
-	TEXT* q;
 	processing_state ret = CONT;
 	INDEV flist, oflist;
 
@@ -3747,28 +3705,33 @@ static processing_state get_statement(TEXT* statement,
 
 // Set count of characters to zero 
 
-	USHORT count = 0;
-	USHORT start_quoted_string = MAX_USHORT; // The initial value's just debug test.
+	int count = 0;
+	int valuable_count = 0; // counter of valuable (non-space) chars
+	const int term_length = Termlen-1; // additional variable for decreasing calculation
 
-	bool blank = true;
 	bool done = false;
-	bool incomment = false;
-	// set to true once we are inside a single quoted string
-	bool in_single_quoted_string = false;
-	bool in_double_quoted_string = false;
-	bool ignore_this_stmt = false;
 
+	enum {normal, in_single_line_comment, in_comment,
+		  in_single_quoted_string, in_double_quoted_string} state = normal;
 
 	while (!done) {
-		const SSHORT c = getNextInputChar();
+		SSHORT c = getNextInputChar();
 		switch (c) {
-		//		switch (c = getc(Ifp)) {
 		case EOF:
 			// Go back to getc if we get interrupted by a signal. 
 
 			if (SYSCALL_INTERRUPTED(errno)) {
 				errno = 0;
 				break;
+			}
+
+			// If there was something valuable before EOF - error
+			if (valuable_count > 0) {
+				TEXT errbuf[MSG_LENGTH];
+				gds__msg_format(NULL, ISQL_MSG_FAC, UNEXPECTED_EOF, MSG_LENGTH,
+								errbuf, NULL, NULL, NULL, NULL, NULL);
+				STDERROUT(errbuf, 1);
+				Exit_value = FINI_ERROR;
 			}
 
 			// If we hit EOF at the top of the flist, exit time 
@@ -3809,98 +3772,44 @@ static processing_state get_statement(TEXT* statement,
 		case '\n':
 //		case '\0': // In particular with readline the \n is removed
 			// the context of string literals should not extend past eoln 
-			in_single_quoted_string = in_double_quoted_string = false;
-
-			// Ignore a series of carriage returns at the beginning 
-			if (blank) {
-				if (Interactive || Echo)
-					ISQL_prompt(statement_prompt);
-				break;
+			if (state == in_single_line_comment)
+			{
+				state = normal;
 			}
 
 			/* Catch the help ? without a terminator */
-			if (*statement == '?') {
-				statement[1] = '\0';
+			if (*statement == '?' && count == 1) {
+				c = 0;
 				done = true;
-				Continuation = false;
 				break;
 			}
-
-			// Put the newline on the line for printing 
-			*p++ = c;
-			count++;
 
 			// If in a comment, keep reading 
-			if (incomment && (Interactive || Echo)) {
-				//  Comment prompt 
-				ISQL_prompt("--> ");
-				break;
-			}
-
-			// Eat any white space at the end of a line 
-
-			q = p;
-			while (q > statement && isspace(*(q - 1)))
-				q--;
-
-			/* Search back past a final comment for a terminator
-			   **  If a comment ends a line with a terminator,
-			   **  null terminate the line before the comment
-			   **  Otherwise, just read on
-			 */
-			if ((*(q - 1) == '/') && (*(q - 2) == '*')) {
-				q -= 2;
-
-				// Don't search past a newline or beginning of statement  
-
-				while (q != statement && (*q != '\n') &&
-					   (*(q - 1) != '*') && (*(q - 2) != '/'))
-					q--;
-				// If the search took us to begin line, keep reading 
-				if ((q == statement) || (*q == '\n')) {
-					if (Interactive || Echo)
-						ISQL_prompt(con_prompt);
-					break;
-				}
-
-				q -= 2;
-			}
-
-			while ((q > statement) && isspace(*(q - 1)))
-				q--;
-
-			/*
-			   **  Look for terminator as last chars then
-			   **  null terminate string and set done
-			   *   do not bother with terminators inside
-			   *   quoted strings and comments.
-			 */
-
-			if (!incomment &&
-				// Making sure that q does'nt go out of bounds 
-				((q - statement) >= Termlen) &&
-				!strncmp(q - Termlen, isqlGlob.global_Term, Termlen))
+			if (Interactive || Echo)
 			{
-				// Lop off terminal comment 
-				*(q - Termlen) = '\0';
-				done = true;
-				Continuation = false;
-			}
-			else {
-
-				// Continuation prompt 
-				if (Interactive || Echo)
+				if (state == in_comment)
+				{	//  Comment prompt 
+					ISQL_prompt("--> ");
+				}
+				else if (valuable_count == 0)
+				{	// Ignore a series of nothing at the beginning 
+					ISQL_prompt(statement_prompt);
+				}
+				else
+				{
 					ISQL_prompt(con_prompt);
+				}
 			}
+
 			break;
 
-		case '\t':
-		case BLANK:
-			// Skip leading blanks and convert tabs 
-
-			if (!blank) {
-				*p++ = BLANK;
-				count++;
+		case '-':
+			// Could this the be start of a single-line comment.
+			if (state == normal && count > 0 && (*(p - 1) == '-'))
+			{
+				state = in_single_line_comment;
+				if (valuable_count == 1)
+					valuable_count = 0;
 			}
 			break;
 
@@ -3910,12 +3819,12 @@ static processing_state get_statement(TEXT* statement,
 			   * ignore possibilities of a comment beginning inside
 			   * quoted strings.
 			 */
-			if (count && (*(p - 1) == '/') &&
-				!in_single_quoted_string && !in_double_quoted_string)
-					incomment = true;
-			*p++ = c;
-			blank = false;
-			count++;
+			if (state == normal && count > 0 && (*(p - 1) == '/'))
+			{
+				state = in_comment;
+				if (valuable_count == 1)
+					valuable_count = 0;
+			}
 			break;
 
 		case '/':
@@ -3923,70 +3832,65 @@ static processing_state get_statement(TEXT* statement,
 			   * ignore possibilities of a comment ending inside
 			   * quoted strings.
 			 */
-			if (incomment && (*(p - 1) == '*') &&
-				!in_single_quoted_string && !in_double_quoted_string)
-					incomment = false;
-			*p++ = c;
-			blank = false;
-			count++;
+			if (state == in_comment && (*(p - 1) == '*'))
+			{
+				state = normal;
+				valuable_count--; // This char is not valuable
+			}
 			break;
 
 		case SINGLE_QUOTE:
-			// check if this quote ends an open quote 
-			if (!incomment && !in_double_quoted_string)
-				if (in_single_quoted_string) {
-					if (count && (*(p - 1) != SINGLE_QUOTE) ||
-						(count == start_quoted_string + 1))
-						/* for strings such as '' which are empty strings,
-						   we need to reset the in_single_quoted_string flag */
-						in_single_quoted_string = false;
-				}
-				else {
-					start_quoted_string = count;
-					in_single_quoted_string = true;
-				}
-			*p++ = c;
-			blank = false;
-			count++;
+			switch (state)
+			{
+				case normal: state = in_single_quoted_string; break;
+				case in_single_quoted_string: state = normal; break;
+			}
 			break;
 
 		case DBL_QUOTE:
-			// check if this double quote ends an open double quote 
-			if (!incomment && !in_single_quoted_string)
-				if (in_double_quoted_string) {
-					if (count && (*(p - 1) != '\"') ||
-						(count == start_quoted_string + 1))
-						/* for strings such as "" which are empty strings,
-						   we need to reset the in_single_quoted_string flag */
-						in_double_quoted_string = false;
-				}
-				else {
-					start_quoted_string = count;
-					in_double_quoted_string = true;
-				}
-			*p++ = c;
-			blank = false;
-			count++;
+			switch (state)
+			{
+				case normal: state = in_double_quoted_string; break;
+				case in_double_quoted_string: state = normal; break;
+			}
 			break;
 
 
 		default:
-			// Any other character is significant 
-
-			*p++ = c;
-			count++;
-			blank = false;
-			if (!incomment)
-				Continuation = true;
-			break;
+			if (state == normal && c == isqlGlob.global_Term[term_length] &&
+				// one-char terminator or the beginning also match
+				(Termlen == 1 ||
+				 (valuable_count >= term_length &&
+				  strncmp(p-term_length, isqlGlob.global_Term, term_length) == 0)))
+			{
+				c = 0;
+				done = true;
+				p -= term_length;
+				count -= term_length;
+			}
 		}
 
+		// Any non-space character is significant if not in comment
+		if (state != in_comment &&
+			state != in_single_line_comment &&
+			!isspace(c) && c != EOF)
+		{
+			valuable_count++;
+			if (valuable_count == 1) // this is the first valuable char in stream
+			{	// ignore all previous crap
+				p = statement;
+				count = 0;
+			}
+		}
+
+		*p++ = c;
+		count++;
 
 		/* If in danger of running out of room, reallocate to a bigger
 		   **  Statement buffer, keeping track of where p is pointing
 		 */
 
-		if (count == bufsize)
+		if (count > bufsize && !done)
 		{
 				TEXT* errbuf = (TEXT*) ISQL_ALLOC((SLONG) MSG_LENGTH);
 				if (errbuf) {
@@ -3998,23 +3902,22 @@ static processing_state get_statement(TEXT* statement,
 				}
 				ret = SKIP;
 
-				ignore_this_stmt = true;
-				in_single_quoted_string = in_double_quoted_string = false;
-				count = 0;
-				p = statement;
+				// move some content to start of buffer just in case if
+				// the overflow has splitter terminator
+				count = MAX(Termlen, 2);
+				memcpy(statement, p-count, count);
+				p = statement + count;
 				*p = '\0';
 		}
 
-		// Pass statement to frontend for processing 
-
-		if (done && !ignore_this_stmt)
-			ret = frontend(statement);
 	}
 
 	// If this was a null statement, skip it 
 	if (!*statement)
 		ret = SKIP;
 
+	if (ret == CONT)
+		ret = frontend(statement);
 
 	if (ret == CONT) {
 
