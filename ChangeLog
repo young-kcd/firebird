@@ -1,3 +1,119 @@
+2003-11-18 21:36  skidder
+
+	* firebird2/src/jrd/: evl_string.h, evl_string_test.cpp:
+	
+	Finalize operator LIKE test code coverage. A little refactoring
+
+2003-11-18 17:54  dimitr
+
+	* firebird2/src/jrd/: opt.cpp, rse.cpp:
+	
+	1) Fixed server crashes when a SP is used as inner stream in left
+	joins 2) Fixed conjuncts out-of-limits issue
+
+2003-11-18 17:44  dimitr
+
+	* firebird2/src/jrd/: opt.cpp, rse.cpp:
+	
+	1) Fixed server crashes when a SP is used as inner stream in left
+	joins 2) Fixed conjuncts out-of-limits issue
+
+2003-11-18 14:46  brodsom
+
+	* firebird2/src/jrd/jrd.h:
+	
+	Correction
+
+2003-11-18 13:40  brodsom
+
+	* firebird2/src/journal/: rebuild.epp, server.epp:
+	
+	-Warning fixes
+
+2003-11-18 13:38  brodsom
+
+	* firebird2/src/: jrd/iberr.cpp, jrd/isc_sync.cpp, jrd/jrd.h,
+	jrd/sdw.cpp, jrd/svc.cpp, jrd/vio.cpp, jrd/cmp.cpp, jrd/dyn.epp,
+	jrd/dyn_def.epp, jrd/err.cpp, misc/align.cpp:
+	
+	-Remove unneeded setjmp header
+
+2003-11-18 13:37  eku
+
+	* firebird2/src/journal/console.cpp:
+	
+	Fixed compiler error.
+
+2003-11-18 13:33  brodsom
+
+	* firebird2/src/: alice/all.cpp, alice/exe.cpp, alice/alice.cpp,
+	alice/alice.h, alice/alice_meta.epp, dudley/parse.cpp,
+	dudley/expand.cpp, dudley/expr.cpp, gpre/gpre.cpp,
+	ipserver/ipserver.cpp:
+	
+	-Remove unneeded setjmp header
+
+2003-11-18 12:24  aafemt
+
+	* firebird2/src/jrd/: ext.cpp, ext.h, ext_proto.h, fil.h:
+	
+	'struct' cleanup
+
+2003-11-18 11:52  brodsom
+
+	* firebird2/src/wal/walw.cpp:
+	
+	-Fix error (found by Erik)
+
+2003-11-18 08:58  robocop
+
+	* firebird2/src/: alice/alice_meta.epp, alice/tdr.cpp,
+	burp/mvol.cpp, dsql/ddl.cpp, dsql/dsql.h, dsql/errd.cpp,
+	dsql/keywords.cpp, dsql/keywords.h, dsql/metd.epp,
+	dsql/metd_proto.h, dsql/pass1.cpp, dsql/prepa_proto.h,
+	dsql/preparse.cpp, dudley/exe.epp, dudley/extract.epp,
+	ipserver/ipserver.cpp, isql/isql.epp, journal/journal_vms.e,
+	jrd/alt_proto.h, jrd/filters.cpp, jrd/rlck.cpp, jrd/svc.cpp,
+	jrd/why.cpp, wal/driver.cpp:
+	
+	const correctness and other minor items
+
+2003-11-18 04:21  brodsom
+
+	* firebird2/doc/README.build.mingw.html:
+	
+	-Correction
+
+2003-11-18 04:11  brodsom
+
+	* firebird2/: configure.in, doc/README.build.mingw.html:
+	
+	-Fix threading in MinGW (and the failed tests in fbtcs)
+
+2003-11-18 03:31  brodsom
+
+	* firebird2/builds/win32/preprocess.bat:
+	
+	-Enable build of dba_full
+
+2003-11-18 03:27  brodsom
+
+	* firebird2/src/journal/: rebuild.epp, server.epp:
+	
+	-Fix some warnings -Code formating
+
+2003-11-18 03:26  brodsom
+
+	* firebird2/src/wal/: wal.cpp, wal.h, walw.cpp:
+	
+	-simplify ifdefs
+
+2003-11-18 00:39  brodsom
+
+	* firebird2/src/dsql/parse.y:
+	
+	-Remove unneeded win32 headers
+
 2003-11-17 19:34  skidder
 
 	* firebird2/src/jrd/jrd.cpp:
