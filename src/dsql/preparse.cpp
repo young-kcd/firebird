@@ -32,19 +32,18 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 
-#define CREATE		0
-#define DATABASE	1
-#define SCHEMA		2
-#define PAGE_SIZE	3
-#define USER		4
-#define PASSWORD	5
-//#warning FIXME: PAGESIZE conflicts with the define from sys/param.h
-#define PAGESIZE	6
-#define LENGTH		7
-#define PAGES		8
-#define PAGE		9
-#define SET		10
-#define NAMES		11
+#define PP_CREATE	0
+#define PP_DATABASE	1
+#define PP_SCHEMA	2
+#define PP_PAGE_SIZE	3
+#define PP_USER		4
+#define PP_PASSWORD	5
+#define PP_PAGESIZE	6
+#define PP_LENGTH	7
+#define PP_PAGES	8
+#define PP_PAGE		9
+#define PP_SET		10
+#define PP_NAMES	11
 
 
 #define MAX_TOKEN_SIZE	1024
@@ -71,18 +70,18 @@ typedef struct pp_table {
 } PP_TABLE;
 
 static CONST PP_TABLE pp_symbols[] = {
-	{"CREATE", 6, CREATE},
-	{"DATABASE", 8, DATABASE},
-	{"SCHEMA", 6, SCHEMA},
-	{"PAGE_SIZE", 9, PAGE_SIZE},
-	{"USER", 4, USER},
-	{"PASSWORD", 8, PASSWORD},
-	{"PAGESIZE", 8, PAGESIZE},
-	{"LENGTH", 6, LENGTH},
-	{"PAGES", 5, PAGES},
-	{"PAGE", 4, PAGE},
-	{"SET", 3, SET},
-	{"NAMES", 5, NAMES},
+	{"CREATE", 6, PP_CREATE},
+	{"DATABASE", 8, PP_DATABASE},
+	{"SCHEMA", 6, PP_SCHEMA},
+	{"PAGE_SIZE", 9, PP_PAGE_SIZE},
+	{"USER", 4, PP_USER},
+	{"PASSWORD", 8, PP_PASSWORD},
+	{"PAGESIZE", 8, PP_PAGESIZE},
+	{"LENGTH", 6, PP_LENGTH},
+	{"PAGES", 5, PP_PAGES},
+	{"PAGE", 4, PP_PAGE},
+	{"SET", 3, PP_SET},
+	{"NAMES", 5, PP_NAMES},
 	{"", 0, 0}
 };
 
@@ -136,18 +135,18 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 
 	if (get_token(user_status, SYMBOL, FALSE, &stmt, stmt_end, token,
 				  &token_length) ||
-		token_length != pp_symbols[CREATE].length ||
-		strcmp(token, pp_symbols[CREATE].symbol)) {
+		token_length != pp_symbols[PP_CREATE].length ||
+		strcmp(token, pp_symbols[PP_CREATE].symbol)) {
 		gds__free((SLONG *) token);
 		return FALSE;
 	}
 
 	if (get_token(user_status, SYMBOL, FALSE, &stmt, stmt_end, token,
 				  &token_length) ||
-		(token_length != pp_symbols[DATABASE].length &&
-		 token_length != pp_symbols[SCHEMA].length) ||
-		(strcmp(token, pp_symbols[DATABASE].symbol) &&
-		 strcmp(token, pp_symbols[SCHEMA].symbol))) {
+		(token_length != pp_symbols[PP_DATABASE].length &&
+		 token_length != pp_symbols[PP_SCHEMA].length) ||
+		(strcmp(token, pp_symbols[PP_DATABASE].symbol) &&
+		 strcmp(token, pp_symbols[PP_SCHEMA].symbol))) {
 		gds__free((SLONG *) token);
 		return FALSE;
 	}
@@ -193,8 +192,8 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 
 				get_out = FALSE;
 				switch (pp_symbols[i].code) {
-				case PAGE_SIZE:
-				case PAGESIZE:
+				case PP_PAGE_SIZE:
+				case PP_PAGESIZE:
 					if (get_token(user_status, '=', TRUE, &stmt, stmt_end,
 								  token, &token_length) ||
 						get_token(user_status, NUMERIC, FALSE, &stmt,
@@ -209,7 +208,7 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 					matched = TRUE;
 					break;
 
-				case USER:
+				case PP_USER:
 					if (get_token(user_status, STRING, FALSE, &stmt, stmt_end,
 								  token, &token_length)) {
 						get_out = TRUE;
@@ -225,7 +224,7 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 					matched = TRUE;
 					break;
 
-				case PASSWORD:
+				case PP_PASSWORD:
 					if (get_token(user_status, STRING, FALSE, &stmt, stmt_end,
 								  token, &token_length)) {
 						get_out = TRUE;
@@ -241,11 +240,11 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 					matched = TRUE;
 					break;
 
-				case SET:
+				case PP_SET:
 					if (get_token(user_status, SYMBOL, FALSE, &stmt, stmt_end,
 								  token, &token_length) ||
-						token_length != pp_symbols[NAMES].length ||
-						strcmp(token, pp_symbols[NAMES].symbol) ||
+						token_length != pp_symbols[PP_NAMES].length ||
+						strcmp(token, pp_symbols[PP_NAMES].symbol) ||
 						get_token(user_status, STRING, FALSE, &stmt, stmt_end,
 								  token, &token_length)) {
 						get_out = TRUE;
@@ -261,7 +260,7 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 					matched = TRUE;
 					break;
 
-				case LENGTH:
+				case PP_LENGTH:
 					/* Skip a token for value */
 
 					if (get_token(user_status, '=', TRUE, &stmt, stmt_end,
@@ -275,8 +274,8 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 					matched = TRUE;
 					break;
 
-				case PAGE:
-				case PAGES:
+				case PP_PAGE:
+				case PP_PAGES:
 					matched = TRUE;
 					break;
 				}
