@@ -1,3 +1,48 @@
+2004-04-10 19:25  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.30.2.4):
+	
+	Undo my change for BLOBs in read_only transactions and add comment
+
+2004-04-10 16:24  dimitr
+
+	* firebird2/src/jrd/svc.cpp (1.67.2.6):
+	
+	Enabled Services API for Win32 CS.
+
+2004-04-10 16:23  dimitr
+
+	* firebird2/src/utilities/gsec.cpp (1.16.2.2):
+	
+	1) Backported Service API fixes for GSEC.  2) Added a workaround
+	for Win32 CS.
+
+2004-04-10 16:19  dimitr
+
+	* firebird2/builds/win32/msvc6/gstat.dsp (1.14.2.2):
+	
+	Fixed GSTAT to understand non-local connection strings.
+
+2004-04-10 16:16  dimitr
+
+	* firebird2/src/utilities/dba.epp (1.27.2.5):
+	
+	1) Fixed Services API issues with GSTAT.  2) Fixed GSTAT to
+	understand non-local connection strings.
+
+2004-04-10 05:28  skidder
+
+	* firebird2/src/jrd/met.epp (1.61.2.4):
+	
+	Small safety fix for new modify_procedure logic
+
+2004-04-10 03:54  skidder
+
+	* firebird2/builds/posix/Makefile.in.intl (1.11.2.2):
+	
+	Add new collation for POSIX build. I lost 3 hours debugging it
+	because I thought it is a problem with 1.5.1/AMD64 port
+
 2004-04-09 01:46  skidder
 
 	* firebird2/builds/posix/Makefile.in.extlib (1.10.2.6):
