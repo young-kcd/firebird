@@ -67,7 +67,7 @@ goto :EOF
 ::===========
 :MASTER_PROCESS
 @echo.
-@set GPRE=gpre
+@set GPRE=gpre_static
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
 @for %%i in (backup, restore) do @call :PREPROCESS burp %%i
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i

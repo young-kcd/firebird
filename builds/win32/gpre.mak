@@ -7,7 +7,7 @@ RSC=rc.exe
 OUTDIR=.\temp
 INTDIR=.\temp
 
-ALL : ".\gpre.exe" "$(OUTDIR)\gpre.bsc"
+ALL : ".\gpre_static.exe" "$(OUTDIR)\gpre_static.bsc"
 
 CLEAN :
 	-@erase "$(INTDIR)\ada.obj"
@@ -64,15 +64,15 @@ CLEAN :
 	-@erase "$(INTDIR)\sql.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\version.res"
-	-@erase "$(OUTDIR)\gpre.bsc"
-	-@erase ".\gpre.exe"
+	-@erase "$(OUTDIR)\gpre_static.bsc"
+	-@erase ".\gpre_static.exe"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 CPP_PROJ=/nologo /MD /W3 /GX /Ot /Oi /Oy /Ob2 /I "../../src/include" /I "../../src/include/gen" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /n /o"$(OUTDIR)\gpre.bsc" 
+BSC32_FLAGS=/nologo /n /o"$(OUTDIR)\gpre_static.bsc" 
 BSC32_SBRS= \
 	"$(INTDIR)\gpre_meta.sbr" \
 	"$(INTDIR)\ada.sbr" \
@@ -101,13 +101,13 @@ BSC32_SBRS= \
 	"$(INTDIR)\dsc.sbr" \
 	"$(INTDIR)\isc.sbr"
 
-"$(OUTDIR)\gpre.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
+"$(OUTDIR)\gpre_static.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
   $(BSC32_FLAGS) $(BSC32_SBRS)
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\gpre.pdb" /machine:I386 /out:"gpre.exe" /pdbtype:sept 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\gpre_static.pdb" /machine:I386 /out:"gpre_static.exe" /pdbtype:sept 
 LINK32_OBJS= \
 	"$(INTDIR)\gpre_meta.obj" \
 	"$(INTDIR)\ada.obj" \
@@ -138,7 +138,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\version.res" \
 	".\temp\fbclient.lib"
 
-".\gpre.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+".\gpre_static.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
