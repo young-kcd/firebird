@@ -52,7 +52,7 @@ static void string_put(CTL, SCHAR *);
  *	  For V3 historical reasons, only ASCII byte values are passed
  *	  through.  All other byte values are mapped to ascii '.'
  */
-static CONST UCHAR char_tab[128] =
+static const UCHAR char_tab[128] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -79,7 +79,7 @@ typedef struct tmp {
 #endif
 
 /* TXNN: Used on filter of internal data structure to text */
-static CONST TEXT acl_privs[] = "?CGDRWPIEUTX??", acl_ids[][16] = {
+static const TEXT acl_privs[] = "?CGDRWPIEUTX??", acl_ids[][16] = {
 	"?: ",
 	"group: ",
 	"user: ",
@@ -95,7 +95,7 @@ static CONST TEXT acl_privs[] = "?CGDRWPIEUTX??", acl_ids[][16] = {
 };
 
 /* TXNN: Used on filter of internal data structure to text */
-static CONST TEXT dtypes[][36] = {
+static const TEXT dtypes[][36] = {
 	"",
 	"TEXT, length %d",
 	"COUNTED_STRING, length %d",

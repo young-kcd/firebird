@@ -51,7 +51,7 @@ No need to worry about blr_blob or ?blr_blob_id
 
 #include "../jrd/dsc.h"
 
-static CONST USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
+static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
 	{ 0, 0, 0, 0, 0, 0, 0,
 	dtype_short,				/* blr_short == 7 */
 	dtype_long,					/* blr_long == 8 */
@@ -76,7 +76,7 @@ static CONST USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
 	0, 0, 0, 0
 };
 
-static CONST USHORT type_alignments[DTYPE_TYPE_MAX] = {
+static const USHORT type_alignments[DTYPE_TYPE_MAX] = {
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */
@@ -103,7 +103,7 @@ static CONST USHORT type_alignments[DTYPE_TYPE_MAX] = {
 	sizeof(SINT64)				/* dtype_int64 */
 };
 
-static CONST USHORT type_lengths[DTYPE_TYPE_MAX] = {
+static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */

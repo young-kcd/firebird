@@ -137,7 +137,7 @@ rel_MAX} RIDS;
 #undef END_RELATION
 
 #ifdef GARBAGE_THREAD
-static CONST SCHAR gc_tpb[] = { isc_tpb_version1, isc_tpb_read,
+static const SCHAR gc_tpb[] = { isc_tpb_version1, isc_tpb_read,
 	isc_tpb_read_committed, isc_tpb_rec_version,
 	isc_tpb_ignore_limbo
 };

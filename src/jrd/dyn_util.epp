@@ -65,7 +65,7 @@
 
 DATABASE DB = STATIC "ODS.RDB";
 
-static CONST SCHAR gen_id_blr1[] = {
+static const SCHAR gen_id_blr1[] = {
 	blr_version5,
 	blr_begin,
 	blr_message, 0, 1, 0,
@@ -79,7 +79,7 @@ static CONST SCHAR gen_id_blr1[] = {
 	blr_literal, blr_long, 0, 1, 0, 0, 0,
 		blr_parameter, 0, 0, 0, blr_end, blr_end, blr_end, blr_eoc};
 
-static CONST SCHAR prot_blr[] = {
+static const SCHAR prot_blr[] = {
 	blr_version5,
 	blr_begin,
 	blr_message, 1, 1, 0,

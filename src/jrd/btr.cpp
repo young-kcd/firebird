@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.18 2003-02-10 17:01:34 brodsom Exp $
+$Id: btr.cpp,v 1.19 2003-02-13 10:10:40 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -101,7 +101,7 @@ typedef struct {
 
 #define INT64_KEY_LENGTH	(sizeof (double) + sizeof (SSHORT))
 
-static CONST double pow10[] =
+static const double pow10[] =
 	{ 1.e00, 1.e01, 1.e02, 1.e03, 1.e04, 1.e05, 1.e06, 1.e07, 1.e08, 1.e09,
 	1.e10, 1.e11, 1.e12, 1.e13, 1.e14, 1.e15, 1.e16, 1.e17, 1.e18, 1.e19,
 	1.e20, 1.e21, 1.e22, 1.e23, 1.e24, 1.e25, 1.e26, 1.e27, 1.e28, 1.e29,
@@ -110,7 +110,7 @@ static CONST double pow10[] =
 
 #define powerof10(s) ((s) <= 0 ? pow10[-(s)] : 1./pow10[-(s)])
 
-static CONST struct {			/* Used in make_int64_key() */
+static const struct {			/* Used in make_int64_key() */
 	UINT64 limit;
 	SINT64 factor;
 	SSHORT scale_change;

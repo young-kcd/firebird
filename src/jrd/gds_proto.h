@@ -125,7 +125,7 @@ void*	API_ROUTINE gds__temp_file(BOOLEAN, TEXT*, TEXT*);
 void		API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
 BOOLEAN	API_ROUTINE gds__validate_lib_path(TEXT*, TEXT*, TEXT*,
 											  SLONG);
-SLONG	API_ROUTINE gds__vax_integer(CONST UCHAR*, SSHORT);
+SLONG	API_ROUTINE gds__vax_integer(const UCHAR*, SSHORT);
 void	API_ROUTINE gds__vtof(SCHAR*, SCHAR*, USHORT);
 void	API_ROUTINE gds__vtov(const SCHAR*, char*, SSHORT);
 void	API_ROUTINE isc_print_sqlerror(SSHORT, STATUS*);

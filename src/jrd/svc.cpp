@@ -312,7 +312,7 @@ extern int main_gsec(SVC service);
   in use flag (for compatibility)
 */
 
-typedef CONST void (*PFN_SERV_t) ();
+typedef const void (*PFN_SERV_t) ();
 
 static const serv services[] =
 {
@@ -455,7 +455,7 @@ SVC SVC_attach(USHORT	service_length,
  *
  **************************************/
 
-	CONST struct serv *serv;
+	const struct serv *serv;
 	TEXT misc_buf[512];
 #ifndef SUPERSERVER
 	TEXT service_path[MAXPATHLEN];
@@ -1884,7 +1884,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
  *
  **************************************/
 	TDBB tdbb;
-	CONST struct serv *serv;
+	const struct serv *serv;
 	USHORT svc_id;
 	TEXT* tmp_ptr = NULL;
 	USHORT opt_switch_len = 0;

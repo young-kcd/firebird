@@ -654,7 +654,7 @@ class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
 	struct jrd_nod*	fld_default_value;	/* default value, if any */
 	TEXT *		fld_security_name;	/* pointer to security class name for field */
 	struct arr*	fld_array;			/* array description, if array */
-	CONST TEXT*	fld_name;			/* Field name */
+	const TEXT*	fld_name;			/* Field name */
 	UCHAR		fld_length;			/* Field name length */
 	UCHAR		fld_string[2];		/* one byte for ALLOC and one for the terminating null */
 };

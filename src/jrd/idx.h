@@ -49,7 +49,7 @@ struct ini_idx_t {
 #define INDEX(id,flag,rel,unique,count) {(id),(flag),(UCHAR) (rel),(unique),(count),{
 #define SEGMENT(fld,type) {(fld),(type)}
 
-static CONST struct ini_idx_t indices[] = {
+static const struct ini_idx_t indices[] = {
 
 /*	define index RDB$INDEX_0 for RDB$RELATIONS unique RDB$RELATION_NAME; */
 	INDEX(0, ODS_8_0, rel_relations, idx_unique, 1)

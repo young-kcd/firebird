@@ -28,13 +28,13 @@
 extern "C" {
 #endif
 
-void		SCL_check_access(struct scl*, struct jrd_rel*, CONST TEXT*,
-							CONST TEXT*, USHORT,
-							CONST TEXT*, CONST TEXT*);
+void		SCL_check_access(struct scl*, struct jrd_rel*, const TEXT*,
+							const TEXT*, USHORT,
+							const TEXT*, const TEXT*);
 void		SCL_check_procedure(struct dsc*, USHORT);
 void		SCL_check_relation(struct dsc*, USHORT);
 struct scl*	SCL_get_class(/* INOUT */ TEXT*);
-int			SCL_get_mask(CONST TEXT*, CONST TEXT*);
+int			SCL_get_mask(const TEXT*, const TEXT*);
 void		SCL_init(BOOLEAN, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, TDBB, BOOLEAN);
 void		SCL_move_priv(UCHAR**, USHORT, STR*, ULONG*);
 struct scl*	SCL_recompute_class(TDBB, TEXT*);

@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.21 2003-02-10 13:28:23 eku Exp $
+$Id: y-valve.cpp,v 1.22 2003-02-13 10:11:23 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -309,7 +309,7 @@ static TEXT *marker_failures_ptr = marker_failures;
 
 #define MAXERRORSTRINGLENGTH	250
 static TEXT glbstr1[MAXERRORSTRINGLENGTH];
-static CONST TEXT glbunknown[10] = "<unknown>";
+static const TEXT glbunknown[10] = "<unknown>";
 
 #ifdef VMS
 #define CALL(proc, handle)	(*get_entrypoint(proc, handle))
@@ -481,7 +481,7 @@ typedef struct
 #ifdef INITIALIZE_PATHS
 #define CONST_IMAGE				/* nothing */
 #else
-#define CONST_IMAGE	CONST
+#define CONST_IMAGE	const
 #endif
 
 
@@ -624,7 +624,7 @@ static CONST_IMAGE IMAGE images[] =
 
 #define SUBSYSTEMS		sizeof (images) / (sizeof (IMAGE))
 
-static CONST ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
+static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 {
 #ifdef PIPE_CLIENT
 
@@ -681,7 +681,7 @@ static CONST ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 #endif
 };
 
-static CONST TEXT *generic[] = {
+static const TEXT *generic[] = {
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	gen,
 #include "../jrd/entry.h"
 };
@@ -689,7 +689,7 @@ static CONST TEXT *generic[] = {
 
 /* Information items for two phase commit */
 
-static CONST UCHAR prepare_tr_info[] =
+static const UCHAR prepare_tr_info[] =
 {
 	gds__info_tra_id,
 	gds__info_end
@@ -697,7 +697,7 @@ static CONST UCHAR prepare_tr_info[] =
 
 /* Information items for DSQL prepare */
 
-static CONST SCHAR sql_prepare_info[] =
+static const SCHAR sql_prepare_info[] =
 {
 	gds__info_sql_select,
 	gds__info_sql_describe_vars,
@@ -715,7 +715,7 @@ static CONST SCHAR sql_prepare_info[] =
 
 /* Information items for SQL info */
 
-static CONST SCHAR describe_select_info[] =
+static const SCHAR describe_select_info[] =
 {
 	gds__info_sql_select,
 	gds__info_sql_describe_vars,
@@ -731,7 +731,7 @@ static CONST SCHAR describe_select_info[] =
 	gds__info_sql_describe_end
 };
 
-static CONST SCHAR describe_bind_info[] =
+static const SCHAR describe_bind_info[] =
 {
 	gds__info_sql_bind,
 	gds__info_sql_describe_vars,

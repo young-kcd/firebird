@@ -290,10 +290,10 @@ class acc : public pool_alloc<type_acc>
 	struct acc*	acc_next;
 	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
 	struct jrd_rel*	acc_view;
-	CONST TEXT*	acc_trg_name;
-	CONST TEXT*	acc_prc_name;
-	CONST TEXT*	acc_name;
-	CONST TEXT*	acc_type;
+	const TEXT*	acc_trg_name;
+	const TEXT*	acc_prc_name;
+	const TEXT*	acc_name;
+	const TEXT*	acc_type;
 	USHORT		acc_mask;
 };
 typedef acc *ACC;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.26 2003-02-11 00:56:13 brodsom Exp $
+ * $Id: sort.cpp,v 1.27 2003-02-13 10:11:16 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -113,7 +113,7 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 /* these values are not defined as const as they are passed to 
    the diddle_key routines  which mangles them.
    As the diddle_key routines differ on VAX (little endian) and non VAX
-   (big endian) patforms, making the following CONST caused a core on the 
+   (big endian) patforms, making the following const caused a core on the 
    Intel Platforms, while Solaris was working fine. */
 static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 };
  

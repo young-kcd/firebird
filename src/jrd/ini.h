@@ -44,7 +44,7 @@ nam_MAX} name_ids;
 
 #define NAME(name, id) name,
 
-static CONST TEXT* CONST FAR_VARIABLE names[] =
+static const TEXT* const FAR_VARIABLE names[] =
 {
 	0,
 #include "../jrd/names.h"
@@ -77,11 +77,11 @@ typedef struct gfld
 	UCHAR gfld_length;
 	UCHAR gfld_sub_type;
 	UCHAR gfld_minor;
-	CONST UCHAR *gfld_dflt_blr;
+	const UCHAR *gfld_dflt_blr;
 	USHORT gfld_dflt_len;
 } GFLD;
 
-static CONST struct gfld FAR_VARIABLE gfields[] = {
+static const struct gfld FAR_VARIABLE gfields[] = {
 #include "../jrd/fields.h"
 	{ 0, 0, dtype_null, 0, 0, 0, NULL, 0 }
 };
@@ -120,7 +120,7 @@ rel_MAX} RIDS;
 #define RFLD_F_UPD_MINOR 5
 #define RFLD_F_LENGTH	6
 
-static CONST UCHAR FAR_VARIABLE relfields[] =
+static const UCHAR FAR_VARIABLE relfields[] =
 {
 #include "../jrd/relations.h"
 	0
@@ -134,7 +134,7 @@ static CONST UCHAR FAR_VARIABLE relfields[] =
 /* obtain field types */
 
 typedef struct rtyp {
-	CONST TEXT *rtyp_name;
+	const TEXT *rtyp_name;
 	SSHORT rtyp_value;
 	UCHAR rtyp_field;
 } RTYP;
@@ -147,7 +147,7 @@ typedef struct rtyp {
 #define COLLATION(name, cc_id, cs_id, coll_id, sym)
 #define END_CHARSET
 
-static CONST RTYP FAR_VARIABLE types[] = {
+static const RTYP FAR_VARIABLE types[] = {
 #include "../jrd/types.h"
 #include "../jrd/intlnames.h"
 	{NULL, 0, 0}
@@ -164,18 +164,18 @@ static CONST RTYP FAR_VARIABLE types[] = {
 /* obtain international names */
 
 typedef struct initcharset {
-	CONST UCHAR *init_charset_name;
+	const UCHAR *init_charset_name;
 	SSHORT init_charset_id;
 	USHORT init_charset_bytes_per_char;
 } CS_TYPE;
 
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2) \
-	{ (CONST UCHAR *) (name), (cs_id), (bytes)},
+	{ (const UCHAR *) (name), (cs_id), (bytes)},
 #define CSALIAS(name, cs_id)
 #define COLLATION(name, cc_id, cs_id, coll_id, sym)
 #define END_CHARSET
 
-static CONST CS_TYPE cs_types[] = {
+static const CS_TYPE cs_types[] = {
 #include "../jrd/intlnames.h"
 	{NULL, 0, 0}
 };
@@ -185,19 +185,19 @@ static CONST CS_TYPE cs_types[] = {
 #undef END_CHARSET
 
 typedef struct initcollation {
-	CONST UCHAR *init_collation_name;
+	const UCHAR *init_collation_name;
 	SSHORT init_collation_charset;
 	SSHORT init_collation_id;
 } COLL_TYPE;
 
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2) \
-	{ (CONST UCHAR *) (name), (cs_id), (coll_id) },
+	{ (const UCHAR *) (name), (cs_id), (coll_id) },
 #define CSALIAS(name, cs_id)
 #define COLLATION(name, cc_id, cs_id, coll_id, sym) \
-	{ (CONST UCHAR *) (name), (cs_id), (coll_id) },
+	{ (const UCHAR *) (name), (cs_id), (coll_id) },
 #define END_CHARSET
 
-static CONST COLL_TYPE coll_types[] = {
+static const COLL_TYPE coll_types[] = {
 #include "../jrd/intlnames.h"
 	{NULL, 0, 0}
 };

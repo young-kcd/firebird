@@ -409,7 +409,7 @@ public:
 		{ return FB_NEW(p) CharSet_Unicode(p); }
 	CharSet_Unicode(MemoryPool &p) : CharSet(CS_UNICODE_UCS2, "UNICODE_UCS2", 2, 2, 2, 0)
 	{
-		static CONST WCHAR space = 0x0020;
+		static const WCHAR space = 0x0020;
 		charset_space_character = (const char *) & space;	/* 0x0020 */
 	}
 };
@@ -931,7 +931,7 @@ typedef struct {
 	SLONG lval;
 } Tab;
 
-static CONST Tab tab[] = {
+static const Tab tab[] = {
 	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
 	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
 	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
@@ -1330,7 +1330,7 @@ static USHORT ttype_ascii_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  * Functional description
  *
  *************************************/
-	static CONST ASCII POSIX[] = "C.ASCII";
+	static const ASCII POSIX[] = "C.ASCII";
 
 	FAMILY_INTERNAL(ttype_ascii, ttype_ascii_init, CS_ASCII, CC_C);
 
@@ -1349,7 +1349,7 @@ static USHORT ttype_none_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  * Functional description
  *
  *************************************/
-	static CONST ASCII POSIX[] = "C";
+	static const ASCII POSIX[] = "C";
 
 	FAMILY_INTERNAL(ttype_none, ttype_none_init, CS_NONE, CC_C);
 
@@ -1370,7 +1370,7 @@ static USHORT ttype_unicode_fss_init(
  * Functional description
  *
  *************************************/
-	static CONST ASCII POSIX[] = "C.UNICODE_FSS";
+	static const ASCII POSIX[] = "C.UNICODE_FSS";
 
 	FAMILY_INTERNAL(ttype_unicode_fss, ttype_unicode_fss_init, CS_UNICODE_FSS,
 					CC_C);
@@ -1393,7 +1393,7 @@ static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  * Functional description
  *
  *************************************/
-	static CONST ASCII POSIX[] = "C.OCTETS";
+	static const ASCII POSIX[] = "C.OCTETS";
 
 	FAMILY_INTERNAL(ttype_binary, ttype_binary_init, CS_BINARY, CC_C);
 	cache->texttype_fn_to_upper = (FPTR_SHORT) internal_ch_copy;
@@ -1522,11 +1522,11 @@ static USHORT cs_unicode_ucs2_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
  * Functional description
  *
  *************************************/
-	static CONST WCHAR space = 0x0020;
+	static const WCHAR space = 0x0020;
 
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_UNICODE;
-	csptr->charset_name = ( /*CONST* ASCII *) "UNICODE_UCS2";
+	csptr->charset_name = ( /*const* ASCII *) "UNICODE_UCS2";
 	csptr->charset_flags = 0;
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;

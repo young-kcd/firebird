@@ -68,7 +68,7 @@ static void dmp_transactions(TIP, ULONG);
 
 static int dmp_descending = 0;
 
-static CONST SCHAR months[][4] = {
+static const SCHAR months[][4] = {
 	"Jan", "Feb", "Mar",
 	"Apr", "May", "Jun",
 	"Jul", "Aug", "Sep",

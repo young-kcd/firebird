@@ -117,7 +117,7 @@ static SLONG process_lck_owner_handle = 0;
 #endif	/* SUPERSERVER */
 
 
-static CONST UCHAR compatibility[] = {
+static const UCHAR compatibility[] = {
 
 /*				Shared	Prot	Shared	Prot
 		none	null	 Read	Read	Write	Write	Exclusive */

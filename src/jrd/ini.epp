@@ -71,13 +71,13 @@ static void add_relation_fields(USHORT);
 static void add_security_to_sys_rel(TDBB, TEXT*, TEXT*, TEXT*, SSHORT);
 static void add_trigger(TEXT*, BLK*, BLK*);
 static void add_user_priv(TDBB, TEXT*, TEXT*, TEXT*, TEXT);
-static void modify_relation_field(TDBB, CONST UCHAR*, CONST UCHAR*, BLK*);
-static void store_generator(TDBB, CONST GEN*, BLK*);
+static void modify_relation_field(TDBB, const UCHAR*, const UCHAR*, BLK*);
+static void store_generator(TDBB, const GEN*, BLK*);
 static void store_global_field(TDBB, GFLD*, BLK*);
 static void store_intlnames(TDBB, DBB);
-static void store_message(TDBB, CONST TRIGMSG*, BLK*);
-static void store_relation_field(TDBB, CONST UCHAR*, CONST UCHAR*, int, BLK*, int);
-static void store_trigger(TDBB, CONST JRD_TRG*, BLK*);
+static void store_message(TDBB, const TRIGMSG*, BLK*);
+static void store_relation_field(TDBB, const UCHAR*, const UCHAR*, int, BLK*, int);
+static void store_trigger(TDBB, const JRD_TRG*, BLK*);
 
 
 /* This is the table used in defining triggers; note that
@@ -86,7 +86,7 @@ static void store_trigger(TDBB, CONST JRD_TRG*, BLK*);
    changed to RDB$TRIGGER_9 to handle SQL security on relations whose
    name is > 27 characters */
 
-static CONST JRD_TRG FAR_VARIABLE triggers[] =
+static const JRD_TRG FAR_VARIABLE triggers[] =
 {
 	{ "RDB$TRIGGER_1", (UCHAR) nam_user_privileges,
 		RDB$TRIGGERS.RDB$TRIGGER_TYPE.PRE_MODIFY, sizeof(trigger3), trigger3,
@@ -196,7 +196,7 @@ static CONST JRD_TRG FAR_VARIABLE triggers[] =
 
 /* this table is used in defining messages for system triggers */
 
-static CONST TRIGMSG FAR_VARIABLE trigger_messages[] =
+static const TRIGMSG FAR_VARIABLE trigger_messages[] =
 {
 	{ "RDB$TRIGGER_9", 0, "grant_obj_notfound", ODS_8_0 },
 	{ "RDB$TRIGGER_9", 1, "grant_fld_notfound", ODS_8_0 },
@@ -254,13 +254,13 @@ void INI_format(const TEXT* owner, TEXT* charset)
 	TDBB			tdbb;
 	DBB				dbb;
 	int				n;
-	CONST RTYP*		type;
-	CONST UCHAR*	relfld;
-	CONST UCHAR*	fld;
+	const RTYP*		type;
+	const UCHAR*	relfld;
+	const UCHAR*	fld;
 	GFLD*			gfield;
-	CONST JRD_TRG*		trigger;
-	CONST TRIGMSG*	message;
-	CONST GEN*		generator;
+	const JRD_TRG*		trigger;
+	const TRIGMSG*	message;
+	const GEN*		generator;
 	TEXT			string[32];
 	TEXT*			p;
 	TEXT			string2[32];
@@ -479,7 +479,7 @@ USHORT INI_get_trig_flags(TEXT* trig_name)
  *      Return the trigger flags for a system trigger.
  *
  **************************************/
-	CONST JRD_TRG* trig;
+	const JRD_TRG* trig;
 
 	for (trig = triggers; trig->trg_length > 0; trig++)
 	{
@@ -515,11 +515,11 @@ void INI_init(void)
 	VEC				formats;
 	VEC				fields;
 	int				n;
-	CONST UCHAR*	relfld;
-	CONST UCHAR*	fld_;
+	const UCHAR*	relfld;
+	const UCHAR*	fld_;
 	fmt::fmt_desc_iterator	desc;
-	CONST GFLD*		gfield;
-	CONST JRD_TRG*		trigger;
+	const GFLD*		gfield;
+	const JRD_TRG*		trigger;
 	TDBB			tdbb;
 	vec::iterator	itr;
 
@@ -591,8 +591,8 @@ void INI_init2(void)
 	JRD_REL				relation;
 	FMT				format;
 	int				n;
-	CONST UCHAR*	relfld;
-	CONST UCHAR*	fld;
+	const UCHAR*	relfld;
+	const UCHAR*	fld;
 	fmt::fmt_desc_iterator			desc;
 	TDBB			tdbb;
 	USHORT			major_version;
@@ -696,9 +696,9 @@ void INI_init2(void)
 
 JRD_TRG* INI_lookup_sys_trigger(JRD_REL				relation,
 							JRD_TRG*			trigger,
-							CONST UCHAR**	blr,
+							const UCHAR**	blr,
 							UCHAR*			trigger_type,
-							CONST SCHAR**	trigger_name,
+							const SCHAR**	trigger_name,
 							USHORT*			trig_flags)
 {
 /**************************************
@@ -853,7 +853,7 @@ static void add_generator(TEXT* generator_name, BLK* handle)
  *
  **************************************/
 	TDBB tdbb;
-	CONST GEN* generator = generators;
+	const GEN* generator = generators;
 
 	tdbb = GET_THREAD_DATA;
 
@@ -929,8 +929,8 @@ static void add_index_set(DBB		dbb,
 	TDBB	tdbb;
 	JRD_REL		relation;
 	TEXT	string[32];
-	CONST struct ini_idx_t*	index;
-	CONST ini_idx_t::ini_idx_segment_t*segment;
+	const struct ini_idx_t*	index;
+	const ini_idx_t::ini_idx_segment_t*segment;
 	IDX		idx;
 	idx::idx_repeat* tail;
 	USHORT	position;
@@ -1020,8 +1020,8 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
  *
  **************************************/
 	TDBB			tdbb;
-	CONST JRD_TRG*		trig;
-	CONST TRIGMSG*	message;
+	const JRD_TRG*		trig;
+	const TRIGMSG*	message;
 	BLK				handle1;
 	BLK				handle2;
 
@@ -1078,8 +1078,8 @@ static void add_relation_fields( USHORT minor_version)
 	DSC				desc;
 	BLK				s_handle;
 	BLK				m_handle;
-	CONST UCHAR*	fld;
-	CONST UCHAR*	relfld;
+	const UCHAR*	fld;
+	const UCHAR*	relfld;
 	int				n;
 
 	tdbb = GET_THREAD_DATA;
@@ -1276,8 +1276,8 @@ static void add_trigger(TEXT* trigger_name, BLK* handle1, BLK* handle2)
  *
  **************************************/
 	TDBB			tdbb;
-	CONST JRD_TRG*		trigger;
-	CONST TRIGMSG*	message;
+	const JRD_TRG*		trigger;
+	const TRIGMSG*	message;
 
 	tdbb = GET_THREAD_DATA;
 
@@ -1304,8 +1304,8 @@ static void add_trigger(TEXT* trigger_name, BLK* handle1, BLK* handle2)
 
 
 static void modify_relation_field(TDBB			tdbb,
-								  CONST UCHAR*	fld,
-								  CONST UCHAR*	relfld,
+								  const UCHAR*	fld,
+								  const UCHAR*	relfld,
 								  BLK*			handle)
 {
 /**************************************
@@ -1321,7 +1321,7 @@ static void modify_relation_field(TDBB			tdbb,
  *
  **************************************/
 	DBB			dbb;
-	CONST GFLD*	gfield;
+	const GFLD*	gfield;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1338,7 +1338,7 @@ static void modify_relation_field(TDBB			tdbb,
 }
 
 
-static void store_generator(TDBB tdbb, CONST GEN* generator, BLK* handle)
+static void store_generator(TDBB tdbb, const GEN* generator, BLK* handle)
 {
 /**************************************
  *
@@ -1508,8 +1508,8 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
  *	character sets & collations.
  *
  **************************************/
-	CONST CS_TYPE*		csptr;
-	CONST COLL_TYPE*	collptr;
+	const CS_TYPE*		csptr;
+	const COLL_TYPE*	collptr;
 	BLK					handle;
 
 	SET_TDBB(tdbb);
@@ -1544,7 +1544,7 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
 }
 
 
-static void store_message(TDBB tdbb, CONST TRIGMSG* message, BLK* handle)
+static void store_message(TDBB tdbb, const TRIGMSG* message, BLK* handle)
 {
 /**************************************
  *
@@ -1572,8 +1572,8 @@ static void store_message(TDBB tdbb, CONST TRIGMSG* message, BLK* handle)
 
 
 static void store_relation_field(TDBB			tdbb,
-								 CONST UCHAR*	fld,
-								 CONST UCHAR*	relfld,
+								 const UCHAR*	fld,
+								 const UCHAR*	relfld,
 								 int			field_id,
 								 BLK*			handle,
 								 int			fmt0_flag)
@@ -1590,7 +1590,7 @@ static void store_relation_field(TDBB			tdbb,
  *
  **************************************/
 	DBB			dbb;
-	CONST GFLD*	gfield;
+	const GFLD*	gfield;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1609,7 +1609,7 @@ static void store_relation_field(TDBB			tdbb,
 }
 
 
-static void store_trigger(TDBB tdbb, CONST JRD_TRG* trigger, BLK* handle)
+static void store_trigger(TDBB tdbb, const JRD_TRG* trigger, BLK* handle)
 {
 /**************************************
  *

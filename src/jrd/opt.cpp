@@ -205,7 +205,7 @@ static int opt_debug_flag = DEBUG_NONE;
 
 /* enumeration of sort datatypes */
 
-static CONST UCHAR sort_dtypes[] = {
+static const UCHAR sort_dtypes[] = {
 	0,							/* dtype_null */
 	SKD_text,					/* dtype_text */
 	SKD_cstring,				/* dtype_cstring */

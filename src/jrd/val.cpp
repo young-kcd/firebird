@@ -612,7 +612,7 @@ typedef enum {
 	rtn_eof
 } RTN;
 
-static CONST TEXT msg_table[][52] = {
+static const TEXT msg_table[][52] = {
 	"Page %ld wrong type (expected %d encountered %d)",	/* 0 */
 	"Checksum error on page %ld",
 	"Page %ld doubly allocated",
@@ -662,9 +662,9 @@ static RTN walk_relation(TDBB, VDR, JRD_REL);
 static RTN walk_root(TDBB, VDR, JRD_REL);
 static RTN walk_tip(TDBB, VDR, SLONG);
 
-static CONST SLONG end_level = END_LEVEL, end_bucket = END_BUCKET;
+static const SLONG end_level = END_LEVEL, end_bucket = END_BUCKET;
 #ifdef IGNORE_NULL_IDX_KEY
-static CONST SLONG end_non_null = END_NON_NULL;
+static const SLONG end_non_null = END_NON_NULL;
 #endif /* IGNORE_NULL_IDX_KEY */
 
 #ifdef SHLIB_DEFS
@@ -764,7 +764,7 @@ static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, JRD_REL relation, ..
  **************************************/
 	TEXT s[256], *p;
 	va_list ptr;
-	CONST TEXT *string;
+	const TEXT *string;
 	ATT att;
 
 	VA_START(ptr, relation);

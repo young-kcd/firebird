@@ -62,7 +62,7 @@
 extern "C" {
 
 
-static CONST SCHAR NULL_STR = '\0';
+static const SCHAR NULL_STR = '\0';
 
 /* Data to be passed to index fast load duplicates routine */
 

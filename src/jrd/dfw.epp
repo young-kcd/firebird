@@ -200,7 +200,7 @@ static bool shadow_defined(TDBB);
 static bool validate_text_type (TDBB, STATUS *, TFB);
 static bool wal_defined(TDBB);
 
-static CONST UCHAR nonnull_validation_blr[] =
+static const UCHAR nonnull_validation_blr[] =
 {
 	blr_version5,
 	blr_not,
@@ -215,7 +215,7 @@ typedef struct task
 	bool (*task_routine) (TDBB, SSHORT, DFW, JRD_TRA);
 } TASK;
 
-static CONST TASK task_table[] =
+static const TASK task_table[] =
 {
 	{ dfw_add_file, add_file },
 	{ dfw_add_shadow, add_shadow },

@@ -80,21 +80,21 @@
 
 DATABASE DB = FILENAME "ODS.RDB";
 
-static BOOLEAN check_hex(CONST TEXT*, USHORT);
-static BOOLEAN check_number(CONST TEXT*, USHORT);
-static BOOLEAN check_user_group(CONST TEXT*, USHORT, STR*, ULONG*);
-static BOOLEAN check_string(CONST TEXT*, CONST TEXT*);
-static SLONG compute_access(TDBB, SCL, JRD_REL, CONST TEXT*, CONST TEXT*);
+static BOOLEAN check_hex(const TEXT*, USHORT);
+static BOOLEAN check_number(const TEXT*, USHORT);
+static BOOLEAN check_user_group(const TEXT*, USHORT, STR*, ULONG*);
+static BOOLEAN check_string(const TEXT*, const TEXT*);
+static SLONG compute_access(TDBB, SCL, JRD_REL, const TEXT*, const TEXT*);
 static TEXT *save_string(TEXT*, TEXT**);
-static SLONG walk_acl(TDBB, CONST TEXT*, JRD_REL, CONST TEXT*, CONST TEXT*, STR*, ULONG*);
+static SLONG walk_acl(TDBB, const TEXT*, JRD_REL, const TEXT*, const TEXT*, STR*, ULONG*);
 
 typedef struct {
 	USHORT p_names_priv;
 	USHORT p_names_acl;
-	CONST TEXT *p_names_string;
+	const TEXT *p_names_string;
 } P_NAMES;
 
-static CONST P_NAMES p_names[] =
+static const P_NAMES p_names[] =
 {
 	{ SCL_protect, priv_protect, "protect" },
 	{ SCL_control, priv_control, "control" },
@@ -113,11 +113,11 @@ static CONST P_NAMES p_names[] =
 
 void SCL_check_access(SCL			s_class,
 					  JRD_REL			view,
-					  CONST TEXT*	trg_name,
-					  CONST TEXT*	prc_name,
+					  const TEXT*	trg_name,
+					  const TEXT*	prc_name,
 					  USHORT		mask,
-					  CONST TEXT*	type,
-					  CONST TEXT*	name)
+					  const TEXT*	type,
+					  const TEXT*	name)
 {
 /**************************************
  *
@@ -132,7 +132,7 @@ void SCL_check_access(SCL			s_class,
  *
  **************************************/
 	TDBB			tdbb;
-	CONST P_NAMES*	names;
+	const P_NAMES*	names;
 	SCL				att_class;
 	ATT				attachment;
 
@@ -505,7 +505,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 }
 
 
-int SCL_get_mask(CONST TEXT* relation_name, CONST TEXT* field_name)
+int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 {
 /**************************************
  *
@@ -815,7 +815,7 @@ void SCL_move_priv(
  *
  **************************************/
 	UCHAR *p;
-	CONST P_NAMES *priv;
+	const P_NAMES *priv;
 
 	p = *acl_ptr;
 
@@ -909,7 +909,7 @@ void SCL_release( SCL s_class)
 }
 
 
-static BOOLEAN check_hex(CONST TEXT* acl, USHORT number)
+static BOOLEAN check_hex(const TEXT* acl, USHORT number)
 {
 /**************************************
  *
@@ -946,7 +946,7 @@ static BOOLEAN check_hex(CONST TEXT* acl, USHORT number)
 }
 
 
-static BOOLEAN check_number(CONST TEXT* acl, USHORT number)
+static BOOLEAN check_number(const TEXT* acl, USHORT number)
 {
 /**************************************
  *
@@ -974,7 +974,7 @@ static BOOLEAN check_number(CONST TEXT* acl, USHORT number)
 }
 
 
-static BOOLEAN check_user_group(CONST TEXT*	acl,
+static BOOLEAN check_user_group(const TEXT*	acl,
 								USHORT		number,
 								STR*		start_ptr,
 								ULONG*		length_ptr)
@@ -1053,7 +1053,7 @@ static BOOLEAN check_user_group(CONST TEXT*	acl,
 }
 
 
-static BOOLEAN check_string(CONST TEXT* acl, CONST TEXT* string)
+static BOOLEAN check_string(const TEXT* acl, const TEXT* string)
 {
 /**************************************
  *
@@ -1104,8 +1104,8 @@ static BOOLEAN check_string(CONST TEXT* acl, CONST TEXT* string)
 static SLONG compute_access(TDBB		tdbb,
 							SCL			s_class,
 							JRD_REL			view,
-							CONST TEXT*	trg_name,
-							CONST TEXT*	prc_name)
+							const TEXT*	trg_name,
+							const TEXT*	prc_name)
 {
 /**************************************
  *
@@ -1233,10 +1233,10 @@ static TEXT *save_string(TEXT* string, TEXT** ptr)
 
 
 static SLONG walk_acl(TDBB			tdbb,
-					  CONST TEXT*	acl,
+					  const TEXT*	acl,
 					  JRD_REL			view,
-					  CONST TEXT*	trg_name,
-					  CONST TEXT*	prc_name,
+					  const TEXT*	trg_name,
+					  const TEXT*	prc_name,
 					  STR*			start_ptr,
 					  ULONG*		length_ptr)
 {

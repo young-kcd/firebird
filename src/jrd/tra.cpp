@@ -84,7 +84,7 @@
 
 #define EVENT_FLAG	15
 
-static CONST SCHAR lock_types[] =
+static const SCHAR lock_types[] =
 {
 	0,
 	LCK$K_NLMODE,
@@ -117,7 +117,7 @@ static void THREAD_ROUTINE sweep_database(UCHAR *);
 static void transaction_options(TDBB, JRD_TRA, UCHAR *, USHORT);
 static BOOLEAN vms_convert(LCK, SLONG *, SCHAR, BOOLEAN);
 
-static CONST UCHAR sweep_tpb[] = { isc_tpb_version1, isc_tpb_read,
+static const UCHAR sweep_tpb[] = { isc_tpb_version1, isc_tpb_read,
 	isc_tpb_read_committed, isc_tpb_rec_version
 };
 

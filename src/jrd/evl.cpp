@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.26 2003-02-10 13:28:21 eku Exp $ 
+  * $Id: evl.cpp,v 1.27 2003-02-13 10:10:59 dimitr Exp $ 
  */
 
 /*
@@ -179,7 +179,7 @@ static DSC *upcase(TDBB, DSC *, VLU);
 static DSC *internal_info(TDBB, DSC *, VLU);
 
 
-static CONST UCHAR special[256] = {
+static const UCHAR special[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0,	/* $%*+- (dollar, percent, star, plus, minus) */
@@ -1241,7 +1241,7 @@ BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
 							 nod_current_time
 							 || temp_field->fld_default_value->nod_type ==
 							 nod_current_timestamp) {
-						static CONST GDS_TIMESTAMP temp_timestamp = { 0, 0 };
+						static const GDS_TIMESTAMP temp_timestamp = { 0, 0 };
 						desc->dsc_dtype = dtype_timestamp;
 						desc->dsc_scale = 0;
 						desc->dsc_flags = 0;

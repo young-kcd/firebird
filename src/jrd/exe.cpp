@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.41 2003-02-12 19:12:15 tamlin Exp $
+$Id: exe.cpp,v 1.42 2003-02-13 10:11:02 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3578,7 +3578,7 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
 		if (condition->xcp_rpt[0].xcp_code == gds_check_constraint) {
 			MET_lookup_cnstrt_for_trigger(tdbb, name, relation_name,
 										  request->req_trg_name);
-			// CONST CAST
+			// const CAST
 			s = (name[0]) ? name : (TEXT*)"";
 			r = (relation_name[0]) ? relation_name : (TEXT*)"";
 			ERR_post(condition->xcp_rpt[0].xcp_code,
@@ -4099,7 +4099,7 @@ static void validate(TDBB tdbb, JRD_NOD list)
 			JRD_FLD			field;
 			const char*	value;
 			TEXT		temp[128];
-			CONST TEXT*	name;
+			const TEXT*	name;
 			USHORT length, stream, id;
 
 			node = (*ptr1)->nod_arg[e_val_value];

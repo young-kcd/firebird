@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.33 2003-02-10 13:28:23 eku Exp $
+$Id: par.cpp,v 1.34 2003-02-13 10:11:14 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -81,10 +81,10 @@ $Id: par.cpp,v 1.33 2003-02-10 13:28:23 eku Exp $
 extern "C" {
 
 
-static CONST TEXT elements[][10] =
+static const TEXT elements[][10] =
 	{ "", "statement", "boolean", "value", "RSE", "TABLE" };
-static CONST struct {
-	CONST SCHAR *code_string;
+static const struct {
+	const SCHAR *code_string;
 	SLONG code_number;
 } FAR_VARIABLE codes[] = {
 #include "gen/codetext.h"
@@ -118,7 +118,7 @@ static JRD_NOD par_stream(TDBB, CSB *);
 static JRD_NOD par_union(TDBB, CSB *);
 static USHORT par_word(CSB *);
 static JRD_NOD parse(TDBB, CSB *, USHORT);
-static void syntax_error(CSB, CONST TEXT *);
+static void syntax_error(CSB, const TEXT *);
 static void warning(CSB, ...);
 
 #define BLR_PEEK	*((*csb)->csb_running)
@@ -2901,7 +2901,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 }
 
 
-static void syntax_error(CSB csb, CONST TEXT * string)
+static void syntax_error(CSB csb, const TEXT * string)
 {
 /**************************************
  *

@@ -55,19 +55,19 @@ enum {
 	{ blr, #internal, STRINGIZER(internal##2), #length, #count, \
 	 #type, #sub_type }
 
-static void print(CONST SCHAR **, int, CONST SCHAR *);
+static void print(const SCHAR **, int, const SCHAR *);
 
 typedef struct {
 	UCHAR blr;
-	SCHAR CONST *internal;
-	SCHAR CONST *internal2;
-	SCHAR CONST *length;
-	SCHAR CONST *count;
-	SCHAR CONST *type;
-	SCHAR CONST *sub_type;
+	SCHAR const *internal;
+	SCHAR const *internal2;
+	SCHAR const *length;
+	SCHAR const *count;
+	SCHAR const *type;
+	SCHAR const *sub_type;
 } VERB;
 
-static CONST VERB verbs[] = {
+static const VERB verbs[] = {
 	PAIR(nod_assignment, blr_assignment, e_asgn_length, 2, STATEMENT, VALUE),
 	PAIR(nod_erase, blr_erase, e_erase_length, 0, STATEMENT, OTHER),
 	PAIR(nod_dcl_variable, blr_dcl_variable, e_dcl_length, 0, STATEMENT, OTHER),
@@ -225,7 +225,7 @@ static CONST VERB verbs[] = {
 	0
 };
 
-CONST SCHAR *table[256], *table2[256], *lengths[256], *counts[256],
+const SCHAR *table[256], *table2[256], *lengths[256], *counts[256],
 	*types[256], *sub_types[256];
 
 
@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
  *	Spit out a conversion table.
  *
  **************************************/
-	CONST VERB *verb;
+	const VERB *verb;
 	int max, blr;
 
 	for (blr = 0; blr < FB_NELEM(table); blr++) {
@@ -272,22 +272,22 @@ int main(int argc, char *argv[])
 			max = blr;
 	}
 
-	ib_printf("static CONST UCHAR blr_table4 [] = {\n");
+	ib_printf("static const UCHAR blr_table4 [] = {\n");
 	print(table, max, "(UCHAR) ");
 
-	ib_printf("static CONST UCHAR blr_table [] = {\n");
+	ib_printf("static const UCHAR blr_table [] = {\n");
 	print(table2, max, "(UCHAR) ");
 
-	ib_printf("static CONST SCHAR length_table [] = {\n");
+	ib_printf("static const SCHAR length_table [] = {\n");
 	print(lengths, max, "");
 
-	ib_printf("static CONST SCHAR count_table [] = {\n");
+	ib_printf("static const SCHAR count_table [] = {\n");
 	print(counts, max, "");
 
-	ib_printf("static CONST SCHAR type_table [] = {\n");
+	ib_printf("static const SCHAR type_table [] = {\n");
 	print(types, max, "");
 
-	ib_printf("static CONST SCHAR sub_type_table [] = {\n");
+	ib_printf("static const SCHAR sub_type_table [] = {\n");
 	print(sub_types, max, "");
 
 	return 0;
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 
 
 #ifdef __STDC__
-static void print(CONST SCHAR ** table, int max, CONST SCHAR * fudge)
+static void print(const SCHAR ** table, int max, const SCHAR * fudge)
 #else
 static void print(table, max, fudge)
 	 SCHAR **table;

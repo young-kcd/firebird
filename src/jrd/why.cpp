@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.11 2003-02-10 13:28:23 eku Exp $
+$Id: why.cpp,v 1.12 2003-02-13 10:11:21 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -231,7 +231,7 @@ static void exit_handler(EVENT);
 static WHY_TRA find_transaction(WHY_DBB, WHY_TRA);
 static void free_block(void*);
 static int get_database_info(STATUS *, WHY_TRA, TEXT **);
-static CONST PTR get_entrypoint(int, int);
+static const PTR get_entrypoint(int, int);
 static SCHAR *get_sqlda_buffer(SCHAR *, USHORT, XSQLDA *, USHORT, USHORT *);
 static STATUS get_transaction_info(STATUS *, WHY_TRA, TEXT **);
 
@@ -239,7 +239,7 @@ static STATUS get_transaction_info(STATUS *, WHY_TRA, TEXT **);
 static void init_paths(void);
 #endif
 
-static void iterative_sql_info(STATUS *, WHY_STMT *, SSHORT, CONST SCHAR *, SSHORT,
+static void iterative_sql_info(STATUS *, WHY_STMT *, SSHORT, const SCHAR *, SSHORT,
 							   SCHAR *, USHORT, XSQLDA *);
 static STATUS no_entrypoint(STATUS * user_status, ...);
 static STATUS open_blob(STATUS *, WHY_ATT *, WHY_TRA *, WHY_BLB *, SLONG *, USHORT,
@@ -307,7 +307,7 @@ static TEXT *marker_failures_ptr = marker_failures;
 
 #define MAXERRORSTRINGLENGTH	250
 static TEXT glbstr1[MAXERRORSTRINGLENGTH];
-static CONST TEXT glbunknown[10] = "<unknown>";
+static const TEXT glbunknown[10] = "<unknown>";
 
 #ifdef VMS
 #define CALL(proc, handle)	(*get_entrypoint(proc, handle))
@@ -479,7 +479,7 @@ typedef struct
 #ifdef INITIALIZE_PATHS
 #define CONST_IMAGE				/* nothing */
 #else
-#define CONST_IMAGE	CONST
+#define CONST_IMAGE	const
 #endif
 
 
@@ -624,7 +624,7 @@ static CONST_IMAGE IMAGE images[] =
 
 #define SUBSYSTEMS		sizeof (images) / (sizeof (IMAGE))
 
-static CONST ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
+static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 {
 #ifdef PIPE_CLIENT
 
@@ -683,7 +683,7 @@ static CONST ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 #endif
 };
 
-static CONST TEXT *generic[] = {
+static const TEXT *generic[] = {
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	gen,
 #include "../jrd/entry.h"
 };
@@ -691,7 +691,7 @@ static CONST TEXT *generic[] = {
 
 /* Information items for two phase commit */
 
-static CONST UCHAR prepare_tr_info[] =
+static const UCHAR prepare_tr_info[] =
 {
 	gds__info_tra_id,
 	gds__info_end
@@ -699,7 +699,7 @@ static CONST UCHAR prepare_tr_info[] =
 
 /* Information items for DSQL prepare */
 
-static CONST SCHAR sql_prepare_info[] =
+static const SCHAR sql_prepare_info[] =
 {
 	gds__info_sql_select,
 	gds__info_sql_describe_vars,
@@ -717,7 +717,7 @@ static CONST SCHAR sql_prepare_info[] =
 
 /* Information items for SQL info */
 
-static CONST SCHAR describe_select_info[] =
+static const SCHAR describe_select_info[] =
 {
 	gds__info_sql_select,
 	gds__info_sql_describe_vars,
@@ -733,7 +733,7 @@ static CONST SCHAR describe_select_info[] =
 	gds__info_sql_describe_end
 };
 
-static CONST SCHAR describe_bind_info[] =
+static const SCHAR describe_bind_info[] =
 {
 	gds__info_sql_bind,
 	gds__info_sql_describe_vars,
@@ -3396,7 +3396,7 @@ STATUS API_ROUTINE GDS_DSQL_PREPARE_M(STATUS * user_status,
 									  SCHAR * string,
 									  USHORT dialect,
 									  USHORT GDS_VAL(item_length),
-									  CONST SCHAR * items,
+									  const SCHAR * items,
 									  USHORT GDS_VAL(buffer_length),
 									  SCHAR * buffer)
 {
@@ -3502,7 +3502,7 @@ STATUS API_ROUTINE GDS_DSQL_SET_CURSOR(STATUS * user_status,
 STATUS API_ROUTINE GDS_DSQL_SQL_INFO(STATUS * user_status,
 									 WHY_STMT * stmt_handle,
 									 SSHORT GDS_VAL(item_length),
-									 CONST SCHAR * items,
+									 const SCHAR * items,
 									 SSHORT GDS_VAL(buffer_length),
 									 SCHAR * buffer)
 {
@@ -3562,7 +3562,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT * subsystem)
  *	has been explicitly enabled, all are available.
  *
  **************************************/
-	CONST IMAGE *sys, *end;
+	const IMAGE *sys, *end;
 
 	for (sys = images, end = sys + SUBSYSTEMS; sys < end; sys++)
 		if (!strcmp(sys->name, subsystem)) {
@@ -5189,7 +5189,7 @@ static void check_status_vector(STATUS * status, STATUS expected)
 			/* If the error code is valid, then I better be able to retrieve a
 			 * proper facility code from it ... let's find out */
 			if (*s && (*s & ISC_MASK) == ISC_MASK) {
-				CONST struct _facilities *facs;
+				const struct _facilities *facs;
 				int fac_code;
 				BOOLEAN found = 0;
 
@@ -5433,7 +5433,7 @@ static int get_database_info(STATUS * status, WHY_TRA transaction, TEXT ** ptr)
 }
 
 
-static CONST PTR get_entrypoint(int proc, int implementation)
+static const PTR get_entrypoint(int proc, int implementation)
 {
 /**************************************
  *
@@ -5447,12 +5447,12 @@ static CONST PTR get_entrypoint(int proc, int implementation)
  **************************************/
 
 #if !defined(PIPE_CLIENT) && !defined(SUPERCLIENT)
-	CONST TEXT *name;
+	const TEXT *name;
 	TEXT *image;
 #endif
 
-	CONST ENTRY *ent = entrypoints + implementation * PROC_count + proc;
-	CONST PTR entrypoint = ent->address;
+	const ENTRY *ent = entrypoints + implementation * PROC_count + proc;
+	const PTR entrypoint = ent->address;
 
 	if (entrypoint)
 	{
@@ -5601,7 +5601,7 @@ static STATUS get_transaction_info(STATUS * status,
 static void iterative_sql_info(STATUS * user_status,
 							   WHY_STMT * stmt_handle,
 							   SSHORT item_length,
-							   CONST SCHAR * items,
+							   const SCHAR * items,
 							   SSHORT buffer_length,
 							   SCHAR * buffer, USHORT dialect, XSQLDA * sqlda)
 {

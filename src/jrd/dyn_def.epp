@@ -96,7 +96,7 @@
 DATABASE DB = STATIC "ODS.RDB";
 
 
-static CONST UCHAR who_blr[] =
+static const UCHAR who_blr[] =
 {
 	blr_version5,
 	blr_begin,
@@ -127,8 +127,8 @@ static int private_getODS()
 	TDBB	tdbb = GET_THREAD_DATA;
 	DBB		dbb = tdbb->tdbb_database;
 
-	CONST SSHORT major_version  = (SSHORT) dbb->dbb_ods_version;
-	CONST SSHORT minor_original = (SSHORT) dbb->dbb_minor_original;
+	const SSHORT major_version  = (SSHORT) dbb->dbb_ods_version;
+	const SSHORT minor_original = (SSHORT) dbb->dbb_minor_original;
 
 	return ENCODE_ODS(major_version, minor_original);
 }

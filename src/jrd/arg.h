@@ -46,7 +46,7 @@
        be generated, to be filled in by the call
 */
 
-static CONST SCHAR arg_types1[log_max][10] = {
+static const SCHAR arg_types1[log_max][10] = {
 	"snpsbs",					/* attach_database */
 	"psbsb",					/* blob_info */
 	"p",						/* cancel_blob */

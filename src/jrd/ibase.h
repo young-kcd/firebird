@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.25 2003-02-10 16:28:05 alexpeshkoff Exp $
+$Id: ibase.h,v 1.26 2003-02-13 10:11:05 dimitr Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -619,7 +619,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_set_cursor_name(ISC_STATUS ISC_FAR*,
 ISC_STATUS ISC_EXPORT isc_dsql_sql_info(ISC_STATUS ISC_FAR*,
 										isc_stmt_handle ISC_FAR*,
 										short,
-										CONST char ISC_FAR*,
+										const char ISC_FAR*,
 										short,
 										char ISC_FAR*);
 

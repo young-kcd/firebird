@@ -962,7 +962,7 @@ const
 
 (* Error codes *)
 
-CONST
+const
 	gds_facility		= 20;
 	gds_err_base		= 335544320;
 	gds_err_factor		= 1;
@@ -1423,7 +1423,7 @@ CONST
 
 (* Dynamic SQL datatypes *)
 
-CONST
+const
 	SQL_TEXT	= 452;
 	SQL_VARYING	= 448;
 	SQL_SHORT	= 500;
@@ -1438,7 +1438,7 @@ CONST
 
 (* Map definition block definitions *)
 
-CONST
+const
 	PYXIS__MAP_VERSION1		= chr(1);
 	PYXIS__MAP_FIELD2		= chr(2);
 	PYXIS__MAP_FIELD1		= chr(3);
@@ -1455,7 +1455,7 @@ CONST
 
 (* Field option flags for display options *)
 
-CONST
+const
 	PYXIS__OPT_DISPLAY	= 1;
 	PYXIS__OPT_UPDATE	= 2;
 	PYXIS__OPT_WAKEUP	= 4;
@@ -1463,7 +1463,7 @@ CONST
 
 (* Field option values following display *)
 
-CONST
+const
 	PYXIS__OPT_NULL		= 1;
 	PYXIS__OPT_DEFAULT	= 2;
 	PYXIS__OPT_INITIAL	= 3;
@@ -1471,7 +1471,7 @@ CONST
 
 (* Pseudo key definitions *)
 
-CONST
+const
 	PYXIS__KEY_DELETE		= 127;
 	PYXIS__KEY_UP			= 128;
 	PYXIS__KEY_DOWN			= 129;
@@ -1492,7 +1492,7 @@ CONST
 
 (* Menu definition stuff *)
 
-CONST
+const
 	PYXIS__MENU_VERSION1		= chr(1);
 	PYXIS__MENU_LABEL		= chr(2);
 	PYXIS__MENU_ENTREE		= chr(3);

@@ -57,7 +57,7 @@
 // We currently can't include jrd/err_proto.h to get the function
 // declaration. :-<
 extern "C" {
-extern void DLL_EXPORT ERR_bugcheck_msg(CONST TEXT *);
+extern void DLL_EXPORT ERR_bugcheck_msg(const TEXT *);
 }
 
 

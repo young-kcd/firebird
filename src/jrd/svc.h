@@ -180,7 +180,7 @@ public:
 	TEXT**	svc_argv;
 	ULONG	svc_argc;
 	EVENT_T	svc_start_event[1];	/* fired once service has started successfully */
-	CONST struct serv*	svc_service;
+	const struct serv*	svc_service;
 	UCHAR*	svc_resp_buf;
 	UCHAR*	svc_resp_ptr;
 	USHORT	svc_resp_buf_len;
@@ -199,10 +199,10 @@ typedef svc *SVC;
 typedef struct serv
 {
 	USHORT		serv_action;
-	CONST TEXT*	serv_name;
-	CONST TEXT*	serv_std_switches;
-	CONST TEXT*	serv_executable;
-	CONST void (*serv_thd) ();
+	const TEXT*	serv_name;
+	const TEXT*	serv_std_switches;
+	const TEXT*	serv_executable;
+	const void (*serv_thd) ();
 	BOOLEAN*	in_use;
 } *SERV;
 

@@ -186,15 +186,15 @@ static double power_of_ten(int);
 
 #ifndef NATIVE_QUAD
 #ifndef WORDS_BIGENDIAN
-static CONST SQUAD quad_min_int = { 0, LONG_MIN };
-static CONST SQUAD quad_max_int = { -1, LONG_MAX };
+static const SQUAD quad_min_int = { 0, LONG_MIN };
+static const SQUAD quad_max_int = { -1, LONG_MAX };
 #else
-static CONST SQUAD quad_min_int = { LONG_MIN, 0 };
-static CONST SQUAD quad_max_int = { LONG_MAX, -1 };
+static const SQUAD quad_min_int = { LONG_MIN, 0 };
+static const SQUAD quad_max_int = { LONG_MAX, -1 };
 #endif
 #endif
 
-static CONST TEXT *CONST months[] = {
+static const TEXT *const months[] = {
 	"JANUARY",
 	"FEBRUARY",
 	"MARCH",
@@ -2501,8 +2501,8 @@ static void string_to_datetime(
 		}
 		else if (LETTER7(c) && !have_english_month) {
 			TEXT temp[sizeof(YESTERDAY) + 1], *t;
-			CONST TEXT *CONST * month_ptr;
-			CONST TEXT *m;
+			const TEXT *const * month_ptr;
+			const TEXT *m;
 
 			t = temp;
 			while ((p < end) && (t < &temp[sizeof(temp) - 1])) {

@@ -92,7 +92,7 @@ void DLL_EXPORT ERR_bugcheck(int number)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_bugcheck_msg(CONST TEXT* msg)
+void DLL_EXPORT ERR_bugcheck_msg(const TEXT* msg)
 {
 /**************************************
  *
@@ -273,7 +273,7 @@ void DLL_EXPORT ERR_error_msg(const TEXT* msg)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_log(int facility, int number, CONST TEXT* message)
+void DLL_EXPORT ERR_log(int facility, int number, const TEXT* message)
 {
 /**************************************
  *

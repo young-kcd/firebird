@@ -42,7 +42,7 @@ extern "C" {
 /* When converting non-text values to text, how many bytes to allocate
    for holding the text image of the value.  */
 
-static USHORT CONST _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
+static USHORT const _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 {
 	0,							/* dtype_null */
 	0,							/* dtype_text */
@@ -68,7 +68,7 @@ static USHORT CONST _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 };
 
 /* blr to dsc type conversions */
-static CONST USHORT DSC_blr_type_mapping[] = {
+static const USHORT DSC_blr_type_mapping[] = {
 	blr_null,
 	blr_text,
 	blr_cstring,
@@ -91,7 +91,7 @@ static CONST USHORT DSC_blr_type_mapping[] = {
 
 /* Unimplemented names are in lowercase & <brackets> */
 /* Datatypes that represent a range of SQL datatypes are in lowercase */
-static CONST TEXT *CONST DSC_dtype_names[] = {
+static const TEXT *const DSC_dtype_names[] = {
 	"<dtype_null>",
 	"CHAR",
 	"CSTRING",
@@ -120,7 +120,7 @@ static CONST TEXT *CONST DSC_dtype_names[] = {
    dtype_null as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-CONST BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
+const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
 	dtype_null	dtype_text	dtype_cstring	dtype_varying
@@ -277,7 +277,7 @@ CONST BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
    dtype_null as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-CONST BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
+const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
 	dtype_null	dtype_text	dtype_cstring	dtype_varying
@@ -434,7 +434,7 @@ CONST BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
    dtype_null as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-CONST BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
+const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
 	dtype_null	dtype_text	dtype_cstring	dtype_varying
@@ -591,7 +591,7 @@ CONST BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
    dtype_null as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-CONST BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
+const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
 	dtype_null	dtype_text	dtype_cstring	dtype_varying
@@ -923,7 +923,7 @@ int DLL_EXPORT DSC_string_length(DSC* desc)
 }
 
 
-CONST TEXT *DSC_dtype_tostring(UCHAR dtype)
+const TEXT *DSC_dtype_tostring(UCHAR dtype)
 {
 	/**************************************
      *

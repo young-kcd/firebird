@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.47 2003-02-10 13:28:22 eku Exp $
+$Id: met.epp,v 1.48 2003-02-13 10:11:12 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -137,14 +137,14 @@ static void get_trigger(TDBB, JRD_REL, SLONG[2], TRIG_VEC *, TEXT *, BOOLEAN, US
 static BOOLEAN get_type(TDBB, SSHORT *, UCHAR *, UCHAR *);
 static void lookup_view_contexts(TDBB, JRD_REL);
 static void name_copy(TEXT *, TEXT *);
-static USHORT name_length(CONST TEXT *);
+static USHORT name_length(const TEXT *);
 static JRD_NOD parse_procedure_blr(TDBB, JRD_PRC, SLONG[2], CSB *);
 static BOOLEAN par_messages(TDBB, UCHAR *, USHORT, JRD_PRC, CSB *);
 static BOOLEAN resolve_charset_and_collation(TDBB, SSHORT *, UCHAR *,
 											 UCHAR *);
-static STR save_name(TDBB, CONST TEXT*);
+static STR save_name(TDBB, const TEXT*);
 static void save_trigger_data(TDBB, TRIG_VEC*, JRD_REL, JRD_REQ, STR, TEXT*, BOOLEAN, USHORT);
-static void store_dependencies(TDBB, CSB, CONST TEXT*, USHORT);
+static void store_dependencies(TDBB, CSB, const TEXT*, USHORT);
 static void terminate(TEXT*, USHORT);
 static BOOLEAN verify_TRG_ignore_perm(TDBB, TEXT*);
 
@@ -825,7 +825,7 @@ JRD_NOD MET_get_dependencies(TDBB			tdbb,
 						 SLONG			blob_id[2],
 						 JRD_REQ*			request,
 						 CSB*			csb_ptr,
-						 CONST TEXT*	object_name,
+						 const TEXT*	object_name,
 						 USHORT			type)
 {
 /**************************************
@@ -1338,7 +1338,7 @@ SLONG MET_lookup_exception_number(TDBB tdbb, TEXT * name)
 }
 
 
-int MET_lookup_field(TDBB tdbb, JRD_REL relation, CONST TEXT* name, CONST TEXT* security_name)
+int MET_lookup_field(TDBB tdbb, JRD_REL relation, const TEXT* name, const TEXT* security_name)
 {
 /**************************************
  *
@@ -1357,8 +1357,8 @@ int MET_lookup_field(TDBB tdbb, JRD_REL relation, CONST TEXT* name, CONST TEXT* 
 	BLK			request;
 	VEC			vector;
 	vec::iterator	fieldIter, end;
-	CONST TEXT*	p;
-	CONST TEXT*	q;
+	const TEXT*	p;
+	const TEXT*	q;
 	USHORT		id;
 	UCHAR		length;
 
@@ -2131,7 +2131,7 @@ JRD_REL MET_lookup_relation(TDBB tdbb, const char* name)
 	JRD_REL				check_relation;
 	vec::iterator	ptr, end;
 	SCHAR*			p;
-	CONST SCHAR*	q;
+	const SCHAR*	q;
 	UCHAR			length;
 
 	SET_TDBB(tdbb);
@@ -3187,7 +3187,7 @@ void MET_revoke(
 }
 
 
-TEXT* MET_save_name(TDBB tdbb, CONST TEXT* name)
+TEXT* MET_save_name(TDBB tdbb, const TEXT* name)
 {
 /**************************************
  *
@@ -3947,7 +3947,7 @@ static void name_copy( TEXT * to, TEXT * from)
 }
 
 
-static USHORT name_length(CONST TEXT* name)
+static USHORT name_length(const TEXT* name)
 {
 /**************************************
  *
@@ -3960,8 +3960,8 @@ static USHORT name_length(CONST TEXT* name)
  *      SQL delimited identifier may contain blanks.
  *
  **************************************/
-	CONST TEXT*	p;
-	CONST TEXT*	q;
+	const TEXT*	p;
+	const TEXT*	q;
 
 	q = name - 1;
 	for (p = name; *p; p++)
@@ -4184,7 +4184,7 @@ static BOOLEAN resolve_charset_and_collation(
 			charset = (UCHAR *) DEFAULT_CHARACTER_SET_NAME;
 
 		charset_id = 0;
-		// CONST CAST 
+		// const CAST 
 		if (get_type(tdbb, &charset_id, charset, (UCHAR*) "RDB$CHARACTER_SET_NAME"))
 		{
 			*id = charset_id;
@@ -4240,7 +4240,7 @@ static BOOLEAN resolve_charset_and_collation(
 }
 
 
-static STR save_name(TDBB tdbb, CONST TEXT* name)
+static STR save_name(TDBB tdbb, const TEXT* name)
 {
 /**************************************
  *
@@ -4316,7 +4316,7 @@ static void save_trigger_data(TDBB tdbb, TRIG_VEC* ptr, JRD_REL relation, JRD_RE
 
 static void store_dependencies(TDBB			tdbb,
 							   CSB			csb,
-							   CONST TEXT*	object_name,
+							   const TEXT*	object_name,
 							   USHORT		dependency_type)
 {
 /**************************************
@@ -4342,7 +4342,7 @@ static void store_dependencies(TDBB			tdbb,
 	SSHORT	dpdo_type;
 	SLONG	number;
 	BOOLEAN found;
-	CONST TEXT*	field_name;
+	const TEXT*	field_name;
 	TEXT*	dpdo_name;
 	TEXT	name[32];
 

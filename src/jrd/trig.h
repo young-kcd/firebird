@@ -47,11 +47,11 @@
 
 typedef struct jrd_trg
 {
-	CONST SCHAR*	trg_name;
+	const SCHAR*	trg_name;
 	UCHAR			trg_relation;
 	UCHAR			trg_type;
 	USHORT			trg_length;
-	CONST UCHAR*	trg_blr;
+	const UCHAR*	trg_blr;
 	USHORT			trg_flags;
 	UCHAR			trg_ods_version;
 } JRD_TRG;
@@ -60,9 +60,9 @@ typedef struct jrd_trg
 
 typedef struct trigger_msg
 {
-	CONST SCHAR*	trigmsg_name;
+	const SCHAR*	trigmsg_name;
 	USHORT			trigmsg_number;
-	CONST SCHAR*	trigmsg_text;
+	const SCHAR*	trigmsg_text;
 	UCHAR			trg_ods_version;
 } TRIGMSG;
 
@@ -70,13 +70,13 @@ typedef struct trigger_msg
 
 typedef struct gen
 {
-	CONST SCHAR*	gen_name;
+	const SCHAR*	gen_name;
 	USHORT			gen_id;
 } GEN;
 
 /* generators needed by the system triggers */
 
-static CONST GEN generators[] =
+static const GEN generators[] =
 {
 	{ "RDB$SECURITY_CLASS", 0 },
 	{ "SQL$DEFAULT", 0 },
@@ -93,15 +93,15 @@ static CONST GEN generators[] =
 /* here is trigger 1, along with its messages */
 
 /******
-static CONST TEXT trigger_1_msg_0 [] = "could not find relation/procedure for GRANT";
-static CONST TEXT trigger_1_msg_1 [] = "could not find field for GRANT";
-static CONST TEXT trigger_1_msg_2 [] = "user does not have GRANT privileges for operation";
-static CONST TEXT trigger_1_msg_3 [] = "relation/procedure has non-SQL security class defined";
-static CONST TEXT trigger_1_msg_4 [] = "field has non-SQL security class defined";
-static CONST TEXT trigger_1_msg_5 [] = "user does not have GRANT privileges on base table/view for operation";
+static const TEXT trigger_1_msg_0 [] = "could not find relation/procedure for GRANT";
+static const TEXT trigger_1_msg_1 [] = "could not find field for GRANT";
+static const TEXT trigger_1_msg_2 [] = "user does not have GRANT privileges for operation";
+static const TEXT trigger_1_msg_3 [] = "relation/procedure has non-SQL security class defined";
+static const TEXT trigger_1_msg_4 [] = "field has non-SQL security class defined";
+static const TEXT trigger_1_msg_5 [] = "user does not have GRANT privileges on base table/view for operation";
 ******/
 
-static CONST UCHAR FAR_VARIABLE trigger1[] =
+static const UCHAR FAR_VARIABLE trigger1[] =
 {
 /* NOTE:
    The blr in trigger 1 has been manually changed to add a substring
@@ -748,7 +748,7 @@ static CONST UCHAR FAR_VARIABLE trigger1[] =
 
 
 
-static CONST UCHAR FAR_VARIABLE trigger2[] = {
+static const UCHAR FAR_VARIABLE trigger2[] = {
 	blr_version5,
 	blr_if,
 	blr_not,
@@ -810,10 +810,10 @@ static CONST UCHAR FAR_VARIABLE trigger2[] = {
 
 
 /******
-static CONST TEXT trigger_3_msg_0 [] = "cannot modify an existing user privilege";
+static const TEXT trigger_3_msg_0 [] = "cannot modify an existing user privilege";
 ******/
 
-static CONST UCHAR trigger3[] = {
+static const UCHAR trigger3[] = {
 	blr_version5,
 	blr_leave, 0,
 	blr_eoc
@@ -821,10 +821,10 @@ static CONST UCHAR trigger3[] = {
 
 
 /******
-static CONST TEXT trigger_4_msg_0 [] = "cannot modify or erase a system trigger";
+static const TEXT trigger_4_msg_0 [] = "cannot modify or erase a system trigger";
 ******/
 
-static CONST UCHAR trigger4[] = {
+static const UCHAR trigger4[] = {
 	blr_version5,
 	blr_if,
 	blr_eql,
@@ -837,7 +837,7 @@ static CONST UCHAR trigger4[] = {
 };
 
 
-static CONST UCHAR trigger5[] = {
+static const UCHAR trigger5[] = {
 	blr_version5,
 	blr_if,
 	blr_missing,
@@ -854,10 +854,10 @@ static CONST UCHAR trigger5[] = {
 
 
 /******
-static CONST TEXT trigger_6_msg_0 [] = "only the owner of a relation may reassign ownership";
+static const TEXT trigger_6_msg_0 [] = "only the owner of a relation may reassign ownership";
 ******/
 
-static CONST UCHAR trigger6[] = {
+static const UCHAR trigger6[] = {
 	blr_version5,
 	blr_if,
 	blr_and,
@@ -877,7 +877,7 @@ static CONST UCHAR trigger6[] = {
 };
 
 
-static CONST UCHAR trigger7[] = {
+static const UCHAR trigger7[] = {
 	blr_version5,
 	blr_assignment,
 	blr_gen_id, 14, 'R', 'D', 'B', '$', 'G', 'E', 'N', 'E', 'R', 'A', 'T',
@@ -892,12 +892,12 @@ static CONST UCHAR trigger7[] = {
 /* define trigger add_constraint for rdb$relation_constraints  */
 
 /******
-static CONST TEXT trigger_26_msg_0 [] = "Cannot define constraints on VIEWS";
-static CONST TEXT trigger_26_msg_1 [] = "internal gds software consistency check (Invalid RDB$CONSTRAINT_TYPE)";
-static CONST TEXT trigger_26_msg_2 [] = "Attempt to define a second primary key for the same relation";
+static const TEXT trigger_26_msg_0 [] = "Cannot define constraints on VIEWS";
+static const TEXT trigger_26_msg_1 [] = "internal gds software consistency check (Invalid RDB$CONSTRAINT_TYPE)";
+static const TEXT trigger_26_msg_2 [] = "Attempt to define a second primary key for the same relation";
 ******/
 
-static CONST UCHAR FAR_VARIABLE trigger26[] = {
+static const UCHAR FAR_VARIABLE trigger26[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -987,10 +987,10 @@ static CONST UCHAR FAR_VARIABLE trigger26[] = {
 /* define trigger update_constraint for rdb$relation_constraints  */
 
 /******
-static CONST TEXT trigger_25_msg_0 [] = "Can't update constraints (RDB$RELATION_CONSTRAINTS).";
+static const TEXT trigger_25_msg_0 [] = "Can't update constraints (RDB$RELATION_CONSTRAINTS).";
 ******/
 
-static CONST UCHAR trigger25[] = {
+static const UCHAR trigger25[] = {
 	blr_version5,
 	blr_begin,
 	blr_leave, 1,
@@ -1003,11 +1003,11 @@ static CONST UCHAR trigger25[] = {
 /* define trigger pre_delete_constraint for rdb$relation_constraints */
 
 /******
-static CONST TEXT trigger_10_msg_0 [] = "Cannot delete PRIMARY KEY being used in FOREIGN KEY definition.";
-static CONST TEXT trigger_10_msg_1 [] = "Cannot drop NOT NULL constraint for fields in PRIMARY/UNIQUE constraints.";
+static const TEXT trigger_10_msg_0 [] = "Cannot delete PRIMARY KEY being used in FOREIGN KEY definition.";
+static const TEXT trigger_10_msg_1 [] = "Cannot drop NOT NULL constraint for fields in PRIMARY/UNIQUE constraints.";
 ******/
 
-static CONST UCHAR FAR_VARIABLE trigger10[] = {
+static const UCHAR FAR_VARIABLE trigger10[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1150,7 +1150,7 @@ static CONST UCHAR FAR_VARIABLE trigger10[] = {
 
 /* define trigger post_delete_constraint for rdb$relation_constraints   */
 
-static CONST UCHAR FAR_VARIABLE trigger11[] = {
+static const UCHAR FAR_VARIABLE trigger11[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1294,11 +1294,11 @@ static CONST UCHAR FAR_VARIABLE trigger11[] = {
 /* define trigger add_ref_constraint for rdb$ref_constraints  */
 
 /******
-static CONST TEXT trigger_12_msg_0 [] = "Name of Referential Constraint not defined in constraints relation.";
-static CONST TEXT trigger_12_msg_1 [] = "Non-existent Primary or Unique key specifed for Foreign Key.";
+static const TEXT trigger_12_msg_0 [] = "Name of Referential Constraint not defined in constraints relation.";
+static const TEXT trigger_12_msg_1 [] = "Non-existent Primary or Unique key specifed for Foreign Key.";
 ******/
 
-static CONST UCHAR FAR_VARIABLE trigger12[] = {
+static const UCHAR FAR_VARIABLE trigger12[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1356,10 +1356,10 @@ static CONST UCHAR FAR_VARIABLE trigger12[] = {
 /* define trigger update_ref_constraint for rdb$ref_constraints */
 
 /******
-static CONST TEXT trigger_13_msg_0 [] = "Can't update constraints (RDB$REF_CONSTRAINTS).";
+static const TEXT trigger_13_msg_0 [] = "Can't update constraints (RDB$REF_CONSTRAINTS).";
 ******/
 
-static CONST UCHAR trigger13[] = {
+static const UCHAR trigger13[] = {
 	blr_version5,
 	blr_begin,
 	blr_leave, 1,
@@ -1371,10 +1371,10 @@ static CONST UCHAR trigger13[] = {
 /* define trigger update_check_constraint for rdb$check_constraints */
 
 /******
-static CONST TEXT trigger_14_msg_0 [] = "Can't update constraints (RDB$CHECK_CONSTRAINTS).";
+static const TEXT trigger_14_msg_0 [] = "Can't update constraints (RDB$CHECK_CONSTRAINTS).";
 ******/
 
-static CONST UCHAR trigger14[] = {
+static const UCHAR trigger14[] = {
 	blr_version5,
 	blr_begin,
 	blr_leave, 1,
@@ -1386,10 +1386,10 @@ static CONST UCHAR trigger14[] = {
 /* define trigger pre_delete_check_constraint for rdb$check_constraints */
 
 /******
-static CONST TEXT trigger_15_msg_0 [] = "Can't delete CHECK constraint entry (RDB$CHECK_CONSTRAINTS)";
+static const TEXT trigger_15_msg_0 [] = "Can't delete CHECK constraint entry (RDB$CHECK_CONSTRAINTS)";
 ******/
 
-static CONST UCHAR trigger15[] = {
+static const UCHAR trigger15[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1414,7 +1414,7 @@ static CONST UCHAR trigger15[] = {
 
 /* define trigger post_delete_check_constraint for rdb$check_constraints */
 
-static CONST UCHAR FAR_VARIABLE trigger16[] = {
+static const UCHAR FAR_VARIABLE trigger16[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -1497,10 +1497,10 @@ static CONST UCHAR FAR_VARIABLE trigger16[] = {
 /* define trigger delete_constraint_segs for rdb$index_segments  */
 
 /******
-static CONST TEXT trigger_17_msg_0 [] = "Can't delete index segment used by an Integrity Constraint";
+static const TEXT trigger_17_msg_0 [] = "Can't delete index segment used by an Integrity Constraint";
 ******/
 
-static CONST UCHAR trigger17[] = {
+static const UCHAR trigger17[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1525,10 +1525,10 @@ static CONST UCHAR trigger17[] = {
 /* define trigger update_constraint_segs for rdb$index_segments  */
 
 /******
-static CONST TEXT trigger_18_msg_0 [] = "Can't update index segment used by an Integrity Constraint";
+static const TEXT trigger_18_msg_0 [] = "Can't update index segment used by an Integrity Constraint";
 ******/
 
-static CONST UCHAR trigger18[] = {
+static const UCHAR trigger18[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1553,10 +1553,10 @@ static CONST UCHAR trigger18[] = {
 /* define trigger delete_constraint_idx for rdb$indices  */
 
 /******
-static CONST TEXT trigger_19_msg_0 [] = "Can't delete index used by an Integrity Constraint";
+static const TEXT trigger_19_msg_0 [] = "Can't delete index used by an Integrity Constraint";
 ******/
 
-static CONST UCHAR trigger19[] = {
+static const UCHAR trigger19[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1581,12 +1581,12 @@ static CONST UCHAR trigger19[] = {
 /* define trigger update_constraint_idx for rdb$indices  */
 
 /******
-static CONST TEXT trigger_20_msg_0 [] = "Can't modify index used by an Integrity Constraint";
-static CONST TEXT trigger_20_msg_1 [] = "Can't deactivate index used by an Integrity Constraint";
-static CONST TEXT trigger_20_msg_2 [] = "Can't deactivate a primary index";
+static const TEXT trigger_20_msg_0 [] = "Can't modify index used by an Integrity Constraint";
+static const TEXT trigger_20_msg_1 [] = "Can't deactivate index used by an Integrity Constraint";
+static const TEXT trigger_20_msg_2 [] = "Can't deactivate a primary index";
 ******/
 
-static CONST UCHAR FAR_VARIABLE trigger20[] = {
+static const UCHAR FAR_VARIABLE trigger20[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1732,10 +1732,10 @@ static CONST UCHAR FAR_VARIABLE trigger20[] = {
 /* define trigger delete_constraint_trigger for rdb$triggers  */
 
 /******
-static CONST TEXT trigger_21_msg_0 [] = "Can't delete trigger used by a CHECK Constraint";
+static const TEXT trigger_21_msg_0 [] = "Can't delete trigger used by a CHECK Constraint";
 ******/
 
-static CONST UCHAR trigger21[] = {
+static const UCHAR trigger21[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -1773,10 +1773,10 @@ static CONST UCHAR trigger21[] = {
 /* define trigger update_constraint_trigger for rdb$triggers  */
 
 /******
-static CONST TEXT trigger_22_msg_0 [] = "Can't update trigger used by a CHECK Constraint";
+static const TEXT trigger_22_msg_0 [] = "Can't update trigger used by a CHECK Constraint";
 ******/
 
-static CONST UCHAR trigger22[] = {
+static const UCHAR trigger22[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -1814,10 +1814,10 @@ static CONST UCHAR trigger22[] = {
 /* define trigger pre_delete_field for rdb$relation_fields  */
 
 /******
-static CONST TEXT trigger_23_msg_0 [] = "Cannot delete field being used in an integrity constraint.";
+static const TEXT trigger_23_msg_0 [] = "Cannot delete field being used in an integrity constraint.";
 ******/
 
-static CONST UCHAR FAR_VARIABLE trigger23[] = {
+static const UCHAR FAR_VARIABLE trigger23[] = {
 	blr_version5,
     blr_begin, 
 	blr_for, 
@@ -1975,10 +1975,10 @@ static CONST UCHAR FAR_VARIABLE trigger23[] = {
 /* define trigger pre_modify_field for rdb$relation_fields  */
 
 /******
-static CONST TEXT trigger_24_msg_0 [] = "Cannot rename field being used in an integrity constraint.";
+static const TEXT trigger_24_msg_0 [] = "Cannot rename field being used in an integrity constraint.";
 ******/
 
-static CONST UCHAR FAR_VARIABLE trigger24[] = {
+static const UCHAR FAR_VARIABLE trigger24[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -2048,7 +2048,7 @@ static CONST UCHAR FAR_VARIABLE trigger24[] = {
 
 
 /* define trigger post_delete_field for rdb$relation_fields  */
-static CONST UCHAR trigger27[] = {
+static const UCHAR trigger27[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -2090,7 +2090,7 @@ static CONST UCHAR trigger27[] = {
 };
 
 
-static CONST UCHAR trigger28[] = {
+static const UCHAR trigger28[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -2114,7 +2114,7 @@ static CONST UCHAR trigger28[] = {
 };
 
 
-static CONST UCHAR trigger29[] = {
+static const UCHAR trigger29[] = {
 	blr_version5,
 	blr_if,
 	blr_and,
@@ -2134,7 +2134,7 @@ static CONST UCHAR trigger29[] = {
 };
 
 
-static CONST UCHAR trigger30[] = {
+static const UCHAR trigger30[] = {
 	blr_version5,
 	blr_begin,
 	blr_assignment,
@@ -2149,7 +2149,7 @@ static CONST UCHAR trigger30[] = {
 
 
 /* new trigger to create ODS 8.1 (and to upgrade from ODS 8.0 to ODS 8.1 */
-static CONST UCHAR trigger31[] = {
+static const UCHAR trigger31[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -2200,7 +2200,7 @@ static CONST UCHAR trigger31[] = {
 
 
 /* ODS 8.1 trigger  */
-static CONST UCHAR trigger34[] = {
+static const UCHAR trigger34[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -2245,7 +2245,7 @@ static CONST UCHAR trigger34[] = {
 };
 
 /* ODS 8.1 trigger  */
-static CONST UCHAR trigger35[] = {
+static const UCHAR trigger35[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,

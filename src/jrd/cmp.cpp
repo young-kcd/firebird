@@ -1879,11 +1879,11 @@ int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 							   CSB			csb,
 							   TEXT*		security_name,
 							   JRD_REL			view,
-							   CONST TEXT*	trig,
-							   CONST TEXT*	proc,
+							   const TEXT*	trig,
+							   const TEXT*	proc,
 							   USHORT		mask,
-							   CONST TEXT*	type_name,
-							   CONST TEXT*	name)
+							   const TEXT*	type_name,
+							   const TEXT*	name)
 {
 /**************************************
  *

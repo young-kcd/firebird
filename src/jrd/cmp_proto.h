@@ -48,11 +48,11 @@ int DLL_EXPORT CMP_post_access(TDBB,
 								  struct Csb*,
 								  /* INOUT */ TEXT*,
 								  struct jrd_rel*,
-								  CONST TEXT*,
-								  CONST TEXT*,
+								  const TEXT*,
+								  const TEXT*,
 								  USHORT,
-								  CONST TEXT*,
-								  CONST TEXT*);
+								  const TEXT*,
+								  const TEXT*);
 void DLL_EXPORT CMP_post_resource(TDBB, struct Rsc**, struct blk*,
 									 enum rsc_s, USHORT);
 void DLL_EXPORT CMP_release_resource(struct Rsc**, enum rsc_s,

@@ -38,7 +38,7 @@ typedef struct _facilities {
 	char *facility;
 	};
 
-static CONST struct _facilities facilities[] = {
+static const struct _facilities facilities[] = {
 	0,  "JRD       ",
 	3,  "GFIX      ",
 	7,  "DSQL      ",

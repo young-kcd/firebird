@@ -102,7 +102,7 @@ static const char *warn[] = {
 	0
 };
 
-static CONST SCHAR *c_boiler_plate[] = {
+static const SCHAR *c_boiler_plate[] = {
 	"#define gds_arg_end		0	/* end of argument list */",
 	"#define gds_arg_gds		1	/* generic DSRI status value */",
 	"#define gds_arg_string		2	/* string argument */",
@@ -124,7 +124,7 @@ static CONST SCHAR *c_boiler_plate[] = {
 	"",
 };
 
-static CONST SCHAR *cpp_boiler_plate[] = {
+static const SCHAR *cpp_boiler_plate[] = {
 	"const SLONG gds_arg_end		= 0;	/* end of argument list */",
 	"const SLONG gds_arg_gds		= 1;	/* generic DSRI status value */",
 	"const SLONG gds_arg_string	= 2;	/* string argument */",
@@ -150,7 +150,7 @@ static CONST SCHAR *cpp_boiler_plate[] = {
 #define isc_base		(isc_facility << 24)
 #define isc_factor		1
 
-static CONST SCHAR *isc_c_boiler_plate[] = {
+static const SCHAR *isc_c_boiler_plate[] = {
 	"#define isc_arg_end		0	/* end of argument list */",
 	"#define isc_arg_gds		1	/* generic DSRI status value */",
 	"#define isc_arg_string		2	/* string argument */",
@@ -173,7 +173,7 @@ static CONST SCHAR *isc_c_boiler_plate[] = {
 	"",
 };
 
-static CONST SCHAR *pas_boiler_plate[] = {
+static const SCHAR *pas_boiler_plate[] = {
 	"\tgds_arg_end\t\t= 0;\t(* end of argument list *)",
 	"\tgds_arg_gds\t\t= 1;\t(* generic DSRI status value *)",
 	"\tgds_arg_string\t\t= 2;\t(* string argument *)",
@@ -187,7 +187,7 @@ static CONST SCHAR *pas_boiler_plate[] = {
 	"",
 };
 
-static CONST SCHAR *ftn_boiler_plate_data[] = {
+static const SCHAR *ftn_boiler_plate_data[] = {
 	"",
 	"      PARAMETER (",
 	"     + GDS_ARG_END          = 0,   { end of argument list }",
@@ -203,7 +203,7 @@ static CONST SCHAR *ftn_boiler_plate_data[] = {
 	"",
 };
 
-static CONST SCHAR *ftn_boiler_plate_decls[] = {
+static const SCHAR *ftn_boiler_plate_decls[] = {
 	"      INTEGER*4",
 	"     + GDS_ARG_END,          { end of argument list }",
 	"     + GDS_ARG_GDS,          { generic DSRI status value }",
@@ -218,8 +218,8 @@ static CONST SCHAR *ftn_boiler_plate_decls[] = {
 	"",
 };
 
-static CONST SCHAR sql_code_boiler_plate[] =
-	"static CONST SSHORT FAR_VARIABLE gds__sql_code [] = {";
+static const SCHAR sql_code_boiler_plate[] =
+	"static const SSHORT FAR_VARIABLE gds__sql_code [] = {";
 
 
 int CLIB_ROUTINE main( int argc, char *argv[])
@@ -304,7 +304,7 @@ static void build_msgfac_h(void)
 	ib_fprintf(msgfac, "\tchar *facility;\n");
 	ib_fprintf(msgfac, "\t};\n\n");
 
-	ib_fprintf(msgfac, "static CONST struct _facilities facilities[] = {\n");
+	ib_fprintf(msgfac, "static const struct _facilities facilities[] = {\n");
 	FOR F IN FACILITIES WITH ANY FAC_CODE IN SYSTEM_ERRORS OVER FAC_CODE
 		ib_fprintf(msgfac, "\t{%d,  \"%-10.10s\"},\n", F.FAC_CODE, F.FACILITY);
 	END_FOR;
@@ -616,7 +616,7 @@ static void build_other_headers(void)
 /* Start the PASCAL codes file */
 
 	ib_fprintf(pas_codes, "\
-CONST\n\
+const\n\
 \tgds_facility\t\t= %d;\n\
 \tgds_err_base\t\t= %ld;\n\
 \tgds_err_factor\t\t= %ld;\n", gds_facility, (SLONG) gds_base, (SLONG) gds_factor);

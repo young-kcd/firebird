@@ -98,12 +98,12 @@ extern STATUS API_ROUTINE isc_dsql_prepare(STATUS *, FRBRD **,
 										   USHORT, XSQLDA *);
 extern STATUS API_ROUTINE isc_dsql_prepare_m(STATUS *, FRBRD **,
 											 FRBRD **, USHORT, SCHAR *,
-											 USHORT, USHORT, CONST SCHAR *, USHORT,
+											 USHORT, USHORT, const SCHAR *, USHORT,
 											 SCHAR *);
 extern STATUS API_ROUTINE isc_dsql_set_cursor_name(STATUS *, FRBRD **,
 												   SCHAR *, USHORT);
 extern STATUS API_ROUTINE isc_dsql_sql_info(STATUS *, FRBRD **, SSHORT,
-											CONST SCHAR *, SSHORT, SCHAR *);
+											const SCHAR *, SSHORT, SCHAR *);
 extern STATUS API_ROUTINE isc_prepare_transaction2(STATUS *, FRBRD **, USHORT,
 												   UCHAR *);
 typedef void event_ast_routine(UCHAR*, USHORT, UCHAR*);

@@ -139,12 +139,12 @@
 
 
 #ifdef SUPERSERVER
-static CONST TEXT gdslogid[] = " (Server)";
+static const TEXT gdslogid[] = " (Server)";
 #else
 #ifdef SUPERCLIENT
-static CONST TEXT gdslogid[] = " (Client)";
+static const TEXT gdslogid[] = " (Client)";
 #else
-static CONST TEXT gdslogid[] = "";
+static const TEXT gdslogid[] = "";
 #endif
 #endif
 
@@ -199,7 +199,7 @@ static char *ib_prefix_msg = 0;
 
 
 
-static CONST SCHAR *FAR_VARIABLE CONST messages[] = {
+static const SCHAR *FAR_VARIABLE const messages[] = {
 #include "gen/msgs.h"
 	0							/* Null entry to terminate list */
 };
@@ -3368,7 +3368,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
 #endif
 
 
-SLONG API_ROUTINE gds__vax_integer(CONST UCHAR * ptr, SSHORT length)
+SLONG API_ROUTINE gds__vax_integer(const UCHAR * ptr, SSHORT length)
 {
 /**************************************
  *
@@ -4496,8 +4496,8 @@ static int yday(struct tm *times)
  *
  **************************************/
 	SSHORT day, month, year;
-	CONST BYTE *days;
-	static CONST BYTE month_days[] =
+	const BYTE *days;
+	static const BYTE month_days[] =
 		{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 	day = times->tm_mday;

@@ -44,7 +44,7 @@ struct fmt *MET_format(TDBB, struct jrd_rel *, USHORT);
 BOOLEAN MET_get_char_subtype(TDBB, SSHORT *, UCHAR *, USHORT);
 struct jrd_nod *MET_get_dependencies(TDBB, struct jrd_rel*, TEXT*,
 								class Csb*, SLONG[2], struct jrd_req**,
-								class Csb **, CONST TEXT*, USHORT);
+								class Csb **, const TEXT*, USHORT);
 struct jrd_fld *MET_get_field(struct jrd_rel *, USHORT);
 void MET_get_shadow_files(TDBB, USHORT);
 int MET_get_walinfo(TDBB, struct logfiles **, ULONG *,
@@ -54,7 +54,7 @@ void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB, TEXT* constraint, const TEXT* 
 void MET_lookup_cnstrt_for_trigger(TDBB, TEXT *, TEXT *, TEXT *);
 void MET_lookup_exception(TDBB, SLONG, /* INOUT */ TEXT*, /* INOUT */ TEXT*);
 SLONG MET_lookup_exception_number(TDBB, TEXT*);
-int MET_lookup_field(TDBB, struct jrd_rel*, CONST TEXT*, CONST TEXT*);
+int MET_lookup_field(TDBB, struct jrd_rel*, const TEXT*, const TEXT*);
 BLF MET_lookup_filter(TDBB, SSHORT, SSHORT);
 SLONG MET_lookup_generator(TDBB, TEXT *);
 void MET_lookup_generator_id(TDBB, SLONG, TEXT *);
@@ -79,7 +79,7 @@ void MET_release_triggers(TDBB, TRIG_VEC *);
 BOOLEAN MET_clear_cache(TDBB, JRD_PRC);
 void MET_remove_procedure(TDBB, int, JRD_PRC);
 void MET_revoke(TDBB, struct jrd_tra *, TEXT *, TEXT *, TEXT *);
-TEXT*MET_save_name(TDBB, CONST TEXT*);
+TEXT*MET_save_name(TDBB, const TEXT*);
 void MET_scan_relation(TDBB, struct jrd_rel *);
 const TEXT* MET_trigger_msg(TDBB, const TEXT*, USHORT);
 void MET_update_shadow(TDBB, struct sdw *, USHORT);

@@ -31,16 +31,16 @@ extern "C" {
 #endif
 
 extern int DLL_EXPORT DSC_string_length(struct dsc *);
-extern CONST TEXT *DSC_dtype_tostring(UCHAR);
+extern const TEXT *DSC_dtype_tostring(UCHAR);
 extern void DLL_EXPORT DSC_get_dtype_name(struct dsc *, TEXT *, USHORT);
 extern void DLL_EXPORT DSC_make_descriptor(struct dsc *, USHORT, SSHORT,
 										   USHORT, SSHORT, SSHORT, SSHORT);
 extern USHORT DLL_EXPORT DSC_convert_to_text_length(USHORT dsc_type);
 
-extern CONST BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
-extern CONST BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
-extern CONST BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
-extern CONST BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
+extern const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
+extern const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
+extern const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
+extern const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
 
 #ifdef __cplusplus
 } /* extern "C" */
