@@ -1542,6 +1542,8 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction,
 	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
+	fb_assert(relation && relation->rel_index_root);
+
 	// Get root page, assign an index id, and store the index descriptor.
 	// Leave the root pointer null for the time being.
 	WIN window(relation->rel_index_root);

@@ -193,6 +193,10 @@ void IDX_create_index(
 				 isc_arg_string, ERR_cstring(relation->rel_name), 0);
 	}
 
+	if (!relation->rel_index_root) {
+		get_root_page(tdbb, relation);
+	}
+
 	BTR_reserve_slot(tdbb, relation, transaction, idx);
 
 	if (index_id) {
