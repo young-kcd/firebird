@@ -487,18 +487,94 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 #define CP1251_UPPER_YA 0xDF
 #define CP1251_LOWER_YA 0xFF
 
-#define CP1251_UPPER(ch) \
-	((((UCHAR) (ch) >= (UCHAR) ASCII_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_LOWER_Z)) \
-		? (UCHAR) ((ch)-ASCII_LOWER_A+ASCII_UPPER_A) \
-		: (((UCHAR) (ch) >= (UCHAR) CP1251_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) CP1251_LOWER_YA)) \
-		? (UCHAR) ((ch)-CP1251_LOWER_A+CP1251_UPPER_A) \
-        : (UCHAR) (ch))
-#define	CP1251_LOWER(ch) \
-	((((UCHAR) (ch) >= (UCHAR) ASCII_UPPER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_UPPER_Z)) \
-		? (UCHAR) ((ch)-ASCII_UPPER_A+ASCII_LOWER_A) \
-		: (((UCHAR) (ch) >= (UCHAR) CP1251_UPPER_A) && ((UCHAR) (ch) <= (UCHAR) CP1251_UPPER_YA)) \
-		? (UCHAR) ((ch)-CP1251_UPPER_A+CP1251_LOWER_A) \
-        : (UCHAR) (ch))
+#define CP1251_UPPER_EX0 0xA8	// ¨
+#define CP1251_LOWER_EX0 0xB8	// ¸
+#define CP1251_UPPER_EX1 0xA5	// ¥
+#define CP1251_LOWER_EX1 0xB4	// ´
+#define CP1251_UPPER_EX2 0xAA	// ª
+#define CP1251_LOWER_EX2 0xBA	// º
+#define CP1251_UPPER_EX3 0xAF	// ¯
+#define CP1251_LOWER_EX3 0xBF	// ¿
+#define CP1251_UPPER_EX4 0xB2	// ²
+#define CP1251_LOWER_EX4 0xB3	// ³
+
+UCHAR CP1251_UPPER(UCHAR ch)
+{
+	UCHAR res;
+
+	if (ch >= ASCII_LOWER_A && ch <= ASCII_LOWER_Z)
+	{
+		res = ch - ASCII_LOWER_A + ASCII_UPPER_A;
+	}
+	else if (ch >= CP1251_LOWER_A && ch <= CP1251_LOWER_YA)
+	{
+		res = ch - CP1251_LOWER_A + CP1251_UPPER_A;
+	}
+	else
+	{
+		switch (ch)
+		{
+		case CP1251_LOWER_EX0:
+			res = CP1251_UPPER_EX0;
+			break;
+		case CP1251_LOWER_EX1:
+			res = CP1251_UPPER_EX1;
+			break;
+		case CP1251_LOWER_EX2:
+			res = CP1251_UPPER_EX2;
+			break;
+		case CP1251_LOWER_EX3:
+			res = CP1251_UPPER_EX3;
+			break;
+		case CP1251_LOWER_EX4:
+			res = CP1251_UPPER_EX4;
+			break;
+		default:
+			res = ch;
+		}
+	}
+
+	return res;
+}
+
+UCHAR CP1251_LOWER(UCHAR ch)
+{
+	UCHAR res;
+
+	if (ch >= ASCII_UPPER_A && ch <= ASCII_UPPER_Z)
+	{
+		res = ch - ASCII_UPPER_A + ASCII_LOWER_A;
+	}
+	else if (ch >= CP1251_UPPER_A && ch <= CP1251_UPPER_YA)
+	{
+		res = ch - CP1251_UPPER_A + CP1251_LOWER_A;
+	}
+	else
+	{
+		switch (ch)
+		{
+		case CP1251_UPPER_EX0:
+			res = CP1251_LOWER_EX0;
+			break;
+		case CP1251_UPPER_EX1:
+			res = CP1251_LOWER_EX1;
+			break;
+		case CP1251_UPPER_EX2:
+			res = CP1251_LOWER_EX2;
+			break;
+		case CP1251_UPPER_EX3:
+			res = CP1251_LOWER_EX3;
+			break;
+		case CP1251_UPPER_EX4:
+			res = CP1251_LOWER_EX4;
+			break;
+		default:
+			res = ch;
+		}
+	}
+
+	return res;
+}
 
 
 /*
