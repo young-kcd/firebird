@@ -1,3 +1,168 @@
+2003-09-14 17:37  dimitr
+
+	* firebird2/src/jrd/: opt.cpp, par.cpp:
+	
+	The final part of my little PLAN enhancement.
+
+2003-09-14 17:32  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h, gen.cpp, parse.cpp, parse.y,
+	pass1.cpp:
+	
+	The final part of my little PLAN enhancement.
+
+2003-09-14 03:09  brodsom
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	-Change variable name to fix error in MinGW
+
+2003-09-14 03:08  brodsom
+
+	* firebird2/src/alice/: alice.cpp, alice_meta.epp:
+	
+	-Style
+
+2003-09-14 03:08  brodsom
+
+	* firebird2/src/burp/: backup.epp, burp.cpp, burp_proto.h,
+	mvol.cpp:
+	
+	-Style -Cast corrections
+
+2003-09-14 02:46  brodsom
+
+	* firebird2/src/lock/print.cpp:
+	
+	-Fix warnings
+
+2003-09-14 02:26  brodsom
+
+	* firebird2/src/: remote/xnet.cpp, remote/xnet.h, misc/codes.epp:
+	
+	Warning fixes
+
+2003-09-13 20:35  skidder
+
+	* firebird2/src/jrd/: cch.cpp, common.h, gds.cpp, nbak.cpp, nbak.h:
+	
+	Make NBACKUP work on Windows
+
+2003-09-13 16:47  skidder
+
+	* firebird2/src/gpre/exp.cpp:
+	
+	Remove some crap from the code
+
+2003-09-13 15:36  epocman
+
+	* firebird2/src/utilities/install/: install_reg.cpp,
+	install_svc.cpp:
+	
+	Win32 instreg / instsvc now returns FINI_ERROR instead of FINI_OK
+	when usage() function is called. This helps external automated
+	tools to detect mistakes in parameters.
+
+2003-09-13 15:29  epocman
+
+	* firebird2/src/utilities/: install_reg.cpp, install_svc.cpp:
+	
+	Win32 instreg / instsvc now returns FINI_ERROR instead of FINI_OK
+	when usage() function is called. This helps external automated
+	tools to detect mistakes in parameters.
+
+2003-09-13 14:23  brodsom
+
+	* firebird2/src/gpre/: ftn.cpp, msc.cpp, sqe.cpp, sql.cpp:
+	
+	-Fix indents -Corrections (Thanks to Claudio)
+
+2003-09-13 14:22  brodsom
+
+	* firebird2/src/gpre/: ada.cpp, c_cxx.cpp, cmd.cpp, cob.cpp,
+	hsh.cpp, par.cpp, pas.cpp:
+	
+	Fix indents
+
+2003-09-13 14:16  brodsom
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	-Fix indents
+
+2003-09-13 14:03  brodsom
+
+	* firebird2/src/jrd/: cmp.cpp, dpm.epp, event.cpp, idx.cpp,
+	jrd.cpp:
+	
+	Fix indents
+
+2003-09-13 13:59  brodsom
+
+	* firebird2/src/jrd/: pcmet.epp, rlck.cpp, rng.cpp, sdw.cpp,
+	shut.cpp, sym.cpp, tra.cpp, val.cpp:
+	
+	Fix indents
+
+2003-09-13 13:45  brodsom
+
+	* firebird2/src/: dudley/extract.epp, dudley/hsh.cpp,
+	jrd/os/vms/vmsevent.cpp, qli/all.cpp, qli/expand.cpp,
+	qli/gener.cpp, qli/hsh.cpp, qli/proc.epp, ipserver/ipclient.cpp:
+	
+	Fix indents
+
+2003-09-13 12:26  robocop
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Trivial correction
+
+2003-09-13 11:25  brodsom
+
+	* firebird2/src/common/classes/rwlock.h:
+	
+	Fix for MINGW build
+
+2003-09-13 11:15  brodsom
+
+	* firebird2/src/remote/: inet.cpp, server.cpp:
+	
+	Corrections (Thanks to Claudio)
+
+2003-09-13 11:02  brodsom
+
+	* firebird2/src/qli/meta.epp:
+	
+	Correction (Thanks to Claudio)
+
+2003-09-13 03:12  brodsom
+
+	* firebird2/src/common/classes/rwlock.h:
+	
+	Provisional quick fix for broken msvc 6 build with last Nickolay
+	commit. To be reviewed by N.
+
+2003-09-13 01:37  brodsom
+
+	* firebird2/src/jrd/: utl.cpp, why.cpp, alt.cpp, gds.cpp,
+	gds_proto.h, gdsold.h, tra.cpp:
+	
+	-Remove GDS_VAL and GDS_REF (Final commit)
+
+2003-09-13 01:25  brodsom
+
+	* firebird2/src/burp/: backup.epp, burp.cpp, burp.h, restore.epp:
+	
+	-Remove GDS_VAL and GDS_REF -BOOLEAN Cleaning -Fix tab indent in
+	restore and backup
+
+2003-09-13 00:30  brodsom
+
+	* firebird2/src/qli/show.epp:
+	
+	-Removing GDS_VAL and GDS_REF
+
 2003-09-12 18:49  brodsom
 
 	* firebird2/src/utilities/stats.epp:
