@@ -2,7 +2,184 @@
   * v2.0 Alpha 1
   **************
 
-    * <short description>.
-        <detailed description>.
+    * C/C++ client interface version added
+        FB_API_VER defined to 20 for Firebird 2.0 in ibase.h
       Contributor(s):
-        <name> <email>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Implemented EXECUTE BLOCK statement
+        It is now possible to use dynamic PSQL with this statement
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Implemented support for default parameters for stored procedures
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * DSQL parser changed
+        It now always detects table aliases ambiguity and abandoned support for implicit double table aliases
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug
+        Problems with interdependent views during restore process
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF #750664
+        Issues with read-only databases and transactions
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug
+        Fixed memory leak from connection pool in isc_database_info
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Per-segment index selectivity maintenance
+        Per-segment selectivity information is now available to the optimizer opening possibilities for more clever access path decisions
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed/re-worked invariant tracking in PSQL and request cloning logic
+        This fixes numerous issues with recursive procedures, for example SF #627057
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Re-worked logic of updatable views
+        This solves problems with views that are implicitly updatable, but still have update triggers
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Added SQL200X ROWS clause
+        New syntax to limit amount of records you want to get
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF #781610
+        Problems with -- comments in ISQL
+      Contributor(s):
+        John Bellardo <bellardo at cs.ucsd.edu>
+        Blas Rodriguez Somoza <blas at puertareal.com>
+
+    * Support for explicit cursor syntax in PSQL
+        It is now possible to declare and use multiple cursors in PSQL
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * LIKE/CONTAINING/STARTING WITH functions re-worked
+        1) functions now work with BLOBs correctly
+        2) use single-pass Knuth-Morris-Pratt algorithm for pattern matching
+        3) fix crash when NULL is used as ESCAPE character for LIKE
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug
+        Fixed server crash with explicit plans used in subqueries, when outer aggregation is performed.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Nulls ordering is changed to be SQL200X-compliant (SF #225218)
+        Implemented nulls placement behavior is MSSQL-like, works on ODS11 databases only since it requires new indices for operation. 
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Enable support for databases on raw devices
+        You can now use raw devices to store database. Exceptionally usable with database aliases
+      Contributor(s):
+        Erik Kunze <erik.kunze at philosys.de>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * New indices code
+        Very fast, nicely tolerates large amount of duplicates, limit of 256 bytes key length removed
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Internal logging enhanced
+        1) Implemented thread- and signal- safe debug logging facilities
+        2) Updated routines that print out various internal structures (DSQL node tree, BLR, DYN, etc)
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Improved PLAN clause
+        Allowed to specify more possible paths for the engine
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Further optimizer improvements
+        1) MERGE PLAN is may now be generated for joins using equality comparsion on expressions
+        2) Better logic regarding unique indices handling
+        3) Improved logic for OR expressions
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * New local protocol
+        XNET is now used as default local protocol for Windows and is supported in CS builds
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Services API are fully ported to Classic architecture
+        All Services API are supported on Linux and Windows CS
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * SUBSTRING enhanced
+        SUBSTRING built-in function now supports arbitrary expressions in parameters
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Added LEAVE <label> syntax support
+        PSQL loops now may be marked with labels and terminated in Java style
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fix SF #750659
+        Generators values were resisting metadata-only backup
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fix SF #544132, #728839
+        Problems with nulls handling in UDFs
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fix SF #784121
+        Problems with some expressions in outer join conditions
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Slightly reworked synchronization logic
+        1) Significantly reduce thread lock contention in lock manager and in SuperServer thread pool manager
+        2) Fix rare race condition that could cause SS engine to hang during request processing until next request arrival
+        3) Make lock manager memory dumps more informative (OWN_hung is detected correctly)
+        4) Decouple lock manager synchronization objects for different engine instances
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Derived tables support
+        Implemented support for derived tables in DSQL (subqueries in FROM clause) as defined by SQL200X
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Enhanced GROUP BY clause
+        Implemented support for arbitrary expressions in GROUP BY clause
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * New backup technology
+        Implemented fast on-line physical incremental backup facilities
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Generic cleanup.
+        Various cleaning and tidying up of code, warnings removal, 64-bitness cleanup, numerious minor bugfixes
+      Contributor(s):
+        Blas Rodriguez Somoza <blas at puertareal.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Generic cleanup
+        Large amount of ongoing code cleanup and style standartization. In particular, broken WAL and journalling code is fully cleaned out
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
