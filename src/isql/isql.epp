@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.5 2004-02-10 18:46:28 dimitr Exp $
+  $Id: isql.epp,v 1.32.2.6 2004-11-03 16:52:41 skidder Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -3763,8 +3763,6 @@ static SSHORT get_statement(TEXT ** statement_ref,
 
 		case '\n':
 //        case '\0': // In particular with readline the \n is removed
-			/* the context of string literals should not extend past eoln */
-			in_single_quoted_string = in_double_quoted_string = FALSE;
 
 			/* Ignore a series of carriage returns at the beginning */
 			if (blank) {
@@ -3839,10 +3837,12 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			   *   quoted strings and comments.
 			 */
 
-			if (!incomment &&
+			if (!incomment && 
+				!in_single_quoted_string && !in_double_quoted_string &&
 				/* Making sure that q does'nt go out of bounds */
 				((q - statement) >= Termlen) &&
-				!strncmp(q - Termlen, Term, Termlen)) {
+				!strncmp(q - Termlen, Term, Termlen)) 
+			{
 				if (Echo) {
 					/* Terminate to print entire statement */
 					*p = '\0';
@@ -3864,10 +3864,10 @@ static SSHORT get_statement(TEXT ** statement_ref,
 
 		case '\t':
 		case BLANK:
-			/* Skip leading blanks and convert tabs */
+			/* Skip leading blanks */
 
 			if (!blank) {
-				*p++ = BLANK;
+				*p++ = c;
 				count++;
 			}
 			break;
