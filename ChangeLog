@@ -1,3 +1,27 @@
+2003-05-30 14:29  dimitr
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	Updated parse.cpp.
+
+2003-05-30 14:17  alexpeshkoff
+
+	* firebird2/src/: common/config/config_file.cpp,
+	common/config/config_file.h, common/config/dir_list.cpp,
+	common/config/dir_list.h, include/fb_string.h, jrd/ext.cpp,
+	jrd/flu.cpp, jrd/isc_file.cpp:
+	
+	Added support for case-sensitivity in path's comaparison according
+	to OS requirements.  Use it in config_file & dir_list Now in win32
+	one may write: DatabaseAccess=ReStrIcT c:\HiSpAtH
+
+2003-05-30 13:48  dimitr
+
+	* firebird2/src/jrd/fun.epp:
+	
+	Bugfix for wrong UDF arguments of types DATE/TIME (dialect 3). 
+	Thanks to Oleg LOA.
+
 2003-05-29 15:40  skidder
 
 	* firebird2/src/install/arch-specific/linux/Makefile.in:
