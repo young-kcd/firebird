@@ -25,7 +25,7 @@
  *
  */
 /*
-$Id: gen.cpp,v 1.9 2002-08-03 15:27:20 dimitr Exp $
+$Id: gen.cpp,v 1.10 2002-09-10 18:28:19 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2415,11 +2415,13 @@ static void gen_sort( REQ request, NOD list)
 	STUFF(list->nod_count);
 
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-		if ((*ptr)->nod_arg[1])
+		if ((*ptr)->nod_arg[e_order_nulls])
+			STUFF(blr_nullsfirst);
+		if ((*ptr)->nod_arg[e_order_flag])
 			STUFF(blr_descending);
 		else
 			STUFF(blr_ascending);
-		GEN_expr(request, (*ptr)->nod_arg[0]);
+		GEN_expr(request, (*ptr)->nod_arg[e_order_field]);
 	}
 }
 

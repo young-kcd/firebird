@@ -244,3 +244,5 @@
 #define NULLIF 500
 #define COALESCE 501
 #define USING 502
+#define NULLS 503
+#define LAST 504

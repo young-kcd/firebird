@@ -406,6 +406,8 @@ static void	yyerror (TEXT *);
 %token NULLIF
 %token COALESCE
 %token USING
+%token NULLS
+%token LAST
 
 /* precedence declarations for expression evaluation */
 
@@ -2641,10 +2643,10 @@ order_list	: order_item
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-order_item	: column_name collate_clause order_direction
-			{ $$ = make_node (nod_order, e_order_count, $1, $3, $2); }
-		| ordinal collate_clause order_direction
-			{ $$ = make_node (nod_order, e_order_count, $1, $3, $2); }
+order_item	: column_name collate_clause order_direction nulls_placement
+			{ $$ = make_node (nod_order, e_order_count, $1, $3, $2, $4); }
+		| ordinal collate_clause order_direction nulls_placement
+			{ $$ = make_node (nod_order, e_order_count, $1, $3, $2, $4); }
 		;
 
 order_direction	: ASC
@@ -2654,6 +2656,15 @@ order_direction	: ASC
 		|
 			{ $$ = 0; }
 		;
+		
+nulls_placement : NULLS FIRST
+			{ $$ = make_node (nod_flag, 0, NULL); }
+		| NULLS LAST
+			{ $$ = 0; }
+		|
+			{ $$ = 0; }
+		;
+
 for_update_clause : FOR UPDATE for_update_list
 			{ $$ = $3; }
 		|

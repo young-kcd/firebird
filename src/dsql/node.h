@@ -702,7 +702,8 @@ typedef nod *NOD;
 #define e_order_field   0		/* nod_order */
 #define e_order_flag    1
 #define e_order_collate 2
-#define e_order_count   3
+#define e_order_nulls   3
+#define e_order_count   4
 
 
 #define e_lock_tables	0

@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.6 2002-09-04 12:09:25 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.7 2002-09-10 18:28:19 skidder Exp $
  *
  */
 
@@ -165,6 +165,7 @@ static CONST TOK tokens [] = {
 	{ISOLATION, "ISOLATION", 1},
 	{JOIN, "JOIN", 1},
 	{KEY, "KEY", 1},
+	{LAST, "LAST", 2},
 	{LEFT, "LEFT", 1},
 	{LENGTH, "LENGTH", 1},
 	{LEVEL, "LEVEL", 1},
@@ -189,6 +190,7 @@ static CONST TOK tokens [] = {
 	{NOT, "NOT", 1},
 	{NULLIF, "NULLIF", 2},
 	{KW_NULL, "NULL", 1},
+	{NULLS, "NULLS", 2},
 	{KW_NUMERIC, "NUMERIC", 1},
 	{NUM_LOG_BUFS, "NUM_LOG_BUFFERS", 1},
 	{OF, "OF", 1},

@@ -4118,7 +4118,8 @@ static NOD pass1_sort( REQ request, NOD input, NOD s_list)
 					  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */
 					  0);
 		node2 = MAKE_node(nod_order, e_order_count);
-		node2->nod_arg[1] = node1->nod_arg[1];
+		node2->nod_arg[e_order_flag] = node1->nod_arg[e_order_flag]; /* asc/desc flag */
+		node2->nod_arg[e_order_nulls] = node1->nod_arg[e_order_nulls]; /* nulls first/last flag */
 		node1 = node1->nod_arg[0];
 		if (node1->nod_type == nod_field_name) {
 			node2->nod_arg[0] = pass1_field(request, node1, 0);
