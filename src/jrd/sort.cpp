@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.38 2003-07-06 07:04:03 dimitr Exp $
+ * $Id: sort.cpp,v 1.38.2.1 2003-12-24 13:02:01 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -565,15 +565,8 @@ void SORT_fini(SCB scb, ATT att)
  *      Finish sort, and release all resources.
  *
  **************************************/
-	BOOLEAN rval;				/*  Return value from local_fini  */
 
-	rval = local_fini(scb, att);
-
-/* And the sort context block itself */
-/* *IF* local_fini didn't have a problem with the SCB.  */
-/* --  Morgan Schweers (mrs)  */
-
-	if (rval == TRUE)
+	if (scb && local_fini(scb, att))
 		gds__free(scb);
 }
 
@@ -2304,6 +2297,10 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 	}
 
 	scb->scb_merge = NULL;
+	scb->scb_attachment = NULL;
+	scb->scb_impure = NULL;
+	scb->scb_next = NULL;
+
 	return (TRUE);
 }
 
