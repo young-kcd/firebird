@@ -1,3 +1,10 @@
+2004-07-29 19:44  skidder
+
+	* firebird2/src/common/classes/tree.h (1.39):
+	
+	Correct a couple errors I introduced during int->size_t transition
+	for array indexing
+
 2004-07-26 23:32  skidder
 
 	* firebird2/src/jrd/evl.cpp (1.98):
