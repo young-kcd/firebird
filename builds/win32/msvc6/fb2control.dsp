@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 shlwapi.lib mfc42.lib mfcs42.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /machine:I386 /out:"..\..\..\temp\release\fb2control\Firebird2Control.cpl"
+# ADD LINK32 shlwapi.lib mfc42.lib mfcs42.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /machine:I386 /out:"..\..\..\temp\release\firebird\system32\Firebird2Control.cpl"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "fb2control - Win32 Debug"
@@ -82,8 +82,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 fbclient.lib shlwapi.lib /nologo /version:1.0 /subsystem:windows /dll /debug /machine:I386 /out:"c:\winnt\system32\Firebird2Control.cpl" /pdbtype:sept /libpath:"..\..\..\temp\debug\fbclient"
-# ADD LINK32 shlwapi.lib mfc42d.lib mfcs42d.lib th32.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\fb2control\Firebird2Control.cpl" /pdbtype:sept
+# ADD BASE LINK32 shlwapi.lib /nologo /version:1.0 /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 shlwapi.lib mfc42d.lib mfcs42d.lib th32.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird\system32\Firebird2Control.cpl" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
