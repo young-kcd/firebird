@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\debug\common_cs"
 # PROP Intermediate_Dir "..\..\..\temp\debug\common_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /GR /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /GR /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "DEV_BUILD" /YX /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "DEV_BUILD" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\release\common_cs"
 # PROP Intermediate_Dir "..\..\..\temp\release\common_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /GX /GR /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GX /GR /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /FD /EHc- /c
+# ADD BASE CPP /nologo /MDd /W3 /GR /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -161,6 +161,10 @@ SOURCE=..\..\..\src\common\classes\array.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\auto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\config\config.h
 # End Source File
 # Begin Source File
@@ -178,6 +182,18 @@ SOURCE=..\..\..\src\jrd\os\config_root.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\config\dir_list.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\fb_pair.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\init.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\objects_array.h
 # End Source File
 # Begin Source File
 
