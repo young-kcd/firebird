@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.v5_examples,v 1.5 2003-03-17 12:05:51 eku Exp $
+#  $Id: Makefile.in.v5_examples,v 1.6 2003-03-26 11:08:17 brodsom Exp $
 #
 ROOT=../..
 ObjModuleName=v5_examples
@@ -158,7 +158,7 @@ employee.fdb:	empbuild$(EXEC_EXT) $(INPUT_FILES) isql
 isql:
 	-$(LN) $(ISQL_STATIC) isql
 
-empbuild: $(EMPBLD_Objects) $(LIBFBCOMMON_A) $(LIBBSTATIC_A) 
+empbuild: $(EMPBLD_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
 	$(EXE_LINK) $(LINK_OPTS) $(EMPBLD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 empbuild.exe:	$(EMPBLD_OBJ)
@@ -192,7 +192,7 @@ intlbuild.fdb : intlddl.sql intlbld.sql
 	$(ISQL_STATIC) -i intlbld.sql
 
 
-intlbld: $(INTLBLD_Objects)  $(LIBFBCOMMON_A) $(LIBBSTATIC_A) 
+intlbld: $(INTLBLD_Objects)  $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
 	-$(RM) $@
 	$(EXE_LINK) $(LINK_OPTS) $(INTLBLD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
