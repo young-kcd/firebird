@@ -73,6 +73,7 @@
 
 #if defined(WIN_NT)
 #include <io.h>
+#include <process.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
 #endif
@@ -153,6 +154,8 @@ static const TEXT gdslogid[] = " (Client)";
 static const TEXT gdslogid[] = "";
 #endif
 #endif
+
+static const char * FB_PID_FILE = "fb_%d";
 
 #include "gen/sql_code.h"
 #include "../jrd/thd.h"
@@ -508,6 +511,7 @@ static const struct
 #define FB_ENV			"FIREBIRD"
 #define FB_LOCK_ENV		"FIREBIRD_LOCK"
 #define FB_MSG_ENV		"FIREBIRD_MSG"
+#define FB_TMP_ENV		"FIREBIRD_TMP"
 
 #ifdef WIN_NT
 #define EXPAND_PATH(relative, absolute)		_fullpath(absolute, relative, MAXPATHLEN)
@@ -1650,8 +1654,18 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
 
 	if (ib_prefix_lock == NULL) {
 		if (!(ib_prefix_lock = getenv(FB_LOCK_ENV))) {
+#ifdef EMBEDDED
+			ib_prefix_lock = ib_prefix_lock_val;
+			gds__temp_dir(ib_prefix_lock);
+			// Generate filename based on the current PID
+			TEXT tmp_buf[MAXPATHLEN];
+			sprintf(tmp_buf, FB_PID_FILE, getpid());
+			sprintf(tmp_buf, root, tmp_buf);
+			root = tmp_buf;
+#else
 			ib_prefix_lock = ib_prefix_lock_val;
 			gds__prefix(ib_prefix_lock, "");
+#endif
 		}
 		else {
 			strcat(ib_prefix_lock_val, ib_prefix_lock);
@@ -1688,7 +1702,7 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
 		return;
 	}
 
-/* Check for the existence of an InterBase logical name.  If there is 
+/* Check for the existence of a Firebird logical name.  If there is 
    one use it, otherwise use the system directories. */
 
 	if (ISC_expand_logical_once
@@ -2225,6 +2239,37 @@ void API_ROUTINE gds__sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
 }
 
 
+void API_ROUTINE gds__temp_dir(TEXT * buffer)
+{
+/**************************************
+ *
+ *      g d s _ _ t e m p _ d i r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Return temporary directory.
+ *
+ **************************************/
+	TEXT * directory = 0;
+	if (!(directory = getenv(FB_TMP_ENV))) {
+#ifdef WIN_NT
+		TEXT temp_dir[MAXPATHLEN];
+		DWORD len;
+		// This checks "TEMP" and "TMP" environment variables
+		if ((len = GetTempPath(sizeof(temp_dir), temp_dir)) &&
+			len < sizeof(temp_dir))
+			directory = temp_dir;
+#else
+		directory = getenv("TMP"));
+#endif
+	}
+	if (!directory || strlen(directory) >= MAXPATHLEN)
+		directory = WORKFILE;
+	strcpy(buffer, directory);
+}
+
+	
 void * API_ROUTINE gds__temp_file(
 					 BOOLEAN stdio_flag, TEXT * string, 
 					 TEXT * expanded_string, TEXT * dir, BOOLEAN unlink_flag)
@@ -2247,24 +2292,21 @@ void * API_ROUTINE gds__temp_file(
  *      via introducing two functions with different return types.
  *
  **************************************/
-#ifdef WIN_NT
-	/* These are the characters used in temporary filenames.  */
-	static const char letters[] = "abcdefghijklmnopqrstuvwxyz0123456789";
-
 	TEXT temp_dir[MAXPATHLEN];
+
 	TEXT *directory = dir;
-	if (!directory && !(directory = getenv("FIREBIRD_TMP"))) {
-		DWORD len;
-		// This checks "TEMP" and "TMP" environment variables
-		if ((len = GetTempPath(sizeof(temp_dir), temp_dir)) &&
-			len < sizeof(temp_dir))
-			directory = temp_dir;
-		else
-			directory = WORKFILE;
+	if (!directory) {
+		gds__temp_dir(temp_dir);
+		directory = temp_dir;
 	}
 	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-2)
 		return (void *)-1;
+
 	void *result;
+
+#ifdef WIN_NT
+	/* These are the characters used in temporary filenames.  */
+	static const char letters[] = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 	_timeb t;
 	_ftime(&t);
@@ -2299,14 +2341,8 @@ void * API_ROUTINE gds__temp_file(
 		if (!(result = ib_fdopen((int) result, "w+b")))
 			return (void *)-1;
 	}
-	return result;
 #else
-	TEXT *directory = dir;
-	if (!directory && !(directory = getenv("FIREBIRD_TMP")) && !(directory = getenv("TMP")))
-		directory = WORKFILE;
 	TEXT file_name[MAXPATHLEN];
-	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-2)
-		return (void *)-1;
 	strcpy(file_name, directory);
 	if (file_name[strlen(file_name)-1] != '/')
 		strcat(file_name, "/");
@@ -2318,7 +2354,7 @@ void * API_ROUTINE gds__temp_file(
 #else
 	if (mktemp(file_name) == (char *)0)
 		return (void *)-1;
-	void *result;
+
 	do {
 		result = (void *)open(file_name, O_RDWR | O_EXCL| O_CREAT);
 	} while (result == (void *)-1 && errno == EINTR);
@@ -2335,8 +2371,9 @@ void * API_ROUTINE gds__temp_file(
 
 	if (!expanded_string || unlink_flag)
 		unlink(file_name);
-	return result;
 #endif
+
+	return result;
 }
 
 

@@ -310,18 +310,15 @@ TempDirectoryList::TempDirectoryList() : items(0)
 	}
 }
 
-
 const Firebird::PathName TempDirectoryList::GetConfigString() const
 {
 	const char* value;
-	if (!(value = Config::getTempDirectories()) &&
+	char tmp_buf[MAXPATHLEN];
+	if (!(value = Config::getTempDirectories())) {
 		// Temporary directory configuration has not been defined.
 		// Let's make default configuration.
-		!(value = getenv("FIREBIRD_TMP")) &&
-		!(value = getenv("TMP")) &&
-		!(value = getenv("TEMP")))
-	{
-		value = WORKDIR;
+		gds__temp_dir(tmp_buf);
+		value = tmp_buf;
 	}
 	return Firebird::PathName(value);
 }
