@@ -1,3 +1,36 @@
+2004-10-18 22:48  skidder
+
+	* firebird2/builds/install/misc/firebird.conf (1.9):
+	
+	Update BugCheckAbort option description
+
+2004-10-18 16:46  hvlad
+
+	* firebird2/src/jrd/: idx.cpp (1.76), vio.cpp (1.115), vio_proto.h
+	(1.25):
+	
+	More precise check for primary key\unique\foreign key constraints.
+	Code for expression indexes will be commited soon.
+
+2004-10-18 09:19  robocop
+
+	* firebird2/src/dsql/errd.cpp (1.36):
+	
+	a) Error reporting functions must not overflow their buffers.  b)
+	Use ISC_STATUS type when dealing with status vector.
+
+2004-10-18 09:17  robocop
+
+	* firebird2/src/burp/burp.cpp (1.89):
+	
+	reinterpret_cast downgraded to static_cast
+
+2004-10-18 08:48  robocop
+
+	* firebird2/src/dsql/dsql.h (1.68):
+	
+	Totally misc.
+
 2004-10-18 01:48  skidder
 
 	* firebird2/configure.in (1.206):
