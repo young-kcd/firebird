@@ -1,3 +1,4 @@
+
 /*
  *	PROGRAM:	Alice (All Else) Utility
  *	MODULE:		alice_proto.h
@@ -21,8 +22,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _ALICE_ALICE_PROTO_H_
-#define _ALICE_ALICE_PROTO_H_
+#ifndef ALICE_ALICE_PROTO_H
+#define ALICE_ALICE_PROTO_H
 
 #ifdef SUPERSERVER
 int ALICE_main(SVC service);
@@ -33,4 +34,4 @@ void	ALICE_print(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 void	ALICE_error(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 void	ALICE_print_status(ISC_STATUS*);
 
-#endif /* _ALICE_ALICE_PROTO_H_ */
+#endif // ALICE_ALICE_PROTO_H

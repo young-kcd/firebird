@@ -35,7 +35,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif
-#include "../jrd/jrd.h"
 #include "../jrd/jrn.h"
 #include "../journal/journal.h"
 #include "../journal/conso_proto.h"

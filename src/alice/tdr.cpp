@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.20 2003-09-15 08:05:09 dimitr Exp $
+//	$Id: tdr.cpp,v 1.21 2003-09-15 16:25:49 brodsom Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -40,7 +40,6 @@
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
 #include "../alice/all.h"
-#include "../alice/alloc.h"
 #include "../alice/alice_proto.h"
 #include "../alice/all_proto.h"
 #include "../alice/alice_meta.h"

@@ -99,7 +99,11 @@ int CLIB_ROUTINE main(int argc,
 	bool found;
 	bool sw_interactive = false;
 	char option_name[32];
-	SLONG redir_in, redir_out, redir_err;
+#ifdef SERVICE_REDIRECT
+	SLONG redir_in;
+	SLONG redir_out;
+	SLONG redir_err;
+#endif
 	TEXT msg[128];
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);

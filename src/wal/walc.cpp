@@ -27,7 +27,6 @@
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/jrd_time.h"
-#include "../jrd/jrd.h"
 #include "../jrd/isc.h"
 #include "../jrd/file_params.h"
 #include "../wal/wal.h"

@@ -21,14 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _ALICE_ALL_H_
-#define _ALICE_ALL_H_
+#ifndef ALICE_ALL_H
+#define ALICE_ALL_H
 
 #include "../jrd/block_cache.h"
 #include "../alice/lls.h"
-
-void		ALLA_init();				/* initialize pool system */
-void		ALLA_fini();				/* get rid of everything */
 
 class AliceMemoryPool : public MemoryPool
 {
@@ -56,5 +53,5 @@ private:
 	BlockCache<class lls> lls_cache;  /* Was plb_lls */
 };
 
-#endif /* _ALICE_ALL_H_ */
+#endif // ALICE_ALL_H
 

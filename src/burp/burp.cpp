@@ -142,9 +142,7 @@ static SLONG get_number(const SCHAR *);
 static ULONG get_size(const SCHAR *, FIL);
 static gbak_action open_files(const TEXT *, TEXT **, USHORT, USHORT, USHORT);
 static int common_main(int, char **, pfn_svc_output, SLONG);
-#ifdef SUPERSERVER
-static int output_svc(SLONG, UCHAR *);
-#else
+#ifndef SUPERSERVER
 static int output_main(SLONG, UCHAR *);
 #endif
 static void burp_output(const SCHAR *, ...) ATTRIBUTE_FORMAT(1,2);
@@ -193,24 +191,6 @@ int BURP_main(SVC service)
 	SVC_finish(service, SVC_finished);
 
 	return exit_code;
-}
-
-
-static int output_svc(SLONG output_data, UCHAR* output_buf)
-{
-/**************************************
- *
- *	o u t p u t _ n e t w a r e
- *
- **************************************
- *
- * Functional description
- *	Routine which is passed to GBAK for calling back when there is output.
- *
- **************************************/
-	SVC_fprintf((SVC) output_data, "%s", output_buf);
-
-	return 0;
 }
 
 

@@ -33,7 +33,6 @@
 #include <string.h>
 #include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
-#include "../jrd/jrd.h"
 #include "../wal/wal.h"
 #include "../jrd/jrn.h"
 #include "gen/codes.h"

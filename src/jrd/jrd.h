@@ -56,11 +56,9 @@ extern "C" {
 #undef WALW_DEBUG
 #endif
 
-/* Moved to err_proto.h */
-/*#define BUGCHECK(number)        ERR_bugcheck (number)
+#define BUGCHECK(number)        ERR_bugcheck (number)
 #define CORRUPT(number)         ERR_corrupt (number)
 #define IBERROR(number)         ERR_error (number)
-*/
 
 
 #define BLKCHK(blk, type)       if (MemoryPool::blk_type(blk) != (USHORT) (type)) BUGCHECK (147)

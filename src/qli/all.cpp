@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.18 2003-09-15 12:30:27 robocop Exp $
+$Id: all.cpp,v 1.19 2003-09-15 16:30:34 brodsom Exp $
 */
 
 /***************************************************
@@ -42,7 +42,12 @@ $Id: all.cpp,v 1.18 2003-09-15 12:30:27 robocop Exp $
 
 #include "firebird.h"
 #include <string.h>
-#include "../qli/everything.h"
+#include "../qli/dtr.h"
+#include "../qli/parse.h"
+#include "../qli/compile.h"
+#include "../qli/exe.h"
+#include "../qli/report.h"
+#include "../qli/format.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/mov_proto.h"

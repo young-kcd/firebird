@@ -31,4 +31,4 @@ USHORT	TDR_analyze(TDR);
 bool	TDR_attach_database(ISC_STATUS*, TDR, TEXT*);
 void	TDR_get_states(TDR);
 
-#endif /* ALICE_TDR_PROTO_H */
+#endif // ALICE_TDR_PROTO_H

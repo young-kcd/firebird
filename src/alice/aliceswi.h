@@ -261,4 +261,4 @@ static in_sw_tab_t alice_in_sw_table[] =
      0, 0, FALSE, 0, 0, NULL}
 };
 
-#endif /* ALICE_ALICESWI_H */
+#endif // ALICE_ALICESWI_H

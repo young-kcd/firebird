@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.33 2003-09-15 13:11:01 brodsom Exp $
+//	$Id: alice.cpp,v 1.34 2003-09-15 16:25:49 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -106,9 +106,7 @@ static bool fAnsiCP = false;
 static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
 static void expand_filename(TEXT*, TEXT*);
-#ifdef SUPERSERVER
-static int output_svc(SLONG, UCHAR*);
-#else
+#ifndef SUPERSERVER
 static int output_main(SLONG, UCHAR*);
 #endif
 static int common_main(int, char**, pfn_svc_output, SLONG);
@@ -144,14 +142,6 @@ int ALICE_main(SVC service)
 //
 //	Routine which is passed to GFIX for calling back when there is output.
 //
-
-static int output_svc(SLONG output_data, UCHAR * output_buf)
-{
-	SVC_fprintf((SVC) output_data, "%s", output_buf);
-
-	return 0;
-}
-
 
 #else	// SUPERSERVER
 

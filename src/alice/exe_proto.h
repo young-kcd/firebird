@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _ALICE_EXE_PROTO_H_
-#define _ALICE_EXE_PROTO_H_
+#ifndef ALICE_EXE_PROTO_H
+#define ALICE_EXE_PROTO_H
 
 extern int EXE_action(TEXT *, ULONG);
 extern int EXE_two_phase(TEXT *, ULONG);
 
-#endif /* _ALICE_ALICE_PROTO_H_ */
+#endif // ALICE_EXE_PROTO_H

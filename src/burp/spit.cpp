@@ -32,7 +32,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "../jrd/common.h"
-#include "../jrd/jrd.h"
+#include "../jrd/gdsassert.h"
 #include <stdarg.h>
 
 #include <fcntl.h>
