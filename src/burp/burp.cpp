@@ -532,7 +532,7 @@ static int api_gbak(int argc,
 
 		if (*p++ == isc_info_svc_line)
 		{
-			ISC_USHORT len = (ISC_USHORT) isc_vax_integer(p, sizeof(ISC_USHORT));
+			const ISC_USHORT len = (ISC_USHORT) isc_vax_integer(p, sizeof(ISC_USHORT));
 			p += sizeof(ISC_USHORT);
 			if (!len)
 			{
@@ -544,11 +544,12 @@ static int api_gbak(int argc,
 
 			p[len] = '\0';
 			burp_output("%s\n", p);
-
-			p += len;
 		}
 	} while (*sl == isc_info_svc_line);
 
+	gds__free(spb);
+	gds__free(svc_name);
+	gds__free(thd);
 	isc_service_detach(status, (&svc_handle));
 	return FINI_OK;
 }
