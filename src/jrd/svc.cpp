@@ -698,6 +698,28 @@ SVC SVC_attach(USHORT	service_length,
 }
 
 
+#if defined(SUPERSERVER) && defined(SERVER_SHUTDOWN)
+static int shutdown_thread(void *arg) {
+/**************************************
+ *
+ *	s h u t d o w n _ t h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shutdown SuperServer. If hangs, server 
+ *  is forcely & dirty closed after timeout.
+ *
+ **************************************/
+
+	THREAD_ENTER;
+	JRD_shutdown_all();
+	*reinterpret_cast<int*>(arg) = 1;
+	return 0;
+}
+#endif // defined(SUPERSERVER) && defined(SERVER_SHUTDOWN)
+
+
 void SVC_detach(SVC service)
 {
 /**************************************
@@ -713,7 +735,23 @@ void SVC_detach(SVC service)
 
 #ifdef SERVER_SHUTDOWN
 	if (service->svc_do_shutdown) {
+#ifdef SUPERSERVER
+		int flShutdownComplete = 0;
+		gds__thread_start(shutdown_thread, &flShutdownComplete, 
+			THREAD_medium, 0, 0);
+		THREAD_EXIT;
+		int timeout = 10;	// seconds
+		while (timeout--) {
+			if (flShutdownComplete)
+				break;
+			THREAD_SLEEP(1 * 1000);
+		}
+		if (!flShutdownComplete) {
+			gds__log("Forced server shutdown - not all databases closed");
+		}
+#else // SUPERSERVER
 		JRD_shutdown_all();
+#endif // SUPERSERVER
 		if (shutdown_fct)
 				(shutdown_fct) (shutdown_param);
 		else
