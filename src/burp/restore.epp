@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.7 2002-06-29 05:39:38 skywalker Exp $
+$Id: restore.epp,v 1.8 2002-10-22 08:05:57 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -4822,16 +4822,16 @@ REC_TYPE	record;
 UCHAR		scan_next_attr;
 TGBL		tdgbl;
 	
-SLONG		rel_flags, sys_flag;
-short		rel_flags_null, sys_flag_null;
-GDS_QUAD	view_blr, view_src, rel_desc, ext_desc;
-USHORT		view_blr_null, view_src_null, rel_desc_null, ext_desc_null;
+SLONG		rel_flags = 0, sys_flag = 0;
+short		rel_flags_null = TRUE, sys_flag_null = TRUE;
+GDS_QUAD	view_blr = isc_blob_null, view_src = isc_blob_null, rel_desc = isc_blob_null, ext_desc = isc_blob_null;
+USHORT		view_blr_null = TRUE, view_src_null = TRUE, rel_desc_null = TRUE, ext_desc_null = TRUE;
 
 BASED_ON RDB$RELATIONS.RDB$SECURITY_CLASS sec_class;
-short		sec_class_null;
+short		sec_class_null = TRUE;
 
 BASED_ON RDB$RELATIONS.RDB$EXTERNAL_FILE ext_file_name;
-short		ext_file_name_null;
+short		ext_file_name_null = TRUE;
 
 isc_tr_handle	local_trans;
 tdgbl = GET_THREAD_DATA;
@@ -4842,22 +4842,8 @@ relation = (REL) BURP_ALLOC_ZERO (sizeof (struct rel));
 relation->rel_next = tdgbl->relations;
 tdgbl->relations = relation;
 
-rel_flags_null = TRUE;
-sys_flag_null  = TRUE;
-view_blr_null  = TRUE;
-view_src_null  = TRUE;
-rel_desc_null  = TRUE;
-ext_desc_null  = TRUE;
-sec_class_null = TRUE;
-ext_file_name_null = TRUE;
-
 sec_class[0] = '\0';
 ext_file_name[0] = '\0';
-
-view_blr = isc_blob_null;
-view_src = isc_blob_null;
-ext_desc = isc_blob_null;
-rel_desc = isc_blob_null;
 
 /*
 STORE (REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
