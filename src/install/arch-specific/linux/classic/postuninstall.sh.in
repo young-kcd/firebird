@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postuninstall.sh.in,v 1.1.2.1 2003-12-14 04:03:33 skywalker Exp $
+#   $Id: postuninstall.sh.in,v 1.1.2.2 2003-12-14 07:00:22 skywalker Exp $
 # 
 
 # The post uninstall routine for Firebird Classic.
@@ -103,6 +103,24 @@ deleteFirebirdUser() {
 
 }
 
+#------------------------------------------------------------------------
+#  removeLinksForBackCompatibility
+#  Remove links for back compatibility to InterBase and Firebird1.0 
+#  linked systems.
+
+removeLinksForBackCompatibility() {
+
+    if [ -L /usr/lib/libgds.so ]
+      then
+        rm -f /usr/lib/libgds.so
+    fi
+    if [ -L /usr/lib/libgds.so.0 ]
+      then
+        rm -f /usr/lib/libgds.so.0
+    fi
+
+}
+
 
 #= Main PostUn ============================================================
 
@@ -123,6 +141,7 @@ deleteFirebirdUser() {
         #oldLine=`grep "^gds_db" $FileName`
         #removeLineFromFile "$FileName" "$oldLine"
 
+        removeLinksForBackCompatibility
         
         if [ -d /etc/xinetd.d ]
           then

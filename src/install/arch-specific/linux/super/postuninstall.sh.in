@@ -18,17 +18,42 @@ removeLineFromFile() {
 }
 
 
+#------------------------------------------------------------------------
+#  removeLinksForBackCompatibility
+#  Remove links for back compatibility to InterBase and Firebird1.0 
+#  linked systems.
+
+removeLinksForBackCompatibility() {
+
+    if [ -L /usr/lib/libgds.so ]
+      then
+        rm -f /usr/lib/libgds.so
+    fi
+    if [ -L /usr/lib/libgds.so.0 ]
+      then
+        rm -f /usr/lib/libgds.so.0
+    fi
+
+}
 
 #= Main PostUn ===============================================================
 
+
+    if [ "$1"=0 ] 
+      then 
     
-    # Update /etc/services
+        # Update /etc/services
+        # Lose the gds_db line from /etc/services 
+        # Leave it there, it was probably there already and does no
+        # harm. MOD 7-Nov-2002
 
+        #FileName=/etc/services
+        #oldLine=`grep "^gds_db" $FileName`
 
-    FileName=/etc/services
-    oldLine=`grep "^gds_db" $FileName`
+        #removeLineFromFile "$FileName" "$oldLine"
 
-    removeLineFromFile "$FileName" "$oldLine"
+        removeLinksForBackCompatibility
+
 
     # If we have right systems remove the service autoconfig stuff.
         if [ -x sbin/insserv ] 

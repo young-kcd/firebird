@@ -409,6 +409,62 @@ updateHostsDotFile() {
 
 
 #------------------------------------------------------------------------
+#  buildUninstallFile
+#  This will work only for the .tar.gz install and it builds an
+#  uninstall shell script.  The RPM system takes care of it's own.
+
+
+buildUninstallFile() {
+
+    cd $origDir
+
+    if [ ! -f manifest.txt ]  # Only do this if we are a .tar.gz install
+      then
+        return
+    fi
+
+    cp manifest.txt $IBRootDir/misc
+
+    cp -r scripts $IBRootDir/misc/
+    cp scripts/tarMainUninstall.sh $IBRootDir/bin/uninstall.sh
+
+}
+
+#------------------------------------------------------------------------
+#  createLinksForBackCompatibility
+#  Create links for back compatibility to InterBase and Firebird1.0 
+#  linked systems.
+
+createLinksForBackCompatibility() {
+
+    # These two links are required for compatibility with existing ib programs
+    # If the program had been linked with libgds.so then this link is required
+    # to ensure it loads the fb equivalent.  Eventually these should be 
+    # optional and in a seperate rpm install.  MOD 7-Nov-2002.
+
+    if [ ! -e /usr/lib/libgds.so ]
+      then
+        if [ -L /usr/lib/libgds.so ]
+          then
+            rm -f /usr/lib/libgds.so
+        fi
+        ln -s $FBRootDir/lib/libfbclient.so /usr/lib/libgds.so
+    fi
+
+    if [ ! -e /usr/lib/libgds.so.0 ]
+      then
+        if [ -L /usr/lib/libgds.so.0 ]
+          then
+            rm -f /usr/lib/libgds.so.0
+        fi
+        ln -s $FBRootDir/lib/libfbclient.so /usr/lib/libgds.so.0
+    fi
+
+
+}
+
+
+#------------------------------------------------------------------------
 #  For security reasons most files in firebird installation are
 #  root-owned and world-readable(executable) only (including firebird).
 
@@ -452,6 +508,7 @@ removeLineFromFile() {
         ln -s $RPM_INSTALL_PREFIX/interbase @prefix@
     fi 
 
+    origDir=`pwd`
 
     IBRootDir=@prefix@
     IBBin=$IBRootDir/bin
@@ -463,16 +520,6 @@ removeLineFromFile() {
     export RunUser
     export DBAPasswordFile
 
-    # If run from tar-install, copy uninstall files to misc
-    if [ -f manifest.txt -a -d scripts ]
-      then
-        cp manifest.txt $IBRootDir/misc
-	mkdir $IBRootDir/misc/scripts
-	cp scripts/preuninstall.sh $IBRootDir/misc/scripts
-	cp scripts/postuninstall.sh $IBRootDir/misc/scripts
-	cp scripts/taruninstall.sh $IBRootDir/misc/scripts
-	cp scripts/tarMainUninstall.sh $IBRootDir/misc/uninstall.sh
-    fi
 
     # Update /etc/services
     # The \n is needed, some /etc/services files are missing a trailing
@@ -576,6 +623,11 @@ EOF
 
     # Set up Firebird for run with init.d
     installInitdScript
+
+
+    createLinksForBackCompatibility
+
+    buildUninstallFile
 
     # start the db server so we can change the password
     startInetService
