@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.6 2004-10-05 07:03:26 hvlad Exp $
+ *  $Id: sparse_bitmap.h,v 1.7 2004-10-27 09:27:22 aafemt Exp $
  *
  */
 
@@ -145,10 +145,10 @@ public:
 		T val_aligned = value & ~(T)(BUNCH_BITS-1);
 		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 		if (tree.locate(val_aligned)) {
-			Bucket *current = &tree.current();
-			if (current->bits & bit_mask) {
-				current->bits &= ~bit_mask;
-				if (!current->bits)
+			Bucket *current_bucket = &tree.current();
+			if (current_bucket->bits & bit_mask) {
+				current_bucket->bits &= ~bit_mask;
+				if (!current_bucket->bits)
 					tree.fastRemove();
 				return true;
 			}

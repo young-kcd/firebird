@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: RecordNumber.h,v 1.3 2004-10-03 04:48:54 robocop Exp $
+ *  $Id: RecordNumber.h,v 1.4 2004-10-27 09:28:26 aafemt Exp $
  *
  */
 
@@ -85,7 +85,7 @@ public:
 
 	inline SINT64 getValue() const { return value; }
 
-	inline void setValue(SINT64 value) { this->value = value; }
+	inline void setValue(SINT64 avalue) { value = avalue; }
 
 	bool isBof() const { return value == BOF_NUMBER; }
 
