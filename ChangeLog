@@ -1,3 +1,44 @@
+2003-02-02 17:01  dimitr
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Fixed my latest commit.
+
+2003-02-02 16:20  dimitr
+
+	* firebird2/src/: ipserver/ipclient.cpp, ipserver/ipserver.cpp,
+	remote/wnet.cpp:
+	
+	A bit changed two config entry names.
+
+2003-02-02 16:20  dimitr
+
+	* firebird2/src/common/config/: config.cpp, config.h,
+	config_impl.h:
+	
+	1. Applied singleton-instance idiom to the config manager. It costs
+	just a few CPU cycles, so doesn't affect the performance.  2. A bit
+	changed two config entry names.
+
+2003-02-02 14:23  dimitr
+
+	* firebird2/builds/win32/msvc6/: common.dsp, common_classic.dsp:
+	
+	Updated project files.
+
+2003-02-02 14:12  dimitr
+
+	* firebird2/src/jrd/sort_mem.cpp:
+	
+	Optimized sorting for the cases of file I/O (i.e. when memory is
+	not used).
+
+2003-02-02 14:09  dimitr
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Reduced memory usage.
+
 2003-02-01 04:08  hippoman
 
 	* firebird2/builds/win32/msvc7/: Firebird2.sln, burp.vcproj,
