@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.12 2002-10-29 20:20:10 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.13 2002-11-05 01:51:23 nmcc Exp $
 #
 
 ROOT=..
@@ -559,7 +559,7 @@ dist:
 # 
 
 
-clean: clean_objects clean_dependancies clean_build
+clean: clean_objects clean_dependancies clean_extern_objects clean_build
 
 
 # Not sure if this one is still needed MOD 7-Oct-2002
@@ -570,6 +570,8 @@ clean_dbs:
 clean_objects:
 	rm -f `find $(GEN_ROOT)/ -type f -name '*.o' -print`
 
+clean_extern_objects:
+	rm -f `find $(SRC_ROOT)/extern/ -type f -name '*.o' -print`
 
 # Clear out dependancies files created by the gcc compiler
 # since when .o and other files are deleted the dependant 
