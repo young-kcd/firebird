@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.36 2002-08-26 11:59:01 eku Exp $
+# $Id: configure.in,v 1.37 2002-08-28 07:03:07 eku Exp $
 
 ################################# INITIALISATION ###############################
 
@@ -140,6 +140,21 @@ if test "$ac_cv_func_gettimeofday" = "yes"; then
   esac
 fi
 AC_CHECK_FUNCS(time times)
+AC_CHECK_FUNCS(gethostname connect)
+if test "$ac_cv_func_gethostname" = "no"; then
+  AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
+fi
+if test "$ac_cv_func_connect" = "no"; then
+  AC_CHECK_LIB(socket, connect, XE_APPEND(-lsocket,LIBS),, $LIBS)
+fi  
+AC_CHECK_FUNC(strcasecmp stricmp)
+if test "$ac_cv_func_strcasecmp" = "no"; then
+  # EKU: On SINIX-Z strcasecmp is in libresolv.
+  AC_CHECK_LIB(gen, dirname,
+    [XE_APPEND(-lresolv,LIBS)
+     unset ac_cv_func_strcasecmp
+     AC_CHECK_FUNCS(strcasecmp)],, $LIBS)
+fi
 AC_CHECK_FUNCS(dirname)
 if test "$ac_cv_func_dirname" = "no"; then
   # EKU: On SINIX-Z dirname is in libgen.
