@@ -260,8 +260,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		if (!fb_stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
 			ret = GsecMsg23;
 		else {
-			// AP - temp fix for views with COMPUTED fields
-			FOR U IN USERS_BG WITH U.USER_NAME EQ io_user_data->user_name
+			FOR U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
 				found = true;
 				ERASE U
 				ON_ERROR
