@@ -1614,9 +1614,9 @@ post_event	: POST_EVENT value event_argument_opt ';'
 			{ $$ = make_node (nod_post, e_pst_count, $2, $3); }
 		;
 
-event_argument_opt	: ',' value
+event_argument_opt	: /*',' value
 			{ $$ = $2; }
-		|
+		|*/
 			{ $$ = NULL; }
 		;
 
