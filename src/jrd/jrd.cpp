@@ -4323,32 +4323,9 @@ void JRD_print_all_counters(char *fname)
  *      component
  *
  ******************************************************/
-	IB_FILE *fptr;
-
-	if (!trace_pools)
-		return;
-
-	if (!(fptr = ib_fopen(fname, "a+"))) {
-		char buff[256];
-		sprintf(buff, "Failed to open %s", fname);
-		gds__log(buff, 0);
-		return;
-	}
-#if defined(V4_THREADING) && !defined(SUPERSERVER) 
-	V4_JRD_MUTEX_LOCK(databases_mutex);
-#endif
-
-	ib_fprintf(fptr, "\nPrinting Block type Report\n");
-	ib_fprintf(fptr, "==========================\n");
-	gds_print_delta_counters(fptr);
-	ALL_print_memory_pool_info(fptr, databases);
-//	ALLD_print_memory_pool_info(fptr);
-
-#if defined(V4_THREADING) && !defined(SUPERSERVER) 
-	V4_JRD_MUTEX_UNLOCK(databases_mutex);
-#endif
-
-	ib_fclose(fptr);
+	// Skidder: This may be ported to new memory pools, but
+    // I think this debugging feature may be safely eradicated
+	return;
 }
 
 #ifdef DEBUG_PROCS

@@ -69,10 +69,6 @@ HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
 static USHORT usServerFlags;
 
-#ifdef SUPERSERVER
-extern SLONG trace_pools;
-#endif
-
 // Static functions to be called from this file only.
 static void GetDriveLetter(ULONG, char pchBuf[DRV_STRINGLEN]);
 #ifdef NOT_USED_OR_REPLACED
@@ -112,10 +108,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	usServerFlags = usServerFlagMask;
 
 /* initialize interprocess server */
-
-#ifdef SUPERSERVER
-	trace_pools = Config::getTraceMemoryPools();
-#endif
 
 	if (!(usServerFlagMask & SRVR_ipc)) {
 		szClassName = "FB_Disabled";

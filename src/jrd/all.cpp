@@ -40,16 +40,6 @@
 
 #include <algorithm>
 
-#ifdef SUPERSERVER
-
-extern "C" {
-extern SLONG trace_pools;
-}
-SLONG all_delta_alloc = 0;
-
-#endif // SUPERSERVER
-
-
 #ifdef SHLIB_DEFS
 #define strlen		(*_libgds_strlen)
 

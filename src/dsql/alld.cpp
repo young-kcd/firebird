@@ -67,13 +67,6 @@ ASSERT_FILENAME			//Define things dsql/assert needed
 
 #include "../include/fb_vector.h"
 
-#ifdef SUPERSERVER
-extern "C" {
-extern SLONG trace_pools;
-}
-SLONG alld_delta_alloc = 0;
-#endif
-
 DsqlMemoryPool *DSQL_permanent_pool = 0;
 typedef Firebird::vector<DsqlMemoryPool*> pool_vec_t;
 static bool init_flag = false;

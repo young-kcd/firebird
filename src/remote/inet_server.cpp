@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.24 2003-04-16 10:18:27 aafemt Exp $
+$Id: inet_server.cpp,v 1.25 2003-05-09 16:02:46 skidder Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -161,11 +161,6 @@ static void set_signal(int, FPTR_VOID);
 #ifdef WINDOWS_ROUTER
 static int atov(UCHAR *, UCHAR **, SSHORT);
 #endif /* WINDOWS_ROUTER */
-
-#ifdef SUPERSERVER
-extern SLONG free_map_debug;
-extern SLONG trace_pools;
-#endif
 
 static TEXT protocol[128];
 static int INET_SERVER_start = 0;
@@ -441,8 +436,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			exit(STARTUP_ERROR);
 		}
 	}
-
-	trace_pools = Config::getTraceMemoryPools();
 
 #endif
 
