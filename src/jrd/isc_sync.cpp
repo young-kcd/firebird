@@ -1658,7 +1658,8 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
 		err_msg = "";
 	}
 
-	TEXT *log_msg = (TEXT *) gds__alloc(strlen(err_msg) + 256);
+	TEXT* log_msg = (TEXT*) gds__alloc(strlen(err_msg) + 256);
+	log_msg[0] = '\0';
 
 	switch (except_code) {
 	case EXCEPTION_ACCESS_VIOLATION:
