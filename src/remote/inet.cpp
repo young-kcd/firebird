@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.66 2003-04-03 17:16:01 brodsom Exp $
+$Id: inet.cpp,v 1.67 2003-04-09 13:20:55 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -677,38 +677,30 @@ PORT INET_analyze(	TEXT*	file_name,
 /* If we want user verification, we can't speak anything less than version 7 */
 
 	cnct = &packet->p_cnct;
+
 	cnct->p_cnct_user_id.cstr_length = user_length;
 	cnct->p_cnct_user_id.cstr_address = user_id;
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		{PROTOCOL_VERSION8,				arch_generic, ptype_rpc, MAX_PTYPE, 2},
-		{PROTOCOL_VERSION8,				ARCHITECTURE, ptype_rpc, MAX_PTYPE, 3},
-		{PROTOCOL_VERSION10,				arch_generic, ptype_rpc, MAX_PTYPE, 4},
-        {PROTOCOL_VERSION10,				ARCHITECTURE, ptype_rpc, MAX_PTYPE, 5}
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2)
 #ifdef SCROLLABLE_CURSORS
 		,
-		{PROTOCOL_SCROLLABLE_CURSORS,	arch_generic, ptype_rpc, MAX_PTYPE, 6},
-		{PROTOCOL_SCROLLABLE_CURSORS,	ARCHITECTURE, ptype_rpc, MAX_PTYPE, 7}
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 3)
 #endif
 	};
 
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
-	copy_p_cnct_repeat_array(	cnct->p_cnct_versions,
-								protocols_to_try1,
-								cnct->p_cnct_count);
+	copy_p_cnct_repeat_array(cnct->p_cnct_versions,
+							 protocols_to_try1,
+							 cnct->p_cnct_count);
 
 /* Try connection using first set of protocols.  punt if error */
 
-	PORT port = inet_try_connect(	packet,
-									rdb,
-									*file_length,
-									file_name,
-									node_name,
-									status_vector,
-									dpb,
-									dpb_length);
+	PORT port = inet_try_connect(packet, rdb, *file_length, file_name,
+								 node_name, status_vector, dpb, dpb_length);
 	if (!port) {
 		return NULL;
 	}
@@ -724,17 +716,15 @@ PORT INET_analyze(	TEXT*	file_name,
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
-			{PROTOCOL_VERSION6, arch_generic, ptype_rpc, ptype_batch_send,	2},
-			{PROTOCOL_VERSION6, ARCHITECTURE, ptype_rpc, ptype_batch_send,	3},
-			{PROTOCOL_VERSION7, arch_generic, ptype_rpc, MAX_PTYPE,			4},
-			{PROTOCOL_VERSION7, ARCHITECTURE, ptype_rpc, MAX_PTYPE,			5}
+			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_rpc, ptype_batch_send, 1),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, MAX_PTYPE, 2)
 		};
 
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
 
-		copy_p_cnct_repeat_array(	cnct->p_cnct_versions,
-									protocols_to_try2,
-									cnct->p_cnct_count);
+		copy_p_cnct_repeat_array(cnct->p_cnct_versions,
+								 protocols_to_try2,
+								 cnct->p_cnct_count);
 
 		port = inet_try_connect(packet, rdb, *file_length, file_name,
 								node_name, status_vector, dpb, dpb_length);
@@ -753,17 +743,15 @@ PORT INET_analyze(	TEXT*	file_name,
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
-			{PROTOCOL_VERSION3, arch_generic, ptype_rpc, ptype_batch_send, 2},
-			{PROTOCOL_VERSION3, ARCHITECTURE, ptype_rpc, ptype_batch_send, 3},
-			{PROTOCOL_VERSION4, arch_generic, ptype_rpc, ptype_batch_send, 4},
-			{PROTOCOL_VERSION4, ARCHITECTURE, ptype_rpc, ptype_batch_send, 5}
+			REMOTE_PROTOCOL(PROTOCOL_VERSION3, ptype_rpc, ptype_batch_send, 1),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION4, ptype_rpc, ptype_batch_send, 2)
 		};
 
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
 
-		copy_p_cnct_repeat_array(	cnct->p_cnct_versions,
-									protocols_to_try3,
-									cnct->p_cnct_count);
+		copy_p_cnct_repeat_array(cnct->p_cnct_versions,
+								 protocols_to_try3,
+								 cnct->p_cnct_count);
 
 		port = inet_try_connect(packet, rdb, *file_length, file_name,
 								node_name, status_vector, dpb, dpb_length);

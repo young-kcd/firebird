@@ -32,10 +32,14 @@
  *
  */
 /*
-$Id: protocol.h,v 1.8 2002-10-29 03:17:45 seanleyne Exp $
+$Id: protocol.h,v 1.9 2003-04-09 13:20:56 dimitr Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_
+
+// dimitr: ask for asymmetric protocols only.
+// Comment it out to return back to FB 1.0 behaviour.
+#define ASYMMETRIC_PROTOCOLS_ONLY
 
 /* The protocol is defined blocks, rather than messages, to
    separate the protocol from the transport layer.  */
@@ -74,7 +78,7 @@ $Id: protocol.h,v 1.8 2002-10-29 03:17:45 seanleyne Exp $
 #define PROTOCOL_VERSION9	9
 
 /* Protocol 10 includes support for warnings and removes the requirement for
- * encoding and decoding status codes.*/
+ * encoding and decoding status codes */
 
 #define PROTOCOL_VERSION10	10
 
@@ -310,6 +314,15 @@ typedef struct p_cnct
 		USHORT	p_cnct_weight;		/* Preference weight */
 	}		p_cnct_versions[10];
 } P_CNCT;
+
+#ifdef ASYMMETRIC_PROTOCOLS_ONLY
+#define REMOTE_PROTOCOL(version, min_type, max_type, weight) \
+	{version, arch_generic, min_type, max_type, weight * 2}
+#else
+#define REMOTE_PROTOCOL(version, min_type, max_type, weight) \
+	{version, arch_generic, min_type, max_type, weight * 2}, \
+	{version, ARCHITECTURE, min_type, max_type, weight * 2 + 1}
+#endif
 
 /* User identification data, if any, is of form:
 

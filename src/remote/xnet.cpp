@@ -194,8 +194,6 @@ PORT XNET_analyze(
 	SSHORT user_length;
 	TEXT *p, user_id[128], buffer[64];
 
-	p_cnct::p_cnct_repeat * protocol;
-
 	*file_length = strlen(file_name);
 
 /* We need to establish a connection to a remote server.  Allocate the necessary
@@ -245,83 +243,26 @@ PORT XNET_analyze(
    then 5 protocol descriptions; however, the interprocess server 
    was created in 4.0 so this does not apply */
 
-#ifdef SCROLLABLE_CURSORS
-	cnct->p_cnct_count = 8;
-#else
-	cnct->p_cnct_count = 6;
-#endif
-
 	cnct->p_cnct_user_id.cstr_length = user_length;
 	cnct->p_cnct_user_id.cstr_address = (UCHAR *) user_id;
 
-	protocol = cnct->p_cnct_versions;
-
-	protocol->p_cnct_version = PROTOCOL_VERSION7;
-	protocol->p_cnct_architecture = arch_generic;
-	protocol->p_cnct_min_type = ptype_rpc;
-	protocol->p_cnct_max_type = MAX_PTYPE;
-	protocol->p_cnct_weight = 2;
-
-	++protocol;
-
-	protocol->p_cnct_version = PROTOCOL_VERSION7;
-	protocol->p_cnct_architecture = ARCHITECTURE;
-	protocol->p_cnct_min_type = ptype_rpc;
-	protocol->p_cnct_max_type = MAX_PTYPE;
-	protocol->p_cnct_weight = 3;
-
-	++protocol;
-
-	protocol->p_cnct_version = PROTOCOL_VERSION8;
-	protocol->p_cnct_architecture = arch_generic;
-	protocol->p_cnct_min_type = ptype_rpc;
-	protocol->p_cnct_max_type = MAX_PTYPE;
-	protocol->p_cnct_weight = 4;
-
-	++protocol;
-
-	protocol->p_cnct_version = PROTOCOL_VERSION8;
-	protocol->p_cnct_architecture = ARCHITECTURE;
-	protocol->p_cnct_min_type = ptype_rpc;
-	protocol->p_cnct_max_type = MAX_PTYPE;
-	protocol->p_cnct_weight = 5;
-
-	++protocol;
-
-	protocol->p_cnct_version = PROTOCOL_VERSION10;
-	protocol->p_cnct_architecture = arch_generic;
-	protocol->p_cnct_min_type = ptype_rpc;
-	protocol->p_cnct_max_type = MAX_PTYPE;
-	protocol->p_cnct_weight = 6;
-
-	++protocol;
-
-	protocol->p_cnct_version = PROTOCOL_VERSION10;
-	protocol->p_cnct_architecture = ARCHITECTURE;
-	protocol->p_cnct_min_type = ptype_rpc;
-	protocol->p_cnct_max_type = MAX_PTYPE;
-	protocol->p_cnct_weight = 7;
-
+	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
+	{
+		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, MAX_PTYPE, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 3)
 #ifdef SCROLLABLE_CURSORS
-	++protocol;
-
-	protocol->p_cnct_version = PROTOCOL_SCROLLABLE_CURSORS;
-	protocol->p_cnct_architecture = arch_generic;
-	protocol->p_cnct_min_type = ptype_rpc;
-	protocol->p_cnct_max_type = MAX_PTYPE;
-	protocol->p_cnct_weight = 8;
-
-	++protocol;
-
-	protocol->p_cnct_version = PROTOCOL_SCROLLABLE_CURSORS;
-	protocol->p_cnct_architecture = ARCHITECTURE;
-	protocol->p_cnct_min_type = ptype_rpc;
-	protocol->p_cnct_max_type = MAX_PTYPE;
-	protocol->p_cnct_weight = 9;
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 4)
 #endif
+	};
+	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
-/* If we can't talk to a server, punt.  Let somebody else generate
-   an error. */
+	for (size_t i = 0; i < cnct->p_cnct_count; i++) {
+		cnct->p_cnct_versions[i] = protocols_to_try1[i];
+	}
+
+/* If we can't talk to a server, punt. Let somebody else generate an error. */
 
 	if (!(port = XNET_connect(node_name, packet, status_vector, FALSE))) {
 		ALLR_release((BLK) rdb);
@@ -345,42 +286,19 @@ PORT XNET_analyze(
 
 		/* try again with next set of known protocols */
 
-		cnct->p_cnct_count = 4;
-
 		cnct->p_cnct_user_id.cstr_length = user_length;
 		cnct->p_cnct_user_id.cstr_address = (UCHAR *) user_id;
 
-		protocol = cnct->p_cnct_versions;
+		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
+		{
+			REMOTE_PROTOCOL(PROTOCOL_VERSION4, ptype_rpc, ptype_batch_send, 1),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_rpc, ptype_batch_send, 2),
+		};
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
 
-		protocol->p_cnct_version = PROTOCOL_VERSION4;
-		protocol->p_cnct_architecture = arch_generic;
-		protocol->p_cnct_min_type = ptype_rpc;
-		protocol->p_cnct_max_type = ptype_batch_send;
-		protocol->p_cnct_weight = 2;
-
-		++protocol;
-
-		protocol->p_cnct_version = PROTOCOL_VERSION4;
-		protocol->p_cnct_architecture = ARCHITECTURE;
-		protocol->p_cnct_min_type = ptype_rpc;
-		protocol->p_cnct_max_type = ptype_batch_send;
-		protocol->p_cnct_weight = 3;
-
-		++protocol;
-
-		protocol->p_cnct_version = PROTOCOL_VERSION6;
-		protocol->p_cnct_architecture = arch_generic;
-		protocol->p_cnct_min_type = ptype_rpc;
-		protocol->p_cnct_max_type = ptype_batch_send;
-		protocol->p_cnct_weight = 4;
-
-		++protocol;
-
-		protocol->p_cnct_version = PROTOCOL_VERSION6;
-		protocol->p_cnct_architecture = ARCHITECTURE;
-		protocol->p_cnct_min_type = ptype_rpc;
-		protocol->p_cnct_max_type = ptype_batch_send;
-		protocol->p_cnct_weight = 5;
+		for (size_t i = 0; i < cnct->p_cnct_count; i++) {
+			cnct->p_cnct_versions[i] = protocols_to_try2[i];
+		}
 
 		if (!(port = XNET_connect(node_name, packet, status_vector, FALSE))) {
 			ALLR_release((BLK) rdb);
@@ -405,26 +323,18 @@ PORT XNET_analyze(
 
 		/* try again with next set of known protocols */
 
-		cnct->p_cnct_count = 2;
-
 		cnct->p_cnct_user_id.cstr_length = user_length;
 		cnct->p_cnct_user_id.cstr_address = (UCHAR *) user_id;
 
-		protocol = cnct->p_cnct_versions;
+		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
+		{
+			REMOTE_PROTOCOL(PROTOCOL_VERSION3, ptype_rpc, ptype_batch_send, 1)
+		};
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
 
-		protocol->p_cnct_version = PROTOCOL_VERSION3;
-		protocol->p_cnct_architecture = arch_generic;
-		protocol->p_cnct_min_type = ptype_rpc;
-		protocol->p_cnct_max_type = ptype_batch_send;
-		protocol->p_cnct_weight = 2;
-
-		++protocol;
-
-		protocol->p_cnct_version = PROTOCOL_VERSION3;
-		protocol->p_cnct_architecture = ARCHITECTURE;
-		protocol->p_cnct_min_type = ptype_rpc;
-		protocol->p_cnct_max_type = ptype_batch_send;
-		protocol->p_cnct_weight = 3;
+		for (size_t i = 0; i < cnct->p_cnct_count; i++) {
+			cnct->p_cnct_versions[i] = protocols_to_try3[i];
+		}
 
 		if (!(port = XNET_connect(node_name, packet, status_vector, FALSE))) {
 			ALLR_release((BLK) rdb);
