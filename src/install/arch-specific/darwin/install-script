@@ -1,0 +1,173 @@
+#!/bin/sh
+#
+# Script args:
+# $0: full path to script
+# $1: full path to top level package dir, no trailing slash
+# $2: full path to installed location
+# $3:  ?????
+# $4:  ?????
+
+FB_FW='$2/Firebird.framework'
+FB_RES='$FB_FW/Versions/A/Resources'
+INST_RES='$FB_RES/installer_files'
+
+# Install and start sysv semaphores
+if test `uname -r | sed -e 's/\.[0-9]*//g'` -lt 6; then
+	if [ -e "SysV Semaphores" ]; then
+		mkdir -p /Library/StartupItems
+		if [ ! -e "/Library/StartupItems/SysV Semaphores" ]; then
+			cp -r "$INST_RES/SysV Semaphores" /Library/StartupItems
+			"/Library/StartupItems/SysV Semaphores/SysV Semaphores" start
+		fi
+	fi
+fi
+
+
+# Setup our services entry, our user account, and our group
+#
+#
+# Start with the service entry
+if niutil -list . /services/gds_db 2&>1 /dev/null ; then
+	echo -n
+else
+	niutil -create . /services/gds_db
+	niutil -createprop . /services/gds_db port 3050
+	niutil -createprop . /services/gds_db protocol tcp tcp
+fi
+
+# Now for the group.  If the firebird group already exists, remember the
+#  id if we need it to create the firebird user
+if niutil -list . /groups/firebird 2&>1 /dev/null; then
+	NEW_GID=`niutil -readprop . /groups/firebird gid`
+else
+	NEW_GID=`nigrep gid . /groups | grep ":  gid " | awk '{ print $4 + 1 } ' | sort -n | tail -1`
+	niutil -create . /groups/firebird
+	niutil -createprop . /groups/firebird passwd "*"
+	niutil -createprop . /groups/firebird gid $NEW_GID
+	niutil -createprop . /groups/firebird users firebird
+fi
+
+# Now create the firebird user
+if niutil -list . /users/firebird 2&>1 /dev/null; then
+	echo -n
+else
+	NEW_UID=`nigrep uid . /users | grep ":  uid " | awk '{ print $4 + 1 } ' | sort -n | tail -1`
+	niutil -create . /users/firebird
+	niutil -createprop . /users/firebird uid $NEW_UID
+	niutil -createprop . /users/firebird home /Library/Frameworks/Firebird.framework
+	niutil -createprop . /users/firebird passwd "*"
+	niutil -createprop . /users/firebird expire 0
+	niutil -createprop . /users/firebird shell /bin/tcsh
+	niutil -createprop . /users/firebird change 0
+	niutil -createprop . /users/firebird gid $NEW_GID
+	niutil -createprop . /users/firebird realname "Firebird SQL Database"
+fi
+
+# set the permissions correctly
+if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+	echo -n
+else
+	rm -rf /Library/StartupItems/Firebird
+fi
+
+# Install the framework
+# mkdir -p /Library/Frameworks
+# cp -r Firebird.framework $FB_FW
+#ln -s ../../bin $FB_FW/Versions/A/Resources/English.lproj/var/bin; \
+#ln -s Versions/Current/Headers $FB_FW/Headers
+#ln -s Versions/Current/Resources $FB_FW/Resources
+#ln -s Versions/Current/Firebird $FB_FW/Firebird
+#ln -s A $FB_FW/Versions/Current
+chown -R firebird.firebird "$FB_FW"
+
+# set the permissions correctly
+if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+	echo -n
+else
+    chmod 777 "$FB_FW/Resources/English.lproj/var"
+    chmod 777 "$FB_FW/Resources/English.lproj/var/security.fdb"
+    chmod 777 "$FB_FW/Resources/English.lproj/var/help/help.fdb"
+
+    #chmod a+s "$FB_FW/Resources/bin/gds_drop"
+    chmod a+s "$FB_FW/Resources/bin/fb_lock_mgr"
+    chmod a+s "$FB_FW/Resources/bin/fb_inet_server"
+    #chown root "$FB_FW/Resources/bin/gds_drop"
+    chown root "$FB_FW/Resources/bin/fb_lock_mgr"
+    chown root "$FB_FW/Resources/bin/fb_inet_server"
+fi
+
+# Install the startup item
+if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+	if [ -e "$INST_RES/Firebird.startup" ]; then
+		mkdir -p /Library/StartupItems
+		cp -r "$INST_RES/Firebird.startup" /Library/StartupItems/Firebird
+	fi
+else
+	rm -rf /Library/StartupItems/Firebird
+fi
+
+
+# Install FBConsole
+#if [ -e FBConsole.app ]; then
+	#mkdir -p /Applications
+	#cp -r FBConsole.app /Applications
+#fi
+
+#
+# If TCP is installed, update both services and servers databases
+#
+HUPNEEDED='n'	# Relevant to Classic only
+if [ -f /etc/services ]; then
+    grep -s gds_db /etc/services  > /dev/null 2>&1
+    if test $? != 0 ; then
+	HUPNEEDED='y'
+        cat /etc/services "$FB_RES/English.lproj/var/services.isc" > /etc/.interbase.temp.install.services
+	mv /etc/.interbase.temp.install.services /etc/services
+    fi
+fi
+if [ -f /etc/inetd.conf ]; then
+    if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+	# Remove gds_db service. We do not want gds_inet_server to be invoked
+        echo "Installing Firebird SuperServer"
+	cat /etc/inetd.conf | grep -v gds_db > /etc/.interbase.temp.install.inetd.conf
+	mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
+	HUPNEEDED='y'
+    else
+	grep -s gds_db /etc/inetd.conf  > /dev/null 2>&1
+	if test $? != 0 ; then
+	    HUPNEEDED='y'
+            cp /etc/inetd.conf /etc/inetd.conf.fbsave
+            sed -e
+			"s/\/usr\/interbase/\/Library\/Frameworks\/Firebird.framework\/Resources/g" "$FB_FW/Resources/English.lproj/var/inetd.conf.isc" > /etc/.fb.inetd.conf.entry
+	    cat /etc/inetd.conf /etc/.fb.inetd.conf.entry > /etc/.interbase.temp.install.inetd.conf
+	    mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
+            rm -f /etc/.fb.inetd.conf.entry
+	fi
+    fi
+fi
+
+if grep -x "localhost" /etc/hosts.equiv > /dev/null; then                
+	echo -n
+else     
+    echo "localhost" >> /etc/hosts.equiv                
+fi    
+if grep -x "localhost.localdomain" /etc/hosts.equiv > /dev/null; then    
+	echo -n
+else     
+    echo "localhost.localdomain" >> /etc/hosts.equiv    
+fi    
+
+
+if [ "$HUPNEEDED" = 'y' ]
+then
+    INETPID=`ps -axe | grep inetd | awk '{print $1}'`
+    kill -HUP `cat /var/run/inetd.conf`
+fi
+
+
+###
+# And last but not least, start the server
+if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+	#echo Starting Firebird Database Server
+	/Library/StartupItems/Firebird.startup/Firebird start
+fi

@@ -1,5 +1,72 @@
 # EKU: taken from Makefile.in.firebird
 
+ROOT=..
+
+include     $(ROOT)/gen/make.defaults
+include		$(ROOT)/gen/make.platform
+include     $(ROOT)/gen/make.rules
+include     $(ROOT)/gen/make.shared.variables
+
+@SET_MAKE@
+
+DIR = $(ROOT)/gen/firebird/installer_scratch
+
+export BLOCKSIZE
+
+
+all: package
+
+package packages dist: INST_NM=Firebird
+package packages dist: BLOCKSIZE=1048576
+package packages dist:
+	mkdir -p $(DIR)/t
+	mv $(ROOT)/gen/firebird/frameworks/FirebirdCS.framework \
+			$(DIR)/t/Firebird.framework
+	sh -c 'cd $(DIR)/t; pax -w -f ../Archive.pax .; mkbom . ../Archive.bom'
+	gzip $(DIR)/Archive.pax
+	mv $(DIR)/t/Firebird.framework \
+		$(ROOT)/gen/firebird/frameworks/FirebirdCS.framework
+	mkdir -p $(DIR)/$(INST_NM).pkg/Contents/Resources
+	mv $(DIR)/Archive.* $(DIR)/$(INST_NM).pkg/Contents
+	cp install/arch-specific/darwin/Info.plist $(DIR)/$(INST_NM).pkg/Contents
+	cp install/arch-specific/darwin/PkgInfo $(DIR)/$(INST_NM).pkg/Contents
+	cp install/arch-specific/darwin/Description.plist \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources
+	cp install/arch-specific/darwin/install-script \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/postinstall
+	cp install/arch-specific/darwin/install-script \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/postupgrade
+	cp install/arch-specific/darwin/preinstall-script \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/preinstall
+	cp install/arch-specific/darwin/preupgrade-script \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/preupgrade
+	chmod a+rx $(DIR)/$(INST_NM).pkg/Contents/Resources/pre*
+	chmod a+rx $(DIR)/$(INST_NM).pkg/Contents/Resources/post*
+	cp install/arch-specific/darwin/*.txt \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources
+	ln -s ../Archive.bom $(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).bom
+	ln -s ../Archive.pax.gz \
+				$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).pax.gz
+	cp install/arch-specific/darwin/FB.info \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).info
+	echo "NumFiles 0" > \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	echo -n "InstalledSize " >> \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	du -c $(ROOT)/gen/firebird/frameworks/FirebirdCS.framework \
+			| tail -1 | sed -e 's/[\t ]*total//' \
+			>> $(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	echo "CompressedSize 0" >> \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
+	mv $(DIR)/$(INST_NM).pkg $(ROOT)/gen/firebird
+	rm -rf $(DIR)
+	
+
+install: package
+	
+
+
+
 darwin_installer_common: force
 	$(QUIET_ECHO) "Building Firebird Installer..."
 	mkdir -p $(OBJS)/firebird/installer_tmp
