@@ -162,8 +162,6 @@ public:
 		if (toDelete == 0)
 			return;
 		JrdMemoryPool *perm = toDelete->dbb_permanent;
-		// No ideas, why ~modules() not done?
-		// modules.clear();
 #ifdef SUPERSERVER
 		// Memory pool destruction below decrements memory statistics for 
 		// SuperServer situated in database block we are about to deallocate
