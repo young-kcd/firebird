@@ -112,7 +112,7 @@
 
 					 
 
-		
+				
 
 						
 
@@ -347,6 +347,8 @@ const USHORT  f_xcp_desc = 3  ;
 const USHORT  f_xcp_sys_flag = 4  ;
 const USHORT  f_rol_name = 0  ;
 const USHORT  f_rol_owner = 1  ;
+const USHORT  f_rol_desc = 2  ;
+const USHORT  f_rol_sys_flag = 3  ;
 const USHORT  f_backup_id = 0  ;
 const USHORT  f_backup_time = 1  ;
 const USHORT  f_backup_level = 2  ;
