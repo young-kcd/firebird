@@ -299,8 +299,7 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 	dpb_len = dpb - dpb_array;
 
 /* This code is because 3.3 server does not recognize isc_dpb_overwrite. */
-	if (!isc_attach_database(user_status, 0,
-							 file_name, GDS_REF(temp_db_handle),
+	if (!isc_attach_database(user_status, 0, file_name, &temp_db_handle,
 							 dpb_len, dpb_array) ||
 		user_status[1] != gds_io_error) {
 		if (!user_status[1])

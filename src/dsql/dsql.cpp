@@ -1103,12 +1103,9 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 				MOVD_move(&desc, &offset_parameter->par_desc);
 
 				THREAD_EXIT;
-				s = isc_receive2(GDS_VAL(tdsql->tsql_status),
-							 GDS_REF(request->req_handle),
-							 message->msg_number,
-							 message->msg_length,
-							 GDS_VAL(message->msg_buffer),
-							 0, direction, offset);
+				s = isc_receive2(tdsql->tsql_status, &request->req_handle,
+								 message->msg_number, message->msg_length,
+								 message->msg_buffer, 0, direction, offset);
 				THREAD_ENTER;
 
 				if (s) {
@@ -1137,11 +1134,9 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 				(USHORT *) (dsql_msg + (SLONG) null->par_user_desc.dsc_address);
 			UCHAR* buffer = dsql_msg + (SLONG) parameter->par_user_desc.dsc_address;
 			THREAD_EXIT;
-			s = isc_get_segment(tdsql->tsql_status,
-							GDS_REF(request->req_handle),
-							GDS_VAL(ret_length),
-							parameter->par_user_desc.dsc_length,
-							reinterpret_cast<char*>(GDS_VAL(buffer)));
+			s = isc_get_segment(tdsql->tsql_status, &request->req_handle,
+							ret_length, parameter->par_user_desc.dsc_length,
+							reinterpret_cast<char*>(buffer));
 			THREAD_ENTER;
 			if (!s) {
 				RESTORE_THREAD_DATA;
@@ -1160,10 +1155,9 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 		}
 
 		THREAD_EXIT;
-		s = isc_receive(GDS_VAL(tdsql->tsql_status),
-					GDS_REF(request->req_handle),
-					message->msg_number,
-					message->msg_length, GDS_VAL(message->msg_buffer), 0);
+		s = isc_receive(tdsql->tsql_status, &request->req_handle,
+						message->msg_number, message->msg_length, 
+						message->msg_buffer, 0);
 		THREAD_ENTER;
 
 		if (s) {
@@ -1314,10 +1308,8 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 				reinterpret_cast<SCHAR*>(
 					dsql_msg + (SLONG) parameter->par_user_desc.dsc_address);
 			THREAD_EXIT;
-			s = isc_put_segment(tdsql->tsql_status,
-							GDS_REF(request->req_handle),
-							parameter->par_user_desc.dsc_length,
-							GDS_VAL(buffer));
+			s = isc_put_segment(tdsql->tsql_status, &request->req_handle,
+							parameter->par_user_desc.dsc_length, buffer);
 			THREAD_ENTER;
 			if (s)
 				punt();
@@ -2570,9 +2562,7 @@ static void cleanup_database(FRBRD ** db_handle, SLONG flag)
 			for (int i = 0; i < irq_MAX; i++)
 				if (dbb->dbb_requests[i])
 					isc_release_request(user_status,
-										reinterpret_cast <
-										void
-										**>(GDS_REF(dbb->dbb_requests[i])));
+								reinterpret_cast <void**>(&dbb->dbb_requests[i]));
 			THREAD_ENTER;
 		}
 		HSHD_finish(dbb);
@@ -2662,11 +2652,9 @@ static void close_cursor( DSQL_REQ request)
 		THREAD_EXIT; //ttt
 		if (request->req_type == REQ_GET_SEGMENT ||
 			request->req_type == REQ_PUT_SEGMENT)
-				isc_close_blob(status_vector,
-							   GDS_REF(request->req_handle));
+				isc_close_blob(status_vector, &request->req_handle);
 		else
-			isc_unwind_request(status_vector,
-							   GDS_REF(request->req_handle), 0);
+			isc_unwind_request(status_vector, &request->req_handle, 0);
 		THREAD_ENTER;
 	}
 
@@ -2823,11 +2811,9 @@ static void execute_blob(	DSQL_REQ		request,
 		}
 		THREAD_EXIT;
 		s = isc_open_blob2(tdsql->tsql_status,
-						   GDS_REF(request->req_dbb->dbb_database_handle),
-						   GDS_REF(request->req_trans),
-						   GDS_REF(request->req_handle),
-						   GDS_VAL(blob_id),
-						   bpb_length,
+						   &request->req_dbb->dbb_database_handle,
+						   &request->req_trans, &request->req_handle,
+						   blob_id, bpb_length,
 						   reinterpret_cast<UCHAR*>(bpb));
 		THREAD_ENTER;
 		if (s) {
@@ -2841,11 +2827,9 @@ static void execute_blob(	DSQL_REQ		request,
 		memset(blob_id, 0, sizeof(GDS__QUAD));
 		THREAD_EXIT;
 		s = isc_create_blob2(tdsql->tsql_status,
-							 GDS_REF(request->req_dbb->dbb_database_handle),
-							 GDS_REF(request->req_trans),
-							 GDS_REF(request->req_handle),
-							 GDS_VAL(blob_id), bpb_length,
-							 reinterpret_cast<char*>(bpb));
+							 &request->req_dbb->dbb_database_handle,
+							 &request->req_trans, &request->req_handle,
+							 blob_id, bpb_length, reinterpret_cast<char*>(bpb));
 		THREAD_ENTER;
 		if (s) {
 			punt();
@@ -4448,10 +4432,9 @@ static DSQL_REQ prepare(
 	}
 
 	THREAD_EXIT;
-	status = isc_compile_request(GDS_VAL(tdsql->tsql_status),
-								 GDS_REF(request->req_dbb->dbb_database_handle),
-								 GDS_REF(request->req_handle),
-								 length,
+	status = isc_compile_request(tdsql->tsql_status,
+								 &request->req_dbb->dbb_database_handle,
+								 &request->req_handle, length,
 								 request->req_blr_string->str_data);
 	THREAD_ENTER;
 
@@ -4619,8 +4602,7 @@ static void release_request(DSQL_REQ request, USHORT top_level)
 
 	if (request->req_handle) {
 		THREAD_EXIT;
-		isc_release_request(status_vector,
-							GDS_REF(request->req_handle));
+		isc_release_request(status_vector, &request->req_handle);
 		THREAD_ENTER;
 	}
 

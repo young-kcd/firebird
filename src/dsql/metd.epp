@@ -598,7 +598,7 @@ USHORT METD_get_charset_bpc (DSQL_REQ request,
 
      THREAD_EXIT;
     *************/
-    isc_release_request (gds_status, GDS_REF (handle));
+    isc_release_request (gds_status, &handle);
     THREAD_ENTER;
 
     return bpc;
@@ -670,7 +670,7 @@ gds__release request ()
 THREAD_EXIT;
 *************/
 
-	isc_release_request(gds_status, GDS_REF(handle));
+	isc_release_request(gds_status, &handle);
 	THREAD_ENTER;
 
 	if (dbb->dbb_dfl_charset == NULL)

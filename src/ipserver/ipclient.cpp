@@ -222,10 +222,10 @@ static HANDLE server_process_handle = 0;
 
 ISC_STATUS GDS_ATTACH_DATABASE(
 						   ISC_STATUS * user_status,
-						   USHORT GDS_VAL(file_length),
+						   USHORT file_length,
 						   SCHAR * file_name,
 IDB * handle,
-USHORT GDS_VAL(dpb_length), SCHAR * dpb, SCHAR * expanded_filename)
+USHORT dpb_length, SCHAR * dpb, SCHAR * expanded_filename)
 {
 /**************************************
  *
@@ -252,7 +252,7 @@ USHORT GDS_VAL(dpb_length), SCHAR * dpb, SCHAR * expanded_filename)
 	/* make sure handle is valid (should be null coming in) */
 
 	NULL_CHECK(handle, isc_bad_db_handle);
-	if (!(l = GDS_VAL(file_length)))
+	if (!(l = file_length))
 		l = strlen(file_name);
 
 	/* remote names should not go through here */
@@ -309,9 +309,9 @@ USHORT GDS_VAL(dpb_length), SCHAR * dpb, SCHAR * expanded_filename)
 
 ISC_STATUS GDS_BLOB_INFO(ISC_STATUS * user_status,
 					 IBL * blob,
-					 USHORT GDS_VAL(item_length),
+					 USHORT item_length,
 					 UCHAR * items,
-					 USHORT GDS_VAL(buffer_length), UCHAR * buffer)
+					 USHORT buffer_length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -605,7 +605,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, ITR * itr_handle)
 
 ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
 				   IDB * db_handle,
-				   IRQ * req_handle, USHORT GDS_VAL(blr_length), UCHAR * blr)
+				   IRQ * req_handle, USHORT blr_length, UCHAR * blr)
 {
 /**************************************
  *
@@ -724,7 +724,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 						IDB * db_handle,
 						ITR * itr_handle,
 						IBL * blob_handle,
-						BID blob_id, USHORT GDS_VAL(bpb_length), UCHAR * bpb)
+						BID blob_id, USHORT bpb_length, UCHAR * bpb)
 {
 /**************************************
  *
@@ -788,12 +788,12 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
-						   USHORT GDS_VAL(file_length),
+						   USHORT file_length,
 						   SCHAR * file_name,
 						   IDB * handle,
-						   USHORT GDS_VAL(dpb_length),
+						   USHORT dpb_length,
 						   SCHAR * dpb,
-						   SSHORT GDS_VAL(db_type), SCHAR * expanded_filename)
+						   SSHORT db_type, SCHAR * expanded_filename)
 {
 /**************************************
  *
@@ -819,7 +819,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 	/* handle must be null coming in */
 
 	NULL_CHECK(handle, isc_bad_db_handle);
-	if (!(l = GDS_VAL(file_length)))
+	if (!(l = file_length))
 		l = strlen(file_name);
 
 	/* remote names should not go through here */
@@ -848,7 +848,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 		IPS_C_IN(comm, ips_name, IPS_CREATE_NAME, 
 				 expanded_filename, strlen(expanded_filename));
 	}
-	IPS_C_IN(comm, ips_dpb, IPS_CREATE_DPB, dpb, GDS_VAL(dpb_length));
+	IPS_C_IN(comm, ips_dpb, IPS_CREATE_DPB, dpb, dpb_length);
 	IPS_C_IN(comm, ips_expanded, IPS_CREATE_EXPANDED,
 			 expanded_filename, strlen(expanded_filename));
 
@@ -873,9 +873,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS * user_status,
 						 IDB * handle,
-						 USHORT GDS_VAL(item_length),
+						 USHORT item_length,
 						 UCHAR * items,
-						 USHORT GDS_VAL(buffer_length), UCHAR * buffer)
+						 USHORT buffer_length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -920,7 +920,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_DDL(ISC_STATUS * user_status,
 			   IDB * db_handle,
-			   ITR * itr_handle, USHORT GDS_VAL(length), UCHAR * msg)
+			   ITR * itr_handle, USHORT length, UCHAR * msg)
 {
 /**************************************
  *
@@ -1920,7 +1920,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS * user_status,
 ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 					   IBL * blob_handle,
 					   USHORT * length,
-					   USHORT GDS_VAL(buffer_length), UCHAR * buffer)
+					   USHORT buffer_length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -1971,11 +1971,11 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 					 IDB * db_handle,
 					 ITR * tra_handle,
 					 BID array_id,
-					 USHORT GDS_VAL(sdl_length),
+					 USHORT sdl_length,
 					 UCHAR * sdl,
-					 USHORT GDS_VAL(param_length),
+					 USHORT param_length,
 					 UCHAR * param,
-					 SLONG GDS_VAL(slice_length),
+					 SLONG slice_length,
 					 UCHAR * slice, SLONG * return_length)
 {
 /**************************************
@@ -2100,7 +2100,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
 					  IDB * db_handle,
 					  ITR * itr_handle,
 					  IBL * blob_handle,
-					  BID blob_id, USHORT GDS_VAL(bpb_length), UCHAR * bpb)
+					  BID blob_id, USHORT bpb_length, UCHAR * bpb)
 {
 /**************************************
  *
@@ -2164,7 +2164,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 				   ITR * itr_handle,
-				   USHORT GDS_VAL(buffer_length), UCHAR * buffer)
+				   USHORT buffer_length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -2209,7 +2209,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
 					   IBL * blob_handle,
-					   USHORT GDS_VAL(buffer_length), UCHAR * buffer)
+					   USHORT buffer_length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -2257,11 +2257,11 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 					 IDB * db_handle,
 					 ITR * tra_handle,
 					 BID array_id,
-					 USHORT GDS_VAL(sdl_length),
+					 USHORT sdl_length,
 					 UCHAR * sdl,
-					 USHORT GDS_VAL(param_length),
+					 USHORT param_length,
 					 UCHAR * param,
-					 SLONG GDS_VAL(slice_length), UCHAR * slice)
+					 SLONG slice_length, UCHAR * slice)
 {
 /**************************************
  *
@@ -2320,8 +2320,8 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
 					  IDB * handle,
 					  SLONG * id,
-					  USHORT GDS_VAL(length),
-					  UCHAR * events, void (GDS_VAL(*ast)) (), void *arg)
+					  USHORT length,
+					  UCHAR * events, void (*ast) (), void *arg)
 {
 /**************************************
  *
@@ -2434,9 +2434,9 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 				   IRQ * req_handle,
-				   SSHORT GDS_VAL(msg_type),
-				   USHORT GDS_VAL(msg_length),
-				   UCHAR * msg, SSHORT GDS_VAL(level)
+				   SSHORT msg_type,
+				   USHORT msg_length,
+				   UCHAR * msg, SSHORT level
 #ifdef SCROLLABLE_CURSORS
 				   , USHORT direction, ULONG offset
 #endif
@@ -2492,7 +2492,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
 					 IDB * db_handle,
-					 ITR * itr_handle, USHORT GDS_VAL(length), UCHAR * id)
+					 ITR * itr_handle, USHORT length, UCHAR * id)
 {
 /**************************************
  *
@@ -2518,7 +2518,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
 	NULL_CHECK(itr_handle, isc_bad_trans_handle);
 	idb = *db_handle;
 	CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
-	l = GDS_VAL(length);
+	l = length;
 
 	/* point to communications area */
 
@@ -2587,10 +2587,10 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, IRQ * req_handle)
 
 ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
 						IRQ * request,
-						USHORT GDS_VAL(level),
-						USHORT GDS_VAL(item_length),
+						USHORT level,
+						USHORT item_length,
 						UCHAR * items,
-						USHORT GDS_VAL(buffer_length), UCHAR * buffer)
+						USHORT buffer_length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -2728,8 +2728,8 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, ITR * itr_handle)
 
 ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 					 IBL * blob_handle,
-					 SSHORT GDS_VAL(mode),
-					 SLONG GDS_VAL(offset), SLONG * result)
+					 SSHORT mode,
+					 SLONG offset, SLONG * result)
 {
 /**************************************
  *
@@ -2776,9 +2776,9 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 				IRQ * req_handle,
-				SSHORT GDS_VAL(msg_type),
-				USHORT GDS_VAL(msg_length),
-				UCHAR * msg, SSHORT GDS_VAL(level))
+				SSHORT msg_type,
+				USHORT msg_length,
+				UCHAR * msg, SSHORT level)
 {
 /**************************************
  *
@@ -2852,7 +2852,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 	/* handle should be null coming in */
 
 	NULL_CHECK(handle, isc_bad_svc_handle);
-	if (!(l = GDS_VAL(service_length)))
+	if (!(l = service_length))
 		l = strlen(service_name);
 
 	/* initiate connection */
@@ -3044,7 +3044,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_START(ISC_STATUS * user_status,
 				 IRQ * req_handle,
-				 ITR * itr_handle, SSHORT GDS_VAL(level))
+				 ITR * itr_handle, SSHORT level)
 {
 /**************************************
  *
@@ -3094,9 +3094,9 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 						  IRQ * req_handle,
 						  ITR * itr_handle,
-						  SSHORT GDS_VAL(msg_type),
-						  USHORT GDS_VAL(msg_length),
-						  UCHAR * msg, SSHORT GDS_VAL(level))
+						  SSHORT msg_type,
+						  USHORT msg_length,
+						  UCHAR * msg, SSHORT level)
 {
 /**************************************
  *
@@ -3148,7 +3148,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 						  ITR * itr_handle,
-						  SSHORT GDS_VAL(count), int **vector)
+						  SSHORT count, int **vector)
 {
 /**************************************
  *
@@ -3191,7 +3191,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	   ONLY case where normal buffering is not done, so we'd better
 	   never have enough databases to exceed 8k worth of space */
 
-	for (i = 0; i < GDS_VAL(count); i++) {
+	for (i = 0; i < count; i++) {
 
 		/* first idb pointer already acquired above */
 
@@ -3226,7 +3226,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
-							 ITR * itr_handle, SSHORT GDS_VAL(count), ...)
+							 ITR * itr_handle, SSHORT count, ...)
 {
 /**************************************
  *
@@ -3269,7 +3269,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	   ONLY case where normal buffering is not done, so we'd better
 	   never have enough databases to exceed 8k worth of space */
 
-	for (i = 0; i < GDS_VAL(count); i++) {
+	for (i = 0; i < count; i++) {
 
 		/* the first pointer has already been gotten above */
 
@@ -3305,9 +3305,9 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 
 ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
 							ITR * transaction,
-							USHORT GDS_VAL(item_length),
+							USHORT item_length,
 							UCHAR * items,
-							USHORT GDS_VAL(buffer_length), UCHAR * buffer)
+							USHORT buffer_length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -3408,7 +3408,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
-				  IRQ * req_handle, SSHORT GDS_VAL(level))
+				  IRQ * req_handle, SSHORT level)
 {
 /**************************************
  *

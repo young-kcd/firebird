@@ -965,18 +965,14 @@ static void attach_database( ICC icc, P_OP operation)
 
 	handle = NULL;
 	if (operation == op_attach)
-		result = GDS_ATTACH_DATABASE(status_vector,
-									 file_length,
+		result = GDS_ATTACH_DATABASE(status_vector, file_length,
 									 reinterpret_cast < char *>(file_name),
-									 GDS_REF(handle),
-									 dpb_length,
+									 &handle, dpb_length,
 									 reinterpret_cast < char *>(dpb));
 	else
-		result = GDS_CREATE_DATABASE(status_vector,
-									 file_length,
+		result = GDS_CREATE_DATABASE(status_vector, file_length,
 									 reinterpret_cast < char *>(file_name),
-									 GDS_REF(handle),
-									 dpb_length,
+									 &handle, dpb_length,
 									 reinterpret_cast < char *>(dpb), 0);
 
 	/* allocate structure and return handle */
@@ -1028,7 +1024,7 @@ static void cancel_events( ICC icc)
 
 	/* perform operation, return response and remove event */
 
-	GDS_CANCEL_EVENTS(status_vector, GDS_REF(idb->idb_handle), GDS_REF(id));
+	GDS_CANCEL_EVENTS(status_vector, &idb->idb_handle, &id);
 	for (event = idb->idb_events; event; event = event->ivnt_next)
 	{
 		if (event->ivnt_ast && event->ivnt_id == id)
@@ -1146,11 +1142,8 @@ static void compile( ICC icc)
 	/* compile and get handle */
 
 	handle = NULL;
-	result = GDS_COMPILE(status_vector,
-						 GDS_REF(idb->idb_handle),
-						 GDS_REF(handle),
-						 blr_length,
-						 reinterpret_cast < char *>(GDS_VAL(blr)));
+	result = GDS_COMPILE(status_vector, &idb->idb_handle, &handle,
+						 blr_length, reinterpret_cast < char *>(blr));
 
 	/* create data structure and return handle */
 
@@ -1214,10 +1207,8 @@ static void ddl( ICC icc)
 
 	/* perform operation and return response */
 
-	GDS_DDL(status_vector,
-			GDS_REF(idb->idb_handle),
-			GDS_REF(transaction->itr_handle),
-			length, reinterpret_cast < char *>(GDS_VAL(buffer)));
+	GDS_DDL(status_vector, &idb->idb_handle, &transaction->itr_handle,
+			length, reinterpret_cast < char *>(buffer));
 	send_response(icc, status_vector);
 }
 
@@ -1321,9 +1312,9 @@ static void end_blob( ICC icc, P_OP operation)
 	/* perform operation, send response and free resources */
 
 	if (operation == op_close_blob)
-		GDS_CLOSE_BLOB(status_vector, GDS_REF(blob->ibl_handle));
+		GDS_CLOSE_BLOB(status_vector, &blob->ibl_handle);
 	else
-		GDS_CANCEL_BLOB(status_vector, GDS_REF(blob->ibl_handle));
+		GDS_CANCEL_BLOB(status_vector, &blob->ibl_handle);
 	send_response(icc, status_vector);
 	release_blob(blob);
 }
@@ -1358,7 +1349,7 @@ static void end_database( ICC icc)
 
 	/* detach database, send response and free resources */
 
-	result = GDS_DETACH(status_vector, GDS_REF(idb->idb_handle));
+	result = GDS_DETACH(status_vector, &idb->idb_handle);
 	send_response(icc, status_vector);
 	if (!result)
 	{
@@ -1411,7 +1402,7 @@ static void end_request( ICC icc)
 
 	/* process call, respond and free resources */
 
-	GDS_RELEASE_REQUEST(status_vector, GDS_REF(request->irq_handle));
+	GDS_RELEASE_REQUEST(status_vector, &request->irq_handle);
 	send_response(icc, status_vector);
 	release_request(request);
 }
@@ -1510,33 +1501,28 @@ static void end_transaction( ICC icc, P_OP operation)
 	switch (operation)
 	{
 	case op_commit:
-		result = GDS_COMMIT(status_vector, GDS_REF(transaction->itr_handle));
+		result = GDS_COMMIT(status_vector, &transaction->itr_handle);
 		if (!result)
 			release_transaction(transaction);
 		break;
 
 	case op_rollback:
-		result = GDS_ROLLBACK(status_vector,
-							  GDS_REF(transaction->itr_handle));
+		result = GDS_ROLLBACK(status_vector, &transaction->itr_handle);
 		if (!result)
 			release_transaction(transaction);
 		break;
 
 	case op_commit_retaining:
-		result = GDS_COMMIT_RETAINING(status_vector,
-									  GDS_REF(transaction->itr_handle));
+		result = GDS_COMMIT_RETAINING(status_vector, &transaction->itr_handle);
 		break;
 
 	case op_rollback_retaining:
-		result = GDS_ROLLBACK_RETAINING(status_vector,
-										GDS_REF(transaction->itr_handle));
+		result = GDS_ROLLBACK_RETAINING(status_vector, &transaction->itr_handle);
 		break;
 
 	case op_prepare2:
-		result = GDS_PREPARE2(status_vector,
-							  GDS_REF(transaction->itr_handle),
-							  msg_length,
-							  reinterpret_cast<UCHAR*>(GDS_VAL(msg)));
+		result = GDS_PREPARE2(status_vector, &transaction->itr_handle,
+							  msg_length, reinterpret_cast<UCHAR*>(msg));
 		if (!result)
 			transaction->itr_flags |= ITR_limbo;
 		break;
@@ -1988,11 +1974,8 @@ static void get_segment( ICC icc)
 	 */
 
 	length = 0;
-	GDS_GET_SEGMENT(status_vector,
-					GDS_REF(blob->ibl_handle),
-					GDS_REF(length),
-					buffer_length,
-					reinterpret_cast < char *>(GDS_VAL(buffer)));
+	GDS_GET_SEGMENT(status_vector, &blob->ibl_handle, &length, buffer_length,
+					reinterpret_cast < char *>(buffer));
 	if (!transfer_buffers(icc, comm))
 		return;
 	ips->ips_length = length;
@@ -2084,16 +2067,11 @@ static void get_slice( ICC icc)
 
 	/* get and return slice */
 
-	GDS_GET_SLICE(status_vector,
-				  GDS_REF(idb->idb_handle),
-				  GDS_REF(transaction->itr_handle),
-				  (GDS_QUAD *) & array_id,
-				  sdl_length,
-				  reinterpret_cast < char *>(sdl),
-				  param_length,
-				  reinterpret_cast < long *>(params),
-				  slice_length,
-				  slice, reinterpret_cast < long *>(GDS_REF(return_length)));
+	GDS_GET_SLICE(status_vector, &idb->idb_handle, &transaction->itr_handle,
+				  (GDS_QUAD *) &array_id, sdl_length,
+				  reinterpret_cast < char *>(sdl), param_length,
+				  reinterpret_cast < long *>(params), slice_length,
+				  slice, reinterpret_cast < long *>(&return_length));
 	ips->ips_length = return_length;
 	send_response(icc, status_vector);
 	if (slice)
@@ -2185,46 +2163,33 @@ static void info( ICC icc, P_OP operation)
 	case op_info_database:
 		idb = (IDB) handle;
 		CHECK_HANDLE(idb, type_idb, isc_bad_db_handle);
-		GDS_DATABASE_INFO(status_vector,
-						  GDS_REF(idb->idb_handle),
-						  item_length,
-						  reinterpret_cast < char *>(items),
-						  buffer_length,
-						  reinterpret_cast < char *>(GDS_VAL(buffer)));
+		GDS_DATABASE_INFO(status_vector, &idb->idb_handle,
+						  item_length, reinterpret_cast < char *>(items),
+						  buffer_length, reinterpret_cast < char *>(buffer));
 		break;
 
 	case op_info_blob:
 		blob = (IBL) handle;
 		CHECK_HANDLE(blob, type_ibl, isc_bad_segstr_handle);
-		GDS_BLOB_INFO(status_vector,
-					  GDS_REF(blob->ibl_handle),
-					  item_length,
-					  reinterpret_cast < char *>(items),
-					  buffer_length,
-					  reinterpret_cast < char *>(GDS_VAL(buffer)));
+		GDS_BLOB_INFO(status_vector, &blob->ibl_handle, item_length,
+					  reinterpret_cast < char *>(items), buffer_length,
+					  reinterpret_cast < char *>(buffer));
 		break;
 
 	case op_info_request:
 		request = (IRQ) handle;
 		CHECK_HANDLE(request, type_irq, isc_bad_req_handle);
-		GDS_REQUEST_INFO(status_vector,
-						 GDS_REF(request->irq_handle),
-						 incarnation,
-						 item_length,
-						 reinterpret_cast < char *>(items),
-						 buffer_length,
-						 reinterpret_cast < char *>(GDS_VAL(buffer)));
+		GDS_REQUEST_INFO(status_vector, &request->irq_handle, incarnation,
+						 item_length, reinterpret_cast < char *>(items),
+						 buffer_length, reinterpret_cast < char *>(buffer));
 		break;
 
 	case op_info_transaction:
 		transaction = (ITR) handle;
 		CHECK_HANDLE(transaction, type_itr, isc_bad_trans_handle);
-		GDS_TRANSACTION_INFO(status_vector,
-							 GDS_REF(transaction->itr_handle),
-							 item_length,
-							 reinterpret_cast < char *>(items),
-							 buffer_length,
-							 reinterpret_cast < char *>(GDS_VAL(buffer)));
+		GDS_TRANSACTION_INFO(status_vector, &transaction->itr_handle,
+							 item_length, reinterpret_cast < char *>(items),
+							 buffer_length, reinterpret_cast < char *>(buffer));
 		break;
 
 	case op_service_info:
@@ -2470,17 +2435,15 @@ static void open_blob( ICC icc, P_OP op)
 	case op_open_blob:
 		blob_id.bid_relation_id = ips->ips_rel_id;
 		blob_id.bid_number = ips->ips_bid_number;
-		result = GDS_OPEN_BLOB(status_vector,
-							   GDS_REF(idb->idb_handle),
-							   GDS_REF(transaction->itr_handle),
-							   GDS_REF(handle), (GDS_QUAD *) & blob_id);
+		result = GDS_OPEN_BLOB(status_vector, &idb->idb_handle,
+							   &transaction->itr_handle, &handle, 
+							   (GDS_QUAD *) & blob_id);
 		break;
 
 	case op_create_blob:
-		result = GDS_CREATE_BLOB(status_vector,
-								 GDS_REF(idb->idb_handle),
-								 GDS_REF(transaction->itr_handle),
-								 GDS_REF(handle), (GDS_QUAD *) & blob_id);
+		result = GDS_CREATE_BLOB(status_vector, &idb->idb_handle,
+								 &transaction->itr_handle,
+								 &handle, (GDS_QUAD *) & blob_id);
 		ips->ips_rel_id = blob_id.bid_relation_id;
 		ips->ips_bid_number = blob_id.bid_number;
 		break;
@@ -2488,21 +2451,16 @@ static void open_blob( ICC icc, P_OP op)
 	case op_open_blob2:
 		blob_id.bid_relation_id = ips->ips_rel_id;
 		blob_id.bid_number = ips->ips_bid_number;
-		result = GDS_OPEN_BLOB2(status_vector,
-								GDS_REF(idb->idb_handle),
-								GDS_REF(transaction->itr_handle),
-								GDS_REF(handle),
+		result = GDS_OPEN_BLOB2(status_vector, &idb->idb_handle,
+								&transaction->itr_handle, &handle,
 								(GDS_QUAD *) & blob_id,
 								bpb_length, reinterpret_cast<UCHAR*>(bpb));
 		break;
 
 	case op_create_blob2:
-		result = GDS_CREATE_BLOB2(status_vector,
-								  GDS_REF(idb->idb_handle),
-								  GDS_REF(transaction->itr_handle),
-								  GDS_REF(handle),
-								  (GDS_QUAD *) & blob_id,
-								  bpb_length,
+		result = GDS_CREATE_BLOB2(status_vector, &idb->idb_handle,
+								  &transaction->itr_handle, &handle,
+								  (GDS_QUAD *) & blob_id, bpb_length,
 								  reinterpret_cast < char *>(bpb));
 		ips->ips_rel_id = blob_id.bid_relation_id;
 		ips->ips_bid_number = blob_id.bid_number;
@@ -2677,10 +2635,8 @@ static void put_segment( ICC icc)
 
 	/* put the segment into the database */
 
-	GDS_PUT_SEGMENT(status_vector,
-					GDS_REF(blob->ibl_handle),
-					buffer_length,
-					reinterpret_cast < char *>(GDS_VAL(buffer)));
+	GDS_PUT_SEGMENT(status_vector, &blob->ibl_handle, buffer_length,
+					reinterpret_cast < char *>(buffer));
 	send_response(icc, status_vector);
 }
 
@@ -2769,15 +2725,10 @@ static void put_slice( ICC icc)
 
 	/* put the slice into the database */
 
-	GDS_PUT_SLICE(status_vector,
-				  GDS_REF(idb->idb_handle),
-				  GDS_REF(transaction->itr_handle),
-				  (GDS_QUAD *) & array_id,
-				  sdl_length,
-				  reinterpret_cast < char *>(sdl),
-				  param_length,
-				  reinterpret_cast < long *>(params),
-				  slice_length, GDS_VAL(slice));
+	GDS_PUT_SLICE(status_vector, &idb->idb_handle, &transaction->itr_handle,
+				  (GDS_QUAD *) & array_id, sdl_length,
+				  reinterpret_cast < char *>(sdl), param_length,
+				  reinterpret_cast < long *>(params), slice_length, slice);
 	ips->ips_rel_id = array_id.bid_relation_id;
 	ips->ips_number = array_id.bid_number;
 	send_response(icc, status_vector);
@@ -2852,13 +2803,10 @@ static void que_events( ICC icc)
 
 	/* queue the event and return id */
 
-	result = GDS_QUE_EVENTS(status_vector,
-							GDS_REF(idb->idb_handle),
-							GDS_REF(event->ivnt_handle),
-							length,
-							reinterpret_cast<char*>(GDS_VAL(events)),
+	result = GDS_QUE_EVENTS(status_vector, &idb->idb_handle, &event->ivnt_handle,
+							length, reinterpret_cast<char*>(events),
 							reinterpret_cast < void (*)() > (event_ast),
-							GDS_VAL(event));
+							event);
 	if (!result)
 		ips->ips_event_id = event->ivnt_handle;
 	else
@@ -2916,9 +2864,8 @@ static void receive_msg( ICC icc)
 
 	/* receive message and send response */
 
-	GDS_RECEIVE(status_vector,
-				GDS_REF(request->irq_handle),
-				number, length, GDS_VAL(buffer), level
+	GDS_RECEIVE(status_vector, &request->irq_handle,
+				number, length, buffer, level
 #ifdef SCROLLABLE_CURSORS
 				, direction, offset
 #endif
@@ -2971,10 +2918,8 @@ static void reconnect( ICC icc)
 
 /* reconnect transaction and return id */
 
-	if (!GDS_RECONNECT(status_vector,
-					   GDS_REF(idb->idb_handle),
-					   GDS_REF(handle),
-					   length, reinterpret_cast < char *>(GDS_VAL(buffer))))
+	if (!GDS_RECONNECT(status_vector, &idb->idb_handle, &handle,
+					   length, reinterpret_cast < char *>(buffer)))
 	{
 		if (transaction = make_transaction(idb, handle))
 		{
@@ -2984,7 +2929,7 @@ static void reconnect( ICC icc)
 		else
 		{
 			gds__handle_cleanup(status_vector,
-								(FRBRD **) GDS_REF(handle));
+								(FRBRD **) &handle);
 			NOT_NULL(transaction, TRUE);
 		}
 	}
@@ -3169,8 +3114,7 @@ static void seek_blob( ICC icc)
 
 	/* seek blob and return result */
 
-	GDS_SEEK_BLOB(status_vector,
-				  GDS_REF(blob->ibl_handle), mode, offset, GDS_REF(result));
+	GDS_SEEK_BLOB(status_vector, &blob->ibl_handle, mode, offset, &result);
 	ips->ips_result = result;
 	send_response(icc, status_vector);
 }
@@ -3271,9 +3215,8 @@ static void send_msg( ICC icc)
 
 	/* send message */
 
-	GDS_SEND(status_vector,
-			 GDS_REF(request->irq_handle),
-			 number, length, GDS_VAL(buffer), level);
+	GDS_SEND(status_vector, &request->irq_handle, number, length, &buffer, 
+			 level);
 	send_response(icc, status_vector);
 }
 
@@ -3732,18 +3675,15 @@ static void shutdown_attachments( ICC icc)
 			while (idb->idb_transactions)
 			{
 				if (!(idb->idb_transactions->itr_flags & ITR_limbo))
-					GDS_ROLLBACK(status_vector,
-								 GDS_REF(idb->idb_transactions->itr_handle));
+					GDS_ROLLBACK(status_vector, &idb->idb_transactions->itr_handle);
 				else
 					gds__handle_cleanup(status_vector,
-										(FRBRD **) GDS_REF(idb->
-																 idb_transactions->
-																 itr_handle));
+									(FRBRD **) &idb->idb_transactions->itr_handle);
 
 				release_transaction(idb->idb_transactions);
 			}
 
-			GDS_DETACH(status_vector, GDS_REF(idb->idb_handle));
+			GDS_DETACH(status_vector, &idb->idb_handle);
 			while (idb->idb_events)
 				release_event(idb->idb_events);
 
@@ -3802,9 +3742,8 @@ static void start( ICC icc)
 
 	/* start the request */
 
-	GDS_START(status_vector,
-			  GDS_REF(request->irq_handle),
-			  GDS_REF(transaction->itr_handle), level);
+	GDS_START(status_vector, &request->irq_handle, &transaction->itr_handle,
+			  level);
 	send_response(icc, status_vector);
 }
 
@@ -3856,10 +3795,8 @@ static void start_and_send( ICC icc)
 
 	/* start the request */
 
-	GDS_START_AND_SEND(status_vector,
-					   GDS_REF(request->irq_handle),
-					   GDS_REF(transaction->itr_handle),
-					   number, length, GDS_VAL(buffer), level);
+	GDS_START_AND_SEND(status_vector, &request->irq_handle,
+					   &transaction->itr_handle, number, length, buffer, level);
 	send_response(icc, status_vector);
 }
 
@@ -3918,8 +3855,7 @@ static void start_transaction( ICC icc)
 
 	/* start the transaction and return the handle */
 
-	GDS_START_MULTIPLE(status_vector,
-					   GDS_REF(handle), count, (UCHAR *) vector);
+	GDS_START_MULTIPLE(status_vector, &handle, count, (UCHAR *) vector);
 	transaction = make_transaction(idb, handle);
 	ips->ips_tr_handle = (UCHAR *) transaction;
 	NOT_NULL(transaction, TRUE);
@@ -4092,7 +4028,7 @@ static void unwind( ICC icc)
 
 	/* unwind the request */
 
-	GDS_UNWIND(status_vector, GDS_REF(request->irq_handle), level);
+	GDS_UNWIND(status_vector, &request->irq_handle, level);
 	send_response(icc, status_vector);
 }
 
