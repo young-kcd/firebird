@@ -57,6 +57,7 @@
 
 #include "../jrd/gds.h"
 #include "../jrd/msg.h"
+#include "../jrd/event.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -795,7 +796,7 @@ SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
 
 /* initialize the block with event names and counts */
 
-	*p++ = 1;
+	*p++ = EPB_version1;
 
 	VA_START(ptr, count);
 
@@ -879,7 +880,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 	gds_alloc_flag_unfreed((void *) *result_buffer);
 #endif /* DEBUG_GDS_ALLOC */
 
-	*p++ = 1;
+	*p++ = EPB_version1;
 
 	nb = name_buffer;
 
@@ -958,11 +959,7 @@ SCHAR * result_buffer)
 
 	p++;
 	q++;
-#ifdef EVENTS_WILDCARDING
-	while (p < end && *q) { /* Ignore the detailed part of EPB */
-#else /* EVENTS_WILDCARDING */
 	while (p < end) {
-#endif /* EVENTS_WILDCARDING */
 		/* skip over the event name */
 
 		i = (USHORT) * p++;
