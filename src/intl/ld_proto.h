@@ -24,6 +24,10 @@
 #ifndef _INTL_LD_PROTO_H_
 #define _INTL_LD_PROTO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef DEV_BUILD
 void DLL_EXPORT LD_assert(const SCHAR*, int);
 #endif
@@ -31,5 +35,8 @@ void DLL_EXPORT LD_assert(const SCHAR*, int);
 USHORT DLL_EXPORT LD_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
 USHORT DLL_EXPORT LD2_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* _INTL_LD_PROTO_H_ */
