@@ -2930,7 +2930,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		return node;
 
 	case nod_sort:
-		args += args;
+		args += 2 * args;
 		break;
 
 	default:
@@ -2958,7 +2958,7 @@ static jrd_nod* copy(thread_db* tdbb,
 	// finish off sort
 
 	if (input->nod_type == nod_sort) {
-		for (const jrd_nod* const* const end = arg1 + input->nod_count;
+		for (jrd_nod** end = arg1 + input->nod_count * 2;
 			arg1 < end; arg1++, arg2++)
 		{
 			*arg2 = *arg1;
@@ -4630,7 +4630,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_sort:
 		{
 			jrd_nod** ptr = node->nod_arg;
-			for (const jrd_nod* const* const end = ptr + node->nod_count;
+			for (jrd_nod** end = ptr + node->nod_count;
 				ptr < end; ptr++)
 			{
 				(*ptr)->nod_flags |= nod_value;

@@ -3923,7 +3923,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	{
 		/* generate a sort block which the optimizer will try to map to an index */
 
-		jrd_nod* aggregate = PAR_make_node(tdbb, 2);
+		jrd_nod* aggregate = PAR_make_node(tdbb, 3);
 		aggregate->nod_type = nod_sort;
 		aggregate->nod_count = 1;
 		aggregate->nod_arg[0] = agg_operator->nod_arg[e_asgn_from];
@@ -3931,6 +3931,9 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 		if (agg_operator->nod_type == nod_agg_max) {
 			aggregate->nod_arg[1] = (jrd_nod*) TRUE;
 		}
+		/* 10-Aug-2004. Nickolay Samofatov
+		   Unneeded nulls seem to be skipped somehow. */
+		aggregate->nod_arg[2] = (jrd_nod*) rse_nulls_default;
 		rse->rse_aggregate = aggregate;
 	}
 
@@ -5522,15 +5525,18 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 			continue;
 		}
 		stream_cnt += river1->riv_count;
-		jrd_nod* sort = FB_NEW_RPT(*tdbb->tdbb_default, selected_classes.getCount() * 2) jrd_nod();
+		jrd_nod* sort = FB_NEW_RPT(*tdbb->tdbb_default, selected_classes.getCount() * 3) jrd_nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = selected_classes.getCount();
 		jrd_nod*** selected_class;
 		for (selected_class = selected_classes.begin(), ptr = sort->nod_arg;
 			selected_class < selected_classes.end(); selected_class++) 
 		{
+			ptr[sort->nod_count] = (jrd_nod*) FALSE; // Ascending sort
+			ptr[sort->nod_count * 2] = (jrd_nod*) rse_nulls_default; // Default nulls placement
 			*ptr++ = (*selected_class)[river1->riv_number];
 		}
+
 		RecordSource* rsb =
 			gen_sort(tdbb, opt, &river1->riv_count, NULL, river1->riv_rsb, sort, false);
 		*rsb_tail++ = rsb;
