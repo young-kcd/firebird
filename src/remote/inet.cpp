@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.24 2002-10-24 09:01:31 eku Exp $
+$Id: inet.cpp,v 1.25 2002-10-24 09:13:01 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -64,9 +64,11 @@ $Id: inet.cpp,v 1.24 2002-10-24 09:01:31 eku Exp $
 #include <sys/param.h>
 #endif
 
+
 #ifdef HAVE_GRP_H
 #include <grp.h>
 #endif
+
 
 #ifdef HAVE_SYS_TYPES_H
 #include <pwd.h>
@@ -273,11 +275,9 @@ static struct ipccfg INET_tcp_delay[] =
 };
 #endif
 
-#ifdef DEV_BUILD
+/*
 #define DEBUG	1
-#endif
-
-int inet_loop_in_receive_packet = 1;
+*/
 
 #ifndef REQUESTER
 #ifdef DEBUG
@@ -288,7 +288,7 @@ int inet_loop_in_receive_packet = 1;
 #define TRACE_operations	(1 << 1)	/* bit 1 */
 #define TRACE_summary		(1 << 2)	/* bit 2 */
 
-static int INET_trace = 0; /* TRACE_summary | TRACE_packets | TRACE_operations; */
+static int INET_trace = TRACE_summary | TRACE_packets | TRACE_operations;
 static time_t INET_start_time = 0;
 SLONG INET_force_error = -1;	/* simulate a network error */
 static ULONG INET_count_send = 0;
@@ -958,7 +958,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 
 #ifdef DEBUG
 	{
-		char *p;
+		UCHAR *p;
 		if (INET_trace & TRACE_operations) {
 			ib_fprintf(ib_stdout, "INET_connect\n");
 			ib_fflush(ib_stdout);
@@ -3925,10 +3925,6 @@ static int packet_receive(
 				{
 					return FALSE;
 				}
-				if (inet_loop_in_receive_packet == 0)
-				{
-					return FALSE;
-				}
 				continue;
 			}
 
@@ -4116,7 +4112,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 		INET_count_send++;
 		INET_bytes_send += buffer_length;
 		if (INET_trace & TRACE_packets)
-			packet_print("send", (UCHAR *)buffer, buffer_length, INET_count_send);
+			packet_print("send", buffer, buffer_length, INET_count_send);
 		INET_force_error--;
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
