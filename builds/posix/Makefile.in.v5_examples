@@ -28,7 +28,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.v5_examples,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#  $Id: Makefile.in.v5_examples,v 1.2 2002-09-10 18:22:12 skidder Exp $
 #
 ROOT=../..
 ObjModuleName=v5_examples
@@ -46,7 +46,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-PATH := $(BIN):$(PATH)
+PATH := ./:$(BIN):$(PATH)
 export PATH
 
 
