@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.13 2003-11-11 00:26:23 bellardo Exp $
+dnl $Id: configure.in,v 1.141.2.14 2003-11-11 08:05:46 bellardo Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -38,7 +38,7 @@ case "$target" in
     AC_DEFINE(DARWIN)
 	XE_APPEND(-framework CoreFoundation,LIBS)
     LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=N
+    EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     ;;
 

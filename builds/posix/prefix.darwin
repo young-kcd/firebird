@@ -15,10 +15,9 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.11 2003-11-11 05:44:45 bellardo Exp $
+#$Id: prefix.darwin,v 1.8.2.12 2003-11-11 08:05:53 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
-CC=@CXX@
 LD=@CXX@
 
 OS_ServerFiles=inet_server.cpp
@@ -36,7 +35,7 @@ LIB_LINK_SONAME_LINE:=
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin fb_lock_print
 
-FBEMBED_LINK:=-F../gen/firebird -framework Firebird
+FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB)
 
 Physical_IO_Module=unix.cpp
 PLATFORM_PATH := jrd/os/darwin
