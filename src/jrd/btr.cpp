@@ -2594,7 +2594,7 @@ static SLONG fast_load(TDBB tdbb,
 		// how faster jumpkeys are recalculated on insert.
 		
 		
-		jumpInfo.jumpAreaSize = 512 + (sqrt(key_length) * 16);
+		jumpInfo.jumpAreaSize = 512 + ((int)sqrt((float)key_length) * 16);
 		//  key_size  |  jumpAreaSize
 		//  ----------+-----------------
 		//         4  |    544
