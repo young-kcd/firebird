@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.19 2002-10-31 05:33:35 seanleyne Exp $
+$Id: isc.cpp,v 1.20 2002-11-02 11:03:44 dimitr Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -501,6 +501,7 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 				gds__log("Unable to open config file \"%s\": errno = %d",
 						 config_file, errno);
 		}
+#ifndef SUPERCLIENT
 		if (!dls_flag)
 		{
 			/* Temp. directory configuration has not been defined.
@@ -522,6 +523,7 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 			}
 			dls_flag = TRUE;
 		}
+#endif
 		dls_init = TRUE;		/* Temp dir config should be read only once */
 
 		fdls_init = TRUE;		/* Ext func dir config should be read only once. */
