@@ -67,7 +67,7 @@ copy dbs\qli\help.fdb %ROOT_PATH%\gen\help.fdb > nul
 ::==============
 :NEXT_STEP
 @echo.
-@echo    You may now run make6_debug.bat or make6_release.bat
+@echo    You may now run make6_all.bat [DEBUG] [CLEAN]
 @echo.
 @goto :EOF
 
