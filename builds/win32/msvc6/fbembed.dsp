@@ -163,7 +163,7 @@ SOURCE=..\defs\fbclient.def
 # End Source File
 # Begin Source File
 
-SOURCE=..\fbclient_debug.def
+SOURCE=..\defs\fbclient_debug.def
 
 !IF  "$(CFG)" == "fbembed - Win32 Release"
 
