@@ -1,4 +1,97 @@
-Internationalization (I18N)
+Internationalization (I18N) of the Win32 installer.
+===================================================
+
+The intention of adding internationalization to the Win32 Firebird
+installer is to provide a minimum level of translation to support
+the installation process only. This means just translating the install
+dialogues, the readme file and the installation readme file. All other
+documentatation i18n should be available separately. I18n is a
+good thing, but bloating the installer with large amounts of translated
+documentation is not desirable.
 
 
-Further details to follow.
+The current version of InnoSetup - 4.2.7 - provides generic support for
+the following languages:
+
+    Catalan, Czech, Dutch, French, German, Norwegian, Polish,
+    PortugueseStd, Russian and Slovenian.
+
+Therefore adding i18n support to the Firebird installer is extremely
+simple if you are working with one of these languages. If you wish to
+translate into a language that is not supported out of the box by
+InnoSetup you will need to provide a full translation of Default.isl for
+your language.
+
+Currently Firebird only has support for English and French installs. So
+there are opportunities for others to provide support for their native
+language.
+
+
+How to add new languages
+------------------------
+
+The simplest way to understand this is to study the implementation of
+the French translation. The basic components are as follows:
+
+o The Win32 install files are located in install\arch-specific\win32.
+  This sub-directory is located as follows:
+
+    Firebird 1.5  - firebird2\src
+    Firebird 2.0  - firebird2\builds
+
+
+o Each language has its own sub-directory under install\arch-specific\win32.
+  If possible a two-letter language code should be used for the
+  directory name.
+
+
+o Three files are required:
+
+  * custom_messages_%LANG_CODE%.inc
+
+    where %LANG_CODE% represents the language identifier used in the
+    directory name. This file contains the translated strings that are
+    used throughout the installation process. The original, english
+    strings are stored in install\arch-specific\win32\custom_messages.inc
+
+  * readme.txt
+
+    where the actual file name can be either in english or in the
+    translated equivalent of the name. The readme file stores last
+	minute documentation changes as well as general notes on using
+	firebird. It is displayed at the end of the installation process.
+
+  * installation_readme.txt
+
+    This filename can be translated or left with the original english
+    title. It contains installation specific details. It is displayed
+    near the beginning of the installation process.
+
+
+o Adding the new language to the InnoSetup install script
+
+  Changes have been kept to the absolute minimum. Only the following
+  sections need to be altered:
+
+    [Languages]
+    Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: output\doc\installation_readme.txt; InfoAfterFile: src\install\arch-specific\win32\readme.txt;
+    Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: src\install\arch-specific\win32\fr\installation_lisezmoi.txt; InfoAfterFile: src\install\arch-specific\win32\fr\lisezmoi.txt;
+
+    [Messages]
+    en.BeveledLabel=English
+    fr.BeveledLabel=Français
+
+    [CustomMessages]
+    #include "custom_messages.inc"
+    #include "fr\custom_messages_fr.inc"
+
+  Use the location of the French files as a guide.
+
+o Submitting your changes
+
+  All i18n is being co-ordinated by Paul Reeves who maintains the Win32
+  installation kits. He can be contacted at:
+
+     mailto:preeves@ibphoenix.com
+
+
