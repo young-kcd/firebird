@@ -170,16 +170,17 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	if (ISC_is_WinNT()) {	/* True - NT, False - Win95 */
 		
 		/* CVC: This operating system call doesn't exist for W9x. */
-		BOOL (*SetProcessAffinityMask)(HANDLE, DWORD);
+		typedef BOOL (*PSetProcessAffinityMask)(HANDLE, DWORD);
+		PSetProcessAffinityMask SetProcessAffinityMask;
 
 		server_flag = (SRVR_multi_client);
-		(FARPROC)SetProcessAffinityMask =
+		SetProcessAffinityMask = (PSetProcessAffinityMask)
 			GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "SetProcessAffinityMask");
 		if (SetProcessAffinityMask) {
 			/* Mike Nordell - 11 Jun 2001: CPU affinity. */
 			ISC_get_config (LOCK_HEADER, CPU_affinity_setting);
 			(*SetProcessAffinityMask)(GetCurrentProcess(),
-				reinterpret_cast<DWORD>(g_CPU_affinity_mask));
+				static_cast<DWORD>(g_CPU_affinity_mask));
 		}
 	}
 	else
