@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.1 2003-07-19 05:02:23 bellardo Exp $
+dnl $Id: configure.in,v 1.141.2.2 2003-07-19 06:20:33 bellardo Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -39,7 +39,7 @@ case "$target" in
 	XE_APPEND(-framework CoreFoundation,LIBS)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
-    SHRLIB_EXT=so
+    SHRLIB_EXT=dylib
     ;;
 
   *-*-freebsd*)
@@ -650,6 +650,7 @@ mkdir -p temp/libfbembed/alice
 mkdir -p temp/libfbembed/utilities
 mkdir -p temp/libfbembed/fbutil
 mkdir -p temp/libfbembed/jrd/os/posix
+mkdir -p temp/libfbembed/jrd/os/darwin
 mkdir -p temp/libfbembed/jrd/os/win32
 mkdir -p temp/libfbembed/burp
 mkdir -p temp/libfbembed/wal
