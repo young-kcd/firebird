@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  This library is part of the FirebirdSQL project
+#  This library is part of the Firebird project
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.10.2.4 2003-10-31 16:40:47 skidder Exp $
+#   $Id: postinstall.sh.in,v 1.10.2.5 2003-12-14 04:03:33 skywalker Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -89,6 +89,46 @@ replaceLineInFile() {
 }
 
 #------------------------------------------------------------------------
+#  Detect Distribution.
+
+detectDistro() {
+
+    # it's not provided...
+    if [ -z "$linuxDistro"  ]
+    then
+	if [ -e /etc/SuSE-release  ]
+	then
+	    # SuSE
+	    linuxDistro="SuSE"
+	elif [ -e /etc/mandrake-release ]
+	then
+	    # Mandrake
+	    linuxDistro="MDK"
+	elif [ -e /etc/debian_version ]
+	then
+	    # Debian
+	    linuxDistro="Debian"
+	elif [ -e /etc/gentoo-release ]
+	then
+	    # Debian
+	    linuxDistro="Gentoo"
+	elif [ -e /etc/rc.d/init.d/functions ]
+	then
+	    # very likely Red Hat
+	    linuxDistro="RH"
+	elif [ -d /etc/rc.d/init.d ]
+	then
+	    # generic Red Hat
+	    linuxDistro="G-RH"
+	elif [ -d /etc/init.d ]
+	then
+	    # generic SuSE
+	    linuxDistro="G-SuSE"
+	fi
+    fi
+}
+
+#------------------------------------------------------------------------
 #  Add new user and group
 
 
@@ -98,15 +138,30 @@ addFirebirdUser() {
 
     if [ -z "$testStr" ]
       then
-        groupadd firebird
+        case $linuxDistro in
+        "MDK")
+            groupadd -r firebird
+            ;;
+         *)
+            groupadd firebird
+            ;;
+         esac
     fi
 
     testStr=`grep firebird /etc/passwd`
-    if [ -z "$testDir" ]
+    if [ -z "$testStr" ]
       then
-        useradd -M -d $FBRootDir -s /bin/bash \
-            -c "Firebird Database Administrator" -g firebird firebird 
+        case $linuxDistro in
+        "MDK")
+            useradd -M -r -d $FBRootDir -s /bin/bash \
+                -c "Firebird Database Administrator" -g firebird firebird 
+            ;;
 
+        *)
+            useradd -M -d $FBRootDir -s /bin/bash \
+                -c "Firebird Database Administrator" -g firebird firebird 
+            ;;
+        esac
         # >/dev/null 2>&1 
     fi
 }
@@ -425,7 +480,7 @@ fixFilePermissions() {
     done
 
     # make examples db's writable by group
-    for i in `find . -name '*.gdb' -print`
+    for i in `find . -name '*.fdb' -print`
       do
         chmod ug=rw,o= $i
       done
@@ -645,6 +700,9 @@ createLinksForBackCompatibility() {
 
 
 
+    # Detect which linux distro we are installing on
+    detectDistro
+
     # Make sure the links are in place 
     if  [ -z "$FirebirdInstallPrefix" ]
        then
@@ -664,7 +722,7 @@ createLinksForBackCompatibility() {
     # The \n is needed, some /etc/services files are missing a trailing
     # line feed - MOD 7-Nov-2002
     FileName=/etc/services
-    newLine="gds_db          3050/tcp  # FirebirdSQL Database Remote Protocol"
+    newLine="gds_db          3050/tcp  # Firebird SQL Database Remote Protocol"
     oldLine=`grep "^gds_db" $FileName`
     if [ -z "$oldLine" ]
       then

@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.13.2.2 2003-10-28 18:21:45 skidder Exp $
+#   $Id: makeInstallImage.sh.in,v 1.13.2.3 2003-12-14 04:03:33 skywalker Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -119,9 +119,9 @@ copyFiles() {
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
 
-    cp $BuiltFBDir/bin/CSchangeRunUser.sh $DestDir/bin
-    cp $BuiltFBDir/bin/CSrestoreRootRunUser.sh $DestDir/bin
-    cp $BuiltFBDir/bin/changeDBAPassword.sh $DestDir/bin
+    cp $BuildRootDir/gen/install/bin/CSchangeRunUser.sh $DestDir/bin
+    cp $BuildRootDir/gen/install/bin/CSrestoreRootRunUser.sh $DestDir/bin
+    cp $BuildRootDir/gen/install/bin/changeDBAPassword.sh $DestDir/bin
 
     # Copy examples only if we have them
 
@@ -170,12 +170,12 @@ copyFiles() {
     # Note that this copies files from outside the build tree.
     cp $BuildRootDir/doc/*.pdf $DestDir/doc
     cp $BuildRootDir/doc/README.* $DestDir/doc
-    cp $BuildRootDir/doc/sql.extensions/* $DestDir/doc/sql.extensions
+    cp $BuildRootDir/doc/sql.extensions/README* $DestDir/doc/sql.extensions
     cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
     cp $BuildRootDir/doc/README.user $DestDir/README
 
-    cp $BuiltFBDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
-    cp $BuiltFBDir/misc/firebird.conf $DestDir/firebird.conf
+    cp $BuildRootDir/gen/install/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
+    cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf
 
     echo "#" >> $DestDir/aliases.conf
     echo "# List of known database aliases" >> $DestDir/aliases.conf
