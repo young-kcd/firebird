@@ -1,3 +1,29 @@
+2004-04-04 19:58  skidder
+
+	* firebird2/src/jrd/dpm.epp (1.40):
+	
+	Allow to modify generators from read-only transactions again
+
+2004-04-04 10:25  alexpeshkoff
+
+	* firebird2/src/jrd/: btr.cpp (1.82), btr.h (1.29), btr_proto.h
+	(1.26), exe.h (1.48):
+	
+	better memory allocation for csb_idx_allocation
+
+2004-04-04 09:40  skidder
+
+	* firebird2/src/jrd/ntrace.h (1.1):
+	
+	Preliminary version of Trace API header. Not integrated yet, for
+	peer review
+
+2004-04-04 06:11  skidder
+
+	* firebird2/doc/README.performance_monitoring (1.2):
+	
+	Update Trace API spec
+
 2004-04-03 05:36  skidder
 
 	* firebird2/doc/README.performance_monitoring (1.1):
