@@ -59,7 +59,7 @@ static int like2(UCHAR *, SSHORT, UCHAR *, SSHORT, UCHAR);
 #else
 static int like(UCHAR *, SSHORT, UCHAR *, SSHORT, UCHAR);
 #endif
-static TEXT *make_blob_buffer(SLONG *, USHORT *);
+static TEXT *make_blob_buffer(FRBRD *, USHORT *);
 #if (defined JPN_EUC || defined JPN_SJIS)
 static int matches(USHORT *, SSHORT, USHORT *, SSHORT);
 static int matches2(UCHAR *, SSHORT, UCHAR *, SSHORT);
@@ -939,7 +939,7 @@ static int like(
 }
 
 
-static TEXT *make_blob_buffer( SLONG * blob, USHORT * length)
+static TEXT *make_blob_buffer( FRBRD * blob, USHORT * length)
 {
 /**************************************
  *
@@ -955,7 +955,7 @@ static TEXT *make_blob_buffer( SLONG * blob, USHORT * length)
  **************************************/
 	SLONG size, segment_count, max_segment;
 
-	gds__blob_size((SLONG*) &blob, &size, &segment_count, &max_segment);
+	gds__blob_size(&blob, &size, &segment_count, &max_segment);
 
 #ifdef JPN_EUC
 	max_segment = MIN(max_segment * 2, 32768);	/* prepare for SJIS->EUC expansion */
@@ -1074,7 +1074,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
  **************************************/
 	TEXT *p1, *p2, *buffer, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
 		fixed_buffer[512], control[256];
-	int *blob;
+	FRBRD *blob;
 	USHORT buffer_length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	SSHORT l1, l2, result;
@@ -1109,15 +1109,15 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 
 	result = FALSE;
 
-	blob = (int*) EXEC_open_blob(node->nod_arg[0]);
+	blob = EXEC_open_blob(node->nod_arg[0]);
 
 	buffer_length = sizeof(fixed_buffer);
 
-	if (!(buffer = make_blob_buffer((SLONG*) blob, &buffer_length)))
+	if (!(buffer = make_blob_buffer( blob, &buffer_length)))
 		buffer = fixed_buffer;
 
 	while (!gds__get_segment(status_vector,
-							 (struct why_hndl**) GDS_REF(blob),
+							 GDS_REF(blob),
 							 (USHORT*) GDS_REF(l1), buffer_length, GDS_VAL(buffer)))
 #if (defined JPN_EUC || defined JPN_SJIS)
 		if (sleuth_check2(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1), (UCHAR*) control, (UCHAR*) (control + l2)))
@@ -1132,7 +1132,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, (struct why_hndl**) GDS_REF(blob))) {
+	if (gds__close_blob(status_vector, GDS_REF(blob))) {
 		context = (QLI_CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;
@@ -1487,7 +1487,7 @@ static int string_boolean( QLI_NOD node)
 	DSC *desc1, *desc2, *desc3;
 	TEXT *p1, *p2, *p3, *buffer, fixed_buffer[512];
 	TEXT temp1[TEMP_LENGTH], temp2[TEMP_LENGTH];
-	int *blob;
+	FRBRD *blob;
 	SSHORT l1, l2, l3, l, result;
 	USHORT buffer_length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
@@ -1520,15 +1520,15 @@ static int string_boolean( QLI_NOD node)
 /* Source string is a blob, things get interesting */
 
 	result = FALSE;
-	blob = (int*) EXEC_open_blob(node->nod_arg[0]);
+	blob = EXEC_open_blob(node->nod_arg[0]);
 
 	buffer_length = sizeof(fixed_buffer);
 
-	if (!(buffer = make_blob_buffer((SLONG*) blob, &buffer_length)))
+	if (!(buffer = make_blob_buffer( blob, &buffer_length)))
 		buffer = fixed_buffer;
 
 	while (!gds__get_segment(status_vector,
-							 (struct why_hndl**) GDS_REF(blob),
+							 GDS_REF(blob),
 							 (USHORT*) GDS_REF(l1),
 							 buffer_length,
 							 GDS_VAL(buffer)))
@@ -1540,7 +1540,7 @@ static int string_boolean( QLI_NOD node)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, (struct why_hndl**) GDS_REF(blob))) {
+	if (gds__close_blob(status_vector, GDS_REF(blob))) {
 		context = (QLI_CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;

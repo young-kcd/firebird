@@ -36,7 +36,7 @@ extern "C" {
 #define FRBRD void
 #endif
 
-extern int API_ROUTINE gds__blob_size(SLONG *, SLONG *, SLONG *, SLONG *);
+extern int API_ROUTINE gds__blob_size(FRBRD **, SLONG *, SLONG *, SLONG *);
 extern void API_ROUTINE isc_expand_dpb(SCHAR **, SSHORT *, ...);
 extern int API_ROUTINE gds__edit(TEXT *, USHORT);
 extern SLONG API_ROUTINE gds__event_block(SCHAR **, SCHAR **, USHORT, ...);

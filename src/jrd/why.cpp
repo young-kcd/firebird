@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.2 2002-12-16 21:19:47 skidder Exp $
+$Id: why.cpp,v 1.3 2002-12-17 14:58:14 skidder Exp $
 */
 
 #include "firebird.h"
@@ -52,14 +52,8 @@ $Id: why.cpp,v 1.2 2002-12-16 21:19:47 skidder Exp $
 #include "../jrd/common.h"
 #include <stdarg.h>
 
-#ifdef DEV_BUILD
 #include "../jrd/ib_stdio.h"
 #include <assert.h>
-#endif
-
-#ifndef assert
-#define assert(x)
-#endif
 
 #include "../jrd/y_handle.h"
 #include "gen/codes.h"

@@ -50,7 +50,7 @@ typedef struct qli_req {
     struct blk	req_header;
     struct qli_req	*req_next;		/* Next request in statement */
     struct dbb	*req_database;		/* Database for request */
-    int		*req_handle;		/* Database request handle */
+    FRBRD		*req_handle;		/* Database request handle */
     struct rlb	*req_blr;
     struct qli_msg	*req_messages;		/* Messages associated with request */
     struct qli_msg	*req_receive;		/* Current receive message, if any  */
@@ -163,7 +163,7 @@ typedef struct itm {
     USHORT	itm_header_segments;
     USHORT	itm_count;			/* Number of lines to skip */
     USHORT	itm_column;			/* Logical column number */
-    int		*itm_stream;
+    FRBRD	*itm_stream;
     USHORT	itm_kanji_fragment;		/* JPN: last kanji on line border */
     STATUS	itm_blob_status;		/* JPN: status of the last blob fetch */
 } *ITM;

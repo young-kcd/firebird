@@ -26,7 +26,7 @@
 
 extern void		EXEC_abort (void);
 extern void		EXEC_execute (struct qli_nod *);
-extern void		*EXEC_open_blob (struct qli_nod *);
+extern FRBRD	*EXEC_open_blob (struct qli_nod *);
 extern struct file	*EXEC_open_output (struct qli_nod *);
 extern void		EXEC_poll_abort (void);
 extern struct dsc	*EXEC_receive (struct qli_msg *, struct par *);

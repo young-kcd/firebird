@@ -24,20 +24,20 @@
 #ifndef _QLI_PROC_PROTO_H_
 #define _QLI_PROC_PROTO_H_
 
-extern void	PRO_close (struct dbb *, void *);
+extern void	PRO_close (struct dbb *, FRBRD *);
 extern void	PRO_commit (struct dbb *);
 extern void	PRO_copy_procedure (struct dbb *, TEXT *, struct dbb *, TEXT *);
 extern void	PRO_create (struct dbb *, TEXT *);
 extern int	PRO_delete_procedure (struct dbb *, TEXT *);
 extern void	PRO_edit_procedure (struct dbb *, TEXT *);
-extern void	*PRO_fetch_procedure (struct dbb *, TEXT *);
-extern int	PRO_get_line (void *, TEXT *, USHORT);
+extern FRBRD	*PRO_fetch_procedure (struct dbb *, TEXT *);
+extern int	PRO_get_line (FRBRD *, TEXT *, USHORT);
 extern void	PRO_invoke (struct dbb *, TEXT *);
-extern void	*PRO_open_blob (struct dbb *, SLONG *);
+extern FRBRD	*PRO_open_blob (struct dbb *, SLONG *);
 extern int	PRO_rename_procedure (struct dbb *, TEXT *, TEXT *);
 extern void	PRO_rollback (struct dbb *);
 extern void	PRO_scan (struct dbb *, void (*)(), void *);
 extern void	PRO_setup (struct dbb *);
-extern void	*PRO_transaction (struct dbb *, int);
+extern FRBRD	*PRO_transaction (struct dbb *, int);
 
 #endif /* _QLI_PROC_PROTO_H_ */

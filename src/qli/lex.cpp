@@ -601,7 +601,7 @@ void LEX_init(void)
 	QLI_line->line_size = sizeof(QLI_line->line_data);
 	QLI_line->line_ptr = QLI_line->line_data;
 	QLI_line->line_type = line_stdin;
-	QLI_line->line_source = (int *) ib_stdin;
+	QLI_line->line_source = (FRBRD *) ib_stdin;
 
 	QLI_semi = FALSE;
 	input_file = ib_stdin;
@@ -664,7 +664,7 @@ void LEX_pop_line(void)
 }
 
 
-void LEX_procedure( DBB database, int *blob)
+void LEX_procedure( DBB database, FRBRD *blob)
 {
 /**************************************
  *
@@ -722,7 +722,7 @@ int LEX_push_file( TEXT * filename, int error_flag)
 
 	line = (LINE) ALLOCPV(type_line, strlen(filename));
 	line->line_type = line_file;
-	line->line_source = (int *) file;
+	line->line_source = (FRBRD *) file;
 	line->line_size = sizeof(line->line_data);
 	line->line_ptr = line->line_data;
 	*line->line_ptr = 0;

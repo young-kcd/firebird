@@ -77,7 +77,7 @@ typedef struct line {
     USHORT	line_length;
     TEXT	*line_ptr;
     SLONG	line_position;
-    int		*line_source;			/* File or blob handle */
+    FRBRD	*line_source;			/* File or blob handle */
     ENUM line_t	line_type;
     TEXT	line_data [256];
     TEXT	line_source_name [2];

@@ -26,6 +26,7 @@
 
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
+#include "../jrd/y_handle.h"
 
 #define QLI_MSG_FAC		1
 #define BUGCHECK(number)	ERRQ_bugcheck (number)
@@ -75,27 +76,27 @@ typedef struct dbb {
     struct qli_rel	*dbb_relations;		/* Linked list of relations */
     struct frm	*dbb_forms;		/* Known forms in database */
     struct fun	*dbb_functions;		/* Known functions in database */
-    void	*dbb_handle;		/* database handle */
-    void	*dbb_transaction;	/* transaction handle */
-    void	*dbb_proc_trans;	/* procedure transaction */
-    void	*dbb_meta_trans;	/* metadata update transaction */
-    void	*dbb_field_request;	/* "get fields" request handle */
+    FRBRD	*dbb_handle;		/* database handle */
+    FRBRD	*dbb_transaction;	/* transaction handle */
+    FRBRD	*dbb_proc_trans;	/* procedure transaction */
+    FRBRD	*dbb_meta_trans;	/* metadata update transaction */
+    FRBRD	*dbb_field_request;	/* "get fields" request handle */
     struct sym	*dbb_symbol;		/* Database variable */
     struct con	*dbb_user;		/* user name */
     struct con	*dbb_password;		/* password */
     USHORT	dbb_filename_length;	/* Length of filename */
-    void	*dbb_lookup_blob;	/* Request to look up blob */
-    void	*dbb_store_blob;	/* Request to store blob */
-    void	*dbb_edit_blob;
-    void	*dbb_edit_store;
-    void	*dbb_scan_blobs;
-    void	*dbb_delete_blob;
+    FRBRD	*dbb_lookup_blob;	/* Request to look up blob */
+    FRBRD	*dbb_store_blob;	/* Request to store blob */
+    FRBRD	*dbb_edit_blob;
+    FRBRD	*dbb_edit_store;
+    FRBRD	*dbb_scan_blobs;
+    FRBRD	*dbb_delete_blob;
     USHORT	dbb_flags;
     USHORT	dbb_type;		/* Friend or foe? */
     USHORT	dbb_pagesize;		/* For SQL metadata */
     ULONG	dbb_capabilities;	/* Special characteristics to look out for */
     int		*dbb_statistics;	/* Statistics memory */
-    void	*dbb_requests [96];	/* Misc meta-data requests */
+    FRBRD	*dbb_requests [96];	/* Misc meta-data requests */
     TEXT	dbb_filename [2];	/* Filename of database */
 } *DBB;
 

@@ -46,7 +46,7 @@ static void display_acl(DBB, SLONG[2]);
 static void display_blob(DBB, SLONG[2], TEXT *, USHORT, UCHAR *, int);
 static void display_blr(DBB, SLONG[2]);
 static void display_text(DBB, SLONG[2], TEXT *, int);
-static void display_procedure(DBB, UCHAR *, int *);
+static void display_procedure(DBB, UCHAR *, FRBRD *);
 static USHORT get_window_size(int);
 static void show_blob_info(SLONG *, SLONG *, USHORT, USHORT, DBB, TEXT *);
 static void show_blr(DBB, USHORT, SLONG *, USHORT, SLONG *);
@@ -468,7 +468,7 @@ static void display_blob(
  **************************************/
 	USHORT length, buffer_length;
 	TEXT buffer[256], *b;
-	int *blob;
+	FRBRD *blob;
 	STATUS status_vector[ISC_STATUS_LENGTH], status;
 
 	blob = NULL;
@@ -476,7 +476,7 @@ static void display_blob(
 	if (gds__open_blob2(status_vector,
 						GDS_REF(dbb->dbb_handle),
 						GDS_REF(dbb->dbb_meta_trans),
-						(void**) GDS_REF(blob),
+						GDS_REF(blob),
 						(GDS__QUAD*) GDS_VAL(blob_id),
 						bpb_length,
 						(char*) GDS_VAL(bpb)))
@@ -485,7 +485,7 @@ static void display_blob(
 	for (;;) {
 		buffer_length = sizeof(buffer) - 1;
 		status = gds__get_segment(status_vector,
-								  (void**) GDS_REF(blob),
+								  GDS_REF(blob),
 								  GDS_REF(length), buffer_length, buffer);
 		if (status && status != gds_segment)
 			break;
@@ -506,7 +506,7 @@ static void display_blob(
 			ib_printf("%s%s\n", prefix, buffer);
 	}
 
-	gds__close_blob(status_vector, (void**) GDS_REF(blob));
+	gds__close_blob(status_vector, GDS_REF(blob));
 }
 
 
@@ -548,7 +548,7 @@ static void display_text( DBB dbb, SLONG blob_id[2], TEXT * prefix, int strip)
 }
 
 
-static void display_procedure( DBB database, UCHAR * name, int *blob)
+static void display_procedure( DBB database, UCHAR * name, FRBRD *blob)
 {
 /**************************************
  *
@@ -2002,7 +2002,8 @@ static void show_proc( QPR proc)
  *	with that name.
  *
  **************************************/
-	int *blob, count;
+	FRBRD *blob;
+	int count;
 	DBB database;
 	NAM name;
 
@@ -2010,7 +2011,7 @@ static void show_proc( QPR proc)
 	name = proc->qpr_name;
 
 	if (database = proc->qpr_database) {
-		if (blob = (int*) PRO_fetch_procedure(database, (TEXT*) name->nam_string))
+		if (blob = PRO_fetch_procedure(database, (TEXT*) name->nam_string))
 			display_procedure(database, (UCHAR*) name->nam_string, blob);
 		else
 			ERRQ_msg_put(126,	/* Msg126 Procedure %s not found in database %s */
@@ -2020,7 +2021,7 @@ static void show_proc( QPR proc)
 	}
 
 	for (database = QLI_databases; database; database = database->dbb_next)
-		if (blob = (int*) PRO_fetch_procedure(database, (TEXT*) name->nam_string)) {
+		if (blob = PRO_fetch_procedure(database, (TEXT*) name->nam_string)) {
 			display_procedure(database, (UCHAR*) name->nam_string, blob);
 			count++;
 		}

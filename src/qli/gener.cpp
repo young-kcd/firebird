@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.10 2002-12-13 14:04:15 dimitr Exp $
+$Id: gener.cpp,v 1.11 2002-12-17 14:58:20 skidder Exp $
 */
 
 #include "firebird.h"
@@ -112,7 +112,7 @@ void GEN_release(void)
 	for (; QLI_requests; QLI_requests = QLI_requests->req_next) {
 		if (QLI_requests->req_handle)
 			gds__release_request(status_vector,
-								 (void**) GDS_REF(QLI_requests->req_handle));
+								 GDS_REF(QLI_requests->req_handle));
 
 		rlb = QLI_requests->req_blr;
 		RELEASE_RLB;
@@ -617,7 +617,7 @@ static void gen_compile( QLI_REQ request)
 
 	if (gds__compile_request(status_vector,
 							 GDS_REF(dbb->dbb_handle),
-							 (void**) GDS_REF(request->req_handle),
+							 GDS_REF(request->req_handle),
 							 length, (char*) GDS_VAL(rlb->rlb_base))) {
 		RELEASE_RLB;
 		ERRQ_database_error(dbb, status_vector);
@@ -626,7 +626,7 @@ static void gen_compile( QLI_REQ request)
 #ifdef DEV_BUILD
 	if (QLI_explain &&
 		!gds__request_info(status_vector,
-						   (void**) GDS_REF(request->req_handle),
+						   GDS_REF(request->req_handle),
 						   0,
 						   sizeof(explain_info),
 						   explain_info,

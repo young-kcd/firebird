@@ -111,7 +111,7 @@ void EXEC_abort(void)
 	for (request = QLI_requests; request; request = request->req_next)
 		if (request->req_handle)
 			gds__unwind_request(status_vector,
-								(void**) GDS_REF(request->req_handle), 0);
+								GDS_REF(request->req_handle), 0);
 
 	QLI_abort = TRUE;
 }
@@ -213,7 +213,7 @@ void EXEC_execute( QLI_NOD node)
 }
 
 
-void *EXEC_open_blob( QLI_NOD node)
+FRBRD *EXEC_open_blob( QLI_NOD node)
 {
 /**************************************
  *
@@ -232,7 +232,7 @@ void *EXEC_open_blob( QLI_NOD node)
 	DSC *desc, static_desc;
 	UCHAR segment[20], bpb[20], *p;
 	USHORT bpb_length;
-	void *blob;
+	FRBRD *blob;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	desc = EVAL_value(node);
@@ -412,7 +412,7 @@ DSC *EXEC_receive(QLI_MSG message, PAR parameter)
 	request = message->msg_request;
 
 	if (gds__receive(status_vector,
-					 (void**) GDS_REF(request->req_handle),
+					 GDS_REF(request->req_handle),
 					 message->msg_number,
 					 message->msg_length,
 					 GDS_VAL(message->msg_buffer),
@@ -445,7 +445,7 @@ void EXEC_send( QLI_MSG message)
 
 	map_data(message);
 	if (gds__send(status_vector,
-				  (void**) GDS_REF(request->req_handle),
+				  GDS_REF(request->req_handle),
 				  message->msg_number,
 				  message->msg_length,
 				  GDS_VAL(message->msg_buffer),
@@ -471,7 +471,7 @@ void EXEC_start_request( QLI_REQ request, QLI_MSG message)
 	if (message) {
 		map_data(message);
 		if (!gds__start_and_send(status_vector,
-								 (void**) GDS_REF(request->req_handle),
+								 GDS_REF(request->req_handle),
 								 GDS_REF(request->req_database->
 										 dbb_transaction),
 								 message->msg_number, message->msg_length,
@@ -479,7 +479,7 @@ void EXEC_start_request( QLI_REQ request, QLI_MSG message)
 	}
 	else
 		if (!gds__start_request(status_vector,
-								(void**) GDS_REF(request->req_handle),
+								GDS_REF(request->req_handle),
 								GDS_REF(request->req_database->
 										dbb_transaction), 0)) return;
 
@@ -681,7 +681,8 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	DBB to_dbb, from_dbb;
 	DSC *from_desc, *to_desc;
 	QLI_NOD field;
-	SLONG *from_blob, *to_blob, size, segment_count, max_segment;
+	FRBRD *from_blob, *to_blob;
+	SLONG size, segment_count, max_segment;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT bpb_length, length, buffer_length;
 	UCHAR bpb[20], *p, fixed_buffer[4096], *buffer;
@@ -765,19 +766,19 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	if (gds__create_blob(status_vector,
 						 GDS_REF(to_dbb->dbb_handle),
 						 GDS_REF(to_dbb->dbb_transaction),
-						 (void**) GDS_REF(to_blob), (GDS__QUAD*) GDS_VAL(to_desc->dsc_address)))
+						 GDS_REF(to_blob), (GDS__QUAD*) GDS_VAL(to_desc->dsc_address)))
 #endif
 		ERRQ_database_error(to_dbb, status_vector);
 
 	if (gds__open_blob2(status_vector,
 						GDS_REF(from_dbb->dbb_handle),
 						GDS_REF(from_dbb->dbb_transaction),
-						(void**) GDS_REF(from_blob),
+						GDS_REF(from_blob),
 						(GDS__QUAD*) GDS_VAL(from_desc->dsc_address),
 						bpb_length,
 						(char*) bpb)) ERRQ_database_error(from_dbb, status_vector);
 
-	gds__blob_size((SLONG*) &from_blob, &size, &segment_count, &max_segment);
+	gds__blob_size(&from_blob, &size, &segment_count, &max_segment);
 
 	if (max_segment < sizeof(fixed_buffer)) {
 		buffer_length = sizeof(fixed_buffer);
@@ -794,12 +795,12 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	}
 
 	while (!gds__get_segment(status_vector,
-							 (void**) GDS_REF(from_blob),
+							 GDS_REF(from_blob),
 							 GDS_REF(length),
 							 buffer_length,
 							 (char*) GDS_VAL(buffer)))
 			if (gds__put_segment(status_vector,
-								 (void**) GDS_REF(to_blob),
+								 GDS_REF(to_blob),
 								 length,
 								 (char*) GDS_VAL(buffer)))
 				ERRQ_database_error(to_dbb, status_vector);
@@ -807,10 +808,10 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, (void**) GDS_REF(from_blob)))
+	if (gds__close_blob(status_vector, GDS_REF(from_blob)))
 		ERRQ_database_error(from_dbb, status_vector);
 
-	if (gds__close_blob(status_vector, (void**) GDS_REF(to_blob)))
+	if (gds__close_blob(status_vector, GDS_REF(to_blob)))
 		ERRQ_database_error(to_dbb, status_vector);
 
 	return TRUE;
@@ -1179,7 +1180,7 @@ static void print_counts( QLI_REQ request)
 	SCHAR count_buffer[COUNT_ITEMS * 7 + 1], *c;
 
 	if (gds__request_info(status_vector,
-						  (void**) GDS_REF(request->req_handle),
+						  GDS_REF(request->req_handle),
 						  0,
 						  sizeof(count_info),
 						  count_info,

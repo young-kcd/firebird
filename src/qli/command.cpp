@@ -41,7 +41,7 @@
 #include <descrip.h>
 #endif
 
-static void dump_procedure(DBB, IB_FILE *, TEXT *, USHORT, void *);
+static void dump_procedure(DBB, IB_FILE *, TEXT *, USHORT, FRBRD *);
 static void extract_procedure(IB_FILE *, TEXT *, USHORT, DBB, SLONG *);
 
 extern USHORT QLI_lines, QLI_columns, QLI_form_mode, QLI_name_columns;
@@ -190,7 +190,7 @@ void CMD_extract( SYN node)
 	DBB database;
 	NAM name;
 	IB_FILE *file;
-	int *blob;
+	FRBRD *blob;
 
 	file = (IB_FILE*) EXEC_open_output((QLI_NOD) node->syn_arg[1]);
 
@@ -201,7 +201,7 @@ void CMD_extract( SYN node)
 			if (!(database = proc->qpr_database))
 				database = QLI_databases;
 			name = proc->qpr_name;
-			if (!(blob = (int*) PRO_fetch_procedure(database, name->nam_string))) {
+			if (!(blob = PRO_fetch_procedure(database, name->nam_string))) {
 				ERRQ_msg_put(89,	/* Msg89 Procedure %s not found in database %s */
 							 name->nam_string,
 							 database->dbb_symbol->sym_string, NULL, NULL,
@@ -586,7 +586,7 @@ void CMD_transaction( SYN node)
 static void dump_procedure(
 						   DBB database,
 						   IB_FILE * file,
-						   TEXT * name, USHORT length, void *blob)
+						   TEXT * name, USHORT length, FRBRD *blob)
 {
 /**************************************
  *
@@ -626,7 +626,7 @@ static void extract_procedure(
  *	Extract a procedure from a database.
  *
  **************************************/
-	void *blob;
+	FRBRD *blob;
 
 	blob = PRO_open_blob(database, blob_id);
 	dump_procedure(database, file, name, length, blob);

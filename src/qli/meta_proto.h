@@ -40,7 +40,7 @@ extern int	MET_get_datatype (USHORT);
 extern void	MET_index_info (TEXT *, TEXT *, SCHAR *);
 extern void	MET_meta_commit (struct dbb *);
 extern void	MET_meta_rollback (struct dbb *);
-extern SLONG	*MET_meta_transaction (struct dbb *, int);
+extern FRBRD	*MET_meta_transaction (struct dbb *, int);
 extern void	MET_modify_field (struct dbb *, struct qli_fld *);
 extern void	MET_modify_index (struct syn *);
 extern void	MET_modify_relation (struct qli_rel *, struct qli_fld *);
@@ -50,6 +50,6 @@ extern void	MET_sql_alter_table (struct qli_rel *, struct qli_fld *);
 extern void	MET_sql_cr_view (struct syn *);
 extern void	MET_sql_grant (struct syn *);
 extern void	MET_sql_revoke (struct syn *);
-extern SLONG	*MET_transaction (NOD_T, struct dbb *);
+extern FRBRD	*MET_transaction (NOD_T, struct dbb *);
 
 #endif /* _QLI_META_PROTO_H_ */

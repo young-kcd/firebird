@@ -263,7 +263,7 @@ STATUS GDS_EXPORT gds__transaction_info(STATUS GDS_FAR *,
 											char GDS_FAR *);
 
 STATUS GDS_EXPORT gds__unwind_request(STATUS GDS_FAR *,
-										  void GDS_FAR * GDS_FAR *,
+										  FRBRD GDS_FAR * GDS_FAR *,
 										  short);
 
 STATUS GDS_EXPORT gds__ftof(char GDS_FAR *,

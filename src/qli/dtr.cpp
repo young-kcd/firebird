@@ -486,7 +486,7 @@ static USHORT process_statement( USHORT flush_flag)
 					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	/* QLI: don't care */
 #endif
 				}
-				perf_get_info((struct why_hndl**)&dbb->dbb_handle, (perf*) dbb->dbb_statistics);
+				perf_get_info(&dbb->dbb_handle, (perf *)dbb->dbb_statistics);
 			}
 
 /* Execute the request, for better or worse */
@@ -503,7 +503,7 @@ static USHORT process_statement( USHORT flush_flag)
 				/* Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n" */
 				ERRQ_msg_get(506, report + strlen(report));
 				/* Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b" */
-				perf_get_info((struct why_hndl**)&dbb->dbb_handle, &statistics);
+				perf_get_info(&dbb->dbb_handle, &statistics);
 				perf_format((perf*) dbb->dbb_statistics, &statistics,
 							report, buffer, 0);
 				ERRQ_msg_put(26, dbb->dbb_filename, buffer, NULL, NULL, NULL);	/* Msg26 Statistics for database %s %s  */

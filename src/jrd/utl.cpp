@@ -330,7 +330,7 @@ SCHAR * dpb, SSHORT db_type)
 
 
 int API_ROUTINE gds__blob_size(
-							   SLONG * b,
+							   FRBRD ** b,
 							   SLONG * size,
 							   SLONG * seg_count, SLONG * max_seg)
 {
@@ -354,7 +354,7 @@ int API_ROUTINE gds__blob_size(
 #pragma FB_COMPILER_MESSAGE("Fix! Bad casts.")
 
 	if (gds__blob_info(status_vector,
-					   reinterpret_cast < FRBRD **>(GDS_VAL(b)),
+					   GDS_VAL(b),
 					   sizeof(blob_items),
 					   const_cast < char *>(blob_items),
 					   sizeof(buffer), buffer)) {

@@ -65,7 +65,7 @@ static UCHAR dyn_gdl4[] = {
 };
 
 
-void PRO_close( DBB database, void *blob)
+void PRO_close( DBB database, FRBRD *blob)
 {
 /**************************************
  *
@@ -124,8 +124,8 @@ void PRO_copy_procedure(
  *	existing procedure.
  *
  **************************************/
-	void *old_blob, *new_blob;
-	void *store_request;
+	FRBRD *old_blob, *new_blob;
+	FRBRD *store_request;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	TEXT s[120], buffer[255];
 	SSHORT length;
@@ -218,7 +218,7 @@ void PRO_create( DBB database, TEXT * name)
  **************************************/
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG start, stop;
-	void *blob;
+	FRBRD *blob;
 	TEXT s[64];
 	USHORT bpb_length;
 	UCHAR bpb[20], *p;
@@ -292,7 +292,7 @@ int PRO_delete_procedure( DBB database, TEXT * name)
  *
  **************************************/
 	USHORT count;
-	void *request;
+	FRBRD *request;
 
 	request = NULL;
 	count = 0;
@@ -367,7 +367,7 @@ void PRO_edit_procedure( DBB database, TEXT * name)
 }
 
 
-void *PRO_fetch_procedure( DBB database, TEXT * proc)
+FRBRD *PRO_fetch_procedure( DBB database, TEXT * proc)
 {
 /**************************************
  *
@@ -380,7 +380,7 @@ void *PRO_fetch_procedure( DBB database, TEXT * proc)
  *	If the name doesn't exit, return NULL.
  *
  **************************************/
-	int *blob;
+	FRBRD *blob;
 	TEXT name[32];
 	USHORT l;
 
@@ -390,14 +390,14 @@ void *PRO_fetch_procedure( DBB database, TEXT * proc)
 
 	FOR(REQUEST_HANDLE database->dbb_lookup_blob) X IN DB.QLI$PROCEDURES WITH
 		X.QLI$PROCEDURE_NAME EQ name
-        blob = (int*) PRO_open_blob(database, (SLONG*) &X.QLI$PROCEDURE);
+        blob = PRO_open_blob(database, (SLONG*) &X.QLI$PROCEDURE);
 	END_FOR
 
 	return blob;
 }
 
 
-int PRO_get_line( void *blob, TEXT * buffer, USHORT size)
+int PRO_get_line( FRBRD *blob, TEXT * buffer, USHORT size)
 {
 /**************************************
  *
@@ -445,7 +445,7 @@ void PRO_invoke( DBB database, TEXT * name)
  *	we may have to loop through databases.  Whatever...
  *
  **************************************/
-	void *blob;
+	FRBRD *blob;
 	TEXT s[64];
 
 	blob = NULL;
@@ -466,12 +466,12 @@ void PRO_invoke( DBB database, TEXT * name)
 		ERRQ_print_error(72, name, NULL, NULL, NULL, NULL);
 /* Msg 72 procedure \"%s\" is undefined */
 
-	LEX_procedure((struct dbb*) database, (int*) blob);
+	LEX_procedure((struct dbb*) database, blob);
 	LEX_token();
 }
 
 
-void *PRO_open_blob( DBB database, SLONG * blob_id)
+FRBRD *PRO_open_blob( DBB database, SLONG * blob_id)
 {
 /**************************************
  *
@@ -483,7 +483,7 @@ void *PRO_open_blob( DBB database, SLONG * blob_id)
  *	Open a procedure blob.
  *
  **************************************/
-	void *blob;
+	FRBRD *blob;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT bpb_length;
 	UCHAR bpb[20], *p;
@@ -530,7 +530,7 @@ int PRO_rename_procedure( DBB database, TEXT * old_name, TEXT * new_name)
 	USHORT count;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	TEXT s[132];
-	void *request;
+	FRBRD *request;
 
 	request = NULL;
 	PRO_setup(database);
@@ -653,7 +653,7 @@ void PRO_setup( DBB dbb)
 }
 
 
-void *PRO_transaction( DBB database, int update_flag)
+FRBRD *PRO_transaction( DBB database, int update_flag)
 {
 /**************************************
  *
@@ -672,7 +672,7 @@ void *PRO_transaction( DBB database, int update_flag)
  *
  **************************************/
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	void *transaction;
+	FRBRD *transaction;
 
 	if (!database)
 		IBERROR(248);			/* Msg248 no active database for operation */
@@ -742,7 +742,7 @@ static int clear_out_qli_procedures( DBB dbb)
  *
  **************************************/
 	int count;
-	void *req;
+	FRBRD *req;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	req = NULL;
@@ -904,7 +904,7 @@ static void probe( DBB database, TEXT * name)
  *	return if it is.
  *
  **************************************/
-	void *blob;
+	FRBRD *blob;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 /* Probe to see if procedure is already in use */

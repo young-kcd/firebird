@@ -619,7 +619,7 @@ void FMT_print( QLI_NOD list, PRT print)
 
 		/* Finally, handle blobs */
 
-		if (!(item->itm_stream = (int*) EXEC_open_blob(item->itm_value)))
+		if (!(item->itm_stream = EXEC_open_blob(item->itm_value)))
 			continue;
 
 #ifdef JPN_EUC
@@ -653,7 +653,7 @@ void FMT_print( QLI_NOD list, PRT print)
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
 		item = (ITM) * ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
-			gds__close_blob(status_vector, (void**) GDS_REF(item->itm_stream));
+			gds__close_blob(status_vector, GDS_REF(item->itm_stream));
 	}
 }
 
@@ -1540,11 +1540,11 @@ static int print_line( ITM item, TEXT ** ptr)
 #else
 
 	if ((status = gds__get_segment(status_vector,
-								   (void**) GDS_REF(item->itm_stream),
+								   GDS_REF(item->itm_stream),
 								   GDS_REF(length),
 								   l, GDS_VAL(p))) && status != gds_segment) {
 		long *null_status = 0;
-		gds__close_blob(null_status, (void**) GDS_REF(item->itm_stream));
+		gds__close_blob(null_status, GDS_REF(item->itm_stream));
 		if (status != gds_segstr_eof)
 			ERRQ_database_error(0, status_vector);
 		return EOF;
