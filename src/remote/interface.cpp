@@ -5652,7 +5652,7 @@ static void THREAD_ROUTINE event_thread( PORT port)
 		stuff = port->receive(&packet);
 		THREAD_EXIT;
 
-		P_OP operation = packet.p_operation;
+		const P_OP operation = packet.p_operation;
 
 		if (!stuff || operation == op_exit || operation == op_disconnect) {
 			/* Actually, the remote server doing the watching died.
