@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.61 2003-03-12 11:22:24 dimitr Exp $
+$Id: inet.cpp,v 1.62 2003-03-12 13:55:45 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -91,6 +91,10 @@ $Id: inet.cpp,v 1.61 2003-03-12 11:22:24 dimitr Exp $
 #if !(defined VMS || defined WIN_NT)
 #include <netdb.h>
 #include <arpa/inet.h>
+/* EKU: SINIX-Z does not define INADDR_NONE */
+#ifndef INADDR_NONE
+#define INADDR_NONE (unsigned long)-1
+#endif
 #endif
 
 #ifdef DARWIN
