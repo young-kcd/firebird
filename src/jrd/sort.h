@@ -110,12 +110,11 @@ const ULONG MAX_SORT_RECORD		= 65535;	/* bytes */
 
 /* the record struct actually contains the keyids etc, and the back_pointer
    which points to the sort_record structure. */
-struct sr
+typedef struct sr
 {
 	sort_record**	sr_bckptr;	/* Pointer back to sort list entry */
 	sort_record		sr_sort_record;
-};
-typedef sr SR;
+} SR;
 
 /* scb_longs includes the size of sr_bckptr.  */
 

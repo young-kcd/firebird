@@ -36,7 +36,7 @@
    See MET_format() and make_format() in MET.EPP for enlightenment.
 */
 
-struct dsc
+typedef struct dsc
 {
 	dsc()
 	:	dsc_dtype(0),
@@ -57,8 +57,7 @@ struct dsc
 	SSHORT& dsc_ttype() { return dsc_sub_type;}
 	SSHORT dsc_ttype() const { return dsc_sub_type;}
 #endif
-};
-typedef dsc DSC;
+} DSC;
 
 
 inline SSHORT DSC_GET_CHARSET(const dsc* desc) {
@@ -71,12 +70,11 @@ inline SSHORT DSC_GET_COLLATE(const dsc* desc) {
 }
 //#define DSC_GET_COLLATE(dsc)	(((dsc)->dsc_sub_type) >> 8)
 
-struct alt_dsc {
+typedef struct alt_dsc {
 	SLONG dsc_combined_type;
 	SSHORT dsc_sub_type;
 	USHORT dsc_flags;			/* Not currently used */
-};
-typedef alt_dsc ALT_DSC;
+} ALT_DSC;
 
 inline bool DSC_EQUIV(const dsc* d1, const dsc* d2) {
 	return ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && 

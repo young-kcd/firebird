@@ -235,15 +235,14 @@ enum tok_t {
 	tok_eol
 };
 
-struct tok {
+typedef struct tok {
 	enum tok_t tok_type;		/* type of token */
 	sym* tok_symbol;			/* hash block if recognized */
 	enum kwwords tok_keyword;	/* keyword number, if recognized */
 	SLONG tok_position;			/* byte number in input stream */
 	USHORT tok_length;
 	TEXT tok_string[MAXSYMLEN];
-};
-typedef tok* TOK;
+} *TOK;
 
 #endif // DUDLEY_PARSE_H
 
