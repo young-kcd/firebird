@@ -600,7 +600,7 @@ void THD_yield(void)
 #endif /* _POSIX_PRIORITY_SCHEDULING */
 #endif
 
-#ifdef SOLARIS
+#ifdef SOLARIS_MT
 	thr_yield();
 #endif
 
@@ -759,11 +759,12 @@ void thdd::start(EntryPoint* routine,
 	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
 		Firebird::system_call_failed::raise("thr_sigsetmask", rval);
 #if (defined SUPERCLIENT || defined SUPERSERVER)
-	rval = thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, THR_DETACHED | THR_NEW_LWP, &thread_id);
+	rval = thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, THR_DETACHED | THR_NEW_LWP,
+					 &thread_id);
 #else
 	rval =
-		thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, (THR_DETACHED | THR_NEW_LWP),
-				   &thread_id);
+		thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, THR_DETACHED | THR_BOUND,
+					 &thread_id);
 #endif
 	thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
 
