@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gbak,v 1.6 2003-03-28 11:29:18 aafemt Exp $
+#  $Id: Makefile.in.embed.gbak,v 1.6.2.1 2003-11-10 23:28:40 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=embed.gbak
@@ -62,14 +62,14 @@ all: gbak gsplit
 gbak : $(LIBFBEMBED_SO) $(GBAK)
 
 $(GBAK):	$(GBAK_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 
 gsplit : $(LIBFBEMBED_SO) $(GSPLIT)
 
 $(GSPLIT):	$(GSPLIT_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gdef,v 1.5 2003-03-27 11:21:44 aafemt Exp $
+#  $Id: Makefile.in.embed.gdef,v 1.5.2.1 2003-11-10 23:28:40 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=embed.gdef
@@ -61,7 +61,7 @@ all:	gdef
 gdef:   $(BIN)/gdef
 
 $(BIN)/gdef: $(GDEF_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 
