@@ -2090,9 +2090,11 @@ void DYN_define_index(GBL		gbl,
 			id = drq_l_primary;
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				IND IN RDB$INDICES WITH
+				IND IN RDB$INDICES CROSS
+					RC IN RDB$RELATION_CONSTRAINTS
+					OVER RDB$INDEX_NAME WITH
 					IND.RDB$RELATION_NAME EQ referenced_relation AND
-					IND.RDB$INDEX_NAME STARTING "RDB$PRIMARY"
+					RC.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY
                 if (!DYN_REQUEST(drq_l_primary))
                     DYN_REQUEST(drq_l_primary) = request;
 

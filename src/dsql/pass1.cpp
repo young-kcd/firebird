@@ -930,6 +930,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
     case nod_redef_relation:
 	case nod_def_index:
 	case nod_def_view:
+	case nod_redef_view:
 	case nod_def_constraint:
 	case nod_def_exception:
 	case nod_mod_relation:

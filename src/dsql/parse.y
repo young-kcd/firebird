@@ -49,6 +49,8 @@
  * 2002.08.04 Dmitry Yemanov: ALTER VIEW
  * 2002.08.06 Arno Brinkman: ordinal added to grp_column_elem for using positions in group by
  * 2002.08.07 Dmitry Yemanov: INT64/LARGEINT are replaced with BIGINT and available in dialect 3 only
+ * 2002.08.31 Dmitry Yemanov: allowed user-defined index names for PK/FK/UK constraints
+ * 2002.09.01 Dmitry Yemanov: RECREATE VIEW
  */
 
 

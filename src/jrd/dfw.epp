@@ -1519,12 +1519,19 @@ static bool create_index(	TDBB	tdbb,
 					idx.idx_flags |= idx_descending;
 				if (!IDX.RDB$FOREIGN_KEY.NULL)
 					idx.idx_flags |= idx_foreign;
-				if (!strncmp(	IDX.RDB$INDEX_NAME,
-								"RDB$PRIMARY",
-								strlen("RDB$PRIMARY")))
-				{
+
+				BLK rc_request = NULL;
+
+				FOR(REQUEST_HANDLE rc_request)
+					RC IN RDB$RELATION_CONSTRAINTS WITH
+					RC.RDB$INDEX_NAME EQ work->dfw_name AND
+					RC.RDB$CONSTRAINT_TYPE = "PRIMARY KEY"
+
 					idx.idx_flags |= idx_primary;
-				}
+
+				END_FOR;
+
+				CMP_release(tdbb, (REQ)rc_request);
 			}
 
 			if (++key_count > idx.idx_count ||
