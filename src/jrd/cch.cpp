@@ -72,55 +72,6 @@
 #include "../common/config/config.h"
 #include "../jrd/jrd_time.h"
 
-extern "C" {
-
-
-static BDB alloc_bdb(TDBB, BCB, UCHAR **);
-static int blocking_ast_bdb(BDB);
-static void btc_flush(TDBB, SLONG, BOOLEAN, STATUS *);
-static void btc_insert(DBB, BDB);
-static void btc_remove(BDB);
-static void cache_bugcheck(int);
-static void THREAD_ROUTINE cache_reader(DBB);
-static void THREAD_ROUTINE cache_writer(DBB);
-static void check_precedence(TDBB, WIN *, SLONG);
-static void clear_precedence(DBB, BDB);
-static BDB dealloc_bdb(BDB);
-static BOOLEAN down_grade(TDBB, BDB);
-static void expand_buffers(TDBB, ULONG);
-static BDB get_buffer(TDBB, SLONG, LATCH, SSHORT);
-static void journal_buffer(STATUS *, BDB);
-static SSHORT latch_bdb(TDBB, LATCH, BDB, SLONG, SSHORT);
-static SSHORT lock_buffer(TDBB, BDB, SSHORT, SSHORT);
-static ULONG memory_init(TDBB, BCB, ULONG);
-static void page_validation_error(TDBB, struct win *, SSHORT);
-static void prefetch_epilogue(PRF, STATUS *);
-static void prefetch_init(PRF, TDBB);
-static void prefetch_io(PRF, STATUS *);
-static void prefetch_prologue(PRF, SLONG *);
-static SSHORT related(BDB, BDB, SSHORT);
-static void release_bdb(TDBB, BDB, BOOLEAN, BOOLEAN, BOOLEAN);
-static BOOLEAN writeable(BDB);
-static int write_buffer(TDBB, BDB, SLONG, USHORT, STATUS *, BOOLEAN);
-static BOOLEAN write_page(TDBB, BDB, USHORT, STATUS *, BOOLEAN);
-static void unmark(TDBB, WIN *);
-
-#define MIN_BUFFER_SEGMENT	65536L
-
-#ifndef DEBUG_PRINTF
-#define DEBUG_PRINTF(msg)	ib_fprintf (ib_stderr, (msg))
-#endif
-
-/* Given pointer a field in the block, find the block */
-
-#define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
-
-#ifdef MULTI_THREAD
-#ifndef VMS
-#define INTERLOCK_CACHE
-#endif
-#endif
-
 /* In the superserver mode, no page locks are acquired through the lock manager.
    Instead, a latching mechanism is used.  So the calls to lock subsystem for
    database pages in the original code should not be made, lest they should cause
@@ -151,6 +102,65 @@ static void unmark(TDBB, WIN *);
 #define PAGE_LOCK_RE_POST(lock)			LCK_re_post (lock)
 #define PAGE_OVERHEAD	(sizeof (bcb_repeat) + sizeof (struct bdb) + \
 			 sizeof (struct lck) + (int) dbb->dbb_page_size)
+#endif
+
+extern "C" {
+
+
+static BDB alloc_bdb(TDBB, BCB, UCHAR **);
+#ifndef PAGE_LATCHING
+static int blocking_ast_bdb(BDB);
+#endif
+static void btc_flush(TDBB, SLONG, BOOLEAN, STATUS *);
+static void btc_insert(DBB, BDB);
+static void btc_remove(BDB);
+static void cache_bugcheck(int);
+#ifdef CACHE_READER
+static void THREAD_ROUTINE cache_reader(DBB);
+#endif
+#ifdef CACHE_WRITER
+static void THREAD_ROUTINE cache_writer(DBB);
+#endif
+static void check_precedence(TDBB, WIN *, SLONG);
+static void clear_precedence(DBB, BDB);
+static BDB dealloc_bdb(BDB);
+#ifndef PAGE_LATCHING
+static BOOLEAN down_grade(TDBB, BDB);
+#endif
+static void expand_buffers(TDBB, ULONG);
+static BDB get_buffer(TDBB, SLONG, LATCH, SSHORT);
+static void journal_buffer(STATUS *, BDB);
+static SSHORT latch_bdb(TDBB, LATCH, BDB, SLONG, SSHORT);
+static SSHORT lock_buffer(TDBB, BDB, SSHORT, SSHORT);
+static ULONG memory_init(TDBB, BCB, ULONG);
+static void page_validation_error(TDBB, struct win *, SSHORT);
+#ifdef CACHE_READER
+static void prefetch_epilogue(PRF, STATUS *);
+static void prefetch_init(PRF, TDBB);
+static void prefetch_io(PRF, STATUS *);
+static void prefetch_prologue(PRF, SLONG *);
+#endif
+static SSHORT related(BDB, BDB, SSHORT);
+static void release_bdb(TDBB, BDB, BOOLEAN, BOOLEAN, BOOLEAN);
+static BOOLEAN writeable(BDB);
+static int write_buffer(TDBB, BDB, SLONG, USHORT, STATUS *, BOOLEAN);
+static BOOLEAN write_page(TDBB, BDB, USHORT, STATUS *, BOOLEAN);
+static void unmark(TDBB, WIN *);
+
+#define MIN_BUFFER_SEGMENT	65536L
+
+#ifndef DEBUG_PRINTF
+#define DEBUG_PRINTF(msg)	ib_fprintf (ib_stderr, (msg))
+#endif
+
+/* Given pointer a field in the block, find the block */
+
+#define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
+
+#ifdef MULTI_THREAD
+#ifndef VMS
+#define INTERLOCK_CACHE
+#endif
 #endif
 
 #define BCB_MUTEX_ACQUIRE
