@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.167 2003-10-27 18:42:42 skidder Exp $
+dnl $Id: configure.in,v 1.168 2003-10-29 07:57:19 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -328,12 +328,6 @@ if test "$EDITLINE_FLG" = "Y"; then
 fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
-dnl kkuznetsov: Solaris always check for -lnsl
-if test "$PLATFORM" = "solx86" -o "$PLATFORM" = "SOLARIS"; then
-  AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
-  AC_CHECK_LIB(thread, main) 
-fi
-
 
 dnl Check for functions
 AC_CHECK_FUNCS(strlcpy strlcat)
@@ -469,18 +463,11 @@ case "$PLATFORM" in
     AC_CHECK_FILES(/proc/self/exe)
     ;;
 
-  FREEBSD)
-    dnl the AC_CHECK_TYPES for socklen_t doesn't include sys/socket.h
-    dnl so test for socklen_t with sys/socket.h included
-    AC_MSG_CHECKING(if sys/socket.h defines socklen_t)
-    AC_TRY_COMPILE([#include <sys/types.h>
-       #include <sys/socket.h>],
-    [socklen_t s;],
-    [AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)])
-    ;;
+  SOLARIS|solx86)
+    dnl kkuznetsov: Solaris always check for -lnsl
+    AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
+    AC_CHECK_LIB(thread, main) 
 
-  [SOLARIS|solx86])
     AC_ARG_WITH(sfio,
       AC_HELP_STRING([--with-sfio=PATH],
         [use sfio (replacement stdio on Solaris) (default=no)]),
