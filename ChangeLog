@@ -1,3 +1,15 @@
+2003-04-14 21:21  skidder
+
+	* firebird2/builds/posix/prefix.linux:
+	
+	Be compatible with older machines
+
+2003-04-14 09:23  alexpeshkoff
+
+	* firebird2/src/jrd/: ext.cpp, flu.cpp:
+	
+	Suggested by Claudio cleanup
+
 2003-04-13 21:52  skidder
 
 	* firebird2/src/jrd/svc.cpp:
