@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.33 2003-08-27 10:20:07 aafemt Exp $
+$Id: backup.epp,v 1.34 2003-08-28 10:39:26 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -254,9 +254,9 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 
 	tdgbl->gbl_database_file_name = dbb_file;
 
-	tdgbl->io_ptr = (UCHAR *) NULL;
+	tdgbl->io_ptr = NULL;
 	tdgbl->io_cnt = 0;
-	tdgbl->relations = (BURP_REL) NULL;
+	tdgbl->relations = NULL;
 	tdgbl->BCK_capabilities = 0;
 
 	isc_trans = NULL;
@@ -705,7 +705,7 @@ static BURP_FLD get_fields( BURP_REL relation)
 	            field->fld_flags |= FLD_array;
 	            field->fld_dimensions = Y.RDB$DIMENSIONS;
 	            if (field->fld_dimensions < 0) {
-	                BURP_error_redirect ((ISC_STATUS*) NULL_PTR, 52, field->fld_name, NULL);
+	                BURP_error_redirect (NULL, 52, field->fld_name, NULL);
                 }
 	         /* msg 52 array dimension for field %s is invalid */
                 get_ranges (field);
@@ -827,7 +827,7 @@ static BURP_FLD get_fields( BURP_REL relation)
 	                field->fld_flags |= FLD_array;
 	                field->fld_dimensions = RF.RDB$DIMENSIONS;
 	                if (field->fld_dimensions < 0)
-	                    BURP_error_redirect ((ISC_STATUS*) NULL_PTR, 52, field->fld_name, NULL);
+	                    BURP_error_redirect (NULL, 52, field->fld_name, NULL);
 	           /* msg 52 array dimension for field %s is invalid */
 	           get_ranges (field);
 	                }
@@ -1058,7 +1058,7 @@ static void get_ranges( BURP_FLD field)
 	    SORTED BY X.RDB$DIMENSION 
 	
 	    if (count != X.RDB$DIMENSION)
-	        BURP_error_redirect ((ISC_STATUS*) NULL_PTR, 52, field->fld_name, NULL);
+	        BURP_error_redirect (NULL, 52, field->fld_name, NULL);
 	   /* msg 52 array dimension for field %s is invalid */
 	    *rp++ = X.RDB$LOWER_BOUND;
 	    *rp++ = X.RDB$UPPER_BOUND;
@@ -1070,7 +1070,7 @@ static void get_ranges( BURP_FLD field)
 	END_ERROR;
 
 	if (count != field->fld_dimensions)
-		BURP_error_redirect((ISC_STATUS*) NULL_PTR, 52, field->fld_name, NULL);
+		BURP_error_redirect(NULL, 52, field->fld_name, NULL);
 	/* msg 52 array dimension for field %s is invalid */
 }
 
@@ -1385,7 +1385,7 @@ static void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 			break;
 
 		default:
-			BURP_error_redirect((ISC_STATUS*) NULL_PTR, 21, (void*) (ULONG) item, NULL);
+			BURP_error_redirect(NULL, 21, (void*) (ULONG) item, NULL);
 			/* msg 21 don't understand blob info item %ld */
 		}
 	}
@@ -1684,7 +1684,7 @@ static void put_data(BURP_REL relation)
 			break;
 
 		default:
-			BURP_error_redirect((ISC_STATUS*) NULL_PTR, 26, (void *) (SLONG) field->fld_type, NULL);
+			BURP_error_redirect(NULL, 26, (void *) (SLONG) field->fld_type, NULL);
 			/* msg 26 datatype %ld not understood */
 			break;
 		}
@@ -1786,7 +1786,7 @@ static void put_data(BURP_REL relation)
 	{
 		BURP_error_redirect(status_vector, 27, NULL, NULL);
 		/* msg 27 isc_compile_request failed */
-		isc_print_blr((char*) blr_buffer, (isc_callback)NULL_PTR, NULL_PTR, 0);
+		isc_print_blr((char*) blr_buffer, NULL, NULL, 0);
 	}
 
 	BURP_FREE(blr_buffer);
