@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.31 2003-07-06 07:05:22 dimitr Exp $
+  $Id: isql.epp,v 1.32 2003-07-06 08:14:44 dimitr Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -103,6 +103,7 @@
 #include "../jrd/license.h"
 #include "../jrd/constants.h"
 #include "../jrd/ods.h"
+#include "../jrd/file_params.h"
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
@@ -321,6 +322,20 @@ static RI_ACTIONS ri_actions_all[] = {
      {0, 0, 0}
 };
 
+// We statically link ISQL against CLIB in MSVC6 and
+// hence we've got problems sharing file handles with FBCLIENT.
+// Since temp files are deleted by ISQL, let's create them here as well.
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+static IB_FILE * create_temp_file(TEXT * string, TEXT * expanded_string)
+{
+	gds__temp_dir(expanded_string);
+	strcat(expanded_string, string);
+	strcat(expanded_string, TEMP_PATTERN);
+	mktemp(expanded_string);
+	return ib_fopen(expanded_string, "w+b");
+}
+#define gds__temp_file(flag, string, expanded_string) create_temp_file(string, expanded_string)
+#endif
 
 
 
