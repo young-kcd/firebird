@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.31 2004-09-15 05:24:28 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.32 2004-09-15 05:30:25 skidder Exp $
  *
  */
  
@@ -173,7 +173,6 @@ private:
 	isc_db_handle newdb; /* database handle */
     isc_tr_handle trans; /* transaction handle */
 	
-	// Owned by caller. Not good in theory, may need to be changed.
 	Firebird::PathName database;
 	Firebird::string username;
 	Firebird::string password;
