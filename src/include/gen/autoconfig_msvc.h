@@ -77,6 +77,8 @@
 #undef HAVE_MNTTAB_H
 #undef HAVE_SYS_MNTENT_H
 #undef HAVE_SYS_MNTTAB_H
+#undef HAVE_SYS_IPC_H
+#undef HAVE_SYS_FILE_H
 
 
 /* Functions */

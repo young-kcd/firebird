@@ -59,8 +59,10 @@
 #include "../jrd/jrd_proto.h"
 
 #include <sys/types.h>
-#if !defined(WIN32)
+#ifdef HABE_SYS_IPC_H
 #include <sys/ipc.h>
+#endif
+#ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
 #include <errno.h>

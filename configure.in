@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.93 2002-11-19 15:31:21 skidder Exp $
+dnl $Id: configure.in,v 1.94 2002-11-21 08:56:21 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -242,6 +242,7 @@ AC_CHECK_HEADERS(netinet/in.h rpc/rpc.h netconfig.h)
 AC_CHECK_HEADERS(rpc/xdr.h,,,[#include <rpc/rpc.h>])
 AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
+AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
