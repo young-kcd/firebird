@@ -546,7 +546,7 @@ RSB OPT_compile(TDBB tdbb,
 // find the end of the conjunct stack.
 	for (stack_end = &conjunct_stack; *stack_end;
 		 stack_end = &(*stack_end)->lls_next);
-	SLONG saved_conjunct_count = conjunct_count;
+	const SLONG saved_conjunct_count = conjunct_count;
 	*stack_end = parent_stack;
 	conjunct_count += distribute_equalities(&conjunct_stack, csb);
 	if (parent_stack) {
@@ -578,7 +578,7 @@ RSB OPT_compile(TDBB tdbb,
 	for (; parent_stack && conjunct_count < MAX_CONJUNCTS;
 		 parent_stack = parent_stack->lls_next, conjunct_count++)
 	{
-		opt_->opt_conjuncts.grow(conjunct_count+1);
+		opt_->opt_conjuncts.grow(conjunct_count + 1);
 		opt_->opt_conjuncts[conjunct_count].opt_conjunct_node = node =
 			(JRD_NOD) parent_stack->lls_object;
 		compute_dependencies(node,
@@ -2002,7 +2002,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
  *		operation '$'.
  *
  **************************************/
-	Firebird::HalfStaticArray<LLS,OPT_STATIC_ITEMS> classes(GET_THREAD_DATA->tdbb_default);
+	Firebird::HalfStaticArray<LLS, OPT_STATIC_ITEMS> classes(GET_THREAD_DATA->tdbb_default);
 	LLS *class_, *class2, stack, temp;
 	JRD_NOD boolean, node1, node2, new_node, arg1, arg2;
 	USHORT count;
@@ -2033,13 +2033,13 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 				break;
 			}
 		if (class_ == classes.end()) {
-			classes.grow(classes.getCount()+1);
+			classes.grow(classes.getCount() + 1);
 			LLS_PUSH(node1, class_);
 			LLS_PUSH(node2, class_);
 		}
 	}
 
-	if (classes.getCount()==0)
+	if (classes.getCount() == 0)
 		return 0;
 
 /* Make another pass looking for any equality relationships that may
@@ -2557,7 +2557,7 @@ static bool estimate_cost(TDBB tdbb,
 		for (i = 0; i < csb_tail->csb_indices; i++) {
 			n = 0;
 			clear_bounds(opt, idx);
-			opt_end = opt->opt_conjuncts.begin()+opt->opt_base_conjuncts;
+			opt_end = opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
 			for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
 				node = tail->opt_conjunct_node;
 				if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
@@ -2566,7 +2566,7 @@ static bool estimate_cost(TDBB tdbb,
 					n += match_index(tdbb, opt, stream, node, idx);
 				}
 			}
-			Opt::opt_segment *segment = opt->opt_segments;
+			Opt::opt_segment* segment = opt->opt_segments;
 			if (segment->opt_lower || segment->opt_upper) {
 				indexes++;
 				for (count = 0; count < idx->idx_count; count++, segment++) {
@@ -2861,19 +2861,19 @@ static void find_best(TDBB tdbb,
 	stream_end = &streams[1] + streams[0];
 	opt->opt_streams[position].opt_stream_number = stream;
 	++position;
-	Opt::opt_stream *order_end = opt->opt_streams.begin() + position;
-	Opt::opt_stream *stream_data = opt->opt_streams.begin() + stream;
+	Opt::opt_stream* order_end = opt->opt_streams.begin() + position;
+	Opt::opt_stream* stream_data = opt->opt_streams.begin() + stream;
 
 	// Save the various flag bits from the optimizer block to reset its
 	// state after each test.
-	Firebird::HalfStaticArray<UCHAR,OPT_STATIC_ITEMS> 
+	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> 
 		stream_flags(tdbb->tdbb_default), conjunct_flags(tdbb->tdbb_default);
 	stream_flags.grow(csb->csb_n_stream);
 	conjunct_flags.grow(opt->opt_base_conjuncts);
 	int i;
-	for (i=0; i < stream_flags.getCount(); i++)
+	for (i = 0; i < stream_flags.getCount(); i++)
 		stream_flags[i] = opt->opt_streams[i].opt_stream_flags & opt_stream_used;
-	for (i=0; i < conjunct_flags.getCount(); i++)
+	for (i = 0; i < conjunct_flags.getCount(); i++)
 		conjunct_flags[i] = opt->opt_conjuncts[i].opt_conjunct_flags & opt_conjunct_used;
 
 	// Compute delta and total estimate cost to fetch this stream.
@@ -2896,7 +2896,7 @@ static void find_best(TDBB tdbb,
 	{
 		opt->opt_best_count = position;
 		opt->opt_best_cost = new_cost;
-		for (Opt::opt_stream *tail = opt->opt_streams.begin(); tail < order_end; tail++) {
+		for (Opt::opt_stream* tail = opt->opt_streams.begin(); tail < order_end; tail++) {
 			tail->opt_best_stream = tail->opt_stream_number;
 		}
 #ifdef OPT_DEBUG
@@ -2926,7 +2926,7 @@ static void find_best(TDBB tdbb,
 	// make a simplifying assumption that if we have already seen a join 
 	// ordering that is lower cost than this one, give up.
 	if (!done && position > 4) {
-		Opt::opt_stream *tail = &opt->opt_streams[position];
+		Opt::opt_stream* tail = &opt->opt_streams[position];
 		/* If we are the new low-cost join ordering, record that 
 		   fact.  Otherwise, give up. */
 		if (tail->opt_best_stream_cost == 0 ||
@@ -3002,9 +3002,9 @@ static void find_best(TDBB tdbb,
 
 	// Clean up from any changes made for compute the cost for this stream
 	csb->csb_rpt[stream].csb_flags &= ~csb_active;
-	for (i=0; i < stream_flags.getCount(); i++)
+	for (i = 0; i < stream_flags.getCount(); i++)
 		opt->opt_streams[i].opt_stream_flags &= stream_flags[i];
-	for (i=0; i < conjunct_flags.getCount(); i++)
+	for (i = 0; i < conjunct_flags.getCount(); i++)
 		opt->opt_conjuncts[i].opt_conjunct_flags &= conjunct_flags[i];
 }
 
@@ -3372,7 +3372,7 @@ static bool form_river(TDBB tdbb,
 		sort_clause = project_clause = NULL;
 	}
 
-	Opt::opt_stream *tail;
+	Opt::opt_stream* tail;
 
 	for (tail = opt->opt_streams.begin(); tail < opt_end; tail++, stream++, ptr++) {
 		*stream = (UCHAR) tail->opt_best_stream;
@@ -4230,10 +4230,10 @@ static RSB gen_retrieval(TDBB     tdbb,
 		   could be calculated via the index; currently we won't detect that case
 		 */
 
-		Firebird::HalfStaticArray<IDX*,OPT_STATIC_ITEMS> idx_walk_vector(tdbb->tdbb_default);
+		Firebird::HalfStaticArray<IDX*, OPT_STATIC_ITEMS> idx_walk_vector(tdbb->tdbb_default);
 		idx_walk_vector.grow(csb_tail->csb_indices);
 		IDX** idx_walk = idx_walk_vector.begin();
-		Firebird::HalfStaticArray<UINT64,OPT_STATIC_ITEMS> idx_priority_level_vector(tdbb->tdbb_default);
+		Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS> idx_priority_level_vector(tdbb->tdbb_default);
 		idx_priority_level_vector.grow(csb_tail->csb_indices);
 		UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
@@ -4324,10 +4324,10 @@ static RSB gen_retrieval(TDBB     tdbb,
 		// Walk through the indicies based on earlier calculated count and
 		// when necessary build the index
 
-		Firebird::HalfStaticArray<SSHORT,OPT_STATIC_ITEMS>
+		Firebird::HalfStaticArray<SSHORT, OPT_STATIC_ITEMS>
 			conjunct_position_vector(tdbb->tdbb_default);
 
-		Firebird::HalfStaticArray<Opt::opt_conjunct*,OPT_STATIC_ITEMS> 
+		Firebird::HalfStaticArray<Opt::opt_conjunct*, OPT_STATIC_ITEMS> 
 			matching_nodes_vector(tdbb->tdbb_default);
 
 		for (i = 0; i < idx_walk_count; i++)
@@ -4413,7 +4413,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 					     (idx_tail->opt_lower || idx_tail->opt_upper);
 					     idx_tail++, position++)
 					{
-						for (SSHORT j = 0; j < conjunct_position_vector.getCount(); j++) {
+						for (int j = 0; j < conjunct_position_vector.getCount(); j++) {
 							if (conjunct_position_vector[j] == position) {
 								matching_nodes_vector[j]->opt_conjunct_flags |= opt_conjunct_matched;
 							}
@@ -4971,7 +4971,7 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
    to indicate that nothing could be done. */
 
 	river_cnt = stream_cnt = 0;
-	Firebird::HalfStaticArray<JRD_NOD*,OPT_STATIC_ITEMS> selected_classes(tdbb->tdbb_default, cnt);
+	Firebird::HalfStaticArray<JRD_NOD*, OPT_STATIC_ITEMS> selected_classes(tdbb->tdbb_default, cnt);
 	for (class_ = classes; class_ < last_class; class_ += cnt) {
 		i = river_count(cnt, class_);
 		if (i > river_cnt) {
@@ -5015,7 +5015,7 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		sort = FB_NEW_RPT(*tdbb->tdbb_default, selected_classes.getCount() * 2) jrd_nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = selected_classes.getCount();
-		JRD_NOD **selected_class;
+		JRD_NOD** selected_class;
 		for (selected_class = selected_classes.begin(), ptr = sort->nod_arg;
 			selected_class < selected_classes.end(); selected_class++) 
 		{
@@ -5193,7 +5193,7 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 
 	CSB              csb       = opt->opt_csb;
 	csb_repeat*      csb_tail  = &csb->csb_rpt[stream];
-	Opt::opt_conjunct* opt_end = opt->opt_conjuncts.begin()+opt->opt_base_conjuncts;
+	Opt::opt_conjunct* opt_end = opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
 	IRL relationship = NULL;
 
 /* Loop thru indexes looking for a match */
@@ -5545,11 +5545,11 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 	float compound_selectivity = 1; // Real maximum selectivity possible is 1.
 
 	// TMN: Shouldn't this be allocated from the tdbb->tdbb_default pool?
-	Firebird::HalfStaticArray<IDX*,OPT_STATIC_ITEMS> 
+	Firebird::HalfStaticArray<IDX*, OPT_STATIC_ITEMS> 
 		idx_walk_vector(tdbb->tdbb_default);
 	idx_walk_vector.grow(csb_tail->csb_indices);
 	IDX** idx_walk = idx_walk_vector.begin();
-	Firebird::HalfStaticArray<UINT64,OPT_STATIC_ITEMS> 
+	Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS> 
 		idx_priority_level_vector(tdbb->tdbb_default);
 	idx_priority_level_vector.grow(csb_tail->csb_indices);
 	UINT64* idx_priority_level = idx_priority_level_vector.begin();
@@ -5888,7 +5888,7 @@ static SSHORT match_index(TDBB tdbb,
  *	were not reliable and will not be used.
  *
  **************************************/
-	Opt::opt_segment *ptr;
+	Opt::opt_segment* ptr;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
 	SET_TDBB(tdbb);
@@ -6701,9 +6701,9 @@ static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
  *    Sort indices based on the priority level.
  *
  ***************************************************/
-	Firebird::HalfStaticArray<IDX*,OPT_STATIC_ITEMS> idx_csb(GET_THREAD_DATA->tdbb_default);
+	Firebird::HalfStaticArray<IDX*, OPT_STATIC_ITEMS> idx_csb(GET_THREAD_DATA->tdbb_default);
 	idx_csb.grow(csb_tail->csb_indices);
-	memcpy(idx_csb.begin(), idx_walk, csb_tail->csb_indices*sizeof(IDX*));
+	memcpy(idx_csb.begin(), idx_walk, csb_tail->csb_indices * sizeof(IDX*));
 
 	SSHORT idx_walk_count = 0;
 	float selectivity = 1; /* Real maximum selectivity possible is 1 */
