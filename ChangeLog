@@ -1,3 +1,17 @@
+2003-10-21 00:41  brodsom
+
+	* firebird2/src/dudley/: ddl.cpp, exe.epp, expand.cpp, extract.epp,
+	generate.cpp, trn.cpp:
+	
+	Macro cleaning Use array access for nod_arg
+
+2003-10-21 00:40  brodsom
+
+	* firebird2/src/: dsql/make.cpp, jrd/cmp.cpp, jrd/dfw.epp,
+	jrd/dsc.h, jrd/evl.cpp, jrd/intl.h:
+	
+	Macro cleaning
+
 2003-10-20 20:34  brodsom
 
 	* firebird2/src/jrd/: gds.cpp, gds_proto.h:
