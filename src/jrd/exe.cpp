@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.36 2002-12-10 11:53:49 eku Exp $
+$Id: exe.cpp,v 1.37 2002-12-11 09:39:41 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3521,21 +3521,29 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
 	{
 		const char* string = 0;
 		/* evaluate exception message and convert it to string */
-		length = MOV_make_string(EVL_expr(tdbb, node),
-								 ttype_none,
-								 &string,
-								 reinterpret_cast<VARY*>(temp),
-								 sizeof(temp));
-		length = MIN(length, sizeof(message) - 1);
+		DSC *desc = EVL_expr(tdbb, node);
+		if (desc)
+		{
+			length = MOV_make_string(desc,
+									 ttype_none,
+									 &string,
+									 reinterpret_cast<VARY*>(temp),
+									 sizeof(temp));
+			length = MIN(length, sizeof(message) - 1);
 
-		/* dimitr: or should we throw an error here, i.e.
-				   replace the above assignment with the following lines:
+			/* dimitr: or should we throw an error here, i.e.
+					   replace the above assignment with the following lines:
 
-		if (length > sizeof(message) - 1)
-			ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
-		*/
+			if (length > sizeof(message) - 1)
+				ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
+			*/
 
-		memcpy(message, string, length);
+			memcpy(message, string, length);
+		}
+		else
+		{
+			length = 0;
+		}
 	}
 	message[length] = 0;
 
