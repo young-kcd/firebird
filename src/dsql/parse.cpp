@@ -7740,7 +7740,7 @@ case 652:
 { yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG); }
 break;
 case 653:
-{ yyval = yyvsp[-2]; }
+{ yyval = yyvsp[-1]; }
 break;
 case 654:
 { yyval = yyvsp[0]; }
