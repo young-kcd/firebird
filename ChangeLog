@@ -1,3 +1,34 @@
+2003-04-20 18:26  skidder
+
+	* firebird2/doc/fb2-todo.txt:
+	
+	Added TODO for Firebird 2
+
+2003-04-20 17:11  skidder
+
+	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.xinetd.in:
+	
+	Fix problem in firebird.xinetd noted by Andreas Filsinger
+
+2003-04-20 05:30  hippoman
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, alice.vcproj,
+	alice_classic.vcproj, burp.vcproj, burp_classic.vcproj,
+	common.vcproj, common_classic.vcproj, dsql_server.vcproj,
+	dsql_server_classic.vcproj, engine.vcproj, engine_classic.vcproj,
+	engine_embed.vcproj, fb_inet_server.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbembed.vcproj, fbguard.vcproj, fbserver.vcproj,
+	fbudf.vcproj, gbak.vcproj, gdef.vcproj, gds32.vcproj, gfix.vcproj,
+	gpre.vcproj, gpre_boot.vcproj, gsec.vcproj, gsplit.vcproj,
+	gstat.vcproj, ib_udf.vcproj, ib_util.vcproj, instreg.vcproj,
+	instsvc.vcproj, intl.vcproj, intlcpp.vcproj, ipserver.vcproj,
+	isql.vcproj, lock.vcproj, lock_classic.vcproj, qli.vcproj,
+	remote.vcproj, remote_classic.vcproj, utilities.vcproj,
+	utilities_classic.vcproj, wal.vcproj, wal_classic.vcproj:
+	
+	* Sync the msvc7 build
+
 2003-04-19 19:01  alexpeshkoff
 
 	* firebird2/builds/win32/msvc6/common_classic.dsp:
