@@ -304,10 +304,12 @@ typedef srl *SRL;
    available in the opt block */
 
 #define MAX_OPT_ITEMS	1024
-#define MAX_STREAMS	MAX_OPT_ITEMS
+
 #define MAX_CONJUNCTS	MAX_OPT_ITEMS
 #define MAX_INDICES	MAX_OPT_ITEMS
-#define	OPT_BITS	(MAX_OPT_ITEMS/32)
+#define	OPT_BITS	(MAX_OPT_ITEMS / 32)
+
+#define MAX_STREAMS	256
 
 /* General optimizer block */
 class Opt : public pool_alloc<type_opt>
