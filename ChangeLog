@@ -1,3 +1,64 @@
+2004-11-01 13:49  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/pt/custom_messages_pt.inc
+	(1.1):
+	
+	file custom_messages_pt.inc was initially added on branch
+	B1_5_Release.
+
+2004-11-01 13:49  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/pt/leia-me.txt (1.1):
+	
+	file leia-me.txt was initially added on branch B1_5_Release.
+
+2004-11-01 13:49  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/hu/custom_messages_hu.inc
+	(1.1):
+	
+	file custom_messages_hu.inc was initially added on branch
+	B1_5_Release.
+
+2004-11-01 13:49  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/de/custom_messages_de.inc
+	(1.1):
+	
+	file custom_messages_de.inc was initially added on branch
+	B1_5_Release.
+
+2004-11-01 13:49  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/de/liesmich.txt (1.1):
+	
+	file liesmich.txt was initially added on branch B1_5_Release.
+
+2004-11-01 13:49  paul_reeves
+
+	*
+	
+	file installation_liesmich.txt was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/win32/de/installation_liesmich.
+	txt (1.1):
+
+2004-11-01 13:49  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.10.2.15), FirebirdInstall_15.iss
+	(1.5.2.18), Readme.txt (1.2.2.6), custom_messages.inc (1.1.2.2),
+	i18n_readme.txt (1.1.2.3), installation_readme.txt (1.2.2.8),
+	de/custom_messages_de.inc (1.1.2.1), de/installation_liesmich.txt
+	(1.1.2.1), de/liesmich.txt (1.1.2.1), fr/custom_messages_fr.inc
+	(1.1.2.2), hu/custom_messages_hu.inc (1.1.2.1),
+	pt/custom_messages_pt.inc (1.1.2.1), pt/leia-me.txt (1.1.2.1):
+	
+	Extend i18n support in Win32 kits
+
 2004-10-30 10:10  skidder
 
 	* firebird2/configure.in (1.141.2.30):
