@@ -97,7 +97,7 @@ void ALLD_fini()
 
 void ALLD_init()
 {
-	tsql* tdsql = DSQL_get_thread_data();
+	// tsql* tdsql = DSQL_get_thread_data();
 
 	if (!init_flag)
 	{

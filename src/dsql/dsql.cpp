@@ -4899,7 +4899,7 @@ static void release_request(dsql_req* request, bool top_level)
 	{
 		child->req_flags |= REQ_orphan;
 		child->req_parent = NULL;
-		DsqlContextPoolHolder(tdsql, &child->req_pool);
+		DsqlContextPoolHolder context(tdsql, &child->req_pool);
 		release_request(child, false);
 	}
 
