@@ -269,7 +269,7 @@ void LEX_init( void *file)
 }
 
 
-void LEX_put_text( void *blob, TXT text)
+void LEX_put_text (FRBRD *blob, TXT text)
 {
 /**************************************
  *

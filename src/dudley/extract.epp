@@ -34,7 +34,8 @@
 #include "../dudley/extra_proto.h"
 #include "../jrd/gds_proto.h"
 
-DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
+//DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
+DATABASE DB = EXTERN FILENAME "ok:C:\GDB\ODS.RDB" RUNTIME DB_file_name;
 
 #ifndef FOPEN_WRITE_TYPE
 #define FOPEN_WRITE_TYPE	"w"
@@ -1853,7 +1854,7 @@ static void print_blob(SLONG * blob_id, TEXT type)
 	SCHAR blr_buffer[2048], *p, *q;
 	SSHORT length;
 	STATUS status_vector[ISC_STATUS_LENGTH], status;
-	SLONG *blob;
+	FRBRD *blob;
 	UCHAR bpb_buffer[20], *bpb, *r;
 
 	blob = NULL;
@@ -1874,7 +1875,7 @@ static void print_blob(SLONG * blob_id, TEXT type)
 	if (gds__open_blob2(status_vector,
 						GDS_REF(DB),
 						GDS_REF(gds_trans),
-						(void**) GDS_REF(blob),
+						GDS_REF(blob),
 						(GDS__QUAD*) GDS_VAL(blob_id), (USHORT) (r - bpb), (SCHAR*) bpb)) {
 		gds__print_status(status_vector);
 		DDL_err(269, NULL, NULL, NULL, NULL, NULL);	/* msg 269: gds__open_blob failed */
@@ -1888,7 +1889,7 @@ static void print_blob(SLONG * blob_id, TEXT type)
 	}
 
 	while (!(status = gds__get_segment(status_vector,
-									   (void**) GDS_REF(blob),
+									   GDS_REF(blob),
 									   (USHORT*) GDS_REF(length),
 									   (USHORT) (sizeof(buffer) - 1),
 									   buffer)) || status == gds_segment) {
@@ -1935,7 +1936,7 @@ static void print_blob(SLONG * blob_id, TEXT type)
 		return;
 	}
 
-	if (gds__close_blob(status_vector, (void**) GDS_REF(blob))) {
+	if (gds__close_blob(status_vector, GDS_REF(blob))) {
 		gds__print_status(status_vector);
 		DDL_err(272, NULL, NULL, NULL, NULL, NULL);	/* msg 272: gds__close_blob failed */
 		return;
@@ -2008,7 +2009,7 @@ static void set_capabilities(void)
  *	unpleasantness later.
  *
  **************************************/
-	ULONG *req;
+	FRBRD *req;
 	RFR_TAB rel_field_table;
 
 	req = NULL;
@@ -2025,7 +2026,7 @@ static void set_capabilities(void)
 	       END_FOR;
 	}
 
-	gds__release_request(gds_status, (void**) GDS_REF(req));
+	gds__release_request(gds_status, GDS_REF(req));
 }
 
 

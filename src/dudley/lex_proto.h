@@ -29,7 +29,7 @@ extern void LEX_fini(void);
 extern void LEX_flush(void);
 extern void LEX_get_text(SCHAR *, TXT);
 extern void LEX_init(void *);
-extern void LEX_put_text(void *, TXT);
+extern void LEX_put_text(FRBRD *, TXT);
 extern void LEX_real(void);
 extern struct tok *LEX_token(void);
 

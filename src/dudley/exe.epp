@@ -53,7 +53,8 @@
 #define	IS_DTYPE_ANY_TEXT(x)	(make_dtype(x) <= dtype_any_text)
 #define NUMERIC_SCALE(desc)	((IS_DTYPE_ANY_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
 
-DATABASE DB = FILENAME "yachts.lnk";
+//DATABASE DB = FILENAME "yachts.lnk";
+DATABASE DB = FILENAME "ok:C:\GDB\ODS.RDB";
 
 static void add_cache(DBB);
 static void add_field(DUDLEY_FLD);
@@ -77,8 +78,8 @@ static DUDLEY_FLD check_field(SYM, SYM);
 static BOOLEAN check_function(SYM);
 static BOOLEAN check_range(DUDLEY_FLD);
 static BOOLEAN check_relation(SYM);
-static void close_blob(void *);
-static void *create_blob(SLONG *, USHORT, UCHAR *);
+static void close_blob(FRBRD *);
+static FRBRD *create_blob(SLONG *, USHORT, UCHAR *);
 static void drop_cache(DBB);
 static void drop_field(DUDLEY_FLD);
 static void drop_filter(FILTER);
@@ -2109,7 +2110,7 @@ static BOOLEAN check_relation( SYM name)
 }
 
 
-static void close_blob( void *blob)
+static void close_blob(FRBRD *blob)
 {
 /**************************************
  *
@@ -2128,7 +2129,7 @@ static void close_blob( void *blob)
 }
 
 
-static void *create_blob( SLONG * blob_id, USHORT bpb_length, UCHAR * bpb)
+static FRBRD *create_blob( SLONG * blob_id, USHORT bpb_length, UCHAR * bpb)
 {
 /**************************************
  *
@@ -2141,7 +2142,7 @@ static void *create_blob( SLONG * blob_id, USHORT bpb_length, UCHAR * bpb)
  *
  **************************************/
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	void *blob;
+	FRBRD *blob;
     
 	blob = NULL;
     
@@ -3082,7 +3083,7 @@ static USHORT get_prot_mask( TEXT * relation, TEXT * field)
 		blr_end,
 		blr_eoc
 	};
-	static int req_handle;
+	static FRBRD* req_handle;
 	struct {
 		SCHAR relation_name[32];
 		SCHAR field_name[32];
@@ -3098,11 +3099,11 @@ static USHORT get_prot_mask( TEXT * relation, TEXT * field)
 		strcpy(msg.field_name, "");
 
 	if (!req_handle)
-		isc_compile_request2((SLONG *) 0, &DB, (void**) &req_handle, sizeof(blr), blr);
-	isc_start_request((SLONG *) 0, (void**) &req_handle, &gds_trans, 0);
-	isc_start_and_send((SLONG *) 0, (void**) &req_handle, &gds_trans, 0, sizeof(msg),
+		isc_compile_request2((SLONG *) 0, &DB, &req_handle, sizeof(blr), blr);
+	isc_start_request((SLONG *) 0, &req_handle, &gds_trans, 0);
+	isc_start_and_send((SLONG *) 0, &req_handle, &gds_trans, 0, sizeof(msg),
 					   &msg, 0);
-	isc_receive((SLONG *) 0, (void**) &req_handle, 1, sizeof(output), &output, 0);
+	isc_receive((SLONG *) 0, &req_handle, 1, sizeof(output), &output, 0);
 
 	return output.prot_mask;
 }
@@ -3961,7 +3962,7 @@ static void set_generator( DUDLEY_NOD node)
  *	else is interfering.
  *
  **************************************/
-	int *req_handle1, *req_handle2;
+	FRBRD *req_handle1, *req_handle2;
 	USHORT prot_mask, i;
 	SLONG *number;
 	SLONG new_val;
@@ -3996,13 +3997,13 @@ static void set_generator( DUDLEY_NOD node)
 	GENERATE_blr(&current_blr, node);
 	l = current_blr.str_current - current_blr.str_start;
 
-	req_handle1 = (int *) NULL_PTR;
+	req_handle1 = 0;
 	blr = (SCHAR *) current_blr.str_start;
-	isc_compile_request2((SLONG *) 0, &DB, (void**) &req_handle1, l, blr);
-	isc_start_request((SLONG *) 0, (void**) &req_handle1, &gds_trans, 0);
-	isc_receive((SLONG *) 0, (void**) &req_handle1, 0, sizeof(gen_value), &gen_value,
+	isc_compile_request2((SLONG *) 0, &DB, &req_handle1, l, blr);
+	isc_start_request((SLONG *) 0, &req_handle1, &gds_trans, 0);
+	isc_receive((SLONG *) 0, &req_handle1, 0, sizeof(gen_value), &gen_value,
 				0);
-	isc_release_request((SLONG *) 0, (void**) &req_handle1);
+	isc_release_request((SLONG *) 0, &req_handle1);
 
 /* the difference between output.current and new is the amount we
    want to change the generator by */
@@ -4020,13 +4021,13 @@ static void set_generator( DUDLEY_NOD node)
 	GENERATE_blr(&new_blr, node);
 	l = new_blr.str_current - new_blr.str_start;
 
-	req_handle2 = (int *) NULL_PTR;
+	req_handle2 = 0;
 	blr = (SCHAR *) new_blr.str_start;
-	isc_compile_request2((SLONG *) 0, &DB, (void**) &req_handle2, l, blr);
-	isc_start_request((SLONG *) 0, (void**) &req_handle2, &gds_trans, 0);
-	isc_receive((SLONG *) 0, (void**) &req_handle2, 0, sizeof(gen_value), &gen_value,
+	isc_compile_request2((SLONG *) 0, &DB, &req_handle2, l, blr);
+	isc_start_request((SLONG *) 0, &req_handle2, &gds_trans, 0);
+	isc_receive((SLONG *) 0, &req_handle2, 0, sizeof(gen_value), &gen_value,
 				0);
-	isc_release_request((SLONG *) 0, (void**) &req_handle2);
+	isc_release_request((SLONG *) 0, &req_handle2);
 
 	for (i = 5; (gen_value != new_val) && --i;) {
 		*number = new_val - gen_value;
@@ -4035,13 +4036,13 @@ static void set_generator( DUDLEY_NOD node)
 		GENERATE_blr(&new_blr, node);
 		l = new_blr.str_current - new_blr.str_start;
 
-		req_handle2 = (int *) NULL_PTR;
+		req_handle2 = 0;
 		blr = (SCHAR *) new_blr.str_start;
-		isc_compile_request2((SLONG *) 0, &DB, (void**) &req_handle2, l, blr);
-		isc_start_request((SLONG *) 0, (void**) &req_handle2, &gds_trans, 0);
-		isc_receive((SLONG *) 0, (void**) &req_handle2, 0, sizeof(gen_value),
+		isc_compile_request2((SLONG *) 0, &DB, &req_handle2, l, blr);
+		isc_start_request((SLONG *) 0, &req_handle2, &gds_trans, 0);
+		isc_receive((SLONG *) 0, &req_handle2, 0, sizeof(gen_value),
 					&gen_value, 0);
-		isc_release_request((SLONG *) 0, (void**) &req_handle2);
+		isc_release_request((SLONG *) 0, &req_handle2);
 	}
 
 	gds__free(current_blr.str_start);
@@ -4064,7 +4065,7 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
 	TEXT buffer[4096];
 	USHORT length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	void *blob;
+	FRBRD *blob;
 
 /* Generate access control list */
 
@@ -4097,7 +4098,7 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 	struct str blr;
 	USHORT length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	void *handle;
+	FRBRD *handle;
 
 	blr.str_current = blr.str_start = (SCHAR *) gds__alloc((SLONG) 4096);
 	blr.str_length = 4096;
@@ -4139,7 +4140,7 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 	DUDLEY_NOD *ptr, *end;
 	SYM symbol;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	void *blob;
+	FRBRD *blob;
 	USHORT bpb_length;
 	UCHAR bpb[20];
 
@@ -4223,7 +4224,7 @@ static void store_text( TXT text, SLONG * blob_id)
  *
  **************************************/
 
-	void *blob;
+	FRBRD *blob;
 	USHORT bpb_length;
 	UCHAR bpb[20];
 
