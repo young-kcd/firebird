@@ -282,6 +282,7 @@
         /doc/sql.extentions/README.expression_indices
       Contributor(s):
       	Oleg Loa <loa at mail.ru>
+        Aleksey Karyakin <karyakin at cmpmail.com>
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * IIF builtin function
