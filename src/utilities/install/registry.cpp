@@ -36,7 +36,9 @@
 #include "../utilities/install/registry.h"
 
 static void cleanup_key(HKEY, TEXT*);
+#ifdef THIS_CODE_IS_TEMPORARILY_NOT_USED_ANYMORE
 static USHORT remove_subkeys(HKEY, bool, USHORT(*)(SLONG, TEXT*, HKEY));
+#endif
 
 USHORT REGISTRY_install(HKEY hkey_rootnode,
 						TEXT* directory, USHORT(*err_handler)(SLONG, TEXT*, HKEY))

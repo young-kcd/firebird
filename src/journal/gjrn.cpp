@@ -69,14 +69,14 @@ struct func_tab {
 
 static const func_tab option_table[] = {
 #ifndef VMS
-	"console", CONSOLE_start_console,
+	{"console", CONSOLE_start_console},
 #endif
-	"enable", start_enable,
-	"disable", start_disable,
-	"online_dump", start_dump,
-	"restore", REBUILD_start_restore,
-	"server", SERVER_start_server,
-	0, 0
+	{"enable", start_enable},
+	{"disable", start_disable},
+	{"online_dump", start_dump},
+	{"restore", REBUILD_start_restore},
+	{"server", SERVER_start_server},
+	{NULL, NULL}
 };
 
 

@@ -198,7 +198,9 @@ static bool rec_add_hdr_entry(DRB, USHORT, USHORT, UCHAR *, USHORT);
 static bool rec_delete_hdr_entry(DRB, USHORT);
 static void rec_find_space(DRB, CACHE *, HDR *, USHORT, USHORT, UCHAR *);
 static bool rec_find_type(DRB, CACHE *, HDR *, USHORT, UCHAR **, UCHAR **);
+#ifdef NOT_USED_OR_REPLACED
 static bool rec_get_hdr_entry(DRB, USHORT, USHORT *, UCHAR *);
+#endif
 static void rec_restore(SCHAR *, SCHAR *);
 static void rec_restore_manual(SCHAR *);
 static void release_db(DRB);
@@ -3238,6 +3240,7 @@ static bool rec_find_type(DRB database,
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static bool rec_get_hdr_entry(DRB database,
 							  USHORT type,
 							  USHORT * len,
@@ -3277,7 +3280,7 @@ static bool rec_get_hdr_entry(DRB database,
 	release_page(database, cch);
 	return true;
 }
-
+#endif
 
 static void rec_restore(SCHAR * journal_name,
 						SCHAR * dbn)

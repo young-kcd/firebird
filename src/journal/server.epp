@@ -140,22 +140,19 @@ DATABASE
 // List of console commands
 
 cmds commands[] = {
-	"DISABLE <db name>	", cmd_disable, 163, "\tdisable database",
-	"DROP <db name>		", cmd_drop, 164, "\tdrop all files for a database",
-	"ERASE <db id>		", cmd_erase, 165,
-	"\tdrop all files for non active database",
-	"EXIT			", cmd_exit, 166, "\texit journal console program",
-	"HELP			", cmd_help, 167, "\tdisplay this text",
-	"RESET DELETE <db name>	", cmd_reset, 168,
-	"\treset delete flag for database",
-	"SET DELETE <db name>	", cmd_set, 169, "\tset delete flag for database",
-	"SHUTDOWN		", cmd_shutdown, 170, "\tshutdown journal server",
-	"STATUS			", cmd_status, 171, "\tdisplay status of journal server",
-	"VERSION			", cmd_version, 172,
-	"\tdisplay software version number",
-	"ARCHIVE <db name>	", cmd_archive, 239, "\trestart archive for database",
-	"QUIT			", cmd_exit, 0, NULL,
-	NULL, cmd_none, 0
+	{"DISABLE <db name>	", cmd_disable, 163, "\tdisable database"},
+	{"DROP <db name>		", cmd_drop, 164, "\tdrop all files for a database"},
+	{"ERASE <db id>		", cmd_erase, 165, "\tdrop all files for non active database"},
+	{"EXIT			", cmd_exit, 166, "\texit journal console program"},
+	{"HELP			", cmd_help, 167, "\tdisplay this text"},
+	{"RESET DELETE <db name>	", cmd_reset, 168, "\treset delete flag for database"},
+	{"SET DELETE <db name>	", cmd_set, 169, "\tset delete flag for database"},
+	{"SHUTDOWN		", cmd_shutdown, 170, "\tshutdown journal server"},
+	{"STATUS			", cmd_status, 171, "\tdisplay status of journal server"},
+	{"VERSION			", cmd_version, 172, "\tdisplay software version number"},
+	{"ARCHIVE <db name>	", cmd_archive, 239, "\trestart archive for database"},
+	{"QUIT			", cmd_exit, 0, NULL},
+	{NULL, cmd_none, 0, NULL}
 };
 
 struct backup_info {
@@ -270,7 +267,9 @@ static void send_reply(CNCT, JRNH *, USHORT);
 static void set_use_count(DJB);
 static void sign_off(CNCT, LTJC *);
 static void sign_on(CNCT, LTJC *);
+#if defined(UNIX_JOURNALLING)
 static void signal_child(void*);
+#endif
 static void CLIB_ROUTINE signal_quit(void);
 static DJB start_database(CNCT, SCHAR *, SCHAR *, SSHORT, SLONG, ULONG);
 static bool start_server(UCHAR *, bool, bool, bool);
