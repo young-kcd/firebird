@@ -25,6 +25,7 @@
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <windows.h>
+#include <conio.h>
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../utilities/install/install_nt.h"
@@ -68,6 +69,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************/
 	TEXT **end, *p, *q, *cmd;
 	TEXT directory[MAXPATHLEN];
+	TEXT full_username[128];
+	TEXT oem_username[128];
+	TEXT keyb_password[64];
 	USHORT sw_command, sw_startup, sw_mode, sw_guardian, sw_arch;
 	bool sw_version;
 	USHORT i, status, len;
@@ -179,9 +183,61 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		ib_printf("install_svc version %s\n", GDS_VERSION);
 
 	if (sw_command == COMMAND_NONE ||
-		(username && sw_command != COMMAND_INSTALL))
+		(username != 0 && sw_command != COMMAND_INSTALL))
 	{
 		usage();
+	}
+
+	if (sw_command == COMMAND_INSTALL && username != 0)
+	{
+		p = username;
+		while (*p != '\0' && *p != '\\') ++p;
+		if (*p == '\0')
+		{
+			DWORD cnlen = sizeof(full_username);
+			GetComputerName(full_username, &cnlen);
+			strcat(full_username, "\\");
+			strncat(full_username, username, sizeof(full_username) - (cnlen + 1));
+		}
+		else
+			strncpy(full_username, username, sizeof(full_username));
+		full_username[sizeof(full_username) -1] = '\0';
+		CharToOem(full_username, oem_username);
+		username = full_username;
+		
+		if (password == 0)
+		{
+			ib_printf("Enter %s user password : ", oem_username);
+			p = keyb_password;
+			q = p + sizeof(keyb_password) - 1;	// keep room for '\0'
+			while (p < q && (*p++ = getch()) != '\r') putch('*'); // Win32 only
+			*(p - 1) = '\0';	// Cuts at '\r'
+			ib_printf("\n");
+			OemToChar(keyb_password, keyb_password);
+			password = keyb_password;
+		}
+
+		// Let's grant "Logon as a Service" right to the -login user
+		switch (SERVICES_grant_logon_right(full_username, svc_error))
+		{
+			case FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED :
+				/*
+				// OM - I think it is better not to bother the admin with this message.
+				ib_printf("The 'Logon as a Service' right was already "
+					"granted to %s\n", oem_username);
+				*/
+				break;
+			case FB_SUCCESS :
+				ib_printf("The 'Logon as a Service' right has been "
+					"granted to %s\n", oem_username);
+				break;
+			case FB_FAILURE :
+			default :
+				ib_printf("Failed granting the 'Logon as a Service' right "
+					"to %s\n", oem_username);
+				exit(FINI_ERROR);
+				break;
+		}
 	}
 
 	manager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
@@ -346,6 +402,8 @@ static void svc_query(TEXT* name, TEXT* display_name, SC_HANDLE manager)
 		qsc = (QUERY_SERVICE_CONFIG*) new UCHAR[uSize];
 		if (qsc && QueryServiceConfig(service, qsc, uSize, &uSize))
 		{
+			CharToOem(qsc->lpBinaryPathName, qsc->lpBinaryPathName);
+			CharToOem(qsc->lpServiceStartName, qsc->lpServiceStartName);
 			ib_printf("  Path    : %s\n", qsc->lpBinaryPathName);
 			ib_printf("  Startup : ");
 			switch (qsc->dwStartType)
@@ -416,7 +474,10 @@ static USHORT svc_error( SLONG status, TEXT * string, SC_HANDLE service)
 			ib_printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}
 		else
+		{
+			CharToOem(buffer, buffer);
 			ib_printf("%s", buffer);	// '\n' is included in system messages
+		}
 	}
 	return FB_FAILURE;
 }
@@ -433,18 +494,20 @@ static void usage(void)
  *
  **************************************/
 	ib_printf("\nUsage:\n");
-	ib_printf("  instsvc install [ -superserver* | -classic ]\n");
-	ib_printf("                  [ -auto* | -demand ]\n");
-	ib_printf("                  [ -guardian ]\n");
-	ib_printf("                  [ -login username password ]\n\n");
-	ib_printf("          start   [ -boostpriority ]\n");
-	ib_printf("          stop\n");
-	ib_printf("          query\n");
-	ib_printf("          remove\n\n");
+	ib_printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]\n");
+	ib_printf("                    [ -a[uto]* | -d[emand] ]\n");
+	ib_printf("                    [ -g[uardian] ]\n");
+	ib_printf("                    [ -l[ogin] username [password] ]\n\n");
+	ib_printf("          sta[rt]   [ -b[oostpriority] ]\n");
+	ib_printf("          sto[p]\n");
+	ib_printf("          q[uery]\n");
+	ib_printf("          r[emove]\n\n");
 	ib_printf("  This utility should be located and run from the 'bin' directory\n");
 	ib_printf("  of your Firebird installation.\n\n");
 	ib_printf("  '*' denotes the default values\n");
 	ib_printf("  '-z' can be used with any other option, prints version\n");
+	ib_printf("  'username' refers by default to a local account on this machine.\n");
+	ib_printf("  Use the format 'domain\\username' or 'server\\username' if appropriate.\n");
 
 	exit(FINI_OK);
 }

@@ -37,8 +37,6 @@
 /* Defines */
 #define RUNAS_SERVICE " -s"
 
-static void grant_logon_right(TEXT* account);
-
 USHORT SERVICES_install(SC_HANDLE manager,
 						TEXT * service_name,
 						TEXT * display_name,
@@ -62,7 +60,6 @@ USHORT SERVICES_install(SC_HANDLE manager,
  **************************************/
 	SC_HANDLE service;
 	TEXT path_name[MAXPATHLEN];
-	TEXT full_user_name[128];
 	USHORT len;
 	DWORD errnum;
 	DWORD dwServiceType;
@@ -82,24 +79,8 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	dwServiceType = SERVICE_WIN32_OWN_PROCESS;
 	if (nt_user_name != 0)
 	{
-		TEXT *p = nt_user_name;
-		while (*p != '\0' && *p != '\\') ++p;
-		if (*p == '\0')
-		{
-			DWORD cnlen = sizeof(full_user_name);
-			GetComputerName(full_user_name, &cnlen);
-			strcat(full_user_name, "\\");
-			strncat(full_user_name, nt_user_name, sizeof(full_user_name) - (cnlen + 1));
-		}
-		else
-			strncpy(full_user_name, nt_user_name, sizeof(full_user_name));
-		full_user_name[sizeof(full_user_name) -1] = '\0';
 		if (nt_user_password == 0)
 			nt_user_password = "";
-		nt_user_name = full_user_name;
-
-		// Let's grant "Logon as a Service" right to the -login user
-		grant_logon_right(nt_user_name);
 	}
 	else
 		dwServiceType |= SERVICE_INTERACTIVE_PROCESS;
@@ -286,13 +267,14 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 	return FB_SUCCESS;
 }
 
-static void grant_logon_right(TEXT* account)
+USHORT SERVICES_grant_logon_right(TEXT* account,
+							USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
-/**************************************
+/***************************************************
  *
- * g r a n t _ l o g o n _ r i g h t
+ * S E R V I C E _ g r a n t _ l o g o n _ r i g h t
  *
- **************************************
+ ***************************************************
  *
  * Functional description
  *  Grants the "Log on as a service" right to account.
@@ -300,11 +282,14 @@ static void grant_logon_right(TEXT* account)
  *  To run a service under an account other than LocalSystem, the account
  *  must have this right. To succeed granting the right, the current user
  *  must be an Administrator.
- *  This function does not report errors, which will happen if the right
- *  as been granted already.
+ *  Returns FB_SUCCESS when actually granted the right.
+ *  Returns FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED if right was already granted
+ *  to the user.
+ *  Returns FB_FAILURE on any error.
+ *
  *  OM - August 2003
  *
- **************************************/
+ ***************************************************/
 
 	LSA_OBJECT_ATTRIBUTES ObjectAttributes;
 	LSA_HANDLE PolicyHandle;
@@ -314,14 +299,15 @@ static void grant_logon_right(TEXT* account)
 	DWORD cchDomain;
 	SID_NAME_USE peUse;
 	LSA_UNICODE_STRING PrivilegeString;
-
+	NTSTATUS lsaErr;
+	
 	// Open the policy on the local machine.
 	ZeroMemory(&ObjectAttributes, sizeof(ObjectAttributes));
-	if (LsaOpenPolicy(NULL, &ObjectAttributes,
-		POLICY_CREATE_ACCOUNT | POLICY_LOOKUP_NAMES, &PolicyHandle)
+	if ((lsaErr = LsaOpenPolicy(NULL, &ObjectAttributes,
+		POLICY_CREATE_ACCOUNT | POLICY_LOOKUP_NAMES, &PolicyHandle))
 			!= (NTSTATUS)0)
 	{
-		return;
+		return (*err_handler)(LsaNtStatusToWinError(lsaErr), "LsaOpenPolicy", NULL);
 	}
 
 	// Obtain the SID of the user/group. First get required buffer sizes.
@@ -329,34 +315,72 @@ static void grant_logon_right(TEXT* account)
 	LookupAccountName(NULL, account, NULL, &cbSid, NULL, &cchDomain, &peUse);
 	pSid = (PSID)LocalAlloc(LMEM_ZEROINIT, cbSid);
 	if (pSid == 0)
-	{
+	{	
+		DWORD err = GetLastError();
 		LsaClose(PolicyHandle);
-		return;
+		return (*err_handler)(err, "LocalAlloc(Sid)", NULL);
 	}
 	pDomain = (LPTSTR)LocalAlloc(LMEM_ZEROINIT, cchDomain);
 	if (pDomain == 0)
 	{
+		DWORD err = GetLastError();
 		LsaClose(PolicyHandle);
 		LocalFree(pSid);
-		return;
+		return (*err_handler)(err, "LocalAlloc(Domain)", NULL);
 	}
 	// Now, really obtain the SID of the user/group.
 	if (LookupAccountName(NULL, account, pSid, &cbSid,
-		pDomain, &cchDomain, &peUse) != 0)
+			pDomain, &cchDomain, &peUse) != 0)
 	{
-		// Grant the SeServiceLogonRight to users represented by pSid.
-		PrivilegeString.Buffer = L"SeServiceLogonRight";
-		PrivilegeString.Length = (USHORT) 19 * sizeof(WCHAR); // 19 : char len of Buffer
-		PrivilegeString.MaximumLength=(USHORT)(19 + 1) * sizeof(WCHAR);
-		// No need to check the result.
-		LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1);
+		PLSA_UNICODE_STRING UserRights;
+		ULONG CountOfRights = 0;
+		ULONG i;
+
+		LsaEnumerateAccountRights(PolicyHandle, pSid, &UserRights, &CountOfRights);
+		// Check if the seServiceLogonRight is already granted
+		for (i = 0; i < CountOfRights; i++)
+		{
+			if (wcscmp(UserRights[i].Buffer, L"SeServiceLogonRight") == 0)
+				break;
+		}
+		LsaFreeMemory(UserRights); // Don't leak
+		if (CountOfRights == 0 || i == CountOfRights)
+		{
+			// Grant the SeServiceLogonRight to users represented by pSid.
+			PrivilegeString.Buffer = L"SeServiceLogonRight";
+			PrivilegeString.Length = (USHORT) 19 * sizeof(WCHAR); // 19 : char len of Buffer
+			PrivilegeString.MaximumLength=(USHORT)(19 + 1) * sizeof(WCHAR);
+			if ((lsaErr = LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1))
+				!= (NTSTATUS)0)
+			{
+				LsaClose(PolicyHandle);
+				LocalFree(pSid);
+				LocalFree(pDomain);
+				return (*err_handler)(LsaNtStatusToWinError(lsaErr), "LsaAddAccountRights", NULL);
+			}
+		}
+		else
+		{
+			LsaClose(PolicyHandle);
+			LocalFree(pSid);
+			LocalFree(pDomain);
+			return FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED;
+		}
+	}
+	else
+	{
+		DWORD err = GetLastError();
+		LsaClose(PolicyHandle);
+		LocalFree(pSid);
+		LocalFree(pDomain);
+		return (*err_handler)(err, "LookupAccountName", NULL);
 	}
 	
 	LsaClose(PolicyHandle);
 	LocalFree(pSid);
 	LocalFree(pDomain);
 
-	return;
+	return FB_SUCCESS;
 }
 
 //

@@ -189,7 +189,10 @@ static USHORT reg_error( SLONG status, TEXT * string, HKEY hkey)
 			ib_printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}
 		else
+		{
+			CharToOem(buffer, buffer);
 			ib_printf("%s\n", buffer);
+		}
 	}
 
 	return FB_FAILURE;
@@ -208,11 +211,10 @@ static void usage(void)
  **************************************/
 
 	ib_printf("\nUsage:\n");
-	ib_printf("  instreg install\n");
-	ib_printf("          remove\n\n");
+	ib_printf("  instreg i[nstall]\n");
+	ib_printf("          r[emove]\n\n");
 	ib_printf("  This utility should be located and run from the 'bin' directory\n");
 	ib_printf("  of your Firebird installation.\n\n");
-	ib_printf("  '*' denotes the default values\n");
 	ib_printf("  '-z' can be used with any other option, prints version\n");
 
 	exit(FINI_OK);
