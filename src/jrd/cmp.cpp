@@ -3291,11 +3291,9 @@ static JRD_NOD pass1(TDBB tdbb,
 			// Comment 1994-August-08 David Schnepper
 
 			if (tail->csb_flags & (csb_view_update | csb_trigger)) {
-			// dimitr:	this code is rollbacked to its previous state
-			//			to allow computed fields in views to be updatable
-			//			via triggers
-			//												2003.11.05
-			//	if (!(field->fld_computation))
+				// dimitr:	added an extra check for views, because we don't
+				//			want their old/new contexts to be substituted
+				if (relation->rel_view_rse || !field->fld_computation)
 					break;
 			}
 
