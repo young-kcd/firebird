@@ -2495,7 +2495,7 @@ static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
  *      
  **************************************/
 	CHARSET obj;
-	BYTE *end, *space, *end_space;
+	BYTE *end, *space, *end_space, *pptr;
 
 	SET_TDBB(tdbb);
 
@@ -2504,25 +2504,34 @@ static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
 	obj = INTL_CHARSETTYPE(charset, (FPTR_VOID) ERR_post);
 
 	assert(obj != NULL);
+	if (len < 1 )
+	    return; /* Exit, if nothing to fill */
+	    
+	pptr=ptr; /*So not good idea incrementing function argument
+		                Konstantin Kuznetsov */
+				
 
 /* Single-octet character sets are optimized here */
 	if (obj->charset_space_length == 1) {
 		end = &ptr[len];
-		while (ptr < end)
-			*ptr++ = *obj->charset_space_character;
+		space = obj->charset_space_character;
+		while (pptr < end){
+			*pptr = *space;
+			pptr++;
+		};	
 	}
 	else {
 		end = &ptr[len];
 		end_space = &obj->charset_space_character[obj->charset_space_length];
-		while (ptr < end) {
+		while (pptr < end) {
 			space = obj->charset_space_character;
-			while (ptr < end && space < end_space) {
-				*ptr++ = *space++;
+			while ((pptr < end) && (space < end_space)) {
+				*pptr++ = *space++;
 			}
 			/* This assert is checking that we didn't have a buffer-end
 			 * in the middle of a space character
 			 */
-			assert(!(ptr == end) || (space == end_space));
+			assert(!(pptr == end) || (space == end_space));
 		}
 	}
 }
