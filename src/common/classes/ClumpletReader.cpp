@@ -11,9 +11,9 @@ ClumpletReader::ClumpletReader(bool isTagged, const UCHAR* buffer, size_t buffLe
 {
 }
 
-void ClumpletReader::usage_mistake(const char* what) {
+void ClumpletReader::usage_mistake (const char* what) {
 	fatal_exception::raiseFmt(
-		"Internal error when using clumplet API: %s", what);
+ 		"Internal error when using clumplet API: %s", what);
 }
 
 void ClumpletReader::invalid_structure() {
@@ -26,8 +26,8 @@ UCHAR ClumpletReader::getBufferTag() {
 		return 0;
 	}
 
-	UCHAR* buffer_end = getBufferEnd();
-	UCHAR* buffer_start = getBuffer();
+	const UCHAR* buffer_end = getBufferEnd();
+	const UCHAR* buffer_start = getBuffer();
 	if (buffer_end - buffer_start == 0) {
 		invalid_structure();
 		return 0;
@@ -36,8 +36,8 @@ UCHAR ClumpletReader::getBufferTag() {
 }
 
 void ClumpletReader::moveNext() {
-	UCHAR* clumplet = getBuffer() + cur_offset;
-	UCHAR* buffer_end = getBufferEnd();
+	const UCHAR* clumplet = getBuffer() + cur_offset;
+	const UCHAR* buffer_end = getBufferEnd();
 
 	// Check for EOF
 	if (clumplet >= buffer_end) {
@@ -57,8 +57,8 @@ void ClumpletReader::moveNext() {
 
 // Methods which work with currently selected clumplet
 UCHAR ClumpletReader::getClumpTag() {
-	UCHAR* clumplet = getBuffer() + cur_offset;
-	UCHAR* buffer_end = getBufferEnd();
+	const UCHAR* clumplet = getBuffer() + cur_offset;
+	const UCHAR* buffer_end = getBufferEnd();
 
 	// Check for EOF
 	if (clumplet >= buffer_end) {
@@ -70,8 +70,8 @@ UCHAR ClumpletReader::getClumpTag() {
 }
 
 size_t ClumpletReader::getClumpLength() {
-	UCHAR* clumplet = getBuffer() + cur_offset;
-	UCHAR* buffer_end = getBufferEnd();
+	const UCHAR* clumplet = getBuffer() + cur_offset;
+	const UCHAR* buffer_end = getBufferEnd();
 
 	// Check for EOF
 	if (clumplet >= buffer_end) {
@@ -96,13 +96,13 @@ size_t ClumpletReader::getClumpLength() {
 }
 
 SLONG ClumpletReader::getInt() {
-	UCHAR* clumplet = getBuffer() + cur_offset;
+	const UCHAR* clumplet = getBuffer() + cur_offset;
 	size_t length = getClumpLength();
 
 	if (length > 4)
 		invalid_structure();
 
-	UCHAR* ptr = clumplet + 2;
+	const UCHAR* ptr = clumplet + 2;
 
 	// This code is taken from gds__vax_integer
 	SLONG value = 0;
@@ -116,13 +116,13 @@ SLONG ClumpletReader::getInt() {
 }
 
 SINT64 ClumpletReader::getBigInt() {
-	UCHAR* clumplet = getBuffer() + cur_offset;
+	const UCHAR* clumplet = getBuffer() + cur_offset;
 	size_t length = getClumpLength();
 
 	if (length > 8)
 		invalid_structure();
 
-	UCHAR* ptr = clumplet + 2;
+	const UCHAR* ptr = clumplet + 2;
 
 	// This code is taken from isc_portable_integer
 	SINT64 value = 0;
@@ -136,9 +136,16 @@ SINT64 ClumpletReader::getBigInt() {
 }
 
 string& ClumpletReader::getString(string& str) {
-	UCHAR* clumplet = getBuffer() + cur_offset;
+	const UCHAR* clumplet = getBuffer() + cur_offset;
 	size_t length = getClumpLength();
-	str.assign(reinterpret_cast<char*>(clumplet + 2), length);
+	str.assign(reinterpret_cast<const char*>(clumplet + 2), length);
+	return str;
+}
+
+PathName& ClumpletReader::getPath(PathName& str) {
+	const UCHAR* clumplet = getBuffer() + cur_offset;
+	size_t length = getClumpLength();
+	str.assign(reinterpret_cast<const char*>(clumplet + 2), length);
 	return str;
 }
 

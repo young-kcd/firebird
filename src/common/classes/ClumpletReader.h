@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletReader.h,v 1.3 2004-11-03 08:38:09 skidder Exp $
+ *  $Id: ClumpletReader.h,v 1.4 2004-11-15 16:34:47 alexpeshkoff Exp $
  *
  */
 
@@ -54,6 +54,7 @@ public:
 	SLONG getInt();
 	SINT64 getBigInt();
 	string& getString(string& str);
+	PathName& getPath(PathName& str);
 	const UCHAR* getBytes() { return getBuffer() + cur_offset + 2; }
 
 	// Return the tag for buffer (usually structure version)
@@ -66,15 +67,15 @@ protected:
 	bool mIsTagged;
 
 	// Methods are virtual so writer can override 'em
-	virtual UCHAR* getBuffer() { return const_cast<UCHAR*>(static_buffer); }
-	virtual UCHAR* getBufferEnd() { return const_cast<UCHAR*>(static_buffer_end); }
+	virtual const UCHAR* getBuffer() { return static_buffer; }
+	virtual const UCHAR* getBufferEnd() { return static_buffer_end; }
 
 	// These functions are called when error condition is detected by this class. 
 	// They may throw exceptions. If they don't reader tries to do something
 	// sensible, certainly not overwrite memory or read past the end of buffer
 
 	// This appears to be a programming error in buffer access pattern
-	virtual void usage_mistake(const char* what);
+	virtual void usage_mistake (const char* what);
 
 	// This is called when passed buffer appears invalid
 	virtual void invalid_structure();

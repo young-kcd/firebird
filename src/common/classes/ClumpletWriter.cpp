@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletWriter.cpp,v 1.3 2004-11-03 08:38:09 skidder Exp $
+ *  $Id: ClumpletWriter.cpp,v 1.4 2004-11-15 16:34:47 alexpeshkoff Exp $
  *
  */
 
@@ -39,33 +39,35 @@ ClumpletWriter::ClumpletWriter(bool isTagged, size_t limit, UCHAR tag) :
   ClumpletReader(isTagged, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
 	if (isTagged) {
-		dynamic_buffer += static_cast<char>(tag);
+		dynamic_buffer.push(tag);
 	}
 }
  
 ClumpletWriter::ClumpletWriter(bool isTagged, size_t limit, const UCHAR* buffer, size_t buffLen) :
   ClumpletReader(isTagged, NULL, 0), sizeLimit(limit), 
-	  dynamic_buffer(getPool(), reinterpret_cast<const char*>(buffer), buffLen) 
+	  dynamic_buffer(getPool()) 
 {
+	  dynamic_buffer.push(buffer, buffLen);
 }
 
 void ClumpletWriter::reset(UCHAR tag) {
+	dynamic_buffer.shrink(0);
+
 	if (!mIsTagged) {
 		usage_mistake("buffer is not tagged");
 
-		dynamic_buffer.resize(0);
 		cur_offset = 0;
 		return;
 	}
 
 	cur_offset = 1;
-	dynamic_buffer.resize(1);
-	dynamic_buffer[0] = static_cast<char>(tag);
+	dynamic_buffer.push(tag);
 }
 
 void ClumpletWriter::reset(const UCHAR* buffer, size_t buffLen) {
 	cur_offset = mIsTagged ? 1 : 0;
-	dynamic_buffer.assign(reinterpret_cast<const char*>(buffer), buffLen);
+	dynamic_buffer.clear();
+	dynamic_buffer.push(buffer, buffLen);
 }
 
 
@@ -75,7 +77,7 @@ void ClumpletWriter::size_overflow() {
 
 void ClumpletWriter::insertInt(UCHAR tag, SLONG value) {
 #if defined(WORDS_BIGENDIAN)
-	char bytes[4];
+	UCHAR bytes[4];
 	UCHAR* ptr = &value;
 	bytes[0] = ptr[3];
 	bytes[1] = ptr[2];
@@ -89,7 +91,7 @@ void ClumpletWriter::insertInt(UCHAR tag, SLONG value) {
 
 void ClumpletWriter::insertBigInt(UCHAR tag, SINT64 value) {
 #if defined(WORDS_BIGENDIAN)
-	char bytes[8];
+	UCHAR bytes[8];
 	UCHAR* ptr = static_cast<UCHAR*>(&value);
 	bytes[0] = ptr[7];
 	bytes[1] = ptr[6];
@@ -106,6 +108,10 @@ void ClumpletWriter::insertBigInt(UCHAR tag, SINT64 value) {
 }
 
 void ClumpletWriter::insertString(UCHAR tag, const string& str) {
+	insertString(tag, str.c_str(), str.length());
+}
+
+void ClumpletWriter::insertPath(UCHAR tag, const PathName& str) {
 	insertString(tag, str.c_str(), str.length());
 }
 
@@ -134,27 +140,27 @@ void ClumpletWriter::insertBytes(UCHAR tag, const UCHAR* bytes, size_t length) {
 void ClumpletWriter::insertBytesNoLengthCheck(UCHAR tag, const UCHAR* bytes, UCHAR length) {
 	// Check that we're not beyond the end of buffer.
 	// We get there when we set end marker.
-	if (cur_offset > dynamic_buffer.length()) {
+	if (cur_offset > dynamic_buffer.getCount()) {
 		usage_mistake("write past EOF");
 		return;
 	}
 	
 	// Check that resulting data doesn't overflow size limit
-	if (dynamic_buffer.length() + length + 2 > sizeLimit) {
+	if (dynamic_buffer.getCount() + length + 2 > sizeLimit) {
 		size_overflow();
 	}
 
 	// Insert the data
-	dynamic_buffer.insert(cur_offset, static_cast<char>(tag));
-	dynamic_buffer.insert(cur_offset + 1, static_cast<char>(length));
-	dynamic_buffer.insert(cur_offset + 2, reinterpret_cast<const char*>(bytes));
+	dynamic_buffer.insert(cur_offset, tag);
+	dynamic_buffer.insert(cur_offset + 1, length);
+	dynamic_buffer.insert(cur_offset + 2, bytes, length);
 	cur_offset += length + 2;
 }
 
 void ClumpletWriter::insertEndMarker(UCHAR tag) {
 	// Check that we're not beyond the end of buffer.
 	// We get there when we set end marker.
-	if (cur_offset > dynamic_buffer.length()) {
+	if (cur_offset > dynamic_buffer.getCount()) {
 		usage_mistake("write past EOF");
 		return;
 	}
@@ -164,15 +170,15 @@ void ClumpletWriter::insertEndMarker(UCHAR tag) {
 		size_overflow();
 	}
 
-	dynamic_buffer.erase(cur_offset, string::npos);
-	dynamic_buffer += static_cast<char>(tag);
+	dynamic_buffer.shrink(cur_offset);
+	dynamic_buffer.push(tag);
 
 	cur_offset += 2; // Go past EOF to indicate we set the marker
 }
 
 void ClumpletWriter::deleteClumplet() {
-	UCHAR* clumplet = getBuffer() + cur_offset;
-	UCHAR* buffer_end = getBufferEnd();
+	const UCHAR* clumplet = getBuffer() + cur_offset;
+	const UCHAR* buffer_end = getBufferEnd();
 
 	// Check for EOF
 	if (clumplet >= buffer_end) {
@@ -182,10 +188,10 @@ void ClumpletWriter::deleteClumplet() {
 
 	if (buffer_end - clumplet < 2) {
 		// It appears we're erasing EOF marker
-		dynamic_buffer.erase(cur_offset, string::npos);
+		dynamic_buffer.shrink(cur_offset);
 	} else {
 		size_t length = clumplet[1];
-		dynamic_buffer.erase(cur_offset, length + 2);
+		dynamic_buffer.remove(cur_offset, length + 2);
 	}
 }
 

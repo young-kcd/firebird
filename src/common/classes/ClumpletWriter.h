@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletWriter.h,v 1.3 2004-11-03 08:38:09 skidder Exp $
+ *  $Id: ClumpletWriter.h,v 1.4 2004-11-15 16:34:47 alexpeshkoff Exp $
  *
  */
 
@@ -32,6 +32,7 @@
 #define CLUMPLETWRITER_H
 
 #include "../common/classes/ClumpletReader.h"
+#include "../common/classes/array.h"
 
 namespace Firebird {
 
@@ -52,19 +53,16 @@ public:
 	void insertBigInt(UCHAR tag, SINT64 value);
 	void insertBytes(UCHAR tag, const UCHAR* bytes, size_t length);
 	void insertString(UCHAR tag, const string& str);
+	void insertPath(UCHAR tag, const PathName& str);
 	void insertString(UCHAR tag, const char* str, size_t length);
 	void insertEndMarker(UCHAR tag);
 
     // Delete currently selected clumplet from buffer
 	void deleteClumplet();
 
-	virtual UCHAR* getBuffer() { 
-		return reinterpret_cast<UCHAR*>(dynamic_buffer.begin()); 
-	}
+	virtual const UCHAR* getBuffer() { return dynamic_buffer.begin(); }
 protected:
-	virtual UCHAR* getBufferEnd() { 
-		return reinterpret_cast<UCHAR*>(dynamic_buffer.end()); 
-	}
+	virtual const UCHAR* getBufferEnd() { return dynamic_buffer.end(); }
 	virtual void size_overflow();
 	void insertBytesNoLengthCheck(UCHAR tag, const UCHAR* bytes, UCHAR length);
 private:
@@ -74,7 +72,7 @@ private:
 	ClumpletWriter(const ClumpletWriter& from);
 	ClumpletWriter& operator=(const ClumpletWriter& from);
 
-	string dynamic_buffer;
+	HalfStaticArray<UCHAR, 128> dynamic_buffer;
 };
 
 } // namespace Firebird

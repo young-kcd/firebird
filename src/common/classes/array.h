@@ -144,6 +144,13 @@ public:
 		memcpy(data + index, L.data, L.count);
 		count += L.count;
 	}
+	void insert(size_t index, const T* items, size_t itemsSize) {
+		fb_assert(index <= count);
+		ensureCapacity(count + itemsSize);
+		memmove(data + index + itemsSize, data + index, sizeof(T) * (count - index));
+		memcpy(data + index, items, sizeof(T) * itemsSize);
+		count += itemsSize;
+	}
 	size_t add(const T& item) {
 		ensureCapacity(count + 1);
 		data[count++] = item;
@@ -152,6 +159,12 @@ public:
 	void remove(size_t index) {
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
+	}
+	void remove(size_t from, size_t to) {
+  		fb_assert(from <= to);
+  		fb_assert(to <= count);
+  		memmove(data + from, data + to, sizeof(T) * (to - from));
+		count -= (to - from);
 	}
 	void remove(T* itr) {
 		const size_t index = itr - begin();
@@ -178,6 +191,11 @@ public:
 	size_t getCapacity() const { return capacity; }
 	void push(const T& item) {
 		add(item);
+	}
+	void push(const T* items, size_t itemsSize) {
+		ensureCapacity(count + itemsSize);
+		memcpy(data + count, items, sizeof(T) * itemsSize);
+		count += itemsSize;
 	}
 	T pop() {
 		fb_assert(count > 0);
