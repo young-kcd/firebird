@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.16 2003-03-13 00:49:47 brodsom Exp $
+$Id: canonical.cpp,v 1.17 2003-03-18 01:35:11 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -64,9 +64,6 @@ static bool_t burp_putlong(XDR*, SLONG *);
 static bool_t burp_setpostn(XDR*, u_int);
 static bool_t expand_buffer(XDR*);
 static bool_t xdr_datum(XDR*, DSC*, UCHAR*);
-#if (defined DEBUG_XDR_MEMORY) && (defined SUPERCLIENT) && (defined WIN_NT)
-extern void xdr_debug_memory(XDR*, enum xdr_op, void*, void*, ULONG);
-#endif
 static bool_t xdr_quad(XDR*, SLONG*);
 static int xdr_init(XDR*, LSTRING*, enum xdr_op);
 static bool_t xdr_slice(XDR*, LSTRING*, USHORT, UCHAR*);
@@ -593,52 +590,6 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, UCHAR * buffer)
 
 	return TRUE;
 }
-
-#if (defined DEBUG_XDR_MEMORY) && (defined SUPERCLIENT) && (defined WIN_NT)
-void xdr_debug_memory(	XDR* xdrs,
-						enum xdr_op xop,
-						void* xdrvar,
-						void* address,
-						ULONG length)
-{
-/**************************************
- *
- *	x d r _ d e b u g _ m e m o r y
- *
- **************************************
- *
- * Functional description
- *	Track memory allocation patterns of XDR aggregate
- *	types (i.e. xdr_cstring, xdr_string, etc.) to
- *	validate that memory is not leaked by overwriting
- *	XDR aggregate pointers and that freeing a packet
- *	with REMOTE_free_packet() does not miss anything.
- *
- *	All memory allocations due to marshalling XDR
- *	variables are recorded in a debug memory alloca-
- *	tion table stored at the front of a packet.
- *
- *	Once a packet is being tracked it is an assertion
- *	error if a memory allocation can not be recorded
- *	due to space limitations or if a previous memory
- *	allocation being freed cannot be found. At most
- *	P_MALLOC_SIZE entries can be stored in the memory
- *	allocation table. A rough estimate of the number
- *	of XDR aggregates that can hang off a packet can
- *	be obtained by examining the subpackets defined
- *	in <remote/protocol.h>: A guestimate of 36 at this
- *	time includes 10 strings used to decode an xdr
- *	status vector.
- *
- **************************************/
-
-	/* This function does nothing here.  It is implemented in protocol.c.  This
-	 * stub exists for compiling GBAK on windows NT only 
-	 * 25-November-1997*/
-
-}
-#endif
-
 
 static bool_t xdr_quad(XDR* xdrs, SLONG* ip)
 {
