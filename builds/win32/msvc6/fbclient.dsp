@@ -402,7 +402,7 @@ SOURCE=..\..\..\src\jrd\version.rc
 # End Group
 # Begin Source File
 
-SOURCE=.\fbclient.def
+SOURCE=..\fbclient.def
 
 !IF  "$(CFG)" == "fbclient - Win32 Debug"
 
@@ -410,14 +410,12 @@ SOURCE=.\fbclient.def
 
 !ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
 
-# PROP BASE Exclude_From_Build 1
-
 !ENDIF 
 
 # End Source File
 # Begin Source File
 
-SOURCE=.\fbclient_debug.def
+SOURCE=..\fbclient_debug.def
 
 !IF  "$(CFG)" == "fbclient - Win32 Debug"
 
