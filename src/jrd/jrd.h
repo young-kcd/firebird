@@ -207,6 +207,7 @@ public:
 	USHORT dbb_prefetch_pages;	/* prefetch pages per request */
 	Firebird::string dbb_spare_string;	/* random buffer */
 	Firebird::PathName dbb_filename;	/* filename string */
+	Firebird::PathName dbb_database_name;	/* database ID (file name or alias) */
 	Firebird::string dbb_encrypt_key;	/* encryption key */
 
 	JrdMemoryPool* dbb_permanent;
@@ -273,6 +274,7 @@ private:
 	:	dbb_modules(p),
 		dbb_spare_string(p),
 		dbb_filename(p),
+		dbb_database_name(p),
 		dbb_encrypt_key(p),
 		dbb_pools(1, p, type_dbb),
 		dbb_text_objects(p),

@@ -2821,6 +2821,7 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		case nod_argument:
 		case nod_current_date:
 		case nod_current_role:
+		case nod_current_database:
 		case nod_current_time:
 		case nod_current_timestamp:
 		case nod_gen_id:
@@ -2931,6 +2932,7 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 		case nod_argument:
 		case nod_current_date:
 		case nod_current_role:
+		case nod_current_database:
 		case nod_current_time:
 		case nod_current_timestamp:
 		case nod_gen_id:
@@ -3251,6 +3253,7 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		case nod_null:
 		case nod_user_name:
 		case nod_current_role:
+		case nod_current_database:
 		case nod_current_time:
 		case nod_current_date:
 		case nod_current_timestamp:

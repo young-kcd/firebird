@@ -137,13 +137,18 @@ static const struct
 /* New BLR in 6.0 */
 	{"extract", extract}, {"current_date", zero},	/* 160 */
 	{"current_timestamp", zero}, {"current_time", zero},
-    /* These verbs were added in 6.0, primarily to support 64-bit integers */
 	{"post_arg", two},
 	{"exec_into", exec_into},
 	{"user_savepoint", user_savepoint},
+	
+	/* These are actually cursor operations added in Firebird 2.0 */
     {"divide2", two},
 	{"agg_total2", one},
-	{"agg_total_distinct2", one}, {"agg_average2", one}, {"agg_average_distinct2", one},	/* 170 */
+	
+	{"current_database", zero}, 
+	
+    /* These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete */
+	{"agg_average2", one}, {"agg_average_distinct2", one},	/* 170 */
 	{"average2", two}, 
 	{"gen_id2", gen_id}, 
     {"set_generator2", gen_id},
@@ -156,6 +161,7 @@ static const struct
 	{"nullsfirst", zero},
 	{"writelock", zero},
 	{"nullslast", zero}, /* 180 */
+    {"current_database", zero},
 	{0, 0}
 };
 

@@ -58,6 +58,10 @@ const ULONG MAX_COLUMN_SIZE	= 32767;	/* Bytes */
 
 const int USERNAME_LENGTH	= 31;	/* Bytes */
 
+// Maximum length of database file name. Since it is stored in system tables and
+// clumplet structures it is highly non-trivial to increase
+const int DATABASE_NAME_LENGTH	= 255;	/* Bytes */
+
 const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
 const size_t MAX_SQL_IDENTIFIER_LEN = 31;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];

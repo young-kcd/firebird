@@ -1109,6 +1109,14 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 		desc->dsc_length = USERNAME_LENGTH + sizeof(USHORT);
 		return;
 
+	case nod_current_database:
+		desc->dsc_dtype = dtype_varying;
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0;
+		desc->dsc_ttype() = ttype_dynamic;
+		desc->dsc_length = DATABASE_NAME_LENGTH + sizeof(USHORT);
+		return;
+
 	case nod_internal_info:
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_scale = 0;

@@ -1696,6 +1696,14 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		desc->dsc_flags = 0;
 		return;
 
+    case nod_current_database:
+		desc->dsc_dtype = dtype_text;
+		desc->dsc_ttype() = ttype_metadata;
+		desc->dsc_length = DATABASE_NAME_LENGTH;
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0;
+		return;
+
 	case nod_internal_info:
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
@@ -4942,6 +4950,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_null:
 	case nod_user_name:
     case nod_current_role:
+    case nod_current_database:
 	case nod_internal_info:
 	case nod_gen_id:
 	case nod_gen_id2:

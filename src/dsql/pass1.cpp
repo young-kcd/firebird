@@ -2644,6 +2644,7 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_current_timestamp:
 		case nod_user_name:
 		case nod_current_role:
+		case nod_current_database:
 		case nod_internal_info:
 		case nod_dbkey:
 		case nod_derived_table:
@@ -4260,6 +4261,7 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_current_timestamp:
 		case nod_user_name:
 		case nod_current_role:
+		case nod_current_database:
 		case nod_internal_info:
 			return false;
 
@@ -4458,6 +4460,7 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_current_timestamp:
 		case nod_user_name:
 		case nod_current_role:
+		case nod_current_database:
 		case nod_internal_info:
 			return false;
 

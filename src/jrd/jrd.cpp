@@ -570,13 +570,15 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	thread_db thd_context;
 	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
-/* If database name is not alias, check it against conf file */
-	const vdnResult vdn = verify_database_name(expanded_filename, user_status);
+/* Check database against conf file. */
+	const vdnResult vdn = verify_database_name(expanded_name, user_status);
 	if (!is_alias && vdn == vdnFail)
 	{
 		JRD_restore_context();
 		return user_status[1];
-	}
+	} 
+	else 
+	  user_status[0] = 0; // Clear status vector
 
 /* Unless we're already attached, do some initialization */
 
@@ -731,6 +733,18 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	{
 		first = true;
 		dbb->dbb_filename = expanded_name;
+		
+		// NS: Use alias as database ID only if accessing database using file name is not possible.
+		//
+		// This way we:
+		// 1. Ensure uniqueness of ID even in presence of multiple processes
+		// 2. Make sure that ID value can be used to connect back to database
+		//
+		if (is_alias && vdn == vdnFail)
+			dbb->dbb_database_name.assign(file_name, file_length ? file_length : strlen(file_name));
+		else
+			dbb->dbb_database_name = expanded_name;
+			
 		/* Extra LCK_init() done to keep the lock table until the
 		   database is shutdown() after the last detach. */
 		LCK_init(tdbb, LCK_OWNER_database);
@@ -1794,10 +1808,14 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	// Check for DatabaseAccess
-	if (!is_alias && verify_database_name(expanded_name, user_status) == vdnFail) 
+	const vdnResult vdn = verify_database_name(expanded_name, user_status);
+	
+	if (!is_alias && vdn == vdnFail) 
 	{
 		ERR_punt();
-	}
+	} 
+	else 
+		user_status[0] = 0; // Clear status vector.
 
 	if (options.dpb_key) 
 	{
@@ -1988,6 +2006,17 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 #else
 	dbb->dbb_filename = expanded_name;
 #endif
+
+	// NS: Use alias as database ID only if accessing database using file name is not possible.
+	//
+	// This way we:
+	// 1. Ensure uniqueness of ID even in presence of multiple processes
+	// 2. Make sure that ID value can be used to connect back to database
+	//
+	if (is_alias && vdn == vdnFail)
+		dbb->dbb_database_name.assign(file_name, file_length ? file_length : strlen(file_name));
+	else
+		dbb->dbb_database_name = dbb->dbb_filename;
 
 #ifdef GOVERNOR
 	if (!options.dpb_sec_attach) {
