@@ -114,6 +114,36 @@ void MemoryPool::external_free(void *blk) {
 	::free(blk);
 }
 
+inline void* MemoryPool::internal_alloc(size_t size) {
+	if (size == sizeof(FreeBlocksTree::ItemList))
+		// This condition is to handle case when nodelist and itemlist have equal size
+		if (sizeof(FreeBlocksTree::ItemList)!=sizeof(FreeBlocksTree::NodeList) || 
+			spareLeafs.getCount()) 
+		{
+			if (!spareLeafs.getCount()) pool_out_of_memory();
+			void *temp = spareLeafs[spareLeafs.getCount()-1];
+			spareLeafs.shrink(spareLeafs.getCount()-1);
+			needSpare = true;
+			return temp;
+		}
+	if (size == sizeof(FreeBlocksTree::NodeList)) {
+		if (!spareNodes.getCount()) pool_out_of_memory();
+		void *temp = spareNodes[spareNodes.getCount()-1];
+		spareNodes.shrink(spareNodes.getCount()-1);
+		needSpare = true;
+		return temp;
+	}
+	assert(false);
+}
+
+inline void MemoryPool::internal_free(void* block) {
+	((PendingFreeBlock*)block)->next = pendingFree;
+	((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->used = false;
+	pendingFree = (PendingFreeBlock*)block;
+	needSpare = true;
+	return;
+}
+
 void* MemoryPool::alloc(size_t size, SSHORT type
 #ifdef DEBUG_GDS_ALLOC
 	, char* file, int line
@@ -278,36 +308,6 @@ void MemoryPool::deletePool(MemoryPool* pool) {
 		external_free(temp);
 		temp = next;
 	}
-}
-
-void* MemoryPool::InternalAllocator::alloc(size_t size) {
-	if (size == sizeof(FreeBlocksTree::ItemList))
-		// This condition is to handle case when nodelist and itemlist have equal size
-		if (sizeof(FreeBlocksTree::ItemList)!=sizeof(FreeBlocksTree::NodeList) || 
-			((MemoryPool*)this)->spareLeafs.getCount()) 
-		{
-			if (!((MemoryPool*)this)->spareLeafs.getCount()) pool_out_of_memory();
-			void *temp = ((MemoryPool*)this)->spareLeafs[((MemoryPool*)this)->spareLeafs.getCount()-1];
-			((MemoryPool*)this)->spareLeafs.shrink(((MemoryPool*)this)->spareLeafs.getCount()-1);
-			((MemoryPool*)this)->needSpare = true;
-			return temp;
-		}
-	if (size == sizeof(FreeBlocksTree::NodeList)) {
-		if (!((MemoryPool*)this)->spareNodes.getCount()) pool_out_of_memory();
-		void *temp = ((MemoryPool*)this)->spareNodes[((MemoryPool*)this)->spareNodes.getCount()-1];
-		((MemoryPool*)this)->spareNodes.shrink(((MemoryPool*)this)->spareNodes.getCount()-1);
-		((MemoryPool*)this)->needSpare = true;
-		return temp;
-	}
-	assert(false);
-}
-
-void MemoryPool::InternalAllocator::free(void* block) {
-	((PendingFreeBlock*)block)->next = ((MemoryPool*)this)->pendingFree;
-	((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->used = false;
-	((MemoryPool*)this)->pendingFree = (PendingFreeBlock*)block;
-	((MemoryPool*)this)->needSpare = true;
-	return;
 }
 
 void* MemoryPool::int_alloc(size_t size, SSHORT type
@@ -547,6 +547,14 @@ void MemoryPool::free(void *block) {
 	}
 	if (needSpare) updateSpare();
 	if (locking) lock.leave();
+}
+
+void* MemoryPool::InternalAllocator::alloc(size_t size) {
+	return ((MemoryPool*)this)->internal_alloc(size);
+}
+
+void MemoryPool::InternalAllocator::free(void* block) {
+	((MemoryPool*)this)->internal_free(block);
 }
 
 } /* namespace Firebird */

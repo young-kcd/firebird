@@ -88,8 +88,8 @@ class MemoryPool {
 private:
 	class InternalAllocator {
 	public:
-		 void* alloc(size_t size);
-		 void free(void* block);
+		void* alloc(size_t size);
+		void free(void* block);
 	};
 	typedef BePlusTree<BlockInfo, BlockInfo, InternalAllocator, 
 		DefaultKeyValue<BlockInfo>, BlockInfo> FreeBlocksTree;
@@ -117,16 +117,20 @@ private:
 		locking(_locking)
 	{
 	}
-	
+
 	// This should never be called
 	~MemoryPool() {
 	}
 	
 	/* Returns NULL in case it cannot allocate requested chunk */
 	static void* external_alloc(size_t size);
-	
+
 	static void external_free(void *blk);
 	
+	inline void* internal_alloc(size_t size);
+
+	inline void internal_free(void* block);
+
 	void updateSpare();
 	
 	void addFreeBlock(MemoryBlock *blk);
@@ -176,6 +180,8 @@ public:
 		memset(result,size,0);
 		return result;	
 	}
+
+	friend class InternalAllocator;
 };
 
 }; // namespace Firebird
