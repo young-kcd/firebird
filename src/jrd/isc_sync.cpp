@@ -1067,9 +1067,6 @@ int ISC_event_wait(
 	struct sigaction user_handler;
 #endif
 #endif
-#ifdef SOLARIS
-	timestruc_t timer;
-#endif
 
 /* If we're not blocked, the rest is a gross waste of time */
 
