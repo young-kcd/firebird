@@ -2189,12 +2189,18 @@ static act* act_declare(void)
 
 	bool delimited = false;
 
-	TEXT t_str[MAX_CURSOR_SIZE];
-	SQL_resolve_identifier("<Cursor Name>", t_str, MAX_CURSOR_SIZE);
-	if (gpreGlob.token_global.tok_type == tok_dblquoted)
-		delimited = true;
-	else {
-		gpre_sym* symb = HSH_lookup2(gpreGlob.token_global.tok_string);
+	{ // Scope
+		TEXT t_str[MAX_CURSOR_SIZE];
+		SQL_resolve_identifier("<Cursor Name>", t_str, MAX_CURSOR_SIZE);
+		gpre_sym* symb = NULL;
+		if (gpreGlob.token_global.tok_type == tok_dblquoted)
+		{
+			delimited = true;
+			symb = HSH_lookup(t_str);
+		}
+		else {
+			symb = HSH_lookup2(t_str);
+		}
 		if (symb &&
 			(symb->sym_type == SYM_cursor ||
 			 symb->sym_type == SYM_delimited_cursor))
@@ -2203,7 +2209,7 @@ static act* act_declare(void)
 			fb_utils::snprintf(s, sizeof(s), "symbol %s is already in use", t_str);
 			PAR_error(s);
 		}
-	}
+	} // end scope
 
 #ifdef SCROLLABLE_CURSORS
 	bool scroll = false;
