@@ -284,8 +284,9 @@ void ConfigFile::loadConfig()
 		prevCR = false;
 		do {
 			bytesRead = fread(buffer, 1, sizeof(buffer), ifile);
-			if (errno!=0) {
-			   Firebird::Syslog::Record(Firebird::Syslog::Error, strerror(errno));
+			if (ferror(ifile)) {
+			   string Msg = "Error reading config file: " + configFile;
+			   Firebird::Syslog::Record(Firebird::Syslog::Error, Msg);
 			}
 			for (int pos = 0; pos < bytesRead; pos++) {
 				switch(buffer[pos]) {
