@@ -1,3 +1,23 @@
+2002-10-27 16:36  skidder
+
+	* firebird2/builds/posix/Makefile.in.codes:
+	
+	file Makefile.in.codes was initially added on branch
+	B1_5_0_Alpha2-skidder.
+
+2002-10-27 16:35  skidder
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.codes,
+	builds/posix/Makefile.in.firebird, src/jrd/ids.m:
+	
+	Generated headers are now updated automatically
+
+2002-10-27 13:51  dimitr
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Rolled back my change, because it breaked unix builds.
+
 2002-10-26 23:16  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
