@@ -2773,8 +2773,8 @@ set_statistics	: SET STATISTICS INDEX symbol_index_name
 
 /* SELECT statement */
 
-select		: union_expr order_clause for_update_clause
-			{ $$ = make_node (nod_select, 3, $1, $2, $3); }
+select		: union_expr order_clause for_update_clause lock_clause
+			{ $$ = make_node (nod_select, 4, $1, $2, $3, $4); }
 		;
 
 union_expr	: select_expr
@@ -2820,8 +2820,8 @@ nulls_clause : NULLS begin_first nulls_placement end_first
 			{ $$ = 0; }
 		;
 
-for_update_clause : FOR UPDATE for_update_list lock_clause
-			{ $$ = make_node (nod_for_update, 2, $3, $4); }
+for_update_clause : FOR UPDATE for_update_list
+			{ $$ = make_node (nod_for_update, 1, $3); }
 		|
 			{ $$ = 0; }
 		;

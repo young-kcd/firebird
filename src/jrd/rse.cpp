@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.28 2003-07-06 07:04:02 dimitr Exp $
+ * $Id: rse.cpp,v 1.28.2.1 2003-07-17 08:22:26 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -466,7 +466,7 @@ BOOLEAN RSE_get_record(TDBB tdbb, RSB rsb, RSE_GET_MODE mode)
 				RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
 				
 				// Fetch next record if current was deleted before being locked
-				if (!VIO_writelock(tdbb, org_rpb, transaction)) {
+				if (!VIO_writelock(tdbb, org_rpb, rsb, transaction)) {
 					continue;
 				}
 			}

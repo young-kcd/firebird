@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.68 2003-06-28 09:32:46 dimitr Exp $
+$Id: exe.cpp,v 1.68.2.1 2003-07-17 08:26:19 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -960,8 +960,6 @@ void EXE_unwind(TDBB tdbb, JRD_REQ request)
  *
  **************************************/
 	vec::iterator ptr, end;
-	JrdMemoryPool *old_pool;
-	JRD_REQ old_request;
 
 	DEV_BLKCHK(request, type_req);
 
@@ -969,10 +967,11 @@ void EXE_unwind(TDBB tdbb, JRD_REQ request)
 
 	if (request->req_flags & req_active) {
 		if (request->req_fors) {
-			old_pool = tdbb->tdbb_default;
+			JrdMemoryPool *old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = request->req_pool;
-			old_request = tdbb->tdbb_request;
+			JRD_REQ old_request = tdbb->tdbb_request;
 			tdbb->tdbb_request = request;
+			JRD_TRA old_transaction = tdbb->tdbb_transaction;
 			tdbb->tdbb_transaction = request->req_transaction;
 			for (ptr = request->req_fors->begin(), end =
 				 request->req_fors->end(); ptr < end; ptr++)
@@ -980,6 +979,7 @@ void EXE_unwind(TDBB tdbb, JRD_REQ request)
 					RSE_close(tdbb, reinterpret_cast < class Rsb *>((Rsb*)(*ptr)));
 			tdbb->tdbb_default = old_pool;
 			tdbb->tdbb_request = old_request;
+			tdbb->tdbb_transaction = old_transaction;
 		}
 		release_blobs(tdbb, request);
 	}

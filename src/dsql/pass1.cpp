@@ -1340,10 +1340,9 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		return input;
 
 	case nod_select:
-		temp = input->nod_arg[e_select_update];
 		node = PASS1_rse(request, input->nod_arg[e_select_expr], input->nod_arg[e_select_order],
-			temp ? temp->nod_arg[e_fpd_lock] : NULL );
-		if (temp) {
+			input->nod_arg[e_select_lock]);
+		if (input->nod_arg[e_select_update]) {
 			request->req_type = REQ_SELECT_UPD;
 			request->req_flags |= REQ_no_batch;
 			break;
