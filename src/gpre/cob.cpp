@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.52 2004-11-10 04:18:58 robocop Exp $
+//	$Id: cob.cpp,v 1.53 2004-11-10 04:32:11 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -1658,7 +1658,6 @@ static void gen_database( const act* action)
 	rdy* ready;
 	gpre_sym* symbol;
 	gpre_sym* cur_stmt;
-	gpre_sym* dup;
 	gpre_prc* procedure;
 	gpre_lls* stack_ptr;
 
@@ -1723,7 +1722,7 @@ static void gen_database( const act* action)
 			for (ready = (rdy*) local_act->act_object; ready; ready = ready->rdy_next)
 			{
 				TEXT* s = ready->rdy_filename;
-				if (s && ((*s == '\'') || (*s == '\'')))
+				if (s && ((*s == '\'') || (*s == '\"')))
 				{
 					strcpy(fname, ++s);
 					s = fname + strlen(fname) - 1;
@@ -1755,6 +1754,7 @@ static void gen_database( const act* action)
 			for (chck_dups = local_act->act_rest; chck_dups;
 				 chck_dups = chck_dups->act_rest) 
 			{
+				const gpre_sym* dup;
 				if (chck_dups->act_type == ACT_dyn_cursor)
 					dup = ((DYN) chck_dups->act_object)->dyn_cursor_name;
 				else if (chck_dups->act_type == ACT_dyn_prepare)
@@ -1763,7 +1763,9 @@ static void gen_database( const act* action)
 						 (chck_dups->act_type == ACT_open ||
 						  chck_dups->act_type == ACT_blob_open ||
 						  chck_dups->act_type == ACT_blob_create))
+				{
 					dup = ((open_cursor*) chck_dups->act_object)->opn_cursor;
+				}
 				else
 					continue;
 
