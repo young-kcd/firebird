@@ -5747,9 +5747,14 @@ static JRD_NOD make_starts(TDBB tdbb,
 	retrieval->irb_relation = relation;
 	retrieval->irb_generic = irb_starting;
 	retrieval->irb_lower_count = retrieval->irb_upper_count = 1;
-/* If we are matching less than the full index, this is a partial match */
-	if (retrieval->irb_upper_count < idx->idx_count)
+	// If we are matching less than the full index, this is a partial match
+	if (retrieval->irb_upper_count < idx->idx_count) {
 		retrieval->irb_generic |= irb_partial;
+	}
+	// Set descending flag on retrieval if index is descending
+	if (idx->idx_flags & idx_descending) {
+		retrieval->irb_generic |= irb_descending;
+	}
 	retrieval->irb_value[0] = retrieval->irb_value[idx->idx_count] = value;
 	idx->idx_runtime_flags |= idx_plan_starts;
 	return node;

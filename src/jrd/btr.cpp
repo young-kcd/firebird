@@ -172,7 +172,7 @@ static SLONG fast_load(TDBB, JRD_REL, IDX *, USHORT, SCB, SelectivityList&);
 static IRT fetch_root(TDBB, WIN *, JRD_REL);
 static UCHAR *find_node_start_point(BTR, KEY *, UCHAR *, USHORT *, bool, bool, bool = false, SLONG = NO_VALUE);
 static UCHAR *find_area_start_point(BTR, KEY *, UCHAR *, USHORT *, bool, bool, SLONG = NO_VALUE);
-static SLONG find_page(BTR, KEY *, UCHAR, SLONG = NO_VALUE);
+static SLONG find_page(BTR, KEY *, UCHAR, SLONG = NO_VALUE, bool = false);
 static CONTENTS garbage_collect(TDBB, WIN *, SLONG);
 static void generate_jump_nodes(TDBB, BTR, jumpNodeList*, USHORT, USHORT*, USHORT*, USHORT*);
 static SLONG insert_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *, SLONG *);
@@ -183,7 +183,7 @@ static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
 static CONTENTS remove_node(TDBB, IIB *, WIN *);
 static CONTENTS remove_leaf_node(TDBB, IIB *, WIN *);
-static bool scan(TDBB, UCHAR *, SBM *, USHORT, KEY *, USHORT, SCHAR);
+static bool scan(TDBB, UCHAR *, SBM *, USHORT, USHORT, KEY *, USHORT, SCHAR);
 
 
 USHORT BTR_all(TDBB    tdbb,
@@ -448,9 +448,9 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 
 	SCHAR flags = page->btr_header.pag_flags;
 	// if there is an upper bound, scan the index pages looking for it
-	if (retrieval->irb_upper_count) {
-		while (scan(tdbb, pointer, bitmap, prefix, &upper,
-				(USHORT) (retrieval->irb_generic &
+	if (retrieval->irb_upper_count)	{
+		while (scan(tdbb, pointer, bitmap, (idx.idx_count - retrieval->irb_upper_count), 
+				prefix, &upper, (USHORT) (retrieval->irb_generic &
 				(irb_partial | irb_descending | irb_starting | irb_equality)),
 				flags))
 		{
@@ -568,7 +568,8 @@ BTR BTR_find_page(TDBB tdbb,
 	{
 		while (page->btr_level > 0) {
 			while (true) {
-				number = find_page(page, backwards ? upper : lower, idx->idx_flags);
+				number = find_page(page, backwards ? upper : lower, idx->idx_flags,
+					NO_VALUE, (retrieval->irb_generic & (irb_starting | irb_partial)));
 				if (number != END_BUCKET) {
 					page = (BTR) CCH_HANDOFF(tdbb, window, number, 
 						LCK_read, pag_index);
@@ -3821,7 +3822,8 @@ static UCHAR *find_area_start_point(BTR bucket, KEY * key, UCHAR * value,
 }
 
 
-static SLONG find_page(BTR bucket, KEY * key, UCHAR idx_flags, SLONG find_record_number)
+static SLONG find_page(BTR bucket, KEY * key, UCHAR idx_flags, SLONG find_record_number, 
+					   bool retrieval)
 {
 /**************************************
  *
@@ -3856,7 +3858,7 @@ static SLONG find_page(BTR bucket, KEY * key, UCHAR idx_flags, SLONG find_record
 	USHORT prefix = 0;	// last computed prefix against processed node
 
 	pointer = find_area_start_point(bucket, key, 0, &prefix,
-		descending, false, find_record_number);
+		descending, retrieval, find_record_number);
 
 	if (flags & btr_large_keys) {
 		IndexNode node;
@@ -3874,7 +3876,7 @@ static SLONG find_page(BTR bucket, KEY * key, UCHAR idx_flags, SLONG find_record
 		}
 
 		SLONG previousNumber = node.pageNumber;
-		if (pointer == BTreeNode::getPointerFirstNode(bucket)) {
+		if (node.nodePointer == BTreeNode::getPointerFirstNode(bucket)) {
 			prefix = 0;
 			// Handle degenerating node, always generated at first
 			// page in a level. 
@@ -5794,7 +5796,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 }
 
 
-static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap, 
+static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap, USHORT to_segment,
 				 USHORT prefix, KEY *key, USHORT flag, SCHAR page_flags)
 {
 /**************************************
@@ -5831,14 +5833,16 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap,
 		count = key->key_length;
 	}
 
-	UCHAR *end_key = key->key_data + count;
+	UCHAR* end_key = key->key_data + count;
 	count -= key->key_length;
 
 	// reset irb_equality flag passed for optimization
 	flag &= ~irb_equality;
 
-	UCHAR *p = NULL;
-	UCHAR *q = NULL;
+	bool descending = (flag & irb_descending);
+	bool done = false;
+	UCHAR* p = NULL;
+	UCHAR* q = NULL;
 	USHORT l;
 
 	if (page_flags & btr_large_keys) {
@@ -5850,7 +5854,29 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap,
 				return false;
 			}
 
-			if (node.prefix <= prefix) {
+			if (descending && done && (node.prefix < prefix)) {
+				return false;
+			}
+
+			if (key->key_length == 0) {
+				// Scanning for NULL keys
+				if (to_segment == 0) {
+					// All segments are expected to be NULL
+					if (node.prefix + node.length > 0) {
+						return false;
+					}
+				}
+				else {
+					// Up to (partial/starting) to_segment is expected to be NULL.
+					if (node.length && (node.prefix == 0)) {
+						q = node.data;
+						if (*q > to_segment) {
+							return false;
+						}
+					}
+				}
+			}
+			else if (node.prefix <= prefix) {
 				prefix = node.prefix;
 				p = key->key_data + prefix;
 				q = node.data;
@@ -5877,6 +5903,9 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap,
 					if (*p++ > *q++) {
 						break;
 					}
+				}
+				if (p >= end_key) {
+					done = true;
 				}
 			}
 
@@ -5906,7 +5935,29 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap,
 				return false;
 			}
 
-			if (node->btn_prefix <= prefix) {
+			if (descending && done && (node->btn_prefix < prefix)) {
+				return false;
+			}
+
+			if (key->key_length == 0) {
+				// Scanning for NULL keys
+				if (to_segment == 0) {
+					// All segments are expected to be NULL
+					if (node->btn_prefix + node->btn_length > 0) {
+						return false;
+					}
+				}
+				else {
+					// Up to (partial/starting) to_segment is expected to be NULL.
+					if (node->btn_length && (node->btn_prefix == 0)) {
+						q = node->btn_data;
+						if (*q > to_segment) {
+							return false;
+						}
+					}
+				}
+			}
+			else if (node->btn_prefix <= prefix) {
 				prefix = node->btn_prefix;
 				p = key->key_data + prefix;
 				q = node->btn_data;
@@ -5933,6 +5984,9 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap,
 					if (*p++ > *q++) {
 						break;
 					}
+				}
+				if (p >= end_key) {
+					done = true;
 				}
 			}
 
