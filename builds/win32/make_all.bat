@@ -1,4 +1,5 @@
 @echo off
+set ERRLEV=0
 
 :: Set env vars
 @call setenvvar.bat
@@ -27,6 +28,7 @@
 ) else (
 	call :DEBUG
 )
+if "%ERRLEV%"=="1" goto :END
 @call :MOVE
 @goto :END
 
@@ -38,7 +40,15 @@ if "%VS_VER%"=="msvc6" (
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% release /OUT all.log
 )
+if errorlevel 1 goto :RELEASE2
 @goto :EOF
+
+:RELEASE2
+echo.
+echo Error building release
+echo.
+set ERRLEV=1
+goto :EOF
 
 ::===========
 :DEBUG
@@ -48,7 +58,15 @@ if "%VS_VER%"=="msvc6" (
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /OUT all.log
 )
+if errorlevel 1 goto :DEBUG2
 @goto :EOF
+
+:DEBUG2
+echo.
+echo Error building debug
+echo.
+set ERRLEV=1
+goto :EOF
 
 ::===========
 :MOVE

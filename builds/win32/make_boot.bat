@@ -5,6 +5,7 @@
 ::
 
 @echo off
+set ERRLEV=0
 
 :CHECK_ENV
 @call setenvvar.bat
@@ -20,7 +21,8 @@
 @del %ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
 @copy %ROOT_PATH%\src\include\gen\autoconfig_msvc.h %ROOT_PATH%\src\include\gen\autoconfig.h > nul
 @echo Creating directories
-:: Don't rmdir gen, it contains the dbs
+:: Don't rmdir gen, it contains the dbs, only the exe files
+@del gen\*.exe 2>nul
 @rmdir /s /q %ROOT_PATH%\gen\alice 2>nul
 @mkdir %ROOT_PATH%\gen\alice 2>nul
 @rmdir /s /q %ROOT_PATH%\gen\burp 2>nul
@@ -52,16 +54,21 @@
 
 ::=======
 @call :gpre_boot
+if "%ERRLEV%"=="1" goto :END
 ::=======
 @echo Preprocessing the entire source tree...
 @call preprocess.bat BOOT
 ::=======
 @call :gpre_static
+if "%ERRLEV%"=="1" goto :END
 ::=======
 @echo Preprocessing the entire source tree...
 @call preprocess.bat
 ::=======
 @call :msgs
+if "%ERRLEV%"=="1" goto :END
+@call :codes
+if "%ERRLEV%"=="1" goto :END
 ::=======
 @echo Building message file and codes header...
 @%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D localhost:%DB_PATH%/gen/dbs/msg.fdb
@@ -84,7 +91,15 @@ if "%VS_VER%"=="msvc6" (
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot /rebuild release /OUT boot1.log
 )
+if errorlevel 1 goto :gpre_boot2
 @copy %ROOT_PATH%\temp\release\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
+goto :EOF
+
+:gpre_boot2
+echo.
+echo Error building gpre_boot see boot1.log
+echo.
+set ERRLEV=1
 goto :EOF
 
 ::===================
@@ -97,24 +112,55 @@ if "%VS_VER%"=="msvc6" (
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static /rebuild release /OUT boot2.log
 )
+if errorlevel 1 goto :gpre_static2
 @copy %ROOT_PATH%\temp\release\firebird\bin\gpre_static.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
-
+:gpre_static2
+echo.
+echo Error building gpre_static see boot2.log
+echo.
+set ERRLEV=1
+goto :EOF
 
 ::===================
-:: BUILD messages, codes and relations
+:: BUILD messages
 :msgs
 @echo.
 @echo Building build_msg and codes...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" "codes - Win32 Release" /REBUILD /OUT boot3.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" /REBUILD /OUT boot3.log
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project build_msg /rebuild release /OUT boot3.log
+)
+if errorlevel 1 goto :msgs2
+@copy %ROOT_PATH%\temp\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
+@goto :EOF
+:msgs2
+echo.
+echo Error building messages see boot3.log
+echo.
+set ERRLEV=1
+goto :EOF
+
+::===================
+:: BUILD codes
+:codes
+@echo.
+@echo Building build_msg and codes...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "codes - Win32 Release" /REBUILD /OUT boot4.log
+) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project codes  /rebuild release /OUT boot4.log
 )
-@copy %ROOT_PATH%\temp\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
+if errorlevel 1 goto :codes2
 @copy %ROOT_PATH%\temp\release\codes\codes.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
+:codes2
+echo.
+echo Error building messages see boot4.log
+echo.
+set ERRLEV=1
+goto :EOF
 
 ::==============
 :NEXT_STEP

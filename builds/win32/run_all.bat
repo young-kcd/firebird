@@ -16,14 +16,21 @@
 @echo      FIREBIRD=%FIREBIRD%
 @if "%FIREBIRD%"=="" (goto :HELP & goto :EOF)
 
+set ERRLEV=0
+
 call clean_all
 call prepare
 call make_boot
+if "%ERRLEV%"=="1" goto :END2
 call make_all
+if "%ERRLEV%"=="1" goto :END2
 call make_examples
+if "%ERRLEV%"=="1" goto :END2
 cd ..\install\arch-specific\win32
 call BuildExecutableInstall
 cd ..\..\..\win32
+
+goto:END2
 
 ::===========
 :HELP
