@@ -1,3 +1,28 @@
+2002-10-19 11:05  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Fixed a possible buffer overrun.
+
+2002-10-19 02:56  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	AB: "cosmetic changes"
+
+2002-10-19 02:49  arnobrinkman
+
+	* firebird2/src/dsql/make.cpp:
+	
+	AB: "cosmetic changes"
+
+2002-10-19 02:32  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	AB: bug fixed with sub-select and group by clause and cosmetic
+	changes
+
 2002-10-18 16:40  dimitr
 
 	* firebird2/src/jrd/jrd.cpp:
