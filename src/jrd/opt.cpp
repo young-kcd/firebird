@@ -4134,7 +4134,16 @@ static RSB gen_retrieval(TDBB tdbb,
 					/* Mark all conjuncts that could be calculated against the 
 					   index as used. For example if you have nod1 >= con2 and nod2 <= con2 */
 					for (j = 0; j < count; j++) {
-						matching_nodes[j]->opt_flags |= opt_matched;
+						idx_tail = matching_nodes[j];
+						idx_end = idx_tail + idx->idx_count;
+						for (idx_tail = opt->opt_rpt ;idx_tail < idx_end && 
+							 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++) {
+							for (tail = opt->opt_rpt; tail < opt_end; tail++) {
+								if (idx_tail->opt_match == tail->opt_conjunct) {
+									tail->opt_flags |= opt_matched;
+								}
+							}
+						}
 					}
 				}
 
