@@ -24,7 +24,9 @@
 #ifndef REMOTE_INET_PROTO_H
 #define REMOTE_INET_PROTO_H
 
-rem_port*	INET_analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*, const TEXT*,
+#include "fb_string.h"
+
+rem_port*	INET_analyze(const Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*,
 	bool, const SCHAR*, SSHORT);
 rem_port*	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT,
 	const SCHAR*, SSHORT);

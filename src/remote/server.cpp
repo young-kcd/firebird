@@ -787,6 +787,18 @@ static ISC_STATUS attach_database(
    they will be stuffed in the DPB if so. */
 	REMOTE_get_timeout_params(port, dpb, dl);
 
+/* Disable remote gsec attachments */
+	UCHAR* p = const_cast<UCHAR*>(dpb);
+	const UCHAR* const end = &dpb[dl];
+	while (p < end)
+	{
+		if (p[0] == isc_dpb_gsec_attach && p[1])
+		{
+			p[2] = 0;
+		}
+		p += (2 + p[1]);
+	}
+
 	THREAD_EXIT();
 	if (operation == op_attach)
 	{

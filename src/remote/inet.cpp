@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.125 2004-11-07 10:38:10 robocop Exp $
+$Id: inet.cpp,v 1.126 2004-11-07 14:44:55 alexpeshkoff Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -311,8 +311,7 @@ static bool_t	inet_read(XDR *);
 static bool_t	inet_setpostn(XDR *, u_int);
 static rem_port*		inet_try_connect(	PACKET*,
 									RDB,
-									USHORT,
-									TEXT*,
+									const Firebird::PathName&,
 									const TEXT*,
 									ISC_STATUS*,
 									const SCHAR*,
@@ -425,8 +424,7 @@ inline void STOP_PORT_CRITICAL() {
 #endif
 
 
-rem_port* INET_analyze(	TEXT*	file_name,
-					USHORT*	file_length,
+rem_port* INET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
 					const TEXT*	user_string,
@@ -450,8 +448,6 @@ rem_port* INET_analyze(	TEXT*	file_name,
  *	If the "uv_flag" is non-zero, user verification also takes place.
  *
  **************************************/
-	*file_length = strlen(file_name);
-
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
@@ -500,7 +496,7 @@ rem_port* INET_analyze(	TEXT*	file_name,
 	}
 #endif
 
-	const SSHORT user_length = (SSHORT) (p - user_id);
+	const USHORT user_length = (USHORT) (p - user_id);
 	fb_assert(user_length <= sizeof(user_id));
 
 /* Establish connection to server */
@@ -533,7 +529,7 @@ rem_port* INET_analyze(	TEXT*	file_name,
 
 /* Try connection using first set of protocols.  punt if error */
 
-	rem_port* port = inet_try_connect(packet, rdb, *file_length, file_name,
+	rem_port* port = inet_try_connect(packet, rdb, file_name,
 								 node_name, status_vector, dpb, dpb_length);
 	if (!port) {
 		return NULL;
@@ -560,7 +556,7 @@ rem_port* INET_analyze(	TEXT*	file_name,
 								 protocols_to_try2,
 								 cnct->p_cnct_count);
 
-		port = inet_try_connect(packet, rdb, *file_length, file_name,
+		port = inet_try_connect(packet, rdb, file_name,
 								node_name, status_vector, dpb, dpb_length);
 		if (!port)
 			return NULL;
@@ -587,7 +583,7 @@ rem_port* INET_analyze(	TEXT*	file_name,
 								 protocols_to_try3,
 								 cnct->p_cnct_count);
 
-		port = inet_try_connect(packet, rdb, *file_length, file_name,
+		port = inet_try_connect(packet, rdb, file_name,
 								node_name, status_vector, dpb, dpb_length);
 		if (!port) {
 			return NULL;
@@ -3176,10 +3172,11 @@ static bool_t inet_setpostn( XDR * xdrs, u_int bytecount)
 static rem_port* inet_try_connect(
 							 PACKET* packet,
 							 RDB rdb,
-							 USHORT file_length,
-							 TEXT* file_name,
-	const TEXT* node_name, ISC_STATUS* status_vector,
-	const SCHAR* dpb, SSHORT dpb_length)
+							 const Firebird::PathName& file_name,
+							 const TEXT* node_name, 
+							 ISC_STATUS* status_vector,
+							 const SCHAR* dpb, 
+							 SSHORT dpb_length)
 {
 /**************************************
  *
@@ -3200,8 +3197,8 @@ static rem_port* inet_try_connect(
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = file_length;
-	cnct->p_cnct_file.cstr_address = (UCHAR *) file_name;
+	cnct->p_cnct_file.cstr_length = file_name.length();
+	cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
 
 /* If we can't talk to a server, punt.  Let somebody else generate
    an error.  status_vector will have the network error info. */

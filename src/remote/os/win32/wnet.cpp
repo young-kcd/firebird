@@ -106,8 +106,7 @@ static xdr_t::xdr_ops wnet_ops =
 const USHORT MAX_PTYPE	= ptype_out_of_band;
 
 
-rem_port* WNET_analyze(	TEXT*	file_name,
-					USHORT*	file_length,
+rem_port* WNET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
 					const TEXT*	user_string,
@@ -127,7 +126,6 @@ rem_port* WNET_analyze(	TEXT*	file_name,
  *	return NULL.
  *
  **************************************/
-	*file_length = strlen(file_name);
 
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
@@ -169,8 +167,8 @@ rem_port* WNET_analyze(	TEXT*	file_name,
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = *file_length;
-	cnct->p_cnct_file.cstr_address = (UCHAR *) file_name;
+	cnct->p_cnct_file.cstr_length = file_name.length();
+	cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
 
 /* Note: prior to V3.1E a receivers could not in truth handle more
    then 5 protocol descriptions; however, this restriction does not 
@@ -217,8 +215,8 @@ rem_port* WNET_analyze(	TEXT*	file_name,
 		cnct->p_cnct_operation = op_attach;
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
-		cnct->p_cnct_file.cstr_length = *file_length;
-		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name;
+		cnct->p_cnct_file.cstr_length = file_name.length();
+		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
 
 		/* try again with next set of known protocols */
 
@@ -255,8 +253,8 @@ rem_port* WNET_analyze(	TEXT*	file_name,
 		cnct->p_cnct_operation = op_attach;
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
-		cnct->p_cnct_file.cstr_length = *file_length;
-		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name;
+		cnct->p_cnct_file.cstr_length = file_name.length();
+		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
 
 		/* try again with next set of known protocols */
 

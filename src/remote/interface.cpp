@@ -99,11 +99,11 @@ const int MAX_USER_LENGTH	= 33;
 
 static RVNT add_event(rem_port*);
 static void add_other_params(rem_port*, UCHAR*, USHORT*);
-static void add_working_directory(UCHAR*, USHORT*, const TEXT*);
-static rem_port* analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*,
-					bool, const SCHAR*, SSHORT, TEXT*);
-static rem_port* analyze_service(TEXT*, USHORT*, ISC_STATUS*, const TEXT*, bool,
-							const SCHAR*, SSHORT);
+static void add_working_directory(UCHAR*, USHORT*, const Firebird::PathName&);
+static rem_port* analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*,
+					bool, const SCHAR*, SSHORT, Firebird::PathName&);
+static rem_port* analyze_service(Firebird::PathName&, ISC_STATUS*, const TEXT*, 
+					bool, const SCHAR*, SSHORT);
 static bool batch_gds_receive(trdb *, rem_port*, struct rmtque *,
 								 ISC_STATUS *, USHORT);
 static bool batch_dsql_fetch(trdb *, rem_port*, struct rmtque *,
@@ -135,7 +135,7 @@ static bool get_single_user(USHORT, const SCHAR*);
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static ISC_STATUS info(ISC_STATUS*, RDB, P_OP, USHORT, USHORT, USHORT,
 					const SCHAR*, USHORT, const SCHAR*, USHORT, SCHAR*);
-static bool init(ISC_STATUS *, rem_port*, P_OP, UCHAR *, USHORT, UCHAR *, USHORT);
+static bool init(ISC_STATUS *, rem_port*, P_OP, const Firebird::PathName&, UCHAR *, USHORT);
 static RTR make_transaction(RDB, USHORT);
 static ISC_STATUS mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(ISC_STATUS, ...);
@@ -255,12 +255,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  *	Connect to an old, grungy database, corrupted by user data.
  *
  **************************************/
-	UCHAR	expanded_name[MAXPATHLEN];
 	trdb	thd_context(user_status);
 	trdb*	tdrdb;
-
-	TEXT	node_name[MAXPATHLEN];
-	memset((void *) node_name, 0, (size_t) MAXPATHLEN);
 
 	ISC_STATUS* v = user_status;
 
@@ -279,9 +275,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	REM_set_thread_data(tdrdb, &thd_context);
 
 	NULL_CHECK(handle, isc_bad_db_handle);
-
-	strcpy((char*) expanded_name, reinterpret_cast<const char*>(expanded_filename));
-	USHORT length = strlen((char *) expanded_name);
 
 	UCHAR	new_dpb[MAXPATHLEN];
 	UCHAR* new_dpb_ptr = new_dpb;
@@ -311,11 +304,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	const TEXT* us = (user_string[0]) ? user_string : 0;
 
-	port = analyze((TEXT*)expanded_name, &length, user_status, us,
+	Firebird::PathName expanded_name(expanded_filename);
+	Firebird::PathName node_name;
+	port = analyze(expanded_name, user_status, us,
 					user_verification, dpb, dpb_length, node_name);
 	if (!port)
 	{
-		if (new_dpb_ptr != new_dpb) {
+		if (new_dpb_ptr != new_dpb) 
+		{
 			gds__free(new_dpb_ptr);
 		}
 		return error(user_status);
@@ -334,7 +330,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		add_other_params(port, new_dpb_ptr, &new_dpb_length);
 		add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
 
-		const bool result = init(user_status, port, op_attach, expanded_name, length,
+		const bool result = init(user_status, port, op_attach, expanded_name,
 						new_dpb_ptr, new_dpb_length);
 
 		if (new_dpb_ptr != new_dpb) {
@@ -848,12 +844,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
  *	Create a nice, squeeky clean database, uncorrupted by user data.
  *
  **************************************/
-	UCHAR expanded_name[MAXPATHLEN];
 	trdb thd_context(user_status);
 	trdb* tdrdb;
-
-	TEXT node_name[MAXPATHLEN];
-	memset((void *) node_name, 0, (size_t) MAXPATHLEN);
 
 	ISC_STATUS* v = user_status;
 	*v++ = isc_arg_gds;
@@ -870,9 +862,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	REM_set_thread_data(tdrdb, &thd_context);
 
 	NULL_CHECK(handle, isc_bad_db_handle);
-
-	strcpy((char *) expanded_name, (char *) expanded_filename);
-	USHORT length = strlen((char *) expanded_name);
 
 	rem_port* port;
 	UCHAR new_dpb[MAXPATHLEN];
@@ -903,8 +892,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	const TEXT* us = (user_string[0]) ? user_string : 0;
 
-	port = analyze((TEXT *) expanded_name, &length, user_status, us,
-				 user_verification, dpb, dpb_length, node_name);
+	Firebird::PathName expanded_name(expanded_filename);
+	Firebird::PathName node_name;
+	port = analyze(expanded_name, user_status, us,
+				   user_verification, dpb, dpb_length, node_name);
 	if (!port) {
 		if (new_dpb_ptr != new_dpb)
 			gds__free(new_dpb_ptr);
@@ -925,7 +916,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
 
 		const bool result = 
-			init(user_status, port, op_create, expanded_name, length,
+			init(user_status, port, op_create, expanded_name,
 					  new_dpb_ptr, new_dpb_length);
 		if (new_dpb_ptr != new_dpb) {
 			gds__free(new_dpb_ptr);
@@ -3844,7 +3835,6 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  *	Connect to an Interbase service.
  *
  **************************************/
-	UCHAR expanded_name[MAXPATHLEN];
 	trdb thd_context(user_status);
 	trdb* tdrdb;
 
@@ -3852,14 +3842,13 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 	NULL_CHECK(handle, isc_bad_svc_handle);
 
+	Firebird::PathName expanded_name;
 	if (service_length) {
-		strncpy((char *) expanded_name, service_name,
-				service_length);
-		expanded_name[service_length] = 0;
+		expanded_name.assign(service_name, service_length);
 	}
-	else
-		strcpy((char *) expanded_name, service_name);
-	USHORT length = strlen((char *) expanded_name);
+	else {
+		expanded_name.assign(service_name);
+	}
 
 	ISC_STATUS* v = user_status;
 	*v++ = isc_arg_gds;
@@ -3893,7 +3882,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 	const TEXT* us = (user_string[0]) ? user_string : 0;
 
-	port = analyze_service((TEXT *) expanded_name, &length, user_status, us,
+	port = analyze_service(expanded_name, user_status, us,
 						 user_verification, spb, spb_length);
 	if (!port) {
 		if (new_spb_ptr != new_spb)
@@ -3924,7 +3913,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		add_other_params(port, new_spb_ptr, &new_spb_length);
 
 		const bool result =
-			init(user_status, port, op_service_attach, expanded_name, length,
+			init(user_status, port, op_service_attach, expanded_name,
 				 new_spb_ptr, new_spb_length);
 		if (new_spb_ptr != new_spb) {
 			gds__free(new_spb_ptr);
@@ -4618,7 +4607,7 @@ static void add_other_params( rem_port* port, UCHAR* dpb_or_spb, USHORT* length)
 
 static void add_working_directory(UCHAR*	dpb_or_spb,
 								  USHORT*	length,
-								  const TEXT*		node_name)
+								  const Firebird::PathName&	node_name)
 {
 /************************************************
  *
@@ -4633,7 +4622,8 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
  ************************************************/
 	Firebird::PathName cwd;
 
-	if (node_name && !strcmp(node_name, "localhost"))
+	// for WNet local node_name should be compared with "\\\\." ?
+	if (node_name == "localhost")
 	{
 		fb_getcwd(cwd);
 	}
@@ -4647,14 +4637,13 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
 }
 
 
-static rem_port* analyze(TEXT*	file_name,
-					USHORT*	file_length,
-					ISC_STATUS*	status_vector,
-					const TEXT*	user_string,
-					bool	uv_flag,
-					const SCHAR*	dpb,
-					SSHORT	dpb_length,
-					TEXT*	node_name)
+static rem_port* analyze(Firebird::PathName&	file_name,
+					ISC_STATUS*					status_vector,
+					const TEXT*					user_string,
+					bool						uv_flag,
+					const SCHAR*				dpb,
+					SSHORT						dpb_length,
+					Firebird::PathName&			node_name)
 {
 /**************************************
  *
@@ -4673,29 +4662,23 @@ static rem_port* analyze(TEXT*	file_name,
  *	NOTE: The file name must have been expanded prior to this call.
  *
  **************************************/
-#if (defined SUPERCLIENT || defined WIN_NT)
-	TEXT expanded_name[MAXPATHLEN];
-#endif
-
 #if defined(WIN_NT)
-	*file_length = ISC_expand_share(file_name, expanded_name, sizeof(expanded_name));
-	strcpy(file_name, expanded_name); // B.O.
+	ISC_expand_share(file_name);
 #endif
 
-	file_name[*file_length] = 0;
 	rem_port* port = NULL;
 
 /* Analyze the file name to see if a remote connection is required.  If not,
    quietly (sic) return. */
 
 #ifdef VMS
-	port = DECNET_analyze(file_name, file_length, status_vector, uv_flag);
+	port = DECNET_analyze(file_name.c_str(), file_name.length(), status_vector, uv_flag);
 #endif
 
 #if defined(WIN_NT)
 	if (ISC_analyze_pclan(file_name, node_name)) {
-		return WNET_analyze(file_name, file_length, status_vector,
-							node_name, user_string, uv_flag);
+		return WNET_analyze(file_name, status_vector,
+							node_name.c_str(), user_string, uv_flag);
 	}
 #endif
 
@@ -4703,16 +4686,16 @@ static rem_port* analyze(TEXT*	file_name,
 	{
 		if (ISC_analyze_tcp(file_name, node_name))
 		{
-			port = INET_analyze(file_name, file_length, status_vector,
-								node_name, user_string, uv_flag, dpb,
+			port = INET_analyze(file_name, status_vector,
+								node_name.c_str(), user_string, uv_flag, dpb,
 								dpb_length);
 
 			if (!port)
 			{
 				/* retry in case multiclient inet server not forked yet */
 				sleep(2);
-				port = INET_analyze(file_name, file_length, status_vector,
-									node_name, user_string, uv_flag, dpb,
+				port = INET_analyze(file_name, status_vector,
+									node_name.c_str(), user_string, uv_flag, dpb,
 									dpb_length);
 			}
 		}
@@ -4723,8 +4706,8 @@ static rem_port* analyze(TEXT*	file_name,
 			{
 				if (ISC_analyze_nfs(file_name, node_name))
 				{
-					port = INET_analyze(file_name, file_length, status_vector,
-										node_name, user_string, uv_flag, dpb,
+					port = INET_analyze(file_name, status_vector,
+										node_name.c_str(), user_string, uv_flag, dpb,
 										dpb_length);
 					if (!port)
 					{
@@ -4732,8 +4715,8 @@ static rem_port* analyze(TEXT*	file_name,
 
 						sleep(2);
 						port =
-							INET_analyze(file_name, file_length,
-										 status_vector, node_name,
+							INET_analyze(file_name, 
+										 status_vector, node_name.c_str(),
 										 user_string, uv_flag, dpb,
 										 dpb_length);
 					}
@@ -4750,10 +4733,9 @@ static rem_port* analyze(TEXT*	file_name,
 
 	if (!port)
 	{
-		return XNET_analyze(file_name,
-							file_length,
+		return XNET_analyze(file_name, 
 							status_vector,
-							node_name,
+							node_name.c_str(),
 							user_string,
 							uv_flag);
 	}
@@ -4778,28 +4760,23 @@ static rem_port* analyze(TEXT*	file_name,
 
 	if (ostype == OSTYPE_NT && !port)
 	{
-		strcpy(expanded_name, file_name); // B.O.
-		strcpy(file_name, "\\\\.\\");
-		strcat(file_name, expanded_name);
+		file_name.insert(0, "\\\\.\\");
 		if (ISC_analyze_pclan(file_name, node_name))
-			return WNET_analyze(file_name, file_length, status_vector,
-								node_name, user_string, uv_flag);
+			return WNET_analyze(file_name, status_vector,
+								node_name.c_str(), user_string, uv_flag);
 	}
 #endif /* WIN_NT */
 
 #ifdef UNIX
 
-	if (!port && !node_name[0])
+	if (!port && node_name.isEmpty())
 	{
-		strcpy(expanded_name, file_name); // B.O.
-		strcpy(file_name, "localhost:");
-		strcat(file_name, expanded_name);
+		file_name.insert(0, "localhost:");
 		if (ISC_analyze_tcp(file_name, node_name))
 		{
-			return INET_analyze(file_name,
-								file_length,
+			return INET_analyze(file_name, 
 								status_vector,
-								node_name,
+								node_name.c_str(),
 								user_string,
 								uv_flag,
 								dpb,
@@ -4820,8 +4797,7 @@ static rem_port* analyze(TEXT*	file_name,
 }
 
 
-static rem_port* analyze_service(TEXT* service_name,
-							USHORT* service_length,
+static rem_port* analyze_service(Firebird::PathName& service_name,
 							ISC_STATUS* status_vector,
 							const TEXT* user_string,
 							bool uv_flag,
@@ -4843,10 +4819,8 @@ static rem_port* analyze_service(TEXT* service_name,
  *	with the server.
  *
  **************************************/
-	service_name[*service_length] = 0;
-	TEXT node_name[MAXPATHLEN];
-	node_name[0] = '\0';
 	rem_port* port = NULL;
+	Firebird::PathName node_name;
 
 /* Analyze the service name to see if a remote connection is required.  If not,
    quietly (sic) return. */
@@ -4858,14 +4832,14 @@ static rem_port* analyze_service(TEXT* service_name,
 
 #if defined(WIN_NT)
 	if (ISC_analyze_pclan(service_name, node_name)) {
-		return WNET_analyze(service_name, service_length, status_vector,
-							node_name, user_string, uv_flag);
+		return WNET_analyze(service_name, status_vector,
+							node_name.c_str(), user_string, uv_flag);
 	}
 #endif
 	if (!port) {
 		if (ISC_analyze_tcp(service_name, node_name))
-			port = INET_analyze(service_name, service_length, status_vector,
-								node_name, user_string, uv_flag, dpb,
+			port = INET_analyze(service_name, status_vector,
+								node_name.c_str(), user_string, uv_flag, dpb,
 								dpb_length);
 	}
 
@@ -4875,25 +4849,21 @@ static rem_port* analyze_service(TEXT* service_name,
    interprocess server */
 
 	if (!port) {
-		port = XNET_analyze(service_name, service_length, status_vector,
-							node_name, user_string, uv_flag);
+		port = XNET_analyze(service_name, status_vector,
+							node_name.c_str(), user_string, uv_flag);
 	}
 #endif
 
 #ifdef SUPERCLIENT
 #ifdef UNIX
 
-	if (!port && !node_name[0]) {
-		TEXT expanded_name[MAXPATHLEN];
-		strcpy(expanded_name, service_name); // B.O.
-		strcpy(service_name, "localhost:");
-		strcat(service_name, expanded_name);
+	if (!port && node_name.isEmpty()) {
+		service_name = "localhost:" + service_name;
 		if (ISC_analyze_tcp(service_name, node_name))
 		{
-			return INET_analyze(service_name,
-								service_length,
+			return INET_analyze(service_name, 
 								status_vector,
-								node_name,
+								node_name.c_str(), 
 								user_string,
 								uv_flag,
 								dpb,
@@ -5806,11 +5776,12 @@ static bool get_new_dpb(const UCHAR*	dpb,
 		const SSHORT l = MIN(password_length, MAX_PASSWORD_ENC_LENGTH);
 		strncpy((char*) pw_buffer, (const char*) password, l);
 		pw_buffer[l] = 0;
-		p = (UCHAR *) ENC_crypt(reinterpret_cast<char*>(pw_buffer),
-								PASSWORD_SALT) + 2;
-		*s++ = strlen((const char*) p);
-		while (*p) {
-			*s++ = *p++;
+		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
+		ENC_crypt(pwt, sizeof pwt, reinterpret_cast<char*>(pw_buffer), PASSWORD_SALT);
+		TEXT *pp = pwt + 2;
+		*s++ = strlen((const char*) pp);
+		while (*pp) {
+			*s++ = *pp++;
 		}
 	}
 #endif
@@ -5962,8 +5933,7 @@ static ISC_STATUS info(
 static bool init(ISC_STATUS* user_status,
 				 rem_port* port,
 				 P_OP op,
-				 UCHAR* file_name,
-				 USHORT file_length,
+				 const Firebird::PathName& file_name,
 				 UCHAR* dpb,
 				 USHORT dpb_length)
 {
@@ -5985,8 +5955,8 @@ static bool init(ISC_STATUS* user_status,
 
 	P_ATCH* attach = &packet->p_atch;
 	packet->p_operation = op;
-	attach->p_atch_file.cstr_length = file_length;
-	attach->p_atch_file.cstr_address = file_name;
+	attach->p_atch_file.cstr_length = file_name.length();
+	attach->p_atch_file.cstr_address = (UCHAR *) file_name.c_str();
 	attach->p_atch_dpb.cstr_length = dpb_length;
 	attach->p_atch_dpb.cstr_address = dpb;
 

@@ -26,11 +26,13 @@
 #ifndef REMOTE_XNET_PROTO_H
 #define REMOTE_XNET_PROTO_H
 
+#include "fb_string.h"
+
 #ifdef NO_PORT
 #define rem_port void
 #endif
 
-rem_port*	XNET_analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*,
+rem_port*	XNET_analyze(const Firebird::PathName&, ISC_STATUS*, const TEXT*,
 	const TEXT*, bool);
 rem_port*	XNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
 
