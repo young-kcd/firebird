@@ -75,7 +75,9 @@ extern SLONG trace_pools;
 
 // Static functions to be called from this file only.
 static void GetDriveLetter(ULONG, char pchBuf[DRV_STRINGLEN]);
+#ifdef NOT_USED_OR_REPLACED
 static char *MakeVersionString(char *, int, USHORT);
+#endif
 static BOOL CanEndServer(HWND, BOOL);
 
 // Window Procedure

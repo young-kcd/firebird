@@ -79,6 +79,10 @@
 #include "../jrd/dbg_proto.h"
 
 
+#ifdef DEV_BUILD
+#define OPT_DEBUG
+#endif
+
 static BOOLEAN augment_stack(JRD_NOD, LLS *);
 static SLONG calculate_priority_level(OPT, IDX *);
 static void check_indices(csb_repeat *);
@@ -145,7 +149,9 @@ static BOOLEAN match_indices(TDBB, OPT, SSHORT, JRD_NOD, IDX *);
 static USHORT nav_rsb_size(RSB, USHORT, USHORT);
 static BOOLEAN node_equality(JRD_NOD, JRD_NOD);
 static JRD_NOD optimize_like(TDBB, JRD_NOD);
+#ifdef OPT_DEBUG
 static void print_order(OPT, USHORT, double, double);
+#endif
 static USHORT river_count(USHORT, JRD_NOD *);
 static BOOLEAN river_reference(RIV, JRD_NOD);
 static BOOLEAN search_stack(JRD_NOD, LLS);
@@ -160,10 +166,6 @@ static SSHORT sort_indices_by_priority(csb_repeat *, IDX **, SLONG *);
 
 
 /* macro definitions */
-
-#ifdef DEV_BUILD
-#define OPT_DEBUG
-#endif
 
 #ifdef OPT_DEBUG
 #define DEBUG_PUNT		5

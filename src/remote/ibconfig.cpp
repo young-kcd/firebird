@@ -72,11 +72,14 @@ LRESULT APIENTRY OSPage(HWND, UINT, WPARAM, LPARAM);
 // Static functions for reading and writing settings
 static BOOL ReadIBSettings(HWND);
 static BOOL WriteIBSettings(HWND);
+#ifdef NOT_USED_OR_REPLACED
 static BOOL ReadOSSettings(HWND);
 static BOOL WriteOSSettings(HWND);
-
+#endif
 static void RefreshIBControls(HWND, BOOL);
+#ifdef NOT_USED_OR_REPLACED
 static void RefreshOSControls(HWND, BOOL);
+#endif
 static BOOL ValidateUser(HWND);
 static void PrintCfgStatus(STATUS *, int, HWND);
 static void FillSysdbaSPB(char *, char *);
