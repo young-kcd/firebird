@@ -338,7 +338,7 @@ typedef const void (*PFN_SERV_t) ();
 
 static const serv services[] =
 {
-#if !(NOT_USED_OR_REPLACED)
+#ifndef NOT_USED_OR_REPLACED
 #ifdef WIN_NT
 	{ isc_action_max, "print_cache", "-svc", "bin/fb_cache_print", NULL, 0 },
 	{ isc_action_max, "print_locks", "-svc", "bin/fb_lock_print", NULL, 0 },
