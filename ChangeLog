@@ -1,3 +1,24 @@
+2004-07-01 18:12  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/Makefile.in (1.1):
+	
+	file Makefile.in was initially added on branch B1_5_Release.
+
+2004-07-01 18:12  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/Makefile.in
+	(1.1.2.1):
+	
+	Some more build files for solx86gcc
+
+2004-07-01 18:03  kkuznetsov
+
+	* firebird2/: configure.in (1.141.2.23),
+	builds/posix/prefix.solx86gcc (1.1.2.2), src/common/classes/locks.h
+	(1.5.2.5), src/jrd/thd.cpp (1.19.2.1):
+	
+	Putting Solaris changes from HEAD to R1_5
+
 2004-06-23 08:33  kkuznetsov
 
 	* firebird2/configure.in (1.141.2.22):
