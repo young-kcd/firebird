@@ -1,3 +1,165 @@
+2003-02-11 21:17  brodsom
+
+	* firebird2/src/utilities/: gsec.cpp, dba_full.epp, dba.epp:
+	
+	Remove GUI_TOOLS define
+
+2003-02-11 21:14  brodsom
+
+	* firebird2/src/: alice/tdr.cpp, alice/alice.cpp,
+	alice/alice_meta.epp, alice/exe.cpp, burp/burp.cpp, dsql/dsql.h,
+	isql/isql.epp, isql/isql.h, isql/show.epp, isql/show_proto.h,
+	isql/extract.epp, remote/ibconfig.cpp:
+	
+	Remove GUI_TOOLS define
+
+2003-02-11 20:03  brodsom
+
+	* firebird2/src/burp/burp.cpp:
+	
+	Remove an old trick
+
+2003-02-11 18:43  dimitr
+
+	* firebird2/builds/win32/msvc6/: dsql_server.dsp,
+	dsql_server_classic.dsp, engine.dsp, engine_classic.dsp:
+	
+	Fixed another build issues.
+
+2003-02-11 17:19  dimitr
+
+	* firebird2/builds/win32/msvc6/: engine.dsp, engine_classic.dsp:
+	
+	Fixed build problems related to the service manager and error
+	handling.
+
+2003-02-11 16:32  brodsom
+
+	* firebird2/src/utilities/v2_dmp.cpp:
+	
+	Remove V2 dump (not used)
+
+2003-02-11 16:29  brodsom
+
+	* firebird2/src/lock/: printv3.cpp, fparamv3.h, lockv3.h,
+	lockv3s4.h:
+	
+	Remove V3 lock/print
+
+2003-02-11 16:22  brodsom
+
+	* firebird2/src/: utilities/drpv3_proto.h, utilities/drop.cpp,
+	utilities/dropv3.cpp, lock/prtv3_proto.h, lock/printv3s4.cpp,
+	lock/print.cpp:
+	
+	Remove V3 lock/print
+
+2003-02-11 15:42  brodsom
+
+	* firebird2/src/: utilities/rstore.epp, utilities/rebuild.cpp,
+	utilities/rebuild.h, utilities/dba_full.epp, jrd/gdsold.h:
+	
+	Remove ODS_4, gds_version3 defines. (IB V2)
+
+2003-02-11 06:13  aafemt
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.boot.gpre,
+	builds/posix/Makefile.in.static.gpre,
+	builds/posix/make.shared.variables, builds/posix/prefix.darwin,
+	builds/posix/prefix.example, builds/posix/prefix.freebsd,
+	builds/posix/prefix.linux, builds/posix/prefix.mingw,
+	builds/posix/prefix.sinixz, builds/posix/prefix.solaris,
+	builds/posix/prefix.solx86:
+	
+	Little step towards MinGW build. Physical IO module is
+	platform-depended now
+
+2003-02-11 03:13  brodsom
+
+	* firebird2/src/jrd/val.cpp:
+	
+	Change define name VAL_VERBOSE to DEBUG_VAL_VERBOSE.
+
+2003-02-11 03:12  brodsom
+
+	* firebird2/src/jrd/ib_stdio.cpp:
+	
+	Remove Check_FLT_ROUNDS, No_leftright, Pack_32, Unsigned_shifts,
+	hardway and notdef unused defines.
+
+2003-02-11 03:09  brodsom
+
+	* firebird2/src/jrd/ib_stdio.h:
+	
+	Remove _THREAD_SAFE and _FLOCK_DEBUG unused defines.
+
+2003-02-11 02:50  brodsom
+
+	* firebird2/src/jrd/enc.cpp:
+	
+	Remove notdef unused define
+
+2003-02-11 01:59  brodsom
+
+	* firebird2/src/v5_examples/winevent.c:
+	
+	Correct previous change
+
+2003-02-11 01:56  brodsom
+
+	* firebird2/src/jrd/sort.cpp:
+	
+	Change define name SORT_TRACE to DEBUG_SORT_TRACE
+
+2003-02-11 01:54  brodsom
+
+	* firebird2/src/remote/: parser.cpp, remote.cpp, server.cpp:
+	
+	Change define name REMOTE_DEBUG_MEMORY to DEBUG_REMOTE_MEMORY
+
+2003-02-11 01:48  brodsom
+
+	* firebird2/src/ipserver/: ipclient.cpp, ipserver.cpp:
+	
+	Change define name IP_TRACE to DEBUG_IP_TRACE
+
+2003-02-11 01:43  brodsom
+
+	* firebird2/src/v5_examples/winevent.c:
+	
+	Change define
+
+2003-02-11 01:37  brodsom
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Remove win16_only define (unused)
+
+2003-02-11 01:36  brodsom
+
+	* firebird2/src/jrd/fun.epp:
+	
+	Change wrong define
+
+2003-02-11 00:47  brodsom
+
+	* firebird2/src/remote/xnet.cpp:
+	
+	Remove NEW, CHECK_THIS, blank define.
+
+2003-02-11 00:46  brodsom
+
+	* firebird2/src/isql/show.epp:
+	
+	Remove UNUSED_FOR_ISQL define.
+
+2003-02-11 00:44  brodsom
+
+	* firebird2/src/gpre/: par.cpp, ftn.cpp, cob.cpp, c_cxx.cpp,
+	ada.cpp:
+	
+	Remove UNDEF define.
+
 2003-02-10 21:15  brodsom
 
 	* firebird2/src/lock/fparamv3.h:
