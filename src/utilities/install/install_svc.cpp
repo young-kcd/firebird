@@ -180,7 +180,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	if (sw_version)
-		ib_printf("install_svc version %s\n", GDS_VERSION);
+		ib_printf("instsvc version %s\n", GDS_VERSION);
 
 	if (sw_command == COMMAND_NONE ||
 		(username != 0 && sw_command != COMMAND_INSTALL))

@@ -33,7 +33,6 @@
 
 typedef Firebird::string string;
 
-static const char *REGISTRY_KEY = "RootDirectory";
 static const char *CONFIG_FILE = "firebird.conf";
 
 /******************************************************************************
@@ -46,13 +45,13 @@ void getRootFromRegistry(TEXT *buffer, DWORD buffer_length)
 	HKEY hkey;
 	DWORD type;
 
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_CUR_VER,
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_INSTANCES,
 		0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
 	{
 		return;
 	}
 
-	RegQueryValueEx(hkey, REGISTRY_KEY, NULL, &type,
+	RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE, NULL, &type,
 		reinterpret_cast<UCHAR*>(buffer), &buffer_length);
 	RegCloseKey(hkey);
 }

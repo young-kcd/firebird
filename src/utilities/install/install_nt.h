@@ -24,12 +24,13 @@
 #ifndef _UTILITIES_INSTALL_NT_H_
 #define _UTILITIES_INSTALL_NT_H_
 
-#define REMOTE_SERVICE			"FirebirdServer"
-#define REMOTE_DISPLAY_NAME		"Firebird Server"
+#define REMOTE_SERVICE			"FirebirdSQLDefaultInstance"
+#define REMOTE_DISPLAY_NAME		"Firebird SQL Server - DefaultInstance"
 #define REMOTE_SS_EXECUTABLE	"bin\\fbserver"
 #define REMOTE_CS_EXECUTABLE	"bin\\fb_inet_server"
-#define ISCGUARD_SERVICE		"FirebirdGuardian"
-#define ISCGUARD_DISPLAY_NAME	"Firebird Guardian"
+
+#define ISCGUARD_SERVICE		"FirebirdGuardianDefaultInstance"
+#define ISCGUARD_DISPLAY_NAME	"Firebird SQL Guardian - DefaultInstance"
 #define ISCGUARD_EXECUTABLE		"bin\\fbguard"
 #define GUARDIAN_MUTEX			"FirebirdGuardianMutex"
 /* Starting with 128 the service prams are user defined */
