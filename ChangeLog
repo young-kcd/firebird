@@ -1,3 +1,10 @@
+2002-12-28 01:20  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: OUTER JOINs and no current record for fetch operation,
+	caused by previous optimizer change
+
 2002-12-24 19:14  skidder
 
 	* firebird2/src/jrd/met.epp:
