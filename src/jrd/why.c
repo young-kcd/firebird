@@ -30,7 +30,7 @@
  *
  */
 /*
-$Id: why.c,v 1.14 2002-10-24 09:01:29 eku Exp $
+$Id: why.c,v 1.15 2002-10-24 11:13:34 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -139,6 +139,11 @@ extern int access();
 #define INIT_STATUS(vector)		vector [0] = gds_arg_gds;\
 					vector [1] = SUCCESS;\
 					vector [2] = gds_arg_end
+
+#define IS_NETWORK_ERROR(vector) \
+	(vector[1] == isc_network_error || \
+	 vector[1] == isc_net_write_err || \
+	 vector[1] == isc_net_read_err)
 
 #define CHECK_HANDLE(blk, blk_type, code) if (!(blk) || (blk)->type != blk_type) \
 	return bad_handle (user_status, code)
@@ -4317,9 +4322,12 @@ STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
 	for (sub = transaction; sub; sub = sub->next)
 		if (sub->implementation != SUBSYSTEMS &&
 			CALL(PROC_ROLLBACK, sub->implementation) (status, &sub->handle)) {
-			if (status[1] != isc_network_error)
+			if (!IS_NETWORK_ERROR(status))
 				return error(status, local);
 		}
+
+	if (IS_NETWORK_ERROR(status))
+		INIT_STATUS(status);
 
 	subsystem_exit();
 
