@@ -1,3 +1,45 @@
+2004-09-20 10:49  robocop
+
+	* firebird2/src/extlib/: ib_udf.cpp (1.1), ib_udf2.sql (1.1):
+	
+	Change in UDF handling to benefit ib_udf: - The old ib_udf.sql
+	works as always with ib_udf.c - You can use ib_udf.cpp with the old
+	ib_udf.sql, but it won't detect NULL - You must use ib_udf2.sql
+	ONLY with ib_udf.cpp and will have complete functionality - You can
+	point your build schema to use ib_udf.cpp instead of ib_udf.c - The
+	changes are backward compatible, except for the detection of NULL
+	that needs the new DDL declarations.
+
+2004-09-20 10:41  robocop
+
+	* firebird2/src/jrd/fun.epp (1.66):
+	
+	Cobweb cleaning in UDF handling
+
+2004-09-20 10:39  robocop
+
+	* firebird2/src/burp/burp.h (1.58):
+	
+	Redundant cast
+
+2004-09-20 10:39  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.144):
+	
+	1) static_cast is enough from void* to another type 2) Style
+
+2004-09-20 10:37  robocop
+
+	* firebird2/src/common/utils.cpp (1.9):
+	
+	Added a comment, in case it's not obvious
+
+2004-09-20 10:36  robocop
+
+	* firebird2/src/jrd/utl.cpp (1.71):
+	
+	Treat getenv() with more respect
+
 2004-09-17 17:02  alexpeshkoff
 
 	* firebird2/src/include/fb_string.h (1.28):
