@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.115 2004-06-09 18:20:20 brodsom Exp $
+$Id: inet.cpp,v 1.116 2004-06-14 11:20:37 fsg Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -3447,7 +3447,7 @@ static int packet_receive(
 #endif
 
 				// restore original timeout value FSG 3 MAY 2001
-				savetime = timeout;
+				timeout = savetime;
 
 				if (slct_count != -1 || !INTERRUPT_ERROR(INET_ERRNO))
 				{
