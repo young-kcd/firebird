@@ -3146,6 +3146,7 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
 
 	state = pthread_mutexattr_init(&mattr);
 	if (state == 0)
+	{
 #if _POSIX_THREAD_PROCESS_SHARED >= 200112L
 		pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
 #endif
