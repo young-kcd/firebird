@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: GenericMap.h,v 1.4 2004-11-29 01:08:38 skidder Exp $
+ *  $Id: GenericMap.h,v 1.5 2004-12-02 12:11:48 aafemt Exp $
  *
  */
 
@@ -67,7 +67,7 @@ public:
 	typedef typename KeyValuePair::second_type ValueType;
 
 	GenericMap() : tree(&getPool()), mCount(0) { }
-	GenericMap(MemoryPool& pool) : AutoStorage(pool), tree(&getPool()), mCount(0) { }
+	GenericMap(MemoryPool& a_pool) : AutoStorage(a_pool), tree(&getPool()), mCount(0) { }
 	~GenericMap() {
 		if (tree.getFirst()) {
 			while (true) {
