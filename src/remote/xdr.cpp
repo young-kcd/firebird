@@ -39,8 +39,10 @@
 // The simpliest way to check it is to issue
 // "select abs(2.0/3.0) from rdb$database" from correct client
 // It will return big strange value in case of invalid define
-#if (defined WIN_NT) || (defined LINUX)
+#if defined(i386) || defined(I386) || defined(_M_IX86)
 #define		SWAP_DOUBLE
+#else
+#error "Define SWAP_DOUBLE for your platform correctly !"
 #endif
 
 #ifdef VMS
