@@ -2493,12 +2493,12 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 	// Read node that need to be removed
 	IndexNode removingNode;
 	UCHAR* localPointer = BTreeNode::readNode(&removingNode, pointer, flags, leafPage);
-	USHORT offsetDeletePoint = (pointer - (UCHAR*)page);
+	const USHORT offsetDeletePoint = (pointer - (UCHAR*)page);
 
 	// Read the next node after the removing node
 	IndexNode nextNode;
 	localPointer = BTreeNode::readNode(&nextNode, localPointer, flags, leafPage);
-	USHORT offsetNextPoint = (localPointer - (UCHAR*)page);
+	const USHORT offsetNextPoint = (localPointer - (UCHAR*)page);
 
 	// Save data in tempKey so we can rebuild from it
 	USHORT newNextPrefix = nextNode.prefix;
