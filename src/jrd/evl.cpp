@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.36 2003-08-12 09:56:50 robocop Exp $ 
+  * $Id: evl.cpp,v 1.37 2003-08-26 07:15:52 dimitr Exp $ 
  */
 
 /*
@@ -168,7 +168,7 @@ static BOOLEAN wc_sleuth_class(class TextType*, USHORT, UCS2_CHAR *, UCS2_CHAR *
 						UCS2_CHAR);
 static SSHORT string_boolean(TDBB, JRD_NOD, DSC *, DSC *);
 static SSHORT string_function(TDBB, JRD_NOD, SSHORT, UCHAR *, SSHORT, UCHAR *, USHORT);
-static DSC *substring(TDBB, VLU, DSC *, USHORT, USHORT);
+static DSC *substring(TDBB, VLU, DSC *, SLONG, SLONG);
 static DSC *upcase(TDBB, DSC *, VLU);
 static DSC *internal_info(TDBB, DSC *, VLU);
 
@@ -1169,10 +1169,8 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 			return negate_dsc(tdbb, values[0], impure);
 
 		case nod_substr:
-			return substring(tdbb, impure,
-							 values[0],
-							 (SSHORT) MOV_get_long(values[1], 0),
-							 (SSHORT) MOV_get_long(values[2], 0));
+			return substring(tdbb, impure, values[0],
+				MOV_get_long(values[1], 0), MOV_get_long(values[2], 0));
 
 		case nod_upcase:
 			return upcase(tdbb, values[0], impure);
@@ -4797,7 +4795,7 @@ static SSHORT string_function(
 
 static DSC *substring(
 					  TDBB tdbb,
-					  VLU impure, DSC * value, USHORT offset, USHORT length)
+					  VLU impure, DSC * value, SLONG offset_arg, SLONG length_arg)
 {
 /**************************************
  *
@@ -4824,6 +4822,12 @@ static DSC *substring(
 	SET_TDBB(tdbb);
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
+
+	if (offset_arg < 0 || length_arg < 0) {
+		ERR_post(gds_arith_except, 0);
+	}
+	USHORT offset = (USHORT) offset_arg;
+	USHORT length = (USHORT) length_arg;
 
 	if (dtype_blob == value->dsc_dtype && (BLOB_text != value->dsc_sub_type
 		|| (ttype = value->dsc_scale) == ttype_ascii || ttype == ttype_none || ttype == ttype_binary
