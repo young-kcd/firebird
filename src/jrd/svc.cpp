@@ -2189,8 +2189,9 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 			{
 				continue;
 			}
-			else;				/* the event was posted */
-			break;
+			else {				/* the event was posted */
+				break;
+			}
 		}
 
 		ISC_event_fini(evnt_ptr);
