@@ -156,7 +156,7 @@
 			Name="EXTLIB files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\extlib\ib_udf.c">
+				RelativePath="..\..\..\src\extlib\ib_udf.cpp">
 			</File>
 		</Filter>
 		<Filter
