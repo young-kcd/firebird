@@ -521,5 +521,5 @@ static void usage(void)
 	ib_printf("  'username' refers by default to a local account on this machine.\n");
 	ib_printf("  Use the format 'domain\\username' or 'server\\username' if appropriate.\n");
 
-	exit(FINI_OK);
+	exit(FINI_ERROR);
 }
