@@ -44,7 +44,7 @@ extern "C"
 #ifdef WIN_NT
 #define exception_type _exception
 #else
-#define exception_type exception
+#define exception_type __exception
 #endif
 int MATHERR(struct exception_type *e)
 {
