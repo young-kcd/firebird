@@ -155,7 +155,7 @@ static void	yyerror (TEXT *);
 /* token declarations */
 
 /* Tokens are organized chronologically by date added.
-   See dsql/keywords.h for a list organized alphabetically */
+   See dsql/keywords.cpp for a list organized alphabetically */
 
 /* Tokens in v4.0 -- not separated into v3 and v4 tokens */
 
@@ -448,7 +448,6 @@ static void	yyerror (TEXT *);
 %nonassoc COLUMN
 
 %%
-
 
 /* list of possible statements */
 
@@ -3771,77 +3770,90 @@ null_value	: KW_NULL
 
 /* Performs special mapping of keywords into symbols */
 
-symbol_UDF_name				: SYMBOL
-			;
+symbol_UDF_name	: valid_symbol_name
+	;
 
-symbol_blob_subtype_name		: SYMBOL
-			;
+symbol_blob_subtype_name	: valid_symbol_name
+	;
 
-symbol_character_set_name		: SYMBOL
-			;
+symbol_character_set_name	: valid_symbol_name
+	;
 
-symbol_collation_name			: SYMBOL
-			;
+symbol_collation_name	: valid_symbol_name
+	;
 
-symbol_column_name			: SYMBOL
-			;
+symbol_column_name	: valid_symbol_name
+	;
 
-symbol_constraint_name			: SYMBOL
-			;
+symbol_constraint_name	: valid_symbol_name
+	;
 
-symbol_cursor_name			: SYMBOL
-			;
+symbol_cursor_name	: valid_symbol_name
+	;
 
-symbol_domain_name			: SYMBOL
-			;
+symbol_domain_name	: valid_symbol_name
+	;
 
-symbol_exception_name			: SYMBOL
-			;
+symbol_exception_name	: valid_symbol_name
+	;
 
-symbol_filter_name			: SYMBOL
-			;
+symbol_filter_name	: valid_symbol_name
+	;
 
-symbol_gdscode_name			: SYMBOL
-			;
+symbol_gdscode_name	: valid_symbol_name
+	;
 
-symbol_generator_name			: SYMBOL
-			;
+symbol_generator_name	: valid_symbol_name
+	;
 
-symbol_index_name			: SYMBOL
-			;
+symbol_index_name	: valid_symbol_name
+	;
 
-symbol_item_alias_name			: SYMBOL
-			;
+symbol_item_alias_name	: valid_symbol_name
+	;
 
-symbol_label_name			: SYMBOL
-			;
+symbol_label_name	: valid_symbol_name
+	;
 
-symbol_procedure_name			: SYMBOL
-			;
+symbol_procedure_name	: valid_symbol_name
+	;
 
-symbol_role_name			: SYMBOL
-			;
+symbol_role_name	: valid_symbol_name
+	;
 
-symbol_table_alias_name			: SYMBOL
-			;
+symbol_table_alias_name	: valid_symbol_name
+	;
 
-symbol_table_name			: SYMBOL
-			;
+symbol_table_name	: valid_symbol_name
+	;
 
-symbol_trigger_name			: SYMBOL
-			;
+symbol_trigger_name	: valid_symbol_name
+	;
 
-symbol_user_name			: SYMBOL
-			;
+symbol_user_name	: valid_symbol_name
+	;
 
-symbol_variable_name			: SYMBOL
-			;
+symbol_variable_name	: valid_symbol_name
+	;
 
-symbol_view_name			: SYMBOL
-			;
+symbol_view_name	: valid_symbol_name
+	;
 
-symbol_savepoint_name			: SYMBOL
-			;
+symbol_savepoint_name	: valid_symbol_name
+	;
+
+/* symbols */
+
+valid_symbol_name	: SYMBOL
+/*
+	| non_reserved_word
+*/
+	;
+
+/* list of non-reserved words */
+
+//non_reserved_word :
+//	;
 
 %%
 
