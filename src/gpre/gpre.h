@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.46 2003-10-07 09:58:26 robocop Exp $
+ * $Id: gpre.h,v 1.47 2003-10-14 22:21:49 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -86,47 +86,22 @@
    BLR string definitions */
 
 #if (defined (SOLARIS) || defined (AIX) || defined (WIN_NT))
-#define CONST_STR	"const "
+static const char* CONST_STR	= "const ";
+#else
+static const char* CONST_STR	= "";
 #endif
 
-#ifndef CONST_STR
-#define CONST_STR	""
-#endif
-
-#define MAXSYMLEN 	512			/* max length of symbol + terminator */
-#define NAME_SIZE 	32
+const int MAXSYMLEN		= 512;		// max length of symbol + terminator
+const int NAME_SIZE 	= 32;
 #define SQL_DIALECT_V5 	1		/* pre 6.0 dialect */
 
-#define MAKE_ACTION(request,type) 	MSC_action(request,type)
 #define ALLOC(size) 			MSC_alloc (size)
-#define MAKE_CONTEXT(request)		MSC_context (request)
-#define COPY(from, length, to) 		MSC_copy (from, length, to)
-#define COPY_CAT(from1, length1, from2, length2,to) 	MSC_copy_cat(from1, length1, from2, length2,to)
-#define FREE(block)			MSC_free (block)
-#define MAKE_NODE(type, count)		MSC_node (type, count)
-#define POP(stack)			MSC_pop (stack)
+#define COPY(from, length, to)	MSC_copy (from, length, to)
+#define COPY_CAT(from1, length1, from2, length2,to)		MSC_copy_cat(from1, length1, from2, length2,to)
+#define FREE(block)				MSC_free (block)
+#define POP(stack)				MSC_pop (stack)
 #define PUSH(object, stack)		MSC_push (object, stack)
-#define REALLOC(block, size)		MSC_realloc (block, size)
-#define MAKE_REFERENCE(link)		MSC_reference (link);
-#define MAKE_REQUEST(type)		MSC_request (type)
-#define MAKE_STRING(string)		MSC_string (string)
-#define MAKE_PRIVILEGE_BLOCK()		MSC_privilege_block ()
-#define MAKE_USERNAME(string, dyn)	MSC_username (string, dyn)
-#define IBERROR				CPR_error
-
-#define RANGE_SHORT_INTEGER(X)	((X) < 32768  &&  (X) >= -32768)
-#define RANGE_POSITIVE_SHORT_INTEGER(X) ((X) < 32768 &&  (X) >= 0)
-
-#define QUOTED(typ)		(typ == tok_sglquoted || typ == tok_dblquoted)
-
-
-#define STRIP_QUOTES(tkn)	{int ij; \
-				for (ij=1; ij<tkn.tok_length-1; ij++) \
-				    tkn.tok_string[ij-1] = tkn.tok_string[ij];\
-				--ij; \
-				tkn.tok_string[ij] = 0;                \
-				tkn.tok_length = ij;                \
-				}
+#define REALLOC(block, size)	MSC_realloc (block, size)
 
 /* Language options */
 
@@ -212,9 +187,11 @@ typedef struct fil {
 	USHORT fil_flags;
 } *FIL;
 
-#define FIL_manual		1		/* Manual shadow */
-#define FIL_raw			2		/* On raw device */
-#define FIL_conditional		4	/* Conditional shadow */
+enum fil_flags_vals {
+	FIL_manual	= 1,	// Manual shadow
+	FIL_raw		= 2,	// On raw device
+	FIL_conditional	= 4	// Conditional shadow
+};
 
 const size_t FIL_LEN = sizeof(fil);
 
@@ -276,16 +253,10 @@ typedef struct gpre_nod {
 	gpre_nod* nod_arg[1];		/* argument */
 } *GPRE_NOD;
 
-#define nod_arg0 nod_arg[0]
-#define nod_arg1 nod_arg[1]
-#define nod_arg2 nod_arg[2]
-
 inline size_t NOD_LEN(const size_t cnt)
 {
-	fb_assert(cnt != 0);
-	return sizeof(gpre_nod) + (cnt - 1) * sizeof(gpre_nod*);
+	return sizeof(gpre_nod) + (cnt ? cnt - 1 : 0) * sizeof(gpre_nod*);
 }
-//#define NOD_LEN(cnt) (sizeof(gpre_nod) + (cnt - 1) * sizeof(gpre_nod*))
 
 
 typedef struct sdt {
@@ -328,10 +299,12 @@ typedef struct swe {
 	TEXT swe_label[1];			/* Label */
 } *SWE;
 
-#define SWE_error	0
-#define SWE_warning	1
-#define SWE_not_found	2
-#define SWE_max		3
+enum swe_condition_vals {
+	SWE_error,
+	SWE_warning,
+	SWE_not_found,
+	SWE_max
+};
 
 
 /* Text block */
@@ -370,7 +343,7 @@ const size_t VAL_LEN = sizeof(val);
    Note: the dimension (DIM) block used to hold dimension information.
    The preferred mechanism is the repeating tail on the array block. */
 
-#define MAX_ARRAY_DIMENSIONS 16
+const int MAX_ARRAY_DIMENSIONS = 16;
 
 typedef struct ary {
 	USHORT ary_dtype;			/* data type of array */
@@ -387,7 +360,6 @@ typedef struct ary {
 
 // CVC: The count is ignored, the array is hardcoded at 16.
 const size_t ARY_LEN = sizeof(ary);
-//#define ARY_LEN(count) (sizeof(ary))
 
 
 
@@ -406,12 +378,14 @@ typedef struct gpre_trg {
 
 const size_t TRG_LEN = sizeof(gpre_trg);
 
-#define PRE_STORE_TRIGGER	1
-#define POST_STORE_TRIGGER	2
-#define PRE_MODIFY_TRIGGER	3
-#define POST_MODIFY_TRIGGER	4
-#define PRE_ERASE_TRIGGER	5
-#define POST_ERASE_TRIGGER	6
+enum gpre_trg_types {
+	PRE_STORE_TRIGGER = 1,
+	POST_STORE_TRIGGER,
+	PRE_MODIFY_TRIGGER,
+	POST_MODIFY_TRIGGER,
+	PRE_ERASE_TRIGGER,
+	POST_ERASE_TRIGGER
+};
 
 
 /* Linked list stack stuff */
@@ -443,36 +417,41 @@ typedef struct cnstrt {
 
 const size_t CNSTRT_LEN = sizeof(cnstrt);
 
-
 /* Values for cnstrt_fkey_def_type */
 
-#define REF_UPDATE_ACTION	0x0001
-#define REF_UPD_CASCADE		0x0002
-#define REF_UPD_SET_DEFAULT	0x0004
-#define REF_UPD_SET_NULL	0x0008
-#define REF_UPD_NONE		0x0010
-#define REF_UPDATE_MASK		0x001E
+enum cnstrt_fkey_def_type_vals {
+	REF_UPDATE_ACTION	= 0x0001,
+	REF_UPD_CASCADE		= 0x0002,
+	REF_UPD_SET_DEFAULT	= 0x0004,
+	REF_UPD_SET_NULL	= 0x0008,
+	REF_UPD_NONE		= 0x0010,
+	REF_UPDATE_MASK		= 0x001E,
 
-#define REF_DELETE_ACTION	0x0020
-#define REF_DEL_CASCADE		0x0040
-#define REF_DEL_SET_DEFAULT	0x0080
-#define REF_DEL_SET_NULL	0x0100
-#define REF_DEL_NONE		0x0200
-#define REF_DELETE_MASK		0x03C0
+	REF_DELETE_ACTION	= 0x0020,
+	REF_DEL_CASCADE		= 0x0040,
+	REF_DEL_SET_DEFAULT	= 0x0080,
+	REF_DEL_SET_NULL	= 0x0100,
+	REF_DEL_NONE		= 0x0200,
+	REF_DELETE_MASK		= 0x03C0
+};
 
 /* Values for cnstrt_type */
 
-#define CNSTRT_NOT_NULL		1
-#define CNSTRT_PRIMARY_KEY	2
-#define CNSTRT_UNIQUE		3
-#define CNSTRT_FOREIGN_KEY	4
-#define CNSTRT_CHECK		5
+enum cnstrt_type_vals {
+	CNSTRT_NOT_NULL = 1,
+	CNSTRT_PRIMARY_KEY,
+	CNSTRT_UNIQUE,
+	CNSTRT_FOREIGN_KEY,
+	CNSTRT_CHECK
+};
 
 /* Values for cnstrt_flags */
 
-#define CNSTRT_DEFERRABLE		1
-#define CNSTRT_INITIALLY_DEFERRED	2
-#define CNSTRT_delete			4
+enum cnstrt_flags_vals {
+	CNSTRT_DEFERRABLE			= 1,
+	CNSTRT_INITIALLY_DEFERRED	= 2,
+	CNSTRT_delete				= 4
+};
 
 
 /* Grant/revoke block */
@@ -491,15 +470,17 @@ typedef struct prv {
 
 const size_t PRV_LEN = sizeof(prv);
 
-#define PRV_no_privs	0		/* no privileges being granted or revoked */
-#define PRV_select	1			/* select privilege being granted or revoked */
-#define PRV_insert	2			/* insert privilege being granted or revoked */
-#define PRV_delete	4			/* delete privilege being granted or revoked */
-#define PRV_update	8			/* update privilege being granted or revoked */
-#define PRV_execute	16			/* execute privilege being granted or revoked */
-#define PRV_references	32		/* reference privilege */
-#define PRV_grant_option 64		/* privilege to grant privileges being granted */
-#define PRV_all		128			/* all privileges being granted/revoked */
+enum priv_types {
+	PRV_no_privs	= 0,		/* no privileges being granted or revoked */
+	PRV_select		= 1,		/* select privilege being granted or revoked */
+	PRV_insert		= 2,		/* insert privilege being granted or revoked */
+	PRV_delete		= 4,		/* delete privilege being granted or revoked */
+	PRV_update		= 8,		/* update privilege being granted or revoked */
+	PRV_execute		= 16,		/* execute privilege being granted or revoked */
+	PRV_references	= 32,		/* reference privilege */
+	PRV_grant_option= 64,		/* privilege to grant privileges being granted */
+	PRV_all			= 128		/* all privileges being granted/revoked */
+};
 
 
 /* statistic block. Used for all statistics commands */
@@ -510,7 +491,9 @@ typedef struct sts {
 } *STS;
 
 const size_t STS_LEN = sizeof(sts);
-#define STS_index	1			/* Object is an index */
+enum sts_flags_vals {
+	STS_index = 1		/* Object is an index */
+};
 
 
 /* Computed field block */
@@ -661,13 +644,15 @@ typedef struct act {
 	USHORT act_count;			/* used to hold begin/end count for routines */
 } *ACT;
 
-#define ACT_mark	1			/* action is mark only - no comment */
-#define ACT_first	2			/* action is first on line.  No FTN continuation */
-#define ACT_break	4			/* module boundary break */
-#define ACT_sql		8			/* action is SQL statement */
-#define ACT_decl	16			/* action is a PASCAL forward or extern routine */
-#define ACT_main	32			/* action is the main routine in the program/module */
-#define ACT_back_token	128		/* end of action marked by prior token */
+enum act_flags_vals {
+	ACT_mark	= 1,		/* action is mark only - no comment */
+	ACT_first	= 2,		/* action is first on line.  No FTN continuation */
+	ACT_break	= 4,		/* module boundary break */
+	ACT_sql		= 8,		/* action is SQL statement */
+	ACT_decl	= 16,		/* action is a PASCAL forward or extern routine */
+	ACT_main	= 32,		/* action is the main routine in the program/module */
+	ACT_back_token	= 128		/* end of action marked by prior token */
+};
 
 const size_t ACT_LEN = sizeof(act);
 
@@ -752,8 +737,10 @@ typedef blb* BLB;
 
 const size_t BLB_LEN = sizeof(blb);
 
-#define BLB_create		1
-#define BLB_symbol_released	2
+enum blb_flags_vals {
+	BLB_create	= 1,
+	BLB_symbol_released	= 2
+};
 
 
 /* Reserved relation lock block */
@@ -836,20 +823,24 @@ typedef struct dbb {
 
 const size_t DBB_LEN = sizeof(dbb);
 
-#define DBB_no_arrays		1
-#define DBB_sqlca		2		/* Created as default for a sqlca */
-#define DBB_in_trans		4	/* included in this transaction */
-#define DBB_drop_log		8
-#define DBB_log_serial		16
-#define DBB_log_default		32
-#define DBB_cascade		64
-#define DBB_drop_cache		128
-#define DBB_create_database	256
-#define DBB_v3			512		/* Database is V3 */
+enum dbb_flags_valss {
+	DBB_no_arrays	= 1,
+	DBB_sqlca		= 2,	/* Created as default for a sqlca */
+	DBB_in_trans	= 4,	/* included in this transaction */
+	DBB_drop_log	= 8,
+	DBB_log_serial	= 16,
+	DBB_log_default	= 32,
+	DBB_cascade		= 64,
+	DBB_drop_cache	= 128,
+	DBB_create_database	= 256,
+	DBB_v3			= 512	/* Database is V3 */
+};
 
-#define DBB_GLOBAL 	0
-#define DBB_EXTERN 	1
-#define DBB_STATIC 	2
+enum dbb_scope_vals {
+	DBB_GLOBAL,
+	DBB_EXTERN,
+	DBB_STATIC
+};
 
 /* TPB block */
 
@@ -884,7 +875,9 @@ typedef struct gpre_prc {
 } *GPRE_PRC;
 
 const size_t PRC_LEN = sizeof(gpre_prc);
-#define PRC_scanned	1
+enum prc_flags_vals {
+	PRC_scanned = 1
+};
 
 
 /* Maps used by union and global aggregates */
@@ -928,16 +921,15 @@ typedef struct gpre_rse {
 
 inline size_t RSE_LEN(const size_t cnt)
 {
-	fb_assert(cnt != 0);
-	return sizeof(gpre_rse) + (cnt - 1) * sizeof (int*);
+	return sizeof(gpre_rse) + (cnt ? cnt - 1 : 0) * sizeof (int*);
 	// CVC: The statement below avoids problem with cnt==0 but at the
 	// cost of a possible run-time memory error.
 	//return offsetof(gpre_rse, rse_context) + nItems * sizeof(int*);
 }
 
-//#define RSE_LEN(cnt) (sizeof(gpre_rse) + (cnt - 1) * sizeof (int *))
-
-#define RSE_singleton 1
+enum rse_flags_vals {
+	RSE_singleton = 1
+};
 
 
 /* Relation block, not to be confused with siblings or in-laws */
@@ -961,7 +953,9 @@ typedef struct gpre_rel {
 
 const size_t REL_LEN = sizeof(gpre_rel);
 
-#define REL_view_check	1		/* View created with check option */
+enum rel_flags_vals {
+	REL_view_check	= 1		/* View created with check option */
+};
 
 
 /* Index block. Used for DDL INDEX commands */
@@ -975,11 +969,13 @@ typedef struct ind {
 
 const size_t IND_LEN = sizeof(ind);
 
-#define IND_dup_flag	1		/* if false, duplicates not allowed */
-#define IND_meta	2			/* if true, created for a metadata operation */
-#define IND_descend	4			/* if true, a descending-order index */
-#define IND_active	8			/* activate index */
-#define IND_inactive	16		/* de-activate index */
+enum ind_flags_vals {
+	IND_dup_flag	= 1,	/* if false, duplicates not allowed */
+	IND_meta		= 2,	/* if true, created for a metadata operation */
+	IND_descend		= 4,	/* if true, a descending-order index */
+	IND_active		= 8,	/* activate index */
+	IND_inactive	= 16	/* de-activate index */
+};
 
 
 /* Symbolic names for international text types */
@@ -1001,16 +997,16 @@ typedef struct intlsym {		/* International symbol */
 const size_t INTLSYM_LEN = sizeof(intlsym);
 
 /* values used in intlsym_type */
-
-#define INTLSYM_collation	1
-#define	INTLSYM_charset		2
+enum intlsym_type_vals {
+	INTLSYM_collation	= 1,
+	INTLSYM_charset		= 2
+};
 
 /* values used in intlsym_flags */
 
 /* Macro for detecting fields which may have embedded nulls */
 
-#define SUBTYPE_ALLOWS_NULLS(s)	((s) == 1)
-#define FIELD_ALLOWS_NULLS(f)	(SUBTYPE_ALLOWS_NULLS((f)->fld_sub_type))
+#define SUBTYPE_ALLOWS_NULLS 1
 
 
 /* Field block.  Fields are what farms and databases are all about */
@@ -1050,23 +1046,28 @@ typedef struct gpre_fld {
 
 const size_t FLD_LEN = sizeof(gpre_fld);
 
-#define FLD_blob	 1
-#define FLD_text	 2
-#define FLD_stream_blob	 4
-#define FLD_dbkey	 8
-#define FLD_not_null	 32		/* if CREATE TABLE specifies not null */
-#define FLD_delete	 64			/* if ALTER TABLE specifies delete of field */
-#define FLD_meta	 128		/* if true, created for a metadata operation */
-#define FLD_national	 256	/* uses SQL "NATIONAL" character set */
-#define FLD_charset      512	/* field has a specific character set */
-#define FLD_computed   	 1024	/* field is computed */
-#define FLD_meta_cstring 2048	/* field is being defined as cstring by the user. */
+enum fld_flags_vals {
+	FLD_blob		= 1,
+	FLD_text		= 2,
+	FLD_stream_blob	= 4,
+	FLD_dbkey		= 8,
+	FLD_not_null	= 32,	/* if CREATE TABLE specifies not null */
+	FLD_delete		= 64,	/* if ALTER TABLE specifies delete of field */
+	FLD_meta		= 128,	/* if true, created for a metadata operation */
+	FLD_national	= 256,	/* uses SQL "NATIONAL" character set */
+	FLD_charset		= 512,	/* field has a specific character set */
+	FLD_computed	= 1024,	/* field is computed */
+	FLD_meta_cstring= 2048	/* field is being defined as cstring by the user. */
+};
 
 
 typedef enum {
-		FUN_value,
-		FUN_reference,
-		FUN_descriptor, FUN_blob_struct, FUN_scalar_array} FUN_T;
+	FUN_value,
+	FUN_reference,
+	FUN_descriptor,
+	FUN_blob_struct,
+	FUN_scalar_array
+}FUN_T;
 
 
 /* Port block */
@@ -1100,10 +1101,8 @@ typedef struct slc {
 
 inline size_t SLC_LEN(const size_t count)
 {
-	fb_assert(count != 0);
-	return sizeof(slc) + sizeof(slc::slc_repeat) * (count - 1);
+	return sizeof(slc) + sizeof(slc::slc_repeat) * (count ? count - 1 : 0);
 }
-//#define SLC_LEN(count)	(sizeof(slc) + sizeof(slc::slc_repeat) * (count - 1))
 
 
 /* Request block, corresponds to a single JRD request */
@@ -1180,19 +1179,21 @@ typedef struct gpre_req {
 	ULONG req_flags;
 } *GPRE_REQ;
 
-#define REQ_exp_hand		1
-#define REQ_local		2		/* defined in an included routine */
-#define REQ_sql_cursor		1024	/* request is an SQL cursor */
-#define REQ_extend_dpb		2048	/* we need to extend dpb at runtime */
-#define REQ_sql_declare_cursor	4096	/* request is declare cursor */
-#define REQ_sql_blob_open	8192	/* request is SQL open blob cursor */
-#define REQ_sql_blob_create	16384	/* request is SQL create blob cursor */
-#define REQ_sql_database_dyn	32768	/* request is to generate DYN to add files o database */
+enum req_flags_vals {
+	REQ_exp_hand			= 1,
+	REQ_local				= 2,		/* defined in an included routine */
+	REQ_sql_cursor			= 1024,		/* request is an SQL cursor */
+	REQ_extend_dpb			= 2048,		/* we need to extend dpb at runtime */
+	REQ_sql_declare_cursor	= 4096,		/* request is declare cursor */
+	REQ_sql_blob_open		= 8192,		/* request is SQL open blob cursor */
+	REQ_sql_blob_create		= 16384,	/* request is SQL create blob cursor */
+	REQ_sql_database_dyn	= 32768,	/* request is to generate DYN to add files o database */
 #ifdef SCROLLABLE_CURSORS
-#define REQ_scroll		65536	/* request is a scrollable cursor */
-#define REQ_backwards	       131072	/* request was last scrolled backwards */
+	REQ_scroll				= 65536,	/* request is a scrollable cursor */
+	REQ_backwards			= 131072,	/* request was last scrolled backwards */
 #endif
-#define REQ_blr_version4       262144	/* request must generate blr_version4 */
+	REQ_blr_version4		= 262144	/* request must generate blr_version4 */
+};
 
 const size_t REQ_LEN = sizeof(gpre_req);
 
@@ -1244,16 +1245,18 @@ typedef struct ref {
 	SSHORT ref_ttype;			/* Character set type for literals */
 } *REF;
 
-#define REF_union	1			/* Pseudo field for union */
-#define REF_pseudo	2			/* Other pseudo field (probably for forms) */
-#define REF_null	4			/* Only here cause of related null reference */
-#define REF_fetch_array	8		/* Need to fetch full array */
-#define REF_literal	16			/* Reference is to a constant */
-#define REF_ttype	32			/* Reference contains character set spec */
-#define REF_array_elem	64		/* Reference to an array element */
-#define REF_sql_date	128		/* Reference is to a date constant */
-#define REF_sql_time	256		/* Reference is to a time constant */
-#define REF_timestamp  	512		/* Reference is to a timestamp constant */
+enum ref_flags_vals {
+	REF_union		= 1,	/* Pseudo field for union */
+	REF_pseudo		= 2,	/* Other pseudo field (probably for forms) */
+	REF_null		= 4,	/* Only here cause of related null reference */
+	REF_fetch_array	= 8,	/* Need to fetch full array */
+	REF_literal		= 16,	/* Reference is to a constant */
+	REF_ttype		= 32,	/* Reference contains character set spec */
+	REF_array_elem	= 64,	/* Reference to an array element */
+	REF_sql_date	= 128,	/* Reference is to a date constant */
+	REF_sql_time	= 256,	/* Reference is to a time constant */
+	REF_timestamp	= 512	/* Reference is to a timestamp constant */
+};
 
 const size_t REF_LEN = sizeof(ref);
 
@@ -1274,8 +1277,10 @@ typedef struct bas {
 
 const size_t BAS_LEN = sizeof(bas);
 
-#define BAS_segment	1			/* Based on a blob segment length */
-#define BAS_ambiguous	2		/* Ambiguous reference to segment */
+enum bas_flags_vals {
+	BAS_segment		= 1,		/* Based on a blob segment length */
+	BAS_ambiguous	= 2		/* Ambiguous reference to segment */
+};
 
 
 /* declare udf block */
@@ -1324,18 +1329,19 @@ const size_t TRA_LEN = sizeof(gpre_tra);
 
 
 /* values for tra_flags */
+enum tra_flags_vals {
+	TRA_ro				= 1,
+	TRA_nw				= 2,
+	TRA_con				= 4,
+	TRA_rrl 			= 8,
+	TRA_inc 			= 16,
+	TRA_read_committed	= 32,
+	TRA_autocommit		= 64,
+	TRA_rec_version		= 128,
+	TRA_no_auto_undo	= 256
+};
 
-#define TRA_ro			1
-#define TRA_nw			2
-#define TRA_con			4
-#define TRA_rrl 		8
-#define TRA_inc 		16
-#define TRA_read_committed	32
-#define TRA_autocommit		64
-#define TRA_rec_version		128
-#define TRA_no_auto_undo	256
-
-#define MAX_TRA_OPTIONS		8
+const int MAX_TRA_OPTIONS	= 8;
 
 
 /* act_object block for SQL database commands. */
@@ -1402,10 +1408,14 @@ typedef struct udf {
 
 const size_t UDF_LEN = sizeof(udf);
 
-#define	UDF_value	0
-#define UDF_boolean	1
+enum udf_type_vals {
+	UDF_value,
+	UDF_boolean
+};
 
-#define UDF_scanned	1
+enum udf_flags_vals {
+	UDF_scanned = 1
+};
 
 
 /* Update block -- used for (at least) MODIFY */
@@ -1426,9 +1436,6 @@ const size_t UPD_LEN = sizeof(upd);
 
 
 #include "../jrd/dsc.h"
-
-#define dtype_float	dtype_real
-
 
 /* GPRE wide globals */
 
@@ -1486,17 +1493,15 @@ EXTERN INTLSYM text_subtypes;
 
 /* ada_flags fields definition */
 
-#define ADA_create_database	1	/* the flag is set when there is a
-								   create database SQL statement in
-								   user program, and is used to
-								   generate additional "with" and
-								   "function" declarations    */
+const int ADA_create_database = 1;	// the flag is set when there is a
+									// create database SQL statement in
+									// user program, and is used to
+									// generate additional "with" and
+									// "function" declarations
 
 EXTERN USHORT ada_flags;
 
 #undef EXTERN
-
-#include "../gpre/msc_proto.h"
 
 #ifndef assert
 #ifdef DEV_BUILD

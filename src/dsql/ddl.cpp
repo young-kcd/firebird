@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.68 2003-10-05 06:33:54 robocop Exp $
+ * $Id: ddl.cpp,v 1.69 2003-10-14 22:22:32 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -223,8 +223,6 @@ static const UCHAR nonnull_validation_blr[] = {
 	blr_fid, 0, 0, 0,
 	blr_eoc
 };
-
-ASSERT_FILENAME
 
 static inline bool hasOldContext(int value)
 {

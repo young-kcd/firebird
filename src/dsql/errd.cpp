@@ -61,7 +61,6 @@
 #include "../jrd/thd_proto.h"
 
 
-ASSERT_FILENAME					/* Define things assert() needs */
 #ifdef DEV_BUILD
 /**
   

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.26 2003-10-07 09:58:26 robocop Exp $
+//	$Id: pas.cpp,v 1.27 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -129,35 +129,35 @@ static void t_start_auto(const act*, const gpre_req*, TEXT *, int);
 
 static int first_flag;
 
-#define INDENT 3
+const int INDENT = 3;
 
 #ifdef VMS
-#define SHORT_DCL	"gds__short"
-#define LONG_DCL	"integer"
-#define POINTER_DCL	"gds__ptr_type"
-#define PACKED_ARRAY	"packed array"
-#define OPEN_BRACKET	"("
-#define CLOSE_BRACKET	")"
-#define REF_PAR		"%REF "
-#define SIZEOF		"size"
-#define STATIC_STRING	"[STATIC]"
-#define ISC_BADDRESS	"ISC_BADDRESS"
+const char* SHORT_DCL		= "gds__short";
+const char* LONG_DCL		= "integer";
+const char* POINTER_DCL		= "gds__ptr_type";
+const char* PACKED_ARRAY	= "packed array";
+const char* OPEN_BRACKET	= "(";
+const char* CLOSE_BRACKET	= ")";
+const char* REF_PAR			= "%REF ";
+const char* SIZEOF			= "size";
+const char* STATIC_STRING	= "[STATIC]";
+const char* ISC_BADDRESS	= "ISC_BADDRESS";
 #else
-#define SHORT_DCL	"integer16"
-#define LONG_DCL	"integer32"
-#define POINTER_DCL	"UNIV_PTR"
-#define PACKED_ARRAY	"array"
-#define OPEN_BRACKET	"["
-#define CLOSE_BRACKET	"]"
-#define REF_PAR		""
-#define SIZEOF		"sizeof"
-#define STATIC_STRING	"STATIC"
-#define ISC_BADDRESS	"ADDR"
+const char* SHORT_DCL		= "integer16";
+const char* LONG_DCL		= "integer32";
+const char* POINTER_DCL		= "UNIV_PTR";
+const char* PACKED_ARRAY	= "array";
+const char* OPEN_BRACKET	= "[";
+const char* CLOSE_BRACKET	= "]";
+const char* REF_PAR			= "";
+const char* SIZEOF			= "sizeof";
+const char* STATIC_STRING	= "STATIC";
+const char* ISC_BADDRESS	= "ADDR";
 #endif
 
-#define FB_DP_VOLATILE		""
-#define GDS_EVENT_COUNTS	"GDS__EVENT_COUNTS"
-#define GDS_EVENT_WAIT		"GDS__EVENT_WAIT"
+const char* FB_DP_VOLATILE		= "";
+const char* GDS_EVENT_COUNTS	= "GDS__EVENT_COUNTS";
+const char* GDS_EVENT_WAIT		= "GDS__EVENT_WAIT";
 
 static inline void begin(const int column)
 {
@@ -769,7 +769,7 @@ static void gen_based( const act* action, int column)
 		ib_fprintf(out_file, "char;");
 		break;
 
-	case dtype_float:
+	case dtype_real:
 		ib_fprintf(out_file, "real;");
 		break;
 
@@ -1953,8 +1953,8 @@ static void gen_event_init( const act* action, int column)
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
-	args.pat_string1 = GDS_EVENT_WAIT;
-	args.pat_string2 = GDS_EVENT_COUNTS;
+	args.pat_string1 =  const_cast<char*>(GDS_EVENT_WAIT);
+	args.pat_string2 =  const_cast<char*>(GDS_EVENT_COUNTS);
 
 //  generate call to dynamically generate event blocks 
 
@@ -2031,15 +2031,15 @@ static void gen_event_wait( const act* action, int column)
 
 	if (ident < 0) {
 		sprintf(s, "event handle \"%s\" not found", event_name->sym_string);
-		IBERROR(s);
+		CPR_error(s);
 		return;
 	}
 
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) ident;
-	args.pat_string1 = GDS_EVENT_WAIT;
-	args.pat_string2 = GDS_EVENT_COUNTS;
+	args.pat_string1 =  const_cast<char*>(GDS_EVENT_WAIT);
+	args.pat_string2 =  const_cast<char*>(GDS_EVENT_COUNTS);
 
 //  generate calls to wait on the event and to fill out the events array 
 
@@ -2324,7 +2324,7 @@ static void gen_get_segment( const act* action, int column)
 	args.pat_condition = true;
 	args.pat_ident1 = blob->blb_len_ident;
 	args.pat_ident2 = blob->blb_buff_ident;
-	args.pat_string1 = SIZEOF;
+	args.pat_string1 =  const_cast<char*>(SIZEOF);
 	PATTERN_expand(column, pattern1, &args);
 
 	if (action->act_flags & ACT_sql) {
@@ -2653,7 +2653,7 @@ static void gen_request( const gpre_req* request, int column)
 
 //  generate request handle, blob handles, and ports 
 
-	sw_volatile = FB_DP_VOLATILE;
+	sw_volatile =  const_cast<char*>(FB_DP_VOLATILE);
 	printa(column, " ");
 
 	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open |
@@ -2715,25 +2715,25 @@ static void gen_request( const gpre_req* request, int column)
 			case REQ_ready:
 				string_type = "DPB";
 				if (PRETTY_print_cdb(request->req_blr, gen_blr, 0, 1))
-					IBERROR("internal error during parameter generation");
+					CPR_error("internal error during parameter generation");
 				break;
 
 			case REQ_ddl:
 				string_type = "DYN";
 				if (PRETTY_print_dyn(request->req_blr, gen_blr, 0, 1))
-					IBERROR("internal error during dynamic DDL generation");
+					CPR_error("internal error during dynamic DDL generation");
 				break;
 			case REQ_slice:
 				string_type = "SDL";
 				if (PRETTY_print_sdl(request->req_blr, gen_blr, 0, 1))
-					IBERROR("internal error during SDL generation");
+					CPR_error("internal error during SDL generation");
 				break;
 
 			default:
 				string_type = "BLR";
 				if (gds__print_blr(request->req_blr,
 								   gen_blr, 0, 1))
-					IBERROR("internal error during BLR generation");
+					CPR_error("internal error during BLR generation");
 				break;
 			}
 		printa(column, "%s;\t(* end of %s string for request gds__%d *)\n",
@@ -2754,7 +2754,7 @@ static void gen_request( const gpre_req* request, int column)
 					gen_raw(reinterpret_cast<UCHAR*>(reference->ref_sdl), reference->ref_sdl_length,
 							column);
 				else if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 1))
-					IBERROR("internal error during SDL generation");
+					CPR_error("internal error during SDL generation");
 				printa(column, "%s; \t(* end of SDL string for gds__%d *)\n",
 					   CLOSE_BRACKET, reference->ref_sdl_ident);
 			}
@@ -3454,7 +3454,7 @@ static void make_array_declaration( const ref* reference)
 		ib_fprintf(out_file, "GDS__QUAD");
 		break;
 
-	case dtype_float:
+	case dtype_real:
 		ib_fprintf(out_file, "real");
 		break;
 
@@ -3465,7 +3465,7 @@ static void make_array_declaration( const ref* reference)
 	default:
 		sprintf(s, "datatype %d unknown for field %s",
 				field->fld_array_info->ary_dtype, name);
-		IBERROR(s);
+		CPR_error(s);
 		return;
 	}
 
@@ -3538,7 +3538,7 @@ static void make_port( POR port, int column)
 			field = field->fld_array;
 
 		switch (field->fld_dtype) {
-		case dtype_float:
+		case dtype_real:
 			ib_fprintf(out_file, "gds__%d\t: real\t(* %s *)",
 					   reference->ref_ident, name);
 			break;

@@ -97,5 +97,5 @@ struct pat {
 
 typedef pat PAT;
 
-#endif /* GPRE_PAT_H */
+#endif // GPRE_PAT_H
 

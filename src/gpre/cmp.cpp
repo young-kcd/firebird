@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.20 2003-10-06 09:48:43 robocop Exp $
+//	$Id: cmp.cpp,v 1.21 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -83,7 +83,7 @@ static USHORT next_ident;
 #define STUFF_LONG(blr) {STUFF (blr); STUFF ((blr) >> 8); STUFF ((blr) >>16); STUFF ((blr) >> 24);}
 #define STUFF_INT(blr)	STUFF (blr); STUFF ((blr) >> 8); STUFF ((blr) >> 16); STUFF ((blr) >> 24)
 
-#define MAX_TPB		4000
+const int MAX_TPB = 4000;
 
 //____________________________________________________________
 //  
@@ -896,8 +896,8 @@ static void cmp_for( GPRE_REQ request)
 	port = request->req_primary;
 	make_send(port, request);
 
-	field = MAKE_NODE(nod_field, 1);
-	value = MAKE_NODE(nod_value, 1);
+	field = MSC_node(nod_field, 1);
+	value = MSC_node(nod_value, 1);
 	STUFF(blr_begin);
 
 	for (reference = port->por_references; reference;
@@ -981,7 +981,7 @@ static void cmp_loop( GPRE_REQ request)
 	primary = request->req_primary;
 	make_send(primary, request);
 	STUFF(blr_begin);
-	counter = MAKE_NODE(nod_value, 1);
+	counter = MSC_node(nod_value, 1);
 	for (reference = primary->por_references; reference;
 		 reference = reference->ref_next)
 	{
@@ -1017,7 +1017,7 @@ static void cmp_loop( GPRE_REQ request)
 		update_context = (GPRE_CTX) node->nod_arg[0];
 		STUFF(blr_store);
 		CME_relation(update_context, request);
-		list = node->nod_arg1;
+		list = node->nod_arg[1];
 		STUFF(blr_begin);
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
 			 ptr++)
@@ -1183,7 +1183,7 @@ static void cmp_procedure( GPRE_REQ request)
 		STUFF_WORD(0);
 
 	if (request->req_references) {
-		node = MAKE_NODE(nod_value, 1);
+		node = MSC_node(nod_value, 1);
 		STUFF_WORD(procedure->prc_out_count);
 		for (; outputs; outputs = outputs->lls_next) {
 			node->nod_arg[0] = outputs->lls_object;

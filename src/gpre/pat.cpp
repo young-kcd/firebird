@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.18 2003-10-07 06:20:50 eku Exp $
+//	$Id: pat.cpp,v 1.19 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -361,7 +361,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		default:
 			sprintf(buffer, "Unknown substitution \"%c%c\"", pattern[-2],
 					pattern[-1]);
-			IBERROR(buffer);
+			CPR_error(buffer);
 			continue;
 		}
 		if (!sw_gen)

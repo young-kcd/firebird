@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.38 2003-10-06 09:48:43 robocop Exp $
+//  $Id: gpre.cpp,v 1.39 2003-10-14 22:21:49 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -71,7 +71,7 @@
 #ifdef VMS
 #include <descrip.h>
 extern "C" {
-extern int lib$get_foreign();
+	int lib$get_foreign();
 } // extern "C"
 #endif
 
@@ -81,15 +81,13 @@ extern int lib$get_foreign();
 #endif
 
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH		"fb_q"
+const char* SCRATCH		= "fb_q";
 #else
-#define SCRATCH		"fb_query_"
+const char* SCRATCH		= "fb_query_";
 #endif
 
-#ifndef FOPEN_READ_TYPE
-#define FOPEN_READ_TYPE		"r"
-#define FOPEN_WRITE_TYPE	"w"
-#endif
+const char* FOPEN_READ_TYPE		= "r";
+const char* FOPEN_WRITE_TYPE	= "w";
 
 static bool			all_digits(const char*);
 static bool			arg_is_string(SLONG, TEXT**, const TEXT*);
@@ -179,41 +177,34 @@ static const ext_table_t dml_ext_table[] =
 
 #ifdef GPRE_FORTRAN
 #ifdef VMS
-#define FORTRAN_EXTENSIONS
 	{ lang_fortran, IN_SW_GPRE_F, ".efor", ".for" },
-#endif
-
-#ifndef FORTRAN_EXTENSIONS
+#else
 	{ lang_fortran, IN_SW_GPRE_F, ".ef", ".f" },
 #endif
-#endif
+#endif // GPRE_FORTRAN
 
 #ifdef GPRE_COBOL
 #ifdef VMS
-#define COBOL_EXTENSIONS
 	{ lang_cobol, IN_SW_GPRE_COB, ".ecob", ".cob" },
-#endif
-
-#ifndef COBOL_EXTENSIONS
-#define COBOL_EXTENSIONS
+#else 
 	{ lang_cobol, IN_SW_GPRE_COB, ".ecbl", ".cbl" },
 #endif
-#endif
+#endif // GPRE_COBOL
 
+#ifdef GPRE_ADA
 #ifdef VMS
-#define ADA_EXTENSIONS
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
-#endif
-#ifdef hpux
-#define ADA_EXTENSIONS
+#elif hpux
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
-#endif
-#ifndef ADA_EXTENSIONS
+#else
 	{ lang_ada, IN_SW_GPRE_ADA, ".ea", ".a" },
 #endif
+
 #ifdef ALSYS_ADA
 	{ lang_ada, IN_SW_GPRE_ALSYS, ".eada", ".ada" },
 #endif
+#endif // GPRE_ADA
+
 #if (defined( WIN_NT))
 	{ lang_cplusplus, IN_SW_GPRE_CPLUSPLUS, ".epp", ".cpp" },
 #else
@@ -222,13 +213,15 @@ static const ext_table_t dml_ext_table[] =
 	{ lang_undef, IN_SW_GPRE_0, NULL, NULL }
 };
 
-#define CHR_LETTER	1
-#define CHR_DIGIT	2
-#define CHR_IDENT	4
-#define CHR_QUOTE	8
-#define CHR_WHITE	16
-#define CHR_INTRODUCER	32
-#define CHR_DBLQUOTE	64
+enum char_types {
+	CHR_LETTER	= 1,
+	CHR_DIGIT	= 2,
+	CHR_IDENT	= 4,
+	CHR_QUOTE	= 8,
+	CHR_WHITE	= 16,
+	CHR_INTRODUCER	= 32,
+	CHR_DBLQUOTE	= 64
+};
 
 //  macro compares chars; case sensitive for some platforms 
 
@@ -1191,7 +1184,7 @@ void CPR_raw_read()
 		else {
 			line_position++;
 			if (classes[c] != CHR_WHITE)
-				continue_char = (KEYWORD(KW_AMPERSAND));
+				continue_char = (token.tok_keyword == KW_AMPERSAND);
 		}
 	}
 }
@@ -1253,7 +1246,7 @@ TOK CPR_token()
 
 		switch (sw_sql_dialect) {
 		case SQL_DIALECT_V5:
-			if (!(QUOTED(token->tok_type)))
+			if (!(isQuoted(token->tok_type)))
 				CPR_error("Can only tag quoted strings with character set");
 			else
 				token->tok_charset = symbol;
@@ -1273,7 +1266,7 @@ TOK CPR_token()
 	else if (default_lc_ctype && text_subtypes) {
 		switch (sw_sql_dialect) {
 		case SQL_DIALECT_V5:
-			if (QUOTED(token->tok_type)){
+			if (isQuoted(token->tok_type)){
 				token->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype), 
 												   SYM_charset);
 			}
@@ -1374,7 +1367,8 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 //  PC-like platforms can't delete a file that is open.  Therefore
 //  we will save the name of the temp file for later deletion. 
 
-	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+	trace_file = (IB_FILE *) gds__temp_file(TRUE,  const_cast<char*>(SCRATCH),
+											trace_file_name);
 #endif
 
 	if (trace_file == (IB_FILE *) - 1) {
@@ -2196,8 +2190,8 @@ static TOK get_token()
 
 	token.tok_length = p - token.tok_string;
 	*p++ = 0;
-	if (QUOTED(token.tok_type)) {
-		STRIP_QUOTES(token)
+	if (isQuoted(token.tok_type)) {
+		strip_quotes(token);
 	/** If the dialect is 1 then anything that is quoted is
 	a string. Don not lookup in the hash table to prevent 
 	parsing confusion. 
@@ -2243,7 +2237,7 @@ static TOK get_token()
 //IF symbol is null AND it is not a quoted string AND -e switch was specified
 //THEN search again using HSH_lookup2().
 //*  
-	if ((token.tok_symbol == NULL) && (!QUOTED(token.tok_type)) && sw_case) {
+	if ((token.tok_symbol == NULL) && (!isQuoted(token.tok_type)) && sw_case) {
 		token.tok_symbol = symbol = HSH_lookup2(token.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
 			token.tok_keyword = (KWWORDS) symbol->sym_keyword;

@@ -16,7 +16,9 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-KW_start_actions,
+typedef enum kwwords {
+	KW_none = 0,
+	KW_start_actions,
 	KW_ACTIVE,
 	KW_ANY,
 	KW_AT,
@@ -308,3 +310,5 @@ KW_start_actions,
 	KW_WARNING,
 	KW_WEEKDAY,
 	KW_WHENEVER, KW_WIDTH, KW_WITH, KW_WORK, KW_WRITE, KW_YEAR, KW_YEARDAY,
+	KW_max
+} KWWORDS;

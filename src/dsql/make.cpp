@@ -55,8 +55,6 @@
 #include "../common/config/config.h"
 
 
-ASSERT_FILENAME					/* declare things assert() needs */
-ASSERT_BLKCHK_MSG
 /* InterBase provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
  * see if it is something that *could* represent a date value

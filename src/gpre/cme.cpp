@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.13 2003-10-06 09:48:43 robocop Exp $
+//	$Id: cme.cpp,v 1.14 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -43,6 +43,7 @@
 #include "../gpre/par_proto.h"
 #include "../gpre/prett_proto.h"
 #include "../jrd/dsc_proto.h"
+#include "../gpre/msc_proto.h"
 
 static GPRE_NOD cmp_array(GPRE_NOD, GPRE_REQ);
 static GPRE_NOD cmp_array_element(GPRE_NOD, GPRE_REQ);
@@ -61,8 +62,7 @@ static void stuff_sdl_element(REF, GPRE_FLD);
 static void stuff_sdl_loops(REF, GPRE_FLD);
 static void stuff_sdl_number(SLONG, REF);
 
-#define USER_LENGTH	32
-
+const int USER_LENGTH = 32;
 #define STUFF(blr)		*request->req_blr++ = (UCHAR) (blr)
 #define STUFF_WORD(blr)		STUFF (blr); STUFF (blr >> 8)
 #define STUFF_CSTRING(blr)	stuff_cstring (request, blr)
@@ -1031,7 +1031,7 @@ void CME_relation(GPRE_CTX context, GPRE_REQ request)
 
 		if ((context->ctx_alias) &&
 			!(request->req_database->dbb_flags & DBB_v3))
-				STUFF_CSTRING(context->ctx_alias);
+				stuff_cstring(request, context->ctx_alias);
 		STUFF(context->ctx_internal);
 	}
 	else if (procedure = context->ctx_procedure)
@@ -1651,7 +1651,7 @@ static void cmp_plan( GPRE_NOD plan_expression, GPRE_REQ request)
 
 		case nod_index_order:
 			STUFF(blr_navigational);
-			STUFF_CSTRING((TEXT *) arg->nod_arg[0]);
+			stuff_cstring(request, (TEXT *) arg->nod_arg[0]);
 			break;
 
 		case nod_index:
@@ -1660,7 +1660,7 @@ static void cmp_plan( GPRE_NOD plan_expression, GPRE_REQ request)
 			STUFF(arg->nod_count);
 			for (ptr2 = arg->nod_arg, end2 = ptr2 + arg->nod_count;
 				 ptr2 < end2; ptr2++)
-				STUFF_CSTRING((TEXT *) * ptr2);
+				stuff_cstring(request, (TEXT *) * ptr2);
 			break;
 		}
 	}

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: dyntable.cpp,v 1.4 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: dyntable.cpp,v 1.5 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -32,9 +32,6 @@
 #include "../jrd/gds.h"
 
 #define NODE(dyn) dyn, "dyn",
-#ifndef NULL
-#define NULL	0
-#endif
 
 struct dyn {
 	SSHORT dyn_value;

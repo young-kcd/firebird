@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.27 2003-10-07 09:58:26 robocop Exp $
+ *	$Id: gpre_meta.epp,v 1.28 2003-10-14 22:21:49 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -44,8 +44,8 @@
 #include "../gpre/par_proto.h"
 #include "../jrd/constants.h"
 
-#define MAX_USER_LENGTH		33
-#define MAX_PASSWORD_LENGTH	33
+const int MAX_USER_LENGTH	= 33;
+const int MAX_PASSWORD_LENGTH	= 33;
 
 DATABASE DB = FILENAME "yachts.lnk" RUNTIME database->dbb_filename;
 
@@ -678,7 +678,7 @@ LLS MET_get_primary_key(dbb* database, const TEXT* relation_name)
 		AND Z.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY"
 		SORTED BY Y.RDB$FIELD_POSITION
 		
-		STR field_name = (str*) MAKE_STRING(Y.RDB$FIELD_NAME);
+		STR field_name = (str*) MSC_string(Y.RDB$FIELD_NAME);
 		// Strip off any trailing spaces from field name
 		// CVC: This code stops at the first space, even in the middle.
 		TEXT* tmp = (TEXT*) field_name;
@@ -860,7 +860,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 
 	GPRE_PRC procedure = context->ctx_procedure;
 	if (procedure) {
-		GPRE_NOD node = MAKE_NODE(nod_list, procedure->prc_out_count);
+		GPRE_NOD node = MSC_node(nod_list, procedure->prc_out_count);
 		//count = 0;
 		for (field = procedure->prc_outputs; field; field = field->fld_next) {
 			reference = (REF) ALLOC(REF_LEN);
@@ -879,7 +879,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 				++count;
 		}
-		GPRE_NOD anode = MAKE_NODE(nod_list, count);
+		GPRE_NOD anode = MSC_node(nod_list, count);
 		//count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 			reference = (REF) ALLOC(REF_LEN);
@@ -915,7 +915,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 		count++;
 	END_FOR;
 
-	GPRE_NOD node = MAKE_NODE(nod_list, count);
+	GPRE_NOD node = MSC_node(nod_list, count);
 
 	while (stack) {
 		field = (GPRE_FLD) POP(&stack);
@@ -1007,7 +1007,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 	case blr_varying:
 	case blr_text:
 		dtype = dtype_text;
-		if (sw_cstring && !SUBTYPE_ALLOWS_NULLS(sub_type)) {
+		if (sw_cstring && sub_type != SUBTYPE_ALLOWS_NULLS) {
 			++l;
 			dtype = dtype_cstring;
 		}
@@ -1955,6 +1955,7 @@ static void get_array(dbb* database, const TEXT* field_name, GPRE_FLD field)
 	USHORT field_dimensions = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_array_request)
+
 	F IN RDB$FIELDS WITH F.RDB$FIELD_NAME EQ field_name
 		if (F.RDB$DIMENSIONS) {
 			GPRE_FLD sub_field = (GPRE_FLD) ALLOC(FLD_LEN);

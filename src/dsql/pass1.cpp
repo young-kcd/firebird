@@ -157,8 +157,6 @@
 extern void DSQL_pretty(dsql_nod*, int);
 #endif
 
-ASSERT_FILENAME					/* Define things assert() needs */
-ASSERT_BLKCHK_MSG
 static bool aggregate_found(DSQL_REQ, DSQL_NOD);
 static bool aggregate_found2(DSQL_REQ, DSQL_NOD, USHORT*, USHORT*, bool);
 static DSQL_NOD ambiguity_check(DSQL_REQ, DSQL_NOD, STR, DLLS);

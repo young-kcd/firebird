@@ -24,18 +24,8 @@
 #ifndef GPRE_PARSE_H
 #define GPRE_PARSE_H
 
-typedef enum kwwords {
-	KW_none = 0,
 #include "../gpre/words.h"
-	KW_max
-} KWWORDS;
-
 #include "../gpre/gpre.h"
-
-#define MATCH(keyword) 		MSC_match(keyword)
-#define KEYWORD(kw)		((int) token.tok_keyword == (int) kw)
-#define ADVANCE_TOKEN		PAR_get_token ()
-#define SYNTAX_ERROR		CPR_s_error
 
 /* Token block, used to hold a lexical token. */
 
@@ -60,7 +50,20 @@ typedef struct tok {
 	sym* tok_charset;			/* Character set of token */
 } *TOK;
 
-#define TOK_LEN sizeof(tok)
+const size_t TOK_LEN = sizeof(tok);
+
+inline void strip_quotes(tok& tkn){
+	int ij;
+	for (ij=1; ij<tkn.tok_length-1; ij++)
+		tkn.tok_string[ij-1] = tkn.tok_string[ij];
+	--ij;
+	tkn.tok_string[ij] = 0;
+	tkn.tok_length = ij;
+}
+
+inline bool isQuoted(int typ){
+	return (typ == tok_sglquoted || typ == tok_dblquoted);
+}
 
 #ifdef PARSER_MAIN
 #define EXTERN
@@ -72,4 +75,4 @@ EXTERN tok token;
 
 #undef EXTERN
 
-#endif /* GPRE_PARSE_H */
+#endif // GPRE_PARSE_H

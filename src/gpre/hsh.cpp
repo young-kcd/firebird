@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.15 2003-10-06 09:48:44 robocop Exp $
+//	$Id: hsh.cpp,v 1.16 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -40,7 +40,7 @@ static int hash(const SCHAR*);
 static bool scompare(const SCHAR*, const SCHAR*);
 static bool scompare2(const SCHAR*, const SCHAR*);
 
-#define HASH_SIZE 211
+const int HASH_SIZE = 211;
 
 static SYM hash_table[HASH_SIZE];
 static SYM key_symbols;
@@ -121,7 +121,7 @@ void HSH_insert( SYM symbol)
 		if (scompare(symbol->sym_string, (*next)->sym_string)) {
 			/* insert in most recently seen order; 
 			   This is important for alias resolution in subqueries.
-			   BUT insert tokens AFTER KEYWORD!
+			   BUT insert tokens AFTER keyword!
 			   In a lookup, keyword should be found first.
 			   This assumes that KEYWORDS are inserted before any other token.
 			   No one should be using a keywords as an alias anyway. */

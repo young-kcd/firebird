@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.32 2003-10-06 09:48:43 robocop Exp $
+//	$Id: ftn.cpp,v 1.33 2003-10-14 22:21:49 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -45,6 +45,7 @@
 #include "../gpre/pat_proto.h"
 #include "../gpre/prett_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../gpre/msc_proto.h"
 
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -167,207 +168,192 @@ static bool first_flag;
 static ADL array_decl_list;
 
 #ifdef VMS
-#define INCLUDE_ISC_FTN  "       include  'interbase:[syslib]gds.for\' \n\n"
-#define DOUBLE_DCL	"DOUBLE PRECISION"
-#define I2CONST_1	"%VAL("
-#define I2CONST_2	")"
-#define I2_1		""
-#define I2_2		""
-#define VAL_1		"%VAL("
-#define VAL_2		")"
-#define REF_1		"%REF("
-#define REF_2		")"
-#define I4CONST_1	"%VAL("
-#define I4CONST_2	")"
-#define COMMENT		"C     "
-#define INLINE_COMMENT	"!"
-#define COMMA		","
-#define NULL_SQLDA	"%VAL(0)"
+const char* INCLUDE_ISC_FTN		="       include  'interbase:[syslib]gds.for\' \n\n";
+const char* DOUBLE_DCL			= "DOUBLE PRECISION";
+const char* I2CONST_1			= "%VAL(";
+const char* I2CONST_2			= ")";
+const char* I2_1				= "";
+const char* I2_2				= "";
+const char* VAL_1				= "%VAL(";
+const char* VAL_2				= ")";
+const char* REF_1				= "%REF(";
+const char* REF_2				= ")";
+const char* I4CONST_1			= "%VAL(";
+const char* I4CONST_2			= ")";
+const char* COMMENT				= "C     ";
+const char* INLINE_COMMENT		= "!";
+const char* COMMA				= ",";
+#elif (defined AIX || defined AIX_PPC)
+const char* INCLUDE_ISC_FTN		="       INCLUDE  '%s\' \n\n";
+const char* INCLUDE_FTN_FILE	="include/gds.f";
+const char* DOUBLE_DCL			= "DOUBLE PRECISION";
+const char* I2CONST_1			= "%VAL(";
+const char* I2CONST_2			= ")";
+const char* I2_1				= "";
+const char* I2_2				= "";
+const char* VAL_1				= "%VAL(";
+const char* VAL_2				= ")";
+const char* REF_1				= "%REF(";
+const char* REF_2				= ")";
+const char* I4CONST_1			= "%VAL(";
+const char* I4CONST_2			= ")";
+const char* COMMENT				= "C     ";
+const char* INLINE_COMMENT		= "!";
+const char* COMMA				= ",";
+#elif defined(sun)
+const char* INCLUDE_ISC_FTN		= "       INCLUDE  '%s\' \n\n";
+const char* INCLUDE_FTN_FILE	="include/gds.f";
+const char* DOUBLE_DCL			= "DOUBLE PRECISION";
+const char* I2CONST_1			= "";
+const char* I2CONST_2			= "";
+const char* I2_1				= "";
+const char* I2_2				= "";
+const char* VAL_1				= "";
+const char* VAL_2				= "";
+const char* REF_1				= "";
+const char* REF_2				= "";
+const char* I4CONST_1			= "";
+const char* I4CONST_2			= "";
+const char* COMMENT				= "*     ";
+const char* INLINE_COMMENT		= "\n*                ";
+const char* COMMA				= ",";
+#elif defined(SINIXZ)
+const char* INCLUDE_ISC_FTN		= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
+const char* INCLUDE_FTN_FILE	= "include/gds.f";
+const char* DOUBLE_DCL			= "DOUBLE PRECISION";
+const char* I2CONST_1			= "";
+const char* I2CONST_2			= "";
+const char* I2_1				= "";
+const char* I2_2				= "";
+const char* VAL_1				= "";
+const char* VAL_2				= "";
+const char* REF_1				= "";
+const char* REF_2				= "";
+const char* I4CONST_1			= "";
+const char* I4CONST_2			= "";
+const char* COMMENT				= "*     ";
+const char* INLINE_COMMENT		= "\n*                ";
+const char* COMMA				= ",";
+#elif defined(LINUX)
+const char* INCLUDE_ISC_FTN		= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
+const char* INCLUDE_FTN_FILE	= "include/gds.f";
+const char* DOUBLE_DCL			= "DOUBLE PRECISION";
+const char* I2CONST_1			= "";
+const char* I2CONST_2			= "";
+const char* I2_1				= "";
+const char* I2_2				= "";
+const char* VAL_1				= "";
+const char* VAL_2				= "";
+const char* REF_1				= "";
+const char* REF_2				= "";
+const char* I4CONST_1			= "";
+const char* I4CONST_2			= "";
+const char* COMMENT				= "*     ";
+const char* INLINE_COMMENT		= "\n*                ";
+const char* COMMA				= ",";
+#elif defined(WIN_NT)
+const char* INCLUDE_ISC_FTN		= "       INCLUDE  \'%s\' \n\n";
+const char* INCLUDE_FTN_FILE	= "include/gds.f";
+const char* DOUBLE_DCL			= "DOUBLE PRECISION";
+const char* I2CONST_1			= "";
+const char* I2CONST_2			= "";
+const char* I2_1				= "";
+const char* I2_2				= "";
+const char* VAL_1				= "";
+const char* VAL_2				= "";
+const char* REF_1				= "";
+const char* REF_2				= "";
+const char* I4CONST_1			= "";
+const char* I4CONST_2			= "";
+const char* COMMENT				= "*     ";
+const char* INLINE_COMMENT		= "\n*                ";
+const char* COMMA				= ",";
+#elif (defined FREEBSD || defined NETBSD)
+const char* INCLUDE_ISC_FTN		= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
+const char* INCLUDE_FTN_FILE	= "include/gds.f";
+const char* DOUBLE_DCL			= "DOUBLE PRECISION";
+const char* I2CONST_1			= "";
+const char* I2CONST_2			= "";
+const char* I2_1				= "";
+const char* I2_2				= "";
+const char* VAL_1				= "";
+const char* VAL_2				= "";
+const char* REF_1				= "";
+const char* REF_2				= "";
+const char* I4CONST_1			= "";
+const char* I4CONST_2			= "";
+const char* COMMENT				= "*     ";
+const char* INLINE_COMMENT		= "\n*                ";
+const char* COMMA				= ",";
+#elif defined(DARWIN)
+const char* INCLUDE_ISC_FTN		= "       INCLUDE  '/Library/Frameworks/Firebird.framework/Headers/gds.f\' \n\n";
+const char* INCLUDE_FTN_FILE	= "Firebird/gds.f";
+const char* DOUBLE_DCL			= "DOUBLE PRECISION";
+const char* I2CONST_1			= "";
+const char* I2CONST_2			= "";
+const char* I2_1				= "";
+const char* I2_2				= "";
+const char* VAL_1				= "";
+const char* VAL_2				= "";
+const char* REF_1				= "";
+const char* REF_2				= "";
+const char* I4CONST_1			= "";
+const char* I4CONST_2			= "";
+const char* COMMENT				= "*     ";
+const char* INLINE_COMMENT		= "\n*                ";
+const char* COMMA				= ",";
+#elif defined(hpux)
+const char* INCLUDE_ISC_FTN		= "       INCLUDE  '%s\' \n\n";
+const char* INCLUDE_FTN_FILE	= "include/gds.f";
+const char* DOUBLE_DCL			= "DOUBLE PRECISION";
+const char* I2CONST_1			= "ISC_INT2(";
+const char* I2CONST_2			= ")";
+const char* I2_1				= "ISC_INT2(";
+const char* I2_2				= ")";
+const char* VAL_1				= "";
+const char* VAL_2				= "";
+const char* REF_1				= "";
+const char* REF_2				= "";
+const char* I4CONST_1			= "";
+const char* I4CONST_2			= "";
+const char* COMMENT				= "*     ";
+const char* INLINE_COMMENT		= "!";
+const char* COMMA				= ",";
 #endif
 
-#if (defined AIX || defined AIX_PPC)
-#define INCLUDE_ISC_FTN  "       INCLUDE  '%s\' \n\n"
-#define INCLUDE_FTN_FILE "include/gds.f"
-#define DOUBLE_DCL	"DOUBLE PRECISION"
-#define I2CONST_1	"%VAL("
-#define I2CONST_2	")"
-#define I2_1		""
-#define I2_2		""
-#define VAL_1		"%VAL("
-#define VAL_2		")"
-#define REF_1		"%REF("
-#define REF_2		")"
-#define I4CONST_1	"%VAL("
-#define I4CONST_2	")"
-#define COMMENT		"C     "
-#define INLINE_COMMENT	"!"
-#define COMMA		","
-#endif
+const char* COLUMN				= "      ";
+const char* INDENT				= "   ";
+const char* CONTINUE			= "     +   ";
+const char* COLUMN_INDENT		= "          ";
 
-#ifdef sun
-#define INCLUDE_ISC_FTN  "       INCLUDE  '%s\' \n\n"
-#define INCLUDE_FTN_FILE "include/gds.f"
-#define DOUBLE_DCL      "DOUBLE PRECISION"
-#define I2CONST_1	""
-#define I2CONST_2	""
-#define I2_1		""
-#define I2_2		""
-#define VAL_1		""
-#define VAL_2		""
-#define REF_1		""
-#define REF_2		""
-#define I4CONST_1	""
-#define I4CONST_2	""
-#define COMMENT		"*     "
-#define INLINE_COMMENT  "\n*                "
-#define COMMA		","
-#endif
+const char* ISC_EMBED_DSQL_CLOSE		= "isc_embed_dsql_close";
+const char* ISC_EMBED_DSQL_DECLARE		= "isc_embed_dsql_declare";
+const char* ISC_EMBED_DSQL_DESCRIBE		= "isc_embed_dsql_describe";
+const char* ISC_EMBED_DSQL_DESCRIBE_BIND	= "isc_embed_dsql_describe_bind";
+const char* ISC_EMBED_DSQL_EXECUTE 		= "isc_embed_dsql_execute";
+const char* ISC_EMBED_DSQL_EXECUTE2		= "isc_embed_dsql_execute2";
+const char* ISC_EMBED_DSQL_EXECUTE_IMMEDIATE	= "isc_embed_dsql_execute_immed";
+const char* ISC_EMBED_DSQL_EXECUTE_IMMEDIATE2	= "isc_embed_dsql_execute_immed2";
+const char* ISC_EMBED_DSQL_FETCH		= "isc_embed_dsql_fetch";
+const char* ISC_EMBED_DSQL_INSERT		= "isc_embed_dsql_insert";
+const char* ISC_EMBED_DSQL_OPEN			= "isc_embed_dsql_open";
+const char* ISC_EMBED_DSQL_OPEN2		= "isc_embed_dsql_open2";
+const char* ISC_EMBED_DSQL_PREPARE		= "isc_embed_dsql_prepare";
+const char* ISC_DSQL_ALLOCATE			= "isc_dsql_alloc_statement2";
+const char* ISC_DSQL_EXECUTE			= "isc_dsql_execute_m";
+const char* ISC_DSQL_FREE				= "isc_dsql_free_statement";
+const char* ISC_DSQL_SET_CURSOR			= "isc_dsql_set_cursor_name";
 
-#ifdef SINIXZ
-#define INCLUDE_ISC_FTN  "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
-#define INCLUDE_FTN_FILE "include/gds.f"
-#define DOUBLE_DCL      "DOUBLE PRECISION"
-#define I2CONST_1       ""
-#define I2CONST_2       ""
-#define I2_1            ""
-#define I2_2            ""
-#define VAL_1           ""
-#define VAL_2           ""
-#define REF_1           ""
-#define REF_2           ""
-#define I4CONST_1       ""
-#define I4CONST_2       ""
-#define COMMENT         "*     "
-#define INLINE_COMMENT  "\n*                "
-#define COMMA           ","
-#endif
+const char* ISC_EVENT_WAIT				= "ISC_EVENT_WAIT";
+const char* ISC_EVENT_COUNTS			= "ISC_EVENT_COUNTS";
 
-#ifdef LINUX
-#define INCLUDE_ISC_FTN  "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
-#define INCLUDE_FTN_FILE "include/gds.f"
-#define DOUBLE_DCL      "DOUBLE PRECISION"
-#define I2CONST_1       ""
-#define I2CONST_2       ""
-#define I2_1            ""
-#define I2_2            ""
-#define VAL_1           ""
-#define VAL_2           ""
-#define REF_1           ""
-#define REF_2           ""
-#define I4CONST_1       ""
-#define I4CONST_2       ""
-#define COMMENT         "*     "
-#define INLINE_COMMENT  "\n*                "
-#define COMMA           ","
-#endif
+const char* DSQL_I2CONST_1				= I2CONST_1;
+const char* DSQL_I2CONST_2				= I2CONST_2;
 
-#ifdef WIN_NT
-#define INCLUDE_ISC_FTN  "       INCLUDE  \'%s\' \n\n"
-#define INCLUDE_FTN_FILE "include/gds.f"
-#define DOUBLE_DCL      "DOUBLE PRECISION"
-#define I2CONST_1       ""
-#define I2CONST_2       ""
-#define I2_1            ""
-#define I2_2            ""
-#define VAL_1           ""
-#define VAL_2           ""
-#define REF_1           ""
-#define REF_2           ""
-#define I4CONST_1       ""
-#define I4CONST_2       ""
-#define COMMENT         "*     "
-#define INLINE_COMMENT  "\n*                "
-#define COMMA           ","
-#endif
-
-#if defined FREEBSD || defined NETBSD
-#define INCLUDE_ISC_FTN  "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
-#define INCLUDE_FTN_FILE "include/gds.f"
-#define DOUBLE_DCL      "DOUBLE PRECISION"
-#define I2CONST_1       ""
-#define I2CONST_2       ""
-#define I2_1            ""
-#define I2_2            ""
-#define VAL_1           ""
-#define VAL_2           ""
-#define REF_1           ""
-#define REF_2           ""
-#define I4CONST_1       ""
-#define I4CONST_2       ""
-#define COMMENT         "*     "
-#define INLINE_COMMENT  "\n*                "
-#define COMMA           ","
-#endif
-
-#if defined DARWIN
-#define INCLUDE_ISC_FTN  "       INCLUDE  '/Library/Frameworks/Firebird.framework/Headers/gds.f\' \n\n"
-#define INCLUDE_FTN_FILE "Firebird/gds.f"
-#define DOUBLE_DCL      "DOUBLE PRECISION"
-#define I2CONST_1       ""
-#define I2CONST_2       ""
-#define I2_1            ""
-#define I2_2            ""
-#define VAL_1           ""
-#define VAL_2           ""
-#define REF_1           ""
-#define REF_2           ""
-#define I4CONST_1       ""
-#define I4CONST_2       ""
-#define COMMENT         "*     "
-#define INLINE_COMMENT  "\n*                "
-#define COMMA           ","
-#endif
-
-#ifdef hpux
-#define INCLUDE_ISC_FTN  "       INCLUDE  '%s\' \n\n"
-#define INCLUDE_FTN_FILE "include/gds.f"
-#define DOUBLE_DCL      "DOUBLE PRECISION"
-#define I2CONST_1	"ISC_INT2("
-#define I2CONST_2	")"
-#define I2_1		"ISC_INT2("
-#define I2_2		")"
-#define VAL_1		""
-#define VAL_2		""
-#define REF_1		""
-#define REF_2		""
-#define I4CONST_1	""
-#define I4CONST_2	""
-#define COMMENT		"*     "
-#define INLINE_COMMENT  "!"
-#define COMMA		","
-#endif
-
-#define COLUMN		"      "
-#define INDENT		"   "
-#define CONTINUE	"     +   "
-#define COLUMN_INDENT	"          "
-
-#define ISC_EMBED_DSQL_CLOSE 		"isc_embed_dsql_close"
-#define ISC_EMBED_DSQL_DECLARE 		"isc_embed_dsql_declare"
-#define ISC_EMBED_DSQL_DESCRIBE 	"isc_embed_dsql_describe"
-#define ISC_EMBED_DSQL_DESCRIBE_BIND 	"isc_embed_dsql_describe_bind"
-#define ISC_EMBED_DSQL_EXECUTE 		"isc_embed_dsql_execute"
-#define ISC_EMBED_DSQL_EXECUTE2		"isc_embed_dsql_execute2"
-#define ISC_EMBED_DSQL_EXECUTE_IMMEDIATE "isc_embed_dsql_execute_immed"
-#define ISC_EMBED_DSQL_EXECUTE_IMMEDIATE2 "isc_embed_dsql_execute_immed2"
-#define ISC_EMBED_DSQL_FETCH		"isc_embed_dsql_fetch"
-#define ISC_EMBED_DSQL_INSERT		"isc_embed_dsql_insert"
-#define ISC_EMBED_DSQL_OPEN		"isc_embed_dsql_open"
-#define ISC_EMBED_DSQL_OPEN2		"isc_embed_dsql_open2"
-#define ISC_EMBED_DSQL_PREPARE	 	"isc_embed_dsql_prepare"
-#define ISC_DSQL_ALLOCATE		"isc_dsql_alloc_statement2"
-#define ISC_DSQL_EXECUTE		"isc_dsql_execute_m"
-#define ISC_DSQL_FREE			"isc_dsql_free_statement"
-#define ISC_DSQL_SET_CURSOR		"isc_dsql_set_cursor_name"
-
-#define ISC_EVENT_WAIT			"ISC_EVENT_WAIT"
-#define ISC_EVENT_COUNTS		"ISC_EVENT_COUNTS"
-
-#define DSQL_I2CONST_1			I2CONST_1
-#define DSQL_I2CONST_2			I2CONST_2
-
-#ifndef NULL_SQLDA
-#define NULL_SQLDA	"0"
+#ifdef VMS
+const char* NULL_SQLDA	= "%VAL(0)";
+#else
+const char* NULL_SQLDA	= "0";
 #endif
 
 
@@ -897,7 +883,7 @@ static void gen_based(const act* action)
 					fld_length : field->fld_length), COLUMN);
 		break;
 
-	case dtype_float:
+	case dtype_real:
 		ib_fprintf(out_file, "%sREAL%s", COLUMN, COLUMN);
 		break;
 
@@ -2190,10 +2176,10 @@ static void gen_event_init(const act* action)
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
-	args.pat_string1 = ISC_EVENT_WAIT;
-	args.pat_string2 = ISC_EVENT_COUNTS;
-	args.pat_string3 = I2_1;
-	args.pat_string4 = I2_2;
+	args.pat_string1 = const_cast<char*>(ISC_EVENT_WAIT);
+	args.pat_string2 = const_cast<char*>(ISC_EVENT_COUNTS);
+	args.pat_string3 = const_cast<char*>(I2_1);
+	args.pat_string4 = const_cast<char*>(I2_2);
 
 //  generate call to dynamically generate event blocks 
 
@@ -2271,7 +2257,7 @@ static void gen_event_wait(const act* action)
 	if (ident < 0) {
 		TEXT s[64];
 		sprintf(s, "event handle \"%s\" not found", event_name->sym_string);
-		IBERROR(s);
+		CPR_error(s);
         return;
 	}
 
@@ -2279,8 +2265,8 @@ static void gen_event_wait(const act* action)
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) ident;
-	args.pat_string1 = ISC_EVENT_WAIT;
-	args.pat_string2 = ISC_EVENT_COUNTS;
+	args.pat_string1 = const_cast<char*>(ISC_EVENT_WAIT);
+	args.pat_string2 = const_cast<char*>(ISC_EVENT_COUNTS);
 
 //  generate calls to wait on the event and to fill out the events array 
 
@@ -2907,24 +2893,24 @@ static void gen_request_data( const gpre_req* request)
 			case REQ_ready:
 				string_type = "DPB";
 				if (PRETTY_print_cdb(request->req_blr, gen_blr, 0, 0))
-					IBERROR("internal error during parameter generation");
+					CPR_error("internal error during parameter generation");
 				break;
 
 			case REQ_ddl:
 				string_type = "DYN";
 				if (PRETTY_print_dyn(request->req_blr, gen_blr, 0, 0))
-					IBERROR("internal error during dynamic DDL generation");
+					CPR_error("internal error during dynamic DDL generation");
 				break;
 			case REQ_slice:
 				string_type = "SDL";
 				if (PRETTY_print_sdl(request->req_blr, gen_blr, 0, 0))
-					IBERROR("internal error during SDL generation");
+					CPR_error("internal error during SDL generation");
 				break;
 
 			default:
 				string_type = "BLR";
 				if (gds__print_blr(request->req_blr, gen_blr, 0, 0))
-					IBERROR("internal error during BLR generation");
+					CPR_error("internal error during BLR generation");
 			}
 		}
 		else {
@@ -2972,7 +2958,7 @@ static void gen_request_data( const gpre_req* request)
 				if (!(sw_raw)) {
 					printa(COMMENT, " ");
 					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
-						IBERROR("internal error during SDL generation");
+						CPR_error("internal error during SDL generation");
 					printa(COMMENT, " ");
 					printa(COMMENT, "END OF SDL STRING FOR REQUEST isc_%d\n",
 						   reference->ref_sdl_ident);
@@ -3706,7 +3692,7 @@ static void make_array_declaration( const ref* reference)
 				   COLUMN, field->fld_array->fld_length, COLUMN);
 		break;
 
-	case dtype_float:
+	case dtype_real:
 		ib_fprintf(out_file, "%sREAL%s", COLUMN, COLUMN);
 		break;
 
@@ -3825,7 +3811,7 @@ static void make_port( const por* port)
 					   COLUMN, reference->ref_ident, INLINE_COMMENT, name);
 			break;
 
-		case dtype_float:
+		case dtype_real:
 			ib_fprintf(out_file, "%sREAL          isc_%d      %s{ %s }\n",
 					   COLUMN, reference->ref_ident, INLINE_COMMENT, name);
 			break;
@@ -4212,7 +4198,7 @@ static void gen_clear_handles(const act* action)
 {
 	for (const gpre_req* request = requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
-			printa("%s%s = 0;", COLUMN, request->req_handle);
+			printa("%s%s = 0;", const_cast<char*>(COLUMN), request->req_handle);
 	}
 }
 
@@ -4246,7 +4232,7 @@ static void gen_function(const act* function)
 	const act* action = (const act*) function->act_object;
 
 	if (action->act_type != ACT_any) {
-		IBERROR("can't generate function");
+		CPR_error("can't generate function");
 		return;
 	}
 
@@ -4307,7 +4293,7 @@ static void gen_function(const act* function)
 				break;
 
 			default:
-				IBERROR("gen_function: unsupported datatype");
+				CPR_error("gen_function: unsupported datatype");
 				return;
 			}
 			ib_fprintf(out_file, "    %s\t%s;\n", dtype,
@@ -4346,7 +4332,7 @@ static void gen_function(const act* function)
 static void gen_type(const act* action)
 {
 	// CVC: If I'm not mistaken, assumes sizeof(long) == sizeof(ref*)
-	printa("%s%ld", COLUMN, action->act_object);
+	printa("%s%ld", const_cast<char*>(COLUMN), action->act_object);
 }
 
 #ifdef NOT_USED_OR_REPLACED

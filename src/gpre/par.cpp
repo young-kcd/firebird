@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.33 2003-10-06 09:48:44 robocop Exp $
+//  $Id: par.cpp,v 1.34 2003-10-14 22:21:49 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -306,7 +306,7 @@ ACT PAR_action(const TEXT* base_dir)
 			return par_case();
 
 		case KW_EXEC:
-			if (!MATCH(KW_SQL))
+			if (!MSC_match(KW_SQL))
 				break;
 			sw_sql = true;
 			action = SQL_action(base_dir);
@@ -391,8 +391,8 @@ SSHORT PAR_blob_subtype(DBB db)
 			PAR_error("error during BLOB SUB_TYPE lookup");
 		}
 		if (!MET_type(field, token.tok_string, &const_subtype))
-			SYNTAX_ERROR("blob sub_type");
-		ADVANCE_TOKEN;
+			CPR_s_error("blob sub_type");
+		PAR_get_token();
 		return const_subtype;
 	}
 
@@ -412,7 +412,7 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 	DBB db, *db_ptr;
 	TEXT s[256], *string;
 
-	ACT action = MAKE_ACTION(0, ACT_database);
+	ACT action = MSC_action(0, ACT_database);
 	db = (DBB) ALLOC(DBB_LEN);
 
 //  Get handle name token, make symbol for handle, and
@@ -423,23 +423,23 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 	symbol->sym_type = SYM_database;
 	symbol->sym_object = (GPRE_CTX) db;
 
-	if (!MATCH(KW_EQUALS))
-		SYNTAX_ERROR("\"=\" in database declaration");
+	if (!MSC_match(KW_EQUALS))
+		CPR_s_error("\"=\" in database declaration");
 
-	if (MATCH(KW_STATIC))
+	if (MSC_match(KW_STATIC))
 		db->dbb_scope = DBB_STATIC;
-	else if (MATCH(KW_EXTERN))
+	else if (MSC_match(KW_EXTERN))
 		db->dbb_scope = DBB_EXTERN;
 
-	MATCH(KW_COMPILETIME);
+	MSC_match(KW_COMPILETIME);
 
 //  parse the compiletime options 
 
 	for (;;) {
-		if (MATCH(KW_FILENAME) && (!QUOTED(token.tok_type)))
-			SYNTAX_ERROR("quoted file name");
+		if (MSC_match(KW_FILENAME) && (!isQuoted(token.tok_type)))
+			CPR_s_error("quoted file name");
 
-		if (QUOTED(token.tok_type)) {
+		if (isQuoted(token.tok_type)) {
 			if (base_directory){
 				db->dbb_filename = string = (TEXT *) ALLOC(token.tok_length + 
 													strlen(base_directory) + 1);
@@ -452,29 +452,29 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 			}
 			token.tok_length += 2;
 		}
-		else if (MATCH(KW_PASSWORD)) {
-			if (!QUOTED(token.tok_type))
-				SYNTAX_ERROR("quoted password");
+		else if (MSC_match(KW_PASSWORD)) {
+			if (!isQuoted(token.tok_type))
+				CPR_s_error("quoted password");
 			db->dbb_c_password = string =
 				(TEXT *) ALLOC(token.tok_length + 1);
 			COPY(token.tok_string, token.tok_length, string);
 		}
-		else if (MATCH(KW_USER)) {
-			if (!QUOTED(token.tok_type))
-				SYNTAX_ERROR("quoted user name");
+		else if (MSC_match(KW_USER)) {
+			if (!isQuoted(token.tok_type))
+				CPR_s_error("quoted user name");
 			db->dbb_c_user = string = (TEXT *) ALLOC(token.tok_length + 1);
 			COPY(token.tok_string, token.tok_length, string);
 		}
-		else if (MATCH(KW_LC_MESSAGES)) {
-			if (!QUOTED(token.tok_type))
-				SYNTAX_ERROR("quoted language name");
+		else if (MSC_match(KW_LC_MESSAGES)) {
+			if (!isQuoted(token.tok_type))
+				CPR_s_error("quoted language name");
 			db->dbb_c_lc_messages = string =
 				(TEXT *) ALLOC(token.tok_length + 1);
 			COPY(token.tok_string, token.tok_length, string);
 		}
-		else if (!sql && MATCH(KW_LC_CTYPE)) {
-			if (!QUOTED(token.tok_type))
-				SYNTAX_ERROR("quoted character set name");
+		else if (!sql && MSC_match(KW_LC_CTYPE)) {
+			if (!isQuoted(token.tok_type))
+				CPR_s_error("quoted character set name");
 			db->dbb_c_lc_ctype = string =
 				(TEXT *) ALLOC(token.tok_length + 1);
 			COPY(token.tok_string, token.tok_length, string);
@@ -482,7 +482,7 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 		else
 			break;
 
-		ADVANCE_TOKEN;
+		PAR_get_token();
 	}
 
 	if ((sw_auto) && (db->dbb_c_password || db->dbb_c_user || db->dbb_c_lc_ctype
@@ -493,7 +493,7 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 	}
 
 	if (!db->dbb_filename)
-		SYNTAX_ERROR("quoted file name");
+		CPR_s_error("quoted file name");
 
 	if (default_user && !db->dbb_c_user)
 		db->dbb_c_user = default_user;
@@ -509,20 +509,20 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 
 //  parse the runtime options 
 
-	if (MATCH(KW_RUNTIME)) {
-		if (MATCH(KW_FILENAME))
+	if (MSC_match(KW_RUNTIME)) {
+		if (MSC_match(KW_FILENAME))
 			db->dbb_runtime = sql ? SQL_var_or_string(false)
 				: PAR_native_value(false, false);
-		else if (MATCH(KW_PASSWORD))
+		else if (MSC_match(KW_PASSWORD))
 			db->dbb_r_password = sql ? SQL_var_or_string(false)
 				: PAR_native_value(false, false);
-		else if (MATCH(KW_USER))
+		else if (MSC_match(KW_USER))
 			db->dbb_r_user = sql ? SQL_var_or_string(false)
 				: PAR_native_value(false, false);
-		else if (MATCH(KW_LC_MESSAGES))
+		else if (MSC_match(KW_LC_MESSAGES))
 			db->dbb_r_lc_messages = sql ? SQL_var_or_string(false)
 				: PAR_native_value(false, false);
-		else if (!sql && MATCH(KW_LC_CTYPE))
+		else if (!sql && MSC_match(KW_LC_CTYPE))
 			db->dbb_r_lc_ctype = sql ? SQL_var_or_string(false)
 				: PAR_native_value(false, false);
 		else
@@ -530,10 +530,10 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 				: PAR_native_value(false, false);
 	}
 
-	if ((sw_language == lang_ada) && (KEYWORD(KW_HANDLES))) {
-		ADVANCE_TOKEN;
-		if (QUOTED(token.tok_type))
-			SYNTAX_ERROR("quoted file name");
+	if ((sw_language == lang_ada) && (token.tok_keyword ==KW_HANDLES)) {
+		PAR_get_token();
+		if (isQuoted(token.tok_type))
+			CPR_s_error("quoted file name");
 		COPY(token.tok_string, token.tok_length, s);
 		strcat(s, ".");
 		if (!ada_package[0] || !strcmp(ada_package, s))
@@ -544,11 +544,11 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 					ada_package, token.tok_string);
 			CPR_warn(s);
 		}
-		ADVANCE_TOKEN;
+		PAR_get_token();
 	}
 
 	if (sw_language != lang_fortran)
-		MATCH(KW_SEMI_COLON);
+		MSC_match(KW_SEMI_COLON);
 
 	if (!MET_database(db, true)) {
 		sprintf(s, "Couldn't access database %s = '%s'",
@@ -597,10 +597,10 @@ bool PAR_end()
 	if ((sw_language == lang_ada) || (sw_language == lang_c) ||
 		(isLangCpp(sw_language)))
 	{
-		return (MATCH(KW_SEMI_COLON));
+		return (MSC_match(KW_SEMI_COLON));
 	}
 
-	return (KEYWORD(KW_SEMI_COLON));
+	return (token.tok_keyword == KW_SEMI_COLON);
 }
 
 
@@ -612,7 +612,7 @@ bool PAR_end()
 void PAR_error(const TEXT* string)
 {
 
-	IBERROR(string);
+	CPR_error(string);
 	PAR_unwind();
 }
 
@@ -639,42 +639,42 @@ ACT PAR_event_init(bool sql)
 
 	SQL_resolve_identifier("<identifier>", req_name);
 	strcpy(token.tok_string, req_name);
-	init = MAKE_NODE(nod_event_init, 4);
+	init = MSC_node(nod_event_init, 4);
 	init->nod_arg[0] = (GPRE_NOD) PAR_symbol(SYM_dummy);
 	init->nod_arg[3] = (GPRE_NOD) isc_databases;
 
-	action = MAKE_ACTION(0, ACT_event_init);
+	action = MSC_action(0, ACT_event_init);
 	action->act_object = (REF) init;
 
 //  parse optional database handle 
 
-	if (!MATCH(KW_LEFT_PAREN)) {
+	if (!MSC_match(KW_LEFT_PAREN)) {
 		if ((symbol = token.tok_symbol) && (symbol->sym_type == SYM_database))
 			init->nod_arg[3] = (GPRE_NOD) symbol->sym_object;
 		else
-			SYNTAX_ERROR("left parenthesis or database handle");
+			CPR_s_error("left parenthesis or database handle");
 
-		ADVANCE_TOKEN;
-		if (!MATCH(KW_LEFT_PAREN))
-			SYNTAX_ERROR("left parenthesis");
+		PAR_get_token();
+		if (!MSC_match(KW_LEFT_PAREN))
+			CPR_s_error("left parenthesis");
 	}
 
 //  eat any number of event strings until a right paren is found,
 //  pushing the events onto a stack 
 
 	while (true) {
-		if (MATCH(KW_RIGHT_PAREN))
+		if (MSC_match(KW_RIGHT_PAREN))
 			break;
 
 		if (!sql && (symbol = token.tok_symbol)
 			&& symbol->sym_type == SYM_context) {
 			field = EXP_field(&context);
 			reference = EXP_post_field(field, context, FALSE);
-			node = MAKE_NODE(nod_field, 1);
+			node = MSC_node(nod_field, 1);
 			node->nod_arg[0] = (GPRE_NOD) reference;
 		}
 		else {
-			node = MAKE_NODE(nod_null, 1);
+			node = MSC_node(nod_null, 1);
 			if (sql)
 				node->nod_arg[0] = (GPRE_NOD) SQL_var_or_string(false);
 			else
@@ -683,12 +683,12 @@ ACT PAR_event_init(bool sql)
 		PUSH(node, &stack);
 		count++;
 
-		MATCH(KW_COMMA);
+		MSC_match(KW_COMMA);
 	}
 
 //  pop the event strings off the stack 
 
-	event_list = init->nod_arg[1] = MAKE_NODE(nod_list, (SSHORT) count);
+	event_list = init->nod_arg[1] = MSC_node(nod_list, (SSHORT) count);
 	ptr = event_list->nod_arg + count;
 	while (stack)
 		*--ptr = (GPRE_NOD) POP(&stack);
@@ -714,7 +714,7 @@ ACT PAR_event_wait(bool sql)
 
 //  this is a simple statement, just add a handle 
 
-	action = MAKE_ACTION(0, ACT_event_wait);
+	action = MSC_action(0, ACT_event_wait);
 	SQL_resolve_identifier("<identifier>", req_name);
 	strcpy(token.tok_string, req_name);
 	action->act_object = (REF) PAR_symbol(SYM_dummy);
@@ -733,19 +733,19 @@ ACT PAR_event_wait(bool sql)
 void PAR_fini()
 {
 	if (cur_for)
-		IBERROR("unterminated FOR statement");
+		CPR_error("unterminated FOR statement");
 
 	if (cur_modify)
-		IBERROR("unterminated MODIFY statement");
+		CPR_error("unterminated MODIFY statement");
 
 	if (cur_store)
-		IBERROR("unterminated STORE statement");
+		CPR_error("unterminated STORE statement");
 
 	if (cur_error)
-		IBERROR("unterminated ON_ERROR clause");
+		CPR_error("unterminated ON_ERROR clause");
 
 	if (cur_item)
-		IBERROR("unterminated ITEM statement");
+		CPR_error("unterminated ITEM statement");
 }
 
 
@@ -789,7 +789,7 @@ void PAR_init()
 	cur_statement = cur_item = NULL;
 	bas_extern_flag = false;
 
-	cur_routine = MAKE_ACTION(0, ACT_routine);
+	cur_routine = MSC_action(0, ACT_routine);
 	cur_routine->act_flags |= ACT_main;
 	PUSH((GPRE_NOD) cur_routine, &routine_stack);
 	routine_decl = true;
@@ -798,6 +798,11 @@ void PAR_init()
 	brace_count = 0;
 }
 
+static inline void gobble(SCHAR*& string, SCHAR*& s1){
+	for (s1= token.tok_string; *s1;) 
+		*string++ = *s1++; 
+	PAR_get_token();
+}
 
 //____________________________________________________________
 //  
@@ -813,8 +818,6 @@ TEXT* PAR_native_value(bool array_ref,
 	int length;
 	USHORT parens, brackets;
 
-#define GOBBLE {for (s1= token.tok_string; *s1;) *string++ = *s1++; ADVANCE_TOKEN;}
-
 	string = buffer;
 
 	while (true) {
@@ -823,12 +826,12 @@ TEXT* PAR_native_value(bool array_ref,
 	double quotes.
     **/
 		if (sw_sql_dialect == 1) {
-			if (QUOTED(token.tok_type)) {
+			if (isQuoted(token.tok_type)) {
 				enum tok_t typ;
 				typ = token.tok_type;
 				token.tok_length += 2;
 				*string++ = '\"';
-				GOBBLE;
+				gobble(string, s1);;
 				*string++ = '\"';
 				break;
 			}
@@ -839,7 +842,7 @@ TEXT* PAR_native_value(bool array_ref,
 			else if (token.tok_type == tok_sglquoted) {
 				token.tok_length += 2;
 				*string++ = '\"';
-				GOBBLE;
+				gobble(string, s1);;
 				*string++ = '\"';
 				break;
 			}
@@ -848,22 +851,22 @@ TEXT* PAR_native_value(bool array_ref,
 			if (token.tok_type == tok_sglquoted) {
 				token.tok_length += 2;
 				*string++ = '\"';
-				GOBBLE;
+				gobble(string, s1);;
 				*string++ = '\"';
 				break;
 			}
 		}
 
-		if (KEYWORD(KW_AMPERSAND) || KEYWORD(KW_ASTERISK))
-			GOBBLE;
+		if (token.tok_keyword == KW_AMPERSAND || token.tok_keyword == KW_ASTERISK)
+			gobble(string, s1);;
 		if (token.tok_type != tok_ident)
-			SYNTAX_ERROR("identifier");
-		GOBBLE;
+			CPR_s_error("identifier");
+		gobble(string, s1);;
 
 		/* For ADA, gobble '<attribute> */
 
 		if ((sw_language == lang_ada) && (token.tok_string[0] == '\'')) {
-			GOBBLE;
+			gobble(string, s1);;
 		}
 		keyword = token.tok_keyword;
 		if (keyword == KW_LEFT_PAREN) {
@@ -871,10 +874,10 @@ TEXT* PAR_native_value(bool array_ref,
 			while (parens) {
 				enum tok_t typ;
 				typ = token.tok_type;
-				if (QUOTED(typ))
+				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
-				GOBBLE;
-				if (QUOTED(typ))
+				gobble(string, s1);;
+				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
 				keyword = token.tok_keyword;
 				if (keyword == KW_RIGHT_PAREN)
@@ -882,25 +885,25 @@ TEXT* PAR_native_value(bool array_ref,
 				else if (keyword == KW_LEFT_PAREN)
 					parens++;
 			}
-			GOBBLE;
+			gobble(string, s1);;
 			keyword = token.tok_keyword;
 		}
 		while (keyword == KW_L_BRCKET) {
 			brackets = 1;
 			while (brackets) {
-				GOBBLE;
+				gobble(string, s1);;
 				keyword = token.tok_keyword;
 				if (keyword == KW_R_BRCKET)
 					brackets--;
 				else if (keyword == KW_L_BRCKET)
 					brackets++;
 			}
-			GOBBLE;
+			gobble(string, s1);;
 			keyword = token.tok_keyword;
 		}
 
 		while ((keyword == KW_CARAT) && (sw_language == lang_pascal)) {
-			GOBBLE;
+			gobble(string, s1);;
 			keyword = token.tok_keyword;
 		}
 
@@ -909,7 +912,7 @@ TEXT* PAR_native_value(bool array_ref,
 			 && (!handle_ref || sw_language == lang_c
 				 || sw_language == lang_ada)) || keyword == KW_POINTS
 			|| (keyword == KW_COLON && !sw_sql && !array_ref)) {
-			GOBBLE;
+			gobble(string, s1);;
 		}
 		else
 			break;
@@ -969,37 +972,37 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 
 		do {
 			if (!(relation = EXP_relation()))
-				SYNTAX_ERROR("relation name");
+				CPR_s_error("relation name");
 			database = relation->rel_database;
 			lock_block = (RRL) ALLOC(RRL_LEN);
 			lock_block->rrl_next = database->dbb_rrls;
 			lock_block->rrl_relation = relation;
 			database->dbb_rrls = lock_block;
-		} while (MATCH(KW_COMMA));
+		} while (MSC_match(KW_COMMA));
 
 		/*
 		 * get the lock level and mode and apply them to all the
 		 * relations in the list
 		 */
 
-		MATCH(KW_FOR);
+		MSC_match(KW_FOR);
 		lock_level = (flags & TRA_con) ? gds_tpb_protected : gds_tpb_shared;
 		lock_mode = gds_tpb_lock_read;
 
-		if (MATCH(KW_PROTECTED))
+		if (MSC_match(KW_PROTECTED))
 			lock_level = gds_tpb_protected;
-		else if (MATCH(KW_EXCLUSIVE))
+		else if (MSC_match(KW_EXCLUSIVE))
 			lock_level = gds_tpb_exclusive;
-		else if (MATCH(KW_SHARED))
+		else if (MSC_match(KW_SHARED))
 			lock_level = gds_tpb_shared;
 
-		if (MATCH(KW_WRITE)) {
+		if (MSC_match(KW_WRITE)) {
 			if (flags & TRA_ro)
-				IBERROR("write lock requested for a read_only transaction");
+				CPR_error("write lock requested for a read_only transaction");
 			lock_mode = gds_tpb_lock_write;
 		}
 		else
-			MATCH(KW_READ);
+			MSC_match(KW_READ);
 
 		for (database = isc_databases; database; database = database->dbb_next)
 		{
@@ -1015,7 +1018,7 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 				}
 			}
 		}
-		if (!(MATCH(KW_COMMA)))
+		if (!(MSC_match(KW_COMMA)))
 			break;
 	}
 }
@@ -1031,7 +1034,7 @@ GPRE_REQ PAR_set_up_dpb_info(RDY ready, ACT action, USHORT buffercount)
 	GPRE_REQ request;
 
 	ready->rdy_database->dbb_buffercount = buffercount;
-	request = MAKE_REQUEST(REQ_ready);
+	request = MSC_request(REQ_ready);
 	request->req_database = ready->rdy_database;
 	request->req_actions = action;
 	ready->rdy_request = request;
@@ -1060,7 +1063,7 @@ SYM PAR_symbol(enum sym_t type)
 		}
 
 	symbol = MSC_symbol(SYM_cursor, token.tok_string, token.tok_length, 0);
-	ADVANCE_TOKEN;
+	PAR_get_token();
 
 	return symbol;
 }
@@ -1094,9 +1097,9 @@ void PAR_using_db()
 			db->dbb_flags |= DBB_in_trans;
 		}
 		else
-			SYNTAX_ERROR("database handle");
-		ADVANCE_TOKEN;
-		if (!MATCH(KW_COMMA))
+			CPR_s_error("database handle");
+		PAR_get_token();
+		if (!MSC_match(KW_COMMA))
 			break;
 	}
 }
@@ -1153,15 +1156,15 @@ static bool match_parentheses()
 
 	paren_count = 0;
 
-	if (MATCH(KW_LEFT_PAREN)) {
+	if (MSC_match(KW_LEFT_PAREN)) {
 		paren_count++;
 		while (paren_count) {
-			if (MATCH(KW_RIGHT_PAREN))
+			if (MSC_match(KW_RIGHT_PAREN))
 				paren_count--;
-			else if (MATCH(KW_LEFT_PAREN))
+			else if (MSC_match(KW_LEFT_PAREN))
 				paren_count++;
 			else
-				ADVANCE_TOKEN;
+				PAR_get_token();
 		}
 		return true;
 	}
@@ -1193,19 +1196,19 @@ static ACT par_any()
 //  Make up request block.  Since this might not be a database statement,
 //  stay ready to back out if necessay. 
 
-	request = MAKE_REQUEST(REQ_any);
+	request = MSC_request(REQ_any);
 
 	par_options(request, true);
 	rec_expr = EXP_rse(request, symbol);
 	EXP_rse_cleanup(rec_expr);
-	action = MAKE_ACTION(request, ACT_any);
+	action = MSC_action(request, ACT_any);
 
 	request->req_rse = rec_expr;
 	context = rec_expr->rse_context[0];
 	relation = context->ctx_relation;
 	request->req_database = relation->rel_database;
 
-	function = MAKE_ACTION(0, ACT_function);
+	function = MSC_action(0, ACT_function);
 	function->act_object = (REF) action;
 	function->act_next = global_functions;
 	global_functions = function;
@@ -1236,14 +1239,14 @@ static ACT par_array_element()
 	field = EXP_field(&context);
 	request = context->ctx_request;
 	node = EXP_array(request, field, FALSE, FALSE);
-	reference = MAKE_REFERENCE(&request->req_references);
+	reference = MSC_reference(&request->req_references);
 	reference->ref_expr = node;
 	reference->ref_field = element = field->fld_array;
 	element->fld_symbol = field->fld_symbol;
 	reference->ref_context = context;
 	node->nod_arg[0] = (GPRE_NOD) reference;
 
-	action = MAKE_ACTION(request, ACT_variable);
+	action = MSC_action(request, ACT_variable);
 	action->act_object = reference;
 
 	return action;
@@ -1259,12 +1262,12 @@ static ACT par_at()
 {
 	ACT action;
 
-	if (!MATCH(KW_END) || !cur_fetch)
+	if (!MSC_match(KW_END) || !cur_fetch)
 		return NULL;
 
 	action = (ACT) cur_fetch->lls_object;
 
-	return MAKE_ACTION(action->act_request, ACT_at_end);
+	return MSC_action(action->act_request, ACT_at_end);
 }
 
 
@@ -1292,15 +1295,15 @@ static ACT par_based()
 	int notSegment = 0;			/* a COBOL specific patch */
 	char tmpChar[2];			/* a COBOL specific patch */
 
-	MATCH(KW_ON);
-	action = MAKE_ACTION(0, ACT_basedon);
+	MSC_match(KW_ON);
+	action = MSC_action(0, ACT_basedon);
 	based_on = (BAS) ALLOC(BAS_LEN);
 	action->act_object = (REF) based_on;
 
 	if ((sw_language != lang_fortran) || isc_databases) {
 		relation = EXP_relation();
-		if (!MATCH(KW_DOT))
-			SYNTAX_ERROR("dot in qualified field reference");
+		if (!MSC_match(KW_DOT))
+			CPR_s_error("dot in qualified field reference");
 		SQL_resolve_identifier("<fieldname>", t_str);
 		if (!(field = MET_field(relation, token.tok_string))) {
 			sprintf(s, "undefined field %s", token.tok_string);
@@ -1316,12 +1319,12 @@ static ACT par_based()
 					("BASED ON impermissible datatype for a dialect-1 program");
 			}
 		}
-		ADVANCE_TOKEN;
-		if (sw_language == lang_cobol && KEYWORD(KW_DOT)) {
+		PAR_get_token();
+		if (sw_language == lang_cobol && token.tok_keyword == KW_DOT) {
 			strcpy(tmpChar, token.tok_string);
 		}
-		if (MATCH(KW_DOT)) {
-			if (!MATCH(KW_SEGMENT)) {
+		if (MSC_match(KW_DOT)) {
+			if (!MSC_match(KW_SEGMENT)) {
 				if (sw_language != lang_cobol)
 					PAR_error
 						("only .SEGMENT allowed after qualified field name");
@@ -1345,26 +1348,26 @@ static ACT par_based()
 		based_on->bas_rel_name = (STR) ALLOC(token.tok_length + 1);
 		COPY(token.tok_string, token.tok_length,
 			 (SCHAR *) based_on->bas_rel_name);
-		ADVANCE_TOKEN;
-		if (!MATCH(KW_DOT))
+		PAR_get_token();
+		if (!MSC_match(KW_DOT))
 			PAR_error("expected qualified field name");
 		else {
 			based_on->bas_fld_name = (STR) ALLOC(token.tok_length + 1);
 			COPY(token.tok_string, token.tok_length,
 				 (SCHAR *) based_on->bas_fld_name);
 			ambiguous_flag = false;
-			ADVANCE_TOKEN;
-			if (MATCH(KW_DOT)) {
+			PAR_get_token();
+			if (MSC_match(KW_DOT)) {
 				based_on->bas_db_name = based_on->bas_rel_name;
 				based_on->bas_rel_name = based_on->bas_fld_name;
 				based_on->bas_fld_name = (STR) ALLOC(token.tok_length + 1);
 				COPY(token.tok_string, token.tok_length,
 					 (SCHAR *) based_on->bas_fld_name);
-				if (KEYWORD(KW_SEGMENT))
+				if (token.tok_keyword == KW_SEGMENT)
 					ambiguous_flag = true;
-				ADVANCE_TOKEN;
-				if (MATCH(KW_DOT)) {
-					if (!MATCH(KW_SEGMENT))
+				PAR_get_token();
+				if (MSC_match(KW_DOT)) {
+					if (!MSC_match(KW_SEGMENT))
 						PAR_error("too many qualifiers on field name");
 					based_on->bas_flags |= BAS_segment;
 					ambiguous_flag = false;
@@ -1385,7 +1388,7 @@ static ACT par_based()
 		do {
 			PUSH((GPRE_NOD) PAR_native_value(false, false),
 				 &based_on->bas_variables);
-		} while (MATCH(KW_COMMA));
+		} while (MSC_match(KW_COMMA));
 		/* 
 		   ** bug_4031.  based_on->bas_variables are now in reverse order.
 		   ** we must reverse the order so we can output them to the .c 
@@ -1431,10 +1434,10 @@ static ACT par_based()
 
 	if (notSegment)
 		return action;
-	if (KEYWORD(KW_SEMI_COLON) ||
-		(sw_language == lang_cobol && KEYWORD(KW_DOT))) {
+	if (token.tok_keyword ==KW_SEMI_COLON ||
+		(sw_language == lang_cobol && token.tok_keyword == KW_DOT)) {
 		strcpy(based_on->bas_terminator, token.tok_string);
-		ADVANCE_TOKEN;
+		PAR_get_token();
 	}
 
 	return action;
@@ -1472,9 +1475,9 @@ static BLB par_blob()
 	SYM symbol;
 
 	if (!(symbol = MSC_find_symbol(token.tok_symbol, SYM_blob)))
-		SYNTAX_ERROR("blob handle");
+		CPR_s_error("blob handle");
 
-	ADVANCE_TOKEN;
+	PAR_get_token();
 
 	return (BLB) symbol->sym_object;
 }
@@ -1491,13 +1494,13 @@ static ACT par_blob_action( ACT_T type)
 	ACT action;
 
 	blob = par_blob();
-	action = MAKE_ACTION(blob->blb_request, type);
+	action = MSC_action(blob->blb_request, type);
 	action->act_object = (REF) blob;
 
 //   Need to eat the semicolon if present  
 
 	if (sw_language == lang_c)
-		MATCH(KW_SEMI_COLON);
+		MSC_match(KW_SEMI_COLON);
 	else
 		PAR_end();
 
@@ -1521,18 +1524,18 @@ static ACT par_blob_field()
 
 	blob = par_blob();
 
-	if (MATCH(KW_DOT)) {
-		if (MATCH(KW_SEGMENT))
+	if (MSC_match(KW_DOT)) {
+		if (MSC_match(KW_SEGMENT))
 			type = ACT_segment;
-		else if (MATCH(KW_LENGTH))
+		else if (MSC_match(KW_LENGTH))
 			type = ACT_segment_length;
 		else
-			SYNTAX_ERROR("SEGMENT or LENGTH");
+			CPR_s_error("SEGMENT or LENGTH");
 	}
 	else
 		type = ACT_blob_handle;
 
-	action = MAKE_ACTION(blob->blb_request, type);
+	action = MSC_action(blob->blb_request, type);
 
 	if (first)
 		action->act_flags |= ACT_first;
@@ -1569,7 +1572,7 @@ static ACT par_case()
 static ACT par_clear_handles()
 {
 
-	return MAKE_ACTION(0, ACT_clear_handles);
+	return MSC_action(0, ACT_clear_handles);
 }
 
 
@@ -1591,19 +1594,19 @@ static ACT par_derived_from()
 		return (NULL);
     }
 
-	action = MAKE_ACTION(0, ACT_basedon);
+	action = MSC_action(0, ACT_basedon);
 	based_on = (BAS) ALLOC(BAS_LEN);
 	action->act_object = (REF) based_on;
 
 	relation = EXP_relation();
-	if (!MATCH(KW_DOT))
-		SYNTAX_ERROR("dot in qualified field reference");
+	if (!MSC_match(KW_DOT))
+		CPR_s_error("dot in qualified field reference");
 	SQL_resolve_identifier("<Field Name>", s);
 	if (!(field = MET_field(relation, token.tok_string))) {
 		sprintf(s, "undefined field %s", token.tok_string);
 		PAR_error(s);
 	}
-	ADVANCE_TOKEN;
+	PAR_get_token();
 	based_on->bas_field = field;
 
 
@@ -1613,7 +1616,7 @@ static ACT par_derived_from()
 		(GPRE_NOD) PAR_native_value(false, false);
 
 	strcpy(based_on->bas_terminator, token.tok_string);
-	ADVANCE_TOKEN;
+	PAR_get_token();
 
 	return action;
 }
@@ -1664,9 +1667,9 @@ static ACT par_end_error()
 //   Need to eat the semicolon for c if present  
 
 	if (sw_language == lang_c)
-		MATCH(KW_SEMI_COLON);
+		MSC_match(KW_SEMI_COLON);
 
-	return MAKE_ACTION(0, ACT_enderror);
+	return MSC_action(0, ACT_enderror);
 }
 
 
@@ -1684,7 +1687,7 @@ static ACT par_end_fetch()
 
 	begin_action = (ACT) POP(&cur_fetch);
 
-	action = MAKE_ACTION(begin_action->act_request, ACT_hctef);
+	action = MSC_action(begin_action->act_request, ACT_hctef);
 	begin_action->act_pair = action;
 	action->act_pair = begin_action;
 
@@ -1717,7 +1720,7 @@ static ACT par_end_for()
 
 	if (begin_action->act_type == ACT_blob_for) {
 		blob = (BLB) begin_action->act_object;
-		action = MAKE_ACTION(request, ACT_endblob);
+		action = MSC_action(request, ACT_endblob);
 		action->act_object = (REF) blob;
 		begin_action->act_pair = action;
 		action->act_pair = begin_action;
@@ -1732,7 +1735,7 @@ static ACT par_end_for()
 	if (!request->req_database)
 		return NULL;
 
-	action = MAKE_ACTION(request, ACT_endfor);
+	action = MSC_action(request, ACT_endfor);
 	begin_action->act_pair = action;
 	action->act_pair = begin_action;
 	EXP_rse_cleanup(request->req_rse);
@@ -1786,27 +1789,27 @@ static ACT par_end_modify()
 			if (reference->ref_context == modify->upd_source &&
 				reference->ref_level >= modify->upd_level &&
 				!reference->ref_master) {
-			change = MAKE_REFERENCE(&modify->upd_references);
+			change = MSC_reference(&modify->upd_references);
 			change->ref_context = modify->upd_update;
 			change->ref_field = reference->ref_field;
 			change->ref_source = reference;
 			change->ref_flags = reference->ref_flags;
 
-			item = MAKE_NODE(nod_assignment, 2);
+			item = MSC_node(nod_assignment, 2);
 			item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) change);
 			item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) change);
 			PUSH((GPRE_NOD) item, &stack);
 			count++;
 
 			if (reference->ref_null) {
-				flag = MAKE_REFERENCE(&modify->upd_references);
+				flag = MSC_reference(&modify->upd_references);
 				flag->ref_context = change->ref_context;
 				flag->ref_field = flag_field;
 				flag->ref_master = change;
 				flag->ref_source = reference->ref_null;
 				change->ref_null = flag;
 
-				item = MAKE_NODE(nod_assignment, 2);
+				item = MSC_node(nod_assignment, 2);
 				item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) flag);
 				item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) flag);
 				PUSH((GPRE_NOD) item, &stack);
@@ -1817,13 +1820,13 @@ static ACT par_end_modify()
 //  Build a list node of the assignments 
 
 	modify->upd_assignments = assignments =
-		MAKE_NODE(nod_list, (SSHORT) count);
+		MSC_node(nod_list, (SSHORT) count);
 	ptr = assignments->nod_arg + count;
 
 	while (stack)
 		*--ptr = (GPRE_NOD) POP(&stack);
 
-	action = MAKE_ACTION(request, ACT_endmodify);
+	action = MSC_action(request, ACT_endmodify);
 	action->act_object = (REF) modify;
 	begin_action->act_pair = action;
 	action->act_pair = begin_action;
@@ -1843,16 +1846,16 @@ static ACT par_end_stream()
 	GPRE_REQ request;
 
 	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_stream)
-		SYNTAX_ERROR("stream cursor");
+		CPR_s_error("stream cursor");
 
 	request = (GPRE_REQ) symbol->sym_object;
 	HSH_remove(symbol);
 
 	EXP_rse_cleanup(request->req_rse);
-	ADVANCE_TOKEN;
+	PAR_get_token();
 	PAR_end();
 
-	return MAKE_ACTION(request, ACT_s_end);
+	return MSC_action(request, ACT_s_end);
 }
 
 
@@ -1895,14 +1898,14 @@ static ACT par_end_store(bool special)
 				count++;
 		}
 
-		request->req_node = assignments = MAKE_NODE(nod_list, (SSHORT) count);
+		request->req_node = assignments = MSC_node(nod_list, (SSHORT) count);
 		count = 0;
 
 		for (reference = request->req_references; reference;
 			 reference = reference->ref_next) {
 			if (reference->ref_master)
 				continue;
-			item = MAKE_NODE(nod_assignment, 2);
+			item = MSC_node(nod_assignment, 2);
 			item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) reference);
 			item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) reference);
 			assignments->nod_arg[count++] = item;
@@ -1927,13 +1930,13 @@ static ACT par_end_store(bool special)
 				if (reference->ref_context == return_values->upd_update &&
 					reference->ref_level >= return_values->upd_level &&
 					!reference->ref_master) {
-				change = MAKE_REFERENCE(&return_values->upd_references);
+				change = MSC_reference(&return_values->upd_references);
 				change->ref_context = return_values->upd_update;
 				change->ref_field = reference->ref_field;
 				change->ref_source = reference;
 				change->ref_flags = reference->ref_flags;
 
-				item = MAKE_NODE(nod_assignment, 2);
+				item = MSC_node(nod_assignment, 2);
 				item->nod_arg[0] = MSC_unary(nod_field, (GPRE_NOD) change);
 				item->nod_arg[1] = MSC_unary(nod_value, (GPRE_NOD) change);
 				PUSH((GPRE_NOD) item, &stack);
@@ -1943,7 +1946,7 @@ static ACT par_end_store(bool special)
 		/* Build a list node of the assignments */
 
 		return_values->upd_assignments = assignments =
-			MAKE_NODE(nod_list, (SSHORT) count);
+			MSC_node(nod_list, (SSHORT) count);
 		ptr = assignments->nod_arg + count;
 
 		while (stack)
@@ -1953,9 +1956,9 @@ static ACT par_end_store(bool special)
 		HSH_remove(context->ctx_symbol);
 
 	if (special)
-		action = MAKE_ACTION(request, ACT_endstore_special);
+		action = MSC_action(request, ACT_endstore_special);
 	else
-		action = MAKE_ACTION(request, ACT_endstore);
+		action = MSC_action(request, ACT_endstore);
 	begin_action->act_pair = action;
 	action->act_pair = begin_action;
 	return action;
@@ -1976,14 +1979,14 @@ static ACT par_erase()
 	GPRE_REQ request;
 
 	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_context)
-		SYNTAX_ERROR("context variable");
+		CPR_s_error("context variable");
 
 	source = symbol->sym_object;
 	request = source->ctx_request;
 	if (request->req_type != REQ_for && request->req_type != REQ_cursor)
 		PAR_error("invalid context for modify");
 
-	ADVANCE_TOKEN;
+	PAR_get_token();
 	PAR_end();
 
 //  Make an update block to hold everything known about the modify 
@@ -1992,7 +1995,7 @@ static ACT par_erase()
 	erase->upd_request = request;
 	erase->upd_source = source;
 
-	action = MAKE_ACTION(request, ACT_erase);
+	action = MSC_action(request, ACT_erase);
 	action->act_object = (REF) erase;
 
 	return action;
@@ -2014,10 +2017,10 @@ static ACT par_fetch()
 		return NULL;
 
 	request = (GPRE_REQ) symbol->sym_object;
-	ADVANCE_TOKEN;
+	PAR_get_token();
 	PAR_end();
 
-	action = MAKE_ACTION(request, ACT_s_fetch);
+	action = MSC_action(request, ACT_s_fetch);
 	PUSH((GPRE_NOD) action, &cur_fetch);
 
 	return action;
@@ -2035,7 +2038,7 @@ static ACT par_finish()
 	SYM symbol;
 	RDY ready;
 
-	action = MAKE_ACTION(0, ACT_finish);
+	action = MSC_action(0, ACT_finish);
 
 	if (!terminator())
 		while (true) {
@@ -2048,15 +2051,15 @@ static ACT par_finish()
 				CPR_eol_token();
 			}
 			else
-				SYNTAX_ERROR("database handle");
+				CPR_s_error("database handle");
 			if (terminator())
 				break;
-			if (!MATCH(KW_COMMA))
+			if (!MSC_match(KW_COMMA))
 				break;
 		}
 
 	if (sw_language == lang_ada)
-		MATCH(KW_SEMI_COLON);
+		MSC_match(KW_SEMI_COLON);
 	return action;
 }
 
@@ -2082,14 +2085,14 @@ static ACT par_for()
 	symbol = NULL;
 	dup_symbol = false;
 
-	if (!KEYWORD(KW_FIRST) && !KEYWORD(KW_LEFT_PAREN)) {
+	if (!(token.tok_keyword == KW_FIRST) && !(token.tok_keyword == KW_LEFT_PAREN)) {
 		if (token.tok_symbol)
 			dup_symbol = true;
 
 		symbol = MSC_symbol(SYM_cursor, token.tok_string, token.tok_length, 0);
-		ADVANCE_TOKEN;
+		PAR_get_token();
 
-		if (!MATCH(KW_IN)) {
+		if (!MSC_match(KW_IN)) {
 			MSC_free((UCHAR *) symbol);
 			return NULL;
 		}
@@ -2105,14 +2108,14 @@ static ACT par_for()
 //  Make up request block.  Since this might not be a database statement,
 //  stay ready to back out if necessay. 
 
-	request = MAKE_REQUEST(REQ_for);
+	request = MSC_request(REQ_for);
 
 	if (!par_options(request, true) || !(rec_expr = EXP_rse(request, symbol))) {
 		MSC_free_request(request);
 		return NULL;
 	}
 
-	action = MAKE_ACTION(request, ACT_for);
+	action = MSC_action(request, ACT_for);
 	PUSH((GPRE_NOD) action, &cur_for);
 
 	request->req_rse = rec_expr;
@@ -2167,7 +2170,7 @@ static ACT par_left_brace()
 	if (brace_count++ > 0)
 		return NULL;
 
-	cur_routine = action = MAKE_ACTION(0, ACT_routine);
+	cur_routine = action = MSC_action(0, ACT_routine);
 	action->act_flags |= ACT_mark;
 
 	return action;
@@ -2206,15 +2209,15 @@ static ACT par_modify()
 	if (request->req_type != REQ_for && request->req_type != REQ_cursor)
 		PAR_error("invalid context for modify");
 
-	action = MAKE_ACTION(request, ACT_modify);
+	action = MSC_action(request, ACT_modify);
 	action->act_object = (REF) modify;
 
-	ADVANCE_TOKEN;
-	MATCH(KW_USING);
+	PAR_get_token();
+	MSC_match(KW_USING);
 
 //  Make an update context by cloning the source context 
 
-	update = MAKE_CONTEXT(request);
+	update = MSC_context(request);
 	update->ctx_symbol = source->ctx_symbol;
 	update->ctx_relation = source->ctx_relation;
 
@@ -2242,7 +2245,7 @@ static ACT par_modify()
 static ACT par_on()
 {
 
-	if (!(MATCH(KW_ERROR)))
+	if (!(MSC_match(KW_ERROR)))
 		return NULL;
 
 	return par_on_error();
@@ -2263,7 +2266,7 @@ static ACT par_on_error()
 		PAR_error("ON_ERROR used out of context");
 
 	PAR_end();
-	cur_statement->act_error = action = MAKE_ACTION(0, ACT_on_error);
+	cur_statement->act_error = action = MSC_action(0, ACT_on_error);
 	action->act_object = (REF) cur_statement;
 
 	PUSH((GPRE_NOD) action, &cur_error);
@@ -2297,8 +2300,8 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 
 	if (!symbol) {
 		symbol = PAR_symbol(SYM_dummy);
-		if (!MATCH(KW_IN))
-			SYNTAX_ERROR("IN");
+		if (!MSC_match(KW_IN))
+			CPR_s_error("IN");
 	}
 
 //  The next thing we should find is a field reference.  Get it. 
@@ -2327,15 +2330,15 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 //   See if we need a blob filter (do we have a subtype to subtype clause?)  
 
 	for (;;)
-		if (MATCH(KW_FILTER)) {
-			blob->blb_const_from_type = (MATCH(KW_FROM)) ?
+		if (MSC_match(KW_FILTER)) {
+			blob->blb_const_from_type = (MSC_match(KW_FROM)) ?
 				PAR_blob_subtype(request->req_database) : field->fld_sub_type;
-			if (!MATCH(KW_TO))
-				SYNTAX_ERROR("TO");
+			if (!MSC_match(KW_TO))
+				CPR_s_error("TO");
 			blob->blb_const_to_type = PAR_blob_subtype(request->req_database);
 			filter_is_defined = true;
 		}
-		else if (MATCH(KW_STREAM))
+		else if (MSC_match(KW_STREAM))
 			blob->blb_type = gds_bpb_type_stream;
 		else
 			break;
@@ -2357,7 +2360,7 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 	if (token.tok_keyword == KW_none)
 		token.tok_symbol = HSH_lookup(token.tok_string);
 
-	action = MAKE_ACTION(request, act_op);
+	action = MSC_action(request, act_op);
 	action->act_object = (REF) blob;
 
 	if (act_op == ACT_blob_for)
@@ -2366,7 +2369,7 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 //   Need to eat the semicolon if present  
 
 	if (sw_language == lang_c)
-		MATCH(KW_SEMI_COLON);
+		MSC_match(KW_SEMI_COLON);
 	else
 		PAR_end();
 
@@ -2384,26 +2387,26 @@ static bool par_options(GPRE_REQ request,
 						bool flag)
 {
 
-	if (!MATCH(KW_LEFT_PAREN))
+	if (!MSC_match(KW_LEFT_PAREN))
 		return true;
 
 	while (true) {
-		if (MATCH(KW_RIGHT_PAREN))
+		if (MSC_match(KW_RIGHT_PAREN))
 			return true;
-		if (MATCH(KW_REQUEST_HANDLE)) {
+		if (MSC_match(KW_REQUEST_HANDLE)) {
 			request->req_handle = PAR_native_value(false, true);
 			request->req_flags |= REQ_exp_hand;
 		}
-		else if (MATCH(KW_TRANSACTION_HANDLE))
+		else if (MSC_match(KW_TRANSACTION_HANDLE))
 			request->req_trans = PAR_native_value(false, true);
-		else if (MATCH(KW_LEVEL))
+		else if (MSC_match(KW_LEVEL))
 			request->req_request_level = PAR_native_value(false, false);
 		else {
 			if (!flag)
-				SYNTAX_ERROR("request option");
+				CPR_s_error("request option");
 			return false;
 		}
-		MATCH(KW_COMMA);
+		MSC_match(KW_COMMA);
 	}
 }
 
@@ -2456,10 +2459,10 @@ static ACT par_ready()
 	USHORT default_buffers = 0;
 	USHORT buffers;
 
-	action = MAKE_ACTION(0, ACT_ready);
+	action = MSC_action(0, ACT_ready);
 
-	if (KEYWORD(KW_CACHE))
-		SYNTAX_ERROR("database name or handle");
+	if (token.tok_keyword == KW_CACHE)
+		CPR_s_error("database name or handle");
 
 	while (!terminator()) {
 		/* this default mechanism is left here for backwards 
@@ -2468,12 +2471,12 @@ static ACT par_ready()
 		   options since it needlessly complicates the ready
 		   statement without providing any extra functionality */
 
-		if (MATCH(KW_DEFAULT)) {
-			if (!MATCH(KW_CACHE))
-				SYNTAX_ERROR("database name or handle");
+		if (MSC_match(KW_DEFAULT)) {
+			if (!MSC_match(KW_CACHE))
+				CPR_s_error("database name or handle");
 			default_buffers = atoi(token.tok_string);
 			CPR_eol_token();
-			MATCH(KW_BUFFERS);
+			MSC_match(KW_BUFFERS);
 			continue;
 		}
 
@@ -2483,14 +2486,14 @@ static ACT par_ready()
 
 		if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_database) {
 			ready->rdy_filename = PAR_native_value(false, false);
-			if (MATCH(KW_AS))
+			if (MSC_match(KW_AS))
 				need_handle = true;
 		}
 
 		if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_database) {
 			if (!isc_databases || isc_databases->dbb_next || need_handle) {
 				need_handle = false;
-				SYNTAX_ERROR("database handle");
+				CPR_s_error("database handle");
 			}
 			ready->rdy_database = isc_databases;
 		}
@@ -2507,18 +2510,18 @@ static ACT par_ready()
 		buffers = 0;
 		db = ready->rdy_database;
 		for (;;) {
-			if (MATCH(KW_CACHE)) {
+			if (MSC_match(KW_CACHE)) {
 				buffers = atoi(token.tok_string);
 				CPR_eol_token();
-				MATCH(KW_BUFFERS);
+				MSC_match(KW_BUFFERS);
 			}
-			else if (MATCH(KW_USER))
+			else if (MSC_match(KW_USER))
 				db->dbb_r_user = PAR_native_value(false, false);
-			else if (MATCH(KW_PASSWORD))
+			else if (MSC_match(KW_PASSWORD))
 				db->dbb_r_password = PAR_native_value(false, false);
-			else if (MATCH(KW_LC_MESSAGES))
+			else if (MSC_match(KW_LC_MESSAGES))
 				db->dbb_r_lc_messages = PAR_native_value(false, false);
-			else if (MATCH(KW_LC_CTYPE)) {
+			else if (MSC_match(KW_LC_CTYPE)) {
 				db->dbb_r_lc_ctype = PAR_native_value(false, false);
 				db->dbb_know_subtype = 2;
 			}
@@ -2551,7 +2554,7 @@ static ACT par_ready()
 			request = PAR_set_up_dpb_info(ready, action, default_buffers);
 		}
 
-		MATCH(KW_COMMA);
+		MSC_match(KW_COMMA);
 	}
 
 	PAR_end();
@@ -2645,12 +2648,12 @@ static ACT par_returning_values()
 			count++;
 	}
 
-	request->req_node = assignments = MAKE_NODE(nod_list, (SSHORT) count);
+	request->req_node = assignments = MSC_node(nod_list, (SSHORT) count);
 	count = 0;
 
 	for (reference = request->req_references; reference;
 		 reference = reference->ref_next) {
-		REF save_ref = MAKE_REFERENCE(&begin_action->act_object);
+		REF save_ref = MSC_reference(&begin_action->act_object);
 		save_ref->ref_context = reference->ref_context;
 		save_ref->ref_field = reference->ref_field;
 		save_ref->ref_source = reference;
@@ -2658,7 +2661,7 @@ static ACT par_returning_values()
 
 		if (reference->ref_master)
 			continue;
-		GPRE_NOD item = MAKE_NODE(nod_assignment, 2);
+		GPRE_NOD item = MSC_node(nod_assignment, 2);
 		item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) save_ref);
 		item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) save_ref);
 		assignments->nod_arg[count++] = item;
@@ -2670,7 +2673,7 @@ static ACT par_returning_values()
 	GPRE_CTX source = request->req_contexts;
 	request->req_type = REQ_store2;
 
-	GPRE_CTX new_ = MAKE_CONTEXT(request);
+	GPRE_CTX new_ = MSC_context(request);
 	new_->ctx_symbol = source->ctx_symbol;
 	new_->ctx_relation = source->ctx_relation;
 	new_->ctx_symbol->sym_object = new_;
@@ -2678,7 +2681,7 @@ static ACT par_returning_values()
 //  make an update block to hold everything known about referenced
 //  fields 
 
-	ACT action = MAKE_ACTION(request, ACT_store2);
+	ACT action = MSC_action(request, ACT_store2);
 	action->act_object = (REF) new_values;
 
 	new_values->upd_request = request;
@@ -2719,13 +2722,13 @@ static ACT par_release()
 	ACT action;
 	SYM symbol;
 
-	action = MAKE_ACTION(0, ACT_release);
+	action = MSC_action(0, ACT_release);
 
-	MATCH(KW_FOR);
+	MSC_match(KW_FOR);
 
 	if ((symbol = token.tok_symbol) && (symbol->sym_type == SYM_database)) {
 		action->act_object = (REF) symbol->sym_object;
-		ADVANCE_TOKEN;
+		PAR_get_token();
 	}
 
 	PAR_end();
@@ -2754,9 +2757,9 @@ static ACT par_slice( ACT_T type)
 	field = EXP_field(&context);
 
 	if (!(info = field->fld_array_info))
-		SYNTAX_ERROR("array field");
+		CPR_s_error("array field");
 
-	request = MAKE_REQUEST(REQ_slice);
+	request = MSC_request(REQ_slice);
 	request->req_slice = slice =
 		(SLC) ALLOC(SLC_LEN(info->ary_dimension_count));
 	slice->slc_dimensions = info->ary_dimension_count;
@@ -2764,37 +2767,37 @@ static ACT par_slice( ACT_T type)
 	slice->slc_field_ref = EXP_post_field(field, context, FALSE);
 	slice->slc_parent_request = context->ctx_request;
 
-	if (!MATCH(KW_L_BRCKET))
-		SYNTAX_ERROR("left bracket");
+	if (!MSC_match(KW_L_BRCKET))
+		CPR_s_error("left bracket");
 
 	for (tail = slice->slc_rpt, n = 0; ++n <= slice->slc_dimensions; ++tail) {
 		tail->slc_lower = tail->slc_upper = EXP_subscript(request);
-		if (MATCH(KW_COLON))
+		if (MSC_match(KW_COLON))
 			tail->slc_upper = EXP_subscript(request);
-		if (!MATCH(KW_COMMA))
+		if (!MSC_match(KW_COMMA))
 			break;
 	}
 
 	if (n != slice->slc_dimensions)
 		PAR_error("subscript count mismatch");
 
-	if (!MATCH(KW_R_BRCKET))
-		SYNTAX_ERROR("right bracket");
+	if (!MSC_match(KW_R_BRCKET))
+		CPR_s_error("right bracket");
 
 	if (type == ACT_get_slice) {
-		if (!MATCH(KW_INTO))
-			SYNTAX_ERROR("INTO");
+		if (!MSC_match(KW_INTO))
+			CPR_s_error("INTO");
 	}
-	else if (!MATCH(KW_FROM))
-		SYNTAX_ERROR("FROM");
+	else if (!MSC_match(KW_FROM))
+		CPR_s_error("FROM");
 
 	slice->slc_array = EXP_subscript(0);
 
-	action = MAKE_ACTION(request, type);
+	action = MSC_action(request, type);
 	action->act_object = (REF) slice;
 
 	if (sw_language == lang_c)
-		MATCH(KW_SEMI_COLON);
+		MSC_match(KW_SEMI_COLON);
 	else
 		PAR_end();
 
@@ -2814,9 +2817,9 @@ static ACT par_store()
 	GPRE_CTX context;
 	GPRE_REL relation;
 
-	request = MAKE_REQUEST(REQ_store);
+	request = MSC_request(REQ_store);
 	par_options(request, false);
-	action = MAKE_ACTION(request, ACT_store);
+	action = MSC_action(request, ACT_store);
 	PUSH((GPRE_NOD) action, &cur_store);
 
 	context = EXP_context(request, 0);
@@ -2829,7 +2832,7 @@ static ACT par_store()
 //*  
 	if (token.tok_keyword == KW_none)
 		token.tok_symbol = HSH_lookup(token.tok_string);
-	MATCH(KW_USING);
+	MSC_match(KW_USING);
 
 	return action;
 }
@@ -2849,15 +2852,15 @@ static ACT par_start_stream()
 	GPRE_REL relation;
 	SYM cursor;
 
-	request = MAKE_REQUEST(REQ_cursor);
+	request = MSC_request(REQ_cursor);
 	par_options(request, false);
-	action = MAKE_ACTION(request, ACT_s_start);
+	action = MSC_action(request, ACT_s_start);
 
 	cursor = PAR_symbol(SYM_dummy);
 	cursor->sym_type = SYM_stream;
 	cursor->sym_object = (GPRE_CTX) request;
 
-	MATCH(KW_USING);
+	MSC_match(KW_USING);
 	rec_expr = EXP_rse(request, 0);
 	request->req_rse = rec_expr;
 	context = rec_expr->rse_context[0];
@@ -2890,7 +2893,7 @@ static ACT par_start_transaction()
 	ACT action;
 	GPRE_TRA trans;
 
-	action = MAKE_ACTION(0, ACT_start);
+	action = MSC_action(0, ACT_start);
 
 	if (terminator()) {
 		PAR_end();
@@ -2906,34 +2909,36 @@ static ACT par_start_transaction()
 
 //  loop reading the various transaction options 
 
-	while (!KEYWORD(KW_RESERVING) && !KEYWORD(KW_USING) && !terminator()) {
-		if (MATCH(KW_READ_ONLY)) {
+	while (!(token.tok_keyword == KW_RESERVING) && !(token.tok_keyword == KW_USING) && 
+		!terminator()) 
+	{
+		if (MSC_match(KW_READ_ONLY)) {
 			trans->tra_flags |= TRA_ro;
 			continue;
 		}
-		else if (MATCH(KW_READ_WRITE))
+		else if (MSC_match(KW_READ_WRITE))
 			continue;
 
-		if (MATCH(KW_CONSISTENCY)) {
+		if (MSC_match(KW_CONSISTENCY)) {
 			trans->tra_flags |= TRA_con;
 			continue;
 		}
-// ***    else if (MATCH (KW_READ_COMMITTED))
+// ***    else if (MSC_match (KW_READ_COMMITTED))
 // { 
 // trans->tra_flags |= TRA_read_committed;
 // continue;
 // } **
-		else if (MATCH(KW_CONCURRENCY))
+		else if (MSC_match(KW_CONCURRENCY))
 			continue;
 
-		if (MATCH(KW_NO_WAIT)) {
+		if (MSC_match(KW_NO_WAIT)) {
 			trans->tra_flags |= TRA_nw;
 			continue;
 		}
-		else if (MATCH(KW_WAIT))
+		else if (MSC_match(KW_WAIT))
 			continue;
 
-		if (MATCH(KW_AUTOCOMMIT)) {
+		if (MSC_match(KW_AUTOCOMMIT)) {
 			trans->tra_flags |= TRA_autocommit;
 			continue;
 		}
@@ -2941,16 +2946,16 @@ static ACT par_start_transaction()
 		if (sw_language == lang_cobol || sw_language == lang_fortran)
 			break;
 		else
-			SYNTAX_ERROR("transaction keyword");
+			CPR_s_error("transaction keyword");
 	}
 
 //  send out for the list of reserved relations 
 
-	if (MATCH(KW_RESERVING)) {
+	if (MSC_match(KW_RESERVING)) {
 		trans->tra_flags |= TRA_rrl;
 		PAR_reserving(trans->tra_flags, false);
 	}
-	else if (MATCH(KW_USING)) {
+	else if (MSC_match(KW_USING)) {
 		trans->tra_flags |= TRA_inc;
 		PAR_using_db();
 	}
@@ -2976,7 +2981,7 @@ static ACT par_subroutine()
 	if (sw_language != lang_fortran)
 		return NULL;
 
-	action = MAKE_ACTION(0, ACT_routine);
+	action = MSC_action(0, ACT_routine);
 	action->act_flags |= ACT_mark | ACT_break;
 	cur_routine = action;
 	return action;
@@ -2994,24 +2999,24 @@ static ACT par_trans( ACT_T act_op)
 	ACT action;
 	bool parens;
 
-	action = MAKE_ACTION(0, act_op);
+	action = MSC_action(0, act_op);
 
 	if (!terminator()) {
-		parens = MATCH(KW_LEFT_PAREN);
+		parens = MSC_match(KW_LEFT_PAREN);
 		if ((sw_language == lang_fortran)
 			&& (act_op == ACT_commit_retain_context)) {
-			if (!(MATCH(KW_TRANSACTION_HANDLE)))
+			if (!(MSC_match(KW_TRANSACTION_HANDLE)))
 				return NULL;
 		}
 		else
-			MATCH(KW_TRANSACTION_HANDLE);
+			MSC_match(KW_TRANSACTION_HANDLE);
 		action->act_object = (REF) PAR_native_value(false, true);
 		if (parens)
 			EXP_match_paren();
 	}
 
 	if ((sw_language != lang_fortran) && (sw_language != lang_pascal))
-		MATCH(KW_SEMI_COLON);
+		MSC_match(KW_SEMI_COLON);
 
 	return action;
 }
@@ -3040,14 +3045,14 @@ static ACT par_type()
 //SYM	symbol;
 //symbol = token.tok_symbol;
 //relation = (GPRE_REL) symbol->sym_object;
-//ADVANCE_TOKEN;
+//PAR_get_token();
 //** 
 
 	relation = EXP_relation();
 
 //  No dot and we give up 
 
-	if (!MATCH(KW_DOT))
+	if (!MSC_match(KW_DOT))
 		return NULL;
 
 //  Look for field name.  No field name, punt 
@@ -3056,10 +3061,10 @@ static ACT par_type()
 	if (!(field = MET_field(relation, token.tok_string)))
 		return NULL;
 
-	ADVANCE_TOKEN;
+	PAR_get_token();
 
-	if (!MATCH(KW_DOT))
-		SYNTAX_ERROR("period");
+	if (!MSC_match(KW_DOT))
+		CPR_s_error("period");
 
 //  Lookup type.  If we can't find it, complain bitterly 
 
@@ -3068,8 +3073,8 @@ static ACT par_type()
 		PAR_error(s);
 	}
 
-	ADVANCE_TOKEN;
-	action = MAKE_ACTION(0, ACT_type_number);
+	PAR_get_token();
+	action = MSC_action(0, ACT_type_number);
 	action->act_object = (REF) (ULONG) type;
 
 	return action;
@@ -3100,12 +3105,12 @@ static ACT par_variable()
 	first = token.tok_first;
 	field = EXP_field(&context);
 
-	if ((dot = MATCH(KW_DOT)) && (cast = EXP_cast(field))) {
+	if ((dot = MSC_match(KW_DOT)) && (cast = EXP_cast(field))) {
 		field = cast;
-		dot = MATCH(KW_DOT);
+		dot = MSC_match(KW_DOT);
 	}
 
-	if (dot && MATCH(KW_NULL)) {
+	if (dot && MSC_match(KW_NULL)) {
 		is_null = true;
 		dot = false;
 	}
@@ -3116,7 +3121,7 @@ static ACT par_variable()
 	if (field->fld_array)
 		EXP_post_array(reference);
 
-	action = MAKE_ACTION(request, ACT_variable);
+	action = MSC_action(request, ACT_variable);
 
 	if (first)
 		action->act_flags |= ACT_first;
@@ -3139,7 +3144,7 @@ static ACT par_variable()
 
 //  Check to see if the flag field has been allocated.  If not, sigh, allocate it 
 
-	flag = MAKE_REFERENCE(&request->req_references);
+	flag = MSC_reference(&request->req_references);
 	flag->ref_context = reference->ref_context;
 	flag->ref_field = PAR_null_field();
 	flag->ref_level = request->req_level;
@@ -3175,32 +3180,32 @@ static ACT scan_routine_header()
 {
 	ACT action;
 
-	action = MAKE_ACTION(0, ACT_routine);
+	action = MSC_action(0, ACT_routine);
 	action->act_flags |= ACT_mark;
 
-	while (!(MATCH(KW_SEMI_COLON)))
+	while (!(MSC_match(KW_SEMI_COLON)))
 		if (!(match_parentheses()))
-			ADVANCE_TOKEN;
+			PAR_get_token();
 
-	if (MATCH(KW_OPTIONS) && MATCH(KW_LEFT_PAREN)) {
-		while (!(MATCH(KW_RIGHT_PAREN))) {
-			if (MATCH(KW_EXTERN) || MATCH(KW_FORWARD))
+	if (MSC_match(KW_OPTIONS) && MSC_match(KW_LEFT_PAREN)) {
+		while (!(MSC_match(KW_RIGHT_PAREN))) {
+			if (MSC_match(KW_EXTERN) || MSC_match(KW_FORWARD))
 				action->act_flags |= ACT_decl;
 			else
-				ADVANCE_TOKEN;
+				PAR_get_token();
 		}
-		MATCH(KW_SEMI_COLON);
+		MSC_match(KW_SEMI_COLON);
 	}
 	else
 		for (;;) {
-			if (MATCH(KW_EXTERN) || MATCH(KW_FORWARD)) {
+			if (MSC_match(KW_EXTERN) || MSC_match(KW_FORWARD)) {
 				action->act_flags |= ACT_decl;
-				MATCH(KW_SEMI_COLON);
+				MSC_match(KW_SEMI_COLON);
 			}
-			else if (MATCH(KW_INTERNAL) || MATCH(KW_ABNORMAL) ||
-					 MATCH(KW_VARIABLE) || MATCH(KW_VAL_PARAM))
+			else if (MSC_match(KW_INTERNAL) || MSC_match(KW_ABNORMAL) ||
+					 MSC_match(KW_VARIABLE) || MSC_match(KW_VAL_PARAM))
 			{
-				MATCH(KW_SEMI_COLON);
+				MSC_match(KW_SEMI_COLON);
 			}
 			else
 				break;
@@ -3232,26 +3237,30 @@ static void set_external_flag()
 static bool terminator()
 {
 
-//  For C, changed KEYWORD (KW_SEMICOLON) to MATCH (KW_SEMICOLON) to eat a
+//  For C, changed keyword (KW_SEMICOLON) to MSC_match (KW_SEMICOLON) to eat a
 //  semicolon if it is present so as to allow it to be there or not be there.
 //  Bug#833.  mao 6/21/89 
 
 //  For C, right brace ("}") must also be a terminator. 
 
 	if (sw_language == lang_c) {
-		if (MATCH(KW_SEMI_COLON) ||
-			KEYWORD(KW_ELSE) || KEYWORD(KW_ON_ERROR) || KEYWORD(KW_R_BRACE))
+		if (MSC_match(KW_SEMI_COLON) || token.tok_keyword == KW_ELSE ||
+			token.tok_keyword == KW_ON_ERROR || token.tok_keyword == KW_R_BRACE)
 		{
 			return true;
 		}
 	}
 	else if (sw_language == lang_ada) {
-		if (MATCH(KW_SEMI_COLON) || KEYWORD(KW_ELSE) || KEYWORD(KW_ON_ERROR))
+		if (MSC_match(KW_SEMI_COLON) || token.tok_keyword == KW_ELSE || 
+			token.tok_keyword == KW_ON_ERROR)
+		{
 			return true;
+		}
 	}
 	else {
-		if (KEYWORD(KW_SEMI_COLON) || KEYWORD(KW_ELSE) || KEYWORD(KW_ON_ERROR) ||
-			(sw_language == lang_cobol && KEYWORD(KW_DOT)))
+		if (token.tok_keyword == KW_SEMI_COLON || token.tok_keyword == KW_ELSE ||
+			token.tok_keyword == KW_ON_ERROR ||
+			(sw_language == lang_cobol && token.tok_keyword == KW_DOT))
 		{
 			return true;
 		}

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.17 2003-10-06 09:48:43 robocop Exp $
+//	$Id: cmd.cpp,v 1.18 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -100,7 +100,7 @@ static void set_statistics(GPRE_REQ, ACT);
 #define STUFF_CHECK(n)	if (request->req_base - request->req_blr + request->req_length <= (n) + 50)\
 			CMP_check (request,(n))
 
-#define BLOB_BUFFER_SIZE   4096	/* to read in blr blob for default values */
+const int BLOB_BUFFER_SIZE = 4096;	// to read in blr blob for default values
 
 
 //____________________________________________________________
@@ -1972,7 +1972,7 @@ static bool create_view(GPRE_REQ request,
 				&& (slice =
 					slice_req->
 					req_slice))
-					IBERROR("Array slices not supported in views");
+					CPR_error("Array slices not supported in views");
 			context = reference->ref_context;
 		}
 		if (field)
@@ -1981,7 +1981,7 @@ static bool create_view(GPRE_REQ request,
 			symbol = fld->fld_symbol;
 		else {
 			request->req_length = 0;
-			IBERROR("view expression requires field name");
+			CPR_error("view expression requires field name");
 			return false;
 		}
 		if (fld) {
@@ -2007,12 +2007,12 @@ static bool create_view(GPRE_REQ request,
 		select = relation->rel_view_rse;
 		if ((select->rse_aggregate) ||
 			(non_updateable) || (select->rse_count != 1)) {
-			IBERROR("Invalid view WITH CHECK OPTION - non-updateable view");
+			CPR_error("Invalid view WITH CHECK OPTION - non-updateable view");
 			return false;
 		}
 
 		if (!(select->rse_boolean)) {
-			IBERROR("Invalid view WITH CHECK OPTION - no WHERE clause");
+			CPR_error("Invalid view WITH CHECK OPTION - no WHERE clause");
 			return false;
 		}
 
@@ -2025,18 +2025,18 @@ static bool create_view(GPRE_REQ request,
 
 		/* Make the OLD context for the trigger    */
 
-		contexts[0] = request->req_contexts = context = MAKE_CONTEXT(request);
+		contexts[0] = request->req_contexts = context = MSC_context(request);
 		context->ctx_relation = relation;
 
 		/* Make the NEW context for the trigger    */
 
-		contexts[1] = request->req_contexts = context = MAKE_CONTEXT(request);
+		contexts[1] = request->req_contexts = context = MSC_context(request);
 		context->ctx_relation = relation;
 
 		/* Make the context for the  base relation  */
 
 		contexts[2] = select->rse_context[0] = request->req_contexts =
-			context = MAKE_CONTEXT(request);
+			context = MSC_context(request);
 		context->ctx_relation = sub_relation;
 
 		/* Make lists to assign from NEW fields to fields in the base relation.  */
@@ -2058,9 +2058,9 @@ static bool create_view(GPRE_REQ request,
 				reference->ref_context = contexts[2];
 				fld = reference->ref_field;
 			}
-			view_ref = MAKE_REFERENCE(0);
+			view_ref = MSC_reference(0);
 			view_ref->ref_context = contexts[0];
-			new_view_ref = MAKE_REFERENCE(0);
+			new_view_ref = MSC_reference(0);
 			new_view_ref->ref_context = contexts[1];
 			new_view_ref->ref_field = view_ref->ref_field =
 				(field) ? field : fld;
@@ -2075,7 +2075,7 @@ static bool create_view(GPRE_REQ request,
 
 			or_node = MSC_binary(nod_or, eq_nod, iand_node);
 
-			set_item = MAKE_NODE(nod_assignment, 2);
+			set_item = MSC_node(nod_assignment, 2);
 			set_item->nod_arg[1] = value;
 			set_item->nod_arg[0] = new_view_field;
 			PUSH(set_item, &stack);
@@ -2091,7 +2091,7 @@ static bool create_view(GPRE_REQ request,
 									 MSC_binary(nod_or, eq_nod, iand_node));
 		}
 
-		set_list = MAKE_NODE(nod_list, count);
+		set_list = MSC_node(nod_list, count);
 		ptr = set_list->nod_arg + count;
 		while (stack)
 			*--ptr = (GPRE_NOD) POP(&stack);
@@ -2617,7 +2617,7 @@ static void put_dtype( GPRE_REQ request, GPRE_FLD field)
 
 			/* Correct the length of C string for meta data operations */
 
-			if (sw_cstring && !SUBTYPE_ALLOWS_NULLS(field->fld_sub_type))
+			if (sw_cstring && field->fld_sub_type != SUBTYPE_ALLOWS_NULLS)
 				length--;
 			dtype = blr_text;
 		}
@@ -2696,7 +2696,7 @@ static void put_dtype( GPRE_REQ request, GPRE_FLD field)
 		length = 8;
 		break;
 
-	case dtype_float:
+	case dtype_real:
 		dtype = blr_float;
 		length = sizeof(float);
 		break;
@@ -3014,7 +3014,7 @@ static void replace_field_names(GPRE_NOD input,
 	if (((input->nod_type == nod_via) || (input->nod_type == nod_any) ||
 		 (input->nod_type == nod_unique)) && (search_list == 0) &&
 		(replace_with == 0) && (input->nod_count == 0)) {
-		IBERROR("Invalid view WITH CHECK OPTION - no subqueries permitted");
+		CPR_error("Invalid view WITH CHECK OPTION - no subqueries permitted");
 		return;
 	}
 
@@ -3024,7 +3024,7 @@ static void replace_field_names(GPRE_NOD input,
 			rse_field = reference->ref_field;
 			if (null_them) {
 				if (reference->ref_context == contexts[2]) {
-					*ptr = MAKE_NODE(nod_null, 0);
+					*ptr = MSC_node(nod_null, 0);
 				}
 				continue;
 			}

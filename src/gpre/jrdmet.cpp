@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.10 2003-10-06 09:48:44 robocop Exp $
+//	$Id: jrdmet.cpp,v 1.11 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -41,6 +41,7 @@
 #undef GPRE
 #include "../gpre/hsh_proto.h"
 #include "../gpre/jrdme_proto.h"
+#include "../gpre/msc_proto.h"
 
 
 //____________________________________________________________

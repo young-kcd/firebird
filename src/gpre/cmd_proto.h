@@ -26,5 +26,5 @@
 
 int CMD_compile_ddl(GPRE_REQ);
 
-#endif /* GPRE_CMD_PROTO_H */
+#endif // GPRE_CMD_PROTO_H
 

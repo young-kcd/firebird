@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.26 2003-10-07 09:58:26 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.27 2003-10-14 22:21:49 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -45,8 +45,8 @@
 #include "../jrd/constants.h"
 #include "../jrd/gds_proto.h"
 
-#define MAX_USER_LENGTH		33
-#define MAX_PASSWORD_LENGTH	33
+const int MAX_USER_LENGTH		= 33;
+const int MAX_PASSWORD_LENGTH	= 33;
 
 extern enum lang_t sw_language;
 extern bool sw_cstring;
@@ -297,7 +297,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 
 	GPRE_PRC procedure = context->ctx_procedure;
 	if (procedure) {
-		node = MAKE_NODE(nod_list, procedure->prc_out_count);
+		node = MSC_node(nod_list, procedure->prc_out_count);
 		//int count = 0;
 		for (field = procedure->prc_outputs; field; field = field->fld_next) {
 			reference = (REF) ALLOC(REF_LEN);
@@ -316,7 +316,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 			count++;
 		}
-		node = MAKE_NODE(nod_list, count);
+		node = MSC_node(nod_list, count);
 		//count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 			reference = (REF) ALLOC(REF_LEN);
@@ -385,7 +385,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 	case blr_varying:
 	case blr_text:
 		dtype = dtype_text;
-		if (sw_cstring && !SUBTYPE_ALLOWS_NULLS(sub_type)) {
+		if (sw_cstring && sub_type != SUBTYPE_ALLOWS_NULLS) {
 			++l;
 			dtype = dtype_cstring;
 		}

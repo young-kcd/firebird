@@ -33,7 +33,6 @@
 #include "../jrd/thd_proto.h"
 
 
-ASSERT_FILENAME
 const int HASH_SIZE = 211;
 static SSHORT hash(const SCHAR*, USHORT);
 static bool remove_symbol(dsql_sym**, dsql_sym*);

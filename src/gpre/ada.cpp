@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.29 2003-10-06 09:48:43 robocop Exp $
+//	$Id: ada.cpp,v 1.30 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -45,7 +45,6 @@
 #include "../gpre/pat_proto.h"
 #include "../gpre/prett_proto.h"
 #include "../jrd/gds_proto.h"
-
 
 static void	align (int);
 static void	asgn_from (const act*, REF, int);
@@ -131,18 +130,18 @@ static void	t_start_auto (const act*, GPRE_REQ, TEXT *, int, bool);
 static TEXT output_buffer[512];
 static int first_flag;
 
-#define COMMENT		"--- "
-#define INDENT		3
+static const char* COMMENT = "--- ";
+const int INDENT	= 3;
 
-#define BYTE_DCL	"interbase.isc_byte"
-#define BYTE_VECTOR_DCL	"interbase.isc_vector_byte"
-#define SHORT_DCL	"interbase.isc_short"
-#define USHORT_DCL	"interbase.isc_ushort"
-#define LONG_DCL	"interbase.isc_long"
-#define LONG_VECTOR_DCL	"interbase.isc_vector_long"
-#define EVENT_LIST_DCL	"interbase.event_list"
-#define FLOAT_DCL	"interbase.isc_float"
-#define DOUBLE_DCL	"interbase.isc_double"
+static const char* BYTE_DCL			= "interbase.isc_byte";
+static const char* BYTE_VECTOR_DCL	= "interbase.isc_vector_byte";
+static const char* SHORT_DCL		= "interbase.isc_short";
+static const char* USHORT_DCL		= "interbase.isc_ushort";
+static const char* LONG_DCL			= "interbase.isc_long";
+static const char* LONG_VECTOR_DCL	= "interbase.isc_vector_long";
+static const char* EVENT_LIST_DCL	= "interbase.event_list";
+static const char* REAL_DCL			= "interbase.isc_float";
+static const char* DOUBLE_DCL		= "interbase.isc_double";
 
 static inline void endif(const int column)
 {
@@ -706,8 +705,8 @@ static void gen_based( const act* action, int column)
 			sprintf(s2, "string (1..%d)", length);
 		break;
 
-	case dtype_float:
-		sprintf(s2, "%s", FLOAT_DCL);
+	case dtype_real:
+		sprintf(s2, "%s", REAL_DCL);
 		break;
 
 	case dtype_double:
@@ -980,9 +979,8 @@ static void gen_compile( const act* action, int column)
 		t_start_auto(action, request, status_vector(action), column, true);
 
 	if ((action->act_error || (action->act_flags & ACT_sql)) && sw_auto)
-		printa(column, "if (%s = 0) and (%s%s /= 0) then",
-			   request->req_handle, ada_package, request_trans(action,
-															   request));
+		printa(column, "if (%s = 0) and (%s%s /= 0) then", request->req_handle,
+				ada_package, request_trans(action, request));
 	else
 		printa(column, "if %s = 0 then", request->req_handle);
 
@@ -1916,7 +1914,7 @@ static void gen_event_wait( const act* action, int column)
 
 	if (ident < 0) {
 		sprintf(s, "event handle \"%s\" not found", event_name->sym_string);
-        IBERROR(s);
+		CPR_error(s);
 		return;
 	}
 
@@ -2168,7 +2166,7 @@ static void gen_function( const act* function, int column)
 	action = (const act*) function->act_object;
 
 	if (action->act_type != ACT_any) {
-		IBERROR("can't generate function");
+		CPR_error("can't generate function");
 		return;
 	}
 
@@ -2220,7 +2218,7 @@ static void gen_function( const act* function, int column)
 				break;
 
 			default:
-				IBERROR("gen_function: unsupported datatype");
+				CPR_error("gen_function: unsupported datatype");
 				return;
 			}
 			ib_fprintf(out_file, "    %s\t%s;\n", dtype,
@@ -2712,27 +2710,27 @@ static void gen_request( GPRE_REQ request, int column)
 				string_type = "DPB";
 				if (PRETTY_print_cdb(request->req_blr,
 									 gen_blr, 0, 0))
-					IBERROR("internal error during parameter generation");
+					CPR_error("internal error during parameter generation");
 				break;
 
 			case REQ_ddl:
 				string_type = "DYN";
 				if (PRETTY_print_dyn(request->req_blr,
 									 gen_blr, 0, 0))
-					IBERROR("internal error during dynamic DDL generation");
+					CPR_error("internal error during dynamic DDL generation");
 				break;
 			case REQ_slice:
 				string_type = "SDL";
 				if (PRETTY_print_sdl(request->req_blr,
 									 gen_blr, 0, 0))
-					IBERROR("internal error during SDL generation");
+					CPR_error("internal error during SDL generation");
 				break;
 
 			default:
 				string_type = "BLR";
 				if (gds__print_blr(request->req_blr,
 								   gen_blr, 0, 0))
-					IBERROR("internal error during BLR generation");
+					CPR_error("internal error during BLR generation");
 			}
 		}
 		else {
@@ -2776,7 +2774,7 @@ static void gen_request( GPRE_REQ request, int column)
 						   reference->ref_sdl_ident);
 					if (PRETTY_print_sdl(reference->ref_sdl,
 										 gen_blr, 0, 1))
-						IBERROR("internal error during SDL generation");
+						CPR_error("internal error during SDL generation");
 				}
 			}
 		}
@@ -3475,8 +3473,8 @@ static void make_array_declaration( REF reference, int column)
 		ib_fprintf(out_file, "interbase.quad");
 		break;
 
-	case dtype_float:
-		ib_fprintf(out_file, "%s", FLOAT_DCL);
+	case dtype_real:
+		ib_fprintf(out_file, "%s", REAL_DCL);
 		break;
 
 	case dtype_double:
@@ -3583,9 +3581,9 @@ static void make_port( POR port, int column)
 			field = field->fld_array;
 
 		switch (field->fld_dtype) {
-		case dtype_float:
+		case dtype_real:
 			printa(column + INDENT, "isc_%d\t: %s;\t-- %s --",
-				   reference->ref_ident, FLOAT_DCL, name);
+				   reference->ref_ident, REAL_DCL, name);
 			break;
 
 		case dtype_double:
@@ -3638,7 +3636,7 @@ static void make_port( POR port, int column)
 		default:
 			sprintf(s, "datatype %d unknown for field %s, msg %d",
 					field->fld_dtype, name, port->por_msg_number);
-			IBERROR(s);
+			CPR_error(s);
 			return;
 		}
 	}

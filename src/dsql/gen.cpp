@@ -47,7 +47,7 @@
 #include "../jrd/dsc_proto.h"
 #include "gen/iberror.h"
 
-ASSERT_FILENAME static void gen_aggregate(DSQL_REQ, DSQL_NOD);
+static void gen_aggregate(DSQL_REQ, DSQL_NOD);
 static void gen_cast(DSQL_REQ, DSQL_NOD);
 static void	gen_coalesce(DSQL_REQ, DSQL_NOD);
 static void gen_constant(DSQL_REQ, DSC *, bool);

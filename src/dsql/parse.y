@@ -99,28 +99,26 @@
 #include "../wal/wal.h"
 #include "../jrd/err_proto.h"
 
-ASSERT_FILENAME
-
 static void	yyerror (TEXT *);
 
 /* since UNIX isn't standard, we have to define
    stuff which is in <limits.h> (which isn't available
    on all UNIXes... */
 
-#define SHRT_POS_MAX		32767
-#define SHRT_UNSIGNED_MAX	65535
-#define SHRT_NEG_MAX		32768
-#define LONG_POS_MAX		2147483647
-#define POSITIVE		0
-#define NEGATIVE		1
-#define UNSIGNED		2
+const long SHRT_POS_MAX			= 32767;
+const long SHRT_UNSIGNED_MAX	= 65535;
+const long SHRT_NEG_MAX			= 32768;
+const long LONG_POS_MAX			= 2147483647;
+const int POSITIVE	= 0;
+const int NEGATIVE	= 1;
+const int UNSIGNED	= 2;
 
-#define MIN_CACHE_BUFFERS	   250
-#define DEF_CACHE_BUFFERS	   1000
+const int MIN_CACHE_BUFFERS	= 250;
+const int DEF_CACHE_BUFFERS	= 1000;
 
 /* Fix 69th procedure problem - solution from Oleg Loa */
-#define YYSTACKSIZE		2048
-#define YYMAXDEPTH		2048
+#define YYSTACKSIZE	2048
+#define YYMAXDEPTH	2048
 
 #define YYSTYPE		DSQL_NOD
 #if defined(DEBUG) || defined(DEV_BUILD)
@@ -130,8 +128,10 @@ static void	yyerror (TEXT *);
 static const char INTERNAL_FIELD_NAME [] = "DSQL internal"; /* NTX: placeholder */
 static const char NULL_STRING [] = "";	
 
-#define TRIGGER_TYPE_SUFFIX(slot1, slot2, slot3) \
-	((slot1 << 1) | (slot2 << 3) | (slot3 << 5))
+inline SLONG trigger_type_suffix(int slot1, int slot2, int slot3){
+	return ((slot1 << 1) | (slot2 << 3) | (slot3 << 5));
+}
+
 
 DSQL_NOD		DSQL_parse;
 
@@ -142,14 +142,7 @@ static void	yyerror (TEXT *);
 
 #include "../dsql/chars.h"
 
-#define MAX_TOKEN_LEN   256
-#define CHECK_BOUND(to)\
-	{\
-	if ((to - string) >= MAX_TOKEN_LEN)		\
-	yyabandon (-104, isc_token_too_long); \
-	}
-#define CHECK_COPY_INCR(to,ch){CHECK_BOUND(to); *to++=ch;}
-
+const int MAX_TOKEN_LEN = 256;
 
 static TEXT	*lex_position (void);
 #ifdef NOT_USED_OR_REPLACED
@@ -169,6 +162,18 @@ static void	stack_nodes (DSQL_NOD, DLLS *);
 inline static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
 static void	yyabandon (SSHORT, ISC_STATUS);
 static void	check_log_file_attrs (void);
+
+inline void check_bound(char *to, char *string)
+{
+	if ((to - string) >= MAX_TOKEN_LEN)
+		yyabandon (-104, isc_token_too_long);
+}
+
+inline void check_copy_incr(char*& to, char ch, char* string)
+{
+	check_bound(to, string); 
+	*to++=ch;
+}
 
 struct LexerState {
 	/* This is, in fact, parser state. Not used in lexer itself */
@@ -1859,35 +1864,35 @@ trigger_type_prefix	: BEFORE
 		;
 
 trigger_type_suffix	: INSERT
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 0, 0), CONSTANT_SLONG); }
 		| UPDATE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 0, 0), CONSTANT_SLONG); }
 		| KW_DELETE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 0, 0), CONSTANT_SLONG); }
 		| INSERT OR UPDATE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 2, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 2, 0), CONSTANT_SLONG); }
 		| INSERT OR KW_DELETE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 3, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 3, 0), CONSTANT_SLONG); }
 		| UPDATE OR INSERT
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 1, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 1, 0), CONSTANT_SLONG); }
 		| UPDATE OR KW_DELETE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 3, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 3, 0), CONSTANT_SLONG); }
 		| KW_DELETE OR INSERT
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 1, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 1, 0), CONSTANT_SLONG); }
 		| KW_DELETE OR UPDATE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 2, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 2, 0), CONSTANT_SLONG); }
 		| INSERT OR UPDATE OR KW_DELETE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 2, 3), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 2, 3), CONSTANT_SLONG); }
 		| INSERT OR KW_DELETE OR UPDATE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (1, 3, 2), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 3, 2), CONSTANT_SLONG); }
 		| UPDATE OR INSERT OR KW_DELETE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 1, 3), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 1, 3), CONSTANT_SLONG); }
 		| UPDATE OR KW_DELETE OR INSERT
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (2, 3, 1), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 3, 1), CONSTANT_SLONG); }
 		| KW_DELETE OR INSERT OR UPDATE
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 1, 2), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 1, 2), CONSTANT_SLONG); }
 		| KW_DELETE OR UPDATE OR INSERT
-			{ $$ = MAKE_constant ((STR) TRIGGER_TYPE_SUFFIX (3, 2, 1), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 2, 1), CONSTANT_SLONG); }
 		;
 
 trigger_position : POSITION nonneg_short_integer
@@ -4675,10 +4680,10 @@ int LexerState::yylex (
 		{
 		if (ptr >= end)
 			return -1;
-		CHECK_COPY_INCR(p, UPPER7(*ptr));
+		check_copy_incr(p, UPPER7(*ptr), string);
 		}
 		
-		CHECK_BOUND(p);
+		check_bound(p, string);
 		*p = 0;
 
 		/* make a string value to hold the name, the name 
@@ -4950,15 +4955,15 @@ int LexerState::yylex (
 	if (tok_class & CHR_LETTER)
 	{
 		p = string;
-		CHECK_COPY_INCR(p, UPPER (c));
+		check_copy_incr(p, UPPER (c), string);
 		for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
 				return -1;
-			CHECK_COPY_INCR(p, UPPER (*ptr));
+			check_copy_incr(p, UPPER (*ptr), string);
 		}
 
-		CHECK_BOUND(p);
+		check_bound(p, string);
 		*p = 0;
 		sym = HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
 		if (sym)

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.21 2003-09-13 14:47:38 skidder Exp $
+//	$Id: exp.cpp,v 1.22 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -46,22 +46,8 @@
 #include "../gpre/sqe_proto.h"
 #include "../gpre/sql_proto.h"
 
-#define ZERO_BASED	0
-#define ONE_BASED	1
-
-//#ifdef MAX_USHORT
-//#undef MAX_USHORT
-//#endif
-// TMN: patched bad redefinitions
-//#define MAX_USHORT    ((USHORT)(0xFFFF))
-//#ifdef MAX_SSHORT
-//#undef MAX_SSHORT
-//#endif
-//#define MAX_SSHORT    ((SSHORT)(0x7FFF))
-//#ifdef MIN_SSHORT
-//#undef MIN_SSHORT
-//#endif
-//#define MIN_SSHORT    ((SSHORT)(0x8000))
+const int ZERO_BASED	= 0;
+const int ONE_BASED		= 1;
 
 static bool check_relation(void);
 static GPRE_NOD lookup_field(GPRE_CTX);
@@ -146,7 +132,7 @@ GPRE_FLD EXP_cast(GPRE_FLD field)
 	for (dtype = data_types;; dtype++)
 		if ((int) dtype->dtype_keyword == (int) KW_none)
 			return NULL;
-		else if (MATCH(dtype->dtype_keyword))
+		else if (MSC_match(dtype->dtype_keyword))
 			break;
 
 	cast = (GPRE_FLD) ALLOC(FLD_LEN);
@@ -164,11 +150,11 @@ GPRE_FLD EXP_cast(GPRE_FLD field)
 			cast->fld_length++;
 			cast->fld_dtype = dtype_cstring;
 		}
-		if (!MATCH(KW_L_BRCKET) && !MATCH(KW_LT))
-			SYNTAX_ERROR("left bracket or <");
+		if (!MSC_match(KW_L_BRCKET) && !MSC_match(KW_LT))
+			CPR_s_error("left bracket or <");
 		cast->fld_length += EXP_pos_USHORT_ordinal(true);
-		if (!MATCH(KW_R_BRCKET) && !MATCH(KW_GT))
-			SYNTAX_ERROR("right bracket or >");
+		if (!MSC_match(KW_R_BRCKET) && !MSC_match(KW_GT))
+			CPR_s_error("right bracket or >");
 		break;
 
 	case dtype_quad:
@@ -195,17 +181,17 @@ GPRE_FLD EXP_cast(GPRE_FLD field)
 
 	case dtype_long:
 		cast->fld_length = sizeof(SLONG);
-		if (MATCH(KW_SCALE))
+		if (MSC_match(KW_SCALE))
 			cast->fld_scale = EXP_SSHORT_ordinal(TRUE);
 		break;
 
 	case dtype_short:
 		cast->fld_length = sizeof(SSHORT);
-		if (MATCH(KW_SCALE))
+		if (MSC_match(KW_SCALE))
 			cast->fld_scale = EXP_SSHORT_ordinal(TRUE);
 		break;
 
-	case dtype_float:
+	case dtype_real:
 		cast->fld_length = 4;
 		break;
 
@@ -241,16 +227,16 @@ GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
 
 	if (!(symbol = initial_symbol)) {
 		symbol = PAR_symbol(SYM_context);
-		if (!MATCH(KW_IN)) {
+		if (!MSC_match(KW_IN)) {
 			FREE((UCHAR *) symbol);
-			SYNTAX_ERROR("IN");
+			CPR_s_error("IN");
 		}
 	}
 
 	symbol->sym_type = SYM_context;
 
 	relation = EXP_relation();
-	context = MAKE_CONTEXT(request);
+	context = MSC_context(request);
 	context->ctx_symbol = symbol;
 	context->ctx_relation = relation;
 	symbol->sym_object = context;
@@ -279,14 +265,14 @@ GPRE_FLD EXP_field(GPRE_CTX * rcontext)
 			break;
 
 	if (!symbol)
-		SYNTAX_ERROR("context variable");
+		CPR_s_error("context variable");
 
 	context = symbol->sym_object;
 	relation = context->ctx_relation;
-	ADVANCE_TOKEN;
+	PAR_get_token();
 
-	if (!MATCH(KW_DOT))
-		SYNTAX_ERROR("dot after context variable");
+	if (!MSC_match(KW_DOT))
+		CPR_s_error("dot after context variable");
 
 	SQL_resolve_identifier("<Field Name>", s);
 	if (!(field = MET_field(relation, token.tok_string))) {
@@ -295,7 +281,7 @@ GPRE_FLD EXP_field(GPRE_CTX * rcontext)
 		PAR_error(s);
 	}
 
-	ADVANCE_TOKEN;
+	PAR_get_token();
 	*rcontext = context;
 
 	return field;
@@ -310,8 +296,8 @@ GPRE_FLD EXP_field(GPRE_CTX * rcontext)
 void EXP_left_paren( TEXT * string)
 {
 
-	if (!MATCH(KW_LEFT_PAREN))
-		SYNTAX_ERROR((string) ? string : (char*)"left parenthesis");
+	if (!MSC_match(KW_LEFT_PAREN))
+		CPR_s_error((string) ? string : (char*)"left parenthesis");
 }
 
 
@@ -329,7 +315,7 @@ GPRE_NOD EXP_literal(void)
 
 	switch (sw_sql_dialect) {
 	case 1:
-		if (!(token.tok_type == tok_number || QUOTED(token.tok_type)))
+		if (!(token.tok_type == tok_number || isQuoted(token.tok_type)))
 			return NULL;
 		break;
 	default:
@@ -339,7 +325,7 @@ GPRE_NOD EXP_literal(void)
 
 	reference = (REF) ALLOC(REF_LEN);
 	node = MSC_unary(nod_literal, (GPRE_NOD) reference);
-	if (QUOTED(token.tok_type)) {
+	if (isQuoted(token.tok_type)) {
 		reference->ref_value = string = (TEXT *) ALLOC(token.tok_length + 3);
 		strcat(string, "\'");
 		COPY(token.tok_string, token.tok_length, string + 1);
@@ -368,7 +354,7 @@ GPRE_NOD EXP_literal(void)
 	}
 // ** End date/time/timestamp *
 	if ((token.tok_type == tok_sglquoted && (token.tok_charset)) ||
-		((QUOTED(token.tok_type) && (sw_sql_dialect == 1))
+		((isQuoted(token.tok_type) && (sw_sql_dialect == 1))
 		 && (token.tok_charset)))
 	{
 		reference->ref_flags |= REF_ttype;
@@ -381,7 +367,7 @@ GPRE_NOD EXP_literal(void)
 		reference->ref_flags |= REF_ttype;
 		reference->ref_ttype = ttype_metadata;
 	}
-	ADVANCE_TOKEN;
+	PAR_get_token();
 	return node;
 }
 
@@ -399,10 +385,10 @@ SINT64 EXP_SINT64_ordinal(USHORT advance_flag)
 	char buffer[64];
 	char format[8] = "%"QUADFORMAT"d";
 
-	negate = (MATCH(KW_MINUS));
+	negate = (MSC_match(KW_MINUS));
 
 	if (token.tok_type != tok_number)
-		SYNTAX_ERROR("<number>");
+		CPR_s_error("<number>");
 
 	sscanf(token.tok_string, format, &n);
 	sprintf(buffer, format, n);
@@ -410,7 +396,7 @@ SINT64 EXP_SINT64_ordinal(USHORT advance_flag)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
-		ADVANCE_TOKEN;
+		PAR_get_token();
 
 	return (negate) ? -n : n;
 }
@@ -427,10 +413,10 @@ SLONG EXP_SLONG_ordinal(USHORT advance_flag)
 	SLONG n;
 	char buffer[32];
 
-	negate = (MATCH(KW_MINUS));
+	negate = (MSC_match(KW_MINUS));
 
 	if (token.tok_type != tok_number)
-		SYNTAX_ERROR("<number>");
+		CPR_s_error("<number>");
 
 	n = atoi(token.tok_string);
 	sprintf(buffer, "%"SLONGFORMAT, n);
@@ -438,7 +424,7 @@ SLONG EXP_SLONG_ordinal(USHORT advance_flag)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
-		ADVANCE_TOKEN;
+		PAR_get_token();
 
 	return (negate) ? -n : n;
 }
@@ -455,10 +441,10 @@ SSHORT EXP_SSHORT_ordinal(USHORT advance_flag)
 	bool negate;
 	SLONG n;
 
-	negate = (MATCH(KW_MINUS));
+	negate = (MSC_match(KW_MINUS));
 
 	if (token.tok_type != tok_number)
-		SYNTAX_ERROR("<number>");
+		CPR_s_error("<number>");
 
 	n = atoi(token.tok_string);
 	if (negate && n > -1L * MIN_SSHORT)
@@ -467,7 +453,7 @@ SSHORT EXP_SSHORT_ordinal(USHORT advance_flag)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
-		ADVANCE_TOKEN;
+		PAR_get_token();
 
 	return (SSHORT) ((negate) ? -n : n);
 }
@@ -485,7 +471,7 @@ ULONG EXP_ULONG_ordinal(USHORT advance_flag)
 	char buffer[32];
 
 	if (token.tok_type != tok_number)
-		SYNTAX_ERROR("<unsigned number>");
+		CPR_s_error("<unsigned number>");
 
 	n = atoi(token.tok_string);
 	sprintf(buffer, "%"ULONGFORMAT, n);
@@ -493,7 +479,7 @@ ULONG EXP_ULONG_ordinal(USHORT advance_flag)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
-		ADVANCE_TOKEN;
+		PAR_get_token();
 
 	return n;
 }
@@ -507,14 +493,14 @@ ULONG EXP_ULONG_ordinal(USHORT advance_flag)
 USHORT EXP_USHORT_ordinal(bool advance_flag)
 {
 	if (token.tok_type != tok_number)
-		SYNTAX_ERROR("<unsigned number>");
+		CPR_s_error("<unsigned number>");
 
 	ULONG n = atoi(token.tok_string);
 	if (n > MAX_USHORT)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
-		ADVANCE_TOKEN;
+		PAR_get_token();
 
 	return (USHORT) n;
 }
@@ -559,7 +545,7 @@ void EXP_post_array( REF reference)
 
 	context = reference->ref_context;
 	request = context->ctx_request;
-	array_reference = MAKE_REFERENCE(&request->req_array_references);
+	array_reference = MSC_reference(&request->req_array_references);
 	array_reference->ref_context = context;
 	array_reference->ref_field = field;
 	array_reference->ref_level = request->req_level;
@@ -629,7 +615,7 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 
 //  This is first occurrence of field, make a new reference 
 
-	reference = MAKE_REFERENCE(&request->req_references);
+	reference = MSC_reference(&request->req_references);
 	reference->ref_context = context;
 	reference->ref_field = field;
 	reference->ref_level = request->req_level;
@@ -650,10 +636,10 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 bool EXP_match_paren(void)
 {
 
-	if (MATCH(KW_RIGHT_PAREN))
+	if (MSC_match(KW_RIGHT_PAREN))
 		return true;
 
-	SYNTAX_ERROR("right parenthesis");
+	CPR_s_error("right parenthesis");
 	return false;	// silence compiler warning
 }
 
@@ -683,9 +669,9 @@ GPRE_REL EXP_relation(void)
 	SQL_resolve_identifier("<identifier>", s);
 	if (symbol = MSC_find_symbol(token.tok_symbol, SYM_database)) {
 		db = (DBB) symbol->sym_object;
-		ADVANCE_TOKEN;
-		if (!MATCH(KW_DOT))
-			SYNTAX_ERROR("period after database name");
+		PAR_get_token();
+		if (!MSC_match(KW_DOT))
+			CPR_s_error("period after database name");
 		SQL_resolve_identifier("<Table name>", s);
 		relation = MET_get_relation(db, token.tok_string, "");
 	}
@@ -696,16 +682,16 @@ GPRE_REL EXP_relation(void)
 					relation = temp;
 				else {
 					sprintf(s, "relation %s is ambiguous", token.tok_string);
-					ADVANCE_TOKEN;
+					PAR_get_token();
 					PAR_error(s);
 				}
 			}
 	}
 
 	if (!relation)
-		SYNTAX_ERROR("relation name");
+		CPR_s_error("relation name");
 
-	ADVANCE_TOKEN;
+	PAR_get_token();
 
 	return relation;
 }
@@ -738,7 +724,7 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 
 //  parse FIRST n clause, if present 
 
-	if (MATCH(KW_FIRST)) {
+	if (MSC_match(KW_FIRST)) {
 		if (!count_field)
 			count_field = MET_make_field("jrd_count", dtype_long, 4, false);
 		first = par_value(request, count_field);
@@ -754,16 +740,16 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 
 //  parse subsequent context clauses if this is a join 
 
-	while (MATCH(KW_CROSS)) {
+	while (MSC_match(KW_CROSS)) {
 		context = EXP_context(request, 0);
 		count++;
-		if (MATCH(KW_OVER))
+		if (MSC_match(KW_OVER))
 			boolean = make_and(boolean, par_over(context));
 	}
 
 //  bug_3380 - could have an "over" clause without a "cross" clause 
 
-	if (MATCH(KW_OVER))
+	if (MSC_match(KW_OVER))
 		boolean = make_and(boolean, par_over(context));
 
 //  build rse node 
@@ -782,7 +768,7 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 //  parse boolean, if any.  If there is an error, ignore the
 //  boolean, but keep the rse 
 
-	if (MATCH(KW_WITH))
+	if (MSC_match(KW_WITH))
 		boolean = make_and(boolean, par_boolean(request));
 
 	rec_expr->rse_boolean = boolean;
@@ -793,31 +779,31 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 	bool insensitive = false;
 
 	while (true) {
-		if (MATCH(KW_SORTED)) {
-			MATCH(KW_BY);
+		if (MSC_match(KW_SORTED)) {
+			MSC_match(KW_BY);
 			items = NULL;
 			direction = false;
 			count = 0;
 			while (true) {
-				if (MATCH(KW_ASCENDING)) {
+				if (MSC_match(KW_ASCENDING)) {
 					direction = false;
 					continue;
 				}
-				else if (MATCH(KW_DESCENDING)) {
+				else if (MSC_match(KW_DESCENDING)) {
 					direction = true;
 					continue;
 				}
-				else if (MATCH(KW_EXACTCASE)) {
+				else if (MSC_match(KW_EXACTCASE)) {
 					insensitive = false;
 					continue;
 				}
-				else if (MATCH(KW_ANYCASE)) {
+				else if (MSC_match(KW_ANYCASE)) {
 					insensitive = true;
 					continue;
 				}
 				item = par_value(request, 0);
 				if (insensitive) {
-					upcase = MAKE_NODE(nod_upcase, 1);
+					upcase = MSC_node(nod_upcase, 1);
 					upcase->nod_arg[0] = item;
 				}
 				count++;
@@ -826,11 +812,11 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 					PUSH(upcase, &items);
 				else
 					PUSH(item, &items);
-				if (!MATCH(KW_COMMA))
+				if (!MSC_match(KW_COMMA))
 					break;
 			}
 			rec_expr->rse_sort = sort =
-				MAKE_NODE(nod_sort, (SSHORT) (count * 2));
+				MSC_node(nod_sort, (SSHORT) (count * 2));
 			sort->nod_count = count;
 			ptr = sort->nod_arg + count * 2;
 			while (--count >= 0) {
@@ -841,18 +827,18 @@ GPRE_RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 
 		/* Parse REDUCED clause, if any. */
 
-		else if (MATCH(KW_REDUCED)) {
-			MATCH(KW_TO);
+		else if (MSC_match(KW_REDUCED)) {
+			MSC_match(KW_TO);
 			items = NULL;
 			count = 0;
 			while (true) {
 				item = par_value(request, 0);
 				count++;
 				PUSH(item, &items);
-				if (!MATCH(KW_COMMA))
+				if (!MSC_match(KW_COMMA))
 					break;
 			}
-			rec_expr->rse_reduced = sort = MAKE_NODE(nod_projection, count);
+			rec_expr->rse_reduced = sort = MSC_node(nod_projection, count);
 			sort->nod_count = count;
 			ptr = sort->nod_arg + count;
 			while (--count >= 0)
@@ -920,7 +906,7 @@ GPRE_NOD EXP_subscript(GPRE_REQ request)
 		node->nod_type = nod_literal;
 		reference->ref_value = string = (TEXT *) ALLOC(token.tok_length + 1);
 		COPY(token.tok_string, token.tok_length, string);
-		ADVANCE_TOKEN;
+		PAR_get_token();
 		return node;
 	}
 
@@ -1020,7 +1006,7 @@ static GPRE_NOD make_list( LLS stack)
 	for (temp = stack, count = 0; temp; temp = temp->lls_next)
 		++count;
 
-	node = MAKE_NODE(nod_list, count);
+	node = MSC_node(nod_list, count);
 
 	for (ptr = node->nod_arg + count; stack;)
 		*--ptr = POP(&stack);
@@ -1089,7 +1075,7 @@ static GPRE_NOD par_and( GPRE_REQ request)
 
 	expr1 = par_not(request);
 
-	if (!MATCH(KW_AND))
+	if (!MSC_match(KW_AND))
 		return expr1;
 
 	return MSC_binary(nod_and, expr1, par_and(request));
@@ -1112,18 +1098,18 @@ static GPRE_NOD par_array(GPRE_REQ request,
 	GPRE_NOD node, index_node, array_node;
 	int i, fortran_adjustment;
 
-	if (MATCH(KW_LEFT_PAREN))
+	if (MSC_match(KW_LEFT_PAREN))
 		paren = true;
-	else if (MATCH(KW_L_BRCKET))
+	else if (MSC_match(KW_L_BRCKET))
 		bracket = true;
 	else if (!subscript_flag)
-		SYNTAX_ERROR("Missing parenthesis or bracket for array reference.");
+		CPR_s_error("Missing parenthesis or bracket for array reference.");
 
 	array_node = MSC_node(nod_array,
 						  (SSHORT) (field->fld_array_info->ary_dimension_count + 1));
 
-	if (sql_flag && ((paren && MATCH(KW_RIGHT_PAREN)) ||
-					 (bracket && MATCH(KW_R_BRCKET))))
+	if (sql_flag && ((paren && MSC_match(KW_RIGHT_PAREN)) ||
+					 (bracket && MSC_match(KW_R_BRCKET))))
 	{
 		return array_node;
 	}
@@ -1178,16 +1164,16 @@ static GPRE_NOD par_array(GPRE_REQ request,
 			else
 				array_node->nod_arg[i] = index_node;
 
-			if ((dimension->dim_next) && (!MATCH(KW_COMMA)))
-				SYNTAX_ERROR("Adequate number of subscripts for this array reference.");
+			if ((dimension->dim_next) && (!MSC_match(KW_COMMA)))
+				CPR_s_error("Adequate number of subscripts for this array reference.");
 		}
 
 		/*  Match the parenthesis or bracket  */
 
-		if ((paren) && (!MATCH(KW_RIGHT_PAREN)))
-			SYNTAX_ERROR("Missing parenthesis for array reference.");
-		else if ((bracket) && !MATCH(KW_R_BRCKET))
-			SYNTAX_ERROR("Missing right bracket for array reference.");
+		if ((paren) && (!MSC_match(KW_RIGHT_PAREN)))
+			CPR_s_error("Missing parenthesis for array reference.");
+		else if ((bracket) && !MSC_match(KW_R_BRCKET))
+			CPR_s_error("Missing right bracket for array reference.");
 	}
 
 	return array_node;
@@ -1206,7 +1192,7 @@ static GPRE_NOD par_boolean( GPRE_REQ request)
 
 	expr1 = par_and(request);
 
-	if (!MATCH(KW_OR) && !MATCH(KW_OR1))
+	if (!MSC_match(KW_OR) && !MSC_match(KW_OR1))
 		return expr1;
 
 	return MSC_binary(nod_or, expr1, par_boolean(request));
@@ -1228,15 +1214,15 @@ static GPRE_NOD par_field( GPRE_REQ request)
 	bool upcase_flag = false;
 
 	if (!(symbol = token.tok_symbol))
-		SYNTAX_ERROR("qualified field reference");
+		CPR_s_error("qualified field reference");
 
-	if (MATCH(KW_UPPERCASE)) {
-		prefix_node = MAKE_NODE(nod_upcase, 1);
+	if (MSC_match(KW_UPPERCASE)) {
+		prefix_node = MSC_node(nod_upcase, 1);
 		upcase_flag = true;
-		if (!MATCH(KW_LEFT_PAREN))
-			SYNTAX_ERROR("left parenthesis");
+		if (!MSC_match(KW_LEFT_PAREN))
+			CPR_s_error("left parenthesis");
 		if (!(symbol = token.tok_symbol))
-			SYNTAX_ERROR("qualified field reference");
+			CPR_s_error("qualified field reference");
 	}
 
 	if (symbol->sym_type == SYM_context) {
@@ -1244,18 +1230,18 @@ static GPRE_NOD par_field( GPRE_REQ request)
 		if (field->fld_array_info)
 			node = par_array(request, field, FALSE, FALSE);
 
-		if (MATCH(KW_DOT) && (cast = EXP_cast(field)))
+		if (MSC_match(KW_DOT) && (cast = EXP_cast(field)))
 			field = cast;
 	}
 	else
-		SYNTAX_ERROR("qualified field reference");
+		CPR_s_error("qualified field reference");
 
 //  There is a legit field reference.  If the reference is
 //  to a field in this request, make up a reference block
 //  and a field node, and return. 
 
 	if (!field->fld_array_info)
-		node = MAKE_NODE(nod_field, 1);
+		node = MSC_node(nod_field, 1);
 
 	if (upcase_flag)
 		prefix_node->nod_arg[0] = node;
@@ -1278,7 +1264,7 @@ static GPRE_NOD par_field( GPRE_REQ request)
 
 		/* Next, make a value reference for this request */
 
-		value_reference = MAKE_REFERENCE(&request->req_values);
+		value_reference = MSC_reference(&request->req_values);
 		value_reference->ref_field = reference->ref_field;
 		value_reference->ref_source = reference;
 
@@ -1287,8 +1273,8 @@ static GPRE_NOD par_field( GPRE_REQ request)
 	}
 
 	if (upcase_flag) {
-		if (!MATCH(KW_RIGHT_PAREN))
-			SYNTAX_ERROR("right parenthesis");
+		if (!MSC_match(KW_RIGHT_PAREN))
+			CPR_s_error("right parenthesis");
 		return prefix_node;
 	}
 
@@ -1310,9 +1296,9 @@ static GPRE_NOD par_multiply( GPRE_REQ request, GPRE_FLD field)
 	node = par_primitive_value(request, field);
 
 	while (true) {
-		if (MATCH(KW_ASTERISK))
+		if (MSC_match(KW_ASTERISK))
 			operator_ = nod_times;
-		else if (MATCH(KW_SLASH))
+		else if (MSC_match(KW_SLASH))
 			operator_ = nod_divide;
 		else
 			return node;
@@ -1374,7 +1360,7 @@ static GPRE_NOD par_not( GPRE_REQ request)
 {
 	GPRE_NOD node;
 
-	if (MATCH(KW_LEFT_PAREN)) {
+	if (MSC_match(KW_LEFT_PAREN)) {
 		node = par_boolean(request);
 		EXP_match_paren();
 		return node;
@@ -1383,7 +1369,7 @@ static GPRE_NOD par_not( GPRE_REQ request)
 	if (node = par_udf(request, UDF_boolean, 0))
 		return node;
 
-	if (!(MATCH(KW_NOT)))
+	if (!(MSC_match(KW_NOT)))
 		return par_relational(request);
 
 	return MSC_unary(nod_not, par_not(request));
@@ -1417,9 +1403,9 @@ static GPRE_NOD par_over( GPRE_CTX context)
 			PAR_error(s);
 		}
 		boolean = make_and(boolean, MSC_binary(nod_eq, field1, field2));
-		ADVANCE_TOKEN;
+		PAR_get_token();
 	}
-	while (MATCH(KW_COMMA));
+	while (MSC_match(KW_COMMA));
 
 	return boolean;
 }
@@ -1436,24 +1422,24 @@ static GPRE_NOD par_primitive_value( GPRE_REQ request, GPRE_FLD field)
 	GPRE_NOD node, sub;
 	SYM symbol;
 
-	if (MATCH(KW_MINUS))
+	if (MSC_match(KW_MINUS))
 		return MSC_unary(nod_negate, par_primitive_value(request, field));
 
-	if (MATCH(KW_LEFT_PAREN)) {
+	if (MSC_match(KW_LEFT_PAREN)) {
 		node = par_value(request, field);
 		EXP_match_paren();
 		return node;
 	}
 
-	if (MATCH(KW_UPPERCASE)) {
-		node = MAKE_NODE(nod_upcase, 1);
+	if (MSC_match(KW_UPPERCASE)) {
+		node = MSC_node(nod_upcase, 1);
 		sub = par_primitive_value(request, field);
 		node->nod_arg[0] = sub;
 		return node;
 	}
 
-	if (MATCH(KW_USER_NAME))
-		return MAKE_NODE(nod_user_name, 0);
+	if (MSC_match(KW_USER_NAME))
+		return MSC_node(nod_user_name, 0);
 
 //  Check for user defined functions 
 
@@ -1480,16 +1466,16 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 	bool negation;
 	rel_ops* relop;
 
-	if (MATCH(KW_ANY)) {
-		expr = MAKE_NODE(nod_any, 1);
+	if (MSC_match(KW_ANY)) {
+		expr = MSC_node(nod_any, 1);
 		expr->nod_count = 0;
 		expr->nod_arg[0] = (GPRE_NOD) EXP_rse(request, 0);
 		EXP_rse_cleanup((GPRE_RSE) expr->nod_arg[0]);
 		return expr;
 	}
 
-	if (MATCH(KW_UNIQUE)) {
-		expr = MAKE_NODE(nod_unique, 1);
+	if (MSC_match(KW_UNIQUE)) {
+		expr = MSC_node(nod_unique, 1);
 		expr->nod_count = 0;
 		expr->nod_arg[0] = (GPRE_NOD) EXP_rse(request, 0);
 		EXP_rse_cleanup((GPRE_RSE) expr->nod_arg[0]);
@@ -1510,28 +1496,28 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 
 //  Check for any of the binary guys 
 
-	negation = MATCH(KW_NOT);
+	negation = MSC_match(KW_NOT);
 
 	for (relop = relops;; relop++)
 		if ((int) relop->rel_kw == (int) KW_none)
-			SYNTAX_ERROR("relational operator");
-		else if (MATCH(relop->rel_kw))
+			CPR_s_error("relational operator");
+		else if (MSC_match(relop->rel_kw))
 			break;
 
 	expr2 = NULL;
 	if ((int) relop->rel_kw == (int) KW_STARTING) {
-		MATCH(KW_WITH);
-		expr = MAKE_NODE(relop->rel_op, relop->rel_args);
+		MSC_match(KW_WITH);
+		expr = MSC_node(relop->rel_op, relop->rel_args);
 	}
 	else if ((int) relop->rel_kw == (int) KW_MATCHES) {
 		expr2 = par_value(request, field);
-		if (MATCH(KW_USING))
-			expr = MAKE_NODE(nod_sleuth, 3);
+		if (MSC_match(KW_USING))
+			expr = MSC_node(nod_sleuth, 3);
 		else
-			expr = MAKE_NODE(nod_matches, 2);
+			expr = MSC_node(nod_matches, 2);
 	}
 	else
-		expr = MAKE_NODE(relop->rel_op, relop->rel_args);
+		expr = MSC_node(relop->rel_op, relop->rel_args);
 
 	expr->nod_arg[0] = expr1;
 
@@ -1541,7 +1527,7 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 
 	case nod_between:
 		expr->nod_arg[1] = expr2 = par_value(request, field);
-		MATCH(KW_AND);
+		MSC_match(KW_AND);
 		expr->nod_arg[2] = par_value(request, field);
 		break;
 
@@ -1595,17 +1581,18 @@ static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, GPRE_FLD field)
 	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_udf && (new_udf = (UDF) symbol->sym_object) &&
 			/* request->req_database == new_udf->udf_database && */
-			new_udf->udf_type == type) {
-			node = MAKE_NODE(nod_udf, 2);
+			new_udf->udf_type == type)
+		{
+			node = MSC_node(nod_udf, 2);
 			node->nod_count = 1;
 			node->nod_arg[1] = (GPRE_NOD) new_udf;
-			ADVANCE_TOKEN;
-			if (!MATCH(KW_LEFT_PAREN))
+			PAR_get_token();
+			if (!MSC_match(KW_LEFT_PAREN))
 				EXP_left_paren(0);
 			stack = NULL;
 			for (;;) {
 				PUSH(par_value(request, field), &stack);
-				if (!MATCH(KW_COMMA))
+				if (!MSC_match(KW_COMMA))
 					break;
 			}
 			EXP_match_paren();
@@ -1631,9 +1618,9 @@ static GPRE_NOD par_value( GPRE_REQ request, GPRE_FLD field)
 	node = par_multiply(request, field);
 
 	while (true) {
-		if (MATCH(KW_PLUS))
+		if (MSC_match(KW_PLUS))
 			operator_ = nod_plus;
-		else if (MATCH(KW_MINUS))
+		else if (MSC_match(KW_MINUS))
 			operator_ = nod_minus;
 		else
 			return node;

@@ -93,7 +93,6 @@ nested FOR loops are added.
 #include <ctype.h>
 #endif
 
-ASSERT_FILENAME
 #ifdef VMS
 #include <descrip.h>
 #endif

@@ -61,8 +61,6 @@ nested FOR loops are added.
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 
-ASSERT_FILENAME			//Define things dsql/assert needed
-
 #include "../include/fb_vector.h"
 
 DsqlMemoryPool *DSQL_permanent_pool = 0;

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.19 2003-10-07 09:59:28 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.20 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -69,11 +69,11 @@ static void printa(const int, const TEXT*, ...);
 
 static int first_flag = 0;
 
-#define INDENT 3
+const int INDENT = 3;
 
-#define GDS_VTOV	"gds__vtov"
-#define JRD_VTOF	"jrd_vtof"
-#define VTO_CALL	"%s ((const char*)%s, (char*)%s, %d);"
+static const char* GDS_VTOV = "gds__vtov";
+static const char* JRD_VTOF = "jrd_vtof";
+static const char* VTO_CALL = "%s ((const char*)%s, (char*)%s, %d);";
 
 static inline void begin(const int column)
 {
@@ -712,7 +712,7 @@ static void make_port( POR port, int column)
 					   reference->ref_ident, field->fld_length, name);
 			break;
 
-		case dtype_float:
+		case dtype_real:
 			ib_fprintf(out_file, "    float  jrd_%d;\t/* %s */",
 					   reference->ref_ident, name);
 			break;

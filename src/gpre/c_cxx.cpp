@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.33 2003-10-06 09:48:43 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.34 2003-10-14 22:21:49 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -38,6 +38,7 @@
 #include "../jrd/gds.h"
 #include "gpre.h"
 #include "../gpre/pat.h"
+#include "../gpre/msc_proto.h"
 #include "../gpre/cmp_proto.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/lang_proto.h"
@@ -134,31 +135,22 @@ static void t_start_auto(const act*, GPRE_REQ, TEXT *, int, bool);
 static int global_first_flag;
 static TEXT *status_name;
 
-#define INDENT		3
+const int INDENT	= 3;
 
-#define NULL_STRING	"(char *)0"
-#define NULL_STATUS	"(long*) 0L"
-#define NULL_SQLDA	"(XSQLDA*) 0L"
+static const char* NULL_STRING	= "(char *)0";
+static const char* NULL_STATUS	= "(long*) 0L";
+static const char* NULL_SQLDA	= "(XSQLDA*) 0L";
 
 #ifdef VMS
-#define GDS_INCLUDE	"\"interbase:[syslib]gds.h\""
+static const char* GDS_INCLUDE	= "\"interbase:[syslib]gds.h\"";
+#elif DARWIN
+static const char* GDS_INCLUDE	= "<Firebird/ibase.h>";
+#else
+static const char* GDS_INCLUDE	= "<ibase.h>";
 #endif
 
-#ifdef DARWIN
-#define GDS_INCLUDE	"<Firebird/ibase.h>"
-#endif
-
-#ifndef GDS_INCLUDE
-#define GDS_INCLUDE	"<ibase.h>"
-#endif
-
-#ifndef DCL_LONG
-#define DCL_LONG	"long"
-#endif
-
-#ifndef DCL_QUAD
-#define DCL_QUAD	"ISC_QUAD"
-#endif
+static const char* DCL_LONG	= "long";
+static const char* DCL_QUAD	= "ISC_QUAD";
 
 static inline void begin(const int column)
 {
@@ -855,7 +847,7 @@ static void gen_based( const act* action, int column)
 
 	default:
 		sprintf(s, "datatype %d unknown\n", field->fld_dtype);
-		IBERROR(s);
+		CPR_error(s);
 		return;
 	}
 
@@ -1358,7 +1350,7 @@ static int gen_cursor_open( const act* action, GPRE_REQ request, int column)
 	args.pat_vector1 = status_vector(action);
 	args.pat_condition = sw_auto;
 	args.pat_string1 = make_name(s, ((OPN) action->act_object)->opn_cursor);
-	args.pat_string2 = NULL_STRING;
+	args.pat_string2 = const_cast<char*>(NULL_STRING);
 	args.pat_string3 = request_trans(action, request);
 	args.pat_value2 = -1;
 
@@ -2095,7 +2087,7 @@ static void gen_event_wait( const act* action, int column)
 
 	if (ident < 0) {
 		sprintf(s, "event handle \"%s\" not found", event_name->sym_string);
-		IBERROR(s);
+		CPR_error(s);
 		return;
 	}
 
@@ -2313,7 +2305,7 @@ static void gen_function( const act* function, int column)
 	const act* action = (const act*) function->act_object;
 
 	if (action->act_type != ACT_any) {
-		IBERROR("can't generate function");
+		CPR_error("can't generate function");
 		return;
 	}
 
@@ -2344,7 +2336,7 @@ static void gen_function( const act* function, int column)
 				break;
 
 			case dtype_long:
-				dtype = DCL_LONG;
+				dtype = const_cast<char*>(DCL_LONG);
 				break;
 
 			case dtype_cstring:
@@ -2353,7 +2345,7 @@ static void gen_function( const act* function, int column)
 				break;
 
 			case dtype_quad:
-				dtype = DCL_QUAD;
+				dtype = const_cast<char*>(DCL_QUAD);
 				break;
 
 // ** Begin date/time/timestamp *
@@ -2387,7 +2379,7 @@ static void gen_function( const act* function, int column)
 				break;
 
 			default:
-				IBERROR("gen_function: unsupported datatype");
+				CPR_error("gen_function: unsupported datatype");
 				return;
 			}
 			ib_fprintf(out_file, "    %s\t%s;\n", dtype,
@@ -2458,7 +2450,7 @@ static void gen_get_or_put_slice(const act* action,
 		args.pat_string5 = s4;	/* array name */
 	}
 
-	args.pat_string6 = DCL_LONG;
+	args.pat_string6 = const_cast<char*>(DCL_LONG);
 
 	PATTERN_expand((USHORT) column, (get) ? pattern1 : pattern2, &args);
 
@@ -2879,7 +2871,7 @@ static void gen_request( GPRE_REQ request)
 				string_type = "dpb";
 				if (PRETTY_print_cdb(request->req_blr, gen_blr, 0, 0))
 				{
-					IBERROR("internal error during parameter generation");
+					CPR_error("internal error during parameter generation");
 				}
 				break;
 
@@ -2887,14 +2879,14 @@ static void gen_request( GPRE_REQ request)
 				string_type = "dyn";
 				if (PRETTY_print_dyn(request->req_blr, gen_blr, 0, 0))
 				{
-					IBERROR("internal error during dynamic DDL generation");
+					CPR_error("internal error during dynamic DDL generation");
 				}
 				break;
 			case REQ_slice:
 				string_type = "sdl";
 				if (PRETTY_print_sdl(request->req_blr, gen_blr, 0, 0))
 				{
-					IBERROR("internal error during SDL generation");
+					CPR_error("internal error during SDL generation");
 				}
 				break;
 
@@ -2902,7 +2894,7 @@ static void gen_request( GPRE_REQ request)
 				string_type = "blr";
 				if (gds__print_blr(request->req_blr, gen_blr, 0, 0))
 				{
-					IBERROR("internal error during BLR generation");
+					CPR_error("internal error during BLR generation");
 				}
 			}
 		printa(INDENT, "};\t/* end of %s string for request isc_%d */\n",
@@ -2926,7 +2918,7 @@ static void gen_request( GPRE_REQ request)
 				else
 					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
 					{
-						IBERROR("internal error during SDL generation");
+						CPR_error("internal error during SDL generation");
 					}
 				printa(INDENT,
 					   "};\t/* end of sdl string for request isc_%d */\n",
@@ -3556,7 +3548,7 @@ static void make_array_declaration( REF reference)
 		break;
 
 	case dtype_long:
-		dtype = DCL_LONG;
+		dtype = const_cast<char*>(DCL_LONG);
 		break;
 
 	case dtype_cstring:
@@ -3566,7 +3558,7 @@ static void make_array_declaration( REF reference)
 		break;
 
 	case dtype_quad:
-		dtype = DCL_QUAD;
+		dtype = const_cast<char*>(DCL_QUAD);
 		break;
 
 // ** Begin date/time/timestamp *
@@ -3587,7 +3579,7 @@ static void make_array_declaration( REF reference)
 		dtype = "ISC_INT64";
 		break;
 
-	case dtype_float:
+	case dtype_real:
 		dtype = "float ";
 		break;
 
@@ -3598,7 +3590,7 @@ static void make_array_declaration( REF reference)
 	default:
 		sprintf(s, "datatype %d unknown for field %s",
 				field->fld_array_info->ary_dtype, name);
-		IBERROR(s);
+		CPR_error(s);
 		return;
 	}
 
@@ -3704,7 +3696,7 @@ static void make_port( POR port, int column)
 			break;
 
 		case dtype_long:
-			dtype = DCL_LONG;
+			dtype = const_cast<char*>(DCL_LONG);
 			break;
 
 		case dtype_cstring:
@@ -3715,7 +3707,7 @@ static void make_port( POR port, int column)
 			break;
 
 		case dtype_quad:
-			dtype = DCL_QUAD;
+			dtype = const_cast<char*>(DCL_QUAD);
 			break;
 
 // ** Begin date/time/timestamp *
@@ -3739,7 +3731,7 @@ static void make_port( POR port, int column)
 			dtype = "ISC_QUAD";
 			break;
 
-		case dtype_float:
+		case dtype_real:
 			dtype = "float ";
 			break;
 
@@ -3750,7 +3742,7 @@ static void make_port( POR port, int column)
 		default:
 			sprintf(s, "datatype %d unknown for field %s, msg %d",
 					field->fld_dtype, name, port->por_msg_number);
-			IBERROR(s);
+			CPR_error(s);
 			return;
 		}
 		if (fld_len)
@@ -3904,7 +3896,7 @@ static TEXT* status_vector( const act* action)
 	if (action && (action->act_error || (action->act_flags & ACT_sql)))
 		return status_name;
 
-	return NULL_STATUS;
+	return const_cast<char*>(NULL_STATUS);
 }
 
 

@@ -612,15 +612,8 @@ typedef tsql* TSQL;
 #endif
 
 #ifdef DEV_BUILD
-/* Verifies that a pointed to block matches the expected type.
- Useful to find coding errors & memory globbers.
-
-#define DEV_BLKCHK(blk, typ)	\
-	{ \
-	if ((blk) && (((BLK) (blk))->blk_type != (typ))) \
-	    ERRD_assert_msg (assert_blkchk_msg, assert_filename, (ULONG) __LINE__); \
-	}
-*/
+// Verifies that a pointed to block matches the expected type.
+// Useful to find coding errors & memory globbers.
 
 #define DEV_BLKCHK(blk, typ)	{						\
 		if ((blk) && MemoryPool::blk_type(blk) != (SSHORT)typ) {	\
@@ -638,19 +631,16 @@ typedef tsql* TSQL;
 
 // Define the assert_filename as a static variable to save on codespace
 
-#define	ASSERT_FILENAME static UCHAR assert_filename[] = __FILE__; 
-#define	ASSERT_BLKCHK_MSG static UCHAR assert_blkchk_msg[] = "Unexpected memory block type";	// NTX: dev
+static UCHAR assert_filename[] = __FILE__;
+static UCHAR assert_blkchk_msg[] = "Unexpected memory block type";	// NTX: dev
 
 #else // PROD_BUILD
 
-#define	ASSERT_FILENAME
-#define	ASSERT_BLKCHK_MSG
 #define DEV_BLKCHK(blk, typ)
 #define _assert(ex)
 #undef assert
 #define assert(ex)
 #define ASSERT_FAIL
-#define	ASSERT_FILENAME
 
 #endif // DEV_BUILD
 

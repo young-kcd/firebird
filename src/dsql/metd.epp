@@ -79,7 +79,6 @@ nested FOR loops are added.
     THREAD_ENTER;               // First statment after FOR loop 
 ***************************************************************/
 
-ASSERT_FILENAME 
 DATABASE DB = STATIC "yachts.lnk";
 
 static const UCHAR blr_bpb[] = { isc_bpb_version1,
