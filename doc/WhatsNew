@@ -1,5 +1,65 @@
 
   **************
+  * v1.5 Alpha 3
+  **************
+
+    * Fixed bug SF #558364.
+        Triggers fail to compile if PLAN used.
+      Note:
+        Now you can use plans in triggers.
+      Contributor(s):
+        Ignacio J. Ortega <nacho@siapi.es>
+        
+    * Fixed unregistered bug.
+        Distributed (2PC) transaction cannot be properly rolled back due to network errors.
+      Contributor(s):
+        Vlad Horsun <horsun@kdb.dp.ua>,
+        Erik Kunze <erik.kunze@philosys.de>
+
+    * Fixed Alpha 2 bug.
+        Possible buffer overrun if dynamic exception messages are used.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Alpha 2 bug.
+        Problem with sub-select and GROUP BY clause.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Alpha 2 bug.
+        The server hangs with a bugcheck #284 (cannot restore singleton select data).
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Generic cleanup.
+        ISC_STATUS_LENGTH and MAXPATHLEN macros.
+      Contributor(s):
+        Erik Kunze <erik.kunze@philosys.de>
+
+    * Fixed Alpha 2 bug.
+        Version information is missing in libraries and tools.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Alpha 2 bug.
+        Backported a few bits of FB1 code which have been lost.
+      Contributor(s):
+        Claudio Varderrama <cvalde@usa.net>,
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed bug SF #496784.
+        When optimizer find indexes for LEFT JOIN, work like INNER JOIN.
+      Note:
+        Fixed problem which caused complex outer joins to produce wrong	results.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed Alpha 2 bug.
+        Changes in aliases.conf are not applied until the server is restarted.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+  **************
   * v1.5 Alpha 2
   **************
 
@@ -19,7 +79,7 @@
         Nickolay Samofatov <skidder@bssys.com>
 
     * Fixed unregistered bug.
-        Check constraint which uses only one table field is now dropped automatically when this field is dropped
+        Check constraint which uses only one table field is now dropped automatically when this field is dropped.
       Contributor(s):
         Nickolay Samofatov <skidder@bssys.com>
 
