@@ -3001,6 +3001,7 @@ static void service_get(SVC		service,
 #endif
 #else
 	time(&start_time);
+#endif
 #endif /* NETWARE */
 	*return_length = 0;
 	service->svc_flags &= ~SVC_timeout;
