@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.31 2004-11-08 03:14:17 robocop Exp $
+$Id: utld.cpp,v 1.32 2004-12-12 01:58:43 robocop Exp $
 */
 
 #include "firebird.h"
@@ -257,12 +257,10 @@ ISC_STATUS	UTLD_parse_sqlda(
 				XSQLDA* xsqlda,
 				const USHORT clause)
 {
-	USHORT i, n, blr_len, par_count, dtype, msg_len, len, align,
-		null_offset;
+	USHORT n;
 	XSQLVAR *xvar, xsqlvar;
 	SQLDA* sqlda;
 	SQLVAR* qvar;
-	//BLOB_PTR *p;				// one huge pointer per line for LIBS 
 
 	if (!xsqlda)
 		n = 0;
@@ -297,6 +295,8 @@ ISC_STATUS	UTLD_parse_sqlda(
 		return 0;
 	}
 
+	USHORT i;
+
 	if (msg_length)
 	{
 		/* This is a call from execute or open, or the first call from fetch.
@@ -312,8 +312,8 @@ ISC_STATUS	UTLD_parse_sqlda(
 		/* Make a quick pass through the SQLDA to determine the amount of
 		   blr that will be generated. */
 
-		blr_len = 8;
-		par_count = 0;
+		USHORT blr_len = 8;
+		USHORT par_count = 0;
 		if (xsqlda)
 			xvar = xsqlda->sqlvar - 1;
 		else
@@ -326,7 +326,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 				qvar++;
 				sqlvar_to_xsqlvar(qvar, xvar);
 			}
-			dtype = xvar->sqltype & ~1;
+			const USHORT dtype = xvar->sqltype & ~1;
 			if (dtype == SQL_VARYING || dtype == SQL_TEXT)
 				blr_len += 3;
 			else
@@ -400,7 +400,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 		ch_stuff(p, blr_message, same_flag);
 		ch_stuff(p, 0, same_flag);
 		ch_stuff_word(p, par_count, same_flag);
-		msg_len = 0;
+		USHORT msg_len = 0;
 		if (xsqlda)
 			xvar = xsqlda->sqlvar - 1;
 		else
@@ -414,8 +414,8 @@ ISC_STATUS	UTLD_parse_sqlda(
 				qvar++;
 				sqlvar_to_xsqlvar(qvar, xvar);
 			}
-			dtype = xvar->sqltype & ~1;
-			len = xvar->sqllen;
+			USHORT dtype = xvar->sqltype & ~1;
+			USHORT len = xvar->sqllen;
 			switch (dtype)
 			{
 			case SQL_VARYING:
@@ -490,7 +490,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 			ch_stuff(p, blr_short, same_flag);
 			ch_stuff(p, 0, same_flag);
 
-			align = type_alignments[dtype];
+			USHORT align = type_alignments[dtype];
 			if (align)
 				msg_len = FB_ALIGN(msg_len, align);
 			msg_len += len;
@@ -550,8 +550,8 @@ ISC_STATUS	UTLD_parse_sqlda(
 			qvar++;
 			sqlvar_to_xsqlvar(qvar, xvar);
 		}
-		dtype = xvar->sqltype & ~1;
-		len = xvar->sqllen;
+		USHORT dtype = xvar->sqltype & ~1;
+		USHORT len = xvar->sqllen;
 		switch (dtype)
 		{
 		case SQL_VARYING:
@@ -598,10 +598,10 @@ ISC_STATUS	UTLD_parse_sqlda(
 			dtype = dtype_quad;
 		}
 
-		align = type_alignments[dtype];
+		USHORT align = type_alignments[dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);
-		null_offset = offset + len;
+		USHORT null_offset = offset + len;
 
 		align = type_alignments[dtype_short];
 		if (align)
