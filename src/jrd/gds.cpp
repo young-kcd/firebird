@@ -341,14 +341,14 @@ static char ib_prefix_msg_val[MAXPATHLEN];
 #include "../include/fb_types.h"
 #endif
 
-typedef struct msg
+typedef struct gds_msg
 {
 	ULONG msg_top_tree;
 	int msg_file;
 	USHORT msg_bucket_size;
 	USHORT msg_levels;
 	SCHAR msg_bucket[1];
-} *MSG;
+} *GDS_MSG;
 
 typedef struct ctl
 {
@@ -409,7 +409,7 @@ typedef struct clean
 static CLEAN	cleanup_handlers = NULL;
 static FREE		pool = NULL;
 static void**	malloced_memory = NULL;
-static MSG		default_msg = NULL;
+static GDS_MSG		default_msg = NULL;
 static SLONG	initialized = FALSE;
 static MUTX_T	alloc_mutex;
 
@@ -1943,7 +1943,7 @@ int API_ROUTINE gds__msg_close(void *handle)
  *
  **************************************/
 
-	MSG message = reinterpret_cast < MSG > (handle);
+	GDS_MSG message = reinterpret_cast < GDS_MSG > (handle);
 
 	if (!message) {
 		if (!default_msg) {
@@ -1952,7 +1952,7 @@ int API_ROUTINE gds__msg_close(void *handle)
 		message = default_msg;
 	}
 
-	default_msg = (MSG) NULL;
+	default_msg = (GDS_MSG) NULL;
 
 	int fd = message->msg_file;
 
@@ -2065,7 +2065,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void *handle,
  *	number if we can't find the message.
  *
  **************************************/
-	MSG message;
+	GDS_MSG message;
 	int status;
 	USHORT n;
 	MSGREC leaf;
@@ -2075,7 +2075,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void *handle,
 
 /* Handle default message file */
 
-	if (!(message = (MSG) handle) && !(message = default_msg)) {
+	if (!(message = (GDS_MSG) handle) && !(message = default_msg)) {
 		/* Try environment variable setting first */
 
 		if ((p = getenv("ISC_MSGS")) == NULL ||
@@ -2190,7 +2190,7 @@ int API_ROUTINE gds__msg_open(void **handle, TEXT * filename)
  *
  **************************************/
 	int n;
-	MSG message;
+	GDS_MSG message;
 	ISC_MSGHDR header;
 
 	if ((n = open(filename, O_RDONLY | O_BINARY, 0)) < 0)
@@ -2208,7 +2208,7 @@ int API_ROUTINE gds__msg_open(void **handle, TEXT * filename)
 	}
 
 	message =
-		(MSG) ALLOC_LIB_MEMORY((SLONG) sizeof(struct msg) +
+		(GDS_MSG) ALLOC_LIB_MEMORY((SLONG) sizeof(gds_msg) +
 							   header.msghdr_bucket_size - 1);
 /* FREE: in gds__msg_close */
 	if (!message) {				/* NOMEM: return non-open error */
