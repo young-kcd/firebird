@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.31 2004-04-29 17:47:43 brodsom Exp $
+//	$Id: cmd.cpp,v 1.32 2004-04-30 22:41:33 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -34,7 +34,6 @@
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
-//#include "../jrd/constants.h"
 #include "../gpre/cmd_proto.h"
 #include "../gpre/cme_proto.h"
 #include "../gpre/cmp_proto.h"

@@ -46,13 +46,13 @@
 
 /* ODS major version -- major versions are not compatible */
 
-#define ODS_VERSION6 	6		/* on-disk structure as of v3.0 */
-#define ODS_VERSION7	7		/* new on disk structure for fixing index bug */
-#define ODS_VERSION8	8		/* new btree structure to support pc semantics */
-#define ODS_VERSION9	9		/* btree leaf pages are always propogated up */
-#define ODS_VERSION10	10		/* V6.0 features. SQL delimited idetifier,
-								   SQLDATE, and 64-bit exact numeric type */
-#define ODS_VERSION11   11      /* Firebird 2.0 features */
+const int ODS_VERSION6	= 6;		/* on-disk structure as of v3.0 */
+const int ODS_VERSION7	= 7;		/* new on disk structure for fixing index bug */
+const int ODS_VERSION8	= 8;		/* new btree structure to support pc semantics */
+const int ODS_VERSION9	= 9;		/* btree leaf pages are always propogated up */
+const int ODS_VERSION10	= 10;		/* V6.0 features. SQL delimited idetifier,
+									SQLDATE, and 64-bit exact numeric type */
+const int ODS_VERSION11	= 11;		/* Firebird 2.0 features */
 
 /* ODS minor version -- minor versions ARE compatible, but may be
    increasingly functional.  Add new minor versions, but leave previous
@@ -60,41 +60,41 @@
 
 /* Minor versions for ODS 6 */
 
-#define ODS_GRANT6	1			/* adds fields for field level grant */
-#define ODS_INTEGRITY6	2		/* adds fields for referential integrity */
-#define ODS_FUNCTIONS6	3		/* modifies type of RDB$MODULE_NAME field */
-#define ODS_SQLNAMES6	4		/* permits SQL security on > 27 SCHAR names */
-#define ODS_CURRENT6	4
+const int ODS_GRANT6		= 1;		/* adds fields for field level grant */
+const int ODS_INTEGRITY6	= 2;		/* adds fields for referential integrity */
+const int ODS_FUNCTIONS6	= 3;		/* modifies type of RDB$MODULE_NAME field */
+const int ODS_SQLNAMES6		= 4;		/* permits SQL security on > 27 SCHAR names */
+const int ODS_CURRENT6		= 4;
 
 /* Minor versions for ODS 7 */
 
-#define ODS_FUNCTIONS7	1		/* modifies type of RDB$MODULE_NAME field */
-#define ODS_SQLNAMES7	2		/* permits SQL security on > 27 SCHAR names */
-#define ODS_CURRENT7	2
+const int ODS_FUNCTIONS7	= 1;		/* modifies type of RDB$MODULE_NAME field */
+const int ODS_SQLNAMES7		= 2;		/* permits SQL security on > 27 SCHAR names */
+const int ODS_CURRENT7		= 2;
 
 /* Minor versions for ODS 8 */
 
-#define ODS_CASCADE_RI8	1		/* permits cascading referential integrity */
+const int ODS_CASCADE_RI8	= 1;		/* permits cascading referential integrity */
 				/* ODS 8.2 is the same as ODS 8.1 */
-#define ODS_CURRENT8	2
+const int ODS_CURRENT8		= 2;
 
 /* Minor versions for ODS 9 */
 
-#define ODS_CURRENT_9_0	0		/* SQL roles & Index garbage collection */
-#define ODS_SYSINDEX9	1		/* Index on RDB$CHECK_CONSTRAINTS (RDB$TRIGGER_NAME) */
-#define ODS_CURRENT9	1
+const int ODS_CURRENT_9_0	= 0;		/* SQL roles & Index garbage collection */
+const int ODS_SYSINDEX9		= 1;		/* Index on RDB$CHECK_CONSTRAINTS (RDB$TRIGGER_NAME) */
+const int ODS_CURRENT9		= 1;
 
 /* Minor versions for ODS 10 */
 
-#define ODS_CURRENT10_0	0		/* V6.0 features. SQL delimited identifier,
-								   SQLDATE, and 64-bit exact numeric type */
-#define ODS_SYSINDEX10	1		/* New system indices */
-#define ODS_CURRENT10	1
+const int ODS_CURRENT10_0	= 0;		/* V6.0 features. SQL delimited identifier,
+										SQLDATE, and 64-bit exact numeric type */
+const int ODS_SYSINDEX10	= 1;		/* New system indices */
+const int ODS_CURRENT10		= 1;
 
 /* Minor versions for ODS 11 */
 
-#define ODS_CURRENT11_0	0		/* Firebird 2.0 features. */
-#define ODS_CURRENT11	0
+const int ODS_CURRENT11_0	= 0;		/* Firebird 2.0 features. */
+const int ODS_CURRENT11		= 0;
 
 /* useful ODS macros. These are currently used to flag the version of the
    system triggers and system indices in ini.e */
@@ -115,40 +115,40 @@
 
 /* Set current ODS major and minor version */
 
-#define ODS_VERSION	ODS_VERSION11	/* current ods major version -- always 
-									   the highest */
-#define ODS_CURRENT	ODS_CURRENT11	/* the highest defined minor version
-									   number for this ODS_VERSION!! */
-#define ODS_CURRENT_VERSION	ODS_11_0	/* Current ODS version in use which includes 
-										   both Major and Minor ODS versions! */
+const int ODS_VERSION	= ODS_VERSION11;	/* current ods major version -- always 
+											the highest */
+const int ODS_CURRENT	= ODS_CURRENT11;	/* the highest defined minor version
+											number for this ODS_VERSION!! */
+const int ODS_CURRENT_VERSION	= ODS_11_0;		/* Current ODS version in use which includes 
+												both Major and Minor ODS versions! */
 
 
-#define USER_REL_INIT_ID_ODS8   31	/* ODS <= 8 */
-#define USER_DEF_REL_INIT_ID   128	/* ODS >= 9 */
+const int USER_REL_INIT_ID_ODS8		= 31;	/* ODS <= 8 */
+const int USER_DEF_REL_INIT_ID		= 128;	/* ODS >= 9 */
 
 
 /* Page types */
 
-#define pag_undefined	0
-#define pag_header	1			/* Database header page */
-#define pag_pages	2			/* Page inventory page */
-#define pag_transactions 3		/* Transaction inventory page */
-#define pag_pointer	4			/* Pointer page */
-#define pag_data	5			/* Data page */
-#define pag_root	6			/* Index root page */
-#define pag_index	7			/* Index (B-tree) page */
-#define pag_blob	8			/* Blob data page */
-#define pag_ids		9			/* Gen-ids */
-#define pag_log		10			/* Write ahead log information */
-#define pag_max		10			/* Max page type */
+const int pag_undefined		= 0;
+const int pag_header		= 1;		/* Database header page */
+const int pag_pages			= 2;		/* Page inventory page */
+const int pag_transactions	= 3;		/* Transaction inventory page */
+const int pag_pointer		= 4;		/* Pointer page */
+const int pag_data			= 5;		/* Data page */
+const int pag_root			= 6;		/* Index root page */
+const int pag_index			= 7;		/* Index (B-tree) page */
+const int pag_blob			= 8;		/* Blob data page */
+const int pag_ids			= 9;		/* Gen-ids */
+const int pag_log			= 10;		/* Write ahead log information */
+const int pag_max			= 10;		/* Max page type */
 
-#define HEADER_PAGE	0
-#define LOG_PAGE        2
+const int HEADER_PAGE		= 0;
+const int LOG_PAGE			= 2;
 
-#define MIN_PAGE_SIZE	1024
+const int MIN_PAGE_SIZE		= 1024;
 
-#define MAX_PAGE_SIZE		16384
-#define DEFAULT_PAGE_SIZE	4096
+const int MAX_PAGE_SIZE		= 16384;
+const int DEFAULT_PAGE_SIZE	= 4096;
 
 namespace Ods {
 
@@ -178,9 +178,9 @@ struct blob_page : public pag
 	SLONG blp_page[1];			/* Page number if level 1 */
 };
 
-#define BLP_SIZE	OFFSETA (Ods::blob_page*, blp_page)
+#define BLP_SIZE	OFFSETA(Ods::blob_page*, blp_page)
 
-#define blp_pointers	1		/* Blob pointer page, not data page */
+const int blp_pointers	= 1;		/* Blob pointer page, not data page */
 
 
 /* B-tree node */
@@ -193,7 +193,7 @@ struct btree_nod
 	UCHAR btn_data[1];
 };
 
-#define BTN_SIZE	6
+const int BTN_SIZE	= 6;
 
 // B-tree page ("bucket")
 struct btree_page : public pag
@@ -210,8 +210,8 @@ struct btree_page : public pag
 };
 
 // Firebird B-tree nodes
-#define BTN_LEAF_SIZE	6
-#define BTN_PAGE_SIZE	10
+const int BTN_LEAF_SIZE	= 6;
+const int BTN_PAGE_SIZE	= 10;
 
 struct IndexNode
 {
@@ -240,14 +240,14 @@ struct IndexJumpInfo {
 	UCHAR  jumpers;				// nr of jump-nodes in page, with a maximum of 255
 };
 
-#define btr_dont_gc				1	// Don't garbage-collect this page
-#define btr_not_propogated		2	// page is not propogated upward
-#define btr_descending  		8	// Page/bucket is part of a descending index
-#define btr_all_record_number	16	// Non-leaf-nodes will contain record number information
-#define btr_large_keys			32	// AB: 2003-index-structure enhancement
-#define btr_jump_info			64	// AB: 2003-index-structure enhancement
+const int btr_dont_gc			= 1;	// Don't garbage-collect this page
+const int btr_not_propogated	= 2;	// page is not propogated upward
+const int btr_descending		= 8;	// Page/bucket is part of a descending index
+const int btr_all_record_number	= 16;	// Non-leaf-nodes will contain record number information
+const int btr_large_keys		= 32;	// AB: 2003-index-structure enhancement
+const int btr_jump_info			= 64;	// AB: 2003-index-structure enhancement
 
-#define BTR_FLAG_COPY_MASK (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info)
+const int BTR_FLAG_COPY_MASK = (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info);
 
 /* Data Page */
 
@@ -265,9 +265,9 @@ struct data_page : public pag
 
 #define DPG_SIZE	(sizeof (Ods::data_page) - sizeof (Ods::data_page::dpg_repeat))
 
-#define dpg_orphan	1			/* Data page is NOT in pointer page */
-#define dpg_full	2			/* Pointer page is marked FULL */
-#define dpg_large	4			/* Large object is on page */
+const int dpg_orphan	= 1;		/* Data page is NOT in pointer page */
+const int dpg_full		= 2;		/* Pointer page is marked FULL */
+const int dpg_large		= 4;		/* Large object is on page */
 
 
 /* Index root page */
@@ -300,16 +300,16 @@ typedef struct irtd : public irtd_ods10 {
 	float irtd_selectivity;
 } IRTD;
 
-#define irt_unique	1
-#define irt_descending	2
-#define irt_in_progress	4
-#define irt_foreign	8
-#define irt_primary	16
-#define irt_expression	32
+const int irt_unique		= 1;
+const int irt_descending	= 2;
+const int irt_in_progress	= 4;
+const int irt_foreign		= 8;
+const int irt_primary		= 16;
+const int irt_expression	= 32;
 
-#define STUFF_COUNT	4
-#define END_LEVEL	-1
-#define END_BUCKET	-2
+const int STUFF_COUNT		= 4;
+const int END_LEVEL			= -1;
+const int END_BUCKET		= -2;
 
 /* Header page */
 
@@ -340,7 +340,7 @@ struct header_page : public pag
 	UCHAR hdr_data[1];			/* Misc data */
 };
 
-#define HDR_SIZE        OFFSETA (Ods::header_page*, hdr_data)
+#define HDR_SIZE	OFFSETA (Ods::header_page*, hdr_data)
 
 /* Header page clumplets */
 
@@ -349,43 +349,43 @@ struct header_page : public pag
 	<type_byte> <length_byte> <data...>
 */
 
-#define HDR_end			0
-#define HDR_root_file_name	1	/* Original name of root file */
-#define HDR_journal_server	2	/* Name of journal server */
-#define HDR_file		3		/* Secondary file */
-#define HDR_last_page		4	/* Last logical page number of file */
-#define HDR_unlicensed		5	/* Count of unlicensed activity */
-#define HDR_sweep_interval	6	/* Transactions between sweeps */
-#define HDR_log_name		7	/* replay log name */
-#define HDR_journal_file	8	/* Intermediate journal file */
-#define	HDR_password_file_key	9	/* Key to compare to password db */
-#define HDR_backup_info         10	/* WAL backup information */
-#define HDR_cache_file		11	/* Shared cache file */
-#define HDR_difference_file 12  /* Delta file that is used during backup lock */
-#define HDR_backup_guid     13  /* UID generated on each switch into backup mode */
-#define HDR_max			14		/* Maximum HDR_clump value */
+const int HDR_end				= 0;
+const int HDR_root_file_name	= 1;	/* Original name of root file */
+const int HDR_journal_server	= 2;	/* Name of journal server */
+const int HDR_file				= 3;	/* Secondary file */
+const int HDR_last_page			= 4;	/* Last logical page number of file */
+const int HDR_unlicensed		= 5;	/* Count of unlicensed activity */
+const int HDR_sweep_interval	= 6;	/* Transactions between sweeps */
+const int HDR_log_name			= 7;	/* replay log name */
+const int HDR_journal_file		= 8;	/* Intermediate journal file */
+const int HDR_password_file_key	= 9;	/* Key to compare to password db */
+const int HDR_backup_info		= 10;	/* WAL backup information */
+const int HDR_cache_file		= 11;	/* Shared cache file */
+const int HDR_difference_file	= 12;	/* Delta file that is used during backup lock */
+const int HDR_backup_guid		= 13;	/* UID generated on each switch into backup mode */
+const int HDR_max				= 14;	/* Maximum HDR_clump value */
 
 /* Header page flags */
 
-#define hdr_active_shadow	0x1	/* 1    file is an active shadow file */
-#define hdr_force_write		0x2	/* 2    database is forced write */
-#define hdr_short_journal	0x4	/* 4    short-term journalling */
-#define hdr_long_journal	0x8	/* 8    long-term journalling */
-#define hdr_no_checksums	0x10	/* 16   don't calculate checksums */
-#define hdr_no_reserve		0x20	/* 32   don't reserve space for versions */
-#define hdr_disable_cache	0x40	/* 64   disable using shared cache file */
-//#define hdr_shutdown		0x80	/* 128  database is shutdown */
-#define hdr_SQL_dialect_3	0x100	/* 256  database SQL dialect 3 */
-#define hdr_read_only		0x200	/* 512  Database in ReadOnly. If not set, DB is RW */
+const int hdr_active_shadow		= 0x1;	/* 1    file is an active shadow file */
+const int hdr_force_write		= 0x2;	/* 2    database is forced write */
+const int hdr_short_journal		= 0x4;	/* 4    short-term journalling */
+const int hdr_long_journal		= 0x8;	/* 8    long-term journalling */
+const int hdr_no_checksums		= 0x10;	/* 16   don't calculate checksums */
+const int hdr_no_reserve		= 0x20;	/* 32   don't reserve space for versions */
+const int hdr_disable_cache		= 0x40;	/* 64   disable using shared cache file */
+//const int hdr_shutdown		= 0x80;	/* 128  database is shutdown */
+const int hdr_SQL_dialect_3		= 0x100;	/* 256  database SQL dialect 3 */
+const int hdr_read_only			= 0x200;	/* 512  Database in ReadOnly. If not set, DB is RW */
 /* backup status mask - see bit values in nbak.h */
-#define hdr_backup_mask		0xC00
-#define hdr_shutdown_mask	0x1080
+const int hdr_backup_mask		= 0xC00;
+const int hdr_shutdown_mask		= 0x1080;
 
 // Values for shutdown mask
-#define hdr_shutdown_none  0x0
-#define hdr_shutdown_multi 0x80
-#define hdr_shutdown_full 0x1000
-#define hdr_shutdown_single 0x1080
+const int hdr_shutdown_none		= 0x0;
+const int hdr_shutdown_multi	= 0x80;
+const int hdr_shutdown_full		= 0x1000;
+const int hdr_shutdown_single	= 0x1080;
 
 /*
 typedef struct sfd {
@@ -420,9 +420,7 @@ struct pointer_page : public pag
 	SLONG ppg_page[1];			/* Data page vector */
 };
 
-#define ppg_bits	ppg_page
-
-#define ppg_eof		1			/* Last pointer page in relation */
+const int ppg_eof		= 1;			/* Last pointer page in relation */
 
 /* Transaction Inventory Page */
 
@@ -492,19 +490,18 @@ typedef struct blh {
 	SLONG blh_page[1];			/* Page vector for blob pages */
 } *BLH;
 
-#define blh_data	blh_page
 #define BLH_SIZE	OFFSETA (Ods::blh*, blh_page)
 
-#define rhd_deleted	1			/* record is logically deleted */
-#define rhd_chain	2			/* record is an old version */
-#define rhd_fragment	4		/* record is a fragment */
-#define rhd_incomplete	8		/* record is incomplete */
-#define rhd_blob	16			/* isn't a record but a blob */
-#define rhd_stream_blob	32		/* blob is a stream mode blob */
-#define rhd_delta	32			/* prior version is differences only */
-#define rhd_large	64			/* object is large */
-#define rhd_damaged	128			/* object is known to be damaged */
-#define rhd_gc_active	256		/* garbage collecting dead record version */
+const int rhd_deleted		= 1;		/* record is logically deleted */
+const int rhd_chain			= 2;		/* record is an old version */
+const int rhd_fragment		= 4;		/* record is a fragment */
+const int rhd_incomplete	= 8;		/* record is incomplete */
+const int rhd_blob			= 16;		/* isn't a record but a blob */
+const int rhd_stream_blob	= 32;		/* blob is a stream mode blob */
+const int rhd_delta			= 32;		/* prior version is differences only */
+const int rhd_large			= 64;		/* object is large */
+const int rhd_damaged		= 128;		/* object is known to be damaged */
+const int rhd_gc_active		= 256;		/* garbage collecting dead record version */
 
 
 /* Log page */
@@ -532,27 +529,27 @@ struct log_info_page : public pag
 	UCHAR log_data[1];
 };
 
-#define LIP_SIZE	OFFSETA (Ods::log_info_page*, log_data);
+#define LIP_SIZE	OFFSETA (Ods::log_info_page*, log_data)
 
 /* additions for write ahead log, almost obsolete. */
 
-//#define CTRL_FILE_LEN		255	/* Pre allocated size of file name */
-#define CLUMP_ADD		0
-#define CLUMP_REPLACE		1
-#define CLUMP_REPLACE_ONLY	2
+//const int CTRL_FILE_LEN		= 255;	/* Pre allocated size of file name */
+const int CLUMP_ADD			= 0;
+const int CLUMP_REPLACE		= 1;
+const int CLUMP_REPLACE_ONLY= 2;
 
 /* Log Clumplet types */
 
-#define LOG_end			HDR_end
-//#define LOG_ctrl_file1		1	/* file name of 2nd last control pt */
-//#define LOG_ctrl_file2		2	/* file name of last ctrl pt */
-//#define LOG_logfile		3		/* Primary WAL file name */
-//#define LOG_backup_info		4	/* Journal backup directory */
-//#define LOG_chkpt_len		5	/* checkpoint length */
-//#define LOG_num_bufs		6	/* Number of log buffers */
-//#define LOG_bufsize		7		/* Buffer size */
-//#define LOG_grp_cmt_wait	8	/* Group commit wait time */
-#define LOG_max			8		/* Maximum LOG_clump value */
+const int LOG_end			= HDR_end;
+//const int LOG_ctrl_file1		1	/* file name of 2nd last control pt */
+//const int LOG_ctrl_file2		2	/* file name of last ctrl pt */
+//const int LOG_logfile			3	/* Primary WAL file name */
+//const int LOG_backup_info		4	/* Journal backup directory */
+//const int LOG_chkpt_len		5	/* checkpoint length */
+//const int LOG_num_bufs		6	/* Number of log buffers */
+//const int LOG_bufsize			7	/* Buffer size */
+//const int LOG_grp_cmt_wait	8	/* Group commit wait time */
+const int LOG_max			= 8;	/* Maximum LOG_clump value */
 
 } //namespace Jrd
 

@@ -62,7 +62,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/rng.h"
 #include "../jrd/btr.h"
-#include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cmp_proto.h"

@@ -1042,7 +1042,7 @@ static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_le
 						isc_arg_string, ERR_string (file_name, file_length),
 						isc_arg_gds, isc_io_read_err,
 						isc_arg_unix, errno, 0);
-				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
+				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name, file_length), 0);
 				dbb->dbb_file = NULL; // Will be set again later by the caller				
 			} catch(const std::exception&) {

@@ -249,18 +249,18 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
-	header->hdr_flags &= ~hdr_shutdown_mask;
+	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
 	switch(flag & isc_dpb_shut_mode_mask) {
 	case isc_dpb_shut_normal:
 		break;
 	case isc_dpb_shut_multi:
-		header->hdr_flags |= hdr_shutdown_multi;
+		header->hdr_flags |= Ods::hdr_shutdown_multi;
 		break;
 	case isc_dpb_shut_single:
-		header->hdr_flags |= hdr_shutdown_single;
+		header->hdr_flags |= Ods::hdr_shutdown_single;
 		break;
 	case isc_dpb_shut_full:
-		header->hdr_flags |= hdr_shutdown_full;
+		header->hdr_flags |= Ods::hdr_shutdown_full;
 		break;
 	}
 	CCH_RELEASE(tdbb, &window);
@@ -358,18 +358,18 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
-	header->hdr_flags &= ~hdr_shutdown_mask;
+	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
 	switch(shut_mode) {
 	case isc_dpb_shut_normal:
 		break;
 	case isc_dpb_shut_multi:
-		header->hdr_flags |= hdr_shutdown_multi;
+		header->hdr_flags |= Ods::hdr_shutdown_multi;
 		break;
 	case isc_dpb_shut_single:
-		header->hdr_flags |= hdr_shutdown_single;
+		header->hdr_flags |= Ods::hdr_shutdown_single;
 		break;
 	case isc_dpb_shut_full:
-		header->hdr_flags |= hdr_shutdown_full;
+		header->hdr_flags |= Ods::hdr_shutdown_full;
 		break;
 	}
 	CCH_RELEASE(tdbb, &window);

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.72 2004-04-29 17:48:39 brodsom Exp $
+$Id: ibase.h,v 1.73 2004-04-30 22:45:38 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -72,10 +72,6 @@ typedef	signed short	ISC_SHORT;
 typedef	unsigned short	ISC_USHORT;
 
 typedef	unsigned char	ISC_UCHAR;
-
-#define  DSQL_close     1
-#define  DSQL_drop      2
-
 
 /********************************/
 /* InterBase Handle Definitions */
@@ -305,43 +301,11 @@ typedef struct paramvary {
 /* Dynamic SQL definitions */
 /***************************/
 
-/******************************/
-/* Declare the extended SQLDA */
-/******************************/
+#include "../dsql/sqlda_pub.h"
 
-#ifndef FB_SQLDA
-
-typedef struct
-{
-	short			sqltype;			/* datatype of field */
-	short			sqlscale;			/* scale factor */
-	short			sqlsubtype;			/* datatype subtype - BLOBs & Text types only */
-	short			sqllen;				/* length of data area */
-	char *			sqldata;			/* address of data */
-	short *			sqlind;				/* address of indicator variable */
-	short			sqlname_length;		/* length of sqlname field */
-	char			sqlname[32];		/* name of field, name length + space for NULL */
-	short			relname_length;		/* length of relation name */
-	char			relname[32];		/* field's relation name + space for NULL */
-	short			ownname_length;		/* length of owner name */
-	char			ownname[32];		/* relation's owner name + space for  NULL */
-	short			aliasname_length;	/* length of alias name */
-	char			aliasname[32];		/* relation's alias name + space for NULL */
-} XSQLVAR;
-
-typedef struct
-{
-	short		version;			/* version of this XSQLDA */
-	char		sqldaid[8];			/* XSQLDA name field */
-	ISC_LONG	sqldabc;			/* length in bytes of SQLDA */
-	short		sqln;				/* number of fields allocated */
-	short		sqld;				/* actual number of fields */
-	XSQLVAR		sqlvar[1];			/* first field address */
-} XSQLDA;
-
-#define XSQLDA_LENGTH(n)	(sizeof (XSQLDA) + ((n)-1) * sizeof (XSQLVAR))
-
-#define SQLDA_VERSION1				1
+/***************************/
+/* SQL Dialects            */
+/***************************/
 
 #define SQL_DIALECT_V5				1	/* meaning is same as DIALECT_xsqlda */
 #define SQL_DIALECT_V6_TRANSITION	2	/* flagging anything that is delimited
@@ -354,9 +318,6 @@ typedef struct
 										   numeric type */
 #define SQL_DIALECT_CURRENT		SQL_DIALECT_V6	/* latest IB DIALECT */
 
-
-#define FB_SQLDA
-#endif
 
 /***************************/
 /* OSRI database functions */
@@ -2333,28 +2294,6 @@ enum info_db_provider
 #define isc_interp_eng_ascii              0
 #define isc_interp_jpn_sjis               5
 #define isc_interp_jpn_euc                6
-
-/*******************/
-/* SQL definitions */
-/*******************/
-
-#define SQL_TEXT                           452
-#define SQL_VARYING                        448
-#define SQL_SHORT                          500
-#define SQL_LONG                           496
-#define SQL_FLOAT                          482
-#define SQL_DOUBLE                         480
-#define SQL_D_FLOAT                        530
-#define SQL_TIMESTAMP                      510
-#define SQL_BLOB                           520
-#define SQL_ARRAY                          540
-#define SQL_QUAD                           550
-#define SQL_TYPE_TIME			   560
-#define SQL_TYPE_DATE                      570
-#define SQL_INT64			   580
-
-/* Historical alias for pre V6 applications */
-#define SQL_DATE			SQL_TIMESTAMP
 
 /*****************/
 /* Blob Subtypes */

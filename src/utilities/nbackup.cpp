@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.22 2004-03-20 15:45:09 alexpeshkoff Exp $
+ *  $Id: nbackup.cpp,v 1.23 2004-04-30 22:47:16 brodsom Exp $
  *
  */
  
@@ -377,10 +377,10 @@ void nbackup::fixup_database()
 	Ods::header_page header;
 	if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 		b_error::raise("Unexpected end of database file", errno);
-	const int backup_state = header.hdr_flags & hdr_backup_mask;
+	const int backup_state = header.hdr_flags & Ods::hdr_backup_mask;
 	if (backup_state != nbak_state_stalled)	
 		b_error::raise("Database is not in state (%d) to be safely fixed up", backup_state);
-	header.hdr_flags = (header.hdr_flags & ~hdr_backup_mask) | nbak_state_normal;
+	header.hdr_flags = (header.hdr_flags & ~Ods::hdr_backup_mask) | nbak_state_normal;
 	seek_file(dbase, 0);
 	write_file(dbase, &header, sizeof(header));	
 	close_database();
@@ -572,7 +572,7 @@ void nbackup::backup_database(int level, const char* fname)
 		Ods::header_page header;	
 		if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 			b_error::raise("Unexpected end of file when reading header of database file");
-		if ((header.hdr_flags & hdr_backup_mask) != nbak_state_stalled)
+		if ((header.hdr_flags & Ods::hdr_backup_mask) != nbak_state_stalled)
 		{
 			b_error::raise("Internal error. Database file is not locked. Flags are %d",
 				header.hdr_flags);
@@ -590,13 +590,13 @@ void nbackup::backup_database(int level, const char* fname)
 		const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buff)->hdr_data;
 		while (true) {
 			switch(*p) {
-			case HDR_backup_guid:
+			case Ods::HDR_backup_guid:
 				if (p[1] != sizeof(FB_GUID))
 					break;
 				memcpy(&backup_guid, p + 2, sizeof(FB_GUID));
 				guid_found = 1;
 				break;
-			case HDR_difference_file:
+			case Ods::HDR_difference_file:
 				p += p[1] + 2;
 				continue;
 			}
@@ -841,13 +841,13 @@ void nbackup::restore_database(int filecount, const char* const* files)
 				const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buffer)->hdr_data;
 				while (true) {
 					switch(*p) {
-					case HDR_backup_guid:
+					case Ods::HDR_backup_guid:
 						if (p[1] != sizeof(FB_GUID))
 							break;
 						memcpy(&prev_guid, p + 2, sizeof(FB_GUID));
 						guid_found = 1;
 						break;
-					case HDR_difference_file:
+					case Ods::HDR_difference_file:
 						p += p[1] + 2;
 						continue;
 					}

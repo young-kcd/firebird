@@ -45,7 +45,6 @@
 
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/constants.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"

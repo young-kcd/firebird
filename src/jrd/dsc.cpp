@@ -30,7 +30,6 @@
 #include "../jrd/dsc.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../jrd/constants.h"
 #include "../jrd/intl.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"

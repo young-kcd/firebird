@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.28 2004-04-28 21:56:47 brodsom Exp $
+$Id: utld.cpp,v 1.29 2004-04-30 22:40:46 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -38,7 +38,6 @@ $Id: utld.cpp,v 1.28 2004-04-28 21:56:47 brodsom Exp $
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda.h"
-#include "../jrd/blr.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../dsql/utld_proto.h"

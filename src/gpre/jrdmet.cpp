@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.15 2004-04-29 17:47:43 brodsom Exp $
+//	$Id: jrdmet.cpp,v 1.16 2004-04-30 22:41:33 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -36,7 +36,6 @@
 #include "../jrd/ods.h"
 
 #include "../gpre/gpre.h"
-#include "../jrd/constants.h"
 #define GPRE
 #include "../jrd/ini.h"
 #undef GPRE

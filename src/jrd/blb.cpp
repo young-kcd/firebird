@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.71 2004-04-29 17:48:39 brodsom Exp $
+$Id: blb.cpp,v 1.72 2004-04-30 22:45:39 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -55,8 +55,6 @@ $Id: blb.cpp,v 1.71 2004-04-29 17:48:39 brodsom Exp $
 #include "../jrd/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/cch.h"
-//#include "../jrd/common.h"
-#include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
@@ -2191,7 +2189,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 
 		blob->blb_level = 2;
 		page = (blob_page*) DPM_allocate(tdbb, &window);
-		page->pag_flags = blp_pointers;
+		page->pag_flags = Ods::blp_pointers;
 		page->pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
 		page->blp_length = vector->count() << SHIFTLONG;
@@ -2213,7 +2211,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	}
 	else {
 		page = (blob_page*) DPM_allocate(tdbb, &window);
-		page->pag_flags = blp_pointers;
+		page->pag_flags = Ods::blp_pointers;
 		page->pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
 		vector->resize(l + 1);

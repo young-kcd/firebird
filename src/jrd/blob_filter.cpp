@@ -42,7 +42,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/blob_filter.h"
 #include "../jrd/tra.h"
-#include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/blf_proto.h"
 #include "../jrd/filte_proto.h"

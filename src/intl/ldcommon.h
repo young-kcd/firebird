@@ -28,6 +28,7 @@
 // Put the assert in here
 
 #include "../jrd/intlobj.h"
+#include "../jrd/constants.h"
 #include "../intl/langdrv.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"

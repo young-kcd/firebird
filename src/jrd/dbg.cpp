@@ -42,7 +42,6 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/constants.h"
 
 #ifdef SUPERSERVER
 #include "../jrd/thd_proto.h"

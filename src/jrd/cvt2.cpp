@@ -48,7 +48,6 @@
 /* CVC: I needed them here. */
 #include "../jrd/jrd.h"
 #include "../jrd/blb_proto.h"
-#include "../jrd/constants.h"
 #include "../jrd/tra.h"
 #include "../jrd/req.h"
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.34 2004-04-28 22:13:46 brodsom Exp $
+ * $Id: extract.epp,v 1.35 2004-04-30 22:42:12 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -51,7 +51,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../isql/isql.h"
-#include "../jrd/constants.h"
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"

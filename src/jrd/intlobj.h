@@ -69,10 +69,6 @@ typedef unsigned char MBCHAR;	/* Multibyte Char */
 #define type_charset 55
 #define type_csconvert 56
 
-#ifndef JRD_CONSTANTS_H
-#define MAX_KEY 4096
-#endif
-
 namespace Jrd {
 	class vec;
 	struct thread_db;

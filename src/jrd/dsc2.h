@@ -26,7 +26,6 @@
 #ifndef JRD_DSC_H
 #define JRD_DSC_H
 
-#include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 
 // Descriptor format

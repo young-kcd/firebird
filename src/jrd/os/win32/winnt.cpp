@@ -1110,7 +1110,7 @@ static jrd_file* setup_file(Database*		dbb,
 			try {
 				dbb->dbb_file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
-				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
+				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name, file_length), 0);
 				dbb->dbb_file = NULL; // Will be set again later by the caller				
 			} catch(const std::exception&) {

@@ -107,18 +107,18 @@ rel_MAX} RIDS;
 				(UCHAR) name, (UCHAR) id, update, ods, (UCHAR) upd_id, upd_ods,
 #define END_RELATION		0,
 
-#define RFLD_R_NAME	0
-#define RFLD_R_ID	1
-#define RFLD_R_MINOR	2
-#define RFLD_RPT	3
+const int RFLD_R_NAME	= 0;
+const int RFLD_R_ID		= 1;
+const int RFLD_R_MINOR	= 2;
+const int RFLD_RPT		= 3;
 
-#define RFLD_F_NAME	0
-#define RFLD_F_ID	1
-#define RFLD_F_UPDATE	2
-#define RFLD_F_MINOR	3
-#define RFLD_F_UPD_ID	4
-#define RFLD_F_UPD_MINOR 5
-#define RFLD_F_LENGTH	6
+const int RFLD_F_NAME	= 0;
+const int RFLD_F_ID		= 1;
+const int RFLD_F_UPDATE	= 2;
+const int RFLD_F_MINOR	= 3;
+const int RFLD_F_UPD_ID	= 4;
+const int RFLD_F_UPD_MINOR	= 5;
+const int RFLD_F_LENGTH	= 6;
 
 static const UCHAR relfields[] =
 {

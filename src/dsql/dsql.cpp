@@ -72,7 +72,7 @@ nested FOR loops are added.
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
 #include "../jrd/iberr.h"
-#include "../dsql/sqlda.h"
+//#include "../dsql/sqlda.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/dsql_proto.h"

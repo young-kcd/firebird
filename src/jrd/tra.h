@@ -86,35 +86,35 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	UCHAR tra_transactions[1];
 };
 
-#define TRA_system		1L		/* system transaction */
-#define TRA_update		2L		/* update is permitted */
-#define TRA_prepared		4L	/* transaction is in limbo */
-#define TRA_reconnected		8L	/* reconnect in progress */
-#define TRA_reserving		16L	/* relations explicityly locked */
-#define TRA_degree3		32L		/* serializeable transaction */
-#define TRA_committing		64L	/* commit in progress */
-#define TRA_write		128L	/* transaction has written */
-#define TRA_readonly		256L	/* transaction is readonly */
-#define TRA_nowait		512L	/* don't wait on relations, give up */
-#define TRA_prepare2		1024L	/* transaction has updated RDB$TRANSACTIONS */
-#define TRA_ignore_limbo	2048L	/* ignore transactions in limbo */
-#define TRA_invalidated 	4096L	/* transaction invalidated by failed write */
-#define TRA_deferred_meta 	8192L	/* deferred meta work posted */
-//#define TRA_add_log		16384L	/* write ahead log file was added */
-//#define TRA_delete_log		32768L	/* write ahead log file was deleted */
-#define TRA_read_committed	65536L	/* can see latest committed records */
-#define TRA_autocommit		131072L	/* autocommits all updates */
-#define TRA_perform_autocommit	262144L	/* indicates autocommit is necessary */
-#define TRA_rec_version		524288L	/* don't wait for uncommitted versions */
-#define TRA_restart_requests	1048576L	/* restart all requests in attachment */
-#define TRA_no_auto_undo	2097152L	/* don't start a savepoint in TRA_start */
-#define TRA_sweep_at_startup    4194304L	/* sweep done at startup */
-#define TRA_precommitted	8388608L	/* transaction committed at startup */
+const ULONG TRA_system			= 1L;		/* system transaction */
+const ULONG TRA_update			= 2L;		/* update is permitted */
+const ULONG TRA_prepared		= 4L;		/* transaction is in limbo */
+const ULONG TRA_reconnected		= 8L;		/* reconnect in progress */
+const ULONG TRA_reserving		= 16L;		/* relations explicityly locked */
+const ULONG TRA_degree3			= 32L;		/* serializeable transaction */
+const ULONG TRA_committing		= 64L;		/* commit in progress */
+const ULONG TRA_write			= 128L;		/* transaction has written */
+const ULONG TRA_readonly		= 256L;		/* transaction is readonly */
+const ULONG TRA_nowait			= 512L;		/* don't wait on relations, give up */
+const ULONG TRA_prepare2		= 1024L;	/* transaction has updated RDB$TRANSACTIONS */
+const ULONG TRA_ignore_limbo	= 2048L;	/* ignore transactions in limbo */
+const ULONG TRA_invalidated 	= 4096L;	/* transaction invalidated by failed write */
+const ULONG TRA_deferred_meta 	= 8192L;	/* deferred meta work posted */
+//const ULONG TRA_add_log		= 16384L;	/* write ahead log file was added */
+//const ULONG TRA_delete_log	= 32768L;	/* write ahead log file was deleted */
+const ULONG TRA_read_committed	= 65536L;	/* can see latest committed records */
+const ULONG TRA_autocommit		= 131072L;	/* autocommits all updates */
+const ULONG TRA_perform_autocommit	= 262144L;	/* indicates autocommit is necessary */
+const ULONG TRA_rec_version			= 524288L;	/* don't wait for uncommitted versions */
+const ULONG TRA_restart_requests	= 1048576L;	/* restart all requests in attachment */
+const ULONG TRA_no_auto_undo		= 2097152L;	/* don't start a savepoint in TRA_start */
+const ULONG TRA_sweep_at_startup	= 4194304L;	/* sweep done at startup */
+const ULONG TRA_precommitted		= 8388608L;	/* transaction committed at startup */
 
-#define TRA_MASK		3
-#define TRA_BITS_PER_TRANS	2
-#define TRA_TRANS_PER_BYTE	4
-#define TRA_SHIFT		2
+const int TRA_MASK				= 3;
+const int TRA_BITS_PER_TRANS	= 2;
+const int TRA_TRANS_PER_BYTE	= 4;
+const int TRA_SHIFT				= 2;
 
 #define TRANS_SHIFT(number)	(((number) & TRA_MASK) << 1)
 #define TRANS_OFFSET(number)	((number) >> TRA_SHIFT)
@@ -123,18 +123,18 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
    for "dead" active transactions every so often at transaction
    startup */
 
-#define TRA_ACTIVE_CLEANUP	100
+const int TRA_ACTIVE_CLEANUP	= 100;
 
 /* Transaction states.  The first four are states found
    in the transaction inventory page; the last two are
    returned internally */
 
-#define tra_active	    0		/* Transaction is active */
-#define tra_limbo	    1
-#define tra_dead	    2
-#define tra_committed	    3
-#define tra_us		    4		/* Transaction is us */
-#define tra_precommitted    5	/* Transaction is precommitted */
+const int tra_active		= 0;	/* Transaction is active */
+const int tra_limbo			= 1;
+const int tra_dead			= 2;
+const int tra_committed		= 3;
+const int tra_us			= 4;	/* Transaction is us */
+const int tra_precommitted	= 5;	/* Transaction is precommitted */
 
 /* The highest transaction number possible.  This is 0x7fffffff if SLONG is 32 bits. */
 #define MAX_TRA_NUMBER		 (~(1L << (BITS_PER_LONG - 1)))
@@ -153,12 +153,12 @@ class Savepoint : public pool_alloc<type_sav>
 
 /* Savepoint block flags. */
 
-#define SAV_trans_level		1	/* savepoint was started by TRA_start */
-#define SAV_event_post		2	/* event posted in the save point */
-#define SAV_user            4   /* named user savepoint as opposed to system ones */
+const int SAV_trans_level	= 1;	/* savepoint was started by TRA_start */
+const int SAV_event_post	= 2;	/* event posted in the save point */
+const int SAV_user			= 4;	/* named user savepoint as opposed to system ones */
 
-#define SAV_LARGE         500   /* Number of allocated record structs when transaction sweep
-                                  becomes preferred over transaction savepoint undo */
+const int SAV_LARGE			= 500;	/* Number of allocated record structs when transaction sweep
+									becomes preferred over transaction savepoint undo */
 
 /* Deferred work blocks are used by the meta data handler to keep track
    of work deferred to commit time.  This are usually used to perform

@@ -37,7 +37,6 @@
 #include "../jrd/trig.h"
 #include "../jrd/intl.h"
 #include "../jrd/dflt.h"
-#include "../jrd/constants.h"
 #include "../jrd/ini.h"
 #include "../jrd/idx.h"
 #include "../jrd/gdsassert.h"

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.29 2004-03-22 11:37:55 alexpeshkoff Exp $
+ *  $Id: nbak.cpp,v 1.30 2004-04-30 22:45:38 brodsom Exp $
  *
  */
 
@@ -575,12 +575,12 @@ void BackupManager::begin_backup()
 		// Set state in database header page. All changes are written to main database file yet.
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		int newState = nbak_state_stalled;
-		header->hdr_flags = (header->hdr_flags & ~hdr_backup_mask) | newState;
+		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | newState;
 		// This number may be smaller than actual because some pages may be not flushed to
 		// disk yet. This is not a problem as it can cause only a slight performance degradation
 		backup_pages = header->hdr_backup_pages = PIO_act_alloc(database);
 		const ULONG adjusted_scn = ++header->pag_scn; // Generate new SCN
-		PAG_replace_entry_first(header, HDR_backup_guid, sizeof(guid), 
+		PAG_replace_entry_first(header, Ods::HDR_backup_guid, sizeof(guid), 
 			reinterpret_cast<const UCHAR*>(&guid));
 
 		header_locked = false;
@@ -678,7 +678,7 @@ void BackupManager::end_backup(bool recover) {
 		header->pag_scn = current_scn;
 		NBAK_TRACE(("new SCN=%d is getting written to header", adjusted_scn));
 		// Adjust state
-		header->hdr_flags = (header->hdr_flags & ~hdr_backup_mask) | backup_state;
+		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | backup_state;
 		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
@@ -759,7 +759,7 @@ void BackupManager::end_backup(bool recover) {
 		backup_state = nbak_state_normal;
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		// Adjust state
-		header->hdr_flags = (header->hdr_flags & ~hdr_backup_mask) | backup_state;
+		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | backup_state;
 		NBAK_TRACE(("Set state %d in header page", backup_state));
 		// Generate new SCN
 		header->pag_scn = ++current_scn;
@@ -1046,13 +1046,13 @@ void BackupManager::set_difference(const char* filename) {
 		Ods::header_page* header =
 			(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
-		PAG_replace_entry_first(header, HDR_difference_file, 
+		PAG_replace_entry_first(header, Ods::HDR_difference_file, 
 			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
 		CCH_RELEASE(tdbb, &window);
 		strncpy(diff_name, filename, sizeof(diff_name));
 	}
 	else {
-		PAG_delete_clump_entry(HEADER_PAGE, HDR_difference_file);
+		PAG_delete_clump_entry(HEADER_PAGE, Ods::HDR_difference_file);
 		generate_filename();
 	}
 }
@@ -1090,7 +1090,7 @@ bool BackupManager::actualize_state() throw() {
 		}
 	}
 
-	const int new_backup_state = header->hdr_flags & hdr_backup_mask;
+	const int new_backup_state = header->hdr_flags & Ods::hdr_backup_mask;
 	NBAK_TRACE(("backup state read from header is %d", new_backup_state));
 	// Check is we missed lock/unlock cycle and need to invalidate
 	// our allocation table and file handle 
@@ -1103,10 +1103,10 @@ bool BackupManager::actualize_state() throw() {
 	const UCHAR* p = header->hdr_data;
 	while (true) {
 		switch (*p) {
-		case HDR_backup_guid:
+		case Ods::HDR_backup_guid:
 			p += p[1] + 2;
 			continue;
-		case HDR_difference_file:
+		case Ods::HDR_difference_file:
 			fname_found = true;
 			memcpy(diff_name, p + 2, p[1]);
 			diff_name[p[1]] = 0;				

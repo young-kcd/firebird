@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.39 2004-04-29 17:47:43 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.40 2004-04-30 22:41:33 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -43,7 +43,6 @@
 #include "../gpre/gpre_meta.h"
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
-#include "../jrd/constants.h"
 #include "../jrd/gds_proto.h"
 
 //const int MAX_USER_LENGTH		= 33;

@@ -38,7 +38,6 @@
 
 #include "firebird.h"
 #include "../jrd/jrd.h"
-#include "../jrd/constants.h"
 #include "../jrd/intlobj.h"
 
 namespace Jrd {

@@ -35,7 +35,6 @@
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
-#include "../jrd/constants.h"
 #include "../dsql/blob_proto.h"
 
 DATABASE DB = STATIC "yachts.lnk";

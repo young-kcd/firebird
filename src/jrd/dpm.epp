@@ -1373,7 +1373,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
    1 and 2). */
 
 	const USHORT length = index->dpg_length - BLH_SIZE;
-	const UCHAR* q = (UCHAR *) header->blh_data;
+	const UCHAR* q = (UCHAR *) header->blh_page;
 
 	if (blob->blb_level == 0) {
 		blob->blb_space_remaining = length;
@@ -1973,7 +1973,7 @@ SLONG DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	header->blh_length = blob->blb_length;
 	header->blh_level = blob->blb_level;
 	header->blh_sub_type = blob->blb_sub_type;
-	UCHAR* p = (UCHAR *) header->blh_data;
+	UCHAR* p = (UCHAR *) header->blh_page;
 
 	if (length) {
 		MOVE_FASTER(q, p, length);

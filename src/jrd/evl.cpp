@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.80 2004-04-29 17:48:39 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.81 2004-04-30 22:45:38 brodsom Exp $ 
  */
 
 /*
@@ -84,7 +84,6 @@
 #include "../jrd/sort.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
-#include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd_time.h"
 #include "../jrd/all_proto.h"

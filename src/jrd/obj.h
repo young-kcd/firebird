@@ -27,22 +27,22 @@
 /* Object types used in RDB$DEPENDENCIES and RDB$USER_PRIVILEGES */
 /* Note: some values are hard coded in grant.gdl */
 
-#define obj_relation            0
-#define obj_view                1
-#define obj_trigger             2
-#define obj_computed            3
-#define obj_validation          4
-#define obj_procedure           5
-#define obj_expression_index    6
-#define obj_exception           7
-#define obj_user                8
-#define obj_field               9
-#define obj_index               10
-#define obj_count               11
-#define obj_user_group          12
-#define obj_sql_role            13
-#define obj_generator		    14
-#define obj_udf       	        15
-#define obj_blob_filter		    16
+const int obj_relation			= 0;
+const int obj_view				= 1;
+const int obj_trigger			= 2;
+const int obj_computed			= 3;
+const int obj_validation		= 4;
+const int obj_procedure			= 5;
+const int obj_expression_index	= 6;
+const int obj_exception			= 7;
+const int obj_user				= 8;
+const int obj_field				= 9;
+const int obj_index				= 10;
+const int obj_count				= 11;
+const int obj_user_group		= 12;
+const int obj_sql_role			= 13;
+const int obj_generator			= 14;
+const int obj_udf				= 15;
+const int obj_blob_filter		= 16;
 
 #endif /* JRD_OBJ_H */

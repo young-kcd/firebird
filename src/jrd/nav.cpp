@@ -939,7 +939,7 @@ static int compare_keys(
 		const index_desc::idx_repeat* tail;
 		if (idx->idx_count > 1) {
 			segment = key_string1 +
-				((length2 - 1) / (STUFF_COUNT + 1)) * (STUFF_COUNT + 1);
+				((length2 - 1) / (Ods::STUFF_COUNT + 1)) * (Ods::STUFF_COUNT + 1);
 			tail = idx->idx_rpt + (idx->idx_count - *segment);
 		}
 		else {
@@ -959,7 +959,7 @@ static int compare_keys(
 
 		if (idx->idx_count > 1) {
 			// if we've exhausted the segment, we've found a match
-			USHORT remainder = length2 % (STUFF_COUNT + 1);
+			USHORT remainder = length2 % (Ods::STUFF_COUNT + 1);
 			if (!remainder && (*string1 != *segment)) 
 			{
 				return 0;
@@ -967,7 +967,7 @@ static int compare_keys(
 
 			// if the rest of the key segment is 0's, we've found a match
 			if (remainder) {
-				for (remainder = STUFF_COUNT + 1 - remainder; remainder;
+				for (remainder = Ods::STUFF_COUNT + 1 - remainder; remainder;
 					remainder--) 
 				{
 					if (*string1++) {
