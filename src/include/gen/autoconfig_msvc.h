@@ -52,6 +52,9 @@
 /* Is the platform big endian? */
 #define WORDS_BIGENDIAN 0
 
+/* Are paths case sensitive? */
+#define CASE_SENSITIVITY false
+
 /* CPU types */
 #undef PowerPC
 #undef sparc
