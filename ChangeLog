@@ -1,3 +1,10 @@
+2005-01-21 11:19  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/: CS/prototype.in
+	(1.1.2.5), SS/prototype.in (1.1.2.3):
+	
+	add fogotten aliases.conf to target package
+
 2005-01-20 12:27  dimitr
 
 	* firebird2/src/burp/: backup.epp (1.24.2.6), restore.epp
