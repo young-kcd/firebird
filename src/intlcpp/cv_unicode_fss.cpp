@@ -27,7 +27,11 @@
 #include "../intlcpp/ldcommon.h"
 #include "cv_unicode_fss.h"
 
+typedef USHORT fss_wchar_t;
+typedef SLONG fss_size_t;
+
 static fss_size_t fss_mbtowc( fss_wchar_t * p, NCHAR *s, fss_size_t n);
+static fss_size_t fss_wctomb(MBCHAR *s, fss_wchar_t wc);
 
 SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 {
@@ -183,7 +187,7 @@ SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 
 
 
-static fss_size_t fss_mbtowc( fss_wchar_t * p, UCHAR *s, fss_size_t n)
+static fss_size_t fss_mbtowc( fss_wchar_t * p, NCHAR *s, fss_size_t n)
 {
 	long l;
 	int c0, c, nc;
@@ -257,7 +261,7 @@ USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_le
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CS_UTFFSS_fss_to_unicode ||
+	assert(obj->csconvert_convert == (FPTR_SHORT) CS_UTFFSS_fss_to_unicode ||
 		   ((TEXTTYPE) obj)->texttype_fn_to_wc == CS_UTFFSS_fss_to_unicode);
 
 	*err_code = 0;
@@ -301,7 +305,7 @@ USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, 
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CS_UTFFSS_unicode_to_fss);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CS_UTFFSS_unicode_to_fss);
 
 	*err_code = 0;
 

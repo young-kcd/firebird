@@ -45,7 +45,7 @@ USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len,
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVKSC_ksc_to_unicode);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVKSC_ksc_to_unicode);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 
@@ -116,7 +116,7 @@ USHORT CVKSC_unicode_to_ksc(CSCONVERT obj, UCHAR *ksc_str, USHORT ksc_len, UCS2_
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVKSC_unicode_to_ksc);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVKSC_unicode_to_ksc);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 

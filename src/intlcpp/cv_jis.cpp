@@ -42,7 +42,7 @@ USHORT CVJIS_eucj_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVJIS_eucj_to_unicode);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_eucj_to_unicode);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 
@@ -130,7 +130,7 @@ USHORT CVJIS_sjis_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVJIS_sjis_to_unicode);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_sjis_to_unicode);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 
@@ -380,7 +380,7 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UC
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVJIS_unicode_to_sjis);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_unicode_to_sjis);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 
@@ -461,7 +461,7 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, UC
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CVJIS_unicode_to_eucj);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_unicode_to_eucj);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 

@@ -23,9 +23,6 @@
 
  /* Note: all routines have cousins in jrd/intl.c */
 
-typedef USHORT fss_wchar_t;
-typedef SLONG fss_size_t;
-
 USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_len, NCHAR *src_ptr
 								, USHORT src_len, SSHORT *err_code, USHORT *err_position);
 
@@ -51,7 +48,3 @@ static const Tab tab[] = {
 	{ 0xFE, 0xFC, 5 * 6, 0x7FFFFFFF, 0x4000000 },	/* 6 byte sequence */
 	{ 0, 0, 0, 0, 0}						/* end of table    */
 };
-
-static fss_size_t fss_mbtowc( fss_wchar_t * p, UCHAR *s, fss_size_t n);
-
-static fss_size_t fss_wctomb(MBCHAR *s, fss_wchar_t wc);

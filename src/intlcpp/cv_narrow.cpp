@@ -51,7 +51,7 @@ USHORT CV_unicode_to_nc(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *sr
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CV_unicode_to_nc);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CV_unicode_to_nc);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 
@@ -100,7 +100,7 @@ USHORT CV_wc_to_wc(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, USHORT *src
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CV_wc_to_wc);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CV_wc_to_wc);
 	assert(obj->csconvert_datatable != NULL);
 	assert(obj->csconvert_misc != NULL);
 
@@ -149,7 +149,7 @@ USHORT CV_nc_to_unicode(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *sr
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CV_nc_to_unicode);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CV_nc_to_unicode);
 	assert(obj->csconvert_datatable != NULL);
 	assert(sizeof(UNICODE) == 2);
 
@@ -190,7 +190,7 @@ USHORT CV_wc_copy(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr,
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == CV_wc_copy);
+	assert(obj->csconvert_convert == (FPTR_SHORT) CV_wc_copy);
 
 	*err_code = 0;
 
@@ -216,7 +216,7 @@ USHORT CV_wc_copy(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr,
 }
 
 
-static USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr
+USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr
 								, USHORT src_len, SSHORT *err_code, USHORT *err_position)
 {
 	BYTE *start;
@@ -227,7 +227,7 @@ static USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, 
 	assert(err_code != NULL);
 	assert(err_position != NULL);
 	assert(obj != NULL);
-	assert(obj->csconvert_convert == eight_bit_convert);
+	assert(obj->csconvert_convert == (FPTR_SHORT) eight_bit_convert);
 	assert(obj->csconvert_datatable != NULL);
 
 	*err_code = 0;
