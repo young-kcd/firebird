@@ -1,3 +1,140 @@
+2003-11-30 22:13  dimitr
+
+	* firebird2/src/: jrd/btr.cpp, jrd/btr.h, jrd/btr_proto.h,
+	jrd/dfw.epp, jrd/dfw_proto.h, jrd/idx.cpp, jrd/idx_proto.h,
+	jrd/irq.h, jrd/pcmet.epp, include/gen/ids.h:
+	
+	Let's support segment-level selectivities. Amen.
+
+2003-11-30 22:05  dimitr
+
+	* firebird2/src/jrd/: ini.epp, relations.h:
+	
+	Added new field to RDB$INDEX_SEGMENTS
+
+2003-11-30 22:04  dimitr
+
+	* firebird2/src/jrd/: grant.epp, tra.cpp:
+	
+	Minor change
+
+2003-11-30 22:01  dimitr
+
+	* firebird2/src/common/classes/array.h:
+	
+	1) Const correctness 2) A few extra vector-like methods
+
+2003-11-30 21:23  arnobrinkman
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Fix a bug, when end() returns pointer with value 0x0000000 then
+	after -1 this value is bigger as begin()
+
+2003-11-30 21:00  epocman
+
+	* firebird2/doc/README.Win32LibraryInstallation.txt:
+	
+	Win32 - New tool 'instgds.exe'. This installs a copy of
+	fbclient.dll as gds32.dll in the windows system directory, but take
+	care of updating the file version info, so that gds32.dll appears
+	to be of version 6.3 instead of 1.5, for compatibility reasons with
+	some old legacy applications. There is no more 'stub' gds32.dll.
+	The gds32.dll is a full clone of fbclient.dll (only client library
+	to be build).
+
+2003-11-30 20:53  epocman
+
+	* firebird2/builds/win32/msvc7/instgds.vcproj:
+	
+	file instgds.vcproj was initially added on branch B1_5_Release.
+
+2003-11-30 20:53  epocman
+
+	* firebird2/src/utilities/install_gds.cpp:
+	
+	file install_gds.cpp was initially added on branch B1_5_Release.
+
+2003-11-30 20:53  epocman
+
+	* firebird2/src/utilities/gdsclient.cpp:
+	
+	file gdsclient.cpp was initially added on branch B1_5_Release.
+
+2003-11-30 20:53  epocman
+
+	* firebird2/src/utilities/gdsclient_proto.h:
+	
+	file gdsclient_proto.h was initially added on branch B1_5_Release.
+
+2003-11-30 20:53  epocman
+
+	* firebird2/builds/win32/msvc6/instgds.dsp:
+	
+	file instgds.dsp was initially added on branch B1_5_Release.
+
+2003-11-30 20:53  epocman
+
+	* firebird2/: builds/win32/make_all.bat,
+	builds/win32/msvc6/Firebird2.dsw, builds/win32/msvc6/instgds.dsp,
+	src/jrd/ibinitdll.cpp, src/jrd/version.rc,
+	src/utilities/gdsclient.cpp, src/utilities/install_nt.h,
+	src/utilities/gdsclient_proto.h, src/utilities/install_gds.cpp,
+	builds/win32/msvc7/instgds.vcproj:
+	
+	Win32 - New tool 'instgds.exe'. This installs a copy of
+	fbclient.dll as gds32.dll in the windows system directory, but take
+	care of updating the file version info, so that gds32.dll appears
+	to be of version 6.3 instead of 1.5, for compatibility reasons with
+	some old legacy applications. There is no more 'stub' gds32.dll.
+	The gds32.dll is a full clone of fbclient.dll (only client library
+	to be build).
+
+2003-11-30 20:13  skidder
+
+	* firebird2/src/jrd/: blb.h, btr.h, dpm_proto.h, dyn_proto.h,
+	entry.h, exe_proto.h, idx_proto.h, inf_proto.h, jrd.h, jrd_proto.h,
+	met_proto.h, pcmet_proto.h, req.h, rlck_proto.h, tra.h,
+	tra_proto.h, val.h, vio_proto.h:
+	
+	Finish fixing class/struct inconsistencies. Firebird now builds
+	using MSVC2003
+
+2003-11-30 15:13  skidder
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Little correction in my invariant-tracking changes
+
+2003-11-30 13:23  dimitr
+
+	* firebird2/src/: include/gen/msgs.h, msgs/msg.gbak:
+	
+	Cleaned up some error messages.
+
+2003-11-30 07:41  robocop
+
+	* firebird2/src/isql/: extra_proto.h, extract.epp, isql.epp,
+	isql.h, isql_proto.h, isql_win.h, show.epp, show_proto.h:
+	
+	isql: more cleanup and restore the ability to have nested INPUT
+	commands or run INPUT commands from the interactive session without
+	quitting it.
+
+2003-11-30 03:12  skidder
+
+	* firebird2/src/jrd/: cch.h, jrd.h, os/pio_proto.h:
+	
+	Begin fixing class/struct inconsistencies. This work is a part of
+	task to make Firebird build using MSVC2003
+
+2003-11-30 02:59  skidder
+
+	* firebird2/src/jrd/jrd.h:
+	
+	Begin fixing class/struct inconsistencies. This work is a part of
+	task to make Firebird build using MSVC2003
+
 2003-11-28 07:47  robocop
 
 	* firebird2/: builds/win32/msvc6/build_msg.dsp,
