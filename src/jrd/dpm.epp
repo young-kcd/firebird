@@ -1128,7 +1128,7 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
 			CCH_RELEASE(tdbb, &window);
 			ERR_post(isc_read_only_trans, 0);
 		}
-		CCH_MARK(tdbb, &window);
+		CCH_MARK_SYSTEM(tdbb, &window);
 
 		/* Initialize or increment the quad value in an ODS 10 or later
 		 * generator page, or the long value in ODS <= 9.
