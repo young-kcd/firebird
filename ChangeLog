@@ -1,3 +1,17 @@
+2004-06-22 22:13  skidder
+
+	* firebird2/src/: common/classes/tree.h (1.34), jrd/blb.cpp (1.82),
+	jrd/blb.h (1.17), jrd/btr.cpp (1.96), jrd/exe.cpp (1.115),
+	jrd/gds.cpp (1.142), jrd/gds_proto.h (1.35), jrd/jrd.h (1.108),
+	jrd/req.h (1.41), jrd/tra.cpp (1.81), jrd/tra.h (1.32):
+	
+	Implement rudimentary framework to track lifetimes of active BLOBs.
+	 This solves the following issues: 1) Outrageous memory consumption
+	when blobs are converted from strings during request processing 2)
+	Materialization doesn't cause invalidation of BLOB IDs too early. 
+	Original behaviour caused errors with updatable views or procedures
+	receiving BLOB arguments.
+
 2004-06-22 00:45  skidder
 
 	* firebird2/src/common/classes/tree.h (1.33):
