@@ -2,6 +2,11 @@
   * v1.5.2
   **************
 
+    * Fixed v1.0 regression.
+        Blobs containing more than 65535 segments are not backed up by GBAK properly
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
     * Fixed ISQL problems
         1) statement terminators and '--' comments are no longer recognized in multi-line literals
         2) tab characters are no longer translated to spaces in literal strings
