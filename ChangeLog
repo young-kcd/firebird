@@ -1,3 +1,92 @@
+2003-12-22 19:30  dimitr
+
+	* firebird2/src/jrd/: isc_file.cpp, isc_file.cpp:
+	
+	Fixed bug introduced some months ago.
+
+2003-12-22 19:26  dimitr
+
+	* firebird2/src/burp/mvol.cpp:
+	
+	Oooops, sorry.
+
+2003-12-22 19:03  dimitr
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	Minor addition to one of my previous changes.
+
+2003-12-22 18:58  dimitr
+
+	* firebird2/src/burp/: mvol.cpp, mvol.cpp:
+	
+	Another bugfix by Oleg Loa. Never terminate the server when GBAK is
+	running as a service.
+
+2003-12-22 18:51  dimitr
+
+	* firebird2/src/jrd/evl.cpp:
+	
+	Fixed bug in nulls handling in BETWEEN. Thanks to Oleg Loa.
+
+2003-12-22 18:43  dimitr
+
+	* firebird2/src/jrd/: cvt2.cpp, evl.cpp:
+	
+	Fixed bug in nulls handling in BETWEEN. Thanks to Oleg Loa.
+
+2003-12-22 10:59  robocop
+
+	* firebird2/src/: alice/alice.cpp, burp/backup.epp, burp/burp.cpp,
+	burp/burp.h, burp/burp_proto.h, burp/restore.epp,
+	common/classes/vector.h, dsql/array.epp, dsql/array_proto.h,
+	dsql/dsql.cpp, dsql/make.cpp, dsql/metd.epp, dudley/exe.epp,
+	gpre/cme.cpp, gpre/gpre_meta_boot.cpp, gpre/pretty.cpp,
+	gpre/sql.cpp, include/fb_types.h, include/fb_vector.h,
+	ipserver/ipapi_proto.h, ipserver/ipc.h, ipserver/ipclient.cpp,
+	ipserver/ipserver.cpp, isql/show.epp, journal/gjrn.cpp,
+	jrd/ExecuteStatement.cpp, jrd/ail.cpp, jrd/all.cpp, jrd/all.h,
+	jrd/alt.cpp, jrd/alt_proto.h, jrd/blb.cpp, jrd/blob_filter.cpp,
+	jrd/blp.h, jrd/bookmark.cpp, jrd/btr.cpp, jrd/builtin.cpp,
+	jrd/cch.cpp, jrd/cch_proto.h, jrd/cmp.cpp, jrd/cmp_proto.h,
+	jrd/cvt.cpp, jrd/cvt2.cpp, jrd/dfw.epp, jrd/dsc.cpp, jrd/dsc.h,
+	jrd/entry.h, jrd/event.cpp, jrd/event.h, jrd/event_proto.h,
+	jrd/evl.cpp, jrd/evl_proto.h, jrd/exe.cpp, jrd/filters.cpp,
+	jrd/flu_proto.h, jrd/functions.cpp, jrd/gds.cpp, jrd/gdsold.h,
+	jrd/ibase.h, jrd/idx.cpp, jrd/ini.h, jrd/jrd.cpp, jrd/jrd.h,
+	jrd/jrd_proto.h, jrd/met.epp, jrd/met_proto.h, jrd/nbak.cpp,
+	jrd/opt.cpp, jrd/par.cpp, jrd/rlck.cpp, jrd/rse.cpp, jrd/sdw.cpp,
+	jrd/sdw_proto.h, jrd/sort.cpp, jrd/sort.h, jrd/sort_mem.cpp,
+	jrd/tra.cpp, jrd/utl.cpp, jrd/utl_proto.h, jrd/val.cpp, jrd/val.h,
+	jrd/vio.cpp, jrd/vio_proto.h, jrd/why.cpp, jrd/why_proto.h,
+	jrd/os/path_utils.h, jrd/os/vms/vmsevent.cpp, qli/meta.epp,
+	qli/mov.cpp, remote/inter_proto.h, remote/interface.cpp,
+	remote/protocol.cpp, remote/protocol.h, remote/remote.h,
+	remote/server.cpp, utilities/gsec/gsec.cpp, utilities/gsec/gsec.h,
+	utilities/gsec/gsec_proto.h, utilities/gsec/secur_proto.h,
+	utilities/gsec/security.epp:
+	
+	General cleanup
+
+2003-12-22 02:38  skidder
+
+	* firebird2/src/jrd/pag.cpp:
+	
+	Fix leak from connection memory pool when isc_database_info is
+	called. Do not backport to FB1.5 because bug was present in FB1
+	codebase
+
+2003-12-22 00:54  skidder
+
+	* firebird2/: builds/win32/defs/fbclient.def,
+	builds/win32/defs/fbclient_debug.def, builds/win32/defs/gds32.def,
+	builds/win32/defs/gds32_debug.def, src/dsql/array.epp,
+	src/dsql/array_proto.h, src/jrd/ibase.h:
+	
+	Rollback crazy change made by Dimitry Sibiryakov and approved by
+	Claudio Valderrama. We should not break compatibility with half of
+	the world without apparent reasons.
+
 2003-12-21 12:51  alexpeshkoff
 
 	* firebird2/src/jrd/lck.cpp:
