@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.87 2002-11-14 08:01:45 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.88 2002-11-14 08:18:10 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -28,7 +28,7 @@ CPU_TYPE=$host_cpu dnl EKU: Should this be target_cpu ???
 AC_SUBST(CPU_TYPE)
 
 dnl EKU: set appropiate defaults for each platform
-dnl      LOCK_MANAGER : build lock manager (CS only)
+dnl      LOCK_MANAGER_FLG : build lock manager (CS only)
 dnl      EDITLINE_FLG : support fancy command line editing in isql
 
 case "$target" in
@@ -36,7 +36,7 @@ case "$target" in
     MAKEFILE_PREFIX=darwin
     PLATFORM=DARWIN
     AC_DEFINE(DARWIN)
-    LOCK_MANAGER=Y
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     ;;
 
@@ -44,7 +44,7 @@ case "$target" in
     MAKEFILE_PREFIX=freebsd 
     LATFORM=FREEBSD
     AC_DEFINE(FREEBSD)
-    LOCK_MANAGER=Y
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     ;;
 
@@ -52,7 +52,7 @@ case "$target" in
     MAKEFILE_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
-    LOCK_MANAGER=Y
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     ;;
 
@@ -60,7 +60,7 @@ case "$target" in
     MAKEFILE_PREFIX=netbsd
     PLATFORM=NETBSD
     AC_DEFINE(NETBSD)
-    LOCK_MANAGER=Y
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     ;;
 
@@ -68,7 +68,7 @@ case "$target" in
     MAKEFILE_PREFIX=hpux
     PLATFORM=hpux
     AC_DEFINE(hpux)
-    LOCK_MANAGER=Y
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     ;;
 
@@ -76,7 +76,7 @@ case "$target" in
     MAKEFILE_PREFIX=solx86
     PLATFORM=solx86
     AC_DEFINE(solx86)
-    LOCK_MANAGER=N
+    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     RAW_DEVICES_FLG=Y
     ;;
@@ -85,7 +85,7 @@ case "$target" in
     MAKEFILE_PREFIX=solaris
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS)
-    LOCK_MANAGER=Y
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     ;;
 
@@ -93,7 +93,7 @@ case "$target" in
     MAKEFILE_PREFIX=sinixz
     PLATFORM="SINIX-Z"
     AC_DEFINE(SINIXZ)
-    LOCK_MANAGER=N
+    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     ;;
 
@@ -101,7 +101,7 @@ case "$target" in
     MAKEFILE_PREFIX=mingw
     PLATFORM=win32
     AC_DEFINE(WIN_NT)
-    LOCK_MANAGER=Y
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
     ;;
 esac
@@ -168,12 +168,12 @@ if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
   AC_ARG_WITH(lock-manager,
     [  --with-lock-manager     build lock manager],
     [case "$withval" in
-       yes) LOCK_MANAGER=Y;;
-       no)  LOCK_MANAGER=N;;
+       yes) LOCK_MANAGER_FLG=Y;;
+       no)  LOCK_MANAGER_FLG=N;;
        *)   AC_MSG_ERROR(bad value '${withval}' for --with-lock-manager);;
      esac])
 
-  if test "$LOCK_MANAGER" = "Y"; then
+  if test "$LOCK_MANAGER_FLG" = "Y"; then
     dnl EKU: we should determine the necessity by target system
     dnl      at least SOLARIS-MT, DARWIN and SINIX-Z do not require a lock
     dnl      manager process
@@ -703,7 +703,7 @@ case $RAW_DEVICES_FLG in
 esac
 
 if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
-  case $LOCK_MANAGER in
+  case $LOCK_MANAGER_FLG in
    Y)     echo "Lock manager : enabled";;
    N)     echo "Lock manager : disabled";;
   esac
