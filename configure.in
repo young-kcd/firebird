@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.105 2002-12-12 12:08:33 dimitr Exp $
+dnl $Id: configure.in,v 1.106 2002-12-29 14:15:50 nmcc Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -84,8 +84,8 @@ case "$target" in
     MAKEFILE_PREFIX=solaris
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS)
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=N
+    LOCK_MANAGER_FLG=N
+    EDITLINE_FLG=Y
     ;;
 
   i*-sni-sysv4)
@@ -298,7 +298,7 @@ fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 AC_CHECK_LIB(sfio, main,,, $LIBS) dnl Solaris only
 dnl kkuznetsov: Solaris always check for -lnsl
-if test "$PLATFORM" = "solx86" ; then
+if test "$PLATFORM" = "solx86" -o "$PLATFORM" = "SOLARIS"; then
   AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
   AC_CHECK_LIB(thread, main)
 fi
