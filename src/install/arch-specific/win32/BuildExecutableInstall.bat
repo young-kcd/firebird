@@ -436,7 +436,7 @@ if NOT DEFINED INNO_SETUP_PATH (@echo INNO_SETUP_PATH variable not defined & got
 
 @Echo.
 @Echo Reading command-line parameters
-@(@call :SET_PARAMS %1 %2 )|| (@echo Error calling SET_PARAMS & @goto :EOF)
+@(@call :SET_PARAMS %1 %2 %3 %4 %5)|| (@echo Error calling SET_PARAMS & @goto :EOF)
 @Echo.
 @Echo Setting version number
 @(@call :SED_MAGIC ) || (@echo Error calling SED_MAGIC & @goto :EOF)

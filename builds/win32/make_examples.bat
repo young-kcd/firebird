@@ -57,7 +57,7 @@
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "v5_examples - Win32 Release" %CLEAN% /OUT v5_examples.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln /project v5_examples %CLEAN% /OUT v5_examples.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% release /project v5_examples  /OUT v5_examples.log
 )
 @goto :EOF
 
@@ -68,7 +68,7 @@ if "%VS_VER%"=="msvc6" (
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "v5_examples - Win32 Debug" %CLEAN% /OUT v5_examples.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln /project v5_examples debug %CLEAN% /OUT v5_examples.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /project v5_examples   /OUT v5_examples.log
 )
 @goto :EOF
 
