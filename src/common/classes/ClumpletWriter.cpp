@@ -44,7 +44,7 @@ ClumpletWriter::ClumpletWriter(bool isTagged, size_t limit, UCHAR tag) :
 ClumpletWriter::ClumpletWriter(bool isTagged, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag) :
 	ClumpletReader(isTagged, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
-	if (buffer) {
+	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);
 	}
 	else if (isTagged) {
