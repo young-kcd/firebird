@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.37.2.3 2003-10-15 14:47:57 alexpeshkoff Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.4 2003-10-27 18:29:12 skidder Exp $
 #
 
 ROOT=..
@@ -329,7 +329,7 @@ examples:
 	$(MAKE) -C ../gen/v5_examples -f ../Makefile.v5_examples
 #	$(MAKE) -f $(GEN_ROOT)/Makefile.v5_examples
 
-otherfiles: misc_files script_files
+otherfiles: misc_files
 
 
 #_ Embedded Firebird Targets (Classic)_______________________________________
