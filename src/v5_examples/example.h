@@ -20,6 +20,6 @@
 #define ARG(type, arg)		type arg
 #define ARGLIST(arg)
 
-#define EXPORT _export
+#define EXPORT
 
 #define ERREXIT(status, rc)	{isc_print_status(status); return rc;}
