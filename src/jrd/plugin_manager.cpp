@@ -260,10 +260,10 @@ PluginManager::~PluginManager()
 
 PluginManager::Module::~Module()
 {
-	if (*prev == this)
-		*prev = next;
-	else
-		(*prev)->next = next;
+	if (next)
+		next->prev = prev;
+	*prev = next;
+
 	unload_module();
 }
 
