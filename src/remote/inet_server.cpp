@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.25 2003-05-09 16:02:46 skidder Exp $
+$Id: inet_server.cpp,v 1.26 2003-06-06 09:16:54 alexpeshkoff Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -233,8 +233,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				case 'D':
 					INET_SERVER_flag |= SRVR_debug;
 					debug = standalone = TRUE;
+#ifdef NEVERDEF
 #ifdef SUPERSERVER
 					free_map_debug = 1;
+#endif
 #endif
 					break;
 #ifndef SUPERSERVER
