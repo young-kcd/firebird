@@ -1,3 +1,38 @@
+2003-12-30 03:48  skidder
+
+	* firebird2/src/utilities/gsec/gsec.cpp:
+	
+	Correction
+
+2003-12-30 03:06  skidder
+
+	* firebird2/builds/install/arch-specific/linux/Makefile.in:
+	
+	Forward port generation of external debug info to FB2 HEAD
+
+2003-12-30 01:26  skidder
+
+	* firebird2/src/install/arch-specific/linux/Makefile.in:
+	
+	Correction
+
+2003-12-30 01:16  skidder
+
+	* firebird2/src/install/arch-specific/linux/Makefile.in:
+	
+	Make GDB happy with our debug info
+
+2003-12-30 01:15  epocman
+
+	* firebird2/src/iscguard/cntl_guard.cpp:
+	
+	Running as a service, while stopping, fbguard.exe did triggered the
+	engine service stop but did not wait for the complete stop before
+	reporting successfull stop. This could led to problems, dependent
+	on system response time, when attempting removal of services
+	immediately after a stop. Problem could be surfaced through instsvc
+	and through the control panel applet.
+
 2003-12-29 05:40  skidder
 
 	* firebird2/src/install/arch-specific/linux/Makefile.in:
