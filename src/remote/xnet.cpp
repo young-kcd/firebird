@@ -604,7 +604,7 @@ rem_port* XNET_connect(const TEXT* name,
 		// only speak if server has correct protocol
 
 		if (xps->xps_server_protocol != XPI_SERVER_PROTOCOL_VERSION) {
-			Firebird::fatal_exception::raise("Unknown XNET protocol");
+			Firebird::fatal_exception::raise("Unknown XNET protocol version");
 		}
 
 		xps->xps_client_protocol = XPI_CLIENT_PROTOCOL_VERSION;
@@ -884,7 +884,7 @@ static rem_port* alloc_port(rem_port* parent,
 	ISC_get_host(buffer, sizeof(buffer));
 	port->port_host = REMOTE_make_string(buffer);
 	port->port_connection = REMOTE_make_string(buffer);
-	sprintf(buffer, "XNet (%s)", port->port_host->str_data);
+	fb_utils::snprintf(buffer, sizeof(buffer), "XNet (%s)", port->port_host->str_data);
 	port->port_version = REMOTE_make_string(buffer);
 	if (parent) {
 		port->port_parent = parent;
