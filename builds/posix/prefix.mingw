@@ -16,15 +16,24 @@
 # Contributor(s): ______________________________________.
 # Start of file prefix.win32:	$(VERSION)	$(PLATFORM)
 
-PROD_FLAGS=-O2 -mno-cygwin -fcheck-new -DWIN32_LEAN_AND_MEAN -MMD
-DEV_FLAGS=-ggdb -mno-cygwin -fcheck-new -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN -MMD -Wall
+PROD_FLAGS=-O2  -march=i686 -mcpu=i686 -mno-cygwin -fcheck-new -Wall -Wno-sign-compare -Wno-format -Wno-parentheses -Wno-switch -fmessage-length=0 -D__SEH_NOOP -DIPSERVER -DMAXPATHLEN=255 -DMINGW -DWIN32_LEAN_AND_MEAN -MMD
+DEV_FLAGS=-ggdb -march=i686 -mcpu=i686 -mno-cygwin -fcheck-new -Wall -Wno-sign-compare -Wno-format -Wno-parentheses -Wno-switch -fmessage-length=0 -D__SEH_NOOP -DIPSERVER -DMAXPATHLEN=255 -DMINGW -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN -MMD 
 
 PLATFORM_PATH=jrd/os/win32
 
 JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
 
+OS_SPECIFIC_Files=thd_priority.cpp
+
+OS_ServerFiles=srvr_w32 window.cpp chop.cpp property.cpp ibconfig.cpp
+
 LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
+LIB_GUI:= -mwindows
+EMBED_UTIL_TARGETS:=gstat gsec 
+CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg 
+WIN_LIBS:=-lmpr -lcomctl32 -lversion -lws2_32 -lgdi32 -lstdc++
+WIN_IPSERVER_Files:=ipserver.cpp alli.cpp
 
 Physical_IO_Module=winnt.cpp
