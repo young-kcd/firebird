@@ -3,8 +3,30 @@
   * v1.5 Alpha 2
   **************
 
+    * Fixed unregistered bug.
+        BLOB subtype is ignored in system domains generated for expression fields in views.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed installation bug.
+        instreg.exe doesn't create "GuardianOptions" registry value.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Resource leaks in DDL recursive procedure handling which caused some DDL to fail.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed Alpha 1 bug.
+        GROUP BY ordinal doesn't work with column aliases.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
     * Fixed Alpha 1 bug.
         Views are not being created correctly (missing records in RDB$VIEW_RELATIONS).
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
 
   **************
   * v1.5 Alpha 1
