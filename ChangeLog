@@ -1,3 +1,17 @@
+2005-01-01 02:53  robocop
+
+	* firebird2/src/: extlib/ib_udf2.sql (1.6), jrd/y_handle.h (1.11),
+	jrd/os/path_utils.h (1.11), misc/gds_header.txt (1.2),
+	misc/ibase_header.txt (1.2):
+	
+	Totally misc.
+
+2004-12-31 11:41  robocop
+
+	* firebird2/src/dsql/parse.y (1.165):
+	
+	Totally misc.
+
 2004-12-28 22:12  skidder
 
 	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.21),
