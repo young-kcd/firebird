@@ -1,3 +1,10 @@
+2004-04-15 04:15  skidder
+
+	* firebird2/src/install/arch-specific/linux/super/rpmfiles.txt.in
+	(1.2.2.5):
+	
+	Fix small Linux SS packaging problem
+
 2004-04-14 09:37  paul_reeves
 
 	* firebird2/src/utilities/fbcpl/fbdialog.cpp (1.1.2.7):
