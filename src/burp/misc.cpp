@@ -147,6 +147,7 @@ void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
  *
  **************************************/
 
+	fb_assert(max_length != 0);
 	if (length) {
 		length = MIN(length, max_length - 1);
 		do {
