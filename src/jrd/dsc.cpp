@@ -111,7 +111,7 @@ static CONST TEXT *CONST DSC_dtype_names[] = {
 	"TIMESTAMP",
 	"BLOB",
 	"ARRAY",
-	"64-bit numeric"
+	"BIGINT"
 };
 
 
