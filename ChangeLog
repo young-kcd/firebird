@@ -1,3 +1,16 @@
+2005-02-10 00:25  skidder
+
+	* firebird2/src/jrd/pag.cpp (1.37.2.8):
+	
+	Please GCC
+
+2005-02-09 23:14  skidder
+
+	* firebird2/src/jrd/pag.cpp (1.37.2.7):
+	
+	Re-enable the ODS architecture compatibility check disabled by Deej
+	10 years ago
+
 2005-02-07 09:01  robocop
 
 	* firebird2/src/isql/isql.epp (1.32.2.11):
