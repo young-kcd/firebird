@@ -188,19 +188,19 @@ static void* intl_back_compat_obj_init_lookup(USHORT, SSHORT, SSHORT);
 /* Note: MUST be only the file name.  The VMS lib$find_shared_image
  *       call insists on file name only, not any "path" components.
  */
-#define INTL_MODULE1    "GDSINTL"
-#define INTL_MODULE2    "GDSINTL2"
+#define INTL_MODULE1    "FBINTL"
+#define INTL_MODULE2    "FBINTL2"
 #endif
 
 #if (defined PC_PLATFORM && !defined NETWARE_386)
-#define INTL_MODULE1 "intl.dll"
-#define INTL_MODULE2 "intl2.dll"
+#define INTL_MODULE1 "fbintl.dll"
+#define INTL_MODULE2 "fbintl2.dll"
 #endif
 
 #ifdef WIN_NT
 /* prefixed with $INTERBASE */
-#define INTL_MODULE1 "gdsintl.dll"
-#define INTL_MODULE2 "gdsintl2.dll"
+#define INTL_MODULE1 "fbintl.dll"
+#define INTL_MODULE2 "fbintl2.dll"
 #endif
 
 #ifndef INTL_MODULE1
