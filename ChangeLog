@@ -1,3 +1,76 @@
+2003-08-15 16:39  arnobrinkman
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	latest versions
+
+2003-08-15 16:38  arnobrinkman
+
+	* firebird2/src/dsql/parse.y:
+	
+	added comment and fix derived table bug inside view, that couldn't
+	use unions.
+
+2003-08-15 12:41  skidder
+
+	* firebird2/src/jrd/scl.epp:
+	
+	Optimize SCL_get_class function a little bit
+
+2003-08-15 12:23  aafemt
+
+	* firebird2/src/: burp/backup.epp, burp/canon_proto.h,
+	burp/canonical.cpp, burp/restore.epp, dsql/array.epp,
+	dsql/array_proto.h, gpre/prett_proto.h, gpre/pretty.cpp,
+	jrd/blb.cpp, jrd/blb_proto.h, jrd/gds.hxx, jrd/gdsold.h,
+	jrd/jrd.cpp, jrd/jrd_proto.h, jrd/sdl.cpp, jrd/sdl_proto.h,
+	remote/inter_proto.h, remote/interface.cpp, remote/protocol.cpp,
+	remote/protocol.h, remote/server.cpp:
+	
+	sdl is UCHAR again
+
+2003-08-15 12:11  aafemt
+
+	* firebird2/doc/README.coding.style:
+	
+	An additional related to previous commit
+
+2003-08-15 12:09  aafemt
+
+	* firebird2/src/include/memory_routines.h:
+	
+	long may be 64 bits. Unbeliveable! Thanks to Erik
+
+2003-08-15 02:32  arnobrinkman
+
+	* firebird2/src/: jrd/par.cpp, dsql/dsql.tab.h:
+	
+	derived table support
+
+2003-08-15 02:01  arnobrinkman
+
+	* firebird2/src/dsql/: parse.y, parse.cpp:
+	
+	derived table support
+
+2003-08-15 01:58  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	derived table support
+
+2003-08-15 01:34  arnobrinkman
+
+	* firebird2/src/dsql/node.h:
+	
+	derived table support
+
+2003-08-15 01:31  arnobrinkman
+
+	* firebird2/src/dsql/: ddl.cpp, dsql.h, gen.cpp:
+	
+	derived table support
+
 2003-08-14 23:00  skidder
 
 	* firebird2/doc/README.coding.style:
