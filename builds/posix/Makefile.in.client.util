@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.13 2003-09-08 20:23:31 skidder Exp $
+#  $Id: Makefile.in.client.util,v 1.14 2003-09-12 10:16:13 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -176,8 +176,8 @@ $(INSTREG):	$(INSTREG_Objects)
 
 instsvc: $(INSTSVC)
 
-$(INSTSVC):	$(INSTSVC_Objects) $(LIBFBCOMMON_A) $(OS_SPECIFIC_Objects)
-	$(LD) $(LINK_OPTS) $(INSTSVC_Objects) $(OS_SPECIFIC_Objects) -o $@ -L$(LIB) -lfbcommon $(LINK_LIBS) 
+$(INSTSVC):	$(INSTSVC_Objects) $(LIBFBCOMMON_A)
+	$(LD) $(LINK_OPTS) $(INSTSVC_Objects) -o $@ -L$(LIB) -lfbcommon $(LINK_LIBS) 
 
 # This one needs a bit of work.
 
