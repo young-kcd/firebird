@@ -1,3 +1,9 @@
+2004-04-09 01:46  skidder
+
+	* firebird2/builds/posix/Makefile.in.extlib (1.10.2.6):
+	
+	Fix broken soname for libib_util.so in B1_5_Release (SF#904270)
+
 2004-04-08 01:42  skidder
 
 	* firebird2/builds/win32/msvc7/: alice.vcproj (1.8.2.3),
