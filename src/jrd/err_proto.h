@@ -50,7 +50,7 @@ void	ERR_assert(const TEXT*, int);
 void	ERR_bugcheck(int);
 void	ERR_bugcheck_msg(const TEXT*);
 void	ERR_corrupt(int);
-void	ERR_duplicate_error(Jrd::idx_e, Jrd::jrd_rel*, USHORT);
+void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT);
 void	ERR_error(int);
 void	ERR_error_msg(const TEXT*);
 void	ERR_post(ISC_STATUS, ...);

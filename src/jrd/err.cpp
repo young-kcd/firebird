@@ -128,10 +128,12 @@ void ERR_corrupt(int number)
 }
 #endif
 
+
 const TEXT* ERR_cstring(const Firebird::string& in_string)
 {
 	return ERR_cstring(in_string.c_str());
 }
+
 
 const TEXT* ERR_cstring(const TEXT* in_string)
 {
@@ -156,7 +158,7 @@ const TEXT* ERR_cstring(const TEXT* in_string)
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_duplicate_error(IDX_E	code,
-						jrd_rel*		relation,
+						const jrd_rel*		relation,
 						USHORT index_number)
 {
 /**************************************
@@ -182,6 +184,8 @@ void ERR_duplicate_error(IDX_E	code,
 		MET_lookup_cnstrt_for_index(tdbb, constraint, index_name);
 		if (constraint[0])
 			constraint_name = ERR_cstring(constraint);
+		else
+			constraint_name = "***unknown***";
 	}
 	else {
 		index_name = "***unknown***";
@@ -233,8 +237,8 @@ void ERR_error(int number)
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 
 	DEBUG;
-	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) <
-		1) sprintf(errmsg, "error code %d", number);
+	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) < 1)
+		sprintf(errmsg, "error code %d", number);
 
 	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), 0);
 }
@@ -282,9 +286,8 @@ void ERR_log(int facility, int number, const TEXT* message)
 	if (message)
 		strcpy(errmsg, message);
 	else
-		if (gds__msg_lookup(0, facility, number, sizeof(errmsg), errmsg, NULL)
-			< 1)
-		strcpy(errmsg, "Internal error code");
+		if (gds__msg_lookup(0, facility, number, sizeof(errmsg), errmsg, NULL) < 1)
+			strcpy(errmsg, "Internal error code");
 
 	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
@@ -319,7 +322,8 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != isc_arg_warning)) {
+		 status_vector[2] != isc_arg_warning))
+	{
 		/* this is a blank status vector */
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = 0;
@@ -416,7 +420,8 @@ void ERR_post(ISC_STATUS status, ...)
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != isc_arg_warning)) {
+		 status_vector[2] != isc_arg_warning))
+	{
 		/* this is a blank status vector just stuff the status */
 		MOVE_FASTER(tmp_status, status_vector,
 					sizeof(ISC_STATUS) * tmp_status_len);
@@ -440,7 +445,8 @@ void ERR_post(ISC_STATUS status, ...)
 			status_vector[i - 1] != isc_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 			(memcmp(&status_vector[i], &tmp_status[1],
-					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0)) {
+					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
+		{
 			/* duplicate found */
 			DEBUG;
 			ERR_punt();
@@ -571,8 +577,8 @@ static void internal_error(ISC_STATUS status, int number)
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 
 	DEBUG;
-	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) <
-		1) strcpy(errmsg, "Internal error code");
+	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) < 1)
+		strcpy(errmsg, "Internal error code");
 
 	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
