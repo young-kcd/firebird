@@ -65,16 +65,16 @@ template <typename T, typename Storage = EmptyStorage<T> >
 class Array : protected Storage {
 public:
 	explicit Array(MemoryPool& p) : 
-		Storage(p), count(0), capacity(getStorageSize()), data(getStorage()) { }
+		Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage()) { }
 	Array(MemoryPool& p, int InitialCapacity) : 
-		Storage(p), count(0), capacity(getStorageSize()), data(getStorage())
+		Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage())
 	{
 		ensureCapacity(InitialCapacity);
 	}
 	Array() : count(0), 
-		capacity(getStorageSize()), data(getStorage()) { }
+		capacity(this->getStorageSize()), data(this->getStorage()) { }
 	explicit Array(int InitialCapacity) : count(0), 
-		capacity(getStorageSize()), data(getStorage())
+		capacity(this->getStorageSize()), data(this->getStorage())
 	{
 		ensureCapacity(InitialCapacity);
 	}
@@ -94,8 +94,8 @@ protected:
 	}
 	void freeData()
 	{
-		if (data != getStorage())
-			getPool().deallocate(data);
+		if (data != this->getStorage())
+			this->getPool().deallocate(data);
 	}
 public:
 	Array<T, Storage>& operator =(const Array<T, Storage>& L) 
@@ -195,8 +195,8 @@ public:
 	{
 		clear();
 		freeData();
-		capacity = getStorageSize();
-		data = getStorage();
+		capacity = this->getStorageSize();
+		data = this->getStorage();
 	}
 
 protected:
@@ -208,7 +208,7 @@ protected:
 				newcapacity = capacity * 2;
 			}
 			T* newdata = reinterpret_cast<T*>
-				(getPool().allocate(sizeof(T) * newcapacity
+				(this->getPool().allocate(sizeof(T) * newcapacity
 #ifdef DEBUG_GDS_ALLOC
 		, 1, __FILE__, __LINE__
 #endif
@@ -234,17 +234,17 @@ public:
 	explicit SortedArray(int s) : Array<Value, Storage>(s) {}
 	SortedArray() : Array<Value, Storage>() {}
 	bool find(const Key& item, int& pos) const {
-		int highBound = count, lowBound = 0;
+		int highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {
 			int temp = (highBound + lowBound) >> 1;
-			if (Cmp::greaterThan(item, KeyOfValue::generate(this, data[temp])))
+			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
 				lowBound = temp + 1;
 			else
 				highBound = temp;
 		}
 		pos = lowBound;
-		return highBound != count &&
-			!Cmp::greaterThan(KeyOfValue::generate(this, data[lowBound]), item);
+		return highBound != this->count &&
+			!Cmp::greaterThan(KeyOfValue::generate(this, this->data[lowBound]), item);
 	}
 	int add(const Value& item) {
 	    int pos;

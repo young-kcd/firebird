@@ -59,7 +59,7 @@ namespace Firebird {
 			
 			Entry* push(Object e, MemoryPool& p)
 			{
-				if (inherited::getCount() < getCapacity())
+				if (inherited::getCount() < this->getCapacity())
 				{
 					add(e);
 					return this;
@@ -71,21 +71,21 @@ namespace Firebird {
 			Object pop()
 			{
 				fb_assert(inherited::getCount() > 0);
-				return data[--count];
+				return this->data[--this->count];
 			}
 
 			Object getObject(int pos) const
 			{
-				return data[pos];
+				return this->data[pos];
 			}
 
 			void split(int elem, Entry* target) 
 			{
 				fb_assert(elem > 0 && elem < count);
-				memcpy(target->data, data, elem * sizeof(Object));
+				memcpy(target->data, this->data, elem * sizeof(Object));
 				target->count += elem;
-				count -= elem;
-				memmove(data, &data[elem], count * sizeof(Object));
+				this->count -= elem;
+				memmove(this->data, &this->data[elem], this->count * sizeof(Object));
 			}
 
 			Entry* dup(MemoryPool& p)
@@ -163,7 +163,7 @@ namespace Firebird {
 		public:
 			explicit iterator(const Stack<Object, Capacity>& s) 
 				: stk(s.stk), elem(stk ? stk->getCount() : 0) { }
-			iterator(iterator& i) 
+			iterator(const iterator& i) 
 				: stk(i.stk), elem(i.elem) { }
 			iterator() : stk(0), elem(0) { }
 

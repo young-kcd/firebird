@@ -4581,7 +4581,9 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input)
 	if (fields) {
 		fields = PASS1_node(request, fields, false);
         // begin IBO hack 
-        const dsql_nod* const* ptr = fields->nod_arg;
+		// 02-May-2004, Nickolay Samofatov. Do not constify ptr further e.g. to 
+		// const dsql_nod* const* .... etc. It chokes GCC 3.4.0
+        dsql_nod** ptr = fields->nod_arg;
         for (const dsql_nod* const* const end = ptr + fields->nod_count;
 			ptr < end; ptr++)
 		{

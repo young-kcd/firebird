@@ -340,8 +340,9 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	if (!rpb->rpb_b_page) {
 		delete_record(tdbb, rpb, (SLONG) 0, 0);
 		if (!(rpb->rpb_flags & rpb_deleted)) {
-			BLB_garbage_collect(tdbb, going, RecordStack(), rpb->rpb_page, relation);
-			IDX_garbage_collect(tdbb, rpb, going, RecordStack());
+			RecordStack empty_staying;
+			BLB_garbage_collect(tdbb, going, empty_staying, rpb->rpb_page, relation);
+			IDX_garbage_collect(tdbb, rpb, going, empty_staying);
 			going.pop();
 		}
 		goto gc_cleanup;
@@ -3407,7 +3408,8 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 /* Delete old versions fetching data for garbage collection. */
 
 	record_param temp = *rpb;
-	garbage_collect(tdbb, &temp, rpb->rpb_page, RecordStack());
+	RecordStack empty_staying;
+	garbage_collect(tdbb, &temp, rpb->rpb_page, empty_staying);
 	VIO_bump_count(tdbb, DBB_expunge_count, rpb->rpb_relation, false);
 }
 

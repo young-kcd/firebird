@@ -3350,7 +3350,9 @@ void gds__cleanup(void)
 
 	gds__msg_close(NULL);
 
-	while (CLEAN clean = cleanup_handlers) {
+	CLEAN clean;
+
+	while (clean = cleanup_handlers) {
 		cleanup_handlers = clean->clean_next;
 		FPTR_VOID_PTR routine = clean->clean_routine;
 		void* arg = clean->clean_arg;

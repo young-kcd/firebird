@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.27 2004-04-18 02:50:35 skidder Exp $
+ *  $Id: tree.h,v 1.28 2004-05-03 04:24:49 skidder Exp $
  *
  */
 
@@ -210,7 +210,11 @@ private:
 		static const Key& generate(const void *sender, void *item) { 
 			for (int lev = ((NodeList *)sender)->level; lev > 0; lev--)
 				item = *((NodeList *)item)->begin();
-			return KeyOfValue::generate(item,*((BePlusTree::ItemList *)item)->begin());
+
+			// ItemList reference below is ISO C++ compliant.
+			// If your compiler has broken name lookup sequence then conditionally
+			// add ItemList typedef for you compiler with whichever syntax it likes
+			return KeyOfValue::generate(item,*((ItemList *)item)->begin());
 		}
 		static void setNodeParentAndLevel(void *node, int level, NodeList *parent) {
 			if (level) {

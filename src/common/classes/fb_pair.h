@@ -83,11 +83,11 @@ template<typename BasePair>
 			: BasePair(AutoStorage::getAutoMemoryPool(), lp) { }
 		bool operator==(const Pair& v)
 		{
-			return first == v.first && second == v.second; 
+			return this->first == v.first && this->second == v.second; 
 		}
 		bool operator<(const Pair& v)
 		{
-			return first < v.first || (!(first < v.first) && second < v.second); 
+			return this->first < v.first || (!(this->first < v.first) && this->second < v.second); 
 		}
 		bool operator!=(const Pair& v)
 		{

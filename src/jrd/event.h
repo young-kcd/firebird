@@ -167,7 +167,7 @@ typedef evt_req *EVT_REQ;
 
 /* Request interest block */
 
-struct rint {
+struct req_int {
 	event_hdr rint_header;
 	SRQ rint_interests;			/* Que owned by event */
 	PTR rint_event;				/* Event of interest */
@@ -175,7 +175,7 @@ struct rint {
 	PTR rint_next;				/* Next interest of request */
 	SLONG rint_count;			/* Threshhold count */
 };
-typedef rint *RINT;
+typedef req_int *RINT;
 
 const int EPB_version1 = 1;
 

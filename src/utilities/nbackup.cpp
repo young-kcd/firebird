@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.24 2004-05-02 23:06:12 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.25 2004-05-03 04:25:06 skidder Exp $
  *
  */
  
@@ -878,7 +878,8 @@ int main( int argc, char *argv[] )
 	fprintf(stderr,"Using %d-bit UNIX IO\n", sizeof(off_t) * 8);
 #endif
 	bool matched = false;
-	const char* const* const end = argv + argc;
+	// Do not constify. GCC 3.4.0 chokes on minus below in this case
+	char** end = argv + argc;
 	
 	try {
 	

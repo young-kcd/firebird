@@ -26,6 +26,7 @@
 #include <exception>
 #include <stddef.h>
 #include <stdarg.h>
+#include <string.h>
 #include "fb_types.h"
 
 

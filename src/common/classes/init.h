@@ -49,7 +49,7 @@ public:
 				leave();
 				throw;
 			}
-			initLock.leave();
+			leave();
 		}
 	} 
 };
