@@ -384,7 +384,7 @@ static LRESULT CALLBACK WindowFunc(
 		case IDM_SHUTDOWN:
 			{
 				HWND hTmpWnd;
-				if ( sw_arch = ARCH_SS ) 
+				if ( sw_arch == ARCH_SS ) 
 				{
 					hTmpWnd = FindWindow(szClassName, szWindowName);
 					PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_SHUTDOWN, 0);
