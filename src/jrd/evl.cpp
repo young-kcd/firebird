@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.33 2003-02-21 09:14:52 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.34 2003-02-21 09:25:17 dimitr Exp $ 
  */
 
 /*
@@ -645,7 +645,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 			{
 				// First term is TRUE, why the whole expression is true.
 				// NULL flag is already turned off a few lines above.
-				return FALSE;
+				return TRUE;
 			}
 			
 			const USHORT value2 = EVL_boolean(tdbb, *ptr);
