@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.40 2004-01-28 07:50:27 robocop Exp $
+//	$Id: sql.cpp,v 1.41 2004-02-02 11:01:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -3159,7 +3159,7 @@ static act* act_grant_revoke( enum act_t type)
 		execute_priv = true;
 	}
 	else {
-		LLS *fields = &priv_block->prv_fields;
+		gpre_lls** fields = &priv_block->prv_fields;
 		while (true) {
 			if (MSC_match(KW_SELECT))
 				priv_block->prv_privileges |= PRV_select;
@@ -3397,7 +3397,7 @@ static act* act_insert(void)
 	gpre_ctx* context = SQE_context(request);
 
 	int count = 0, count2 = 0;
-	LLS fields = NULL;
+	gpre_lls* fields = NULL;
 
 //  Pick up a field list 
 
@@ -3441,7 +3441,7 @@ static act* act_insert(void)
 		EXP_match_paren();
 	}
 
-	LLS values = NULL;
+	gpre_lls* values = NULL;
 	if (MSC_match(KW_VALUES)) {
 		// Now pick up a value list 
 
@@ -3897,7 +3897,7 @@ static act* act_procedure(void)
 	SQL_relation_name(p_name, db_name, owner_name);
 	gpre_prc* procedure = SQL_procedure(request, p_name, db_name, owner_name, true);
 	
-	LLS values = NULL;
+	gpre_lls* values = NULL;
 
 	SSHORT inputs = 0;
 	if (!(token.tok_keyword == KW_RETURNING) && !(token.tok_keyword == KW_SEMI_COLON)) {
@@ -4368,7 +4368,7 @@ static act* act_update(void)
 		token.tok_symbol = HSH_lookup(token.tok_string);
 	}
 
-	LLS stack = NULL;
+	gpre_lls* stack = NULL;
 	SSHORT count = 0;
 
 	do {
@@ -5740,7 +5740,7 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 {
 	enum kwwords keyword;
-	LLS *fields;
+	gpre_lls** fields;
 	USHORT num_for_key_flds = 0, num_prim_key_flds = 0;
 
 	cnstrt* constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);

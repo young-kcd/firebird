@@ -30,7 +30,7 @@ void		PARSE_actions(void);
 void		PARSE_error(USHORT, TEXT*, TEXT*);
 FUNC		PARSE_function(int);
 enum kwwords PARSE_keyword(void);
-DUDLEY_NOD	PARSE_make_list(LLS);
+DUDLEY_NOD	PARSE_make_list(dudley_lls*);
 DUDLEY_NOD	PARSE_make_node(enum nod_t, USHORT);
 bool		PARSE_match(enum kwwords);
 int			PARSE_number(void);

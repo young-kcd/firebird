@@ -26,4 +26,5 @@
 
 void	SHOW_stuff(syn*);
 
-#endif /* QLI_SHOW_PROTO_H */
+#endif // QLI_SHOW_PROTO_H
+

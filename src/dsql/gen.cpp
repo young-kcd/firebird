@@ -62,7 +62,7 @@ static void gen_for_select(dsql_req*, dsql_nod*);
 static void gen_gen_id(dsql_req*, const dsql_nod*);
 static void gen_join_rse(dsql_req*, const dsql_nod*);
 static void gen_map(dsql_req*, dsql_map*);
-static void gen_parameter(dsql_req*, const par*);
+static void gen_parameter(dsql_req*, const dsql_par*);
 static void gen_plan(dsql_req*, const dsql_nod*);
 static void gen_relation(dsql_req*, dsql_ctx*);
 static void gen_rse(dsql_req*, const dsql_nod*);
@@ -98,7 +98,7 @@ const bool USE_VALUE    = false;
 **/
 UCHAR GEN_expand_buffer( dsql_req* request, UCHAR byte)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	const ULONG length = request->req_blr_string->str_length + 2048;
 	// AB: We must define a maximum length and post an error when exceeded else 
@@ -144,7 +144,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 	dsql_nod* ddl_node;
 	dsql_ctx* context;
 	dsql_map* map;
-	var* variable;
+	dsql_var* variable;
 
 	switch (node->nod_type) {
 	case nod_alias:
@@ -229,7 +229,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		return;
 
 	case nod_variable:
-		variable = (var*) node->nod_arg[e_var_variable];
+		variable = (dsql_var*) node->nod_arg[e_var_variable];
 		if (variable->var_flags & VAR_input) {
 			stuff(request, blr_parameter2);
 			stuff(request, variable->var_msg_number);
@@ -255,7 +255,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		return;
 
 	case nod_parameter:
-		gen_parameter(request, (par*) node->nod_arg[e_par_parameter]);
+		gen_parameter(request, (dsql_par*) node->nod_arg[e_par_parameter]);
 		return;
 
 	case nod_relation:
@@ -585,7 +585,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
  **/
 void GEN_port( dsql_req* request, dsql_msg* message)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	if (request->req_blr_string) {
 		stuff(request, blr_message);
@@ -593,7 +593,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 		stuff_word(request, message->msg_parameter);
 	}
 
-    par* parameter;
+    dsql_par* parameter;
 
 	USHORT number = 0;
 	for (parameter = message->msg_parameters; parameter;
@@ -1890,11 +1890,11 @@ static void gen_map( dsql_req* request, dsql_map* map)
     @param parameter
 
  **/
-static void gen_parameter( dsql_req* request, const par* parameter)
+static void gen_parameter( dsql_req* request, const dsql_par* parameter)
 {
 	const dsql_msg* message = parameter->par_message;
 
-	const par* null = parameter->par_null;
+	const dsql_par* null = parameter->par_null;
 	if (null != NULL) {
 		stuff(request, blr_parameter2);
 		stuff(request, message->msg_number);
@@ -2092,7 +2092,7 @@ void GEN_return( dsql_req* request, const dsql_nod* parameters, bool eos_flag)
 		{
 			outputs++;
 			const dsql_nod* parameter = *ptr;
-			const var* variable = (var*) parameter->nod_arg[e_var_variable];
+			const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
 			stuff(request, blr_assignment);
 			stuff(request, blr_variable);
 			stuff_word(request, variable->var_variable_number);
@@ -2226,7 +2226,7 @@ static void gen_rse( dsql_req* request, const dsql_nod* rse)
 		stuff(request, blr_receive);
 		stuff(request, request->req_async->msg_number);
 		stuff(request, blr_seek);
-		const par* parameter = request->req_async->msg_parameters;
+		const dsql_par* parameter = request->req_async->msg_parameters;
 		gen_parameter(request, parameter->par_next);
 		gen_parameter(request, parameter);
 	}
@@ -2304,7 +2304,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		ptr++) 
 	{
 		dsql_nod* item = *ptr;
-		par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
+		dsql_par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
 		parameter->par_node = item;
 		MAKE_desc(&parameter->par_desc, item);
 		const char* name_alias = NULL;
@@ -2510,7 +2510,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 // Set up parameter to handle EOF 
 
 	{
-		par* parameter_eof = MAKE_parameter(request->req_receive, false, false, 0);
+		dsql_par* parameter_eof = MAKE_parameter(request->req_receive, false, false, 0);
 		request->req_eof = parameter_eof;
 		parameter_eof->par_desc.dsc_dtype = dtype_short;
 		parameter_eof->par_desc.dsc_scale = 0;
@@ -2531,7 +2531,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 				context = (dsql_ctx*) item->nod_arg[e_rel_context];
 				if (relation = context->ctx_relation) {
 					// Set up dbkey
-					par* parameter =
+					dsql_par* parameter =
 						MAKE_parameter(request->req_receive, false, false, 0);
 					parameter->par_dbkey_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
@@ -2563,7 +2563,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 	if (request->req_type == REQ_SELECT &&
 		request->req_dbb->dbb_base_level >= 5) 
 	{
-		par* parameter = MAKE_parameter(request->req_async, false, false, 0);
+		dsql_par* parameter = MAKE_parameter(request->req_async, false, false, 0);
 		parameter->par_desc.dsc_dtype = dtype_short;
 		parameter->par_desc.dsc_length = sizeof(USHORT);
 		parameter->par_desc.dsc_scale = 0;
@@ -2622,7 +2622,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 	gen_constant(request, &constant_desc, USE_VALUE);
 	gen_parameter(request, request->req_eof);
 
-	for (par* parameter = message->msg_parameters; parameter;
+	for (dsql_par* parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next) {
 		if (parameter->par_node) {
 			stuff(request, blr_assignment);

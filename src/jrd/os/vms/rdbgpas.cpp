@@ -99,9 +99,9 @@ static int gds_to_rdb(int *status_vector, int *user_status)
  *
  **************************************/
 	int code, trans;
-	USHORT fac = 0, class_ = 0;
+	USHORT fac = 0, dummy_class = 0;
 
-	code = gds__decode(status_vector[1], &fac, &class_);
+	code = gds__decode(status_vector[1], &fac, &dummy_class);
 	trans = codes[code];
 
 	return set_status(user_status, trans);

@@ -35,5 +35,5 @@ int			MOVQ_get_string(const dsc*, TEXT**, vary*, USHORT);
 void		MOVQ_move(const dsc*, dsc*);
 void		MOVQ_terminate (const SCHAR*, SCHAR*, USHORT, USHORT);
 
-#endif /* QLI_MOV_PROTO_H */
+#endif // QLI_MOV_PROTO_H
 

@@ -302,10 +302,10 @@ static inline size_t IDX_LEN(const size_t cnt)
 
 /* Linked list stack stuff */
 
-typedef struct lls {
-	struct dudley_nod *lls_object;		/* object on stack */
-	lls* lls_next;						/* next item on stack */
-} *LLS;
+struct dudley_lls {
+	struct dudley_nod *lls_object;		// object on stack
+	dudley_lls* lls_next;				// next item on stack
+};
 
 
 /* General Syntax node, produced by parser */

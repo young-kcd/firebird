@@ -53,8 +53,8 @@ typedef struct why_hndl
 	struct why_hndl*	parent;
 	struct why_hndl*	next;
 	union {
-		struct why_hndl*requests;
-		struct dasup*	das;
+		struct why_hndl*	requests;
+		struct sqlda_sup*	das;
 	};
 	struct why_hndl*	statements;
 	struct why_hndl*	blobs;

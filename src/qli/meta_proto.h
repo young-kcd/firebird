@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		meta_proto.h
- *	DESCRIPTION:	Prototype header file for meta.c
+ *	DESCRIPTION:	Prototype header file for meta.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -52,5 +52,5 @@ void	MET_sql_grant(syn*);
 void	MET_sql_revoke(syn*);
 FRBRD*	MET_transaction(NOD_T, dbb*);
 
-#endif /* QLI_META_PROTO_H */
+#endif // QLI_META_PROTO_H
 

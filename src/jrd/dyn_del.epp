@@ -1000,25 +1000,25 @@ void DYN_delete_procedure( GBL gbl, const UCHAR** ptr)
 	}	// try
 	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		if (id == drq_e_prms)
+		
+		switch (id)
 		{
+		case drq_e_prms:
 			DYN_error_punt(true, 138, NULL, NULL, NULL, NULL, NULL);
 			/* msg 138: "ERASE RDB$PROCEDURE_PARAMETERS failed" */
-		}
-		else if (id == drq_e_prcs)
-		{
+			break;
+		case drq_e_prcs:
 			DYN_error_punt(true, 139, NULL, NULL, NULL, NULL, NULL);
 			/* msg 139: "ERASE RDB$PROCEDURES failed" */
-		}
-		else if (id == drq_d_gfields)
-		{
+			break;
+		case drq_d_gfields:
 			DYN_error_punt(true, 35, NULL, NULL, NULL, NULL, NULL);
 			/* msg 35: "ERASE RDB$FIELDS failed" */
-		}
-		else
-		{
+			break;
+		default:
 			DYN_error_punt(true, 62, NULL, NULL, NULL, NULL, NULL);
 			/* msg 62: "ERASE RDB$USER_PRIVILEGES failed" */
+			break;
 		}
 	}
 

@@ -24,10 +24,10 @@
 #ifndef ALICE_LLS_H
 #define ALICE_LLS_H
 
-typedef struct lls {
+struct alice_lls {
 	struct blk* lls_object;
-	struct lls* lls_next;
-} *LLS;
+	alice_lls* lls_next;
+};
 
 #endif // ALICE_LLS_H
 

@@ -67,7 +67,7 @@ USHORT computePrefix(const UCHAR* prevString, USHORT prevLength,
 }
 
 
-SLONG findPageInDuplicates(const btr* page, UCHAR* pointer, 
+SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 			SLONG previousNumber, SLONG findRecordNumber)
 {
 /**************************************
@@ -209,7 +209,7 @@ USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
 }
 
 
-UCHAR* getPointerFirstNode(btr* page, IndexJumpInfo* jumpInfo)
+UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo)
 {
 /**************************************
  *
@@ -322,7 +322,7 @@ bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 
 
 #ifdef SCROLLABLE_CURSORS
-UCHAR* lastNode(btr* page, EXP expanded_page, BTX* expanded_node)
+UCHAR* lastNode(btree_page* page, EXP expanded_page, BTX* expanded_node)
 {
 /**************************************
  *
@@ -563,7 +563,7 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 }
 
 
-UCHAR* writeJumpInfo(btr* page, const IndexJumpInfo* jumpInfo)
+UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
 {
 /**************************************
  *

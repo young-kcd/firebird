@@ -4315,7 +4315,7 @@ static dsql_fld* make_field (dsql_nod* field_name)
  *	Make a field block of given name.
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	if (field_name == NULL)
 	{
@@ -4345,7 +4345,7 @@ static dsql_fil* make_file()
  *	Make a file block
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 		   
 	dsql_fil* temp_file = FB_NEW(*tdsql->tsql_default) dsql_fil;
 
@@ -4365,7 +4365,7 @@ static dsql_nod* make_list (dsql_nod* node)
  *	Collapse nested list nodes into single list.
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	if (!node)
 		return node;
@@ -4404,7 +4404,7 @@ static dsql_nod* make_parameter (void)
  *	Any change should also be made to function below
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
 	node->nod_type = nod_parameter;
@@ -4432,7 +4432,7 @@ static dsql_nod* make_node (NOD_TYPE	type,
  *	Any change should also be made to function below
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 	node->nod_type = type;
@@ -4465,7 +4465,7 @@ static dsql_nod* make_flag_node (NOD_TYPE	type,
  *	Make a node of given type. Set flag field
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 	node->nod_type = type;

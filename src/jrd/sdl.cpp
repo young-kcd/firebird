@@ -401,7 +401,7 @@ static const UCHAR* compile(const UCHAR* sdl, SDL_ARG arg)
  *	is null, parse, but do not generate anything.
  *
  **************************************/
-	SLONG n, count, variable, value, operator_;
+	SLONG n, count, variable, value, sdl_operator;
 	IPTR *label;
 	const UCHAR* expressions[16];
 	const UCHAR** expr;
@@ -477,19 +477,19 @@ static const UCHAR* compile(const UCHAR* sdl, SDL_ARG arg)
 		return p + 4;
 
 	case isc_sdl_add:
-		operator_ = op_add;
+		sdl_operator = op_add;
 	case isc_sdl_subtract:
-		if (!operator_)
-			operator_ = op_subtract;
+		if (!sdl_operator)
+			sdl_operator = op_subtract;
 	case isc_sdl_multiply:
-		if (!operator_)
-			operator_ = op_multiply;
+		if (!sdl_operator)
+			sdl_operator = op_multiply;
 	case isc_sdl_divide:
-		if (!operator_)
-			operator_ = op_divide;
+		if (!sdl_operator)
+			sdl_operator = op_divide;
 		COMPILE(p, arg);
 		COMPILE(p, arg);
-		STUFF(operator_, arg);
+		STUFF(sdl_operator, arg);
 		return p;
 
 	case isc_sdl_scalar:

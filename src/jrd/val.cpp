@@ -680,7 +680,8 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
  *
  **************************************/
 	struct vdr control;
-	JrdMemoryPool *val_pool, *old_pool;
+	JrdMemoryPool* val_pool = 0;
+	JrdMemoryPool* old_pool = 0;
 	USHORT i;
 
 	SET_TDBB(tdbb);
@@ -754,22 +755,22 @@ static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, jrd_rel* relation, .
  *	Corruption has been detected.
  *
  **************************************/
-	TEXT s[256], *p;
+	TEXT s[256];
 	va_list ptr;
-	const TEXT *string;
-	ATT att;
 
 	VA_START(ptr, relation);
 
 	SET_TDBB(tdbb);
-	att = tdbb->tdbb_attachment;
+	ATT att = tdbb->tdbb_attachment;
 	if (err_code < att->att_val_errors->count())
 		(*att->att_val_errors)[err_code]++;
 
-	string = msg_table[err_code];
+	const TEXT* string = msg_table[err_code];
 
 	sprintf(s, "Database: %s\n\t",
 			tdbb->tdbb_attachment->att_filename->str_data);
+			
+	TEXT* p;
 	for (p = s; *p; p++)
 		/* nothing */ ;
 	vsprintf(p, string, ptr);
@@ -1021,7 +1022,7 @@ static RTN walk_blob(TDBB tdbb,
 	SLONG sequence;
 
 	for (sequence = 0; pages1 < end1; pages1++) {
-		blp* page1 = 0;
+		blob_page* page1 = 0;
 		fetch_page(tdbb, control, *pages1, pag_blob, &window1, &page1);
 		if (page1->blp_lead_page != header->blh_lead_page)
 			corrupt(tdbb, control, VAL_BLOB_INCONSISTENT, relation, number);
@@ -1036,7 +1037,7 @@ static RTN walk_blob(TDBB tdbb,
 			const SLONG* pages2 = page1->blp_page;
 			const SLONG* const end2 = pages2 + (page1->blp_length >> SHIFTLONG);
 			for (; pages2 < end2; pages2++, sequence++) {
-				blp* page2 = 0;
+				blob_page* page2 = 0;
 				fetch_page(tdbb, control, *pages2, pag_blob, &window2,
 						   &page2);
 				if (page2->blp_lead_page != header->blh_lead_page
@@ -1073,7 +1074,7 @@ static RTN walk_chain(TDBB tdbb,
  *	Make sure chain of record versions is completely intact.
  *
  **************************************/
-	DPG page;
+	data_page* page;
 #ifdef DEBUG_VAL_VERBOSE
 	USHORT counter = 0;
 #endif
@@ -1092,7 +1093,7 @@ static RTN walk_chain(TDBB tdbb,
 #endif
 		control->vdr_rel_chain_counter++;
 		fetch_page(tdbb, control, page_number, pag_data, &window, &page);
-		const dpg::dpg_repeat* line = &page->dpg_rpt[line_number];
+		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
 		header = (RHD) ((UCHAR *) page + line->dpg_offset);
 		if (page->dpg_count <= line_number ||
 			!line->dpg_length ||
@@ -1177,15 +1178,11 @@ static RTN walk_data_page(TDBB tdbb,
  *	Walk a single data page.
  *
  **************************************/
-	RTN result;
-	SLONG number;
-	int state;
-
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
 	WIN window(-1);
-	dpg* page;
+	data_page* page;
 	fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 
 #ifdef DEBUG_VAL_VERBOSE
@@ -1209,10 +1206,12 @@ static RTN walk_data_page(TDBB tdbb,
 /* Walk records */
 
 	const UCHAR* const end_page = (UCHAR *) page + dbb->dbb_page_size;
-	const dpg::dpg_repeat* const end = page->dpg_rpt + page->dpg_count;
-	number = sequence * dbb->dbb_max_records;
+	const data_page::dpg_repeat* const end = page->dpg_rpt + page->dpg_count;
+	SLONG number = sequence * dbb->dbb_max_records;
 
-	for (const dpg::dpg_repeat* line = page->dpg_rpt; line < end; line++, number++) {
+	for (const data_page::dpg_repeat* line = page->dpg_rpt; line < end;
+		line++, number++)
+	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level) {
 			ib_fprintf(ib_stdout, "Slot %02d (%d,%d): ",
@@ -1245,6 +1244,7 @@ static RTN walk_data_page(TDBB tdbb,
 				if (header->rhd_b_page)
 					SBM_set(tdbb, &control->vdr_rel_records, number);
 				else {
+					int state;
 					if (header->rhd_transaction < dbb->dbb_oldest_transaction)
 						state = tra_committed;
 					else
@@ -1269,7 +1269,7 @@ static RTN walk_data_page(TDBB tdbb,
 				((header->rhd_flags & rhd_large) ||
 				 (control->vdr_flags & vdr_records)))
 			{
-				result = (header->rhd_flags & rhd_blob) ?
+				const RTN result = (header->rhd_flags & rhd_blob) ?
 					walk_blob(tdbb, control, relation, (BLH) header,
 							  line->dpg_length, number) :
 					walk_record(tdbb, control, relation, header,
@@ -1309,7 +1309,7 @@ static void walk_generators(TDBB tdbb, VDR control)
  *	Walk the page inventory pages.
  *
  **************************************/
-	PPG page;
+	pointer_page* page;
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
@@ -1378,7 +1378,6 @@ static RTN walk_index(TDBB tdbb,
  *	So errors are reported against index id+1
  *
  **************************************/
-	BTR page, down_page;
 	SLONG down_number, next_number;
 	UCHAR *p, *q, l;
 
@@ -1397,10 +1396,12 @@ static RTN walk_index(TDBB tdbb,
 	}
 
 	bool firstNode = true;
-	SCHAR flags;
+	SCHAR flags = 0;
 	UCHAR *pointer;
 	UCHAR *endPointer;
 	IndexNode node, lastNode;
+	btree_page* page;
+	btree_page* down_page;
 
 	while (next) {
 		WIN window(-1);
@@ -1692,28 +1693,23 @@ static void walk_pip(TDBB tdbb, VDR control)
  *	Walk the page inventory pages.
  *
  **************************************/
-	DBB dbb;
-	PIP page;
-	PGC pgc;
-	USHORT sequence;
-	UCHAR byte;
-	SLONG page_number;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	pgc = dbb->dbb_pcontrol;
+	PGC pgc = dbb->dbb_pcontrol;
+	PIP page;
 
-	for (sequence = 0;; sequence++) {
-		page_number = (sequence) ? sequence * pgc->pgc_ppp - 1 : pgc->pgc_pip;
+	for (USHORT sequence = 0;; sequence++) {
+		const SLONG page_number =
+			(sequence) ? sequence * pgc->pgc_ppp - 1 : pgc->pgc_pip;
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "walk_pip: page %d\n", page_number);
 #endif
 		WIN window(-1);
 		fetch_page(tdbb, control, page_number, pag_pages, &window, &page);
-		byte = page->pip_bits[pgc->pgc_bytes - 1];
+		const UCHAR byte = page->pip_bits[pgc->pgc_bytes - 1];
 		CCH_RELEASE(tdbb, &window);
 		if (byte & 0x80)
 			break;
@@ -1736,15 +1732,9 @@ static RTN walk_pointer_page(	TDBB	tdbb,
  *	to go.
  *
  **************************************/
-	DBB dbb;
-	PPG page;
-	RTN result;
-	USHORT slot;
-	SLONG *pages, seq;
-
 	SET_TDBB(tdbb);
 
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	VCL vector = relation->rel_pages;
 
@@ -1752,6 +1742,7 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 		return corrupt(tdbb, control, VAL_P_PAGE_LOST, relation, sequence);
 	}
 
+	pointer_page* page;
 	WIN window(-1);
 	fetch_page(	tdbb,
 				control,
@@ -1778,13 +1769,14 @@ static RTN walk_pointer_page(	TDBB	tdbb,
 
 /* Walk the data pages (someday we may optionally walk pages with "large objects" */
 
-	seq = (SLONG) sequence *dbb->dbb_dp_per_pp;
+	SLONG seq = (SLONG) sequence *dbb->dbb_dp_per_pp;
 
-	for (pages = page->ppg_page, slot = 0; slot < page->ppg_count;
+	USHORT slot = 0;
+	for (SLONG* pages = page->ppg_page; slot < page->ppg_count;
 		 slot++, pages++, seq++)
 	{
 		if (*pages) {
-			result = walk_data_page(tdbb, control, relation, *pages, seq);
+			const RTN result = walk_data_page(tdbb, control, relation, *pages, seq);
 			if (result != rtn_ok && (control->vdr_flags & vdr_repair)) {
 				CCH_MARK(tdbb, &window);
 				*pages = 0;
@@ -1833,16 +1825,6 @@ static RTN walk_record(TDBB tdbb,
  *	Walk a record.
  *
  **************************************/
-	DPG page;
-	RHDF fragment;
-	USHORT record_length, line_number;
-	SLONG page_number;
-	fmt* format;
-	UCHAR flags;
-	SCHAR c, *p, *end;
-	RTN result;
-	dpg::dpg_repeat * line;
-
 	SET_TDBB(tdbb);
 
 #ifdef DEBUG_VAL_VERBOSE
@@ -1861,13 +1843,15 @@ static RTN walk_record(TDBB tdbb,
 	}
 
 	if (control && header->rhd_transaction > control->vdr_max_transaction)
+	{
 		corrupt(tdbb, control, VAL_REC_BAD_TID, relation, number,
 				header->rhd_transaction);
+	}
 
 /* If there's a back pointer, verify that it's good */
 
 	if (header->rhd_b_page && !(header->rhd_flags & rhd_chain)) {
-		result = walk_chain(tdbb, control, relation, header, number);
+		const RTN result = walk_chain(tdbb, control, relation, header, number);
 		if (result != rtn_ok)
 			return result;
 	}
@@ -1881,8 +1865,10 @@ static RTN walk_record(TDBB tdbb,
 
 /* Pick up what length there is on the fragment */
 
-	fragment = (RHDF) header;
+	RHDF fragment = (RHDF) header;
 
+	char* p;
+	const char* end;
 	if (header->rhd_flags & rhd_incomplete) {
 		p = (SCHAR *) fragment->rhdf_data;
 		end = p + length - OFFSETA(RHDF, rhdf_data);
@@ -1892,10 +1878,11 @@ static RTN walk_record(TDBB tdbb,
 		end = p + length - OFFSETA(RHD, rhd_data);
 	}
 
-	record_length = 0;
+	USHORT record_length = 0;
 
-	while (p < end)
-		if ((c = *p++) >= 0) {
+	while (p < end) {
+		const char c = *p++;
+		if (c >= 0) {
 			record_length += c;
 			p += c;
 		}
@@ -1903,17 +1890,19 @@ static RTN walk_record(TDBB tdbb,
 			record_length -= c;
 			p++;
 		}
+	}
 
 /* Next, chase down fragments, if any */
 
-	page_number = fragment->rhdf_f_page;
-	line_number = fragment->rhdf_f_line;
-	flags = fragment->rhdf_flags;
+	SLONG page_number = fragment->rhdf_f_page;
+	USHORT line_number = fragment->rhdf_f_line;
+	UCHAR flags = fragment->rhdf_flags;
 
+	data_page* page;
 	while (flags & rhd_incomplete) {
 		WIN window(-1);
 		fetch_page(tdbb, control, page_number, pag_data, &window, &page);
-		line = &page->dpg_rpt[line_number];
+		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
 		if (page->dpg_relation != relation->rel_id ||
 			line_number >= page->dpg_count || !(length = line->dpg_length)) {
 			corrupt(tdbb, control, VAL_REC_FRAGMENT_CORRUPT, relation,
@@ -1937,8 +1926,9 @@ static RTN walk_record(TDBB tdbb,
 			p = (SCHAR *) ((RHD) fragment)->rhd_data;
 			end = p + line->dpg_length - OFFSETA(RHD, rhd_data);
 		}
-		while (p < end)
-			if ((c = *p++) >= 0) {
+		while (p < end) {
+			const char c = *p++;
+			if (c >= 0) {
 				record_length += c;
 				p += c;
 			}
@@ -1946,6 +1936,7 @@ static RTN walk_record(TDBB tdbb,
 				record_length -= c;
 				p++;
 			}
+		}
 		page_number = fragment->rhdf_f_page;
 		line_number = fragment->rhdf_f_line;
 		flags = fragment->rhdf_flags;
@@ -1954,7 +1945,7 @@ static RTN walk_record(TDBB tdbb,
 
 /* Check out record length and format */
 
-	format = MET_format(tdbb, relation, header->rhd_format);
+	const fmt* format = MET_format(tdbb, relation, header->rhd_format);
 
 	if (!delta_flag && record_length != format->fmt_length)
 		return corrupt(tdbb, control, VAL_REC_WRONG_LENGTH, relation, number);
@@ -2066,9 +2057,6 @@ static RTN walk_root(TDBB tdbb, VDR control, jrd_rel* relation)
  *	Walk index root page for a relation as well as any indices.
  *
  **************************************/
-	IRT page;
-	USHORT i;
-
 	SET_TDBB(tdbb);
 
 /* If the relation has an index root, walk it */
@@ -2077,11 +2065,12 @@ static RTN walk_root(TDBB tdbb, VDR control, jrd_rel* relation)
 		return corrupt(tdbb, control, VAL_INDEX_ROOT_MISSING, relation);
 	}
 
+	IRT page;
 	WIN window(-1);
 	fetch_page(tdbb, control, relation->rel_index_root, pag_root, &window,
 			   &page);
 
-	for (i = 0; i < page->irt_count; i++) {
+	for (USHORT i = 0; i < page->irt_count; i++) {
 		const SLONG page_number = page->irt_rpt[i].irt_root;
 		if (page_number) {
 			walk_index(tdbb, control, relation, page_number, i);
@@ -2105,19 +2094,17 @@ static RTN walk_tip(TDBB tdbb, VDR control, SLONG transaction)
  *	Walk transaction inventory pages.
  *
  **************************************/
-	DBB dbb;
-	TIP page;
-	VCL vector;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-
-	if (!(vector = dbb->dbb_t_pages)) {
+	VCL vector = dbb->dbb_t_pages;
+	if (!vector) {
 		return corrupt(tdbb, control, VAL_TIP_LOST, 0);
 	}
 
+	TIP page;
 	const ULONG pages = transaction / dbb->dbb_pcontrol->pgc_tpt;
 
 	for (ULONG sequence = 0; sequence <= pages; sequence++) {
@@ -2151,3 +2138,4 @@ static RTN walk_tip(TDBB tdbb, VDR control, SLONG transaction)
 
 	return rtn_ok;
 }
+

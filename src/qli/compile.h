@@ -27,10 +27,10 @@
 /* Name nodes -- used to hold names between parse and compilation */
 
 typedef struct nam {
-    blk		nam_header;
-    sym*	nam_symbol;		/* Symbol pointer, if any */
-    USHORT	nam_length;		/* Length of name */
-    TEXT	nam_string[1];	/* Actual name string */
+    blk			nam_header;
+    qli_symbol*	nam_symbol;		/* Symbol pointer, if any */
+    USHORT		nam_length;		/* Length of name */
+    TEXT		nam_string[1];	/* Actual name string */
 } *NAM;
 
 /* Qualified procedure node -- used to hold qualified procedure names */
@@ -252,4 +252,5 @@ enum set_t {
 #define s_dfi_flag_order       32
 #define s_dfi_flag_statistics  64
 
-#endif /* QLI_COMPILE_H */
+#endif // QLI_COMPILE_H
+

@@ -325,7 +325,7 @@ void PIC_edit(const dsc* desc, PICS picture, TEXT** output, USHORT max_length)
 }
 
 
-void PIC_missing( CON constant, PICS picture)
+void PIC_missing( qli_const* constant, PICS picture)
 {
 /**************************************
  *
@@ -344,7 +344,7 @@ void PIC_missing( CON constant, PICS picture)
 
 	const int l = MAX(desc->dsc_length, picture->pic_length);
 
-	STR scratch = (STR) ALLOCDV(type_str, l + 3);
+	qli_str* scratch = (qli_str*) ALLOCDV(type_str, l + 3);
 	TEXT* p = scratch->str_data;
 	*p++ = '\"';
 
@@ -459,7 +459,7 @@ static TEXT* default_edit_string(
 	}
 
 	if (buff == buffer) {
-		STR string = (STR) ALLOCDV(type_str, strlen(buff));
+		qli_str* string = (qli_str*) ALLOCDV(type_str, strlen(buff));
 		strcpy(string->str_data, buff);
 		buff = string->str_data;
 	}

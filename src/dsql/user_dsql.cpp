@@ -108,7 +108,7 @@ static dsql_err_stblock*	UDSQL_error		= NULL;
 static stmt*		statements		= NULL;
 static dsql_name*		statement_names	= NULL;
 static dsql_name*		cursor_names	= NULL;
-static DBB		databases		= NULL;
+static dsql_dbb*		databases		= NULL;
 
 static inline void set_global_private_status(ISC_STATUS* user_status, ISC_STATUS* local_status)
 {
@@ -1287,10 +1287,10 @@ ISC_STATUS API_ROUTINE gds__to_sqlda(SQLDA* sqlda,
 //
 //	Helper functions for cleanup().
 //
-static void free_all_databases(DBB& databases)
+static void free_all_databases(dsql_dbb*& databases)
 {
 	while (databases) {
-		dbb* database = databases;
+		dsql_dbb* database = databases;
 		databases = database->dbb_next;
 		gds__free(database);
 	}
@@ -1374,9 +1374,9 @@ static void cleanup_database(FRBRD** db_handle, void* dummy)
 		}
 	}
 
-	DBB dbb;
+	dsql_dbb* dbb;
 
-	for (DBB* dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
+	for (dsql_dbb** dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
 	{
 		if (dbb->dbb_database_handle == *db_handle)
 		{
@@ -1494,14 +1494,14 @@ static void init(FRBRD** db_handle)
 		return;
 	}
 
-	DBB dbb;
+	dsql_dbb* dbb;
 	for (dbb = databases; dbb; dbb = dbb->dbb_next) {
 		if (dbb->dbb_database_handle == *db_handle) {
 			return;
 		}
 	}
 
-	dbb = (DBB) gds__alloc((SLONG) sizeof(dbb));
+	dbb = (dsql_dbb*) gds__alloc((SLONG) sizeof(dbb));
 
 	// FREE: by database exit handler cleanup_database()
 	if (!dbb) {					// NOMEM

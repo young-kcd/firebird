@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.37 2004-01-28 07:50:27 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.38 2004-02-02 11:01:26 robocop Exp $
  */
 
 #include "firebird.h"
@@ -229,7 +229,7 @@ bool MET_get_column_default(const gpre_rel* relation,
  *		of the fields.
  */  
 
-LLS MET_get_primary_key(DBB db, const TEXT* relation_name)
+gpre_lls* MET_get_primary_key(DBB db, const TEXT* relation_name)
 {
 	SCHAR name[NAME_SIZE];
 

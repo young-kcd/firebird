@@ -157,26 +157,24 @@ typedef struct pag {
 	SCHAR pag_flags;
 	USHORT pag_checksum;
 	ULONG pag_generation;
-	ULONG pag_seqno;			/* WAL seqno of last update */
-	ULONG pag_offset;			/* WAL offset of last update */
-	// We use pag_seqno as SCN number to avoid major ODS version bump
-	ULONG& pag_scn() { return pag_seqno; }
+	// We renamed pag_seqno for SCN number usage to avoid major ODS version bump
+	ULONG pag_scn;			/* WAL seqno of last update */
+	ULONG reserved;			/* Was used for WAL */
 } *PAG;
 
 
 /* Blob page */
 
-typedef struct blp {
-	struct pag blp_header;
+struct blob_page {
+	pag blp_header;
 	SLONG blp_lead_page;		/* First page of blob (for redundancy only) */
 	SLONG blp_sequence;			/* Sequence within blob */
 	USHORT blp_length;			/* Bytes on page */
 	USHORT blp_pad;				/* Unused */
 	SLONG blp_page[1];			/* Page number if level 1 */
-} *BLP;
+};
 
-#define blp_data	blp_page	/* Formerly defined field */
-#define BLP_SIZE	OFFSETA (BLP, blp_page)
+#define BLP_SIZE	OFFSETA (blob_page*, blp_page)
 
 #define blp_pointers	1		/* Blob pointer page, not data page */
 
@@ -194,8 +192,8 @@ typedef struct btn
 #define BTN_SIZE	6
 
 // B-tree page ("bucket")
-typedef struct btr {
-	struct pag btr_header;
+struct btree_page {
+	pag btr_header;
 	SLONG btr_sibling;			// right sibling page
 	SLONG btr_left_sibling;		// left sibling page
 	SLONG btr_prefix_total;		// sum of all prefixes on page
@@ -203,8 +201,8 @@ typedef struct btr {
 	USHORT btr_length;			// length of data in bucket
 	UCHAR btr_id;				// index id for consistency
 	UCHAR btr_level;			// index level (0 = leaf)
-	struct btn btr_nodes[1];
-} *BTR;
+	btn btr_nodes[1];
+};
 
 // Firebird B-tree nodes
 #define BTN_LEAF_SIZE	6
@@ -247,8 +245,8 @@ struct IndexJumpInfo {
 
 /* Data Page */
 
-typedef struct dpg {
-	struct pag dpg_header;
+struct data_page {
+	pag dpg_header;
 	SLONG dpg_sequence;			/* Sequence number in relation */
 	USHORT dpg_relation;		/* Relation id */
 	USHORT dpg_count;			/* Number of record segments on page */
@@ -256,13 +254,9 @@ typedef struct dpg {
 		USHORT dpg_offset;		/* Offset of record fragment */
 		USHORT dpg_length;		/* Length of record fragment */
 	} dpg_rpt[1];
-} *DPG;
+};
 
-#ifdef __cplusplus
-#define DPG_SIZE	(sizeof (dpg) - sizeof (dpg::dpg_repeat))
-#else
-#define DPG_SIZE	(sizeof (struct dpg) - sizeof(struct dpg_repeat))
-#endif
+#define DPG_SIZE	(sizeof (data_page) - sizeof (data_page::dpg_repeat))
 
 #define dpg_orphan	1			/* Data page is NOT in pointer page */
 #define dpg_full	2			/* Pointer page is marked FULL */
@@ -272,7 +266,7 @@ typedef struct dpg {
 /* Index root page */
 
 typedef struct irt {
-	struct pag irt_header;
+	pag irt_header;
 	USHORT irt_relation;		/* relation id (for consistency) */
 	USHORT irt_count;			/* Number of indices */
 	struct irt_repeat {
@@ -312,7 +306,7 @@ typedef struct irtd : public irtd_ods10 {
 /* Header page */
 
 typedef struct hdr {
-	struct pag hdr_header;
+	pag hdr_header;
 	USHORT hdr_page_size;		/* Page size of database */
 	USHORT hdr_ods_version;		/* Version of on-disk structure */
 	SLONG hdr_PAGES;			/* Page number of PAGES relation */
@@ -337,7 +331,7 @@ typedef struct hdr {
 	UCHAR hdr_data[1];			/* Misc data */
 } *HDR;
 
-#define HDR_SIZE        OFFSETA (HDR, hdr_data)
+#define HDR_SIZE        OFFSETA (hdr*, hdr_data)
 
 /* Header page clumplets */
 
@@ -377,17 +371,19 @@ typedef struct hdr {
 /* backup status mask */
 #define hdr_backup_mask     0xC00
 
+/*
 typedef struct sfd {
-	SLONG sfd_min_page;			/* Minimum page number */
-	SLONG sfd_max_page;			/* Maximum page number */
-	UCHAR sfd_index;			/* Sequence of secondary file */
-	UCHAR sfd_file[1];			/* Given file name */
+	SLONG sfd_min_page;			// Minimum page number
+	SLONG sfd_max_page;			// Maximum page number
+	UCHAR sfd_index;			// Sequence of secondary file
+	UCHAR sfd_file[1];			// Given file name
 } SFD; 
+*/
 
 /* Page Inventory Page */
 
 typedef struct pip {
-	struct pag pip_header;
+	pag pip_header;
 	SLONG pip_min;				/* Lowest (possible) free page */
 	UCHAR pip_bits[1];
 } *PIP;
@@ -395,8 +391,8 @@ typedef struct pip {
 
 /* Pointer Page */
 
-typedef struct ppg {
-	struct pag ppg_header;
+struct pointer_page {
+	pag ppg_header;
 	SLONG ppg_sequence;			/* Sequence number in relation */
 	SLONG ppg_next;				/* Next pointer page in relation */
 	USHORT ppg_count;			/* Number of slots active */
@@ -404,7 +400,7 @@ typedef struct ppg {
 	USHORT ppg_min_space;		/* Lowest slot with space available */
 	USHORT ppg_max_space;		/* Highest slot with space available */
 	SLONG ppg_page[1];			/* Data page vector */
-} *PPG;
+};
 
 #define ppg_bits	ppg_page
 
@@ -413,7 +409,7 @@ typedef struct ppg {
 /* Transaction Inventory Page */
 
 typedef struct tip {
-	struct pag tip_header;
+	pag tip_header;
 	SLONG tip_next;				/* Next transaction inventory page */
 	UCHAR tip_transactions[1];
 } *TIP;
@@ -421,8 +417,8 @@ typedef struct tip {
 
 /* Generator Page */
 
-typedef struct gpg {
-	struct pag gpg_header;
+struct generator_page {
+	pag gpg_header;
 	SLONG gpg_sequence;			/* Sequence number */
 	SLONG gpg_waste1;			/* overhead carried for backward compatibility */
 	USHORT gpg_waste2;			/* overhead carried for backward compatibility */
@@ -430,7 +426,7 @@ typedef struct gpg {
 	USHORT gpg_waste4;			/* overhead carried for backward compatibility */
 	USHORT gpg_waste5;			/* overhead carried for backward compatibility */
 	SINT64 gpg_values[1];		/* Generator vector */
-} *GPG;
+};
 
 
 /* Record header */
@@ -499,19 +495,19 @@ typedef struct blh {
 
 /* Log page */
 
-typedef struct ctrl_pt {
+struct ctrl_pt {
 	SLONG cp_seqno;
 	SLONG cp_offset;
 	SLONG cp_p_offset;
 	SSHORT cp_fn_length;
-} CP;
+};
 
 struct log_info_page {
-	struct pag log_header;
-	SLONG log_flags;			/* flags            */
-	CP log_cp_1;				/* control point 1      */
-	CP log_cp_2;				/* control point 2      */
-	CP log_file;				/* current file         */
+	pag log_header;
+	SLONG log_flags;			/* flags, OBSOLETE      */
+	ctrl_pt log_cp_1;			/* control point 1      */
+	ctrl_pt log_cp_2;			/* control point 2      */
+	ctrl_pt log_file;			/* current file         */
 	SLONG log_next_page;		/* Next log page        */
 	SLONG log_mod_tip;			/* tip of modify transaction    */
 	SLONG log_mod_tid;			/* transaction id of modify process */
@@ -522,16 +518,6 @@ struct log_info_page {
 };
 
 #define LIP_SIZE	OFFSETA (log_info_page*, log_data);
-
-/* log flags */
-
-#define log_recover		1		/* recovery required */
-#define log_no_ail		2		/* dummy! will be used till df work */
-#define log_delete		4		/* log files have been deleted */
-#define log_add			8		/* log files have been added */
-#define log_rec_in_progress	16	/* recovery is in progress */
-#define log_partial_rebuild	32	/* partial recovery in progress */
-#define log_recovery_done 	64	/* long term recovery just finished */
 
 #define CTRL_FILE_LEN		255	/* Pre allocated size of file name */
 #define CLUMP_ADD		0

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.52 2004-01-28 07:50:32 robocop Exp $
+ * $Id: rse.cpp,v 1.53 2004-02-02 11:01:34 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2623,7 +2623,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 			break;
 
 		case RSE_get_forward:
-			while(((IRSB_SKIP) impure)->irsb_count > 1) {
+			while (((IRSB_SKIP) impure)->irsb_count > 1) {
 				((IRSB_SKIP) impure)->irsb_count--;
 				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 					return FALSE;

@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.41 2003-11-26 11:15:32 aafemt Exp $
+$Id: flu.cpp,v 1.42 2004-02-02 11:01:34 robocop Exp $
 */
 
 #include "firebird.h"
@@ -741,14 +741,13 @@ NSModule ISC_link_with_module (
  *
  **************************************/
  NSObjectFileImage image;
- NSObjectFileImageReturnCode retVal;
- NSModule mod_handle;
  NSSymbol initSym;
  void (*init)(void);
 
  /* Create an object file image from the given path */
- retVal = NSCreateObjectFileImageFromFile(fileName, &image);
- if(retVal != NSObjectFileImageSuccess)
+ const NSObjectFileImageReturnCode retVal =
+ 	NSCreateObjectFileImageFromFile(fileName, &image);
+ if (retVal != NSObjectFileImageSuccess)
  {
      switch(retVal)
      {
@@ -774,9 +773,9 @@ NSModule ISC_link_with_module (
  }
 
  /* link the image */
- mod_handle = NSLinkModule(image, fileName, NSLINKMODULE_OPTION_PRIVATE);
+ NSModule mod_handle = NSLinkModule(image, fileName, NSLINKMODULE_OPTION_PRIVATE);
  NSDestroyObjectFileImage(image) ;
- if(mod_handle == NULL)
+ if (mod_handle == NULL)
  {
      /*printf("NSLinkModule() failed for dlopen()");*/
      return NULL;

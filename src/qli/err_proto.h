@@ -43,5 +43,5 @@ void	ERRQ_print_error (USHORT, const TEXT*, const TEXT*, const TEXT*,
 							const TEXT*, const TEXT*);
 void	ERRQ_syntax (USHORT);
 
-#endif /* QLI_ERR_PROTO_H */
+#endif // QLI_ERR_PROTO_H
 

@@ -127,7 +127,7 @@ static SYM gen_trigger_name(TRG_T, DUDLEY_REL);
 static int get_system_flag(void);
 static void get_trigger_attributes(int *, int *, int *);
 static void grant_user_privilege(void);
-static DUDLEY_CTX lookup_context(SYM, LLS);
+static DUDLEY_CTX lookup_context(SYM, dudley_lls*);
 static DUDLEY_FLD lookup_global_field(DUDLEY_FLD);
 static ACT make_action(enum act_t, DBB);
 static ACT make_computed_field(DUDLEY_FLD);
@@ -162,7 +162,7 @@ static void sort_out_attributes(DUDLEY_TRG, SLONG, SLONG, SLONG);
 static TXT start_text(void);
 static void validate_field(DUDLEY_FLD);
 
-static LLS local_context;
+static dudley_lls* local_context;
 
 
 void PARSE_actions(void)
@@ -287,7 +287,7 @@ enum kwwords PARSE_keyword(void)
 }
 
 
-DUDLEY_NOD PARSE_make_list(LLS stack)
+DUDLEY_NOD PARSE_make_list(dudley_lls* stack)
 {
 /**************************************
  *
@@ -301,7 +301,7 @@ DUDLEY_NOD PARSE_make_list(LLS stack)
  *
  **************************************/
 	DUDLEY_NOD node;
-	LLS temp;
+	dudley_lls* temp;
 	USHORT count;
 
 	temp = stack;
@@ -1036,7 +1036,7 @@ static void define_index(void)
  *	Define a new index.
  *
  **************************************/
-	LLS stack;
+	dudley_lls* stack;
 	SYM index_name, rel_name;
 	TXT description = NULL;
 	SSHORT count;
@@ -1553,7 +1553,7 @@ static void define_view(void)
 	SYM symbol;
 	SSHORT position;
 	DUDLEY_CTX context, my_context;
-	LLS contexts;
+	dudley_lls* contexts;
 	ACT rel_actions, action;
 
 /* Pick up relation name */
@@ -1578,7 +1578,7 @@ static void define_view(void)
 
 /* add my context to the context stack */
 
-	contexts = (LLS) relation->rel_rse->nod_arg[s_rse_contexts];
+	contexts = (dudley_lls*) relation->rel_rse->nod_arg[s_rse_contexts];
 	my_context = make_context(0, relation);
 	LLS_PUSH((DUDLEY_NOD) my_context, &contexts);
 	relation->rel_rse->nod_arg[s_rse_contexts] = (DUDLEY_NOD) contexts;
@@ -2223,7 +2223,7 @@ static void grant_user_privilege(void)
 }
 
 
-static DUDLEY_CTX lookup_context( SYM symbol, LLS contexts)
+static DUDLEY_CTX lookup_context( SYM symbol, dudley_lls* contexts)
 {
 /**************************************
  *
@@ -3335,7 +3335,7 @@ static void parse_field_clauses( DUDLEY_FLD field)
  *
  **************************************/
 	int n;
-	LLS stack;
+	dudley_lls* stack;
 
 /* Pick up purely optional clauses */
 

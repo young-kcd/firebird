@@ -47,17 +47,17 @@ typedef enum tok_t {
     tok_eof
 } TOK_T;
 
-typedef struct tok {
-    blk		tok_header;
-    TOK_T 	tok_type;	/* type of token */
-    sym*	tok_symbol;		/* hash block if recognized */
-    KWWORDS	tok_keyword;	/* keyword number, if recognized */
-    SLONG	tok_position;	/* byte number in input stream */
-    USHORT	tok_length;
-    tok*	tok_next;
-    tok*	tok_prior;
-    TEXT	tok_string [2];
-} *TOK ; 
+struct qli_tok {
+    blk			tok_header;
+    TOK_T 		tok_type;		/* type of token */
+    qli_symbol*	tok_symbol;		/* hash block if recognized */
+    KWWORDS		tok_keyword;	/* keyword number, if recognized */
+    SLONG		tok_position;	/* byte number in input stream */
+    USHORT		tok_length;
+    qli_tok*	tok_next;
+    qli_tok*	tok_prior;
+    TEXT		tok_string [2];
+};
 
 /* Input line control */
 
@@ -69,19 +69,19 @@ enum line_t {
     line_edit
 };
 
-typedef struct line {
-    blk		line_header;
-    line*	line_next;
-    dbb*	line_database;
-    USHORT	line_size;
-    USHORT	line_length;
-    TEXT	*line_ptr;
-    SLONG	line_position;
-    FRBRD	*line_source;			/* File or blob handle */
+struct qli_line {
+    blk			line_header;
+    qli_line*	line_next;
+    dbb*		line_database;
+    USHORT		line_size;
+    USHORT		line_length;
+    TEXT*		line_ptr;
+    SLONG		line_position;
+    FRBRD*		line_source;			/* File or blob handle */
     enum line_t	line_type;
-    TEXT	line_data [256];
-    TEXT	line_source_name [2];
-} *LINE;
+    TEXT		line_data[256];
+    TEXT		line_source_name[2];
+};
 
 #ifdef PARSER_MAIN
 #define EXTERN
@@ -89,11 +89,11 @@ typedef struct line {
 #define EXTERN	extern
 #endif
 
-EXTERN TOK	QLI_token;
-EXTERN LINE	QLI_line;                  
-EXTERN TEXT	*QLI_prompt;
+EXTERN qli_tok*		QLI_token;
+EXTERN qli_line*	QLI_line;
+EXTERN TEXT*		QLI_prompt;
 
 #undef EXTERN
 
-#endif /* QLI_PARSE_H */
+#endif // QLI_PARSE_H
 

@@ -988,7 +988,7 @@ static void par_dependency(TDBB   tdbb,
 }
 
 
-static jrd_nod* par_exec_proc(TDBB tdbb, Csb* csb, SSHORT operator_)
+static jrd_nod* par_exec_proc(TDBB tdbb, Csb* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1006,7 +1006,7 @@ static jrd_nod* par_exec_proc(TDBB tdbb, Csb* csb, SSHORT operator_)
 	{
 		TEXT name[32];
 
-		if (operator_ == blr_exec_pid) {
+		if (blr_operator == blr_exec_pid) {
 			const USHORT pid = BLR_WORD;
 			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, FALSE, FALSE, 0)))
 				sprintf(name, "id %d", pid);
@@ -1086,7 +1086,7 @@ static jrd_nod* par_fetch(TDBB tdbb, Csb* csb, jrd_nod* for_node)
 }
 
 
-static jrd_nod* par_field(TDBB tdbb, Csb* csb, SSHORT operator_)
+static jrd_nod* par_field(TDBB tdbb, Csb* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1118,12 +1118,12 @@ static jrd_nod* par_field(TDBB tdbb, Csb* csb, SSHORT operator_)
 	const SSHORT stream = csb->csb_rpt[context].csb_stream;
 	SSHORT flags = 0;
 	bool is_column = false;
-	if (operator_ == blr_fid) {
+	if (blr_operator == blr_fid) {
 		id = BLR_WORD;
 		flags = nod_id;
 		is_column = true;
 	}
-	else if (operator_ == blr_field) {
+	else if (blr_operator == blr_field) {
 		tail = &csb->csb_rpt[stream];
 		procedure = tail->csb_procedure;
 
@@ -1187,7 +1187,7 @@ static jrd_nod* par_field(TDBB tdbb, Csb* csb, SSHORT operator_)
    id's may not be valid yet */
 
 	if (csb->csb_g_flags & csb_get_dependencies) {
-		if (operator_ == blr_fid)
+		if (blr_operator == blr_fid)
 			par_dependency(tdbb, csb, stream, id, 0);
 		else
 			par_dependency(tdbb, csb, stream, id, name);
@@ -1731,7 +1731,7 @@ static jrd_nod* par_plan(TDBB tdbb, Csb* csb)
 }
 
 
-static jrd_nod* par_procedure(TDBB tdbb, Csb* csb, SSHORT operator_)
+static jrd_nod* par_procedure(TDBB tdbb, Csb* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1750,7 +1750,7 @@ static jrd_nod* par_procedure(TDBB tdbb, Csb* csb, SSHORT operator_)
 	{
 		TEXT name[32];
 
-		if (operator_ == blr_procedure) {
+		if (blr_operator == blr_procedure) {
 			par_name(csb, name);
 			procedure = MET_lookup_procedure(tdbb, name, FALSE);
 		}
@@ -1885,7 +1885,7 @@ static void par_procedure_parms(
 			asgn->nod_count = count_table[blr_assignment];
 
 			// default value for parameter 
-			if((count <= 0) && input_flag) {
+			if ((count <= 0) && input_flag) {
 				prm* parameter = (prm*)(*procedure->prc_input_fields)
 					[procedure->prc_inputs - n];
 
@@ -1921,7 +1921,7 @@ static void par_procedure_parms(
 
 static jrd_nod* par_relation(
 						TDBB tdbb,
-						Csb* csb, SSHORT operator_, BOOLEAN parse_context)
+						Csb* csb, SSHORT blr_operator, BOOLEAN parse_context)
 {
 /**************************************
  *
@@ -1945,9 +1945,9 @@ static jrd_nod* par_relation(
 /* Find relation either by id or by name */
 	str* alias_string = NULL;
 	jrd_rel* relation = 0;
-	if (operator_ == blr_rid || operator_ == blr_rid2) {
+	if (blr_operator == blr_rid || blr_operator == blr_rid2) {
 		const SSHORT id = BLR_WORD;
-		if (operator_ == blr_rid2) {
+		if (blr_operator == blr_rid2) {
 			const SSHORT length = BLR_PEEK;
 			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
 			alias_string->str_length = length;
@@ -1958,9 +1958,9 @@ static jrd_nod* par_relation(
 			error(csb, isc_relnotdef, isc_arg_string, ERR_cstring(name), 0);
 		}
 	}
-	else if (operator_ == blr_relation || operator_ == blr_relation2) {
+	else if (blr_operator == blr_relation || blr_operator == blr_relation2) {
 		par_name(csb, name);
-		if (operator_ == blr_relation2) {
+		if (blr_operator == blr_relation2) {
 			const SSHORT length = BLR_PEEK;
 			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
 			alias_string->str_length = length;
@@ -2290,17 +2290,17 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 
 	SET_TDBB(tdbb);
 
-	const SSHORT operator_ = BLR_BYTE;
+	const SSHORT blr_operator = BLR_BYTE;
 
-	if (operator_ < 0 || operator_ >= FB_NELEM(type_table)) {
+	if (blr_operator < 0 || blr_operator >= FB_NELEM(type_table)) {
         syntax_error(csb, "invalid BLR code");
     }
 
-	const SSHORT sub_type = sub_type_table[operator_];
+	const SSHORT sub_type = sub_type_table[blr_operator];
 
-	if (expected && (expected != type_table[operator_])) {
+	if (expected && (expected != type_table[blr_operator])) {
 		if (expected_optional) {
-			if (expected_optional != type_table[operator_]) {
+			if (expected_optional != type_table[blr_operator]) {
 				syntax_error(csb, elements[expected]);
 			}
 		}
@@ -2315,10 +2315,10 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 
 	jrd_nod* node;
 	jrd_nod** arg;
-	USHORT n = length_table[operator_];
+	USHORT n = length_table[blr_operator];
 	if (n) {
 		node = PAR_make_node(tdbb, n);
-		node->nod_count = count_table[operator_];
+		node->nod_count = count_table[blr_operator];
 		arg = node->nod_arg;
 	}
 	else {
@@ -2328,7 +2328,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 
 /* Dispatch on operator type. */
 
-	switch (operator_) {
+	switch (blr_operator) {
 	case blr_any:
 	case blr_unique:
 	case blr_ansi_any:
@@ -2430,7 +2430,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 	case blr_store2:
 		node->nod_arg[e_sto_relation] = parse(tdbb, csb, RELATION);
 		node->nod_arg[e_sto_statement] = parse(tdbb, csb, sub_type);
-		if (operator_ == blr_store2)
+		if (blr_operator == blr_store2)
 			node->nod_arg[e_sto_statement2] = parse(tdbb, csb, sub_type);
 		break;
 
@@ -2464,12 +2464,12 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 
 	case blr_exec_proc:
 	case blr_exec_pid:
-		node = par_exec_proc(tdbb, csb, operator_);
+		node = par_exec_proc(tdbb, csb, blr_operator);
 		break;
 
 	case blr_pid:
 	case blr_procedure:
-		node = par_procedure(tdbb, csb, operator_);
+		node = par_procedure(tdbb, csb, blr_operator);
 		break;
 
 	case blr_function:
@@ -2490,7 +2490,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 			BLR_PEEK == (UCHAR) blr_stream)
 				node->nod_arg[e_for_re] = parse(tdbb, csb, TYPE_RSE);
 		else
-			node->nod_arg[e_for_re] = par_rse(tdbb, csb, operator_);
+			node->nod_arg[e_for_re] = par_rse(tdbb, csb, blr_operator);
 		node->nod_arg[e_for_statement] = parse(tdbb, csb, sub_type);
 		break;
 
@@ -2521,7 +2521,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 
 	case blr_rse:
 	case blr_rs_stream:
-		node = par_rse(tdbb, csb, operator_);
+		node = par_rse(tdbb, csb, blr_operator);
 		break;
 
 	case blr_singular:
@@ -2533,7 +2533,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 	case blr_rid:
 	case blr_relation2:
 	case blr_rid2:
-		node = par_relation(tdbb, csb, operator_, TRUE);
+		node = par_relation(tdbb, csb, blr_operator, TRUE);
 		break;
 
 	case blr_union:
@@ -2555,7 +2555,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 
 	case blr_field:
 	case blr_fid:
-		node = par_field(tdbb, csb, operator_);
+		node = par_field(tdbb, csb, blr_operator);
 		break;
 
 	case blr_gen_id:
@@ -2575,7 +2575,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
             /* CVC: There're thousand ways to go wrong, but I don't see any value
                in posting dependencies with set generator since it's DDL, so I will
                track only gen_id() in both dialects. */
-            if ((operator_ == blr_gen_id)
+            if ((blr_operator == blr_gen_id)
                 && (csb->csb_g_flags & csb_get_dependencies))
 			{
                 jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
@@ -2666,7 +2666,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 			const fmt* format = (fmt*) message->nod_arg[e_msg_format];
 			if (n >= format->fmt_count)
 				error(csb, isc_badparnum, 0);
-			if (operator_ != blr_parameter) {
+			if (blr_operator != blr_parameter) {
 				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
 				node->nod_arg[e_arg_flag] = temp;
 				node->nod_count = 1;
@@ -2678,7 +2678,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 				if (n >= format->fmt_count)
 					error(csb, isc_badparnum, 0);
 			}
-			if (operator_ == blr_parameter3) {
+			if (blr_operator == blr_parameter3) {
 				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
 				node->nod_arg[e_arg_indicator] = temp;
 				node->nod_count = 2;
@@ -2702,7 +2702,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 			lls* stack = NULL;
 
 			while (BLR_PEEK != (UCHAR) blr_end) {
-				if (operator_ == blr_select && BLR_PEEK != blr_receive)
+				if (blr_operator == blr_select && BLR_PEEK != blr_receive)
 					syntax_error(csb, "blr_receive");
 				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
 			}
@@ -2774,9 +2774,9 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 			node->nod_arg[e_stat_rse] = parse(tdbb, csb, OTHER);
 		else
 			node->nod_arg[e_stat_rse] = parse(tdbb, csb, TYPE_RSE);
-		if (operator_ != blr_count)
+		if (blr_operator != blr_count)
 			node->nod_arg[e_stat_value] = parse(tdbb, csb, VALUE);
-		if (operator_ == blr_via)
+		if (blr_operator == blr_via)
 			node->nod_arg[e_stat_default] = parse(tdbb, csb, VALUE);
 		break;
 
@@ -2819,7 +2819,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 			(jrd_nod*) (SLONG) csb->csb_rpt[n].csb_stream;
 		node->nod_arg[e_find_dbkey_dbkey] = parse(tdbb, csb, VALUE);
 
-		if (operator_ == blr_find_dbkey_version)
+		if (blr_operator == blr_find_dbkey_version)
 			node->nod_arg[e_find_dbkey_version] = parse(tdbb, csb, VALUE);
 		break;
 
@@ -2942,9 +2942,9 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 	}
 
 	if (csb->csb_g_flags & csb_blr_version4)
-		node->nod_type = (NOD_T) (USHORT) blr_table4[(int) operator_];
+		node->nod_type = (NOD_T) (USHORT) blr_table4[(int) blr_operator];
 	else
-		node->nod_type = (NOD_T) (USHORT) blr_table[(int) operator_];
+		node->nod_type = (NOD_T) (USHORT) blr_table[(int) blr_operator];
 
 	return node;
 }

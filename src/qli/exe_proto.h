@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		exe_proto.h
- *	DESCRIPTION:	Prototype header file for exe.c
+ *	DESCRIPTION:	Prototype header file for exe.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,9 +29,10 @@ void	EXEC_execute(qli_nod*);
 FRBRD*	EXEC_open_blob(qli_nod*);
 file*	EXEC_open_output(qli_nod*);
 void	EXEC_poll_abort (void);
-dsc*	EXEC_receive(qli_msg*, par*);
+dsc*	EXEC_receive(qli_msg*, qli_par*);
 void	EXEC_send(qli_msg*);
 void	EXEC_start_request(qli_req*, qli_msg*);
 void	EXEC_top(qli_nod*);
 
-#endif /* QLI_EXE_PROTO_H */
+#endif // QLI_EXE_PROTO_H
+

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.33 2004-01-21 07:16:17 skidder Exp $
+ * $Id: show.epp,v 1.34 2004-02-02 11:01:29 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -2539,7 +2539,7 @@ static processing_state show_generators(const SCHAR* object)
 			else
 			{
 				found = true;
-				if( SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
+				if (SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
 				{
 					sprintf (Print_buffer,
 							 "Generator %s, current value is %" QUADFORMAT "d%s",

@@ -1306,18 +1306,18 @@ int API_ROUTINE isc_version(FRBRD** handle,
 	TEXT s[128];
 
 	while (count-- > 0) {
-		const USHORT implementation = *implementations++;
-		const USHORT class_ = *implementations++;
+		const USHORT implementation_nr = *implementations++;
+		const USHORT impl_class_nr = *implementations++;
 		const int l = *versions++; // it was UCHAR
 		const TEXT* implementation_string;
-		if (implementation >= FB_NELEM(impl_implementation)
-			|| !(implementation_string = impl_implementation[implementation]))
+		if (implementation_nr >= FB_NELEM(impl_implementation)
+			|| !(implementation_string = impl_implementation[implementation_nr]))
 		{
 			implementation_string = "**unknown**";
 		}
 		const TEXT* class_string;
-		if (class_ >= FB_NELEM(impl_class) ||
-			!(class_string = impl_class[class_]))
+		if (impl_class_nr >= FB_NELEM(impl_class) ||
+			!(class_string = impl_class[impl_class_nr]))
 		{
 			class_string = "**unknown**";
 		}
@@ -1344,10 +1344,10 @@ int API_ROUTINE isc_version(FRBRD** handle,
 
 
 void API_ROUTINE isc_format_implementation(
-										   USHORT implementation,
+										   USHORT implementation_nr,
 										   USHORT ibuflen,
 										   TEXT* ibuf,
-	USHORT class_, USHORT cbuflen, TEXT* cbuf)
+	USHORT impl_class_nr, USHORT cbuflen, TEXT* cbuf)
 {
 /**************************************
  *
@@ -1361,27 +1361,28 @@ void API_ROUTINE isc_format_implementation(
  *
  **************************************/
 	if (ibuflen > 0) {
-		if (implementation >= FB_NELEM(impl_implementation) ||
-			!(impl_implementation[implementation])) 
+		if (implementation_nr >= FB_NELEM(impl_implementation) ||
+			!(impl_implementation[implementation_nr]))
 		{
 			strncpy(ibuf, "**unknown**", ibuflen - 1);
 			ibuf[MIN(11, ibuflen - 1)] = '\0';
 		}
 		else {
-			strncpy(ibuf, impl_implementation[implementation], ibuflen - 1);
-			const int len = strlen(impl_implementation[implementation]);
+			strncpy(ibuf, impl_implementation[implementation_nr], ibuflen - 1);
+			const int len = strlen(impl_implementation[implementation_nr]);
 			ibuf[MIN(len, ibuflen - 1)] = '\0';
 		}
 	}
 
 	if (cbuflen > 0) {
-		if (class_ >= FB_NELEM(impl_class) || !(impl_class[class_])) {
+		if (impl_class_nr >= FB_NELEM(impl_class) || !(impl_class[impl_class_nr]))
+		{
 			strncpy(cbuf, "**unknown**", cbuflen - 1);
 			ibuf[MIN(11, cbuflen - 1)] = '\0';
 		}
 		else {
-			strncpy(cbuf, impl_class[class_], cbuflen - 1);
-			const int len = strlen(impl_class[class_]);
+			strncpy(cbuf, impl_class[impl_class_nr], cbuflen - 1);
+			const int len = strlen(impl_class[impl_class_nr]);
 			ibuf[MIN(len, cbuflen - 1)] = '\0';
 		}
 	}

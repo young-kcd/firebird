@@ -555,7 +555,7 @@ static EVH acquire(void)
 
 		PRB process = (PRB) ABS_PTR(EVENT_process_offset);
 		process->prb_flags |= PRB_remap;
-		EVENT event = process->prb_event;
+		event_t* event = process->prb_event;
 
 		post_process(process);
 
@@ -633,7 +633,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 
 		PRB process = (PRB) ABS_PTR(EVENT_process_offset);
 		process->prb_flags |= PRB_remap;
-		EVENT event = process->prb_event;
+		event_t* event = process->prb_event;
 		post_process(process);
 
 		while (true) {
@@ -824,9 +824,9 @@ static void delete_process(SLONG process_offset)
 			SLONG value = ISC_event_clear(process->prb_event);
 			RELEASE;
 #ifdef SOLARIS_MT
-			EVENT events = EVENT_process->prb_event;
+			event_t* events = EVENT_process->prb_event;
 #else
-			EVENT events = process->prb_event;
+			event_t* events = process->prb_event;
 #endif
 			timeout = ISC_event_wait(1, &events, &value, 5 * 1000000, 0, 0);
 			ACQUIRE;
@@ -1617,9 +1617,9 @@ static void THREAD_ROUTINE watcher_thread(void *dummy)
 		process = (PRB) ABS_PTR(EVENT_process_offset);
 		RELEASE;
 #ifdef SOLARIS_MT
-		EVENT events = EVENT_process->prb_event;
+		event_t* events = EVENT_process->prb_event;
 #else
-		EVENT events = process->prb_event;
+		event_t* events = process->prb_event;
 #endif
 		ISC_event_wait(1, &events, &value, 0, 0, 0);
 	}

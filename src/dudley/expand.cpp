@@ -40,19 +40,19 @@ static void expand_global_field(DUDLEY_FLD);
 static void expand_index(ACT);
 static void expand_relation(DUDLEY_REL);
 static void expand_trigger(DUDLEY_TRG);
-static DUDLEY_FLD field_context(DUDLEY_NOD, LLS, DUDLEY_CTX *);
-static DUDLEY_FLD field_search(DUDLEY_NOD, LLS, DUDLEY_CTX *);
-static DUDLEY_CTX lookup_context(SYM, LLS);
+static DUDLEY_FLD field_context(DUDLEY_NOD, dudley_lls*, DUDLEY_CTX *);
+static DUDLEY_FLD field_search(DUDLEY_NOD, dudley_lls*, DUDLEY_CTX *);
+static DUDLEY_CTX lookup_context(SYM, dudley_lls*);
 static DUDLEY_FLD lookup_field(DUDLEY_FLD);
 static DUDLEY_FLD lookup_global_field(DUDLEY_FLD);
 static DUDLEY_REL lookup_relation(DUDLEY_REL);
 static DUDLEY_TRG lookup_trigger(DUDLEY_TRG);
 static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL, USHORT);
-static DUDLEY_NOD resolve(DUDLEY_NOD, LLS, LLS);
-static void resolve_rse(DUDLEY_NOD, LLS *);
+static DUDLEY_NOD resolve(DUDLEY_NOD, dudley_lls*, dudley_lls*);
+static void resolve_rse(DUDLEY_NOD, dudley_lls**);
 
 static SSHORT context_id;
-static LLS request_context;
+static dudley_lls* request_context;
 
 void EXP_actions(void)
 {
@@ -304,12 +304,11 @@ static void expand_relation( DUDLEY_REL relation)
  *	to fields and contexts.
  *
  **************************************/
-	LLS contexts, stack;
 	DUDLEY_CTX my_context, context;
 	DUDLEY_NOD rse;
 
 	context_id = 0;
-	contexts = NULL;
+	dudley_lls* contexts = NULL;
 	request_context = NULL;
 
 	if (!relation->rel_rse)
@@ -317,12 +316,13 @@ static void expand_relation( DUDLEY_REL relation)
 				 &request_context);
 	else {
 		rse = relation->rel_rse;
-		contexts = (LLS) rse->nod_arg[s_rse_contexts];
+		contexts = (dudley_lls*) rse->nod_arg[s_rse_contexts];
 		my_context = lookup_context(NULL, contexts);
 		my_context->ctx_view_rse = TRUE;
 
 		/* drop view context from context stack & build the request stack */
 
+		dudley_lls* stack;
 		for (stack = NULL; contexts; contexts = contexts->lls_next)
 			LLS_PUSH(contexts->lls_object, &stack);
 
@@ -355,13 +355,14 @@ static void expand_trigger( DUDLEY_TRG trigger)
  *	to fields and contexts.
  *
  **************************************/
-	LLS contexts, update;
 	DUDLEY_CTX old, new_ctx;
 	DUDLEY_REL relation;
 
 	context_id = 2;
 	old = new_ctx = NULL;
-	request_context = contexts = update = NULL;
+	request_context = NULL;
+	dudley_lls* contexts = NULL;
+	dudley_lls* update = NULL;
 
 	relation = trigger->trg_relation;
 
@@ -385,7 +386,7 @@ static void expand_trigger( DUDLEY_TRG trigger)
 }
 
 
-static DUDLEY_FLD field_context( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_context)
+static DUDLEY_FLD field_context( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_CTX * output_context)
 {
 /**************************************
  *
@@ -451,7 +452,7 @@ static DUDLEY_FLD field_context( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * out
 }
 
 
-static DUDLEY_FLD field_search( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_context)
+static DUDLEY_FLD field_search( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_CTX * output_context)
 {
 /**************************************
  *
@@ -506,7 +507,7 @@ static DUDLEY_FLD field_search( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * outp
 }
 
 
-static DUDLEY_CTX lookup_context( SYM symbol, LLS contexts)
+static DUDLEY_CTX lookup_context( SYM symbol, dudley_lls* contexts)
 {
 /**************************************
  *
@@ -700,7 +701,7 @@ static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation, USHORT id)
 }
 
 
-static DUDLEY_NOD resolve( DUDLEY_NOD node, LLS right, LLS left)
+static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 {
 /**************************************
  *
@@ -869,7 +870,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, LLS right, LLS left)
 }
 
 
-static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
+static void resolve_rse( DUDLEY_NOD rse, dudley_lls** stack)
 {
 /**************************************
  *
@@ -885,7 +886,6 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
  *
  **************************************/
 	DUDLEY_NOD sub;
-	LLS contexts, temp;
 	DUDLEY_CTX context;
 	SYM name, symbol;
 
@@ -894,8 +894,9 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
 	if (sub = rse->nod_arg[s_rse_first])
 		rse->nod_arg[s_rse_first] = resolve(sub, *stack, 0);
 
-	contexts = (LLS) rse->nod_arg[s_rse_contexts];
+	dudley_lls* contexts = (dudley_lls*) rse->nod_arg[s_rse_contexts];
 
+	dudley_lls* temp;
 	for (temp = NULL; contexts;)
 		LLS_PUSH(LLS_POP(&contexts), &temp);
 

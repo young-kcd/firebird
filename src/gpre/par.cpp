@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.42 2004-01-28 07:50:27 robocop Exp $
+//  $Id: par.cpp,v 1.43 2004-02-02 11:01:26 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -118,13 +118,13 @@ static bool		routine_decl;
 static bool		bas_extern_flag;
 static act*		cur_statement;
 static act*		cur_item;
-static LLS		cur_for;
-static LLS		cur_store;
-static LLS		cur_fetch;
-static LLS		cur_modify;
-static LLS		cur_error;
-static LLS		routine_stack;
-static gpre_fld*		flag_field;
+static gpre_lls*	cur_for;
+static gpre_lls*	cur_store;
+static gpre_lls*	cur_fetch;
+static gpre_lls*	cur_modify;
+static gpre_lls*	cur_error;
+static gpre_lls*	routine_stack;
+static gpre_fld*	flag_field;
 
 
 //____________________________________________________________
@@ -623,7 +623,7 @@ void PAR_error(const TEXT* string)
 act* PAR_event_init(bool sql)
 {
 	GPRE_NOD node;
-	LLS stack = NULL;
+	gpre_lls* stack = NULL;
 	gpre_sym* symbol;
 	int count = 0;
 	char req_name[128];
@@ -1265,8 +1265,7 @@ static act* par_based()
 	TEXT s[64];
 	TEXT t_str[NAME_SIZE + 1];
 	bool ambiguous_flag;
-	LLS t1, t2, hold;
-	int notSegment = 0;			// a COBOL specific patch 
+	int notSegment = 0;			// a COBOL specific patch
 	char tmpChar[2];			// a COBOL specific patch 
 
 	MSC_match(KW_ON);
@@ -1369,9 +1368,9 @@ static act* par_based()
 		   ** file correctly.
 		 */
 		if (based_on->bas_variables->lls_next) {
-			t1 = based_on->bas_variables;	// last one in the old list 
-			t2 = NULL;			// last one in the new list 
-			hold = t2;			// beginning of new list 
+			gpre_lls* t1 = based_on->bas_variables;	// last one in the old list
+			gpre_lls* t2 = NULL;			// last one in the new list
+			gpre_lls* hold = t2;			// beginning of new list
 
 			// while we still have a next one, keep going thru 
 			while (t1->lls_next) {
@@ -1575,7 +1574,7 @@ static act* par_derived_from()
 	based_on->bas_field = field;
 
 
-	based_on->bas_variables = (LLS) MSC_alloc(LLS_LEN);
+	based_on->bas_variables = (gpre_lls*) MSC_alloc(LLS_LEN);
 	based_on->bas_variables->lls_next = NULL;
 	based_on->bas_variables->lls_object =
 		(GPRE_NOD) PAR_native_value(false, false);
@@ -1738,7 +1737,7 @@ static act* par_end_modify()
 
 //  Build assignments for all fields and null flags referenced 
 
-	lls* stack = NULL;
+	gpre_lls* stack = NULL;
 	int count = 0;
 
 	for (reference = request->req_references; reference;
@@ -1827,7 +1826,7 @@ static act* par_end_store(bool special)
 	REF reference, change;
 	GPRE_NOD assignments, item;
 	int count;
-	LLS stack;
+	gpre_lls* stack;
 
 	if (!cur_store)
 		PAR_error("unmatched END_STORE");

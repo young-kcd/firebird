@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.40 2004-01-28 07:50:27 robocop Exp $
+//	$Id: ftn.cpp,v 1.41 2004-02-02 11:01:26 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -1599,7 +1599,7 @@ static void gen_database_decls(const act* action)
 //  generate event parameter block for each event in module 
 
 	SSHORT max_count = 0;
-	for (LLS stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
+	for (gpre_lls* stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		count = gen_event_block((const act*) stack_ptr->lls_object);
 		max_count = MAX(count, max_count);
 	}
@@ -2246,7 +2246,7 @@ static void gen_event_wait(const act* action)
 
 	int ident = -1;
 	DBB database =  NULL;
-	for (LLS stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
+	for (gpre_lls* stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		const act* event_action = (const act*) stack_ptr->lls_object;
 		GPRE_NOD event_init = (GPRE_NOD) event_action->act_object;
 		const gpre_sym* stack_name = (const gpre_sym*) event_init->nod_arg[0];

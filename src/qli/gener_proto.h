@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		gener_proto.h
- *	DESCRIPTION:	Prototype header file for gener.c
+ *	DESCRIPTION:	Prototype header file for gener.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -26,8 +26,8 @@
 
 qli_nod*	GEN_generate(qli_nod*);
 void		GEN_release (void);
-rlb*		GEN_rlb_extend(rlb*);
-void		GEN_rlb_release(rlb*);
+qli_rlb*	GEN_rlb_extend(qli_rlb*);
+void		GEN_rlb_release(qli_rlb*);
 
-#endif /* QLI_GENER_PROTO_H */
+#endif // QLI_GENER_PROTO_H
 

@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.25 2004-01-04 14:12:40 dimitr Exp $
+$Id: utld.cpp,v 1.26 2004-02-02 11:01:05 robocop Exp $
 */
 
 #include "firebird.h"
@@ -104,8 +104,8 @@ ISC_STATUS	UTLD_parse_sql_info(
 				USHORT* return_index)
 {
 	XSQLVAR *xvar, xsqlvar;
-	SQLDA *sqlda;
-	SQLVAR *var;
+	SQLDA* sqlda;
+	SQLVAR* qvar;
 	USHORT last_index = 0;
 
 	if (return_index)
@@ -159,7 +159,7 @@ ISC_STATUS	UTLD_parse_sql_info(
 					xvar = xsqlda->sqlvar + index - 1;
 				else
 				{
-					var = sqlda->sqlvar + index - 1;
+					qvar = sqlda->sqlvar + index - 1;
 					memset(xvar, 0, sizeof(XSQLVAR));
 				}
 				break;
@@ -215,7 +215,7 @@ ISC_STATUS	UTLD_parse_sql_info(
 			}
 
 		if (!xsqlda)
-			xsqlvar_to_sqlvar(xvar, var);
+			xsqlvar_to_sqlvar(xvar, qvar);
 
 		if (index > last_index)
 			last_index = index;
@@ -250,19 +250,19 @@ ISC_STATUS	UTLD_parse_sql_info(
  **/
 ISC_STATUS	UTLD_parse_sqlda(
 				ISC_STATUS* status,
-				DASUP dasup,
+				sqlda_sup* const dasup,
 				USHORT* blr_length,
 				USHORT* msg_type,
 				USHORT* msg_length,
 				USHORT dialect,
 				XSQLDA* xsqlda,
-				USHORT clause)
+				const USHORT clause)
 {
 	USHORT i, n, blr_len, par_count, dtype, msg_len, len, align,
 		null_offset;
 	XSQLVAR *xvar, xsqlvar;
-	SQLDA *sqlda;
-	SQLVAR *var;
+	SQLDA* sqlda;
+	SQLVAR* qvar;
 	//BLOB_PTR *p;				// one huge pointer per line for LIBS 
 
 	if (!xsqlda)
@@ -282,12 +282,15 @@ ISC_STATUS	UTLD_parse_sqlda(
 			xvar = &xsqlvar;
 		}
 
+
+	sqlda_sup::dasup_clause* const pClause = &dasup->dasup_clauses[clause];
+
 	if (!n)
 	{
 		// If there isn't an SQLDA, don't bother with anything else. 
 
 		if (blr_length)
-			*blr_length = dasup->dasup_clauses[clause].dasup_blr_length = 0;
+			*blr_length = pClause->dasup_blr_length = 0;
 		if (msg_length)
 			*msg_length = 0;
 		if (msg_type)
@@ -315,14 +318,14 @@ ISC_STATUS	UTLD_parse_sqlda(
 		if (xsqlda)
 			xvar = xsqlda->sqlvar - 1;
 		else
-			var = sqlda->sqlvar - 1;
+			qvar = sqlda->sqlvar - 1;
 		for (i = 0; i < n; i++)
 		{
 			if (xsqlda)
 				xvar++;
 			else {
-				var++;
-				sqlvar_to_xsqlvar(var, xvar);
+				qvar++;
+				sqlvar_to_xsqlvar(qvar, xvar);
 			}
 			dtype = xvar->sqltype & ~1;
 			if (dtype == SQL_VARYING || dtype == SQL_TEXT)
@@ -346,36 +349,36 @@ ISC_STATUS	UTLD_parse_sqlda(
 		/* Make sure the blr buffer is large enough.  If it isn't, allocate
 		   a new one. */
 
-		if (blr_len > dasup->dasup_clauses[clause].dasup_blr_buf_len)
+		if (blr_len > pClause->dasup_blr_buf_len)
 		{
-			if (dasup->dasup_clauses[clause].dasup_blr) {
-				gds__free(dasup->dasup_clauses[clause].dasup_blr);
+			if (pClause->dasup_blr) {
+				gds__free(pClause->dasup_blr);
 			}
-			dasup->dasup_clauses[clause].dasup_blr =
+			pClause->dasup_blr =
 				reinterpret_cast<char*>(gds__alloc((SLONG) blr_len));
 			// FREE: unknown
-			if (!dasup->dasup_clauses[clause].dasup_blr)	// NOMEM:
+			if (!pClause->dasup_blr)	// NOMEM:
 				return error_dsql_804(status, isc_virmemexh);
-			memset(dasup->dasup_clauses[clause].dasup_blr, 0, blr_len);
-			dasup->dasup_clauses[clause].dasup_blr_buf_len = blr_len;
-			dasup->dasup_clauses[clause].dasup_blr_length = 0;
+			memset(pClause->dasup_blr, 0, blr_len);
+			pClause->dasup_blr_buf_len = blr_len;
+			pClause->dasup_blr_length = 0;
 		}
 
-		bool same_flag = (blr_len == dasup->dasup_clauses[clause].dasup_blr_length);
+		bool same_flag = (blr_len == pClause->dasup_blr_length);
 
 		/* turn off same_flag because it breaks execute & execute2 when
 		   more than one statement is prepared */
 
 		same_flag = false;
 
-		dasup->dasup_clauses[clause].dasup_blr_length = blr_len;
+		pClause->dasup_blr_length = blr_len;
 
 		/* Generate the blr for the message and at the same time, determine
 		   the size of the message buffer.  Allow for a null indicator with
 		   each variable in the SQLDA. */
 
 		// one huge pointer per line for LIBS
-		BLOB_PTR *p = reinterpret_cast <UCHAR*>(dasup->dasup_clauses[clause].dasup_blr);
+		BLOB_PTR* p = reinterpret_cast<UCHAR*>(pClause->dasup_blr);
 
 	/** The define SQL_DIALECT_V5 is not available here, Hence using
 	constant 1.
@@ -402,15 +405,15 @@ ISC_STATUS	UTLD_parse_sqlda(
 		if (xsqlda)
 			xvar = xsqlda->sqlvar - 1;
 		else
-			var = sqlda->sqlvar - 1;
+			qvar = sqlda->sqlvar - 1;
 		for (i = 0; i < n; i++)
 		{
 			if (xsqlda)
 				xvar++;
 			else
 			{
-				var++;
-				sqlvar_to_xsqlvar(var, xvar);
+				qvar++;
+				sqlvar_to_xsqlvar(qvar, xvar);
 			}
 			dtype = xvar->sqltype & ~1;
 			len = xvar->sqllen;
@@ -504,17 +507,17 @@ ISC_STATUS	UTLD_parse_sqlda(
 		/* Make sure the message buffer is large enough.  If it isn't, allocate
 		   a new one. */
 
-		if (msg_len > dasup->dasup_clauses[clause].dasup_msg_buf_len)
+		if (msg_len > pClause->dasup_msg_buf_len)
 		{
-			if (dasup->dasup_clauses[clause].dasup_msg)
-				gds__free(dasup->dasup_clauses[clause].dasup_msg);
-			dasup->dasup_clauses[clause].dasup_msg =
+			if (pClause->dasup_msg)
+				gds__free(pClause->dasup_msg);
+			pClause->dasup_msg =
 				reinterpret_cast<char*>(gds__alloc((SLONG) msg_len));
 			// FREE: unknown
-			if (!dasup->dasup_clauses[clause].dasup_msg)	// NOMEM:
+			if (!pClause->dasup_msg)	// NOMEM:
 				return error_dsql_804(status, isc_virmemexh);
-			memset(dasup->dasup_clauses[clause].dasup_msg, 0, msg_len);
-			dasup->dasup_clauses[clause].dasup_msg_buf_len = msg_len;
+			memset(pClause->dasup_msg, 0, msg_len);
+			pClause->dasup_msg_buf_len = msg_len;
 		}
 
 		// Fill in the return values to the caller.
@@ -533,20 +536,20 @@ ISC_STATUS	UTLD_parse_sqlda(
 
 	USHORT offset = 0;
 	// one huge pointer per line for LIBS
-	BLOB_PTR *msg_buf =
-		reinterpret_cast<UCHAR*>(dasup->dasup_clauses[clause].dasup_msg);
+	BLOB_PTR* msg_buf =
+		reinterpret_cast<UCHAR*>(pClause->dasup_msg);
 	if (xsqlda)
 		xvar = xsqlda->sqlvar - 1;
 	else
-		var = sqlda->sqlvar - 1;
+		qvar = sqlda->sqlvar - 1;
 	for (i = 0; i < n; i++)
 	{
 		if (xsqlda)
 			xvar++;
 		else
 		{
-			var++;
-			sqlvar_to_xsqlvar(var, xvar);
+			qvar++;
+			sqlvar_to_xsqlvar(qvar, xvar);
 		}
 		dtype = xvar->sqltype & ~1;
 		len = xvar->sqllen;
@@ -644,7 +647,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
 			// Copy data - unless known to be NULL 
-			if ((offset + len) > dasup->dasup_clauses[clause].dasup_msg_buf_len)
+			if ((offset + len) > pClause->dasup_msg_buf_len)
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
 			if (!*null_ind)

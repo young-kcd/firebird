@@ -584,7 +584,7 @@ public:
 	class vcx *rel_view_contexts;	/* linked list of view contexts */
 
 	TEXT *rel_security_name;	/* pointer to security class name for relation */
-	class ext *rel_file;		/* external file name */
+	class external_file* rel_file;		/* external file name */
 	SLONG rel_index_root;		/* index root page number */
 	SLONG rel_data_pages;		/* count of relation data pages */
 

@@ -125,7 +125,7 @@ typedef struct
 
 /* Structure to support conversion of SQLDA's to messages */
 
-typedef struct dasup
+struct sqlda_sup
 {
 	struct dasup_clause
 	{
@@ -139,10 +139,11 @@ typedef struct dasup
 	USHORT	dasup_dialect;		/* Dialect associated with statement */
 	USHORT	dasup_stmt_type;	/* Type of statement */
 
-} *DASUP;
+};
 
-#define DASUP_CLAUSE_select	0
-#define DASUP_CLAUSE_bind	1
+// enum would be troblesome here
+const USHORT DASUP_CLAUSE_select	= 0;
+const USHORT DASUP_CLAUSE_bind		= 1;
 
 #endif // DSQL_SQLDA_H
 

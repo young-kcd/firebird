@@ -26,31 +26,32 @@
 
 /* Control break block */
 
-typedef struct qli_brk {
-    blk		brk_header;
+struct qli_brk {
+    blk			brk_header;
     qli_brk*	brk_next;		/* Next break */
-    SYN		brk_field;		/* Field expression for break */
-    SYN		brk_line;		/* Print line */
-    LLS		brk_statisticals;	/* Statistical expressions */
-} *QLI_BRK;
+    SYN			brk_field;		/* Field expression for break */
+    SYN			brk_line;		/* Print line */
+    qli_lls*	brk_statisticals;	/* Statistical expressions */
+};
 
 /* Report block */
 
-typedef struct rpt {
+struct qli_rpt {
     blk		rpt_hdr;
     qli_nod*	rpt_detail_line;	/* Detail line print list */
-    QLI_BRK		rpt_top_page;		/* Top of page print list */
-    QLI_BRK		rpt_bottom_page;	/* Bottom of page print list */
-    QLI_BRK		rpt_top_rpt;		/* Top of report print list */
-    QLI_BRK		rpt_bottom_rpt;		/* Bottom of report print list */
-    QLI_BRK		rpt_top_breaks;		/* Top of <field> break list */
-    QLI_BRK		rpt_bottom_breaks;	/* Bottom of <field> break list */
-    TEXT	*rpt_column_header;
-    TEXT	*rpt_name;		/* Parsed report name */
-    TEXT	*rpt_header;		/* Expanded report header */
-    UCHAR	*rpt_buffer;		/* Data buffer */
-    USHORT	rpt_columns;		/* Columns per page */
-    USHORT	rpt_lines;		/* Lines per page */
-} *RPT;
+    qli_brk*	rpt_top_page;		/* Top of page print list */
+    qli_brk*	rpt_bottom_page;	/* Bottom of page print list */
+    qli_brk*	rpt_top_rpt;		/* Top of report print list */
+    qli_brk*	rpt_bottom_rpt;		/* Bottom of report print list */
+    qli_brk*	rpt_top_breaks;		/* Top of <field> break list */
+    qli_brk*	rpt_bottom_breaks;	/* Bottom of <field> break list */
+    TEXT*		rpt_column_header;
+    TEXT*		rpt_name;			/* Parsed report name */
+    TEXT*		rpt_header;			/* Expanded report header */
+    UCHAR*		rpt_buffer;			/* Data buffer */
+    USHORT		rpt_columns;		/* Columns per page */
+    USHORT		rpt_lines;			/* Lines per page */
+};
 
-#endif /* QLI_REPORT_H */
+#endif // QLI_REPORT_H
+

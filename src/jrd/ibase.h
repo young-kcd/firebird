@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.67 2004-01-29 05:56:52 skidder Exp $
+$Id: ibase.h,v 1.68 2004-02-02 11:01:34 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -610,8 +610,8 @@ void ISC_EXPORT isc_encode_sql_time(const void*,
 void ISC_EXPORT isc_encode_timestamp(const void*,
 									 ISC_TIMESTAMP*);
 
-ISC_LONG ISC_EXPORT_VARARG isc_event_block(char * *,
-										   char * *,
+ISC_LONG ISC_EXPORT_VARARG isc_event_block(char**,
+										   char**,
 										   unsigned short, ...);
 
 void ISC_EXPORT isc_event_counts(ISC_ULONG*,

@@ -13,7 +13,7 @@
 
 PluginManager::Plugin PluginManager::findPlugin(const Firebird::string &name)
 {
-	for(Module *itr = moduleList; itr; itr = itr->next)
+	for (Module *itr = moduleList; itr; itr = itr->next)
 	{
 		if (itr->name() == name)
 			return itr;
@@ -52,7 +52,7 @@ void PluginManager::loadAllPlugins()
 	Firebird::string fbLibPath(fb_lib_path);
 	Firebird::string checkDir;
 	
-	for(pathItr = searchPaths.begin(); pathItr != searchPaths.end(); ++pathItr)
+	for (pathItr = searchPaths.begin(); pathItr != searchPaths.end(); ++pathItr)
 	{
 		if (pathItr->second)	// This path is fb relative
 		{
@@ -64,11 +64,11 @@ void PluginManager::loadAllPlugins()
 		}
 		
 		PathUtils::dir_iterator *dirItr = PathUtils::newDirItr(*getDefaultMemoryPool(), checkDir);
-		while(*dirItr)
+		while (*dirItr)
 		{
 			// See if we have already loaded this module
 			bool alreadyLoaded = false;
-			for(Module *itr = moduleList; itr; itr = itr->next)
+			for (Module *itr = moduleList; itr; itr = itr->next)
 			{
 				if (itr->name() == **dirItr)
 				{
@@ -82,7 +82,7 @@ void PluginManager::loadAllPlugins()
 			{
 				Firebird::string pathComponent, modName;
 				PathUtils::splitLastComponent(pathComponent, modName, **dirItr);
-				for(Firebird::list<Firebird::string>::iterator itr2 = ignoreModules.begin();
+				for (Firebird::list<Firebird::string>::iterator itr2 = ignoreModules.begin();
 						itr2 != ignoreModules.end(); ++itr2)
 				{
 					if (modName == *itr2)
@@ -125,7 +125,7 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::string& n
 	//	of the module is relative.
 	if (PathUtils::isRelative(name))
 	{
-		for(itr = searchPaths.begin(); itr != searchPaths.end(); ++itr)
+		for (itr = searchPaths.begin(); itr != searchPaths.end(); ++itr)
 		{
 			if (itr->second)	// This path is fb relative
 			{
@@ -158,7 +158,7 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::string& n
 
 	if (!PathUtils::isRelative(name))
 	{
-		for(itr = searchPaths.begin(); itr != searchPaths.end(); ++itr)
+		for (itr = searchPaths.begin(); itr != searchPaths.end(); ++itr)
 		{
 			Firebird::string::size_type pos = 0;
 			Firebird::string::size_type checkPos;
@@ -203,7 +203,7 @@ void PluginManager::addSearchPath(const Firebird::string& path, bool isFBRelativ
 {
 	Firebird::list<Path>::iterator itr;
 	
-	for(itr = searchPaths.begin(); itr != searchPaths.end(); ++itr)
+	for (itr = searchPaths.begin(); itr != searchPaths.end(); ++itr)
 	{
 		if (itr->first == path && itr->second == isFBRelative)
 			return;
@@ -216,7 +216,7 @@ void PluginManager::removeSearchPath(const Firebird::string& path, bool isFBRela
 {
 	Firebird::list<Path>::iterator itr;
 	
-	for(itr = searchPaths.begin(); itr != searchPaths.end(); ++itr)
+	for (itr = searchPaths.begin(); itr != searchPaths.end(); ++itr)
 	{
 		if (itr->first == path && itr->second == isFBRelative)
 		{
@@ -241,7 +241,7 @@ const PluginManager::Plugin& PluginManager::Plugin::operator=(const Plugin& othe
 
 PluginManager::~PluginManager()
 {
-	while(moduleList)
+	while (moduleList)
 	{
 #if defined(DEV_BUILD)
 		if (moduleList->refCnt != 1)
@@ -306,7 +306,7 @@ void PluginManager::load_engine_plugins()
 	enginePluginManager.loadAllPlugins();
 	
 	Firebird::string entryPoint(ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT);
-	for(PluginManager::iterator itr = enginePluginManager.begin();
+	for (PluginManager::iterator itr = enginePluginManager.begin();
 	    itr != enginePluginManager.end(); ++itr)
 	{
 		engineRegistrationFuncType regFunc = (engineRegistrationFuncType)

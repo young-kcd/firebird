@@ -48,14 +48,14 @@ typedef struct itm {
 	SSHORT *itm_return_length;
 } ITM;
 
-typedef struct event_t {
+struct event_t {
 	SLONG event_pid;
 	SLONG event_count;
-} *EVENT;
+};
 
 typedef struct wait {
 	USHORT wait_count;
-	EVENT wait_events;
+	event_t* wait_events;
 	SLONG *wait_values;
 } WAIT;
 
@@ -113,20 +113,20 @@ typedef struct mtx {
 
 
 #ifdef ANY_THREADING
-typedef struct event_t
+struct event_t
 {
 	SLONG event_semid;
 	SLONG event_count;
 	THD_MUTEX_STRUCT event_mutex[1];
 	THD_COND_STRUCT event_semnum[1];
-} *EVENT;
+};
 #else
-typedef struct event_t
+struct event_t
 {
 	SLONG event_semid;
 	SLONG event_count;
 	SSHORT event_semnum;
-} *EVENT;
+};
 #endif /* ANY_THREADING */
 
 
@@ -149,14 +149,14 @@ typedef struct mtx
 	void*	mtx_handle;
 } MTX_T, *MTX;
 
-typedef struct event_t
+struct event_t
 {
 	SLONG			event_pid;
 	SLONG			event_count;
 	SLONG			event_type;
 	void*			event_handle;
 	struct event_t*	event_shared;
-} *EVENT;
+};
 
 #define SH_MEM_STRUCTURE_DEFINED
 typedef struct sh_mem

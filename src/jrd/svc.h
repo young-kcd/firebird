@@ -90,22 +90,6 @@
 #define SVC_PUTSPECIFIC_DATA	/* nothing */
 #endif
 
-/* Macro used to signify that the service started has done basic
- * initialization and can be considered a successful startup
- */
-#ifndef SUPERSERVER
-
-#define SVC_STARTED(service)
-
-#else /* SUPERSERVER */
-
-#define SVC_STARTED(service)	{{EVENT evnt_ptr = service->svc_start_event; \
-    				  if (!(service->svc_flags & SVC_evnt_fired)) { \
-				      service->svc_flags |= SVC_evnt_fired; \
-			   	      ISC_event_post (evnt_ptr);}}}
-
-
-#endif /* SUPERSERVER */
 
 void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 
@@ -137,19 +121,7 @@ public:
 	TEXT	svc_reserved[1];
 	TEXT*	svc_switches;
 };
-typedef svc *SVC;
-
-typedef int (*pfn_svc_main) (SVC);
-
-typedef struct serv
-{
-	USHORT		serv_action;
-	const TEXT*	serv_name;
-	const TEXT*	serv_std_switches;
-	const TEXT*	serv_executable;
-	pfn_svc_main	serv_thd;
-	BOOLEAN*	in_use;
-} *SERV;
+typedef svc* SVC;
 
 /* Bitmask values for the svc_flags variable */
 
@@ -162,6 +134,40 @@ typedef struct serv
 #define SVC_evnt_fired	64
 
 
+/* Function used to signify that the service started has done basic
+ * initialization and can be considered a successful startup
+ */
+#ifndef SUPERSERVER
+
+inline void SVC_STARTED(svc*)
+{
+	// null definition, no overhead.
+}
+
+#else /* SUPERSERVER */
+
+inline void SVC_STARTED(svc* service)
+{
+	event_t* evnt_ptr = service->svc_start_event;
+	if (!(service->svc_flags & SVC_evnt_fired)) {
+		service->svc_flags |= SVC_evnt_fired;
+		ISC_event_post(evnt_ptr);
+	}
+}
+
+#endif /* SUPERSERVER */
+
+typedef int (*pfn_svc_main) (svc*);
+
+typedef struct serv
+{
+	USHORT		serv_action;
+	const TEXT*	serv_name;
+	const TEXT*	serv_std_switches;
+	const TEXT*	serv_executable;
+	pfn_svc_main	serv_thd;
+	BOOLEAN*	in_use;
+} *SERV;
 
 typedef int (*pfn_svc_output)(svc*, const UCHAR*);
 

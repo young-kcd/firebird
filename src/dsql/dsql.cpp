@@ -114,10 +114,10 @@ static USHORT	get_plan_info(dsql_req*, SSHORT, SCHAR**);
 static USHORT	get_request_info(dsql_req*, SSHORT, SCHAR*);
 static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
-static DBB		init(FRBRD**);
+static dsql_dbb*	init(FRBRD**);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static USHORT	name_length(const TEXT*);
-static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, par*);
+static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
 static dsql_req*		prepare(dsql_req*, USHORT, const TEXT*, USHORT, USHORT);
 static void		punt(void);
 static UCHAR*	put_item(UCHAR, USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
@@ -133,8 +133,8 @@ extern dsql_nod* DSQL_parse;
 #endif
 
 static bool init_flag = false;
-static DBB databases;
-static OPN open_cursors;
+static dsql_dbb* databases;
+static dsql_opn* open_cursors;
 
 static const SCHAR db_hdr_info_items[] = {
 	isc_info_db_sql_dialect,
@@ -452,7 +452,7 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 
 // If we haven't been initialized yet, do it now 
 
-		dbb* database = init(db_handle);
+		dsql_dbb* database = init(db_handle);
 
 		tdsql->tsql_default = DsqlMemoryPool::createPool();
 
@@ -592,7 +592,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 				((request->
 			  	req_type == REQ_EMBED_SELECT) ? REQ_embedded_sql_cursor : 0);
 
-            opn* open_cursor = FB_NEW(*DSQL_permanent_pool) opn;
+            dsql_opn* open_cursor = FB_NEW(*DSQL_permanent_pool) dsql_opn;
 			request->req_open_cursor = open_cursor;
 			open_cursor->opn_request = request;
 			open_cursor->opn_transaction = *trans_handle;
@@ -662,7 +662,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 		tdsql->tsql_status = user_status;
 		tdsql->tsql_default = NULL;
 
-		dbb* database = init(db_handle);
+		dsql_dbb* database = init(db_handle);
 
 		tdsql->tsql_default = DsqlMemoryPool::createPool();
 
@@ -856,7 +856,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	// 1. Locate why_db_handle, corresponding to jrd_database_handle 
 	THREAD_EXIT;
 	THD_MUTEX_LOCK (&databases_mutex);
-	dbb* database;
+	dsql_dbb* database;
 	for (database = databases; database; database = database->dbb_next)
 	{
 	    if (database->dbb_database_handle->handle.h_dbb == jrd_attachment_handle)
@@ -899,7 +899,7 @@ WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
 {
 	THREAD_EXIT;
 	THD_MUTEX_LOCK (&databases_mutex);
-	dbb* database;
+	dsql_dbb* database;
 	for (database = databases; database; database = database->dbb_next)
 	{
 	    if (database->dbb_database_handle->handle.h_dbb == jrd_attachment_handle)
@@ -949,7 +949,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 							)
 {
 	dsql_msg* message;
-	par* parameter;
+	dsql_par* parameter;
 	ISC_STATUS s;
 	tsql thd_context;
 	tsql* tdsql;
@@ -1047,7 +1047,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 
 			if (offset)
 			{
-				par* offset_parameter;
+				dsql_par* offset_parameter;
 				DSC desc;
 
 				message = (dsql_msg*) request->req_async;
@@ -1097,7 +1097,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 			// For get segment, use the user buffer and indicator directly.
 	
 			parameter = request->req_blob->blb_segment;
-			par* null = parameter->par_null;
+			dsql_par* null = parameter->par_null;
 			USHORT* ret_length =
 				(USHORT *) (dsql_msg_buf + (IPTR) null->par_user_desc.dsc_address);
 			UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
@@ -1132,7 +1132,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 			punt();
 		}
 
-		const par* eof = request->req_eof;
+		const dsql_par* eof = request->req_eof;
 		if (eof)
 		{
 			if (!*((USHORT *) eof->par_desc.dsc_address)) {
@@ -1268,7 +1268,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 		if (request->req_type == REQ_PUT_SEGMENT) {
 		// For put segment, use the user buffer and indicator directly. 
 
-			par* parameter = request->req_blob->blb_segment;
+			dsql_par* parameter = request->req_blob->blb_segment;
 			const SCHAR* buffer =
 				reinterpret_cast<const SCHAR*>(
 					dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address);
@@ -1341,7 +1341,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 				       0);
 		}
 
-		DBB database;
+		dsql_dbb* database;
 		if (old_request) { // this test is irrelevant, see ERRD_post call above
 			database = old_request->req_dbb;
 			if (!database) {
@@ -1616,7 +1616,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 
 		while (items < end_items && *items != isc_info_end)
 		{
-			UCHAR item = *items++;
+			UCHAR item = *items++; // cannot be const
 			if (item == isc_info_sql_select || item == isc_info_sql_bind)
 			{
 				message = (item == isc_info_sql_select) ?
@@ -1695,9 +1695,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 			else if (item == isc_info_sql_sqlda_start) {
 				length = *items++;
 				first_index =
-					static_cast<USHORT>
-					(gds__vax_integer
-				 	(items, length));
+					static_cast<USHORT>(gds__vax_integer(items, length));
 				items += length;
 			}
 			else if (item == isc_info_sql_batch_fetch) {
@@ -2721,7 +2719,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_variable:
 		{
-		const var* variable = (var*) node->nod_arg[e_var_variable];
+		const dsql_var* variable = (dsql_var*) node->nod_arg[e_var_variable];
         // Adding variable->var_variable_number to display, obviously something
         // is missing from the printf, and Im assuming this was it.
         // (anyway can't be worse than it was MOD 05-July-2002.
@@ -2741,7 +2739,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 				(USHORT)(IPTR)node->nod_arg[e_par_parameter]);
 		}
 		else {
-			const par* param = (par*) node->nod_arg[e_par_parameter];
+			const dsql_par* param = (dsql_par*) node->nod_arg[e_par_parameter];
 			trace_line("%sparameter: %d\n",	buffer, param->par_index);
 		}
 		return;
@@ -2850,8 +2848,8 @@ static void cleanup_database(FRBRD ** db_handle, void* flag)
 
 	THD_MUTEX_LOCK(&databases_mutex);
 
-	DBB dbb;
-	for (DBB* dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
+	dsql_dbb* dbb;
+	for (dsql_dbb** dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
 		if (dbb->dbb_database_handle == *db_handle) {
 			*dbb_ptr = dbb->dbb_next;
 			dbb->dbb_next = NULL;
@@ -2904,8 +2902,8 @@ static void cleanup_transaction (FRBRD * tra_handle, void* arg)
 // find this transaction/request pair in the list of pairs 
 
 	THD_MUTEX_LOCK(&cursors_mutex);
-	opn** open_cursor_ptr = &open_cursors;
-	opn* open_cursor;
+	dsql_opn** open_cursor_ptr = &open_cursors;
+	dsql_opn* open_cursor;
 	while (open_cursor = *open_cursor_ptr)
 	{
 		if (open_cursor->opn_transaction == tra_handle) {
@@ -2965,8 +2963,8 @@ static void close_cursor( dsql_req* request)
 // Remove the open cursor from the list 
 
 	THD_MUTEX_LOCK(&cursors_mutex);
-	opn** open_cursor_ptr = &open_cursors;
-	opn* open_cursor;
+	dsql_opn** open_cursor_ptr = &open_cursors;
+	dsql_opn* open_cursor;
 	for (; open_cursor = *open_cursor_ptr;
 		 open_cursor_ptr = &open_cursor->opn_next)
 	{
@@ -3036,7 +3034,7 @@ static USHORT convert( SLONG number, UCHAR* buffer)
  **/
 static ISC_STATUS error()
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	return tdsql->tsql_status[1];
 }
@@ -3073,7 +3071,7 @@ static void execute_blob(	dsql_req*		request,
 	UCHAR bpb[24];
 	ISC_STATUS s;
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_blb* blob = request->req_blob;
 	map_in_out(request, blob->blb_open_in_msg, in_blr_length, in_blr,
@@ -3100,8 +3098,8 @@ static void execute_blob(	dsql_req*		request,
 		bpb_length = 0;
 	}
 
-	par* parameter = blob->blb_blob_id;
-	const par* null = parameter->par_null;
+	dsql_par* parameter = blob->blb_blob_id;
+	const dsql_par* null = parameter->par_null;
 
 	if (request->req_type == REQ_GET_SEGMENT)
 	{
@@ -3180,7 +3178,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 	ISC_STATUS s;
 	ISC_STATUS_ARRAY local_status;
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	request->req_trans = *trans_handle;
 	ISC_STATUS return_status = FB_SUCCESS;
@@ -3503,8 +3501,8 @@ static SSHORT filter_sub_type( dsql_req* request, const dsql_nod* node)
 	if (node->nod_type == nod_constant)
 		return (SSHORT)(IPTR) node->nod_arg[0];
 
-	const par* parameter = (par*) node->nod_arg[e_par_parameter];
-	const par* null = parameter->par_null;
+	const dsql_par* parameter = (dsql_par*) node->nod_arg[e_par_parameter];
+	const dsql_par* null = parameter->par_null;
 	if (null)
 		if (*((SSHORT *) null->par_desc.dsc_address))
 			return 0;
@@ -3614,7 +3612,7 @@ static USHORT get_plan_info(
 
 	ISC_STATUS s;
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 	memset(explain_buffer, 0, sizeof(explain_buffer));
 	SCHAR* explain_ptr = explain_buffer;
 	SCHAR* buffer_ptr = *out_buffer;
@@ -3724,7 +3722,7 @@ static USHORT get_request_info(
 {
 	ISC_STATUS s;
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 // get the info for the request from the engine 
 
@@ -4119,7 +4117,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
     @param db_handle
 
  **/
-static DBB init(FRBRD** db_handle)
+static dsql_dbb* init(FRBRD** db_handle)
 {
 
 #ifdef ANY_THREADING
@@ -4156,7 +4154,7 @@ static DBB init(FRBRD** db_handle)
 
 	// Look for database block.  If we don't find one, allocate one.
 
-	DBB database;
+	dsql_dbb* database;
 	for (database = databases; database; database = database->dbb_next)
 	{
 		if (database->dbb_database_handle == *db_handle) {
@@ -4166,7 +4164,7 @@ static DBB init(FRBRD** db_handle)
 	}
 
 	DsqlMemoryPool* pool = DsqlMemoryPool::createPool();
-	database = FB_NEW(*pool) dbb;
+	database = FB_NEW(*pool) dsql_dbb;
 	database->dbb_pool = pool;
 	database->dbb_next = databases;
 	databases = database;
@@ -4287,7 +4285,7 @@ static void map_in_out(	dsql_req*		request,
 						USHORT	msg_length,
 						UCHAR*	dsql_msg_buf)
 {
-	par* parameter;
+	dsql_par* parameter;
 
 	USHORT count = parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
@@ -4309,7 +4307,7 @@ static void map_in_out(	dsql_req*		request,
 				break;
 
 			SSHORT* flag = NULL;
-			par* null = parameter->par_null;
+			dsql_par* null = parameter->par_null;
 			if (null != NULL)
 			{
 				const USHORT null_offset = (IPTR) null->par_user_desc.dsc_address;
@@ -4346,13 +4344,13 @@ static void map_in_out(	dsql_req*		request,
 				  isc_arg_gds, isc_dsql_sqlda_err, 0);
 	}
 
-	par* dbkey;
+	dsql_par* dbkey;
 	if (request &&
 		((dbkey = request->req_parent_dbkey) != NULL) &&
 		((parameter = request->req_dbkey) != NULL))
 	{
 		MOVD_move(&dbkey->par_desc, &parameter->par_desc);
-		par* null = parameter->par_null;
+		dsql_par* null = parameter->par_null;
 		if (null != NULL)
 		{
 			SSHORT* flag = (SSHORT *) null->par_desc.dsc_address;
@@ -4360,13 +4358,13 @@ static void map_in_out(	dsql_req*		request,
 		}
 	}
 
-	par* rec_version;
+	dsql_par* rec_version;
 	if (request &&
 		((rec_version = request->req_parent_rec_version) != NULL) &&
 		((parameter = request->req_rec_version) != NULL))
 	{
 		MOVD_move(&rec_version->par_desc, &parameter->par_desc);
-		par* null = parameter->par_null;
+		dsql_par* null = parameter->par_null;
 		if (null != NULL)
 		{
 			SSHORT* flag = (SSHORT *) null->par_desc.dsc_address;
@@ -4415,7 +4413,7 @@ static USHORT name_length( const TEXT* name)
  **/
 static USHORT parse_blr(
 						USHORT blr_length,
-						const UCHAR* blr, const USHORT msg_length, par* parameters)
+						const UCHAR* blr, const USHORT msg_length, dsql_par* parameters)
 {
 /* If there's no blr length, then the format of the current message buffer
    is identical to the format of the previous one. */
@@ -4423,7 +4421,7 @@ static USHORT parse_blr(
 	if (!blr_length)
 	{
 		USHORT par_count = 0;
-		for (const par* parameter = parameters; parameter;
+		for (const dsql_par* parameter = parameters; parameter;
 			 parameter = parameter->par_next)
 		{
 			if (parameter->par_index) {
@@ -4570,11 +4568,11 @@ static USHORT parse_blr(
 		USHORT null_offset = offset;
 		offset += sizeof(SSHORT);
 
-		for (par* parameter = parameters; parameter; parameter = parameter->par_next)
+		for (dsql_par* parameter = parameters; parameter; parameter = parameter->par_next)
 		{
 			if (parameter->par_index == index) {
 				parameter->par_user_desc = desc;
-				par* null = parameter->par_null;
+				dsql_par* null = parameter->par_null;
 				if (null) {
 					null->par_user_desc.dsc_dtype = dtype_short;
 					null->par_user_desc.dsc_scale = 0;
@@ -4618,7 +4616,7 @@ static dsql_req* prepare(
 {
 	ISC_STATUS_ARRAY local_status;
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	MOVE_CLEAR(local_status, sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
 
@@ -4974,7 +4972,7 @@ static void release_request(dsql_req* request, bool top_level)
 static ISC_STATUS return_success(void)
 {
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	ISC_STATUS* p = tdsql->tsql_status;
 	*p++ = isc_arg_gds;
@@ -5020,7 +5018,7 @@ static UCHAR* var_info(
 	if (!message || !message->msg_index)
 		return info;
 
-	for (const par* param = message->msg_par_ordered; param; 
+	for (const dsql_par* param = message->msg_par_ordered; param;
 		param = param->par_ordered)
 	{
 		if (param->par_index && param->par_index >= first_index) {

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.30 2004-01-28 07:50:27 robocop Exp $
+//	$Id: exp.cpp,v 1.31 2004-02-02 11:01:26 robocop Exp $
 //
 
 #include "firebird.h"
@@ -53,7 +53,7 @@ const int ONE_BASED		= 1;
 static bool check_relation(void);
 static GPRE_NOD lookup_field(gpre_ctx*);
 static GPRE_NOD make_and(GPRE_NOD, GPRE_NOD);
-static GPRE_NOD make_list(LLS);
+static GPRE_NOD make_list(gpre_lls*);
 static GPRE_NOD normalize_index(dim*, GPRE_NOD, USHORT);
 static GPRE_NOD par_and(gpre_req*);
 static GPRE_NOD par_array(gpre_req*, gpre_fld*, bool, bool);
@@ -750,8 +750,8 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 	while (true) {
 		if (MSC_match(KW_SORTED)) {
 			MSC_match(KW_BY);
-			lls* items = NULL;
-			lls* directions = NULL;
+			gpre_lls* items = NULL;
+			gpre_lls* directions = NULL;
 			bool direction = false;
 			count = 0;
 			while (true) {
@@ -800,7 +800,7 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 
 		else if (MSC_match(KW_REDUCED)) {
 			MSC_match(KW_TO);
-			lls* items = NULL;
+			gpre_lls* items = NULL;
 			count = 0;
 			while (true) {
 				gpre_nod* item = par_value(request, 0);
@@ -961,10 +961,10 @@ static GPRE_NOD make_and( GPRE_NOD node1, GPRE_NOD node2)
 //		Make a generic variable length node from a stack.
 //  
 
-static GPRE_NOD make_list( LLS stack)
+static GPRE_NOD make_list( gpre_lls* stack)
 {
 	USHORT count = 0;
-	for (const lls* temp = stack; temp; temp = temp->lls_next)
+	for (const gpre_lls* temp = stack; temp; temp = temp->lls_next)
 		++count;
 
 	gpre_nod* node = MSC_node(nod_list, count);
@@ -1248,16 +1248,16 @@ static GPRE_NOD par_multiply( gpre_req* request, gpre_fld* field)
 	gpre_nod* node = par_primitive_value(request, field);
 
 	while (true) {
-		enum nod_t operator_;
+		enum nod_t nod_type;
 		if (MSC_match(KW_ASTERISK))
-			operator_ = nod_times;
+			nod_type = nod_times;
 		else if (MSC_match(KW_SLASH))
-			operator_ = nod_divide;
+			nod_type = nod_divide;
 		else
 			return node;
 		gpre_nod* arg = node;
 		node =
-			MSC_binary(operator_, arg, par_primitive_value(request, field));
+			MSC_binary(nod_type, arg, par_primitive_value(request, field));
 	}
 }
 
@@ -1534,7 +1534,7 @@ static GPRE_NOD par_udf( gpre_req* request, USHORT type, gpre_fld* field)
 			PAR_get_token();
 			if (!MSC_match(KW_LEFT_PAREN))
 				EXP_left_paren(0);
-			lls* stack = NULL;
+			gpre_lls* stack = NULL;
 			for (;;) {
 				MSC_push(par_value(request, field), &stack);
 				if (!MSC_match(KW_COMMA))
@@ -1560,15 +1560,15 @@ static GPRE_NOD par_value( gpre_req* request, gpre_fld* field)
 	gpre_nod* node = par_multiply(request, field);
 
 	while (true) {
-		enum nod_t operator_;
+		enum nod_t nod_type;
 		if (MSC_match(KW_PLUS))
-			operator_ = nod_plus;
+			nod_type = nod_plus;
 		else if (MSC_match(KW_MINUS))
-			operator_ = nod_minus;
+			nod_type = nod_minus;
 		else
 			return node;
 		gpre_nod* arg = node;
-		node = MSC_binary(operator_, arg, par_value(request, field));
+		node = MSC_binary(nod_type, arg, par_value(request, field));
 	}
 }
 

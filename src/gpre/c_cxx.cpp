@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.41 2004-01-28 07:50:27 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.42 2004-02-02 11:01:25 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1461,7 +1461,7 @@ static void gen_database( const act* action, int column)
 //  generate event parameter block for each event in module 
 
 	SSHORT max_count = 0;
-	for (LLS stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
+	for (gpre_lls* stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		SSHORT count = gen_event_block((const act*) (stack_ptr->lls_object));
 		max_count = MAX(count, max_count);
 	}
@@ -2076,7 +2076,7 @@ static void gen_event_wait( const act* action, int column)
 
 	DBB database;
 	int ident = -1;
-	for (LLS stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
+	for (gpre_lls* stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		const act* event_action = (const act*) stack_ptr->lls_object;
 		GPRE_NOD event_init = (GPRE_NOD) event_action->act_object;
 		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];

@@ -1073,7 +1073,7 @@ void CCH_fetch_page(
 		bak_state == nbak_state_stalled || 
 	    (bak_state == nbak_state_merge && 
 		 (bdb->bdb_page >= dbb->backup_manager->get_backup_pages() ||
-		  page->pag_scn() < dbb->backup_manager->get_current_scn())
+		  page->pag_scn < dbb->backup_manager->get_current_scn())
 		)))
 	{		
 		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE", 
@@ -1121,16 +1121,6 @@ void CCH_fetch_page(
 	}
 	
 	dbb->backup_manager->unlock_state();
-
-#ifdef DEBUG_SAVE_BDB_PAGE
-/* This debug option will not work with WAL or existing databases.
-   Verify that page number saved in pag_offset by write_page(). */
-
-	if (bdb->bdb_page != page->pag_offset) {
-		DEBUG_PRINTF
-			("Incorrect page number in pag_offset (CCH_fetch_page)\n");
-	}
-#endif
 
 #ifndef NO_CHECKSUM
 	if (((compute_checksum == 1)
@@ -1217,7 +1207,7 @@ void CCH_fini(TDBB tdbb)
 	/* Shutdown the dedicated cache reader for this database. */
 
 		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_reader)) {
-			EVENT event = dbb->dbb_reader_event;
+			event_t* event = dbb->dbb_reader_event;
 			bcb->bcb_flags &= ~BCB_cache_reader;
 			ISC_event_post(event);
 			SLONG count = ISC_event_clear(event);
@@ -1234,7 +1224,7 @@ void CCH_fini(TDBB tdbb)
 	/* Shutdown the dedicated cache writer for this database. */
 
 		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_writer)) {
-			EVENT event = dbb->dbb_writer_event_fini;
+			event_t* event = dbb->dbb_writer_event_fini;
 			/* initialize initialization event */
 			ISC_event_init(event, 0, 0);
 			SLONG count = ISC_event_clear(event);
@@ -1701,7 +1691,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 	}
 
 #ifdef CACHE_READER
-	EVENT event = dbb->dbb_reader_event;
+	event_t* event = dbb->dbb_reader_event;
 	ISC_event_init(event, 0, 0);
 	count = ISC_event_clear(event);
 	if (gds__thread_start
@@ -1718,7 +1708,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 
 #ifdef CACHE_WRITER
 	if (!(dbb->dbb_flags & DBB_read_only)) {
-		EVENT event = dbb->dbb_writer_event_init;
+		event_t* event = dbb->dbb_writer_event_init;
 		/* Initialize initialization event */
 		ISC_event_init(event, 0, 0);
 		count = ISC_event_clear(event);
@@ -2041,7 +2031,7 @@ void update_write_direction(TDBB tdbb, BDB bdb)
 	if (bdb->bdb_page != HEADER_PAGE)
 	{
 		// SCN of header page is adjusted in nbak.cpp
-		bdb->bdb_buffer->pag_scn() = dbb->backup_manager->get_current_scn(); // Set SCN for the page
+		bdb->bdb_buffer->pag_scn = dbb->backup_manager->get_current_scn(); // Set SCN for the page
 	}
 	SSHORT write_direction;
 	const int backup_state = dbb->backup_manager->get_state();
@@ -3089,7 +3079,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
    LCK_init fails we won't be able to accomplish anything anyway, so
    return, unlike the other try blocks further down the page. */
    
-	EVENT reader_event = 0;
+	event_t* reader_event = 0;
 	BCB bcb = 0;
 
 	try {
@@ -3256,7 +3246,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
    return, unlike the other try blocks further down the page. */
-	EVENT writer_event = 0;
+	event_t* writer_event = 0;
 	BCB bcb = 0;
 
 	try {
@@ -3766,45 +3756,45 @@ static void expand_buffers(TDBB tdbb, ULONG number)
 	old = dbb->dbb_bcb;
 	const bcb_repeat* const old_end = old->bcb_rpt + old->bcb_count;
 
-	BCB new_ = FB_NEW_RPT(*dbb->dbb_bufferpool, number) bcb;
-	new_->bcb_count = number;
-	new_->bcb_free_minimum = (SSHORT) MIN(number / 4, 128);	/* 25% clean page reserve */
-	new_->bcb_checkpoint = old->bcb_checkpoint;
-	new_->bcb_flags = old->bcb_flags;
-	const bcb_repeat* const new_end = new_->bcb_rpt + number;
+	BCB new_block = FB_NEW_RPT(*dbb->dbb_bufferpool, number) bcb;
+	new_block->bcb_count = number;
+	new_block->bcb_free_minimum = (SSHORT) MIN(number / 4, 128);	/* 25% clean page reserve */
+	new_block->bcb_checkpoint = old->bcb_checkpoint;
+	new_block->bcb_flags = old->bcb_flags;
+	const bcb_repeat* const new_end = new_block->bcb_rpt + number;
 
 /* point at the dirty page binary tree */
 
-	new_->bcb_btree = old->bcb_btree;
+	new_block->bcb_btree = old->bcb_btree;
 
 /* point at the free precedence blocks */
 
-	new_->bcb_free = old->bcb_free;
+	new_block->bcb_free = old->bcb_free;
 
 /* position the new bcb in the in use, empty and latch queues */
 
-	QUE_INSERT(old->bcb_in_use, new_->bcb_in_use);
+	QUE_INSERT(old->bcb_in_use, new_block->bcb_in_use);
 	QUE_DELETE(old->bcb_in_use);
-	QUE_INSERT(old->bcb_empty, new_->bcb_empty);
+	QUE_INSERT(old->bcb_empty, new_block->bcb_empty);
 	QUE_DELETE(old->bcb_empty);
-	QUE_INSERT(old->bcb_free_lwt, new_->bcb_free_lwt);
+	QUE_INSERT(old->bcb_free_lwt, new_block->bcb_free_lwt);
 	QUE_DELETE(old->bcb_free_lwt);
 
 /* Copy addresses of previously allocated buffer space to new block */
 
 	for (const lls* stack = old->bcb_memory; stack; stack = stack->lls_next) {
-		LLS_PUSH(stack->lls_object, &new_->bcb_memory);
+		LLS_PUSH(stack->lls_object, &new_block->bcb_memory);
 	}
 
 /* Initialize tail of new buffer control block */
 	bcb_repeat* new_tail;
-	for (new_tail = new_->bcb_rpt; new_tail < new_end; new_tail++) {
+	for (new_tail = new_block->bcb_rpt; new_tail < new_end; new_tail++) {
 		QUE_INIT(new_tail->bcb_page_mod);
 	}
 
 /* Move any active buffers from old block to new */
 
-	new_tail = new_->bcb_rpt;
+	new_tail = new_block->bcb_rpt;
 
 	for (bcb_repeat* old_tail = old->bcb_rpt; old_tail < old_end;
 		old_tail++, new_tail++)
@@ -3815,7 +3805,7 @@ static void expand_buffers(TDBB tdbb, ULONG number)
 			BDB bdb = BLOCK(que, BDB, bdb_que);
 			QUE_DELETE((*que));
 			QUE mod_que =
-				&new_->bcb_rpt[bdb->bdb_page % new_->bcb_count].bcb_page_mod;
+				&new_block->bcb_rpt[bdb->bdb_page % new_block->bcb_count].bcb_page_mod;
 			QUE_INSERT((*mod_que), (*que));
 		}
 	}
@@ -3830,7 +3820,7 @@ static void expand_buffers(TDBB tdbb, ULONG number)
 		if (!num_in_seg) {
 			memory = (UCHAR *)gds__alloc((SLONG) dbb->dbb_page_size *
 										 (num_per_seg + 1));
-			LLS_PUSH(memory, &new_->bcb_memory);
+			LLS_PUSH(memory, &new_block->bcb_memory);
 			memory = (UCHAR *) (((U_IPTR) memory + dbb->dbb_page_size - 1) &
 								~((int) dbb->dbb_page_size - 1));
 			num_in_seg = num_per_seg;
@@ -3839,13 +3829,13 @@ static void expand_buffers(TDBB tdbb, ULONG number)
 				num_per_seg = left_to_do;
 			}
 		}
-		new_tail->bcb_bdb = alloc_bdb(tdbb, new_, &memory);
+		new_tail->bcb_bdb = alloc_bdb(tdbb, new_block, &memory);
 		num_in_seg--;
 	}
 
 /* Set up new buffer control, release old buffer control, and clean up */
 
-	dbb->dbb_bcb = new_;
+	dbb->dbb_bcb = new_block;
 
 	delete old;
 	tdbb->tdbb_default = old_pool;
@@ -4368,7 +4358,7 @@ static SSHORT latch_bdb(
 		QUE_APPEND(bdb->bdb_waiters, lwt_->lwt_waiters);
 	}
 
-	EVENT event = &lwt_->lwt_event;
+	event_t* event = &lwt_->lwt_event;
 
 	int timeout_occurred = FALSE;
 /* Loop until the latch is granted or until a timeout occurrs. */
@@ -5502,11 +5492,6 @@ static bool write_page(
 	if (true) {
 		AST_CHECK;
 		dbb->dbb_writes++;
-
-#ifdef DEBUG_SAVE_BDB_PAGE
-		/* Save page number into page->pag_offset before computing the checksum */
-		page->pag_offset = bdb->bdb_page;
-#endif
 
 		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */

@@ -90,4 +90,5 @@
 #define REQ_show_dimensions	64
 #define REQ_max			65
 
-#endif /* QLI_REQS_H */
+#endif // QLI_REQS_H
+

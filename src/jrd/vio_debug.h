@@ -1,4 +1,4 @@
-/* *	PROGRAM:	JRD Access Method
+/* 	PROGRAM:	JRD Access Method
  *	MODULE:		vio_debug.h
  *	DESCRIPTION:	Definitions for tracing VIO activity
  *
@@ -35,3 +35,4 @@
 static int debug_flag;
 
 #endif /* JRD_VIO_DEBUG_H */
+

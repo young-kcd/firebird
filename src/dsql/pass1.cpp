@@ -191,8 +191,8 @@ static dsql_nod* compose(dsql_nod*, dsql_nod*, NOD_TYPE);
 static void explode_asterisk(dsql_req*, dsql_nod*, const dsql_nod*, dsql_lls**);
 static dsql_nod* explode_outputs(dsql_req*, const dsql_prc*);
 static void field_error(const TEXT*, const TEXT*, const dsql_nod*);
-static par* find_dbkey(const dsql_req*, const dsql_nod*);
-static par* find_record_version(const dsql_req*, const dsql_nod*);
+static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
+static dsql_par* find_record_version(const dsql_req*, const dsql_nod*);
 static bool invalid_reference(const dsql_ctx*, const dsql_nod*, 
 	const dsql_nod*, bool, bool);
 static bool node_match(const dsql_nod*, const dsql_nod*, bool);
@@ -218,7 +218,7 @@ static dsql_nod* pass1_group_by_list(dsql_req*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_insert(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_join(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_label(dsql_req*, dsql_nod*);
-static dsql_nod* pass1_make_derived_field(dsql_req*, TSQL, dsql_nod*);
+static dsql_nod* pass1_make_derived_field(dsql_req*, tsql*, dsql_nod*);
 static void	pass1_put_args_on_stack(dsql_req*, dsql_nod*, dsql_lls**, bool);
 static dsql_nod* pass1_relation(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_rse(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*);
@@ -285,7 +285,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_node, dsql_type_nod);
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_rel* relation = NULL;
 	dsql_prc* procedure = NULL;
@@ -294,14 +294,17 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
    and give an error if it is neither */
 
 	dsql_str* relation_name;
-	if (relation_node->nod_type == nod_rel_proc_name) {
+	switch (relation_node->nod_type)
+	{
+	case nod_rel_proc_name:
 		relation_name = (dsql_str*) relation_node->nod_arg[e_rpn_name];
-	}
-	else if (relation_node->nod_type == nod_derived_table) {
+		break;
+	case nod_derived_table:
 		relation_name = (dsql_str*) relation_node->nod_arg[e_derived_table_alias];
-	}
-	else {
+		break;
+	default:
 		relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
+		break;
 	}
 
     // CVC: Let's skim the context, too.
@@ -2239,7 +2242,7 @@ static dsql_nod* explode_outputs( dsql_req* request, const dsql_prc* procedure)
 		dsql_nod* p_node = MAKE_node(nod_parameter, e_par_count);
 		*ptr = p_node;
 		p_node->nod_count = 0;
-		par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
+		dsql_par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
 		p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 		MAKE_desc_from_field(&parameter->par_desc, field);
 		parameter->par_name = parameter->par_alias = field->fld_name;
@@ -2307,16 +2310,16 @@ static void field_error(const TEXT* qualifier_name, const TEXT* field_name,
     @param relation_name
 
  **/
-static par* find_dbkey(const dsql_req* request, const dsql_nod* relation_name)
+static dsql_par* find_dbkey(const dsql_req* request, const dsql_nod* relation_name)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
 	dsql_msg* message = request->req_receive;
-	par* candidate = NULL;
+	dsql_par* candidate = NULL;
 	const dsql_str* rel_name = (dsql_str*) relation_name->nod_arg[e_rln_name];
 	DEV_BLKCHK(rel_name, dsql_type_str);
-	for (par* parameter = message->msg_parameters; parameter;
+	for (dsql_par* parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)
 	{
 		DEV_BLKCHK(parameter, dsql_type_par);
@@ -2349,16 +2352,16 @@ static par* find_dbkey(const dsql_req* request, const dsql_nod* relation_name)
     @param relation_name
 
  **/
-static par* find_record_version(const dsql_req* request, const dsql_nod* relation_name)
+static dsql_par* find_record_version(const dsql_req* request, const dsql_nod* relation_name)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
 	dsql_msg* message = request->req_receive;
-	par* candidate = NULL;
+	dsql_par* candidate = NULL;
 	const dsql_str* rel_name = (dsql_str*) relation_name->nod_arg[e_rln_name];
 	DEV_BLKCHK(rel_name, dsql_type_str);
-	for (par* parameter = message->msg_parameters; parameter;
+	for (dsql_par* parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)
 	{
 		DEV_BLKCHK(parameter, dsql_type_par);
@@ -2851,8 +2854,8 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 		if (node1->nod_type != node2->nod_type) {
 			return false;
 		}
-		const var* var1 = reinterpret_cast<var*>(node1->nod_arg[e_var_variable]);
-		const var* var2 = reinterpret_cast<var*>(node2->nod_arg[e_var_variable]);
+		const dsql_var* var1 = reinterpret_cast<dsql_var*>(node1->nod_arg[e_var_variable]);
+		const dsql_var* var2 = reinterpret_cast<dsql_var*>(node2->nod_arg[e_var_variable]);
 		DEV_BLKCHK(var1, dsql_type_var);
 		DEV_BLKCHK(var2, dsql_type_var);
 		if ((strcmp(var1->var_name, var2->var_name))					||
@@ -2977,7 +2980,7 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	PASS1_make_context(request, input->nod_arg[e_blb_relation]);
 	dsql_nod* field = pass1_field(request, input->nod_arg[e_blb_field], false);
@@ -2997,7 +3000,7 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 
 // Create a parameter for the blob segment 
 
-	par* parameter = MAKE_parameter(blob->blb_segment_msg, true, true, 0);
+	dsql_par* parameter = MAKE_parameter(blob->blb_segment_msg, true, true, 0);
 	blob->blb_segment = parameter;
 	parameter->par_desc.dsc_dtype = dtype_text;
 	parameter->par_desc.dsc_ttype = ttype_binary;
@@ -3127,7 +3130,7 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
 	DEV_BLKCHK(sub1, dsql_type_nod);
 	DEV_BLKCHK(collation, dsql_type_str);
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* node = MAKE_node(nod_cast, e_cast_count);
 	dsql_fld* field = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_fld;
@@ -3376,9 +3379,9 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request,
 
 // Verify that the cursor is appropriate and updatable 
 
-	par* rv_source = find_record_version(parent, relation_name);
+	dsql_par* rv_source = find_record_version(parent, relation_name);
 
-	par* source;
+	dsql_par* source;
 	if (parent->req_type != REQ_SELECT_UPD ||
 		!(source = find_dbkey(parent, relation_name)) ||
 		(!rv_source && !(request->req_dbb->dbb_flags & DBB_v3)))
@@ -3408,7 +3411,7 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request,
 
 	node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
 	temp->nod_count = 0;
-	par* parameter = request->req_dbkey =
+	dsql_par* parameter = request->req_dbkey =
 		MAKE_parameter(request->req_send, false, false, 0);
 	temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 	parameter->par_desc = source->par_desc;
@@ -3565,7 +3568,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* node = MAKE_node (nod_derived_table, e_derived_table_count);
 	dsql_str* alias = (dsql_str*) input->nod_arg[e_derived_table_alias];
@@ -4811,7 +4814,8 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
     @param field
 
  **/
-static dsql_nod* pass1_make_derived_field(dsql_req* request, TSQL tdsql, dsql_nod* select_item)
+static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
+	dsql_nod* select_item)
 {
 	DEV_BLKCHK(select_item, dsql_type_nod);
 
@@ -5050,7 +5054,7 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 	}
 
 	// make up a dummy context to hold the resultant relation.
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 	dsql_ctx* new_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 	new_context->ctx_context = context->ctx_context;
 	new_context->ctx_relation = relation;
@@ -5161,7 +5165,7 @@ static dsql_ctx* pass1_alias(dsql_req* request, dsql_lls* stack, dsql_str* alias
  **/
 static dsql_str* pass1_alias_concat(const dsql_str* input1, const dsql_str* input2)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	DEV_BLKCHK(input1, dsql_type_str);
 	DEV_BLKCHK(input2, dsql_type_str);
@@ -5242,7 +5246,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(order, dsql_type_nod);
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 // Handle implicit union case first.  Maybe it's not a union 
 
@@ -6000,7 +6004,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(order_list, dsql_type_nod);
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	// set up the rse node for the union.
 	dsql_nod* union_rse = MAKE_node(nod_rse, e_rse_count);
@@ -6242,7 +6246,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 							cast_node = select_item;
 						}
 						else {
-							TSQL tdsql = GET_THREAD_DATA;
+							tsql* tdsql = GET_THREAD_DATA;
 							cast_node = MAKE_node(nod_cast, e_cast_count);
 							dsql_fld* afield = FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_fld;
 							cast_node->nod_arg[e_cast_target] = (dsql_nod*) afield;
@@ -6401,7 +6405,7 @@ static dsql_nod* resolve_variable_name(const dsql_nod* var_nodes, const dsql_str
 		dsql_nod* var_node = *ptr;
 		if (var_node->nod_type == nod_variable)
 		{
-			const var* variable = (var*) var_node->nod_arg[e_var_variable];
+			const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 			DEV_BLKCHK(variable, dsql_type_var);
 			if (!strcmp
 				(reinterpret_cast<const char*>(var_name->str_data),
@@ -6466,7 +6470,7 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 					ptr + var_nodes->nod_count; ptr < end; ptr++) //, position++)
 				{
 					dsql_nod* var_node = *ptr;
-					const var* variable = (var*) var_node->nod_arg[e_var_variable];
+					const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 					DEV_BLKCHK(variable, dsql_type_var);
 					if (!strcmp
 						(reinterpret_cast<const char*>(var_name->str_data),
@@ -6485,7 +6489,7 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 					ptr + var_nodes->nod_count; ptr < end; ptr++) //, position++)
 				{
 					dsql_nod* var_node = *ptr;
-					const var* variable = (var*) var_node->nod_arg[e_var_variable];
+					const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 					DEV_BLKCHK(variable, dsql_type_var);
 					if (!strcmp
 						(reinterpret_cast<const char*>(var_name->str_data),
@@ -6511,7 +6515,7 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 				dsql_nod* var_node = *ptr;
 				if (var_node->nod_type == nod_variable)
 				{
-					const var* variable = (var*) var_node->nod_arg[e_var_variable];
+					const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 					DEV_BLKCHK(variable, dsql_type_var);
 					if (!strcmp
 						(reinterpret_cast<const char*>(var_name->str_data),
@@ -6568,7 +6572,7 @@ static dsql_nod* post_map( dsql_nod* node, dsql_ctx* context)
 	DEV_BLKCHK(node, dsql_type_nod);
 	DEV_BLKCHK(context, dsql_type_ctx);
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 // Check to see if the item has already been posted 
 
@@ -7017,7 +7021,7 @@ static bool set_parameter_type(dsql_nod* in_node, dsql_nod* node, bool force_var
 		case nod_parameter:
 			{
 				MAKE_desc(&in_node->nod_desc, node);
-				par* parameter = (par*) in_node->nod_arg[e_par_parameter];
+				dsql_par* parameter = (dsql_par*) in_node->nod_arg[e_par_parameter];
 				DEV_BLKCHK(parameter, dsql_type_par);
 				parameter->par_desc = in_node->nod_desc;
 				parameter->par_node = in_node;
@@ -7156,7 +7160,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node,
 	switch (par_node->nod_type) {
 	case nod_parameter:
 		{
-			par* parameter = (par*) par_node->nod_arg[e_par_parameter];
+			dsql_par* parameter = (dsql_par*) par_node->nod_arg[e_par_parameter];
 			DEV_BLKCHK(parameter, dsql_type_par);
 			const dsql_fld* field = (dsql_fld*) fld_node->nod_arg[e_fld_field];
 			DEV_BLKCHK(field, dsql_type_fld);

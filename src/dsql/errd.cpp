@@ -125,7 +125,7 @@ void ERRD_error( int code, const char* text)
 {
 	TEXT s[256];
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	sprintf(s, "** DSQL error: %s **\n", text);
 	TRACE(s);
@@ -166,7 +166,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 
 	VA_START(args, status);
 
-	ISC_STATUS* status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
+	ISC_STATUS* status_vector = ((tsql*) GET_THREAD_DATA)->tsql_status;
 	int indx = 0;
 
 	if (status_vector[0] != isc_arg_gds ||
@@ -264,7 +264,7 @@ void ERRD_post(ISC_STATUS status, ...)
 {
 	int warning_indx = 0;
 
-	ISC_STATUS* status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
+	ISC_STATUS* status_vector = ((tsql*) GET_THREAD_DATA)->tsql_status;
 
 // stuff the status into temp buffer 
 	ISC_STATUS_ARRAY tmp_status;
@@ -363,7 +363,7 @@ void ERRD_post(ISC_STATUS status, ...)
  **/
 void ERRD_punt(void)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 // Save any strings in a permanent location 
 

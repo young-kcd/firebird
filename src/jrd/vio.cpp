@@ -1485,7 +1485,7 @@ void VIO_fini(TDBB tdbb)
 
 	if (dbb->dbb_flags & DBB_garbage_collector)
 	{
-		EVENT gc_event_fini = dbb->dbb_gc_event_fini;
+		event_t* gc_event_fini = dbb->dbb_gc_event_fini;
 		/* initialize finalization event */
 		ISC_event_init(gc_event_fini, 0, 0);
 		SLONG count = ISC_event_clear(gc_event_fini);
@@ -1968,7 +1968,7 @@ void VIO_init(TDBB tdbb)
    then start one up. */
 
 	if (!(dbb->dbb_flags & DBB_garbage_collector)) {
-		EVENT gc_event_init = dbb->dbb_gc_event_init;
+		event_t* gc_event_init = dbb->dbb_gc_event_init;
 		/* Initialize initialization event */
 		ISC_event_init(gc_event_init, 0, 0);
 		SLONG count = ISC_event_clear(gc_event_init);

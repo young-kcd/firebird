@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.51 2004-01-28 07:50:33 robocop Exp $
+$Id: why.cpp,v 1.52 2004-02-02 11:01:35 robocop Exp $
 */
 
 #include "firebird.h"
@@ -217,7 +217,7 @@ static void cleanup_transaction(WHY_TRA);
 static ISC_STATUS error(ISC_STATUS *, ISC_STATUS *);
 static ISC_STATUS error2(ISC_STATUS *, ISC_STATUS *);
 static void event_ast(void*, USHORT, const UCHAR*);
-static void exit_handler(EVENT);
+static void exit_handler(event_t*);
 static WHY_TRA find_transaction(WHY_DBB, WHY_TRA);
 static void free_block(void*);
 static int get_database_info(ISC_STATUS *, WHY_TRA, TEXT **);
@@ -233,7 +233,7 @@ static ISC_STATUS open_blob(ISC_STATUS*, WHY_ATT*, WHY_TRA*, WHY_BLB*, SLONG*,
 static ISC_STATUS open_marker_file(ISC_STATUS *, TEXT *, TEXT *);
 #endif
 static ISC_STATUS prepare(ISC_STATUS *, WHY_TRA);
-static void release_dsql_support(DASUP);
+static void release_dsql_support(sqlda_sup*);
 static void release_handle(WHY_HNDL);
 static void save_error_string(ISC_STATUS *);
 static void subsystem_enter(void);
@@ -2135,7 +2135,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 	WHY_STMT statement;
 	USHORT in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length;
-	DASUP dasup;
+	sqlda_sup* dasup;
 
 	GET_STATUS;
 	statement = *stmt_handle;
@@ -2406,7 +2406,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY local;
 	USHORT in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length;
-	struct dasup dasup;
+	sqlda_sup dasup;
 
 	GET_STATUS;
 
@@ -2415,7 +2415,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 	if (*tra_handle)
 		CHECK_HANDLE(*tra_handle, HANDLE_transaction, isc_bad_trans_handle);
 
-	memset(&dasup, 0, sizeof(struct dasup));
+	memset(&dasup, 0, sizeof(sqlda_sup));
 	if (UTLD_parse_sqlda(status, &dasup, &in_blr_length, &in_msg_type,
 						 &in_msg_length, dialect, in_sqlda,
 						 DASUP_CLAUSE_bind))
@@ -2796,7 +2796,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY local;
 	WHY_STMT statement;
 	USHORT blr_length, msg_type, msg_length;
-	DASUP dasup;
+	sqlda_sup* dasup;
 
 	GET_STATUS;
 	statement = *stmt_handle;
@@ -2857,7 +2857,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY local;
 	WHY_STMT statement;
 	USHORT blr_length, msg_type, msg_length;
-	DASUP dasup;
+	sqlda_sup* dasup;
 
 	GET_STATUS;
 	statement = *stmt_handle;
@@ -3097,7 +3097,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY local;
 	WHY_STMT statement;
 	USHORT blr_length, msg_type, msg_length;
-	DASUP dasup;
+	sqlda_sup* dasup;
 
 	GET_STATUS;
 	statement = *stmt_handle;
@@ -3193,7 +3193,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY local;
 	USHORT buffer_len;
 	SCHAR *buffer, local_buffer[BUFFER_MEDIUM];
-	DASUP dasup;
+	sqlda_sup* dasup;
 
 	GET_STATUS;
 	CHECK_HANDLE(*stmt_handle, HANDLE_statement, isc_bad_stmt_handle);
@@ -3222,7 +3222,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 	{
 		release_dsql_support((*stmt_handle)->das);
 
-		if (!(dasup = (DASUP) alloc((SLONG) sizeof(struct dasup)))) {
+		if (!(dasup = (sqlda_sup*) alloc((SLONG) sizeof(sqlda_sup)))) {
 			(*stmt_handle)->requests = 0;
 			status[0] = isc_arg_gds;
 			status[1] = isc_virmemexh;
@@ -3460,7 +3460,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
 	SLONG value, id;
-	EVENT event_ptr;
+	event_t* event_ptr;
 
 	GET_STATUS;
 
@@ -5266,7 +5266,7 @@ static void event_ast(void* buffer_void,
 
 
 #ifndef REQUESTER
-static void exit_handler(EVENT why_event)
+static void exit_handler(event_t* why_event)
 {
 /**************************************
  *
@@ -5914,7 +5914,7 @@ static void why_priv_gds__free_if_set(void* pMem)
 	}
 }
 
-static void release_dsql_support(DASUP dasup)
+static void release_dsql_support(sqlda_sup* dasup)
 {
 /**************************************
  *
@@ -5931,7 +5931,7 @@ static void release_dsql_support(DASUP dasup)
 	}
 
 	/* for C++, add "dasup::" before "dasup_clause" */
-	struct dasup::dasup_clause* pClauses = dasup->dasup_clauses;
+	sqlda_sup::dasup_clause* pClauses = dasup->dasup_clauses;
 
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_bind].dasup_blr);
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_select].dasup_blr);

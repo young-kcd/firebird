@@ -610,7 +610,8 @@ void IDX_garbage_collect(TDBB tdbb, RPB * rpb, LLS going, LLS staying)
 				/* Cancel index if there are duplicates in the remaining records */
 
 				lls* stack2;
-				for(stack2 = stack1->lls_next; stack2; stack2 = stack2->lls_next) {
+				for (stack2 = stack1->lls_next; stack2; stack2 = stack2->lls_next)
+				{
 					REC rec2 = (REC) stack2->lls_object;
 					if (rec2->rec_number == rec1->rec_number) {
 						BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0);
@@ -1262,7 +1263,7 @@ static IDX_E insert_key(
 	IDX_E result = idx_e_ok;
 	IDX* idx = insertion->iib_descriptor;
 
-/* Insert the key into the index.  If the index is unique, BTR
+/* Insert the key into the index.  If the index is unique, btr
    will keep track of duplicates. */
 
 	insertion->iib_duplicates = NULL;

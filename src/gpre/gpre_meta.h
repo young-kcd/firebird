@@ -34,7 +34,7 @@ const SCHAR*		MET_generator(const TEXT*, DBB);
 bool		MET_get_column_default(const gpre_rel*, const TEXT*, TEXT*, USHORT);
 bool		MET_get_domain_default(DBB, const TEXT*, TEXT*, USHORT);
 USHORT		MET_get_dtype(USHORT, USHORT, USHORT*);
-LLS			MET_get_primary_key(DBB, const TEXT*);
+gpre_lls*	MET_get_primary_key(DBB, const TEXT*);
 gpre_prc*	MET_get_procedure(DBB, const TEXT*, const TEXT*);
 gpre_rel*	MET_get_relation(DBB, const TEXT*, const TEXT*);
 INTLSYM		MET_get_text_subtype(SSHORT);

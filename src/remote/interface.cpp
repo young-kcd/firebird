@@ -6188,23 +6188,23 @@ static void receive_after_start( rrq* request, USHORT msg_type)
 	while (true) {
 		REM_MSG message = tail->rrq_xdr;
 		if (message->msg_address) {
-			REM_MSG new_ = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
-			tail->rrq_xdr = new_;
-			new_->msg_next = message;
-			new_->msg_number = message->msg_number;
+			REM_MSG new_msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
+			tail->rrq_xdr = new_msg;
+			new_msg->msg_next = message;
+			new_msg->msg_number = message->msg_number;
 
 #ifdef SCROLLABLE_CURSORS
 			/* link the new message in a doubly linked list to make it 
 			   easier to scroll back and forth through the records */
 
 			REM_MSG prior = message->msg_prior;
-			message->msg_prior = new_;
-			prior->msg_next = new_;
-			new_->msg_prior = prior;
+			message->msg_prior = new_msg;
+			prior->msg_next = new_msg;
+			new_msg->msg_prior = prior;
 #else
-			while (message->msg_next != new_->msg_next)
+			while (message->msg_next != new_msg->msg_next)
 				message = message->msg_next;
-			message->msg_next = new_;
+			message->msg_next = new_msg;
 #endif
 		}
 

@@ -182,7 +182,7 @@ typedef irb *IRB;
 #define irb_descending	16		/* ?Base index uses descending order */
 
 // macros used to manipulate btree nodes
-#define BTR_SIZE	OFFSETA(BTR, btr_nodes);
+#define BTR_SIZE	OFFSETA(btree_page*, btr_nodes);
 
 #define NEXT_NODE(node)	(btn*)(node->btn_data + node->btn_length)
 #define NEXT_NODE_RECNR(node)	(btn*)(node->btn_data + node->btn_length + sizeof(SLONG))

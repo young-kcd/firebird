@@ -464,21 +464,26 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 			break;
 
 		case 'A':
-			if (*p == 'C') {
+			switch (*p)
+			{
+			case 'C':
 				q = *vms_status++;
 				length = *q++;
-			}
-			else if (*p == 'D' || *p == 'F') {
+				break;
+			case 'D':
+			case 'F':
 				length = *vms_status++;
 				q = *vms_status++;
-			}
-			else if (*p == 'S') {
+				break;
+			case 'S':
 				dsc_ptr = *vms_status++;
 				length = dsc_ptr->dsc$w_length;
 				q = dsc_ptr->dsc$a_pointer;
-			}
-			else
+				break;
+			default:
 				BUGCHECK(236);	/* msg 236 Error parsing RDB FAO msg string */
+				break;
+			}
 
 			++p;
 			*tmp++ = isc_arg_cstring;
@@ -811,7 +816,7 @@ static int translate_status(
  *
  **************************************/
 	ISC_STATUS *gds, *rdb, code, *count_addr;
-	USHORT fac = 0, class_ = 0;
+	USHORT fac = 0, dummy_class = 0;
 	SSHORT count, length;
 	SCHAR msgbuff[WRKBUF_SIZ], *p, *q, *pw1, *pw2, flags[4];
 	struct dsc$descriptor_s desc, *desc_ptr;
@@ -834,7 +839,7 @@ static int translate_status(
 	if (*gds++ != isc_arg_gds)
 		BUGCHECK(239);			/* msg 239 Interbase status vector inconsistent */
 
-	code = gds__decode(*gds, &fac, &class_);
+	code = gds__decode(*gds, &fac, &dummy_class);
 
 	if ((code < 0) || (code > isc_err_max)) {
 		rdb[0] = *gds;
@@ -880,9 +885,9 @@ static int translate_status(
 			case isc_arg_cstring:
 				length = *pw2++ = *gds++;
 				q = *gds++;
-				do
+				do {
 					(*pw2++ = *q++);
-				while (--length);
+				} while (--length);
 				break;
 
 			case isc_arg_string:
@@ -898,14 +903,18 @@ static int translate_status(
 				BUGCHECK(240);	/* msg 240 Interbase/RdB message parameter inconsistency */
 			}
 
-			if (*p == 'C')
+			switch (*p)
+			{
+			case 'C':
 				*rdb++ = pw1;
-			else if (*p == 'D' || *p == 'F') {
+				break;
+			case 'D':
+			case 'F':
 				*rdb++ = *pw1++;
 				*rdb++ = pw1;
 				++count;
-			}
-			else if (*p == 'S') {
+				break;
+			case 'S':
 				*rdb++ = pw2;
 				desc_ptr = (struct dsc$descriptor *) pw2;
 				desc_ptr->dsc$b_class = DSC$K_CLASS_S;
@@ -913,9 +922,11 @@ static int translate_status(
 				desc_ptr->dsc$w_length = *pw1++;
 				desc_ptr->dsc$a_pointer = pw1;
 				pw2 += sizeof(struct dsc$descriptor);
-			}
-			else
+				break;
+			default:
 				BUGCHECK(241);	/* msg 241 error parsing RDB FAO message string */
+				break;
+			}
 
 			pw1 = pw2;
 			++count;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.57 2004-01-28 07:50:27 robocop Exp $
+ * $Id: gpre.h,v 1.58 2004-02-02 11:01:26 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -380,12 +380,12 @@ enum gpre_trg_types {
 
 /* Linked list stack stuff */
 
-typedef struct lls {
+struct gpre_lls {
 	gpre_nod* lls_object;		/* object on stack */
-	lls* lls_next;				/* next item on stack */
-} *LLS;
+	gpre_lls* lls_next;				/* next item on stack */
+};
 
-const size_t LLS_LEN = sizeof(lls);
+const size_t LLS_LEN = sizeof(gpre_lls);
 
 
 /* Constraint block, used to hold information about integrity constraints */
@@ -393,10 +393,10 @@ const size_t LLS_LEN = sizeof(lls);
 typedef struct cnstrt {
 	str* cnstrt_name;				/* Name of constraint */
 	USHORT cnstrt_type;				/* Type of constraint */
-	lls* cnstrt_fields;				/* list of fields */
+	gpre_lls* cnstrt_fields;				/* list of fields */
 	USHORT cnstrt_fkey_def_type;	/* extended foreign key definition */
 	str* cnstrt_referred_rel;		/* referred relation, if foreign key */
-	lls* cnstrt_referred_fields;	/* optional list of fields from
+	gpre_lls* cnstrt_referred_fields;	/* optional list of fields from
 									   referred relation */
 	cnstrt* cnstrt_next;			/* next contraint for field or relation */
 	gpre_txt* cnstrt_text;			/* source for CHECK constraints */
@@ -454,7 +454,7 @@ typedef struct prv {
 	str* prv_relation;			/* relation on which we're doing grant/revoke */
 	USHORT prv_object_dyn;		/* the dyn-verb to be used with prv_relation
 								   i.e. gds__dyn_rel/proc_name */
-	lls* prv_fields;			/* fields on which we're doing grant/revoke */
+	gpre_lls* prv_fields;			/* fields on which we're doing grant/revoke */
 	prv* prv_next;				/* next grant/revoke block (with different user) */
 } *PRV;
 
@@ -1246,7 +1246,7 @@ const size_t REF_LEN = sizeof(ref);
 
 struct bas {
 	gpre_fld* bas_field;		/* database field referenced */
-	lls* bas_variables;			/* list of variables based on above */
+	gpre_lls* bas_variables;			/* list of variables based on above */
 	str* bas_db_name;			/* database name if present and required */
 	str* bas_rel_name;			/* relation name if no db statement */
 	str* bas_fld_name;			/* field if no db statement */
@@ -1461,7 +1461,7 @@ EXTERN TEXT *default_user, *default_password;
 EXTERN TEXT *default_lc_ctype;
 EXTERN TEXT *default_lc_messages;
 EXTERN gpre_req* requests;
-EXTERN LLS events;
+EXTERN gpre_lls* events;
 EXTERN IB_FILE *out_file;
 EXTERN LANG_T sw_language;
 EXTERN int line, errors, warnings, fatals;

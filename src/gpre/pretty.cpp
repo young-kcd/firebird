@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.21 2003-12-22 10:00:14 robocop Exp $
+//	$Id: pretty.cpp,v 1.22 2004-02-02 11:01:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -561,14 +561,14 @@ static int print_char( CTL control, SSHORT offset)
 static int print_dyn_verb( CTL control, SSHORT level)
 {
 	int offset = control->ctl_blr - control->ctl_blr_start;
-	UCHAR operator_ = BLR_BYTE;
+	const UCHAR dyn_operator = BLR_BYTE;
 
     const char* p;
 	const int size = FB_NELEM(dyn_table);
-	if (operator_ > size || operator_ <= 0 || !(p = dyn_table[operator_])) {
+	if (dyn_operator > size || dyn_operator <= 0 || !(p = dyn_table[dyn_operator])) {
 		return error(control, offset,
 					 "*** dyn operator %d is undefined ***\n",
-					 (int) operator_);
+					 (int) dyn_operator);
 	}
 
 	indent(control, level);
@@ -579,7 +579,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 
 	int length;
 	
-	switch (operator_) {
+	switch (dyn_operator) {
 	case isc_dyn_drop_difference:
 	case isc_dyn_begin_backup:
 	case isc_dyn_end_backup:
@@ -675,7 +675,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 
 	PRINT_LINE;
 
-	switch (operator_) {
+	switch (dyn_operator) {
 	case isc_dyn_def_database:
 	case isc_dyn_def_dimension:
 	case isc_dyn_def_exception:
@@ -780,27 +780,27 @@ static SLONG print_long( CTL control, SSHORT offset)
 
 static int print_sdl_verb( CTL control, SSHORT level)
 {
-	int offset, n;
-	const char *p;
-	UCHAR operator_;
+	const char* p;
 
-	offset = control->ctl_blr - control->ctl_blr_start;
-	operator_ = BLR_BYTE;
+	int offset = control->ctl_blr - control->ctl_blr_start;
+	const UCHAR sdl_operator = BLR_BYTE;
 
-	if (operator_ > FB_NELEM(sdl_table) ||
-		operator_ <= 0 || !(p = sdl_table[operator_]))
+	if (sdl_operator > FB_NELEM(sdl_table) ||
+		sdl_operator <= 0 || !(p = sdl_table[sdl_operator]))
+	{
 		return error(control, offset,
 					 "*** SDL operator %d is undefined ***\n",
-					 (int) operator_);
+					 (int) sdl_operator);
+	}
 
 	indent(control, level);
 	blr_format(control, p);
 	PUT_BYTE(',');
 	PUT_BYTE(' ');
 	++level;
-	n = 0;
+	int n = 0;
 
-	switch (operator_) {
+	switch (sdl_operator) {
 	case isc_sdl_begin:
 		PRINT_LINE;
 		while (NEXT_BYTE != isc_sdl_end)

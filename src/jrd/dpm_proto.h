@@ -30,7 +30,7 @@ class blb;
 struct pag* DPM_allocate(TDBB, struct win*);
 void	DPM_backout(TDBB, struct rpb *);
 int		DPM_chain(TDBB, struct rpb *, struct rpb *);
-int		DPM_compress(TDBB, struct dpg *);
+int		DPM_compress(TDBB, struct data_page*);
 void	DPM_create_relation(TDBB, struct jrd_rel *);
 SLONG	DPM_data_pages(TDBB, struct jrd_rel *);
 void	DPM_delete(TDBB, struct rpb *, SLONG);

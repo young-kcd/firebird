@@ -36,7 +36,7 @@ protected:
 public:
 	static AliceMemoryPool *createPool() {
 		AliceMemoryPool *result = (AliceMemoryPool *)internal_create(sizeof(AliceMemoryPool));
-		new (&result->lls_cache) BlockCache<lls> (*result);
+		new (&result->lls_cache) BlockCache<alice_lls> (*result);
 		return result;
 	}
 	static void deletePool(AliceMemoryPool* pool);
@@ -46,11 +46,11 @@ public:
 //		lls_cache(*this)
 //	{}
 
-	static class blk* ALLA_pop(class lls**);
-	static void ALLA_push(class blk*, class lls**);
+	static class blk* ALLA_pop(alice_lls**);
+	static void ALLA_push(class blk*, alice_lls**);
 
 private:
-	BlockCache<class lls> lls_cache;  /* Was plb_lls */
+	BlockCache<alice_lls> lls_cache;  // Was plb_lls
 };
 
 #endif // ALICE_ALL_H

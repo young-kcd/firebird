@@ -672,14 +672,22 @@ static void extract_fields(void)
             if (F.RDB$SEGMENT_LENGTH)
                 ib_fprintf(output_file, " segment_length %u",
                            (USHORT) F.RDB$SEGMENT_LENGTH);
-            if (F.RDB$FIELD_SUB_TYPE == 1)
+            switch (F.RDB$FIELD_SUB_TYPE)
+            {
+            case 1:
                 ib_fprintf(output_file, " sub_type text");
-            else if (F.RDB$FIELD_SUB_TYPE == 2)
+                break;
+            case 2:
                 ib_fprintf(output_file, " sub_type BLR");
-            else if (F.RDB$FIELD_SUB_TYPE == 3)
+                break;
+            case 3:
                 ib_fprintf(output_file, " sub_type ACL");
-            else if (F.RDB$FIELD_SUB_TYPE)
-                ib_fprintf(output_file, " sub_type %d", F.RDB$FIELD_SUB_TYPE);
+                break;
+            default:
+            	if (F.RDB$FIELD_SUB_TYPE)
+                	ib_fprintf(output_file, " sub_type %d", F.RDB$FIELD_SUB_TYPE);
+                break;
+            }
         }
         else {
             strcpy(s, F.RDB$FIELD_NAME);

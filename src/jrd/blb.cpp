@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.52 2004-02-01 05:33:55 skidder Exp $
+$Id: blb.cpp,v 1.53 2004-02-02 11:01:32 robocop Exp $
 */
 
 #include "firebird.h"
@@ -86,7 +86,7 @@ static void delete_blob(TDBB, BLB, ULONG);
 static void delete_blob_id(TDBB, const bid*, ULONG, jrd_rel*);
 static ARR find_array(jrd_tra*, const bid*);
 static BLF find_filter(TDBB, SSHORT, SSHORT);
-static BLP get_next_page(TDBB, BLB, WIN *);
+static blob_page* get_next_page(TDBB, BLB, WIN *);
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 static void get_replay_blob(TDBB, const bid*);
 #endif
@@ -262,9 +262,9 @@ BLB BLB_create2(TDBB tdbb,
 
 /* Set up for a "small" blob -- a blob that fits on an ordinary data page */
 
-	blp* page = (BLP) blob->blb_data;
+	blob_page* page = (blob_page*) blob->blb_data;
 	page->blp_header.pag_type = pag_blob;
-	blob->blb_segment = (UCHAR *) page->blp_data;
+	blob->blb_segment = (UCHAR *) page->blp_page;
 
 /* Format blob id and return blob handle */
 
@@ -535,12 +535,12 @@ USHORT BLB_get_segment(TDBB tdbb,
 					else
 						CCH_RELEASE(tdbb, &window);
 				}
-				const blp* page = get_next_page(tdbb, blob, &window);
+				const blob_page* page = get_next_page(tdbb, blob, &window);
 				if (!page) {
 					blob->blb_flags |= BLB_eof;
 					return 0;
 				}
-				from = (const UCHAR*) page->blp_data;
+				from = (const UCHAR*) page->blp_page;
 				length = page->blp_length;
 				active_page = true;
 			}
@@ -583,12 +583,12 @@ USHORT BLB_get_segment(TDBB tdbb,
 				else
 					CCH_RELEASE(tdbb, &window);
 			}
-			const blp* page = get_next_page(tdbb, blob, &window);
+			const blob_page* page = get_next_page(tdbb, blob, &window);
 			if (!page) {
 				active_page = false;
 				break;
 			}
-			from = reinterpret_cast<const UCHAR*>(page->blp_data) + seek;
+			from = reinterpret_cast<const UCHAR*>(page->blp_page) + seek;
 			length = page->blp_length - seek;
 			seek = 0;
 			active_page = true;
@@ -1140,7 +1140,7 @@ BLB BLB_open2(TDBB tdbb,
 				blob->blb_space_remaining =
 					new_blob->blb_clump_size - new_blob->blb_space_remaining;
 				blob->blb_segment =
-					(UCHAR *) ((BLP) new_blob->blb_data)->blp_data;
+					(UCHAR *) ((blob_page*) new_blob->blb_data)->blp_page;
 			}
 			return blob;
 		}
@@ -1306,8 +1306,8 @@ void BLB_put_segment(TDBB tdbb, BLB blob, const UCHAR* seg, USHORT segment_lengt
 
 		/* Get ready to start filling the next page. */
 
-		BLP page = (BLP) blob->blb_data;
-		p = blob->blb_segment = (UCHAR *) page->blp_data;
+		blob_page* page = (blob_page*) blob->blb_data;
+		p = blob->blb_segment = (UCHAR *) page->blp_page;
 		blob->blb_space_remaining = blob->blb_clump_size;
 
 		/* If there's still a length waiting to be moved, move it already! */
@@ -1656,8 +1656,8 @@ static BLB allocate_blob(TDBB tdbb, jrd_tra* transaction)
    database page size. */
 
 	blob->blb_clump_size = dbb->dbb_page_size -
-							sizeof(dpg) -
-							sizeof(dpg::dpg_repeat) -
+							sizeof(data_page) -
+							sizeof(data_page::dpg_repeat) -
 							sizeof(blh);
 	blob->blb_max_pages = blob->blb_clump_size >> SHIFTLONG;
 	blob->blb_pointers = (dbb->dbb_page_size - BLP_SIZE) >> SHIFTLONG;
@@ -1906,11 +1906,11 @@ static void delete_blob(TDBB tdbb, BLB blob, ULONG prior_page)
 
 	for (; ptr < end; ptr++)
 		if ( (window.win_page = *ptr) ) {
-			blp* page = (BLP) CCH_FETCH(tdbb, &window, LCK_read, pag_blob);
+			blob_page* page = (blob_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_blob);
 			MOVE_FASTER(page, blob->blb_data, dbb->dbb_page_size);
 			CCH_RELEASE_TAIL(tdbb, &window);
 			PAG_release_page(*ptr, prior_page);
-			page = (BLP) blob->blb_data;
+			page = (blob_page*) blob->blb_data;
 			SLONG* ptr2 = page->blp_page;
 			for (const SLONG* const end2 = ptr2 + blob->blb_pointers;
 				 ptr2 < end2; ptr2++)
@@ -2024,7 +2024,7 @@ static BLF find_filter(TDBB tdbb, SSHORT from, SSHORT to)
 }
 
 
-static BLP get_next_page(TDBB tdbb, BLB blob, WIN * window)
+static blob_page* get_next_page(TDBB tdbb, BLB blob, WIN * window)
 {
 /**************************************
  *
@@ -2051,7 +2051,7 @@ static BLP get_next_page(TDBB tdbb, BLB blob, WIN * window)
 #endif
 
 
-	blp* page = 0;
+	blob_page* page = 0;
 /* Level 1 blobs are much easier -- page number is in vector. */
 	if (blob->blb_level == 1) {
 #ifdef SUPERSERVER_V2
@@ -2071,12 +2071,12 @@ static BLP get_next_page(TDBB tdbb, BLB blob, WIN * window)
 		}
 #endif
 		window->win_page = (*vector)[blob->blb_sequence];
-		page = (BLP) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
+		page = (blob_page*) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
 	}
 	else {
 		window->win_page =
 			(*vector)[blob->blb_sequence / blob->blb_pointers];
-		page = (BLP) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
+		page = (blob_page*) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
 #ifdef SUPERSERVER_V2
 		/* Perform prefetch of blob level 2 data pages. */
 
@@ -2096,7 +2096,7 @@ static BLP get_next_page(TDBB tdbb, BLB blob, WIN * window)
 			CCH_PREFETCH(tdbb, pages, i);
 		}
 #endif
-		page = (BLP)CCH_HANDOFF(tdbb,
+		page = (blob_page*)CCH_HANDOFF(tdbb,
 								window,
 								 page->blp_page[blob->blb_sequence %
 												blob->blb_pointers],
@@ -2176,7 +2176,7 @@ static void insert_page(TDBB tdbb, BLB blob)
    image to the buffer, and release the page.  */
 
 	WIN window(-1);
-	blp* page = (BLP) DPM_allocate(tdbb, &window);
+	blob_page* page = (blob_page*) DPM_allocate(tdbb, &window);
 	const ULONG page_number = window.win_page;
 
 	if (blob->blb_sequence == 0)
@@ -2208,7 +2208,7 @@ static void insert_page(TDBB tdbb, BLB blob)
 		/* The vector just overflowed.  Sigh.  Transform blob to level 2. */
 
 		blob->blb_level = 2;
-		page = (BLP) DPM_allocate(tdbb, &window);
+		page = (blob_page*) DPM_allocate(tdbb, &window);
 		page->blp_header.pag_flags = blp_pointers;
 		page->blp_header.pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
@@ -2227,10 +2227,10 @@ static void insert_page(TDBB tdbb, BLB blob)
 	if (l < vector->count()) {
 		window.win_page = (*vector)[l];
 		window.win_flags = 0;
-		page = (BLP) CCH_FETCH(tdbb, &window, LCK_write, pag_blob);
+		page = (blob_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_blob);
 	}
 	else {
-		page = (BLP) DPM_allocate(tdbb, &window);
+		page = (blob_page*) DPM_allocate(tdbb, &window);
 		page->blp_header.pag_flags = blp_pointers;
 		page->blp_header.pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;

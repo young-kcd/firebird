@@ -66,16 +66,17 @@ static int yylex(void)
  **************************************/
 	SYMB symbol;
 	SCHAR *p, *q;
-	SCHAR class_, string[31];
+	SCHAR string[31];
 	SSHORT c;
 	SLONG number;
 
-	while (((class_ = classes[c = ib_getchar()]) & CHR_WHITE) && c != -1);
+	SCHAR char_class;
+	while (((char_class = classes[c = ib_getchar()]) & CHR_WHITE) && c != -1);
 
 	if (c == -1)
 		return c;
 
-	if (class_ & CHR_LETTER) {
+	if (char_class & CHR_LETTER) {
 		p = string;
 		*p++ = c;
 		while (classes[c = ib_getchar()] & CHR_IDENT)
@@ -111,7 +112,7 @@ static int yylex(void)
 		return NUMBER;
 	}
 
-	if (class_ & CHR_DIGIT) {
+	if (char_class & CHR_DIGIT) {
 		number = c - '0';
 		while (classes[c = ib_getchar()] & CHR_DIGIT)
 			number = number * 10 + (c - '0');

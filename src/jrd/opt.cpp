@@ -389,7 +389,11 @@ Rsb* OPT_compile(TDBB tdbb,
 
 		rsb = NULL;
 		local_streams[0] = 0;
-		if (node->nod_type == nod_union) {
+		
+		switch (node->nod_type)
+		{
+		case nod_union:
+		{
 			const SSHORT i = (SSHORT) key_streams[0];
 			compute_dbkey_streams(csb, node, key_streams);
 			rsb =
@@ -398,22 +402,23 @@ Rsb* OPT_compile(TDBB tdbb,
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR)(IPTR) node->nod_arg[e_uni_stream];
+			break;
 		}
-		else if (node->nod_type == nod_aggregate) {
+		case nod_aggregate:
 			fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 			fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
 			rsb = gen_aggregate(tdbb, opt_, node);
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR)(IPTR) node->nod_arg[e_agg_stream];
-		}
-		else if (node->nod_type == nod_procedure) {
+			break;
+		case nod_procedure:
 			rsb = gen_procedure(tdbb, opt_, node);
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR)(IPTR) node->nod_arg[e_prc_stream];
-		}
-		else if (node->nod_type == nod_rse) {
+			break;
+		case nod_rse:
 			compute_rse_streams(csb, (RSE) node, beds);
 			compute_rse_streams(csb, (RSE) node, local_streams);
 			compute_dbkey_streams(csb, node, key_streams);
@@ -445,6 +450,7 @@ Rsb* OPT_compile(TDBB tdbb,
 				if (rse->rse_jointype == blr_left)
 					find_used_streams(rsb, outer_streams);
 			}
+			break;
 		}
 
 		// if an rsb has been generated, we have a non-relation;
@@ -2165,17 +2171,20 @@ static bool dump_index(const jrd_nod* node,
 	}
 
 	// spit out the node type
-	if (node->nod_type == nod_bit_and) {
+	switch (node->nod_type)
+	{
+	case nod_bit_and:
 		*buffer++ = isc_info_rsb_and;
-	}
-	else if (node->nod_type == nod_bit_or) {
+		break;
+	case nod_bit_or:
 		*buffer++ = isc_info_rsb_or;
-	}
-	else if (node->nod_type == nod_bit_dbkey) {
+		break;
+	case nod_bit_dbkey:
 		*buffer++ = isc_info_rsb_dbkey;
-	}
-	else if (node->nod_type == nod_index) {
+		break;
+	case nod_index:
 		*buffer++ = isc_info_rsb_index;
+		break;
 	}
 
 	TEXT index_name[32];
@@ -3422,22 +3431,22 @@ static Rsb* gen_aggregate(TDBB tdbb, OPT opt, jrd_nod* node)
 	// to use an index in more complex situations
 
 	jrd_nod** ptr;
-	jrd_nod*  operator_;
+	jrd_nod* agg_operator;
 	jrd_nod* map = node->nod_arg[e_agg_map];
 	if ((map->nod_count == 1) &&
 		(ptr = map->nod_arg) &&
-		(operator_ = (*ptr)->nod_arg[e_asgn_from]) &&
-		(operator_->nod_type == nod_agg_min ||
-		 operator_->nod_type == nod_agg_max))
+		(agg_operator = (*ptr)->nod_arg[e_asgn_from]) &&
+		(agg_operator->nod_type == nod_agg_min ||
+		 agg_operator->nod_type == nod_agg_max))
 	{
 		/* generate a sort block which the optimizer will try to map to an index */
 
 		jrd_nod* aggregate = PAR_make_node(tdbb, 2);
 		aggregate->nod_type = nod_sort;
 		aggregate->nod_count = 1;
-		aggregate->nod_arg[0] = operator_->nod_arg[e_asgn_from];
+		aggregate->nod_arg[0] = agg_operator->nod_arg[e_asgn_from];
 		/* in the max case, flag the sort as descending */
-		if (operator_->nod_type == nod_agg_max) {
+		if (agg_operator->nod_type == nod_agg_max) {
 			aggregate->nod_arg[1] = (jrd_nod*) TRUE;
 		}
 		rse->rse_aggregate = aggregate;
@@ -3460,11 +3469,11 @@ static Rsb* gen_aggregate(TDBB tdbb, OPT opt, jrd_nod* node)
 		// The rse_aggregate is still set. That means the optimizer
 		// was able to match the field to an index, so flag that fact
 		// so that it can be handled in EVL_group
-		if (operator_->nod_type == nod_agg_min) {
-			operator_->nod_type = nod_agg_min_indexed;
+		if (agg_operator->nod_type == nod_agg_min) {
+			agg_operator->nod_type = nod_agg_min_indexed;
 		}
-		else if (operator_->nod_type == nod_agg_max) {
-			operator_->nod_type = nod_agg_max_indexed;
+		else if (agg_operator->nod_type == nod_agg_max) {
+			agg_operator->nod_type = nod_agg_max_indexed;
 		}
 	}
 

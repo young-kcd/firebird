@@ -40,4 +40,5 @@ void	PRO_scan(dbb*, void(*)(), void*);
 void	PRO_setup(dbb*);
 FRBRD*	PRO_transaction(dbb*, int);
 
-#endif /* QLI_PROC_PROTO_H */
+#endif // QLI_PROC_PROTO_H
+

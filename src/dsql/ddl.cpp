@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.86 2004-01-28 07:50:23 robocop Exp $
+ * $Id: ddl.cpp,v 1.87 2004-02-02 11:01:00 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -152,12 +152,12 @@ static void modify_privilege(dsql_req*, NOD_TYPE, SSHORT, const UCHAR*,
 static SCHAR modify_privileges(dsql_req*, NOD_TYPE, SSHORT, const dsql_nod*,
 	const dsql_nod*, const dsql_nod*);
 static void modify_relation(dsql_req*);
-static par* parameter_reverse_order(par* parameter, par* prev);
+static dsql_par* parameter_reverse_order(dsql_par* parameter, dsql_par* prev);
 static void process_role_nm_list(dsql_req*, SSHORT, dsql_nod*, dsql_nod*, NOD_TYPE);
 static void put_descriptor(dsql_req*, const dsc*);
 static void put_dtype(dsql_req*, const dsql_fld*, bool);
 static void put_field(dsql_req*, dsql_fld*, bool);
-static void put_local_variable(dsql_req*, var*, dsql_nod*);
+static void put_local_variable(dsql_req*, dsql_var*, dsql_nod*);
 static void put_local_variables(dsql_req*, dsql_nod*, SSHORT);
 static void put_msg_field(dsql_req*, dsql_fld*);
 static dsql_nod* replace_field_names(dsql_nod*, dsql_nod*, dsql_nod*, bool);
@@ -263,7 +263,7 @@ void DDL_execute(dsql_req* request)
  *	metadata updates.
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 4) {
@@ -793,7 +793,7 @@ static void check_constraint(	dsql_req*		request,
 								dsql_nod*		element,
 								bool delete_trigger_required)
 {
-/* *************************************
+/**************************************
  *
  *	c h e c k _ c o n s t r a i n t
  *
@@ -882,7 +882,7 @@ static void check_one_call (USHORT* repetition_count,
 static void create_view_triggers(dsql_req* request, dsql_nod* element,
 	dsql_nod* items)
 {								// Fields in the VIEW actually  
-/* *************************************
+/**************************************
  *
  *	c r e a t e _ v i e w _ t r i g g e r s
  *
@@ -1905,8 +1905,9 @@ static void define_field(
 				const dsql_str* string = (dsql_str*) (*ptr)->nod_arg[e_rct_name];
 				dsql_nod* node1 = (*ptr)->nod_arg[e_rct_type];
 
-				if (node1->nod_type == nod_null)
+                switch (node1->nod_type)
 				{
+				case nod_null:
 					if (default_null_flag)
 					{
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
@@ -1923,9 +1924,9 @@ static void define_field(
 									string ? string->str_data : 0);
 					request->append_uchar(isc_dyn_fld_not_null);
 					request->append_uchar(isc_dyn_end);	// For NOT NULL Constraint definition  
-				}
-				else if (node1->nod_type == nod_primary
-						 || node1->nod_type == nod_unique)
+					break;
+				case nod_primary:
+				case nod_unique:
 				{
 					if (!cnstrt_flag)
 					{
@@ -1964,8 +1965,10 @@ static void define_field(
 
 					request->append_cstring(isc_dyn_fld_name, field->fld_name);
 					request->append_uchar(isc_dyn_end);
+					break;
 				}
-				else if (node1->nod_type == nod_foreign) {
+				case nod_foreign:
+				{
 					if (!cnstrt_flag) {
 						request->append_uchar(isc_dyn_end);	// For field definition  
 						cnstrt_flag = true;
@@ -1973,8 +1976,9 @@ static void define_field(
 					const char* constraint_name = string ? string->str_data : 0;
 					request->append_cstring(isc_dyn_rel_constraint, constraint_name);
 					foreign_key(request, node1, constraint_name);
+					break;
 				}
-				else if (node1->nod_type == nod_def_constraint) {
+				case nod_def_constraint:
 					if (!cnstrt_flag) {
 						request->append_uchar(isc_dyn_end);	// For field definition  
 						cnstrt_flag = true;
@@ -1983,6 +1987,7 @@ static void define_field(
 									string ? string->str_data : 0);
 					check_constraint(request, node1,
 									 false); // No delete trigger
+					break;
 				}
 			}
 		}
@@ -2222,7 +2227,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
  *	Create DYN to store a procedure
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	SSHORT inputs  = 0, defaults = 0;
 	SSHORT outputs = 0;
@@ -2412,7 +2417,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			 ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
-			var* variable = (var*) parameter->nod_arg[e_var_variable];
+			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
 			dsql_fld* field = variable->var_field;
 			put_msg_field(request, field);
 		}
@@ -2428,7 +2433,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			 ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
-			var* variable = (var*) parameter->nod_arg[e_var_variable];
+			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
 			dsql_fld* field = variable->var_field;
 			put_msg_field(request, field);
 		}
@@ -2451,7 +2456,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			 ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
-			var* variable = (var*) parameter->nod_arg[e_var_variable];
+			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
 			put_local_variable(request, variable, 0);
 		}
 	}
@@ -2491,7 +2496,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	SSHORT inputs = 0, outputs = 0, locals = 0;
 	request->req_blk_node = node;
 	
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 	
 	dsql_nod* parameters;
 
@@ -2557,20 +2562,20 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
 			 ptr < end; ptr++)
 		{
-			par* param = MAKE_parameter(request->req_receive, true, true, ++position);
+			dsql_par* param = MAKE_parameter(request->req_receive, true, true, ++position);
 			param->par_node = *ptr;
 			MAKE_desc(&param->par_desc, *ptr);
 			param->par_desc.dsc_flags |= DSC_nullable;
 
 			dsql_nod* parameter = *ptr;
-			var* variable = (var*) parameter->nod_arg[e_var_variable];
+			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
 			dsql_fld* field = variable->var_field;
 			param->par_name = param->par_alias = field->fld_name;
 		}
 	}
 
 	// Set up parameter to handle EOF 
-	par* param = MAKE_parameter(request->req_receive, false, false, 0);
+	dsql_par* param = MAKE_parameter(request->req_receive, false, false, 0);
 	request->req_eof = param;
 	param->par_desc.dsc_dtype = dtype_short;
 	param->par_desc.dsc_scale = 0;
@@ -2595,7 +2600,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 			 ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
-			var* variable = (var*) parameter->nod_arg[e_var_variable];
+			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
 			put_local_variable(request, variable, 0);
 		}
 	}
@@ -2851,7 +2856,7 @@ static void define_shadow(dsql_req* request)
 //
 static void define_trigger( dsql_req* request, dsql_nod* node)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	// make the "define trigger" node the current request ddl node so
 	// that generating of BLR will be appropriate for trigger
@@ -3230,7 +3235,7 @@ static void define_update_action(
 								 dsql_req* request,
 								 dsql_nod** base_and_node, dsql_nod** base_relation)
 {
-/* *************************************
+/**************************************
  *
  *	d e f i n e _ u p d a t e _ a c t i o n
  *
@@ -3758,7 +3763,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
  *	Create the ddl to define a trigger for a VIEW WITH CHECK OPTION.
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 
@@ -4049,7 +4054,7 @@ static void delete_relation_view (
 
 static void foreign_key( dsql_req* request, dsql_nod* element, const char* index_name)
 {
-/* *************************************
+/**************************************
  *
  *	f o r e i g n _ k e y
  *
@@ -4382,7 +4387,7 @@ static void make_index(	dsql_req*    request,
 						const char* relation_name,
 						const char* index_name)
 {
-/* *************************************
+/**************************************
  *
  *	m a k e _ i n d e x
  *
@@ -5156,7 +5161,7 @@ static void modify_relation( dsql_req* request)
  *	global fields for the local fields.
  *
  **************************************/
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 
@@ -5279,7 +5284,7 @@ static void modify_relation( dsql_req* request)
 }
 
 
-static par* parameter_reverse_order(par* parameter, par* prev)
+static dsql_par* parameter_reverse_order(dsql_par* parameter, dsql_par* prev)
 {
 /**************************************
  *
@@ -5291,7 +5296,7 @@ static par* parameter_reverse_order(par* parameter, par* prev)
  *	Reverse parameters order for EXECUTE BLOCK statement
  *
  **************************************/
-	par* result;
+	dsql_par* result;
 
 	if (parameter->par_next)
 		result = parameter_reverse_order(parameter->par_next, parameter);
@@ -5507,7 +5512,7 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 }
 
 
-static void put_local_variable( dsql_req* request, var* variable,
+static void put_local_variable( dsql_req* request, dsql_var* variable,
 	dsql_nod* host_param)
 {
 /**************************************
@@ -5597,7 +5602,7 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 					MAKE_variable(field, field->fld_name, VAR_output, 0, 0,
 									  locals);
 				*ptr = var_node;
-				var* variable = (var*) var_node->nod_arg[e_var_variable];
+				dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 				put_local_variable(request, variable, parameter);
 
 				// fld_length is calculated inside put_local_variable(),
@@ -5648,7 +5653,7 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 							   dsql_nod*		replace_fields,
 							   bool	null_them)
 {
-/* *************************************
+/**************************************
  *
  *	r e p l a c e _ f i e l d _ n a m e s
  *
@@ -5772,7 +5777,7 @@ static void save_field(dsql_req* request, const TEXT* field_name)
  *
  **************************************/
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_rel* relation = request->req_relation;
 	if (!relation) {
@@ -5802,7 +5807,7 @@ static void save_relation( dsql_req* request, const dsql_str* relation_name)
  *
  **************************************/
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	if (request->req_flags & REQ_save_metadata) {
 		return;

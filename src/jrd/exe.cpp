@@ -1650,16 +1650,16 @@ static jrd_nod* find(TDBB tdbb, jrd_nod* node)
 	{
 		Rsb* rsb = *((Rsb**) node->nod_arg[e_find_rsb]);
 
-		USHORT operator_ =
+		const USHORT blr_operator =
 			(USHORT) MOV_get_long(EVL_expr(	tdbb,
 											node->nod_arg
 											[e_find_operator]),
 									0);
-		if (operator_ != blr_eql &&
-			operator_ != blr_leq &&
-			operator_ != blr_lss &&
-			operator_ != blr_geq &&
-			operator_ != blr_gtr)
+		if (blr_operator != blr_eql &&
+			blr_operator != blr_leq &&
+			blr_operator != blr_lss &&
+			blr_operator != blr_geq &&
+			blr_operator != blr_gtr)
 		{
 			ERR_post(isc_invalid_operator, 0);
 		}
@@ -1682,7 +1682,7 @@ static jrd_nod* find(TDBB tdbb, jrd_nod* node)
 
 		if (!RSE_find_record(	tdbb,
 								rsb,
-								operator_,
+								blr_operator,
 								direction,
 								node->nod_arg[e_find_args]))
 		{
@@ -2137,8 +2137,9 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 							isc_arg_string, node_savepoint_name, 0);
 					}
 
-					if (operation == blr_savepoint_set) {
-
+					switch (operation)
+					{
+					case blr_savepoint_set:
 						// Release the savepoint
 						if (found) {
 							previous->sav_next = savepoint->sav_next;
@@ -2151,18 +2152,20 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 						// Use the savepoint created by EXE_start
 						transaction->tra_save_point->sav_flags |= SAV_user;
 						strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
-					}
-					else if (operation == blr_savepoint_release_single) {
-
+						break;
+					case blr_savepoint_release_single:
+					{
 						// Release the savepoint
 						previous->sav_next = savepoint->sav_next;
 						SAV current = transaction->tra_save_point;
 						transaction->tra_save_point = savepoint;
 						VERB_CLEANUP;
 						transaction->tra_save_point = current;
+						break;
 					}
-					else if (operation == blr_savepoint_release) {
-						SLONG sav_number = savepoint->sav_number;
+					case blr_savepoint_release:
+					{
+						const SLONG sav_number = savepoint->sav_number;
 
 						// Release the savepoint and all subsequent ones
 						while (transaction->tra_save_point &&
@@ -2173,9 +2176,11 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 
 						// Restore the savepoint initially created by EXE_start
 						VIO_start_save_point(tdbb, transaction);
+						break;
 					}
-					else if (operation == blr_savepoint_undo) {
-						SLONG sav_number = savepoint->sav_number;
+					case blr_savepoint_undo:
+					{
+						const SLONG sav_number = savepoint->sav_number;
 
 						// Undo the savepoint
 						while (transaction->tra_save_point &&
@@ -2189,9 +2194,11 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 						VIO_start_save_point(tdbb, transaction);
 						transaction->tra_save_point->sav_flags |= SAV_user;
 						strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
+						break;
 					}
-					else {
+					default:
 						BUGCHECK(232);
+						break;
 					}
 				}
 			default:

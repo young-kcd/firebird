@@ -116,4 +116,5 @@ typedef struct pics {
 #define PIC_literal		2	/* We're in a quoted string */
 #define PIC_signed		4	/* This numeric edit string has a sign indicator */
 
-#endif /* QLI_FORMAT_H */
+#endif // QLI_FORMAT_H
+

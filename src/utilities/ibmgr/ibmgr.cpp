@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.9 2003-11-10 09:16:33 robocop Exp $
+ * $Id: ibmgr.cpp,v 1.10 2004-02-02 11:02:11 robocop Exp $
  */
 
 #include "firebird.h"
@@ -611,12 +611,19 @@ static SSHORT get_switches(
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
-					if (in_sw == IN_SW_IBMGR_ONCE)
+					
+					switch (in_sw)
+					{
+					case IN_SW_IBMGR_ONCE:
 						ibmgr_data->suboperation = SOP_START_ONCE;
-					else if (in_sw == IN_SW_IBMGR_SIGNORE)
+						break;
+					case IN_SW_IBMGR_SIGNORE:
 						ibmgr_data->suboperation = SOP_START_SIGNORE;
-					else
+						break;
+					default:
 						ibmgr_data->suboperation = SOP_START_FOREVER;
+						break;
+					}
 					break;
 
 				case IN_SW_IBMGR_NOW:
@@ -627,14 +634,22 @@ static SSHORT get_switches(
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
-					if (in_sw == IN_SW_IBMGR_NOW)
+					
+					switch (in_sw)
+					{
+					case IN_SW_IBMGR_NOW:
 						ibmgr_data->suboperation = SOP_SHUT_NOW;
-					else if (in_sw == IN_SW_IBMGR_NOAT)
+						break;
+					case IN_SW_IBMGR_NOAT:
 						ibmgr_data->suboperation = SOP_SHUT_NOAT;
-					else if (in_sw == IN_SW_IBMGR_NOTR)
+						break;
+					case IN_SW_IBMGR_NOTR:
 						ibmgr_data->suboperation = SOP_SHUT_NOTR;
-					else
+						break;
+					default:
 						ibmgr_data->suboperation = SOP_SHUT_IGN;
+						break;
+					}
 					break;
 
 				case IN_SW_IBMGR_POOL:

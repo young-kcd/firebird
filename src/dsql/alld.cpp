@@ -96,7 +96,7 @@ void ALLD_fini()
 
 void ALLD_init()
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	if (!init_flag)
 	{
@@ -110,7 +110,7 @@ void ALLD_init()
 
 void DsqlMemoryPool::ALLD_push(BLK object, dsql_lls** stack)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 	DsqlMemoryPool* pool = tdsql->tsql_default;
 
 	dsql_lls* node = pool->lls_cache.newBlock();

@@ -47,21 +47,22 @@
 
 int (*dbg_block) ();
 
-void (*dmp_active) (void) = DMP_active,
-	(*dmp_dirty) (void) = DMP_dirty, (*dmp_page) (SLONG, USHORT) = DMP_page;
+void (*dmp_active) (void) = DMP_active;
+void (*dmp_dirty) (void) = DMP_dirty;
+void (*dmp_page) (SLONG, USHORT) = DMP_page;
 
-extern IB_FILE *dbg_file;
+extern IB_FILE* dbg_file;
 
 static void btc_printer(SLONG, BDB, SCHAR *);
 static void btc_printer_errors(SLONG, BDB, SCHAR *);
 static void complement_key(UCHAR *, int);
 static double decompress(SCHAR *);
-static void dmp_blob(BLP);
-static void dmp_data(DPG);
+static void dmp_blob(blob_page*);
+static void dmp_data(data_page*);
 static void dmp_header(HDR);
-static void dmp_index(BTR, USHORT);
+static void dmp_index(btree_page*, USHORT);
 static void dmp_pip(PIP, ULONG);
-static void dmp_pointer(PPG);
+static void dmp_pointer(pointer_page*);
 static void dmp_root(IRT);
 static void dmp_transactions(TIP, ULONG);
 
@@ -302,11 +303,11 @@ void DMP_fetched_page(PAG page,
 		break;
 
 	case pag_pointer:
-		dmp_pointer((PPG) page);
+		dmp_pointer((pointer_page*) page);
 		break;
 
 	case pag_data:
-		dmp_data((DPG) page);
+		dmp_data((data_page*) page);
 		break;
 
 	case pag_root:
@@ -314,11 +315,11 @@ void DMP_fetched_page(PAG page,
 		break;
 
 	case pag_index:
-		dmp_index((BTR) page, page_size);
+		dmp_index((btree_page*) page, page_size);
 		break;
 
 	case pag_blob:
-		dmp_blob((BLP) page);
+		dmp_blob((blob_page*) page);
 		break;
 
 	case pag_ids:
@@ -484,7 +485,7 @@ static double decompress(SCHAR * value)
 }
 
 
-static void dmp_blob(BLP page)
+static void dmp_blob(blob_page* page)
 {
 /**************************************
  *
@@ -514,7 +515,7 @@ static void dmp_blob(BLP page)
 }
 
 
-static void dmp_data(DPG page)
+static void dmp_data(data_page* page)
 {
 /**************************************
  *
@@ -535,7 +536,7 @@ static void dmp_data(DPG page)
 	RHD		header;
 	RHDF	fragment;
 	BLH		blob;
-	dpg::dpg_repeat* index;
+	data_page::dpg_repeat* index;
 	SCHAR	buffer[8096 + 1];
 
 	ib_fprintf(dbg_file,
@@ -781,7 +782,7 @@ static void dmp_header(HDR page)
 }
 
 
-static void dmp_index(BTR page, USHORT page_size)
+static void dmp_index(btree_page* page, USHORT page_size)
 {
 /**************************************
  *
@@ -814,10 +815,10 @@ static void dmp_index(BTR page, USHORT page_size)
 /* Compute the number of data pages per pointer page.  Each data page
    requires a 32 bit pointer and a 2 bit control field. */
 	const USHORT dp_per_pp =
-			(USHORT)((ULONG) ((page_size - OFFSETA(PPG, ppg_page)) * 8) /
+			(USHORT)((ULONG) ((page_size - OFFSETA(pointer_page*, ppg_page)) * 8) /
 						(BITS_PER_LONG + 2));
-	const USHORT max_records = (page_size - sizeof(struct dpg)) /
-								(sizeof(dpg::dpg_repeat) + OFFSETA(RHD, rhd_data));
+	const USHORT max_records = (page_size - sizeof(data_page)) /
+								(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
 
 	BTN end  = (BTN) ((UCHAR *) page + page->btr_length);
 	BTN node = (BTN) page->btr_nodes;
@@ -949,7 +950,7 @@ static void dmp_pip(PIP page, ULONG sequence)
 }
 
 
-static void dmp_pointer(PPG page)
+static void dmp_pointer(pointer_page* page)
 {
 /**************************************
  *

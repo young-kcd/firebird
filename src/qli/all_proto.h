@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		all_proto.h
- *	DESCRIPTION:	Prototype header file for all.c
+ *	DESCRIPTION:	Prototype header file for all.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -31,10 +31,10 @@ void	ALLQ_free(SCHAR*);
 void	ALLQ_init(void);
 SCHAR*	ALLQ_malloc(SLONG);
 plb*	ALLQ_pool(void);
-void	ALLQ_push(blk*, lls**);
-blk*	ALLQ_pop(lls**);
+void	ALLQ_push(blk*, qli_lls**);
+blk*	ALLQ_pop(qli_lls**);
 void	ALLQ_release(frb*);
 void	ALLQ_rlpool(plb*);
 
-#endif /* QLI_ALL_PROTO_H */
+#endif // QLI_ALL_PROTO_H
 

@@ -31,16 +31,16 @@
 USHORT	BTR_all(TDBB, jrd_rel*, idx**, idx**, str**, SLONG*);
 void	BTR_create(TDBB, jrd_rel*, idx*, USHORT, scb*, SelectivityList&);
 void	BTR_delete_index(TDBB, win*, USHORT);
-//USHORT	BTR_delete_node(TDBB, btr*, USHORT);
+//USHORT	BTR_delete_node(TDBB, btree_page*, USHORT);
 bool	BTR_description(jrd_rel*, irt*, idx*, SSHORT);
 void	BTR_evaluate(tdbb*, irb*, sbm**);
-UCHAR*	BTR_find_leaf(btr*, key*, UCHAR*, USHORT*, int, bool);
-btr*	BTR_find_page(tdbb*, irb*, win*, idx*, key*, key*, bool);
+UCHAR*	BTR_find_leaf(btree_page*, key*, UCHAR*, USHORT*, int, bool);
+btree_page*	BTR_find_page(tdbb*, irb*, win*, idx*, key*, key*, bool);
 void	BTR_insert(tdbb*, win*, iib*);
 enum idx_e	BTR_key(tdbb*, jrd_rel*, rec*, idx*, key*, idx_null_state*);
 USHORT	BTR_key_length(jrd_rel*, idx*);
-UCHAR*	BTR_last_node(btr*, jrd_exp*, struct btx**);
-btr*	BTR_left_handoff(tdbb*, win*, btr*, SSHORT);
+UCHAR*	BTR_last_node(btree_page*, jrd_exp*, struct btx**);
+btree_page*	BTR_left_handoff(tdbb*, win*, btree_page*, SSHORT);
 USHORT	BTR_lookup(TDBB, jrd_rel*, USHORT, idx*);
 void	BTR_make_key(tdbb*, USHORT, jrd_nod**, idx*, key*, USHORT);
 bool	BTR_next_index(TDBB, jrd_rel*, jrd_tra*, idx*, win*);
@@ -49,3 +49,4 @@ void	BTR_reserve_slot(TDBB, jrd_rel*, jrd_tra*, idx*);
 void	BTR_selectivity(TDBB, jrd_rel*, USHORT, SelectivityList&);
 
 #endif // JRD_BTR_PROTO_H
+

@@ -117,7 +117,7 @@ static void store_userpriv(USERPRIV, TEXT *, TEXT *, USRE, UPFE);
 static int string_length(SCHAR);
 static void wal_info(UCHAR *, SLONG *, SCHAR *, SLONG *);
 
-static LLS files_to_delete = NULL;
+static dudley_lls* files_to_delete = NULL;
 static const TEXT alloc_info[] = { isc_info_allocation, isc_info_end };
 
 #define MOVE_SYMBOL(symbol, field)	move_symbol (symbol, field, sizeof (field) - 1)
@@ -2491,9 +2491,9 @@ static void drop_shadow( SLONG shadow_number)
  *
  **************************************/
 	SYM string;
-	LLS files, first_file;
 
-	files = first_file = NULL;
+	dudley_lls* files = NULL;
+	dudley_lls* first_file = NULL;
 
 	FOR FIL IN RDB$FILES WITH
 		FIL.RDB$SHADOW_NUMBER EQ shadow_number 

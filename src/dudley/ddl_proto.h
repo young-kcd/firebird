@@ -36,16 +36,16 @@ void		DDL_msg_partial(USHORT, const TEXT*, const TEXT*, const TEXT*,
 							const TEXT*, const TEXT*);
 void		DDL_msg_put(USHORT, const TEXT*, const TEXT*, const TEXT*,
 						const TEXT*, const TEXT*);
-DUDLEY_NOD	DDL_pop(LLS*);
-void		DDL_push(DUDLEY_NOD, LLS*);
+DUDLEY_NOD	DDL_pop(dudley_lls**);
+void		DDL_push(DUDLEY_NOD, dudley_lls**);
 bool		DDL_yes_no(USHORT);
 
-inline void LLS_PUSH(DUDLEY_NOD object, LLS* stack)
+inline void LLS_PUSH(DUDLEY_NOD object, dudley_lls** stack)
 {
 	DDL_push(object, stack);
 }
 
-inline DUDLEY_NOD LLS_POP(LLS* stack)
+inline DUDLEY_NOD LLS_POP(dudley_lls** stack)
 {
 	return DDL_pop(stack);
 }

@@ -1996,10 +1996,9 @@ void* SVC_start(SVC service, USHORT spb_length, const SCHAR* spb)
 	}
 
 	if (serv->serv_thd) {
-		SLONG count;
 #pragma FB_COMPILER_MESSAGE("Fix! Probable bug!")
-		EVENT evnt_ptr =
-			reinterpret_cast<EVENT> (&(service->svc_start_event));
+		event_t* evnt_ptr =
+			reinterpret_cast<event_t*> (&(service->svc_start_event));
 
 		THREAD_EXIT;
 		/* create an event for the service.  The event will be signaled once the
@@ -2010,7 +2009,7 @@ void* SVC_start(SVC service, USHORT spb_length, const SCHAR* spb)
 		 * succeed.
 		 */
 		ISC_event_init(evnt_ptr, 0, 0);
-		count = ISC_event_clear(evnt_ptr);
+		SLONG count = ISC_event_clear(evnt_ptr);
 
 		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 						  (serv->serv_thd), service, THREAD_medium, 0,

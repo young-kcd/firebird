@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		comma_proto.h
- *	DESCRIPTION:	Prototype header file for command.c
+ *	DESCRIPTION:	Prototype header file for command.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -36,4 +36,5 @@ void	CMD_set(syn*);
 void	CMD_shell(syn*);
 void	CMD_transaction(syn*);
 
-#endif /* QLI_COMMA_PROTO_H */
+#endif // QLI_COMMA_PROTO_H
+

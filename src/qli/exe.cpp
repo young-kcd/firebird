@@ -34,6 +34,7 @@
 #include "../qli/err_proto.h"
 #include "../qli/eval_proto.h"
 #include "../qli/exe_proto.h"
+#include "../qli/report.h"
 #include "../qli/forma_proto.h"
 #include "../qli/mov_proto.h"
 #include "../qli/repor_proto.h"
@@ -61,22 +62,22 @@ extern jmp_buf QLI_env;
 
 extern USHORT QLI_prompt_count, QLI_reprompt;
 
-static DSC *assignment(QLI_NOD, DSC *, QLI_NOD, QLI_NOD, PAR);
-static void commit_retaining(QLI_NOD);
-static bool copy_blob(QLI_NOD, PAR);
-static void db_error(QLI_REQ, ISC_STATUS *);
-static void execute_abort(QLI_NOD);
-static void execute_assignment(QLI_NOD);
-static void execute_for(QLI_NOD);
-static void execute_modify(QLI_NOD);
-static void execute_output(QLI_NOD);
-static void execute_print(QLI_NOD);
-static void execute_repeat(QLI_NOD);
-static void execute_store(QLI_NOD);
-static void map_data(QLI_MSG);
-static void print_counts(QLI_REQ);
-static void set_null(QLI_MSG);
-static void transaction_state(QLI_NOD, DBB);
+static DSC *assignment(qli_nod*, DSC *, qli_nod*, qli_nod*, qli_par*);
+static void commit_retaining(qli_nod*);
+static bool copy_blob(qli_nod*, qli_par*);
+static void db_error(qli_req*, ISC_STATUS *);
+static void execute_abort(qli_nod*);
+static void execute_assignment(qli_nod*);
+static void execute_for(qli_nod*);
+static void execute_modify(qli_nod*);
+static void execute_output(qli_nod*);
+static void execute_print(qli_nod*);
+static void execute_repeat(qli_nod*);
+static void execute_store(qli_nod*);
+static void map_data(qli_msg*);
+static void print_counts(qli_req*);
+static void set_null(qli_msg*);
+static void transaction_state(qli_nod*, DBB);
 
 // definitions for SET COUNT
 
@@ -105,7 +106,7 @@ void EXEC_abort(void)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	for (QLI_REQ request = QLI_requests; request; request = request->req_next)
+	for (qli_req* request = QLI_requests; request; request = request->req_next)
 		if (request->req_handle)
 			isc_unwind_request(status_vector, &request->req_handle, 0);
 
@@ -113,7 +114,7 @@ void EXEC_abort(void)
 }
 
 
-void EXEC_execute( QLI_NOD node)
+void EXEC_execute( qli_nod* node)
 {
 /**************************************
  *
@@ -125,14 +126,14 @@ void EXEC_execute( QLI_NOD node)
  *	Execute a node.
  *
  **************************************/
-	QLI_MSG message;
-	QLI_NOD *ptr;
+	qli_msg* message;
+	qli_nod** ptr;
 	USHORT i;
 
 	if (QLI_abort)
 		EXEC_poll_abort();
 
-	if (node)
+	if (node) {
 		switch (node->nod_type) {
 		case nod_abort:
 			execute_abort(node);
@@ -146,7 +147,7 @@ void EXEC_execute( QLI_NOD node)
 			return;
 
 		case nod_erase:
-			if (message = (QLI_MSG) node->nod_arg[e_era_message])
+			if (message = (qli_msg*) node->nod_arg[e_era_message])
 				EXEC_send(message);
 			return;
 
@@ -197,10 +198,11 @@ void EXEC_execute( QLI_NOD node)
 		default:
 			BUGCHECK(33);		// Msg33 EXEC_execute: not implemented
 		}
+	}
 }
 
 
-FRBRD *EXEC_open_blob( QLI_NOD node)
+FRBRD *EXEC_open_blob( qli_nod* node)
 {
 /**************************************
  *
@@ -224,8 +226,8 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 	if (node->nod_type != nod_field)
 		BUGCHECK(34);			// Msg34 print_blob: expected field node
 
-	QLI_CTX context = (QLI_CTX) node->nod_arg[e_fld_context];
-	QLI_REQ request = context->ctx_request;
+	qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
+	qli_req* request = context->ctx_request;
 	DBB dbb = request->req_database;
 	FRBRD* blob = NULL;
 
@@ -255,7 +257,7 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 }
 
 
-file* EXEC_open_output(QLI_NOD node)
+file* EXEC_open_output(qli_nod* node)
 {
 /**************************************
  *
@@ -367,7 +369,7 @@ void EXEC_poll_abort(void)
 }
 
 
-DSC *EXEC_receive(QLI_MSG message, PAR parameter)
+DSC *EXEC_receive(qli_msg* message, qli_par* parameter)
 {
 /**************************************
  *
@@ -381,7 +383,7 @@ DSC *EXEC_receive(QLI_MSG message, PAR parameter)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	QLI_REQ request = message->msg_request;
+	qli_req* request = message->msg_request;
 
 	if (isc_receive(status_vector, &request->req_handle, message->msg_number,
 					 message->msg_length, message->msg_buffer, 0))
@@ -394,7 +396,7 @@ DSC *EXEC_receive(QLI_MSG message, PAR parameter)
 }
 
 
-void EXEC_send( QLI_MSG message)
+void EXEC_send( qli_msg* message)
 {
 /**************************************
  *
@@ -409,7 +411,7 @@ void EXEC_send( QLI_MSG message)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	QLI_REQ request = message->msg_request;
+	qli_req* request = message->msg_request;
 
 	map_data(message);
 	if (isc_send(status_vector, &request->req_handle, message->msg_number,
@@ -418,7 +420,7 @@ void EXEC_send( QLI_MSG message)
 }
 
 
-void EXEC_start_request( QLI_REQ request, QLI_MSG message)
+void EXEC_start_request( qli_req* request, qli_msg* message)
 {
 /**************************************
  *
@@ -450,7 +452,7 @@ void EXEC_start_request( QLI_REQ request, QLI_MSG message)
 }
 
 
-void EXEC_top( QLI_NOD node)
+void EXEC_top( qli_nod* node)
 {
 /**************************************
  *
@@ -467,11 +469,11 @@ void EXEC_top( QLI_NOD node)
 }
 
 
-static DSC *assignment(	QLI_NOD		from_node,
+static DSC *assignment(	qli_nod*		from_node,
 						DSC*	to_desc,
-						QLI_NOD		validation,
-						QLI_NOD		initial,
-						PAR		parameter)
+						qli_nod*		validation,
+						qli_nod*		initial,
+						qli_par*		parameter)
 {
 /**************************************
  *
@@ -492,7 +494,7 @@ static DSC *assignment(	QLI_NOD		from_node,
 
 	USHORT trash;
 	USHORT* missing_flag = &trash;
-	QLI_MSG message = NULL;
+	qli_msg* message = NULL;
 	if (parameter) {
 		message = parameter->par_message;
 		missing_flag =
@@ -546,7 +548,7 @@ static DSC *assignment(	QLI_NOD		from_node,
 }
 
 
-static void commit_retaining( QLI_NOD node)
+static void commit_retaining( qli_nod* node)
 {
 /**************************************
  *
@@ -601,8 +603,9 @@ static void commit_retaining( QLI_NOD node)
 		return;
 	}
 
-    QLI_NOD* ptr = node->nod_arg;
-	for (QLI_NOD* const end = ptr + node->nod_count; ptr < end; ptr++) {
+    qli_nod** ptr = node->nod_arg;
+	for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+	{
 		database = (DBB) *ptr;
 		if ((node->nod_type == nod_commit_retaining) &&
 			!(database->dbb_flags & DBB_prepared))
@@ -619,7 +622,7 @@ static void commit_retaining( QLI_NOD node)
 
 
 
-static bool copy_blob( QLI_NOD value, PAR parameter)
+static bool copy_blob( qli_nod* value, qli_par* parameter)
 {
 /**************************************
  *
@@ -643,11 +646,11 @@ static bool copy_blob( QLI_NOD value, PAR parameter)
 /* Find the sending and receiving requests.  If they are the same
    and no filtering is necessary, a simple assignment will suffice. */
 
-	QLI_CTX context = (QLI_CTX) value->nod_arg[e_fld_context];
-	QLI_REQ from_request = context->ctx_request;
+	qli_ctx* context = (qli_ctx*) value->nod_arg[e_fld_context];
+	qli_req* from_request = context->ctx_request;
 	DBB from_dbb = from_request->req_database;
-	QLI_MSG message = parameter->par_message;
-	QLI_REQ to_request = message->msg_request;
+	qli_msg* message = parameter->par_message;
+	qli_req* to_request = message->msg_request;
 	DBB to_dbb = to_request->req_database;
 
 	dsc* from_desc = EVAL_value(value);
@@ -745,7 +748,7 @@ static bool copy_blob( QLI_NOD value, PAR parameter)
 }
 
 
-static void db_error( QLI_REQ request, ISC_STATUS * status_vector)
+static void db_error( qli_req* request, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -764,7 +767,7 @@ static void db_error( QLI_REQ request, ISC_STATUS * status_vector)
 }
 
 
-static void execute_abort( QLI_NOD node)
+static void execute_abort( qli_nod* node)
 {
 /**************************************
  *
@@ -793,7 +796,7 @@ static void execute_abort( QLI_NOD node)
 }
 
 
-static void execute_assignment( QLI_NOD node)
+static void execute_assignment( qli_nod* node)
 {
 /**************************************
  *
@@ -807,13 +810,13 @@ static void execute_assignment( QLI_NOD node)
 	if (node->nod_flags & NOD_remote)
 		return;
 
-	QLI_NOD to = node->nod_arg[e_asn_to];
-	QLI_NOD from = node->nod_arg[e_asn_from];
-	QLI_NOD initial = node->nod_arg[e_asn_initial];
+	qli_nod* to = node->nod_arg[e_asn_to];
+	qli_nod* from = node->nod_arg[e_asn_from];
+	qli_nod* initial = node->nod_arg[e_asn_initial];
 
-	PAR parameter;
+	qli_par* parameter;
 	if (to->nod_type == nod_field) {
-		QLI_NOD reference = to->nod_arg[e_fld_reference];
+		qli_nod* reference = to->nod_arg[e_fld_reference];
 		parameter = reference->nod_import;
 		if (to->nod_desc.dsc_dtype == dtype_blob &&
 			from->nod_desc.dsc_dtype == dtype_blob &&
@@ -834,7 +837,7 @@ static void execute_assignment( QLI_NOD node)
 // propagate the missing flag in variable assignments
 
 	if (to->nod_type == nod_variable) {
-		QLI_FLD field = (QLI_FLD) to->nod_arg[e_fld_field];
+		qli_fld* field = (qli_fld*) to->nod_arg[e_fld_field];
 		if (to->nod_desc.dsc_missing & DSC_missing)
 			field->fld_flags |= FLD_missing;
 		else
@@ -843,7 +846,7 @@ static void execute_assignment( QLI_NOD node)
 }
 
 
-static void execute_for( QLI_NOD node)
+static void execute_for( qli_nod* node)
 {
 /**************************************
  *
@@ -862,19 +865,19 @@ static void execute_for( QLI_NOD node)
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	QLI_REQ request = (QLI_REQ) node->nod_arg[e_for_request];
+	qli_req* request = (qli_req*) node->nod_arg[e_for_request];
 	if (request)
-		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_for_send]);
+		EXEC_start_request(request, (qli_msg*) node->nod_arg[e_for_send]);
 	else {
-	    QLI_MSG amessage = (QLI_MSG) node->nod_arg[e_for_send];
+	    qli_msg* amessage = (qli_msg*) node->nod_arg[e_for_send];
 		if (amessage)
 			EXEC_send(amessage);
 	}
 
 /* If there isn't a receive message, the body of the loop has been
-   optimized out of existance.  So skip it. */
+   optimized out of existence.  So skip it. */
 
-	QLI_MSG message = (QLI_MSG) node->nod_arg[e_for_receive];
+	qli_msg* message = (qli_msg*) node->nod_arg[e_for_receive];
 	if (!message)
 		goto count;
 
@@ -882,7 +885,7 @@ static void execute_for( QLI_NOD node)
    true. */
 
 	while (true) {
-		dsc* desc = EXEC_receive(message, (PAR) node->nod_arg[e_for_eof]);
+		dsc* desc = EXEC_receive(message, (qli_par*) node->nod_arg[e_for_eof]);
 		if (*(USHORT *) desc->dsc_address)
 			break;
 		EXEC_execute(node->nod_arg[e_for_statement]);
@@ -896,7 +899,7 @@ static void execute_for( QLI_NOD node)
 }
 
 
-static void execute_modify( QLI_NOD node)
+static void execute_modify( qli_nod* node)
 {
 /**************************************
  *
@@ -912,7 +915,7 @@ static void execute_modify( QLI_NOD node)
 	if (node->nod_flags & NOD_remote)
 		return;
 
-	QLI_MSG message = (QLI_MSG) node->nod_arg[e_mod_send];
+	qli_msg* message = (qli_msg*) node->nod_arg[e_mod_send];
 	if (message)
 		set_null(message);
 
@@ -923,7 +926,7 @@ static void execute_modify( QLI_NOD node)
 }
 
 
-static void execute_output( QLI_NOD node)
+static void execute_output( qli_nod* node)
 {
 /**************************************
  *
@@ -938,7 +941,7 @@ static void execute_output( QLI_NOD node)
 	jmp_buf old_env;
 	jmp_buf env;
 
-	PRT print = (PRT) node->nod_arg[e_out_print];
+	qli_prt* print = (qli_prt*) node->nod_arg[e_out_print];
 	print->prt_file = EXEC_open_output(node);
 
 // Set up error handling
@@ -965,7 +968,7 @@ static void execute_output( QLI_NOD node)
 }
 
 
-static void execute_print( QLI_NOD node)
+static void execute_print( qli_nod* node)
 {
 /**************************************
  *
@@ -980,15 +983,15 @@ static void execute_print( QLI_NOD node)
  **************************************/
 
 	if (node->nod_arg[e_prt_header]) {
-		FMT_put((TEXT*) node->nod_arg[e_prt_header], (PRT) node->nod_arg[e_prt_output]);
+		FMT_put((TEXT*) node->nod_arg[e_prt_header], (qli_prt*) node->nod_arg[e_prt_output]);
 		node->nod_arg[e_prt_header] = NULL;
 	}
 
-	FMT_print(node->nod_arg[e_prt_list], (PRT) node->nod_arg[e_prt_output]);
+	FMT_print(node->nod_arg[e_prt_list], (qli_prt*) node->nod_arg[e_prt_output]);
 }
 
 
-static void execute_repeat( QLI_NOD node)
+static void execute_repeat( qli_nod* node)
 {
 /**************************************
  *
@@ -1007,7 +1010,7 @@ static void execute_repeat( QLI_NOD node)
 }
 
 
-static void execute_store( QLI_NOD node)
+static void execute_store( qli_nod* node)
 {
 /**************************************
  *
@@ -1023,7 +1026,7 @@ static void execute_store( QLI_NOD node)
  *	here.
  *
  **************************************/
-	QLI_MSG message = (QLI_MSG) node->nod_arg[e_sto_send];
+	qli_msg* message = (qli_msg*) node->nod_arg[e_sto_send];
 	if (message)
 		set_null(message);
 
@@ -1033,9 +1036,9 @@ static void execute_store( QLI_NOD node)
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	QLI_REQ request = (QLI_REQ) node->nod_arg[e_sto_request];
+	qli_req* request = (qli_req*) node->nod_arg[e_sto_request];
 	if (request)
-		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_sto_send]);
+		EXEC_start_request(request, (qli_msg*) node->nod_arg[e_sto_send]);
 	else if (message)
 		EXEC_send(message);
 
@@ -1044,7 +1047,7 @@ static void execute_store( QLI_NOD node)
 }
 
 
-static void map_data( QLI_MSG message)
+static void map_data( qli_msg* message)
 {
 /**************************************
  *
@@ -1056,19 +1059,19 @@ static void map_data( QLI_MSG message)
  *	Map data to a message in preparation for sending.
  *
  **************************************/
-	for (PAR parameter = message->msg_parameters; parameter;
+	for (qli_par* parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)
 	{
 		dsc* desc = &parameter->par_desc;
 		desc->dsc_address = message->msg_buffer + parameter->par_offset;
-		PAR missing_parameter = parameter->par_missing;
+		qli_par* missing_parameter = parameter->par_missing;
 		if (missing_parameter) {
 			USHORT* missing_flag = (USHORT*) (message->msg_buffer +
 							missing_parameter->par_offset);
 			*missing_flag = (desc->dsc_missing & DSC_missing) ? DSC_missing : 0;
 		}
 
-		QLI_NOD from = parameter->par_value;
+		qli_nod* from = parameter->par_value;
 		if (desc->dsc_dtype == dtype_blob && copy_blob(from, parameter))
 			continue;
 		assignment(from, desc, 0, 0, parameter->par_missing);
@@ -1076,7 +1079,7 @@ static void map_data( QLI_MSG message)
 }
 
 
-static void print_counts( QLI_REQ request)
+static void print_counts( qli_req* request)
 {
 /**************************************
  *
@@ -1133,7 +1136,7 @@ static void print_counts( QLI_REQ request)
 }
 
 
-static void set_null( QLI_MSG message)
+static void set_null( qli_msg* message)
 {
 /**************************************
  *
@@ -1148,10 +1151,10 @@ static void set_null( QLI_MSG message)
  *	statements.
  *
  **************************************/
-	for (PAR parameter = message->msg_parameters; parameter;
+	for (qli_par* parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)
 	{
-		QLI_NOD from = parameter->par_value;
+		qli_nod* from = parameter->par_value;
 		if (from->nod_type == nod_field) {
 			dsc* desc = EVAL_value(from);
 			desc->dsc_missing |= DSC_missing;
@@ -1163,7 +1166,7 @@ static void set_null( QLI_MSG message)
 
 
 
-static void transaction_state( QLI_NOD node, DBB database)
+static void transaction_state( qli_nod* node, DBB database)
 {
 /**************************************
  *

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.11 2004-01-28 07:50:41 robocop Exp $
+ *  $Id: nbackup.cpp,v 1.12 2004-02-02 11:02:05 robocop Exp $
  *
  */
  
@@ -72,7 +72,8 @@
 #define EXIT_OK 0
 #define EXIT_ERROR 1
 
-void usage() {
+void usage()
+{
 	fprintf(stderr, 
 		"Physical Backup Manager    Copyright (C) 2003 Firebird development team\n"
 		"  Original idea is of Sean Leyne <sean@broadviewsoftware.com>\n"
@@ -93,15 +94,16 @@ void usage() {
 	exit(EXIT_ERROR);
 }
 
-class b_error : public std::exception {
+class b_error : public std::exception
+{
 public:
-	explicit b_error(char *message) {
+	explicit b_error(const char* message) {
 		strcpy(txt, message);
 	}
 	virtual ~b_error() throw() {}
 	virtual const char* what() const throw()
 		{ return txt; }
-	static void raise(char *message, ...) {
+	static void raise(const char* message, ...) {
 		char temp[1024];		
 		va_list params;
 		va_start(params, message);
@@ -135,21 +137,21 @@ const char local_prefix[] = "localhost:";
 const char backup_signature[4] = {'N','B','A','K'};
 
 struct inc_header {
-	char signature[4]; // 'NBAK'
-	SSHORT version; // Incremental backup format version.
-	SSHORT level; // Backup level.
+	char signature[4];		// 'NBAK'
+	SSHORT version;			// Incremental backup format version.
+	SSHORT level;			// Backup level.
 	// \\\\\ ---- this is 8 bytes. should not cause alignment problems
-	FB_GUID backup_guid; // GUID of this backup
-	FB_GUID prev_guid; // GUID of previous level backup
-	ULONG page_size; // Size of pages in the database and backup file
-	// This fields are currently filled, but not used. May be used in future versions
-	ULONG backup_scn; // SCN of this backup
-	ULONG prev_scn; // SCN of previous level backup
+	FB_GUID backup_guid;	// GUID of this backup
+	FB_GUID prev_guid;		// GUID of previous level backup
+	ULONG page_size;		// Size of pages in the database and backup file
+	// These fields are currently filled, but not used. May be used in future versions
+	ULONG backup_scn;		// SCN of this backup
+	ULONG prev_scn;			// SCN of previous level backup
 };
 
 class nbackup {
 public:
-	nbackup(char* _database)
+	nbackup(const char* _database)
 	{
 		database = _database;
 		dbase = 0;
@@ -160,8 +162,8 @@ public:
 		// Recognition of local prefix allows to work with
 		// database using TCP/IP loopback while reading file locally.
 		// This makes NBACKUP compatible with Windows CS with XNET disabled
-		if (strncmp(_database,local_prefix,sizeof(local_prefix)-1)==0) {
-			_database += sizeof(local_prefix)-1;
+		if (strncmp(_database, local_prefix, sizeof(local_prefix) - 1) == 0) {
+			_database += sizeof(local_prefix) - 1;
 		}
 		if (!ResolveDatabaseAlias(_database, dbname))
 			strncpy(dbname, _database, sizeof(dbname));
@@ -171,13 +173,13 @@ public:
 	void lock_database();
 	void unlock_database();
 	void backup_database(int level, const char* fname);
-	void restore_database(int filecount, char* files[]);
+	void restore_database(int filecount, const char* const* files);
 private:
     ISC_STATUS_ARRAY status; /* status vector */
 	isc_db_handle newdb; /* database handle */
     isc_tr_handle trans; /* transaction handle */
 	
-	char *database;
+	const char* database;
 	char dbname[MAXPATHLEN]; // Database file name
 	char bakname[MAXPATHLEN];
 	FILE_HANDLE dbase;
@@ -188,7 +190,7 @@ private:
 	void write_file(FILE_HANDLE &file, void *buffer, size_t bufsize);		
 	void seek_file(FILE_HANDLE &file, SINT64 pos);
 	
-	static void pr_error (long * status, char *operation);
+	static void pr_error(const ISC_STATUS* status, const char* operation);
 	
 	void internal_lock_database();
 	void internal_unlock_database();
@@ -383,7 +385,7 @@ void nbackup::fixup_database() {
  *    Print the status, the SQLCODE, and exit.
  *    Also, indicate which operation the error occured on.
  */
-void nbackup::pr_error (long * status, char *operation)
+void nbackup::pr_error (const ISC_STATUS* status, const char* operation)
 {
     printf("[\n");
     printf("PROBLEM ON \"%s\".\n", operation);
@@ -484,7 +486,7 @@ void nbackup::backup_database(int level, const char* fname) {
 			sprintf(str, "select rdb$guid, rdb$scn from rdb$backup_history "
 				"where rdb$backup_id="
 				  "(select max(rdb$backup_id) from rdb$backup_history "
-				   "where rdb$backup_level=%d)", level-1);
+				   "where rdb$backup_level=%d)", level - 1);
 			if (isc_dsql_prepare(status, &trans, &stmt, 0, str, 1, NULL))
 				pr_error(status, "prepare history query");
 			if (isc_dsql_describe(status, &stmt, 1, out_sqlda))
@@ -496,14 +498,15 @@ void nbackup::backup_database(int level, const char* fname) {
 			out_sqlda->sqlvar[1].sqldata = (char*)&prev_scn;
 			if (isc_dsql_execute(status, &trans, &stmt, 1, NULL))
 				pr_error(status, "execute history query");
+				
 			switch (isc_dsql_fetch(status, &stmt, 1, out_sqlda)) {
 			case 100: /* No more records available */
 				b_error::raise("Cannot find record for database \"%s\" backup level %d "
-					"in the backup history", database, level-1);
+					"in the backup history", database, level - 1);
 			case 0: 
 				if (guid_null || scn_null)
 					b_error::raise("Internal error. History query returned null SCN or GUID");
-				prev_guid[sizeof(prev_guid)-1] = 0;
+				prev_guid[sizeof(prev_guid) - 1] = 0;
 				break;
 			default:
 				pr_error(status, "fetch history query");
@@ -527,7 +530,8 @@ void nbackup::backup_database(int level, const char* fname) {
 			Firebird::string begin, fil;
 			PathUtils::splitLastComponent(begin, fil, database);
 			sprintf(bakname, "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
-				today->tm_year+1900, today->tm_mon, today->tm_mday, today->tm_hour, today->tm_min);
+				today->tm_year + 1900, today->tm_mon, today->tm_mday,
+				today->tm_hour, today->tm_min);
 			printf("%s", bakname); // Print out generated filename for script processing
 		}
 
@@ -554,7 +558,10 @@ void nbackup::backup_database(int level, const char* fname) {
 		if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 			b_error::raise("Unexpected end of file when reading header of database file");
 		if ((header.hdr_flags & hdr_backup_mask) != nbak_state_stalled)
-			b_error::raise("Internal error. Database file is not locked. Flags are %d", header.hdr_flags);
+		{
+			b_error::raise("Internal error. Database file is not locked. Flags are %d",
+				header.hdr_flags);
+		}
 	
 		page_buff = (PAG)malloc(header.hdr_page_size);
 		
@@ -565,16 +572,17 @@ void nbackup::backup_database(int level, const char* fname) {
 		
 		FB_GUID backup_guid;
 		bool guid_found = false;
-		UCHAR *p = reinterpret_cast<HDR>(page_buff)->hdr_data;
+		const UCHAR* p = reinterpret_cast<hdr*>(page_buff)->hdr_data;
 		while (true) {
 			switch(*p) {
 			case HDR_backup_guid:
-				if (p[1] != sizeof(FB_GUID)) break;
-				memcpy(&backup_guid, p+2, sizeof(FB_GUID));
+				if (p[1] != sizeof(FB_GUID))
+					break;
+				memcpy(&backup_guid, p + 2, sizeof(FB_GUID));
 				guid_found = 1;
 				break;
 			case HDR_difference_file:
-				p += p[1]+2;
+				p += p[1] + 2;
 				continue;
 			}
 			break;
@@ -585,7 +593,7 @@ void nbackup::backup_database(int level, const char* fname) {
 	
 	
 		// Write data to backup file
-		ULONG backup_scn = header.hdr_header.pag_scn()-1;
+		ULONG backup_scn = header.hdr_header.pag_scn - 1;
 		if (level) {
 			inc_header bh;
 			memcpy(bh.signature, backup_signature, sizeof(backup_signature));
@@ -601,11 +609,12 @@ void nbackup::backup_database(int level, const char* fname) {
 	
 		ULONG curPage = 0;
 		while (true) {
-			if (curPage && page_buff->pag_scn() > backup_scn)
+			if (curPage && page_buff->pag_scn > backup_scn)
 				b_error::raise("Internal error. Database page %d had been changed during backup"
-							   " (page SCN=%d, backup SCN=%d)", curPage, page_buff->pag_scn(), backup_scn);
+							   " (page SCN=%d, backup SCN=%d)", curPage,
+							   page_buff->pag_scn, backup_scn);
 			if (level) {
-				if (page_buff->pag_scn() > prev_scn) {
+				if (page_buff->pag_scn > prev_scn) {
 					write_file(backup, &curPage, sizeof(curPage));
 					write_file(backup, page_buff, header.hdr_page_size);
 				}
@@ -656,10 +665,11 @@ void nbackup::backup_database(int level, const char* fname) {
 		// Pad filename with spaces before storing
 		char buff[256]; // RDB$FILE_NAME has length of 253
 		size_t len = strlen(bakname);
-		if (len > 253) len = 253;
+		if (len > 253)
+			len = 253;
 		buff[0] = len;
 		buff[1] = 0;
-		memcpy(buff+2, bakname, len);
+		memcpy(buff + 2, bakname, len);
 		in_sqlda->sqlvar[3].sqldata = buff;
 		in_sqlda->sqlvar[3].sqlind = &null_flag;
 		if (isc_dsql_execute(status, &trans, &stmt, 1, in_sqlda))
@@ -688,7 +698,7 @@ void nbackup::backup_database(int level, const char* fname) {
 	detach_database();
 }
 
-void nbackup::restore_database(int filecount, char* files[]) {
+void nbackup::restore_database(int filecount, const char* const* files) {
 	// We set this flag when database file is in inconsistent state
 	bool delete_database = false; 
 #ifndef WIN_NT
@@ -734,6 +744,7 @@ void nbackup::restore_database(int filecount, char* files[]) {
 				}
 				else {
 					strncpy(bakname, files[curLevel], sizeof(bakname));
+					bakname[sizeof(bakname) - 1] = 0; // Worst case
 #ifdef WIN_NT
 					if (curLevel)
 #endif
@@ -754,9 +765,11 @@ void nbackup::restore_database(int filecount, char* files[]) {
 						bakheader.level, bakname, curLevel);
 				// We may also add SCN check, but GUID check covers this case too
 				if (memcmp(&bakheader.prev_guid, &prev_guid, sizeof(FB_GUID)) != 0)
+				{
 					b_error::raise(
 						"Wrong order of backup files or "
 						"invalid incremental backup file detected, file: %s", bakname);
+				}
 				delete_database = true;
 				prev_guid = bakheader.backup_guid;
 				while (true) {
@@ -783,9 +796,10 @@ void nbackup::restore_database(int filecount, char* files[]) {
 #else
 				// Use relatively small buffer to make use of prefetch and lazy flush
 				char buffer[65536]; 
-				while(true) {
-					size_t bytesRead = read_file(backup, buffer, sizeof(buffer));
-					if (bytesRead == 0) break;
+				while (true) {
+					const size_t bytesRead = read_file(backup, buffer, sizeof(buffer));
+					if (bytesRead == 0)
+						break;
 					write_file(dbase, buffer, bytesRead);
 				}
 				seek_file(dbase, 0);
@@ -802,16 +816,17 @@ void nbackup::restore_database(int filecount, char* files[]) {
 					b_error::raise("Unexpected end of file when reading header of restored database file (stage 2)");
 				
 				bool guid_found = false;
-				UCHAR *p = reinterpret_cast<HDR>(page)->hdr_data;
+				const UCHAR* p = reinterpret_cast<hdr*>(page)->hdr_data;
 				while (true) {
 					switch(*p) {
 					case HDR_backup_guid:
-						if (p[1] != sizeof(FB_GUID)) break;
-						memcpy(&prev_guid, p+2, sizeof(FB_GUID));
+						if (p[1] != sizeof(FB_GUID))
+							break;
+						memcpy(&prev_guid, p + 2, sizeof(FB_GUID));
 						guid_found = 1;
 						break;
 					case HDR_difference_file:
-						p += p[1]+2;
+						p += p[1] + 2;
 						continue;
 					}
 					break;
@@ -838,55 +853,64 @@ void nbackup::restore_database(int filecount, char* files[]) {
 int main( int argc, char *argv[] )
 {
 #if defined DEV_BUILD && !defined WIN_NT
-	fprintf(stderr,"Using %d-bit UNIX IO\n", sizeof(off_t)*8);
+	fprintf(stderr,"Using %d-bit UNIX IO\n", sizeof(off_t) * 8);
 #endif
 	bool matched = false;
-	char** end = argv + argc, *p;
+	const char* const* const end = argv + argc;
 	
 	try {
 	
 	while (++argv < end)
 		if (**argv == '-')
-			for (p = *argv + 1; *p; p++)
+			for (const char* p = *argv + 1; *p; p++)
+			{
 				switch (UPPER(*p)) {
 
 				case 'F':
-					if (++argv >= end) usage();
+					if (++argv >= end)
+						usage();
 					nbackup(*argv).fixup_database();
 					matched = true;
 					break;
 
 				case 'L':
-					if (++argv >= end) usage();
+					if (++argv >= end)
+						usage();
 					nbackup(*argv).lock_database();
 					matched = true;
 					break;
 
 				case 'U':
-					if (++argv >= end) usage();
+					if (++argv >= end)
+						usage();
 					nbackup(*argv).unlock_database();
 					matched = true;
 					break;
 
 				case 'B': {
-					if (++argv >= end) usage();
+					if (++argv >= end)
+						usage();
 					int level = atoi(*argv);
-					if (++argv >= end) usage();
-					nbackup(*argv).backup_database(level, argv+1 >= end ? NULL : argv[1]);
+					if (++argv >= end)
+						usage();
+					nbackup(*argv).backup_database(level, argv + 1 >= end ? NULL : argv[1]);
 					}
 					matched = true;
 					break;
 
 				case 'R':
-					if (++argv >= end) usage();
-					nbackup(*argv).restore_database(end - argv - 1, argv+1);
+					if (++argv >= end)
+						usage();
+					nbackup(*argv).restore_database(end - argv - 1, argv + 1);
 					matched = true;
 					break;
 
 				default:
 					fprintf(stderr, "Unknown switch %c.\n", *p);
 					usage();
+					break;
 				}
+			}
 				
 	} catch (const std::exception&) {
 		// It must have been printed out. No need to repeat the task
@@ -897,3 +921,4 @@ int main( int argc, char *argv[] )
 	    usage();
 	return EXIT_OK;
 }
+

@@ -234,7 +234,7 @@ BOOLEAN ISC_check_restart(void)
 
 #ifdef SOLARIS_MT
 #define EVENTS
-int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
+int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 {
 /**************************************
  *
@@ -264,7 +264,7 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 }
 
 
-SLONG ISC_event_clear(EVENT event)
+SLONG ISC_event_clear(event_t* event)
 {
 /**************************************
  *
@@ -290,7 +290,7 @@ SLONG ISC_event_clear(EVENT event)
 }
 
 
-void ISC_event_fini(EVENT event)
+void ISC_event_fini(event_t* event)
 {
 /**************************************
  *
@@ -311,7 +311,7 @@ void ISC_event_fini(EVENT event)
 }
 
 
-int ISC_event_init(EVENT event, int semid, int semnum)
+int ISC_event_init(event_t* event, int semid, int semnum)
 {
 /**************************************
  *
@@ -345,7 +345,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 }
 
 
-int ISC_event_post(EVENT event)
+int ISC_event_post(event_t* event)
 {
 /**************************************
  *
@@ -374,7 +374,7 @@ int ISC_event_post(EVENT event)
 
 
 int ISC_event_wait(SSHORT	count,
-				   EVENT*	events,
+				   event_t**	events,
 				   SLONG*	values,
 				   SLONG	micro_seconds,
 				   FPTR_VOID_PTR timeout_handler,
@@ -452,7 +452,7 @@ int ISC_event_wait(SSHORT	count,
 
 #ifdef POSIX_THREADS
 #define EVENTS
-int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
+int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 {
 /**************************************
  *
@@ -482,7 +482,7 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 }
 
 
-SLONG ISC_event_clear(EVENT event)
+SLONG ISC_event_clear(event_t* event)
 {
 /**************************************
  *
@@ -508,7 +508,7 @@ SLONG ISC_event_clear(EVENT event)
 }
 
 
-void ISC_event_fini(EVENT event)
+void ISC_event_fini(event_t* event)
 {
 /**************************************
  *
@@ -529,7 +529,7 @@ void ISC_event_fini(EVENT event)
 }
 
 
-int ISC_event_init(EVENT event, int semid, int semnum)
+int ISC_event_init(event_t* event, int semid, int semnum)
 {
 /**************************************
  *
@@ -586,7 +586,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 }
 
 
-int ISC_event_post(EVENT event)
+int ISC_event_post(event_t* event)
 {
 /**************************************
  *
@@ -629,7 +629,7 @@ int ISC_event_post(EVENT event)
 
 int ISC_event_wait(
 				   SSHORT count,
-				   EVENT * events,
+				   event_t** events,
 				   SLONG * values,
 				   SLONG micro_seconds,
 				   FPTR_VOID_PTR timeout_handler, void *handler_arg)
@@ -723,7 +723,7 @@ int ISC_event_wait(
 #ifdef UNIX
 #ifndef EVENTS
 #define EVENTS
-int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
+int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 {
 /**************************************
  *
@@ -755,7 +755,7 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 }
 
 
-SLONG ISC_event_clear(EVENT event)
+SLONG ISC_event_clear(event_t* event)
 {
 /**************************************
  *
@@ -786,7 +786,7 @@ SLONG ISC_event_clear(EVENT event)
 }
 
 
-void ISC_event_fini(EVENT event)
+void ISC_event_fini(event_t* event)
 {
 /**************************************
  *
@@ -803,7 +803,7 @@ void ISC_event_fini(EVENT event)
 }
 
 
-int ISC_event_init(EVENT event, int semid, int semnum)
+int ISC_event_init(event_t* event, int semid, int semnum)
 {
 /**************************************
  *
@@ -837,7 +837,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 }
 
 
-int ISC_event_post(EVENT event)
+int ISC_event_post(event_t* event)
 {
 /**************************************
  *
@@ -873,7 +873,7 @@ int ISC_event_post(EVENT event)
 
 int ISC_event_wait(
 				   SSHORT count,
-				   EVENT * events,
+				   event_t** events,
 				   SLONG * values,
 				   SLONG micro_seconds,
 				   FPTR_VOID_PTR timeout_handler, void *handler_arg)
@@ -895,7 +895,7 @@ int ISC_event_wait(
  **************************************/
 	int ret;
 	sigset_t mask, oldmask;
-	EVENT *event;
+	event_t** event;
 	int semid, i;
 	int semnums[16], *semnum;
 	struct itimerval user_timer;
@@ -983,7 +983,7 @@ int ISC_event_wait(
 
 #ifdef VMS
 #define EVENTS
-int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
+int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 {
 /**************************************
  *
@@ -1004,7 +1004,7 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 }
 
 
-SLONG ISC_event_clear(EVENT event)
+SLONG ISC_event_clear(event_t* event)
 {
 /**************************************
  *
@@ -1026,7 +1026,7 @@ SLONG ISC_event_clear(EVENT event)
 }
 
 
-int ISC_event_init(EVENT event, int semid, int semnum)
+int ISC_event_init(event_t* event, int semid, int semnum)
 {
 /**************************************
  *
@@ -1047,7 +1047,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 }
 
 
-int ISC_event_post(EVENT event)
+int ISC_event_post(event_t* event)
 {
 /**************************************
  *
@@ -1070,7 +1070,7 @@ int ISC_event_post(EVENT event)
 
 int ISC_event_wait(
 				   SSHORT count,
-				   EVENT * events,
+				   event_t** events,
 				   SLONG * values,
 				   SLONG micro_seconds,
 				   FPTR_VOID_PTR timeout_handler, void *handler_arg)
@@ -1103,7 +1103,7 @@ int ISC_event_wait(
 #ifdef WIN_NT
 
 #define EVENTS
-int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
+int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 {
 /**************************************
  *
@@ -1118,7 +1118,7 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 
 	for (; count > 0; --count, ++events, ++values)
 	{
-		EVENT pEvent = *events;
+		const event_t* pEvent = *events;
 		if (pEvent->event_shared) {
 			pEvent = pEvent->event_shared;
 		}
@@ -1130,7 +1130,7 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 }
 
 
-SLONG ISC_event_clear(EVENT event)
+SLONG ISC_event_clear(event_t* event)
 {
 /**************************************
  *
@@ -1150,7 +1150,7 @@ SLONG ISC_event_clear(EVENT event)
 
 	ResetEvent((HANDLE) event->event_handle);
 
-	EVENT pEvent = event;
+	const event_t* pEvent = event;
 	if (pEvent->event_shared) {
 		pEvent = pEvent->event_shared;
 	}
@@ -1158,7 +1158,7 @@ SLONG ISC_event_clear(EVENT event)
 }
 
 
-void ISC_event_fini(EVENT event)
+void ISC_event_fini(event_t* event)
 {
 /**************************************
  *
@@ -1175,7 +1175,7 @@ void ISC_event_fini(EVENT event)
 }
 
 
-int ISC_event_init(EVENT event, int type, int semnum)
+int ISC_event_init(event_t* event, int type, int semnum)
 {
 /**************************************
  *
@@ -1200,10 +1200,10 @@ int ISC_event_init(EVENT event, int type, int semnum)
 
 
 int ISC_event_init_shared(
-	EVENT lcl_event,
+	event_t* lcl_event,
 	int type,
 	const TEXT* name,
-	EVENT shr_event,
+	event_t* shr_event,
 	bool init_flag)
 {
 /**************************************
@@ -1242,7 +1242,7 @@ int ISC_event_init_shared(
 }
 
 
-int ISC_event_post(EVENT event)
+int ISC_event_post(event_t* event)
 {
 /**************************************
  *
@@ -1270,7 +1270,7 @@ int ISC_event_post(EVENT event)
 
 
 int ISC_event_wait(SSHORT count,
-					EVENT* events,
+					event_t** events,
 					SLONG* values,
 					SLONG micro_seconds,
 					FPTR_VOID_PTR timeout_handler,
@@ -1323,7 +1323,7 @@ int ISC_event_wait(SSHORT count,
 
 #ifndef REQUESTER
 #ifndef EVENTS
-int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
+int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 {
 /**************************************
  *
@@ -1339,7 +1339,7 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 }
 
 
-SLONG ISC_event_clear(EVENT event)
+SLONG ISC_event_clear(event_t* event)
 {
 /**************************************
  *
@@ -1361,7 +1361,7 @@ SLONG ISC_event_clear(EVENT event)
 }
 
 
-int ISC_event_init(EVENT event, int semid, int semnum)
+int ISC_event_init(event_t* event, int semid, int semnum)
 {
 /**************************************
  *
@@ -1379,7 +1379,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 }
 
 
-int ISC_event_post(EVENT event)
+int ISC_event_post(event_t* event)
 {
 /**************************************
  *
@@ -1397,7 +1397,7 @@ int ISC_event_post(EVENT event)
 
 
 int ISC_event_wait(SSHORT count,
-					EVENT * events,
+					event_t** events,
 					SLONG * values,
 					SLONG micro_seconds,
 					FPTR_VOID_PTR timeout_handler, 

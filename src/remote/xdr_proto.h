@@ -31,7 +31,7 @@
 // standard XDR. Firebird XDR is NOT compatible with Sun XDR at interface level
 
 bool_t	xdr_bool (XDR *, int *);
-bool_t	xdr_bytes (XDR *, SCHAR * *, u_int *, u_int);
+bool_t	xdr_bytes (XDR *, SCHAR**, u_int *, u_int);
 bool_t	xdr_double (XDR *, double *);
 bool_t	xdr_enum (XDR *, enum xdr_op *);
 bool_t	xdr_float (XDR *, float *);
@@ -41,7 +41,7 @@ bool_t	xdr_long (XDR *, SLONG *);
 bool_t	xdrmem_create (XDR *, SCHAR *, u_int, enum xdr_op);
 bool_t	xdr_opaque (XDR *, SCHAR *, u_int);
 bool_t	xdr_short (XDR *, SSHORT *);
-bool_t	xdr_string (XDR *, SCHAR * *, u_int);
+bool_t	xdr_string (XDR *, SCHAR**, u_int);
 bool_t	xdr_u_int (XDR *, u_int *);
 bool_t	xdr_u_long (XDR *, ULONG *);
 bool_t	xdr_u_short (XDR *, u_short *);

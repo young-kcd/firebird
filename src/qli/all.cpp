@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.21 2003-09-25 11:49:07 robocop Exp $
+$Id: all.cpp,v 1.22 2004-02-02 11:01:45 robocop Exp $
 */
 
 /***************************************************
@@ -68,7 +68,7 @@ static struct {
 
 static void extend_pool(PLB, USHORT);
 
-static VEC global_pools;
+static qli_vec* global_pools;
 
 #define MIN_ALLOCATION	1024
 
@@ -179,9 +179,9 @@ BLK ALLQ_extend(BLK * pointer, int size)
 	ALLQ_release((FRB) block);
 
 	if (new_blk->blk_type == (SCHAR) type_vec)
-		((VEC) new_blk)->vec_count = size;
+		((qli_vec*) new_blk)->vec_count = size;
 	else if (new_blk->blk_type == (SCHAR) type_vcl)
-		((VCL) new_blk)->vcl_count = size;
+		((qli_vcl*) new_blk)->vcl_count = size;
 
 	*pointer = new_blk;
 
@@ -249,13 +249,13 @@ void ALLQ_init(void)
  **************************************/
 	ISC_STATUS_ARRAY temp_vector;
 
-	global_pools = (VEC) temp_vector;
+	global_pools = (qli_vec*) temp_vector;
 	global_pools->vec_count = 1;
 	global_pools->vec_object[0] = NULL;
 
     PLB pool = ALLQ_pool();
 	QLI_default_pool = QLI_permanent_pool = pool;
-	global_pools = (VEC) ALLQ_alloc(pool, type_vec, 10);
+	global_pools = (qli_vec*) ALLQ_alloc(pool, type_vec, 10);
 	global_pools->vec_count = 10;
 	global_pools->vec_object[0] = (BLK) pool;
 }
@@ -333,7 +333,7 @@ PLB ALLQ_pool(void)
 }
 
 
-void ALLQ_push( BLK object, LLS * stack)
+void ALLQ_push( BLK object, qli_lls** stack)
 {
 /**************************************
  *
@@ -342,16 +342,16 @@ void ALLQ_push( BLK object, LLS * stack)
  **************************************
  *
  * Functional description
- *	Push an object on an LLS stack.
+ *	Push an object on a qli_lls stack.
  *
  **************************************/
 	PLB pool = QLI_default_pool;
 
-    LLS node = pool->plb_lls;
+    qli_lls* node = pool->plb_lls;
 	if (node)
 		pool->plb_lls = node->lls_next;
 	else
-		node = (LLS) ALLQ_alloc(pool, type_lls, 0);
+		node = (qli_lls*) ALLQ_alloc(pool, type_lls, 0);
 
 	node->lls_object = object;
 	node->lls_next = *stack;
@@ -359,7 +359,7 @@ void ALLQ_push( BLK object, LLS * stack)
 }
 
 
-BLK ALLQ_pop(LLS * stack)
+BLK ALLQ_pop(qli_lls** stack)
 {
 /**************************************
  *
@@ -372,7 +372,7 @@ BLK ALLQ_pop(LLS * stack)
  *	further use.
  *
  **************************************/
-	LLS node = *stack;
+	qli_lls* node = *stack;
 	PLB pool = (PLB) global_pools->vec_object[node->lls_header.blk_pool_id];
 	*stack = node->lls_next;
 	node->lls_next = pool->plb_lls;

@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.85 2004-01-31 19:25:20 kkuznetsov Exp $
+$Id: lock.cpp,v 1.86 2004-02-02 11:01:43 robocop Exp $
 */
 
 #include "firebird.h"
@@ -893,7 +893,7 @@ void LOCK_manager( PTR manager_owner_offset)
 	SRQ que;
 	ISC_STATUS_ARRAY local_status;
 	SLONG value;
-	EVENT event_ptr;
+	event_t* event_ptr;
 
 	LOCK_TRACE(("LOCK_manager\n"));
 
@@ -1508,7 +1508,7 @@ static void acquire( PTR owner_offset)
 #if !defined SUPERSERVER && defined SOLARIS_MT
 	if (LOCK_solaris_stall) {
 		if (owner_offset > 0) {
-			EVENT event_ptr;
+			event_t* event_ptr;
 			SLONG value;
 
 			// Can't be hung by OS if we got here
@@ -1922,7 +1922,7 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 		SLONG value = ISC_event_clear(LOCK_owner->own_blocking);
 		blocking_action((void*)(IPTR)*owner_offset_ptr);
 		AST_EXIT;
-		EVENT event_ptr = LOCK_owner->own_blocking;
+		event_t* event_ptr = LOCK_owner->own_blocking;
 		ISC_event_wait(1, &event_ptr, &value, 0, NULL, 0);
 	}
 
@@ -3101,7 +3101,7 @@ static void init_owner_block(
 	owner->own_semaphore = 0;
 
 #if defined(WIN_NT) && !defined(SUPERSERVER)
-	// Skidder: This Win32 EVENT is deleted when our process is closing
+	// Skidder: This Win32 event is deleted when our process is closing
 	if (new_block != OWN_BLOCK_dummy)
 		owner->own_wakeup_hndl = ISC_make_signal(TRUE, TRUE, LOCK_pid,
 												 LOCK_wakeup_signal);
@@ -3109,7 +3109,7 @@ static void init_owner_block(
 	if (new_block == OWN_BLOCK_new)
 	{
 #if defined WIN_NT && defined SUPERSERVER
-		// TMN: This Win32 EVENT is never deleted!
+		// TMN: This Win32 event is never deleted!
 		// Skidder: But it may be reused along with the owner block
 		owner->own_wakeup_hndl = ISC_make_signal(TRUE, TRUE, LOCK_pid, 0);
 #endif
@@ -3160,7 +3160,7 @@ static void lock_alarm_handler(void* event)
  *
  **************************************/
 
-	ISC_event_post(reinterpret_cast<EVENT>(event));
+	ISC_event_post(static_cast<event_t*>(event));
 }
 #endif
 
@@ -4119,7 +4119,7 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
    timeout and cleanup anyway. */
 
 	if (LOCK_owner) {
-		EVENT event_ptr;
+		event_t* event_ptr;
 		SLONG value;
 
 		/* Set a marker for the AST thread to know it's time to cleanup */
@@ -4942,7 +4942,7 @@ static USHORT wait_for_request(
 
 #ifdef USE_WAKEUP_EVENTS
 		SLONG value;
-		EVENT event_ptr;
+		event_t* event_ptr;
 
 		owner = (OWN) ABS_PTR(owner_offset);
 #if (defined HAVE_MMAP && !defined SUPERSERVER)

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.33 2004-01-28 07:50:27 robocop Exp $
+//	$Id: pas.cpp,v 1.34 2004-02-02 11:01:27 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1190,7 +1190,7 @@ static void gen_database( const act* action, int column)
 	const ref* reference;
 	SSHORT event_count;
 	SSHORT max_count;
-	LLS stack_ptr;
+	gpre_lls* stack_ptr;
 
 	if (global_first_flag)
 		return;
@@ -1991,7 +1991,7 @@ static void gen_event_wait( const act* action, int column)
 	gpre_sym* event_name;
 	gpre_sym* stack_name;
 	DBB database;
-	LLS stack_ptr;
+	gpre_lls* stack_ptr;
 	const act* event_action;
 	int ident;
 	TEXT s[64];

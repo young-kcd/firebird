@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.36 2004-01-28 07:50:27 robocop Exp $
+ *	$Id: gpre_meta.epp,v 1.37 2004-02-02 11:01:26 robocop Exp $
  */
 
 #include "firebird.h"
@@ -651,7 +651,7 @@ bool MET_get_column_default(const gpre_rel* relation,
  *		of the fields.
  */  
 
-LLS MET_get_primary_key(dbb* database, const TEXT* relation_name)
+gpre_lls* MET_get_primary_key(dbb* database, const TEXT* relation_name)
 {
 	SCHAR name[NAME_SIZE];
 
@@ -670,8 +670,8 @@ LLS MET_get_primary_key(dbb* database, const TEXT* relation_name)
 
 	START_TRANSACTION;
 
-    LLS fields = NULL;
-	LLS* ptr_fields = &fields;
+    gpre_lls* fields = NULL;
+	gpre_lls** ptr_fields = &fields;
 
 	FOR(REQUEST_HANDLE database->dbb_primary_key_request)
 		X IN RDB$INDICES CROSS
@@ -905,7 +905,7 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 	gds_trans = database->dbb_transaction;
 
 	int count = 0;
-	LLS stack = NULL;
+	gpre_lls* stack = NULL;
 	FOR(REQUEST_HANDLE database->dbb_flds_request)
 	RFR IN RDB$RELATION_FIELDS CROSS GLOB_FLD IN RDB$FIELDS WITH
 		RFR.RDB$FIELD_SOURCE EQ GLOB_FLD.RDB$FIELD_NAME AND

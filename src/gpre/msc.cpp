@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.18 2004-01-28 07:50:27 robocop Exp $
+//	$Id: msc.cpp,v 1.19 2004-02-02 11:01:26 robocop Exp $
 //
 //  
 //  
@@ -64,7 +64,7 @@ typedef struct spc {
 } *SPC;
 
 static SPC space, permanent_space;
-static LLS free_lls;
+static gpre_lls* free_lls;
 
 
 //____________________________________________________________
@@ -330,7 +330,7 @@ bool MSC_match(KWWORDS keyword)
 //		represented on a linked list stack.
 //  
 
-bool MSC_member(GPRE_NOD object, LLS stack)
+bool MSC_member(GPRE_NOD object, gpre_lls* stack)
 {
 
 	for (; stack; stack = stack->lls_next)
@@ -361,9 +361,9 @@ GPRE_NOD MSC_node(enum nod_t type, SSHORT count)
 //		Pop an item off a linked list stack.  Free the stack node.
 //  
 
-GPRE_NOD MSC_pop(LLS * pointer)
+GPRE_NOD MSC_pop(gpre_lls** pointer)
 {
-	LLS stack = *pointer;
+	gpre_lls* stack = *pointer;
 	GPRE_NOD node = stack->lls_object;
 	*pointer = stack->lls_next;
 
@@ -397,13 +397,13 @@ PRV MSC_privilege_block(void)
 //		Push an arbitrary object onto a linked list stack.
 //  
 
-void MSC_push( GPRE_NOD object, LLS* pointer)
+void MSC_push( GPRE_NOD object, gpre_lls** pointer)
 {
-	LLS stack = free_lls;
+	gpre_lls* stack = free_lls;
 	if (stack)
 		free_lls = stack->lls_next;
 	else
-		stack = (LLS) MSC_alloc(LLS_LEN);
+		stack = (gpre_lls*) MSC_alloc(LLS_LEN);
 
 	stack->lls_object = object;
 	stack->lls_next = *pointer;

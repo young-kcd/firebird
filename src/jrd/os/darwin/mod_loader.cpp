@@ -46,14 +46,13 @@ void ModuleLoader::doctorModuleExtention(Firebird::string& name)
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 {
 	NSObjectFileImage image;
-	NSObjectFileImageReturnCode retVal;
-	NSModule mod_handle;
 	NSSymbol initSym;
 	void (*init)(void);
 	
 	/* Create an object file image from the given path */
-	retVal = NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
-	if(retVal != NSObjectFileImageSuccess)
+	const NSObjectFileImageReturnCode retVal =
+		NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
+	if (retVal != NSObjectFileImageSuccess)
 	{
 		switch(retVal)
 		{
@@ -79,9 +78,10 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 	}
 	
 	/* link the image */
-	mod_handle = NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
+	NSModule mod_handle =
+		NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
 	NSDestroyObjectFileImage(image) ;
-	if(mod_handle == NULL)
+	if (mod_handle == NULL)
 	{
 		/*printf("NSLinkModule() failed for dlopen()");*/
 		// We should really throw an error here.

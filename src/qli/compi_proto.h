@@ -28,5 +28,5 @@ qli_nod*	CMPQ_compile(qli_nod*);
 void		CMP_alloc_temp(qli_nod*);
 bool		CMP_node_match(const qli_nod*, const qli_nod*);
 
-#endif /* QLI_COMPI_PROTO_H */
+#endif // QLI_COMPI_PROTO_H
 

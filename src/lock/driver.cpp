@@ -176,17 +176,25 @@ void main( int argc, char **argv)
 				ib_printf("bad lock\n");
 				continue;
 			}
-			if (!LOCK_convert(lock, type, wait, NULL, 0, status_vector)) {
+			if (!LOCK_convert(lock, type, wait, NULL, 0, status_vector))
+			{
 				ib_printf("*** CONVERSION FAILED: status_vector[1] = %d",
 						  status_vector[1]);
-				if (status_vector[1] == isc_lock_timeout)
+				switch (status_vector[1])
+				{
+				case isc_lock_timeout:
 					ib_printf(" (isc_lock_timeout)\n");
-				else if (status_vector[1] == isc_lock_conflict)
+					break;
+				case isc_lock_conflict:
 					ib_printf(" (isc_lock_conflict)\n");
-				else if (status_vector[1] == isc_deadlock)
+					break;
+				case isc_deadlock:
 					ib_printf(" (isc_deadlock)\n");
-				else
+					break;
+				default:
 					ib_printf("\n");
+					break;
+				}
 			}
 			continue;
 		}

@@ -120,7 +120,7 @@ DUDLEY_NOD EXPR_rse(bool view_flag)
  *
  **************************************/
 	DUDLEY_NOD node, boolean, field_name, a_boolean;
-	LLS stack;
+	dudley_lls* stack;
 	DUDLEY_CTX context;
 	SYM field_sym;
 
@@ -211,7 +211,7 @@ DUDLEY_NOD EXPR_statement(void)
  *	Parse a single trigger statement.
  *
  **************************************/
-	LLS stack;
+	dudley_lls* stack;
 	DUDLEY_NOD node;
 	int number;
 
@@ -494,7 +494,7 @@ static DUDLEY_NOD parse_field(void)
  *
  **************************************/
 	DUDLEY_NOD field, array;
-	LLS stack;
+	dudley_lls* stack;
 
 	stack = NULL;
 
@@ -582,7 +582,7 @@ static DUDLEY_NOD parse_function(void)
  **************************************/
 	SYM symbol;
 	DUDLEY_NOD node;
-	LLS stack;
+	dudley_lls* stack;
 
 /* Look for symbol of type function.  If we don't find it, give up */
 
@@ -1075,7 +1075,7 @@ static DUDLEY_NOD parse_sort(void)
  *	Parse a sort list.
  *
  **************************************/
-	LLS stack;
+	dudley_lls* stack;
 	SSHORT direction;
 
 	direction = 0;

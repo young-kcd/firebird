@@ -26,7 +26,7 @@
 
 pics*	PIC_analyze(TEXT*, const dsc*);
 void		PIC_edit(const dsc*, pics*, TEXT**, USHORT);
-void		PIC_missing(con*, pics*);
+void		PIC_missing(qli_const*, pics*);
 
-#endif /* QLI_PICST_PROTO_H */
+#endif // QLI_PICST_PROTO_H
 

@@ -62,9 +62,9 @@ DATABASE DB = STATIC "yachts.lnk";
 #define BUCKETS		5
 #define WINDOW_SIZE	(1 << 17)
 
-typedef struct dba_rel {
-	struct dba_rel *rel_next;
-	struct idx *rel_indexes;
+struct dba_rel {
+	dba_rel* rel_next;
+	struct idx* rel_indexes; // forward decl
 	SLONG rel_index_root;
 	SLONG rel_pointer_page;
 	SLONG rel_slots;
@@ -73,10 +73,10 @@ typedef struct dba_rel {
 	ULONG rel_total_space;
 	SSHORT rel_id;
 	SCHAR rel_name[32];
-} *REL;
+};
 
-typedef struct idx {
-	struct idx *idx_next;
+struct idx {
+	idx* idx_next;
 	SSHORT idx_id;
 	SSHORT idx_depth;
 	SLONG idx_leaf_buckets;
@@ -86,30 +86,30 @@ typedef struct idx {
 	SLONG idx_data_length;
 	SLONG idx_fill_distribution[BUCKETS];
 	SCHAR idx_name[32];
-} *IDX;
+};
 
 /* kidnapped from jrd/pio.h and abused */
 
-typedef struct fil {
-	struct fil *fil_next;		/* Next file in database */
+struct dba_fil {
+	dba_fil* fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
 #ifdef WIN_NT
-	void *fil_desc;
+	void* fil_desc;
 #else
 	int fil_desc;
 #endif
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
 
-} *FIL;
+};
 
 
-static SCHAR *alloc(SLONG);
-static void analyze_data(REL);
-static bool analyze_data_page(REL, DPG);
-static void analyze_index(REL, IDX);
+static char* alloc(SLONG);
+static void analyze_data(dba_rel*);
+static bool analyze_data_page(dba_rel*, const data_page*);
+static void analyze_index(dba_rel*, idx*);
 
 #if (defined WIN_NT)
 static void db_error(SLONG);
@@ -117,13 +117,13 @@ static void db_error(SLONG);
 static void db_error(int);
 #endif
 
-static FIL db_open(const char*, USHORT);
-static PAG db_read(SLONG);
-static bool key_equality(SSHORT, SCHAR *, BTN);
-static void move(SCHAR *, SCHAR *, SSHORT);
-static void print_distribution(SCHAR *, SLONG *);
-static void print_header(HDR);
-static void truncate_name(SCHAR *);
+static dba_fil* db_open(const char*, USHORT);
+static const pag* db_read(SLONG);
+static bool key_equality(SSHORT, const SCHAR*, const btn*);
+static void move(const SCHAR*, SCHAR*, SSHORT);
+static void print_distribution(const SCHAR*, const SLONG*);
+static void print_header(const hdr*);
+static void truncate_name(SCHAR*);
 
 
 static const TEXT help_text[] = "Available switches:\n\
@@ -139,36 +139,36 @@ static const TEXT help_text[] = "Available switches:\n\
 
 /* threading declarations for thread data */
 
-typedef struct tdba {
+struct tdba {
 	struct thdd tdba_thd_data;
-	UCHAR *dba_env;
-	FIL files;
-	REL relations;
+	UCHAR* dba_env;
+	dba_fil* files;
+	dba_rel* relations;
 	SSHORT page_size;
 	PAG buffer1;
 	PAG global_buffer;
 	int exit_code;
-	IB_FILE *sw_outfile;
-} *TDBA;
+	IB_FILE* sw_outfile;
+};
 
 #ifdef GET_THREAD_DATA
 #undef GET_THREAD_DATA
 #endif
 
-static struct tdba *gddba;
+static tdba* gddba;
 
 #define GET_THREAD_DATA	        (gddba)
 #define SET_THREAD_DATA         gddba = tddba = &thd_context; \
 				tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA
 #define RESTORE_THREAD_DATA
 
-void inline dba_full_exit(int code, TDBA tddba)
+void inline dba_full_exit(int code, tdba* tddba)
 {
 	tddba->exit_code = code;
 	Firebird::status_exception::raise(1);
 }
 
-int CLIB_ROUTINE main( int argc, char **argv)
+int CLIB_ROUTINE main( int argc, char** argv)
 {
 /**************************************
  *
@@ -181,36 +181,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	of a database.
  *
  **************************************/
-	REL relation;
-	IDX index;
-	HDR header;
-	LIP logp;
-	FIL current;
-	SCHAR **end, *p, temp[1024], file_name[1024];
-	double average;
-	bool sw_system;
-	bool sw_data;
-	bool sw_index;
-	bool sw_version;
-	bool sw_header;
-	bool sw_log;
-	SLONG page;
-	UCHAR *vp, *vend;
 	isc_db_handle db_handle = NULL;
-	IB_FILE *sw_outfile;
-	TEXT *q;
-	UCHAR *dpb;
-	SSHORT dpb_length;
-	UCHAR dpb_string[100];
-	SCHAR password_enc[33];
 	struct tdba thd_context, *tddba;
 	JMP_BUF env;
-	isc_tr_handle transact1;
-	isc_req_handle request1, request2, request3;
 	ISC_STATUS_ARRAY status_vector;
-#if defined (WIN95)
-	bool fAnsiCP;
-#endif
 
 	SET_THREAD_DATA;
 	memset(tddba, 0, sizeof(*tddba));
@@ -218,30 +192,27 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	tddba->dba_env = (UCHAR*) env;
 
 	if (SETJMP(env)) {
-		int exit_code;
-		/* free mem */
 
 		if (status_vector[1]) {
-			ISC_STATUS *vector;
 			SCHAR s[1024];
 
-			vector = status_vector;
-			if (isc_interprete(s, &vector)) {
+			const ISC_STATUS* vector = status_vector;
+			if (isc_interprete_cpp(s, &vector)) {
 				FPRINTF(tddba->sw_outfile, "%s\n", s);
 				s[0] = '-';
-				while (isc_interprete(s + 1, &vector))
+				while (isc_interprete_cpp(s + 1, &vector))
 					FPRINTF(tddba->sw_outfile, "%s\n", s);
 			}
 		}
 
-		exit_code = tddba->exit_code;
+		const int exit_code = tddba->exit_code;
 		RESTORE_THREAD_DATA;
 		exit(exit_code);
 	}
-	sw_outfile = tddba->sw_outfile = ib_stderr;
+	IB_FILE* sw_outfile = tddba->sw_outfile = ib_stderr;
 
 #if defined (WIN95)
-	fAnsiCP = false;
+	bool fAnsiCP = false;
 #endif
 
 /* Perform some special handling when run as an Interbase service.  The
@@ -278,10 +249,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	const char* name = NULL;
+	bool sw_system;
+	bool sw_data;
+	bool sw_index;
+	bool sw_version;
+	bool sw_header;
+	bool sw_log;
 	sw_log = sw_system = sw_data = sw_index = sw_version = sw_header = false;
 
-	for (end = argv + argc, ++argv; argv < end;) {
-		p = *argv++;
+	const char* const* const end = argv + argc;
+	for (++argv; argv < end;) {
+		const char* p = *argv++;
 		if (*p == '-')
 			switch (UPPER(p[1])) {
 			case 'S':
@@ -347,19 +325,22 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 /* Open database and go to work */
 
-	current = db_open(name, strlen(name));
+	dba_fil* current = db_open(name, strlen(name));
+	char temp[1024];
 	tddba->page_size = sizeof(temp);
 	tddba->global_buffer = (PAG) temp;
-	header = (HDR) db_read((SLONG) 0);
+	const hdr* header = (const hrd*) db_read((SLONG) 0);
 
 	if (header->hdr_ods_version != ODS_VERSION
-		&& header->hdr_ods_version != ODS_VERSION6) {
+		&& header->hdr_ods_version != ODS_VERSION6)
+	{
 		FPRINTF(sw_outfile,
 				"Wrong ODS version, expected %d, encountered %d?\n",
 				ODS_VERSION, header->hdr_ods_version);
 		dba_full_exit(FINI_ERROR, tddba);
 	}
 
+	char file_name[1024];
 #if defined (WIN95)
 	if (!fAnsiCP)
 		AnsiToOem(name, file_name);
@@ -375,17 +356,19 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 /* gather continuation files */
 
-	page = HEADER_PAGE;
+	SLONG page = HEADER_PAGE;
 	do {
 		if (page != HEADER_PAGE)
 			current = db_open(file_name, strlen(file_name));
 		do {
-			header = (HDR) db_read((SLONG) page);
+			header = (const hrd*) db_read((SLONG) page);
 			if (current != tddba->files)
 				current->fil_fudge = 1;	/* ignore header page once read it */
 			*file_name = '\0';
-			for (vp = header->hdr_data, vend = vp + header->hdr_page_size;
-				 vp < vend && *vp != HDR_end; vp += 2 + vp[1]) {
+			const UCHAR* vp = header->hdr_data;
+			for (const UCHAR* const vend = vp + header->hdr_page_size;
+				 vp < vend && *vp != HDR_end; vp += 2 + vp[1])
+			{
 				if (*vp == HDR_file) {
 					memcpy(file_name, vp + 2, vp[1]);
 					*(file_name + vp[1]) = '\0';
@@ -408,7 +391,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	page = HEADER_PAGE;
 	do {
-		header = (HDR) db_read((SLONG) page);
+		header = (const hdr*) db_read((SLONG) page);
 		PPG_print_header(header, page, sw_outfile);
 	}
 	while (page = header->hdr_next_page);
@@ -421,10 +404,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	FPRINTF(sw_outfile, "\n\nDatabase file sequence:\n");
 	for (current = tddba->files; current->fil_next;
 		 current =
-		 current->fil_next) FPRINTF(sw_outfile,
-									"File %s continues as file %s\n",
-									current->fil_string,
-									current->fil_next->fil_string);
+		 current->fil_next)
+	{
+		FPRINTF(sw_outfile, "File %s continues as file %s\n",
+							current->fil_string,
+							current->fil_next->fil_string);
+	}
 	FPRINTF(sw_outfile, "File %s is the %s file\n\n", current->fil_string,
 			(current == tddba->files) ? "only" : "last");
 
@@ -432,24 +417,26 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	page = LOG_PAGE;
 	do {
-		logp = (LIP) db_read((SLONG) page);
+		const log_info_page* logp = (const log_info_page*) db_read((SLONG) page);
 		PPG_print_log(logp, page, sw_outfile);
-	}
-	while (page = logp->log_next_page);
+		page = logp->log_next_page;
+	} while (page);
 
 	if (sw_log)
 		dba_full_exit(FINI_OK, tddba);
 
 #if (defined WIN_NT)
-	dpb = dpb_string;
+	UCHAR dpb_string[100];
+	UCHAR* dpb = dpb_string;
 	*dpb++ = isc_dpb_version1;
 	*dpb++ = isc_dpb_user_name;
 	*dpb++ = strlen(LOCKSMITH_USER);
-	q = LOCKSMITH_USER;
+	const TEXT* q = LOCKSMITH_USER;
 	while (*q)
 		*dpb++ = *q++;
 
 	*dpb++ = isc_dpb_password_enc;
+	char password_enc[33];
 	strcpy(password_enc,
 		   (char *) ENC_crypt(LOCKSMITH_PASSWORD, PASSWORD_SALT));
 	q = password_enc + 2;
@@ -457,7 +444,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	while (*q)
 		*dpb++ = *q++;
 
-	dpb_length = dpb - dpb_string;
+	const SSHORT dpb_length = dpb - dpb_string;
 
 	isc_attach_database(status_vector, 0, name, &DB, dpb_length,
 						(char*) dpb_string);
@@ -472,15 +459,15 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	if (sw_version)
 		isc_version(&DB, NULL, NULL);
-	transact1 = 0;
+	isc_tr_handle transact1 = 0;
 	START_TRANSACTION transact1 READ_ONLY;
 	ON_ERROR
 		dba_full_exit(FINI_ERROR, tddba);
 	END_ERROR
 
-	request1 = NULL;
-	request2 = NULL;
-	request3 = NULL;
+	isc_req_handle request1 = NULL;
+	isc_req_handle request2 = NULL;
+	isc_req_handle request3 = NULL;
 
 	FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request1)
 		X IN RDB$RELATIONS SORTED BY DESC X.RDB$RELATION_NAME
@@ -488,35 +475,35 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			  continue;
 		if (!X.RDB$VIEW_BLR.NULL || !X.RDB$EXTERNAL_FILE.NULL)
 			continue;
-		relation = (REL) ALLOC(sizeof(struct dba_rel));
-		relation->rel_next = tddba->relations;
-		tddba->relations = relation;
-		relation->rel_id = X.RDB$RELATION_ID;
-		strcpy(relation->rel_name, X.RDB$RELATION_NAME);
-		truncate_name(relation->rel_name);
+		dba_rel* arelation = (dba_rel*) ALLOC(sizeof(struct dba_rel));
+		arelation->rel_next = tddba->relations;
+		tddba->relations = arelation;
+		arelation->rel_id = X.RDB$RELATION_ID;
+		strcpy(arelation->rel_name, X.RDB$RELATION_NAME);
+		truncate_name(arelation->rel_name);
 		FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request2)
-			Y IN RDB$PAGES WITH Y.RDB$RELATION_ID EQ relation->rel_id AND
+			Y IN RDB$PAGES WITH Y.RDB$RELATION_ID EQ arelation->rel_id AND
 				Y.RDB$PAGE_SEQUENCE EQ 0 
             if (Y.RDB$PAGE_TYPE == pag_pointer)
-				relation->rel_pointer_page = Y.RDB$PAGE_NUMBER;
+				arelation->rel_pointer_page = Y.RDB$PAGE_NUMBER;
 			if (Y.RDB$PAGE_TYPE == pag_root)
-				relation->rel_index_root = Y.RDB$PAGE_NUMBER;
+				arelation->rel_index_root = Y.RDB$PAGE_NUMBER;
 		END_FOR;
 		ON_ERROR
 			dba_full_exit(FINI_ERROR, tddba);
 		END_ERROR
 		if (sw_index)
 		FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request3)
-			Y IN RDB$INDICES WITH Y.RDB$RELATION_NAME EQ relation->rel_name
+			Y IN RDB$INDICES WITH Y.RDB$RELATION_NAME EQ arelation->rel_name
 				SORTED BY DESC Y.RDB$INDEX_NAME 
             if (Y.RDB$INDEX_INACTIVE)
 				  continue;
-			index = (IDX) ALLOC(sizeof(struct idx));
-			index->idx_next = relation->rel_indexes;
-			relation->rel_indexes = index;
-			strcpy(index->idx_name, Y.RDB$INDEX_NAME);
-			truncate_name(index->idx_name);
-			index->idx_id = Y.RDB$INDEX_ID - 1;
+			idx* aindex = (idx*) ALLOC(sizeof(idx));
+			aindex->idx_next = arelation->rel_indexes;
+			arelation->rel_indexes = aindex;
+			strcpy(aindex->idx_name, Y.RDB$INDEX_NAME);
+			truncate_name(aindex->idx_name);
+			aindex->idx_id = Y.RDB$INDEX_ID - 1;
         END_FOR;
 		ON_ERROR
 			dba_full_exit(FINI_ERROR, tddba);
@@ -544,10 +531,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	FPRINTF(sw_outfile, "\nAnalyzing database pages ...\n\n");
 
+	dba_rel* relation;
 	for (relation = tddba->relations; relation; relation = relation->rel_next) {
 		if (sw_data)
 			analyze_data(relation);
-		for (index = relation->rel_indexes; index; index = index->idx_next)
+		for (idx* index = relation->rel_indexes; index; index = index->idx_next)
 			analyze_index(relation, index);
 	}
 
@@ -560,7 +548,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			FPRINTF(sw_outfile,
 					"    Primary pointer page: %ld, Index root page: %ld\n",
 					relation->rel_pointer_page, relation->rel_index_root);
-			average =
+			const double average =
 				(relation->rel_data_pages) ? (double) relation->
 				rel_total_space * 100 / ((double) relation->rel_data_pages *
 										 (tddba->page_size - DPG_SIZE)) : 0;
@@ -571,14 +559,15 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			print_distribution("\t", relation->rel_fill_distribution);
 		}
 		FPRINTF(sw_outfile, "\n");
-		for (index = relation->rel_indexes; index; index = index->idx_next) {
+		for (idx* index = relation->rel_indexes; index; index = index->idx_next)
+		{
 			FPRINTF(sw_outfile, "    Index %s (%d)\n", index->idx_name,
 					index->idx_id);
 			FPRINTF(sw_outfile,
 					"\tDepth: %d, leaf buckets: %ld, nodes: %ld\n",
 					index->idx_depth, index->idx_leaf_buckets,
 					index->idx_nodes);
-			average =
+			const double average =
 				(index->idx_nodes) ? index->idx_data_length /
 				index->idx_nodes : 0;
 			FPRINTF(sw_outfile,
@@ -597,7 +586,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 }
 
 
-static SCHAR *alloc( SLONG size)
+static char* alloc( SLONG size)
 {
 /**************************************
  *
@@ -609,17 +598,17 @@ static SCHAR *alloc( SLONG size)
  *	Allocate and zero a piece of memory.
  *
  **************************************/
-	SCHAR *block, *p;
-	block = p = (SCHAR*) gds__alloc(size);
-	do
+	char* const block = (char*) gds__alloc(size);
+	char* p = block;
+	do {
 		*p++ = 0;
-	while (--size);
+	} while (--size);
 
 	return block;
 }
 
 
-static void analyze_data( REL relation)
+static void analyze_data( dba_rel* relation)
 {
 /**************************************
  *
@@ -631,23 +620,22 @@ static void analyze_data( REL relation)
  *	Analyze data pages associated with relation.
  *
  **************************************/
-	PPG pointer_page;
-	SLONG next_pp, *ptr, *end;
-	TDBA tddba;
+	tdba* tddba = GET_THREAD_DATA;
 
-	tddba = GET_THREAD_DATA;
+	pointer_page* ptr_page = (pointer_page*) tddba->buffer1;
 
-	pointer_page = (PPG) tddba->buffer1;
-
-	for (next_pp = relation->rel_pointer_page; next_pp;
-		 next_pp = pointer_page->ppg_next) {
-		move((SCHAR*) db_read(next_pp), (SCHAR*) pointer_page, tddba->page_size);
-		for (ptr = pointer_page->ppg_page, end =
-			 ptr + pointer_page->ppg_count; ptr < end; ptr++) {
+	for (SLONG next_pp = relation->rel_pointer_page; next_pp;
+		 next_pp = ptr_page->ppg_next)
+	{
+		move((const SCHAR*) db_read(next_pp), (SCHAR*) ptr_page, tddba->page_size);
+		const SLONG* ptr = ptr_page->ppg_page;
+		for (const SLONG* const end =
+			 ptr + ptr_page->ppg_count; ptr < end; ptr++)
+		{
 			++relation->rel_slots;
 			if (*ptr) {
 				++relation->rel_data_pages;
-				if (!analyze_data_page(relation, (DPG) db_read(*ptr)))
+				if (!analyze_data_page(relation, (const data_page*) db_read(*ptr)))
 					FPRINTF(tddba->sw_outfile,
 							"    Expected data on page %ld\n", *ptr);
 			}
@@ -656,7 +644,7 @@ static void analyze_data( REL relation)
 }
 
 
-static bool analyze_data_page( REL relation, DPG page)
+static bool analyze_data_page( dba_rel* relation, const data_page* page)
 {
 /**************************************
  *
@@ -668,24 +656,23 @@ static bool analyze_data_page( REL relation, DPG page)
  *	Analyze space utilization for data page.
  *
  **************************************/
-	SSHORT bucket, space;
-	struct dpg::dpg_repeat *tail, *end;
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	if (page->dpg_header.pag_type != pag_data)
 		return false;
 
-	space = page->dpg_count * sizeof(struct dpg::dpg_repeat);
+	SSHORT space = page->dpg_count * sizeof(data_page::dpg_repeat);
 
-	for (tail = page->dpg_rpt, end = tail + page->dpg_count; tail < end;
+	const data_page::dpg_repeat* tail = page->dpg_rpt;
+	for (const data_page::dpg_repeat* const end = tail + page->dpg_count; tail < end;
 		 tail++)
+	{
 		if (tail->dpg_offset && tail->dpg_length)
 			space += tail->dpg_length;
+	}
 
 	relation->rel_total_space += space;
-	bucket = (space * BUCKETS) / (tddba->page_size - DPG_SIZE);
+	SSHORT bucket = (space * BUCKETS) / (tddba->page_size - DPG_SIZE);
 
 	if (bucket == BUCKETS)
 		--bucket;
@@ -696,7 +683,7 @@ static bool analyze_data_page( REL relation, DPG page)
 }
 
 
-static void analyze_index( REL relation, IDX index)
+static void analyze_index( dba_rel* relation, idx* index)
 {
 /**************************************
  *
@@ -707,25 +694,21 @@ static void analyze_index( REL relation, IDX index)
  * Functional description
  *
  **************************************/
-	BTR bucket;
-	IRT index_root;
-	BTN node;
 	SSHORT n, space, duplicates, key_length, l, page_count;
-	bool dup;
 	UCHAR key[256], *p, *q;
-	SLONG number, page, prior_page, right_sibling, node_count,
-		node_page_count;
-	TDBA tddba;
+	SLONG number, page, prior_page, node_count;
 
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
-	index_root = (IRT) db_read(relation->rel_index_root);
+	irt* index_root = (const irt*) db_read(relation->rel_index_root);
 
 	if (index_root->irt_count <= index->idx_id ||
 		!(page = index_root->irt_rpt[index->idx_id].irt_root))
+	{
 		return;
+	}
 
-	bucket = (BTR) db_read(page);
+	const btree_page* bucket = (const btree_page*) db_read(page);
 
 	if (bucket->btr_length > tddba->page_size) {
 		FPRINTF(tddba->sw_outfile,
@@ -741,15 +724,16 @@ static void analyze_index( REL relation, IDX index)
 	while (bucket->btr_level) {
 		FPRINTF(tddba->sw_outfile, "\nlevel %ld:\n", bucket->btr_level);
 
-		right_sibling = page;
+		SLONG right_sibling = page;
 		move((SCHAR*) bucket->btr_nodes[0].btn_number, (SCHAR*) &page, sizeof(page));
 
 		node_count = 0;
 		prior_page = 0;
 		for (page_count = 0; right_sibling;
-			 right_sibling = bucket->btr_sibling, page_count++) {
+			 right_sibling = bucket->btr_sibling, page_count++)
+		{
 			FPRINTF(tddba->sw_outfile, "page: %ld\n", right_sibling);
-			bucket = (BTR) db_read(right_sibling);
+			bucket = (const btree_page*) db_read(right_sibling);
 
 			if (bucket->btr_left_sibling != prior_page) {
 				FPRINTF(tddba->sw_outfile,
@@ -775,10 +759,11 @@ static void analyze_index( REL relation, IDX index)
 
 			/* count the nodes on page as well */
 
-			node_page_count = 0;
+			SLONG node_page_count = 0;
 			FPRINTF(tddba->sw_outfile, "\nnodes:");
-			for (node = bucket->btr_nodes;;
-				 node = (BTN) (node->btn_data + node->btn_length)) {
+			for (const btn* node = bucket->btr_nodes; true;
+				 node = (btn*) (node->btn_data + node->btn_length))
+			{
 				move((SCHAR*) node->btn_number, (SCHAR*) &number, sizeof(number));
 
 				if (!(node_page_count % 4))
@@ -813,7 +798,8 @@ static void analyze_index( REL relation, IDX index)
 					break;
 
 				if (!node->btn_length && !node->btn_prefix &&
-					(bucket->btr_left_sibling || node > bucket->btr_nodes)) {
+					(bucket->btr_left_sibling || node > bucket->btr_nodes))
+				{
 					FPRINTF(tddba->sw_outfile,
 							"\n***ERROR: node prefix and length 0\n");
 					return;
@@ -836,7 +822,7 @@ static void analyze_index( REL relation, IDX index)
 		FPRINTF(tddba->sw_outfile, "\npage count: %d\n", page_count);
 		FPRINTF(tddba->sw_outfile, "node count: %d\n", node_count);
 
-		bucket = (BTR) db_read(page);
+		bucket = (const btree_page*) db_read(page);
 		if (bucket->btr_length > tddba->page_size) {
 			FPRINTF(tddba->sw_outfile,
 					"\n***ERROR: page size is too large: %ld\n",
@@ -860,9 +846,10 @@ static void analyze_index( REL relation, IDX index)
 			FPRINTF(tddba->sw_outfile, "\n\npage %ld:", page);
 
 		++index->idx_leaf_buckets;
-		node_page_count = 0;
+		SLONG node_page_count = 0;
 		for (node = bucket->btr_nodes;;
-			 node = (BTN) (node->btn_data + node->btn_length)) {
+			 node = (BTN) (node->btn_data + node->btn_length))
+		{
 			move((SCHAR*) node->btn_number, (SCHAR*) &number, sizeof(number));
 
 			if (!(node_page_count % 4))
@@ -898,6 +885,7 @@ static void analyze_index( REL relation, IDX index)
 			++index->idx_nodes;
 			index->idx_data_length += node->btn_length;
 			l = node->btn_length + node->btn_prefix;
+			bool dup;
 			if (node == bucket->btr_nodes)
 				dup = key_equality(key_length, (SCHAR*) key, node);
 			else
@@ -930,8 +918,8 @@ static void analyze_index( REL relation, IDX index)
 
 		if (duplicates > index->idx_max_duplicates)
 			index->idx_max_duplicates = duplicates;
-		space = bucket->btr_length - OFFSETA(BTR, btr_nodes);
-		n = (space * BUCKETS) / (tddba->page_size - OFFSETA(BTR, btr_nodes));
+		space = bucket->btr_length - OFFSETA(btree_page*, btr_nodes);
+		n = (space * BUCKETS) / (tddba->page_size - OFFSETA(btree_page*, btr_nodes));
 		if (n == BUCKETS)
 			--n;
 		++index->idx_fill_distribution[n];
@@ -940,7 +928,7 @@ static void analyze_index( REL relation, IDX index)
 			break;
 		number = page;
 		page = bucket->btr_sibling;
-		bucket = (BTR) db_read(page);
+		bucket = (const btree_page*) db_read(page);
 
 		if (bucket->btr_header.pag_type != pag_index) {
 			FPRINTF(tddba->sw_outfile,
@@ -981,9 +969,8 @@ static void db_error( SLONG status)
  *
  **************************************/
 	TEXT s[128];
-	TDBA tddba;
 
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 					   NULL,
@@ -1002,7 +989,7 @@ static void db_error( SLONG status)
 // CVC: This function was using cast to char* for the first param always
 // and the callers had to cast their char*'s to UCHAR*, too. Since the
 // real parameter is char* and always the usage is char*, I changed signature.
-static FIL db_open(const char* file_name, USHORT file_length)
+static dba_fil* db_open(const char* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -1014,22 +1001,21 @@ static FIL db_open(const char* file_name, USHORT file_length)
  *	Open a database file.
  *
  **************************************/
-	FIL fil;
-	TDBA tddba;
+	dba_fil* fil;
 
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(FIL) ALLOC(sizeof(struct fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(FIL) ALLOC(sizeof(struct fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
@@ -1053,7 +1039,7 @@ static FIL db_open(const char* file_name, USHORT file_length)
 }
 
 
-static PAG db_read( SLONG page_number)
+static const pag* db_read( SLONG page_number)
 {
 /**************************************
  *
@@ -1065,25 +1051,28 @@ static PAG db_read( SLONG page_number)
  *	Read a database page.
  *
  **************************************/
-	SLONG actual_length;
-	FIL fil;
-	TDBA tddba;
-	LARGE_INTEGER liOffset;
+	tdba* tddba = GET_THREAD_DATA;
 
-	tddba = GET_THREAD_DATA;
-
+	dba_fil* fil;
 	for (fil = tddba->files;
 		 page_number > fil->fil_max_page
-		 && fil->fil_next;) fil = fil->fil_next;
+		 && fil->fil_next;)
+	{
+		fil = fil->fil_next;
+	}
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
+	LARGE_INTEGER liOffset;
 	liOffset.QuadPart =
 		UInt32x32To64((DWORD) page_number, (DWORD) tddba->page_size);
 	if (SetFilePointer
 		(fil->fil_desc, (LONG) liOffset.LowPart, &liOffset.HighPart,
 		 FILE_BEGIN) == -1)
+	{
 		db_error(GetLastError());
+	}
 
+	SLONG actual_length;
 	if (!ReadFile(fil->fil_desc, tddba->global_buffer, tddba->page_size,
 					reinterpret_cast<LPDWORD>(&actual_length), NULL)) 
 	{
@@ -1096,11 +1085,10 @@ static PAG db_read( SLONG page_number)
 
 	return tddba->global_buffer;
 }
-#endif
 
+#else
+// now, on non WinNT
 
-
-#ifndef WIN_NT
 static void db_error( int status)
 {
 /**************************************
@@ -1112,10 +1100,7 @@ static void db_error( int status)
  * Functional description
  *
  **************************************/
-	SCHAR *p;
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
+	tdba* tddba = GET_THREAD_DATA;
 
 	/* FIXME: The strerror() function returns the appropriate description
 	   string, or an unknown error message if the error code is unknown.
@@ -1126,6 +1111,7 @@ static void db_error( int status)
 #ifndef VMS
 	FPRINTF(tddba->sw_outfile, "%s\n", strerror(status));
 #else
+	const SCHAR* p;
 	if ((p = strerror(status)) || (p = strerror(EVMSERR, status)))
 		FPRINTF(tddba->sw_outfile, "%s\n", p);
 	else
@@ -1139,7 +1125,7 @@ static void db_error( int status)
 // CVC: This function was using cast to char* for the first param always
 // and the callers had to cast their char*'s to UCHAR*, too. Since the
 // real parameter is char* and always the usage is char*, I changed signature.
-static FIL db_open(const char* file_name, USHORT file_length)
+static dba_fil* db_open(const char* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -1152,22 +1138,20 @@ static FIL db_open(const char* file_name, USHORT file_length)
  *      Put the file on an ordered list.
  *
  **************************************/
-	FIL fil;
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
+	dba_fil* fil;
+	tdba* tddba = GET_THREAD_DATA;
 
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(FIL) ALLOC(sizeof(struct fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(FIL) ALLOC(sizeof(struct fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
@@ -1184,7 +1168,7 @@ static FIL db_open(const char* file_name, USHORT file_length)
 }
 
 
-static PAG db_read( SLONG page_number)
+static const pag* db_read( SLONG page_number)
 {
 /**************************************
  *
@@ -1196,26 +1180,25 @@ static PAG db_read( SLONG page_number)
  *	Read a database page.
  *
  **************************************/
-	SCHAR *p;
-	SSHORT length, l;
-	FIL fil;
-	TDBA tddba;
-	UINT64 offset;
+	tdba* tddba = GET_THREAD_DATA;
 
-	tddba = GET_THREAD_DATA;
-
+	dba_fil* fil;
 	for (fil = tddba->files;
 		 page_number > fil->fil_max_page
-		 && fil->fil_next;) fil = fil->fil_next;
+		 && fil->fil_next;)
+	{
+		fil = fil->fil_next;
+	}
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
-	offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
+	const UINT64 offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
 	if (lseek (fil->fil_desc, offset, 0) == -1)
 		db_error(errno);
 
-	for (p = (SCHAR *) tddba->global_buffer, length = tddba->page_size;
-		 length > 0;) {
-		l = read(fil->fil_desc, p, length);
+	SSHORT length = tddba->page_size;
+	for (SCHAR* p = (SCHAR *) tddba->global_buffer; length > 0;)
+	{
+		const SSHORT l = read(fil->fil_desc, p, length);
 		if (l < 0)
 			db_error(errno);
 		if (!l) {
@@ -1231,7 +1214,7 @@ static PAG db_read( SLONG page_number)
 #endif
 
 
-static bool key_equality( SSHORT length, SCHAR * key, BTN node)
+static bool key_equality( SSHORT length, const SCHAR* key, const btn* node)
 {
 /**************************************
  *
@@ -1243,28 +1226,26 @@ static bool key_equality( SSHORT length, SCHAR * key, BTN node)
  *	Check a B-tree node against a key for equality.
  *
  **************************************/
-	SSHORT l;
-	SCHAR *p;
-
 	if (length != node->btn_length + node->btn_prefix)
 		return false;
 
-	if (!(l = node->btn_length))
+	SSHORT l = node->btn_length;
+	if (!l)
 		return true;
 
-	p = (SCHAR *) node->btn_data;
+	const SCHAR* p = (SCHAR *) node->btn_data;
 	key += node->btn_prefix;
 
-	do
+	do {
 		if (*p++ != *key++)
 			return false;
-	while (--l);
+	} while (--l);
 
 	return true;
 }
 
 
-static void move( SCHAR * from, SCHAR * to, SSHORT length)
+static void move( const SCHAR* from, SCHAR* to, SSHORT length)
 {
 /**************************************
  *
@@ -1276,14 +1257,13 @@ static void move( SCHAR * from, SCHAR * to, SSHORT length)
  *	Move some stuff.
  *
  **************************************/
-
-	do
+	do {
 		*to++ = *from++;
-	while (--length);
+	} while (--length);
 }
 
 
-static void print_distribution( SCHAR * prefix, SLONG * vector)
+static void print_distribution( const SCHAR* prefix, const SLONG* vector)
 {
 /**************************************
  *
@@ -1295,12 +1275,9 @@ static void print_distribution( SCHAR * prefix, SLONG * vector)
  *	Print distribution as percentages.
  *
  **************************************/
-	SSHORT n;
-	TDBA tddba;
+	tdba* tddba = GET_THREAD_DATA;
 
-	tddba = GET_THREAD_DATA;
-
-	for (n = 0; n < BUCKETS; n++) {
+	for (SSHORT n = 0; n < BUCKETS; n++) {
 		FPRINTF(tddba->sw_outfile, "%s%2d - %2d%% = %ld\n",
 				prefix,
 				n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
@@ -1308,7 +1285,7 @@ static void print_distribution( SCHAR * prefix, SLONG * vector)
 }
 
 
-static void print_header( HDR header)
+static void print_header( const hdr* header)
 {
 /**************************************
  *
@@ -1320,15 +1297,8 @@ static void print_header( HDR header)
  *	Print database header page.
  *
  **************************************/
-	UCHAR *p, *end;
-	SLONG number;
-	struct tm time;
-	SSHORT flags;
-	IB_FILE *sw_outfile;
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
-	sw_outfile = tddba->sw_outfile;
+	tdba* tddba = GET_THREAD_DATA;
+	IB_FILE* sw_outfile = tddba->sw_outfile;
 
 	FPRINTF(sw_outfile, "Database header page information:\n");
 	FPRINTF(sw_outfile, "    Page size\t\t%d\n", header->hdr_page_size);
@@ -1355,12 +1325,14 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 			header->hdr_implementation);
 	FPRINTF(sw_outfile, "    Shadow count\t%ld\n", header->hdr_shadow_count);
 
+	tm time;
 	isc_decode_date((ISC_QUAD*)header->hdr_creation_date, &time);
 	FPRINTF(sw_outfile, "    Creation date\t%s %d, %d %d:%02d:%02d\n",
 			FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			time.tm_hour, time.tm_min, time.tm_sec);
 
-	if (flags = header->hdr_flags) {
+	const SSHORT flags = header->hdr_flags;
+	if (flags) {
 		FPRINTF(sw_outfile, "    Attributes\t\t");
 		if (flags & hdr_force_write) {
 			FPRINTF(sw_outfile, "force write");
@@ -1374,8 +1346,12 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 
 	FPRINTF(sw_outfile, "\n    Variable header data:\n");
 
-	for (p = header->hdr_data, end = p + header->hdr_page_size;
+	const UCHAR* p = header->hdr_data;
+	for (const UCHAR* const end = p + header->hdr_page_size;
 		 p < end && *p != HDR_end; p += 2 + p[1])
+	{
+		SLONG number;
+		
 		switch (*p) {
 		case HDR_root_file_name:
 			FPRINTF(sw_outfile, "\tRoot file name: %*s\n", p[1], p + 2);
@@ -1412,12 +1388,14 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 			FPRINTF(sw_outfile, "\tUnrecognized option %d, length %d\n", p[0],
 					p[1]);
 		}
+	}
 
 	FPRINTF(sw_outfile, "\t*END*\n");
 }
 
 
-static void truncate_name( SCHAR * string)
+// Warning: this function stops at the first blank.
+static void truncate_name( SCHAR* string)
 {
 /**************************************
  *
@@ -1436,3 +1414,4 @@ static void truncate_name( SCHAR * string)
 			return;
 		}
 }
+

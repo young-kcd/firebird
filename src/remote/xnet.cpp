@@ -1844,7 +1844,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 			if ((ULONG) xdrs->x_handy == xch->xch_size) {
 
 				THREAD_EXIT;
-				while(!xnet_shutdown) {
+				while (!xnet_shutdown) {
 
 					wait_result = WaitForSingleObject(xcc->xcc_event_send_channel_empted,
 													  XNET_SEND_WAIT_TIMEOUT);

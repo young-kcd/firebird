@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.38 2004-01-28 07:50:27 robocop Exp $
+//	$Id: cob.cpp,v 1.39 2004-02-02 11:01:26 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -1665,7 +1665,7 @@ static void gen_database( const act* action)
 	gpre_sym* cur_stmt;
 	gpre_sym* dup;
 	gpre_prc* procedure;
-	LLS stack_ptr;
+	gpre_lls* stack_ptr;
 
 	if (global_first_flag)
 		return;
@@ -2508,7 +2508,7 @@ static void gen_event_wait( const act* action)
 	gpre_sym* event_name;
 	gpre_sym* stack_name;
 	DBB database;
-	LLS stack_ptr;
+	gpre_lls* stack_ptr;
 	const act* event_action;
 	SSHORT column;
 	int ident;

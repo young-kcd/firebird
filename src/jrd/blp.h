@@ -20,8 +20,8 @@
  */
 static const struct
 {
-	const char *blr_string;
-	const UCHAR *blr_operators;
+	const char* blr_string;
+	const UCHAR* blr_operators;
 } blr_table[] =
 {
 	{NULL, NULL},

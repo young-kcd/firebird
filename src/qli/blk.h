@@ -24,32 +24,32 @@
 BLKDEF (type_frb, frb, 0)
 BLKDEF (type_hnk, hnk, 0)
 BLKDEF (type_plb, plb, 0)
-BLKDEF (type_vec, vec, sizeof (((VEC) NULL)->vec_object[0]))
+BLKDEF (type_vec, qli_vec, sizeof (((qli_vec*) NULL)->vec_object[0]))
 BLKDEF (type_dbb, dbb, 1)
 BLKDEF (type_rel, qli_rel, 0)
 BLKDEF (type_fld, qli_fld, 1)
-BLKDEF (type_vcl, vcl, sizeof (((VCL) NULL)->vcl_long[0]))
-BLKDEF (type_req, qli_req, 0)				/* Request block */
-BLKDEF (type_nod, qli_nod, sizeof(qli_nod*)) // sizeof (((QLI_NOD) NULL)->nod_arg[0]))
+BLKDEF (type_vcl, qli_vcl, sizeof (((qli_vcl*) NULL)->vcl_long[0]))
+BLKDEF (type_req, qli_req, 0)			// Request block
+BLKDEF (type_nod, qli_nod, sizeof(qli_nod*)) // sizeof (((qli_nod*) NULL)->nod_arg[0]))
 BLKDEF (type_syn, qli_nod, sizeof (((SYN) NULL)->syn_arg[0]))
-BLKDEF (type_lls, lls, 0)				/* linked list stack */
-BLKDEF (type_str, str, 1)				/* random string block */
-BLKDEF (type_tok, tok, 1)				/* token block */
-BLKDEF (type_sym, sym, 1)				/* symbol block */
-BLKDEF (type_msg, qli_msg, 0)				/* Message block */
-BLKDEF (type_nam, nam, 1)				/* Name node */
-BLKDEF (type_ctx, qli_ctx, 0)				/* Context block */
-BLKDEF (type_con, con, 1)				/* Constant block */
-BLKDEF (type_itm, itm, 0)				/* Print item */
-BLKDEF (type_par, par, 0)				/* Parameter block */
-BLKDEF (type_line, line, 1)				/* Input line block */
+BLKDEF (type_lls, qli_lls, 0)			// linked list stack
+BLKDEF (type_str, qli_str, 1)			// random string block
+BLKDEF (type_tok, qli_tok, 1)			// token block
+BLKDEF (type_sym, qli_symbol, 1)		// symbol block
+BLKDEF (type_msg, qli_msg, 0)			// Message block
+BLKDEF (type_nam, nam, 1)				// Name node
+BLKDEF (type_ctx, qli_ctx, 0)			// Context block
+BLKDEF (type_con, qli_const, 1)			// Constant block
+BLKDEF (type_itm, qli_print_item, 0)	// Print item
+BLKDEF (type_par, qli_par, 0)			// Parameter block
+BLKDEF (type_line, qli_line, 1)			// Input line block
 BLKDEF (type_brk, qli_brk, 0) 
-BLKDEF (type_rpt, rpt, 0)
+BLKDEF (type_rpt, qli_rpt, 0)
 BLKDEF (type_pic, pics, 0)
-BLKDEF (type_prt, prt, 0)
+BLKDEF (type_prt, qli_prt, 0)
 BLKDEF (type_map, qli_map, 0)
 BLKDEF (type_qpr, qpr, 0)
 BLKDEF (type_qfn, qfn, 0)
 BLKDEF (type_qfl, qfl, 0)
-BLKDEF (type_fun, fun, sizeof(DSC)) // sizeof (((FUN) NULL)->fun_arg[0]))
-BLKDEF (type_rlb, rlb, 0)				/* Request language block */
+BLKDEF (type_fun, qli_fun, sizeof(dsc)) // sizeof (((FUN) NULL)->fun_arg[0]))
+BLKDEF (type_rlb, qli_rlb, 0)			// Request language block

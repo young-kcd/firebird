@@ -2145,18 +2145,25 @@ void DYN_define_index(GBL		gbl,
 		}
 
 		DYN_rundown_request(request, -1);
-		if (id == drq_l_lfield)
+		switch (id)
+		{
+		case drq_l_lfield:
 			DYN_error_punt(true, 15, NULL, NULL, NULL, NULL, NULL);
-		/* msg 15: "STORE RDB$INDICES failed" */
-		else if (id == drq_l_unq_idx)
+			/* msg 15: "STORE RDB$INDICES failed" */
+			break;
+		case drq_l_unq_idx:
 			DYN_error_punt(true, 17, NULL, NULL, NULL, NULL, NULL);
-		/* msg 17: "Primary Key field lookup failed" */
-		else if (id == drq_l_view_idx)
+			/* msg 17: "Primary Key field lookup failed" */
+			break;
+		case drq_l_view_idx:
 			DYN_error_punt(true, 180, NULL, NULL, NULL, NULL, NULL);
-		/* msg 180: "Table Name lookup failed" */
-		else
+			/* msg 180: "Table Name lookup failed" */
+			break;
+		default:
 			DYN_error_punt(true, 19, NULL, NULL, NULL, NULL, NULL);
-		/* msg 19: "Primary Key lookup failed" */
+			/* msg 19: "Primary Key lookup failed" */
+			break;
+		}
 	}
 }
 

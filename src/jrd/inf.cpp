@@ -907,7 +907,9 @@ int INF_request_info(const jrd_req* request,
 			}
 			else if ((request->req_operation == jrd_req::req_return) &&
 					 (request->req_flags & req_stall))
+			{
 				state = isc_info_req_sql_stall;
+			}
 			if (!(request->req_flags & req_active))
 				state = isc_info_req_inactive;
 			length = INF_convert(state, buffer_ptr);

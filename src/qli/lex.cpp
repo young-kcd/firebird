@@ -85,7 +85,7 @@ static void retchar();
 static bool scan_number(SSHORT, TEXT **);
 static int skip_white(void);
 
-static LLS QLI_statements;
+static qli_lls* QLI_statements;
 static int QLI_position;
 static IB_FILE *input_file = NULL, *trace_file = NULL;
 static char trace_file_name[MAXPATHLEN];
@@ -203,7 +203,7 @@ void LEX_edit( SLONG start, SLONG stop)
 }
 
 
-TOK LEX_edit_string(void)
+qli_tok* LEX_edit_string(void)
 {
 /**************************************
  *
@@ -216,7 +216,7 @@ TOK LEX_edit_string(void)
  *
  **************************************/
 	SSHORT c;
-	TOK token = QLI_token;
+	qli_tok* token = QLI_token;
 
 	do {
 		c = skip_white();
@@ -265,7 +265,7 @@ TOK LEX_edit_string(void)
 }
 
 
-TOK LEX_filename(void)
+qli_tok* LEX_filename(void)
 {
 /**************************************
  *
@@ -279,7 +279,7 @@ TOK LEX_filename(void)
  **************************************/
 	SSHORT c;
 
-	TOK token = QLI_token;
+	qli_tok* token = QLI_token;
 
 	do {
 		c = skip_white();
@@ -556,14 +556,13 @@ void LEX_init(void)
  *	scratch trace file to keep all input.
  *
  **************************************/
-
 	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
 	if (trace_file == (IB_FILE *) - 1)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
 
-	QLI_token = (TOK) ALLOCPV(type_tok, MAXSYMLEN);
+	QLI_token = (qli_tok*) ALLOCPV(type_tok, MAXSYMLEN);
 
-	QLI_line = (LINE) ALLOCPV(type_line, 0);
+	QLI_line = (qli_line*) ALLOCPV(type_line, 0);
 	QLI_line->line_size = sizeof(QLI_line->line_data);
 	QLI_line->line_ptr = QLI_line->line_data;
 	QLI_line->line_type = line_stdin;
@@ -588,7 +587,7 @@ void LEX_mark_statement(void)
  *	the statement stack.
  *
  **************************************/
-	LINE temp;
+	qli_line* temp;
 
 	for (temp = QLI_line;
 		 temp->line_next && QLI_statements;
@@ -598,7 +597,7 @@ void LEX_mark_statement(void)
 			return;
 	}
 
-	LLS statement = (LLS) ALLOCP(type_lls);
+	qli_lls* statement = (qli_lls*) ALLOCP(type_lls);
 	statement->lls_object = (BLK) temp->line_position;
 	statement->lls_next = QLI_statements;
 	QLI_statements = statement;
@@ -618,7 +617,7 @@ void LEX_pop_line(void)
  *	and release the line block.
  *
  **************************************/
-	LINE temp = QLI_line;
+	qli_line* temp = QLI_line;
 	QLI_line = temp->line_next;
 
 	if (temp->line_type == line_blob)
@@ -643,7 +642,7 @@ void LEX_procedure( DBB database, FRBRD *blob)
  *	stack;
  *
  **************************************/
-	LINE temp = (LINE) ALLOCPV(type_line, QLI_token->tok_length);
+	qli_line* temp = (qli_line*) ALLOCPV(type_line, QLI_token->tok_length);
 	temp->line_source = blob;
 	strncpy(temp->line_source_name, QLI_token->tok_string,
 			QLI_token->tok_length);
@@ -685,7 +684,7 @@ bool LEX_push_file(const TEXT* filename,
 		}
 	}
 
-	LINE line = (LINE) ALLOCPV(type_line, strlen(filename));
+	qli_line* line = (qli_line*) ALLOCPV(type_line, strlen(filename));
 	line->line_type = line_file;
 	line->line_source = (FRBRD *) file;
 	line->line_size = sizeof(line->line_data);
@@ -711,7 +710,7 @@ bool LEX_push_string(const TEXT* const string)
  *	Push a simple string on as an input source.
  *
  **************************************/
-	LINE line = (LINE) ALLOCPV(type_line, 0);
+	qli_line* line = (qli_line*) ALLOCPV(type_line, 0);
 	line->line_type = line_string;
 	line->line_size = strlen(string);
 	line->line_ptr = line->line_data;
@@ -791,7 +790,7 @@ void LEX_real(void)
 }
 
 
-LLS LEX_statement_list(void)
+qli_lls* LEX_statement_list(void)
 {
 /**************************************
  *
@@ -810,7 +809,7 @@ LLS LEX_statement_list(void)
 }
 
 
-TOK LEX_token(void)
+qli_tok* LEX_token(void)
 {
 /**************************************
  *
@@ -824,7 +823,7 @@ TOK LEX_token(void)
  **************************************/
 	SSHORT c;
 
-	TOK token = QLI_token;
+	qli_tok* token = QLI_token;
 	TEXT* p = token->tok_string;
 
 // Get next significant byte.  If it's the last EOL of a blob, throw it away
@@ -833,7 +832,7 @@ TOK LEX_token(void)
 		c = skip_white();
 		if (c != '\n' || QLI_line->line_type != line_blob)
 			break;
-		LINE prior = QLI_line;
+		qli_line* prior = QLI_line;
 		next_line(true);
 		if (prior == QLI_line)
 			break;
@@ -920,7 +919,7 @@ TOK LEX_token(void)
 		return token;
 	}
 
-    SYM symbol = HSH_lookup(token->tok_string, token->tok_length);
+    qli_symbol* symbol = HSH_lookup(token->tok_string, token->tok_length);
 	token->tok_symbol = symbol;
 	if (symbol && symbol->sym_type == SYM_keyword)
 		token->tok_keyword = (KWWORDS) symbol->sym_keyword;

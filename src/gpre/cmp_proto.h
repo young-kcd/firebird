@@ -26,10 +26,10 @@
 
 void	CMP_check(gpre_req*, SSHORT);
 void	CMP_compile_request(gpre_req*);
-void	CMP_external_field(gpre_req*, gpre_fld*);
+void	CMP_external_field(gpre_req*, const gpre_fld*);
 void	CMP_init(void);
 USHORT	CMP_next_ident(void);
-void	CMP_stuff_symbol(gpre_req*, gpre_sym*);
+void	CMP_stuff_symbol(gpre_req*, const gpre_sym*);
 void	CMP_t_start(gpre_tra*);
 
 #endif // GPRE_CMP_PROTO_H

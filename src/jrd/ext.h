@@ -26,7 +26,7 @@
 
 /* External file access block */
 
-class ext : public pool_alloc_rpt<SCHAR, type_ext>
+class external_file : public pool_alloc_rpt<SCHAR, type_ext>
 {
     public:
 	fmt* ext_format;			/* External format */
@@ -46,7 +46,7 @@ class ext : public pool_alloc_rpt<SCHAR, type_ext>
 	UCHAR ext_dbkey[8];			/* DBKEY */
 	UCHAR ext_filename[1];
 };
-typedef ext *EXT;
+typedef external_file* EXT;
 
 #define EXT_opened	1			/* File has been opened */
 #define EXT_eof		2			/* Positioned at EOF */
@@ -63,4 +63,5 @@ typedef struct irsb_ext {
 #define rpb_ext_isi	rpb_f_page
 #define rpb_ext_dbkey	rpb_b_page
 
-#endif /* JRD_EXT_H */
+#endif // JRD_EXT_H
+

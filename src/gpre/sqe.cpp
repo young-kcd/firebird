@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.27 2004-01-28 07:50:27 robocop Exp $
+//	$Id: sqe.cpp,v 1.28 2004-02-02 11:01:27 robocop Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -338,7 +338,6 @@ GPRE_NOD SQE_field(gpre_req* request,
 	gpre_rel* relation;
 	gpre_prc* procedure;
 	TOK f_token;
-	LLS upper_dim, lower_dim;
 	int count = 0;
 	gpre_req* slice_req;
 	slc* slice;
@@ -349,7 +348,8 @@ GPRE_NOD SQE_field(gpre_req* request,
 
 	assert_IS_REQ(request);
 
-	upper_dim = lower_dim = NULL;
+	gpre_lls* upper_dim = NULL;
+	gpre_lls* lower_dim = NULL;
 	hold_token.tok_type = tok_t(0);
 
 	if (aster_ok && MSC_match(KW_ASTERISK)) {
@@ -668,7 +668,7 @@ GPRE_NOD SQE_list(pfn_SQE_list_cb routine,
 				  gpre_req* request,
 				  bool aster_ok)
 {
-	LLS stack;
+	gpre_lls* stack;
 	GPRE_NOD list, *ptr;
 	int count;
 
@@ -1055,7 +1055,7 @@ gpre_rse* SQE_select(gpre_req* request,
 	gpre_rse* rse1 = NULL;
 	gpre_rse* rse2 = NULL;
 	GPRE_NOD node;
-	LLS context_stack = NULL;
+	gpre_lls* context_stack = NULL;
 	gpre_ctx* context;
 	map* new_map;
 	map* old_map;
@@ -1140,7 +1140,6 @@ GPRE_NOD SQE_value(gpre_req* request,
 				   bool * bool_flag)
 {
 	GPRE_NOD node, arg;
-	nod_t operator_;
 	USHORT local_count;
 	bool local_flag;
 
@@ -1163,19 +1162,20 @@ GPRE_NOD SQE_value(gpre_req* request,
 		return node;
 	}
 
+	nod_t nod_type;
 	while (true) {
 		if (MSC_match(KW_PLUS))
-			operator_ = nod_plus;
+			nod_type = nod_plus;
 		else if (MSC_match(KW_MINUS))
-			operator_ = nod_minus;
+			nod_type = nod_minus;
 		else if (MSC_match(KW_OR1))
-			operator_ = nod_concatenate;
+			nod_type = nod_concatenate;
 		else {
 			par_terminating_parens(paren_count, &local_count);
 			return node;
 		}
 		arg = node;
-		node = MSC_binary(operator_, arg,
+		node = MSC_binary(nod_type, arg,
 						  par_multiply(request, false, paren_count, bool_flag));
 	}
 }
@@ -2030,28 +2030,28 @@ static gpre_ctx* par_join_clause( gpre_req* request, gpre_ctx* context1)
 
 static NOD_T par_join_type(void)
 {
-	NOD_T operator_;
+	NOD_T nod_type;
 
 	if (MSC_match(KW_INNER))
-		operator_ = nod_join_inner;
+		nod_type = nod_join_inner;
 	else if (MSC_match(KW_LEFT))
-		operator_ = nod_join_left;
+		nod_type = nod_join_left;
 	else if (MSC_match(KW_RIGHT))
-		operator_ = nod_join_right;
+		nod_type = nod_join_right;
 	else if (MSC_match(KW_FULL))
-		operator_ = nod_join_full;
+		nod_type = nod_join_full;
 	else if (MSC_match(KW_JOIN))
 		return nod_join_inner;
 	else
 		return (NOD_T) 0;
 
-	if (operator_ != nod_join_inner)
+	if (nod_type != nod_join_inner)
 		MSC_match(KW_OUTER);
 
 	if (!MSC_match(KW_JOIN))
 		CPR_s_error("JOIN");
 
-	return operator_;
+	return nod_type;
 }
 
 
@@ -2066,7 +2066,6 @@ static GPRE_NOD par_multiply(gpre_req* request,
 							 bool * bool_flag)
 {
 	GPRE_NOD node, arg;
-	enum nod_t operator_;
 
 	assert_IS_REQ(request);
 	node = par_primitive_value(request, aster_ok, paren_count, bool_flag);
@@ -2076,16 +2075,17 @@ static GPRE_NOD par_multiply(gpre_req* request,
 	if (token.tok_keyword == KW_COLLATE)
 		return par_collate(request, node);
 
+	enum nod_t nod_type;
 	while (true) {
 		if (MSC_match(KW_ASTERISK))
-			operator_ = nod_times;
+			nod_type = nod_times;
 		else if (MSC_match(KW_SLASH))
-			operator_ = nod_divide;
+			nod_type = nod_divide;
 		else
 			return node;
 		arg = node;
 		node =
-			MSC_binary(operator_, arg,
+			MSC_binary(nod_type, arg,
 					   par_primitive_value(request, false, paren_count,
 										   bool_flag));
 	}
@@ -2161,7 +2161,6 @@ static void par_order(gpre_req* request,
 					  bool view_flag)
 {
 	GPRE_NOD sort, *ptr, values;
-	LLS items, directions;
 	map* request_map;
 	int count, direction;
 	USHORT i;
@@ -2185,7 +2184,8 @@ static void par_order(gpre_req* request,
 		PAR_error("sort clause not allowed in a view definition");
 
 	MSC_match(KW_BY);
-	items = directions = NULL;
+	gpre_lls* items = NULL;
+	gpre_lls* directions = NULL;
 	count = direction = 0;
 	values = select->rse_fields;
 
@@ -2237,28 +2237,28 @@ static void par_order(gpre_req* request,
 
 static GPRE_NOD par_plan( gpre_req* request)
 {
-	NOD_T operator_;
 	GPRE_NOD plan_expression;
 
 	assert_IS_REQ(request);
 
 //  parse the join type 
 
+	NOD_T nod_type;
 	if (MSC_match(KW_JOIN))
-		operator_ = nod_join;
+		nod_type = nod_join;
 	else if (MSC_match(KW_MERGE))
-		operator_ = nod_merge;
+		nod_type = nod_merge;
 	else if (MSC_match(KW_SORT) && MSC_match(KW_MERGE))
-		operator_ = nod_merge;
+		nod_type = nod_merge;
 	else
-		operator_ = nod_join;
+		nod_type = nod_join;
 
 //  make up the plan expression node 
 
 	plan_expression = MSC_node(nod_plan_expr, 2);
 
-	if (operator_ != nod_join)
-		plan_expression->nod_arg[0] = MSC_node(operator_, 0);
+	if (nod_type != nod_join)
+		plan_expression->nod_arg[0] = MSC_node(nod_type, 0);
 
 //  parse the plan items at this level 
 
@@ -2283,7 +2283,7 @@ static GPRE_NOD par_plan_item(gpre_req* request,
 							  USHORT * paren_count,
 							  bool * bool_flag)
 {
-	LLS stack = NULL;
+	gpre_lls* stack = NULL;
 	int count;
 	GPRE_NOD plan_item, alias_list, access_type, index_list, *ptr;
 	gpre_ctx* context;
@@ -2708,7 +2708,7 @@ static gpre_rse* par_rse(gpre_req* request,
 	int i;
 	int count = 0;
 	int old_count;
-	LLS stack = NULL;
+	gpre_lls* stack = NULL;
 
 	assert_IS_REQ(request);
 	assert_IS_NOD(fields);

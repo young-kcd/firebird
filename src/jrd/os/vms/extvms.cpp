@@ -155,7 +155,6 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 	EXT file;
 	IDX *index;
 	STR string;
-	const fmt* format;
 	UCHAR index_buffer[MAX_KEYS * sizeof(IDX)];
 	struct XABSUM summary;
 	struct XABKEY *key, *end, **ptr, keys[MAX_KEYS];
@@ -169,9 +168,9 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
    format. */
 
 	l = strlen(file_name);
-	relation->rel_file = file = FB_NEW_RPT(dbb->dbb_permanent, l) ext();
+	relation->rel_file = file = FB_NEW_RPT(dbb->dbb_permanent, l) external_file();
 	strcpy(file->ext_filename, file_name);
-	format = file->ext_format = MET_format(tdbb, relation, 0);
+	const fmt* format = file->ext_format = MET_format(tdbb, relation, 0);
 	expand_format(format, MET_current(tdbb, relation));
 
 /* Groan -- time to check in with RMS.  We're going to start
@@ -305,9 +304,7 @@ int EXT_get(Rsb* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	TDBB tdbb;
-
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	if (tdbb->tdbb_request->req_flags & req_abort)
 		return FALSE;
@@ -344,7 +341,6 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
 	EXT file;
 	jrd_req* request;
 	REC record;
-	const fmt* format;
 	int offset, status;
 
 	if (old_rpb->rpb_stream_flags & RPB_s_refetch)
@@ -353,7 +349,7 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
 	record = new_rpb->rpb_record;
 	relation = new_rpb->rpb_relation;
 	file = relation->rel_file;
-	format = record->rec_format;
+	const fmt* format = record->rec_format;
 	set_missing(old_rpb->rpb_relation, record);
 	offset = FLAG_BYTES(format->fmt_count);
 
@@ -390,7 +386,6 @@ EXT_open(Rsb* rsb)
 	jrd_req* request;
 	RPB *rpb;
 	REC record;
-	const fmt* format;
 	EXT file;
 
 	tdbb = GET_THREAD_DATA;
@@ -400,7 +395,7 @@ EXT_open(Rsb* rsb)
 	rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if (!(record = rpb->rpb_record) || !(format = record->rec_format)) {
-		format = MET_current(tdbb, relation);
+		const fmt* format = MET_current(tdbb, relation);
 		record = VIO_record(tdbb, rpb, format, request->req_pool);
 	}
 
@@ -435,7 +430,6 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	TDBB tdbb;
 	Csb* csb;
 	REL relation;
 	Rsb* rsb;
@@ -446,7 +440,7 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 	opt::opt_repeat * tail, *opt_end;
 	csb_repeat *csb_tail;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 /* Start by chasing around finding pointers to the various
    data structures */
@@ -544,7 +538,6 @@ void EXT_store(RPB * rpb, int *transaction)
  **************************************/
 	REL relation;
 	REC record;
-	const fmt* format;
 	EXT file;
 	int status;
 	USHORT offset;
@@ -552,7 +545,7 @@ void EXT_store(RPB * rpb, int *transaction)
 	relation = rpb->rpb_relation;
 	file = relation->rel_file;
 	record = rpb->rpb_record;
-	format = record->rec_format;
+	const fmt* format = record->rec_format;
 	set_missing(relation, record);
 	offset = FLAG_BYTES(format->fmt_count);
 
@@ -695,10 +688,10 @@ static bool compare(UCHAR * string1, UCHAR * string2, USHORT length)
  *
  **************************************/
 
-	do
+	do {
 		if (*string1++ != *string2++)
 			return true;
-	while (--length);
+	} while (--length);
 
 	return false;
 }
@@ -885,7 +878,6 @@ static bool get_dbkey(Rsb* rsb)
 	REC record;
 	DSC *desc;
 	NOD node;
-	const fmt* format;
 	int status;
 	SSHORT offset;
 	IRSB_EXT impure;
@@ -901,7 +893,7 @@ static bool get_dbkey(Rsb* rsb)
 	impure = (UCHAR *) request + rsb->rsb_impure;
 	rpb = &request->req_rpb[rsb->rsb_stream];
 	record = rpb->rpb_record;
-	format = record->rec_format;
+	const fmt* format = record->rec_format;
 
 /* If this isn't the first time thru its the last time thru */
 
@@ -953,7 +945,6 @@ static bool get_indexed(Rsb* rsb)
 	EXT file;
 	IRB retrieval;
 	REL relation;
-	const fmt* format;
 	IDX *index;
 	jrd_req* request;
 	RPB *rpb;
@@ -969,7 +960,7 @@ static bool get_indexed(Rsb* rsb)
 
 	relation = rsb->rsb_relation;
 	file = relation->rel_file;
-	format = file->ext_format;
+	const fmt* format = file->ext_format;
 
 	request = tdbb->tdbb_request;
 	rpb = &request->req_rpb[rsb->rsb_stream];
@@ -1083,7 +1074,6 @@ static bool get_sequential(Rsb* rsb)
 	EXT file;
 	RPB *rpb;
 	REC record;
-	const fmt* format;
 	int status;
 	SSHORT offset;
 	IRSB_EXT impure;
@@ -1097,7 +1087,7 @@ static bool get_sequential(Rsb* rsb)
 	impure = (UCHAR *) request + rsb->rsb_impure;
 	rpb = &request->req_rpb[rsb->rsb_stream];
 	record = rpb->rpb_record;
-	format = record->rec_format;
+	const fmt* format = record->rec_format;
 
 	offset = FLAG_BYTES(format->fmt_count);
 	rab.rab$w_isi = rpb->rpb_ext_isi;
@@ -1194,7 +1184,6 @@ static open_indexed(Rsb* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb;
 	REL relation;
 	EXT file;
 	jrd_req* request;
@@ -1204,7 +1193,7 @@ static open_indexed(Rsb* rsb)
 	IDX *index;
 	int status;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	relation = rsb->rsb_relation;
 	file = relation->rel_file;
@@ -1234,14 +1223,13 @@ static open_sequential(Rsb* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb;
 	REL relation;
 	EXT file;
 	jrd_req* request;
 	RPB *rpb;
 	int status;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	relation = rsb->rsb_relation;
 	file = relation->rel_file;
@@ -1304,14 +1292,13 @@ static void set_flags(REL relation, REC record)
  *	Set missing flags for a record.
  *
  **************************************/
-	const fmt* format;
 	LIT literal;
 	DSC *desc_ptr, desc;
 	FLD field, *field_ptr;
 	SSHORT l, offset, i;
 	UCHAR *p;
 
-	format = record->rec_format;
+	const fmt* format = record->rec_format;
 	field_ptr = relation->rel_fields->vec_object;
 	desc_ptr = format->fmt_desc;
 
@@ -1342,21 +1329,21 @@ static void set_missing(REL relation, REC record)
  *	Set missing values for MODIFY/STORE.
  *
  **************************************/
-	const fmt* format;
 	FLD *field_ptr, field;
 	LIT literal;
 	DSC desc, *desc_ptr;
 	UCHAR *p;
 	USHORT i, l, offset;
 
-	format = record->rec_format;
+	const fmt* format = record->rec_format;
 	field_ptr = relation->rel_fields->vec_object;
 	desc_ptr = format->fmt_desc;
 
 	for (i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
 		if ((field = *field_ptr) &&
 			!field->fld_computation &&
-			(l = desc_ptr->dsc_length) && TEST_NULL(record, i)) {
+			(l = desc_ptr->dsc_length) && TEST_NULL(record, i))
+		{
 			p = record->rec_data + (int) desc_ptr->dsc_address;
 			if (literal = field->fld_missing_value) {
 				desc = *desc_ptr;
@@ -1365,9 +1352,10 @@ static void set_missing(REL relation, REC record)
 			}
 			else {
 				offset = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
-				do
+				do {
 					*p++ = offset;
-				while (--l);
+				} while (--l);
 			}
 		}
 }
+

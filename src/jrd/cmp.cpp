@@ -129,7 +129,7 @@ static UCHAR* alloc_map(TDBB, Csb*, USHORT);
 static jrd_nod* catenate_nodes(TDBB, LLS);
 static jrd_nod* copy(TDBB, Csb*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
 static void expand_view_nodes(TDBB, Csb*, USHORT, LLS *, NOD_T);
-static void ignore_dbkey(TDBB, Csb*, RSE, jrd_rel*);
+static void ignore_dbkey(TDBB, Csb*, RSE, const jrd_rel*);
 static jrd_nod* make_defaults(TDBB, Csb*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(TDBB, Csb*, USHORT);
 static jrd_nod* pass1(TDBB, Csb*, jrd_nod*, jrd_rel*, USHORT, bool);
@@ -2901,7 +2901,7 @@ static void expand_view_nodes(TDBB tdbb,
 }
 
 
-static void ignore_dbkey(TDBB tdbb, Csb* csb, RSE rse, jrd_rel* view)
+static void ignore_dbkey(TDBB tdbb, Csb* csb, RSE rse, const jrd_rel* view)
 {
 /**************************************
  *
@@ -2920,10 +2920,14 @@ static void ignore_dbkey(TDBB tdbb, Csb* csb, RSE rse, jrd_rel* view)
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(view, type_rel);
 
-	jrd_nod** ptr = rse->rse_relation;
-	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end;) {
-		jrd_nod* node = *ptr++;
-		if (node->nod_type == nod_relation) {
+	const jrd_nod* const* ptr = rse->rse_relation;
+	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end;)
+	{
+		const jrd_nod* node = *ptr++;
+		switch (node->nod_type)
+		{
+		case nod_relation:
+		{
 			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
 			const csb_repeat* tail = &csb->csb_rpt[stream];
@@ -2935,21 +2939,23 @@ static void ignore_dbkey(TDBB tdbb, Csb* csb, RSE rse, jrd_rel* view)
 								0, 0, SCL_read, object_table,
 								relation->rel_name);
 			}
+			break;
 		}
-		else if (node->nod_type == nod_rse) {
+		case nod_rse:
 			ignore_dbkey(tdbb, csb, (RSE) node, view);
-		}
-		else if (node->nod_type == nod_aggregate) {
+			break;
+		case nod_aggregate:
 			ignore_dbkey(tdbb, csb, (RSE) node->nod_arg[e_agg_rse], view);
-		}
-		else if (node->nod_type == nod_union) {
-			jrd_nod* clauses = node->nod_arg[e_uni_clauses];
-			jrd_nod** ptr_uni = clauses->nod_arg;
+			break;
+		case nod_union:
+			const jrd_nod* clauses = node->nod_arg[e_uni_clauses];
+			const jrd_nod* const* ptr_uni = clauses->nod_arg;
 			for (const jrd_nod* const* const end_uni = ptr_uni + clauses->nod_count;
 				ptr_uni < end_uni; ptr_uni++)
 			{
 				ignore_dbkey(tdbb, csb, (RSE) *ptr_uni++, view);
 			}
+			break;
 		}
 	}
 }
@@ -4971,27 +4977,36 @@ static void pass2_rse(TDBB tdbb, Csb* csb, RSE rse)
 		 ptr < end; ptr++)
 	{
 		jrd_nod* node = *ptr;
-		if (node->nod_type == nod_relation) {
-			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
+		switch (node->nod_type)
+		{
+		case nod_relation:
+		{
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (jrd_nod*) rse);
+			break;
 		}
-		else if (node->nod_type == nod_rse) {
+		case nod_rse:
 			pass2_rse(tdbb, csb, (RSE) node);
-		}
-		else if (node->nod_type == nod_procedure) {
-			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_prc_stream];
+			break;
+		case nod_procedure:
+		{
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_prc_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (jrd_nod*) rse);
+			break;
 		}
-		else if (node->nod_type == nod_aggregate) {
-			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
+		case nod_aggregate:
+		{
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
 			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (jrd_nod*) rse);
+			break;
 		}
-		else {
+		default:
 			pass2(tdbb, csb, node, (jrd_nod*) rse);
+			break;
 		}
 	}
 

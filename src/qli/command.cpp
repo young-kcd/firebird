@@ -181,7 +181,7 @@ void CMD_extract( SYN node)
  **************************************/
 	DBB database;
 
-	IB_FILE* file = (IB_FILE*) EXEC_open_output((QLI_NOD) node->syn_arg[1]);
+	IB_FILE* file = (IB_FILE*) EXEC_open_output((qli_nod*) node->syn_arg[1]);
 
 	SYN list = node->syn_arg[0];
 	if (list) {
@@ -214,7 +214,7 @@ void CMD_extract( SYN node)
 	}
 
 #ifdef WIN_NT
-	if (((QLI_NOD) node->syn_arg[1])->nod_arg[e_out_pipe])
+	if (((qli_nod*) node->syn_arg[1])->nod_arg[e_out_pipe])
 		_pclose(file);
 	else
 #endif
@@ -295,7 +295,7 @@ void CMD_set( SYN node)
  *
  **************************************/
 	USHORT length;
-	CON string;
+	qli_const* string;
 	TEXT *name;
 
 	SYN* ptr = node->syn_arg;
@@ -334,7 +334,7 @@ void CMD_set( SYN node)
 			break;
 
 		case set_password:
-			string = (CON) value;
+			string = (qli_const*) value;
 			length =
 				MIN(string->con_desc.dsc_length,
 					sizeof(QLI_default_password));
@@ -343,7 +343,7 @@ void CMD_set( SYN node)
 			break;
 
 		case set_prompt:
-			string = (CON) value;
+			string = (qli_const*) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_prompt_string))
 				ERRQ_error(86, NULL, NULL, NULL, NULL, NULL);	// Msg86 substitute prompt string too long
 			strncpy(QLI_prompt_string, (char*) string->con_data,
@@ -352,7 +352,7 @@ void CMD_set( SYN node)
 			break;
 
 		case set_continuation:
-			string = (CON) value;
+			string = (qli_const*) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_cont_string))
 				ERRQ_error(87, NULL, NULL, NULL, NULL, NULL);	// Msg87 substitute prompt string too long
 			strncpy(QLI_cont_string, (char*) string->con_data,
@@ -363,12 +363,12 @@ void CMD_set( SYN node)
 		case set_matching_language:
 			if (QLI_matching_language)
 				ALLQ_release((FRB) QLI_matching_language);
-			if (!(string = (CON) value)) {
+			if (!(string = (qli_const*) value)) {
 				QLI_matching_language = NULL;
 				break;
 			}
 			QLI_matching_language =
-				(CON) ALLOCPV(type_con, string->con_desc.dsc_length);
+				(qli_const*) ALLOCPV(type_con, string->con_desc.dsc_length);
 			strncpy((char*)QLI_matching_language->con_data, (char*)string->con_data,
 					string->con_desc.dsc_length);
 			QLI_matching_language->con_desc.dsc_dtype = dtype_text;
@@ -379,7 +379,7 @@ void CMD_set( SYN node)
 			break;
 
 		case set_user:
-			string = (CON) value;
+			string = (qli_const*) value;
 			length =
 				MIN(string->con_desc.dsc_length, sizeof(QLI_default_user));
 			strncpy(QLI_default_user, (char*)string->con_data, length);
@@ -438,7 +438,7 @@ void CMD_shell( SYN node)
 // Copy command, inserting extra blank at end.
 
 	TEXT* p = buffer;
-	CON constant = (CON) node->syn_arg[0];
+	qli_const* constant = (qli_const*) node->syn_arg[0];
 	if (constant) {
 		const TEXT* q = (TEXT*) constant->con_data;
 		if (l = constant->con_desc.dsc_length)

@@ -32,8 +32,8 @@ static int hash(const SCHAR*, int);
 static bool scompare(const SCHAR*, int, const SCHAR*, int);
 
 const int HASH_SIZE = 224;
-static SYM hash_table[HASH_SIZE];
-static SYM key_symbols;
+static qli_symbol* hash_table[HASH_SIZE];
+static qli_symbol* key_symbols;
 
 struct qli_kword {
 	KWWORDS id;
@@ -60,8 +60,8 @@ void HSH_fini(void)
  *
  **************************************/
 	while (key_symbols) {
-		SYM symbol = key_symbols;
-		key_symbols = (SYM) key_symbols->sym_object;
+		qli_symbol* symbol = key_symbols;
+		key_symbols = (qli_symbol*) key_symbols->sym_object;
 		HSH_remove(symbol);
 		ALL_release((FRB) symbol);
 	}
@@ -87,7 +87,7 @@ void HSH_init(void)
 	    const SCHAR* string = qword->keyword;
 		while (*string)
 			++string;
-		SYM symbol = (SYM) ALLOCPV(type_sym, 0);
+		qli_symbol* symbol = (qli_symbol*) ALLOCPV(type_sym, 0);
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_length = string - qword->keyword;
 		symbol->sym_string = qword->keyword;
@@ -99,7 +99,7 @@ void HSH_init(void)
 }
 
 
-void HSH_insert( SYM symbol)
+void HSH_insert( qli_symbol* symbol)
 {
 /**************************************
  *
@@ -113,7 +113,7 @@ void HSH_insert( SYM symbol)
  **************************************/
 	const int h = hash(symbol->sym_string, symbol->sym_length);
 
-	for (SYM old = hash_table[h]; old; old = old->sym_collision)
+	for (qli_symbol* old = hash_table[h]; old; old = old->sym_collision)
 		if (scompare(symbol->sym_string, symbol->sym_length,
 					 old->sym_string, old->sym_length))
 		{
@@ -127,7 +127,7 @@ void HSH_insert( SYM symbol)
 }
 
 
-SYM HSH_lookup(const SCHAR* string, int length)
+qli_symbol* HSH_lookup(const SCHAR* string, int length)
 {
 /**************************************
  *
@@ -139,7 +139,7 @@ SYM HSH_lookup(const SCHAR* string, int length)
  *	Perform a string lookup against hash table.
  *
  **************************************/
-	for (SYM symbol = hash_table[hash(string, length)]; symbol;
+	for (qli_symbol* symbol = hash_table[hash(string, length)]; symbol;
 		 symbol = symbol->sym_collision)
 	{
 		if (scompare(string, length, symbol->sym_string, symbol->sym_length))
@@ -150,7 +150,7 @@ SYM HSH_lookup(const SCHAR* string, int length)
 }
 
 
-void HSH_remove( SYM symbol)
+void HSH_remove( qli_symbol* symbol)
 {
 /**************************************
  *
@@ -162,13 +162,12 @@ void HSH_remove( SYM symbol)
  *	Remove a symbol from the hash table.
  *
  **************************************/
-	SYM *ptr, homonym;
-
 	const int h = hash(symbol->sym_string, symbol->sym_length);
 
-	for (SYM* next = &hash_table[h]; *next; next = &(*next)->sym_collision)
-		if (symbol == *next)
-			if (homonym = symbol->sym_homonym) {
+	for (qli_symbol** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
+		if (symbol == *next) {
+			qli_symbol* homonym = symbol->sym_homonym;
+			if (homonym) {
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
 				return;
@@ -177,12 +176,14 @@ void HSH_remove( SYM symbol)
 				*next = symbol->sym_collision;
 				return;
 			}
-		else
-			for (ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
+		}
+		else {
+			for (qli_symbol** ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
 				if (symbol == *ptr) {
 					*ptr = symbol->sym_homonym;
 					return;
 				}
+		}
 
 	ERRQ_error(27, NULL, NULL, NULL, NULL, NULL);	// Msg 27 HSH_remove failed
 }

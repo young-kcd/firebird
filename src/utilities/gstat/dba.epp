@@ -82,7 +82,7 @@ DATABASE DB = STATIC "yachts.lnk";
 #define WINDOW_SIZE	(1 << 17)
 
 struct dba_idx {
-	struct dba_idx *idx_next;
+	dba_idx* idx_next;
 	SSHORT idx_id;
 	SSHORT idx_depth;
 	SLONG idx_leaf_buckets;
@@ -95,8 +95,8 @@ struct dba_idx {
 };
 
 struct dba_rel {
-	struct dba_rel *rel_next;
-	struct dba_idx *rel_indexes;
+	dba_rel* rel_next;
+	dba_idx* rel_indexes;
 	SLONG rel_index_root;
 	SLONG rel_pointer_page;
 	SLONG rel_slots;
@@ -115,7 +115,7 @@ struct dba_rel {
 /* kidnapped from jrd/pio.h and abused */
 
 struct dba_fil {
-	struct dba_fil *fil_next;	/* Next file in database */
+	dba_fil* fil_next;	/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
@@ -130,9 +130,9 @@ struct dba_fil {
 
 static SCHAR* alloc(size_t);
 static void analyze_data(dba_rel*, bool);
-static bool analyze_data_page(dba_rel*, DPG, bool);
+static bool analyze_data_page(dba_rel*, const data_page*, bool);
 static ULONG analyze_fragments(const dba_rel*, const rhdf*);
-static ULONG analyze_versions(dba_rel*, RHDF);
+static ULONG analyze_versions(dba_rel*, const rhdf*);
 static void analyze_index(dba_rel*, dba_idx*);
 
 #if (defined WIN_NT)
@@ -142,7 +142,7 @@ static void db_error(int);
 #endif
 
 static dba_fil* db_open(const char*, USHORT);
-static PAG db_read(SLONG);
+static const pag* db_read(SLONG);
 #ifdef SUPERSERVER
 static void db_close(int);
 #endif
@@ -196,9 +196,9 @@ struct tdba {
 	dba_rel* relations;
 	SSHORT page_size;
 	SLONG page_number;
-	PAG buffer1;
-	PAG buffer2;
-	PAG global_buffer;
+	pag* buffer1;
+	pag* buffer2;
+	pag* global_buffer;
 	int exit_code;
 #ifdef SUPERSERVER
 	svc* sw_outfile;
@@ -384,7 +384,10 @@ int CLIB_ROUTINE main(int argc, char** argv)
 					break;
 			}
 			in_sw_tab->in_sw_state = TRUE;
-			if (!in_sw_tab->in_sw) {
+			
+			switch (in_sw_tab->in_sw)
+			{
+			case 0:
 				dba_print(20, str + 1, 0, 0, 0, 0);	/* msg 20: unknown switch "%s" */
 				dba_print(21, 0, 0, 0, 0, 0);	/* msg 21: Available switches: */
 				for (in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw;
@@ -400,40 +403,40 @@ int CLIB_ROUTINE main(int argc, char** argv)
 										0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #endif
 				dba_error(1, 0, 0, 0, 0, 0);	/* msg 1: found unknown switch */
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_USERNAME) {
+				break;
+			case IN_SW_DBA_USERNAME:
 				if (argv < end)
 					strcpy((char*) username, *argv++);
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_PASSWORD) {
+				break;
+			case IN_SW_DBA_PASSWORD:
 				if (argv < end)
 					strcpy((char*) password, *argv++);
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_SYSTEM) {
+				break;
+			case IN_SW_DBA_SYSTEM:
 				sw_system = true;
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_DATA) {
+				break;
+			case IN_SW_DBA_DATA:
 				sw_data = true;
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_INDEX) {
+				break;
+			case IN_SW_DBA_INDEX:
 				sw_index = true;
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_VERSION) {
+				break;
+			case IN_SW_DBA_VERSION:
 				sw_version = true;
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_HEADER) {
+				break;
+			case IN_SW_DBA_HEADER:
 				sw_header = true;
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_LOG) {
+				break;
+			case IN_SW_DBA_LOG:
 				sw_log = true;
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_DATAIDX) {
+				break;
+			case IN_SW_DBA_DATAIDX:
 				sw_index = sw_data = true;
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_RECORD) {
+				break;
+			case IN_SW_DBA_RECORD:
 				sw_record = true;
-			}
-			else if (in_sw_tab->in_sw == IN_SW_DBA_RELATION) {
+				break;
+			case IN_SW_DBA_RELATION:
 				sw_relation = true;
 				while (argv < end && **argv != '-') {
 					if (strlen(*argv) > 31) {
@@ -450,8 +453,9 @@ int CLIB_ROUTINE main(int argc, char** argv)
 					}
 					*next = relation;
 				}
+				break;
 			}
-		}
+		} // if (*str == '-')
 		else {
 			name = str;
 		}
@@ -497,9 +501,9 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 	dba_fil* current = db_open(name, strlen(name));
 	tddba->page_size = sizeof(temp);
-	tddba->global_buffer = (PAG) temp;
+	tddba->global_buffer = (pag*) temp;
 	tddba->page_number = -1;
-	const hdr* header = (HDR) db_read((SLONG) 0);
+	const hdr* header = (const hdr*) db_read((SLONG) 0);
 
 #ifdef SUPERSERVER
 	SVC_STARTED(service);
@@ -534,9 +538,9 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	dba_print(6, file_name, 0, 0, 0, 0);	/* msg 6: \nDatabase \"%s\"\n */
 
 	tddba->page_size = header->hdr_page_size;
-	tddba->buffer1 = (PAG) ALLOC(tddba->page_size);
-	tddba->buffer2 = (PAG) ALLOC(tddba->page_size);
-	tddba->global_buffer = (PAG) ALLOC(tddba->page_size);
+	tddba->buffer1 = (pag*) ALLOC(tddba->page_size);
+	tddba->buffer2 = (pag*) ALLOC(tddba->page_size);
+	tddba->global_buffer = (pag*) ALLOC(tddba->page_size);
 	tddba->page_number = -1;
 
 /* gather continuation files */
@@ -546,7 +550,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		if (page != HEADER_PAGE)
 			current = db_open(file_name, strlen(file_name));
 		do {
-			header = (HDR) db_read((SLONG) page);
+			header = (const hdr*) db_read((SLONG) page);
 			if (current != tddba->files)
 				current->fil_fudge = 1;	/* ignore header page once read it */
 			*file_name = '\0';
@@ -575,7 +579,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 	page = HEADER_PAGE;
 	do {
-		header = (HDR) db_read((SLONG) page);
+		header = (const hdr*) db_read((SLONG) page);
 		PPG_print_header(header, page, sw_outfile);
 		page = header->hdr_next_page;
 	} while (page);
@@ -990,20 +994,20 @@ static void analyze_data( dba_rel* relation, bool sw_record)
  **************************************/
 	tdba* tddba = GET_THREAD_DATA;
 
-	ppg* pointer_page = (PPG) tddba->buffer1;
+	pointer_page* ptr_page = (pointer_page*) tddba->buffer1;
 
 	for (SLONG next_pp = relation->rel_pointer_page; next_pp;
-		 next_pp = pointer_page->ppg_next)
+		 next_pp = ptr_page->ppg_next)
 	{
-		move((SCHAR*) db_read(next_pp), (SCHAR*) pointer_page, tddba->page_size);
-		const SLONG* ptr = pointer_page->ppg_page;
-		for (const SLONG* const end = ptr + pointer_page->ppg_count;
+		move((const SCHAR*) db_read(next_pp), (SCHAR*) ptr_page, tddba->page_size);
+		const SLONG* ptr = ptr_page->ppg_page;
+		for (const SLONG* const end = ptr + ptr_page->ppg_count;
 			ptr < end; ptr++)
 		{
 			++relation->rel_slots;
 			if (*ptr) {
 				++relation->rel_data_pages;
-				if (!analyze_data_page(relation, (DPG) db_read(*ptr), sw_record))
+				if (!analyze_data_page(relation, (const data_page*) db_read(*ptr), sw_record))
 				{
 					dba_print(18, (TEXT*) *ptr, 0, 0, 0, 0);
 					// msg 18: "    Expected data on page %ld" */
@@ -1014,7 +1018,7 @@ static void analyze_data( dba_rel* relation, bool sw_record)
 }
 
 
-static bool analyze_data_page( dba_rel* relation, DPG page, bool sw_record)
+static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw_record)
 {
 /**************************************
  *
@@ -1026,28 +1030,28 @@ static bool analyze_data_page( dba_rel* relation, DPG page, bool sw_record)
  *	Analyze space utilization for data page.
  *
  **************************************/
-	SSHORT bucket, space;
-	RHDF header;
-	struct dpg::dpg_repeat *tail, *end;
-
 	tdba* tddba = GET_THREAD_DATA;
 
 	if (page->dpg_header.pag_type != pag_data)
 		return false;
 
 	if (sw_record) {
-		move((SCHAR*) page, (SCHAR*) tddba->buffer2, tddba->page_size);
-		page = (DPG) tddba->buffer2;
+		move((const SCHAR*) page, (SCHAR*) tddba->buffer2, tddba->page_size);
+		page = (const data_page*) tddba->buffer2;
 	}
 
-	space = page->dpg_count * sizeof(struct dpg::dpg_repeat);
+	SSHORT space = page->dpg_count * sizeof(struct data_page::dpg_repeat);
 
-	for (tail = page->dpg_rpt, end = tail + page->dpg_count; tail < end;
+	const data_page::dpg_repeat* tail = page->dpg_rpt;
+	for (const data_page::dpg_repeat* const end = tail + page->dpg_count; tail < end;
 		 tail++)
-		if (tail->dpg_offset && tail->dpg_length) {
+	{
+		if (tail->dpg_offset && tail->dpg_length)
+		{
 			space += tail->dpg_length;
 			if (sw_record) {
-				header = (RHDF) ((SCHAR *) page + tail->dpg_offset);
+				const rhdf* header =
+					(const rhdf*) ((SCHAR *) page + tail->dpg_offset);
 				if (!(header->rhdf_flags &
 					(rhd_blob | rhd_chain | rhd_fragment)))
 				{
@@ -1067,9 +1071,10 @@ static bool analyze_data_page( dba_rel* relation, DPG page, bool sw_record)
 				}
 			}
 		}
+	}
 
 	relation->rel_total_space += space;
-	bucket = (space * BUCKETS) / (tddba->page_size - DPG_SIZE);
+	SSHORT bucket = (space * BUCKETS) / (tddba->page_size - DPG_SIZE);
 
 	if (bucket == BUCKETS)
 		--bucket;
@@ -1098,14 +1103,14 @@ static ULONG analyze_fragments(const dba_rel* relation, const rhdf* header)
 	while (header->rhdf_flags & rhd_incomplete) {
 		const SLONG f_page = header->rhdf_f_page;
 		const USHORT f_line = header->rhdf_f_line;
-		const dpg* page = (DPG) db_read(f_page);
+		const data_page* page = (const data_page*) db_read(f_page);
 		if (page->dpg_header.pag_type != pag_data ||
 			page->dpg_relation != relation->rel_id ||
 			page->dpg_count <= f_line)
 		{
 			break;
 		}
-		const dpg::dpg_repeat* index = &page->dpg_rpt[f_line];
+		const data_page::dpg_repeat* index = &page->dpg_rpt[f_line];
 		if (!index->dpg_offset)
 			break;
 		space += index->dpg_length;
@@ -1130,7 +1135,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
  **************************************/
 	tdba* tddba = GET_THREAD_DATA;
 
-	IRT index_root = (IRT) db_read(relation->rel_index_root);
+	const irt* index_root = (const irt*) db_read(relation->rel_index_root);
 
 	SLONG page;
 	if (index_root->irt_count <= index->idx_id ||
@@ -1139,19 +1144,20 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 		return;
 	}
 
-	BTR bucket = (BTR) db_read(page);
+	// CVC: The two const_cast's for bucket can go away if BTreeNode's functions
+	// are overloaded for constness. They don't modify bucket and pointer's contents.
+	const btree_page* bucket = (const btree_page*) db_read(page);
 	index->idx_depth = bucket->btr_level + 1;
 
-	UCHAR *pointer;
+	UCHAR* pointer;
 	IndexNode node;
 	while (bucket->btr_level) 
 	{
-		pointer = BTreeNode::getPointerFirstNode(bucket);
+		pointer = BTreeNode::getPointerFirstNode(const_cast<btree_page*>(bucket));
 		BTreeNode::readNode(&node, pointer, bucket->btr_header.pag_flags, false);
-		bucket = (BTR) db_read(node.pageNumber);
+		bucket = (const btree_page*) db_read(node.pageNumber);
 	}
 
-	bool dup;
 	bool firstLeafNode = true;
 	SLONG number;
 	SLONG duplicates = 0;
@@ -1159,14 +1165,13 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 	// This value should be kept equal with size declared in btr.h
 	//UCHAR key[4096];
 	UCHAR* key = (UCHAR*) ALLOC(tddba->page_size / 4);
-	UCHAR* firstNode;
-	USHORT l, space, n, header;
 	USHORT key_length = 0;
 	while (true)
 	{
 		++index->idx_leaf_buckets;
-		pointer = firstNode = BTreeNode::getPointerFirstNode(bucket);
-		while (true) 
+		pointer = BTreeNode::getPointerFirstNode(const_cast<btree_page*>(bucket));
+		const UCHAR* const firstNode = pointer;
+		while (true)
 		{
 			pointer = BTreeNode::readNode(&node, pointer, 
 				bucket->btr_header.pag_flags, true);
@@ -1179,7 +1184,9 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 
 			++index->idx_nodes;
 			index->idx_data_length += node.length;
-			l = node.length + node.prefix;
+			USHORT l = node.length + node.prefix;
+			
+			bool dup;
 			if (node.nodePointer == firstNode) {
 				dup = BTreeNode::keyEquality(key_length, key, &node);
 			}
@@ -1216,9 +1223,9 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 			index->idx_max_duplicates = duplicates;
 		}
 
-		header = (USHORT)(firstNode - (UCHAR*) bucket);
-		space = bucket->btr_length - header;
-		n = (space * BUCKETS) / (tddba->page_size - header);
+		const USHORT header = (USHORT)(firstNode - (UCHAR*) bucket);
+		const USHORT space = bucket->btr_length - header;
+		USHORT n = (space * BUCKETS) / (tddba->page_size - header);
 		if (n == BUCKETS) {
 			--n;
 		}
@@ -1229,9 +1236,9 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 		}
 		number = page;
 		page = bucket->btr_sibling;
-		bucket = (BTR) db_read(page);
+		bucket = (const btree_page*) db_read(page);
 		if (bucket->btr_header.pag_type != pag_index) {
-			dba_print(19, (TEXT *) page, (TEXT *) number, 0, 0, 0);
+			dba_print(19, (const TEXT*) page, (const TEXT*) number, 0, 0, 0);
 			// mag 19: "    Expected b-tree bucket on page %ld from %ld"
 			break;
 		}
@@ -1239,7 +1246,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 }
 
 
-static ULONG analyze_versions( dba_rel* relation, RHDF header)
+static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
 {
 /**************************************
  *
@@ -1251,28 +1258,26 @@ static ULONG analyze_versions( dba_rel* relation, RHDF header)
  *	Analyze space used by a record's back versions.
  *
  **************************************/
-	struct dpg::dpg_repeat *index;
-
 	tdba* tddba = GET_THREAD_DATA;
 	ULONG space = 0, versions = 0;
 	SLONG b_page = header->rhdf_b_page;
 	USHORT b_line = header->rhdf_b_line;
 
 	while (b_page) {
-		dpg* page = (DPG) db_read(b_page);
+		const data_page* page = (const data_page*) db_read(b_page);
 		if (page->dpg_header.pag_type != pag_data ||
 			page->dpg_relation != relation->rel_id ||
 			page->dpg_count <= b_line)
 		{
 			break;
 		}
-		index = &page->dpg_rpt[b_line];
+		const data_page::dpg_repeat* index = &page->dpg_rpt[b_line];
 		if (!index->dpg_offset)
 			break;
 		space += index->dpg_length;
 		++relation->rel_versions;
 		++versions;
-		header = (RHDF) ((SCHAR *) page + index->dpg_offset);
+		header = (const rhdf*) ((SCHAR *) page + index->dpg_offset);
 		b_page = header->rhdf_b_page;
 		b_line = header->rhdf_b_line;
 		if (header->rhdf_flags & rhd_incomplete) {
@@ -1353,7 +1358,6 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
  *	Open a database file.
  *
  **************************************/
-
 	tdba* tddba = GET_THREAD_DATA;
 	
 	dba_fil* fil;
@@ -1361,14 +1365,14 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(dba_fil*) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(dba_fil*) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
@@ -1420,7 +1424,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 }
 
 
-static PAG db_read( SLONG page_number)
+static const pag* db_read( SLONG page_number)
 {
 /**************************************
  *
@@ -1432,9 +1436,6 @@ static PAG db_read( SLONG page_number)
  *	Read a database page.
  *
  **************************************/
-	SLONG actual_length;
-	dba_fil* fil;
-
 	tdba* tddba = GET_THREAD_DATA;
 
 	if (tddba->page_number == page_number)
@@ -1442,6 +1443,7 @@ static PAG db_read( SLONG page_number)
 
 	tddba->page_number = page_number;
 
+	dba_fil* fil;
 	for (fil = tddba->files; page_number > (SLONG) fil->fil_max_page
 							 && fil->fil_next;) 
 	{
@@ -1466,6 +1468,7 @@ static PAG db_read( SLONG page_number)
 		db_error(GetLastError());
 	}
 
+	SLONG actual_length;
 	if (!ReadFile(	fil->fil_desc,
 					tddba->global_buffer,
 					tddba->page_size,
@@ -1564,24 +1567,20 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
  *      Put the file on an ordered list.
  *
  **************************************/
-	dba_fil* fil;
-#ifdef SUPERSERVER
-	open_files *file_list;
-#endif
-
 	tdba* tddba = GET_THREAD_DATA;
 
+	dba_fil* fil;
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(dba_fil*) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(dba_fil*) ALLOC(sizeof(struct dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
@@ -1604,7 +1603,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	}
 
 #ifdef SUPERSERVER
-	file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
+	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
 	if (!file_list) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
@@ -1624,7 +1623,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 }
 
 
-static PAG db_read( SLONG page_number)
+static const pag* db_read( SLONG page_number)
 {
 /**************************************
  *
@@ -1636,9 +1635,6 @@ static PAG db_read( SLONG page_number)
  *	Read a database page.
  *
  **************************************/
-	SCHAR *p;
-	SSHORT length;
-
 	tdba* tddba = GET_THREAD_DATA;
 
 	if (tddba->page_number == page_number)
@@ -1665,8 +1661,8 @@ static PAG db_read( SLONG page_number)
 		db_error(errno);
 	}
 
-	for (p = (SCHAR *) tddba->global_buffer, length = tddba->page_size;
-		 length > 0;)
+	SSHORT length = tddba->page_size;
+	for (SCHAR* p = (SCHAR *) tddba->global_buffer; length > 0;)
 	{
 		const SSHORT l = read(fil->fil_desc, p, length);
 		if (l < 0) {

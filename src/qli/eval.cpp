@@ -41,23 +41,23 @@
 
 
 extern USHORT QLI_prompt_count, QLI_reprompt;
-static SLONG execute_any(QLI_NOD);
-static DSC* execute_concatenate(QLI_NOD, const dsc*, const dsc*);
-static DSC* execute_edit(QLI_NOD);
-static DSC* execute_function(QLI_NOD);
-static DSC* execute_prompt(QLI_NOD);
-static DSC* execute_statistical(QLI_NOD);
+static SLONG execute_any(qli_nod*);
+static DSC* execute_concatenate(qli_nod*, const dsc*, const dsc*);
+static DSC* execute_edit(qli_nod*);
+static DSC* execute_function(qli_nod*);
+static DSC* execute_prompt(qli_nod*);
+static DSC* execute_statistical(qli_nod*);
 static bool like(const UCHAR*, SSHORT, const UCHAR*, SSHORT, const UCHAR);
 static TEXT* make_blob_buffer(FRBRD *, USHORT *);
 static int matches(const TEXT*, SSHORT, const TEXT*, SSHORT);
-static int sleuth(QLI_NOD, const dsc*, const dsc*, const dsc*);
+static int sleuth(qli_nod*, const dsc*, const dsc*, const dsc*);
 static int sleuth_check(USHORT, const UCHAR*, const UCHAR* const,
 	const UCHAR*, const UCHAR* const);
 static int sleuth_class(const USHORT, const UCHAR*, const UCHAR* const, UCHAR);
 static int sleuth_merge(const UCHAR*, const UCHAR* const , const UCHAR*,
 	const UCHAR* const, UCHAR* const);
-static int string_boolean(QLI_NOD);
-static bool string_function(QLI_NOD, SSHORT, const TEXT*, SSHORT, const TEXT*);
+static int string_boolean(qli_nod*);
+static bool string_function(qli_nod*, SSHORT, const TEXT*, SSHORT, const TEXT*);
 
 const int TEMP_LENGTH =	128;
 const USHORT SLEUTH_insensitive	= 1;
@@ -82,7 +82,7 @@ static const UCHAR special[127] =
 static TEXT prompt[2][128] = { "", "" };
 
 
-int EVAL_boolean( QLI_NOD node)
+int EVAL_boolean( qli_nod* node)
 {
 /**************************************
  *
@@ -188,7 +188,7 @@ int EVAL_boolean( QLI_NOD node)
 }
 
 
-void EVAL_break_compute( QLI_NOD node)
+void EVAL_break_compute( qli_nod* node)
 {
 /**************************************
  *
@@ -212,7 +212,7 @@ void EVAL_break_compute( QLI_NOD node)
 }
 
 
-void EVAL_break_increment( QLI_NOD node)
+void EVAL_break_increment( qli_nod* node)
 {
 /**************************************
  *
@@ -250,14 +250,14 @@ void EVAL_break_increment( QLI_NOD node)
 		else {
 			desc1->dsc_missing = FALSE;
 			MOVQ_move(desc2, desc1);
-			node->nod_arg[e_stt_default] = (QLI_NOD) (SLONG) count;
+			node->nod_arg[e_stt_default] = (qli_nod*) (SLONG) count;
 		}
 		return;
 	}
 	else if (desc2->dsc_missing)
 		return;
 
-	node->nod_arg[e_stt_default] = (QLI_NOD) (SLONG) count;
+	node->nod_arg[e_stt_default] = (qli_nod*) (SLONG) count;
 	desc1->dsc_missing = FALSE;
 
 // Finish off as per operator
@@ -286,7 +286,7 @@ void EVAL_break_increment( QLI_NOD node)
 }
 
 
-void EVAL_break_init( QLI_NOD node)
+void EVAL_break_init( qli_nod* node)
 {
 /**************************************
  *
@@ -307,7 +307,7 @@ void EVAL_break_init( QLI_NOD node)
 }
 
 
-DSC *EVAL_parameter(PAR parameter)
+dsc* EVAL_parameter(qli_par* parameter)
 {
 /**************************************
  *
@@ -319,11 +319,11 @@ DSC *EVAL_parameter(PAR parameter)
  *	Compute the descriptor for a parameter.
  *
  **************************************/
-	PAR missing_parameter;
+	qli_par* missing_parameter;
 
 	dsc* desc = &parameter->par_desc;
 	desc->dsc_missing = FALSE;
-	QLI_MSG message = parameter->par_message;
+	qli_msg* message = parameter->par_message;
 
 	if (missing_parameter = parameter->par_missing) {
 		const USHORT* missing_flag =
@@ -337,7 +337,7 @@ DSC *EVAL_parameter(PAR parameter)
 }
 
 
-DSC *EVAL_value(QLI_NOD node)
+dsc* EVAL_value(qli_nod* node)
 {
 /**************************************
  *
@@ -349,7 +349,7 @@ DSC *EVAL_value(QLI_NOD node)
  *	Evaluate a value node.
  *
  **************************************/
-	QLI_FLD field;
+	qli_fld* field;
 	DSC *values[4], **value, *desc2;
 	UCHAR *p;
 	double d1;
@@ -357,8 +357,8 @@ DSC *EVAL_value(QLI_NOD node)
 /* Start by evaluating sub-expressions (where appropriate) */
 
 	dsc* desc = &node->nod_desc;
-	QLI_NOD* ptr = node->nod_arg;
-	QLI_NOD* end_ptr = ptr + node->nod_count;
+	qli_nod** ptr = node->nod_arg;
+	const qli_nod* const* const end_ptr = ptr + node->nod_count;
 
 	for (value = values; ptr < end_ptr; ptr++, value++) {
 		*value = EVAL_value(*ptr);
@@ -382,7 +382,7 @@ DSC *EVAL_value(QLI_NOD node)
 		return desc;
 
 	case nod_variable:
-		field = (QLI_FLD) node->nod_arg[e_fld_field];
+		field = (qli_fld*) node->nod_arg[e_fld_field];
 		desc->dsc_missing =
 			(field->fld_flags & FLD_missing) ? DSC_missing : 0;
 		return desc;
@@ -554,7 +554,7 @@ DSC *EVAL_value(QLI_NOD node)
 }
 
 
-static SLONG execute_any( QLI_NOD node)
+static SLONG execute_any( qli_nod* node)
 {
 /**************************************
  *
@@ -569,25 +569,25 @@ static SLONG execute_any( QLI_NOD node)
  *	absolutely nothing to do.
  *
  **************************************/
-	QLI_MSG message;
-	QLI_REQ request;
+	qli_msg* message;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	if (request = (QLI_REQ) node->nod_arg[e_any_request])
-		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_any_send]);
-	else if (message = (QLI_MSG) node->nod_arg[e_any_send])
+	qli_req* request = (qli_req*) node->nod_arg[e_any_request];
+	if (request)
+		EXEC_start_request(request, (qli_msg*) node->nod_arg[e_any_send]);
+	else if (message = (qli_msg*) node->nod_arg[e_any_send])
 		EXEC_send(message);
 
-	message = (QLI_MSG) node->nod_arg[e_any_receive];
+	message = (qli_msg*) node->nod_arg[e_any_receive];
 	EXEC_receive(message, 0);
 
 	return MOVQ_get_long(EVAL_parameter(node->nod_import), 0);
 }
 
 
-static dsc* execute_concatenate( QLI_NOD node, const dsc* value1, const dsc* value2)
+static dsc* execute_concatenate( qli_nod* node, const dsc* value1, const dsc* value2)
 {
 /**************************************
  *
@@ -625,7 +625,7 @@ static dsc* execute_concatenate( QLI_NOD node, const dsc* value1, const dsc* val
 }
 
 
-static DSC *execute_edit( QLI_NOD node)
+static DSC *execute_edit( qli_nod* node)
 {
 /**************************************
  *
@@ -664,7 +664,7 @@ static DSC *execute_edit( QLI_NOD node)
 }
 
 
-static DSC *execute_function( QLI_NOD node)
+static DSC *execute_function( qli_nod* node)
 {
 /**************************************
  *
@@ -676,22 +676,22 @@ static DSC *execute_function( QLI_NOD node)
  *	Execute a statistical expression.
  *
  **************************************/
-	QLI_REQ request;
-	QLI_MSG message;
+	qli_msg* message;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	if (request = (QLI_REQ) node->nod_arg[e_fun_request])
-		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_fun_send]);
-	else if (message = (QLI_MSG) node->nod_arg[e_fun_send])
+	qli_req* request = (qli_req*) node->nod_arg[e_fun_request];
+	if (request)
+		EXEC_start_request(request, (qli_msg*) node->nod_arg[e_fun_send]);
+	else if (message = (qli_msg*) node->nod_arg[e_fun_send])
 		EXEC_send(message);
 
-	return EXEC_receive((QLI_MSG) node->nod_arg[e_fun_receive], node->nod_import);
+	return EXEC_receive((qli_msg*) node->nod_arg[e_fun_receive], node->nod_import);
 }
 
 
-static DSC *execute_prompt( QLI_NOD node)
+static DSC *execute_prompt( qli_nod* node)
 {
 /**************************************
  *
@@ -770,7 +770,7 @@ static DSC *execute_prompt( QLI_NOD node)
 }
 
 
-static DSC *execute_statistical( QLI_NOD node)
+static DSC *execute_statistical( qli_nod* node)
 {
 /**************************************
  *
@@ -782,18 +782,18 @@ static DSC *execute_statistical( QLI_NOD node)
  *	Execute a statistical expression.
  *
  **************************************/
-	QLI_REQ request;
-	QLI_MSG message;
+	qli_msg* message;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	if (request = (QLI_REQ) node->nod_arg[e_stt_request])
-		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_stt_send]);
-	else if (message = (QLI_MSG) node->nod_arg[e_stt_send])
+	qli_req* request = (qli_req*) node->nod_arg[e_stt_request];
+	if (request)
+		EXEC_start_request(request, (qli_msg*) node->nod_arg[e_stt_send]);
+	else if (message = (qli_msg*) node->nod_arg[e_stt_send])
 		EXEC_send(message);
 
-	return EXEC_receive((QLI_MSG) node->nod_arg[e_stt_receive], node->nod_import);
+	return EXEC_receive((qli_msg*) node->nod_arg[e_stt_receive], node->nod_import);
 }
 
 static bool like(
@@ -909,7 +909,7 @@ static int matches(
 }
 
 
-static int sleuth( QLI_NOD node, const dsc* desc1, const dsc* desc2, const dsc* desc3)
+static int sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc* desc3)
 {
 /**************************************
  *
@@ -970,8 +970,8 @@ static int sleuth( QLI_NOD node, const dsc* desc1, const dsc* desc2, const dsc* 
 		gds__free(buffer);
 
 	if (isc_close_blob(status_vector, &blob)) {
-		QLI_CTX context = (QLI_CTX) node->nod_arg[e_fld_context];
-		QLI_REQ request = context->ctx_request;
+		qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
+		qli_req* request = context->ctx_request;
 		DBB dbb = request->req_database;
 		ERRQ_database_error(dbb, status_vector);
 	}
@@ -1216,7 +1216,7 @@ static int sleuth_merge(
 }
 
 
-static int string_boolean( QLI_NOD node)
+static int string_boolean( qli_nod* node)
 {
 /**************************************
  *
@@ -1286,7 +1286,7 @@ static int string_boolean( QLI_NOD node)
 		gds__free(buffer);
 
 	if (isc_close_blob(status_vector, &blob)) {
-		qli_ctx* context = (QLI_CTX) node->nod_arg[e_fld_context];
+		qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
 		qli_req* request = context->ctx_request;
 		dbb* database = request->req_database;
 		ERRQ_database_error(database, status_vector);
@@ -1297,7 +1297,7 @@ static int string_boolean( QLI_NOD node)
 
 
 static bool string_function(
-						   QLI_NOD node,
+						   qli_nod* node,
 						   SSHORT l1, const TEXT* p1, SSHORT l2, const TEXT* p2)
 {
 /**************************************

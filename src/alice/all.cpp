@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.16 2003-12-14 18:24:59 dimitr Exp $
+//	$Id: all.cpp,v 1.17 2004-02-02 11:00:52 robocop Exp $
 //
 
 #include "firebird.h"
@@ -82,7 +82,7 @@ void ALLA_init(void)
 
 
 
-void AliceMemoryPool::ALLA_push(class blk *object, class lls** stack)
+void AliceMemoryPool::ALLA_push(class blk *object, alice_lls** stack)
 {
 /**************************************
  *
@@ -97,14 +97,14 @@ void AliceMemoryPool::ALLA_push(class blk *object, class lls** stack)
 	TGBL tdgbl = GET_THREAD_DATA;
 	AliceMemoryPool* pool = tdgbl->ALICE_default_pool;
 
-	class lls* node = pool->lls_cache.newBlock();
+	alice_lls* node = pool->lls_cache.newBlock();
 	node->lls_object = object;
 	node->lls_next = *stack;
 	*stack = node;
 }
 
 
-BLK AliceMemoryPool::ALLA_pop(LLS *stack)
+BLK AliceMemoryPool::ALLA_pop(alice_lls** stack)
 {
 /**************************************
  *
@@ -117,7 +117,7 @@ BLK AliceMemoryPool::ALLA_pop(LLS *stack)
  *	further use.
  *
  **************************************/
-	LLS node = *stack;
+	alice_lls* node = *stack;
 	*stack = node->lls_next;
 	BLK object = node->lls_object;
 
@@ -184,7 +184,7 @@ void AliceMemoryPool::deletePool(AliceMemoryPool* pool) {
 			break;
 		}
 	}
-	pool->lls_cache.~BlockCache<lls>();
+	pool->lls_cache.~BlockCache<alice_lls>();
 	MemoryPool::deletePool(pool);
 }
 

@@ -1102,29 +1102,31 @@ static void grant( GBL gbl, const UCHAR** ptr)
 		   unwound the request so passing that as null */
 		BLK req1 = (id == drq_s_grant || id == drq_gcg1) ? NULL : request;
 		DYN_rundown_request(req1, -1);
-		if (id == drq_l_grant1)
+
+		switch (id)
 		{
+		case drq_l_grant1:
 			DYN_error_punt(true, 77, NULL, NULL, NULL, NULL, NULL);
 			// msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant"
-		}
-		else if (id == drq_l_grant2)
-		{
+			break;
+		case drq_l_grant2:
 			DYN_error_punt(true, 78, NULL, NULL, NULL, NULL, NULL);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
-		}
-		else if (id == drq_s_grant || id == drq_gcg1)
-		{
+			break;
+		case drq_s_grant:
+		case drq_gcg1:
 			ERR_punt();
 			// store_priviledge || grantor_can_grant error already handled, 
 			// just bail out
-		}
-		else if (id == drq_get_role_nm) {
+			break;
+		case drq_get_role_nm:
 			ERR_punt();
-		}
-		else {
+			break;
+		default:
 			fb_assert(id == drq_gcg1);
 			DYN_error_punt(true, 78, NULL, NULL, NULL, NULL, NULL);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
+			break;
 		}
 	}
 

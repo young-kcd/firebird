@@ -137,23 +137,22 @@ enum irq_type_t {
 // blocks used to cache metadata
 
 //! Database Block
-class dbb : public pool_alloc<dsql_type_dbb>
+class dsql_dbb : public pool_alloc<dsql_type_dbb>
 {
 public:
-	dbb*			dbb_next;
+	dsql_dbb*		dbb_next;
 	class dsql_rel* dbb_relations;		//!< known relations in database
 	class dsql_prc*	dbb_procedures;		//!< known procedures in database
-	class dsql_udf*		dbb_functions;		//!< known functions in database
+	class dsql_udf*	dbb_functions;		//!< known functions in database
 	DsqlMemoryPool*	dbb_pool;			//!< The current pool for the dbb
 	FRBRD*			dbb_database_handle;
 	FRBRD*			dbb_requests[irq_MAX];
-	dsql_str*			dbb_dfl_charset;
+	dsql_str*		dbb_dfl_charset;
 	USHORT			dbb_base_level;		//!< indicates the version of the engine code itself
 	USHORT			dbb_flags;
 	USHORT			dbb_db_SQL_dialect;
 	SSHORT			dbb_att_charset;	//!< characterset at time of attachment
 };
-typedef dbb* DBB;
 
 //! values used in dbb_flags
 enum dbb_flags_vals {
@@ -190,7 +189,7 @@ enum rel_flags_vals {
 class dsql_fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>
 {
 public:
-	dsql_fld*		fld_next;				//!< Next field in relation
+	dsql_fld*	fld_next;				//!< Next field in relation
 	dsql_rel*	fld_relation;			//!< Parent relation
 	class dsql_prc*	fld_procedure;			//!< Parent procedure
 	dsql_nod*	fld_ranges;				//!< ranges for multi dimension array
@@ -244,10 +243,10 @@ public:
 class dsql_prc : public pool_alloc_rpt<SCHAR, dsql_type_prc>
 {
 public:
-	dsql_prc*		prc_next;		//!< Next relation in database
+	dsql_prc*	prc_next;		//!< Next relation in database
 	dsql_sym*	prc_symbol;		//!< Hash symbol for procedure
-	dsql_fld*		prc_inputs;		//!< Input parameters
-	dsql_fld*		prc_outputs;	//!< Output parameters
+	dsql_fld*	prc_inputs;		//!< Input parameters
+	dsql_fld*	prc_outputs;	//!< Output parameters
 	TEXT*		prc_name;		//!< Name of procedure
 	TEXT*		prc_owner;		//!< Owner of procedure
 	SSHORT		prc_in_count;
@@ -269,7 +268,7 @@ enum prc_flags_vals {
 class dsql_udf : public pool_alloc_rpt<SCHAR, dsql_type_udf>
 {
 public:
-	dsql_udf*		udf_next;
+	dsql_udf*	udf_next;
 	dsql_sym*	udf_symbol;		//!< Hash symbol for udf
 	USHORT		udf_dtype;
 	SSHORT		udf_scale;
@@ -305,7 +304,7 @@ enum udf_flags_vals {
 // Variables - input, output & local
 
 //! Variable block
-class var : public pool_alloc_rpt<SCHAR, dsql_type_var>
+class dsql_var : public pool_alloc_rpt<SCHAR, dsql_type_var>
 {
 public:
 	dsql_fld*	var_field;		//!< Field on which variable is based
@@ -315,7 +314,6 @@ public:
 	USHORT	var_variable_number;	//!< Local variable number
 	TEXT	var_name[2];
 };
-typedef var* VAR;
 
 // values used in var_flags
 enum var_flags_vals {
@@ -351,6 +349,9 @@ enum dsql_intlsym_type_vals {
 // values used in intlsym_flags
 
 
+// Forward declaration.
+class dsql_par;
+class dsql_opn;
 
 //! Request information
 enum REQ_TYPE
@@ -396,9 +397,9 @@ public:
     dsql_lls*    req_dt_context;		//!< Save contexts for views of derived tables
 	dsql_sym* req_name;			//!< Name of request
 	dsql_sym* req_cursor;		//!< Cursor symbol, if any
-	dbb*	req_dbb;			//!< Database handle
+	dsql_dbb*	req_dbb;			//!< Database handle
 	FRBRD*	req_trans;			//!< Database transaction handle
-	class opn* req_open_cursor;
+	dsql_opn* req_open_cursor;
 	dsql_nod* req_ddl_node;		//!< Store metadata request
 	dsql_nod* req_blk_node;		//!< exec_block node 
 	class dsql_blb* req_blob;			//!< Blob info for blob requests
@@ -407,11 +408,11 @@ public:
 	class dsql_msg* req_send;		//!< Message to be sent to start request
 	class dsql_msg* req_receive;	//!< Per record message to be received
 	class dsql_msg* req_async;		//!< Message for sending scrolling information
-	class par* req_eof;			//!< End of file parameter
-	class par* req_dbkey;		//!< Database key for current of
-	class par* req_rec_version;	//!< Record Version for current of
-	class par* req_parent_rec_version;	//!< parent record version
-	class par* req_parent_dbkey;	//!< Parent database key for current of
+	dsql_par* req_eof;			//!< End of file parameter
+	dsql_par* req_dbkey;		//!< Database key for current of
+	dsql_par* req_rec_version;	//!< Record Version for current of
+	dsql_par* req_parent_rec_version;	//!< parent record version
+	dsql_par* req_parent_dbkey;	//!< Parent database key for current of
 	dsql_rel* req_relation;	//!< relation created by this request (for DDL)
 	dsql_prc* req_procedure;	//!< procedure created by this request (for DDL)
 	class dsql_ctx* req_outer_agg_context;	//!< agg context for outer ref
@@ -465,8 +466,8 @@ class dsql_blb : public pool_alloc<dsql_type_blb>
 {
 public:
 	dsql_nod*	blb_field;			//!< Related blob field
-	class par*	blb_blob_id;		//!< Parameter to hold blob id
-	class par*	blb_segment;		//!< Parameter for segments
+	dsql_par*	blb_blob_id;		//!< Parameter to hold blob id
+	dsql_par*	blb_segment;		//!< Parameter for segments
 	dsql_nod* blb_from;
 	dsql_nod* blb_to;
 	class dsql_msg*	blb_open_in_msg;	//!< Input message to open cursor
@@ -475,14 +476,14 @@ public:
 };
 
 //! List of open cursors
-class opn : public pool_alloc<dsql_type_opn>
+class dsql_opn : public pool_alloc<dsql_type_opn>
 {
 public:
-	opn*		opn_next;			//!< Next open cursor
+	dsql_opn*	opn_next;			//!< Next open cursor
 	dsql_req*	opn_request;		//!< Request owning the cursor
 	FRBRD*		opn_transaction;	//!< Transaction executing request
 };
-typedef opn* OPN;
+
 
 //! Transaction block
 class dsql_tra : public pool_alloc<dsql_type_tra>
@@ -528,23 +529,23 @@ public:
 class dsql_msg : public pool_alloc<dsql_type_msg>
 {
 public:
-	class par*	msg_parameters;	//!< Parameter list
-	class par*	msg_par_ordered;	//!< Ordered parameter list
-	UCHAR*	msg_buffer;			//!< Message buffer
-	USHORT	msg_number;			//!< Message number
-	USHORT	msg_length;			//!< Message length
-	USHORT	msg_parameter;		//!< Next parameter number
-	USHORT	msg_index;			//!< Next index into SQLDA
+	dsql_par*	msg_parameters;	//!< Parameter list
+	dsql_par*	msg_par_ordered;	//!< Ordered parameter list
+	UCHAR*		msg_buffer;			//!< Message buffer
+	USHORT		msg_number;			//!< Message number
+	USHORT		msg_length;			//!< Message length
+	USHORT		msg_parameter;		//!< Next parameter number
+	USHORT		msg_index;			//!< Next index into SQLDA
 };
 
 //! Parameter block used to describe a parameter of a message
-class par : public pool_alloc<dsql_type_par>
+class dsql_par : public pool_alloc<dsql_type_par>
 {
 public:
 	dsql_msg*	par_message;		//!< Parent message
-	class par*	par_next;			//!< Next parameter in linked list
-	class par*	par_ordered;		//!< Next parameter in order of index
-	class par*	par_null;			//!< Null parameter, if used
+	dsql_par*	par_next;			//!< Next parameter in linked list
+	dsql_par*	par_ordered;		//!< Next parameter in order of index
+	dsql_par*	par_null;			//!< Null parameter, if used
 	dsql_nod*	par_node;			//!< Associated value node, if any
 	dsql_ctx*	par_dbkey_ctx;		//!< Context of internally requested dbkey
 	dsql_ctx*	par_rec_version_ctx;	//!< Context of internally requested record version
@@ -552,12 +553,11 @@ public:
 	const TEXT*	par_rel_name;		//!< Relation name, if any
 	const TEXT*	par_owner_name;		//!< Owner name, if any
 	const TEXT*	par_alias;			//!< Alias, if any
-	DSC		par_desc;			//!< Field data type
-	DSC		par_user_desc;		//!< SQLDA data type
-	USHORT	par_parameter;		//!< BLR parameter number
-	USHORT	par_index;			//!< Index into SQLDA, if appropriate
+	DSC			par_desc;			//!< Field data type
+	DSC			par_user_desc;		//!< SQLDA data type
+	USHORT		par_parameter;		//!< BLR parameter number
+	USHORT		par_index;			//!< Index into SQLDA, if appropriate
 };
-typedef par* PAR;
 
 
 #include "../jrd/thd.h"
@@ -571,14 +571,13 @@ struct tsql
 	ISC_STATUS*		tsql_status;
 	ISC_STATUS*		tsql_user_status;
 };
-typedef tsql* TSQL;
 
 
 #ifdef GET_THREAD_DATA
 #undef GET_THREAD_DATA
 #endif
 
-#define GET_THREAD_DATA	((TSQL) THD_get_specific())
+#define GET_THREAD_DATA	((tsql*) THD_get_specific())
 /*! \var unsigned DSQL_debug
     \brief Debug level 
     

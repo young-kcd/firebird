@@ -26,7 +26,7 @@
 
 void	EXT_close(Rsb*);
 void	EXT_erase(rpb*, int*);
-ext*	EXT_file(jrd_rel*, const TEXT*, SLONG*);
+class external_file*	EXT_file(jrd_rel*, const TEXT*, SLONG*);
 void	EXT_fini(jrd_rel*);
 int	EXT_get(Rsb*);
 void	EXT_modify(rpb*, rpb*, int*);
@@ -45,3 +45,4 @@ void	EXT_trans_rollback(jrd_tra*);
 void	EXT_trans_start(jrd_tra*);
 
 #endif // JRD_EXT_PROTO_H
+

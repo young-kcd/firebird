@@ -59,7 +59,7 @@ static void show_dbb(DBB);
 static void show_dbb_parameters(DBB);
 static int show_field_detail(DBB, const TEXT *, const TEXT *, SYN);
 static int show_field_instances(DBB, const TEXT *);
-static void show_fields(QLI_REL, QLI_FLD);
+static void show_fields(qli_rel*, qli_fld*);
 static void show_filt(QFL);
 static int show_filter_detail(DBB, TEXT *);
 static void show_filts(DBB);
@@ -75,20 +75,20 @@ static void show_gbl_field(SYN);
 static int show_gbl_field_detail(DBB, const TEXT *);
 static void show_gbl_fields(DBB);
 static int show_gbl_fields_detail(DBB);
-static int show_indices_detail(QLI_REL);
+static int show_indices_detail(qli_rel*);
 static void show_matching(void);
 static void show_names(const TEXT *, USHORT, TEXT *);
 static void show_proc(QPR);
 static void show_procs(DBB);
-static void show_rel(QLI_REL);
-static void show_rel_detail(QLI_REL);
+static void show_rel(qli_rel*);
+static void show_rel_detail(qli_rel*);
 static void show_rels(DBB, enum show_t, SSHORT);
 static USHORT show_security_class_detail(DBB, const TEXT *);
 static USHORT show_security_classes_detail(DBB);
 static void show_string(USHORT, TEXT *, USHORT, TEXT *);
 static void show_sys_trigs(DBB);
 static void show_text_blob(DBB, const TEXT*, USHORT, SLONG*, USHORT, SLONG*, bool);
-static void show_trig(QLI_REL);
+static void show_trig(qli_rel*);
 static int show_trigger_detail(DBB, const TEXT *);
 static void show_trigger_header(TEXT *, USHORT, USHORT, USHORT, SLONG *,
 								DBB, const TEXT *);
@@ -99,7 +99,7 @@ static int show_triggers_detail(DBB);
 static void show_var(NAM);
 static void show_vars(void);
 static void show_versions(void);
-static void show_view(QLI_REL);
+static void show_view(qli_rel*);
 static int show_views_detail(DBB);
 static void view_info(DBB, const TEXT *, const TEXT *, SSHORT, SSHORT);
 
@@ -151,7 +151,7 @@ void SHOW_stuff( SYN node)
  *	Show various stuffs.
  *
  **************************************/
-	QLI_REL relation;
+	qli_rel* relation;
 	DBB dbb;
 	USHORT count;
 	NAM name;
@@ -278,16 +278,16 @@ void SHOW_stuff( SYN node)
 			break;
 
 		case show_relation:
-			show_rel((QLI_REL) value);
-			show_fields((QLI_REL) value, NULL);
-			show_view((QLI_REL) value);
-			show_rel_detail((QLI_REL) value);
+			show_rel((qli_rel*) value);
+			show_fields((qli_rel*) value, NULL);
+			show_view((qli_rel*) value);
+			show_rel_detail((qli_rel*) value);
 			break;
 
 		case show_indices:
 			if (value) {
-				show_rel((QLI_REL) value);
-				if (!show_indices_detail((QLI_REL) value)) {
+				show_rel((qli_rel*) value);
+				if (!show_indices_detail((qli_rel*) value)) {
 					ERRQ_msg_put(93, NULL, NULL, NULL, NULL, NULL);
 					// Msg93 No indices defined
 				}
@@ -402,7 +402,7 @@ void SHOW_stuff( SYN node)
 			break;
 
 		case show_trigger:
-			show_trig((QLI_REL) value);
+			show_trig((qli_rel*) value);
 			break;
 
 		case show_triggers:
@@ -817,7 +817,7 @@ static void show_dbb( DBB database)
  *
  **************************************/
 	if (database) {
-		const sym* symbol = database->dbb_symbol;
+		const qli_symbol* symbol = database->dbb_symbol;
 		if (symbol) {
 			ERRQ_msg_put(113,	// Msg113 Database %s readied as %s
 						 database->dbb_filename, symbol->sym_string, NULL,
@@ -1063,7 +1063,7 @@ static int show_field_instances( DBB database, const TEXT * field_name)
 }
 
 
-static void show_fields( QLI_REL relation, QLI_FLD fields)
+static void show_fields( qli_rel* relation, qli_fld* fields)
 {
 /**************************************
  *
@@ -1076,7 +1076,7 @@ static void show_fields( QLI_REL relation, QLI_FLD fields)
  *
  **************************************/
 	DBB database;
-	SYM symbol;
+	qli_symbol* symbol;
 	USHORT l;
 
 /* Find the long field name (including query name) */
@@ -1092,7 +1092,7 @@ static void show_fields( QLI_REL relation, QLI_FLD fields)
 		database = NULL;
 
 	USHORT max_name = 0;
-	QLI_FLD field;
+	qli_fld* field;
 
 	for (field = fields; field; field = field->fld_next) {
 		l = field->fld_name->sym_length;
@@ -1325,7 +1325,7 @@ static void show_fld( SYN field_node)
 		else if (!relation_name)
 			relation_name = (NAM) * ptr;
 		else
-			for (SYM symbol = ((NAM) * ptr)->nam_symbol; symbol;
+			for (qli_symbol* symbol = ((NAM) * ptr)->nam_symbol; symbol;
 				 symbol = symbol->sym_homonym)
 			{
 				if (symbol->sym_type = SYM_database) {
@@ -1675,7 +1675,7 @@ static void show_gbl_field( SYN field_node)
  *
  **************************************/
 	NAM field_name = NULL, name;
-	SYM symbol;
+	qli_symbol* symbol;
 	DBB database = NULL;
 
 	for (SYN *ptr = field_node->syn_arg + field_node->syn_count - 1;
@@ -1854,7 +1854,7 @@ static int show_gbl_fields_detail( DBB database)
 }
 
 
-static int show_indices_detail( QLI_REL relation)
+static int show_indices_detail( qli_rel* relation)
 {
 /**************************************
  *
@@ -2080,7 +2080,7 @@ static void show_procs( DBB database)
 }
 
 
-static void show_rel( QLI_REL relation)
+static void show_rel( qli_rel* relation)
 {
 /**************************************
  *
@@ -2100,7 +2100,7 @@ static void show_rel( QLI_REL relation)
 }
 
 
-static void show_rel_detail( QLI_REL relation)
+static void show_rel_detail( qli_rel* relation)
 {
 /**************************************
  *
@@ -2178,7 +2178,7 @@ static void show_rels( DBB dbb, enum show_t sw, SSHORT width)
  *      or system_relations for a specific database.
  *
  **************************************/
-	QLI_REL relation;
+	qli_rel* relation;
 	buf_type buffer;
 
 	switch (sw) {
@@ -2391,7 +2391,7 @@ static void show_text_blob(
 }
 
 
-static void show_trig( QLI_REL relation)
+static void show_trig( qli_rel* relation)
 {
 /**************************************
  *
@@ -2695,7 +2695,7 @@ static void show_var( NAM var_name)
  *	Display a global variables.
  *
  **************************************/
-	QLI_FLD variable;
+	qli_fld* variable;
 
 	for (variable = QLI_variables; variable; variable = variable->fld_next) {
 		if (!strcmp(var_name->nam_string, variable->fld_name->sym_string))
@@ -2765,7 +2765,7 @@ static void show_versions(void)
 }
 
 
-static void show_view( QLI_REL relation)
+static void show_view( qli_rel* relation)
 {
 /**************************************
  *

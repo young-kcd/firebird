@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.61 2004-01-28 07:50:32 robocop Exp $ 
+  * $Id: evl.cpp,v 1.62 2004-02-02 11:01:33 robocop Exp $ 
  */
 
 /*
@@ -1274,7 +1274,7 @@ bool EVL_field(jrd_rel* relation, REC record, USHORT id, dsc* desc)
 			}
 
 			jrd_fld* temp_field =
-				reinterpret_cast<jrd_fld*>((*relation->rel_fields)[id]);
+				static_cast<jrd_fld*>((*relation->rel_fields)[id]);
 
 			if (temp_field)
 			{

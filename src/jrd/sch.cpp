@@ -974,7 +974,6 @@ static void stall(THREAD thread)
  *
  **************************************/
 	SLONG value;
-	EVENT ptr;
 	int mutex_state;
 
 	if (thread != active_thread || thread->thread_flags & THREAD_hiber ||
@@ -982,16 +981,15 @@ static void stall(THREAD thread)
 		for (;;) {
 			value = ISC_event_clear(thread->thread_stall);
 			if (thread == active_thread
-				&& !(thread->thread_flags & THREAD_hiber) && (!ast_thread
-															  ||
-															  !
-															  (ast_thread->thread_flags
-															   &
-															   THREAD_ast_active)))
-					break;
+				&& !(thread->thread_flags & THREAD_hiber)
+				&& (!ast_thread
+					|| !(ast_thread->thread_flags & THREAD_ast_active)))
+			{
+				break;
+			}
 			if (mutex_state = THD_mutex_unlock(thread_mutex))
 				mutex_bugcheck("mutex unlock", mutex_state);
-			ptr = thread->thread_stall;
+			event_t* ptr = thread->thread_stall;
 			ISC_event_wait(1, &ptr, &value, 0, 0, 0);
 			if (mutex_state = THD_mutex_lock(thread_mutex))
 				mutex_bugcheck("mutex lock", mutex_state);
@@ -1018,19 +1016,17 @@ static void stall_ast(THREAD thread)
  *	AST is complete.
  *
  **************************************/
-	SLONG value;
-	EVENT ptr;
 	int mutex_state;
 
 	if (thread == ast_thread) {
 		if (ast_thread->thread_flags & THREAD_ast_disabled)
 			for (;;) {
-				value = ISC_event_clear(thread->thread_stall);
+				SLONG value = ISC_event_clear(thread->thread_stall);
 				if (!(ast_thread->thread_flags & THREAD_ast_disabled))
 					break;
 				if (mutex_state = THD_mutex_unlock(thread_mutex))
 					mutex_bugcheck("mutex unlock", mutex_state);
-				ptr = thread->thread_stall;
+				event_t* ptr = thread->thread_stall;
 				ISC_event_wait(1, &ptr, &value, 0, 0, 0);
 				if (mutex_state = THD_mutex_lock(thread_mutex))
 					mutex_bugcheck("mutex lock", mutex_state);
@@ -1048,12 +1044,12 @@ static void stall_ast(THREAD thread)
 
 		if (ast_thread->thread_flags & THREAD_ast_active)
 			for (;;) {
-				value = ISC_event_clear(thread->thread_stall);
+				SLONG value = ISC_event_clear(thread->thread_stall);
 				if (!(ast_thread->thread_flags & THREAD_ast_active))
 					break;
 				if (mutex_state = THD_mutex_unlock(thread_mutex))
 					mutex_bugcheck("mutex unlock", mutex_state);
-				ptr = thread->thread_stall;
+				event_t* ptr = thread->thread_stall;
 				ISC_event_wait(1, &ptr, &value, 0, 0, 0);
 				if (mutex_state = THD_mutex_lock(thread_mutex))
 					mutex_bugcheck("mutex lock", mutex_state);

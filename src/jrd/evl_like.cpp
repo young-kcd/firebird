@@ -332,7 +332,7 @@ const SLEUTHTYPE* match, const SLEUTHTYPE* end_match)
 						return FALSE;
 			}
 		else if (c == GDML_CLASS_START) {
-			const SLEUTHTYPE* const class_ = match;
+			const SLEUTHTYPE* const char_class = match;
 			while (*match++ != GDML_CLASS_END) {
 				if (match >= end_match)
 					return FALSE;
@@ -340,7 +340,7 @@ const SLEUTHTYPE* match, const SLEUTHTYPE* end_match)
 			const SLEUTHTYPE* const end_class = match - 1;
 			if (match >= end_match || *match != GDML_MATCH_ANY) {
 				if (!SLEUTH_CLASS_NAME
-					(obj, flags, class_, end_class, *search++))
+					(obj, flags, char_class, end_class, *search++))
 					return FALSE;
 			}
 			else {
@@ -351,7 +351,7 @@ const SLEUTHTYPE* match, const SLEUTHTYPE* end_match)
 						 end_match)) return TRUE;
 					else if (search < end_search) {
 						if (!SLEUTH_CLASS_NAME
-							(obj, flags, class_, end_class, *search++))
+							(obj, flags, char_class, end_class, *search++))
 							return FALSE;
 					}
 					else
@@ -380,7 +380,7 @@ const SLEUTHTYPE* match, const SLEUTHTYPE* end_match)
 static BOOLEAN SLEUTH_CLASS_NAME(
 								 TextType obj,
 								 USHORT flags,
-								 const SLEUTHTYPE* class_,
+								 const SLEUTHTYPE* char_class,
 								 const SLEUTHTYPE* const end_class, 
 								 SLEUTHTYPE character)
 {
@@ -396,27 +396,27 @@ static BOOLEAN SLEUTH_CLASS_NAME(
  *	instead of SCHAR-based.
  *
  **************************************/
-	fb_assert(class_ != NULL);
+	fb_assert(char_class != NULL);
 	fb_assert(end_class != NULL);
-	fb_assert(class_ <= end_class);
+	fb_assert(char_class <= end_class);
 
 	USHORT result = TRUE;
 	character = COND_UPPER(obj, character);
 
-	if (*class_ == GDML_NOT) {
-		++class_;
+	if (*char_class == GDML_NOT) {
+		++char_class;
 		result = FALSE;
 	}
 
-	while (class_ < end_class) {
-		const SLEUTHTYPE c = *class_++;
+	while (char_class < end_class) {
+		const SLEUTHTYPE c = *char_class++;
 		if (c == GDML_QUOTE) {
-			if (*class_++ == character)
+			if (*char_class++ == character)
 				return TRUE;
 		}
-		else if (*class_ == GDML_RANGE) {
-			class_ += 2;
-			if (character >= c && character <= class_[-1])
+		else if (*char_class == GDML_RANGE) {
+			char_class += 2;
+			if (character >= c && character <= char_class[-1])
 				return result;
 		}
 		else if (character == c)

@@ -163,7 +163,8 @@ EXT EXT_file(jrd_rel* relation, const TEXT * file_name, SLONG * description)
 		file_name = Path.c_str();
 	}
 
-	ext* file = FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
+	external_file* file =
+		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) external_file();
 	relation->rel_file = file;
 	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 	file->ext_flags = 0;
@@ -209,7 +210,7 @@ void EXT_fini(jrd_rel* relation)
  *
  **************************************/
 	if (relation->rel_file) {
-		ext* file = relation->rel_file;
+		external_file* file = relation->rel_file;
 		if (file->ext_ifi)
 			ib_fclose((IB_FILE *) file->ext_ifi);
 		/* before zeroing out the rel_file we need to deallocate the memory */
@@ -234,7 +235,7 @@ int EXT_get(Rsb* rsb)
  	TDBB tdbb = GET_THREAD_DATA;
 
 	jrd_rel* relation = rsb->rsb_relation;
-	ext* file = relation->rel_file;
+	external_file* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_flags & req_abort)
@@ -439,7 +440,7 @@ void EXT_store(RPB * rpb, int *transaction)
  *
  **************************************/
 	jrd_rel* relation = rpb->rpb_relation;
-	ext* file = relation->rel_file;
+	external_file* file = relation->rel_file;
 	rec* record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 

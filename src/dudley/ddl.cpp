@@ -54,7 +54,7 @@
 
 const TEXT* DDL_prompt;
 
-static LLS free_stack;
+static dudley_lls* free_stack;
 static TEXT DDL_message[256];
 
 static const char* const FOPEN_INPUT_TYPE	= "r";
@@ -614,7 +614,7 @@ void DDL_msg_put(
 }
 
 
-DUDLEY_NOD DDL_pop(LLS * pointer)
+DUDLEY_NOD DDL_pop(dudley_lls** pointer)
 {
 /**************************************
  *
@@ -626,7 +626,7 @@ DUDLEY_NOD DDL_pop(LLS * pointer)
  *	Pop an item off a linked list stack.  Free the stack node.
  *
  **************************************/
-	LLS stack;
+	dudley_lls* stack;
 	DUDLEY_NOD node;
 
 	stack = *pointer;
@@ -639,7 +639,7 @@ DUDLEY_NOD DDL_pop(LLS * pointer)
 }
 
 
-void DDL_push( DUDLEY_NOD object, LLS * pointer)
+void DDL_push( DUDLEY_NOD object, dudley_lls** pointer)
 {
 /**************************************
  *
@@ -651,14 +651,14 @@ void DDL_push( DUDLEY_NOD object, LLS * pointer)
  *	Push an arbitrary object onto a linked list stack.
  *
  **************************************/
-	LLS stack;
+	dudley_lls* stack;
 
 	if (free_stack) {
 		stack = free_stack;
 		free_stack = stack->lls_next;
 	}
 	else
-		stack = (LLS) DDL_alloc(sizeof(lls));
+		stack = (dudley_lls*) DDL_alloc(sizeof(dudley_lls));
 
 	stack->lls_object = object;
 	stack->lls_next = *pointer;
@@ -722,3 +722,4 @@ bool DDL_yes_no( USHORT number)
 		ib_printf("%s\n", reprompt);
 	}
 }
+

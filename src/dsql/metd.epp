@@ -289,7 +289,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
  *
  **************************************/
 	FRBRD *DB, *gds_trans;
-	DBB dbb;
+	dsql_dbb* dbb;
 	dsql_intlsym* iname;
 	dsql_sym* symbol;
 
@@ -380,7 +380,7 @@ USHORT METD_get_col_default(dsql_req*    request,
  *
  **************************************************************/
 	FRBRD *DB, *gds_trans;
-	DBB dbb;
+	dsql_dbb* dbb;
 	ISC_STATUS_ARRAY status_vect;
 
 	ISC_QUAD *blob_id;
@@ -493,7 +493,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
  *
  **************************************/
 	FRBRD *DB, *gds_trans;
-	DBB dbb;
+	dsql_dbb* dbb;
 	dsql_intlsym* iname;
 	dsql_sym* symbol;
 
@@ -582,7 +582,7 @@ USHORT METD_get_charset_bpc (dsql_req* request,
  *
  **************************************/
     FRBRD *DB, *gds_trans;
-    DBB	dbb;
+    dsql_dbb*	dbb;
     isc_req_handle handle;
     USHORT	bpc = 0;
     
@@ -635,7 +635,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
  *
  **************************************/
 	FRBRD *DB, *gds_trans;
-	DBB dbb;
+	dsql_dbb* dbb;
 	isc_req_handle handle;
 	UCHAR *str_;
 	USHORT length;
@@ -713,7 +713,7 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 
 	bool found = false;
 
-	DBB    dbb       = request->req_dbb;
+	dsql_dbb*    dbb       = request->req_dbb;
 	FRBRD* DB        = dbb->dbb_database_handle;
 	FRBRD* gds_trans = request->req_trans;
 
@@ -779,7 +779,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 
 	*has_default = false;
 
-	DBB dbb = request->req_dbb;
+	dsql_dbb* dbb = request->req_dbb;
 	FRBRD* DB = dbb->dbb_database_handle;
 	FRBRD* gds_trans = request->req_trans;
 	USHORT result = 0;
@@ -911,7 +911,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 // Now see if it is in the database 
 
-	DBB dbb = request->req_dbb;
+	dsql_dbb* dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 	gds_trans = request->req_trans;
 	userFunc = NULL;
@@ -1148,7 +1148,7 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
  **************************************/
 	FRBRD *DB, *gds_trans;
 
-	DBB dbb = request->req_dbb;
+	dsql_dbb* dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 	gds_trans = request->req_trans;
 
@@ -1204,7 +1204,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
  *
  **************************************/
 	FRBRD *DB, *gds_trans;
-	DBB dbb;
+	dsql_dbb* dbb;
 	dsql_fld* parameter;
 	dsql_fld** ptr;
 	dsql_prc* procedure;
@@ -1404,13 +1404,13 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
  *
  **************************************/
 	FRBRD *DB, *gds_trans;
-	DBB dbb;
+	dsql_dbb* dbb;
 	dsql_fld* field;
 	dsql_fld** ptr;
 	dsql_rel* relation;
 	dsql_rel* temp;
 	dsql_sym* symbol;
-	TSQL tdsql;
+	tsql* tdsql;
 
 	tdsql = GET_THREAD_DATA;
 
@@ -1681,7 +1681,7 @@ dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USH
  *
  **************************************/
 	FRBRD *DB, *gds_trans;
-	DBB dbb;
+	dsql_dbb* dbb;
 	dsql_str* relation;
 
 	dbb = request->req_dbb;
@@ -1727,7 +1727,7 @@ USHORT METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHOR
  *
  **************************************/
 	FRBRD *DB, *gds_trans;
-	DBB dbb;
+	dsql_dbb* dbb;
 	USHORT found;
 
 	dbb = request->req_dbb;
@@ -1779,7 +1779,7 @@ dsql_rel* METD_get_view_relation(dsql_req*    request,
 
 	dsql_rel* relation = 0;
 
-	DBB    dbb       = request->req_dbb;
+	dsql_dbb*    dbb       = request->req_dbb;
 	FRBRD* DB        = dbb->dbb_database_handle;
 	FRBRD* gds_trans = request->req_trans;
 
@@ -1837,7 +1837,7 @@ static void check_array( dsql_req* request, const TEXT* field_name, dsql_fld* fi
  *
  **************************************/
 	FRBRD *DB, *gds_trans;
-	DBB dbb;
+	dsql_dbb* dbb;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;

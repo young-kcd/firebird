@@ -26,4 +26,5 @@
 
 void	RPT_report(qli_nod*);
 
-#endif /* QLI_REPOR_PROTO_H */
+#endif // QLI_REPOR_PROTO_H
+

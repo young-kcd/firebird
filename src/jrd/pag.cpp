@@ -807,7 +807,7 @@ void PAG_format_header(void)
 
 	WIN window(HEADER_PAGE);
 	hdr* header = (HDR) CCH_fake(tdbb, &window, 1);
-	header->hdr_header.pag_scn() = 0;
+	header->hdr_header.pag_scn = 0;
 	MOV_time_stamp(reinterpret_cast <
 				   ISC_TIMESTAMP * >(header->hdr_creation_date));
 	header->hdr_header.pag_type = pag_header;
@@ -1146,27 +1146,27 @@ void PAG_init(void)
 	{
 		control->pgc_gpg =
 			(dbb->dbb_page_size -
-			 OFFSETA(GPG, gpg_values)) / sizeof(((GPG) NULL)->gpg_values);
+			 OFFSETA(generator_page*, gpg_values)) / sizeof(((generator_page*) NULL)->gpg_values);
 	}
 	else {
 		control->pgc_gpg =
 			(dbb->dbb_page_size -
-			 OFFSETA(PPG, ppg_page)) / sizeof(((PPG) NULL)->ppg_page);
+			 OFFSETA(pointer_page*, ppg_page)) / sizeof(((pointer_page*) NULL)->ppg_page);
 	}
 
 
 /* Compute the number of data pages per pointer page.  Each data page
    requires a 32 bit pointer and a 2 bit control field. */
 
-	dbb->dbb_dp_per_pp = (dbb->dbb_page_size - OFFSETA(PPG, ppg_page)) * 8 /
+	dbb->dbb_dp_per_pp = (dbb->dbb_page_size - OFFSETA(pointer_page*, ppg_page)) * 8 /
 		(BITS_PER_LONG + 2);
 
 /* Compute the number of records that can fit on a page using the
    size of the record index (dpb_repeat) and a record header.  This
    gives an artificially high number, reducing the density of db_keys. */
 
-	dbb->dbb_max_records = (dbb->dbb_page_size - sizeof(struct dpg)) /
-		(sizeof(dpg::dpg_repeat) + OFFSETA(RHD, rhd_data));
+	dbb->dbb_max_records = (dbb->dbb_page_size - sizeof(data_page)) /
+		(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
 
 /* Compute the number of index roots that will fit on an index root page,
    assuming that each index has only one key */

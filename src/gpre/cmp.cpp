@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.26 2004-01-28 07:50:27 robocop Exp $
+//	$Id: cmp.cpp,v 1.27 2004-02-02 11:01:26 robocop Exp $
 //
 
 #include "firebird.h"
@@ -54,7 +54,7 @@ static void cmp_blob(blb*, bool);
 static void cmp_blr(gpre_req*);
 static void cmp_erase(act*, gpre_req*);
 static void cmp_fetch(act*);
-static void cmp_field(gpre_req*, gpre_fld*, REF);
+static void cmp_field(gpre_req*, const gpre_fld*, const ref*);
 static void cmp_for(gpre_req*);
 static void cmp_loop(gpre_req*);
 static void cmp_modify(act*, gpre_req*);
@@ -314,7 +314,7 @@ void CMP_compile_request( gpre_req* request)
 //		indicate cast datatypes.
 //  
 
-void CMP_external_field( gpre_req* request, gpre_fld* field)
+void CMP_external_field( gpre_req* request, const gpre_fld* field)
 {
 
 	switch (field->fld_dtype) {
@@ -374,7 +374,7 @@ USHORT CMP_next_ident(void)
 //		Stuff a symbol.
 //  
 
-void CMP_stuff_symbol( gpre_req* request, gpre_sym* symbol)
+void CMP_stuff_symbol( gpre_req* request, const gpre_sym* symbol)
 {
 	STUFF(strlen(symbol->sym_string));
 
@@ -729,7 +729,8 @@ static void cmp_fetch( act* action)
 //		Stuff field datatype info into request.
 //  
 
-static void cmp_field( gpre_req* request, gpre_fld* field, REF reference)
+static void cmp_field( gpre_req* request, const gpre_fld* field,
+	const ref* reference)
 {
 	if (reference && reference->ref_value
 		&& (reference->ref_flags & REF_array_elem))
@@ -994,7 +995,10 @@ static void cmp_loop( gpre_req* request)
 	CME_rse(selection, request);
 	STUFF(blr_begin);
 
-	if (node->nod_type == nod_modify) {
+	switch (node->nod_type)
+	{
+	case nod_modify:
+	{
 		STUFF(blr_modify);
 		STUFF(for_context->ctx_internal);
 		STUFF(update_context->ctx_internal);
@@ -1007,8 +1011,10 @@ static void cmp_loop( gpre_req* request)
 			cmp_assignment(*ptr, request);
 		}
 		STUFF(blr_end);
+		break;
 	}
-	else if (node->nod_type == nod_store) {
+	case nod_store:
+	{
 		update_context = (gpre_ctx*) node->nod_arg[0];
 		STUFF(blr_store);
 		CME_relation(update_context, request);
@@ -1021,10 +1027,14 @@ static void cmp_loop( gpre_req* request)
 			cmp_assignment(*ptr, request);
 		}
 		STUFF(blr_end);
+		break;
 	}
-	else if (node->nod_type == nod_erase) {
+	case nod_erase:
 		STUFF(blr_erase);
 		STUFF(for_context->ctx_internal);
+		break;
+	default:
+	    fb_assert(false);
 	}
 
 	STUFF(blr_assignment);
@@ -1111,10 +1121,10 @@ static void cmp_procedure( gpre_req* request)
 //  requires parameters to be in parameter order which may be changed
 //  when there references are expanded. 
 
-	lls* outputs = NULL;
+	gpre_lls* outputs = NULL;
 	ref* reference = request->req_references;
 	if (reference) {
-		for (lls** list = &outputs; reference; reference = reference->ref_next) {
+		for (gpre_lls** list = &outputs; reference; reference = reference->ref_next) {
 			MSC_push((GPRE_NOD) reference, list);
 			list = &(*list)->lls_next;
 		}

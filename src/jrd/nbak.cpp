@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.18 2004-01-28 07:50:32 robocop Exp $
+ *  $Id: nbak.cpp,v 1.19 2004-02-02 11:01:34 robocop Exp $
  *
  */
 
@@ -559,7 +559,7 @@ void BackupManager::begin_backup() {
 		// This number may be smaller than actual because some pages may be not flushed to
 		// disk yet. This is not a problem as it can cause only a slight performance degradation
 		backup_pages = header->hdr_backup_pages = PIO_act_alloc(database);
-		ULONG adjusted_scn = ++header->hdr_header.pag_scn(); // Generate new SCN
+		const ULONG adjusted_scn = ++header->hdr_header.pag_scn; // Generate new SCN
 		PAG_replace_entry_first(header, HDR_backup_guid, sizeof(guid), 
 			reinterpret_cast<const UCHAR*>(&guid));
 
@@ -654,7 +654,7 @@ void BackupManager::end_backup(bool recover) {
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		NBAK_TRACE(("New state is getting to become after fetches %d", backup_state));
 		// Generate new SCN
-		header->hdr_header.pag_scn() = current_scn;
+		header->hdr_header.pag_scn = current_scn;
 		NBAK_TRACE(("new SCN=%d is getting written to header", adjusted_scn));
 		// Adjust state
 		header->hdr_flags = (header->hdr_flags & ~hdr_backup_mask) | backup_state;
@@ -701,10 +701,10 @@ void BackupManager::end_backup(bool recover) {
 			do {
 				WIN window(all.current().db_page);
 				PAG page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
-				if (page->pag_scn() != current_scn)
+				if (page->pag_scn != current_scn)
 					CCH_MARK(tdbb, &window);
 				CCH_RELEASE(tdbb, &window);
-			} while(all.getNext());
+			} while (all.getNext());
 		}
 		CCH_flush(tdbb, FLUSH_ALL, 0); // Really write changes to main database file
 		
@@ -741,7 +741,7 @@ void BackupManager::end_backup(bool recover) {
 		header->hdr_flags = (header->hdr_flags & ~hdr_backup_mask) | backup_state;
 		NBAK_TRACE(("Set state %d in header page", backup_state));
 		// Generate new SCN
-		header->hdr_header.pag_scn() = ++current_scn;
+		header->hdr_header.pag_scn = ++current_scn;
 		NBAK_TRACE(("new SCN=%d is getting written to header"));
 		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
@@ -1075,8 +1075,8 @@ bool BackupManager::actualize_state() throw() {
 	// Check is we missed lock/unlock cycle and need to invalidate
 	// our allocation table and file handle 
 	bool missed_cycle = 
-			(header->hdr_header.pag_scn() - current_scn) > 1;
-	current_scn = header->hdr_header.pag_scn();
+			(header->hdr_header.pag_scn - current_scn) > 1;
+	current_scn = header->hdr_header.pag_scn;
 	backup_pages = header->hdr_backup_pages;
 
 	// Read difference file name from header clumplets

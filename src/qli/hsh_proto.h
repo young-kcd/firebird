@@ -26,9 +26,9 @@
 
 void	HSH_fini (void);
 void	HSH_init (void);
-void	HSH_insert(sym*);
-sym*	HSH_lookup(const SCHAR*, int);
-void	HSH_remove(sym*);
+void	HSH_insert(qli_symbol*);
+qli_symbol*	HSH_lookup(const SCHAR*, int);
+void	HSH_remove(qli_symbol*);
 
-#endif /* QLI_HSH_PROTO_H */
+#endif // QLI_HSH_PROTO_H
 

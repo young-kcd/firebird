@@ -87,7 +87,7 @@ static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
  **/
 dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default,
 						(numeric_flag == CONSTANT_TIMESTAMP ||
@@ -234,7 +234,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
  **/
 dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
 	node->nod_type = nod_constant;
@@ -1530,7 +1530,7 @@ dsql_nod* MAKE_list(dsql_lls* stack)
  **/
 dsql_nod* MAKE_node(NOD_TYPE type, int count)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 	node->nod_type = type;
@@ -1554,7 +1554,7 @@ dsql_nod* MAKE_node(NOD_TYPE type, int count)
     @param sqlda_index
 
  **/
-par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
+dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	USHORT sqlda_index)
 {
 	DEV_BLKCHK(message, dsql_type_msg);
@@ -1563,15 +1563,15 @@ par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		!Config::getOldParameterOrdering()) 
 	{
 		// This parameter possibly already here. Look for it
-		for (par* temp = message->msg_parameters; temp; temp = temp->par_next) {
+		for (dsql_par* temp = message->msg_parameters; temp; temp = temp->par_next) {
 			if (temp->par_index == sqlda_index)
 				return temp;
 		}
 	}
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
-	par* parameter = FB_NEW(*tdsql->tsql_default) par;
+	dsql_par* parameter = FB_NEW(*tdsql->tsql_default) dsql_par;
 	parameter->par_message = message;
 	parameter->par_next = message->msg_parameters;
 	if (parameter->par_next != 0)
@@ -1598,7 +1598,7 @@ par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 // If a null handing has been requested, set up a null flag 
 
 	if (null_flag) {
-		par* null = MAKE_parameter(message, false, false, 0);
+		dsql_par* null = MAKE_parameter(message, false, false, 0);
 		parameter->par_null = null;
 		null->par_desc.dsc_dtype = dtype_short;
 		null->par_desc.dsc_scale = 0;
@@ -1639,7 +1639,7 @@ dsql_str* MAKE_string(const char* str, int length)
     @param object
 
  **/
-dsql_sym* MAKE_symbol(DBB database,
+dsql_sym* MAKE_symbol(dsql_dbb* database,
 				const TEXT* name, USHORT length, SYM_TYPE type, dsql_req* object)
 {
 	DEV_BLKCHK(database, dsql_type_dbb);
@@ -1647,7 +1647,7 @@ dsql_sym* MAKE_symbol(DBB database,
 	fb_assert(name);
 	fb_assert(length > 0);
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_sym* symbol = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_sym;
 	symbol->sym_type = type;
@@ -1681,7 +1681,7 @@ dsql_sym* MAKE_symbol(DBB database,
  **/
 dsql_str* MAKE_tagged_string(const char* str_, size_t length, const char* charset)
 {
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
 	dsql_str* string = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_str;
 	string->str_charset = charset;
@@ -1735,9 +1735,9 @@ dsql_nod* MAKE_variable(dsql_fld* field,
 {
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	TSQL tdsql = GET_THREAD_DATA;
+	tsql* tdsql = GET_THREAD_DATA;
 
-	var* variable = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) var;
+	dsql_var* variable = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) dsql_var;
 	dsql_nod* node = MAKE_node(nod_variable, e_var_count);
 	node->nod_arg[e_var_variable] = (dsql_nod*) variable;
 	variable->var_msg_number = msg_number;

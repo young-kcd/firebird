@@ -659,15 +659,15 @@ static void print_page_header( SDB sdb)
 		 sdb->sdb_page, sdb->sdb_generation, sdb->sdb_length, sdb->sdb_flags,
 		 sdb->sdb_precedence);
 
-	pag* page = (PAG) ABS_PTR(sdb->sdb_buffer);
+	const pag* page = (pag*) ABS_PTR(sdb->sdb_buffer);
 
 /* Print page header */
 
 	ib_printf("\tPage type: %s\n", page_type[(int) page->pag_type]);
 
-	ib_printf("\tFlags: %d.  Generation: %d.  Seqno: %d.  Offset: %d\n",
+	ib_printf("\tFlags: %d.  Generation: %d.  SCN: %d.\n",
 			  (int) page->pag_flags, page->pag_generation,
-			  page->pag_seqno, page->pag_offset);
+			  page->pag_scn);
 
 /* Print full page information for header and log page */
 

@@ -173,4 +173,5 @@ typedef struct rint {
 
 #define EPB_version1 1
 
-#endif /* JRD_EVENT_H */
+#endif // JRD_EVENT_H
+

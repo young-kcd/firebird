@@ -59,7 +59,7 @@ void PPG_print_header(const hdr* header, SLONG page,
 #ifdef SUPERSERVER
 					  SVC outfile)
 #else
-					  IB_FILE * outfile)
+					  IB_FILE* outfile)
 #endif
 {
 /**************************************
@@ -286,7 +286,6 @@ void PPG_print_log(const log_info_page* logp, SLONG page,
  *	Print log page information
  *
  **************************************/
-	SLONG flags;
 	SLONG ltemp;
 	SSHORT stemp;
 	USHORT ustemp;
@@ -325,23 +324,8 @@ void PPG_print_log(const log_info_page* logp, SLONG page,
 					time.tm_sec);
 		}
 
+		// Legacy information, zero for FB 2.
 		FPRINTF(outfile, "\tLog flags:\t%ld\n", logp->log_flags);
-
-		if (flags = logp->log_flags) {
-			if (flags & log_no_ail)
-				FPRINTF(outfile, "\t\tNo write ahead log\n");
-			if (flags & log_add)
-				FPRINTF(outfile, "\t\tLog added\n");
-			if (flags & log_delete)
-				FPRINTF(outfile, "\t\tLog deleted\n");
-			if (flags & log_recover)
-				FPRINTF(outfile, "\t\tRecovery required\n");
-			if (flags & log_rec_in_progress)
-				FPRINTF(outfile, "\t\tRecovery in progress\n");
-			if (flags & log_partial_rebuild)
-				FPRINTF(outfile, "\t\tPartial recovery\n");
-			FPRINTF(outfile, "\n");
-		}
 	}
 
 	FPRINTF(outfile, "\tNext log page:\t%ld\n", logp->log_next_page);

@@ -882,8 +882,8 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 	case isc_arg_warning:
 	case isc_arg_gds:
 		{
-			USHORT fac = 0, class_ = 0;
-			const ISC_STATUS decoded = gds__decode(code, &fac, &class_);
+			USHORT fac = 0, dummy_class = 0;
+			const ISC_STATUS decoded = gds__decode(code, &fac, &dummy_class);
 			if (gds__msg_format(0, fac, (USHORT) decoded,
 								128, s, args[0], args[1], args[2], args[3],
 								args[4]) < 0)
@@ -2241,9 +2241,9 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 			if (!have_sqlcode) {
 				/* Now check the hard-coded mapping table of gds_codes to
 				   sql_codes */
-				USHORT fac = 0, class_ = 0;
+				USHORT fac = 0, dummy_class = 0;
 
-				USHORT code = (USHORT) gds__decode(status_vector[1], &fac, &class_);
+				const USHORT code = (USHORT) gds__decode(status_vector[1], &fac, &dummy_class);
 
 				if ((code < FB_NELEM(gds__sql_code)) &&
 					(gds__sql_code[code] != GENERIC_SQLCODE))
@@ -2821,7 +2821,7 @@ static void blr_indent(gds_ctl* control, SSHORT level)
 
 
 
-static void blr_print_blr(gds_ctl* control, UCHAR operator_)
+static void blr_print_blr(gds_ctl* control, UCHAR blr_operator)
 {
 /**************************************
  *
@@ -2833,12 +2833,14 @@ static void blr_print_blr(gds_ctl* control, UCHAR operator_)
  *	Print a blr item.
  *
  **************************************/
-	SCHAR *p;
+	const char* p;
 
-	if (operator_ > FB_NELEM(blr_table) ||
-		!(p = (SCHAR *) /* const_cast */ blr_table[operator_].blr_string))
+	if (blr_operator > FB_NELEM(blr_table) ||
+		!(p = blr_table[blr_operator].blr_string))
+	{
 		blr_error(control, "*** blr operator %d is undefined ***",
-				  (int) operator_);
+				  (int) blr_operator);
+	}
 
 	blr_format(control, "blr_%s, ", p);
 }
@@ -3183,7 +3185,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 	blr_print_blr(control, blr_operator);
 	level++;
-	const UCHAR *ops = blr_table[blr_operator].blr_operators;
+	const UCHAR* ops = blr_table[blr_operator].blr_operators;
 	SSHORT n;
 
 	while (*ops)
@@ -3423,18 +3425,18 @@ static void init(void)
 		struct rlimit old;
 
 		if (!getrlimit(RLIMIT_NOFILE, &old) && old.rlim_cur < old.rlim_max) {
-			struct rlimit new_;
-			new_.rlim_cur = new_.rlim_max = old.rlim_max;
-			if (!setrlimit(RLIMIT_NOFILE, &new_))
+			struct rlimit new_max;
+			new_max.rlim_cur = new_max.rlim_max = old.rlim_max;
+			if (!setrlimit(RLIMIT_NOFILE, &new_max))
 			{
 #if _FILE_OFFSET_BITS == 64 && defined SOLARIS
 				gds__log("64 bit i/o support is on.");
 				gds__log("Open file limit increased from %lld to %lld",
-						 old.rlim_cur, new_.rlim_cur);
+						 old.rlim_cur, new_max.rlim_cur);
 		       
 #else
 				gds__log("Open file limit increased from %d to %d",
-						 old.rlim_cur, new_.rlim_cur);
+						 old.rlim_cur, new_max.rlim_cur);
 #endif
 			}
 		}

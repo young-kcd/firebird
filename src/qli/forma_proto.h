@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		forma_proto.h
- *	DESCRIPTION:	Prototype header file for format.c
+ *	DESCRIPTION:	Prototype header file for format.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,11 +25,11 @@
 #define QLI_FORMA_PROTO_H
 
 int			FMT_expression(qli_nod*);
-TEXT*		FMT_format(lls*);
+TEXT*		FMT_format(qli_lls*);
 qli_nod*	FMT_list(qli_nod*);
-void		FMT_print(qli_nod*, prt*);
-void		FMT_put(const TEXT*, prt*);
-void		FMT_report(rpt*);
+void		FMT_print(qli_nod*, qli_prt*);
+void		FMT_put(const TEXT*, qli_prt*);
+void		FMT_report(qli_rpt*);
 
-#endif /* QLI_FORMA_PROTO_H */
+#endif // QLI_FORMA_PROTO_H
 

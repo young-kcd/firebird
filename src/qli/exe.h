@@ -26,13 +26,13 @@
 
 /* Request Language Block  -- used for BLR, DYN, SDL, etc. */
 
-typedef struct rlb {
+struct qli_rlb {
     blk		rlb_header;
     UCHAR	*rlb_data;		/* Pointer to end of BLR/DYN/SDL */
     UCHAR	*rlb_base;		/* Pointer to start of buffer */
     UCHAR	*rlb_limit;		/* Upper limit of string */
     USHORT	rlb_length;		/* Length of string */
-} *RLB;
+};
 
 /* RLB manipulation macros */
 
@@ -40,6 +40,14 @@ typedef struct rlb {
 #define RLB_SAFETY_MARGIN	48
 
 #define CHECK_RLB(in)	(!in || (in->rlb_data > in->rlb_limit)) ? (in = GEN_rlb_extend (in)) : in;
+/* Would need gener_proto.h visible here to use this macro.
+inline qli_rlb* CHECK_RLB(qli_rlb*& in)
+{
+	if (!in || (in->rlb_data > in->rlb_limit))
+		in = GEN_rlb_extend(in);
+	return in;
+}
+*/
 
 // If used to replace the macro shown above, this function should be declared
 // in gener_proto.h and defined in gener.cpp or declared and defined in gener_proto.h
@@ -57,21 +65,21 @@ typedef struct rlb {
 
 /* Request block */
 
-typedef struct qli_req {
-    blk		req_header;
-    qli_req*	req_next;		/* Next request in statement */
-    dbb*	req_database;		/* Database for request */
-    FRBRD		*req_handle;		/* Database request handle */
-    rlb*	req_blr;
-    struct qli_msg	*req_messages;		/* Messages associated with request */
-    struct qli_msg	*req_receive;		/* Current receive message, if any  */
-    struct qli_msg	*req_send;		/* Current send message, if any  */
-    struct qli_msg	*req_continue;		/* Message to continue FOR loop after optional actions */
-    USHORT	req_flags;		/* Flags for state of request compilation, etc. */
-    USHORT	req_context;		/* Next available context */
-    USHORT	req_msg_number;		/* Next available message number */
-    USHORT	req_label;		/* Next available label */
-} *QLI_REQ;
+struct qli_req {
+    blk				req_header;
+    qli_req*		req_next;		/* Next request in statement */
+    dbb*			req_database;	/* Database for request */
+    FRBRD*			req_handle;		/* Database request handle */
+    qli_rlb*		req_blr;
+    struct qli_msg*	req_messages;	/* Messages associated with request */
+    struct qli_msg*	req_receive;	/* Current receive message, if any  */
+    struct qli_msg*	req_send;		/* Current send message, if any  */
+    struct qli_msg*	req_continue;	/* Message to continue FOR loop after optional actions */
+    USHORT			req_flags;		/* Flags for state of request compilation, etc. */
+    USHORT			req_context;	/* Next available context */
+    USHORT			req_msg_number;	/* Next available message number */
+    USHORT			req_label;		/* Next available label */
+};
 
 #define REQ_rse_compiled	1
 #define REQ_project		2	/* Set during generation of project clause */
@@ -87,59 +95,59 @@ typedef enum {
     CTX_STREAM
 } CTX_T;
 
-typedef struct qli_ctx {
-    blk		ctx_header;
-    CTX_T	ctx_type;		/* Type of context */
-    qli_ctx*	ctx_source;		/* Source context for MODIFY */
-    qli_ctx*	ctx_primary;		/* Primary context */
-    sym*	ctx_symbol;		/* Context symbol, if any */
-    struct qli_rel	*ctx_relation;		/* Relation of context */
+struct qli_ctx {
+    blk				ctx_header;
+    CTX_T			ctx_type;		/* Type of context */
+    qli_ctx*		ctx_source;		/* Source context for MODIFY */
+    qli_ctx*		ctx_primary;	/* Primary context */
+    qli_symbol*		ctx_symbol;		/* Context symbol, if any */
+    struct qli_rel*	ctx_relation;	/* Relation of context */
     struct qli_nod*	ctx_stream;		/* Stream of context */
-    struct qli_fld	*ctx_variable;		/* Variable reference */
-    qli_req*	ctx_request;		/* Request block */
-    struct qli_msg	*ctx_message;		/* Message for data */
+    struct qli_fld*	ctx_variable;	/* Variable reference */
+    qli_req*		ctx_request;	/* Request block */
+    struct qli_msg*	ctx_message;	/* Message for data */
     struct qli_nod*	ctx_rse;		/* RSE node for root context */
-    struct qli_nod*	ctx_sub_rse;		/* RSE node aggregate */
-    qli_ctx*	ctx_parent;		/* Parent context for map */
-    struct qli_map	*ctx_map;		/* Map items, if any */
-    USHORT	ctx_context;		/* Context in request */
-} *QLI_CTX;
+    struct qli_nod*	ctx_sub_rse;	/* RSE node aggregate */
+    qli_ctx*		ctx_parent;		/* Parent context for map */
+    struct qli_map*	ctx_map;		/* Map items, if any */
+    USHORT			ctx_context;	/* Context in request */
+};
 
 /* Aggregate/union map block */
 
-typedef struct qli_map {
-    blk		map_header;
+struct qli_map {
+    blk			map_header;
 	qli_map*	map_next;			/* Next map in item */
     struct qli_nod*	map_node;		/* Value for map item */
-    USHORT	map_position;		/* Position in map */
-} *QLI_MAP;
+    USHORT		map_position;		/* Position in map */
+};
 
 /* Message block */                                       
 
-typedef struct qli_msg {
-    blk		msg_header;
+struct qli_msg {
+    blk			msg_header;
     qli_req*	msg_request;		/* Parent request */
     qli_ctx*	msg_context;		/* Contexts in message */
-    struct qli_msg	*msg_next;		/* Next message in request */
-    struct par	*msg_parameters;	/* Field instances */
-    USHORT	msg_number;		/* Message number */
-    USHORT	msg_length;		/* Message length */
-    USHORT	msg_parameter;		/* Next parameter number */
-    UCHAR	*msg_buffer;		/* Message buffer */
-} *QLI_MSG;
+    struct qli_msg* msg_next;		/* Next message in request */
+    struct qli_par* msg_parameters;	/* Field instances */
+    USHORT		msg_number;			/* Message number */
+    USHORT		msg_length;			/* Message length */
+    USHORT		msg_parameter;		/* Next parameter number */
+    UCHAR*		msg_buffer;			/* Message buffer */
+};
 
-/* Field Instance */
+/* Parameter block */
 
-typedef struct par {
-    blk		par_header;
-    DSC		par_desc;		/* Value descriptor */
-    par*	par_next;		/* Next par block in context */
-    qli_msg*	par_message;		/* Parent message */
-    struct qli_nod*	par_value;		/* Value */
-    USHORT	par_parameter;		/* Parameter number */
-    USHORT	par_offset;			/* Offset of parameter in message */
-    par*	par_missing;		/* Parameter block for missing value */
-} *PAR;
+struct qli_par {
+	blk			par_header;
+	dsc			par_desc;			/* Value descriptor */
+	qli_par*	par_next;			/* Next par block in context */
+	qli_msg*	par_message;		/* Parent message */
+	struct qli_nod*	par_value;		/* Value */
+	USHORT		par_parameter;		/* Parameter number */
+	USHORT		par_offset;			/* Offset of parameter in message */
+	qli_par*	par_missing;		/* Parameter block for missing value */
+};
 
 /* Print item block */
 
@@ -155,14 +163,14 @@ typedef enum itm_t
     item_report_header
 } ITM_T;
 
-typedef struct itm {
+struct qli_print_item {
     blk		itm_header;
     struct qli_nod*	itm_value;
-    TEXT	*itm_edit_string;
-    struct pics	*itm_picture;			/* picture string block */
-    TEXT	*itm_query_header;
+    TEXT*	itm_edit_string;
+    struct pics	*itm_picture;		/* picture string block */
+    TEXT*	itm_query_header;
     ITM_T	itm_type;
-    USHORT	itm_flags;			/* Misc flags and crud */
+    USHORT	itm_flags;				/* Misc flags and crud */
     UCHAR	itm_dtype;
     UCHAR	itm_sub_type;
     USHORT	itm_print_offset;
@@ -170,39 +178,39 @@ typedef struct itm {
     USHORT	itm_header_offset;
     USHORT	itm_header_length;
     USHORT	itm_header_segments;
-    USHORT	itm_count;			/* Number of lines to skip */
-    USHORT	itm_column;			/* Logical column number */
-    FRBRD	*itm_stream;
+    USHORT	itm_count;				/* Number of lines to skip */
+    USHORT	itm_column;				/* Logical column number */
+    FRBRD*	itm_stream;
     USHORT	itm_kanji_fragment;		/* JPN: last kanji on line border */
-    ISC_STATUS	itm_blob_status;		/* JPN: status of the last blob fetch */
-} *ITM;
+    ISC_STATUS	itm_blob_status;	/* JPN: status of the last blob fetch */
+};
 
 #define ITM_overlapped	1			/* Overlapped by another item */
 
 /* Print Control Block */
 
-typedef struct prt {
+struct qli_prt {
     blk		prt_header;
-    struct file* prt_file;		/* IB_FILE pointer */
-    struct rpt*	prt_report;		/* Report block (if report) */
-    void		(*prt_new_page)(prt*, bool);	/* New page routine, if any */
+    struct file*	prt_file;		/* IB_FILE pointer */
+    struct qli_rpt*	prt_report;		/* Report block (if report) */
+    void	(*prt_new_page)(qli_prt*, bool);	/* New page routine, if any */
     USHORT	prt_lines_per_page;
     SSHORT	prt_lines_remaining;
     USHORT	prt_page_number;
-} *PRT;
+};
 
 /* General node blocks */
 
-typedef struct qli_nod {
-    blk		nod_header;
-    NOD_T	nod_type;		/* Type of node */
-    DSC		nod_desc;		/* Descriptor */
-    PAR		nod_import;		/* To pass random value */
-    PAR		nod_export;		/* To pass random value */
-    SSHORT	nod_count;		/* Number of arguments */
-    UCHAR	nod_flags;
-    qli_nod* nod_arg[1];	/* If you change this change blk.h too */
-} *QLI_NOD;
+struct qli_nod {
+    blk			nod_header;
+    NOD_T		nod_type;		/* Type of node */
+    dsc			nod_desc;		/* Descriptor */
+    qli_par*	nod_import;		/* To pass random value */
+    qli_par*	nod_export;		/* To pass random value */
+    SSHORT		nod_count;		/* Number of arguments */
+    UCHAR		nod_flags;
+    qli_nod* 	nod_arg[1];		/* If you change this change blk.h too */
+};
 
 #define NOD_local	1		/* locally computed expression */
 #define NOD_remote	2
@@ -365,9 +373,9 @@ typedef struct qli_nod {
 #define EXTERN	extern
 #endif
 
-EXTERN QLI_REQ	QLI_requests;			/* Requests in statement */
+EXTERN qli_req*	QLI_requests;			/* Requests in statement */
 
 #undef EXTERN
 
-#endif /* QLI_EXE_H */
+#endif // QLI_EXE_H
 
