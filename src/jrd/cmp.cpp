@@ -3611,8 +3611,37 @@ static jrd_nod* pass1(thread_db* tdbb,
 			  validate_expr);
 		break;
 
+	case nod_not:
+		// See below
+		if (node->nod_arg[0]->nod_type == nod_ansi_any)
+		{
+			node->nod_arg[0]->nod_flags |= nod_deoptimize;
+		}
+		break;
+
 	case nod_ansi_all:
+		node->nod_flags |= nod_deoptimize;
+		// fall into
+
 	case nod_ansi_any:
+		if (node->nod_flags & nod_deoptimize)
+		{
+			// Deoptimize the conjunct, not the ANY/ALL node itself
+			jrd_nod* boolean =
+				((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean;
+			fb_assert(boolean);
+			if (boolean->nod_type == nod_and)
+			{
+				boolean = boolean->nod_arg[1];
+			}
+			// Deoptimize the injected boolean of a quantified predicate
+			// when it's necessary. Neither ALL nor NOT ANY requires an index scan.
+			// This fixes bugs SF #459059 and #543106.
+			boolean->nod_flags |= nod_deoptimize;
+			node->nod_flags &= ~nod_deoptimize;
+		}
+		// fall into
+
 	case nod_any:
 	case nod_exists:
 	case nod_unique:

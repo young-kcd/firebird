@@ -697,6 +697,16 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		conjunct_count++;
 	}
 
+	// Deoptimize some conjuncts in advance
+	for (i = 0; i < opt->opt_conjuncts.getCount(); i++)
+	{
+		if (opt->opt_conjuncts[i].opt_conjunct_node->nod_flags & nod_deoptimize)
+		{
+			// Fake an index match for them
+			opt->opt_conjuncts[i].opt_conjunct_flags |= opt_conjunct_matched;
+		}
+	}
+
 	// attempt to optimize aggregates via an index, if possible
 	if (aggregate && !sort && !project) {
 		sort = aggregate;

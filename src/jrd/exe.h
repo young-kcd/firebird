@@ -111,11 +111,10 @@ public:
 const int nod_comparison = 1;
 const int nod_id		= 1;		/* marks a field node as a blr_fid guy */
 const int nod_quad		= 2;		/* compute in quad (default is long) */
-const int nod_any_and	= 2;		/* and node is mapping of quantified predicate */
 const int nod_double	= 4;
 const int nod_date		= 8;
 const int nod_value		= 16;		/* full value area required in impure space */
-const int nod_evaluate	= 32;		/* (Gateway only) */
+const int nod_deoptimize	= 32;	/* boolean which requires deoptimization */
 const int nod_agg_dbkey	= 64;		/* dbkey of an aggregate */
 const int nod_invariant	= 128;		/* node is recognized as being invariant */
 
