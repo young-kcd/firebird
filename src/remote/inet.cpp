@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.88 2003-11-16 12:52:36 brodsom Exp $
+$Id: inet.cpp,v 1.89 2003-11-20 08:13:25 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -158,10 +158,6 @@ extern int h_errno;
 #define H_ERRNO		WSAGetLastError()
 
 #endif /* WIN_NT */
-
-#ifndef HAVE_SOCKLEN_T
-typedef int socklen_t;
-#endif
 
 #ifdef SYSV_SIGNALS
 #define NO_ITIMER
