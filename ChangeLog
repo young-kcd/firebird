@@ -1,3 +1,41 @@
+2003-03-20 23:43  arnobrinkman
+
+	* firebird2/src/jrd/: inf.cpp, svc.cpp:
+	
+	bugfix on service API, reported by Martijn Tonies in fb-devel. 
+	This bug exists already since FB1.0.  Due bad validate-checking on
+	returned value this even causes a server-crash !!!!
+
+2003-03-20 12:11  aafemt
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.firebird,
+	builds/posix/make.defaults,
+	src/install/arch-specific/linux/Makefile.in,
+	src/install/arch-specific/linux/classic/makeInstallImage.sh.in,
+	src/install/arch-specific/linux/classic/postinstall.sh.in,
+	src/install/arch-specific/linux/classic/preinstall.sh.in,
+	src/install/arch-specific/sinixz/Makefile.in:
+	
+	Version information is concentrated in src/misc/writeBuildNum.sh
+
+2003-03-20 10:32  dimitr
+
+	* firebird2/src/burp/burp.cpp:
+	
+	no message
+
+2003-03-20 10:28  dimitr
+
+	* firebird2/src/jrd/: jrd_pwd.h, pwd.cpp:
+	
+	Make sure attachment handle is closed on server shutdown.
+
+2003-03-20 09:58  alexpeshkoff
+
+	* firebird2/src/jrd/plugin_manager.cpp:
+	
+	Fixed massive memory leak from default pool
+
 2003-03-19 14:14  dimitr
 
 	* firebird2/src/remote/inet.cpp:
