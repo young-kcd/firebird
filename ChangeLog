@@ -1,3 +1,9 @@
+2004-10-29 19:51  skidder
+
+	* firebird2/src/common/classes/sparse_bitmap.h (1.9):
+	
+	Kill a few redundant const qualifiers
+
 2004-10-29 02:29  skidder
 
 	* firebird2/src/jrd/rse.cpp (1.80):
