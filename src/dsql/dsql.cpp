@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.28 2002-11-11 19:08:31 hippoman Exp $
+$Id: dsql.cpp,v 1.29 2002-11-12 16:04:01 alexpeshkoff Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -882,6 +882,7 @@ STATUS callback_execute_immediate( STATUS* status,
     	requests = 0;
 
 	/* 1. Locate why_db_handle, corresponding to jrd_database_handle */
+	THREAD_EXIT;
 	THD_MUTEX_LOCK (&databases_mutex);
 	for (database = databases; database; database = database->dbb_next)
 	    if (((WHY) (database->dbb_database_handle))->handle == jrd_attachment_handle)
@@ -891,6 +892,7 @@ STATUS callback_execute_immediate( STATUS* status,
     	status[1] = gds_bad_db_handle;
     	status[2] = gds_arg_end;
     	THD_MUTEX_UNLOCK(&databases_mutex);
+        THREAD_ENTER;
     	return status[1];
     }
 	why_db_handle = (WHY) (database->dbb_database_handle);
@@ -907,6 +909,7 @@ STATUS callback_execute_immediate( STATUS* status,
 
 	why_trans_handle->parent = why_db_handle;
 	THD_MUTEX_UNLOCK (&databases_mutex);
+    THREAD_ENTER;
 
 	/* 3. Call execute... function */
 	return dsql8_execute_immediate_common(status,
@@ -2439,12 +2442,14 @@ static void cleanup_database( SLONG ** db_handle, SLONG flag)
  **************************************/
 	DBB *dbb_ptr, dbb;
 	STATUS user_status[ISC_STATUS_LENGTH];
-	USHORT i;
 
 	if (!db_handle || !databases)
 		return;
 
+	if (flag)
+		THREAD_EXIT;
 	THD_MUTEX_LOCK(&databases_mutex);
+
 	for (dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
 		if (dbb->dbb_database_handle == *db_handle) {
 			*dbb_ptr = dbb->dbb_next;
@@ -2454,8 +2459,7 @@ static void cleanup_database( SLONG ** db_handle, SLONG flag)
 
 	if (dbb) {
 		if (flag) {
-			THREAD_EXIT;
-			for (i = 0; i < irq_MAX; i++)
+			for (int i = 0; i < irq_MAX; i++)
 				if (dbb->dbb_requests[i])
 					isc_release_request(user_status,
 										reinterpret_cast <
@@ -2466,6 +2470,8 @@ static void cleanup_database( SLONG ** db_handle, SLONG flag)
 		HSHD_finish(dbb);
 		delete dbb->dbb_pool;
 	}
+	else if (flag)
+		THREAD_ENTER;
 
 	if (!databases) {
 		if (!databases) {
@@ -2510,7 +2516,7 @@ static void cleanup_transaction( SLONG * tra_handle, SLONG arg)
 			 * Over the long run, it might be better to move the subsystem_exit()
 			 * call in why.c below the cleanup handlers. smistry 9-27-98
 			 */
-			THREAD_ENTER;
+			THREAD_ENTER; //ttt
 			GDS_DSQL_FREE_CPP(	local_status,
 								&open_cursor->opn_request,
 								DSQL_close);
@@ -2541,7 +2547,7 @@ static void close_cursor( REQ request)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (request->req_handle) {
-		THREAD_EXIT;
+		THREAD_EXIT; //ttt
 		if (request->req_type == REQ_GET_SEGMENT ||
 			request->req_type == REQ_PUT_SEGMENT)
 				isc_close_blob(status_vector,
@@ -3657,7 +3663,9 @@ static DBB init( SLONG ** db_handle)
 	}
 #endif
 
+	THREAD_EXIT;
 	THD_MUTEX_LOCK(&databases_mutex);
+	THREAD_ENTER;
 
 	if (!init_flag) {
 		init_flag = TRUE;
