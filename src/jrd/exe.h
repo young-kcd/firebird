@@ -135,7 +135,7 @@ typedef rse* RSE;
 #define rse_variant	4			/* flags rse as variant (not invariant?) */
 
 // Number of nodes may fit into nod_arg of normal node to get to rse_relation
-#define rse_delta	(sizeof(class rse)-sizeof(jrd_nod))/sizeof(jrd_nod*)
+const size_t rse_delta = (sizeof(rse)-sizeof(jrd_nod))/sizeof(jrd_nod::blk_repeat_type);
 
 // Types of nulls placement for each column in sort order
 #define rse_nulls_default 0

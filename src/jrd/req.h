@@ -206,7 +206,7 @@ public:
 typedef jrd_req* JRD_REQ;  // CVC: Scheduled for termination, don't use the uppercase type!!!
 
 // Size of request without rpb items at the tail. Used to calculate impure area size
-#define REQ_SIZE	(sizeof (jrd_req) - sizeof (rpb))
+const size_t REQ_SIZE = sizeof (jrd_req) - sizeof (jrd_req::blk_repeat_type);
 
 /* Flags for req_flags */
 #define req_active				0x1L

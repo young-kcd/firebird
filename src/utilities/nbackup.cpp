@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.15 2004-03-09 00:17:05 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.16 2004-03-12 20:19:41 skidder Exp $
  *
  */
  
@@ -526,7 +526,7 @@ void nbackup::backup_database(int level, const char* fname) {
 			Firebird::PathName begin, fil;
 			PathUtils::splitLastComponent(begin, fil, database);
 			sprintf(bakname, "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
-				today->tm_year + 1900, today->tm_mon, today->tm_mday,
+				today->tm_year + 1900, today->tm_mon+1, today->tm_mday,
 				today->tm_hour, today->tm_min);
 			printf("%s", bakname); // Print out generated filename for script processing
 		}
@@ -559,7 +559,7 @@ void nbackup::backup_database(int level, const char* fname) {
 				header.hdr_flags);
 		}
 	
-		page_buff = (PAG)malloc(header.hdr_page_size);
+		page_buff = reinterpret_cast<PAG>(FB_NEW(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size]);
 		
 		seek_file(dbase, 0);
 		
@@ -677,7 +677,7 @@ void nbackup::backup_database(int level, const char* fname) {
 		if (typeid(ex) != typeid(b_error)) {
 			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
 		}
-		free(page_buff);
+		delete[] reinterpret_cast<UCHAR*>(page_buff);
 		if (delete_backup)
 			unlink(bakname);
 		if (trans) {
@@ -689,7 +689,7 @@ void nbackup::backup_database(int level, const char* fname) {
 		detach_database();
 		throw;
 	}
-	free(page_buff);
+	delete[] reinterpret_cast<UCHAR*>(page_buff);
 	internal_unlock_database();
 	detach_database();
 }
@@ -701,7 +701,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 	create_database();
 	delete_database = true;
 #endif
-	PAG page = NULL;
+	UCHAR *page_buffer = NULL;
 	try {
 		int curLevel = 0;
 		FB_GUID prev_guid;
@@ -718,6 +718,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 							b_error::raise("Level 0 backup is not restored");
 						}
 						fixup_database();
+						delete[] page_buffer;
 						return;
 					}
 					try {
@@ -736,6 +737,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 				if (curLevel >= filecount) {
 					close_database();
 					fixup_database();
+					delete[] page_buffer;
 					return;
 				}
 				else {
@@ -774,12 +776,12 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 					if ((bytesDone = read_file(backup, &pageNum, sizeof(pageNum))) == 0)
 						break;					
 					if (bytesDone != sizeof(pageNum) || 
-						read_file(backup, page, bakheader.page_size) != bakheader.page_size) 
+						read_file(backup, page_buffer, bakheader.page_size) != bakheader.page_size) 
 					{
 						b_error::raise("Unexpected end of backup file: %s", bakname);
 					}
 					seek_file(dbase, ((SINT64)pageNum)*bakheader.page_size);
-					write_file(dbase, page, bakheader.page_size);
+					write_file(dbase, page_buffer, bakheader.page_size);
 				}
 				delete_database = false;
 			}
@@ -804,15 +806,15 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 				header_page header;
 				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 					b_error::raise("Unexpected end of file when reading restored database header");
-				page = (PAG)malloc(header.hdr_page_size);
+				page_buffer = FB_NEW(*getDefaultMemoryPool) UCHAR[header.hdr_page_size];
 		
 				seek_file(dbase, 0);
 		
-				if (read_file(dbase, page, header.hdr_page_size) != header.hdr_page_size)
+				if (read_file(dbase, page_buffer, header.hdr_page_size) != header.hdr_page_size)
 					b_error::raise("Unexpected end of file when reading header of restored database file (stage 2)");
 				
 				bool guid_found = false;
-				const UCHAR* p = reinterpret_cast<header_page*>(page)->hdr_data;
+				const UCHAR* p = reinterpret_cast<header_page*>(page_buffer)->hdr_data;
 				while (true) {
 					switch(*p) {
 					case HDR_backup_guid:
@@ -839,7 +841,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 		if (typeid(ex) != typeid(b_error)) {
 			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
 		}
-		free(page);
+		delete[] page_buffer;
 		if (delete_database)
 			unlink(dbname);
 		throw;

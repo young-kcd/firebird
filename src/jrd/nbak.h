@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.9 2004-03-07 07:58:41 robocop Exp $
+ *  $Id: nbak.h,v 1.10 2004-03-12 20:19:39 skidder Exp $
  *
  */
  
@@ -152,6 +152,7 @@ private:
 	AllocItemTree* alloc_table; // Cached allocation table of pages in difference file
 	volatile SATOM backup_state;
 	ULONG last_allocated_page; // Last physical page allocated in the difference file
+	BYTE *temp_buffers_space;
 	ULONG *alloc_buffer, *empty_buffer, *spare_buffer;
 	ULONG current_scn;
 	SLONG backup_pages; // Number of allocated pages as it was at point of backup lock

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.23 2004-03-11 05:03:58 robocop Exp $
+ *  $Id: nbak.cpp,v 1.24 2004-03-12 20:19:38 skidder Exp $
  *
  */
 
@@ -925,7 +925,7 @@ BackupManager::BackupManager(Database* _database, int ini_state) :
 	diff_name[0] = 0;
 	
 	// Allocate various database page buffers needed for operation
-	BYTE *buffers = reinterpret_cast<BYTE*>( 
+	temp_buffers_space = reinterpret_cast<BYTE*>(
 		FB_ALIGN( 
 			reinterpret_cast<U_IPTR>(
 				FB_NEW(*database->dbb_permanent) 
@@ -934,11 +934,11 @@ BackupManager::BackupManager(Database* _database, int ini_state) :
 			MIN_PAGE_SIZE
 		)
 	);
-	memset(buffers, 0, database->dbb_page_size * 3);
+	memset(temp_buffers_space, 0, database->dbb_page_size * 3);
 		
-	empty_buffer = reinterpret_cast<ULONG*>(buffers);
-	spare_buffer = reinterpret_cast<ULONG*>(buffers + database->dbb_page_size);
-	alloc_buffer = reinterpret_cast<ULONG*>(buffers + database->dbb_page_size + 2);
+	empty_buffer = reinterpret_cast<ULONG*>(temp_buffers_space);
+	spare_buffer = reinterpret_cast<ULONG*>(temp_buffers_space + database->dbb_page_size);
+	alloc_buffer = reinterpret_cast<ULONG*>(temp_buffers_space + database->dbb_page_size + 2);
 
 	
 #ifdef SUPERSERVER
@@ -999,8 +999,8 @@ BackupManager::~BackupManager() {
 	if (diff_file)
 		PIO_close(diff_file);
 	shutdown_locks();
-	// Note ! We do not free memory for any allocated objects.
-	// It was allocated from database pool and will be freed automatically
+	delete alloc_table;
+	delete[] temp_buffers_space;
 #ifdef SUPERSERVER
 	delete alloc_lock;
 	delete state_lock;

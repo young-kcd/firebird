@@ -112,7 +112,7 @@ rel_MAX} RIDS;
    (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
 // size of req_rpb[0]
-#define REQ_TAIL		sizeof (rpb)
+const size_t REQ_TAIL = sizeof (jrd_req::blk_repeat_type);
 #define MAP_LENGTH		256
 
 /* RITTER - changed HP10 to HPUX */
