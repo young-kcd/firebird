@@ -265,19 +265,15 @@ int DLL_EXPORT ISC_event_wait (
  **************************************/
 ULONG ISC_exception_post(ULONG except_code, TEXT* err_msg)
 {
+	ULONG result;
+	bool is_critical = true;
+	
 	if (!SCH_thread_enter_check ())
 	{
 		THREAD_ENTER;
 	}
 
 	TDBB tdbb = GET_THREAD_DATA;
-	/* If we've catched our own software exception,
-	   continue rewinding the stack to properly handle it
-	   and deliver an error information to the client side */
-	if (tdbb->tdbb_status_vector[0] == 1 && tdbb->tdbb_status_vector[1] > 0)
-	{
-		return EXCEPTION_CONTINUE_SEARCH;
-	}
 
 	if (!err_msg)
 	{
@@ -289,94 +285,96 @@ ULONG ISC_exception_post(ULONG except_code, TEXT* err_msg)
 switch (except_code) 
     {
     case EXCEPTION_ACCESS_VIOLATION:
-	sprintf (log_msg, "%s Access violation.\n"
-			"\t\tThe code attempted to access a virtual\n"
-			"\t\taddress without privilege to do so.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Access violation.\n"
+				"\t\tThe code attempted to access a virtual\n"
+				"\t\taddress without privilege to do so.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_DATATYPE_MISALIGNMENT:
-	sprintf (log_msg, "%s Datatype misalignment.\n"
-			"\t\tThe attempted to read or write a value\n"
-			"\t\tthat was not stored on a memory boundary.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Datatype misalignment.\n"
+				"\t\tThe attempted to read or write a value\n"
+				"\t\tthat was not stored on a memory boundary.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
-	sprintf (log_msg, "%s Array bounds exceeded.\n"
-			"\t\tThe code attempted to access an array\n"
-			"\t\telement that is out of bounds.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Array bounds exceeded.\n"
+				"\t\tThe code attempted to access an array\n"
+				"\t\telement that is out of bounds.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_FLT_DENORMAL_OPERAND:
-	sprintf (log_msg, "%s Float denormal operand.\n"
-			"\t\tOne of the floating-point operands is too\n"
-			"\t\tsmall to represent as a standard floating-point\n"
-			"\t\tvalue.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Float denormal operand.\n"
+				"\t\tOne of the floating-point operands is too\n"
+				"\t\tsmall to represent as a standard floating-point\n"
+				"\t\tvalue.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-	sprintf (log_msg, "%s Floating-point divide by zero.\n"
-			"\t\tThe code attempted to divide a floating-point\n"
-			"\t\tvalue by a floating-point divisor of zero.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Floating-point divide by zero.\n"
+				"\t\tThe code attempted to divide a floating-point\n"
+				"\t\tvalue by a floating-point divisor of zero.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_FLT_INEXACT_RESULT:
-	sprintf (log_msg, "%s Floating-point inexact result.\n"
-			"\t\tThe result of a floating-point operation cannot\n"
-			"\t\tbe represented exactly as a decimal fraction.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Floating-point inexact result.\n"
+				"\t\tThe result of a floating-point operation cannot\n"
+				"\t\tbe represented exactly as a decimal fraction.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_FLT_INVALID_OPERATION:
-	sprintf (log_msg, "%s Floating-point invalid operand.\n"
-			"\t\tAn indeterminant error occurred during a\n"
-			"\t\tfloating-point operation.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Floating-point invalid operand.\n"
+				"\t\tAn indeterminant error occurred during a\n"
+				"\t\tfloating-point operation.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_FLT_OVERFLOW:
-	sprintf (log_msg, "%s Floating-point overflow.\n"
-			"\t\tThe exponent of a floating-point operation\n"
-			"\t\tis greater than the magnitude allowed.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Floating-point overflow.\n"
+				"\t\tThe exponent of a floating-point operation\n"
+				"\t\tis greater than the magnitude allowed.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_FLT_STACK_CHECK:
-	sprintf (log_msg, "%s Floating-point stack check.\n"
-			"\t\tThe stack overflowed or underflowed as the\n"
-			"\t\tresult of a floating-point operation.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Floating-point stack check.\n"
+				"\t\tThe stack overflowed or underflowed as the\n"
+				"\t\tresult of a floating-point operation.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_FLT_UNDERFLOW:
-	sprintf (log_msg, "%s Floating-point underflow.\n"
-			"\t\tThe exponent of a floating-point operation\n"
-			"\t\tis less than the magnitude allowed.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Floating-point underflow.\n"
+				"\t\tThe exponent of a floating-point operation\n"
+				"\t\tis less than the magnitude allowed.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_INT_DIVIDE_BY_ZERO:
-	sprintf (log_msg, "%s Integer divide by zero.\n"
-			"\t\tThe code attempted to divide an integer value\n"
-			"\t\tby an integer divisor of zero.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Integer divide by zero.\n"
+				"\t\tThe code attempted to divide an integer value\n"
+				"\t\tby an integer divisor of zero.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_INT_OVERFLOW:
-	sprintf (log_msg, "%s Interger overflow.\n"
-			"\t\tThe result of an integer operation caused the\n"
-			"\t\tmost significant bit of the result to carry.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg);
-	break;
+		sprintf (log_msg, "%s Interger overflow.\n"
+				"\t\tThe result of an integer operation caused the\n"
+				"\t\tmost significant bit of the result to carry.\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg);
+		break;
     case EXCEPTION_STACK_OVERFLOW:
-        ERR_post(isc_exception_stack_overflow, 0);
-	/* This will never be called, but to be safe it's here */
-	return EXCEPTION_CONTINUE_EXECUTION;
+		ERR_post(isc_exception_stack_overflow, 0);
+		/* This will never be called, but to be safe it's here */
+		result = EXCEPTION_CONTINUE_EXECUTION;
+		is_critical = false;
+		break;
 
     case EXCEPTION_BREAKPOINT:
     case EXCEPTION_SINGLE_STEP:
@@ -386,23 +384,42 @@ switch (except_code)
     case EXCEPTION_IN_PAGE_ERROR:
     case EXCEPTION_ILLEGAL_INSTRUCTION:
     case EXCEPTION_GUARD_PAGE:
-	/* Pass these exception on to someone else,
+		/* Pass these exception on to someone else,
            probably the OS or the debugger, since there
            isn't a dam thing we can do with them */
-        free (log_msg);
-	return EXCEPTION_CONTINUE_SEARCH;
+		result = EXCEPTION_CONTINUE_SEARCH;
+		is_critical = false;
+		break;
     default:
-	sprintf (log_msg, "%s An exception occurred that does\n"
-			"\t\tnot have a description.  Exception number %X.\n"
-			"\tThis exception will cause the Firebird server\n"
-			"\tto terminate abnormally.", err_msg, except_code);
-	break; 
+		/* If we've catched our own software exception,
+		   continue rewinding the stack to properly handle it
+		   and deliver an error information to the client side */
+		if (tdbb->tdbb_status_vector[0] == 1 && tdbb->tdbb_status_vector[1] > 0)
+		{
+			result = EXCEPTION_CONTINUE_SEARCH;
+			is_critical = false;
+		}
+		else
+		{
+			sprintf (log_msg, "%s An exception occurred that does\n"
+					"\t\tnot have a description.  Exception number %X.\n"
+					"\tThis exception will cause the Firebird server\n"
+					"\tto terminate abnormally.", err_msg, except_code);
+		}
+		break; 
 	}
 
 	gds__log(log_msg);
 	gds__free(log_msg);
 
-	exit(3);
+	if (is_critical)
+	{
+		exit(3);
+	}
+	else
+	{
+		return result;
+	}
 }
 
 #endif /* SUPERSERVER */
