@@ -1663,6 +1663,16 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
  *	Get ALL mount points.
  *
  **************************************/
+	
+/* Solaris uses this because:
+	Since we had to substitute an alternative for the stdio supplied
+	with Solaris, we cannot use the getmntent() library call which
+	wants a Solaris stdio FILE* as an argument, so we parse the text-
+	type /etc/mnttab file ourselves.     - from FB1
+	
+	This will still apply with SFIO on FB2.  nmcc Dec2002
+*/
+	
 	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16], *p, *q;
 	SSHORT n;
 
