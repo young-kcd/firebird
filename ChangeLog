@@ -1,3 +1,46 @@
+2004-03-31 07:56  skidder
+
+	* firebird2/src/jrd/: dfw.epp (1.45.2.5), met.epp (1.61.2.3),
+	met_proto.h (1.18.2.2):
+	
+	Backport fix for restore performance regression problem.
+
+2004-03-31 07:08  skidder
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.9.2.4),
+	Firebird2Boot.sln (1.1.2.1), alice.vcproj (1.8.2.2),
+	alice_classic.vcproj (1.8.2.2), build_msg.vcproj (1.1.2.2),
+	burp.vcproj (1.11.2.2), burp_classic.vcproj (1.11.2.2),
+	codes.vcproj (1.1.2.2), common.vcproj (1.9.2.2),
+	common_classic.vcproj (1.7.2.2), common_static.vcproj (1.1.2.1),
+	dsql_server.vcproj (1.10.2.2), dsql_server_classic.vcproj
+	(1.10.2.2), engine.vcproj (1.21.2.2), engine_classic.vcproj
+	(1.20.2.2), engine_embed.vcproj (1.8.2.2), fb2control.vcproj
+	(1.1.2.2), fb_inet_server.vcproj (1.9.2.2), fb_lock_print.vcproj
+	(1.13.2.2), fbclient.vcproj (1.17.2.3), fbclient_static.vcproj
+	(1.1.2.3), fbembed.vcproj (1.14.2.2), fbguard.vcproj (1.11.2.2),
+	fbserver.vcproj (1.10.2.2), fbudf.vcproj (1.6.2.2), gbak.vcproj
+	(1.11.2.2), gdef.vcproj (1.11.2.2), gds32.vcproj (1.10.2.2),
+	gfix.vcproj (1.10.2.2), gpre.vcproj (1.13.2.3), gpre_boot.vcproj
+	(1.12.2.3), gpre_static.vcproj (1.1.2.2), gsec.vcproj (1.10.2.2),
+	gsplit.vcproj (1.5.2.2), gstat.vcproj (1.11.2.2), ib_udf.vcproj
+	(1.10.2.2), ib_util.vcproj (1.10.2.2), instreg.vcproj (1.9.2.2),
+	instsvc.vcproj (1.9.2.2), intl.vcproj (1.10.2.2), ipserver.vcproj
+	(1.9.2.2), isql.vcproj (1.11.2.2), lock.vcproj (1.8.2.2),
+	lock_classic.vcproj (1.8.2.2), qli.vcproj (1.10.2.2), remote.vcproj
+	(1.11.2.2), remote_classic.vcproj (1.11.2.2), utilities.vcproj
+	(1.10.2.2), utilities_classic.vcproj (1.9.2.2), v5_examples.vcproj
+	(1.1.2.1), wal.vcproj (1.8.2.2), wal_classic.vcproj (1.8.2.2):
+	
+	Update MSVC7 makefiles
+
+2004-03-31 04:42  skidder
+
+	* firebird2/src/: jrd/intl_classes.h (1.4.2.1), jrd/jrd.h
+	(1.42.2.3), utilities/fbcpl/fbdialog.cpp (1.1.2.6):
+	
+	Minor fixes needed to build Firebird 1.5 with VS2003
+
 2004-03-29 09:40  skidder
 
 	* firebird2/src/: common/classes/array.h (1.3.2.2), jrd/cmp.cpp
