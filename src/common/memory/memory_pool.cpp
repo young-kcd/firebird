@@ -637,7 +637,7 @@ FBMemoryPool::FBMemoryPool(MemoryPool* p, Segment* seg, size_t extInc,
 		parentPool(p),
 		pimplParent(pP),
 		blk_type_count(0),
-		extend_increment( (extInc + ALLOC_ALIGNMENT - 1) << ALLOC_ALIGN_SHIFT )
+		extend_increment( (extInc + ALLOC_ALIGNMENT - 1) >> ALLOC_ALIGN_SHIFT )
 {
 	if (extend_increment < MIN_ALLOCATION)
 		extend_increment = MIN_ALLOCATION;
