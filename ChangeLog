@@ -1,3 +1,104 @@
+2004-01-09 23:34  arnobrinkman
+
+	* firebird2/src/burp/: burp.h, restore.epp:
+	
+	Fix bug: "arithmetic exception, numeric overflow, or string
+	truncation" on VIEW after restore.
+	
+	This was caused if VIEW1 was referenced in VIEW2, but VIEW2 was
+	restored before VIEW1.	Due that the calculated dbkey_length stored
+	in RDB$RELATIONS for VIEW2 is wrong.  After all relations are
+	restored a recalculation of dbkey_length for VIEWs is done.
+	
+	This fix should also be added in the first release (SP ?) after
+	FB1.5 final.
+
+2004-01-09 10:28  paul_reeves
+
+	* firebird2/src/:
+	install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc,
+	install/arch-specific/win32/FirebirdInstall_15.iss,
+	misc/security.gbak:
+	
+	Add grants to public on tables in security.fdb. Update build
+	numbers for post-RC8 builds. Add a space to two string resources in
+	the Win32 installer.
+
+2004-01-09 03:23  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Change ambiguity check for proper handling of sub-queries and
+	non-aliassed (derived)tables.
+	
+	This doesn't work anymore : "select table.field from table t"
+	
+	But now this does work correctly : "select * from table t join
+	table on (table.ID = t.ID)"
+
+2004-01-09 02:51  skidder
+
+	* firebird2/src/jrd/: blb.cpp, dpm.epp:
+	
+	Do not allow to create BLOBs or set generators from read-only
+	transactions.  This should finally close SF#750664
+
+2004-01-09 02:21  skidder
+
+	* firebird2/src/jrd/dpm.epp:
+	
+	Fix another bug mentioned in SF#750664
+
+2004-01-09 02:06  skidder
+
+	* firebird2/src/jrd/cch.cpp:
+	
+	Fix bug introduced during C->C++ porting effort.  One of the
+	consequences of this bug were mentioned in the SF#750664
+
+2004-01-08 22:29  skidder
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Use backward-compatible default nulls ordering for old ODS as
+	suggested by Dmitry Emanov to preserve backward compatibility
+
+2004-01-08 18:15  skidder
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, Firebird2Boot.sln,
+	alice.vcproj, alice_classic.vcproj, build_msg.vcproj, burp.vcproj,
+	burp_classic.vcproj, codes.vcproj, common.vcproj,
+	common_classic.vcproj, common_static.vcproj, dsql_server.vcproj,
+	dsql_server_classic.vcproj, engine.vcproj, engine_classic.vcproj,
+	engine_embed.vcproj, fb_inet_server.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbclient_static.vcproj, fbembed.vcproj,
+	fbguard.vcproj, fbserver.vcproj, fbudf.vcproj, gbak.vcproj,
+	gdef.vcproj, gds32.vcproj, gfix.vcproj, gpre.vcproj,
+	gpre_boot.vcproj, gpre_static.vcproj, gsec.vcproj, gsplit.vcproj,
+	gstat.vcproj, ib_udf.vcproj, ib_util.vcproj, instreg.vcproj,
+	instsvc.vcproj, intl.vcproj, isql.vcproj, lock.vcproj,
+	lock_classic.vcproj, nbackup.vcproj, qli.vcproj, remote.vcproj,
+	remote_classic.vcproj, utilities.vcproj, utilities_classic.vcproj,
+	wal.vcproj, wal_classic.vcproj:
+	
+	Update MSVC7 makefiles. Use VS2003 since nobody else is obviously
+	using VS7 makefiles. To build with original VS.NET use one of the
+	available converters (I fixed up VSPC to be able to convert
+	Firebird projects, for example)
+
+2004-01-08 11:28  epocman
+
+	* firebird2/src/utilities/: install.cpp, install_client.cpp:
+	
+	Minor bug fixes, as reported in firebird-devel by
+	<togniolli@uol.com.br>.
+
+2004-01-08 06:47  robocop
+
+	* firebird2/builds/: misc/journal.gbak, win32/prepare.bat:
+	
+	Removing JOURNAL leftover. Thanks Blas.
+
 2004-01-07 17:49  alexpeshkoff
 
 	*
