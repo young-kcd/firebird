@@ -2904,7 +2904,7 @@ first_clause	: FIRST long_integer begin_limit
 skip_clause	: SKIP long_integer
 			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
 		| SKIP '(' end_limit value ')'
-			{ $$ = $3; }
+			{ $$ = $4; }
 		| SKIP parameter
 			{ $$ = $2; }
 		;
