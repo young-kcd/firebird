@@ -44,13 +44,15 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 const int array_desc_column_major = 1;	// Set for FORTRAN
 
-typedef struct gen_t {
+struct gen_t {
 	UCHAR* gen_sdl;
 	UCHAR** gen_sdl_ptr;
 	UCHAR* gen_end;
 	ISC_STATUS* gen_status;
 	SSHORT gen_internal;
-} *GEN_T;
+};
+
+typedef gen_t *GEN_T;
 
 static void adjust_length(ISC_ARRAY_DESC*);
 static void copy_exact_name (const char*, char*, SSHORT);

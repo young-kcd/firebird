@@ -29,7 +29,7 @@
 const USHORT DIALECT_sqlda	= 0;
 const USHORT DIALECT_xsqlda	= 1;
 
-typedef struct
+struct SQLVAR
 {
 	SSHORT	sqltype;
 	SSHORT	sqllen;
@@ -37,16 +37,16 @@ typedef struct
 	SSHORT*	sqlind;
 	SSHORT	sqlname_length;
 	SCHAR	sqlname[30];
-} SQLVAR;
+};
 
-typedef struct
+struct SQLDA
 {
 	SCHAR	sqldaid[8];
 	SLONG	sqldabc;
 	SSHORT	sqln;
 	SSHORT	sqld;
 	SQLVAR	sqlvar[1];
-} SQLDA;
+};
 
 #define SQLDA_LENGTH(n)		(sizeof (SQLDA) + (n-1) * sizeof (SQLVAR))
 

@@ -39,7 +39,7 @@
 
 // an enumeration of the possible node types in a syntax tree 
 
-typedef enum nod_t 
+enum nod_t 
 {
 	nod_unknown_type = 0,
 	nod_commit = 1,	// Commands, not executed. 
@@ -332,8 +332,9 @@ typedef enum nod_t
 	nod_exec_block,		// EXECUTE BLOCK support
 	nod_param_val,		// default value for SP parameters support
 	nod_rows	// ROWS support
-} NOD_TYPE;
+};
 
+typedef nod_t NOD_TYPE;
 
 /* definition of a syntax node created both
    in parsing and in context recognition */

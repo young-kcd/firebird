@@ -25,11 +25,13 @@
  * MOD 29-Jun-2002
  */
 
-typedef struct tok {
+struct tok {
     USHORT tok_ident;
     const char* tok_string;
     USHORT tok_version;
-} TOK;
+};
+
+typedef tok TOK;
 
 // These symbols are exported
 extern "C" {

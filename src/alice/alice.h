@@ -57,7 +57,7 @@ enum alice_shut_mode {
 	SHUT_FULL = 4
 };
 
-typedef struct user_action
+struct user_action
 {
 	ULONG ua_switches;
 	UCHAR* ua_user;
@@ -74,7 +74,7 @@ typedef struct user_action
 	TEXT ua_log_file[MAXPATHLEN];
 	USHORT ua_db_SQL_dialect;
 	alice_shut_mode ua_shutdown_mode;
-} *USER_ACTION;
+};
 
 
 
@@ -90,7 +90,7 @@ public:
 
 //  Transaction block: used to store info about a multidatabase transaction. 
 
-typedef struct tdr : public pool_alloc<alice_type_tdr>
+struct tdr : public pool_alloc<alice_type_tdr>
 {
 	tdr* tdr_next;				// next subtransaction 
 	SLONG tdr_id;				// database-specific transaction id 
@@ -102,8 +102,9 @@ typedef struct tdr : public pool_alloc<alice_type_tdr>
 	FB_API_HANDLE tdr_db_handle;		// reattached database handle 
 	USHORT tdr_db_caps;			// capabilities of database 
 	USHORT tdr_state;			// see flags below 
-} *TDR;
+};
 
+typedef tdr* TDR;
 // Transaction Description Record 
 
 const int TDR_VERSION		= 1;

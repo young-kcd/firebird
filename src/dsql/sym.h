@@ -28,7 +28,7 @@
 
 // possible symbol types 
 
-typedef enum sym_type {
+enum sym_type {
 	SYM_statement,
 	SYM_cursor,
 	SYM_keyword,
@@ -40,7 +40,9 @@ typedef enum sym_type {
 	SYM_procedure,
 	SYM_intlsym,
 	SYM_eof
-} SYM_TYPE;
+};
+
+typedef sym_type SYM_TYPE;
 
 // symbol block 
 

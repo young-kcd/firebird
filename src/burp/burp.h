@@ -505,7 +505,7 @@ enum att_type {
 };
 
 
-typedef enum att_type ATT_TYPE;
+typedef att_type ATT_TYPE;
 
 // TMN: Why was this even added in the first place???
 //typedef SCHAR		att_type;
@@ -617,14 +617,16 @@ struct burp_prc {
 };
 
 
-typedef struct gfld {
+struct gfld {
 	TEXT		gfld_name [GDS_NAME_LEN];
 	ISC_QUAD	gfld_vb;
 	ISC_QUAD	gfld_vs;
 	ISC_QUAD	gfld_vs2;
 	gfld*		gfld_next;
 	USHORT		gfld_flags;
-} *GFLD;
+};
+
+typedef gfld* GFLD;
 
 enum gfld_flags_vals {
 	GFLD_validation_blr		= 1,
@@ -692,13 +694,13 @@ const int INVALID_HANDLE_VALUE	= -1;
 
 // File block -- for multi-file databases 
 
-typedef enum {
+enum SIZE_CODE {
 	size_n = 0,	// none 
 	size_k,		// k = 1024 
 	size_m,		// m = k x 1024 
 	size_g,		// g = m x 1024 
 	size_e		// error 
-} SIZE_CODE;
+};
 
 struct burp_fil {
 	burp_fil*	fil_next;
@@ -713,19 +715,23 @@ const size_t FIL_LEN	= sizeof(burp_fil);
 
 /* Split & Join stuff */
 
-typedef enum act_t {
+enum act_t {
 	ACT_unknown, // action is unknown 
 	ACT_backup,
 	ACT_backup_split,
 	ACT_restore,
 	ACT_restore_join
-} ACT_T;
+};
 
-typedef struct act {
+typedef act_t ACT_T;
+
+struct act {
 		USHORT		act_total;
 		burp_fil*	act_file;
 		ACT_T		act_action;
-} *ACT;
+};
+
+typedef act* ACT; 
 
 const size_t ACT_LEN = sizeof(act);
 
@@ -733,7 +739,7 @@ const ULONG MAX_LENGTH = -1UL; // Keep in sync with burp_fil.fil_length
 
 // This structure has been cloned from spit.c 
 
-typedef struct hdr_split {
+struct hdr_split {
 	TEXT hdr_split_tag[18];
 	TEXT hdr_split_timestamp[30];
 	TEXT hdr_split_text1[11];
@@ -742,7 +748,9 @@ typedef struct hdr_split {
 	TEXT hdr_split_total[4];	 // Total number of files 
 	TEXT hdr_split_text3[2];
 	TEXT hdr_split_name[27];	 // File name 
-} *HDR_SPLIT;
+};
+
+typedef hdr_split* HDR_SPLIT;
 
 /* NOTE: size of the hdr_split_tag and HDR_SPLIT_TAG must be the same and equal
    to 18. Otherwise we will not be able to join the gbk files v5.x */
@@ -755,7 +763,7 @@ const unsigned int MIN_SPLIT_SIZE	= 2048;	// bytes
 
 // Global switches and data 
 
-typedef struct tgbl
+struct tgbl
 {
 	thdd		tgbl_thd_data;
 	const TEXT*	gbl_database_file_name;
@@ -881,7 +889,9 @@ typedef struct tgbl
 	isc_req_handle	handles_write_procedure_prms_req_handle1;
 	USHORT			hdr_forced_writes;
 	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update 
-} *TGBL;
+};
+
+typedef tgbl* TGBL;
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h
 // in other modules.
