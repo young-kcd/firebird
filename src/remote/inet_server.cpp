@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.21 2003-02-10 11:48:24 dimitr Exp $
+$Id: inet_server.cpp,v 1.22 2003-02-14 02:23:18 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -93,7 +93,7 @@ $Id: inet_server.cpp,v 1.21 2003-02-10 11:48:24 dimitr Exp $
 #endif
 #include <errno.h>
 #include "../jrd/gds.h"
-#include "../jrd/pwd.h"
+#include "../jrd/jrd_pwd.h"
 #endif
 
 #include "../remote/remote.h"
