@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.50 2004-01-28 07:50:27 robocop Exp $
+//  $Id: gpre.cpp,v 1.51 2004-02-20 06:42:41 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -135,7 +135,8 @@ static SLONG traced_position = 0;
 //___________________________________________________________________
 // Test if input language is cpp based.
 //
-bool isLangCpp(LANG_T lang) {
+bool isLangCpp(LANG_T lang)
+{
     if (lang == lang_cxx || lang == lang_internal) {
         return true;
     }
@@ -239,7 +240,6 @@ enum char_types {
 int main(int argc, char* argv[])
 {
 	gpre_sym* symbol;
-	SLONG end_position;
 	int i;
 	TEXT*	p;
 	TEXT	spare_file_name[256];
@@ -387,7 +387,8 @@ int main(int argc, char* argv[])
 		{
 			strcpy(spare_file_name, file_name);
 			if (file_rename(spare_file_name, ext_tab->in, NULL) &&
-				(input_file = ib_fopen(spare_file_name, FOPEN_READ_TYPE))) {
+				(input_file = ib_fopen(spare_file_name, FOPEN_READ_TYPE)))
+			{
 				file_name = spare_file_name;
 				break;
 			}
@@ -862,7 +863,9 @@ int main(int argc, char* argv[])
 	sw_databases = isc_databases;
 
 	try {
-		for (end_position = 0; end_position = compile_module(end_position,filename_array[3]););  // empty loop
+		SLONG end_position = 0;
+		while (end_position = compile_module(end_position,filename_array[3]));
+		// empty loop body
 	}	// try
 	catch (const std::exception&) {}  // fall through to the cleanup code
 
@@ -913,7 +916,6 @@ int main(int argc, char* argv[])
 
 void CPR_abort()
 {
-
 	++fatals;
 	Firebird::status_exception::raise(1);
 }
@@ -1007,7 +1009,6 @@ void CPR_exit( int stat)
 
 void CPR_warn(const TEXT* string)
 {
-
 	ib_fprintf(ib_stderr, "(W) %s:%d: %s\n", file_name, line + 1, string);
 	warnings++;
 }
@@ -1149,18 +1150,19 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 //       A BASIC-specific function which resides here since it reads from
 //       the input file.  Look for a '\n' with no continuation character (&).
 //       Eat tokens until previous condition is satisfied.
-//       This function is used to "eat" an BASIC external function definition.
+//       This function is used to "eat" a BASIC external function definition.
 //  
 
 void CPR_raw_read()
 {
-	SSHORT c;
 	SCHAR token_string[MAXSYMLEN];
 	bool continue_char = false;
 
 	SCHAR* p = token_string;
 
-	while (c = get_char(input_file)) {
+	SSHORT c;
+	while (c = get_char(input_file))
+	{
 		position++;
 		if ((classes[c] == CHR_WHITE) && sw_trace && token_string) {
 			*p = 0;
@@ -1171,7 +1173,7 @@ void CPR_raw_read()
 		else
 			*p++ = (SCHAR) c;
 
-		if (c = '\n') {
+		if (c == '\n') { // Changed assignment to comparison. Probable archaic bug
 			line++;
 			line_position = 0;
 			if (!continue_char)
@@ -1263,13 +1265,13 @@ TOK CPR_token()
 	else if (default_lc_ctype && text_subtypes) {
 		switch (sw_sql_dialect) {
 		case SQL_DIALECT_V5:
-			if (isQuoted(token->tok_type)){
+			if (isQuoted(token->tok_type)) {
 				token->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype), 
 												   SYM_charset);
 			}
 			break;
 		default:
-			if (token->tok_type == tok_sglquoted){
+			if (token->tok_type == tok_sglquoted) {
 				token->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype),
 												   SYM_charset);
 			}
@@ -1593,7 +1595,8 @@ static void finish_based( act* action)
 		}
 
 		if ((based_on->bas_flags & BAS_segment)
-			&& !(field->fld_flags & FLD_blob)) {
+			&& !(field->fld_flags & FLD_blob))
+		{
 			sprintf(s, "field %s is not a blob",
 					field->fld_symbol->sym_string);
 			CPR_error(s);
@@ -2016,9 +2019,8 @@ static TOK get_token()
 
 #ifdef GPRE_ADA
 	if ((sw_language == lang_ada) && (c == '\'')) {
-		SSHORT c1, c2;
-		c1 = nextchar();
-		c2 = nextchar();
+		const SSHORT c1 = nextchar();
+		const SSHORT c2 = nextchar();
 		if (c2 != '\'') {
 			char_class = CHR_LETTER;
 		}
@@ -2267,11 +2269,10 @@ static TOK get_token()
 
 static int nextchar()
 {
-	SSHORT c;
-
 	position++;
 	line_position++;
-	if ((c = get_char(input_file)) == '\n') {
+	const SSHORT c = get_char(input_file);
+	if (c == '\n') {
 		line++;
 		prior_line_position = line_position;
 		line_position = 0;
@@ -2334,10 +2335,7 @@ static int nextchar()
 
 static SLONG pass1(const TEXT* base_directory)
 {
-	act* action;
-	SLONG start;
-
-//  FSG 14.Nov.2000 
+//  FSG 14.Nov.2000
 	if (sw_verbose) {
 		ib_fprintf(ib_stderr,
 				   "*********************** PASS 1 ***************************\n");
@@ -2347,8 +2345,9 @@ static SLONG pass1(const TEXT* base_directory)
 	{
 		while (token.tok_symbol)
 		{
-			start = token.tok_position;
-			if (action = PAR_action(base_directory))
+			const SLONG start = token.tok_position;
+			act* action = PAR_action(base_directory);
+			if (action)
 			{
 				action->act_position = start;
 				if (!(action->act_flags & ACT_back_token)) {
@@ -2427,10 +2426,7 @@ static SLONG pass1(const TEXT* base_directory)
 
 static void pass2( SLONG start_position)
 {
-	SSHORT d, prior, comment_start_len, to_skip;
-	SLONG column, start;
 	SLONG i;
-	bool line_pending;
 
 	SSHORT c = 0;
 
@@ -2472,15 +2468,12 @@ static void pass2( SLONG start_position)
 //  
 
 	SLONG line = 0;
-	if (sw_lines)
-		line_pending = true;
-	else
-		line_pending = false;
+	bool line_pending = sw_lines;
 	SLONG current = 1 + start_position;
-	column = 0;
+	SLONG column = 0;
 
-	comment_start_len = strlen(comment_start);
-	to_skip = 0;
+	SSHORT comment_start_len = strlen(comment_start);
+	SSHORT to_skip = 0;
 
 //  Dump text until the start of the next action, then process the action. 
 
@@ -2532,7 +2525,7 @@ static void pass2( SLONG start_position)
 		// Unless the action is purely a marker, insert a comment initiator
 		// into the output stream.
 
-		start = column;
+		const SLONG start = column;
 		if (!(action->act_flags & ACT_mark)) {
 			if (sw_language == lang_fortran) {
 				ib_fputc('\n', out_file);
@@ -2558,24 +2551,29 @@ static void pass2( SLONG start_position)
 				CPR_error("internal error -- unexpected EOF in action");
 				return;
 			}
-			prior = c;
+			const SSHORT prior = c;
 			c = get_char(input_file);
 			if (!suppress_output) {
 				// close current comment to avoid nesting comments 
 				if (sw_block_comments && !(action->act_flags & ACT_mark) &&
-					c == comment_start[0]) {
-					return_char((d = get_char(input_file)));
+					c == comment_start[0])
+				{
+					const SSHORT d = get_char(input_file);
+					return_char(d);
 					if (d == comment_start[1])
 						ib_fputs(comment_stop, out_file);
 				}
 				if (sw_language != lang_cobol || !sw_ansi || c == '\n'
 					|| to_skip-- <= 0)
+				{
 					ib_putc(c, out_file);
+				}
 				if (c == '\n') {
 					line++;
 					if ((sw_language == lang_fortran) ||
 						(sw_language == lang_ada) ||
-						(sw_language == lang_cobol)) {
+						(sw_language == lang_cobol))
+					{
 						ib_fputs(comment_start, out_file);
 						to_skip =
 							(column < 7) ? comment_start_len - column : 0;
@@ -2587,7 +2585,9 @@ static void pass2( SLONG start_position)
 
 				if (sw_block_comments && !(action->act_flags & ACT_mark) &&
 					prior == comment_stop[0] && c == comment_stop[1])
+				{
 					ib_fputs(comment_start, out_file);
+				}
 			}
 		}
 
@@ -2603,7 +2603,10 @@ static void pass2( SLONG start_position)
 		(*gen_routine) (action, start);
 		if (action->act_type == ACT_routine &&
 			!action->act_object &&
-			((sw_language == lang_c) || (isLangCpp(sw_language)))) continue;
+			((sw_language == lang_c) || (isLangCpp(sw_language))))
+		{
+			continue;
+		}
 
 		if (action->act_flags & ACT_break)
 			return;
@@ -2721,7 +2724,7 @@ static void return_char( SSHORT c)
 
 static SSHORT skip_white()
 {
-	SSHORT c, c2, next;
+	SSHORT c, next;
 
 	while (true) {
 		if ((c = nextchar()) == EOF)
@@ -2733,7 +2736,8 @@ static SSHORT skip_white()
 
 #ifdef GPRE_FORTRAN
 		if (sw_language == lang_fortran &&
-			line_position == 1 && (c == 'C' || c == 'c' || c == '*')) {
+			line_position == 1 && (c == 'C' || c == 'c' || c == '*'))
+		{
 			while ((c = nextchar()) != '\n' && c != EOF);
 			continue;
 		}
@@ -2752,7 +2756,8 @@ static SSHORT skip_white()
 			(!sw_ansi && line_position == 1 &&
 			 (c == 'C' || c == 'c' || c == '*' || c == '/' || c == '\\') ||
 			 (sw_ansi && line_position == 7 && c != '\t' && c != ' '
-			  && c != '-'))) {
+			  && c != '-')))
+		{
 			while ((c = nextchar()) != '\n' && c != EOF);
 			continue;
 		}
@@ -2767,7 +2772,7 @@ static SSHORT skip_white()
 		// skip in-line SQL comments 
 
 		if (sw_sql && (c == '-')) {
-			c2 = nextchar();
+			const SSHORT c2 = nextchar();
 			if (c2 != '-')
 				return_char(c2);
 			else {
@@ -2801,17 +2806,19 @@ static SSHORT skip_white()
 		// skip fortran embedded comments on VMS or hpux or sgi 
 
 		if (c == '!'
-			&& (sw_language == lang_fortran)) {
+			&& (sw_language == lang_fortran))
+		{
 			/* If this character is a '!' followed by a '=', this is an
 			   Interbase 'not equal' operator, not a Fortran comment.
 			   Bug #307.  mao 6/14/89  */
 
-			if ((c2 = nextchar()) == '=') {
-				return_char(c2);
+			const SSHORT c3 = nextchar();
+			if (c3 == '=') {
+				return_char(c3);
 				return c;
 			}
 			else {
-				if ((c = c2) != '\n' && c != EOF)
+				if ((c = c3) != '\n' && c != EOF)
 					while ((c = nextchar()) != '\n' && c != EOF);
 				continue;
 			}

@@ -56,12 +56,12 @@
 
 gds__completion_ast();
 
-static bool extend_file(FIL, ISC_STATUS *);
-static FIL seek_file(FIL, BDB, int *);
-static FIL setup_file(DBB, const TEXT*, USHORT, USHORT, struct NAM*);
-static void setup_trace(FIL, SSHORT);
-static void trace_event(FIL, SSHORT, SCHAR *, SSHORT);
-static bool vms_io_error(ISC_STATUS *, TEXT *, ISC_STATUS, int, FIL);
+static bool extend_file(jrd_file*, ISC_STATUS *);
+static jrd_file* seek_file(jrd_file*, BDB, int *);
+static jrd_file* setup_file(DBB, const TEXT*, USHORT, USHORT, struct NAM*);
+static void setup_trace(jrd_file*, SSHORT);
+static void trace_event(jrd_file*, SSHORT, SCHAR *, SSHORT);
+static bool vms_io_error(ISC_STATUS*, TEXT*, ISC_STATUS, int, jrd_file*);
 
 #define DVI$_DEVLOCKNAM		240
 
@@ -113,7 +113,7 @@ typedef struct fab$ {
 } FAT$;
 
 
-int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
+int PIO_add_file(DBB dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
 {
 /**************************************
  *
@@ -130,14 +130,14 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
  *	have been locked before entry.
  *
  **************************************/
-	fil* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
+	jrd_file* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
 	if (!new_file)
 		return 0;
 
 	new_file->fil_min_page = start;
 	USHORT sequence = 1;
 
-	fil* file;
+	jrd_file* file;
 	for (file = main_file; file->fil_next; file = file->fil_next)
 		++sequence;
 
@@ -148,7 +148,7 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
 }
 
 
-void PIO_close(FIL main_file)
+void PIO_close(jrd_file* main_file)
 {
 /**************************************
  *
@@ -162,7 +162,7 @@ void PIO_close(FIL main_file)
  *	have been locked before entry.
  *
  **************************************/
-	FIL file;
+	jrd_file* file;
 	int status;
 
 	for (file = main_file; file; file = file->fil_next) {
@@ -201,7 +201,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 
 
 // Last param is ignored for now!
-FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
+jrd_file* PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 {
 /**************************************
  *
@@ -294,7 +294,7 @@ int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
 }
 
 
-void PIO_flush(FIL file)
+void PIO_flush(jrd_file* file)
 {
 /**************************************
  *
@@ -309,7 +309,7 @@ void PIO_flush(FIL file)
 }
 
 
-void PIO_force_write(FIL file, bool flag)
+void PIO_force_write(jrd_file* file, bool flag)
 {
 /**************************************
  *
@@ -339,7 +339,7 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
  **************************************/
 	SSHORT iosb[4];
 	int status, block;
-	FIL file;
+	jrd_file* file;
 
 	file = dbb->dbb_file;
 
@@ -411,7 +411,7 @@ SLONG PIO_max_alloc(DBB dbb)
  *
  **************************************/
 	USHORT length;
-	FIL file;
+	jrd_file* file;
 	USHORT iosb[4];
 	ATR$ atr;
 	FIB$ fib;
@@ -465,11 +465,11 @@ SLONG PIO_max_alloc(DBB dbb)
 
 
 
-FIL PIO_open(DBB dbb,
+jrd_file* PIO_open(DBB dbb,
 			 const TEXT* string,
 			 SSHORT length,
-			 SSHORT trace_flag,
-			 BLK connection, const TEXT* file_name, USHORT file_length)
+			 bool trace_flag,
+			 blk* connection, const TEXT* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -482,7 +482,7 @@ FIL PIO_open(DBB dbb,
  *	the connection to communication with a page/lock server.
  *
  **************************************/
-	FIL file;
+	jrd_file* file;
 	int status;
 	TEXT *address, expanded_name[NAM$C_MAXRSS], temp[256];
 	struct FAB fab;
@@ -526,7 +526,7 @@ FIL PIO_open(DBB dbb,
 }
 
 
-int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -540,9 +540,8 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
  **************************************/
 	SSHORT iosb[4];
 	int status, block;
-	DBB dbb;
 
-	dbb = bdb->bdb_dbb;
+	DBB dbb = bdb->bdb_dbb;
 	file = seek_file(file, bdb, &block);
 
 #ifdef ISC_DATABASE_ENCRYPTION
@@ -592,11 +591,11 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 	trace_event(file, trace_read, &bdb->bdb_page, sizeof(bdb->bdb_page));
 #endif
 
-	return TRUE;
+	return true;
 }
 
 
-int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
+bool PIO_write(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -610,9 +609,8 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
  **************************************/
 	SSHORT iosb[4];
 	int status, block;
-	DBB dbb;
 
-	dbb = bdb->bdb_dbb;
+	DBB dbb = bdb->bdb_dbb;
 	file = seek_file(file, bdb, &block);
 
 	for (;;) {
@@ -657,7 +655,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 
 		if (status == SS$_ENDOFFILE) {
 			if (!extend_file(file, status_vector))
-				return FALSE;
+				return false;
 		}
 		else
 			return vms_io_error(status_vector, "QIO writevblk",
@@ -668,11 +666,11 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 	trace_event(file, trace_write, &bdb->bdb_page, sizeof(bdb->bdb_page));
 #endif
 
-	return TRUE;
+	return true;
 }
 
 
-static bool extend_file(FIL file, ISC_STATUS* status_vector)
+static bool extend_file(jrd_file* file, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -762,7 +760,7 @@ static bool extend_file(FIL file, ISC_STATUS* status_vector)
 }
 
 
-static FIL seek_file(FIL file, BDB bdb, int *block)
+static jrd_file* seek_file(jrd_file* file, BDB bdb, int *block)
 {
 /**************************************
  *
@@ -775,17 +773,16 @@ static FIL seek_file(FIL file, BDB bdb, int *block)
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	ULONG page;
-	DBB dbb;
-
-	dbb = bdb->bdb_dbb;
-	page = bdb->bdb_page;
+	DBB dbb = bdb->bdb_dbb;
+	ULONG page = bdb->bdb_page;
 
 	for (;; file = file->fil_next)
+	{
 		if (!file)
 			CORRUPT(158);		/* msg 158 database file not available */
 		else if (page >= file->fil_min_page && page <= file->fil_max_page)
 			break;
+	}
 
 	page -= file->fil_min_page - file->fil_fudge;
 	*block = 1 + (page * dbb->dbb_page_size) / 512;
@@ -794,7 +791,7 @@ static FIL seek_file(FIL file, BDB bdb, int *block)
 }
 
 
-static FIL setup_file(DBB dbb,
+static jrd_file* setup_file(DBB dbb,
 					  const TEXT* file_name,
 					  USHORT file_length, USHORT chan, struct NAM* nam)
 {
@@ -808,8 +805,6 @@ static FIL setup_file(DBB dbb,
  *	Set up file and lock blocks for a file.
  *
  **************************************/
-	FIL file;
-	LCK lock;
 	UCHAR lock_id[64], devlock[64], *p, *q;
 	USHORT l, iosb[4];
 	ITM items[2];
@@ -817,7 +812,7 @@ static FIL setup_file(DBB dbb,
 
 /* Allocate file block and move in file name */
 
-	file = FB_NEW_RPT(dbb->dbb_permanent, file_length + 1) fil();
+	jrd_file* file = FB_NEW_RPT(dbb->dbb_permanent, file_length + 1) jrd_file();
 	file->fil_desc = chan;
 	file->fil_length = file_length;
 	file->fil_max_page = -1;
@@ -865,7 +860,8 @@ static FIL setup_file(DBB dbb,
 	while (--l);
 	l = p - lock_id;
 
-	dbb->dbb_lock = lock = FB_NEW_RPT(dbb->dbb_permanent, l) lck();
+	lck* lock = FB_NEW_RPT(dbb->dbb_permanent, l) lck();
+	dbb->dbb_lock = lock;
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL, lock->lck_type);
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
@@ -887,7 +883,7 @@ static FIL setup_file(DBB dbb,
 
 
 #ifdef TRACE
-static void setup_trace(FIL file, SSHORT event)
+static void setup_trace(jrd_file* file, SSHORT event)
 {
 /**************************************
  *
@@ -905,7 +901,7 @@ static void setup_trace(FIL file, SSHORT event)
 }
 
 
-static void trace_event(FIL file, SSHORT type, SCHAR * ptr, SSHORT length)
+static void trace_event(jrd_file* file, SSHORT type, SCHAR * ptr, SSHORT length)
 {
 /**************************************
  *
@@ -931,9 +927,9 @@ static void trace_event(FIL file, SSHORT type, SCHAR * ptr, SSHORT length)
 
 
 static bool vms_io_error(
-							ISC_STATUS * status_vector,
-							TEXT * string,
-							ISC_STATUS operation, int code, FIL file)
+							ISC_STATUS* status_vector,
+							TEXT* string,
+							ISC_STATUS operation, int code, jrd_file* file)
 {
 /**************************************
  *
@@ -952,7 +948,7 @@ static bool vms_io_error(
 	*status_vector++ = (ISC_STATUS) string;
 	*status_vector++ = isc_arg_string;
 	*status_vector++ =
-		(ISC_STATUS) ERR_string(file->fil_string, file->fil_length);
+		(ISC_STATUS)(U_IPTR) ERR_string(file->fil_string, file->fil_length);
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = operation;
 	*status_vector++ = isc_arg_vms;

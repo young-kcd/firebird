@@ -48,14 +48,14 @@
 class ThreadPriorityScheduler {
 private:
 	static MUTX_T mutex;			// locks modification of thps chains
-	static MemoryPool * pool;		// where we should place our thps
-	static ThreadPriorityScheduler * chain;	// where starts thps chain
-	static ThreadPriorityScheduler * news;	// where starts new thps chain
+	static MemoryPool* pool;		// where we should place our thps
+	static ThreadPriorityScheduler* chain;	// where starts thps chain
+	static ThreadPriorityScheduler* news;	// where starts new thps chain
 	static bool initialized;
 	static DWORD specific_key;		// for thread LS access
 	static bool shutdown;		// server shutting down
 
-	ThreadPriorityScheduler * next;			// next thread in list
+	ThreadPriorityScheduler* next;			// next thread in list
 	union {
 	struct thdd *context;	// current context
 	DWORD id;				// ID on startup
@@ -114,3 +114,4 @@ public:
 #endif // THREAD_PSCHED
 
 #endif // JRD_OS_THD_PRIORITY_H
+

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.4 2003-11-28 06:48:31 robocop Exp $
+ * $Id: ibmgr.h,v 1.5 2004-02-20 06:43:26 robocop Exp $
  */
 
 #ifndef UTILITIES_IBMGR_H
@@ -80,7 +80,7 @@
 
 /* structure to hold all information
 */
-typedef struct ibmgr_data_t {
+struct ibmgr_data_t {
 
     USHORT		operation;	/* what's to be done */
     USHORT		suboperation;	/* suboperation */
@@ -95,7 +95,7 @@ typedef struct ibmgr_data_t {
     isc_svc_handle	attached;	/* !=NULL if we attached to service */
     TEXT		print_file[MAXPATHLEN];/* Dump file name */
 
-} IBMGR_DATA;
+};
 
 	
 /* Messages tag definitions
@@ -135,5 +135,5 @@ typedef struct ibmgr_data_t {
 #define MSG_FLNMTOOLONG	36	/* FIle name too long */
  
 
-#endif /* UTILITIES_IBMGR_H */
+#endif // UTILITIES_IBMGR_H
 

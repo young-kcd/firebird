@@ -29,16 +29,17 @@
 #include "../jrd/rse.h"
 #include "../jrd/lls.h"
 
+class jrd_req;
 
-BOOLEAN OPT_access_path(const struct jrd_req*, SCHAR*, SSHORT, USHORT*);
+bool OPT_access_path(const jrd_req*, SCHAR*, SSHORT, USHORT*);
 class Rsb* OPT_compile(TDBB, class Csb *,
-							   struct rse *, struct lls *);
+							   struct rse *, class lls*);
 struct jrd_nod* OPT_make_dbkey(struct opt *, struct jrd_nod *,
 								  USHORT);
 struct jrd_nod* OPT_make_index(TDBB, struct opt *, struct jrd_rel *,
 								  struct idx *);
 int OPT_match_index(struct opt *, USHORT, struct idx *);
-void OPT_set_index(TDBB, struct jrd_req *, class Rsb **, struct jrd_rel *,
+void OPT_set_index(TDBB, jrd_req *, class Rsb **, struct jrd_rel *,
 						  struct idx *);
 
 #endif // JRD_OPT_PROTO_H

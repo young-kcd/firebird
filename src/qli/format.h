@@ -79,11 +79,11 @@ typedef enum pic_t {
 
 /* Picture string handling block */
 
-typedef struct pics {
+struct pics {
     blk		pic_header;
     USHORT	pic_print_length;	/* Print length of picture string */
-    TEXT	*pic_string;		/* Address of string */
-    TEXT	*pic_pointer;		/* Address of string */
+    const TEXT*	pic_string;		/* Address of string */
+    const TEXT*	pic_pointer;		/* Address of string */
     USHORT	pic_flags;		/* Misc. trash */
     USHORT	pic_count;		/* Count of repeat characters */
     TEXT	pic_character;		/* Last significant character */
@@ -110,7 +110,7 @@ typedef struct pics {
     USHORT	pic_seconds;		/* seconds */
     USHORT	pic_meridian;		/* AM/PM indicator */
     pics*	pic_missing;		/* missing value edit string */
-} *PICS;
+};
 
 #define PIC_suppress_blanks	1	/* Suppress leading blanks */
 #define PIC_literal		2	/* We're in a quoted string */

@@ -35,14 +35,14 @@
    number of the first segment-clump.  The two types of blobs can be
    reliably distinguished by a zero or non-zero relation id. */
    
-typedef struct bid {
+struct bid {
 	ULONG bid_relation_id;		/* Relation id (or null) */
 	union {
 		ULONG bid_temp_id;	/* Temporary ID of blob or array. Used for newly created objects (bid_relation_id==0) */
 		ULONG bid_number;	/* Record number */
 	} bid_stuff;
 	bool isEmpty() const { return bid_relation_id == 0 && bid_stuff.bid_number == 0; }
-} *BID;
+};
 
 /* Your basic blob block. */
 
@@ -55,8 +55,8 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	blb *blb_next;		/* Next blob in transaction */
 	UCHAR *blb_segment;			/* Next segment to be addressed */
 	struct ctl *blb_filter;		/* Blob filter control block, if any */
-	struct bid blb_blob_id;		/* Id of materialized blob */
-	struct jrd_req *blb_request;	/* request that assigned temporary blob */
+	bid blb_blob_id;		/* Id of materialized blob */
+	class jrd_req *blb_request;	/* request that assigned temporary blob */
 	vcl *blb_pages;		/* Vector of pages */
 	USHORT blb_pointers;		/* Max pointer on a page */
 	USHORT blb_level;			/* Storage type */
@@ -79,7 +79,6 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	/* blb_data must be longword aligned */
 	UCHAR blb_data[1];			/* A page's worth of blob */
 };
-typedef blb* BLB;
 
 #define BLB_temporary	1		/* Newly created blob */
 #define BLB_eof		2			/* This blob is exhausted */
@@ -97,15 +96,15 @@ typedef blb* BLB;
 	2	large blob -- blob "record" is pointer to pages of pointers
 */
 
-/* mapping blob ids for REPLAY */
-class map : public pool_alloc<type_map>
+// mapping blob ids for REPLAY
+// Useful only with REPLAY_OSRI_API_CALLS_SUBSYSTEM defined.
+class blb_map : public pool_alloc<type_map>
 {
     public:
-	map *map_next;
-	blb *map_old_blob;
-	blb *map_new_blob;
+	blb_map*	map_next;
+	blb*		map_old_blob;
+	blb*		map_new_blob;
 };
-typedef map* MAP;
 
-#endif /* JRD_BLB_H */
+#endif // JRD_BLB_H
 

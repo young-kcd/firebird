@@ -43,7 +43,6 @@ class fblog : public pool_alloc<type_log>
 	UCHAR *log_ptr;				/* current end of buffer for logging */
 	void *log_file;				/* db-specific file to write */
 };
-typedef fblog* LOG;
 
 
 
@@ -114,5 +113,5 @@ enum log_t {
 	log_max
 };
 
-#endif /* JRD_LOG_H */
+#endif // JRD_LOG_H
 

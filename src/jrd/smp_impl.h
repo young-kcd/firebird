@@ -32,4 +32,5 @@ class V4Mutex : public SmpLock
         MUTX mutex;
 };
 
-#endif
+#endif // JRD_SMP_IMPL_H
+

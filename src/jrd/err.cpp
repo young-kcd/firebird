@@ -303,7 +303,7 @@ void ERR_log(int facility, int number, const TEXT* message)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-BOOLEAN ERR_post_warning(ISC_STATUS status, ...)
+bool ERR_post_warning(ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -317,8 +317,9 @@ BOOLEAN ERR_post_warning(ISC_STATUS status, ...)
  **************************************/
 	va_list args;
 	int type, len;
-	ISC_STATUS *status_vector, *q;
+	ISC_STATUS* q;
 	int indx = 0, warning_indx = 0;
+	ISC_STATUS* status_vector;
 
 	VA_START(args, status);
 	status_vector = ((TDBB) GET_THREAD_DATA)->tdbb_status_vector;
@@ -350,12 +351,13 @@ BOOLEAN ERR_post_warning(ISC_STATUS status, ...)
 				break;
 
 			case isc_arg_string:
-				q = reinterpret_cast < ISC_STATUS * >(va_arg(args, TEXT *));
+				q = reinterpret_cast<ISC_STATUS*>(va_arg(args, TEXT*));
 				if (strlen((TEXT *) q) >= MAX_ERRSTR_LEN) {
 					status_vector[(indx - 1)] = isc_arg_cstring;
 					status_vector[indx++] = MAX_ERRSTR_LEN;
 				}
-				status_vector[indx++] = reinterpret_cast < ISC_STATUS > (q);
+				// TEXT* forced to platform's int and stored as ISC_STATUS !!!
+				status_vector[indx++] = (ISC_STATUS)(U_IPTR) q;
 				break;
 
 			case isc_arg_interpreted:
@@ -366,7 +368,8 @@ BOOLEAN ERR_post_warning(ISC_STATUS status, ...)
 				len = va_arg(args, int);
 				status_vector[indx++] =
 					(ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
-				status_vector[indx++] = (ISC_STATUS) va_arg(args, TEXT *);
+				// TEXT* forced to platform's int and stored as ISC_STATUS !!!
+				status_vector[indx++] = (ISC_STATUS) (U_IPTR) va_arg(args, TEXT*);
 				break;
 
 			case isc_arg_number:
@@ -381,11 +384,11 @@ BOOLEAN ERR_post_warning(ISC_STATUS status, ...)
 				break;
 			}
 		status_vector[indx] = isc_arg_end;
-		return TRUE;
+		return true;
 	}
 	else {
 		/* not enough free space */
-		return FALSE;
+		return false;
 	}
 }
 #endif

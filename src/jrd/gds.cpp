@@ -1367,7 +1367,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		TEXT* p = getenv("ISC_MSGS");
 		if (p == NULL ||
 			(status =
-			 gds__msg_open(reinterpret_cast < void **>(&message), p))) 
+			 gds__msg_open(reinterpret_cast<void**>(&message), p)))
 		{
 			TEXT translated_msg_file[sizeof(MSG_FILE_LANG) + LOCALE_MAX + 1];
 
@@ -1386,7 +1386,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 				sprintf(translated_msg_file, MSG_FILE_LANG, p);
 				gds__prefix_msg(msg_file, translated_msg_file);
 				status =
-					gds__msg_open(reinterpret_cast < void **>(&message),
+					gds__msg_open(reinterpret_cast<void**>(&message),
 								  msg_file);
 			}
 			else
@@ -1396,7 +1396,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 				gds__prefix_msg(msg_file, MSG_FILE);
 				status =
-					gds__msg_open(reinterpret_cast < void **>(&message),
+					gds__msg_open(reinterpret_cast<void**>(&message),
 								  msg_file);
 			}
 			gds__free((SLONG *) msg_file);

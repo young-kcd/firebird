@@ -742,7 +742,7 @@ const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 };
 
 #ifdef DEV_BUILD
-static BOOLEAN validate_dsc_tables(void);
+static bool validate_dsc_tables();
 #endif
 
 
@@ -961,7 +961,7 @@ void DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
 
 
 #ifdef DEV_BUILD
-static BOOLEAN validate_dsc_tables(void)
+static bool validate_dsc_tables()
 {
 /**************************************
  *
@@ -991,7 +991,7 @@ static BOOLEAN validate_dsc_tables(void)
 	ib_fprintf (ib_stderr, "DSC_add_result [%d][%d] is %d, invalid.\n",
 		 op1, op2, DSC_add_result [op1][op2]);
 */
-				return FALSE;
+				return false;
 			}
 
 			/* Addition operator must be communitive */
@@ -1002,7 +1002,7 @@ static BOOLEAN validate_dsc_tables(void)
 		 op1, op2, DSC_add_result [op1][op2],
 		 op2, op1, DSC_add_result [op2][op1] );
 */
-				return FALSE;
+				return false;
 			}
 
 			/* Difficult to validate Subtraction */
@@ -1013,7 +1013,7 @@ static BOOLEAN validate_dsc_tables(void)
 	ib_fprintf (ib_stderr, "DSC_sub_result [%d][%d] is %d, invalid.\n",
 		 op1, op2, DSC_sub_result [op1][op2]);
 */
-				return FALSE;
+				return false;
 			}
 
 			/* Multiplication operator must be commutative */
@@ -1025,7 +1025,7 @@ static BOOLEAN validate_dsc_tables(void)
 		 op1, op2, DSC_multiply_result [op1][op2],
 		 op2, op1, DSC_multiply_result [op2][op1]);
 */
-				return FALSE;
+				return false;
 			}
 
 			/* Multiplication operator must be communitive */
@@ -1038,11 +1038,11 @@ static BOOLEAN validate_dsc_tables(void)
 	    op1, op2, DSC_multiply_blr4_result [op1][op2],
 	    op2, op1, DSC_multiply_blr4_result [op2][op1] );
 */
-				return FALSE;
+				return false;
 			}
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 #endif /* DEV_BUILD */

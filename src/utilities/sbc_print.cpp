@@ -380,7 +380,7 @@ static void db_get_sbc(
  *
  **************************************/
 	db_open(db, strlen(db));
-	HDR hdr = (HDR) db_read((SLONG) HEADER_PAGE);
+	header_page* hdr = (header_page*) db_read((SLONG) HEADER_PAGE);
 
 	*cache_buffers = hdr->hdr_cache_buffers;
 	*cache_flags = hdr->hdr_flags & hdr_disable_cache;

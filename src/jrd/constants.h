@@ -36,7 +36,7 @@
 
 #define BLOB_untyped	0
 
-/* InterBase defined BLOb subtypes */
+/* InterBase defined BLOB subtypes */
 
 #define BLOB_text	1
 #define BLOB_blr	2
@@ -46,6 +46,7 @@
 #define BLOB_format	6
 #define BLOB_tra	7
 #define BLOB_extfile	8
+#define BLOB_max_predefined_type 9
 
 
 
@@ -109,5 +110,5 @@ enum frb_sysflag {
 #define SQL_MATCH_1_CHAR	'_'	/* Not translatable */
 #define SQL_MATCH_ANY_CHARS	'%'	/* Not translatable */
 
-#endif /* JRD_CONSTANTS_H */
+#endif // JRD_CONSTANTS_H
 

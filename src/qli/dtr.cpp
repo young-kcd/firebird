@@ -92,7 +92,7 @@ static void enable_signals(void);
 static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
 static void CLIB_ROUTINE signal_quit(void);
-static bool yes_no(USHORT, TEXT *);
+static bool yes_no(USHORT, const TEXT*);
 
 struct answer_t {
 	TEXT answer[30];
@@ -100,7 +100,8 @@ struct answer_t {
 };
 
 static int yes_no_loaded = 0;
-static answer_t answer_table[] = {
+static answer_t answer_table[] =
+{
 	{ "NO", false },					// NO   
 	{ "YES", true },					// YES  
 	{ "", false }
@@ -119,27 +120,15 @@ int  CLIB_ROUTINE main( int argc, char **argv)
  *	Top level routine.  
  *
  **************************************/
-	TEXT **arg_end, *p, *q, *r, *end, c, *startup_file, *application_file;
-#ifdef UNIX
-	SCHAR home_directory[256];
-#endif
-	PLB temp;
-	bool flush_flag;
-	bool banner_flag;
-	bool version_flag;
-	bool got_started;
-#ifdef VMS
-	bool vms_tryagain_flag;
-#endif
-	SLONG debug_value;
 	jmp_buf env;
 
 // Look at options, if any 
 
-	startup_file = STARTUP_FILE;
+	const TEXT* startup_file = STARTUP_FILE;
 
 #ifdef UNIX
 // If a Unix system, get home directory from environment 
+	SCHAR home_directory[256];
 	startup_file = getenv("HOME");
 	if (startup_file == NULL) {
 		startup_file = ".qli_startup";
@@ -151,11 +140,11 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	}
 #endif
 
-	application_file = NULL;
+	TEXT* application_file = NULL;
 	ALLQ_init();
 	LEX_init();
-	version_flag = flush_flag = false;
-	banner_flag = true;
+	bool version_flag = false, flush_flag = false;
+	bool banner_flag = true;
 	sw_buffers = 0;
 	strcpy(QLI_prompt_string, "QLI> ");
 	strcpy(QLI_cont_string, "CON> ");
@@ -166,21 +155,26 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	QLI_charset[0] = 0;
 
 #ifdef DEV_BUILD
-	QLI_hex_output = 0;
+	QLI_hex_output = false;
 #endif
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
 #endif
 
-	for (arg_end = argv + argc, argv++; argv < arg_end;) {
-		p = *argv++;
+	SLONG debug_value; // aparently unneeded, see usage below.
+
+	const TEXT* const* const arg_end = argv + argc;
+	argv++;
+	while (argv < arg_end) {
+		const TEXT* p = *argv++;
 		if (*p++ != '-') {
 			banner_flag = false;
 			LEX_pop_line();
 			LEX_push_string(p - 1);
 			continue;
 		}
+		TEXT c;
 		while (c = *p++)
 			switch (UPPER(c)) {
 			case 'A':
@@ -209,28 +203,32 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			case 'P':
-				if (argv >= arg_end || **argv == '-')
+				{
+					if (argv >= arg_end || **argv == '-')
+						break;
+					TEXT* r = QLI_default_password;
+					const TEXT* const end = r + sizeof(QLI_default_password) - 1;
+					for (const TEXT* q = *argv++; *q && r < end;)
+						*r++ = *q++;
+					*r = 0;
 					break;
-				r = QLI_default_password;
-				end = r + sizeof(QLI_default_password) - 1;
-				for (q = *argv++; *q && r < end;)
-					*r++ = *q++;
-				*r = 0;
-				break;
+				}
 
 			case 'T':
 				sw_trace = true;
 				break;
 
 			case 'U':
-				if (argv >= arg_end || **argv == '-')
+				{
+					if (argv >= arg_end || **argv == '-')
+						break;
+					TEXT* r = QLI_default_user;
+					const TEXT* const end = r + sizeof(QLI_default_user) - 1;
+					for (const TEXT* q = *argv++; *q && r < end;)
+						*r++ = *q++;
+					*r = 0;
 					break;
-				r = QLI_default_user;
-				end = r + sizeof(QLI_default_user) - 1;
-				for (q = *argv++; *q && r < end;)
-					*r++ = *q++;
-				*r = 0;
-				break;
+				}
 
 			case 'V':
 				sw_verify = true;
@@ -245,7 +243,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				   mechanism it can be changed at will */
 
 			case 'Y':
-				QLI_trace = TRUE;
+				QLI_trace = true;
 				break;
 
 			case 'Z':
@@ -273,7 +271,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 		LEX_push_file(startup_file, false);
 
 #ifdef VMS
-	vms_tryagain_flag = false;
+	bool vms_tryagain_flag = false;
 	if (startup_file)
 		vms_tryagain_flag = LEX_push_file(startup_file, false);
 
@@ -287,7 +285,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	}
 #endif
 
-	for (got_started = false; !got_started;)
+	for (bool got_started = false; !got_started;)
 	{
 		got_started = true;
 		try {
@@ -306,7 +304,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 // Loop until end of file or forced exit 
 
 	while (QLI_line) {
-		temp = QLI_default_pool = ALLQ_pool();
+		plb* temp = QLI_default_pool = ALLQ_pool();
 		flush_flag = process_statement(flush_flag);
 		ERRQ_pending();
 		ALLQ_rlpool(temp);
@@ -362,17 +360,13 @@ static bool process_statement(bool flush_flag)
  *	is required, return true (or status), otherwise return false.
  *
  **************************************/
-	SYN syntax_tree;
-	BLK expanded_tree, execution_tree;
 	DBB dbb;
-	PERF statistics;
-	TEXT buffer[512], report[256];
 	jmp_buf env;
 
 // Clear database active flags in preparation for a new statement 
 
-	QLI_abort = FALSE;
-	execution_tree = NULL;
+	QLI_abort = false;
+	blk* execution_tree = NULL;
 
 	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		dbb->dbb_flags &= ~DBB_active;
@@ -381,7 +375,7 @@ static bool process_statement(bool flush_flag)
 
 	if (QLI_skip_line) {
 		ib_printf("\n");
-		QLI_skip_line = FALSE;
+		QLI_skip_line = false;
 	}
 
 /* Enable signal handling for the next statement.  Each signal will
@@ -429,7 +423,8 @@ static bool process_statement(bool flush_flag)
 
 	QLI_prompt = QLI_cont_string;
 
-	if (!(syntax_tree = PARQ_parse()))
+	SYN syntax_tree = PARQ_parse();
+	if (!syntax_tree)
 		return false;
 
 	EXEC_poll_abort();
@@ -457,7 +452,8 @@ static bool process_statement(bool flush_flag)
 /* Expand the statement.  It will return NULL is the statement was
    a command.  An error will be unwound */
 
-	if (!(expanded_tree = (BLK) EXP_expand(syntax_tree)))
+	blk* expanded_tree = (BLK) EXP_expand(syntax_tree);
+	if (!expanded_tree)
 		return false;
 
 // Compile the statement 
@@ -490,6 +486,8 @@ static bool process_statement(bool flush_flag)
 
 	if (QLI_statistics)
 	{
+		PERF statistics;
+		TEXT buffer[512], report[256];
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		{
 			if (dbb->dbb_flags & DBB_active)
@@ -502,7 +500,7 @@ static bool process_statement(bool flush_flag)
 				perf_format((perf*) dbb->dbb_statistics, &statistics,
 							report, buffer, 0);
 				ERRQ_msg_put(26, dbb->dbb_filename, buffer, NULL, NULL, NULL);	// Msg26 Statistics for database %s %s  
-				QLI_skip_line = TRUE;
+				QLI_skip_line = true;
 			}
 		}
 	}
@@ -617,7 +615,7 @@ static void CLIB_ROUTINE signal_quit(void)
 }
 
 
-static bool yes_no(USHORT number, TEXT * arg1)
+static bool yes_no(USHORT number, const TEXT* arg1)
 {
 /**************************************
  *
@@ -631,8 +629,7 @@ static bool yes_no(USHORT number, TEXT * arg1)
  *	acceptable answer (e.g. y, Yes, N, etc.)
  *
  **************************************/
-	TEXT buffer[256], prompt[256], *p, *q;
-	answer_t* response;
+	TEXT prompt[256];
 
 	ERRQ_msg_format(number, sizeof(prompt), prompt, arg1, NULL, NULL, NULL,
 					NULL);
@@ -644,19 +641,23 @@ static bool yes_no(USHORT number, TEXT * arg1)
 			strcpy(answer_table[1].answer, "YES");
 	}
 
+	TEXT buffer[256];
 	while (true) {
 		buffer[0] = 0;
 		if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 			return true;
-		for (response = answer_table; *response->answer != '\0'; response++) {
-			p = buffer;
+		for (answer_t* response = answer_table; *response->answer != '\0';
+			response++)
+		{
+			const TEXT* p = buffer;
 			while (*p == ' ')
 				p++;
 			if (*p == EOF)
 				return true;
-			for (q = response->answer; *p && UPPER(*p) == *q++; p++);
+			for (const TEXT* q = response->answer; *p && UPPER(*p) == *q++; p++);
 			if (!*p || *p == '\n')
 				return response->value;
 		}
 	}
 }
+

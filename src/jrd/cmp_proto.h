@@ -44,8 +44,8 @@ jrd_req* CMP_make_request(TDBB, Csb*);
 void CMP_post_access(TDBB, Csb*, const TEXT*, SLONG,
 					 const TEXT*, const TEXT*, USHORT, const TEXT*,
 					 const TEXT*);
-void CMP_post_resource(TDBB, Rsc**, blk*, enum rsc_s, USHORT);
-void CMP_release_resource(Rsc**, enum rsc_s, USHORT);
+void CMP_post_resource(TDBB, Resource**, blk*, enum Resource::rsc_s, USHORT);
+void CMP_release_resource(Resource**, enum Resource::rsc_s, USHORT);
 void CMP_release(TDBB, jrd_req*);
 void CMP_shutdown_database(TDBB);
 

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Event manager
- *	MODULE:		print.c
+ *	MODULE:		print.cpp
  *	DESCRIPTION:	Global region print utility
  *
  * The contents of this file are subject to the Interbase Public
@@ -182,7 +182,6 @@ static void event_table_dump(void)
  *
  **************************************/
 	SRQ *que;
-	HDR *block;
 	PRB process;
 	FRB free;
 	EVNT event, parent;
@@ -202,9 +201,10 @@ static void event_table_dump(void)
 	prt_que("\tEvents", &EVENT_header->evh_events);
 
 	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
-		 offset += block->hdr_length) {
+		 offset += block->hdr_length) 
+	{
 		ib_printf("\n%.5ld ", offset);
-		block = (HDR *) ABS_PTR(offset);
+		event_hdr* block = (event_hdr*) ABS_PTR(offset);
 		switch (block->hdr_type) {
 		case type_prb:
 			ib_printf("PROCESS_BLOCK (%ld)\n", block->hdr_length);

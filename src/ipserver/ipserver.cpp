@@ -586,7 +586,7 @@ static void ipi_end_thread( ICC icc)
 			ipm->ipm_handle = 0;
 		}
 
-		if (ipserver_private_data.ipms == ipm){
+		if (ipserver_private_data.ipms == ipm) {
 			ipserver_private_data.ipms = ipm->ipm_next;
 		}
 		else {

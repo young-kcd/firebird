@@ -204,7 +204,7 @@ struct tdba {
 	svc* sw_outfile;
 	dba_mem *head_of_mem_list;
 	open_files *head_of_files_list;
-	SVC dba_service_blk;
+	svc* dba_service_blk;
 #else
 	IB_FILE* sw_outfile;
 #endif
@@ -250,7 +250,7 @@ static bool fAnsiCP = false;
 
 
 #ifdef SUPERSERVER
-int main_gstat( SVC service)
+int main_gstat( svc* service)
 #else
 
 int CLIB_ROUTINE main(int argc, char** argv)
@@ -503,10 +503,10 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	tddba->page_size = sizeof(temp);
 	tddba->global_buffer = (pag*) temp;
 	tddba->page_number = -1;
-	const hdr* header = (const hdr*) db_read((SLONG) 0);
+	const header_page* header = (const header_page*) db_read((SLONG) 0);
 
 #ifdef SUPERSERVER
-	SVC_STARTED(service);
+	service->svc_started();
 #endif
 
 /* ODS7 was not released as a shipping ODS and was replaced
@@ -550,7 +550,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		if (page != HEADER_PAGE)
 			current = db_open(file_name, strlen(file_name));
 		do {
-			header = (const hdr*) db_read((SLONG) page);
+			header = (const header_page*) db_read((SLONG) page);
 			if (current != tddba->files)
 				current->fil_fudge = 1;	/* ignore header page once read it */
 			*file_name = '\0';
@@ -579,7 +579,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 	page = HEADER_PAGE;
 	do {
-		header = (const hdr*) db_read((SLONG) page);
+		header = (const header_page*) db_read((SLONG) page);
 		PPG_print_header(header, page, sw_outfile);
 		page = header->hdr_next_page;
 	} while (page);
@@ -882,7 +882,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		FINISH;
 
 #ifdef SUPERSERVER
-		SVC_STARTED(service);
+		service->svc_started();
 		dba_mem* alloced = tddba->head_of_mem_list;
 		while (alloced != 0) {
 			delete[] alloced->memory;
@@ -1135,7 +1135,8 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
  **************************************/
 	tdba* tddba = GET_THREAD_DATA;
 
-	const irt* index_root = (const irt*) db_read(relation->rel_index_root);
+	const index_root_page* index_root = 
+		(const index_root_page*) db_read(relation->rel_index_root);
 
 	SLONG page;
 	if (index_root->irt_count <= index->idx_id ||

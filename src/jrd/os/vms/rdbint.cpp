@@ -42,7 +42,7 @@ typedef struct handle {
 	int *messages;
 	struct handle *parent;
 	struct handle *next;
-} *HANDLE, *REQ, *DBB, *TRA, *BLB;
+} *HANDLE, *REQ, *DBB, *HND_TRA, *HND_BLB;
 
 typedef struct teb {
 	DBB *teb_database;
@@ -169,7 +169,7 @@ int RDB_attach_database(
 
 int RDB_blob_info(
 				  int* user_status,
-				  BLB* handle,
+				  HND_BLB* handle,
 				  SSHORT item_length,
 				  SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
@@ -195,7 +195,7 @@ int RDB_blob_info(
 }
 
 
-int RDB_cancel_blob(int *user_status, BLB * blob_handle)
+int RDB_cancel_blob(int *user_status, HND_BLB* blob_handle)
 {
 /**************************************
  *
@@ -230,7 +230,7 @@ int RDB_cancel_blob(int *user_status, BLB * blob_handle)
 }
 
 
-int RDB_close_blob(int *user_status, BLB * blob_handle)
+int RDB_close_blob(int *user_status, HND_BLB* blob_handle)
 {
 /**************************************
  *
@@ -259,7 +259,7 @@ int RDB_close_blob(int *user_status, BLB * blob_handle)
 }
 
 
-int RDB_commit_transaction(int *user_status, TRA * tra_handle)
+int RDB_commit_transaction(int *user_status, HND_TRA* tra_handle)
 {
 /**************************************
  *
@@ -511,7 +511,7 @@ int RDB_detach_database(int *user_status, DBB * handle)
 
 int RDB_get_segment(
 					int *user_status,
-					BLB * blob_handle,
+					HND_BLB* blob_handle,
 					SSHORT * length, SSHORT buffer_length, UCHAR * buffer)
 {
 /**************************************
@@ -568,7 +568,7 @@ int RDB_open_blob(int *user_status,
 }
 
 
-int RDB_prepare_transaction(int *user_status, TRA * tra_handle)
+int RDB_prepare_transaction(int *user_status, HND_TRA* tra_handle)
 {
 /**************************************
  *
@@ -592,7 +592,7 @@ int RDB_prepare_transaction(int *user_status, TRA * tra_handle)
 
 int RDB_put_segment(
 					int* user_status,
-					BLB* blob_handle, SSHORT buffer_length, const UCHAR* buffer)
+					HND_BLB* blob_handle, SSHORT buffer_length, const UCHAR* buffer)
 {
 /**************************************
  *
@@ -657,7 +657,8 @@ int RDB_receive(
 int RDB_reconnect_transaction(
 							  int* user_status,
 							  DBB* db_handle,
-							  TRA* tra_handle, SSHORT length, const UCHAR* id)
+							  HND_TRA* tra_handle, SSHORT length,
+							  const UCHAR* id)
 {
 /**************************************
  *
@@ -744,7 +745,7 @@ int RDB_request_info(int* user_status,
 }
 
 
-int RDB_rollback_transaction(int *user_status, TRA * tra_handle)
+int RDB_rollback_transaction(int *user_status, HND_TRA* tra_handle)
 {
 /**************************************
  *
@@ -809,11 +810,11 @@ int RDB_send(
 
 
 int RDB_start_and_send(
-					   int *user_status,
-					   REQ * req_handle,
-					   TRA * tra_handle,
+					   int* user_status,
+					   REQ* req_handle,
+					   HND_TRA* tra_handle,
 					   USHORT msg_type,
-USHORT msg_length, SCHAR * msg, SSHORT level)
+	USHORT msg_length, SCHAR* msg, SSHORT level)
 {
 /**************************************
  *
@@ -849,9 +850,9 @@ USHORT msg_length, SCHAR * msg, SSHORT level)
 
 
 int RDB_start_request(
-					  int *user_status,
-					  REQ * req_handle,
-					  TRA * tra_handle, SSHORT level)
+					  int* user_status,
+					  REQ* req_handle,
+					  HND_TRA* tra_handle, SSHORT level)
 {
 /**************************************
  *
@@ -876,8 +877,8 @@ int RDB_start_request(
 
 
 int RDB_start_multiple(
-					   int *user_status,
-					   TRA * tra_handle, SSHORT count, TEB * teb)
+					   int* user_status,
+					   HND_TRA* tra_handle, SSHORT count, TEB * teb)
 {
 /**************************************
  *
@@ -925,10 +926,10 @@ int RDB_start_multiple(
 
 
 int RDB_start_transaction(
-						  int *user_status,
-						  TRA * tra_handle,
+						  int* user_status,
+						  HND_TRA* tra_handle,
 						  SSHORT count,
-						  DBB * db_handle, SSHORT tpb_length, SCHAR * tpb)
+						  DBB* db_handle, SSHORT tpb_length, SCHAR * tpb)
 {
 /**************************************
  *
@@ -978,7 +979,7 @@ int RDB_start_transaction(
 
 int RDB_transaction_info(
 						 int* user_status,
-						 TRA* handle,
+						 HND_TRA* handle,
 						 SSHORT item_length,
 						 const SCHAR* items,
 						 SSHORT buffer_length, SCHAR* buffer)

@@ -43,7 +43,7 @@
 #endif
 
 static void dump_procedure(DBB, IB_FILE*, const TEXT*, USHORT, FRBRD *);
-static void extract_procedure(IB_FILE*, const TEXT*, USHORT, DBB, SLONG *);
+static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD*);
 
 extern USHORT QLI_lines, QLI_columns, QLI_form_mode, QLI_name_columns;
 
@@ -209,7 +209,7 @@ void CMD_extract( SYN node)
 			 database =
 			 database->dbb_next)
 		{
-			PRO_scan(database, (void (*)()) extract_procedure, file);
+			PRO_scan(database, extract_procedure, file);
 		}
 	}
 
@@ -306,11 +306,11 @@ void CMD_set( SYN node)
 		SYN value = *ptr++;
 		switch (sw) {
 		case set_blr:
-			QLI_blr = (USHORT)(ULONG) value;
+			QLI_blr = (bool)(ULONG) value;
 			break;
 
 		case set_statistics:
-			QLI_statistics = (USHORT)(ULONG) value;
+			QLI_statistics = (bool)(ULONG) value;
 			break;
 
 		case set_columns:
@@ -322,11 +322,11 @@ void CMD_set( SYN node)
 			break;
 
 		case set_semi:
-			QLI_semi = (USHORT)(ULONG) value;
+			QLI_semi = (bool)(ULONG) value;
 			break;
 
 		case set_echo:
-			QLI_echo = (USHORT)(ULONG) value;
+			QLI_echo = (bool)(ULONG) value;
 			break;
 
 		case set_form:
@@ -405,11 +405,11 @@ void CMD_set( SYN node)
 
 #ifdef DEV_BUILD
 		case set_explain:
-			QLI_explain = (USHORT)(ULONG) value;
+			QLI_explain = (bool)(ULONG) value;
 			break;
 
 		case set_hex_output:
-			QLI_hex_output = (USHORT)(ULONG) value;
+			QLI_hex_output = (bool)(ULONG) value;
 			break;
 #endif
 
@@ -433,7 +433,6 @@ void CMD_shell( SYN node)
  *
  **************************************/
 	TEXT buffer[256];
-	USHORT l;
 
 // Copy command, inserting extra blank at end.
 
@@ -441,7 +440,8 @@ void CMD_shell( SYN node)
 	qli_const* constant = (qli_const*) node->syn_arg[0];
 	if (constant) {
 		const TEXT* q = (TEXT*) constant->con_data;
-		if (l = constant->con_desc.dsc_length)
+		USHORT l = constant->con_desc.dsc_length;
+		if (l)
 			do {
 				*p++ = *q++;
 			} while (--l);
@@ -588,9 +588,9 @@ static void dump_procedure(
 
 
 static void extract_procedure(
-							  IB_FILE* file,
+							  void* file,
 							  const TEXT* name,
-							  USHORT length, DBB database, SLONG* blob_id)
+							  USHORT length, DBB database, ISC_QUAD* blob_id)
 {
 /**************************************
  *
@@ -603,7 +603,7 @@ static void extract_procedure(
  *
  **************************************/
 	FRBRD* blob = PRO_open_blob(database, blob_id);
-	dump_procedure(database, file, name, length, blob);
+	dump_procedure(database, static_cast<IB_FILE*>(file), name, length, blob);
 }
 
 

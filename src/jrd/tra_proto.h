@@ -26,34 +26,39 @@
 
 #include "../jrd/req.h"
 
-BOOLEAN	TRA_active_transactions(TDBB, struct dbb *);
+class att;
+class jrd_tra;
+class Resource;
+class dbb;
+
+bool	TRA_active_transactions(TDBB, dbb*);
 void	TRA_cleanup(TDBB);
-void	TRA_commit(TDBB, class jrd_tra*, const bool);
+void	TRA_commit(TDBB, jrd_tra*, const bool);
 void	TRA_extend_tip(TDBB, ULONG, struct win *);
 int		TRA_fetch_state(TDBB, SLONG);
 void	TRA_get_inventory(TDBB, UCHAR *, ULONG, ULONG);
 int		TRA_get_state(TDBB, SLONG);
 
 #ifdef SUPERSERVER_V2
-void	TRA_header_write(TDBB, struct dbb *, SLONG);
+void	TRA_header_write(TDBB, dbb*, SLONG);
 #endif
 void	TRA_init(TDBB);
-void	TRA_invalidate(struct dbb *, ULONG);
-void	TRA_link_transaction(TDBB, class jrd_tra *);
-void	TRA_post_resources(TDBB, class jrd_tra *, class Rsc *);
-BOOLEAN TRA_precommited(TDBB, SLONG, SLONG);
-void	TRA_prepare(TDBB, class jrd_tra*, USHORT, const UCHAR*);
-class jrd_tra*	TRA_reconnect(TDBB, const UCHAR*, USHORT);
-void	TRA_release_transaction(TDBB, class jrd_tra *);
-void	TRA_rollback(TDBB, class jrd_tra*, const bool);
-void	TRA_set_state(TDBB, class jrd_tra *, SLONG, SSHORT);
-void	TRA_shutdown_attachment(TDBB, struct att *);
-int		TRA_snapshot_state(TDBB, class jrd_tra *, SLONG);
-class jrd_tra*	TRA_start(TDBB, int, const SCHAR*);
+void	TRA_invalidate(dbb *, ULONG);
+void	TRA_link_transaction(TDBB, jrd_tra *);
+void	TRA_post_resources(TDBB, jrd_tra *, Resource*);
+bool	TRA_precommited(TDBB, SLONG, SLONG);
+void	TRA_prepare(TDBB, jrd_tra*, USHORT, const UCHAR*);
+jrd_tra*	TRA_reconnect(TDBB, const UCHAR*, USHORT);
+void	TRA_release_transaction(TDBB, jrd_tra *);
+void	TRA_rollback(TDBB, jrd_tra*, const bool);
+void	TRA_set_state(TDBB, jrd_tra *, SLONG, SSHORT);
+void	TRA_shutdown_attachment(TDBB, att *);
+int		TRA_snapshot_state(TDBB, jrd_tra *, SLONG);
+jrd_tra*	TRA_start(TDBB, int, const SCHAR*);
 int		TRA_state(UCHAR *, ULONG, ULONG);
-int		TRA_sweep(TDBB, class jrd_tra *);
-struct lck*	TRA_transaction_lock(TDBB, struct blk *);
-int		TRA_wait(TDBB, class jrd_tra *, SLONG, USHORT);
+int		TRA_sweep(TDBB, jrd_tra *);
+lck*	TRA_transaction_lock(TDBB, struct blk *);
+int		TRA_wait(TDBB, jrd_tra *, SLONG, bool);
 
 #endif // JRD_TRA_PROTO_H
 

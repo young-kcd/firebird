@@ -422,8 +422,6 @@ bool LEX_get_line(TEXT * prompt,
  *	return false.  Regardless, a null terminated string is returned.
  *
  **************************************/
-	SSHORT c;
-
 // UNIX flavor
 
 	if (prompt)
@@ -433,6 +431,8 @@ bool LEX_get_line(TEXT * prompt,
 	TEXT* p = buffer;
 
 	bool overflow_flag = false;
+	SSHORT c;
+
 	while (true) {
 		c = ib_getc(input_file);
 		if (c == EOF) {
@@ -568,7 +568,7 @@ void LEX_init(void)
 	QLI_line->line_type = line_stdin;
 	QLI_line->line_source = (FRBRD *) ib_stdin;
 
-	QLI_semi = FALSE;
+	QLI_semi = false;
 	input_file = ib_stdin;
 	HSH_init();
 }
@@ -671,9 +671,8 @@ bool LEX_push_file(const TEXT* filename,
  *	if the error flag is set, otherwise return quietly.
  *
  **************************************/
-	IB_FILE *file;
-
-	if (!(file = ib_fopen(filename, FOPEN_INPUT_TYPE))) {
+	IB_FILE *file = ib_fopen(filename, FOPEN_INPUT_TYPE);
+	if (!file) {
 	    TEXT buffer[64];
 		sprintf(buffer, "%s.com", filename);
 		if (!(file = ib_fopen(buffer, FOPEN_INPUT_TYPE))) {
@@ -821,12 +820,12 @@ qli_tok* LEX_token(void)
  *	Parse and return the next token.
  *
  **************************************/
-	SSHORT c;
-
 	qli_tok* token = QLI_token;
 	TEXT* p = token->tok_string;
 
 // Get next significant byte.  If it's the last EOL of a blob, throw it away
+
+	SSHORT c;
 
 	for (;;) {
 		c = skip_white();
@@ -866,9 +865,9 @@ qli_tok* LEX_token(void)
 		token->tok_type = tok_number;
 	else if (char_class & CHR_quote) {
 		token->tok_type = tok_quoted;
-		SSHORT next;
 		while (true) {
-			if (!(next = nextchar(false)) || next == '\n') {
+			const SSHORT next = nextchar(false);
+			if (!next || next == '\n') {
 				retchar();
 				IBERROR(63);	// Msg 63 unterminated quoted string
 				break;
@@ -1003,15 +1002,14 @@ static int nextchar(const bool eof_ok)
  *	Get the next character from the input stream.
  *
  **************************************/
-	SSHORT c;
-
 // Get the next character in the current line.  If we run out,
 // get the next line.  If the line source runs out, pop the
 // line source.  If we run out of line sources, we are distinctly
 // at end of file.
 
 	while (QLI_line) {
-		if (c = *QLI_line->line_ptr++)
+		const SSHORT c = *QLI_line->line_ptr++;
+		if (c)
 			return c;
 		next_line(eof_ok);
 	}
@@ -1032,7 +1030,7 @@ static void next_line(const bool eof_ok)
  *	Get the next line from the input stream.
  *
  **************************************/
-	TEXT *p, *q;
+	TEXT *p;
 
 	while (QLI_line) {
 		bool flag = false;
@@ -1072,6 +1070,7 @@ static void next_line(const bool eof_ok)
 					ib_printf("%s", QLI_line->line_data);
 			}
 			if (flag) {
+				TEXT* q;
 				for (q = p; classes[*q] & CHR_white; q++);
 				if (*q == '@') {
 					TEXT filename[MAXPATHLEN];
@@ -1163,7 +1162,7 @@ static void retchar()
 
 
 static bool scan_number(SSHORT c,
-						TEXT ** ptr)
+						TEXT** ptr)
 {
 /**************************************
  *
@@ -1246,8 +1245,8 @@ static int skip_white(void)
 		if (char_class & CHR_white)
 			continue;
 		if (c == '/') {
-		    SSHORT next;
-			if ((next = nextchar(true)) != '*') {
+		    SSHORT next = nextchar(true);
+			if (next != '*') {
 				retchar();
 				return c;
 			}

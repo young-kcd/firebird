@@ -162,24 +162,24 @@ bdb[] = {
 },
 pre[] = {
 	"PRECEDENCE",
-		FLD(PRE, "Flags: %x", pre_flags),
-		FLD(PRE, "Low: %x", pre_low),
-		FLD(PRE, "High: %x", pre_hi),
+		FLD(Precedence*, "Flags: %x", pre_flags),
+		FLD(Precedence*, "Low: %x", pre_low),
+		FLD(Precedence*, "High: %x", pre_hi),
 		0
 },
 lck[] = {
 	"LOCK",
-		FLD(LCK, "Parent: %x", lck_parent),
-		FLD(LCK, "Object: %x", lck_object),
-		FLD(LCK, "Type: %x", lck_type),
-		FLD(LCK, "Physical: %x", lck_physical),
-		FLD(LCK, "Logical: %x", lck_logical),
-		FLD(LCK, "Length: %x", lck_length),
+		FLD(lck*, "Parent: %x", lck_parent),
+		FLD(lck*, "Object: %x", lck_object),
+		FLD(lck*, "Type: %x", lck_type),
+		FLD(lck*, "Physical: %x", lck_physical),
+		FLD(lck*, "Logical: %x", lck_logical),
+		FLD(lck*, "Length: %x", lck_length),
 		0
 },
-fil[] = {
+jrd_file[] = {
 	"FILE",
-		FLD(FIL, "File desc: %x", fil_desc),
+		FLD(jrd_file*, "File desc: %x", fil_desc),
 		0
 },
 pgc[] = {
@@ -278,11 +278,11 @@ bms[] = {
 		FLD(BMS, "Max: %x", bms_max),
 		0
 },
-dfw[] = {
+Deferred_work[] = {
 	"DEFERRED WORK BLOCK",
-		FLD(DFW, "type: %d", dfw_type),
-		FLD(DFW, "next: %x", dfw_next),
-		FLD(DFW, "name: %s", dfw_name),
+		FLD(Deferred_work*, "type: %d", dfw_type),
+		FLD(Deferred_work*, "next: %x", dfw_next),
+		FLD(Deferred_work*, "name: %s", dfw_name),
 		0
 },
 tfb[] = {
@@ -300,8 +300,8 @@ str[] = {
 },
 Dcc[] = {
 	"DATA COMPRESSION CONTROL",
-		FLD(DCC, "next: %x", dcc_next),
-		FLD(DCC, "end: %x", dcc_end),
+		FLD(Dcc*, "next: %x", dcc_next),
+		FLD(Dcc*, "end: %x", dcc_end),
 		0
 },
 sbm[] = {
@@ -323,13 +323,13 @@ smb[] = {
 },
 blb[] = {
 	"BLOB",
-		FLD(BLB, "Relation: %x", blb_relation),
-		FLD(BLB, "Count: %d", blb_count),
-		FLD(BLB, "Length: %d", blb_length),
-		FLD(BLB, "Max seg: %d", blb_max_segment),
-		FLD(BLB, "Flags: %x", blb_flags),
-		FLD(BLB, "Trans: %x", blb_transaction),
-		FLD(BLB, "Next: %x", blb_segment),
+		FLD(blb*, "Relation: %x", blb_relation),
+		FLD(blb*, "Count: %d", blb_count),
+		FLD(blb*, "Length: %d", blb_length),
+		FLD(blb*, "Max seg: %d", blb_max_segment),
+		FLD(blb*, "Flags: %x", blb_flags),
+		FLD(blb*, "Trans: %x", blb_transaction),
+		FLD(blb*, "Next: %x", blb_segment),
 		0
 },
 irb[] = {
@@ -357,15 +357,15 @@ static TEXT_PTR sym[] = {	"SYMBOL", 0};
 static TEXT_PTR fun[] = {	"FUNCTION", 0};
 static TEXT_PTR irl[] = {	"INDEXED RELATIONSHIP", 0};
 static TEXT_PTR acc[] = {	"ACCESS", 0};
-static TEXT_PTR Rsc[] = {	"RESOURCE", 0};
+static TEXT_PTR Resource[] = {	"RESOURCE", 0};
 static TEXT_PTR idl[] = {	"INDEX LOCK", 0};
-static TEXT_PTR sdw[] = {	"SHADOW", 0};
+static TEXT_PTR Shadow[] = {	"SHADOW", 0};
 static TEXT_PTR sav[] = {	"SAVE POINT", 0};
 static TEXT_PTR vct[] = {	"VERB", 0};
 static TEXT_PTR btb[] = {	"BLOCKED THREAD", 0};
 static TEXT_PTR blf[] = {	"BLOB FILTER", 0};
 static TEXT_PTR arr[] = {	"ARRAY DESCRIPTION", 0};
-static TEXT_PTR map[] = {	"MAP BLOCK", 0};
+static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
 static TEXT_PTR log[] = {	"LOG BLOCK", 0};
 static TEXT_PTR dls[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] = {
@@ -379,7 +379,7 @@ static TEXT_PTR rng[] = {	"REFRESH RANGE BLOCK", 0};
 static TEXT_PTR tpc[] = {	"TIP CACHE BLOCK", 0};
 static TEXT_PTR xcp[] = {	"EXCEPTION LIST BLOCK", 0};
 static TEXT_PTR Opt[] = {	"OPTIMIZATION BLOCK", 0};
-static TEXT_PTR prf[] = {	"PRF", 0};
+static TEXT_PTR Prefetch[] = {	"PRF", 0};
 static TEXT_PTR rse[] = {	"RECORD SELECTION EXPRESSION", 0};
 static TEXT_PTR lit[] = {	"LITERAL", 0};
 static TEXT_PTR asb[] = {	"ASB", 0};
@@ -436,7 +436,7 @@ static TEXT_PTR tdbb[] = {
 		0
 };
 static TEXT_PTR svc[] =		{	"SERVICE MANAGER BLOCK", 0};
-static TEXT_PTR lwt[] =		{	"LATCH WAIT BLOCK", 0};
+static TEXT_PTR Latch_wait[] =		{	"LATCH WAIT BLOCK", 0};
 static TEXT_PTR vcx[] =		{	"VIEW CONTEXT BLOCK", 0};
 static TEXT_PTR srpb[] =	{	"RPB BLOCK", 0};
 
@@ -497,7 +497,7 @@ TEXT* dbt_blocks[] = { 0,
 const char* DBT_jrd_type_map(int type)
 {
 #define BLKDEF(enum_c, str_c, ext) case enum_c: return str_c[0];
-	switch(type)
+	switch (type)
 	{
 	#include "../jrd/blk.h"
 	default:

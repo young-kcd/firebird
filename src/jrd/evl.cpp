@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.62 2004-02-02 11:01:33 robocop Exp $ 
+  * $Id: evl.cpp,v 1.63 2004-02-20 06:42:59 robocop Exp $ 
  */
 
 /*
@@ -160,12 +160,12 @@ static dsc* record_version(TDBB, const jrd_nod*, VLU);
 static bool reject_duplicate(const UCHAR*, const UCHAR*, void*);
 static dsc* scalar(TDBB, jrd_nod*, VLU);
 static SSHORT sleuth(TDBB, jrd_nod*, dsc*, dsc*);
-static BOOLEAN nc_sleuth_check(TextType, USHORT, const UCHAR*, const UCHAR*,
+static bool nc_sleuth_check(TextType, USHORT, const UCHAR*, const UCHAR*,
 	const UCHAR*, const UCHAR*);
-static BOOLEAN nc_sleuth_class(TextType, USHORT, const UCHAR*, const UCHAR*, UCHAR);
-static BOOLEAN wc_sleuth_check(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
+static bool nc_sleuth_class(TextType, USHORT, const UCHAR*, const UCHAR*, UCHAR);
+static bool wc_sleuth_check(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
 						const UCS2_CHAR*, const UCS2_CHAR*);
-static BOOLEAN wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
+static bool wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
 						UCS2_CHAR);
 static SSHORT string_boolean(TDBB, jrd_nod*, dsc*, dsc*, bool);
 static SSHORT string_function(TDBB, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
@@ -366,8 +366,7 @@ SBM* EVL_bitmap(TDBB tdbb, jrd_nod* node)
 		{
 			inv* impure = (INV) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			BTR_evaluate(tdbb,
-						 reinterpret_cast <
-						 irb * >(node->nod_arg[e_idx_retrieval]),
+						 reinterpret_cast<irb*>(node->nod_arg[e_idx_retrieval]),
 						 &impure->inv_bitmap);
 			return &impure->inv_bitmap;
 		}
@@ -1056,7 +1055,7 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 				impure->vlu_desc.dsc_dtype = dtype_long;
 				impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 				impure->vlu_desc.dsc_address =
-					reinterpret_cast < UCHAR * >(&impure->vlu_misc.vlu_long);
+					reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
 				impure->vlu_desc.dsc_length = sizeof(ULONG);
 				*(ULONG *) impure->vlu_desc.dsc_address =
 					times.tm_sec * ISC_TIME_SECONDS_PRECISION +
@@ -1540,8 +1539,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 			if (request->req_flags & req_null)
 				impure->vlu_desc.dsc_address = NULL;
 			else
-				EVL_make_value(tdbb, desc,
-							   reinterpret_cast < vlu * >(impure));
+				EVL_make_value(tdbb, desc, impure);
 		}
 	}
 
@@ -1571,8 +1569,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 						goto break_out;
 				}
 				else {
-					EVL_make_value(tdbb, desc,
-								   reinterpret_cast < vlu * >(impure));
+					EVL_make_value(tdbb, desc, impure);
 					if (!vtemp.vlu_desc.dsc_address
 						|| MOV_compare(&vtemp.vlu_desc, desc))
 					{
@@ -1602,8 +1599,14 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 					++impure->vlux_count;
 					if (!impure->vlu_desc.dsc_dtype)
 					{
-						EVL_make_value(tdbb, desc,
-									   reinterpret_cast<vlu*>(&impure->vlu_desc));
+						EVL_make_value(tdbb, desc, impure);
+						// It was reinterpret_cast<vlu*>(&impure->vlu_desc));
+						// but vlu_desc is the first member of vlu and vlux
+						// derives from vlu and vlu doesn't derive from anything
+						// and it doesn't contain virtuals.
+						// Thus, &vlux->vlu_desc == &vlu->vlu_desc == &vlux
+						// Delete this comment or restore the original code
+						// when this reasoning has been validated, please.
 						break;
 					}
 					const SLONG result =
@@ -1616,7 +1619,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 					     (from->nod_type == nod_agg_min ||
 					      from->nod_type == nod_agg_min_indexed)))
 					{
-						EVL_make_value(tdbb, desc, reinterpret_cast<vlu*>(impure));
+						EVL_make_value(tdbb, desc, impure);
 					}
 
 					/* if a max or min has been mapped to an index, then the first record is the eof */
@@ -1635,7 +1638,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 				if (request->req_flags & req_null)
 					break;
 				++impure->vlux_count;
-				add(desc, from, reinterpret_cast < vlu * >(impure));
+				add(desc, from, impure);
 				break;
 
 			case nod_agg_total2:
@@ -1644,7 +1647,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 				if (request->req_flags & req_null)
 					break;
 				++impure->vlux_count;
-				add2(desc, from, reinterpret_cast < vlu * >(impure));
+				add2(desc, from, impure);
 				break;
 
 			case nod_agg_count2:
@@ -1871,7 +1874,7 @@ void EVL_make_value(TDBB tdbb, const dsc* desc, VLU value)
 
 		const USHORT length =
 			MOV_get_string_ptr(&from, &ttype, &address,
-							   reinterpret_cast < vary * >(temp),
+							   reinterpret_cast<vary*>(temp),
 							   sizeof(temp));
 
 /* Allocate a string block of sufficient size. */
@@ -2057,7 +2060,7 @@ USHORT EVL_mb_sleuth_merge(TDBB tdbb,
 	len2 = obj.to_wc(pp2, len2, control, control_bytes, &err_code, &err_pos);
 
 	const USHORT ret_val = EVL_wc_sleuth_merge(tdbb, obj, pp1, len1, pp2, len2,
-				      reinterpret_cast < UCS2_CHAR * >(combined),
+				      reinterpret_cast<UCS2_CHAR*>(combined),
 				      combined_bytes);
 
 	if (pp1 != buffer1)
@@ -3005,8 +3008,8 @@ static void compute_agg_distinct(TDBB tdbb, jrd_nod* node)
 	while (true) {
 		UCHAR* data;
 		SORT_get(tdbb->tdbb_status_vector,
-				 reinterpret_cast < SCB > (asb_impure->iasb_sort_handle),
-				 reinterpret_cast < ULONG ** >(&data)
+				 reinterpret_cast<SCB>(asb_impure->iasb_sort_handle),
+				 reinterpret_cast<ULONG**>(&data)
 #ifdef SCROLLABLE_CURSORS
 				 , RSE_get_forward
 #endif
@@ -3014,7 +3017,7 @@ static void compute_agg_distinct(TDBB tdbb, jrd_nod* node)
 
 		if (data == NULL) {
 			/* we are done, close the sort */
-			SORT_fini(reinterpret_cast < SCB > (asb_impure->iasb_sort_handle),
+			SORT_fini(reinterpret_cast<SCB>(asb_impure->iasb_sort_handle),
 					  tdbb->tdbb_attachment);
 			asb_impure->iasb_sort_handle = NULL;
 			break;
@@ -3025,13 +3028,13 @@ static void compute_agg_distinct(TDBB tdbb, jrd_nod* node)
 		case nod_agg_total_distinct:
 		case nod_agg_average_distinct:
 			++impure->vlux_count;
-			add(desc, node, reinterpret_cast < vlu * >(impure));
+			add(desc, node, impure);
 			break;
 
 		case nod_agg_total_distinct2:
 		case nod_agg_average_distinct2:
 			++impure->vlux_count;
-			add2(desc, node, reinterpret_cast < vlu * >(impure));
+			add2(desc, node, impure);
 			break;
 
 		case nod_agg_count_distinct:
@@ -3092,7 +3095,7 @@ static dsc* concatenate(TDBB tdbb, jrd_nod* node, VLU impure)
 		USHORT ttype1;
 		USHORT length1 =
 			MOV_get_string_ptr(value1, &ttype1, &address1,
-							   reinterpret_cast < vary * >(temp1),
+							   reinterpret_cast<vary*>(temp1),
 							   sizeof(temp1));
 
 /* value2 will be converted to the same text type as value1 */
@@ -3107,7 +3110,7 @@ static dsc* concatenate(TDBB tdbb, jrd_nod* node, VLU impure)
 		str* temp3 = NULL;
 		USHORT length2 =
 			MOV_make_string2(value2, ttype1, &address2,
-							 reinterpret_cast < vary * >(temp2),
+							 reinterpret_cast<vary*>(temp2),
 							 sizeof(temp2), &temp3);
 
 		dsc desc;
@@ -3241,8 +3244,8 @@ static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
 	}
 	SLONG count = 0;
 
-	blk* rsb = (BLK) node->nod_arg[e_stat_rsb];
-	RSE_open(tdbb, reinterpret_cast < struct Rsb *>(rsb));
+	Rsb* rsb = (Rsb*) (BLK) node->nod_arg[e_stat_rsb];
+	RSE_open(tdbb, rsb);
 
 /* Handle each variety separately */
 
@@ -3250,8 +3253,7 @@ static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
 	{
 	case nod_count:
 		flag = 0;
-		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
-							  g_RSE_get_mode))
+		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
 			++impure->vlu_misc.vlu_long;
 		}
@@ -3259,8 +3261,7 @@ static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
 
 	case nod_count2:
 		flag = 0;
-		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
-							  g_RSE_get_mode))
+		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
 			value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (!(request->req_flags & req_null)) {
@@ -3271,8 +3272,7 @@ static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
 
 	case nod_min:
 	case nod_max:
-		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
-							  g_RSE_get_mode))
+		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
 			value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (request->req_flags & req_null) {
@@ -3290,8 +3290,7 @@ static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
 		break;
 
 	case nod_from:
-		if (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
-						   g_RSE_get_mode))
+		if (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
 			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 		}
@@ -3307,8 +3306,7 @@ static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
 
 	case nod_average:			/* total or average with dialect-1 semantics */
 	case nod_total:
-		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
-								g_RSE_get_mode))
+		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
 			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (request->req_flags & req_null) {
@@ -3337,8 +3335,7 @@ static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
 		break;
 
 	case nod_average2:			/* average with dialect-3 semantics */
-		while (RSE_get_record(tdbb, reinterpret_cast<struct Rsb*>(rsb),
-							  g_RSE_get_mode))
+		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
 			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (request->req_flags & req_null)
@@ -3385,7 +3382,7 @@ static dsc* eval_statistical(TDBB tdbb, jrd_nod* node, VLU impure)
 
 /* Close stream and return value */
 
-	RSE_close(tdbb, reinterpret_cast < struct Rsb *>(rsb));
+	RSE_close(tdbb, rsb);
 	request->req_flags &= ~req_null;
 	request->req_flags |= flag;
 
@@ -3427,7 +3424,7 @@ static SINT64 get_day_fraction(const dsc* d)
 	result.dsc_flags = 0;
 	result.dsc_sub_type = 0;
 	result.dsc_length = sizeof(double);
-	result.dsc_address = reinterpret_cast < UCHAR * >(&result_days);
+	result.dsc_address = reinterpret_cast<UCHAR*>(&result_days);
 
 /* Convert the input number to a double */
 	CVT_move(d, &result, ERR_post);
@@ -3510,7 +3507,7 @@ static SINT64 get_timestamp_to_isc_ticks(const dsc* d)
 	result.dsc_flags = 0;
 	result.dsc_sub_type = 0;
 	result.dsc_length = sizeof(GDS_TIMESTAMP);
-	result.dsc_address = reinterpret_cast < UCHAR * >(&result_timestamp);
+	result.dsc_address = reinterpret_cast<UCHAR*>(&result_timestamp);
 
 	CVT_move(d, &result, ERR_post);
 
@@ -3570,7 +3567,7 @@ static dsc* lock_record(TDBB tdbb, jrd_nod* node, VLU impure)
 	USHORT lock_level;
 	Rsb* rsb;
 	RPB* rpb;
-	LCK lock = NULL;
+	lck* lock = NULL;
 
 	SET_TDBB(tdbb);
 
@@ -3643,12 +3640,6 @@ static dsc* lock_relation(TDBB tdbb, jrd_nod* node, VLU impure)
  *      pointing to the lock handle.
  *
  **************************************/
-	dsc* desc;
-	USHORT lock_level;
-	jrd_nod* relation_node;
-	jrd_rel* relation;
-	LCK lock = NULL;
-
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(node, type_nod);
 
@@ -3661,15 +3652,16 @@ static dsc* lock_relation(TDBB tdbb, jrd_nod* node, VLU impure)
 
 /* get the locking level */
 
-	desc = EVL_expr(tdbb, node->nod_arg[e_lockrel_level]);
-	lock_level = (USHORT) MOV_get_long(desc, 0);
+	dsc* desc = EVL_expr(tdbb, node->nod_arg[e_lockrel_level]);
+	const USHORT lock_level = (USHORT) MOV_get_long(desc, 0);
 	if (lock_level > LCK_EX)
 		ERR_post(isc_bad_lock_level, isc_arg_number, (SLONG) lock_level, 0);
 
 /* perform the actual lock (or unlock) */
 
-	relation_node = node->nod_arg[e_lockrel_relation];
-	relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
+	jrd_nod* relation_node = node->nod_arg[e_lockrel_relation];
+	jrd_rel* relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
+	lck* lock = NULL;
 	if (!lock_level)
 		RLCK_unlock_relation(0, relation);
 	else
@@ -3681,9 +3673,6 @@ static dsc* lock_relation(TDBB tdbb, jrd_nod* node, VLU impure)
 	impure->vlu_misc.vlu_long = (ULONG) lock;
 #else
 	{
-		ATT att;
-		ULONG slot;
-
 		SET_TDBB(tdbb);
 
 		/* The lock pointer can't be stored in a ULONG.  Therefore we must
@@ -3692,8 +3681,9 @@ static dsc* lock_relation(TDBB tdbb, jrd_nod* node, VLU impure)
 		   an index into this vector.  When the user releases a lock, its
 		   slot in the vector is zeroed and it becomes available for reuse. */
 
-		att = tdbb->tdbb_attachment;
-		slot = ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
+		ATT att = tdbb->tdbb_attachment;
+		const ULONG slot =
+			ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
 								   &att->att_lck_quick_ref, 50);
 		att->att_lck_quick_ref->vec_object[slot] = lock;
 		impure->vlu_misc.vlu_long = slot;
@@ -4288,9 +4278,12 @@ static dsc* scalar(TDBB tdbb, jrd_nod* node, VLU impure)
 
 	BLB_scalar(tdbb,
 			   request->req_transaction,
-			   reinterpret_cast < bid * >(desc->dsc_address),
+			   reinterpret_cast<bid*>(desc->dsc_address),
 			   list->nod_count,
-			   subscripts, reinterpret_cast < vlu * >(&impure->vlu_desc));
+			   subscripts, impure);
+			   // It was subscripts, reinterpret_cast<vlu*>(&impure->vlu_desc));
+			   // but vlu_desc is the first member of vlu and impure is already
+			   // of type vlu*, so this cast seems nonsense.
 
 	return &impure->vlu_desc;
 }
@@ -4368,7 +4361,7 @@ static SSHORT sleuth(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
 
 		blb* blob =
 			BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
-					 reinterpret_cast < bid * >(desc1->dsc_address));
+					 reinterpret_cast<bid*>(desc1->dsc_address));
 
 		ret_val = FALSE;
 		while (!(blob->blb_flags & BLB_eof))
@@ -4433,13 +4426,13 @@ static SSHORT string_boolean(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, b
 		if (!computed_invariant) {
 			l2 =
 				MOV_make_string2(desc2, type1, &p2,
-							 	 reinterpret_cast < vary * >(temp2),
+							 	 reinterpret_cast<vary*>(temp2),
 							 	 TEMP_SIZE(temp2), &match_str);
 		}
 
 		l1 =
 			MOV_get_string_ptr(desc1, &xtype1, &p1,
-							   reinterpret_cast < vary * >(temp1),
+							   reinterpret_cast<vary*>(temp1),
 							   TEMP_SIZE(temp1));
 
 		fb_assert(xtype1 == type1);
@@ -4457,7 +4450,7 @@ static SSHORT string_boolean(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, b
 			if (!computed_invariant) {
 				l2 =
 					MOV_make_string2(desc2, type1, &p2,
-								 	reinterpret_cast < vary * >(temp2),
+								 	reinterpret_cast<vary*>(temp2),
 								 	TEMP_SIZE(temp2), &match_str);
 			}
 		}
@@ -4465,19 +4458,19 @@ static SSHORT string_boolean(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, b
 			type1 = ttype_none;	/* Do byte matching */
 			if (!computed_invariant) {
 				l2 =
-					MOV_get_string(desc2, &p2, reinterpret_cast < vary * >(temp2),
+					MOV_get_string(desc2, &p2, reinterpret_cast<vary*>(temp2),
 								TEMP_SIZE(temp2));
 			}
 		}
 
-		blb* blob =
-			BLB_open(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc1->dsc_address));
+		blb* blob =	BLB_open(tdbb, request->req_transaction,
+						reinterpret_cast<bid*>(desc1->dsc_address));
 
 		/* Performs the string_function on each segment of the blob until
 		   a positive result is obtained */
 
 		ret_val = FALSE;
-		switch(node->nod_type) {
+		switch (node->nod_type) {
 		case nod_starts: 
 			{
 				Firebird::StartsEvaluator<UCHAR> evaluator(p2, l2);
@@ -4510,7 +4503,7 @@ static SSHORT string_boolean(TDBB tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, b
 						break;
 					}
 					const USHORT l3 = MOV_make_string(dsc,
-										 type1, &q1, (VARY *) temp3,
+										 type1, &q1, (vary*) temp3,
 										 TEMP_SIZE(temp3));
 					if (!l3)
 						ERR_post(isc_like_escape_invalid, 0);
@@ -4661,7 +4654,7 @@ static SSHORT string_function(
 				return FALSE;
 			}
 			const USHORT l3 = MOV_make_string(dsc,
-								 ttype, &q1, (VARY *) temp3,
+								 ttype, &q1, (vary*) temp3,
 								 TEMP_SIZE(temp3));
 			if (!l3)
 				ERR_post(isc_like_escape_invalid, 0);
@@ -4739,8 +4732,8 @@ static dsc* substring(
 	{
 		/* Source string is a blob, things get interesting. */
 
-		BLB blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
-							reinterpret_cast<BID>(value->dsc_address));
+		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+							reinterpret_cast<bid*>(value->dsc_address));
 		if (!blob->blb_length || blob->blb_length <= offset)
 		{
 			desc.dsc_length = 0;
@@ -4777,7 +4770,7 @@ static dsc* substring(
 
 	desc.dsc_length =
 		MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
-						   reinterpret_cast < vary * >(temp), sizeof(temp));
+						   reinterpret_cast<vary*>(temp), sizeof(temp));
 	INTL_ASSIGN_TTYPE(&desc, ttype);
 
 	/* CVC: Why bother? If the offset is greater or equal than the length in bytes,
@@ -4881,7 +4874,7 @@ static dsc* upcase(TDBB tdbb, const dsc* value, VLU impure)
 	dsc desc;
 	desc.dsc_length =
 		MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
-						   reinterpret_cast < vary * >(temp), sizeof(temp));
+						   reinterpret_cast<vary*>(temp), sizeof(temp));
 	desc.dsc_dtype = dtype_text;
 	INTL_ASSIGN_TTYPE(&desc, ttype);
 	EVL_make_value(tdbb, &desc, impure);

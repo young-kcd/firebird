@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.31 2004-02-08 16:35:40 alexpeshkoff Exp $
+ *  $Id: alloc.h,v 1.32 2004-02-20 06:42:35 robocop Exp $
  *
  */
 
@@ -207,7 +207,7 @@ public:
 	
 	static void globalFree(void* block) {
 	    if (block)
-		  ((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->pool->deallocate(block);
+		  ((MemoryBlock*)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))))->pool->deallocate(block);
 	}
 	
 	void* calloc(size_t size, SSHORT type = 0
@@ -277,7 +277,7 @@ static inline void* operator new[](size_t s) {
 // Do not complain here. It causes client tools to crash on Red Hat 8.0
 //	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
 #endif	// DEV_BUILD
-//	return getDefaultMemoryPool()->->calloc(s, 0
+//	return getDefaultMemoryPool()->calloc(s, 0
 	return getDefaultMemoryPool()->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__,__LINE__

@@ -136,7 +136,7 @@ typedef struct tsec {
     pfn_svc_output		tsec_output_proc;
     svc*				tsec_output_data;
     IB_FILE*			tsec_output_file;
-    SVC					tsec_service_blk;
+    svc*				tsec_service_blk;
 } *TSEC;
 
 #define GsecMsg0	0	/* empty message */

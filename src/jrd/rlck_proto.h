@@ -25,37 +25,41 @@
 #define JRD_RLCK_PROTO_H
 
 #ifdef PC_ENGINE
-struct lck *RLCK_lock_record(struct rpb *, USHORT, int (*)(),
+
+class lck;
+
+lck *RLCK_lock_record(struct rpb *, USHORT, int (*)(),
 									struct blk *);
-struct lck *RLCK_lock_record_implicit(class jrd_tra *, struct rpb *,
+lck *RLCK_lock_record_implicit(class jrd_tra *, struct rpb *,
 											 USHORT, int (*)(), struct blk *);
-struct lck *RLCK_lock_relation(struct jrd_rel *, USHORT, int (*)(),
+lck *RLCK_lock_relation(struct jrd_rel *, USHORT, int (*)(),
 									  struct blk *);
-struct lck *RLCK_range_relation(class jrd_tra *, struct jrd_rel *, int (*)(),
+lck *RLCK_range_relation(class jrd_tra *, struct jrd_rel *, int (*)(),
 									   struct blk *);
-struct lck *RLCK_record_locking(struct jrd_rel *);
-void RLCK_release_lock(struct lck *);
-void RLCK_release_locks(struct att *);
+lck *RLCK_record_locking(struct jrd_rel *);
+void RLCK_release_lock(lck*);
+void RLCK_release_locks(class att *);
 #endif
-struct lck *RLCK_reserve_relation(struct tdbb *, class jrd_tra *,
+lck *RLCK_reserve_relation(struct tdbb *, class jrd_tra *,
 										 struct jrd_rel *, USHORT, USHORT);
 
 /* TMN: This header did not match the implementation.
  * I moved the #ifdef as noted
  */
 /* #ifdef PC_ENGINE */
-void RLCK_shutdown_attachment(struct att *);
-void RLCK_shutdown_database(struct dbb *);
+void RLCK_shutdown_attachment(class att*);
+void RLCK_shutdown_database(class dbb*);
 #ifdef PC_ENGINE
-void RLCK_signal_refresh(class jrd_tra *);
+void RLCK_signal_refresh(class jrd_tra*);
 #endif
 
-struct lck *RLCK_transaction_relation_lock(class jrd_tra *, struct jrd_rel *);
+lck *RLCK_transaction_relation_lock(class jrd_tra *, struct jrd_rel *);
 
 #ifdef PC_ENGINE
-void RLCK_unlock_record(struct lck *, struct rpb *);
-void RLCK_unlock_record_implicit(struct lck *, struct rpb *);
-void RLCK_unlock_relation(struct lck *, struct jrd_rel *);
+void RLCK_unlock_record(lck*, struct rpb *);
+void RLCK_unlock_record_implicit(lck*, struct rpb *);
+void RLCK_unlock_relation(lck*, struct jrd_rel *);
 #endif
 
-#endif /* JRD_RLCK_PROTO_H */
+#endif // JRD_RLCK_PROTO_H
+

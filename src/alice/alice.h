@@ -126,20 +126,20 @@ enum tdr_state_vals {
 
 /* a couple of obscure blocks used only in data allocator routines */
 
-class vec : public pool_alloc_rpt<class blk*, alice_type_vec>
-{
-public:
-	ULONG vec_count;
-	blk *vec_object[1];
-};
-typedef vec* VEC;
+//class alice_vec : public pool_alloc_rpt<class blk*, alice_type_vec>
+//{
+//public:
+//	ULONG vec_count;
+//	blk *vec_object[1];
+//};
+//typedef alice_vec* VEC;
 
-class vcl : public pool_alloc_rpt<SLONG, alice_type_vcl>
-{
-	ULONG vcl_count;
-	SLONG vcl_long[1];
-};
-typedef vcl* VCL;
+//class alice_vcl : public pool_alloc_rpt<SLONG, alice_type_vcl>
+//{
+//	ULONG vcl_count;
+//	SLONG vcl_long[1];
+//};
+//typedef alice_vcl* VCL;
 
 /* Global switches and data */
 
@@ -168,7 +168,7 @@ public:
 	pfn_svc_output  output_proc;
 	svc*			output_data;
 	IB_FILE*		output_file;
-	SVC				service_blk;
+	svc*			service_blk;
 	isc_db_handle	db_handle;
 	isc_tr_handle	tr_handle;
 	ISC_STATUS*		status;

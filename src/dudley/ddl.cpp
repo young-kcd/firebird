@@ -62,7 +62,8 @@ static const char* const FOPEN_INPUT_TYPE	= "r";
 const char* DDL_EXT		= ".gdl";	// normal extension for a ddl file
 const int MAX_ERRORS	= 50;
 
-enum in_sw_values {
+enum in_sw_values
+{
 	IN_SW_GDEF_0 = 0,		// null switch value
 	IN_SW_GDEF_G,			// generate DDL from a database file
 	IN_SW_GDEF_R,			// replace existing database
@@ -80,7 +81,8 @@ enum in_sw_values {
 	IN_SW_GDEF_PASSWORD		// password for PC security
 };
 
-static const in_sw_tab_t gdef_in_sw_table[] = {
+static const in_sw_tab_t gdef_in_sw_table[] =
+{
 	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, FALSE, 0, 0,
 		"\t\textract definition from database"}, 	/* extract DDL from database */
 	{ IN_SW_GDEF_R, 0, "REPLACE", 0, 0, 0, FALSE, 0, 0,
@@ -385,7 +387,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			DDL_msg_partial(9, 0, 0, 0, 0, 0);	/* msg 9: \n1 error during input. */
 		else
 			DDL_msg_partial(8, 0, 0, 0, 0, 0);	/* msg 8: \nNo errors. */
-		if (DDL_yes_no(10)){ // msg 10 : save changes before exiting?
+		if (DDL_yes_no(10)) { // msg 10 : save changes before exiting?
 			DDL_quit = false;
 			DDL_errors = 0;
 		}

@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef SORT_MEM_H
-#define SORT_MEM_H
+#ifndef JRD_SORT_MEM_H
+#define JRD_SORT_MEM_H
 
 #include "../jrd/sort.h"
 
@@ -121,4 +121,5 @@ public:
 	~SortMem();
 };
 
-#endif	// SORT_MEM_H
+#endif	// JRD_SORT_MEM_H
+

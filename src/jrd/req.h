@@ -35,13 +35,18 @@
 
 #include <vector>
 
+class lck;
+class fmt;
+class jrd_rel;
+class jrd_prc;
+
 /* record parameter block */
 
 typedef struct rpb {
 	rpb() : rpb_window(-1) {}
 	SLONG rpb_number;			/* record number in relation */
 	SLONG rpb_transaction;		/* transaction number */
-	struct jrd_rel *rpb_relation;	/* relation of record */
+	jrd_rel*	rpb_relation;	/* relation of record */
 	class rec *rpb_record;		/* final record block */
 	class rec *rpb_prior;		/* prior record block if this is a delta record */
 	struct srpb *rpb_copy;		/* rpb copy for singleton verification */
@@ -99,10 +104,10 @@ typedef struct rpb {
 class rec : public pool_alloc_rpt<SCHAR, type_rec>
 {
     public:
-	const struct fmt* rec_format;		/* what the data looks like */
-	struct lls *rec_precedence;	/* stack of higher precedence pages */
+	const fmt* rec_format;		/* what the data looks like */
+	class lls *rec_precedence;	/* stack of higher precedence pages */
 	USHORT rec_length;			/* how much there is */
-	const struct fmt* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
+	const fmt* rec_fmt_bk;   	// backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			/* misc record flags */
 	SLONG rec_number;			/* original rpb number - used for undoing multiple updates */
 	double rec_dummy;			/* this is to force next field to a double boundary */
@@ -139,14 +144,14 @@ public:
 	jrd_req*		req_request;	/* next request in dbb */
 	struct acc*	req_access;		/* Access items to be checked */
 	struct vec*	req_variables;	/* Vector of variables, if any */
-	class Rsc*	req_resources;	/* Resources (relations and indices) */
+	class Resource*	req_resources;	/* Resources (relations and indices) */
 	struct jrd_nod*	req_message;	/* Current message for send/receive */
 #ifdef SCROLLABLE_CURSORS
 	struct jrd_nod *req_async_message;	/* Asynchronous message (used in scrolling) */
 #endif
 	struct vec*	req_refresh_ranges;	/* Vector of refresh_ranges */
 	struct rng*	req_begin_ranges;	/* Vector of refresh_ranges */
-	struct jrd_prc*	req_procedure;		/* procedure, if any */
+	jrd_prc*	req_procedure;		/* procedure, if any */
 	const TEXT*		req_trg_name;		/* name of request (trigger), if any */
 	USHORT req_length;			/* message length for send/receive */
 	USHORT req_nmsgs;			/* number of message types */
@@ -162,9 +167,9 @@ public:
 	ULONG req_records_affected; /* count of records affected by the last statement */
 
 	USHORT req_view_flags;		/* special flags for virtual ops on views */
-	struct jrd_rel* req_top_view_store;	/* the top view in store(), if any */
-	struct jrd_rel* req_top_view_modify;	/* the top view in modify(), if any */
-	struct jrd_rel* req_top_view_erase;	/* the top view in erase(), if any */
+	jrd_rel* 	req_top_view_store;	/* the top view in store(), if any */
+	jrd_rel*	req_top_view_modify;	/* the top view in modify(), if any */
+	jrd_rel*	req_top_view_erase;	/* the top view in erase(), if any */
 
 	struct jrd_nod* req_top_node;	/* top of execution tree */
 	struct jrd_nod* req_next;		/* next node for execution */
@@ -198,7 +203,7 @@ public:
 };
 typedef jrd_req* JRD_REQ;  // CVC: Scheduled for termination, don't use the uppercase type!!!
 
-#define REQ_SIZE	(sizeof (struct jrd_req) - sizeof (((JRD_REQ) NULL)->req_rpb[0]))
+#define REQ_SIZE	(sizeof (jrd_req) - sizeof (((JRD_REQ) NULL)->req_rpb[0]))
 
 /* Flags for req_flags */
 #define req_active				0x1L
@@ -249,36 +254,32 @@ enum {
 };
 
 
-/* Resources */
+// Resources
 
-/* TMN: Had to remove this enum from bein nested in struct rsc since we now use C++,
- * but this enum is used in the C API. Can you say "legacy"? :-(
- */
-enum rsc_s {
-	rsc_relation,
-	rsc_procedure,
-	rsc_index
-};
-
-class Rsc : public pool_alloc<type_rsc>
+class Resource : public pool_alloc<type_rsc>
 {
     public:
-	class Rsc *rsc_next;		/* Next resource in request */
-	struct jrd_rel *rsc_rel;		/* Relation block */
-	struct jrd_prc *rsc_prc;		/* Relation block */
-	USHORT rsc_id;				/* Id of parent */
+	enum rsc_s
+	{
+		rsc_relation,
+		rsc_procedure,
+		rsc_index
+	};
+	Resource*	rsc_next;		/* Next resource in request */
+	jrd_rel*	rsc_rel;		/* Relation block */
+	jrd_prc*	rsc_prc;		/* Relation block */
+	USHORT		rsc_id;			/* Id of parent */
 	enum rsc_s rsc_type;
 };
-typedef Rsc *RSC;
 
 /* Index lock block */
 
 class idl : public pool_alloc<type_idl>
 {
     public:
-	struct idl*	idl_next;		/* Next index lock block for relation */
-	struct lck*	idl_lock;		/* Lock block */
-	struct jrd_rel*	idl_relation;	/* Parent relation */
+	idl*		idl_next;		/* Next index lock block for relation */
+	lck*		idl_lock;		/* Lock block */
+	jrd_rel*	idl_relation;	/* Parent relation */
 	USHORT		idl_id;			/* Index id */
 	USHORT		idl_count;		/* Use count */
 };
@@ -290,7 +291,7 @@ typedef idl *IDL;
 class acc : public pool_alloc<type_acc>
 {
     public:
-	struct acc*	acc_next;
+	acc*	acc_next;
 	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
 	SLONG	acc_view_id;
 	const TEXT*	acc_trg_name;
@@ -301,5 +302,5 @@ class acc : public pool_alloc<type_acc>
 };
 typedef acc *ACC;
 
-#endif /* JRD_REQ_H */
+#endif // JRD_REQ_H
 

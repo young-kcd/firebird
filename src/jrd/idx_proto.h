@@ -30,7 +30,7 @@
 
 
 void IDX_check_access(TDBB, class Csb *, struct jrd_rel *, struct jrd_rel *,
-							 struct jrd_fld *);
+							 class jrd_fld*);
 void IDX_create_index(TDBB, struct jrd_rel*, struct idx*, const TEXT*,
 					  USHORT*, class jrd_tra*, SelectivityList&);
 struct idb* IDX_create_index_block(TDBB, struct jrd_rel *, USHORT);
@@ -38,8 +38,8 @@ void IDX_delete_index(TDBB, struct jrd_rel *, USHORT);
 void IDX_delete_indices(TDBB, struct jrd_rel *);
 enum idx_e IDX_erase(TDBB, struct rpb *, class jrd_tra *, struct jrd_rel **,
 							USHORT *);
-void IDX_garbage_collect(TDBB, struct rpb *, struct lls *,
-								struct lls *);
+void IDX_garbage_collect(TDBB, struct rpb *, class lls*,
+								class lls*);
 enum idx_e IDX_modify(struct tdbb *, struct rpb *, struct rpb *,
 							 class jrd_tra *, struct jrd_rel **, USHORT *);
 enum idx_e IDX_modify_check_constraints(TDBB, struct rpb *, struct rpb *,

@@ -296,7 +296,7 @@ static void print_topic(
 						error_flag);
 		else {
 			ib_printf("\n%s\n\n", strip(string));
-			QLI_skip_line = TRUE;
+			QLI_skip_line = true;
 			FOR B IN X.TEXT
 				if (QLI_abort)
 					return;

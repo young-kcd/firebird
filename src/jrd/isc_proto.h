@@ -28,7 +28,7 @@
 
 void	ISC_ast_enter(void);
 void	ISC_ast_exit(void);
-int		ISC_check_process_existence(SLONG, SLONG, USHORT);
+bool	ISC_check_process_existence(SLONG, SLONG, bool);
 void	ISC_get_config(TEXT *, struct ipccfg *);
 int		ISC_set_config(TEXT *, struct ipccfg *);
 TEXT*	INTERNAL_API_ROUTINE ISC_get_host(TEXT *, USHORT);
@@ -50,7 +50,7 @@ void	ISC_wake_init(void);
 #endif
 
 #ifdef WIN_NT
-BOOLEAN ISC_is_WinNT(void);
+bool	ISC_is_WinNT();
 struct _SECURITY_ATTRIBUTES* ISC_get_security_desc(void);
 /* Disabled. Not found anywhere.
 TEXT*	ISC_prefix_interbase(TEXT*, TEXT*);

@@ -150,19 +150,19 @@ typedef struct rvnt
 	SSHORT		rvnt_length;
 } *RVNT;
 
-typedef struct vec
+struct rem_vec
 {
 	struct blk	vec_header;
 	ULONG		vec_count;
 	struct blk*	vec_object[1];
-} *VEC;
+};
 
-typedef struct vcl
-{
-	struct blk	vcl_header;
-	ULONG		vcl_count;
-	SLONG		vcl_long[1];
-} *VCL;
+//struct rem_vcl
+//{
+//	struct blk	vcl_header;
+//	ULONG		vcl_count;
+//	SLONG		vcl_long[1];
+//};
 
 /* Random string block -- jack of all kludges */
 
@@ -403,15 +403,15 @@ struct rem_port
 	XDR				port_receive;
 	XDR				port_send;
 #ifdef DEBUG_XDR_MEMORY
-	VEC				port_packet_vector;	/* Vector of send/receive packets */
+	rem_vec*		port_packet_vector;	/* Vector of send/receive packets */
 #endif
-	VEC				port_object_vector;
+	rem_vec*		port_object_vector;
 	BLK*			port_objects;
-	rem_str*				port_version;
-	rem_str*				port_host;			/* Our name */
-	rem_str*				port_connection;	/* Name of connection */
-	rem_str*				port_user_name;
-	rem_str*				port_passwd;
+	rem_str*		port_version;
+	rem_str*		port_host;			/* Our name */
+	rem_str*		port_connection;	/* Name of connection */
+	rem_str*		port_user_name;
+	rem_str*		port_passwd;
 	struct rpr*		port_rpr;			/* port stored procedure reference */
 	struct rsr*		port_statement;		/* Statement for execute immediate */
 	struct rmtque*	port_receive_rmtque;	/* for client, responses waiting */

@@ -24,14 +24,18 @@
 #ifndef JRD_INF_PROTO_H
 #define JRD_INF_PROTO_H
 
-int		INF_blob_info(const struct blb*, const SCHAR*, const SSHORT,
+class jrd_req;
+class jrd_tra;
+class blb;
+
+int		INF_blob_info(const blb*, const SCHAR*, const SSHORT,
 						SCHAR*, const SSHORT);
 USHORT	INF_convert(SLONG, SCHAR*);
 int		INF_database_info(const SCHAR*, const SSHORT, SCHAR*, const SSHORT);
 SCHAR*	INF_put_item(SCHAR, USHORT, const SCHAR*, SCHAR*, const SCHAR*);
-int		INF_request_info(const struct jrd_req*, const SCHAR*, const SSHORT,
+int		INF_request_info(const jrd_req*, const SCHAR*, const SSHORT,
 						SCHAR*, const SSHORT);
-int		INF_transaction_info(const class jrd_tra*, const SCHAR*, const SSHORT,
+int		INF_transaction_info(const jrd_tra*, const SCHAR*, const SSHORT,
 						SCHAR*, const SSHORT);
 
 #endif // JRD_INF_PROTO_H

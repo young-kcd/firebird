@@ -51,8 +51,8 @@ typedef union {
 
 #define SHUT_WAIT_TIME	5
 
-static BOOLEAN notify_shutdown(DBB, SSHORT, SSHORT);
-static BOOLEAN shutdown_locks(DBB);
+static bool notify_shutdown(DBB, SSHORT, SSHORT);
+static bool shutdown_locks(DBB);
 
 
 BOOLEAN SHUT_blocking_ast(DBB dbb)
@@ -69,12 +69,9 @@ BOOLEAN SHUT_blocking_ast(DBB dbb)
  *
  **************************************/
 	SDATA data;
-	SSHORT flag, delay;
-	ATT attachment;
-
 	data.data_long = LCK_read_data(dbb->dbb_lock);
-	flag = data.data_items.flag;
-	delay = data.data_items.delay;
+	const SSHORT flag = data.data_items.flag;
+	const SSHORT delay = data.data_items.delay;
 
 /* Database shutdown has been cancelled. */
 
@@ -83,9 +80,11 @@ BOOLEAN SHUT_blocking_ast(DBB dbb)
 			~(DBB_shut_attach | DBB_shut_tran | DBB_shut_force |
 			  DBB_shutdown);
 		dbb->dbb_shutdown_delay = 0;
-		for (attachment = dbb->dbb_attachments; attachment;
-			 attachment = attachment->att_next) attachment->att_flags &=
-				~ATT_shutdown_notify;
+		for (att* attachment = dbb->dbb_attachments; attachment;
+			 attachment = attachment->att_next)
+		{
+			 attachment->att_flags &= ~ATT_shutdown_notify;
+		}
 		return FALSE;
 	}
 
@@ -116,13 +115,9 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
  *	Schedule database for shutdown
  *
  **************************************/
-	TDBB tdbb;
-	ATT attachment;
-	HDR header;
-	SSHORT timeout, exclusive;
 
-	tdbb = GET_THREAD_DATA;
-	attachment = tdbb->tdbb_attachment;
+	TDBB tdbb = GET_THREAD_DATA;
+	att* attachment = tdbb->tdbb_attachment;
 
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
@@ -140,7 +135,8 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 		/* Clear shutdown flag on database header page */
 
 		WIN window(HEADER_PAGE);
-		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+		header_page* header =
+			(header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		header->hdr_flags &= ~hdr_shutdown;
 		CCH_RELEASE(tdbb, &window);
@@ -174,7 +170,8 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
    haven't gotten it report shutdown error for weaker forms. For forced shutdown
    keep notifying until successful. */
 
-	exclusive = FALSE;
+	bool exclusive = false;
+	SSHORT timeout;
 	for (timeout = delay; timeout >= 0; timeout -= SHUT_WAIT_TIME)
 	{
 		if ((exclusive = notify_shutdown(dbb, flag, timeout)) ||
@@ -200,7 +197,7 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
    attachments to shutdown. */
 
 	if (flag & isc_dpb_shut_transaction) {
-		exclusive = FALSE;
+		exclusive = false;
 		flag = isc_dpb_shut_force;
 	}
 
@@ -214,7 +211,8 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	++dbb->dbb_use_count;
 	dbb->dbb_ast_flags &= ~(DBB_shut_force | DBB_shut_attach | DBB_shut_tran);
 	WIN window(HEADER_PAGE);
-	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header =
+		(header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_flags |= hdr_shutdown;
 	CCH_RELEASE(tdbb, &window);
@@ -247,7 +245,7 @@ BOOLEAN SHUT_init(DBB dbb)
 }
 
 
-static BOOLEAN notify_shutdown(DBB dbb, SSHORT flag, SSHORT delay)
+static bool notify_shutdown(DBB dbb, SSHORT flag, SSHORT delay)
 {
 /**************************************
  *
@@ -282,14 +280,14 @@ static BOOLEAN notify_shutdown(DBB dbb, SSHORT flag, SSHORT delay)
 	if ((flag & isc_dpb_shut_transaction) &&
 		!(TRA_active_transactions(tdbb, dbb)))
 	{
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static BOOLEAN shutdown_locks(DBB dbb)
+static bool shutdown_locks(DBB dbb)
 {
 /**************************************
  *
@@ -302,15 +300,14 @@ static BOOLEAN shutdown_locks(DBB dbb)
  *	locks if database is quiet.
  *
  **************************************/
-	ATT attachment, shut_attachment;
-	TDBB tdbb;
-
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 /* Mark database and all active attachments as shutdown. */
 
 	dbb->dbb_ast_flags |= DBB_shutdown;
 
+	att* attachment;
+	
 	for (attachment = dbb->dbb_attachments; attachment;
 		 attachment = attachment->att_next)
 	{
@@ -324,16 +321,17 @@ static BOOLEAN shutdown_locks(DBB dbb)
 		THREAD_EXIT;
 		THREAD_SLEEP(1 * 1000);
 		THREAD_ENTER;
-		return FALSE;
+		return false;
 	}
 
 /* Since no attachment is actively running, release all
    attachment-specfic locks while they're not looking. */
 
-	shut_attachment = NULL;
+	att* shut_attachment = NULL;
 
 	for (attachment = dbb->dbb_attachments; attachment;
-		 attachment = attachment->att_next) {
+		 attachment = attachment->att_next)
+	{
 		if (attachment->att_flags & ATT_shutdown_manager) {
 			shut_attachment = attachment;
 			continue;
@@ -373,5 +371,6 @@ static BOOLEAN shutdown_locks(DBB dbb)
 		dbb->dbb_ast_flags |= DBB_shutdown_locks;
 	}
 
-	return TRUE;
+	return true;
 }
+

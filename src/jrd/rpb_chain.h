@@ -20,8 +20,8 @@
  * Contributor(s): ______________________________________.
  */
  
-#ifndef RPB_CHAIN_H
-#define RPB_CHAIN_H
+#ifndef JRD_RPB_CHAIN_H
+#define JRD_RPB_CHAIN_H
 
 #include "../jrd/gdsassert.h"
 #include <string.h>
@@ -58,5 +58,5 @@ public:
 	int PushRpb(struct rpb* value);
 	bool PopRpb(struct rpb* value, int Level);
 };
-#endif	//RPB_CHAIN_H
+#endif	//JRD_RPB_CHAIN_H
 

@@ -26,19 +26,23 @@
 
 void	PRO_close(dbb*, FRBRD*);
 void	PRO_commit(dbb*);
-void	PRO_copy_procedure(dbb*, TEXT*, dbb*, TEXT*);
-void	PRO_create(dbb*, TEXT*);
-int		PRO_delete_procedure(dbb*, TEXT*);
-void	PRO_edit_procedure(dbb*, TEXT*);
-FRBRD*	PRO_fetch_procedure(dbb*, TEXT*);
-bool	PRO_get_line (FRBRD *, TEXT *, USHORT);
-void	PRO_invoke(dbb*, TEXT*);
-FRBRD*	PRO_open_blob(dbb*, SLONG*);
-int		PRO_rename_procedure(dbb*, TEXT*, TEXT*);
+void	PRO_copy_procedure(dbb*, const TEXT*, dbb*, const TEXT*);
+void	PRO_create(dbb*, const TEXT*);
+int		PRO_delete_procedure(dbb*, const TEXT*);
+void	PRO_edit_procedure(dbb*, const TEXT*);
+FRBRD*	PRO_fetch_procedure(dbb*, const TEXT*);
+bool	PRO_get_line (FRBRD*, TEXT*, USHORT);
+void	PRO_invoke(dbb*, const TEXT*);
+FRBRD*	PRO_open_blob(dbb*, ISC_QUAD*);
+int		PRO_rename_procedure(dbb*, const TEXT*, const TEXT*);
 void	PRO_rollback(dbb*);
-void	PRO_scan(dbb*, void(*)(), void*);
+
+typedef void (*extract_fn_t)(void* file, const TEXT* name,
+							  USHORT length, DBB database, ISC_QUAD* blob_id);
+void	PRO_scan(dbb*, extract_fn_t, void*);
+
 void	PRO_setup(dbb*);
-FRBRD*	PRO_transaction(dbb*, int);
+FRBRD*	PRO_transaction(dbb*, bool);
 
 #endif // QLI_PROC_PROTO_H
 

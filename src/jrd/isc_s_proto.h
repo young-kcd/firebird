@@ -44,7 +44,7 @@ int		ISC_event_post(struct event_t *);
 int		ISC_event_wait(SSHORT, struct event_t **, SLONG *, SLONG, FPTR_VOID_PTR, void *);
 
 #ifdef WIN_NT
-void*	ISC_make_signal(BOOLEAN, BOOLEAN, int, int);
+void*	ISC_make_signal(bool, bool, int, int);
 #endif /* WIN_NT */
 
 typedef void (*FPTR_INIT_GLOBAL_REGION)(void*, struct sh_mem*, bool);
@@ -67,20 +67,21 @@ BOOLEAN	ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, SLONG);
 
 #ifdef SUPERSERVER
 #ifdef UNIX
-void	ISC_exception_post(ULONG, TEXT *);
+void	ISC_exception_post(ULONG, const TEXT*);
 void	ISC_sync_signals_set(void);
 void	ISC_sync_signals_reset(void);
 #endif /* UNIX */
 
 #ifdef WIN_NT
-ULONG	ISC_exception_post(ULONG, TEXT *);
+ULONG	ISC_exception_post(ULONG, const TEXT*);
 #endif /* WIN_NT */
 
 #endif /* SUPERSERVER */
 
-UCHAR*	ISC_remap_file(ISC_STATUS *, struct sh_mem *, SLONG, USHORT);
+UCHAR*	ISC_remap_file(ISC_STATUS *, struct sh_mem *, SLONG, bool);
 void	ISC_reset_timer(FPTR_VOID_PTR, void *, SLONG *, void **);
 void	ISC_set_timer(SLONG, FPTR_VOID_PTR, void *, SLONG *, void **);
 void	ISC_unmap_file(ISC_STATUS *, struct sh_mem *, USHORT);
 
 #endif // JRD_ISC_S_PROTO_H
+

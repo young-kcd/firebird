@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.49 2004-01-28 07:50:13 robocop Exp $
+//	$Id: alice.cpp,v 1.50 2004-02-20 06:42:27 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -119,7 +119,7 @@ static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 //		if gfix is run as a service
 //
 
-static int output_svc(SVC output_data, const UCHAR * output_buf)
+static int output_svc(svc* output_data, const UCHAR * output_buf)
 {
 	ib_fprintf(ib_stdout, "%s", output_buf);
 	return 0;
@@ -232,7 +232,7 @@ int common_main(int			argc,
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
 		tdgbl->sw_service = true;
 		tdgbl->sw_service_thd = true;
-		tdgbl->service_blk = (SVC) output_data;
+		tdgbl->service_blk = (svc*) output_data;
 		tdgbl->status = tdgbl->service_blk->svc_status;
 		argv++;
 		argc--;
@@ -539,7 +539,7 @@ int common_main(int			argc,
 		CMD_UTIL_put_svc_status(tdgbl->service_blk->svc_status, ALICE_MSG_FAC,
 								20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-		SVC_STARTED(tdgbl->service_blk);
+		tdgbl->service_blk->svc_started();
 #else
 		ALICE_print(21, 0, 0, 0, 0, 0);	/* msg 21: plausible options are:\n */
 		for (table = alice_in_sw_table; table->in_sw_msg; table++)
@@ -605,7 +605,7 @@ int common_main(int			argc,
 	{
 		/* All "calls" to exit_local(), normal and error exits, wind up here */
 
-		SVC_STARTED(tdgbl->service_blk);
+		tdgbl->service_blk->svc_started();
 
 		int exit_code = tdgbl->exit_code;
 

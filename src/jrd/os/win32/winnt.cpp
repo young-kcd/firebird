@@ -66,13 +66,13 @@
 #define OS_CHICAGO		2
 
 #ifdef SUPERSERVER_V2
-static void release_io_event(FIL, OVERLAPPED*);
+static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
-static ULONG get_number_of_pages(const fil*, const USHORT);
+static ULONG get_number_of_pages(const jrd_file*, const USHORT);
 static bool	MaybeCloseFile(SLONG*);
-static FIL seek_file(FIL, BDB, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
-static FIL setup_file(DBB, const TEXT*, USHORT, HANDLE);
-static BOOLEAN nt_error(TEXT*, const fil*, ISC_STATUS, ISC_STATUS*);
+static jrd_file* seek_file(jrd_file*, BDB, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
+static jrd_file* setup_file(DBB, const TEXT*, USHORT, HANDLE);
+static bool nt_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
 
 static USHORT ostype;
 
@@ -93,7 +93,7 @@ static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
 
 
 
-int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
+int PIO_add_file(DBB dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
 {
 /**************************************
  *
@@ -107,7 +107,7 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
  *	sequence of 0.
  *
  **************************************/
-	fil* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
+	jrd_file* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
 	if (!new_file) {
 		return 0;
 	}
@@ -115,7 +115,7 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
 	new_file->fil_min_page = start;
 	USHORT sequence = 1;
 
-	fil* file;
+	jrd_file* file;
 	for (file = main_file; file->fil_next; file = file->fil_next) {
 		++sequence;
 	}
@@ -127,7 +127,7 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
 }
 
 
-void PIO_close(FIL main_file)
+void PIO_close(jrd_file* main_file)
 {
 /**************************************
  *
@@ -138,7 +138,7 @@ void PIO_close(FIL main_file)
  * Functional description
  *
  **************************************/
-	for (FIL file = main_file; file; file = file->fil_next)
+	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
 		if (MaybeCloseFile(&file->fil_desc) ||
 			MaybeCloseFile(&file->fil_force_write_desc))
@@ -181,7 +181,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 
 
 
-FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
+jrd_file* PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 {
 /**************************************
  *
@@ -228,7 +228,7 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 /* workspace is the exapnded name here */
 
 	length = PIO_expand(string, length, workspace);
-	fil* file = setup_file(dbb, workspace, length, desc);
+	jrd_file* file = setup_file(dbb, workspace, length, desc);
 
 	return file;
 }
@@ -252,7 +252,7 @@ int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
 }
 
 
-void PIO_flush(FIL main_file)
+void PIO_flush(jrd_file* main_file)
 {
 /**************************************
  *
@@ -264,7 +264,7 @@ void PIO_flush(FIL main_file)
  *	Flush the operating system cache back to good, solid oxide.
  *
  **************************************/
-	for (FIL file = main_file; file; file = file->fil_next)
+	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
 		if (ostype == OS_CHICAGO)
 		{
@@ -279,7 +279,7 @@ void PIO_flush(FIL main_file)
 }
 
 
-void PIO_force_write(FIL file, bool flag)
+void PIO_force_write(jrd_file* file, bool flag)
 {
 /**************************************
  *
@@ -345,12 +345,11 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
  *	repositioned since the file was originally mapped.
  *
  **************************************/
-	OVERLAPPED overlapped, *overlapped_ptr;
-
-	FIL file = dbb->dbb_file;
+	jrd_file* file = dbb->dbb_file;
 	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
 
+	OVERLAPPED overlapped, *overlapped_ptr;
 	if (ostype == OS_CHICAGO)
 	{
 		THD_MUTEX_LOCK(file->fil_mutex);
@@ -434,7 +433,7 @@ SLONG PIO_max_alloc(DBB dbb)
  *	Compute last physically allocated page of database.
  *
  **************************************/
-	FIL file = dbb->dbb_file;
+	jrd_file* file = dbb->dbb_file;
 
 	while (file->fil_next) {
 		file = file->fil_next;
@@ -464,7 +463,7 @@ SLONG PIO_act_alloc(DBB dbb)
  **  Traverse the linked list of files and add up the number of pages
  **  in each file
  **/
-	for (const fil* file = dbb->dbb_file; file != NULL; file = file->fil_next) {
+	for (const jrd_file* file = dbb->dbb_file; file != NULL; file = file->fil_next) {
 		tot_pages += get_number_of_pages(file, dbb->dbb_page_size);
 	}
 
@@ -472,11 +471,11 @@ SLONG PIO_act_alloc(DBB dbb)
 }
 
 
-FIL PIO_open(DBB dbb,
+jrd_file* PIO_open(DBB dbb,
 			 const TEXT* string,
 			 SSHORT length,
-			 SSHORT trace_flag,
-			 BLK connection, const TEXT* file_name, USHORT file_length)
+			 bool trace_flag,
+			 blk* connection, const TEXT* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -557,7 +556,7 @@ FIL PIO_open(DBB dbb,
 }
 
 
-int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
+bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -569,14 +568,12 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
  *	Read a data page.
  *
  **************************************/
-	DWORD actual_length;
-	OVERLAPPED overlapped, *overlapped_ptr;
-
 	DBB dbb = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
 
+	OVERLAPPED overlapped, *overlapped_ptr;
 	if (!(file = seek_file(file, bdb, status_vector, &overlapped, &overlapped_ptr)))
-		return FALSE;
+		return false;
 
 	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
@@ -584,6 +581,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 	if (dbb->dbb_encrypt_key)
 	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
+        DWORD actual_length;
 
 		if (!ReadFile(desc, spare_buffer, size, &actual_length, overlapped_ptr)
 			|| actual_length != size)
@@ -599,6 +597,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 	}
 	else
 	{
+		DWORD actual_length;
 		if (!ReadFile(desc, page, size, &actual_length, overlapped_ptr) ||
 			actual_length != size)
 		{
@@ -627,16 +626,16 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 		THD_MUTEX_UNLOCK(file->fil_mutex);
 	}
 
-	return TRUE;
+	return true;
 }
 
 
 #ifdef SUPERSERVER_V2
-int PIO_read_ahead(DBB		dbb,
+bool PIO_read_ahead(DBB		dbb,
 				   SLONG	start_page,
 				   SCHAR*	buffer,
 				   SLONG	pages,
-				   PIOB		piob,
+				   phys_io_blk*		piob,
 				   ISC_STATUS*	status_vector)
 {
 /**************************************
@@ -651,9 +650,7 @@ int PIO_read_ahead(DBB		dbb,
  *	file boundaries.
  *
  **************************************/
-	FIL file;
-	DWORD segmented_length, actual_length;
-	HANDLE desc;
+	DWORD actual_length;
 	OVERLAPPED overlapped, *overlapped_ptr;
 	struct bdb bdb;
 
@@ -674,26 +671,27 @@ int PIO_read_ahead(DBB		dbb,
 		bdb.bdb_dbb = dbb;
 		bdb.bdb_page = start_page;
 
-		file = seek_file(dbb->dbb_file,
+		jrd_file* file = seek_file(dbb->dbb_file,
 						&bdb, status_vector,
 						overlapped_ptr,
 						&overlapped_ptr);
 		if (!file) {
-			return FALSE;
+			return false;
 		}
 
 		/* Check that every page within the set resides in the same database
 		   file. If not read what you can and loop back for the rest. */
 
-		segmented_length = 0;
+		DWORD segmented_length = 0;
 		while (pages && start_page >= file->fil_min_page
-			   && start_page <= file->fil_max_page) {
+			   && start_page <= file->fil_max_page)
+		{
 			segmented_length += dbb->dbb_page_size;
 			++start_page;
 			--pages;
 		}
 
-		desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
+		HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 						 file->fil_force_write_desc : file->fil_desc);
 
 		if (ReadFile(	desc,
@@ -709,7 +707,7 @@ int PIO_read_ahead(DBB		dbb,
 		}
 		else if (piob && !pages) {
 			piob->piob_flags = PIOB_pending;
-			piob->piob_desc = reinterpret_cast<long>(desc);
+			piob->piob_desc = reinterpret_cast<SLONG>(desc);
 			piob->piob_file = file;
 			piob->piob_io_length = segmented_length;
 		}
@@ -733,13 +731,13 @@ int PIO_read_ahead(DBB		dbb,
 		buffer += segmented_length;
 	}
 
-	return TRUE;
+	return true;
 }
 #endif
 
 
 #ifdef SUPERSERVER_V2
-int PIO_status(PIOB piob, ISC_STATUS* status_vector)
+bool PIO_status(phys_io_blk* piob, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -755,13 +753,14 @@ int PIO_status(PIOB piob, ISC_STATUS* status_vector)
 
 	if (!(piob->piob_flags & PIOB_success)) {
 		if (piob->piob_flags & PIOB_error) {
-			return FALSE;
+			return false;
 		}
 		if (!GetOverlappedResult((HANDLE) piob->piob_desc,
 								 (OVERLAPPED *) & piob->piob_io_event,
 								 &actual_length,
 								 piob->piob_wait) ||
-			actual_length != piob->piob_io_length) {
+			actual_length != piob->piob_io_length)
+		{
 			release_io_event(piob->piob_file,
 							 (OVERLAPPED *) & piob->piob_io_event);
 			return nt_error("GetOverlappedResult", piob->piob_file,
@@ -770,12 +769,12 @@ int PIO_status(PIOB piob, ISC_STATUS* status_vector)
 	}
 
 	release_io_event(piob->piob_file, (OVERLAPPED *) & piob->piob_io_event);
-	return TRUE;
+	return true;
 }
 #endif
 
 
-int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -797,7 +796,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 	file = seek_file(file, bdb, status_vector, &overlapped,
 				   &overlapped_ptr);
 	if (!file) {
-		return FALSE;
+		return false;
 	}
 
 	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
@@ -848,12 +847,12 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 		THD_MUTEX_UNLOCK(file->fil_mutex);
 	}
 
-	return TRUE;
+	return true;
 }
 
 
 
-static ULONG get_number_of_pages(const fil* file, const USHORT pagesize)
+static ULONG get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 {
 /**************************************
  *
@@ -882,7 +881,7 @@ static ULONG get_number_of_pages(const fil* file, const USHORT pagesize)
 
 
 #ifdef SUPERSERVER_V2
-static void release_io_event(FIL file, OVERLAPPED* overlapped)
+static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 {
 /**************************************
  *
@@ -913,7 +912,7 @@ static void release_io_event(FIL file, OVERLAPPED* overlapped)
 #endif
 
 
-static FIL seek_file(FIL			file,
+static jrd_file* seek_file(jrd_file*			file,
 					 BDB			bdb,
 					 ISC_STATUS*		status_vector,
 					 OVERLAPPED*	overlapped,
@@ -955,10 +954,11 @@ static FIL seek_file(FIL			file,
 
 		if (SetFilePointer(desc,
 						   (LONG) liOffset.LowPart,
-						   &liOffset.HighPart, FILE_BEGIN) == 0xffffffff) {
+						   &liOffset.HighPart, FILE_BEGIN) == 0xffffffff)
+		{
 			THD_MUTEX_UNLOCK(file->fil_mutex);
-			return (FIL)(ULONG) nt_error("SetFilePointer", file, isc_io_access_err,
-								  status_vector);
+			nt_error("SetFilePointer", file, isc_io_access_err, status_vector);
+			return 0;
 		}
 		*overlapped_ptr = NULL;
 	}
@@ -981,9 +981,10 @@ static FIL seek_file(FIL			file,
 		}
 		THD_MUTEX_UNLOCK(file->fil_mutex);
 		if (!overlapped->hEvent &&
-			!(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL))) {
-			return (FIL)(ULONG) nt_error("CreateEvent", file, isc_io_access_err,
-								  status_vector);
+			!(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
+		{
+			nt_error("CreateEvent", file, isc_io_access_err, status_vector);
+			return 0;
 		}
 		ResetEvent(overlapped->hEvent);
 #endif
@@ -993,7 +994,7 @@ static FIL seek_file(FIL			file,
 }
 
 
-static FIL setup_file(DBB		dbb,
+static jrd_file* setup_file(DBB		dbb,
 					  const TEXT*		file_name,
 					  USHORT	file_length,
 					  HANDLE	desc)
@@ -1008,13 +1009,12 @@ static FIL setup_file(DBB		dbb,
  *	Set up file and lock blocks for a file.
  *
  **************************************/
-	LCK lock;
 	UCHAR lock_string[32];
 	BY_HANDLE_FILE_INFORMATION file_info;
 
 /* Allocate file block and copy file name string */
 
-	FIL file = FB_NEW_RPT(*dbb->dbb_permanent, file_length + 1) fil;
+	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_length + 1) jrd_file;
 	file->fil_desc = reinterpret_cast<SLONG>(desc);
 	file->fil_force_write_desc =
 		reinterpret_cast<SLONG>(INVALID_HANDLE_VALUE);
@@ -1064,7 +1064,8 @@ static FIL setup_file(DBB		dbb,
 	// We know p only was incremented, so can use safely size_t instead of ptrdiff_t
 	l = p - lock_string;
 
-	dbb->dbb_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, l) lck;
+	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) lck;
+	dbb->dbb_lock = lock;
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL, lock->lck_type);
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
@@ -1109,8 +1110,8 @@ static bool MaybeCloseFile(SLONG* pFile)
 	return false;
 }
 
-static BOOLEAN nt_error(TEXT*	string,
-						const fil*		file,
+static bool nt_error(TEXT*	string,
+						const jrd_file*		file,
 						ISC_STATUS	operation,
 						ISC_STATUS*	status_vector)
 {
@@ -1133,13 +1134,13 @@ static BOOLEAN nt_error(TEXT*	string,
 		*status_vector++ = (ISC_STATUS) string;
 		*status_vector++ = isc_arg_string;
 		*status_vector++ =
-			(ISC_STATUS) ERR_string(file->fil_string, file->fil_length);
+			(ISC_STATUS)(U_IPTR) ERR_string(file->fil_string, file->fil_length);
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = operation;
 		*status_vector++ = isc_arg_win32;
 		*status_vector++ = GetLastError();
 		*status_vector++ = isc_arg_end;
-		return FALSE;
+		return false;
 	}
 
 	ERR_post(isc_io_error,
@@ -1147,6 +1148,6 @@ static BOOLEAN nt_error(TEXT*	string,
 			 isc_arg_string, ERR_string(file->fil_string, file->fil_length),
 			 isc_arg_gds, operation, isc_arg_win32, GetLastError(), 0);
 
-	return TRUE;
+	return true;
 }
 

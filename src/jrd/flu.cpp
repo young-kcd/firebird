@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.44 2004-02-08 18:47:44 skidder Exp $
+$Id: flu.cpp,v 1.45 2004-02-20 06:43:00 robocop Exp $
 */
 
 #include "firebird.h"
@@ -745,7 +745,7 @@ NSModule ISC_link_with_module (
  	NSCreateObjectFileImageFromFile(fileName, &image);
  if (retVal != NSObjectFileImageSuccess)
  {
-     switch(retVal)
+     switch (retVal)
      {
          case NSObjectFileImageFailure:
                 /*printf("object file setup failure");*/
@@ -869,7 +869,7 @@ static MOD search_for_module(TEXT* module_name, TEXT* name, bool ShowAccessError
 		if (ShowAccessError) {
 			ERR_post(isc_conf_access_denied,
 				isc_arg_string, "UDF library",
-				isc_arg_string, ERR_cstring(const_cast <TEXT *>(absolute_module.c_str())),
+				isc_arg_string, ERR_cstring(absolute_module.c_str()),
 				isc_arg_end);
 		}
 		return NULL;

@@ -111,8 +111,8 @@ STR GRANT_realloc_acl(STR		start_ptr,
  *
  **************************************/
 
-	ULONG old_offset = (ULONG) (*write_ptr - start_ptr->str_data);
-	ULONG realloc_length = *buffer_length + ACL_BUFFER_SIZE;
+	const ULONG old_offset = (ULONG) (*write_ptr - start_ptr->str_data);
+	const ULONG realloc_length = *buffer_length + ACL_BUFFER_SIZE;
 
 
 /* realloc the new length, ERR_punt incase of no memory */
@@ -129,7 +129,7 @@ STR GRANT_realloc_acl(STR		start_ptr,
 }
 
 
-bool GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work,
+bool GRANT_privileges( TDBB tdbb, SSHORT phase, Deferred_work* work,
 					jrd_tra*) // unused param, makes dfw.epp happy
 {
 /**************************************
@@ -330,7 +330,7 @@ static void define_default_class(
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), 0,
 						   (SINT64) 1));
 
-		blk* request = (BLK) CMP_find_request(tdbb, irq_grant7, IRQ_REQUESTS);
+		blk* request = CMP_find_request(tdbb, irq_grant7, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$RELATIONS
@@ -376,13 +376,10 @@ static void delete_security_class( TDBB tdbb, TEXT * s_class)
  *	Delete a security class.
  *
  **************************************/
-	DBB dbb;
-	BLK handle;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	handle = NULL;
+	BLK handle = NULL;
 
 	FOR(REQUEST_HANDLE handle)
 		CLS IN RDB$SECURITY_CLASSES
@@ -410,9 +407,7 @@ static void finish_security_class(UCHAR**	acl_ptr,
  *	in a wildcard for any public privileges.
  *
  **************************************/
-	UCHAR *acl;
-
-	acl = *acl_ptr;
+	UCHAR* acl = *acl_ptr;
 
 	if (public_priv) {
 		CHECK_AND_MOVE(acl, ACL_id_list, *start_ptr, length_ptr);
@@ -438,16 +433,12 @@ static USHORT get_public_privs(
  *	Get public privileges for a particular object.
  *
  **************************************/
-	DBB dbb;
-	BLK request;
-	USHORT public_priv;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	public_priv = 0;
+	USHORT public_priv = 0;
 
-	request = (BLK) CMP_find_request(tdbb, irq_grant5, IRQ_REQUESTS);
+	BLK request = CMP_find_request(tdbb, irq_grant5, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		PRV IN RDB$USER_PRIVILEGES
@@ -496,7 +487,7 @@ static void get_object_info(
 	*view = false;
 
 	if (obj_type == obj_relation) {
-		blk* request = (BLK) CMP_find_request(tdbb, irq_grant1, IRQ_REQUESTS);
+		blk* request = CMP_find_request(tdbb, irq_grant1, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$RELATIONS WITH
@@ -517,7 +508,7 @@ static void get_object_info(
 			REQUEST(irq_grant1) = request;
 	}
 	else {
-		blk* request = (BLK) CMP_find_request(tdbb, irq_grant9, IRQ_REQUESTS);
+		blk* request = CMP_find_request(tdbb, irq_grant9, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$PROCEDURES WITH
@@ -558,21 +549,16 @@ static void get_user_privs(TDBB		tdbb,
  *	Get privileges for a particular object.
  *
  **************************************/
-	DBB dbb;
-	BLK request;
-	UCHAR *acl;
-	TEXT user[32];
-	USHORT priv;
-	SSHORT user_type;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	acl = *acl_ptr;
+	UCHAR* acl = *acl_ptr;
+	TEXT user[32];
 	user[0] = 0;
-	user_type = -2;
+	SSHORT user_type = -2;
+	USHORT priv = 0;
 
-	request = (BLK) CMP_find_request(tdbb, irq_grant2, IRQ_REQUESTS);
+	BLK request = CMP_find_request(tdbb, irq_grant2, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		PRV IN RDB$USER_PRIVILEGES
@@ -583,7 +569,8 @@ static void get_user_privs(TDBB		tdbb,
 			PRV.RDB$FIELD_NAME MISSING
 			SORTED BY PRV.RDB$USER, PRV.RDB$USER_TYPE
 
-        if (!REQUEST(irq_grant2)) REQUEST(irq_grant2) = request;
+        if (!REQUEST(irq_grant2))
+			REQUEST(irq_grant2) = request;
 
 		fb_utils::fb_exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
 		if (strcmp(PRV.RDB$USER, user) || PRV.RDB$USER_TYPE != user_type)
@@ -633,10 +620,7 @@ static void grant_user(UCHAR**	acl_ptr,
  *	Grant privileges to a particular user.
  *
  **************************************/
-	UCHAR *acl;
-	UCHAR length;
-
-	acl = *acl_ptr;
+	UCHAR* acl = *acl_ptr;
 
 	CHECK_AND_MOVE(acl, ACL_id_list, *start_ptr, length_ptr);
 	switch (user_type) {
@@ -669,7 +653,7 @@ static void grant_user(UCHAR**	acl_ptr,
 
 	}
 
-	length = strlen(user);
+	const UCHAR length = strlen(user);
 	CHECK_AND_MOVE(acl, (UCHAR) length, *start_ptr, length_ptr);
 	if (length) {
 		CHECK_ACL_BOUND(acl, *start_ptr, length_ptr, length);
@@ -697,9 +681,7 @@ static void grant_views(
  *	Grant privileges to all views.
  *
  **************************************/
-	UCHAR *acl;
-
-	acl = *acl_ptr;
+	UCHAR* acl = *acl_ptr;
 
 	CHECK_AND_MOVE(acl, ACL_id_list, *start_ptr, length_ptr);
 	CHECK_AND_MOVE(acl, id_views, *start_ptr, length_ptr);
@@ -723,15 +705,10 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
  *	default security class for this relation.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	DSC desc;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-	request = (BLK) CMP_find_request(tdbb, irq_grant8, IRQ_REQUESTS);
+	BLK request = CMP_find_request(tdbb, irq_grant8, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		REL IN RDB$RELATIONS
@@ -752,6 +729,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 	if (!REQUEST(irq_grant8))
 		REQUEST(irq_grant8) = request;
 
+	dsc desc;
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_sub_type = 0;
 	desc.dsc_scale = 0;
@@ -782,7 +760,6 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
  *	security class to be effective.
  *
  **************************************/
-	DBB dbb;
 	BLK request, request2;
 	TEXT field_name[32], user[32], s_class[32];
 	UCHAR *field_acl, *relation_acl;
@@ -803,7 +780,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	try {
 
@@ -832,7 +809,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	user[0] = 0;
 	aggregate_public = public_priv;
 
-	request = (BLK) CMP_find_request(tdbb, irq_grant6, IRQ_REQUESTS);
+	request = CMP_find_request(tdbb, irq_grant6, IRQ_REQUESTS);
 	request2 = NULL;
 
 	FOR(REQUEST_HANDLE request)
@@ -1069,7 +1046,7 @@ static void save_security_class(TDBB	tdbb,
 	BLB_put_segment(tdbb, blob, buffer, length);
 	BLB_close(tdbb, blob);
 
-	blk* request = (BLK) CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
+	blk* request = CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
 
 	bool found = false;
 	FOR(REQUEST_HANDLE request)
@@ -1087,7 +1064,7 @@ static void save_security_class(TDBB	tdbb,
 		REQUEST(irq_grant3) = request;
 
 	if (!found) {
-		request = (BLK) CMP_find_request(tdbb, irq_grant4, IRQ_REQUESTS);
+		request = CMP_find_request(tdbb, irq_grant4, IRQ_REQUESTS);
 
 		STORE(REQUEST_HANDLE request)
 			CLS IN RDB$SECURITY_CLASSES
@@ -1114,9 +1091,7 @@ static USHORT trans_sql_priv( TEXT * privileges)
  *	Map a SQL privilege letter into an internal privilege bit.
  *
  **************************************/
-	USHORT priv;
-
-	priv = 0;
+	USHORT priv = 0;
 
 	switch (UPPER7(privileges[0])) {
 	case 'S':
@@ -1162,10 +1137,8 @@ static SLONG squeeze_acl(UCHAR*		acl_base,
  *
  **************************************/
 	UCHAR *dup_acl;
-	UCHAR *acl;
 	UCHAR *dest, *source;
 	SLONG privilege = 0;
-	USHORT hit = FALSE;
 	UCHAR c;
 	int length;
 	UCHAR l;
@@ -1173,76 +1146,78 @@ static SLONG squeeze_acl(UCHAR*		acl_base,
 
 /* Make sure that this half-finished acl looks good enough to process. */
 	**acl_ptr = 0;
-	acl = acl_base;
+	UCHAR* acl = acl_base;
 
 	if (*acl++ != ACL_version)
 		BUGCHECK(160);			/* msg 160 wrong ACL version */
 
+	bool hit = false;
+	
 	while ( (c = *acl++) )
 		switch (c) {
 		case ACL_id_list:
 			dup_acl = acl - 1;
-			hit = TRUE;
+			hit = true;
 			while ( (c = *acl++) ) {
 				switch (c) {
 				case id_person:
 					if (user_type != obj_user)
-						hit = FALSE;
+						hit = false;
 					if (check_string((TEXT*)acl, user))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_sql_role:
 					if (user_type != obj_sql_role)
-						hit = FALSE;
+						hit = false;
 					if (check_string((TEXT*)acl, user))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_view:
 					if (user_type != obj_view)
-						hit = FALSE;
+						hit = false;
 					if (check_string((TEXT*)acl, user))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_procedure:
 					if (user_type != obj_procedure)
-						hit = FALSE;
+						hit = false;
 					if (check_string((TEXT*)acl, user))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_trigger:
 					if (user_type != obj_trigger)
-						hit = FALSE;
+						hit = false;
 					if (check_string((TEXT*)acl, user))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_project:
 				case id_organization:
-					hit = FALSE;
+					hit = false;
 					// CVC: What's the idea of calling a function whose only
 					// result is boolean without checking it?
 					check_string((TEXT*)acl, user);
 					break;
 
 				case id_views:
-					hit = FALSE;
+					hit = false;
 					break;
 
 				case id_node:
 				case id_user:
-					hit = FALSE;
+					hit = false;
 					for (l = *acl++; l; acl++, l--);
 					break;
 
 				case id_group:
 					if (user_type != obj_user_group)
-						hit = FALSE;
+						hit = false;
 					if (check_string((TEXT*)acl, user))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				default:
@@ -1336,11 +1311,10 @@ static bool check_string( const TEXT* acl, const TEXT* string)
  *      return true.
  *
  **************************************/
-	USHORT l;
-
 /* JPN: Since Kanji User names are not allowed, No need to fix this UPPER loop. */
 
-	if ( (l = *acl++) )
+	USHORT l = *acl++;
+	if (l)
 		do {
 			const TEXT c1 = *acl++;
 			const TEXT c2 = *string++;

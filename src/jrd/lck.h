@@ -103,7 +103,7 @@ public:
 	class blk*	lck_owner;		/* Logical owner block (transaction, etc.) */
 	class blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
 	class blk*	lck_compatible2;	/* Sub-level for internal compatibility */
-	struct att* lck_attachment;	/* Attachment that owns lock */
+	class att* lck_attachment;	/* Attachment that owns lock */
 	struct btb* lck_blocked_threads;	/* Threads blocked by lock */
 	lock_ast_t	lck_ast;	        /* Blocking AST routine */
 	SLONG		lck_id;				/* Lock id from lock manager */
@@ -118,8 +118,8 @@ public:
 		SCHAR lck_string[1];
 		SLONG lck_long;
 	} lck_key;
-	SCHAR lck_tail[1];			/* Makes the allocater happy */
+	SCHAR lck_tail[1];			/* Makes the allocator happy */
 };
-typedef lck *LCK;
 
-#endif /* JRD_LCK_H */
+#endif // JRD_LCK_H
+

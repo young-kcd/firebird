@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.9 2003-11-21 19:42:06 kkuznetsov Exp $
+ *  $Id: rwlock.h,v 1.10 2004-02-20 06:42:35 robocop Exp $
  *
  */
 
@@ -46,7 +46,8 @@
 
 #define LOCK_WRITER_OFFSET 50000
 
-namespace Firebird {
+namespace Firebird
+{
 
 // This class works on Windows 98/NT4 or later. Win95 is not supported
 // Should work pretty fast.
@@ -65,47 +66,61 @@ private:
 	// funcions
 	//
 #if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
-	inline LONG InterlockedIncrement_uni(volatile LONG* lock_p){
+	inline LONG InterlockedIncrement_uni(volatile LONG* lock_p)
+	{
 		return InterlockedIncrement(const_cast<LONG*>(lock_p));
 	}
-	inline LONG InterlockedDecrement_uni(volatile LONG* lock_p){
+	inline LONG InterlockedDecrement_uni(volatile LONG* lock_p)
+	{
 		return InterlockedDecrement(const_cast<LONG*>(lock_p));
 	}
-	inline LONG InterlockedExchangeAdd_uni(volatile LONG* lock_p, LONG value){
+	inline LONG InterlockedExchangeAdd_uni(volatile LONG* lock_p, LONG value)
+	{
 		return InterlockedExchangeAdd(const_cast<LONG*>(lock_p), value);
 	}
 #else
-	inline LONG InterlockedIncrement_uni(volatile LONG* lock_p){
+	inline LONG InterlockedIncrement_uni(volatile LONG* lock_p)
+	{
 		return InterlockedIncrement(lock_p);
 	}
-	inline LONG InterlockedDecrement_uni(volatile LONG* lock_p){
+	inline LONG InterlockedDecrement_uni(volatile LONG* lock_p)
+	{
 		return InterlockedDecrement(lock_p);
 	}
-	inline LONG InterlockedExchangeAdd_uni(volatile LONG* lock_p, LONG value){
+	inline LONG InterlockedExchangeAdd_uni(volatile LONG* lock_p, LONG value)
+	{
 		return InterlockedExchangeAdd(lock_p, value);
 	}
 #endif
 
 public:
-	RWLock() : lock(0), blockedReaders(0), blockedWriters(0) { 
+	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
+	{ 
 		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
 			INT_MAX, NULL); 
 		writers_event = CreateEvent(NULL, FALSE/*auto-reset*/, FALSE, NULL);
 	}
-	~RWLock() { CloseHandle(readers_semaphore); CloseHandle(writers_event); }
+	~RWLock()
+	{
+		CloseHandle(readers_semaphore);
+		CloseHandle(writers_event);
+	}
 	// Returns negative value if writer is active.
 	// Otherwise returns a number of readers
-	LONG getState() {
+	LONG getState() const
+	{
 		return lock;
 	}
-	void unblockWaiting() {
+	void unblockWaiting()
+	{
 		if (blockedWriters) 
 			SetEvent(writers_event);
 		else
 			if (blockedReaders)
 				ReleaseSemaphore(readers_semaphore, blockedReaders, NULL);
 	}
-	bool tryBeginRead() {
+	bool tryBeginRead()
+	{
 		if (lock < 0) return false;
 		if (InterlockedIncrement_uni(&lock) > 0) return true;
 		// We stepped on writer's toes. Fix our mistake 
@@ -113,7 +128,8 @@ public:
 			unblockWaiting();
 		return false;
 	}
-	bool tryBeginWrite() {
+	bool tryBeginWrite()
+	{
 		if (lock) return false;
 		if (InterlockedExchangeAdd_uni(&lock, -LOCK_WRITER_OFFSET) == 0) return true;
 		// We stepped on somebody's toes. Fix our mistake
@@ -121,7 +137,8 @@ public:
 			unblockWaiting();
 		return false;
 	}
-	void beginRead() {
+	void beginRead()
+	{
 		if (!tryBeginRead()) {
 			InterlockedIncrement_uni(&blockedReaders);
 			while (!tryBeginRead())
@@ -129,7 +146,8 @@ public:
 			InterlockedDecrement_uni(&blockedReaders); 
 		}
 	}
-	void beginWrite() {
+	void beginWrite()
+	{
 		if (!tryBeginWrite()) {
 			InterlockedIncrement_uni(&blockedWriters);
 			while (!tryBeginWrite())
@@ -137,11 +155,13 @@ public:
 			InterlockedDecrement_uni(&blockedWriters);
 		}
 	}
-	void endRead() {
+	void endRead()
+	{
 		if (InterlockedDecrement_uni(&lock) == 0)
 			unblockWaiting();
 	}
-	void endWrite() {
+	void endWrite()
+	{
 		if (InterlockedExchangeAdd_uni(&lock, LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
 			unblockWaiting();
 	}
@@ -160,53 +180,67 @@ public:
 #include <synch.h>
 #include <errno.h>
 
-namespace Firebird {
+namespace Firebird
+{
 
-class RWLock {
+class RWLock
+{
 private:
 	rwlock_t lock;
 public:
-	RWLock() {		
+	RWLock()
+	{		
 		if (rwlock_init(&lock, USYNC_PROCESS, NULL))
 		{
 			system_call_failed::raise();
 		}
 	}
-	~RWLock() {
+	~RWLock()
+	{
 		if (rwlock_destroy(&lock))
 			system_call_failed::raise();
 	}
-	void beginRead() {
+	void beginRead()
+	{
 		if (rw_rdlock(&lock))	
 			system_call_failed::raise();
 	}
-	bool tryBeginRead() {
-		int code = rw_tryrdlock(&lock);
-		if (code == EBUSY) return false;
-		if (code) system_call_failed::raise();
+	bool tryBeginRead()
+	{
+		const int code = rw_tryrdlock(&lock);
+		if (code == EBUSY)
+			return false;
+		if (code)
+			system_call_failed::raise();
 		return true;
 	}
-	void endRead() {
+	void endRead()
+	{
 		if (rw_unlock(&lock))	
 			system_call_failed::raise();
 	}
-	bool tryBeginWrite() {
-		int code = rw_trywrlock(&lock);
-		if (code == EBUSY) return false;
-		if (code) system_call_failed::raise();
+	bool tryBeginWrite()
+	{
+		const int code = rw_trywrlock(&lock);
+		if (code == EBUSY)
+			return false;
+		if (code)
+			system_call_failed::raise();
 		return true;
 	}
-	void beginWrite() {
+	void beginWrite()
+	{
 		if (rw_wrlock(&lock))	
 			system_call_failed::raise();
 	}
-	void endWrite() {
+	void endWrite()
+	{
 		if (rw_unlock(&lock))	
 			system_call_failed::raise();
 	}
 };
 
-}
+} // namespace Firebird
 
 
 
@@ -216,9 +250,11 @@ public:
 #include <pthread.h>
 #include <errno.h>
 
-namespace Firebird {
+namespace Firebird
+{
 
-class RWLock {
+class RWLock
+{
 private:
 	pthread_rwlock_t lock;
 public:
@@ -240,44 +276,57 @@ public:
 		}
 #endif
 	}
-	~RWLock() {
+	~RWLock()
+	{
 		if (pthread_rwlock_destroy(&lock))
 			system_call_failed::raise();
 	}
-	void beginRead() {
+	void beginRead()
+	{
 		if (pthread_rwlock_rdlock(&lock))	
 			system_call_failed::raise();
 	}
-	bool tryBeginRead() {
-		int code = pthread_rwlock_tryrdlock(&lock);
-		if (code == EBUSY) return false;
-		if (code) system_call_failed::raise();
+	bool tryBeginRead()
+	{
+		const int code = pthread_rwlock_tryrdlock(&lock);
+		if (code == EBUSY)
+			return false;
+		if (code)
+			system_call_failed::raise();
 		return true;
 	}
-	void endRead() {
+	void endRead()
+	{
 		if (pthread_rwlock_unlock(&lock))	
 			system_call_failed::raise();
 	}
-	bool tryBeginWrite() {
-		int code = pthread_rwlock_trywrlock(&lock);
-		if (code == EBUSY) return false;
-		if (code) system_call_failed::raise();
+	bool tryBeginWrite()
+	{
+		const int code = pthread_rwlock_trywrlock(&lock);
+		if (code == EBUSY)
+			return false;
+		if (code)
+			system_call_failed::raise();
 		return true;
 	}
-	void beginWrite() {
+	void beginWrite()
+	{
 		if (pthread_rwlock_wrlock(&lock))	
 			system_call_failed::raise();
 	}
-	void endWrite() {
+	void endWrite()
+	{
 		if (pthread_rwlock_unlock(&lock))	
 			system_call_failed::raise();
 	}
 };
 
-}
+} // namespace Firebird
+
 #endif /*solaris*/
 #endif /*MULTI_THREAD*/
 
 #endif /*!WIN_NT*/
 
-#endif
+#endif // #ifndef RWLOCK_H
+

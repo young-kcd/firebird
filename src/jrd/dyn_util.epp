@@ -148,14 +148,14 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
 		p += sizeof(gen_id_blr2);
 		req_handle = CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), TRUE);
 	}
-	*request = (BLK)req_handle;
+	*request = req_handle;
 	EXE_start(tdbb, req_handle, dbb->dbb_sys_trans);
 	EXE_receive(tdbb, req_handle, 0, sizeof(value), (UCHAR*)&value);
 	EXE_unwind(tdbb, req_handle);
 	*request = NULL;
 
 	if (!DYN_REQUEST(id)) {
-		DYN_REQUEST(id) = (BLK)req_handle;
+		DYN_REQUEST(id) = req_handle;
 	}
 
 	return value;
@@ -196,7 +196,7 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 												"RDB$CONSTRAINT_NAME",
 				/* cast away volatile - bad */	(BLK*)&request));
 
-		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_con, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_f_nxt_con, DYN_REQUESTS);
 		id = drq_f_nxt_con;
 
 		found = false;
@@ -257,7 +257,7 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 												"RDB$FIELD_NAME",
 				/* cast away volatile - bad */	(BLK*)&request));
 
-		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_fld, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_f_nxt_fld, DYN_REQUESTS);
 		id = drq_f_nxt_fld;
 
 		found = false;
@@ -312,7 +312,7 @@ void DYN_UTIL_generate_field_position(
 
 	try {
 
-	request = (BLK) CMP_find_request(tdbb, drq_l_fld_pos, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_l_fld_pos, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$RELATION_FIELDS
@@ -380,7 +380,7 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 												"RDB$INDEX_NAME",
 				/* cast away volatile - bad */	(BLK*)&request));
 
-		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_idx, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_f_nxt_idx, DYN_REQUESTS);
 		id = drq_f_nxt_idx;
 
 		found = false;
@@ -439,7 +439,7 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 												"RDB$TRIGGER_NAME",
 				/* cast away volatile - bad */	(BLK*)&request));
 
-		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_trg, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_f_nxt_trg, DYN_REQUESTS);
 		id = drq_f_nxt_trg;
 
 		found = false;
@@ -508,7 +508,7 @@ bool DYN_UTIL_get_prot(TDBB		tdbb,
 	 * The "(BLK)" cast, casts away volatile AND changes
 	 * type at the same time - bad
 	 */
-	DYN_rundown_request( (BLK)request, drq_l_prot_mask);
+	DYN_rundown_request( (BLK) request, drq_l_prot_mask);
 
 	}	// try
 	catch (const std::exception&) {
@@ -540,7 +540,7 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
 
 	try {
 

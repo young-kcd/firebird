@@ -93,12 +93,14 @@
 
 void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 
+struct serv_entry; // forward decl.
+
 /* Service manager block */
 class svc : public pool_alloc<type_svc>
 {
 public:
 	SLONG	svc_handle;			/* "handle" of process/thread running service */
-	ISC_STATUS*	svc_status;			/* status vector for svc_handle */
+	ISC_STATUS*	svc_status;		/* status vector for svc_handle */
 	void*	svc_input;			/* input to service */
 	void*	svc_output;			/* output from service */
 	ULONG	svc_stdout_head;
@@ -107,7 +109,7 @@ public:
 	TEXT**	svc_argv;
 	ULONG	svc_argc;
 	event_t	svc_start_event[1];	/* fired once service has started successfully */
-	const struct serv*	svc_service;
+	serv_entry*	svc_service;
 	UCHAR*	svc_resp_buf;
 	UCHAR*	svc_resp_ptr;
 	USHORT	svc_resp_buf_len;
@@ -120,8 +122,8 @@ public:
 	TEXT	svc_enc_password[MAX_PASSWORD_ENC_LENGTH];
 	TEXT	svc_reserved[1];
 	TEXT*	svc_switches;
+	void svc_started();
 };
-typedef svc* SVC;
 
 /* Bitmask values for the svc_flags variable */
 
@@ -134,23 +136,23 @@ typedef svc* SVC;
 #define SVC_evnt_fired	64
 
 
-/* Function used to signify that the service started has done basic
- * initialization and can be considered a successful startup
- */
+// Method used to signify that the service started has done basic
+// initialization and can be considered a successful startup.
+
 #ifndef SUPERSERVER
 
-inline void SVC_STARTED(svc*)
+inline void svc::svc_started()
 {
 	// null definition, no overhead.
 }
 
 #else /* SUPERSERVER */
 
-inline void SVC_STARTED(svc* service)
+inline void svc::svc_started()
 {
-	event_t* evnt_ptr = service->svc_start_event;
-	if (!(service->svc_flags & SVC_evnt_fired)) {
-		service->svc_flags |= SVC_evnt_fired;
+	event_t* evnt_ptr = svc_start_event;
+	if (!(svc_flags & SVC_evnt_fired)) {
+		svc_flags |= SVC_evnt_fired;
 		ISC_event_post(evnt_ptr);
 	}
 }
@@ -158,18 +160,17 @@ inline void SVC_STARTED(svc* service)
 #endif /* SUPERSERVER */
 
 typedef int (*pfn_svc_main) (svc*);
-
-typedef struct serv
-{
-	USHORT		serv_action;
-	const TEXT*	serv_name;
-	const TEXT*	serv_std_switches;
-	const TEXT*	serv_executable;
-	pfn_svc_main	serv_thd;
-	BOOLEAN*	in_use;
-} *SERV;
-
 typedef int (*pfn_svc_output)(svc*, const UCHAR*);
 
-#endif /* JRD_SVC_H */
+struct serv_entry
+{
+	USHORT			serv_action;
+	const TEXT*		serv_name;
+	const TEXT*		serv_std_switches;
+	const TEXT*		serv_executable;
+	pfn_svc_main	serv_thd;
+	bool*			serv_in_use;
+};
+
+#endif // JRD_SVC_H
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.53 2004-01-21 07:18:25 skidder Exp $
+ * $Id: sort.cpp,v 1.54 2004-02-20 06:43:00 robocop Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -207,15 +207,15 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
 			if (direction) {
 				if (!(scb->scb_flags & scb_sorted)) {
 					*((USHORT *) (record + key->skd_vary_offset)) =
-						((VARY *) p)->vary_length;
+						((vary*) p)->vary_length;
 					const UCHAR fill_char =
 						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-					UCHAR* fill_pos = p + sizeof(USHORT) + ((VARY *) p)->vary_length;
-					const USHORT fill = n - sizeof(USHORT) - ((VARY *) p)->vary_length;
+					UCHAR* fill_pos = p + sizeof(USHORT) + ((vary*) p)->vary_length;
+					const USHORT fill = n - sizeof(USHORT) - ((vary*) p)->vary_length;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
-				((VARY *) p)->vary_length = 0;
+				((vary*) p)->vary_length = 0;
 			}
 			break;
 
@@ -276,7 +276,7 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
 
 		if (key->skd_dtype == SKD_varying && !direction) {
 			p = record + key->skd_offset;
-			((VARY *) p)->vary_length = *((USHORT *) (record + key->skd_vary_offset));
+			((vary*) p)->vary_length = *((USHORT *) (record + key->skd_vary_offset));
 		}
 
 		if (key->skd_dtype == SKD_cstring && !direction) {
@@ -344,7 +344,7 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
 			if (key->skd_dtype == SKD_varying && direction) {
 				if (!(scb->scb_flags & scb_sorted)) {
 					*((USHORT *) (record + key->skd_vary_offset)) = l =
-						((VARY *) p)->vary_length;
+						((vary*) p)->vary_length;
 					fill_char =
 						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 					fill_pos = p + sizeof(USHORT) + l;
@@ -352,7 +352,7 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
-				((VARY *) p)->vary_length = 0;
+				((vary*) p)->vary_length = 0;
 			}
 
 			if (key->skd_dtype == SKD_cstring && direction) {
@@ -496,7 +496,7 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
 
 		if (key->skd_dtype == SKD_varying && !direction) {
 			p = (BLOB_PTR *) record + key->skd_offset;
-			((VARY *) p)->vary_length = *((USHORT *) (record + key->skd_vary_offset));
+			((vary*) p)->vary_length = *((USHORT *) (record + key->skd_vary_offset));
 		}
 
 		if (key->skd_dtype == SKD_cstring && !direction) {
@@ -532,7 +532,7 @@ void SORT_error(ISC_STATUS* status_vector,
 // CVC: Warning, converting pointer to ISC_STATUS => SLONG in 32 bits.
 	*status_vector++ = (ISC_STATUS) string;
 	*status_vector++ = isc_arg_string;
-	*status_vector++ = (ISC_STATUS) ERR_cstring(sfb->sfb_file_name);
+	*status_vector++ = (ISC_STATUS) (U_IPTR) ERR_cstring(sfb->sfb_file_name);
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = operation;
 	if (errcode) {
@@ -1350,15 +1350,15 @@ static void diddle_key(UCHAR * record, SCB scb, bool direction)
 			if (direction) {
 				if (!(scb->scb_flags & scb_sorted)) {
 					*((USHORT *) (record + key->skd_vary_offset)) =
-						((VARY *) p)->vary_length;
+						((vary*) p)->vary_length;
 					fill_char =
 						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-					fill_pos = p + sizeof(USHORT) + ((VARY *) p)->vary_length;
-					fill = n - sizeof(USHORT) - ((VARY *) p)->vary_length;
+					fill_pos = p + sizeof(USHORT) + ((vary*) p)->vary_length;
+					fill = n - sizeof(USHORT) - ((vary*) p)->vary_length;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
-				((VARY *) p)->vary_length = 0;
+				((vary*) p)->vary_length = 0;
 			}
 			break;
 
@@ -1423,7 +1423,7 @@ static void diddle_key(UCHAR * record, SCB scb, bool direction)
 
 		if (key->skd_dtype == SKD_varying && !direction) {
 			p = record + key->skd_offset;
-			((VARY *) p)->vary_length = *((USHORT *) (record + key->skd_vary_offset));
+			((vary*) p)->vary_length = *((USHORT *) (record + key->skd_vary_offset));
 		}
 
 		if (key->skd_dtype == SKD_cstring && !direction) {
@@ -1494,7 +1494,7 @@ static void diddle_key(UCHAR * record, SCB scb, bool direction)
 			if (key->skd_dtype == SKD_varying && direction) {
 				if (!(scb->scb_flags & scb_sorted)) {
 					*((USHORT *) (record + key->skd_vary_offset)) = l =
-						((VARY *) p)->vary_length;
+						((vary*) p)->vary_length;
 					fill_char =
 						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 					fill_pos = p + sizeof(USHORT) + l;
@@ -1502,7 +1502,7 @@ static void diddle_key(UCHAR * record, SCB scb, bool direction)
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
-				((VARY *) p)->vary_length = 0;
+				((vary*) p)->vary_length = 0;
 			}
 
 			if (key->skd_dtype == SKD_cstring && direction) {
@@ -1640,16 +1640,16 @@ static void diddle_key(UCHAR * record, SCB scb, bool direction)
 			break;
 		}
 		if (complement && n)
-			do
+			do {
 				*p++ ^= -1;
-			while (--n);
+			} while (--n);
 
 		// Flatter but don't complement control info for non-fixed
 		// data types when restoring the data
 
 		if (key->skd_dtype == SKD_varying && !direction) {
 			p = (BLOB_PTR *) record + key->skd_offset;
-			((VARY *) p)->vary_length = *((USHORT *) (record + key->skd_vary_offset));
+			((vary*) p)->vary_length = *((USHORT *) (record + key->skd_vary_offset));
 		}
 
 		if (key->skd_dtype == SKD_cstring && !direction) {

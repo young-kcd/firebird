@@ -149,7 +149,7 @@ void ExecuteStatement::Open(TDBB tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTo
 		status[0] = isc_arg_gds;
 		status[1] = isc_exec_sql_invalid_req;
 		status[2] = isc_arg_string;
-		status[3] = reinterpret_cast<ISC_STATUS>(ERR_cstring(StartOfSqlOperator));
+		status[3] = (ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
 		status[4] = isc_arg_end;
 		Chk(status[1]);
 	}
@@ -216,7 +216,7 @@ rec_err:
 			tdbb->tdbb_status_vector[3] = i;
 			tdbb->tdbb_status_vector[4] = isc_arg_string;
 			tdbb->tdbb_status_vector[5] = 
-				reinterpret_cast<ISC_STATUS>(ERR_cstring(StartOfSqlOperator));
+				(ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
 			tdbb->tdbb_status_vector[6] = isc_arg_end;
 			Firebird::status_exception::raise(status[1]);
 		}

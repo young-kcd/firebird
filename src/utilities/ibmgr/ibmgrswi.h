@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgrswi.h,v 1.2 2003-11-28 06:48:31 robocop Exp $
+ * $Id: ibmgrswi.h,v 1.3 2004-02-20 06:43:26 robocop Exp $
  */
 
 #ifndef IBMGR_IBMGRSWI_H
@@ -58,13 +58,14 @@
 
 #define IN_SW_IBMGR_AMBIG	99	/* ambiguous switch */
 
-static struct in_sw_tab_t ibmgr_in_sw_table [] = {
+static const struct in_sw_tab_t ibmgr_in_sw_table [] =
+{
     {IN_SW_IBMGR_START,		0,	"START",	0, 0, 0, FALSE,	0,	2,	NULL},   /* start server */
     {IN_SW_IBMGR_ONCE,		0,	"ONCE",		0, 0, 0, FALSE,	0,	1,	NULL},	/* start server once */
     {IN_SW_IBMGR_FOREVER,	0,	"FOREVER",	0, 0, 0, FALSE,	0,	1,	NULL},	/* restart when server dies */
-    {IN_SW_IBMGR_SIGNORE,        0,      "SIGNORE",      0, 0, 0, FALSE, 0,      1,      NULL},   /* dito, ignore start up error */
-    {IN_SW_IBMGR_SHUT,		0,	"SHUT",		0, 0, 0, FALSE,	0,	3,      NULL},   /* shutdown server */
-    {IN_SW_IBMGR_NOW,		0,	"NOW",		0, 0, 0, FALSE,	0,	3,      NULL},   /* immidiate shutdown */
+    {IN_SW_IBMGR_SIGNORE, 0, "SIGNORE", 0, 0, 0, FALSE, 0, 1, NULL},   /* dito, ignore start up error */
+    {IN_SW_IBMGR_SHUT,		0,	"SHUT",		0, 0, 0, FALSE,	0,	3, NULL},   /* shutdown server */
+    {IN_SW_IBMGR_NOW,		0,	"NOW",		0, 0, 0, FALSE,	0,	3, NULL},   /* immidiate shutdown */
 
 /* The following switches should be activated when
    appropriate functionality is implemented
@@ -93,5 +94,5 @@ static struct in_sw_tab_t ibmgr_in_sw_table [] = {
     {IN_SW_IBMGR_0,		0,      NULL,		0, 0, 0, FALSE,	0,	0,	NULL}	/* End of List */
 };
 
-#endif /* IBMGR_IBMGRSWI_H */
+#endif // IBMGR_IBMGRSWI_H
 

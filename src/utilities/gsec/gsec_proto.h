@@ -2,7 +2,7 @@
 #define GSEC_PROTO_H
 
 #ifdef SUPERSERVER
-int		GSEC_main(SVC service);
+int		GSEC_main(svc* service);
 #endif
 
 // Output reporting utilities

@@ -30,9 +30,9 @@
 class rng : public pool_alloc_rpt<SCHAR, type_rng>
 {
     public:
-	struct rng *rng_next;		/* next in list of ranges being created */
-	struct att *rng_attachment;	/* attachment that owns range */
-	struct rng *rng_lck_next;	/* next in list of ranges interested in a lock */
+	rng*		rng_next;		/* next in list of ranges being created */
+	class att *rng_attachment;	/* attachment that owns range */
+	rng*		rng_lck_next;	/* next in list of ranges interested in a lock */
 	struct vec *rng_relation_locks;	/* relation locks */
 	struct vec *rng_relation_trans;	/* relation transactions */
 	struct vec *rng_record_locks;	/* record locks */
@@ -53,4 +53,5 @@ typedef rng *RNG;
 
 #define RANGE_NAME_LENGTH	31	/* max. length of range name for the event */
 
-#endif /* JRD_RNG_H */
+#endif // JRD_RNG_H
+

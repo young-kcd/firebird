@@ -27,14 +27,16 @@
 #include "../jrd/req.h"
 #include "../jrd/sqz.h"
 
+class Dcc;
+
 USHORT	SQZ_apply_differences(struct rec*, const SCHAR*, const SCHAR* const);
-USHORT	SQZ_compress(class Dcc*, const SCHAR*, SCHAR*, int);
-USHORT	SQZ_compress_length(class Dcc*, const SCHAR*, int);
+USHORT	SQZ_compress(Dcc*, const SCHAR*, SCHAR*, int);
+USHORT	SQZ_compress_length(Dcc*, const SCHAR*, int);
 SCHAR*	SQZ_decompress(const SCHAR*, USHORT, SCHAR*, const SCHAR* const);
 USHORT	SQZ_differences(const SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*, int);
 USHORT	SQZ_no_differences(SCHAR* const, int);
-void	SQZ_fast(class Dcc*, const SCHAR*, SCHAR*);
-USHORT	SQZ_length(TDBB, const SCHAR*, int, class Dcc*);
+void	SQZ_fast(Dcc*, const SCHAR*, SCHAR*);
+USHORT	SQZ_length(TDBB, const SCHAR*, int, Dcc*);
 
 #endif // JRD_SQZ_PROTO_H
 

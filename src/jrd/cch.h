@@ -26,6 +26,9 @@
 
 #include "../include/fb_blk.h"
 
+class lck;
+class Precedence;
+
 /* Page buffer cache size constraints. */
 
 #define MIN_PAGE_BUFFERS	50L
@@ -41,11 +44,11 @@
 class bcb : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
     public:
-	struct lls*	bcb_memory;			/* Large block partitioned into buffers */
+	class lls*	bcb_memory;			/* Large block partitioned into buffers */
 	struct que	bcb_in_use;			/* Que of buffers in use */
 	struct que	bcb_empty;			/* Que of empty buffers */
 	class bdb*	bcb_btree;			/* root of dirty page btree */
-	struct pre*	bcb_free;			/* Free precedence blocks */
+	Precedence*	bcb_free;			/* Free precedence blocks */
 	struct que	bcb_free_lwt;		/* Free latch wait blocks */
 	SSHORT		bcb_flags;			/* see below */
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
@@ -72,8 +75,8 @@ typedef bcb *BCB;
 class bdb : public pool_alloc<type_bdb>
 {
     public:
-	struct dbb*	bdb_dbb;				/* Database block (for ASTs) */
-	struct lck*	bdb_lock;				/* Lock block for buffer */
+	class dbb*	bdb_dbb;				/* Database block (for ASTs) */
+	lck*		bdb_lock;				/* Lock block for buffer */
 	struct que	bdb_que;				/* Buffer que */
 	struct que	bdb_in_use;				/* queue of buffers in use */
 	struct pag*	bdb_buffer;				/* Actual buffer */
@@ -138,7 +141,7 @@ typedef bdb *BDB;
 
 /* PRE -- Precedence block */
 
-class pre : public pool_alloc<type_pre>
+class Precedence : public pool_alloc<type_pre>
 {
     public:
 	bdb*		pre_hi;
@@ -147,7 +150,6 @@ class pre : public pool_alloc<type_pre>
 	struct que	pre_higher;
 	SSHORT		pre_flags;
 };
-typedef pre *PRE;
 
 #define PRE_cleared	1
 
@@ -188,7 +190,7 @@ typedef enum
 
 /* LWT -- Latch wait block */
 
-class lwt : public pool_alloc<type_lwt>
+class Latch_wait : public pool_alloc<type_lwt>
 {
     public:
 	struct tdbb*	lwt_tdbb;
@@ -197,7 +199,6 @@ class lwt : public pool_alloc<type_lwt>
 	struct event_t	lwt_event;		/* grant event to wait on */
 	USHORT			lwt_flags;
 };
-typedef lwt *LWT;
 
 #define LWT_pending	1			/* latch request is pending */
 
@@ -210,22 +211,22 @@ typedef lwt *LWT;
 
 /* Prefetch block */
 
-class prf : public pool_alloc<type_prf>
+class Prefetch : public pool_alloc<type_prf>
 {
     public:
 	struct tdbb*prf_tdbb;			/* thread database context */
 	SLONG		prf_start_page;		/* starting page of multipage prefetch */
 	USHORT		prf_max_prefetch;	/* maximum no. of pages to prefetch */
 	USHORT		prf_page_count;		/* actual no. of pages being prefetched */
-	struct		piob prf_piob;		/* physical I/O status block */
+	phys_io_blk	prf_piob;			/* physical I/O status block */
 	SCHAR*		prf_aligned_buffer;	/* buffer address aligned for raw (OS cache bypass) I/O */
 	SCHAR*		prf_io_buffer;		/* I/O buffer address */
 	UCHAR		prf_flags;
 	bdb*		prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
 	SCHAR		prf_unaligned_buffer[PREFETCH_MAX_TRANSFER + MIN_PAGE_SIZE];
 };
-typedef prf *PRF;
 
 #define PRF_active	1			/* prefetch block currently in use */
 
-#endif /* JRD_CCH_H */
+#endif // JRD_CCH_H
+

@@ -365,8 +365,8 @@ struct qli_fld {
     qli_symbol*	fld_name;			/* Field name */
     qli_symbol*	fld_query_name;		/* Field query name */
     qli_symbol*	fld_based;			/* Name of global field, if we care */
-    TEXT*		fld_edit_string;	/* Edit string, if any */
-    TEXT*		fld_query_header;	/* Query header, if any */
+    const TEXT*	fld_edit_string;	/* Edit string, if any */
+    const TEXT*	fld_query_header;	/* Query header, if any */
     USHORT		fld_flags;
     USHORT		fld_id;				/* Field in in database */
     USHORT		fld_dtype;			/* Data type of field */
@@ -484,20 +484,26 @@ EXTERN TEXT	QLI_default_user [32], QLI_default_password [32];
 EXTERN TEXT	QLI_charset [32];
 EXTERN qli_const*	QLI_matching_language;
 
-EXTERN USHORT	QLI_eof, QLI_blr, QLI_skip_line, QLI_statistics, QLI_semi;
-EXTERN USHORT	QLI_abort, QLI_echo, QLI_trace;
+//EXTERN USHORT	QLI_eof;
+EXTERN bool		QLI_blr, QLI_skip_line, QLI_statistics, QLI_semi;
+EXTERN bool		QLI_abort, QLI_echo, QLI_trace;
 EXTERN USHORT	QLI_count;
 #ifdef DEV_BUILD
-EXTERN USHORT	QLI_explain;
-EXTERN USHORT	QLI_hex_output;
+EXTERN bool		QLI_explain;
+EXTERN bool		QLI_hex_output;
 #endif
 
-EXTERN USHORT   QLI_euc_justify;
-EXTERN USHORT   QLI_interp;
+//EXTERN USHORT   QLI_euc_justify;
+//EXTERN USHORT   QLI_interp;
 
 #undef EXTERN
 
 #include "../qli/all_proto.h"
+
+inline bool isNullBlob(const ISC_QUAD* id)
+{
+	return !id->gds_quad_high && !id->gds_quad_low;
+}
 
 #endif // QLI_DTR_H
 

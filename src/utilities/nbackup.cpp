@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.13 2004-02-11 11:16:46 aafemt Exp $
+ *  $Id: nbackup.cpp,v 1.14 2004-02-20 06:43:20 robocop Exp $
  *
  */
  
@@ -369,10 +369,10 @@ void nbackup::close_backup() {
 
 void nbackup::fixup_database() {
 	open_database_write();
-	struct hdr header;
+	header_page header;
 	if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 		b_error::raise("Unexpected end of database file", errno);
-	int backup_state = header.hdr_flags & hdr_backup_mask;
+	const int backup_state = header.hdr_flags & hdr_backup_mask;
 	if (backup_state != nbak_state_stalled)	
 		b_error::raise("Database is not in state (%d) to be safely fixed up", backup_state);
 	header.hdr_flags = (header.hdr_flags & ~hdr_backup_mask) | nbak_state_normal;
@@ -554,7 +554,7 @@ void nbackup::backup_database(int level, const char* fname) {
 		open_database_scan();
 		
 		// Read database header
-		struct hdr header;	
+		header_page header;	
 		if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 			b_error::raise("Unexpected end of file when reading header of database file");
 		if ((header.hdr_flags & hdr_backup_mask) != nbak_state_stalled)
@@ -572,7 +572,7 @@ void nbackup::backup_database(int level, const char* fname) {
 		
 		FB_GUID backup_guid;
 		bool guid_found = false;
-		const UCHAR* p = reinterpret_cast<hdr*>(page_buff)->hdr_data;
+		const UCHAR* p = reinterpret_cast<header_page*>(page_buff)->hdr_data;
 		while (true) {
 			switch(*p) {
 			case HDR_backup_guid:
@@ -805,7 +805,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 				seek_file(dbase, 0);
 #endif				
 				// Read database header
-				struct hdr header;
+				header_page header;
 				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 					b_error::raise("Unexpected end of file when reading restored database header");
 				page = (PAG)malloc(header.hdr_page_size);
@@ -816,7 +816,7 @@ void nbackup::restore_database(int filecount, const char* const* files) {
 					b_error::raise("Unexpected end of file when reading header of restored database file (stage 2)");
 				
 				bool guid_found = false;
-				const UCHAR* p = reinterpret_cast<hdr*>(page)->hdr_data;
+				const UCHAR* p = reinterpret_cast<header_page*>(page)->hdr_data;
 				while (true) {
 					switch(*p) {
 					case HDR_backup_guid:

@@ -110,7 +110,7 @@ void EXEC_abort(void)
 		if (request->req_handle)
 			isc_unwind_request(status_vector, &request->req_handle, 0);
 
-	QLI_abort = TRUE;
+	QLI_abort = true;
 }
 
 
@@ -126,10 +126,6 @@ void EXEC_execute( qli_nod* node)
  *	Execute a node.
  *
  **************************************/
-	qli_msg* message;
-	qli_nod** ptr;
-	USHORT i;
-
 	if (QLI_abort)
 		EXEC_poll_abort();
 
@@ -147,18 +143,23 @@ void EXEC_execute( qli_nod* node)
 			return;
 
 		case nod_erase:
-			if (message = (qli_msg*) node->nod_arg[e_era_message])
-				EXEC_send(message);
-			return;
+			{
+				qli_msg* message = (qli_msg*) node->nod_arg[e_era_message];
+				if (message)
+					EXEC_send(message);
+				return;
+			}
 
 		case nod_for:
 			execute_for(node);
 			return;
 		case nod_list:
-			ptr = node->nod_arg;
-			for (i = 0; i < node->nod_count; i++)
-				EXEC_execute(*ptr++);
-			return;
+			{
+				qli_nod** ptr = node->nod_arg;
+				for (USHORT i = 0; i < node->nod_count; i++)
+					EXEC_execute(*ptr++);
+				return;
+			}
 
 		case nod_modify:
 			execute_modify(node);
@@ -216,7 +217,7 @@ FRBRD *EXEC_open_blob( qli_nod* node)
  **************************************/
 	dsc* desc = EVAL_value(node);
 	if (!desc)
-		return FALSE;
+		return NULL;
 
 // Starting from the print item, work our way back to the database block
 
@@ -272,7 +273,7 @@ file* EXEC_open_output(qli_nod* node)
 // Evaluate filename and copy to a null terminated string
 
 	dsc* desc = EVAL_value(node->nod_arg[e_out_file]);
-	TEXT* p = NULL;
+	const TEXT* p = NULL;
 	TEXT temp[64];
 	SSHORT l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
 
@@ -416,7 +417,9 @@ void EXEC_send( qli_msg* message)
 	map_data(message);
 	if (isc_send(status_vector, &request->req_handle, message->msg_number,
 				  message->msg_length, message->msg_buffer, 0))
+	{
 		db_error(request, status_vector);
+	}
 }
 
 
@@ -441,12 +444,17 @@ void EXEC_start_request( qli_req* request, qli_msg* message)
 								 &request->req_database-> dbb_transaction,
 								 message->msg_number, message->msg_length,
 								 message->msg_buffer, 0))
+		{
 			return;
+		}
 	}
-	else
+	else {
 		if (!isc_start_request(status_vector, &request->req_handle,
 								&request->req_database-> dbb_transaction, 0))
+		{
 			return;
+		}
+	}
 
 	db_error(request, status_vector);
 }
@@ -780,14 +788,14 @@ static void execute_abort( qli_nod* node)
  *
  **************************************/
 	if (node->nod_count) {
-	    UCHAR* ptr = NULL;
-	    UCHAR temp[80];
+	    const TEXT* ptr = NULL;
+		UCHAR temp[80];
 		USHORT l =
-			MOVQ_get_string(EVAL_value(node->nod_arg[0]), (TEXT**) &ptr,
+			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr,
 				(vary*) temp, sizeof(temp));
 
 		UCHAR msg[128];
-		MOVQ_terminate((SCHAR*) ptr, (SCHAR*) msg, l, sizeof(msg));
+		MOVQ_terminate(ptr, (SCHAR*) msg, l, sizeof(msg));
 		ERRQ_error(40, (TEXT*) msg, NULL, NULL, NULL, NULL);
 		// Msg40 Request terminated by statement: %s
 	}
@@ -938,14 +946,13 @@ static void execute_output( qli_nod* node)
  *	Open output stream to re-direct output.
  *
  **************************************/
-	jmp_buf old_env;
-	jmp_buf env;
-
 	qli_prt* print = (qli_prt*) node->nod_arg[e_out_print];
 	print->prt_file = EXEC_open_output(node);
 
 // Set up error handling
 
+	jmp_buf old_env;
+	jmp_buf env;
 	memcpy(old_env, QLI_env, sizeof(QLI_env));
 	memcpy(QLI_env, env, sizeof(QLI_env));
 

@@ -29,7 +29,7 @@
 
 /*
  * TMN: Fix this header! It should include any header it needs
- * to define the types this header usus.
+ * to define the types this header uses.
  */
 
 #include "../jrd/jrd_blks.h"
@@ -37,23 +37,26 @@
 #include "../common/classes/tree.h"
 #include "../jrd/rpb_chain.h"
 
+class blb;
+class lck;
+
 /* Transaction block */
 
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
     public:
-	struct att *tra_attachment;	/* database attachment */
+	class att *tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
 	SLONG tra_oldest;			/* oldest interesting transaction */
 	SLONG tra_oldest_active;	/* record versions older than this can be
 								   gargage-collected by this tx */
-	class jrd_tra *tra_next;		/* next transaction in database */
-	class jrd_tra *tra_sibling;	/* next transaction in group */
+	jrd_tra*	tra_next;		/* next transaction in database */
+	jrd_tra*	tra_sibling;	/* next transaction in group */
 	JrdMemoryPool* tra_pool;		/* pool for transaction */
-	class blb *tra_blobs;		/* Linked list of active blobs */
+	blb*		tra_blobs;		/* Linked list of active blobs */
 	struct arr *tra_arrays;		/* Linked list of active arrays */
-	struct lck *tra_lock;		/* lock for transaction */
+	lck*		tra_lock;		/* lock for transaction */
 	struct vec *tra_relation_locks;	/* locks for relations */
 	struct sbm *tra_commit_sub_trans;	/* commited sub-transactions */
 	struct sav *tra_save_point;	/* list of savepoints  */
@@ -62,8 +65,8 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 #ifdef PC_ENGINE
 	SLONG tra_range_id;				/* unique id of cache range within transaction */
 #endif
-	struct dfw *tra_deferred_work;	/* work deferred to commit time */
-	class Rsc *tra_resources;		/* resource existence list */
+	class Deferred_work*	tra_deferred_work;	/* work deferred to commit time */
+	class Resource*	tra_resources;		/* resource existence list */
 	class traRpbList *tra_rpblist;	/* active RPB's of given transaction */
 	UCHAR tra_use_count;			/* use count for safe AST delivery */
 	UCHAR tra_callback_count;		/* callback count for 'execute statement' */
@@ -131,7 +134,7 @@ class sav : public pool_alloc<type_sav>
 	struct vct *sav_verb_actions;	/* verb action list */
 	USHORT sav_verb_count;		/* Active verb count */
 	SLONG sav_number;			/* save point number */
-	struct sav *sav_next;
+	sav *sav_next;
 	USHORT sav_flags;
 	TEXT sav_name[32]; /* Savepoint name */
 };
@@ -190,20 +193,19 @@ enum dfw_t {
 	dfw_end_backup
 };
 
-class dfw : public pool_alloc_rpt<SCHAR, type_dfw>
+class Deferred_work : public pool_alloc_rpt<SCHAR, type_dfw>
 {
     public:
-	enum dfw_t dfw_type;		/* type of work deferred */
-	struct dfw *dfw_next;		/* next block in transaction */
-	struct lck *dfw_lock;		/* relation creation lock */
-	struct dfw *dfw_args;		/* arguments */
-	SLONG dfw_sav_number;		/* save point number */
-	USHORT dfw_name_length;		/* length of object name */
-	USHORT dfw_id;				/* object id, if appropriate */
-	USHORT dfw_count;			/* count of block posts */
-	SCHAR dfw_name[2];			/* name of object */
+	enum dfw_t 		dfw_type;		/* type of work deferred */
+	Deferred_work*	dfw_next;		/* next block in transaction */
+	lck*			dfw_lock;		/* relation creation lock */
+	Deferred_work*	dfw_args;		/* arguments */
+	SLONG			dfw_sav_number;	/* save point number */
+	USHORT			dfw_name_length;/* length of object name */
+	USHORT			dfw_id;			/* object id, if appropriate */
+	USHORT			dfw_count;		/* count of block posts */
+	SCHAR			dfw_name[2];	/* name of object */
 };
-typedef dfw *DFW;
 
 /* Verb actions */
 
@@ -227,7 +229,7 @@ typedef Firebird::BePlusTree<UndoItem, SLONG, MemoryPool, UndoItem> UndoItemTree
 class vct : public pool_alloc<type_vct>
 {
     public:
-	struct vct *vct_next;		/* Next action within verb */
+	vct* 			vct_next;		/* Next action within verb */
 	struct jrd_rel *vct_relation;	/* Relation involved */
 	struct sbm *vct_records;	/* Record involved */
 	UndoItemTree* vct_undo;     /* Data for undo records */
@@ -235,4 +237,5 @@ class vct : public pool_alloc<type_vct>
 typedef vct *VCT;
 
 
-#endif /* JRD_TRA_H */
+#endif // JRD_TRA_H
+

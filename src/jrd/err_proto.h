@@ -36,7 +36,7 @@ typedef enum idx_e {
 	idx_e_foreign
 } IDX_E;
 
-BOOLEAN	ERR_post_warning(ISC_STATUS, ...);
+bool	ERR_post_warning(ISC_STATUS, ...);
 void	ERR_assert(const TEXT*, int);
 void	ERR_bugcheck(int);
 void	ERR_bugcheck_msg(const TEXT*);

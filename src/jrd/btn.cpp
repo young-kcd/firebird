@@ -322,7 +322,7 @@ bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 
 
 #ifdef SCROLLABLE_CURSORS
-UCHAR* lastNode(btree_page* page, EXP expanded_page, BTX* expanded_node)
+UCHAR* lastNode(btree_page* page, jrd_exp* expanded_page, BTX* expanded_node)
 {
 /**************************************
  *

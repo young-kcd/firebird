@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.8 2003-11-11 12:17:04 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.9 2004-02-20 06:43:11 robocop Exp $ */
 
 #include <windows.h>
 #include <process.h>
@@ -180,7 +180,7 @@ int API_ROUTINE ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 	if (opn_event >= end_opn_event) {
 		HANDLE lhandle;
 
-		if (!(lhandle = ISC_make_signal(FALSE, FALSE, pid, signal_number)))
+		if (!(lhandle = ISC_make_signal(false, false, pid, signal_number)))
 			return -1;
 
 		if (opn_event_count < MAX_OPN_EVENTS)

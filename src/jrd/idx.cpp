@@ -129,8 +129,8 @@ void IDX_check_access(TDBB tdbb, Csb* csb, jrd_rel* view, jrd_rel* relation,
 			referenced_window.win_page =
 				get_root_page(tdbb, referenced_relation);
 			referenced_window.win_flags = 0;
-			irt* referenced_root =
-				(IRT) CCH_FETCH(tdbb, &referenced_window, LCK_read, pag_root);
+			index_root_page* referenced_root =
+				(index_root_page*) CCH_FETCH(tdbb, &referenced_window, LCK_read, pag_root);
 			IDX referenced_idx;
 			if (!BTR_description
 				(referenced_relation, referenced_root, &referenced_idx,
@@ -277,17 +277,18 @@ void IDX_create_index(
 
 /* Loop thru the relation computing index keys.  If there are old versions,
    find them, too. */
-	BOOLEAN cancel = FALSE;
+	bool cancel = false;
 	KEY key;
-	while (!cancel && DPM_next(tdbb, &primary, LCK_read, FALSE, FALSE)) {
+	while (!cancel && DPM_next(tdbb, &primary, LCK_read, false, false)) {
 		if (transaction && !VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;
 		if (primary.rpb_flags & rpb_deleted)
 			CCH_RELEASE(tdbb, &primary.rpb_window);
 		else {
 			primary.rpb_record = gc_record;
+			// JrdMemoryPool and its parent MemoryPool are unrelated to blk.
 			VIO_data(tdbb, &primary,
-					 reinterpret_cast < BLK > (dbb->dbb_permanent));
+					 reinterpret_cast<BLK>(dbb->dbb_permanent));
 			gc_record = primary.rpb_record;
 			LLS_PUSH(primary.rpb_record, &stack);
 		}
@@ -299,7 +300,7 @@ void IDX_create_index(
 				break;			/* must be garbage collected */
 			secondary.rpb_record = NULL;
 			VIO_data(tdbb, &secondary,
-					 reinterpret_cast < BLK > (tdbb->tdbb_default));
+					 reinterpret_cast<BLK>(tdbb->tdbb_default));
 			LLS_PUSH(secondary.rpb_record, &stack);
 			secondary.rpb_page = secondary.rpb_b_page;
 			secondary.rpb_line = secondary.rpb_b_line;
@@ -408,7 +409,7 @@ void IDX_create_index(
 
 #ifdef SUPERSERVER
 		if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
-			cancel = JRD_reschedule(tdbb, 0, false);
+			cancel = JRD_reschedule(tdbb, 0, false) == TRUE;
 #endif
 	}
 
@@ -450,8 +451,6 @@ IDB IDX_create_index_block(TDBB tdbb, jrd_rel* relation, USHORT id)
  *	lock block for the specified index.
  *
  **************************************/
-	LCK lock;
-
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
@@ -468,7 +467,8 @@ IDB IDX_create_index_block(TDBB tdbb, jrd_rel* relation, USHORT id)
    any modification to the index so that the cached information
    about the index will be discarded */
 
-	index_block->idb_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
+	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
+	index_block->idb_lock = lock;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = index_block->idb_id;
@@ -523,11 +523,11 @@ void IDX_delete_indices(TDBB tdbb, jrd_rel* relation)
 	SET_TDBB(tdbb);
 
 	WIN window(relation->rel_index_root);
-	IRT root = (IRT) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
+	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 
 	for (i = 0; i < root->irt_count; i++) {
 		BTR_delete_index(tdbb, &window, i);
-		root = (IRT) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
+		root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	}
 
 	CCH_RELEASE(tdbb, &window);
@@ -599,7 +599,7 @@ void IDX_garbage_collect(TDBB tdbb, RPB * rpb, LLS going, LLS staying)
 	insertion.iib_key = &key1;
 
 	WIN window(rpb->rpb_relation->rel_index_root);
-	IRT root = (IRT) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
+	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 
 	for (USHORT i = 0; i < root->irt_count; i++) {
 		if (BTR_description(rpb->rpb_relation, root, &idx, i)) {
@@ -636,7 +636,7 @@ void IDX_garbage_collect(TDBB tdbb, RPB * rpb, LLS going, LLS staying)
 				/* Get rid of index node */
 
 				BTR_remove(tdbb, &window, &insertion);
-				root = (IRT) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
+				root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 				if (stack1->lls_next)
 					BTR_description(rpb->rpb_relation, root, &idx, i);
 			}
@@ -890,8 +890,8 @@ static IDX_E check_duplicates(
 	{
 		if (rpb.rpb_number != insertion->iib_number
 			&& VIO_get_current(tdbb, &rpb, insertion->iib_transaction,
-							   reinterpret_cast < BLK > (tdbb->tdbb_default),
-							   record_idx->idx_flags & idx_foreign))
+							   reinterpret_cast<BLK>(tdbb->tdbb_default),
+							   (record_idx->idx_flags & idx_foreign) != 0))
 		{
 			// dimitr: we shouldn't ignore status exceptions which take place
 			//		   inside the lock manager. Namely, they are: isc_deadlock,
@@ -1067,7 +1067,7 @@ static IDX_E check_partner_index(
 /* get the index root page for the partner relation */
 
 	WIN window(get_root_page(tdbb, partner_relation));
-	IRT root = (IRT) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
+	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 
 /* get the description of the partner index */
 
@@ -1204,7 +1204,7 @@ static int index_block_flush(void *ast_object)
 
 	SET_THREAD_DATA;
 
-	LCK lock = index_block->idb_lock;
+	lck* lock = index_block->idb_lock;
 
 	if (lock->lck_attachment) {
 		tdbb->tdbb_database = lock->lck_attachment->att_database;
@@ -1346,7 +1346,7 @@ static void signal_index_deletion(TDBB tdbb, jrd_rel* relation, USHORT id)
  *
  **************************************/
 	IDB index_block;
-	LCK lock = NULL;
+	lck* lock = NULL;
 
 	SET_TDBB(tdbb);
 

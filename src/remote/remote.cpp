@@ -713,7 +713,7 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 
 /* If it fits, do it */
 
-	VEC vector = port->port_object_vector;
+	rem_vec* vector = port->port_object_vector;
 	if ((vector != NULL) && slot < vector->vec_count) {
 		vector->vec_object[slot] = object;
 		return slot;
@@ -725,7 +725,7 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 	if (slot + 10 > MAX_OBJCT_HANDLES)
 		return (OBJCT) NULL;
 
-	VEC new_vector = (VEC) ALLOCV(type_vec, slot + 10);
+	rem_vec* new_vector = (rem_vec*) ALLOCV(type_vec, slot + 10);
 	port->port_object_vector = new_vector;
 #ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("REMOTE_set_object         allocate vector  %x\n", new_vector);

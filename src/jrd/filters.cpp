@@ -306,7 +306,7 @@ ISC_STATUS filter_format(USHORT action, ctl* control)
 		length = control->ctl_buffer_length;
 
 	control->ctl_segment_length = length;
-	move(temp2, reinterpret_cast < char *>(control->ctl_buffer), length);
+	move(temp2, reinterpret_cast<char*>(control->ctl_buffer), length);
 
 	return FB_SUCCESS;
 }
@@ -444,7 +444,7 @@ ISC_STATUS filter_runtime(USHORT action, ctl* control)
 	}
 
 	control->ctl_segment_length = length;
-	move(line, reinterpret_cast < char *>(control->ctl_buffer),
+	move(line, reinterpret_cast<char*>(control->ctl_buffer),
 		 control->ctl_segment_length);
 
 	return status;
@@ -1187,7 +1187,7 @@ static ISC_STATUS string_filter(USHORT action, ctl* control)
 		if (length > control->ctl_buffer_length)
 			length = control->ctl_buffer_length;
 		move(string->tmp_string + (USHORT) control->ctl_data[2],
-			 reinterpret_cast < char *>(control->ctl_buffer), length);
+			 reinterpret_cast<char*>(control->ctl_buffer), length);
 		control->ctl_data[2] += length;
 		if (control->ctl_data[2] == string->tmp_length) {
 			control->ctl_data[1] = (IPTR) string->tmp_next;

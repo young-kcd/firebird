@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.6 2004-01-28 07:50:32 robocop Exp $
+ *  $Id: evl_string.h,v 1.7 2004-02-20 06:42:59 robocop Exp $
  *
  */
 
@@ -304,7 +304,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		}
 		// percent sign
 		if (c == sql_match_any) {
-			switch(item->type) {
+			switch (item->type) {
 			case piSearch:
 			case piEscapedString:
 				patternItems.grow(patternItems.getCount()+1);
@@ -319,7 +319,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		}
 		// underscore
 		if (c == sql_match_one) {
-			switch(item->type) {
+			switch (item->type) {
 			case piSearch:
 			case piEscapedString:
 				patternItems.grow(patternItems.getCount()+1);
@@ -437,7 +437,7 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 		{
 			BranchItem *current_branch = &branches[branch_number];
 			PatternItem *current_pattern = current_branch->pattern;
-			switch(current_pattern->type) {
+			switch (current_pattern->type) {
 			case piDirectMatch:
 				if (data[data_pos] != current_pattern->str.data[current_branch->offset]) {
 					// Terminate matching branch

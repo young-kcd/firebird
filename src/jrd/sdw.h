@@ -29,15 +29,14 @@
 
 /* Shadowing block */
 
-class sdw : public pool_alloc<type_sdw>
+class Shadow : public pool_alloc<type_sdw>
 {
     public:
-	struct sdw *sdw_next;		/* next in linked list */
-	struct fil *sdw_file;		/* Stack of shadow files */
-	USHORT sdw_number;			/* number of shadow */
+	Shadow* sdw_next;				// next in linked list
+	class jrd_file* sdw_file;	// Stack of shadow files
+	USHORT sdw_number;			// number of shadow
 	USHORT sdw_flags;
 };
-typedef sdw *SDW;
 
 #define SDW_dumped	1			/* bit set when file has been copied */
 #define SDW_shutdown	2		/* stop shadowing on next cache flush */
@@ -55,4 +54,5 @@ typedef sdw *SDW;
 #define SDW_INVALID	(SDW_shutdown | SDW_delete | SDW_rollover | SDW_conditional)
 #define SDW_IGNORE	(SDW_shutdown | SDW_delete)
 
-#endif /* JRD_SDW_H */
+#endif // JRD_SDW_H
+

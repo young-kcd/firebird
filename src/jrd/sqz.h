@@ -31,10 +31,10 @@ class Dcc : public pool_alloc<type_dcc>
 {
     public:
 	JrdMemoryPool *dcc_pool;
-	class Dcc *dcc_next;		/* Next block if overflow */
-	SCHAR *dcc_end;				/* End of control string */
+	Dcc *dcc_next;			// Next block if overflow
+	SCHAR *dcc_end;			// End of control string
 	SCHAR dcc_string[128];
 };
 
-#endif /* JRD_SQZ_H */
+#endif // JRD_SQZ_H
 

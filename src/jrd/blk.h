@@ -33,9 +33,9 @@ BLKDEF(type_vec, vec, sizeof(((VEC) NULL)->vec_object[0]))
 BLKDEF(type_dbb, dbb, 0)
 BLKDEF(type_bcb, bcb, sizeof(((BCB) NULL)->bcb_rpt[0]))   /* Done 2 */
 BLKDEF(type_bdb, bdb, 0)
-BLKDEF(type_pre, pre, 0)
+BLKDEF(type_pre, Precedence, 0)
 BLKDEF(type_lck, lck, 1)
-BLKDEF(type_fil, fil, 1)
+BLKDEF(type_fil, jrd_file, 1)
 BLKDEF(type_pgc, pgc, 0)
 BLKDEF(type_rel, jrd_rel, 0)
 BLKDEF(type_fmt, fmt, sizeof(((fmt*) NULL)->fmt_desc[0]))   /* Done */
@@ -43,12 +43,12 @@ BLKDEF(type_vcl, vcl, sizeof(((VCL) NULL)->vcl_long[0]))   /* Done */
 BLKDEF(type_req, jrd_req, sizeof(((jrd_req*) NULL)->req_rpb[0]))    /* Done */
 BLKDEF(type_tra, jrd_tra, 1)
 BLKDEF(type_nod, jrd_nod, sizeof(((jrd_nod*) NULL)->nod_arg[0]))    /* Done */
-BLKDEF(type_csb, Csb, sizeof(((CSB) NULL)->csb_rpt[0]))    /* Done */
+BLKDEF(type_csb, Csb, sizeof(((Csb*) NULL)->csb_rpt[0]))    /* Done */
 BLKDEF(type_lls, lls, 0)	/* linked list stack */
 BLKDEF(type_rec, rec, 1)	/* record parameter */
 BLKDEF(type_rsb, Rsb, sizeof(((Rsb*) NULL)->rsb_arg[0]))	/* Done record source */
 BLKDEF(type_bms, bms, 0)	/* bit map segment */
-BLKDEF(type_dfw, dfw, 1)	/* deferred work block */
+BLKDEF(type_dfw, Deferred_work, 1)	/* deferred work block */
 BLKDEF(type_tfb, tfb, 0)	/* temporary field block */
 BLKDEF(type_str, str, 1)	/* random string block */
 BLKDEF(type_dcc, Dcc, 0)	/* data compression control */
@@ -68,14 +68,14 @@ BLKDEF(type_fun, fun, sizeof(((FUN) NULL)->fun_rpt[0]))	/* Done Function definit
 BLKDEF(type_irl, irl, 0)
 BLKDEF(type_acc, acc, 0)
 BLKDEF(type_idl, idl, 0)
-BLKDEF(type_rsc, Rsc, 0)
-BLKDEF(type_sdw, sdw, 0)
+BLKDEF(type_rsc, Resource, 0)
+BLKDEF(type_sdw, Shadow, 0)
 BLKDEF(type_vct, vct, 0)	/* Verb actions */
 BLKDEF(type_btb, btb, 0)
 BLKDEF(type_blf, blf, 0)
 BLKDEF(type_arr, arr, sizeof(((ADS) NULL)->ads_rpt[0]))	/* Done, but funny   Array description */
-BLKDEF(type_map, map, 0)
-BLKDEF(type_log, log, 0)
+BLKDEF(type_map, blb_map, 0)
+BLKDEF(type_log, fblog, 0)
 BLKDEF(type_dls, dls, 1)
 BLKDEF(type_ail, logfiles, 1)	/* wal file */
 BLKDEF(type_prc, jrd_prc, 1)	/* procedure block */
@@ -87,11 +87,11 @@ BLKDEF(type_bkm, bkm, 1)	/* bookmark block for storing current location */
 BLKDEF(type_tpc, tpc, 1)	/* TIP page cache block */
 BLKDEF(type_rng, rng, 1)	/* refresh range */
 BLKDEF(type_svc, svc, 1)	/* services */
-BLKDEF(type_lwt, lwt, 0)	/* latch wait block */
+BLKDEF(type_lwt, Latch_wait, 0)	/* latch wait block */
 BLKDEF(type_vcx, vcx, 0)	/* view context block */
 BLKDEF(type_srpb, srpb, 0)	/* save rpb block */
 BLKDEF(type_opt, Opt, 0)
-BLKDEF(type_prf, prf, 0)
+BLKDEF(type_prf, Prefetch, 0)
 BLKDEF(type_rse, rse, 0)
 BLKDEF(type_lit, lit, 0)
 BLKDEF(type_asb, asb, 0)

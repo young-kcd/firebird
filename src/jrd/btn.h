@@ -45,13 +45,13 @@ typedef struct btx {
 #define BTX_SIZE	2
 
 // format of expanded index buffer
-typedef struct jrd_exp {
+struct jrd_exp {
 	USHORT exp_length;
 	ULONG exp_incarnation;
 	btx exp_nodes[1];
-} *EXP;
+};
 
-#define EXP_SIZE	OFFSETA (EXP, exp_nodes)
+#define EXP_SIZE	OFFSETA (jrd_exp*, exp_nodes)
 
 struct dynKey {
 	USHORT keyLength;
@@ -79,7 +79,7 @@ namespace BTreeNode {
 	bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode);
 
 #ifdef SCROLLABLE_CURSORS
-	UCHAR* lastNode(btree_page* page, EXP expanded_page, BTX* expanded_node);
+	UCHAR* lastNode(btree_page* page, jrd_exp* expanded_page, BTX* expanded_node);
 #endif
 
 	UCHAR* nextNode(IndexNode* node, UCHAR* pointer, 

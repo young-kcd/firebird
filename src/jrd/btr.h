@@ -61,7 +61,7 @@ typedef struct idx {
 	struct vec *idx_foreign_indexes;	/* ids for foreign key partner indexes */
 	jrd_nod* idx_expression;	/* node tree for indexed expresssion */
 	struct dsc idx_expression_desc;	/* descriptor for expression result */
-	struct jrd_req *idx_expression_request;	/* stored request for expression evaluation */
+	class jrd_req* idx_expression_request;	/* stored request for expression evaluation */
 	// This structure should exactly match IRTD structure for current ODS
 	struct idx_repeat {
 		USHORT idx_field;		/* field id */

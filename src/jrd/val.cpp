@@ -874,7 +874,7 @@ static void garbage_collect(TDBB tdbb, VDR control)
  *	the bitmap of pages visited.
  *
  **************************************/
-	PIP page;
+	page_inv_page* page;
 	USHORT sequence;
 	SLONG number;
 
@@ -1139,7 +1139,7 @@ static void walk_database(TDBB tdbb, VDR control)
 
 	DPM_scan_pages(tdbb);
 	WIN window(-1);
-	hdr* page;
+	header_page* page;
 	fetch_page(tdbb, control, (SLONG) HEADER_PAGE, pag_header, &window,
 			   &page);
 	control->vdr_max_transaction = page->hdr_next_transaction;
@@ -1343,7 +1343,7 @@ static void walk_header(TDBB tdbb, VDR control, SLONG page_num)
  *	Walk the overflow header pages
  *
  **************************************/
-	HDR page;
+	header_page* page;
 
 	SET_TDBB(tdbb);
 
@@ -1698,7 +1698,7 @@ static void walk_pip(TDBB tdbb, VDR control)
 	CHECK_DBB(dbb);
 
 	PGC pgc = dbb->dbb_pcontrol;
-	PIP page;
+	page_inv_page* page;
 
 	for (USHORT sequence = 0;; sequence++) {
 		const SLONG page_number =
@@ -2065,7 +2065,7 @@ static RTN walk_root(TDBB tdbb, VDR control, jrd_rel* relation)
 		return corrupt(tdbb, control, VAL_INDEX_ROOT_MISSING, relation);
 	}
 
-	IRT page;
+	index_root_page* page;
 	WIN window(-1);
 	fetch_page(tdbb, control, relation->rel_index_root, pag_root, &window,
 			   &page);
@@ -2104,7 +2104,7 @@ static RTN walk_tip(TDBB tdbb, VDR control, SLONG transaction)
 		return corrupt(tdbb, control, VAL_TIP_LOST, 0);
 	}
 
-	TIP page;
+	tx_inv_page* page;
 	const ULONG pages = transaction / dbb->dbb_pcontrol->pgc_tpt;
 
 	for (ULONG sequence = 0; sequence <= pages; sequence++) {

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		fun_proto.h
- *	DESCRIPTION:	Prototype header file for fun.c
+ *	DESCRIPTION:	Prototype header file for fun.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,18 +24,11 @@
 #ifndef JRD_FUN_PROTO_H
 #define JRD_FUN_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void		FUN_evaluate(fun*, jrd_nod*, vlu*);
 void		FUN_fini(tdbb*);
 void		FUN_init(void);
-fun*		FUN_lookup_function(TEXT*, bool ShowAccessError);
+fun*		FUN_lookup_function(const TEXT*, bool ShowAccessError);
 fun*		FUN_resolve(class Csb*, fun*, jrd_nod*);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 #endif // JRD_FUN_PROTO_H
+

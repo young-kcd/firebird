@@ -55,7 +55,8 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 #ifdef EXPRESSION_INDICES
 int PCMET_expression_index(
-						   TDBB tdbb, SSHORT phase, DFW work, jrd_tra* transaction)
+						   TDBB tdbb, SSHORT phase, Deferred_work* work,
+						   jrd_tra* transaction)
 {
 /**************************************
  *

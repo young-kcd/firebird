@@ -661,7 +661,6 @@ static FPTR_SHORT lookup_init_function(
 #endif
 
 /* Still not found, check if there is a UDF in the database defined the right way */
-	FUN function_block;
 	USHORT argcount;
 	char entry[48];
 
@@ -684,7 +683,8 @@ static FPTR_SHORT lookup_init_function(
 			break;
 	}
 	INTL_TRACE(("INTL: trying user fn %s\n", entry));
-	if ( (function_block = FUN_lookup_function((TEXT*)entry, false)) ) {
+	FUN function_block = FUN_lookup_function(entry, false);
+	if (function_block) {
 		INTL_TRACE(("INTL: found a user fn, validating\n"));
 		if ((function_block->fun_count == argcount) &&
 			(function_block->fun_args == argcount) &&
@@ -1094,17 +1094,17 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 
 			to_len =
 				INTL_convert_bytes(tdbb, to_cs,
-								   reinterpret_cast<UCHAR*>(((VARY *) to->dsc_address)->vary_string),
+								   reinterpret_cast<UCHAR*>(((vary*) to->dsc_address)->vary_string),
 								   to_size, from_cs, from_ptr, from_len, err);
-			((VARY *) to->dsc_address)->vary_length = to_len;
+			((vary*) to->dsc_address)->vary_length = to_len;
 			from_fill = 0;		/* Convert_bytes handles source truncation */
 		}
 		else {
 			/* binary string can always be converted TO by byte-copy */
 			to_len = MIN(from_len, to_size);
 			from_fill = from_len - to_len;
-			((VARY *) p)->vary_length = to_len;
-			p = reinterpret_cast<UCHAR*>(((VARY *) p)->vary_string);
+			((vary*) p)->vary_length = to_len;
+			p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
 			if (to_len)
 				do
 					*p++ = *q++;
@@ -1488,7 +1488,6 @@ int INTL_str_to_upper(TDBB tdbb, DSC * pString)
  *      Given an input string, convert it to uppercase 
  *
  **************************************/
-	USHORT len;
 	UCHAR *src, *dest;
 	UCHAR buffer[MAX_KEY];
 	USHORT ttype;
@@ -1498,9 +1497,9 @@ int INTL_str_to_upper(TDBB tdbb, DSC * pString)
 	fb_assert(pString != NULL);
 	fb_assert(pString->dsc_address != NULL);
 
-	len =
+	USHORT len =
 		CVT_get_string_ptr(pString, &ttype, &src,
-						   reinterpret_cast < vary * >(buffer),
+						   reinterpret_cast<vary*>(buffer),
 						   sizeof(buffer), ERR_post);
 	switch (ttype) {
 	case ttype_binary:

@@ -172,7 +172,7 @@ typedef enum {
 #if (defined REQUESTER || defined SUPERCLIENT)
 static TEXT cvt_failures[CVT_FAILURE_SPACE];
 static TEXT* cvt_failures_ptr = NULL;
-static TEXT* error_string(const char*, SSHORT);
+static const TEXT* error_string(const char*, SSHORT);
 #endif
 
 static void conversion_error(const dsc*, FPTR_ERROR);
@@ -348,7 +348,7 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 			const SSHORT length =
 				CVT_make_string(desc, ttype_ascii,
 								&p,
-								(VARY *) buffer, sizeof(buffer), err);
+								(vary*) buffer, sizeof(buffer), err);
 			value = 0.0;
 			scale = 0;
 			SSHORT sign = 0;
@@ -608,7 +608,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_cstring:
 	case dtype_text:
 		length =
-			CVT_make_string(desc, ttype_ascii, &p, (VARY *) buffer,
+			CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
 							sizeof(buffer), err);
 		scale -= decompose(p, length, dtype_long, &value, err);
 		break;
@@ -874,7 +874,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_cstring:
 	case dtype_text:
 		length =
-			CVT_make_string(desc, ttype_ascii, &p, (VARY *) buffer,
+			CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
 							sizeof(buffer), err);
 		scale -= decompose(p, length, dtype_quad, &value.high, err);
 		break;
@@ -1030,7 +1030,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_cstring:
 	case dtype_text:
 		length =
-			CVT_make_string(desc, ttype_ascii, &p, (VARY *) buffer,
+			CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
 							sizeof(buffer), err);
 		scale -= decompose(p, length, dtype_int64, (SLONG *) & value, err);
 		break;
@@ -1238,7 +1238,7 @@ GDS_TIMESTAMP CVT_get_timestamp(const dsc* desc, FPTR_ERROR err)
 USHORT CVT_make_string(const dsc*          desc,
 					   USHORT        to_interp,
 					   const char**  address,
-					   VARY*         temp,
+					   vary*         temp,
 					   USHORT        length,
 					   FPTR_ERROR    err)
 {
@@ -1626,8 +1626,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				l -= length;
 				/* TMN: Here we should really have the following fb_assert */
 				/* fb_assert(length <= MAX_USHORT); */
-				((VARY *) p)->vary_length = (USHORT) length;
-				p = reinterpret_cast<UCHAR*>(((VARY *) p)->vary_string);
+				((vary*) p)->vary_length = (USHORT) length;
+				p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
 				CVT_COPY_BUFF(q, p, length);
 				break;
 			}
@@ -1776,7 +1776,7 @@ static void conversion_error(const dsc* desc, FPTR_ERROR err)
         const char* string;
 		const USHORT length =
 			CVT_make_string(desc, ttype_ascii, &string,
-							(VARY *) s, sizeof(s), err);
+							(vary*) s, sizeof(s), err);
 #if (defined REQUESTER || defined SUPERCLIENT)
 		p = error_string(string, length);
 #else
@@ -2053,7 +2053,7 @@ static SSHORT decompose(const char* string,
 
 
 #if (defined REQUESTER || defined SUPERCLIENT)
-static TEXT* error_string(const char* in_string, SSHORT length)
+static const TEXT* error_string(const char* in_string, SSHORT length)
 {
 /**************************************
  *
@@ -2426,7 +2426,7 @@ static void string_to_datetime(
 	const char* string;
 	const USHORT length =
 		CVT_make_string(desc, ttype_ascii, &string,
-						(VARY *) buffer, sizeof(buffer), err);
+						(vary*) buffer, sizeof(buffer), err);
 						
 	const char* p = string;
 	const char* const end = p + length;

@@ -184,7 +184,7 @@ void xdr_debug_memory(
    of each packet to determine which packet contains it. Record or
    delete an entry in that packet's memory allocation table. */
 
-	VEC vector = port->port_packet_vector;
+	rem_vec* vector = port->port_packet_vector;
 	if (!vector)	/* Not tracking port's protocol */
 		return;
 
@@ -1112,7 +1112,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 	if (xop == XDR_FREE) {
 		/* Free a slot in the packet tracking vector */
 
-		VEC vector = port->port_packet_vector;
+		rem_vec* vector = port->port_packet_vector;
 		if (vector)
 			for (i = 0; i < vector->vec_count; i++)
 				if (vector->vec_object[i] == (BLK) packet) {
@@ -1126,7 +1126,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		   to start recording memory allocations for this packet. */
 
 		fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
-		VEC vector = ALLR_vector(&port->port_packet_vector, 0);
+		rem_vec* vector = ALLR_vector(&port->port_packet_vector, 0);
 
 		for (i = 0; i < vector->vec_count; i++)
 			if (vector->vec_object[i] == (BLK) packet)

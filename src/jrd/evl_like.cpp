@@ -262,7 +262,7 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 }
 
 
-static BOOLEAN SLEUTH_AUX(
+static bool SLEUTH_AUX(
 						  TextType obj,
 						  USHORT flags,
 						  const SLEUTHTYPE* search,
@@ -295,67 +295,79 @@ const SLEUTHTYPE* match, const SLEUTHTYPE* end_match)
 			c = COND_UPPER(obj, c);
 			if (match >= end_match || *match != GDML_MATCH_ANY) {
 				if (search >= end_search)
-					return FALSE;
+					return false;
 				d = *search++;
 				if (c != COND_UPPER(obj, d))
-					return FALSE;
+					return false;
 			}
 			else {
 				++match;
 				for (;;)
 					if (SLEUTH_AUX
-						(obj, flags, search, end_search, match,
-						 end_match)) return TRUE;
+						(obj, flags, search, end_search, match, end_match))
+					{
+						return true;
+					}
 					else if (search < end_search) {
 						d = *search++;
 						if (c != COND_UPPER(obj, d))
-							return FALSE;
+							return false;
 					}
 					else
-						return FALSE;
+						return false;
 			}
 		}
 		else if (c == GDML_MATCH_ONE)
 			if (match >= end_match || *match != GDML_MATCH_ANY) {
 				if (search >= end_search)
-					return FALSE;
+					return false;
 				search++;
 			}
 			else {
 				if (++match >= end_match)
-					return TRUE;
+					return true;
 				for (;;)
 					if (SLEUTH_AUX
 						(obj, flags, search, end_search, match,
-						 end_match)) return TRUE;
+						 end_match))
+					{
+						return true;
+					}
 					else if (++search >= end_search)
-						return FALSE;
+						return false;
 			}
 		else if (c == GDML_CLASS_START) {
 			const SLEUTHTYPE* const char_class = match;
 			while (*match++ != GDML_CLASS_END) {
 				if (match >= end_match)
-					return FALSE;
+					return false;
 			}
 			const SLEUTHTYPE* const end_class = match - 1;
 			if (match >= end_match || *match != GDML_MATCH_ANY) {
 				if (!SLEUTH_CLASS_NAME
 					(obj, flags, char_class, end_class, *search++))
-					return FALSE;
+				{
+					return false;
+				}
 			}
 			else {
 				++match;
 				for (;;)
 					if (SLEUTH_AUX
 						(obj, flags, search, end_search, match,
-						 end_match)) return TRUE;
+						 end_match))
+					{
+						return true;
+					}
 					else if (search < end_search) {
 						if (!SLEUTH_CLASS_NAME
 							(obj, flags, char_class, end_class, *search++))
-							return FALSE;
+						{
+							return false;
+						}
 					}
 					else
-						return FALSE;
+						return false;
 			}
 		}
 		else if (c == GDML_FLAG_SET) {
@@ -371,13 +383,13 @@ const SLEUTHTYPE* match, const SLEUTHTYPE* end_match)
 	}
 
 	if (search < end_search)
-		return FALSE;
+		return false;
 
-	return TRUE;
+	return true;
 }
 
 
-static BOOLEAN SLEUTH_CLASS_NAME(
+static bool SLEUTH_CLASS_NAME(
 								 TextType obj,
 								 USHORT flags,
 								 const SLEUTHTYPE* char_class,
@@ -400,19 +412,19 @@ static BOOLEAN SLEUTH_CLASS_NAME(
 	fb_assert(end_class != NULL);
 	fb_assert(char_class <= end_class);
 
-	USHORT result = TRUE;
+	bool result = true;
 	character = COND_UPPER(obj, character);
 
 	if (*char_class == GDML_NOT) {
 		++char_class;
-		result = FALSE;
+		result = false;
 	}
 
 	while (char_class < end_class) {
 		const SLEUTHTYPE c = *char_class++;
 		if (c == GDML_QUOTE) {
 			if (*char_class++ == character)
-				return TRUE;
+				return true;
 		}
 		else if (*char_class == GDML_RANGE) {
 			char_class += 2;
@@ -423,7 +435,7 @@ static BOOLEAN SLEUTH_CLASS_NAME(
 			return result;
 	}
 
-	return (result) ? FALSE : TRUE;
+	return !result;
 }
 
 

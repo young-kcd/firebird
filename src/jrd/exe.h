@@ -106,7 +106,7 @@ class rse : public jrd_node_base
 public:
 	USHORT	rse_count;
 	USHORT	rse_jointype;		/* inner, left, full */
-	BOOLEAN rse_writelock;
+	bool		rse_writelock;
 	Rsb*		rse_rsb;
 	jrd_nod*	rse_first;
     jrd_nod*	rse_skip;
@@ -126,7 +126,7 @@ typedef rse* RSE;
 #define rse_singular	2		/* flags rse-type node as from a singleton select */
 #define rse_variant	4			/* flags rse as variant (not invariant?) */
 
-#define rse_delta	(sizeof(struct rse)-sizeof(struct jrd_nod))/sizeof(((jrd_nod*) NULL)->nod_arg[0])
+#define rse_delta	(sizeof(class rse)-sizeof(jrd_nod))/sizeof(((jrd_nod*) NULL)->nod_arg[0])
 
 // Types of nulls placement for each column in sort order
 #define rse_nulls_default 0
@@ -144,7 +144,7 @@ public:
 };
 typedef lit* LIT;
 
-#define lit_delta	((sizeof(struct lit) - sizeof(struct jrd_nod) - sizeof(SINT64)) / sizeof(jrd_nod**))
+#define lit_delta	((sizeof(class lit) - sizeof(jrd_nod) - sizeof(SINT64)) / sizeof(jrd_nod**))
 
 
 /* Aggregate Sort Block (for DISTINCT aggregates) */
@@ -164,7 +164,7 @@ public:
 };
 typedef asb* ASB;
 
-#define asb_delta	((sizeof(struct asb) - sizeof(struct jrd_nod)) / sizeof (jrd_nod**))
+#define asb_delta	((sizeof(class asb) - sizeof(jrd_nod)) / sizeof (jrd_nod**))
 
 
 /* Various structures in the impure area */
@@ -538,13 +538,13 @@ struct csb_repeat
 
 	struct jrd_rel* csb_relation;
 	struct str* csb_alias;		/* SQL alias name for this instance of relation */
-	struct jrd_prc* csb_procedure;
+	class jrd_prc* csb_procedure;
 	struct jrd_rel* csb_view;		/* parent view */
 
 	struct idx* csb_idx;		/* Packed description of indices */
 	struct str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
 	jrd_nod* csb_message;			/* Msg for send/receive */
-	struct fmt* csb_format;		/* Default fmt for stream */
+	class fmt* csb_format;		/* Default fmt for stream */
 	struct sbm* csb_fields;		/* Fields referenced */
 	float csb_cardinality;		/* Cardinality of relation */
 	jrd_nod* csb_plan;				/* user-specified plan for this relation */
@@ -590,13 +590,13 @@ public:
 	jrd_nod*		csb_node;
 	struct acc*	csb_access;		/* Access items to be checked */
 	struct vec*	csb_variables;	/* Vector of variables, if any */
-	class Rsc*	csb_resources;	/* Resources (relations and indexes) */
-	struct lls*	csb_dependencies;	/* objects this request depends upon */
-	Firebird::Array<class Rsb*> csb_fors;		/* stack of fors */
-	Firebird::Array<struct jrd_nod*> csb_invariants;	/* stack of invariant nodes */
-	Firebird::Array<struct jrd_node_base*> csb_current_nodes;	/* rse's and other invariant candidates within whose scope we are */
+	class Resource*	csb_resources;	/* Resources (relations and indexes) */
+	class lls*	csb_dependencies;	/* objects this request depends upon */
+	Firebird::Array<Rsb*> csb_fors;		/* stack of fors */
+	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
+	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* rse's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
-	struct rse*	csb_current_rse;	/* this holds the rse currently being processed; 
+	rse*	csb_current_rse;	/* this holds the rse currently being processed;
 									   unlike the current_rses stack, it references any expanded view rse */
 #endif
 	jrd_nod*		csb_async_message;	/* asynchronous message to send to request */
@@ -667,5 +667,5 @@ public:
 #define XCP_MESSAGE_LENGTH	78	// must correspond to the size of
 								// RDB$EXCEPTIONS.RDB$MESSAGE
 
-#endif /* JRD_EXE_H */
+#endif // JRD_EXE_H
 

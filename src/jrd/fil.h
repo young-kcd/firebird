@@ -61,7 +61,7 @@ typedef struct dls {
 
 typedef struct mdls {
 	DLS mdls_dls;				/* Pointer to the directory list */
-	BOOLEAN mdls_mutex_init;
+	bool mdls_mutex_init;
 	MUTX_T mdls_mutex[1];		/* Mutex for directory list. Must
 								   be locked before list operations */
 } MDLS;

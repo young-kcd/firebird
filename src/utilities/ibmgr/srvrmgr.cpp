@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.8 2003-11-08 16:33:47 brodsom Exp $
+ * $Id: srvrmgr.cpp,v 1.9 2004-02-20 06:43:26 robocop Exp $
  */
 
 #include "firebird.h"
@@ -67,17 +67,17 @@
 #define ATTACH_RETRY		10	/* Number of attach retries */
 
 
-static bool attach_service(IBMGR_DATA *);
-static bool detach_service(IBMGR_DATA *);
-static bool print_pool(IBMGR_DATA *);
-static bool start_shutdown(IBMGR_DATA *);
-static bool start_server(IBMGR_DATA *);
+static bool attach_service(ibmgr_data_t*);
+static bool detach_service(ibmgr_data_t*);
+static bool print_pool(ibmgr_data_t*);
+static bool start_shutdown(ibmgr_data_t*);
+static bool start_server(ibmgr_data_t*);
 #ifdef NOT_USED_OR_REPLACED
-static bool server_is_ok(IBMGR_DATA *);
+static bool server_is_ok(ibmgr_data_t*);
 #endif
-static bool server_is_up(IBMGR_DATA *);
+static bool server_is_up(ibmgr_data_t*);
 
-void SRVRMGR_cleanup( IBMGR_DATA * data)
+void SRVRMGR_cleanup( ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -94,7 +94,7 @@ void SRVRMGR_cleanup( IBMGR_DATA * data)
 }
 
 
-USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
+USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -303,7 +303,7 @@ gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
 }
 
 
-static bool attach_service( IBMGR_DATA * data)
+static bool attach_service( ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -317,7 +317,6 @@ static bool attach_service( IBMGR_DATA * data)
  *
  **************************************/
 	ISC_STATUS_ARRAY status;
-	TEXT spb[SPB_BUFLEN], *p;
 	TEXT svc_name[128];
 
 /* Obviously we should not be already attached to service
@@ -326,7 +325,8 @@ static bool attach_service( IBMGR_DATA * data)
 
 	strcpy(svc_name, data->host);
 
-	p = spb;
+	TEXT spb[SPB_BUFLEN];
+	TEXT* p = spb;
 
 	if (!strcmp(data->user, SYSDBA_USER_NAME)) {
 		*p++ = isc_spb_version1;
@@ -364,7 +364,7 @@ static bool attach_service( IBMGR_DATA * data)
 }
 
 
-static bool detach_service( IBMGR_DATA * data)
+static bool detach_service( ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -403,7 +403,7 @@ static bool detach_service( IBMGR_DATA * data)
 }
 
 
-static bool start_shutdown( IBMGR_DATA * data)
+static bool start_shutdown( ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -434,7 +434,7 @@ static bool start_shutdown( IBMGR_DATA * data)
 }
 
 
-static bool start_server( IBMGR_DATA * data)
+static bool start_server( ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -447,11 +447,6 @@ static bool start_server( IBMGR_DATA * data)
  *
  **************************************/
 	TEXT msg[MSG_LEN];
-	TEXT path[MAXPATHLEN];
-	TEXT *argv[4];
-	int retry;
-	pid_t pid, ret_value;
-	int exit_status;
 
 /* If we are currently attached and host has not been changed,
    server on this host is up and running.
@@ -480,8 +475,10 @@ static bool start_server( IBMGR_DATA * data)
 /* We failed to attach to service, thus server might not be running
    You know what? We'll try to start it.
 */
+	TEXT path[MAXPATHLEN];
 	gds__prefix(path, SERVER_GUARDIAN);
 
+	TEXT *argv[4];
 	argv[0] = path;
 	if (data->suboperation == SOP_START_ONCE)
 		argv[1] = "-o";
@@ -496,6 +493,7 @@ static bool start_server( IBMGR_DATA * data)
 	ib_printf("Argument list:\n\"%s\"\n\"%s\"\n", argv[0], argv[1]);
 #endif
 
+	pid_t pid;
 	if (!(pid = vfork())) {
 		execv(path, argv);
 		_exit(FINI_ERROR);
@@ -504,7 +502,7 @@ static bool start_server( IBMGR_DATA * data)
 /* Wait a little bit to let the server start
 */
 	sleep(ATTACH_PAUSE);
-	for (retry = ATTACH_RETRY; retry; retry--) {
+	for (int retry = ATTACH_RETRY; retry; retry--) {
 		sleep(ATTACH_PAUSE);
 
 		/* What we want to do here is to find out if the server has
@@ -516,7 +514,8 @@ static bool start_server( IBMGR_DATA * data)
 		   then the server exited with startup error and there is no
 		   need to try to attach to it.
 		 */
-		ret_value = waitpid(pid, &exit_status, WNOHANG);
+		int exit_status; // unused after the call below.
+		const pid_t ret_value = waitpid(pid, &exit_status, WNOHANG);
 
 		/* waitpid() returns guardian process pid if the server has
 		   exited (or killed by a signal), -1 if error happened,
@@ -551,7 +550,7 @@ static bool start_server( IBMGR_DATA * data)
 
 
 #ifdef NOT_USED_OR_REPLACED
-static bool server_is_ok( IBMGR_DATA * data)
+static bool server_is_ok( ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -595,7 +594,7 @@ static bool server_is_ok( IBMGR_DATA * data)
 }
 #endif
 
-static bool server_is_up( IBMGR_DATA * data)
+static bool server_is_up( ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -611,13 +610,12 @@ static bool server_is_up( IBMGR_DATA * data)
 	ISC_STATUS_ARRAY status;
 	TEXT svc_name[128];
 	isc_svc_handle svc_handle = NULL;
-	bool up;
 
 /* Obviously we should not be already attached to service
 */
 	fb_assert(!data->attached);
 
-	up = true;
+	bool up = true;
 
 /* To find out if we the server is already running we
    will try to attach to it. We are going to use "anonymous"
@@ -647,7 +645,7 @@ static bool server_is_up( IBMGR_DATA * data)
 }
 
 
-static bool print_pool( IBMGR_DATA * data)
+static bool print_pool( ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -659,22 +657,22 @@ static bool print_pool( IBMGR_DATA * data)
  *      Make the server print memory pools
  *
  **************************************/
-	ISC_STATUS_ARRAY status;
-	char *sptr, sendbuf[512];
-	USHORT path_length;
-	char respbuf[2];
 
 /* We should be attached to ask for any service
 */
 	fb_assert(data->attached);
 
-	sptr = sendbuf;
-	path_length = strlen(data->print_file);
+	char sendbuf[512];
+	char* sptr = sendbuf;
+	const USHORT path_length = strlen(data->print_file);
 	*sptr = isc_info_svc_dump_pool_info;
 	++sptr;
 	STUFF_WORD(sptr, path_length);
 	strcpy(sptr, data->print_file);
 	sptr += path_length;
+
+	ISC_STATUS_ARRAY status;
+	char respbuf[2];
 	isc_service_query(status, &data->attached, 0, 0, NULL,
 					  sptr - sendbuf, sendbuf, sizeof(respbuf), respbuf);
 	if (status[0] == 1 && status[1] > 0) {

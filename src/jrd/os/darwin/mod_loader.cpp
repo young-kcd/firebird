@@ -54,7 +54,7 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 		NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
 	if (retVal != NSObjectFileImageSuccess)
 	{
-		switch(retVal)
+		switch (retVal)
 		{
 			case NSObjectFileImageFailure:
 					/*printf("object file setup failure");*/

@@ -32,10 +32,11 @@
 
 class lls : public pool_alloc<type_lls>
 {
-    public:
-        BLK lls_object;
-        struct lls *lls_next;
+	public:
+		BLK lls_object;
+		lls* lls_next;
 };
 typedef lls *LLS;
 
-#endif /* JRD_LLS_H */
+#endif // JRD_LLS_H
+

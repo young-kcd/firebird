@@ -84,7 +84,7 @@ void ERRQ_database_error( DBB dbb, ISC_STATUS* status_vector)
 		gds__print_status(status_vector);
 	}
 
-	QLI_skip_line = TRUE;
+	QLI_skip_line = true;
 
 /* if we've really got the database open and get an I/O error,
    close up neatly.  If we get an I/O error trying to open the
@@ -159,7 +159,7 @@ void ERRQ_error_format(
 					ERRQ_message, s, NULL, NULL, NULL, NULL);
 	/* Msg12 ** QLI error: %s ** */
 	QLI_error = (TEXT*) ERRQ_message;
-	QLI_skip_line = TRUE;
+	QLI_skip_line = true;
 }
 
 

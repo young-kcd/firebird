@@ -406,7 +406,7 @@ SQUAD MOV_get_quad(const dsc* desc, SSHORT scale)
 int MOV_get_string_ptr(
 					   const dsc* desc,
 					   USHORT* ttype,
-					   UCHAR** address, VARY* temp, USHORT length)
+					   UCHAR** address, vary* temp, USHORT length)
 {
 /**************************************
  *
@@ -429,7 +429,7 @@ int MOV_get_string_ptr(
 }
 
 
-int MOV_get_string(const dsc* desc, UCHAR** address, VARY* temp, USHORT length)
+int MOV_get_string(const dsc* desc, UCHAR** address, vary* temp, USHORT length)
 {
 /**************************************
  *
@@ -500,7 +500,7 @@ GDS_TIMESTAMP MOV_get_timestamp(const dsc* desc)
 int MOV_make_string(const dsc*	     desc,
 					USHORT	     ttype,
 					const char** address,
-					VARY*	     temp,
+					vary*	     temp,
 					USHORT	     length)
 {
 /**************************************
@@ -529,7 +529,7 @@ int MOV_make_string(const dsc*	     desc,
 int MOV_make_string2(
 					 const dsc* desc,
 					 USHORT ttype,
-					 UCHAR** address, VARY* temp, USHORT length, STR* ptr)
+					 UCHAR** address, vary* temp, USHORT length, STR* ptr)
 {
 /**************************************
  *

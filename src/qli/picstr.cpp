@@ -38,12 +38,12 @@
 
 static TEXT* cvt_to_ascii(SLONG, TEXT*, int);
 static TEXT* default_edit_string(const dsc*, TEXT*);
-static void edit_alpha(const dsc*, PICS, TEXT**, USHORT);
-static void edit_date(const dsc*, PICS, TEXT**);
-static void edit_float(const dsc*, PICS, TEXT**);
-static void edit_numeric(const dsc*, PICS, TEXT**);
-static int generate(PICS);
-static void literal(PICS, TEXT, TEXT**);
+static void edit_alpha(const dsc*, pics*, TEXT**, USHORT);
+static void edit_date(const dsc*, pics*, TEXT**);
+static void edit_float(const dsc*, pics*, TEXT**);
+static void edit_numeric(const dsc*, pics*, TEXT**);
+static int generate(pics*);
+static void literal(pics*, TEXT, TEXT**);
 
 static const TEXT* alpha_weekdays[] =
 {
@@ -73,7 +73,7 @@ static const TEXT* alpha_months[] =
 };
 
 
-PICS PIC_analyze(TEXT* string, const dsc* desc)
+pics* PIC_analyze(const TEXT* string, const dsc* desc)
 {
 /**************************************
  *
@@ -91,7 +91,7 @@ PICS PIC_analyze(TEXT* string, const dsc* desc)
 		else
 			string = default_edit_string(desc, NULL);
 
-	PICS picture = (PICS) ALLOCD(type_pic);
+	pics* picture = (pics*) ALLOCD(type_pic);
 	picture->pic_string = picture->pic_pointer = string;
 
 // Make a first pass just counting characters
@@ -291,7 +291,7 @@ PICS PIC_analyze(TEXT* string, const dsc* desc)
 }
 
 
-void PIC_edit(const dsc* desc, PICS picture, TEXT** output, USHORT max_length)
+void PIC_edit(const dsc* desc, pics* picture, TEXT** output, USHORT max_length)
 {
 /**************************************
  *
@@ -325,7 +325,7 @@ void PIC_edit(const dsc* desc, PICS picture, TEXT** output, USHORT max_length)
 }
 
 
-void PIC_missing( qli_const* constant, PICS picture)
+void PIC_missing( qli_const* constant, pics* picture)
 {
 /**************************************
  *
@@ -352,7 +352,7 @@ void PIC_missing( qli_const* constant, PICS picture)
 	*p++ = '\"';
 	*p = 0;
 
-    PICS missing_picture = PIC_analyze(scratch->str_data, desc);
+    pics* missing_picture = PIC_analyze(scratch->str_data, desc);
 	picture->pic_missing = missing_picture;
 	picture->pic_length =
 		MAX(picture->pic_print_length, missing_picture->pic_print_length);
@@ -386,8 +386,7 @@ static TEXT* cvt_to_ascii( SLONG number, TEXT* pointer, int length)
 }
 
 
-static TEXT* default_edit_string(
-									const dsc* desc, TEXT* buff)
+static TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 {
 /**************************************
  *
@@ -470,7 +469,7 @@ static TEXT* default_edit_string(
 
 static void edit_alpha(
 					   const dsc* desc,
-					   PICS picture, TEXT** output, USHORT max_length)
+					   pics* picture, TEXT** output, USHORT max_length)
 {
 /**************************************
  *
@@ -485,9 +484,9 @@ static void edit_alpha(
  **************************************/
 	TEXT temp[512];
 
-	TEXT* p = NULL;
+	const TEXT* p = NULL;
 	const USHORT l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
-	TEXT* const end = p + l;
+	const TEXT* const end = p + l;
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;
 	TEXT* out = *output;
@@ -533,7 +532,7 @@ static void edit_alpha(
 }
 
 
-static void edit_date( const dsc* desc, PICS picture, TEXT** output)
+static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 {
 /**************************************
  *
@@ -679,7 +678,7 @@ static void edit_date( const dsc* desc, PICS picture, TEXT** output)
 }
 
 
-static void edit_float( const dsc* desc, PICS picture, TEXT** output)
+static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 {
 /**************************************
  *
@@ -890,7 +889,7 @@ static void edit_float( const dsc* desc, PICS picture, TEXT** output)
 }
 
 
-static void edit_numeric(const dsc* desc, PICS picture, TEXT** output)
+static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 {
 /**************************************
  *
@@ -1086,7 +1085,7 @@ static void edit_numeric(const dsc* desc, PICS picture, TEXT** output)
 }
 
 
-static int generate( PICS picture)
+static int generate( pics* picture)
 {
 /**************************************
  *
@@ -1132,7 +1131,7 @@ static int generate( PICS picture)
 
 		// We're got a potential repeat count.  If real, extract it.
 
-		TEXT* p = picture->pic_pointer;
+		const TEXT* p = picture->pic_pointer;
 		while (*p >= '0' && *p <= '9')
 			picture->pic_count = picture->pic_count * 10 + *p++ - '0';
 
@@ -1158,7 +1157,7 @@ static int generate( PICS picture)
 }
 
 
-static void literal( PICS picture, TEXT c, TEXT ** ptr)
+static void literal( pics* picture, TEXT c, TEXT** ptr)
 {
 /**************************************
  *

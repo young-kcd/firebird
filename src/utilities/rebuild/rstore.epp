@@ -83,12 +83,12 @@ static void store_headers( RBDB rbdb)
  **************************************/
 	ULONG page_number;
 	PAG page;
-	HDR header;
+	header_page* header;
 	BLP blob;
 	BTR bucket;
 	DPG data;
 	IRT index_root;
-	PIP pip;
+	page_inv_page* pip;
 	PPG pointer;
 	ISC_QUAD temp;
 
@@ -133,7 +133,7 @@ static void store_headers( RBDB rbdb)
 
 				switch (page->pag_type) {
 				case pag_header:
-					header = (HDR) page;
+					header = (header_page*) page;
 					P.HDR_PAGE_SIZE.NULL = FALSE;
 					P.HDR_ODS_VERSION.NULL = FALSE;
 					P.HDR_PAGES.NULL = FALSE;
@@ -163,14 +163,14 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_pages:
-					pip = (PIP) page;
+					pip = (page_inv_page*) page;
 					P.PIP_MIN.NULL = FALSE;
 					P.PIP_MIN = pip->pip_min;
 					break;
 
 				case pag_transactions:
 					P.TIP_NEXT.NULL = FALSE;
-					P.TIP_NEXT = ((TIP) page)->tip_next;
+					P.TIP_NEXT = ((tx_inv_page*) page)->tip_next;
 					break;
 
 				case pag_pointer:

@@ -85,7 +85,7 @@
 
 
 static EVH acquire(void);
-static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse);
+static FRB alloc_global(UCHAR type, ULONG length, bool recurse);
 static SLONG create_process(void);
 static void delete_event(EVNT);
 static void delete_process(SLONG);
@@ -106,7 +106,7 @@ static void probe_processes(void);
 static void punt(const TEXT*);
 static void release(void);
 static void remove_que(SRQ *);
-static BOOLEAN request_completed(EVT_REQ);
+static bool request_completed(EVT_REQ);
 static ISC_STATUS return_ok(ISC_STATUS *);
 #ifdef MULTI_THREAD
 static void THREAD_ROUTINE watcher_thread(void *);
@@ -183,7 +183,7 @@ SLONG EVENT_create_session(ISC_STATUS * status_vector)
 		create_process();
 
 	ACQUIRE;
-	SES session = (SES) alloc_global(type_ses, (SLONG) sizeof(ses), FALSE);
+	SES session = (SES) alloc_global(type_ses, (SLONG) sizeof(ses), false);
 	PRB process = (PRB) ABS_PTR(EVENT_process_offset);
 	session->ses_process = EVENT_process_offset;
 
@@ -416,7 +416,7 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
 // Allocate request block
 
 	ACQUIRE;
-	EVT_REQ request = (EVT_REQ) alloc_global(type_req, sizeof(evt_req), FALSE);
+	EVT_REQ request = (EVT_REQ) alloc_global(type_req, sizeof(evt_req), false);
 	SES session = (SES) ABS_PTR(session_id);
 	insert_tail(&session->ses_requests, &request->req_requests);
 	request->req_session = session_id;
@@ -482,7 +482,7 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
 		}
 		else {
 			interest =
-				(RINT) alloc_global(type_rint, (SLONG) sizeof(rint), FALSE);
+				(RINT) alloc_global(type_rint, (SLONG) sizeof(rint), false);
 			event = (EVNT) ABS_PTR(event_offset);
 			insert_tail(&event->evnt_interests, &interest->rint_interests);
 			interest->rint_event = event_offset;
@@ -526,7 +526,6 @@ static EVH acquire(void)
  **************************************/
 
 	int mutex_state;
-	EVH header = NULL;
 #ifdef MULTI_THREAD
 	if (mutex_state = ISC_mutex_lock(MUTEX))
 		mutex_bugcheck("mutex lock", mutex_state);
@@ -570,9 +569,10 @@ static EVH acquire(void)
 		}
 #endif /* WIN_NT */
 
+	EVH header = NULL;
 #if (!(defined SUPERSERVER) && (defined HAVE_MMAP))
 		ISC_STATUS_ARRAY status_vector;
-		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, FALSE);
+		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, false);
 #endif
 		if (!header) {
 			RELEASE;
@@ -591,7 +591,7 @@ static EVH acquire(void)
 }
 
 
-static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
+static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 {
 /**************************************
  *
@@ -613,7 +613,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) ABS_PTR(*ptr)) && *ptr;
 		 ptr = &free->frb_next) 
 	{
-		const SLONG tail = free->frb_header.hdr_length - length;
+		const SLONG tail = free->hdr_length - length;
 		if (tail >= 0 && (!best || tail < best_tail)) {
 			best = ptr;
 			best_tail = tail;
@@ -653,17 +653,17 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 #if !((defined SUPERSERVER) && (defined HAVE_MMAP))
 		ISC_STATUS_ARRAY status_vector;
 		header =
-			reinterpret_cast < EVH >
-			(ISC_remap_file(status_vector, &EVENT_data, ev_length, TRUE));
+			reinterpret_cast<EVH>
+			(ISC_remap_file(status_vector, &EVENT_data, ev_length, true));
 #endif
 		if (header) {
 			free = (FRB) ((UCHAR *) header + old_length);
 /**
-	free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
+	free->hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
 **/
-			free->frb_header.hdr_length =
+			free->hdr_length =
 				EVENT_data.sh_mem_length_mapped - old_length;
-			free->frb_header.hdr_type = type_frb;
+			free->hdr_type = type_frb;
 			free->frb_next = 0;
 
 			EVENT_header = header;
@@ -676,7 +676,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 			process->prb_flags &= ~PRB_remap_over;
 #endif /* WIN_NT */
 
-			return alloc_global(type, length, TRUE);
+			return alloc_global(type, length, true);
 		}
 	}
 
@@ -691,14 +691,14 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 	if (best_tail < (SLONG) sizeof(frb))
 		*best = free->frb_next;
 	else {
-		free->frb_header.hdr_length -= length;
-		free = (FRB) ((UCHAR *) free + free->frb_header.hdr_length);
-		free->frb_header.hdr_length = length;
+		free->hdr_length -= length;
+		free = (FRB) ((UCHAR *) free + free->hdr_length);
+		free->hdr_length = length;
 	}
 
-	memset((UCHAR*) free + sizeof(hdr), 0,
-		   free->frb_header.hdr_length - sizeof(hdr));
-	free->frb_header.hdr_type = type;
+	memset((UCHAR*) free + sizeof(event_hdr), 0,
+		   free->hdr_length - sizeof(event_hdr));
+	free->hdr_type = type;
 
 	return free;
 }
@@ -720,7 +720,7 @@ static SLONG create_process(void)
 		return EVENT_process_offset;
 
 	ACQUIRE;
-	PRB process = (PRB) alloc_global(type_prb, (SLONG) sizeof(prb), FALSE);
+	PRB process = (PRB) alloc_global(type_prb, (SLONG) sizeof(prb), false);
 	insert_tail(&EVENT_header->evh_processes, &process->prb_processes);
 	QUE_INIT(process->prb_sessions);
 	EVENT_process_offset = REL_PTR(process);
@@ -747,7 +747,7 @@ static SLONG create_process(void)
 
 #ifdef MULTI_THREAD
 	if (gds__thread_start
-		(reinterpret_cast < FPTR_INT_VOID_PTR > (watcher_thread), NULL,
+		(reinterpret_cast<FPTR_INT_VOID_PTR>(watcher_thread), NULL,
 		 THREAD_medium, THREAD_blast, 0))
 		ERR_bugcheck_msg("cannot start thread");
 #endif
@@ -1076,8 +1076,6 @@ static void exit_handler(void* arg)
  *	Cleanup on exit.
  *
  **************************************/
-	ISC_STATUS_ARRAY local_status;
-
 	if (EVENT_process_offset) {
 		if (EVENT_header->evh_current_process != EVENT_process_offset)
 			ACQUIRE;
@@ -1087,6 +1085,8 @@ static void exit_handler(void* arg)
 
 	while (acquire_count > 0)
 		RELEASE;
+
+	ISC_STATUS_ARRAY local_status;
 
 #ifndef SERVER
 #ifdef SOLARIS_MT
@@ -1147,7 +1147,7 @@ static void free_global(FRB block)
 
 	FRB prior = NULL;
 	PTR offset = REL_PTR(block);
-	block->frb_header.hdr_type = type_frb;
+	block->hdr_type = type_frb;
 
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) ABS_PTR(*ptr)) && *ptr;
 		 prior = free, ptr = &free->frb_next)
@@ -1158,7 +1158,7 @@ static void free_global(FRB block)
 
 	if (offset <= 0 || offset > EVENT_header->evh_length ||
 		(prior
-		 && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
+		 && (UCHAR*) block < (UCHAR*) prior + prior->hdr_length))
 	{
 		punt("free_global: bad block");
 		return;
@@ -1171,21 +1171,17 @@ static void free_global(FRB block)
 
 /* Try to merge free block with next block */
 
-	if (free
-		&& (SCHAR *) block + block->frb_header.hdr_length ==
-		(SCHAR *) free)
+	if (free && (SCHAR *) block + block->hdr_length == (SCHAR *) free)
 	{
-		block->frb_header.hdr_length += free->frb_header.hdr_length;
+		block->hdr_length += free->hdr_length;
 		block->frb_next = free->frb_next;
 	}
 
 /* Next, try to merge the free block with the prior block */
 
-	if (prior
-		&& (SCHAR *) prior + prior->frb_header.hdr_length ==
-		(SCHAR *) block)
+	if (prior && (SCHAR *) prior + prior->hdr_length ==	(SCHAR *) block)
 	{
-		prior->frb_header.hdr_length += block->frb_header.hdr_length;
+		prior->hdr_length += block->hdr_length;
 		prior->frb_next = block->frb_next;
 	}
 }
@@ -1253,9 +1249,9 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
 #endif
 
 	FRB free = (FRB) ((UCHAR*) EVENT_header + sizeof(evh));
-	free->frb_header.hdr_length =
+	free->hdr_length =
 		EVENT_data.sh_mem_length_mapped - sizeof(evh);
-	free->frb_header.hdr_type = type_frb;
+	free->hdr_type = type_frb;
 	free->frb_next = 0;
 
 	EVENT_header->evh_free = (UCHAR *) free - (UCHAR *) EVENT_header;
@@ -1296,7 +1292,7 @@ static EVNT make_event(USHORT length, const TEXT* string, SLONG parent_offset)
  *
  **************************************/
 	EVNT event =
-		(EVNT) alloc_global(type_evnt, (SLONG) (sizeof(evnt) + length), FALSE);
+		(EVNT) alloc_global(type_evnt, (SLONG) (sizeof(evnt) + length), false);
 	insert_tail(&EVENT_header->evh_events, &event->evnt_events);
 	QUE_INIT(event->evnt_interests);
 
@@ -1392,7 +1388,8 @@ static void probe_processes(void)
 		const SLONG process_offset = REL_PTR(process);
 		if (process_offset != EVENT_process_offset &&
 			!ISC_check_process_existence(process->prb_process_id,
-										 process->prb_process_uid[0], FALSE)) {
+										 process->prb_process_uid[0], false))
+		{
 			que = (SRQ *) ABS_PTR(que->srq_backward);
 			delete_process(process_offset);
 		}
@@ -1478,7 +1475,7 @@ static void remove_que(SRQ* node)
 }
 
 
-static BOOLEAN request_completed(EVT_REQ request)
+static bool request_completed(EVT_REQ request)
 {
 /**************************************
  *
@@ -1495,10 +1492,10 @@ static BOOLEAN request_completed(EVT_REQ request)
 		interest = (RINT) ABS_PTR(next);
 		EVNT event = (EVNT) ABS_PTR(interest->rint_event);
 		if (interest->rint_count <= event->evnt_count)
-			return TRUE;
+			return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -1544,9 +1541,10 @@ static int validate(void)
 	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
 		offset += block->hdr_length)
 	{
-		HDR* block = (HDR *) ABS_PTR(offset);
+		event_hdr* block = (event_hdr*) ABS_PTR(offset);
 		if (!block->hdr_length || !block->hdr_type
-			|| block->hdr_type >= type_max) {
+			|| block->hdr_type >= type_max)
+		{
 			punt("bad block length or type");
 			break;
 		}
@@ -1626,3 +1624,4 @@ static void THREAD_ROUTINE watcher_thread(void *dummy)
 
 }
 #endif
+

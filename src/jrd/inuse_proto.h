@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		inuse_proto.h
- *	DESCRIPTION:	Prototype header file for inuse.c
+ *	DESCRIPTION:	Prototype header file for inuse.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,9 +24,10 @@
 #ifndef JRD_INUSE_PROTO_H
 #define JRD_INUSE_PROTO_H
 
-BOOLEAN INUSE_cleanup(struct iuo *, FPTR_VOID);
-void INUSE_clear(struct iuo *);
-BOOLEAN INUSE_insert(struct iuo *, void *, BOOLEAN);
-BOOLEAN INUSE_remove(struct iuo *, void *, BOOLEAN);
+bool INUSE_cleanup(struct iuo*, FPTR_VOID);
+void INUSE_clear(struct iuo*);
+bool INUSE_insert(struct iuo*, void*, bool);
+bool INUSE_remove(struct iuo*, void*, bool);
 
 #endif // JRD_INUSE_PROTO_H
+

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.37 2004-01-28 07:50:18 robocop Exp $
+ *  $Id: alloc.cpp,v 1.38 2004-02-20 06:42:35 robocop Exp $
  *
  */
 
@@ -297,7 +297,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int 
 	poolBlk->length = MEM_ALIGN(instance_size);
 	poolBlk->prev = NULL;
 	
-	MemoryBlock *hdr = (MemoryBlock*) (mem +
+	MemoryBlock* hdr = (MemoryBlock*) (mem +
 		MEM_ALIGN(sizeof(MemoryExtent)) +
 		MEM_ALIGN(sizeof(MemoryBlock)) +
 		MEM_ALIGN(instance_size));

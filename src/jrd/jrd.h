@@ -96,7 +96,13 @@
 
 // fwd. decl.
 class vec;
-class tdbb;
+struct tdbb;
+class att;
+class jrd_tra;
+class jrd_req;
+class lck;
+class jrd_file;
+class fmt;
 
 
 class dbb : private pool_alloc<type_dbb>
@@ -114,7 +120,7 @@ public:
 	// permanent memory pool, the entire delete() operation needs
 	// to complete _before_ the permanent pool is deleted, or else
 	// risk an aborted engine.
-	static void deleteDbb(dbb *toDelete)
+	static void deleteDbb(dbb* toDelete)
 	{
 		if (toDelete == 0)
 			return;
@@ -123,24 +129,24 @@ public:
 		JrdMemoryPool::noDbbDeletePool(perm);
 	}
 	
-	class dbb *dbb_next;		/* Next database block in system */
-	class att *dbb_attachments;	/* Active attachments */
+	dbb*	dbb_next;		/* Next database block in system */
+	att *dbb_attachments;	/* Active attachments */
 	struct bcb *dbb_bcb;		/* Buffer control block */
 	vec*		dbb_relations;	/* relation vector */
 	vec*		dbb_procedures;	/* scanned procedures */
-	struct lck *dbb_lock;		/* granddaddy lock */
-	class jrd_tra *dbb_sys_trans;	/* system transaction */
-	struct fil *dbb_file;		/* files for I/O operations */
-	struct sdw *dbb_shadow;		/* shadow control block */
-	struct lck *dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
+	lck* 		dbb_lock;		/* granddaddy lock */
+	jrd_tra*	dbb_sys_trans;	/* system transaction */
+	jrd_file* dbb_file;		/* files for I/O operations */
+	class Shadow*	dbb_shadow;		/* shadow control block */
+	lck*		dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
 	SLONG dbb_shadow_sync_count;	/* to synchronize changes to shadows */
-	struct lck *dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
+	lck*		dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
 	struct plc *dbb_connection;	/* connection block */
 	struct pgc *dbb_pcontrol;	/* page control */
 	class vcl *dbb_t_pages;	/* pages number for transactions */
 	class vcl *dbb_gen_id_pages;	/* known pages for gen_id */
 	struct blf *dbb_blob_filters;	/* known blob filters */
-	struct lls *dbb_modules;	/* external function/filter modules */
+	class lls *dbb_modules;	/* external function/filter modules */
 	MUTX_T *dbb_mutexes;		/* DBB block mutexes */
 	WLCK_T *dbb_rw_locks;		/* DBB block read/write locks */
 	REC_MUTX_T dbb_sp_rec_mutex;	/* Recursive mutex for accessing/updating stored procedure metadata */
@@ -174,7 +180,6 @@ public:
     USHORT dbb_next_pool_id;
 	vec*		dbb_internal;	/* internal requests */
 	vec*		dbb_dyn_req;	/* internal dyn requests */
-//	struct jrn *dbb_journal;	/* journal block */
 
 	SLONG dbb_oldest_active;	/* Cached "oldest active" transaction */
 	SLONG dbb_oldest_transaction;	/* Cached "oldest interesting" transaction */
@@ -193,7 +198,7 @@ public:
 	event_t dbb_gc_event_init[1];	/* Event for initialization garbage collector */
 	event_t dbb_gc_event_fini[1];	/* Event for finalization garbage collector */
 #endif
-	class att *dbb_update_attachment;	/* Attachment with update in process */
+	att *dbb_update_attachment;	/* Attachment with update in process */
 	class btb *dbb_update_que;	/* Attachments waiting for update */
 	class btb *dbb_free_btbs;	/* Unused btb blocks */
 
@@ -214,7 +219,7 @@ public:
 	crypt_routine dbb_encrypt;		/* External encryption routine */
 	crypt_routine dbb_decrypt;		/* External decryption routine */
 
-	class map *dbb_blob_map;	/* mapping of blobs for REPLAY */
+	class blb_map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */
 	Firebird::vector<class TextType*>		dbb_text_objects;	/* intl text type descriptions */
 	Firebird::vector<class CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
@@ -369,7 +374,6 @@ typedef dbb* DBB;
 #define VAL_MAX_ERROR               25
 
 
-
 //
 // the attachment block; one is created for each attachment to a database
 //
@@ -407,15 +411,15 @@ public:
 		att_counts[0] = 0;
 	}*/
 
-	class dbb*	att_database;		// Parent databasea block
+	dbb*		att_database;		// Parent databasea block
 	att*		att_next;			// Next attachment to database
 	att*		att_blocking;		// Blocking attachment, if any
 	class usr*	att_user;			// User identification
-	class jrd_tra*	att_transactions;	// Transactions belonging to attachment
-	class jrd_tra*	att_dbkey_trans;	// transaction to control db-key scope
-	struct jrd_req*	att_requests;		// Requests belonging to attachment
+	jrd_tra*	att_transactions;	// Transactions belonging to attachment
+	jrd_tra*	att_dbkey_trans;	// transaction to control db-key scope
+	jrd_req*	att_requests;		// Requests belonging to attachment
 	struct scb*	att_active_sorts;	// Active sorts
-	struct lck*	att_id_lock;		// Attachment lock (if any)
+	lck*		att_id_lock;		// Attachment lock (if any)
 	SLONG		att_attachment_id;	// Attachment ID
 	SLONG		att_lock_owner_handle;	// Handle for the lock manager
 	SLONG		att_event_session;	// Event session id, if any
@@ -424,13 +428,13 @@ public:
 	class vcl*	att_counts[DBB_max_count];
 	vec*		att_relation_locks;	// explicit persistent locks for relations
 	struct bkm*	att_bookmarks;		// list of bookmarks taken out using this attachment
-	struct lck*	att_record_locks;	// explicit or implicit record locks taken out during attachment
+	lck*		att_record_locks;	// explicit or implicit record locks taken out during attachment
 	vec*		att_bkm_quick_ref;	// correspondence table of bookmarks
 	vec*		att_lck_quick_ref;	// correspondence table of locks
 	ULONG		att_flags;			// Flags describing the state of the attachment
 	SSHORT		att_charset;		// user's charset specified in dpb
 	class str*	att_lc_messages;	// attachment's preference for message natural language
-	struct lck*	att_long_locks;		// outstanding two phased locks
+	lck*		att_long_locks;		// outstanding two phased locks
 	vec*		att_compatibility_table;	// hash table of compatible locks
 	class vcl*	att_val_errors;
 	class str*	att_working_directory;	// Current working directory is cached
@@ -483,12 +487,12 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	USHORT prc_outputs;
 	struct jrd_nod *prc_input_msg;
 	struct jrd_nod *prc_output_msg;
-	struct fmt *prc_input_fmt;
-	struct fmt *prc_output_fmt;
-	struct fmt *prc_format;
+	fmt*	prc_input_fmt;
+	fmt*	prc_output_fmt;
+	fmt*	prc_format;
 	vec*		prc_input_fields;	/* vector of field blocks */
 	vec*		prc_output_fields;	/* vector of field blocks */
-	struct jrd_req *prc_request;	/* compiled procedure request */
+	jrd_req *prc_request;	/* compiled procedure request */
 	class str *prc_security_name;	/* pointer to security class name for procedure */
 	USHORT prc_use_count;		/* requests compiled with procedure */
 	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 
@@ -496,7 +500,7 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 								   no code should rely on value of this field 
 								   (it will usually be 0)
 								*/
-	struct lck *prc_existence_lock;	/* existence lock, if any */
+	lck* prc_existence_lock;	/* existence lock, if any */
 	class str *prc_name;		/* pointer to ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
 };
@@ -546,21 +550,20 @@ typedef struct frgn {
 } *FRGN;
 
 // Relation trigger definition
-typedef struct trig {
+struct trig {
     class str* blr; // BLR code
 	jrd_req* request; // Compiled request. Gets filled on first invocation
 	bool compile_in_progress;
-	BOOLEAN sys_trigger;
+	bool sys_trigger;
 	USHORT flags; // Flags as they are in RDB$TRIGGERS table
 	class jrd_rel* relation; // Trigger parent relation
 	class str* name; // Trigger name
 	void compile(tdbb* _tdbb); // Ensure that trigger is compiled
 	BOOLEAN release(tdbb* _tdbb); // Try to free trigger request
-} *TRIG;
+};
 
 typedef Firebird::vector<trig> trig_vec;
 
-typedef trig_vec* TRIG_VEC;
 
 /* Relation block; one is created for each relation referenced
    in the database, though it is not really filled out until
@@ -569,15 +572,15 @@ typedef trig_vec* TRIG_VEC;
 class jrd_rel : public pool_alloc<type_rel>
 {
 public:
-	USHORT rel_id;
-	USHORT rel_flags;
-	USHORT rel_current_fmt;		/* Current format number */
-	UCHAR rel_length;			/* length of ascii relation name */
-	struct fmt *rel_current_format;	/* Current record format */
+	USHORT	rel_id;
+	USHORT	rel_flags;
+	USHORT	rel_current_fmt;		/* Current format number */
+	UCHAR	rel_length;			/* length of ascii relation name */
+	fmt*	rel_current_format;	/* Current record format */
 	TEXT*	rel_name;				/* pointer to ascii relation name */
 	vec*	rel_formats;	/* Known record formats */
-	TEXT *rel_owner_name;		/* pointer to ascii owner */
-	class vcl *rel_pages;		/* vector of pointer page numbers */
+	TEXT*	rel_owner_name;		/* pointer to ascii owner */
+	class vcl*	rel_pages;		/* vector of pointer page numbers */
 	vec*	rel_fields;		/* vector of field blocks */
 
 	struct rse *rel_view_rse;	/* view record select expression */
@@ -599,9 +602,9 @@ public:
 	USHORT rel_sweep_count;		/* sweep and/or garbage collector threads active */
 	SSHORT rel_scan_count;		/* concurrent sequential scan count */
 
-	struct lck *rel_existence_lock;	/* existence lock, if any */
-	struct lck *rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
-	struct lck *rel_record_locking;	/* lock to start record locking on relation */
+	lck*	rel_existence_lock;	/* existence lock, if any */
+	lck*	rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
+	lck*	rel_record_locking;	/* lock to start record locking on relation */
 
 	ULONG rel_explicit_locks;	/* count of records explicitly locked in relation */
 	ULONG rel_read_locks;		/* count of records read locked in relation (implicit or explicit) */
@@ -616,8 +619,8 @@ public:
 	trig_vec   *rel_post_modify;	/* Post-operation modify trigger */
 	trig_vec   *rel_pre_store;		/* Pre-operation store trigger */
 	trig_vec   *rel_post_store;	/* Post-operation store trigger */
-	struct prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
-	struct frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
+	prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
+	frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };
 
 #define REL_scanned					1		/* Field expressions scanned (or being scanned) */
@@ -660,11 +663,11 @@ class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
 class idb : public pool_alloc<type_idb>
 {
     public:
-	struct idb*	idb_next;
+	idb*	idb_next;
 	struct jrd_nod*	idb_expression;			/* node tree for index expression */
-	struct jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
+	jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
 	struct dsc	idb_expression_desc;	/* descriptor for expression result */
-	struct lck*	idb_lock;				/* lock to synchronize changes to index */
+	lck*		idb_lock;				/* lock to synchronize changes to index */
 	UCHAR idb_id;
 };
 typedef idb *IDB;
@@ -675,12 +678,12 @@ typedef idb *IDB;
 class vcx: public pool_alloc<type_vcx>
 {
     public:
-	class vcx *vcx_next;
-	class str *vcx_context_name;
-	class str *vcx_relation_name;
+	vcx* vcx_next;
+	class str* vcx_context_name;
+	class str* vcx_relation_name;
 	USHORT vcx_context;
 };
-typedef vcx *VCX;
+typedef vcx* VCX;
 
 
 /* general purpose vector */
@@ -692,9 +695,13 @@ public:
 	typedef typename Firebird::vector<T>::const_iterator const_iterator;
 
 	static vec_base* newVector(MemoryPool& p, int len)
-		{ return FB_NEW(p) vec_base<T,TYPE>(p, len); }
+	{
+		return FB_NEW(p) vec_base<T, TYPE>(p, len);
+	}
 	static vec_base* newVector(MemoryPool& p, const vec_base& base)
-		{ return FB_NEW(p) vec_base<T,TYPE>(p, base); }
+	{
+		return FB_NEW(p) vec_base<T, TYPE>(p, base);
+	}
 		
 	// CVC: THis should be size_t instead of ULONG for maximum portability.
 	ULONG count() const { return vector.size(); }
@@ -728,17 +735,21 @@ class vec : public vec_base<BlkPtr, type_vec>
 {
 public:
     static vec* newVector(MemoryPool& p, int len)
-        { return FB_NEW(p) vec(p, len); }
+	{
+		return FB_NEW(p) vec(p, len);
+	}
     static vec* newVector(MemoryPool& p, const vec& base)
-        { return FB_NEW(p) vec(p, base); }
+	{
+		return FB_NEW(p) vec(p, base);
+	}
 	static vec* newVector(MemoryPool& p, vec* base, int len)
-		{
-			if (!base)
-				base = FB_NEW(p) vec(p, len);
-			else if (len > (int) base->count())
-				base->resize(len);
-			return base;
-		}
+	{
+		if (!base)
+			base = FB_NEW(p) vec(p, len);
+		else if (len > (int) base->count())
+			base->resize(len);
+		return base;
+	}
 
 private:
     vec(MemoryPool& p, int len) : vec_base<BlkPtr, type_vec>(p, len) {}
@@ -750,17 +761,21 @@ class vcl : public vec_base<SLONG, type_vcl>
 {
 public:
     static vcl* newVector(MemoryPool& p, int len)
-        { return FB_NEW(p) vcl(p, len); }
+	{
+		return FB_NEW(p) vcl(p, len);
+	}
     static vcl* newVector(MemoryPool& p, const vcl& base)
-        { return FB_NEW(p) vcl(p, base); }
+	{
+		return FB_NEW(p) vcl(p, base);
+	}
 	static vcl* newVector(MemoryPool& p, vcl* base, int len)
-		{
-			if (!base)
-				base = FB_NEW(p) vcl(p, len);
-			else if (len > (int) base->count())
-				base->resize(len);
-			return base;
-		}
+	{
+		if (!base)
+			base = FB_NEW(p) vcl(p, len);
+		else if (len > (int) base->count())
+			base->resize(len);
+		return base;
+	}
 
 private:
     vcl(MemoryPool& p, int len) : vec_base<SLONG, type_vcl>(p, len) {}
@@ -838,9 +853,9 @@ typedef str *STR;
 // Transaction element block
 //
 typedef struct teb {
-	ATT *teb_database;
+	att** teb_database;
 	int teb_tpb_length;
-	UCHAR *teb_tpb;
+	UCHAR* teb_tpb;
 } TEB;
 
 /* Blocking Thread Block */
@@ -920,8 +935,8 @@ typedef struct tdbb
 	struct thdd	tdbb_thd_data;
 	dbb*	tdbb_database;
 	att*	tdbb_attachment;
-	class jrd_tra*	tdbb_transaction;
-	struct jrd_req*	tdbb_request;
+	jrd_tra*	tdbb_transaction;
+	jrd_req*	tdbb_request;
 	JrdMemoryPool*	tdbb_default;
 	ISC_STATUS*	tdbb_status_vector;
 	void*		tdbb_setjmp;
@@ -949,11 +964,11 @@ typedef struct tdbb
 
 /* List of internal database handles */
 
-typedef struct ihndl
+struct ihndl
 {
-	struct ihndl*	ihndl_next;
-	void*			ihndl_object;
-} *IHNDL;
+	ihndl*	ihndl_next;
+	void*	ihndl_object;
+};
 
 
 /* Threading macros */
@@ -1052,7 +1067,7 @@ extern TDBB gdbb;
 #if !defined(REQUESTER)
 
 extern int debug;
-extern IHNDL internal_db_handles;
+extern ihndl* internal_db_handles;
 
 #endif /* REQUESTER */
 

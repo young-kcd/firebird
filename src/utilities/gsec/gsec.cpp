@@ -210,7 +210,7 @@ int common_main(int argc,
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
 		tdsec->tsec_service_gsec = true;
 		tdsec->tsec_service_thd = true;
-		tdsec->tsec_service_blk = (SVC) output_data;
+		tdsec->tsec_service_blk = (svc*) output_data;
 		tdsec->tsec_status = tdsec->tsec_service_blk->svc_status;
 		argv++;
 		argc--;
@@ -301,7 +301,7 @@ int common_main(int argc,
 			 * will cause the service to wait for the client to request data.  However,
 			 * if the server is not signaled, then the client can never request anything */
 			if (user_data->operation == DIS_OPER)
-				SVC_STARTED(tdsec->tsec_service_blk);
+				tdsec->tsec_service_blk->svc_started();
 #endif
 			ret = SECURITY_exec_line(status, db_handle, user_data,
 									 data_print, NULL);
@@ -351,7 +351,7 @@ int common_main(int argc,
 	}	// try
 	catch (const std::exception&) {
 		/* All calls to gsec_exit(), normal and error exits, wind up here */
-		SVC_STARTED(tdsec->tsec_service_blk);
+		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_env = NULL;
 		const int exit_code = tdsec->tsec_exit_code;
 
@@ -1230,7 +1230,7 @@ void GSEC_error(
 							isc_arg_string, arg2,
 							isc_arg_string, arg3,
 							isc_arg_string, arg4, isc_arg_string, arg5);
-	SVC_STARTED(tdsec->tsec_service_blk);
+	tdsec->tsec_service_blk->svc_started();
 #else
 	tsec* tdsec = GET_THREAD_DATA;
 #endif

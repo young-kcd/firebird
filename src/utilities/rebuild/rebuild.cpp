@@ -63,17 +63,17 @@ static USHORT compute_checksum(RBDB, PAG);
 static void db_error(int);
 static void dump(IB_FILE *, RBDB, ULONG, ULONG, UCHAR);
 static void dump_tips(IB_FILE *, RBDB);
-static void format_header(RBDB, HDR, int, ULONG, ULONG, ULONG, ULONG);
+static void format_header(RBDB, header_page*, int, ULONG, ULONG, ULONG, ULONG);
 static void format_index_root(IRT, int, SSHORT, SSHORT);
 static void format_pointer(PPG, int, SSHORT, SSHORT, int, SSHORT, SLONG *);
-static void format_pip(PIP, int, int);
-static void format_tip(TIP, int, SLONG);
-static void get_next_file(RBDB, HDR);
+static void format_pip(page_inv_page*, int, int);
+static void format_tip(tx_inv_page*, int, SLONG);
+static void get_next_file(RBDB, header_page*);
 static void get_range(TEXT ***, TEXT **, ULONG *, ULONG *);
 static void get_switch(TEXT **, SWC);
 static void move(const SCHAR*, SCHAR*, SSHORT);
-static HDR open_database(RBDB, ULONG);
-static void print_db_header(IB_FILE *, HDR);
+static header_page* open_database(RBDB, ULONG);
+static void print_db_header(IB_FILE *, header_page*);
 static void rebuild(RBDB);
 static void write_headers(IB_FILE *, RBDB, ULONG, ULONG);
 
@@ -109,7 +109,7 @@ int main( int argc, char *argv[])
  *
  **************************************/
 	TEXT **end, *db_in, *ascii_out, out_file[128];
-	HDR header;
+	header_page* header;
 	RBDB rbdb;
 	struct swc switch_space;
 	SWC token;
@@ -230,11 +230,11 @@ int main( int argc, char *argv[])
 	gdbb->tdbb_database->dbb_dp_per_pp = (rbdb->rbdb_page_size
 										  - OFFSETA(PPG, ppg_page)) * 8 / 34;
 	gdbb->tdbb_database->dbb_pcontrol->pgc_bytes = rbdb->rbdb_page_size
-		- OFFSETA(PIP, pip_bits);
+		- OFFSETA(page_inv_page*, pip_bits);
 	gdbb->tdbb_database->dbb_pcontrol->pgc_ppp =
 		gdbb->tdbb_database->dbb_pcontrol->pgc_bytes * 8;
 	gdbb->tdbb_database->dbb_pcontrol->pgc_tpt =
-		(rbdb->rbdb_page_size - OFFSETA(TIP, tip_transactions)) * 4;
+		(rbdb->rbdb_page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4;
 	gdbb->tdbb_database->dbb_pcontrol->pgc_pip = 1;
 
 	if (ascii_out)
@@ -625,7 +625,7 @@ static void dump_tips( IB_FILE * file, RBDB rbdb)
 
 static void format_header(
 						  RBDB rbdb,
-						  HDR page,
+						  header_page* page,
 						  int page_size,
 						  ULONG oldest, ULONG active, ULONG next, ULONG imp)
 {
@@ -709,7 +709,7 @@ int eof, SSHORT count, SLONG * page_vector)
 }
 
 
-static void format_pip( PIP page, int page_size, int last_flag)
+static void format_pip( page_inv_page* page, int page_size, int last_flag)
 {
 /**************************************
  *
@@ -729,7 +729,7 @@ static void format_pip( PIP page, int page_size, int last_flag)
 
 /* Set all page bits to zero, indicating RBDB_allocated */
 
-	bytes = page_size - OFFSETA(PIP, pip_bits);
+	bytes = page_size - OFFSETA(page_inv_page*, pip_bits);
 	memset(page->pip_bits, 0, bytes);
 
 /* If this is the last pip, make sure the last page (which
@@ -742,7 +742,7 @@ static void format_pip( PIP page, int page_size, int last_flag)
 }
 
 
-static void format_tip( TIP page, int page_size, SLONG next_page)
+static void format_tip( tx_inv_page* page, int page_size, SLONG next_page)
 {
 /**************************************
  *
@@ -769,12 +769,12 @@ static void format_tip( TIP page, int page_size, SLONG next_page)
 /* Code for committed transaction is 3, so just fill all
    bytes with -1 */
 
-	bytes = page_size - OFFSETA(TIP, tip_transactions);
+	bytes = page_size - OFFSETA(tx_inv_page*, tip_transactions);
 	memset(page->tip_transactions, -1, bytes);
 }
 
 
-static void get_next_file( RBDB rbdb, HDR header)
+static void get_next_file( RBDB rbdb, header_page* header)
 {
 /**************************************
  *
@@ -926,7 +926,7 @@ static void move(const SCHAR* from, SCHAR* to, SSHORT length)
 }
 
 
-static HDR open_database( RBDB rbdb, ULONG pg_size)
+static header_page* open_database( RBDB rbdb, ULONG pg_size)
 {
 /**************************************
  *
@@ -948,7 +948,7 @@ static HDR open_database( RBDB rbdb, ULONG pg_size)
 	rbdb->rbdb_buffer1 = (PAG) temp;
 	rbdb->rbdb_valid = TRUE;
 
-	hdr* header = (HDR) RBDB_read(rbdb, (SLONG) 0);
+	header_page* header = (header_page*) RBDB_read(rbdb, (SLONG) 0);
 
 	if (header->hdr_header.pag_type != pag_header) {
 		ib_printf("header page has wrong type, expected %d found %d!\n",
@@ -985,7 +985,7 @@ static HDR open_database( RBDB rbdb, ULONG pg_size)
 }
 
 
-static void print_db_header( IB_FILE * file, HDR header)
+static void print_db_header( IB_FILE * file, header_page* header)
 {
 /**************************************
  *
@@ -1152,14 +1152,14 @@ static void write_headers(
 		case pag_header:
 			ib_fprintf(file, "header page, checksum %d\n",
 					   page->pag_checksum);
-			print_db_header(file, (HDR) page);
+			print_db_header(file, (header_page*) page);
 			break;
 
 		case pag_pages:
 			{
 			ib_fprintf(file, "page inventory page, checksum %d\n",
 					   page->pag_checksum);
-			PIP pip = (PIP) page;
+			page_inv_page* pip = (page_inv_page*) page;
 			ib_fprintf(file, "\tlowest free page %d\n\n", pip->pip_min);
 			break;
 			}
@@ -1167,7 +1167,7 @@ static void write_headers(
 		case pag_transactions:
 			ib_fprintf(file, "TIP page, checksum %d\n", page->pag_checksum);
 			ib_fprintf(file, "\tnext tip for database %ld\n\n",
-					   ((TIP) page)->tip_next);
+					   ((tx_inv_page*) page)->tip_next);
 			break;
 
 		case pag_pointer:
@@ -1211,7 +1211,7 @@ static void write_headers(
 			{
 			ib_fprintf(file, "index root page, checksum %d\n",
 					   page->pag_checksum);
-			const irt* index_root = (IRT) page;
+			const index_root_page* index_root = (index_root_page*) page;
 			ib_fprintf(file, "\trelation %d, number of indexes %d\n\n",
 					   index_root->irt_relation, index_root->irt_count);
 			break;

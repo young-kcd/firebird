@@ -34,6 +34,8 @@
 
 #include "../jrd/dsc.h"
 
+class jrd_req;
+
 // Record source block (RSB) types
 
 enum rsb_t
@@ -73,8 +75,8 @@ public:
 	Rsb* rsb_next;						// next rsb, if appropriate
 	struct jrd_rel* rsb_relation;		// relation, if appropriate
 	struct str*	rsb_alias;				// SQL alias for relation
-	struct jrd_prc* rsb_procedure;		// procedure, if appropriate
-	struct fmt* rsb_format;				// format, if appropriate
+	class jrd_prc* rsb_procedure;		// procedure, if appropriate
+	class fmt* rsb_format;				// format, if appropriate
 	struct jrd_nod* rsb_any_boolean;	// any/all boolean
 	Rsb* rsb_arg[1];
 };
@@ -157,7 +159,7 @@ typedef struct irsb_sort {
 
 typedef struct irsb_procedure {
 	ULONG irsb_flags;
-	struct jrd_req *irsb_req_handle;
+	jrd_req *irsb_req_handle;
 	struct str *irsb_message;
 } *IRSB_PROCEDURE;
 
@@ -178,8 +180,8 @@ typedef struct irsb_sim {
 	ULONG irsb_flags;
 	USHORT irsb_sim_rid;				// next relation id
 	USHORT irsb_sim_fid;				// next field id
-	struct jrd_req *irsb_sim_req1;		// request handle #1
-	struct jrd_req *irsb_sim_req2;		// request handle #2
+	jrd_req *irsb_sim_req1;		// request handle #1
+	jrd_req *irsb_sim_req2;		// request handle #2
 } *IRSB_SIM;
 
 const ULONG irsb_sim_alias = 32;		// duplicate relation but w/o user name

@@ -26,6 +26,7 @@
 
 // fwd. decl.
 class blb;
+class lls;
 
 struct pag* DPM_allocate(TDBB, struct win*);
 void	DPM_backout(TDBB, struct rpb *);
@@ -35,22 +36,21 @@ void	DPM_create_relation(TDBB, struct jrd_rel *);
 SLONG	DPM_data_pages(TDBB, struct jrd_rel *);
 void	DPM_delete(TDBB, struct rpb *, SLONG);
 void	DPM_delete_relation(TDBB, struct jrd_rel *);
-BOOLEAN	DPM_fetch(TDBB, struct rpb *, USHORT);
+bool	DPM_fetch(TDBB, struct rpb *, USHORT);
 SSHORT	DPM_fetch_back(TDBB, struct rpb *, USHORT, SSHORT);
 void	DPM_fetch_fragment(TDBB, struct rpb *, USHORT);
 SINT64	DPM_gen_id(TDBB, SLONG, USHORT, SINT64);
 int		DPM_get(TDBB, struct rpb *, SSHORT);
 ULONG	DPM_get_blob(TDBB, blb*, ULONG, USHORT, SLONG);
-BOOLEAN	DPM_next(TDBB, struct rpb *, USHORT, BOOLEAN,
-					BOOLEAN);
+bool	DPM_next(TDBB, struct rpb*, USHORT, bool, bool);
 void	DPM_pages(TDBB, SSHORT, int, ULONG, SLONG);
 SLONG	DPM_prefetch_bitmap(struct tdbb *, struct jrd_rel *, struct sbm *,
 								 SLONG);
 void	DPM_scan_pages(TDBB);
-void	DPM_store(TDBB, struct rpb *, struct lls **, USHORT);
+void	DPM_store(TDBB, struct rpb *, lls**, USHORT);
 SLONG	DPM_store_blob(TDBB, blb*, struct rec *);
 void	DPM_rewrite_header(TDBB, struct rpb *);
-void	DPM_update(TDBB, struct rpb *, struct lls **,
+void	DPM_update(TDBB, struct rpb *, lls**,
 					   class jrd_tra *);
 
-#endif /* JRD_DPM_PROTO_H */
+#endif // JRD_DPM_PROTO_H

@@ -37,7 +37,7 @@ struct blk*	ALLR_block(UCHAR, ULONG);
 struct blk*	ALLR_clone(struct blk *);
 void		ALLR_free (void *);
 void		ALLR_release (void *);
-struct vec*	ALLR_vector (struct vec **, ULONG);
+struct rem_vec*	ALLR_vector (struct rem_vec**, ULONG);
 
 #endif // REMOTE_ALLR_PROTO_H
 

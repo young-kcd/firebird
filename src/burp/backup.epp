@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.50 2004-02-06 07:07:44 skidder Exp $
+$Id: backup.epp,v 1.51 2004-02-20 06:42:30 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1358,14 +1358,14 @@ void put_blob( burp_fld* field, ISC_QUAD * blob_id, ULONG count)
 
 	ULONG segments = 0;
 	USHORT max_segment = 0;
-	UCHAR *p = blob_info;
+	const UCHAR* p = blob_info;
 
 	UCHAR item;
 	while ((item = *p++) != isc_info_end)
 	{
-		USHORT l = (USHORT) isc_vax_integer((char*) p, 2);
+		const USHORT l = (USHORT) isc_vax_integer((const char*) p, 2);
 		p += 2;
-		USHORT n = (USHORT) isc_vax_integer((char*) p, l);
+		const USHORT n = (USHORT) isc_vax_integer((const char*) p, l);
 		p += l;
 		switch (item)
 		{

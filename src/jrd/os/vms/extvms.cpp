@@ -574,7 +574,7 @@ void EXT_store(RPB * rpb, int *transaction)
 }
 
 
-void EXT_trans_commit(TRA transaction)
+void EXT_trans_commit(tra* transaction)
 {
 /**************************************
  *
@@ -589,7 +589,7 @@ void EXT_trans_commit(TRA transaction)
 }
 
 
-void EXT_trans_prepare(TRA transaction)
+void EXT_trans_prepare(tra* transaction)
 {
 /**************************************
  *
@@ -604,7 +604,7 @@ void EXT_trans_prepare(TRA transaction)
 }
 
 
-void EXT_trans_rollback(TRA transaction)
+void EXT_trans_rollback(tra* transaction)
 {
 /**************************************
  *
@@ -619,7 +619,7 @@ void EXT_trans_rollback(TRA transaction)
 }
 
 
-void EXT_trans_start(TRA transaction)
+void EXT_trans_start(tra* transaction)
 {
 /**************************************
  *

@@ -57,7 +57,7 @@ typedef enum rsr_t {
 class tfb : public pool_alloc<type_tfb>
 {
     public:
-	struct tfb *tfb_next;		/* next block in chain */
+	tfb *tfb_next;		/* next block in chain */
 	USHORT tfb_id;				/* id of field in relation */
 	USHORT tfb_flags;
 	DSC tfb_desc;

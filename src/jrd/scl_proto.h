@@ -24,17 +24,19 @@
 #ifndef JRD_SCL_PROTO_H
 #define JRD_SCL_PROTO_H
 
-void SCL_check_access(const struct scl*, SLONG, const TEXT*,
+class scl;
+
+void SCL_check_access(const scl*, SLONG, const TEXT*,
 					  const TEXT*, USHORT, const TEXT*, const TEXT*);
 void SCL_check_procedure(const struct dsc*, USHORT);
 void SCL_check_relation(const struct dsc*, USHORT);
-struct scl* SCL_get_class(/* INOUT */ TEXT*);
+scl* SCL_get_class(/* INOUT */ TEXT*);
 int SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, TDBB, bool);
 void SCL_move_priv(UCHAR**, USHORT, STR*, ULONG*);
-struct scl* SCL_recompute_class(TDBB, TEXT*);
-void SCL_release(struct scl*);
+scl* SCL_recompute_class(TDBB, TEXT*);
+void SCL_release(scl*);
 void SCL_check_index(TDBB, const TEXT*, UCHAR, USHORT);
 
 #endif // JRD_SCL_PROTO_H

@@ -57,7 +57,7 @@ public:
 
     struct sbm* plb_buckets;   /* available bit map buckets */
     struct bms* plb_segments;  /* available bit map segments */
-	struct Dcc* plb_dccs;
+	class Dcc* plb_dccs;
 
 private:
 	BlockCache<lls> lls_cache;  /* Was plb_lls */

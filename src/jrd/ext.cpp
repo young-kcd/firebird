@@ -71,7 +71,7 @@ IB_FILE *ext_fopen(const char *filename, const char *mode) {
 	if (!iExternalFileDirectoryList.IsPathInList(filename))
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "external file",
-			isc_arg_string, ERR_cstring(const_cast <TEXT *>(filename)),
+			isc_arg_string, ERR_cstring(filename),
 			isc_arg_end);
 
 	return ib_fopen(filename, mode);
@@ -184,8 +184,7 @@ EXT EXT_file(jrd_rel* relation, const TEXT * file_name, SLONG * description)
 			ERR_post(isc_io_error,
 					 isc_arg_string, "ib_fopen",
 					 isc_arg_string,
-					 ERR_cstring(reinterpret_cast <
-								 char *>(file->ext_filename)),
+					 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 					isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 		}
 		else {
@@ -255,7 +254,7 @@ int EXT_get(Rsb* rsb)
 		ERR_post(isc_io_error,
 				 isc_arg_string, "ib_fseek",
 				 isc_arg_string,
-				 ERR_cstring(reinterpret_cast < char *>(file->ext_filename)),
+				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
@@ -501,7 +500,7 @@ void EXT_store(RPB * rpb, int *transaction)
 		|| (ib_fseek((IB_FILE *) file->ext_ifi, (SLONG) 0, 2) != 0))
 	{
 		ERR_post(isc_io_error, isc_arg_string, "ib_fseek", isc_arg_string,
-				 ERR_cstring(reinterpret_cast < char *>(file->ext_filename)),
+				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 	for (; l--; ++p)

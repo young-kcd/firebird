@@ -28,16 +28,16 @@ void		CCH_shutdown_database(dbb*);
 
 USHORT		CCH_checksum(bdb*);
 int			CCH_down_grade_dbb(void* ast_argument);
-BOOLEAN		CCH_exclusive(TDBB, USHORT, SSHORT);
-BOOLEAN		CCH_exclusive_attachment(TDBB, USHORT, SSHORT);
+bool		CCH_exclusive(TDBB, USHORT, SSHORT);
+bool		CCH_exclusive_attachment(TDBB, USHORT, SSHORT);
 void		CCH_expand(TDBB, ULONG);
 pag*		CCH_fake(TDBB, win*, SSHORT);
-pag*		CCH_fetch(TDBB, win*, USHORT, SSHORT, SSHORT, SSHORT, BOOLEAN);
+pag*		CCH_fetch(TDBB, win*, USHORT, SSHORT, SSHORT, SSHORT, bool);
 SSHORT		CCH_fetch_lock(TDBB, win*, USHORT, SSHORT, SSHORT, SSHORT);
-void		CCH_fetch_page(TDBB, win*, SSHORT, BOOLEAN);
+void		CCH_fetch_page(TDBB, win*, SSHORT, bool);
 void		CCH_fini(TDBB);
 void		CCH_flush(TDBB, USHORT, SLONG);
-BOOLEAN		CCH_free_page(TDBB);
+bool		CCH_free_page(TDBB);
 SLONG		CCH_get_incarnation(win*);
 pag*		CCH_handoff(TDBB, win*, SLONG, SSHORT, SSHORT, SSHORT, SSHORT);
 void		CCH_init(TDBB, ULONG);
@@ -47,27 +47,27 @@ void		CCH_must_write(win*);
 lck*		CCH_page_lock(TDBB);
 void		CCH_precedence(TDBB, win*, SLONG);
 void		CCH_prefetch(tdbb*, SLONG*, SSHORT);
-BOOLEAN		CCH_prefetch_pages(TDBB);
-void		CCH_release(TDBB, win*, BOOLEAN);
+bool		CCH_prefetch_pages(TDBB);
+void		CCH_release(TDBB, win*, bool);
 void		CCH_release_and_free(win*);
 void		CCH_release_exclusive(TDBB);
-bool		CCH_rollover_to_shadow(dbb*, fil*, const bool);
-void		CCH_unwind(TDBB, BOOLEAN);
-BOOLEAN		CCH_validate(win*);
+bool		CCH_rollover_to_shadow(dbb*, jrd_file*, const bool);
+void		CCH_unwind(TDBB, bool);
+bool		CCH_validate(win*);
 void		CCH_flush_database(TDBB tdbb);
-bool		CCH_write_all_shadows(TDBB, sdw*, bdb*,
+bool		CCH_write_all_shadows(TDBB, Shadow*, bdb*,
 					 ISC_STATUS*, USHORT, const bool);
 
 /* macros for dealing with cache pages */
 
-#define CCH_FETCH(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, 1)
-#define CCH_FETCH_NO_SHADOW(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, 0)
-#define CCH_FETCH_NO_CHECKSUM(tdbb, window, lock, type)   CCH_fetch (tdbb, window, lock, type, 0, 1, 1)
-#define CCH_FETCH_TIMEOUT(tdbb, window, lock, type, latch_wait)   CCH_fetch (tdbb, window, lock, type, 0, latch_wait, 1)
+#define CCH_FETCH(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, true)
+#define CCH_FETCH_NO_SHADOW(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, false)
+#define CCH_FETCH_NO_CHECKSUM(tdbb, window, lock, type)   CCH_fetch (tdbb, window, lock, type, 0, 1, true)
+#define CCH_FETCH_TIMEOUT(tdbb, window, lock, type, latch_wait)   CCH_fetch (tdbb, window, lock, type, 0, latch_wait, true)
 #define CCH_FETCH_LOCK(tdbb, window, lock, wait, latch_wait, type) CCH_fetch_lock (tdbb, window, lock, wait, latch_wait, type)
 #define CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow)       CCH_fetch_page (tdbb, window, checksum, read_shadow)
-#define CCH_RELEASE(tdbb, window)                         CCH_release (tdbb, window, FALSE)
-#define CCH_RELEASE_TAIL(tdbb, window)                    CCH_release (tdbb, window, TRUE)
+#define CCH_RELEASE(tdbb, window)                         CCH_release (tdbb, window, false)
+#define CCH_RELEASE_TAIL(tdbb, window)                    CCH_release (tdbb, window, true)
 #define CCH_MARK(tdbb, window)                            CCH_mark (tdbb, window, 0)
 #define CCH_MARK_SYSTEM(tdbb, window)                     CCH_mark (tdbb, window, 1)
 #define CCH_HANDOFF(tdbb, window, page, lock, type)       CCH_handoff (tdbb, window, page, lock, type, 1, 0)

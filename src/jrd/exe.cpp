@@ -148,7 +148,7 @@ static jrd_nod* erase(TDBB, jrd_nod*, SSHORT);
 static void execute_looper(TDBB, jrd_req*, jrd_tra*, enum jrd_req::req_s);
 static void exec_sql(TDBB, jrd_req*, DSC *);
 static void execute_procedure(TDBB, jrd_nod*);
-static jrd_req* execute_triggers(TDBB, TRIG_VEC *, REC, REC, enum jrd_req::req_ta);
+static jrd_req* execute_triggers(TDBB, trig_vec**, REC, REC, enum jrd_req::req_ta);
 static jrd_nod* looper(TDBB, jrd_req*, jrd_nod*);
 static jrd_nod* modify(TDBB, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(TDBB, jrd_nod*);
@@ -171,7 +171,7 @@ inline void PreModifyEraseTriggers(TDBB, trig_vec**, SSHORT, RPB*, REC, jrd_req:
 #ifdef PC_ENGINE
 static jrd_nod* find(TDBB, jrd_nod*);
 static jrd_nod* find_dbkey(TDBB, jrd_nod*);
-static LCK implicit_record_lock(jrd_tra*, RPB *);
+static lck* implicit_record_lock(jrd_tra*, RPB *);
 static jrd_nod* release_bookmark(TDBB, jrd_nod*);
 static jrd_nod* set_bookmark(TDBB, jrd_nod*);
 static jrd_nod* set_index(TDBB, jrd_nod*);
@@ -215,7 +215,7 @@ static SLONG memory_count = 0;
 #define RECORD_LOCK_CHECK_INTERVAL	10
 
 #ifdef PC_ENGINE
-// TMN: RAII class for LCK. Unlocks the LCK on destruction.
+// TMN: RAII class for lck. Unlocks the lck on destruction.
 class LCK_RAII_wrapper
 {
 	LCK_RAII_wrapper() : l(0) {}
@@ -224,9 +224,9 @@ class LCK_RAII_wrapper
 			RLCK_unlock_record_implicit(l, 0);
 		}
 	}
-	void assign(LCK lock) { l = lck; }
+	void assign(lck* lock) { l = lock; }
 
-	LCK l;
+	lck* l;
 
 private:
 	LCK_RAII_wrapper(const LCK_RAII_wrapper&);	// no impl.
@@ -1064,12 +1064,12 @@ static void cleanup_rpb(TDBB tdbb, RPB *rpb)
 		}
 		else if (desc->dsc_dtype == dtype_varying)
 		{
-			VARY* vary = reinterpret_cast<VARY*>(p);
+			vary* varying = reinterpret_cast<vary*>(p);
 			USHORT length = desc->dsc_length - sizeof(USHORT);
-			if (length > vary->vary_length)
+			if (length > varying->vary_length)
 			{
-				p = reinterpret_cast<UCHAR*>(vary->vary_string + vary->vary_length);
-				length -= vary->vary_length;
+				p = reinterpret_cast<UCHAR*>(varying->vary_string + varying->vary_length);
+				length -= varying->vary_length;
 				do {
 					*p++ = 0;
 				} while (--length);
@@ -1189,14 +1189,13 @@ static jrd_nod* erase(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 									   rpb,
 									   NULL,
 									   transaction,
-									   reinterpret_cast <
-									   blk *
-									   >(tdbb->tdbb_default), FALSE)))
+									   reinterpret_cast<blk*>(tdbb->tdbb_default),
+									   FALSE)))
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
 		VIO_data(tdbb, rpb,
-				 reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
+				 reinterpret_cast<blk*>(tdbb->tdbb_request->req_pool));
 
 		/* If record is present, and the transaction is read committed,
 		 * make sure the record has not been updated.  Also, punt after
@@ -1225,7 +1224,7 @@ static jrd_nod* erase(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 	{
 		/* check whether record locking is turned on */
 
-		LCK record_locking = RLCK_record_locking(relation);
+		lck* record_locking = RLCK_record_locking(relation);
 		if (record_locking->lck_physical != LCK_PR)
 		{
 			/* get an implicit lock on the record */
@@ -1246,7 +1245,7 @@ static jrd_nod* erase(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 				which_trig, rpb, 0, jrd_req::req_trigger_delete);
 
 	if (relation->rel_file)
-		EXT_erase(rpb, reinterpret_cast < int *>(transaction));
+		EXT_erase(rpb, reinterpret_cast<int*>(transaction));
 	else if (!relation->rel_view_rse)
 		VIO_erase(tdbb, rpb, transaction);
 		
@@ -1380,7 +1379,7 @@ static void exec_sql(TDBB tdbb, jrd_req* request, DSC* dsc)
  *	Execute a string as SQL operator.
  *
  **************************************/
-	vary* v = reinterpret_cast <vary*> (
+	vary* v = reinterpret_cast<vary*>(
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
 	ISC_STATUS_ARRAY local;
@@ -1500,11 +1499,11 @@ static void execute_procedure(TDBB tdbb, jrd_nod* node)
 	EXE_start(tdbb, proc_request, transaction);
 	if (in_message) {
 		EXE_send(tdbb, proc_request, 0, in_msg_length,
-				 reinterpret_cast < UCHAR * >(in_msg));
+				 reinterpret_cast<UCHAR*>(in_msg));
 	}
 
 	EXE_receive(tdbb, proc_request, 1, out_msg_length,
-				reinterpret_cast < UCHAR * >(out_msg));
+				reinterpret_cast<UCHAR*>(out_msg));
 
 /* Clean up all savepoints started during execution of the
    procedure */
@@ -1553,7 +1552,7 @@ static void execute_procedure(TDBB tdbb, jrd_nod* node)
 
 
 static jrd_req* execute_triggers(TDBB tdbb,
-								TRIG_VEC* triggers,
+								trig_vec** triggers,
 								REC old_rec,
 								REC new_rec,
 								enum jrd_req::req_ta trigger_action)
@@ -1583,7 +1582,7 @@ static jrd_req* execute_triggers(TDBB tdbb,
 	SET_TDBB(tdbb);
 
 	jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
-	TRIG_VEC vector = *triggers;
+	trig_vec* vector = *triggers;
 	jrd_req* result = NULL;
 
 	try
@@ -1750,7 +1749,7 @@ static jrd_nod* find_dbkey(TDBB tdbb, jrd_nod* node)
 
 
 #ifdef PC_ENGINE
-static LCK implicit_record_lock(jrd_tra* transaction, RPB * rpb)
+static lck* implicit_record_lock(jrd_tra* transaction, RPB * rpb)
 {
 /**************************************
  *
@@ -1771,7 +1770,7 @@ static LCK implicit_record_lock(jrd_tra* transaction, RPB * rpb)
 	DEV_BLKCHK(transaction, type_tra);
 
 	jrd_rel* relation = rpb->rpb_relation;
-	LCK record_locking = relation->rel_record_locking;
+	lck* record_locking = relation->rel_record_locking;
 
 /* occasionally we should check whether we really still need to 
    do record locking; this is defined as RECORD_LOCK_CHECK_INTERVAL--
@@ -1785,7 +1784,7 @@ static LCK implicit_record_lock(jrd_tra* transaction, RPB * rpb)
 		return NULL;
 	}
 
-	LCK lock = RLCK_lock_record_implicit(transaction, rpb, LCK_SW, 0, 0);
+	lck* lock = RLCK_lock_record_implicit(transaction, rpb, LCK_SW, 0, 0);
 	if (!lock) {
 		ERR_post(isc_record_lock, 0);
 	}
@@ -2557,8 +2556,8 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_exec_into: 
 			{
-			class ExecuteStatement* impure =
-				(class ExecuteStatement*)
+			ExecuteStatement* impure =
+				(ExecuteStatement*)
 					((SCHAR *) request + node->nod_impure);
 			switch (request->req_operation) {
 			case jrd_req::req_evaluate:
@@ -2582,7 +2581,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_post:
 			{
-			DFW work = DFW_post_work(transaction, dfw_post_event,
+			Deferred_work* work = DFW_post_work(transaction, dfw_post_event,
 									 EVL_expr(tdbb, node->nod_arg[0]), 0);
 			if (node->nod_arg[1])
 				DFW_post_work_arg(transaction, work,
@@ -2703,7 +2702,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 
 				desc = EVL_expr(tdbb, node->nod_arg[e_rellock_lock]);
 #if SIZEOF_VOID_P != 8
-				RLCK_release_lock(*(LCK *) desc->dsc_address);
+				RLCK_release_lock(*(lck**) desc->dsc_address);
 #else
 				{
 					att* attachment = tdbb->tdbb_attachment;
@@ -2712,7 +2711,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 					const ULONG slot = *(ULONG *) desc->dsc_address;
 					vec* vector = attachment->att_lck_quick_ref;
 					if (vector && slot < vector->vec_count) {
-						lock = (LCK) vector->vec_object[slot];
+						lock = (lck*) vector->vec_object[slot];
 					}
 					RLCK_release_lock(lock);
 					vector->vec_object[slot] = NULL;
@@ -2923,7 +2922,8 @@ static jrd_nod* modify(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 									   org_rpb,
 									   NULL,
 									   transaction,
-									   reinterpret_cast<BLK>(tdbb->tdbb_default), FALSE)))
+									   reinterpret_cast<blk*>(tdbb->tdbb_default),
+									   FALSE)))
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
@@ -3657,7 +3657,7 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, jrd_nod* msg_node)
  *	and jump to handle error accordingly.
  *
  **************************************/
-	TEXT name[32], relation_name[32], *s, *r;
+	TEXT name[32], relation_name[32];
 	TEXT message[XCP_MESSAGE_LENGTH + 1], temp[XCP_MESSAGE_LENGTH + 1];
 
 	SET_TDBB(tdbb);
@@ -3683,7 +3683,7 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, jrd_nod* msg_node)
 			length = MOV_make_string(desc,
 									 ttype_none,
 									 &string,
-									 reinterpret_cast<VARY*>(temp),
+									 reinterpret_cast<vary*>(temp),
 									 sizeof(temp));
 			length = MIN(length, sizeof(message) - 1);
 
@@ -3703,6 +3703,8 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, jrd_nod* msg_node)
 	}
 	message[length] = 0;
 
+	const TEXT* s;
+
 	switch (exception->xcp_type) {
 	case xcp_sql_code:
 		ERR_post(isc_sqlerr, isc_arg_number, exception->xcp_code, 0);
@@ -3713,7 +3715,7 @@ static void set_error(TDBB tdbb, const xcp_repeat* exception, jrd_nod* msg_node)
 										  request->req_trg_name);
 			// const CAST
 			s = (name[0]) ? name : (TEXT*) "";
-			r = (relation_name[0]) ? relation_name : (TEXT*) "";
+			const TEXT* r = (relation_name[0]) ? relation_name : (TEXT*) "";
 			ERR_post(exception->xcp_code,
 					 isc_arg_string, ERR_cstring(s),
 					 isc_arg_string, ERR_cstring(r), 0);
@@ -3890,7 +3892,7 @@ static jrd_nod* store(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 		cleanup_rpb(tdbb, rpb);
 
 		if (relation->rel_file) {
-			EXT_store(rpb, reinterpret_cast < int *>(transaction));
+			EXT_store(rpb, reinterpret_cast<int*>(transaction));
 		}
 		else if (!relation->rel_view_rse)
 		{
@@ -4179,7 +4181,7 @@ static void validate(TDBB tdbb, jrd_nod* list)
 			const USHORT length = MOV_make_string(EVL_expr(tdbb, node),
 									 ttype_dynamic,
 									 &value,
-									 reinterpret_cast<VARY*>(temp),
+									 reinterpret_cast<vary*>(temp),
 									 sizeof(temp));
 
 			if (request->req_flags & req_null ||

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		shut_proto.h
- *	DESCRIPTION:	Prototype Header file for shut.c
+ *	DESCRIPTION:	Prototype Header file for shut.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,8 +24,11 @@
 #ifndef JRD_SHUT_PROTO_H
 #define JRD_SHUT_PROTO_H
 
-BOOLEAN		SHUT_blocking_ast(struct dbb *);
-BOOLEAN		SHUT_database(struct dbb *, SSHORT, SSHORT);
-BOOLEAN		SHUT_init(struct dbb *);
+class dbb;
+
+BOOLEAN		SHUT_blocking_ast(dbb*);
+BOOLEAN		SHUT_database(dbb*, SSHORT, SSHORT);
+BOOLEAN		SHUT_init(dbb*);
 
 #endif // JRD_SHUT_PROTO_H
+

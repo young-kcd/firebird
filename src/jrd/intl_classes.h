@@ -151,14 +151,14 @@ public:
 						(tt->texttype_fn_mbtowc)))(tt,a,b,c);
 	}
 
-	bool like(class tdbb* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl, SSHORT escape)
+	bool like(struct tdbb* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl, SSHORT escape)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like);
 		return reinterpret_cast<FPTR_LIKE>(tt->texttype_fn_like)(tdbb,tt,s,sl,p,pl,escape);
 	}
 	
-	void *like_create(class tdbb* tdbb, const UCHAR* p, SSHORT pl, SSHORT escape)
+	void *like_create(struct tdbb* tdbb, const UCHAR* p, SSHORT pl, SSHORT escape)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_create);
@@ -186,21 +186,21 @@ public:
 		reinterpret_cast<FPTR_LIKE_DESTROY>(tt->texttype_fn_like_destroy)(object);
 	}
 	
-	bool like_process(class tdbb* tdbb, void* object, const UCHAR* s, SSHORT sl)
+	bool like_process(struct tdbb* tdbb, void* object, const UCHAR* s, SSHORT sl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_process);
 		return reinterpret_cast<FPTR_LIKE_PROCESS>(tt->texttype_fn_like_process)(tdbb,tt,object,s,sl);
 	}
 	
-	bool contains(class tdbb* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl)
+	bool contains(struct tdbb* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains);
 		return reinterpret_cast<FPTR_CONTAINS>(tt->texttype_fn_contains)(tdbb,tt,s,sl,p,pl);
 	}
 	
-	void *contains_create(class tdbb* tdbb, const UCHAR* p, SSHORT pl)
+	void *contains_create(struct tdbb* tdbb, const UCHAR* p, SSHORT pl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains_create);
@@ -228,24 +228,24 @@ public:
 		reinterpret_cast<FPTR_CONTAINS_DESTROY>(tt->texttype_fn_contains_destroy)(object);
 	}
 	
-	bool contains_process(class tdbb* tdbb, void* object, const UCHAR* s, SSHORT sl)
+	bool contains_process(struct tdbb* tdbb, void* object, const UCHAR* s, SSHORT sl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains_process);
 		return reinterpret_cast<FPTR_CONTAINS_PROCESS>(tt->texttype_fn_contains_process)(tdbb,tt,object,s,sl);
 	}
 	
-	USHORT matches(class tdbb* tdbb, const UCHAR* a, SSHORT b, const UCHAR* c, SSHORT d)
+	USHORT matches(struct tdbb* tdbb, const UCHAR* a, SSHORT b, const UCHAR* c, SSHORT d)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_matches);
 		return (*(reinterpret_cast<
-					USHORT (*)(class tdbb*, TextType, const UCHAR*, short, const UCHAR*, short)>
+					USHORT (*)(struct tdbb*, TextType, const UCHAR*, short, const UCHAR*, short)>
 						(tt->texttype_fn_matches)))
 							(tdbb,tt,a,b,c,d);
 	}
 
-	USHORT sleuth_check(class tdbb* tdbb, USHORT a,
+	USHORT sleuth_check(struct tdbb* tdbb, USHORT a,
 								const UCHAR* b,
 								USHORT c,
 								const UCHAR* d,
@@ -254,12 +254,12 @@ public:
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_sleuth_check);
 		return (*(reinterpret_cast<
-					USHORT(*)(class tdbb*, TextType, USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT)>
+					USHORT(*)(struct tdbb*, TextType, USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT)>
 						(tt->texttype_fn_sleuth_check)))
 							(tdbb,tt,a,b,c,d,e);
 	}
 	
-	USHORT sleuth_merge(class tdbb* tdbb, const UCHAR* a,
+	USHORT sleuth_merge(struct tdbb* tdbb, const UCHAR* a,
 								USHORT b,
 								const UCHAR* c,
 								USHORT d,
@@ -269,7 +269,7 @@ public:
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_sleuth_merge);
 		return (*(reinterpret_cast<
-					USHORT(*)(class tdbb*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
+					USHORT(*)(struct tdbb*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
 						(tt->texttype_fn_sleuth_merge)))
 							(tdbb,tt,a,b,c,d,e,f);
 	}

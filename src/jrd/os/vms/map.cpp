@@ -39,7 +39,7 @@
 
 /* Struct used to describe records that request mapping */
 
-typedef struct map_msg {
+struct map_msg {
 	struct msg *msg_next;		/* Next message in request */
 	USHORT msg_number;			/* Message number */
 	USHORT msg_gds_length;		/* Length of GDS form */
@@ -49,7 +49,7 @@ typedef struct map_msg {
 		USHORT msg_dtype;		/* Parameter dtype */
 		USHORT msg_length;		/* Parameter length */
 	} msg_rpt[];
-} *MAP_MSG;
+};
 
 #include "../jrd/map_proto.h"
 
@@ -57,7 +57,7 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 static void bugcheck(int);
 static bool check_message(UCHAR **);
-static MAP_MSG rebuild_message(UCHAR **, UCHAR **);
+static map_msg* rebuild_message(UCHAR **, UCHAR **);
 static int translate_status(ISC_STATUS *, ISC_STATUS *, SCHAR **);
 
 #define WRKBUF_SIZ		256
@@ -118,7 +118,7 @@ void MAP_date_to_rdb(SLONG * gds_date, SLONG * vms_date)
 }
 
 
-int MAP_gds_to_rdb(USHORT number, MAP_MSG msg, UCHAR * from, UCHAR * to)
+int MAP_gds_to_rdb(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 {
 /**************************************
  *
@@ -191,7 +191,7 @@ int MAP_gds_to_rdb(USHORT number, MAP_MSG msg, UCHAR * from, UCHAR * to)
 }
 
 
-MAP_MSG MAP_parse_blr(UCHAR * org_blr,
+map_msg* MAP_parse_blr(UCHAR * org_blr,
 				  USHORT org_blr_length,
 				  UCHAR * new_blr,
 				  USHORT * new_blr_length, SLONG * max_length)
@@ -209,7 +209,8 @@ MAP_MSG MAP_parse_blr(UCHAR * org_blr,
  *	types and build message blocks for the offending messages.
  *
  **************************************/
-	MAP_MSG msg, next;
+	msp_msg* msg;
+	map_msg* next;
 	UCHAR *end_org_blr, *new, *org, *last_copied;
 	SLONG max;
 
@@ -266,7 +267,7 @@ MAP_MSG MAP_parse_blr(UCHAR * org_blr,
 }
 
 
-int MAP_rdb_length(USHORT number, MAP_MSG msg)
+int MAP_rdb_length(USHORT number, map_msg* msg)
 {
 /**************************************
  *
@@ -288,7 +289,7 @@ int MAP_rdb_length(USHORT number, MAP_MSG msg)
 }
 
 
-int MAP_rdb_to_gds(USHORT number, MAP_MSG msg, UCHAR * from, UCHAR * to)
+int MAP_rdb_to_gds(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 {
 /**************************************
  *
@@ -360,7 +361,7 @@ int MAP_rdb_to_gds(USHORT number, MAP_MSG msg, UCHAR * from, UCHAR * to)
 }
 
 
-void MAP_release(MAP_MSG msg)
+void MAP_release(map_msg* msg)
 {
 /**************************************
  *
@@ -372,7 +373,7 @@ void MAP_release(MAP_MSG msg)
  *	Release any mapping blocks.
  *
  **************************************/
-	MAP_MSG next;
+	map_msg* next;
 
 	while (next = msg) {
 		msg = msg->msg_next;
@@ -684,7 +685,7 @@ static bool check_message(UCHAR ** org_ptr)
 }
 
 
-static MAP_MSG rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
+static map_msg* rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
 {
 /**************************************
  *
@@ -695,12 +696,12 @@ static MAP_MSG rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
  * Functional description
  *	A message contains an offensive gds datatype.  Rebuild it as a
  *	valid Rdb message while building a msg block to drive the data
- *	mapping.  If we succeed, return the MAP_MSG block.  If we fail for
+ *	mapping.  If we succeed, return the map_msg block.  If we fail for
  *	any reason, return NULL;
  *
  **************************************/
-	MAP_MSG msg;
-	UCHAR *org, *new, *last_copied;
+	map_msg* msg;
+	UCHAR *org, *new_msg, *last_copied;
 	USHORT number, l, length, gds_length, rdb_length;
 	struct msg_repeat *desc, *end;
 
@@ -708,7 +709,7 @@ static MAP_MSG rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
 
 	length = 0;
 	org = last_copied = *org_ptr;
-	new = *new_ptr;
+	new_msg = *new_ptr;
 	number = *org++;
 	l = *org++;
 	l |= *org++ << 16;
@@ -760,21 +761,21 @@ static MAP_MSG rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
 
 		case blr_d_float:
 			while (last_copied < org)
-				*new++ = *last_copied++;
-			new[-1] = blr_double;
+				*new_msg++ = *last_copied++;
+			new_msg[-1] = blr_double;
 			rdb_length = gds_length = 8;
 			break;
 
 		case blr_cstring:
 			while (last_copied < org)
-				*new++ = *last_copied++;
-			new[-1] = blr_varying;
+				*new_msg++ = *last_copied++;
+			new_msg[-1] = blr_varying;
 			gds_length = *org++;
 			gds_length |= *org++ << 16;
 			rdb_length = gds_length + 1;
 			l = rdb_length - 2;
-			*new++ = l;
-			*new++ = l >> 16;
+			*new_msg++ = l;
+			*new_msg++ = l >> 16;
 			last_copied = org;
 			break;
 
@@ -790,10 +791,10 @@ static MAP_MSG rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
    pointers, and return */
 
 	while (last_copied < org)
-		*new++ = *last_copied++;
+		*new_msg++ = *last_copied++;
 
 	*org_ptr = org;
-	*new_ptr = new;
+	*new_ptr = new_msg;
 
 	return msg;
 }

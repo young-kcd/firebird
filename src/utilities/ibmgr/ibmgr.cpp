@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.11 2004-02-19 01:41:38 skidder Exp $
+ * $Id: ibmgr.cpp,v 1.12 2004-02-20 06:43:26 robocop Exp $
  */
 
 #include "firebird.h"
@@ -71,15 +71,16 @@
 #define ACT_QUIT	1
 #define ACT_PROMPT	2
 
-static void copy_str_upper(TEXT *, TEXT *);
-static bool get_line(int *, SCHAR **, TEXT *);
-static SSHORT get_switches(int, TEXT **, in_sw_tab_t*, IBMGR_DATA *, bool *);
-static SSHORT parse_cmd_line(int, TEXT **);
+static void copy_str_upper(TEXT*, const TEXT*);
+static bool get_line(int*, SCHAR**, TEXT*);
+static SSHORT get_switches(int, const TEXT* const*, const in_sw_tab_t*,
+	ibmgr_data_t*, bool*);
+static SSHORT parse_cmd_line(int, const TEXT* const*);
 static void print_config(void);
 static void print_help(void);
 
 
-static IBMGR_DATA ibmgr_data;
+static ibmgr_data_t ibmgr_data;
 
 
 int CLIB_ROUTINE main( int argc, char **argv)
@@ -96,14 +97,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	the specified argc/argv to IBMGR_exec_line (see below).
  *
  **************************************/
-	int local_argc;
-	SCHAR *local_argv[MAXARGS];
-	TEXT stuff[MAXSTUFF];
-	TEXT msg[MSG_LEN];
-	TEXT *user = NULL, *password = NULL, *host = NULL;	/* pointers for getenv */
-	SSHORT ret;
-	struct passwd *pw;
-
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
 #endif
@@ -112,12 +105,15 @@ int CLIB_ROUTINE main( int argc, char **argv)
 /* Let's see if we have something in
    environment variables
 */
-	user = getenv("ISC_USER");
-	password = getenv("ISC_PASSWORD");
+	const TEXT* user = getenv("ISC_USER");
+	const TEXT* password = getenv("ISC_PASSWORD");
 
+	const TEXT* host = NULL;	// pointer for getenv
 /* MMM - do not allow to change host now
-host = getenv ("ISC_HOST");
+	host = getenv("ISC_HOST");
 */
+
+	TEXT msg[MSG_LEN];
 
 /* Let's get a real user name. This info is used by
    START server command. Because server is not running
@@ -125,7 +121,8 @@ host = getenv ("ISC_HOST");
    real user to be root or FIREBIRD_USER_NAME or
    INTERBASE_USER_NAME or INTERBASE_USER_SHORT
 */
-	if ((pw = getpwuid(getuid())) == NULL) {
+	const struct passwd* pw = getpwuid(getuid());
+	if (pw == NULL) {
 		ib_perror("getpwuid");
 		SRVRMGR_msg_get(MSG_GETPWFAIL, msg);
 		ib_fprintf(OUTFILE, "%s\n", msg);
@@ -138,7 +135,9 @@ host = getenv ("ISC_HOST");
 		!strcmp(pw->pw_name, FIREBIRD_USER_NAME) ||
 		!strcmp(pw->pw_name, INTERBASE_USER_NAME) ||
 		!strcmp(pw->pw_name, INTERBASE_USER_SHORT))
+	{
 			strcpy(ibmgr_data.user, SYSDBA_USER_NAME);
+	}
 	else
 		copy_str_upper(ibmgr_data.user, pw->pw_name);
 
@@ -171,11 +170,13 @@ host = getenv ("ISC_HOST");
    Print the version and then drop into prompt mode.
 */
 	if (argc == 2 &&
-		*argv[1] == '-' && (argv[1][1] == 'Z' || argv[1][1] == 'z')) {
+		*argv[1] == '-' && (argv[1][1] == 'Z' || argv[1][1] == 'z'))
+	{
 		parse_cmd_line(argc, argv);
 		argc--;
 	}
 
+	SSHORT ret;
 	if (argc > 1) {
 		ret = parse_cmd_line(argc, argv);
 		if (ret == FB_SUCCESS) {
@@ -196,6 +197,10 @@ host = getenv ("ISC_HOST");
 			exit(FINI_OK);
 	}
 
+	int local_argc;
+	SCHAR* local_argv[MAXARGS];
+	TEXT stuff[MAXSTUFF];
+	
 	for (;;) {
 		if (get_line(&local_argc, local_argv, stuff))
 			break;
@@ -217,7 +222,7 @@ host = getenv ("ISC_HOST");
 }
 
 
-static bool get_line( int *argc, SCHAR ** argv, TEXT * stuff)
+static bool get_line( int *argc, SCHAR** argv, TEXT* stuff)
 {
 /**************************************
  *
@@ -231,9 +236,6 @@ static bool get_line( int *argc, SCHAR ** argv, TEXT * stuff)
  *	unused), and a max of MAXSTUFF characters, at which point
  *
  **************************************/
-	USHORT count;
-	TEXT *cursor, c;
-	bool first;
 	TEXT msg[MSG_LEN];
 
 	SRVRMGR_msg_get(MSG_PROMPT, msg);
@@ -244,16 +246,16 @@ if (sw_service_gsec)
 */
 	ib_fflush(ib_stdout);
 	*argc = 1;
-	cursor = stuff;
-	count = MAXSTUFF - 1;
-	first = true;
+	TEXT* cursor = stuff;
+	USHORT count = MAXSTUFF - 1;
+	bool first = true;
 
 /* for each input character, if it's white space (or any non-printable,
    non-newline for that matter), ignore it; if it's a newline, we're
    done; otherwise, put it in the current argument */
 
 	while (*argc < MAXARGS && count > 0) {
-		c = ib_getc(ib_stdin);
+		TEXT c = ib_getc(ib_stdin);
 		if (c > ' ' && c <= '~') {
 			/* note that the first argument gets a '-' appended to the front to fool
 			   the switch checker into thinking it came from the command line */
@@ -293,9 +295,9 @@ if (sw_service_gsec)
 
 static SSHORT get_switches(
 						   int argc,
-						   TEXT ** argv,
-						   in_sw_tab_t* in_sw_table,
-						   IBMGR_DATA * ibmgr_data, bool * quitflag)
+						   const TEXT* const* argv,
+						   const in_sw_tab_t* in_sw_table,
+						   ibmgr_data_t* ibmgr_data, bool * quitflag)
 {
 /**************************************
  *
@@ -310,13 +312,8 @@ static SSHORT get_switches(
  *		 ERR_OTHER  non-syntax error.
  *
  **************************************/
-	TEXT *p, *string, msg[MSG_LEN];
-	const TEXT *q;
-	in_sw_tab_t* in_sw_tab;
-	USHORT in_sw;
-	USHORT last_sw;
+	TEXT msg[MSG_LEN];
 	bool sw_version = false;
-	int l;
 	SSHORT err_msg_no;
 
 /* Look at each argument. It's either a switch or a parameter.
@@ -324,9 +321,9 @@ static SSHORT get_switches(
    need parameters.
 */
 	*quitflag = false;
-	last_sw = IN_SW_IBMGR_0;
+	USHORT last_sw = IN_SW_IBMGR_0;
 	for (--argc; argc > 0; argc--) {
-		string = *++argv;
+		const TEXT* string = *++argv;
 		if (*string == '?')
 			ibmgr_data->operation = OP_HELP;
 		else if (*string != '-') {
@@ -421,10 +418,12 @@ static SSHORT get_switches(
 		else {
 			/* iterate through the switch table, looking for matches
 			 */
-			in_sw = IN_SW_IBMGR_0;
-			for (in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name;
-				 in_sw_tab++) {
-				p = string + 1;
+			USHORT in_sw = IN_SW_IBMGR_0;
+			const TEXT* q;
+			for (const in_sw_tab_t* in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name;
+				 in_sw_tab++)
+			{
+				const TEXT* p = string + 1;
 
 				/* handle orphaned hyphen case
 				 */
@@ -433,7 +432,7 @@ static SSHORT get_switches(
 
 				/* compare switch to switch name in table
 				 */
-				l = 0;
+				int l = 0;
 				while (*p) {
 					if (!*++p) {
 						if (l >= in_sw_tab->in_sw_min_length)
@@ -801,7 +800,7 @@ static void print_help(void)
 }
 
 
-static SSHORT parse_cmd_line( int argc, TEXT ** argv)
+static SSHORT parse_cmd_line( int argc, const TEXT* const* argv)
 {
 /**************************************
  *
@@ -828,14 +827,13 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv)
  **************************************/
 	TEXT msg[MSG_LEN];
 	bool quitflag = false;
-	SSHORT ret;
 
 	ibmgr_data.operation = OP_NONE;
 	ibmgr_data.suboperation = SOP_NONE;
 	ibmgr_data.par_entered = 0;
 
-	ret =
-		get_switches(argc, argv, (in_sw_tab_t*) &ibmgr_in_sw_table, &ibmgr_data, &quitflag);
+	SSHORT ret =
+		get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag);
 	if (ret != FB_SUCCESS) {
 		if (ret == ERR_SYNTAX) {
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);
@@ -868,7 +866,8 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv)
 			 strcmp(ibmgr_data.real_user, FIREBIRD_USER_NAME) &&
 			 strcmp(ibmgr_data.real_user, INTERBASE_USER_NAME) &&
 			 strcmp(ibmgr_data.real_user, INTERBASE_USER_SHORT)) ||
-			strcmp(ibmgr_data.user, SYSDBA_USER_NAME)) {
+			strcmp(ibmgr_data.user, SYSDBA_USER_NAME))
+		{
 			SRVRMGR_msg_get(MSG_NOPERM, msg);
 			ib_fprintf(OUTFILE, "%s\n", msg);
 			ret = ACT_NONE;
@@ -908,7 +907,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv)
 
 	return ret;
 }
-static void copy_str_upper( TEXT * str1, TEXT * str2)
+static void copy_str_upper( TEXT* str1, const TEXT* str2)
 {
 /**************************************
  *
@@ -927,3 +926,4 @@ static void copy_str_upper( TEXT * str1, TEXT * str2)
 
 	*str1 = '\0';
 }
+

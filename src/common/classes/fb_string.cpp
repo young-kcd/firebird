@@ -12,7 +12,7 @@
 namespace {
 	int StringIgnoreCaseCompare(const char* s1, const char* s2, unsigned int l) {
 		while (l--) {
-			int delta = toupper(*s1++) - toupper(*s2++);
+			const int delta = toupper(*s1++) - toupper(*s2++);
 			if (delta) {
 				return delta;
 			}
@@ -35,12 +35,12 @@ namespace {
 				l = strlen(s);
 			}
 			Firebird::AbstractString::const_pointer end = s + l;
-			while(s < end) {
-				unsigned char c = static_cast<unsigned char>(*s++);
+			while (s < end) {
+				const unsigned char c = static_cast<unsigned char>(*s++);
 				m[c >> 3] |= (1 << (c & 7));
 			}
 		}
-		inline bool Contains(char c) {
+		inline bool Contains(const char c) {
 			return m[c >> 3] & (1 << (c & 7));
 		}
 	};
@@ -52,18 +52,23 @@ namespace Firebird {
 	AbstractString::AbstractString(const AbstractString& v) {
 		memcpy(createStorage(v.length()), v.c_str(), v.length());
 	}
+
 	AbstractString::AbstractString(size_type size, const_pointer data) {
 		memcpy(createStorage(size), data, size);
 	}
+
 	AbstractString::AbstractString(const_pointer p1, size_type n1, 
-				 const_pointer p2, size_type n2) {
+				 const_pointer p2, size_type n2)
+	{
 		char *s = createStorage(n1 + n2);
 		memcpy(s, p1, n1);
 		memcpy(&s[n1], p2, n2);
 	}
+
 	AbstractString::AbstractString(size_type size, char_type c) {
 		memset(createStorage(size), c, size);
 	}
+
 	void AbstractString::AdjustRange(size_type length, size_type& pos, size_type& n) {
 		if (pos == npos) {
 			pos = length > n ? length - n : 0;
@@ -77,6 +82,7 @@ namespace Firebird {
 			n = length - pos;
 		}
 	}
+
 	AbstractString::pointer AbstractString::baseAssign(size_type n) {
 		StoragePair x;
 		openStorage(x, n
@@ -87,6 +93,7 @@ namespace Firebird {
 		x.newStorage[n] = 0;
 		return x.newStorage;
 	}
+
 	AbstractString::pointer AbstractString::baseAppend(size_type n) {
 		StoragePair x;
 		openStorage(x, length() + n
@@ -100,6 +107,7 @@ namespace Firebird {
 		x.newStorage[length()] = 0;
 		return &x.newStorage[x.oldSize];
 	}
+
 	AbstractString::pointer AbstractString::baseInsert(size_type p0, size_type n) {
 		if (p0 >= length()) {
 			return baseAppend(n);
@@ -122,6 +130,7 @@ namespace Firebird {
 		x.newStorage[length()] = 0;
 		return &x.newStorage[p0];
 	}
+
 	void AbstractString::baseErase(size_type p0, size_type n) {
 		AdjustRange(length(), p0, n);
 		StoragePair x;
@@ -141,11 +150,12 @@ namespace Firebird {
 		}
 		x.newStorage[length()] = 0;
 	}
+
 /*	void AbstractString::reserve(size_type n) {
 		if (n <= actualSize) {
 			return;
 		}
-		unsigned short l = userSize;
+		const unsigned short l = userSize;
 		StoragePair x;
 		openStorage(x, n
 #ifdef DEV_BUILD
@@ -161,6 +171,7 @@ namespace Firebird {
 		}
 		x.newStorage[l] = 0;
 	}*/
+
 	void AbstractString::resize(size_type n, char_type c) {
 		if (n == length()) {
 			return;
@@ -179,6 +190,7 @@ namespace Firebird {
 		}
 		x.newStorage[n] = 0;
 	}
+
 	AbstractString::size_type AbstractString::rfind(const_pointer s, size_type pos) const {
 		const size_type l = strlen(s);
 		int lastpos = length() - l;
@@ -198,6 +210,7 @@ namespace Firebird {
 		}
 		return npos;
 	}
+
 	AbstractString::size_type AbstractString::rfind(char_type c, size_type pos) const {
 		int lastpos = length() - 1;
 		if (lastpos < 0) {
@@ -216,6 +229,7 @@ namespace Firebird {
 		}
 		return npos;
 	}
+
 	AbstractString::size_type AbstractString::find_first_of(const_pointer s, size_type pos, size_type n) const {
 		strBitMask sm(s, n);
 		const_pointer p = &c_str()[pos];
@@ -227,6 +241,7 @@ namespace Firebird {
 		}
 		return npos;
 	}
+
 	AbstractString::size_type AbstractString::find_last_of(const_pointer s, size_type pos, size_type n) const {
 		strBitMask sm(s, n);
 		int lpos = length() - 1;
@@ -242,6 +257,7 @@ namespace Firebird {
 		}
 		return npos;
 	}
+
 	AbstractString::size_type AbstractString::find_first_not_of(const_pointer s, size_type pos, size_type n) const {
 		strBitMask sm(s, n);
 		const_pointer p = &c_str()[pos];
@@ -253,6 +269,7 @@ namespace Firebird {
 		}
 		return npos;
 	}
+
 	AbstractString::size_type AbstractString::find_last_not_of(const_pointer s, size_type pos, size_type n) const {
 		strBitMask sm(s, n);
 		int lpos = length() - 1;
@@ -268,6 +285,7 @@ namespace Firebird {
 		}
 		return npos;
 	}
+
 	bool AbstractString::LoadFromFile(FILE *file) {
 		baseErase(0, length());
 		if (! file)
@@ -283,16 +301,19 @@ namespace Firebird {
 		}
 		return rc;
 	}
+
 	void AbstractString::upper() {
 		for(pointer p = Modify(); *p; p++) {
 			*p = toupper(*p);
 		}
 	}
+
 	void AbstractString::lower() {
 		for(pointer p = Modify(); *p; p++) {
 			*p = tolower(*p);
 		}
 	}
+
 	void AbstractString::baseTrim(TrimType WhereTrim, const_pointer ToTrim) {
 		strBitMask sm(ToTrim, strlen(ToTrim));
 		const_pointer b = c_str();
@@ -331,6 +352,7 @@ namespace Firebird {
 		}
 		x.newStorage[NewLength] = 0;
 	}
+
 	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n) {
 		if (CASE_SENSITIVITY)
 			return memcmp(s1, s2, n);

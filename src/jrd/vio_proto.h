@@ -40,17 +40,17 @@ void	VIO_fini(TDBB);
 #endif
 bool	VIO_garbage_collect(TDBB, struct rpb *, class jrd_tra *);
 struct rec*	VIO_gc_record(TDBB, struct jrd_rel *);
-int		VIO_get(TDBB, struct rpb *, class Rsb *, class jrd_tra *, struct blk *);
-int		VIO_get_current(TDBB, struct rpb *, class jrd_tra *, struct blk *, USHORT);
+bool	VIO_get(TDBB, struct rpb *, class Rsb *, class jrd_tra *, struct blk *);
+bool	VIO_get_current(TDBB, struct rpb*, class jrd_tra*, struct blk*, bool);
 #ifdef GARBAGE_THREAD
 void	VIO_init(TDBB);
 #endif
 void	VIO_merge_proc_sav_points(TDBB, class jrd_tra *, struct sav **);
 BOOLEAN	VIO_writelock(TDBB, struct rpb *, class Rsb *, class jrd_tra *);
 void	VIO_modify(TDBB, struct rpb *, struct rpb *, class jrd_tra *);
-BOOLEAN	VIO_next_record(TDBB, struct rpb *, class Rsb *, class jrd_tra *,
-							   struct blk *, BOOLEAN, BOOLEAN);
-struct rec*	VIO_record(TDBB, struct rpb *, const struct fmt*, JrdMemoryPool *);
+bool	VIO_next_record(TDBB, struct rpb *, class Rsb *, class jrd_tra *,
+							   struct blk *, bool, bool);
+struct rec*	VIO_record(TDBB, struct rpb *, const class fmt*, JrdMemoryPool *);
 void	VIO_start_save_point(TDBB, class jrd_tra *);
 void	VIO_store(TDBB, struct rpb *, class jrd_tra *);
 BOOLEAN	VIO_sweep(TDBB, class jrd_tra *);

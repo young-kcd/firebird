@@ -265,7 +265,7 @@ struct data_page {
 
 /* Index root page */
 
-typedef struct irt {
+struct index_root_page {
 	pag irt_header;
 	USHORT irt_relation;		/* relation id (for consistency) */
 	USHORT irt_count;			/* Number of indices */
@@ -279,7 +279,7 @@ typedef struct irt {
 		UCHAR irt_keys;			/* number of keys in index */
 		UCHAR irt_flags;
 	} irt_rpt[1];
-} *IRT;
+};
 
 /* key descriptor */
 
@@ -305,7 +305,7 @@ typedef struct irtd : public irtd_ods10 {
 
 /* Header page */
 
-typedef struct hdr {
+struct header_page {
 	pag hdr_header;
 	USHORT hdr_page_size;		/* Page size of database */
 	USHORT hdr_ods_version;		/* Version of on-disk structure */
@@ -329,9 +329,9 @@ typedef struct hdr {
 	SLONG hdr_backup_pages; /* The amount of pages in files locked for backup */
 	SLONG hdr_misc[3];			/* Stuff to be named later */
 	UCHAR hdr_data[1];			/* Misc data */
-} *HDR;
+};
 
-#define HDR_SIZE        OFFSETA (hdr*, hdr_data)
+#define HDR_SIZE        OFFSETA (header_page*, hdr_data)
 
 /* Header page clumplets */
 
@@ -382,11 +382,11 @@ typedef struct sfd {
 
 /* Page Inventory Page */
 
-typedef struct pip {
+struct page_inv_page {
 	pag pip_header;
 	SLONG pip_min;				/* Lowest (possible) free page */
 	UCHAR pip_bits[1];
-} *PIP;
+};
 
 
 /* Pointer Page */
@@ -408,11 +408,11 @@ struct pointer_page {
 
 /* Transaction Inventory Page */
 
-typedef struct tip {
+struct tx_inv_page {
 	pag tip_header;
 	SLONG tip_next;				/* Next transaction inventory page */
 	UCHAR tip_transactions[1];
-} *TIP;
+};
 
 
 /* Generator Page */
@@ -449,7 +449,7 @@ typedef struct rhdf {
 	SLONG rhdf_b_page;			/* back pointer */
 	USHORT rhdf_b_line;			/* back line */
 	USHORT rhdf_flags;			/* flags, etc */
-	UCHAR rhdf_format;			/* format version */
+	UCHAR rhdf_format;			/* format version */  // until here, same than rhd
 	SLONG rhdf_f_page;			/* next fragment page */
 	USHORT rhdf_f_line;			/* next fragment line */
 	UCHAR rhdf_data[1];			/* Blob data */
@@ -463,7 +463,7 @@ typedef struct blh {
 	SLONG blh_lead_page;		/* First data page number */
 	SLONG blh_max_sequence;		/* Number of data pages */
 	USHORT blh_max_segment;		/* Longest segment */
-	USHORT blh_flags;
+	USHORT blh_flags;			/* flags, etc */
 	UCHAR blh_level;			/* Number of address levels */
 	SLONG blh_count;			/* Total number of segments */
 	SLONG blh_length;			/* Total length of data */
@@ -537,5 +537,5 @@ struct log_info_page {
 #define LOG_grp_cmt_wait	8	/* Group commit wait time */
 #define LOG_max			8		/* Maximum LOG_clump value */
 
-#endif /* JRD_ODS_H */
+#endif // JRD_ODS_H
 

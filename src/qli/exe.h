@@ -85,6 +85,9 @@ struct qli_req {
 #define REQ_project		2	/* Set during generation of project clause */
 #define REQ_group_by		4	/* Set during generation of group by clause */
 
+
+struct qli_nod;
+
 /* Context node */
 
 typedef enum {
@@ -102,12 +105,12 @@ struct qli_ctx {
     qli_ctx*		ctx_primary;	/* Primary context */
     qli_symbol*		ctx_symbol;		/* Context symbol, if any */
     struct qli_rel*	ctx_relation;	/* Relation of context */
-    struct qli_nod*	ctx_stream;		/* Stream of context */
+    qli_nod*		ctx_stream;		/* Stream of context */
     struct qli_fld*	ctx_variable;	/* Variable reference */
     qli_req*		ctx_request;	/* Request block */
     struct qli_msg*	ctx_message;	/* Message for data */
-    struct qli_nod*	ctx_rse;		/* RSE node for root context */
-    struct qli_nod*	ctx_sub_rse;	/* RSE node aggregate */
+    qli_nod*		ctx_rse;		/* RSE node for root context */
+    qli_nod*		ctx_sub_rse;	/* RSE node aggregate */
     qli_ctx*		ctx_parent;		/* Parent context for map */
     struct qli_map*	ctx_map;		/* Map items, if any */
     USHORT			ctx_context;	/* Context in request */
@@ -118,7 +121,7 @@ struct qli_ctx {
 struct qli_map {
     blk			map_header;
 	qli_map*	map_next;			/* Next map in item */
-    struct qli_nod*	map_node;		/* Value for map item */
+    qli_nod*	map_node;			/* Value for map item */
     USHORT		map_position;		/* Position in map */
 };
 
@@ -143,7 +146,7 @@ struct qli_par {
 	dsc			par_desc;			/* Value descriptor */
 	qli_par*	par_next;			/* Next par block in context */
 	qli_msg*	par_message;		/* Parent message */
-	struct qli_nod*	par_value;		/* Value */
+	qli_nod*	par_value;			/* Value */
 	USHORT		par_parameter;		/* Parameter number */
 	USHORT		par_offset;			/* Offset of parameter in message */
 	qli_par*	par_missing;		/* Parameter block for missing value */
@@ -164,24 +167,24 @@ typedef enum itm_t
 } ITM_T;
 
 struct qli_print_item {
-    blk		itm_header;
-    struct qli_nod*	itm_value;
-    TEXT*	itm_edit_string;
-    struct pics	*itm_picture;		/* picture string block */
-    TEXT*	itm_query_header;
-    ITM_T	itm_type;
-    USHORT	itm_flags;				/* Misc flags and crud */
-    UCHAR	itm_dtype;
-    UCHAR	itm_sub_type;
-    USHORT	itm_print_offset;
-    USHORT	itm_print_length;
-    USHORT	itm_header_offset;
-    USHORT	itm_header_length;
-    USHORT	itm_header_segments;
-    USHORT	itm_count;				/* Number of lines to skip */
-    USHORT	itm_column;				/* Logical column number */
-    FRBRD*	itm_stream;
-    USHORT	itm_kanji_fragment;		/* JPN: last kanji on line border */
+    blk			itm_header;
+    qli_nod*	itm_value;
+    const TEXT*	itm_edit_string;
+    struct pics*	itm_picture;	/* picture string block */
+    const TEXT*	itm_query_header;
+    ITM_T		itm_type;
+    USHORT		itm_flags;			/* Misc flags and crud */
+    UCHAR		itm_dtype;
+    UCHAR		itm_sub_type;
+    USHORT		itm_print_offset;
+    USHORT		itm_print_length;
+    USHORT		itm_header_offset;
+    USHORT		itm_header_length;
+    USHORT		itm_header_segments;
+    USHORT		itm_count;			/* Number of lines to skip */
+    USHORT		itm_column;			/* Logical column number */
+    FRBRD*		itm_stream;
+    USHORT		itm_kanji_fragment;	/* JPN: last kanji on line border */
     ISC_STATUS	itm_blob_status;	/* JPN: status of the last blob fetch */
 };
 

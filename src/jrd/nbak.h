@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.6 2003-10-03 01:47:25 brodsom Exp $
+ *  $Id: nbak.h,v 1.7 2004-02-20 06:43:00 robocop Exp $
  *
  */
  
@@ -54,6 +54,8 @@ DEFINE_TRACE_ROUTINE(nbak_trace);
 #define NBAK_TRACE(args) /* nothing */
 #define NBAK_TRACE_AST(message) /* nothing */
 #endif
+
+class lck;
 
 class AllocItem {
 public:
@@ -146,7 +148,7 @@ public:
 #endif
 private:
 	class dbb* database;
-	class fil* diff_file;
+	class jrd_file* diff_file;
 	AllocItemTree* alloc_table; // Cached allocation table of pages in difference file
 	volatile SATOM backup_state;
 	ULONG last_allocated_page; // Last physical page allocated in the difference file
@@ -167,9 +169,9 @@ private:
 	// in case of errors.
 	Firebird::Spinlock* adjust_state_lock; 
 #else
-	class lck* alloc_lock; // Lock to protect allocation table
-	class lck* state_lock; // Lock to protect backup state
-	class lck* database_lock; // Lock to protect writing to database
+	lck* alloc_lock; // Lock to protect allocation table
+	lck* state_lock; // Lock to protect backup state
+	lck* database_lock; // Lock to protect writing to database
 
 	// Absense of 'volatile' REALLY causes database corruption
 	// with optimized build on Linux CS. Do not remove it !

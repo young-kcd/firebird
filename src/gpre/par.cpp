@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.43 2004-02-02 11:01:26 robocop Exp $
+//  $Id: par.cpp,v 1.44 2004-02-20 06:42:41 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -439,7 +439,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 			CPR_s_error("quoted file name");
 
 		if (isQuoted(token.tok_type)) {
-			if (base_directory){
+			if (base_directory) {
 				db->dbb_filename = string = (TEXT *) MSC_alloc(token.tok_length + 
 													strlen(base_directory) + 1);
 				MSC_copy_cat(base_directory, strlen(base_directory), 

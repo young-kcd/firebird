@@ -42,15 +42,16 @@ typedef USHORT UNICODE;
 typedef USHORT fss_wchar_t;
 typedef int fss_size_t;
 
-typedef struct {
+struct Byte_Mask_Table
+{
 	int cmask;
 	int cval;
 	int shift;
 	SLONG lmask;
 	SLONG lval;
-} Tab;
+};
 
-static const Tab tab[] = {
+static const Byte_Mask_Table tab[] = {
 	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
 	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
 	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
@@ -62,19 +63,15 @@ static const Tab tab[] = {
 
 static fss_size_t fss_mbtowc(fss_wchar_t* p, const UCHAR* s, fss_size_t n)
 {
-	SLONG l;
-	int c0, c, nc;
-	Tab *t;
-
 	if (s == 0)
 		return 0;
 
-	nc = 0;
+	int nc = 0;
 	if (n <= nc)
 		return -1;
-	c0 = *s & 0xff;
-	l = c0;
-	for (t = const_cast < Tab * >(tab); t->cmask; t++) {
+	const int c0 = *s & 0xff;
+	SLONG l = c0;
+	for (const Byte_Mask_Table* t = tab; t->cmask; t++) {
 		nc++;
 		if ((c0 & t->cmask) == t->cval) {
 			l &= t->lmask;
@@ -86,7 +83,7 @@ static fss_size_t fss_mbtowc(fss_wchar_t* p, const UCHAR* s, fss_size_t n)
 		if (n <= nc)
 			return -1;
 		s++;
-		c = (*s ^ 0x80) & 0xFF;
+		const int c = (*s ^ 0x80) & 0xFF;
 		if (c & 0xC0)
 			return -1;
 		l = (l << 6) | c;
@@ -96,19 +93,15 @@ static fss_size_t fss_mbtowc(fss_wchar_t* p, const UCHAR* s, fss_size_t n)
 
 static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
 {
-	SLONG l;
-	int c, nc;
-	Tab *t;
-
 	if (s == 0)
 		return 0;
 
-	l = wc;
-	nc = 0;
-	for (t = const_cast < Tab * >(tab); t->cmask; t++) {
+	SLONG l = wc;
+	int nc = 0;
+	for (const Byte_Mask_Table* t = tab; t->cmask; t++) {
 		nc++;
 		if (l <= t->lmask) {
-			c = t->shift;
+			int c = t->shift;
 			*s = t->cval | (l >> c);
 			while (c > 0) {
 				c -= 6;
@@ -156,10 +149,6 @@ static USHORT internal_fss_to_unicode(CSCONVERT obj,
 							   SSHORT * err_code,
 							   USHORT * err_position)
 {
-	UNICODE *start;
-	USHORT src_start = src_len;
-	fss_size_t res;
-
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
@@ -171,10 +160,10 @@ static USHORT internal_fss_to_unicode(CSCONVERT obj,
 	if (dest_ptr == NULL)
 		return (src_len * 2);	/* All single byte narrow characters */
 
-	start = dest_ptr;
-	src_start = src_len;
+	const UNICODE* const start = dest_ptr;
+	const USHORT src_start = src_len;
 	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
-		res = fss_mbtowc(dest_ptr, src_ptr, src_len);
+		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
 		if (res == -1) {
 			*err_code = CS_BAD_INPUT;
 			break;
@@ -199,11 +188,8 @@ USHORT internal_unicode_to_fss(CSCONVERT obj,
 									  SSHORT * err_code,
 									  USHORT * err_position)
 {
-	UCHAR *start;
-	USHORT src_start = unicode_len;
+	const USHORT src_start = unicode_len;
 	UCHAR tmp_buffer[6];
-	UCHAR *p;
-	fss_size_t res;
 
 	fb_assert(unicode_str != NULL || fss_str == NULL);
 	fb_assert(err_code != NULL);
@@ -217,10 +203,10 @@ USHORT internal_unicode_to_fss(CSCONVERT obj,
 	if (fss_str == NULL)
 		return ((unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
 
-	start = fss_str;
+	const UCHAR* const start = fss_str;
 	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
 		/* Convert the wide character into temp buffer */
-		res = fss_wctomb(tmp_buffer, *unicode_str);
+		fss_size_t res = fss_wctomb(tmp_buffer, *unicode_str);
 		if (res == -1) {
 			*err_code = CS_BAD_INPUT;
 			break;
@@ -231,7 +217,7 @@ USHORT internal_unicode_to_fss(CSCONVERT obj,
 			break;
 		}
 		/* copy the converted bytes into the destination */
-		p = tmp_buffer;
+		const UCHAR* p = tmp_buffer;
 		for (; res; res--, fss_len--)
 			*fss_str++ = *p++;
 		unicode_len -= sizeof(*unicode_str);
@@ -259,9 +245,7 @@ static SSHORT internal_str_copy(
  *      Note: dest may equal src.
  *
  **************************************/
-	UCHAR *pStart;
-
-	pStart = dest;
+	const UCHAR* const pStart = dest;
 	while (inLen-- && outLen--) {
 		*dest++ = *src++;
 	}
@@ -300,11 +284,8 @@ static USHORT internal_string_to_key(
  * Functional description
  *
  **************************************/
-	UCHAR *pStart;
-	UCHAR pad_char;
-
-	pStart = dest;
-	pad_char = *obj->texttype_collation_table;
+	const UCHAR* const pStart = dest;
+	const UCHAR pad_char = *obj->texttype_collation_table;
 	while (inLen-- && outLen--)
 		*dest++ = *src++;
 
@@ -332,47 +313,44 @@ static SSHORT internal_compare(
  * Functional description
  *
  **************************************/
-	SSHORT fill;
-	UCHAR pad;
-
-	pad = (obj->texttype_type == ttype_binary) ? 0 : ' ';
-	fill = length1 - length2;
+	const UCHAR pad = (obj->texttype_type == ttype_binary) ? 0 : ' ';
+	SSHORT fill = length1 - length2;
 	if (length1 >= length2) {
 		if (length2)
-			do
+			do {
 				if (*p1++ != *p2++)
 					if (p1[-1] > p2[-1])
 						return 1;
 					else
 						return -1;
-			while (--length2);
+			} while (--length2);
 		if (fill > 0)
-			do
+			do {
 				if (*p1++ != pad)
 					if (p1[-1] > pad)
 						return 1;
 					else
 						return -1;
-			while (--fill);
+			} while (--fill);
 		return 0;
 	}
 
 	if (length1)
-		do
+		do {
 			if (*p1++ != *p2++)
 				if (p1[-1] > p2[-1])
 					return 1;
 				else
 					return -1;
-		while (--length1);
+		} while (--length1);
 
-	do
+	do {
 		if (*p2++ != pad)
 			if (pad > p2[-1])
 				return 1;
 			else
 				return -1;
-	while (++fill);
+	} while (++fill);
 
 	return 0;
 }
@@ -516,7 +494,7 @@ static SSHORT internal_str_to_upper(
  *      Note: dest may equal src.
  *
  **************************************/
-	UCHAR* pStart = dest;
+	const UCHAR* const pStart = dest;
 	while (inLen-- && outLen--) {
 		*dest++ = UPPER7(*src);
 		src++;
@@ -553,9 +531,6 @@ static USHORT wc_to_nc(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/* byte count
  * Functional description
  *
  **************************************/
-	NCHAR *pStart;
-	UCS2_CHAR *pStart_src;
-
 	fb_assert(obj != NULL);
 	fb_assert((pSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
@@ -564,8 +539,10 @@ static USHORT wc_to_nc(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/* byte count
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return ((nSrc + 1) / 2);
-	pStart = pDest;
-	pStart_src = pSrc;
+
+	const NCHAR* const pStart = pDest;
+	const UCS2_CHAR* const pStart_src = pSrc;
+
 	while (nDest && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc >= 256) {
 			*err_code = CS_CONVERT_ERROR;
@@ -599,9 +576,6 @@ static USHORT mb_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte c
  *      byte stream.
  *
  *************************************/
-	UCS2_CHAR *pStart;
-	MBCHAR *pStart_src;
-
 	fb_assert(obj != NULL);
 	fb_assert((pSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
@@ -610,8 +584,9 @@ static USHORT mb_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte c
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
+
+	const UCS2_CHAR* const pStart = pDest;
+	const MBCHAR* const pStart_src = pSrc;
 	while (nDest > 1 && nSrc > 1) {
 		*pDest++ = *pSrc * 256 + *(pSrc + 1);
 		pSrc += 2;
@@ -642,9 +617,6 @@ static USHORT wc_to_mb(CSCONVERT obj, MBCHAR * pDest, USHORT nDest,	/* byte coun
  *      byte stream.
  *
  *************************************/
-	MBCHAR *pStart;
-	UCS2_CHAR *pStart_src;
-
 	fb_assert(obj != NULL);
 	fb_assert((pSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
@@ -653,8 +625,9 @@ static USHORT wc_to_mb(CSCONVERT obj, MBCHAR * pDest, USHORT nDest,	/* byte coun
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
+
+	const MBCHAR* const pStart = pDest;
+	const UCS2_CHAR* const pStart_src = pSrc;
 	while (nDest > 1 && nSrc > 1) {
 		*pDest++ = *pSrc / 256;
 		*pDest++ = *pSrc++ % 256;
@@ -833,9 +806,6 @@ static USHORT cvt_ascii_to_unicode(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDes
  *      Byte values >= 128 create BAD_INPUT
  *
  *************************************/
-	UCS2_CHAR *pStart;
-	UCHAR *pStart_src;
-
 	fb_assert(obj != NULL);
 	fb_assert((pSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
@@ -843,8 +813,9 @@ static USHORT cvt_ascii_to_unicode(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDes
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (2 * nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
+
+	const UCS2_CHAR* const pStart = pDest;
+	const UCHAR* const pStart_src = pSrc;
 	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc > 127) {
 			*err_code = CS_BAD_INPUT;
@@ -878,9 +849,6 @@ static USHORT cvt_unicode_to_ascii(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/
  *      Byte values >= 128 create CONVERT_ERROR
  *
  *************************************/
-	NCHAR *pStart;
-	UCS2_CHAR *pStart_src;
-
 	fb_assert(obj != NULL);
 	fb_assert((pSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
@@ -888,8 +856,9 @@ static USHORT cvt_unicode_to_ascii(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc / 2);
-	pStart = pDest;
-	pStart_src = pSrc;
+
+	const NCHAR* const pStart = pDest;
+	const UCS2_CHAR* const pStart_src = pSrc;
 	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc > 127) {
 			*err_code = CS_CONVERT_ERROR;
@@ -923,9 +892,6 @@ static USHORT cvt_none_to_unicode(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest
  *      Byte values >= 128 create CONVERT ERROR
  *
  *************************************/
-	UCS2_CHAR *pStart;
-	UCHAR *pStart_src;
-
 	fb_assert(obj != NULL);
 	fb_assert((pSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
@@ -933,8 +899,9 @@ static USHORT cvt_none_to_unicode(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (2 * nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
+
+	const UCS2_CHAR* const pStart = pDest;
+	const UCHAR* const pStart_src = pSrc;
 	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc > 127) {
 			*err_code = CS_CONVERT_ERROR;
@@ -973,9 +940,6 @@ static USHORT cvt_utffss_to_ascii(CSCONVERT obj, UCHAR * pDest, USHORT nDest,	/*
  *      routine does double duty.
  *
  *************************************/
-	UCHAR *pStart;
-	UCHAR *pStart_src;
-
 	fb_assert(obj != NULL);
 	fb_assert((pSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
@@ -983,8 +947,9 @@ static USHORT cvt_utffss_to_ascii(CSCONVERT obj, UCHAR * pDest, USHORT nDest,	/*
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc);
-	pStart = pDest;
-	pStart_src = pSrc;
+
+	const UCHAR* const pStart = pDest;
+	const UCHAR* const pStart_src = pSrc;
 	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc > 127) {
 			/* In the cvt_ascii_to_utffss case this should be CS_BAD_INPUT */
@@ -1175,7 +1140,9 @@ FPTR_SHORT INTL_builtin_lookup(USHORT objtype, SSHORT parm1, SSHORT parm2) {
 	case type_csconvert:
 		if (((parm1 == CS_ASCII) && (parm2 == CS_UNICODE_FSS)) ||
 			((parm2 == CS_ASCII) && (parm1 == CS_UNICODE_FSS)))
+		{
 			return (FPTR_SHORT)cvt_ascii_utf_init;
+		}
 
 		/* converting FROM NONE to UNICODE has a short cut 
 		 * - it's treated like ASCII */

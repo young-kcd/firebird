@@ -194,9 +194,9 @@ static void share_name_from_unc(TEXT*, const TEXT*, LPREMOTE_NAME_INFO);
 
 #ifndef NO_NFS
 #if (defined AIX || defined AIX_PPC)
-static BOOLEAN get_mounts(MNT *, TEXT *, TEXT **, int *);
+static bool get_mounts(MNT *, TEXT *, TEXT **, int *);
 #else
-static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
+static bool get_mounts(MNT *, TEXT *, IB_FILE *);
 #endif
 #endif
 
@@ -727,8 +727,8 @@ int ISC_expand_filename(const TEXT* file_name,
 	TEXT *p, *q, *end, temp[MAXPATHLEN], device[4];
 	USHORT length = 0;
 	USHORT dtype;
-	BOOLEAN fully_qualified_path = FALSE;
-	BOOLEAN drive_letter_present = FALSE;
+	bool fully_qualified_path = false;
+	bool drive_letter_present = false;
 	if (!file_length)
 		file_length = strlen(file_name);
 
@@ -758,13 +758,13 @@ int ISC_expand_filename(const TEXT* file_name,
 		if (q - temp != 1)
 			return file_length;
 		device[0] = temp[0];
-		drive_letter_present = TRUE;
+		drive_letter_present = true;
 		strcpy(device + 1, ":\\");
 		dtype = GetDriveType(device);
 		if (dtype <= 1)
 			return file_length;
 		if (*(q + 1) == '/' || *(q + 1) == '\\')
-			fully_qualified_path = TRUE;
+			fully_qualified_path = true;
 	}
 
 /* Translate forward slashes to back slashes */
@@ -782,7 +782,7 @@ int ISC_expand_filename(const TEXT* file_name,
 		return file_length;
 	}
 	else if (temp[0] == '\\' || temp[0] == '/')
-		fully_qualified_path = TRUE;
+		fully_qualified_path = true;
 
 /* Expand the file name */
 
@@ -1308,7 +1308,7 @@ static void expand_share_name(TEXT* share_name)
 #ifndef NO_NFS
 #if (defined AIX || defined AIX_PPC)
 #define GET_MOUNTS
-static BOOLEAN get_mounts(
+static bool get_mounts(
 						  MNT * mount,
 						  TEXT * mnt_buffer, TEXT ** buffer, int *count)
 {
@@ -1332,16 +1332,16 @@ static BOOLEAN get_mounts(
 		   a buffer for it, and finally get it. */
 
 		if (mntctl(MCTL_QUERY, sizeof(SLONG), mnt_buffer) != 0)
-			return FALSE;
+			return false;
 
 		l = *(SLONG *) mnt_buffer;
 		/* FREE: in get_mounts() */
 		if (!(*buffer = gds__alloc((SLONG) l)) ||
 			(*count = mntctl(MCTL_QUERY, l, *buffer)) <= 0)
-			return FALSE;		/* NOMEM: */
+			return false;		/* NOMEM: */
 	}
 	else if (!*count)
-		return FALSE;
+		return false;
 
 	for (i = --(*count), p = *buffer; i--;)
 		p += ((struct vmount *) p)->vmt_length;
@@ -1376,14 +1376,14 @@ static BOOLEAN get_mounts(
 		mount->mnt_path = p;
 	}
 
-	return TRUE;
+	return true;
 }
 #endif // (defined AIX || defined AIX_PPC)
 
 #if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
 #if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) /* SYSV stylish */
-static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
+static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 {
 /**************************************
  *
@@ -1422,13 +1422,13 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 		mount->mnt_path = p;
 	    while ((*p++ = *q++) != 0);
 		mount->mnt_mount = mptr->mnt_mountp;
-		return TRUE;
+		return true;
 	}
 	else
-		return FALSE;
+		return false;
 }
 #else // !GETMNTENT_TAKES_TWO_ARGUMENTS 
-static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
+static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 {
 /**************************************
  *
@@ -1468,17 +1468,17 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 		mount->mnt_path = p;
 		while (*p++ = *q++);
 		mount->mnt_mount = mptr->mnt_dir;
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 #endif // GETMNTENT_TAKES_TWO_ARGUMENTS
 #endif // HAVE_GETMNTENT && !SOLARIS
 
 #ifdef SCO_UNIX
 #define GET_MOUNTS
-static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
+static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 {
 /**************************************
  *
@@ -1532,15 +1532,15 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 		mount->mnt_mount = p;
 		q = mount_point;
 		while (*p++ = *q++);
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 #endif // SCO_UNIX
 
 #ifndef GET_MOUNTS
-static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
+static bool get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 {
 /**************************************
  *
@@ -1600,10 +1600,10 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 		mount->mnt_mount = p;
 		q = mount_point;
 		while (*p++ = *q++);
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 #endif // GET_MOUNTS
 

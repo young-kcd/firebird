@@ -197,8 +197,7 @@ int INF_database_info(const SCHAR* items,
  *	Process requests for database info.
  *
  **************************************/
-	FIL file;
-	SCHAR item, buffer[256];
+	SCHAR buffer[256];
 	SCHAR site[256];
 	SSHORT length, l;
 	SLONG id;
@@ -220,7 +219,8 @@ int INF_database_info(const SCHAR* items,
 
 	while (items < end_items && *items != isc_info_end) {
 		SCHAR* p = buffer;
-		switch ((item = *items++)) {
+		SCHAR item = *items++;
+		switch (item) {
 		case isc_info_end:
 			break;
 
@@ -291,12 +291,12 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_wal_recv_ckpt_fname:
-			/* Get the information from the header or wal page */
+			// WAL obsolete
 			length = 0;
 			break;
 
 		case isc_info_wal_recv_ckpt_poffset:
-			/* Get the information from the header or wal page */
+			// WAL obsolete
 			length = 0;
 			break;
 
@@ -479,7 +479,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_forced_writes:
 			if (!header_refreshed)
 			{
-				file = dbb->dbb_file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
 				header_refreshed = true;
 			}
@@ -494,7 +494,7 @@ int INF_database_info(const SCHAR* items,
 				 id < transaction->tra_number; id++)
 			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_limbo &&
-					TRA_wait(tdbb, transaction, id, TRUE) == tra_limbo)
+					TRA_wait(tdbb, transaction, id, true) == tra_limbo)
 				{
 					length = INF_convert(id, buffer);
 					if (!
@@ -710,7 +710,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_transaction:
 			if (!header_refreshed)
 			{
-				file = dbb->dbb_file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
 				header_refreshed = true;
 			}
@@ -720,7 +720,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_active:
 			if (!header_refreshed)
 			{
-				file = dbb->dbb_file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
 				header_refreshed = true;
 			}
@@ -730,7 +730,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_snapshot:
 			if (!header_refreshed)
 			{
-				file = dbb->dbb_file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
 				header_refreshed = true;
 			}
@@ -740,7 +740,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_next_transaction:
 			if (!header_refreshed)
 			{
-				file = dbb->dbb_file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length);
 				header_refreshed = true;
 			}
@@ -832,8 +832,6 @@ int INF_request_info(const jrd_req* request,
  *
  **************************************/
 	jrd_nod* node;
-	const fmt* format;
-	SCHAR item;
 	SSHORT state;
 	USHORT length = 0;
 
@@ -844,7 +842,8 @@ int INF_request_info(const jrd_req* request,
 	SCHAR* buffer_ptr = buffer;
 
 	while (items < end_items && *items != isc_info_end) {
-		switch ((item = *items++)) {
+		SCHAR item = *items++;
+		switch (item) {
 		case isc_info_end:
 			break;
 
@@ -932,7 +931,7 @@ int INF_request_info(const jrd_req* request,
 					INF_convert((IPTR) node->nod_arg[e_msg_number],
 								buffer_ptr);
 			else {
-				format = (fmt*) node->nod_arg[e_msg_format];
+				const fmt* format = (fmt*) node->nod_arg[e_msg_format];
 				length = INF_convert(format->fmt_length, buffer_ptr);
 			}
 			break;
@@ -977,14 +976,15 @@ int INF_transaction_info(const jrd_tra* transaction,
  *	Process requests for blob info.
  *
  **************************************/
-	SCHAR item, buffer[128];
+	SCHAR buffer[128];
 	SSHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
 
 	while (items < end_items && *items != isc_info_end) {
-		switch ((item = *items++)) {
+		SCHAR item = *items++;
+		switch (item) {
 		case isc_info_end:
 			break;
 
@@ -1020,15 +1020,10 @@ static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
  *	Return operation counts for relation.
  *
  **************************************/
-	TDBB tdbb;
-	SLONG n;
-	vcl::iterator ptr;
-	USHORT relation_id;
-	VCL vector;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-	if (!(vector = tdbb->tdbb_attachment->att_counts[count_id]))
+	vcl* vector = tdbb->tdbb_attachment->att_counts[count_id];
+	if (!vector)
 		return 0;
 
 	// CVC: This function was receiving UCHAR* but to avoid all the casts
@@ -1037,12 +1032,16 @@ static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
 	UCHAR* p = reinterpret_cast<UCHAR*>(buffer);
 	const UCHAR* const end = p + length - 6;
 
-	for (relation_id = 0, ptr = vector->begin();
+	USHORT relation_id = 0;
+	for (vcl::iterator ptr = vector->begin();
 		 relation_id < vector->count() && p < end; ++relation_id)
-		if (n = *ptr++) {
+	{
+		const SLONG n = *ptr++;
+		if (n) {
 			STUFF_WORD(p, relation_id);
-			p += INF_convert(n, reinterpret_cast < char *>(p));
+			p += INF_convert(n, reinterpret_cast<char*>(p));
 		}
+	}
 
 	return p - reinterpret_cast<UCHAR*>(buffer);
 }

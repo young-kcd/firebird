@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.44 2003-11-26 11:15:32 aafemt Exp $
+$Id: isc.cpp,v 1.45 2004-02-20 06:43:00 robocop Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -64,14 +64,15 @@ $Id: isc.cpp,v 1.44 2003-11-26 11:15:32 aafemt Exp $
 #include "../jrd/fil.h"
 #include "../jrd/dls_proto.h"
 
-static BOOLEAN dls_init = FALSE;
-#if defined(SUPERSERVER) || !defined(SUPERCLIENT)
-static BOOLEAN dls_flag = FALSE;
-#endif
-static BOOLEAN fdls_init = FALSE;
-#ifdef SUPERSERVER
-static BOOLEAN fdls_flag = FALSE;
-#endif
+// I can't find where these are used.
+//static BOOLEAN dls_init = FALSE;
+//#if defined(SUPERSERVER) || !defined(SUPERCLIENT)
+//static BOOLEAN dls_flag = FALSE;
+//#endif
+//static BOOLEAN fdls_init = FALSE;
+//#ifdef SUPERSERVER
+//static BOOLEAN fdls_flag = FALSE;
+//#endif
 
 /* End of temporary file management specific stuff */
 
@@ -203,9 +204,9 @@ void ISC_ast_exit(void)
 #endif
 
 
-int ISC_check_process_existence(SLONG	pid,
+bool ISC_check_process_existence(SLONG	pid,
 								SLONG	xl_pid,
-								USHORT	super_user)
+								bool	super_user)
 {
 /**************************************
  *
@@ -223,14 +224,14 @@ int ISC_check_process_existence(SLONG	pid,
 #define CHECK_EXIST
 	return (kill((int) pid, 0) == -1 &&
 			(errno == ESRCH
-			 || (super_user && errno == EPERM)) ? FALSE : TRUE);
+			 || (super_user && errno == EPERM)) ? false : true);
 #endif
 
 #ifdef VMS
 #define CHECK_EXIST
 	ULONG item = JPI$_PID;
 	return (lib$getjpi(&item, &pid, NULL, NULL, NULL, NULL) == SS$_NONEXPR) ?
-		FALSE : TRUE;
+		false : true;
 #endif
 
 #ifdef WIN_NT
@@ -238,14 +239,14 @@ int ISC_check_process_existence(SLONG	pid,
 
 	if (!handle && GetLastError() != ERROR_ACCESS_DENIED)
 	{
-		return FALSE;
+		return false;
 	}
 
 	CloseHandle(handle);
 #endif
 
 #ifndef CHECK_EXIST
-	return TRUE;
+	return true;
 #else
 #undef CHECK_EXIST
 #endif
@@ -266,8 +267,6 @@ int ISC_expand_logical_once(const TEXT* file_name,
  *      Expand a logical name.  If it doesn't exist, return 0.
  *
  **************************************/
-	USHORT l;
-	ITM items[2];
 	struct dsc$descriptor_s desc1, desc2;
 
 	if (!file_length)
@@ -276,6 +275,8 @@ int ISC_expand_logical_once(const TEXT* file_name,
 	ISC_make_desc(file_name, &desc1, file_length);
 	ISC_make_desc(LOGICAL_NAME_TABLE, &desc2, sizeof(LOGICAL_NAME_TABLE) - 1);
 
+	USHORT l;
+	ITM items[2];
 	items[0].itm_length = 256;
 	items[0].itm_code = LNM$_STRING;
 	items[0].itm_buffer = expanded_name;
@@ -302,7 +303,7 @@ int ISC_expand_logical_once(const TEXT* file_name,
 
 #if (defined SOLARIS || defined SCO_EV)
 #define GET_HOST
-TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
+TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
  *
@@ -328,7 +329,7 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 
 #ifdef VMS
 #define GET_HOST
-TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
+TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
  *
@@ -361,7 +362,7 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 
 #ifdef WIN_NT
 #define GET_HOST
-TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
+TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
  *
@@ -390,7 +391,7 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 #endif
 
 #ifndef GET_HOST
-TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
+TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************
  *
@@ -504,15 +505,14 @@ int INTERNAL_API_ROUTINE ISC_get_user(
  *
  **************************************/
 	SLONG privileges[2];
-	USHORT uic[2], len0, len1, len2;
+	USHORT uic[2];
 	TEXT user_name[256];
-	TEXT* p = 0;
 
 	if (user_string && *user_string) {
 		const TEXT* q = user_string;
+		TEXT* p;
 		for (p = user_name; (*p = *q++) && *p != '.'; p++);
 		*p = 0;
-		p = user_name;
 		uic[0] = uic[1] = -1;
 		if (*q) {
 			uic[1] = atoi(q);
@@ -531,6 +531,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(
 		}
 	}
 	else {
+		USHORT len0, len1, len2;
 	    ITM items[4];
 		items[0].itm_code = JPI$_UIC;
 		items[0].itm_length = sizeof(uic);
@@ -550,7 +551,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(
 		items[3].itm_code = 0;
 		items[3].itm_length = 0;
 
-		SLONG status = sys$getjpiw(NULL, NULL, NULL, items, NULL, NULL, NULL);
+		const SLONG status = sys$getjpiw(NULL, NULL, NULL, items, NULL, NULL, NULL);
 
 		if (!(status & 1)) {
 			len1 = 0;
@@ -560,7 +561,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(
 		user_name[len1] = 0;
 
 		if (name) {
-			for (p = user_name; *p && *p != ' ';)
+			for (const TEXT* p = user_name; *p && *p != ' ';)
 				*name++ = *p++;
 			*name = 0;
 		}
@@ -1201,13 +1202,11 @@ SLONG ISC_get_user_group_id(const TEXT* user_group_name)
 #endif /* end of ifdef UNIX */
 
 #ifdef WIN_NT
-// Returns the type of OS. TRUE for NT,
-// FALSE for the 16-bit based ones (9x/ME, ...).
+// Returns the type of OS: true for NT,
+// false for the 16-bit based ones (9x/ME, ...).
 //
-BOOLEAN ISC_is_WinNT()
+bool ISC_is_WinNT()
 {
-	OSVERSIONINFO OsVersionInfo;
-
 	// thread safe??? :-)
 	if (!os_type)
 	{
@@ -1215,7 +1214,8 @@ BOOLEAN ISC_is_WinNT()
 		/* The first time this routine is called we use the Windows API
 		   call GetVersion to determine whether Windows/NT or Chicago
 		   is running. */
-
+		OSVERSIONINFO OsVersionInfo;
+		
 		OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo))
 		{
@@ -1225,7 +1225,7 @@ BOOLEAN ISC_is_WinNT()
 
 	}
 
-	return (os_type != 2) ? TRUE : FALSE;
+	return (os_type != 2);
 }
 
 //____________________________________________________________

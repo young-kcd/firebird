@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.53 2004-02-02 11:01:34 robocop Exp $
+ * $Id: rse.cpp,v 1.54 2004-02-20 06:43:00 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2248,8 +2248,8 @@ static BOOLEAN get_record(TDBB			tdbb,
 								rsb,
 								request->req_transaction,
 								(BLK) request->req_pool,
-								(mode == RSE_get_backward) ? TRUE : FALSE,
-								FALSE))
+								(mode == RSE_get_backward),
+								false))
 			{
 				 return FALSE;
 			}
@@ -2583,7 +2583,7 @@ static BOOLEAN get_record(TDBB			tdbb,
          *******/
         
 	case rsb_first:
-		switch(mode) {
+		switch (mode) {
 		case RSE_get_forward:
 			if (((IRSB_FIRST) impure)->irsb_count <= 0)
 				return FALSE;
@@ -2608,7 +2608,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 		break;
 
 	case rsb_skip:
-		switch(mode) {
+		switch (mode) {
 		case RSE_get_backward:
 			if (((IRSB_SKIP) impure)->irsb_count > 0)
 				return FALSE;
@@ -3027,8 +3027,7 @@ static void open_merge(TDBB tdbb, Rsb* rsb, IRSB_MRG impure)
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)
 			mfb->mfb_block_data =
-				reinterpret_cast <
-				UCHAR * >(gds__alloc(mfb->mfb_block_size));
+				reinterpret_cast<UCHAR*>(gds__alloc(mfb->mfb_block_size));
 	}
 }
 

@@ -85,4 +85,5 @@ typedef usr *USR;
 #define object_procedure "PROCEDURE"
 #define object_column "COLUMN"
 
-#endif /* JRD_SCL_H */
+#endif // JRD_SCL_H
+

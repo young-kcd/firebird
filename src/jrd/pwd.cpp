@@ -197,7 +197,6 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 bool SecurityDatabase::prepare()
 {
 	TEXT user_info_name[MAXPATHLEN];
-	IHNDL ihandle;
 	SCHAR* dpb;
 	SCHAR dpb_buffer[256];
 	SSHORT dpb_len;
@@ -210,6 +209,7 @@ bool SecurityDatabase::prepare()
 
 	// Register as internal database handle
 
+	ihndl* ihandle;
 	for (ihandle = internal_db_handles; ihandle; ihandle = ihandle->ihndl_next)
 	{
 		if (ihandle->ihndl_object == NULL)
@@ -221,7 +221,7 @@ bool SecurityDatabase::prepare()
 
 	if (!ihandle)
 	{
-		ihandle = (IHNDL) gds__alloc ((SLONG) sizeof(struct ihndl));
+		ihandle = (ihndl*) gds__alloc ((SLONG) sizeof(struct ihndl));
 		ihandle->ihndl_object = &lookup_db;
 		ihandle->ihndl_next = internal_db_handles;
 		internal_db_handles = ihandle;
@@ -337,7 +337,7 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	instance.mutex.aquire();
 	THREAD_ENTER;
 	TEXT pw1[33];
-	bool found = instance.lookup_user(name, uid, gid, pw1);
+	const bool found = instance.lookup_user(name, uid, gid, pw1);
 	instance.mutex.release();
 
 	// Punt if the user has specified neither a raw nor an encrypted password,
@@ -365,3 +365,4 @@ void SecurityDatabase::verifyUser(TEXT* name,
 
 	*node_id = 0;
 }
+

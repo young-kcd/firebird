@@ -24,15 +24,16 @@
 #ifndef JRD_EXE_PROTO_H
 #define JRD_EXE_PROTO_H
 
+class jrd_req;
 
 void EXE_assignment(TDBB, struct jrd_nod*);
-struct jrd_req* EXE_find_request(TDBB, struct jrd_req *, bool);
-void EXE_receive(TDBB, struct jrd_req*, USHORT, USHORT, UCHAR*);
-void EXE_send(TDBB, struct jrd_req *, USHORT, USHORT, UCHAR *);
-void EXE_start(TDBB, struct jrd_req *, class jrd_tra *);
-void EXE_unwind(TDBB, struct jrd_req *);
+jrd_req* EXE_find_request(TDBB, jrd_req *, bool);
+void EXE_receive(TDBB, jrd_req*, USHORT, USHORT, UCHAR*);
+void EXE_send(TDBB, jrd_req*, USHORT, USHORT, UCHAR *);
+void EXE_start(TDBB, jrd_req*, class jrd_tra *);
+void EXE_unwind(TDBB, jrd_req*);
 #ifdef SCROLLABLE_CURSORS
-void EXE_seek(TDBB, struct jrd_req *, USHORT, ULONG);
+void EXE_seek(TDBB, jrd_req*, USHORT, ULONG);
 #endif
 
 #ifdef PC_ENGINE
@@ -41,4 +42,5 @@ void EXE_mark_crack(TDBB, Rsb*, USHORT);
 #endif
 
 
-#endif /* JRD_EXE_PROTO_H */
+#endif // JRD_EXE_PROTO_H
+

@@ -148,7 +148,7 @@ void DYN_define_cache( GBL gbl, const UCHAR** ptr)
 
 	bool found = false;
 	id = drq_l_cache;
-	request = (BLK) CMP_find_request(tdbb, drq_l_cache, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_l_cache, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache 
         found = true;
@@ -162,7 +162,7 @@ void DYN_define_cache( GBL gbl, const UCHAR** ptr)
 		goto dyn_punt_148;
 	}
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_cache, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_cache, DYN_REQUESTS);
 	id = drq_s_cache;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES 
@@ -266,7 +266,7 @@ void DYN_define_constraint(GBL		gbl,
 
 	try {
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_rel_con, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_rel_con, DYN_REQUESTS);
 	id = drq_s_rel_con;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -384,7 +384,7 @@ void DYN_define_constraint(GBL		gbl,
 /* Make sure unique field names were specified for UNIQUE/PRIMARY/FOREIGN */
 /* All fields must have the NOT NULL attribute specified for UNIQUE/PRIMARY. */
 
-	request = (BLK) CMP_find_request(tdbb, drq_c_unq_nam, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_c_unq_nam, DYN_REQUESTS);
 	id = drq_c_unq_nam;
 
 	not_null = TRUE;
@@ -427,7 +427,7 @@ void DYN_define_constraint(GBL		gbl,
 		/* msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY/UNIQUE constraint definition" */
 	}
 
-	request = (BLK) CMP_find_request(tdbb, drq_n_idx_seg, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_n_idx_seg, DYN_REQUESTS);
 	id = drq_n_idx_seg;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -451,7 +451,7 @@ void DYN_define_constraint(GBL		gbl,
 
 	if (foreign_flag == FALSE)
 	{
-		request = (BLK) CMP_find_request(tdbb, drq_c_dup_con, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_c_dup_con, DYN_REQUESTS);
 		id = drq_c_dup_con;
 
 		index_name[0] = 0;
@@ -511,7 +511,7 @@ void DYN_define_constraint(GBL		gbl,
 	else
 	{						/* Foreign key being defined   */
 
-		request = (BLK) CMP_find_request(tdbb, drq_s_ref_con, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_s_ref_con, DYN_REQUESTS);
 		id = drq_s_ref_con;
 		
 		BLK old_request = NULL;
@@ -521,7 +521,7 @@ void DYN_define_constraint(GBL		gbl,
 				old_request = request;
 			old_id = id;
 			request =
-				(BLK) CMP_find_request(tdbb, drq_l_intg_con, DYN_REQUESTS);
+				CMP_find_request(tdbb, drq_l_intg_con, DYN_REQUESTS);
 			id = drq_l_intg_con;
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -640,7 +640,7 @@ void DYN_define_dimension(GBL		gbl,
 	UCHAR verb;
 	volatile BLK request;
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -728,7 +728,7 @@ void DYN_define_exception( GBL gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -804,7 +804,7 @@ void DYN_define_file(GBL		gbl,
 
 	id = -1;
 
-	request = (BLK) CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
 
 	GET_STRING(ptr, temp_f1);
 	ISC_expand_filename(temp_f1, 0, temp_f);
@@ -817,7 +817,7 @@ void DYN_define_file(GBL		gbl,
             DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	END_FOR;
 
-	request = (BLK) CMP_find_request(tdbb, id = drq_s_files, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, id = drq_s_files, DYN_REQUESTS);
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES 
@@ -907,7 +907,7 @@ void DYN_define_difference(GBL		gbl,
 
 	bool found = false;
 	id = drq_l_difference;
-	request = (BLK) CMP_find_request(tdbb, drq_l_difference, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_l_difference, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIL IN RDB$FILES
 		if (FIL.RDB$FILE_FLAGS & FILE_difference)
@@ -922,7 +922,7 @@ void DYN_define_difference(GBL		gbl,
 		goto dyn_punt_216;
 	}
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
 	id = drq_s_difference;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES
@@ -992,7 +992,7 @@ void DYN_define_filter( GBL gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_filters, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_filters, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1086,7 +1086,7 @@ void DYN_define_function( GBL gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1181,7 +1181,7 @@ void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
 
 	try {
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_func_args, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_func_args, DYN_REQUESTS);
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FUNCTION_ARGUMENTS
@@ -1311,7 +1311,7 @@ void DYN_define_generator( GBL gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1384,7 +1384,7 @@ void DYN_define_global_field(GBL		gbl,
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1655,7 +1655,7 @@ void DYN_define_index(GBL		gbl,
 
 	try {
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_indices, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_indices, DYN_REQUESTS);
 	id = drq_s_indices;
 
 	referenced_relation[0] = 0;
@@ -1691,7 +1691,7 @@ void DYN_define_index(GBL		gbl,
 
 		old_request = request;
 		old_id = id;
-		request = (BLK) CMP_find_request(tdbb, drq_l_view_idx, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_l_view_idx, DYN_REQUESTS);
 		id = drq_l_view_idx;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1714,7 +1714,7 @@ void DYN_define_index(GBL		gbl,
 
 		old_request = request;
 		old_id = id;
-		request = (BLK) CMP_find_request(tdbb, drq_l_lfield, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_l_lfield, DYN_REQUESTS);
 		id = drq_l_lfield;
 
 		while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1975,8 +1975,7 @@ void DYN_define_index(GBL		gbl,
 
 			old_request = request;
 			old_id = id;
-			request =
-				(BLK) CMP_find_request(tdbb, drq_s_idx_segs, DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_s_idx_segs, DYN_REQUESTS);
 			id = drq_s_idx_segs;
 			while (seg_list) {
 				str_ = (STR) LLS_POP(&seg_list);
@@ -2013,8 +2012,7 @@ void DYN_define_index(GBL		gbl,
 
 			old_request = request;
 			old_id = id;
-			request =
-				(BLK) CMP_find_request(tdbb, drq_l_unq_idx, DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_l_unq_idx, DYN_REQUESTS);
 			id = drq_l_unq_idx;
 
 			index_name[0] = 0;
@@ -2087,8 +2085,7 @@ void DYN_define_index(GBL		gbl,
 		else if (referenced_relation[0]) {
 			old_request = request;
 			old_id = id;
-			request =
-				(BLK) CMP_find_request(tdbb, drq_l_primary, DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_l_primary, DYN_REQUESTS);
 			id = drq_l_primary;
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -2210,7 +2207,7 @@ void DYN_define_local_field(GBL		gbl,
 
 	try {
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_lfields, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_lfields, DYN_REQUESTS);
 	id = drq_s_lfields;
 
 	scflag = lflag = sflag = slflag = clflag = prflag = FALSE;
@@ -2399,8 +2396,7 @@ void DYN_define_local_field(GBL		gbl,
 		if (blr) {
 			BLK old_request = request;
 			old_id = id;
-			request =
-				(BLK) CMP_find_request(tdbb, drq_s_gfields2, DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_s_gfields2, DYN_REQUESTS);
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				FLD IN RDB$FIELDS
@@ -2519,7 +2515,7 @@ void DYN_define_log_file(
 	{
 	    bool found = false;
 		id = drq_l_log_files;
-		request = (BLK) CMP_find_request(tdbb, drq_l_log_files, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_l_log_files, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FIL IN RDB$LOG_FILES
 			found = true;
@@ -2533,7 +2529,7 @@ void DYN_define_log_file(
 		}
 	}
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_log_files, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_log_files, DYN_REQUESTS);
 	id = drq_s_log_files;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$LOG_FILES 
@@ -2655,7 +2651,7 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_prms, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_prms, DYN_REQUESTS);
 
 	try {
 
@@ -2802,8 +2798,7 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 		if (P.RDB$FIELD_SOURCE.NULL) {
 			/* Need to store dummy global field */
 			id = drq_s_prm_src;
-			request2 =
-				(BLK) CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
+			request2 = CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
 			STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				PS IN RDB$FIELDS USING
                 DYN_UTIL_generate_field_name(tdbb, gbl,
@@ -2909,7 +2904,7 @@ void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
 	id = drq_l_prc_name;
 	check_unique_name(tdbb, gbl, procedure_name, true);
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_prcs, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_prcs, DYN_REQUESTS);
 	id = drq_s_prcs;
 
 
@@ -2982,9 +2977,7 @@ void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
 		/* msg 134: "STORE RDB$PROCEDURES failed" */
 
 		for (const TEXT* p = ALL_PROC_PRIVILEGES; *p; p++) {
-			request =
-				(BLK) CMP_find_request(tdbb, drq_s_prc_usr_prvs,
-									   DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_s_prc_usr_prvs, DYN_REQUESTS);
 			id = drq_s_prc_usr_prvs;
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -3070,7 +3063,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 
 	id = drq_l_rel_name;
 	check_unique_name(tdbb, gbl, relation_name, false);
-	request = (BLK) CMP_find_request(tdbb, drq_s_rels, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_rels, DYN_REQUESTS);
 	id = drq_s_rels;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -3154,9 +3147,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 			if (is_a_view) {
 				BLK old_request = request;
 				old_id = id;
-				request =
-					(BLK) CMP_find_request(tdbb, drq_l_view_rels,
-										   DYN_REQUESTS);
+				request = CMP_find_request(tdbb, drq_l_view_rels, DYN_REQUESTS);
 				id = drq_l_view_rels;
 
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -3208,8 +3199,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 
 	if (sql_prot)
 		for (const TEXT* p = ALL_PRIVILEGES; *p; p++) {
-			request =
-				(BLK) CMP_find_request(tdbb, drq_s_usr_prvs, DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_s_usr_prvs, DYN_REQUESTS);
 			id = drq_s_usr_prvs;
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -3338,7 +3328,7 @@ void DYN_define_role( GBL gbl, const UCHAR** ptr)
 			goto do_err_punt;
 		}
 
-		request = (BLK) CMP_find_request(tdbb, drq_role_gens, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_role_gens, DYN_REQUESTS);
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$ROLES 
@@ -3394,7 +3384,7 @@ void DYN_define_security_class( GBL gbl, const UCHAR** ptr)
 	volatile BLK request;
 	UCHAR verb;
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -3482,7 +3472,7 @@ void DYN_define_sql_field(GBL		gbl,
 
 	try {
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_sql_lfld, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_sql_lfld, DYN_REQUESTS);
 	id = drq_s_sql_lfld;
 	BLK old_request = NULL;
 
@@ -3510,7 +3500,7 @@ void DYN_define_sql_field(GBL		gbl,
 
 		old_request = request;
 		old_id = id;
-		request = (BLK) CMP_find_request(tdbb, drq_s_sql_gfld, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_s_sql_gfld, DYN_REQUESTS);
 		id = drq_s_sql_gfld;
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -3756,7 +3746,7 @@ void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
 /* If a shadow set identified by the
    shadow number already exists return error.  */
 
-	request = (BLK) CMP_find_request(tdbb, drq_l_shadow, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_l_shadow, DYN_REQUESTS);
 
 	try {
 
@@ -3844,7 +3834,7 @@ void DYN_define_trigger(GBL		gbl,
 		strcpy(trigger_name, t);
 	}
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -3993,7 +3983,7 @@ void DYN_define_trigger_msg(GBL gbl, const UCHAR** ptr, const TEXT* trigger_name
 	volatile BLK request;
 	UCHAR verb;
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -4077,7 +4067,7 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
-	request = (BLK) CMP_find_request(tdbb, drq_s_view_rels, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_s_view_rels, DYN_REQUESTS);
 	id = drq_s_view_rels;
 
 	bool b_ending_store = false;
@@ -4091,7 +4081,7 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
 		volatile SSHORT old_id = id;
 		volatile BLK old_request = request;
 
-		request = (BLK) CMP_find_request(tdbb, drq_e_view_rels, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_e_view_rels, DYN_REQUESTS);
 		id = drq_e_view_rels;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -4189,7 +4179,7 @@ static void check_unique_name(	TDBB	tdbb,
 
 	try {
 
-		request = (BLK) CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
 
 		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -4206,7 +4196,7 @@ static void check_unique_name(	TDBB	tdbb,
 			goto local_punt_false_132;
 		}
 
-		request = (BLK) CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
 
 		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -4262,7 +4252,7 @@ static bool find_field_source(TDBB	tdbb,
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
 
 /* CVC: It seems the logic of this function was changed over time. It's unlikely
 it will cause a failure that leads to call DYN_error_punt(), unless the request finds
@@ -4319,12 +4309,12 @@ static bool get_who( TDBB tdbb, GBL gbl, SCHAR* output_name)
 
 	SET_TDBB(tdbb);
 
-	request = (BLK) CMP_find_request(tdbb, drq_l_user_name, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_l_user_name, DYN_REQUESTS);
 
 	try {
 		if (!request)
 		{
-			request = (BLK) CMP_compile2(tdbb, who_blr, TRUE);
+			request = CMP_compile2(tdbb, who_blr, TRUE);
 		}
 		EXE_start(tdbb, (jrd_req*) request, gbl->gbl_transaction);
 		EXE_receive(tdbb, (jrd_req*) request, 0, MAX_SQL_IDENTIFIER_SIZE,
@@ -4368,7 +4358,7 @@ bool is_it_user_name(GBL gbl, const TEXT* role_name, TDBB tdbb)
    can infer there is a user with this name */
 
 		request_id = drq_get_user_priv;
-		request = (BLK) CMP_find_request(tdbb, request_id, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, request_id, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH
 				(PRIV.RDB$USER EQ role_name AND
@@ -4392,7 +4382,7 @@ bool is_it_user_name(GBL gbl, const TEXT* role_name, TDBB tdbb)
    his privileges on the table */
 
 		request_id = drq_get_rel_owner;
-		request = (BLK) CMP_find_request(tdbb, request_id, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, request_id, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			REL IN RDB$RELATIONS WITH
 				REL.RDB$OWNER_NAME EQ role_name 

@@ -38,13 +38,13 @@
 
 #ifdef SUPERSERVER
 
-#define fb_assert(ex)	{if (!(ex)){gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
-#define fb_assert_continue(ex)	{if (!(ex)){gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
+#define fb_assert(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
 
 #else	// !SUPERSERVER
 
-#define fb_assert(ex)	{if (!(ex)){ib_fprintf (ib_stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
-#define fb_assert_continue(ex)	{if (!(ex)){ib_fprintf (ib_stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
+#define fb_assert(ex)	{if (!(ex)) {ib_fprintf (ib_stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	{if (!(ex)) {ib_fprintf (ib_stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
 
 #endif	// SUPERSERVER
 

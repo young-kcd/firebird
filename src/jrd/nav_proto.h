@@ -35,7 +35,7 @@ BOOLEAN NAV_get_record(TDBB tdbb, class Rsb*, struct irsb_nav*, struct rpb*,
 #ifdef PC_ENGINE
 BOOLEAN NAV_find_record(class Rsb*, USHORT, USHORT, struct jrd_nod*);
 void NAV_get_bookmark(class Rsb*, struct irsb_nav*, struct bkm*);
-BOOLEAN NAV_reset_position(class Rsb*, struct rpb*);
+bool NAV_reset_position(class Rsb*, struct rpb*);
 BOOLEAN NAV_set_bookmark(class Rsb*, struct irsb_nav*, struct rpb*,
 								struct bkm*);
 #endif

@@ -783,7 +783,8 @@ void INI_update_database()
 	   version but not the update. */
 
 	WIN window(HEADER_PAGE);
-	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header =
+		(header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK(tdbb, &window);
 
 /* Only minor upgrades can occur within a major ODS, define which one   

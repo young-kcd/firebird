@@ -590,9 +590,8 @@ int common_main(int		argc,
 // NOMEM: return error, FREE: during function exit in the SETJMP 
 	if (tdgbl == NULL)
 	{
-		SVC service;
-		service = (SVC) output_data;
-		SVC_STARTED(service);
+		svc* service = (svc*) output_data;
+		service->svc_started();
 		return FINI_ERROR;
 	}
 
@@ -638,7 +637,7 @@ int common_main(int		argc,
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
 		tdgbl->gbl_sw_service_gbak = true;
 		tdgbl->gbl_sw_service_thd = true;
-		tdgbl->service_blk = (SVC) output_data;
+		tdgbl->service_blk = (svc*) output_data;
 		tdgbl->status = tdgbl->service_blk->svc_status;
 		argv++;
 		argc--;
@@ -1144,17 +1143,17 @@ int common_main(int		argc,
 
 	switch (action) {
 	case (RESTORE):
-		SVC_STARTED(tdgbl->service_blk);
+		tdgbl->service_blk->svc_started();
 		result = RESTORE_restore(file1, file2);
 		break;
 
 	case (BACKUP):
-		SVC_STARTED(tdgbl->service_blk);
+		tdgbl->service_blk->svc_started();
 		result = BACKUP_backup(file1, file2);
 		break;
 
 	case (QUIT):
-		SVC_STARTED(tdgbl->service_blk);
+		tdgbl->service_blk->svc_started();
 		BURP_abort();
 		break;
 	}
@@ -1244,7 +1243,7 @@ void BURP_abort(void)
 	BURP_print(83, 0, 0, 0, 0, 0);
 	// msg 83 Exiting before completion due to errors 
 
-	SVC_STARTED(tdgbl->service_blk);
+	tdgbl->service_blk->svc_started();
 
 	BURP_exit_local(FINI_ERROR, tdgbl);
 }
@@ -1279,7 +1278,7 @@ void BURP_error(USHORT errcode, bool abort,
 							arg1_t, arg1, arg2_t, arg2, arg3_t, arg3,
 							arg4_t, arg4, arg5_t, arg5);
 
-	SVC_STARTED(tdgbl->service_blk);
+	tdgbl->service_blk->svc_started();
 #endif
 	BURP_msg_partial(256, 0, 0, 0, 0, 0);	// msg 256: gbak: ERROR: 
 	BURP_msg_put(errcode, arg1, arg2, arg3, arg4, arg5);

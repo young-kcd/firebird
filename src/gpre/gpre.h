@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.58 2004-02-02 11:01:26 robocop Exp $
+ * $Id: gpre.h,v 1.59 2004-02-20 06:42:41 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -1485,7 +1485,7 @@ EXTERN USHORT ada_flags;
 #ifndef fb_assert
 #ifdef DEV_BUILD
 #undef fb_assert
-#define fb_assert(ex)	{if (!(ex)){CPR_assert (__FILE__, __LINE__);}}
+#define fb_assert(ex)	{if (!(ex)) {CPR_assert (__FILE__, __LINE__);}}
 #else // DEV_BUILD
 #undef fb_assert
 #define fb_assert(ex)

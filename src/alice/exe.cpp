@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.27 2003-11-18 12:33:42 brodsom Exp $
+//	$Id: exe.cpp,v 1.28 2004-02-20 06:42:27 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -102,7 +102,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 	isc_attach_database(tdgbl->status, 0, database, &handle, dpb_length,
 						 reinterpret_cast<SCHAR*>(dpb));
 
-	SVC_STARTED(tdgbl->service_blk);
+	tdgbl->service_blk->svc_started();
 
 	if (tdgbl->status[1])
 		error = true;
@@ -156,7 +156,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 	isc_attach_database(tdgbl->status, 0, database, &handle,
 						 dpb_length,  reinterpret_cast<char*>(dpb));
 
-	SVC_STARTED(tdgbl->service_blk);
+	tdgbl->service_blk->svc_started();
 
 	if (tdgbl->status[1])
 		error = true;

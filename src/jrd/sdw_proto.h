@@ -34,10 +34,10 @@ void	SDW_get_shadows(void);
 void	SDW_init(bool, bool);
 bool	SDW_lck_update(SLONG);
 void	SDW_notify(void);
-bool	SDW_rollover_to_shadow(struct fil *, const bool);
-void	SDW_shutdown_shadow(struct sdw *);
+bool	SDW_rollover_to_shadow(class jrd_file*, const bool);
+void	SDW_shutdown_shadow(class Shadow*);
 void	SDW_start(const TEXT*, USHORT, USHORT, bool);
 int		SDW_start_shadowing(void* ast_object);
 
-#endif /* JRD_SDW_PROTO_H */
+#endif // JRD_SDW_PROTO_H
 

@@ -96,7 +96,8 @@ static bool_t xnet_setpostn(XDR *, u_int);
 static bool_t xnet_read(XDR * xdrs);
 static bool_t xnet_write(XDR * xdrs);
 
-static xdr_t::xdr_ops xnet_ops = {
+static xdr_t::xdr_ops xnet_ops =
+{
 	xnet_getlong,
 	xnet_putlong,
 	xnet_getbytes,
@@ -486,7 +487,8 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 	}
 
 	// waiting for xnet connect lock to release
-	if (WaitForSingleObject(xnet_connect_mutex, XNET_CONNECT_TIMEOUT) != WAIT_OBJECT_0) {
+	if (WaitForSingleObject(xnet_connect_mutex, XNET_CONNECT_TIMEOUT) != WAIT_OBJECT_0)
+	{
 		xnet_connect_fini();
 		XNET_UNLOCK;
 		return NULL;
@@ -502,7 +504,8 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 	SetEvent(xnet_connect_event);
 
 	// waiting for server response
-	if (WaitForSingleObject(xnet_response_event, XNET_CONNECT_TIMEOUT) != WAIT_OBJECT_0) {
+	if (WaitForSingleObject(xnet_response_event, XNET_CONNECT_TIMEOUT) != WAIT_OBJECT_0)
+	{
 		ReleaseMutex(xnet_connect_mutex);
 		xnet_connect_fini();
 		XNET_UNLOCK;
@@ -799,27 +802,32 @@ static void xnet_connect_fini()
 
 #ifdef WIN_NT
 
-	if (xnet_connect_mutex){
+	if (xnet_connect_mutex)
+	{
 		CloseHandle(xnet_connect_mutex);
 		xnet_connect_mutex = 0;
 	}
 
-	if (xnet_connect_event){
+	if (xnet_connect_event)
+	{
 		CloseHandle(xnet_connect_event);
 		xnet_connect_event = 0;
 	}
 
-	if (xnet_response_event){
+	if (xnet_response_event)
+	{
 		CloseHandle(xnet_response_event);
 		xnet_response_event = 0;
 	}
 
-	if (xnet_connect_map){
+	if (xnet_connect_map)
+	{
 		UnmapViewOfFile(xnet_connect_map);
 		xnet_connect_map = 0;
 	}
 
-	if (xnet_connect_map_h){
+	if (xnet_connect_map_h)
+	{
 		CloseHandle(xnet_connect_map_h);
 		xnet_connect_map_h = 0;
 	}
@@ -1109,7 +1117,8 @@ static rem_port* aux_request(rem_port* port, PACKET * packet)
 		xcc->xcc_event_recv_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled ||
-			(xcc->xcc_event_recv_channel_filled && ERRNO == ERROR_ALREADY_EXISTS)) {
+			(xcc->xcc_event_recv_channel_filled && ERRNO == ERROR_ALREADY_EXISTS))
+		{
 			throw -1;
 		}
 
@@ -1119,7 +1128,8 @@ static rem_port* aux_request(rem_port* port, PACKET * packet)
 		xcc->xcc_event_recv_channel_empted =
 			CreateEvent(ISC_get_security_desc(), TRUE, TRUE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted ||
-			(xcc->xcc_event_recv_channel_empted && ERRNO == ERROR_ALREADY_EXISTS)) {
+			(xcc->xcc_event_recv_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
+		{
 			throw -1;
 		}
 
@@ -1129,7 +1139,8 @@ static rem_port* aux_request(rem_port* port, PACKET * packet)
 		xcc->xcc_event_send_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled ||
-			(xcc->xcc_event_send_channel_filled && ERRNO == ERROR_ALREADY_EXISTS)) {
+			(xcc->xcc_event_send_channel_filled && ERRNO == ERROR_ALREADY_EXISTS))
+		{
 			throw -1;
 		}
 
@@ -1139,7 +1150,8 @@ static rem_port* aux_request(rem_port* port, PACKET * packet)
 		xcc->xcc_event_send_channel_empted =
 			CreateEvent(ISC_get_security_desc(), TRUE, TRUE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted ||
-			(xcc->xcc_event_send_channel_empted && ERRNO == ERROR_ALREADY_EXISTS)) {
+			(xcc->xcc_event_send_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
+		{
 			throw -1;
 		}
 
@@ -1346,7 +1358,8 @@ static void disconnect(rem_port* port)
 			port->port_async = NULL;
 		}
 
-		for (rem_port** ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next){
+		for (rem_port** ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
+		{
 			if (*ptr == port) {
 				*ptr = port->port_next;
 				if (ptr == &parent->port_clients)
@@ -1515,7 +1528,7 @@ static int send_full( rem_port* port, PACKET * packet)
 
 	if (xnet_write(&port->port_send))
 		return TRUE;
-	else{
+	else {
 		XNET_ERROR(port, "SetEvent()", isc_net_write_err, ERRNO);
 		return FALSE;
 	}
@@ -1565,7 +1578,8 @@ static void xnet_on_server_shutdown(rem_port* port)
 
 /* mark all mapped areas connected to server with dead_proc_id */
 	for (xpm = client_maps; xpm; xpm = xpm->xpm_next) {
-		if (XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id){
+		if (XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id)
+		{
 			xpm->xpm_flags |= XPMF_SERVER_SHUTDOWN;
 			xpm->xpm_handle = 0;
 			xpm->xpm_address = NULL;
@@ -2144,21 +2158,24 @@ static bool_t xnet_srv_init()
 		sprintf(name_buffer, XNET_MU_CONNECT_MUTEX, XNET_PREFIX);
 		xnet_connect_mutex =
 			CreateMutex(ISC_get_security_desc(), FALSE, name_buffer);
-		if (!xnet_connect_mutex || (xnet_connect_mutex && ERRNO == ERROR_ALREADY_EXISTS)) {
+		if (!xnet_connect_mutex || (xnet_connect_mutex && ERRNO == ERROR_ALREADY_EXISTS))
+		{
 			throw -1;
 		}
 
 		sprintf(name_buffer, XNET_E_CONNECT_EVENT, XNET_PREFIX);
 		xnet_connect_event =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
-		if (!xnet_connect_event || (xnet_connect_event && ERRNO == ERROR_ALREADY_EXISTS)) {
+		if (!xnet_connect_event || (xnet_connect_event && ERRNO == ERROR_ALREADY_EXISTS))
+		{
 			throw -1;
 		}
 
 		sprintf(name_buffer, XNET_E_RESPONSE_EVENT, XNET_PREFIX);
 		xnet_response_event =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
-		if (!xnet_response_event || (xnet_response_event && ERRNO == ERROR_ALREADY_EXISTS)) {
+		if (!xnet_response_event || (xnet_response_event && ERRNO == ERROR_ALREADY_EXISTS))
+		{
 			throw -1;
 		}
 
@@ -2169,7 +2186,8 @@ static bool_t xnet_srv_init()
 												0,
 												XNET_CONNECT_RESPONZE_SIZE,
 												name_buffer);
-		if (!xnet_connect_map_h || (xnet_connect_map_h && ERRNO == ERROR_ALREADY_EXISTS)) {
+		if (!xnet_connect_map_h || (xnet_connect_map_h && ERRNO == ERROR_ALREADY_EXISTS))
+		{
 			throw -1;
 		}
 
@@ -2215,14 +2233,16 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
 		SC_HANDLE manager, service;
 
 		if ((manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT)) &&
-			(service = OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG))) {
+			(service = OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
+		{
 			LPQUERY_SERVICE_CONFIG config;
 			SCHAR buffer[1024];
 			DWORD config_len;
 
 			config = (LPQUERY_SERVICE_CONFIG) buffer;
 			THREAD_EXIT;
-			if (!QueryServiceConfig(service, config, sizeof(buffer), &config_len)) {
+			if (!QueryServiceConfig(service, config, sizeof(buffer), &config_len))
+			{
 				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
 				/* NOMEM: ALLR_alloc handled */
 				/* FREE:  later in this block */

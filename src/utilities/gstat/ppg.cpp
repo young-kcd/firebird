@@ -55,9 +55,9 @@
 
 
 
-void PPG_print_header(const hdr* header, SLONG page,
+void PPG_print_header(const header_page* header, SLONG page,
 #ifdef SUPERSERVER
-					  SVC outfile)
+					  svc* outfile)
 #else
 					  IB_FILE* outfile)
 #endif
@@ -271,7 +271,7 @@ void PPG_print_header(const hdr* header, SLONG page,
 
 void PPG_print_log(const log_info_page* logp, SLONG page,
 #ifdef SUPERSERVER
-				   SVC outfile)
+				   svc* outfile)
 #else
 				   IB_FILE* outfile)
 #endif

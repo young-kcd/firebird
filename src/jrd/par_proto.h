@@ -25,11 +25,11 @@
 #define JRD_PAR_PROTO_H
 
 struct jrd_nod*	PAR_blr(TDBB, struct jrd_rel*, const UCHAR*, class Csb*,
-					class Csb**, struct jrd_req**, BOOLEAN, USHORT);
+					class Csb**, class jrd_req**, BOOLEAN, USHORT);
 int				PAR_desc(class Csb*, struct dsc*);
 struct jrd_nod*	PAR_gen_field(TDBB, USHORT, USHORT);
 struct jrd_nod*	PAR_make_field(TDBB, class Csb*, USHORT, const TEXT*);
-struct jrd_nod*	PAR_make_list(TDBB, struct lls*);
+struct jrd_nod*	PAR_make_list(TDBB, class lls*);
 struct jrd_nod*	PAR_make_node(TDBB, int);
 class Csb*		PAR_parse(TDBB, const UCHAR*, USHORT);
 SLONG			PAR_symbol_to_gdscode(const char*);

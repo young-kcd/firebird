@@ -136,15 +136,13 @@ bool CMP_node_match( const qli_nod* node1, const qli_nod* node2)
 
 	switch (node1->nod_type) {
 	case nod_field:
+		if (node1->nod_arg[e_fld_field] != node2->nod_arg[e_fld_field] ||
+			node1->nod_arg[e_fld_context] != node2->nod_arg[e_fld_context]
+			|| node1->nod_arg[e_fld_subs] != node2->nod_arg[e_fld_subs])
 		{
-			if (node1->nod_arg[e_fld_field] != node2->nod_arg[e_fld_field] ||
-				node1->nod_arg[e_fld_context] != node2->nod_arg[e_fld_context]
-				|| node1->nod_arg[e_fld_subs] != node2->nod_arg[e_fld_subs])
-			{
-				return false;
-			}
-			return true;
+			return false;
 		}
+		return true;
 
 	case nod_constant:
 		{
@@ -716,7 +714,6 @@ static qli_nod* compile_field( qli_nod* node, qli_req* request, bool internal_fl
    current request, there is nothing to do.  If the value is not computable,
    make up a parameter to send the value into the request. */
 
-	qli_msg* message;
 	if (internal_flag) {
 		if (computable(node, request))
 			return node;
@@ -724,13 +721,15 @@ static qli_nod* compile_field( qli_nod* node, qli_req* request, bool internal_fl
 		node->nod_export = parm;
 		parm->par_desc = node->nod_desc;
 		parm->par_value = node;
-		if (!(message = context->ctx_message))
+		qli_msg* message = context->ctx_message;
+		if (!message)
 			message = request->req_receive;
 		node->nod_arg[e_fld_reference] = make_reference(node, message);
 		return node;
 	}
 
-	if (!(message = context->ctx_message) && request)
+	qli_msg* message = context->ctx_message;
+	if (!message && request)
 		message = request->req_receive;
 
 	node->nod_arg[e_fld_reference] = make_reference(node, message);
@@ -751,7 +750,6 @@ static qli_nod* compile_for( qli_nod* node, qli_req* old_request, bool internal_
  *	request, dandy.
  *
  **************************************/
-	qli_par* parameter;
 
 /* Compile rse.  This will set up both send and receive message.  If the
    messages aren't needed, we can release them later. */
@@ -796,7 +794,7 @@ static qli_nod* compile_for( qli_nod* node, qli_req* old_request, bool internal_
 	}
 
 	if (receive) {
-		parameter = make_parameter(receive, 0);
+		qli_par* parameter = make_parameter(receive, 0);
 		node->nod_arg[e_for_eof] = (qli_nod*) parameter;
 		parameter->par_desc.dsc_dtype = dtype_short;
 		parameter->par_desc.dsc_length = sizeof(SSHORT);
@@ -1020,7 +1018,7 @@ static qli_nod* compile_print( qli_nod* node, qli_req* request)
  **************************************/
 
 	if (!print_header)
-		print_header = (TEXT **) & node->nod_arg[e_prt_header];
+		print_header = (TEXT**) & node->nod_arg[e_prt_header];
 
 	compile_print_list(node->nod_arg[e_prt_list], request, &print_items);
 
@@ -1073,12 +1071,12 @@ static qli_nod* compile_prompt( qli_nod* node)
  *	Set up a prompt expression for execution.
  *
  **************************************/
-	qli_fld* field;
 	USHORT prompt_length;
 
 // Make up a plausible prompt length
 
-	if (!(field = (qli_fld*) node->nod_arg[e_prm_field]))
+	qli_fld* field = (qli_fld*) node->nod_arg[e_prm_field];
+	if (!field)
 		prompt_length = PROMPT_LENGTH;
 	else {
 		switch (field->fld_dtype) {
@@ -1707,20 +1705,20 @@ static void make_descriptor( qli_nod* node, dsc* desc)
  *	Fill out a descriptor based on an expression.
  *
  **************************************/
-	DSC desc1, desc2;
 	qli_fld* field;
 	qli_par* parameter;
 	qli_map* map;
 	qli_fun* function;
 	USHORT dtype;
 
+	dsc desc1;
 	desc1.dsc_dtype = 0;
 	desc1.dsc_scale = 0;
 	desc1.dsc_length = 0;
 	desc1.dsc_sub_type = 0;
 	desc1.dsc_address = NULL;
 	desc1.dsc_flags = 0;
-	desc2 = desc1;
+	dsc desc2 = desc1;
 
 	switch (node->nod_type) {
 	case nod_field:
@@ -1772,7 +1770,9 @@ static void make_descriptor( qli_nod* node, dsc* desc)
 		make_descriptor(node->nod_arg[1], &desc2);
 		if ((desc1.dsc_dtype == dtype_text && desc1.dsc_length >= 9) ||
 			(desc2.dsc_dtype == dtype_text && desc2.dsc_length >= 9))
+		{
 			dtype = dtype_double;
+		}
 		else
 			dtype = MAX(desc1.dsc_dtype, desc2.dsc_dtype);
 		switch (dtype) {
@@ -1809,7 +1809,9 @@ static void make_descriptor( qli_nod* node, dsc* desc)
 		make_descriptor(node->nod_arg[1], &desc2);
 		if ((desc1.dsc_dtype == dtype_text && desc1.dsc_length >= 9) ||
 			(desc2.dsc_dtype == dtype_text && desc2.dsc_length >= 9))
+		{
 			dtype = dtype_double;
+		}
 		else
 			dtype = MAX(desc1.dsc_dtype, desc2.dsc_dtype);
 		switch (dtype) {

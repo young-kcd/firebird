@@ -243,7 +243,7 @@ int DBG_analyze(int pool_id)
 		for (p = blocks, end = p + (int) type_MAX, type = 0; p < end;
 			 p++, type++) {
 			if (p->sum_count)
-				fields = reinterpret_cast < char **>(dbt_blocks[type]);
+				fields = reinterpret_cast<char**>(dbt_blocks[type]);
 			if (!strcmp(*fields, "TRANSACTION") && p->sum_count) {
 				pool_type = 2;
 				trans_pool_mem += (total_length / 1024);
@@ -270,7 +270,7 @@ int DBG_analyze(int pool_id)
 
 	for (p = blocks, end = p + (int) type_MAX, type = 0; p < end; p++, type++)
 		if (p->sum_count) {
-			fields = reinterpret_cast < char **>(dbt_blocks[type]);
+			fields = reinterpret_cast<char**>(dbt_blocks[type]);
 			for (i = 0; i < 31; name_padded[i++] = ' ');
 			name_padded[i] = '\0';
 			for (i = 0; (*fields)[i]; i++)
@@ -307,14 +307,11 @@ int DBG_bdbs(void)
  * Functional description
  *
  **************************************/
-	DBB dbb;
-	BCB bcb;
+	DBB dbb = GET_DBB;
 
-	dbb = GET_DBB;
-
-	bcb = dbb->dbb_bcb;
+	BCB bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++)
-		DBG_block(reinterpret_cast < blk * >(bcb->bcb_rpt[i].bcb_bdb));
+		DBG_block(bcb->bcb_rpt[i].bcb_bdb);
 
 	return TRUE;
 }
@@ -331,17 +328,15 @@ int DBG_precedence(void)
  * Functional description
  *
  **************************************/
-	DBB dbb;
-	BCB bcb;
 	BDB bdb;
 	QUE que;
-	PRE precedence;
+	Precedence* precedence;
 	BDB hi_bdb;
 	BDB lo_bdb;
 
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
-	bcb = dbb->dbb_bcb;
+	BCB bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++) {
 		bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_flags || bdb->bdb_ast_flags) {
@@ -377,7 +372,7 @@ int DBG_precedence(void)
 				ib_fprintf(dbg_file, "\tdirect higher precedence pages:");
 				for (que = bdb->bdb_higher.que_forward;
 					 que != &bdb->bdb_higher; que = que->que_forward) {
-					precedence = BLOCK(que, PRE, pre_higher);
+					precedence = BLOCK(que, Precedence*, pre_higher);
 					hi_bdb = precedence->pre_hi;
 					ib_fprintf(dbg_file, " %"SLONGFORMAT"", hi_bdb->bdb_page);
 					if (precedence->pre_flags & PRE_cleared)
@@ -389,7 +384,7 @@ int DBG_precedence(void)
 				ib_fprintf(dbg_file, "\tdirect lower precedence pages:");
 				for (que = bdb->bdb_lower.que_forward; que != &bdb->bdb_lower;
 					 que = que->que_forward) {
-					precedence = BLOCK(que, PRE, pre_lower);
+					precedence = BLOCK(que, Precedence*, pre_lower);
 					lo_bdb = precedence->pre_low;
 					ib_fprintf(dbg_file, " %"SLONGFORMAT"", lo_bdb->bdb_page);
 					if (precedence->pre_flags & PRE_cleared)
@@ -448,7 +443,7 @@ int DBG_block(BLK block)
 		ib_fprintf(dbg_file, " -- %s",
 				   node_names[(int) ((jrd_nod*) block)->nod_type]);
 
-	prt_fields(reinterpret_cast < char *>(block), fields);
+	prt_fields(reinterpret_cast<char*>(block), fields);
 
 	switch ((enum blk_t) block->blk_type) {
 	case type_vec:
@@ -504,8 +499,8 @@ int DBG_block(BLK block)
 		break;
 
 	case type_pre:
-		prt_que("Higher", &BLOCK(PRE)->pre_higher);
-		prt_que("Lower", &BLOCK(PRE)->pre_lower);
+		prt_que("Higher", &BLOCK(Precedence*)->pre_higher);
+		prt_que("Lower", &BLOCK(Precedence*)->pre_lower);
 		break;
 
 	case type_fmt:
@@ -909,8 +904,8 @@ int DBG_rpb(RPB * rpb)
  **************************************/
 
 	ib_fprintf(dbg_file, "\n%X\tRECORD PARAMETER BLOCK", rpb);
-	prt_fields(reinterpret_cast < char *>(rpb), dbt_rpb);
-	DBG_window(reinterpret_cast < int *>(&rpb->rpb_window));
+	prt_fields(reinterpret_cast<char*>(rpb), dbt_rpb);
+	DBG_window(reinterpret_cast<int*>(&rpb->rpb_window));
 	return TRUE;
 }
 
@@ -1006,7 +1001,7 @@ int DBG_window(int *window)
  *
  **************************************/
 	ib_fprintf(dbg_file, "\n%X\tWINDOW", window);
-	prt_fields(reinterpret_cast < char *>(window), dbt_window);
+	prt_fields(reinterpret_cast<char*>(window), dbt_window);
 	return TRUE;
 }
 
@@ -1240,30 +1235,30 @@ static int rsb_pretty(const Rsb* rsb, int column)
 		for (const Rsb* const* const end = ptr + rsb->rsb_count * 2; ptr < end;
 			 ptr += 2)
 		{
-			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
+			DBG_pretty(reinterpret_cast<jrd_nod*>(*ptr), column);
 		}
 	}
 	else if (rsb->rsb_type != rsb_left_cross) {
 		for (const Rsb* const* const end = ptr + rsb->rsb_count; ptr < end; ptr++)
 		{
-			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
+			DBG_pretty(reinterpret_cast<jrd_nod*>(*ptr), column);
 		}
 	}
 	else {
 		for (const Rsb* const* const end = ptr + rsb->rsb_count + 1; ptr < end;
 			 ptr++)
 		{
-			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
+			DBG_pretty(reinterpret_cast<jrd_nod*>(*ptr), column);
 		}
 	}
 
 	if (rsb->rsb_next)
-		DBG_pretty(reinterpret_cast < jrd_nod * >(rsb->rsb_next), column);
+		DBG_pretty(reinterpret_cast<jrd_nod*>(rsb->rsb_next), column);
 	return TRUE;
 }
 
 
-void yyerror(const char *string)
+void yyerror(const char* string)
 {
 /**************************************
  *

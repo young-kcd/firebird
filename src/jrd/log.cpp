@@ -54,7 +54,7 @@ This is currently removed as
 
 This is a valuable function to re-activate in the product, but 
 until it is I've #ifdef'ed it out under REPLAY_OSRI_API_CALLS_SUBSYSTEM.
-I've also embedded the notes on how it works into log.c so they
+I've also embedded the notes on how it works into log.cpp so they
 can serve as a reference to a future completion of implementation.
 
 Not reviewed, removal & documentation only
@@ -200,7 +200,6 @@ void LOG_call(enum log_t call_type, ...)
  *	bugs in a production environment.
  *
  **************************************/
-	SCHAR *arg_type;
 	SSHORT number;
 	SLONG long_number;
 	SCHAR *pointer;
@@ -220,7 +219,8 @@ void LOG_call(enum log_t call_type, ...)
    pop the arguments off the call stack and put
    them into the log file */
 
-	for (arg_type = arg_types1[(int) call_type]; *arg_type; arg_type++)
+	for (const char* arg_type = arg_types1[(int) call_type]; *arg_type; arg_type++)
+	{
 		switch (*arg_type) {
 		case 'o':
 		case 's':
@@ -270,6 +270,7 @@ void LOG_call(enum log_t call_type, ...)
 		default:
 			error("argument type not known");
 		}
+	}
 
 	va_end(ptr);
 
@@ -352,7 +353,7 @@ void LOG_fini(void)
  *
  **************************************/
 	DBB dbb = GET_DBB;
-	LOG log;
+	fblog* log;
 	if (dbb && (log = dbb->dbb_log)) {
 		if (log->log_file) {
 			log_flush();
@@ -432,7 +433,7 @@ static void log_char(SCHAR c)
  **************************************/
 	DBB dbb = GET_DBB;
 
-	LOG log = dbb->dbb_log;
+	fblog* log = dbb->dbb_log;
 	*log->log_ptr++ = c;
 
 /* this log flush could be done in the middle of an OSRI
@@ -462,7 +463,7 @@ static void log_flush(void)
  **************************************/
 	DBB dbb = GET_DBB;
 
-	LOG log = dbb->dbb_log;
+	fblog* log = dbb->dbb_log;
 	if (!(log->log_ptr - log->log_buffer))
 		return;
 
@@ -602,11 +603,12 @@ static void open_log(const TEXT* file_name, SSHORT file_length,
 	if (!log_file)
 		error("can't open log file");
 	else {
-		LOG log = FB_NEW(*dbb->dbb_permanent) log();
+		fblog* log = FB_NEW(*dbb->dbb_permanent) fblog();
 		dbb->dbb_log = log;
 		log->log_file = log_file;
 		log->log_string = FB_NEW_RPT(*dbb->dbb_permanent, LOG_BUFFER_LENGTH) str();
 		log->log_ptr = log->log_buffer = log->log_string->str_data;
 	}
 }
-#endif /* REPLAY_OSRI_API_CALLS_SUBSYSTEM */
+#endif // REPLAY_OSRI_API_CALLS_SUBSYSTEM
+

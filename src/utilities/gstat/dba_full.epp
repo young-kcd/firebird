@@ -122,7 +122,7 @@ static const pag* db_read(SLONG);
 static bool key_equality(SSHORT, const SCHAR*, const btn*);
 static void move(const SCHAR*, SCHAR*, SSHORT);
 static void print_distribution(const SCHAR*, const SLONG*);
-static void print_header(const hdr*);
+static void print_header(const header_page*);
 static void truncate_name(SCHAR*);
 
 
@@ -329,7 +329,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	char temp[1024];
 	tddba->page_size = sizeof(temp);
 	tddba->global_buffer = (PAG) temp;
-	const hdr* header = (const hrd*) db_read((SLONG) 0);
+	const header_page* header = (const header_page*) db_read((SLONG) 0);
 
 	if (header->hdr_ods_version != ODS_VERSION
 		&& header->hdr_ods_version != ODS_VERSION6)
@@ -391,7 +391,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 	page = HEADER_PAGE;
 	do {
-		header = (const hdr*) db_read((SLONG) page);
+		header = (const header_page*) db_read((SLONG) page);
 		PPG_print_header(header, page, sw_outfile);
 	}
 	while (page = header->hdr_next_page);
@@ -700,7 +700,8 @@ static void analyze_index( dba_rel* relation, idx* index)
 
 	tdba* tddba = GET_THREAD_DATA;
 
-	irt* index_root = (const irt*) db_read(relation->rel_index_root);
+	index_root_page* index_root = 
+		(const index_root_page*) db_read(relation->rel_index_root);
 
 	if (index_root->irt_count <= index->idx_id ||
 		!(page = index_root->irt_rpt[index->idx_id].irt_root))
@@ -1285,7 +1286,7 @@ static void print_distribution( const SCHAR* prefix, const SLONG* vector)
 }
 
 
-static void print_header( const hdr* header)
+static void print_header( const header_page* header)
 {
 /**************************************
  *

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.22 2004-02-02 11:01:45 robocop Exp $
+$Id: all.cpp,v 1.23 2004-02-20 06:43:15 robocop Exp $
 */
 
 /***************************************************
@@ -86,9 +86,6 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
  *	This is the primary block allocation routine.
  *
  **************************************/
-	FRB free, *best, *ptr;
-	SLONG best_tail, tail;
-
 	if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
 		BUGCHECK(1);			// Msg1 bad block type
 
@@ -96,7 +93,8 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 
 	USHORT size = block_sizes[type].typ_root_length;
 
-	if (tail = block_sizes[type].typ_tail_length)
+	SLONG tail = block_sizes[type].typ_tail_length;
+	if (tail)
 		size += count * tail;
 
 #ifndef VMS
@@ -111,10 +109,14 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 /* Find best fit.  Best fit is defined to be the free block of SHORTest
    tail.  If there isn't a fit, extend the pool and try, try again. */
 
+	FRB free;
+	FRB* best;
+	SLONG best_tail;
+
 	while (true) {
 		best = NULL;
 		best_tail = 32767;
-		for (ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
+		for (FRB* ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
 			if (free->frb_next && (SCHAR *) free >= (SCHAR *) free->frb_next)
 				BUGCHECK(434);	// memory pool free list is incorrect
 			else if ((tail = free->frb_header.blk_length - size) >= 0
@@ -397,11 +399,10 @@ void ALLQ_release( FRB block)
  *	of addresses).
  *
  **************************************/
-	PLB pool;
-
 	block->frb_header.blk_type = (SCHAR) type_frb;
 	int pool_id = block->frb_header.blk_pool_id;
 
+	PLB pool;
 	if (pool_id >= global_pools->vec_count ||
 		!(pool = (PLB) global_pools->vec_object[pool_id]))
 	{
@@ -468,10 +469,9 @@ void ALLQ_rlpool( PLB pool)
  *	hunks to the free hunk list.
  *
  **************************************/
-	HNK hunk, hunks;
-
 	global_pools->vec_object[pool->plb_pool_id] = NULL;
 
+	HNK hunk, hunks;
 	for (hunks = pool->plb_hunks; hunk = hunks;) {
 		hunks = hunk->hnk_next;
 		gds__free(hunk->hnk_address);
@@ -492,7 +492,7 @@ static void extend_pool( PLB pool, USHORT count)
  *	of given size.
  *
  **************************************/
-	SLONG size =
+	const SLONG size =
 		(count + sizeof(hnk) + MIN_ALLOCATION - 1) & ~(MIN_ALLOCATION - 1);
 
 	if ((USHORT) size < count)

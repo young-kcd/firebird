@@ -38,4 +38,5 @@ typedef struct symb {
 	short symb_size;
 } *SYMB;
 
-#endif /* JRD_DBG_H */
+#endif // JRD_DBG_H
+

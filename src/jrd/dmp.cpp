@@ -59,12 +59,12 @@ static void complement_key(UCHAR *, int);
 static double decompress(SCHAR *);
 static void dmp_blob(blob_page*);
 static void dmp_data(data_page*);
-static void dmp_header(HDR);
+static void dmp_header(header_page*);
 static void dmp_index(btree_page*, USHORT);
 static void dmp_pip(PIP, ULONG);
 static void dmp_pointer(pointer_page*);
-static void dmp_root(IRT);
-static void dmp_transactions(TIP, ULONG);
+static void dmp_root(index_root_page*);
+static void dmp_transactions(tx_inv_page*, ULONG);
 
 static int dmp_descending = 0;
 
@@ -291,7 +291,7 @@ void DMP_fetched_page(PAG page,
 	switch (page->pag_type)
 	{
 	case pag_header:
-		dmp_header((HDR) page);
+		dmp_header((header_page*) page);
 		break;
 
 	case pag_pages:
@@ -299,7 +299,7 @@ void DMP_fetched_page(PAG page,
 		break;
 
 	case pag_transactions:
-		dmp_transactions((TIP) page, sequence);
+		dmp_transactions((tx_inv_page*) page, sequence);
 		break;
 
 	case pag_pointer:
@@ -311,7 +311,7 @@ void DMP_fetched_page(PAG page,
 		break;
 
 	case pag_root:
-		dmp_root((IRT) page);
+		dmp_root((index_root_page*) page);
 		break;
 
 	case pag_index:
@@ -468,7 +468,7 @@ static double decompress(SCHAR * value)
 	p = (SCHAR *) & dbl;
 
 	if (*value & (1 << 7)) {
-		*p++ = static_cast < SCHAR > (*value++ ^ (1 << 7));
+		*p++ = static_cast<SCHAR>(*value++ ^ (1 << 7));
 		l = 7;
 		do
 			*p++ = *value++;
@@ -677,7 +677,7 @@ static void dmp_data(data_page* page)
 }
 
 
-static void dmp_header(HDR page)
+static void dmp_header(header_page* page)
 {
 /**************************************
  *
@@ -988,7 +988,7 @@ static void dmp_pointer(pointer_page* page)
 }
 
 
-static void dmp_root(IRT page)
+static void dmp_root(index_root_page* page)
 {
 /**************************************
  *
@@ -999,7 +999,7 @@ static void dmp_root(IRT page)
  * Functional description
  *
  **************************************/
-	irt::irt_repeat * desc;
+	index_root_page::irt_repeat * desc;
 	USHORT i, j;
 
 	ib_fprintf(dbg_file,
@@ -1027,7 +1027,7 @@ static void dmp_root(IRT page)
 }
 
 
-static void dmp_transactions(TIP page, ULONG sequence)
+static void dmp_transactions(tx_inv_page* page, ULONG sequence)
 {
 /**************************************
  *

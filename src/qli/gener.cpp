@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.29 2004-02-02 11:01:59 robocop Exp $
+$Id: gener.cpp,v 1.30 2004-02-20 06:43:16 robocop Exp $
 */
 
 #include "firebird.h"
@@ -199,8 +199,8 @@ static void explain(const UCHAR* explain_buffer)
  *	request in pretty-printed form.
  *
  **************************************/
-	SSHORT length, level = 0;
-	SCHAR relation_name[32], *r;
+	SSHORT level = 0;
+	SCHAR relation_name[32];
 	// CVC: This function may have the same bugs than the internal function
 	// used in the engine, that received fixes in FB1 & FB1.5.
 
@@ -224,19 +224,22 @@ static void explain(const UCHAR* explain_buffer)
 			break;
 
 		case isc_info_rsb_relation:
-			explain_printf(level, "isc_info_rsb_relation, ", 0);
+			{
+				explain_printf(level, "isc_info_rsb_relation, ", 0);
 
-			buffer_length--;
-			buffer_length -= (length = *explain_buffer++);
+				buffer_length--;
+				SSHORT length = *explain_buffer++;
+				buffer_length -= length;
 
-			r = relation_name;
-			while (length--) {
-				*r++ = *explain_buffer;
-				ib_putchar(*explain_buffer++);
+				char* r = relation_name;
+				while (length--) {
+					*r++ = *explain_buffer;
+					ib_putchar(*explain_buffer++);
+				}
+				ib_printf(",\n");
+				*r++ = 0;
+				break;
 			}
-			ib_printf(",\n");
-			*r++ = 0;
-			break;
 
 		case isc_info_rsb_type:
 			buffer_length--;
@@ -595,8 +598,6 @@ static void gen_compile( qli_req* request)
  *	Finish off BLR generation for a request, and get it compiled.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-
 	qli_rlb* rlb = CHECK_RLB(request->req_blr);
 	STUFF(blr_end);
 	STUFF(blr_eoc);
@@ -608,6 +609,7 @@ static void gen_compile( qli_req* request)
 
 	DBB dbb = request->req_database;
 
+	ISC_STATUS_ARRAY status_vector;
 	if (isc_compile_request(status_vector, &dbb->dbb_handle,
 							 &request->req_handle, length,
 							 (const char*) rlb->rlb_base)) {
@@ -746,10 +748,8 @@ static void gen_expression(qli_nod* node, qli_req* request)
  *	Generate the BLR for a boolean or value expression.
  *
  **************************************/
-	qli_ctx* context;
-	qli_map* map;
-	USHORT operatr;
-	qli_rlb* rlb;
+	USHORT operatr = 0;
+	qli_rlb* rlb = 0;
 
 	if (node->nod_flags & NOD_local)
 		request = NULL;
@@ -783,17 +783,20 @@ static void gen_expression(qli_nod* node, qli_req* request)
 		return;
 
 	case nod_map:
-		map = (qli_map*) node->nod_arg[e_map_map];
-		context = (qli_ctx*) node->nod_arg[e_map_context];
-		if (context->ctx_request != request &&
-			map->map_node->nod_type == nod_field) {
-			gen_field(map->map_node, request);
+		{
+			qli_map* map = (qli_map*) node->nod_arg[e_map_map];
+			const qli_ctx* context = (qli_ctx*) node->nod_arg[e_map_context];
+			if (context->ctx_request != request &&
+				map->map_node->nod_type == nod_field) 
+			{
+				gen_field(map->map_node, request);
+				return;
+			}
+			STUFF(blr_fid);
+			STUFF(context->ctx_context);
+			STUFF_WORD(map->map_position);
 			return;
 		}
-		STUFF(blr_fid);
-		STUFF(context->ctx_context);
-		STUFF_WORD(map->map_position);
-		return;
 
 	case nod_eql:
 		operatr = blr_eql;
@@ -1061,7 +1064,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 
 /* If data is to be received (included EOF), build a send */
 
-	const qli_par* eof;
+	const qli_par* eof = 0;
 	dsc desc;
 	USHORT value;
 

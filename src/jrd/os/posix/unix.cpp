@@ -122,9 +122,9 @@
 #endif
 
 static void close_marker_file(TEXT *);
-static FIL seek_file(FIL, BDB, UINT64 *, ISC_STATUS *);
-static FIL setup_file(DBB, const TEXT*, USHORT, int);
-static BOOLEAN unix_error(TEXT *, FIL, ISC_STATUS, ISC_STATUS *);
+static jrd_file* seek_file(jrd_file*, BDB, UINT64 *, ISC_STATUS *);
+static jrd_file* setup_file(DBB, const TEXT*, USHORT, int);
+static bool unix_error(TEXT*, jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
@@ -143,7 +143,7 @@ union fcntlun {
 #endif
 
 
-int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
+int PIO_add_file(DBB dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
 {
 /**************************************
  *
@@ -160,14 +160,14 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
  *	have been locked before entry.
  *
  **************************************/
-	fil* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
+	jrd_file* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
 	if (!new_file)
 		return 0;
 
 	new_file->fil_min_page = start;
 	USHORT sequence = 1;
 
-	fil* file;
+	jrd_file* file;
 	for (file = main_file; file->fil_next; file = file->fil_next)
 		++sequence;
 
@@ -178,7 +178,7 @@ int PIO_add_file(DBB dbb, FIL main_file, const TEXT* file_name, SLONG start)
 }
 
 
-void PIO_close(FIL main_file)
+void PIO_close(jrd_file* main_file)
 {
 /**************************************
  *
@@ -192,7 +192,7 @@ void PIO_close(FIL main_file)
  *	have been locked before entry.
  *
  **************************************/
-	FIL file;
+	jrd_file* file;
 
 	if (main_file) {
 		TEXT marker_filename[MAXPATHLEN];
@@ -240,7 +240,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 }
 
 
-FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
+jrd_file* PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 {
 /**************************************
  *
@@ -290,7 +290,7 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 
 	TEXT expanded_name[256]; // Shouldn't it be MAXPATHLEN?
 	length = PIO_expand(string, length, expanded_name);
-	fil* file = setup_file(dbb, expanded_name, length, desc);
+	jrd_file* file = setup_file(dbb, expanded_name, length, desc);
 	return file;
 }
 
@@ -313,7 +313,7 @@ int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name)
 }
 
 
-void PIO_flush(FIL main_file)
+void PIO_flush(jrd_file* main_file)
 {
 /**************************************
  *
@@ -325,7 +325,7 @@ void PIO_flush(FIL main_file)
  *	Flush the operating system cache back to good, solid oxide.
  *
  **************************************/
-	FIL file;
+	jrd_file* file;
 
 /* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
    is a no-op. */
@@ -342,7 +342,7 @@ void PIO_flush(FIL main_file)
 }
 
 
-void PIO_force_write(FIL file, bool flag)
+void PIO_force_write(jrd_file* file, bool flag)
 {
 /**************************************
  *
@@ -404,7 +404,7 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
  *	repositioned since the file was originally mapped.
  *
  **************************************/
-	FIL file;
+	jrd_file* file;
 	SSHORT i;
 	UINT64 bytes;
 
@@ -496,7 +496,7 @@ SLONG PIO_max_alloc(DBB dbb)
  **************************************/
 	struct stat statistics;
 	UINT64 length;
-	FIL file;
+	jrd_file* file;
 
 	for (file = dbb->dbb_file; file->fil_next; file = file->fil_next);
 
@@ -540,7 +540,7 @@ SLONG PIO_act_alloc(DBB dbb)
  **************************************/
 	struct stat statistics;
 	UINT64 length;
-	FIL file;
+	jrd_file* file;
 	ULONG tot_pages = 0;
 
 /**
@@ -568,11 +568,11 @@ SLONG PIO_act_alloc(DBB dbb)
 }
 
 
-FIL PIO_open(DBB dbb,
+jrd_file* PIO_open(DBB dbb,
 			 const TEXT* string,
 			 SSHORT length,
-			 SSHORT trace_flag,
-			 BLK connection, const TEXT* file_name, USHORT file_length)
+			 bool trace_flag,
+			 blk* connection, const TEXT* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -665,7 +665,7 @@ FIL PIO_open(DBB dbb,
 }
 
 
-int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
+bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -677,17 +677,16 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
  *	Read a data page.  Oh wow.
  *
  **************************************/
-	DBB dbb;
 	SSHORT i;
-	UINT64 bytes, size, offset;
+	UINT64 bytes, offset;
 
 	ISC_inhibit();
 
 	if (file->fil_desc == -1)
 		return unix_error("read", file, isc_io_read_err, status_vector);
 
-	dbb = bdb->bdb_dbb;
-	size = dbb->dbb_page_size;
+	DBB dbb = bdb->bdb_dbb;
+	const UINT64 size = dbb->dbb_page_size;
 
 #ifdef ISC_DATABASE_ENCRYPTION
 	if (dbb->dbb_encrypt_key) {
@@ -695,7 +694,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 
 		for (i = 0; i < IO_RETRY; i++) {
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
-				return FALSE;
+				return false;
 #ifdef PREAD_PWRITE
             if ((bytes = pread (file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size) 
 #else
@@ -719,7 +718,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 	{
 		for (i = 0; i < IO_RETRY; i++) {
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
-				return FALSE;
+				return false;
 #ifdef PREAD_PWRITE
 			if ((bytes = pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
 				break;
@@ -755,11 +754,11 @@ int PIO_read(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 	}
 
 	ISC_enable();
-	return TRUE;
+	return true;
 }
 
 
-int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
+bool PIO_write(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -771,9 +770,8 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
  *	Write a data page.  Oh wow.
  *
  **************************************/
-	DBB dbb;
 	SSHORT i;
-	SLONG bytes, size;
+	SLONG bytes;
     UINT64 offset;
 
 	ISC_inhibit();
@@ -781,8 +779,8 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 	if (file->fil_desc == -1)
 		return unix_error("write", file, isc_io_write_err, status_vector);
 
-	dbb = bdb->bdb_dbb;
-	size = dbb->dbb_page_size;
+	DBB dbb = bdb->bdb_dbb;
+	const SLONG size = dbb->dbb_page_size;
 
 #ifdef ISC_DATABASE_ENCRYPTION
 	if (dbb->dbb_encrypt_key) {
@@ -793,7 +791,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 
 		for (i = 0; i < IO_RETRY; i++) {
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
-				return FALSE;
+				return false;
 #ifdef PREAD_PWRITE
 			if ((bytes = pwrite(file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
 				break;
@@ -812,7 +810,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 	{
 		for (i = 0; i < IO_RETRY; i++) {
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
-				return FALSE;
+				return false;
 #ifdef PREAD_PWRITE
 			if ((bytes = pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
 				break;
@@ -832,7 +830,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 #endif
 
 	ISC_enable();
-	return TRUE;
+	return true;
 }
 
 
@@ -882,7 +880,8 @@ static void close_marker_file(TEXT * marker_filename)
 #endif
 
 
-static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vector)
+static jrd_file* seek_file(jrd_file* file, BDB bdb, UINT64* offset,
+	ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -895,32 +894,36 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vec
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	ULONG page;
-	DBB dbb;
     UINT64 lseek_offset;
 
-	dbb = bdb->bdb_dbb;
-	page = bdb->bdb_page;
+	DBB dbb = bdb->bdb_dbb;
+	ULONG page = bdb->bdb_page;
 
 	for (;; file = file->fil_next)
+	{
 		if (!file) {
 			ISC_enable();
 			CORRUPT(158);		/* msg 158 database file not available */
 		}
 		else if (page >= file->fil_min_page && page <= file->fil_max_page)
 			break;
+	}
 
 	if (file->fil_desc == -1)
-		return (FIL)(IPTR) unix_error("lseek", file, isc_io_access_err,
-								status_vector);
+	{
+		unix_error("lseek", file, isc_io_access_err, status_vector);
+		return 0;
+	}
 
 	page -= file->fil_min_page - file->fil_fudge;
 
     lseek_offset = page;
     lseek_offset *= dbb->dbb_page_size;
 
-    if (lseek_offset != LSEEK_OFFSET_CAST lseek_offset) {
-        return (FIL)(IPTR) unix_error ("lseek", file, isc_io_32bit_exceeded_err, status_vector);
+    if (lseek_offset != LSEEK_OFFSET_CAST lseek_offset)
+	{
+		unix_error("lseek", file, isc_io_32bit_exceeded_err, status_vector);
+		return 0;
     }
 
 #ifdef PREAD_PWRITE
@@ -928,10 +931,11 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vec
 #else
 	THD_MUTEX_LOCK(file->fil_mutex);
 
-	if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST lseek_offset, 0)) == (off_t)-1) {
+	if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST lseek_offset, 0)) == (off_t)-1)
+	{
 		THD_MUTEX_UNLOCK(file->fil_mutex);
-		return (FIL)(IPTR) unix_error("lseek", file, isc_io_access_err,
-								status_vector);
+		unix_error("lseek", file, isc_io_access_err, status_vector);
+		return 0;
 	}
 #endif
 
@@ -939,7 +943,8 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, ISC_STATUS * status_vec
 }
 
 
-static FIL setup_file(DBB dbb, const TEXT* file_name, USHORT file_length, int desc)
+static jrd_file* setup_file(DBB dbb, const TEXT* file_name, USHORT file_length,
+	int desc)
 {
 /**************************************
  *
@@ -951,15 +956,13 @@ static FIL setup_file(DBB dbb, const TEXT* file_name, USHORT file_length, int de
  *	Set up file and lock blocks for a file.
  *
  **************************************/
-	FIL file;
-	LCK lock;
 	UCHAR *p, *q, lock_string[32];
 	USHORT l;
 	struct stat statistics;
 
 /* Allocate file block and copy file name string */
 
-	file = FB_NEW_RPT(*dbb->dbb_permanent, file_length + 1) fil();
+	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_length + 1) jrd_file();
 	file->fil_desc = desc;
 	file->fil_length = file_length;
 	file->fil_max_page = -1UL;
@@ -993,7 +996,8 @@ static FIL setup_file(DBB dbb, const TEXT* file_name, USHORT file_length, int de
 
 	l = p - lock_string;
 
-	dbb->dbb_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, l) lck();
+	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) lck();
+	dbb->dbb_lock = lock;
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL, lock->lck_type);
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
@@ -1015,9 +1019,10 @@ static FIL setup_file(DBB dbb, const TEXT* file_name, USHORT file_length, int de
 }
 
 
-static BOOLEAN unix_error(
-						  TEXT * string,
-						  FIL file, ISC_STATUS operation, ISC_STATUS * status_vector)
+static bool unix_error(
+						  TEXT* string,
+						  jrd_file* file, ISC_STATUS operation,
+						  ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1030,39 +1035,39 @@ static BOOLEAN unix_error(
  *	to do something about it.  Harumph!
  *
  **************************************/
-	ISC_STATUS *status;
-
 	ISC_enable();
 
-	if (status = status_vector) {
+	ISC_STATUS* status = status_vector;
+	if (status) {
 		*status++ = isc_arg_gds;
 		*status++ = isc_io_error;
 		*status++ = isc_arg_string;
-		*status++ = (ISC_STATUS) string;
+		*status++ = (ISC_STATUS) string; // pointer to ISC_STATUS!!!
 		*status++ = isc_arg_string;
-		*status++ = (ISC_STATUS) ERR_string(file->fil_string, file->fil_length);
+		*status++ = (ISC_STATUS)(U_IPTR) ERR_string(file->fil_string, file->fil_length);
 		*status++ = isc_arg_gds;
 		*status++ = operation;
 		*status++ = isc_arg_unix;
 		*status++ = errno;
 		*status++ = isc_arg_end;
 		gds__log_status(0, status_vector);
-		return FALSE;
+		return false;
 	}
 	else
 		ERR_post(isc_io_error,
 				 isc_arg_string, string,
 				 isc_arg_string, ERR_string(file->fil_string,
-											file->fil_length), isc_arg_gds,
+											file->fil_length),
+				 isc_arg_gds,
 				 operation, isc_arg_unix, errno, 0);
 
 
-    // Added a FALSE for final return - which seems to be the answer, 
+    // Added a false for final return - which seems to be the answer,
     // but is better than what it was which was nothing ie random 
     // Most usages within here want it to return a failure.
     // MOD 01-July-2002
 
-    return FALSE;
+    return false;
 }
 
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
@@ -1209,7 +1214,7 @@ raw_devices_validate_database (
  *
  **************************************/
 	char header[MIN_PAGE_SIZE];
-	HDR hp = (HDR)header;
+	header_page* hp = (header_page*)header;
 	ssize_t bytes;
 	BOOLEAN retval = FALSE;
 	int i;
@@ -1293,9 +1298,8 @@ raw_devices_unlink_database (
 	const TEXT* file_name)
 {
 	char header[MIN_PAGE_SIZE];
-	size_t file_length = strlen(file_name);
-	ssize_t bytes;
-	int desc, i;
+	const size_t file_length = strlen(file_name);
+	int desc = -1, i;
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
@@ -1313,7 +1317,8 @@ raw_devices_unlink_database (
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
-		if ((bytes = write (desc, header, sizeof(header))) == sizeof(header))
+		const ssize_t bytes = write (desc, header, sizeof(header);
+		if (bytes) == sizeof(header))
 			break;
 		if (bytes == -1 && SYSCALL_INTERRUPTED(errno))
 			continue;
@@ -1324,7 +1329,8 @@ raw_devices_unlink_database (
 			isc_arg_unix, errno, 0);
 	}
 
-	(void)close(desc);
+	//if (desc != -1) perhaps it's better to check this???
+		(void)close(desc);
 
 #if DEV_BUILD
 	gds__log ("raw_devices_unlink_database: %s -> %s\n",
@@ -1333,5 +1339,5 @@ raw_devices_unlink_database (
 
 	return 0;
 }
-#endif /* SUPPORT_RAW_DEVICES */
+#endif // SUPPORT_RAW_DEVICES
 

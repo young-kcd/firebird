@@ -1,7 +1,7 @@
 /*
  *      PROGRAM:        InterBase server manager
  *      MODULE:         srvrmgr_proto.h
- *      DESCRIPTION:    Prototype header file for srvrmgr.c
+ *      DESCRIPTION:    Prototype header file for srvrmgr.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,8 +24,9 @@
 #ifndef SRVRMGR_PROTO_H
 #define SRVRMGR_PROTO_H
  
-void 	SRVRMGR_cleanup (IBMGR_DATA *);
-USHORT	SRVRMGR_exec_line (IBMGR_DATA *);
-void 	SRVRMGR_msg_get (USHORT, TEXT *);
+void 	SRVRMGR_cleanup (ibmgr_data_t*);
+USHORT	SRVRMGR_exec_line (ibmgr_data_t*);
+void 	SRVRMGR_msg_get (USHORT, TEXT*);
 
 #endif // SRVRMGR_PROTO_H
+

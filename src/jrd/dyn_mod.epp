@@ -136,7 +136,7 @@ void DYN_modify_database( GBL gbl, const UCHAR** ptr)
 		goto dyn_punt_84;
 	}
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_database, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_m_database, DYN_REQUESTS);
 
 	const SSHORT length = gds__vax_integer(s + 1, 2);
 	SLONG start = gds__vax_integer(s + 3, length);
@@ -272,7 +272,7 @@ void DYN_modify_exception( GBL gbl, const UCHAR** ptr)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -345,7 +345,7 @@ void DYN_modify_global_field(
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
 	bool found = false;
 	
 	dyn_fld* orig_dom = 0;
@@ -408,7 +408,7 @@ void DYN_modify_global_field(
 		orig_dom->dyn_precision = FLD.RDB$FIELD_PRECISION;
 		orig_dom->dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
 		orig_dom->dyn_collation = FLD.RDB$COLLATION_ID;
-		orig_dom->dyn_null_flag = FLD.RDB$NULL_FLAG;
+		orig_dom->dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
 
 		/* If the original field type is an array, force its blr type to blr_blob */
 		bool has_dimensions = false;
@@ -591,7 +591,7 @@ void DYN_modify_global_field(
 
 			case isc_dyn_fld_not_null:
 				nullflg = true;
-				new_dom->dyn_null_flag = TRUE;
+				new_dom->dyn_null_flag = true;
 				break;
 
 			case isc_dyn_fld_query_name:
@@ -889,7 +889,7 @@ void DYN_modify_index( GBL gbl, const UCHAR** ptr)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1045,7 +1045,7 @@ void DYN_modify_local_field(
 			DYN_execute(gbl, ptr, relation_name, field_name, NULL, NULL, NULL);
 		}
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1174,7 +1174,7 @@ void DYN_modify_procedure( GBL gbl, const UCHAR** ptr)
 
 	try {
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_prcs, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_m_prcs, DYN_REQUESTS);
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1277,7 +1277,7 @@ void DYN_modify_relation( GBL gbl, const UCHAR** ptr)
 	field_name[0] = 0;
 	GET_STRING(ptr, name);
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1372,7 +1372,7 @@ void DYN_modify_trigger( GBL gbl, const UCHAR** ptr)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1505,7 +1505,7 @@ void DYN_modify_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
 
 	try {
 
@@ -1587,7 +1587,7 @@ void DYN_modify_view( GBL gbl, const UCHAR** ptr)
 
 	try {
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1668,7 +1668,7 @@ static void drop_cache( GBL gbl)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1718,7 +1718,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1774,7 +1774,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 	}
 	
 	if (!found && verb == isc_dyn_begin_backup) try {
-		request = (BLK) CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FILES 
 			X.RDB$FILE_NAME.NULL = TRUE;
@@ -1831,7 +1831,7 @@ static void drop_log( GBL gbl)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -2272,7 +2272,7 @@ void DYN_modify_sql_field(GBL		gbl,
 			orig_fld->dyn_precision = FLD.RDB$FIELD_PRECISION;
 			orig_fld->dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
 			orig_fld->dyn_collation = FLD.RDB$COLLATION_ID;
-			orig_fld->dyn_null_flag = FLD.RDB$NULL_FLAG;
+			orig_fld->dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
 
 			strcpy(orig_fld->dyn_fld_source, RFR.RDB$FIELD_SOURCE);
 
@@ -2389,7 +2389,7 @@ void DYN_modify_sql_field(GBL		gbl,
 
 				case isc_dyn_fld_not_null:
 					nullflg = true;
-					new_fld->dyn_null_flag = TRUE;
+					new_fld->dyn_null_flag = true;
 					break;
 
 				case isc_dyn_fld_dimensions:
@@ -2663,7 +2663,7 @@ void get_domain_type(TDBB tdbb, DBB dbb, GBL gbl, DYN_FLD dom_fld)
 		dom_fld->dyn_precision = FLD.RDB$FIELD_PRECISION;
 		dom_fld->dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
 		dom_fld->dyn_collation = FLD.RDB$COLLATION_ID;
-		dom_fld->dyn_null_flag = FLD.RDB$NULL_FLAG;
+		dom_fld->dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
 
 	END_FOR;
 	CMP_release(tdbb, (jrd_req*)request);

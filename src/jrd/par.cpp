@@ -435,7 +435,7 @@ jrd_nod* PAR_make_field(TDBB tdbb, Csb* csb, USHORT context,
  * been resolved, because we would have fully loaded the
  * relation, but if it can not be loaded, then we have this
  * problem. The only thing that can be done to remedy this
- * problem is to rollback.  This will clear the dfw list and
+ * problem is to rollback.  This will clear the Deferred_work list and
  * allow the user to remedy the original error.  Note: it would
  * be incorrect for us (the server) to perform the rollback
  * implicitly, because this is a task for the user to do, and
@@ -1008,12 +1008,12 @@ static jrd_nod* par_exec_proc(TDBB tdbb, Csb* csb, SSHORT blr_operator)
 
 		if (blr_operator == blr_exec_pid) {
 			const USHORT pid = BLR_WORD;
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, FALSE, FALSE, 0)))
+			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
 				sprintf(name, "id %d", pid);
 		}
 		else {
 			par_name(csb, name);
-			procedure = MET_lookup_procedure(tdbb, name, FALSE);
+			procedure = MET_lookup_procedure(tdbb, name, false);
 		}
 		if (!procedure)
 			error(csb, isc_prcnotdef, isc_arg_string, ERR_cstring(name), 0);
@@ -1133,7 +1133,7 @@ static jrd_nod* par_field(TDBB tdbb, Csb* csb, SSHORT blr_operator)
 						  || (procedure->prc_flags & PRC_being_scanned)
 						  || (procedure->prc_flags & PRC_being_altered)))
 		{
-			scan_proc = MET_procedure(tdbb, procedure->prc_id, FALSE, 0);
+			scan_proc = MET_procedure(tdbb, procedure->prc_id, false, 0);
 			if (scan_proc != procedure)
 				procedure = NULL;
 		}
@@ -1752,11 +1752,11 @@ static jrd_nod* par_procedure(TDBB tdbb, Csb* csb, SSHORT blr_operator)
 
 		if (blr_operator == blr_procedure) {
 			par_name(csb, name);
-			procedure = MET_lookup_procedure(tdbb, name, FALSE);
+			procedure = MET_lookup_procedure(tdbb, name, false);
 		}
 		else {
 			const SSHORT pid = BLR_WORD;
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, FALSE, FALSE, 0)))
+			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
 				sprintf(name, "id %d", pid);
 		}
 		if (!procedure)
@@ -1814,8 +1814,9 @@ static void par_procedure_parms(
 			error(csb,
 				  isc_prcmismat,
 				  isc_arg_string,
-				  ERR_cstring(reinterpret_cast<
-							  const char*>(procedure->prc_name->str_data)), 0);
+				  ERR_cstring(reinterpret_cast<const char*>
+				  	(procedure->prc_name->str_data)),
+				  0);
 		}
 		else
 			mismatch = true;
@@ -1914,7 +1915,8 @@ static void par_procedure_parms(
 		error(csb,
 			  isc_prcmismat,
 			  isc_arg_string,
-			  ERR_cstring(reinterpret_cast<char*>(procedure->prc_name->str_data)), 0);
+			  ERR_cstring(reinterpret_cast<const char*>(procedure->prc_name->str_data)),
+			  0);
 	}
 }
 
@@ -1951,9 +1953,9 @@ static jrd_nod* par_relation(
 			const SSHORT length = BLR_PEEK;
 			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
 			alias_string->str_length = length;
-			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
+			par_name(csb, reinterpret_cast<char*>(alias_string->str_data));
 		}
-		if (!(relation = MET_lookup_relation_id(tdbb, id, FALSE))) {
+		if (!(relation = MET_lookup_relation_id(tdbb, id, false))) {
 			sprintf(name, "id %d", id);
 			error(csb, isc_relnotdef, isc_arg_string, ERR_cstring(name), 0);
 		}
@@ -1964,7 +1966,7 @@ static jrd_nod* par_relation(
 			const SSHORT length = BLR_PEEK;
 			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
 			alias_string->str_length = length;
-			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
+			par_name(csb, reinterpret_cast<char*>(alias_string->str_data));
 		}
 		if (!(relation = MET_lookup_relation(tdbb, name)))
 			error(csb, isc_relnotdef, isc_arg_string, ERR_cstring(name), 0);
@@ -2088,7 +2090,7 @@ static jrd_nod* par_rse(TDBB tdbb, Csb* csb, SSHORT rse_op)
 			break;
 			
 		case blr_writelock:
-			rse->rse_writelock = TRUE;
+			rse->rse_writelock = true;
 			break;
 
 #ifdef SCROLLABLE_CURSORS
@@ -2620,7 +2622,8 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 		break;
 
 	case blr_extract:
-		node->nod_arg[e_extract_part] = reinterpret_cast < jrd_nod * >(BLR_BYTE);
+	    // This forced conversion looks strange, but extract_part fits in a byte
+		node->nod_arg[e_extract_part] = (jrd_nod*)(U_IPTR) BLR_BYTE;
 		node->nod_arg[e_extract_value] = parse(tdbb, csb, sub_type);
 		node->nod_count = e_extract_count;
 		break;
@@ -2706,7 +2709,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 					syntax_error(csb, "blr_receive");
 				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
 			}
-			BLR_BYTE;
+			BLR_BYTE; // skip blr_end
 			node = PAR_make_list(tdbb, stack);
 		}
 		break;
@@ -2718,7 +2721,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 			node->nod_arg[e_blk_action] = parse(tdbb, csb, sub_type);
 			while (BLR_PEEK != (UCHAR) blr_end)
 				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
-			BLR_BYTE;
+			BLR_BYTE; // skip blr_end
 			node->nod_arg[e_blk_handlers] = PAR_make_list(tdbb, stack);
 		}
 		break;
@@ -2744,7 +2747,7 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 		node->nod_arg[e_if_true] = parse(tdbb, csb, sub_type);
 		if (BLR_PEEK == (UCHAR) blr_end) {
 			node->nod_count = 2;
-			BLR_BYTE;
+			BLR_BYTE; // skip blr_end
 			break;
 		}
 		node->nod_arg[e_if_false] = parse(tdbb, csb, sub_type);
@@ -2909,7 +2912,9 @@ static jrd_nod* parse(TDBB tdbb, Csb* csb, USHORT expected, USHORT expected_opti
 		n = BLR_BYTE;
 		if (n != blr_relation && n != blr_relation2 &&
 			n != blr_rid && n != blr_rid2)
-				syntax_error(csb, elements[RELATION]);
+		{
+			syntax_error(csb, elements[RELATION]);
+		}
 		node->nod_arg[e_range_relation_relation] =
 			par_relation(tdbb, csb, n, FALSE);
 		break;

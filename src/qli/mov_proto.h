@@ -31,7 +31,7 @@ void		MOVQ_double_to_date (double, SLONG [2]);
 void		MOVQ_fast (const SCHAR*, SCHAR*, ULONG);
 double		MOVQ_get_double(const dsc*);
 SLONG		MOVQ_get_long(const dsc*, SSHORT);
-int			MOVQ_get_string(const dsc*, TEXT**, vary*, USHORT);
+int			MOVQ_get_string(const dsc*, const TEXT**, vary*, USHORT);
 void		MOVQ_move(const dsc*, dsc*);
 void		MOVQ_terminate (const SCHAR*, SCHAR*, USHORT, USHORT);
 

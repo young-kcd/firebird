@@ -310,7 +310,7 @@ bool DYN_is_it_sql_role(GBL		gbl,
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 		return found;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$ROLES WITH
@@ -665,7 +665,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, USHORT size, bool err_flag)
 	return length;
 }
 
-USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, BID blob_id)
+USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
 {
 /**************************************
  *
@@ -689,7 +689,7 @@ USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, BID blob_id)
 	}
 
 	try {
-		BLB blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
+		blb* blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
@@ -703,7 +703,7 @@ USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, BID blob_id)
 	return length;
 }
 
-USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, BID blob_id)
+USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
 {
 /**************************************
  *
@@ -730,7 +730,7 @@ USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, BID blob_id)
 	const UCHAR* end = NULL;
 
 	try {
-		BLB blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
+		blb* blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
 
 		for (end = p + length; p < end; p += TEXT_BLOB_LENGTH)
 		{
@@ -954,7 +954,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 
 	try {
 
-	request = (BLK)CMP_find_request(tdbb,
+	request = CMP_find_request(tdbb,
 						(USHORT)(field[0] ? drq_l_grant1 : drq_l_grant2),
 						DYN_REQUESTS);
 	for (const TEXT* pr = privileges; *pr; pr++)
@@ -1162,7 +1162,7 @@ static bool grantor_can_grant(	GBL		gbl,
 
 /* Verify that the input relation exists. */
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
 
 
 	try {
@@ -1196,7 +1196,7 @@ static bool grantor_can_grant(	GBL		gbl,
 		bool field_exists = false;
 		
 		/* SELECT RDB$RELATION_FIELDS failed in grant */
-		request = (BLK) CMP_find_request(tdbb, drq_gcg5, DYN_REQUESTS);
+		request = CMP_find_request(tdbb, drq_gcg5, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			G_FLD IN RDB$RELATION_FIELDS WITH
 				G_FLD.RDB$RELATION_NAME = relation_name AND
@@ -1227,7 +1227,7 @@ static bool grantor_can_grant(	GBL		gbl,
 	bool grantor_is_owner = false;
 /* SELECT RDB$RELATIONS/RDB$OWNER_NAME failed in grant */
 
-	request = (BLK) CMP_find_request(tdbb, drq_gcg2, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_gcg2, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH
 			REL.RDB$RELATION_NAME = relation_name AND
@@ -1257,7 +1257,7 @@ static bool grantor_can_grant(	GBL		gbl,
 	err_num = 185;
 /* SELECT RDB$USER_PRIVILEGES failed in grant */
 
-	request = (BLK) CMP_find_request(tdbb, drq_gcg1, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_gcg1, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PRV IN RDB$USER_PRIVILEGES WITH
 			PRV.RDB$USER = UPPERCASE(grantor) AND
@@ -1364,7 +1364,7 @@ static bool grantor_can_grant(	GBL		gbl,
 	err_num = 186;
 /* SELECT RDB$VIEW_RELATIONS/RDB$RELATION_FIELDS/... failed in grant */
 
-	request = (BLK) CMP_find_request(tdbb, drq_gcg3, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_gcg3, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		G_FLD IN RDB$RELATION_FIELDS CROSS
 			G_VIEW IN RDB$VIEW_RELATIONS WITH
@@ -1466,7 +1466,7 @@ static bool grantor_can_grant_role(	TDBB	tdbb,
 		return false;
 	}
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_get_role_au, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_get_role_au, DYN_REQUESTS);
 
 	// The 'grantor' is not the owner of the ROLE, see if they
 	// have admin privilege on the role
@@ -1673,7 +1673,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 
 	volatile USHORT old_id, id;
 
-	BLK request = (BLK)CMP_find_request(tdbb,
+	BLK request = CMP_find_request(tdbb,
 						(USHORT)(field[0] ? drq_e_grant1 : drq_e_grant2),
 						DYN_REQUESTS);
 	id = field[0] ? drq_e_grant1 : drq_e_grant2;
@@ -1801,7 +1801,7 @@ static void set_field_class_name(GBL gbl, const TEXT* relation, const TEXT* fiel
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
 	BLK request2 = NULL;
 	
 	bool unique = false;
@@ -1820,7 +1820,7 @@ static void set_field_class_name(GBL gbl, const TEXT* relation, const TEXT* fiel
 				MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 0, (SINT64) 1));
 
 			unique = true;
-			request2 = (BLK) CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
+			request2 = CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
 			FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				RFR1 IN RDB$RELATION_FIELDS 
 				WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
@@ -1865,7 +1865,7 @@ static void store_privilege(GBL		gbl,
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
-	BLK request = (BLK) CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
+	BLK request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
 
 /* need to unwind our own request here!! SM 27-Sep-96 */
 

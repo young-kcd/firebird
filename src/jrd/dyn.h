@@ -49,8 +49,8 @@ typedef struct gbl
 } *GBL;
 
 typedef struct dyn_fld {
-	DSC dyn_dsc;
-	BOOLEAN dyn_null_flag;
+	dsc dyn_dsc;
+	bool dyn_null_flag;
 	USHORT dyn_dtype;
 	USHORT dyn_precision;
 	USHORT dyn_charlen;

@@ -277,7 +277,7 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
 }
 
 
-void TPC_update_cache(TDBB tdbb, TIP tip_page, SLONG sequence)
+void TPC_update_cache(TDBB tdbb, tx_inv_page* tip_page, SLONG sequence)
 {
 /**************************************
  *
@@ -387,7 +387,7 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
 	oldest = MAX(oldest, dbb->dbb_oldest_transaction);
 #else
 	WIN window(HEADER_PAGE);
-	const hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+	const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	const ULONG top = header->hdr_next_transaction;
 	oldest = MAX(oldest, (ULONG) header->hdr_oldest_transaction);
 	CCH_RELEASE(tdbb, &window);

@@ -24,28 +24,31 @@
 #ifndef JRD_PIO_PROTO_H
 #define JRD_PIO_PROTO_H
 
-int		PIO_add_file(struct dbb*, struct fil*, const TEXT*, SLONG);
-void	PIO_close(struct fil*);
-struct fil*	PIO_create(struct dbb*, const TEXT*, SSHORT, bool);
+class jrd_file;
+class dbb;
+
+int		PIO_add_file(dbb*, jrd_file*, const TEXT*, SLONG);
+void	PIO_close(jrd_file*);
+jrd_file*	PIO_create(dbb*, const TEXT*, SSHORT, bool);
 int		PIO_connection(const TEXT*, USHORT*);
 int		PIO_expand(const TEXT*, USHORT, TEXT*);
-void	PIO_flush(struct fil*);
-void	PIO_force_write(struct fil*, bool);
-void	PIO_header(struct dbb*, SCHAR*, int);
-SLONG	PIO_max_alloc(struct dbb*);
-SLONG	PIO_act_alloc(struct dbb*);
-struct fil*	PIO_open(struct dbb*, const TEXT*, SSHORT, SSHORT,
+void	PIO_flush(jrd_file*);
+void	PIO_force_write(jrd_file*, bool);
+void	PIO_header(dbb*, SCHAR*, int);
+SLONG	PIO_max_alloc(dbb*);
+SLONG	PIO_act_alloc(dbb*);
+jrd_file*	PIO_open(dbb*, const TEXT*, SSHORT, bool,
 							struct blk*, const TEXT*, USHORT);
-int		PIO_read(struct fil*, class bdb*, struct pag*, ISC_STATUS*);
+bool	PIO_read(jrd_file*, class bdb*, struct pag*, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2
-int		PIO_read_ahead(struct dbb*, SLONG, SCHAR*, SLONG, struct piob*,
+bool	PIO_read_ahead(dbb*, SLONG, SCHAR*, SLONG, struct phys_io_blk*,
 						  ISC_STATUS*);
-int		PIO_status(struct piob*, ISC_STATUS*);
+bool		PIO_status(struct phys_io_blk*, ISC_STATUS*);
 #endif
 
 int		PIO_unlink(const TEXT*);
-int		PIO_write(struct fil*, class bdb*, struct pag*, ISC_STATUS*);
+bool	PIO_write(jrd_file*, class bdb*, struct pag*, ISC_STATUS*);
 
 #endif // JRD_PIO_PROTO_H
 

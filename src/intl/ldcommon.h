@@ -47,7 +47,7 @@ typedef USHORT UNICODE;
 #else
 #include <stdlib.h> /* prototype for abort() */
 #define ERR_assert	LD_assert
-#define fb_assert(ex)	{if (!(ex)){LD_assert (__FILE__, __LINE__); abort();}}
+#define fb_assert(ex)	{if (!(ex)) {LD_assert (__FILE__, __LINE__); abort();}}
 
 #endif
 

@@ -2196,17 +2196,16 @@ OBJCT rem_port::get_id(BLK block)
    NOTE: prior to server version 4.5.0 id==0 COULD be used - so
    only the server side can now depend on id==0 meaning "invalid id" */
 
-	VEC vector = this->port_object_vector;
+	rem_vec* vector = this->port_object_vector;
 	if (!vector) {
 		return REMOTE_set_object(this, block, (OBJCT) 1);
 	}
 
 	// Search vector for an empty slot.  If we find one, use it
 
-	BLK *p, *end;
-
-	for (p = vector->vec_object + 1, end =
-		 vector->vec_object + vector->vec_count; p < end; p++)
+	blk** p = vector->vec_object + 1;
+	for (const blk* const* const end = vector->vec_object + vector->vec_count;
+		p < end; p++)
 	{
 		if (!*p) {
 			*p = block;

@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.66 2004-02-16 23:24:31 arnobrinkman Exp $
+$Id: restore.epp,v 1.67 2004-02-20 06:42:30 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1936,7 +1936,7 @@ void get_blob (const burp_fld* fields,
 	ISC_QUAD* blob_id = (ISC_QUAD*) ((UCHAR*) record_buffer + field->fld_offset);
 	FRBRD* blob = NULL;
 	ISC_STATUS_ARRAY status_vector;
-	char blob_desc[] = {isc_bpb_version1, isc_bpb_type, 1, blob_type};
+	const char blob_desc[] = {isc_bpb_version1, isc_bpb_type, 1, blob_type};
 
 	if (isc_create_blob2 (status_vector, &DB, &gds_trans, &blob, blob_id, 
 		sizeof(blob_desc), blob_desc))

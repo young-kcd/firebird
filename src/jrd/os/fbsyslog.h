@@ -32,4 +32,5 @@ public:
 	static void Record(Severity, string);
 };
 }
-#endif  //FIREBIRD_SYSLOG_H
+#endif  // FIREBIRD_SYSLOG_H
+

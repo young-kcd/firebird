@@ -71,7 +71,7 @@ public:
 
 #define MAX_FORMAT_SIZE		65535
 
-typedef vary VARY;
+//typedef vary VARY;
 
 /* A macro to define a local vary stack variable of a given length
    Usage:  VARY_STR(5)	my_var;        */
@@ -98,7 +98,7 @@ class fun : public pool_alloc_rpt<fun_repeat, type_fun>
 {
     public:
 	STR fun_exception_message;	/* message containing the exception error message */
-	struct fun *fun_homonym;	/* Homonym functions */
+	fun*		fun_homonym;	/* Homonym functions */
 	struct sym *fun_symbol;		/* Symbol block */
 	int (*fun_entrypoint) ();	/* Function entrypoint */
 	USHORT fun_count;			/* Number of arguments (including return) */
@@ -163,7 +163,7 @@ class arr : public pool_alloc_rpt<ads::ads_repeat, type_arr>
 	class blb*	arr_blob;		/* Blob for data access */
 	class jrd_tra* arr_transaction;	/* Parent transaction block */
 	struct arr* arr_next;		/* Next array in transaction */
-	struct jrd_req* arr_request;	/* request */
+	class jrd_req* arr_request;	/* request */
 	SLONG		arr_effective_length;	/* Length of array instance */
 	USHORT		arr_desc_length;		/* Length of array descriptor */
 	struct ads	arr_desc;		/* Array descriptor */

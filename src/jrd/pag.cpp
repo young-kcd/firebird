@@ -228,13 +228,13 @@ void PAG_add_clump(
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
 	pag* page;
-	hdr* header = 0;
+	header_page* header = 0;
 	log_info_page* logp = 0;
 	USHORT* end_addr;
 	WIN window(page_num);
 	if (page_num == HEADER_PAGE) {
 		page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-		header = (HDR) page;
+		header = (header_page*) page;
 		end_addr = &header->hdr_end;
 	}
 	else {
@@ -309,7 +309,7 @@ void PAG_add_clump(
 		window.win_page = page_num;
 		if (page_num == HEADER_PAGE) {
 			page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-			header = (HDR) page;
+			header = (header_page*) page;
 			end_addr = &header->hdr_end;
 		}
 		else {
@@ -350,7 +350,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 
 /* Find current last file */
 
-	fil* file = dbb->dbb_file;
+	jrd_file* file = dbb->dbb_file;
 	while (file->fil_next) {
 		file = file->fil_next;
 	}
@@ -372,13 +372,13 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 
 /* Create header page for new file */
 
-	fil* next = file->fil_next;
+	jrd_file* next = file->fil_next;
 
 	if (dbb->dbb_flags & DBB_force_write)
 		PIO_force_write(next, true);
 
 	WIN window(next->fil_min_page);
-	hdr* header = (HDR) CCH_fake(tdbb, &window, 1);
+	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_type = pag_header;
 	header->hdr_sequence = sequence;
 	header->hdr_page_size = dbb->dbb_page_size;
@@ -389,8 +389,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 #ifdef SUPPORT_RAW_DEVICES
 /* The following lines (taken from PAG_format_header) are needed to identify
    this file in raw_devices_validate_database as a valid database attachment. */
-	MOV_time_stamp(reinterpret_cast <
-				   ISC_TIMESTAMP * >(header->hdr_creation_date));
+	MOV_time_stamp(reinterpret_cast<ISC_TIMESTAMP*>(header->hdr_creation_date));
 	header->hdr_ods_version        = ODS_VERSION;
 	header->hdr_implementation     = CLASS;
 	header->hdr_ods_minor          = ODS_CURRENT;
@@ -409,7 +408,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 
 	file->fil_fudge = 0;
 	window.win_page = file->fil_min_page;
-	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	if (!file->fil_min_page)
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 	else
@@ -441,7 +440,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 }
 
 
-int PAG_add_header_entry(HDR header, USHORT type, SSHORT len, const UCHAR* entry)
+int PAG_add_header_entry(header_page* header, USHORT type, SSHORT len, const UCHAR* entry)
 {
 /***********************************************
  *
@@ -482,8 +481,8 @@ int PAG_add_header_entry(HDR header, USHORT type, SSHORT len, const UCHAR* entry
 	if (free_space > (2 + len)) {
 		fb_assert(type <= MAX_UCHAR);
 		fb_assert(len <= MAX_UCHAR);
-		*p++ = static_cast < UCHAR > (type);
-		*p++ = static_cast < UCHAR > (len);
+		*p++ = static_cast<UCHAR>(type);
+		*p++ = static_cast<UCHAR>(len);
 
 		if (len) {
 			if (q) {
@@ -510,7 +509,7 @@ int PAG_add_header_entry(HDR header, USHORT type, SSHORT len, const UCHAR* entry
 }
 
 
-int PAG_replace_entry_first(HDR header, USHORT type, SSHORT len, const UCHAR* entry)
+int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const UCHAR* entry)
 {
 /***********************************************
  *
@@ -604,7 +603,8 @@ PAG PAG_allocate(WIN * window)
 	for (sequence = control->pgc_high_water;; sequence++) {
 		pip_window.win_page = (sequence == 0) ?
 			control->pgc_pip : sequence * control->pgc_ppp - 1;
-		pip* pip_page = (pip*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
+		page_inv_page* pip_page = 
+			(page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
 		const UCHAR* end = (UCHAR*) pip_page + dbb->dbb_page_size;
 		for (bytes = &pip_page->pip_bits[pip_page->pip_min >> 3]; bytes < end;
 			 bytes++)
@@ -651,7 +651,7 @@ PAG PAG_allocate(WIN * window)
 /* We've allocated the last page on the space management page.  Rather
    than returning it, format it as a page inventory page, and recurse. */
 
-	pip* new_pip_page = (pip*) new_page;
+	page_inv_page* new_pip_page = (page_inv_page*) new_page;
 	new_pip_page->pip_header.pag_type = pag_pages;
 	// CVC: If some tips on web sites are true, this can be improved by
 	// a pointer to ULONG setting memory to 0xffffffff.
@@ -699,7 +699,7 @@ SLONG PAG_attachment_id(void)
 	}
 	else {
 		window.win_page = HEADER_PAGE;
-		hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &window);
 		attachment->att_attachment_id = ++header->hdr_attachment_id;
 
@@ -758,11 +758,11 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 	}
 	CCH_MARK(tdbb, &window);
 
-	hdr* header = 0;
+	header_page* header = 0;
 	log_info_page* logp = 0;
 	USHORT* end_addr;
 	if (page_num == HEADER_PAGE) {
-		header = (HDR) page;
+		header = (header_page*) page;
 		end_addr = &header->hdr_end;
 	}
 	else {
@@ -806,7 +806,7 @@ void PAG_format_header(void)
 /* Initialize header page */
 
 	WIN window(HEADER_PAGE);
-	hdr* header = (HDR) CCH_fake(tdbb, &window, 1);
+	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_scn = 0;
 	MOV_time_stamp(reinterpret_cast <
 				   ISC_TIMESTAMP * >(header->hdr_creation_date));
@@ -883,12 +883,12 @@ void PAG_format_pip(void)
 
 	WIN window(1);
 	dbb->dbb_pcontrol->pgc_pip = 1;
-	pip* pages = (PIP) CCH_fake(tdbb, &window, 1);
+	page_inv_page* pages = (page_inv_page*) CCH_fake(tdbb, &window, 1);
 
 	pages->pip_header.pag_type = pag_pages;
 	pages->pip_min = 4;
 	UCHAR* p = pages->pip_bits;
-	int i = dbb->dbb_page_size - OFFSETA(PIP, pip_bits);
+	int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
 
 	while (i--) {
 		*p++ = 0xff;
@@ -983,7 +983,7 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
 
 	try {
 
-	hdr* header = (HDR) temp_page;
+	header_page* header = (header_page*) temp_page;
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
 
 	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence) {
@@ -1135,10 +1135,10 @@ void PAG_init(void)
 
 	pgc* control = FB_NEW(*dbb->dbb_permanent) pgc();
 	dbb->dbb_pcontrol = control;
-	control->pgc_bytes = dbb->dbb_page_size - OFFSETA(PIP, pip_bits);
+	control->pgc_bytes = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
 	control->pgc_ppp = control->pgc_bytes * 8;
 	control->pgc_tpt =
-		(dbb->dbb_page_size - OFFSETA(TIP, tip_transactions)) * 4;
+		(dbb->dbb_page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4;
 	control->pgc_pip = 1;
 /* dbb_ods_version can be 0 when a new database is being created */
 	if ((dbb->dbb_ods_version == 0)
@@ -1171,8 +1171,8 @@ void PAG_init(void)
 /* Compute the number of index roots that will fit on an index root page,
    assuming that each index has only one key */
 
-	dbb->dbb_max_idx = (dbb->dbb_page_size - OFFSETA(IRT, irt_rpt)) /
-		(sizeof(irt::irt_repeat) +
+	dbb->dbb_max_idx = (dbb->dbb_page_size - OFFSETA(index_root_page*, irt_rpt)) /
+		(sizeof(index_root_page::irt_repeat) +
 		(1 * (dbb->dbb_ods_version >= ODS_VERSION11) ?
 			sizeof(irtd) : sizeof(irtd_ods10)));
 
@@ -1215,9 +1215,9 @@ void PAG_init2(USHORT shadow_number)
 
 	try {
 
-	fil* file = dbb->dbb_file;
+	jrd_file* file = dbb->dbb_file;
 	if (shadow_number) {
-		sdw* shadow = dbb->dbb_shadow;
+		Shadow* shadow = dbb->dbb_shadow;
 		for (; shadow; shadow = shadow->sdw_next) {
 			if (shadow->sdw_number == shadow_number) {
 				file = shadow->sdw_file;
@@ -1256,7 +1256,7 @@ void PAG_init2(USHORT shadow_number)
 			if (!file->fil_min_page)
 				CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 
-			hdr* header = (HDR) temp_page;
+			header_page* header = (header_page*) temp_page;
 			temp_bdb.bdb_buffer = (PAG) header;
 			temp_bdb.bdb_page = window.win_page;
 			temp_bdb.bdb_dbb = dbb;
@@ -1322,7 +1322,7 @@ void PAG_init2(USHORT shadow_number)
 		file->fil_next = PIO_open(dbb,
 								  file_name,
 								  file_length,
-								  FALSE,
+								  false,
 								  0,
 								  file_name,
 								  file_length);
@@ -1375,7 +1375,7 @@ SLONG PAG_last_page(void)
 		window.win_page =
 			(!sequence) ? dbb->dbb_pcontrol->pgc_pip : sequence *
 			pages_per_pip - 1;
-		pip* page = (PIP) CCH_FETCH(tdbb, &window, LCK_read, pag_pages);
+		page_inv_page* page = (page_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pages);
 		UCHAR* bits;
 		for (bits = page->pip_bits + (pages_per_pip >> 3) - 1;
 			 *bits == (UCHAR) - 1; --bits); // null loop body???
@@ -1422,7 +1422,8 @@ void PAG_release_page(SLONG number, SLONG prior_page)
 	WIN pip_window((sequence == 0) ?
 		control->pgc_pip : sequence * control->pgc_ppp - 1);
 
-	pip* pages = (PIP) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
+	page_inv_page* pages = 
+		(page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
 	CCH_precedence(tdbb, &pip_window, prior_page);
 	CCH_MARK(tdbb, &pip_window);
 	pages->pip_bits[relative_bit >> 3] |= 1 << (relative_bit & 7);
@@ -1452,7 +1453,7 @@ void PAG_set_force_write(DBB dbb, SSHORT flag)
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
 	WIN window(HEADER_PAGE);
-	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
 	if (flag == 2)
@@ -1474,12 +1475,12 @@ void PAG_set_force_write(DBB dbb, SSHORT flag)
 
 	CCH_RELEASE(tdbb, &window);
 
-	for (fil* file = dbb->dbb_file; file; file = file->fil_next) {
+	for (jrd_file* file = dbb->dbb_file; file; file = file->fil_next) {
 		PIO_force_write(file, flag != 0);
 	}
 
-	for (sdw* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next) {
-		for (fil* file = shadow->sdw_file; file; file = file->fil_next)
+	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next) {
+		for (jrd_file* file = shadow->sdw_file; file; file = file->fil_next)
 			PIO_force_write(file, flag != 0);
 	}
 }
@@ -1502,7 +1503,7 @@ void PAG_set_no_reserve(DBB dbb, USHORT flag)
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
 	WIN window(HEADER_PAGE);
-	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
 	if (flag) {
@@ -1518,7 +1519,7 @@ void PAG_set_no_reserve(DBB dbb, USHORT flag)
 }
 
 
-void PAG_set_db_readonly(DBB dbb, SSHORT flag)
+void PAG_set_db_readonly(DBB dbb, bool flag)
 {
 /*********************************************
  *
@@ -1533,7 +1534,7 @@ void PAG_set_db_readonly(DBB dbb, SSHORT flag)
 	TDBB tdbb = GET_THREAD_DATA;
 
 	WIN window(HEADER_PAGE);
-	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
 	if (!flag) {
 		/* If the database is transitioning from RO to RW, reset the
@@ -1574,7 +1575,7 @@ void PAG_set_db_SQL_dialect(DBB dbb, SSHORT flag)
 	const USHORT minor_original = dbb->dbb_minor_original;
 
 	WIN window(HEADER_PAGE);
-	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
 	if ((flag) && (ENCODE_ODS(major_version, minor_original) >= ODS_10_0)) {
 		switch (flag) {
@@ -1583,6 +1584,7 @@ void PAG_set_db_SQL_dialect(DBB dbb, SSHORT flag)
 			if (dbb->dbb_flags & DBB_DB_SQL_dialect_3 ||
 				header->hdr_flags & hdr_SQL_dialect_3)
 			{
+				// Check the returned value here!
 				ERR_post_warning(isc_dialect_reset_warning, 0);
 			}
 
@@ -1629,7 +1631,7 @@ void PAG_set_page_buffers(ULONG buffers)
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
 	WIN window(HEADER_PAGE);
-	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_page_buffers = buffers;
 	CCH_RELEASE(tdbb, &window);
@@ -1716,7 +1718,7 @@ static void find_clump_space(
 
 	const UCHAR* ptr = entry;
 	pag* page = *ppage;
-	hdr* header = 0; // used after the loop
+	header_page* header = 0; // used after the loop
 	log_info_page* logp = 0; // used after the loop
 
 	while (true) {
@@ -1725,7 +1727,7 @@ static void find_clump_space(
 		UCHAR* p;
 
 		if (page_num == HEADER_PAGE) {
-			header = (HDR) page;
+			header = (header_page*) page;
 			next_page = header->hdr_next_page;
 			free_space = dbb->dbb_page_size - header->hdr_end;
 			end_addr = &header->hdr_end;
@@ -1747,8 +1749,8 @@ static void find_clump_space(
 
 			fb_assert(type <= MAX_UCHAR);
 			fb_assert(len <= MAX_UCHAR);
-			*p++ = static_cast < UCHAR > (type);
-			*p++ = static_cast < UCHAR > (len);
+			*p++ = static_cast<UCHAR>(type);
+			*p++ = static_cast<UCHAR>(len);
 
 			if (len) {
 				do {
@@ -1784,13 +1786,13 @@ static void find_clump_space(
 		CCH_MARK(tdbb, &new_window);
 
 
-	hdr* new_header = 0;
+	header_page* new_header = 0;
 	log_info_page* new_logp = 0;
 	SLONG next_page;
 	USHORT* end_addr;
 	UCHAR* p;
 	if (page_num == HEADER_PAGE) {
-		new_header = (HDR) new_page;
+		new_header = (header_page*) new_page;
 		new_header->hdr_header.pag_type = pag_header;
 		new_header->hdr_end = HDR_SIZE;
 		new_header->hdr_page_size = dbb->dbb_page_size;
@@ -1811,8 +1813,8 @@ static void find_clump_space(
 
 	fb_assert(type <= MAX_UCHAR);
 	fb_assert(len <= MAX_UCHAR);
-	*p++ = static_cast < UCHAR > (type);
-	*p++ = static_cast < UCHAR > (len);
+	*p++ = static_cast<UCHAR>(type);
+	*p++ = static_cast<UCHAR>(len);
 
 	if (len) {
 		do {
@@ -1860,12 +1862,12 @@ static bool find_type(
 	TDBB tdbb = GET_THREAD_DATA;
 
 	while (true) {
-		hdr* header = 0;
+		header_page* header = 0;
 		log_info_page* logp = 0;
 		UCHAR* p;
 		SLONG next_page;
 		if (page_num == HEADER_PAGE) {
-			header = (HDR) (*ppage);
+			header = (header_page*) (*ppage);
 			p = header->hdr_data;
 			next_page = header->hdr_next_page;
 		}

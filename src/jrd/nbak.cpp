@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.19 2004-02-02 11:01:34 robocop Exp $
+ *  $Id: nbak.cpp,v 1.20 2004-02-20 06:43:00 robocop Exp $
  *
  */
 
@@ -360,12 +360,10 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
  *  will release the lock as soon it finishes
  *
  **************************************/
-	DBB new_dbb = reinterpret_cast<DBB>(ast_object);
-	LCK lock;
+	DBB new_dbb = static_cast<DBB>(ast_object);
 	struct tdbb thd_context, *tdbb;
 
-
-	lock = new_dbb->backup_manager->state_lock;
+	lck* lock = new_dbb->backup_manager->state_lock;
 
 	ISC_ast_enter();
 
@@ -415,11 +413,9 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
  *
  **************************************/
 	DBB new_dbb = reinterpret_cast<DBB>(ast_object);
-	LCK lock;
 	struct tdbb thd_context, *tdbb;
 
-
-	lock = new_dbb->backup_manager->alloc_lock;
+	lck* lock = new_dbb->backup_manager->alloc_lock;
 
 	ISC_ast_enter();
 
@@ -467,13 +463,11 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
  *  will release the lock as soon it finishes
  *
  **************************************/
-	DBB new_dbb = reinterpret_cast<DBB>(ast_object);
-	LCK lock;
+	DBB new_dbb = static_cast<DBB>(ast_object);
 	struct tdbb thd_context, *tdbb;
 	ISC_STATUS_ARRAY ast_status;
 
-
-	lock = new_dbb->backup_manager->database_lock;
+	lck* lock = new_dbb->backup_manager->database_lock;
 
 	ISC_ast_enter();
 
@@ -523,7 +517,7 @@ void BackupManager::begin_backup() {
 
 	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
-	HDR header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true;
 	try {
 		lock_state_write(true);
@@ -622,7 +616,7 @@ void BackupManager::end_backup(bool recover) {
 
 	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
-	HDR header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true;
 
 	try {
@@ -720,7 +714,7 @@ void BackupManager::end_backup(bool recover) {
 	// We finished. We need to reflect it in our database header page
 	window.win_page = HEADER_PAGE;
 	window.win_flags = 0;
-	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	state_locked = false;
 	header_locked = true;
 	try {
@@ -802,14 +796,16 @@ bool BackupManager::actualize_alloc() throw() {
 		
 			if (!PIO_read(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status))
 				return false;
-			for (ULONG i=last_allocated_page-temp_bdb.bdb_page; i < alloc_buffer[0]; i++) {
-				NBAK_TRACE(("alloc item page=%d, diff=%d", alloc_buffer[i+1], temp_bdb.bdb_page+i+1));
-				if (!alloc_table->add(AllocItem(alloc_buffer[i+1], temp_bdb.bdb_page+i+1))) {
+			for (ULONG i = last_allocated_page - temp_bdb.bdb_page; i < alloc_buffer[0]; i++) {
+				NBAK_TRACE(("alloc item page=%d, diff=%d", alloc_buffer[i + 1], temp_bdb.bdb_page + i + 1));
+				if (!alloc_table->add(AllocItem(alloc_buffer[i + 1], temp_bdb.bdb_page + i + 1)))
+				{
 					database->dbb_flags |= DBB_bugcheck;
 					status[0] = isc_arg_gds;
 					status[1] = isc_bug_check;
 					status[2] = isc_arg_string;
-					status[3] = (ISC_STATUS)ERR_cstring("Duplicated item in allocation table detected");
+					status[3] =
+						(ISC_STATUS)(U_IPTR) ERR_cstring("Duplicated item in allocation table detected");
 					status[4] = isc_arg_end;
 					return false;
 				}
@@ -1023,9 +1019,9 @@ void BackupManager::set_difference(const char* filename) {
 	TDBB tdbb = GET_THREAD_DATA;
 	
 	if (filename) {
-		HDR header;
+		header_page* header;
 		WIN window(HEADER_PAGE);
-		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+		header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		PAG_replace_entry_first(header, HDR_difference_file, 
 			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
@@ -1049,12 +1045,12 @@ bool BackupManager::actualize_state() throw() {
 			
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;
-	HDR header = reinterpret_cast<HDR>(spare_buffer);
+	header_page* header = reinterpret_cast<header_page*>(spare_buffer);
 	struct bdb temp_bdb;
 	temp_bdb.bdb_page = HEADER_PAGE;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<PAG>(header);
-	FIL file = database->dbb_file;
+	jrd_file* file = database->dbb_file;
 	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status)) {
 		if (!CCH_rollover_to_shadow(database, file, false)) {
 			NBAK_TRACE(("Shadow change error"));
@@ -1083,7 +1079,7 @@ bool BackupManager::actualize_state() throw() {
 	bool fname_found = false;
 	UCHAR *p = header->hdr_data;
 	while (true) {
-		switch(*p) {
+		switch (*p) {
 		case HDR_backup_guid:
 			p += p[1]+2;
 			continue;
@@ -1119,7 +1115,8 @@ bool BackupManager::actualize_state() throw() {
 		status[0] = isc_arg_gds;
 		status[1] = isc_bug_check;
 		status[2] = isc_arg_string;
-		status[3] = (ISC_STATUS)ERR_cstring("Difference file is in use while backup is already finished");
+		status[3] =
+			(ISC_STATUS)(U_IPTR) ERR_cstring("Difference file is in use while backup is already finished");
 		status[4] = isc_arg_end;
 		return false;
 	}
@@ -1150,7 +1147,7 @@ bool BackupManager::actualize_state() throw() {
 #endif
 		try {
 			NBAK_TRACE(("Open difference file"));
-			diff_file = PIO_open(database, diff_name, strlen(diff_name), 0, 
+			diff_file = PIO_open(database, diff_name, strlen(diff_name), false,
 								 NULL, diff_name, strlen(diff_name));
 		} catch(const Firebird::status_exception&) {
 #ifdef SUPERSERVER

@@ -11,4 +11,5 @@ class SmpLock
         virtual void release(void) = 0;
 };
 
-#endif
+#endif // JRD_SMP_H
+

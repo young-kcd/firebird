@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.35 2004-01-28 07:50:32 robocop Exp $
+$Id: fun.epp,v 1.36 2004-02-20 06:43:00 robocop Exp $
 */
 
 #include "firebird.h"
@@ -86,23 +86,23 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 typedef struct blob_t {
 //	SSHORT(*blob_get_segment) ();
-	SSHORT (*blob_get_segment) (BLB, UCHAR*, USHORT, USHORT*);
+	SSHORT (*blob_get_segment) (blb*, UCHAR*, USHORT, USHORT*);
 //	int* blob_handle;
 	void* blob_handle;
 	SLONG blob_number_segments;
 	SLONG blob_max_segment;
 	SLONG blob_total_length;
 //	void (*blob_put_segment) ();
-	void (*blob_put_segment) (BLB, const UCHAR*, USHORT);
+	void (*blob_put_segment) (blb*, const UCHAR*, USHORT);
 //	SLONG(*blob_seek) ();
-	SLONG (*blob_seek) (BLB, USHORT, SLONG);
+	SLONG (*blob_seek) (blb*, USHORT, SLONG);
 } *BLOB;
 
 
 
-static SSHORT blob_get_segment(BLB, UCHAR*, USHORT, USHORT*);
-static void blob_put_segment(BLB, const UCHAR*, USHORT);
-static SLONG blob_lseek(BLB, USHORT, SLONG);
+static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
+static void blob_put_segment(blb*, const UCHAR*, USHORT);
+static SLONG blob_lseek(blb*, USHORT, SLONG);
 static SLONG get_scalar_array(fun_repeat*, DSC*, SAD, LLS*);
 
 
@@ -121,11 +121,11 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 
 	SLONG args[MAX_UDF_ARGUMENTS + 1];
 	UCHAR temp[800];
-	str* temp_string;
 
 	TDBB tdbb = GET_THREAD_DATA;
 
 	// Start by constructing argument list
+	str* temp_string;
 	UCHAR* temp_ptr;
 
 	if (function->fun_temp_length < sizeof(temp))
@@ -142,7 +142,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 		temp_string =
 			FB_NEW_RPT(*tdbb->tdbb_default,
 				function->fun_temp_length + DOUBLE_ALIGN - 1) str;
-		MOVE_CLEAR(temp_string->str_data, temp_string->str_length);
+		MOVE_CLEAR(temp_string->str_data, temp_string->str_length); // useless, as noted by NS
 		temp_ptr = (UCHAR *) FB_ALIGN((U_IPTR) temp_string->str_data, DOUBLE_ALIGN);
 	}
 
@@ -434,7 +434,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 					{
 						blob =
 							BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
-									   (BID) &value->vlu_misc);
+									   (bid*) &value->vlu_misc);
 						return_blob_struct = blob_desc;
 					}
 					else
@@ -453,7 +453,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 										 isc_arg_gds, isc_blobnotsup,
 										 isc_arg_string, "conversion", 0);
 							}
-							blob_id = *(BID) input->dsc_address;
+							blob_id = *(bid*) input->dsc_address;
 						}
 						blob = BLB_open(tdbb,
 										tdbb->tdbb_request->req_transaction,
@@ -580,7 +580,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 				case dtype_long:
 				    if (return_dsc)
 				    {
-				    	switch(return_dsc->dsc_dtype)
+				    	switch (return_dsc->dsc_dtype)
 				    	{
 	                    case dtype_short:
     		                value->vlu_misc.vlu_long = *(SSHORT *) temp_ptr;
@@ -610,7 +610,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 				case dtype_int64:
 				    if (return_dsc)
 				    {
-					    switch(return_dsc->dsc_dtype)
+					    switch (return_dsc->dsc_dtype)
 					    {
 					    case dtype_short:
 					        value->vlu_misc.vlu_int64 = *(SSHORT *) temp_ptr;
@@ -659,7 +659,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
                     temp_desc.dsc_length =
-                        reinterpret_cast<VARY *>(temp_ptr)->vary_length + sizeof(USHORT);
+                        reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
 					MOV_move(&temp_desc, &value->vlu_desc);
 					break;
 
@@ -708,7 +708,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 
 	while (blob_stack)
 	{
-		BLB_close(tdbb, (BLB)LLS_POP(&blob_stack));
+		BLB_close(tdbb, (blb*)LLS_POP(&blob_stack));
 	}
 
 	while (array_stack)
@@ -757,9 +757,7 @@ void FUN_fini( TDBB tdbb)
  *	Unregister interest in external function modules.
  *
  **************************************/
-	DBB dbb;
-
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	while (dbb->dbb_modules)
 		FLU_unregister_module((MOD) LLS_POP(&dbb->dbb_modules));
@@ -781,7 +779,7 @@ void FUN_init(void)
 }
 
 
-FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
+FUN FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -793,28 +791,14 @@ FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
  *	Lookup function by name.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request_fun, request_arg;
-	FUN function, prior;
-	SYM symbol;
-	STR string;
-	STR exception_msg;
-	TEXT *p;
-	MOD module;
-	LLS stack;
-	USHORT count, args, l;
-	ULONG length;
-	fun_repeat *tail, temp[MAX_UDF_ARGUMENTS + 1];
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* Start by looking for already defined symbol */
 #ifdef V4_THREADING
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 #endif
-	for (symbol = SYM_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = SYM_lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
 	    if (symbol->sym_type == SYM_fun) {
 #ifdef V4_THREADING
@@ -824,25 +808,26 @@ FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
 		}
 	}
 
-	prior = NULL;
+	fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
+	FUN prior = NULL;
 
-	request_fun = (BLK) CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
-	request_arg = (BLK) CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
+	blk* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
+	blk* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request_fun) X IN RDB$FUNCTIONS
 		WITH X.RDB$FUNCTION_NAME EQ name 
         if (!REQUEST(irq_l_functions))
             REQUEST(irq_l_functions) = request_fun;
-		count = args = 0;
+		USHORT count = 0, args = 0;
 		MOVE_CLEAR(temp, (SLONG) sizeof(temp));
-		length = 0;
+		ULONG length = 0;
 		FOR(REQUEST_HANDLE request_arg) Y IN RDB$FUNCTION_ARGUMENTS
 			WITH Y.RDB$FUNCTION_NAME EQ X.RDB$FUNCTION_NAME
 				SORTED BY Y.RDB$ARGUMENT_POSITION 
 
             if (!REQUEST(irq_l_args))
                 REQUEST(irq_l_args) = request_arg;
-			tail = temp + Y.RDB$ARGUMENT_POSITION;
+			fun_repeat* tail = temp + Y.RDB$ARGUMENT_POSITION;
 			tail->fun_mechanism = (FUN_T) Y.RDB$MECHANISM;
 			count = MAX(count, Y.RDB$ARGUMENT_POSITION);
 			DSC_make_descriptor(&tail->fun_desc, Y.RDB$FIELD_TYPE,
@@ -855,12 +840,12 @@ FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
 
 			if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
 				++args;
-			l = FB_ALIGN(tail->fun_desc.dsc_length, DOUBLE_ALIGN);
+			USHORT l = FB_ALIGN(tail->fun_desc.dsc_length, DOUBLE_ALIGN);
 			if (tail->fun_desc.dsc_dtype == dtype_blob)
 				l = sizeof(blob_t);
 			length += l;
         END_FOR;
-		function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1) fun;
+		FUN function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1) fun;
 		function->fun_count = count;
 		function->fun_args = args;
 		function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
@@ -868,6 +853,8 @@ FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
 		function->fun_temp_length = length;
 		MOVE_FAST(temp, function->fun_rpt,
 				  (count + 1) * sizeof(fun_repeat));
+				  
+		TEXT* p;
 #ifndef	WIN_NT					/* NT allows blanks in file paths */
 		for (p = X.RDB$MODULE_NAME; *p && *p != ' '; p++);
 		*p = 0;
@@ -878,7 +865,7 @@ FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
 		/* Prepare the exception message to be used in case this function ever
 		   causes an exception.  This is done at this time to save us from preparing
 		   (thus allocating) this message every time the function is called. */
-		exception_msg =
+		str* exception_msg =
 			FB_NEW_RPT(*dbb->dbb_permanent,
 						  strlen(EXCEPTION_MESSAGE) + strlen(name) +
 						  strlen(X.RDB$ENTRYPOINT) +
@@ -891,9 +878,11 @@ FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
 								  ISC_EXT_LIB_PATH_ENV, ShowAccessError);
 
-		if ( (module = FLU_lookup_module(X.RDB$MODULE_NAME)) ) {
+		MOD module = FLU_lookup_module(X.RDB$MODULE_NAME);
+		if (module) {
 			/* Register interest in the module by database. */
 
+			lls* stack;
 			for (stack = dbb->dbb_modules; stack; stack = stack->lls_next)
 				if (module == (MOD) stack->lls_object)
 					break;
@@ -909,9 +898,7 @@ FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
 			}
 			else
 			{
-				JrdMemoryPool *old_pool;
-
-				old_pool = tdbb->tdbb_default;
+				JrdMemoryPool* old_pool = tdbb->tdbb_default;
 				tdbb->tdbb_default = dbb->dbb_permanent;
 				LLS_PUSH(module, &dbb->dbb_modules);
 				tdbb->tdbb_default = old_pool;
@@ -932,13 +919,14 @@ FUN FUN_lookup_function(TEXT * name, bool ShowAccessError)
 		else
 		{
 			prior = function;
-			function->fun_symbol = symbol = FB_NEW(*dbb->dbb_permanent) sym;
-			symbol->sym_object = (BLK) function;
-			string = FB_NEW_RPT(*dbb->dbb_permanent, strlen(name)) str;
+			SYM new_symbol = FB_NEW(*dbb->dbb_permanent) sym;
+			function->fun_symbol = new_symbol;
+			new_symbol->sym_object = (BLK) function;
+			str* string = FB_NEW_RPT(*dbb->dbb_permanent, strlen(name)) str;
 			strcpy((char*)string->str_data, name);
-			symbol->sym_string = (TEXT *) string->str_data;
-			symbol->sym_type = SYM_fun;
-			SYM_insert(symbol);
+			new_symbol->sym_string = (TEXT *) string->str_data;
+			new_symbol->sym_type = SYM_fun;
+			SYM_insert(new_symbol);
 		}
 	END_FOR;
 
@@ -980,12 +968,14 @@ FUN FUN_resolve(Csb* csb, FUN function, jrd_nod* args)
 			jrd_nod** ptr;
 			fun_repeat* tail;
 			for (ptr = args->nod_arg, tail = function->fun_rpt + 1; ptr < end;
-				 ptr++, tail++) {
+				 ptr++, tail++)
+			{
 				CMP_get_desc(tdbb, csb, *ptr, &arg);
 				if ((SSHORT) abs(tail->fun_mechanism) == FUN_descriptor)
 					score += 10;
 				else if (tail->fun_desc.dsc_dtype == dtype_blob ||
-						 arg.dsc_dtype == dtype_blob) {
+						 arg.dsc_dtype == dtype_blob)
+				{
 					score = 0;
 					break;
 				}
@@ -1004,7 +994,7 @@ FUN FUN_resolve(Csb* csb, FUN function, jrd_nod* args)
 }
 
 
-static SLONG blob_lseek( BLB blob, USHORT mode, SLONG offset)
+static SLONG blob_lseek( blb* blob, USHORT mode, SLONG offset)
 {
 /**************************************
  *
@@ -1016,18 +1006,15 @@ static SLONG blob_lseek( BLB blob, USHORT mode, SLONG offset)
  *	lseek a  a blob segement.  Return the offset 
  *
  **************************************/
-
-	SLONG return_offset;
-
 /* add thread enter and thread_exit wrappers */
 	THREAD_ENTER;
-	return_offset = BLB_lseek(blob, mode, offset);
+	const SLONG return_offset = BLB_lseek(blob, mode, offset);
 	THREAD_EXIT;
 	return (return_offset);
 }
 
 
-static void blob_put_segment( BLB blob, const UCHAR* buffer, USHORT length)
+static void blob_put_segment( blb* blob, const UCHAR* buffer, USHORT length)
 {
 /**************************************
  *
@@ -1039,20 +1026,18 @@ static void blob_put_segment( BLB blob, const UCHAR* buffer, USHORT length)
  *	Put  segment into a blob.  Return nothing 
  *
  **************************************/
-	TDBB tdbb;
-
 /* As this is a call-back from a UDF, must reacquire the
    engine mutex */
 
 	THREAD_ENTER;
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 	BLB_put_segment(tdbb, blob, buffer, length);
 	THREAD_EXIT;
 }
 
 
 static SSHORT blob_get_segment(
-							   BLB blob,
+							   blb* blob,
 							   UCHAR* buffer,
 							   USHORT length, USHORT* return_length)
 {
@@ -1070,11 +1055,9 @@ static SSHORT blob_get_segment(
  *		-1	-- Current segment is incomplete.
  *
  **************************************/
-	TDBB tdbb;
-
 /* add thread enter and thread_exit wrappers */
 	THREAD_ENTER;
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 	*return_length = BLB_get_segment(tdbb, blob, buffer, length);
 	THREAD_EXIT;
 
@@ -1105,42 +1088,39 @@ static SLONG get_scalar_array(fun_repeat*	arg,
  *	Return length of array desc.
  *
  **************************************/
-	TDBB tdbb;
-	BLB blob;
-	ADS array_desc;
-	SLONG stuff[ADS_LEN(16) / 4], n;
-	UCHAR *data, *temp;
-	DSC from, to;
-	USHORT dimensions;
-	ads::ads_repeat *tail1;
-	sad::sad_repeat *tail2, *end;
-
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 /* Get first the array descriptor, then the array */
 
-	array_desc = (ADS) stuff;
-	blob = BLB_get_array(tdbb,
+	SLONG stuff[ADS_LEN(16) / 4];
+	ads* array_desc = (ads*) stuff;
+	blb* blob = BLB_get_array(tdbb,
 						tdbb->tdbb_request->req_transaction,
-						(BID)value->dsc_address,
+						(bid*)value->dsc_address,
 						array_desc);
-	data = FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->ads_total_length];
+						
+	UCHAR* data =
+		FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->ads_total_length];
 	BLB_get_data(tdbb, blob, data, array_desc->ads_total_length);
-	dimensions = array_desc->ads_dimensions;
+	const USHORT dimensions = array_desc->ads_dimensions;
 
 /* Convert array, if necessary */
 
-	to = arg->fun_desc;
-	from = array_desc->ads_rpt[0].ads_desc;
+	dsc to = arg->fun_desc;
+	dsc from = array_desc->ads_rpt[0].ads_desc;
 
 	if (to.dsc_dtype != from.dsc_dtype ||
-		to.dsc_scale != from.dsc_scale || to.dsc_length != from.dsc_length) {
-		n = array_desc->ads_count;
-		to.dsc_address = temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[(SLONG) to.dsc_length * n];
+		to.dsc_scale != from.dsc_scale || to.dsc_length != from.dsc_length)
+	{
+		SLONG n = array_desc->ads_count;
+		UCHAR* temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[(SLONG) to.dsc_length * n];
+		to.dsc_address = temp;
 		from.dsc_address = data;
 		for (; n; --n, to.dsc_address += to.dsc_length,
 			 from.dsc_address += array_desc->ads_element_length)
-				MOV_move(&from, &to);
+		{
+			MOV_move(&from, &to);
+		}
 		delete[] data;
 		data = temp;
 	}
@@ -1152,8 +1132,11 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 	scalar_desc->sad_desc.dsc_address = data;
 	scalar_desc->sad_dimensions = dimensions;
 
-	for (tail2 = scalar_desc->sad_rpt, end = tail2 + dimensions, tail1 =
-		 array_desc->ads_rpt; tail2 < end; ++tail1, ++tail2) {
+	const ads::ads_repeat* tail1 = array_desc->ads_rpt;
+	sad::sad_repeat* tail2 = scalar_desc->sad_rpt;
+	for (const sad::sad_repeat* const end = tail2 + dimensions; tail2 < end;
+		++tail1, ++tail2)
+	{
 		tail2->sad_upper = tail1->ads_upper;
 		tail2->sad_lower = tail1->ads_lower;
 	}

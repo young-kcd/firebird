@@ -139,7 +139,7 @@ static void pass1_modify(TDBB, Csb*, jrd_nod*);
 static RSE pass1_rse(TDBB, Csb*, RSE, jrd_rel*, USHORT);
 static void pass1_source(TDBB, Csb*, RSE, jrd_nod*, jrd_nod**, LLS *, jrd_rel*, USHORT);
 static jrd_nod* pass1_store(TDBB, Csb*, jrd_nod*);
-static jrd_nod* pass1_update(TDBB, Csb*, jrd_rel*, TRIG_VEC, USHORT, USHORT, USHORT, jrd_rel*,
+static jrd_nod* pass1_update(TDBB, Csb*, jrd_rel*, trig_vec*, USHORT, USHORT, USHORT, jrd_rel*,
 						USHORT);
 static jrd_nod* pass2(TDBB, Csb*, jrd_nod* const, jrd_nod*);
 static void pass2_rse(TDBB, Csb*, RSE);
@@ -148,7 +148,7 @@ static void plan_check(Csb*, RSE);
 static void plan_set(Csb*, RSE, jrd_nod*);
 static void post_procedure_access(TDBB, Csb*, jrd_prc*);
 static Rsb* post_rse(TDBB, Csb*, RSE);
-static void	post_trigger_access(TDBB, Csb*, jrd_rel*, TRIG_VEC, jrd_rel*);
+static void	post_trigger_access(TDBB, Csb*, jrd_rel*, trig_vec*, jrd_rel*);
 static void process_map(TDBB, Csb*, jrd_nod*, fmt**);
 static bool stream_in_rse(USHORT, RSE);
 static SSHORT strcmp_space(const TEXT*, const TEXT*);
@@ -1834,7 +1834,7 @@ jrd_req* CMP_make_request(TDBB tdbb, Csb* csb)
 			 ptr < end; ptr++)
 		{
 			VarInvariantArray** var_invariants;
-			switch((*ptr)->nod_type) {
+			switch ((*ptr)->nod_type) {
 			case nod_argument: 
 				{
 					jrd_nod* msg = (*ptr)->nod_arg[e_arg_message];
@@ -1877,18 +1877,18 @@ jrd_req* CMP_make_request(TDBB tdbb, Csb* csb)
 	// a little complicated since relation locks MUST be taken before
 	// index locks.
 
-	for (RSC resource = request->req_resources; resource;
+	for (Resource* resource = request->req_resources; resource;
 		 resource = resource->rsc_next)
 	{
 		switch (resource->rsc_type)
 		{
-		case rsc_relation:
+		case Resource::rsc_relation:
 			{
 				jrd_rel* relation = resource->rsc_rel;
 				MET_post_existence(tdbb, relation);
 				break;
 			}
-		case rsc_index:
+		case Resource::rsc_index:
 			{
 				jrd_rel* relation = resource->rsc_rel;
 				IDL index =
@@ -1906,7 +1906,7 @@ jrd_req* CMP_make_request(TDBB tdbb, Csb* csb)
 				}
 				break;
 			}
-		case rsc_procedure:
+		case Resource::rsc_procedure:
 			{
 				jrd_prc* procedure = resource->rsc_prc;
 				procedure->prc_use_count++;
@@ -2050,9 +2050,9 @@ void CMP_post_access(TDBB tdbb,
 
 
 void CMP_post_resource(TDBB tdbb,
-						RSC * rsc_ptr,
+						Resource** rsc_ptr,
 						BLK rel_or_prc,
-						enum rsc_s type,
+						enum Resource::rsc_s type,
 						USHORT id)
 {
 /**************************************
@@ -2069,23 +2069,23 @@ void CMP_post_resource(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	RSC resource;
+	Resource* resource;
 	for (resource = *rsc_ptr; resource; resource = resource->rsc_next) {
 		if (resource->rsc_type == type && resource->rsc_id == id)
 			return;
 	}
 
-	resource = FB_NEW(*tdbb->tdbb_default) Rsc;
+	resource = FB_NEW(*tdbb->tdbb_default) Resource;
 	resource->rsc_next = *rsc_ptr;
 	*rsc_ptr = resource;
 	resource->rsc_type = type;
 	resource->rsc_id = id;
 	switch (type) {
-	case rsc_relation:
-	case rsc_index:
+	case Resource::rsc_relation:
+	case Resource::rsc_index:
 		resource->rsc_rel = (jrd_rel*) rel_or_prc;
 		break;
-	case rsc_procedure:
+	case Resource::rsc_procedure:
 		resource->rsc_prc = (jrd_prc*) rel_or_prc;
 		break;
 	default:
@@ -2095,7 +2095,7 @@ void CMP_post_resource(TDBB tdbb,
 }
 
 
-void CMP_release_resource(RSC * rsc_ptr, enum rsc_s type, USHORT id)
+void CMP_release_resource(Resource** rsc_ptr, enum Resource::rsc_s type, USHORT id)
 {
 /**************************************
  *
@@ -2109,7 +2109,7 @@ void CMP_release_resource(RSC * rsc_ptr, enum rsc_s type, USHORT id)
  **************************************/
 	DEV_BLKCHK(*rsc_ptr, type_rsc);
 
-	RSC resource;
+	Resource* resource;
 	for (; (resource = *rsc_ptr); rsc_ptr = &resource->rsc_next) {
 		if (resource->rsc_type == type && resource->rsc_id == id)
 			break;
@@ -2198,17 +2198,17 @@ void CMP_release(TDBB tdbb, jrd_req* request)
 
 	att* attachment = request->req_attachment;
 	if (!attachment || !(attachment->att_flags & ATT_shutdown)) {
-		for (Rsc* resource = request->req_resources;
+		for (Resource* resource = request->req_resources;
 			 resource; resource = resource->rsc_next)
 		{
 			switch (resource->rsc_type) {
-			case rsc_relation:
+			case Resource::rsc_relation:
 				{
 					jrd_rel* relation = resource->rsc_rel;
 					MET_release_existence(relation);
 					break;
 				}
-			case rsc_index:
+			case Resource::rsc_index:
 				{
 					jrd_rel* relation = resource->rsc_rel;
 					idl* index = CMP_get_index_lock(tdbb, relation,
@@ -2221,7 +2221,7 @@ void CMP_release(TDBB tdbb, jrd_req* request)
 					}
 					break;
 				}
-			case rsc_procedure:
+			case Resource::rsc_procedure:
 				{
 					CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
 					break;
@@ -2742,7 +2742,7 @@ static jrd_nod* copy(TDBB tdbb,
 			csb_repeat* element = CMP_csb_element(csb, new_stream);
 			// SKIDDER: Maybe we need to check if we really found a procedure?
 			element->csb_procedure = MET_lookup_procedure_id(tdbb,
-			  (SSHORT)(IPTR) node->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
+			  (SSHORT)(IPTR) node->nod_arg[e_prc_procedure], false, false, 0);
 
 			csb->csb_rpt[new_stream].csb_flags |=
 				csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
@@ -3370,8 +3370,8 @@ static jrd_nod* pass1(TDBB tdbb,
 	case nod_exec_proc:
 		procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 		post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(tdbb, &csb->csb_resources, (BLK) procedure,
-						  rsc_procedure, procedure->prc_id);
+		CMP_post_resource(tdbb, &csb->csb_resources, procedure,
+						  Resource::rsc_procedure, procedure->prc_id);
 		break;
 
 	case nod_store:
@@ -3843,7 +3843,7 @@ static RSE pass1_rse(TDBB tdbb,
 	jrd_nod* first = rse->rse_first;
 	jrd_nod* skip = rse->rse_skip;
 	jrd_nod* plan = rse->rse_plan;
-	BOOLEAN writelock = rse->rse_writelock;
+	const bool writelock = rse->rse_writelock;
 #ifdef SCROLLABLE_CURSORS
 	jrd_nod* async_message = rse->rse_async_message;
 #endif
@@ -4033,10 +4033,10 @@ static void pass1_source(TDBB     tdbb,
 	if (source->nod_type == nod_procedure) {
 		pass1(tdbb, csb, source, parent_view, view_stream, false);
 		jrd_prc* procedure = MET_lookup_procedure_id(tdbb,
-		  (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
+		  (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
 		post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(tdbb, &csb->csb_resources, (BLK) procedure,
-						  rsc_procedure, procedure->prc_id);
+		CMP_post_resource(tdbb, &csb->csb_resources, procedure,
+						  Resource::rsc_procedure, procedure->prc_id);
 		return;
 	}
 
@@ -4061,7 +4061,7 @@ static void pass1_source(TDBB     tdbb,
 	// relation is accessed.
 
 	jrd_rel* view = (jrd_rel*) source->nod_arg[e_rel_relation];
-	CMP_post_resource(tdbb, &csb->csb_resources, (BLK) view, rsc_relation,
+	CMP_post_resource(tdbb, &csb->csb_resources, view, Resource::rsc_relation,
 					  view->rel_id);
 	source->nod_arg[e_rel_view] = (jrd_nod*) parent_view;
 
@@ -4250,8 +4250,8 @@ static jrd_nod* pass1_store(TDBB tdbb, Csb* csb, jrd_nod* node)
 			 pass1_update(tdbb, csb, relation, trigger, stream, stream, priv,
 						  parent, parent_stream);
 		if (!source) {
-			CMP_post_resource(tdbb, &csb->csb_resources, (BLK) relation,
-							  rsc_relation, relation->rel_id);
+			CMP_post_resource(tdbb, &csb->csb_resources, relation,
+							  Resource::rsc_relation, relation->rel_id);
 			return very_orig;
 		}
 
@@ -4269,8 +4269,8 @@ static jrd_nod* pass1_store(TDBB tdbb, Csb* csb, jrd_nod* node)
 			}
 		}
 		else {
-			CMP_post_resource(tdbb, &csb->csb_resources, (BLK) relation,
-							  rsc_relation, relation->rel_id);
+			CMP_post_resource(tdbb, &csb->csb_resources, relation,
+							  Resource::rsc_relation, relation->rel_id);
 			trigger_seen = true;
 			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, false);
 			node->nod_arg[e_sto_sub_store] = view_node;
@@ -4300,7 +4300,7 @@ static jrd_nod* pass1_store(TDBB tdbb, Csb* csb, jrd_nod* node)
 static jrd_nod* pass1_update(TDBB tdbb,
 							Csb* csb,
 							jrd_rel* relation,
-							TRIG_VEC trigger,
+							trig_vec* trigger,
 							USHORT stream,
 							USHORT update_stream,
 							USHORT priv,
@@ -5352,8 +5352,7 @@ static void post_procedure_access(TDBB tdbb, Csb* csb, jrd_prc* procedure)
 	CMP_post_access(tdbb, csb, prc_sec_name, 0,
 					0, 0, SCL_execute,
 					object_procedure,
-					reinterpret_cast <
-					char *>(procedure->prc_name->str_data));
+					reinterpret_cast<const char*>(procedure->prc_name->str_data));
 
 	// this request also inherits all the access requirements that
 	// the procedure has
@@ -5375,8 +5374,7 @@ static void post_procedure_access(TDBB tdbb, Csb* csb, jrd_prc* procedure)
 				// direct access from this SP to a resource
 				CMP_post_access(tdbb, csb, access->acc_security_name,
 								0, 0,
-								reinterpret_cast <
-								char *>(procedure->prc_name->str_data),
+								reinterpret_cast<const char*>(procedure->prc_name->str_data),
 								access->acc_mask, access->acc_type,
 								access->acc_name);
 			}
@@ -5446,7 +5444,8 @@ static Rsb* post_rse(TDBB tdbb, Csb* csb, RSE rse)
 }
 
 
-static void post_trigger_access(TDBB tdbb, Csb* csb, jrd_rel* owner_relation, TRIG_VEC triggers, jrd_rel* view)
+static void post_trigger_access(TDBB tdbb, Csb* csb, jrd_rel* owner_relation,
+	trig_vec* triggers, jrd_rel* view)
 {
 /**************************************
  *

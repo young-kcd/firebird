@@ -232,7 +232,7 @@ static const UCHAR sort_dtypes[] = {
 typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 
 
-BOOLEAN OPT_access_path(const jrd_req* request,
+bool OPT_access_path(const jrd_req* request,
 						SCHAR* buffer,
 						SSHORT buffer_length, USHORT* return_length)
 {
@@ -265,10 +265,7 @@ BOOLEAN OPT_access_path(const jrd_req* request,
 
 	*return_length = buffer - begin;
 
-	if (i >= 0)
-		return FALSE;
-	else
-		return TRUE;
+	return (i < 0);
 }
 
 
@@ -1098,7 +1095,7 @@ void OPT_set_index(TDBB tdbb,
 				LCK_release(tdbb, index->idl_lock);
 			}
 		}
-		CMP_release_resource(&request->req_resources, rsc_index, index_id);
+		CMP_release_resource(&request->req_resources, Resource::rsc_index, index_id);
 	}
 
 /* get lock on new index */
@@ -2363,7 +2360,7 @@ static bool dump_rsb(const jrd_req* request,
         }
 
 		if (!OPT_access_path(procedure->prc_request, buffer, *buffer_length,
-			 reinterpret_cast < USHORT * >(&return_length)))
+			 reinterpret_cast<USHORT*>(&return_length)))
 		{
 			return false;
 		}
@@ -4069,7 +4066,7 @@ static Rsb* gen_procedure(TDBB tdbb, OPT opt, jrd_nod* node)
 
 	Csb* csb = opt->opt_csb;
 	jrd_prc* procedure = MET_lookup_procedure_id(tdbb,
-		(SSHORT)(IPTR)node->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
+		(SSHORT)(IPTR)node->nod_arg[e_prc_procedure], false, false, 0);
 	Rsb* rsb = FB_NEW_RPT(*tdbb->tdbb_default, RSB_PRC_count) Rsb();
 	rsb->rsb_type = rsb_procedure;
 	rsb->rsb_stream = (UCHAR)(IPTR) node->nod_arg[e_prc_stream];
@@ -5421,12 +5418,13 @@ static jrd_nod* make_index_node(TDBB tdbb, jrd_rel* relation, Csb* csb, IDX * id
    a SET INDEX operation */
 	if (csb)
 		CMP_post_resource(tdbb, &csb->csb_resources,
-						  reinterpret_cast < BLK > (relation), rsc_index,
+						  relation, Resource::rsc_index,
 						  idx->idx_id);
 	else
 		CMP_post_resource(tdbb, &tdbb->tdbb_request->req_resources,
-						  reinterpret_cast < BLK > (relation), rsc_index,
+						  relation, Resource::rsc_index,
 						  idx->idx_id);
+						  
 	jrd_nod* node = PAR_make_node(tdbb, e_idx_length);
 	node->nod_type = nod_index;
 	node->nod_count = 0;
@@ -6198,13 +6196,7 @@ static jrd_nod* optimize_like(TDBB tdbb, jrd_nod* like_node)
  *	still needed.
  *
  **************************************/
-	DSC* escape_desc;
-	UCHAR *end, *q, *p_start;
-	SSHORT count;
-	LIT literal;
-	USHORT escape_ch;
 	UCHAR tmp_buffer[32];		/* large enough to hold 1 ch of escape string */
-	TextType text_obj = NULL;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(like_node, type_nod);
 	
@@ -6218,15 +6210,20 @@ static jrd_nod* optimize_like(TDBB tdbb, jrd_nod* like_node)
 		return NULL;
 	}
 	dsc* search_desc = &((LIT) search_node)->lit_desc;
+	dsc* escape_desc = 0;
 	if (escape_node)
 		escape_desc = &((LIT) escape_node)->lit_desc;
+
 /* if either is not a character expression, forget it */
 	if ((search_desc->dsc_dtype > dtype_any_text) ||
 		(escape_node && escape_desc->dsc_dtype > dtype_any_text))
 	{
 		return NULL;
 	}
+
 /* Get the escape character, if any */
+	TextType text_obj = NULL;
+	USHORT escape_ch = 0;
 	if (escape_node)
 	{
 		/* Ensure escape string is same character set as search string 
@@ -6236,7 +6233,7 @@ static jrd_nod* optimize_like(TDBB tdbb, jrd_nod* like_node)
 		const char* p2;
 		USHORT p_count =
 			MOV_make_string(escape_desc, INTL_TTYPE(search_desc), &p2,
-							reinterpret_cast < vary * >(tmp_buffer),
+							reinterpret_cast<vary*>(tmp_buffer),
 							sizeof(tmp_buffer));
 		UCHAR* p = reinterpret_cast<UCHAR*>(const_cast<char*>(p2));
 		/* Now get first character from escape string */
@@ -6245,8 +6242,9 @@ static jrd_nod* optimize_like(TDBB tdbb, jrd_nod* like_node)
 					   INTL_TTYPE(search_desc), &p, &p_count);
 	}
 
-/* if the first character is a wildcard char, forget it */
-	// CVC: Beware, if INTL doesn't understand the next character, p_count is zero. No check is done.
+	// If the first character is a wildcard char, forget it.
+	// CVC: Beware, if INTL doesn't understand the next character, p_count is zero.
+	// No check is done. We must handle this failure.
 	UCHAR* p = search_desc->dsc_address;
 	USHORT p_count = search_desc->dsc_length;
 	USHORT ch =
@@ -6257,29 +6255,30 @@ static jrd_nod* optimize_like(TDBB tdbb, jrd_nod* like_node)
 	{
 		return NULL;
 	}
-/* allocate a literal node to store the starting with string;
-   assume it will be shorter than the search string */
+	// allocate a literal node to store the starting with string;
+	// assume it will be shorter than the search string
 	// CVC: This assumption may not be true if we use "value like field".
-	count =
+	const SSHORT count =
 		lit_delta + (search_desc->dsc_length + sizeof(jrd_nod*) -
 					 1) / sizeof(jrd_nod*);
 	jrd_nod* node = PAR_make_node(tdbb, count);
 	node->nod_type = nod_literal;
 	node->nod_count = 0;
-	literal = (LIT) node;
+	LIT literal = (LIT) node;
 	literal->lit_desc = *search_desc;
-	literal->lit_desc.dsc_address = q = reinterpret_cast<UCHAR*>(literal->lit_data);
+	UCHAR* q = reinterpret_cast<UCHAR*>(literal->lit_data);
+	literal->lit_desc.dsc_address = q;
 /* copy the string into the starting with literal, up to the first wildcard character */
 	p_count = search_desc->dsc_length;
-	for (p = search_desc->dsc_address, end =
-		 p + search_desc->dsc_length; p < end;)
+	p = search_desc->dsc_address;
+	for (const UCHAR* const end = p + search_desc->dsc_length; p < end;)
 	{
-		/* if there are escape characters, skip past them and 
-		   don't treat the next char as a wildcard */
+		// if there are escape characters, skip past them and
+		// don't treat the next char as a wildcard
 		// CVC: Beware, if INTL doesn't understand the next character, p_count is zero. No check is done.
 		// Same than above, but worse, since it will enter an infinite loop. Example: Spanish Ñ against unicode.
 		// Reported also on Portuguese characters that aren't ASCII < 128.
-		p_start = p;
+		const UCHAR* p_start = p;
 		ch =
 			INTL_getch(tdbb, &text_obj,
 					   INTL_TTYPE(search_desc), &p, &p_count);

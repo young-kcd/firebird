@@ -74,7 +74,7 @@ bool DLS_get_temp_space(ULONG size, SFB sfb)
 #ifdef V4_THREADING
 	if (!ptr->mdls_mutex_init) {
 		V4_MUTEX_INIT(ptr->mdls_mutex);
-		ptr->mdls_mutex_init = TRUE;
+		ptr->mdls_mutex_init = true;
 	}
 
 	V4_MUTEX_LOCK(ptr->mdls_mutex);
@@ -137,7 +137,7 @@ void DLS_put_temp_space(SFB sfb)
 }
 
 
-BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
+bool API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
 {
 /**************************************
  *
@@ -155,7 +155,7 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
 	dls* new_dls = (DLS) gds__alloc((SLONG) (sizeof(dls) +
 										sizeof(TEXT) * strlen(dir_name)));
 	if (!new_dls)
-		return FALSE;
+		return false;
 
 	strcpy(new_dls->dls_directory, dir_name);
 	new_dls->dls_size = size;
@@ -171,7 +171,7 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
 
 	if (!mdls->mdls_mutex_init) {
 		V4_MUTEX_INIT(mdls->mdls_mutex);
-		mdls->mdls_mutex_init = TRUE;
+		mdls->mdls_mutex_init = true;
 	}
 
 	V4_MUTEX_LOCK(mdls->mdls_mutex);
@@ -195,7 +195,7 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT* dir_name)
 	V4_MUTEX_UNLOCK(mdls->mdls_mutex);
 #endif
 
-	return TRUE;
+	return true;
 }
 
 

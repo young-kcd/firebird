@@ -86,32 +86,34 @@ typedef struct evh {
 #define type_ses	7			/* Session */
 #define type_max	8
 
-typedef struct hdr
+struct event_hdr // CVC: previous clash with ods.h's hdr
 {
 	SLONG hdr_length;			/* Length of block */
 	UCHAR hdr_type;				/* Type of block */
-} HDR;
+};
 
 /* Free blocks */
 
-typedef struct frb
+struct frb : public event_hdr
 {
-	HDR frb_header;
+	//event_hdr frb_header;
 	SLONG frb_next;				/* Next block */
-} *FRB;
+};
+typedef frb *FRB;
 
 /* Process blocks */
 
-typedef struct prb
+struct prb : public event_hdr
 {
-	HDR prb_header;
+	//event_hdr prb_header;
 	SRQ prb_processes;			/* Process que owned by header */
 	SRQ prb_sessions;			/* Sessions within process */
 	SLONG prb_process_id;		/* Process id */
 	SLONG prb_process_uid[2];	/* Process UID (apollo) */
 	event_t prb_event[1];		/* Event on which to wait */
 	USHORT prb_flags;
-} *PRB;
+};
+typedef prb *PRB;
 
 #define PRB_wakeup	1			/* Schedule a wakeup for process */
 #define PRB_pending	2			/* Wakeup has been requested, and is dangling */
@@ -121,8 +123,8 @@ typedef struct prb
 
 /* Session block */
 
-typedef struct ses {
-	HDR ses_header;
+struct ses : public event_hdr {
+	//event_hdr ses_header;
 	SRQ ses_sessions;			/* Sessions within process */
 	SRQ ses_requests;			/* Outstanding requests */
 	PTR ses_interests;			/* Historical interests */
@@ -130,14 +132,15 @@ typedef struct ses {
 #ifdef MULTI_THREAD
 	USHORT ses_flags;
 #endif
-} *SES;
+};
+typedef ses *SES;
 
 #define	SES_delivering	1		/* Watcher thread is delivering an event */
 
 /* Event block */
 
-typedef struct evnt {
-	HDR evnt_header;
+struct evnt : public event_hdr {
+	//event_hdr evnt_header;
 	SRQ evnt_events;			/* System event que (owned by header) */
 	SRQ evnt_interests;			/* Que of request interests in event */
 	PTR evnt_hash_collision;	/* Hash table collision pointer */
@@ -145,12 +148,13 @@ typedef struct evnt {
 	SLONG evnt_count;			/* Current event count */
 	USHORT evnt_length;			/* Length of event name */
 	TEXT evnt_name[1];			/* Event name */
-} *EVNT;
+};
+typedef evnt *EVNT;
 
 /* Request block */
 
-typedef struct evt_req {
-	HDR req_header;
+struct evt_req : public event_hdr {
+	//event_hdr req_header;
 	SRQ req_requests;			/* Request que owned by session block */
 	PTR req_process;			/* Parent process block */
 	PTR req_session;			/* Parent session block */
@@ -158,18 +162,20 @@ typedef struct evt_req {
 	FPTR_EVENT_CALLBACK req_ast;	/* Asynchronous routine */
 	void *req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id, dummy */
-} *EVT_REQ;
+};
+typedef evt_req *EVT_REQ;
 
 /* Request interest block */
 
-typedef struct rint {
-	HDR rint_header;
+struct rint : public event_hdr {
+	//event_hdr rint_header;
 	SRQ rint_interests;			/* Que owned by event */
 	PTR rint_event;				/* Event of interest */
 	PTR rint_request;			/* Request of interest */
 	PTR rint_next;				/* Next interest of request */
 	SLONG rint_count;			/* Threshhold count */
-} *RINT;
+};
+typedef rint *RINT;
 
 #define EPB_version1 1
 

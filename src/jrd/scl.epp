@@ -364,7 +364,7 @@ void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
 
 	const scl* s_class = NULL;
 
-	BLK request = (BLK) CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
+	BLK request = CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) SPROC IN RDB$PROCEDURES
 		WITH SPROC.RDB$PROCEDURE_NAME EQ name
@@ -421,7 +421,7 @@ void SCL_check_relation(const dsc* dsc_name, USHORT mask)
 
 	const scl* s_class = NULL;
 
-	BLK request = (BLK) CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
+	BLK request = CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS
 		WITH REL.RDB$RELATION_NAME EQ name
@@ -659,8 +659,7 @@ void SCL_init(bool create,
 
 			if (!create)
 			{
-				request =
-					(BLK) CMP_find_request(tdbb, irq_get_role_name,
+				request = CMP_find_request(tdbb, irq_get_role_name,
 										   IRQ_REQUESTS);
 
 				FOR(REQUEST_HANDLE request) X IN RDB$ROLES
@@ -687,7 +686,7 @@ void SCL_init(bool create,
             bool found = false;
             for (p = login_name, q = name; *p++ = UPPER7 (*q); q++);
             
-            request = (BLK) CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
+            request = CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
 
             // CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
             // uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
@@ -1101,7 +1100,7 @@ static SLONG compute_access(TDBB tdbb,
 	str_buffer->str_length = BLOB_BUFFER_SIZE - 1;
 	TEXT* buffer = (TEXT*) str_buffer->str_data;
 
-	BLK request = (BLK) CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
+	BLK request = CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) X IN RDB$SECURITY_CLASSES
 		WITH X.RDB$SECURITY_CLASS EQ s_class->scl_name

@@ -40,7 +40,7 @@ static const struct
 } REM_block_sizes[] =
 {
 	{type_MIN	, 0, 0},
-	{type_vec	, sizeof(vec)		, sizeof(((VEC) NULL)->vec_object[0])},
+	{type_vec	, sizeof(rem_vec)		, sizeof(((rem_vec*) NULL)->vec_object[0])},
 	{type_rdb	, sizeof(rdb)		, 0},
 	{type_fmt	, sizeof(rem_fmt)		, sizeof(((rem_fmt*) NULL)->fmt_desc[0])},
 	{type_rrq	, sizeof(rrq)		, sizeof(((rrq*) NULL)->rrq_rpt [0])},
@@ -240,14 +240,14 @@ void ALLR_release( void *block)
 //
 //	Allocate a vector.
 //
-VEC ALLR_vector(VEC* ptr, ULONG count)
+rem_vec* ALLR_vector(rem_vec** ptr, ULONG count)
 {
 	++count;
 
-	vec* vector = *ptr;
+	rem_vec* vector = *ptr;
 
 	if (!vector) {
-		vector = *ptr = (VEC) ALLR_block(type_vec, count);
+		vector = *ptr = (rem_vec*) ALLR_block(type_vec, count);
 		vector->vec_count = count;
 		return vector;
 	}
@@ -257,7 +257,7 @@ VEC ALLR_vector(VEC* ptr, ULONG count)
 	if (count <= vector->vec_count)
 		return vector;
 
-	vec* new_vector = *ptr = (VEC) ALLR_block(type_vec, count);
+	rem_vec* new_vector = *ptr = (rem_vec*) ALLR_block(type_vec, count);
 	new_vector->vec_count = count;
 
 	blk** p = new_vector->vec_object;

@@ -27,7 +27,7 @@
 void	MAP_date_to_gds(SLONG *, SLONG *);
 void	MAP_date_to_rdb(SLONG *, SLONG *);
 int		MAP_gds_to_rdb(USHORT, struct map_msg *, UCHAR *, UCHAR *);
-struct map*	MAP_parse_blr(UCHAR *, USHORT, UCHAR *, USHORT *, SLONG *);
+struct map_msg*	MAP_parse_blr(UCHAR *, USHORT, UCHAR *, USHORT *, SLONG *);
 int		MAP_rdb_length(USHORT, struct map_msg *);
 int		MAP_rdb_to_gds(USHORT, struct map_msg *, UCHAR *, UCHAR *);
 void	MAP_release(struct map_msg *);

@@ -60,13 +60,13 @@ static SSHORT compare_keys(const IDX*, const UCHAR*, USHORT, const KEY*, USHORT)
 static void expand_index(WIN *);
 #endif
 #ifdef PC_ENGINE
-static BOOLEAN find_dbkey(Rsb*, ULONG);
-static BOOLEAN find_record(Rsb*, RSE_GET_MODE, KEY *, USHORT, USHORT);
+static bool find_dbkey(Rsb*, ULONG);
+static bool find_record(Rsb*, RSE_GET_MODE, KEY *, USHORT, USHORT);
 #endif
-static BTX find_current(EXP, btree_page*, const UCHAR*);
+static BTX find_current(jrd_exp*, btree_page*, const UCHAR*);
 static bool find_saved_node(Rsb*, IRSB_NAV, WIN *, UCHAR **);
 static UCHAR* get_position(TDBB, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
-static BOOLEAN get_record(Rsb*, IRSB_NAV, RPB *, KEY *, BOOLEAN);
+static bool get_record(Rsb*, IRSB_NAV, RPB *, KEY *, bool);
 static void init_fetch(IRSB_NAV);
 static UCHAR* nav_open(TDBB, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
 static void set_position(IRSB_NAV, RPB *, WIN *, UCHAR *, BTX, UCHAR *, USHORT);
@@ -74,7 +74,7 @@ static void setup_bitmaps(Rsb*, IRSB_NAV);
 
 
 #ifdef SCROLLABLE_CURSORS
-EXP NAV_expand_index(WIN * window, IRSB_NAV impure)
+jrd_exp* NAV_expand_index(WIN * window, IRSB_NAV impure)
 {
 /**************************************
  *
@@ -101,7 +101,7 @@ EXP NAV_expand_index(WIN * window, IRSB_NAV impure)
 
 	// if the right version of expanded page is available, there 
 	// is no work to be done 
-	EXP expanded_page;
+	jrd_exp* expanded_page;
 	if ((expanded_page = window->win_expanded_buffer) &&
 		(expanded_page->exp_incarnation == CCH_get_incarnation(window)))
 	{
@@ -115,7 +115,7 @@ EXP NAV_expand_index(WIN * window, IRSB_NAV impure)
 
 	btree_page* page = (btree_page*) window->win_buffer;
 
-	expanded_page = (EXP) ALL_malloc(EXP_SIZE + page->btr_prefix_total +
+	expanded_page = (jrd_exp*) ALL_malloc(EXP_SIZE + page->btr_prefix_total +
 		(SLONG) page->btr_length + BTX_SIZE, ERR_jmp);
 	window->win_expanded_buffer = expanded_page;
 	expanded_page->exp_incarnation = -1;
@@ -168,11 +168,11 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 	BTN expanded_node;
 	USHORT search_flags;
 
-	const BOOLEAN backwards = (direction == blr_backward
+	const bool backwards = (direction == blr_backward
 				 || direction == blr_backward_starting);
 
-	if (direction == blr_forward_starting
-		|| direction == blr_backward_starting) search_flags = irb_starting;
+	if (direction == blr_forward_starting || direction == blr_backward_starting)
+		search_flags = irb_starting;
 	else
 		search_flags = 0;
 
@@ -274,7 +274,10 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 		{
 			if (find_record
 				(rsb, RSE_get_last, &key_value, find_key->nod_count,
-				 search_flags)) return TRUE;
+				 search_flags))
+			{
+				return TRUE;
+			}
 			return NAV_get_record(rsb, impure,
 								  request->req_rpb + rsb->rsb_stream,
 								  RSE_get_backward);
@@ -303,7 +306,9 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 	case blr_eql:
 		if (find_record(rsb, backwards ? RSE_get_last : RSE_get_first,
 						&key_value, find_key->nod_count, search_flags))
+		{
 			return TRUE;
+		}
 		else {
 			// We need to override the crack semantics of find_record, because even 
 			// if we go to EOF or BOF as a result of the find, this is defined as a
@@ -381,7 +386,10 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 		{
 			if (find_record
 				(rsb, RSE_get_first, &key_value, find_key->nod_count,
-				 search_flags)) return TRUE;
+				 search_flags))
+			{
+				return TRUE;
+			}
 
 			// special case when the key is greater than the last record in the file;
 			// stream is defined to be on EOF; see bug #6151
@@ -545,7 +553,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 	}
 
 	// Find the next interesting node.  If necessary, skip to the next page
-	EXP expanded_page;
+	jrd_exp* expanded_page;
 	BTX expanded_node;
 	bool page_changed = false;
 	// AB: I don't see number is initialized? 
@@ -737,7 +745,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 
 		CCH_RELEASE(tdbb, &window);
 
-		if (get_record(rsb, impure, rpb, &key, FALSE)) {
+		if (get_record(rsb, impure, rpb, &key, false)) {
 #ifdef PC_ENGINE
 			if (impure->irsb_flags & irsb_refresh)
 				RNG_add_record(rpb);
@@ -765,7 +773,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 
 
 #ifdef PC_ENGINE
-BOOLEAN NAV_reset_position(Rsb* rsb, RPB * new_rpb)
+bool NAV_reset_position(Rsb* rsb, RPB * new_rpb)
 {
 /**************************************
  *
@@ -808,9 +816,8 @@ BOOLEAN NAV_reset_position(Rsb* rsb, RPB * new_rpb)
 	// find the key value of the new position, and set the stream to it
 	BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, idx,
 			&key_value, 0);
-	if (!find_record(rsb, RSE_get_first, &key_value, idx->idx_count,	// XXX
-					 0))
-		return FALSE;
+	if (!find_record(rsb, RSE_get_first, &key_value, idx->idx_count, 0)) // XXX
+		return false;
 
 	// now find the dbkey of the new record within the 
 	// duplicates of this key value
@@ -987,7 +994,7 @@ static void expand_index(WIN * window)
  **************************************/
 
 	btree_page* page = (btree_page*) window->win_buffer;
-	EXP expanded_page = window->win_expanded_buffer;
+	jrd_exp* expanded_page = window->win_expanded_buffer;
 	expanded_page->exp_incarnation = CCH_get_incarnation(window);
 
 	// go through the nodes on the original page and expand them
@@ -1045,7 +1052,7 @@ static void expand_index(WIN * window)
 
 
 #ifdef PC_ENGINE
-static BOOLEAN find_dbkey(Rsb* rsb, ULONG record_number)
+static bool find_dbkey(Rsb* rsb, ULONG record_number)
 {
 /**************************************
  *
@@ -1078,7 +1085,7 @@ static BOOLEAN find_dbkey(Rsb* rsb, ULONG record_number)
 
 	// if we're on a crack, this isn't going very far
 	if (impure->irsb_flags & (irsb_bof | irsb_eof | irsb_crack)) {
-		return FALSE;
+		return false;
 	}
 
 	// find the last fetched position from the index,
@@ -1103,22 +1110,22 @@ static BOOLEAN find_dbkey(Rsb* rsb, ULONG record_number)
 
 		// if we find an index entry with the proper dbkey, try to fetch the record 
 		if (rpb->rpb_number == record_number) {
-			if (get_record(rsb, impure, rpb, &key, TRUE)) {
+			if (get_record(rsb, impure, rpb, &key, true)) {
 				set_position(impure, rpb, &window, node, expanded_node,
 							 key.key_data, key.key_length);
 				CCH_RELEASE(tdbb, &window);
-				return TRUE;
+				return true;
 			}
 
 			CCH_RELEASE(tdbb, &window);
-			return FALSE;
+			return false;
 		}
 
 		// go to the next node; if we find a non-equivalent node, give up
 		node = BTR_next_node(node, &expanded_node);
 		if (BTN_LENGTH(node)) {
 			CCH_RELEASE(tdbb, &window);
-			return FALSE;
+			return false;
 		}
 	}
 
@@ -1132,7 +1139,7 @@ static BOOLEAN find_dbkey(Rsb* rsb, ULONG record_number)
 
 
 #ifdef PC_ENGINE
-static BOOLEAN find_record(
+static bool find_record(
 						   Rsb* rsb,
 						   RSE_GET_MODE mode,
 						   KEY * find_key,
@@ -1162,11 +1169,10 @@ static BOOLEAN find_record(
 	btree_page* page;
 	WIN window;
 	BTN node;
-	EXP expanded_page;
+	jrd_exp* expanded_page;
 	BTX expanded_node;
 	KEY lower, upper, *tmp, value;
 	USHORT upper_count, lower_count;
-	BOOLEAN result = FALSE, position_set = FALSE;
 	UCHAR *p, *q;
 	USHORT l;
 
@@ -1221,6 +1227,8 @@ static BOOLEAN find_record(
 	// during the parse.  See HACKs for bug 7041
 
 	try {
+		bool result = false;
+		bool position_set = false;
 
 	// loop through the equivalent values of the given key, finding
 	// a valid record if possible; for RSE_get_last, save the last
@@ -1239,7 +1247,7 @@ static BOOLEAN find_record(
 		if (rpb->rpb_number == END_LEVEL) {
 			CCH_RELEASE(tdbb, &window);
 			RSE_MARK_CRACK(tdbb, rsb, irsb_eof);
-			return FALSE;
+			return false;
 		}
 
 		if (rpb->rpb_number == END_BUCKET) {
@@ -1280,10 +1288,10 @@ static BOOLEAN find_record(
 		// anytime we successfully retrieve a record, set position 
 		// to it in case we go past a viable record in looking for
 		// the last record of equivalent key
-		if (result = get_record(rsb, impure, rpb, &value, TRUE)) {
+		if (result = get_record(rsb, impure, rpb, &value, true)) {
 			set_position(impure, rpb, &window, node, expanded_node,
 						 value.key_data, value.key_length);
-			position_set = TRUE;
+			position_set = true;
 		}
 
 		// if we're looking for the first record, we're done
@@ -1304,7 +1312,7 @@ static BOOLEAN find_record(
 #endif
 
 
-static BTX find_current(EXP expanded_page, btree_page* page, const UCHAR* current_pointer)
+static BTX find_current(jrd_exp* expanded_page, btree_page* page, const UCHAR* current_pointer)
 {
 /**************************************
  *
@@ -1461,7 +1469,7 @@ static UCHAR* get_position(
 		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
 	}
 
-	EXP expanded_page = NULL;
+	jrd_exp* expanded_page = NULL;
 
 #ifdef PC_ENGINE
 	// if we are on a forced crack, don't really get the next node in 
@@ -1560,10 +1568,10 @@ static UCHAR* get_position(
 }
 
 
-static BOOLEAN get_record(
+static bool get_record(
 						  Rsb* rsb,
 						  IRSB_NAV impure,
-						  RPB * rpb, KEY * key, BOOLEAN inhibit_cleanup)
+						  RPB * rpb, KEY * key, bool inhibit_cleanup)
 {
 /**************************************
  *
@@ -1583,7 +1591,7 @@ static BOOLEAN get_record(
 
 	KEY value;
 	USHORT old_att_flags;
-	BOOLEAN result;
+	bool result = false;
 
 	try {
 
@@ -1618,7 +1626,7 @@ static BOOLEAN get_record(
 					(IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]),
 				&value,	0);
 		if (compare_keys(idx, key->key_data, key->key_length, &value, FALSE)) {
-			result = FALSE;
+			result = false;
 		} 
 		else {
 			// the successful retrieval of a record
@@ -1691,7 +1699,7 @@ static UCHAR* nav_open(
  **************************************/
 	IRB retrieval;
 	KEY lower, upper, *limit_ptr;
-	//EXP expanded_page;
+	//jrd_exp* expanded_page;
 	jrd_nod* retrieval_node;
 
 	SET_TDBB(tdbb);

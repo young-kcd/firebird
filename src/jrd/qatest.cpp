@@ -135,11 +135,11 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
  **************************************/
 	TDBB tdbb;
 	char filename[MAXPATHLEN];
-	SDW shadow;
+	Shadow* shadow;
 #ifdef WIN_NT
 	HANDLE desc;
 #endif
-	FIL file;
+	jrd_file* file;
 
 
 	switch (*function) {
@@ -224,7 +224,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 				*function);
 		THREAD_ENTER;
 		ERR_post(isc_random,
-				 isc_arg_string, ERR_cstring((TEXT *) filename), 0);
+				 isc_arg_string, ERR_cstring(filename), 0);
 		THREAD_EXIT;
 		return 0;
 	}

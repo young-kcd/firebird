@@ -218,7 +218,7 @@ static void analyse( int number, SCHAR * string, PAG page, int sequence)
 
 	case pag_root:
 		ib_printf("Index root page, relation %d\n",
-				  ((IRT) page)->irt_relation);
+				  ((index_root_page*) page)->irt_relation);
 		break;
 
 	case pag_index:
