@@ -4192,14 +4192,14 @@ static void validate(TDBB tdbb, JRD_NOD list)
 		{
 			/* Validation error -- report result */
 
-			JRD_NOD			node;
-			VEC			vector;
-			JRD_REL			relation;
-			JRD_REQ			request;
-			JRD_FLD			field;
-			const char*	value;
-			TEXT		temp[128];
-			const TEXT*	name;
+			JRD_NOD node;
+			VEC vector;
+			JRD_REL relation;
+			JRD_REQ request;
+			JRD_FLD field;
+			const char* value;
+			TEXT temp[128];
+			const TEXT* name = NULL;
 			USHORT length, stream, id;
 
 			node = (*ptr1)->nod_arg[e_val_value];
