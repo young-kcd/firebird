@@ -1,3 +1,55 @@
+2002-12-11 21:52  skidder
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.firebird,
+	builds/posix/prefix.linux:
+	
+	Little changes to build stable Linux packages
+
+2002-12-11 17:31  skidder
+
+	* firebird2/src/jrd/: isc.cpp, jrd.cpp:
+	
+	Temporary hack to make engine work until new configuration manager
+	be able to handle directories stuff
+
+2002-12-11 11:09  dimitr
+
+	* firebird2/src/dsql/parse.y:
+	
+	Fixed serious bug with views I unfortunately introduced in Alpha 5
+	:-(
+
+2002-12-11 10:48  dimitr
+
+	* firebird2/src/burp/burp.cpp:
+	
+	no message
+
+2002-12-11 10:45  dimitr
+
+	* firebird2/src/dsql/gen.cpp:
+	
+	Cleanup.
+
+2002-12-11 10:41  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	no message
+
+2002-12-11 10:39  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Fixed coredump when a message expression was NULL.
+
+2002-12-11 09:35  dimitr
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw, engine.dsp,
+	fbclient.dsp, gpre_boot.dsp:
+	
+	Updated project files.
+
 2002-12-10 12:53  eku
 
 	* firebird2/: builds/posix/prefix.sinixz, src/burp/restore.epp,
