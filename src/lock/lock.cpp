@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.52 2003-05-25 18:59:19 skidder Exp $
+$Id: lock.cpp,v 1.53 2003-05-26 15:44:20 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3228,7 +3228,9 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 
 	LOCK_header = (LHB) shmem_data->sh_mem_address;
 	// Reflect real number of semaphores available
+#ifdef UNIX
 	LOCK_sem_count = shmem_data->sh_mem_semaphores;
+#endif
 
 	if (!initialize) {
 		return;
