@@ -111,6 +111,29 @@ class dbb : private pool_alloc<type_dbb>
 {
 public:
 	static dbb* newDbb(MemoryPool& p) { return new(p) dbb(p); }
+	
+	~dbb()
+	{
+		pool_vec_type::iterator itr;
+		
+		for(itr = dbb_pools.begin(); itr != dbb_pools.end(); ++itr)
+		{
+			if (*itr == dbb_bufferpool)
+				dbb_bufferpool = 0;
+			if (*itr != dbb_permanent)
+				delete *itr;
+		}
+		if (dbb_bufferpool != 0)
+			delete dbb_bufferpool;
+		delete dbb_permanent;
+	}
+	
+	// The delete operators are no-oped because the dbb memory is allocated from the
+	// dbb's own permanent pool.  That pool has already been released by the dbb
+	// destructor, so the memory has already been released.  Hence the operator
+	// delete no-op.
+	void operator delete(void *mem) {}
+	void operator delete[](void *mem) {}
 
 	class dbb *dbb_next;		/* Next database block in system */
 	class att *dbb_attachments;	/* Active attachments */

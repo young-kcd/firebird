@@ -2528,7 +2528,7 @@ STATUS DLL_EXPORT GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
 	}
 	JRD_SS_MUTEX_UNLOCK;
 
-	ALL_fini();
+	delete dbb;
 	tdbb->tdbb_database = NULL;
 	if (err) {
 		user_status[0] = gds_arg_gds;
@@ -6080,7 +6080,7 @@ static void shutdown_database(DBB dbb, BOOLEAN release_pools)
 	}
 #endif
 	if (release_pools) {
-		ALL_fini();
+		delete dbb;
 		tdbb->tdbb_database = NULL;
 	}
 }
