@@ -347,6 +347,7 @@ namespace Firebird
 			baseTrim(TrimBoth, ToTrim);
 		}
 		bool LoadFromFile(FILE *file);
+		void vprintf(const char* Format, va_list params);
 		void printf(const char* Format, ...);
 		inline ~AbstractString() {
 			if (stringBuffer != inlineBuffer)

@@ -363,6 +363,13 @@ extern "C" {
 	}
 
 	void AbstractString::printf(const char* format,...) {
+		va_list params;
+		va_start(params, format);
+		vprintf(format, params);
+		va_end(params);
+	}
+
+	void AbstractString::vprintf(const char* format, va_list params) {
 #ifndef HAVE_VSNPRINTF
 #error NS: I'm lazy to implement version of this routine based on plain vsprintf.
 #error Please find an implementation of vsnprintf function for your platform.
@@ -371,8 +378,6 @@ extern "C" {
 #endif
 		enum {tempsize = 256};
 		char temp[tempsize];
-		va_list params;
-		va_start(params, format);
 		int l = VSNPRINTF(temp, tempsize, format, params);
 		if (l < 0) {
 			size_type n = sizeof(temp);
@@ -399,7 +404,6 @@ extern "C" {
 			resize(l);
 			VSNPRINTF(begin(), l + 1, format, params);
 		}
-		va_end(params);
 	}
 
 	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n) {
