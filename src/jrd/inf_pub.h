@@ -40,58 +40,60 @@
 /******************************/
 
 enum db_info_types
-    {
-isc_info_db_id			= 4,
-isc_info_reads			= 5,
-isc_info_writes		    = 6,
-isc_info_fetches		= 7,
-isc_info_marks			= 8,
+{
+	isc_info_db_id			= 4,
+	isc_info_reads			= 5,
+	isc_info_writes		    = 6,
+	isc_info_fetches		= 7,
+	isc_info_marks			= 8,
 
-isc_info_implementation = 11,
-isc_info_isc_version		= 12,
-isc_info_base_level		= 13,
-isc_info_page_size		= 14,
-isc_info_num_buffers	= 15,
-isc_info_limbo			= 16,
-isc_info_current_memory	= 17,
-isc_info_max_memory		= 18,
-isc_info_window_turns	= 19,
-isc_info_license		= 20,
+	isc_info_implementation = 11,
+	isc_info_isc_version		= 12,
+	isc_info_base_level		= 13,
+	isc_info_page_size		= 14,
+	isc_info_num_buffers	= 15,
+	isc_info_limbo			= 16,
+	isc_info_current_memory	= 17,
+	isc_info_max_memory		= 18,
+	isc_info_window_turns	= 19,
+	isc_info_license		= 20,
 
-isc_info_allocation		= 21,
-isc_info_attachment_id	 = 22,
-isc_info_read_seq_count	= 23,
-isc_info_read_idx_count	= 24,
-isc_info_insert_count		= 25,
-isc_info_update_count		= 26,
-isc_info_delete_count		= 27,
-isc_info_backout_count	 	= 28,
-isc_info_purge_count		= 29,
-isc_info_expunge_count		= 30,
+	isc_info_allocation		= 21,
+	isc_info_attachment_id	 = 22,
+	isc_info_read_seq_count	= 23,
+	isc_info_read_idx_count	= 24,
+	isc_info_insert_count		= 25,
+	isc_info_update_count		= 26,
+	isc_info_delete_count		= 27,
+	isc_info_backout_count	 	= 28,
+	isc_info_purge_count		= 29,
+	isc_info_expunge_count		= 30,
 
-isc_info_sweep_interval	= 31,
-isc_info_ods_version		= 32,
-isc_info_ods_minor_version	= 33,
-isc_info_no_reserve		= 34,
-isc_info_logfile		= 35,
-isc_info_cur_logfile_name	= 36,
-isc_info_cur_log_part_offset	= 37,
-isc_info_num_wal_buffers	= 38,
-isc_info_wal_buffer_size	= 39,
-isc_info_wal_ckpt_length	= 40,
+	isc_info_sweep_interval	= 31,
+	isc_info_ods_version		= 32,
+	isc_info_ods_minor_version	= 33,
+	isc_info_no_reserve		= 34,
+	/* Begin deprecated WAL and JOURNAL items. */
+	isc_info_logfile		= 35,
+	isc_info_cur_logfile_name	= 36,
+	isc_info_cur_log_part_offset	= 37,
+	isc_info_num_wal_buffers	= 38,
+	isc_info_wal_buffer_size	= 39,
+	isc_info_wal_ckpt_length	= 40,
 
-isc_info_wal_cur_ckpt_interval = 41,
-isc_info_wal_prv_ckpt_fname	= 42,
-isc_info_wal_prv_ckpt_poffset	= 43,
-isc_info_wal_recv_ckpt_fname	= 44,
-isc_info_wal_recv_ckpt_poffset = 45,
-isc_info_wal_grpc_wait_usecs	= 47,
-isc_info_wal_num_io		= 48,
-isc_info_wal_avg_io_size	= 49,
-isc_info_wal_num_commits	= 50,
-isc_info_wal_avg_grpc_size	= 51,
+	isc_info_wal_cur_ckpt_interval = 41,
+	isc_info_wal_prv_ckpt_fname	= 42,
+	isc_info_wal_prv_ckpt_poffset	= 43,
+	isc_info_wal_recv_ckpt_fname	= 44,
+	isc_info_wal_recv_ckpt_poffset = 45,
+	isc_info_wal_grpc_wait_usecs	= 47,
+	isc_info_wal_num_io		= 48,
+	isc_info_wal_avg_io_size	= 49,
+	isc_info_wal_num_commits	= 50,
+	isc_info_wal_avg_grpc_size	= 51,
+	/* End deprecated WAL and JOURNAL items. */
 
-isc_info_forced_writes		= 52,
+	isc_info_forced_writes		= 52,
 	isc_info_user_names = 53,
 	isc_info_page_errors = 54,
 	isc_info_record_errors = 55,
@@ -106,7 +108,7 @@ isc_info_forced_writes		= 52,
 	isc_info_db_read_only = 63,
 	isc_info_db_size_in_pages = 64,
 
-    /* Values 65 -100 unused to avoid conflict with InterBase */
+	/* Values 65 -100 unused to avoid conflict with InterBase */
 	
 	frb_info_att_charset = 101,
 	isc_info_db_class = 102,
@@ -119,7 +121,7 @@ isc_info_forced_writes		= 52,
 	isc_info_active_transactions = 109,
 
 	isc_info_db_last_value   /* Leave this LAST! */
-    };
+};
 
 #define isc_info_version isc_info_isc_version
 
@@ -129,7 +131,7 @@ isc_info_forced_writes		= 52,
 /**************************************/
 
 enum  info_db_implementations
-    {
+{
 	isc_info_db_impl_rdb_vms = 1,
 	isc_info_db_impl_rdb_eln = 2,
 	isc_info_db_impl_rdb_eln_dev = 3,
@@ -187,7 +189,7 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_amd64 = 66,
 
 	isc_info_db_impl_last_value   /* Leave this LAST! */
-    };
+};
 
 #define isc_info_db_impl_isc_a            isc_info_db_impl_isc_apl_68K
 #define isc_info_db_impl_isc_u            isc_info_db_impl_isc_vax_ultr
@@ -196,7 +198,7 @@ enum  info_db_implementations
 
 
 enum info_db_class
-    {
+{
 	isc_info_db_class_access = 1,
 	isc_info_db_class_y_valve = 2,
 	isc_info_db_class_rem_int = 3,
@@ -211,17 +213,17 @@ enum info_db_class
 	isc_info_db_class_server_access = 14,
 
 	isc_info_db_class_last_value   /* Leave this LAST! */
-    };
+};
 
 enum info_db_provider
-    {
+{
 	isc_info_db_code_rdb_eln = 1,
 	isc_info_db_code_rdb_vms = 2,
 	isc_info_db_code_interbase = 3,
 	isc_info_db_code_firebird = 4,
 
 	isc_info_db_code_last_value   /* Leave this LAST! */
-    };
+};
 
 
 /*****************************/

@@ -4904,6 +4904,7 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
 				derived_field->nod_desc = select_item->nod_desc;
 				return derived_field;
 			}
+
 		case nod_field:
 			{
 				const dsql_fld* field = (dsql_fld*) select_item->nod_arg[e_fld_field];
@@ -4922,7 +4923,6 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
 				derived_field->nod_desc = select_item->nod_desc;
 				return derived_field;
 			}
-
 
 		case nod_alias:
 			{
