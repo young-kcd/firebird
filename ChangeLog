@@ -1,3 +1,41 @@
+2004-09-05 23:50  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.75):
+	
+	Fixed a bug I introduced today.
+
+2004-09-05 21:37  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.120):
+	
+	Fixed issue SF #571026.
+
+2004-09-05 17:00  dimitr
+
+	* firebird2/src/isql/isql.epp (1.100):
+	
+	Minor fixes.
+
+2004-09-05 16:08  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.89):
+	
+	Fixed bug SF #223058
+
+2004-09-05 15:53  dimitr
+
+	* firebird2/src/remote/server.cpp (1.93):
+	
+	Cleanup.
+
+2004-09-05 09:23  dimitr
+
+	* firebird2/src/dsql/: make.cpp (1.74), make_proto.h (1.23),
+	pass1.cpp (1.159):
+	
+	Solved issues with literal NULLs in the CASE-based functions.  To
+	be reviewed by Arno.
+
 2004-09-04 22:09  dimitr
 
 	* firebird2/src/remote/inet.cpp (1.119):
