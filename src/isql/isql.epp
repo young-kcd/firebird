@@ -732,7 +732,7 @@ static void readNextInputLine(const char* prompt) {
 				size += growStep;
 				char* line2 = (char*) malloc (size);
 				if (pos > 0) {
-					memcpy(line2, lastInputLine, pos - 1);
+					memcpy(line2, lastInputLine, pos + 1);
 					free(lastInputLine);
 				}
 				lastInputLine = line2;
