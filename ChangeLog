@@ -1,3 +1,42 @@
+2005-01-05 13:15  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.81):
+	
+	Minor corrections.
+
+2005-01-05 13:13  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.167):
+	
+	Fixed concatenation desciptor usage (e.g. GROUP BY failures) +
+	minor corrections.
+
+2005-01-05 09:25  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.49), c_cxx.cpp (1.62), cob.cpp
+	(1.58), ftn.cpp (1.56), int_cxx.cpp (1.40), pas.cpp (1.50):
+	
+	Let's prevent accidental modification of some params.
+
+2005-01-05 05:02  robocop
+
+	* firebird2/src/gpre/par.cpp (1.57):
+	
+	Misc.
+
+2005-01-05 05:00  robocop
+
+	* firebird2/src/gpre/par.cpp (1.56):
+	
+	1.- More constants.  2.- Support for BASIC language was dropped a
+	lot of time ago.
+
+2005-01-05 04:58  robocop
+
+	* firebird2/src/gpre/gpre.cpp (1.71):
+	
+	More constants.
+
 2005-01-05 03:06  robocop
 
 	* firebird2/src/gpre/: gpre.cpp (1.70), gpre.h (1.76):
