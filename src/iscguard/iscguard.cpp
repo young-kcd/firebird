@@ -138,7 +138,7 @@ int WINAPI WinMain(
 /* since the flag is set we run as a service */
 	if (service_flag == true) {
 		CNTL_init((FPTR_VOID) WINDOW_main, ISCGUARD_SERVICE);
-		if (!StartServiceCtrlDispatcher(service_table)) {
+		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
 				CNTL_shutdown_service("StartServiceCtrlDispatcher failed");
 		}
