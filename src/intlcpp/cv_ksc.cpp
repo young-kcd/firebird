@@ -31,10 +31,10 @@
 *	KSC-5601 to EUC is not needed.
 */
 
-USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, UCHAR *ksc_str, USHORT ksc_len,
-							SSHORT *err_code, USHORT *err_position)
+USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *ksc_str
+							, USHORT ksc_len, SSHORT *err_code, USHORT *err_position)
 {
-	USHORT *start;
+	UCS2_CHAR *start;
 	UCS2_CHAR ch;
 	UCS2_CHAR wide;
 	UCHAR c1, c2;
@@ -52,7 +52,7 @@ USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, UC
 	*err_code = 0;
 
 	if (dest_ptr == NULL)
-		return (ksc_len * 2);
+		return (ksc_len * sizeof(UCS2_CHAR));
 
 	start = dest_ptr;
 	while (ksc_len && dest_len > 1) {
@@ -92,7 +92,7 @@ USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, UC
 			break;
 		}
 		*dest_ptr++ = ch;
-		dest_len -= 2;
+		dest_len -= sizeof(*dest_ptr);
 		ksc_len -= this_len;
 	}
 
@@ -103,7 +103,7 @@ USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, UC
 }
 
 
-USHORT CVKSC_unicode_to_ksc(CSCONVERT obj, UCHAR *ksc_str, USHORT ksc_len, USHORT *unicode_str
+USHORT CVKSC_unicode_to_ksc(CSCONVERT obj, UCHAR *ksc_str, USHORT ksc_len, UCS2_CHAR *unicode_str
 							, USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
 {
 	UCHAR *start;
@@ -129,13 +129,10 @@ USHORT CVKSC_unicode_to_ksc(CSCONVERT obj, UCHAR *ksc_str, USHORT ksc_len, USHOR
 	while (ksc_len && unicode_len > 1) {
 		wide = *unicode_str++;
 
-		ksc_ch = ((USHORT *) obj->csconvert_datatable)[
-													   ((USHORT *) obj->
-														csconvert_misc)[
-																		(USHORT)
-																		wide /
-																		256] +
-													   (wide % 256)];
+		ksc_ch = ((USHORT *) obj->csconvert_datatable)
+				[((USHORT *) obj->csconvert_misc)
+					[(USHORT)wide / 256]
+				 + (wide % 256)];
 		if ((ksc_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;

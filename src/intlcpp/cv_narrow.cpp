@@ -38,6 +38,7 @@ void CV_convert_init(CSCONVERT csptr, SSHORT to_cs, SSHORT from_cs,
 }
 
 
+
 USHORT CV_unicode_to_nc(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr, USHORT src_len
 						, SSHORT *err_code,	USHORT *err_position)
 {
@@ -253,6 +254,8 @@ static USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, 
 	*err_position = src_start - src_len;
 	return (dest_ptr - start);
 }
+
+
 
 CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_865, CV_dos_865_x_iso8859_1)
 {

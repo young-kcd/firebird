@@ -25,103 +25,14 @@
 
 #include "firebird.h"
 #include "../intlcpp/ldcommon.h"
-#include "cv_unicode_fss.h"
+#include "cs_unicode_fss.h"
 
 typedef USHORT fss_wchar_t;
 typedef SLONG fss_size_t;
 
-USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_len, NCHAR *src_ptr
-								, USHORT src_len, SSHORT *err_code, USHORT *err_position)
-
-{
-	UNICODE *start;
-	USHORT src_start = src_len;
-	fss_size_t res;
-
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == CS_UTFFSS_fss_to_unicode ||
-		   ((TEXTTYPE) obj)->texttype_fn_to_wc == CS_UTFFSS_fss_to_unicode);
-
-	*err_code = 0;
-
-/* See if we're only after a length estimate */
-	if (dest_ptr == NULL)
-		return (src_len * 2);	/* All single byte narrow characters */
-
-	start = dest_ptr;
-	src_start = src_len;
-	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
-		res = fss_mbtowc(dest_ptr, src_ptr, src_len);
-		if (res == -1) {
-			*err_code = CS_BAD_INPUT;
-			break;
-		}
-		assert(res <= src_len);
-		dest_ptr++;
-		dest_len -= sizeof(*dest_ptr);
-		src_ptr += res;
-		src_len -= res;
-	}
-	if (src_len && !*err_code) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = src_start - src_len;
-	return ((dest_ptr - start) * sizeof(*dest_ptr));
-}
 
 
-USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, UNICODE *unicode_str,
-								USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
-{
-	MBCHAR *start;
-	USHORT src_start = unicode_len;
-	MBCHAR tmp_buffer[6];
-	MBCHAR *p;
-	fss_size_t res;
-
-	assert(unicode_str != NULL || fss_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == CS_UTFFSS_unicode_to_fss);
-
-	*err_code = 0;
-
-/* See if we're only after a length estimate */
-	if (fss_str == NULL)
-		return ((USHORT) (unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
-
-	start = fss_str;
-	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
-		/* Convert the wide character into temp buffer */
-		res = fss_wctomb(tmp_buffer, *unicode_str);
-		if (res == -1) {
-			*err_code = CS_BAD_INPUT;
-			break;
-		}
-		/* will the mb sequence fit into space left? */
-		if (res > fss_len) {
-			*err_code = CS_TRUNCATION_ERROR;
-			break;
-		}
-		/* copy the converted bytes into the destination */
-		p = tmp_buffer;
-		for (; res; res--, fss_len--)
-			*fss_str++ = *p++;
-		unicode_len -= sizeof(*unicode_str);
-		unicode_str++;
-	}
-	if (unicode_len && !*err_code) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = src_start - unicode_len;
-	return ((fss_str - start) * sizeof(*fss_str));
-}
-
-SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, NCHAR* p, USHORT n)
+SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 {
 /**************************************
  *
@@ -335,3 +246,93 @@ static fss_size_t fss_wctomb(MBCHAR *s, fss_wchar_t wc)
 	return -1;
 }
 
+
+USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_len, NCHAR *src_ptr
+								, USHORT src_len, SSHORT *err_code, USHORT *err_position)
+{
+	UNICODE *start;
+	USHORT src_start = src_len;
+	fss_size_t res;
+
+	assert(src_ptr != NULL || dest_ptr == NULL);
+	assert(err_code != NULL);
+	assert(err_position != NULL);
+	assert(obj != NULL);
+	assert(obj->csconvert_convert == CS_UTFFSS_fss_to_unicode ||
+		   ((TEXTTYPE) obj)->texttype_fn_to_wc == CS_UTFFSS_fss_to_unicode);
+
+	*err_code = 0;
+
+/* See if we're only after a length estimate */
+	if (dest_ptr == NULL)
+		return (src_len * 2);	/* All single byte narrow characters */
+
+	start = dest_ptr;
+	src_start = src_len;
+	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
+		res = fss_mbtowc(dest_ptr, src_ptr, src_len);
+		if (res == -1) {
+			*err_code = CS_BAD_INPUT;
+			break;
+		}
+		assert(res <= src_len);
+		dest_ptr++;
+		dest_len -= sizeof(*dest_ptr);
+		src_ptr += res;
+		src_len -= res;
+	}
+	if (src_len && !*err_code) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	*err_position = src_start - src_len;
+	return ((dest_ptr - start) * sizeof(*dest_ptr));
+}
+
+
+USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, UNICODE *unicode_str,
+								USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
+{
+	MBCHAR *start;
+	USHORT src_start = unicode_len;
+	MBCHAR tmp_buffer[6];
+	MBCHAR *p;
+	fss_size_t res;
+
+	assert(unicode_str != NULL || fss_str == NULL);
+	assert(err_code != NULL);
+	assert(err_position != NULL);
+	assert(obj != NULL);
+	assert(obj->csconvert_convert == CS_UTFFSS_unicode_to_fss);
+
+	*err_code = 0;
+
+/* See if we're only after a length estimate */
+	if (fss_str == NULL)
+		return ((USHORT) (unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
+
+	start = fss_str;
+	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
+		/* Convert the wide character into temp buffer */
+		res = fss_wctomb(tmp_buffer, *unicode_str);
+		if (res == -1) {
+			*err_code = CS_BAD_INPUT;
+			break;
+		}
+		/* will the mb sequence fit into space left? */
+		if (res > fss_len) {
+			*err_code = CS_TRUNCATION_ERROR;
+			break;
+		}
+		/* copy the converted bytes into the destination */
+		p = tmp_buffer;
+		for (; res; res--, fss_len--)
+			*fss_str++ = *p++;
+		unicode_len -= sizeof(*unicode_str);
+		unicode_str++;
+	}
+	if (unicode_len && !*err_code) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	*err_position = src_start - unicode_len;
+	return ((fss_str - start) * sizeof(*fss_str));
+}

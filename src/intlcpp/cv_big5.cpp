@@ -25,10 +25,10 @@
 #include "../intlcpp/ldcommon.h"
 #include "../intlcpp/cv_big5.h"
 
-USHORT CVBIG5_big5_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, UCHAR *src_ptr
+USHORT CVBIG5_big5_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *src_ptr
 							, USHORT src_len, SSHORT *err_code, USHORT *err_position)
 {
-	USHORT *start;
+	UCS2_CHAR *start;
 	UCS2_CHAR ch;
 	UCS2_CHAR wide;
 	USHORT src_start = src_len;
@@ -47,10 +47,9 @@ USHORT CVBIG5_big5_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, 
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
-		return (src_len * 2);
+		return (src_len * sizeof(UCS2_CHAR));
 
 	start = dest_ptr;
-	src_start = src_len;
 	while ((src_len) && (dest_len > 1)) {
 		if (*src_ptr & 0x80) {
 			c1 = *src_ptr++;
@@ -90,7 +89,7 @@ USHORT CVBIG5_big5_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, 
 		}
 
 		*dest_ptr++ = ch;
-		dest_len -= 2;
+		dest_len -= sizeof(UCS2_CHAR);
 		src_len -= this_len;
 	};
 	if (src_len && !*err_code) {
@@ -101,7 +100,7 @@ USHORT CVBIG5_big5_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, 
 }
 
 
-USHORT CVBIG5_unicode_to_big5(CSCONVERT obj, UCHAR *big5_str, USHORT big5_len, USHORT *unicode_str,
+USHORT CVBIG5_unicode_to_big5(CSCONVERT obj, UCHAR *big5_str, USHORT big5_len, UCS2_CHAR *unicode_str,
 							  USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
 {
 	UCHAR *start;
@@ -129,14 +128,10 @@ USHORT CVBIG5_unicode_to_big5(CSCONVERT obj, UCHAR *big5_str, USHORT big5_len, U
 		/* Convert from UNICODE to BIG5 code */
 		wide = *unicode_str++;
 
-		big5_ch = ((USHORT *) obj->csconvert_datatable)[
-														((USHORT *) obj->
-														 csconvert_misc)[
-																		 (USHORT)
-																		 wide
-																		 /
-																		 256]
-														+ (wide % 256)];
+		big5_ch = ((USHORT *) obj->csconvert_datatable)
+				[((USHORT *) obj->csconvert_misc)
+					[(USHORT)wide/256]
+				 +(wide % 256)];
 		if ((big5_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -203,7 +198,7 @@ USHORT CVBIG5_check_big5(UCHAR *big5_str, USHORT big5_len)
 
 
 USHORT CVBIG5_big5_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len
-							, SSHORT *err_code, USHORT *err_position)
+							, SSHORT *err_code,  USHORT *err_position)
 {
 /**************************************
  * Functional description
