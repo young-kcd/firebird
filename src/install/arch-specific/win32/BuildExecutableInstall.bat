@@ -43,7 +43,7 @@ set FBBUILD_EMB_PACK=0
 
 :: Hard code our package number - it only needs to be changed if the
 :: kit is repackaged but the engine is not rebuilt
-set FBBUILD_PACKAGE_NUMBER=0_RC1
+set FBBUILD_PACKAGE_NUMBER=0_RC2
 
 :: See what we have on the command line
 for %%v in ( %1 %2 %3 %4 %5 )  do (
@@ -126,7 +126,7 @@ for %%v in (fbclient ib_util) do @(
 )
 
 ::Allow fbserver to access upto 3GB RAM, if it is available.
-dumpbin /headers %ROOT_PATH%\output\bin\fbserver.exe | findstr /C:"Application can handle large (>2GB) addresses" || editbin /largeaddressaware %ROOT_PATH%\output\fbserver.exe
+dumpbin /headers %ROOT_PATH%\output\bin\fbserver.exe | findstr /C:"Application can handle large (>2GB) addresses" || editbin /largeaddressaware %ROOT_PATH%\output\bin\fbserver.exe
 
 
 ::Generate .lib compatible with Borland compiler.
@@ -431,7 +431,7 @@ if "%FBBUILD_ISX_PACK%" NEQ "1" goto :EOF
 if NOT DEFINED INNO_SETUP_PATH (@echo INNO_SETUP_PATH variable not defined & goto :EOF)
 @Echo Now let's compile the InnoSetup scripts
 @Echo.
-%INNO_SETUP_PATH%\iscc %ROOT_PATH%\src\install\arch-specific\win32\FirebirdInstall_%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%.iss
+"%INNO_SETUP_PATH%\iscc" %ROOT_PATH%\src\install\arch-specific\win32\FirebirdInstall_%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%.iss
 ::End of ISX_PACK
 ::---------------
 @goto :EOF

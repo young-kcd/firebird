@@ -420,9 +420,9 @@ If ((ProductsInstalled AND FB2) = FB2) then
 ;
 
 if ProductsInstalledCount = 1 then
-  StatusDescription := Format2(ExpandConstant('{cm:InstallProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}'))
+  StatusDescription := Format2(ExpandConstant('{cm:InstalledProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}'))
 else
-  StatusDescription := Format2(ExpandConstant('{cm:InstallProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}'));
+  StatusDescription := Format2(ExpandConstant('{cm:InstalledProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}'));
 
   Result := StatusDescription
     +#13
