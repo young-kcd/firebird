@@ -154,20 +154,20 @@ public:
 	InversionCandidate* getInversion(RecordSource** rsb);
 
 protected:
-	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, NOD_T node_type);
-	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList);
+	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, NOD_T node_type) const;
+	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const;
 	str* getAlias();
 	InversionCandidate* generateInversion(RecordSource** rsb);
 	RecordSource* generateNavigation();
 	bool getInversionCandidates(InversionCandidateList* inversions, 
-		IndexScratchList* indexScratches, USHORT scope);
-	jrd_nod* makeIndexNode(const index_desc* idx);
-	jrd_nod* makeIndexScanNode(IndexScratch* indexScratch);
-	InversionCandidate* makeInversion(InversionCandidateList* inversions);
-	bool matchBoolean(IndexScratch* indexScratch, jrd_nod* boolean, USHORT scope);
+		IndexScratchList* indexScratches, USHORT scope) const;
+	jrd_nod* makeIndexNode(const index_desc* idx) const;
+	jrd_nod* makeIndexScanNode(IndexScratch* indexScratch) const;
+	InversionCandidate* makeInversion(InversionCandidateList* inversions) const;
+	bool matchBoolean(IndexScratch* indexScratch, jrd_nod* boolean, USHORT scope) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
-		jrd_nod* boolean, USHORT scope);
-	bool validateStarts(IndexScratch* indexScratch, jrd_nod* boolean, USHORT segment);
+		jrd_nod* boolean, USHORT scope) const;
+	bool validateStarts(IndexScratch* indexScratch, jrd_nod* boolean, USHORT segment) const;
 private:
 	MemoryPool& pool;
 	thread_db* tdbb;
@@ -203,7 +203,7 @@ class InnerJoinStreamInfo
 {
 public:
 	InnerJoinStreamInfo(MemoryPool& p);
-	bool independent();
+	bool independent() const;
 
 	int		stream;
 	bool	baseUnique;
@@ -232,17 +232,17 @@ protected:
 	void calculateCardinalities();
 	void calculateStreamInfo();
 	bool cheaperRelationship(IndexRelationship* checkRelationship,
-		IndexRelationship* withRelationship);
+		IndexRelationship* withRelationship) const;
 	bool estimateCost(USHORT stream, double *cost, 
-		double *resulting_cardinality);
+		double *resulting_cardinality) const;
 	void findBestOrder(int position, InnerJoinStreamInfo* stream, 
 		IndexedRelationships* processList, double cost, double cardinality);
 	void getIndexedRelationship(InnerJoinStreamInfo* baseStream, 
 		InnerJoinStreamInfo* testStream);
 	InnerJoinStreamInfo* getStreamInfo(int stream);
 #ifdef OPT_DEBUG
-	void printFoundOrder(int position, double cost, double cardinality);
-	void printProcessList(IndexedRelationships* processList, int stream);
+	void printFoundOrder(int position, double cost, double cardinality) const;
+	void printProcessList(const IndexedRelationships* processList, int stream) const;
 #endif
 
 private:

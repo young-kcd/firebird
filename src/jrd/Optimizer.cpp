@@ -930,7 +930,7 @@ OptimizerRetrieval::~OptimizerRetrieval()
 }
 
 jrd_nod* OptimizerRetrieval::composeInversion(jrd_nod* node1, jrd_nod* node2, 
-											  NOD_T node_type)
+											  NOD_T node_type) const
 {
 /**************************************
  *
@@ -973,7 +973,7 @@ jrd_nod* OptimizerRetrieval::composeInversion(jrd_nod* node1, jrd_nod* node2,
 }
 
 void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, 
-	SortedStreamList* streamList)
+	SortedStreamList* streamList) const
 {
 /**************************************
  *
@@ -1388,7 +1388,7 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
 }
 
 bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions, 
-		IndexScratchList* indexScratches, USHORT scope)
+		IndexScratchList* indexScratches, USHORT scope) const
 {
 /**************************************
  *
@@ -1511,7 +1511,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 	return (inversions->getCount() >= 1);
 }
 
-jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx)
+jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
 {
 /**************************************
  *
@@ -1551,7 +1551,7 @@ jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx)
 	return node;
 }
 
-jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
+jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 {
 /**************************************
  *
@@ -1656,6 +1656,7 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 }
 
 InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* inversions)
+	const
 {
 /**************************************
  *
@@ -1752,7 +1753,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				double diffSelectivity = (bestSelectivity / 
 					inversion[currentPosition]->selectivity);
 				if ((diffSelectivity >= 0.98) && (diffSelectivity <= 1.02)) {
-					// If the "same" selectivty then compare with the nr of unmatched segments, 
+					// If the "same" selectivity then compare with the nr of unmatched segments, 
 					// how many indexes and matched segments.
 					int compareSelectivity = (inversion[currentPosition]->indexes - bestIndexes);
 					if (compareSelectivity == 0) {
@@ -1877,7 +1878,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 }
 
 bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, 
-	jrd_nod* boolean, USHORT scope)
+	jrd_nod* boolean, USHORT scope) const
 {
 /**************************************
  *
@@ -2096,7 +2097,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 }
 
 InversionCandidate* OptimizerRetrieval::matchOnIndexes(
-	IndexScratchList* indexScratches, jrd_nod* boolean, USHORT scope)
+	IndexScratchList* indexScratches, jrd_nod* boolean, USHORT scope) const
 {
 /**************************************
  *
@@ -2228,7 +2229,8 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 }
 
 
-bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, jrd_nod* boolean, USHORT segment)
+bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
+										jrd_nod* boolean, USHORT segment) const
 {
 /**************************************
  *
@@ -2351,7 +2353,7 @@ InnerJoinStreamInfo::InnerJoinStreamInfo(MemoryPool& p) :
 	previousExpectedStreams.shrink(0);
 }
 
-bool InnerJoinStreamInfo::independent()
+bool InnerJoinStreamInfo::independent() const
 {
 /**************************************
  *
@@ -2532,7 +2534,7 @@ void OptimizerInnerJoin::calculateStreamInfo()
 }
 
 bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationship,
-		IndexRelationship* withRelationship)
+		IndexRelationship* withRelationship) const
 {
 /**************************************
  *
@@ -2558,7 +2560,7 @@ bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationshi
 }
 
 bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost, 
-	double *resulting_cardinality)
+	double *resulting_cardinality) const
 {
 /**************************************
  *
@@ -2569,7 +2571,7 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
  *  Estimate the cost for the stream.
  *
  **************************************/
-	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	double cardinality = csb_tail->csb_cardinality;
 
 	// Create the optimizer retrieval generation class and calculate
@@ -2598,7 +2600,7 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 		*resulting_cardinality = MAX(cardinality, 1.0);
 	}
 
-	bool useIndexRetrieval = (inversionNew->indexes >= 1);
+	const bool useIndexRetrieval = (inversionNew->indexes >= 1);
 	delete inversionNew;
 	delete optimizerRetrieval;
 
@@ -2892,7 +2894,7 @@ InnerJoinStreamInfo* OptimizerInnerJoin::getStreamInfo(int stream)
 }
 
 #ifdef OPT_DEBUG
-void OptimizerInnerJoin::printFoundOrder(int position, double cost, double cardinality)
+void OptimizerInnerJoin::printFoundOrder(int position, double cost, double cardinality) const
 {
 /**************************************
  *
@@ -2916,11 +2918,12 @@ void OptimizerInnerJoin::printFoundOrder(int position, double cost, double cardi
 	fclose(opt_debug_file);
 }
 
-void OptimizerInnerJoin::printProcessList(IndexedRelationships* processList, int stream)
+void OptimizerInnerJoin::printProcessList(const IndexedRelationships* processList,
+	int stream) const
 {
 /**************************************
  *
- *	p r i n t F o u n d O r d e r
+ *	p r i n t P r o c e s s L i s t
  *
  **************************************
  *
@@ -2930,7 +2933,7 @@ void OptimizerInnerJoin::printProcessList(IndexedRelationships* processList, int
 
 	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
 	fprintf(opt_debug_file, "processlist, basestream %2.2d, relationships: \n", stream);
-	IndexRelationship** relationships = processList->begin();
+	const IndexRelationship* const* relationships = processList->begin();
 	for (int i = 0; i < processList->getCount(); i++) {
 		fprintf(opt_debug_file, "\t\t%2.2d (%10.2f)\n", relationships[i]->stream, relationships[i]->cost);
 	}
