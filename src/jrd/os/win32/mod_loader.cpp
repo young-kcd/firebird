@@ -23,8 +23,12 @@ private:
 
 bool ModuleLoader::isLoadableModule(const string& module)
 {
-	DWORD handle;
-	return (GetFileVersionInfoSize(const_cast<char*>(module.c_str()), &handle) > 0);
+	LPCSTR pszName = module.c_str();
+	HINSTANCE hMod = LoadLibraryEx(pszName, 0, LOAD_LIBRARY_AS_DATAFILE);
+	if (hMod) {
+		FreeLibrary((HMODULE)hMod);
+	}
+	return hMod != 0;
 }
 
 void ModuleLoader::doctorModuleExtention(Firebird::string& name)
