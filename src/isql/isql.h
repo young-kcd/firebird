@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.30 2004-05-18 16:21:39 brodsom Exp $
+ * $Id: isql.h,v 1.31 2004-05-18 21:59:25 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -271,20 +271,15 @@ static const char* SCRATCH		= "fb_q";
 static const char* SCRATCH		= "fb_query_";
 #endif
 
+inline void STDERROUT(char* st, bool cr){
+	fprintf (Errfp, "%s", st);
+	if (cr)
+		fprintf (Errfp, "\n");
+	fflush (Errfp);
+}
 
-#ifndef	STDERROUT
-#define	STDERROUT(st,l)	{ fprintf (Errfp, "%s", st);\
-			  if (l) fprintf (Errfp, "\n");\
-			  fflush (Errfp); }
-#endif
-
-#ifndef ISQL_ALLOC
 #define ISQL_ALLOC(x)     gds__alloc (x)
-#endif
-
-#ifndef ISQL_FREE
 #define ISQL_FREE(x)     {isc_free ((char*) x); x = NULL;}
-#endif
 
 static const char* NEWLINE			= "\n";
 static const char* TAB_AS_SPACES	= "        ";
