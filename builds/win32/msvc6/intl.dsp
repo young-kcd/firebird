@@ -173,6 +173,10 @@ SOURCE=..\..\..\src\intl\lc_latin1.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\intl\lc_latin2.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\lc_narrow.c
 # End Source File
 # Begin Source File
