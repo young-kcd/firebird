@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.0"
+	Version="7.10"
 	Name="engine_embed"
 	SccProjectName=""
 	SccLocalPath="">
@@ -126,9 +126,6 @@
 		<Filter
 			Name="JRD files"
 			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\ail.cpp">
-			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\all.cpp">
 			</File>
@@ -286,9 +283,6 @@
 				RelativePath="..\..\..\src\jrd\jrd.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\jrn.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\lck.cpp">
 			</File>
 			<File
@@ -322,9 +316,6 @@
 				RelativePath="..\..\..\src\jrd\nodebug.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\old.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\opt.cpp">
 				<FileConfiguration
 					Name="Release|Win32">
@@ -347,9 +338,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pwd.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\rec.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rlck.cpp">
