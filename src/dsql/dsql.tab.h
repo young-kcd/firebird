@@ -164,7 +164,7 @@
 #define SHADOW 420
 #define SHARED 421
 #define SINGULAR 422
-#define SIZE 423
+#define KW_SIZE 423
 #define SMALLINT 424
 #define SNAPSHOT 425
 #define SOME 426
@@ -199,7 +199,7 @@
 #define WITH 455
 #define WORK 456
 #define WRITE 457
-#define FLOAT 458
+#define FLOAT_NUMBER 458
 #define NUMBER 459
 #define NUMERIC 460
 #define SYMBOL 461

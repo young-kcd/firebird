@@ -175,7 +175,9 @@ static void	yyerror (TEXT *);
 static int dsql_debug;
 
 static TEXT	*lex_position (void);
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN	long_int (DSQL_NOD, SLONG *);
+#endif
 static DSQL_FLD	make_field (DSQL_NOD);
 static FIL	make_file (void);
 static DSQL_NOD	make_list (DSQL_NOD);
@@ -183,7 +185,9 @@ static DSQL_NOD	make_node (NOD_TYPE, int, ...);
 static DSQL_NOD	make_parameter (void);
 static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static void	prepare_console_debug (int, int  *);
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);
+#endif
 static void	stack_nodes (DSQL_NOD, DLLS *);
 static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
 static void	yyabandon (SSHORT, STATUS);
@@ -4061,6 +4065,7 @@ return ptr;
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN long_int (
     DSQL_NOD		string,
     SLONG	*long_value)
@@ -4088,7 +4093,7 @@ static BOOLEAN long_int (
 
 	return TRUE;
 }
-
+#endif
 
 static DSQL_FLD make_field (
     DSQL_NOD		field_name)
@@ -4329,6 +4334,7 @@ static void prepare_console_debug (int level, int *yydeb)
 #endif
 }
 
+#ifdef NOT_USED_OR_REPLACED
 static BOOLEAN short_int (
     DSQL_NOD		string,
     SLONG	*long_value,
@@ -4386,7 +4392,7 @@ static BOOLEAN short_int (
 	}
 	return !return_value;
 }
-
+#endif
 
 static void stack_nodes (
     DSQL_NOD		node,
