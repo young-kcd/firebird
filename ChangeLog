@@ -1,3 +1,30 @@
+2003-11-20 22:53  bellardo
+
+	* firebird2/src/jrd/: all.cpp, all.h, jrd.h:
+	
+	Fix a memory management bug that resulted in sporadic crashes when
+	disconnecting from a database.
+
+2003-11-20 20:07  bellardo
+
+	* firebird2/src/jrd/: all.cpp, all.h, jrd.h:
+	
+	Fix a memory management bug that resulted in sporadic crashes when
+	disconnecting from a database.
+
+2003-11-20 18:32  skidder
+
+	* firebird2/src/jrd/: evl_string.h, evl_string_test.cpp:
+	
+	Implement algorithms for CONTAINING and STARTING WITH
+
+2003-11-20 09:13  eku
+
+	* firebird2/: src/remote/inet.cpp, configure.in:
+	
+	Moved the definition of socklen_t to autoconfig.h. It's used in
+	inet.ccp and server.cpp.
+
 2003-11-18 21:36  skidder
 
 	* firebird2/src/jrd/: evl_string.h, evl_string_test.cpp:
