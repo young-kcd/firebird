@@ -1,3 +1,23 @@
+2004-08-13 21:27  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.5):
+	
+	Apply changes by Adriano to make compilable
+
+2004-08-13 05:07  skidder
+
+	* firebird2/src/remote/xdr.cpp (1.20):
+	
+	Again, do not send trash over the wire
+
+2004-08-13 04:32  skidder
+
+	* firebird2/src/dsql/dsql.cpp (1.115):
+	
+	Do not send stack and memory dumps to remote client when
+	isc_dsql_sql_info and isc_dsql_prepare functions are used. Again,
+	issue is pinpointed by Valgrind
+
 2004-08-13 01:28  skidder
 
 	*
