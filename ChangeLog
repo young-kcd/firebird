@@ -1,3 +1,27 @@
+2003-06-13 09:56  dimitr
+
+	* firebird2/src/dsql/: dsql.h, pass1.cpp:
+	
+	New error messages for:   - gbak   - DSQL layer (aggregate
+	tracking)   - JRD layer (EXECUTE STATEMENT)   - config stuff
+
+2003-06-13 09:50  dimitr
+
+	* firebird2/src/: msgs/msg.gbak, include/gen/codes.h,
+	include/gen/codetext.h, include/gen/gds_codes.ftn,
+	include/gen/gds_codes.pas, include/gen/iberror.h,
+	include/gen/msgs.h, include/gen/rdb_codes.h,
+	include/gen/sql_code.h, burp/backup.epp:
+	
+	New error messages for:   - gbak   - DSQL layer (aggregate
+	tracking)   - JRD layer (EXECUTE STATEMENT)   - config stuff
+
+2003-06-13 03:17  skywalker
+
+	* firebird2/configure.in:
+	
+	Create a required directory for super
+
 2003-06-12 11:38  dimitr
 
 	* firebird2/src/dsql/pass1.cpp:
