@@ -1,3 +1,22 @@
+2005-02-10 00:48  skidder
+
+	* firebird2/doc/WhatsNew (1.57):
+	
+	Improve English
+
+2005-02-10 00:21  skidder
+
+	* firebird2/src/jrd/pag.cpp (1.87):
+	
+	Please GCC
+
+2005-02-10 00:03  skidder
+
+	* firebird2/src/jrd/: pag.cpp (1.86), ods.h (1.33):
+	
+	Re-enable the ODS architecture compatibility check disabled by Deej
+	10 years ago
+
 2005-02-08 22:23  hvlad
 
 	* firebird2/src/jrd/: btr.cpp (1.136), idx.cpp (1.88):
