@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		cvt_proto.h
- *	DESCRIPTION:	Prototype header file for cvt.c
+ *	DESCRIPTION:	Prototype header file for cvt.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,20 +24,21 @@
 #ifndef JRD_CVT_PROTO_H
 #define JRD_CVT_PROTO_H
 
-double		CVT_date_to_double(struct dsc *, FPTR_VOID);
+double		CVT_date_to_double(const struct dsc*, FPTR_VOID);
 void		CVT_double_to_date(double, SLONG[2], FPTR_VOID);
-double		CVT_get_double(struct dsc *, FPTR_VOID);
-SLONG		CVT_get_long(struct dsc *, SSHORT, FPTR_VOID);
-SINT64		CVT_get_int64(struct dsc *, SSHORT, FPTR_VOID);
-UCHAR		CVT_get_numeric(UCHAR *, USHORT, SSHORT *, double *, FPTR_VOID);
-SQUAD		CVT_get_quad(struct dsc *, SSHORT, FPTR_VOID);
-USHORT		CVT_get_string_ptr(struct dsc *, USHORT *, UCHAR **,
-								 struct vary *, USHORT, FPTR_VOID);
-GDS_DATE	CVT_get_sql_date(struct dsc *, FPTR_VOID);
-GDS_TIME	CVT_get_sql_time(struct dsc *, FPTR_VOID);
-GDS_TIMESTAMP CVT_get_timestamp(struct dsc *, FPTR_VOID);
-USHORT		CVT_make_string(struct dsc*, USHORT, const char**, struct vary *,
+double		CVT_get_double(const struct dsc*, FPTR_VOID);
+SLONG		CVT_get_long(const struct dsc*, SSHORT, FPTR_VOID);
+SINT64		CVT_get_int64(const struct dsc*, SSHORT, FPTR_VOID);
+UCHAR		CVT_get_numeric(UCHAR*, USHORT, SSHORT*, double*, FPTR_VOID);
+SQUAD		CVT_get_quad(const struct dsc*, SSHORT, FPTR_VOID);
+USHORT		CVT_get_string_ptr(const struct dsc*, USHORT*, UCHAR**,
+								 struct vary*, USHORT, FPTR_VOID);
+GDS_DATE	CVT_get_sql_date(const struct dsc*, FPTR_VOID);
+GDS_TIME	CVT_get_sql_time(const struct dsc*, FPTR_VOID);
+GDS_TIMESTAMP CVT_get_timestamp(const struct dsc*, FPTR_VOID);
+USHORT		CVT_make_string(const struct dsc*, USHORT, const char**, struct vary*,
 							  USHORT, FPTR_VOID);
-extern "C" void CVT_move(struct dsc *, struct dsc *, FPTR_VOID);
+extern "C" void CVT_move(const struct dsc*, struct dsc*, FPTR_VOID);
 
 #endif // JRD_CVT_PROTO_H
+

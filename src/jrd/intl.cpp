@@ -152,7 +152,7 @@ CharSetAllocFunc INTL_charset_alloc_func(short);
 TextTypeAllocFunc INTL_texttype_alloc_func(short);
 CsConvertAllocFunc INTL_csconvert_alloc_func(short, short);
 
-static BOOLEAN all_spaces(TDBB, CHARSET_ID, BYTE *, USHORT, USHORT);
+static bool all_spaces(TDBB, CHARSET_ID, const BYTE*, USHORT, USHORT);
 #ifdef NOT_USED_OR_REPLACED
 #ifdef DEV_BUILD
 static void dump_hex(UCHAR *, USHORT);
@@ -633,7 +633,7 @@ CsConvert* INTL_convert_lookup(TDBB tdbb,
 }
 
 
-int INTL_convert_string(DSC * to, DSC * from, FPTR_VOID err)
+int INTL_convert_string(dsc* to, const dsc* from, FPTR_VOID err)
 {
 /**************************************
  *
@@ -647,19 +647,14 @@ int INTL_convert_string(DSC * to, DSC * from, FPTR_VOID err)
  * RETURNS:
  *      0 if no error in conversion
  *      non-zero otherwise.
+ *      CVC: Unfortunately, this function puts the source in the 2nd param,
+ *      as opposed to the CVT routines, so const help mitigating coding mistakes.
  *
  **************************************/
-	UCHAR *p, *q;
-	UCHAR *from_ptr;
-	CHARSET_ID to_cs, from_cs;
-	USHORT from_type;
-	TDBB tdbb;
-	USHORT from_len, from_fill;
-	USHORT to_size, to_len, to_fill;
 
 /* Note: This function is called from outside the engine as
    well as inside - we likely can't get rid of GET_THREAD_DATA here */
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 	if (tdbb == NULL)			/* are we in the Engine? */
 		return (1);				/* no, then can't access intl gah */
 
@@ -667,18 +662,23 @@ int INTL_convert_string(DSC * to, DSC * from, FPTR_VOID err)
 	assert(from != NULL);
 	assert(IS_TEXT(to) && IS_TEXT(from));
 
-	from_cs = INTL_charset(tdbb, INTL_TTYPE(from), err);
-	to_cs = INTL_charset(tdbb, INTL_TTYPE(to), err);
+	CHARSET_ID from_cs = INTL_charset(tdbb, INTL_TTYPE(from), err);
+	CHARSET_ID to_cs = INTL_charset(tdbb, INTL_TTYPE(to), err);
 
-	p = to->dsc_address;
+	UCHAR* p = to->dsc_address;
 
 /* Must convert dtype(cstring,text,vary) and ttype(ascii,binary,..intl..) */
 
-	from_len = CVT_get_string_ptr(from, &from_type, &from_ptr, NULL, 0, err);
+	UCHAR* from_ptr;
+	USHORT from_type;
+	const USHORT from_len =
+		CVT_get_string_ptr(from, &from_type, &from_ptr, NULL, 0, err);
 
+	USHORT to_size, to_len, to_fill;
 	to_size = to_len = TEXT_LEN(to);
+	USHORT from_fill;
 
-	q = from_ptr;
+	const UCHAR* q = from_ptr;
 	switch (to->dsc_dtype) {
 	case dtype_text:
 		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE)) {
@@ -1332,10 +1332,10 @@ UCHAR INTL_upper(TDBB tdbb, USHORT ttype, UCHAR ch)
 }
 
 
-static BOOLEAN all_spaces(
+static bool all_spaces(
 						  TDBB tdbb,
 						  CHARSET_ID charset,
-						  BYTE * ptr, USHORT len, USHORT offset)
+						  const BYTE* ptr, USHORT len, USHORT offset)
 {
 /**************************************
  *
@@ -1350,16 +1350,11 @@ static BOOLEAN all_spaces(
  *      (0x20 for Ascii, 0x0020 for Unicode, 0x20 for SJIS, but must watch for 
  *      0x??20, which is NOT a space.
  **************************************/
-	CharSet* obj;
-	BYTE *p;
-	BYTE *end;
-	const unsigned char *space, *end_space;
-
 	SET_TDBB(tdbb);
 
 	assert(ptr != NULL);
 
-	obj = INTL_charset_lookup(tdbb, charset, NULL);
+	CharSet* obj = INTL_charset_lookup(tdbb, charset, NULL);
 
 	assert(obj != NULL);
 
@@ -1369,32 +1364,33 @@ static BOOLEAN all_spaces(
  * to a character boundary
  */
 
-/* Single-octet character sets are optimized here */
+// Single-octet character sets are optimized here
 
 	if (obj->getSpaceLength() == 1) {
-		p = &ptr[offset];
-		end = &ptr[len];
+		const BYTE* p = &ptr[offset];
+		const BYTE* const end = &ptr[len];
 		while (p < end) {
 			if (*p++ != *obj->getSpace())
-				return (FALSE);
+				return false;
 		}
-		return (TRUE);
+		return true;
 	}
 	else {
-		p = &ptr[offset];
-		end = &ptr[len];
-		space = obj->getSpace();
-		end_space = &space[obj->getSpaceLength()];
+		const BYTE* p = &ptr[offset];
+		const BYTE* const end = &ptr[len];
+		const unsigned char* space = obj->getSpace();
+		const unsigned char* const end_space = &space[obj->getSpaceLength()];
 		while (p < end) {
 			space = obj->getSpace();
 			while (p < end && space < end_space) {
 				if (*p++ != *space++)
-					return (FALSE);
+					return false;
 			}
 		}
-		return (TRUE);
+		return true;
 	}
 }
+
 #ifdef NOT_USED_OR_REPLACED
 static USHORT internal_keylength(TextType* obj, USHORT iLength)
 {

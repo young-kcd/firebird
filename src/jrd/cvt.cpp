@@ -171,18 +171,18 @@ typedef enum {
 
 #if (defined REQUESTER || defined SUPERCLIENT)
 static TEXT cvt_failures[CVT_FAILURE_SPACE];
-static TEXT *cvt_failures_ptr = NULL;
-static TEXT *error_string(const char*, SSHORT);
+static TEXT* cvt_failures_ptr = NULL;
+static TEXT* error_string(const char*, SSHORT);
 #endif
 
-static void conversion_error(DSC *, FPTR_VOID);
-static void datetime_to_text(DSC *, DSC *, FPTR_VOID);
-static SSHORT decompose(const char*, USHORT, SSHORT, SLONG *, FPTR_VOID);
-static void float_to_text(DSC *, DSC *, FPTR_VOID);
-static void integer_to_text(DSC *, DSC *, FPTR_VOID);
-static void string_to_datetime(DSC *, GDS_TIMESTAMP *, EXPECT_DATETIME,
+static void conversion_error(const dsc*, FPTR_VOID);
+static void datetime_to_text(const dsc*, dsc*, FPTR_VOID);
+static SSHORT decompose(const char*, USHORT, SSHORT, SLONG*, FPTR_VOID);
+static void float_to_text(const dsc*, dsc*, FPTR_VOID);
+static void integer_to_text(const dsc*, dsc*, FPTR_VOID);
+static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, EXPECT_DATETIME,
 							   FPTR_VOID);
-static double power_of_ten(int);
+static double power_of_ten(const int);
 
 #ifndef NATIVE_QUAD
 #ifndef WORDS_BIGENDIAN
@@ -219,7 +219,7 @@ typedef void (*pfn_cvt_private_cludge) (int, int);
 typedef void (*pfn_cvt_private_cludge2) (int, int, ...);
 
 
-double CVT_date_to_double(DSC * desc, FPTR_VOID err)
+double CVT_date_to_double(const dsc* desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -238,17 +238,17 @@ double CVT_date_to_double(DSC * desc, FPTR_VOID err)
 /* If the input descriptor is not in date form, convert it. */
 
 	if (desc->dsc_dtype == dtype_timestamp)
-		date = (SLONG *) desc->dsc_address;
+		date = (SLONG*) desc->dsc_address;
 	else if (desc->dsc_dtype == dtype_sql_time) {
 		/* Temporarily convert the time to a timestamp for conversion */
 		date = temp;
 		date[0] = 0;
-		date[1] = *(SLONG *) desc->dsc_address;
+		date[1] = *(SLONG*) desc->dsc_address;
 	}
 	else if (desc->dsc_dtype == dtype_sql_date) {
 		/* Temporarily convert the date to a timestamp for conversion */
 		date = temp;
-		date[0] = *(SLONG *) desc->dsc_address;
+		date[0] = *(SLONG*) desc->dsc_address;
 		date[1] = 0;
 	}
 	else {
@@ -258,13 +258,13 @@ double CVT_date_to_double(DSC * desc, FPTR_VOID err)
 		   conversion is occuring in really flexible spots - we don't
 		   want to overdo it. */
 
-		DSC temp_desc;
+		dsc temp_desc;
 		MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 
 		temp_desc.dsc_dtype = dtype_timestamp;
 		temp_desc.dsc_length = sizeof(temp);
 		date = temp;
-		temp_desc.dsc_address = (UCHAR *) date;
+		temp_desc.dsc_address = (UCHAR*) date;
 		CVT_move(desc, &temp_desc, err);
 	}
 
@@ -303,7 +303,7 @@ void CVT_double_to_date(double real, SLONG fixed[2], FPTR_VOID err)
 }
 
 
-double CVT_get_double(DSC * desc, FPTR_VOID err)
+double CVT_get_double(const dsc* desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -364,45 +364,47 @@ double CVT_get_double(DSC * desc, FPTR_VOID err)
 	case dtype_text:
 		{
 			TEXT buffer[50];	/* must hold ascii of largest double */
-			SSHORT fraction, sign, exp, length, past_sign, digit_seen;
 			const char* p;
-			const char* end;
 
-			length =
+			const SSHORT length =
 				CVT_make_string(desc, ttype_ascii,
 								&p,
 								(VARY *) buffer, sizeof(buffer), err);
 			value = 0.0;
-			digit_seen = past_sign = scale = fraction = sign = exp = 0;
-			for (end = p + length; p < end; p++)
+			scale = 0;
+			SSHORT sign = 0;
+			bool digit_seen = false, past_sign = false, fraction = false;
+			const char* const end = p + length;
+			for (; p < end; p++) {
 				if (*p == COMMA)
 					continue;
 				else if (DIGIT(*p)) {
-					digit_seen = 1;
-					past_sign = 1;
+					digit_seen = true;
+					past_sign = true;
 					if (fraction)
 						scale++;
 					value = value * 10. + (*p - '0');
 				}
 				else if (*p == '.') {
-					past_sign = 1;
+					past_sign = true;
 					if (fraction)
 						conversion_error(desc, err);
 					else
-						fraction = 1;
+						fraction = true;
 				}
 				else if (!past_sign && *p == '-') {
 					sign = -1;
-					past_sign = 1;
+					past_sign = true;
 				}
 				else if (!past_sign && *p == '+') {
 					sign = 1;
-					past_sign = 1;
+					past_sign = true;
 				}
 				else if (*p == 'e' || *p == 'E')
 					break;
 				else if (*p != ' ')
 					conversion_error(desc, err);
+			}
 
 			/* If we didn't see a digit then must be a funny string like "    ".  */
 			if (!digit_seen)
@@ -415,10 +417,12 @@ double CVT_get_double(DSC * desc, FPTR_VOID err)
 			   exponent */
 
 			if (p < end) {
-				digit_seen = sign = exp = 0;
+				digit_seen = false;
+				sign = 0;
+				SSHORT exp = 0;
 				for (p++; p < end; p++) {
 					if (DIGIT(*p)) {
-						digit_seen = 1;
+						digit_seen = true;
 						exp = exp * 10 + *p - '0';
 
 						/* The following is a 'safe' test to prevent overflow of
@@ -491,8 +495,7 @@ double CVT_get_double(DSC * desc, FPTR_VOID err)
    the user know... */
 
 	if (ABSOLUT(scale) > DBL_MAX_10_EXP)
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_arith_except,
-														   0);
+		reinterpret_cast<pfn_cvt_private_cludge>(err) (gds_arith_except, 0);
 
 	if (scale > 0)
 		value *= power_of_ten(scale);
@@ -503,7 +506,7 @@ double CVT_get_double(DSC * desc, FPTR_VOID err)
 }
 
 
-SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
+SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_VOID err)
 {
 /**************************************
  *
@@ -688,9 +691,9 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
 }
 
 
-UCHAR CVT_get_numeric(UCHAR * string,
+UCHAR CVT_get_numeric(UCHAR* string,
 					  USHORT length,
-					  SSHORT * scale, double *ptr, FPTR_VOID err)
+					  SSHORT* scale, double* ptr, FPTR_VOID err)
 {
 /**************************************
  *
@@ -712,11 +715,7 @@ UCHAR CVT_get_numeric(UCHAR * string,
  *              
  *
  **************************************/
-	UCHAR *p, *end;
-	SSHORT local_scale, fraction, sign, digit_seen;
-	DSC desc;
-	SINT64 value;
-
+	dsc desc;
 
 	MOVE_CLEAR(&desc, sizeof(desc));
 	desc.dsc_dtype = dtype_text;
@@ -724,12 +723,15 @@ UCHAR CVT_get_numeric(UCHAR * string,
 	desc.dsc_length = length;
 	desc.dsc_address = string;
 
-	value = 0;
-	digit_seen = local_scale = fraction = sign = 0;
+	SINT64 value = 0;
+	SSHORT local_scale = 0, sign = 0;
+	bool digit_seen = false, fraction = false;
 
-	for (p = string, end = p + length; p < end; p++) {
+	const UCHAR* p = string;
+	const UCHAR* const end = p + length;
+	for (; p < end; p++) {
 		if (DIGIT(*p)) {
-			digit_seen = 1;
+			digit_seen = true;
 
 			/* Before computing the next value, make sure there will be
 			   no overflow. Trying to detect overflow after the fact is
@@ -755,7 +757,7 @@ UCHAR CVT_get_numeric(UCHAR * string,
 			if (fraction)
 				conversion_error(&desc, err);
 			else
-				fraction = TRUE;
+				fraction = true;
 		}
 		else if (*p == '-' && !digit_seen && !sign && !fraction)
 			sign = -1;
@@ -802,7 +804,7 @@ UCHAR CVT_get_numeric(UCHAR * string,
 }
 
 
-SQUAD CVT_get_quad(DSC * desc, SSHORT scale, FPTR_VOID err)
+SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_VOID err)
 {
 /**************************************
  *
@@ -959,7 +961,7 @@ SQUAD CVT_get_quad(DSC * desc, SSHORT scale, FPTR_VOID err)
 }
 
 
-SINT64 CVT_get_int64(DSC * desc, SSHORT scale, FPTR_VOID err)
+SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1107,10 +1109,10 @@ SINT64 CVT_get_int64(DSC * desc, SSHORT scale, FPTR_VOID err)
 }
 
 
-USHORT CVT_get_string_ptr(DSC * desc,
-						  USHORT * ttype,
-						  UCHAR ** address,
-						  VARY * temp, USHORT length, FPTR_VOID err)
+USHORT CVT_get_string_ptr(const dsc* desc,
+						  USHORT* ttype,
+						  UCHAR** address,
+						  vary* temp, USHORT length, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1134,9 +1136,6 @@ USHORT CVT_get_string_ptr(DSC * desc,
  *      already a string, output pointers point to ttype_ascii.
  *
  **************************************/
-	VARY *varying;
-	DSC temp_desc;
-
 	assert(desc != NULL);
 	assert(ttype != NULL);
 	assert(address != NULL);
@@ -1158,7 +1157,7 @@ USHORT CVT_get_string_ptr(DSC * desc,
 			return MIN((USHORT) strlen((char *) desc->dsc_address),
 					   desc->dsc_length - 1);
 		if (desc->dsc_dtype == dtype_varying) {
-			varying = (VARY *) desc->dsc_address;
+			vary* varying = (vary*) desc->dsc_address;
 			*address = reinterpret_cast<UCHAR*>(varying->vary_string);
 			return MIN(varying->vary_length,
 					   (USHORT) (desc->dsc_length - sizeof(USHORT)));
@@ -1167,6 +1166,7 @@ USHORT CVT_get_string_ptr(DSC * desc,
 
 /* No luck -- convert value to varying string. */
 
+	dsc temp_desc;
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 	temp_desc.dsc_length = length;
 	temp_desc.dsc_address = (UCHAR *) temp;
@@ -1180,7 +1180,7 @@ USHORT CVT_get_string_ptr(DSC * desc,
 }
 
 
-GDS_DATE CVT_get_sql_date(DSC * desc, FPTR_VOID err)
+GDS_DATE CVT_get_sql_date(const dsc* desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1200,13 +1200,13 @@ GDS_DATE CVT_get_sql_date(DSC * desc, FPTR_VOID err)
 
 	memset(&temp_desc, 0, sizeof(temp_desc));
 	temp_desc.dsc_dtype = dtype_sql_date;
-	temp_desc.dsc_address = (UCHAR *) & value;
+	temp_desc.dsc_address = (UCHAR *) &value;
 	CVT_move(desc, &temp_desc, err);
 	return value;
 }
 
 
-GDS_TIME CVT_get_sql_time(DSC * desc, FPTR_VOID err)
+GDS_TIME CVT_get_sql_time(const dsc* desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1226,13 +1226,13 @@ GDS_TIME CVT_get_sql_time(DSC * desc, FPTR_VOID err)
 
 	memset(&temp_desc, 0, sizeof(temp_desc));
 	temp_desc.dsc_dtype = dtype_sql_time;
-	temp_desc.dsc_address = (UCHAR *) & value;
+	temp_desc.dsc_address = (UCHAR *) &value;
 	CVT_move(desc, &temp_desc, err);
 	return value;
 }
 
 
-GDS_TIMESTAMP CVT_get_timestamp(DSC * desc, FPTR_VOID err)
+GDS_TIMESTAMP CVT_get_timestamp(const dsc* desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1252,13 +1252,13 @@ GDS_TIMESTAMP CVT_get_timestamp(DSC * desc, FPTR_VOID err)
 
 	memset(&temp_desc, 0, sizeof(temp_desc));
 	temp_desc.dsc_dtype = dtype_timestamp;
-	temp_desc.dsc_address = (UCHAR *) & value;
+	temp_desc.dsc_address = (UCHAR *) &value;
 	CVT_move(desc, &temp_desc, err);
 	return value;
 }
 
 
-USHORT CVT_make_string(DSC*          desc,
+USHORT CVT_make_string(const dsc*          desc,
 					   USHORT        to_interp,
 					   const char**  address,
 					   VARY*         temp,
@@ -1276,10 +1276,6 @@ USHORT CVT_make_string(DSC*          desc,
  *     The pointer to this string is returned in address.
  *
  **************************************/
-	VARY *varying;
-	DSC temp_desc;
-	USHORT from_len;
-
 	assert(desc != NULL);
 	assert(address != NULL);
 	assert(err != NULL);
@@ -1289,14 +1285,14 @@ USHORT CVT_make_string(DSC*          desc,
 
 	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp) {
 		*address = reinterpret_cast<char*>(desc->dsc_address);
-		from_len = desc->dsc_length;
+		const USHORT from_len = desc->dsc_length;
 		if (desc->dsc_dtype == dtype_text)
 			return from_len;
 		if (desc->dsc_dtype == dtype_cstring)
 			return MIN((USHORT) strlen((char *) desc->dsc_address),
 					   from_len - 1);
 		if (desc->dsc_dtype == dtype_varying) {
-			varying = (VARY *) desc->dsc_address;
+			vary* varying = (vary*) desc->dsc_address;
 			*address = varying->vary_string;
 			return MIN(varying->vary_length, (USHORT) (from_len - sizeof(USHORT)));
 		}
@@ -1304,6 +1300,7 @@ USHORT CVT_make_string(DSC*          desc,
 
 /* Not string data, then  -- convert value to varying string. */
 
+	dsc temp_desc;
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 	temp_desc.dsc_length = length;
 	temp_desc.dsc_address = (UCHAR *) temp;
@@ -1316,7 +1313,7 @@ USHORT CVT_make_string(DSC*          desc,
 }
 
 
-void CVT_move(DSC * from, DSC * to, FPTR_VOID err)
+void CVT_move(const dsc* from, dsc* to, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1328,9 +1325,8 @@ void CVT_move(DSC * from, DSC * to, FPTR_VOID err)
  *      Move (and possible convert) something to something else.
  *
  **************************************/
-	UCHAR *p, *q;
 	SSHORT fill;
-	SLONG l, length;
+	SLONG l;
 	UCHAR *ptr;
 	USHORT strtype;
 #if !defined(REQUESTER) && !defined(SUPERCLIENT)
@@ -1338,9 +1334,9 @@ void CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 #endif
 	UCHAR fill_char;
 
-	length = from->dsc_length;
-	p = to->dsc_address;
-	q = from->dsc_address;
+	SLONG length = from->dsc_length;
+	UCHAR* p = to->dsc_address;
+	const UCHAR* q = from->dsc_address;
 
 /* If the datatypes and lengths are identical, just move the
    stuff byte by byte.  Although this may seem slower than 
@@ -1786,7 +1782,7 @@ void CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 }
 
 
-static void conversion_error(DSC * desc, FPTR_VOID err)
+static void conversion_error(const dsc* desc, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1823,7 +1819,7 @@ static void conversion_error(DSC * desc, FPTR_VOID err)
 }
 
 
-static void datetime_to_text(DSC * from, DSC * to, FPTR_VOID err)
+static void datetime_to_text(const dsc* from, dsc* to, FPTR_VOID err)
 {
 /**************************************
  *
@@ -1835,19 +1831,15 @@ static void datetime_to_text(DSC * from, DSC * to, FPTR_VOID err)
  *      Convert a timestamp, date or time value to text.
  *
  **************************************/
-	DSC desc;
-	TEXT *p, temp[30];			/* yyyy-mm-dd hh:mm:ss.tttt  OR
-								   dd-MMM-yyyy hh:mm:ss.tttt */
-	struct tm times;
-	GDS_TIMESTAMP date;
 	TDBB tdbb = NULL;
-	SSHORT version4 = TRUE;
+	bool version4 = true;
 
 	assert(DTYPE_IS_TEXT(to->dsc_dtype));
 
 /* Convert a date or time value into a timestamp for manipulation */
 
-
+	GDS_TIMESTAMP date;
+	
 	switch (from->dsc_dtype) {
 	case dtype_sql_time:
 		date.timestamp_date = 0;
@@ -1865,7 +1857,10 @@ static void datetime_to_text(DSC * from, DSC * to, FPTR_VOID err)
 		if ((tdbb) &&
 			(((THDD) tdbb)->thdd_type == THDD_TYPE_TDBB) &&
 			tdbb->tdbb_request)
-version4 = (tdbb->tdbb_request->req_flags & req_blr_version4) ? TRUE : FALSE;
+		{
+			version4 = (tdbb->tdbb_request->req_flags & req_blr_version4) ?
+				true : false;
+		}
 		date = *(GDS_TIMESTAMP *) from->dsc_address;
 		break;
 	default:
@@ -1876,8 +1871,12 @@ version4 = (tdbb->tdbb_request->req_flags & req_blr_version4) ? TRUE : FALSE;
 
 /* Decode the timestamp into human readable terms */
 
+	tm times;
 	isc_decode_timestamp(&date, &times);
-	p = temp;
+	
+	TEXT temp[30];			/* yyyy-mm-dd hh:mm:ss.tttt  OR
+							dd-MMM-yyyy hh:mm:ss.tttt */
+	TEXT* p = temp;
 
 /* Make a textual date for data types that include it */
 
@@ -1924,6 +1923,7 @@ version4 = (tdbb->tdbb_request->req_flags & req_blr_version4) ? TRUE : FALSE;
 
 /* Move the text version of the date/time value into the destination */
 
+	dsc desc;
 	MOVE_CLEAR(&desc, sizeof(desc));
 	desc.dsc_address = (UCHAR *) temp;
 	desc.dsc_dtype = dtype_text;
@@ -1961,40 +1961,37 @@ static SSHORT decompose(const char* string,
  *      Decompose a numeric string in mantissa and exponent.
  *
  **************************************/
-
-	const char* p;
-	const char* end;
-	SSHORT scale, exp, fraction, sign, digit_seen;
-	DSC errd;
-	SINT64 value, lower_limit, upper_limit, limit_by_10;
-
 #ifndef NATIVE_QUAD
 /* For now, this routine does not handle quadwords unless this is
    supported by the platform as a native datatype. */
 
 	if (dtype == dtype_quad)
-		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
+		reinterpret_cast<pfn_cvt_private_cludge> (err) (gds_badblk, 0);	/* internal error */
 #endif
 
+	dsc errd;
 	MOVE_CLEAR(&errd, sizeof(errd));
 	errd.dsc_dtype = dtype_text;
 	errd.dsc_ttype = ttype_ascii;
 	errd.dsc_length = length;
 	errd.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(string));
 
-	value = 0;
-	digit_seen = scale = fraction = sign = 0;
-	lower_limit = (dtype == dtype_long) ? MIN_SLONG : MIN_SINT64;
-	upper_limit = (dtype == dtype_long) ? MAX_SLONG : MAX_SINT64;
+	SINT64 value = 0;
+	SSHORT scale = 0, sign = 0;
+	bool digit_seen = false, fraction = false;
+	const SINT64 lower_limit = (dtype == dtype_long) ? MIN_SLONG : MIN_SINT64;
+	const SINT64 upper_limit = (dtype == dtype_long) ? MAX_SLONG : MAX_SINT64;
 
-	limit_by_10 = upper_limit / 10;	/* used to check for overflow */
+	const SINT64 limit_by_10 = upper_limit / 10;	/* used to check for overflow */
 
-	for (p = string, end = p + length; p < end; p++)
+	const char* p = string;
+	const char* const end = p + length;
+	for (; p < end; p++)
 	{
 		if (*p == ',')
 			continue;
 		else if (DIGIT(*p)) {
-			digit_seen = 1;
+			digit_seen = true;
 
 			/* Before computing the next value, make sure there will be
 			   no overflow. Trying to detect overflow after the fact is
@@ -2020,7 +2017,7 @@ static SSHORT decompose(const char* string,
 			if (fraction)
 				conversion_error(&errd, err);
 			else
-				fraction = TRUE;
+				fraction = true;
 		}
 		else if (*p == '-' && !digit_seen && !sign && !fraction)
 			sign = -1;
@@ -2040,12 +2037,13 @@ static SSHORT decompose(const char* string,
 		value = -value;
 
 /* If there's still something left, there must be an explicit exponent */
-
 	if (p < end) {
-		digit_seen = sign = exp = 0;
+		sign = 0;
+		SSHORT exp = 0;
+		digit_seen = false;
 		for (p++; p < end; p++) {
 			if (DIGIT(*p)) {
-				digit_seen = 1;
+				digit_seen = true;
 				exp = exp * 10 + *p - '0';
 
 				/* The following is a 'safe' test to prevent overflow of
@@ -2084,7 +2082,7 @@ static SSHORT decompose(const char* string,
 
 
 #if (defined REQUESTER || defined SUPERCLIENT)
-static TEXT *error_string(const char* in_string, SSHORT length)
+static TEXT* error_string(const char* in_string, SSHORT length)
 {
 /**************************************
  *
@@ -2099,8 +2097,6 @@ static TEXT *error_string(const char* in_string, SSHORT length)
  *      is independent of the JRD allocator mechanism.
  *
  **************************************/
-	TEXT *new_string;
-
 	if (!cvt_failures_ptr)
 		cvt_failures_ptr = cvt_failures;
 
@@ -2109,12 +2105,13 @@ static TEXT *error_string(const char* in_string, SSHORT length)
 	if (cvt_failures_ptr + length + 1 > cvt_failures + CVT_FAILURE_SPACE)
 		cvt_failures_ptr = cvt_failures;
 
-	new_string = cvt_failures_ptr;
+	TEXT* new_string = cvt_failures_ptr;
 
 	while (length--
-		   && (cvt_failures_ptr <
-			   cvt_failures + CVT_FAILURE_SPACE - 1)) *cvt_failures_ptr++ =
-			*in_string++;
+		   && (cvt_failures_ptr < cvt_failures + CVT_FAILURE_SPACE - 1))
+	{
+		*cvt_failures_ptr++ = *in_string++;
+	}
 	*cvt_failures_ptr++ = 0;
 
 	return new_string;
@@ -2122,7 +2119,7 @@ static TEXT *error_string(const char* in_string, SSHORT length)
 #endif
 
 
-static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
+static void float_to_text(const dsc* from, dsc* to, FPTR_VOID err)
 {
 /**************************************
  *
@@ -2140,15 +2137,12 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
  *
  **************************************/
 	double d;
-	int precision;
-	int to_len;					/* length of destination */
-	int width;					/* minimum width to print */
-	int chars_printed;			/* number of characters printed */
 	char temp[] = "-1.234567890123456E-300";
 
-	to_len = DSC_string_length(to);
-	width = MIN(to_len, (int) sizeof(temp) - 1);
+	const int to_len = DSC_string_length(to); // length of destination
+	const int width = MIN(to_len, (int) sizeof(temp) - 1); // minimum width to print
 
+	int precision;
 	if (dtype_double == from->dsc_dtype) {
 		precision = 16;			/* minimum significant digits in a double */
 		d = *(double *) from->dsc_address;
@@ -2172,6 +2166,7 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 		Since this is inconsistent with dialect 3, see workaround at the tail
 		of this function. */
 
+	int chars_printed;			/* number of characters printed */
 	if ((dtype_double == from->dsc_dtype) && (from->dsc_scale < 0))
 		chars_printed = sprintf(temp, "%- #*.*f", width, -from->dsc_scale, d);
 	else
@@ -2217,7 +2212,7 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 
 /* Now move the result to the destination array. */
 
-	DSC intermediate;
+	dsc intermediate;
 	intermediate.dsc_dtype = dtype_text;
 	intermediate.dsc_ttype = ttype_ascii;
 	/* CVC: If you think this is dangerous, replace the "else" with a call to
@@ -2241,7 +2236,7 @@ static void float_to_text(DSC * from, DSC * to, FPTR_VOID err)
 }
 
 
-static void integer_to_text(DSC * from, DSC * to, FPTR_VOID err)
+static void integer_to_text(const dsc* from, dsc* to, FPTR_VOID err)
 {
 /**************************************
  *
@@ -2254,13 +2249,6 @@ static void integer_to_text(DSC * from, DSC * to, FPTR_VOID err)
  *      nice, formatted text.
  *
  **************************************/
-	DSC intermediate;
-	UCHAR temp[32], *p, *q;
-	SSHORT l, neg, pad, decimal, length;
-	SCHAR scale;
-	SINT64 n;
-	UINT64 u;
-
 #ifndef NATIVE_QUAD
 /* For now, this routine does not handle quadwords unless this is
    supported by the platform as a native datatype. */
@@ -2269,28 +2257,31 @@ static void integer_to_text(DSC * from, DSC * to, FPTR_VOID err)
 		reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 #endif
 
-	pad = decimal = neg = 0;
+	SSHORT pad = 0, decimal = 0, neg = 0;
 
 /* Save (or compute) scale of source.  Then convert source to ordinary
    longword or int64. */
 
-	scale = from->dsc_scale;
+	SCHAR scale = from->dsc_scale;
 
 	if (scale > 0)
 		pad = scale;
 	else if (scale < 0)
 		decimal = 1;
 
+	SINT64 n;
+	dsc intermediate;
 	MOVE_CLEAR(&intermediate, sizeof(intermediate));
 	intermediate.dsc_dtype = dtype_int64;
 	intermediate.dsc_length = sizeof(n);
 	intermediate.dsc_scale = scale;
-	intermediate.dsc_address = (UCHAR *) & n;
+	intermediate.dsc_address = (UCHAR*) &n;
 
 	CVT_move(from, &intermediate, err);
 
 /* Check for negation, then convert the number to a string of digits */
 
+	UINT64 u;
 	if (n >= 0)
 		u = n;
 	else {
@@ -2298,14 +2289,15 @@ static void integer_to_text(DSC * from, DSC * to, FPTR_VOID err)
 		u = -n;
 	}
 
-	p = temp;
+    UCHAR temp[32];
+    UCHAR* p = temp;
 
 	do {
 		*p++ = (UCHAR) (u % 10) + '0';
 		u /= 10;
 	} while (u);
 
-	l = p - temp;
+	SSHORT l = p - temp;
 
 /* if scale < 0, we need at least abs(scale)+1 digits, so add
    any leading zeroes required. */
@@ -2314,22 +2306,27 @@ static void integer_to_text(DSC * from, DSC * to, FPTR_VOID err)
 		l++;
 	}
 /* postassertion: l+scale > 0 */
+	fb_assert(l + scale > 0);
+
+	// CVC: also, we'll check for buffer overflow directly.
+	fb_assert(temp + sizeof(temp) >= p);
 
 /* Compute the total length of the field formatted.  Make sure it
    fits.  Keep in mind that routine handles both string and varying
    string fields. */
 
-	length = l + neg + decimal + pad;
+	const SSHORT length = l + neg + decimal + pad;
 
 	if ((to->dsc_dtype == dtype_text && length > to->dsc_length) ||
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||
 		(to->dsc_dtype == dtype_varying
 		 && length > (SSHORT) (to->dsc_length - sizeof(USHORT))))
+	{
 	    conversion_error(from, err);
+	}
 
-	q =
-		(to->dsc_dtype ==
-		 dtype_varying) ? to->dsc_address + sizeof(USHORT) : to->dsc_address;
+	UCHAR* q = (to->dsc_dtype == dtype_varying) ?
+		to->dsc_address + sizeof(USHORT) : to->dsc_address;
 
 /* If negative, put in minus sign */
 
@@ -2340,35 +2337,35 @@ static void integer_to_text(DSC * from, DSC * to, FPTR_VOID err)
    copy number */
 
 	if (scale >= 0)
-		do
+		do {
 			*q++ = *--p;
-		while (--l);
+		} while (--l);
 	else {
 		l += scale;				/* l > 0 (see postassertion: l+scale > 0 above) */
-		do
+		do {
 			*q++ = *--p;
-		while (--l);
+		} while (--l);
 		*q++ = '.';
-		do
+		do {
 			*q++ = *--p;
-		while (++scale);
+		} while (++scale);
 	}
 
 /* If padding is required, do it now. */
 
 	if (pad)
-		do
+		do {
 			*q++ = '0';
-		while (--pad);
+		} while (--pad);
 
 /* Finish up by padding (if fixed) or computing the actual length
    (varying string) */
 
 	if (to->dsc_dtype == dtype_text) {
 		if ((l = to->dsc_length - length) > 0)
-			do
+			do {
 				*q++ = ' ';
-			while (--l);
+			} while (--l);
 		return;
 	}
 
@@ -2382,8 +2379,8 @@ static void integer_to_text(DSC * from, DSC * to, FPTR_VOID err)
 
 
 static void string_to_datetime(
-							   DSC * desc,
-							   GDS_TIMESTAMP * date,
+							   const dsc* desc,
+							   GDS_TIMESTAMP* date,
 							   EXPECT_DATETIME expect_type, FPTR_VOID err)
 {
 /**************************************
@@ -2439,12 +2436,7 @@ static void string_to_datetime(
  *            components.
  *
  **************************************/
-	const char* string;
-	const char* p;
-	const char* end;
-	TEXT c;
-	USHORT length, n, i, components[7];
-	USHORT start_component;
+	USHORT n, components[7];
 	SSHORT description[7];
 /* Values inside of description
      > 0 is number of digits 
@@ -2456,18 +2448,19 @@ static void string_to_datetime(
 	USHORT position_year = 0;
 	USHORT position_month = 1;
 	USHORT position_day = 2;
-	BOOLEAN have_english_month = FALSE;
-	BOOLEAN dot_separator_seen = FALSE;
+	bool have_english_month = false;
+	bool dot_separator_seen = false;
 	time_t clock;
 	struct tm times, times2;
 	TEXT buffer[100];			/* arbitrarily large */
 
-	length =
+	const char* string;
+	const USHORT length =
 		CVT_make_string(desc, ttype_ascii, &string,
 						(VARY *) buffer, sizeof(buffer), err);
-	p = string;
-
-	end = p + length;
+						
+	const char* p = string;
+	const char* const end = p + length;
 
 	memset(components, 0, sizeof(components));
 	memset(description, 0, sizeof(description));
@@ -2476,7 +2469,8 @@ static void string_to_datetime(
 /* The 7 components are Year, Month, Day, Hours, Minutes, Seconds, Thou */
 /* The first 3 can be in any order */
 
-	start_component = (expect_type == expect_sql_time) ? 3 : 0;
+	const int start_component = (expect_type == expect_sql_time) ? 3 : 0;
+	int i;
 	for (i = start_component; i < 7; i++) {
 
 		/* Skip leading blanks.  If we run out of characters, we're done
@@ -2489,7 +2483,7 @@ static void string_to_datetime(
 
 		/* Handle digit or character strings */
 
-		c = UPPER7(*p);
+		TEXT c = UPPER7(*p);
 		if (DIGIT(c)) {
 			USHORT precision = 0;
 			n = 0;
@@ -2521,7 +2515,7 @@ static void string_to_datetime(
 			}
 
 			month_ptr = months;
-			while (TRUE) {
+			while (true) {
 				/* Month names are only allowed in first 2 positions */
 				if (*month_ptr && i < 2) {
 					for (t = temp, m = *month_ptr++; *t && *t == *m;
@@ -2571,7 +2565,7 @@ static void string_to_datetime(
 			n = month_ptr - months;
 			position_month = i;
 			description[i] = ENGLISH_MONTH;
-			have_english_month++;
+			have_english_month = true;
 		}
 		else {					/* Not a digit and not a letter - must be punctuation */
 
@@ -2595,7 +2589,7 @@ static void string_to_datetime(
 		}
 		if (*p == '.') {
 			if (i <= 1)
-				dot_separator_seen++;
+				dot_separator_seen = true;
 			p++;
 			continue;
 		}
@@ -2709,7 +2703,9 @@ static void string_to_datetime(
 		((times.tm_min = components[4]) > 59) ||
 		((times.tm_sec = components[5]) > 59) ||
 		(description[6] > -ISC_TIME_SECONDS_PRECISION_SCALE))
-			conversion_error(desc, err);
+	{
+		conversion_error(desc, err);
+	}
 
 /* convert day/month/year to Julian and validate result
    This catches things like 29-Feb-1995 (not a leap year) */
@@ -2719,15 +2715,20 @@ static void string_to_datetime(
 		isc_decode_timestamp(date, &times2);
 
 		if ((times.tm_year + 1900) < MIN_YEAR
-			|| (times.tm_year) + 1900 > MAX_YEAR) reinterpret_cast <
-				pfn_cvt_private_cludge > (err) (isc_date_range_exceeded, 0);
+			|| (times.tm_year) + 1900 > MAX_YEAR)
+		{
+			reinterpret_cast<pfn_cvt_private_cludge>
+				(err) (isc_date_range_exceeded, 0);
+		}
 
 		if (times.tm_year != times2.tm_year ||
 			times.tm_mon != times2.tm_mon ||
 			times.tm_mday != times2.tm_mday ||
 			times.tm_hour != times2.tm_hour ||
 			times.tm_min != times2.tm_min || times.tm_sec != times2.tm_sec)
+		{
 			conversion_error(desc, err);
+		}
 	};
 
 /* Convert fraction of seconds */
@@ -2738,7 +2739,7 @@ static void string_to_datetime(
 }
 
 
-double power_of_ten(int scale)
+double power_of_ten(const int scale)
 {
 /*************************************
  *
@@ -2786,3 +2787,4 @@ double power_of_ten(int scale)
 	 */
 	return upper_part[scale >> 5] * lower_part[scale & 0x1f];
 }
+

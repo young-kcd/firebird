@@ -31,7 +31,7 @@ int			INTL_compare(TDBB, struct dsc *, struct dsc *, FPTR_VOID);
 USHORT		INTL_convert_bytes(TDBB, CHARSET_ID, UCHAR *, USHORT, CHARSET_ID, 
 								BYTE *, USHORT, FPTR_VOID);
 CsConvert*	INTL_convert_lookup(TDBB, CHARSET_ID, CHARSET_ID);
-int			INTL_convert_string(struct dsc *, struct dsc *, FPTR_VOID);
+int			INTL_convert_string(struct dsc*, const struct dsc*, FPTR_VOID);
 int			INTL_data(struct dsc *);
 int			INTL_data_or_binary(struct dsc *);
 int			INTL_defined_type(TDBB, ISC_STATUS *, SSHORT);
