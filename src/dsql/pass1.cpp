@@ -1280,10 +1280,8 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node->nod_flags = input->nod_flags;
 		dsql_nod* cursor = node->nod_arg[e_flp_cursor] = input->nod_arg[e_flp_cursor];
 
-		const dsql_nod* select = input->nod_arg[e_flp_select];
 		node->nod_arg[e_flp_select] =
-			PASS1_rse(request, select->nod_arg[e_select_expr], 
-					  select->nod_arg[e_select_lock]);
+			PASS1_statement(request, input->nod_arg[e_flp_select], proc_flag);
 
 		if (cursor) {
 			fb_assert(cursor->nod_flags > 0);
