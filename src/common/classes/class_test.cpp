@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: class_test.cpp,v 1.15 2004-05-21 06:14:51 robocop Exp $
+ *  $Id: class_test.cpp,v 1.16 2004-06-13 18:30:20 skidder Exp $
  *
  */
 
@@ -78,7 +78,7 @@ const int TEST_ITEMS = 1000000;
 struct Test {
 	int value;
 	int count;
-	static const int& generate(void *sender, const Test& value) {
+	static const int& generate(const void *sender, const Test& value) {
 		return value.value;
 	}
 };
