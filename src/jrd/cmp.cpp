@@ -3642,7 +3642,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 		}
 		else if (sub->nod_type == nod_field)
 		{
-			USHORT stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
+			stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
 			tail = &csb->csb_rpt[stream];
 			if (tail->csb_flags & csb_trigger && stream == 0)	// OLD context
 			{
