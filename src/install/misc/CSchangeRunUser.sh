@@ -262,6 +262,7 @@ fixFilePermissions() {
 
     chmod ug=rw,o= firebird.log
 
+	chmod a=r aliases.conf
 	chmod a=r firebird.conf
     chmod a=r firebird.msg
     chmod ug=rw,o= help/help.fdb

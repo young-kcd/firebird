@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.12 2003-05-25 10:44:58 fsg Exp $
+#   $Id: makeInstallImage.sh.in,v 1.13 2003-06-01 15:47:16 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -171,6 +171,15 @@ copyFiles() {
 
     cp $BuiltFBDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
     cp $BuiltFBDir/misc/firebird.conf $DestDir/firebird.conf
+
+    echo "#" >> $DestDir/aliases.conf
+    echo "# List of known database aliases" >> $DestDir/aliases.conf
+    echo "# ------------------------------" >> $DestDir/aliases.conf
+    echo "#" >> $DestDir/aliases.conf
+    echo "# Examples:" >> $DestDir/aliases.conf
+    echo "#" >> $DestDir/aliases.conf
+    echo "# employee = /$FBRootDir/examples/employee.fdb" >> $DestDir/aliases.conf
+    echo "#" >> $DestDir/aliases.conf
     
 
 # Create links from /usr/lib to install area.
