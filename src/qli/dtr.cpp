@@ -326,7 +326,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
  */
 	gds_alloc_report(0, __FILE__, __LINE__);
 #endif
-	exit(FINI_OK);
+	return (FINI_OK);
 }
 
 
@@ -342,12 +342,12 @@ static void enable_signals(void)
  *	Enable signals.
  *
  **************************************/
-	void (*prev_handler) ();
+	typedef void (*new_handler) (int);
 
-	signal(SIGQUIT, (void(*)(int)) signal_quit);
-	signal(SIGINT, (void(*)(int)) signal_quit);
-	signal(SIGPIPE, (void(*)(int)) signal_quit);
-	signal(SIGFPE, (void(*)(int)) signal_arith_excp);
+	signal(SIGQUIT, (new_handler) signal_quit);
+	signal(SIGINT, (new_handler) signal_quit);
+	signal(SIGPIPE, (new_handler) signal_quit);
+	signal(SIGFPE, (new_handler) signal_arith_excp);
 }
 
 
