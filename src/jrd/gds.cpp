@@ -264,6 +264,7 @@ static void		blr_print_join(CTL);
 static SLONG	blr_print_line(CTL, SSHORT);
 static void		blr_print_verb(CTL, SSHORT);
 static int		blr_print_word(CTL);
+static int		blr_get_word(CTL);
 
 static void		init(void);
 static int		yday(struct tm *);
@@ -407,6 +408,7 @@ extern int ib_vfprintf();
 #define PRINT_DTYPE	blr_print_dtype (control)
 #define PRINT_JOIN	blr_print_join (control)
 #define BLR_BYTE	*(control->ctl_blr)++
+#define BLR_WORD	blr_get_word (control)
 #define PUT_BYTE(byte)	*(control->ctl_ptr)++ = byte
 
 #define op_line		 1
@@ -428,6 +430,7 @@ extern int ib_vfprintf();
 #define op_set_error	 17
 #define op_literals	 18
 #define op_relation	 20
+#define op_exec_into 21
 
 static const UCHAR
 	/* generic print formats */
@@ -481,7 +484,8 @@ static const UCHAR
 	indices[]	= { op_byte, op_line, op_literals, 0},
 	lock_relation[] = { op_line, op_indent, op_relation, op_line, op_verb, 0},
 	range_relation[] = { op_line, op_verb, op_indent, op_relation, op_line, 0},
-	extract[]	= { op_line, op_byte, op_verb, 0};
+	extract[]	= { op_line, op_byte, op_verb, 0},
+	exec_into[] = { op_line, op_exec_into, 0};
 
 static const struct
 {
@@ -3254,6 +3258,18 @@ static void blr_print_verb(CTL control, SSHORT level)
 				PRINT_WORD;
 			break;
 
+		case op_exec_into:
+			n = BLR_WORD /*e_exec_into_count*/ ;
+			PRINT_VERB;
+			if (! BLR_BYTE) {// ! singleton
+				PRINT_VERB;
+			}
+			/*e_exec_into_list*/
+			while (n-- > 0) {
+				PRINT_VERB;
+			}
+			break;
+
 		default:
 			assert(FALSE);
 			break;
@@ -3280,6 +3296,27 @@ static int blr_print_word(CTL control)
 	blr_format(control,
 			   (control->ctl_language) ? "chr(%d),chr(%d), " : "%d,%d, ",
 			   (int) v1, (int) v2);
+
+	return (v2 << 8) | v1;
+}
+
+
+static int blr_get_word(CTL control)
+{
+/**************************************
+ *
+ *	b l r _ g e t _ w o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a VAX word as a numeric value.
+ *
+ **************************************/
+	UCHAR v1, v2;
+
+	v1 = BLR_BYTE;
+	v2 = BLR_BYTE;
 
 	return (v2 << 8) | v1;
 }
