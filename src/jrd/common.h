@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.55 2003-02-12 02:26:44 brodsom Exp $
+$Id: common.h,v 1.56 2003-02-13 06:12:52 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -301,7 +301,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 
 /*****************************************************
-/* SUN platforms--the 386i is obsolete 
+ * SUN platforms--the 386i is obsolete 
 *****************************************************/
 
 #ifdef sun
@@ -643,7 +643,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* SCO_EV */
 
 /*****************************************************
-/* UNIX
+ * UNIX
 *****************************************************/
 #ifdef UNIX
 #define NO_CHECKSUM     1
