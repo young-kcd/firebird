@@ -1117,7 +1117,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 		buffer = fixed_buffer;
 
 	while (!gds__get_segment(status_vector,
-							 (void**) GDS_REF(blob),
+							 (struct why_hndl**) GDS_REF(blob),
 							 (USHORT*) GDS_REF(l1), buffer_length, GDS_VAL(buffer)))
 #if (defined JPN_EUC || defined JPN_SJIS)
 		if (sleuth_check2(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1), (UCHAR*) control, (UCHAR*) (control + l2)))
@@ -1132,7 +1132,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, (void**) GDS_REF(blob))) {
+	if (gds__close_blob(status_vector, (struct why_hndl**) GDS_REF(blob))) {
 		context = (QLI_CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;
@@ -1528,7 +1528,7 @@ static int string_boolean( QLI_NOD node)
 		buffer = fixed_buffer;
 
 	while (!gds__get_segment(status_vector,
-							 (void**) GDS_REF(blob),
+							 (struct why_hndl**) GDS_REF(blob),
 							 (USHORT*) GDS_REF(l1),
 							 buffer_length,
 							 GDS_VAL(buffer)))
@@ -1540,7 +1540,7 @@ static int string_boolean( QLI_NOD node)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, (void**) GDS_REF(blob))) {
+	if (gds__close_blob(status_vector, (struct why_hndl**) GDS_REF(blob))) {
 		context = (QLI_CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;
