@@ -25,6 +25,7 @@
 #define DUDLEY_DDL_H
 
 #include "../jrd/common.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef VMS
 const int BLOCK_SIZE = 512;
@@ -87,7 +88,7 @@ enum act_t {
 typedef struct act {
 	enum act_t act_type;		// what to do
 	act* act_next;				// next action in system
-	struct dbb *act_object;		// object in question (dudley_rel, dudley_fld, idx, etc.)
+	struct dbb* act_object;		// object in question (dudley_rel, dudley_fld, idx, etc.)
 	USHORT act_line;			// line the action started on
 	USHORT act_flags;
 } *ACT;
@@ -98,9 +99,9 @@ const int ACT_ignore	= 1;	// Ignore the action
 /* Context block */
 
 typedef struct dudley_ctx {
-	struct sym *ctx_name;
-	struct dudley_rel *ctx_relation;
-	struct dudley_fld *ctx_field;
+	struct sym* ctx_name;
+	struct dudley_rel* ctx_relation;
+	struct dudley_fld* ctx_field;
 	USHORT ctx_view_rse;
 	USHORT ctx_context_id;
 } *DUDLEY_CTX;
@@ -109,26 +110,26 @@ typedef struct dudley_ctx {
 /* Database Definition Block */
 
 typedef struct dbb {
-	struct sym *dbb_name;
-	struct dudley_rel *dbb_relations;
-	struct gfl *dbb_fields;
+	struct sym* dbb_name;
+	struct dudley_rel* dbb_relations;
+	struct gfl* dbb_fields;
 	dbb* dbb_next;
-	struct sym *dbb_security_class;
-	SLONG *dbb_handle;
-	SLONG *dbb_transaction;
-	struct txt *dbb_description;
+	struct sym* dbb_security_class;
+	SLONG* dbb_handle;
+	SLONG* dbb_transaction;
+	struct txt* dbb_description;
 	USHORT dbb_flags;
-	struct sym *dbb_file_name;
-	struct fil *dbb_files;
+	struct sym* dbb_file_name;
+	struct fil* dbb_files;
 	USHORT dbb_page_size;
 	ULONG dbb_length;			/* Length of database in pages, if known */
-	struct fil *dbb_logfiles;
-	struct fil *dbb_overflow;
+	struct fil* dbb_logfiles;
+	struct fil* dbb_overflow;
 	SLONG dbb_chkptlen;
 	SSHORT dbb_numbufs;
 	SSHORT dbb_bufsize;
 	SLONG dbb_grp_cmt_wait;
-	struct fil *dbb_cache_file;
+	struct fil* dbb_cache_file;
 } *DBB;
 
 enum dbb_flags_vals {
@@ -163,25 +164,25 @@ typedef struct dudley_fld {
 	SSHORT fld_system;			/* 0 if field is user defined */
 	USHORT fld_flags;			/* misc trash */
 	dudley_fld* fld_next;		/* next field in relation */
-	struct dudley_rel *fld_relation;	/* relation */
-	struct sym *fld_security_class;
+	struct dudley_rel* fld_relation;	/* relation */
+	struct sym* fld_security_class;
 	dudley_ctx* fld_context;	/* context for view */
 	dbb* fld_database;			/* database for global fields */
-	struct sym *fld_name;		/* field name */
-	struct sym *fld_source;		/* name of global field */
+	struct sym* fld_name;		/* field name */
+	struct sym* fld_source;		/* name of global field */
 	dudley_fld* fld_source_field;	/* global field for computed field */
-	struct sym *fld_base;		/* base field for views */
-	struct sym *fld_query_name;	/* query name */
-	struct dudley_nod *fld_query_header;	/* query header */
-	struct sym *fld_edit_string;	/* edit string */
-	struct dudley_nod *fld_computed;	/* computed by expression */
-	struct dudley_nod *fld_missing;	/* missing value */
-	struct dudley_nod *fld_default;	/* default value */
-	struct dudley_nod *fld_validation;	/* valid if value */
-	struct txt *fld_description;	/* description of field */
-	struct txt *fld_compute_src;	/* computed_by source */
-	struct txt *fld_valid_src;	/* validation source */
-	SLONG *fld_ranges;			/* ranges for multi-dim. array */
+	struct sym* fld_base;		/* base field for views */
+	struct sym* fld_query_name;	/* query name */
+	struct dudley_nod* fld_query_header;	/* query header */
+	struct sym* fld_edit_string;	/* edit string */
+	struct dudley_nod* fld_computed;	/* computed by expression */
+	struct dudley_nod* fld_missing;	/* missing value */
+	struct dudley_nod* fld_default;	/* default value */
+	struct dudley_nod* fld_validation;	/* valid if value */
+	struct txt* fld_description;	/* description of field */
+	struct txt* fld_compute_src;	/* computed_by source */
+	struct txt* fld_valid_src;	/* validation source */
+	SLONG* fld_ranges;			/* ranges for multi-dim. array */
 } *DUDLEY_FLD;
 
 enum fld_flags_vals {
@@ -204,7 +205,7 @@ enum fld_flags_vals {
 typedef struct fil {
 	SLONG fil_length;			/* File length in pages */
 	SLONG fil_start;			/* Starting page */
-	struct sym *fil_name;		/* File name */
+	struct sym* fil_name;		/* File name */
 	fil* fil_next;				/* next file */
 	SSHORT fil_shadow_number;	/* shadow number if part of shadow */
 	SSHORT fil_manual;			/* flag to indicate manual shadow */
@@ -217,10 +218,10 @@ typedef struct fil {
 /* Filter block */
 
 typedef struct filter {
-	struct sym *filter_name;	/* symbol for filter name */
-	struct txt *filter_description;	/* description of filter */
-	struct sym *filter_module_name;	/* symbol for module name */
-	struct sym *filter_entry_point;	/* symbol for entrypoint */
+	struct sym* filter_name;	/* symbol for filter name */
+	struct txt* filter_description;	/* description of filter */
+	struct sym* filter_module_name;	/* symbol for module name */
+	struct sym* filter_entry_point;	/* symbol for entrypoint */
 	SSHORT filter_input_sub_type;
 	SSHORT filter_output_sub_type;
 } *FILTER;
@@ -229,7 +230,7 @@ typedef struct filter {
 /* Function argument block. */
 
 typedef struct funcarg {
-	struct sym *funcarg_funcname;	/* symbol for function name */
+	struct sym* funcarg_funcname;	/* symbol for function name */
 	SSHORT funcarg_position;	/* argument position */
 	SSHORT funcarg_mechanism;	/* argument passed by value, or by reference */
 	SSHORT funcarg_dtype;		/* data type of argument */
@@ -253,14 +254,14 @@ enum funcarg_mechanism_vals {
 /* Function description block */
 
 typedef struct func {
-	struct sym *func_name;		/* symbol for function name */
-	struct sym *func_query_name;	/* symbol for query name */
-	struct sym *func_module_name;	/* symbol for module name */
-	struct sym *func_entry_point;	/* symbol for entrypoint */
+	struct sym* func_name;		/* symbol for function name */
+	struct sym* func_query_name;	/* symbol for query name */
+	struct sym* func_module_name;	/* symbol for module name */
+	struct sym* func_entry_point;	/* symbol for entrypoint */
 	SSHORT func_return_arg;		/* return argument position */
 	func* func_next;			/* next function in database */
 	dbb* func_database;			/* database for function */
-	struct txt *func_description;	/* description of function */
+	struct txt* func_description;	/* description of function */
 	funcarg* func_args;			/* Known function arguments */
 	funcarg* func_return;		/* Return argument */
 } *FUNC;
@@ -280,10 +281,10 @@ typedef struct dudley_idx {
 	bool idx_inactive;			/* false if index is active */
 	idx_direction idx_type;		/* true descending */
 	USHORT idx_flags;			/* Indicate which attributes have changed */
-	struct sym *idx_name;		/* Index name */
-	struct sym *idx_relation;	/* Relation in question */
-	struct txt *idx_description;	/* Description pointer */
-	struct sym *idx_field[1];	/* Fields */
+	struct sym* idx_name;		/* Index name */
+	struct sym* idx_relation;	/* Relation in question */
+	struct txt* idx_description;	/* Description pointer */
+	struct sym* idx_field[1];	/* Fields */
 } *DUDLEY_IDX;
 
 enum idx_flags_vals {
@@ -294,8 +295,10 @@ enum idx_flags_vals {
 	IDX_statistics_flag = 16
 };
 
-static inline size_t IDX_LEN(int cnt){
-	return (sizeof (struct dudley_idx) + (cnt - 1) * sizeof (((DUDLEY_IDX) NULL)->idx_field[0]));
+static inline size_t IDX_LEN(const size_t cnt)
+{
+	fb_assert(cnt != 0);
+	return sizeof (struct dudley_idx) + (cnt - 1) * sizeof (((DUDLEY_IDX) NULL)->idx_field[0]);
 }
 
 /* Linked list stack stuff */
@@ -336,27 +339,29 @@ enum nod_t {
 
 typedef struct dudley_nod {
 	enum nod_t nod_type;		/* node type */
-	UCHAR *nod_blr;				/* symbolic blr string */
+	UCHAR* nod_blr;				/* symbolic blr string */
 	SSHORT nod_count;			/* number of sub-items */
 	dudley_nod* nod_arg[1];		/* argument */
 } *DUDLEY_NOD;
 
-static inline size_t NOD_LEN(int cnt) {
-	return (sizeof(dudley_nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) NULL)->nod_arg[0]));
+static inline size_t NOD_LEN(const size_t cnt)
+{
+	fb_assert(cnt != 0);
+	return sizeof(dudley_nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) NULL)->nod_arg[0]);
 }
 
 /* Relation block, not to be confused with siblings or in-laws */
 
 typedef struct dudley_rel {
 	dbb* rel_database;			/* parent database */
-	struct sym *rel_filename;	/* external filename */
+	struct sym* rel_filename;	/* external filename */
 	dudley_fld* rel_fields;		/* linked list of known fields */
-	struct sym *rel_name;		/* symbol for relation */
-	struct sym *rel_security_class;	/* name of security class */
+	struct sym* rel_name;		/* symbol for relation */
+	struct sym* rel_security_class;	/* name of security class */
 	dudley_rel* rel_next;		/* next relation in database */
 	dudley_nod* rel_rse;		/* view rse */
-	struct txt *rel_description;	/* description of relation */
-	struct txt *rel_view_source;	/* source dml for view definition */
+	struct txt* rel_description;	/* description of relation */
+	struct txt* rel_view_source;	/* source dml for view definition */
 	USHORT rel_field_position;	/* highest used field position */
 	SSHORT rel_system;			/* 0 if relation is user defined */
 	USHORT rel_flags;
@@ -376,9 +381,9 @@ enum rel_flags_values {
 /* Security class handling */
 
 typedef struct scl {
-	struct sym *scl_name;		/* name of security class */
-	struct txt *scl_description;	/* description of security class */
-	struct sce *scl_entries;	/* list of entries */
+	struct sym* scl_name;		/* name of security class */
+	struct txt* scl_description;	/* description of security class */
+	struct sce* scl_entries;	/* list of entries */
 } *SCL;
 
 const int SCL_write = 2;
@@ -388,7 +393,7 @@ const int SCL_write = 2;
 typedef struct sce {
 	sce* sce_next;				/* next security item in list */
 	SLONG sce_privileges;		/* bitmask of privileges */
-	UCHAR *sce_idents[20];		/* misc identification stuff */
+	UCHAR* sce_idents[20];		/* misc identification stuff */
 	UCHAR sce_strings[1];
 } *SCE;
 
@@ -396,8 +401,8 @@ typedef struct sce {
 /* String block for build DYN & BLR strings */
 
 typedef struct str {
-	UCHAR *str_start;			/* start of string buffer */
-	UCHAR *str_current;			/* current position in string being built */
+	UCHAR* str_start;			/* start of string buffer */
+	UCHAR* str_current;			/* current position in string being built */
 	USHORT str_length;			/* length of buffer */
 } *STR;
 
@@ -416,7 +421,7 @@ enum sym_t {
 };
 
 typedef struct sym {
-	TEXT *sym_string;			/* address of asciz string */
+	TEXT* sym_string;			/* address of asciz string */
 	SSHORT sym_length;			/* length of string (exc. term.) */
 	enum sym_t sym_type;		/* symbol type */
 	SSHORT sym_keyword;			/* keyword number, if keyword */
@@ -458,8 +463,8 @@ typedef struct dudley_trg {
 	DUDLEY_REL trg_relation;
 	DUDLEY_NOD trg_statement;			/* blr */
 	sym* trg_name;				/* symbol for trigger */
-	struct txt *trg_description;	/* description of relation */
-	struct txt *trg_source;		/* source of trigger */
+	struct txt* trg_description;	/* description of relation */
+	struct txt* trg_source;		/* source of trigger */
 	SSHORT trg_sequence;
 	SSHORT trg_inactive;		/* 0 = on, 1 = off */
 	USHORT trg_mflag;			/* modify attributes */
@@ -494,7 +499,7 @@ typedef enum {
 /* Text block */
 
 typedef struct txt {
-	TEXT *txt_file;
+	TEXT* txt_file;
 	ULONG txt_position;
 	USHORT txt_length;
 	USHORT txt_start_line;
@@ -515,8 +520,8 @@ typedef struct typ {
 
 typedef struct userpriv {
 	sym* userpriv_relation;
-	struct usre *userpriv_userlist;
-	struct upfe *userpriv_upflist;
+	struct usre* userpriv_userlist;
+	struct upfe* userpriv_upflist;
 	USHORT userpriv_flags;
 } *USERPRIV;
 
@@ -532,10 +537,10 @@ enum userpriv_flags_vals {
 
 /* rdb$user_privilege.rdb$privilege */
 
-static const char* UPRIV_SELECT = "SELECT";
-static const char* UPRIV_DELETE = "DELETE";
-static const char* UPRIV_INSERT = "INSERT";
-static const char* UPRIV_UPDATE = "UPDATE";
+static const char* const UPRIV_SELECT = "SELECT";
+static const char* const UPRIV_DELETE = "DELETE";
+static const char* const UPRIV_INSERT = "INSERT";
+static const char* const UPRIV_UPDATE = "UPDATE";
 
 /* user name entry */
 
@@ -644,3 +649,4 @@ enum nod_val_pos {
 };
 
 #endif // DUDLEY_DDL_H
+

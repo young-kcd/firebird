@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		utld.c
+ *	MODULE:		utld.cpp
  *	DESCRIPTION:	Utility routines for DSQL
  *
  * The contents of this file are subject to the Interbase Public
@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.18 2003-10-03 01:59:50 brodsom Exp $
+$Id: utld.cpp,v 1.19 2003-10-05 06:33:08 robocop Exp $
 */
 
 #include "firebird.h"
@@ -58,7 +58,8 @@ static void print_xsqlda(XSQLDA *);
 static void sqlvar_to_xsqlvar(SQLVAR *, XSQLVAR *);
 static void xsqlvar_to_sqlvar(XSQLVAR *, SQLVAR *);
 
-static inline void ch_stuff(BLOB_PTR*& p, SCHAR value, bool& same_flag){
+static inline void ch_stuff(BLOB_PTR*& p, const SCHAR value, bool& same_flag)
+{
 	if (*p == value) 
 		p++; 
 	else {
@@ -67,9 +68,10 @@ static inline void ch_stuff(BLOB_PTR*& p, SCHAR value, bool& same_flag){
 	}
 }
 
-static inline void ch_stuff_word(BLOB_PTR*& p, SCHAR value, bool& same_flag){
-	ch_stuff(p, (value) & 255, same_flag);
-	ch_stuff(p, (value) >> 8, same_flag);
+static inline void ch_stuff_word(BLOB_PTR*& p, const SCHAR value, bool& same_flag)
+{
+	ch_stuff(p, value & 255, same_flag);
+	ch_stuff(p, value >> 8, same_flag);
 }
 
 /* these statics define a round-robin data area for storing
@@ -96,7 +98,7 @@ const int  DSQL_FAILURE_SPACE = 2048;
 
  **/
 ISC_STATUS	UTLD_parse_sql_info(
-				ISC_STATUS * status,
+				ISC_STATUS* status,
 				USHORT dialect,
 				SCHAR* info,
 				XSQLDA* xsqlda,
@@ -248,13 +250,13 @@ ISC_STATUS	UTLD_parse_sql_info(
 
  **/
 ISC_STATUS	UTLD_parse_sqlda(
-				ISC_STATUS * status,
+				ISC_STATUS* status,
 				DASUP dasup,
-				USHORT * blr_length,
-				USHORT * msg_type,
-				USHORT * msg_length,
+				USHORT* blr_length,
+				USHORT* msg_type,
+				USHORT* msg_length,
 				USHORT dialect,
-				XSQLDA * xsqlda,
+				XSQLDA* xsqlda,
 				USHORT clause)
 {
 	USHORT i, n, blr_len, par_count, dtype, msg_len, len, align,
@@ -382,13 +384,16 @@ ISC_STATUS	UTLD_parse_sqlda(
 		if (dialect > 1) {
 			ch_stuff(p, blr_version5, same_flag);
 		}
-		else if ((SCHAR) *(p) == (SCHAR) (blr_version4)) {
-			(p)++; 
-		}
 		else {
-			*(p)++ = (blr_version4); 
-			same_flag = false;
+			ch_stuff(p, blr_version4, same_flag);
 		}
+		//else if ((SCHAR) *(p) == (SCHAR) (blr_version4)) {
+		//	(p)++; 
+		//}
+		//else {
+		//	*(p)++ = (blr_version4); 
+		//	same_flag = false;
+		//}
 		
 		ch_stuff(p, blr_begin, same_flag);
 		ch_stuff(p, blr_message, same_flag);
@@ -667,7 +672,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 
  **/
 void	UTLD_save_status_strings(
-			ISC_STATUS * vector
+			ISC_STATUS* vector
 		)
 {
 	TEXT *p;

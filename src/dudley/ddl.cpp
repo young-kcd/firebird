@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Data Definition Utility
- *	MODULE:		ddl.c
+ *	MODULE:		ddl.cpp
  *	DESCRIPTION:	Main line routine
  *
  * The contents of this file are subject to the Interbase Public
@@ -51,7 +51,7 @@
 #include <io.h>
 #endif
 
-const TEXT *DDL_prompt;
+const TEXT* DDL_prompt;
 
 static LLS free_stack;
 static TEXT DDL_message[256];
@@ -348,7 +348,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		/* then handle the case where the input already ends in .GDL */
 
 		if (*p == '.') {
-			for (q = const_cast<TEXT*>(DDL_EXT); UPPER(*p) == UPPER(*q); p++, q++)
+			for (const TEXT* q2 = DDL_EXT; UPPER(*p) == UPPER(*q2); p++, q2++)
 				if (!*p) {
 					input_file = ib_fopen(DDL_file_name, FOPEN_INPUT_TYPE);
 					if (!input_file) {

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		preparse.c
+ *	MODULE:		preparse.cpp
  *	DESCRIPTION:	Dynamic SQL pre parser / parser on client side. 
  *			This module will probably change to a YACC parser.
  *
@@ -52,14 +52,16 @@ enum pp_vals {
 const int MAX_TOKEN_SIZE = 1024;
 
 
-/* use stuff_dpb in place of STUFF to avoid confusion with BLR STUFF
-   macro defined in dsql.h */
+// use stuff_dpb in place of STUFF to avoid confusion with BLR STUFF
+// macro defined in dsql.h
 
-static inline void stuff_dpb(SCHAR*& dpb, SCHAR blr){
+static inline void stuff_dpb(SCHAR*& dpb, const SCHAR blr)
+{
 	*dpb++ = blr;
 }
 
-static inline void stuff_dpb_int(SCHAR*& dpb, int blr){
+static inline void stuff_dpb_long(SCHAR*& dpb, const SLONG blr)
+{
 	stuff_dpb(dpb, blr);
 	stuff_dpb(dpb, blr >> 8);
 	stuff_dpb(dpb, blr >> 16);
@@ -121,12 +123,12 @@ enum token_vals {
 
  **/
 int	PREPARSE_execute(
-		ISC_STATUS * user_status,
-		FRBRD ** db_handle,
-		FRBRD ** trans_handle,
+		ISC_STATUS* user_status,
+		FRBRD** db_handle,
+		FRBRD** trans_handle,
 		USHORT stmt_length,
-		SCHAR * stmt,
-		BOOLEAN * stmt_eaten,
+		SCHAR* stmt,
+		BOOLEAN* stmt_eaten,
 		USHORT dialect)
 {
 	TEXT file_name[MAX_TOKEN_SIZE + 1];
@@ -197,7 +199,7 @@ int	PREPARSE_execute(
 	stuff_dpb(dpb, 0);
 	stuff_dpb(dpb, isc_dpb_sql_dialect);
 	stuff_dpb(dpb, 4);
-	stuff_dpb_int(dpb, dialect);
+	stuff_dpb_long(dpb, dialect);
 	do {
 		result = get_next_token(&stmt, stmt_end, token, &token_length);
 		if (result == NO_MORE_TOKENS) {
@@ -227,7 +229,7 @@ int	PREPARSE_execute(
 					page_size = atol(token);
 					stuff_dpb(dpb, gds_dpb_page_size);
 					stuff_dpb(dpb, 4);
-					stuff_dpb_int(dpb, page_size);
+					stuff_dpb_long(dpb, page_size);
 					matched = true;
 					break;
 
