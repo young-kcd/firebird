@@ -2063,8 +2063,9 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 			EVL_field(0, org_rpb->rpb_record, f_trg_name, &desc1);
 			DFW_post_work(transaction, dfw_modify_trigger, &desc1, 0);
 			break;
-                default:
-                        break;
+
+		default:
+			break;
 		}
 
 /* We're almost ready to go.  To modify the record, we must first

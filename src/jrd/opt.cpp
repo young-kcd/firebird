@@ -6436,7 +6436,7 @@ static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
 			bool should_be_used = true;
 			if (idx->idx_selectivity && !(csb_tail->csb_plan)) {
 				if (!(idx->idx_flags & idx_unique) &&
-					selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity) {
+					(selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity)) {
 					should_be_used = false;
 				}
 				selectivity = idx->idx_selectivity;
