@@ -279,7 +279,8 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 #endif
 
 	const int desc = open(file_name, flag, MASK);
-	if (desc == -1) {
+	if (desc == -1) 
+	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "open O_CREAT",
 				 isc_arg_cstring, length, ERR_string(string, length),
@@ -290,10 +291,13 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 
 	TEXT expanded_name[256]; // Shouldn't it be MAXPATHLEN?
 	length = PIO_expand(string, length, expanded_name, sizeof(expanded_name));
-	jrd_file *file;
-	try {
+	jrd_file* file;
+	try 
+	{
 		file = setup_file(dbb, expanded_name, length, desc);
-	} catch(const std::exception&) {
+	} 
+	catch(const std::exception&) 
+	{
 		close(desc);
 		throw;
 	}
@@ -301,8 +305,7 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 }
 
 
-int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
-	USHORT bufsize)
+int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, size_t len_expanded)
 {
 /**************************************
  *
@@ -316,7 +319,8 @@ int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
  *
  **************************************/
 
-	return ISC_expand_filename(file_name, file_length, expanded_name, bufsize);
+	return ISC_expand_filename(file_name, file_length, 
+		expanded_name, len_expanded, false);
 }
 
 

@@ -170,7 +170,7 @@ static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 /* ---------------------------------------------------------------- */
 
 static void check_dependencies(thread_db*, const TEXT*, const TEXT*, USHORT, jrd_tra*);
-static void check_filename(const TEXT*, USHORT);
+static void check_filename(const TEXT*, USHORT, bool);
 static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
@@ -736,7 +736,6 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  **************************************/
 	USHORT section, shadow_number;
 	SLONG start, max;
-	Firebird::PathName temp;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -771,11 +770,11 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		jrd_req* handle = 0;
 		jrd_req* handle2 = 0;
 
-		/* Check the file name for node name.  This has already been done for 
-		   ** shadows in add_shadow() */
+		/* Check the file name for node name. This has already 
+		 * been done for shadows in add_shadow() */
 
 		if (work->dfw_type != dfw_add_shadow) {
-			check_filename(work->dfw_name, work->dfw_name_length);
+			check_filename(work->dfw_name, work->dfw_name_length, true);
 		}
 
 		/* get any files to extend into */
@@ -786,9 +785,9 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				   ** for shadows in add_shadow ()) */
 			if (work->dfw_type != dfw_add_shadow)
 			{
-				ISC_expand_filename(X.RDB$FILE_NAME, temp);
 				MODIFY X USING
-					temp.copy_to(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
+					ISC_expand_filename(X.RDB$FILE_NAME, 0, 
+						X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME), false);
 				END_MODIFY;
 			}
 
@@ -890,7 +889,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 
 	case 4:
-		check_filename(work->dfw_name, work->dfw_name_length);
+		check_filename(work->dfw_name, work->dfw_name_length, false);
 
 		/* could have two cases: 
 		   1) this shadow has already been written to, so add this file using
@@ -904,12 +903,15 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		FOR(REQUEST_HANDLE handle)
 			F IN RDB$FILES
 				WITH F.RDB$FILE_NAME EQ work->dfw_name
-			ISC_expand_filename(F.RDB$FILE_NAME, expanded_fname);
+
+			expanded_fname = F.RDB$FILE_NAME;
+			ISC_expand_filename(expanded_fname, false);
 			MODIFY F USING
-				expanded_fname.copy_to(F.RDB$FILE_NAME, sizeof(F.RDB$FILE_NAME));
+				expanded_fname.saveTo(F.RDB$FILE_NAME, sizeof(F.RDB$FILE_NAME));
 			END_MODIFY;
 
 			for (shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
+			{
 				if ((F.RDB$SHADOW_NUMBER == shadow->sdw_number) &&
 					!(shadow->sdw_flags & SDW_IGNORE))
 				{
@@ -951,6 +953,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					}
 					break;
 				}
+			}
 
 		END_FOR;
 		CMP_release(tdbb, handle);
@@ -1063,7 +1066,7 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_wrong_backup_state, 0);
 			}
-			check_filename(work->dfw_name, work->dfw_name_length);		
+			check_filename(work->dfw_name, work->dfw_name_length, true);
 			dbb->backup_manager->set_difference(work->dfw_name);
 		} catch(const std::exception&) {
 			dbb->backup_manager->unlock_state();
@@ -1321,7 +1324,7 @@ static void check_dependencies(thread_db* tdbb,
 }
 
 
-static void check_filename(const TEXT* name, USHORT l)
+static void check_filename(const TEXT* name, USHORT l, bool shareExpand)
 {
 /**************************************
  *
@@ -1347,7 +1350,7 @@ static void check_filename(const TEXT* name, USHORT l)
 			valid = false;
 	}
 
-	if (!valid || ISC_check_if_remote(file_name, false)) {
+	if (!valid || ISC_check_if_remote(file_name, shareExpand)) {
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_node_name_err, 0);
 		/* Msg305: A node name is not permitted in a secondary, shadow, or log file name */
 	}

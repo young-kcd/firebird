@@ -803,8 +803,8 @@ void DYN_define_file(Global*		gbl,
 
 	TEXT temp_f1[MAXPATHLEN];
 	GET_STRING(ptr, temp_f1);
-	Firebird::PathName temp_f;
-	ISC_expand_filename(temp_f1, temp_f);
+	Firebird::PathName temp_f = temp_f1;
+	ISC_expand_filename(temp_f, false);
 	if (dbb->dbb_filename == temp_f) {
 		DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	}
@@ -818,7 +818,7 @@ void DYN_define_file(Global*		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES 
-        temp_f.copy_to(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
+        temp_f.saveTo(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
 		X.RDB$SHADOW_NUMBER = (SSHORT)shadow_number;
 		X.RDB$FILE_FLAGS = 0;
 		X.RDB$FILE_FLAGS.NULL = FALSE;
@@ -3106,11 +3106,13 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				// If miss it, file will be searched in External Tables Dirs,
 				// that's why no expand_filename required.
 				PathUtils::splitLastComponent(Path, Name, REL.RDB$EXTERNAL_FILE);
-				if (Path.length() > 0)	{	// path component present in filename
+				if (Path.length() > 0)	// path component present in filename
+				{
 					ISC_expand_filename(REL.RDB$EXTERNAL_FILE,
-									strlen(REL.RDB$EXTERNAL_FILE),
-									REL.RDB$EXTERNAL_FILE,
-									sizeof(REL.RDB$EXTERNAL_FILE));
+										strlen(REL.RDB$EXTERNAL_FILE),
+										REL.RDB$EXTERNAL_FILE, 
+										sizeof(REL.RDB$EXTERNAL_FILE), 
+										false);
 				}
 				REL.RDB$EXTERNAL_FILE.NULL = FALSE;
 				break;

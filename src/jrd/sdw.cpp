@@ -920,8 +920,8 @@ void SDW_start(
    if so, a shadow file is being accessed as a database */
 
 	const int length = strlen(file_name);
-	const int expanded_length = PIO_expand(file_name, (USHORT) length,
-		expanded_name, sizeof(expanded_name));
+	const int expanded_length = PIO_expand(file_name, (USHORT) length, 
+					expanded_name, sizeof(expanded_name));
 	jrd_file* dbb_file = dbb->dbb_file;
 
 	if (dbb_file && dbb_file->fil_string &&

@@ -30,24 +30,32 @@
 #include "fb_string.h"
 
 #ifndef NO_NFS
-bool		ISC_analyze_nfs(TEXT*, TEXT*);
+bool		ISC_analyze_nfs(Firebird::PathName&, Firebird::PathName&);
 #endif
-int			ISC_analyze_pclan(TEXT*, TEXT*);
-int			ISC_analyze_tcp(TEXT*, TEXT*);
-int			ISC_analyze_xnet(TEXT*, TEXT*);
+bool		ISC_analyze_pclan(Firebird::PathName&, Firebird::PathName&);
+bool		ISC_analyze_tcp(Firebird::PathName&, Firebird::PathName&);
+bool		ISC_analyze_xnet(Firebird::PathName&, Firebird::PathName&);
 bool		ISC_check_if_remote(const Firebird::PathName&, bool);
-int			ISC_expand_filename(const Firebird::PathName&, Firebird::PathName&);
-// Temporary hack to make old files happy
-inline int	ISC_expand_filename(const TEXT* unexp, USHORT len, TEXT* exp, USHORT bufsize)
+void		ISC_expand_filename(Firebird::PathName&, bool);
+
+// This form of ISC_expand_filename makes epp files happy
+// It's explicit that expanded amy be equal to unexpanded
+inline int	ISC_expand_filename(const TEXT* unexpanded, 
+								USHORT len_unexpanded, 
+								TEXT* expanded, 
+								size_t len_expanded, 
+								bool expand_share) 
 {
-	Firebird::PathName pn(unexp, len ? len : strlen(unexp));
-	Firebird::PathName result;
-	const int rc = ISC_expand_filename(pn, result);
-	result.copy_to(exp, bufsize);
-	return rc;
+	Firebird::PathName pn(unexpanded, 
+			len_unexpanded ? len_unexpanded : strlen(unexpanded));
+	ISC_expand_filename(pn, expand_share);
+	return pn.saveTo(expanded, len_expanded);
 }
-int			ISC_expand_logical(const TEXT*, USHORT, TEXT*, USHORT);
-int			ISC_expand_share(const TEXT*, TEXT*, USHORT);
+
+#ifdef VMS
+int			ISC_expand_logical(const TEXT*, USHORT, TEXT*);
+#endif
+void		ISC_expand_share(Firebird::PathName&);
 int			ISC_file_lock(SSHORT);
 int			ISC_file_unlock(SSHORT);
 bool		ISC_verify_database_access(const Firebird::PathName&);
