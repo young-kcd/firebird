@@ -106,6 +106,7 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -117,7 +118,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient.def"
-				ProgramDatabaseFile="..\..\..\temp\release\fbclient/fbclient.pdb"
+				GenerateDebugInformation="TRUE"
 				ImportLibrary="..\..\..\temp\release\fbclient/fbclient.lib"/>
 			<Tool
 				Name="VCMIDLTool"

@@ -38,6 +38,7 @@
 				ProgramDataBaseFileName="..\..\..\temp\release\ib_util/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -49,7 +50,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_util.def"
-				ProgramDatabaseFile="..\..\..\temp\release\ib_util/ib_util.pdb"
+				GenerateDebugInformation="TRUE"
 				ImportLibrary="..\..\..\temp\release\ib_util/ib_util.lib"/>
 			<Tool
 				Name="VCMIDLTool"

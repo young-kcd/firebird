@@ -104,6 +104,7 @@
 				ProgramDataBaseFileName="..\..\..\temp\release\ib_udf/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -115,7 +116,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_udf.def"
-				ProgramDatabaseFile="..\..\..\temp\release\ib_udf/ib_udf.pdb"
+				GenerateDebugInformation="TRUE"
 				ImportLibrary="..\..\..\temp\release\ib_udf/ib_udf.lib"/>
 			<Tool
 				Name="VCMIDLTool"

@@ -90,6 +90,7 @@
 				ProgramDataBaseFileName="..\..\..\temp\release\remote_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>

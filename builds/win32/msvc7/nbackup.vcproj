@@ -102,6 +102,7 @@
 				ProgramDataBaseFileName="..\..\..\temp\release\nbackup/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -112,7 +113,7 @@
 				OutputFile="release/firebird/bin/nbackup.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\release\nbackup/nbackup.pdb"
+				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"

@@ -38,6 +38,7 @@
 				ProgramDataBaseFileName="..\..\..\temp\release\fb_lock_print/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -48,7 +49,7 @@
 				OutputFile="release/firebird/bin/fb_lock_print.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\release\fb_lock_print/fb_lock_print.pdb"
+				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"

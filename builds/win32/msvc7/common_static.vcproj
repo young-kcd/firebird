@@ -160,6 +160,9 @@
 				RelativePath="..\..\..\src\jrd\db_alias.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\fb_string.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
 			</File>
 			<File

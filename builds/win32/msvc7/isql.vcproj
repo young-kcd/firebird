@@ -26,7 +26,7 @@
 				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="2"
+				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\isql/"
 				ObjectFile="..\..\..\temp\debug\isql/"
@@ -101,6 +101,7 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -111,7 +112,7 @@
 				OutputFile="release/firebird/bin/isql.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\release\isql/isql.pdb"
+				GenerateDebugInformation="TRUE"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"

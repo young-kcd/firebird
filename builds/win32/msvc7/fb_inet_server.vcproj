@@ -39,6 +39,7 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -49,7 +50,7 @@
 				OutputFile="release/firebird/bin/fb_inet_server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\release\fb_inet_server/fb_inet_server.pdb"
+				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				StackReserveSize="2097152"/>
 			<Tool

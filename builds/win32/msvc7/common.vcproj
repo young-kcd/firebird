@@ -38,6 +38,7 @@
 				ProgramDataBaseFileName="..\..\..\temp\release\common_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -161,6 +162,9 @@
 			Filter="">
 			<File
 				RelativePath="..\..\..\src\jrd\db_alias.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\fb_string.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
