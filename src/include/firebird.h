@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.9 2003-02-27 21:34:40 brodsom Exp $
+ *  $Id: firebird.h,v 1.10 2003-03-01 18:15:43 brodsom Exp $
  *
  */
 
@@ -58,6 +58,11 @@
 
 #ifdef __cplusplus
 #include "fb_exception.h"
+#endif
+
+// 
+#ifdef SUPERSERVER
+#define SERVER_SHUTDOWN		1
 #endif
 
 #endif /* INCLUDE_Firebird */

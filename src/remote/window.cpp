@@ -34,16 +34,18 @@
 #include "../remote/window.rh"
 #include "../remote/property.rh"
 #include "../remote/xnet.h"
+#ifdef IPSERVER
 #include "../ipserver/ips.h"
-
+#endif
 #include "../jrd/svc_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/jrd_proto.h"
 #include "../remote/window_proto.h"
 #include "../remote/propty_proto.h"
+#ifdef IPSERVER
 #include "../ipserver/ipsrv_proto.h"
-
+#endif
 #include "../jrd/gds_proto.h"
 
 #include "../remote/window.h"
@@ -117,7 +119,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 		szClassName = "FB_Disabled";
 	}
 	else {
-
+#ifdef IPSERVER
 		if (!IPS_init(hWnd, 0, (USHORT) Config::getIpcMapSize(), 0)) {
 			// The initialization failed.  Check to see if there is another
 			// server running.  If so, bring up it's property sheet and quit
@@ -145,7 +147,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 			}
 			return 0;
 		}
-
+#endif
 		if (!XNET_init(hWnd, 0, 0, 0)) {
 			char szMsgString[TMP_STRINGLEN];
 			hWnd = FindWindow(szClassName, APP_NAME);
@@ -202,9 +204,9 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 						  CW_USEDEFAULT,
 						  APP_HSIZE,
 						  APP_VSIZE, HWND_DESKTOP, NULL, hInstance, NULL);
-
+#ifdef SERVER_SHUTDOWN
 	SVC_shutdown_init(WINDOW_shutdown, (ULONG) hWnd);
-
+#endif
 // Do the proper ShowWindow depending on if the app is an icon on
 // the desktop, or in the task bar.
 
@@ -464,6 +466,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				else
 					SetFocus(hPSDlg);
 				return TRUE;
+
 			}
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
@@ -481,10 +484,10 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 
 		PostQuitMessage(0);
 		break;
-
+#ifdef IPSERVER
 	case IPI_CONNECT_MESSAGE:
 		return IPS_start_thread(lParam);
-
+#endif
 	case XPI_CONNECT_MESSAGE:
 		return SRVR_xnet_start_thread(lParam);
 

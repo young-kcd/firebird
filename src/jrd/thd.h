@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.10 2002-10-30 06:40:49 seanleyne Exp $
+$Id: thd.h,v 1.11 2003-03-01 18:15:42 brodsom Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -108,9 +108,6 @@ struct IB_RTL_CRITICAL_SECTION
 };
 #endif
 
-#ifdef SUPERSERVER
-#define SERVER_SHUTDOWN		1
-#endif
 
 #ifdef MULTI_THREAD
 #define ANY_THREADING		1
