@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.176 2003-11-04 06:45:22 eku Exp $
+dnl $Id: configure.in,v 1.177 2003-11-04 08:34:42 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -310,6 +310,9 @@ if test "$EDITLINE_FLG" = "Y"; then
 fi
 AC_CHECK_HEADERS(unistd.h)
 if test "$ac_cv_header_unistd_h" = "yes"; then
+  dnl For details see
+  dnl http://www.opengroup.org/onlinepubs/007904975/basedefs/unistd.h.html
+  dnl http://people.redhat.com/drepper/posix-option-groups.html
   AC_MSG_CHECKING(if POSIX threads are available)
   AC_TRY_RUN([#include <unistd.h>
     main () { 
