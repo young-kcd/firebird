@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.69 2004-11-10 04:33:37 robocop Exp $
+$Id: backup.epp,v 1.70 2004-11-10 08:16:35 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1304,7 +1304,7 @@ void put_asciz( const SCHAR attribute, const TEXT* string)
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	const ULONG l = strlen(string);
+	ULONG l = strlen(string);
 	// CVC: We'll have to ensure that length < MAX_FILE_NAME_SIZE.
 	// For now, we'll truncate silently until we define a message.
 	// We can't honor operating systems that allow longer file names.
