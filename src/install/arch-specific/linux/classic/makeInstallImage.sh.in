@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.7 2003-02-10 18:23:17 skidder Exp $
+#   $Id: makeInstallImage.sh.in,v 1.8 2003-03-20 11:11:51 aafemt Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -150,9 +150,7 @@ copyFiles() {
     cp $BuiltFBDir/include/*.h $DestDir/include 
 
 
-    cp -f $BuiltFBDir/lib/@FIREBIRD_LIBGDS_SO@ $DestDir/lib/@FIREBIRD_LIBGDS_SO@
-    ln -s @FIREBIRD_LIBGDS_SO@  $DestDir/lib/@FIREBIRD_LIBGDS_SO_LNK@
-    ln -s @FIREBIRD_LIBGDS_SO@  $DestDir/lib/@FIREBIRD_LIBGDS_SO_X_LNK@
+    cp -df $BuiltFBDir/lib/libfbembed.so* $DestDir/lib
 
 #    cp -f $BuiltFBDir/lib/gds.a /usr/lib/libgds.a 
     cp -f $BuiltFBDir/lib/ib_util.so $DestDir/lib/libib_util.so 
@@ -173,9 +171,10 @@ copyFiles() {
 
 # Create links from /usr/lib to install area.
 
-    ln -s ../../$FBRootDir/lib/@FIREBIRD_LIBGDS_SO@ $TargetDir/usr/lib/@FIREBIRD_LIBGDS_SO@
-    ln -s ../../$FBRootDir/lib/@FIREBIRD_LIBGDS_SO_LNK@ $TargetDir/usr/lib/@FIREBIRD_LIBGDS_SO_LNK@
-    ln -s ../../$FBRootDir/lib/@FIREBIRD_LIBGDS_SO_X_LNK@ $TargetDir/usr/lib/@FIREBIRD_LIBGDS_SO_X_LNK@
+    origDir=`pwd`
+    cd $DestDir
+    for i in lib/libfbembed.so*; do ln -s ../../$FBRootDir/$i $origDir/$TargetDir/usr/$i; done
+    cd $origDir
     #ln -s ../../$FBRootDir/lib/libgds.a $TargetDir/usr/lib/libgds.a
     ln -s ../../$FBRootDir/lib/libib_util.so $TargetDir/usr/lib/libib_util.so
 

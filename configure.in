@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.130 2003-03-13 15:46:34 alexpeshkoff Exp $
+dnl $Id: configure.in,v 1.131 2003-03-20 11:11:48 aafemt Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -496,22 +496,12 @@ esac
 
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
-dnl The following file defines the version number strings
-. ./src/misc/writeBuildNum.sh
-FIREBIRD_PACKAGE_VERSION="0.Beta4"
-
-
-FIREBIRD_LIBGDS_SO=libfbembed.$SHRLIB_EXT.${FIREBIRD_VERSION}
-FIREBIRD_LIBGDS_SO_LNK=libfbembed.$SHRLIB_EXT
-FIREBIRD_LIBGDS_SO_X_LNK=libfbembed.$SHRLIB_EXT.${MajorVer}
-
-AC_SUBST(FIREBIRD_LIBGDS_SO)
-AC_SUBST(FIREBIRD_LIBGDS_SO_LNK)
-AC_SUBST(FIREBIRD_LIBGDS_SO_X_LNK)
-
 AC_SUBST(SFIO_DIR)
 AC_SUBST(SFIO_FLAGS)
 AC_SUBST(SFIO_LDFLAGS)
+
+dnl The following file defines the version number strings. Specially for install/uninstall routines
+. ./src/misc/writeBuildNum.sh
 
 AC_SUBST(FIREBIRD_VERSION)
 AC_SUBST(FIREBIRD_PACKAGE_VERSION)
@@ -566,8 +556,6 @@ mkdir -p gen/firebird/examples/v5
 mkdir -p gen/firebird/lib
 mkdir -p gen/firebird/misc
 mkdir -p gen/firebird/help
-
-src/misc/writeBuildNum.sh rebuildHeader
 
 mkdir -p gen/jrd/os
 mkdir -p gen/jrd/os/darwin
@@ -774,18 +762,6 @@ gen/Makefile.install:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
 Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 )
-
-
-dnl AC_DEFINE_UNQUOTED(FB_BUILD_TYPE, "$BuildType")
-dnl AC_DEFINE_UNQUOTED(FB_MAJOR_VER, "$MajorVer")
-dnl AC_DEFINE_UNQUOTED(FB_MINOR_VER, "$MinorVer")
-dnl AC_DEFINE_UNQUOTED(FB_REV_NO, "$RevNo")
-dnl AC_DEFINE_UNQUOTED(FB_BUILD_SUFFIX, "$BuildSuffix")
-dnl AC_DEFINE_UNQUOTED(PRODUCT_VER_STRING, "$PRODUCT_VER_STRING")
-dnl AC_DEFINE_UNQUOTED(FILE_VER_NUMBER, $FILE_VER_NUMBER)
-dnl AC_DEFINE_UNQUOTED(FILE_VER_STRING, "$FILE_VER_STRING")
-dnl AC_DEFINE_UNQUOTED(LICENSE_VER_STRING, "$FILE_VER_STRING")
-
 
 
 dnl Print out the build configuration (the most interesting thing)

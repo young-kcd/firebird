@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.18 2003-03-12 12:39:56 eku Exp $
+#   $Id: make.defaults,v 1.19 2003-03-20 11:11:49 aafemt Exp $
 # 
 
 
@@ -39,7 +39,7 @@
 # prefix.xxx where xxx is the platform name using the form SH := bash 
 # see the readme file with the Makefile.in files for more details.
 
-
+-include $(ROOT)/gen/Make.Version
 
 #_____________________________________________________________________________
 
@@ -50,8 +50,6 @@ RealFirebirdPath = @NEW_FIREBIRD_DIR@
 
 FirebirdInstallPrefix = @prefix@
 CpuType=@CPU_TYPE@
-FirebirdVersion=@FIREBIRD_VERSION@
-PackageVersion=@FIREBIRD_PACKAGE_VERSION@
 
 PLATFORM=@PLATFORM@
 ifeq (@FIREBIRD_ARCH_TYPE@,classic)
@@ -59,10 +57,6 @@ ifeq (@FIREBIRD_ARCH_TYPE@,classic)
 else
 	ArchPrefix=SS
 endif
-
-SharedLibraryName=@FIREBIRD_LIBGDS_SO@
-SharedLibrarySoName=@FIREBIRD_LIBGDS_SO_X_LNK@
-SharedLibraryBaseName=@FIREBIRD_LIBGDS_SO_LNK@
 
 # link with readline libraries - set by configure
 EDITLINE_FLG=@EDITLINE_FLG@
@@ -106,7 +100,14 @@ BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 
 
 # The shared library name for the embedded (or classic) library
+# SD: This name is also hard-coded in src/install/.../linux/classic scripts.
+#     Scold me, but I don't want library names to be in configure.in
 # 
+
+SharedLibraryName=libfbembed.${SHRLIB_EXT}.${FirebirdVersion}
+SharedLibrarySoName=libfbembed.${SHRLIB_EXT}.${MajorVer}
+SharedLibraryBaseName=libfbembed.${SHRLIB_EXT}
+
 LIBFBEMBED_SO = $(LIB)/$(SharedLibraryName)
 LIBFBEMBED_SOBASENAME = $(LIB)/$(SharedLibrarySoName)
 LIBFBEMBED_SONAME = $(LIB)/$(SharedLibraryBaseName)

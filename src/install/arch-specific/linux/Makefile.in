@@ -27,15 +27,15 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.7 2002-11-16 02:17:14 skywalker Exp $
+#  $Id: Makefile.in,v 1.8 2003-03-20 11:11:50 aafemt Exp $
 #
 ROOT=..
 
 
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 
@@ -67,8 +67,7 @@ FirebirdBuildPrefix=$(GEN_ROOT)
 #export FirebirdInstallPrefix
 #export PackageVersion
 
-BuildVersion=@FIREBIRD_VERSION@.@FB_BUILD_NUM@
-PackageVersion=@FIREBIRD_PACKAGE_VERSION@
+BuildVersion=$(FirebirdVersion).$(BuildNum)
 
 Version=$(BuildVersion)-$(PackageVersion)
 

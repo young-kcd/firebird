@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.31 2003-03-17 12:05:48 eku Exp $
+#  $Id: Makefile.in.firebird,v 1.32 2003-03-20 11:11:49 aafemt Exp $
 #
 
 ROOT=..
@@ -169,11 +169,13 @@ firebird_boot: updateBuildNum boot_phase1 boot_phase2
 
 .PHONY: updateBuildNum external_libraries
 
-updateBuildNum : jrd/build_no.h
+updateBuildNum : jrd/build_no.h $(MAKE_ROOT)/Make.Version
 
 jrd/build_no.h : misc/writeBuildNum.sh
 	(cd ..; ./src/misc/writeBuildNum.sh rebuildHeader)
 
+$(MAKE_ROOT)/Make.Version : misc/writeBuildNum.sh
+	misc/writeBuildNum.sh createMakeVersion $@
 
 
 # 
