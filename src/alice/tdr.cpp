@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.13 2003-02-11 20:14:53 brodsom Exp $
+//	$Id: tdr.cpp,v 1.14 2003-02-18 02:36:47 brodsom Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -41,7 +41,6 @@
 #include "../alice/aliceswi.h"
 #include "../alice/all.h"
 #include "../alice/alloc.h"
-#include "../alice/info.h"
 #include "../alice/alice_proto.h"
 #include "../alice/all_proto.h"
 #include "../alice/alice_meta.h"
@@ -760,19 +759,10 @@ static void reattach_database(TDR trans)
 {
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	UCHAR buffer[1024], *p, *q, *start;
-	USHORT protocols = 0;
 	STR string;
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
-
-//  determine what protocols are allowable for this OS
-
-#ifdef VMS
-	protocols |= DECNET_PROTOCOL | VMS_TCP_PROTOCOL;
-#else
-	protocols |= TCP_PROTOCOL;
-#endif
 
 	ISC_get_host(reinterpret_cast < char *>(buffer), sizeof(buffer));
 
@@ -799,39 +789,14 @@ static void reattach_database(TDR trans)
 			*p++ = *q++;
 		start = p;
 
-		if (protocols & DECNET_PROTOCOL) {
-			p = start;
-			*p++ = ':';
-			*p++ = ':';
-			for (q = trans->tdr_fullpath->str_data; *q;)
-				*p++ = *q++;
-			*q = 0;
-			if (TDR_attach_database
-				(status_vector, trans,
-				 reinterpret_cast < char *>(buffer))) return;
-		}
-
-		if (protocols & VMS_TCP_PROTOCOL) {
-			p = start;
-			*p++ = '^';
-			for (q = trans->tdr_fullpath->str_data; *q;)
-				*p++ = *q++;
-			*q = 0;
-			if (TDR_attach_database
-				(status_vector, trans,
-				 reinterpret_cast < char *>(buffer))) return;
-		}
-
-		if (protocols & TCP_PROTOCOL) {
-			p = start;
-			*p++ = ':';
-			for (q = trans->tdr_fullpath->str_data; *q;)
-				*p++ = *q++;
-			*q = 0;
-			if (TDR_attach_database
-				(status_vector, trans,
-				 reinterpret_cast < char *>(buffer))) return;
-		}
+		p = start;
+		*p++ = ':';
+		for (q = trans->tdr_fullpath->str_data; *q;)
+			*p++ = *q++;
+		*q = 0;
+		if (TDR_attach_database
+			(status_vector, trans,
+			 reinterpret_cast < char *>(buffer))) return;
 	}
 
 //  attaching using the old method didn't work;
@@ -842,54 +807,14 @@ static void reattach_database(TDR trans)
 			*p++ = *q++;
 		start = p;
 
-		if (protocols & DECNET_PROTOCOL) {
-			p = start;
-			*p++ = ':';
-			*p++ = ':';
-			for (q = (UCHAR *) trans->tdr_filename; *q;)
-				*p++ = *q++;
-			*q = 0;
-			if (TDR_attach_database
-				(status_vector, trans,
-				 reinterpret_cast < char *>(buffer))) return;
-		}
-
-		if (protocols & VMS_TCP_PROTOCOL) {
-			p = start;
-			*p++ = '^';
-			for (q = (UCHAR *) trans->tdr_filename; *q;)
-				*p++ = *q++;
-			*q = 0;
-			if (TDR_attach_database
-				(status_vector, trans,
-				 reinterpret_cast < char *>(buffer))) return;
-		}
-
-		if (protocols & TCP_PROTOCOL) {
-			p = start;
-			*p++ = ':';
-			for (q = (UCHAR *) trans->tdr_filename; *q;)
-				*p++ = *q++;
-			*q = 0;
-			if (TDR_attach_database
-				(status_vector, trans,
-				 reinterpret_cast < char *>(buffer))) return;
-		}
-
-		if (protocols & MSLAN_PROTOCOL) {
-			p = buffer;
-			*p++ = '\\';
-			*p++ = '\\';
-			for (q = trans->tdr_remote_site->str_data; *q;)
-				*p++ = *q++;
-			for (q = (UCHAR *) trans->tdr_filename; *q;)
-				*p++ = *q++;
-			*q = 0;
-
-			if (TDR_attach_database
-				(status_vector, trans,
-				 reinterpret_cast < char *>(buffer))) return;
-		}
+		p = start;
+		*p++ = ':';
+		for (q = (UCHAR *) trans->tdr_filename; *q;)
+			*p++ = *q++;
+		*q = 0;
+		if (TDR_attach_database
+			(status_vector, trans,
+			 reinterpret_cast < char *>(buffer))) return;
 	}
 
 //  we have failed to reattach; notify the user
