@@ -1,3 +1,100 @@
+2002-11-10 17:34  dimitr
+
+	* firebird2/src/ipserver/: ipc.h, ipclient.cpp, ipserver.cpp:
+	
+	Cleanup.
+
+2002-11-10 17:27  nmcc
+
+	* firebird2/src/: make.new/config/config.h.in,
+	jrd/os/posix/config_root.cpp:
+	
+	Fix posix builds.
+
+2002-11-10 16:38  dimitr
+
+	* firebird2/src/jrd/winnt.cpp:
+	
+	Cleanup.
+
+2002-11-10 15:45  dimitr
+
+	* firebird2/: src/remote/cntl.cpp, src/iscguard/cntl_guard.cpp,
+	builds/win32/msvc6/fbembed.dsp:
+	
+	Cleanup.
+
+2002-11-10 15:28  kkuznetsov
+
+	* firebird2/src/: lock/lock.cpp, remote/inet.cpp:
+	
+	
+	Fix some compile errors
+
+2002-11-10 15:19  dimitr
+
+	* firebird2/builds/win32/msvc6/: common.dsp, engine.dsp,
+	engine_classic.dsp, fbguard.dsp:
+	
+	Updated project files.
+
+2002-11-10 15:07  dimitr
+
+	* firebird2/src/: iscguard/cntl_guard.cpp, iscguard/iscguard.cpp,
+	iscguard/iscguard.h, iscguard/iscguard_utils.cpp,
+	make.new/config/config.h.in, lock/fparamv3.h:
+	
+	Cleanup.
+
+2002-11-10 15:06  dimitr
+
+	* firebird2/src/utilities/: install_svc.cpp, registry.cpp,
+	registry.h:
+	
+	Don't use the registry, use new config manager instead.
+
+2002-11-10 15:04  dimitr
+
+	* firebird2/src/jrd/: arg.h, file_params.h, gds.cpp, isc_win32.cpp,
+	pwd.h, sort_mem.cpp:
+	
+	Cleanup and get rid of the registry.
+
+2002-11-10 14:54  dimitr
+
+	* firebird2/src/remote/: cntl.cpp, nt_server.cpp, property.cpp,
+	remote_def.h, srvr_w32.cpp, wnet.cpp:
+	
+	1. SRVR_pipe renamed to SRVR_wnet.  2. Registry entries are no
+	longer used.  3. Wnet protocol is now controlled by -w switch (was:
+	-n).
+
+2002-11-10 14:41  dimitr
+
+	* firebird2/src/common/config/: config.cpp, config.h,
+	config_impl.h:
+	
+	Guardian option is added to the config manager.
+
+2002-11-10 10:48  dimitr
+
+	* firebird2/src/common/config/: config.cpp, config.h,
+	config_impl.h:
+	
+	Allowed root directory to be overriden in the config file.
+
+2002-11-10 08:58  dimitr
+
+	* firebird2/src/dsql/: parse.cpp, parse.y:
+	
+	A bit improved parser's debug output. Thanks to Ignacio J. Ortega.
+
+2002-11-10 08:48  dimitr
+
+	* firebird2/src/dsql/: parse.cpp, parse.y:
+	
+	Fixed small parser bug. Thanks to Ignacio J. Ortega.
+
 2002-11-09 14:23  skywalker
 
 	* firebird2/: configure.in, builds/posix/Makefile.in.boot.gpre,
