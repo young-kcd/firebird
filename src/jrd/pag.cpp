@@ -981,7 +981,7 @@ void PAG_header(TEXT * file_name, USHORT file_length)
    and unit of transfer is a multiple of physical disk
    sector for raw disk access. */
 
-	temp_buffer = (SCHAR*)gds__alloc((SLONG) 2 * MIN_PAGE_SIZE);
+	temp_buffer = (SCHAR*)MemoryPool::external_alloc((SLONG) 2 * MIN_PAGE_SIZE);
 	temp_page =
 		(SCHAR *) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
@@ -1095,11 +1095,11 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 		dbb->dbb_ast_flags |= DBB_shutdown;
 
 	if (temp_buffer)
-		gds__free(temp_buffer);
+		MemoryPool::external_free(temp_buffer);
 	}	// try
 	catch (...) {
 		if (temp_buffer) {
-			gds__free(temp_buffer);
+			MemoryPool::external_free(temp_buffer);
 		}
 		ERR_punt();
 	}
@@ -1200,7 +1200,7 @@ void PAG_init2(USHORT shadow_number)
    and set up to release it in case of error. Align
    the temporary page buffer for raw disk access. */
 
-	temp_buffer = (SCHAR*) gds__alloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
+	temp_buffer = (SCHAR*) MemoryPool::external_alloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
 	temp_page =
 		(SCHAR *) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
@@ -1306,12 +1306,12 @@ void PAG_init2(USHORT shadow_number)
 	}
 
 	if (temp_buffer) {
-		gds__free(temp_buffer);
+		MemoryPool::external_free(temp_buffer);
 	}
 	}	// try
 	catch (...) {
 		if (temp_buffer) {
-			gds__free(temp_buffer);
+			MemoryPool::external_free(temp_buffer);
 		}
 		ERR_punt();
 	}

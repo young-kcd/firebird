@@ -169,7 +169,7 @@ int SDW_add_file(TEXT * file_name, SLONG start, USHORT shadow_number)
    the spare page buffer for raw disk access. */
 
 	spare_buffer = (SCHAR*)
-		gds__alloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
+		MemoryPool::external_alloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
 	spare_page =
 		(SCHAR *) (((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) &
 				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
@@ -198,7 +198,7 @@ int SDW_add_file(TEXT * file_name, SLONG start, USHORT shadow_number)
 					0))
 	{
 		if (spare_buffer) {
-			gds__free(spare_buffer);
+			MemoryPool::external_free(spare_buffer);
 		}
 		return 0;
 	}
@@ -245,7 +245,7 @@ else
 						0))
 		{
 			if (spare_buffer) {
-				gds__free(spare_buffer);
+				MemoryPool::external_free(spare_buffer);
 			}
 			return 0;
 		}
@@ -259,13 +259,13 @@ else
 	}
 
 	if (spare_buffer) {
-		gds__free(spare_buffer);
+		MemoryPool::external_free(spare_buffer);
 	}
 
 	}	// try
 	catch (...) {
 		if (spare_buffer) {
-			gds__free(spare_buffer);
+			MemoryPool::external_free(spare_buffer);
 		}
 		ERR_punt();
 	}
@@ -970,7 +970,7 @@ void SDW_start(
 
 	shadow = NULL;
 	spare_buffer =
-		(SLONG *) gds__alloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
+		(SLONG *) MemoryPool::external_alloc((SLONG) dbb->dbb_page_size + MIN_PAGE_SIZE);
 	spare_page = reinterpret_cast < SLONG * >((SCHAR *)
 											  
 											  (((U_IPTR)
@@ -1053,7 +1053,7 @@ void SDW_start(
 
 	PAG_init2(shadow_number);
 	if (spare_buffer) {
-		gds__free(spare_buffer);
+		MemoryPool::external_free(spare_buffer);
 	}
 
 	}	// try
@@ -1066,7 +1066,7 @@ void SDW_start(
 			delete shadow_file;
 		}
 		if (spare_buffer) {
-			gds__free(spare_buffer);
+			MemoryPool::external_free(spare_buffer);
 		}
 		if (file_flags & FILE_manual && !delete_) {
 			ERR_post(gds_shadow_missing, gds_arg_number,
