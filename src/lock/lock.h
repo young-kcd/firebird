@@ -162,7 +162,7 @@ const SLONG LHB_PATTERN			= 123454321;
 
 /* Lock header block -- one per lock file, lives up front */
 
-struct lhb {
+typedef struct lhb {
 	UCHAR lhb_type;				/* memory tag - always type_lbh */
 	UCHAR lhb_version;			/* Version of lock table */
 	SRQ_PTR lhb_secondary;			/* Secondary lock header block */
@@ -207,8 +207,7 @@ struct lhb {
 	ULONG lhb_reserved[2];		/* For future use */
 	srq lhb_data[LCK_MAX_SERIES];
 	srq lhb_hash[1];			/* Hash table */
-};
-typedef lhb* LHB;
+} *LHB;
 
 // lhb_flags
 const USHORT LHB_lock_ordering		= 1;	/* Lock ordering is enabled */
@@ -218,7 +217,7 @@ const USHORT LHB_shut_manager		= 2;	/* Lock manager shutdown flag */
    managers.  It is pointed to by the word in the lhb that used to contain
    a pattern. */
 
-struct shb {
+typedef struct shb {
 	UCHAR shb_type;				/* memory tag - always type_shb */
 	UCHAR shb_flags;
 	SRQ_PTR shb_history;
@@ -226,13 +225,12 @@ struct shb {
 	SRQ_PTR shb_insert_que;			/* Queue inserting into */
 	SRQ_PTR shb_insert_prior;		/* Prior of inserting queue */
 	SLONG shb_misc[10];			/* Unused space */
-};
-typedef shb* SHB;
+} *SHB;
 
 
 /* Lock block */
 
-struct lbl
+typedef struct lbl
 {
 	UCHAR lbl_type;				/* mem tag: type_lbl=in use, type_null=free */
 	UCHAR lbl_state;			/* High state granted */
@@ -248,14 +246,13 @@ struct lbl
 	USHORT lbl_pending_lrq_count;	/* count of lbl_requests with LRQ_pending */
 	USHORT lbl_counts[LCK_max];	/* Counts of granted locks */
 	UCHAR lbl_key[1];			/* Key value */
-};
-typedef lbl* LBL;
+} *LBL;
 
 /* No flags are defined for LBL at this time */
 
 /* Lock requests */
 
-struct lrq {
+typedef struct lrq {
 	UCHAR lrq_type;				/* mem tag: type_lrq=in use, type_null=free */
 	UCHAR lrq_requested;		/* Level requested  */
 	UCHAR lrq_state;			/* State of lock request */
@@ -268,8 +265,7 @@ struct lrq {
 	srq lrq_own_blocks;			/* Owner block que */
 	lock_ast_t lrq_ast_routine;	/* Block ast routine */
 	void* lrq_ast_argument;		/* Ast argument */
-};
-typedef lrq* LRQ;
+} *LRQ;
 
 // lrw_flags
 const USHORT LRQ_blocking		= 1;		/* Request is blocking */
@@ -284,7 +280,7 @@ const USHORT LRQ_blocking_seen	= 256;		/* Blocking notification received by owne
 
 /* Owner block */
 
-struct own
+typedef struct own
 {
 	UCHAR own_type;				/* memory tag - always type_own */
 	UCHAR own_owner_type;		/* type of owner */
@@ -315,8 +311,7 @@ struct own
 #endif
 	USHORT own_semaphore;		/* Owner semaphore -- see note below */
 	USHORT own_flags;			/* Misc stuff */
-};
-typedef own* OWN;
+} *OWN;
 
 /* Flags in own_flags */
 const USHORT OWN_blocking	= 1;		// Owner is blocking
@@ -351,15 +346,14 @@ struct semaphore_mask {
 
 /* Lock manager history block */
 
-struct his {
+typedef struct his {
 	UCHAR his_type;				/* memory tag - always type_his */
 	UCHAR his_operation;		/* operation that occured */
 	SRQ_PTR his_next;				/* SRQ_PTR to next item in history list */
 	SRQ_PTR his_process;			/* owner to record for this operation */
 	SRQ_PTR his_lock;				/* lock to record for operation */
 	SRQ_PTR his_request;			/* request to record for operation */
-};
-typedef his* HIS;
+} *HIS;
 
 /* his_operation definitions */
 // should be UCHAR according to his_operation but is USHORT in lock.cpp:post_operation 

@@ -59,7 +59,7 @@ typedef int bool_t;
 
 enum xdr_op { XDR_ENCODE = 0, XDR_DECODE = 1, XDR_FREE = 2 };
 
-struct xdr_t
+typedef struct xdr_t
 {
 	enum xdr_op	x_op;			/* operation; fast additional param */
 	struct xdr_ops
@@ -77,8 +77,7 @@ struct xdr_t
 	caddr_t	x_private;	/* pointer to private data */
 	caddr_t	x_base;		/* private used for position info */
 	int		x_handy;	/* extra private word */
-};
-typedef xdr_t XDR;
+} XDR;
 
 /* Descriminated union crud */
 
