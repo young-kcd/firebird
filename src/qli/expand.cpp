@@ -1204,7 +1204,7 @@ static FRM expand_form( SYN input, QLI_REL relation)
 		return form;
 
 	ERRQ_print_error(145, string, database->dbb_filename, NULL, NULL, NULL);	/* Msg145 form is not defined in database */
-
+	return NULL;
 }
 
 

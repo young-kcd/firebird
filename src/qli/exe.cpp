@@ -369,6 +369,7 @@ struct file *EXEC_open_output(QLI_NOD node)
 
 	IBERROR(37);				/* Msg37 ib_fdopen failed */
 #endif
+	return NULL;
 }
 
 
@@ -586,6 +587,7 @@ static DSC *assignment(	QLI_NOD		from_node,
 
 		QLI_reprompt = TRUE;
 		QLI_prompt_count = 0;
+		return NULL;
 	}
 }
 

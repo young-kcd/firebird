@@ -197,6 +197,7 @@ int EVAL_boolean( QLI_NOD node)
 
 	default:
 		BUGCHECK(28);			/* Msg28 EVAL_boolean: not finished */
+		return NULL;
 	}
 }
 
@@ -570,6 +571,7 @@ DSC *EVAL_value(QLI_NOD node)
 
 	default:
 		BUGCHECK(29);			/* Msg29 EVAL_value: not finished */
+		return NULL;
 	}
 }
 

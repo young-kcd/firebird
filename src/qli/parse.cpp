@@ -943,6 +943,7 @@ static SYN parse_copy(void)
 	}
 
 	ERRQ_print_error(157, QLI_token->tok_string, NULL, NULL, NULL, NULL);	/* Msg157 Expected PROCEDURE encountered %s */
+	return NULL;
 }
 
 
@@ -1159,6 +1160,7 @@ static SYN parse_define(void)
 		return parse_def_index();
 
 	SYNTAX_ERROR(169);			/* Msg169 object type for DEFINE */
+	return NULL;
 }
 
 
@@ -4558,6 +4560,7 @@ if (MATCH (KW_VIEW))
 ***/
 
 	SYNTAX_ERROR(386);			/* Msg386 object type for CREATE */
+	return NULL;
 }
 
 

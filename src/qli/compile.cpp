@@ -687,6 +687,7 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
 
 	default:
 		BUGCHECK(359);			/* Msg359 compile_expression: not yet implemented */
+		return NULL;
 	}
 }
 
@@ -1392,6 +1393,7 @@ static QLI_NOD compile_statement( QLI_NOD node, QLI_REQ request, int internal_fl
 
 	default:
 		BUGCHECK(360);			/* Msg360 not yet implemented (compile_statement) */
+		return NULL;
 	}
 }
 
@@ -1695,6 +1697,7 @@ static int computable( QLI_NOD node, QLI_REQ request)
 
 	default:
 		BUGCHECK(361);			/* Msg361 computable: not yet implemented */
+		return NULL;
 	}
 }
 
