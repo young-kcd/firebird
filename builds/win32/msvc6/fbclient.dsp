@@ -114,10 +114,6 @@ SOURCE=..\..\..\src\jrd\cvt.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\db_alias.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\dls.cpp
 # End Source File
 # Begin Source File
