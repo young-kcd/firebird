@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.37 2004-04-11 04:04:16 robocop Exp $
+ * $Id: show.epp,v 1.38 2004-04-21 00:18:48 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -394,8 +394,8 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 			sprintf (info, "Transaction - Next = %ld %s", value_out, NEWLINE);
 			break;
 
-/* IGNORE WAL.
-
+#ifdef NOT_USED_OR_REPLACED
+		// IGNORE WAL
 		case isc_info_num_wal_buffers:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
@@ -454,7 +454,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 				sprintf(info, "Wal group commit wait = %ld %s",
 						value_out, NEWLINE);
 			break;
-*/
+#endif
 
 		case isc_info_base_level:
 			value_out = isc_vax_integer(d, length);
@@ -1783,7 +1783,8 @@ static void show_db()
 		return;
 	}
 
-/* IGNORE WAL
+#ifdef NOT_USED_OR_REPLACED
+	// IGNORE WAL
 
 	bool is_wal = false;
 
@@ -1843,7 +1844,7 @@ static void show_db()
 	{
 		ISQL_printf(Out, info_buf);
 	}
-*/
+#endif
 
 	if (V4) {
 	    FOR DBB IN RDB$DATABASE

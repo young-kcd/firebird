@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.28 2004-04-11 04:04:16 robocop Exp $
+ * $Id: extract.epp,v 1.29 2004-04-21 00:18:48 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -1425,6 +1425,7 @@ static void list_check()
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static void print_set(bool* set_used)
 {
 /**************************************
@@ -1454,7 +1455,7 @@ static void print_set(bool* set_used)
 		ISQL_printf(Out, Print_buffer);
 	}
 }
-
+#endif
 
 static void list_create_db()
 {
@@ -1622,7 +1623,8 @@ static void list_create_db()
 		return;
 	END_ERROR;
 
-	/* IGNORE WAL FOR THE FORESEEABLE FUTURE.
+#ifdef NOT_USED_OR_REPLACED
+	// IGNORE WAL FOR THE FORESEEABLE FUTURE.
 	bool first_file = true;
 	first = true; // CVC: I'm not sure if this line should be added here.
 	bool has_wal = false;
@@ -1774,7 +1776,8 @@ static void list_create_db()
 		if (buffer)
 			ISQL_FREE(buffer);
 	}
-	END OF WAL-RELATED CODE	*/
+	// END OF WAL-RELATED CODE
+#endif
 
 	if (!first)
 	{
