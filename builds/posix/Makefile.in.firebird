@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.25 2003-01-04 17:10:43 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.26 2003-02-10 11:00:13 eku Exp $
 #
 
 ROOT=..
@@ -150,7 +150,7 @@ firebird_super firebird_server: firebird_basic super_targets
 
 
 # In building embedded/server version some targets are common, mainly the 
-# boot kit, isc4.gdb database and messages files.  Boot builds a number of
+# boot kit, security.gdb database and messages files.  Boot builds a number of
 # static programs gpre_static gbak_static isql_static though an involved 
 # process.  These are used to compile the rest of the source, as it saves
 # some complications particularly for super in needing to start the server
@@ -246,12 +246,12 @@ lock_mgr :
 #  (It's probably possible to directly build the dynamic library - but thats
 #  for another day). We still don't have the security database stuff.
 #
-# Phase2 is complete with the building of an isc4.gdb user store database
+# Phase2 is complete with the building of an security.gdb user store database
 # in order to do that isql and gdef tools need to be built without security
 # to do that a special alt_boot.o is inserted into the shared library.
-# Again once isc4.gdb is built then were not too worried about the components
-# (in fact some of them have to be rebuilt again to incorperate the security
-# module)
+# Again once security.gdb is built then were not too worried about the
+# components (in fact some of them have to be rebuilt again to incorperate
+# the security module)
 #
 
 .PHONY: create_db empty_db gbak_static isql_static refDatabases
@@ -279,7 +279,7 @@ ref_databases : gbak_static
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.refDatabases $@
 
 
-isc4.gdb: gdef isql 		# build the security database
+security.gdb: gdef isql 		# build the security database
 	$(MAKE) -C utilities $@
 
 
@@ -294,10 +294,10 @@ isc4.gdb: gdef isql 		# build the security database
 #  for another day). We still don't have the security database stuff.
 #
 # Notes:
-# mainly we need gdef and isql to be able to build isc4.gdb.  I wonder
-# if we could reduce the tricky dependancy by restoring the isc4.gdb database
-# earlier, then perhaps we could build the jrdlib in one step and include
-# the security bits and pieces.
+# mainly we need gdef and isql to be able to build security.gdb.  I wonder
+# if we could reduce the tricky dependancy by restoring the security.gdb
+# database earlier, then perhaps we could build the jrdlib in one step and
+# include the security bits and pieces.
 
 .PHONY: ref_databases msgs msgs_intl generated_headers intl extlib includes
 

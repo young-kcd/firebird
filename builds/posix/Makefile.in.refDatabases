@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.10 2002-12-29 14:18:21 nmcc Exp $
+#  $Id: Makefile.in.refDatabases,v 1.11 2003-02-10 11:00:17 eku Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -41,7 +41,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 # If we export the username/password we get an error because we can't connect
-# to isc4.gdb!  So we won't export them while we make the databases...
+# to security.gdb!  So we won't export them while we make the databases...
 #
 unexport ISC_USER
 unexport ISC_PASSWORD
@@ -84,7 +84,7 @@ yachts.lnk: empty.gdb
 
 .PHONY: ref_databases
 
-ref_databases : msg.gdb help.gdb metadata.gdb isc4.gdb
+ref_databases : msg.gdb help.gdb metadata.gdb security.gdb
 
 msg.gdb:	$(SRC_ROOT)/msgs/msg.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
@@ -100,11 +100,11 @@ $(FIREBIRD)/help/help.gdb:	$(SRC_ROOT)/misc/help.gbak
 	touch $@
 	chmod 444 $@
 
-isc4.gdb:	$(FIREBIRD)/isc4.gdb
+security.gdb:	$(FIREBIRD)/security.gdb
 	$(RM) -f $@
 	ln -fs $^ $@
 
-$(FIREBIRD)/isc4.gdb:	$(SRC_ROOT)/misc/isc4.gbak
+$(FIREBIRD)/security.gdb:	$(SRC_ROOT)/misc/security.gbak
 	$(BIN)/gbak_static  -R $< $@
 	touch $@
 	chmod 666 $@

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.2 2002-12-16 21:19:17 skidder Exp $
+#  $Id: make.shared.targets,v 1.3 2003-02-10 11:00:18 eku Exp $
 #
 
 
@@ -72,9 +72,9 @@ $(SRC)/gpre/gpre_meta.cpp:  $(SRC)/gpre/gpre_meta.epp
 
 
 
-buildb: isc4.gdb yachts.lnk help.gdb
+buildb: security.gdb yachts.lnk help.gdb
 
-isc4.gdb : $(ISC_GDB)
+security.gdb : $(ISC_GDB)
 	-ln -sf $(ISC_GDB) $@
 
 yachts.lnk: 

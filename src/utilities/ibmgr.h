@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.2 2001-12-24 02:50:53 tamlin Exp $
+ * $Id: ibmgr.h,v 1.3 2003-02-10 11:01:21 eku Exp $
  */
 
 #ifndef _UTILITIES_IBMGR_H_
@@ -37,7 +37,7 @@
 #define INTERBASE_USER_NAME	"interbase"
 #define INTERBASE_USER_SHORT	"interbas"
 #define SERVER_GUARDIAN		"bin/ibguard"
-#define USER_INFO_NAME		"isc4.gdb"
+#define USER_INFO_NAME		"security.gdb"
 
 #define MSG_FAC		18
 #define MSG_LEN		128
