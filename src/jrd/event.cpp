@@ -1035,7 +1035,7 @@ static void delete_request(JRD_REQ request)
 		else {
 			interest->rint_next = session->ses_interests;
 			session->ses_interests = REL_PTR(interest);
-			interest->rint_request = NULL;
+			interest->rint_request = (PTR)0;
 		}
 	}
 
