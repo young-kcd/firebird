@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.13 2003-02-13 09:26:13 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.14 2003-03-16 12:04:13 dimitr Exp $
  *
  */
 
@@ -238,7 +238,6 @@ static const TOK tokens [] = {
 	{ROLLBACK, "ROLLBACK", 1}, 
 	{ROWS_AFFECTED, "ROWS_AFFECTED", 2},
 	{SAVEPOINT, "SAVEPOINT", 2},
-	{STATEMENT, "STATEMENT", 2},
 	{DATABASE, "SCHEMA", 1},	/* Alias of DATABASE */
 	{SECOND, "SECOND", 2},
 	{SEGMENT, "SEGMENT", 1},
@@ -257,6 +256,7 @@ static const TOK tokens [] = {
 	{STABILITY, "STABILITY", 1}, 
 	{STARTING, "STARTING", 1}, 
 	{STARTING, "STARTS", 1},	/* Alias of STARTING */
+	{STATEMENT, "STATEMENT", 2},
 	{STATISTICS, "STATISTICS", 1},
 	{SUBSTRING,	"SUBSTRING", 2},
 	{SUB_TYPE, "SUB_TYPE", 1},
