@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.16 2003-02-27 16:04:50 brodsom Exp $
+//  $Id: par.cpp,v 1.17 2003-03-01 12:10:16 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.16 2003-02-27 16:04:50 brodsom Exp $
+//	$Id: par.cpp,v 1.17 2003-03-01 12:10:16 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -68,7 +68,9 @@ extern TEXT*	module_lc_ctype;
 
 static jmp_buf*	PAR_jmp_buf;
 
+#ifdef FTN_BLK_DATA
 static void		block_data_list(DBB);
+#endif
 static BOOLEAN	match_parentheses();
 static ACT		par_any();
 static ACT		par_array_element();
@@ -85,8 +87,10 @@ static ACT		par_end_block();
 static ACT		par_end_error();
 static ACT		par_end_fetch();
 static ACT		par_end_for();
+#ifdef PYXIS
 static ACT		par_end_form();
 static ACT		par_end_menu();
+#endif
 static ACT		par_end_modify();
 static ACT		par_end_stream();
 static ACT		par_end_store();
@@ -2321,7 +2325,7 @@ static ACT par_for()
 	return action;
 }
 
-
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Parse a form or menu name, if one is present.  Return form
@@ -2333,8 +2337,8 @@ static GPRE_CTX par_form_menu( enum sym_t type)
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Parse a form display/interaction statement.
@@ -2345,7 +2349,7 @@ static ACT par_form_display()
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
 }
-
+#endif
 #ifdef PYXIS
 //____________________________________________________________
 //  
@@ -3792,7 +3796,7 @@ static ACT par_variable()
 	return action;
 }
 
-
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Create a new window.
@@ -3803,8 +3807,8 @@ static ACT par_window_create()
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Create a new window.
@@ -3815,8 +3819,8 @@ static ACT par_window_delete()
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Establish the scope of window declarations,
@@ -3829,8 +3833,8 @@ static ACT par_window_scope()
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
 }
-
-
+#endif
+#ifdef PYXIS
 //____________________________________________________________
 //  
 //		Create a new window.
@@ -3841,7 +3845,7 @@ static ACT par_window_suspend()
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
 }
-
+#endif
 
 //____________________________________________________________
 //  
