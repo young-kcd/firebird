@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.5 2002-11-05 01:42:48 nmcc Exp $
+#   $Id: make.defaults,v 1.6 2002-11-13 07:07:55 eku Exp $
 # 
 
 
@@ -65,7 +65,7 @@ SharedLibrarySoName=@FIREBIRD_LIBGDS_SO_X_LNK@
 SharedLibraryBaseName=@FIREBIRD_LIBGDS_SO_LNK@
 
 # link with readline libraries - set by configure
-READLINE_FLG=@READLINE_FLG@
+EDITLINE_FLG=@EDITLINE_FLG@
 
 
 # Default programs and tools to be used in the build process

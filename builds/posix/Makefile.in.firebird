@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.15 2002-11-11 13:09:17 eku Exp $
+#  $Id: Makefile.in.firebird,v 1.16 2002-11-13 07:07:55 eku Exp $
 #
 
 ROOT=..
@@ -183,7 +183,7 @@ jrd/build_no.h : misc/writeBuildNum.sh
 # is the only external library we have included.
 # 
 EXTERNAL_LIBRARIES=
-ifeq ($(READLINE_FLG),Y)
+ifeq ($(EDITLINE_FLG),Y)
 EXTERNAL_LIBRARIES:= $(EXTERNAL_LIBRARIES) $(LIBEDIT_A)
 endif
 

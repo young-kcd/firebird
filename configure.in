@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.81 2002-11-12 13:46:06 eku Exp $
+dnl $Id: configure.in,v 1.82 2002-11-13 07:07:53 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -121,15 +121,15 @@ if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
 fi
 AC_SUBST(MANAGER_PROCESS_TARGET)
 
-READLINE_FLG=Y
-AC_ARG_WITH(readline,
-  [  --with-readline         support fancy command line editing (default=yes)],
+EDITLINE_FLG=N
+AC_ARG_WITH(editline,
+  [  --with-editline         support fancy command line editing (default=yes)],
   [case "$withval" in
-     yes) READLINE_FLG=Y;;
-     no)  READLINE_FLG=N;;
-     *)   AC_MSG_ERROR(bad value '${withval}' for --with-readline);;
+     yes) EDITLINE_FLG=Y;;
+     no)  EDITLINE_FLG=N;;
+     *)   AC_MSG_ERROR(bad value '${withval}' for --with-editline);;
    esac])
-AC_SUBST(READLINE_FLG)
+AC_SUBST(EDITLINE_FLG)
 
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
@@ -169,9 +169,8 @@ AC_CHECK_HEADERS(stdarg.h)
 AC_CHECK_HEADERS(stdlib.h)
 AC_CHECK_HEADERS(string.h)
 AC_CHECK_HEADERS(signal.h)
-if test "$READLINE_FLG" = "Y"; then
+if test "$EDITLINE_FLG" = "Y"; then
   AC_DEFINE(HAVE_EDITLINE_H)
-#  AC_CHECK_HEADERS(readline/readline.h)
 fi
 AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(unistd.h)
@@ -190,9 +189,8 @@ fi
 AC_CHECK_LIB(crypt, main)
 AC_CHECK_LIB(curses, main)
 dnl AC_CHECK_LIB(termcap, main)
-if test "$READLINE_FLG" = "Y"; then
+if test "$EDITLINE_FLG" = "Y"; then
   AC_SUBST(EDITLINE_A, -ledit)
-#  AC_CHECK_LIB(readline, main,,, $LIBS)
 fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 AC_CHECK_LIB(sfio, main,,, $LIBS) dnl Solaris only

@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.15 2002-10-07 01:29:12 skywalker Exp $
+  $Id: isql.epp,v 1.16 2002-11-13 07:07:56 eku Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -71,21 +71,6 @@
 // This is a local file included in our distribution - but not always 
 // compiled into the system
 #include "editline.h"
-#endif
-
-#ifdef HAVE_READLINE_READLINE_H
-#include <stdio.h>
-#include <readline/readline.h>
-#include <readline/history.h>
-
-// We have conflicting values for NEWLINE readline wants '\n' and
-// isql.h wants "\n".  (note the quotes).  So we undef it here after
-// getting through the readline headers.
-
-#ifdef NEWLINE
-#undef NEWLINE
-#endif
-
 #endif
 
 #include <string>
