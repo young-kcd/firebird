@@ -33,8 +33,10 @@
  *
  *  Contributor(s):
  * 
+ *		Alex Peshkoff <peshkoff@mail.ru>
+ *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.38 2004-03-25 23:12:39 skidder Exp $
+ *  $Id: alloc.h,v 1.39 2004-03-31 17:13:24 alexpeshkoff Exp $
  *
  */
 
@@ -490,6 +492,11 @@ namespace Firebird
 		SSHORT type;
 	};
 
+	// Permanent storage is used as base class for all objects,
+	// performing memory allocation in methods other than 
+	// constructors of this objects. Permanent means that pool,
+	// which will be later used for such allocations, must
+	// be explicitly passed in all constructors of such object.
 	class PermanentStorage {
 	private:
 		MemoryPool& pool;
@@ -498,27 +505,22 @@ namespace Firebird
 		MemoryPool& getPool() const { return pool; }
 	};
 
+	// Automatic storage is used as base class for objects,
+	// that may have constructors without explicit MemoryPool
+	// parameter. In this case AutoStorage sends AutoMemoryPool
+	// to PermanentStorage. To ensure this operation to be safe
+	// such trick possible only for local (on stack) variables.
 	class AutoStorage : public PermanentStorage {
+	private:
+#if defined(DEV_BUILD)
+		void ProbeStack();
+#endif
 	public:
 		static MemoryPool& getAutoMemoryPool() { return *getDefaultMemoryPool(); }
 	protected:
 		AutoStorage() : PermanentStorage(getAutoMemoryPool()) {
-#ifdef DEV_BUILD
-			//
-			// AutoStorage can be used only for objects on the stack.
-			// What is this check based on:
-			//	1. One and only one stack is used for all kind of variables.
-			//	2. Objects don't grow > 64K.
-			//
-			char ProbeVar = '\0';
-			char *MyStack = &ProbeVar;
-			char *ThisLocation = (char *)this;
-			int distance = ThisLocation - MyStack;
-			if (distance < 0) {
-				distance = -distance;
-			}
-			// Cannot use fb_assert in this header
-			fb_assert(distance < 64 * 1024);
+#if defined(DEV_BUILD)
+			ProbeStack();
 #endif
 		}
 		explicit AutoStorage(MemoryPool& p) : PermanentStorage(p) { }

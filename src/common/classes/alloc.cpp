@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.47 2004-03-28 09:10:08 robocop Exp $
+ *  $Id: alloc.cpp,v 1.48 2004-03-31 17:13:24 alexpeshkoff Exp $
  *
  */
 
@@ -1272,3 +1272,22 @@ void operator delete[](void* mem) throw()
 	Firebird::MemoryPool::globalFree(mem);
 }
 
+#if defined(DEV_BUILD)
+void Firebird::AutoStorage::ProbeStack() {
+	//
+	// AutoStorage() default constructor can be used only 
+	// for objects on the stack. ProbeStack() uses the 
+	// following assumptions to check it:
+	//	1. One and only one stack is used for all kind of variables.
+	//	2. Objects don't grow > 64K.
+	//
+	char ProbeVar = '\0';
+	char *MyStack = &ProbeVar;
+	char *ThisLocation = (char *)this;
+	int distance = ThisLocation - MyStack;
+	if (distance < 0) {
+		distance = -distance;
+	}
+	fb_assert(distance < 64 * 1024);
+}
+#endif
