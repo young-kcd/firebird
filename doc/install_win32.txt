@@ -104,7 +104,7 @@ Firebird 1.5 installation notes
   - run instreg.exe:
       instreg.exe install
     it causes the installation path to be written into the registry
-    (HKLM\Software\FirebirdSQL\Firebird\CurrentVersion)
+    (HKLM\Software\Firebird Project\Firebird Server\CurrentVersion)
   - if you want to register a service, run also instsvc.exe:
       instsvc.exe install
   - optionally, you should copy both fbclient.dll and gds32.dll
