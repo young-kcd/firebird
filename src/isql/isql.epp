@@ -732,9 +732,9 @@ static void readNextInputLine(const char* prompt)
 			fflush(stdout);
 
 			// Read the line
-			if (!feof(Ifp)) {
-				char buffer[MAX_USHORT];
-				fgets(buffer, sizeof(buffer), Ifp);
+			char buffer[MAX_USHORT];
+			if(fgets(buffer, sizeof(buffer), Ifp) != NULL)
+			{
 				size_t lineSize = strlen(buffer);
 				lastInputLine = (char*) malloc(lineSize + 1);
 				memcpy(lastInputLine, buffer, lineSize + 1);
@@ -3033,7 +3033,7 @@ static processing_state end_trans()
 			readNextInputLine(infobuf);
 			//			ISQL_prompt(infobuf);
 			//			fgets(buffer, BUFFER_LENGTH80, stdin);
-			if (isyesno(lastInputLine)) {	// check for Yes answer 
+			if (lastInputLine && isyesno(lastInputLine)) {	// check for Yes answer 
 				gds__msg_format(NULL, ISQL_MSG_FAC, COMMIT_MSG, sizeof(infobuf),
 								infobuf, NULL, NULL, NULL, NULL, NULL);
 				STDERROUT(infobuf, 1);
