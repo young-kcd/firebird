@@ -32,15 +32,21 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.38 2004-02-20 06:42:35 robocop Exp $
+ *  $Id: alloc.cpp,v 1.39 2004-03-01 03:18:42 skidder Exp $
  *
  */
 
 #include "../../include/firebird.h"
 #include "alloc.h"
+#ifdef HAVE_MMAP
+#include <sys/mman.h>
+#endif
 
 // Size in bytes, must be aligned according to ALLOC_ALIGNMENT
-#define MIN_EXTENT_SIZE  16384
+// It should also be a multiply of page size
+const size_t MIN_EXTENT_SIZE = 16384;
+// We cache this amount of extents to avoid memory mapping overhead
+const int MAP_CACHE_SIZE = 64;
 
 #define FB_MAX(M,N) ((M)>(N)?(M):(N))
 
@@ -48,9 +54,9 @@
 #define ALLOC_PATTERN 0xFEEDABED
 //#define ALLOC_PATTERN 0x0
 #ifdef DEBUG_GDS_ALLOC
-#define PATTERN_FILL(ptr,size,pattern) for (size_t _i=0;_i< size>>2;_i++) ((unsigned int*)(ptr))[_i]=(pattern)
+# define PATTERN_FILL(ptr,size,pattern) for (size_t _i=0;_i< size>>2;_i++) ((unsigned int*)(ptr))[_i]=(pattern)
 #else
-#define PATTERN_FILL(ptr,size,pattern) ((void)0)
+# define PATTERN_FILL(ptr,size,pattern) ((void)0)
 #endif
 
 // TODO (in order of importance):
@@ -121,13 +127,73 @@ void MemoryPool::updateSpare() {
 	} while (needSpare);
 }
 
+#if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
+# define MAP_ANONYMOUS MAP_ANON
+#endif
+
+#if defined(HAVE_MMAP) && !defined(MAP_ANONYMOUS)
+static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
+#endif
+
+#if defined(WIN_NT) || defined(HAVE_MMAP)
+static Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
+static Mutex cache_mutex;
+#endif
+
 void* MemoryPool::external_alloc(size_t size) {
 	// This method is assumed to return NULL in case it cannot alloc
+#if defined(WIN_NT) || defined(HAVE_MMAP)
+	if (size == MIN_EXTENT_SIZE) {
+		cache_mutex.enter();
+		void* result = NULL;
+		if (extents_cache.getCount()) {
+			// Use recently used object object to encourage caching
+			result = extents_cache[extents_cache.getCount()-1];
+			extents_cache.shrink(extents_cache.getCount()-1);
+		}
+		cache_mutex.leave();
+		if (result) return result;
+	}
+#endif
+#if defined WIN_NT
+	return VirtualAlloc(NULL, size, MEM_COMMIT, 
+						PAGE_READWRITE);
+#elif defined HAVE_MMAP
+# ifdef MAP_ANONYMOUS
+	return mmap(NULL, size, PROT_READ | PROT_WRITE, 
+		MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+# else	
+	// This code is needed for Solaris 2.6, AFAIK
+	if (dev_zero_fd < 0) dev_zero_fd = open("/dev/zero", O_RDWR);
+	return mmap(NULL, size, PROT_READ | PROT_WRITE, 
+		MAP_PRIVATE | MAP_ANONYMOUS, dev_zero_fd, 0);
+# endif
+#else
 	return malloc(size);
+#endif
 }
 	
-void MemoryPool::external_free(void *blk) {
+void MemoryPool::external_free(void *blk, size_t size) {
+#if defined(WIN_NT) || defined(HAVE_MMAP)
+	if (size == MIN_EXTENT_SIZE) {
+		cache_mutex.enter();
+		if (extents_cache.getCount() < extents_cache.getCapacity()) {
+			extents_cache.add(blk);
+			cache_mutex.leave();
+			return;
+		}
+		cache_mutex.leave();
+	}
+#endif
+#if defined WIN_NT
+	if (!VirtualFree(blk, 0, MEM_RELEASE))
+		system_call_failed::raise("VirtualFree");
+#elif defined HAVE_MMAP
+	if (munmap(blk, size))
+		system_call_failed::raise("munmap");
+#else
 	::free(blk);
+#endif
 }
 
 void* MemoryPool::tree_alloc(size_t size) {
@@ -192,7 +258,7 @@ bool MemoryPool::verify_pool() {
 			; 
 			blk = (MemoryBlock *)((char*)blk+MEM_ALIGN(sizeof(MemoryBlock))+blk->length))
 		{
-#ifndef NDEBUG
+# ifndef NDEBUG
 			fb_assert(blk->pool == this); // Pool is correct ?
 			fb_assert(blk->prev == prev); // Prev is correct ?
 			BlockInfo temp = {blk, blk->length};
@@ -210,7 +276,7 @@ bool MemoryPool::verify_pool() {
 			}
 			else
 				fb_assert(!foundTree && !foundPending); // Block is not free. Should not be in free lists
-#endif
+# endif
 			prev = blk;
 			if (blk->last) break;
 		}
@@ -277,6 +343,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int 
 	char* mem = (char *)external_alloc(alloc_size);
 	if (!mem) pool_out_of_memory();
 	((MemoryExtent *)mem)->next = NULL;
+	((MemoryExtent *)mem)->extent_size = alloc_size;
 	MemoryPool* pool = new(mem +
 		MEM_ALIGN(sizeof(MemoryExtent)) +
 		MEM_ALIGN(sizeof(MemoryBlock))) 
@@ -335,17 +402,13 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int 
 void MemoryPool::deletePool(MemoryPool* pool) {
 	/* dimitr: I think we need an abstract base class or a global macro
 			   in locks.h to avoid these architecture checks. */
-#ifdef MULTI_THREAD
-	pool->lock.~Spinlock();
-#else
-	pool->lock.~SharedSpinlock();
-#endif
+	pool->lock.~Mutex();
 	if (pool->cur_memory) *pool->cur_memory -= pool->used_memory;
 	// Delete all extents now
 	MemoryExtent *temp = pool->extents;
 	while (temp) {
 		MemoryExtent *next = temp->next;
-		external_free(temp);
+		external_free(temp, temp->extent_size);
 		temp = next;
 	}
 }
@@ -483,6 +546,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		}
 		extents_memory += alloc_size - MEM_ALIGN(sizeof(MemoryExtent));
 		extent->next = extents;
+		extent->extent_size = alloc_size;
 		extents = extent;
 			
 		blk = (MemoryBlock *)((char*)extent+MEM_ALIGN(sizeof(MemoryExtent)));
@@ -583,7 +647,7 @@ void MemoryPool::free_blk_extent(MemoryBlock *blk) {
 		fb_assert(itr); // We had to find it somewhere
 	}
 	extents_memory -= blk->length + MEM_ALIGN(sizeof(MemoryBlock));
-	external_free(extent);
+	external_free(extent, extent->extent_size);
 }
 
 void MemoryPool::deallocate(void *block) {

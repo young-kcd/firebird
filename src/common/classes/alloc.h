@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.32 2004-02-20 06:42:35 robocop Exp $
+ *  $Id: alloc.h,v 1.33 2004-03-01 03:18:42 skidder Exp $
  *
  */
 
@@ -98,6 +98,7 @@ struct BlockInfo {
 
 struct MemoryExtent {
 	MemoryExtent *next;
+	size_t extent_size; // Includes extent header size
 };
 
 struct PendingFreeBlock {
@@ -133,18 +134,14 @@ private:
 	Vector<void*, MAX_TREE_DEPTH + 1> spareNodes;
 	bool needSpare;
 	PendingFreeBlock *pendingFree;
-#ifdef MULTI_THREAD
-	Spinlock lock;
-#else
-	SharedSpinlock lock;
-#endif
+	Mutex lock;
 	int extents_memory; // Sum of memory in allocated extents minus size of extents headers
 	int used_memory; // Size of used memory blocks including block headers
 
 	/* Returns NULL in case it cannot allocate requested chunk */
 	static void* external_alloc(size_t size);
 
-	static void external_free(void* blk);
+	static void external_free(void* blk, size_t size);
 	
 	void* tree_alloc(size_t size);
 
