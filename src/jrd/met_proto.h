@@ -44,7 +44,7 @@ struct jrd_nod*	MET_get_dependencies(TDBB, struct jrd_rel*, TEXT*,
 struct jrd_fld*	MET_get_field(struct jrd_rel *, USHORT);
 void		MET_get_shadow_files(TDBB, bool);
 int			MET_get_walinfo(TDBB, struct logfiles **, ULONG *, struct logfiles **);
-void		MET_load_trigger(TDBB, struct jrd_rel *, TEXT *, TRIG_VEC *);
+void		MET_load_trigger(TDBB, struct jrd_rel*, const TEXT*, TRIG_VEC*);
 void		MET_lookup_cnstrt_for_index(TDBB, TEXT* constraint, const TEXT* index_name);
 void		MET_lookup_cnstrt_for_trigger(TDBB, TEXT*, TEXT*, const TEXT*);
 void		MET_lookup_exception(TDBB, SLONG, /* INOUT */ TEXT*, /* INOUT */ TEXT*);
@@ -55,7 +55,7 @@ SLONG		MET_lookup_generator(TDBB, TEXT *);
 void		MET_lookup_generator_id(TDBB, SLONG, TEXT *);
 void		MET_lookup_index(TDBB, TEXT *, TEXT *, USHORT);
 SLONG		MET_lookup_index_name(TDBB, TEXT *, SLONG *, SSHORT *);
-int			MET_lookup_partner(TDBB, struct jrd_rel*, struct idx*, const UCHAR*);
+int			MET_lookup_partner(TDBB, struct jrd_rel*, struct idx*, const TEXT*);
 struct jrd_prc*	MET_lookup_procedure(TDBB, SCHAR *, BOOLEAN);
 struct jrd_prc*	MET_lookup_procedure_id(TDBB, SSHORT, BOOLEAN, BOOLEAN, USHORT);
 struct jrd_rel*	MET_lookup_relation(TDBB, const char*);

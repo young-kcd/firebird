@@ -760,7 +760,6 @@ void INI_update_database()
  **************************************/
 	DBB dbb;
 	HDR header;
-	WIN window;
 	USHORT major_version, minor_version;
 	TDBB tdbb;
 
@@ -816,8 +815,7 @@ void INI_update_database()
 	   doing the update so that no other process can see the new minor
 	   version but not the update. */
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK(tdbb, &window);
 
@@ -1001,7 +999,7 @@ static void add_index_set(DBB		dbb,
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_flags;
 			SelectivityList selectivity(tdbb->tdbb_default);
-			IDX_create_index(tdbb, relation, &idx, (const UCHAR*) string, NULL, NULL,
+			IDX_create_index(tdbb, relation, &idx, string, NULL, NULL,
 							 selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;
 		END_STORE;

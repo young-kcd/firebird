@@ -548,3 +548,4 @@ struct log_info_page {
 #define LOG_max			8		/* Maximum LOG_clump value */
 
 #endif /* JRD_ODS_H */
+

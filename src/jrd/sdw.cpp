@@ -80,7 +80,6 @@ void SDW_add(TEXT * file_name, USHORT shadow_number, USHORT file_flags)
 	DBB dbb;
 	FIL shadow_file;
 	SDW shadow;
-	WIN window;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = GET_DBB;
@@ -105,8 +104,7 @@ void SDW_add(TEXT * file_name, USHORT shadow_number, USHORT file_flags)
 
 	if (shadow->sdw_flags & SDW_conditional)
 		shadow->sdw_flags &= ~SDW_conditional;
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	CCH_write_all_shadows(tdbb, 0, window.win_bdb,
@@ -467,12 +465,10 @@ void SDW_dump_pages(void)
 	TDBB tdbb;
 	DBB dbb;
 	SDW shadow;
-	WIN window;
 	SLONG page_number, max;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
-	window.win_flags = 0;
 	gds__log("conditional shadow dumped for database %s",
 			 dbb->dbb_file->fil_string);
 	max = PAG_last_page();
@@ -483,7 +479,7 @@ void SDW_dump_pages(void)
 
 /* none of these pages should need any alteration
    since header pages for extend files are not handled at this level */
-
+	WIN window(-1);
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
@@ -548,7 +544,6 @@ void SDW_get_shadows(void)
 	DBB dbb;
 	LCK lock;
 	HDR header;
-	WIN window;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
@@ -565,8 +560,7 @@ void SDW_get_shadows(void)
 	if (lock->lck_physical != LCK_SR) {
 		/* fb_assert (lock->lck_physical == LCK_none); */
 
-		window.win_page = HEADER_PAGE;
-		window.win_flags = 0;
+		WIN window(HEADER_PAGE);
 		header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		lock->lck_key.lck_long = header->hdr_shadow_count;
 		LCK_lock(tdbb, lock, LCK_SR, TRUE);
@@ -602,7 +596,6 @@ void SDW_init(bool activate, bool delete_, SBM sbm_rec)
 	DBB dbb;
 	LCK lock;
 	HDR header;
-	WIN window;
 	USHORT key_length;
 	TDBB tdbb;
 
@@ -627,8 +620,7 @@ void SDW_init(bool activate, bool delete_, SBM sbm_rec)
 
 /* get current shadow lock count from database header page */
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	lock->lck_key.lck_long = header->hdr_shadow_count;
@@ -711,7 +703,6 @@ void SDW_notify(void)
 	DBB dbb;
 	LCK lock;
 	HDR header;
-	WIN window;
 	JRNDA record;
 	TDBB tdbb;
 
@@ -723,8 +714,7 @@ void SDW_notify(void)
    note that since other processes need the header page to issue locks
    on the shadow count, this is effectively an uninterruptible operation */
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
@@ -947,7 +937,6 @@ void SDW_start(
 	SCHAR expanded_name[MAXPATHLEN];
 	UCHAR *p;
 	FIL dbb_file, shadow_file = 0;
-	WIN window;
 	HDR database_header, shadow_header;
 	volatile USHORT header_fetched = 0;
 	SLONG *spare_buffer = NULL, *spare_page;
@@ -1002,6 +991,9 @@ void SDW_start(
 												spare_buffer + MIN_PAGE_SIZE -
 												1) & ~((U_IPTR) MIN_PAGE_SIZE
 													   - 1)));
+
+	WIN window(-1);
+
 	try {
 
 	shadow_file =
@@ -1020,7 +1012,6 @@ void SDW_start(
 		   3. make sure that the shadow has not already been activated */
 
 		window.win_page = HEADER_PAGE;
-		window.win_flags = 0;
 		database_header =
 			(HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		header_fetched++;
@@ -1173,7 +1164,6 @@ static void activate_shadow(void)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	HDR header;
 	JRNDA record;
 	TDBB tdbb;
@@ -1188,8 +1178,7 @@ static void activate_shadow(void)
 
 /* clear the shadow bit on the header page */
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_flags &= ~hdr_active_shadow;
@@ -1310,7 +1299,7 @@ static void check_if_got_ast(FIL file)
 	lock = dbb->dbb_shadow_lock;
 	if (!lock || (file != dbb->dbb_file))
 		return;
-	while (TRUE) {
+	while (true) {
 		if (dbb->dbb_ast_flags & DBB_get_shadows)
 			break;
 		LCK_convert(tdbb, lock, LCK_SR, TRUE);
@@ -1335,7 +1324,6 @@ static void copy_header(void)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
@@ -1345,8 +1333,7 @@ static void copy_header(void)
 /* get the database header page and write it out --
    CCH will take care of modifying it */
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	if (dbb->dbb_wal)

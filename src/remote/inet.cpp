@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.93 2003-12-11 08:26:46 dimitr Exp $
+$Id: inet.cpp,v 1.94 2003-12-11 10:33:28 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -781,6 +781,7 @@ PORT INET_connect(const TEXT* name,
 		const char* svc = Config::getRemoteServiceName();
 		if (port) {
 			snprintf(temp, sizeof(temp), "%d", port);
+			temp[sizeof(temp) - 1] = 0;
 			protocol = temp;
 		}
 		else {
@@ -3630,11 +3631,11 @@ static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 	struct sigaction internal_handler, client_handler;
 #endif /* HAVE_SETITIMER */
 
-#ifdef WIN_NT
-	const char* data = buffer;
-#else
+#ifdef SINIXZ
 // Please systems with ill-defined send() function, like SINIX-Z.
 	char* data = const_cast<char*>(buffer);
+#else
+	const char* data = buffer;
 #endif
 	SSHORT length = buffer_length;
 
@@ -3677,10 +3678,10 @@ static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 		THREAD_EXIT;
 		int count = 0;
 		SSHORT n;
-#ifdef WIN_NT
-		const char* b = buffer;
-#else
+#ifdef SINIXZ
 		char* b = const_cast<char*>(buffer);
+#else
+		const char* b = buffer;
 #endif
 		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB)) == -1 &&
 				(ERRNO == ENOBUFS || INTERRUPT_ERROR(ERRNO)))

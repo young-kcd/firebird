@@ -29,6 +29,7 @@
  * to pre-process it, and nothing will happen.
  *
  * Marco Romanini (27-January-1999) */
+// CVC: This file is really pure CPP now.
 
 #include "firebird.h"
 #include <string.h>
@@ -58,7 +59,7 @@
  * subtypes to text.
  * (from_type in [0..8], to_type == BLOB_text)
  */
-static PTR filters[] = {
+static const FPTR_BFILTER_CALLBACK filters[] = {
 	filter_text,
 	filter_transliterate_text,
 	filter_blr,
@@ -71,7 +72,8 @@ static PTR filters[] = {
 };
 
 
-static ISC_STATUS open_blob(TDBB, JRD_TRA, CTL*, SLONG*, USHORT, const UCHAR*, PTR,
+static ISC_STATUS open_blob(TDBB, JRD_TRA, CTL*, SLONG*, USHORT, const UCHAR*,
+							FPTR_BFILTER_CALLBACK,
 							USHORT, BLF);
 
 ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
@@ -87,7 +89,7 @@ ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
  *
  **************************************/
 	CTL control, next;
-	PTR callback;
+	FPTR_BFILTER_CALLBACK callback;
 	ISC_STATUS status;
 	ISC_STATUS *user_status;
 
@@ -136,7 +138,7 @@ ISC_STATUS BLF_create_blob(TDBB tdbb,
 							SLONG* blob_id,
 							USHORT bpb_length,
 							const UCHAR* bpb,
-							ISC_STATUS (*callback)(),
+							FPTR_BFILTER_CALLBACK callback,
 							BLF filter)
 {
 /**************************************
@@ -152,7 +154,7 @@ ISC_STATUS BLF_create_blob(TDBB tdbb,
 
 	return open_blob(tdbb, tra_handle, filter_handle,
 					 blob_id, bpb_length, bpb,
-					 (ISC_STATUS (*)(USHORT, CTL)) callback, ACTION_create,
+					 callback, ACTION_create,
 					 filter);
 }
 
@@ -250,10 +252,10 @@ BLF BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 ISC_STATUS BLF_open_blob(TDBB tdbb,
 						JRD_TRA tra_handle,
 						CTL* filter_handle,
-						SLONG* blob_id,
+						const SLONG* blob_id,
 						USHORT bpb_length,
 						const UCHAR* bpb,
-						ISC_STATUS (*callback)(),
+						FPTR_BFILTER_CALLBACK callback,
 						BLF filter)
 {
 /**************************************
@@ -267,9 +269,13 @@ ISC_STATUS BLF_open_blob(TDBB tdbb,
  *
  **************************************/
 
+// CVC: We have a function that deals both with opening and creating blobs.
+// Therefore, throwing const away is safe because it won't be changed.
+// Someone might create some crazy filter that calls put_slice, though.
 	return open_blob(tdbb, tra_handle, filter_handle,
-					 blob_id, bpb_length, bpb,
-					 (ISC_STATUS (*)(USHORT, CTL)) callback,
+					 const_cast<SLONG*>(blob_id),
+					 bpb_length, bpb,
+					 callback,
 					 ACTION_open, filter);
 }
 
@@ -328,7 +334,7 @@ static ISC_STATUS open_blob(
 					SLONG* blob_id,
 					USHORT bpb_length,
 					const UCHAR* bpb,
-					PTR callback,
+					FPTR_BFILTER_CALLBACK callback,
 					USHORT action,
 					BLF filter)
 {
@@ -378,6 +384,8 @@ static ISC_STATUS open_blob(
 	temp.ctl_internal[0] = dbb;
 	temp.ctl_internal[1] = tra_handle;
 	temp.ctl_internal[2] = NULL;
+	// CVC: Using ISC_STATUS (SLONG) to return a pointer!!!
+	// If we change the function signature, we'll change the public API.
 	prior = (CTL) (*callback) (ACTION_alloc, &temp);
 	prior->ctl_source = callback;
 	prior->ctl_status = user_status;
@@ -404,7 +412,7 @@ static ISC_STATUS open_blob(
  * to tell the filter what character sets to translate between.
  */
 
-	if (filter->blf_filter == (PTR) filter_transliterate_text) {
+	if (filter->blf_filter == filter_transliterate_text) {
 		fb_assert(to == BLOB_text);
 		fb_assert(from == BLOB_text);
 		control->ctl_to_sub_type = to_charset;

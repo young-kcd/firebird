@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Cache Manager
- *	MODULE:		sbc_print.c
+ *	MODULE:		sbc_print.cpp
  *	DESCRIPTION:	Shared Cache printer
  *
  * The contents of this file are subject to the Interbase Public
@@ -756,7 +756,7 @@ static void print_process( PRB process)
 
 	ib_printf("\tLogical Writes: %d\n", process->prb_logical_writes);
 
-	ib_printf("\tWAL ib_puts: %d\n", process->prb_ail_puts);
+	ib_printf("\tWAL puts: %d\n", process->prb_ail_puts);
 
 	ib_printf("\n");
 }
@@ -871,3 +871,4 @@ static void print_sccb(void)
 
 	ib_printf("\tflags: %d\n\n", sccb->sccb_flags);
 }
+

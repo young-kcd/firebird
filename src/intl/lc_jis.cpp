@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_jis.c
+ *	MODULE:		lc_jis.cpp
  *	DESCRIPTION:	Language Drivers in the JIS family.
  *
  * The contents of this file are subject to the Interbase Public
@@ -157,3 +157,4 @@ static USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch)
 		return (ch - (UCS2_CHAR) ASCII_UPPER_A + (UCS2_CHAR) ASCII_LOWER_A);
 	return ch;
 }
+

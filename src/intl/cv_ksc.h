@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cv_ksc.c
+ *	MODULE:		cv_ksc.h
  *	DESCRIPTION:	Codeset conversion for KSC-5601 codesets
  *
  * The contents of this file are subject to the Interbase Public
@@ -27,7 +27,7 @@
 *	KSC-5601 to EUC is not needed.
 */
 
-/* These macros have a duplicate in lc_ksc.c */
+/* These macros have a duplicate in lc_ksc.cpp */
 #define	KSC1(uc)	((uc) & 0x80)
 #define	KSC2(uc)	((uc) >= 0x41)
 
@@ -48,4 +48,5 @@ USHORT CVKSC_check_ksc(UCHAR *ksc_str, USHORT ksc_len);
 USHORT CVKSC_ksc_byte2short(CSCONVERT obj, USHORT *dst, USHORT dst_len, UCHAR *src, USHORT src_len
 							, SSHORT *err_code,	USHORT *err_position);
 
-short CVKSC_ksc_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len);
+short CVKSC_ksc_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
+

@@ -481,10 +481,7 @@ void DPM_create_relation( TDBB tdbb, JRD_REL relation)
  *
  **************************************/
 	DBB dbb;
-	WIN window, root_window;
-	PPG page;
 	VCL vector;
-	IRT root;
 	HDR header;
 	JRNDA record;
 
@@ -498,8 +495,8 @@ void DPM_create_relation( TDBB tdbb, JRD_REL relation)
 #endif
 
 /* Allocate first pointer page */
-
-	page = (PPG) DPM_allocate(tdbb, &window);
+	WIN window(-1);
+	ppg* page = (PPG) DPM_allocate(tdbb, &window);
 	page->ppg_header.pag_type = pag_pointer;
 	page->ppg_relation = relation->rel_id;
 	page->ppg_header.pag_flags = ppg_eof;
@@ -508,8 +505,7 @@ void DPM_create_relation( TDBB tdbb, JRD_REL relation)
 /* If this is relation 0 (RDB$PAGES), update the header */
 
 	if (relation->rel_id == 0) {
-		root_window.win_page = HEADER_PAGE;
-		root_window.win_flags = 0;
+		WIN root_window(HEADER_PAGE);
 		header = (HDR) CCH_FETCH(tdbb, &root_window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &root_window);
 		header->hdr_PAGES = window.win_page;
@@ -528,9 +524,11 @@ void DPM_create_relation( TDBB tdbb, JRD_REL relation)
 	relation->rel_pages = vector = vcl::newVector(*dbb->dbb_permanent, 1);
 	(*vector)[0] = window.win_page;
 
+	// CVC: AFAIK, DPM_allocate calls PAG_allocate and neither of them cares about win_page.
+	// Therefore, I decided that the root_window in the if() above and this one aren't related.
 /* Create an index root page */
-
-	root = (IRT) DPM_allocate(tdbb, &root_window);
+	WIN root_window(-1);
+	irt* root = (IRT) DPM_allocate(tdbb, &root_window);
 	root->irt_header.pag_type = pag_root;
 	root->irt_relation = relation->rel_id;
 /*root->irt_count = 0;*/
@@ -561,7 +559,6 @@ SLONG DPM_data_pages(TDBB tdbb, JRD_REL relation)
  *
  **************************************/
 	USHORT sequence;
-	WIN window;
 	PPG ppage;
 	SLONG *page, *end_page, pages;
 
@@ -573,7 +570,7 @@ SLONG DPM_data_pages(TDBB tdbb, JRD_REL relation)
 #endif
 
 	if (!(pages = relation->rel_data_pages)) {
-		window.win_flags = 0;
+		WIN window(-1);
 		for (sequence = 0;; sequence++) {
 			if (!
 				(ppage =
@@ -621,7 +618,6 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
  *
  **************************************/
 	DBB dbb;
-	WIN *window, pwindow;
 	DPG page;
 	PPG ppage;
 	UCHAR flags;
@@ -649,7 +645,7 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 			 rpb->rpb_f_line, rpb->rpb_flags);
 #endif
 
-	window = &rpb->rpb_window;
+	WIN* window = &rpb->rpb_window;
 	page = (DPG) window->win_buffer;
 	sequence = page->dpg_sequence;
 	index = &page->dpg_rpt[rpb->rpb_line];
@@ -725,7 +721,7 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
   retry_after_latch_timeout:
-	pwindow.win_flags = 0;
+	WIN pwindow(-1);
 	if (!
 		(ppage =
 		 get_pointer_page(tdbb, rpb->rpb_relation, &pwindow, pp_sequence,
@@ -818,7 +814,6 @@ void DPM_delete_relation( TDBB tdbb, JRD_REL relation)
  **************************************/
 	DBB dbb;
 	USHORT sequence, i;
-	WIN window, data_window;
 	DPG dpage;
 	PPG ppage;
 	BLK handle;
@@ -829,6 +824,7 @@ void DPM_delete_relation( TDBB tdbb, JRD_REL relation)
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
+	WIN window(-1), data_window(-1);
 	window.win_flags = data_window.win_flags = WIN_large_scan;
 	window.win_scans = data_window.win_scans = 1;
 
@@ -839,7 +835,7 @@ void DPM_delete_relation( TDBB tdbb, JRD_REL relation)
 
 /* Delete all data and pointer pages */
 
-	for (sequence = 0; TRUE; sequence++)
+	for (sequence = 0; true; sequence++)
 	{
 		ppage = get_pointer_page(tdbb, relation, &window, sequence, LCK_read);
 		if (!ppage)
@@ -1109,7 +1105,6 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
  **************************************/
 	DBB dbb;
 	GPG page;
-	WIN window;
 	VCL vector;
 	USHORT sequence, offset;
 	SINT64 value, *ptr;
@@ -1129,11 +1124,14 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
 	sequence = generator / dbb->dbb_pcontrol->pgc_gpg;
 	offset = generator % dbb->dbb_pcontrol->pgc_gpg;
 
+	WIN window(-1);
 	if (!(vector = dbb->dbb_gen_id_pages) ||
-		(sequence >= vector->count()) || !((*vector)[sequence])) {
+		(sequence >= vector->count()) || !((*vector)[sequence]))
+	{
 		DPM_scan_pages(tdbb);
 		if (!(vector = dbb->dbb_gen_id_pages) ||
-			(sequence >= vector->count()) || !((*vector)[sequence])) {
+			(sequence >= vector->count()) || !((*vector)[sequence]))
+		{
 			page = (GPG) DPM_allocate(tdbb, &window);
 			page->gpg_header.pag_type = pag_ids;
 			page->gpg_sequence = sequence;
@@ -1232,15 +1230,8 @@ int DPM_get( TDBB tdbb, RPB * rpb, SSHORT lock_type)
  *	just return false.
  *
  **************************************/
-	DBB dbb;
-	SLONG sequence, page_number;
-	USHORT pp_sequence;
-	WIN *window;
-	PPG page;
-	SSHORT slot, line;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1249,11 +1240,13 @@ int DPM_get( TDBB tdbb, RPB * rpb, SSHORT lock_type)
 				  lock_type);
 #endif
 
-	window = &rpb->rpb_window;
+	WIN* window = &rpb->rpb_window;
 	rpb->rpb_prior = NULL;
 
 /* Find starting point */
-
+	SLONG sequence;
+	USHORT pp_sequence;
+	SSHORT slot, line;
 	DECOMPOSE(rpb->rpb_number, dbb->dbb_max_records, sequence, line);
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
@@ -1263,22 +1256,25 @@ int DPM_get( TDBB tdbb, RPB * rpb, SSHORT lock_type)
 		return FALSE;
 
 /* Find the next pointer page, data page, and record */
-
-	if (!
-		(page =
-		 get_pointer_page(tdbb, rpb->rpb_relation, window, pp_sequence,
-						  LCK_read))) return FALSE;
+	ppg* page = get_pointer_page(tdbb, rpb->rpb_relation, window, pp_sequence,
+						  LCK_read);
+	if (!page) {
+		return FALSE;
+	}
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS_INFO)
 		ib_printf("    record  %"SLONGFORMAT":%d\n", page->ppg_page[slot], line);
 #endif
 
-	if ( (page_number = page->ppg_page[slot]) ) {
+	const SLONG page_number = page->ppg_page[slot];
+	if (page_number) {
 		CCH_HANDOFF(tdbb, window, page_number, lock_type, pag_data);
 		if (get_header(window, line, rpb) &&
 			!(rpb->rpb_flags & (rpb_blob | rpb_chained | rpb_fragment)))
+		{
 			return TRUE;
+		}
 	}
 
 	CCH_RELEASE(tdbb, window);
@@ -1462,7 +1458,6 @@ BOOLEAN DPM_next(TDBB tdbb,
 	DBB dbb;
 	SLONG sequence, page_number;
 	USHORT pp_sequence;
-	WIN *window;
 	PPG ppage;
 	DPG dpage;
 	SSHORT slot, line, flags;
@@ -1477,7 +1472,7 @@ BOOLEAN DPM_next(TDBB tdbb,
 		ib_printf("DPM_next (rpb %"SLONGFORMAT")\n", rpb->rpb_number);
 #endif
 
-	window = &rpb->rpb_window;
+	WIN* window = &rpb->rpb_window;
 	if (window->win_flags & WIN_large_scan) {
 		/* Try to account for staggered execution of large sequential scans. */
 
@@ -1529,7 +1524,7 @@ BOOLEAN DPM_next(TDBB tdbb,
 
 /* Find the next pointer page, data page, and record */
 
-	while (TRUE) {
+	while (true) {
 		if (!
 			(ppage =
 			 get_pointer_page(tdbb, rpb->rpb_relation, window, pp_sequence,
@@ -1701,7 +1696,6 @@ SLONG DPM_prefetch_bitmap(TDBB tdbb, JRD_REL relation, SBM bitmap, SLONG number)
 	SLONG dp_sequence, prefetch_number;
 	USHORT pp_sequence, i;
 	SSHORT line, slot;
-	WIN window;
 	PPG ppage;
 	SLONG pages[PREFETCH_MAX_PAGES];
 
@@ -1713,7 +1707,7 @@ SLONG DPM_prefetch_bitmap(TDBB tdbb, JRD_REL relation, SBM bitmap, SLONG number)
 		return number;
 
 	dbb = tdbb->tdbb_database;
-	window.win_flags = 0;
+	WIN window(-1);
 
 	for (i = 0; i < dbb->dbb_prefetch_pages;) {
 		DECOMPOSE(number, dbb->dbb_max_records, dp_sequence, line);
@@ -1756,7 +1750,6 @@ void DPM_scan_pages( TDBB tdbb)
 	BLK request;
 	JRD_REL relation;
 	VCL *address, vector;
-	WIN window;
 	PPG ppage;
 	int sequence;
 
@@ -1776,8 +1769,7 @@ void DPM_scan_pages( TDBB tdbb)
 	address = &relation->rel_pages;
 	vector = *address;
 	sequence = vector->count() - 1;
-	window.win_page = (*vector)[sequence];
-	window.win_flags = 0;
+	WIN window((*vector)[sequence]);
 	ppage = (PPG) CCH_FETCH(tdbb, &window, LCK_read, pag_pointer);
 
 	while (ppage->ppg_next) {
@@ -2033,7 +2025,6 @@ void DPM_rewrite_header( TDBB tdbb, RPB * rpb)
  **************************************/
 	DBB dbb;
 	RHD header;
-	WIN *window;
 	DPG page;
 
 	SET_TDBB(tdbb);
@@ -2047,7 +2038,7 @@ void DPM_rewrite_header( TDBB tdbb, RPB * rpb)
 		ib_printf("    record  %"SLONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
 #endif
 
-	window = &rpb->rpb_window;
+	WIN* window = &rpb->rpb_window;
 	page = (DPG) window->win_buffer;
 	header = (RHD) ((SCHAR *) page + page->dpg_rpt[rpb->rpb_line].dpg_offset);
 
@@ -2214,7 +2205,6 @@ static void delete_tail( TDBB tdbb, RHDF header, USHORT length)
  **************************************/
 	BLH blob;
 	USHORT flags;
-	WIN window;
 	DPG dpage;
 	BLP bpage;
 	SLONG page_number, *page1, *end1, *page2, *end2;
@@ -2232,6 +2222,7 @@ static void delete_tail( TDBB tdbb, RHDF header, USHORT length)
 				  header->rhdf_b_page, header->rhdf_b_line);
 #endif
 
+	WIN window(-1);
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
@@ -2239,7 +2230,7 @@ static void delete_tail( TDBB tdbb, RHDF header, USHORT length)
 
 	if (!(header->rhdf_flags & rhd_blob)) {
 		page_number = header->rhdf_f_page;
-		while (TRUE) {
+		while (true) {
 			window.win_page = page_number;
 			dpage = (DPG) CCH_FETCH(tdbb, &window, LCK_read, pag_data);
 			header = (RHDF) ((UCHAR *) dpage + dpage->dpg_rpt[0].dpg_offset);
@@ -2338,7 +2329,6 @@ static void fragment(
  **************************************/
 	DBB dbb;
 	DPG page;
-	WIN *window;
 	RPB tail_rpb;
 	SSHORT line, space;
 	USHORT pre_header_length, post_header_length;
@@ -2374,7 +2364,7 @@ static void fragment(
    that others may reconstruct it during fragmentation of the
    new version. */
 
-	window = &rpb->rpb_window;
+	WIN* window = &rpb->rpb_window;
 	page = (DPG) window->win_buffer;
 	line = rpb->rpb_line;
 
@@ -2515,7 +2505,6 @@ static void extend_relation( TDBB tdbb, JRD_REL relation, WIN * window)
 	DBB dbb;
 	SLONG *slots;
 	USHORT pp_sequence, slot;
-	WIN pp_window, new_pp_window;
 	UCHAR *bits;
 	PPG ppage;
 	DPG dpage;
@@ -2524,7 +2513,7 @@ static void extend_relation( TDBB tdbb, JRD_REL relation, WIN * window)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
-	pp_window.win_flags = new_pp_window.win_flags = 0;
+	WIN pp_window(-1), new_pp_window(-1);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
@@ -2917,7 +2906,6 @@ static RHD locate_space(
  *
  **************************************/
 	DBB dbb;
-	WIN *window;
 	JRD_REL relation;
 	PPG ppage;
 	USHORT pp_sequence, slot, i;
@@ -2929,7 +2917,7 @@ static RHD locate_space(
 	CHECK_DBB(dbb);
 
 	relation = rpb->rpb_relation;
-	window = &rpb->rpb_window;
+	WIN* window = &rpb->rpb_window;
 
 /* If there is a preferred page, try there first */
 
@@ -3017,7 +3005,6 @@ static void mark_full( TDBB tdbb, RPB * rpb)
  *
  **************************************/
 	DBB dbb;
-	WIN pp_window;
 	DPG dpage;
 	PPG ppage;
 	UCHAR *byte, bit, flags;
@@ -3028,7 +3015,7 @@ static void mark_full( TDBB tdbb, RPB * rpb)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
-	pp_window.win_flags = 0;
+	WIN pp_window(-1);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -3305,3 +3292,4 @@ static void store_big_record(
 	else
 		CCH_RELEASE(tdbb, &rpb->rpb_window);
 }
+

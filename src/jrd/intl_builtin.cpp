@@ -60,7 +60,7 @@ static const Tab tab[] = {
 	{ 0, 0, 0, 0, 0 } 				/* end of table    */
 };
 
-static fss_size_t fss_mbtowc(fss_wchar_t * p, UCHAR * s, fss_size_t n)
+static fss_size_t fss_mbtowc(fss_wchar_t* p, const UCHAR* s, fss_size_t n)
 {
 	SLONG l;
 	int c0, c, nc;
@@ -121,8 +121,8 @@ static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
 	return -1;
 }
 
-static SSHORT internal_fss_mbtowc(TEXTTYPE * obj,
-						   UCS2_CHAR * wc, NCHAR * p, USHORT n)
+static SSHORT internal_fss_mbtowc(TEXTTYPE* obj,
+						   UCS2_CHAR* wc, const NCHAR* p, USHORT n)
 {
 /**************************************
  *
@@ -408,7 +408,7 @@ static USHORT internal_ch_to_lower(TEXTTYPE obj, UCHAR ch)
 }
 
 SSHORT INTL_builtin_nc_mbtowc(TEXTTYPE obj,
-							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count)
+							  UCS2_CHAR* wc, const UCHAR* ptr, USHORT count)
 {
 /**************************************
  *
@@ -439,7 +439,7 @@ SSHORT INTL_builtin_nc_mbtowc(TEXTTYPE obj,
 }
 
 SSHORT INTL_builtin_mb_mbtowc(TEXTTYPE obj,
-							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count)
+							  UCS2_CHAR* wc, const UCHAR* ptr, USHORT count)
 {
 /**************************************
  *
@@ -471,7 +471,7 @@ SSHORT INTL_builtin_mb_mbtowc(TEXTTYPE obj,
 
 
 SSHORT INTL_builtin_wc_mbtowc(TEXTTYPE obj,
-							  UCS2_CHAR * wc, UCHAR * ptr, USHORT count)
+							  UCS2_CHAR* wc, const UCHAR* ptr, USHORT count)
 {
 /**************************************
  *

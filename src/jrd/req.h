@@ -38,6 +38,7 @@
 /* record parameter block */
 
 typedef struct rpb {
+	rpb() : rpb_window(-1) {}
 	SLONG rpb_number;			/* record number in relation */
 	SLONG rpb_transaction;		/* transaction number */
 	struct jrd_rel *rpb_relation;	/* relation of record */

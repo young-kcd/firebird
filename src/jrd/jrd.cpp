@@ -2507,9 +2507,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
    process can attach to this database once we release our exclusive
    lock and start dropping files. */
 
-   	WIN window;
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+   	WIN window(HEADER_PAGE);
 	hdr* header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_ods_version = 0;

@@ -107,7 +107,7 @@ void main( int argc, char **argv)
 					  NULL, NULL,	/* AST and argument */
 					  0, wait, status_vector, lck_owner_handle);
 
-	while (TRUE) {
+	while (true) {
 		ib_printf("Request: ");
 		status = ib_scanf("%s%s", op, arg);
 		if (status == EOF)

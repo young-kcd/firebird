@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.14 2003-11-11 12:13:37 brodsom Exp $
+ *  $Id: nbak.cpp,v 1.15 2003-12-11 10:33:25 robocop Exp $
  *
  */
 
@@ -521,9 +521,7 @@ void BackupManager::begin_backup() {
 	TDBB tdbb = GET_THREAD_DATA;
 
 	// Lock header page first to prevent possible deadlock
-	WIN window;
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	HDR header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true;
 	try {
@@ -621,9 +619,7 @@ void BackupManager::end_backup(bool recover) {
 						// that times.
 
 	// Lock header page first to prevent possible deadlock
-	WIN window;
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	HDR header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true;
 
@@ -698,15 +694,15 @@ void BackupManager::end_backup(bool recover) {
 		
 		tdbb->tdbb_flags |= TDBB_set_backup_state | TDBB_backup_merge;
 		
-		if (all.getFirst()) do {
-			WIN window;
-			window.win_page = all.current().db_page;
-			window.win_flags = 0;
-			PAG page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
-			if (page->pag_scn() != current_scn)
-				CCH_MARK(tdbb, &window);
-			CCH_RELEASE(tdbb, &window);
-		} while(all.getNext());
+		if (all.getFirst()) {
+			do {
+				WIN window(all.current().db_page);
+				PAG page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
+				if (page->pag_scn() != current_scn)
+					CCH_MARK(tdbb, &window);
+				CCH_RELEASE(tdbb, &window);
+			} while(all.getNext());
+		}
 		CCH_flush(tdbb, FLUSH_ALL, 0); // Really write changes to main database file
 		
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
@@ -1024,10 +1020,8 @@ void BackupManager::set_difference(const char* filename) {
 	TDBB tdbb = GET_THREAD_DATA;
 	
 	if (filename) {
-		WIN window;
 		HDR header;
-		window.win_page = HEADER_PAGE;
-		window.win_flags = 0;
+		WIN window(HEADER_PAGE);
 		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		PAG_replace_entry_first(header, HDR_difference_file, 

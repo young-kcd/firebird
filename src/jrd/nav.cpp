@@ -486,9 +486,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 	}
 
 	// find the last fetched position from the index
-	WIN window;
-	window.win_page = impure->irsb_nav_page;
-	window.win_flags = 0;
+	WIN window(impure->irsb_nav_page);
 
 	KEY key;
 	BTX expanded_next = NULL;

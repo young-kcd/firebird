@@ -54,8 +54,8 @@ bool is_valid_server(ISC_STATUS* status, const TEXT* server);
 FRBRD *open_security_db(ISC_STATUS*, const TEXT*, const TEXT*, int, const TEXT*);
 void get_security_error(ISC_STATUS*, int);
 
-SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
-										 SCHAR ** result_buffer,
+SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
+										 SCHAR** result_buffer,
 										 USHORT count, ...)
 {
 /**************************************
@@ -72,10 +72,6 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
  *	Return 0 if any error occurs.
  *
  **************************************/
-	SCHAR *p, *q;
-	SCHAR *end;
-	SLONG length;
-	USHORT i;
 	va_list ptr;
 
 	VA_START(ptr, count);
@@ -84,14 +80,14 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
    setting initial length to include version
    and counts for each argument */
 
-	length = 1;
-	i = count;
+	SLONG length = 1;
+	USHORT i = count;
 	while (i--) {
-		q = va_arg(ptr, SCHAR *);
+		const char* q = va_arg(ptr, SCHAR *);
 		length += strlen(q) + 5;
 	}
 
-	p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
+	char* p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
 /* FREE: apparently never freed */
 	if (!*event_buffer)			/* NOMEM: */
 		return 0;
@@ -117,10 +113,10 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
 
 	i = count;
 	while (i--) {
-		q = va_arg(ptr, SCHAR *);
+		const char* q = va_arg(ptr, SCHAR *);
 
 		/* Strip the blanks from the ends */
-
+		const char* end;
 		for (end = q + strlen(q); --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
@@ -135,9 +131,9 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
 }
 
 
-USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
-									 SCHAR ** result_buffer,
-									 USHORT count, TEXT ** name_buffer)
+USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
+									 SCHAR** result_buffer,
+									 USHORT count, TEXT** name_buffer)
 {
 /**************************************
  *
@@ -153,31 +149,26 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
  *
  **************************************/
 #define 	MAX_NAME_LENGTH		31
-	SCHAR *p, *q;
-	SCHAR *end;
-	TEXT **nb;
-	SLONG length;
-	USHORT i;
 
 /* calculate length of event parameter block, 
    setting initial length to include version
    and counts for each argument */
 
-	i = count;
-	nb = name_buffer;
-	length = 0;
+	USHORT i = count;
+	TEXT** nb = name_buffer;
+	SLONG length = 0;
 	while (i--) {
-		q = *nb++;
+		const TEXT* const q = *nb++;
 
 		/* Strip trailing blanks from string */
-
+		const char* end;
 		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
 		length += end - q + 1 + 5;
 	}
 
 
 	i = count;
-	p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
+	char* p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
 /* FREE: apparently never freed */
 	if (!(*event_buffer))		/* NOMEM: */
 		return 0;
@@ -200,10 +191,10 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
 	nb = name_buffer;
 
 	while (i--) {
-		q = *nb++;
+		const TEXT* q = *nb++;
 
 		/* Strip trailing blanks from string */
-
+		const char* end;
 		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
@@ -219,10 +210,10 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
 
 
 void API_ROUTINE isc_event_block_s(
-								   SCHAR ** event_buffer,
-								   SCHAR ** result_buffer,
+								   SCHAR** event_buffer,
+								   SCHAR** result_buffer,
 								   USHORT count,
-TEXT ** name_buffer, USHORT * return_count)
+	TEXT** name_buffer, USHORT* return_count)
 {
 /**************************************
  *
@@ -242,21 +233,19 @@ TEXT ** name_buffer, USHORT * return_count)
 
 
 ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
-												 ISC_STATUS * status_vector,
-												 FRBRD **tra_handle,
+												 ISC_STATUS* status_vector,
+												 FRBRD** tra_handle,
 												 SSHORT count, ...)
 {
-
+// This infamous structure is defined several times in different places/
 struct teb_t {
-	FRBRD **teb_database;
+	FRBRD** teb_database;
 	int teb_tpb_length;
-	UCHAR *teb_tpb;
+	UCHAR* teb_tpb;
 };
 
 	teb_t tebs[16];
 	teb_t* teb;
-	teb_t* end;
-	ISC_STATUS status;
 	va_list ptr;
 
 	if (count <= FB_NELEM(tebs))
@@ -272,18 +261,16 @@ struct teb_t {
 		return status_vector[1];
 	}
 
-	end = teb + count;
+	const teb_t* const end = teb + count;
 	VA_START(ptr, count);
 
-	for (; teb < end; teb++) {
-		teb->teb_database = va_arg(ptr, FRBRD **);
-		teb->teb_tpb_length = va_arg(ptr, int);
-		teb->teb_tpb = va_arg(ptr, UCHAR *);
+	for (teb_t* teb_iter = teb; teb_iter < end; ++teb_iter) {
+		teb_iter->teb_database = va_arg(ptr, FRBRD **);
+		teb_iter->teb_tpb_length = va_arg(ptr, int);
+		teb_iter->teb_tpb = va_arg(ptr, UCHAR *);
 	}
 
-	teb = end - count;
-
-	status = isc_start_multiple(status_vector, tra_handle, count, teb);
+	const ISC_STATUS status = isc_start_multiple(status_vector, tra_handle, count, teb);
 
 	if (teb != tebs)
 		gds__free(teb);

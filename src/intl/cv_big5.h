@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cv_big5.c
+ *	MODULE:		cv_big5.h
  *	DESCRIPTION:	Codeset conversion for BIG5 family codesets
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,7 +23,7 @@
 
 #include "../intl/ldcommon.h"
 
-/* These macros have a duplicate in lc_big5.c */
+/* These macros have a duplicate in lc_big5.cpp */
 #define	BIG51(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
 			 (UCHAR)((uc)&0xff)<=0xfe)	/* BIG-5 1st-byte */
 #define	BIG52(uc)	((UCHAR)((uc)&0xff)>=0x40 && \
@@ -38,5 +38,5 @@ USHORT CVBIG5_check_big5(UCHAR *big5_str, USHORT big5_len);
 USHORT CVBIG5_big5_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len
 							, SSHORT *err_code, USHORT *err_position);
 
-SSHORT CVBIG5_big5_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len);
+SSHORT CVBIG5_big5_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
 

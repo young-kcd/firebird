@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_dos.c
+ *	MODULE:		lc_dos.cpp
  *	DESCRIPTION:	Language Drivers for compatibility with DOS products.
  *
  * The contents of this file are subject to the Interbase Public
@@ -648,7 +648,7 @@ USHORT fam1_to_lower(TEXTTYPE obj, BYTE ch)
 }
 
 
-SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR *wc, UCHAR *ptr, USHORT count)
+SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* ptr, USHORT count)
 {
 /**************************************
  *
@@ -688,3 +688,4 @@ SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR *wc, UCHAR *ptr, USHORT count)
 
 #undef LOCALE_UPPER
 #undef LOCALE_LOWER
+

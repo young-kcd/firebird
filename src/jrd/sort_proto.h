@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		sort_proto.h
- *	DESCRIPTION:	Prototype header file for sort.c
+ *	DESCRIPTION:	Prototype header file for sort.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -37,8 +37,8 @@ ULONG	SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 
 void	SORT_error(ISC_STATUS *, struct sfb *, TEXT *, ISC_STATUS, int);
 void	SORT_fini(struct scb *, struct att *);
-struct scb*	SORT_init(ISC_STATUS *, USHORT, USHORT, struct skd *,
-							 BOOLEAN(*)(), void *, struct att *, UINT64);
+struct scb*	SORT_init(ISC_STATUS*, USHORT, USHORT, const struct skd*,
+						FPTR_REJECT_DUP_CALLBACK, void*, struct att*, UINT64);
 void	SORT_put(ISC_STATUS *, struct scb *, ULONG **);
 void	SORT_shutdown(struct att *);
 bool	SORT_sort(ISC_STATUS *, struct scb *);
@@ -46,3 +46,4 @@ ULONG	SORT_write_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 							  ULONG);
 
 #endif // JRD_SORT_PROTO_H
+

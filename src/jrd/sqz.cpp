@@ -103,7 +103,7 @@ USHORT SQZ_compress(DCC dcc, const SCHAR* input, SCHAR* output, int space)
 
 	const SCHAR* start = input;
 
-	while (TRUE)
+	while (true)
 	{
 		control = dcc->dcc_string;
 		while (control < dcc->dcc_end)
@@ -169,7 +169,7 @@ USHORT SQZ_compress_length(DCC dcc, SCHAR* input, int space)
 
 	start = input;
 
-	while (TRUE) {
+	while (true) {
 		control = dcc->dcc_string;
 		while (control < dcc->dcc_end)
 			if (--space <= 0)
@@ -390,7 +390,7 @@ void SQZ_fast(DCC dcc, SCHAR* input, SCHAR* output)
 	SCHAR *control;
 	SSHORT length;
 
-	while (TRUE)
+	while (true)
 	{
 		control = dcc->dcc_string;
 		while (control < dcc->dcc_end)

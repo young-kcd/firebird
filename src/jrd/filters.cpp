@@ -745,8 +745,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 			*(aux->ctlaux_subfilter) = *control;
 
 			control->ctl_source_handle = aux->ctlaux_subfilter;
-			control->ctl_source =
-				reinterpret_cast < ISC_STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
+			control->ctl_source = filter_transliterate_text;
 			source = control->ctl_source_handle;
 
 			if (action == ACTION_open) {
@@ -1109,9 +1108,7 @@ static ISC_STATUS caller(
 	source->ctl_buffer = buffer;
 	source->ctl_buffer_length = buffer_length;
 
-	status =
-		reinterpret_cast < ISC_STATUS(*)(...) > (*source->ctl_source) (action,
-																   source);
+	status = (*source->ctl_source) (action, source);
 
 	if (return_length)
 		*return_length = source->ctl_segment_length;

@@ -297,3 +297,4 @@ static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *
 #undef		KSC2
 #undef		GEN_HAN
 #undef		SPE_HAN
+

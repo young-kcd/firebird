@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_unicode_ucs2.c
+ *	MODULE:		lc_unicode_ucs2.cpp
  *	DESCRIPTION:	Language Drivers in the Unicode family.
  *
  * The contents of this file are subject to the Interbase Public
@@ -27,7 +27,7 @@
 #include "cv_unicode_fss.h"
 #include "ld_proto.h"
 
-static SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
+static SSHORT wc_mbtowc(TEXTTYPE* obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n);
 
 static inline void FAMILY_UNICODE_WIDE_BIN(TEXTTYPE cache,
 										   TTYPE_ID id_number,
@@ -109,7 +109,7 @@ TEXTTYPE_ENTRY(UNI201_init)
 }
 
 
-static SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
+static SSHORT wc_mbtowc(TEXTTYPE* obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n)
 {
 	fb_assert(obj);
 	fb_assert(wc);
@@ -120,3 +120,4 @@ static SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 	*wc = *(UCS2_CHAR *) p;
 	return sizeof(UCS2_CHAR);
 }
+

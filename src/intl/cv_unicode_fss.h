@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cs_utffss.c
+ *	MODULE:		cv_unicode_fss.h
  *	DESCRIPTION:	Character set definition for Unicode FSS format
  *
  * The contents of this file are subject to the Interbase Public
@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
- /* Note: all routines have cousins in jrd/intl.c */
+ /* Note: all routines have cousins in jrd/intl.cpp */
 
 USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_len, NCHAR *src_ptr
 								, USHORT src_len, SSHORT *err_code, USHORT *err_position);
@@ -29,7 +29,7 @@ USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_le
 USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, UNICODE *unicode_str,
 								USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
-SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
+SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE* obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n);
 
 struct Tab {
 	int cmask;
@@ -48,3 +48,4 @@ static const Tab tab[] = {
 	{ 0xFE, 0xFC, 5 * 6, 0x7FFFFFFF, 0x4000000 },	/* 6 byte sequence */
 	{ 0, 0, 0, 0, 0}						/* end of table    */
 };
+

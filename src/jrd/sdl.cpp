@@ -314,7 +314,7 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 
 int	SDL_walk(ISC_STATUS* status_vector,
 		const UCHAR* sdl,
-		USHORT mode,
+		bool mode,
 		UCHAR* array,
 		ADS array_desc,
 		SLONG* variables,
@@ -335,7 +335,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 	USHORT n, offset;
 	struct sdl_arg arg;
 
-	arg.sdl_arg_mode = mode;
+	arg.sdl_arg_mode = mode ? TRUE: FALSE;
 	arg.sdl_arg_array = array;
 	arg.sdl_arg_sdl = sdl;
 	arg.sdl_arg_desc = array_desc;

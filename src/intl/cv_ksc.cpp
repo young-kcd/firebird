@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cv_ksc.c
+ *	MODULE:		cv_ksc.cpp
  *	DESCRIPTION:	Codeset conversion for KSC-5601 codesets
  *
  * The contents of this file are subject to the Interbase Public
@@ -265,8 +265,8 @@ USHORT CVKSC_ksc_byte2short(CSCONVERT obj,
 
 
 short CVKSC_ksc_mbtowc(CSCONVERT obj,
-					   UCS2_CHAR *wc,
-					   UCHAR *src, 
+					   UCS2_CHAR* wc,
+					   const UCHAR* src,
 					   USHORT src_len)
 {
 	fb_assert(src != NULL);
@@ -292,3 +292,4 @@ short CVKSC_ksc_mbtowc(CSCONVERT obj,
 		return 1;
 	}
 }
+

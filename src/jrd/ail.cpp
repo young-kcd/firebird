@@ -99,7 +99,6 @@ void AIL_add_log()
  *	WAL is being enabled. 
  *
  **************************************/
-	WIN window;
 	SCHAR db_name[MAXPATHLEN];
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -111,8 +110,7 @@ void AIL_add_log()
  */
 
 	CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
+	WIN window(LOG_PAGE);
 	log_info_page* logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
@@ -151,7 +149,6 @@ void AIL_checkpoint_finish(
  *	and updating the control point on the database log page.
  *
  **************************************/
-	WIN window;
 	TDBB tdbb = GET_THREAD_DATA;
 
 	PIO_flush(dbb->dbb_file);
@@ -161,8 +158,7 @@ void AIL_checkpoint_finish(
 
 	AIL_upd_cntrl_pt(walname, (USHORT) strlen(walname), seq, off, p_off);
 
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
+	WIN window(LOG_PAGE);
 	pag* log_page = CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK(tdbb, &window);
 	log_page->pag_checksum = CCH_checksum(window.win_bdb);
@@ -373,9 +369,7 @@ void AIL_drop_log()
 
 /* Fetch the log page to reset WAL info on it */
 
-	WIN window;
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
+	WIN window(LOG_PAGE);
 	log_info_page* logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	AIL_init_log_page(logp, logp->log_file.cp_seqno);
@@ -408,9 +402,7 @@ void AIL_drop_log_force()
 	CCH_exclusive(tdbb, LCK_PW, LCK_WAIT);
 
 /* Fetch the log page to reset WAL info on it */
-	WIN window;
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
+	WIN window(LOG_PAGE);
 	log_info_page* logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 
 	if (logp->log_flags & log_no_ail) {	/* WAL already disabled */
@@ -651,7 +643,7 @@ void AIL_get_file_list(LLS * stack)
 		return;
 	}
 
-	while (TRUE) {
+	while (true) {
 		if (!(log_flags & WALFH_RAW)) {
 			fname_term_length = strlen(curr_name) + 1;
 			fname = FB_NEW_RPT(*dbb->dbb_permanent, fname_term_length) str();
@@ -693,7 +685,6 @@ void AIL_init(
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	WIN *win, window;
 	log_info_page* logp;
 	TEXT dbname[MAXPATHLEN];
 
@@ -720,14 +711,14 @@ void AIL_init(
  * some checks.
  */
 
+	WIN window(LOG_PAGE);
+	WIN* win;
 	if (in_win) {
 		win = in_win;
 		win->win_flags = 0;
 		logp = (log_info_page*) win->win_buffer;
 	}
 	else {
-		window.win_page = LOG_PAGE;
-		window.win_flags = 0;
 		logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 		win = &window;
 	}
@@ -848,14 +839,12 @@ void AIL_journal_tid()
  *	Journal the next transaction id on the header page.
  *	This will be used at WAL_init and control point time.
  **************************************/
-	WIN window;
 	JRNDH journal;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	HDR hdr = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
@@ -992,7 +981,6 @@ void AIL_recover_page(SLONG page_no, pag* page)
  *	recovers a single page from the second last control point.
  *	assumes that the 'corrupt' page is not in the cache.
  **************************************/
-	WIN window;
 	SCHAR rwal[MAXPATHLEN];
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -1004,8 +992,7 @@ void AIL_recover_page(SLONG page_no, pag* page)
 	SLONG seqno, offset;
 	WAL_flush(tdbb->tdbb_status_vector, dbb->dbb_wal, &seqno, &offset, false);
 
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
+	WIN window(LOG_PAGE);
 	log_info_page* logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_log);
 
 /* If there is no log, just return */
@@ -1056,9 +1043,7 @@ void AIL_set_log_options(
 	if (!(chkpt_len || num_bufs || bufsize || (grp_cmt_wait >= 0)))
 		return;
 
-	WIN window;
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
+	WIN window(LOG_PAGE);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 
 	if (chkpt_len) {
@@ -1137,7 +1122,6 @@ void AIL_upd_cntrl_pt(
  *
  **************************************/
 	log_info_page* logp;
-	WIN window;
 	UCHAR *p1, *p2, *p3, *p;
 	USHORT len;
 	TDBB tdbb;
@@ -1145,8 +1129,7 @@ void AIL_upd_cntrl_pt(
 	tdbb = GET_THREAD_DATA;
 
 
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
+	WIN window(LOG_PAGE);
 	logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 

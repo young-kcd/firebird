@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.32 2003-11-14 11:12:28 aafemt Exp $
+ *  $Id: fb_types.h,v 1.33 2003-12-11 10:33:18 robocop Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -137,6 +137,8 @@ typedef void (*FPTR_VOID_PTR) (void*);
 typedef int (*FPTR_INT) ();
 typedef int (*FPTR_INT_VOID_PTR) (void*);
 typedef void (*FPTR_PRINT_CALLBACK) (void*, SSHORT, const char*);
+// SORT_init uses this signature for a callback
+typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
 
 // The type of JRD's ERR_post, DSQL's ERRD_post & post_error,
 // REMOTE's move_error & GPRE's post_error.

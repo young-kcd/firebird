@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cv_gb2312.c
+ *	MODULE:		cv_gb2312.h
  *	DESCRIPTION:	Codeset conversion for GB2312 family codesets
  *
  * The contents of this file are subject to the Interbase Public
@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
-/* These macros have a duplicate in lc_gb2312.c */
+/* These macros have a duplicate in lc_gb2312.cpp */
 #define	GB1(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
 			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 1st-byte */
 #define	GB2(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
@@ -38,4 +38,5 @@ USHORT CVGB_check_gb2312(UCHAR *gb_str, USHORT gb_len);
 USHORT CVGB_gb2312_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len
 							, SSHORT *err_code, USHORT *err_position);
 
-SSHORT CVGB_gb2312_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len);
+SSHORT CVGB_gb2312_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
+

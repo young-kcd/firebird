@@ -52,18 +52,18 @@
 
 #define HIGH_WATER(x)		((SSHORT) sizeof (dpg) + (SSHORT) sizeof (dpg::dpg_repeat) * (x - 1))
 
-static void apply_data(DPG, JRND *);
-static void apply_header(HDR, JRND *);
-static void apply_ids(PPG, JRND *);
-static void apply_index(BTR, JRND *);
-static void apply_log(log_info_page*, JRND *);
-static void apply_pip(PIP, JRND *);
-static void apply_pointer(PPG, JRND *);
-static void apply_root(IRT, JRND *);
-static void apply_transaction(TIP, JRND *);
+static void apply_data(DPG, jrnd*);
+static void apply_header(HDR, jrnd*);
+static void apply_ids(PPG, jrnd*);
+static void apply_index(BTR, jrnd*);
+static void apply_log(log_info_page*, jrnd*);
+static void apply_pip(PIP, jrnd*);
+static void apply_pointer(PPG, jrnd*);
+static void apply_root(IRT, jrnd*);
+static void apply_transaction(TIP, jrnd*);
 static void disable(void);
-static JRNP *next_clump(JRND *, JRNP *);
-static void process_page(TDBB, JRND*, SLONG, SLONG, PAG, SBM*, bool);
+static JRNP* next_clump(jrnd*, const jrnp*);
+static void process_page(TDBB, jrnd*, SLONG, SLONG, PAG, SBM*, bool);
 static void quad_move(UCHAR *, UCHAR *);
 static void rec_process_record(TDBB, JRNH*, USHORT, ULONG,
 							   ULONG, PAG, SBM*, bool);
@@ -150,14 +150,12 @@ void REC_update_next_transid(void)
  *      bumped transaction id.
  *
  **************************************/
-	WIN window;
 	HDR hdr;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	hdr = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	hdr->hdr_next_transaction = hdr->hdr_bumped_transaction;
@@ -166,7 +164,7 @@ void REC_update_next_transid(void)
 }
 
 
-static void apply_data(DPG page, JRND * record)
+static void apply_data(DPG page, jrnd* record)
 {
 /**************************************
  *
@@ -271,7 +269,7 @@ static void apply_data(DPG page, JRND * record)
 }
 
 
-static void apply_header(HDR page, JRND * record)
+static void apply_header(HDR page, jrnd* record)
 {
 /**************************************
  *
@@ -324,7 +322,7 @@ static void apply_header(HDR page, JRND * record)
 }
 
 
-static void apply_ids(PPG page, JRND * record)
+static void apply_ids(PPG page, jrnd* record)
 {
 /**************************************
  *
@@ -353,7 +351,7 @@ static void apply_ids(PPG page, JRND * record)
 }
 
 
-static void apply_index(BTR page, JRND * record)
+static void apply_index(BTR page, jrnd* record)
 {
 /**************************************
  *
@@ -444,7 +442,7 @@ static void apply_index(BTR page, JRND * record)
 }
 
 
-static void apply_log(log_info_page* page, JRND * record)
+static void apply_log(log_info_page* page, jrnd* record)
 {
 /**************************************
  *
@@ -471,7 +469,7 @@ static void apply_log(log_info_page* page, JRND * record)
 }
 
 
-static void apply_pip(PIP page, JRND * record)
+static void apply_pip(PIP page, jrnd* record)
 {
 /**************************************
  *
@@ -507,7 +505,7 @@ static void apply_pip(PIP page, JRND * record)
 }
 
 
-static void apply_pointer(PPG page, JRND * record)
+static void apply_pointer(PPG page, jrnd* record)
 {
 /**************************************
  *
@@ -540,7 +538,7 @@ static void apply_pointer(PPG page, JRND * record)
 }
 
 
-static void apply_root(IRT page, JRND * record)
+static void apply_root(IRT page, jrnd* record)
 {
 /**************************************
  *
@@ -552,11 +550,11 @@ static void apply_root(IRT page, JRND * record)
  *	Apply changes to index root page
  *
  **************************************/
-	JRNRP temp, *clump;
-
-	for (clump = NULL;
+	jrnrp temp;
+	for (const jrnrp* clump = NULL;
 		 (clump =
-		 (JRNRP *) next_clump(record, reinterpret_cast < jrnp * >(clump)));) {
+		 (jrnrp*) next_clump(record, reinterpret_cast<const jrnp*>(clump)));)
+	{
 		MOVE_FAST((SCHAR *) clump, (SCHAR *) & temp, JRNRP_SIZE);
 
 		if (temp.jrnrp_type != JRNP_ROOT_PAGE)
@@ -567,7 +565,7 @@ static void apply_root(IRT page, JRND * record)
 }
 
 
-static void apply_transaction(TIP page, JRND * record)
+static void apply_transaction(TIP page, jrnd* record)
 {
 /**************************************
  *
@@ -581,7 +579,7 @@ static void apply_transaction(TIP page, JRND * record)
  **************************************/
 	JRNI *clump, *clump_end;
 	JRNI temp;
-	JRND rec;
+	jrnd rec;
 
 	MOVE_FAST((SCHAR *) record, (SCHAR *) & rec, JRND_SIZE);
 	clump = (JRNI *) record->jrnd_data;
@@ -624,7 +622,7 @@ static void disable(void)
 }
 
 
-static JRNP *next_clump(JRND * record, JRNP * prior)
+static JRNP* next_clump(jrnd* record, const jrnp* prior)
 {
 /**************************************
  *
@@ -640,7 +638,7 @@ static JRNP *next_clump(JRND * record, JRNP * prior)
  *
  **************************************/
 	JRNB temp1;
-	USHORT offset, l;
+	USHORT l;
 	JRNP temp;
 
 /* If the prior pointer is null, just return the data area */
@@ -650,7 +648,7 @@ static JRNP *next_clump(JRND * record, JRNP * prior)
 
 /* Compute the offset and length of prior clump */
 
-	offset = (SCHAR *) prior - (SCHAR *) record;
+	USHORT offset = (SCHAR *) prior - (SCHAR *) record;
 
 	MOVE_FAST((SCHAR *) prior, (SCHAR *) & temp, JRNP_SIZE);
 
@@ -720,7 +718,7 @@ static JRNP *next_clump(JRND * record, JRNP * prior)
 
 static void process_page(
 						 TDBB tdbb,
-						 JRND* record,
+						 jrnd* record,
 						 SLONG seqno,
 						 SLONG offset,
 						 PAG rec_page, SBM* sbm_rec, bool activate_shadow)
@@ -742,16 +740,15 @@ static void process_page(
 	PAG page;
 	JRNP *clump;
 	UCHAR *p, *q;
-	WIN window;
 	log_info_page* logp;
-	JRND rec;
+	jrnd rec;
 	HDR hdr;
 	USHORT hdr_end;
 
 	SET_TDBB(tdbb);
 
 	dbb = tdbb->tdbb_database;
-	window.win_flags = 0;
+	WIN window(-1);
 
 	clump = (JRNP *) record->jrnd_data;
 	q = (UCHAR *) clump;
@@ -942,7 +939,7 @@ PAG page, SBM* sbm_rec, bool activate_shadow)
 
 	switch (record->jrnh_type) {
 	case JRN_PAGE:
-		process_page(tdbb, reinterpret_cast < JRND * >(record), seqno, offset,
+		process_page(tdbb, reinterpret_cast<jrnd*>(record), seqno, offset,
 					 page, sbm_rec, activate_shadow);
 		break;
 
@@ -1010,9 +1007,9 @@ static void scan_and_apply_logs(
 	WALR WALRS_handle;
 	UCHAR *wal_buff;
 	STR string;
-	JRND rec;
+	jrnd rec;
 #ifdef DEV_BUILD
-	JRND rec1;
+	jrnd rec1;
 	SLONG checksum;
 #endif
 
@@ -1036,7 +1033,7 @@ static void scan_and_apply_logs(
 	string = FB_NEW_RPT(*dbb->dbb_permanent, MAX_WALBUFLEN) str();
 	wal_buff = (UCHAR *) string->str_data;
 
-	while (TRUE) {
+	while (true) {
 		ret_val =
 			WALR_get(tdbb->tdbb_status_vector,
 					 reinterpret_cast < walrs * >(WALRS_handle), wal_buff,

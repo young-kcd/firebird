@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.80 2003-12-06 02:58:22 skidder Exp $
+$Id: met.epp,v 1.81 2003-12-11 10:33:25 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -131,20 +131,20 @@ DATABASE DB = FILENAME "ODS.RDB";
 static int blocking_ast_procedure(void* ast_object);
 static int blocking_ast_relation(void* ast_object);
 static void get_trigger(TDBB, JRD_REL, SLONG[2], TRIG_VEC*, const TEXT*, bool, USHORT);
-static BOOLEAN get_type(TDBB, SSHORT *, UCHAR *, UCHAR *);
+static bool get_type(TDBB, SSHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(TDBB, JRD_REL);
-static void name_copy(TEXT *, TEXT *);
+static void name_copy(TEXT*, const TEXT*);
 static USHORT name_length(const TEXT *);
-static JRD_NOD parse_procedure_blr(TDBB, JRD_PRC, SLONG[2], CSB);
-static BOOLEAN par_messages(TDBB, UCHAR *, USHORT, JRD_PRC, CSB);
-static BOOLEAN resolve_charset_and_collation(TDBB, SSHORT *, UCHAR *,
-											 UCHAR *);
+static jrd_nod* parse_procedure_blr(TDBB, jrd_prc*, SLONG[2], CSB);
+static BOOLEAN par_messages(TDBB, const UCHAR*, USHORT, jrd_prc*, CSB);
+static BOOLEAN resolve_charset_and_collation(TDBB, SSHORT*, const UCHAR*,
+											 const UCHAR*);
 static str* save_name(TDBB, const TEXT*);
 static void save_trigger_data(TDBB, TRIG_VEC*, JRD_REL, JRD_REQ, STR,
 	const TEXT*, bool, USHORT);
 static void store_dependencies(TDBB, CSB, const TEXT*, USHORT);
 static void terminate(TEXT*, USHORT);
-static BOOLEAN verify_TRG_ignore_perm(TDBB, TEXT*);
+static bool verify_TRG_ignore_perm(TDBB, const TEXT*);
 
 
 
@@ -1239,7 +1239,7 @@ int MET_get_walinfo(
 
 void MET_load_trigger(
 					  TDBB tdbb,
-					  JRD_REL relation, TEXT * trigger_name, TRIG_VEC* triggers)
+					  JRD_REL relation, const TEXT* trigger_name, TRIG_VEC* triggers)
 {
 /**************************************
  *
@@ -1637,7 +1637,7 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
  **************************************/
 	DBB dbb;
 	BLK request;
-	PTR filter;
+	FPTR_BFILTER_CALLBACK filter;
 	MOD module;
 	LLS stack;
 	BLF blf_;
@@ -1659,7 +1659,7 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
             REQUEST(irq_r_filters) = request;
 		MET_exact_name(X.RDB$MODULE_NAME);
 		MET_exact_name(X.RDB$ENTRYPOINT);
-		filter = (ISC_STATUS (*)(USHORT, CTL))
+		filter = (FPTR_BFILTER_CALLBACK)
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,
 								  ISC_EXT_LIB_PATH_ENV, true);
 		if (filter)
@@ -1891,7 +1891,7 @@ SLONG MET_lookup_index_name(TDBB tdbb,
 
 
 int MET_lookup_partner(
-					   TDBB tdbb, JRD_REL relation, IDX* idx, const UCHAR* index_name)
+					   TDBB tdbb, JRD_REL relation, IDX* idx, const TEXT* index_name)
 {
 /**************************************
  *
@@ -3963,7 +3963,7 @@ static void get_trigger(
 }
 
 
-static BOOLEAN get_type( TDBB tdbb, SSHORT * id, UCHAR * name, UCHAR * field)
+static bool get_type(TDBB tdbb, SSHORT* id, const UCHAR* name, const TEXT* field)
 {
 /**************************************
  *
@@ -3980,20 +3980,16 @@ static BOOLEAN get_type( TDBB tdbb, SSHORT * id, UCHAR * name, UCHAR * field)
  *
  **************************************/
 	UCHAR buffer[32];			/* BASED ON RDB$TYPE_NAME */
-	BOOLEAN found;
-	UCHAR *p;
-	BLK handle;
-	DBB dbb;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	fb_assert(id != NULL);
 	fb_assert(name != NULL);
 	fb_assert(field != NULL);
 
 /* Force key to uppercase, following C locale rules for uppercase */
-
+	UCHAR* p;
 	for (p = buffer; *name && p < buffer + sizeof(buffer) - 1; p++, name++)
 	{
 		*p = UPPER7(*name);
@@ -4002,15 +3998,15 @@ static BOOLEAN get_type( TDBB tdbb, SSHORT * id, UCHAR * name, UCHAR * field)
 
 /* Try for exact name match */
 
-	found = FALSE;
+	bool found = false;
 
-	handle = NULL;
+	BLK handle = NULL;
 	FOR(REQUEST_HANDLE handle)
 		FIRST 1 T IN RDB$TYPES WITH
 			T.RDB$FIELD_NAME EQ field AND
 			T.RDB$TYPE_NAME EQ buffer
 
-        found = TRUE;
+        found = true;
 		*id = T.RDB$TYPE;
 	END_FOR;
 	CMP_release(tdbb, (JRD_REQ)handle);
@@ -4088,7 +4084,7 @@ static void lookup_view_contexts( TDBB tdbb, JRD_REL view)
 }
 
 
-static void name_copy( TEXT * to, TEXT * from)
+static void name_copy(TEXT* to, const TEXT* from)
 {
 /**************************************
  *
@@ -4100,9 +4096,7 @@ static void name_copy( TEXT * to, TEXT * from)
  *      Copy a system name, stripping trailing blanks.
  *
  **************************************/
-	USHORT length;
-
-	length = name_length(from);
+	const USHORT length = name_length(from);
 	memcpy(to, from, length);
 	to[length] = '\0';
 }
@@ -4121,11 +4115,9 @@ static USHORT name_length(const TEXT* name)
  *      SQL delimited identifier may contain blanks.
  *
  **************************************/
-	const TEXT*	p;
-	const TEXT*	q;
 
-	q = name - 1;
-	for (p = name; *p; p++)
+	const TEXT* q = name - 1;
+	for (const TEXT* p = name; *p; p++)
 	{
 		if (*p != BLANK)
 		{
@@ -4137,9 +4129,9 @@ static USHORT name_length(const TEXT* name)
 }
 
 
-static JRD_NOD parse_procedure_blr(
+static jrd_nod* parse_procedure_blr(
 							   TDBB tdbb,
-							   JRD_PRC procedure, SLONG blob_id[2], CSB csb)
+							   jrd_prc* procedure, SLONG blob_id[2], CSB csb)
 {
 /**************************************
  *
@@ -4151,22 +4143,17 @@ static JRD_NOD parse_procedure_blr(
  *      Parse blr, returning a compiler scratch block with the results.
  *
  **************************************/
-	DBB dbb;
-	BLB blob;
-	JRD_NOD node;
-	STR temp;
-	SLONG length;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
-	length = blob->blb_length + 10;
-	temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
+	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
+	const SLONG length = blob->blb_length + 10;
+	// CVC: Warning: the str class is limited by 64K
+	str* temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 	csb->csb_blr = temp->str_data;
 	par_messages(tdbb, temp->str_data, (USHORT) length, procedure, csb);
-	node =
+	jrd_nod* node =
 		PAR_blr(tdbb, NULL, temp->str_data, NULL, &csb,
 				&procedure->prc_request, FALSE, 0);
 	delete temp;
@@ -4176,9 +4163,9 @@ static JRD_NOD parse_procedure_blr(
 
 
 static BOOLEAN par_messages(TDBB	tdbb,
-							UCHAR*	blr,
+							const UCHAR*	blr,
 							USHORT	blr_length,
-							JRD_PRC	procedure,
+							jrd_prc*	procedure,
 							CSB		csb)
 {
 /**************************************
@@ -4192,13 +4179,8 @@ static BOOLEAN par_messages(TDBB	tdbb,
  *      a format (fmt) block.
  *
  **************************************/
-	fmt::fmt_desc_iterator desc;
-	FMT format;
-	USHORT count, offset, align, msg_number;
-	SSHORT version;
-
 	csb->csb_running = blr;
-	version = BLR_BYTE;
+	const SSHORT version = BLR_BYTE;
 	if (version != blr_version4 && version != blr_version5)
 		return FALSE;
 
@@ -4208,14 +4190,17 @@ static BOOLEAN par_messages(TDBB	tdbb,
 	SET_TDBB(tdbb);
 
 	while (BLR_BYTE == blr_message) {
-		msg_number = BLR_BYTE;
-		count = BLR_BYTE;
+		const USHORT msg_number = BLR_BYTE;
+		USHORT count = BLR_BYTE;
 		count += (BLR_BYTE) << 8;
-		format = fmt::newFmt(*tdbb->tdbb_default, count);
+		fmt* format = fmt::newFmt(*tdbb->tdbb_default, count);
 		format->fmt_count = count;
-		offset = 0;
-		for (desc = format->fmt_desc.begin(); count; --count, ++desc) {
-			align = PAR_desc(csb, &*desc);
+		// CVC: This offset should be protected against 32K overflow in the future
+		USHORT offset = 0;
+		for (fmt::fmt_desc_iterator desc = format->fmt_desc.begin(); count;
+			--count, ++desc)
+		{
+			const USHORT align = PAR_desc(csb, &*desc);
 			if (align)
 				offset = FB_ALIGN(offset, align);
 			desc->dsc_address = (UCHAR *) (ULONG) offset;
@@ -4290,9 +4275,9 @@ void MET_release_triggers( TDBB tdbb, TRIG_VEC* vector_ptr)
 
 static BOOLEAN resolve_charset_and_collation(
 											 TDBB tdbb,
-											 SSHORT * id,
-											 UCHAR * charset,
-											 UCHAR * collation)
+											 SSHORT* id,
+											 const UCHAR* charset,
+											 const UCHAR* collation)
 {
 /**************************************
  *
@@ -4342,11 +4327,10 @@ static BOOLEAN resolve_charset_and_collation(
 	if (collation == NULL)
 	{
 		if (charset == NULL)
-			charset = (UCHAR *) DEFAULT_CHARACTER_SET_NAME;
+			charset = (const UCHAR*) DEFAULT_CHARACTER_SET_NAME;
 
 		charset_id = 0;
-		// const CAST 
-		if (get_type(tdbb, &charset_id, charset, (UCHAR*) "RDB$CHARACTER_SET_NAME"))
+		if (get_type(tdbb, &charset_id, charset, "RDB$CHARACTER_SET_NAME"))
 		{
 			*id = charset_id;
 			return TRUE;
@@ -4636,7 +4620,7 @@ static void store_dependencies(TDBB			tdbb,
 }
 
 
-static void terminate(TEXT * str, USHORT len)
+static void terminate(TEXT* str, USHORT len)
 {
 /**************************************
  *
@@ -4657,7 +4641,7 @@ static void terminate(TEXT * str, USHORT len)
 }
 
 
-static BOOLEAN verify_TRG_ignore_perm(TDBB tdbb, TEXT* trig_name)
+static bool verify_TRG_ignore_perm(TDBB tdbb, const TEXT* trig_name)
 {
 /*****************************************************
  *
@@ -4674,19 +4658,16 @@ static BOOLEAN verify_TRG_ignore_perm(TDBB tdbb, TEXT* trig_name)
  *      set null, set default, and cascade.
  *
  **************************************/
-	DBB dbb;
-	BLK request;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 /* see if this is a system trigger, with the flag set as TRG_ignore_perm */
 	if (INI_get_trig_flags(trig_name) & (USHORT) TRG_ignore_perm)
 	{
-		return TRUE;
+		return true;
 	}
 
-	request = (BLK) CMP_find_request(tdbb, irq_c_trg_perm, IRQ_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, irq_c_trg_perm, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		CHK IN RDB$CHECK_CONSTRAINTS CROSS
@@ -4710,11 +4691,11 @@ static BOOLEAN verify_TRG_ignore_perm(TDBB tdbb, TEXT* trig_name)
 			!strcmp(REF.RDB$DELETE_RULE, RI_ACTION_NULL) ||
 			!strcmp(REF.RDB$DELETE_RULE, RI_ACTION_DEFAULT))
 		{
-			return TRUE;
+			return true;
 		}
 		else
 		{
-			return FALSE;
+			return false;
 		}
 	END_FOR;
 
@@ -4723,6 +4704,6 @@ static BOOLEAN verify_TRG_ignore_perm(TDBB tdbb, TEXT* trig_name)
 		REQUEST(irq_c_trg_perm) = request;
 	}
 
-	return FALSE;
+	return false;
 }
 

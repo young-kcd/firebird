@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		evl_proto.h
- *	DESCRIPTION:	Prototype header file for evl.c
+ *	DESCRIPTION:	Prototype header file for evl.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -32,27 +32,29 @@ BOOLEAN		EVL_boolean(TDBB tdbb, jrd_nod*);
 dsc*		EVL_expr(TDBB tdbb, jrd_nod*);
 BOOLEAN		EVL_field(jrd_rel*, rec*, USHORT, DSC*);
 USHORT		EVL_group(TDBB tdbb, Rsb*, jrd_nod*, USHORT);
-USHORT		EVL_mb_contains(TDBB tdbb, TextType, UCHAR *, USHORT, UCHAR *, USHORT);
-USHORT		EVL_mb_like(TDBB tdbb, TextType, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
-USHORT		EVL_mb_matches(TDBB tdbb, TextType, UCHAR *, SSHORT, UCHAR *, SSHORT);
-USHORT		EVL_mb_sleuth_check(TDBB tdbb, TextType, USHORT, UCHAR *, USHORT,
-								UCHAR *,USHORT);
-USHORT		EVL_mb_sleuth_merge(TDBB tdbb, TextType, UCHAR *, USHORT, UCHAR *, 
-								USHORT, UCHAR *, USHORT);
-void		EVL_make_value(TDBB tdbb, dsc*, vlu*);
-USHORT		EVL_nc_contains(TDBB tdbb, TextType, UCHAR*, USHORT, UCHAR*, USHORT);
-USHORT		EVL_nc_like(TDBB tdbb, TextType, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
-USHORT		EVL_nc_matches(TDBB tdbb, TextType, UCHAR *, SSHORT, UCHAR *, SSHORT);
-USHORT		EVL_nc_sleuth_check(TDBB tdbb, TextType, USHORT, UCHAR *, USHORT, 
-								UCHAR *, USHORT);
-USHORT		EVL_nc_sleuth_merge(TDBB tdbb, TextType, UCHAR *, USHORT, UCHAR *, 
-								USHORT, UCHAR *, USHORT);
-USHORT		EVL_wc_contains(TDBB tdbb, TextType, USHORT *, USHORT, USHORT *, USHORT);
-USHORT		EVL_wc_like(TDBB tdbb, TextType, USHORT *, SSHORT, USHORT *, SSHORT, USHORT);
-USHORT		EVL_wc_matches(TDBB tdbb, TextType, USHORT *, SSHORT, USHORT *, SSHORT);
-USHORT		EVL_wc_sleuth_check(TDBB tdbb, TextType, USHORT, USHORT *, USHORT, 
-								USHORT *, USHORT);
-USHORT		EVL_wc_sleuth_merge(TDBB tdbb, TextType, USHORT *, USHORT, USHORT *, 
-								USHORT, USHORT *, USHORT);
+USHORT		EVL_mb_contains(TDBB tdbb, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT);
+USHORT		EVL_mb_like(TDBB tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT, USHORT);
+USHORT		EVL_mb_matches(TDBB tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
+USHORT		EVL_mb_sleuth_check(TDBB tdbb, TextType, USHORT, const UCHAR*, USHORT,
+								const UCHAR*,USHORT);
+USHORT		EVL_mb_sleuth_merge(TDBB tdbb, TextType, const UCHAR*, USHORT, const UCHAR*,
+								USHORT, UCHAR*, USHORT);
+void		EVL_make_value(TDBB tdbb, const dsc*, vlu*);
+USHORT		EVL_nc_contains(TDBB tdbb, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT);
+USHORT		EVL_nc_like(TDBB tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT, USHORT);
+USHORT		EVL_nc_matches(TDBB tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
+USHORT		EVL_nc_sleuth_check(TDBB tdbb, TextType, USHORT, const UCHAR*, USHORT,
+								const UCHAR*, USHORT);
+USHORT		EVL_nc_sleuth_merge(TDBB tdbb, TextType, const UCHAR*, USHORT, const UCHAR*,
+								USHORT, UCHAR*, USHORT);
+// CVC: evl.cpp declares abstract type UCS2_CHAR* instead of USHORT*
+USHORT		EVL_wc_contains(TDBB tdbb, TextType, const USHORT*, USHORT, const USHORT*, USHORT);
+USHORT		EVL_wc_like(TDBB tdbb, TextType, const USHORT*, SSHORT, const USHORT*, SSHORT, USHORT);
+USHORT		EVL_wc_matches(TDBB tdbb, TextType, const USHORT*, SSHORT, const USHORT*, SSHORT);
+USHORT		EVL_wc_sleuth_check(TDBB tdbb, TextType, USHORT, const USHORT*, USHORT,
+								const USHORT*, USHORT);
+USHORT		EVL_wc_sleuth_merge(TDBB tdbb, TextType, const USHORT*, USHORT, const USHORT*,
+								USHORT, USHORT*, USHORT);
 
 #endif // JRD_EVL_PROTO_H
+

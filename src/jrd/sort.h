@@ -262,10 +262,10 @@ typedef struct scb
 	struct run *scb_runs;		/* ALLOC: Run on scratch file, if any */
 	struct mrg *scb_merge;		/* Top level merge block */
 	struct run *scb_free_runs;	/* ALLOC: Currently unused run blocks */
-	SORTP *scb_merge_space;		/* ALLOC: memory space to do merging */
+	SORTP* scb_merge_space;		/* ALLOC: memory space to do merging */
 	ULONG scb_flags;			/* see flag bits below */
 	ISC_STATUS *scb_status_vector;	/* Status vector for errors */
-	BOOLEAN(*scb_dup_callback) ();	/* Duplicate handling callback */
+	FPTR_REJECT_DUP_CALLBACK scb_dup_callback;	/* Duplicate handling callback */
 	void *scb_dup_callback_arg;	/* Duplicate handling callback arg */
 	struct dls *scb_dls;
 	struct mrg *scb_merge_pool;	/* ALLOC: pool of mrg blocks */
@@ -281,3 +281,4 @@ typedef struct scb
 #define SCB_LEN(n_k)	(sizeof (struct scb) + (SLONG)(n_k) * sizeof (SKD))
 
 #endif // JRD_SORT_H
+

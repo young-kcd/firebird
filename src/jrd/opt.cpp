@@ -6167,11 +6167,10 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
  *
  **************************************/
 	DSC* escape_desc;
-	UCHAR *p, *end, *q, *p_start;
+	UCHAR *end, *q, *p_start;
 	SSHORT count;
 	LIT literal;
-	USHORT ch, escape_ch;
-	USHORT p_count;
+	USHORT escape_ch;
 	UCHAR tmp_buffer[32];		/* large enough to hold 1 ch of escape string */
 	TextType text_obj = NULL;
 	SET_TDBB(tdbb);
@@ -6182,14 +6181,18 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
    be evaluated at compile time, forget it */
 	if ((search_node->nod_type != nod_literal) ||
 		(escape_node && escape_node->nod_type != nod_literal))
+	{
 		return NULL;
+	}
 	dsc* search_desc = &((LIT) search_node)->lit_desc;
 	if (escape_node)
 		escape_desc = &((LIT) escape_node)->lit_desc;
 /* if either is not a character expression, forget it */
 	if ((search_desc->dsc_dtype > dtype_any_text) ||
 		(escape_node && escape_desc->dsc_dtype > dtype_any_text))
+	{
 		return NULL;
+	}
 /* Get the escape character, if any */
 	if (escape_node)
 	{
@@ -6198,11 +6201,11 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
 		 * character escape string */
 
 		const char* p2;
-		p_count =
+		USHORT p_count =
 			MOV_make_string(escape_desc, INTL_TTYPE(search_desc), &p2,
 							reinterpret_cast < vary * >(tmp_buffer),
 							sizeof(tmp_buffer));
-		p = reinterpret_cast<UCHAR*>(const_cast<char*>(p2));
+		UCHAR* p = reinterpret_cast<UCHAR*>(const_cast<char*>(p2));
 		/* Now get first character from escape string */
 		escape_ch =
 			INTL_getch(tdbb, &text_obj,
@@ -6210,17 +6213,20 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
 	}
 
 /* if the first character is a wildcard char, forget it */
-
-	p = search_desc->dsc_address;
-	p_count = search_desc->dsc_length;
-	ch =
+	// CVC: Beware, if INTL doesn't understand the next character, p_count is zero. No check is done.
+	UCHAR* p = search_desc->dsc_address;
+	USHORT p_count = search_desc->dsc_length;
+	USHORT ch =
 		INTL_getch(tdbb, &text_obj,
 				   INTL_TTYPE(search_desc), &p, &p_count);
 	if ((!escape_node || ch != escape_ch)
 		&& (ch == SQL_MATCH_1_CHAR || ch == SQL_MATCH_ANY_CHARS))
+	{
 		return NULL;
+	}
 /* allocate a literal node to store the starting with string;
    assume it will be shorter than the search string */
+	// CVC: This assumption may not be true if we use "value like field".
 	count =
 		lit_delta + (search_desc->dsc_length + sizeof(jrd_nod*) -
 					 1) / sizeof(jrd_nod*);
@@ -6237,7 +6243,9 @@ static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
 	{
 		/* if there are escape characters, skip past them and 
 		   don't treat the next char as a wildcard */
-
+		// CVC: Beware, if INTL doesn't understand the next character, p_count is zero. No check is done.
+		// Same than above, but worse, since it will enter an infinite loop. Example: Spanish Ñ against unicode.
+		// Reported also on Portuguese characters that aren't ASCII < 128.
 		p_start = p;
 		ch =
 			INTL_getch(tdbb, &text_obj,

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		tpc.c
+ *	MODULE:		tpc.cpp
  *	DESCRIPTION:	TIP Cache for DBB
  *
  * The contents of this file are subject to the Interbase Public
@@ -386,7 +386,6 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	HDR header;
 	ULONG top, trans_per_tip, base;
 
@@ -400,8 +399,7 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
 	top = dbb->dbb_next_transaction;
 	oldest = MAX(oldest, dbb->dbb_oldest_transaction);
 #else
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	top = header->hdr_next_transaction;
 	oldest = MAX(oldest, (ULONG) header->hdr_oldest_transaction);
@@ -474,3 +472,4 @@ static int extend_cache(TDBB tdbb, SLONG number)
 
 	return tra_active;
 }
+

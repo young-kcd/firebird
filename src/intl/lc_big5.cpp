@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_big5.c
+ *	MODULE:		lc_big5.cpp
  *	DESCRIPTION:	Language Drivers in the BIG5 family.  
  *
  * The contents of this file are subject to the Interbase Public
@@ -136,3 +136,4 @@ static USHORT big5_to_lower(TEXTTYPE obj, UCS2_CHAR ch)
 		return (ch - (UCS2_CHAR) ASCII_UPPER_A + (UCS2_CHAR) ASCII_LOWER_A);
 	return ch;
 }
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cs_utffss.c
+ *	MODULE:		cv_unicode_fss.cpp
  *	DESCRIPTION:	Character set definition for Unicode FSS format
  *
  * The contents of this file are subject to the Interbase Public
@@ -31,10 +31,10 @@
 typedef USHORT fss_wchar_t;
 typedef SLONG fss_size_t;
 
-static fss_size_t fss_mbtowc( fss_wchar_t * p, NCHAR *s, fss_size_t n);
-static fss_size_t fss_wctomb(MBCHAR *s, fss_wchar_t wc);
+static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n);
+static fss_size_t fss_wctomb(MBCHAR* s, fss_wchar_t wc);
 
-SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
+SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE* obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n)
 {
 /**************************************
  *
@@ -188,7 +188,7 @@ SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 
 
 
-static fss_size_t fss_mbtowc( fss_wchar_t * p, NCHAR *s, fss_size_t n)
+static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n)
 {
 	long l;
 	int c0, c, nc;
@@ -223,7 +223,7 @@ static fss_size_t fss_mbtowc( fss_wchar_t * p, NCHAR *s, fss_size_t n)
 }
 
 
-static fss_size_t fss_wctomb(MBCHAR *s, fss_wchar_t wc)
+static fss_size_t fss_wctomb(MBCHAR* s, fss_wchar_t wc)
 {
 	long l;
 	int c, nc;
@@ -350,3 +350,4 @@ USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj,
 	*err_position = src_start - unicode_len;
 	return ((fss_str - start) * sizeof(*fss_str));
 }
+

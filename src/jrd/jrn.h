@@ -167,22 +167,22 @@ enum jrnr_t {
 
 /* Journal server response message */
 
-typedef struct jrnr {
+struct jrnr {
 	JRNH jrnr_header;
 	enum jrnr_t jrnr_response;
 	SLONG jrnr_page;
-} JRNR;
+};
 
 /* Journal data message format */
 
-typedef struct jrnd {
+struct jrnd {
 	JRNH jrnd_header;
 	USHORT jrnd_length;			/* Length of data portion */
 	SLONG jrnd_page;			/* Page number */
 	UCHAR jrnd_data[1];
-} JRND;
+};
 
-#define JRND_SIZE	OFFSETA (JRND*, jrnd_data)
+#define JRND_SIZE	OFFSETA (jrnd*, jrnd_data)
 
 /* Journal page clumplet formats */
 
@@ -312,11 +312,11 @@ typedef struct jrng {
  * the new b-tree root page number.
  */
 
-typedef struct jrnrp {
+struct jrnrp {
 	UCHAR jrnrp_type;			/* = JRNP_ROOT_PAGE */
 	SLONG jrnrp_id;				/* index number     */
 	SLONG jrnrp_page;			/* new page number  */
-} JRNRP;
+};
 
 #define JRNRP_SIZE 	sizeof (struct jrnrp)
 

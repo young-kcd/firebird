@@ -31,12 +31,18 @@
  * blob control structure (ISC_BLOB_CTL) which is in ibase.h.
  * Therefore this structure should be kept in sync with that one,
  * with the exception of the internal members, which are all the
- * once which appear after ctl_internal. */
+ * ones which appear after ctl_internal. */
+
+// There's already a PTR defined for events, equivalent to SLONG.
+// Therefore, redefined PTR here as FPTR_BFILTER_CALLBACK
+class ctl;
+typedef ISC_STATUS (*FPTR_BFILTER_CALLBACK)(USHORT, ctl*);
+
 
 class ctl : public pool_alloc<type_ctl>
 {
 public:
-	ISC_STATUS	(*ctl_source)(USHORT, ctl*);		/* Source filter */
+	FPTR_BFILTER_CALLBACK	ctl_source;				/* Source filter */
 	ctl*		ctl_source_handle;		/* Argument to pass to source filter */
 	SSHORT		ctl_to_sub_type;		/* Target type */
 	SSHORT		ctl_from_sub_type;		/* Source type */
@@ -50,12 +56,11 @@ public:
 	SLONG		ctl_total_length;		/* Total length of blob */
 	ISC_STATUS*		ctl_status;				/* Address of status vector */
 	IPTR		ctl_data[8];			/* Application specific data */
-	void*		ctl_internal[3];		/* InterBase internal-use only */
-	UCHAR*		ctl_exception_message;	/* Message to use in case of filter exception */
+	void*	ctl_internal[3];		/* Firebird internal-use only */
+	const UCHAR*	ctl_exception_message;	/* Message to use in case of filter exception */
 };
 typedef ctl *CTL;
 
-typedef ISC_STATUS(*PTR) (USHORT, CTL);
 
 /* Blob filter management */
 
@@ -65,7 +70,7 @@ class blf : public pool_alloc<type_blf>
 	blf*	blf_next;					/* Next known filter */
 	SSHORT		blf_from;				/* Source sub-type */
 	SSHORT		blf_to;					/* Target sub-type */
-	PTR		blf_filter;		/* Entrypoint of filter */
+	FPTR_BFILTER_CALLBACK	blf_filter;		/* Entrypoint of filter */
 	STR			blf_exception_message;	/* message to be used in case of filter exception */
 };
 typedef blf *BLF;

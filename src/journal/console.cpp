@@ -79,11 +79,11 @@ static enum jrnr_t get_reply(SLONG);
 static SLONG open_connection(SCHAR *, bool);
 static void put_command(SLONG, UCHAR *, USHORT, UCHAR *, USHORT);
 
-extern cmds commands[];
+extern const cmds commands[];
 
 
 bool CONSOLE_start_console(int argc,
-						   char * argv[])
+						   char* argv[])
 {
 /**************************************
  *
@@ -374,18 +374,16 @@ static void expand_dbname(TEXT * in)
  *	modified.
  *
  **************************************/
-	cmds* command;
 	TEXT cmd[32], operand1[JOURNAL_PATH_LENGTH],
-		operand2[JOURNAL_PATH_LENGTH], *p, *q;
+		operand2[JOURNAL_PATH_LENGTH], *p;
 	TEXT exp_op[JOURNAL_PATH_LENGTH];
-	USHORT n;
 
 	cmd[0] = operand1[0] = operand2[0] = 0;
 
-	n = sscanf(in, "%s%s%s", cmd, operand1, operand2);
+	sscanf(in, "%s%s%s", cmd, operand1, operand2);
 
-	for (command = commands; p = command->cmds_string; command++) {
-		q = cmd;
+	for (const cmds* command = commands; p = command->cmds_string; command++) {
+		const TEXT* q = cmd;
 		while (*q && UPPER(*q) == *p++)
 			q++;
 		if (!*q)
@@ -498,21 +496,20 @@ static enum jrnr_t get_reply(SLONG channel)
  *	Format and send off a command.
  *
  **************************************/
-	UCHAR *p, buffer[MAXPATHLEN];
-	ULONG len, length;
-	JRNR *reply;
+	UCHAR buffer[MAXPATHLEN];
 	int status;
 
-	p = buffer + sizeof(JRNR);
+	UCHAR* p = buffer + sizeof(jrnr);
 
 	for (;;) {
-		reply = (JRNR *) buffer;
+		jrnr* reply = (jrnr*) buffer;
 
 		// first read enough to find out how much to read
 
-		length = sizeof(reply->jrnr_header);
+		ULONG length = sizeof(reply->jrnr_header);
 
-		if ((len = read(channel, buffer, length)) != length)
+		ULONG len = read(channel, buffer, length);
+		if (len != length)
 			error(errno, "socket read");
 
 		// read the rest of the response
@@ -545,19 +542,18 @@ static enum jrnr_t get_reply(SLONG channel)
  *	Format and send off a command.
  *
  **************************************/
-	UCHAR *p, buffer[MAXPATHLEN];
-	ULONG length, len;
-	JRNR *reply;
+	UCHAR buffer[MAXPATHLEN];
 
-	p = buffer + sizeof(JRNR);
+	UCHAR* p = buffer + sizeof(jrnr);
 
 	for (;;) {
-		reply = (JRNR *) buffer;
+		jrnr* reply = (jrnr*) buffer;
 
 		// first read enough to find out how much to read
 
-		length = sizeof(reply->jrnr_header);
+		ULONG length = sizeof(reply->jrnr_header);
 
+		ULONG len;
 		if (!ReadFile((HANDLE) channel, buffer, length, &len, NULL) ||
 			len != length)
 		{

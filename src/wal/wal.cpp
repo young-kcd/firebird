@@ -146,7 +146,7 @@ SSHORT WAL_checkpoint_finish(ISC_STATUS* status_vector,
  * Functional description
  *	To inform the WAL writer that the caller (Asynchronous Buffer
  *	Writer) has done its part of checkpointing.
- *	This routine ib_puts a checkpoint (null) record in the log file.
+ *	This routine puts a checkpoint (null) record in the log file.
  *	It returns the log file sequence number, its name, its position
  *	and the offset within it where this checkpointing finished.
  *

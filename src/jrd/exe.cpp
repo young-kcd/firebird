@@ -268,7 +268,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 
 	request->req_flags &= ~req_null;
 
-	const dsc* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
+	dsc* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
 
 	SSHORT null = (request->req_flags & req_null) ? -1 : 0;
 

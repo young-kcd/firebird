@@ -103,7 +103,7 @@ public:
 	
 	USHORT to_wc(UCS2_CHAR *a,
 				 USHORT b,
-				 UCHAR *c,
+				 const UCHAR *c,
 				 USHORT d,
 				 SSHORT *e,
 				 USHORT *f)
@@ -111,81 +111,81 @@ public:
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_to_wc);
 		return (*(reinterpret_cast
-					<USHORT (*)(TEXTTYPE,UCS2_CHAR*,USHORT,UCHAR*,USHORT,short*,USHORT*)>
+					<USHORT (*)(TEXTTYPE,UCS2_CHAR*,USHORT,const UCHAR*,USHORT,short*,USHORT*)>
 						(tt->texttype_fn_to_wc)))
 							(tt,a,b,c,d,e,f);
 	}
 									
-	USHORT mbtowc(UCS2_CHAR *a, UCHAR *b, USHORT c)
+	USHORT mbtowc(UCS2_CHAR* a, const UCHAR* b, USHORT c)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_mbtowc);
 		return (*(reinterpret_cast<
-					USHORT (*)(TEXTTYPE, UCS2_CHAR*, UCHAR*, USHORT)>
+					USHORT (*)(TEXTTYPE, UCS2_CHAR*, const UCHAR*, USHORT)>
 						(tt->texttype_fn_mbtowc)))(tt,a,b,c);
 	}
 
-	USHORT contains(class tdbb *a, UCHAR *b,
+	USHORT contains(class tdbb* a, const UCHAR *b,
 					USHORT c,
-					UCHAR *d,
+					const UCHAR* d,
 					USHORT e)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains);
 		return (*(reinterpret_cast<
-					USHORT (*)(class tdbb *,TextType,UCHAR*,USHORT,UCHAR*,USHORT)>
+					USHORT (*)(class tdbb*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT)>
 						(tt->texttype_fn_contains)))
 							(a,tt,b,c,d,e);
 	}
 	
-	USHORT like(class tdbb *tdbb, UCHAR *a,
+	USHORT like(class tdbb* tdbb, const UCHAR* a,
 							  SSHORT b,
-							  UCHAR *c,
+							  const UCHAR* c,
 							  SSHORT d,
 							  SSHORT e)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like);
 		return (*(reinterpret_cast<
-					USHORT(*)(class tdbb *,TextType,UCHAR*,short,UCHAR*,short,short)>
+					USHORT(*)(class tdbb*, TextType, const UCHAR*, short, const UCHAR*, short, short)>
 						(tt->texttype_fn_like)))(tdbb,tt,a,b,c,d,e);
 	}
 	
-	USHORT matches(class tdbb *tdbb, UCHAR *a, SSHORT b, UCHAR *c, SSHORT d)
+	USHORT matches(class tdbb* tdbb, const UCHAR* a, SSHORT b, const UCHAR* c, SSHORT d)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_matches);
 		return (*(reinterpret_cast<
-					USHORT (*)(class tdbb *,TextType,UCHAR*,short,UCHAR*,short)>
+					USHORT (*)(class tdbb*, TextType, const UCHAR*, short, const UCHAR*, short)>
 						(tt->texttype_fn_matches)))
 							(tdbb,tt,a,b,c,d);
 	}
 
-	USHORT sleuth_check(class tdbb *tdbb, USHORT a,
-								UCHAR *b,
+	USHORT sleuth_check(class tdbb* tdbb, USHORT a,
+								const UCHAR* b,
 								USHORT c,
-								UCHAR *d,
+								const UCHAR* d,
 								USHORT e)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_sleuth_check);
 		return (*(reinterpret_cast<
-					USHORT(*)(class tdbb *,TextType,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
+					USHORT(*)(class tdbb*, TextType, USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT)>
 						(tt->texttype_fn_sleuth_check)))
 							(tdbb,tt,a,b,c,d,e);
 	}
 	
-	USHORT sleuth_merge(class tdbb *tdbb, UCHAR *a,
+	USHORT sleuth_merge(class tdbb* tdbb, const UCHAR* a,
 								USHORT b,
-								UCHAR *c,
+								const UCHAR* c,
 								USHORT d,
-								UCHAR *e,
+								UCHAR* e,
 								USHORT f)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_sleuth_merge);
 		return (*(reinterpret_cast<
-					USHORT(*)(class tdbb *,TextType,UCHAR*,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
+					USHORT(*)(class tdbb*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
 						(tt->texttype_fn_sleuth_merge)))
 							(tdbb,tt,a,b,c,d,e,f);
 	}

@@ -88,7 +88,7 @@ static void error(ISC_STATUS*, JRN, int, const TEXT*);
 #ifdef BSD_SOCKETS
 static int find_address(ISC_STATUS *, JRN, struct sockaddr_in *);
 #endif
-static int get_reply(ISC_STATUS *, JRN, JRNR *);
+static int get_reply(ISC_STATUS*, JRN, jrnr*);
 static int journal_close(ISC_STATUS *, JRN);
 static int jrn_put(ISC_STATUS*, JRN, jrnh*, USHORT, const UCHAR*, USHORT);
 static int retry_connect(ISC_STATUS*, JRN*, const TEXT*, USHORT, LTJC*, USHORT,
@@ -205,7 +205,7 @@ int JRN_archive_end(
 
 int JRN_archive_error(
 					  ISC_STATUS * status_vector,
-					  JRN * ret_journal,
+					  jrn** ret_journal,
 					  SLONG db_id, SLONG file_id, SLONG error_code)
 {
 /**************************************
@@ -220,9 +220,7 @@ int JRN_archive_error(
  *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  *
  **************************************/
-	JRN journal;
-
-	journal = *ret_journal;
+	jrn* journal = *ret_journal;
 	*ret_journal = NULL;
 
 	if (!(journal))
@@ -1006,7 +1004,7 @@ static int find_address(
 #endif
 
 
-static int get_reply(ISC_STATUS * status_vector, JRN journal, JRNR * reply)
+static int get_reply(ISC_STATUS* status_vector, JRN journal, jrnr* reply)
 {
 /**************************************
  *

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_gb2312.c
+ *	MODULE:		lc_gb2312.cpp
  *	DESCRIPTION:	Language Drivers in the GB2312 family.  
  *
  * The contents of this file are subject to the Interbase Public
@@ -24,7 +24,7 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 
-/* These macros have a duplicate in cv_gb2312.c */
+/* These macros have a duplicate in cv_gb2312.cpp */
 #define	GB1(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
 			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 1st-byte */
 #define	GB2(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \

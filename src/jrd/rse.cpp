@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.44 2003-11-18 16:54:01 dimitr Exp $
+ * $Id: rse.cpp,v 1.45 2003-12-11 10:33:25 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -120,7 +120,7 @@ static void proc_assignment(DSC *, DSC *, UCHAR *, DSC *, SSHORT, REC);
 static void pop_rpbs(JRD_REQ, RSB);
 static void push_rpbs(TDBB, JRD_REQ, RSB);
 static ULONG read_merge_block(TDBB, MFB, ULONG);
-static BOOLEAN reject(UCHAR *, UCHAR *, int);
+static bool reject(const UCHAR*, const UCHAR*, void*);
 static void restore_record(RPB *);
 static void save_record(TDBB, RPB *);
 static void write_merge_block(TDBB, MFB, ULONG);
@@ -148,7 +148,7 @@ void RSE_close(TDBB tdbb, RSB rsb)
 
 	SET_TDBB(tdbb);
 
-	while (TRUE) {
+	while (true) {
 		impure = (IRSB_SORT) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
 		if (!(impure->irsb_flags & irsb_open))
 			return;
@@ -617,7 +617,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 
 	request = tdbb->tdbb_request;
 
-	while (TRUE) {
+	while (true) {
 		impure = (IRSB_INDEX) ((SCHAR *) request + rsb->rsb_impure);
 		impure->irsb_flags |= irsb_first | irsb_open;
 		impure->irsb_flags &=
@@ -1118,7 +1118,7 @@ static BOOLEAN fetch_record(TDBB tdbb, RSB rsb, SSHORT n
    another candidate record from the n-1 streams to the left, 
    then reopen the stream and start again from the beginning */
 
-	while (TRUE)
+	while (true)
 	{
 		RSE_close(tdbb, sub_rsb);
 		if (n == 0 || !fetch_record(tdbb, rsb, n - 1
@@ -1173,7 +1173,7 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure, RSE_GET_MODE mode)
 /* loop through the outer join in either the forward or the backward direction; 
    the various modes indicate what state of the join we are in */
 
-	while (TRUE)
+	while (true)
 	{
 		if (!(impure->irsb_flags & irsb_join_full))
 		{
@@ -1340,7 +1340,7 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure)
 
 	if (!(impure->irsb_flags & irsb_join_full))
 	{
-		while (TRUE)
+		while (true)
 		{
 			if (impure->irsb_flags & irsb_mustread)
 			{
@@ -2703,7 +2703,8 @@ static BOOLEAN get_record(TDBB			tdbb,
 #ifdef SCROLLABLE_CURSORS
 								  , mode
 #endif
-				  ))) {
+				  )))
+			{
 #ifdef SCROLLABLE_CURSORS
 				if (mode == RSE_get_forward)
 					impure->irsb_flags |= irsb_eof;
@@ -3168,8 +3169,7 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, UINT64 max_records)
 						   map->smb_length,
 						   map->smb_keys,
 						   map->smb_key_desc,
-						   reinterpret_cast < BOOLEAN(*)() >
-						   ((map->smb_flags & SMB_project) ? reject : NULL), 0,
+         				   ((map->smb_flags & SMB_project) ? reject : NULL), 0,
 						   tdbb->tdbb_attachment, max_records);
 
 	if (!(impure->irsb_sort_handle = handle))
@@ -3594,7 +3594,7 @@ static ULONG read_merge_block(TDBB tdbb, MFB mfb, ULONG block)
 }
 
 
-static BOOLEAN reject(UCHAR * record_a, UCHAR * record_b, int user_arg)
+static bool reject(const UCHAR* record_a, const UCHAR* record_b, void* user_arg)
 {
 /**************************************
  *
@@ -3604,11 +3604,11 @@ static BOOLEAN reject(UCHAR * record_a, UCHAR * record_b, int user_arg)
  *
  * Functional description
  *	Callback routine used by project to reject duplicate records.
- *	Particularly dumb routine -- always returns TRUE;
+ *	Particularly dumb routine -- always returns true;
  *
  **************************************/
 
-	return TRUE;
+	return true;
 }
 
 

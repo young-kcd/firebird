@@ -84,7 +84,7 @@
 
 /*
  *      PROGRAM:        JRD Intl
- *      MODULE:         intl.c
+ *      MODULE:         intl.cpp
  *      DESCRIPTION:    International text support routines
  *
  * copyright (c) 1992, 1993 by Borland International
@@ -1605,3 +1605,4 @@ static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
 		}
 	}
 }
+

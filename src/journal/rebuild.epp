@@ -152,15 +152,15 @@ extern FILE* msg_file;
 
 static USHORT add_file(DRB, FIL, UCHAR*, SSHORT, SLONG, bool);
 static void add_time(timeval*, timeval*);
-static void apply_data(DRB, DPG, JRND *);
-static void apply_header(HDR, JRND *);
-static void apply_ids(PPG, JRND *);
-static void apply_index(BTR, JRND *);
-static void apply_log(log_info_page*, JRND *);
-static void apply_pip(PIP, JRND *);
-static void apply_pointer(PPG, JRND *);
-static void apply_root(IRT, JRND *);
-static void apply_transaction(TIP, JRND *);
+static void apply_data(DRB, DPG, jrnd*);
+static void apply_header(HDR, jrnd*);
+static void apply_ids(PPG, jrnd*);
+static void apply_index(BTR, jrnd*);
+static void apply_log(log_info_page*, jrnd*);
+static void apply_pip(PIP, jrnd*);
+static void apply_pointer(PPG, jrnd*);
+static void apply_root(IRT, jrnd*);
+static void apply_transaction(TIP, jrnd*);
 static USHORT checksum(DRB, PAG);
 static void close_database(DRB);
 static bool commit(DRB, LTJC *, USHORT);
@@ -175,7 +175,7 @@ static void get_log_files(SLONG, SSHORT, SCHAR ***, SLONG **, SSHORT *,
 						  SLONG);
 static void get_old_files(SLONG, SCHAR ***, SSHORT *, SLONG *, SLONG *);
 static CACHE get_page(DRB, SLONG, bool);
-static JRNP *next_clump(JRND *, void *);
+static JRNP *next_clump(jrnd*, void *);
 static void open_all_files(void);
 static DRB open_database(const TEXT*, USHORT, SSHORT);
 static bool open_database_file(DRB, const TEXT*, bool, SLONG*);
@@ -183,8 +183,8 @@ static int open_journal(const SCHAR*, SCHAR**, SSHORT, SLONG, SLONG*);
 static int process_online_dump(const SCHAR*, SCHAR**, SSHORT);
 static int process_journal(const SCHAR*, SCHAR**, SSHORT, SLONG, SLONG, SLONG*);
 static SLONG process_new_file(DRB, JRNF *);
-static bool process_old_record(JRND *, USHORT);
-static void process_page(DRB, JRND *, ULONG, ULONG, bool);
+static bool process_old_record(jrnd*, USHORT);
+static void process_page(DRB, jrnd*, ULONG, ULONG, bool);
 static bool process_partial(SLONG, SCHAR *);
 static bool process_record(JRNH *, USHORT, ULONG, ULONG, bool);
 static void quad_move(register UCHAR *, register UCHAR *);
@@ -494,7 +494,7 @@ static void add_time(timeval* first,
 
 static void apply_data(DRB database,
 					   DPG page,
-					   JRND * record)
+					   jrnd* record)
 {
 /**************************************
  *
@@ -521,7 +521,7 @@ static void apply_data(DRB database,
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNP_SIZE);
 
 		if (temp.jrnp_type != JRNP_DATA_SEGMENT) {
-			GJRN_printf(55, (TEXT*)(ULONG) temp.jrnp_type, NULL, NULL, NULL);
+			GJRN_printf(55, (TEXT*)(U_IPTR) temp.jrnp_type, NULL, NULL, NULL);
 			rebuild_abort(72);
 		}
 
@@ -595,7 +595,7 @@ static void apply_data(DRB database,
 
 
 static void apply_header(HDR page,
-						 JRND * record)
+						 jrnd* record)
 {
 /**************************************
  *
@@ -659,7 +659,7 @@ static void apply_header(HDR page,
 
 
 static void apply_ids(PPG page,
-					  JRND * record)
+					  jrnd* record)
 {
 /**************************************
  *
@@ -697,7 +697,7 @@ static void apply_ids(PPG page,
 
 
 static void apply_index(BTR page,
-						JRND * record)
+						jrnd* record)
 {
 /**************************************
  *
@@ -731,8 +731,8 @@ static void apply_index(BTR page,
 
 			/*
 			if (sw_debug) {
-				GJRN_printf(25, (TEXT*)(ULONG) temp.jrnb_offset,
-							(TEXT*)(ULONG) temp.jrnb_length, NULL, NULL);
+				GJRN_printf(25, (TEXT*)(U_IPTR) temp.jrnb_offset,
+							(TEXT*)(U_IPTR) temp.jrnb_length, NULL, NULL);
 				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
 
@@ -761,8 +761,8 @@ static void apply_index(BTR page,
 			page->btr_prefix_total = temp.jrnb_prefix_total;
 
 			if (sw_debug) {
-				GJRN_printf(26, (TEXT*)(ULONG) temp.jrnb_offset,
-							(TEXT*)(ULONG) temp.jrnb_length, NULL, NULL);
+				GJRN_printf(26, (TEXT*)(U_IPTR) temp.jrnb_offset,
+							(TEXT*)(U_IPTR) temp.jrnb_length, NULL, NULL);
 				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
 			*/
@@ -783,7 +783,7 @@ static void apply_index(BTR page,
 				} while (--l);
 
 			if (sw_debug) {
-				GJRN_printf(29, (TEXT*)(ULONG) temp.jrnb_length, NULL, NULL, NULL);
+				GJRN_printf(29, (TEXT*)(U_IPTR) temp.jrnb_length, NULL, NULL, NULL);
 				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
 			break;
@@ -806,7 +806,7 @@ static void apply_index(BTR page,
 			}
 
 			if (sw_debug) {
-				GJRN_printf(30, (TEXT*)(ULONG) temp.jrnb_offset, NULL, NULL, NULL);
+				GJRN_printf(30, (TEXT*)(U_IPTR) temp.jrnb_offset, NULL, NULL, NULL);
 				GJRN_printf(27, (TEXT*)(SLONG) page->btr_length, NULL, NULL, NULL);
 			}
 			break;*/
@@ -819,7 +819,7 @@ static void apply_index(BTR page,
 
 
 static void apply_log(log_info_page* page,
-					  JRND * record)
+					  jrnd* record)
 {
 /**************************************
  *
@@ -850,7 +850,7 @@ static void apply_log(log_info_page* page,
 }
 
 static void apply_pip(PIP page,
-					  JRND * record)
+					  jrnd* record)
 {
 /**************************************
  *
@@ -902,7 +902,7 @@ static void apply_pip(PIP page,
 
 
 static void apply_pointer(PPG page,
-						  JRND * record)
+						  jrnd* record)
 {
 /**************************************
  *
@@ -944,7 +944,7 @@ static void apply_pointer(PPG page,
 
 
 static void apply_root(IRT page,
-					   JRND * record)
+					   jrnd* record)
 {
 /**************************************
  *
@@ -956,14 +956,12 @@ static void apply_root(IRT page,
  *	Apply changes to index root page
  *
  **************************************/
-	JRNRP temp, *clump;
-
 	if (sw_debug)
-
 		GJRN_printf(33, (TEXT*) record->jrnd_page, NULL, NULL, NULL);
-
-	for (clump = NULL; clump = (JRNRP *) next_clump(record, clump);) {
-		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNRP_SIZE);
+		
+	jrnrp temp;
+	for (jrnrp* clump = NULL; clump = (jrnrp*) next_clump(record, clump);) {
+		memcpy((SCHAR *) &temp, (SCHAR *) clump, JRNRP_SIZE);
 
 		if (temp.jrnrp_type != JRNP_ROOT_PAGE)
 			rebuild_abort(65);
@@ -980,7 +978,7 @@ static void apply_root(IRT page,
 }
 
 static void apply_transaction(TIP page,
-							  JRND * record)
+							  jrnd* record)
 {
 /**************************************
  *
@@ -994,7 +992,7 @@ static void apply_transaction(TIP page,
  **************************************/
 	JRNI *clump, *clump_end;
 	JRNI temp;
-	JRND rec;
+	jrnd rec;
 
 	if (sw_debug)
 
@@ -1291,7 +1289,7 @@ static void disable(DRB database,
 	format_time(date, ctime);
 
 	if (sw_verbose)
-		GJRN_printf(35, (TEXT*)(ULONG) record->ltjc_length, dbname,
+		GJRN_printf(35, (TEXT*)(U_IPTR) record->ltjc_length, dbname,
 					(TEXT*) record->ltjc_header.jrnh_handle, ctime);
 
 	sw_disable = 1;
@@ -1777,7 +1775,7 @@ static CACHE get_page(DRB database,
 }
 
 
-static JRNP *next_clump(JRND * record,
+static JRNP *next_clump(jrnd* record,
 						void *prior)
 {
 /**************************************
@@ -2169,7 +2167,7 @@ static int process_online_dump(const SCHAR* dbname,
 			if (ret_val)
 				break;
 
-			process_old_record((JRND *) wal_buff, len);
+			process_old_record((jrnd*) wal_buff, len);
 		}
 		// get finish time
 
@@ -2220,7 +2218,7 @@ static int process_journal(const SCHAR* dbname,
 	ULONG offset;
 	timeval first, next;
 #ifdef DEV_BUILD
-	JRND rec1;
+	jrnd rec1;
 	SLONG rec_checksum;
 #endif
 
@@ -2338,7 +2336,7 @@ static SLONG process_new_file(DRB database,
 
 
 		GJRN_printf(180, file_name,
-					(TEXT*)(ULONG) record->jrnf_sequence, NULL, NULL);
+					(TEXT*)(U_IPTR) record->jrnf_sequence, NULL, NULL);
 
 	if (sw_trace)
 		return 0;
@@ -2417,7 +2415,7 @@ static SLONG process_new_file(DRB database,
 }
 
 
-static bool process_old_record(JRND * record,
+static bool process_old_record(jrnd* record,
 							   USHORT length)
 {
 /**************************************
@@ -2449,7 +2447,7 @@ static bool process_old_record(JRND * record,
 
 
 static void process_page(DRB database,
-						 JRND * record,
+						 jrnd* record,
 						 ULONG seqno,
 						 ULONG offset,
 						 bool wal_flag)
@@ -2469,7 +2467,7 @@ static void process_page(DRB database,
 	JRNP *clump;
 	UCHAR *p, *q;
 	CACHE cch;
-	JRND rec;
+	jrnd rec;
 
 	clump = (JRNP *) record->jrnd_data;
 	q = (UCHAR *) clump;
@@ -2777,7 +2775,7 @@ static bool process_record(JRNH * record,
 	database = databases;
 	switch (record->jrnh_type) {
 	case JRN_PAGE:
-		process_page(database, (JRND*) record, seqno, offset, wal_flag);
+		process_page(database, (jrnd*) record, seqno, offset, wal_flag);
 		break;
 	case JRN_ENABLE:
 		break;
@@ -2809,7 +2807,7 @@ static bool process_record(JRNH * record,
 			GJRN_printf(46, (TEXT*) seqno, (TEXT*) offset, NULL, NULL);
 		break;
 	default:
-		GJRN_printf(45, (TEXT*)(ULONG) record->jrnh_type, NULL, NULL, NULL);
+		GJRN_printf(45, (TEXT*)(U_IPTR) record->jrnh_type, NULL, NULL, NULL);
 		rebuild_abort(0);
 	}
 

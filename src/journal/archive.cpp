@@ -54,32 +54,20 @@ int CLIB_ROUTINE main(int argc,
  *    backup a file to another disk, update journal database.
  *
  **************************************/
-	TEXT *d_file;
-	TEXT *s_file;
-	TEXT *j_dir;
-	SLONG file_id;
-	SLONG s_fd, d_fd;
-	SLONG p_offset;
-	USHORT j_length;
-	bool ret_val;
-	SLONG size;
-	SLONG db_id;
-	ISC_STATUS_ARRAY status;
-	JRN journal = NULL;
-
 	argv++;
 
-	db_id = atoi(*argv++);
-	file_id = atoi(*argv++);
-	p_offset = atoi(*argv++);
-	size = atoi(*argv++);
-	s_file = *argv++;
-	d_file = *argv++;
-	j_dir = *argv++;
-	j_length = strlen(j_dir);
+	const SLONG db_id = atoi(*argv++);
+	const SLONG file_id = atoi(*argv++);
+	const SLONG p_offset = atoi(*argv++);
+	const SLONG size = atoi(*argv++);
+	const TEXT* s_file = *argv++;
+	const TEXT* d_file = *argv++;
+	const TEXT* j_dir = *argv++;
+	const USHORT j_length = strlen(j_dir);
 
 // Attach with journal server
-
+	ISC_STATUS_ARRAY status;
+	jrn* journal = NULL;
 	if (JRN_archive_begin(status, &journal, db_id, file_id, j_dir, j_length)
 		!= FB_SUCCESS)
 	{
@@ -88,18 +76,20 @@ int CLIB_ROUTINE main(int argc,
 	}
 
 // Check in with database
-
-	if (!open_file(s_file, p_offset, LLIO_OPEN_R, &s_fd))
+	SLONG s_fd;
+	if (!open_file(s_file, p_offset, LLIO_OPEN_R, &s_fd)) {
 		error_exit(status, &journal, db_id, file_id, 236);
 		// msg 236: Archive process unable to open log file.
+	}
 
+    SLONG d_fd;
 	if (!open_file(d_file, 0L, LLIO_OPEN_NEW_RW, &d_fd)) {
 		LLIO_close(0, s_fd);
 		error_exit(status, &journal, db_id, file_id, 237);
 		// msg 237: Archive process unable to create archive file.
 	}
 
-	ret_val = copy_file(s_fd, d_fd, size);
+	bool ret_val = copy_file(s_fd, d_fd, size);
 
 	ret_val |= (LLIO_close(0, s_fd) == FB_SUCCESS);
 	ret_val |= (LLIO_close(0, d_fd) == FB_SUCCESS);
@@ -134,11 +124,10 @@ static bool copy_file(SLONG s_fd,
  *
  **************************************/
 	UCHAR buff[1024];
-	SLONG l, len, read, written;
 
-	len = size;
+	SLONG len = size;
 
-	l = 1024;
+	SLONG l = 1024;
 
 	while (len) {
 		if (len < 1024)
@@ -146,11 +135,14 @@ static bool copy_file(SLONG s_fd,
 
 		len -= l;
 
+		SLONG read;
 		if (LLIO_read(0, s_fd, 0, 0L, LLIO_SEEK_NONE, buff, l, &read) ||
 			l != read)
 		{
 			return false;
 		}
+		
+		SLONG written;
 		if (LLIO_write(0, d_fd, 0, 0L, LLIO_SEEK_NONE, buff, l, &written) ||
 			l != written)
 		{
@@ -162,8 +154,8 @@ static bool copy_file(SLONG s_fd,
 }
 
 
-static void error_exit(ISC_STATUS * status_vector,
-					   JRN * ret_journal,
+static void error_exit(ISC_STATUS* status_vector,
+					   JRN* ret_journal,
 					   SLONG db_id,
 					   SLONG file_id,
 					   SLONG error_code)

@@ -339,6 +339,7 @@ typedef dbb* DBB;
 
 //
 // Errors during validation - will be returned on info calls
+// CVC: It seems they will be better in a header for val.cpp that's not val.h
 //
 #define VAL_PAG_WRONG_TYPE          0
 #define VAL_PAG_CHECKSUM_ERR        1
@@ -820,9 +821,9 @@ public:
 			return false;	// runtime safety
 		}
 		// TMN: Note that this violates "common sense" and should be fixed.
-		str* res = FB_NEW_RPT(*pPool, new_len+1) str;
+		str* res = FB_NEW_RPT(*pPool, new_len + 1) str;
 		res->str_length = new_len;
-		memcpy(res->str_data, s->str_data, s->str_length+1);
+		memcpy(res->str_data, s->str_data, s->str_length + 1);
 		str* old = s;
 		s = res;
 		delete old;
@@ -878,6 +879,9 @@ typedef btb *BTB;
 
 
 /* Window block for loading cached pages into */
+// CVC: Apparently, the only possible values are HEADER_PAGE==0 and LOG_PAGE==2
+// and reside in ods.h, although I watched a place with 1 and others with members
+// of a struct.
 
 typedef struct win {
 	SLONG win_page;
@@ -886,7 +890,21 @@ typedef struct win {
 	class bdb* win_bdb;
 	SSHORT win_scans;
 	USHORT win_flags;
+	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
 } WIN;
+
+// This is a compilation artifact: I wanted to be sure I would pick all old "win"
+// declarations at the top, so "win" was built with a mandatory argument in
+// the constructor. This struct satisfies a single place with an array. The
+// alternative would be to initialize 16 elements of the array with 16 calls
+// to the constructor: win my_array[n] = {win(-1), ... (win-1)};
+// When all places are changed, this class can disappear and win's constructor
+// may get the default value of -1 to "wp".
+struct win_for_array: public win
+{
+	win_for_array() : win(-1) {}
+};
+
 
 #define	WIN_large_scan		1	/* large sequential scan */
 #define WIN_secondary		2	/* secondary stream */
@@ -1071,3 +1089,4 @@ extern IHNDL internal_db_handles;
 
 
 #endif /* JRD_JRD_H */
+

@@ -532,7 +532,7 @@ int VIO_chase_record_version(TDBB tdbb, RPB * rpb, RSB rsb, JRD_TRA transaction,
 
 /* First, save the record indentifying information to be restored on exit */
 
-	while (TRUE) {
+	while (true) {
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_READS_INFO)
 			ib_printf
@@ -914,7 +914,7 @@ int VIO_check_if_updated(TDBB tdbb, RPB * rpb)
 
 	transaction = tdbb->tdbb_request->req_transaction;
 
-	while (TRUE) {
+	while (true) {
 		if (!DPM_get(tdbb, rpb, LCK_read))
 			return FALSE;
 		else
@@ -1505,7 +1505,7 @@ int VIO_garbage_collect(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 	if (transaction->tra_attachment->att_flags & ATT_no_cleanup)
 		return TRUE;
 
-	while (TRUE)
+	while (true)
 	{
 		if (rpb->rpb_flags & rpb_damaged)
 		{
@@ -1736,7 +1736,7 @@ int VIO_get_current(
 				  pool );
 #endif
 
-	while (TRUE) {
+	while (true) {
 		/* If the record doesn't exist, no problem. */
 
 		if (!DPM_get(tdbb, rpb, LCK_read))
@@ -4034,7 +4034,7 @@ static int prepare_update(	TDBB	tdbb,
    replacing it with a completely new version.  Make sure it
    was the same one we stored above. */
 
-	while (TRUE)
+	while (true)
 	{
 		org_rpb.rpb_flags = rpb->rpb_flags;
 		org_rpb.rpb_f_line = rpb->rpb_f_line;

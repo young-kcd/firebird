@@ -89,7 +89,6 @@ int OLD_dump(
  *			    Other relevent info to pick up where it leaves off.
  *
  **************************************/
-	WIN window;
 	PGC pgc;
 	UCHAR byte;
 	SLONG sequence;
@@ -185,6 +184,7 @@ int OLD_dump(
 
 	pgc = dbb->dbb_pcontrol;
 
+	WIN window(-1);
 	for (sequence = 0;; sequence++) {
 		window.win_page = (sequence) ? (SLONG) (sequence * pgc->pgc_ppp - 1) :
 			(SLONG) pgc->pgc_pip;
@@ -466,8 +466,7 @@ static int old_dump_page(OLD OLD_handle, ULONG page_number)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
-	JRND record;
+	jrnd record;
 	SSHORT ret_val;
 
 	dbb = GET_DBB;
@@ -476,8 +475,7 @@ static int old_dump_page(OLD OLD_handle, ULONG page_number)
 	record.jrnd_page = page_number;
 	record.jrnd_length = dbb->dbb_page_size;
 
-	window.win_page = page_number;
-	window.win_flags = 0;
+	WIN window(page_number);
 	CCH_FETCH_NO_CHECKSUM(NULL, &window, LCK_read, pag_undefined);
 	ret_val = old_put_rec(OLD_handle,
 						  reinterpret_cast < jrnh * >(&record),

@@ -396,7 +396,6 @@ void CCH_do_log_shutdown(TDBB tdbb, bool force_archive)
  **************************************/
 	DBB dbb;
 	log_info_page* logp;
-	WIN window;
 	SLONG seqno, offset, p_offset;
 	SCHAR walname[MAXPATHLEN];
 	SSHORT w_len;
@@ -407,8 +406,7 @@ void CCH_do_log_shutdown(TDBB tdbb, bool force_archive)
 	if (!dbb->dbb_wal)
 		return;
 
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
+	WIN window(LOG_PAGE);
 	logp = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	logp->log_flags &= ~log_recover;
 
@@ -1566,7 +1564,6 @@ PAG CCH_handoff(TDBB	tdbb,
  *		The fetched page is unmarked.
  *
  **************************************/
-	WIN temp;
 	SSHORT must_read;
 	BDB bdb;
 
@@ -1586,7 +1583,7 @@ PAG CCH_handoff(TDBB	tdbb,
 		return window->win_buffer;
 	}
 
-	temp = *window;
+	WIN temp = *window;
 	window->win_page = page;
 	must_read =
 		CCH_FETCH_LOCK(tdbb, window, lock, LCK_WAIT, latch_wait, page_type);
@@ -2208,7 +2205,6 @@ void CCH_recover_shadow(TDBB tdbb, SBM sbm_rec)
  *
  **************************************/
 	SLONG page_no = -1;
-	WIN window;
 	DBB dbb;
 	ISC_STATUS *status;
 	int result;
@@ -2219,6 +2215,7 @@ void CCH_recover_shadow(TDBB tdbb, SBM sbm_rec)
 	dbb = tdbb->tdbb_database;
 	status = tdbb->tdbb_status_vector;
 
+	WIN window(-1);
 	if (!sbm_rec) {
 		/* Now that shadows are initialized after WAL, write the header
 		   page with the recover bit to shadow. */
@@ -2575,7 +2572,6 @@ void CCH_release_journal(TDBB tdbb, SLONG number)
  *	Get rid of journal buffer for a page which has been released.
  *
  **************************************/
-	WIN window;
 	BDB bdb, journal;
 	BCB bcb;
 	DBB dbb;
@@ -2585,7 +2581,7 @@ void CCH_release_journal(TDBB tdbb, SLONG number)
 	if (!dbb->dbb_wal)
 		return;
 
-	window.win_page = number;
+	WIN window(number);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
 
 /* if there is still a journal buffer, zero it out */
@@ -3232,7 +3228,7 @@ static void btc_insert(DBB dbb, BDB bdb)
 
 	page = bdb->bdb_page;
 
-	while (TRUE) {
+	while (true) {
 		if (page == node->bdb_page)
 			break;
 
@@ -4241,7 +4237,7 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 
 	BCB_MUTEX_ACQUIRE;
 
-	while (TRUE) {
+	while (true) {
 	  find_page:
 
 		bcb = dbb->dbb_bcb;
@@ -4504,7 +4500,7 @@ static void journal_buffer(ISC_STATUS * status, BDB bdb)
 	BCB bcb;
 	DBB dbb;
 	ULONG seqno, offset;
-	JRND header;
+	jrnd header;
 
 	dbb = bdb->bdb_dbb;
 	bdb->bdb_flags &= ~BDB_journal;
@@ -5069,7 +5065,7 @@ static ULONG memory_init(TDBB tdbb, BCB bcb, ULONG number)
 					if (memory_size < MIN_BUFFER_SEGMENT)	/* Diminishing returns */
 						return buffers;
 				}
-			} while (TRUE);
+			} while (true);
 
 			LLS_PUSH(memory, &bcb->bcb_memory);
 			memory_end = memory + memory_size;

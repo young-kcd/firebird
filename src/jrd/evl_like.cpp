@@ -6,7 +6,7 @@
 
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		evl_like.c
+ *	MODULE:		evl_like.cpp
  *	DESCRIPTION:	Expression evaluation (international)
  *
  * The contents of this file are subject to the Interbase Public
@@ -49,8 +49,8 @@
 #define GDML_RPAREN		')'
 
 
-USHORT LIKENAME(TDBB tdbb, TextType obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte count */
-				LIKETYPE * p2, SSHORT l2_bytes,	/* byte count */
+USHORT LIKENAME(TDBB tdbb, TextType obj, const LIKETYPE* p1, SSHORT l1_bytes,	/* byte count */
+				const LIKETYPE* p2, SSHORT l2_bytes,	/* byte count */
 				UCS2_CHAR escape_char)
 {
 /**************************************
@@ -131,8 +131,8 @@ USHORT LIKENAME(TDBB tdbb, TextType obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte
 
 USHORT MATCHESNAME(TDBB tdbb,
 				   TextType obj,
-				   MATCHESTYPE * p1,
-				   SSHORT l1_bytes, MATCHESTYPE * p2, SSHORT l2_bytes)
+				   const MATCHESTYPE* p1,
+				   SSHORT l1_bytes, const MATCHESTYPE* p2, SSHORT l2_bytes)
 {
 /**************************************
  *
@@ -195,8 +195,8 @@ USHORT MATCHESNAME(TDBB tdbb,
 USHORT SLEUTHNAME(TDBB tdbb_dummy,
 				  TextType obj,
 				  USHORT flags,
-				  SLEUTHTYPE * search,
-				  USHORT search_len, SLEUTHTYPE * match, USHORT match_len)
+				  const SLEUTHTYPE* search,
+				  USHORT search_len, const SLEUTHTYPE* match, USHORT match_len)
 {
 /**************************************
  *
@@ -211,13 +211,11 @@ USHORT SLEUTHNAME(TDBB tdbb_dummy,
  *	(pointer, end_pointer) for use in SLEUTH_AUX
  *
  **************************************/
-	SLEUTHTYPE *end_match, *end_search;
-
 	fb_assert((match_len % sizeof(SLEUTHTYPE)) == 0);
 	fb_assert((search_len % sizeof(SLEUTHTYPE)) == 0);
 
-	end_match = match + (match_len / sizeof(SLEUTHTYPE));
-	end_search = search + (search_len / sizeof(SLEUTHTYPE));
+	const SLEUTHTYPE* const end_match = match + (match_len / sizeof(SLEUTHTYPE));
+	const SLEUTHTYPE* const end_search = search + (search_len / sizeof(SLEUTHTYPE));
 
 	return ((USHORT)
 			SLEUTH_AUX(obj, flags, search, end_search, match, end_match));
@@ -226,11 +224,11 @@ USHORT SLEUTHNAME(TDBB tdbb_dummy,
 
 USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 						 TextType obj,
-						 SLEUTHTYPE * match,
+						 const SLEUTHTYPE* match,
 						 USHORT match_bytes,
-						 SLEUTHTYPE * control,
+						 const SLEUTHTYPE* control,
 						 USHORT control_bytes,
-						 SLEUTHTYPE * combined, USHORT combined_bytes)
+						 SLEUTHTYPE* combined, USHORT combined_bytes)
 {
 /**************************************
  *
@@ -254,8 +252,8 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
  *	is not a bug.
  *
  **************************************/
-	SLEUTHTYPE c, *comb, **v, *vector[256], **end_vector, *p, max_op,
-		temp[256], *t, *end_match, *end_control;
+	SLEUTHTYPE *vector[256], **end_vector, *p,
+		temp[256];
 
 	fb_assert(match != NULL);
 	fb_assert(control != NULL);
@@ -264,18 +262,18 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 	fb_assert((match_bytes % sizeof(SLEUTHTYPE)) == 0);
 	fb_assert((control_bytes % sizeof(SLEUTHTYPE)) == 0);
 
-	end_match = match + (match_bytes / sizeof(SLEUTHTYPE));
-	end_control = control + (control_bytes / sizeof(SLEUTHTYPE));
+	const SLEUTHTYPE* const end_match = match + (match_bytes / sizeof(SLEUTHTYPE));
+	const SLEUTHTYPE* const end_control = control + (control_bytes / sizeof(SLEUTHTYPE));
 
-	max_op = 0;
-	comb = combined;
-	v = vector;
-	t = temp;
+	SLEUTHTYPE max_op = 0;
+	SLEUTHTYPE* comb = combined;
+	SLEUTHTYPE** v = vector;
+	SLEUTHTYPE* t = temp;
 
 /* Parse control string into substitution strings and initializing string */
 
 	while (control < end_control) {
-		c = *control++;
+		SLEUTHTYPE c = *control++;
 		if (*control == GDML_SUBSTITUTE) {
 			/* Note: don't allow substitution characters larger than vector */
 			end_vector = vector + (((int)c < FB_NELEM(vector)) ? c : 0);
@@ -287,7 +285,9 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 				c = *control++;
 				if ((t > temp && t[-1] == GDML_QUOTE)
 					|| ((c != GDML_COMMA) && (c != GDML_RPAREN)))
+				{
 					*t++ = c;
+				}
 				else
 					break;
 			}
@@ -306,7 +306,7 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 /* Interpret matching string, substituting where appropriate */
 
 	while (match < end_match) {
-		c = *match++;
+		const SLEUTHTYPE c = *match++;
 
 		/* if we've got a defined character, slurp the definition */
 
@@ -327,7 +327,9 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 		else {
 			if ((((size_t) c) < sizeof(special)) && special[c] &&
 				comb > combined && comb[-1] != GDML_QUOTE)
+			{
 				*comb++ = GDML_QUOTE;
+			}
 			*comb++ = c;
 		}
 	}
@@ -346,9 +348,9 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 static BOOLEAN SLEUTH_AUX(
 						  TextType obj,
 						  USHORT flags,
-						  SLEUTHTYPE * search,
-						  SLEUTHTYPE * end_search,
-SLEUTHTYPE * match, SLEUTHTYPE * end_match)
+						  const SLEUTHTYPE* search,
+						  const SLEUTHTYPE* end_search,
+const SLEUTHTYPE* match, const SLEUTHTYPE* end_match)
 {
 /**************************************
  *
@@ -360,7 +362,7 @@ SLEUTHTYPE * match, SLEUTHTYPE * end_match)
  *	Evaluate the "sleuth" search operator.
  *
  **************************************/
-	SLEUTHTYPE c, d, *class_, *end_class;
+	SLEUTHTYPE c, d;
 
 	fb_assert(search != NULL);
 	fb_assert(end_search != NULL);
@@ -413,11 +415,12 @@ SLEUTHTYPE * match, SLEUTHTYPE * end_match)
 						return FALSE;
 			}
 		else if (c == GDML_CLASS_START) {
-			class_ = match;
-			while (*match++ != GDML_CLASS_END)
+			const SLEUTHTYPE* const class_ = match;
+			while (*match++ != GDML_CLASS_END) {
 				if (match >= end_match)
 					return FALSE;
-			end_class = match - 1;
+			}
+			const SLEUTHTYPE* const end_class = match - 1;
 			if (match >= end_match || *match != GDML_MATCH_ANY) {
 				if (!SLEUTH_CLASS_NAME
 					(obj, flags, class_, end_class, *search++))
@@ -460,8 +463,9 @@ SLEUTHTYPE * match, SLEUTHTYPE * end_match)
 static BOOLEAN SLEUTH_CLASS_NAME(
 								 TextType obj,
 								 USHORT flags,
-								 SLEUTHTYPE * class_,
-								 SLEUTHTYPE * end_class, SLEUTHTYPE character)
+								 const SLEUTHTYPE* class_,
+								 const SLEUTHTYPE* const end_class, 
+								 SLEUTHTYPE character)
 {
 /**************************************
  *
@@ -475,14 +479,11 @@ static BOOLEAN SLEUTH_CLASS_NAME(
  *	instead of SCHAR-based.
  *
  **************************************/
-	SLEUTHTYPE c;
-	USHORT result;
-
 	fb_assert(class_ != NULL);
 	fb_assert(end_class != NULL);
 	fb_assert(class_ <= end_class);
 
-	result = TRUE;
+	USHORT result = TRUE;
 	character = COND_UPPER(obj, character);
 
 	if (*class_ == GDML_NOT) {
@@ -491,7 +492,7 @@ static BOOLEAN SLEUTH_CLASS_NAME(
 	}
 
 	while (class_ < end_class) {
-		c = *class_++;
+		const SLEUTHTYPE c = *class_++;
 		if (c == GDML_QUOTE) {
 			if (*class_++ == character)
 				return TRUE;

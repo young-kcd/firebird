@@ -2074,7 +2074,7 @@ static JRD_NOD par_rse(TDBB tdbb, CSB csb, SSHORT rse_op)
 		//*ptr++ = parse(tdbb, csb, RELATION);
 	}
 
-	while (TRUE)
+	while (true)
 		switch (op = BLR_BYTE) {
 		case blr_boolean:
 			rse->rse_boolean = parse(tdbb, csb, BOOL);
@@ -2227,7 +2227,7 @@ static JRD_NOD par_stream(TDBB tdbb, CSB csb)
 	rse->rse_count = 1;
 	rse->rse_relation[0] = parse(tdbb, csb, RELATION);
 
-	while (TRUE)
+	while (true)
 		switch (op = BLR_BYTE) {
 		case blr_boolean:
 			rse->rse_boolean = parse(tdbb, csb, BOOL);

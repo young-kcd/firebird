@@ -206,7 +206,6 @@ USHORT BTR_all(TDBB    tdbb,
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	IRT root;
 	STR new_buffer;
 	USHORT count, i;
@@ -216,7 +215,7 @@ USHORT BTR_all(TDBB    tdbb,
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
-	window.win_flags = 0;
+	WIN window(-1);
 
 	buffer = *start_buffer;
 	if (!(root = fetch_root(tdbb, &window, relation))) {
@@ -274,9 +273,7 @@ void BTR_create(TDBB tdbb,
 
 	// Index is created.  Go back to the index root page and update it to
 	// point to the index.
-	WIN window;
-	window.win_page = relation->rel_index_root;
-	window.win_flags = 0;
+	WIN window(relation->rel_index_root);
 	IRT root = (IRT) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
 	root->irt_rpt[idx->idx_id].irt_root = idx->idx_root;
@@ -417,8 +414,7 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 	SBM_reset(bitmap);
 
 	IDX idx;
-	WIN window;
-	window.win_flags = 0;
+	WIN window(-1);
 	KEY lower, upper;
 	BTR page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper, false);
 
@@ -431,7 +427,7 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 		while (!(pointer = find_node_start_point(page, &lower, 0, &prefix,
 					idx.idx_flags & idx_descending, true)))
 		{
-			page =(BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
+			page = (BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
 				LCK_read, pag_index);
 		}
 
@@ -631,11 +627,9 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 	IDX *idx;
-	WIN window;
 
 	idx = insertion->iib_descriptor;
-	window.win_page = idx->idx_root;
-	window.win_flags = 0;
+	WIN window(idx->idx_root);
 	BTR bucket = (BTR) CCH_FETCH(tdbb, &window, LCK_read, pag_index);
 
 	if (bucket->btr_level == 0) {
@@ -665,9 +659,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 	CCH_MARK(tdbb, &window);
 	bucket->btr_header.pag_flags &= ~btr_dont_gc;
 
-	WIN new_window;
-	new_window.win_page = split_page;
-	new_window.win_flags = 0;
+	WIN new_window(split_page);
 	BTR new_bucket = (BTR) CCH_FETCH(tdbb, &new_window, LCK_read, pag_index);
 
 	if (bucket->btr_level != new_bucket->btr_level) {
@@ -749,7 +741,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 
 	// journal root page change
 	if (dbb->dbb_wal) {
-		JRNRP journal;
+		jrnrp journal;
 		journal.jrnrp_type = JRNP_ROOT_PAGE;
 		journal.jrnrp_id = idx->idx_id;
 		journal.jrnrp_page = new_window.win_page;
@@ -1117,11 +1109,10 @@ USHORT BTR_lookup(TDBB tdbb, JRD_REL relation, USHORT id, IDX * buffer)
  *	Return a description of the specified index.
  *
  **************************************/
-	WIN window;
 	IRT root;
 
 	SET_TDBB(tdbb);
-	window.win_flags = 0;
+	WIN window(-1);
 
 	if (!(root = fetch_root(tdbb, &window, relation))) {
 		return FB_FAILURE;
@@ -1354,9 +1345,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 	DBB dbb = tdbb->tdbb_database;
 	IDX *idx;
 	idx = insertion->iib_descriptor;
-	WIN window;
-	window.win_page = idx->idx_root;
-	window.win_flags = 0;
+	WIN window(idx->idx_root);
 	BTR page = (BTR) CCH_FETCH(tdbb, &window, LCK_read, pag_index);
 
 	// If the page is level 0, re-fetch it for write
@@ -1406,7 +1395,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 
 		// journal root page change
 		if (dbb->dbb_wal) {
-			JRNRP journal;
+			jrnrp journal;
 			journal.jrnrp_type = JRNP_ROOT_PAGE;
 			journal.jrnrp_id = idx->idx_id;
 			journal.jrnrp_page = number;
@@ -1452,9 +1441,7 @@ void BTR_reserve_slot(TDBB tdbb, JRD_REL relation, JRD_TRA transaction, IDX * id
 
 	// Get root page, assign an index id, and store the index descriptor.
 	// Leave the root pointer null for the time being.
-	WIN window;
-	window.win_page = relation->rel_index_root;
-	window.win_flags = 0;
+	WIN window(relation->rel_index_root);
 	IRT root = (IRT) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
 
@@ -1551,8 +1538,7 @@ void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& se
  **************************************/
 
 	SET_TDBB(tdbb);
-	WIN window;
-	window.win_flags = 0;
+	WIN window(-1);
 
 	IRT root = fetch_root(tdbb, &window, relation);
 	if (!root) {
@@ -2504,7 +2490,7 @@ static void delete_tree(TDBB tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	WIN window;
+	WIN window(-1);
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
@@ -2616,7 +2602,7 @@ static SLONG fast_load(TDBB tdbb,
 	
  	KEY keys[MAX_LEVELS];
 	btr *buckets[MAX_LEVELS];
-	WIN windows[MAX_LEVELS];
+	win_for_array windows[MAX_LEVELS];
 	ULONG split_pages[MAX_LEVELS];
 	SLONG split_record_numbers[MAX_LEVELS];
 	UCHAR* pointers[MAX_LEVELS];
@@ -2729,7 +2715,7 @@ static SLONG fast_load(TDBB tdbb,
 	buckets[1] = NULL;
 	keys[0].key_length = 0;
 
-	WIN *window;
+	WIN* window = 0;
 	bool error = false;
 	ULONG count = 0;
 	ULONG duplicates = 0;
@@ -2753,7 +2739,7 @@ static SLONG fast_load(TDBB tdbb,
 		// pointer holds the "main" pointer for inserting new nodes.
 
 		ISR isr;
-		WIN split_window;
+		win_for_array split_window;
 		KEY split_key, temp_key;
 		key* key;
 		dynKey* jumpKey = (*jumpKeys)[0];
@@ -4166,9 +4152,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	// is the parent page; there is a minute possibility that it could have been 
 	// released and reused already as another page on this level, but if so, it 
 	// won't really matter because we won't find the node on it
-	WIN parent_window;
-	parent_window.win_page = parent_number;
-	parent_window.win_flags = 0;
+	WIN parent_window(parent_number);
 	BTR parent_page = (BTR) CCH_FETCH(tdbb, &parent_window, LCK_write, pag_undefined);
 	if ((parent_page->btr_header.pag_type != pag_index)
 		|| (parent_page->btr_relation != relation_number)
@@ -4183,9 +4167,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	// but if it does not recognize us as its right sibling, keep 
 	// going to the right until we find the page that is our real 
 	// left sibling
-	WIN left_window;
-	left_window.win_page = left_number;
-	left_window.win_flags = 0;
+	WIN left_window(left_number);
 	BTR left_page = (BTR) CCH_FETCH(tdbb, &left_window, LCK_write, pag_index);
 	while (left_page->btr_sibling != window->win_page) {
 #ifdef DEBUG_BTR
@@ -4218,10 +4200,10 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	}
 
 	// fetch the right sibling page
-	WIN right_window;
 	BTR right_page = NULL;
-	if ( (right_window.win_page = gc_page->btr_sibling) ) {
-		right_window.win_flags = 0;
+	WIN right_window(gc_page->btr_sibling);
+	if (right_window.win_page) {
+		// right_window.win_flags = 0; redundant, made by the constructor
 		right_page = (BTR) CCH_FETCH(tdbb, &right_window, LCK_write, pag_index);
 
 		if (right_page->btr_left_sibling != window->win_page) {
@@ -5292,7 +5274,7 @@ static SLONG insert_node(TDBB tdbb,
 	}
 
 	// Allocate and format the overflow page
-	WIN split_window;
+	WIN split_window(-1);
 	BTR split = (BTR) DPM_allocate(tdbb, &split_window);
 
 	// if we're a pointer page, make sure the child page is written first

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_iso8859_2.c
+ *	MODULE:		lc_iso8859_2.cpp
  *	DESCRIPTION:	Language Drivers in the iso8859_2 family.
  *			(full International collation)
  *
@@ -140,3 +140,4 @@ static	USHORT	fam2_to_lower (TEXTTYPE obj, BYTE ch)
 
 #undef LOCALE_UPPER
 #undef LOCALE_LOWER
+

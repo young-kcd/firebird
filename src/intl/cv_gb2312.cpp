@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cv_gb2312.c
+ *	MODULE:		cv_gb2312.cpp
  *	DESCRIPTION:	Codeset conversion for GB2312 family codesets
  *
  * The contents of this file are subject to the Interbase Public
@@ -267,8 +267,8 @@ USHORT CVGB_gb2312_byte2short(CSCONVERT obj,
 
 
 SSHORT CVGB_gb2312_mbtowc(CSCONVERT obj,
-						  UCS2_CHAR *wc,
-						  UCHAR *src,
+						  UCS2_CHAR* wc,
+						  const UCHAR* src,
 						  USHORT src_len)
 {
 /**************************************
@@ -296,3 +296,4 @@ SSHORT CVGB_gb2312_mbtowc(CSCONVERT obj,
 		return 1;
 	};
 }
+

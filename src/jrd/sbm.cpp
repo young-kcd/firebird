@@ -256,7 +256,7 @@ void SBM_dump(IB_FILE * f, SBM bitmap1)
 			   bitmap1->sbm_count, bitmap1->sbm_used,
 			   bitmap1->sbm_high_water);
 
-	while (TRUE) {
+	while (true) {
 		if (!SBM_next(bitmap1, &bit1, RSE_get_forward))
 			break;
 		if (bit1 == last_bit + 1) {
@@ -310,7 +310,7 @@ BOOLEAN SBM_equal(SBM bitmap1, SBM bitmap2)
 
 /* Now check each bit */
 	bit1 = bit2 = -1;
-	while (TRUE) {
+	while (true) {
 		int res1, res2;
 
 		res1 = SBM_next(bitmap1, &bit1, RSE_get_forward);

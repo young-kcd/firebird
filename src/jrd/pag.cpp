@@ -219,7 +219,6 @@ int PAG_add_clump(
 	DBB dbb;
 	HDR header;
 	log_info_page* logp;
-	WIN window;
 	UCHAR *entry_p, *clump_end;
 	USHORT l;
 	int found;
@@ -233,8 +232,7 @@ int PAG_add_clump(
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
-	window.win_page = page_num;
-	window.win_flags = 0;
+	WIN window(page_num);
 	if (page_num == HEADER_PAGE) {
 		page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		header = (HDR) page;
@@ -353,7 +351,6 @@ USHORT PAG_add_file(TEXT * file_name, SLONG start)
 	TDBB tdbb;
 	DBB dbb;
 	FIL file, next;
-	WIN window;
 	HDR header;
 	USHORT sequence;
 	ULONG seqno;
@@ -391,7 +388,7 @@ USHORT PAG_add_file(TEXT * file_name, SLONG start)
 	if (dbb->dbb_flags & DBB_force_write)
 		PIO_force_write(next, TRUE);
 
-	window.win_page = next->fil_min_page;
+	WIN window(next->fil_min_page);
 	header = (HDR) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_type = pag_header;
 	header->hdr_sequence = sequence;
@@ -620,13 +617,7 @@ PAG PAG_allocate(WIN * window)
  *
  **************************************/
 	DBB dbb;
-	PIP pip_page;
-	PIP new_pip_page;
-	PAG new_page = 0;
-	WIN pip_window;
 	PGC control;
-	USHORT i;
-	UCHAR *bytes, bit, *end;
 	SLONG sequence;
 	SLONG relative_bit;
 	JRNA record;
@@ -637,20 +628,29 @@ PAG PAG_allocate(WIN * window)
 	CHECK_DBB(dbb);
 
 	control = dbb->dbb_pcontrol;
-	pip_window.win_flags = 0;
+	// Not sure if this can be moved inside the loop. Maybe some data members
+	// should persist across iterations?
+	WIN pip_window(-1);
+	// CVC: Not sure of the initial value. Notice bytes and bit are used after the loop.
+	UCHAR* bytes = 0;
+	UCHAR bit = 0;
+	
+	pag* new_page = 0; // NULL before the search for a new page.
 
 /* Find an allocation page with something on it */
 
 	for (sequence = control->pgc_high_water;; sequence++) {
 		pip_window.win_page = (sequence == 0) ?
 			control->pgc_pip : sequence * control->pgc_ppp - 1;
-		pip_page = (PIP) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
-		end = (UCHAR *) pip_page + dbb->dbb_page_size;
+		pip* pip_page = (pip*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
+		const UCHAR* end = (UCHAR*) pip_page + dbb->dbb_page_size;
 		for (bytes = &pip_page->pip_bits[pip_page->pip_min >> 3]; bytes < end;
-			 bytes++) {
+			 bytes++)
+		{
 			if (*bytes != 0) {
 				/* 'byte' is not zero, so it describes at least one free page. */
-				for (i = 0, bit = 1; i < 8; i++, bit <<= 1) {
+				bit = 1;
+				for (SLONG i = 0; i < 8; i++, bit <<= 1) {
 					if (bit & *bytes) {
 						relative_bit =
 							((bytes - pip_page->pip_bits) << 3) + i;
@@ -698,9 +698,11 @@ PAG PAG_allocate(WIN * window)
 /* We've allocated the last page on the space management page.  Rather
    than returning it, format it as a page inventory page, and recurse. */
 
-	new_pip_page = (PIP) new_page;
+	pip* new_pip_page = (pip*) new_page;
 	new_pip_page->pip_header.pag_type = pag_pages;
-	end = (UCHAR *) new_pip_page + dbb->dbb_page_size;
+	// CVC: If some tips on web sites are true, this can be improved by
+	// a pointer to ULONG setting memory to 0xffffffff.
+	const UCHAR* end = (UCHAR *) new_pip_page + dbb->dbb_page_size;
 	for (bytes = new_pip_page->pip_bits; bytes < end;)
 		*bytes++ = 0xff;
 
@@ -733,7 +735,6 @@ SLONG PAG_attachment_id(void)
 	DBB dbb;
 	ATT attachment;
 	HDR header;
-	WIN window;
 	LCK lock;
 	JRNDA record;
 
@@ -741,7 +742,7 @@ SLONG PAG_attachment_id(void)
 	dbb = tdbb->tdbb_database;
 
 	attachment = tdbb->tdbb_attachment;
-	window.win_flags = 0;
+	WIN window(-1);
 
 /* If we've been here before just return the id */
 
@@ -798,7 +799,6 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	UCHAR *entry_p, *clump_end, *r;
 	USHORT l;
 	log_info_page* logp;
@@ -813,8 +813,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
-	window.win_page = page_num;
-	window.win_flags = 0;
+	WIN window(page_num);
 
 	if (page_num == HEADER_PAGE)
 		page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
@@ -867,7 +866,6 @@ void PAG_format_header(void)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	HDR header;
 	TDBB tdbb;
 
@@ -877,7 +875,7 @@ void PAG_format_header(void)
 
 /* Initialize header page */
 
-	window.win_page = HEADER_PAGE;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_scn() = 0;
 	MOV_time_stamp(reinterpret_cast <
@@ -920,13 +918,12 @@ void PAG_format_log(void)
  *	Set all parameters to 0
  *
  **************************************/
-	WIN window;
 	log_info_page* logp;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
 
-	window.win_page = LOG_PAGE;
+	WIN window(LOG_PAGE);
 	logp = (log_info_page*) CCH_fake(tdbb, &window, 1);
 	logp->log_header.pag_type = pag_log;
 
@@ -951,7 +948,6 @@ void PAG_format_pip(void)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	PIP pages;
 	UCHAR *p;
 	int i;
@@ -963,7 +959,8 @@ void PAG_format_pip(void)
 
 /* Initialize Page Inventory Page */
 
-	dbb->dbb_pcontrol->pgc_pip = window.win_page = 1;
+	WIN window(1);
+	dbb->dbb_pcontrol->pgc_pip = 1;
 	pages = (PIP) CCH_fake(tdbb, &window, 1);
 
 	pages->pip_header.pag_type = pag_pages;
@@ -999,15 +996,13 @@ int PAG_get_clump(SLONG page_num, USHORT type, USHORT * len, UCHAR * entry)
  **************************************/
 	UCHAR *q, *entry_p;
 	USHORT l;
-	WIN window;
 	PAG page;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
 
 	*len = 0;
-	window.win_page = page_num;
-	window.win_flags = 0;
+	WIN window(page_num);
 
 	if (page_num == HEADER_PAGE)
 		page = CCH_FETCH(tdbb, &window, LCK_read, pag_header);
@@ -1278,7 +1273,6 @@ void PAG_init2(USHORT shadow_number)
 	FIL file;
 	SDW shadow;
 	HDR header;
-	WIN window;
 	SCHAR *temp_buffer = NULL, *temp_page;
 	USHORT file_length, sequence;
 	TEXT *p, *file_name;
@@ -1315,7 +1309,7 @@ void PAG_init2(USHORT shadow_number)
 	}
 
 	sequence = 1;
-	window.win_flags = 0;
+	WIN window(-1);
 
 /* Loop thru files and header pages until everything is open */
 
@@ -1444,7 +1438,6 @@ SLONG PAG_last_page(void)
 	UCHAR *bits;
 	USHORT sequence;
 	ULONG pages_per_pip;
-	WIN window;
 	PIP page;
 	TDBB tdbb;
 
@@ -1453,7 +1446,7 @@ SLONG PAG_last_page(void)
 	CHECK_DBB(dbb);
 
 	pages_per_pip = dbb->dbb_pcontrol->pgc_ppp;
-	window.win_flags = 0;
+	WIN window(-1);
 
 /* Find the last page allocated */
 
@@ -1491,7 +1484,6 @@ void PAG_modify_log(SLONG tid, SLONG flag)
  *	Journal change to page.
  **************************************/
 	DBB dbb;
-	WIN window;
 	log_info_page* page;
 	JRNL record;
 	TDBB tdbb;
@@ -1500,8 +1492,7 @@ void PAG_modify_log(SLONG tid, SLONG flag)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	window.win_page = LOG_PAGE;
-	window.win_flags = 0;
+	WIN window(LOG_PAGE);
 	page = (log_info_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_log);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
@@ -1542,7 +1533,6 @@ void PAG_release_page(SLONG number, SLONG prior_page)
  **************************************/
 	DBB dbb;
 	PIP pages;
-	WIN pip_window;
 	PGC control;
 	JRNA record;
 	SLONG sequence;
@@ -1562,10 +1552,8 @@ void PAG_release_page(SLONG number, SLONG prior_page)
 	sequence = number / control->pgc_ppp;
 	relative_bit = number % control->pgc_ppp;
 
-	pip_window.win_page = (sequence == 0) ?
-		control->pgc_pip : sequence * control->pgc_ppp - 1;
-
-	pip_window.win_flags = 0;
+	WIN pip_window((sequence == 0) ?
+		control->pgc_pip : sequence * control->pgc_ppp - 1);
 
 /* if shared cache is being used, the page which is being freed up
  * may have a journal buffer which in no longer valid after the
@@ -1614,7 +1602,6 @@ void PAG_set_force_write(DBB dbb, SSHORT flag)
  *      The value 2 for flag means set to default.
  *
  **************************************/
-	WIN window;
 	HDR header;
 	FIL file;
 	SDW shadow;
@@ -1625,8 +1612,7 @@ void PAG_set_force_write(DBB dbb, SSHORT flag)
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
@@ -1679,7 +1665,6 @@ void PAG_set_no_reserve(DBB dbb, USHORT flag)
  *	Turn on/off reserving space for versions
  *
  **************************************/
-	WIN window;
 	HDR header;
 	TDBB tdbb;
 
@@ -1687,8 +1672,7 @@ void PAG_set_no_reserve(DBB dbb, USHORT flag)
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
@@ -1717,14 +1701,12 @@ void PAG_set_db_readonly(DBB dbb, SSHORT flag)
  *	Set database access mode to readonly OR readwrite
  *
  *********************************************/
-	WIN window;
 	HDR header;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
 	if (!flag) {
@@ -1760,7 +1742,6 @@ void PAG_set_db_SQL_dialect(DBB dbb, SSHORT flag)
  *	Set database SQL dialect to SQL_DIALECT_V5 or SQL_DIALECT_V6
  *
  *********************************************/
-	WIN window;
 	HDR header;
 	TDBB tdbb;
 	USHORT major_version, minor_original;
@@ -1770,8 +1751,7 @@ void PAG_set_db_SQL_dialect(DBB dbb, SSHORT flag)
 	major_version = (SSHORT) dbb->dbb_ods_version;
 	minor_original = (SSHORT) dbb->dbb_minor_original;
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
 	if ((flag) && (ENCODE_ODS(major_version, minor_original) >= ODS_10_0)) {
@@ -1818,7 +1798,6 @@ void PAG_set_page_buffers(ULONG buffers)
  *	Set database-specific page buffer cache
  *
  **************************************/
-	WIN window;
 	HDR header;
 	TDBB tdbb;
 	DBB dbb;
@@ -1829,8 +1808,7 @@ void PAG_set_page_buffers(ULONG buffers)
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_page_buffers = buffers;
@@ -1869,15 +1847,13 @@ int PAG_unlicensed(void)
  *	sort of non-sense.
  *
  **************************************/
-	WIN window;
 	SLONG count;
 	USHORT len;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
@@ -1918,7 +1894,6 @@ static void find_clump_space(
  **************************************/
 	DBB dbb;
 	UCHAR *p;
-	WIN new_window;
 	HDR new_header, header;
 	log_info_page* new_logp;
 	log_info_page* logp;
@@ -1935,7 +1910,7 @@ static void find_clump_space(
 	const UCHAR* ptr = entry;
 	page = *ppage;
 
-	while (TRUE) {
+	while (true) {
 		if (page_num == HEADER_PAGE) {
 			header = (HDR) page;
 			next_page = header->hdr_next_page;
@@ -1987,6 +1962,7 @@ static void find_clump_space(
 				CCH_HANDOFF(tdbb, window, next_page, LCK_write, pag_log);
 	}
 
+	WIN new_window(-1);
 	new_page = (PAG) DPM_allocate(tdbb, &new_window);
 
 	if (must_write)
@@ -2072,7 +2048,7 @@ static BOOLEAN find_type(
 
 	q = 0;
 
-	while (TRUE) {
+	while (true) {
 		if (page_num == HEADER_PAGE) {
 			header = (HDR) (*ppage);
 			p = header->hdr_data;

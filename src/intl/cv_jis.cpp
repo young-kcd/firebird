@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cv_jis.c
+ *	MODULE:		cv_jis.cpp
  *	DESCRIPTION:	Codeset conversion for JIS family codesets
  *
  * The contents of this file are subject to the Interbase Public
@@ -763,7 +763,7 @@ USHORT CVJIS_euc_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *sr
 }
 
 
-SSHORT CVJIS_euc_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len)
+SSHORT CVJIS_euc_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len)
 {
 /**************************************
  *
@@ -937,7 +937,7 @@ USHORT CVJIS_sjis_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *s
 }
 
 
-SSHORT CVJIS_sjis_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len)
+SSHORT CVJIS_sjis_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len)
 {
 /**************************************
  *
@@ -982,3 +982,4 @@ CONVERT_ENTRY(CS_SJIS, CS_EUCJ, CVJIS_sjis_x_eucj)
 
 	CONVERT_RETURN;
 }
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cv_big5.c
+ *	MODULE:		cv_big5.cpp
  *	DESCRIPTION:	Codeset conversion for BIG5 family codesets
  *
  * The contents of this file are subject to the Interbase Public
@@ -267,8 +267,8 @@ USHORT CVBIG5_big5_byte2short(CSCONVERT obj,
 
 
 SSHORT CVBIG5_big5_mbtowc(CSCONVERT obj,
-						  UCS2_CHAR *wc,
-						  UCHAR *src,
+						  UCS2_CHAR* wc,
+						  const UCHAR* src,
 						  USHORT src_len)
 {
 /**************************************
@@ -296,3 +296,4 @@ SSHORT CVBIG5_big5_mbtowc(CSCONVERT obj,
 		return 1;
 	};
 }
+

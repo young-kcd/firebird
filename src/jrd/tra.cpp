@@ -226,7 +226,6 @@ void TRA_cleanup(TDBB tdbb)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	HDR header;
 	TIP tip;
 	ATT attachment;
@@ -258,8 +257,7 @@ void TRA_cleanup(TDBB tdbb)
    the transaction inventory page was initialized to zero, it
    transaction is automatically marked active. */
 
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	ceiling = header->hdr_next_transaction;
 	active = header->hdr_oldest_active;
@@ -454,24 +452,23 @@ void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
  *
  **************************************/
 	DBB dbb;
-	WIN window, prior_window;
 	TIP tip, prior_tip;
 	JRNI record;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
-	window.win_flags = prior_window.win_flags = 0;
 
 /* Start by fetching prior transaction page, if any */
-
-	if (sequence)
+	WIN prior_window(-1);
+	if (sequence) {
 		prior_tip =
 			fetch_inventory_page(tdbb, &prior_window, (SLONG) (sequence - 1),
 								 LCK_write);
+	}
 
 /* Allocate and format new page */
-
+	WIN window(-1);
 	tip = (TIP) DPM_allocate(tdbb, &window);
 	tip->tip_header.pag_type = pag_transactions;
 
@@ -524,7 +521,6 @@ int TRA_fetch_state(TDBB tdbb, SLONG number)
 	DBB dbb;
     SLONG trans_per_tip;
 	ULONG tip_number, tip_seq;
-	WIN window;
 	TIP tip;
 	ULONG byte;
 	USHORT shift, state;
@@ -538,7 +534,7 @@ int TRA_fetch_state(TDBB tdbb, SLONG number)
     tip_number = (ULONG) number;
 	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 	tip_seq = tip_number / trans_per_tip;
-	window.win_flags = 0;
+	WIN window(-1);
 	tip = fetch_inventory_page(tdbb, &window, tip_seq, LCK_read);
 
 /* calculate the state of the desired transaction */
@@ -572,7 +568,6 @@ void TRA_get_inventory(TDBB tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
 	DBB dbb;
 	ULONG trans_per_tip;
 	ULONG sequence, last, l;
-	WIN window;
 	TIP tip;
 	UCHAR *p, *q;
 
@@ -586,7 +581,7 @@ void TRA_get_inventory(TDBB tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
 
 /* fetch the first inventory page */
 
-	window.win_flags = 0;
+	WIN window(-1);
 	tip = fetch_inventory_page(tdbb, &window, (SLONG) sequence++, LCK_read);
 
 /* move the first page into the bit vector */
@@ -1278,7 +1273,6 @@ void TRA_set_state(TDBB tdbb, JRD_TRA transaction, SLONG number, SSHORT state)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	TIP tip;
 	JRNI record;
 	UCHAR *address;
@@ -1309,7 +1303,7 @@ void TRA_set_state(TDBB tdbb, JRD_TRA transaction, SLONG number, SSHORT state)
 	byte = TRANS_OFFSET(number % trans_per_tip);
 	shift = TRANS_SHIFT(number);
 
-	window.win_flags = 0;
+	WIN window(-1);
 	tip = fetch_inventory_page(tdbb, &window, (SLONG) sequence, LCK_write);
 
 #ifdef SUPERSERVER_V2
@@ -1475,7 +1469,6 @@ jrd_tra* TRA_start(TDBB tdbb, int tpb_length, const SCHAR* tpb)
  **************************************/
 	DBB dbb;
 	ATT attachment;
-	WIN window;
 	HDR header;
 	JRD_TRA trans, temp;
 	LCK lock;
@@ -1487,7 +1480,7 @@ jrd_tra* TRA_start(TDBB tdbb, int tpb_length, const SCHAR* tpb)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	attachment = tdbb->tdbb_attachment;
-	window.win_flags = 0;
+	WIN window(-1);
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 		ERR_post(isc_shutinprog, isc_arg_cstring,
@@ -1542,7 +1535,7 @@ jrd_tra* TRA_start(TDBB tdbb, int tpb_length, const SCHAR* tpb)
    all transactions older than the oldest are either committed
    or cleaned up, they can be all considered as committed.  To
    make everything simpler, round down the oldest to a multiple
-   of four, which ib_puts the transaction on a byte boundary. */
+   of four, which puts the transaction on a byte boundary. */
 
 	base = oldest & ~TRA_MASK;
 
@@ -1830,7 +1823,6 @@ int TRA_sweep(TDBB tdbb, JRD_TRA trans)
 	DBB dbb;
 	JRD_TRA transaction = 0;
 	HDR header;
-	WIN window;
 	USHORT shift;
 	ULONG byte, active, base;
 	SLONG transaction_oldest_active;
@@ -1937,8 +1929,7 @@ int TRA_sweep(TDBB tdbb, JRD_TRA trans)
 
 		CCH_flush(tdbb, (USHORT) FLUSH_SWEEP, 0);
 
-		window.win_page = HEADER_PAGE;
-		window.win_flags = 0;
+		WIN window(HEADER_PAGE);
 		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
 		if (header->hdr_oldest_transaction < --transaction_oldest_active) {
@@ -2512,14 +2503,13 @@ static SLONG inventory_page(TDBB tdbb, SLONG sequence)
 	DBB dbb;
 	TIP tip;
 	VCL vector;
-	WIN window;
 	SLONG next;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	window.win_flags = 0;
+	WIN window(-1);
 	while (!(vector = dbb->dbb_t_pages) || sequence >= (SLONG) vector->count()) {
 		DPM_scan_pages(tdbb);
 		if ((vector = dbb->dbb_t_pages) && sequence < (SLONG) vector->count())
@@ -2559,7 +2549,6 @@ static SSHORT limbo_transaction(TDBB tdbb, SLONG id)
  *
  **************************************/
 	DBB dbb;
-	WIN window;
 	TIP tip;
 	UCHAR *byte;
 	SSHORT shift, state;
@@ -2574,7 +2563,7 @@ static SSHORT limbo_transaction(TDBB tdbb, SLONG id)
 	page = id / trans_per_tip;
 	number = id % trans_per_tip;
 
-	window.win_flags = 0;
+	WIN window(-1);
 	tip = fetch_inventory_page(tdbb, &window, page, LCK_write);
 
 	trans_offset = TRANS_OFFSET(number);
@@ -2649,7 +2638,6 @@ static void retain_context(TDBB tdbb, JRD_TRA transaction, const bool commit)
 	DBB dbb;
 	HDR header;
 	SLONG new_number, old_number;
-	WIN window;
 	LCK new_lock, old_lock;
 
 	SET_TDBB(tdbb);
@@ -2667,7 +2655,7 @@ static void retain_context(TDBB tdbb, JRD_TRA transaction, const bool commit)
 /* Create a new transaction lock, inheriting oldest active
    from transaction being committed. */
 
-	window.win_flags = 0;
+	WIN window(-1);
 #ifdef SUPERSERVER_V2
 	new_number = bump_transaction_id(tdbb, &window);
 #else

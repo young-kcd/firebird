@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_ascii.c
+ *	MODULE:		lc_ascii.h
  *	DESCRIPTION:	Language Drivers in the binary collation family.
  *
  * The contents of this file are subject to the Interbase Public
@@ -35,7 +35,7 @@ USHORT cp1251_to_upper(TEXTTYPE obj, BYTE ch);
 USHORT cp1251_to_lower(TEXTTYPE obj, BYTE ch);
 SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
 
-SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR *wc, UCHAR *ptr, USHORT count);
+SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* ptr, USHORT count);
 
 /*
  * Generic base for InterBase 4.0 Language Driver - ASCII family (binary
@@ -70,3 +70,4 @@ SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR *wc, UCHAR *ptr, USHORT count);
 
 #undef ASCII_SPACE
 #undef LANGASCII_MAX_KEY
+

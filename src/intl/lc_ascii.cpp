@@ -716,3 +716,4 @@ USHORT cp1251_to_lower(TEXTTYPE obj, BYTE ch)
 
 #undef ASCII_SPACE
 #undef LANGASCII_MAX_KEY
+

@@ -118,7 +118,6 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
  **************************************/
 	TDBB tdbb;
 	ATT attachment;
-	WIN window;
 	HDR header;
 	SSHORT timeout, exclusive;
 
@@ -140,8 +139,7 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	{
 		/* Clear shutdown flag on database header page */
 
-		window.win_page = HEADER_PAGE;
-		window.win_flags = 0;
+		WIN window(HEADER_PAGE);
 		header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		header->hdr_flags &= ~hdr_shutdown;
@@ -215,8 +213,7 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 
 	++dbb->dbb_use_count;
 	dbb->dbb_ast_flags &= ~(DBB_shut_force | DBB_shut_attach | DBB_shut_tran);
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+	WIN window(HEADER_PAGE);
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_flags |= hdr_shutdown;

@@ -24,17 +24,18 @@
 #ifndef JRD_BLF_PROTO_H
 #define JRD_BLF_PROTO_H
 
+// Does this file really need the extern C for external blob filters?
 extern "C" {
 
 ISC_STATUS	BLF_close_blob(TDBB, ctl**);
 ISC_STATUS	BLF_create_blob(TDBB, JRD_TRA, ctl**, SLONG*,
 										 USHORT, const UCHAR*,
-										 ISC_STATUS(*)(), BLF);
-ISC_STATUS	BLF_get_segment(TDBB, ctl**, USHORT*, USHORT, UCHAR *);
+										 FPTR_BFILTER_CALLBACK, BLF);
+ISC_STATUS	BLF_get_segment(TDBB, ctl**, USHORT*, USHORT, UCHAR*);
 BLF			BLF_lookup_internal_filter(TDBB, SSHORT, SSHORT);
-ISC_STATUS	BLF_open_blob(TDBB, JRD_TRA, ctl**, SLONG*,
+ISC_STATUS	BLF_open_blob(TDBB, JRD_TRA, ctl**, const SLONG*,
 									   USHORT, const UCHAR*,
-									   ISC_STATUS(*)(), BLF);
+									   FPTR_BFILTER_CALLBACK, BLF);
 ISC_STATUS	BLF_put_segment(TDBB, ctl**, USHORT, const UCHAR*);
 
 } /* extern "C" */
