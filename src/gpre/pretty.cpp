@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.7 2002-12-13 14:50:23 dimitr Exp $
+//	$Id: pretty.cpp,v 1.8 2003-02-08 00:36:51 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -823,34 +823,6 @@ static int print_dyn_verb( CTL control, SSHORT level)
 			PRINT_CHAR;
 		PRINT_LINE;
 		return 0;
-
-#if (defined JPN_SJIS || defined JPN_EUC)
-
-	case gds_dyn_view_source2:
-	case gds_dyn_fld_validation_source2:
-	case gds_dyn_fld_computed_source2:
-	case gds_dyn_description2:
-	case gds_dyn_prc_source2:
-		PRINT_WORD;
-		length = PRINT_WORD;
-		while (length--)
-			PRINT_CHAR;
-		PRINT_LINE;
-		return 0;
-
-	case gds_dyn_fld_edit_string2:
-	case gds_dyn_fld_query_header2:
-	case gds_dyn_trg_msg2:
-	case gds_dyn_trg_source2:
-		PRINT_WORD;
-		if (length = PRINT_WORD)
-			do
-				PRINT_CHAR;
-			while (--length);
-		PRINT_LINE;
-		return 0;
-
-#endif
 
 	case gds_dyn_del_exception:
 		if (length = PRINT_WORD)

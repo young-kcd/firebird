@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.7 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: int.cpp,v 1.8 2003-02-08 00:36:51 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -75,15 +75,9 @@ static int first_flag = 0;
 #define BEGIN		printa (column, "{")
 #define END		printa (column, "}")
 
-#if !(defined JPN_SJIS || defined JPN_EUC)
 #define GDS_VTOV	"gds__vtov"
 #define JRD_VTOF	"jrd_vtof"
 #define VTO_CALL	"%s ((const char*)%s, (char*)%s, %d);"
-#else
-#define GDS_VTOV	"gds__vtov2"
-#define JRD_VTOF	"jrd_vtof2"
-#define VTO_CALL	"%s (%s, %s, %d, %d);"
-#endif
 
 
 //____________________________________________________________
@@ -235,8 +229,6 @@ static void asgn_to( REF reference)
 	GPRE_FLD field = source->ref_field;
 	gen_name(s, source);
 
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 #pragma FB_COMPILER_MESSAGE("BUG: Checking for zero pointer - then using it!")
 	// Repeated later down in function gen_emodify, but then
 	// emitting jrd_ftof call.
@@ -249,23 +241,6 @@ static void asgn_to( REF reference)
 	else if (!field || field->fld_dtype == dtype_cstring)
 		ib_fprintf(out_file, "gds__vtov((const char*)%s, (char*)%s, sizeof (%s));",
 				   s, reference->ref_value, reference->ref_value);
-
-#else
-
-//  To avoid chopping off a double byte kanji character in between
-//  the two bytes, generate calls to gds__ftof2 gds$_vtof2 and
-//  gds$_vtov2 wherever necessary 
-
-	if (!field || field->fld_dtype == dtype_text)
-		ib_fprintf(out_file, "gds__ftov2 (%s, %d, %s, sizeof (%s), %d);",
-				   s,
-				   field->fld_length,
-				   reference->ref_value, reference->ref_value, sw_interp);
-	else if (!field || field->fld_dtype == dtype_cstring)
-		ib_fprintf(out_file, "gds__vtov2 (%s, %s, sizeof (%s), %d);",
-				   s, reference->ref_value, reference->ref_value, sw_interp);
-
-#endif
 	else
 		ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
 }
@@ -362,8 +337,6 @@ static void gen_emodify( ACT action, int column)
 		field = reference->ref_field;
 		align(column);
 
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
-
 		if (field->fld_dtype == dtype_text)
 			ib_fprintf(out_file, "jrd_ftof (%s, %d, %s, %d);",
 					   gen_name(s1, source),
@@ -373,25 +346,6 @@ static void gen_emodify( ACT action, int column)
 			ib_fprintf(out_file, "gds__vtov((const char*)%s, (char*)%s, %d);",
 					   gen_name(s1, source),
 					   gen_name(s2, reference), field->fld_length);
-
-#else
-
-		/* To avoid chopping off a double byte kanji character in between
-		   the two bytes, generate calls to gds__ftof2 gds$_vtof2 and
-		   gds$_vtov2 wherever necessary
-		   Cannot find where jrd_fof is defined. It needs Japanization too */
-
-		if (field->fld_dtype == dtype_text)
-			ib_fprintf(out_file, "jrd_ftof (%s, %d, %s, %d);",
-					   gen_name(s1, source),
-					   field->fld_length,
-					   gen_name(s2, reference), field->fld_length);
-		else if (field->fld_dtype == dtype_cstring)
-			ib_fprintf(out_file, "gds__vtov2 (%s, %s, %d, %d);",
-					   gen_name(s1, source),
-					   gen_name(s2, reference), field->fld_length, sw_interp);
-
-#endif
 		else
 			ib_fprintf(out_file, "%s = %s;",
 					   gen_name(s1, reference), gen_name(s2, source));

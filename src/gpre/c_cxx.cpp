@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.13 2002-12-16 15:51:37 alexpeshkoff Exp $
+//	$Id: c_cxx.cpp,v 1.14 2003-02-08 00:36:52 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -51,11 +51,6 @@ extern "C" {
 
 
 extern TEXT *transaction_name;
-
-#if (defined JPN_EUC || defined JPN_SJIS)
-extern SCHAR default_dpb[];
-extern USHORT default_dpb_size;
-#endif
 
 static void align(int);
 static void asgn_from(ACT, REF, int);
@@ -674,7 +669,6 @@ static void asgn_from( ACT action, REF reference, int column)
 		if (!slice_flag &&
 			reference->ref_value &&
 			(reference->ref_flags & REF_array_elem)) field = field->fld_array;
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
 		if (field && field->fld_dtype <= dtype_cstring)
 			if (field->fld_sub_type == 1)
 				if (field->fld_length == 1)
@@ -695,34 +689,6 @@ static void asgn_from( ACT action, REF reference, int column)
 			else
 				ib_fprintf(out_file, "isc_vtof (%s, %s, %d);", value,
 						   variable, field->fld_length);
-#else
-		/* To avoid chopping off a double byte kanji character in between
-		   the two bytes, generate calls to isc_ftof2 isc_vtof2 and
-		   isc_vtov2 wherever necessary */
-
-		if (field && field->fld_dtype <= dtype_cstring)
-			if (field->fld_sub_type == 1)
-				if (field->fld_length == 1)
-					ib_fprintf(out_file, "%s = %s;", variable, value);
-				else
-					ib_fprintf(out_file,
-							   "isc_ftof (%s, sizeof (%s), %s, %d);", value,
-							   value, variable, field->fld_length);
-			else if (field->fld_flags & FLD_dbkey)
-				ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);", value,
-						   field->fld_length, variable, field->fld_length);
-			else if (sw_cstring)
-				ib_fprintf(out_file, "isc_vtov2 (%s, %s, %d, %d);", value,
-						   variable, field->fld_length, sw_interp);
-			else if (reference->ref_source)
-				ib_fprintf(out_file,
-						   "isc_ftof2 (%s, sizeof (%s), %s, %d, %d);", value,
-						   value, variable, field->fld_length, sw_interp);
-			else
-				ib_fprintf(out_file, "isc_vtof2 (%s, %s, %d, %d);", value,
-						   variable, field->fld_length, sw_interp);
-
-#endif
 		else if (!reference->ref_master
 				 || (reference->ref_flags & REF_literal)) ib_fprintf(out_file,
 																	 "%s = %s;",
@@ -809,7 +775,6 @@ static void asgn_to( ACT action, REF reference, int column)
 			ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
 		else if (field->fld_sub_type == 1 && field->fld_length == 1)
 			ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
 		else if (field->fld_flags & FLD_dbkey)
 			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
 					   s, field->fld_length, reference->ref_value,
@@ -821,23 +786,6 @@ static void asgn_to( ACT action, REF reference, int column)
 		else
 			ib_fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, sizeof (%s));", s,
 					   reference->ref_value, reference->ref_value);
-#else
-		/* To avoid chopping off a double byte kanji character in between
-		   the two bytes, generate calls to isc_ftof2 isc_vtof2 and
-		   isc_vtov2 wherever necessary */
-
-		else if (field->fld_flags & FLD_dbkey)
-			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
-					   s, field->fld_length, reference->ref_value,
-					   field->fld_length);
-		else if (!sw_cstring || field->fld_sub_type == 1)
-			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, sizeof (%s));", s,
-					   field->fld_length, reference->ref_value,
-					   reference->ref_value);
-		else
-			ib_fprintf(out_file, "isc_vtov2 (%s, %s, sizeof (%s), %d);", s,
-					   reference->ref_value, reference->ref_value, sw_interp);
-#endif
 	}
 
 //  Pick up NULL value if one is there 
@@ -872,7 +820,6 @@ static void asgn_to_proc( REF reference, int column)
 			ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
 		else if (field->fld_sub_type == 1 && field->fld_length == 1)
 			ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
 		else if (field->fld_flags & FLD_dbkey)
 			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
 					   s, field->fld_length, reference->ref_value,
@@ -884,24 +831,6 @@ static void asgn_to_proc( REF reference, int column)
 		else
 			ib_fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, sizeof (%s));", s,
 					   reference->ref_value, reference->ref_value);
-#else
-		/* To avoid chopping off a double byte kanji character in between
-		   the two bytes, generate calls to isc_ftof2 isc_vtof2 and
-		   isc_vtov2 wherever necessary */
-
-		else if (field->fld_flags & FLD_dbkey)
-			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
-					   s, field->fld_length, reference->ref_value,
-					   field->fld_length);
-		else if (!sw_cstring || field->fld_sub_type == 1)
-			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, sizeof (%s));", s,
-					   field->fld_length, reference->ref_value,
-					   reference->ref_value);
-		else
-			ib_fprintf(out_file, "isc_vtov2 (%s, %s, sizeof (%s), %d);", s,
-					   reference->ref_value, reference->ref_value, sw_interp);
-
-#endif
 	}
 }
 
@@ -1646,21 +1575,6 @@ static void gen_database( ACT action, int column)
 	printa(column, "isc_array_length, \t/* array return size */");
 	printa(column, "SQLCODE;\t\t/* SQL status code */");
 
-#if (defined JPN_EUC || defined JPN_SJIS)
-//  Generate the default dpb to pass the users interpretation 
-
-	ib_fprintf(out_file, "\n");
-	printa(column - INDENT, "static short");
-	printa(column, "isc_dpb_size = %d;", default_dpb_size);
-	printa(column - INDENT, "static char");
-	printa(column, "isc_dpb [] = {");
-	column += INDENT;
-	PRETTY_print_cdb(default_dpb, gen_blr, 0, 0);
-	column -= INDENT;
-	printa(column, "}; \t\t\t/* default dpb */");
-	ib_fprintf(out_file, "\n");
-#endif
-
 	if (sw_pyxis)
 	{
 		if (sw_window_scope == DBB_STATIC)
@@ -2135,26 +2049,12 @@ static void gen_emodify( ACT action, int column)
 		if (field->fld_dtype > dtype_cstring ||
 			(field->fld_sub_type == 1 && field->fld_length == 1))
 			ib_fprintf(out_file, "%s = %s;", s2, s1);
-#if (! (defined JPN_SJIS || defined JPN_EUC) )
 		else if (sw_cstring && !field->fld_sub_type)
 			ib_fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, %d);",
 					   s1, s2, field->fld_length);
 		else
 			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
 					   s1, field->fld_length, s2, field->fld_length);
-#else
-		/* To avoid chopping off a double byte kanji character in between
-		   the two bytes, generate calls to isc_ftof2 iscvtof2 and
-		   iscvtov2 wherever necessary */
-
-		else if (sw_cstring && !field->fld_sub_type)
-			ib_fprintf(out_file, "isc_vtov2 (%s, %s, %d, %d);",
-					   s1, s2, field->fld_length, sw_interp);
-		else
-			ib_fprintf(out_file, "isc_ftof2 (%s, %d, %s, %d, %d);",
-					   s1, field->fld_length, s2, field->fld_length,
-					   sw_interp);
-#endif
 		if (field->fld_array_info)
 			gen_get_or_put_slice(action, reference, FALSE, column);
 	}

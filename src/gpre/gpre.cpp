@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.17 2002-12-06 13:43:10 eku Exp $
+//  $Id: gpre.cpp,v 1.18 2003-02-08 00:36:51 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.17 2002-12-06 13:43:10 eku Exp $
+//	$Id: gpre.cpp,v 1.18 2003-02-08 00:36:51 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -2026,38 +2026,8 @@ static TOK get_token()
 	}
 	else if (class_ & CHR_LETTER) {
 		while (TRUE) {
-#if (! (defined JPN_EUC || defined JPN_SJIS) )
 			while (classes[c = nextchar()] & CHR_IDENT)
 				*p++ = (TEXT) c;
-#else
-			p--;
-			while (TRUE) {
-				if (KANJI1(c)) {
-					/* If it is a double byte kanji either EUC or SJIS
-					   then handle both the bytes together */
-
-					*p++ = c;
-					c = nextchar();
-					if (!KANJI2(c)) {
-						c = *(--p);
-						break;
-					}
-					else
-						*p++ = c;
-				}
-				else {
-#ifdef JPN_SJIS
-					if ((SJIS_SINGLE(c)) || (classes[c] & CHR_IDENT))
-#else
-					if (classes[c] & CHR_IDENT)
-#endif
-						*p++ = c;
-					else
-						break;
-				}
-				c = nextchar();
-			}
-#endif /* JPN_SJIS || JPN_EUC */
 			if (c != '-' || sw_language != lang_cobol)
 				break;
 			if (sw_language == lang_cobol && sw_ansi)

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: sqe.cpp,v 1.7 2002-11-30 17:40:24 hippoman Exp $
+//  $Id: sqe.cpp,v 1.8 2003-02-08 00:36:50 brodsom Exp $
 //  Revision 1.3  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.7 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: sqe.cpp,v 1.8 2003-02-08 00:36:50 brodsom Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -3542,13 +3542,6 @@ static char *upcase_string( char *p)
 
 	while ((c = *p++) && (++l <= NAME_SIZE)) {
 		*q++ = UPPER7(c);
-#ifdef JPN_SJIS
-
-		/* Do not upcase second byte of a sjis kanji character */
-
-		if (SJIS1(c) && (c = *p++) && (++l <= NAME_SIZE))
-			*q++ = c;
-#endif
 	}
 	*q = 0;
 

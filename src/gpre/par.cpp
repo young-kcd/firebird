@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.10 2002-12-06 13:43:10 eku Exp $
+//  $Id: par.cpp,v 1.11 2003-02-08 00:36:51 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.10 2002-12-06 13:43:10 eku Exp $
+//	$Id: par.cpp,v 1.11 2003-02-08 00:36:51 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -3163,27 +3163,6 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 			blob->blb_type = gds_bpb_type_stream;
 		else
 			break;
-
-#if (defined JPN_EUC || defined JPN_SJIS)
-//  If the blob is filtered to sub_type text or
-//  if there is no filter but the actual field's sub_type is text,
-//  set blb_source_interp (for writing) or blb_target_interp (for reading).
-//  These fields will be used for generating proper Blob Parameter Block. 
-
-	if ((blob->blb_const_to_type == 1) ||
-		(!filter_is_defined && (field->fld_sub_type == 1))) {
-		switch (act_op) {
-		case ACT_blob_create:
-			blob->blb_source_interp = sw_interp;
-			break;
-
-		case ACT_blob_open:
-		case ACT_blob_for:
-			blob->blb_target_interp = sw_interp;
-			break;
-		}
-	}
-#endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	if (!(blob->blb_seg_length = field->fld_seg_length))
 		blob->blb_seg_length = 512;

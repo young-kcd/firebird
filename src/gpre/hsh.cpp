@@ -25,15 +25,12 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.8 2002-12-02 08:25:16 eku Exp $
+//	$Id: hsh.cpp,v 1.9 2003-02-08 00:36:51 brodsom Exp $
 //
 
 #include "firebird.h"
 #include "../gpre/gpre.h"
 #include "../gpre/parse.h"
-#ifdef JPN_SJIS
-#include "../intl/kanji.h"
-#endif
 #include "../gpre/hsh_proto.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"
@@ -269,22 +266,8 @@ static BOOLEAN scompare2( register SCHAR * string1, register SCHAR * string2)
 	SCHAR c1, c2;
 
 	while (c1 = *string1++)
-#ifndef JPN_SJIS
 		if (!(c2 = *string2++) || (UPPER(c1) != UPPER(c2)))
 			return FALSE;
-#else
-	{
-		/* Do not upcase second byte of a sjis kanji character */
-
-		if (!(c2 = *string2++) || (UPPER(c1) != UPPER(c2)))
-			return FALSE;
-
-		if (SJIS1(c1) && (c1 = *string1++))
-			if (!(c2 = *string2++) || c1 != c2)
-				return FALSE;
-	}
-#endif
-
 	if (*string2)
 		return FALSE;
 

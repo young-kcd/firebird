@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.7 2002-12-06 13:43:10 eku Exp $
+//	$Id: sql.cpp,v 1.8 2003-02-08 00:36:50 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -6389,13 +6389,6 @@ static void to_upcase( TEXT * p, TEXT * q)
 	l = 0;
 	while ((c = *p++) && (++l <= NAME_SIZE)) {
 		*q++ = UPPER(c);
-#ifdef JPN_SJIS
-
-		/* Do not upcase second byte of a sjis kanji character */
-
-		if (SJIS1(c) && (c = *p++) && (++l <= NAME_SIZE))
-			*q++ = c;
-#endif
 	}
 	*q = 0;
 }

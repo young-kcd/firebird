@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.10 2002-11-30 17:40:24 hippoman Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.11 2003-02-08 00:36:51 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -951,12 +951,6 @@ static int upcase( TEXT * from, TEXT * to)
 
 	while (p < end && (c = *from++)) {
 		*p++ = UPPER(c);
-#ifdef JPN_SJIS
-		/* Do not upcase second byte of a sjis kanji character */
-
-		if (SJIS1(c) && p < end && (c = *from++))
-			*p++ = c;
-#endif
 	}
 
 	*p = 0;
