@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.123 2004-09-24 06:42:39 robocop Exp $
+$Id: inet.cpp,v 1.124 2004-10-20 17:42:35 dimitr Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -304,7 +304,7 @@ static u_int	inet_getpostn(XDR *);
 static void		inet_handler(void* _port);
 #endif
 static caddr_t	inet_inline(XDR *, u_int);
-static int		inet_error(rem_port*, const TEXT*, ISC_STATUS, int);
+static void		inet_error(rem_port*, const TEXT*, ISC_STATUS, int);
 static bool_t	inet_putlong(XDR*, const SLONG*);
 static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	inet_read(XDR *);
@@ -2962,7 +2962,7 @@ static caddr_t inet_inline( XDR* xdrs, u_int bytecount)
 	return xdrs->x_base + bytecount;
 }
 
-static int inet_error(
+static void inet_error(
 					  rem_port* port,
 					  const TEXT* function, ISC_STATUS operation, int status)
 {
@@ -2976,8 +2976,6 @@ static int inet_error(
  *	An I/O error has occurred.  Call
  * 	inet_gen_error with the appropriate args
  *	to format the status vector if any.
- *	In any case, return NULL, which
- *	is used to indicate an error.
  *
  **************************************/
 	TEXT msg[BUFFER_SMALL];
@@ -3012,8 +3010,6 @@ static int inet_error(
 					   (ISC_STATUS) port->port_connection->str_data, isc_arg_gds,
 					   operation, 0);
 	}
-
-	return 0;
 }
 
 static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
@@ -3467,8 +3463,9 @@ static int packet_receive(
 
 			if (slct_count == -1)
 			{
-				return inet_error(port, "select in packet_receive",
-								  isc_net_read_err, INET_ERRNO);
+				inet_error(port, "select in packet_receive",
+						   isc_net_read_err, INET_ERRNO);
+				return FALSE;
 			}
 
 			if (!slct_count && port->port_protocol >= PROTOCOL_VERSION8)
@@ -3505,14 +3502,15 @@ static int packet_receive(
 			break;
 	}
 
-	if (n <= 0 && (port->port_flags & PORT_async))
+	if (n == -1) {
+		inet_error(port, "read", isc_net_read_err, INET_ERRNO);
 		return FALSE;
+	}
 
-	if (n == -1)
-		return inet_error(port, "read", isc_net_read_err, INET_ERRNO);
-
-	if (!n)
-		return inet_error(port, "read end_of_file", isc_net_read_err, 0);
+	if (!n) {
+		inet_error(port, "read end_of_file", isc_net_read_err, 0);
+		return FALSE;
+	}
 
 #ifndef REQUESTER
 #ifdef DEBUG
@@ -3524,8 +3522,9 @@ static int packet_receive(
 		INET_force_error--;
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
-			return inet_error(port, "simulated error - read",
-							  isc_net_read_err, 0);
+			inet_error(port, "simulated error - read",
+					   isc_net_read_err, 0);
+			return FALSE;
 		}
 	}
 #endif
@@ -3588,7 +3587,8 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 				continue;
 			}
 
-			return inet_error(port, "send", isc_net_write_err, INET_ERRNO);
+			inet_error(port, "send", isc_net_write_err, INET_ERRNO);
+			return FALSE;
 		}
 
 		data += n;
@@ -3655,7 +3655,8 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 
 		THREAD_ENTER();
 		if (n == -1) {
-			return inet_error(port, "send/oob", isc_net_write_err, INET_ERRNO);
+			inet_error(port, "send/oob", isc_net_write_err, INET_ERRNO);
+			return FALSE;
 		}
 	}
 
@@ -3669,8 +3670,9 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		INET_force_error--;
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
-			return inet_error(port, "simulated error - send",
-							  isc_net_write_err, 0);
+			inet_error(port, "simulated error - send",
+					   isc_net_write_err, 0);
+			return FALSE;
 		}
 	}
 #endif
