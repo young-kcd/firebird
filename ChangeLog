@@ -1,3 +1,21 @@
+2003-03-16 13:04  dimitr
+
+	* firebird2/src/dsql/keywords.cpp:
+	
+	Cleanup.
+
+2003-03-16 11:54  dimitr
+
+	* firebird2/src/dsql/sym.h:
+	
+	Cleanup.
+
+2003-03-16 11:16  dimitr
+
+	* firebird2/src/jrd/: event.cpp, event.h:
+	
+	Used local subsystem prefix for event request structure.
+
 2003-03-15 21:48  seanleyne
 
 	* firebird2/src/install/misc/firebird.conf:
