@@ -3126,7 +3126,7 @@ static void release_dcc( DCC dcc)
 	while (dcc) {
 		temp = dcc;
 		dcc = temp->dcc_next;
-		delete dcc;
+		delete temp;
 	}
 }
 
