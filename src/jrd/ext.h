@@ -24,6 +24,8 @@
 #ifndef JRD_EXT_H
 #define JRD_EXT_H
 
+#include <stdio.h>
+
 namespace Jrd {
 
 /* External file access block */
@@ -38,8 +40,8 @@ class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 	int		ext_ifi;			/* Internal file identifier */
 	int		ext_isi;			/* Internal stream (default) */
 #else
-	int*	ext_ifi;			/* Internal file identifier */
-	int*	ext_isi;			/* Internal stream (default) */
+	FILE*	ext_ifi;			/* Internal file identifier */
+	//int*	ext_isi;			// Internal stream (default)
 #endif
 	USHORT	ext_record_length;	/* Record length */
 	USHORT	ext_file_type;		/* File type */

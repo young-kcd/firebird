@@ -181,11 +181,11 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
  * ReadOnly mode, thus being consistent.
  */
 	if (!(dbb->dbb_flags & DBB_read_only))
-		file->ext_ifi = (int *) ext_fopen(file_name, FOPEN_TYPE);
+		file->ext_ifi = ext_fopen(file_name, FOPEN_TYPE);
 	if (!(file->ext_ifi))
 	{
 		/* could not open the file as read write attempt as read only */
-		if (!(file->ext_ifi = (int *) ext_fopen(file_name, FOPEN_READ_ONLY)))
+		if (!(file->ext_ifi = ext_fopen(file_name, FOPEN_READ_ONLY)))
 		{
 			ERR_post(isc_io_error,
 					 isc_arg_string, "fopen",
@@ -217,9 +217,9 @@ void EXT_fini(jrd_rel* relation)
 	if (relation->rel_file) {
 		ExternalFile* file = relation->rel_file;
 		if (file->ext_ifi)
-			fclose((FILE *) file->ext_ifi);
+			fclose(file->ext_ifi);
 		/* before zeroing out the rel_file we need to deallocate the memory */
-		delete relation->rel_file;
+		delete file;
 		relation->rel_file = 0;
 	}
 }
@@ -255,7 +255,7 @@ bool EXT_get(RecordSource* rsb)
 	SSHORT l = record->rec_length - offset;
 
 	if (file->ext_ifi == 0 ||
-		(fseek((FILE *) file->ext_ifi, rpb->rpb_ext_pos, 0) != 0))
+		(fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0))
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "fseek",
@@ -265,12 +265,12 @@ bool EXT_get(RecordSource* rsb)
 	}
 
 	while (l--) {
-		const SSHORT c = getc((FILE *) file->ext_ifi);
+		const SSHORT c = getc(file->ext_ifi);
 		if (c == EOF)
 			return false;
 		*p++ = c;
 	}
-	rpb->rpb_ext_pos = ftell((FILE *) file->ext_ifi);
+	rpb->rpb_ext_pos = ftell(file->ext_ifi);
 
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
@@ -503,15 +503,15 @@ void EXT_store(record_param* rpb, int* transaction)
 	USHORT l = record->rec_length - offset;
 
 	if (file->ext_ifi == 0
-		|| (fseek((FILE *) file->ext_ifi, (SLONG) 0, 2) != 0))
+		|| (fseek(file->ext_ifi, (SLONG) 0, 2) != 0))
 	{
 		ERR_post(isc_io_error, isc_arg_string, "fseek", isc_arg_string,
 				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 	for (; l--; ++p)
-		putc(*p, (FILE *) file->ext_ifi);
-	fflush((FILE *) file->ext_ifi);
+		putc(*p, file->ext_ifi);
+	fflush(file->ext_ifi);
 }
 
 
