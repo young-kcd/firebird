@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interbase Message file modify for escape chars
- *	MODULE:		modify_messages.e
+ *	MODULE:		modify_messages.epp
  *	DESCRIPTION:	Allow modification of messages with translatation of escape sequences
  *
  * The contents of this file are subject to the Interbase Public

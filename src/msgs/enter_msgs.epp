@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interbase Message file entry program
- *	MODULE:		enter_messages.e
+ *	MODULE:		enter_messages.epp
  *	DESCRIPTION:	Allow entry of messages to database
  *
  * The contents of this file are subject to the Interbase Public

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interbase Message Facility
- *	MODULE:		check_messages.e
+ *	MODULE:		check_messages.epp
  *	DESCRIPTION:	Check whether any messages have been updated
  *
  * The contents of this file are subject to the Interbase Public

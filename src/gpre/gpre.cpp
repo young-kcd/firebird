@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.44 2003-11-03 23:51:47 brodsom Exp $
+//  $Id: gpre.cpp,v 1.45 2003-11-10 09:16:02 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -94,7 +94,8 @@ static bool			file_rename(TEXT*, const TEXT*, const TEXT*);
 static void			finish_based(ACT);
 #endif
 static int			get_char(IB_FILE*);
-static bool			get_switches(int, TEXT**, const in_sw_tab_t*, SW_TAB, TEXT**);
+static bool			get_switches(int, TEXT**, const in_sw_tab_t*, SW_TAB,
+								 TEXT**);
 static TOK			get_token();
 static int			nextchar();
 static SLONG		pass1(const TEXT*);
@@ -108,7 +109,7 @@ static SSHORT		skip_white();
 /* Program wide globals */
 
 IB_FILE *input_file, *trace_file;
-TEXT*	file_name;
+const TEXT*	file_name;
 TEXT*	out_file_name;
 SLONG position, last_position, line_position, first_position,
 	prior_line_position;
@@ -341,7 +342,7 @@ int main(int argc, char* argv[])
 //  Call a subroutine to process the input line 
 //  
 
-	TEXT* filename_array[4] = { 0 };
+	TEXT* filename_array[4] = { 0, 0, 0, 0 };
 
 	if (!get_switches(argc, argv, gpre_in_sw_table, sw_table, filename_array)) {
 		CPR_exit(FINI_ERROR);
@@ -350,8 +351,8 @@ int main(int argc, char* argv[])
 	file_name		= filename_array[0];
 	out_file_name	= filename_array[1];
 
-	TEXT* db_filename = filename_array[2];
-	TEXT* db_base_directory = filename_array[3];
+	const TEXT* db_filename = filename_array[2];
+	//TEXT* db_base_directory = filename_array[3];
 
 	if (!file_name) {
 		ib_fprintf(ib_stderr, "gpre:  no source file named.\n");
@@ -368,7 +369,8 @@ int main(int argc, char* argv[])
 
 	if (sw_language == lang_undef)
 		for (ext_tab = dml_ext_table; sw_language = ext_tab->ext_language;
-			 ext_tab++) {
+			 ext_tab++) 
+		{
 			strcpy(spare_file_name, file_name);
 			if (!(file_rename(spare_file_name, ext_tab->in, NULL)))
 				break;
@@ -381,7 +383,8 @@ int main(int argc, char* argv[])
 
 	if (sw_language == lang_undef)
 		for (ext_tab = dml_ext_table; sw_language = ext_tab->ext_language;
-			 ext_tab++) {
+			 ext_tab++) 
+		{
 			strcpy(spare_file_name, file_name);
 			if (file_rename(spare_file_name, ext_tab->in, NULL) &&
 				(input_file = ib_fopen(spare_file_name, FOPEN_READ_TYPE))) {
@@ -1647,9 +1650,6 @@ static bool get_switches(int			argc,
 						 SW_TAB		sw_table,
 						 TEXT**		file_array)
 {
-	TEXT *p, *q, *string;
-	const in_sw_tab_t* in_sw_table_iterator;
-	SW_TAB sw_table_iterator;
 	USHORT in_sw;
 
 //  
@@ -1658,11 +1658,11 @@ static bool get_switches(int			argc,
 //  we try to open the file. 
 //  
 
-	sw_table_iterator = sw_table;
+	SW_TAB sw_table_iterator = sw_table;
 
 	for (--argc; argc; argc--)
 	{
-		string = *++argv;
+		TEXT* string = *++argv;
 		if (*string != '?')
 		{
 			if (*string != '-')
@@ -1689,11 +1689,12 @@ static bool get_switches(int			argc,
 
 				sw_table_iterator++;
 				sw_table_iterator->sw_in_sw = IN_SW_GPRE_0;
-				for (in_sw_table_iterator = in_sw_table;
+				const TEXT* q;
+				for (const in_sw_tab_t* in_sw_table_iterator = in_sw_table;
 					 q = in_sw_table_iterator->in_sw_name;
 					 in_sw_table_iterator++)
 				{
-					p = string + 1;
+					const TEXT* p = string + 1;
 
 					/* handle orphaned hyphen case */
 

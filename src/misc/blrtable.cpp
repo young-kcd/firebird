@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		blrtable.c
+ *	MODULE:		blrtable.cpp
  *	DESCRIPTION:	blr to internal conversion table generator
  *
  * The contents of this file are subject to the Interbase Public

@@ -82,14 +82,15 @@ nested FOR loops are added.
 
 DATABASE DB = STATIC "yachts.lnk";
 
-static const UCHAR blr_bpb[] = { isc_bpb_version1,
+static const UCHAR blr_bpb[] = {
+	isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_blr,
 	isc_bpb_target_type, 1, BLOB_blr
 };
 
-static void check_array(DSQL_REQ, const SCHAR*, DSQL_FLD);
-static void convert_dtype(DSQL_FLD, SSHORT);
-static void	free_function (udf*);
+static void check_array(dsql_req*, const SCHAR*, dsql_fld*);
+static void convert_dtype(dsql_fld*, SSHORT);
+static void	free_function (dsql_udf*);
 static void free_procedure(dsql_prc*);
 static void free_relation(dsql_rel*);
 static TEXT* metd_exact_name(TEXT*);
@@ -124,7 +125,7 @@ static inline void metd_rec_unlock()
 }
 #endif
 
-void METD_drop_function (DSQL_REQ request, const str* name)
+void METD_drop_function (dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -142,7 +143,7 @@ void METD_drop_function (DSQL_REQ request, const str* name)
  *	accessing it.
  *
  **************************************/
-    udf* userFunc;
+    dsql_udf* userFunc;
     dsql_sym* symbol;
 
     metd_rec_lock();
@@ -154,7 +155,7 @@ void METD_drop_function (DSQL_REQ request, const str* name)
                          name->str_length, SYM_udf, 0);
     for (; symbol; symbol = symbol->sym_homonym) {
         if ((symbol->sym_type == SYM_udf) &&
-            ((userFunc = (udf*) symbol->sym_object) &&
+            ((userFunc = (dsql_udf*) symbol->sym_object) &&
              (!(userFunc->udf_flags & UDF_dropped))))
 		{
             break;
@@ -162,7 +163,7 @@ void METD_drop_function (DSQL_REQ request, const str* name)
     }
     
     if (symbol) {
-        userFunc = (udf*) symbol->sym_object;
+        userFunc = (dsql_udf*) symbol->sym_object;
         userFunc->udf_flags |= UDF_dropped;
     }
 
@@ -176,7 +177,7 @@ void METD_drop_function (DSQL_REQ request, const str* name)
 }
 
 
-void METD_drop_procedure( DSQL_REQ request, const str* name)
+void METD_drop_procedure( dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -223,7 +224,7 @@ void METD_drop_procedure( DSQL_REQ request, const str* name)
 }
 
 
-void METD_drop_relation( DSQL_REQ request, const str* name)
+void METD_drop_relation( dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -271,7 +272,7 @@ void METD_drop_relation( DSQL_REQ request, const str* name)
 }
 
 
-INTLSYM METD_get_collation(DSQL_REQ request, const str* name)
+INTLSYM METD_get_collation(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -351,7 +352,7 @@ INTLSYM METD_get_collation(DSQL_REQ request, const str* name)
 }
 
 
-void METD_get_col_default(DSQL_REQ    request,
+void METD_get_col_default(dsql_req*    request,
 						  const char* for_rel_name,
 						  const char* for_col_name,
 						  bool*    has_default,
@@ -472,7 +473,7 @@ void METD_get_col_default(DSQL_REQ    request,
 }
 
 
-INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, const char* name /* UTF-8 */)
+INTLSYM METD_get_charset(dsql_req* request, USHORT length, const char* name /* UTF-8 */)
 {
 /**************************************
  *
@@ -557,7 +558,7 @@ INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, const char* name /* UT
 }
 
 
-USHORT METD_get_charset_bpc (DSQL_REQ request,
+USHORT METD_get_charset_bpc (dsql_req* request,
                              SSHORT	charset_id)
 {
 /**************************************
@@ -615,7 +616,7 @@ USHORT METD_get_charset_bpc (DSQL_REQ request,
     return bpc;
 }
 
-STR METD_get_default_charset(DSQL_REQ request)
+dsql_str* METD_get_default_charset(dsql_req* request)
 {
 /**************************************
  *
@@ -658,7 +659,7 @@ STR METD_get_default_charset(DSQL_REQ request)
         /* Terminate ASCIIZ string on first trailing blank */
         metd_exact_name(DBB.RDB$CHARACTER_SET_NAME);
         length = strlen(DBB.RDB$CHARACTER_SET_NAME);
-        dbb->dbb_dfl_charset = FB_NEW_RPT(*dbb->dbb_pool, length) str;
+        dbb->dbb_dfl_charset = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_str;
         dbb->dbb_dfl_charset->str_length = length;
         dbb->dbb_dfl_charset->str_charset = NULL;
         str_ = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
@@ -691,7 +692,7 @@ THREAD_EXIT;
 }
 
 
-USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, const char* name /* UTF-8 */)
+USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name /* UTF-8 */)
 {
 /**************************************
  *
@@ -753,7 +754,7 @@ USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, const char* name /* UTF
 }
 
 
-void METD_get_domain_default(DSQL_REQ request,
+void METD_get_domain_default(dsql_req* request,
 							 const TEXT* domain_name,
 							 bool* has_default,
 							 TEXT* buffer, USHORT buff_length)
@@ -856,7 +857,7 @@ void METD_get_domain_default(DSQL_REQ request,
 }
 
 
-udf* METD_get_function(DSQL_REQ request, const str* name)
+dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -870,8 +871,8 @@ udf* METD_get_function(DSQL_REQ request, const str* name)
  *
  **************************************/
 	FRBRD *DB, *gds_trans;
-	udf* userFunc;
-	udf* temp;
+	dsql_udf* userFunc;
+	dsql_udf* temp;
     DSQL_NOD	udf_param_node, *ptr;
 
 
@@ -883,18 +884,18 @@ udf* METD_get_function(DSQL_REQ request, const str* name)
 						reinterpret_cast<const TEXT*>(name->str_data),
 						name->str_length, SYM_udf, 0);
     if (symbol && (symbol->sym_type == SYM_udf) &&
-	    ((userFunc = (udf*) symbol->sym_object) &&
+	    ((userFunc = (dsql_udf*) symbol->sym_object) &&
          (!(userFunc->udf_flags & UDF_dropped))))
 	{
         metd_rec_unlock();
-        return (udf*) symbol->sym_object;
+        return (dsql_udf*) symbol->sym_object;
 	}
 
 
 /* This was the old code that didn't do the loop above to check for the flag.
 	if (symbol) {
         metd_rec_unlock();
-		return (udf*) symbol->sym_object;
+		return (dsql_udf*) symbol->sym_object;
     }
 */
 
@@ -904,7 +905,7 @@ udf* METD_get_function(DSQL_REQ request, const str* name)
 	DB = dbb->dbb_database_handle;
 	gds_trans = request->req_trans;
 	userFunc = NULL;
-    DLLS stack = 0;
+    dsql_lls* stack = 0;
     USHORT return_arg;
 
 	THREAD_EXIT;
@@ -915,7 +916,7 @@ udf* METD_get_function(DSQL_REQ request, const str* name)
 
         THREAD_ENTER;
 
-	    userFunc = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) udf;
+	    userFunc = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) dsql_udf;
         /* Moved below as still can't say for sure it will be stored.
            Following the same logic for MET_get_procedure and MET_get_relation
         userFunc->udf_next = dbb->dbb_functions;
@@ -941,7 +942,7 @@ udf* METD_get_function(DSQL_REQ request, const str* name)
     
 /* Note: The following two requests differ in the fields which are
  *	 new since ODS7 (DBB_v3 flag).  One of the two requests
- *	 here will be cached in dbb_requests [ird_func_return],
+ *	 here will be cached in dbb_requests[ird_func_return],
  *	 the one that is appropriate for the database we are
  *	 working against.
  */
@@ -1005,7 +1006,7 @@ udf* METD_get_function(DSQL_REQ request, const str* name)
 			    udf_param_node = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_nod;
                 d = &udf_param_node->nod_desc;
                 d->dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-                    gds_cvt_blr_dtype [X.RDB$FIELD_TYPE] : dtype_blob;
+                    gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
                 d->dsc_scale = X.RDB$FIELD_SCALE;
                 if (!X.RDB$FIELD_SUB_TYPE.NULL) {
                     d->dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
@@ -1060,7 +1061,7 @@ udf* METD_get_function(DSQL_REQ request, const str* name)
     /* Can't call MAKE_list because it allocates an initial list node
        in the default pool. */
 	USHORT arg_count = 0;
-    for (DLLS stack_temp = stack; stack_temp; stack_temp = stack_temp->lls_next)
+    for (dsql_lls* stack_temp = stack; stack_temp; stack_temp = stack_temp->lls_next)
 	{
         ++arg_count;
     }
@@ -1086,14 +1087,14 @@ udf* METD_get_function(DSQL_REQ request, const str* name)
 
     for (; symbol; symbol = symbol->sym_homonym) {
         if ((symbol->sym_type == SYM_udf) &&
-            ((temp = (udf*) symbol->sym_object) &&
+            ((temp = (dsql_udf*) symbol->sym_object) &&
              (!(temp->udf_flags & UDF_dropped))))
 		{
             /* Get rid of all the stuff we just read in. Use existing one */
             
             free_function (userFunc);
             metd_rec_unlock();
-            return (udf*) symbol->sym_object;
+            return (dsql_udf*) symbol->sym_object;
         }
     }
     
@@ -1118,7 +1119,7 @@ udf* METD_get_function(DSQL_REQ request, const str* name)
 }
 
 
-DSQL_NOD METD_get_primary_key(DSQL_REQ request, const str* relation_name)
+DSQL_NOD METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 {
 /**************************************
  *
@@ -1157,7 +1158,7 @@ DSQL_NOD METD_get_primary_key(DSQL_REQ request, const str* relation_name)
 
 	    if (!list)
             list = MAKE_node(nod_list, (int) X.RDB$SEGMENT_COUNT);
-		str* field_name = MAKE_cstring(Y.RDB$FIELD_NAME);
+		dsql_str* field_name = MAKE_cstring(Y.RDB$FIELD_NAME);
         dsql_nod* field_node = MAKE_node(nod_field_name, (int) e_fln_count);
         field_node->nod_arg[e_fln_name] = (DSQL_NOD) field_name;
         list->nod_arg[count] = field_node;
@@ -1175,7 +1176,7 @@ DSQL_NOD METD_get_primary_key(DSQL_REQ request, const str* relation_name)
 }
 
 
-dsql_prc* METD_get_procedure(DSQL_REQ request, const str* name)
+dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -1191,7 +1192,8 @@ dsql_prc* METD_get_procedure(DSQL_REQ request, const str* name)
  **************************************/
 	FRBRD *DB, *gds_trans;
 	DBB dbb;
-	DSQL_FLD parameter, *ptr;
+	dsql_fld* parameter;
+	dsql_fld** ptr;
 	dsql_prc* procedure;
 	dsql_prc* temp;
 	SSHORT type, count;
@@ -1369,7 +1371,7 @@ dsql_prc* METD_get_procedure(DSQL_REQ request, const str* name)
 }
 
 
-dsql_rel* METD_get_relation(DSQL_REQ request, const str* name)
+dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -1384,7 +1386,8 @@ dsql_rel* METD_get_relation(DSQL_REQ request, const str* name)
  **************************************/
 	FRBRD *DB, *gds_trans;
 	DBB dbb;
-	DSQL_FLD field, *ptr;
+	dsql_fld* field;
+	dsql_fld** ptr;
 	dsql_rel* relation;
 	dsql_rel* temp;
 	dsql_sym* symbol;
@@ -1646,7 +1649,7 @@ dsql_rel* METD_get_relation(DSQL_REQ request, const str* name)
 }
 
 
-STR METD_get_trigger_relation(DSQL_REQ request, const str* name, USHORT* trig_type)
+dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USHORT* trig_type)
 {
 /**************************************
  *
@@ -1660,7 +1663,7 @@ STR METD_get_trigger_relation(DSQL_REQ request, const str* name, USHORT* trig_ty
  **************************************/
 	FRBRD *DB, *gds_trans;
 	DBB dbb;
-	STR relation;
+	dsql_str* relation;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
@@ -1692,7 +1695,7 @@ STR METD_get_trigger_relation(DSQL_REQ request, const str* name, USHORT* trig_ty
 }
 
 
-USHORT METD_get_type(DSQL_REQ request, const str* name, char* field, SSHORT* value)
+USHORT METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT* value)
 {
 /**************************************
  *
@@ -1737,7 +1740,7 @@ USHORT METD_get_type(DSQL_REQ request, const str* name, char* field, SSHORT* val
 }
 
 
-dsql_rel* METD_get_view_relation(DSQL_REQ    request,
+dsql_rel* METD_get_view_relation(dsql_req*    request,
 								const char* view_name         /* UTF-8 */,
 								const char* relation_or_alias /* UTF-8 */,
 								USHORT      level)
@@ -1774,7 +1777,7 @@ dsql_rel* METD_get_view_relation(DSQL_REQ    request,
 		if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
 			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
 		{
-			STR relation_name = MAKE_string(X.RDB$RELATION_NAME,
+			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME,
 		                                strlen(X.RDB$RELATION_NAME));
 			relation = METD_get_relation(request, relation_name);
 			delete relation_name;
@@ -1800,7 +1803,7 @@ dsql_rel* METD_get_view_relation(DSQL_REQ    request,
 }
 
 
-static void check_array( DSQL_REQ request, const TEXT* field_name, DSQL_FLD field)
+static void check_array( dsql_req* request, const TEXT* field_name, dsql_fld* field)
 {
 /**************************************
  *
@@ -1847,7 +1850,7 @@ static void check_array( DSQL_REQ request, const TEXT* field_name, DSQL_FLD fiel
 }
 
 
-static void convert_dtype( DSQL_FLD field, SSHORT field_type)
+static void convert_dtype( dsql_fld* field, SSHORT field_type)
 {
 /**************************************
  *
@@ -1884,7 +1887,7 @@ static void convert_dtype( DSQL_FLD field, SSHORT field_type)
 }
 
 
-static void free_function (udf* userFunc)
+static void free_function (dsql_udf* userFunc)
 {
 /**************************************
  *
@@ -1902,7 +1905,7 @@ static void free_function (udf* userFunc)
     if (userFunc->udf_arguments) {
         dsql_nod* args = userFunc->udf_arguments;
         for (USHORT arg_count = 0; arg_count < args->nod_count; ++arg_count) {
-            dsql_nod* udf_argument = args->nod_arg [arg_count];
+            dsql_nod* udf_argument = args->nod_arg[arg_count];
             delete udf_argument;
 		}
 	}
@@ -1924,7 +1927,8 @@ static void free_procedure( dsql_prc* procedure)
  *	Free memory allocated for a procedure block and params
  *
  **************************************/
-	DSQL_FLD param, temp;
+	dsql_fld* param;
+	dsql_fld* temp;
 
 /* release the input & output parameter blocks */
 
@@ -1958,7 +1962,8 @@ static void free_relation( dsql_rel* relation)
  *	Free memory allocated for a relation block and fields
  *
  **************************************/
-	DSQL_FLD field, temp;
+	dsql_fld* field;
+	dsql_fld* temp;
 
 /* release the field blocks */
 

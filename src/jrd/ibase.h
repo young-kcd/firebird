@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.56 2003-11-08 16:36:07 brodsom Exp $
+$Id: ibase.h,v 1.57 2003-11-10 09:16:13 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -366,13 +366,13 @@ ISC_STATUS ISC_EXPORT isc_attach_database(ISC_STATUS*,
 										  short,
 										  const char*);
 
-ISC_STATUS ISC_EXPORT isc_array_get_slice(ISC_STATUS *,
-										  isc_db_handle *,
-										  isc_tr_handle *,
-										  ISC_QUAD *,
-										  ISC_ARRAY_DESC *,
-										  void *,
-										  ISC_LONG *);
+ISC_STATUS ISC_EXPORT isc_array_get_slice(ISC_STATUS*,
+										  isc_db_handle*,
+										  isc_tr_handle*,
+										  ISC_QUAD*,
+										  const ISC_ARRAY_DESC*,
+										  void*,
+										  ISC_LONG*);
 
 ISC_STATUS ISC_EXPORT isc_array_lookup_bounds(ISC_STATUS*,
 											  isc_db_handle*,
@@ -396,12 +396,12 @@ ISC_STATUS ISC_EXPORT isc_array_set_desc(ISC_STATUS *,
 										 const short*,
 										 ISC_ARRAY_DESC*);
 
-ISC_STATUS ISC_EXPORT isc_array_put_slice(ISC_STATUS *,
-										  isc_db_handle *,
-										  isc_tr_handle *,
-										  ISC_QUAD *,
-										  ISC_ARRAY_DESC *,
-										  void *,
+ISC_STATUS ISC_EXPORT isc_array_put_slice(ISC_STATUS*,
+										  isc_db_handle*,
+										  isc_tr_handle*,
+										  ISC_QUAD*,
+										  const ISC_ARRAY_DESC*,
+										  void*,
 										  ISC_LONG *);
 
 void ISC_EXPORT isc_blob_default_desc(ISC_BLOB_DESC *,

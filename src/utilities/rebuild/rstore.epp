@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Rebuild scrambled database
- *	MODULE:		rstore.e
+ *	MODULE:		rstore.epp
  *	DESCRIPTION:	Store page headers for analysis
  *
  * The contents of this file are subject to the Interbase Public

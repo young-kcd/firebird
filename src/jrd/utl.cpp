@@ -1861,7 +1861,7 @@ BSTREAM* API_ROUTINE Bopen(GDS_QUAD* blob_id,
 	else if (*mode == 'r' || *mode == 'R') {
 		if (isc_open_blob2(status_vector, &database, &transaction, &blob,
 							blob_id, bpb_length,
-							reinterpret_cast<const UCHAR*>(bpb)))
+							bpb))
 		{
 			return NULL;
 		}
@@ -2057,7 +2057,7 @@ static int dump(
 
 	blob = NULL;
 	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id,
-						bpb_length, reinterpret_cast<const UCHAR*>(bpb))) {
+						bpb_length, bpb)) {
 		isc_print_status(status_vector);
 		return FALSE;
 	}

@@ -41,10 +41,10 @@
 // It will return big strange value in case of invalid define
 #if defined(i386) || defined(I386) || defined(_M_IX86)
 #define		SWAP_DOUBLE
+#elif defined(sparc) || defined(PowerPC)
+#undef		SWAP_DOUBLE
 #else
-#if !defined(sparc) && !defined(DARWIN)
 #error "Define SWAP_DOUBLE for your platform correctly !"
-#endif
 #endif
 
 #ifdef VMS

@@ -30,14 +30,14 @@
 class dsql_req;
 class dsql_fld;
 class dsql_nod;
-class str;
+class dsql_str;
 
 void DDL_execute(dsql_req*);
 void DDL_generate(dsql_req*, dsql_nod*);
 bool DDL_ids(const dsql_req*);
 void DDL_put_field_dtype(dsql_req*, const dsql_fld*, bool);
-void DDL_resolve_intl_type(dsql_req*, dsql_fld*, const str*);
-void DDL_resolve_intl_type2(dsql_req*, dsql_fld*, const str*, bool);
+void DDL_resolve_intl_type(dsql_req*, dsql_fld*, const dsql_str*);
+void DDL_resolve_intl_type2(dsql_req*, dsql_fld*, const dsql_str*, bool);
 
 #endif // DSQL_DDL_PROTO_H
 

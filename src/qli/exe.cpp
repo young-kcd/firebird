@@ -246,7 +246,7 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_transaction,
 						&blob, (GDS_QUAD*) desc->dsc_address, bpb_length,
-						reinterpret_cast<const UCHAR*>(bpb)))
+						bpb))
 	{
 		ERRQ_database_error(dbb, status_vector);
 	}
@@ -696,7 +696,7 @@ static bool copy_blob( QLI_NOD value, PAR parameter)
 	if (isc_open_blob2(status_vector, &from_dbb->dbb_handle,
 						&from_dbb->dbb_transaction, &from_blob,
 						(GDS_QUAD*) from_desc->dsc_address, bpb_length,
-						reinterpret_cast<const UCHAR*>(bpb)))
+						bpb))
 	{
 		ERRQ_database_error(from_dbb, status_vector);
 	}

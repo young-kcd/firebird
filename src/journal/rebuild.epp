@@ -1345,7 +1345,8 @@ static int error(const TEXT* filename,
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS* s = status_vector;
 	*s++ = isc_arg_gds;
-	*s++ = isc_io_error, *s++ = isc_arg_string;
+	*s++ = isc_io_error;
+	*s++ = isc_arg_string;
 	*s++ = (ISC_STATUS) string;
 	*s++ = isc_arg_string;
 	*s++ = (ISC_STATUS) filename;

@@ -447,7 +447,7 @@ FRBRD *PRO_open_blob( DBB database, SLONG * blob_id)
 
 	if (isc_open_blob2(status_vector, &database->dbb_handle,
 						&database->dbb_proc_trans, &blob, (GDS_QUAD*) blob_id,
-						bpb_length, reinterpret_cast<const UCHAR*>(bpb)))
+						bpb_length, bpb))
 		ERRQ_database_error(database, status_vector);
 
 	return blob;

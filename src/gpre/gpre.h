@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.53 2003-11-03 23:51:47 brodsom Exp $
+ * $Id: gpre.h,v 1.54 2003-11-10 09:16:03 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -761,7 +761,7 @@ typedef struct dbb {
 	FRBRD *dbb_transaction;		/* default transaction */
 	rrl* dbb_rrls;				/* temporary list of relation locks */
 	tpb* dbb_tpbs;				/* real tpbs for this db */
-	TEXT *dbb_filename;
+	const TEXT* dbb_filename;
 	TEXT *dbb_runtime;
 	TEXT *dbb_c_user;			/* compiletime user name */
 	TEXT *dbb_c_password;		/* compiletime password */

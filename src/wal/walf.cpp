@@ -1,6 +1,6 @@
 /*
  *        PROGRAM:        JRD Write Ahead Log File utilitles
- *        MODULE:         walf.c
+ *        MODULE:         walf.cpp
  *        DESCRIPTION:    Write Ahead Log File utilities
  *
  * The contents of this file are subject to the Interbase Public

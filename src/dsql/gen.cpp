@@ -104,7 +104,7 @@ UCHAR GEN_expand_buffer( dsql_req* request, UCHAR byte)
 
 	const bool bIsPermanentPool = MemoryPool::blk_pool(request->req_blr_string) == DSQL_permanent_pool;
 	DsqlMemoryPool* pool = bIsPermanentPool ? DSQL_permanent_pool : tdsql->tsql_default;
-	str* new_buffer = FB_NEW_RPT(*pool, length) str;
+	dsql_str* new_buffer = FB_NEW_RPT(*pool, length) dsql_str;
 	new_buffer->str_length = length;
 
 	// one huge pointer per line for LIBS
@@ -476,7 +476,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		case nod_count:
 			blr_operator = blr_count;
 /* count2
-		blr_operator = node->nod_arg [0]->nod_arg [e_rse_items] ? blr_count2 : blr_count;
+		blr_operator = node->nod_arg[0]->nod_arg[e_rse_items] ? blr_count2 : blr_count;
 */
 			break;
 		case nod_from:
@@ -637,7 +637,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 /* Allocate buffer for message */
 	// CVC: again, final possibility of having overflow! Should be < 64K
 	const USHORT new_len = message->msg_length + DOUBLE_ALIGN - 1;
-	str* buffer = FB_NEW_RPT(*tdsql->tsql_default, new_len) str;
+	dsql_str* buffer = FB_NEW_RPT(*tdsql->tsql_default, new_len) dsql_str;
 	message->msg_buffer =
 		(UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, DOUBLE_ALIGN);
 
@@ -873,8 +873,8 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 	const dsql_nod* const* end;
 	dsql_ctx* context;
 	dsql_msg* message;
-	str* name;
-	str* string;
+	dsql_str* name;
+	dsql_str* string;
 	ULONG id_length;
 
 	switch (node->nod_type) {
@@ -926,7 +926,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		else
 			message = NULL;
 		stuff(request, blr_exec_proc);
-		name = (str*) node->nod_arg[e_exe_procedure];
+		name = (dsql_str*) node->nod_arg[e_exe_procedure];
 		stuff_cstring(request, name->str_data);
 		if (temp = node->nod_arg[e_exe_inputs]) {
 			stuff_word(request, temp->nod_count);
@@ -959,7 +959,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 	case nod_set_generator:
 	case nod_set_generator2:
 		stuff(request, blr_set_generator);
-		string = (str*) node->nod_arg[e_gen_id_name];
+		string = (dsql_str*) node->nod_arg[e_gen_id_name];
 		stuff_cstring(request, string->str_data);
 		GEN_expr(request, node->nod_arg[e_gen_id_value]);
 		return;
@@ -1100,7 +1100,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 	case nod_user_savepoint:
 		stuff(request, blr_user_savepoint);
 		stuff(request, blr_savepoint_set);
-		stuff_cstring(request, ((str*)node->nod_arg[e_sav_name])->str_data);
+		stuff_cstring(request, ((dsql_str*)node->nod_arg[e_sav_name])->str_data);
 		return;
 
 	case nod_release_savepoint:
@@ -1111,18 +1111,18 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		else {
 			stuff(request, blr_savepoint_release);
 		}
-		stuff_cstring(request, ((str*)node->nod_arg[e_sav_name])->str_data);
+		stuff_cstring(request, ((dsql_str*)node->nod_arg[e_sav_name])->str_data);
 		return;
 
 	case nod_undo_savepoint:
 		stuff(request, blr_user_savepoint);
 		stuff(request, blr_savepoint_undo);
-		stuff_cstring(request, ((str*)node->nod_arg[e_sav_name])->str_data);
+		stuff_cstring(request, ((dsql_str*)node->nod_arg[e_sav_name])->str_data);
 		return;
 
 	case nod_exception_stmt:
 		stuff(request, blr_abort);
-		string = (str*) node->nod_arg[e_xcps_name];
+		string = (dsql_str*) node->nod_arg[e_xcps_name];
 		temp = node->nod_arg[e_xcps_msg];
 		/* if exception name is undefined,
 		   it means we have re-initiate semantics here,
@@ -1616,7 +1616,7 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
  **/
 static void gen_error_condition( dsql_req* request, const dsql_nod* node)
 {
-	const str* string;
+	const dsql_str* string;
 
 	switch (node->nod_type) {
 	case nod_sqlcode:
@@ -1626,13 +1626,13 @@ static void gen_error_condition( dsql_req* request, const dsql_nod* node)
 
 	case nod_gdscode:
 		stuff(request, blr_gds_code);
-		string = (str*) node->nod_arg[0];
+		string = (dsql_str*) node->nod_arg[0];
 		stuff_cstring(request, string->str_data);
 		return;
 
 	case nod_exception:
 		stuff(request, blr_exception);
-		string = (str*) node->nod_arg[0];
+		string = (dsql_str*) node->nod_arg[0];
 		stuff_cstring(request, string->str_data);
 		return;
 
@@ -1791,7 +1791,7 @@ static void gen_for_select( dsql_req* request, dsql_nod* for_select)
 static void gen_gen_id( dsql_req* request, const dsql_nod* node)
 {
 	stuff(request, blr_gen_id);
-	const str* string = (str*) node->nod_arg[e_gen_id_name];
+	const dsql_str* string = (dsql_str*) node->nod_arg[e_gen_id_name];
 	stuff_cstring(request, string->str_data);
 	GEN_expr(request, node->nod_arg[e_gen_id_value]);
 }
@@ -1941,7 +1941,7 @@ static void gen_plan( dsql_req* request, const dsql_nod* plan_expression)
 		gen_relation(request, (dsql_ctx*) arg->nod_arg[e_rel_context]);
 
 		/* now stuff the access method for this stream */
-		const str* index_string;
+		const dsql_str* index_string;
 
 		arg = node->nod_arg[1];
 		switch (arg->nod_type) {
@@ -1951,7 +1951,7 @@ static void gen_plan( dsql_req* request, const dsql_nod* plan_expression)
 
 		case nod_index_order:
 			stuff(request, blr_navigational);
-			index_string = (str*) arg->nod_arg[0];
+			index_string = (dsql_str*) arg->nod_arg[0];
 			stuff_cstring(request, index_string->str_data);
 			if (!arg->nod_arg[1])
 				break;
@@ -1967,7 +1967,7 @@ static void gen_plan( dsql_req* request, const dsql_nod* plan_expression)
 				for (const dsql_nod* const* const end2 = ptr2 + arg->nod_count;
 					 ptr2 < end2; ptr2++) 
 				{
-					index_string = (str*) * ptr2;
+					index_string = (dsql_str*) * ptr2;
 					stuff_cstring(request, index_string->str_data);
 				}
 				break;
@@ -2166,7 +2166,7 @@ static void gen_rse( dsql_req* request, const dsql_nod* rse)
 		GEN_expr(request, node);
 	}
 
-    if ((node = rse->nod_arg [e_rse_skip]) != NULL) {
+    if ((node = rse->nod_arg[e_rse_skip]) != NULL) {
         stuff(request, blr_skip);
         GEN_expr (request, node);
     }
@@ -2316,7 +2316,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 			break;
 			}
 		case nod_alias: {
-			const str* string = (str*) item->nod_arg[e_alias_alias];
+			const dsql_str* string = (dsql_str*) item->nod_arg[e_alias_alias];
 			parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
 			dsql_nod* alias = item->nod_arg[e_alias_value];
 			if (alias->nod_type == nod_field) {
@@ -2344,7 +2344,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 			break;
 			}
 		case nod_derived_field: {
-			const str* string = (str*) item->nod_arg[e_derived_field_name];
+			const dsql_str* string = (dsql_str*) item->nod_arg[e_derived_field_name];
 			parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
 			dsql_nod* alias = item->nod_arg[e_derived_field_value];
 			if (alias->nod_type == nod_field) {
@@ -2386,7 +2386,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 				break;
 				}
 			case nod_alias: {
-				const str* string = (str*) map_node->nod_arg[e_alias_alias];
+				const dsql_str* string = (dsql_str*) map_node->nod_arg[e_alias_alias];
 				parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
 				dsql_nod* alias = map_node->nod_arg[e_alias_value];
 				if (alias->nod_type == nod_field) {
@@ -2396,7 +2396,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 				break;
 				}
 			case nod_derived_field: {
-				const str* string = (str*) map_node->nod_arg[e_derived_field_name];
+				const dsql_str* string = (dsql_str*) map_node->nod_arg[e_derived_field_name];
 				parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
 				dsql_nod* alias = map_node->nod_arg[e_derived_field_value];
 				if (alias->nod_type == nod_field) {
@@ -2432,7 +2432,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 			} // case nod_map
 		case nod_udf: 
 			{
-			udf* userFunc = (UDF) item->nod_arg[0];
+			dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
 			name_alias = userFunc->udf_name;
 			break;
 			}
@@ -2748,7 +2748,7 @@ static void gen_table_lock( dsql_req* request, const dsql_nod* tbl_lock,
 		stuff(request, lock_mode);
 
 		/* stuff table name */
-		const str* temp = (str*) ((*ptr)->nod_arg[e_rln_name]);
+		const dsql_str* temp = (dsql_str*) ((*ptr)->nod_arg[e_rln_name]);
 		stuff_cstring(request, reinterpret_cast<const char*>(temp->str_data));
 
 		stuff(request, lock_level);
@@ -2769,7 +2769,7 @@ static void gen_table_lock( dsql_req* request, const dsql_nod* tbl_lock,
  **/
 static void gen_udf( dsql_req* request, const dsql_nod* node)
 {
-	const udf* userFunc = (UDF) node->nod_arg[0];
+	const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
 	stuff(request, blr_function);
 	stuff_cstring(request, userFunc->udf_name);
 
@@ -2803,7 +2803,7 @@ static void gen_union( dsql_req* request, const dsql_nod* union_node)
 {
 	stuff(request, blr_union);
 
-// Obtain the context for UNION from the first DSQL_MAP node 
+// Obtain the context for UNION from the first dsql_map* node
 	dsql_nod* items = union_node->nod_arg[e_rse_items];
 	dsql_nod* map_item = items->nod_arg[0];
 	// AB: First item could be a virtual field generated by derived table.

@@ -425,15 +425,15 @@ ISC_STATUS API_ROUTINE gds__get_segment(ISC_STATUS * status_vector,
 }
 
 ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS * status_vector,
-								  FRBRD **db_handle,
-								  FRBRD **tra_handle,
-								  GDS_QUAD * array_id,
+								  FRBRD** db_handle,
+								  FRBRD** tra_handle,
+								  GDS_QUAD* array_id,
 								  SSHORT sdl_length,
-								  SCHAR * sdl,
+								  SCHAR* sdl,
 								  SSHORT parameters_leng,
-								  SLONG * parameters,
+								  SLONG* parameters,
 								  SLONG slice_length,
-								  void *slice, SLONG * return_length)
+								  void* slice, SLONG* return_length)
 {
 	return isc_get_slice(status_vector, db_handle, tra_handle, array_id,
 						 sdl_length, sdl, parameters_leng, parameters,
@@ -482,15 +482,15 @@ ISC_STATUS API_ROUTINE gds__put_segment(ISC_STATUS* status_vector,
 	return isc_put_segment(status_vector, blob_handle, segment_length, segment);
 }
 
-ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS * status_vector,
-								  FRBRD **db_handle,
-								  FRBRD **tra_handle,
-								  GDS_QUAD * array_id,
+ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS* status_vector,
+								  FRBRD** db_handle,
+								  FRBRD** tra_handle,
+								  GDS_QUAD* array_id,
 								  SSHORT sdl_length,
-								  SCHAR * sdl,
+								  SCHAR* sdl,
 								  SSHORT parameters_leng,
-								  SLONG * parameters,
-								  SLONG slice_length, void *slice)
+								  SLONG* parameters,
+								  SLONG slice_length, void* slice)
 {
 	return isc_put_slice(status_vector, db_handle, tra_handle, array_id, 
 						 sdl_length, sdl, parameters_leng, parameters,

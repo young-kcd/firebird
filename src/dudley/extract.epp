@@ -1780,7 +1780,7 @@ static void print_blob(SLONG* blob_id, TEXT type)
 
 	if (isc_open_blob2(status_vector, &DB, &gds_trans, &blob,
 						(GDS_QUAD*) blob_id, (USHORT) (r - bpb),
-						reinterpret_cast<const UCHAR*>(bpb)))
+						bpb))
 	{
 		gds__print_status(status_vector);
 		DDL_err(269, NULL, NULL, NULL, NULL, NULL);	

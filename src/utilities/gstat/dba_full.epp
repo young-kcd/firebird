@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		dba.e
+ *	MODULE:		dba_full.epp
  *	DESCRIPTION:	Database analysis tool
  *
  * The contents of this file are subject to the Interbase Public

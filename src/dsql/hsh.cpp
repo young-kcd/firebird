@@ -396,14 +396,14 @@ void HSHD_set_flag(
 					switch (type) {
 					case SYM_relation:
 						{
-							DSQL_REL sym_rel = (DSQL_REL) homonym->sym_object;
+							dsql_rel* sym_rel = (dsql_rel*) homonym->sym_object;
 							sym_rel->rel_flags |= flag;
 							break;
 						}
 
 					case SYM_procedure:
 						{
-							DSQL_PRC sym_prc = (DSQL_PRC) homonym->sym_object;
+							dsql_prc* sym_prc = (dsql_prc*) homonym->sym_object;
 							sym_prc->prc_flags |= flag;
 							break;
 						}

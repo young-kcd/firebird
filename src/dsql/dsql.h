@@ -64,7 +64,7 @@ typedef err* ERR;
 #include "../dsql/sym.h"
 
 //! generic data type used to store strings
-class str : public pool_alloc_rpt<char, dsql_type_str>
+class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
 {
 public:
 	const char* str_charset;	//!< ASCIIZ Character set identifier for string
@@ -72,7 +72,6 @@ public:
 	ULONG       str_length;		//!< length of string in BYTES
 	char        str_data[2];	//!< one for ALLOC and one for the NULL
 };
-typedef str* STR;
 
 // values used in str_flags
 
@@ -85,7 +84,6 @@ public:
 	blk* lls_object;
 	dsql_lls* lls_next;
 };
-typedef dsql_lls* DLLS;
 
 inline void LLS_PUSH(blk* object, dsql_lls** stack)
 {
@@ -140,11 +138,11 @@ public:
 	dbb*			dbb_next;
 	class dsql_rel* dbb_relations;		//!< known relations in database
 	class dsql_prc*	dbb_procedures;		//!< known procedures in database
-	class udf*		dbb_functions;		//!< known functions in database
+	class dsql_udf*		dbb_functions;		//!< known functions in database
 	DsqlMemoryPool*	dbb_pool;			//!< The current pool for the dbb
 	FRBRD*			dbb_database_handle;
 	FRBRD*			dbb_requests[irq_MAX];
-	str*			dbb_dfl_charset;
+	dsql_str*			dbb_dfl_charset;
 	USHORT			dbb_base_level;		//!< indicates the version of the engine code itself
 	USHORT			dbb_flags;
 	USHORT			dbb_db_SQL_dialect;
@@ -175,7 +173,6 @@ public:
 	USHORT		rel_flags;
 	TEXT		rel_data[3];
 };
-typedef dsql_rel* DSQL_REL;
 
 // rel_flags bits
 enum rel_flags_vals {
@@ -211,7 +208,6 @@ public:
 	SSHORT		fld_ttype;				//!< ID of field's language_driver
 	TEXT		fld_name[2];
 };
-typedef dsql_fld* DSQL_FLD;
 
 // values used in fld_flags
 
@@ -226,19 +222,18 @@ enum fld_flags_vals {
 const int MAX_ARRAY_DIMENSIONS = 16; //!< max array dimensions
 
 //! database/log/cache file block
-class fil : public pool_alloc<dsql_type_fil>
+class dsql_fil : public pool_alloc<dsql_type_fil>
 {
 public:
 	SLONG	fil_length;			//!< File length in pages
 	SLONG	fil_start;			//!< Starting page
-	str*	fil_name;			//!< File name
-	fil*	fil_next;			//!< next file
+	dsql_str*	fil_name;			//!< File name
+	dsql_fil*	fil_next;			//!< next file
 	SSHORT	fil_shadow_number;	//!< shadow number if part of shadow
 	SSHORT	fil_manual;			//!< flag to indicate manual shadow
 	SSHORT	fil_partitions;		//!< number of log file partitions
 	USHORT	fil_flags;
 };
-typedef fil* FIL;
 
 //! Stored Procedure block
 class dsql_prc : public pool_alloc_rpt<SCHAR, dsql_type_prc>
@@ -256,7 +251,6 @@ public:
 	USHORT		prc_flags;
 	TEXT		prc_data[3];
 };
-typedef dsql_prc* DSQL_PRC;
 
 // prc_flags bits
 
@@ -266,10 +260,10 @@ enum prc_flags_vals {
 };
 
 //! User defined function block
-class udf : public pool_alloc_rpt<SCHAR, dsql_type_udf>
+class dsql_udf : public pool_alloc_rpt<SCHAR, dsql_type_udf>
 {
 public:
-	udf*		udf_next;
+	dsql_udf*		udf_next;
 	dsql_sym*	udf_symbol;		//!< Hash symbol for udf
 	USHORT		udf_dtype;
 	SSHORT		udf_scale;
@@ -282,7 +276,6 @@ public:
 
 	TEXT		udf_name[2];
 };
-typedef udf* UDF;
 
 //! these values are multiplied by -1 to indicate that server frees them
 //! on return from the udf
@@ -392,18 +385,18 @@ public:
 	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update
 	dsql_req*	req_offspring;	//!< Cursor update requests
 	DsqlMemoryPool*	req_pool;
-	DLLS	req_context;
-    DLLS    req_union_context;	//!< Save contexts for views of unions
-    DLLS    req_dt_context;		//!< Save contexts for views of derived tables
+	dsql_lls*	req_context;
+    dsql_lls*    req_union_context;	//!< Save contexts for views of unions
+    dsql_lls*    req_dt_context;		//!< Save contexts for views of derived tables
 	dsql_sym* req_name;			//!< Name of request
 	dsql_sym* req_cursor;		//!< Cursor symbol, if any
 	dbb*	req_dbb;			//!< Database handle
 	FRBRD*	req_trans;			//!< Database transaction handle
 	class opn* req_open_cursor;
 	dsql_nod* req_ddl_node;		//!< Store metadata request
-	class blb* req_blob;			//!< Blob info for blob requests
+	class dsql_blb* req_blob;			//!< Blob info for blob requests
 	FRBRD*	req_handle;				//!< OSRI request handle
-	str*	req_blr_string;			//!< String block during BLR generation
+	dsql_str*	req_blr_string;			//!< String block during BLR generation
 	class dsql_msg* req_send;		//!< Message to be sent to start request
 	class dsql_msg* req_receive;	//!< Per record message to be received
 	class dsql_msg* req_async;		//!< Message for sending scrolling information
@@ -427,9 +420,9 @@ public:
 	USHORT	req_scope_level;		//!< Scope level for parsing aliases in subqueries
 	USHORT	req_message_number;	//!< Next available message number
 	USHORT	req_loop_level;		//!< Loop level
-	DLLS	req_labels;			//!< Loop labels
+	dsql_lls*	req_labels;			//!< Loop labels
 	USHORT	req_cursor_number;	//!< Cursor number
-	DLLS	req_cursors;		//!< Cursors
+	dsql_lls*	req_cursors;		//!< Cursors
 	USHORT	req_in_select_list;	//!< now processing "select list"
 	USHORT	req_in_where_clause;	//!< processing "where clause"
 	USHORT	req_in_group_by_clause;	//!< processing "group by clause"
@@ -439,9 +432,8 @@ public:
 	USHORT	req_flags;			//!< generic flag
 	USHORT	req_client_dialect;	//!< dialect passed into the API call
 	USHORT	req_in_outer_join;	//!< processing inside outer-join part
-	STR		req_alias_relation_prefix;	//!< prefix for every relation-alias.
+	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
 };
-typedef dsql_req* DSQL_REQ;
 
 
 // values used in req_flags
@@ -461,7 +453,7 @@ enum req_flags_vals {
 };
 
 //! Blob
-class blb : public pool_alloc<dsql_type_blb>
+class dsql_blb : public pool_alloc<dsql_type_blb>
 {
 public:
 	dsql_nod*	blb_field;			//!< Related blob field
@@ -473,7 +465,6 @@ public:
 	class dsql_msg*	blb_open_out_msg;	//!< Output message from open cursor
 	class dsql_msg*	blb_segment_msg;	//!< Segment message
 };
-typedef blb* BLB;
 
 //! List of open cursors
 class opn : public pool_alloc<dsql_type_opn>
@@ -491,7 +482,6 @@ class dsql_tra : public pool_alloc<dsql_type_tra>
 public:
 	dsql_tra* tra_next;		//!< Next open transaction
 };
-typedef dsql_tra* DSQL_TRA;
 
 
 //! Context block used to create an instance of a relation reference
@@ -509,9 +499,8 @@ public:
 	USHORT				ctx_context;		//!< Context id
 	USHORT				ctx_scope_level;	//!< Subquery level within this request
 	USHORT				ctx_flags;			//!< Various flag values
-	DLLS				ctx_childs_derived_table;	//!< Childs derived table context
+	dsql_lls*				ctx_childs_derived_table;	//!< Childs derived table context
 };
-typedef dsql_ctx* DSQL_CTX;
 
 // Flag values for ctx_flags
 
@@ -526,7 +515,6 @@ public:
 	dsql_nod*	map_node;			//!< Value for map item
 	USHORT		map_position;		//!< Position in map
 };
-typedef dsql_map* DSQL_MAP;
 
 //! Message block used in communicating with a running request
 class dsql_msg : public pool_alloc<dsql_type_msg>
@@ -540,7 +528,6 @@ public:
 	USHORT	msg_parameter;		//!< Next parameter number
 	USHORT	msg_index;			//!< Next index into SQLDA
 };
-typedef dsql_msg* DSQL_MSG;
 
 //! Parameter block used to describe a parameter of a message
 class par : public pool_alloc<dsql_type_par>

@@ -28,7 +28,7 @@ UCHAR	GEN_expand_buffer(dsql_req*, UCHAR);
 void	GEN_expr(dsql_req*, dsql_nod*);
 void	GEN_port(dsql_req*, dsql_msg*);
 void	GEN_request(dsql_req*, dsql_nod*);
-void	GEN_return(DSQL_REQ, const dsql_nod*, bool);
+void	GEN_return(dsql_req*, const dsql_nod*, bool);
 void	GEN_start_transaction(dsql_req*, const dsql_nod*);
 void	GEN_statement(dsql_req*, dsql_nod*);
 

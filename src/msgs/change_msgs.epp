@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interbase Message file edit program
- *	MODULE:		change_msgs.e
+ *	MODULE:		change_msgs.epp
  *	DESCRIPTION:	Allow limited change of messages in database
  *
  * The contents of this file are subject to the Interbase Public

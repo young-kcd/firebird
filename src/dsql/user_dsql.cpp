@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		user_dsql.c
+ *	MODULE:		user_dsql.cpp
  *	DESCRIPTION:	Above the Y-valve entrypoints for DSQL
  *
  *

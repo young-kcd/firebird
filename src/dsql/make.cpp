@@ -85,7 +85,7 @@ static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
     @param numeric_flag
 
  **/
-dsql_nod* MAKE_constant(str* constant, dsql_constant_type numeric_flag)
+dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 
@@ -232,7 +232,7 @@ dsql_nod* MAKE_constant(str* constant, dsql_constant_type numeric_flag)
     @param character_set
 
  **/
-dsql_nod* MAKE_str_constant(str* constant, SSHORT character_set)
+dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 
@@ -265,7 +265,7 @@ dsql_nod* MAKE_str_constant(str* constant, SSHORT character_set)
     @param str
 
  **/
-str* MAKE_cstring(const char* str)
+dsql_str* MAKE_cstring(const char* str)
 {
 
 	return MAKE_string(str, strlen(str));
@@ -288,8 +288,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 	dsc desc1, desc2;
 	USHORT dtype, dtype1, dtype2;
 	dsql_map* map;
-	DSQL_CTX context;
-	DSQL_REL relation;
+	dsql_ctx* context;
+	dsql_rel* relation;
 	dsql_fld* field;
 
 	DEV_BLKCHK(node, dsql_type_nod);
@@ -420,7 +420,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		/* Beware that JRD treats substring() always as returning CHAR
 		instead	of VARCHAR for historical reasons. */
 		if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob) {
-			dsql_nod* for_node = node->nod_arg [e_substr_length];
+			dsql_nod* for_node = node->nod_arg[e_substr_length];
 			fb_assert (for_node->nod_desc.dsc_dtype == dtype_long);
 			/* Migrate the charset from the blob to the string. */
 			desc->dsc_ttype = desc1.dsc_scale;
@@ -888,7 +888,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 	case nod_dbkey:
 		/* Fix for bug 10072 check that the target is a relation */
-		context = (DSQL_CTX) node->nod_arg[0]->nod_arg[0];
+		context = (dsql_ctx*) node->nod_arg[0]->nod_arg[0];
 		relation = context->ctx_relation;
 		if (relation != 0) {
 			desc->dsc_dtype = dtype_text;
@@ -904,7 +904,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 	case nod_udf:
 		{
-			const udf* userFunc = (UDF) node->nod_arg[0];
+			const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
 			desc->dsc_dtype = static_cast<UCHAR>(userFunc->udf_dtype);
 			desc->dsc_length = userFunc->udf_length;
 			desc->dsc_scale = static_cast<SCHAR>(userFunc->udf_scale);
@@ -1419,7 +1419,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
     @param indices
 
  **/
-dsql_nod* MAKE_field(DSQL_CTX context, dsql_fld* field, dsql_nod* indices)
+dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 {
 	DEV_BLKCHK(context, dsql_type_ctx);
 	DEV_BLKCHK(field, dsql_type_fld);
@@ -1454,7 +1454,8 @@ dsql_nod* MAKE_field(DSQL_CTX context, dsql_fld* field, dsql_nod* indices)
 	}
 
 	if ((field->fld_flags & FLD_nullable) ||
-		(context->ctx_flags & CTX_outer_join)) {
+		(context->ctx_flags & CTX_outer_join))
+	{
 		node->nod_desc.dsc_flags = DSC_nullable;
 	}
 
@@ -1472,12 +1473,12 @@ dsql_nod* MAKE_field(DSQL_CTX context, dsql_fld* field, dsql_nod* indices)
     @param stack
 
  **/
-dsql_nod* MAKE_list(DLLS stack)
+dsql_nod* MAKE_list(dsql_lls* stack)
 {
 	DEV_BLKCHK(stack, dsql_type_lls);
 
 	USHORT count = 0;
-	for (DLLS temp = stack; temp; temp = temp->lls_next)
+	for (dsql_lls* temp = stack; temp; temp = temp->lls_next)
 		++count;
 
 	dsql_nod* node = MAKE_node(nod_list, count);
@@ -1590,7 +1591,7 @@ par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
     @param length
 
  **/
-str* MAKE_string(const char* str, int length)
+dsql_str* MAKE_string(const char* str, int length)
 {
 	return MAKE_tagged_string(str, length, NULL);
 }
@@ -1650,11 +1651,11 @@ dsql_sym* MAKE_symbol(DBB database,
     @param charset
 
  **/
-str* MAKE_tagged_string(const char* str_, size_t length, const char* charset)
+dsql_str* MAKE_tagged_string(const char* str_, size_t length, const char* charset)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 
-	str* string = FB_NEW_RPT(*tdsql->tsql_default, length) str;
+	dsql_str* string = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_str;
 	string->str_charset = charset;
 	string->str_length  = length;
 	memcpy(string->str_data, str_, length);
@@ -1680,7 +1681,7 @@ dsql_nod* MAKE_trigger_type(dsql_nod* prefix_node, dsql_nod* suffix_node)
 	const long suffix = (long) suffix_node->nod_arg[0];
 	delete prefix_node;
 	delete suffix_node;
-	return MAKE_constant((str*) (prefix + suffix - 1), CONSTANT_SLONG);
+	return MAKE_constant((dsql_str*) (prefix + suffix - 1), CONSTANT_SLONG);
 }
 
 

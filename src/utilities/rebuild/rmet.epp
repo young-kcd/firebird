@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Rebuild scrambled database
- *	MODULE:		rmet.e
+ *	MODULE:		rmet.epp
  *	DESCRIPTION:	Crawl around the guts of a database
  *
  * The contents of this file are subject to the Interbase Public

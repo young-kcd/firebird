@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Command line utilities
- *	MODULE:		cmd_util.c
+ *	MODULE:		cmd_util.cpp
  *	DESCRIPTION:	Common functions
  *
  * The contents of this file are subject to the Interbase Public

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Lock Manager
- *	MODULE:		driver.c
+ *	MODULE:		driver.cpp
  *	DESCRIPTION:	Stand alone test driver
  *
  * The contents of this file are subject to the Interbase Public

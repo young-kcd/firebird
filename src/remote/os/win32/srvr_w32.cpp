@@ -258,7 +258,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 // BRS There is a error in MinGW (3.1.0) headers 
 // the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
 //
-#ifdef MINGW
+#if defined(MINGW)
 		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
 #else
 		if (!StartServiceCtrlDispatcher(service_table)) {

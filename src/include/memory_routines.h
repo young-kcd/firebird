@@ -26,14 +26,6 @@
 #ifndef MEMORY_ROUTINES_H
 #define MEMORY_ROUTINES_H
 
-/* SD: I didn't find a way to make external functions inline
-       except including their bodies into header. FIX ME, please */
-/*
-inline short get_short(const char*);
-inline long get_long(const char*);
-inline short gather_short(char* &);
-inline long gather_long(char* &);
-*/
 
 inline SSHORT get_short(const SCHAR* p)
 {
@@ -52,7 +44,7 @@ inline SSHORT get_short(const SCHAR* p)
 
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	// According to CTO32L definition in common.h this trick work for VAX/VMS
+	// According to CTO32L definition in common.h this trick works for VAX/VMS
 	return *reinterpret_cast<const SSHORT*>(p);
 #else
 	// Non-IA32
@@ -133,7 +125,7 @@ inline SLONG get_long(const UCHAR* p)
 #endif
 }
 
-inline SSHORT gather_short(SCHAR* &p)
+inline SSHORT gather_short(const SCHAR*& p)
 {
 /**************************************
  *
@@ -151,8 +143,7 @@ inline SSHORT gather_short(SCHAR* &p)
 
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	SSHORT value;
-	value = *reinterpret_cast<const SSHORT*>(p);
+	const SSHORT value = *reinterpret_cast<const SSHORT*>(p);
 	p += 2;
 	return value;
 #else
@@ -170,7 +161,7 @@ union {
 #endif	// endianness
 }
 
-inline SLONG gather_long(SCHAR* &p)
+inline SLONG gather_long(const SCHAR*& p)
 {
 /**************************************
  *
@@ -188,8 +179,7 @@ inline SLONG gather_long(SCHAR* &p)
 
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	SLONG value;
-	value = *reinterpret_cast<const SLONG*>(p);
+	const SLONG value = *reinterpret_cast<const SLONG*>(p);
 	p += 4;
 	return value;
 #else

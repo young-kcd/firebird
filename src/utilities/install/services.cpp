@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Windows NT service control panel installation program
- *	MODULE:		services.c
+ *	MODULE:		services.cpp
  *	DESCRIPTION:	Functions which update the Windows service manager for IB
  *
  * The contents of this file are subject to the Interbase Public

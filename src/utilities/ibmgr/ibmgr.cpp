@@ -1,7 +1,7 @@
 /*
  *
  *	PROGRAM:	InterBase server manager
- *	MODULE:		ibmgr.c
+ *	MODULE:		ibmgr.cpp
  *	DESCRIPTION:	Main routine and parser
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.8 2003-11-08 16:33:47 brodsom Exp $
+ * $Id: ibmgr.cpp,v 1.9 2003-11-10 09:16:33 robocop Exp $
  */
 
 #include "firebird.h"

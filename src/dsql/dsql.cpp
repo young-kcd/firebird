@@ -466,7 +466,7 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
-		return tdsql->tsql_status [1];
+		return tdsql->tsql_status[1];
 	}
 
 	return return_success();
@@ -610,7 +610,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 	catch (const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
-		return tdsql->tsql_status [1];
+		return tdsql->tsql_status[1];
 	}
 
 	RESTORE_THREAD_DATA;
@@ -737,7 +737,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
-		return tdsql->tsql_status [1];
+		return tdsql->tsql_status[1];
 	}
 
 	return return_success();
@@ -1140,7 +1140,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
-		return tdsql->tsql_status [1];
+		return tdsql->tsql_status[1];
 	}
 
 	return return_success();
@@ -1198,7 +1198,7 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
-		return tdsql->tsql_status [1];
+		return tdsql->tsql_status[1];
 	}
 
 	return return_success();
@@ -1281,7 +1281,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
-		return tdsql->tsql_status [1];
+		return tdsql->tsql_status[1];
 	}
 
 	return return_success();
@@ -1450,7 +1450,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
-		return tdsql->tsql_status [1];
+		return tdsql->tsql_status[1];
 	}
 }
 
@@ -1550,7 +1550,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
-		return tdsql->tsql_status [1];
+		return tdsql->tsql_status[1];
 	}
 
 	return return_success();
@@ -1775,7 +1775,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 	catch(const std::exception&)
 	{
 		RESTORE_THREAD_DATA;
-		return tdsql->tsql_status [1];
+		return tdsql->tsql_status[1];
 	}
 
 	return return_success();
@@ -1811,13 +1811,7 @@ static void trace_line(const char* message, ...) {
  **/
 void DSQL_pretty(const dsql_nod* node, int column)
 {
-	DSQL_MAP map;
-	DSQL_REL relation;
-	DSQL_PRC procedure;
-	DSQL_CTX context;
-	DSQL_FLD field;
-	STR string;
-	var* variable;
+	const dsql_str* string;
 
 	TEXT buffer[1024];
 
@@ -1842,11 +1836,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	switch (MemoryPool::blk_type(node)) {
 	case (TEXT) dsql_type_str:
-		trace_line("%sSTRING: \"%s\"\n", buffer, ((STR) node)->str_data);
+		trace_line("%sSTRING: \"%s\"\n", buffer, ((dsql_str*) node)->str_data);
 		return;
 
 	case (TEXT) dsql_type_fld:
-		trace_line("%sFIELD: %s\n", buffer, ((DSQL_FLD) node)->fld_name);
+		trace_line("%sFIELD: %s\n", buffer, ((dsql_fld*) node)->fld_name);
 		return;
 
 	case (TEXT) dsql_type_sym:
@@ -2596,7 +2590,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_label:
 		verb = "label";
-		DSQL_pretty(node->nod_arg[e_label_name], column+1);
+		DSQL_pretty(node->nod_arg[e_label_name], column + 1);
 		trace_line("%s   number %d\n", buffer,
 			(int)(IPTR)node->nod_arg[e_label_number]);
 		return;
@@ -2604,18 +2598,20 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_derived_field:
 		verb = "derived_field";
 		trace_line("%s%s\n", buffer, verb);
-		DSQL_pretty(node->nod_arg[e_derived_field_value], column+1);
-		DSQL_pretty(node->nod_arg[e_derived_field_name], column+1);
+		DSQL_pretty(node->nod_arg[e_derived_field_value], column + 1);
+		DSQL_pretty(node->nod_arg[e_derived_field_name], column + 1);
 		trace_line("%s   scope %d\n", buffer,
 			(USHORT)(U_IPTR)node->nod_arg[e_derived_field_scope]);
 		return;
 
 	case nod_aggregate:
+		{
 		verb = "aggregate";
 		trace_line("%s%s\n", buffer, verb);
-		context = (DSQL_CTX) node->nod_arg[e_agg_context];
+		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
 		trace_line("%s   context %d\n", buffer, context->ctx_context);
-		if ((map = context->ctx_map) != NULL)
+		dsql_map* map = context->ctx_map;
+		if (map != NULL)
 			trace_line("%s   map\n", buffer);
 		while (map) {
 			trace_line("%s      position %d\n", buffer, map->map_position);
@@ -2625,6 +2621,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		DSQL_pretty(node->nod_arg[e_agg_group], column + 1);
 		DSQL_pretty(node->nod_arg[e_agg_rse], column + 1);
 		return;
+		}
 
 	case nod_constant:
 		verb = "constant";
@@ -2639,10 +2636,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 
 	case nod_field:
-		context = (DSQL_CTX) node->nod_arg[e_fld_context];
-		relation = context->ctx_relation;
- 		procedure = context->ctx_procedure;
-		field = (DSQL_FLD) node->nod_arg[e_fld_field];
+		{
+		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_fld_context];
+		const dsql_rel* relation = context->ctx_relation;
+		const dsql_prc* procedure = context->ctx_procedure;
+		const dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
 		trace_line("%sfield %s.%s, context %d\n", buffer,
  			(relation != NULL ? 
  				relation->rel_name : 
@@ -2651,13 +2649,14 @@ void DSQL_pretty(const dsql_nod* node, int column)
  					"unknown_db_object")), 
  			field->fld_name, context->ctx_context);
 		return;
+		}
 	
 	case nod_field_name:
 		trace_line("%sfield name: \"", buffer);
-		string = (STR) node->nod_arg[e_fln_context];
+		string = (dsql_str*) node->nod_arg[e_fln_context];
 		if (string)
 			trace_line("%s.", string->str_data);
-		string = (STR) node->nod_arg[e_fln_name];
+		string = (dsql_str*) node->nod_arg[e_fln_name];
         if (string != 0) {
             trace_line("%s\"\n", string->str_data);
         }
@@ -2667,20 +2666,25 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		return;
 
 	case nod_map:
+		{
 		verb = "map";
 		trace_line("%s%s\n", buffer, verb);
-		context = (DSQL_CTX) node->nod_arg[e_map_context];
+		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_map_context];
 		trace_line("%s   context %d\n", buffer, context->ctx_context);
-		for (map = (DSQL_MAP) node->nod_arg[e_map_map]; map; map = map->map_next) {
+		for (const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map]; map;
+			map = map->map_next)
+		{
 			trace_line("%s   position %d\n", buffer, map->map_position);
 			DSQL_pretty(map->map_node, column + 1);
 		}
 		return;
+		}
 
 	case nod_relation:
-		context = (DSQL_CTX) node->nod_arg[e_rel_context];
-		relation = context->ctx_relation;
-		procedure = context->ctx_procedure;
+		{
+		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_rel_context];
+		const dsql_rel* relation = context->ctx_relation;
+		const dsql_prc* procedure = context->ctx_procedure;
  		if( relation != NULL ) {
  			trace_line("%srelation %s, context %d\n",
  				buffer, relation->rel_name, context->ctx_context);
@@ -2694,18 +2698,21 @@ void DSQL_pretty(const dsql_nod* node, int column)
  				buffer, context->ctx_context);
  		}
 		return;
+		}
 
 	case nod_variable:
-		variable = (var*) node->nod_arg[e_var_variable];
+		{
+		const var* variable = (var*) node->nod_arg[e_var_variable];
         // Adding variable->var_variable_number to display, obviously something
         // is missing from the printf, and Im assuming this was it.
         // (anyway can't be worse than it was MOD 05-July-2002.
 		trace_line("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
 		return;
+		}
 
 	case nod_var_name:
 		trace_line("%svariable name: \"", buffer);
-		string = (STR) node->nod_arg[e_vrn_name];
+		string = (dsql_str*) node->nod_arg[e_vrn_name];
 		trace_line("%s\"\n", string->str_data);
 		return;
 
@@ -2727,13 +2734,13 @@ void DSQL_pretty(const dsql_nod* node, int column)
     /* CVC: The answer is that nod_arg[0] can be either the udf name or the
     pointer to udf struct returned by METD_get_function, so we should resort
     to the block type. The replacement happens in pass1_udf(). */
-        //        switch (node->nod_arg [e_udf_name]->nod_header.blk_type) {
-        switch (MemoryPool::blk_type(node->nod_arg [e_udf_name])) {
+        //        switch (node->nod_arg[e_udf_name]->nod_header.blk_type) {
+        switch (MemoryPool::blk_type(node->nod_arg[e_udf_name])) {
         case dsql_type_udf:
-            trace_line ("%s\"\n", ((UDF) node->nod_arg [e_udf_name])->udf_name);
+            trace_line ("%s\"\n", ((dsql_udf*) node->nod_arg[e_udf_name])->udf_name);
             break;
         case dsql_type_str:  
-            string = (STR) node->nod_arg [e_udf_name];
+            string = (dsql_str*) node->nod_arg[e_udf_name];
             trace_line ("%s\"\n", string->str_data);
             break;
         default:
@@ -3048,7 +3055,7 @@ static void execute_blob(	dsql_req*		request,
 
 	TSQL tdsql = GET_THREAD_DATA;
 
-	blb* blob = request->req_blob;
+	dsql_blb* blob = request->req_blob;
 	map_in_out(request, blob->blb_open_in_msg, in_blr_length, in_blr,
 			   in_msg_length, in_msg);
 
@@ -3087,7 +3094,7 @@ static void execute_blob(	dsql_req*		request,
 						   &request->req_dbb->dbb_database_handle,
 						   &request->req_trans, &request->req_handle,
 						   blob_id, bpb_length,
-						   reinterpret_cast<const UCHAR*>(bpb));
+						   bpb);
 		THREAD_ENTER;
 		if (s) {
 			punt();
@@ -4684,13 +4691,13 @@ static dsql_req* prepare(
 	{
 		/* Allocate persistent blr string from request's pool. */
 
-		request->req_blr_string = FB_NEW_RPT(*tdsql->tsql_default, 980) str;
+		request->req_blr_string = FB_NEW_RPT(*tdsql->tsql_default, 980) dsql_str;
 	}
 	else {
 		/* Allocate transient blr string from permanent pool so
 		   as not to unnecessarily bloat the request's pool. */
 
-		request->req_blr_string = FB_NEW_RPT(*DSQL_permanent_pool, 980) str;
+		request->req_blr_string = FB_NEW_RPT(*DSQL_permanent_pool, 980) dsql_str;
 	}
 	request->req_blr_string->str_length = 980;
 	request->req_blr = reinterpret_cast<BLOB_PTR*>(request->req_blr_string->str_data);

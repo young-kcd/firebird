@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Rebuild scrambled database
- *	MODULE:		rebuild.c
+ *	MODULE:		rebuild.cpp
  *	DESCRIPTION:	Main routine for analyzing and rebuilding database
  *
  * The contents of this file are subject to the Interbase Public

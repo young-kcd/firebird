@@ -101,7 +101,7 @@
 #include "../wal/wal.h"
 #include "../jrd/err_proto.h"
 
-static void	yyerror (TEXT *);
+static void	yyerror(const TEXT*);
 
 /* since UNIX isn't standard, we have to define
    stuff which is in <limits.h> (which isn't available
@@ -127,8 +127,8 @@ const int DEF_CACHE_BUFFERS	= 1000;
 #define YYDEBUG		1
 #endif
 
-static const char INTERNAL_FIELD_NAME [] = "DSQL internal"; /* NTX: placeholder */
-static const char NULL_STRING [] = "";	
+static const char INTERNAL_FIELD_NAME[] = "DSQL internal"; /* NTX: placeholder */
+static const char NULL_STRING[] = "";
 
 inline SLONG trigger_type_suffix(const int slot1, const int slot2, const int slot3)
 {
@@ -136,9 +136,9 @@ inline SLONG trigger_type_suffix(const int slot1, const int slot2, const int slo
 }
 
 
-DSQL_NOD		DSQL_parse;
+dsql_nod* DSQL_parse;
 
-static void	yyerror (TEXT *);
+//static void	yyerror(const TEXT*); redeclaration.
 
 #define YYPARSE_PARAM_TYPE
 #define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous
@@ -151,8 +151,8 @@ static TEXT	*lex_position (void);
 #ifdef NOT_USED_OR_REPLACED
 static bool		long_int(DSQL_NOD, SLONG *);
 #endif
-static DSQL_FLD	make_field (DSQL_NOD);
-static FIL	make_file (void);
+static dsql_fld*	make_field (DSQL_NOD);
+static dsql_fil*	make_file (void);
 static DSQL_NOD	make_list (DSQL_NOD);
 static DSQL_NOD	make_node (NOD_TYPE, int, ...);
 static DSQL_NOD	make_parameter (void);
@@ -161,8 +161,8 @@ static void	prepare_console_debug (int, int  *);
 #ifdef NOT_USED_OR_REPLACED
 static bool	short_int(DSQL_NOD, SLONG *, SSHORT);
 #endif
-static void	stack_nodes (DSQL_NOD, DLLS *);
-inline static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
+static void	stack_nodes (DSQL_NOD, dsql_lls**);
+inline static int	yylex (USHORT, USHORT, USHORT, BOOLEAN*);
 static void	yyabandon (SSHORT, ISC_STATUS);
 static void	check_log_file_attrs (void);
 
@@ -180,8 +180,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 struct LexerState {
 	/* This is, in fact, parser state. Not used in lexer itself */
-	DSQL_FLD g_field;
-	FIL	g_file;
+	dsql_fld* g_field;
+	dsql_fil*	g_file;
 	DSQL_NOD g_field_name;
 	SSHORT log_defined, cache_defined;
 	int dsql_debug;
@@ -204,7 +204,7 @@ struct LexerState {
 		USHORT	client_dialect,
 		USHORT	db_dialect,
 		USHORT	parser_version,
-		BOOLEAN	*stmt_ambiguous);
+		BOOLEAN* stmt_ambiguous);
 };
 
 /* Get ready for thread-safety. Move this to BISON object pointer when we 
@@ -779,7 +779,7 @@ arg_desc	: init_data_type udf_data_type
 							  $1, NULL); }
 		| init_data_type udf_data_type BY KW_DESCRIPTOR
 			{ $$ = make_node (nod_udf_param, (int) e_udf_param_count,
-				$1, MAKE_constant ((STR) FUN_descriptor, CONSTANT_SLONG)); }
+				$1, MAKE_constant ((dsql_str*) FUN_descriptor, CONSTANT_SLONG)); }
 		;
 
 
@@ -789,21 +789,21 @@ return_value1	: return_value
 		;
 return_value	: init_data_type udf_data_type
 			{ $$ = make_node (nod_udf_return_value, (int) 2, $1, 
-				MAKE_constant ((STR) FUN_reference, CONSTANT_SLONG));}
+				MAKE_constant ((dsql_str*) FUN_reference, CONSTANT_SLONG));}
 		| init_data_type udf_data_type FREE_IT
 			{ $$ = make_node (nod_udf_return_value, (int) 2, $1, 
-				MAKE_constant ((STR) (-1 * FUN_reference), CONSTANT_SLONG));}
+				MAKE_constant ((dsql_str*) (-1 * FUN_reference), CONSTANT_SLONG));}
 										 /* FUN_refrence with FREE_IT is -ve */
 		| init_data_type udf_data_type BY KW_VALUE
 			{ $$ = make_node (nod_udf_return_value, (int) 2, $1, 
-				MAKE_constant ((STR) FUN_value, CONSTANT_SLONG));}
+				MAKE_constant ((dsql_str*) FUN_value, CONSTANT_SLONG));}
 /* CVC: Enable return by descriptor for the future.*/
 		| init_data_type udf_data_type BY KW_DESCRIPTOR
 			{ $$ = make_node (nod_udf_return_value, (int) 2, $1,
-				MAKE_constant ((STR) FUN_descriptor, CONSTANT_SLONG));}
+				MAKE_constant ((dsql_str*) FUN_descriptor, CONSTANT_SLONG));}
 		| PARAMETER pos_short_integer
 			{ $$ = make_node (nod_udf_return_value, (int) 2, 
-				NULL, MAKE_constant ((STR) $2, CONSTANT_SLONG));}
+				NULL, MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG));}
 		;
 
 filter_decl_clause : symbol_filter_name INPUT_TYPE blob_subtype OUTPUT_TYPE blob_subtype 
@@ -903,17 +903,17 @@ shadow_clause	: pos_short_integer manual_auto conditional sql_string
 		;
 
 manual_auto	: MANUAL
-			{ $$ = MAKE_constant ((STR) 1, CONSTANT_SLONG); } 
+			{ $$ = MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG); }
 		| AUTO
-			{ $$ = MAKE_constant ((STR) 0, CONSTANT_SLONG); } 
+			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
 		| 
-			{ $$ = MAKE_constant ((STR) 0, CONSTANT_SLONG); } 
+			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
 		;
 
 conditional	: 
-			{ $$ = MAKE_constant ((STR) 0, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
 		| CONDITIONAL
-			{ $$ = MAKE_constant ((STR) 1, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG); }
 		;	
 
 first_file_length : 
@@ -1113,7 +1113,7 @@ db_default_log_spec : LOGFILE
 		;
 
 db_file		: file1 sql_string file_desc1
-			{ lex.g_file->fil_name = (STR) $2; 
+			{ lex.g_file->fil_name = (dsql_str*) $2;
 			  $$ = (DSQL_NOD) make_node (nod_file_desc, (int) 1,
 						(DSQL_NOD) lex.g_file); }
 		;
@@ -1126,7 +1126,7 @@ db_cache	: CACHE sql_string cache_length
 				  */ /* Cache redefined */ /*
 			  lex.g_file = make_file();
 			  lex.g_file->fil_length = (SLONG) $3;
-			  lex.g_file->fil_name = (STR) $2;
+			  lex.g_file->fil_name = (dsql_str*) $2;
 			  lex.cache_defined = TRUE;
 			  $$ = (DSQL_NOD) make_node (nod_cache_file_desc, (int) 1,
 					 (DSQL_NOD) lex.g_file); } 
@@ -1157,7 +1157,7 @@ logfile_desc	: logfile_name logfile_attrs
 		;
 logfile_name	: sql_string 
 			{ lex.g_file = make_file();
-			  lex.g_file->fil_name = (STR) $1; } 
+			  lex.g_file->fil_name = (dsql_str*) $1; }
 		;
 logfile_attrs	: 
 		| logfile_attrs logfile_attr
@@ -1746,32 +1746,32 @@ fetch_seek_opt	:
 	| FIRST
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_bof_forward, 0)
-				MAKE_constant ((STR) 3, CONSTANT_SLONG),
-				MAKE_constant ((STR) 0, CONSTANT_SLONG)); }
+				MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG),
+				MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG)); }
 	| LAST
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_eof_backward, 0)
-				MAKE_constant ((STR) 4, CONSTANT_SLONG),
-				MAKE_constant ((STR) 0, CONSTANT_SLONG)); }
+				MAKE_constant ((dsql_str*) 4, CONSTANT_SLONG),
+				MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG)); }
 	| PRIOR
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_backward, 1)
-				MAKE_constant ((STR) 2, CONSTANT_SLONG),
-				MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
+				MAKE_constant ((dsql_str*) 2, CONSTANT_SLONG),
+				MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
 	| NEXT
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_forward, 1)
-				MAKE_constant ((STR) 1, CONSTANT_SLONG),
-				MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
+				MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG),
+				MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
 	| ABSOLUTE value
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_bof_forward, value)
-				MAKE_constant ((STR) 3, CONSTANT_SLONG),
+				MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG),
 				$2); }
 	| RELATIVE value
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_forward, value)
-				MAKE_constant ((STR) 1, CONSTANT_SLONG),
+				MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG),
 				$2); }
 	;
 */
@@ -1917,9 +1917,9 @@ replace_trigger_clause : symbol_trigger_name FOR simple_table_name
 		;
 
 trigger_active	: ACTIVE 
-			{ $$ = MAKE_constant ((STR) 0, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
 		| INACTIVE
-			{ $$ = MAKE_constant ((STR) 1, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG); }
 		|
 			{ $$ = NULL; }
 		;
@@ -1929,45 +1929,45 @@ trigger_type	: trigger_type_prefix trigger_type_suffix
 		;
 
 trigger_type_prefix	: BEFORE
-			{ $$ = MAKE_constant ((STR) 0, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
 		| AFTER
-			{ $$ = MAKE_constant ((STR) 1, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG); }
 		;
 
 trigger_type_suffix	: INSERT
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 0, 0), CONSTANT_SLONG); }
 		| UPDATE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 0, 0), CONSTANT_SLONG); }
 		| KW_DELETE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 0, 0), CONSTANT_SLONG); }
 		| INSERT OR UPDATE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 2, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 2, 0), CONSTANT_SLONG); }
 		| INSERT OR KW_DELETE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 3, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 3, 0), CONSTANT_SLONG); }
 		| UPDATE OR INSERT
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 1, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 1, 0), CONSTANT_SLONG); }
 		| UPDATE OR KW_DELETE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 3, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 3, 0), CONSTANT_SLONG); }
 		| KW_DELETE OR INSERT
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 1, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 1, 0), CONSTANT_SLONG); }
 		| KW_DELETE OR UPDATE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 2, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 2, 0), CONSTANT_SLONG); }
 		| INSERT OR UPDATE OR KW_DELETE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 2, 3), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 2, 3), CONSTANT_SLONG); }
 		| INSERT OR KW_DELETE OR UPDATE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (1, 3, 2), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 3, 2), CONSTANT_SLONG); }
 		| UPDATE OR INSERT OR KW_DELETE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 1, 3), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 1, 3), CONSTANT_SLONG); }
 		| UPDATE OR KW_DELETE OR INSERT
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (2, 3, 1), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 3, 1), CONSTANT_SLONG); }
 		| KW_DELETE OR INSERT OR UPDATE
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 1, 2), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 1, 2), CONSTANT_SLONG); }
 		| KW_DELETE OR UPDATE OR INSERT
-			{ $$ = MAKE_constant ((STR) trigger_type_suffix (3, 2, 1), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 2, 1), CONSTANT_SLONG); }
 		;
 
 trigger_position : POSITION nonneg_short_integer
-			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
 		|
 			{ $$ = NULL; }
 		;
@@ -2063,10 +2063,10 @@ alter_op	: DROP simple_column_name drop_behaviour
 /* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example. 
 		| col_opt simple_column_name POSITION nonneg_short_integer 
 			{ $$ = make_node (nod_mod_field_pos, 2, $2,
-			MAKE_constant ((STR) $4, CONSTANT_SLONG)); } */
+			MAKE_constant ((dsql_str*) $4, CONSTANT_SLONG)); } */
 		| col_opt simple_column_name POSITION pos_short_integer
 			{ $$ = make_node (nod_mod_field_pos, 2, $2,
-				MAKE_constant ((STR) $4, CONSTANT_SLONG)); }
+				MAKE_constant ((dsql_str*) $4, CONSTANT_SLONG)); }
 		| col_opt alter_column_name TO simple_column_name
 			{ $$ = make_node (nod_mod_field_name, 2, $2, $4); }
 		| col_opt alter_col_name TYPE alter_data_type_or_domain end_trigger 
@@ -2272,16 +2272,16 @@ array_spec	: array_range
 array_range	: signed_long_integer
 				{ if ((SLONG) $1 < 1)
 			 		$$ = make_node (nod_list, (int) 2, 
-					MAKE_constant ((STR) $1, CONSTANT_SLONG), 
-					MAKE_constant ((STR) 1, CONSTANT_SLONG)); 
+					MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG),
+					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG));
 				  else
 			 		$$ = make_node (nod_list, (int) 2, 
-			   		MAKE_constant ((STR) 1, CONSTANT_SLONG), 
-					MAKE_constant ((STR) $1, CONSTANT_SLONG) ); }
+			   		MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG),
+					MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG) ); }
 		| signed_long_integer ':' signed_long_integer
 				{ $$ = make_node (nod_list, (int) 2, 
-			 	MAKE_constant ((STR) $1, CONSTANT_SLONG),
-				MAKE_constant ((STR) $3, CONSTANT_SLONG)); }
+			 	MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG),
+				MAKE_constant ((dsql_str*) $3, CONSTANT_SLONG)); }
 		;
 
 simple_type	: non_charset_simple_type
@@ -2676,18 +2676,18 @@ set		: set_transaction
 set_generator	: SET GENERATOR symbol_generator_name TO signed_long_integer
 			{ 
 			  $$ = make_node (nod_set_generator2,e_gen_id_count,$3,
-						MAKE_constant ((STR) $5, CONSTANT_SLONG));
+						MAKE_constant ((dsql_str*) $5, CONSTANT_SLONG));
 			}
 				| SET GENERATOR symbol_generator_name TO NUMBER64BIT
 						{
 			  $$ = make_node (nod_set_generator2,e_gen_id_count,$3,
-					   MAKE_constant((STR)$5, CONSTANT_SINT64));
+					   MAKE_constant((dsql_str*)$5, CONSTANT_SINT64));
 			}
 				| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
 						{
 			  $$ = make_node (nod_set_generator2, (int) e_gen_id_count, $3,
 					  make_node(nod_negate, 1,
-							MAKE_constant((STR)$6, CONSTANT_SINT64)));
+							MAKE_constant((dsql_str*)$6, CONSTANT_SINT64)));
 			}
 		;
 
@@ -2906,10 +2906,10 @@ rows_clause	: ROWS value
 			// equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1)
 			{ $$ = make_node (nod_rows, (int) e_rows_count,
 				make_node (nod_subtract, 2, $2,
-					MAKE_constant ((STR) 1, CONSTANT_SLONG)),
+					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)),
 				make_node (nod_add, 2,
 					make_node (nod_subtract, 2, $4, $2),
-					MAKE_constant ((STR) 1, CONSTANT_SLONG))); }
+					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG))); }
 		|
 			{ $$ = NULL; }
 		;
@@ -2988,7 +2988,7 @@ limit_clause	: first_clause skip_clause end_limit
 		;
 
 first_clause	: FIRST long_integer begin_limit
-			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
 		| FIRST '(' value ')' begin_limit
 			{ $$ = $3; }
 		| FIRST parameter begin_limit
@@ -2996,7 +2996,7 @@ first_clause	: FIRST long_integer begin_limit
 		;
 
 skip_clause	: SKIP long_integer
-			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
 		| SKIP '(' end_limit value ')'
 			{ $$ = $4; }
 		| SKIP parameter
@@ -3295,7 +3295,7 @@ blob_subtype_value : blob_subtype
 		;
 
 blob_subtype	: signed_short_integer
-			{ $$ = MAKE_constant ((STR) $1, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
 		;
 
 segment_clause	: MAX_SEGMENT segment_length
@@ -3304,7 +3304,7 @@ segment_clause	: MAX_SEGMENT segment_length
 		;
 
 segment_length	: unsigned_short_integer
-			{ $$ = MAKE_constant ((STR) $1, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
 		| parameter
 		;
 
@@ -3530,35 +3530,35 @@ null_predicate	: value IS KW_NULL
 trigger_action_predicate	: INSERTING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
 	| UPDATING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((STR) 2, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((dsql_str*) 2, CONSTANT_SLONG)); }
 	| DELETING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((STR) 3, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG)); }
 	;
 
 special_trigger_action_predicate	: KW_INSERTING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
 	| KW_UPDATING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((STR) 2, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((dsql_str*) 2, CONSTANT_SLONG)); }
 	| KW_DELETING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((STR) 3, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG)); }
 	;
 
 /* set values */
@@ -3598,7 +3598,7 @@ column_singleton : SELECT limit_clause
 			rows_clause
 			{ $$ = make_node (nod_select_expr, (int) e_sel_count, 
 				$2, $3, make_list ($4), $5, $6, $7, $8, $9, $10, $11,
-				MAKE_constant ((STR) 1, CONSTANT_SLONG)); }
+				MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
 		;
 
 
@@ -3719,20 +3719,20 @@ constant	: u_constant
 		;
 
 u_numeric_constant : NUMERIC
-			{ $$ = MAKE_constant ((STR) $1, CONSTANT_STRING); }
+			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
 		| NUMBER
-			{ $$ = MAKE_constant ((STR) $1, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
 		| FLOAT_NUMBER
-			{ $$ = MAKE_constant ((STR) $1, CONSTANT_DOUBLE); }
+			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_DOUBLE); }
 		| NUMBER64BIT
-			{ $$ = MAKE_constant ((STR) $1, CONSTANT_SINT64); }
+			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SINT64); }
 		| SCALEDINT
-			{ $$ = MAKE_constant ((STR) $1, CONSTANT_SINT64); }
+			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SINT64); }
 		;
 
 u_constant	: u_numeric_constant
 		| sql_string
-			{ $$ = MAKE_str_constant ((STR) $1, lex.att_charset); }
+			{ $$ = MAKE_str_constant ((dsql_str*) $1, lex.att_charset); }
 		| DATE STRING
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
@@ -3747,7 +3747,7 @@ u_constant	: u_numeric_constant
 					isc_arg_number, db_dialect,
 					isc_arg_string, "DATE",
 					0);
-			$$ = MAKE_constant ((STR) $2, CONSTANT_DATE);
+			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_DATE);
 			}
 		| TIME STRING
 			{
@@ -3763,10 +3763,10 @@ u_constant	: u_numeric_constant
 					isc_arg_number, db_dialect,
 					isc_arg_string, "TIME",
 					0);
-			$$ = MAKE_constant ((STR) $2, CONSTANT_TIME); 
+			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_TIME);
 			}
 		| TIMESTAMP STRING
-			{ $$ = MAKE_constant ((STR) $2, CONSTANT_TIMESTAMP); }
+			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_TIMESTAMP); }
 		;
 
 parameter	: '?'
@@ -3785,25 +3785,25 @@ current_role	: CURRENT_ROLE
 
 internal_info	: CURRENT_CONNECTION
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_connection_id, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_connection_id, CONSTANT_SLONG)); }
 		| CURRENT_TRANSACTION
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_transaction_id, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_transaction_id, CONSTANT_SLONG)); }
 		| GDSCODE
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_gdscode, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_gdscode, CONSTANT_SLONG)); }
 		| SQLCODE
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_sqlcode, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_sqlcode, CONSTANT_SLONG)); }
 		| ROW_COUNT
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((STR) internal_rows_affected, CONSTANT_SLONG)); }
+						MAKE_constant ((dsql_str*) internal_rows_affected, CONSTANT_SLONG)); }
 		;
 
 sql_string	: STRING			/* string in current charset */
 			{ $$ = $1; }
 		| INTRODUCER STRING		/* string in specific charset */
-			{ ((STR) $2)->str_charset = (TEXT *) $1;
+			{ ((dsql_str*) $2)->str_charset = (TEXT *) $1;
 			  $$ = $2; }
 		;
 
@@ -3935,13 +3935,13 @@ substring_function	: SUBSTRING '(' value FROM value string_length_opt ')'
 			   compatible with the engine's implementation */
 			{ $$ = make_node (nod_substr, (int) e_substr_count, $3,
 				make_node (nod_subtract, 2, $5,
-					MAKE_constant ((STR) 1, CONSTANT_SLONG)), $6); }
+					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)), $6); }
 		;
 
 string_length_opt	: FOR value
 			{ $$ = $2; }
 		|
-			{ $$ = MAKE_constant ((STR) SHRT_POS_MAX, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) SHRT_POS_MAX, CONSTANT_SLONG); }
 		;
 
 udf		: symbol_UDF_name '(' value_list ')'
@@ -4006,21 +4006,21 @@ case_result	: rhs
 		;
 
 timestamp_part	: YEAR
-			{ $$ = MAKE_constant ((STR)blr_extract_year, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_year, CONSTANT_SLONG); }
 		| MONTH
-			{ $$ = MAKE_constant ((STR)blr_extract_month, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_month, CONSTANT_SLONG); }
 		| DAY
-			{ $$ = MAKE_constant ((STR)blr_extract_day, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_day, CONSTANT_SLONG); }
 		| HOUR
-			{ $$ = MAKE_constant ((STR)blr_extract_hour, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_hour, CONSTANT_SLONG); }
 		| MINUTE
-			{ $$ = MAKE_constant ((STR)blr_extract_minute, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_minute, CONSTANT_SLONG); }
 		| SECOND
-			{ $$ = MAKE_constant ((STR)blr_extract_second, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_second, CONSTANT_SLONG); }
 		| WEEKDAY
-			{ $$ = MAKE_constant ((STR)blr_extract_weekday, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_weekday, CONSTANT_SLONG); }
 		| YEARDAY
-			{ $$ = MAKE_constant ((STR)blr_extract_yearday, CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_yearday, CONSTANT_SLONG); }
 		;
 
 all_noise	: ALL
@@ -4167,7 +4167,7 @@ void LEX_dsql_init (void)
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_keyword = token->tok_ident;
 		symbol->sym_version = token->tok_version;
-		STR str_ = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) str;
+		dsql_str* str_ = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) dsql_str;
 		str_->str_length = symbol->sym_length;
 		strncpy((char*)str_->str_data, (char*)symbol->sym_string, symbol->sym_length);
 		symbol->sym_object = (void *) str_;
@@ -4177,7 +4177,7 @@ void LEX_dsql_init (void)
 
 
 void LEX_string (
-	TEXT	*string,
+	TEXT* string,
 	USHORT	length,
 	SSHORT	character_set)
 {
@@ -4244,7 +4244,7 @@ static void check_log_file_attrs (void)
 }
 
 
-static TEXT *lex_position (void)
+static TEXT* lex_position (void)
 {
 /**************************************
  *
@@ -4278,20 +4278,20 @@ static bool long_int(DSQL_NOD string,
  *
  *************************************/
 
-	for (const char* p = ((STR) string)->str_data; classes [*p] & CHR_DIGIT; p++)
+	for (const char* p = ((dsql_str*) string)->str_data; classes[*p] & CHR_DIGIT; p++)
 	{
-		if (!(classes [*p] & CHR_DIGIT)) {
+		if (!(classes[*p] & CHR_DIGIT)) {
 			return false;
 		}
 	}
 
-	*long_value = atol ((char *)((STR) string)->str_data);
+	*long_value = atol ((char *)((dsql_str*) string)->str_data);
 
 	return true;
 }
 #endif
 
-static DSQL_FLD make_field (DSQL_NOD field_name)
+static dsql_fld* make_field (DSQL_NOD field_name)
 {
 /**************************************
  *
@@ -4303,27 +4303,25 @@ static DSQL_FLD make_field (DSQL_NOD field_name)
  *	Make a field block of given name.
  *
  **************************************/
-	DSQL_FLD	field;
-	STR	string;
-	TSQL	tdsql;
-
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
 	if (field_name == NULL)
 	{
-		field = FB_NEW_RPT(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
+		dsql_fld* field =
+			FB_NEW_RPT(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
 		strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
 		return field;
 	}
-	string = (STR) field_name->nod_arg [1];
-	field = FB_NEW_RPT(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) dsql_fld;
+	const dsql_str* string = (dsql_str*) field_name->nod_arg[1];
+	dsql_fld* field =
+		FB_NEW_RPT(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) dsql_fld;
 	strcpy (field->fld_name, (TEXT*) string->str_data);
 
 	return field;
 }
 
 
-static FIL make_file (void)
+static dsql_fil* make_file (void)
 {
 /**************************************
  *
@@ -4335,12 +4333,9 @@ static FIL make_file (void)
  *	Make a file block
  *
  **************************************/
-	FIL	temp_file;
-	TSQL	tdsql;
-
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 		   
-	temp_file = FB_NEW(*tdsql->tsql_default) fil;
+	dsql_fil* temp_file = FB_NEW(*tdsql->tsql_default) dsql_fil;
 
 	return temp_file;
 }
@@ -4358,28 +4353,24 @@ static DSQL_NOD make_list (DSQL_NOD node)
  *	Collapse nested list nodes into single list.
  *
  **************************************/
-	DSQL_NOD	*ptr;
-	DLLS	stack, temp;
-	USHORT	l;
-	DSQL_NOD	old;
-	TSQL	tdsql;
-
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
 	if (!node)
 		return node;
 
-	stack = 0;
+	dsql_lls* stack = 0;
 	stack_nodes (node, &stack);
-	for (l = 0, temp = stack; temp; temp = temp->lls_next)
+	USHORT l = 0;
+	{for (const dsql_lls* temp = stack; temp; temp = temp->lls_next)
 		l++;
+	}
 
-	old  = node;
+	dsql_nod* old  = node;
 	node = FB_NEW_RPT(*tdsql->tsql_default, l) dsql_nod;
 	node->nod_count = l;
 	node->nod_type  = nod_list;
 	node->nod_flags = old->nod_flags;
-	ptr = node->nod_arg + node->nod_count;
+	dsql_nod** ptr = node->nod_arg + node->nod_count;
 
 	while (stack)
 		*--ptr = (DSQL_NOD) LLS_POP (&stack);
@@ -4401,12 +4392,9 @@ static DSQL_NOD make_parameter (void)
  *	Any change should also be made to function below
  *
  **************************************/
-	DSQL_NOD	node;
-	TSQL	tdsql;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	tdsql = GET_THREAD_DATA;
-
-	node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
 	node->nod_type = nod_parameter;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
@@ -4432,18 +4420,15 @@ static DSQL_NOD make_node (NOD_TYPE	type,
  *	Any change should also be made to function below
  *
  **************************************/
-	DSQL_NOD	node, *p;
-	va_list	ptr;
-	TSQL	tdsql;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	tdsql = GET_THREAD_DATA;
-
-	node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 	node->nod_type = type;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
 	node->nod_count = count;
-	p = node->nod_arg;
+	dsql_nod** p = node->nod_arg;
+	va_list	ptr;
 	VA_START (ptr, count);
 
 	while (--count >= 0)
@@ -4468,19 +4453,16 @@ static DSQL_NOD make_flag_node (NOD_TYPE	type,
  *	Make a node of given type. Set flag field
  *
  **************************************/
-	DSQL_NOD	node, *p;
-	va_list	ptr;
-	TSQL	tdsql;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	tdsql = GET_THREAD_DATA;
-
-	node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 	node->nod_type = type;
 	node->nod_flags = flag;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
 	node->nod_count = count;
-	p = node->nod_arg;
+	dsql_nod** p = node->nod_arg;
+	va_list	ptr;
 	VA_START (ptr, count);
 
 	while (--count >= 0)
@@ -4528,13 +4510,13 @@ static bool short_int(DSQL_NOD string,
  *
  *************************************/
 
-	if (((STR) string)->str_length > 5) {
+	if (((dsql_str*) string)->str_length > 5) {
 		return false;
 	}
 
-	for (char* p = ((STR) string)->str_data; classes [*p] & CHR_DIGIT; p++)
+	for (char* p = ((dsql_str*) string)->str_data; classes[*p] & CHR_DIGIT; p++)
 	{
-		if (!(classes [*p] & CHR_DIGIT)) {
+		if (!(classes[*p] & CHR_DIGIT)) {
 			return false;
 		}
 	}
@@ -4543,12 +4525,12 @@ static bool short_int(DSQL_NOD string,
 	 * than 32767... */
 
 	SCHAR buf[10];	
-	buf [0] = ((STR) string)->str_data[0];
-	buf [1] = ((STR) string)->str_data[1];
-	buf [2] = ((STR) string)->str_data[2];
-	buf [3] = ((STR) string)->str_data[3];
-	buf [4] = ((STR) string)->str_data[4];
-	buf [5] = '\0';
+	buf[0] = ((dsql_str*) string)->str_data[0];
+	buf[1] = ((dsql_str*) string)->str_data[1];
+	buf[2] = ((dsql_str*) string)->str_data[2];
+	buf[3] = ((dsql_str*) string)->str_data[3];
+	buf[4] = ((dsql_str*) string)->str_data[4];
+	buf[5] = '\0';
 
 	*long_value = atoi (buf);
 
@@ -4571,7 +4553,7 @@ static bool short_int(DSQL_NOD string,
 #endif
 
 static void stack_nodes (DSQL_NOD	node,
-						 DLLS		*stack)
+						 dsql_lls** stack)
 {
 /**************************************
  *
@@ -4583,9 +4565,6 @@ static void stack_nodes (DSQL_NOD	node,
  *	Assist in turning a tree of misc nodes into a clean list.
  *
  **************************************/
-	DSQL_NOD	*ptr, *end;
-	DSQL_NOD	 curr_node, next_node, start_chain, end_chain, save_link;
-
 	if (node->nod_type != nod_list)
 		{
 		LLS_PUSH (node, stack);
@@ -4600,30 +4579,30 @@ static void stack_nodes (DSQL_NOD	node,
 	   non-list nodes in the process.   The purpose of this is to avoid
 	   massive recursion of this function. */
 
-	start_chain = node;
-	end_chain = NULL;
-	curr_node = node;
-	next_node = node->nod_arg[0];
+	dsql_nod* start_chain = node;
+	dsql_nod* end_chain = NULL;
+	dsql_nod* curr_node = node;
+	dsql_nod* next_node = node->nod_arg[0];
 	while ( curr_node->nod_count == 2 &&
 			curr_node->nod_arg[0]->nod_type == nod_list &&
 			curr_node->nod_arg[1]->nod_type != nod_list &&
 			next_node->nod_arg[0]->nod_type == nod_list &&
 			next_node->nod_arg[1]->nod_type != nod_list)
-		{
+	{
 
 		/* pattern was found so reverse the links and go to next node */
 
-		save_link = next_node->nod_arg[0];
+		dsql_nod* save_link = next_node->nod_arg[0];
 		next_node->nod_arg[0] = curr_node;
 		curr_node = next_node;
 		next_node = save_link;
 		end_chain = curr_node;
-		}
+	}
 
 	/* see if any chain was found */
 
-	if ( end_chain)
-		{
+	if (end_chain)
+	{
 
 		/* first, handle the rest of the nodes */
 		/* note that next_node still points to the first non-pattern node */
@@ -4634,19 +4613,20 @@ static void stack_nodes (DSQL_NOD	node,
 		
 		curr_node = end_chain;
 		while (true)
-			{
+		{
 			LLS_PUSH( curr_node->nod_arg[1], stack);
 			if ( curr_node == start_chain)
 				break;
-			save_link = curr_node->nod_arg[0];
+			dsql_nod* save_link = curr_node->nod_arg[0];
 			curr_node->nod_arg[0] = next_node;
 			next_node = curr_node;
 			curr_node = save_link;
-			}
-		return;
 		}
+		return;
+	}
 
-	for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
+	dsql_nod** ptr = node->nod_arg;
+	for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 		stack_nodes (*ptr, stack);
 }
 
@@ -4654,9 +4634,10 @@ inline static int yylex (
 	USHORT	client_dialect,
 	USHORT	db_dialect,
 	USHORT	parser_version,
-	BOOLEAN	*stmt_ambiguous)
+	BOOLEAN* stmt_ambiguous)
 {
-	int temp = lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+	const int temp =
+		lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 	lex.prev_prev_keyword = lex.prev_keyword;
 	lex.prev_keyword = temp;
 	return temp;
@@ -4666,7 +4647,7 @@ int LexerState::yylex (
 	USHORT	client_dialect,
 	USHORT	db_dialect,
 	USHORT	parser_version,
-	BOOLEAN	*stmt_ambiguous)
+	BOOLEAN* stmt_ambiguous)
 {
 /**************************************
  *
@@ -4686,8 +4667,6 @@ int LexerState::yylex (
 	DSQL_SYM	sym;
 	SSHORT	c;
 	USHORT	buffer_len;
-
-	STR delimited_id_str;
 
 	/* Find end of white space and skip comments */
 
@@ -4744,27 +4723,27 @@ int LexerState::yylex (
 			continue;
 		}
 
-		tok_class = classes [c];
+		tok_class = classes[c];
 
 		if (!(tok_class & CHR_WHITE))
 		break;
-		}
+	}
 
 	/* Depending on tok_class of token, parse token */
 
 	last_token = ptr - 1;
 
 	if (tok_class & CHR_INTRODUCER)
-		{
+	{
 		/* The Introducer (_) is skipped, all other idents are copied
 		 * to become the name of the character set
 		 */
 		p = string;
-		for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
+		for (; ptr < end && classes[*ptr] & CHR_IDENT; ptr++)
 		{
-		if (ptr >= end)
-			return -1;
-		check_copy_incr(p, UPPER7(*ptr), string);
+			if (ptr >= end)
+				return -1;
+			check_copy_incr(p, UPPER7(*ptr), string);
 		}
 		
 		check_bound(p, string);
@@ -4776,79 +4755,79 @@ int LexerState::yylex (
 		yylval = (DSQL_NOD) (MAKE_string(string, p - string))->str_data;
 
 		return INTRODUCER;
-		}
+	}
 
 	/* parse a quoted string, being sure to look for double quotes */
 
 	if (tok_class & CHR_QUOTE)
-		{
+	{
 		buffer = string;
 		buffer_len = sizeof (string);
 		buffer_end = buffer + buffer_len - 1;
 		for (p = buffer; ; p++)
 		{
-		if (ptr >= end)
+			if (ptr >= end)
 			{
-			if (buffer != string)
-				gds__free (buffer);
-			return -1;
+				if (buffer != string)
+					gds__free (buffer);
+				return -1;
 			}
-		/* *ptr is quote - if next != quote we're at the end */
-		if ((*ptr == c) && ((++ptr == end) || (*ptr != c)))
-			break;
+			/* *ptr is quote - if next != quote we're at the end */
+			if ((*ptr == c) && ((++ptr == end) || (*ptr != c)))
+				break;
 			if (p > buffer_end)
 			{
-			new_buffer = (char*)gds__alloc (2 * buffer_len);
+				new_buffer = (char*)gds__alloc (2 * buffer_len);
 			/* FREE: at outer block */
-			if (!new_buffer)		/* NOMEM: */
-			{
-			if (buffer != string)
-				gds__free (buffer);
-			return -1;
-			}
+				if (!new_buffer)		/* NOMEM: */
+				{
+					if (buffer != string)
+						gds__free (buffer);
+					return -1;
+				}
 				memcpy (new_buffer, buffer, buffer_len);
-			if (buffer != string)
-				gds__free (buffer);
-			buffer = new_buffer;
-			p = buffer + buffer_len;
-			buffer_len = 2 * buffer_len;
-			buffer_end = buffer + buffer_len - 1;
+				if (buffer != string)
+					gds__free (buffer);
+				buffer = new_buffer;
+				p = buffer + buffer_len;
+				buffer_len = 2 * buffer_len;
+				buffer_end = buffer + buffer_len - 1;
 			}
-		*p = *ptr++;
+			*p = *ptr++;
 		}
 		if (c == '"')
 		{
-		*stmt_ambiguous = TRUE; /* string delimited by double quotes could be
+			*stmt_ambiguous = TRUE; /* string delimited by double quotes could be
 					**   either a string constant or a SQL delimited
 					**   identifier, therefore marks the SQL
 					**   statement as ambiguous  */
-		if (client_dialect == SQL_DIALECT_V6_TRANSITION)
+			if (client_dialect == SQL_DIALECT_V6_TRANSITION)
 			{
-			if (buffer != string)
-			gds__free (buffer);
-			yyabandon (-104, isc_invalid_string_constant);
+				if (buffer != string)
+					gds__free (buffer);
+				yyabandon (-104, isc_invalid_string_constant);
 			}
-		else if (client_dialect >= SQL_DIALECT_V6)
+			else if (client_dialect >= SQL_DIALECT_V6)
 			{
-			if ((p - buffer) >= MAX_TOKEN_LEN)
-			{
-			if (buffer != string)
-				gds__free (buffer);
-			yyabandon (-104, isc_token_too_long);
-			}
-			yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
-			delimited_id_str = (STR) yylval;
-			delimited_id_str->str_flags |= STR_delimited_id;
-			if (buffer != string)
-			gds__free (buffer);
-			return SYMBOL;
+				if ((p - buffer) >= MAX_TOKEN_LEN)
+				{
+					if (buffer != string)
+						gds__free (buffer);
+					yyabandon (-104, isc_token_too_long);
+				}
+				yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
+				dsql_str* delimited_id_str = (dsql_str*) yylval;
+				delimited_id_str->str_flags |= STR_delimited_id;
+				if (buffer != string)
+					gds__free (buffer);
+				return SYMBOL;
 			}
 		}
 		yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
 		if (buffer != string)
 		gds__free (buffer);
 		return STRING;
-		}
+	}
 												 
 /* 
  * Check for a numeric constant, which starts either with a digit or with
@@ -4879,7 +4858,7 @@ int LexerState::yylex (
 	fb_assert(ptr <= end);
 
 	if ((tok_class & CHR_DIGIT) ||
-		((c == '.') && (ptr < end) && (classes [*ptr] & CHR_DIGIT)))
+		((c == '.') && (ptr < end) && (classes[*ptr] & CHR_DIGIT)))
 	{
 		/* The following variables are used to recognize kinds of numbers. */
 
@@ -4895,11 +4874,11 @@ int LexerState::yylex (
 		for (--ptr ; ptr < end ; ptr++)
 		{
 			c = *ptr;
-			if (have_exp_digit && (! (classes [c]  & CHR_DIGIT)))
+			if (have_exp_digit && (! (classes[c]  & CHR_DIGIT)))
 				/* First non-digit after exponent and digit terminates
 				 the token. */
 				break;
-			else if (have_exp_sign && (! (classes [c]  & CHR_DIGIT)))
+			else if (have_exp_sign && (! (classes[c]  & CHR_DIGIT)))
 			{
 				/* only digits can be accepted after "1E-" */
 				have_error = true;
@@ -4910,7 +4889,7 @@ int LexerState::yylex (
 				/* We've seen e or E, but nothing beyond that. */
 				if ( ('-' == c) || ('+' == c) )
 					have_exp_sign = true;
-				else if ( classes [c]  & CHR_DIGIT )
+				else if ( classes[c]  & CHR_DIGIT )
 					/* We have a digit: we haven't seen a sign yet,
 					but it's too late now. */
 					have_exp_digit = have_exp_sign  = true;
@@ -4931,7 +4910,7 @@ int LexerState::yylex (
 					break;
 				}
 			}
-			else if (classes [c] & CHR_DIGIT)
+			else if (classes[c] & CHR_DIGIT)
 			{
 				/* Before computing the next value, make sure there will be
 				   no overflow.  */
@@ -4939,12 +4918,14 @@ int LexerState::yylex (
 				have_digit = true;
 
 				if (number >= limit_by_10)
+				{
 				/* possibility of an overflow */
 					if ((number > limit_by_10) || (c > '8'))
 					{
 						have_error = true;
 						break;
 					}
+				}
 				number = number * 10 + (c - '0');
 			}
 			else if ( (('E' == c) || ('e' == c)) && have_digit )
@@ -4962,62 +4943,61 @@ int LexerState::yylex (
 			fb_assert(have_digit);
 
 			if (have_exp_digit)
-				{
+			{
 				yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
 				last_token_bk = last_token;
 				line_start_bk = line_start;
 				lines_bk = lines;
 
 				return FLOAT_NUMBER;
-				}
+			}
 			else if (!have_exp)
-				{
+			{
 
 				/* We should return some kind (scaled-) integer type
 				   except perhaps in dialect 1. */
 
 				if (!have_decimal && (number <= MAX_SLONG))
 				{
-				yylval = (DSQL_NOD) (ULONG) number;
-				return NUMBER;
+					yylval = (DSQL_NOD) (ULONG) number;
+					return NUMBER;
 				}
 				else
 				{
-				/* We have either a decimal point with no exponent
-				   or a string of digits whose value exceeds MAX_SLONG:
-				   the returned type depends on the client dialect,
-				   so warn of the difference if the client dialect is
-				   SQL_DIALECT_V6_TRANSITION.
-				*/
+					/* We have either a decimal point with no exponent
+					   or a string of digits whose value exceeds MAX_SLONG:
+					   the returned type depends on the client dialect,
+					   so warn of the difference if the client dialect is
+					   SQL_DIALECT_V6_TRANSITION.
+					*/
 
-				if (SQL_DIALECT_V6_TRANSITION == client_dialect)
+					if (SQL_DIALECT_V6_TRANSITION == client_dialect)
 					{
-					/* Issue a warning about the ambiguity of the numeric
-					 * numeric literal.  There are multiple calls because
-					 * the message text exceeds the 119-character limit
-					 * of our message database.
-					 */
-					ERRD_post_warning( isc_dsql_warning_number_ambiguous,
+						/* Issue a warning about the ambiguity of the numeric
+						 * numeric literal.  There are multiple calls because
+						 * the message text exceeds the 119-character limit
+						 * of our message database.
+						 */
+						ERRD_post_warning( isc_dsql_warning_number_ambiguous,
 							   isc_arg_string,
-							   ERR_string( last_token,
-								   ptr - last_token ),
+							   ERR_string( last_token, ptr - last_token ),
 							   isc_arg_end );
-					ERRD_post_warning( isc_dsql_warning_number_ambiguous1,
+						ERRD_post_warning( isc_dsql_warning_number_ambiguous1,
 							   isc_arg_end );
 					}
 
-				yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
+					yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
 
-				last_token_bk = last_token;
-				line_start_bk = line_start;
-				lines_bk = lines;
+					last_token_bk = last_token;
+					line_start_bk = line_start;
+					lines_bk = lines;
 
-				if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-					return FLOAT_NUMBER;
-				else if (have_decimal)
-					return SCALEDINT;
-				else
-					return NUMBER64BIT;
+					if (client_dialect < SQL_DIALECT_V6_TRANSITION)
+						return FLOAT_NUMBER;
+					else if (have_decimal)
+						return SCALEDINT;
+					else
+						return NUMBER64BIT;
 				}
 			} /* else if (!have_exp) */
 		} /* if (!have_error) */
@@ -5040,7 +5020,7 @@ int LexerState::yylex (
 	{
 		p = string;
 		check_copy_incr(p, UPPER (c), string);
-		for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
+		for (; ptr < end && classes[*ptr] & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
 				return -1;
@@ -5092,7 +5072,9 @@ int LexerState::yylex (
 		 * 3. We detect FIRST if we are explicitly asked for (such as in NULLS FIRST/LAST clause)
 		 * 4. In all other cases we return them as SYMBOL
 		 */
-			if ((sym->sym_keyword == FIRST && !first_detection) || sym->sym_keyword == SKIP) {
+			if ((sym->sym_keyword == FIRST && !first_detection) ||
+				sym->sym_keyword == SKIP)
+			{
 				if (prev_keyword == SELECT || limit_clause) {
 					LexerState savedState = lex;
 					int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
@@ -5111,7 +5093,8 @@ int LexerState::yylex (
 						return sym->sym_keyword;
 					}
 				} /* else fall down and return token as SYMBOL */
-			} else {
+			}
+			else {
 				yylval = (DSQL_NOD) sym->sym_object;
 				last_token_bk = last_token;
 				line_start_bk = line_start;
@@ -5200,7 +5183,8 @@ int LexerState::yylex (
 				}
 				return nextToken;
 			}
-		} else {
+		}
+		else {
 			/* Restore status quo. */
 			lex = savedState;
 		}
@@ -5212,8 +5196,9 @@ int LexerState::yylex (
 }
 
 
-static void yyerror (
-	TEXT	*error_string)
+// The argument passed to this function is ignored. Therefore, messages like
+// "syntax error" and "yacc stack overflow" are never seen.
+static void yyerror(const TEXT* error_string)
 {
 /**************************************
  *
@@ -5228,17 +5213,17 @@ static void yyerror (
 
 	if (yychar < 1)
 		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
-		isc_arg_gds, isc_command_end_err,	/* Unexpected end of command */
-		0);
+			isc_arg_gds, isc_command_end_err,	/* Unexpected end of command */
+			0);
 	else
 	{
 		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
-		isc_arg_gds, isc_dsql_token_unk_err, 
-		isc_arg_number, (SLONG) lex.lines, 
-		isc_arg_number, (SLONG) (lex.last_token - lex.line_start + 1), /*CVC: +1*/
+			isc_arg_gds, isc_dsql_token_unk_err,
+			isc_arg_number, (SLONG) lex.lines,
+			isc_arg_number, (SLONG) (lex.last_token - lex.line_start + 1), /*CVC: +1*/
 			/* Token unknown - line %d, char %d */
-		isc_arg_gds, isc_random, 
-		isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token, 0);
+			isc_arg_gds, isc_random,
+			isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token, 0);
 	}
 }
 
@@ -5260,3 +5245,4 @@ static void yyabandon (SSHORT		sql_code,
 	ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) sql_code, 
 		isc_arg_gds, error_symbol, 0);
 }
+

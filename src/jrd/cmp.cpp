@@ -1368,7 +1368,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				rc_len += DSC_string_length (&desc2);
 			else
 				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
-			// error() is a local routine in par.c, so we use plain ERR_post
+			// error() is a local routine in par.cpp, so we use plain ERR_post
 			if (rc_len > MAX_FORMAT_SIZE)
 				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
 			desc->dsc_length = static_cast<USHORT>(rc_len);
@@ -2222,7 +2222,7 @@ static UCHAR* alloc_map(TDBB tdbb, CSB csb, USHORT stream)
 	str* string = FB_NEW_RPT(*tdbb->tdbb_default, MAP_LENGTH) str;
 	string->str_length = MAP_LENGTH;
 	csb->csb_rpt[stream].csb_map = (UCHAR *) string->str_data;
-	fb_assert(stream <= MAX_STREAMS);
+	fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR maybe?
 	string->str_data[0] = (UCHAR) stream;
 
 	return (UCHAR*) string->str_data;
@@ -2614,6 +2614,7 @@ static JRD_NOD copy(TDBB tdbb,
 		new_stream = csb->csb_n_stream++;
 		fb_assert(new_stream <= MAX_STREAMS);
 		node->nod_arg[e_agg_stream] = (JRD_NOD) (SLONG) new_stream;
+		// fb_assert(new_stream <= MAX_UCHAR);
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
 
@@ -2817,7 +2818,7 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB csb, USHORT stream, JRD_NOD statemen
 
 	if (!(map = csb->csb_rpt[stream].csb_map)) {
 		map = local_map;
-		fb_assert(stream <= MAX_STREAMS);
+		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR relevant, too?
 		map[0] = (UCHAR) stream;
 		map[1] = 1;
 		map[2] = 2;
@@ -2880,7 +2881,7 @@ static JRD_NOD make_validation(TDBB tdbb, CSB csb, USHORT stream)
 
 	if (!(map = csb->csb_rpt[stream].csb_map)) {
 		map = local_map;
-		fb_assert(stream <= MAX_STREAMS);
+		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR still relevant for the bitmap?
 		map[0] = (UCHAR) stream;
 	}
 
@@ -3130,6 +3131,7 @@ static JRD_NOD pass1(TDBB tdbb,
 		tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_modify;
 		pass1_modify(tdbb, csb, node);
+		// fb_assert(node->nod_arg [e_mod_new_stream] <= MAX_USHORT);
 		if ( (node->nod_arg[e_mod_validate] = make_validation(tdbb, csb,
 							(USHORT)(ULONG) node->
 							nod_arg[e_mod_new_stream])) ) node->nod_count =

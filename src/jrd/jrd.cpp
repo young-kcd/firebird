@@ -2704,7 +2704,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 									   reinterpret_cast<BID>(array_id),
 									   sdl,
 									   param_length,
-									   reinterpret_cast<long*>(param),
+									   reinterpret_cast<const long*>(param),
 									   slice_length, slice);
 	}
 	catch (const std::exception&)
@@ -2899,7 +2899,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 				  reinterpret_cast<BID>(array_id),
 				  sdl,
 				  param_length,
-				  reinterpret_cast<long*>(param), slice_length, slice);
+				  reinterpret_cast<const long*>(param), slice_length, slice);
 	}
 	catch (const std::exception&)
 	{
@@ -6539,8 +6539,10 @@ static void purge_attachment(TDBB		tdbb,
 	{
 		if (dbb->dbb_attachments || (dbb->dbb_flags & DBB_being_opened))
 		{
-			/* There are still attachments so do a partial shutdown */
+			// There are still attachments so do a partial shutdown
 
+            // Both CMP_release() and SCL_release() do advance the pointer
+			// before the deallocation.
 			jrd_req* request;
 			while ( (request = attachment->att_requests) ) {
 				CMP_release(tdbb, request);

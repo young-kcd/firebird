@@ -57,7 +57,7 @@ static void adjust_length(ISC_ARRAY_DESC*);
 static void copy_exact_name (const char*, char*, SSHORT);
 static ISC_STATUS copy_status(const ISC_STATUS*, ISC_STATUS*);
 static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
-static ISC_STATUS gen_sdl(ISC_STATUS*, ISC_ARRAY_DESC*, SSHORT*, UCHAR**,
+static ISC_STATUS gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*, SSHORT*, UCHAR**,
 					  SSHORT*);
 static ISC_STATUS lookup_desc(ISC_STATUS*, FRBRD**, FRBRD**, const SCHAR*,
 						const SCHAR*, ISC_ARRAY_DESC*, SCHAR*);
@@ -88,7 +88,7 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
 									   FRBRD** db_handle,
 									   FRBRD** trans_handle,
 									   GDS_QUAD* array_id,
-									   ISC_ARRAY_DESC* desc,
+									   const ISC_ARRAY_DESC* desc,
 									   void* array, SLONG* slice_length)
 {
 /**************************************
@@ -186,7 +186,7 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS* status,
 									   FRBRD** db_handle,
 									   FRBRD** trans_handle,
 									   GDS_QUAD* array_id,
-									   ISC_ARRAY_DESC* desc,
+									   const ISC_ARRAY_DESC* desc,
 									   void* array, SLONG* slice_length)
 {
 /**************************************
@@ -389,7 +389,7 @@ static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
 
 
 static ISC_STATUS gen_sdl(ISC_STATUS* status,
-					  ISC_ARRAY_DESC* desc,
+					  const ISC_ARRAY_DESC* desc,
 					  SSHORT* sdl_buffer_length,
 					  UCHAR** sdl_buffer,
                       SSHORT* sdl_length)

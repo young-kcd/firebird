@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		ppg.c
+ *	MODULE:		ppg.cpp
  *	DESCRIPTION:	Database page print module
  *
  * The contents of this file are subject to the Interbase Public
