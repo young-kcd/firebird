@@ -1038,7 +1038,6 @@ static void define_index(void)
  *
  **************************************/
 	LLS stack;
-	DUDLEY_IDX index;
 	SYM index_name, rel_name, *ptr;
 	TXT description;
 	SSHORT count, unique, inactive, descending;
@@ -1082,7 +1081,7 @@ static void define_index(void)
 
 	if (!KEYWORD(KW_SEMI))
 		PARSE_error(135, DDL_token.tok_string, 0);	/* msg 135: expected comma or semi-colon, encountered \"%s\" */
-	index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(count));
+	DUDLEY_IDX index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(count == 0 ? 1 : count));
 	index->idx_count = count;
 	index->idx_name = index_name;
 	index->idx_relation = rel_name;
@@ -1760,9 +1759,7 @@ static void drop_index(void)
  *	Parse DROP INDEX statement.
  *
  **************************************/
-	DUDLEY_IDX index;
-
-	index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(0));
+	DUDLEY_IDX index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(1)); // 0 is invalid
 	index->idx_name = PARSE_symbol(tok_ident);
 	parse_end();
 
@@ -2511,9 +2508,7 @@ static void modify_index(void)
  *	an index
  *
  **************************************/
-	DUDLEY_IDX index;
-
-	index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(0));
+	DUDLEY_IDX index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(1)); // 0 is invalid
 	index->idx_name = PARSE_symbol(tok_ident);
 
 	while (TRUE) {

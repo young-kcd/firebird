@@ -433,6 +433,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	DDL_exit(FINI_OK);
+	// This will never execute, see exit() in DDL_exit. Make the compiler happy.
+	return 0;
 }
 #endif
 
