@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.183 2003-11-13 03:41:45 stryqx Exp $
+dnl $Id: configure.in,v 1.184 2003-11-18 03:11:54 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -558,7 +558,7 @@ case "$PLATFORM" in
 #define FB_PIPE_NAME "interbas"])
     AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
-    XE_PREPEND(-lmpr -lversion -lws2_32 -lole32,LIBS)
+    XE_PREPEND( -mno-cygwin -mthreads -lmpr -lversion -lws2_32 -lole32,LIBS)
     ;;
 
   *)
