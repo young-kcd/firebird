@@ -2,6 +2,19 @@
   * v1.5 RC 2
   **************
 
+    * Fixed unregistered bug.
+        Possible index corruptions during garbage collection.
+      Contributor(s):
+        Vlad Horsun <horsun@kdb.dp.ua>
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Solved problems with temporary files management:
+        1) Security hole on all POSIX platforms except FREEBSD/OPENBSD related to mktemp usage (possible DoS attacks or privileges elevation)
+        2) Only 27 unique filenames generated on win32 (which could cause unpredictable behavior in SS builds)
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
     * Fixed RC1 bug.
         Various server crashes in the remote protocol code.
       Contributor(s):
