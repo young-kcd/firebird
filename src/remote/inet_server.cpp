@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.17 2002-11-18 07:57:43 eku Exp $
+$Id: inet_server.cpp,v 1.18 2002-12-07 13:49:37 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -41,6 +41,7 @@ $Id: inet_server.cpp,v 1.17 2002-11-18 07:57:43 eku Exp $
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
 #include "../common/memory/memory_pool.h"
+#include "../common/config/config.h"
 #if !(defined VMS)
 #include <sys/param.h>
 #endif
@@ -165,10 +166,6 @@ static int atov(UCHAR *, UCHAR **, SSHORT);
 #ifdef SUPERSERVER
 extern SLONG free_map_debug;
 extern SLONG trace_pools;
-static struct ipccfg trace_pooltbl[] = {
-	ISCCFG_TRACE_POOLS, 0, &trace_pools, 0, 0,
-	NULL, 0, NULL, 0, 0
-};
 #endif
 
 static TEXT protocol[128];
@@ -446,10 +443,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 	}
 
-	ISC_get_config(LOCK_HEADER, trace_pooltbl);
+	trace_pools = Config::getTraceMemoryPools();
 
 #endif
-
 
 	if (multi_threaded)
 		SRVR_multi_thread(port, INET_SERVER_flag);

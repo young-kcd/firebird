@@ -78,7 +78,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"LockRequireSpins",			(ConfigValue) false},
 	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
 	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
-	{TYPE_INTEGER,		"SolarisStallValue",		(ConfigValue) 60}			// seconds
+	{TYPE_INTEGER,		"SolarisStallValue",		(ConfigValue) 60},			// seconds
+	{TYPE_BOOLEAN,		"TraceMemoryPools",			(ConfigValue) false}		// for internal use only
 };
 
 /******************************************************************************
@@ -303,4 +304,9 @@ int Config::getDeadlockTimeout()
 int Config::getSolarisStallValue()
 {
 	return (int) sysConfig.values[KEY_SOLARIS_STALL_VALUE];
+}
+
+bool Config::getTraceMemoryPools()
+{
+	return (bool) sysConfig.values[KEY_TRACE_MEMORY_POOLS];
 }

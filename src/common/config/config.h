@@ -85,7 +85,8 @@ class Config
 		KEY_LOCK_ACQUIRE_SPINS,						// 18
 		KEY_EVENT_MEM_SIZE,							// 19
 		KEY_DEADLOCK_TIMEOUT,						// 20
-		KEY_SOLARIS_STALL_VALUE						// 21
+		KEY_SOLARIS_STALL_VALUE,					// 21
+		KEY_TRACE_MEMORY_POOLS						// 22	
 	};
 
 public:
@@ -199,6 +200,11 @@ public:
 		Solaris stall value
 	*/
 	static int getSolarisStallValue();
+
+	/*
+		Trace memory pools
+	*/
+	static bool getTraceMemoryPools();
 };
 
 #endif // CONFIG_H
