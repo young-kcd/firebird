@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.9 2004-10-29 17:51:27 skidder Exp $
+ *  $Id: sparse_bitmap.h,v 1.10 2004-10-30 06:03:06 robocop Exp $
  *
  */
 
@@ -183,7 +183,7 @@ public:
 			bitmap->clear();
 	}
 
-	size_t approxSize() {
+	size_t approxSize() const {
 		return sizeof(*this) + tree.approxSize();
 	}
 
