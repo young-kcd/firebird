@@ -1956,11 +1956,11 @@ bool VIO_get_current(
 
 		case tra_active:
 			// 1. if record just inserted 
-			//	  than FK can't reference it but PK must check it's new value
+			//	  then FK can't reference it but PK must check it's new value
 			// 2. if record just deleted 
-			//    than FK can't reference it but PK must check it's old value
+			//    then FK can't reference it but PK must check it's old value
 			// 3. if record just modified
-			//	  than FK can reference it if old key values are equal to new 
+			//	  then FK can reference it if old key values are equal to new 
 			//	  key values and equal FK values
 			//	  PK is ok if PK values are not equal to old and not equal to 
 			//	  new values 
@@ -1973,7 +1973,7 @@ bool VIO_get_current(
 				*old_rpb = *rpb;
 				old_rpb->rpb_record = NULL;
 				
-				if(!DPM_fetch(tdbb, old_rpb, LCK_read))
+				if (!DPM_fetch(tdbb, old_rpb, LCK_read))
 				{
 					return false; // record deleted 
 				}
@@ -1993,7 +1993,7 @@ bool VIO_get_current(
 					return !foreign_key;
 
 				old_rpb->rpb_prior = (old_rpb->rpb_flags & rpb_delta) ? data : NULL;
-				if(!DPM_fetch_back(tdbb, old_rpb, LCK_read, 1))
+				if (!DPM_fetch_back(tdbb, old_rpb, LCK_read, 1))
 				{
 					return !foreign_key; 
 				}
