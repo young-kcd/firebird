@@ -2309,7 +2309,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 				}
 			}
 			else if (alias->nod_type == nod_dbkey) {
-				parameter->par_name = const_cast<char*>(db_key_name);
+				parameter->par_name = db_key_name;
 				context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
 				parameter->par_rel_name = context->ctx_relation->rel_name;
 				parameter->par_owner_name = context->ctx_relation->rel_owner;
@@ -2337,7 +2337,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 				}
 			}
 			else if (alias->nod_type == nod_dbkey) {
-				parameter->par_name = const_cast<char*>(db_key_name);
+				parameter->par_name = db_key_name;
 				context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
 				parameter->par_rel_name = context->ctx_relation->rel_name;
 				parameter->par_owner_name = context->ctx_relation->rel_owner;
@@ -2415,13 +2415,13 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		case nod_gen_id2:
 			name_alias	= "GEN_ID";
 			break;
-        case nod_user_name:
-            name_alias	= "USER";
+		case nod_user_name:
+			name_alias	= "USER";
 			break;
-        case nod_current_role:
-            name_alias	= "ROLE";
+		case nod_current_role:
+			name_alias	= "ROLE";
 			break;
-        case nod_internal_info: 
+		case nod_internal_info:
 			{
 			internal_info_id id =
 				*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);
@@ -2431,14 +2431,14 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		case nod_concatenate:
 			name_alias = "CONCATENATION";
 			break;
-        case nod_substr:
-            name_alias = "SUBSTRING";
+		case nod_substr:
+			name_alias = "SUBSTRING";
 			break;
-        case nod_cast:
-            name_alias	= "CAST";
+		case nod_cast:
+			name_alias	= "CAST";
 			break;
-        case nod_upcase:
-            name_alias	= "UPPER";
+		case nod_upcase:
+			name_alias	= "UPPER";
 			break;
 		case nod_current_date:
 			name_alias = "CURRENT_DATE";
