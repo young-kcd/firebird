@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.63 2003-08-18 16:53:42 skidder Exp $
+$Id: lock.cpp,v 1.64 2003-08-19 11:44:10 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1044,7 +1044,7 @@ void LOCK_manager( PTR manager_owner_offset)
 	ISC_unmap_file(local_status, &LOCK_data, ISC_SEM_REMOVE);
 	chmod(LOCK_HEADER, 0664);
 #else
-	ISC_unmap_file(local_status, &LOCK_data, NULL);
+	ISC_unmap_file(local_status, &LOCK_data, 0);
 #endif
 
 }
