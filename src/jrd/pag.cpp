@@ -102,93 +102,182 @@ static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
 
 #define ERR_POST_IF_DATABASE_IS_READONLY(dbb)	{if (dbb->dbb_flags & DBB_read_only) ERR_post (isc_read_only_database, 0);}
 
-/* Class definitions
+// Class definitions (obsolete platforms are commented out)
+// Class constant name consists of OS platform and CPU architecture.
+//
+// For ports created before Firebird 2.0 release 64-bit and 32-bit 
+// sub-architectures of the same CPU should use different classes.
+// For 64-bit ports first created after or as a part of Firebird 2.0
+// release CPU architecture may be the same for both variants.
 
-	1		Apollo 68K, Dn 10K
-	2		Sun 68k, Sun Sparc, HP 9000/300, MAC AUX, IMP, DELTA, NeXT, UNIXWARE, DG_X86
-    3       Sun 386i
-	4		VMS
-	5		Ultrix/VAX
-	6		Ultrix/MIPS
-	7		HP 900/800 (precision)
-	8		NetWare
-	9		MAC-OS
-       10		IBM RS/6000
-       11		DG AViiON
-       12		HP MPE/XL
-       13		Silicon Grpahics/IRIS
-       14		Cray
-       15		Dec OSF/1
-       16		NT -- post 4.0 (delivered 4.0 as class 8)
-       17               OS/2
-       18               Windows 16 bit
-       19             LINUX on Intel series
-       20             LINUX on sparc systems
-	   21             FreeBSD/i386
-	   22             NetBSD/i386
-       23		Darwin/PowerPC
-       24		LINUX on AMD64 systems
+static const CLASS_UNKNOWN = 0;
+//static const CLASS_APOLLO_68K = 1;  // Apollo 68K, Dn 10K
+static const CLASS_SOLARIS_SPARC = 2; // Sun 68k, Sun Sparc, HP 9000/300, MAC AUX, IMP, DELTA, NeXT, UNIXWARE, DG_X86
+static const CLASS_SOLARIS_I386 = 3;  // Sun 386i
+//static const CLASS_VMS_VAX = 4;     // VMS/VAX
+//static const CLASS_ULTRIX_VAX = 5;  // Ultrix/VAX
+//static const CLASS_ULTRIX_MIPS = 6; // Ultrix/MIPS
+static const CLASS_HPUX_PA = 7;		  // HP-UX on PA-RISC (was: HP 900/800 (precision))
+static const CLASS_NETWARE_I386 = 8;  // NetWare
+//static const CLASS_MAC_OS = 9;	  // MAC-OS
+static const CLASS_AIX_PPC = 10;	  // AIX on PowerPC platform (was: IBM RS/6000)
+//static const CLASS_DG_AVIION = 11;  // DG AViiON
+//static const CLASS_MPE_XL = 12;	  // MPE/XL
+static const CLASS_IRIX_MIPS = 13;	  // Silicon Grpahics/IRIS
+static const CLASS_CRAY = 14;		  // Cray
+static const CLASS_TRU64_ALPHA = 15;  // Tru64 Unix running on Alpha (was: Dec OSF/1)
+static const CLASS_WINDOWS_I386 = 16; // NT -- post 4.0 (delivered 4.0 as class 8)
+//static const CLASS_OS2 = 17;		  // OS/2
+//static const CLASS_WIN16 = 18;	  // Windows 16 bit
+static const CLASS_LINUX_I386 = 19;   // LINUX on Intel series
+static const CLASS_LINUX_SPARC = 20;  // LINUX on sparc systems
+static const CLASS_FREEBSD_I386 = 21; // FreeBSD/i386
+static const CLASS_NETBSD_I386 = 22;  // NetBSD/i386
+static const CLASS_DARWIN_PPC = 23;   // Darwin/PowerPC
+static const CLASS_LINUX_AMD64 = 24;  // LINUX on AMD64 systems
 
-*/
+static const CLASS_MAX10 = CLASS_LINUX_AMD64;
+static const CLASS_MAX = CLASS_LINUX_AMD64;
+
+// ARCHITECTURE COMPATIBILITY CLASSES
+
+// For ODS10 and earlier things which normally define ODS compatibility are:
+//  1) endianness (big-endian/little-endian)
+//  2) alignment (32-bit or 64-bit), matters for record formats
+//  3) pointer size (32-bit or 64-bit), also matters for record formats
+//
+// For ODS11 pointers are not stored in database and alignment is always 64-bit. 
+// So the only thing which normally matters for ODS11 is endiannes, but if
+// endianness is wrong we are going to notice it during ODS version check,
+// before architecture compatibility is tested. But we distinguish them here too,
+// for consistency.
+
+enum ArchitectureType { 
+	archUnknown, // Unknown architecture, allow opening database only if CLASS matches exactly
+	archIntel86, // Little-endian platform with 32-bit pointers and 32-bit alignment (ODS10)
+	archLittleEndian, // Any little-endian platform with standard layout of data
+	archBigEndian     // Any big-endian platform with standard layout of data
+};
+
+// Note that Sparc, HP and PowerPC disk structures should be compatible in theory, 
+// but in practice alignment on these platforms varies and actually depends on the 
+// compiler used to produce the build. Yes, some 32-bit RISC builds use 64-bit alignment.
+// This is why we declare all such builds "Unknown" for ODS10.
+
+static ArchitectureType archMatrix10[CLASS_MAX10 + 1] = {
+	archUnknown, // CLASS_UNKNOWN
+	archUnknown, // CLASS_APOLLO_68K
+	archUnknown, // CLASS_SOLARIS_SPARC
+	archIntel86, // CLASS_SOLARIS_I386
+	archUnknown, // CLASS_VMS_VAX
+	archUnknown, // CLASS_ULTRIX_VAX
+	archUnknown, // CLASS_ULTRIX_MIPS
+	archUnknown, // CLASS_HPUX_PA
+	archUnknown, // CLASS_NETWARE_I386
+	archUnknown, // CLASS_MAC_OS
+	archUnknown, // CLASS_AIX_PPC
+	archUnknown, // CLASS_DG_AVIION
+	archUnknown, // CLASS_MPE_XL
+	archUnknown, // CLASS_IRIX_MIPS
+	archUnknown, // CLASS_CRAY
+	archUnknown, // CLASS_TRU64_ALPHA
+	archIntel86, // CLASS_WINDOWS_I386
+	archUnknown, // CLASS_OS2
+	archUnknown, // CLASS_WIN16
+	archIntel86, // CLASS_LINUX_I386
+	archUnknown, // CLASS_LINUX_SPARC
+	archIntel86, // CLASS_FREEBSD_I386
+    archIntel86, // CLASS_NETBSD_I386
+	archUnknown, // CLASS_DARWIN_PPC
+	archUnknown  // CLASS_LINUX_AMD64
+};
+
+static ArchitectureType archMatrix[CLASS_MAX + 1] = {
+	archUnknown,      // CLASS_UNKNOWN
+	archUnknown,      // CLASS_APOLLO_68K
+	archBigEndian,    // CLASS_SOLARIS_SPARC
+	archLittleEndian, // CLASS_SOLARIS_I386
+	archUnknown,      // CLASS_VMS_VAX
+	archUnknown,      // CLASS_ULTRIX_VAX
+	archUnknown, 	  // CLASS_ULTRIX_MIPS
+	archBigEndian,    // CLASS_HPUX_PA
+	archUnknown,      // CLASS_NETWARE_I386
+	archUnknown,      // CLASS_MAC_OS
+	archBigEndian,    // CLASS_AIX_PPC
+	archUnknown,      // CLASS_DG_AVIION
+	archUnknown,      // CLASS_MPE_XL
+	archBigEndian,    // CLASS_IRIX_MIPS
+	archUnknown,      // CLASS_CRAY
+	archBigEndian,    // CLASS_TRU64_ALPHA
+	archLittleEndian, // CLASS_WINDOWS_I386
+	archUnknown,      // CLASS_OS2
+	archUnknown,      // CLASS_WIN16
+	archLittleEndian, // CLASS_LINUX_I386
+	archBigEndian,    // CLASS_LINUX_SPARC
+	archLittleEndian, // CLASS_FREEBSD_I386
+    archLittleEndian, // CLASS_NETBSD_I386
+	archBigEndian,    // CLASS_DARWIN_PPC
+	archLittleEndian  // CLASS_LINUX_AMD64
+};
 
 #ifdef sun
 #ifdef i386
-const SSHORT CLASS		= 3;
+const SSHORT CLASS		= CLASS_SOLARIS_I386;
 #else
-const SSHORT CLASS		= 2;
+const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
 #endif
 #endif
 
 #ifdef hpux
-const SSHORT CLASS		= 7;
+const SSHORT CLASS		= CLASS_HPUX_PA;
 #endif
 
 #ifdef VMS
-const SSHORT CLASS		= 4;
+const SSHORT CLASS		= CLASS_VMS_VAX;
 #endif
 
 #ifdef AIX
-const SSHORT CLASS		= 10;
+const SSHORT CLASS		= CLASS_AIX_PPC;
 #endif
 
 #ifdef AIX_PPC
-const SSHORT CLASS		= 10;
+const SSHORT CLASS		= CLASS_AIX_PPC;
 #endif
 
 #ifdef WIN_NT
-const SSHORT CLASS		= 16;
+const SSHORT CLASS		= CLASS_WINDOWS_I386;
 #endif
 
 #ifdef SINIXZ
-const SSHORT CLASS		= 19;
+const SSHORT CLASS		= CLASS_LINUX_I386;
 #endif
 
 #ifdef LINUX
 #ifdef i386
-const SSHORT CLASS		= 19;
+const SSHORT CLASS		= CLASS_LINUX_I386;
 #endif
 #ifdef i586
-const SSHORT CLASS		= 19;
+const SSHORT CLASS		= CLASS_LINUX_I386;
 #endif
 #ifdef sparc
-const SSHORT CLASS		= 20;
+const SSHORT CLASS		= CLASS_LINUX_SPARC;
 #endif
 #endif
 
 #ifdef FREEBSD
-const SSHORT CLASS		= 21;
+const SSHORT CLASS		= CLASS_FREEBSD_I386;
 #endif
 
 #ifdef NETBSD
-const SSHORT CLASS		= 22;
+const SSHORT CLASS		= CLASS_NETBSD_I386;
 #endif
 
 #ifdef DARWIN
-const SSHORT CLASS		= 23;
+const SSHORT CLASS		= CLASS_DARWIN_PPC;
 #endif
 
 #if defined LINUX && defined AMD64
-const SSHORT CLASS		= 24;
+const SSHORT CLASS		= CLASS_LINUX_AMD64;
 #endif
 
 
@@ -1009,10 +1098,24 @@ created.  Even when we get to the stage where databases created on PC platforms
 are sharable between all platforms, it would be useful to identify where they
 were created for debugging purposes.  - Deej 2/6/95
 
-if (header->hdr_implementation && header->hdr_implementation != CLASS)
-    ERR_post (isc_bad_db_format,
-	isc_arg_cstring, file_length,  ERR_string(file_name, file_length), 0);
+Re-enable and recode the check to avoid BUGCHECK messages when database
+is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 ****/
+
+	if (header->hdr_implementation != CLASS &&
+		DECODE_ODS_MAJOR(header->hdr_ods_version) < ODS_VERSION11 ?  
+		  (header->hdr_implementation < 0 || header->hdr_implementation > CLASS_MAX10 ||
+		   archMatrix10[header->hdr_implementation] == archUnknown ||
+		   archMatrix10[header->hdr_implementation] != archMatrix10[CLASS])
+		:
+		  (header->hdr_implementation < 0 || header->hdr_implementation > CLASS_MAX ||
+		   archMatrix[header->hdr_implementation] == archUnknown ||
+		   archMatrix[header->hdr_implementation] != archMatrix[CLASS])
+	   )
+	{
+	    ERR_post (isc_bad_db_format,
+			isc_arg_cstring, file_length,  ERR_string(file_name, file_length), 0);
+	}
 
 	if (header->hdr_page_size < MIN_PAGE_SIZE ||
 		header->hdr_page_size > MAX_PAGE_SIZE) 

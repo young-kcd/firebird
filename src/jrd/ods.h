@@ -122,7 +122,7 @@ const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
 /* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and 
    the next 4 bits are major version number */
 inline USHORT DECODE_ODS_MAJOR(USHORT ods_version) {
-	return ((ods_version & 0xFFF0) >> 4);
+	return ((ods_version & 0x00F0) >> 4);
 }
 inline USHORT DECODE_ODS_MINOR(USHORT ods_version) {
 	return (ods_version & 0x000F);
