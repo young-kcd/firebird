@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.137 2003-06-15 05:57:47 stryqx Exp $
+dnl $Id: configure.in,v 1.138 2003-06-15 06:03:02 stryqx Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -457,6 +457,17 @@ case "$PLATFORM" in
     dnl MOD: Check for /proc/self/exe mainly used on linux systems
     dnl      this is used to determine path to executable file.
     AC_CHECK_FILES(/proc/self/exe)
+    ;;
+
+  FREEBSD)
+    dnl the AC_CHECK_TYPES for socklen_t doesn't include sys/socket.h
+    dnl so test for socklen_t with sys/socket.h included
+    AC_MSG_CHECKING(if sys/socket.h defines socklen_t)
+    AC_TRY_COMPILE([#include <sys/types.h>
+       #include <sys/socket.h>],
+    [socklen_t s;],
+    [AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)])
     ;;
 
   [SOLARIS|solx86])
