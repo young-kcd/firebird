@@ -907,6 +907,7 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 		/* The  strerror()  function  returns  the appropriate description
 		   string, or an unknown error message if the error code is unknown. */
 		p = (TEXT*) strerror(code);
+		strcpy(s, p);
 		break;
 
 	case isc_arg_dos:
