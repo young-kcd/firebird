@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.182 2003-11-13 00:53:12 stryqx Exp $
+dnl $Id: configure.in,v 1.183 2003-11-13 03:41:45 stryqx Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -519,6 +519,8 @@ case "$PLATFORM" in
     [socklen_t s;],
     [AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes)],
     [AC_MSG_RESULT(no)])
+    dnl define HAVE_POSIX_THREADS for FreeBSD 4.x support
+    AC_DEFINE(HAVE_POSIX_THREADS)
     ;;
 
   SOLARIS|solx86)
