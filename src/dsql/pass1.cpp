@@ -1770,19 +1770,21 @@ static NOD copy_field( NOD field, CTX context)
 		case nod_via:
 			temp = MAKE_node(field->nod_type, field->nod_count);
 			temp->nod_arg[e_via_rse] = copy_field(field->nod_arg[e_via_rse], context);
-			temp->nod_arg[e_via_value_1] = field->nod_arg[e_via_value_1];
+			temp->nod_arg[e_via_value_1] = temp->nod_arg[e_via_rse]->nod_arg[e_rse_items]->nod_arg[0];
 			temp->nod_arg[e_via_value_2] = field->nod_arg[e_via_value_2];
 			return temp;
 
 		case nod_rse:
 			temp = MAKE_node(field->nod_type, field->nod_count);
-			temp->nod_arg[e_rse_streams] = field->nod_arg[e_rse_streams];
-			if (field->nod_arg[e_rse_boolean])
+			temp->nod_arg[e_rse_streams] = copy_field(field->nod_arg[e_rse_streams], context);
+			if (field->nod_arg[e_rse_boolean]) {
 				temp->nod_arg[e_rse_boolean] = copy_field(field->nod_arg[e_rse_boolean], context);
+			}
 			temp->nod_arg[e_rse_sort] = field->nod_arg[e_rse_sort];
 			temp->nod_arg[e_rse_reduced] = field->nod_arg[e_rse_reduced];
-			if (field->nod_arg[e_rse_items])
+			if (field->nod_arg[e_rse_items]) {
 				temp->nod_arg[e_rse_items] = copy_field(field->nod_arg[e_rse_items], context);
+			}
 			temp->nod_arg[e_rse_first] = field->nod_arg[e_rse_first];
 			temp->nod_arg[e_rse_singleton] = field->nod_arg[e_rse_singleton];
 			temp->nod_arg[e_rse_plan] = field->nod_arg[e_rse_plan];
@@ -1795,12 +1797,18 @@ static NOD copy_field( NOD field, CTX context)
 			temp = MAKE_node(field->nod_type, field->nod_count);
 			temp->nod_desc = field->nod_desc;
 			ptr2 = temp->nod_arg;
-			for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end;
-				 ptr++)
+			for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end; ptr++) {
 				*ptr2++ = copy_field(*ptr, context);
+			}
 			return temp;
 
-		case nod_relation:
+		case nod_aggregate:
+			temp = MAKE_node(field->nod_type, field->nod_count);
+			temp->nod_arg[e_agg_context] = field->nod_arg[e_agg_context];
+			temp->nod_arg[e_agg_group] = field->nod_arg[e_agg_group];
+			temp->nod_arg[e_agg_rse] = copy_field(field->nod_arg[e_agg_rse], context);
+			return temp;
+
 		case nod_or:
 		case nod_and:
 		case nod_not:
@@ -1846,9 +1854,9 @@ static NOD copy_field( NOD field, CTX context)
 		case nod_list:
 			temp = MAKE_node(field->nod_type, field->nod_count);
 			ptr2 = temp->nod_arg;
-			for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end;
-				 ptr++)
+			for (ptr = field->nod_arg, end = ptr + field->nod_count; ptr < end; ptr++) {
 				*ptr2++ = copy_field(*ptr, context);
+			}
 			return temp;
 
 		case nod_cast:
@@ -1857,8 +1865,9 @@ static NOD copy_field( NOD field, CTX context)
 		case nod_udf:
 			temp = MAKE_node(field->nod_type, field->nod_count);
 			temp->nod_arg[0] = field->nod_arg[0];
-			if (field->nod_count == 2)
+			if (field->nod_count == 2) {
 				temp->nod_arg[1] = copy_field(field->nod_arg[1], context);
+			}
 			return temp;
 	
 		default:
@@ -1887,8 +1896,9 @@ static NOD copy_fields( NOD fields, CTX context)
 
 	list = MAKE_node(nod_list, fields->nod_count);
 
-	for (i = 0; i < fields->nod_count; i++)
+	for (i = 0; i < fields->nod_count; i++) {
 		list->nod_arg[i] = copy_field(fields->nod_arg[i], context);
+	}
 
 	return list;
 }
@@ -2163,21 +2173,17 @@ static BOOLEAN invalid_reference(REQ request, NOD node, NOD list, BOOLEAN exact_
 	DEV_BLKCHK(node, dsql_type_nod);
 	DEV_BLKCHK(list, dsql_type_nod);
 
-	if (node == NULL)
-	{
+	if (node == NULL) {
 		return FALSE;
 	}
 
 	invalid = FALSE;
 
-	if (list)
-	{
+	if (list) {
 		/* Check if this node (with ignoring of CASTs) appear also 
 		   in the list of group by. If yes then it's allowed */
-		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
-		{
-			if (node_match(node, *ptr, TRUE))
-			{
+		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
+			if (node_match(node, *ptr, TRUE)) {
 				return FALSE;
 			}
 		}
@@ -2191,8 +2197,7 @@ static BOOLEAN invalid_reference(REQ request, NOD node, NOD list, BOOLEAN exact_
 
 ******************************************************
 */
-	if (node->nod_type == nod_map)
-	{
+	if (node->nod_type == nod_map) {
 		MAP map;
 		map = (MAP) node->nod_arg[e_map_map];
 		DEV_BLKCHK(map, dsql_type_map);
@@ -2210,8 +2215,7 @@ static BOOLEAN invalid_reference(REQ request, NOD node, NOD list, BOOLEAN exact_
 				/* Wouldn't it be better to call a error from this 
 				   point where return is TRUE. Then we could give 
 				   the fieldname that's making the trouble */
-				if (!exact_field || !request)
-				{
+				if (!exact_field || !request) {
 					return TRUE;
 				}
 
@@ -2226,8 +2230,7 @@ static BOOLEAN invalid_reference(REQ request, NOD node, NOD list, BOOLEAN exact_
 
 				DEV_BLKCHK(field_context, dsql_type_ctx);
 
-				if (field_context->ctx_scope_level <= request->req_scope_level) 
-				{
+				if (field_context->ctx_scope_level <= request->req_scope_level) {
 					return TRUE;
 				}
 
@@ -2238,8 +2241,7 @@ static BOOLEAN invalid_reference(REQ request, NOD node, NOD list, BOOLEAN exact_
 			case nod_cast:
 			case nod_udf:
 				/* If there are no arguments given to the UDF then it's always valid */
-                if (node->nod_count == 2)
-				{
+                if (node->nod_count == 2) {
                     invalid |= invalid_reference(request, node->nod_arg [1], list, exact_field);
 				}
 				break;
@@ -2249,8 +2251,7 @@ static BOOLEAN invalid_reference(REQ request, NOD node, NOD list, BOOLEAN exact_
 			case nod_singular:   
 				//return FALSE;
 				for (ptr = node->nod_arg, end = ptr + node->nod_count;
-					 ptr < end; ptr++)
-				{
+					 ptr < end; ptr++) {
 					invalid |= invalid_reference(request, *ptr, list, TRUE);
 				}
 				break;
@@ -2307,9 +2308,9 @@ static BOOLEAN invalid_reference(REQ request, NOD node, NOD list, BOOLEAN exact_
 			case nod_starting:
 			case nod_rse:
 			case nod_list:
-				for (ptr = node->nod_arg, end = ptr + node->nod_count;
-					 ptr < end; ptr++)
+				for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++) {
 					invalid |= invalid_reference(request, *ptr, list, exact_field);
+				}
 				break;
 
 			case nod_alias:
@@ -2422,56 +2423,45 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 	DEV_BLKCHK(node1, dsql_type_nod);
 	DEV_BLKCHK(node2, dsql_type_nod);
 
-	if ((!node1) && (!node2)) 
-	{
+	if ((!node1) && (!node2)) {
 		return TRUE;
 	}
 
-	if ((!node1) || (!node2)) 
-	{
+	if ((!node1) || (!node2)) {
 		return FALSE;
 	}
 
-	if (ignore_cast && node1->nod_type == nod_cast)	
-	{
+	if (ignore_cast && node1->nod_type == nod_cast)	{
 		/* If node2 is also cast and same type continue with both sources */
 		if (node2->nod_type == nod_cast && 
 			node1->nod_desc.dsc_dtype == node2->nod_desc.dsc_dtype &&
 			node1->nod_desc.dsc_scale == node2->nod_desc.dsc_scale &&
 			node1->nod_desc.dsc_length == node2->nod_desc.dsc_length &&
-			node1->nod_desc.dsc_sub_type == node2->nod_desc.dsc_sub_type) 
-		{
+			node1->nod_desc.dsc_sub_type == node2->nod_desc.dsc_sub_type) {
 			return node_match(node1->nod_arg[e_cast_source], node2->nod_arg[e_cast_source], ignore_cast);
 		} 
-		else 
-		{
+		else {
 			return node_match(node1->nod_arg[e_cast_source], node2, ignore_cast);
 		}
 	}
 
 	/* We don't care about the alias self only about his field */
-	if ((node1->nod_type == nod_alias) || (node2->nod_type == nod_alias)) 
-	{
-		if ((node1->nod_type == nod_alias) && (node2->nod_type == nod_alias))
-		{
+	if ((node1->nod_type == nod_alias) || (node2->nod_type == nod_alias)) {
+		if ((node1->nod_type == nod_alias) && (node2->nod_type == nod_alias)) {
 			return node_match(node1->nod_arg[e_alias_value],
 				node2->nod_arg[e_alias_value], ignore_cast);
 		}
-		else
-		{
-			if (node1->nod_type == nod_alias)
-			{
+		else {
+			if (node1->nod_type == nod_alias) {
 				return node_match(node1->nod_arg[e_alias_value], node2, ignore_cast);
 			}
-			if (node2->nod_type == nod_alias)
-			{
+			if (node2->nod_type == nod_alias) {
 				return node_match(node1, node2->nod_arg[e_alias_value], ignore_cast);
 			}
 		}
 	}
 
-	if ((node1->nod_type != node2->nod_type) || (node1->nod_count != node2->nod_count))
-	{
+	if ((node1->nod_type != node2->nod_type) || (node1->nod_count != node2->nod_count)) {
 		return FALSE;
 	}
 
@@ -2487,8 +2477,7 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
    case we compare two other subtrees.
 */
 
-	if (node1->nod_type == nod_aggregate)
-	{
+	if (node1->nod_type == nod_aggregate) {
 		if (node1->nod_arg[e_agg_context] != node2->nod_arg[e_agg_context]) {
 			return FALSE;
 		}
@@ -2499,36 +2488,29 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 							node2->nod_arg[e_agg_rse], ignore_cast);
 	}
 
-	if (node1->nod_type == nod_relation)
-	{
-		if (node1->nod_arg[e_rel_context] != node2->nod_arg[e_rel_context])
-		{
+	if (node1->nod_type == nod_relation) {
+		if (node1->nod_arg[e_rel_context] != node2->nod_arg[e_rel_context]) {
 			return FALSE;
 		} 
 		return TRUE;
 	}
 
-	if (node1->nod_type == nod_field)
-	{
+	if (node1->nod_type == nod_field) {
 		if (node1->nod_arg[e_fld_field] != node2->nod_arg[e_fld_field] ||
-			node1->nod_arg[e_fld_context] != node2->nod_arg[e_fld_context])
-		{
+			node1->nod_arg[e_fld_context] != node2->nod_arg[e_fld_context]) {
 			return FALSE;
 		}
-		if (node1->nod_arg[e_fld_indices] || node2->nod_arg[e_fld_indices])
-		{
+		if (node1->nod_arg[e_fld_indices] || node2->nod_arg[e_fld_indices]) {
 			return node_match(node1->nod_arg[e_fld_indices],
 							  node2->nod_arg[e_fld_indices], ignore_cast);
 		}
 		return TRUE;
 	}
 
-	if (node1->nod_type == nod_constant)
-	{
+	if (node1->nod_type == nod_constant) {
 		if (node1->nod_desc.dsc_dtype != node2->nod_desc.dsc_dtype ||
 			node1->nod_desc.dsc_length != node2->nod_desc.dsc_length ||
-			node1->nod_desc.dsc_scale != node2->nod_desc.dsc_scale)
-		{
+			node1->nod_desc.dsc_scale != node2->nod_desc.dsc_scale) {
 			return FALSE;
 		}
 		p1 = node1->nod_desc.dsc_address;
@@ -2541,8 +2523,7 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 		return TRUE;
 	}
 
-	if (node1->nod_type == nod_map)
-	{
+	if (node1->nod_type == nod_map) {
 		map1 = (MAP)node1->nod_arg[e_map_map];
 		map2 = (MAP)node2->nod_arg[e_map_map];
 		DEV_BLKCHK(map1, dsql_type_map);
@@ -2553,8 +2534,7 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 	if ((node1->nod_type == nod_gen_id)		||
 		(node1->nod_type == nod_gen_id2)	||
 		(node1->nod_type == nod_udf)		||
-		(node1->nod_type == nod_cast))
-	{
+		(node1->nod_type == nod_cast)) {
 		if (node1->nod_arg[0] != node2->nod_arg[0]) {
 			return FALSE;
 		}
@@ -2569,17 +2549,14 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 		(node1->nod_type == nod_agg_total)		||
 		(node1->nod_type == nod_agg_total2)		||
 		(node1->nod_type == nod_agg_average2)	||
-		(node1->nod_type == nod_agg_average))
-	{
+		(node1->nod_type == nod_agg_average)) {
 		if ((node1->nod_flags & NOD_AGG_DISTINCT) !=
-			(node2->nod_flags & NOD_AGG_DISTINCT))
-		{
+			(node2->nod_flags & NOD_AGG_DISTINCT)) {
 			return FALSE;
 		}
 	}
 
-	if (node1->nod_type == nod_variable)
-	{
+	if (node1->nod_type == nod_variable) {
 		if (node1->nod_type != node2->nod_type) {
 			return FALSE;
 		}
@@ -2591,8 +2568,7 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 			(var1->var_field != var2->var_field)						||
 			(var1->var_variable_number != var2->var_variable_number)	||
 			(var1->var_msg_item != var2->var_msg_item)					||
-			(var1->var_msg_number != var2->var_msg_number))
-		{
+			(var1->var_msg_number != var2->var_msg_number)) {
 			return FALSE;
 		}
 		return TRUE;
@@ -2601,9 +2577,11 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 	ptr1 = node1->nod_arg;
 	ptr2 = node2->nod_arg;
 
-	for (end = ptr1 + node1->nod_count; ptr1 < end; ptr1++, ptr2++)
-		if (!node_match(*ptr1, *ptr2, ignore_cast))
+	for (end = ptr1 + node1->nod_count; ptr1 < end; ptr1++, ptr2++) {
+		if (!node_match(*ptr1, *ptr2, ignore_cast)) {
 			return FALSE;
+		}
+	}
 
 	return TRUE;
 }
@@ -3347,7 +3325,7 @@ static NOD pass1_field( REQ request, NOD input, USHORT list)
 							/* AB: If we come here then in an aggregate is referenced 
 							   to two fields which have a different "parent_context" 
 							   meaning pointing to a different aggregate context 
-							   and there's now way to do calculations between 2 
+							   and there's no way to do calculations between 2 
 							   different aggregate contexts */
 							ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, 
 								gds_arg_gds, gds_field_ref_err, 0); /* invalid field reference */
