@@ -31,6 +31,7 @@
  */
 
 #include "firebird.h"
+#include "../jrd/y_ref.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
@@ -43,7 +44,6 @@
 #include "../jrd/jrd_pwd.h"
 #include "../alice/aliceswi.h"
 #include "../burp/burpswi.h"
-#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "gen/codes.h"
 #include "../jrd/license.h"
