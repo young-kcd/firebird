@@ -1,3 +1,72 @@
+2005-03-16 15:46  paul_reeves
+
+	*
+	
+	Bring installation_readme.txt up-to-date.
+	firebird2/builds/install/arch-specific/win32/installation_readme.tx
+	t (1.5):
+
+2005-03-16 14:15  paul_reeves
+
+	* firebird2/:
+	builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.6), src/jrd/isc_version.h (1.3):
+	
+	Minor fix to Win32 build script. Sync isc_version.h.
+
+2005-03-16 11:53  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstallEnvironmentChecks.inc (1.4),
+	FirebirdInstallSupportFunctions.inc (1.2), FirebirdInstall_20.iss
+	(1.4):
+	
+	Improve detection of previous Windows installs.
+
+2005-03-16 11:51  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/pl/:
+	custom_messages_pl.inc (1.1), czytajto.txt (1.1),
+	instalacja_czytajto.txt (1.1):
+	
+	Add Polish translation of Win32 installer.
+
+2005-03-16 02:08  robocop
+
+	* firebird2/builds/install/arch-specific/win32/Readme.txt (1.4):
+	
+	We renamed the list to become firebird-support a lot of time ago.
+
+2005-03-16 02:04  robocop
+
+	* firebird2/builds/install/arch-specific/linux/:
+	classic/postinstall.sh.in (1.10), misc/changeDBAPassword.sh.in
+	(1.4), misc/changeGdsLibraryCompatibleLink.sh.in (1.2):
+	
+	Fixing typos
+
+2005-03-15 12:46  alexpeshkoff
+
+	*
+	
+	removed unused link /usr/include/gds.h
+	firebird2/builds/install/arch-specific/linux/classic/makeInstallIma
+	ge.sh.in (1.10):
+
+2005-03-15 10:27  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/ba/:
+	Instalacija_ProcitajMe.txt (1.1), ProcitajMe.txt (1.1),
+	custom_messages_ba.inc (1.1):
+	
+	Add Bosnian translation of Win32 installer.
+
+2005-03-15 08:33  kkuznetsov
+
+	* firebird2/src/jrd/isc_s_proto.h (1.17):
+	
+	Cleanup unneeded extern "C"
+
 2005-03-15 03:09  robocop
 
 	* firebird2/src/jrd/jrd.cpp (1.203):
