@@ -32,6 +32,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GDS32"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gds32/gds32.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gds32/"
 				ObjectFile="..\..\..\temp\release\gds32/"

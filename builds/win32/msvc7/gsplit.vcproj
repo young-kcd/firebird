@@ -95,6 +95,7 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gsplit/gsplit.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gsplit/"
 				ObjectFile="..\..\..\temp\release\gsplit/"

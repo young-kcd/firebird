@@ -95,6 +95,7 @@
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\release\isql/"
 				ObjectFile="..\..\..\temp\release\isql/"

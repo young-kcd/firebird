@@ -94,6 +94,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\instreg/instreg.pch"
 				AssemblerListingLocation="..\..\..\temp\release\instreg/"
 				ObjectFile="..\..\..\temp\release\instreg/"

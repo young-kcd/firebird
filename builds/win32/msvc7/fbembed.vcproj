@@ -99,6 +99,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbembed/fbembed.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbembed/"

@@ -100,6 +100,7 @@
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;SERVER_SHUTDOWN;GOVERNOR;I386;_X86_=1;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbclient/fbclient.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbclient/"
 				ObjectFile="..\..\..\temp\release\fbclient/"

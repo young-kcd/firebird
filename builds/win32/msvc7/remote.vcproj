@@ -85,6 +85,7 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,SERVER_SHUTDOWN,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\remote_ss/remote.pch"
 				AssemblerListingLocation="..\..\..\temp\release\remote_ss/"
 				ObjectFile="..\..\..\temp\release\remote_ss/"

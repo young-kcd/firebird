@@ -32,6 +32,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\engine_cs/engine_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\engine_cs/"

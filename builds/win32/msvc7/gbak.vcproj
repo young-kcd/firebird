@@ -95,6 +95,7 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gbak/gbak.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gbak/"
 				ObjectFile="..\..\..\temp\release\gbak/"

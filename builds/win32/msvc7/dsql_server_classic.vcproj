@@ -32,6 +32,7 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\dsql_server_cs/dsql_server_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\dsql_server_cs/"
 				ObjectFile="..\..\..\temp\release\dsql_server_cs/"

@@ -85,6 +85,7 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\utilities_ss/utilities.pch"
 				AssemblerListingLocation="..\..\..\temp\release\utilities_ss/"
 				ObjectFile="..\..\..\temp\release\utilities_ss/"

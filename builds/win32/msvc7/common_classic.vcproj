@@ -86,6 +86,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\common_cs/common_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\common_cs/"
 				ObjectFile="..\..\..\temp\release\common_cs/"

@@ -94,6 +94,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gdef/gdef.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gdef/"
 				ObjectFile="..\..\..\temp\release\gdef/"

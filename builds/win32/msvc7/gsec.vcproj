@@ -32,6 +32,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gsec/gsec.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gsec/"
 				ObjectFile="..\..\..\temp\release\gsec/"

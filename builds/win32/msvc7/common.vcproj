@@ -32,6 +32,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\common_ss/common.pch"
 				AssemblerListingLocation="..\..\..\temp\release\common_ss/"
 				ObjectFile="..\..\..\temp\release\common_ss/"

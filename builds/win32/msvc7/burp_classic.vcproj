@@ -32,6 +32,7 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\burp_cs/burp_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\burp_cs/"
 				ObjectFile="..\..\..\temp\release\burp_cs/"

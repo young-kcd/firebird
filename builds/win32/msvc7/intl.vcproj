@@ -32,6 +32,7 @@
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\intl/intl.pch"
 				AssemblerListingLocation="..\..\..\temp\release\intl/"
 				ObjectFile="..\..\..\temp\release\intl/"

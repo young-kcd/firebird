@@ -25,6 +25,7 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,SUPERCLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\debug\codes/codes.pch"
 				AssemblerListingLocation=".\..\..\..\temp\debug\codes/"
@@ -86,6 +87,7 @@
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\codes/codes.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\codes/"
@@ -138,9 +140,6 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
 				RelativePath="..\..\..\gen\misc\codes.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 		</Filter>
 		<Filter

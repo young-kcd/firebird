@@ -32,6 +32,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IB_UTIL_EXPORTS"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\ib_util/ib_util.pch"
 				AssemblerListingLocation="..\..\..\temp\release\ib_util/"
 				ObjectFile="..\..\..\temp\release\ib_util/"

@@ -31,6 +31,7 @@
 				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gpre/gpre.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gpre/"
 				ObjectFile="..\..\..\temp\release\gpre/"

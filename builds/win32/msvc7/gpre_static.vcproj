@@ -30,6 +30,7 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
 				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\gpre_static/gpre_static.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\gpre_static/"
 				ObjectFile=".\..\..\..\temp\release\gpre_static/"
@@ -88,6 +89,7 @@
 				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile=".\..\..\..\temp\debug\gpre_static/gpre_static.pch"
 				AssemblerListingLocation=".\..\..\..\temp\debug\gpre_static/"
 				ObjectFile=".\..\..\..\temp\debug\gpre_static/"
@@ -160,9 +162,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\exp.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\ftn.cpp">

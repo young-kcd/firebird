@@ -94,6 +94,7 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gstat/"
 				ObjectFile="..\..\..\temp\release\gstat/"

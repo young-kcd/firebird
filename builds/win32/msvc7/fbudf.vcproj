@@ -32,6 +32,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FBUDF_EXPORTS"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbudf/fbudf.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbudf/"
 				ObjectFile="..\..\..\temp\release\fbudf/"
