@@ -1,3 +1,23 @@
+2004-11-18 20:59  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.36):
+	
+	Document my last fix
+
+2004-11-18 20:53  skidder
+
+	* firebird2/src/install/arch-specific/linux/misc/firebird.xinetd.in
+	(1.2.2.4):
+	
+	Fix problem with XP SP2 clients talking to POSIX server
+	(SF#1065511)
+
+2004-11-18 09:11  arnobrinkman
+
+	* firebird2/doc/WhatsNew (1.36.2.35):
+	
+	no message
+
 2004-11-17 22:57  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.72.2.9):
