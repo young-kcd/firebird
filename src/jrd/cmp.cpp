@@ -3685,7 +3685,14 @@ static RSE pass1_rse(
 		*new_rse = *rse;
 		new_rse->rse_count = count;
 		rse = new_rse;
+
+/* AB: Because we've build an new rse, we must put this one in the stack 
+  of current_rses else could rse's not be flagged an rse_variant.
+  See SF BUG # [ 523589 ] for an example */
+		LLS_POP(&(*csb)->csb_current_rses);
+		LLS_PUSH(new_rse, &(*csb)->csb_current_rses);
 	}
+
 
 	arg = rse->rse_relation + count;
 
