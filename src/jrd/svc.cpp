@@ -3249,7 +3249,7 @@ static void service_get(
 	void *sv_hndlr;
 #else
 	struct itimerval sv_timr;
-#ifndef SIGACTION_SUPPORTED
+#ifndef HAVE_SIGACTION
 	struct sigvec sv_hndlr;
 #else
 	struct sigaction sv_hndlr;

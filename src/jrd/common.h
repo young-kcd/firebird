@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.20 2002-08-22 08:20:26 dimitr Exp $
+$Id: common.h,v 1.21 2002-08-22 10:48:23 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -92,7 +92,6 @@ $Id: common.h,v 1.20 2002-08-22 08:20:26 dimitr Exp $
 #endif
 
 #define KILLER_SIGNALS
-#define SIGACTION_SUPPORTED
 
 #define VA_START(list,parmN)    va_start (list, parmN)
 #define UNIX    1
@@ -116,22 +115,36 @@ $Id: common.h,v 1.20 2002-08-22 08:20:26 dimitr Exp $
 
 /* SINIX-Z 5.42 */
 #ifdef SINIXZ
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/mman.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#undef GETTIMEOFDAY_RETURNS_TIMEZONE
+int gettimeofday (struct timeval *tp);
+int munmap(void * addr, size_t len);
+int gethostname(char *name, size_t len);
+
+#ifdef __cplusplus
+    }
+#endif
+
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
 #define MMAP_SUPPORTED
 
-#if 0 /* for I386 these are defined later */
-#define FB_ALIGN(n,b)	((n+1) & ~1)
 #define ALIGNMENT	4
-#define DOUBLE_ALIGN	4
-#endif
+#define DOUBLE_ALIGN	8
+#define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 
 #ifdef SUPERSERVER
 #define SET_TCP_NO_DELAY
 #endif
 
 #define KILLER_SIGNALS
-#define SIGACTION_SUPPORTED
 
 #define VA_START(list,parmN)    va_start (list, parmN)
 #define UNIX    1
@@ -183,7 +196,6 @@ $Id: common.h,v 1.20 2002-08-22 08:20:26 dimitr Exp $
 #define MAP_ANNON
 #define LSEEK_OFFSET_CAST (off_t)
 #define INTL
-#define SIGACTION_SUPPORTED
 
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t)length)
 #define MOVE_FAST(from,to,length)	memcpy (to, from, (int) (length))
@@ -221,7 +233,6 @@ $Id: common.h,v 1.20 2002-08-22 08:20:26 dimitr Exp $
 #define QUADCONST(n) (n##LL)
 #define KILLER_SIGNALS
 #define MMAP_SUPPORTED
-#define SIGACTION_SUPPORTED
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
 #define MEMMOVE(from,to,length)     memmove ((void *)to, (void *)from, (size_t) length)
@@ -258,7 +269,6 @@ $Id: common.h,v 1.20 2002-08-22 08:20:26 dimitr Exp $
 
 #define KILLER_SIGNALS
 #define MMAP_SUPPORTED
-#define SIGACTION_SUPPORTED
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
 #define MEMMOVE(from,to,length)     memmove ((void *)to, (void *)from, (size_t) length)
@@ -312,7 +322,6 @@ $Id: common.h,v 1.20 2002-08-22 08:20:26 dimitr Exp $
 
 #define ATEXIT(c)       atexit (c)
 #define SETPGRP         setpgrp ()
-#define SIGACTION_SUPPORTED
 #define NO_FLOCK
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 /*********   Reason for introducing MEMMOVE macro.
@@ -556,7 +565,6 @@ typedef unsigned int64 UATOM;
 #ifndef _POWER					/* IBM RS/6000 */
 #define AIX
 #define KILLER_SIGNALS
-#define SIGACTION_SUPPORTED
 #define MMAP_SUPPORTED
 #define NO_FLOCK
 #define SETPGRP         setpgid (0, 0)
@@ -578,7 +586,6 @@ typedef unsigned int64 UATOM;
 #else /* AIX PowerPC */
 #define AIX_PPC
 #define KILLER_SIGNALS
-#define SIGACTION_SUPPORTED
 #define MMAP_SUPPORTED
 #define NO_FLOCK
 #define SETPGRP         setpgid (0, 0)
@@ -731,7 +738,6 @@ typedef unsigned __int64 UINT64;
 #define SCO_UNIX        1
 #define                 IEEE
 #define SETPGRP         setpgrp()
-#define SIGACTION_SUPPORTED
 #define MMAP_SUPPORTED
 #define NO_FLOCK
 #define ATEXIT(c)       atexit (c)
@@ -761,7 +767,6 @@ typedef unsigned __int64 UINT64;
 #ifdef DGUX
 #define UNIX            1
 #define KILLER_SIGNALS
-#define SIGACTION_SUPPORTED
 #define MMAP_SUPPORTED
 #define NO_FLOCK
 #define SETPGRP         setpgid (0, 0)
@@ -795,7 +800,6 @@ typedef unsigned __int64 UINT64;
 #define INTL
 #define NO_PYXIS
 #define KILLER_SIGNALS
-#define SIGACTION_SUPPORTED
 #define MMAP_SUPPORTED
 #define HAS_64BIT_POINTERS		/* if a machine has 64 bit pointers you need this */
 #define SETPGRP         setpgrp (0, 0)
@@ -838,7 +842,6 @@ typedef unsigned long UATOM;
 #define IMPLEMENTATION  isc_info_db_impl_isc_sgi  /* 41 */
 #define DOUBLE_ALIGN    8
 #define                 IEEE
-#define SIGACTION_SUPPORTED
 #define MMAP_SUPPORTED
 #define NO_FLOCK
 #define INTL
@@ -908,7 +911,6 @@ typedef unsigned long DWORD;
 #define INTL
 #define SETPGRP         setpgrp()
 #define KILLER_SIGNALS
-#define SIGACTION_SUPPORTED
 #define MMAP_SUPPORTED
 #define NO_FLOCK
 #define NO_PYXIS

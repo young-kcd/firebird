@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.6 2002-07-29 15:37:55 skywalker Exp $
+$Id: inet_server.cpp,v 1.7 2002-08-22 10:48:24 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -65,7 +65,9 @@ $Id: inet_server.cpp,v 1.6 2002-07-29 15:37:55 skywalker Exp $
 #endif
 
 #ifdef SUPERSERVER
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include "../jrd/gds.h"
 #include "../jrd/pwd.h"
@@ -571,7 +573,7 @@ static void set_signal( int signal_number, void (*handler) (void))
 	sigset(signal_number, handler);
 #else
 
-#ifndef SIGACTION_SUPPORTED
+#ifndef HAVE_SIGACTION
 	struct sigvec vec;
 	struct sigvec old_vec;
 

@@ -76,15 +76,15 @@
 // with the same code in isc_ipc.cpp
 
 #ifdef SUN3_3
-typedef int (*CLIB_ROUTINE SIG_FPTR) ();
+typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
 #else
 #if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
-typedef void (CLIB_ROUTINE * SIG_FPTR) ();
+typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #else
 #if (defined(DARWIN))
-typedef void (*CLIB_ROUTINE SIG_FPTR) (int);
+typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) (int);
 #else
-typedef void (*CLIB_ROUTINE SIG_FPTR) ();
+typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
 #endif
 #endif
 #endif
@@ -128,7 +128,9 @@ static UCHAR *next_shared_memory;
 #endif
 
 #include <errno.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
@@ -153,7 +155,7 @@ static UCHAR *next_shared_memory;
 #define SIGVEC		FPTR_INT
 #endif
 
-#ifdef SIGACTION_SUPPORTED
+#ifdef HAVE_SIGACTION
 #define SIGVEC		struct sigaction
 #endif
 
@@ -1110,7 +1112,7 @@ int ISC_event_wait(
 	void *user_handler;
 #else
 	struct itimerval user_timer;
-#ifndef SIGACTION_SUPPORTED
+#ifndef HAVE_SIGACTION
 	struct sigvec user_handler;
 #else
 	struct sigaction user_handler;
@@ -4308,7 +4310,7 @@ void ISC_reset_timer(
 	timerclear(&internal_timer.it_interval);
 	timerclear(&internal_timer.it_value);
 	setitimer(ITIMER_REAL, &internal_timer, NULL);
-#ifndef SIGACTION_SUPPORTED
+#ifndef HAVE_SIGACTION
 	sigvector(SIGALRM, client_handler, NULL);
 #else
 	sigaction(SIGALRM, (struct sigaction*)client_handler, NULL);
@@ -4338,7 +4340,7 @@ void ISC_set_timer(
  **************************************/
 #ifndef SYSV_SIGNALS
 	struct itimerval internal_timer;
-#ifndef SIGACTION_SUPPORTED
+#ifndef HAVE_SIGACTION
 	struct sigvec internal_handler;
 #else
 	struct sigaction internal_handler;
@@ -4367,14 +4369,14 @@ void ISC_set_timer(
 		client_handler = &d2;
 	*client_handler = (void *) sigset(SIGALRM, SIG_DFL);
 #else
-#ifndef SIGACTION_SUPPORTED
+#ifndef HAVE_SIGACTION
 	internal_handler.sv_handler = SIG_DFL;
 	internal_handler.sv_mask = 0;
 	internal_handler.sv_flags = SV_INTERRUPT;
 	sigvector(SIGALRM, &internal_handler, (struct sigvec *) client_handler);
 #else
-//	internal_handler.sa_handler = (SIG_FPTR) SIG_DFL;
-	internal_handler.sa_handler = (void(*)(int)) SIG_DFL;
+	internal_handler.sa_handler = (SIG_FPTR) SIG_DFL;
+//	internal_handler.sa_handler = (void(*)(int)) SIG_DFL;
 	memset(&internal_handler.sa_mask, 0, sizeof(internal_handler.sa_mask));
 	internal_handler.sa_flags = SA_RESTART;
 	sigaction(SIGALRM, &internal_handler,

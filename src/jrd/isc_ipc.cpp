@@ -26,7 +26,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.14 2002-07-06 05:31:56 skywalker Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.15 2002-08-22 10:48:23 eku Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -81,15 +81,15 @@ typedef struct sig {
 // with the same code in isc_sync.cpp
 
 #ifdef SUN3_3
-typedef int (*CLIB_ROUTINE SIG_FPTR) ();
+typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
 #else
 #if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
-typedef void (CLIB_ROUTINE * SIG_FPTR) ();
+typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #else
 #if (defined(DARWIN))
-typedef void (*CLIB_ROUTINE SIG_FPTR) (int);
+typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) (int);
 #else
-typedef void (*CLIB_ROUTINE SIG_FPTR) ();
+typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
 #endif
 #endif
 #endif
@@ -154,7 +154,9 @@ static int process_id = 0;
 #endif
 
 #include <errno.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 #ifndef O_RDWR
 #include <fcntl.h>
@@ -170,7 +172,7 @@ static int process_id = 0;
 #define SIGVEC		FPTR_INT
 #endif
 
-#ifdef SIGACTION_SUPPORTED
+#ifdef HAVE_SIGACTION
 #define SIGVEC		struct sigaction
 #endif
 
@@ -769,7 +771,7 @@ static void isc_signal2(
 
 		SIGVEC vec, old_vec;
 
-#ifndef SIGACTION_SUPPORTED
+#ifndef HAVE_SIGACTION
 #ifdef OLD_POSIX_THREADS
 		if (signal_number != SIGALRM)
 			vec.sv_handler = SIG_DFL;
@@ -787,8 +789,8 @@ static void isc_signal2(
 		else
 #endif
 #pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
-			vec.sa_handler = (void(*)(int)) signal_handler;
-//			vec.sa_handler = (SIG_FPTR) signal_handler;
+//			vec.sa_handler = (void(*)(int)) signal_handler;
+			vec.sa_handler = (SIG_FPTR) signal_handler;
 		memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
 		vec.sa_flags = SA_RESTART;
 		sigaction(signal_number, &vec, &old_vec);

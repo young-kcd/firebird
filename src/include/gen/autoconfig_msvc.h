@@ -58,6 +58,7 @@
 #undef HAVE_TIME
 #undef HAVE_TIMES
 #define HAVE_DIRNAME
+#undef HAVE_SIGACTION
 
 /* Types */
 #undef socklen_t
@@ -73,6 +74,9 @@
 
 /* Is the platform big endian? */
 #define WORDS_BIGENDIAN 0
+
+/* Return type of signal handler */
+#define RETSIGTYPE void
 
 /* Are paths case sensitive? */
 #define CASE_SENSITIVITY false

@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.15 2002-08-20 11:49:10 eku Exp $
+$Id: inet.cpp,v 1.16 2002-08-22 10:48:24 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -311,20 +311,21 @@ static ULONG inet_debug_timer(void)
  *
  **************************************/
 #ifdef HAVE_GETTIMEOFDAY
-    struct timeval tv;
+	struct timeval tv;
 #ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
-    (void)gettimeofday(&tv, (struct timezone *)0);
+	(void)gettimeofday(&tv, (struct timezone *)0);
 #else
-    (void)gettimeofday(&tv);
+	(void)gettimeofday(&tv);
 #endif
-    return (tv.tv_sec*1000 + tv.tv_usec - INET_start_time);
+	return (tv.tv_sec*1000 + tv.tv_usec - INET_start_time);
 #else
 	struct timeb now;
 	(void) ftime(&now);
 	return (now.time * 1000 + now.millitm - INET_start_time);
+#endif /* HAVE_GETTIMEOFDAY */
 }
-#endif
-#endif
+#endif /* DEBUG */
+#endif /* !REQUESTER */
 
 
 
@@ -3990,7 +3991,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 
 #ifndef NO_ITIMER
 	struct itimerval internal_timer, client_timer;
-#ifdef SIGACTION_SUPPORTED
+#ifdef HAVE_SIGACTION
 	struct sigaction internal_handler, client_handler;
 #else
 	struct sigvec internal_handler, client_handler;
@@ -4062,7 +4063,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 				internal_timer.it_value.tv_sec = 0;
 				internal_timer.it_value.tv_usec = 0;
 				setitimer(ITIMER_REAL, &internal_timer, &client_timer);
-#ifndef SIGACTION_SUPPORTED
+#ifndef HAVE_SIGACTION
 				internal_handler.sv_handler = alarm_handler;
 				internal_handler.sv_mask = 0;
 				internal_handler.sv_flags = SV_INTERRUPT;
@@ -4089,7 +4090,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 			internal_timer.it_value.tv_sec = 0;
 			internal_timer.it_value.tv_usec = 0;
 			setitimer(ITIMER_REAL, &internal_timer, NULL);
-#ifdef SIGACTION_SUPPORTED
+#ifdef HAVE_SIGACTION
 			sigaction(SIGALRM, &client_handler, NULL);
 #else
 			sigvector(SIGALRM, &client_handler, NULL);
