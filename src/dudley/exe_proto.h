@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_EXE_PROTO_H_
-#define _DUDLEY_EXE_PROTO_H_
+#ifndef DUDLEY_EXE_PROTO_H
+#define DUDLEY_EXE_PROTO_H
 
 extern SLONG EXE_check_db_version(DBB);
 extern void EXE_create_database(DBB);
@@ -32,4 +32,4 @@ extern void EXE_fini(DBB);
 extern void EXE_modify_database(DBB);
 extern bool EXE_relation(DUDLEY_REL);
 
-#endif /* _DUDLEY_EXE_PROTO_H_ */
+#endif // DUDLEY_EXE_PROTO_H

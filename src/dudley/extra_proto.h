@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_EXTRA_PROTO_H_
-#define _DUDLEY_EXTRA_PROTO_H_
+#ifndef DUDLEY_EXTRA_PROTO_H
+#define DUDLEY_EXTRA_PROTO_H
 
 extern void DDL_ext(void);
 
-#endif /* _DUDLEY_EXTRA_PROTO_H_ */
+#endif // DUDLEY_EXTRA_PROTO_H

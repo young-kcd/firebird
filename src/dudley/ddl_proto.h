@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_DDL_PROTO_H_
-#define _DUDLEY_DDL_PROTO_H_
+#ifndef DUDLEY_DDL_PROTO_H
+#define DUDLEY_DDL_PROTO_H
 
 extern UCHAR *DDL_alloc(int);
 extern int DDL_db_error(ISC_STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
@@ -37,4 +37,4 @@ extern DUDLEY_NOD DDL_pop(LLS *);
 extern void DDL_push(DUDLEY_NOD, LLS *);
 extern bool DDL_yes_no(USHORT);
 
-#endif /* _DUDLEY_DDL_PROTO_H_ */
+#endif // DUDLEY_DDL_PROTO_H

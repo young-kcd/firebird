@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_LEX_PROTO_H_
-#define _DUDLEY_LEX_PROTO_H_
+#ifndef DUDLEY_LEX_PROTO_H
+#define DUDLEY_LEX_PROTO_H
 
 extern tok* LEX_filename(void);
 extern void LEX_fini(void);
@@ -33,4 +33,4 @@ extern void LEX_put_text(FRBRD *, TXT);
 extern void LEX_real(void);
 extern tok* LEX_token(void);
 
-#endif /* _DUDLEY_LEX_PROTO_H_ */
+#endif // DUDLEY_LEX_PROTO_H

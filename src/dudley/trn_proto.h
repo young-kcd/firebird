@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_TRN_PROTO_H_
-#define _DUDLEY_TRN_PROTO_H_
+#ifndef DUDLEY_TRN_PROTO_H
+#define DUDLEY_TRN_PROTO_H
 
 extern void TRN_translate(void);
 extern bool TRN_get_buffer(STR, USHORT);
 
-#endif /* _DUDLEY_TRN_PROTO_H_ */
+#endif // DUDLEY_TRN_PROTO_H

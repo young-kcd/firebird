@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_GENER_PROTO_H_
-#define _DUDLEY_GENER_PROTO_H_
+#ifndef DUDLEY_GENER_PROTO_H
+#define DUDLEY_GENER_PROTO_H
 
 extern int GENERATE_acl(SCL, UCHAR *);
 extern void GENERATE_blr(STR, DUDLEY_NOD);
 
-#endif /* _DUDLEY_GENER_PROTO_H_ */
+#endif // DUDLEY_GENER_PROTO_H

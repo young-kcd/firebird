@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_EXPAN_PROTO_H_
-#define _DUDLEY_EXPAN_PROTO_H_
+#ifndef DUDLEY_EXPAN_PROTO_H
+#define DUDLEY_EXPAN_PROTO_H
 
 extern void EXP_actions(void);
 
-#endif /* _DUDLEY_EXPAN_PROTO_H_ */
+#endif // DUDLEY_EXPAN_PROTO_H

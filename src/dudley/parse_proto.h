@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_PARSE_PROTO_H_
-#define _DUDLEY_PARSE_PROTO_H_
+#ifndef DUDLEY_PARSE_PROTO_H
+#define DUDLEY_PARSE_PROTO_H
 
 #include "../dudley/parse.h"
 
@@ -37,4 +37,4 @@ extern int PARSE_number(void);
 extern DUDLEY_REL PARSE_relation(void);
 extern SYM PARSE_symbol(enum tok_t);
 
-#endif /* _DUDLEY_PARSE_PROTO_H_ */
+#endif // DUDLEY_PARSE_PROTO_H
