@@ -1856,6 +1856,7 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 	temp_lock.lck_parent = dbb->dbb_lock;
 	temp_lock.lck_length = sizeof(SLONG);
+	temp_lock.lck_test_field = 666;			// this should better be in constructor !
 
 	if (!LCK_lock_non_blocking
 		(tdbb, &temp_lock, LCK_EX, (trans) ? FALSE : TRUE)) return TRUE;
