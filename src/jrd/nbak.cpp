@@ -494,6 +494,8 @@ void BackupManager::shutdown_locks() {
 
 
 BackupManager::~BackupManager() {
+	if (diff_file)
+		PIO_close(diff_file);
 	shutdown_locks();
 	// Note ! We do not free memory for any allocated objects.
 	// It was allocated from database pool and will be freed automatically

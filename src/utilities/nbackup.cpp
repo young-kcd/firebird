@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "../jrd/common.h"
 #include "../jrd/db_alias.h"
 #include "../jrd/ods.h"
@@ -36,7 +37,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/os/guid.h"
-#include "ibase.h"
+#include "../jrd/ibase.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -52,6 +53,10 @@
 
 #if defined(WIN_NT)
 #include <io.h>
+#endif
+
+#if defined(WIN_NT)
+#define vsnprintf _vsnprintf
 #endif
 
 #define EXIT_OK 0
@@ -225,12 +230,12 @@ void nbackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 	LARGE_INTEGER offset;
 	offset.QuadPart = pos;
 	DWORD error;
-	if ((SetFilePointer(dbase, offset.LowPart, &offset.HighPart, 
+	if (SetFilePointer(dbase, offset.LowPart, &offset.HighPart, 
 					    FILE_BEGIN) == INVALID_SET_FILE_POINTER &&
 		 (error = GetLastError()) != NO_ERROR)
 	{
 		b_error::raise("IO error (%d) seeking file: %s", 
-			GetLastError(),
+			error,
 			&file==&dbase ? dbname :
 			&file==&backup ? bakname : "unknown");
 	}
@@ -246,8 +251,8 @@ void nbackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 void nbackup::open_database_write() {
 #ifdef WIN_NT
 	dbase = CreateFile(dbname, GENERIC_READ | GENERIC_WRITE, 
-		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
-		FILE_ATTRIBUTE_NORMAL, NULL);
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
+		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname);
 #else
@@ -487,6 +492,7 @@ void nbackup::backup_database(int level, const char* fname) {
 			PathUtils::splitLastComponent(begin, fil, database);
 			sprintf(bakname, "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
 				today->tm_year+1900, today->tm_mon, today->tm_mday, today->tm_hour, today->tm_min);
+			printf("%s", bakname); // Print out generated filename for script processing
 		}
 
 		// Level 0 backup is a full reconstructed database image that can be
@@ -511,7 +517,7 @@ void nbackup::backup_database(int level, const char* fname) {
 		struct hdr header;	
 		if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 			b_error::raise("Unexpected end of file when reading header of database file");
-		if (header.hdr_flags & hdr_backup_mask != nbak_state_stalled)
+		if ((header.hdr_flags & hdr_backup_mask) != nbak_state_stalled)
 			b_error::raise("Internal error. Database file is not locked. Flags are %d", header.hdr_flags);
 	
 		page_buff = (PAG)malloc(header.hdr_page_size);
@@ -673,6 +679,10 @@ void nbackup::restore_database(int filecount, char* files[]) {
 					} catch (const std::exception& e) {
 						printf("%s\n", e.what());
 					}
+#ifdef WIN_NT
+					if (curLevel)
+						close_backup();
+#endif
 				}
 			} else {
 				if (curLevel >= filecount) {
@@ -681,7 +691,10 @@ void nbackup::restore_database(int filecount, char* files[]) {
 					return;
 				} else {
 					strncpy(bakname, files[curLevel], sizeof(bakname));
-					open_backup_scan();
+#ifdef WIN_NT
+					if (curLevel)
+#endif
+						open_backup_scan();
 				}
 			}
 		
@@ -717,11 +730,11 @@ void nbackup::restore_database(int filecount, char* files[]) {
 					write_file(dbase, page, bakheader.page_size);
 				}
 				delete_database = false;
-				page = NULL;
 			} else {
 #ifdef WIN_NT
-				if (!CopyFile(filename, dbname, FALSE))
-					b_error::raise("Error (%d) creating database file: %s", GetLastError(), dbname);
+				if (!CopyFile(bakname, dbname, FALSE))
+					b_error::raise("Error (%d) creating database file: %s via copying from: %s", GetLastError(), dbname, bakname);
+				delete_database = true; // database is possibly broken
 				open_database_write();
 #else
 				// Use relatively small buffer to make use of prefetch and lazy flush
@@ -761,6 +774,8 @@ void nbackup::restore_database(int filecount, char* files[]) {
 				}
 				if (!guid_found)
 					b_error::raise("Cannot get backup guid clumplet from L0 backup");
+				// We are likely to have normal database here
+				delete_database = false;
 			}
 			close_backup();
 			curLevel++;
