@@ -1,4 +1,103 @@
   **************
+  * v1.5 Beta 3
+  **************
+
+    * Fixed Beta 2 bug.
+        "Wrong page type" error during some DDL operations.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Server hangs during disconnect after mass updates.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Improved optimizer.
+        Sub-selects in SET clause of UPDATE now can use indices.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed unregistered bug.
+        "Context already in use" error in the case of DISTINCT with sub-selects.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Enhanced isc_database_info abilities.
+        List of currently active transactions is now available via isc_database_info call.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed Beta 2 bug.
+        ISQL cannot work with scripts containing character code 0xFF.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 2 bug.
+        Ineffective PLANs made by the optimizer for SPs and views.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Performance improvement.
+        Shortcut boolean evaluation.
+      Note:
+        The behaviour is controlled by "CompleteBooleanEvaluation" option of firebird.conf. Default is 0 (shortcut evaluation).
+      Contributor(s):
+        Mike Nordell <tamlin@algonet.se>
+
+    * Fixed Beta 2 bug.
+        Stack overflow during statement preparation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+        Mike Nordell <tamlin@algonet.se>
+
+    * Performance improvement.
+        Speed-up for index operations (IA32 CPU architecture only)
+      Contributor(s):
+        Mike Nordell <tamlin@algonet.se>
+
+    * Fixed Beta 2 bug.
+        Wrong record operation statistics.
+      Contributor(s):
+        Evgeny Kilin <john@citycard.izhnet.ru>
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 2 bug.
+        Wrong line-number statistics in DSQL.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed Beta 2 bug.
+        Server crashes during some operations.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Change in universal triggers.
+        Allowed access to both (OLD and NEW) contexts in universal triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Improved optimizer.
+        When an equal-node and other nodes (geq, leq, between...) are available for an index retrieval, then use the equal node always instead of the others.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed unregistered bug.
+        Long delays during connecting/disconnecting on WinXP.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Beta 2 bug.
+        Server crash during service manager operations.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Generic cleanup.
+        Removed a lot of unused code.
+      Contributor(s):
+        Blas Rodriguez Somoza <blas@puertareal.com>
+        Erik Kunze <erik.kunze@philosys.de>
+
+  **************
   * v1.5 Beta 2
   **************
 
