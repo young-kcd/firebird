@@ -60,12 +60,12 @@ static void print(const SCHAR **, int, const SCHAR *);
 
 struct VERB {
 	UCHAR blr;
-	const SCHAR const* internal;
-	const SCHAR const* internal2;
-	const SCHAR const* length;
-	const SCHAR const* count;
-	const SCHAR const* type;
-	const SCHAR const* sub_type;
+	const SCHAR* const internal;
+	const SCHAR* const internal2;
+	const SCHAR* const length;
+	const SCHAR* const count;
+	const SCHAR* const type;
+	const SCHAR* const sub_type;
 };
 
 static const VERB verbs[] = 
@@ -225,7 +225,7 @@ static const VERB verbs[] =
 	PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
 	PAIR(nod_dcl_cursor, blr_dcl_cursor, e_dcl_cursor_length, 0, STATEMENT, OTHER),
 	PAIR(nod_cursor_stmt, blr_cursor_stmt, e_cursor_stmt_length, 0, STATEMENT, OTHER),
-	{0}
+	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 
 const SCHAR *table[256], *table2[256], *lengths[256], *counts[256],
