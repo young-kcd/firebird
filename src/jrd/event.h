@@ -149,7 +149,7 @@ typedef struct evnt {
 
 /* Request block */
 
-typedef struct req {
+typedef struct evt_req {
 	HDR req_header;
 	SRQ req_requests;			/* Request que owned by session block */
 	PTR req_process;			/* Parent process block */
@@ -158,7 +158,7 @@ typedef struct req {
 	void (*req_ast) ();			/* Asynchronous routine */
 	void *req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id, dummy */
-} *REQ;
+} *EVT_REQ;
 
 /* Request interest block */
 
