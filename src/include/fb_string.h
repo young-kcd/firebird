@@ -183,6 +183,11 @@ namespace Firebird
 		{
 			memcpy(createStorage(v.length()), v.c_str(), v.length());
 		}
+		inline AbstractString(MemoryPool& p, const char_type* s, size_type l) 
+			: AutoStorage(p)
+		{
+			memcpy(createStorage(l), s, l);
+		}
 
 		pointer Modify(void) {
 			return getStorage();
@@ -375,6 +380,8 @@ namespace Firebird
 		inline StringBase<Comparator>(const_iterator first, const_iterator last) : AbstractString(last - first, first) {}
 		inline explicit StringBase<Comparator>(MemoryPool& p) : AbstractString(p) {}
 		inline StringBase<Comparator>(MemoryPool& p, const AbstractString& v) : AbstractString(p, v) {}
+		inline StringBase<Comparator>(MemoryPool& p, const char_type* s, size_type l) : AbstractString(p, s, l) {}
+
 
 		inline StringType& append(const StringType& str) {
 			fb_assert(&str != this);
@@ -576,6 +583,13 @@ namespace Firebird
 		inline bool operator>=(const StringType& str) const {return compare(str) >= 0;}
 		inline bool operator> (const StringType& str) const {return compare(str) >  0;}
 		inline bool operator!=(const StringType& str) const {return compare(str) != 0;}
+
+		inline bool operator< (const char_type* str) const {return compare(str) <  0;}
+		inline bool operator<=(const char_type* str) const {return compare(str) <= 0;}
+		inline bool operator==(const char_type* str) const {return compare(str) == 0;}
+		inline bool operator>=(const char_type* str) const {return compare(str) >= 0;}
+		inline bool operator> (const char_type* str) const {return compare(str) >  0;}
+		inline bool operator!=(const char_type* str) const {return compare(str) != 0;}
 
 		inline operator bool() {return length() > 0;}
     };
