@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.64 2004-05-06 18:07:02 brodsom Exp $
+ * $Id: sort.cpp,v 1.65 2004-05-06 22:09:14 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -69,9 +69,9 @@
 #include <io.h> // lseek, read, write, close
 #endif
 
-#define IO_RETRY			20
-#define RUN_GROUP			8
-#define	MAX_MERGE_LEVEL		2
+const ULONG IO_RETRY			= 20;
+const USHORT RUN_GROUP			= 8;
+const USHORT MAX_MERGE_LEVEL	= 2;
 
 #ifdef VMS
 double MTH$CVT_D_G(), MTH$CVT_G_D();
@@ -84,11 +84,11 @@ using namespace Jrd;
 // overhead. On most platorms, this saves 4KB to 8KB per sort
 // buffer from being allocated but not used.
 
-#define SORT_BUFFER_CHUNK_SIZE  4096
-#define MIN_SORT_BUFFER_SIZE    (SORT_BUFFER_CHUNK_SIZE * 4)
-#define MAX_SORT_BUFFER_SIZE    (SORT_BUFFER_CHUNK_SIZE * 32)
+const ULONG SORT_BUFFER_CHUNK_SIZE	= 4096;
+const ULONG MIN_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 4;
+const ULONG MAX_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 32;
 
-#define MAX_TEMPFILE_SIZE       1073741824	// 1GB
+const ULONG MAX_TEMPFILE_SIZE		= 1073741824;	// 1GB
 
 #define DIFF_LONGS(a,b)         ((a) - (b))
 #define SWAP_LONGS(a,b,t)       {t=a; a=b; b=t;}

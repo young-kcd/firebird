@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.113 2004-05-05 21:53:37 brodsom Exp $
+$Id: common.h,v 1.114 2004-05-06 22:09:17 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -65,13 +65,8 @@ $Id: common.h,v 1.113 2004-05-05 21:53:37 brodsom Exp $
 #include <sys/param.h>
 #endif
 
-#ifndef INCLUDE_FB_MACROS_H
 #include "../include/fb_macros.h"
-#endif
-
-#ifndef INCLUDE_FB_TYPES_H
 #include "../include/fb_types.h"
-#endif
 
 /*
   do not use links in source code to maintain platform neutraility

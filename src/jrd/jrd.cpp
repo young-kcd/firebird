@@ -142,7 +142,7 @@ struct db_file {
 //#include "../jrd/sort.h"
 #endif /* SERVER_SHUTDOWN */
 
-#define	WAIT_PERIOD	-1
+const SSHORT WAIT_PERIOD	= -1;
 
 #ifdef SUPPORT_RAW_DEVICES
 #define unlink PIO_unlink

@@ -113,7 +113,8 @@ using namespace Jrd;
 #endif
 
 #ifndef O_BINARY
-#define O_BINARY	0
+//#define O_BINARY	0
+#error Please define O_BINARY for this platform in common.h
 #endif
 
 #ifdef SUPERSERVER

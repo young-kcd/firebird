@@ -30,8 +30,6 @@
  *
  */
 
-#define IO_RETRY	20
-
 // 11 Sept 2002 Nickolay Samofatov
 // this defined in included dsc2.h
 //#define ISC_TIME_SECONDS_PRECISION		10000L
@@ -111,31 +109,31 @@
 // Those definitions are commented to allow V4_ macros to be inside V4_THREADING ifdefs
 // The include chain is
 // gdsassert.h -> gds_proto.h -> fil.h -> thd.h
-/*
-#ifdef WIN_NT
-#define V4_THREADING
-#endif
-
-#ifdef SOLARIS_MT
-#define V4_THREADING
-#endif
-
-#ifdef SUPERSERVER
-#define V4_THREADING			// RFM: 9/22/2000 fix from Inprise tree,
-								// Inprise bug 114840
-#endif
-
+//
+//#ifdef WIN_NT
+//#define V4_THREADING
+//#endif
+//
+//#ifdef SOLARIS_MT
+//#define V4_THREADING
+//#endif
+//
+//#ifdef SUPERSERVER
+//#define V4_THREADING			// RFM: 9/22/2000 fix from Inprise tree,
+//								// Inprise bug 114840
+//#endif
+//
 // The following ifdef was added to build thread safe gds shared
 //  library on linux platform. It seems the gdslib works now (20020220)
 //  with thread enabled applications. Anyway, more tests should be 
 //  done as I don't have deep knowledge of the interbase/firebird 
 //  engine and this change may imply side effect I haven't known 
 //  about yet. Tomas Nejedlik (tomas@nejedlik.cz)
-
-#if ((defined(LINUX) || defined(FREEBSD)) && defined(SUPERCLIENT))
-#define V4_THREADING
-#endif
-*/
+//
+//#if ((defined(LINUX) || defined(FREEBSD)) && defined(SUPERCLIENT))
+//#define V4_THREADING
+//#endif
+//
 
 
 #ifdef SUPERSERVER
@@ -173,7 +171,7 @@ static const char * FB_PID_FILE = "fb_%d";
 #endif /* WIN_NT */
 
 // Number of times to try to generate new name for temporary file
-#define MAX_TMPFILE_TRIES 256
+const int MAX_TMPFILE_TRIES		= 256;
 
 static char *ib_prefix = 0;
 static char *ib_prefix_lock = 0;
@@ -181,26 +179,19 @@ static char *ib_prefix_msg = 0;
 
 #include "gen/msgs.h"
 
-#ifndef FOPEN_APPEND_TYPE
-#define FOPEN_APPEND_TYPE	"a"
-#endif
-
 #ifndef O_BINARY
-#define O_BINARY		0
+//#define O_BINARY	0
+#error Please define O_BINARY for this platform in common.h
 #endif
 
-#ifndef GENERIC_SQLCODE
-#define GENERIC_SQLCODE		-999
-#endif
+const SLONG GENERIC_SQLCODE		= -999;
 
 static char ib_prefix_val[MAXPATHLEN];
 static char ib_prefix_lock_val[MAXPATHLEN];
 static char ib_prefix_msg_val[MAXPATHLEN];
 
 
-#ifndef INCLUDE_FB_TYPES_H
 #include "../include/fb_types.h"
-#endif
 
 
 // This structure is used to parse the firebird.msg file.
@@ -305,14 +296,6 @@ static struct
 
 /* BLR Pretty print stuff */
 
-#define PRINT_VERB 	blr_print_verb (control, level)
-#define PRINT_LINE	blr_print_line (control, (SSHORT) offset)
-#define PRINT_BYTE	blr_print_byte (control)
-#define PRINT_CHAR	blr_print_char (control)
-#define PRINT_WORD	blr_print_word (control)
-#define PRINT_COND	blr_print_cond (control)
-#define PRINT_DTYPE	blr_print_dtype (control)
-#define PRINT_JOIN	blr_print_join (control)
 #define BLR_BYTE	*(control->ctl_blr)++
 #define PUT_BYTE(byte)	*(control->ctl_ptr)++ = byte
 
@@ -991,8 +974,8 @@ void API_ROUTINE gds__interprete_a(
 }
 
 
-#define	SECS_PER_HOUR	(60 * 60)
-#define	SECS_PER_DAY	(SECS_PER_HOUR * 24)
+const int SECS_PER_HOUR	= 60 * 60;
+const int SECS_PER_DAY	= SECS_PER_HOUR * 24;
 
 #ifdef WIN_NT
 Firebird::Mutex trace_mutex;
@@ -1153,7 +1136,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 #ifdef WIN_NT
 	trace_mutex.enter();
 #endif
-	FILE* file = fopen(name, FOPEN_APPEND_TYPE);
+	FILE* file = fopen(name, "a");
 	if (file != NULL)
 	{
 		fprintf(file, "\n%s%s\t%.25s\t", 
@@ -2071,8 +2054,8 @@ int API_ROUTINE gds__print_blr(
 
 	SSHORT level = 0;
 	SLONG offset = 0;
-	PRINT_LINE;
-	PRINT_VERB;
+	blr_print_line(control, (SSHORT) offset);
+	blr_print_verb(control, level);
 
 	offset = control->ctl_blr - control->ctl_blr_start;
 	const SCHAR eoc = BLR_BYTE;
@@ -2082,7 +2065,7 @@ int API_ROUTINE gds__print_blr(
 				  (int) eoc);
 
 	blr_format(control, "blr_eoc");
-	PRINT_LINE;
+	blr_print_line(control, (SSHORT) offset);
 
 	}	// try
 	catch (const std::exception&) {
@@ -2107,15 +2090,10 @@ void API_ROUTINE gds__put_error(const TEXT* string)
  **************************************/
 
 #ifdef VMS
-#define PUT_ERROR
 	struct dsc$descriptor_s desc;
 
 	ISC_make_desc(string, &desc, 0);
 	lib$put_output(&desc);
-#endif
-
-#ifdef PUT_ERROR
-#undef PUT_ERROR
 #else
 	fputs(string, stderr);
 	fputc('\n', stderr);
@@ -2759,7 +2737,7 @@ static void blr_error(gds_ctl* control, const TEXT* string, ...)
 	VA_START(args, string);
 	blr_format(control, string, args);
 	offset = 0;
-	PRINT_LINE;
+	blr_print_line(control, (SSHORT) offset);
 	Firebird::status_exception::raise();
 }
 
@@ -2902,21 +2880,21 @@ static void blr_print_cond(gds_ctl* control)
 	switch (ctype) {
 	case blr_gds_code:
 		blr_format(control, "blr_gds_code, ");
-		n = PRINT_BYTE;
+		n = blr_print_byte(control);
 		while (--n >= 0)
-			PRINT_CHAR;
+			blr_print_char(control);
 		break;
 
 	case blr_exception:
 		blr_format(control, "blr_exception, ");
-		n = PRINT_BYTE;
+		n = blr_print_byte(control);
 		while (--n >= 0)
-			PRINT_CHAR;
+			blr_print_char(control);
 		break;
 
 	case blr_sql_code:
 		blr_format(control, "blr_sql_code, ");
-		PRINT_WORD;
+		blr_print_word(control);
 		break;
 
 	case blr_default_code:
@@ -3042,38 +3020,38 @@ static int blr_print_dtype(gds_ctl* control)
 
 	switch (dtype) {
 	case blr_text:
-		length = PRINT_WORD;
+		length = blr_print_word(control);
 		break;
 
 	case blr_varying:
-		length = PRINT_WORD + 2;
+		length = blr_print_word(control) + 2;
 		break;
 
 	case blr_short:
 	case blr_long:
 	case blr_quad:
 	case blr_int64:
-		PRINT_BYTE;
+		blr_print_byte(control);
 		break;
 
 	case blr_text2:
-		PRINT_WORD;
-		length = PRINT_WORD;
+		blr_print_word(control);
+		length = blr_print_word(control);
 		break;
 
 	case blr_varying2:
-		PRINT_WORD;
-		length = PRINT_WORD + 2;
+		blr_print_word(control);
+		length = blr_print_word(control) + 2;
 		break;
 
 	case blr_cstring2:
-		PRINT_WORD;
-		length = PRINT_WORD;
+		blr_print_word(control);
+		length = blr_print_word(control);
 		break;
 
 	default:
 		if (dtype == blr_cstring)
-			length = PRINT_WORD;
+			length = blr_print_word(control);
 		break;
 	}
 
@@ -3163,7 +3141,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 	if ((SCHAR) blr_operator == (SCHAR) blr_end) {
 		blr_format(control, "blr_end, ");
-		PRINT_LINE;
+		blr_print_line(control, (SSHORT) offset);
 		return;
 	}
 
@@ -3175,19 +3153,19 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 	while (*ops)
 		switch (*ops++) {
 		case op_verb:
-			PRINT_VERB;
+			blr_print_verb(control, level);
 			break;
 
 		case op_line:
-			offset = PRINT_LINE;
+			offset = blr_print_line(control, (SSHORT) offset);
 			break;
 
 		case op_byte:
-			n = PRINT_BYTE;
+			n = blr_print_byte(control);
 			break;
 
 		case op_word:
-			n = PRINT_WORD;
+			n = blr_print_word(control);
 			break;
 
 		case op_pad:
@@ -3195,43 +3173,43 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_dtype:
-			n = PRINT_DTYPE;
+			n = blr_print_dtype(control);
 			break;
 
 		case op_literal:
 			while (--n >= 0)
-				PRINT_CHAR;
+				blr_print_char(control);
 			break;
 
 		case op_join:
-			PRINT_JOIN;
+			blr_print_join(control);
 			break;
 
 		case op_message:
 			while (--n >= 0) {
 				blr_indent(control, level);
-				PRINT_DTYPE;
-				offset = PRINT_LINE;
+				blr_print_dtype(control);
+				offset = blr_print_line(control, (SSHORT) offset);
 			}
 			break;
 
 		case op_parameters:
 			level++;
 			while (--n >= 0)
-				PRINT_VERB;
+				blr_print_verb(control, level);
 			level--;
 			break;
 
 		case op_error_handler:
 			while (--n >= 0) {
 				blr_indent(control, level);
-				PRINT_COND;
-				offset = PRINT_LINE;
+				blr_print_cond(control);
+				offset = blr_print_line(control, (SSHORT) offset);
 			}
 			break;
 
 		case op_set_error:
-			PRINT_COND;
+			blr_print_cond(control);
 			break;
 
 		case op_indent:
@@ -3240,37 +3218,37 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 		case op_begin:
 			while ((SCHAR) * (control->ctl_blr) != (SCHAR) blr_end)
-				PRINT_VERB;
+				blr_print_verb(control, level);
 			break;
 
 		case op_map:
 			while (--n >= 0) {
 				blr_indent(control, level);
-				PRINT_WORD;
-				offset = PRINT_LINE;
-				PRINT_VERB;
+				blr_print_word(control);
+				offset = blr_print_line(control, (SSHORT) offset);
+				blr_print_verb(control, level);
 			}
 			break;
 
 		case op_args:
 			while (--n >= 0)
-				PRINT_VERB;
+				blr_print_verb(control, level);
 			break;
 
 		case op_literals:
 			while (--n >= 0) {
 				blr_indent(control, level);
-				SSHORT n2 = PRINT_BYTE;
+				SSHORT n2 = blr_print_byte(control);
 				while (--n2 >= 0)
-					PRINT_CHAR;
-				offset = PRINT_LINE;
+					blr_print_char(control);
+				offset = blr_print_line(control, (SSHORT) offset);
 			}
 			break;
 
 		case op_union:
 			while (--n >= 0) {
-				PRINT_VERB;
-				PRINT_VERB;
+				blr_print_verb(control, level);
+				blr_print_verb(control, level);
 			}
 			break;
 
@@ -3283,21 +3261,21 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 						  (int) blr_operator);
 
 			if (blr_operator == blr_relation) {
-				n = PRINT_BYTE;
+				n = blr_print_byte(control);
 				while (--n >= 0)
-					PRINT_CHAR;
+					blr_print_char(control);
 			}
 			else
-				PRINT_WORD;
+				blr_print_word(control);
 			break;
 		
 		case op_exec_into: {
-			PRINT_VERB;
-			if (! PRINT_BYTE) {
-				PRINT_VERB;
+			blr_print_verb(control, level);
+			if (! blr_print_byte(control)) {
+				blr_print_verb(control, level);
 			}
 			while (n-- > 0) {
-				PRINT_VERB;
+				blr_print_verb(control, level);
 			}
 			break;
 		}

@@ -29,33 +29,27 @@
 
 #include "../jrd/common.h"
 
-#ifndef IB_PREFIX_TYPE
-#define IB_PREFIX_TYPE 0
-#define IB_PREFIX_LOCK_TYPE 1
-#define IB_PREFIX_MSG_TYPE 2
-#endif
-
-#ifndef INCLUDE_FB_TYPES_H
-#include "../include/fb_types.h"
-#endif
+const SSHORT IB_PREFIX_TYPE			= 0;
+const SSHORT IB_PREFIX_LOCK_TYPE	= 1;
+const SSHORT IB_PREFIX_MSG_TYPE		= 2;
 
 #include "../jrd/fil.h"
+
+// flags for gds_alloc_report
+const ULONG ALLOC_dont_report	= 1L << 0;	/* Don't report this block */
+const ULONG ALLOC_silent		= 1L << 1;	/* Don't report new leaks */
+const ULONG ALLOC_verbose		= 1L << 2;	/* Report all leaks, even old */
+const ULONG ALLOC_mark_current	= 1L << 3;	/* Mark all current leaks */
+const ULONG ALLOC_check_each_call	= 1L << 4;	/* Check memory integrity on each alloc/free call */
+const ULONG ALLOC_dont_check	= 1L << 5;	/* Stop checking integrity on each call */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 void*	API_ROUTINE gds__alloc_debug(SLONG, const TEXT*, ULONG);
 void	API_ROUTINE gds_alloc_flag_unfreed(void*);
 void	API_ROUTINE gds_alloc_report(ULONG, const char*, int);
-
-#define	ALLOC_dont_report	(1L << 0)	/* Don't report this block */
-#define	ALLOC_silent		(1L << 1)	/* Don't report new leaks */
-#define	ALLOC_verbose		(1L << 2)	/* Report all leaks, even old */
-#define	ALLOC_mark_current	(1L << 3)	/* Mark all current leaks */
-#define ALLOC_check_each_call	(1L << 4)	/* Check memory integrity on each alloc/free call */
-#define ALLOC_dont_check	(1L << 5)	/* Stop checking integrity on each call */
 
 void*	API_ROUTINE gds__alloc(SLONG);
 

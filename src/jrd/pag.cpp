@@ -141,62 +141,62 @@ static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
 
 #ifdef sun
 #ifdef i386
-#define CLASS		3
+const SSHORT CLASS		= 3;
 #else
-#define CLASS		2
+const SSHORT CLASS		= 2;
 #endif
 #endif
 
 #ifdef hpux
-#define CLASS		7
+const SSHORT CLASS		= 7;
 #endif
 
 #ifdef VMS
-#define CLASS		4
+const SSHORT CLASS		= 4;
 #endif
 
 #ifdef AIX
-#define CLASS		10
+const SSHORT CLASS		= 10;
 #endif
 
 #ifdef AIX_PPC
-#define CLASS		10
+const SSHORT CLASS		= 10;
 #endif
 
 #ifdef WIN_NT
-#define CLASS		16
+const SSHORT CLASS		= 16;
 #endif
 
 #ifdef SINIXZ
-#define CLASS       19
+const SSHORT CLASS		= 19;
 #endif
 
 #ifdef LINUX
 #ifdef i386
-#define CLASS           19
+const SSHORT CLASS		= 19;
 #endif
 #ifdef i586
-#define CLASS           19
+const SSHORT CLASS		= 19;
 #endif
 #ifdef sparc
-#define CLASS           20
+const SSHORT CLASS		= 20;
 #endif
 #endif
 
 #ifdef FREEBSD
-#define CLASS           21
+const SSHORT CLASS		= 21;
 #endif
 
 #ifdef NETBSD
-#define CLASS           22
+const SSHORT CLASS		= 22;
 #endif
 
 #ifdef DARWIN
-#define CLASS		23
+const SSHORT CLASS		= 23;
 #endif
 
 #if defined LINUX && defined AMD64
-#define CLASS 		24
+const SSHORT CLASS		= 24;
 #endif
 
 

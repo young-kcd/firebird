@@ -61,16 +61,14 @@ static int global_file;
 
 #ifdef WIN_NT
 #include <io.h> // open, lseek, write, close
-#define FILENAME	"firebird.msg"
 const char* const locale_pattern = "%.8s.msg";
 const char path_separator = '\\';
-#endif
-
-#ifndef FILENAME
-#define FILENAME	"firebird.msg"
+#else
 const char* const locale_pattern = "%.10s.msg";
 const char path_separator = '/';
 #endif
+
+const char* const FILENAME	= "firebird.msg";
 
 #ifdef VMS
 #include <file.h>
@@ -86,7 +84,8 @@ const char path_separator = '/';
 #endif
 
 #ifndef O_BINARY
-#define O_BINARY	0
+//#define O_BINARY	0
+#error Please define O_BINARY for this platform in common.h
 #endif
 
 

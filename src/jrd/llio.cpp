@@ -67,10 +67,11 @@
 
 #ifdef WIN_NT
 #include <windows.h>
-#endif
-
+#else
 #ifndef O_SYNC
-#define O_SYNC		0
+//#define O_SYNC		0
+#error Please define O_SYNC for this platform in common.h
+#endif
 #endif
 
 const int IO_RETRY		= 20;

@@ -41,7 +41,7 @@
 
 using namespace Jrd;
 
-#define SHUT_WAIT_TIME	5
+const SSHORT SHUT_WAIT_TIME	= 5;
 
 // Shutdown lock data
 union shutdown_data {
@@ -55,7 +55,7 @@ union shutdown_data {
 
 // Define this to true if you need to allow no-op behavior when requested shutdown mode 
 // matches current. Logic of jrd8_create_database may need attention in this case too
-#define IGNORE_SAME_MODE false
+const bool IGNORE_SAME_MODE = false;
 
 static bool bad_mode(bool ignore);
 static bool notify_shutdown(Database*, SSHORT, SSHORT);
