@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.29 2004-05-29 04:50:46 robocop Exp $
+//	$Id: cme.cpp,v 1.30 2004-06-03 07:31:09 robocop Exp $
 //
 
 #include "firebird.h"
@@ -499,16 +499,18 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 
 			case dtype_sql_date:
 				if (kw_word == KW_HOUR || kw_word == KW_MINUTE
-					|| kw_word ==
-					KW_SECOND)
-		  CPR_error("Invalid extract part for SQL DATE type");
+					|| kw_word == KW_SECOND)
+				{
+					CPR_error("Invalid extract part for SQL DATE type");
+				}
 				break;
 
 			case dtype_sql_time:
 				if (kw_word != KW_HOUR && kw_word != KW_MINUTE
-					&& kw_word !=
-					KW_SECOND)
-		  CPR_error("Invalid extract part for SQL TIME type");
+					&& kw_word != KW_SECOND)
+				{
+					CPR_error("Invalid extract part for SQL TIME type");
+				}
 				break;
 
 			default:
@@ -1078,7 +1080,6 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 
 void CME_rse(gpre_rse* selection, gpre_req* request)
 {
-	gpre_rse* sub_rse;
 	SSHORT i;
 
 	if (selection->rse_join_type == (NOD_T) 0)
@@ -1095,6 +1096,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 
 //  Process unions, if any, otherwise process relations 
 
+	gpre_rse* sub_rse = 0;
 	gpre_nod* union_node = selection->rse_union;
 	if (union_node)
 	{

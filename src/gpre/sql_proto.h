@@ -26,13 +26,14 @@
 
 act*	SQL_action(const TEXT*);
 void	SQL_adjust_field_dtype(gpre_fld*);
+void	SQL_dialect1_bad_type(USHORT);
 void	SQL_init(void);
 void	SQL_par_field_collate(gpre_req*, gpre_fld*);
 void	SQL_par_field_dtype(gpre_req*, gpre_fld*, bool);
-gpre_prc* SQL_procedure(gpre_req*, TEXT*, TEXT*, TEXT*, bool);
-gpre_rel* SQL_relation(gpre_req*, TEXT*, TEXT*, TEXT*, bool);
+gpre_prc* SQL_procedure(gpre_req*, const TEXT*, const TEXT*, const TEXT*, bool);
+gpre_rel* SQL_relation(gpre_req*, const TEXT*, const TEXT*, const TEXT*, bool);
 void	SQL_relation_name(TEXT*, TEXT*, TEXT*);
-void	SQL_resolve_identifier(TEXT*, TEXT*);
+void	SQL_resolve_identifier(const TEXT*, TEXT*);
 TEXT*	SQL_var_or_string(bool);
 
 #endif // GPRE_SQL_PROTO_H

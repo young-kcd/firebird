@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.43 2004-05-24 17:13:37 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.44 2004-06-03 07:31:09 robocop Exp $
  */
 
 #include "firebird.h"
@@ -171,7 +171,8 @@ bool MET_database(dbb* database, bool print_version)
 	}
 
 	if (isc_attach_database
-		(gds_status, 0, database->dbb_filename, &DB, d - &dpb[0], dpb)) {
+		(gds_status, 0, database->dbb_filename, &DB, d - &dpb[0], dpb))
+	{
 		/* We failed to attach, try in read only mode just in case 
 		if (d == dpb)
 			*d++ = isc_dpb_version1;
@@ -278,7 +279,8 @@ bool MET_database(dbb* database, bool print_version)
 //  get the base level of the engine  
 
 	if (isc_database_info(gds_status, &DB, sizeof(db_version_info),
-						   db_version_info, sizeof(buffer), buffer)) {
+						   db_version_info, sizeof(buffer), buffer))
+	{
 		isc_print_status(gds_status);
 		return false;
 	}
@@ -1406,7 +1408,9 @@ IND MET_index(dbb* database, const TEXT* string)
 		if (symbol->sym_type == SYM_index &&
 			(index = (IND) symbol->sym_object) &&
 			index->ind_relation->rel_database == database)
+		{
 			return index;
+		}
 
 	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
@@ -1480,7 +1484,6 @@ void MET_load_hash_table(dbb* database)
 		database->dbb_flags |= DBB_v3;
 
 	gpre_sym* symbol;
-	TEXT* p;
 	SLONG length;
 
 /*  Pick up all relations (necessary to parse parts of the GDML grammar)  */
@@ -1565,6 +1568,7 @@ void MET_load_hash_table(dbb* database)
  *  this may fail
  */
 
+	TEXT* p;
 	FB_API_HANDLE handle2 = 0;
 
 	FOR(REQUEST_HANDLE handle)
@@ -2216,7 +2220,8 @@ static int symbol_length(const TEXT* string)
 
 	const TEXT* p = string + (len - 1);
 
-	for (; p >= string && *p == ' '; p--);
+	while (p >= string && *p == ' ')
+		--p;
 	if (p < string)
 		return 0;
 	++p;
@@ -2232,11 +2237,10 @@ static int symbol_length(const TEXT* string)
 
 static int upcase(const TEXT* from, TEXT* to)
 {
-	TEXT c;
-
 	TEXT* p = to;
 	const TEXT* const end = to + NAME_SIZE;
 
+	TEXT c;
 	while (p < end && (c = *from++)) {
 		*p++ = UPPER(c);
 	}

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.45 2004-05-24 17:13:38 brodsom Exp $
+//	$Id: sql.cpp,v 1.46 2004-06-03 07:31:10 robocop Exp $
 //
 
 #include "firebird.h"
@@ -110,7 +110,7 @@ static FIL		define_file(void);
 static FIL		define_log_file(bool);
 static dbb*		dup_dbb(const dbb*);
 static void		error(const TEXT *, const TEXT *);
-static TEXT		*extract_string(bool);
+static TEXT*	extract_string(bool);
 static swe*		gen_whenever(void);
 static void		into(gpre_req*, GPRE_NOD, GPRE_NOD);
 static gpre_fld*	make_field(gpre_rel*);
@@ -136,7 +136,6 @@ static bool		par_using(DYN);
 static USHORT	resolve_dtypes(KWWORDS, bool);
 static bool		tail_database(enum act_t, DBB);
 static void		to_upcase(const TEXT *, TEXT *);
-static void		dialect1_bad_type(USHORT);
 
 static swe* global_whenever[SWE_max];
 static swe* global_whenever_list;
@@ -478,7 +477,9 @@ void SQL_par_field_collate( gpre_req* request, gpre_fld* field)
 		if ((field->fld_dtype != dtype_text) &&
 			(field->fld_dtype != dtype_cstring) &&
 			(field->fld_dtype != dtype_varying))
-				PAR_error("COLLATE applies only to character columns");
+		{
+			PAR_error("COLLATE applies only to character columns");
+		}
 		if (gpreGlob.token_global.tok_type != tok_ident)
 			CPR_s_error("<collation name>");
 		gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_collate);
@@ -495,11 +496,11 @@ void SQL_par_field_collate( gpre_req* request, gpre_fld* field)
 			 (field->fld_character_set->intlsym_charset_id !=
 			  field->fld_collate->intlsym_charset_id))
 			|| (field->fld_global &&
-				(field->fld_charset_id !=
-				 field->fld_collate->
-				 intlsym_charset_id)))
-				PAR_error
+				(field->fld_charset_id != field->fld_collate->intlsym_charset_id)))
+		{
+			PAR_error
 				("Specified COLLATION is incompatible with column CHARACTER SET");
+		}
 		PAR_get_token();
 	}
 }
@@ -516,13 +517,11 @@ void SQL_par_field_dtype(gpre_req* request,
 						 gpre_fld* field,
 						 bool is_udf)
 {
-	int l, p, q;
-	enum kwwords keyword;
-	gpre_sym* symbol;
 	char s[ERROR_LENGTH];
 	bool sql_date = false;
 
-	switch (keyword = gpreGlob.token_global.tok_keyword) {
+	enum kwwords keyword = gpreGlob.token_global.tok_keyword;
+	switch (keyword) {
 	case KW_SMALLINT:
 	case KW_INT:
 	case KW_INTEGER:
@@ -583,8 +582,9 @@ void SQL_par_field_dtype(gpre_req* request,
 		}
 		else {
 			SQL_resolve_identifier("<domain name>", s);
-			field->fld_global = symbol =
+			gpre_sym* symbol =
 				MSC_symbol(SYM_field, s, (USHORT) strlen(s), (gpre_ctx*) field);
+			field->fld_global = symbol;
 			if (!MET_domain_lookup(request, field, s))
 				PAR_error("Specified DOMAIN or source column not found");
 			PAR_get_token();
@@ -608,7 +608,7 @@ void SQL_par_field_dtype(gpre_req* request,
 
 	case KW_FLOAT:
 		if (MSC_match(KW_LEFT_PAREN)) {
-			l = EXP_USHORT_ordinal(true);
+			const int l = EXP_USHORT_ordinal(true);
 			EXP_match_paren();
 			if (l < 17)
 				field->fld_dtype = dtype_real;
@@ -696,7 +696,7 @@ void SQL_par_field_dtype(gpre_req* request,
 		field->fld_precision = 9;
 		field->fld_sub_type = (keyword == KW_NUMERIC) ? 1 : 2;
 		if (MSC_match(KW_LEFT_PAREN)) {
-			p = EXP_USHORT_ordinal(true);
+			const int p = EXP_USHORT_ordinal(true);
 			if ((p <= 0) || (p > 18))
 				PAR_error("Precision must be from 1 to 18");
 
@@ -710,7 +710,7 @@ void SQL_par_field_dtype(gpre_req* request,
 			}
 
 			if (MSC_match(KW_COMMA)) {
-				q = EXP_USHORT_ordinal(true);
+				const int q = EXP_USHORT_ordinal(true);
 
 				if (q > p)
 					PAR_error("Scale can not be greater than precision");
@@ -786,8 +786,9 @@ void SQL_par_field_dtype(gpre_req* request,
 	}
 
 	if (field->fld_flags & FLD_national) {
-		if (!(symbol = MSC_find_symbol(HSH_lookup(DEFAULT_CHARACTER_SET_NAME),
-										SYM_charset)))
+        gpre_sym* symbol = MSC_find_symbol(HSH_lookup(DEFAULT_CHARACTER_SET_NAME),
+										SYM_charset);
+		if (!symbol)
 		{
 			PAR_error("NATIONAL character set missing");
 		}
@@ -801,9 +802,10 @@ void SQL_par_field_dtype(gpre_req* request,
 			 && request->req_database->dbb_def_charset)
 	{
 		// Use database default character set 
-		if (symbol = MSC_find_symbol(HSH_lookup
+		gpre_sym* symbol = MSC_find_symbol(HSH_lookup
 							(request->req_database->dbb_def_charset),
-							SYM_charset))
+							SYM_charset);
+		if (symbol)
 		{
 			field->fld_character_set = (INTLSYM) symbol->sym_object;
 		}
@@ -820,15 +822,12 @@ void SQL_par_field_dtype(gpre_req* request,
 //  
 
 gpre_prc* SQL_procedure(gpre_req* request,
-					   TEXT * prc_string,
-					   TEXT * db_string,
-					   TEXT * owner_string,
+					   const TEXT* prc_string,
+					   const TEXT* db_string,
+					   const TEXT* owner_string,
 					   bool err_flag)
 {
-	DBB db;
 	SCHAR s[ERROR_LENGTH];
-
-	gpre_prc* procedure = NULL;
 
 	if (db_string && db_string[0]) {
 		// a database was specified for the procedure
@@ -845,6 +844,8 @@ gpre_prc* SQL_procedure(gpre_req* request,
 			request->req_database = (DBB) symbol->sym_object;
 	}
 
+	gpre_prc* procedure = NULL;
+	
 	if (request->req_database)
 		procedure = MET_get_procedure(request->req_database, prc_string,
 							  owner_string);
@@ -853,7 +854,7 @@ gpre_prc* SQL_procedure(gpre_req* request,
 		//   for the existence of the procedure
 
 		procedure = NULL; // redundant
-		for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_prc* tmp_procedure = MET_get_procedure(db, prc_string,
 														owner_string);
@@ -894,15 +895,12 @@ gpre_prc* SQL_procedure(gpre_req* request,
 //  
 
 gpre_rel* SQL_relation(gpre_req* request,
-					  TEXT * rel_string,
-					  TEXT * db_string,
-					  TEXT * owner_string,
+					  const TEXT* rel_string,
+					  const TEXT* db_string,
+					  const TEXT* owner_string,
 					  bool err_flag)
 {
-	DBB db;
 	SCHAR s[ERROR_LENGTH];
-
-	gpre_rel* relation = NULL;
 
 	if (db_string && db_string[0]) {
 		/* a database was specified for the relation,
@@ -919,6 +917,8 @@ gpre_rel* SQL_relation(gpre_req* request,
 			request->req_database = (DBB) symbol->sym_object;
 	}
 
+	gpre_rel* relation = NULL;
+	
 	if (request->req_database)
 		relation = MET_get_relation(request->req_database, rel_string, 
 									owner_string);
@@ -926,8 +926,8 @@ gpre_rel* SQL_relation(gpre_req* request,
 		/* no database was specified, check the metadata for all the databases
 		   for the existence of the relation */
 
-		relation = NULL;
-		for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		relation = NULL; // redundant
+		for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_rel* tmp_relation = MET_get_relation(db, rel_string, owner_string);
 			if (tmp_relation) {
@@ -964,13 +964,14 @@ gpre_rel* SQL_relation(gpre_req* request,
 //		Get a relation name (checking for database specifier)
 //  
 
-void SQL_relation_name(TEXT * r_name,
-					   TEXT * db_name,
-					   TEXT * owner_name)
+void SQL_relation_name(TEXT* r_name,
+					   TEXT* db_name,
+					   TEXT* owner_name)
 {
 	db_name[0] = 0;
 	owner_name[0] = 0;
 
+	// Why not TEXT t_str[NAME_SIZE + 1]; instead and avoid deallocation problem?
 	TEXT* t_str = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<Table name>", t_str);
 
@@ -999,6 +1000,7 @@ void SQL_relation_name(TEXT * r_name,
 		strcpy(r_name, gpreGlob.token_global.tok_string);
 		PAR_get_token();
 	}
+#pragma FB_COMPILER_MESSAGE("Apparently, no safe way to deallocate t_str here.")
 }
 
 
@@ -1007,7 +1009,7 @@ void SQL_relation_name(TEXT * r_name,
 //		Extract SQL var
 //  
 
-TEXT *SQL_var_or_string(bool string_only)
+TEXT* SQL_var_or_string(bool string_only)
 {
 
 	if ((gpreGlob.token_global.tok_type != tok_sglquoted && gpreGlob.sw_sql_dialect == 3) ||
@@ -1304,10 +1306,7 @@ static act* act_alter_index(void)
 
 static act* act_alter_table(void)
 {
-	gpre_fld* field;
-	gpre_ctx* context;
-
-//  create request block 
+//  create request block
 
 	gpre_req* request = MSC_request(REQ_ddl);
 
@@ -1318,7 +1317,8 @@ static act* act_alter_table(void)
 //  CHECK Constraints require the context to be set to the
 //  current relation 
 
-	request->req_contexts = context = MSC_context(request);
+	gpre_ctx* context = MSC_context(request);
+	request->req_contexts = context;
 	context->ctx_relation = relation;
 
 //  Reserve context 1 for relation on which constraint is
@@ -1338,6 +1338,7 @@ static act* act_alter_table(void)
 	gpre_fld** ptr = &relation->rel_fields;
 	cnstrt** cnstrt_ptr = &relation->rel_constraints;
 	cnstrt* cnstrt_str;
+	gpre_fld* field;
 
 	while (!end_of_command()) {
 		if (MSC_match(KW_ADD)) {
@@ -1479,7 +1480,8 @@ static act* act_connect(void)
 			   dpb can be extended at runtime */
 
 			if (db->dbb_r_user || db->dbb_r_password || db->dbb_r_sql_role
-				|| db->dbb_r_lc_messages || db->dbb_r_lc_ctype) {
+				|| db->dbb_r_lc_messages || db->dbb_r_lc_ctype)
+			{
 				if (!request)
 					request =
 						PAR_set_up_dpb_info(ready, action, default_buffers);
@@ -1492,8 +1494,10 @@ static act* act_connect(void)
 			if (!request && (db->dbb_c_user || db->dbb_c_password ||
 							 db->dbb_c_sql_role ||
 							 db->dbb_c_lc_messages || db->dbb_c_lc_ctype))
-					request =
+			{
+				request =
 					PAR_set_up_dpb_info(ready, action, default_buffers);
+			}
 
 			if (!MSC_match(KW_COMMA))
 				break;
@@ -1554,8 +1558,10 @@ static act* act_connect(void)
 			if (!request && (db->dbb_c_user || db->dbb_c_password ||
 							 db->dbb_c_sql_role ||
 							 db->dbb_c_lc_ctype || db->dbb_c_lc_messages))
-					request =
+			{
+				request =
 					PAR_set_up_dpb_info(ready, action, default_buffers);
+			}
 		}
 
 	return action;
@@ -2197,7 +2203,8 @@ static act* act_declare(void)
 		gpre_sym* symb = HSH_lookup2(gpreGlob.token_global.tok_string);
 		if (symb &&
 			(symb->sym_type == SYM_cursor ||
-			 symb->sym_type == SYM_delimited_cursor)) {
+			 symb->sym_type == SYM_delimited_cursor))
+		{
 			char s[64];
 			sprintf(s, "symbol %s is already in use", t_str);
 			PAR_error(s);
@@ -2281,7 +2288,8 @@ static act* act_declare(void)
 		return action;
 
 	default:
-		while (MSC_match(KW_COMMA));
+		while (MSC_match(KW_COMMA))
+			; // empty loop body
 		if (MSC_match(KW_STATEMENT)) {
 			action = (act*) MSC_alloc(ACT_LEN);
 			action->act_type = ACT_dyn_statement;
@@ -2321,20 +2329,19 @@ static act* act_declare_filter(void)
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) filter;
 
-	SLONG input_type, output_type;
-
+	SLONG input_type;
 	if (MSC_match(KW_INPUT_TYPE))
 		input_type = EXP_SSHORT_ordinal(true);
 	else
 		CPR_s_error("INPUT_TYPE");
 
+	SLONG output_type;
 	if (MSC_match(KW_OUTPUT_TYPE))
 		output_type = EXP_SSHORT_ordinal(true);
 	else
 		CPR_s_error("OUTPUT_TYPE");
 
-	if (!range_short_integer(input_type)
-		|| !range_short_integer(output_type))
+	if (!range_short_integer(input_type) || !range_short_integer(output_type))
 		PAR_error("Blob sub_type out of range");
 
 	filter->fltr_input_type = (SSHORT) input_type;
@@ -2449,8 +2456,6 @@ static act* act_declare_table( gpre_sym* symbol, DBB db)
 
 static act* act_declare_udf(void)
 {
-	SLONG return_parameter;
-
 	gpre_req* request = MSC_request(REQ_ddl);
 
 	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
@@ -2475,7 +2480,7 @@ static act* act_declare_udf(void)
 	while (true) {
 		if (MSC_match(KW_RETURNS)) {
 			if (MSC_match(KW_PARAMETER)) {
-				return_parameter = EXP_pos_USHORT_ordinal(true);
+				const SLONG return_parameter = EXP_pos_USHORT_ordinal(true);
 				if (return_parameter > 10)
 					PAR_error("return parameter not in range");
 				fb_assert(return_parameter <= MAX_SSHORT);
@@ -2553,7 +2558,7 @@ static act* act_delete(void)
 	gpre_req* request = MSC_request(REQ_mass_update);
 	upd* update = (upd*) MSC_alloc(UPD_LEN);
 
-	bool where = MSC_match(KW_WITH);
+	const bool where = MSC_match(KW_WITH);
 	if (where && MSC_match(KW_CURRENT)) {
 		if (!MSC_match(KW_OF))
 			CPR_s_error("OF <cursor>");
@@ -2563,7 +2568,8 @@ static act* act_delete(void)
 		request = par_cursor(NULL);
 		if ((transaction || request->req_trans) &&
 			(!transaction || !request->req_trans ||
-			 strcmp(transaction, request->req_trans))) {
+			 strcmp(transaction, request->req_trans)))
+		{
 			if (transaction)
 				PAR_error("different transaction for select and delete");
 			else {				// does not specify transaction clause in      
@@ -2733,7 +2739,7 @@ static act* act_drop(void)
 	gpre_req* request = NULL;
 	gpre_rel* relation = NULL;
 	SCHAR* db_string;
-	TEXT* identifier_name;
+	TEXT* identifier_name; // it's not deallocated.
 
 	switch (gpreGlob.token_global.tok_keyword) {
 	case KW_DATABASE:
@@ -3000,7 +3006,7 @@ static act* act_fetch(void)
 //  parse the fetch orientation 
 
 	USHORT direction = blr_forward;
-	TEXT* direction_string = NULL;
+	const TEXT* direction_string = NULL;
 	GPRE_NOD offset_node = NULL;
 
 	if (!MSC_match(KW_NEXT)) {
@@ -3087,7 +3093,7 @@ static act* act_fetch(void)
 		if (offset_node)
 			value->val_value = ((REF) offset_node->nod_arg[0])->ref_value;
 		else {
-			TEXT* offset_string = "1";
+			const TEXT* offset_string = "1";
 			string = (TEXT*) MSC_alloc(2);
 			value->val_value = string;
 			MSC_copy(offset_string, 1, string);
@@ -3242,7 +3248,8 @@ static act* act_grant_revoke( enum act_t type)
 		else if (MSC_match(KW_VIEW)) {
 			SQL_relation_name(r_name, db_name, owner_name);
 			if (!MET_get_view_relation
-				(request, r_name, relation_name->str_string, 0)) {
+				(request, r_name, relation_name->str_string, 0))
+			{
 				sprintf(s, "VIEW %s not defined on table %s", r_name,
 						relation_name->str_string);
 				PAR_error(s);
@@ -3415,15 +3422,15 @@ static act* act_insert(void)
 
 			// Dialect 1 program may not insert new datatypes 
 			if ((SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) &&
-				(nod_field == node->nod_type)) {
-				USHORT field_dtype;
-
-				field_dtype =
+				(nod_field == node->nod_type))
+			{
+				const USHORT field_dtype =
 					((REF) (node->nod_arg[0]))->ref_field->fld_dtype;
 				if ((dtype_sql_date == field_dtype)
 					|| (dtype_sql_time == field_dtype)
-					|| (dtype_int64 == field_dtype)) {
-					dialect1_bad_type(field_dtype);
+					|| (dtype_int64 == field_dtype))
+				{
+					SQL_dialect1_bad_type(field_dtype);
 				}
 			}
 
@@ -3739,8 +3746,10 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 					blob->blb_from_charset = par_char_set();
 					if (act_op == ACT_blob_open
 						&& blob->blb_from_charset != field->fld_charset_id)
-							PAR_error
+					{
+						PAR_error
 							("Specified CHARACTER SET does not match BLOB column declaration.");
+					}
 				}
 				else
 					PAR_error("Only text BLOBS can specify CHARACTER SET");
@@ -3766,8 +3775,10 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 				blob->blb_to_charset = par_char_set();
 				if (act_op == ACT_blob_create
 					&& blob->blb_to_charset != field->fld_charset_id)
-						PAR_error
+				{
+					PAR_error
 						("Specified CHARACTER SET does not match BLOB column declaration.");
+				}
 			}
 			else
 				PAR_error("Only text BLOBS can specify CHARACTER SET");
@@ -4033,7 +4044,8 @@ static act* act_set_dialect(void)
 		CPR_s_error("SQL DIALECT 1,2 or 3");
 
 	if (gpreGlob.isc_databases && dialect != gpreGlob.compiletime_db_dialect
-		&& gpreGlob.sw_ods_version < 10) {
+		&& gpreGlob.sw_ods_version < 10)
+	{
 		char warn_mesg[100];
 		sprintf(warn_mesg,
 				"Pre 6.0 database. Cannot use dialect %d, Resetting to %d\n",
@@ -4388,7 +4400,7 @@ static act* act_update(void)
 //  then this is a sub-action of an existing request.  If not, then it is
 //  a free standing request 
 
-	bool where = MSC_match(KW_WITH);
+	const bool where = MSC_match(KW_WITH);
 	if (where && MSC_match(KW_CURRENT)) {
 		if (!MSC_match(KW_OF))
 			CPR_s_error("OF cursor");
@@ -4405,7 +4417,8 @@ static act* act_update(void)
 			PAR_error("expected a TABLE cursor, got a BLOB cursor");
 		if ((transaction || request->req_trans) &&
 			(!transaction || !request->req_trans ||
-			 strcmp(transaction, request->req_trans))) {
+			 strcmp(transaction, request->req_trans)))
+		{
 			if (transaction)
 				PAR_error("different transaction for select and update");
 			else {				// does not specify transaction clause in      
@@ -4471,7 +4484,8 @@ static act* act_update(void)
 			slc* slice = NULL;
 			act* slice_action = (act*) field_ref->ref_slice;
 			if (slice_action &&
-				(slice = (slc*) slice_action->act_object)) {
+				(slice = (slc*) slice_action->act_object))
+			{
 				// These gpreGlob.requests got lost in freeing the main request  
 
 				gpre_req* slice_request = slice_action->act_request;
@@ -4488,7 +4502,8 @@ static act* act_update(void)
 
 				bool found = false;
 				for (REF req_ref = request->req_references; req_ref;
-					 req_ref = req_ref->ref_next) {
+					 req_ref = req_ref->ref_next)
+				{
 					if (req_ref == field_ref) {
 						set_item->nod_arg[1]->nod_arg[0] = (GPRE_NOD) req_ref;
 						found = true;
@@ -4496,8 +4511,10 @@ static act* act_update(void)
 					}
 					if ((req_ref->ref_field == field_ref->ref_field) &&
 						(req_ref->ref_context == field_ref->ref_context))
+					{
 						PAR_error
 							("Can't update multiple slices of same column");
+					}
 				}
 				if (!found) {
 					field_ref->ref_next = request->req_references;
@@ -4568,14 +4585,14 @@ static act* act_update(void)
 		if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
 			for (int arg_num = 0; arg_num <= 1; arg_num++)
 				if (nod_field == set_item->nod_arg[arg_num]->nod_type) {
-					USHORT field_dtype =((REF)
+					const USHORT field_dtype = ((REF)
 						 (set_item->nod_arg[arg_num]->
 						  nod_arg[0]))->ref_field->fld_dtype;
 					if ((dtype_sql_date == field_dtype)
 						|| (dtype_sql_time == field_dtype)
 						|| (dtype_int64 == field_dtype))
 					{
-						dialect1_bad_type(field_dtype);
+						SQL_dialect1_bad_type(field_dtype);
 					}
 				}
 		}
@@ -4663,7 +4680,7 @@ static act* act_whenever(void)
 
 static bool check_filename(const TEXT * name)
 {
-	USHORT l = strlen(name);
+	const USHORT l = strlen(name);
 	if (!l)
 		return true;
 
@@ -4882,7 +4899,7 @@ static void error(const TEXT * format, const TEXT * string2)
 //		token.
 //  
 
-static TEXT *extract_string(bool advance_token)
+static TEXT* extract_string(bool advance_token)
 {
 	switch (gpreGlob.sw_sql_dialect) {
 	case 1:
@@ -4984,7 +5001,8 @@ static void into( gpre_req* request, GPRE_NOD field_list, GPRE_NOD var_list)
 
 			bool found = false;
 			for (reference = request->req_references; reference;
-				 reference = reference->ref_next) {
+				 reference = reference->ref_next)
+			{
 				if (reference == field_ref) {
 					found = true;
 					break;
@@ -5113,8 +5131,8 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 
 	case nod_map_ref:
 		{
-		MEL element = (MEL) expr->nod_arg[0];
-		pair(element->mel_expr, field_expr);
+			MEL element = (MEL) expr->nod_arg[0];
+			pair(element->mel_expr, field_expr);
 		}
 		return;
 
@@ -5123,8 +5141,8 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 		return;
 	}
 
-	GPRE_NOD* ptr = expr->nod_arg;
-	GPRE_NOD* end_ptr = ptr + expr->nod_count;
+	gpre_nod** ptr = expr->nod_arg;
+	const gpre_nod* const* const end_ptr = ptr + expr->nod_count;
 
 	for (; ptr < end_ptr; ptr++)
 		pair(*ptr, field_expr);
@@ -5439,7 +5457,6 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 	gpre_rel* relation)
 {
-	enum kwwords keyword;
 	STR field_name;
 
 	cnstrt* new_constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
@@ -5454,7 +5471,8 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 		PAR_get_token();
 	}
 
-	switch (keyword = gpreGlob.token_global.tok_keyword) {
+	const enum kwwords keyword = gpreGlob.token_global.tok_keyword;
+	switch (keyword) {
 	case KW_NOT:
 		PAR_get_token();
 		if (!MSC_match(KW_NULL))
@@ -5579,10 +5597,9 @@ static void par_options(const TEXT** transaction)
 
 static int par_page_size(void)
 {
-	int n1, n2;
-
 	MSC_match(KW_EQUALS);
-	n2 = n1 = EXP_USHORT_ordinal(false);
+	const int n1 = EXP_USHORT_ordinal(false);
+	int n2 = n1;
 
 	if (n1 <= 1024)
 		n2 = 1024;
@@ -5642,9 +5659,7 @@ static DYN par_statement(void)
 
 static void par_fkey_extension(cnstrt* cnstrt_val)
 {
-	enum kwwords keyword;
-
-//  
+//
 //   Extended foreign key definition could be as follows :
 //  
 //   [ON DELETE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
@@ -5656,7 +5671,8 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 
 	PAR_get_token();
 
-	switch (keyword = gpreGlob.token_global.tok_keyword) {
+	const enum kwwords keyword = gpreGlob.token_global.tok_keyword;
+	switch (keyword) {
 	case KW_DELETE:
 		// NOTE: action must be defined only once 
 		if (cnstrt_val->cnstrt_fkey_def_type & REF_DELETE_ACTION)
@@ -5732,10 +5748,6 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 
 static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 {
-	enum kwwords keyword;
-	gpre_lls** fields;
-	USHORT num_for_key_flds = 0, num_prim_key_flds = 0;
-
 	cnstrt* constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
 	if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT) {
@@ -5748,7 +5760,11 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 		PAR_get_token();
 	}
 
-	switch (keyword = gpreGlob.token_global.tok_keyword) {
+	gpre_lls** fields;
+	USHORT num_for_key_flds = 0, num_prim_key_flds = 0;
+
+	const enum kwwords keyword = gpreGlob.token_global.tok_keyword;
+	switch (keyword) {
 	case KW_PRIMARY:
 	case KW_UNIQUE:
 	case KW_FOREIGN:
@@ -5822,8 +5838,10 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 			   later on */
 			if (constraint->cnstrt_referred_fields != NULL &&
 				num_prim_key_flds != num_for_key_flds)
-					PAR_error
+			{
+				PAR_error
 					("FOREIGN KEY column count does not match PRIMARY KEY");
+			}
 			if (gpreGlob.token_global.tok_keyword == KW_ON) {
 				par_fkey_extension(constraint);
 				PAR_get_token();
@@ -6220,10 +6238,9 @@ static void to_upcase(const TEXT * p, TEXT * q)
 
 //____________________________________________________________
 //  
-//  
+//  To do: move these to the correct position in the file.
 
-// The first param should be const probably.
-void SQL_resolve_identifier( TEXT * err_mesg, TEXT * str)
+void SQL_resolve_identifier( const TEXT* err_mesg, TEXT* str)
 {
 
 	switch (gpreGlob.sw_sql_dialect) {
@@ -6252,10 +6269,10 @@ void SQL_resolve_identifier( TEXT * err_mesg, TEXT * str)
 }
 
 
-static void dialect1_bad_type(USHORT field_dtype)
+void SQL_dialect1_bad_type(USHORT field_dtype)
 {
 	char buffer[200];
-	const char *s = NULL;
+	const char* s = "unknown";
 
 	switch (field_dtype) {
 	case dtype_sql_date:

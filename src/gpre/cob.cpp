@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.45 2004-05-29 04:50:46 robocop Exp $
+//	$Id: cob.cpp,v 1.46 2004-06-03 07:31:09 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -3371,7 +3371,7 @@ static void gen_request( gpre_req* request)
 			if (reference->ref_sdl) {
 				printa(names[COLUMN_0], false, "01  %s%d.", names[isc_a_pos],
 					   reference->ref_sdl_ident);
-				gen_raw((UCHAR*) reference->ref_sdl, REQ_slice,
+				gen_raw(reference->ref_sdl, REQ_slice,
 						reference->ref_sdl_length, reference->ref_sdl_ident);
 				if (!gpreGlob.sw_raw)
 					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))

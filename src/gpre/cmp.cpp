@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.31 2004-05-24 17:13:36 brodsom Exp $
+//	$Id: cmp.cpp,v 1.32 2004-06-03 07:31:09 robocop Exp $
 //
 
 #include "firebird.h"
@@ -994,37 +994,37 @@ static void cmp_loop( gpre_req* request)
 	switch (node->nod_type)
 	{
 	case nod_modify:
-	{
-		request->add_byte(blr_modify);
-		request->add_byte(for_context->ctx_internal);
-		request->add_byte(update_context->ctx_internal);
-		gpre_nod* list = node->nod_arg[0];
-		request->add_byte(blr_begin);
-		gpre_nod** ptr = list->nod_arg;
-		for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end;
-			 ptr++)
 		{
-			cmp_assignment(*ptr, request);
+			request->add_byte(blr_modify);
+			request->add_byte(for_context->ctx_internal);
+			request->add_byte(update_context->ctx_internal);
+			gpre_nod* list = node->nod_arg[0];
+			request->add_byte(blr_begin);
+			gpre_nod** ptr = list->nod_arg;
+			for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end;
+				 ptr++)
+			{
+				cmp_assignment(*ptr, request);
+			}
+			request->add_byte(blr_end);
+			break;
 		}
-		request->add_byte(blr_end);
-		break;
-	}
 	case nod_store:
-	{
-		update_context = (gpre_ctx*) node->nod_arg[0];
-		request->add_byte(blr_store);
-		CME_relation(update_context, request);
-		gpre_nod* list = node->nod_arg[1];
-		request->add_byte(blr_begin);
-		gpre_nod** ptr = list->nod_arg;
-		for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end;
-			 ptr++)
 		{
-			cmp_assignment(*ptr, request);
+			update_context = (gpre_ctx*) node->nod_arg[0];
+			request->add_byte(blr_store);
+			CME_relation(update_context, request);
+			gpre_nod* list = node->nod_arg[1];
+			request->add_byte(blr_begin);
+			gpre_nod** ptr = list->nod_arg;
+			for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end;
+				 ptr++)
+			{
+				cmp_assignment(*ptr, request);
+			}
+			request->add_byte(blr_end);
+			break;
 		}
-		request->add_byte(blr_end);
-		break;
-	}
 	case nod_erase:
 		request->add_byte(blr_erase);
 		request->add_byte(for_context->ctx_internal);

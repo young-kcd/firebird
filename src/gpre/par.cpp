@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.50 2004-05-29 04:54:20 robocop Exp $
+//  $Id: par.cpp,v 1.51 2004-06-03 07:31:10 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -401,7 +401,6 @@ SSHORT PAR_blob_subtype(DBB db)
 
 act* PAR_database(bool sql, const TEXT* base_directory)
 {
-	DBB* db_ptr;
 	TEXT s[256], *string;
 
 	act* action = MSC_action(0, ACT_database);
@@ -564,7 +563,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 //  Since we have a real DATABASE statement, get rid of any artificial
 //  databases that were created because of an INCLUDE SQLCA statement. 
 
-	for (db_ptr = &gpreGlob.isc_databases; *db_ptr;)
+	for (DBB* db_ptr = &gpreGlob.isc_databases; *db_ptr;)
 		if ((*db_ptr)->dbb_flags & DBB_sqlca)
 			*db_ptr = (*db_ptr)->dbb_next;
 		else
@@ -615,10 +614,6 @@ void PAR_error(const TEXT* string)
 
 act* PAR_event_init(bool sql)
 {
-	GPRE_NOD node;
-	gpre_lls* stack = NULL;
-	gpre_sym* symbol;
-	int count = 0;
 	char req_name[128];
 
 //  make up statement node 
@@ -635,7 +630,8 @@ act* PAR_event_init(bool sql)
 //  parse optional database handle 
 
 	if (!MSC_match(KW_LEFT_PAREN)) {
-		if ((symbol = gpreGlob.token_global.tok_symbol) && (symbol->sym_type == SYM_database))
+		gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
+		if (symbol && (symbol->sym_type == SYM_database))
 			init->nod_arg[3] = (GPRE_NOD) symbol->sym_object;
 		else
 			CPR_s_error("left parenthesis or database handle");
@@ -648,10 +644,15 @@ act* PAR_event_init(bool sql)
 //  eat any number of event strings until a right paren is found,
 //  pushing the gpreGlob.events onto a stack 
 
+	GPRE_NOD node;
+	gpre_lls* stack = NULL;
+	int count = 0;
+	
 	while (true) {
 		if (MSC_match(KW_RIGHT_PAREN))
 			break;
 
+		const gpre_sym* symbol;
 		if (!sql && (symbol = gpreGlob.token_global.tok_symbol)
 			&& symbol->sym_type == SYM_context)
 		{
@@ -802,8 +803,6 @@ TEXT* PAR_native_value(bool array_ref,
 {
 	SCHAR buffer[512];
 	SCHAR* s1;
-	enum kwwords keyword;
-	USHORT parens, brackets;
 
 	SCHAR* string = buffer;
 
@@ -855,12 +854,11 @@ TEXT* PAR_native_value(bool array_ref,
 		if ((gpreGlob.sw_language == lang_ada) && (gpreGlob.token_global.tok_string[0] == '\'')) {
 			gobble(string, s1);
 		}
-		keyword = gpreGlob.token_global.tok_keyword;
+		enum kwwords keyword = gpreGlob.token_global.tok_keyword;
 		if (keyword == KW_LEFT_PAREN) {
-			parens = 1;
+			int parens = 1;
 			while (parens) {
-				enum tok_t typ;
-				typ = gpreGlob.token_global.tok_type;
+				const enum tok_t typ = gpreGlob.token_global.tok_type;
 				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
 				gobble(string, s1);
@@ -876,7 +874,7 @@ TEXT* PAR_native_value(bool array_ref,
 			keyword = gpreGlob.token_global.tok_keyword;
 		}
 		while (keyword == KW_L_BRCKET) {
-			brackets = 1;
+			int brackets = 1;
 			while (brackets) {
 				gobble(string, s1);
 				keyword = gpreGlob.token_global.tok_keyword;
@@ -949,7 +947,6 @@ gpre_fld* PAR_null_field()
 void PAR_reserving( USHORT flags, bool parse_sql)
 {
 	DBB database;
-	USHORT lock_level, lock_mode;
 
 	while (true) {
 		// find a relation name, or maybe a list of them 
@@ -974,8 +971,8 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 		 */
 
 		MSC_match(KW_FOR);
-		lock_level = (flags & TRA_con) ? isc_tpb_protected : isc_tpb_shared;
-		lock_mode = isc_tpb_lock_read;
+		USHORT lock_level = (flags & TRA_con) ? isc_tpb_protected : isc_tpb_shared;
+		USHORT lock_mode = isc_tpb_lock_read;
 
 		if (MSC_match(KW_PROTECTED))
 			lock_level = isc_tpb_protected;
@@ -1254,12 +1251,9 @@ static act* par_at()
 
 static act* par_based()
 {
-	gpre_fld* field;
-	gpre_rel* relation;
 	TEXT s[64];
 	TEXT t_str[NAME_SIZE + 1];
-	bool ambiguous_flag;
-	int notSegment = 0;			// a COBOL specific patch
+	bool notSegment = false;	// a COBOL specific patch
 	char tmpChar[2];			// a COBOL specific patch 
 
 	MSC_match(KW_ON);
@@ -1268,11 +1262,12 @@ static act* par_based()
 	action->act_object = (REF) based_on;
 
 	if ((gpreGlob.sw_language != lang_fortran) || gpreGlob.isc_databases) {
-		relation = EXP_relation();
+		gpre_rel* relation = EXP_relation();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("dot in qualified field reference");
 		SQL_resolve_identifier("<fieldname>", t_str);
-		if (!(field = MET_field(relation, gpreGlob.token_global.tok_string))) {
+		gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
+		if (!field) {
 			sprintf(s, "undefined field %s", gpreGlob.token_global.tok_string);
 			PAR_error(s);
 		}
@@ -1297,7 +1292,7 @@ static act* par_based()
 						("only .SEGMENT allowed after qualified field name");
 				else {
 					strcpy(based_on->bas_terminator, tmpChar);
-					notSegment = 1;
+					notSegment = true;
 				}
 			}
 			else if (!(field->fld_flags & FLD_blob)) {
@@ -1305,8 +1300,8 @@ static act* par_based()
 						field->fld_symbol->sym_string);
 				PAR_error(s);
 			}
-			if (notSegment == 0)	/* this is flag is to solve KW_DOT problem
-									   in COBOL. should be 0 for all other lang */
+			if (!notSegment)	/* this is flag is to solve KW_DOT problem
+								   in COBOL. should be false for all other lang */
 				based_on->bas_flags |= BAS_segment;
 		}
 		based_on->bas_field = field;
@@ -1322,7 +1317,7 @@ static act* par_based()
 			based_on->bas_fld_name = (STR) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 			MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length,
 				based_on->bas_fld_name->str_string);
-			ambiguous_flag = false;
+			bool ambiguous_flag = false;
 			PAR_get_token();
 			if (MSC_match(KW_DOT)) {
 				based_on->bas_db_name = based_on->bas_rel_name;
@@ -1559,8 +1554,8 @@ static act* par_derived_from()
 		CPR_s_error("dot in qualified field reference");
 	SQL_resolve_identifier("<Field Name>", s);
 	
-	gpre_fld* field;
-	if (!(field = MET_field(relation, gpreGlob.token_global.tok_string))) {
+	gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
+	if (!field) {
 		sprintf(s, "undefined field %s", gpreGlob.token_global.tok_string);
 		PAR_error(s);
 	}
@@ -1816,12 +1811,8 @@ static act* par_end_stream()
 
 static act* par_end_store(bool special)
 {
-	gpre_ctx* context;
-	upd* return_values;
-	REF reference, change;
-	GPRE_NOD assignments, item;
-	int count;
-	gpre_lls* stack;
+	REF reference;
+	GPRE_NOD assignments;
 
 	if (!cur_store)
 		PAR_error("unmatched END_STORE");
@@ -1837,7 +1828,7 @@ static act* par_end_store(bool special)
 
 		// Make up an assignment list for all field references 
 
-		count = 0;
+		int count = 0;
 		for (reference = request->req_references; reference;
 			 reference = reference->ref_next)
 		{
@@ -1853,7 +1844,7 @@ static act* par_end_store(bool special)
 		{
 			if (reference->ref_master)
 				continue;
-			item = MSC_node(nod_assignment, 2);
+			gpre_nod* item = MSC_node(nod_assignment, 2);
 			item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) reference);
 			item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) reference);
 			assignments->nod_arg[count++] = item;
@@ -1866,12 +1857,12 @@ static act* par_end_store(bool special)
 		 */
 
 		act* action2 = (act*) MSC_pop(&cur_store);
-		return_values = (upd*) action2->act_object;
+		upd* return_values = (upd*) action2->act_object;
 
 		// Build assignments for all fields and null flags referenced 
 
-		stack = NULL;
-		count = 0;
+		gpre_lls* stack = NULL;
+		int count = 0;
 
 		for (reference = request->req_references; reference;
 			 reference = reference->ref_next)
@@ -1880,13 +1871,13 @@ static act* par_end_store(bool special)
 					reference->ref_level >= return_values->upd_level &&
 					!reference->ref_master)
 			{
-				change = MSC_reference(&return_values->upd_references);
+				ref* change = MSC_reference(&return_values->upd_references);
 				change->ref_context = return_values->upd_update;
 				change->ref_field = reference->ref_field;
 				change->ref_source = reference;
 				change->ref_flags = reference->ref_flags;
 
-				item = MSC_node(nod_assignment, 2);
+				gpre_nod* item = MSC_node(nod_assignment, 2);
 				item->nod_arg[0] = MSC_unary(nod_field, (GPRE_NOD) change);
 				item->nod_arg[1] = MSC_unary(nod_value, (GPRE_NOD) change);
 				MSC_push((GPRE_NOD) item, &stack);
@@ -1903,7 +1894,9 @@ static act* par_end_store(bool special)
 		while (stack)
 			*--ptr = (GPRE_NOD) MSC_pop(&stack);
 	}
-	if ((context = request->req_contexts))
+	
+	gpre_ctx* context = request->req_contexts;
+	if (context)
 		HSH_remove(context->ctx_symbol);
 
 	act* action;
@@ -2107,8 +2100,8 @@ static act* par_left_brace()
 	if (brace_count++ > 0)
 		return NULL;
 
-	act* action;
-	gpreGlob.cur_routine = action = MSC_action(0, ACT_routine);
+	act* action = MSC_action(0, ACT_routine);
+	gpreGlob.cur_routine = action;
 	action->act_flags |= ACT_mark;
 
 	return action;
@@ -2378,11 +2371,9 @@ static act* par_ready()
 {
 	gpre_req* request;
 	gpre_sym* symbol;
-	rdy* ready;
 	DBB db;
 	bool need_handle = false;
 	USHORT default_buffers = 0;
-	USHORT buffers;
 
 	act* action = MSC_action(0, ACT_ready);
 
@@ -2405,7 +2396,7 @@ static act* par_ready()
 			continue;
 		}
 
-		ready = (rdy*) MSC_alloc(RDY_LEN);
+		rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 		ready->rdy_next = (rdy*) action->act_object;
 		action->act_object = (REF) ready;
 
@@ -2432,7 +2423,7 @@ static act* par_ready()
 
 		// pick up the possible parameters, in any order 
 
-		buffers = 0;
+		USHORT buffers = 0;
 		db = ready->rdy_database;
 		for (;;) {
 			if (MSC_match(KW_CACHE)) {
@@ -2486,7 +2477,7 @@ static act* par_ready()
 
 	if (action->act_object) {
 		if (default_buffers)
-			for (ready = (rdy*) action->act_object; ready;
+			for (rdy* ready = (rdy*) action->act_object; ready;
 				 ready = ready->rdy_next)
 			{
 				if (!ready->rdy_request)
@@ -2499,7 +2490,7 @@ static act* par_ready()
 
 	for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		if (db->dbb_runtime || !(db->dbb_flags & DBB_sqlca)) {
-			ready = (rdy*) MSC_alloc(RDY_LEN);
+			rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 			ready->rdy_next = (rdy*) action->act_object;
 			action->act_object = (REF) ready;
 			ready->rdy_database = db;
@@ -2508,7 +2499,7 @@ static act* par_ready()
 	if (!action->act_object)
 		PAR_error("no database available to READY");
 	else
-		for (ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
+		for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
 			request = ready->rdy_request;
 			if (default_buffers && !ready->rdy_request)
 				request = PAR_set_up_dpb_info(ready, action, default_buffers);
@@ -2552,7 +2543,6 @@ static act* par_returning_values()
 {
 
 	REF reference;
-	GPRE_NOD assignments;
 
 	if (!cur_store)
 		PAR_error("STORE must precede RETURNING_VALUES");
@@ -2572,11 +2562,13 @@ static act* par_returning_values()
 			count++;
 	}
 
-	request->req_node = assignments = MSC_node(nod_list, (SSHORT) count);
+	GPRE_NOD assignments = MSC_node(nod_list, (SSHORT) count);
+	request->req_node = assignments;
 	count = 0;
 
 	for (reference = request->req_references; reference;
-		 reference = reference->ref_next) {
+		 reference = reference->ref_next)
+	{
 		REF save_ref = MSC_reference(&begin_action->act_object);
 		save_ref->ref_context = reference->ref_context;
 		save_ref->ref_field = reference->ref_field;

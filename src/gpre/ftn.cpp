@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.47 2004-05-29 04:50:46 robocop Exp $
+//	$Id: ftn.cpp,v 1.48 2004-06-03 07:31:09 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -2946,7 +2946,7 @@ static void gen_request_data( const gpre_req* request)
 						   reference->ref_sdl_ident, COMMA,
 						   (begin_i / sizeof(SLONG)) + 1,
 						   (end_i / sizeof(SLONG)) + 1);
-					gen_raw((const UCHAR*) reference->ref_sdl, REQ_slice,
+					gen_raw(reference->ref_sdl, REQ_slice,
 							reference->ref_sdl_length, begin_i, end_i);
 				}
 				if (!(gpreGlob.sw_raw)) {

@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.17 2004-05-02 23:04:17 skidder Exp $
+//	$Id: jrdmet.cpp,v 1.18 2004-06-03 07:31:10 robocop Exp $
 //
 
 #include "firebird.h"
@@ -50,8 +50,6 @@
 
 void JRDMET_init( DBB db)
 {
-	gpre_sym* symbol;
-
 	const UCHAR* relfld = relfields;
 
 	while (relfld[RFLD_R_NAME]) {
@@ -60,7 +58,8 @@ void JRDMET_init( DBB db)
 		relation->rel_next = db->dbb_relations;
 		relation->rel_id = relfld[RFLD_R_ID];
 		db->dbb_relations = relation;
-		relation->rel_symbol = symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
+		gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
+		relation->rel_symbol = symbol;
 		symbol->sym_type = SYM_relation;
 		symbol->sym_object = (gpre_ctx*) relation;
 
@@ -122,7 +121,8 @@ void JRDMET_init( DBB db)
 
 	for (const rtyp* rtype = types; rtype->rtyp_name; rtype++) {
 		field_type* type = (field_type*) MSC_alloc(TYP_LEN);
-		type->typ_symbol = symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
+		gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
+		type->typ_symbol = symbol;
 		type->typ_value = rtype->rtyp_value;
 		symbol->sym_type = SYM_type;
 		symbol->sym_object = (gpre_ctx*) type;

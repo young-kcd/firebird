@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.68 2004-05-29 04:48:42 robocop Exp $
+ * $Id: gpre.h,v 1.69 2004-06-03 07:31:09 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -1242,9 +1242,9 @@ class ref {
 	gpre_nod* ref_expr;			/* expression, if node is expression */
 	TEXT *ref_value;			/* value string if host language value */
 	val* ref_values;			/* linked list of values */
-	TEXT *ref_null_value;		/* value string if host language value */
-	UCHAR *ref_sdl;				/* Raw slice description language for an array */
-	UCHAR *ref_sdl_base;		/* base of sdl string during generation */
+	TEXT* ref_null_value;		/* value string if host language value */
+	UCHAR* ref_sdl;				/* Raw slice description language for an array */
+	UCHAR* ref_sdl_base;		/* base of sdl string during generation */
 	int ref_sdl_length;			/* sdl length for this reference */
 	slc* ref_slice;				/* Slice, if field referenced is sliced */
 	USHORT ref_sdl_ident;		/* identifier of sdl structure */
@@ -1253,7 +1253,7 @@ class ref {
 	SSHORT ref_ttype;			/* Character set type for literals */
 
 	inline void add_byte(const int byte) {
-		*ref_sdl++ = (SCHAR) (byte);
+		*ref_sdl++ = (UCHAR) byte;
 	}
 	inline void add_word(const int word) {
 		add_byte(word);

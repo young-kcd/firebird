@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.39 2004-05-24 17:13:37 brodsom Exp $
+//	$Id: pas.cpp,v 1.40 2004-06-03 07:31:10 robocop Exp $
 //
 
 #include "firebird.h"
@@ -2723,7 +2723,7 @@ static void gen_request( const gpre_req* request, int column)
 					   reference->ref_sdl_ident, PACKED_ARRAY,
 					   reference->ref_sdl_length, OPEN_BRACKET);
 				if (gpreGlob.sw_raw)
-					gen_raw(reinterpret_cast<UCHAR*>(reference->ref_sdl), reference->ref_sdl_length,
+					gen_raw(reference->ref_sdl, reference->ref_sdl_length,
 							column);
 				else if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 1))
 					CPR_error("internal error during SDL generation");

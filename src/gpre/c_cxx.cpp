@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.49 2004-05-24 17:13:37 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.50 2004-06-03 07:31:09 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1483,8 +1483,8 @@ static void gen_database( const act* action, int column)
 			for (REF reference = port->por_references; reference;
 				 reference = reference->ref_next)
 			{
-					if (reference->ref_flags & REF_fetch_array)
-						make_array_declaration(reference);
+				if (reference->ref_flags & REF_fetch_array)
+					make_array_declaration(reference);
 			}
 	}
 
@@ -2581,9 +2581,11 @@ static void gen_on_error( const act* action, USHORT column)
 	if ((err_action->act_type == ACT_get_segment) ||
 		(err_action->act_type == ACT_put_segment) ||
 		(err_action->act_type == ACT_endblob))
-			printa(column,
-				   "if (%s [1] && (%s [1] != isc_segment) && (%s [1] != isc_segstr_eof))",
-				   global_status_name, global_status_name, global_status_name);
+	{
+		printa(column,
+			   "if (%s [1] && (%s [1] != isc_segment) && (%s [1] != isc_segstr_eof))",
+			   global_status_name, global_status_name, global_status_name);
+	}
 	else
 		printa(column, "if (%s [1])", global_status_name);
 	column += INDENT;
@@ -2652,8 +2654,6 @@ static void gen_procedure( const act* action, int column)
 
 static void gen_put_segment( const act* action, int column)
 {
-	blb* blob;
-	PAT args;
 	const TEXT* pattern1 = "%IF%S1 [1] = %ENisc_put_segment (%V1, &%BH, %I1, %I2);";
 
 	if (!action->act_error)
@@ -2661,6 +2661,7 @@ static void gen_put_segment( const act* action, int column)
 	if (action->act_error || (action->act_flags & ACT_sql))
 		begin(column);
 
+	blb* blob;
 	if (action->act_flags & ACT_sql) {
 		blob = (blb*) action->act_request->req_blobs;
 		REF from = action->act_object;
@@ -2675,6 +2676,7 @@ static void gen_put_segment( const act* action, int column)
 	else
 		blob = (blb*) action->act_object;
 
+	PAT args;
 	args.pat_blob = blob;
 	args.pat_vector1 = status_vector(action);
 	args.pat_condition = !(action->act_error
@@ -2925,7 +2927,7 @@ static void gen_request(const gpre_req* request)
 				printa(0, "static %schar\n   isc_%d [] = {", CONST_STR,
 					   reference->ref_sdl_ident);
 				if (gpreGlob.sw_raw)
-					gen_raw((UCHAR *) reference->ref_sdl,
+					gen_raw(reference->ref_sdl,
 							reference->ref_sdl_length);
 				else
 					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
@@ -3140,6 +3142,7 @@ static void gen_select( const act* action, int column)
 			align(column);
 			asgn_to(action, (REF) var_list->nod_arg[i], column);
 		}
+		
 	if (request->req_database->dbb_flags & DBB_v3) {
 		gen_receive(action, column, port);
 		printa(column, "if (!SQLCODE && %s)", name);
@@ -3182,7 +3185,6 @@ static void gen_send( const act* action, const gpre_port* port, int column)
 
 static void gen_slice( const act* action, REF var_reference, int column)
 {
-	PAT args;
 	const TEXT* pattern1 = "isc_get_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
 (char *) %I1, (short) %N2, %I1v, %I1s, %S5, &isc_array_length);";
 	const TEXT* pattern2 = "isc_put_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
@@ -3197,13 +3199,13 @@ static void gen_slice( const act* action, REF var_reference, int column)
 	printa(column, "isc_%ds = %d", request->req_ident,
 		   slice->slc_field->fld_array->fld_length);
 
-	slc::slc_repeat *tail, *end;
-	for (tail = slice->slc_rpt, end = tail + slice->slc_dimensions;
+	const slc::slc_repeat* tail = slice->slc_rpt;
+	for (const slc::slc_repeat* const end = tail + slice->slc_dimensions;
 		 tail < end; ++tail)
 	{
 		if (tail->slc_upper != tail->slc_lower) {
-			REF lower = (REF) tail->slc_lower->nod_arg[0];
-			REF upper = (REF) tail->slc_upper->nod_arg[0];
+			const ref* lower = (REF) tail->slc_lower->nod_arg[0];
+			const ref* upper = (REF) tail->slc_upper->nod_arg[0];
 			if (lower->ref_value)
 				fprintf(gpreGlob.out_file, " * ( %s - %s + 1)", upper->ref_value,
 						   lower->ref_value);
@@ -3224,6 +3226,7 @@ static void gen_slice( const act* action, REF var_reference, int column)
 				request->req_ident, reference->ref_id, reference->ref_value);
 	}
 
+	PAT args;
 	args.pat_reference =
 		(var_reference ? var_reference : slice->slc_field_ref);
 	args.pat_request = parent_request;	// blob id request
@@ -3261,7 +3264,6 @@ static void gen_start(const act* action,
 					  int column,
 					  bool sending)
 {
-	PAT args;
 	const TEXT* pattern1 =
 		"isc_start_and_send (%V1, (FB_API_HANDLE*) &%RH, (FB_API_HANDLE*) &%S1, (short) %PN, (short) %PL, &%PI, (short) %RL);";
 	const TEXT* pattern2 = "isc_start_request (%V1, (FB_API_HANDLE*) &%RH, (FB_API_HANDLE*) &%S1, (short) %RL);";
@@ -3275,6 +3277,7 @@ static void gen_start(const act* action,
 		}
 	}
 
+	PAT args;
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
 	args.pat_port = port;

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.19 2004-05-24 17:13:37 brodsom Exp $
+//	$Id: hsh.cpp,v 1.20 2004-06-03 07:31:10 robocop Exp $
 //
 
 #include "firebird.h"
@@ -59,10 +59,8 @@ static struct word {
 
 void HSH_fini(void)
 {
-	gpre_sym* symbol;
-
 	while (key_symbols) {
-		symbol = key_symbols;
+		gpre_sym* symbol = key_symbols;
 		key_symbols = (gpre_sym*) key_symbols->sym_object;
 		HSH_remove(symbol);
 		MSC_free((UCHAR *) symbol);
@@ -78,19 +76,18 @@ void HSH_fini(void)
 
 void HSH_init(void)
 {
-	SCHAR *string;
-	gpre_sym* symbol;
-	gpre_sym** ptr;
-	int i;
-	word* a_word;
+	//SCHAR *string;
 
-	for (ptr = hash_table, i = 0; i < HASH_SIZE; i++)
+	int i = 0;
+	for (gpre_sym** ptr = hash_table; i < HASH_SIZE; i++)
 		*ptr++ = NULL;
 
 	fflush(stdout);
+	word* a_word;
 	for (i = 0, a_word = keywords; i < FB_NELEM(keywords); i++, a_word++) {
-		for (string = a_word->keyword; *string; string++);
-		symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
+		// Unused code: SYM_LEN is used always.
+		//for (string = a_word->keyword; *string; string++);
+		gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_string = a_word->keyword;
 		symbol->sym_keyword = (int) a_word->id;
@@ -108,13 +105,10 @@ void HSH_init(void)
 
 void HSH_insert( gpre_sym* symbol)
 {
-	gpre_sym** next;
-	gpre_sym* ptr;
+	const int h = hash(symbol->sym_string);
 
-	int h = hash(symbol->sym_string);
-
-	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision) {
-		for (ptr = *next; ptr; ptr = ptr->sym_homonym)
+	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision) {
+		for (const gpre_sym* ptr = *next; ptr; ptr = ptr->sym_homonym)
 			if (ptr == symbol)
 				return;
 
@@ -190,13 +184,12 @@ gpre_sym* HSH_lookup2(const SCHAR* string)
 
 void HSH_remove( gpre_sym* symbol)
 {
-	gpre_sym** next;
 	gpre_sym** ptr;
 	gpre_sym* homonym;
 
-	int h = hash(symbol->sym_string);
+	const int h = hash(symbol->sym_string);
 
-	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision)
+	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
 		if (symbol == *next)
 			if (homonym = symbol->sym_homonym) {
 				homonym->sym_collision = symbol->sym_collision;
@@ -273,3 +266,4 @@ static bool scompare2(const SCHAR* string1,
 
 	return true;
 }
+

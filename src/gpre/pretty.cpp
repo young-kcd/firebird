@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.26 2004-05-23 23:24:42 brodsom Exp $
+//	$Id: pretty.cpp,v 1.27 2004-06-03 07:31:10 robocop Exp $
 //
 
 #include "firebird.h"
@@ -115,12 +115,6 @@ int PRETTY_print_cdb( UCHAR* blr,
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
 	SCHAR temp[32];
-	SSHORT parameter;
-	SSHORT level = 0;
-	SSHORT length;
-	SSHORT i;
-	SSHORT offset = 0;
-
 
 	if (!routine) {
 		routine = gds__default_printer;
@@ -133,19 +127,24 @@ int PRETTY_print_cdb( UCHAR* blr,
 	control->ctl_ptr = control->ctl_buffer;
 	control->ctl_language = language;
 
+	SSHORT level = 0;
 	indent(control, level);
-	i = BLR_BYTE;
+	const SSHORT i = BLR_BYTE;
 	if (*control->ctl_blr)
 		sprintf(temp, "gds__dpb_version%d, ", i);
 	else
 		sprintf(temp, "gds__dpb_version%d", i);
 	blr_format(control, temp);
+	
+	SSHORT offset = 0;
 	print_line(control, offset);
 
+	SSHORT parameter;
 	while (parameter = BLR_BYTE) {
-		const char *p;
+		const char* p;
 		if (parameter > FB_NELEM(cdb_table) ||
-			!(p = cdb_table[parameter])) {
+			!(p = cdb_table[parameter]))
+		{
 			return error(control, 0,
 						 "*** cdb parameter %d is undefined ***\n",
 						 parameter);
@@ -153,7 +152,8 @@ int PRETTY_print_cdb( UCHAR* blr,
 		indent(control, level);
 		blr_format(control, p);
 		PUT_BYTE(',');
-		if (length = print_byte(control, offset)) {
+		SSHORT length = print_byte(control, offset);
+		if (length) {
 			do {
 				print_char(control, offset);
 			} while (--length);
@@ -177,9 +177,6 @@ int PRETTY_print_dyn(
 {
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
-	SSHORT offset = 0;
-	SSHORT version = 0;
-	SSHORT level = 0;
 
 	if (!routine) {
 		routine = gds__default_printer;
@@ -192,8 +189,9 @@ int PRETTY_print_dyn(
 	control->ctl_ptr = control->ctl_buffer;
 	control->ctl_language = language;
 
-	version = BLR_BYTE;
+	const SSHORT version = BLR_BYTE;
 
+	SSHORT offset = 0;
 	if (version != isc_dyn_version_1)
 		return error(control, offset,
 					 "*** dyn version %d is not supported ***\n",
@@ -201,7 +199,7 @@ int PRETTY_print_dyn(
 
 	blr_format(control, "gds__dyn_version_1, ");
 	print_line(control, offset);
-	level++;
+	SSHORT level = 1;
 	PRINT_DYN_VERB;
 
 	if (BLR_BYTE != isc_dyn_eoc)
@@ -227,9 +225,6 @@ PRETTY_print_sdl(UCHAR* blr,
 {
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
-	SSHORT offset = 0;
-	SSHORT version;
-	SSHORT level = 0;
 
 	if (!routine) {
 		routine = gds__default_printer;
@@ -242,8 +237,9 @@ PRETTY_print_sdl(UCHAR* blr,
 	control->ctl_ptr = control->ctl_buffer;
 	control->ctl_language = language;
 
-	version = BLR_BYTE;
+	const SSHORT version = BLR_BYTE;
 
+	SSHORT offset = 0;
 	if (version != isc_sdl_version1)
 		return error(control, offset,
 					 "*** sdl version %d is not supported ***\n",
@@ -251,7 +247,7 @@ PRETTY_print_sdl(UCHAR* blr,
 
 	blr_format(control, "gds__sdl_version1, ");
 	print_line(control, offset);
-	level++;
+	SSHORT level = 1;
 
 	while (NEXT_BYTE != isc_sdl_eoc)
 		PRINT_SDL_VERB;
@@ -323,16 +319,10 @@ static int indent( CTL control, SSHORT level)
 static int print_blr_dtype(CTL control,
 						   bool print_object)
 {
-	unsigned short dtype;
-	SCHAR *string;
+	const char* string;
 	SSHORT length;
-//  TMN: FIX FIX Note that offset is not initialized to anything useful
-//  for e.g. print_word(control, (SSHORT)offset). I assume it's better to initialize it to zero
-//  than letting it be random.
-//  
-	SSHORT offset = 0;
 
-	dtype = BLR_BYTE;
+	const USHORT dtype = BLR_BYTE;
 
 //  Special case blob (261) to keep down the size of the
 //  jump table 
@@ -427,6 +417,11 @@ static int print_blr_dtype(CTL control,
 
 	if (!print_object)
 		return length;
+		
+//  TMN: FIX FIX Note that offset is not initialized to anything useful
+//  for e.g. print_word(control, (SSHORT)offset). I assume it's better to initialize it to zero
+//  than letting it be random.
+	SSHORT offset = 0;
 
 	switch (dtype) {
 	case blr_text:
@@ -480,7 +475,7 @@ static int print_blr_dtype(CTL control,
 
 static void print_blr_line(void* arg, SSHORT offset, const char* line)
 {
-	CTL control = reinterpret_cast<CTL>(arg);
+	CTL control = static_cast<CTL>(arg);
 	bool comma = false;
 	char c;
 
@@ -508,9 +503,7 @@ static void print_blr_line(void* arg, SSHORT offset, const char* line)
 
 static int print_byte( CTL control, SSHORT offset)
 {
-	UCHAR v;
-
-	v = BLR_BYTE;
+	const UCHAR v = BLR_BYTE;
 	sprintf(control->ctl_ptr, (control->ctl_language) ? "chr(%d), " : "%d, ",
 			v);
 	ADVANCE_PTR(control->ctl_ptr);
@@ -526,11 +519,8 @@ static int print_byte( CTL control, SSHORT offset)
 
 static int print_char( CTL control, SSHORT offset)
 {
-	UCHAR c;
-	SSHORT printable;
-
-	c = BLR_BYTE;
-	printable = (c >= 'a' && c <= 'z') ||
+	const UCHAR c = BLR_BYTE;
+	const bool printable = (c >= 'a' && c <= 'z') ||
 		(c >= 'A' && c <= 'Z') ||
 		(c >= '0' && c <= '9' || c == '$' || c == '_');
 
@@ -879,9 +869,7 @@ static int print_sdl_verb( CTL control, SSHORT level)
 
 static int print_string( CTL control, SSHORT offset)
 {
-	SSHORT n;
-
-	n = print_byte(control, offset);
+	SSHORT n = print_byte(control, offset);
 	while (--n >= 0)
 		print_char(control, offset);
 
@@ -897,10 +885,8 @@ static int print_string( CTL control, SSHORT offset)
 
 static int print_word( CTL control, SSHORT offset)
 {
-	UCHAR v1, v2;
-
-	v1 = BLR_BYTE;
-	v2 = BLR_BYTE;
+	const UCHAR v1 = BLR_BYTE;
+	const UCHAR v2 = BLR_BYTE;
 	sprintf(control->ctl_ptr,
 			(control->ctl_language) ? "chr(%d),chr(%d), " : "%d,%d, ", v1,
 			v2);
@@ -908,3 +894,4 @@ static int print_word( CTL control, SSHORT offset)
 
 	return (v2 << 8) | v1;
 }
+
