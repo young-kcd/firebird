@@ -1,3 +1,105 @@
+2002-10-24 17:41  dimitr
+
+	* firebird2/src/utilities/install_svc.cpp:
+	
+	Cleanup.
+
+2002-10-24 17:39  dimitr
+
+	* firebird2/src/iscguard/iscguard_utils.cpp:
+	
+	ISC_STATUS_LENGTH correction.
+
+2002-10-24 17:18  dimitr
+
+	* firebird2/src/remote/window.cpp:
+	
+	Cleanup.
+
+2002-10-24 16:52  dimitr
+
+	* firebird2/src/: jrd/isc_ipc.cpp, lock/lock.cpp:
+	
+	Cleanup.
+
+2002-10-24 16:02  dimitr
+
+	* firebird2/builds/win32/msvc6/ib_udf.def:
+	
+	no message
+
+2002-10-24 14:01  tamlin
+
+	* firebird2/builds/win32/msvc6/gfix.dsp:
+	
+	Make gfix compile in debug mode.
+
+2002-10-24 13:16  tamlin
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Compile without warnings on MSVC6.
+
+2002-10-24 13:13  dimitr
+
+	* firebird2/src/jrd/: why.c, y-valve.cpp:
+	
+	More complete implementation of my 2PC related fix.
+
+2002-10-24 11:13  eku
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Removed latestr checkin (private modifications).
+
+2002-10-24 11:01  eku
+
+	* firebird2/src/: alice/tdr.cpp, burp/backup.epp, burp/burp.h,
+	burp/canonical.cpp, burp/restore.epp, csv/csi.cpp, csv/csi.h,
+	csv/csu.cpp, csv/csv.cpp, csv/print.cpp, dsql/metd.epp,
+	dsql/movd.cpp, dsql/preparse.cpp, dsql/user_dsql.cpp,
+	dudley/exe.epp, dudley/extract.epp, dudley/lex.cpp, gpre/form.cpp,
+	gpre/gpre_meta.epp, gpre/gpre_meta_boot.cpp,
+	install/arch-specific/sinixz/prototype.in, ipserver/ipc.h,
+	iscguard/iscguard.cpp, iscguard/iscguard_utils.cpp, isql/show.epp,
+	journal/archive.cpp, journal/console.cpp, journal/gjrn.cpp,
+	journal/journal.h, journal/oldr.cpp, jrd/ail.cpp, jrd/all_old.cpp,
+	jrd/alt.cpp, jrd/cch.cpp, jrd/common.h, jrd/dfw.epp, jrd/dyn.epp,
+	jrd/event.cpp, jrd/functions.cpp, jrd/gds.cpp, jrd/ibase.h,
+	jrd/iberr.cpp, jrd/isc.cpp, jrd/jrd.cpp, jrd/jrd.h, jrd/jrn.cpp,
+	jrd/map.cpp, jrd/met.epp, jrd/old.cpp, jrd/pag.cpp, jrd/perf.cpp,
+	jrd/print.cpp, jrd/pwd.cpp, jrd/rdb.cpp, jrd/rdbgpas.cpp,
+	jrd/rdbint.cpp, jrd/rng.cpp, jrd/sdw.cpp, jrd/svc.cpp, jrd/utl.cpp,
+	jrd/why.c, jrd/y-valve.cpp, lock/driver.cpp, lock/lock.cpp,
+	lock/manager.cpp, lock/print.cpp, lock/printv3.cpp, pipe/foot.cpp,
+	qli/all.cpp, qli/eval.cpp, qli/exe.cpp, qli/form.cpp,
+	qli/format.cpp, qli/gener.cpp, qli/lex.cpp, qli/meta.epp,
+	qli/noform.cpp, qli/proc.epp, qli/show.epp, remote/inet.cpp,
+	remote/inet_server.cpp, remote/interface.cpp,
+	remote/ipc_server.cpp, remote/mgr.cpp, remote/nt_server.cpp,
+	remote/nwserv.cpp, remote/remote.h, remote/server.cpp,
+	remote/srvr_w32.cpp, utilities/cache.cpp, utilities/create_db.cpp,
+	utilities/dba_full.epp, utilities/drop.cpp, utilities/dropv3.cpp,
+	utilities/print_pool.cpp, utilities/sbc_print.cpp,
+	utilities/security.epp, v5_examples/api1.c, v5_examples/api10.c,
+	v5_examples/api11.c, v5_examples/api12.c, v5_examples/api13.c,
+	v5_examples/api15.c, v5_examples/api16.c, v5_examples/api16t.c,
+	v5_examples/api2.c, v5_examples/api3.c, v5_examples/api4.c,
+	v5_examples/api5.c, v5_examples/api6.c, v5_examples/api7.c,
+	v5_examples/api8.c, v5_examples/api9.c, v5_examples/apifull.c,
+	v5_examples/empbuild.c, v5_examples/winevent.c, wal/driver.cpp,
+	wal/wal.cpp, wal/wal_prnt.cpp, wal/walc.cpp, wal/walw.cpp:
+	
+	Code cleanup:
+	
+	Since we already have the define ISC_STATUS_LENGTH for the the
+	length of the status vector, we should use it! Replaced
+	'status[20]' with 'status[ISC_STATUS_LENGTH]'.
+	
+	Replaced the different symbolic names for the maximum length of a
+	path (MAX_PATH, MAX_PATH_LENGTH, MAXPATHLEN) with one uniq symbol
+	MAXPATHLEN.
+
 2002-10-23 17:23  skidder
 
 	* firebird2/: configure.in, src/dsql/ddl.cpp, src/dsql/dsql.tab.h,
