@@ -250,7 +250,7 @@ class CsConvert_None_Unicode : public CsConvert
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
 		{ return FB_NEW(p) CsConvert_None_Unicode; }
-	CsConvert_None_Unicode() : CsConvert(0, "DIRECT", CS_NONE, CS_UNICODE101)
+	CsConvert_None_Unicode() : CsConvert(0, "DIRECT", CS_NONE, CS_UNICODE_UCS2)
 			{}
 	unsigned short convert(unsigned char*,
 						   unsigned short,
@@ -265,7 +265,7 @@ class CsConvert_Unicode_None : public CsConvert
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
 		{ return FB_NEW(p) CsConvert_Unicode_None; }
-	CsConvert_Unicode_None() : CsConvert(0, "DIRECT", CS_UNICODE101, CS_NONE)
+	CsConvert_Unicode_None() : CsConvert(0, "DIRECT", CS_UNICODE_UCS2, CS_NONE)
 			{}
 	unsigned short convert(unsigned char*,
 						   unsigned short,
@@ -280,7 +280,7 @@ class CsConvert_ASCII_Unicode : public CsConvert
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
 		{ return FB_NEW(p) CsConvert_ASCII_Unicode; }
-	CsConvert_ASCII_Unicode() : CsConvert(0, "DIRECT", CS_ASCII, CS_UNICODE101)
+	CsConvert_ASCII_Unicode() : CsConvert(0, "DIRECT", CS_ASCII, CS_UNICODE_UCS2)
 			{}
 	unsigned short convert(unsigned char*,
 						   unsigned short,
@@ -295,7 +295,7 @@ class CsConvert_Unicode_ASCII : public CsConvert
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
 		{ return FB_NEW(p) CsConvert_Unicode_ASCII; }
-	CsConvert_Unicode_ASCII() : CsConvert(0, "DIRECT", CS_UNICODE101, CS_ASCII)
+	CsConvert_Unicode_ASCII() : CsConvert(0, "DIRECT", CS_UNICODE_UCS2, CS_ASCII)
 			{}
 	unsigned short convert(unsigned char*,
 						   unsigned short,
@@ -310,7 +310,7 @@ class CsConvert_UFSS_Unicode : public CsConvert
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
 		{ return FB_NEW(p) CsConvert_UFSS_Unicode; }
-	CsConvert_UFSS_Unicode() : CsConvert(0, "DIRECT", CS_UNICODE_FSS, CS_UNICODE101)
+	CsConvert_UFSS_Unicode() : CsConvert(0, "DIRECT", CS_UNICODE_FSS, CS_UNICODE_UCS2)
 			{}
 	unsigned short convert(unsigned char*,
 						   unsigned short,
@@ -325,7 +325,7 @@ class CsConvert_Unicode_UFSS : public CsConvert
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
 		{ return FB_NEW(p) CsConvert_Unicode_UFSS; }
-	CsConvert_Unicode_UFSS() : CsConvert(0, "DIRECT", CS_UNICODE101, CS_UNICODE_FSS)
+	CsConvert_Unicode_UFSS() : CsConvert(0, "DIRECT", CS_UNICODE_UCS2, CS_UNICODE_FSS)
 			{}
 	unsigned short convert(unsigned char *a,
 						   unsigned short b,
@@ -341,7 +341,7 @@ class CsConvert_Binary_Unicode : public CsConvert
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
 		{ return FB_NEW(p) CsConvert_Binary_Unicode; }
-	CsConvert_Binary_Unicode() : CsConvert(0, "DIRECT", CS_BINARY, CS_UNICODE101)
+	CsConvert_Binary_Unicode() : CsConvert(0, "DIRECT", CS_BINARY, CS_UNICODE_UCS2)
 		{}	
 	unsigned short convert(unsigned char*,
 						   unsigned short,
@@ -356,7 +356,7 @@ class CsConvert_Unicode_Binary : public CsConvert
 public:
 	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
 		{ return FB_NEW(p) CsConvert_Unicode_Binary; }
-	CsConvert_Unicode_Binary() : CsConvert(0, "DIRECT", CS_UNICODE101, CS_BINARY)
+	CsConvert_Unicode_Binary() : CsConvert(0, "DIRECT", CS_UNICODE_UCS2, CS_BINARY)
 		{}	
 	unsigned short convert(unsigned char*,
 						   unsigned short,
@@ -407,7 +407,7 @@ class CharSet_Unicode : public CharSet
 public:
 	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
 		{ return FB_NEW(p) CharSet_Unicode(p); }
-	CharSet_Unicode(MemoryPool &p) : CharSet(CS_UNICODE101, "UNICODE101", 2, 2, 2, 0)
+	CharSet_Unicode(MemoryPool &p) : CharSet(CS_UNICODE_UCS2, "UNICODE_UCS2", 2, 2, 2, 0)
 	{
 		static CONST WCHAR space = 0x0020;
 		charset_space_character = (const char *) & space;	/* 0x0020 */
@@ -1248,7 +1248,7 @@ CharSetAllocFunc INTL_charset_alloc_func(short charset)
 			return CharSet_ASCII::object_factory;
 		case CS_UNICODE_FSS:
 			return CharSet_Unicode_FSS::object_factory;
-		case CS_UNICODE101:
+		case CS_UNICODE_UCS2:
 			return CharSet_Unicode::object_factory;
 		case CS_BINARY:
 			return CharSet_Binary::object_factory;
@@ -1454,9 +1454,9 @@ static USHORT cs_ascii_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
  *************************************
 
 	common_8bit_init(csptr, CS_ASCII, (ASCII *) "ASCII", NULL, NULL, NULL);
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE101, CS_ASCII,
+	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_ASCII,
 						(FPTR_SHORT) cvt_ascii_to_unicode, NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_ASCII, CS_UNICODE101,
+	common_convert_init(&csptr->charset_from_unicode, CS_ASCII, CS_UNICODE_UCS2,
 						(FPTR_SHORT) cvt_unicode_to_ascii, NULL, NULL);
 	CHARSET_RETURN;
 }
@@ -1476,12 +1476,12 @@ static USHORT cs_none_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 
 	common_8bit_init(csptr, CS_NONE, (ASCII *) "NONE", NULL, NULL, NULL);
 /*
-common_convert_init (&csptr->charset_to_unicode, CS_UNICODE101, id,
+common_convert_init (&csptr->charset_to_unicode, CS_UNICODE_UCS2, id,
 	nc_to_wc, to_unicode_tbl, NULL);
 *
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE101, CS_NONE,
+	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_NONE,
 						(FPTR_SHORT) cvt_none_to_unicode, NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_NONE, CS_UNICODE101,
+	common_convert_init(&csptr->charset_from_unicode, CS_NONE, CS_UNICODE_UCS2,
 						(FPTR_SHORT) wc_to_nc, NULL, NULL);
 	CHARSET_RETURN;
 }
@@ -1501,17 +1501,17 @@ static USHORT cs_unicode_fss_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 
 	common_8bit_init(csptr, CS_UNICODE_FSS, (ASCII *) "UNICODE_FSS", NULL,
 					 NULL, NULL);
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE101,
+	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2,
 						CS_UNICODE_FSS, (FPTR_SHORT) INTL_fss_to_unicode,
 						NULL, NULL);
 	common_convert_init(&csptr->charset_from_unicode, CS_UNICODE_FSS,
-						CS_UNICODE101, (FPTR_SHORT) INTL_unicode_to_fss, NULL,
+						CS_UNICODE_UCS2, (FPTR_SHORT) INTL_unicode_to_fss, NULL,
 						NULL);
 	CHARSET_RETURN;
 }
 
 
-static USHORT cs_unicode_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
+static USHORT cs_unicode_ucs2_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1525,8 +1525,8 @@ static USHORT cs_unicode_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 	static CONST WCHAR space = 0x0020;
 
 	csptr->charset_version = 40;
-	csptr->charset_id = CS_UNICODE101;
-	csptr->charset_name = ( /*CONST* ASCII *) "UNICODE101";
+	csptr->charset_id = CS_UNICODE;
+	csptr->charset_name = ( /*CONST* ASCII *) "UNICODE_UCS2";
 	csptr->charset_flags = 0;
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;
@@ -1551,10 +1551,10 @@ static USHORT cs_binary_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 
 	common_8bit_init(csptr, CS_BINARY, (ASCII *) "BINARY", NULL, NULL, NULL);
 	csptr->charset_space_character = (BYTE *) "\0";
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE101, CS_BINARY,
+	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_BINARY,
 						(FPTR_SHORT) mb_to_wc, NULL, NULL);
 	common_convert_init(&csptr->charset_from_unicode, CS_BINARY,
-						CS_UNICODE101, (FPTR_SHORT) wc_to_mb, NULL, NULL);
+						CS_UNICODE_UCS2, (FPTR_SHORT) wc_to_mb, NULL, NULL);
 	CHARSET_RETURN;
 }
 

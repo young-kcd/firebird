@@ -536,7 +536,7 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 
 		if (err_code &&
 			!((err_code == CS_TRUNCATION_ERROR) &&
-			  all_spaces(tdbb, CS_UNICODE101, tmp_buffer, len, err_position))) {
+			  all_spaces(tdbb, CS_UNICODE_UCS2, tmp_buffer, len, err_position))) {
 			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
 				reinterpret_cast < void (*) (...) > (*err) (gds_arith_except,
@@ -594,10 +594,10 @@ CsConvert* DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
 	if (charset->findConverter(to_cs, &converter))
 		return converter;
 		
-	if (to_cs == CS_UNICODE101) {
+	if (to_cs == CS_UNICODE_UCS2) {
 		converter = charset->getCharSet()->getConvToUnicode();
 	}
-	else if (from_cs == CS_UNICODE101) {
+	else if (from_cs == CS_UNICODE_UCS2) {
 		CharSet* charset2;
 		charset2 = INTL_charset_lookup(tdbb, to_cs, NULL);
 		if (charset2 == NULL)

@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.18 2002-12-29 01:45:24 nmcc Exp $
+$Id: restore.epp,v 1.19 2003-01-25 03:12:46 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -99,21 +99,21 @@ static CONST struct s_t_cvtbl {
 	{160,	CS_DOS_850,		0},				/* codepoint collation */
 	{107,	CS_DOS_865,		0},				/* codepoint collation */
 	{105,	CS_DOS_865,		1},				/* PDOX_NORDAN4 */
-	{139,	CS_LATIN1,		1},				/* DA_DA */
-	{140,	CS_LATIN1,		2},				/* DU_NL */
-	{141,	CS_LATIN1,		3},				/* FI_FI */
-	{142,	CS_LATIN1,		4},				/* FR_FR */
-	{143,	CS_LATIN1,		5},				/* FR_CA */
-	{144,	CS_LATIN1,		6},				/* DE_DE */
-	{145,	CS_LATIN1,		7},				/* IS_IS */
-	{146,	CS_LATIN1,		8},				/* IT_IT */
-	{148,	CS_LATIN1,		9},				/* NO_NO */
-	{149,	CS_LATIN1,		10},				/* ES_ES */
-	{151,	CS_LATIN1,		11},				/* SV_SV */
-	{152,	CS_LATIN1,		12},				/* EN_UK */
-	{153,	CS_LATIN1,		14},				/* EN_US */
-	{154,	CS_LATIN1,		15},				/* PT_PT */
-    {160,   CS_LATIN2,       1},                /* CS_CZ */
+	{139,	CS_ISO8859_1,		1},				/* DA_DA */
+	{140,	CS_ISO8859_1,		2},				/* DU_NL */
+	{141,	CS_ISO8859_1,		3},				/* FI_FI */
+	{142,	CS_ISO8859_1,		4},				/* FR_FR */
+	{143,	CS_ISO8859_1,		5},				/* FR_CA */
+	{144,	CS_ISO8859_1,		6},				/* DE_DE */
+	{145,	CS_ISO8859_1,		7},				/* IS_IS */
+	{146,	CS_ISO8859_1,		8},				/* IT_IT */
+	{148,	CS_ISO8859_1,		9},				/* NO_NO */
+	{149,	CS_ISO8859_1,		10},				/* ES_ES */
+	{151,	CS_ISO8859_1,		11},				/* SV_SV */
+	{152,	CS_ISO8859_1,		12},				/* EN_UK */
+	{153,	CS_ISO8859_1,		14},				/* EN_US */
+	{154,	CS_ISO8859_1,		15},				/* PT_PT */
+	{160,	CS_ISO8859_2,		1},				/* CS_CZ */
 	{180,	CS_NEXT,		1},				/* NXT_US */
 	{181,	CS_NEXT,		2},				/* NXT_GERMANY */
 	{182,	CS_NEXT,		3},				/* NXT_FRANCE */

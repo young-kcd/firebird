@@ -725,11 +725,11 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 
 			if (action == ACTION_open) {
 				aux->ctlaux_obj1 =
-					INTL_convert_lookup(tdbb, dest_cs, CS_UNICODE101);
+					INTL_convert_lookup(tdbb, dest_cs, CS_UNICODE_UCS2);
 			}
 			else {
 				aux->ctlaux_obj1 =
-					INTL_convert_lookup(tdbb, CS_UNICODE101, source_cs);
+					INTL_convert_lookup(tdbb, CS_UNICODE_UCS2, source_cs);
 			}
 
 			if (!aux->ctlaux_obj1) {
@@ -754,12 +754,12 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 			source = control->ctl_source_handle;
 
 			if (action == ACTION_open) {
-				control->ctl_from_sub_type = CS_UNICODE101;
-				aux->ctlaux_subfilter->ctl_to_sub_type = CS_UNICODE101;
+				control->ctl_from_sub_type = CS_UNICODE_UCS2;
+				aux->ctlaux_subfilter->ctl_to_sub_type = CS_UNICODE_UCS2;
 			}
 			else {
-				control->ctl_to_sub_type = CS_UNICODE101;
-				aux->ctlaux_subfilter->ctl_from_sub_type = CS_UNICODE101;
+				control->ctl_to_sub_type = CS_UNICODE_UCS2;
+				aux->ctlaux_subfilter->ctl_from_sub_type = CS_UNICODE_UCS2;
 			}
 
 
