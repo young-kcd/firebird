@@ -762,9 +762,6 @@
 				RelativePath="..\..\..\src\jrd\log_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\loiter.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\map_proto.h">
 			</File>
 			<File

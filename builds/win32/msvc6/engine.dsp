@@ -991,10 +991,6 @@ SOURCE=..\..\..\src\jrd\log_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\loiter.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\map_proto.h
 # End Source File
 # Begin Source File
