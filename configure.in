@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.143 2003-07-09 01:20:17 brodsom Exp $
+dnl $Id: configure.in,v 1.144 2003-07-11 02:28:45 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -541,7 +541,7 @@ mkdir -p gen/jrd
 mkdir -p gen/msgs
 mkdir -p gen/qli
 mkdir -p gen/utilities
-mkdir -p gen/v5_examples
+mkdir -p gen/examples
 
 dnl # some .o and .d in this directory (to be removed)
 mkdir -p gen/remote
@@ -552,7 +552,15 @@ mkdir -p gen/firebird/include
 mkdir -p gen/firebird/intl
 mkdir -p gen/firebird/UDF
 mkdir -p gen/firebird/bin
-mkdir -p gen/firebird/examples/v5
+mkdir -p gen/firebird/examples/api
+mkdir -p gen/firebird/examples/build_win32
+mkdir -p gen/firebird/examples/build_unix
+mkdir -p gen/firebird/examples/dyn
+mkdir -p gen/firebird/examples/empbuild
+mkdir -p gen/firebird/examples/include
+mkdir -p gen/firebird/examples/stat
+mkdir -p gen/firebird/examples/udf
+mkdir -p gen/firebird/examples/winevent
 mkdir -p gen/firebird/lib
 mkdir -p gen/firebird/misc
 mkdir -p gen/firebird/help
@@ -636,7 +644,7 @@ mkdir -p temp/inet_server/ipserver
 mkdir -p temp/msgs/msgs
 mkdir -p temp/extlib/extlib
 mkdir -p temp/extlib/extlib/fbudf
-mkdir -p temp/v5_examples/v5_examples
+mkdir -p temp/examples
 
 mkdir -p temp/libfbembed
 mkdir -p temp/libfbembed/jrd

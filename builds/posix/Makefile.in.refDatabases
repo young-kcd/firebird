@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.17 2003-07-08 12:24:12 brodsom Exp $
+#  $Id: Makefile.in.refDatabases,v 1.18 2003-07-11 02:23:58 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -86,7 +86,7 @@ yachts.lnk: empty.fdb
 
 ref_databases : msg.fdb help.fdb metadata.fdb security.fdb
 
-msg.fdb:	$(SRC_ROOT)/msgs/msg.gbak
+msg.fdb:	$(BLD_ROOT)/misc/msg.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
 	$(TOUCH) $@
 	$(CHMOD) 444 $@
@@ -95,7 +95,7 @@ help.fdb:	$(FIREBIRD)/help/help.fdb
 	$(RM) -f $@
 	$(LN) -f $^ $@
 
-$(FIREBIRD)/help/help.fdb:	$(SRC_ROOT)/misc/help.gbak
+$(FIREBIRD)/help/help.fdb:	$(BLD_ROOT)/misc/help.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
 	$(TOUCH) $@
 	$(CHMOD) 444 $@
@@ -104,12 +104,12 @@ security.fdb:	$(FIREBIRD)/security.fdb
 	$(RM) -f $@
 	$(LN) -f $^ $@
 
-$(FIREBIRD)/security.fdb:	$(SRC_ROOT)/misc/security.gbak
+$(FIREBIRD)/security.fdb:	$(BLD_ROOT)/misc/security.gbak
 	$(BIN)/gbak_static  -R $< $@
 	$(TOUCH) $@
 	$(CHMOD) 666 $@
 
-metadata.fdb:	$(SRC_ROOT)/misc/metadata.gbak
+metadata.fdb:	$(BLD_ROOT)/misc/metadata.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
 	$(TOUCH) $@
 	$(CHMOD) 444 $@

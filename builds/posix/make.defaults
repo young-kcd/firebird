@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.26 2003-07-09 00:46:55 brodsom Exp $
+#   $Id: make.defaults,v 1.27 2003-07-11 02:23:58 brodsom Exp $
 # 
 
 
@@ -45,6 +45,8 @@ TMP_ROOT=$(ROOT)/temp
 GEN_ROOT=$(ROOT)/gen
 SRC_ROOT=$(ROOT)/src
 BLD_ROOT=$(ROOT)/builds
+LNG_ROOT=$(ROOT)/lang_helpers
+EXA_ROOT=$(ROOT)/examples
 
 FIREBIRD=$(GEN_ROOT)/firebird
 INTERBASE=$(FIREBIRD)

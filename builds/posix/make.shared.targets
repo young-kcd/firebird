@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.13 2003-07-08 01:05:22 brodsom Exp $
+#  $Id: make.shared.targets,v 1.14 2003-07-11 02:23:58 brodsom Exp $
 #
 
 
@@ -46,8 +46,8 @@
 
 $(SRC_ROOT)/dsql/parse.cpp: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/parse.sed
 	$(YACC) -l -d $<
-	$(MV) $(SRC_ROOT)/y.tab.c $(SRC_ROOT)/dsql/dsql.tab.c
-	$(MV) $(SRC_ROOT)/y.tab.h $(SRC_ROOT)/dsql/dsql.tab.h
+	$(MV) $(GEN_ROOT)/y.tab.c $(SRC_ROOT)/dsql/dsql.tab.c
+	$(MV) $(GEN_ROOT)/y.tab.h $(SRC_ROOT)/dsql/dsql.tab.h
 	sed -e 's/\\r//g' $(SRC_ROOT)/dsql/parse.sed > $(SRC_ROOT)/dsql/parse2.sed
 	sed -f $(SRC_ROOT)/dsql/parse2.sed <$(SRC_ROOT)/dsql/dsql.tab.c > $@  
 	-$(RM) $(SRC_ROOT)/dsql/parse2.sed
