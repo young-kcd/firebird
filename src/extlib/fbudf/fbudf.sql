@@ -24,6 +24,7 @@
 
 set sql dialect 3;
 
+-- The Nvl family is deprecated. Use native COALESCE instead.
 --FBUDF_API paramdsc* idNvl(paramdsc* v, paramdsc* v2)
 declare external function invl
 int by descriptor, int by descriptor
@@ -48,6 +49,7 @@ varchar(100) by descriptor, varchar(100) by descriptor,
 varchar(100) by descriptor returns parameter 3
 entry_point 'sNvl' module_name 'fbudf';
 
+-- The NullIf family is deprecated. Use native NULLIF instead.
 --FBUDF_API paramdsc* iNullIf(paramdsc* v, paramdsc* v2)
 declare external function inullif
 int by descriptor, int by descriptor
