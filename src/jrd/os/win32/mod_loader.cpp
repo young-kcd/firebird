@@ -60,5 +60,5 @@ void *Win32Module::findSymbol(const Firebird::string& symName)
 		string newSym = '_' + symName;
 		result = GetProcAddress(module, newSym.c_str());
 	}
-	return static_cast<void*>(result);
+	return (void*) result;
 }
