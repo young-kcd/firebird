@@ -464,7 +464,7 @@ void IDX_create_index(
 	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);
 
 	if ((idx->idx_flags & idx_unique) && ifl_data.ifl_duplicates > 0) {
-		SORT_fini(sort_handle, tdbb->tdbb_attachment);
+		// we don't need SORT_fini() here, as it's called inside BTR_create()
 		ERR_post(gds_no_dup, gds_arg_string,
 				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
 	}
