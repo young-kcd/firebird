@@ -1,3 +1,69 @@
+2004-05-13 21:46  brodsom
+
+	* firebird2/src/: jrd/svc.cpp (1.119), lock/lock.cpp (1.96):
+	
+	bad if
+
+2004-05-13 17:18  brodsom
+
+	* firebird2/src/remote/server.cpp (1.79):
+	
+	-Avoid shadow warning
+
+2004-05-13 16:04  kkuznetsov
+
+	* firebird2/: configure.in (1.199), src/common/classes/alloc.cpp
+	(1.51), src/include/firebird.h (1.19),
+	builds/posix/prefix.solx86gcc (1.10):
+	
+	Add check for caddr_t to fix compile error on Solaris munmap, some
+	more warnings to prefix solx86gcc, comment historycal pragmas
+
+2004-05-13 11:46  brodsom
+
+	* firebird2/src/gpre/: ada.cpp (1.40), ftn.cpp (1.44):
+	
+	-Avoid shadow warning
+
+2004-05-13 11:23  brodsom
+
+	* firebird2/src/: dudley/ddl.h (1.23), dudley/parse.cpp (1.41),
+	misc/blrtable.cpp (1.14), isql/isql.epp (1.83):
+	
+	-Fix ISO C++ errors (gcc -pedantic switch)
+
+2004-05-13 11:22  brodsom
+
+	* firebird2/src/jrd/: evl.cpp (1.88), evl_like.cpp (1.18),
+	evl_like.h (1.1):
+	
+	Rename evl_like.cpp to evl_like.h (after last changes it constains
+	function templates)
+
+2004-05-13 10:05  brodsom
+
+	* firebird2/src/jrd/val.h (1.25):
+	
+	Correction (Error found by Claudio)
+
+2004-05-13 08:48  eku
+
+	* firebird2/src/gpre/gpre.cpp (1.58):
+	
+	Fixed Blas' corrections.
+
+2004-05-13 02:57  brodsom
+
+	* firebird2/src/jrd/evl.cpp (1.87):
+	
+	-Remove unused warning
+
+2004-05-13 02:32  brodsom
+
+	* firebird2/src/: dsql/metd.epp (1.59), gpre/gpre_meta.epp (1.42):
+	
+	-Avoid shadow warning
+
 2004-05-12 23:47  brodsom
 
 	* firebird2/src/: remote/server.cpp (1.78), burp/burp.cpp (1.75):
