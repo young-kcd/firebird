@@ -1023,7 +1023,7 @@ STATUS GDS_DATABASE_INFO(STATUS*	user_status,
 
 	try
 	{
-		if (buffer_length > sizeof(temp)) {
+		if (buffer_length > (SLONG) sizeof(temp)) {
 			temp_buffer = ALLR_alloc((SLONG) buffer_length);
 		} else {
 			temp_buffer = temp;
@@ -2093,7 +2093,7 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 			return error(user_status);
 		}
 
-		statement->rsr_handle = (FRBRD *) packet->p_resp.p_resp_object;
+		statement->rsr_handle = (FRBRD *)(ULONG) packet->p_resp.p_resp_object;
 		if (packet->p_resp.p_resp_object == 0xFFFF) {
 			release_sql_request(statement);
 			*stmt_handle = NULL;

@@ -815,7 +815,7 @@ USHORT XNET_init(HWND hwnd,
 		return (USHORT) 1;
 	}
 
-	return (USHORT) xpm;
+	return (USHORT)(ULONG) xpm;
 }
 
 

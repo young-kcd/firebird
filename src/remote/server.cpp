@@ -440,7 +440,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 			extra_threads = threads_waiting - pending_requests;
 			if (extra_threads < 0) {
 				gds__thread_start(	reinterpret_cast<FPTR_INT_VOID_PTR>(thread),
-									(void*)flags,
+									(void*)(ULONG) flags,
 									THREAD_medium,
 									THREAD_ast,
 									0);

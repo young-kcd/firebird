@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.7 2003-03-04 03:42:23 brodsom Exp $
+$Id: parser.cpp,v 1.8 2003-04-08 01:06:46 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -228,7 +228,7 @@ REM_MSG DLL_EXPORT PARSE_messages(UCHAR * blr, USHORT blr_length)
 				net_length += (desc->dsc_length + 3) & ~3;
 			if (align > 1)
 				offset = FB_ALIGN(offset, align);
-			desc->dsc_address = (UCHAR *) offset;
+			desc->dsc_address = (UCHAR *)(ULONG) offset;
 			offset += desc->dsc_length;
 		}
 		format->fmt_length = offset;
