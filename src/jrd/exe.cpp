@@ -1385,48 +1385,29 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
  *
  **************************************/
 
-	UCHAR *p;
-	vary *v = reinterpret_cast <vary*> (
-		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
-	v->vary_length = BUFFER_LARGE;
-	SSHORT l;
-	ISC_STATUS *status;
-	ISC_STATUS_ARRAY local;
-
-	memset(local, 0, sizeof(local));
-	status = local;
-
 	SET_TDBB(tdbb);
-	p = 0;
-	l = (dsc && !(request->req_flags & req_null)) ?
-		MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0; // !!! How call Msgs ?
-	if (p) {
-		if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
-			status[0] = gds_arg_gds;
-			status[1] = gds_exec_sql_max_call_exceeded;
-			status[2] = gds_arg_end;
-		}
-		else {
-			tdbb->tdbb_transaction->tra_callback_count++;
-			callback_execute_immediate(status,
-									   tdbb->tdbb_attachment,
-									   tdbb->tdbb_transaction,
-									   reinterpret_cast<TEXT *>(p), l);
-			tdbb->tdbb_transaction->tra_callback_count--;
-		}
+	if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
+		ERR_post(isc_exec_sql_max_call_exceeded, 0);
 	}
-	else {
-		status[0] = gds_arg_gds;
-		status[1] = gds_exec_sql_invalid_arg;
-		status[4] = gds_arg_end;
-	}
+
+	AutoPtr<str> SqlStatementText(ExecuteStatement::
+		getString(tdbb->tdbb_transaction->tra_pool, dsc, request));
+
+	ISC_STATUS_ARRAY local;
+	memset(local, 0, sizeof(local));
+	ISC_STATUS* status = local;
+
+	tdbb->tdbb_transaction->tra_callback_count++;
+	callback_execute_immediate(status,
+				   tdbb->tdbb_attachment, tdbb->tdbb_transaction,
+				   reinterpret_cast<TEXT *>(SqlStatementText->str_data), 
+				   SqlStatementText->str_length);
+	tdbb->tdbb_transaction->tra_callback_count--;
 
 	if (status[1]) {
  		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
 		ERR_punt();
 	}
-
-	delete v;
 }
 
 

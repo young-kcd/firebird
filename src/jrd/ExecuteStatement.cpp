@@ -40,6 +40,8 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/sch_proto.h"
+#define	WHY_NO_API 
+#include "../jrd/why_proto.h"
 
 #include "../jrd/ExecuteStatement.h"
 
@@ -91,19 +93,8 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	SingleMode = SingleTon;
 
 	assert(tdbb->tdbb_transaction->tra_pool);
-	vary *v = reinterpret_cast <vary*> (
-		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
-	v->vary_length = BUFFER_LARGE;
-	UCHAR *p = 0;
-	DSC* dsc = EVL_expr(tdbb, sql);
-	SLONG l = (dsc && !(tdbb->tdbb_request->req_flags & req_null)) ?
-		MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0;
-	if (! p) {
-		tdbb->tdbb_status_vector[0] = gds_arg_gds;
-		tdbb->tdbb_status_vector[1] = gds_exec_sql_invalid_arg;
-		tdbb->tdbb_status_vector[4] = gds_arg_end;
-		ERR_punt();
-	}
+	AutoPtr<str> p(getString(tdbb->tdbb_transaction->tra_pool, 
+		EVL_expr(tdbb, sql), tdbb->tdbb_request));
 	if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
 		tdbb->tdbb_status_vector[0] = gds_arg_gds;
 		tdbb->tdbb_status_vector[1] = gds_exec_sql_max_call_exceeded;
@@ -133,12 +124,12 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 
 	// For normal diagnostic
 	const int max_diag_len = 50;
-	int diag_len = strlen((TEXT *)p);
+	int diag_len = p->str_length;
 	if (diag_len > max_diag_len)
 		diag_len = max_diag_len;
 	StartOfSqlOperator = FB_NEW(*tdbb->tdbb_transaction->tra_pool) TEXT[diag_len + 1];
 	StartOfSqlOperator[0] = 0;
-	strncat(StartOfSqlOperator, (TEXT *)p, diag_len);
+	strncat(StartOfSqlOperator, (TEXT*)(p->str_data), diag_len);
 
 	// this check uses local error handler for local status vector
 	ISC_STATUS_ARRAY local;
@@ -149,7 +140,8 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	Chk(isc_dsql_allocate_statement(status, &Attachment, &Statement));
 
 	Chk(isc_dsql_prepare(status, &Transaction, &Statement,
-            (USHORT)l, (TEXT *)p, SQL_DIALECT_CURRENT, Sqlda));
+			(USHORT)(p->str_length), (TEXT*)(p->str_data), 
+			SQL_DIALECT_CURRENT, Sqlda));
     if (! Sqlda->sqld) {  // Non-select statement - reject for a while
 		/*Chk(isc_dsql_execute(status, &Transaction,
                &Statement, SQLDA_VERSION1, 0)); */
@@ -306,6 +298,7 @@ void ExecuteStatement::Close(TDBB tdbb) {
 	}
 	delete Sqlda;
 	Sqlda = 0;
+	WHY_cleanup_transaction(Transaction);
 	delete Transaction;
 	Transaction = 0;
 	delete Buffer;
@@ -344,4 +337,22 @@ ULONG ExecuteStatement::ParseSqlda(void) {
         offset += sizeof (short);
     }
     return offset;
+}
+
+class str* ExecuteStatement::getString(MemoryPool* pool, dsc* d, const jrd_req* r) {
+	char buffer[BUFFER_LARGE + sizeof(vary)];
+	vary* v = reinterpret_cast<vary*>(buffer);
+	v->vary_length = BUFFER_LARGE;
+
+	UCHAR* p = 0;
+	const SSHORT l = (d && !(r->req_flags & req_null)) ?
+		MOV_get_string(d, &p, v, BUFFER_LARGE) : 0; // !!! How call Msgs ?
+	if (! p) {
+		ERR_post(isc_exec_sql_invalid_arg, 0);
+	}
+
+	class str* s = FB_NEW_RPT(*pool, l + 1) str();
+	s->str_length = l;
+	memcpy(s->str_data, p, l);
+	return s;
 }

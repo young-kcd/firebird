@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.23 2003-06-16 15:42:58 alexpeshkoff Exp $
+$Id: why.cpp,v 1.23.2.1 2004-03-27 13:36:40 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -6022,6 +6022,16 @@ static void subsystem_exit(void)
 	THREAD_EXIT;
 }
 
+// Call all cleanup routines registered with the transaction.
+void WHY_cleanup_transaction(WHY_TRA transaction)
+{
+	for (clean* cln = transaction->cleanup; cln; cln = transaction->cleanup)
+	{
+		transaction->cleanup = cln->clean_next;
+		cln->TransactionRoutine(transaction, cln->clean_arg);
+		free_block(cln);
+	}
+}
 
 #if defined (SERVER_SHUTDOWN) && !defined (SUPERCLIENT) && !defined (REQUESTER)
 BOOLEAN WHY_set_shutdown(BOOLEAN flag)

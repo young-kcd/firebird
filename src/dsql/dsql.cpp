@@ -921,10 +921,12 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
     THREAD_ENTER;
 
 	/* 3. Call execute... function */
-	return dsql8_execute_immediate_common(status,
-										  &why_db_handle, &why_trans_handle,
-										  len, sql_operator, database->dbb_db_SQL_dialect,
-										  0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
+	ISC_STATUS rc = dsql8_execute_immediate_common(status,
+						&why_db_handle, &why_trans_handle,
+						len, sql_operator, database->dbb_db_SQL_dialect,
+						0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
+	WHY_cleanup_transaction(why_trans_handle);
+	return rc;
 }
 
 

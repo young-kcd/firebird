@@ -52,6 +52,25 @@ public:
 	void Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon);
 	bool Fetch(TDBB tdbb, JRD_NOD * FirstVar);
 	void Close(TDBB tdbb);
+	static class str* getString(MemoryPool*, dsc*, const jrd_req*);
+};
+
+
+// To be moved to some more appropriate place
+template <typename Where>
+class AutoPtr {
+private:
+	Where* ptr;
+public:
+	AutoPtr<Where>(Where* v) {ptr = v;}
+	operator Where*() {return ptr;}
+	operator bool() {return ptr ? true : false;}
+	bool operator !() {return ptr ? false : true;}
+	Where* operator->() {return ptr;}
+	~AutoPtr<Where>() {delete ptr;}
+private:
+	AutoPtr<Where>(AutoPtr<Where>&);
+	void operator=(AutoPtr<Where>&);
 };
 
 #endif // _JRD_DynExec_H_
