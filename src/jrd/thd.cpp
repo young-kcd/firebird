@@ -1868,7 +1868,7 @@ static int thread_start(
 	pthread_attr_t pattr;
 	int state;
 
-#if ( !defined HP10 && !defined linux && !defined FREEBSD )
+#if ( !defined HP10 && !defined LINUX && !defined FREEBSD )
 		state = pthread_attr_init(&pattr);
 	if (state)
 		return state;
@@ -1885,7 +1885,7 @@ static int thread_start(
 	return state;
 
 #else
-#if ( defined linux || defined FREEBSD )
+#if ( defined LINUX || defined FREEBSD )
 		if (state = pthread_create(&thread, NULL, (void*(*)(void*))routine, arg))
 		return state;
 	return pthread_detach(thread);

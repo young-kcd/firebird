@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.19 2003-02-27 21:43:11 brodsom Exp $
+//	$Id: cob.cpp,v 1.20 2003-03-02 17:47:20 fsg Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -161,7 +161,7 @@
 #define MICROFOCUS
 #endif
 
-#ifdef linux
+#ifdef LINUX
 #define MICROFOCUS
 #endif
 

@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.35 2003-03-01 19:10:43 brodsom Exp $
+$Id: lock.cpp,v 1.36 2003-03-02 17:47:22 fsg Exp $
 */
 
 #include "firebird.h"
@@ -188,7 +188,7 @@ SSHORT LOCK_debug_level = 0;
 #define DUMMY_OWNER_DELETE	((PTR) -2)
 #define DUMMY_OWNER_SHUTDOWN	((PTR) -3)
 
-#if !(defined linux || defined WIN_NT || defined FREEBSD || defined NETBSD || defined DARWIN )
+#if !(defined LINUX || defined WIN_NT || defined FREEBSD || defined NETBSD || defined DARWIN )
 extern SCHAR *sys_errlist[];
 #endif
 

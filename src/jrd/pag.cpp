@@ -169,7 +169,7 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 #define CLASS       19
 #endif
 
-#ifdef linux
+#ifdef LINUX
 #ifdef i386
 #define CLASS           19
 #endif

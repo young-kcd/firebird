@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.28 2003-02-25 12:43:52 brodsom Exp $
+$Id: flu.cpp,v 1.29 2003-03-02 17:47:21 fsg Exp $
 */
 
 #include "firebird.h"
@@ -83,7 +83,7 @@ static int condition_handler(int *, int *, int *);
 #define IB_UDF_DIR 	"UDF/"
 #endif
 
-#if (defined SOLARIS || defined SCO_EV || defined linux || defined AIX_PPC || defined SINIXZ || defined FREEBSD)
+#if (defined SOLARIS || defined SCO_EV || defined LINUX || defined AIX_PPC || defined SINIXZ || defined FREEBSD)
 #include <dlfcn.h>
 #define DYNAMIC_SHARED_LIBRARIES
 #include <unistd.h>

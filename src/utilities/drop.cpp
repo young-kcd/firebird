@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.16 2003-02-15 00:55:08 brodsom Exp $
+ * $Id: drop.cpp,v 1.17 2003-03-02 17:47:22 fsg Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -354,7 +354,7 @@ static int sem_exclusive( SLONG key, SLONG count)
  **************************************/
 	int semid;
 
-#if !(defined SUNOS4 || defined linux || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#if !(defined SUNOS4 || defined LINUX || defined FREEBSD || defined NETBSD || defined SINIXZ)
 	return semget(key, (int) count, IPC_EXCL);
 #else
 	if ((semid = semget(key, (int) count, IPC_EXCL)) != -1)

@@ -81,7 +81,7 @@ DATABASE DB = STATIC "yachts.lnk";
 #if (defined WIN_NT)
 #include <stdlib.h>
 #else
-#if !(defined linux || defined FREEBSD || defined NETBSD || defined DARWIN)
+#if !(defined LINUX || defined FREEBSD || defined NETBSD || defined DARWIN)
 extern SCHAR *sys_errlist[];
 #endif
 #endif

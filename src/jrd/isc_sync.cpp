@@ -642,7 +642,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 		pthread_cond_init(event->event_semnum, pthread_condattr_default);
 #else
 /* RITTER - added HP11 to the preprocessor condition below */
-#if (defined linux || defined DARWIN || defined HP11 || defined FREEBSD)
+#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
 		pthread_mutex_init(event->event_mutex, NULL);
 		pthread_cond_init(event->event_semnum, NULL);
 #else
@@ -771,7 +771,7 @@ int ISC_event_wait(
 		if (micro_seconds > 0 && (ret == -1) && (errno == EAGAIN))
 #else
 /* RITTER - added HP11 to the preprocessor condition below */
-#if (defined linux || defined DARWIN || defined HP11 || defined FREEBSD)
+#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
 		if (micro_seconds > 0 && (ret == ETIMEDOUT))
 #else
 		if (micro_seconds > 0 && (ret == ETIME))
@@ -3172,7 +3172,7 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
 	int state;
 
 /* RITTER - replaced HP10 with HPUX in the line below */
-#if (!defined HPUX && !defined linux && !defined DARWIN && !defined FREEBSD)
+#if (!defined HPUX && !defined LINUX && !defined DARWIN && !defined FREEBSD)
 
 	pthread_mutexattr_t mattr;
 
@@ -3193,7 +3193,7 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
 	 memory in which case we need interprocess thread sync.
 */
 /* RITTER - added HP11 */
-#if (defined linux || defined DARWIN || defined HP11 || defined FREEBSD)
+#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
 	return pthread_mutex_init(mutex->mtx_mutex, NULL);
 #else
 	state = pthread_mutex_init(mutex->mtx_mutex, pthread_mutexattr_default);

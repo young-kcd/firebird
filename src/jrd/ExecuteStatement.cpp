@@ -68,7 +68,7 @@ static struct {
 /* dtype_timestamp	*/ SQL_TIMESTAMP, sizeof(SLONG) * 2,
 /* dtype_blob		*/ SQL_BLOB, 0, 
 /* dtype_array		*/ SQL_ARRAY, -1, // Not supported for a while
-/* dtype_int64		*/ SQL_INT64, sizeof(__int64),
+/* dtype_int64		*/ SQL_INT64, sizeof(SINT64),
 };
 
 static TEXT cba[] = "Callback arg";

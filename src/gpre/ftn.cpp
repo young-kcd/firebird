@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.17 2003-02-27 16:04:56 brodsom Exp $
+//	$Id: ftn.cpp,v 1.18 2003-03-02 17:47:20 fsg Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -264,7 +264,7 @@ static ADL array_decl_list;
 #define COMMA           ","
 #endif
 
-#ifdef linux
+#ifdef LINUX
 #define INCLUDE_ISC_FTN  "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
 #define INCLUDE_FTN_FILE "include/gds.f"
 #define DOUBLE_DCL      "DOUBLE PRECISION"

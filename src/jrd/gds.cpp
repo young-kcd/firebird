@@ -181,7 +181,7 @@ extern int ib_printf();
 #endif
 #endif
 
-#if !(defined VMS || defined WIN_NT || defined linux || defined FREEBSD || defined NETBSD || defined DARWIN )
+#if !(defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined DARWIN )
 extern int errno;
 extern SCHAR *sys_errlist[];
 extern int sys_nerr;
