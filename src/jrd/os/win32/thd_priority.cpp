@@ -229,7 +229,7 @@ BOOLEAN ThreadPriorityScheduler::Boosted(void) {
 // Scheduler Thread
 //
 unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
-	static GlobalTicks = THPS_TICKS;
+	static int GlobalTicks = THPS_TICKS;
 	for (;;) {
 		Sleep(THPS_TIME);
 		UCHAR StateCloseHandles = 0;
