@@ -2,6 +2,14 @@
   * v1.5.2
   **************
 
+    * Fixed ISQL problems
+        1) statement terminators and '--' comments are no longer recognized in multi-line literals
+        2) tab characters are no longer translated to spaces in literal strings
+      Contributor(s):
+        Dimitry Sibiryakov <sd at topol.udm.net>
+        Claudio Varderrama <cvalde at usa.net>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
     * Fixed unregistered bug.
         Possible server crash when execute_immediate is used to release or rollback transaction to non-existing savepoint
       Contributor(s):
