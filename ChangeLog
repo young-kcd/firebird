@@ -1,3 +1,113 @@
+2002-11-13 17:37  alexpeshkoff
+
+	* firebird2/src/jrd/: isc_file.cpp, isc_win32.cpp:
+	
+	ERROR_FBOK => ERROR_SUCCESS
+
+2002-11-13 16:57  alexpeshkoff
+
+	* firebird2/src/: dsql/ddl.cpp, jrd/exe.cpp:
+	
+	Fixed bug with exception inside for/while loop in triggers
+
+2002-11-13 16:00  kkuznetsov
+
+	* firebird2/src/: burp/spit.cpp, csv/csi.cpp, csv/csv.cpp,
+	dsql/array.epp, dsql/blob.epp, dsql/dsql.cpp, dsql/preparse.cpp,
+	dsql/user_dsql.cpp, dsql/utld.cpp, dudley/exe.epp,
+	ipserver/ipclient.cpp, journal/archive.cpp, journal/misc.cpp,
+	journal/oldr.cpp, jrd/ail.cpp, jrd/blb.cpp, jrd/blob_filter.epp,
+	jrd/btr.cpp, jrd/cch.cpp, jrd/common.h, jrd/dyn_def.epp,
+	jrd/dyn_mod.epp, jrd/dyn_util.epp, jrd/filters.cpp, jrd/gds.cpp,
+	jrd/isc_file.cpp, jrd/isc_sync.cpp, jrd/isc_win32.cpp, jrd/jio.cpp,
+	jrd/jrd.cpp, jrd/jrn.cpp, jrd/lck_dummy.cpp, jrd/llio.cpp,
+	jrd/map.cpp, jrd/old.cpp, jrd/rec.cpp, jrd/sdl.cpp, jrd/sort.cpp,
+	jrd/svc.cpp, jrd/utl.cpp, jrd/vmslock.cpp, jrd/why.c,
+	jrd/y-valve.cpp, lock/lock.cpp, lock/pls.cpp, lock/printv3.cpp,
+	lock/printv3s4.cpp, pipe/foot.cpp, pipe/head.cpp, qli/meta.epp,
+	remote/interface.cpp, remote/merge.cpp, remote/multivx.cpp,
+	remote/remote.cpp, remote/server.cpp, remote/wfwnp.cpp,
+	remote/winvx.cpp, utilities/ibmgr.cpp, utilities/install_reg.cpp,
+	utilities/install_svc.cpp, utilities/registry.cpp,
+	utilities/services.cpp, utilities/srvrmgr.cpp, v5_examples/api9f.c,
+	wal/driver.cpp, wal/wal.cpp, wal/wal_prnt.cpp, wal/walc.cpp,
+	wal/walf.cpp, wal/walr.cpp, wal/walw.cpp:
+	
+	Renaming all occurences of SUCCESS to FBOK
+
+2002-11-13 15:47  dimitr
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	no message
+
+2002-11-13 15:43  paul_reeves
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	-m Fix bug: 623992 - double forward slash in connection string.
+	With thanks to Mark O'Donohue.
+
+2002-11-13 13:27  eku
+
+	* firebird2/: configure.in, src/include/gen/autoconfig_msvc.h,
+	src/jrd/common.h, src/jrd/isc_file.cpp,
+	src/make.new/config/config.h.in:
+	
+	Autoconf cleanup:  o added test for the header file mntent.h  o
+	replaced NON_MNTENT with !HAVE_MNTENT_H
+	
+	Removed some left-overs from Sean's DECOSF removal.
+
+2002-11-13 13:23  eku
+
+	* firebird2/builds/posix/prefix.sinixz:
+	
+	We don't need profiling information!
+
+2002-11-13 13:07  kkuznetsov
+
+	* firebird2/src/gpre/: ada.cpp, ftn.cpp:
+	
+	Making ADA and Fortrun funs happy
+
+2002-11-13 12:07  eku
+
+	* firebird2/src/install/arch-specific/sinixz/: Makefile.in,
+	prototype.in:
+	
+	SINIX-Z: distribute firebird.conf, removed duplicate entry in
+	prototype
+
+2002-11-13 11:12  eku
+
+	* firebird2/configure.in:
+	
+	Help text should show the correct default value.
+
+2002-11-13 09:00  eku
+
+	* firebird2/src/: install/misc/firebird.conf, misc/firebird.conf:
+	
+	Merged contents of src/misc/firebird.conf into
+	src/install/misc/firebird.conf.
+
+2002-11-13 08:07  eku
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.firebird,
+	builds/posix/make.defaults, src/include/gen/autoconfig_msvc.h,
+	src/isql/isql.epp, src/make.new/config/config.h.in:
+	
+	Editline cleanup:  o removed obsolete readline tests  o renamed
+	readline into editline	o editline is not enabled by default,
+	enabled with '--with-editline'
+
+2002-11-13 05:09  skywalker
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Change parameter name to RemoteFileOpenAbility
+
 2002-11-12 19:59  fsg
 
 	* firebird2/src/intl/anhun.h:
