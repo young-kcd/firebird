@@ -32,7 +32,7 @@ for %%v in ( %1 %2 ) do (
 @call :MOVE
 @echo.
 @echo The following errors and warnings occurred during the build:
-@type make_all.log | findstr error
+@type make_all.log | findstr error(s)
 @echo.
 @goto :END
 

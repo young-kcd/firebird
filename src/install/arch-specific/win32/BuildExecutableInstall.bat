@@ -100,6 +100,7 @@ for %%v in (fbclient gds32 ib_util) do @(
 @echo Copying docs...
 @copy %ROOT_PATH%\doc\*.* %ROOT_PATH%\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of main documentation tree failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
+@if EXIST "%ROOT_PATH%\output\doc\Firebird_v15.104_ReleaseNotes.pdf" ren %ROOT_PATH%\output\doc\Firebird_v15.104_ReleaseNotes.pdf Firebird_v15_ReleaseNotes.pdf 
 
 @echo Copying udf library scripts...
 

@@ -35,6 +35,9 @@
 @echo Building empbuild.fdb
 @copy %ROOT_PATH%\src\v5_examples\*.sql %ROOT_PATH%\gen\v5_examples\ > nul
 @copy %ROOT_PATH%\src\v5_examples\*.inp %ROOT_PATH%\gen\v5_examples\ > nul
+
+@echo.
+@echo Creating empbuild.fdb
 :: Here we must use cd because isql does not have an option to set a base directory
 @cd %ROOT_PATH%\gen\v5_examples
 @del empbuild.fdb 2> nul

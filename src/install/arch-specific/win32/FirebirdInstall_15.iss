@@ -142,7 +142,8 @@ Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs"; Valu
 
 ;User _may_ be installing over an existing 1.5 install, and it may have been set to run as application on startup
 ;so we had better delete this entry unless they have chosen to autostart as application
-Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; Valuetype: none; ValueName: 'Firebird'; flags: deletevalue; Check: IsNotAutoStart;
+; - except that this seems to be broken. Bah!
+;Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; Valuetype: none; ValueName: 'Firebird'; ValueData: ''; flags: deletevalue; Check: IsNotAutoStartApp;
 
 [Icons]
 Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0; Tasks: MenuGroupTask; Check: InstallServerIcon; IconIndex: 0; Components: ClassicServerComponent; Comment: Run Firebird classic server (without guardian)
@@ -182,10 +183,10 @@ Source: output\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent; 
 Source: output\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 
 ;This file is a bit 'special'. See the InstallGds32 procedure below for more info.
-Source: output\bin\gds32.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile; Check: InstallGds32
+Source: output\bin\gds32.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile promptifolder; Check: InstallGds32
 Source: output\bin\gds32.dll; DestDir: {app}\bin\gds32.dll.stub; Components: ClientComponent; Check: InstallGds32Stub
 Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
-Source: output\bin\fbclient.local; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder; MinVersion: 0,5.0
+Source: output\bin\fbclient.local; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile; MinVersion: 0,5.0
 
 Source: output\bin\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent; 
 Source: output\bin\msvcrt.local; DestDir: {app}\bin; Components: ClientComponent; MinVersion: 0,5.0;
@@ -201,8 +202,8 @@ Source: output\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent; Flags
 Source: output\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: output\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: output\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion
-;Source: output\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent; Flags: ignoreversion
-Source: output\doc\Firebird_v15.104_ReleaseNotes.pdf; DestDir: {app}\doc\Firebird_v15.ReleaseNotes.pdf; Components: DevAdminComponent; Flags: ignoreversion
+Source: output\v5_examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent; Flags: ignoreversion
+;Source: output\doc\Firebird_v15.104_ReleaseNotes.pdf; DestDir: {app}\doc\Firebird_v15.ReleaseNotes.pdf; Components: DevAdminComponent; Flags: ignoreversion
 ;Source: firebird\install\doc_all_platforms\Firebird_v1_5_*.html; DestDir: {app}\doc; Components: DevAdminComponent;  Flags: ignoreversion;
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
 Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete
