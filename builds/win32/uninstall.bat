@@ -1,3 +1,3 @@
 instsvc stop
-instsvc remove -g -z
+instsvc remove -z
 instreg remove -z
