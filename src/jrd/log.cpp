@@ -183,9 +183,6 @@ static void log_string(SSHORT, const SCHAR*);
 static void log_teb(SSHORT, const TEB*);
 static void open_log(const TEXT*, SSHORT, const SCHAR*);
 
-#define PUT(c)	log_char(c)
-
-
 void LOG_call(enum log_t call_type, ...)
 {
 /**************************************
@@ -211,7 +208,7 @@ void LOG_call(enum log_t call_type, ...)
 	if (!dbb || !dbb->dbb_log || !dbb->dbb_log->log_file)
 		return;
 
-	PUT((SCHAR) call_type);
+	log_char((SCHAR) call_type);
 
 	VA_START(ptr, call_type);
 
@@ -491,7 +488,7 @@ static void log_long(SLONG number)
 	const SLONG vax_number = gds__vax_integer(&number, sizeof(number));
 	const char* p = (SCHAR *) & vax_number;
 	for (int i = 0; i < sizeof(number); i++)
-		PUT(*p++);
+		log_char(*p++);
 }
 
 
@@ -509,7 +506,7 @@ static void log_pointer(const SCHAR* pointer)
  **************************************/
 	const char* p = (SCHAR *) & pointer;
 	for (int i = 0; i < sizeof(pointer); i++)
-		PUT(*p++);
+		log_char(*p++);
 }
 
 
@@ -528,7 +525,7 @@ static void log_short(SSHORT number)
 	const USHORT vax_number = (USHORT) gds__vax_integer(&number, sizeof(number));
 	const char* p = (SCHAR *) & vax_number;
 	for (int i = 0; i < sizeof(number); i++)
-		PUT(*p++);
+		log_char(*p++);
 }
 
 
@@ -545,7 +542,7 @@ static void log_string(SSHORT buffer_size, const SCHAR* buffer)
  *
  **************************************/
 	while (buffer_size--)
-		PUT(*buffer++);
+		log_char(*buffer++);
 }
 
 

@@ -117,8 +117,8 @@ const int MAX_INDEX_SEGMENTS = 16;
 const int MAX_KEY			= 4096;		// Maximum page size possible divide by 4 (16384 / 4)
 const int MAX_KEY_PRE_ODS11	= 255;		// Max key-size before ODS11
 
-#define SQL_MATCH_1_CHAR	'_'	/* Not translatable */
-#define SQL_MATCH_ANY_CHARS	'%'	/* Not translatable */
+const char SQL_MATCH_1_CHAR		= '_';	/* Not translatable */
+const char SQL_MATCH_ANY_CHARS	= '%';	/* Not translatable */
 
 #endif // JRD_CONSTANTS_H
 

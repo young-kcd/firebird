@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.63 2004-05-05 21:53:36 brodsom Exp $
+ * $Id: sort.cpp,v 1.64 2004-05-06 18:07:02 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -98,10 +98,6 @@ using namespace Jrd;
 #define  DO_32_COMPARE(p, q, l)   do if (*p++ != *q++) break; while (--l);
 
 #define MOVE_32(len,from,to)      memcpy(to, from, len*4)
-
-#ifndef EINTR
-#define EINTR   0
-#endif
 
 // These values are not defined as const as they are passed to 
 // the diddle_key routines which mangles them.

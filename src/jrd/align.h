@@ -40,7 +40,7 @@ Maximum alignments for corresponding data types are defined in dsc.h
  *  value is greater than blr_blob_id, be sure to change the next define,
  *  and also add the required entries to all of the arrays below.
  */
-#define DTYPE_BLR_MAX	blr_blob_id
+const unsigned char DTYPE_BLR_MAX	= blr_blob_id;
 
 /*
  the blr types are defined in blr.h

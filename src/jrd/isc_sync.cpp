@@ -201,13 +201,6 @@ static BOOLEAN mutex_test(MTX);
 static void make_object_name(TEXT*, const TEXT*, const TEXT*);
 #endif
 
-#ifndef sigvector
-#ifndef hpux
-#define sigvector	sigvec
-#endif
-#endif
-
-
 #if defined FREEBSD || defined NETBSD || defined DARWIN
 #define sigset      signal
 #endif

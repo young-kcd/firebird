@@ -52,9 +52,9 @@ class RefreshRange : public pool_alloc_rpt<SCHAR, type_rng>
 	UCHAR rng_event[1];			/* event name to post */
 };
 
-#define RNG_posted	1			/* range has already been posted */
+const USHORT RNG_posted	= 1;			/* range has already been posted */
 
-#define RANGE_NAME_LENGTH	31	/* max. length of range name for the event */
+const int RANGE_NAME_LENGTH	= 31;	/* max. length of range name for the event */
 
 } //namespace Jrd
 

@@ -73,12 +73,8 @@
 #define O_SYNC		0
 #endif
 
-#ifndef EINTR
-#define EINTR		0
-#endif
-
-#define IO_RETRY	20
-#define BUFSIZE		32768
+const int IO_RETRY		= 20;
+const int BUFSIZE		= 32768;
 
 static void io_error(ISC_STATUS*, const TEXT*, const TEXT*, ISC_STATUS);
 
@@ -144,7 +140,6 @@ int LLIO_allocate_file_space(
 
 
 #ifdef WIN_NT
-#define IO_DEFINED
 int LLIO_close(ISC_STATUS* status_vector, SLONG file_desc)
 {
 /**************************************
@@ -402,10 +397,9 @@ static void io_error(ISC_STATUS* status_vector,
 					   isc_arg_string, filename, isc_arg_gds, operation,
 					   isc_arg_win32, GetLastError(), 0);
 }
-#endif
 
+#else // WIN_NT
 
-#ifndef IO_DEFINED
 int LLIO_close(ISC_STATUS* status_vector, SLONG file_desc)
 {
 /**************************************
@@ -663,5 +657,5 @@ static void io_error(
 					   isc_arg_string, filename, isc_arg_gds, operation,
 					   isc_arg_unix, errno, 0);
 }
-#endif
+#endif // WIN_NT
 

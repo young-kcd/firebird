@@ -1079,20 +1079,10 @@ extern int debug;
    so in this case we define the macro as calling that function. */
 #ifndef JRD_MAIN
 
-#ifdef __cplusplus
-
 #define SET_THREAD_DATA		tdbb = &thd_context;\
 				MOVE_CLEAR (tdbb, sizeof (*tdbb));\
 				THD_put_specific (reinterpret_cast<struct thdd*>(tdbb));\
 				tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB
-
-#else
-
-#define SET_THREAD_DATA		tdbb = &thd_context;\
-				MOVE_CLEAR (tdbb, sizeof (*tdbb));\
-				THD_put_specific((struct thdd*)tdbb);\
-				tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB
-#endif /* __cplusplus */
 
 #define RESTORE_THREAD_DATA	THD_restore_specific()
 

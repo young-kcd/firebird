@@ -89,10 +89,10 @@ inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
 
 // END_LEVEL (-1) is choosen here as a unknown/none value, because it's 
 // already reserved as END_LEVEL marker for page number and record number.
-#define NO_VALUE END_LEVEL
+const SLONG NO_VALUE	= END_LEVEL;
 // A split page will never have the number 0, because that's the value
 // of the main page.
-#define NO_SPLIT 0
+const SLONG NO_SPLIT	= 0;
 
 // Thresholds for determing of a page should be garbage collected
 // Garbage collect if page size is below GARBAGE_COLLECTION_THRESHOLD
@@ -111,7 +111,7 @@ struct INT64_KEY {
 };
 
 // I assume this wasn't done sizeof(INT64_KEY) on purpose, since alignment might affect it.
-#define INT64_KEY_LENGTH	(sizeof (double) + sizeof (SSHORT))
+size_t INT64_KEY_LENGTH	= sizeof (double) + sizeof (SSHORT);
 
 static const double pow10_table[] =
 {
@@ -1994,7 +1994,7 @@ static void compress(thread_db* tdbb,
 	else if (itype == idx_timestamp2) {
 		GDS_TIMESTAMP timestamp;
 		timestamp = MOV_get_timestamp(desc);
-#define SECONDS_PER_DAY	((ULONG) 24 * 60 * 60)
+		const ULONG SECONDS_PER_DAY	= 24 * 60 * 60;
 		temp.temp_sint64 = ((SINT64) (timestamp.timestamp_date) *
 			(SINT64) (SECONDS_PER_DAY * ISC_TIME_SECONDS_PRECISION)) +
 			(SINT64) (timestamp.timestamp_time);

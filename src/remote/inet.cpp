@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.103 2004-05-05 21:54:55 brodsom Exp $
+$Id: inet.cpp,v 1.104 2004-05-06 18:08:41 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -152,18 +152,6 @@ extern int h_errno;
 # endif	/* SOCKET */
 
 #endif /* WIN_NT */
-
-#ifdef SYSV_SIGNALS
-#define NO_ITIMER
-#endif
-
-#ifndef EINTR
-#define EINTR		0
-#endif
-
-#ifndef hpux
-#define sigvector	sigvec
-#endif
 
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET  -1

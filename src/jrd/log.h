@@ -24,14 +24,14 @@
 #ifndef JRD_LOG_H
 #define JRD_LOG_H
 
-#define LOG_VERSION1	1		/* version to correspond with v2.5 access method */
-#define LOG_VERSION2	2		/* version to correspond with v3.0 access method */
-#define LOG_VERSION3	3		/* version to correspond with v4.0 access method */
+const int LOG_VERSION1	= 1;		/* version to correspond with v2.5 access method */
+const int LOG_VERSION2	= 2;		/* version to correspond with v3.0 access method */
+const int LOG_VERSION3	= 3;		/* version to correspond with v4.0 access method */
 
 /* the log buffer length should be long enough to fit
    any OSRI call atomically to prevent multiuser bugs */
 
-#define LOG_BUFFER_LENGTH	1024
+const int LOG_BUFFER_LENGTH	= 1024;
 
 /* replay log block */
 

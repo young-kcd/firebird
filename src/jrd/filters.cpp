@@ -659,7 +659,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	thread_db* tdbb = NULL;
 /* Note: Cannot pass tdbb without API change to user filters */
 
-#define EXP_SCALE		128		/* to keep expansion non-floating */
+	const USHORT EXP_SCALE		= 128;		/* to keep expansion non-floating */
 
 	ctlaux* aux = (ctlaux*) control->ctl_data[0];
 	

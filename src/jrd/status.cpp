@@ -49,7 +49,7 @@ void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list
 			case isc_arg_string:
 				{
 					ISC_STATUS* q = va_arg(args, ISC_STATUS*);
-					if (strlen((TEXT *) q) >= MAX_ERRSTR_LEN)
+					if (strlen((TEXT *) q) >= (size_t) MAX_ERRSTR_LEN)
 					{
 						*(p - 1) = isc_arg_cstring;
 						*p++ = (ISC_STATUS) MAX_ERRSTR_LEN;

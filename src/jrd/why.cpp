@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.64 2004-05-03 01:53:24 skidder Exp $
+$Id: why.cpp,v 1.65 2004-05-06 18:07:00 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -611,10 +611,8 @@ static const IMAGE images[] =
 {
 	{"REMINT", "REMINT"},			/* Remote */
 
-#ifndef REQUESTER
-#ifndef SUPERCLIENT
+# if !defined(REQUESTER) && !defined(SUPERCLIENT)
 	{"GDSSHR", "GDSSHR"},			/* Primary access method */
-#endif
 #endif
 
 #ifdef RDB
@@ -643,11 +641,9 @@ static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
 #include "../jrd/entry.h"
 
-#ifndef REQUESTER
-#ifndef SUPERCLIENT
+# if !defined(REQUESTER) && !defined(SUPERCLIENT)
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, cur},
 #include "../jrd/entry.h"
-#endif
 #endif
 
 #ifdef RDB

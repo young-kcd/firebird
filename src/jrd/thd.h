@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.20 2004-05-03 21:43:56 brodsom Exp $
+$Id: thd.h,v 1.21 2004-05-06 18:07:02 brodsom Exp $
 */
 
 #ifndef JRD_THD_H
@@ -44,7 +44,7 @@ $Id: thd.h,v 1.20 2004-05-03 21:43:56 brodsom Exp $
 
 #ifdef HAVE_POSIX_THREADS
 #ifdef SUPERSERVER
-#define POSIX_THREADS		1
+#define POSIX_THREADS
 #endif
 #ifdef SUPERCLIENT
 #if defined(LINUX) || defined(FREEBSD)
@@ -54,15 +54,15 @@ $Id: thd.h,v 1.20 2004-05-03 21:43:56 brodsom Exp $
    done as I don't have deep knowledge of the interbase/firebird 
    engine and this change may imply side effect I haven't known 
    about yet. Tomas Nejedlik (tomas@nejedlik.cz) */
-#define POSIX_THREADS		1
+#define POSIX_THREADS
 #endif
 #endif
 #endif
 
 #ifdef VMS
-/*
-#define POSIX_THREADS		1
-*/
+//
+//#define POSIX_THREADS
+//
 #include "../jrd/isc.h"
 #define THD_MUTEX_STRUCT	MTX_T
 #endif
@@ -76,10 +76,7 @@ $Id: thd.h,v 1.20 2004-05-03 21:43:56 brodsom Exp $
    including the whole world tends to break things (Microsoft also
    doesn't believe in benign naming conversions) we must copy code. */
 
-#ifndef __cplusplus
-typedef
-#endif
-struct IB_RTL_CRITICAL_SECTION
+typedef struct IB_RTL_CRITICAL_SECTION
 {
 	void*	DebugInfo;
 	ULONG	LockCount;
@@ -90,12 +87,11 @@ struct IB_RTL_CRITICAL_SECTION
 };
 #endif
 
-
 #ifdef MULTI_THREAD
-#define ANY_THREADING		1
+#define ANY_THREADING
 #endif
 #ifdef V4_THREADING
-#define ANY_THREADING		1
+#define ANY_THREADING
 #endif
 
 #ifdef POSIX_THREADS
@@ -104,11 +100,11 @@ struct IB_RTL_CRITICAL_SECTION
 #define THD_COND_STRUCT		pthread_cond_t
 
 #ifndef PTHREAD_PROCESS_SHARED
-#define PTHREAD_PROCESS_SHARED	1
+#define PTHREAD_PROCESS_SHARED
 #endif
 
 #ifndef PTHREAD_CREATE_DETACHED
-#define PTHREAD_CREATE_DETACHED	1
+#define PTHREAD_CREATE_DETACHED
 #endif
 
 #ifdef HAVE_PTHREAD_KEYCREATE

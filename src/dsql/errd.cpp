@@ -211,7 +211,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 
 		case isc_arg_string: 
             pszTmp = va_arg(args, char*);
-            if (strlen(pszTmp) >= MAX_ERRSTR_LEN) {
+            if (strlen(pszTmp) >= (size_t) MAX_ERRSTR_LEN) {
                 status_vector[(indx - 1)] = isc_arg_cstring;
                 status_vector[indx++] = MAX_ERRSTR_LEN;
             }

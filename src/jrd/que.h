@@ -79,7 +79,7 @@ typedef struct que {
 } *QUE;
 
 }
-// Self-referencing queue BASE should be defined in the source which includes this
+// Self-relative queue BASE should be defined in the source which includes this
 #define SRQ_PTR SLONG
 
 #define SRQ_REL_PTR(item)           (SRQ_PTR) ((UCHAR*) item - SRQ_BASE)

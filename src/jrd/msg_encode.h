@@ -20,11 +20,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#ifndef MSG_ENCODE_H
+#define MSG_ENCODE_H
 
-#define ISC_MASK	0x14000000	/* Defines the code as a valid ISC code */
-#define FAC_MASK	0x00FF0000	/* Specifies the facility where the code is located */
-#define CODE_MASK	0x0000FFFF	/* Specifies the code in the message file */
-#define CLASS_MASK	0xF0000000	/* Defines the code as warning, error, info, or other */
+const ISC_STATUS ISC_MASK	= 0x14000000;	/* Defines the code as a valid ISC code */
+const ISC_STATUS FAC_MASK	= 0x00FF0000;	/* Specifies the facility where the code is located */
+const ISC_STATUS CODE_MASK	= 0x0000FFFF;	/* Specifies the code in the message file */
+const ISC_STATUS CLASS_MASK	= 0xF0000000;	/* Defines the code as warning, error, info, or other */
 
 /* The following definitions can be used to specify the context in
  * which a status code is used.
@@ -49,3 +51,5 @@
 #define GET_FACILITY(code)		(code & FAC_MASK) >> 16
 #define GET_CLASS(code)			(code & CLASS_MASK) >> 30
 #define GET_CODE(code)			(code & CODE_MASK) >> 0
+
+#endif // MSG_ENCODE_H

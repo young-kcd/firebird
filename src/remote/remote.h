@@ -426,7 +426,6 @@ struct rem_port
 	UCHAR			port_buffer[1];
 
 	/* TMN: Beginning of C++ port */
-#ifdef __cplusplus
 	/* TMN: ugly, but at least a start */
 	int		accept(p_cnct* cnct);
 	void	disconnect();
@@ -478,8 +477,6 @@ struct rem_port
 	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
-
-#endif	/* __cplusplus */
 
 };
 

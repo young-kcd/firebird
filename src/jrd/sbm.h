@@ -74,14 +74,14 @@ class SparseBitmap : public pool_alloc<type_sbm>
 
 /* States */
 
-#define	SBM_EMPTY	0
-#define SBM_SINGULAR	1
-#define SBM_PLURAL	2
+const UCHAR SBM_EMPTY		= 0;
+const UCHAR SBM_SINGULAR	= 1;
+const UCHAR SBM_PLURAL		= 2;
 
 /* Types */
 
-#define SBM_BUCKET	0
-#define SBM_ROOT	1
+const UCHAR SBM_BUCKET		= 0;
+const UCHAR SBM_ROOT		= 1;
 
 /* Bit map segment */
 

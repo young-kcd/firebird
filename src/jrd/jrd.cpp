@@ -385,7 +385,7 @@ static MUTX_T	databases_mutex[1];
 static ULONG	JRD_cache_default;
 
 #ifdef GOVERNOR
-#define ATTACHMENTS_PER_USER 1
+const int ATTACHMENTS_PER_USER = 1;
 static ULONG JRD_max_users = 0;
 static ULONG num_attached = 0;
 #endif /* GOVERNOR */
@@ -497,12 +497,12 @@ static void SET_TDBB(thread_db*& tdbb)
 
 
 
-#define SWEEP_INTERVAL		20000
-#define	DPB_EXPAND_BUFFER	2048
+const int SWEEP_INTERVAL		= 20000;
+const int DPB_EXPAND_BUFFER		= 2048;
 
-#define	DBL_QUOTE			'\042'
-#define	SINGLE_QUOTE		'\''
-#define	BUFFER_LENGTH128	128
+const char DBL_QUOTE			= '\042';
+const char SINGLE_QUOTE			= '\'';
+const int BUFFER_LENGTH128		= 128;
 bool invalid_client_SQL_dialect = false;
 
 #define GDS_ATTACH_DATABASE		jrd8_attach_database

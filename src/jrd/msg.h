@@ -21,16 +21,16 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: msg.h,v 1.4 2003-11-05 09:02:26 robocop Exp $
+$Id: msg.h,v 1.5 2004-05-06 18:07:02 brodsom Exp $
 */
 
 #ifndef JRD_MSG_H
 #define JRD_MSG_H
 
 #define MSG_NUMBER(facility, code)	((SLONG) facility * 10000 + code)
-#define MSG_BUCKET			1024
-#define MSG_MAJOR_VERSION		1
-#define MSG_MINOR_VERSION		0
+const USHORT MSG_BUCKET			= 1024;
+const UCHAR MSG_MAJOR_VERSION	= 1;
+const UCHAR MSG_MINOR_VERSION	= 0;
 
 /* Message file header block */
 

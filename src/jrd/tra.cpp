@@ -76,7 +76,7 @@ const int DYN_MSG_FAC	= 8;
 #include ssdef
 #include lckdef
 
-#define EVENT_FLAG	15
+const int EVENT_FLAG	= 15;
 
 static const SCHAR lock_types[] =
 {
