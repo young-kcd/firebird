@@ -22,7 +22,6 @@
  */
 
 
-#ifdef INTERNAL_DOCUMENTATION
 /*
 
                       Database Validation and Repair
@@ -539,7 +538,6 @@ VI. ADDITIONAL NOTES
       Perhaps it was viewed as too difficult to try to retrieve a damaged blob.)
 
 */
-#endif /* INTERNAL_DOCUMENTATION */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
