@@ -1,3 +1,9 @@
+2002-10-22 10:05  dimitr
+
+	* firebird2/src/burp/restore.epp:
+	
+	Commited Ignacio's fix for uninitialized variables in burp.
+
 2002-10-19 11:05  dimitr
 
 	* firebird2/src/jrd/exe.cpp:
