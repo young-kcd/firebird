@@ -1,6 +1,6 @@
 ::
-:: This bat file doesn't uses cd, all the paths are full paths.
-:: with this convention this bat file is position independent 
+:: This bat file doesn't use cd, all the paths are full paths.
+:: with this convention this bat file is position independent
 :: and it will be easier to move the place of somefiles.
 ::
 
@@ -33,34 +33,16 @@ set ERRLEV=0
 @echo Creating directories
 :: Don't rmdir gen, it contains the dbs, only the exe files
 @del gen\*.exe 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\alice 2>nul
-@mkdir %ROOT_PATH%\gen\alice 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\burp 2>nul
-@mkdir %ROOT_PATH%\gen\burp 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\dsql 2>nul
-@mkdir %ROOT_PATH%\gen\dsql 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\dudley 2>nul
-@mkdir %ROOT_PATH%\gen\dudley 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\gpre 2>nul
-@mkdir %ROOT_PATH%\gen\gpre 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\isql 2>nul
-@mkdir %ROOT_PATH%\gen\isql 2>nul
-:: Let the rmdir in place so people won't be fooled by existing compiled files when rebuilding
-@rmdir /s /q %ROOT_PATH%\gen\journal 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\jrd 2>nul
-@mkdir %ROOT_PATH%\gen\jrd 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\misc 2>nul
-@mkdir %ROOT_PATH%\gen\misc 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\msgs 2>nul
-@mkdir %ROOT_PATH%\gen\msgs 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\qli 2>nul
-@mkdir %ROOT_PATH%\gen\qli 2>nul
+:: Remove previously generated output, and recreate the directory hierarchy. Note the exceptions to the rule!
+for %%v in ( alice burp dsql dudley gpre isql journal jrd misc msgs qli examples ) do (
+  @rmdir /s /q %ROOT_PATH%\gen\%%v 2>nul
+  if NOT "%%v"=="journal" (@mkdir %ROOT_PATH%\gen\%%v 2>nul)
+)
+
 @rmdir /s /q %ROOT_PATH%\gen\utilities 2>nul
 @mkdir %ROOT_PATH%\gen\utilities 2>nul
 @mkdir %ROOT_PATH%\gen\utilities\gstat 2>nul
 @mkdir %ROOT_PATH%\gen\utilities\gsec 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\examples 2>nul
-@mkdir %ROOT_PATH%\gen\examples 2>nul
 
 ::=======
 @if "%DBG%"=="" (
@@ -107,9 +89,9 @@ if "%ERRLEV%"=="1" goto :END
 @echo.
 @echo Building gpre_boot (release)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  %CLEAN% /OUT boot1.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  %CLEAN% /OUT gpre_boot.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% release /OUT boot1.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% release /OUT gpre_boot.log
 )
 if errorlevel 1 goto :gpre_boot2
 goto :EOF
@@ -120,9 +102,9 @@ goto :EOF
 @echo.
 @echo Building gpre_boot (debug)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Debug"  %CLEAN% /OUT boot1.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Debug"  %CLEAN% /OUT gpre_boot.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% debug /OUT boot1.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% debug /OUT gpre_boot.log
 )
 if errorlevel 1 goto :gpre_boot2
 goto :EOF
@@ -131,7 +113,7 @@ goto :EOF
 :: Error gpre_boot
 :gpre_boot2
 echo.
-echo Error building gpre_boot, see boot1.log
+echo Error building gpre_boot, see gpre_boot.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -142,9 +124,9 @@ goto :EOF
 @echo.
 @echo Building gpre_static (release)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Release"  %CLEAN% /OUT boot2.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Release"  %CLEAN% /OUT gpre_static.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static %CLEAN% release /OUT boot2.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static %CLEAN% release /OUT gpre_static.log
 )
 if errorlevel 1 goto :gpre_static2
 @goto :EOF
@@ -155,9 +137,9 @@ if errorlevel 1 goto :gpre_static2
 @echo.
 @echo Building gpre_static (debug)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Debug"  %CLEAN% /OUT boot2.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Debug"  %CLEAN% /OUT gpre_static.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static %CLEAN% debug /OUT boot2.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static %CLEAN% debug /OUT gpre_static.log
 )
 if errorlevel 1 goto :gpre_static2
 @goto :EOF
@@ -166,7 +148,7 @@ if errorlevel 1 goto :gpre_static2
 :: ERROR gpre_static
 :gpre_static2
 echo.
-echo Error building gpre_static, see boot2.log
+echo Error building gpre_static, see gpre_static.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -178,16 +160,16 @@ goto :EOF
 @echo.
 @echo Building build_msg...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" /OUT boot3.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" /OUT build_msg.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project build_msg /rebuild release /OUT boot3.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project build_msg /rebuild release /OUT build_msg.log
 )
 if errorlevel 1 goto :msgs2
 @copy %ROOT_PATH%\temp\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
 :msgs2
 echo.
-echo Error building build_msg, see boot3.log
+echo Error building build_msg, see build_msg.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -198,16 +180,16 @@ goto :EOF
 @echo.
 @echo Building codes...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "codes - Win32 Release" /OUT boot4.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "codes - Win32 Release" /OUT codes.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project codes  /rebuild release /OUT boot4.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project codes  /rebuild release /OUT codes.log
 )
 if errorlevel 1 goto :codes2
 @copy %ROOT_PATH%\temp\release\codes\codes.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
 :codes2
 echo.
-echo Error building codes, see boot4.log
+echo Error building codes, see codes.log
 echo.
 set ERRLEV=1
 goto :EOF

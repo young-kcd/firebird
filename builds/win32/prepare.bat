@@ -3,12 +3,12 @@
 
 @echo.
 @echo    !!  Warning !!
-@echo    This script no longer requires the 
-@echo   path to the source. It now works it  
+@echo    This script no longer requires the
+@echo   path to the source. It now works it
 @echo   out automatically.
 @echo.
-@echo   Paremeter 1 will now set the FIREBIRD variable
-@echo   This may not be what you intended 
+@echo   Parameter 1 will now set the FIREBIRD variable
+@echo   This may not be what you intended
 @echo.
 
 ::Check if on-line help is required
@@ -18,9 +18,9 @@
 @if /I "%1"=="/?" (goto :HELP & goto :EOF)
 
 @if "%1" NEQ "" (set FIREBIRD=%1)
-:: BRS 
+:: BRS
 :: Get all the file name when there are spaces
-:: this can be also achieved with %* but I don't know which versions of 
+:: this can be also achieved with %* but I don't know which versions of
 :: windows allows it
 :LOOP
 	@shift
@@ -31,6 +31,9 @@
 
 @echo      FIREBIRD=%FIREBIRD%
 @if "%FIREBIRD%"=="" (goto :HELP & goto :EOF)
+
+@if "%ISC_USER%"=="" (set ISC_USER=SYSDBA)
+@if "%ISC_PASSWORD%"=="" (set ISC_PASSWORD=masterke)
 
 ::===========
 :MAIN
@@ -50,25 +53,25 @@
 
 @echo create database '%SERVER_NAME%:%DB_PATH%\gen\dbs\msg.fdb'; | "%FIREBIRD%\bin\isql" -q
 @set MSG_ISQL=@"%FIREBIRD%\bin\isql" -q %SERVER_NAME%:%DB_PATH%\gen\dbs\msg.fdb -i %ROOT_PATH%\src\msgs\
-@%MSG_ISQL%msg.sql 
+@%MSG_ISQL%msg.sql
 @%MSG_ISQL%facilities.sql
 @echo _
 @echo loading locales
-@%MSG_ISQL%locales.sql 
+@%MSG_ISQL%locales.sql
 @echo loading history
-@%MSG_ISQL%history.sql 
+@%MSG_ISQL%history.sql
 @echo loading messages
-@%MSG_ISQL%messages.sql 
+@%MSG_ISQL%messages.sql
 @echo loading symbols
-@%MSG_ISQL%symbols.sql 
+@%MSG_ISQL%symbols.sql
 @echo loading system errors
-@%MSG_ISQL%system_errors.sql 
+@%MSG_ISQL%system_errors.sql
 @echo loading French translation
-@%MSG_ISQL%transmsgs.fr_FR.sql 
+@%MSG_ISQL%transmsgs.fr_FR.sql
 @echo loading German translation
-@%MSG_ISQL%transmsgs.de_DE.sql 
+@%MSG_ISQL%transmsgs.de_DE.sql
 
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\help.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\help.fdb 
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\help.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\help.fdb
 @copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk > nul
 
 @echo.
@@ -85,7 +88,7 @@
 @echo   FIREBIRD value should be the root directory of your Firebird installation.
 @echo   Example:
 @echo     c:\program files\firebird
-@echo. 
+@echo.
 @goto :END
 
 

@@ -3,13 +3,13 @@ set ERRLEV=0
 
 :: Set env vars
 @call setenvvar.bat
-@if errorlevel 1 (goto :END)
+@if errorlevel 1 (call :ERROR Executing setenvvar.bat failed & goto :EOF)
 
 :: verify that prepare was run before
-@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :END)
+@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :EOF)
 
 :: verify that boot was run before
-@if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :END)
+@if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
 
 ::===========
 :: Read input values
@@ -28,9 +28,9 @@ set ERRLEV=0
 ) else (
 	call :DEBUG
 )
-if "%ERRLEV%"=="1" goto :END
+if "%ERRLEV%"=="1" (call :ERROR Build failure. & goto :EOF)
 @call :MOVE
-@goto :END
+@goto :EOF
 
 ::===========
 :RELEASE
@@ -79,13 +79,14 @@ goto :EOF
 @mkdir %ROOT_PATH%\output\intl
 @mkdir %ROOT_PATH%\output\udf
 @mkdir %ROOT_PATH%\output\help
-@mkdir %ROOT_PATH%\output\doc
+::@mkdir %ROOT_PATH%\output\doc
 @mkdir %ROOT_PATH%\output\include
 @mkdir %ROOT_PATH%\output\lib
-::
+
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\* %ROOT_PATH%\output\bin >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\intl\* %ROOT_PATH%\output\intl >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\udf\* %ROOT_PATH%\output\udf >nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib >nul
 :: Firebird.conf, etc
 @copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output > nul
 @copy %ROOT_PATH%\builds\install\misc\firebird.conf %ROOT_PATH%\output >nul
@@ -94,28 +95,35 @@ goto :EOF
 @copy %ROOT_PATH%\gen\dbs\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
 ::@copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg >nul
 @copy %ROOT_PATH%\builds\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
-:: LIB
-@copy %ROOT_PATH%\temp\%DBG_DIR%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib >nul
 :: DOCS
-@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt >nul
-@copy %ROOT_PATH%\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt >nul
+::@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt >nul
+::@copy %ROOT_PATH%\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt >nul
+
 :: HEADERS
-:: build headers
-copy %ROOT_PATH%\src\misc\ibase_header.txt %ROOT_PATH%\output\include\ibase.tmp > nul
+:: Don't use this ibase.h unless you have to - we build it better in BuildExecutableInstall.bat
+:: This variation doesn't clean up the license templates, and processes the component files in
+:: a different order to that used in the production version. However, this version doesn't
+:: have a dependancy upon sed while the production one does.
+echo #pragma message("Non-production version of ibase.h.") > %ROOT_PATH%\output\include\ibase.tmp
+echo #pragma message("Using raw, unprocessed concatenation of header files.") >> %ROOT_PATH%\output\include\ibase.tmp
+type %ROOT_PATH%\src\misc\ibase_header.txt >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\include\fb_types.h >> %ROOT_PATH%\output\include\ibase.tmp
-type %ROOT_PATH%\src\dsql\sqlda_pub.h >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\jrd\dsc_pub.h >> %ROOT_PATH%\output\include\ibase.tmp
-type %ROOT_PATH%\src\jrd\ibase.h >> %ROOT_PATH%\output\include\ibase.tmp 
-type %ROOT_PATH%\src\jrd\inf_pub.h >> %ROOT_PATH%\output\include\ibase.tmp 
+type %ROOT_PATH%\src\dsql\sqlda_pub.h >> %ROOT_PATH%\output\include\ibase.tmp
+type %ROOT_PATH%\src\jrd\ibase.h >> %ROOT_PATH%\output\include\ibase.tmp
+type %ROOT_PATH%\src\jrd\inf_pub.h >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\jrd\blr.h >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\include\gen\iberror.h >> %ROOT_PATH%\output\include\ibase.tmp
 sed -f %ROOT_PATH%\src\misc\headers.sed < %ROOT_PATH%\output\include\ibase.tmp > %ROOT_PATH%\output\include\ibase.h
 del %ROOT_PATH%\output\include\ibase.tmp > nul
 
+::Copy additional headers
 copy %ROOT_PATH%\src\extlib\ib_util.h %ROOT_PATH%\output\include > nul
 copy %ROOT_PATH%\src\jrd\perf.h %ROOT_PATH%\output\include >nul
-copy %ROOT_PATH%\src\jrd\blr.h %ROOT_PATH%\output\include > nul
+::This is in ibase.h so why make a separate copy?
+::copy %ROOT_PATH%\src\jrd\blr.h %ROOT_PATH%\output\include > nul
 copy %ROOT_PATH%\src\include\gen\iberror.h %ROOT_PATH%\output\include > nul
+
 :: UDF
 copy %ROOT_PATH%\src\extlib\ib_udf.sql %ROOT_PATH%\output\udf > nul
 copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\udf > nul
@@ -140,5 +148,16 @@ copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\udf > nul
 @echo.
 @goto :EOF
 
-:END
+:ERROR
+::====
+@echo.
+@echo   Error  - %*
+@echo.
+cancel_script > nul 2>&1
+::End of ERROR
+::------------
+@goto :EOF
+
+
+
 

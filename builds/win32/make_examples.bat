@@ -1,14 +1,15 @@
-@echo off
+::@echo off
+
 
 :: Set env vars
 @call setenvvar.bat
-@if errorlevel 1 (goto :END)
+@if errorlevel 1 (goto :EOF)
 
 :: verify that prepare was run before
-@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :END)
+@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :EOF)
 
 :: verify that boot was run before
-@if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :END)
+@if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
 
 ::===========
 :: Read input values
@@ -20,6 +21,11 @@
 @if "%1"=="CLEAN" (set CLEAN=/REBUILD)
 @if "%2"=="CLEAN" (set CLEAN=/REBUILD)
 
+
+::Uncomment this to build intlemp
+::set FB2_INTLEMP=1
+
+
 ::===========
 :MAIN
 @call :BUILD_EMPBUILD
@@ -27,13 +33,13 @@
 @call :MOVE
 @call :BUILD_EMPLOYEE
 @call :MOVE2
-@goto :END
+@goto :EOF
 
 ::===========
 :BUILD_EMPBUILD
 @echo.
 @echo Building empbuild.fdb
-@copy %ROOT_PATH%\output\bin\ %ROOT_PATH%\gen\examples\ > nul
+@copy %ROOT_PATH%\output\bin\isql.exe %ROOT_PATH%\gen\examples\ > nul
 @copy /y %ROOT_PATH%\examples\empbuild\*.sql   %ROOT_PATH%\gen\examples\ > nul
 @copy /y %ROOT_PATH%\examples\empbuild\*.inp   %ROOT_PATH%\gen\examples\ > nul
 
@@ -43,8 +49,6 @@
 @cd %ROOT_PATH%\gen\examples
 @del empbuild.fdb 2> nul
 @del intlbuild.fdb 2> nul
-:: CVC: I need this line to ensure isql is the correct one.
-@copy %ROOT_PATH%\output\bin\isql.exe %ROOT_PATH%\gen\examples\ /y > nul
 @%ROOT_PATH%\gen\examples\isql -i empbld.sql
 @%ROOT_PATH%\gen\examples\isql -i intlbld.sql
 @cd %ROOT_PATH%\builds\win32
@@ -63,9 +67,12 @@
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "empbuild - Win32 Release" "intlbld - Win32 Release" %CLEAN% /OUT examples.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln /project empbuild %CLEAN% /OUT empbuild.log
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln /project intlbld %CLEAN% /OUT intlbld.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% release /project empbuild /OUT empbuild.log
+    if defined FB2_INTLEMP (
+      @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% release /project intlbuild /OUT intlbuild.log
+	)
 )
+
 @goto :EOF
 
 ::===========
@@ -75,8 +82,10 @@ if "%VS_VER%"=="msvc6" (
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "empbuild - Win32 Debug" "intlbld - Win32 Debug" %CLEAN% /OUT examples.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln /project empbuild debug %CLEAN% /OUT empbuild.log
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln /project intlbld debug %CLEAN% /OUT intlbld.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /project empbuild /OUT empbuild.log
+	if defined FB2_INTLEMP (
+	  @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /project intlbuild /OUT intlbld.log
+	)
 )
 @goto :EOF
 
@@ -110,7 +119,13 @@ if "%VS_VER%"=="msvc6" (
 
 :: @copy %ROOT_PATH%\gen\examples\empbuild.c %ROOT_PATH%\output\examples\empbuild\ > nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\examples\empbuild.exe %ROOT_PATH%\gen\examples\empbuild.exe > nul
-@copy %ROOT_PATH%\temp\%DBG_DIR%\examples\intlbld.exe %ROOT_PATH%\gen\examples\intlbld.exe > nul
+if defined FB2_INTLEMP (
+if "%VS_VER%"=="msvc6" (
+@copy %ROOT_PATH%\temp\%DBG_DIR%\examples\intlbld.exe %ROOT_PATH%\gen\examples\intlbuild.exe > nul
+) else (
+@copy %ROOT_PATH%\temp\%DBG_DIR%\examples\intlbuild.exe %ROOT_PATH%\gen\examples\intlbuild.exe > nul
+)
+)
 @goto :EOF
 
 ::===========
@@ -124,10 +139,13 @@ if "%VS_VER%"=="msvc6" (
 @del %ROOT_PATH%\gen\examples\employee.fdb 2>nul
 @del %ROOT_PATH%\gen\examples\intlemp.fdb 2>nul
 @%ROOT_PATH%\gen\examples\empbuild.exe %DB_PATH%/gen/examples/employee.fdb
-:: The script intldml.sql contains a reference to intlemp.fdb that must be changed
-@del isql.tmp 2>nul
-@echo s;intlemp.fdb;%SERVER_NAME%:%ROOT_PATH%\gen\examples\intlemp.fdb;g > isql.tmp
-@%ROOT_PATH%\gen\examples\intlbld.exe %DB_PATH%/gen/examples/intlemp.fdb
+
+if defined FB2_INTLEMP (
+  @del isql.tmp 2>nul
+  @echo s;intlemp.fdb;%SERVER_NAME%:%ROOT_PATH%\gen\examples\intlemp.fdb;g > isql.tmp
+  @%ROOT_PATH%\gen\examples\intlbuild.exe %DB_PATH%/gen/examples/intlemp.fdb
+)
+
 @cd %ROOT_PATH%\builds\win32
 
 @goto :EOF
@@ -135,7 +153,10 @@ if "%VS_VER%"=="msvc6" (
 ::==============
 :MOVE2
 @copy %ROOT_PATH%\gen\examples\employee.fdb %ROOT_PATH%\output\examples\empbuild\ > nul
-@copy %ROOT_PATH%\gen\examples\intlemp.fdb %ROOT_PATH%\output\examples\empbuild\ > nul
+
+if defined FB2_INTLEMP (
+  @copy %ROOT_PATH%\gen\examples\intlemp.fdb %ROOT_PATH%\output\examples\empbuild\ > nul
+)
 
 @goto :EOF
 
@@ -153,4 +174,15 @@ if "%VS_VER%"=="msvc6" (
 @echo.
 @goto :EOF
 
-:END
+
+:ERROR
+::====
+@echo.
+@echo   Error  - %*
+@echo.
+cancel_script > nul 2>&1
+::End of ERROR
+::------------
+@goto :EOF
+
+
