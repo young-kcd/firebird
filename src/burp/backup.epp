@@ -36,14 +36,16 @@
  */
 
 /*
-$Id: backup.epp,v 1.10 2002-11-20 23:09:19 hippoman Exp $
+$Id: backup.epp,v 1.11 2002-11-25 15:23:03 kkuznetsov Exp $
 */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <memory.h>
 #include <string.h>
+#ifndef SOLX86
 #include <sstream>
+#endif
 #include "../burp/burp.h"
 #include "../jrd/ods.h"
 #include "../jrd/align.h"
@@ -494,9 +496,14 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 		// To localize the damage (no common 64-bit integer printf format
 		// string between compilers), we here convert the > MAX_SLONG
 		// value to a string using standard C++.
+		#ifndef SOLX86
 		std::ostringstream foo;
 		foo << cumul_count << std::ends;
 		const char* psz = foo.str().c_str();
+		#else
+		 const char  psz [64]
+		    ib_sprintf (psz,"%ll", cumul_count ); 
+		#endif
 		BURP_verbose(WHAT?, psz, 0, 0, 0, 0);
 		/* msg N closing file, committing, and finishing.  %s bytes written */
 	}
