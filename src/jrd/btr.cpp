@@ -1781,8 +1781,9 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 					stuff_count--;
 				}
 
-				// For descending indexes the segment-number is also complemented,
-				// thus reverse it back (Note! values are complemented per UCHAR base).
+				// For descending indexes the segment-number is also
+				// complemented, thus reverse it back.
+				// Note: values are complemented per UCHAR base.
 				if (descending) {
 					count = (255 - count);
 				}
@@ -1790,6 +1791,7 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 				if ((p1 == p1_end) && (p2 == p2_end)) {
 					count = 0; // All segments are duplicates
 				}
+
 				for (ULONG i = count + 1; i <= segments; i++) {
 					duplicatesList[segments - i]++;
 				}
@@ -2930,6 +2932,7 @@ static SLONG fast_load(thread_db* tdbb,
 	bool error = false;
 	ULONG count = 0;
 	ULONG duplicates = 0;
+	const bool descending = (flags & btr_descending);
 	const ULONG segments = idx->idx_count;
 	// SSHORT segment, stuff_count, pos, i;
 	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->getDefaultPool());
@@ -3163,9 +3166,17 @@ static SLONG fast_load(thread_db* tdbb,
 					stuff_count--;
 				}
 
+				// For descending indexes the segment-number is also
+				// complemented, thus reverse it back.
+				// Note: values are complemented per UCHAR base.
+				if (descending) {
+					segment = (255 - segment);
+				}
+
 				if ((p1 == p1_end) && (p2 == p2_end)) {
 					segment = 0; // All segments are duplicates
 				}
+
 				for (ULONG i = segment + 1; i <= segments; i++) {
 					duplicatesList[segments - i]++;
 				}
