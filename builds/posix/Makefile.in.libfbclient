@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.17 2003-10-31 11:31:22 eku Exp $
+#  $Id: Makefile.in.libfbclient,v 1.18 2003-10-31 12:41:46 eku Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
+CFLAGS:=@SUPERCLIENT@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

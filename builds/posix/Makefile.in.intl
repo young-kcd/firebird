@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.14 2003-10-30 14:26:26 eku Exp $
+#  $Id: Makefile.in.intl,v 1.15 2003-10-31 12:41:46 eku Exp $
 #
 ROOT=..
 ObjModuleName=intl
+CFLAGS:=@SUPERCLIENT@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
