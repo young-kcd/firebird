@@ -1,3 +1,10 @@
+2004-07-02 16:43  kkuznetsov
+
+	* firebird2/: builds/posix/prefix.solx86gcc (1.1.2.3),
+	src/jrd/thd.cpp (1.19.2.2):
+	
+	Some fixes to my previos commits on solx86
+
 2004-07-01 18:12  kkuznetsov
 
 	* firebird2/src/install/arch-specific/solx86gcc/Makefile.in (1.1):
