@@ -46,6 +46,7 @@
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
 #include "../burp/burp.h"
 #include "../burp/burpswi.h"
+#include "../burp/std_desc.h"
 #ifdef WIN_NT
 #include <windows.h>
 #undef TEXT
@@ -151,9 +152,6 @@ static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, BOOLEAN, BOOLEAN)
 #define FDESC		3
 
 #define	DB		tdgbl->db_handle
-
-#define GBAK_STDIN_DESC		(int)0
-#define GBAK_STDOUT_DESC	(int)1
 
 #define KBYTE	1024
 #define	MBYTE	KBYTE * KBYTE
