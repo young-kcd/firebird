@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.56 2003-09-01 23:20:13 arnobrinkman Exp $
+ * $Id: ddl.cpp,v 1.57 2003-09-03 23:52:47 arnobrinkman Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -100,8 +100,8 @@ extern "C" {
 
 
 static void assign_field_length(DSQL_FLD, USHORT);
-static USHORT check_array_or_blob(DSQL_NOD);
-static void check_constraint(DSQL_REQ, DSQL_NOD, SSHORT);
+static bool check_array_or_blob(DSQL_NOD);
+static void check_constraint(DSQL_REQ, DSQL_NOD, bool);
 static void check_one_call(BOOLEAN *, SSHORT, TEXT *);
 static void create_view_triggers(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static void define_computed(DSQL_REQ, DSQL_NOD, DSQL_FLD, DSQL_NOD);
@@ -132,8 +132,8 @@ static void define_update_action(DSQL_REQ, DSQL_NOD *, DSQL_NOD *);
 static void define_upd_cascade_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, const char*, const char*);
 static void define_view(DSQL_REQ, NOD_TYPE);
 static void define_view_trigger(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD);
-static void delete_procedure(DSQL_REQ, DSQL_NOD, BOOLEAN);
-static void delete_relation_view(DSQL_REQ, DSQL_NOD, BOOLEAN);
+static void delete_procedure(DSQL_REQ, DSQL_NOD, bool);
+static void delete_relation_view(DSQL_REQ, DSQL_NOD, bool);
 static void foreign_key(DSQL_REQ, DSQL_NOD, const char* index_name);
 static void generate_dyn(DSQL_REQ, DSQL_NOD);
 static void grant_revoke(DSQL_REQ);
@@ -148,12 +148,12 @@ static SCHAR modify_privileges(DSQL_REQ, NOD_TYPE, SSHORT, DSQL_NOD, DSQL_NOD, D
 static void modify_relation(DSQL_REQ);
 static void process_role_nm_list(DSQL_REQ, SSHORT, DSQL_NOD, DSQL_NOD, NOD_TYPE);
 static void put_descriptor(DSQL_REQ, DSC *);
-static void put_dtype(DSQL_REQ, const dsql_fld*, USHORT);
-static void put_field(DSQL_REQ, DSQL_FLD, BOOLEAN);
+static void put_dtype(DSQL_REQ, const dsql_fld*, bool);
+static void put_field(DSQL_REQ, DSQL_FLD, bool);
 static void put_local_variable(DSQL_REQ, VAR, DSQL_NOD);
 static SSHORT put_local_variables(DSQL_REQ, DSQL_NOD, SSHORT);
 static void put_msg_field(DSQL_REQ, DSQL_FLD);
-static DSQL_NOD replace_field_names(DSQL_NOD, DSQL_NOD, DSQL_NOD, SSHORT);
+static DSQL_NOD replace_field_names(DSQL_NOD, DSQL_NOD, DSQL_NOD, bool);
 static void reset_context_stack(DSQL_REQ);
 static void save_field(DSQL_REQ, SCHAR *);
 static void save_relation(DSQL_REQ, STR);
@@ -396,7 +396,7 @@ bool DDL_ids(const dsql_req* request)
 // Note that this depends on the same STUFF variant
 // as used in gen.c
 //
-void DDL_put_field_dtype(DSQL_REQ request, const dsql_fld* field, USHORT use_subtype)
+void DDL_put_field_dtype(DSQL_REQ request, const dsql_fld* field, bool use_subtype)
 {
 	put_dtype(request, field, use_subtype);
 }
@@ -409,7 +409,7 @@ void DDL_put_field_dtype(DSQL_REQ request, const dsql_fld* field, USHORT use_sub
 //
 void DDL_resolve_intl_type(DSQL_REQ request, DSQL_FLD field, STR collation_name)
 {
-    DDL_resolve_intl_type2 (request, field, collation_name, FALSE);
+    DDL_resolve_intl_type2 (request, field, collation_name, false);
 }
 
 
@@ -706,7 +706,7 @@ void dsql_req::begin_blr(UCHAR verb)
 }
 
 
-static USHORT check_array_or_blob(DSQL_NOD node)
+static bool check_array_or_blob(DSQL_NOD node)
 {
 /**************************************
  *
@@ -736,7 +736,7 @@ static USHORT check_array_or_blob(DSQL_NOD node)
 	case nod_constant:
 	case nod_via:
 	case nod_internal_info:
-		return FALSE;
+		return false;
 
 	case nod_map:
 	{
@@ -758,7 +758,7 @@ static USHORT check_array_or_blob(DSQL_NOD node)
 	{
 		DSQL_FLD fld = (DSQL_FLD) node->nod_arg[e_cast_target];
 		if ((fld->fld_dtype == dtype_blob) || (fld->fld_dtype == dtype_array)) {
-			return TRUE;
+			return true;
 		}
 		return check_array_or_blob(node->nod_arg[e_cast_source]);
 	}
@@ -774,7 +774,7 @@ static USHORT check_array_or_blob(DSQL_NOD node)
 	case nod_divide2:
 
 		if (check_array_or_blob(node->nod_arg[0])) {
-			return TRUE;
+			return true;
 		}
 		return check_array_or_blob(node->nod_arg[1]);
 
@@ -785,11 +785,11 @@ static USHORT check_array_or_blob(DSQL_NOD node)
 	{
 		UDF udf = (UDF) node->nod_arg[0];
 		if ((udf->udf_dtype == dtype_blob) || (udf->udf_dtype == dtype_array)) {
-			return TRUE;
+			return true;
 		}
 		// parameters to UDF don't need checking,
 		// an blob or array can be passed
-		return FALSE;
+		return false;
 	}
 
 	case nod_extract:
@@ -799,31 +799,31 @@ static USHORT check_array_or_blob(DSQL_NOD node)
 		for (DSQL_NOD* ptr = node->nod_arg; ptr < end; ++ptr)
 		{
 			if (check_array_or_blob(*ptr)) {
-				return TRUE;
+				return true;
 			}
 		 }
 	}
 
-		return FALSE;
+		return false;
 
 	case nod_field:
 		if ((node->nod_desc.dsc_dtype == dtype_blob) ||
 			(node->nod_desc.dsc_dtype == dtype_array))
 		{
-			return TRUE;
+			return true;
 		}
-		return FALSE;
+		return false;
 
 	default:
 		assert(FALSE);
-		return FALSE;
+		return false;
 	}
 }
 
 
 static void check_constraint(	DSQL_REQ		request,
 								DSQL_NOD		element,
-								SSHORT	delete_trigger_required)
+								bool delete_trigger_required)
 {
 /* *************************************
  *
@@ -1189,7 +1189,7 @@ static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 		for (ptr = actions->nod_arg, end = ptr + actions->nod_count;
 			 ptr < end; ptr++)
 		{
-			GEN_statement(request, PASS1_statement(request, *ptr, 0));
+			GEN_statement(request, PASS1_statement(request, *ptr, false));
 		}
 
 		/* generate the action statements for the trigger */
@@ -1200,7 +1200,7 @@ static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 			for (ptr = actions->nod_arg, end = ptr + actions->nod_count;
 				 ptr < end; ptr++)
 			{
-				GEN_statement(request, PASS1_statement(request, *ptr, 0));
+				GEN_statement(request, PASS1_statement(request, *ptr, false));
 			}
 			request->append_uchar(blr_end);	// of begin
 		}
@@ -1676,7 +1676,7 @@ static void define_domain(DSQL_REQ request)
 
 	DDL_resolve_intl_type(request, field,
 						  (STR) element->nod_arg[e_dom_collate]);
-	put_field(request, field, FALSE);
+	put_field(request, field, false);
 
 	// check for a default value
 
@@ -1836,7 +1836,7 @@ static void define_field(
 	DSQL_FLD field;
 	DSQL_REL relation;
 	STR string, domain_name;
-	USHORT cnstrt_flag = FALSE;
+	bool cnstrt_flag = false;
 	DSQL_NOD computed_node;
 	bool default_null_flag = false;
 
@@ -1891,7 +1891,7 @@ static void define_field(
 
 		DDL_resolve_intl_type(request, field,
 							  reinterpret_cast<STR>(element->nod_arg[e_dfl_collate]));
-		put_field(request, field, FALSE);
+		put_field(request, field, false);
 	}
 
 	if (position != -1)
@@ -1945,9 +1945,9 @@ static void define_field(
 								  gds_arg_string, "default null not null", 0);
 					}
 					request->append_uchar(gds_dyn_fld_not_null);
-					if (cnstrt_flag == FALSE) {
+					if (!cnstrt_flag) {
 						request->append_uchar(gds_dyn_end);	/* For field definition  */
-						cnstrt_flag = TRUE;
+						cnstrt_flag = true;
 					}
 					request->append_cstring(gds_dyn_rel_constraint,
 									string ? string->str_data : 0);
@@ -1957,10 +1957,10 @@ static void define_field(
 				else if (node1->nod_type == nod_primary
 						 || node1->nod_type == nod_unique)
 				{
-					if (cnstrt_flag == FALSE)
+					if (!cnstrt_flag)
 					{
 						request->append_uchar(gds_dyn_end);	/* For field definition  */
-						cnstrt_flag = TRUE;
+						cnstrt_flag = true;
 					}
 
 					const char* constraint_name = string ? string->str_data : 0;
@@ -1996,29 +1996,29 @@ static void define_field(
 					request->append_uchar(gds_dyn_end);
 				}
 				else if (node1->nod_type == nod_foreign) {
-					if (cnstrt_flag == FALSE) {
+					if (!cnstrt_flag) {
 						request->append_uchar(gds_dyn_end);	/* For field definition  */
-						cnstrt_flag = TRUE;
+						cnstrt_flag = true;
 					}
 					const char* constraint_name = string ? string->str_data : 0;
 					request->append_cstring(gds_dyn_rel_constraint, constraint_name);
 					foreign_key(request, node1, constraint_name);
 				}
 				else if (node1->nod_type == nod_def_constraint) {
-					if (cnstrt_flag == FALSE) {
+					if (!cnstrt_flag) {
 						request->append_uchar(gds_dyn_end);	/* For field definition  */
-						cnstrt_flag = TRUE;
+						cnstrt_flag = true;
 					}
 					request->append_cstring(gds_dyn_rel_constraint,
 									string ? string->str_data : 0);
 					check_constraint(request, node1,
-									 FALSE /* No delete trigger */ );
+									 false /* No delete trigger */ );
 				}
 			}
 		}
 	}
 
-	if (cnstrt_flag == FALSE) {
+	if (!cnstrt_flag) {
 		request->append_uchar(gds_dyn_end);
 	}
 }
@@ -2346,7 +2346,7 @@ static void define_procedure( DSQL_REQ request, NOD_TYPE op)
 			request->append_number(gds_dyn_prm_type, 0);
 
 			DDL_resolve_intl_type(request, field, NULL);
-			put_field(request, field, FALSE);
+			put_field(request, field, false);
 
 			*ptr = MAKE_variable(field, field->fld_name,
 								 VAR_input, 0, (USHORT) (2 * position),
@@ -2382,7 +2382,7 @@ static void define_procedure( DSQL_REQ request, NOD_TYPE op)
 			request->append_number(gds_dyn_prm_number, position);
 			request->append_number(gds_dyn_prm_type, 1);
 			DDL_resolve_intl_type(request, field, NULL);
-			put_field(request, field, FALSE);
+			put_field(request, field, false);
 
 			*ptr = MAKE_variable(field, field->fld_name,
 								 VAR_output, 1, (USHORT) (2 * position),
@@ -2467,10 +2467,10 @@ static void define_procedure( DSQL_REQ request, NOD_TYPE op)
 	request->append_uchar(0);
 	request->req_loop_level = 0;
 	GEN_statement(request,
-		PASS1_statement(request, procedure_node->nod_arg[e_prc_body], 1));
+		PASS1_statement(request, procedure_node->nod_arg[e_prc_body], true));
 	request->req_type = REQ_DDL;
 	request->append_uchar(blr_end);
-	GEN_return(request, procedure_node, TRUE);
+	GEN_return(request, procedure_node, true);
 	request->append_uchar(blr_end);
 	request->end_blr();
 
@@ -2496,7 +2496,7 @@ static void define_rel_constraint( DSQL_REQ request, DSQL_NOD element)
 	} else if (node->nod_type == nod_foreign) {
 		foreign_key(request, node, constraint_name);
 	} else if (node->nod_type == nod_def_constraint) {
-		check_constraint(request, node, FALSE /* No delete trigger */ );
+		check_constraint(request, node, false /* No delete trigger */ );
 	}
 }
 
@@ -2856,7 +2856,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 		request->append_uchar(blr_label);
 		request->append_uchar(0);
 		request->req_loop_level = 0;
-		GEN_statement(request, PASS1_statement(request, actions, 1));
+		GEN_statement(request, PASS1_statement(request, actions, true));
 		request->req_scope_level--;
 		request->append_uchar(blr_end);
 		request->end_blr();
@@ -3021,7 +3021,7 @@ static void define_udf( DSQL_REQ request)
 
 		request->append_cstring(gds_dyn_function_name, udf_name);
 		DDL_resolve_intl_type(request, field, NULL);
-		put_field(request, field, TRUE);
+		put_field(request, field, true);
 		request->append_uchar(gds_dyn_end);
 		position = 1;
 	}
@@ -3065,7 +3065,7 @@ static void define_udf( DSQL_REQ request)
 
 			request->append_cstring(gds_dyn_function_name, udf_name);
 			DDL_resolve_intl_type(request, field, NULL);
-			put_field(request, field, TRUE);
+			put_field(request, field, true);
 			request->append_uchar(gds_dyn_end);
 		}
 	}
@@ -3309,7 +3309,8 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 	DSQL_FLD field;
 	DSQL_CTX context;
 	STR view_name, field_name, source;
-	SSHORT position, updatable = TRUE;
+	SSHORT position;
+	bool updatable = true;
 	TEXT *field_string;
 	DLLS temp;
 
@@ -3445,7 +3446,7 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 			context = (DSQL_CTX) field_node->nod_arg[e_fld_context];
 		}
 		else
-			updatable = FALSE;
+			updatable = false;
 
 		/* if this is an expression, check to make sure there is a name specified */
 
@@ -3737,7 +3738,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 			condition = MAKE_node(nod_not, 1);
 			condition->nod_arg[0] =
 				replace_field_names(select_expr->nod_arg[e_sel_where], items,
-									view_fields, FALSE);
+									view_fields, false);
 			request->append_uchar(blr_begin);
 			request->append_uchar(blr_if);
 			GEN_expr(request, PASS1_node(request, condition->nod_arg[0], false));
@@ -3749,7 +3750,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 			condition = MAKE_node(nod_not, 1);
 			condition->nod_arg[0] =
 				replace_field_names(select_expr->nod_arg[e_sel_where], items,
-									view_fields, TRUE);
+									view_fields, true);
 			request->append_uchar(blr_if);
 			GEN_expr(request, PASS1_node(request, condition->nod_arg[0], false));
 			request->append_uchar(blr_begin);
@@ -3762,7 +3763,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 		for (ptr = actions->nod_arg, end = ptr + actions->nod_count;
 			 ptr < end; ptr++)
 		{
-			GEN_statement(request, PASS1_statement(request, *ptr, 0));
+			GEN_statement(request, PASS1_statement(request, *ptr, false));
 		}
 
 		// generate the action statements for the trigger
@@ -3774,7 +3775,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 			for (ptr = actions->nod_arg, end = ptr + actions->nod_count;
 				 ptr < end; ptr++)
 			{
-				action_node = PASS1_statement(request, *ptr, 0);
+				action_node = PASS1_statement(request, *ptr, false);
 				if (action_node->nod_type == nod_modify)
 				{
 					temp_rse = action_node->nod_arg[e_mod_rse];
@@ -3807,7 +3808,7 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 
 static void delete_procedure (DSQL_REQ     request,
                               DSQL_NOD     node,
-                              BOOLEAN silent_deletion)
+                              bool silent_deletion)
 {
 /**************************************
  *
@@ -3838,7 +3839,7 @@ static void delete_procedure (DSQL_REQ     request,
 static void delete_relation_view (
     DSQL_REQ     request,
     DSQL_NOD     node,
-    BOOLEAN silent_deletion)
+    bool silent_deletion)
 {
 /**************************************
  *
@@ -4017,7 +4018,7 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 
     case nod_redef_relation:
 		STUFF (gds_dyn_begin);
-		delete_relation_view (request, node, TRUE); /* silent. */
+		delete_relation_view (request, node, true); /* silent. */
 		define_relation (request);
 		STUFF (gds_dyn_end);
 		break;
@@ -4030,7 +4031,7 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 
     case nod_redef_view:
 		STUFF(gds_dyn_begin);
-		delete_relation_view(request, node, TRUE); /* silent. */
+		delete_relation_view(request, node, true); /* silent. */
 		define_view(request, node->nod_type);
 		STUFF(gds_dyn_end);
 		break;
@@ -4049,7 +4050,7 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 
     case nod_redef_procedure:
         STUFF (gds_dyn_begin);
-        delete_procedure (request, node, TRUE); /* silent. */
+        delete_procedure (request, node, true); /* silent. */
         define_procedure (request, node->nod_type);
         STUFF (gds_dyn_end);
         break;
@@ -4084,11 +4085,11 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
     /* CVC: Handling drop table and drop view properly. */
     case nod_del_relation:
     case nod_del_view:
-        delete_relation_view (request, node, FALSE); /* no silent. */
+        delete_relation_view (request, node, false); /* no silent. */
         break;
 
 	case nod_del_procedure:
-        delete_procedure(request, node, FALSE); /* no silent. */        
+        delete_procedure(request, node, false); /* no silent. */        
 		break;
 
 	case nod_del_trigger:
@@ -4495,9 +4496,9 @@ static void modify_database( DSQL_REQ request)
 	SSHORT number = 0;
 	SLONG temp_long;
 	SSHORT temp_short;
-	SSHORT drop_log = FALSE;
-	SSHORT drop_cache = FALSE;
-	SSHORT drop_difference = FALSE;
+	bool drop_log = false;
+	bool drop_cache = false;
+	bool drop_difference = false;
 
 	ddl_node = request->req_ddl_node;
 
@@ -4512,13 +4513,13 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 		element = *ptr;
 		switch (element->nod_type) {
 		case nod_drop_log:
-			drop_log = TRUE;
+			drop_log = true;
 			break;
 		case nod_drop_cache:
-			drop_cache = TRUE;
+			drop_cache = true;
 			break;
 		case nod_drop_difference:
-			drop_difference = TRUE;
+			drop_difference = true;
 			break;
 
 		default:
@@ -4762,7 +4763,7 @@ static void modify_domain( DSQL_REQ request)
 		case nod_mod_domain_type:
 			field = (DSQL_FLD) element->nod_arg[e_mod_dom_new_dom_type];
 			DDL_resolve_intl_type(request, field, NULL);
-			put_field(request, field, FALSE);
+			put_field(request, field, false);
 			break;
 
 		case nod_field_name:
@@ -5231,7 +5232,7 @@ static void put_descriptor(DSQL_REQ request, DSC * desc)
 // Write out field data type
 // Taking special care to declare international text.
 //
-static void put_dtype(DSQL_REQ request, const dsql_fld* field, USHORT use_subtype)
+static void put_dtype(DSQL_REQ request, const dsql_fld* field, bool use_subtype)
 {
 
 #ifdef DEV_BUILD
@@ -5283,7 +5284,7 @@ static void put_dtype(DSQL_REQ request, const dsql_fld* field, USHORT use_subtyp
 }
 
 
-static void put_field( DSQL_REQ request, DSQL_FLD field, BOOLEAN udf_flag)
+static void put_field( DSQL_REQ request, DSQL_FLD field, bool udf_flag)
 {
 /**************************************
  *
@@ -5388,7 +5389,7 @@ static void put_local_variable( DSQL_REQ request, VAR variable, DSQL_NOD host_pa
 		field->fld_dtype = dtype_quad;
 	}
 
-	put_dtype(request, field, TRUE);
+	put_dtype(request, field, true);
 	field->fld_dtype = dtype;
 
 	/* Check for a default value, borrowed from define_domain */
@@ -5480,7 +5481,7 @@ static void put_msg_field( DSQL_REQ request, DSQL_FLD field)
 		field->fld_dtype = dtype_quad;
 	}
 
-	put_dtype(request, field, TRUE);
+	put_dtype(request, field, true);
 	field->fld_dtype = dtype;
 
 	// add slot for null flag (parameter2)
@@ -5546,7 +5547,7 @@ void dsql_req::append_string(UCHAR verb, const char* string, USHORT length)
 static DSQL_NOD replace_field_names(DSQL_NOD		input,
 							   DSQL_NOD		search_fields,
 							   DSQL_NOD		replace_fields,
-							   SSHORT	null_them)
+							   bool	null_them)
 {
 /* *************************************
  *
@@ -5945,8 +5946,8 @@ static void modify_field(DSQL_REQ	request,
 			request->append_cstring(gds_dyn_rel_name, relation_name->str_data);
 		}
 
-		DDL_resolve_intl_type2(request, field, NULL, TRUE);
-		put_field(request, field, FALSE);
+		DDL_resolve_intl_type2(request, field, NULL, true);
+		put_field(request, field, false);
 	}
 	request->append_uchar(gds_dyn_end);
 }

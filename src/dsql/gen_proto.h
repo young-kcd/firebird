@@ -28,7 +28,7 @@ extern UCHAR GEN_expand_buffer(struct dsql_req *, UCHAR);
 extern void GEN_expr(struct dsql_req *, struct dsql_nod *);
 extern void GEN_port(struct dsql_req *, struct dsql_msg *);
 extern void GEN_request(struct dsql_req *, struct dsql_nod *);
-extern void GEN_return(DSQL_REQ, DSQL_NOD, BOOLEAN);
+extern void GEN_return(DSQL_REQ, DSQL_NOD, bool);
 extern void GEN_start_transaction(struct dsql_req *, struct dsql_nod *);
 extern void GEN_statement(struct dsql_req *, struct dsql_nod *);
 

@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.38 2003-08-26 07:12:20 dimitr Exp $
+$Id: gen.cpp,v 1.39 2003-09-03 23:52:47 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -55,8 +55,8 @@ $Id: gen.cpp,v 1.38 2003-08-26 07:12:20 dimitr Exp $
 ASSERT_FILENAME static void gen_aggregate(DSQL_REQ, DSQL_NOD);
 static void gen_cast(DSQL_REQ, DSQL_NOD);
 static void	gen_coalesce(DSQL_REQ, DSQL_NOD);
-static void gen_constant(DSQL_REQ, DSC *, BOOLEAN);
-static void gen_descriptor(DSQL_REQ, DSC *, USHORT);
+static void gen_constant(DSQL_REQ, DSC *, bool);
+static void gen_descriptor(DSQL_REQ, DSC *, bool);
 static void gen_error_condition(DSQL_REQ, DSQL_NOD);
 static void gen_field(DSQL_REQ, DSQL_CTX, DSQL_FLD, DSQL_NOD);
 static void gen_for_select(DSQL_REQ, DSQL_NOD);
@@ -85,8 +85,8 @@ static const SCHAR db_key_name[] = "DB_KEY";
 #define STUFF_CSTRING(cstring)	stuff_cstring (request, (char*) (cstring))
 
 /* The following are passed as the third argument to gen_constant */
-#define NEGATE_VALUE TRUE
-#define USE_VALUE    FALSE
+#define NEGATE_VALUE true
+#define USE_VALUE    false
 
 
 /**
@@ -625,7 +625,7 @@ void GEN_port( DSQL_REQ request, DSQL_MSG message)
 			(UCHAR *) (SLONG) message->msg_length;
 		message->msg_length += parameter->par_desc.dsc_length;
 		if (request->req_blr_string)
-			gen_descriptor(request, &parameter->par_desc, FALSE);
+			gen_descriptor(request, &parameter->par_desc, false);
 	}
 
 /* Allocate buffer for message */
@@ -1042,7 +1042,7 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 		return;
 	
 	case nod_return:
-		GEN_return(request, node->nod_arg[e_rtn_procedure], FALSE);
+		GEN_return(request, node->nod_arg[e_rtn_procedure], false);
 		return;
 
 	case nod_exit:
@@ -1229,7 +1229,7 @@ static void gen_cast( DSQL_REQ request, DSQL_NOD node)
 
 	STUFF(blr_cast);
 	field = (DSQL_FLD) node->nod_arg[e_cast_target];
-	DDL_put_field_dtype(request, field, TRUE);
+	DDL_put_field_dtype(request, field, true);
 	GEN_expr(request, node->nod_arg[e_cast_source]);
 }
 
@@ -1262,7 +1262,7 @@ static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
 	// blr_value_if is used for building the coalesce function
 	list = node->nod_arg[0];
 	STUFF(blr_cast);
-	gen_descriptor(request, &node->nod_desc, TRUE);
+	gen_descriptor(request, &node->nod_desc, true);
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
 	{
 		// IF (expression IS NULL) THEN
@@ -1295,7 +1295,7 @@ static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
     @param negate_value
 
  **/
-static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
+static void gen_constant( DSQL_REQ request, DSC * desc, bool negate_value)
 {
 	UCHAR *p;
 	USHORT l;
@@ -1322,7 +1322,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
 
 	switch (desc->dsc_dtype) {
 	case dtype_short:
-		gen_descriptor(request, desc, TRUE);
+		gen_descriptor(request, desc, true);
 		value = *(SSHORT *) p;
 		if (negate_value)
 			value = -value;
@@ -1330,7 +1330,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
 		break;
 
 	case dtype_long:
-		gen_descriptor(request, desc, TRUE);
+		gen_descriptor(request, desc, true);
 		value = *(SLONG *) p;
 		if (negate_value)
 			value = -value;
@@ -1340,7 +1340,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
 
 	case dtype_sql_time:
 	case dtype_sql_date:
-		gen_descriptor(request, desc, TRUE);
+		gen_descriptor(request, desc, true);
 		value = *(SLONG *) p;
 		STUFF_WORD(value);
 		STUFF_WORD(value >> 16);
@@ -1350,7 +1350,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
 		/* this is used for approximate/large numeric literal
 		   which is transmitted to the engine as a string.
 		 */
-		gen_descriptor(request, desc, TRUE);
+		gen_descriptor(request, desc, true);
 		l = (USHORT) desc->dsc_scale;	/* length of string literal */
 		if (negate_value) {
 			STUFF_WORD(l + 1);
@@ -1413,7 +1413,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
 	case dtype_blob:
 	case dtype_array:
 	case dtype_timestamp:
-		gen_descriptor(request, desc, TRUE);
+		gen_descriptor(request, desc, true);
 		value = *(SLONG *) p;
 		STUFF_WORD(value);
 		STUFF_WORD(value >> 16);
@@ -1423,7 +1423,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
 		break;
 
 	case dtype_text:
-		gen_descriptor(request, desc, TRUE);
+		gen_descriptor(request, desc, true);
 		if (l)
 			do
 				STUFF(*p++);
@@ -1450,7 +1450,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
     @param texttype
 
  **/
-static void gen_descriptor( DSQL_REQ request, DSC * desc, USHORT texttype)
+static void gen_descriptor( DSQL_REQ request, DSC * desc, bool texttype)
 {
 
 	switch (desc->dsc_dtype) {
@@ -1982,7 +1982,7 @@ static void gen_relation( DSQL_REQ request, DSQL_CTX context)
     @param eos_flag
 
  **/
-void GEN_return( DSQL_REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
+void GEN_return( DSQL_REQ request, DSQL_NOD procedure, bool eos_flag)
 {
 	if (!procedure)
 		return;
@@ -2150,7 +2150,7 @@ static void gen_searched_case( DSQL_REQ request, DSQL_NOD node)
 	// blr_value_if is used for building the case expression
 
 	STUFF(blr_cast);
-	gen_descriptor(request, &node->nod_desc, TRUE);
+	gen_descriptor(request, &node->nod_desc, true);
 	SSHORT count = node->nod_arg[e_searched_case_search_conditions]->nod_count;
 	DSQL_NOD boolean_list = node->nod_arg[e_searched_case_search_conditions];
 	DSQL_NOD results_list = node->nod_arg[e_searched_case_results];
@@ -2197,7 +2197,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
         list = rse->nod_arg[e_rse_items];
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
 		DSQL_NOD item = *ptr;
-		PAR parameter = MAKE_parameter(request->req_receive, TRUE, TRUE, 0);
+		PAR parameter = MAKE_parameter(request->req_receive, true, true, 0);
 		parameter->par_node = item;
 		MAKE_desc(&parameter->par_desc, item);
 		char  *name_alias = NULL;
@@ -2368,7 +2368,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 // Set up parameter to handle EOF 
 
 	{
-		PAR parameter_eof = MAKE_parameter(request->req_receive, FALSE, FALSE, 0);
+		PAR parameter_eof = MAKE_parameter(request->req_receive, false, false, 0);
 		request->req_eof = parameter_eof;
 		parameter_eof->par_desc.dsc_dtype = dtype_short;
 		parameter_eof->par_desc.dsc_scale = 0;
@@ -2387,7 +2387,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 				if (relation = context->ctx_relation) {
 					// Set up dbkey
 					PAR parameter =
-						MAKE_parameter(request->req_receive, FALSE, FALSE, 0);
+						MAKE_parameter(request->req_receive, false, false, 0);
 					parameter->par_dbkey_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype = ttype_binary;
@@ -2398,8 +2398,8 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 
 					if (!(request->req_dbb->dbb_flags & DBB_v3)) {
 						parameter =
-							MAKE_parameter(request->req_receive, FALSE,
-										   FALSE, 0);
+							MAKE_parameter(request->req_receive, false,
+										   false, 0);
 						parameter->par_rec_version_ctx = context;
 						parameter->par_desc.dsc_dtype = dtype_text;
 						parameter->par_desc.dsc_ttype = ttype_binary;
@@ -2417,14 +2417,14 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 
 	if (request->req_type == REQ_SELECT &&
 		request->req_dbb->dbb_base_level >= 5) {
-		PAR parameter = MAKE_parameter(request->req_async, FALSE, FALSE, 0);
+		PAR parameter = MAKE_parameter(request->req_async, false, false, 0);
 		parameter->par_desc.dsc_dtype = dtype_short;
 		parameter->par_desc.dsc_length = sizeof(USHORT);
 		parameter->par_desc.dsc_scale = 0;
 		parameter->par_desc.dsc_flags = 0;
 		parameter->par_desc.dsc_sub_type = 0;
 
-		parameter = MAKE_parameter(request->req_async, FALSE, FALSE, 0);
+		parameter = MAKE_parameter(request->req_async, false, false, 0);
 		parameter->par_desc.dsc_dtype = dtype_long;
 		parameter->par_desc.dsc_length = sizeof(ULONG);
 		parameter->par_desc.dsc_scale = 0;
@@ -2523,7 +2523,7 @@ static void gen_simple_case( DSQL_REQ request, DSQL_NOD node)
 	/* blr_value_if is used for building the case expression */
 
 	STUFF(blr_cast);
-	gen_descriptor(request, &node->nod_desc, TRUE);
+	gen_descriptor(request, &node->nod_desc, true);
 	SSHORT count = node->nod_arg[e_simple_case_when_operands]->nod_count;
 	DSQL_NOD when_list = node->nod_arg[e_simple_case_when_operands];
 	DSQL_NOD results_list = node->nod_arg[e_simple_case_results];

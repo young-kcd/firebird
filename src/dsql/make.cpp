@@ -1520,7 +1520,7 @@ DSQL_NOD MAKE_node(NOD_TYPE type, int count)
     @param sqlda_index
 
  **/
-PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag, USHORT sqlda_index)
+PAR MAKE_parameter(DSQL_MSG message, bool sqlda_flag, bool null_flag, USHORT sqlda_index)
 {
 	PAR parameter, null;
 	TSQL tdsql;
@@ -1564,7 +1564,7 @@ PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag, USHORT
 /* If a null handing has been requested, set up a null flag */
 
 	if (null_flag) {
-		parameter->par_null = null = MAKE_parameter(message, FALSE, FALSE, 0);
+		parameter->par_null = null = MAKE_parameter(message, false, false, 0);
 		null->par_desc.dsc_dtype = dtype_short;
 		null->par_desc.dsc_scale = 0;
 		null->par_desc.dsc_length = sizeof(SSHORT);

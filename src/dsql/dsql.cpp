@@ -4336,7 +4336,7 @@ static DSQL_REQ prepare(
  * Error will be caught at execute time.
  */
 
-	node = PASS1_statement(request, DSQL_parse, 0);
+	node = PASS1_statement(request, DSQL_parse, false);
 	if (!node)
 		return request;
 
