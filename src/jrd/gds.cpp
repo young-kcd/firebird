@@ -180,8 +180,7 @@ static char *ib_prefix_msg = 0;
 #include "gen/msgs.h"
 
 #ifndef O_BINARY
-//#define O_BINARY	0
-#error Please define O_BINARY for this platform in common.h
+#define O_BINARY	0
 #endif
 
 const SLONG GENERIC_SQLCODE		= -999;
