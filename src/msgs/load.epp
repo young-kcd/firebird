@@ -276,7 +276,6 @@ static STUFF stuff[] = {
 		ITEM(gds__info_db_impl_isc_hp_ux, INFO, VALUES)
 		ITEM(gds__info_db_impl_isc_sun_386i, INFO, VALUES)
 		ITEM(gds__info_db_impl_isc_vms_orcl, INFO, VALUES)
-		ITEM(gds__info_db_impl_isc_mac_aux, INFO, VALUES)
 		ITEM(gds__info_db_impl_isc_rt_aix, INFO, VALUES)
 		ITEM(gds__info_db_impl_isc_mips_ult, INFO, VALUES)
 		ITEM(gds__info_db_impl_isc_apl_dn10, INFO, VALUES)

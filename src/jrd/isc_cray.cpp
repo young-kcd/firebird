@@ -21,6 +21,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ *
  */
 
 #include "firebird.h"
@@ -138,7 +141,7 @@ ISC_analyze_filename(file_name, node_name)
 		return FALSE;
 
 /* for OS/2, introduce a restriction against one-character
-   machine names as a kludge to prevent the situation of 
+   machine names as a kludge to prevent the situation of
    trying to attach to C: as a remote machine -- there has
    got to be a better way to resolve this */
 
@@ -168,7 +171,7 @@ ISC_analyze_nfs(expanded_filename, node_name)
  *
  * Functional description
  *	Check a file name for an NFS mount point.  If so, decompose
- *	into node name and remote file name. 
+ *	into node name and remote file name.
  *
  **************************************/
 	MNT mount;
@@ -492,11 +495,6 @@ ISC_exit()
  *
  **************************************/
 	SIGVEC internal_sigfpe;
-
-#ifdef XENIX
-#define ISC_EXIT
-	sigset(SIGFPE, client_sigfpe);
-#endif
 
 #ifndef ISC_EXIT
 	sigvector(SIGFPE, &client_sigfpe, 0);

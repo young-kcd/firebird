@@ -22,11 +22,12 @@
  * Added TCP_NO_DELAY option for superserver on Linux
  * FSG 16.03.2001
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  *
  */
 /*
-$Id: inet.cpp,v 1.6 2002-02-16 02:21:28 seanleyne Exp $
+$Id: inet.cpp,v 1.7 2002-02-16 02:49:56 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -199,13 +200,6 @@ typedef int socklen_t;
 
 #ifndef EINTR
 #define EINTR		0
-#endif
-
-#ifdef XENIX
-/* 5.5 SCO Port: SIGURG is now available in SCO Openserver */
-#ifndef SCO_EV
-#define SIGURG		SIGUSR1
-#endif
 #endif
 
 #ifndef hpux
@@ -2494,7 +2488,7 @@ static int parse_line(
 
 	if (strcmp(entry1, host_name))
 #ifdef UNIX
-#if !(defined XENIX || defined UNIXWARE || defined NCR3000)
+#if !(defined UNIXWARE || defined NCR3000)
 		if (entry1[1] == '@') {
 			if (!innetgr(&entry1[2], host_name, 0, 0))
 				return -1;
@@ -2523,7 +2517,7 @@ static int parse_line(
 /* if they're in the user group: + they're in, - they're out */
 
 #ifdef UNIX
-#if !(defined XENIX || defined UNIXWARE || defined NCR3000)
+#if !(defined UNIXWARE || defined NCR3000)
 	if (entry2[1] == '@') {
 		if (innetgr(&entry2[2], 0, user_name, 0)) {
 			if (entry2[0] == '+')
@@ -3021,8 +3015,8 @@ static int select_wait( PORT main_port, SLCT * selct)
 			if (selct->slct_count != -1)
 			{
 				/* if selct->slct_count is zero it means that we timed out of
-				   select with nothing to read or accept, so clear the fd_set 
-				   bit as this value is undefined on some platforms (eg. HP-UX), 
+				   select with nothing to read or accept, so clear the fd_set
+				   bit as this value is undefined on some platforms (eg. HP-UX),
 				   when the select call times out. Once these bits are cleared
 				   they can be used in select_port() */
 				if (selct->slct_count == 0)
@@ -3341,7 +3335,7 @@ static void inet_handler( PORT port)
  *	Inet_handler is called the the signal handler on receipt of
  *	a SIGURG signal indicating out-of-band data.  Since SIGURG
  *	may be noisy, check to see if any IO is pending on the channel.
- *	If not, ignore the signal.  If so, call the port specific 
+ *	If not, ignore the signal.  If so, call the port specific
  *	handler to do something appropriate.
  *
  **************************************/
@@ -3874,12 +3868,12 @@ static int packet_receive(
 #ifndef REQUESTER
 
 		/* Implement an error-detection protocol to ensure that the client
-		   is still there.  Use the select() call with a timeout to wait on 
+		   is still there.  Use the select() call with a timeout to wait on
 		   the connection for an incoming packet.  If none comes within a
 		   suitable time interval, write a dummy packet on the connection.
 		   If the client is not there, an error will be returned on the write.
-		   If the client is there, the dummy packet will be ignored by all 
-		   InterBase clients V4 or greater.  This protocol will detect when 
+		   If the client is there, the dummy packet will be ignored by all
+		   InterBase clients V4 or greater.  This protocol will detect when
 		   clients are lost abnormally through reboot or network disconnect. */
 
 		/* Don't send op_dummy packets on aux port; the server won't
@@ -3999,7 +3993,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
  **************************************
  *
  * Functional description
- *	Send some data on it's way.  
+ *	Send some data on it's way.
  *
  **************************************/
 	SSHORT n, length, count;
@@ -4037,7 +4031,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 		if (n == length) {
 			break;
 		}
-		
+
 		if (n == -1)
 		{
 			if (INTERRUPT_ERROR(ERRNO)) {

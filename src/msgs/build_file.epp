@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ *
  */
 
 #include "firebird.h"
@@ -75,15 +78,13 @@ static int file;
 #else
 #include <sys/types.h>
 #ifndef DELTA
-#ifndef XENIX
 #ifndef PC_PLATFORM
 #ifndef WIN_NT
 #include <sys/file.h>
 #endif
 #endif
 #endif
-#endif
-#endif
+#endif  /* VMS */
 
 #ifndef O_RDWR
 #include <fcntl.h>

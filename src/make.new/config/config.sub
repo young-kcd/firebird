@@ -51,6 +51,10 @@ timestamp='2001-05-11'
 #	CPU_TYPE-MANUFACTURER-KERNEL-OPERATING_SYSTEM
 # It is wrong to echo any other type of specification.
 
+#
+# 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+#
+
 me=`echo "$0" | sed -e 's,.*/,,'`
 
 usage="\
@@ -1013,7 +1017,7 @@ case $os in
 	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 	      | -aos* \
 	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
-	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+          | -clix* | -riscos* | -uniplus* | -iris* | -rtu* \
 	      | -hiux* | -386bsd* | -netbsd* | -openbsd* | -freebsd* | -riscix* \
 	      | -lynxos* | -bosx* | -nextstep* | -cxux* | -aout* | -elf* | -oabi* \
 	      | -ptx* | -coff* | -ecoff* | -winnt* | -domain* | -vsta* \
@@ -1116,12 +1120,6 @@ case $os in
 		;;
 	-es1800*)
 		os=-ose
-		;;
-	-xenix)
-		os=-xenix
-		;;
-        -*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
-	        os=-mint
 		;;
 	-none)
 		;;

@@ -22,11 +22,12 @@
  * Added TCP_NO_DELAY option for superserver on Linux
  * FSG 16.03.2001
  *
- * 2002.02.15 Sean Leyne - This module needs to be cleanedup to remove obsolete "EPSON" port/define
+ * 2002.02.15 Sean Leyne - This module needs to be cleanedup to remove obsolete ports/defines:
+ *                            - "EPSON", "XENIX"
  *
  */
 /*
-$Id: protocol.h,v 1.4 2002-02-16 02:21:28 seanleyne Exp $
+$Id: protocol.h,v 1.5 2002-02-16 02:49:56 seanleyne Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_

@@ -21,6 +21,8 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" (MAC_AUX) port
  *
  */
 
@@ -889,10 +891,8 @@ const char gds_info_forced_writes = 52;
 #define gds__info_db_impl_isc_hp_ux        31
 #define gds__info_db_impl_isc_sun_386i     32
 #define gds__info_db_impl_isc_vms_orcl     33
-#define gds__info_db_impl_isc_mac_aux      34
 #define gds__info_db_impl_isc_rt_aix       35
 #define gds__info_db_impl_isc_mips_ult     36
-#define gds__info_db_impl_isc_xenix        37
 #define gds__info_db_impl_isc_dg           38
 #define gds__info_db_impl_isc_hp_mpexl     39
 #define gds__info_db_impl_isc_hp_ux68K     40
@@ -938,10 +938,8 @@ const char gds_info_db_impl_isc_sun4 = 30;
 const char gds_info_db_impl_isc_hp_ux = 31;
 const char gds_info_db_impl_isc_sun_386i = 32;
 const char gds_info_db_impl_isc_vms_orcl = 33;
-const char gds_info_db_impl_isc_mac_aux = 34;
 const char gds_info_db_impl_isc_rt_aix = 35;
 const char gds_info_db_impl_isc_mips_ult = 36;
-const char gds_info_db_impl_isc_xenix = 37;
 const char gds_info_db_impl_isc_dg = 38;
 const char gds_info_db_impl_isc_hp_mpexl = 39;
 const char gds_info_db_impl_isc_hp_ux68K = 40;
@@ -1988,7 +1986,7 @@ const unsigned char gds_dyn_last_dyn_value = 210;
 
 const unsigned char gds_sdl_version1 = 1;
 /* Opps, can't set an unsigned value to -1.  Used to be:
- * const unsigned char gds_sdl_eoc = -1; 
+ * const unsigned char gds_sdl_eoc = -1;
  */
 const unsigned char gds_sdl_eoc = 0xFF;
 const unsigned char gds_sdl_relation = 2;

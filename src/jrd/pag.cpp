@@ -99,7 +99,7 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 	1		Apollo 68K, Dn 10K
 	2		Sun 68k, Sun Sparc, HP 9000/300, MAC AUX, IMP, DELTA, NeXT, UNIXWARE, DG_X86
-    3       Sun 386i, XENIX
+    3       Sun 386i
 	4		VMS
 	5		Ultrix/VAX
 	6		Ultrix/MIPS
@@ -162,10 +162,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 #ifdef AIX_PPC
 #define CLASS		10
-#endif
-
-#ifdef XENIX
-#define CLASS		3
 #endif
 
 #ifdef IMP

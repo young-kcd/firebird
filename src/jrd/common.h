@@ -27,12 +27,12 @@
  *                         readonly databases.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
- *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  *
  */
 /*
-$Id: common.h,v 1.8 2002-02-16 02:21:27 seanleyne Exp $
+$Id: common.h,v 1.9 2002-02-16 02:49:56 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -646,7 +646,6 @@ typedef unsigned __int64 UINT64;
 #ifdef M_I386
 
 #define SMALL_FILE_NAMES
-#define XENIX           1
 #define NOHOSTNAME
 #define KILLER_SIGNALS
 #define SYSV_SIGNALS
@@ -682,7 +681,6 @@ typedef unsigned __int64 UINT64;
 
 #else /* ifndef SCO_EV */
 
-#define XENIX           1
 #define I386            1
 #define VAX             1
 #define UNIX            1

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.5 2002-02-16 02:21:27 seanleyne Exp $
+ * $Id: license.h,v 1.6 2002-02-16 02:49:56 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -35,7 +35,8 @@
  * now be done in 'builds_win32/original/build_no.ksh'.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  *
  */
 
@@ -123,14 +124,6 @@
 
 #ifdef DELTA
 #define FB_PLATFORM	"DL"
-#endif
-
-#ifdef XENIX
-#ifdef SCO_UNIX
-#define FB_PLATFORM	"SI"		/* 5.5 SCO Port */
-#else
-#define FB_PLATFORM	"XN"
-#endif
 #endif
 
 #ifdef sgi

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ *
  */
 
 #if defined(_WIN32) || defined(WIN32) || defined(__WIN32__) || defined(WIN_NT)
@@ -187,7 +190,7 @@ typedef int pid_t;
 /*
  * NOTE: this definition is copied from linux/sem.h: if we do ...
  *    #include <linux/sem.h>
- * we get redefinition error messages for other structures, 
+ * we get redefinition error messages for other structures,
  * so try it this (ugly) way.
  */
 /* arg for semctl system calls. */
@@ -199,13 +202,6 @@ union semun {
 	void *__pad;
 };
 #define SEMUN
-#endif
-
-#ifdef XENIX
-/* 5.5 SCO Port: SIGURG - is now available in SCO Openserver */
-#ifndef SCO_EV
-#define SIGURG		SIGUSR1
-#endif
 #endif
 
 #ifndef SIGURG

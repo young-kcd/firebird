@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  *
  */
 
@@ -102,10 +103,6 @@
 #define ARCHITECTURE		arch_aviion
 #endif /* DG_X86 */
 #endif /* DGUX */
-
-#ifdef XENIX
-#define ARCHITECTURE		arch_sco
-#endif
 
 #ifdef SCO_EV
 #define ARCHITECTURE		arch_sco_ev

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ *
  */
 
 #include <stdio.h>
@@ -65,10 +68,6 @@ union semun {
 
 #ifdef UNIXWARE
 #define SEMAPHORES      10
-#endif
-
-#ifdef XENIX
-#define SEMAPHORES	10
 #endif
 
 #ifdef M88K

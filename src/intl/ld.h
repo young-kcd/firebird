@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  *
  */
 
@@ -371,7 +372,6 @@ typedef UINT16 PDXResult;
 #define ULTRIX_CP                 7
 #define AIX_CP                    8
 #define AUX_CP                    9
-#define XENIX_CP                 10
 
 /*
 // SHIFT-JIS (JAPANESE DBCS)
@@ -1021,9 +1021,12 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.2 2002-02-16 01:58:24 seanleyne Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.3 2002-02-16 02:49:56 seanleyne Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.2  2002/02/16 01:58:24  seanleyne
+//	Code cleanup of obsolete MAC AUX port defines "MAC" and "MAC_CP"
+//	
 //	Revision 1.1.1.1  2001/05/23 13:25:50  tamlin
 //	First steps towards a C++ conversion.
 //

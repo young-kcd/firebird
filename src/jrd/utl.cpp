@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002.02.15 Sean Leyne - Code Cleanup is required of obsolete "EPSON" port
+ * 2002.02.15 Sean Leyne - Code Cleanup is required of obsolete "EPSON", "XENIX" ports
  *
  */
 

@@ -8,22 +8,25 @@
  * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
  * or implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * The Original Code was created by Inprise Corporation
  * and its predecessors. Portions created by Inprise Corporation are
  * Copyright (C) Inprise Corporation.
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" port
+ *
  */
 /*
  *      PROGRAM:        C preprocessor
  *      MODULE:         gds.hxx
  *      DESCRIPTION:    BLR constants for C++
  */
- 
+
 #define gds_version3
- 
+
 #define GDS_TRUE        1
 #define GDS_FALSE       0
 
@@ -58,7 +61,7 @@ typedef struct {
 } ISC_ARRAY_DESC;
 
 /* Dynamic SQL definitions */
- 
+
 typedef struct {
     short       sqltype;
     short       sqllen;
@@ -67,7 +70,7 @@ typedef struct {
     short       sqlname_length;
     char        sqlname [30];
 } SQLVAR;
- 
+
 typedef struct {
     char        sqldaid [8];
     long        sqldabc;
@@ -75,11 +78,11 @@ typedef struct {
     short       sqld;
     SQLVAR      sqlvar [1];
 } SQLDA;
- 
+
 #define SQLDA_LENGTH(n)         (sizeof (SQLDA) + (n-1) * sizeof (SQLVAR))
 
 /* Extended SQLDA */
- 
+
 typedef struct {
     short       sqltype;
     short       sqlscale;
@@ -96,7 +99,7 @@ typedef struct {
     short       aliasname_length;
     char        aliasname [32];
 } XSQLVAR;
- 
+
 const char SQLDA_VERSION1                   = 1;
 
 typedef struct {
@@ -107,7 +110,7 @@ typedef struct {
     short       sqld;
     XSQLVAR     sqlvar [1];
 } XSQLDA;
- 
+
 #define XSQLDA_LENGTH(n)        (sizeof (XSQLDA) + (n-1) * sizeof (XSQLVAR))
 
 #ifdef _Windows
@@ -266,7 +269,7 @@ extern "C" {
     void     GDS_EXPORT isc_extend_dpb (char**, short*, char*, char*);
     }
 #define blr_word(n) (n % 256), (n / 256)
- 
+
 const char blr_text                        = 14;
 const char blr_short                       = 7;
 const char blr_long                        = 8;
@@ -279,16 +282,16 @@ const char blr_varying                     = 37;
 const short blr_blob                       = 261;
 const char blr_cstring                     = 40;
 const char blr_blob_id                     = 45;
- 
+
 const char blr_inner                       = 0;
 const char blr_left                        = 1;
 const char blr_right                       = 2;
 const char blr_full                        = 3;
- 
+
 const char blr_version4                    = 4;
 const char blr_eoc                         = 76;
 const char blr_end                         = -1;
- 
+
 const char blr_assignment                  = 1;
 const char blr_begin                       = 2;
 const char blr_dcl_variable                = 3;
@@ -308,7 +311,7 @@ const char blr_label                       = 17;
 const char blr_leave                       = 18;
 const char blr_store2                      = 19;
 const char blr_post                        = 20;
- 
+
 const char blr_literal                     = 21;
 const char blr_dbkey                       = 22;
 const char blr_field                       = 23;
@@ -332,7 +335,7 @@ const char blr_from                        = 42;
 const char blr_via                         = 43;
 const char blr_user_name                   = 44;
 const char blr_null                        = 45;
- 
+
 const char blr_eql                         = 47;
 const char blr_neq                         = 48;
 const char blr_gtr                         = 49;
@@ -353,7 +356,7 @@ const char blr_like                        = 63;
 
 const char blr_stream                      = 65;
 const char blr_set_index                   = 66;
- 
+
 const char blr_rse                         = 67;
 const char blr_first                       = 68;
 const char blr_project                     = 69;
@@ -368,7 +371,7 @@ const char blr_map                         = 77;
 const char blr_group_by                    = 78;
 const char blr_aggregate                   = 79;
 const char blr_join_type                   = 80;
- 
+
 const char blr_agg_count                   = 83;
 const char blr_agg_max                     = 84;
 const char blr_agg_min                     = 85;
@@ -379,7 +382,7 @@ const char blr_run_max                     = 89;
 const char blr_run_min                     = 90;
 const char blr_run_total                   = 91;
 const char blr_run_average                 = 92;
- 
+
 const char blr_function                    = 100;
 const char blr_gen_id                      = 101;
 const char blr_prot_mask                   = 102;
@@ -403,9 +406,9 @@ const char blr_exec_proc                   = 120;
 const char blr_begin_range                 = 121;
 const char blr_end_range                   = 122;
 const char blr_delete_range                = 123;
- 
+
 /* Database parameter block stuff */
- 
+
 const char gds_dpb_version1                = 1;
 const char gds_dpb_cdd_pathname            = 1;
 const char gds_dpb_allocation              = 2;
@@ -438,7 +441,7 @@ const char gds_dpb_user_name               = 28;
 const char gds_dpb_password                = 29;
 const char gds_dpb_password_enc            = 30;
 const char gds_dpb_sys_user_name_enc       = 31;
- 
+
 const char gds_dpb_pages                   = 1;
 const char gds_dpb_records                 = 2;
 const char gds_dpb_indices                 = 4;
@@ -446,14 +449,14 @@ const char gds_dpb_transactions            = 8;
 const char gds_dpb_no_update               = 16;
 const char gds_dpb_repair                  = 32;
 const char gds_dpb_ignore                  = 64;
- 
+
 /* Bit assignments in RDB$SYSTEM_FLAG */
- 
+
 const char RDB_system                      = 1;
 const char RDB_id_assigned                 = 2;
- 
+
 /* Transaction parameter blob stuff */
- 
+
 const char gds_tpb_version1                = 1;
 const char gds_tpb_version3                = 3;
 const char gds_tpb_consistency             = 1;
@@ -470,18 +473,18 @@ const char gds_tpb_lock_write              = 11;
 const char gds_tpb_verb_time               = 12;
 const char gds_tpb_commit_time             = 13;
 const char gds_tpb_ignore_limbo            = 14;
- 
+
 /* Blob Parameter Block */
- 
+
 const char gds_bpb_version1                = 1;
 const char gds_bpb_source_type             = 1;
 const char gds_bpb_target_type             = 2;
 const char gds_bpb_type                    = 3;
 const char gds_bpb_type_segmented          = 0;
 const char gds_bpb_type_stream             = 1;
- 
-/* Blob stream stuff */ 
- 
+
+/* Blob stream stuff */
+
 typedef struct bstream {
     int         *bstr_blob;             /* Blob handle */
     char        *bstr_buffer;           /* Address of buffer */
@@ -490,31 +493,31 @@ typedef struct bstream {
     short       bstr_cnt;               /* Characters in buffer */
     char        bstr_mode;              /* (mode) ? OUTPUT : INPUT */
 } BSTREAM;
- 
+
 #define getb(p) (--(p)->bstr_cnt >= 0 ? *(p)->bstr_ptr++ & 0377: BLOB_get (p))
 #define putb(x,p) ((x == '\n' || (!(--(p)->bstr_cnt))) ? BLOB_put (x,p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
 #define putbx(x,p) ((!(--(p)->bstr_cnt)) ? BLOB_put (x,p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
- 
+
 extern "C" {
     BSTREAM *Bopen (GDS_QUAD*, gds_db_handle, gds_tr_handle, char*);
 	BSTREAM *BLOB_open (gds_blob_handle, char*, char*);
     }
- 
+
 extern "C" {
     int GDS_EXPORT BLOB_close (BSTREAM*);
     int GDS_EXPORT BLOB_get (BSTREAM*);
     int GDS_EXPORT BLOB_put (int, BSTREAM*);
     }
 /* Information call declarations */
- 
+
 /* Common, structural codes */
- 
+
 const char gds_info_end                    = 1;
 const char gds_info_truncated              = 2;
 const char gds_info_error                  = 3;
- 
+
 /* Database information items */
- 
+
 const char gds_info_db_id                  = 4;
 const char gds_info_reads                  = 5;
 const char gds_info_writes                 = 6;
@@ -544,9 +547,9 @@ const char gds_info_sweep_interval         = 31;
 const char gds_info_ods_version            = 32;
 const char gds_info_ods_minor_version      = 33;
 const char gds_info_no_reserve             = 34;
- 
+
 /* Database Info Return Values */
- 
+
 const char gds_info_db_impl_rdb_vms        = 1;
 const char gds_info_db_impl_rdb_eln        = 2;
 const char gds_info_db_impl_rdb_eln_dev    = 3;
@@ -567,7 +570,6 @@ const char gds_info_db_impl_isc_sun4       = 30;
 const char gds_info_db_impl_isc_hp_ux      = 31;
 const char gds_info_db_impl_isc_sun_386i   = 32;
 const char gds_info_db_impl_isc_vms_orcl   = 33;
-const char gds_info_db_impl_isc_mac_aux    = 34;
 const char gds_info_db_impl_isc_rt_aix     = 35;
 const char gds_info_db_impl_isc_mips_ult   = 36;
 const char gds_info_db_impl_isc_apl_dn10   = 37;
@@ -580,9 +582,9 @@ const char gds_info_db_class_pipe_srvr     = 8;
 const char gds_info_db_class_sam_int       = 9;
 const char gds_info_db_class_sam_srvr      = 10;
 const char gds_info_db_class_gateway       = 11;
- 
+
 /* Request information items */
- 
+
 const char gds_info_number_messages        = 4;
 const char gds_info_max_message            = 5;
 const char gds_info_max_send               = 6;
@@ -596,18 +598,18 @@ const char gds_info_req_inactive           = 3;
 const char gds_info_req_send               = 4;
 const char gds_info_req_receive            = 5;
 const char gds_info_req_select             = 6;
- 
+
 /* Blob information items */
- 
+
 const char gds_info_blob_num_segments      = 4;
 const char gds_info_blob_max_segment       = 5;
 const char gds_info_blob_total_length      = 6;
 const char gds_info_blob_type              = 7;
- 
+
 /* Transaction information items */
- 
+
 const char gds_info_tra_id                 = 4;
- 
+
 /* SQL information items */
 
 const char gds_info_sql_select             = 4;
@@ -641,7 +643,7 @@ const char gds_info_sql_stmt_rollback      = 11;
 const char gds_info_sql_stmt_select_for_upd = 12;
 
 /* Error codes */
- 
+
 const long gds_facility                    = 20;
 const long gds_err_base                    = 335544320L;
 const long gds_err_factor                  = 1;
@@ -720,9 +722,9 @@ const long gds_wronumarg                   = 335544380L;
 const long gds_imp_exc                     = 335544381L;
 const long gds_random                      = 335544382L;
 const long gds_fatal_conflict              = 335544383L;
- 
+
 /* Minor codes subject to change */
- 
+
 const long gds_badblk                      = 335544384L;
 const long gds_invpoolcl                   = 335544385L;
 const long gds_nopoolids                   = 335544386L;
@@ -810,16 +812,16 @@ const long gds_high_minor                  = 335544467L;
 const long gds_tra_state                   = 335544468L;
 const long gds_trans_invalid               = 335544469L;
 const long gds_buf_invalid                 = 335544470L;
- 
+
 /* Dynamic Data Definition Language operators */
- 
+
 /* Version number */
- 
+
 const char gds_dyn_version_1               = 1;
 const char gds_dyn_eoc                     = -1;
- 
+
 /* Operations (may be nested) */
- 
+
 const char gds_dyn_begin                   = 2;
 const char gds_dyn_end                     = 3;
 const char gds_dyn_if                      = 4;
@@ -851,17 +853,17 @@ const char gds_dyn_grant                   = 30;
 const char gds_dyn_revoke                  = 31;
 const char gds_dyn_def_primary_key         = 37;
 const char gds_dyn_def_foreign_key         = 38;
- 
+
 /* View specific stuff */
- 
+
 const char gds_dyn_view_blr                = 43;
 const char gds_dyn_view_source             = 44;
 const char gds_dyn_view_relation           = 45;
 const char gds_dyn_view_context            = 46;
 const char gds_dyn_view_context_name       = 47;
- 
+
 /* Generic attributes */
- 
+
 const char gds_dyn_rel_name                = 50;
 const char gds_dyn_fld_name                = 51;
 const char gds_dyn_idx_name                = 52;
@@ -869,9 +871,9 @@ const char gds_dyn_description             = 53;
 const char gds_dyn_security_class          = 54;
 const char gds_dyn_system_flag             = 55;
 const char gds_dyn_update_flag             = 56;
- 
+
 /* Relation specific attributes */
- 
+
 const char gds_dyn_rel_dbkey_length        = 61;
 const char gds_dyn_rel_store_trig          = 62;
 const char gds_dyn_rel_modify_trig         = 63;
@@ -881,9 +883,9 @@ const char gds_dyn_rel_modify_trig_source  = 66;
 const char gds_dyn_rel_erase_trig_source   = 67;
 const char gds_dyn_rel_ext_file            = 68;
 const char gds_dyn_rel_sql_protection      = 69;
- 
+
 /* Global field specific attributes */
- 
+
 const char gds_dyn_fld_type                = 70;
 const char gds_dyn_fld_length              = 71;
 const char gds_dyn_fld_scale               = 72;
@@ -899,24 +901,24 @@ const char gds_dyn_fld_missing_value       = 81;
 const char gds_dyn_fld_default_value       = 82;
 const char gds_dyn_fld_query_name          = 83;
 const char gds_dyn_fld_dimensions          = 84;
- 
+
 /* Local field specific attributes */
- 
+
 const char gds_dyn_fld_source              = 90;
 const char gds_dyn_fld_base_fld            = 91;
 const char gds_dyn_fld_position            = 92;
 const char gds_dyn_fld_update_flag         = 93;
- 
+
 /* Index specific attributes */
- 
+
 const char gds_dyn_idx_unique              = 100;
 const char gds_dyn_idx_inactive            = 101;
 const char gds_dyn_idx_type                = 103;
 const char gds_dyn_idx_foreign_key         = 104;
 const char gds_dyn_idx_ref_column          = 105;
- 
+
 /* Trigger specific attributes */
- 
+
 const char gds_dyn_trg_type                = 110;
 const char gds_dyn_trg_blr                 = 111;
 const char gds_dyn_trg_source              = 112;
@@ -925,18 +927,18 @@ const char gds_dyn_trg_sequence            = 115;
 const char gds_dyn_trg_inactive            = 116;
 const char gds_dyn_trg_msg_number          = 117;
 const char gds_dyn_trg_msg                 = 118;
- 
+
 /* Security Class specific attributes */
- 
+
 const char gds_dyn_scl_acl                 = 121;
 const char gds_dyn_grant_user              = 130;
 const char gds_dyn_grant_options           = 132;
- 
+
 /* Dimension specific information */
- 
+
 const char gds_dyn_dim_lower               = 141;
 const char gds_dyn_dim_upper               = 142;
- 
+
 /* File specific attributes */
 
 const char gds_dyn_file_name               = 125;
@@ -964,7 +966,7 @@ const char gds_dyn_generator_name          = 95;
 const char gds_dyn_generator_id            = 96;
 
 /* Array slice description language (SDL) */
- 
+
 const char gds_sdl_version1                = 1;
 const char gds_sdl_eoc                     = -1;
 const char gds_sdl_relation                = 2;
@@ -1002,7 +1004,7 @@ const char gds_sdl_do3                     = 33;
 const char gds_sdl_do2                     = 34;
 const char gds_sdl_do1                     = 35;
 const char gds_sdl_element                 = 36;
- 
+
 const short SQL_TEXT                        = 452;
 const short SQL_VARYING                     = 448;
 const short SQL_SHORT                       = 500;
@@ -1011,11 +1013,11 @@ const short SQL_FLOAT                       = 482;
 const short SQL_DOUBLE                      = 480;
 const short SQL_DATE                        = 510;
 const short SQL_BLOB                        = 520;
- 
+
 /* Forms Package definitions */
- 
+
 /* Map definition block definitions */
- 
+
 const char PYXIS_MAP_VERSION1              = 1;
 const char PYXIS_MAP_FIELD2                = 2;
 const char PYXIS_MAP_FIELD1                = 3;
@@ -1029,23 +1031,23 @@ const char PYXIS_MAP_SUB_FORM              = 10;
 const char PYXIS_MAP_ITEM_INDEX            = 11;
 const char PYXIS_MAP_SUB_FIELD             = 12;
 const char PYXIS_MAP_END                   = -1;
- 
+
 /* Field option flags for display options */
- 
+
 const char PYXIS_OPT_DISPLAY               = 1;
 const char PYXIS_OPT_UPDATE                = 2;
 const char PYXIS_OPT_WAKEUP                = 4;
 const char PYXIS_OPT_POSITION              = 8;
- 
+
 /* Field option values following display */
- 
+
 const char PYXIS_OPT_NULL                  = 1;
 const char PYXIS_OPT_DEFAULT               = 2;
 const char PYXIS_OPT_INITIAL               = 3;
 const char PYXIS_OPT_USER_DATA             = 4;
- 
+
 /* Pseudo key definitions */
- 
+
 const char PYXIS_KEY_DELETE                = 127;
 const char PYXIS_KEY_UP                    = 128;
 const char PYXIS_KEY_DOWN                  = 129;
@@ -1063,9 +1065,9 @@ const char PYXIS_KEY_PF9                   = 140;
 const char PYXIS_KEY_ENTER                 = 141;
 const char PYXIS_KEY_SCROLL_TOP            = 146;
 const char PYXIS_KEY_SCROLL_BOTTOM         = 147;
- 
+
 /* Menu definition stuff */
- 
+
 const char PYXIS_MENU_VERSION1             = 1;
 const char PYXIS_MENU_LABEL                = 2;
 const char PYXIS_MENU_ENTREE               = 3;
