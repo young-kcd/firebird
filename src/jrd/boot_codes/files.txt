@@ -1,9 +1,0 @@
-gds_codes.pas
-gds_codes.ftn
-codes.h
-iberror.h
-codetext.h
-msgs.h
-rdb_codes.h
-sql_code.h
-msg_facs.h
