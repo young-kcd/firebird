@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.126 2003-03-06 13:22:07 brodsom Exp $
+dnl $Id: configure.in,v 1.127 2003-03-07 07:41:13 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -130,7 +130,10 @@ AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
             dnl makefiles use $(CC) to link objects. This has to be changed!
 AC_PROG_CXX
 AC_PROG_LN_S
-AC_PROG_RANLIB
+dnl EKU: AC_PROG_RANLIB has been superseded by AC_PROG_LIBTOOL
+AC_LIBTOOL_DLOPEN
+AC_LIBTOOL_WIN32_DLL
+AC_PROG_LIBTOOL
 AC_PROG_YACC
 
 
