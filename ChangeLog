@@ -1,3 +1,10 @@
+2004-07-14 14:10  paul_reeves
+
+	* firebird2/: doc/README.user.embedded (1.1.2.2),
+	src/install/arch-specific/win32/installation_readme.txt (1.2.2.7):
+	
+	Minor doc changes for Fb 1.5.1
+
 2004-07-06 15:12  paul_reeves
 
 	* firebird2/src/jrd/isc_version.h (1.1.2.19):
