@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 1.5.1       (Versão Win32)
+Firebird 1.5.2       (Versão Win32)
 ==================================
 
 
@@ -18,7 +18,7 @@ o Pedido de Novas Funcionalidades
 Introdução
 ==========
 
-Bemvindo ao Firebird 1.5.1. Esta é a primeira versão de manutenção
+Bemvindo ao Firebird 1.5.2. Esta é a segunda versão de manutenção
 do Firebird 1.5. Detalhes completos das correcções e pequenas
 melhorias desta versão estão relatadas nas Notas de Lançamento.
 Estas encontram-se disponíveis na pasta doc/.
@@ -107,7 +107,6 @@ Documentação da Linguagem SQL
 =============================
 Novas funcionalidades de linguagem, palavras, extensões e restrições foram
 introduzidas nesta versão e são documentas em detalhe nas Notas de Lançamento.
-A versão das Notas de Lançamento para o Firebird 1.5 é a 1.0.8.
 
 
 Erros Reportados

@@ -49,18 +49,21 @@ hu.Fb15Running3=          vagy le kell állítani szolgáltatást.
 
 hu.PreviousInstallBroken=   (A telepítés hibásnak tûnik a nem megfelelõ verzió-azonosító miatt.)
 hu.PreviousInstallGood=   (A telepítés hibátlannak tûnik.)
-hu.IconReadme=Firebird 1.5 Read Me
-hu.IconUninstall=Uninstall Firebird
-hu.ReleaseNotes= release notes. (Requires Acrobat Reader.)
-hu.Uninstall=Uninstall Firebird
-hu.Winsock2Web1=Winsock 2 is not installed.
-hu.Winsock2Web2=Would you like to Visit the Winsock 2 Update Home Page?
-hu.NoWinsock2= Please Install Winsock 2 Update before continuing
-hu.MSWinsock2Update= http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
 
-hu.RunCSNoGuardian=Run Firebird classic server (without guardian)
-hu.RunSSNoGuardian=Run Firebird Superserver (without guardian)
-hu.RunSSWithGuardian=Run Firebird Super Server (with guardian)
-hu.RunCSWithGuardian=Run Firebird Classic Server (with guardian)
-hu.RunISQL=Run command-line based Interactive SQL tool
+hu.IconReadme=Firebird 1.5 - Olvass El
+hu.IconUninstall=A Firebird eltávolítása
+hu.ReleaseNotes=Firebird 1.5 - Újdonságok (Acrobat Reader programot igényel)
+hu.Uninstall=A Firebird eltávolítása
+hu.Winsock2Web1=A Winsock 2 kiterjesztés nincs telepítve.
+hu.Winsock2Web2=Meg kívánja látogatni a Winsock 2 frissítés honlapját?
+hu.NoWinsock2=Kérem telepítse a Winsock 2 frissítést mielött folytatná!
+hu.MSWinsock2Update=http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
+  	 
+hu.RunCSNoGuardian=A Hagyományos Szerver futtatása (Guardian nélkül)
+hu.RunSSNoGuardian=A Szuper Szerver futtatása (Guardian nélkül)
+hu.RunSSWithGuardian=A Szuper Szerver futtatása (Guardian segítségével)
+hu.RunCSWithGuardian=A Hagyományos Szerver futtatása (Guardian segítségével)
+hu.RunISQL=A parancssoros Interaktív SQL eszköz futtatása
 
+hu.ReadmeFile=readme.txt
+hu.InstallationReadmeFile=installation_readme.txt

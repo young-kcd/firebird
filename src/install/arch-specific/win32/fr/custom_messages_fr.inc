@@ -61,3 +61,6 @@ fr.RunSSNoGuardian=Démarrer Firebird Superserver (sans guardian)
 fr.RunSSWithGuardian=Démarrer Firebird Super Server (avec guardian)
 fr.RunCSWithGuardian=Démarrer Firebird Classic Server (avec guardian)
 fr.RunISQL=Démarrer l'outil en ligne de commande Interactive SQL (ISQL)
+
+fr.ReadmeFile=lisezmoi.txt
+fr.InstallationReadmeFile=installation_lisezmoi.txt

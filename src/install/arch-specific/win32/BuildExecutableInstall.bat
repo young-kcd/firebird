@@ -163,7 +163,7 @@ dumpbin /headers %ROOT_PATH%\output\bin\fbserver.exe | findstr /C:"Application c
 
 :: This stuff doesn't make much sense to Windows users, although the troubleshooting doc
 :: could be made more platform agnostic.
-@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.mingw.html README.build.msvc.html fb2-todo.txt install_win32.txt *.*~) do (
+@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.mingw.html README.build.msvc.html fb2-todo.txt install_win32.txt README.install.Solaris_on_Intel *.*~) do (
   (@del %ROOT_PATH%\output\doc\%%v 2>nul)
 )
 

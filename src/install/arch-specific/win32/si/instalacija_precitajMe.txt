@@ -1,0 +1,209 @@
+<div class="moz-text-flowed" style="font-family: -moz-fixed">Firebird SQL Relacijska Baza Podatkov 1.5.2 
+==================================================
+
+Ta dokument je navodilo za instalacijo programske opreme 
+Firebird 1.5 za platformo Win32.
+
+
+Vsebina
+--------
+
+o Pred istalacijo
+o Instalacija na sistem z Firebird 2.0
+o Nove možnosti instalecijskega programa
+o Opušèene opcije, vezane na instalcijski program
+o Deinstalacija
+o Ostale informacije
+o Instalacije s pomoèj ukazne vrstice
+
+Pred istalacijo
+---------------
+
+Priproèeno je, da se deinstalirajo vse starejše verzije 
+Firebird 1.0, Firebird 1.5 ali InterBase pred istalacijo te
+programske opreme.
+
+
+Instalacija na sistem z Firebird 2.0
+------------------------------------
+
+Instalacije Firebird 1.5.2 ne zazna morebitne aktive verzije 
+Firebird 2.0. Èe uporabljate verzijo Firebird 2.0, potem jo 
+pred zagonom instalacije ustavite.
+
+
+Nove možnosti instalecijskega programa
+--------------------------------------
+
+Dodana je možnost uporabe veè jezikov med izvajanjem instalacije. 
+Ta podpora je zajeta zgolj pri instalaciji in se ne nanaša na sam
+program.
+
+
+o Novi instalacijski program kombinira izvedljivo verzijo Super 
+  serverja in Klasiènega serverja v enotno instalacijo. Med postopkom
+  instalcije se lahko odloèite za eno ali drugo varianto serverja,
+  vendar ne obe hkrati. Za preklop med obema verzijama je potrebno
+  najprej deinstalirati ter nato ponovno instalirati Firebird.
+  
+o Pravila za instalacijo knjižnice so se spremenila. Podrobnosti so 
+  razložene v datoteki
+    .\docs\README.Win32LibraryInstallation.txt
+  ki je dosegljiva po konèani instalaciji.
+
+  Kot rezultat teh novih pravil sedaj instaler preveri obstojeèo 
+  instalacijo Firebirda ali InterBase. 
+  
+  - Èe je Firebird 1.5 že instaliran, bo 
+    poskusil novo instalacijo prepisati preko stare. Èe 
+    je server zagnan, se bo instalacija prekinila.
+
+  - V primeru, da je instalirana druga verzija baze, 
+    bo uporabnik opozorjen. Èe se uporabnik odloèi nadaljevati
+    z instalacijo, bo instalerina Firebird, vpisane bodo vrednosti
+    v Registry, vendar pa ne bo konfiguriran za zagon (niti kot
+    aplikaciji niti kot server), kar morate nastaviti roèno.
+
+  - Nova opcija instalerja v ukazni vrstici
+      /force
+    nastavi zagon ne glede na zgoraj omenjeno.
+
+
+o Èe pred instalacijo datoteka firebird.conf že, potem bo shranjena kot:
+    firebird.conf.saved.n
+  kjer n predstavlja številko. Instaler vedno namesti 
+  privzeto datoteko firebird.conf. To zagotavlja konsistentnost
+  procesa instalacije.
+
+
+Opušèene opcije instalacije
+---------------------------
+
+o Firebird 1.0 je dodal kljuè v Registry:
+  
+    HKLM\SOFTWARE\FirebirdSQL 
+  To je sedaj opušèeno in kljuè bo ob instalaciji zbrisan.
+  Èe vaša aplikacija uporablja podatke iz tega kljuèa, potem 
+  kljuè dodajte roèno. Priporoèilo je, da dopolnite aplikacijo
+  za uporabo brez kljuèa.
+  
+o Prejšnje verzije Firebird 1.5 kandidatov za izdajo so instalirale
+  fbclient.dll v direktorij <system>. To je sedaj opušèeno. Opcija
+  za instalacijo v sistemski direktorij je na razpolago med samo
+  instalacijo. 
+  
+
+Deinstalacija
+-------------
+
+o Predlagamo uporabo deinstalacije iz Windows programa Control Panel.
+  Obstaja še ena možnost deinstalacije in sicer program unins000.exe 
+  neposredno iz direktorija, iz katerega smo instalirali Firebird.
+  
+o Èe je server zagnan kot aplikacija (in ne kot servis), potem ga je potrebno
+  pred deinstalacijo ustaviti. Ustavimo ga z desnim klikom po ikoni in 
+  zaustavitvi. Èe je med deinstalacijo server zagnan, potem bo deinstalacij 
+  neuspešna in bo potrebno server zbrisati roèno.
+
+
+Ostalo
+------
+
+  Firebird server potrebuje za delovanje WinSock2. Vse Win32 platforme
+  bi ga morale vsebovati, razen Win95. Intalacije preveri, ali Winsock2 
+  knjižnica obstaja v sistemu. Èe je ne najde, instalira novo. Za veè 
+  informacij lahko obišèete naslednjo stran:
+
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+  kjer boste izvedeli veè o nadgradnji.
+
+
+Instalacija z ukazno vrstico
+----------------------------
+
+Instalacija Firebird serverja se lahko izvede tudi s pomoèjo ukazne vrstice.
+Opcija je posebej zanimiva za razvijalce, ki želijo vkljuèiti Firebird server
+v instalacijo svoje aplikacije.
+
+Dovoljeni so naslednji parametri:
+
+
+/SP- 
+  Onemogoèi prikaz sporoèila 'Intaliran bo ... Ali želite nadeljevati?' 
+  na zaèetku instalacije. 
+
+/SILENT, /VERYSILENT 
+  Instalacija bo izvedena na tih oz. zelo tih naèin. Pri tihem 
+  naèinu bodo okna èarovnika in okna ozadja skrita, prikazano bo
+  okno napredka instalacije. Zelo tih naèin bo skril vsa okna, tudi
+  tisto o napredku instalacije. 
+  Morebirna sporoèila o napakah se bodo ne glede na izbrano opcijo prikazala.
+
+  Èe je potreben restart, opcija '/NORESTART' ni uporabljena in uporabljamo tiho
+  instalacijo, se bo prikazalo okno za odloèitev o ponovnem zagonu Windows.
+  Pri zelo tihi instalaciji, se bo ponovni zagon izvedel brez vprašanja. 
+
+/NORESTART 
+  Napotek, da se ne izvede ponovni zagon Windows, tudi èe je ta potreben.
+  
+/DIR="x:\dirname"  
+  Prepiše privzeto mesto instalacije, ki je prikazano v èarovniku. Zahtevana je 
+  polna pot do mesta instalacije. Èe je sekcija [Setup] in ukaz DisableDirPage 
+  nastavljena na 'yes', potem ta opcija ni upoštevana. 
+
+/GROUP="folder name" 
+  Overrides the default folder name displayed on the 
+  Select Start Menu Folder wizard page. If the [Setup]
+  section directive DisableProgramGroupPage was set to
+  yes, this command line parameter is ignored. 
+
+/NOICONS 
+  Prepreèi vpis ikon. 
+
+/COMPONENTS="comma separated list of component names" 
+
+  Izberite izmed - SuperServerComponent, 
+                   ClassicServerComponent, 
+                   ServerComponent, 
+                   DevAdminComponent and 
+                   ClientComponent
+
+  Opcija prepiše privzete komponente za instlacijo. Z uporabo
+  te opcije doloèimo komponente, ki bodo instalirane.
+  Primer za polno instalacijo:
+  
+  /COMPONENTS="SuperServerComponent, ServerComponent, 
+               DevAdminComponent, ClientComponent"
+  
+/FORCE
+  Prepiše obstojeèe verzije Firebird serverja brez opozoril. Opcija
+  je koristna v primeru, èe imamo poškodovano instalacijo Firebird
+  serverja, ki je ne moremo deinstalirati.
+
+
+/NOCPL
+  Ne istaliraj Control Panel Applet. To je lahko uporabno v primeru:
+  
+  o Instalacije / deinstalacije Control Panel Applet pogosto zahteva
+    restart raèunalnik.
+
+  o Lahko uporabimo lastno razvito nadzorno plošèo.
+
+  
+/NOGDS32
+  Ne istaliraj kopije klientove knjižnice v sistemski direktorij.
+
+
+/COPYFBCLIENT
+  Kopiraj knjižnico fbclient.dll v sistemski direktorij. To je
+  priporoèljivo za instalacijo klienta, èe ste preprièani, da
+  boste dostopali samo eno verzijo Firebird serverja (1.5.2). 
+  Glej
+
+    doc/README.Win32LibraryInstallation.txt
+
+  za podrobnejše informacije.
+
+
+</div>

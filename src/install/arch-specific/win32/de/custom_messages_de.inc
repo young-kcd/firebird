@@ -60,8 +60,12 @@ de.Winsock2Web2=Möchten Sie die Winsock 2 Update Home Page besuchen?
 de.NoWinsock2 = Bitte installieren Sie das Winsock 2 Update, bevor Sie fortfahren
 de.MSWinsock2Update = http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
 
-de.RunCSNoGuardian=Run Firebird classic server (without guardian)
-de.RunSSNoGuardian=Run Firebird Superserver (without guardian)
-de.RunSSWithGuardian=Run Firebird Super Server (with guardian)
-de.RunCSWithGuardian=Run Firebird Classic Server (with guardian)
-de.RunISQL=Run command-line based Interactive SQL tool
+de.RunCSNoGuardian=Firebird Classic Server starten (ohne Guardian)
+de.RunSSNoGuardian=Firebird Super Server starten (ohne Guardian)
+de.RunSSWithGuardian=Firebird Super Server starten (Mit Guardian)
+de.RunCSWithGuardian=Firebird Classic Server starten (Mit Guardian)
+de.RunISQL=Starten des Kommandozeilen-basierten interaktiven SQL Tools
+
+de.ReadmeFile=liesmich.txt
+de.InstallationReadmeFile=installation_liesmich.txt
+

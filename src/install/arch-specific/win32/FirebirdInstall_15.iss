@@ -110,8 +110,6 @@ DefaultGroupName=Firebird_{#BaseVer}
 AllowNoIcons=true
 SourceDir=..\..\..\..\..\firebird2
 LicenseFile=src\install\misc\IPLicense.txt
-;InfoBeforeFile=output\doc\installation_readme.txt
-;InfoAfterFile=src\install\arch-specific\win32\readme.txt
 AlwaysShowComponentsList=true
 WizardImageFile=src\install\arch-specific\win32\firebird_install_logo1.bmp
 PrivilegesRequired=admin
@@ -132,8 +130,9 @@ LanguageDetectionMethod=uilanguage
 Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: src\install\arch-specific\win32\installation_readme.txt; InfoAfterFile: src\install\arch-specific\win32\readme.txt;
 Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: src\install\arch-specific\win32\fr\installation_lisezmoi.txt; InfoAfterFile: src\install\arch-specific\win32\fr\lisezmoi.txt;
 Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: src\install\arch-specific\win32\de\installation_liesmich.txt; InfoAfterFile: src\install\arch-specific\win32\de\liesmich.txt
-Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: src\install\arch-specific\win32\installation_readme.txt; InfoAfterFile: src\install\arch-specific\win32\readme.txt;
+Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: src\install\arch-specific\win32\hu\telepitesi_segedlet.txt; InfoAfterFile: src\install\arch-specific\win32\hu\olvass_el.txt;
 Name: pt; MessagesFile: compiler:Languages\PortugueseStd.isl; InfoBeforeFile: src\install\arch-specific\win32\pt\instalação_leia-me.txt; InfoAfterFile: src\install\arch-specific\win32\pt\leia-me.txt
+Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: src\install\arch-specific\win32\si\instalacija_precitajMe.txt; InfoAfterFile: src\install\arch-specific\win32\readme.txt;
 
 [Messages]
 en.BeveledLabel=English
@@ -141,6 +140,7 @@ fr.BeveledLabel=Français
 de.BeveledLabel=Deutsch
 hu.BeveledLabel=Magyar
 pt.BeveledLabel=Português
+si.BeveledLabel=Slovenski
 
 [CustomMessages]
 #include "custom_messages.inc"
@@ -148,6 +148,7 @@ pt.BeveledLabel=Português
 #include "de\custom_messages_de.inc"
 #include "hu\custom_messages_hu.inc"
 #include "pt\custom_messages_pt.inc"
+#include "si\custom_messages_si.inc"
 
 #ifdef iss_debug
 ;By default, available languages are dependant on the current code page.
@@ -225,17 +226,16 @@ Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -c; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ClassicServerComponent; Comment: {cm:RunCSWithGuardian}
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 #define App_Name = SetupSetting("AppName")
-Name: {group}\Firebird 1.5.2 Release Notes; Filename: {app}\doc\Firebird_v1.5.2.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name}.2 {cm:ReleaseNotes}
-Name: {group}\Firebird 1.5.1 Release Notes; Filename: {app}\doc\Firebird_v1.5.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name}.1 {cm:ReleaseNotes}
-Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name}.0 {cm:ReleaseNotes}
-Name: {group}\Firebird 1.5 Quick Start Guide; Filename: {app}\doc\Firebird-1.5-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#App_Name} Quick Start Guide (in English)
+Name: {group}\Firebird 1.5.2 Release Notes; Filename: {app}\doc\Firebird_v1.5.2.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name}.2 {cm:ReleaseNotes}
+Name: {group}\Firebird 1.5.1 Release Notes; Filename: {app}\doc\Firebird_v1.5.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name}.1 {cm:ReleaseNotes}
+Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name}.0 {cm:ReleaseNotes}
+Name: {group}\Firebird 1.5 Quick Start Guide; Filename: {app}\doc\Firebird-1.5-QuickStart.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name} Quick Start Guide (in English)
 ;Always install the original english version of the readme
-Name: {group}\Firebird 1.5.2 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
+Name: {group}\Firebird 1.5.2 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0; Components: DevAdminComponent;
+
 ;Translated files
-Name: {group}\{cm:IconReadme}; Filename: {app}\readme-fr.txt; MinVersion: 4.0,4.0; Languages: fr
-Name: {group}\{cm:IconReadme}; Filename: {app}\readme-de.txt; MinVersion: 4.0,4.0; Languages: de
-Name: {group}\{cm:IconReadme}; Filename: {app}\readme.txt; MinVersion: 4.0,4.0; Languages: hu
-Name: {group}\Uninstall Firebird; Filename: {uninstallexe}; Comment: Uninstall Firebird
+Name: {group}\{cm:IconReadme}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
+Name: {group}\{cm:IconUninstall}; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
 [Files]
 #ifdef files
@@ -243,9 +243,13 @@ Source: src\install\misc\IPLicense.txt; DestDir: {app}; Components: ClientCompon
 Source: src\install\misc\IDPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 ;Always install the original english version
 Source: src\install\arch-specific\win32\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion
+
 ;Translated files
-Source: src\install\arch-specific\win32\fr\lisezmoi.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr
-Source: src\install\arch-specific\win32\de\liesmich.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion; Languages: de
+Source: src\install\arch-specific\win32\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
+Source: src\install\arch-specific\win32\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
+Source: src\install\arch-specific\win32\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: hu;
+Source: src\install\arch-specific\win32\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
+Source: src\install\arch-specific\win32\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 
 Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: SaveFirebirdConf
 Source: output\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
@@ -286,8 +290,11 @@ Source: output\system32\msvcp{#msvc_version}0.dll; DestDir: {sys}; Components: C
 ;Always install the orignal english version
 Source: output\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
 ;Translated files
-Source: output\doc\fr\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion; Languages: fr
-Source: output\doc\de\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion; Languages: de
+;Source: output\doc\fr\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion; Languages: fr;
+;Source: output\doc\de\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion; Languages: de;
+;Source: output\doc\hu\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion; Languages: hu;
+;Source: output\doc\pt\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion; Languages: pt;
+;Source: output\doc\si\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion; Languages: si;
 ;Always install the orignal english version
 Source: output\doc\sql.extensions\*.*; DestDir: {app}\doc\sql.extensions; Components: DevAdminComponent; Flags: skipifsourcedoesntexist ignoreversion
 
@@ -694,11 +701,18 @@ begin
 end;
 
 
+function NonDefaultLanguage: boolean;
+//return true if language other than default is chosen
+begin
+  result := (ActiveLanguage <> 'en');
+end;
+
+
 procedure CurPageChanged(CurPage: Integer);
 begin
   case CurPage of
     wpInfoBefore:   WizardForm.INFOBEFOREMEMO.font.name:='Courier New';
-    wpInfoBefore:   WizardForm.INFOAFTERMEMO.font.name:='Courier New';
+    wpInfoAfter:    WizardForm.INFOAFTERMEMO.font.name:='Courier New';
     wpSelectTasks:  WizardForm.TASKSLIST.height := WizardForm.TASKSLIST.height+30;
     wpFinished:     ; // Create some links to Firebird and IBP here?.
   end;
@@ -708,6 +722,7 @@ end;
 procedure CurStepChanged(CurStep: Integer);
 var
   AppStr: String;
+  ReadMeFileStr: String;
 begin
    case CurStep of
     csCopy: begin
@@ -716,6 +731,7 @@ begin
       end;
 
     csFinished: begin
+
       //If user has chosen to install an app and run it automatically set up the registry accordingly
       //so that the server or guardian starts evertime they login.
       if (ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes) and
@@ -724,10 +740,20 @@ begin
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
       
+      //Fix up conf file
       RemoveSavedConfIfNoDiff;
       UpdateFirebirdConf;
+      
+      //Reset shared library count if necessary
       CheckSharedLibCountAtEnd;
 
+      //Move lang specific readme from doc dir to root of install.
+      if NonDefaultLanguage then begin
+        ReadMeFileStr := ExpandConstant('{cm:ReadMeFile}');
+        if FileCopy(GetAppPath+'\doc\'+ReadMeFileStr, GetAppPath+'\'+ReadMeFileStr, false) then
+          DeleteFile(GetAppPath+'\doc\'+ReadMeFileStr);
+      end;
+      
     end;
   end;
 end;
@@ -747,6 +773,7 @@ begin
     result := GetAppPath+'\bin\fbserver.exe';
 
 end;
+
 
 function SaveFirebirdConf: boolean;
 // If we are installing over an existing installation we save the original

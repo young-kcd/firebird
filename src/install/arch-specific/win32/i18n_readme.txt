@@ -7,8 +7,7 @@ the installation process only. This means just translating the install
 dialogues, the readme file and the installation readme file. All other
 documentatation i18n should be available separately. I18n is a
 good thing, but bloating the installer with large amounts of translated
-documentation is not desirable.
-
+documentation is not desirable. 
 
 The current version of InnoSetup - 4.2.7 - provides generic support for
 the following languages:
@@ -25,7 +24,7 @@ Therefore adding i18n support to the Firebird installer is extremely
 simple as all we need are translations of the Firebird specific messages.
 
 Currently the Firebird installer has support for English, French, German
-Portuguese (standard) and Hungarian installs. So there are still 
+Portuguese (standard), Hungarian and Slovenian installs. So there are still 
 opportunities for others to provide support for their native language.
 
 
@@ -33,7 +32,7 @@ How to add new languages
 ------------------------
 
 The simplest way to understand this is to study the implementation of
-the French translation. The basic components are as follows:
+the French translation. The steps to follow are these:
 
 o The Win32 install files are located in install\arch-specific\win32.
   This sub-directory is located as follows:
@@ -95,6 +94,20 @@ o Three files are required:
     point release.
 
 
+o Issues to bear in mind
+
+  * Use ascii characters for filenames where possible.
+
+  * All strings that appear as text labels in dialogue screens should contain 
+    an ampersand ( & ) to support keyboard input during setup. 
+
+  * The installation readme file and the readme file must be formatted to 
+    a column width of 55 chars. Otherwise the installer will wrap lines 
+    awkwardly. This is because the installer screens use the Courier New
+    font to display these text files. Courier New guarantees to maintain
+    column alignment.
+    
+
 o Adding the new language to the InnoSetup install script
 
   Changes have been kept to the absolute minimum. Only the following
@@ -112,13 +125,14 @@ o Adding the new language to the InnoSetup install script
     #include "custom_messages.inc"
     #include "fr\custom_messages_fr.inc"
 
-  Use the location of the French files as a guide.
+  You are not required to make these changes.
+
 
 o Submitting your changes
 
   All i18n is being co-ordinated by Paul Reeves who maintains the Win32
   installation kits. He can be contacted at:
 
-     mailto:preeves@ibphoenix.com
+     mailto: preeves at ibphoenix.com
 
 

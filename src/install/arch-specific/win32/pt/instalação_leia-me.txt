@@ -1,4 +1,4 @@
-Servidor SQL Firebird 1.5.1 
+Servidor SQL Firbird 1.5.2 
 ==================================================
 
 Este documento constitui um guia para instalar o kit do
@@ -6,29 +6,12 @@ Firebird 1.5 na plataforma Win32. Estas notas referem-
 se ao próprio kit de instalação, em vez do Firebird 1.5
 em geral.
 
-** NOTAS IMPORTANTES **
-
-Se usou um dos binários de instalação do Sourceforge 
-para instalar a RC2 recomenda-se que a remova directa-
--mente a partir da pasta de instalação através do 
-unins000.exe.
-
-Não use o Painel de Controlo como atalho para o 
-programa de remoção. Parece haver um erro que impede 
-que o serviço do servidor seja encerrado se a remoção 
-se fizer a partir daí. 
-
-Isto só se aplica à remoção da versão RC2 do Firebird 
-no Sourceforge. Para binários de instalação mais 
-recentes poderá proceder à remoção através de qualquer
-método disponível.
-
-**       FIM      **
 
 Conteúdo
 --------
 
 o Antes de Instalar
+o Instalação em sistemas com o Firebird 2.0
 o Novas funcionalidades da aplicação de instalação
 o Funcionalidades da instalação abandonadas 
 o Remoção
@@ -39,9 +22,27 @@ o Instalação a partir de um ficheiro batch
 Antes de Instalar
 -----------------
 
-Recomenda-se que REMOVA quaisquer versões prévias 
-do Firebird 1.0, Firebird 1.5 ou InterBase 
-antes de instalar este kit.
+Recomenda-se que REMOVA quaisquer versões prévias do 
+Firebird 1.0, Firebird 1.5 ou InterBase antes de 
+instalar este kit.
+
+
+Instalação em sistemas com o Firebird 2.0
+-----------------------------------------
+
+O processo de instalação do Firebird 1.5.2 não consegue 
+detectar uma versão em activa do Firebird 2.0 Instável.
+Se possui uma destas versões em execução é essencial 
+que interrompa o Servidor antes de tentar instalar o 
+Firebird 1.5.2.
+
+
+Novas funcionalidades de instalação no Firebird 1.5.2
+-----------------------------------------------------
+
+Foi adicionado o suporte para diversos idiomas ao kit
+de instalação. Este suporte SÓ é extensível ao processo
+de instalação.
 
 
 Novas funcionalidades da aplicação de instalação

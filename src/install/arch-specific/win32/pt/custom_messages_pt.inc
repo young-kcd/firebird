@@ -50,18 +50,20 @@ pt.Fb15Running3=                 antes de continuar.
 pt.PreviousInstallBroken=   (A Instalação aparenta estar danificada por disparidade no texto da versão.)
 pt.PreviousInstallGood=   (A Instalação aparenta estar correcta.)
 
-pt.IconReadme=Firebird 1.5 Read Me
-pt.IconUninstall=Uninstall Firebird
-pt.ReleaseNotes= release notes. (Requires Acrobat Reader.)
-pt.Uninstall=Uninstall Firebird
-pt.Winsock2Web1=Winsock 2 is not installed.
-pt.Winsock2Web2=Would you like to Visit the Winsock 2 Update Home Page?
-pt.NoWinsock2= Please Install Winsock 2 Update before continuing
-pt.MSWinsock2Update= http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
+pt.IconReadme=Firebird 1.5 Leia-me
+pt.IconUninstall=Remoção do Firebird
+pt.ReleaseNotes= Notas de Lançamento. (Requer Acrobat Reader.)
+pt.Uninstall=Remoção do Firebird
+pt.Winsock2Web1=A biblioteca Winsock 2 não está instalada.
+pt.Winsock2Web2=Pretende visitar a página de actualização na Internet do Winsock 2?
+pt.NoWinsock2 = Por favor instale a actualização do Winsock 2 antes de continuar
+pt.MSWinsock2Update = http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
 
-pt.RunCSNoGuardian=Run Firebird classic server (without guardian)
-pt.RunSSNoGuardian=Run Firebird Superserver (without guardian)
-pt.RunSSWithGuardian=Run Firebird Super Server (with guardian)
-pt.RunCSWithGuardian=Run Firebird Classic Server (with guardian)
-pt.RunISQL=Run command-line based Interactive SQL tool
+pt.RunCSNoGuardian=Executar o Servidor Firebird classic (sem guardian)
+pt.RunSSNoGuardian=Executar o Servidor Firebird Superserver (sem guardian)
+pt.RunSSWithGuardian=Executar o Servidor Firebird Super (com guardian)
+pt.RunCSWithGuardian=Executar o Servidor Firebird Classic (com guardian)
+pt.RunISQL=Executar a ferramenta de linha-de-comandos SQL Interactivo
 
+pt.ReadmeFile=leia-me.txt
+pt.InstallationReadmeFile=instalação_leia-me.txt

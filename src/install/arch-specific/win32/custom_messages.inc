@@ -64,3 +64,6 @@ en.RunSSNoGuardian=Run Firebird Superserver (without guardian)
 en.RunSSWithGuardian=Run Firebird Super Server (with guardian)
 en.RunCSWithGuardian=Run Firebird Classic Server (with guardian)
 en.RunISQL=Run command-line based Interactive SQL tool
+
+en.ReadmeFile=readme.txt
+en.InstallationReadmeFile=installation_readme.txt
