@@ -498,7 +498,7 @@ SOURCE=..\..\..\src\jrd\utl.cpp
 
 !IF  "$(CFG)" == "engine - Win32 Release"
 
-# SUBTRACT CPP /Og
+# ADD CPP /Og
 
 !ELSEIF  "$(CFG)" == "engine - Win32 Debug"
 
