@@ -2,10 +2,14 @@
 :: ROOT_PATH dos format path of the main directory 
 :: DB_PATH unix format path of the main directory 
 :: VS_VER VisualStudio version (msvc6|msvc7)
+:: SERVER_NAME server needed to connect to firebird (could include port)
+::   Example : localhost/3051
 
 @echo off
 ::=================
 :SET_DB_DIR
+
+@SET SERVER_NAME=localhost
 
 @cd ..\..
 @for /f "delims=" %%a in ('@cd') do (set ROOT_PATH=%%a)
