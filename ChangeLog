@@ -1,3 +1,47 @@
+2003-03-25 14:24  brodsom
+
+	* firebird2/builds/posix/prefix.mingw.README.html:
+	
+	Update the MINGW readme after the event problem was resolved.
+
+2003-03-25 13:07  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fix up little issues with lock manager
+
+2003-03-25 12:07  aafemt
+
+	* firebird2/builds/posix/: Makefile.in.fbserver,
+	Makefile.in.inet_server, Makefile.in.libfbclient,
+	Makefile.in.libfbembed, prefix.mingw, prefix.mingw.README.html:
+	
+	Another step towards MinGW CS build
+
+2003-03-25 10:48  dimitr
+
+	* firebird2/src/jrd/: opt.cpp, vio.cpp:
+	
+	Cleanup.
+
+2003-03-25 10:40  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fixed optimizer bug introduced by me appr. one month ago.
+
+2003-03-25 03:22  brodsom
+
+	* firebird2/: builds/win32/msvc6/engine.dsp,
+	builds/win32/msvc6/engine_classic.dsp,
+	builds/win32/msvc6/engine_embed.dsp,
+	builds/win32/msvc7/engine.vcproj,
+	builds/win32/msvc7/engine_classic.vcproj,
+	builds/win32/msvc7/engine_embed.vcproj, src/jrd/loiter.cpp,
+	src/jrd/loiter.h:
+	
+	Remove WINDOWS_ONLY remains
+
 2003-03-24 15:41  skidder
 
 	* firebird2/src/jrd/: blb.cpp, btr.cpp, exe.cpp, idx.cpp,
