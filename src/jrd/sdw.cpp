@@ -772,8 +772,6 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 		return TRUE;
 
 	update_lock = &temp_lock;
-	MOVE_CLEAR(update_lock, sizeof(struct lck));
-	//update_lock->blk_type = type_lck;
 	update_lock->lck_dbb = dbb;
 	update_lock->lck_attachment = tdbb->tdbb_attachment;
 	update_lock->lck_length = sizeof(SLONG);

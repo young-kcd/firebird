@@ -180,8 +180,6 @@ BOOLEAN TRA_active_transactions(TDBB tdbb, DBB dbb)
 
 	TRA_get_inventory(tdbb, trans->tra_transactions, base, number);
 
-	MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-	temp_lock.blk_type = type_lck;
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = reinterpret_cast<blk*>(trans);
 	temp_lock.lck_type = LCK_tra;
@@ -1566,7 +1564,6 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
    more complicated by the fact that existing transaction may have oldest
    actives older than they are. */
 
-	//MOVE_CLEAR(&temp_lock, sizeof(struct lck));   // Taken care of in lck constructor.
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = reinterpret_cast<blk*>(trans);
 	temp_lock.lck_type = LCK_tra;
@@ -1802,8 +1799,6 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 
 /* fill out a lock block, zeroing it out first */
 
-	MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-	//temp_lock.blk_type = type_lck;
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = reinterpret_cast<blk*>(trans);
 	temp_lock.lck_type = LCK_sweep;
@@ -1811,7 +1806,6 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 	temp_lock.lck_parent = dbb->dbb_lock;
 	temp_lock.lck_length = sizeof(SLONG);
-	temp_lock.lck_test_field = 666;			// this should better be in constructor !
 
 	if (!LCK_lock_non_blocking
 		(tdbb, &temp_lock, LCK_EX, (trans) ? FALSE : TRUE)) return TRUE;
@@ -2006,8 +2000,6 @@ int TRA_wait(TDBB tdbb, TRA trans, SLONG number, USHORT wait)
    we can't get the lock due to deadlock */
 
 	if (wait) {
-		MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-		//temp_lock.blk_type = (UCHAR) type_lck;
 		temp_lock.lck_dbb = dbb;
 		temp_lock.lck_type = LCK_tra;
 		temp_lock.lck_owner_handle =
@@ -2303,8 +2295,6 @@ static void compute_oldest_retaining(
 
 		/* fill out a lock block, zeroing it out first */
 
-		MOVE_CLEAR(&temp_lock, sizeof(struct lck));
-		temp_lock.blk_type = type_lck;
 		temp_lock.lck_dbb = dbb;
 		temp_lock.lck_type = LCK_tra;
 		temp_lock.lck_owner_handle =

@@ -4476,8 +4476,6 @@ static SSHORT lock_buffer(
 
 		struct lck refresh;
 
-		MOVE_CLEAR(&refresh, sizeof(struct lck));
-		//refresh.lck_header.blk_type = type_lck;
 		refresh.lck_dbb = dbb;
 		refresh.lck_type = LCK_bdb;
 		refresh.lck_owner_handle =
