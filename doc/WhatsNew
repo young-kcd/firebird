@@ -1,4 +1,126 @@
   **************
+  * v1.5 RC 7
+  **************
+
+    * Fixed unregistered bug.
+        Server crashes when explicit PLAN with MERGE and JOINs is specified.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        Possible issues in the metadata cache.
+      Contributor(s):
+        Eugeny Kilin <john at citycard.izhnet.ru>
+
+    * Fixed RC6 bug.
+        Problem in the cyclic metadata dependency handling.
+      Contributor(s):
+        Eugeny Kilin <john at citycard.izhnet.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC6 bug.
+        Solved problems with global new/delete operators in host applications using STL.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Reject user names with non-printable characters in GSEC.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Failure of GROUP BY <constant> operation.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        Unnamed columns when some functions/operations are used in the select list.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed RC6 bug.
+        Wrong index utilization in some cases.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC6 bug.
+        Server crash with explicit plans used in subqueries, when outer aggregation is performed.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * GSTAT enhancement.
+        Command-line switches "-r" and "-t" are now supported via the Services API.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC6 bug.
+        Removed handle leaks in the cached security database connection.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC6 bug.
+        Long prepare time for explicit plans in complex joins.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Security fix.
+        Verify secondary database pathnames against DatabaseAccess entry of firebird.conf.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC6 bug.
+        Server crashes in some cases of savepoints usage.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Renamed the registry key.
+        1) The registry location is changed from "HKLM\SOFTWARE\FirebirdSQL\Firebird\CurrentVersion" to "HKLM\SOFTWARE\Firebird Project\Firebird Server\Instances".
+        2) The server path location is changed from "RootDirectory" to "DefaultInstance" for consistency with future versions.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+    * Enhanced win32 guardian.
+        Added switch to start Classic server as an application.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed RC6 bug.
+        1) Fixed various issues with the win32 CS lock manager.
+        2) Enabled automatic lock manager pool resizing.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Possible server crash after unsuccessful index creation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC6 bug.
+        Incorrect NULLs handling in unique indices.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Added new collation.
+        ISO_HUN for ISO8859_2 charset (Hungarian language).
+      Contributor(s):
+        Sandor Szollosi <ssani at freemail.hu>
+
+    * Fixed RC6 bug.
+        CURRENT_ROLE isn't cleared for an invalid role specified.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Problems with parsing remote paths in GFIX (in-limbo transactions information).
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC6 bug.
+        Problems with security.fdb access.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+  **************
   * v1.5 RC 6
   **************
 
@@ -26,7 +148,7 @@
     * Fixes and enhancements to win32 instreg / instsvc install tools.
         See their help output for details.
       Contributor(s):
-        Oliver Mascia <om at tipgroup.com>
+        Olivier Mascia <om at tipgroup.com>
 
     * Fixed unregistered bug.
         Improved OCTETS output in ISQL.
