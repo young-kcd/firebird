@@ -108,8 +108,10 @@ static bool estimate_cost(thread_db*, OptimizerBlk*, USHORT, double *, double *)
 static bool expression_contains(const jrd_nod*, NOD_T);
 static bool expression_contains_stream(const jrd_nod*, UCHAR);
 #ifdef EXPRESSION_INDICES
-static bool expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
-static bool expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
+static bool expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
+							 jrd_nod*, USHORT);
+static bool expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
+							  jrd_nod*, USHORT);
 #endif
 static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, const jrd_nod*,
 					  double, double);
@@ -3115,7 +3117,9 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 
 // Try to merge this function with node_equality() into 1 function.
 
-static bool expression_equal(thread_db* tdbb, OptimizerBlk* opt, const index_desc* idx, jrd_nod* node, USHORT stream)
+static bool expression_equal(thread_db* tdbb, OptimizerBlk* opt,
+							 const index_desc* idx, jrd_nod* node,
+							 USHORT stream)
 {
 /**************************************
  *
@@ -3133,13 +3137,15 @@ static bool expression_equal(thread_db* tdbb, OptimizerBlk* opt, const index_des
 
 	if (idx && idx->idx_expression_request && idx->idx_expression)
 	{
+		fb_assert(idx->idx_flags & idx_expressn);
 		fb_assert(idx->idx_expression_request->req_caller == NULL);
 		idx->idx_expression_request->req_caller = tdbb->tdbb_request;
 		tdbb->tdbb_request = idx->idx_expression_request;
 		JrdMemoryPool* old_pool = tdbb->getDefaultPool();
 		tdbb->setDefaultPool(tdbb->tdbb_request->req_pool);
 
-		bool result = expression_equal2(tdbb, opt, idx->idx_expression, node, stream);
+		bool result = expression_equal2(tdbb, opt, idx->idx_expression,
+										node, stream);
 	
 		tdbb->setDefaultPool(old_pool);
 		tdbb->tdbb_request = idx->idx_expression_request->req_caller;
@@ -3152,7 +3158,9 @@ static bool expression_equal(thread_db* tdbb, OptimizerBlk* opt, const index_des
 }
 
 
-static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node1, jrd_nod* node2, USHORT stream)
+static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
+							  jrd_nod* node1, jrd_nod* node2,
+							  USHORT stream)
 {
 /**************************************
  *
@@ -3222,8 +3230,10 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node1
 			// A+B is equivilant to B+A, ditto A*B==B*A
 			// Note: If one expression is A+B+C, but the other is B+C+A we won't
 			// necessarily match them.
-			if (expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[1], stream) &&
-				expression_equal2(tdbb, opt, node1->nod_arg[1], node2->nod_arg[0], stream))
+			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
+								  node2->nod_arg[1], stream) &&
+				expression_equal2(tdbb, opt, node1->nod_arg[1],
+								  node2->nod_arg[0], stream))
 			{
 				return true;
 			}
@@ -3239,8 +3249,10 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node1
 		case nod_geq:
 		case nod_leq:
 		case nod_lss:
-			if (expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream) &&
-				expression_equal2(tdbb, opt, node1->nod_arg[1], node2->nod_arg[1], stream))
+			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
+								  node2->nod_arg[0], stream) &&
+				expression_equal2(tdbb, opt, node1->nod_arg[1],
+								  node2->nod_arg[1], stream))
 			{
 				return true;
 			}
@@ -3335,14 +3347,16 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node1
 			break;
 
 		case nod_negate:
-			if (expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream))
+			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
+								  node2->nod_arg[0], stream))
 			{
 				return true;
 			}
 			break;
 
 		case nod_upcase:
-			if (expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream))
+			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
+								  node2->nod_arg[0], stream))
 			{
 				/*
 				dsc dsc1, dsc2; 
@@ -3359,17 +3373,15 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node1
 
 		case nod_cast:
 			{
-				dsc	dsc1, dsc2; 
-				dsc	*desc1 = &dsc1, *desc2 = &dsc2; 
+				dsc dsc1, dsc2; 
+				dsc *desc1 = &dsc1, *desc2 = &dsc2; 
 
 				CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
 				CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
 
-//				const dsc* desc1 = &((Format*) node1->nod_arg[e_cast_fmt])->fmt_desc[0];
-//				const dsc* desc2 = &((Format*) node2->nod_arg[e_cast_fmt])->fmt_desc[0];
-
 				if (DSC_EQUIV(desc1, desc2) &&
-					expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream)) 
+					expression_equal2(tdbb, opt, node1->nod_arg[0],
+									  node2->nod_arg[0], stream)) 
 				{
 					return true;
 				}
@@ -6375,7 +6387,7 @@ static jrd_nod* make_missing(thread_db* tdbb,
 	{
 		if (!expression_equal(tdbb, opt, idx, field, stream))
 		{
-			return FALSE;
+			return NULL;
 		}
 	}
 	else
@@ -6465,7 +6477,7 @@ static jrd_nod* make_starts(thread_db* tdbb,
 				computable(opt->opt_csb, field, stream, true, false))
 			{
 				field = value; 
-				value = boolean->nod_arg [0]; 
+				value = boolean->nod_arg[0]; 
 			}
 			else
 			{

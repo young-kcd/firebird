@@ -393,7 +393,9 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
 
 #ifdef EXPRESSION_INDICES
-	if (idx->idx_flags & idx_expressn) {
+	if (idx->idx_flags & idx_expressn)
+	{
+		fb_assert(idx->idx_expression != NULL);
 		PCMET_lookup_index(tdbb, relation, idx);
 	}
 #endif
