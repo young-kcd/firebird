@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.32 2002-08-22 07:56:28 eku Exp $
+# $Id: configure.in,v 1.33 2002-08-22 09:07:55 eku Exp $
 
 ################################# INITIALISATION ###############################
 
@@ -145,6 +145,7 @@ if test "$ac_cv_func_dirname" = "no"; then
   # EKU: On SINIX-Z dirname is in libgen.
   AC_CHECK_LIB(gen, dirname,
     [XE_APPEND(-lgen,LIBS)
+     unset ac_cv_func_dirname
      AC_CHECK_FUNCS(dirname)],, $LIBS)
 fi
 
