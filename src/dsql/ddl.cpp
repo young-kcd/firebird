@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.14 2002-09-04 12:09:25 dimitr Exp $
+ * $Id: ddl.cpp,v 1.15 2002-09-05 11:48:40 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1436,6 +1436,9 @@ static void define_del_cascade_trg(	REQ		request,
 	request->end_blr();
 	// end of the blr
 
+    request->append_number(isc_dyn_system_flag, 
+                           frb_sysflag_referential_constraint);
+
 	// no trg_source and no trg_description
 	request->append_uchar(gds_dyn_end);
 
@@ -1609,6 +1612,9 @@ static void define_set_default_trg(	REQ		request,
 	}
 
 	request->end_blr();
+
+    request->append_number(isc_dyn_system_flag, 
+                            frb_sysflag_referential_constraint);
 
 	// no trg_source and no trg_description
 	request->append_uchar(gds_dyn_end);
@@ -2638,7 +2644,6 @@ static void define_set_null_trg(REQ		request,
 	}
 	request->end_blr();
 	// end of the blr
-
 
     request->append_number(isc_dyn_system_flag, 
                             frb_sysflag_referential_constraint);
