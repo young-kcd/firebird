@@ -77,7 +77,7 @@ public:
 
 /* Process-local spinlock. Used to manage memory heaps in threaded environment. */
 // Pthreads version of the class
-#if !defined(SOLARIS) && !defined(DARWIN)
+#if !defined(SOLARIS) && !defined(DARWIN) && !defined(FREEBSD)
 class Spinlock {
 private:
 	pthread_spinlock_t spinlock;
@@ -124,7 +124,7 @@ public:
 			system_call_failed::raise();
 	}
 };
-#else  // DARWIN
+#else  // DARWIN and FREEBSD
 class Spinlock {
 private:
 	pthread_mutex_t mlock;
