@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		msc_proto.h
- *	DESCRIPTION:	Prototype header file for msc.c
+ *	DESCRIPTION:	Prototype header file for msc.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -34,19 +34,20 @@ GPRE_CTX	MSC_context(GPRE_REQ);
 void		MSC_copy(const char*, int, char*);
 void		MSC_copy_cat(const char*, int, const char*, int, char*);
 SYM			MSC_find_symbol(SYM, enum sym_t);
-void		MSC_free(UCHAR *);
+void		MSC_free(UCHAR*);
 void		MSC_free_request(GPRE_REQ);
 void		MSC_init(void);
 bool		MSC_match(KWWORDS);
 GPRE_NOD	MSC_node(enum nod_t, SSHORT);
-GPRE_NOD	MSC_pop(LLS *);
+GPRE_NOD	MSC_pop(LLS*);
 PRV			MSC_privilege_block(void);
-void		MSC_push(GPRE_NOD, LLS *);
-REF			MSC_reference(REF *);
+void		MSC_push(GPRE_NOD, LLS*);
+REF			MSC_reference(REF*);
 GPRE_REQ	MSC_request(enum req_t);
-SCHAR*		MSC_string(TEXT *);
-SYM			MSC_symbol(enum sym_t, TEXT *, USHORT, GPRE_CTX);
+SCHAR*		MSC_string(TEXT*);
+SYM			MSC_symbol(enum sym_t, TEXT*, USHORT, GPRE_CTX);
 GPRE_NOD	MSC_unary(NOD_T, GPRE_NOD);
-USN			MSC_username(SCHAR *, USHORT);
+USN			MSC_username(SCHAR*, USHORT);
 
 #endif // GPRE_MSC_PROTO_H
+

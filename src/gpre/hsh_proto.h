@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		hsh_proto.h
- *	DESCRIPTION:	Prototype header file for hsh.c
+ *	DESCRIPTION:	Prototype header file for hsh.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,8 +27,9 @@
 void	HSH_fini(void);
 void	HSH_init(void);
 void	HSH_insert(SYM);
-SYM		HSH_lookup(SCHAR *);
-SYM		HSH_lookup2(SCHAR *);
+SYM		HSH_lookup(SCHAR*);
+SYM		HSH_lookup2(SCHAR*);
 void	HSH_remove(SYM);
 
 #endif // GPRE_HSH_PROTO_H
+

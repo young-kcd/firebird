@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		sqe_proto.h
- *	DESCRIPTION:	Prototype header file for sqe.c
+ *	DESCRIPTION:	Prototype header file for sqe.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,9 +24,9 @@
 #ifndef GPRE_SQE_PROTO_H
 #define GPRE_SQE_PROTO_H
 
-typedef GPRE_NOD(*pfn_SQE_list_cb) (GPRE_REQ, bool, USHORT *, bool *);
+typedef GPRE_NOD(*pfn_SQE_list_cb) (GPRE_REQ, bool, USHORT*, bool*);
 
-GPRE_NOD	SQE_boolean(GPRE_REQ, USHORT *);
+GPRE_NOD	SQE_boolean(GPRE_REQ, USHORT*);
 GPRE_CTX	SQE_context(GPRE_REQ);
 GPRE_NOD	SQE_field(GPRE_REQ, bool);
 GPRE_NOD	SQE_list(pfn_SQE_list_cb, GPRE_REQ, bool);
@@ -35,8 +35,8 @@ void		SQE_post_field(GPRE_NOD, GPRE_FLD);
 REF			SQE_post_reference(GPRE_REQ, GPRE_FLD, GPRE_CTX, GPRE_NOD);
 bool		SQE_resolve(GPRE_NOD, GPRE_REQ, GPRE_RSE);
 GPRE_RSE	SQE_select(GPRE_REQ, bool);
-GPRE_NOD	SQE_value(GPRE_REQ, bool, USHORT *, bool *);
-GPRE_NOD	SQE_variable(GPRE_REQ, bool, USHORT *, bool *);
+GPRE_NOD	SQE_value(GPRE_REQ, bool, USHORT*, bool*);
+GPRE_NOD	SQE_variable(GPRE_REQ, bool, USHORT*, bool*);
 
 #endif // GPRE_SQE_PROTO_H
 

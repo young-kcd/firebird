@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		par_proto.h
- *	DESCRIPTION:	Prototype header file for par.c
+ *	DESCRIPTION:	Prototype header file for par.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -28,7 +28,7 @@ ACT		PAR_action(TEXT*);
 SSHORT	PAR_blob_subtype(DBB);
 ACT		PAR_database(bool, const TEXT*);
 bool	PAR_end(void);
-void	PAR_error(const TEXT *);
+void	PAR_error(const TEXT*);
 ACT		PAR_event_init(bool);
 ACT		PAR_event_wait(bool);
 void	PAR_fini(void);
@@ -43,3 +43,4 @@ void	PAR_unwind(void);
 void	PAR_using_db(void);
 
 #endif // GPRE_PAR_PROTO_H
+

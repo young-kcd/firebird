@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		exp_proto.h
- *	DESCRIPTION:	Prototype header file for exp.c
+ *	DESCRIPTION:	Prototype header file for exp.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,8 +27,8 @@
 GPRE_NOD	EXP_array(GPRE_REQ, GPRE_FLD, SSHORT, SSHORT);
 GPRE_FLD	EXP_cast(GPRE_FLD);
 GPRE_CTX	EXP_context(GPRE_REQ, SYM);
-GPRE_FLD	EXP_field(GPRE_CTX *);
-void		EXP_left_paren(TEXT *);
+GPRE_FLD	EXP_field(GPRE_CTX*);
+void		EXP_left_paren(TEXT*);
 GPRE_NOD	EXP_literal(void);
 void		EXP_post_array(REF);
 REF			EXP_post_field(GPRE_FLD, GPRE_CTX, USHORT);

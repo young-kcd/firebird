@@ -25,18 +25,19 @@
 #define GPRE_LANG_PROTO_H
 
 void	ADA_action(ACT, int);
-void	ADA_print_buffer(TEXT *, int);
+void	ADA_print_buffer(TEXT*, int);
 int		BAS_action(ACT, int);
 void	C_CXX_action(ACT, int);
 void	COB_action(ACT, int);
 void	COB_name_init(bool);
-void	COB_print_buffer(TEXT *, bool);
+void	COB_print_buffer(TEXT*, bool);
 void	FTN_action(ACT, int);
 void	FTN_fini(void);
-void	FTN_print_buffer(TEXT *);
+void	FTN_print_buffer(TEXT*);
 void	INT_action(ACT, int);
 void	INT_CXX_action(ACT, int);
 void	PAS_action(ACT, int);
 int		PLI_action(ACT, int);
 
 #endif // GPRE_LANG_PROTO_H
+

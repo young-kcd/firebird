@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		gpre_proto.h
- *	DESCRIPTION:	Prototype header file for gpre.c
+ *	DESCRIPTION:	Prototype header file for gpre.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -28,18 +28,19 @@
 
 void	CPR_abort(void);
 #ifdef DEV_BUILD
-void	CPR_assert(TEXT *, int);
+void	CPR_assert(TEXT*, int);
 #endif
-void	CPR_bugcheck(TEXT *);
+void	CPR_bugcheck(TEXT*);
 void	CPR_end_text(TXT);
 int		CPR_error(const TEXT*);
 void	CPR_exit(int);
 void	CPR_warn(const TEXT*);
 TOK		CPR_eol_token(void);
-void	CPR_get_text(TEXT *, TXT);
+void	CPR_get_text(TEXT*, TXT);
 void	CPR_raw_read(void);
-void	CPR_s_error(TEXT *);
+void	CPR_s_error(TEXT*);
 TXT		CPR_start_text(void);
 TOK		CPR_token(void);
 
 #endif // GPRE_GPRE_PROTO_H
+

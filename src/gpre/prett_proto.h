@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		prett_proto.h
- *	DESCRIPTION:	Prototype header file for pretty.c
+ *	DESCRIPTION:	Prototype header file for pretty.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,3 +29,4 @@ int PRETTY_print_dyn(UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
 int PRETTY_print_sdl(UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
 
 #endif // GPRE_PRETT_PROTO_H
+

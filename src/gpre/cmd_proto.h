@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		cmd_proto.h
- *	DESCRIPTION:	Prototype header file for cmd.c
+ *	DESCRIPTION:	Prototype header file for cmd.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_CMD_PROTO_H_
-#define _GPRE_CMD_PROTO_H_
+#ifndef GPRE_CMD_PROTO_H
+#define GPRE_CMD_PROTO_H
 
 int CMD_compile_ddl(GPRE_REQ);
 
-#endif /* _GPRE_CMD_PROTO_H_ */
+#endif /* GPRE_CMD_PROTO_H */
+
