@@ -3304,7 +3304,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 		
 		case op_exec_into: {
 			PRINT_VERB;
-			if (! BLR_BYTE) {
+			if (! PRINT_BYTE) {
 				PRINT_VERB;
 			}
 			while (n-- > 0) {
