@@ -24,12 +24,14 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.h,v 1.7 2004-06-30 01:41:30 skidder Exp $
+ *  $Id: guid.h,v 1.8 2004-11-14 18:02:44 alexpeshkoff Exp $
  *
  */
 
 #ifndef GUID_H
 #define GUID_H
+
+#include <stdlib.h>
 
 #include "fb_types.h"
 
@@ -39,6 +41,7 @@ struct FB_GUID {
 	USHORT data[8];
 };
 
+void GenerateRandomBytes(void* buffer, size_t size);
 void GenerateGuid(FB_GUID* guid);
 
 // This functions receive buffers of at least GUID_BUFF_SIZE length

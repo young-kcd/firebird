@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.cpp,v 1.6 2004-06-30 01:41:58 skidder Exp $
+ *  $Id: guid.cpp,v 1.7 2004-11-14 18:02:50 alexpeshkoff Exp $
  *
  */
 
@@ -38,14 +38,19 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-void GenerateGuid(FB_GUID* guid) {
+void GenerateRandomBytes(void* buffer, size_t size)
+{
 	// do not use /dev/random because it may return lesser data than we need.
 	int fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
 		Firebird::system_call_failed::raise("open");
-	if (read(fd, guid, sizeof(FB_GUID)) != sizeof(FB_GUID))
+	if (read(fd, buffer, size) != static_cast<int>(size))
 		Firebird::system_call_failed::raise("read");
 	close(fd);
+}
+
+void GenerateGuid(FB_GUID* guid) {
+	GenerateRandomBytes(guid, sizeof(FB_GUID));
 }
 
 void GuidToString(char* buffer, const FB_GUID* guid) {
@@ -59,4 +64,3 @@ void StringToGuid(FB_GUID* guid, const char* buffer) {
 		&guid->data[0], &guid->data[1], &guid->data[2], &guid->data[3],
 		&guid->data[4], &guid->data[5], &guid->data[6], &guid->data[7]);
 }
-

@@ -24,10 +24,13 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.cpp,v 1.7 2004-06-30 01:41:45 skidder Exp $
+ *  $Id: guid.cpp,v 1.8 2004-11-14 18:03:11 alexpeshkoff Exp $
  *
  */
  
+// minimum wun32 version: win95 / winnt4
+#define _WIN32_WINNT 0x0400
+
 #include <windows.h>
 #include <objbase.h>
 #include <stdio.h>
@@ -35,6 +38,36 @@
 #include "../jrd/os/guid.h"
 #include "firebird.h"
 #include "fb_exception.h"
+
+void GenerateRandomBytes(void* buffer, size_t size)
+{
+	HCRYPTPROV hProv;
+
+	// Acquire crypto-provider context handle.
+	if (! CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, 0))
+	{
+		if (GetLastError() == NTE_BAD_KEYSET)
+		{
+			// A common cause of this error is that the key container does not exist. 
+			// To create a key container, call CryptAcquireContext 
+			// using the CRYPT_NEWKEYSET flag. 
+			if (! CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_NEWKEYSET))
+			{
+				Firebird::system_call_failed::raise("CryptAcquireContext");
+			}
+		}
+		else 
+		{
+			Firebird::system_call_failed::raise("CryptAcquireContext");
+		}
+	}
+
+	if (! CryptGenRandom(hProv, size, reinterpret_cast<UCHAR*>(buffer)))
+	{
+		Firebird::system_call_failed::raise("CryptGenRandom");
+	}
+	CryptReleaseContext(hProv, 0);
+}
 
 void GenerateGuid(FB_GUID* guid) {
 	const HRESULT error = CoCreateGuid((GUID*)guid);
