@@ -581,21 +581,21 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 	if (file_length)
 	{
-		memcpy(temp_buffer, file_name, file_length);
-		temp_buffer[file_length] = '\0';
+		memcpy(file_name_buffer, file_name, file_length);
+		file_name_buffer[file_length] = '\0';
 	}
 	else
 	{
-		strcpy(temp_buffer, file_name);
+		strcpy(file_name_buffer, file_name);
 	}
-	strcpy(alias_buffer, temp_buffer);
-	bool is_alias = ResolveDatabaseAlias(alias_buffer, temp_buffer);
-	file_name = temp_buffer;
+	strcpy(alias_buffer, file_name_buffer);
+	bool is_alias = ResolveDatabaseAlias(alias_buffer, file_name_buffer);
+	file_name = file_name_buffer;
 	file_length = strlen(file_name);
 	if (is_alias)
 	{
-		ISC_expand_filename(temp_buffer, sizeof(temp_buffer), file_name_buffer);
-		expanded_filename = file_name_buffer;
+		ISC_expand_filename(file_name_buffer, sizeof(file_name_buffer), temp_buffer);
+		expanded_filename = temp_buffer;
 	}
 
 /* Get length of database file name, if not already known */
