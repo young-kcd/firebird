@@ -30,10 +30,22 @@
 const size_t SERVICE_SIZE = 256;
 const size_t SERVER_PART = 200;
 
-// Replaces the original ugly macro. Now the function that calls isValidServer
-// is responsible for returning NULL to its invoker in turn.
-// It simply makes sure there's something in the string containing the
-// server's name; otherwise it fills the status vector with an error.
+/**
+  
+ 	isValidServer
+  
+    @brief	Validates server name for non-local protocol.
+	Replaces the original ugly macro. 
+	Now the function that calls isValidServer is responsible 
+	for returning NULL to its invoker in turn. It simply makes 
+	sure there's something in the string containing the	server's name; 
+	otherwise it fills the status vector with an error.
+ 
+
+    @param status
+    @param server
+
+ **/
 static bool isValidServer(ISC_STATUS* status, const TEXT* server)
 {
 	if (!server || !*server)
@@ -47,6 +59,19 @@ static bool isValidServer(ISC_STATUS* status, const TEXT* server)
 }
 
 
+/**
+  
+ 	serverSizeValidate
+  
+    @brief	Validates server name in order to avoid 
+	buffer overflow later. Server name may be NULL 
+	in case of local access, we take it into account.
+ 
+
+    @param status
+    @param server
+
+ **/
 static bool serverSizeValidate(ISC_STATUS* status, const TEXT* server)
 {
 	if (! server)
@@ -63,8 +88,13 @@ static bool serverSizeValidate(ISC_STATUS* status, const TEXT* server)
     return false;
 }
 
+
 static int typeBuffer(ISC_STATUS*, char*, int, internal_user_data&,
 					   FPTR_SECURITY_CALLBACK, void*);
+
+
+// all this spb-writing functions should be gone 
+// as soon as we create SvcClumpletWriter
 
 inline void stuffSpbByte(char*& spb, char data)
 {
@@ -101,23 +131,27 @@ static void stuffSpb2(char*& spb, char param, const TEXT* value)
 }
 
 
+/**
+  
+	attachRemoteServiceManager
+  
+	@brief	Opens connection with service manager 
+	on server using protocol, login username/password.
+ 
+
+	@param status
+	@param username
+	@param password
+	@param protocol
+	@param server
+
+ **/
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 							  const TEXT* username,
 							  const TEXT* password, 
 							  int protocol, 
 							  const TEXT* server)
 {
-/**************************************
- *
- *	a t t a c h R e m o t e S e r v i c e M a n a g e r
- *
- **************************************
- *
- * Functional description
- *	Opens connection with service manager 
- *	on server using protocol, login username/password
- *
- **************************************/
 	char service[SERVICE_SIZE];
 
 	if (! serverSizeValidate(status, server))
@@ -157,22 +191,25 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 }
 
 
+/**
+  
+	attachRemoteServiceManager
+  
+	@brief	Opens connection with service manager on server 
+	with protocol in it's name, login username/password.
+ 
+
+	@param status
+	@param username
+	@param password
+	@param server
+
+ **/
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 							  const TEXT* username,
 							  const TEXT* password, 
 							  const TEXT* server)
 {
-/**************************************
- *
- *	a t t a c h R e m o t e S e r v i c e M a n a g e r
- *
- **************************************
- *
- * Functional description
- *	Opens connection with service manager 
- *	on server with protocol in it's name, login username/password
- *
- **************************************/
 	char service[SERVICE_SIZE];
 
 	if (! serverSizeValidate(status, server))
@@ -203,6 +240,18 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 }
 
 
+/**
+  
+	userInfoToSpb
+  
+	@brief	Writes data from awful borland's struct internal_user_data
+	to not less awful borland's format of spb.
+ 
+
+	@param spb
+	@param userInfo
+
+ **/
 static void userInfoToSpb(char*& spb, 
 						  const internal_user_data& userInfo)
 {
@@ -233,23 +282,27 @@ static void userInfoToSpb(char*& spb,
 }
 
 
+/**
+  
+	callRemoteServiceManager
+  
+	@brief	Calls service manager to execute command, 
+	specified in userInfo
+ 
+
+	@param status
+	@param handle
+	@param userInfo
+	@param outputFunction
+	@param functionArg
+
+ **/
 void callRemoteServiceManager(ISC_STATUS* status, 
 							  isc_svc_handle handle, 
 							  const internal_user_data& userInfo,
 							  FPTR_SECURITY_CALLBACK outputFunction,
 							  void* functionArg)
 {
-/**************************************
- *
- *	c a l l R e m o t e S e r v i c e M a n a g e r
- *
- **************************************
- *
- * Functional description
- *	Calls service manager to execute command,
- *	specified in userInfo
- *
- **************************************/
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
 	if (userInfo.operation != DIS_OPER && !userInfo.user_name_entered)
@@ -336,46 +389,26 @@ void callRemoteServiceManager(ISC_STATUS* status,
 }
 
 
+/**
+  
+	detachRemoteServiceManager
+  
+	@brief	Close service manager
+ 
+
+	@param status
+	@param handle
+
+ **/
 void detachRemoteServiceManager(ISC_STATUS* status, 
 							    isc_svc_handle handle)
 {
-/**************************************
- *
- *	d e t a c h R e m o t e S e r v i c e M a n a g e r
- *
- **************************************
- *
- * Functional description
- *	Close service manager.
- *
- **************************************/
 	isc_service_detach(status, &handle);
 }
 
 
-void getSecurityDatabasePath(const TEXT* server, TEXT* buffer, size_t bufSize)
-{
-/**************************************
- *
- *	g e t S e c u r i t y D a t a b a s e P a t h
- *
- **************************************
- *
- * Functional description
- *	Gets the path to the security database
- *	from server	using protocol given in
- *	server name (like server: for TCP/IP).
- *
- **************************************/
-
-/* Whatever is defined for a given platform as a name for
-   the security database is used. */
-
-	TEXT filenameBuffer[MAXPATHLEN];
-	SecurityDatabase::getPath(filenameBuffer);
-	strncpy(buffer, filenameBuffer, bufSize);
-	buffer[bufSize - 1] = 0;
-}
+// all this spb-parsing functions should be gone 
+// as soon as we create SvcClumpletReader
 
 static void parseString2(const char*& p, char* buffer, size_t bufSize, size_t& loop)
 {
@@ -411,20 +444,26 @@ static void parseLong(const char*& p, int& ul, size_t& loop)
 }
 
 
+/**
+  
+	typeBuffer
+  
+	@brief	Prints data, returned by service, using outputFunction
+ 
+
+	@param status
+	@param buf
+	@param offset
+	@param uData
+	@param outputFunction
+	@param functionArg
+
+ **/
 static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 					   internal_user_data& uData,
 					   FPTR_SECURITY_CALLBACK outputFunction,
 					   void* functionArg)
 {
-/**************************************
- *
- *	t y p e B u f f e r
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
 	const char* p = &buf[offset];
 
 	// Sanity checks
