@@ -40,6 +40,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/utl_proto.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -3619,15 +3620,9 @@ static int truncate_string( TEXT* string)
  *	not including the terminating null.
  *
  **************************************/
-	TEXT *p;
-
-	for (p = string; *p; p++);
-
-	for (p--; (p >= string) && (*p == ' '); p--);
-
-	*++p = 0;
-
-	return (p - string);
+	const int len = fb_utils::name_length(string);
+	string[len] = 0;
+	return len;
 }
 
 
