@@ -1,3 +1,162 @@
+2003-04-10 12:48  aafemt
+
+	* firebird2/src/include/fb_types.h:
+	
+	STATUS -> ISC_STATUS. Finalize
+
+2003-04-10 12:42  aafemt
+
+	* firebird2/src/wal/: driver.cpp, wal.cpp, wal_prnt.cpp,
+	wal_proto.h, walc.cpp, walc_proto.h, walf.cpp, walf_proto.h,
+	walr.cpp, walr_proto.h, walw.cpp, walw_proto.h:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 12:38  aafemt
+
+	* firebird2/src/: utilities/cache.cpp, utilities/cmd_util.cpp,
+	utilities/cmd_util_proto.h, utilities/dba.epp,
+	utilities/dba_full.epp, utilities/drop.cpp, utilities/gsec.cpp,
+	utilities/gsec.h, utilities/sbc_print.cpp, utilities/secur_proto.h,
+	utilities/security.epp, utilities/srvrmgr.cpp,
+	v5_examples/winevent.c:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 12:31  aafemt
+
+	* firebird2/src/remote/: allr.cpp, chuser.cpp, ibconfig.cpp,
+	inet.cpp, inet_proto.h, inet_server.cpp, inter_proto.h,
+	interface.cpp, merge.cpp, mgr.cpp, protocol.cpp, protocol.h,
+	remot_proto.h, remote.cpp, remote.h, server.cpp, srvr_w32.cpp,
+	wnet.cpp, wnet_proto.h, xnet.cpp, xnet_proto.h:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 12:16  aafemt
+
+	* firebird2/src/qli/: all.cpp, err.cpp, err_proto.h, eval.cpp,
+	exe.cpp, exe.h, format.cpp, gener.cpp, lex.cpp, meta.epp, proc.epp,
+	show.epp:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 12:08  aafemt
+
+	* firebird2/src/lock/: driver.cpp, lock.cpp, lock_proto.h,
+	manager.cpp, print.cpp:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 09:50  eku
+
+	* firebird2/builds/posix/: Makefile.in.embed.qli, Makefile.in.msgs,
+	Makefile.in.refDatabases, make.shared.targets:
+	
+	Fixed typo: LN_S->LN
+
+2003-04-10 09:06  eku
+
+	* firebird2/src/jrd/common.h:
+	
+	SINIX-Z: added missing format macros.
+
+2003-04-10 08:49  aafemt
+
+	* firebird2/src/jrd/: ExecuteStatement.cpp, ExecuteStatement.h,
+	ail.cpp, ail.h, all_old.cpp, alt.cpp, blb.cpp, blf_proto.h,
+	blob_filter.cpp, blob_filter.h, cch.cpp, cch_proto.h, dfw.epp,
+	dyn.epp, dyn_def.epp, entry.h, envelope.epp, err.cpp, err_proto.h,
+	event.cpp, event_proto.h, exe.cpp, ext.cpp, filte_proto.h,
+	filters.cpp, gds.cpp, gds_proto.h, gdsold.h, iberr.cpp, iberr.h,
+	iberr_proto.h, intl.cpp, intl_proto.h, isc_ipc.cpp, isc_s_proto.h,
+	isc_sync.cpp, jio.cpp, jrd.cpp, jrd.h, jrd_proto.h, jrd_pwd.h,
+	jrn.cpp, jrn.h, jrn_proto.h, lck.cpp, llio.cpp, llio_proto.h,
+	map.cpp, map_proto.h, met.epp, pag.cpp, par.cpp, perf.cpp,
+	pio_proto.h, print.cpp, rdb.cpp, rdbgpas.cpp, rdbint.cpp, rng.cpp,
+	sdl.cpp, sdl_proto.h, sort.cpp, sort.h, sort_mem.cpp, sort_mem.h,
+	sort_proto.h, stats.epp, status.cpp, status.h, sun_ftn.cpp,
+	svc.cpp, svc.h, svc_proto.h, tra.cpp, unix.cpp, utl.cpp,
+	utl_proto.h, vio.cpp, vms.cpp, vmsevent.cpp, vmslo_proto.h,
+	vmslock.cpp, why.cpp, why_proto.h, winnt.cpp, y-valve.cpp:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 08:39  eku
+
+	* firebird2/src/jrd/unix.cpp:
+	
+	fil_max_page is of type ULONG!
+
+2003-04-10 08:34  eku
+
+	* firebird2/builds/posix/: Makefile.in.embed.qli,
+	Makefile.in.example5, Makefile.in.firebird, Makefile.in.msgs,
+	Makefile.in.refDatabases, make.rules, make.shared.targets:
+	
+	Use predefined macros from make.defaults!
+
+2003-04-10 08:32  aafemt
+
+	* firebird2/src/journal/: archive.cpp, console.cpp, gjrn.cpp,
+	journal_vms.e, rebuild.e, server.e:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 08:26  aafemt
+
+	* firebird2/src/: ipserver/ipapi_proto.h, ipserver/ipc.h,
+	ipserver/ipclient.cpp, ipserver/ipserver.cpp, isql/isql.epp,
+	isql/isql_proto.h, isql/show.epp:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 08:19  aafemt
+
+	* firebird2/src/: dudley/ddl.cpp, dudley/ddl_proto.h,
+	dudley/exe.epp, dudley/extract.epp, dudley/lex.cpp,
+	gpre/gpre_meta.epp, gpre/gpre_meta_boot.cpp:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 08:14  aafemt
+
+	* firebird2/src/dsql/: array.epp, array_proto.h, blob.epp,
+	blob_proto.h, ddl.cpp, dsql.cpp, dsql.h, dsql_proto.h, errd.cpp,
+	errd_proto.h, metd.epp, movd.cpp, parse.cpp, parse.y, pass1.cpp,
+	prepa_proto.h, preparse.cpp, user__proto.h, user_dsql.cpp,
+	utld.cpp, utld_proto.h:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 08:10  aafemt
+
+	* firebird2/src/common/fb_exception.cpp:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 08:06  aafemt
+
+	* firebird2/src/burp/: backup.epp, burp.cpp, burp.h, burp_proto.h,
+	canonical.cpp, restore.epp:
+	
+	STATUS -> ISC_STATUS
+
+2003-04-10 08:03  aafemt
+
+	* firebird2/src/jrd/ibase.h:
+	
+	defines -> typedefs
+
+2003-04-10 08:02  aafemt
+
+	* firebird2/src/: include/fb_exception.h, include/fb_types.h,
+	alice/alice.cpp, alice/alice.h, alice/alice_meta.epp,
+	alice/alice_meta.h, alice/alice_proto.h, alice/tdr.cpp,
+	alice/tdr_proto.h:
+	
+	STATUS -> ISC_STATUS
+
 2003-04-09 15:20  dimitr
 
 	* firebird2/src/remote/: inet.cpp, protocol.h, wnet.cpp, xnet.cpp:
