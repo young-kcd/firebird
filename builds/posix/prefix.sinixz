@@ -17,7 +17,7 @@
 #
 # Erik Kunze, Philosys GmbH, <kunze@philosys.de>
 #
-# $Id: prefix.sinixz,v 1.20 2004-02-13 10:14:39 stryqx Exp $
+# $Id: prefix.sinixz,v 1.21 2004-03-23 11:08:31 aafemt Exp $
 #
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
@@ -32,7 +32,7 @@ DEV_WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
 #DEV_WARNINGS=-Wall -W -Wno-parentheses -Wno-switch
 
 PROD_FLAGS=$(PROD_WARNINGS) -DNDEBUG $(COMMON_FLAGS) -pipe -fPIC
-DEV_FLAGS=$(DEV_WARNINGS) -ggdb -DDEBUG_GDS_ALLOC $(COMMON_FLAGS) -pipe -fPIC
+DEV_FLAGS=$(DEV_WARNINGS) -ggdb $(COMMON_FLAGS) -pipe -fPIC
 
 OS_ServerFiles=inet_server.cpp
 

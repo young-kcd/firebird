@@ -13,7 +13,7 @@ CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP
 
 # compile flags for GCC compiler
 COMMON_GCC_FLAGS= -pipe -MMD -p -fPIC -m32
-DEBUG_GCC_FLAGS=  -ggdb -DDEBUG_GDS_ALLOC -Wall -Wno-switch
+DEBUG_GCC_FLAGS=  -ggdb -Wall -Wno-switch
 PROD_GCC_FLAGS= -mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG
 
 # compile flags for SUNWspro/Forte compiler - untested nmcc dec2002
