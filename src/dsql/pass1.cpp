@@ -3307,7 +3307,7 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, const dsql_nod* cursor
 					  isc_arg_gds, isc_dsql_cursor_update_err,
 					  isc_arg_string, string->str_data, 0);
 		}
-		// note that nod_union and nod_join will cause to the error below,
+		// note that nod_union and nod_join will cause the error below,
 		// as well as derived tables. Some cases deserve fixing in the future
 	}
 

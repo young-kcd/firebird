@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: StringMap.h,v 1.2 2004-11-22 22:31:31 skidder Exp $
+ *  $Id: StringMap.h,v 1.3 2004-11-23 04:05:49 robocop Exp $
  *
  */
 
@@ -51,7 +51,7 @@ public:
 	// Returns true if value is found
 	bool get(const string& name, string& value);
 
-	size_t count() { return mCount; }
+	size_t count() const { return mCount; }
 
 	struct StringPair {
 		// We use string class here because we want to handle possible embedded
