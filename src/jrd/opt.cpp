@@ -2818,7 +2818,7 @@ static void find_best(TDBB tdbb,
  *	relationships to form joins.
  *
  **************************************/
-	UCHAR *ptr, *stream_end;
+	UCHAR *ptr;
 
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
@@ -2835,14 +2835,29 @@ static void find_best(TDBB tdbb,
 	// code path for SET PLAN as for a normal optimization--it reduces 
 	// chances for bugs to be introduced, and forces the person maintaining
 	// the optimizer to think about SET PLAN when new features are added --deej
-	if (plan_node && (streams[position + 1] != stream)) {
+	if (plan_node)
+	{
+		if (streams[position + 1] == stream)
+		{
+			opt->opt_streams[position].opt_best_stream = stream;
+			++position;
+			if (position < streams[0])
+			{
+				find_best(tdbb, opt, streams[position + 1], position, streams, plan_node, 
+					(double) 0, (double) 1);
+			}
+			else
+			{
+				opt->opt_best_count = streams[0];
+			}
+		}
 		return;
 	}
 
 	// do some initializations.
 	Csb* csb = opt->opt_csb;
 	csb->csb_rpt[stream].csb_flags |= csb_active;
-	stream_end = &streams[1] + streams[0];
+	UCHAR* stream_end = &streams[1] + streams[0];
 	opt->opt_streams[position].opt_stream_number = stream;
 	++position;
 	Opt::opt_stream* order_end = opt->opt_streams.begin() + position;
