@@ -3188,7 +3188,7 @@ static SSHORT filter_sub_type( DSQL_REQ request, DSQL_NOD node)
   
     @brief	Retrieve the indices from the index tree in
  	the request info buffer, and print them out
- 	in the plan buffer. Return false on success and true on failure
+ 	in the plan buffer. Return true on success and false on failure
  
 
     @param explain_length_ptr
@@ -3218,10 +3218,10 @@ static bool get_indices(
 	switch (*explain++) {
 	case gds_info_rsb_and:
 	case gds_info_rsb_or:
-		if (get_indices(&explain_length, &explain, &plan_length, &plan))
-			return true;
-		if (get_indices(&explain_length, &explain, &plan_length, &plan))
-			return true;
+		if (!get_indices(&explain_length, &explain, &plan_length, &plan))
+			return false;
+		if (!get_indices(&explain_length, &explain, &plan_length, &plan))
+			return false;
 		break;
 
 	case gds_info_rsb_dbkey:
@@ -3235,21 +3235,21 @@ static bool get_indices(
 
 		if (plan[-1] != '(' && plan[-1] != ' ') {
 			if (--plan_length < 0)
-				return true;
+				return false;
 			*plan++ = ',';
 		}
 
 		/* now put out the index name */
 
 		if ((plan_length -= length) < 0)
-			return true;
+			return false;
 		explain_length -= length;
 		while (length--)
 			*plan++ = *explain++;
 		break;
 
 	default:
-		return true;
+		return false;
 	}
 
 	*explain_length_ptr = explain_length;
@@ -3257,7 +3257,7 @@ static bool get_indices(
 	*plan_length_ptr = plan_length;
 	*plan_ptr = plan;
 
-	return false;
+	return true;
 }
 
 
@@ -3451,8 +3451,8 @@ static USHORT get_request_info(
  	get_rsb_item
   
     @brief	Use recursion to print out a reverse-polish
- 	access plan of joins and join types. Return true on failure
- 	and false if succeed
+ 	access plan of joins and join types. Return true on success
+ 	and false on failure
  
 
     @param explain_length_ptr
@@ -3488,7 +3488,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			p = "\nPLAN ";
 			if ((plan_length -= strlen(p)) < 0)
-				return true;
+				return false;
 			while (*p)
 				*plan++ = *p++;
 		}
@@ -3510,7 +3510,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 		if (!*parent_join_count) {
 			if (--plan_length < 0)
-				return true;
+				return false;
 			*plan++ = '(';
 		}
 
@@ -3518,7 +3518,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 		if (plan[-1] != '(') {
 			if (--plan_length < 0)
-				return true;
+				return false;
 			*plan++ = ',';
 		}
 
@@ -3527,7 +3527,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		explain_length--;
 		explain_length -= (length = (UCHAR) * explain++);
 		if ((plan_length -= length) < 0)
-			return true;
+			return false;
 		while (length--)
 			*plan++ = *explain++;
 		break;
@@ -3554,7 +3554,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				if (get_rsb_item(&explain_length, &explain, &plan_length, &plan,
 								 &union_join_count, &union_level)) 
 				{
-					return true;
+					return false;
 				}
 				if (union_level == *level_ptr)
 					break;
@@ -3570,7 +3570,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 					if (get_rsb_item(&explain_length, &explain, &plan_length,
 									 &plan, &union_join_count, &union_level)) 
 					{
-						return true;
+						return false;
 					}
 					if (!union_level)
 						break;
@@ -3588,7 +3588,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (*parent_join_count && plan[-1] != '(') {
 				if (--plan_length < 0)
-					return true;
+					return false;
 				*plan++ = ',';
 			}
 
@@ -3603,7 +3603,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
             }
 
 			if ((plan_length -= strlen(p)) < 0)
-				return true;
+				return false;
 			while (*p)
 				*plan++ = *p++;
 
@@ -3615,7 +3615,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				if (get_rsb_item(&explain_length, &explain, &plan_length,
 								 &plan, &join_count, level_ptr))
 				{
-					return true;
+					return false;
 				}
 				/* CVC: Here's the additional stop condition. */
 				if (!*level_ptr) {
@@ -3627,7 +3627,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			/* put out the final parenthesis for the join */
 
 			if (--plan_length < 0)
-				return true;
+				return false;
 			else
 				*plan++ = ')';
 
@@ -3653,7 +3653,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				p = " NATURAL";
 
 			if ((plan_length -= strlen(p)) < 0)
-				return true;
+				return false;
 			while (*p)
 				*plan++ = *p++;
 
@@ -3662,14 +3662,14 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			if (rsb_type == gds_info_rsb_indexed ||
 				rsb_type == gds_info_rsb_navigate ||
 				rsb_type == gds_info_rsb_ext_indexed) {
-				if (get_indices(&explain_length, &explain, &plan_length, &plan))
-					return true;
+				if (!get_indices(&explain_length, &explain, &plan_length, &plan))
+					return false;
 			}
 
 			if (rsb_type == gds_info_rsb_indexed ||
 				rsb_type == gds_info_rsb_ext_indexed) {
 				if (--plan_length < 0)
-					return true;
+					return false;
 				*plan++ = ')';
 			}
 
@@ -3677,7 +3677,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (!*parent_join_count)
 				if (--plan_length < 0)
-					return true;
+					return false;
 				else
 					*plan++ = ')';
 
@@ -3706,14 +3706,14 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (*parent_join_count && plan[-1] != '(') {
 				if (--plan_length < 0)
-					return true;
+					return false;
 				*plan++ = ',';
 			}
 
 			p = "SORT (";
 
 			if ((plan_length -= strlen(p)) < 0)
-				return true;
+				return false;
 			while (*p)
 				*plan++ = *p++;
 
@@ -3724,13 +3724,13 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			while (explain_length > 0 && plan_length > 0) {
 				if (get_rsb_item(&explain_length, &explain, &plan_length,
 								 &plan, parent_join_count, level_ptr))
-					return true;
+					return false;
 				if (*level_ptr == save_level)
 					break;
 			}
 
 			if (--plan_length < 0)
-				return true;
+				return false;
 			*plan++ = ')';
 			break;
 
@@ -3748,7 +3748,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 	*plan_length_ptr = plan_length;
 	*plan_ptr = plan;
 
-	return false;
+	return true;
 }
 
 
