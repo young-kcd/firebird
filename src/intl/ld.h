@@ -311,33 +311,33 @@ struct CompressPair {
 */
 
 /*
-#define US                        1
-#define CANADA                    2
-#define LATINAMER                 3
-#define NEDERLANDS               31
-#define BELGIUM                  32
-#define FRANCE                   33
-#define SPAIN                    34
-#define HUNGARY                  36
-#define YUGOSLAVIA               38
-#define ITALY                    39
-#define SWITZ                    41
-#define CZECH                    42
-#define UK                       44
-#define DENMARK                  45
-#define SWEDEN                   46
-#define NORWAY                   47
-#define POLAND                   48
-#define GERMANY                  49
-#define BRAZIL                   55
-#define INTL                     61
-#define PORTUGAL                351
-#define FINLAND                 358
-#define JAPAN                    81
-#define ICELAND                 354
+//#define US                        1
+//#define CANADA                    2
+//#define LATINAMER                 3
+//#define NEDERLANDS               31
+//#define BELGIUM                  32
+//#define FRANCE                   33
+//#define SPAIN                    34
+//#define HUNGARY                  36
+//#define YUGOSLAVIA               38
+//#define ITALY                    39
+//#define SWITZ                    41
+//#define CZECH                    42
+//#define UK                       44
+//#define DENMARK                  45
+//#define SWEDEN                   46
+//#define NORWAY                   47
+//#define POLAND                   48
+//#define GERMANY                  49
+//#define BRAZIL                   55
+//#define INTL                     61
+//#define PORTUGAL                351
+//#define FINLAND                 358
+//#define JAPAN                    81
+//#define ICELAND                 354
 
-#define NORDAN                    DENMARK + NORWAY
-#define SWEDFIN                   SWEDEN  + FINLAND
+//#define NORDAN                    DENMARK + NORWAY
+//#define SWEDFIN                   SWEDEN  + FINLAND
 */
 
 /*
@@ -350,78 +350,78 @@ struct CompressPair {
 // Paradox
 */
 /*
-#define pxUS                      1
-#define pxINTL                    2
-#define pxJAPANESE                3
-#define pxNORDAN                  4
-#define pxNORDAN4                 5
-#define pxSWEDFIN                 6
+//#define pxUS                      1
+//#define pxINTL                    2
+//#define pxJAPANESE                3
+//#define pxNORDAN                  4
+//#define pxNORDAN4                 5
+//#define pxSWEDFIN                 6
 */
 /*
 // dBASE
 */
 /*
-#define dbARABIC                  7
-#define dbDANISH                  8
-#define dbDUTCH                   9
-#define dbDUTCH2                 10
-#define dbFINNISH                11
-#define dbFINNISH2               12
-#define dbFRENCH                 13
-#define dbFRENCH2                14
-#define dbGERMAN                 15
-#define dbGERMAN2                16
-#define dbITALIAN                17
-#define dbITALIAN2               18
-#define dbJAPANESE               19
-#define dbSPANISH2               20
-#define dbSWEDISH                21
-#define dbSWEDISH2               22
-#define dbNORWEGIAN              23
-#define dbSPANISH                24
-#define dbUK                     25
-#define dbUK2                    26
-#define dbUS                     27
-#define dbFRENCHCAN              28
-#define dbFRENCHCAN2             29
-#define dbFRENCHCAN3             30
-#define dbCZECH                  31
-#define dbCZECH2                 32
-#define dbGREEK                  33
-#define dbHUNGARIAN              34
-#define dbPOLISH                 35
-#define dbPORTUGUESE             36
-#define dbPORTUGUESE2            37
-#define dbRUSSIAN                38
+//#define dbARABIC                  7
+//#define dbDANISH                  8
+//#define dbDUTCH                   9
+//#define dbDUTCH2                 10
+//#define dbFINNISH                11
+//#define dbFINNISH2               12
+//#define dbFRENCH                 13
+//#define dbFRENCH2                14
+//#define dbGERMAN                 15
+//#define dbGERMAN2                16
+//#define dbITALIAN                17
+//#define dbITALIAN2               18
+//#define dbJAPANESE               19
+//#define dbSPANISH2               20
+//#define dbSWEDISH                21
+//#define dbSWEDISH2               22
+//#define dbNORWEGIAN              23
+//#define dbSPANISH                24
+//#define dbUK                     25
+//#define dbUK2                    26
+//#define dbUS                     27
+//#define dbFRENCHCAN              28
+//#define dbFRENCHCAN2             29
+//#define dbFRENCHCAN3             30
+//#define dbCZECH                  31
+//#define dbCZECH2                 32
+//#define dbGREEK                  33
+//#define dbHUNGARIAN              34
+//#define dbPOLISH                 35
+//#define dbPORTUGUESE             36
+//#define dbPORTUGUESE2            37
+//#define dbRUSSIAN                38
 */
 /*
 // Borland
 */
 /*
-#define BorlDANISH               39
-#define BorlDUTCH                40
-#define BorlFINNISH              41
-#define BorlFRENCH               42
-#define BorlCANADIAN             43
-#define BorlGERMAN               44
-#define BorlICELANDIC            45
-#define BorlITALIAN              46
-#define BorlJAPANESE             47
-#define BorlNORWEGIAN            48
-#define BorlSPANISH              49
-#define BorlSPANISH2             50
-#define BorlSWEDISH              51
-#define BorlUK                   52
-#define BorlUS                   53
-#define BorlPORTUGUESE           54
-#define dbUS2                    55
+//#define BorlDANISH               39
+//#define BorlDUTCH                40
+//#define BorlFINNISH              41
+//#define BorlFRENCH               42
+//#define BorlCANADIAN             43
+//#define BorlGERMAN               44
+//#define BorlICELANDIC            45
+//#define BorlITALIAN              46
+//#define BorlJAPANESE             47
+//#define BorlNORWEGIAN            48
+//#define BorlSPANISH              49
+//#define BorlSPANISH2             50
+//#define BorlSWEDISH              51
+//#define BorlUK                   52
+//#define BorlUS                   53
+//#define BorlPORTUGUESE           54
+//#define dbUS2                    55
 */
 /*
 // User Defined 201 - 254
 */
 /*
-#define USERDEFINED_MIN         201
-#define USERDEFINED_MAX         255
+//#define USERDEFINED_MIN         201
+//#define USERDEFINED_MAX         255
 */
 
 /*
@@ -481,9 +481,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.22 2003-11-23 16:44:26 skidder Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.23 2004-05-16 02:53:34 brodsom Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.22  2003/11/23 16:44:26  skidder
+//	Change DLL_EXPORT to FB_DLL_EXPORT in intl module to match engine (needed for INTL_BUILTIN on Linux)
+//	
 //	Revision 1.21  2003/09/16 10:33:30  aafemt
 //	'struct' removal
 //	
