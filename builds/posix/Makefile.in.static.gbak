@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gbak,v 1.5 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.static.gbak,v 1.6 2003-04-04 10:40:40 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=static.gbak
@@ -55,9 +55,9 @@ Dependencies = $(AllObjects:.o=.d)
 .PHONY: gbak_static
 
 
-gbak_static : $(BIN)/gbak_static
+gbak_static : $(GBAK_STATIC)
 
-$(BIN)/gbak_static : $(GBAKSTATIC_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
+$(GBAK_STATIC) : $(GBAKSTATIC_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
 	$(CXX) $(LINK_OPTS) $(GBAKSTATIC_Objects) -o $@ -L $(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 # Darwin may need this link as well
