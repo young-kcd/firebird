@@ -86,7 +86,7 @@ static void store_trigger(TDBB, const JRD_TRG*, BLK*);
    changed to RDB$TRIGGER_9 to handle SQL security on relations whose
    name is > 27 characters */
 
-static const JRD_TRG FAR_VARIABLE triggers[] =
+static const JRD_TRG triggers[] =
 {
 	{ "RDB$TRIGGER_1", (UCHAR) nam_user_privileges,
 		RDB$TRIGGERS.RDB$TRIGGER_TYPE.PRE_MODIFY, sizeof(trigger3), trigger3,
@@ -196,7 +196,7 @@ static const JRD_TRG FAR_VARIABLE triggers[] =
 
 /* this table is used in defining messages for system triggers */
 
-static const TRIGMSG FAR_VARIABLE trigger_messages[] =
+static const TRIGMSG trigger_messages[] =
 {
 	{ "RDB$TRIGGER_9", 0, "grant_obj_notfound", ODS_8_0 },
 	{ "RDB$TRIGGER_9", 1, "grant_fld_notfound", ODS_8_0 },

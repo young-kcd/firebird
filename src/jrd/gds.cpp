@@ -197,7 +197,7 @@ static char *ib_prefix_msg = 0;
 
 
 
-static const SCHAR *FAR_VARIABLE const messages[] = {
+static const SCHAR * const messages[] = {
 #include "gen/msgs.h"
 	0							/* Null entry to terminate list */
 };
@@ -615,7 +615,7 @@ static const struct
 {
 	const char *blr_string;
 	const UCHAR *blr_operators;
-} FAR_VARIABLE blr_table[] =
+} blr_table[] =
 {
 
 #pragma FB_COMPILER_MESSAGE("Fix this!")

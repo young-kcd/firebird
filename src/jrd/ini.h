@@ -44,7 +44,7 @@ nam_MAX} name_ids;
 
 #define NAME(name, id) name,
 
-static const TEXT* const FAR_VARIABLE names[] =
+static const TEXT* const names[] =
 {
 	0,
 #include "../jrd/names.h"
@@ -81,7 +81,7 @@ typedef struct gfld
 	USHORT gfld_dflt_len;
 } GFLD;
 
-static const struct gfld FAR_VARIABLE gfields[] = {
+static const struct gfld gfields[] = {
 #include "../jrd/fields.h"
 	{ 0, 0, dtype_null, 0, 0, 0, NULL, 0 }
 };
@@ -120,7 +120,7 @@ rel_MAX} RIDS;
 #define RFLD_F_UPD_MINOR 5
 #define RFLD_F_LENGTH	6
 
-static const UCHAR FAR_VARIABLE relfields[] =
+static const UCHAR relfields[] =
 {
 #include "../jrd/relations.h"
 	0
@@ -147,7 +147,7 @@ typedef struct rtyp {
 #define COLLATION(name, cc_id, cs_id, coll_id, sym)
 #define END_CHARSET
 
-static const RTYP FAR_VARIABLE types[] = {
+static const RTYP types[] = {
 #include "../jrd/types.h"
 #include "../jrd/intlnames.h"
 	{NULL, 0, 0}

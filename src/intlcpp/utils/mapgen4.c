@@ -280,7 +280,7 @@ void print_indexed_table(char *name, TABLE * table,
 	unsigned short upper_byte[256];
 	int i;
 
-	ib_printf("static const USHORT FAR_VARIABLE %s_mapping_array[] = {\n",
+	ib_printf("static const USHORT %s_mapping_array[] = {\n",
 			  name);
 	for (index = 0; index < 256; index++)
 		if (replacement == UNICODE_REPLACEMENT_CHARACTER)
@@ -348,7 +348,7 @@ void print_condensed_indexed_table(
 	unsigned short upper_byte[256];
 	int i;
 
-	ib_printf("static const USHORT FAR_VARIABLE %s_mapping_array[] = {\n",
+	ib_printf("static const USHORT %s_mapping_array[] = {\n",
 			  name);
 
 	ib_printf("\n");

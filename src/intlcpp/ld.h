@@ -62,8 +62,6 @@
 
 #define BOOL	UINT16
 
-#define FAR_VARIABLE
-
 #ifdef WIN_NT
 #define DLL_EXPORT	__declspec(dllexport)
 #else
@@ -559,9 +557,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intlcpp/ld.h,v 1.1 2003-02-19 14:02:45 brodsom Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intlcpp/ld.h,v 1.2 2003-02-28 12:48:03 brodsom Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.1  2003/02/19 14:02:45  brodsom
+//	Add C++ intl conversion
+//	
 //	Revision 1.18  2003/02/14 13:47:27  eku
 //	Fixed nested comment.
 //	

@@ -21,10 +21,9 @@ s/yyssp/DSQL_yyssp/g
 s/yysslim/DSQL_yysslim/g
 s/yyss/DSQL_yyss/g
 /^#ident/d
-s/^static TOK tokens/static const TOK FAR_VARIABLE tokens/
-s/^__YYSCLASS yytabelem/__YYSCLASS const yytabelem FAR_VARIABLE/
-s/^__YYSCLASS yytoktype/__YYSCLASS const yytoktype FAR_VARIABLE/
-s/^__YYSCLASS char/__YYSCLASS char FAR_VARIABLE/
+s/^static TOK tokens/static const TOK tokens/
+s/^__YYSCLASS yytabelem/__YYSCLASS const yytabelem/
+s/^__YYSCLASS yytoktype/__YYSCLASS const yytoktype/
 s/^#include *<values.h> *$//g
 s/yylex(void)/yylex(USHORT, USHORT, USHORT, BOOLEAN *)/g
 s/yylex()/yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous)/g

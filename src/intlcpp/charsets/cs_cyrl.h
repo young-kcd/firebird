@@ -558,7 +558,7 @@ static const USHORT to_unicode_map[256] = {
 #define CANT_MAP_CHARACTER 0
 #endif
 
-static const UCHAR FAR_VARIABLE from_unicode_mapping_array[] = {
+static const UCHAR from_unicode_mapping_array[] = {
 										/* U+XX00 */ CANT_MAP_CHARACTER,
 										/* 0 */
 										/* U+XX01 */ CANT_MAP_CHARACTER,

@@ -219,7 +219,7 @@ static const SCHAR *ftn_boiler_plate_decls[] = {
 };
 
 static const SCHAR sql_code_boiler_plate[] =
-	"static const SSHORT FAR_VARIABLE gds__sql_code [] = {";
+	"static const SSHORT gds__sql_code [] = {";
 
 
 int CLIB_ROUTINE main( int argc, char *argv[])

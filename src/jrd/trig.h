@@ -101,7 +101,7 @@ static const TEXT trigger_1_msg_4 [] = "field has non-SQL security class defined
 static const TEXT trigger_1_msg_5 [] = "user does not have GRANT privileges on base table/view for operation";
 ******/
 
-static const UCHAR FAR_VARIABLE trigger1[] =
+static const UCHAR trigger1[] =
 {
 /* NOTE:
    The blr in trigger 1 has been manually changed to add a substring
@@ -748,7 +748,7 @@ static const UCHAR FAR_VARIABLE trigger1[] =
 
 
 
-static const UCHAR FAR_VARIABLE trigger2[] = {
+static const UCHAR trigger2[] = {
 	blr_version5,
 	blr_if,
 	blr_not,
@@ -897,7 +897,7 @@ static const TEXT trigger_26_msg_1 [] = "internal gds software consistency check
 static const TEXT trigger_26_msg_2 [] = "Attempt to define a second primary key for the same relation";
 ******/
 
-static const UCHAR FAR_VARIABLE trigger26[] = {
+static const UCHAR trigger26[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1007,7 +1007,7 @@ static const TEXT trigger_10_msg_0 [] = "Cannot delete PRIMARY KEY being used in
 static const TEXT trigger_10_msg_1 [] = "Cannot drop NOT NULL constraint for fields in PRIMARY/UNIQUE constraints.";
 ******/
 
-static const UCHAR FAR_VARIABLE trigger10[] = {
+static const UCHAR trigger10[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1150,7 +1150,7 @@ static const UCHAR FAR_VARIABLE trigger10[] = {
 
 /* define trigger post_delete_constraint for rdb$relation_constraints   */
 
-static const UCHAR FAR_VARIABLE trigger11[] = {
+static const UCHAR trigger11[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1298,7 +1298,7 @@ static const TEXT trigger_12_msg_0 [] = "Name of Referential Constraint not defi
 static const TEXT trigger_12_msg_1 [] = "Non-existent Primary or Unique key specifed for Foreign Key.";
 ******/
 
-static const UCHAR FAR_VARIABLE trigger12[] = {
+static const UCHAR trigger12[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1414,7 +1414,7 @@ static const UCHAR trigger15[] = {
 
 /* define trigger post_delete_check_constraint for rdb$check_constraints */
 
-static const UCHAR FAR_VARIABLE trigger16[] = {
+static const UCHAR trigger16[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -1586,7 +1586,7 @@ static const TEXT trigger_20_msg_1 [] = "Can't deactivate index used by an Integ
 static const TEXT trigger_20_msg_2 [] = "Can't deactivate a primary index";
 ******/
 
-static const UCHAR FAR_VARIABLE trigger20[] = {
+static const UCHAR trigger20[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1817,7 +1817,7 @@ static const UCHAR trigger22[] = {
 static const TEXT trigger_23_msg_0 [] = "Cannot delete field being used in an integrity constraint.";
 ******/
 
-static const UCHAR FAR_VARIABLE trigger23[] = {
+static const UCHAR trigger23[] = {
 	blr_version5,
     blr_begin, 
 	blr_for, 
@@ -1978,7 +1978,7 @@ static const UCHAR FAR_VARIABLE trigger23[] = {
 static const TEXT trigger_24_msg_0 [] = "Cannot rename field being used in an integrity constraint.";
 ******/
 
-static const UCHAR FAR_VARIABLE trigger24[] = {
+static const UCHAR trigger24[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,

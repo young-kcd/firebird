@@ -74,7 +74,7 @@
 #endif
 */
 
-static const USHORT FAR_VARIABLE to_unicode_mapping_array[] = {
+static const USHORT to_unicode_mapping_array[] = {
 0xFFFD,
 0xFFFD,
 0xFFFD,
@@ -20561,7 +20561,7 @@ static const USHORT to_unicode_map[256] = {
 };
 
 
-static const USHORT FAR_VARIABLE from_unicode_mapping_array[] = {
+static const USHORT from_unicode_mapping_array[] = {
 0,
 0,
 0,

@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.37 2003-02-27 16:28:52 tamlin Exp $
+$Id: par.cpp,v 1.38 2003-02-28 12:57:12 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -87,7 +87,7 @@ static const TEXT elements[][10] =
 static const struct {
 	const SCHAR *code_string;
 	SLONG code_number;
-} FAR_VARIABLE codes[] = {
+} codes[] = {
 #include "gen/codetext.h"
 	{NULL, 0}
 };

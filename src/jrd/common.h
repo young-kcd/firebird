@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.61 2003-02-19 04:08:09 brodsom Exp $
+$Id: common.h,v 1.62 2003-02-28 12:57:13 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -653,10 +653,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #ifndef HUGE_PTR
 #define HUGE_PTR
-#endif
-
-#ifndef FAR_VARIABLE
-#define FAR_VARIABLE
 #endif
 
 #ifndef PASCAL_ROUTINE

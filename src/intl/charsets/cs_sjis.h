@@ -290,7 +290,7 @@
 #define UNICODE_REPLACEMENT_CHARACTER 0xFFFD
 #endif
 
-static const USHORT FAR_VARIABLE sjis_to_unicode_mapping_array[] = {
+static const USHORT sjis_to_unicode_mapping_array[] = {
 												/* U+XX00 */ UNICODE_REPLACEMENT_CHARACTER,
 												/* 0 */
 												/* U+XX01 */ UNICODE_REPLACEMENT_CHARACTER,
@@ -1390,7 +1390,7 @@ static const USHORT sjis_to_unicode_map[256] = {
 #define CANT_MAP_CHARACTER 0
 #endif
 
-static const USHORT FAR_VARIABLE sjis_from_unicode_mapping_array[] = {
+static const USHORT sjis_from_unicode_mapping_array[] = {
 										/* U+XX00 */ CANT_MAP_CHARACTER,
 										/* 0 */
 										/* U+XX01 */ CANT_MAP_CHARACTER,
