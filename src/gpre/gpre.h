@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.19 2002-11-30 17:40:24 hippoman Exp $
+ * $Id: gpre.h,v 1.20 2002-12-02 09:49:34 eku Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -107,6 +107,14 @@ extern "C" {
 #define FORTRAN		1
 #define COBOL		1
 #define EITHER_CASE	1
+#endif
+
+#ifdef BOOT_BUILD
+#undef ADA
+#undef BASIC
+#undef COBOL
+#undef FORTRAN
+#undef PASCAL
 #endif
 
 
