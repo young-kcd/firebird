@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.9 2002-07-04 06:08:51 eku Exp $
+$Id: flu.cpp,v 1.10 2002-08-14 12:27:40 eku Exp $
 */
 
 #include "firebird.h"
@@ -105,7 +105,7 @@ static int condition_handler(int *, int *, int *);
 #define IB_UDF_DIR              "UDF/"
 #endif
 
-#if defined FREEBSD || defined NETBSD || defined DARWIN
+#ifndef HAVE_DIRNAME
 /*
  * Define our own dirname(), because we don't have a syscall for it.
  * !! WARNING !! WARNING !! WARNING !!
@@ -116,7 +116,8 @@ static int condition_handler(int *, int *, int *);
  * syscall versions do it the same way, except that they probably offer
  * thread-safeness as well.
  */
-const char* dirname(const char* fname)
+const char*
+dirname(const char* fname)
 {
 	static char result[512];
 	int i = 0;
@@ -142,7 +143,7 @@ const char* dirname(const char* fname)
 	result[last] = '\0';
 	return result;
 }
-#endif
+#endif /* HAVE_DIRNAME */
 
 
 static void terminate_at_space(char* psz)

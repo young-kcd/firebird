@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.27 2002-08-14 12:15:23 eku Exp $
+# $Id: configure.in,v 1.28 2002-08-14 12:27:39 eku Exp $
 
 AC_INIT(src)
 AC_CONFIG_AUX_DIR(src/make.new/config)
@@ -105,7 +105,9 @@ AC_CHECK_LIB(curses, main)
 AC_CHECK_LIB(readline, main,,,$LIBS)
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
-AC_CHECK_FUNCS(strlcpy strlcat gettimeofday time times)
+AC_CHECK_FUNCS(strlcpy strlcat)
+AC_CHECK_FUNCS(gettimeofday time times)
+AC_CHECK_FUNCS(dirname)
 
 AC_C_BIGENDIAN
 AC_C_CONST

@@ -57,6 +57,7 @@
 #define HAVE_GETTIMEOFDAY
 #undef HAVE_TIME
 #undef HAVE_TIMES
+#define HAVE_DIRNAME
 
 /* Types */
 #undef socklen_t
