@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.3 2002-02-23 22:15:23 seanleyne Exp $
+$Id: y-valve.cpp,v 1.4 2002-04-04 11:37:14 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3561,7 +3561,7 @@ STATUS API_ROUTINE GDS_EVENT_WAIT(STATUS * user_status,
 	GET_STATUS;
 
 	if (!why_initialized) {
-		gds__register_cleanup(exit_handler, why_event);
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, why_event);
 		why_initialized = TRUE;
 		ISC_event_init(why_event, 0, 0);
 	}
