@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.5 2002-09-10 08:07:16 dimitr Exp $
+ *	$Id: gpre_meta.epp,v 1.6 2002-09-10 18:30:52 skidder Exp $
  */
 
 #include "firebird.h"
@@ -686,7 +686,7 @@ LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
 		OVER RDB$INDEX_NAME CROSS
 		Z IN RDB$RELATION_CONSTRAINTS
 		OVER RDB$INDEX_NAME
-		WITH X.RDB$RELATION_NAME EQ name
+		WITH Z.RDB$RELATION_NAME EQ name
 		AND Z.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY"
 		SORTED BY Y.RDB$FIELD_POSITION
 		field_name = (str*) MAKE_STRING(Y.RDB$FIELD_NAME);
