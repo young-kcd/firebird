@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: drop.cpp,v 1.5 2002-01-04 11:34:16 skywalker Exp $
+$Id: drop.cpp,v 1.6 2002-07-04 05:53:33 eku Exp $
 */
 
 #include "firebird.h"
@@ -385,7 +385,7 @@ static int sem_exclusive( SLONG key, SLONG count)
  **************************************/
 	int semid;
 
-#if !(defined SUNOS4 || defined linux || defined FREEBSD || defined NETBSD)
+#if !(defined SUNOS4 || defined linux || defined FREEBSD || defined NETBSD || defined SINIXZ)
 	return semget(key, (int) count, IPC_EXCL);
 #else
 	if ((semid = semget(key, (int) count, IPC_EXCL)) != -1)
