@@ -1,3 +1,15 @@
+2003-12-26 16:57  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added RC8 changes.
+
+2003-12-26 16:00  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Fixed issue spotted by Claudio.
+
 2003-12-24 16:43  dimitr
 
 	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
