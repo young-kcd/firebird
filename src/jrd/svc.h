@@ -81,9 +81,9 @@ const USHORT isc_action_max				= 14;
 /* Currently we store empty string, see bug #10394 */
 // BRS 01/07/2004 commented
 //#ifdef SUPERSERVER
-//#define SVC_PUTSPECIFIC_DATA	{\
-//				char    t_data[] = {'\0'};\
-//				thdd::putSpecificData((void*)t_data);\
+//#define SVC_PUTSPECIFIC_DATA	{
+//				char    t_data[] = {'\0'};
+//				thdd::putSpecificData((void*)t_data);
 //				}
 //#else
 //#define SVC_PUTSPECIFIC_DATA	/* nothing */
