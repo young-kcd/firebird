@@ -1228,7 +1228,7 @@ void SVC_putc(SVC service, UCHAR ch)
 
 
 		case isc_info_svc_user_dbpath:
-			/* The path to the user security database (security.gdb) */
+			/* The path to the user security database (security.fdb) */
 			SecurityDatabase::getPath(buffer);
 
 			if (!(info = INF_put_item(item, strlen(buffer), buffer,
@@ -1732,7 +1732,7 @@ void SVC_query(SVC		service,
 
 
 		case isc_info_svc_user_dbpath:
-			/* The path to the user security database (security.gdb) */
+			/* The path to the user security database (security.fdb) */
 			SecurityDatabase::getPath(reinterpret_cast<char*>(buffer));
 
 			if (!(info = INF_put_item(item,

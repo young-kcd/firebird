@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.20 2003-02-10 11:01:10 eku Exp $
+$Id: inet_server.cpp,v 1.21 2003-02-10 11:48:24 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -417,7 +417,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		gds__log(err_buf);
 	}
 
-/* Server tries to attash to security.gdb to make sure everything is OK
+/* Server tries to attash to security.fdb to make sure everything is OK
    This code fixes bug# 8429 + all other bug of that kind - from 
    now on the server exits if it cannot attach to the database
    (wrong or no license, not enough memory, etc.

@@ -29,13 +29,13 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: alt_use_sec.h,v 1.10 2003-02-10 11:00:51 eku Exp $
+ *  $Id: alt_use_sec.h,v 1.11 2003-02-10 11:48:22 dimitr Exp $
  *
  */
 
 
-// During the build process in the initial stages the security.gdb database
-// does not exist, but to build the security.gdb database the tools need to
+// During the build process in the initial stages the security.fdb database
+// does not exist, but to build the security.fdb database the tools need to
 // be built. So the following #define is set/unset in the makefile depending
 // upon which stage in the compile process we are up to.
 //

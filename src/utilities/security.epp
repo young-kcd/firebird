@@ -34,7 +34,7 @@
 #include "../utilities/gsec.h"
 #include "../utilities/secur_proto.h"
 
-DATABASE DB = STATIC FILENAME "security.gdb";
+DATABASE DB = STATIC FILENAME "security.fdb";
 
 #define MAX_PASSWORD_LENGTH	31
 #define SYSDBA_USER_NAME	"SYSDBA"
@@ -373,7 +373,7 @@ void SECURITY_get_db_path( TEXT * server, TEXT * buffer)
    are unable to get the path from server
 */
 
-/* to get rid of these "security.gdb not found" messges add 
+/* to get rid of these "security.fdb not found" messges add 
    the path to USER_INFO NAME FSG june 30 2001 */
 
 #if (defined VMS || defined WIN_NT || defined LINUX || defined SINIXZ || defined SUPERSERVER)
