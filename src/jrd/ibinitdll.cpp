@@ -27,12 +27,6 @@
 
 HINSTANCE hIBDLLInstance;
 
-#ifdef GDS32
-HINSTANCE hFBDLLInstance;
-const char *FBDLLDIR = "bin\\";
-const char *FBDLLNAME = "fbclient.dll";
-#endif
-
 #ifdef SUPERSERVER
 
 #ifdef  _MSC_VER
@@ -54,45 +48,9 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 	switch (reason)	{
 
 	case DLL_PROCESS_ATTACH:
-#ifdef GDS32
-		{
-		char buffer[MAXPATHLEN];
-		HKEY hkey_instances;
-
-		hFBDLLInstance = 0;
-		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-				REG_KEY_ROOT_INSTANCES, 0, KEY_READ,
-				&hkey_instances) == ERROR_SUCCESS)
-		{
-			DWORD keytype;
-			DWORD buflen = sizeof(buffer);
-			if (RegQueryValueEx(hkey_instances, FB_DEFAULT_INSTANCE, 0,
-					&keytype, reinterpret_cast<UCHAR*>(buffer),
-					&buflen) == ERROR_SUCCESS && keytype == REG_SZ)
-			{
-				lstrcat(buffer, FBDLLDIR);
-				lstrcat(buffer, FBDLLNAME);
-				if (!GetModuleHandle(buffer) && !GetModuleHandle(FBDLLNAME))
-				{
-					hFBDLLInstance = LoadLibrary(buffer);
-				}
-			}
-			RegCloseKey(hkey_instances);
-		}
-
-		if (!hFBDLLInstance)
-		{
-			hFBDLLInstance = LoadLibrary(FBDLLNAME);
-		}
-
-		}
-#endif
 		break;
 
 	case DLL_PROCESS_DETACH:
-#ifdef GDS32
-		FreeLibrary(hFBDLLInstance);
-#endif
 #ifdef EMBEDDED
 		THREAD_ENTER;
 		JRD_shutdown_all();
