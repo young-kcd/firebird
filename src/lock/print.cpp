@@ -433,19 +433,19 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header->lhb_mask, LOCK_header->lhb_flags);
 
 	FPRINTF(outfile,
-			"\tEnqs: %6"ULONGFORMAT", Converts: %6"ULONGFORMAT
-			", Rejects: %6"ULONGFORMAT", Blocks: %6"ULONGFORMAT"\n",
+			"\tEnqs: %6"UQUADFORMAT", Converts: %6"UQUADFORMAT
+			", Rejects: %6"UQUADFORMAT", Blocks: %6"UQUADFORMAT"\n",
 			LOCK_header->lhb_enqs, LOCK_header->lhb_converts,
 			LOCK_header->lhb_denies, LOCK_header->lhb_blocks);
 
 	FPRINTF(outfile,
-			"\tDeadlock scans: %6"ULONGFORMAT", Deadlocks: %6"ULONGFORMAT
+			"\tDeadlock scans: %6"UQUADFORMAT", Deadlocks: %6"UQUADFORMAT
 			", Scan interval: %3"ULONGFORMAT"\n",
 			LOCK_header->lhb_scans, LOCK_header->lhb_deadlocks,
 			LOCK_header->lhb_scan_interval);
 
 	FPRINTF(outfile,
-			"\tAcquires: %6"ULONGFORMAT", Acquire blocks: %6"ULONGFORMAT
+			"\tAcquires: %6"UQUADFORMAT", Acquire blocks: %6"UQUADFORMAT
 			", Spin count: %3"ULONGFORMAT"\n",
 			LOCK_header->lhb_acquires, LOCK_header->lhb_acquire_blocks,
 			LOCK_header->lhb_acquire_spins);
@@ -639,8 +639,8 @@ static void prt_lock_activity(
 		FPRINTF(outfile, "%02d:%02d:%02d ", d.tm_hour, d.tm_min, d.tm_sec);
 
 		if (flag & SW_I_ACQUIRE) {
-			FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-					" %9"ULONGFORMAT" %9"ULONGFORMAT" ",
+			FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+					" %9"UQUADFORMAT" %9"UQUADFORMAT" ",
 					(header->lhb_acquires - prior.lhb_acquires) / seconds,
 					(header->lhb_acquire_blocks -
 					 prior.lhb_acquire_blocks) / seconds,
@@ -661,9 +661,9 @@ static void prt_lock_activity(
 		}
 
 		if (flag & SW_I_OPERATION) {
-			FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-					" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-					" %9"ULONGFORMAT" ",
+			FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+					" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+					" %9"UQUADFORMAT" ",
 					(header->lhb_enqs - prior.lhb_enqs) / seconds,
 					(header->lhb_converts - prior.lhb_converts) / seconds,
 					(header->lhb_downgrades - prior.lhb_downgrades) / seconds,
@@ -683,9 +683,9 @@ static void prt_lock_activity(
 		}
 
 		if (flag & SW_I_TYPE) {
-			FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-					" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-					" %9"ULONGFORMAT" ",
+			FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+					" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+					" %9"UQUADFORMAT" ",
 					(header->lhb_operations[Jrd::LCK_database] -
 					 prior.lhb_operations[Jrd::LCK_database]) / seconds,
 					(header->lhb_operations[Jrd::LCK_relation] -
@@ -715,10 +715,10 @@ static void prt_lock_activity(
 		}
 
 		if (flag & SW_I_WAIT) {
-			FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-					" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-					" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-					" %9"ULONGFORMAT" ",
+			FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+					" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+					" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+					" %9"UQUADFORMAT" ",
 					(header->lhb_waits - prior.lhb_waits) / seconds,
 					(header->lhb_denies - prior.lhb_denies) / seconds,
 					(header->lhb_timeouts - prior.lhb_timeouts) / seconds,
@@ -756,8 +756,8 @@ static void prt_lock_activity(
 
 	FPRINTF(outfile, "\nAverage: ");
 	if (flag & SW_I_ACQUIRE) {
-		FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-				" %9"ULONGFORMAT" %9"ULONGFORMAT" ",
+		FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+				" %9"UQUADFORMAT" %9"UQUADFORMAT" ",
 				(header->lhb_acquires - base.lhb_acquires) / (factor),
 				(header->lhb_acquire_blocks -
 				 base.lhb_acquire_blocks) / (factor),
@@ -772,9 +772,9 @@ static void prt_lock_activity(
 	}
 
 	if (flag & SW_I_OPERATION) {
-		FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-				" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"
-				ULONGFORMAT" ",
+		FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"
+				UQUADFORMAT" ",
 				(header->lhb_enqs - base.lhb_enqs) / (factor),
 				(header->lhb_converts - base.lhb_converts) / (factor),
 				(header->lhb_downgrades - base.lhb_downgrades) / (factor),
@@ -785,9 +785,9 @@ static void prt_lock_activity(
 	}
 
 	if (flag & SW_I_TYPE) {
-		FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-				" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-				" %9"ULONGFORMAT" ",
+		FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+				" %9"UQUADFORMAT" ",
 				(header->lhb_operations[Jrd::LCK_database] -
 				 base.lhb_operations[Jrd::LCK_database]) / (factor),
 				(header->lhb_operations[Jrd::LCK_relation] -
@@ -805,10 +805,10 @@ static void prt_lock_activity(
 	}
 
 	if (flag & SW_I_WAIT) {
-		FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-				" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-				" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
-				" %9"ULONGFORMAT" ",
+		FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+				" %9"UQUADFORMAT" ",
 				(header->lhb_waits - base.lhb_waits) / (factor),
 				(header->lhb_denies - base.lhb_denies) / (factor),
 				(header->lhb_timeouts - base.lhb_timeouts) / (factor),

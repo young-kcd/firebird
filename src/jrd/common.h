@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.124 2004-09-25 10:27:41 robocop Exp $
+$Id: common.h,v 1.125 2004-10-01 21:29:16 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -970,6 +970,10 @@ void routine(const char* message, ...) { \
 	va_end(params); \
 	gds__trace(buffer); \
 }
+
+// Shortcuts to make it easier to convert code using SLONGFORMAT/ULONGFORMAT
+#define UQUADFORMAT QUADFORMAT"u"
+#define SQUADFORMAT QUADFORMAT"d"
 
 #ifdef DEV_BUILD
 

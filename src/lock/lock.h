@@ -123,7 +123,13 @@ const UCHAR type_own	= 8;
 
 const UCHAR type_MAX		= type_own;
 
-const int CLASSIC_LHB_VERSION	= 15; // Firebird 1.5
+#if SIZEOF_VOID_P == 8
+const int PLATFORM_LHB_VERSION	= 200;	// 64-bit target
+#else
+const int PLATFORM_LHB_VERSION	= 0;	// 32-bit target
+#endif
+
+const int CLASSIC_LHB_VERSION	= PLATFORM_LHB_VERSION + 16; // Firebird 2.0
 const int SS_LHB_VERSION		= CLASSIC_LHB_VERSION + 100;
 
 #ifdef SUPERSERVER
@@ -182,29 +188,29 @@ typedef struct lhb {
 	SRQ_PTR lhb_mask;				/* Semaphore mask block */
 	ULONG lhb_scan_interval;	/* Deadlock scan interval (secs) */
 	ULONG lhb_acquire_spins;
-	ULONG lhb_acquires;
-	ULONG lhb_acquire_blocks;
-	ULONG lhb_acquire_retries;
-	ULONG lhb_retry_success;
-	ULONG lhb_enqs;
-	ULONG lhb_converts;
-	ULONG lhb_downgrades;
-	ULONG lhb_deqs;
-	ULONG lhb_read_data;
-	ULONG lhb_write_data;
-	ULONG lhb_query_data;
-	ULONG lhb_operations[LCK_MAX_SERIES];
-	ULONG lhb_waits;
-	ULONG lhb_denies;
-	ULONG lhb_timeouts;
-	ULONG lhb_blocks;
-	ULONG lhb_direct_sigs;
-	ULONG lhb_indirect_sigs;
-	ULONG lhb_wakeups;
-	ULONG lhb_scans;
-	ULONG lhb_deadlocks;
+	UINT64 lhb_acquires;
+	UINT64 lhb_acquire_blocks;
+	UINT64 lhb_acquire_retries;
+	UINT64 lhb_retry_success;
+	UINT64 lhb_enqs;
+	UINT64 lhb_converts;
+	UINT64 lhb_downgrades;
+	UINT64 lhb_deqs;
+	UINT64 lhb_read_data;
+	UINT64 lhb_write_data;
+	UINT64 lhb_query_data;
+	UINT64 lhb_operations[LCK_MAX_SERIES];
+	UINT64 lhb_waits;
+	UINT64 lhb_denies;
+	UINT64 lhb_timeouts;
+	UINT64 lhb_blocks;
+	UINT64 lhb_direct_sigs;
+	UINT64 lhb_indirect_sigs;
+	UINT64 lhb_wakeups;
+	UINT64 lhb_scans;
+	UINT64 lhb_deadlocks;
 	ULONG lhb_wait_time;
-	ULONG lhb_reserved[2];		/* For future use */
+	UINT64 lhb_reserved[2];		/* For future use */
 	srq lhb_data[LCK_MAX_SERIES];
 	srq lhb_hash[1];			/* Hash table */
 } *LHB;
@@ -294,7 +300,7 @@ typedef struct own
 	SRQ_PTR own_pending_request;	/* Request we're waiting on */
 	int own_process_id;			/* Owner's process ID */
 	int own_process_uid;		/* Owner's process UID */
-	ULONG own_acquire_time;		/* lhb_acquires when owner last tried acquire() */
+	UINT64 own_acquire_time;		/* lhb_acquires when owner last tried acquire() */
 	ULONG own_acquire_realtime;	/* GET_TIME when owner last tried acquire() */
 #ifdef WIN_NT
 	void *own_wakeup_hndl;		/* Handle of wakeup event */
