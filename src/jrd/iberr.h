@@ -42,22 +42,7 @@
 				status [2] = gds_arg_end
 
 
-#if 1
-
-/* TMN: The hits just keep on coming. The macro STUFF_STATUS MUST be
- * defined so it can get instantiated in the "calling" place because of
- * the use of varargs. I trimmed this one a bit though by putting the
- * majority of the macro into a function.
- */
-
-#define STUFF_STATUS(status_vector,status)              \
-{                                                       \
-    va_list args;                                       \
-    VA_START (args, status);                            \
-    STUFF_STATUS_function(status_vector, status, args); \
-}
-
-#else	/* 0/1 */
+#ifdef NOT_USED_OR_REPLACED
 
 #define STUFF_STATUS(status_vector,status)      \
 {						\
@@ -112,6 +97,20 @@ while ((type = va_arg (args, int)) && ((p - status_vector) < 17))    \
 *p = gds_arg_end;				\
 }
 /* end of STUFF_STATUS */			
+
+#else
+/* TMN: The hits just keep on coming. The macro STUFF_STATUS MUST be
+ * defined so it can get instantiated in the "calling" place because of
+ * the use of varargs. I trimmed this one a bit though by putting the
+ * majority of the macro into a function.
+ */
+
+#define STUFF_STATUS(status_vector,status)              \
+{                                                       \
+    va_list args;                                       \
+    VA_START (args, status);                            \
+    STUFF_STATUS_function(status_vector, status, args); \
+}
 
 #endif	/* 0/1 */
 

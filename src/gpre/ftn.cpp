@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.15 2003-02-10 23:44:49 brodsom Exp $
+//	$Id: ftn.cpp,v 1.16 2003-02-12 12:44:17 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -60,7 +60,7 @@ extern struct dbd global_db_list[];
 extern USHORT global_db_count;
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 static void align (int column);
 #endif
 static void	asgn_from (ACT, REF);
@@ -4943,7 +4943,7 @@ static void t_start_auto( GPRE_REQ request, TEXT * vector, ACT action, SSHORT te
 	status_and_stop(action);
 }
 
-#if 0							/* RRK_?: this column stuff was not used in 3.3
+#ifdef NOT_USED_OR_REPLACED							/* RRK_?: this column stuff was not used in 3.3
 								   may be should not bother with it now */
 //____________________________________________________________
 //  

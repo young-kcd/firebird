@@ -110,7 +110,7 @@ typedef dsql_lls* DLLS;
 // internal DSQL requests
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 
 #define irq_relation	0	// lookup a relation
 #define irq_fields		1	// lookup a relation's fields

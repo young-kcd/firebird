@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.12 2003-02-10 23:44:53 brodsom Exp $
+//	$Id: ada.cpp,v 1.13 2003-02-12 12:44:17 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -854,7 +854,7 @@ static void gen_blob_for( ACT action, USHORT column)
 }
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 //  This is the V4.0 version of the function prior to 18-January-95.
 //  for unknown reasons it contains a core dump.  The V3.3 version of
 //  this function appears to work fine, so we are using it instead.
@@ -1002,7 +1002,7 @@ static void gen_clear_handles( ACT action, int column)
 }
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
 //  
 //       Generate a symbol to ease compatibility with V3.
@@ -1050,7 +1050,7 @@ static void gen_compile( ACT action, int column)
 		printa(column, "if %s = 0 then", request->req_handle);
 
 	column += INDENT;
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 	printa(column, "interbase.COMPILE_REQUEST%s (%s %s%s, %s%s, %d, isc_%d);",
 		   (request->req_flags & REQ_exp_hand) ? "" : "2",
 		   status_vector(action),

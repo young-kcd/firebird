@@ -84,7 +84,7 @@ static bool_t xdr_sql_message(XDR *, SLONG);
 static bool_t xdr_trrq_blr(XDR *, CSTRING *);
 static bool_t xdr_trrq_message(XDR *, USHORT);
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 // TMN: Patched away this for now, it should probably be removed.
 // Now why the ... would anyone want to define functions differently
 // in an implementation file than they  are defined in their header?!
@@ -104,11 +104,11 @@ extern bool_t xdr_wrapstring();
 
 extern bool_t xdr_free();
 
-#else // 0
+#else // NOT_USED_OR_REPLACED
 
 #  include "../remote/xdr_proto.h"
 
-#endif // 0
+#endif // NOT_USED_OR_REPLACED
 
 
 #ifdef VMS
@@ -132,7 +132,7 @@ static STR gfloat_buffer;
 #  define	xdr_wrapstring	(*_libgds_xdr_wrapstring)
 #   define xdr_free    (*_libgds_xdr_free)
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 // TMN: Patched away this for now, it should probably be removed.
 // Now why the ... would anyone want to define functions differently
 // in an implementation file than they  are defined in their header?!
@@ -148,11 +148,11 @@ extern bool_t xdr_double();
 extern bool_t xdr_wrapstring();
 extern bool_t xdr_free();
 
-#else // 0
+#else // NOT_USED_OR_REPLACED
 
 #  include "../remote/xdr_proto.h"
 
-#endif // 0
+#endif // NOT_USED_OR_REPLACED
 
 #endif // SHLIB_DEFS
 

@@ -87,7 +87,7 @@
  */
 
 /*
-$Id: ib_stdio.cpp,v 1.8 2003-02-11 02:12:02 brodsom Exp $
+$Id: ib_stdio.cpp,v 1.9 2003-02-12 12:51:06 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -3940,7 +3940,13 @@ static u_char *ib__sccl(char *tab, u_char * fmt)
 						&& ib__collate_range_cmp(i, n) <= 0)
 						tab[i] = v;
 			}
-#if 1							/* XXX another disgusting compatibility hack */
+#ifdef NOT_USED_OR_REPLACED							/* XXX another disgusting compatibility hack */
+			c = *fmt++;
+			if (c == 0)
+				return (fmt - 1);
+			if (c == ']')
+				return (fmt);
+#else
 			c = n;
 			/*
 			 * Alas, the V7 Unix scanf also treats formats
@@ -3948,12 +3954,6 @@ static u_char *ib__sccl(char *tab, u_char * fmt)
 			 * This too is permitted by the standard....
 			 */
 			goto doswitch;
-#else
-			c = *fmt++;
-			if (c == 0)
-				return (fmt - 1);
-			if (c == ']')
-				return (fmt);
 #endif
 			break;
 

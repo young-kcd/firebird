@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.9 2003-02-10 13:28:06 eku Exp $
+//	$Id: all.cpp,v 1.10 2003-02-12 12:42:41 brodsom Exp $
 //
 
 #include "../alice/all.h"
@@ -74,7 +74,7 @@ void ALLA_init(void)
 	TGBL tdgbl;
 
 	tdgbl = GET_THREAD_DATA;
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 	tdgbl->ALICE_default_pool = tdgbl->ALICE_permanent_pool =
 		AliceMemoryPool::create_new_pool();
 #else
@@ -138,7 +138,7 @@ BLK AliceMemoryPool::ALLA_pop(LLS *stack)
 	return object;
 }
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 {
 /**************************************

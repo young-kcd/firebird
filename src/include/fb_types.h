@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.12 2003-01-19 14:42:17 dimitr Exp $
+ *  $Id: fb_types.h,v 1.13 2003-02-12 12:45:43 brodsom Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -71,13 +71,13 @@
 /* Basic data types */
 
 
-#if 1
+#ifdef NOT_USED_OR_REPLACED
+typedef signed char SCHAR;
+#else
 /* TMN: TODO It seems SCHAR is used just about *everywhere* where a plain
  * "char" is really intended. This currently forces us to this bad definition.
  */
 typedef char SCHAR;
-#else
-typedef signed char SCHAR;
 #endif
 
 

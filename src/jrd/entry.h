@@ -51,7 +51,7 @@
  * of an array (!) from why.c.
  */
 
-#if 0 && defined(__cplusplus)
+#if defined(NOT_USED_OR_REPLACED) && defined(__cplusplus)
 
 
 ENTRYPOINT( "gds_attach_database",

@@ -2612,12 +2612,12 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 UCHAR *DLL_EXPORT ISC_map_file(
 	   STATUS * status_vector,
 	   TEXT * filename,
-#if 1
-	   // TMN: Parameter is in errors!
-	   void (*init_routine) (void *, struct sh_mem *, int),
-#else
+#ifdef NOT_USED_OR_REPLACED
 	   // MUST of course match header.
 	   FPTR_VOID init_routine,
+#else
+	   // TMN: Parameter is in errors!
+	   void (*init_routine) (void *, struct sh_mem *, int),
 #endif
 	   void *init_arg,
 	   SLONG length,

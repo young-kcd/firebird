@@ -671,7 +671,7 @@ void gds_print_delta_counters(IB_FILE *);
 
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 #ifdef DEBUG_GDS_ALLOC
 
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
@@ -1135,7 +1135,7 @@ void API_ROUTINE isc_encode_timestamp(void *times_arg, GDS_TIMESTAMP * date)
 }
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 ULONG API_ROUTINE gds__free(void* blk)
 {
 /**************************************
@@ -1307,7 +1307,7 @@ static void gds_alloc_validate(ALLOC p)
  *
  **************************************/
  // JMB:  Need to rework the code for the new pools
- #if 0
+ #ifdef NOT_USED_OR_REPLACED
 	USHORT errors = 0;
 
 /* This might be a garbage pointer, so try and validate it first */
@@ -1397,7 +1397,7 @@ static BOOLEAN gds_alloc_validate_free_pattern(UCHAR* ptr,
  *
  **************************************/
  // JMB: Need to rework the code for the new pool
- #if 0
+ #ifdef NOT_USED_OR_REPLACED
 	while (len--)
 	{
 		if (*ptr++ != ALLOC_FREED_PATTERN)
@@ -1431,7 +1431,7 @@ static void gds_alloc_validate_freed(ALLOC p)
  *
  **************************************/
  // JMB: need to rework this code for the new pool
- #if 0
+ #ifdef NOT_USED_OR_REPLACED
 	USHORT errors = 0;
 
 /* This might be a garbage pointer, so try and validate it first */
@@ -1486,7 +1486,7 @@ void gds_alloc_watch(void* p)
  *
  **************************************/
 // JMB: need to rework this for new pools
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 	gds_alloc_watch_call_count++;
 
 /* Do we have a new place to watch?  If so, set our watcher */
@@ -1522,7 +1522,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
  *
  **************************************/
 // JMB: need to rework this for the new pools
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 	if (!blk)
 		return;
 /* Point to the start of the block */
@@ -1554,7 +1554,7 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
  *
  **************************************/
  // JMB: needs to be reworked for new pools
- #if 0
+ #ifdef NOT_USED_OR_REPLACED
 	ALLOC p;
 	IB_FILE *f = NULL;
 	char buffer[150];
@@ -2301,7 +2301,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, TEXT * passed_string)
 
 	char *prefix_ptr;
 	int count = 0;
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 	char *prefix_array;			/* = {ib_prefix, ib_prefix_lock, ib_prefix_msg}; */
 #endif
 

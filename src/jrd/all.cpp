@@ -293,7 +293,7 @@ BLK JrdMemoryPool::ALL_pop(LLS *stack)
 #ifdef SUPERSERVER
 void ALL_print_memory_pool_info(IB_FILE* fptr, DBB databases)
 {
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 /***********************************************************
  *
  *	A L L _ p r i n t _ m e m o r y _ p o o l _ i n f o

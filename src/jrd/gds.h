@@ -22,7 +22,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/gdsold.h"
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 
 /* The public version of this file also contains the following header files
    these are not included explicitly here as they are included in the two 
