@@ -1,3 +1,53 @@
+2002-11-24 18:53  skidder
+
+	* firebird2/builds/posix/prefix.linux:
+	
+	A little more optimization wont hurt
+
+2002-11-24 16:22  skidder
+
+	* firebird2/src/dsql/: gen.cpp, make.cpp, make_proto.h, parse.cpp,
+	parse.y, pass1.cpp:
+	
+	Make SQLDA parameter mapping consistent with order and number of
+	parameters in source SQL string
+
+2002-11-24 14:47  skidder
+
+	* firebird2/src/jrd/: evl.cpp, exe.cpp, exe.h:
+	
+	Fixed crash when grouping by invariant subquery
+
+2002-11-24 14:03  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	no message
+
+2002-11-24 11:22  dimitr
+
+	* firebird2/src/common/memory/memory_pool.cpp:
+	
+	Avoid redundant "best fit" lookup after a pool has been extended.
+
+2002-11-24 00:36  arnobrinkman
+
+	* firebird2/src/jrd/: cmp.cpp, opt.cpp:
+	
+	1) bugfix another LEFT JOIN and 'no current record for fetch
+	operation'.
+	
+	2) Let sub-selects also use indices when there parent is a stored
+	procedure.
+
+2002-11-24 00:11  hippoman
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj,
+	engine_classic.vcproj, fb_lock_print.vcproj, fbclient.vcproj,
+	gpre.vcproj:
+	
+	Fixed the build, thd_win32.cpp has been deleted..
+
 2002-11-23 19:26  dimitr
 
 	* firebird2/src/common/memory/memory_pool.cpp:
