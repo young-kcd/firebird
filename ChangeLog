@@ -1,3 +1,58 @@
+2005-01-04 02:16  stryqx
+
+	* firebird2/src/extern/editline/makelist (1.2):
+	
+	Using tr to map a-z to A-Z doesn't always work as expected on all
+	platforms, especially when a locale is set where the number of
+	lower case characters is different to the number of upper case
+	characters. Using the lower and upper case character classes fixes
+	this problem.
+
+2005-01-04 01:18  robocop
+
+	* firebird2/builds/install/misc/: CSchangeRunUser.sh.in (1.4),
+	CSrestoreRootRunUser.sh.in (1.2), SSchangeRunUser.sh.in (1.2),
+	SSrestoreRootRunUser.sh.in (1.2):
+	
+	Fix typo reported by Kristof Petr.
+
+2005-01-03 20:24  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp (1.130):
+	
+	Fix index bug when a single NULL with recordnumber 0 was 2 times
+	removed.  Due this the LevelNode was removed, which of course may
+	never happen.
+
+2005-01-03 09:16  robocop
+
+	* firebird2/src/utilities/gstat/: dba.epp (1.55), dbaswi.h (1.6),
+	ppg.cpp (1.23), ppg_proto.h (1.10):
+	
+	Forget the log: it belongs to one of the merry friends WAL and
+	JOURNAL that we deprecated and deleted for v2.
+
+2005-01-03 09:11  robocop
+
+	* firebird2/src/gpre/sqe.cpp (1.36):
+	
+	Misc.
+
+2005-01-03 09:08  robocop
+
+	* firebird2/src/jrd/utl.cpp (1.81):
+	
+	Avoid possible buffer overflow.
+
+2005-01-03 09:07  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.48), c_cxx.cpp (1.61), cob.cpp
+	(1.57), ftn.cpp (1.55), gpre.h (1.75), int_cxx.cpp (1.39), parse.h
+	(1.11), pas.cpp (1.49), sqe.cpp (1.35), sql.cpp (1.53):
+	
+	Bring some order to the gpre insanity that was using custom,
+	disparate lengths for variables that should have the same length.
+
 2005-01-01 02:53  robocop
 
 	* firebird2/src/: extlib/ib_udf2.sql (1.6), jrd/y_handle.h (1.11),
