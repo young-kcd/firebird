@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.41 2003-09-18 21:57:59 brodsom Exp $
+ * $Id: sort.cpp,v 1.42 2003-09-28 16:54:49 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -2186,9 +2186,6 @@ static void init(SCB scb)
 
 	scb->scb_next_pointer = scb->scb_first_pointer;
 	scb->scb_last_record = (SR *) scb->scb_end_memory;
-#ifndef SCROLLABLE_CURSORS
-	scb->scb_run_start = scb->scb_records;
-#endif
 
 	*scb->scb_next_pointer++ = reinterpret_cast < sort_record * >(low_key);
 }

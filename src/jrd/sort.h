@@ -267,7 +267,6 @@ typedef struct scb
 	struct mrg *scb_merge;		/* Top level merge block */
 	struct run *scb_free_runs;	/* ALLOC: Currently unused run blocks */
 	SORTP *scb_merge_space;		/* ALLOC: memory space to do merging */
-	ULONG scb_run_start;		/* Record number of run */
 	ULONG scb_flags;			/* see flag bits below */
 	ISC_STATUS *scb_status_vector;	/* Status vector for errors */
 	BOOLEAN(*scb_dup_callback) ();	/* Duplicate handling callback */
