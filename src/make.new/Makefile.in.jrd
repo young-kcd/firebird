@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: Makefile.in.jrd,v 1.12 2002-06-23 19:51:30 paul_reeves Exp $
+#   $Id: Makefile.in.jrd,v 1.13 2002-06-29 16:41:10 skywalker Exp $
 #
 # 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
 #
@@ -264,7 +264,7 @@ bridge.shared_o:	$(GDSSHR)
 		$(OBJS)/dsql/ddl.o $(OBJS)/dsql/dsql.o $(OBJS)/dsql/err.o \
 		$(OBJS)/dsql/gen.o $(OBJS)/dsql/hsh.o $(OBJS)/dsql/make.o \
 		$(OBJS)/dsql/met.o $(OBJS)/dsql/mov.o $(OBJS)/dsql/parse.o \
-		$(OBJS)/dsql/pass1.o $(BLD_LIBS) -o bridge5
+		$(OBJS)/dsql/pass1.o $(BsLsD_LIBS) -o bridge5
 	$(CHMOD_7) bridge5
 
 bridge.shared_bin:	$(GDSSHR)
@@ -719,7 +719,7 @@ build_alt_use_main: alt_use_sec.h.pre
 #	$(GPRE_BOOT) -lang_internal -n -manual -raw -O $< $@
 
 #$(SRC)/codes.cpp:	$(SRC)/codes.epp
-codes.cpp:	$(SRC)/codes.epp  msgs.gdb
+codes.cpp:	$(SRC)/codes.epp  msg.gdb
 	$(GPRE) -n -manual -raw -string $< $@
 
 

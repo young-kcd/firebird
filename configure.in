@@ -22,13 +22,18 @@ AC_CHECK_HEADERS(assert.h)
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(fcntl.h)
 AC_CHECK_HEADERS(grp.h)
+AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(libio.h)
+AC_CHECK_HEADERS(locale.h)
+AC_CHECK_HEADERS(math.h)
+AC_CHECK_HEADERS(pthread.h)
 AC_CHECK_HEADERS(sys/types.h)
 AC_CHECK_HEADERS(sys/stat.h)
 AC_CHECK_HEADERS(sys/uio.h)
 AC_CHECK_HEADERS(sys/wait.h)
 AC_CHECK_HEADERS(time.h)
 AC_CHECK_HEADERS(sys/time.h)
+AC_CHECK_HEADERS(sys/timeb.h)
 AC_CHECK_HEADERS(sys/param.h)
 AC_CHECK_HEADERS(varargs.h)
 AC_CHECK_HEADERS(stdarg.h)
@@ -151,11 +156,12 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/help])
 AC_OUTPUT_COMMANDS([chmod a+x gen/install/install.sh])
 AC_OUTPUT_COMMANDS([chmod a+x gen/install/scripts/*.sh])
 
+AC_OUTPUT_COMMANDS([src/misc/writeBuildNum.sh rebuildHeader])
+
 AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os])
 AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/darwin])
 AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/posix])
 AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/win32])
-
 
 AC_OUTPUT( \
 src/make.rules:src/make.new/make.rules \
@@ -171,6 +177,7 @@ src/dsql/Makefile:src/make.new/Makefile.in.dsql \
 src/dudley/Makefile:src/make.new/Makefile.in.dudley \
 src/v5_examples/Makefile:src/make.new/Makefile.in.example5 \
 src/extlib/Makefile:src/make.new/Makefile.in.extlib \
+src/extlib/fbudf/Makefile:src/make.new/Makefile.in.fbudf \
 src/gpre/Makefile:src/make.new/Makefile.in.gpre \
 src/intl/Makefile:src/make.new/Makefile.in.intl \
 src/isql/Makefile:src/make.new/Makefile.in.isql \
