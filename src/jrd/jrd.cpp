@@ -571,7 +571,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 /* If database name is not alias, check it against conf file */
-	vdnResult vdn = verify_database_name(expanded_filename, user_status);
+	const vdnResult vdn = verify_database_name(expanded_filename, user_status);
 	if (!is_alias && vdn == vdnFail)
 	{
 		JRD_restore_context();
@@ -648,7 +648,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		}
 	}
 
-/* If database to be opened is SecurityDatabase, than only 
+/* If database to be opened is SecurityDatabase, then only 
    gsec or SecurityDatabase may open it. This protects from use
    of old gsec to write wrong password hashes into it. */
 	if (vdn == vdnSecurity && !options.dpb_gsec_attach && !options.dpb_sec_attach)
