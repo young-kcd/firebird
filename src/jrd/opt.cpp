@@ -6269,11 +6269,12 @@ static void set_direction(JRD_NOD from_clause, JRD_NOD to_clause)
 	JRD_NOD *from_ptr, *to_ptr, *end;
 	DEV_BLKCHK(from_clause, type_nod);
 	DEV_BLKCHK(to_clause, type_nod);
-/* all three clauses are allocated with twice the number of arguments to 
-   leave room at the end for an ascending/descending flag, one for each field */
+/* all three clauses are allocated with thrice the number of arguments to 
+   leave room at the end for an ascending/descending and nulls placement flags, 
+   one for each field */
 	from_ptr = from_clause->nod_arg + from_clause->nod_count;
 	to_ptr = to_clause->nod_arg + to_clause->nod_count;
-	for (end = from_ptr + from_clause->nod_count; from_ptr < end; from_ptr++)
+	for (end = from_ptr + from_clause->nod_count * 2; from_ptr < end; from_ptr++)
 		*to_ptr++ = *from_ptr;
 }
 
