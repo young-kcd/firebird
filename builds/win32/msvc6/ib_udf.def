@@ -19,8 +19,6 @@ LIBRARY ib_udf
 
 DESCRIPTION 'InterBase UDF Library'
 
-DATA READ WRITE
-
 EXPORTS
 	IB_UDF_abs		@1
 	IB_UDF_acos		@2
