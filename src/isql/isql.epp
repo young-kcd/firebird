@@ -754,6 +754,9 @@ static void readNextInputLine(const char* prompt)
 			if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
 				add_history(lastInputLine);
 			}
+			// Let's count lines if someone wants to enable line number error messages
+			// for console reading for whatever reason.
+			++Ifp.indev_aux;
 			return;
 		}
 
@@ -4691,33 +4694,33 @@ static processing_state print_sets()
  *
  **************************************/
 
-	ISQL_printf(isqlGlob.Out, "Print statistics:		");
+	ISQL_printf(isqlGlob.Out, "Print statistics:        ");
 	ISQL_printf(isqlGlob.Out, (Stats ? "ON" : "OFF"));
 	ISQL_printf(isqlGlob.Out, NEWLINE);
-	ISQL_printf(isqlGlob.Out, "Echo commands:		   ");
+	ISQL_printf(isqlGlob.Out, "Echo commands:           ");
 	ISQL_printf(isqlGlob.Out, (Echo ? "ON" : "OFF"));
 	ISQL_printf(isqlGlob.Out, NEWLINE);
-	ISQL_printf(isqlGlob.Out, "List format:			 ");
+	ISQL_printf(isqlGlob.Out, "List format:             ");
 	ISQL_printf(isqlGlob.Out, (List ? "ON" : "OFF"));
 	ISQL_printf(isqlGlob.Out, NEWLINE);
-	ISQL_printf(isqlGlob.Out, "Row Count:			   ");
+	ISQL_printf(isqlGlob.Out, "Row Count:               ");
 	ISQL_printf(isqlGlob.Out, (Docount ? "ON" : "OFF"));
 	ISQL_printf(isqlGlob.Out, NEWLINE);
-	ISQL_printf(isqlGlob.Out, "Autocommit DDL:		  ");
+	ISQL_printf(isqlGlob.Out, "Autocommit DDL:          ");
 	ISQL_printf(isqlGlob.Out, (Autocommit ? "ON" : "OFF"));
 	ISQL_printf(isqlGlob.Out, NEWLINE);
 #ifdef SCROLLABLE_CURSORS
-	ISQL_printf(isqlGlob.Out, "Autofetch records:	   ");
+	ISQL_printf(isqlGlob.Out, "Autofetch records:       ");
 	ISQL_printf(isqlGlob.Out, (Autofetch ? "ON" : "OFF"));
 	ISQL_printf(isqlGlob.Out, NEWLINE);
 #endif
-	ISQL_printf(isqlGlob.Out, "Access Plan:			 ");
+	ISQL_printf(isqlGlob.Out, "Access Plan:             ");
 	ISQL_printf(isqlGlob.Out, (Plan ? "ON" : "OFF"));
 	ISQL_printf(isqlGlob.Out, NEWLINE);
-	ISQL_printf(isqlGlob.Out, "Access Plan only:		");
+	ISQL_printf(isqlGlob.Out, "Access Plan only:        ");
 	ISQL_printf(isqlGlob.Out, (Planonly ? "ON" : "OFF"));
 	ISQL_printf(isqlGlob.Out, NEWLINE);
-	ISQL_printf(isqlGlob.Out, "Display BLOB type:	   ");
+	ISQL_printf(isqlGlob.Out, "Display BLOB type:       ");
 	if (Doblob == ALL_BLOBS)
 		ISQL_printf(isqlGlob.Out, "ALL");
 	else if (Doblob == NO_BLOBS)
@@ -4728,17 +4731,17 @@ static processing_state print_sets()
 	}
 	ISQL_printf(isqlGlob.Out, NEWLINE);
 	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)) {
-		sprintf(Print_buffer, "Set names:			   %s%s",
+		sprintf(Print_buffer, "Set names:               %s%s",
 				ISQL_charset, NEWLINE);
 		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
-	ISQL_printf(isqlGlob.Out, "Column headings:          ");
+	ISQL_printf(isqlGlob.Out, "Column headings:         ");
 	ISQL_printf(isqlGlob.Out, Heading ? "ON" : "OFF");
 	ISQL_printf(isqlGlob.Out, NEWLINE);
 	if (global_Cols) {
-		const collist* p = global_Cols;
 		sprintf(Print_buffer, "Column print widths:%s", NEWLINE);
 		ISQL_printf(isqlGlob.Out, Print_buffer);
+		const collist* p = global_Cols;
 		while (p) {
 			sprintf(Print_buffer, "%s%s width: %d%s",
 					TAB_AS_SPACES, p->col_name, p->col_len, NEWLINE);
@@ -4746,19 +4749,19 @@ static processing_state print_sets()
 			p = p->collist_next;
 		}
 	}
-	ISQL_printf(isqlGlob.Out, "Terminator:			  ");
+	ISQL_printf(isqlGlob.Out, "Terminator:              ");
 	ISQL_printf(isqlGlob.Out, isqlGlob.global_Term);
 	ISQL_printf(isqlGlob.Out, NEWLINE);
-	sprintf(Print_buffer, "Time:					%s%s",
+	sprintf(Print_buffer, "Time:                    %s%s",
 			(Time_display) ? "ON" : "OFF", NEWLINE);
 	ISQL_printf(isqlGlob.Out, Print_buffer);
-	sprintf(Print_buffer, "Warnings:				%s%s",
+	sprintf(Print_buffer, "Warnings:                %s%s",
 			(Warnings) ? "ON" : "OFF", NEWLINE);
 	ISQL_printf(isqlGlob.Out, Print_buffer);
-	sprintf(Print_buffer, "Bail on error:				%s%s",
+	sprintf(Print_buffer, "Bail on error:           %s%s",
 			(BailOnError) ? "ON" : "OFF", NEWLINE);
 	ISQL_printf(isqlGlob.Out, Print_buffer);
-	return (SKIP);
+	return SKIP;
 }
 
 

@@ -1082,7 +1082,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 				key = NO_EXCEPTIONS;
 		}
 	}
-	else if ((!strcmp(cmd[1], "FILTER")) || (!strcmp(cmd[1], "FILTERS"))) {
+	else if ((!strcmp(cmd[1], "FILTER")) || (!strcmp(cmd[1], "FILTERS")))
+	{
 		if (*cmd[2] == '"') {
 			remove_delimited_double_quotes(lcmd[2]);
 			ret = show_filters(lcmd[2]);
@@ -1097,7 +1098,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 				key = NO_FILTERS;
 		}
 	}
-	else if ((!strcmp(cmd[1], "FUNCTION")) || (!strcmp(cmd[1], "FUNCTIONS"))) {
+	else if ((!strcmp(cmd[1], "FUNCTION")) || (!strcmp(cmd[1], "FUNCTIONS")))
+	{
 		if (*cmd[2] == '"') {
 			remove_delimited_double_quotes(lcmd[2]);
 			ret = show_functions(lcmd[2]);
@@ -1129,7 +1131,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 				key = NO_GENS;
 		}
 	}
-	else if ((!strcmp(cmd[1], "GRANT")) || (!strcmp(cmd[1], "GRANTS"))) {
+	else if ((!strcmp(cmd[1], "GRANT")) || (!strcmp(cmd[1], "GRANTS")))
+	{
 		if (*cmd[2]) {
 			if (*cmd[2] == '"') {
 				remove_delimited_double_quotes(lcmd[2]);
@@ -1221,7 +1224,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 			else
 				key = NO_TRIGGERS;
 	}
-	else if (!strcmp(cmd[1], "CHECK")) {
+	else if (!strcmp(cmd[1], "CHECK"))
+	{
 		if (*cmd[2] == '"') {
 			remove_delimited_double_quotes(lcmd[2]);
 			ret = show_check(lcmd[2]);
@@ -1992,8 +1996,8 @@ static processing_state show_filters(const SCHAR* object)
 		SORTED BY FIL.RDB$FUNCTION_NAME
 
 			first = false;
-			fb_utils::exact_name(FIL.RDB$FUNCTION_NAME);
-			sprintf (Print_buffer, "%-38s%s", FIL.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+			//fb_utils::exact_name(FIL.RDB$FUNCTION_NAME);
+			sprintf (Print_buffer, "%38s%s", FIL.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 			odd = !odd;
 		END_FOR
@@ -2067,8 +2071,8 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 				SORTED BY FUN.RDB$FUNCTION_NAME
 
 				first = false;
-				fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
-				sprintf (Print_buffer, "%-38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+				//fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+				sprintf (Print_buffer, "%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
 				ISQL_printf (isqlGlob.Out, Print_buffer);
 				odd = !odd;
 			END_FOR
@@ -2084,8 +2088,8 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 				SORTED BY FUN.RDB$FUNCTION_NAME
 
 				first = false;
-				fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
-				sprintf (Print_buffer, "%-38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+				//fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+				sprintf (Print_buffer, "%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
 				ISQL_printf (isqlGlob.Out, Print_buffer);
 				odd = !odd;
 			END_FOR
