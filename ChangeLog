@@ -1,3 +1,55 @@
+2004-01-31 20:33  dimitr
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Fixed the BLR blob filter.
+
+2004-01-31 20:27  kkuznetsov
+
+	* firebird2/builds/install/arch-specific/: solx86/Makefile.in,
+	solx86gcc/Makefile.in:
+	
+	this is requared files
+
+2004-01-31 20:25  kkuznetsov
+
+	* firebird2/src/lock/lock.cpp:
+	
+	fix comile error here
+
+2004-01-31 17:31  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/super/postinstall.sh.in:
+	
+	One more way to register service - /usr/sbin/update-rc.d Thanks to
+	Andreas Bentele
+
+2004-01-31 16:50  alexpeshkoff
+
+	* firebird2/src/install/misc/: SSchangeRunUser.sh.in,
+	SSrestoreRootRunUser.sh.in, changeDBAPassword.sh.in:
+	
+	Fixed scripts that modify SYSDBA password and RunUser
+
+2004-01-31 14:35  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h, parse.cpp, parse.y:
+	
+	Removed obsolete EXECUTE VARCHAR syntax.
+
+2004-01-31 14:31  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h, parse.cpp, parse.y:
+	
+	Removed obsolete EXECUTE VARCHAR syntax.
+
+2004-01-31 12:26  alexpeshkoff
+
+	* firebird2/src/jrd/: blp.h, gds.cpp:
+	
+	Fixed new blr print problems
+
 2004-01-29 20:55  arnobrinkman
 
 	* firebird2/doc/WhatsNew:
