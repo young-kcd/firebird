@@ -36,20 +36,20 @@ class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
 	TEXT scl_name[2];
 };
 
-const int SCL_read			= 1;		/* Read access */
-const int SCL_write			= 2;		/* Write access */
-const int SCL_delete		= 4;		/* Delete access */
-const int SCL_control		= 8;		/* Control access */
-const int SCL_grant			= 16;		/* Grant privileges */
-const int SCL_exists		= 32;		/* At least ACL exists */
-const int SCL_scanned		= 64;		/* But we did look */
-const int SCL_protect		= 128;		/* Change protection */
-const int SCL_corrupt		= 256;		/* ACL does look too good */
-const int SCL_sql_insert	= 512;
-const int SCL_sql_delete	= 1024;
-const int SCL_sql_update	= 2048;
-const int SCL_sql_references	= 4096;
-const int SCL_execute		= 8192;
+const USHORT SCL_read			= 1;		/* Read access */
+const USHORT SCL_write			= 2;		/* Write access */
+const USHORT SCL_delete			= 4;		/* Delete access */
+const USHORT SCL_control		= 8;		/* Control access */
+const USHORT SCL_grant			= 16;		/* Grant privileges */
+const USHORT SCL_exists			= 32;		/* At least ACL exists */
+const USHORT SCL_scanned		= 64;		/* But we did look */
+const USHORT SCL_protect		= 128;		/* Change protection */
+const USHORT SCL_corrupt		= 256;		/* ACL does look too good */
+const USHORT SCL_sql_insert		= 512;
+const USHORT SCL_sql_delete		= 1024;
+const USHORT SCL_sql_update		= 2048;
+const USHORT SCL_sql_references	= 4096;
+const USHORT SCL_execute		= 8192;
 
 
 

@@ -30,7 +30,7 @@
 /* Indices to be created */
 
 /* Maxinum number of segments in any existing system index */
-#define INI_IDX_MAX_SEGMENTS 2
+const int  INI_IDX_MAX_SEGMENTS		= 2;
 
 struct ini_idx_t {
 	UCHAR ini_idx_index_id;

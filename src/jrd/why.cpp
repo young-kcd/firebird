@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.65 2004-05-06 18:07:00 brodsom Exp $
+$Id: why.cpp,v 1.66 2004-05-07 10:48:05 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -60,7 +60,7 @@ $Id: why.cpp,v 1.65 2004-05-06 18:07:00 brodsom Exp $
 #include "../jrd/msg_encode.h"
 #include "gen/msg_facs.h"
 #include "../jrd/acl.h"
-#include "../jrd/inf.h"
+#include "../jrd/inf_pub.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
 #include "../jrd/fil.h"
@@ -155,11 +155,7 @@ inline bool is_network_error(const ISC_STATUS* vector)
 #define GET_STATUS			{ if (!(status = user_status)) status = local; init_status(status); }
 #define RETURN_SUCCESS			{ subsystem_exit(); CHECK_STATUS_SUCCESS (status); return FB_SUCCESS; }
 
-#ifdef REQUESTER
-#define NO_LOCAL_DSQL
-#endif
-
-#ifdef SUPERCLIENT
+#if defined(REQUESTER) || defined (SUPERCLIENT)
 #define NO_LOCAL_DSQL
 #endif
 
@@ -372,9 +368,9 @@ static SLONG why_enabled = 0;
  *		handler on every API call.
  */
 
-#define FPE_RESET_INIT_ONLY		0x0	/* Don't reset FPE after init */
-#define FPE_RESET_NEXT_API_CALL		0x1	/* Reset FPE on next gds call */
-#define FPE_RESET_ALL_API_CALL		0x2	/* Reset FPE on all gds call */
+static const USHORT FPE_RESET_INIT_ONLY			= 0x0;	/* Don't reset FPE after init */
+static const USHORT FPE_RESET_NEXT_API_CALL		= 0x1;	/* Reset FPE on next gds call */
+static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	/* Reset FPE on all gds call */
 
 #if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
 extern ULONG isc_enter_count;
@@ -382,9 +378,7 @@ static ULONG subsystem_usage = 0;
 static USHORT subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
 #define SUBSYSTEM_USAGE_INCR	subsystem_usage++
 #define SUBSYSTEM_USAGE_DECR	subsystem_usage--
-#endif
-
-#ifndef SUBSYSTEM_USAGE_INCR
+#else
 #define SUBSYSTEM_USAGE_INCR	/* nothing */
 #define SUBSYSTEM_USAGE_DECR	/* nothing */
 #endif
@@ -399,7 +393,7 @@ static TEXT *marker_failures_ptr = marker_failures;
  * save_error_string.
  */
 
-#define MAXERRORSTRINGLENGTH	250
+const int MAXERRORSTRINGLENGTH	= 250;
 static TEXT glbstr1[MAXERRORSTRINGLENGTH];
 static const TEXT glbunknown[10] = "<unknown>";
 
