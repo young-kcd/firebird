@@ -592,6 +592,7 @@ bool_t xdr_opaque(XDR * xdrs, SCHAR * p, u_int len)
  *
  **************************************/
 	SCHAR trash[4];
+	static const SCHAR filler[4] = { 0, 0, 0, 0 };
 
 	const SSHORT l = (4 - len) & 3;
 
@@ -601,7 +602,7 @@ bool_t xdr_opaque(XDR * xdrs, SCHAR * p, u_int len)
 		if (!PUTBYTES(xdrs, p, len))
 			return FALSE;
 		if (l)
-			return PUTBYTES(xdrs, trash, l);
+			return PUTBYTES(xdrs, filler, l);
 		return TRUE;
 
 	case XDR_DECODE:
@@ -667,6 +668,7 @@ bool_t xdr_string(XDR * xdrs,
  *
  **************************************/
 	SCHAR trash[4];
+	static const SCHAR filler[4] = { 0, 0, 0, 0 };
 	ULONG length;
 
 	switch (xdrs->x_op)
@@ -678,7 +680,7 @@ bool_t xdr_string(XDR * xdrs,
 			!PUTBYTES(xdrs, *sp, length))
 			return FALSE;
 		if ((length = (4 - length) & 3) != 0)
-			return PUTBYTES(xdrs, trash, length);
+			return PUTBYTES(xdrs, filler, length);
 		return TRUE;
 
 	case XDR_DECODE:
