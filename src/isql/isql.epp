@@ -3842,16 +3842,24 @@ static processing_state get_statement(TEXT* statement,
 		case SINGLE_QUOTE:
 			switch (state)
 			{
-				case normal: state = in_single_quoted_string; break;
-				case in_single_quoted_string: state = normal; break;
+				case normal:
+					state = in_single_quoted_string;
+					break;
+				case in_single_quoted_string:
+					state = normal;
+					break;
 			}
 			break;
 
 		case DBL_QUOTE:
 			switch (state)
 			{
-				case normal: state = in_double_quoted_string; break;
-				case in_double_quoted_string: state = normal; break;
+				case normal:
+					state = in_double_quoted_string;
+					break;
+				case in_double_quoted_string:
+					state = normal;
+					break;
 			}
 			break;
 
