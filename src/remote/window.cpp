@@ -490,8 +490,6 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 	case IPI_CONNECT_MESSAGE:
 		return IPS_start_thread(lParam);
 #endif
-	case XPI_CONNECT_MESSAGE:
-		return SRVR_xnet_start_thread(lParam);
 
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
