@@ -76,12 +76,15 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/thd_proto.h"
 
-#ifndef REQUESTER
+#if defined(SIG_RESTART) || defined(UNIX) 
 static USHORT inhibit_restart;
+#endif
+#ifndef REQUESTER
 static int process_id;
+#endif
+#ifdef UNIX
 static UCHAR *next_shared_memory;
 #endif
-
 
 /* VMS Specific Stuff */
 
