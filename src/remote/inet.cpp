@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.60 2003-03-12 10:13:58 dimitr Exp $
+$Id: inet.cpp,v 1.61 2003-03-12 11:22:24 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -90,6 +90,7 @@ $Id: inet.cpp,v 1.60 2003-03-12 10:13:58 dimitr Exp $
 
 #if !(defined VMS || defined WIN_NT)
 #include <netdb.h>
+#include <arpa/inet.h>
 #endif
 
 #ifdef DARWIN
