@@ -4955,11 +4955,13 @@ static PORT analyze(TEXT*	file_name,
 }
 
 
-static PORT analyze_service(
-							TEXT * service_name,
+static PORT analyze_service(TEXT * service_name,
 							USHORT * service_length,
 							STATUS * status_vector,
-TEXT * user_string, USHORT uv_flag, SCHAR * dpb, SSHORT dpb_length)
+							TEXT * user_string,
+							USHORT uv_flag,
+							SCHAR * dpb,
+							SSHORT dpb_length)
 {
 /**************************************
  *
@@ -4981,6 +4983,7 @@ TEXT * user_string, USHORT uv_flag, SCHAR * dpb, SSHORT dpb_length)
 
 	service_name[*service_length] = 0;
 	port = NULL;
+	node_name[0] = '\0';
 
 /* Analyze the service name to see if a remote connection is required.  If not,
    quietly (sic) return. */
