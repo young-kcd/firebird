@@ -170,7 +170,7 @@ SOURCE=..\..\..\src\jrd\sdl.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\misc\status.cpp
+SOURCE=..\..\..\src\jrd\status.cpp
 # End Source File
 # Begin Source File
 
