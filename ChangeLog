@@ -1,3 +1,17 @@
+2005-01-18 22:45  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.99):
+	
+	Disable XNET for the embedded server.
+
+2005-01-18 16:04  dimitr
+
+	* firebird2/src/dsql/utld.cpp (1.34):
+	
+	Always zero blr/message memory before usage.  Otherwise a reused
+	message may cause garbage to be copied to XDR which in turn may
+	cause asynchronous exceptions in the asymmetric protocol code.
+
 2005-01-17 16:59  kkuznetsov
 
 	* firebird2/src/utilities/ibmgr/srvrmgr.cpp (1.26):
