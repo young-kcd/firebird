@@ -903,6 +903,9 @@
 				RelativePath="..\..\..\src\jrd\rng_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\rpb_chain.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\rse.h">
 			</File>
 			<File

@@ -137,6 +137,9 @@
 			Name="COMMON"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\common\config\config_file.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp">
 			</File>
 		</Filter>

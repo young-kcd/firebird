@@ -159,6 +159,9 @@
 				RelativePath="..\..\..\src\common\classes\alloc.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\array.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\config\config.h">
 			</File>
 			<File
