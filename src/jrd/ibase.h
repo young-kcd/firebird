@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.97 2004-11-28 01:02:21 robocop Exp $
+$Id: ibase.h,v 1.98 2004-12-04 06:58:47 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -536,8 +536,8 @@ void ISC_EXPORT isc_event_counts(ISC_ULONG*,
 								 const ISC_UCHAR *);
 
 /* 17 May 2001 - isc_expand_dpb is DEPRECATED */
-void ISC_EXPORT_VARARG isc_expand_dpb(ISC_SCHAR**,
-									  short*, ...);
+void FB_API_DEPRECATED ISC_EXPORT_VARARG isc_expand_dpb(ISC_SCHAR**,
+											  			short*, ...);
 
 int ISC_EXPORT isc_modify_dpb(ISC_SCHAR**,
 							  short*,
