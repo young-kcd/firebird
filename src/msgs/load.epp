@@ -22,18 +22,18 @@
 
 DATABASE DB = "msg.fdb";
 
-typedef struct {
+struct stuff {
 	SLONG value;
 	SCHAR *symbol;
 	SCHAR *class;
 	SCHAR *type;
-} STUFF;
+};
 
 #define ITEM(symbol, class, type)	symbol, "symbol", "class", "type",
 
-static STUFF stuff[] = {
+static const stuff a_stuff[] = {
 
-	ITEM(blr_text, BLR, DTYPE)
+		ITEM(blr_text, BLR, DTYPE)
 		ITEM(blr_short, BLR, DTYPE)
 		ITEM(blr_long, BLR, DTYPE)
 		ITEM(blr_quad, BLR, DTYPE)
@@ -496,11 +496,8 @@ static STUFF stuff[] = {
 	0, 0, 0, 0
 };
 
-void main( int argc, char **argv)
+int main( int argc, char **argv)
 {
-	SSHORT sequence;
-	STUFF *item;
-
 	READY;
 	START_TRANSACTION;
 
@@ -508,9 +505,9 @@ void main( int argc, char **argv)
 		ERASE X;
 	END_FOR;
 
-	sequence = 0;
+	SSHORT sequence = 0;
 
-	for (item = stuff; item->symbol; ++item)
+	for (const stuff* item = a_stuff; item->symbol; ++item)
 	STORE X IN SYMBOLS
 		X.SEQUENCE = ++sequence;
 		X.VALUE = item->value;
@@ -521,5 +518,5 @@ void main( int argc, char **argv)
 
 	COMMIT;
 	FINISH;
-	exit(FINI_OK);
+	return FINI_OK;
 }
