@@ -1,3 +1,32 @@
+2002-12-17 20:42  skidder
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Further class library development
+
+2002-12-17 15:58  skidder
+
+	* firebird2/src/: jrd/gdsold.h, jrd/utl.cpp, jrd/utl_proto.h,
+	jrd/why.cpp, qli/command.cpp, qli/dtr.cpp, qli/dtr.h, qli/eval.cpp,
+	qli/exe.cpp, qli/exe.h, qli/exe_proto.h, qli/format.cpp,
+	qli/gener.cpp, qli/lex.cpp, qli/lex_proto.h, qli/meta.epp,
+	qli/meta_proto.h, qli/parse.h, qli/proc.epp, qli/proc_proto.h,
+	qli/show.epp:
+	
+	Make QLI compile after why.c-->why.cpp change
+
+2002-12-17 12:57  eku
+
+	* firebird2/src/qli/: dtr.cpp, eval.cpp:
+	
+	Several little changes to make engine compilable again on POSIX.
+
+2002-12-17 00:54  arnobrinkman
+
+	* firebird2/src/dsql/metd.epp:
+	
+	fix so that win32/msvc6 builds works again
+
 2002-12-16 22:19  skidder
 
 	* firebird2/: builds/posix/Makefile.in.boot.gpre,
