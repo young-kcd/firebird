@@ -31,6 +31,8 @@
         1) Introduced SEQUENCE as a synonym for GENERATOR (as per SQL-99)
         2) Added SQL-99 compliant NEXT VALUE FOR <sequence_name> expression
         3) Implemented REVOKE ADMIN OPTION FROM statement
+      See also:
+        /doc/sql.extentions/README.sequence_generators
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -137,6 +139,8 @@
 
     * SQL improvement
         Allowed PLAN, ROWS and ORDER BY clauses in UPDATE/DELETE statements
+      See also:
+        /doc/sql.extentions/README.select_expressions
       Contributor(s):
       	Oleg Loa <loa at mail.ru>
 
@@ -154,6 +158,8 @@
         Added an equivalence predicate which behaves exactly as equality/inequality, but treats NULL = NULL as TRUE
       Syntax:
         A IS [NOT] DISTINCT FROM B
+      See also:
+        /doc/sql.extentions/README.distinct
       Contributor(s):
       	Oleg Loa <loa at mail.ru>
         Dmitry Yemanov <yemanov at yandex.ru>
@@ -162,6 +168,8 @@
         1) Allowed FIRST/SKIP/ROWS/PLAN and ORDER BY clauses in views
         2) Added CROSS JOIN (A CROSS JOIN B means something like A INNER JOIN B ON 1 = 1 or just FROM A, B)
         3) Allowed UNION in subqueries and INSERT statement
+      See also:
+        /doc/sql.extentions/README.select_expressions
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -263,12 +271,16 @@
         Implemented indices based on arbitrary expressions
       Syntax:
         CREATE [UNIQUE] [ASC[ENDING] | DESC[ENDING]] INDEX <index_name> ON <table_name> ( <value_expression> )
+      See also:
+        /doc/sql.extentions/README.expression_indices
       Contributor(s):
       	Oleg Loa <loa at mail.ru>
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * IIF builtin function
         Added IIF (<search_condition>, <value1>, <value2>) as a shortcut for CASE WHEN <search_condition> THEN <value1> ELSE <value2> END
+      See also:
+        /doc/sql.extentions/README.iif
       Contributor(s):
       	Oleg Loa <loa at mail.ru>
 
@@ -284,6 +296,8 @@
 
     * NULL becomes a syntactical value
         You may now specify A = NULL, B > NULL, etc (all of them evaluate to FALSE)
+      See also:
+        /doc/sql.extentions/README.null_value
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -472,11 +486,15 @@
 
     * Re-worked logic of updatable views
         This solves problems with views that are implicitly updatable, but still have update triggers
+      See also:
+        /doc/sql.extentions/README.view_updates
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Added SQL200X ROWS clause
         New syntax to limit amount of records you want to get
+      See also:
+        /doc/sql.extentions/README.rows
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -488,6 +506,8 @@
 
     * Support for explicit cursor syntax in PSQL
         It is now possible to declare and use multiple cursors in PSQL
+      See also:
+        /doc/sql.extentions/README.cursors
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -529,6 +549,8 @@
         Allowed to specify more possible paths for the engine
       Example:
         PLAN (A ORDER IDX1 INDEX (IDX2, IDX3))
+      See also:
+        /doc/sql.extentions/README.plan
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -540,7 +562,9 @@
         Arno Brinkman <firebird at abvisie.nl>
 
     * New local protocol
-        XNET is now used as default local protocol for Windows and is supported in CS builds
+        XNET is now used as local protocol for Windows and is supported in CS builds
+      See also:
+        /doc/README.xnet
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -557,11 +581,15 @@
 
     * Added LEAVE <label> syntax support
         PSQL loops now may be marked with labels and terminated in Java style
+      See also:
+        /doc/sql.extentions/README.leave_labels
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Improved ROW_COUNT
         Now it's possible to get number of selected rows as well
+      See also:
+        /doc/sql.extentions/README.context_variables
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
