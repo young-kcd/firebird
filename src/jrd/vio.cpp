@@ -37,6 +37,7 @@
  *							 record was updated _not_ under the savepoint and 
  *							 deleted under savepoint. Bug affected all kinds 
  *							 of savepoints (explicit, statement, PSQL, ...)
+ * 2003.03.02 Nickolay Samofatov: Use B+ tree to store undo log
  *
  */
 
