@@ -285,7 +285,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_node, dsql_type_nod);
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	dsql_rel* relation = NULL;
 	dsql_prc* procedure = NULL;
@@ -2981,7 +2981,7 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	PASS1_make_context(request, input->nod_arg[e_blb_relation]);
 	dsql_nod* field = pass1_field(request, input->nod_arg[e_blb_field], false);
@@ -3135,7 +3135,7 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
 	DEV_BLKCHK(sub1, dsql_type_nod);
 	DEV_BLKCHK(collation, dsql_type_str);
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	dsql_nod* node = MAKE_node(nod_cast, e_cast_count);
 	dsql_fld* field = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_fld;
@@ -3570,7 +3570,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	dsql_nod* node = MAKE_node (nod_derived_table, e_derived_table_count);
 	dsql_str* alias = (dsql_str*) input->nod_arg[e_derived_table_alias];
@@ -5081,7 +5081,7 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 	}
 
 	// make up a dummy context to hold the resultant relation.
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 	dsql_ctx* new_context = FB_NEW(*tdsql->tsql_default) 
 		dsql_ctx(*tdsql->tsql_default);
 	new_context->ctx_context = context->ctx_context;
@@ -5193,7 +5193,7 @@ static dsql_ctx* pass1_alias(dsql_req* request, DsqlContextStack& stack, dsql_st
  **/
 static dsql_str* pass1_alias_concat(const dsql_str* input1, const dsql_str* input2)
 {
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	DEV_BLKCHK(input1, dsql_type_str);
 	DEV_BLKCHK(input2, dsql_type_str);
@@ -5274,7 +5274,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(order, dsql_type_nod);
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 // Handle implicit union case first.  Maybe it's not a union 
 
@@ -6042,7 +6042,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(order_list, dsql_type_nod);
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	// set up the rse node for the union.
 	dsql_nod* union_rse = MAKE_node(nod_rse, e_rse_count);
@@ -6285,7 +6285,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 							cast_node = select_item;
 						}
 						else {
-							tsql* tdsql = DSQL_get_thread_data;
+							tsql* tdsql = DSQL_get_thread_data();
 							cast_node = MAKE_node(nod_cast, e_cast_count);
 							dsql_fld* afield = FB_NEW_RPT(*tdsql->tsql_default, 0) dsql_fld;
 							cast_node->nod_arg[e_cast_target] = (dsql_nod*) afield;
@@ -6611,7 +6611,7 @@ static dsql_nod* post_map( dsql_nod* node, dsql_ctx* context)
 	DEV_BLKCHK(node, dsql_type_nod);
 	DEV_BLKCHK(context, dsql_type_ctx);
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 // Check to see if the item has already been posted 
 

@@ -97,7 +97,7 @@ void ALLD_fini()
 
 void ALLD_init()
 {
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	if (!init_flag)
 	{
@@ -112,7 +112,7 @@ void ALLD_init()
 #ifdef NOT_USED_OR_REPLACED
 void DsqlMemoryPool::ALLD_push(BLK object, dsql_lls** stack)
 {
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 	DsqlMemoryPool* pool = tdsql->tsql_default;
 
 	dsql_lls* node = pool->lls_cache.newBlock();

@@ -441,7 +441,7 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 	tsql thd_context;
 	tsql* tdsql;
 
-	DSQL_set_thread_data;
+	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
@@ -466,7 +466,7 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data;
+		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -515,7 +515,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 	tsql* tdsql;
 	ISC_STATUS sing_status;
 
-	DSQL_set_thread_data;
+	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
@@ -615,11 +615,11 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 	catch (const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data;
+		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
-	DSQL_restore_thread_data;
+	DSQL_restore_thread_data();
 	return sing_status;
 }
 
@@ -656,7 +656,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 	tsql thd_context;
 	tsql* tdsql;
 
-	DSQL_set_thread_data;
+	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
@@ -737,14 +737,14 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 			Firebird::stuff_exception(tdsql->tsql_status, ex);
 			status = error();
 			release_request(request, true);
-			DSQL_restore_thread_data;
+			DSQL_restore_thread_data();
 			return status;
 		}
 	}
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data;
+		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -963,7 +963,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 	tsql thd_context;
 	tsql* tdsql;
 
-	DSQL_set_thread_data;
+	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
@@ -1116,15 +1116,15 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 							reinterpret_cast<char*>(buffer));
 			THREAD_ENTER();
 			if (!s) {
-				DSQL_restore_thread_data;
+				DSQL_restore_thread_data();
 				return 0;
 			}
 			else if (s == isc_segment) {
-				DSQL_restore_thread_data;
+				DSQL_restore_thread_data();
 				return 101;
 			}
 			else if (s == isc_segstr_eof) {
-				DSQL_restore_thread_data;
+				DSQL_restore_thread_data();
 				return 100;
 			}
 			else
@@ -1145,7 +1145,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 		if (eof)
 		{
 			if (!*((USHORT *) eof->par_desc.dsc_address)) {
-				DSQL_restore_thread_data;
+				DSQL_restore_thread_data();
 				return 100;
 			}
 		}
@@ -1155,7 +1155,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data;
+		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -1183,7 +1183,7 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 	tsql thd_context;
 	tsql* tdsql;
 
-	DSQL_set_thread_data;
+	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
@@ -1214,7 +1214,7 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data;
+		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -1249,7 +1249,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 	tsql thd_context;
 	tsql* tdsql;
 
-	DSQL_set_thread_data;
+	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
@@ -1295,7 +1295,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data;
+		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -1337,7 +1337,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 	tsql thd_context;
 	tsql* tdsql;
 
-	DSQL_set_thread_data;
+	DSQL_set_thread_data(tdsql, &thd_context);
 
 	try
 	{
@@ -1451,7 +1451,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 			*req_handle = request;
 
-			DSQL_restore_thread_data;
+			DSQL_restore_thread_data();
 
 			return GDS_DSQL_SQL_INFO_CPP(user_status,
 									req_handle,
@@ -1465,14 +1465,14 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 			Firebird::stuff_exception(tdsql->tsql_status, ex);
 			status = error();
 			release_request(request, true);
-			DSQL_restore_thread_data;
+			DSQL_restore_thread_data();
 			return status;
 		}
 	}
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data;
+		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 }
@@ -1499,7 +1499,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 	tsql thd_context;
 	tsql* tdsql;
 
-	DSQL_set_thread_data;
+	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
@@ -1574,7 +1574,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data;
+		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -1609,7 +1609,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 	tsql thd_context;
 	tsql* tdsql;
 
-	DSQL_set_thread_data;
+	DSQL_set_thread_data(tdsql, &thd_context);
 
     try
     {
@@ -1804,7 +1804,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
-		DSQL_restore_thread_data;
+		DSQL_restore_thread_data();
 		return tdsql->tsql_status[1];
 	}
 
@@ -3046,7 +3046,7 @@ static USHORT convert( SLONG number, UCHAR* buffer)
  **/
 static ISC_STATUS error()
 {
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	return tdsql->tsql_status[1];
 }
@@ -3083,7 +3083,7 @@ static void execute_blob(	dsql_req*		request,
 	UCHAR bpb[24];
 	ISC_STATUS s;
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	dsql_blb* blob = request->req_blob;
 	map_in_out(request, blob->blb_open_in_msg, in_blr_length, in_blr,
@@ -3190,7 +3190,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 	ISC_STATUS s;
 	ISC_STATUS_ARRAY local_status;
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	request->req_trans = *trans_handle;
 	ISC_STATUS return_status = FB_SUCCESS;
@@ -3623,7 +3623,7 @@ static USHORT get_plan_info(
 
 	ISC_STATUS s;
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 	memset(explain_buffer, 0, sizeof(explain_buffer));
 	SCHAR* explain_ptr = explain_buffer;
 	SCHAR* buffer_ptr = *out_buffer;
@@ -3739,7 +3739,7 @@ static USHORT get_request_info(
 {
 	ISC_STATUS s;
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 // get the info for the request from the engine 
 
@@ -4633,7 +4633,7 @@ static dsql_req* prepare(
 {
 	ISC_STATUS_ARRAY local_status;
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	MOVE_CLEAR(local_status, sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
 
@@ -4849,7 +4849,7 @@ static dsql_req* prepare(
  **/
 static void punt(void)
 {
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	Firebird::status_exception::raise(tdsql->tsql_status);
 }
@@ -4914,7 +4914,7 @@ static void release_request(dsql_req* request, bool top_level)
 
 	ISC_STATUS_ARRAY status_vector;
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	// If request is parent, orphan the children and
 	// release a portion of their requests
@@ -4992,7 +4992,7 @@ static void release_request(dsql_req* request, bool top_level)
 static ISC_STATUS return_success(void)
 {
 
-	tsql* tdsql = DSQL_get_thread_data;
+	tsql* tdsql = DSQL_get_thread_data();
 
 	ISC_STATUS* p = tdsql->tsql_status;
 	*p++ = isc_arg_gds;
@@ -5003,7 +5003,7 @@ static ISC_STATUS return_success(void)
 		*p = isc_arg_end;
 	}
 
-	DSQL_restore_thread_data;
+	DSQL_restore_thread_data();
 
 	return FB_SUCCESS;
 }

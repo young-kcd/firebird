@@ -611,8 +611,8 @@ public:
 	USHORT		par_index;			//!< Index into SQLDA, if appropriate
 };
 
-
 #include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 
 // DSQL threading declarations
 
@@ -624,9 +624,18 @@ struct tsql
 	ISC_STATUS*		tsql_user_status;
 };
 
+inline tsql* DSQL_get_thread_data() {
+	return (tsql*) THD_get_specific();
+}
+inline void DSQL_set_thread_data(tsql* &tdsql, tsql* thd_context) {
+	tdsql = thd_context;
+	THD_put_specific ((THDD) tdsql);
+	tdsql->tsql_thd_data.thdd_type = THDD_TYPE_TSQL;
+}
+inline void DSQL_restore_thread_data() {
+	THD_restore_specific();
+}
 
-
-#define DSQL_get_thread_data	((tsql*) THD_get_specific())
 /*! \var unsigned DSQL_debug
     \brief Debug level 
     
@@ -640,13 +649,6 @@ struct tsql
     64      Display BLR in dsql/prepare
     > 256   Display yacc parser output level = DSQL_level>>8
 */
-#define DSQL_set_thread_data         {\
-				tdsql = &thd_context;\
-				THD_put_specific ((THDD) tdsql);\
-				tdsql->tsql_thd_data.thdd_type = THDD_TYPE_TSQL;\
-				}
-#define DSQL_restore_thread_data     THD_restore_specific()
-
 
 // macros for error generation
 
