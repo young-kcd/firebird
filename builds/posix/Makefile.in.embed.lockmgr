@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.lockmgr,v 1.3 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.embed.lockmgr,v 1.4 2002-12-09 01:38:13 nmcc Exp $
 #
 ROOT=..
 ObjModuleName=embed.lockmgr
@@ -54,9 +54,9 @@ Dependencies = $(AllObjects:.o=.d)
 all : lock_mgr
 
 
-lock_mgr : $(BIN)/gds_lock_mgr
+lock_mgr : $(BIN)/fb_lock_mgr
 
-$(BIN)/gds_lock_mgr: $(LOCKMGR_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
+$(BIN)/fb_lock_mgr: $(LOCKMGR_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
 	$(CXX) $(LINK_OPTS) $(LOCKMGR_Objects) -o $@ -L $(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 

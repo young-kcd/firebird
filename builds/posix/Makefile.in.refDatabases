@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.8 2002-10-14 09:21:11 eku Exp $
+#  $Id: Makefile.in.refDatabases,v 1.9 2002-12-09 01:38:13 nmcc Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -54,7 +54,7 @@ export INTERBASE
 .PHONY: empty_db refDatabases
 
 # This is where you are going to have trouble if there is one, at creating 
-# the first empty database.  Things to watch out for, gds_lock_mgr not being
+# the first empty database.  Things to watch out for, fb_lock_mgr not being
 # able to be started, $INTERBASE variable pointing in the wrong place, 
 # shared library path LD_LIBRARY_PATH not pointing to new stuff (mind you this
 # point it should be creating using create_db statically linked). 
