@@ -1098,7 +1098,7 @@ void MAKE_desc_from_field( DSC * desc, DSQL_FLD field)
 
     @param desc
     @param node
-    @param expression_name
+	@param expression_name
 
  **/
 void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
@@ -1151,7 +1151,7 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 	bool all_blob = true, any_blob = false, any_text_blob = false;
 
 	// Walk through arguments list.
-	DSQL_NOD *arg, *end, tnod;
+	DSQL_NOD *arg, *end, tnod, err_node = NULL;
 	DSC	desc1;
 	arg = node->nod_arg;
 	for (end = arg + node->nod_count; arg < end; arg++) {
@@ -1260,12 +1260,12 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 			if (desc1.dsc_dtype == dtype_sql_date) {
 				all_time = false;
 				all_timestamp = false;
-			}
-			if (desc1.dsc_dtype == dtype_sql_time) { 
+			} 
+			else if (desc1.dsc_dtype == dtype_sql_time) { 
 				all_date = false;
 				all_timestamp = false;
 			}
-			if (desc1.dsc_dtype == dtype_timestamp) {
+			else if (desc1.dsc_dtype == dtype_timestamp) {
 				all_date = false;
 				all_time = false;
 			}
@@ -1277,6 +1277,12 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 		}
 
 		if (desc1.dsc_dtype == dtype_blob) {
+			// When there was already another datatype raise immediately exception
+			if (!all_blob || !all_same_sub_type) {
+				err_node = tnod;
+				break;
+			}
+
 			any_blob = true;
 			if (desc1.dsc_sub_type = 1) {
 				// TEXT BLOB
@@ -1299,6 +1305,17 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 		// Dynamic SQL Error SQL error code = -804 Data type unknown
 	}
 
+	if (err_node) {
+		//TEXT error_info[45];
+		//sprintf(error_info, "%s at line %d, column %d.", expression_name,
+		//	(int) err_node->nod_line, (int) err_node->nod_column);
+		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+			gds_arg_gds, gds_dsql_datatypes_not_comparable,
+			gds_arg_string, "",
+			gds_arg_string, expression_name, 0);
+		// "Datatypes %sare not comparable in expression %s"
+	}
+
 	desc->dsc_flags = DSC_nullable;
 	// If all of the arguments are from type text use a text type.
 	// Firebird behaves a little bit different than standard here, because
@@ -1318,9 +1335,8 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 		desc->dsc_scale = 0;
 		return;
 	}
-
-	// If all of the arguments are a numeric datatype.
-	if (all_numeric) {
+	else if (all_numeric) {
+		// If all of the arguments are a numeric datatype.
 		if (any_approx) {
 			if (max_length <= type_lengths[dtype_real]) {
 				desc->dsc_dtype = dtype_real;
@@ -1341,18 +1357,16 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 		}
 		return;
 	}
-
-	// If all of the arguments are the same datetime datattype.
-	if (all_date || all_time || all_timestamp) {
+	else if (all_date || all_time || all_timestamp) {
+		// If all of the arguments are the same datetime datattype.
 		desc->dsc_dtype  = max_dtype;
 		desc->dsc_length = max_dtype_length;
 		desc->dsc_scale = 0;
 		desc->dsc_sub_type = 0;
 		return;
 	}
-
-	// If all of the arguments are the same BLOB datattype.
-	if (all_blob && all_same_sub_type) {
+	else if (all_blob && all_same_sub_type) {
+		// If all of the arguments are the same BLOB datattype.
 		desc->dsc_dtype  = max_dtype;
 		desc->dsc_sub_type = max_sub_type;
 		if (max_sub_type = 1) {
@@ -1365,15 +1379,16 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 		desc->dsc_length = max_length;
 		return;
 	}
-
-	// We couldn't do anything with this list, mostly because the
-	// datatypes aren't comparable.
-	// Let's try to give a usefull error message.
-	ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-		gds_arg_gds, gds_dsql_datatypes_not_comparable,
-		gds_arg_string, "",
-		gds_arg_string, expression_name, 0);
-	// "Datatypes %sare not comparable in expression %s"
+	else {
+		// We couldn't do anything with this list, mostly because the
+		// datatypes aren't comparable.
+		// Let's try to give a usefull error message.
+		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
+			gds_arg_gds, gds_dsql_datatypes_not_comparable,
+			gds_arg_string, "",
+			gds_arg_string, expression_name, 0);
+		// "Datatypes %sare not comparable in expression %s"
+	}
 }
 
 
