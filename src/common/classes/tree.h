@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.38 2004-07-22 07:17:58 robocop Exp $
+ *  $Id: tree.h,v 1.39 2004-07-29 17:44:03 skidder Exp $
  *
  */
 
@@ -333,12 +333,12 @@ public:
 			case locLessEqual:
 				if (found) return true;
 			case locLess:
-				curPos--;
-				if (curPos < 0) {
+				if (curPos == 0) {
 					curr = curr->prev;
 					if (!curr) return false;
 					curPos = curr->getCount() - 1;
-				}
+				} else
+				  curPos--;
 				return true;
 			case locGreat:
 				if (found) curPos++;
@@ -369,8 +369,11 @@ public:
 			for (int i = tree->level; i > 0; i--)
 				items = (*(NodeList *)items)[((NodeList *)items)->getCount() - 1];
 			curr = (ItemList *)items;
-			curPos = ((ItemList *)items)->getCount() - 1;
-			return curPos >= 0;
+			if (((ItemList *)items)->getCount()) {
+				curPos = ((ItemList *)items)->getCount() - 1;
+				return true;
+			}			
+			return false;
 		}
 		// Accessor position must be establised via successful call to getFirst(), 
 		// getLast() or locate() before you can call this method
