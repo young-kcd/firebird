@@ -1,11 +1,32 @@
 /*
- *  mod_loader.h
+ *	PROGRAM:		JRD Module Loader
+ *	MODULE:			mod_loader.h
+ *	DESCRIPTION:	Abstract class for loadable modules.
  *
- * Original Author: John Bellardo
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by John Bellardo
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2002 John Bellardo <bellardo at cs.ucsd.edu>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
+ *
  */
-
-#ifndef MOD_LOADER_H
-#define MOD_LOADER_H
+ 
+#ifndef JRD_OS_MOD_LOADER_H
+#define JRD_OS_MOD_LOADER_H
 
 #include "fb_string.h"
 
@@ -78,5 +99,5 @@ public:
 	static bool isLoadableModule(const Firebird::PathName&);
 };
 
-#endif
+#endif // JRD_OS_MOD_LOADER_H
 
