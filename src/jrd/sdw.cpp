@@ -891,7 +891,7 @@ void SDW_start(
  *
  **************************************/
 	SCHAR expanded_name[MAXPATHLEN];
-	volatile USHORT header_fetched = 0;
+	USHORT header_fetched = 0;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;

@@ -509,9 +509,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 	}	// try
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		// Note that the following cast to BLK not only changes
-		// the type, it also casts away volatile!
-		DYN_rundown_request((BLK)request, drq_l_prot_mask);
+		DYN_rundown_request(request, drq_l_prot_mask);
 		return false;
 	}
 	return true;
