@@ -758,7 +758,7 @@ but throws away the const to make the callee happy, knowing that the callee
 indeed treats vector as it was a pointer with the const prefix. */
 
 /**
-fb_interpret
+isc_interpret
 
 	@brief Buffer overrun-aware version of the old gds__interprete
 	without the double underscore and without the misspelling.
@@ -772,7 +772,7 @@ fb_interpret
 	    that was filled by an API call that reported an error. The function
 	    positions the pointer on the next element of the vector.
 **/
-SLONG API_ROUTINE fb_interpret(char* const s, int bufsize, const ISC_STATUS** const vector)
+SLONG API_ROUTINE isc_interpret(char* s, int bufsize, const ISC_STATUS** vector)
 {
 	return safe_interpret(s, bufsize, vector);
 }
@@ -783,7 +783,7 @@ that, unlike int* that can be assigned to const int* transparently to the caller
 int** CANNOT be assigned to const int**, so applications would have to be
 fixed to provide such const int**; while it may be more correct from the
 semantic POV, we can't estimate how much work it's for app developers.
-Therefore, we go back to the old signature and provide fb_interpret
+Therefore, we go back to the old signature and provide isc_interpret
 for compliance, to be used inside the engine, too. September, 2003. */
 
 SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)

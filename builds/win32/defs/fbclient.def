@@ -236,7 +236,7 @@ EXPORTS
 	; Error-handling functions
 
 	isc_interprete	@141
-	fb_interpret
+	isc_interpret
 	isc_print_sqlerror	@150
 	isc_print_status	@151
 	isc_sqlcode	@165

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.89 2004-10-03 04:48:54 robocop Exp $
+$Id: ibase.h,v 1.90 2004-10-25 03:52:29 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -53,14 +53,21 @@ $Id: ibase.h,v 1.89 2004-10-03 04:48:54 robocop Exp $
 
 #define ISC_FAR
 
+#if _MSC_VER >= 1300
+#define FB_API_DEPRECATED __declspec(deprecated)
+#elif __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 2)
+#define FB_API_DEPRECATED __attribute__((__deprecated__))
+#else
+#define FB_API_DEPRECATED
+#endif
+
 /* 
  * It is difficult to detect 64-bit long from the redistributable header
  * we do not care of 16-bit platforms anymore thus we may use plain "int"
  * which is 32-bit on all platforms we support
  *
- * Temporarly restrict new definition until ULONG clash with Windows
- * type is solved. Win64 port is not possible before that point.
- * Cannot use SIZEOF_LONG define here because we are in a public header
+ * We'll move to this definition in future API releases.
+ *
  */
 
 #if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
@@ -559,13 +566,13 @@ ISC_STATUS ISC_EXPORT isc_get_slice(ISC_STATUS*,
 									ISC_LONG*);
 
 /* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
-ISC_LONG ISC_EXPORT isc_interprete(ISC_SCHAR*,
+ISC_LONG ISC_EXPORT FB_API_DEPRECATED isc_interprete(ISC_SCHAR*,
 									 ISC_STATUS**);
 									 
 /* This const params version used in the engine and other places. */
-ISC_LONG ISC_EXPORT fb_interpret(ISC_SCHAR* const,
+ISC_LONG ISC_EXPORT isc_interpret(ISC_SCHAR*,
 								 int,
-								 const ISC_STATUS** const);
+								 const ISC_STATUS**);
 									 
 ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS*,
 									isc_db_handle*,

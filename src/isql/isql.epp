@@ -928,14 +928,14 @@ void ISQL_errmsg(const ISC_STATUS* status)
 						(TEXT*)(IPTR)isc_sqlcode(status), NULL, NULL, NULL, NULL);
 		TRANSLATE_CP;
 		STDERROUT(errbuf, 1);
-		if (fb_interpret(errbuf, sizeof(errbuf), &vec))
+		if (isc_interpret(errbuf, sizeof(errbuf), &vec))
 		{
 			TRANSLATE_CP;
 			STDERROUT(errbuf, 1);
 
 			// Continuation of error
 			errbuf[0] = '-';
-			while (fb_interpret(errbuf + 1, sizeof(errbuf) - 1, &vec)) {
+			while (isc_interpret(errbuf + 1, sizeof(errbuf) - 1, &vec)) {
 				TRANSLATE_CP;
 				STDERROUT(errbuf, 1);
 			}
@@ -973,14 +973,14 @@ void ISQL_warning(ISC_STATUS* status)
 			return;
 		}
 		TEXT buf[MSG_LENGTH];
-		if (fb_interpret(buf, sizeof(buf), &vec))
+		if (isc_interpret(buf, sizeof(buf), &vec))
 		{
 			TRANSLATE_CP;
 			STDERROUT(buf, 1);
 
 			// Continuation of warning
 			buf[0] = '-';
-			while (fb_interpret(buf + 1, sizeof(buf) - 1, &vec)) {
+			while (isc_interpret(buf + 1, sizeof(buf) - 1, &vec)) {
 				TRANSLATE_CP;
 				STDERROUT(buf, 1);
 			}

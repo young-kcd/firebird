@@ -4171,7 +4171,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 			continue;
 		}
 		const USHORT l = p < bufferEnd ?
-			(USHORT) fb_interpret(p, bufferEnd - p, &status_vector) : 0;
+			(USHORT) isc_interpret(p, bufferEnd - p, &status_vector) : 0;
 		if (l == 0)
 			break;
 

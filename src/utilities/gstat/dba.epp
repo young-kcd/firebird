@@ -902,11 +902,11 @@ int CLIB_ROUTINE main(int argc, char** argv)
 #endif
 			const ISC_STATUS* vector = status_vector;
 			SCHAR s[1024];
-			if (fb_interpret(s, sizeof(s), &vector))
+			if (isc_interpret(s, sizeof(s), &vector))
 			{
 				FPRINTF(tddba->sw_outfile, "%s\n", s);
 				s[0] = '-';
-				while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
+				while (isc_interpret(s + 1, sizeof(s) - 1, &vector)) {
 					FPRINTF(tddba->sw_outfile, "%s\n", s);
 				}
 			}

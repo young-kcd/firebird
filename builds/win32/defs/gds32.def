@@ -148,7 +148,7 @@ EXPORTS
     isc_get_segment=fbclient.isc_get_segment @139
     isc_get_slice=fbclient.isc_get_slice @140
     isc_interprete=fbclient.isc_interprete @141
-    fb_interpret=fbclient.fb_interpret
+    isc_interpret=fbclient.isc_interpret
     gds__log_status=fbclient.gds__log_status @142
     isc_open=fbclient.isc_open @143
     isc_open_blob=fbclient.isc_open_blob @144
