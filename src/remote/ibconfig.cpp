@@ -49,6 +49,8 @@
 
 #include "../remote/ibsvrhlp.h"
 
+#include "../common/config/config.h"
+
 // Symbolic constant definitions
 #define PASSWORD_LEN            33	// MAXIMUM PASSWORD LENGTH DEFINITION
 #define TEMP_BUFLEN             33
@@ -375,8 +377,12 @@ BOOL ReadIBSettings(HWND hDlg)
 					break;
 				}
 			}
-			bSuccess = TRUE;
 		}
+		else {
+			lMapSize = Config::getIpcMapSize();
+			lCachePages = Config::getDefaultDbCachePages();
+		}
+		bSuccess = TRUE;
 	}
 
 // Empty the Map Size Combo Box

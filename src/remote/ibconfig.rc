@@ -27,9 +27,10 @@ FONT 8, "MS Sans Serif"
  EDITTEXT IDC_DBPAGES, 137, 84, 47, 12, ES_RIGHT | WS_BORDER | WS_TABSTOP
  LTEXT "&Client map size (bytes):", IDC_MAPTEXT, 22, 107, 77, 12
  COMBOBOX IDC_MAPSIZE, 126, 106, 58, 40, CBS_DROPDOWNLIST | CBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
- PUSHBUTTON "&Modify...", IDC_MODRES, 133, 132, 51, 13
+ //PUSHBUTTON "&Modify...", IDC_MODRES, 133, 132, 51, 13
  ICON IDI_CAUTION, IDC_CAUTION_ICON, 9, 17, 18, 20
- LTEXT "The following represent the Firebird Server settings. Changes to these settings can adversely affect server performance and can be adjusted by System Database Administrators only.", IDC_DEFAULT_TEXT, 35, 14, 164, 32
+ //LTEXT "The following represent the Firebird Server settings. Changes to these settings can adversely affect server performance and can be adjusted by System Database Administrators only.", IDC_DEFAULT_TEXT, 35, 14, 164, 32
+ LTEXT "The following represent the Firebird Server settings. You can change them by manual modification of the Firebird configuration file (firebird.conf).", IDC_DEFAULT_TEXT, 35, 14, 164, 32
  GROUPBOX "Firebird Settings", IDC_GROUPBOX1, 9, 63, 195, 100, BS_GROUPBOX
 }
 
@@ -45,7 +46,7 @@ FONT 8, "MS Sans Serif"
  GROUPBOX "Process Priority Class", IDC_GROUPBOX2, 21, 118, 96, 32, BS_GROUPBOX
  CONTROL "N&ormal", IDC_PRIORITYNORM, "BUTTON", BS_AUTORADIOBUTTON | WS_TABSTOP, 28, 132, 37, 11
  CONTROL "&High", IDC_PRIORITYHIGH, "BUTTON", BS_AUTORADIOBUTTON | WS_TABSTOP, 75, 133, 37, 11
- PUSHBUTTON "&Modify...", IDC_MODRES, 136, 137, 51, 13
+ //PUSHBUTTON "&Modify...", IDC_MODRES, 136, 137, 51, 13
  ICON IDI_CAUTION, IDC_CAUTION_ICON, 9, 17, 18, 20
  GROUPBOX "Advanced Firebird Settings", IDC_GROUPBOX1, 9, 63, 195, 100, BS_GROUPBOX
  LTEXT "The following represent the Advanced Server settings. Changes to these settings can adversely affect system performance and can be adjusted by System Database Administrators only.", IDC_DEFAULT_TEXT, 35, 14, 164, 32
