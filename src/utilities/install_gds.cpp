@@ -150,6 +150,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				case FB_GDS32_COPY_REQUIRES_REBOOT :
 					ib_printf("Firebird GDS32.DLL has been scheduled for "
 						"update at the next system reboot.\n");
+					break;
 				case FB_SUCCESS :
 					ib_printf("The compatibility layer GDS32.DLL has been copied "
 						"to the System directory.\n");
@@ -159,6 +160,26 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 		case COMMAND_REMOVE:
 			status = GDSCLIENT_remove(directory, gds_error);
+			switch (status)
+			{
+				case FB_GDS32_NOT_FOUND :
+					ib_printf("GDS32.DLL was not found in the System directory.\n");
+					break;
+				case FB_CANNOT_REMOVE_ALIEN_GDS32 :
+					ib_printf("The installed GDS32.DLL appears to be from an "
+						"unsupported version.\n");
+					ib_printf("It probably belongs to another version of "
+						"Firebird or InterBase(R).\n");
+					break;
+				case FB_GDS32_PROBABLY_IN_USE :
+					ib_printf("The GDS32.DLL can't be removed. It is probably "
+						"currently in use.\n");
+					break;
+				case FB_SUCCESS :
+					ib_printf("The GDS32.DLL has been removed from the "
+						"System directory.\n");
+					break;
+			}
 			break;
 	}
 

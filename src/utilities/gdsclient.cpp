@@ -32,6 +32,9 @@
 #include "../utilities/install_nt.h"
 #include "../utilities/gdsclient_proto.h"
 
+#define GDSVER_MAJOR	6
+#define GDSVER_MINOR	3
+
 static USHORT PatchVersion(const TEXT* gds32, WORD major, WORD minor,
 	USHORT(*err_handler)(ULONG, const TEXT *));
 
@@ -79,7 +82,7 @@ USHORT GDSCLIENT_install(const TEXT * rootdir, bool sw_force,
 	}
 	
 	// Patch _GDS32.DLL File Version to 6.3.?.?.
-	USHORT status = PatchVersion(workfile, 6, 3, err_handler);
+	USHORT status = PatchVersion(workfile, GDSVER_MAJOR, GDSVER_MINOR, err_handler);
 	if (status != FB_SUCCESS)
 		return status;
 
@@ -200,7 +203,61 @@ USHORT GDSCLIENT_remove(const TEXT * rootdir,
  *
  **************************************/
 
-	return (*err_handler) (0, "Not yet implemented");
+	// Get Windows System Directory
+	TEXT sysdir[MAXPATHLEN];
+	int len = GetSystemDirectory(sysdir, sizeof(sysdir));
+	if (len == 0)
+		return (*err_handler) (GetLastError(), "GetSystemDirectory()");
+
+	TEXT gds32[MAXPATHLEN];
+	lstrcpy(gds32, sysdir);
+	lstrcat(gds32, "\\gds32.dll");
+	
+	DWORD dwUnused;
+	DWORD rsize = GetFileVersionInfoSize(gds32, &dwUnused);
+	if (rsize == 0)
+	{
+		ULONG werr = GetLastError();
+		if (werr == ERROR_RESOURCE_DATA_NOT_FOUND)
+			return FB_GDS32_NOT_FOUND;
+		else
+			return (*err_handler) (GetLastError(), "GetFileVersionInfoSize()");
+	}
+
+	BYTE* hver = new BYTE[rsize];
+	if (! GetFileVersionInfo(gds32, 0, rsize, hver))
+	{
+		ULONG werr = GetLastError();
+		delete [] hver;
+		return (*err_handler) (werr, "GetFileVersionInfo()");
+	}
+
+	VS_FIXEDFILEINFO* ffi;
+	UINT uiUnused;
+	if (! VerQueryValue(hver, "\\", (void**)&ffi, &uiUnused))
+	{
+		ULONG werr = GetLastError();
+		delete [] hver;
+		return (*err_handler) (werr, "VerQueryValue()");
+	}
+
+	if ((ffi->dwFileVersionMS & 0xffff0000) != (GDSVER_MAJOR << 16) ||
+		(ffi->dwFileVersionMS & 0x0000ffff) != GDSVER_MINOR ||
+		(ffi->dwProductVersionMS & 0xffff0000) != (GDSVER_MAJOR << 16) ||
+		(ffi->dwProductVersionMS & 0x0000ffff) != GDSVER_MINOR)
+	{
+		delete [] hver;
+		return FB_CANNOT_REMOVE_ALIEN_GDS32;
+	}
+
+	delete [] hver;
+	
+	// Identified the GDS32.DLL as _most probably_ our specific version.
+	// Let's attempt removing it.
+	if (! DeleteFile(gds32))
+		return FB_GDS32_PROBABLY_IN_USE;
+	
+	return FB_SUCCESS;
 }
 
 static USHORT PatchVersion(const TEXT* gds32, WORD major, WORD minor,
@@ -221,66 +278,40 @@ static USHORT PatchVersion(const TEXT* gds32, WORD major, WORD minor,
  *
  **************************************/
 
-	HMODULE hmod = LoadLibraryEx(gds32, 0, LOAD_LIBRARY_AS_DATAFILE);
-	if (hmod == 0)
-	{
-		return (*err_handler) (GetLastError(),
-			"LoadLibraryEx(WinSysDir\\_gds32.dll)");
-	}
-
-	HRSRC hres = FindResource(hmod, MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
-	if (hres == 0)
-	{
-		ULONG werr = GetLastError();
-		FreeLibrary(hmod);
-		return (*err_handler) (werr, "FindResource()");
-	}
-
-	DWORD rsize = SizeofResource(hmod, hres);
+	DWORD dwUnused;
+	DWORD rsize = GetFileVersionInfoSize(gds32, &dwUnused);
 	if (rsize == 0)
+		return (*err_handler) (GetLastError(), "GetFileVersionInfoSize()");
+
+	BYTE* hver = new BYTE[rsize];
+	if (! GetFileVersionInfo(gds32, 0, rsize, hver))
 	{
 		ULONG werr = GetLastError();
-		FreeLibrary(hmod);
-		return (*err_handler) (werr, "SizeOfResource()");
+		delete [] hver;
+		return (*err_handler) (werr, "GetFileVersionInfo()");
 	}
 
-	HGLOBAL hload = LoadResource(hmod, hres);
-	if (hload == 0)
+	VS_FIXEDFILEINFO* ffi;
+	UINT uiUnused;
+	if (! VerQueryValue(hver, "\\", (void**)&ffi, &uiUnused))
 	{
 		ULONG werr = GetLastError();
-		FreeLibrary(hmod);
-		return (*err_handler) (werr, "LoadResource()");
+		delete [] hver;
+		return (*err_handler) (werr, "VerQueryValue()");
 	}
-
-	void* hlock = LockResource(hload);
-	if (hlock == 0)
-	{
-		ULONG werr = GetLastError();
-		FreeLibrary(hmod);
-		return (*err_handler) (werr, "LockResource()");
-	}
-
-	// The above memory pointed to by hlock is write-protected.
-	// Get a writable copy of the resource block.
-	char* hver = new char[rsize];
-	memcpy(hver, hlock, rsize);
-	FreeResource(hload);
-	FreeLibrary(hmod);
-	
-	VS_FIXEDFILEINFO* ffi = (VS_FIXEDFILEINFO*)(hver+40);
 
 	ffi->dwFileVersionMS =		(major << 16) | minor;
 	ffi->dwProductVersionMS =	(major << 16) | minor;
 
-	/*	
+	/*
 	ib_printf("Signature: %8.8x\n", ffi->dwSignature);
 	ib_printf("FileVersionMS : %8.8x\n", ffi->dwFileVersionMS);
 	ib_printf("FileVersionLS : %8.8x\n", ffi->dwFileVersionLS);
 	ib_printf("ProductVersionMS : %8.8x\n", ffi->dwProductVersionMS);
 	ib_printf("ProductVersionLS : %8.8x\n", ffi->dwProductVersionLS);
 	*/
-
-	HANDLE hupd = BeginUpdateResource(gds32, TRUE);
+	
+	HANDLE hupd = BeginUpdateResource(gds32, FALSE);
 	if (hupd == 0)
 	{
 		ULONG werr = GetLastError();

@@ -30,4 +30,7 @@ extern USHORT GDSCLIENT_install(const TEXT * rootdirectory, bool sw_force,
 extern USHORT GDSCLIENT_remove(const TEXT * rootdirectory,
 	USHORT(*err_handler)(ULONG, const TEXT *));
 
+extern USHORT GDSCLIENT_query(const TEXT * rootdirectory,
+	USHORT(*err_handler)(ULONG, const TEXT *));
+
 #endif /* _UTILITIES_GDSCLIENT_PROTO_H_ */
