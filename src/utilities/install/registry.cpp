@@ -35,6 +35,7 @@
 #include "../utilities/install/regis_proto.h"
 #include "../utilities/install/registry.h"
 
+static void cleanup_key(HKEY, TEXT *);
 static USHORT remove_subkeys(HKEY, bool, USHORT(*)(SLONG, TEXT *, HKEY));
 
 USHORT REGISTRY_install(HKEY hkey_rootnode,
@@ -47,7 +48,7 @@ USHORT REGISTRY_install(HKEY hkey_rootnode,
  **************************************
  *
  * Functional description
- *	Install InterBase in the registry.
+ *	Install Firebird in the registry.
  *
  **************************************/
 	HKEY hkey_instances;
@@ -82,7 +83,11 @@ USHORT REGISTRY_install(HKEY hkey_rootnode,
 		// Removes the "Instances" key if we just created it.
 		// Else, keep it, because we don't want to trash other instances.
 		if (disp == REG_CREATED_NEW_KEY)
+		{
 			RegDeleteKey(hkey_rootnode, REG_KEY_ROOT_INSTANCES);
+			cleanup_key(hkey_rootnode, REG_KEY_ROOT_PRODUCT);
+			cleanup_key(hkey_rootnode, REG_KEY_ROOT_COMPANY);
+		}
 
 		return FB_FAILURE;
 	}
@@ -101,26 +106,23 @@ USHORT REGISTRY_remove(HKEY hkey_rootnode,
  **************************************
  *
  * Functional description
- *	Remove InterBase from the registry.
+ *	Remove Firebird from the registry.
  *
  **************************************/
 	HKEY hkey_instances;
 	SLONG status;
-	DWORD subkeys_count, values_count;
 
-	if ((status = RegOpenKeyEx(hkey_rootnode,
-			REG_KEY_ROOT_INSTANCES,
-			0,
-			KEY_READ | KEY_WRITE,
-			&hkey_instances)) != ERROR_SUCCESS)
+	if ((status = RegOpenKeyEx(hkey_rootnode, REG_KEY_ROOT_INSTANCES, 0,
+		KEY_READ | KEY_WRITE, &hkey_instances)) != ERROR_SUCCESS)
 	{
 		if (silent_flag)
 			return FB_FAILURE;
 		return (*err_handler) (status, "RegOpenKeyEx", NULL);
 	}
 
+	// Remove the DEFAULT_INSTANCE value
 	if ((status = RegDeleteValue(hkey_instances, FB_DEFAULT_INSTANCE))
-			!= ERROR_SUCCESS)
+		!= ERROR_SUCCESS)
 	{
 		RegCloseKey(hkey_instances);
 		if (silent_flag)
@@ -128,19 +130,46 @@ USHORT REGISTRY_remove(HKEY hkey_rootnode,
 		return (*err_handler) (status, "RegDeleteValue", NULL);
 	}
 
-	if (RegQueryInfoKey(hkey_instances, NULL, 0, 0,
+	RegCloseKey(hkey_instances);
+	cleanup_key(hkey_rootnode, REG_KEY_ROOT_INSTANCES);
+	cleanup_key(hkey_rootnode, REG_KEY_ROOT_PRODUCT);
+	cleanup_key(hkey_rootnode, REG_KEY_ROOT_COMPANY);
+
+	return FB_SUCCESS;
+}
+
+static void cleanup_key(HKEY hkey_rootnode, TEXT * key)
+{
+/**************************************
+ *
+ * c l e a n u p _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Remove a key, if found unused (no subkeys and no values).
+ *	This function is silent.
+ *
+ **************************************/
+
+	HKEY hkey;
+	DWORD subkeys_count, values_count;
+	
+	if (RegOpenKeyEx(hkey_rootnode, key, 0,
+			KEY_READ | KEY_WRITE, &hkey) == ERROR_SUCCESS)
+	{
+		if (RegQueryInfoKey(hkey, NULL, 0, 0,
 			&subkeys_count, NULL, NULL,
 			&values_count, 0, 0, NULL, NULL) == ERROR_SUCCESS &&
 				subkeys_count == 0 && values_count == 0)
-	{
-		// Let's remove the instances key itself as we see it is now empty.
-		RegCloseKey(hkey_instances);
-		RegDeleteKey(hkey_rootnode, REG_KEY_ROOT_INSTANCES);
+		{
+			RegCloseKey(hkey);
+			RegDeleteKey(hkey_rootnode, key);
+		}
+		else
+			RegCloseKey(hkey);
 	}
-	else
-		RegCloseKey(hkey_instances);
-
-	return FB_SUCCESS;
+	return;
 }
 
 #ifdef THIS_CODE_IS_TEMPORARILY_NOT_USED_ANYMORE
@@ -156,7 +185,7 @@ static USHORT remove_subkeys(
  **************************************
  *
  * Functional description
- *	Remove all sub-keys of an InterBase key from the registry.
+ *	Remove all sub-keys of an Firebird key from the registry.
  *
  **************************************/
 	TEXT *sub_key, buffer[MAXPATHLEN], *p;
