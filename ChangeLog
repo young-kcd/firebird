@@ -1,3 +1,73 @@
+2002-11-04 22:57  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Give ASC a higher priority against same selectivity indices.
+
+2002-11-04 17:37  tamlin
+
+	* firebird2/builds/win32/msvc6/README_MSVC6.txt:
+	
+	no message
+
+2002-11-04 17:35  tamlin
+
+	* firebird2/builds/win32/msvc6/isql.dsp:
+	
+	Fix isql debug build line input
+
+2002-11-04 16:12  skidder
+
+	* firebird2/src/jrd/: dfw.epp, dyn_del.epp, met.epp, met_proto.h,
+	par.cpp, vio.cpp:
+	
+	Stored procedures are no longer recompiled before deletion
+
+2002-11-04 14:57  eku
+
+	* firebird2/: configure.in, src/burp/canonical.cpp,
+	src/csv/csi.cpp, src/csv/csv.cpp, src/dudley/hsh.cpp,
+	src/include/gen/autoconfig_msvc.h, src/jrd/common.h,
+	src/jrd/iberr.cpp, src/make.new/config/config.h.in,
+	src/qli/hsh.cpp, src/remote/ibconfig.cpp, src/remote/interface.cpp,
+	src/utilities/srvrmgr.cpp:
+	
+	More status vector cleanups (ISC_STATUS_LENGTH).  Autoconf checks
+	for xdr_hyper.
+
+2002-11-04 12:18  eku
+
+	* firebird2/src/: csv/csi.cpp, intl/dtest.c, jrd/builtin.cpp,
+	jrd/divorce.cpp, jrd/event.cpp, jrd/isc.cpp, jrd/isc_cray.cpp,
+	jrd/isc_ipc.cpp, jrd/log.cpp, jrd/svc.cpp, lock/lock.cpp,
+	remote/inet.cpp, utilities/srvrmgr.cpp, wal/wal.cpp:
+	
+	Arrays that hold filenames must be at least MAXPATHLEN long.
+
+2002-11-04 10:04  eku
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	Autoconf cleanup: signal.h and sys/signal.h
+
+2002-11-04 10:03  eku
+
+	* firebird2/src/gpre/hsh.cpp:
+	
+	Fixed compiler warning.
+
+2002-11-04 09:48  dimitr
+
+	* firebird2/src/remote/: remote_def.h, srvr_w32.cpp:
+	
+	Cleanup.
+
+2002-11-04 09:07  eku
+
+	* firebird2/configure.in:
+	
+	Fixed C&P error in help text.
+
 2002-11-03 23:27  tamlin
 
 	* firebird2/src/remote/interface.cpp:
