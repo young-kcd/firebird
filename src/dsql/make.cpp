@@ -1165,6 +1165,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 		   However, a parameter can appear as part of an expression.
 		   As MAKE_desc is used for both determination of parameter
 		   types and for expression type checking, we just continue. */
+		if (node->nod_desc.dsc_dtype)
+		{
+			*desc = node->nod_desc;
+		}
 		return;
 
 	case nod_null:
