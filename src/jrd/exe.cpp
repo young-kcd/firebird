@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.43 2003-02-13 13:33:56 dimitr Exp $
+$Id: exe.cpp,v 1.44 2003-02-14 09:26:15 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -663,7 +663,7 @@ void EXE_receive(TDBB		tdbb,
 	execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
 
 	}	//try
-	catch (std::exception &e)
+	catch (const std::exception&)
 	{
 		if (request->req_flags & req_proc_fetch)
 		{

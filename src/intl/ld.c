@@ -22,8 +22,6 @@
  */
 
 #include "firebird.h"
-//#include "../jrd/ib_stdio.h"
-//#include "../jrd/gds_proto.h" 
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
 
