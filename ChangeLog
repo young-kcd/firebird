@@ -1,3 +1,63 @@
+2004-10-08 16:24  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/fr/lisezmoi.txt (1.1):
+	
+	file lisezmoi.txt was initially added on branch B1_5_Release.
+
+2004-10-08 16:24  paul_reeves
+
+	*
+	
+	file installation_lisezmoi.txt was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/win32/fr/installation_lisezmoi.
+	txt (1.1):
+
+2004-10-08 16:24  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/fr/custom_messages_fr.inc
+	(1.1):
+	
+	file custom_messages_fr.inc was initially added on branch
+	B1_5_Release.
+
+2004-10-08 16:24  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/custom_messages.inc
+	(1.1):
+	
+	file custom_messages.inc was initially added on branch
+	B1_5_Release.
+
+2004-10-08 16:24  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	FirebirdInstall_15.iss (1.5.2.17), custom_messages.inc (1.1.2.1),
+	i18n_readme.txt (1.1.2.1), fr/custom_messages_fr.inc (1.1.2.1),
+	fr/installation_lisezmoi.txt (1.1.2.1), fr/lisezmoi.txt (1.1.2.1):
+	
+	Add i18n support to the Win32 installation script. With thanks to
+	Philippe Makowski for the initial cut.
+
+2004-10-08 16:24  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/i18n_readme.txt (1.1):
+	
+	file i18n_readme.txt was initially added on branch B1_5_Release.
+
+2004-10-08 04:00  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.24):
+	
+	Add description for my change
+
+2004-10-08 03:54  skidder
+
+	* firebird2/src/jrd/vio.cpp (1.49.2.3):
+	
+	Fix handling of deadlocks when pessimistic locks are used
+
 2004-10-07 23:34  skidder
 
 	* firebird2/: acx_pthread.m4 (1.1.2.1), configure.in (1.141.2.29),
