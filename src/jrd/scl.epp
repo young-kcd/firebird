@@ -606,7 +606,7 @@ void SCL_init(BOOLEAN	create,
 	*project = *organization = *name = *role_name = *login_name = '\0';
 
 	node_id = 0;
-    id = -1; /* CVC: This var contained trash. */
+    id = group = -1; /* CVC: This var contained trash. */
 
 	if (!user_name) {
        wheel = ISC_get_user(name,
