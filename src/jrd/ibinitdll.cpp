@@ -51,9 +51,6 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 	switch (reason)	{
 
 	case DLL_PROCESS_ATTACH:
-#if defined(CLIENT) && defined(ANY_THREADING)
-		THD_INIT;
-#endif
 		break;
 
 	case DLL_PROCESS_DETACH:
