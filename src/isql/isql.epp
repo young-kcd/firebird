@@ -1974,6 +1974,7 @@ static processing_state add_row(const TEXT* tabname)
 					else {
 						ULONG date[2];
 						times.tm_mon--;
+						times.tm_year -= 1900; // tm_year is 1900-based.
 						char* stringvalue =
 							(SCHAR*) ISQL_ALLOC((SLONG) (ivar->sqllen + 1));
 						isc_encode_date(&times, (ISC_QUAD*) date);
