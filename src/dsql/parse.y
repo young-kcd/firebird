@@ -36,7 +36,7 @@
  *   and not in gen.c; this closes Bug #450301.
  * 2001.10.01 Claudio Valderrama: enable explicit GRANT...to ROLE role_name.
  * 2001.10.06 Claudio Valderrama: Honor explicit USER keyword in GRANTs and REVOKEs.
- * 2002.07.05 Mark O'Donohue: change keyword DEBUG to DEBUG_KEYWORD to avoid
+ * 2002.07.05 Mark O'Donohue: change keyword DEBUG to KW_DEBUG to avoid
  *            clashes with normal DEBUG macro.
  *
  */
@@ -178,7 +178,7 @@ static void	yyerror (TEXT *);
 %token DATABASE
 %token DATE
 %token DB_KEY
-%token DEBUG_KEYWORD
+%token KW_DEBUG
 %token DECIMAL
 %token DECLARE
 %token DEFAULT
@@ -374,7 +374,7 @@ static void	yyerror (TEXT *);
 
 %token NUMBER64BIT SCALEDINT
 
-/* tokens added for Firebird 1 */
+/* CVC: Special Firebird additions. */
 
 %token CURRENT_USER
 %token CURRENT_ROLE
@@ -2812,11 +2812,11 @@ index_list	: symbol_index_name
 
 
 /* INSERT statement */
-
-insert		: INSERT INTO simple_table_name column_parens_opt VALUES '(' insert_value_list ')'
+/* IBO hack: replace column_parens_opt by ins_column_parens_opt. */
+insert		: INSERT INTO simple_table_name ins_column_parens_opt VALUES '(' insert_value_list ')'
 			{ $$ = make_node (nod_insert, e_ins_count, 
 			  $3, make_list ($4), make_list ($7), NULL); }
-		| INSERT INTO simple_table_name column_parens_opt select_expr
+		| INSERT INTO simple_table_name ins_column_parens_opt select_expr
 			{ $$ = make_node (nod_insert, e_ins_count, $3, $4, NULL, $5); }
 		;
 
@@ -2924,6 +2924,22 @@ column_list	: simple_column_name
 		| column_list ',' simple_column_name
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
+
+/* begin IBO hack */
+ins_column_parens_opt : ins_column_parens
+		|
+			{ $$ = NULL; }
+		;
+
+ins_column_parens	: '(' ins_column_list ')'
+			{ $$ = make_list ($2); }
+		;
+
+ins_column_list	: update_column_name
+		| ins_column_list ',' update_column_name
+			{ $$ = make_node (nod_list, 2, $1, $3); }
+		;
+/* end IBO hack */
 
 column_name     : simple_column_name
 		| symbol_table_alias_name '.' symbol_column_name
@@ -3301,7 +3317,7 @@ u_constant	: u_numeric_constant
 constant_list	: constant
 		| parameter
 		| current_user
-                | current_role
+        | current_role
 		| internal_info
 		| constant_list ',' constant
 			{ $$ = make_node (nod_list, 2, $1, $3); }
@@ -3693,13 +3709,17 @@ void LEX_string (
  *
  **************************************/
 
-line_start = ptr = string;
-end = string + length;
-lines = 1;
-att_charset = character_set;
-line_start_bk = line_start;
-lines_bk = lines;
-first_time = TRUE;
+    line_start = ptr = string;
+    end = string + length;
+    lines = 1;
+    att_charset = character_set;
+    line_start_bk = line_start;
+    lines_bk = lines;
+    first_time = TRUE;
+#ifdef DEV_BUILD
+    if (DSQL_debug > 10)
+        printf("%.*s\n", (int)length, string);
+#endif
 }
 
 
@@ -3716,27 +3736,22 @@ static void check_log_file_attrs (void)
  *
  *********************************************/
 
-if (g_file->fil_partitions)
-    {
-    if (!g_file->fil_length)
-	{
-	yyabandon (-261, isc_log_length_spec);
-	/* Total length of a partitioned log must be specified */
-	}
-
-    if (PARTITION_SIZE (OneK*g_file->fil_length,g_file->fil_partitions) <
-	(OneK*MIN_LOG_LENGTH))
-	{
-	yyabandon (-239, isc_partition_too_small);
-	    /* Log partition size too small */
-	}
+    if (g_file->fil_partitions) {
+        if (!g_file->fil_length) {
+            yyabandon (-261, isc_log_length_spec);
+            /* Total length of a partitioned log must be specified */
+        }
+        
+        if (PARTITION_SIZE (OneK * g_file->fil_length, g_file->fil_partitions) <
+            (OneK*MIN_LOG_LENGTH)) {
+            yyabandon (-239, isc_partition_too_small);
+            /* Log partition size too small */
+        }
     }
-else
-    {
-    if ((g_file->fil_length) && (g_file->fil_length < MIN_LOG_LENGTH))
-	{
-	yyabandon (-239, isc_log_too_small);   /* Log size too small */
-	}
+    else {
+        if ((g_file->fil_length) && (g_file->fil_length < MIN_LOG_LENGTH)) {
+            yyabandon (-239, isc_log_too_small);   /* Log size too small */
+        }
     }     
 }
 
