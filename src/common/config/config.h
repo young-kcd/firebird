@@ -70,7 +70,9 @@ class Config
 		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
 		KEY_GUARDIAN_OPTION,						// 4
 		KEY_CPU_AFFINITY_MASK,						// 5
-		KEY_OLD_PARAMETER_ORDERING					// 6
+		KEY_OLD_PARAMETER_ORDERING,					// 6
+		KEY_TCP_REMOTE_BUFFER_SIZE,					// 7
+		KEY_TCP_NO_NAGLE							// 8
 	};
 
 public:
@@ -109,6 +111,16 @@ public:
 		Old parameter ordering for backward compatibility with FB1/IB6.X
 	*/
 	static bool getOldParameterOrdering();
+
+	/*
+		XDR buffer size
+	*/
+	static int getTcpRemoteBufferSize();
+
+	/*
+		Disable Nagle algorithm
+	*/
+	static bool getTcpNoNagle();
 };
 
 #endif // CONFIG_H

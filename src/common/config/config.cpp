@@ -55,7 +55,9 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
-	{TYPE_BOOLEAN,      "OldParameterOrdering",		(ConfigValue) false}
+	{TYPE_BOOLEAN,		"OldParameterOrdering",		(ConfigValue) false},
+	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},
+	{TYPE_BOOLEAN,      "TcpNoNagle",				(ConfigValue) false}
 };
 
 /******************************************************************************
@@ -205,4 +207,14 @@ int Config::getCpuAffinityMask()
 bool Config::getOldParameterOrdering()
 {
 	return (bool) sysConfig.values[KEY_OLD_PARAMETER_ORDERING];
+}
+
+int Config::getTcpRemoteBufferSize()
+{
+	return (int) sysConfig.values[KEY_TCP_REMOTE_BUFFER_SIZE];
+}
+
+bool Config::getTcpNoNagle()
+{
+	return (bool) sysConfig.values[KEY_TCP_NO_NAGLE];
 }

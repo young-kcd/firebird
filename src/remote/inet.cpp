@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.44 2002-12-02 09:43:50 eku Exp $
+$Id: inet.cpp,v 1.45 2002-12-06 12:34:43 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -121,6 +121,8 @@ extern "C" int innetgr(const char *, const char *, const char *, const char *);
 #include "../jrd/isc_i_proto.h"
 #include "../jrd/sch_proto.h"
 #endif /* REQUESTER */
+
+#include "../common/config/config.h"
 
 #if (defined hpux || defined SCO_UNIX)
 extern int h_errno;
@@ -228,24 +230,6 @@ SLONG INET_remote_buffer;
 SLONG INET_max_data;
 static BOOLEAN first_time = TRUE;
 
-static struct ipccfg INET_tcp_buffer[] =
-{
-	{ISCCFG_REMOTE_BUFFER, 0, &INET_remote_buffer, 0, 0},
-	{NULL, 0, NULL, 0, 0}
-};
-
-
-
-#ifdef SET_TCP_NO_DELAY
-SLONG INET_no_nagle;
-
-static struct ipccfg INET_tcp_delay[] =
-{
-	ISCCFG_NO_NAGLE, 0, &INET_no_nagle, 0, 0,
-	NULL, 0, NULL, 0, 0
-};
-#endif
-
 /*
 #define DEBUG	1
 */
@@ -324,12 +308,6 @@ static ULONG inet_debug_timer(void)
 #define DEF_MAX_DATA	8192
 
 #define MAX_SEQUENCE	256
-
-// TMN: How the could this ever have been compiled when there was
-// two _definitions_ of the following data??? A clear violation
-// against the ODR (One Definition Rule).
-//SLONG INET_max_data;
-//SLONG     INET_remote_buffer;
 
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64
@@ -1158,8 +1136,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 
 #ifdef SET_TCP_NO_DELAY
 
-		ISC_get_config(LOCK_HEADER, INET_tcp_delay);
-		if (INET_no_nagle) {
+		if (Config::getTcpNoNagle()) {
 
 			optval = TRUE;
 			n =
@@ -1579,7 +1556,7 @@ static PORT alloc_port( PORT parent)
 #endif
 
 	if (first_time == TRUE) {
-		ISC_get_config(LOCK_HEADER, INET_tcp_buffer);
+		INET_remote_buffer = Config::getTcpRemoteBufferSize();
 		if (INET_remote_buffer < MAX_DATA_LW
 			|| INET_remote_buffer > MAX_DATA_HW) INET_remote_buffer =
 				DEF_MAX_DATA;
