@@ -1,3 +1,16 @@
+2003-01-09 20:47  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h,
+	class_test.cpp:
+	
+	Prepare new memory manager for integration into the engine core
+
+2003-01-09 17:50  skidder
+
+	* firebird2/src/dsql/: parse.y, pass1.cpp:
+	
+	Allow arbitrary expressions in ORDER-BY clause
+
 2003-01-07 17:35  skidder
 
 	* firebird2/src/common/classes/: alloc.cpp, alloc.h,
