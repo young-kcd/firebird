@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.119 2004-09-04 20:09:24 dimitr Exp $
+$Id: inet.cpp,v 1.120 2004-09-05 19:37:43 dimitr Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -730,8 +730,8 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #else
 
-	TEXT msg[64];
-	
+	TEXT msg[BUFFER_SMALL];
+
 /* U N I X style sockets */
 
 	address.sin_family = AF_INET;
@@ -744,8 +744,8 @@ rem_port* INET_connect(const TEXT* name,
 
 		if (host_addr.s_addr == INADDR_NONE) {
 			sprintf(msg,
-					"INET/INET_connect: gethostbyname failed, error code = %d",
-					H_ERRNO);
+					"INET/INET_connect: gethostbyname (%s) failed, error code = %d",
+					name, H_ERRNO);
 			gds__log(msg, 0);
 			inet_gen_error(port,
 						   isc_network_error,
