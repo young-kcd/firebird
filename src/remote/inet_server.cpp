@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.26 2003-06-06 09:16:54 alexpeshkoff Exp $
+$Id: inet_server.cpp,v 1.27 2003-08-10 01:22:12 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -150,8 +150,10 @@ $Id: inet_server.cpp,v 1.26 2003-06-06 09:16:54 alexpeshkoff Exp $
 extern "C" {
 
 
+#ifdef VMS
 static int assign(SCHAR *);
-static void name_process(UCHAR *);
+#endif
+//static void name_process(UCHAR *);
 static void signal_handler(void);
 #ifdef SUPERSERVER
 static void signal_sigpipe_handler(void);
