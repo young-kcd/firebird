@@ -1,3 +1,33 @@
+2003-04-07 23:51  brodsom
+
+	* firebird2/src/burp/: restore.epp, mvol.cpp, burp.cpp, backup.epp:
+	
+	- Fixes for burp warnings.
+
+2003-04-07 21:16  brodsom
+
+	* firebird2/src/jrd/tra.cpp:
+	
+	Modify previous change
+
+2003-04-07 17:48  alexpeshkoff
+
+	* firebird2/src/common/config/: dir_list.cpp, dir_list.h:
+	
+	Removed g++ warnings
+
+2003-04-07 12:14  aafemt
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	fix typo
+
+2003-04-07 10:39  brodsom
+
+	* firebird2/src/jrd/sdl.cpp:
+	
+	Change the format of the ifdef
+
 2003-04-06 17:00  alexpeshkoff
 
 	* firebird2/src/: jrd/jrd.cpp, jrd/isc_file.cpp, jrd/ext.cpp,
