@@ -34,7 +34,7 @@
  *                            implemented ROWS_AFFECTED system variable
  */
 /*
-$Id: exe.cpp,v 1.20 2002-09-28 14:04:35 dimitr Exp $
+$Id: exe.cpp,v 1.21 2002-10-19 09:05:37 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3452,6 +3452,15 @@ static void set_error(TDBB tdbb, XCP condition, NOD node)
 								 &string,
 								 reinterpret_cast<VARY*>(temp),
 								 sizeof(temp));
+		length = MIN(length, sizeof(message) - 1);
+
+		/* dimitr: or should we throw an error here, i.e.
+				   replace the above assignment with the following lines:
+
+		if (length > sizeof(message) - 1)
+			ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
+		*/
+
 		memcpy(message, string, length);
 	}
 	message[length] = 0;
