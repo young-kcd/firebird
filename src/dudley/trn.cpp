@@ -111,10 +111,9 @@ void TRN_translate(void)
 	ACT action;
 	USHORT length;
 	str d;
-	str* dyn;
 
 /* Start by reversing the set of actions */
-	dyn = &d;
+	str* dyn = &d;
 	dyn->str_current = dyn->str_start =
 		reinterpret_cast<UCHAR*>(gds__alloc(8192));
 	if (!dyn->str_current)
@@ -347,14 +346,12 @@ static void add_dimensions( STR dyn, DUDLEY_FLD field)
  *	First get rid of any old ones.
  *
  **************************************/
-	SLONG *range;
-	USHORT n;
-
 	put_symbol(dyn, isc_dyn_delete_dimensions, field->fld_name);
 	check_dyn(dyn, 1);
 	STUFF(isc_dyn_end);
 
-	for (range = field->fld_ranges, n = 0; n < field->fld_dimension;
+	USHORT n = 0;
+	for (const SLONG* range = field->fld_ranges; n < field->fld_dimension;
 		 range += 2, ++n)
 	{
 		put_number(dyn, isc_dyn_def_dimension, n);
@@ -380,12 +377,11 @@ static void add_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
  *	local field.
  *
  **************************************/
-	SYM name, symbol;
 	DUDLEY_REL relation;
 	DUDLEY_FLD source_field;
 	int n;
 
-	name = field->fld_name;
+	SYM name = field->fld_name;
 	if (view)
 		relation = view;
 	else
@@ -394,9 +390,12 @@ static void add_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
 	put_symbol(dyn, isc_dyn_def_local_fld, name);
 	put_symbol(dyn, isc_dyn_rel_name, relation->rel_name);
 
-	if ((symbol = field->fld_source) &&
+	SYM symbol = field->fld_source;
+	if (symbol &&
 		strcmp(symbol->sym_string, name->sym_string) && !field->fld_computed)
+	{
 		put_symbol(dyn, isc_dyn_fld_source, symbol);
+	}
 
 	put_symbol(dyn, isc_dyn_security_class, field->fld_security_class);
 	put_symbol(dyn, isc_dyn_fld_edit_string, field->fld_edit_string);
@@ -590,13 +589,10 @@ static void add_global_field( STR dyn, DUDLEY_FLD field)
  *	Generate dynamic DDL to create a relation.
  *
  **************************************/
-	SYM name;
-	int n;
-
 	if (field->fld_computed)
 		return;
 
-	name = field->fld_name;
+	SYM name = field->fld_name;
 
 	put_symbol(dyn, isc_dyn_def_global_fld, name);
 	put_symbol(dyn, isc_dyn_fld_edit_string, field->fld_edit_string);
@@ -611,7 +607,8 @@ static void add_global_field( STR dyn, DUDLEY_FLD field)
 	put_number(dyn, isc_dyn_fld_scale, field->fld_scale);
 	put_number(dyn, isc_dyn_fld_sub_type, field->fld_sub_type);
 
-	if (n = field->fld_segment_length)
+	const int n = field->fld_segment_length;
+	if (n)
 		put_number(dyn, isc_dyn_fld_segment_length, n);
 
 	put_blr(dyn, isc_dyn_fld_missing_value, NULL, field->fld_missing);
@@ -689,7 +686,7 @@ static void add_relation( STR dyn, DUDLEY_REL relation)
 }
 
 
-static void add_security_class( STR dyn, SCL class_)
+static void add_security_class( STR dyn, SCL sec_class)
 {
 /**************************************
  *
@@ -702,11 +699,11 @@ static void add_security_class( STR dyn, SCL class_)
  *
  **************************************/
 
-	put_symbol(dyn, isc_dyn_def_security_class, class_->scl_name);
+	put_symbol(dyn, isc_dyn_def_security_class, sec_class->scl_name);
 
-	put_acl(dyn, isc_dyn_scl_acl, class_);
+	put_acl(dyn, isc_dyn_scl_acl, sec_class);
 
-	put_text(dyn, isc_dyn_description, class_->scl_description);
+	put_text(dyn, isc_dyn_description, sec_class->scl_description);
 
 	check_dyn(dyn, 1);
 	STUFF(isc_dyn_end);
@@ -725,11 +722,8 @@ static void add_trigger( STR dyn, DUDLEY_TRG trigger)
  *	Generate dynamic ddl to add a trigger for a relation.
  *
  **************************************/
-	SYM name;
-	DUDLEY_REL relation;
-
-	relation = trigger->trg_relation;
-	name = trigger->trg_name;
+	DUDLEY_REL relation = trigger->trg_relation;
+	SYM name = trigger->trg_name;
 
 	put_symbol(dyn, isc_dyn_def_trigger, name);
 	put_symbol(dyn, isc_dyn_rel_name, relation->rel_name);
@@ -779,11 +773,6 @@ static void add_view( STR dyn, DUDLEY_REL relation)
  *	Generate dynamic DDL to create a view.
  *
  **************************************/
-	DUDLEY_FLD field;
-	DUDLEY_CTX context;
-	DUDLEY_NOD contexts;
-	SSHORT i;
-
 	put_symbol(dyn, isc_dyn_def_view, relation->rel_name);
 	put_symbol(dyn, isc_dyn_security_class, relation->rel_security_class);
 	if (relation->rel_system)
@@ -792,9 +781,9 @@ static void add_view( STR dyn, DUDLEY_REL relation)
 	put_blr(dyn, isc_dyn_view_blr, relation, relation->rel_rse);
 	put_text(dyn, isc_dyn_view_source, relation->rel_view_source);
 
-	contexts = relation->rel_rse->nod_arg[s_rse_contexts];
-	for (i = 0; i < contexts->nod_count; i++) {
-		context = (DUDLEY_CTX) contexts->nod_arg[i]->nod_arg[0];
+	DUDLEY_NOD contexts = relation->rel_rse->nod_arg[s_rse_contexts];
+	for (SSHORT i = 0; i < contexts->nod_count; i++) {
+		DUDLEY_CTX context = (DUDLEY_CTX) contexts->nod_arg[i]->nod_arg[0];
 		put_symbol(dyn, isc_dyn_view_relation,
 				   context->ctx_relation->rel_name);
 		put_number(dyn, isc_dyn_view_context, context->ctx_context_id);
@@ -803,7 +792,7 @@ static void add_view( STR dyn, DUDLEY_REL relation)
 		STUFF(isc_dyn_end);
 	}
 
-	for (field = relation->rel_fields; field; field = field->fld_next)
+	for (DUDLEY_FLD field = relation->rel_fields; field; field = field->fld_next)
 		add_field(dyn, field, relation);
 
 	check_dyn(dyn, 1);
@@ -824,20 +813,19 @@ bool TRN_get_buffer(STR dyn, USHORT length)
  *	So, allocate an extra memory.
  *
  **************************************/
-	UCHAR *p, *q, *old;
-	USHORT len, n;
-
-	len = dyn->str_current - dyn->str_start;
+	const USHORT len = dyn->str_current - dyn->str_start;
 
 /* Compute the next incremental string len */
 
-	n = MIN(dyn->str_length * 2, 65536 - 4);
+	const USHORT n = MIN(dyn->str_length * 2, 65536 - 4);
 
 /* If we're in danger of blowing the limit, stop right here */
 
 	if (n < len + length)
 		return false;
 
+	const UCHAR* q;
+	UCHAR *p, *old;
 	q = old = dyn->str_start;
 	dyn->str_start = p = reinterpret_cast<UCHAR*>(gds__alloc(n));
 
@@ -871,11 +859,8 @@ static void drop_field( STR dyn, DUDLEY_FLD field)
  *	a local field.
  *
  **************************************/
-	SYM name;
-	DUDLEY_REL relation;
-
-	name = field->fld_name;
-	relation = field->fld_relation;
+	SYM name = field->fld_name;
+	DUDLEY_REL relation = field->fld_relation;
 
 	put_symbol(dyn, isc_dyn_delete_local_fld, name);
 	put_symbol(dyn, isc_dyn_rel_name, relation->rel_name);
@@ -940,9 +925,7 @@ static void drop_global_field( STR dyn, DUDLEY_FLD field)
  *	a global field.
  *
  **************************************/
-	SYM name;
-
-	name = field->fld_name;
+	SYM name = field->fld_name;
 
 	put_symbol(dyn, isc_dyn_delete_global_fld, name);
 
@@ -989,7 +972,7 @@ static void drop_relation( STR dyn, DUDLEY_REL relation)
 }
 
 
-static void drop_security_class( STR dyn, SCL class_)
+static void drop_security_class( STR dyn, SCL sec_class)
 {
 /**************************************
  *
@@ -1002,7 +985,7 @@ static void drop_security_class( STR dyn, SCL class_)
  *
  **************************************/
 
-	put_symbol(dyn, isc_dyn_delete_security_class, class_->scl_name);
+	put_symbol(dyn, isc_dyn_delete_security_class, sec_class->scl_name);
 	check_dyn(dyn, 1);
 	STUFF(isc_dyn_end);
 }
@@ -1039,9 +1022,7 @@ static void drop_trigger( STR dyn, DUDLEY_TRG trigger)
  *	Generate dynamic ddl to delete a trigger.
  *
  **************************************/
-	SYM name;
-
-	name = trigger->trg_name;
+	SYM name = trigger->trg_name;
 
 	put_symbol(dyn, isc_dyn_delete_trigger, name);
 	check_dyn(dyn, 1);
@@ -1111,7 +1092,8 @@ static void gen_dyn_cxx(void *user_arg, SSHORT offset, const char* string)
 		if ((*q == '$') || (*q == '_')) {
 			r = q;
 			if ((*--r == '_') && (*--r == 's') && (*--r == 'd')
-				&& (*--r == 'g')) {
+				&& (*--r == 'g'))
+			{
 				*q = 0;
 				fprintf(output_file, "%s", p);
 				p = ++q;
@@ -1157,7 +1139,9 @@ static void modify_database( STR dyn, DBB databaseL)
 		  databaseL->dbb_description ||
 		  (databaseL->
 		   dbb_flags & (DBB_null_security_class | DBB_null_description))))
-			return;
+	{
+		return;
+	}
 
 	check_dyn(dyn, 1);
 	STUFF(isc_dyn_mod_database);
@@ -1197,10 +1181,9 @@ static void modify_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
  *	local field.
  *
  **************************************/
-	SYM name, symbol;
 	DUDLEY_REL relation;
 
-	name = field->fld_name;
+	SYM name = field->fld_name;
 	if (view)
 		relation = view;
 	else
@@ -1209,9 +1192,12 @@ static void modify_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
 	put_symbol(dyn, isc_dyn_mod_local_fld, name);
 	put_symbol(dyn, isc_dyn_rel_name, relation->rel_name);
 
-	if ((symbol = field->fld_source) &&
+	SYM symbol = field->fld_source;
+	if (symbol &&
 		strcmp(symbol->sym_string, name->sym_string) && !field->fld_computed)
+	{
 		put_symbol(dyn, isc_dyn_fld_source, symbol);
+	}
 
 	if (field->fld_flags & fld_null_security_class) {
 		check_dyn(dyn, 3);
@@ -1276,13 +1262,10 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
  *	more and more tiresome.
  *
  **************************************/
-	SYM name;
-	int n;
-
 	if (field->fld_computed)
 		return;
 
-	name = field->fld_name;
+	SYM name = field->fld_name;
 
 	put_symbol(dyn, isc_dyn_mod_global_fld, name);
 	if (field->fld_flags & fld_null_edit_string) {
@@ -1299,6 +1282,7 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
 	}
 	else
 		put_symbol(dyn, isc_dyn_fld_query_name, field->fld_query_name);
+		
 	if (field->fld_flags & fld_null_query_header) {
 		check_dyn(dyn, 3);
 		STUFF(isc_dyn_fld_query_header);
@@ -1320,7 +1304,8 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
 	if (field->fld_has_sub_type)
 		put_number(dyn, isc_dyn_fld_sub_type, field->fld_sub_type);
 
-	if (n = field->fld_segment_length)
+	const int n = field->fld_segment_length;
+	if (n)
 		put_number(dyn, isc_dyn_fld_segment_length, n);
 
 	if (field->fld_flags & fld_null_missing_value) {
@@ -1457,11 +1442,8 @@ static void modify_trigger( STR dyn, DUDLEY_TRG trigger)
  *	Generate dynamic ddl to modify a trigger for a relation.
  *
  **************************************/
-	SYM name;
-	DUDLEY_REL relation;
-
-	relation = trigger->trg_relation;
-	name = trigger->trg_name;
+	DUDLEY_REL relation = trigger->trg_relation;
+	SYM name = trigger->trg_name;
 
 	put_symbol(dyn, isc_dyn_mod_trigger, name);
 	put_symbol(dyn, isc_dyn_rel_name, relation->rel_name);
@@ -1505,7 +1487,7 @@ static void modify_trigger_msg( STR dyn, TRGMSG trigmsg)
 }
 
 
-static void put_acl( STR dyn, UCHAR attribute, SCL class_)
+static void put_acl( STR dyn, UCHAR attribute, SCL sec_class)
 {
 /**************************************
  *
@@ -1516,19 +1498,18 @@ static void put_acl( STR dyn, UCHAR attribute, SCL class_)
  * Functional description
  *
  **************************************/
-	USHORT length;
-	TEXT buffer[4096], *p;
+	TEXT buffer[4096];
 
-	if (!class_)
+	if (!sec_class)
 		return;
 
-	length = GENERATE_acl(class_, (UCHAR*) buffer);
+	USHORT length = GENERATE_acl(sec_class, (UCHAR*) buffer);
 	fb_assert(length <= 4096);		/* to make sure buffer is big enough */
 
 	check_dyn(dyn, 3 + length);
 	STUFF(attribute);
 	STUFF_WORD(length);
-	p = buffer;
+	const TEXT* p = buffer;
 	while (length--)
 		STUFF(*p++);
 }
@@ -1545,9 +1526,6 @@ static void put_blr( STR dyn, UCHAR attribute, DUDLEY_REL relation, DUDLEY_NOD n
  * Functional description
  *
  **************************************/
-	UCHAR *p;
-	USHORT length, offset;
-
 	if (!node)
 		return;
 
@@ -1557,11 +1535,11 @@ static void put_blr( STR dyn, UCHAR attribute, DUDLEY_REL relation, DUDLEY_NOD n
 /* Skip over space to put count later, generate blr, then
    go bad and fix up length */
 
-	offset = dyn->str_current - dyn->str_start;
+	const USHORT offset = dyn->str_current - dyn->str_start;
 	dyn->str_current = dyn->str_current + 2;
 	GENERATE_blr(dyn, node);
-	p = dyn->str_start + offset;
-	length = (dyn->str_current - p) - 2;
+	UCHAR* p = dyn->str_start + offset;
+	const USHORT length = (dyn->str_current - p) - 2;
 	*p++ = length;
 	*p = (length >> 8);
 }
@@ -1600,27 +1578,23 @@ static void put_query_header( STR dyn, TEXT attribute, DUDLEY_NOD node)
  * Functional description
  *
  **************************************/
-	SYM symbol;
-	UCHAR *s;
-	USHORT length, offset;
-
 	if (!node)
 		return;
 
 	check_dyn(dyn, 3);
 	STUFF(attribute);
 
-	offset = dyn->str_current - dyn->str_start;
+	const USHORT offset = dyn->str_current - dyn->str_start;
 	dyn->str_current = dyn->str_current + 2;
 	for (int pos = 0; pos < node->nod_count; pos++) {
-		symbol = (SYM) node->nod_arg[pos];
-		s = (UCHAR *) symbol->sym_string;
+		SYM symbol = (SYM) node->nod_arg[pos];
+		const UCHAR* s = (UCHAR *) symbol->sym_string;
 		check_dyn(dyn, symbol->sym_length);
 		while (*s)
 			STUFF(*s++);
 	}
-	s = dyn->str_start + offset;
-	length = (dyn->str_current - s) - 2;
+	UCHAR* s = dyn->str_start + offset;
+	const USHORT length = (dyn->str_current - s) - 2;
 	*s++ = length;
 	*s = (length >> 8);
 }
@@ -1637,19 +1611,16 @@ static void put_symbol( STR dyn, TEXT attribute, SYM symbol)
  * Functional description
  *
  **************************************/
-	TEXT *string;
-	USHORT l;
-
 	if (!symbol)
 		return;
 
-	l = symbol->sym_length;
+	const USHORT l = symbol->sym_length;
 
 	check_dyn(dyn, l + 5);
 	STUFF(attribute);
 	STUFF_WORD(l);
 
-	for (string = symbol->sym_string; *string;)
+	for (const TEXT* string = symbol->sym_string; *string;)
 		STUFF(*string++);
 }
 
@@ -1665,12 +1636,10 @@ static void put_text( STR dyn, UCHAR attribute, TXT text)
  * Functional description
  *
  **************************************/
-	USHORT length;
-
 	if (!text)
 		return;
 
-	length = text->txt_length;
+	const USHORT length = text->txt_length;
 
 	if (!length)
 		return;
@@ -1695,11 +1664,8 @@ static void raw_ada( STR dyn)
  * Functional description
  *
  **************************************/
-	UCHAR *p;
-	USHORT n;
-
-	n = 0;
-	for (p = dyn->str_start; p < dyn->str_current; p++) {
+	USHORT n = 0;
+	for (const UCHAR* p = dyn->str_start; p < dyn->str_current; p++) {
 		if (p < (dyn->str_current - 1)) {
 			fprintf(output_file, "%d,", *p);
 			n += 4;
@@ -1727,20 +1693,19 @@ static void raw_cobol( STR dyn)
  * Functional description
  *
  **************************************/
-	UCHAR *blr, *c;
-	int blr_length, length;
 	union {
 		UCHAR bytewise_blr[4];
 		SLONG longword_blr;
 	} blr_hunk;
 
-	length = 1;
-	blr = dyn->str_start;
-	blr_length = dyn->str_current - dyn->str_start;
+	int length = 1;
+	UCHAR* blr = dyn->str_start;
+	int blr_length = dyn->str_current - dyn->str_start;
 
 	while (blr_length) {
-		for (c = blr_hunk.bytewise_blr;
-			 c < blr_hunk.bytewise_blr + sizeof(SLONG); c++) {
+		for (UCHAR* c = blr_hunk.bytewise_blr;
+			 c < blr_hunk.bytewise_blr + sizeof(SLONG); c++)
+		{
 			*c = *blr++;
 			if (!(--blr_length))
 				break;
@@ -1770,21 +1735,23 @@ static void raw_ftn( STR dyn)
  * Functional description
  *
  **************************************/
-	UCHAR *blr, *c;
-	TEXT buffer[80], *p;
+	TEXT buffer[80];
 	int blr_length;
 	union {
 		UCHAR bytewise_blr[4];
 		SLONG longword_blr;
 	} blr_hunk;
 
-	blr = (UCHAR *) dyn->str_start;
+	UCHAR* blr = (UCHAR *) dyn->str_start;
 	blr_length = dyn->str_current - dyn->str_start;
-	p = buffer;
+	TEXT* p = buffer;
 
 	while (blr_length) {
+		UCHAR* c;
+		// Do not change these assignments order: they target the same union.
 		for (c = blr_hunk.bytewise_blr, blr_hunk.longword_blr = 0;
-			 c < blr_hunk.bytewise_blr + sizeof(SLONG); c++) {
+			 c < blr_hunk.bytewise_blr + sizeof(SLONG); c++)
+		{
 			*c = *blr++;
 			if (!(--blr_length))
 				break;
@@ -1805,3 +1772,4 @@ static void raw_ftn( STR dyn)
 	if (p != buffer)
 		fprintf(output_file, "%s%s\n", "     +   ", buffer);
 }
+

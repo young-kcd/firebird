@@ -41,6 +41,8 @@
 #include "../jrd/jrd_time.h"
 #ifndef REQUESTER
 #include "../jrd/jrd.h"
+#else
+#include "../jrd/common.h"
 #endif
 #include "../jrd/req.h"
 #include "../jrd/val.h"
@@ -685,7 +687,7 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 
 	MOVE_CLEAR(&desc, sizeof(desc));
 	desc.dsc_dtype = dtype_text;
-	desc.dsc_sub_type = ttype_ascii;
+	desc.dsc_ttype() = ttype_ascii;
 	desc.dsc_length = length;
 	desc.dsc_address = const_cast<UCHAR*>(string);
 	// The above line allows the assignment, but "string" is treated as const
@@ -1900,7 +1902,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 	MOVE_CLEAR(&desc, sizeof(desc));
 	desc.dsc_address = (UCHAR *) temp;
 	desc.dsc_dtype = dtype_text;
-	desc.dsc_sub_type = ttype_ascii;
+	desc.dsc_ttype() = ttype_ascii;
 	desc.dsc_length = (p - temp);
 	if (from->dsc_dtype == dtype_timestamp && version4) {
 		/* Prior to BLR Version5, when a timestamp is converted to a string it
@@ -1944,7 +1946,7 @@ static SSHORT decompose(const char* string,
 	dsc errd;
 	MOVE_CLEAR(&errd, sizeof(errd));
 	errd.dsc_dtype = dtype_text;
-	errd.dsc_sub_type = ttype_ascii;
+	errd.dsc_ttype() = ttype_ascii;
 	errd.dsc_length = length;
 	errd.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(string));
 
@@ -2183,7 +2185,7 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	dsc intermediate;
 	intermediate.dsc_dtype = dtype_text;
-	intermediate.dsc_sub_type = ttype_ascii;
+	intermediate.dsc_ttype() = ttype_ascii;
 	/* CVC: If you think this is dangerous, replace the "else" with a call to
 			MEMMOVE(temp, temp + 1, chars_printed) or something cleverer.
 			Paranoid assumption:

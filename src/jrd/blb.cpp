@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.76 2004-05-19 18:11:09 brodsom Exp $
+$Id: blb.cpp,v 1.77 2004-05-21 06:15:39 robocop Exp $
 */
 
 #include "firebird.h"
@@ -991,7 +991,7 @@ void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, j
 		calculates charset internally and assigns it to fields inside blb struct.
 		I really need to call BLB_create2 and provide more parameters.
 		This macro is useless here as it doesn't cater for blob fields because
-		desc.dsc_sub_type is desc.dsc_sub_type but blobs use dsc_scale for the charset
+		desc.dsc_ttype() is desc.dsc_sub_type but blobs use dsc_scale for the charset
 		and dsc_sub_type for blob sub_types, IE text.
 		INTL_ASSIGN_TTYPE (&blob_desc, ttype);
 		*/

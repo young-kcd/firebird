@@ -53,32 +53,32 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 #ifdef BURP
 #include "../burp/misc_proto.h"	/* Was "../burp/misc_pro.h" -Jeevan */
-inline UCHAR* XDR_ALLOC(ULONG size){
+inline UCHAR* XDR_ALLOC(ULONG size) {
 	return MISC_alloc_burp(size);
 }
-inline void XDR_FREEA(void* block){
+inline void XDR_FREEA(void* block) {
 	MISC_free_burp(block);
 }
 #else // BURP
-inline UCHAR* XDR_ALLOC(ULONG size){
+inline UCHAR* XDR_ALLOC(ULONG size) {
 	return (UCHAR*) gds__alloc((SLONG) size);
 }
-inline void XDR_FREEA(void* block){
+inline void XDR_FREEA(void* block) {
 	gds__free(block);
 }
 #endif // BURP
 
 #ifdef DEBUG_XDR_MEMORY
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len)
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 	xdr_debug_memory (xdrs, XDR_FREE, xdrvar, addr, (ULONG) len);
 }
 #else
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 }
 #endif /* DEBUG_XDR_MEMORY */
 

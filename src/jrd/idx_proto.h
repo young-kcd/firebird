@@ -55,7 +55,7 @@ Jrd::idx_e IDX_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
 Jrd::idx_e IDX_modify_check_constraints(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
 											  Jrd::jrd_tra*, Jrd::jrd_rel**,
 											  USHORT *);
-void IDX_statistics(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);
+void IDX_statistics(Jrd::thread_db*, const Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);
 Jrd::idx_e IDX_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*,
 							Jrd::jrd_rel**, USHORT*);
 

@@ -1189,7 +1189,7 @@ int INTL_data_or_binary(const dsc* pText)
  *
  **************************************/
 
-	return (INTL_data(pText) || (pText->dsc_sub_type == ttype_binary));
+	return (INTL_data(pText) || (pText->dsc_ttype() == ttype_binary));
 }
 
 
@@ -1396,7 +1396,7 @@ void INTL_pad_spaces(thread_db* tdbb, DSC * type, UCHAR * string, USHORT length)
 	fb_assert(IS_TEXT(type));
 	fb_assert(string != NULL);
 
-	const USHORT charset = INTL_charset(tdbb, type->dsc_sub_type, NULL);
+	const USHORT charset = INTL_charset(tdbb, type->dsc_ttype(), NULL);
 	pad_spaces(tdbb, charset, string, length);
 }
 

@@ -91,25 +91,25 @@ const UCHAR THPS_UP			= 2;	// candidate for priority boost
 const UCHAR THPS_LOW		= 4;	// candidate for priority decrement
 const UCHAR THPS_BOOSTED	= 8;	// thread controlled by priority scheduler
 
-inline void THPS_ENTER(){
+inline void THPS_ENTER() {
 	ThreadPriorityScheduler::Enter();
 }
-inline void THPS_EXIT(){
+inline void THPS_EXIT() {
 	ThreadPriorityScheduler::Exit();
 }
-inline thdd* THPS_GET(DWORD specific_key){
+inline thdd* THPS_GET(DWORD specific_key) {
 	return (thdd*) ThreadPriorityScheduler::Get();
 }
-inline void THPS_SET(DWORD specific_key, thdd* new_context){
+inline void THPS_SET(DWORD specific_key, thdd* new_context) {
 	ThreadPriorityScheduler::Set(new_context);
 }
-inline void THPS_INIT(){
+inline void THPS_INIT() {
 	ThreadPriorityScheduler::Init();
 }
-inline void THPS_FINI(){
+inline void THPS_FINI() {
 	ThreadPriorityScheduler::Cleanup();
 }
-inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority){
+inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority) {
 	ThreadPriorityScheduler::Attach(handle, thread_id, priority);
 }
 inline bool THPS_BOOSTDONE() {
@@ -118,23 +118,23 @@ inline bool THPS_BOOSTDONE() {
 
 #else // THREAD_PSCHED
 
-inline void THPS_ENTER(){
+inline void THPS_ENTER() {
 }
-inline void THPS_EXIT(){
+inline void THPS_EXIT() {
 }
 #ifdef WIN_NT
-inline thdd* THPS_GET(DWORD specific_key){
+inline thdd* THPS_GET(DWORD specific_key) {
 	return (thdd*) TlsGetValue(specific_key);
 }
-inline void THPS_SET(DWORD specific_key, thdd* new_context){
+inline void THPS_SET(DWORD specific_key, thdd* new_context) {
 	TlsSetValue(specific_key, (LPVOID) new_context);
 }
-inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority){
+inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority) {
 }
 #endif
-inline void THPS_INIT(){
+inline void THPS_INIT() {
 }
-inline void THPS_FINI(){
+inline void THPS_FINI() {
 }
 inline bool THPS_BOOSTDONE() {
 	return false;

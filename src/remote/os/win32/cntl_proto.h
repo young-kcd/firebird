@@ -24,11 +24,11 @@
 #ifndef REMOTE_CNTL_PROTO_H
 #define REMOTE_CNTL_PROTO_H
 
-void	CNTL_init(FPTR_VOID, TEXT *);
+void	CNTL_init(FPTR_VOID, const TEXT*);
 void*	CNTL_insert_thread(void);
 void	WINAPI CNTL_main_thread(DWORD, char*[]);
 void	CNTL_remove_thread(void *);
-void	CNTL_shutdown_service(TEXT *);
+void	CNTL_shutdown_service(const TEXT*);
 
 #endif // REMOTE_CNTL_PROTO_H
 

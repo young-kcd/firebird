@@ -93,13 +93,13 @@ static SLONG process_lck_owner_handle = 0;
 
 #ifdef SUPERSERVER
 
-inline LOCK_OWNER_T LCK_OWNER_ID_PROCESS(){
+inline LOCK_OWNER_T LCK_OWNER_ID_PROCESS() {
 	return getpid();
 }
-inline LOCK_OWNER_T LCK_OWNER_ID_DBB(Database* dbb){
+inline LOCK_OWNER_T LCK_OWNER_ID_DBB(Database* dbb) {
 	return (LOCK_OWNER_T) dbb;
 }
-inline LOCK_OWNER_T LCK_OWNER_ID_ATT(Attachment* attachment){
+inline LOCK_OWNER_T LCK_OWNER_ID_ATT(Attachment* attachment) {
 	return (LOCK_OWNER_T) attachment;
 }
 
@@ -107,13 +107,13 @@ const lck_owner_t LCK_OWNER_TYPE_PROCESS	= LCK_OWNER_process;
 const lck_owner_t LCK_OWNER_TYPE_DBB		= LCK_OWNER_database;
 const lck_owner_t LCK_OWNER_TYPE_ATT		= LCK_OWNER_attachment;
 
-inline SLONG* LCK_OWNER_HANDLE_PROCESS(){
+inline SLONG* LCK_OWNER_HANDLE_PROCESS() {
 	return &process_lck_owner_handle;
 }
-inline SLONG* LCK_OWNER_HANDLE_DBB(Database* dbb){
+inline SLONG* LCK_OWNER_HANDLE_DBB(Database* dbb) {
 	return &dbb->dbb_lock_owner_handle;
 }
-inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment){
+inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment) {
 	return &attachment->att_lock_owner_handle;
 }
 
@@ -121,13 +121,13 @@ inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment){
 
 /* This is not a SUPERSERVER build */
 
-inline LOCK_OWNER_T LCK_OWNER_ID_PROCESS(){
+inline LOCK_OWNER_T LCK_OWNER_ID_PROCESS() {
 	return getpid();
 }
-inline LOCK_OWNER_T LCK_OWNER_ID_DBB(Database* dbb){
+inline LOCK_OWNER_T LCK_OWNER_ID_DBB(Database* dbb) {
 	return getpid();
 }
-inline LOCK_OWNER_T LCK_OWNER_ID_ATT(Attachment* attachment){
+inline LOCK_OWNER_T LCK_OWNER_ID_ATT(Attachment* attachment) {
 	return getpid();
 }
 
@@ -138,10 +138,10 @@ const lck_owner_t LCK_OWNER_TYPE_ATT		= LCK_OWNER_process;
 inline SLONG* LCK_OWNER_HANDLE_PROCESS(){
 	return &process_lck_owner_handle;
 }
-inline SLONG* LCK_OWNER_HANDLE_DBB(Database* dbb){
+inline SLONG* LCK_OWNER_HANDLE_DBB(Database* dbb) {
 	return &process_lck_owner_handle;
 }
-inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment){
+inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment) {
 	return &process_lck_owner_handle;
 }
 

@@ -188,27 +188,27 @@ public:
 
 
 #ifdef SUPERSERVER
-inline Tgbl* ALICE_get_thread_data(){
+inline Tgbl* ALICE_get_thread_data() {
 	return (Tgbl*) THD_get_specific();
 }
-inline void ALICE_set_thread_data(Tgbl* tdgbl){
+inline void ALICE_set_thread_data(Tgbl* tdgbl) {
 	THD_put_specific ((THDD) tdgbl);
 	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TALICE;
 }
-inline void ALICE_restore_thread_data(){
+inline void ALICE_restore_thread_data() {
 	THD_restore_specific();
 }
 #else
 extern Tgbl* gdgbl;
 
-inline Tgbl* ALICE_get_thread_data(){
+inline Tgbl* ALICE_get_thread_data() {
 	return gdgbl;
 }
-inline void ALICE_set_thread_data(Tgbl* tdgbl){
+inline void ALICE_set_thread_data(Tgbl* tdgbl) {
 	gdgbl = tdgbl;
 	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TALICE;
 }
-inline void ALICE_restore_thread_data(){
+inline void ALICE_restore_thread_data() {
 }
 #endif
 

@@ -416,7 +416,7 @@ DSC *RNG_begin(jrd_nod* node, impure_value* impure)
 
 	impure->vlu_desc.dsc_dtype = dtype_text;
 	impure->vlu_desc.dsc_scale = 0;
-	impure->vlu_desc.dsc_sub_type = ttype_ascii;
+	impure->vlu_desc.dsc_ttype() = ttype_ascii;
 	impure->vlu_desc.dsc_address = refresh_range->rng_event;
 	impure->vlu_desc.dsc_length = refresh_range->rng_event_length;
 

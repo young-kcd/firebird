@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.111 2004-05-20 23:05:02 skidder Exp $
+$Id: inet.cpp,v 1.112 2004-05-21 06:16:08 robocop Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -405,7 +405,7 @@ static bool		port_mutex_inited = false;
 
 #define DEFER_PORT_CLEANUP
 
-inline void START_PORT_CRITICAL(){
+inline void START_PORT_CRITICAL() {
 	if (!port_mutex_inited) {
 		port_mutex_inited = true;
 		THD_mutex_init (&port_mutex);
@@ -415,16 +415,16 @@ inline void START_PORT_CRITICAL(){
 	THREAD_ENTER();
 }
 
-inline void STOP_PORT_CRITICAL(){
+inline void STOP_PORT_CRITICAL() {
 	THREAD_EXIT();
 	THD_mutex_unlock (&port_mutex);
 	THREAD_ENTER();
 }
 
 #else
-inline void START_PORT_CRITICAL(){
+inline void START_PORT_CRITICAL() {
 }
-inline void STOP_PORT_CRITICAL(){
+inline void STOP_PORT_CRITICAL() {
 }
 #endif
 

@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.102 2004-05-20 21:58:15 skidder Exp $
+$Id: lock.cpp,v 1.103 2004-05-21 06:15:49 robocop Exp $
 */
 
 #include "firebird.h"
@@ -4246,7 +4246,7 @@ static void validate_history( SRQ_PTR history_header)
 
 	LOCK_TRACE(("validate_history: %ld\n", history_header));
 
-	for (his* history = (HIS) SRQ_ABS_PTR(history_header); true;
+	for (const his* history = (HIS) SRQ_ABS_PTR(history_header); true;
 		 history = (HIS) SRQ_ABS_PTR(history->his_next)) 
 	{
 		count++;

@@ -25,7 +25,7 @@
 #define INTL_LDCOMMON_H
 
 /* #include "../jrd/gdsassert.h" */
-// Put the assert in here
+/* Put the assert in here */
 
 #include "../jrd/intlobj.h"
 #include "../jrd/constants.h"
@@ -35,7 +35,7 @@
 
 #undef DEBUG
 
-// texttype version
+/* texttype version */
 #define IB_LANGDRV_VERSION	1
 
 typedef USHORT UNICODE;

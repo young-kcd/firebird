@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: protocol.h,v 1.20 2004-05-17 10:21:03 brodsom Exp $
+$Id: protocol.h,v 1.21 2004-05-21 06:16:08 robocop Exp $
 */
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
@@ -97,7 +97,7 @@ they will be turned off once SCROLLABLE_CURSORS is turned on.
 
 typedef enum
 {
-	arch_generic	= 1,	/* Generic -- always use cannonical forms */
+	arch_generic	= 1,	/* Generic -- always use canonical forms */
 	arch_apollo		= 2,
 	arch_sun		= 3,
 	arch_vms		= 4,

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: class_perf.cpp,v 1.10 2004-05-17 15:06:46 brodsom Exp $
+ *  $Id: class_perf.cpp,v 1.11 2004-05-21 06:14:51 robocop Exp $
  *
  */
 
@@ -168,8 +168,8 @@ void report() {
 
 const int ALLOC_ITEMS	= 10000000;
 const int MAX_ITEM_SIZE = 50;
-const int BIG_ITEMS		= ALLOC_ITEMS/10;
-const int BIG_SIZE		= MAX_ITEM_SIZE*5;
+const int BIG_ITEMS		= ALLOC_ITEMS / 10;
+const int BIG_SIZE		= MAX_ITEM_SIZE * 5;
 
 struct AllocItem {
 	int order;

@@ -1496,9 +1496,9 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 	case dtype_text:
 		if (request->req_dbb->dbb_flags & DBB_v3)
 			stuff(request, blr_text);
-		else if (texttype || desc->dsc_sub_type == ttype_binary) {
+		else if (texttype || desc->dsc_ttype() == ttype_binary) {
 			stuff(request, blr_text2);
-			stuff_word(request, desc->dsc_sub_type);
+			stuff_word(request, desc->dsc_ttype());
 		}
 		else {
 			stuff(request, blr_text2);	// automatic transliteration 
@@ -1511,9 +1511,9 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 	case dtype_varying:
 		if (request->req_dbb->dbb_flags & DBB_v3)
 			stuff(request, blr_varying);
-		else if (texttype || desc->dsc_sub_type == ttype_binary) {
+		else if (texttype || desc->dsc_ttype() == ttype_binary) {
 			stuff(request, blr_varying2);
-			stuff_word(request, desc->dsc_sub_type);
+			stuff_word(request, desc->dsc_ttype());
 		}
 		else {
 			stuff(request, blr_varying2);	// automatic transliteration 
@@ -2492,7 +2492,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 						MAKE_parameter(request->req_receive, false, false, 0);
 					parameter->par_dbkey_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
-					parameter->par_desc.dsc_sub_type = ttype_binary;
+					parameter->par_desc.dsc_ttype() = ttype_binary;
 					parameter->par_desc.dsc_length =
 						relation->rel_dbkey_length;
 
@@ -2504,7 +2504,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 										   false, 0);
 						parameter->par_rec_version_ctx = context;
 						parameter->par_desc.dsc_dtype = dtype_text;
-						parameter->par_desc.dsc_sub_type = ttype_binary;
+						parameter->par_desc.dsc_ttype() = ttype_binary;
 						parameter->par_desc.dsc_length =
 							relation->rel_dbkey_length / 2;
 					}

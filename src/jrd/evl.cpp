@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.88 2004-05-13 09:22:10 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.89 2004-05-21 06:15:40 robocop Exp $ 
  */
 
 /*
@@ -1373,7 +1373,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 					desc->dsc_length = 1;
 					desc->dsc_sub_type = 0;
 					desc->dsc_scale = 0;
-					desc->dsc_sub_type = ttype_ascii;
+					desc->dsc_ttype() = ttype_ascii;
 					desc->dsc_address = (UCHAR *) " ";
 					return false;
 				}
@@ -1385,7 +1385,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 			desc->dsc_length = 1;
 			desc->dsc_sub_type = 0;
 			desc->dsc_scale = 0;
-			desc->dsc_sub_type = ttype_ascii;
+			desc->dsc_ttype() = ttype_ascii;
 			desc->dsc_address = (UCHAR *) " ";
 			return false;
 		}
@@ -3319,7 +3319,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 	impure->vlu_desc.dsc_address = (UCHAR *) impure->vlu_misc.vlu_dbkey;
 	impure->vlu_desc.dsc_dtype = dtype_text;
 	impure->vlu_desc.dsc_length = 8;
-	impure->vlu_desc.dsc_sub_type = ttype_binary;
+	impure->vlu_desc.dsc_ttype() = ttype_binary;
 
 	return &impure->vlu_desc;
 }
@@ -4357,7 +4357,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
 	impure->vlu_desc.dsc_dtype   = dtype_text;
 	impure->vlu_desc.dsc_length  = 4;
-	impure->vlu_desc.dsc_sub_type   = ttype_binary;
+	impure->vlu_desc.dsc_ttype()   = ttype_binary;
 
 	return &impure->vlu_desc;
 }
@@ -4943,9 +4943,9 @@ static dsc* substring(
 			but it's resolved by INTL_obj_lookup() to UNICODE_FSS in the cases I observed. Here I cannot
 			distinguish between user calls and system calls. Unlike the original ASCII substring(),
 			this one will get correctly the amount of UNICODE characters requested. */
-	else if (desc.dsc_sub_type == ttype_ascii || desc.dsc_sub_type == ttype_none
+	else if (desc.dsc_ttype() == ttype_ascii || desc.dsc_ttype() == ttype_none
 		|| ttype == ttype_binary
-		/*|| desc.dsc_sub_type == ttype_metadata) */)
+		/*|| desc.dsc_ttype() == ttype_metadata) */)
 	{
 		/* Redundant.
 		if (offset >= desc.dsc_length)
@@ -5036,8 +5036,8 @@ static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
 	INTL_ASSIGN_TTYPE(&desc, ttype);
 	EVL_make_value(tdbb, &desc, impure);
 
-	if ((desc.dsc_sub_type == ttype_ascii) ||
-		(desc.dsc_sub_type == ttype_none) || (desc.dsc_sub_type == ttype_metadata))
+	if ((desc.dsc_ttype() == ttype_ascii) ||
+		(desc.dsc_ttype() == ttype_none) || (desc.dsc_ttype() == ttype_metadata))
 	{
 		UCHAR* p = impure->vlu_desc.dsc_address;
 		for (const UCHAR* const end = p + impure->vlu_desc.dsc_length;

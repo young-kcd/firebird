@@ -3004,7 +3004,7 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 	dsql_par* parameter = MAKE_parameter(blob->blb_segment_msg, true, true, 0);
 	blob->blb_segment = parameter;
 	parameter->par_desc.dsc_dtype = dtype_text;
-	parameter->par_desc.dsc_sub_type = ttype_binary;
+	parameter->par_desc.dsc_ttype() = ttype_binary;
 	parameter->par_desc.dsc_length =
 		((dsql_fld*) field->nod_arg[e_fld_field])->fld_seg_length;
 	DEV_BLKCHK(field->nod_arg[e_fld_field], dsql_type_fld);
@@ -7088,7 +7088,7 @@ static bool set_parameter_type(dsql_nod* in_node, dsql_nod* node, bool force_var
 						parameter->par_desc.dsc_length = LIKE_PARAM_LEN + sizeof(USHORT);
 						parameter->par_desc.dsc_sub_type = 0;
 						parameter->par_desc.dsc_scale = 0;
-						parameter->par_desc.dsc_sub_type = ttype_dynamic;
+						parameter->par_desc.dsc_ttype() = ttype_dynamic;
 					}
 				}
 				return true;

@@ -1117,7 +1117,9 @@ static void prt_owner_wait_cycle(
 
 				if (COMPATIBLE(owner_request->lrq_requested, MAX(lock_request->lrq_state,
 								   lock_request->lrq_requested)))
+				{
 					continue;
+				}
 			}
 			else {
 

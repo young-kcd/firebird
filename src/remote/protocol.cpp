@@ -41,33 +41,33 @@
 #include "../jrd/sdl_proto.h"
 
 #ifdef DEBUG_XDR_MEMORY
-inline bool_t P_TRUE(XDR* xdrs, PACKET* p){
+inline bool_t P_TRUE(XDR* xdrs, PACKET* p) {
 	return xdr_debug_packet(xdrs, XDR_FREE, p);
 }
-inline bool_t P_FALSE(XDR* xdrs, PACKET* p){
+inline bool_t P_FALSE(XDR* xdrs, PACKET* p) {
 	return !xdr_debug_packet(xdrs, XDR_FREE, p);
 }
-inline void DEBUG_XDR_PACKET(XDR* xdrs, PACKET* p){
+inline void DEBUG_XDR_PACKET(XDR* xdrs, PACKET* p) {
 	xdr_debug_packet(xdrs, XDR_DECODE, p);
 }
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len);
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len);
 }
 #else
-inline bool_t P_TRUE(XDR* xdrs, PACKET* p){
+inline bool_t P_TRUE(XDR* xdrs, PACKET* p) {
 	return TRUE;
 }
-inline bool_t P_FALSE(XDR* xdrs, PACKET* p){
+inline bool_t P_FALSE(XDR* xdrs, PACKET* p) {
 	return FALSE;
 }
-inline void DEBUG_XDR_PACKET(XDR* xdrs, PACKET* p){
+inline void DEBUG_XDR_PACKET(XDR* xdrs, PACKET* p) {
 }
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len){
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 }
 #endif /* DEBUG_XDR_MEMORY */
 
@@ -140,7 +140,7 @@ static rem_str* gfloat_buffer;
 
 #ifdef DEBUG
 static ULONG xdr_save_size = 0;
-inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p){
+inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p) {
 	fprintf (stderr, "xdr_protocol: %s op %d size %lu\n",
 		((xdrs->x_op == XDR_FREE)   ? "free" :
 		 (xdrs->x_op == XDR_ENCODE) ? "enc " :
@@ -149,7 +149,7 @@ inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p){
 		 : (xdr_save_size - xdrs->x_handy)));
 }
 #else
-inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p){
+inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p) {
 }
 #endif
 
@@ -586,12 +586,16 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		if (slice_response->p_slr_sdl) {
 			if (!xdr_slice(xdrs, &slice->p_slc_slice, slice_response->p_slr_sdl_length,
 						   slice_response->p_slr_sdl)) 
+			{
 				return P_FALSE(xdrs, p);
+			}
 		}
 		else
 			if (!xdr_slice(xdrs, &slice->p_slc_slice, slice->p_slc_sdl.cstr_length,
 						   slice->p_slc_sdl.cstr_address)) 
+			{
 				return P_FALSE(xdrs, p);
+			}
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -601,7 +605,9 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			reinterpret_cast < SLONG & >(slice_response->p_slr_length));
 		if (!xdr_slice (xdrs, &slice_response->p_slr_slice, slice_response->p_slr_sdl_length,
 			 slice_response->p_slr_sdl)) 
+		{
 			return P_FALSE(xdrs, p);
+		}
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -1553,8 +1559,10 @@ static bool_t xdr_slice(
 
 		for (n = slice->lstr_length; n > MAX_OPAQUE;
 			n -= MAX_OPAQUE, p += (int) MAX_OPAQUE)
+		{
 			if (!xdr_opaque (xdrs, reinterpret_cast < SCHAR * >(p), MAX_OPAQUE))
 				 return FALSE;
+		}
 		if (n)
 			if (!xdr_opaque(xdrs, reinterpret_cast < SCHAR * >(p), n))
 				return FALSE;

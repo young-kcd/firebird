@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		evl_like.cpp
+ *	MODULE:		evl_like.h
  *	DESCRIPTION:	Expression evaluation (international). Obsolete.
  *
  * The contents of this file are subject to the Interbase Public

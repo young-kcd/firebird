@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		include.e
+ *	MODULE:		include.epp
  *	DESCRIPTION:	Include file generator
  *
  * The contents of this file are subject to the Interbase Public

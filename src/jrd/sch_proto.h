@@ -39,9 +39,11 @@ int		API_ROUTINE gds__thread_wait(int (*)(), SLONG);
 
 } // extern "C"
 
+struct thread;
+
 void	SCH_abort(void);
 void	SCH_ast(enum ast_t);
-struct thread*	SCH_current_thread(void);
+thread*	SCH_current_thread(void);
 void	SCH_enter(void);
 void	SCH_exit(void);
 void	SCH_hiber(void);
@@ -49,7 +51,7 @@ void	SCH_init(void);
 bool	SCH_schedule(void);
 bool	SCH_thread_enter_check(void);
 bool	SCH_validate(void);
-void	SCH_wake(struct thread*);
+void	SCH_wake(thread*);
 
 
 #endif // JRD_SCH_PROTO_H

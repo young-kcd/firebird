@@ -183,7 +183,7 @@ static DSC *eval(thread_db*, jrd_nod*, DSC*, bool*);
 static SLONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, sort_context*,
 					   SelectivityList&);
 
-static index_root_page* fetch_root(thread_db*, WIN *, jrd_rel*);
+static index_root_page* fetch_root(thread_db*, WIN *, const jrd_rel*);
 static UCHAR* find_node_start_point(btree_page*, temporary_key*, UCHAR*, USHORT*, 
 									bool, bool, bool = false, SLONG = NO_VALUE);
 
@@ -227,7 +227,7 @@ USHORT BTR_all(thread_db*		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 	WIN window(-1);
 
@@ -271,7 +271,7 @@ void BTR_create(thread_db* tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// Now that the index id has been checked out, create the index.
@@ -305,7 +305,7 @@ void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// Get index descriptor.  If index doesn't exist, just leave.
@@ -344,7 +344,7 @@ bool BTR_description(jrd_rel* relation, index_root_page* root, index_desc* idx, 
  *  Index id's must fit in a short - formerly a UCHAR.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	const Database* dbb = GET_DBB;
 	
 	if (id >= root->irt_count) {
 		return false;
@@ -632,7 +632,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 
 	index_desc* idx = insertion->iib_descriptor;
 	WIN window(idx->idx_root);
@@ -775,7 +775,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	int missing_unique_segments = 0;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	IDX_E result = idx_e_ok;
@@ -1021,7 +1021,8 @@ UCHAR *BTR_last_node(btree_page* page, exp_index_buf* expanded_page, btree_exp**
 
 
 #ifdef SCROLLABLE_CURSORS
-btree_page* BTR_left_handoff(thread_db* tdbb, WIN * window, btree_page* page, SSHORT lock_level)
+btree_page* BTR_left_handoff(thread_db* tdbb, WIN * window, btree_page* page,
+	SSHORT lock_level)
 {
 /**************************************
  *
@@ -1038,11 +1039,11 @@ btree_page* BTR_left_handoff(thread_db* tdbb, WIN * window, btree_page* page, SS
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	SLONG original_page = window->win_page;
-	SLONG left_sibling = page->btr_left_sibling;
+	const SLONG original_page = window->win_page;
+	const SLONG left_sibling = page->btr_left_sibling;
 
 	CCH_RELEASE(tdbb, window);
 	window->win_page = left_sibling;
@@ -1132,7 +1133,7 @@ void BTR_make_key(thread_db* tdbb,
 	temporary_key temp;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	//const Database* dbb = tdbb->tdbb_database;
 
 	fb_assert(count > 0);
 	fb_assert(idx != NULL);
@@ -1319,7 +1320,7 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
  *
  **************************************/
 
-	Database* dbb = tdbb->tdbb_database;
+	//const Database* dbb = tdbb->tdbb_database;
 	index_desc* idx = insertion->iib_descriptor;
 	WIN window(idx->idx_root);
 	btree_page* page = (btree_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_index);
@@ -1402,7 +1403,7 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// Get root page, assign an index id, and store the index descriptor.
@@ -1502,7 +1503,7 @@ retry:
 }
 
 
-void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, 
+void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 					 SelectivityList& selectivity)
 {
 /**************************************
@@ -1563,7 +1564,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id,
 	duplicatesList.grow(segments);
 	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
-	Database* dbb = tdbb->tdbb_database;
+	//const Database* dbb = tdbb->tdbb_database;
 
 	// go through all the leaf nodes and count them; 
 	// also count how many of them are duplicates
@@ -1862,7 +1863,7 @@ static void compress(thread_db* tdbb,
 	bool int64_key_op = false;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	UCHAR* p = key->key_data;
@@ -1941,7 +1942,7 @@ static void compress(thread_db* tdbb,
 			to.dsc_flags = 0;
 			to.dsc_sub_type = 0;
 			to.dsc_scale = 0;
-			to.dsc_sub_type = ttype_sort_key;
+			to.dsc_ttype() = ttype_sort_key;
 			to.dsc_length = sizeof(temp1);
 			ptr = to.dsc_address = temp1;
 			length = INTL_string_to_key(tdbb, itype, desc, &to, fuzzy);
@@ -2187,7 +2188,7 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	UCHAR* const temp =
@@ -2256,7 +2257,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	btree_page* page = (btree_page*) window->win_buffer;
@@ -2515,7 +2516,7 @@ static DSC *eval(thread_db* tdbb, jrd_nod* node, DSC * temp, bool *isNull)
 	temp->dsc_sub_type = 0;
 	temp->dsc_scale = 0;
 	temp->dsc_length = 1;
-	temp->dsc_sub_type = ttype_ascii;
+	temp->dsc_ttype() = ttype_ascii;
 	temp->dsc_address = (UCHAR*) " ";
 
 	return temp;
@@ -2558,7 +2559,7 @@ static SLONG fast_load(thread_db* tdbb,
 
 	
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// leaf-page and pointer-page size limits, we always need to 
@@ -3321,7 +3322,7 @@ static SLONG fast_load(thread_db* tdbb,
 }
 
 
-static index_root_page* fetch_root(thread_db* tdbb, WIN * window, jrd_rel* relation)
+static index_root_page* fetch_root(thread_db* tdbb, WIN * window, const jrd_rel* relation)
 {
 /**************************************
  *
@@ -4090,7 +4091,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	btree_page* gc_page = (btree_page*) window->win_buffer;
@@ -4656,7 +4657,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	fb_assert(page);
 	fb_assert(jumpNodes);
 	fb_assert(jumpersSize);
@@ -4816,7 +4817,7 @@ static SLONG insert_node(thread_db* tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// find the insertion point for the specified key
@@ -5488,7 +5489,7 @@ static CONTENTS remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 	index_desc* idx = insertion->iib_descriptor;
 	btree_page* page = (btree_page*) window->win_buffer;
 
@@ -5930,7 +5931,7 @@ void update_selectivity(index_root_page* root, USHORT id,
  *	Update selectivity on the index root page.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	const Database* dbb = GET_DBB;
 
 	index_root_page::irt_repeat* irt_desc = &root->irt_rpt[id];
 	const USHORT idx_count = irt_desc->irt_keys;

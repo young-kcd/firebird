@@ -53,15 +53,19 @@ typedef struct dsc
 	SSHORT	dsc_sub_type;
 	USHORT	dsc_flags;
 	UCHAR*	dsc_address; // Used either as offset in a message or as a pointer
+#ifdef __cplusplus
+	SSHORT& dsc_ttype() { return dsc_sub_type;}
+	SSHORT dsc_ttype() const { return dsc_sub_type;}
+#endif
 } DSC;
 
 
-inline SSHORT DSC_GET_CHARSET(const dsc* desc){
+inline SSHORT DSC_GET_CHARSET(const dsc* desc) {
 	return (desc->dsc_sub_type & 0x00FF);
 }
 //#define DSC_GET_CHARSET(dsc)	(((dsc)->dsc_sub_type) & 0x00FF)
 
-inline SSHORT DSC_GET_COLLATE(const dsc* desc){
+inline SSHORT DSC_GET_COLLATE(const dsc* desc) {
 	return (desc->dsc_sub_type >> 8);
 }
 //#define DSC_GET_COLLATE(dsc)	(((dsc)->dsc_sub_type) >> 8)
@@ -72,7 +76,7 @@ typedef struct alt_dsc {
 	USHORT dsc_flags;			/* Not currently used */
 } ALT_DSC;
 
-inline bool DSC_EQUIV(const dsc* d1, const dsc* d2){
+inline bool DSC_EQUIV(const dsc* d1, const dsc* d2) {
 	return ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && 
 		((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_varying));
 }
@@ -95,7 +99,7 @@ const UCHAR dtype_max_comp	= dtype_d_float;
 /* NOTE: For types <= dtype_any_text the dsc_sub_type field defines
    the text type */
 
-inline USHORT TEXT_LEN(const dsc* desc){
+inline USHORT TEXT_LEN(const dsc* desc) {
 	return ((desc->dsc_dtype == dtype_text) ? desc->dsc_length 
 		: (desc->dsc_dtype == dtype_cstring) ? desc->dsc_length - 1 : desc->dsc_length - sizeof(USHORT));
 }
@@ -119,25 +123,25 @@ const SSHORT dsc_num_type_decimal	= 2;	/* defined as DECIMAL(n,m)        */
 
 /* Date type information */
 
-inline bool DTYPE_IS_TEXT(UCHAR d){
+inline bool DTYPE_IS_TEXT(UCHAR d) {
 	return (((d) >= dtype_text) && ((d) <= dtype_varying));
 }
 //#define DTYPE_IS_DATE(d)	(((d) >= dtype_text) && ((d) <= dtype_varying))
 
-inline bool DTYPE_IS_DATE(UCHAR t){
+inline bool DTYPE_IS_DATE(UCHAR t) {
 	return (((t) >= dtype_sql_date) && ((t) <= dtype_timestamp));
 }
 //#define DTYPE_IS_DATE(t)	(((t) >= dtype_sql_date) && ((t) <= dtype_timestamp))
 
 /* DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs. */
-inline bool DTYPE_IS_BLOB(UCHAR d){
+inline bool DTYPE_IS_BLOB(UCHAR d) {
 	return (((d) == dtype_blob) || ((d) == dtype_array));
 }
 
 //#define DTYPE_IS_BLOB(d)        (((d) == dtype_blob) || ((d) == dtype_array))
 
 /* Exact numeric? */
-inline bool DTYPE_IS_EXACT(UCHAR d){
+inline bool DTYPE_IS_EXACT(UCHAR d) {
 	return (((d) == dtype_int64) || ((d) == dtype_long) || ((d) == dtype_short));
 }
 
@@ -146,14 +150,14 @@ inline bool DTYPE_IS_EXACT(UCHAR d){
 //				 ((d) == dtype_short))
 
 #ifdef VMS
-inline bool DTYPE_IS_APPROX(UCHAR d){
+inline bool DTYPE_IS_APPROX(UCHAR d) {
 	return (((d) == dtype_double) || ((d) == dtype_real) || ((d) == dtype_d_float));
 }
 //#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
 //				 ((d) == dtype_real)  || 
 //				 ((d) == dtype_d_float))
 #else
-inline bool DTYPE_IS_APPROX(UCHAR d){
+inline bool DTYPE_IS_APPROX(UCHAR d) {
 	return (((d) == dtype_double) || ((d) == dtype_real));
 }
 //#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
@@ -161,33 +165,33 @@ inline bool DTYPE_IS_APPROX(UCHAR d){
 #endif
 
 
-inline bool DTYPE_IS_NUMERIC(UCHAR d){
+inline bool DTYPE_IS_NUMERIC(UCHAR d) {
 	return ((((d) >= dtype_byte) && ((d) <= dtype_d_float)) || ((d)  == dtype_int64));
 }
 //#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) && 
 //				  ((d) <= dtype_d_float)) || 
 //				 ((d)  == dtype_int64))
 
-inline SCHAR NUMERIC_SCALE(dsc desc){
+inline SCHAR NUMERIC_SCALE(const dsc desc) {
 	return ((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale);
 }
 
 //#define NUMERIC_SCALE(desc)	((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
 
 /* Macros defining what operations are legal on data types */
-inline bool DTYPE_CAN_NEGATE(UCHAR d){
+inline bool DTYPE_CAN_NEGATE(UCHAR d) {
 	return DTYPE_IS_NUMERIC(d);
 }
 //#define DTYPE_CAN_NEGATE(d)	DTYPE_IS_NUMERIC(d)
-inline bool DTYPE_CAN_AVERAGE(UCHAR d){
+inline bool DTYPE_CAN_AVERAGE(UCHAR d) {
 	return DTYPE_IS_NUMERIC(d);
 }
 //#define DTYPE_CAN_AVERAGE(d)	DTYPE_IS_NUMERIC(d)
-inline bool DTYPE_CAN_DIVIDE(UCHAR d){
+inline bool DTYPE_CAN_DIVIDE(UCHAR d) {
 	return DTYPE_IS_NUMERIC(d);
 }
 //#define DTYPE_CAN_DIVIDE(d)	DTYPE_IS_NUMERIC(d)
-inline bool DTYPE_CAN_MULTIPLY(UCHAR d){
+inline bool DTYPE_CAN_MULTIPLY(UCHAR d) {
 	return DTYPE_IS_NUMERIC(d);
 }
 //#define DTYPE_CAN_MULTIPLY(d)	DTYPE_IS_NUMERIC(d)

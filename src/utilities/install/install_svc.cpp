@@ -36,7 +36,7 @@
 #define REMOTE_EXECUTABLE ((sw_arch == ARCH_SS) ? REMOTE_SS_EXECUTABLE : REMOTE_CS_EXECUTABLE)
 
 static void svc_query(const char*, const char*, SC_HANDLE manager);
-static USHORT svc_error(SLONG, TEXT *, SC_HANDLE);
+static USHORT svc_error(SLONG, const TEXT*, SC_HANDLE);
 static void usage(void);
 
 static struct
@@ -66,22 +66,20 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Install or remove a Firebird service.
  *
  **************************************/
-	TEXT **end, *p, *q, *cmd;
+	TEXT *q, *cmd;
 	TEXT directory[MAXPATHLEN];
 	TEXT full_username[128];
 	TEXT oem_username[128];
 	TEXT keyb_password[64];
-	USHORT sw_command, sw_startup, sw_mode, sw_guardian, sw_arch;
-	bool sw_version;
-	USHORT i, status, status2, len;
-	SC_HANDLE manager, service;
+	USHORT i, status, status2;
+	SC_HANDLE service;
 
-	sw_command = COMMAND_NONE;
-	sw_version = false;
-	sw_startup = STARTUP_AUTO;
-	sw_mode = DEFAULT_PRIORITY;
-	sw_guardian = NO_GUARDIAN;
-	sw_arch = ARCH_SS;
+	USHORT sw_command = COMMAND_NONE;
+	bool sw_version = false;
+	USHORT sw_startup = STARTUP_AUTO;
+	USHORT sw_mode = DEFAULT_PRIORITY;
+	USHORT sw_guardian = NO_GUARDIAN;
+	USHORT sw_arch = ARCH_SS;
 
 	TEXT *username = 0;
 	TEXT *password = 0;
@@ -89,13 +87,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	// Let's get the root directory from the instance path of this program.
 	// argv[0] is only _mostly_ guaranteed to give this info,
 	// so we GetModuleFileName()
-	len = GetModuleFileName(NULL, directory, sizeof(directory));
+	const USHORT len = GetModuleFileName(NULL, directory, sizeof(directory));
 	if (len == 0)
 		return svc_error(GetLastError(), "GetModuleFileName", NULL);
 
 	// Get to the last '\' (this one precedes the filename part). There is
 	// always one after a call to GetModuleFileName().
-	p = directory + len;
+	TEXT* p = directory + len;
 	do {--p;} while (*p != '\\');
 
 	// Get to the previous '\' (this one should precede the supposed 'bin\\' part).
@@ -103,7 +101,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	do {--p;} while (*p != '\\' && *p != ':');
 	*p = '\0';
 
-	end = argv + argc;
+	const TEXT* const* const end = argv + argc;
 	while (++argv < end)
 	{
 		if (**argv != '-')
@@ -209,7 +207,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			printf("Enter %s user password : ", oem_username);
 			p = keyb_password;
 			q = p + sizeof(keyb_password) - 1;	// keep room for '\0'
-			while (p < q && (*p++ = getch()) != '\r') putch('*'); // Win32 only
+			while (p < q && (*p++ = getch()) != '\r')
+				putch('*'); // Win32 only
 			*(p - 1) = '\0';	// Cuts at '\r'
 			printf("\n");
 			OemToChar(keyb_password, keyb_password);
@@ -239,7 +238,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 	}
 
-	manager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	if (manager == NULL)
 	{
 		svc_error(GetLastError(), "OpenSCManager", NULL);
@@ -270,7 +269,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 			/* do the install of the server */
 			status = SERVICES_install(manager, REMOTE_SERVICE,
-					REMOTE_DISPLAY_NAME, const_cast<char*>REMOTE_EXECUTABLE,
+					REMOTE_DISPLAY_NAME, REMOTE_EXECUTABLE,
 						directory, NULL, sw_startup, username, password, svc_error);
 			status2 = FB_SUCCESS;
 			if (username != 0)
@@ -447,7 +446,7 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 	return;
 }
 
-static USHORT svc_error( SLONG status, TEXT * string, SC_HANDLE service)
+static USHORT svc_error( SLONG status, const TEXT* string, SC_HANDLE service)
 {
 /**************************************
  *

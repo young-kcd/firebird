@@ -2537,6 +2537,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 		break;
 
 	case op_info_request:
+		{
 		rrq* requestL;
 		CHECK_HANDLE_MEMBER(requestL,
 							rrq*,
@@ -2552,6 +2553,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 						 reinterpret_cast<char*>(buffer));
 		THREAD_ENTER();
 		break;
+		}
 
 	case op_info_transaction:
 		CHECK_HANDLE_MEMBER(transaction,

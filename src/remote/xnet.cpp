@@ -128,31 +128,31 @@ static MUTX_T xnet_mutex;
 
 #if defined(SUPERCLIENT)
 
-inline void XNET_LOCK(){
+inline void XNET_LOCK() {
 	THD_mutex_lock(&xnet_mutex);
 }
-inline void XNET_UNLOCK(){
+inline void XNET_UNLOCK() {
 	THD_mutex_unlock(&xnet_mutex);
 }
 
 #elif defined(SUPERSERVER)
 
-inline void XNET_LOCK(){
+inline void XNET_LOCK() {
 	if (!xnet_shutdown)
 		THREAD_EXIT();
 	THD_mutex_lock(&xnet_mutex);
 	if (!xnet_shutdown)
 		THREAD_ENTER();
 }
-inline void XNET_UNLOCK(){
+inline void XNET_UNLOCK() {
 	THD_mutex_unlock(&xnet_mutex);
 }
 
 #else // CS
 
-inline void XNET_LOCK(){
+inline void XNET_LOCK() {
 }
-inline void XNET_UNLOCK(){
+inline void XNET_UNLOCK() {
 }
 
 #endif

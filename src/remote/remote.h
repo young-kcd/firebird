@@ -225,7 +225,7 @@ typedef struct rpr
 	USHORT		rpr_flags;
 } *RPR;
 
-// rpw_flags (not used)
+// rpr_flags (not used)
 //#define RPR_eof		1		/* End-of-stream encountered */
 
 struct rrq
@@ -257,8 +257,6 @@ struct rrq
 
 	} rrq_rpt[1];
 };
-
-/* rrq flags */
 
 // rrq_flags
 const USHORT RRQ_backward			= 1;	/* the cache was created in the backward direction */ 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.31 2004-05-18 21:59:25 brodsom Exp $
+ * $Id: isql.h,v 1.32 2004-05-21 06:15:36 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -271,7 +271,7 @@ static const char* SCRATCH		= "fb_q";
 static const char* SCRATCH		= "fb_query_";
 #endif
 
-inline void STDERROUT(char* st, bool cr){
+inline void STDERROUT(char* st, bool cr) {
 	fprintf (Errfp, "%s", st);
 	if (cr)
 		fprintf (Errfp, "\n");

@@ -1069,10 +1069,11 @@ extern int debug;
 #endif /* REQUESTER */
 
 
-/* Define the xxx_THREAD_DATA macros.  These are needed in the whole 
-   component, but they are defined differently for use in jrd.c (JRD_MAIN)
+/* Define the xxx_thread_data macros.  These are needed in the whole 
+   component, but they are defined differently for use in jrd.cpp (JRD_MAIN)
    Here we have a function which sets some flags, and then calls THD_put_specific
    so in this case we define the macro as calling that function. */
+// CVC: This may be obsolete now that different subsystems use different macro/function names.
 #ifndef JRD_MAIN
 
 #define JRD_set_thread_data		tdbb = &thd_context;\

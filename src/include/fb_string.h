@@ -56,7 +56,7 @@ namespace Firebird
 	protected:
 		union {
 			char_type smallStorage[smallStorageSize];
-// BRS 14/05/04: ISO C++ don't allow anonymous struct inside anonymous union
+// BRS 14/05/04: ISO C++ doesn't allow anonymous struct inside anonymous union
 //			struct {
 				char_type* bigStorage;
 //			};

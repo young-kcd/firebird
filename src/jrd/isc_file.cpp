@@ -88,7 +88,7 @@
 
 
 const char* LOGICAL_NAME_TABLE	= "LNM$FILE_DEV";
-const char* DEFAULT_FILE_NAME	".fdb";
+const char* DEFAULT_FILE_NAME	= ".fdb";
 const char INET_FLAG		= '^';
 
 typedef struct itm {

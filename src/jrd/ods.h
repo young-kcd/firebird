@@ -99,7 +99,7 @@ const USHORT ODS_CURRENT11		= 0;
 /* useful ODS macros. These are currently used to flag the version of the
    system triggers and system indices in ini.e */
 
-inline USHORT ENCODE_ODS(USHORT major,USHORT minor){
+inline USHORT ENCODE_ODS(USHORT major,USHORT minor) {
 	return (((major) << 4) | (minor));
 }
 const USHORT ODS_8_0		= ENCODE_ODS(ODS_VERSION8, 0);
@@ -112,10 +112,10 @@ const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
 
 /* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and 
    the next 4 bits are major version number */
-inline USHORT DECODE_ODS_MAJOR(USHORT ods_version){
+inline USHORT DECODE_ODS_MAJOR(USHORT ods_version) {
 	return ((ods_version & 0xFFF0) >> 4);
 }
-inline USHORT DECODE_ODS_MINOR(USHORT ods_version){
+inline USHORT DECODE_ODS_MINOR(USHORT ods_version) {
 	return (ods_version & 0x000F);
 }
 

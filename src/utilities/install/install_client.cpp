@@ -169,7 +169,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		usage();
 	}
 
-	TEXT* clientname = const_cast<char*> ((sw_client == CLIENT_GDS) ? GDS32_NAME : FBCLIENT_NAME);
+	const TEXT* clientname = (sw_client == CLIENT_GDS) ? GDS32_NAME : FBCLIENT_NAME;
 
 	USHORT status;
 	switch (sw_command)

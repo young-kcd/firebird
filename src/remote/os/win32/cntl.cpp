@@ -55,7 +55,7 @@ static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 static DWORD current_state;
 static void (*main_handler) ();
 static SERVICE_STATUS_HANDLE global_service_handle;
-static TEXT* global_service_name;
+static const TEXT* global_service_name;
 static HANDLE stop_event_handle;
 static MUTX_T thread_mutex[1];
 static THREAD threads;
@@ -63,7 +63,7 @@ static HANDLE hMutex = NULL;
 static bool bGuarded = false;
 
 
-void CNTL_init( void (*handler) (), TEXT* name)
+void CNTL_init( void (*handler) (), const TEXT* name)
 {
 /**************************************
  *
@@ -227,7 +227,7 @@ void CNTL_remove_thread( void *thread)
 }
 
 
-void CNTL_shutdown_service( TEXT * message)
+void CNTL_shutdown_service( const TEXT* message)
 {
 /**************************************
  *

@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.29 2004-05-12 19:34:43 brodsom Exp $
+//	$Id: sqe.cpp,v 1.30 2004-05-21 06:15:23 robocop Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -1580,7 +1580,6 @@ static GPRE_NOD merge_fields(GPRE_NOD fields_1,
 							 int n,
 							 bool replace)
 {
-	GPRE_NOD fields;
 	int i, count, offset;
 
 	assert_IS_NOD(fields_1);
@@ -1589,7 +1588,7 @@ static GPRE_NOD merge_fields(GPRE_NOD fields_1,
 	count = fields_1->nod_count + fields_2->nod_count;
 	if (replace)
 		count--;
-	fields = MSC_node(nod_list, (SSHORT) count);
+	gpre_nod* fields = MSC_node(nod_list, (SSHORT) count);
 
 	count = n;
 	if (!replace)
@@ -1686,9 +1685,7 @@ static void pair( GPRE_NOD expr1, GPRE_NOD expr2)
 
 static gpre_ctx* par_alias_list( gpre_req* request, GPRE_NOD alias_list)
 {
-	gpre_rel* relation;
-	USHORT alias_length;
-	TEXT *p, *q, *alias;
+	TEXT *p, *q;
 	SCHAR error_string[ERROR_LENGTH];
 
 	assert_IS_REQ(request);
@@ -1700,6 +1697,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, GPRE_NOD alias_list)
 //  check the first alias in the list with the relations
 //  in the current context for a match 
 
+	gpre_rel* relation = 0; // unreliable test many lines below without initializing.
 	gpre_ctx* context = par_alias(request, (TEXT *) * arg);
 	if (context) {
 		if (alias_list->nod_count == 1)
@@ -1720,7 +1718,10 @@ static gpre_ctx* par_alias_list( gpre_req* request, GPRE_NOD alias_list)
 				continue;
 			if (relation =
 				par_base_table(request, context->ctx_relation,
-							   (TEXT *) * arg)) break;
+							   (TEXT *) * arg))
+			{
+				break;
+			}
 		}
 
 	if (!context) {
@@ -1754,12 +1755,14 @@ static gpre_ctx* par_alias_list( gpre_req* request, GPRE_NOD alias_list)
 //  concatenate all the contexts to form the alias name;
 //  calculate the length leaving room for spaces and a null 
 
-	alias_length = alias_list->nod_count;
+	USHORT alias_length = alias_list->nod_count;
 	for (arg = alias_list->nod_arg; arg < end; arg++)
 		alias_length += strlen((TEXT *) * arg);
 
-	alias = (TEXT *) MSC_alloc(alias_length);
+	TEXT* alias = (TEXT *) MSC_alloc(alias_length);
 
+	// CVC: Warning: Using space as separator may conflict with dialect 3's embedded blanks;
+	// but gpre is not much worried about dialects... except in this file!
 	p = new_context->ctx_alias = alias;
 	for (arg = alias_list->nod_arg; arg < end; arg++) {
 		for (q = (TEXT *) * arg; *q;)
@@ -1852,11 +1855,9 @@ static gpre_rel* par_base_table( gpre_req* request, gpre_rel* relation, TEXT * a
 
 static GPRE_NOD par_and( gpre_req* request, USHORT * paren_count)
 {
-	GPRE_NOD expr1;
-
 	assert_IS_REQ(request);
 
-	expr1 = par_not(request, paren_count);
+	gpre_nod* expr1 = par_not(request, paren_count);
 
 	if (!MSC_match(KW_AND))
 		return expr1;
@@ -1871,16 +1872,13 @@ static GPRE_NOD par_and( gpre_req* request, USHORT * paren_count)
 
 static GPRE_NOD par_collate( gpre_req* request, GPRE_NOD arg)
 {
-	gpre_fld* field;
-	GPRE_NOD node;
-
 	assert_IS_REQ(request);
 	assert_IS_NOD(arg);
 
-	node = MSC_node(nod_cast, 2);
+	gpre_nod* node = MSC_node(nod_cast, 2);
 	node->nod_count = 1;
 	node->nod_arg[0] = arg;
-	field = (gpre_fld*) MSC_alloc(FLD_LEN);
+	gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 	node->nod_arg[1] = (GPRE_NOD) field;
 	CME_get_dtype(arg, field);
 	if (field->fld_dtype > dtype_any_text) {
@@ -1990,26 +1988,22 @@ static gpre_ctx* par_joined_relation( gpre_req* request, gpre_ctx* prior_context
 
 static gpre_ctx* par_join_clause( gpre_req* request, gpre_ctx* context1)
 {
-	gpre_ctx* context2;
-	NOD_T join_type;
-	GPRE_NOD node;
-	gpre_rse* selection;
-
 	assert_IS_REQ(request);
 
-	join_type = par_join_type();
+	const NOD_T join_type = par_join_type();
 	if (join_type == (NOD_T) 0)
 		return context1;
 
-	if (!(context2 = par_joined_relation(request, context1)))
+	gpre_ctx* context2 = par_joined_relation(request, context1);
+	if (!context2)
 		CPR_s_error("<joined table clause>");
 
 	if (!MSC_match(KW_ON))
 		CPR_s_error("ON");
 
-	node = SQE_boolean(request, NULL);
+	gpre_nod* node = SQE_boolean(request, NULL);
 
-	selection = (gpre_rse*) MSC_alloc(RSE_LEN(2));
+	gpre_rse* selection = (gpre_rse*) MSC_alloc(RSE_LEN(2));
 	selection->rse_count = 2;
 	selection->rse_context[0] = context1;
 	selection->rse_context[1] = context2;
@@ -2065,16 +2059,15 @@ static GPRE_NOD par_multiply(gpre_req* request,
 							 USHORT * paren_count,
 							 bool * bool_flag)
 {
-	GPRE_NOD node, arg;
-
 	assert_IS_REQ(request);
-	node = par_primitive_value(request, aster_ok, paren_count, bool_flag);
+	gpre_nod* node = par_primitive_value(request, aster_ok, paren_count, bool_flag);
 	if (node->nod_type == nod_asterisk)
 		return node;
 
 	if (token_global.tok_keyword == KW_COLLATE)
 		return par_collate(request, node);
 
+	GPRE_NOD arg;
 	enum nod_t nod_type;
 	while (true) {
 		if (MSC_match(KW_ASTERISK))
@@ -2101,7 +2094,6 @@ static GPRE_NOD par_not( gpre_req* request, USHORT * paren_count)
 {
 	gpre_rse* selection;
 	GPRE_NOD node, expr, field;
-	enum nod_t type;
 	scope saved_scope;
 
 	assert_IS_REQ(request);
@@ -2109,7 +2101,7 @@ static GPRE_NOD par_not( gpre_req* request, USHORT * paren_count)
 	if (MSC_match(KW_NOT))
 		return negate(par_not(request, paren_count));
 
-	type = (enum nod_t) 0;
+	enum nod_t type = (enum nod_t) 0;
 
 	if (MSC_match(KW_EXISTS))
 		type = nod_any;
@@ -2160,7 +2152,7 @@ static void par_order(gpre_req* request,
 					  bool union_f,
 					  bool view_flag)
 {
-	GPRE_NOD sort, *ptr, values;
+	GPRE_NOD sort, *ptr;
 	map* request_map;
 	int count, direction;
 	USHORT i;
@@ -2187,7 +2179,7 @@ static void par_order(gpre_req* request,
 	gpre_lls* items = NULL;
 	gpre_lls* directions = NULL;
 	count = direction = 0;
-	values = select->rse_fields;
+	gpre_nod* values = select->rse_fields;
 
 	while (true) {
 		direction = FALSE;
@@ -2285,8 +2277,7 @@ static GPRE_NOD par_plan_item(gpre_req* request,
 {
 	gpre_lls* stack = NULL;
 	int count;
-	GPRE_NOD plan_item, alias_list, access_type, index_list, *ptr;
-	gpre_ctx* context;
+	GPRE_NOD access_type, *ptr;
 
 	assert_IS_REQ(request);
 
@@ -2316,13 +2307,13 @@ static GPRE_NOD par_plan_item(gpre_req* request,
 	if (!count)
 		CPR_s_error("<table name> or <alias>");
 
-	alias_list = MSC_node(nod_list, (SSHORT) count);
+	gpre_nod* alias_list = MSC_node(nod_list, (SSHORT) count);
 	for (ptr = &alias_list->nod_arg[count]; stack;)
 		*--ptr = (GPRE_NOD) MSC_pop(&stack);
 
 //  lookup the contexts for the aliases 
 
-	context = par_alias_list(request, alias_list);
+	gpre_ctx* context = par_alias_list(request, alias_list);
 
 //  parse the access type 
 
@@ -2360,8 +2351,8 @@ static GPRE_NOD par_plan_item(gpre_req* request,
 		if (!count)
 			CPR_s_error("<table name> or <alias>");
 
-		access_type->nod_arg[0] = index_list =
-			MSC_node(nod_list, (SSHORT) count);
+		gpre_nod* index_list = MSC_node(nod_list, (SSHORT) count);
+		access_type->nod_arg[0] = index_list;
 		for (ptr = &index_list->nod_arg[count]; stack;)
 			*--ptr = (GPRE_NOD) MSC_pop(&stack);
 
@@ -2375,7 +2366,7 @@ static GPRE_NOD par_plan_item(gpre_req* request,
 
 //  generate the plan item node 
 
-	plan_item = MSC_node(nod_plan_item, 3);
+	gpre_nod* plan_item = MSC_node(nod_plan_item, 3);
 	plan_item->nod_count = 2;
 	plan_item->nod_arg[0] = alias_list;
 	plan_item->nod_arg[1] = access_type;
@@ -2405,7 +2396,7 @@ static GPRE_NOD par_primitive_value(gpre_req* request,
 									USHORT * paren_count,
 									bool * bool_flag)
 {
-	GPRE_NOD node, node_arg;
+	GPRE_NOD node_arg;
 	REF reference;
 	map* tmp_map;
 	bool distinct;
@@ -2415,7 +2406,7 @@ static GPRE_NOD par_primitive_value(gpre_req* request,
 
 	assert_IS_REQ(request);
 
-	node = FALSE;
+	gpre_nod* node = 0;
 
 	if (!paren_count) {
 		local_count = 0;
@@ -2446,7 +2437,9 @@ static GPRE_NOD par_primitive_value(gpre_req* request,
 			!action ||
 			!(action->act_type == ACT_create_domain ||
 			  action->act_type == ACT_alter_domain))
-				PAR_error("VALUE cannot be used in this context");
+		{
+			PAR_error("VALUE cannot be used in this context");
+		}
 
 		return MSC_node(nod_dom_value, 0);
 	}
@@ -2474,10 +2467,12 @@ static GPRE_NOD par_primitive_value(gpre_req* request,
 							!(request->req_in_select_list ||
 							  request->req_in_having_clause ||
 							  request->req_in_order_by_clause)))
+			{
 				/* either nested aggregate, or not part of a select
 				   list, having clause, or order by clause (in any subquery)
 				 */
 				PAR_error("Invalid aggregate reference");
+			}
 
 			node = MSC_node(op->rel_op, 2);
 			node->nod_count = 1;
@@ -2585,14 +2580,14 @@ static GPRE_NOD par_primitive_value(gpre_req* request,
 static GPRE_NOD par_relational(gpre_req* request,
 							   USHORT * paren_count)
 {
-	GPRE_NOD node, expr1, expr2;
+	GPRE_NOD node;
 	REF ref_value;
 	bool negation = false;
 	bool local_flag  =true;
 
 	assert_IS_REQ(request);
 
-	expr1 = SQE_value(request, false, paren_count, &local_flag);
+	gpre_nod* expr1 = SQE_value(request, false, paren_count, &local_flag);
 	if (token_global.tok_keyword == KW_RIGHT_PAREN)
 		return expr1;
 	if (token_global.tok_keyword == KW_SEMI_COLON)
@@ -2627,7 +2622,8 @@ static GPRE_NOD par_relational(gpre_req* request,
 		node->nod_arg[1] = SQE_value(request, false, NULL, NULL);
 		pair(node->nod_arg[0], node->nod_arg[1]);
 		if (MSC_match(KW_ESCAPE)) {
-			node->nod_arg[2] = expr2 = SQE_value(request, false, NULL, NULL);
+			gpre_nod* expr2 = SQE_value(request, false, NULL, NULL);
+			node->nod_arg[2] = expr2;
 			if (expr2->nod_type == nod_value) {
 				ref_value = (REF) expr2->nod_arg[0];
 				ref_value->ref_field = MET_make_field("like_escape_character",
@@ -2845,13 +2841,12 @@ static gpre_rse* par_select( gpre_req* request, gpre_rse* union_rse)
 {
 	gpre_rse* select;
 	GPRE_NOD s_list, into_list;
-	bool distinct;
 
 	assert_IS_REQ(request);
 
 //  Handle the ALL and DISTINCT options 
 
-	distinct = (!MSC_match(KW_ALL) && MSC_match(KW_DISTINCT));
+	const bool distinct = (!MSC_match(KW_ALL) && MSC_match(KW_DISTINCT));
 
 //  Make select list out of select items 
 
@@ -2887,10 +2882,7 @@ static gpre_rse* par_select( gpre_req* request, gpre_rse* union_rse)
 
 static GPRE_NOD par_stat( gpre_req* request)
 {
-	GPRE_NOD node, field_list;
 	GPRE_NOD item;
-	gpre_rse* select;
-	bool distinct;
 	scope previous_scope;
 
 	assert_IS_REQ(request);
@@ -2898,21 +2890,21 @@ static GPRE_NOD par_stat( gpre_req* request)
 	request->req_in_subselect++;
 	push_scope(request, &previous_scope);
 
-	distinct = (!MSC_match(KW_ALL) && MSC_match(KW_DISTINCT));
+	const bool distinct = (!MSC_match(KW_ALL) && MSC_match(KW_DISTINCT));
 
 	request->req_in_select_list++;
 	if (!(item = par_udf(request)))
 		item = SQE_value(request, false, NULL, NULL);
 	request->req_in_select_list--;
 
-	field_list = MSC_node(nod_list, 1);
+	gpre_nod* field_list = MSC_node(nod_list, 1);
 	field_list->nod_arg[0] = item;
-	select = par_rse(request, field_list, distinct);
+	gpre_rse* select = par_rse(request, field_list, distinct);
 	select->rse_flags |= RSE_singleton;
 
 	item = select->rse_fields->nod_arg[0];
 
-	node = MSC_node(nod_via, 3);
+	gpre_nod* node = MSC_node(nod_via, 3);
 	node->nod_count = 0;
 	node->nod_arg[0] = (GPRE_NOD) select;
 	node->nod_arg[2] = MSC_node(nod_null, 0);
@@ -2933,20 +2925,17 @@ static GPRE_NOD par_stat( gpre_req* request)
 
 static GPRE_NOD par_subscript( gpre_req* request)
 {
-	GPRE_NOD node;
-	REF reference;
-	SCHAR *string;
-
 	assert_IS_REQ(request);
 
-	reference = (REF) MSC_alloc(REF_LEN);
-	node = MSC_unary(nod_value, (GPRE_NOD) reference);
+	ref* reference = (REF) MSC_alloc(REF_LEN);
+	gpre_nod* node = MSC_unary(nod_value, (GPRE_NOD) reference);
 
 //  Special case literals 
 
 	if (token_global.tok_type == tok_number) {
 		node->nod_type = nod_literal;
-		reference->ref_value = string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
+		char* string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
+		reference->ref_value = string;
 		MSC_copy(token_global.tok_string, token_global.tok_length, string);
 		PAR_get_token();
 		return node;
@@ -2974,11 +2963,11 @@ static GPRE_NOD par_subscript( gpre_req* request)
 static void par_terminating_parens(
 								   USHORT * paren_count, USHORT * local_count)
 {
-
+	// Suspicious condition.
 	if (*paren_count && paren_count == local_count)
-		do
+		do {
 			EXP_match_paren();
-		while (--(*paren_count));
+		} while (--(*paren_count));
 }
 
 
@@ -3034,7 +3023,9 @@ static GPRE_NOD par_udf( gpre_req* request)
 			((dtype_sql_date == an_udf->udf_dtype) ||
 			 (dtype_sql_time == an_udf->udf_dtype) ||
 			 (dtype_int64 == an_udf->udf_dtype)))
-				dialect1_bad_type(an_udf->udf_dtype);
+		{
+			dialect1_bad_type(an_udf->udf_dtype);
+		}
 
 		node = MSC_node(nod_udf, 2);
 		node->nod_count = 1;
@@ -3161,11 +3152,10 @@ static GPRE_NOD par_udf( gpre_req* request)
 static GPRE_NOD par_udf_or_field(gpre_req* request,
 								 bool aster_ok)
 {
-	GPRE_NOD node;
-
 	assert_IS_REQ(request);
 
-	if (!(node = par_udf(request)))
+	gpre_nod* node = par_udf(request);
+	if (!node)
 		node = SQE_field(request, aster_ok);
 
 	return node;
@@ -3184,11 +3174,9 @@ static GPRE_NOD par_udf_or_field_with_collate(gpre_req* request,
 											  bool * bool_flag)
 
 {
-	GPRE_NOD node;
-
 	assert_IS_REQ(request);
 
-	node = par_udf_or_field(request, aster_ok);
+	gpre_nod* node = par_udf_or_field(request, aster_ok);
 	if (token_global.tok_keyword == KW_COLLATE)
 		node = par_collate(request, node);
 
@@ -3383,29 +3371,25 @@ static gpre_fld* resolve(
 				   GPRE_NOD node,
 				   gpre_ctx* context, gpre_ctx** found_context, act** slice_action)
 {
-	gpre_sym* symbol;
-	gpre_sym* temp_symbol;
 	gpre_fld* field;
-	TOK f_token, q_token;
-	gpre_rse* rs_stream;
-	SSHORT i;
-	gpre_req* slice_req;
-	slc* slice;
-	act* action;
 
 	assert_IS_NOD(node);
 
-	if (rs_stream = context->ctx_stream) {
-		for (i = 0; i < rs_stream->rse_count; i++)
+	gpre_rse* rs_stream = context->ctx_stream;
+	if (rs_stream) {
+		for (SSHORT i = 0; i < rs_stream->rse_count; i++)
 			if (field =
 				resolve(node, rs_stream->rse_context[i], found_context,
-						slice_action)) return field;
+						slice_action))
+			{
+				return field;
+			}
 
 		return NULL;
 	}
 
-	f_token = (TOK) node->nod_arg[0];
-	q_token = (TOK) node->nod_arg[1];
+	TOK f_token = (TOK) node->nod_arg[0];
+	TOK q_token = (TOK) node->nod_arg[1];
 
 	if (!(context->ctx_relation || context->ctx_procedure))
 		return NULL;
@@ -3417,12 +3401,12 @@ static gpre_fld* resolve(
 	else {
 		// Now search alternatives for the qualifier 
 
-		symbol = HSH_lookup(q_token->tok_string);
+		gpre_sym* symbol = HSH_lookup(q_token->tok_string);
 
 		/* This caused gpre to dump core if there are lower case 
 		   table aliases in a where clause used with dialect 2 or 3 
 
-		   if ( (symbol == NULL)&& (sw_case || sw_sql_dialect == SQL_DIALECT_V5))
+		   if ( (symbol == NULL) && (sw_case || sw_sql_dialect == SQL_DIALECT_V5))
 		   symbol = HSH_lookup2 (q_token->tok_string);
 		 */
 
@@ -3434,8 +3418,9 @@ static gpre_fld* resolve(
 			symbol = HSH_lookup2(q_token->tok_string);
 
 
-		for (temp_symbol = symbol; temp_symbol;
-			 temp_symbol = temp_symbol->sym_homonym) {
+		for (gpre_sym* temp_symbol = symbol; temp_symbol;
+			 temp_symbol = temp_symbol->sym_homonym)
+		{
 			if (temp_symbol->sym_type == SYM_context) {
 				symbol = temp_symbol;
 				break;
@@ -3474,8 +3459,11 @@ static gpre_fld* resolve(
 //  Check for valid array field  
 //  Check dimensions 
 //  Set remaining fields for slice 
-	if ((slice_req = (gpre_req*) node->nod_arg[2]) &&
-		(slice = slice_req->req_slice) && slice_action) {
+	slc* slice;
+	gpre_req* slice_req = (gpre_req*) node->nod_arg[2];
+	if (slice_req &&
+		(slice = slice_req->req_slice) && slice_action)
+	{
 		slice = slice_req->req_slice;
 		ary* ary_info = field->fld_array_info;
 		if (!ary_info)
@@ -3488,7 +3476,7 @@ static gpre_fld* resolve(
 		/* The action type maybe ACT_get_slice or ACT_put_slice 
 		   set as a place holder */
 
-		action = MSC_action(slice_req, ACT_get_slice);
+		act* action = MSC_action(slice_req, ACT_get_slice);
 		action->act_object = (REF) slice;
 		*slice_action = action;
 	}
@@ -3496,7 +3484,7 @@ static gpre_fld* resolve(
 		/* The action type maybe ACT_get_slice or ACT_put_slice
 		   set as a place holder */
 
-		action = MSC_action(slice_req, ACT_get_slice);
+		act* action = MSC_action(slice_req, ACT_get_slice);
 		*slice_action = action;
 	}
 
@@ -3512,29 +3500,31 @@ static gpre_fld* resolve(
 
 static gpre_ctx* resolve_asterisk( TOK q_token, gpre_rse* selection)
 {
-	gpre_ctx* context;
-	gpre_rse* rs_stream;
-	gpre_sym* symbol;
-	int i;
-
-	for (i = 0; i < selection->rse_count; i++) {
-		context = selection->rse_context[i];
-		if (rs_stream = context->ctx_stream) {
+	for (int i = 0; i < selection->rse_count; i++) {
+		gpre_ctx* context = selection->rse_context[i];
+		gpre_rse* rs_stream = context->ctx_stream;
+		if (rs_stream) {
 			if (context = resolve_asterisk(q_token, rs_stream))
 				return context;
 			continue;
 		}
-		symbol = HSH_lookup(q_token->tok_string);
+		gpre_sym* symbol = HSH_lookup(q_token->tok_string);
 		for (; symbol; symbol = symbol->sym_homonym)
 			if (symbol->sym_type == SYM_relation &&
 				(gpre_rel*) symbol->sym_object == context->ctx_relation)
+			{
 				return context;
+			}
 			else if (symbol->sym_type == SYM_procedure &&
 					 (gpre_prc*) symbol->sym_object == context->ctx_procedure)
+			{
 				return context;
+			}
 			else if (symbol->sym_type == SYM_context &&
 					 (gpre_ctx*) symbol->sym_object == context)
+			{
 				return context;
+			}
 	}
 
 	return NULL;
@@ -3661,7 +3651,7 @@ static bool validate_references(GPRE_NOD fields,
 		fields->nod_type == nod_agg_average ||
 		fields->nod_type == nod_aggregate)
 	{
-		return FALSE;
+		return false;
 	}
 
 	if (fields->nod_type == nod_any || fields->nod_type == nod_ansi_any ||
@@ -3727,7 +3717,7 @@ static bool validate_references(GPRE_NOD fields,
 static void dialect1_bad_type(USHORT field_dtype)
 {
 	char buffer[200];
-	char *s;
+	const char* s;
 
 	switch (field_dtype) {
 	case dtype_sql_date:

@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        InterBase Window platforms
- *      MODULE:         ibinitdll.c
+ *      MODULE:         ibinitdll.cpp
  *      DESCRIPTION:    DLL entry/exit function
  *
  * The contents of this file are subject to the Interbase Public

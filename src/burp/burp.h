@@ -888,27 +888,27 @@ typedef struct tgbl
 void	BURP_exit_local(int code, tgbl* tdgbl);
 
 #ifdef SUPERSERVER
-inline tgbl* BURP_get_thread_data(){
+inline tgbl* BURP_get_thread_data() {
 	return (tgbl*) THD_get_specific();
 }
-inline void BURP_set_thread_data(tgbl* tdgbl){
+inline void BURP_set_thread_data(tgbl* tdgbl) {
 	THD_put_specific ((THDD) tdgbl);
 	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL;
 }
-inline void BURP_restore_thread_data(){
+inline void BURP_restore_thread_data() {
 	THD_restore_specific();
 }
 #else
 extern tgbl* gdgbl;
 
-inline tgbl* BURP_get_thread_data(){
+inline tgbl* BURP_get_thread_data() {
 	return gdgbl;
 }
-inline void BURP_set_thread_data(tgbl* tdgbl){
+inline void BURP_set_thread_data(tgbl* tdgbl) {
 	gdgbl = tdgbl;
 	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL;
 }
-inline void BURP_restore_thread_data(){
+inline void BURP_restore_thread_data() {
 }
 #endif
 

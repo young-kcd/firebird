@@ -1161,10 +1161,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
  *	stub. 
  *
  **************************************/
-	jrd_rel* r2;
-	jrd_prc* procedure;
 	DSC desc, desc2;
-	USHORT id, rel_flags;
 	// Revokee is only 32 bytes. UserId would be truncated.
 	SqlIdentifier relation_name, revokee, privilege, procedure_name;
 
@@ -1218,6 +1215,10 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (!(transaction->tra_flags & TRA_system))
 	{
+		jrd_rel* r2;
+		jrd_prc* procedure;
+		USHORT id, rel_flags;
+	
 		switch ((RIDS) relation->rel_id)
 		{
 		case rel_relations:

@@ -184,7 +184,6 @@ void IDX_create_index(
  *
  **************************************/
 	IDX_E result = idx_e_ok;
-	index_fast_load ifl_data;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -223,6 +222,7 @@ void IDX_create_index(
 	RecordStack stack;
 	const UCHAR pad = (idx->idx_flags & idx_descending) ? -1 : 0;
 
+	index_fast_load ifl_data;
 	ifl_data.ifl_duplicates = 0;
 	ifl_data.ifl_key_length = key_length;
 
@@ -797,7 +797,7 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
 }
 
 
-void IDX_statistics(thread_db* tdbb, jrd_rel* relation, USHORT id,
+void IDX_statistics(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 					SelectivityList& selectivity)
 {
 /**************************************

@@ -42,12 +42,12 @@ USHORT SERVICES_install(SC_HANDLE manager,
 						const char* service_name,
 						const char* display_name,
 						const char* executable,
-						TEXT * directory,
+						const TEXT* directory,
 						TEXT * dependencies,
 						USHORT sw_startup,
 						TEXT * nt_user_name,
 						TEXT * nt_user_password,
-						USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
+						pfnSvcError err_handler)
 {
 /**************************************
  *
@@ -65,6 +65,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	DWORD errnum;
 	DWORD dwServiceType;
 
+	// No check made on directory length?
 	strcpy(path_name, directory);
 	len = strlen(path_name);
 	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\')
@@ -116,7 +117,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 USHORT SERVICES_remove(SC_HANDLE manager,
 					   const char* service_name,
 					   const char* display_name,
-					   USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
+					   pfnSvcError err_handler)
 {
 /**************************************
  *
@@ -128,10 +129,9 @@ USHORT SERVICES_remove(SC_HANDLE manager,
  *	Remove a service from the service control panel.
  *
  **************************************/
-	SC_HANDLE service;
 	SERVICE_STATUS service_status;
 
-	service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
@@ -155,7 +155,8 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 		service = OpenService(manager, service_name, GENERIC_READ);
 		if (service == NULL)
 		{
-			if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST) break;
+			if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
+				break;
 		}
 		else CloseServiceHandle(service);
 
@@ -170,7 +171,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 					  const char* service_name,
 					  const char* display_name,
 					  USHORT sw_mode,
-					  USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
+					  pfnSvcError err_handler)
 {
 /**************************************
  *
@@ -235,7 +236,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 USHORT SERVICES_stop(SC_HANDLE manager,
 					 const char* service_name,
 					 const char* display_name,
-					 USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
+					 pfnSvcError err_handler)
 {
 /**************************************
  *
@@ -332,7 +333,7 @@ USHORT	SERVICES_status (const char* service_name)
 }
 
 USHORT SERVICES_grant_logon_right(TEXT* account,
-							USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
+							pfnSvcError err_handler)
 {
 /***************************************************
  *
@@ -449,7 +450,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 
 
 USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
-	USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
+	pfnSvcError err_handler)
 {
 /*********************************************************
  *
@@ -479,7 +480,9 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 
 	// Get Security Information on the service. Will of course fail if we're
 	// not allowed to do this. Administrators should be allowed, by default.
-	if (GetNamedSecurityInfo((CHAR*) service_name, SE_SERVICE,
+	// CVC: Only GetNamedSecurityInfoEx has the first param declared const, so we need
+	// to make the compiler happy after Blas' cleanup.
+	if (GetNamedSecurityInfo(const_cast<CHAR*>(service_name), SE_SERVICE,
 		DACL_SECURITY_INFORMATION,
 		NULL /*Owner Sid*/, NULL /*Group Sid*/,
 		&pOldDACL, NULL /*Sacl*/, &pSD) != ERROR_SUCCESS)
@@ -506,7 +509,7 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 	}
 
 	// Updates the new rights in the object
-	if (SetNamedSecurityInfo((CHAR*) service_name, SE_SERVICE,
+	if (SetNamedSecurityInfo(const_cast<CHAR*>(service_name), SE_SERVICE,
 		DACL_SECURITY_INFORMATION,
 		NULL /*Owner Sid*/, NULL /*Group Sid*/,
 		pNewDACL, NULL /*Sacl*/) != ERROR_SUCCESS)

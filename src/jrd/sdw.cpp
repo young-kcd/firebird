@@ -1084,7 +1084,7 @@ int SDW_start_shadowing(void* ast_object)
  *	new shadow files before doing the next physical write.
  *
  **************************************/
-	Database* new_dbb = reinterpret_cast<Database*>(ast_object);
+	Database* new_dbb = static_cast<Database*>(ast_object);
 
 	Lock* lock = new_dbb->dbb_shadow_lock;
 	if (lock->lck_physical != LCK_SR)

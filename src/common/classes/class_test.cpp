@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: class_test.cpp,v 1.14 2004-05-17 15:06:47 brodsom Exp $
+ *  $Id: class_test.cpp,v 1.15 2004-05-21 06:14:51 robocop Exp $
  *
  */
 
@@ -267,8 +267,8 @@ void testBePlusTree() {
 
 const int ALLOC_ITEMS	= 1000000;
 const int MAX_ITEM_SIZE	= 50;
-const int BIG_ITEMS		= ALLOC_ITEMS/10;
-const int BIG_SIZE		= MAX_ITEM_SIZE*5;
+const int BIG_ITEMS		= ALLOC_ITEMS / 10;
+const int BIG_SIZE		= MAX_ITEM_SIZE * 5;
 
 const int LARGE_ITEMS	= 10;
 const size_t LARGE_ITEM_SIZE	= 300000;

@@ -40,11 +40,17 @@
 								   from metadata primarily to flag
 								   SQLDA (in DSQL)               */
 
-/*
+/* Overload text typing information into the dsc_sub_type field.
+ * See intl.h for definitions of text types
+ * Moved to dsc.h only for C++ as an inline function.
+
+ * #ifndef dsc_ttype
+ * #define dsc_ttype	dsc_sub_type
+ * #endif
  * Data types
  *
  * WARNING: if you add another manifest constant to this group, then you
- * must add another entry to the array compare_priority in jrd/cvt2.c.
+ * must add another entry to the array compare_priority in jrd/cvt2.cpp.
  *
  *
  * Note that dtype_null actually means that we do not yet know the

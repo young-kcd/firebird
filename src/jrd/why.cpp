@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.71 2004-05-18 16:48:26 brodsom Exp $
+$Id: why.cpp,v 1.72 2004-05-21 06:15:42 robocop Exp $
 */
 
 #include "firebird.h"
@@ -5467,7 +5467,7 @@ static const PTR get_entrypoint(int proc,
 
 	if (image && name)
 	{
-const int BufSize = 128;
+		const int BufSize = 128;
 		TEXT Buffer[BufSize];
 		const SLONG NameLength = strlen(name) + 1;
 		fb_assert(NameLength < BufSize);

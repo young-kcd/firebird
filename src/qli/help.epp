@@ -54,7 +54,7 @@ const char* TARGET	= "help/help.fdb";
 
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
 
-static int additional_topics(TEXT *, TEXT *, TEXT *);
+static int additional_topics(TEXT *, TEXT *, const TEXT*);
 static void print_more(USHORT, USHORT, TEXT **, USHORT *, TEXT *, bool);
 static void print_topic(USHORT, USHORT, TEXT **, USHORT *, TEXT *, bool);
 static TEXT *strip(TEXT *);
@@ -119,7 +119,7 @@ void HELP_help( qli_syntax* node)
 }
 
 
-static int additional_topics( TEXT * parent, TEXT * banner, TEXT * string)
+static int additional_topics( TEXT * parent, TEXT * banner, const TEXT* string)
 {
 /**************************************
  *
@@ -304,7 +304,7 @@ static void print_topic(
 			END_FOR;
 			ERRQ_msg_format(81, sizeof(banner), banner, INDENT, NULL, NULL,
 							NULL, NULL);	// Msg81 %sSub-topics available:
-			if (additional_topics(string, banner, (TEXT*) INDENT))
+			if (additional_topics(string, banner, INDENT))
 				print_more(level, depth, topics, max_level, string,
 						   error_flag);
 		}

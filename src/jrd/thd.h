@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.26 2004-05-19 18:12:33 brodsom Exp $
+$Id: thd.h,v 1.27 2004-05-21 06:15:41 robocop Exp $
 */
 
 #ifndef JRD_THD_H
@@ -145,7 +145,7 @@ const int SWEEP_QUANTUM		= 10;	/* Make sweeps less disruptive */
 
 typedef struct thdd {
 	void *thdd_prior_context;
-	ULONG thdd_type;		/* what kind of structrue this is */
+	ULONG thdd_type;		/* what kind of structure this is */
 } *THDD;
 
 /* Thread structure types */

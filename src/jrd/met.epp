@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.122 2004-05-19 18:12:32 brodsom Exp $
+$Id: met.epp,v 1.123 2004-05-21 06:15:41 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -211,7 +211,7 @@ void MET_update_partners(thread_db* tdbb)
 	vec::iterator ptr = relations->begin();
 	for (const vec::const_iterator end = relations->end(); ptr < end; ptr++)
 	{
-		jrd_rel* relation = reinterpret_cast<jrd_rel*>(*ptr);
+		jrd_rel* relation = static_cast<jrd_rel*>(*ptr);
 		if (!relation) {
 			continue;
 		}
@@ -220,7 +220,8 @@ void MET_update_partners(thread_db* tdbb)
 }
 
 
-void adjust_dependencies(jrd_prc* procedure) {
+void adjust_dependencies(jrd_prc* procedure)
+{
 	if (procedure->prc_int_use_count == -1) {
 	// Already processed
 		return;
@@ -247,7 +248,8 @@ void adjust_dependencies(jrd_prc* procedure) {
 
 
 #ifdef DEV_BUILD
-void MET_verify_cache(thread_db* tdbb) {
+void MET_verify_cache(thread_db* tdbb)
+{
 /**************************************
  *
  *      M E T _ v e r i f y _ c a c h e
@@ -364,7 +366,7 @@ void MET_clear_cache(thread_db* tdbb)
 	vec* relations = dbb->dbb_relations;
 	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
 	{
-		jrd_rel* relation = reinterpret_cast<jrd_rel*>(*ptr);
+		jrd_rel* relation = static_cast<jrd_rel*>(*ptr);
 		if (!relation)
 			continue;
 		release_cached_triggers(tdbb, relation->rel_pre_store);
@@ -476,7 +478,7 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 	vec::iterator	ptr, end;
 	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
 	{
-		jrd_rel* relation = reinterpret_cast<jrd_rel*>(*ptr);
+		jrd_rel* relation = static_cast<jrd_rel*>(*ptr);
 		if (!relation) {
 			continue;
 		}
@@ -1405,7 +1407,7 @@ int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const TEXT* name,
 		{
 			if (*fieldIter) 
 			{
-				jrd_fld* field = reinterpret_cast<jrd_fld*>(*fieldIter);
+				jrd_fld* field = static_cast<jrd_fld*>(*fieldIter);
 				if (field->fld_length == length && strcmp (field->fld_name, name) == 0)
 				{
 					if (!security_name) 
@@ -2138,7 +2140,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const char* name)
 	for (const vec::const_iterator end = relations->end(); ptr < end; ptr++)
 	{
 		const SCHAR* p;
-		jrd_rel* relation = reinterpret_cast<jrd_rel*>(*ptr);
+		jrd_rel* relation = static_cast<jrd_rel*>(*ptr);
 		if (relation &&
 			(relation->rel_length == length) &&
 			(!(relation->rel_flags & REL_deleted)) &&

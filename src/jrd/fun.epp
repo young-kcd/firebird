@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.57 2004-05-19 18:11:17 brodsom Exp $
+$Id: fun.epp,v 1.58 2004-05-21 06:15:40 robocop Exp $
 */
 
 #include "firebird.h"
@@ -170,9 +170,6 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	value->vlu_desc = return_ptr->fun_desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
 
-	// We don't know or can't handle the data type is some cases.
-	bool unsup_datatype = false;
-
 	// We'll use to this trick to give the UDF a way to signal
 	// "I sent a null blob" when not using descriptors.
 	udf_blob* return_blob_struct = 0;
@@ -206,7 +203,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	double  d;
 
 	// Process arguments
-	const fun_repeat* end = function->fun_rpt + 1 + function->fun_count;
+	const fun_repeat* const end = function->fun_rpt + 1 + function->fun_count;
 	for (fun_repeat* tail = function->fun_rpt + 1; tail < end; ++tail)
 	{
 		DSC* input;
@@ -480,16 +477,20 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 
 		*arg_ptr++ = temp_ptr;
 		temp_ptr += length;
-	}
+	} // for
+
+	// We don't know or can't handle the data type is some cases.
+	bool unsup_datatype = false;
 
 	invoke(function, return_ptr, value, args, unsup_datatype, temp_ptr, temp_desc);
 
 	if (unsup_datatype) {
 		IBERROR(169);			// msg 169 return data type not supported
 	}
-	}
+	} // try
 	catch (const std::exception&) {
 		delete temp_string;
+		// CVC: Maybe we should loop here trying to close blobs from blob_stack, too.
 		while (array_stack.notEmpty()) {
 			delete[] array_stack.pop();
 		}
@@ -673,7 +674,7 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
 		if (module) {
 			/* Register interest in the module by database. */
 
-			Firebird::Stack<mod*>::iterator stack(dbb->dbb_modules);
+			Firebird::Stack<mod*>::const_iterator stack(dbb->dbb_modules);
 			while (stack.notEmpty())
 			{
 				if (module == stack.object())

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _IPC_H_
-#define _IPC_H_
+#ifndef IPSERVER_IPC_H
+#define IPSERVER_IPC_H
 
 #include <stdio.h>
 #include "../jrd/common.h"
@@ -663,4 +663,4 @@ typedef struct tidb {
 
 const ULONG IP_BIAS		= 3333;
 
-#endif /* _IPC_H_ */
+#endif /* IPSERVER_IPC_H */

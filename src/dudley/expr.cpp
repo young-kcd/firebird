@@ -394,7 +394,7 @@ static CON make_numeric_constant( TEXT * string, USHORT length)
 		length++;
 		constant = (CON) DDL_alloc(sizeof(con) + length);
 		constant->con_desc.dsc_dtype = dtype_text;
-		constant->con_desc.dsc_sub_type = ttype_ascii;
+		constant->con_desc.dsc_ttype() = ttype_ascii;
 		constant->con_desc.dsc_length = length;
 		constant->con_desc.dsc_address = constant->con_data;
 		q = (TEXT *) constant->con_desc.dsc_address;
@@ -670,7 +670,7 @@ static CON parse_literal(void)
 		l -= 2;
 		constant = (CON) DDL_alloc(sizeof(con) + l);
 		constant->con_desc.dsc_dtype = dtype_text;
-		constant->con_desc.dsc_sub_type = ttype_ascii;
+		constant->con_desc.dsc_ttype() = ttype_ascii;
 		p = (TEXT *) constant->con_data;
 		constant->con_desc.dsc_address = (UCHAR*) p;
 		if (constant->con_desc.dsc_length = l)
