@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.23 2003-03-09 21:16:25 skidder Exp $
+$Id: restore.epp,v 1.24 2003-03-21 16:19:16 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -55,9 +55,8 @@ $Id: restore.epp,v 1.23 2003-03-09 21:16:25 skidder Exp $
 
 DATABASE DB = STATIC FILENAME "yachts.lnk";
 
-#define DB          tdgbl->db_handle
+#define DB         tdgbl->db_handle
 #define gds_trans  tdgbl->tr_handle
-#define isc_status  tdgbl->status
 
 /***
 #define DEBUG	1
