@@ -73,8 +73,8 @@ int xdrmem_create();
 
 static int		accept_connection(rem_port*, P_CNCT *);
 static rem_port*		alloc_port(rem_port*);
-static rem_port*		aux_connect(rem_port*, PACKET *, XDR_INT(*)(void));
-static rem_port*		aux_request(rem_port*, PACKET *);
+static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
+static rem_port*		aux_request(rem_port*, PACKET*);
 static void		cleanup_port(rem_port*);
 static void		disconnect(rem_port*);
 static void		exit_handler(rem_port*);
@@ -350,8 +350,6 @@ rem_port* WNET_connect(const TEXT*		name,
  *	connect is for a server process.
  *
  **************************************/
-	TEXT command_line[MAXPATHLEN + 32];
-
 	rem_port* port = alloc_port(0);
 	port->port_status_vector = status_vector;
 	status_vector[0] = isc_arg_gds;
@@ -395,6 +393,7 @@ rem_port* WNET_connect(const TEXT*		name,
 	LPSECURITY_ATTRIBUTES security_attr;
 	security_attr = ISC_get_security_desc();
 	THREAD_EXIT;
+	TEXT command_line[MAXPATHLEN + 32];
 	command_line[0] = 0;
 	TEXT* p = 0;
 
@@ -684,12 +683,11 @@ static rem_port* alloc_port( rem_port* parent)
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	TEXT buffer[64];
-
 	rem_port* port = (rem_port*) ALLOCV(type_port, BUFFER_SIZE * 2);
 	port->port_type = port_pipe;
 	port->port_state = state_pending;
 
+	TEXT buffer[64];
 	ISC_get_host(buffer, sizeof(buffer));
 	port->port_host = REMOTE_make_string(buffer);
 	port->port_connection = REMOTE_make_string(buffer);
@@ -714,8 +712,7 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_receive_packet = receive;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
-	port->port_connect =
-		reinterpret_cast < rem_port* (*)(rem_port*, PACKET *, void (*)()) >(aux_connect);
+	port->port_connect = aux_connect;
 	port->port_request = aux_request;
 	port->port_buff_size = BUFFER_SIZE;
 
@@ -729,7 +726,8 @@ static rem_port* alloc_port( rem_port* parent)
 }
 
 
-static rem_port* aux_connect( rem_port* port, PACKET * packet, XDR_INT(*ast) (void))
+// Third param "ast" is unused.
+static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 {
 /**************************************
  *
@@ -742,14 +740,13 @@ static rem_port* aux_connect( rem_port* port, PACKET * packet, XDR_INT(*ast) (vo
  *	done a successfull connect request ("packet" contains the response).
  *
  **************************************/
-	TEXT str_pid[32];
-
 #ifndef REQUESTER
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
 		if (!ConnectNamedPipe(port->port_handle, 0) &&
-			GetLastError() != ERROR_PIPE_CONNECTED) {
+			GetLastError() != ERROR_PIPE_CONNECTED)
+		{
 			wnet_error(port, "ConnectNamedPipe", isc_net_event_connect_err,
 					   ERRNO);
 			disconnect(port);
@@ -767,6 +764,7 @@ static rem_port* aux_connect( rem_port* port, PACKET * packet, XDR_INT(*ast) (vo
 
 	P_RESP* response = &packet->p_resp;
 
+	TEXT str_pid[32];
 	TEXT* p = 0;
 	if (response->p_resp_data.cstr_length) {
 		wnet_copy(reinterpret_cast<const char*>(response->p_resp_data.cstr_address),
@@ -806,7 +804,7 @@ static rem_port* aux_connect( rem_port* port, PACKET * packet, XDR_INT(*ast) (vo
 }
 
 
-static rem_port* aux_request( rem_port* vport, PACKET * packet)
+static rem_port* aux_request( rem_port* vport, PACKET* packet)
 {
 /**************************************
  *
@@ -1195,7 +1193,6 @@ static int wnet_error(
  *	is used to indicate and error.
  *
  **************************************/
-	TEXT msg[64];
 	TEXT node_name[MAXPATHLEN];
 
 	strcpy(node_name, ((SCHAR *) port->port_connection->str_data) + 2);
@@ -1210,6 +1207,7 @@ static int wnet_error(
 					   SYS_ERR, status,
 					   0);
 		if (status != ERROR_CALL_NOT_IMPLEMENTED) {
+            TEXT msg[64];
 			sprintf(msg, "WNET/wnet_error: %s errno = %d", function, status);
 			gds__log(msg, 0, 0, 0, 0);
 		}
@@ -1297,9 +1295,9 @@ static bool_t wnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 	if (xdrs->x_handy >= bytecount) {
 		xdrs->x_handy -= bytecount;
-		do
+		do {
 			*buff++ = *xdrs->x_private++;
-		while (--bytecount);
+		} while (--bytecount);
 		return TRUE;
 	}
 
@@ -1418,9 +1416,9 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 
 	if (xdrs->x_handy >= bytecount) {
 		xdrs->x_handy -= bytecount;
-		do
+		do {
 			*xdrs->x_private++ = *buff++;
-		while (--bytecount);
+		} while (--bytecount);
 		return TRUE;
 	}
 

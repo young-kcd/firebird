@@ -85,7 +85,7 @@ ISC_STATUS jrd8_drop_database(ISC_STATUS *, att **);
 ISC_STATUS jrd8_get_segment(ISC_STATUS *, blb **, USHORT *,
 										  USHORT, UCHAR *);
 ISC_STATUS jrd8_get_slice(ISC_STATUS*, att**,
-										jrd_tra**, SLONG*, USHORT,
+										jrd_tra**, ISC_QUAD*, USHORT,
 										const UCHAR*, USHORT, const UCHAR*, SLONG,
 										UCHAR*, SLONG*);
 ISC_STATUS jrd8_open_blob2(ISC_STATUS*, att**,
@@ -96,7 +96,7 @@ ISC_STATUS jrd8_prepare_transaction(ISC_STATUS *, jrd_tra **,
 ISC_STATUS jrd8_put_segment(ISC_STATUS*, blb**, USHORT,
 										  const UCHAR*);
 ISC_STATUS jrd8_put_slice(ISC_STATUS*, att**,
-										jrd_tra**, SLONG*, USHORT,
+										jrd_tra**, ISC_QUAD*, USHORT,
 										const UCHAR*, USHORT, const UCHAR*, SLONG,
 										UCHAR*);
 ISC_STATUS jrd8_que_events(ISC_STATUS*, att**, SLONG*,

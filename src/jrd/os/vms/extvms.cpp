@@ -49,11 +49,11 @@ static struct FAB fab;
 static struct RAB rab;
 
 static bool check_sort(NOD, IDX *, USHORT);
-static bool compare(UCHAR *, UCHAR *, USHORT);
+static bool compare(const UCHAR*, const UCHAR*, USHORT);
 static int compare_segment(NOD, UCHAR *, DSC *);
-static int connect(EXT, USHORT);
-static void disconnect(EXT);
-static void expand_format(fmt*, fmt*);
+static int connect(external_file*, USHORT);
+static void disconnect(external_file*);
+static void expand_format(fmt*, const fmt*);
 static SLONG find_field(const fmt*, USHORT, USHORT, USHORT);
 static bool get_dbkey(Rsb*);
 static bool get_indexed(Rsb*);
@@ -62,9 +62,9 @@ static bool get_sequential(Rsb*);
 static bool match_index(const fmt*, struct XABKEY *, IDX *);
 static int open_indexed(Rsb*);
 static int open_sequential(Rsb*);
-static void position_by_rfa(EXT, USHORT *);
-static void set_flags(REL, REC);
-static void set_missing(REL, REC);
+static void position_by_rfa(external_file*, USHORT *);
+static void set_flags(jrd_rel*, REC);
+static void set_missing(jrd_rel*, REC);
 
 
 void EXT_close(Rsb* rsb)
@@ -79,22 +79,16 @@ void EXT_close(Rsb* rsb)
  *	Close a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb;
-	REL relation;
-	EXT file;
-	jrd_req* request;
-	RPB *rpb;
-	int status;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-	relation = rsb->rsb_relation;
-	file = relation->rel_file;
-	request = tdbb->tdbb_request;
-	rpb = &request->req_rpb[rsb->rsb_stream];
+	jrd_rel* relation = rsb->rsb_relation;
+	external_file* file = relation->rel_file;
+	jrd_req* request = tdbb->tdbb_request;
+	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if ((rab.rab$w_isi = rpb->rpb_ext_isi) &&
-		rpb->rpb_ext_isi != file->ext_isi) {
+		rpb->rpb_ext_isi != file->ext_isi)
+	{
 		disconnect(file);
 		rpb->rpb_ext_isi = 0;
 	}
@@ -113,20 +107,16 @@ void EXT_erase(RPB * rpb, int *transaction)
  *	Update an external file.
  *
  **************************************/
-	REL relation;
-	EXT file;
-	int status;
-
 	if (rpb->rpb_stream_flags & RPB_s_refetch)
 		IBERROR(180);			/* msg 180 can't reposition for update after sort for RMS */
 
-	relation = rpb->rpb_relation;
-	file = relation->rel_file;
+	jrd_rel* relation = rpb->rpb_relation;
+	external_file* file = relation->rel_file;
 	rab.rab$w_isi = rpb->rpb_ext_isi;
 	rab.rab$l_rop = 0;
 
 	position_by_rfa(file, &rpb->rpb_ext_dbkey);
-	status = sys$delete(&rab);
+	const int status = sys$delete(&rab);
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
@@ -136,7 +126,8 @@ void EXT_erase(RPB * rpb, int *transaction)
 }
 
 
-EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
+// Third param is unused.
+external_file* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 {
 /**************************************
  *
@@ -148,29 +139,20 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
  *	Create a file block for external file access.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	int status;
-	USHORT l;
-	EXT file;
-	IDX *index;
-	STR string;
 	UCHAR index_buffer[MAX_KEYS * sizeof(IDX)];
-	struct XABSUM summary;
-	struct XABKEY *key, *end, **ptr, keys[MAX_KEYS];
-	UCHAR *lognam;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* Allocate and fill out an external file block.  Get the
    external format and flesh it out using the internal
    format. */
 
-	l = strlen(file_name);
-	relation->rel_file = file = FB_NEW_RPT(dbb->dbb_permanent, l) external_file();
+	USHORT l = strlen(file_name);
+	external_file* file = FB_NEW_RPT(dbb->dbb_permanent, l) external_file();
+	relation->rel_file = file;
 	strcpy(file->ext_filename, file_name);
-	const fmt* format = file->ext_format = MET_format(tdbb, relation, 0);
+	fmt* format = file->ext_format = MET_format(tdbb, relation, 0);
 	expand_format(format, MET_current(tdbb, relation));
 
 /* Groan -- time to check in with RMS.  We're going to start
@@ -192,19 +174,21 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
    logical name is defined and it is not READONLY, then let there be
    an error. */
 
-	if (lognam = getenv("GDS_RMSACCESS")) {
+	const UCHAR* lognam = getenv("GDS_RMSACCESS");
+	if (lognam) {
 		if (strcmp(lognam, "READONLY") == 0)
 			fab.fab$b_fac = FAB$M_GET;
 	}
 	else
 		fab.fab$b_fac = FAB$M_DEL | FAB$M_GET | FAB$M_PUT | FAB$M_UPD;
 
+	struct XABSUM summary;
 	fab.fab$b_shr = FAB$M_MSE | FAB$M_SHRGET | FAB$M_SHRPUT |
 		FAB$M_SHRDEL | FAB$M_SHRUPD;
 	fab.fab$l_xab = &summary;
 	summary = cc$rms_xabsum;
 
-	status = sys$open(&fab);
+	int status = sys$open(&fab);
 	fab.fab$l_xab = NULL;
 
 	if (!(status & 1))
@@ -220,8 +204,11 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
    the external format by datatype, offset, and length.  If we can't
    match the key, ignore it */
 
+	struct XABKEY keys[MAX_KEYS];
+
 	if (fab.fab$b_org == FAB$C_IDX) {
-		ptr = (struct XABKEY *) &fab.fab$l_xab;
+		struct XABKEY *key, *end;
+		struct XABKEY** ptr = (struct XABKEY**) &fab.fab$l_xab;
 		for (key = keys, end = key + summary.xab$b_nok; key < end; key++) {
 			*key = cc$rms_xabkey;
 			key->xab$b_ref = key - keys;
@@ -235,14 +222,14 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 					 isc_arg_string, "sys$display",
 					 isc_arg_string, file->ext_filename,
 					 isc_arg_gds, isc_io_access_err, isc_arg_vms, status, 0);
-		index = (IDX *) index_buffer;
+		IDX* index = (IDX *) index_buffer;
 		for (key = keys; key < end; key++)
 			if (match_index(format, key, index)) {
 				++file->ext_index_count;
 				index = (IDX *) (index->idx_rpt + index->idx_count);
 			}
 		if (l = (UCHAR *) index - index_buffer) {
-			string = FB_NEW_RPT(tdbb->tdbb_default, l) str();
+			str* string = FB_NEW_RPT(tdbb->tdbb_default, l) str();
 			MOVE_FAST(index_buffer, string->str_data, l);
 			file->ext_indices = string->str_data;
 		}
@@ -262,7 +249,7 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 }
 
 
-void EXT_fini(REL relation)
+void EXT_fini(jrd_rel* relation)
 {
 /**************************************
  *
@@ -274,13 +261,10 @@ void EXT_fini(REL relation)
  *	Close the file associated with a relation.
  *
  **************************************/
-	EXT file;
-	int status;
-
-	file = relation->rel_file;
+	external_file* file = relation->rel_file;
 
 	if (fab.fab$w_ifi = file->ext_ifi) {
-		status = sys$close(&fab);
+		const int status = sys$close(&fab);
 		if (!(status & 1))
 			ERR_post(isc_io_error,
 					 isc_arg_string, "sys$close",
@@ -337,21 +321,15 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
  *	Update an external file.
  *
  **************************************/
-	REL relation;
-	EXT file;
-	jrd_req* request;
-	REC record;
-	int offset, status;
-
 	if (old_rpb->rpb_stream_flags & RPB_s_refetch)
 		IBERROR(180);			/* msg 180 cannot reposition for update after sort for RMS */
 
-	record = new_rpb->rpb_record;
-	relation = new_rpb->rpb_relation;
-	file = relation->rel_file;
+	REC record = new_rpb->rpb_record;
+	jrd_rel* relation = new_rpb->rpb_relation;
+	external_file* file = relation->rel_file;
 	const fmt* format = record->rec_format;
 	set_missing(old_rpb->rpb_relation, record);
-	offset = FLAG_BYTES(format->fmt_count);
+	const int offset = FLAG_BYTES(format->fmt_count);
 
 	rab.rab$w_isi = old_rpb->rpb_ext_isi;
 	rab.rab$l_rop = 0;
@@ -360,7 +338,7 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
 	rab.rab$l_rbf = record->rec_data + offset;
 	rab.rab$w_rsz = record->rec_length - offset;
 
-	status = sys$update(&rab);
+	const int status = sys$update(&rab);
 	if (!(status & 1))
 		ERR_post(isc_io_error,
 				 isc_arg_string, "sys$update",
@@ -381,21 +359,16 @@ EXT_open(Rsb* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	TDBB tdbb;
-	REL relation;
-	jrd_req* request;
-	RPB *rpb;
-	REC record;
-	EXT file;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
+	jrd_rel* relation = rsb->rsb_relation;
+	jrd_req* request = tdbb->tdbb_request;
+	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
 
-	relation = rsb->rsb_relation;
-	request = tdbb->tdbb_request;
-	rpb = &request->req_rpb[rsb->rsb_stream];
-
-	if (!(record = rpb->rpb_record) || !(format = record->rec_format)) {
-		const fmt* format = MET_current(tdbb, relation);
+	const fmt* format;
+	REC record = rpb->rpb_record;
+	if (!record || !(format = record->rec_format)) {
+		format = MET_current(tdbb, relation);
 		record = VIO_record(tdbb, rpb, format, request->req_pool);
 	}
 
@@ -407,9 +380,11 @@ EXT_open(Rsb* rsb)
 		return open_indexed(rsb);
 
 	case rsb_ext_dbkey:
-		file = relation->rel_file;
-		rpb->rpb_ext_isi = file->ext_isi;
-		return;
+		{
+			const external_file* file = relation->rel_file;
+			rpb->rpb_ext_isi = file->ext_isi;
+			return;
+		}
 
 	default:
 		IBERROR(181);			/* msg 181 external access type not implemented */
@@ -430,41 +405,37 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	Csb* csb;
-	REL relation;
-	Rsb* rsb;
-	NOD dbkey, inversion;
-	EXT file;
-	IDX *idx;
-	SSHORT i, size;
-	opt::opt_repeat * tail, *opt_end;
-	csb_repeat *csb_tail;
-
 	TDBB tdbb = GET_THREAD_DATA;
 
 /* Start by chasing around finding pointers to the various
    data structures */
 
-	csb = opt->opt_csb;
-	csb_tail = &csb->csb_rpt[stream];
-	relation = csb_tail->csb_relation;
-	file = relation->rel_file;
+	Csb* csb = opt->opt_csb;
+	csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	jrd_rel* relation = csb_tail->csb_relation;
+	external_file* file = relation->rel_file;
+	NOD dbkey, inversion;
 	dbkey = inversion = NULL;
 
 /* Check for a dbkey retrieval.  If we find it, ignore everything
    else */
 
-	for (tail = opt->opt_rpt, opt_end = tail + opt->opt_count;
+	opt::opt_repeat* tail = opt->opt_rpt;
+	for (const opt::opt_repeat* const opt_end = tail + opt->opt_count;
 		 tail < opt_end; tail++)
+	{
 		if (!(tail->opt_flags & opt_used) &&
 			(dbkey = OPT_make_dbkey(opt, tail->opt_conjunct, stream)))
 			break;
+	}
 
 /* If there are booleans availables and indices to optimize
    against, go at it */
 
+	IDX* idx;
 	if (!dbkey && opt->opt_count && (idx = file->ext_indices))
-		for (i = 0; i < file->ext_index_count; i++) {
+	{
+		for (SSHORT i = 0; i < file->ext_index_count; i++) {
 			if (OPT_match_index(opt, stream, idx) &&
 				opt->opt_rpt[0].opt_lower) {
 				inversion = OPT_make_index(tdbb, opt, relation, idx);
@@ -474,27 +445,30 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 			}
 			idx = idx->idx_rpt + idx->idx_count;
 		}
+	}
 
 /* Depending on whether or not an index was selected build either
    and external indexed or an external sequential record stream
    block */
 
+	Rsb* rsb;
+	SSHORT size; // better size_t
 	if (dbkey) {
-		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) rsb();
+		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) Rsb();
 		rsb->rsb_type = rsb_ext_dbkey;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
 		rsb->rsb_arg[0] = (Rsb*) dbkey;
 	}
 	else if (inversion) {
-		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) rsb();
+		rsb = FB_NEW_RPT(tdbb->tdbb_default, 1) Rsb();
 		rsb->rsb_type = rsb_ext_indexed;
 		rsb->rsb_count = 1;
 		size = sizeof(struct irsb_index);
 		rsb->rsb_arg[0] = (Rsb*) inversion;
 	}
 	else {
-		rsb = FB_NEW(tdbb->tdbb_default) rsb();
+		rsb = FB_NEW(tdbb->tdbb_default) Rsb();
 		rsb->rsb_type = rsb_ext_sequential;
 		size = sizeof(struct irsb);
 	}
@@ -510,7 +484,7 @@ Rsb* EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 }
 
 
-void EXT_ready(REL relation)
+void EXT_ready(jrd_rel* relation)
 {
 /**************************************
  *
@@ -536,18 +510,12 @@ void EXT_store(RPB * rpb, int *transaction)
  * Functional description
  *	Update an external  *
  **************************************/
-	REL relation;
-	REC record;
-	EXT file;
-	int status;
-	USHORT offset;
-
-	relation = rpb->rpb_relation;
-	file = relation->rel_file;
-	record = rpb->rpb_record;
+	jrd_rel* relation = rpb->rpb_relation;
+	external_file* file = relation->rel_file;
+	REC record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 	set_missing(relation, record);
-	offset = FLAG_BYTES(format->fmt_count);
+	const USHORT offset = FLAG_BYTES(format->fmt_count);
 
 	rab.rab$w_isi = file->ext_isi;
 	rab.rab$l_rbf = record->rec_data + offset;
@@ -564,7 +532,7 @@ void EXT_store(RPB * rpb, int *transaction)
 		file->ext_flags |= EXT_eof;
 	}
 
-	status = sys$put(&rab);
+	const int status = sys$put(&rab);
 	if (!(status & 1))
 		ERR_post(isc_io_error,
 				 isc_arg_string, "sys$put",
@@ -647,8 +615,6 @@ static bool check_sort(NOD sort, IDX * index, USHORT stream)
  *	sort is totally redundant.
  *
  **************************************/
-	NOD field, *ptr, *end;
-	idx::idx_repeat * tail;
 
 /* If there is no sort, or there are more keys than
    index segments, we obviously can optimize anything */
@@ -659,9 +625,11 @@ static bool check_sort(NOD sort, IDX * index, USHORT stream)
 /* For each sort key, make sure the key matches the index segment,
    and that the sort is ascending */
 
-	for (ptr = sort->nod_arg, end = ptr + sort->nod_count, tail =
-		 index->idx_rpt; ptr < end; ptr++, tail++) {
-		field = *ptr;
+	idx::idx_repeat* tail = index->idx_rpt;
+	NOD* ptr = sort->nod_arg;
+	for (NOD* const end = ptr + sort->nod_count; ptr < end; ptr++, tail++)
+	{
+		NOD field = *ptr;
 		if (field->nod_type != nod_field ||
 			(USHORT) field->nod_arg[e_fld_stream] != stream ||
 			(USHORT) field->nod_arg[e_fld_id] != tail->idx_field ||
@@ -675,7 +643,7 @@ static bool check_sort(NOD sort, IDX * index, USHORT stream)
 }
 
 
-static bool compare(UCHAR * string1, UCHAR * string2, USHORT length)
+static bool compare(const UCHAR* string1, const UCHAR* string2, USHORT length)
 {
 /**************************************
  *
@@ -710,17 +678,15 @@ static int compare_segment(NOD node, UCHAR * buffer, DSC * target)
  *	comparison.
  *
  **************************************/
-	DSC *source, desc;
-
-	source = EVL_expr(tdbb, node);
-	desc = *target;
+	const dsc* source = EVL_expr(tdbb, node);
+	dsc desc = *target;
 	desc.dsc_address = (ULONG) desc.dsc_address + buffer;
 
 	return MOV_compare(&desc, source);
 }
 
 
-static int connect(EXT file, USHORT key)
+static int connect(external_file* file, USHORT key)
 {
 /**************************************
  *
@@ -732,11 +698,9 @@ static int connect(EXT file, USHORT key)
  *	Connect RAB and report any errors.
  *
  **************************************/
-	int status;
-
 	rab.rab$w_isi = 0;
 	rab.rab$b_krf = key;
-	status = sys$connect(&rab);
+	const int status = sys$connect(&rab);
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
@@ -748,7 +712,7 @@ static int connect(EXT file, USHORT key)
 }
 
 
-static void disconnect(EXT file)
+static void disconnect(external_file* file)
 {
 /**************************************
  *
@@ -760,9 +724,7 @@ static void disconnect(EXT file)
  *	Disconnect rab and check status.
  *
  **************************************/
-	int status;
-
-	status = sys$disconnect(&rab);
+	const int status = sys$disconnect(&rab);
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
@@ -772,7 +734,7 @@ static void disconnect(EXT file)
 }
 
 
-static void expand_format(fmt* external, fmt* internal)
+static void expand_format(fmt* external, const fmt* internal)
 {
 /**************************************
  *
@@ -788,15 +750,16 @@ static void expand_format(fmt* external, fmt* internal)
  *	files but not internally.
  *
  **************************************/
-	DSC *idesc, *edesc, *end;
-	SLONG offset;
 
 /* For now, more or less ignore external type declarations */
 
-	offset = 0;
+	SLONG offset = 0;
 
-	for (idesc = internal->fmt_desc, edesc = external->fmt_desc,
-		 end = edesc + external->fmt_count; edesc < end; edesc++, idesc++) {
+	const dsc* idesc = internal->fmt_desc;
+	dsc* edesc = external->fmt_desc;
+	for (const dsc* const end = edesc + external->fmt_count; edesc < end;
+		edesc++, idesc++)
+	{
 		*edesc = *idesc;
 		edesc->dsc_address = (UCHAR *) offset;
 		offset += edesc->dsc_length;
@@ -821,10 +784,9 @@ static SLONG find_field(
  *	field, return -1.
  *
  **************************************/
-	DSC *desc, *end;
-	USHORT n;
-
-	for (n = 0, desc = format->fmt_desc, end = desc + format->fmt_count;
+	USHORT n = 0;
+	const dsc* desc = format->fmt_desc;
+	for (const dsc* const end = desc + format->fmt_count;
 		 desc < end; desc++, n++)
 		if ((int) desc->dsc_address == offset && desc->dsc_length == length)
 			switch (type) {
@@ -840,7 +802,10 @@ static SLONG find_field(
 
 			case XAB$C_IN8:
 				if (desc->dsc_dtype == dtype_timestamp ||
-					desc->dsc_dtype == dtype_quad) return n;
+					desc->dsc_dtype == dtype_quad)
+				{
+					return n;
+				}
 				break;
 
 			case XAB$C_BN8:
@@ -870,29 +835,17 @@ static bool get_dbkey(Rsb* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
-	REL relation;
-	EXT file;
-	RPB *rpb;
-	REC record;
-	DSC *desc;
-	NOD node;
-	int status;
-	SSHORT offset;
-	IRSB_EXT impure;
-
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 /* Chase down misc pointers */
 
-	relation = rsb->rsb_relation;
-	file = relation->rel_file;
-	request = tdbb->tdbb_request;
+	jrd_rel* relation = rsb->rsb_relation;
+	external_file* file = relation->rel_file;
+	jrd_req* request = tdbb->tdbb_request;
 
-	impure = (UCHAR *) request + rsb->rsb_impure;
-	rpb = &request->req_rpb[rsb->rsb_stream];
-	record = rpb->rpb_record;
+	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
+	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	REC record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 
 /* If this isn't the first time thru its the last time thru */
@@ -902,10 +855,10 @@ static bool get_dbkey(Rsb* rsb)
 
 /* Evaluate expression */
 
-	node = (NOD) rsb->rsb_arg[0];
-	desc = EVL_expr(tdbb, node->nod_arg[0]);
+	NOD node = (NOD) rsb->rsb_arg[0];
+	const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
 
-	offset = FLAG_BYTES(format->fmt_count);
+	const SSHORT offset = FLAG_BYTES(format->fmt_count);
 	rab.rab$w_isi = rpb->rpb_ext_isi;
 	rab.rab$l_ubf = record->rec_data + offset;
 	rab.rab$w_usz = record->rec_length - offset;
@@ -916,6 +869,7 @@ static bool get_dbkey(Rsb* rsb)
 	impure->irsb_flags &= ~irsb_first;
 	file->ext_flags &= ~EXT_eof;
 
+	int status;    /// Uhhh???? No place above sets status. Some sys$ call is missing.
 	if (status == RMS$_EOF)
 		return false;
 
@@ -940,35 +894,24 @@ static bool get_indexed(Rsb* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	TDBB tdbb;
-	NOD node, *ptr, *end;
-	EXT file;
-	IRB retrieval;
-	REL relation;
-	IDX *index;
-	jrd_req* request;
-	RPB *rpb;
-	UCHAR key_buffer[256], *p;
-	int status, result;
-	IRSB_EXT impure;
-	idx::idx_repeat * segment;
+	UCHAR key_buffer[256];
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 /* Start by finding the signficant data structures for the stream.  These
    are mainly used to initialize the stream at some particular key value */
 
-	relation = rsb->rsb_relation;
-	file = relation->rel_file;
+	jrd_rel* relation = rsb->rsb_relation;
+	external_file* file = relation->rel_file;
 	const fmt* format = file->ext_format;
 
-	request = tdbb->tdbb_request;
-	rpb = &request->req_rpb[rsb->rsb_stream];
-	impure = (UCHAR *) request + rsb->rsb_impure;
+	jrd_req* request = tdbb->tdbb_request;
+	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 
-	node = rsb->rsb_arg[0];
-	retrieval = (IRB) node->nod_arg[e_idx_retrieval];
-	index = &retrieval->irb_desc;
+	NOD node = rsb->rsb_arg[0];
+	IRB retrieval = (IRB) node->nod_arg[e_idx_retrieval];
+	IDX* index = &retrieval->irb_desc;
 
 /* If this is the first time through on this stream, and a lower
    value is present, position the RMS stream with a keyed access.
@@ -977,20 +920,22 @@ static bool get_indexed(Rsb* rsb)
 
 	if (impure->irsb_flags & irsb_first)
 		if (retrieval->irb_lower_count) {
-			p = key_buffer;
-			segment = index->idx_rpt;
-			for (ptr = retrieval->irb_value, end =
-				 ptr + retrieval->irb_lower_count; ptr < end;
-				 ptr++, segment++) p +=
-					get_key_segment(*ptr, p,
+			UCHAR* p = key_buffer;
+			idx::idx_repeat* segment = index->idx_rpt;
+			NOD* ptr = retrieval->irb_value;
+			for (NOD* const end = ptr + retrieval->irb_lower_count; ptr < end;
+				 ptr++, segment++)
+			{
+				p += get_key_segment(*ptr, p,
 									format->fmt_desc + segment->idx_field);
+			}
 			rab.rab$b_krf = index->idx_id;
 			rab.rab$l_kbf = key_buffer;
 			rab.rab$b_ksz = p - key_buffer;
 			rab.rab$b_rac = RAB$C_KEY;
 			rab.rab$l_rop =
 				(retrieval->irb_generic & irb_equality) ? 0 : RAB$M_KGE;
-			status = sys$find(&rab);
+			const int status = sys$find(&rab);
 			file->ext_flags &= ~EXT_eof;
 			if (status == RMS$_EOF || status == RMS$_RNF)
 				return false;
@@ -1013,11 +958,13 @@ static bool get_indexed(Rsb* rsb)
    bound.  Since the full boolean will be applied anyway, the only
    danger is processing a few extraneous records. */
 
-	segment = index->idx_rpt;
+	idx::idx_repeat* segment = index->idx_rpt;
 
-	for (ptr = retrieval->irb_value + index->idx_count,
-		 end = ptr + retrieval->irb_upper_count; ptr < end; ptr++, segment++) {
-		result =
+	NOD* ptr = retrieval->irb_value + index->idx_count;
+	for (NOD* const end = ptr + retrieval->irb_upper_count; ptr < end;
+		ptr++, segment++)
+	{
+		const int result =
 			compare_segment(*ptr, rab.rab$l_ubf,
 							format->fmt_desc + segment->idx_field);
 		if (result < 0)
@@ -1045,10 +992,8 @@ static USHORT get_key_segment(NOD node, UCHAR * buffer, DSC * target)
  *	type.
  *
  **************************************/
-	DSC *source, desc;
-
-	source = EVL_expr(tdbb, node);
-	desc = *target;
+	const dsc* source = EVL_expr(tdbb, node);
+	dsc desc = *target;
 	desc.dsc_address = buffer;
 	MOV_move(source, &desc);
 
@@ -1068,28 +1013,18 @@ static bool get_sequential(Rsb* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	TDBB tdbb;
-	jrd_req* request;
-	REL relation;
-	EXT file;
-	RPB *rpb;
-	REC record;
-	int status;
-	SSHORT offset;
-	IRSB_EXT impure;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
+	jrd_rel* relation = rsb->rsb_relation;
+	external_file* file = relation->rel_file;
+	jrd_req* request = tdbb->tdbb_request;
 
-	relation = rsb->rsb_relation;
-	file = relation->rel_file;
-	request = tdbb->tdbb_request;
-
-	impure = (UCHAR *) request + rsb->rsb_impure;
-	rpb = &request->req_rpb[rsb->rsb_stream];
-	record = rpb->rpb_record;
+	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
+	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	REC record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 
-	offset = FLAG_BYTES(format->fmt_count);
+	const SSHORT offset = FLAG_BYTES(format->fmt_count);
 	rab.rab$w_isi = rpb->rpb_ext_isi;
 	rab.rab$l_ubf = record->rec_data + offset;
 	rab.rab$w_usz = record->rec_length - offset;
@@ -1104,7 +1039,7 @@ static bool get_sequential(Rsb* rsb)
 	}
 
 	rab.rab$b_rac = RAB$C_SEQ;
-	status = sys$get(&rab);
+	const int status = sys$get(&rab);
 	impure->irsb_flags &= ~irsb_first;
 	file->ext_flags &= ~EXT_eof;
 
@@ -1146,18 +1081,14 @@ static bool match_index(const fmt* format, struct XABKEY *xab, IDX * idx)
  *	return false.
  *
  **************************************/
-	int n, dtype;
-	UCHAR *size, *end;
-	USHORT *position;
-	idx::idx_repeat * tail;
-
-	size = &xab->xab$b_siz;
-	end = size + xab->xab$b_nsg;
-	position = &xab->xab$w_pos;
-	tail = idx->idx_rpt;
+	const UCHAR* size = &xab->xab$b_siz;
+	const UCHAR* const end = size + xab->xab$b_nsg;
+	const USHORT* position = &xab->xab$w_pos;
+	idx::idx_repeat* tail = idx->idx_rpt;
 
 	for (; size < end; size++, position++, tail++) {
-		if ((n = find_field(format, xab->xab$b_dtp, *position, *size)) < 0)
+		const int n = find_field(format, xab->xab$b_dtp, *position, *size);
+		if (n < 0)
 			return false;
 		tail->idx_field = n;
 		tail->idx_itype = xab->xab$b_dtp;
@@ -1184,24 +1115,15 @@ static open_indexed(Rsb* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	REL relation;
-	EXT file;
-	jrd_req* request;
-	RPB *rpb;
-	NOD node;
-	IRB retrieval;
-	IDX *index;
-	int status;
-
 	TDBB tdbb = GET_THREAD_DATA;
 
-	relation = rsb->rsb_relation;
-	file = relation->rel_file;
-	request = tdbb->tdbb_request;
-	rpb = &request->req_rpb[rsb->rsb_stream];
-	node = (NOD) rsb->rsb_arg[0];
-	retrieval = (IRB) node->nod_arg[e_idx_retrieval];
-	index = &retrieval->irb_desc;
+	jrd_rel* relation = rsb->rsb_relation;
+	external_file* file = relation->rel_file;
+	jrd_req* request = tdbb->tdbb_request;
+	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
+	NOD node = (NOD) rsb->rsb_arg[0];
+	IRB retrieval = (IRB) node->nod_arg[e_idx_retrieval];
+	IDX* index = &retrieval->irb_desc;
 
 /* Create internal RMS rab (irab) for stream.  Connect
    temporary shared rab, then save internal rab number */
@@ -1223,18 +1145,12 @@ static open_sequential(Rsb* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	REL relation;
-	EXT file;
-	jrd_req* request;
-	RPB *rpb;
-	int status;
-
 	TDBB tdbb = GET_THREAD_DATA;
 
-	relation = rsb->rsb_relation;
-	file = relation->rel_file;
-	request = tdbb->tdbb_request;
-	rpb = &request->req_rpb[rsb->rsb_stream];
+	jrd_rel* relation = rsb->rsb_relation;
+	external_file* file = relation->rel_file;
+	jrd_req* request = tdbb->tdbb_request;
+	RPB* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if (file->ext_file_type == FAB$C_IDX) {
 		fab.fab$w_ifi = file->ext_ifi;
@@ -1243,7 +1159,7 @@ static open_sequential(Rsb* rsb)
 	else {
 		file->ext_flags &= ~EXT_eof;
 		rpb->rpb_ext_isi = rab.rab$w_isi = file->ext_isi;
-		status = sys$ib_rewind(&rab);
+		const int status = sys$ib_rewind(&rab);
 		if (!(status & 1))
 			ERR_post(isc_io_error,
 					 isc_arg_string, "sys$ib_rewind",
@@ -1253,7 +1169,7 @@ static open_sequential(Rsb* rsb)
 }
 
 
-static void position_by_rfa(EXT file, USHORT * rfa)
+static void position_by_rfa(external_file* file, USHORT * rfa)
 {
 /**************************************
  *
@@ -1265,12 +1181,10 @@ static void position_by_rfa(EXT file, USHORT * rfa)
  *	Position file to specific RFA.
  *
  **************************************/
-	int status;
-
 	MOVE_FAST(rfa, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
 	rab.rab$b_rac = RAB$C_RFA;
 	file->ext_flags &= ~EXT_eof;
-	status = sys$get(&rab);
+	const int status = sys$get(&rab);
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
@@ -1280,7 +1194,7 @@ static void position_by_rfa(EXT file, USHORT * rfa)
 }
 
 
-static void set_flags(REL relation, REC record)
+static void set_flags(jrd_rel* relation, REC record)
 {
 /**************************************
  *
@@ -1292,21 +1206,19 @@ static void set_flags(REL relation, REC record)
  *	Set missing flags for a record.
  *
  **************************************/
-	LIT literal;
-	DSC *desc_ptr, desc;
-	FLD field, *field_ptr;
-	SSHORT l, offset, i;
-	UCHAR *p;
+	DSC desc;
 
 	const fmt* format = record->rec_format;
-	field_ptr = relation->rel_fields->vec_object;
-	desc_ptr = format->fmt_desc;
+	jrd_fld** field_ptr = relation->rel_fields->vec_object;
+	dsc* desc_ptr = format->fmt_desc;
 
-	for (i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++) {
+	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++) {
 		SET_NULL(record, i);
+		jrd_fld* field;
 		if (!desc_ptr->dsc_length || !(field = *field_ptr))
 			continue;
-		if (literal = field->fld_missing_value) {
+		LIT literal = field->fld_missing_value;
+		if (literal) {
 			desc = *desc_ptr;
 			desc.dsc_address = record->rec_data + (int) desc.dsc_address;
 			if (!MOV_compare(&literal->lit_desc, &desc))
@@ -1317,7 +1229,7 @@ static void set_flags(REL relation, REC record)
 }
 
 
-static void set_missing(REL relation, REC record)
+static void set_missing(jrd_rel* relation, REC record)
 {
 /**************************************
  *
@@ -1329,33 +1241,33 @@ static void set_missing(REL relation, REC record)
  *	Set missing values for MODIFY/STORE.
  *
  **************************************/
-	FLD *field_ptr, field;
-	LIT literal;
-	DSC desc, *desc_ptr;
-	UCHAR *p;
-	USHORT i, l, offset;
+	DSC desc;
 
 	const fmt* format = record->rec_format;
-	field_ptr = relation->rel_fields->vec_object;
-	desc_ptr = format->fmt_desc;
+	jrd_fld** field_ptr = relation->rel_fields->vec_object;
+	dsc* desc_ptr = format->fmt_desc;
 
-	for (i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
-		if ((field = *field_ptr) &&
-			!field->fld_computation &&
+	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
+	{
+		USHORT l;
+		jrd_fld* field = *field_ptr;
+		if ((field) && !field->fld_computation &&
 			(l = desc_ptr->dsc_length) && TEST_NULL(record, i))
 		{
-			p = record->rec_data + (int) desc_ptr->dsc_address;
-			if (literal = field->fld_missing_value) {
+			UCHAR* p = record->rec_data + (int) desc_ptr->dsc_address;
+			LIT literal = field->fld_missing_value;
+			if (literal) {
 				desc = *desc_ptr;
 				desc.dsc_address = p;
 				MOV_move(&literal->lit_desc, &desc);
 			}
 			else {
-				offset = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
+				const UCHAR pad = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
 				do {
-					*p++ = offset;
+					*p++ = pad;
 				} while (--l);
 			}
 		}
+	}
 }
 

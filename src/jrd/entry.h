@@ -490,7 +490,7 @@ ENTRYPOINT( "gds_get_slice",
 			PSI5_get_slice,
 			"_jrd8_get_slice",
 			IPI_get_slice,
-			(ISC_STATUS*, att**, class jrd_tra**, SLONG*, USHORT,
+			(ISC_STATUS*, att**, class jrd_tra**, ISC_QUAD*, USHORT,
 				const UCHAR*, USHORT, const UCHAR*, SLONG, UCHAR*, SLONG*))
 
 ENTRYPOINT( "gds_put_slice",
@@ -504,7 +504,7 @@ ENTRYPOINT( "gds_put_slice",
 			PSI5_put_slice,
 			"_jrd8_put_slice",
 			IPI_put_slice,
-			(ISC_STATUS*, att**, class jrd_tra**, SLONG*, USHORT,
+			(ISC_STATUS*, att**, class jrd_tra**, ISC_QUAD*, USHORT,
 				const UCHAR*, USHORT, const UCHAR*, SLONG, UCHAR*))
 
 ENTRYPOINT( "gds_seek_blob",

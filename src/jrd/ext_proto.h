@@ -24,9 +24,12 @@
 #ifndef JRD_EXT_PROTO_H
 #define JRD_EXT_PROTO_H
 
+struct bid;
+class external_file;
+
 void	EXT_close(Rsb*);
 void	EXT_erase(rpb*, int*);
-class external_file*	EXT_file(jrd_rel*, const TEXT*, SLONG*);
+external_file*	EXT_file(jrd_rel*, const TEXT*, bid*);
 void	EXT_fini(jrd_rel*);
 int	EXT_get(Rsb*);
 void	EXT_modify(rpb*, rpb*, int*);

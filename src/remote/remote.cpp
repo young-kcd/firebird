@@ -96,7 +96,8 @@ void REMOTE_cleanup_transaction( RTR transaction)
 
 
 ULONG REMOTE_compute_batch_size(rem_port* port,
-								USHORT buffer_used, P_OP op_code, rem_fmt* format)
+								USHORT buffer_used, P_OP op_code,
+								const rem_fmt* format)
 {
 /**************************************
  *
@@ -166,7 +167,6 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
 #define MIN_ROWS_PER_BATCH	10	/* data rows  - picked by SWAG */
 
 	USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
-	ULONG row_size;
 
 #ifdef DEBUG
 	ib_fprintf(ib_stderr,
@@ -175,6 +175,7 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
 			   format->fmt_length, op_overhead);
 #endif
 
+	ULONG row_size;
 	if (port->port_flags & PORT_symmetric) {
 		/* Same architecture connection */
 		row_size = (ROUNDUP(format->fmt_length, 4)
@@ -210,7 +211,7 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
 
 #ifdef DEBUG
 	{
-		char* p = getenv("DEBUG_BATCH_SIZE");
+		const char* p = getenv("DEBUG_BATCH_SIZE");
 		if (p)
 			result = atoi(p);
 		ib_fprintf(ib_stderr, "row_size = %lu num_packets = %d\n",
@@ -376,11 +377,10 @@ void REMOTE_get_timeout_params(
 			has already called THREAD_ENTER
 		    **/
 					{
-						char* t_data;
-						int i = 0;
-
 						THD_init_data();
 
+						char* t_data;
+						int i = 0;
 						int l = *(p++);
 						if (l) {
 							t_data = (char *) malloc(l + 1);
@@ -822,7 +822,7 @@ XDR_INT rem_port::send_partial(PACKET* pckt)
 	return (*this->port_send_partial)(this, pckt);
 }
 
-rem_port* rem_port::connect(PACKET* pckt, void(*ast)())
+rem_port* rem_port::connect(PACKET* pckt, t_event_ast ast)
 {
 	return (*this->port_connect)(this, pckt, ast);
 }

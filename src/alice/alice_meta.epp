@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.29 2004-01-03 10:59:34 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.30 2004-02-24 05:34:06 robocop Exp $
  */
 
 #include "firebird.h"
@@ -59,9 +59,9 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 static alice_str* alloc_string(const TEXT**);
 static USHORT get_capabilities(ISC_STATUS*);
-static TDR get_description(SLONG[2]);
+static TDR get_description(ISC_QUAD*);
 static void parse_fullpath(TDR);
-static USHORT snarf_blob(SLONG[2], USHORT, TEXT*);
+static USHORT snarf_blob(ISC_QUAD*, USHORT, TEXT*);
 
 
 /* 
@@ -188,7 +188,7 @@ TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 		TRA IN RDB$TRANSACTIONS WITH
 			TRA.RDB$TRANSACTION_ID = id AND
 			TRA.RDB$TRANSACTION_DESCRIPTION NOT MISSING
-			trans = get_description((SLONG*)&TRA.RDB$TRANSACTION_DESCRIPTION);
+			trans = get_description(&TRA.RDB$TRANSACTION_DESCRIPTION);
 		END_FOR 
 		ON_ERROR 
 			return_error(user_status);
@@ -309,7 +309,7 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
  *		in other databases.
  */  
 
-static TDR get_description(SLONG blob_id[2])
+static TDR get_description(ISC_QUAD* blob_id)
 {
 	TEXT buffer[1024];
 	TEXT* bigger_buffer = 0;
@@ -463,7 +463,7 @@ static void parse_fullpath(TDR trans)
  *		is not big enough.
  */  
 
-static USHORT snarf_blob(SLONG blob_id[2],
+static USHORT snarf_blob(ISC_QUAD* blob_id,
 						 USHORT buffer_length, TEXT* buffer)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -474,7 +474,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 		buffer[1] = 0;
 
 	FRBRD* blob = NULL;
-	if (isc_open_blob(gds_status, &DB, &gds_trans, &blob, (ISC_QUAD*) blob_id))
+	if (isc_open_blob(gds_status, &DB, &gds_trans, &blob, blob_id))
 	{
 		ALICE_print_status(gds_status);
 		return 0;

@@ -79,8 +79,6 @@ DEFINE_TRACE_ROUTINE(remote_trace);
 // fwd. decl.
 struct rem_port;
 
-/* Block types */
-
 typedef struct rdb
 {
 	struct blk		rdb_header;
@@ -101,8 +99,8 @@ typedef struct rdb
 typedef struct rtr
 {
 	struct blk	rtr_header;
-	struct rdb*	rtr_rdb;
-	struct rtr*	rtr_next;
+	rdb*		rtr_rdb;
+	rtr*		rtr_next;
 	struct rbl*	rtr_blobs;
 	FRBRD*		rtr_handle;
 	USHORT		rtr_flags;
@@ -114,9 +112,9 @@ typedef struct rtr
 typedef struct rbl
 {
 	struct blk	rbl_header;
-	struct rdb*	rbl_rdb;
-	struct rtr*	rbl_rtr;
-	struct rbl*	rbl_next;
+	rdb*		rbl_rdb;
+	rtr*		rbl_rtr;
+	rbl*		rbl_next;
 	FRBRD*		rbl_handle;
 	SLONG		rbl_offset;			/* Apparent (to user) offset in blob */
 	USHORT		rbl_id;
@@ -139,8 +137,8 @@ typedef struct rbl
 typedef struct rvnt
 {
 	struct blk	rvnt_header;
-	struct rvnt*rvnt_next;
-	RDB			rvnt_rdb;
+	rvnt*		rvnt_next;
+	rdb*		rvnt_rdb;
 	FPTR_EVENT_CALLBACK	rvnt_ast;
 	void*		rvnt_arg;
 	SLONG		rvnt_id;
@@ -198,33 +196,33 @@ struct rem_fmt
 typedef struct message
 {
 	struct blk	msg_header;
-	struct message *msg_next;	/* Next available message */
+	message*	msg_next;	/* Next available message */
 #ifdef SCROLLABLE_CURSORS
-	struct message *msg_prior;	/* Next available message */
-	ULONG	msg_absolute; 		/* Absolute record number in cursor result set */
+	message*	msg_prior;	/* Next available message */
+	ULONG		msg_absolute; 		/* Absolute record number in cursor result set */
 #endif
 	/* Please DO NOT re-arrange the order of following two fields.
 	   This could result in alignment problems while trying to access
 	   'msg_buffer' as a 'long', leading to "core" drops 
 		Sriram - 04-Jun-97 */
-	USHORT	msg_number;			/* Message number */
-	UCHAR	*msg_address;		/* Address of message */
-	UCHAR	msg_buffer[1];		/* Allocated message */
+	USHORT		msg_number;			/* Message number */
+	UCHAR*		msg_address;		/* Address of message */
+	UCHAR		msg_buffer[1];		/* Allocated message */
 } *REM_MSG;
 
 /* remote stored procedure request */
 
 typedef struct rpr
 {
-	struct blk		rpr_header;
-	struct rdb*		rpr_rdb;
-	struct rtr*		rpr_rtr;
-	FRBRD*			rpr_handle;
-	struct message*	rpr_in_msg;		/* input message */
-	struct message*	rpr_out_msg;	/* output message */
-	struct rem_fmt*		rpr_in_format;	/* Format of input message */
-	struct rem_fmt*		rpr_out_format;	/* Format of output message */
-	USHORT			rpr_flags;
+	struct blk	rpr_header;
+	rdb*		rpr_rdb;
+	rtr*		rpr_rtr;
+	FRBRD*		rpr_handle;
+	message*	rpr_in_msg;		/* input message */
+	message*	rpr_out_msg;	/* output message */
+	rem_fmt*	rpr_in_format;	/* Format of input message */
+	rem_fmt*	rpr_out_format;	/* Format of output message */
+	USHORT		rpr_flags;
 } *RPR;
 
 #define RPR_eof		1		/* End-of-stream encountered */
@@ -232,8 +230,8 @@ typedef struct rpr
 struct rrq
 {
 	struct blk	rrq_header;
-	struct rdb*	rrq_rdb;
-	struct rtr*	rrq_rtr;
+	rdb*	rrq_rdb;
+	rtr*	rrq_rtr;
 	rrq*	rrq_next;
 	rrq*	rrq_levels;		/* RRQ block for next level */
 	FRBRD*		rrq_handle;
@@ -243,18 +241,18 @@ struct rrq
 	ISC_STATUS_ARRAY	rrq_status_vector;
 	struct		rrq_repeat
 	{
-		rem_fmt*		rrq_format;		/* format for this message */
-		struct message*	rrq_message; 	/* beginning or end of cache, depending on whether it is client or server */
-		struct message*	rrq_xdr;		/* point at which cache is read or written by xdr */ 
+		rem_fmt*	rrq_format;		/* format for this message */
+		message*	rrq_message; 	/* beginning or end of cache, depending on whether it is client or server */
+		message*	rrq_xdr;		/* point at which cache is read or written by xdr */
 #ifdef SCROLLABLE_CURSORS
-		struct message*	rrq_last;		/* last message returned */
-		ULONG			rrq_absolute;	/* current offset in result set for record being read into cache */
-		USHORT			rrq_flags;
+		message*	rrq_last;		/* last message returned */
+		ULONG		rrq_absolute;	/* current offset in result set for record being read into cache */
+		USHORT		rrq_flags;
 #endif
-		USHORT			rrq_msgs_waiting;	/* count of full rrq_messages */
-		USHORT			rrq_rows_pending;	/* How many rows in waiting */
-		USHORT			rrq_reorder_level;	/* Reorder when rows_pending < this level */
-		USHORT			rrq_batch_count;	/* Count of batches in pipeline */
+		USHORT		rrq_msgs_waiting;	/* count of full rrq_messages */
+		USHORT		rrq_rows_pending;	/* How many rows in waiting */
+		USHORT		rrq_reorder_level;	/* Reorder when rows_pending < this level */
+		USHORT		rrq_batch_count;	/* Count of batches in pipeline */
 
 	} rrq_rpt[1];
 };
@@ -270,16 +268,16 @@ struct rrq
 typedef struct rsr
 {
 	struct blk		rsr_header;
-	struct rsr*		rsr_next;
-	struct rdb*		rsr_rdb;
-	struct rtr*		rsr_rtr;
+	rsr*			rsr_next;
+	rdb*			rsr_rdb;
+	rtr*			rsr_rtr;
 	FRBRD*			rsr_handle;
-	struct rem_fmt*		rsr_bind_format;		/* Format of bind message */
-	struct rem_fmt*		rsr_select_format;		/* Format of select message */
-	struct rem_fmt*		rsr_user_select_format; /* Format of user's select message */
-	struct rem_fmt*		rsr_format;				/* Format of current message */
-	struct message*	rsr_message;			/* Next message to process */
-	struct message*	rsr_buffer;				/* Next buffer to use */
+	rem_fmt*		rsr_bind_format;		/* Format of bind message */
+	rem_fmt*		rsr_select_format;		/* Format of select message */
+	rem_fmt*		rsr_user_select_format; /* Format of user's select message */
+	rem_fmt*		rsr_format;				/* Format of current message */
+	message*		rsr_message;			/* Next message to process */
+	message*		rsr_buffer;				/* Next buffer to use */
 	ISC_STATUS_ARRAY	rsr_status_vector;	/* saved status for buffered errors */
 	USHORT			rsr_id;
 	USHORT			rsr_flags;
@@ -357,12 +355,16 @@ enum state_t
 //////////////////////////////////////////////////////////////////
 // fwd. decl.
 struct p_cnct;
+struct rmtque;
 
 class port_interface
 {
 public:
 	virtual int		accept_(rem_port* pPort, p_cnct* pConnection) = 0;
 };
+
+typedef XDR_INT (*t_event_ast)();
+typedef rem_port* (*t_port_connect)(rem_port*, PACKET*, t_event_ast);
 
 struct rem_port
 {
@@ -390,16 +392,16 @@ struct rem_port
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 
 	/* port function pointers (C "emulation" of virtual functions) */
-	int				(*port_accept)(rem_port*, struct p_cnct*);
+	int				(*port_accept)(rem_port*, p_cnct*);
 	void			(*port_disconnect)(rem_port*);
 	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_partial)(rem_port*, PACKET*);
-	rem_port*		(*port_connect)(rem_port*, PACKET*, void(*)());	/* Establish secondary connection */
+	t_port_connect	port_connect;	/* Establish secondary connection */
 	rem_port*		(*port_request)(rem_port*, PACKET*);	/* Request to establish secondary connection */
 
-	struct rdb*		port_context;
-	XDR_INT			(*port_ast)();		/* AST for events */
+	rdb*			port_context;
+	t_event_ast		port_ast;		/* AST for events */
 	XDR				port_receive;
 	XDR				port_send;
 #ifdef DEBUG_XDR_MEMORY
@@ -412,9 +414,9 @@ struct rem_port
 	rem_str*		port_connection;	/* Name of connection */
 	rem_str*		port_user_name;
 	rem_str*		port_passwd;
-	struct rpr*		port_rpr;			/* port stored procedure reference */
-	struct rsr*		port_statement;		/* Statement for execute immediate */
-	struct rmtque*	port_receive_rmtque;	/* for client, responses waiting */
+	rpr*			port_rpr;			/* port stored procedure reference */
+	rsr*			port_statement;		/* Statement for execute immediate */
+	rmtque*			port_receive_rmtque;	/* for client, responses waiting */
 	USHORT			port_requests_queued;	/* requests currently queued */
 #ifdef VMS
 	USHORT			port_iosb[4];
@@ -430,7 +432,7 @@ struct rem_port
 	rem_port*	receive(PACKET* pckt);
 	XDR_INT	send(PACKET* pckt);
 	XDR_INT	send_partial(PACKET* pckt);
-	rem_port*	connect(PACKET* pckt, void(*ast)());
+	rem_port*	connect(PACKET* pckt, t_event_ast);
 	rem_port*	request(PACKET* pckt);
 
 	/* TMN: The following member functions are conceptually private
@@ -503,7 +505,7 @@ struct rem_port
 typedef struct trdb
 {
 	struct thdd	trdb_thd_data;
-	struct rdb*	trdb_database;
+	rdb*	trdb_database;
 	ISC_STATUS*	trdb_status_vector;
 } *TRDB;
 
@@ -516,21 +518,19 @@ typedef struct trdb
 
 /* Queuing structure for Client batch fetches */
 
+typedef bool (*t_rmtque_fn)(trdb*, rem_port*, rmtque*, ISC_STATUS*, USHORT);
+
 typedef struct rmtque
 {
-	struct blk			rmtque_header;	/* Memory allocator header */
-	struct rmtque*		rmtque_next;	/* Next entry in queue */
-	void*				rmtque_parm;/* What request has response in queue */
-	rrq::rrq_repeat*	rmtque_message;/* What message is pending */
-	struct rdb*			rmtque_rdb;	/* What database has pending msg */
+	struct blk			rmtque_header;	// Memory allocator header
+	rmtque*				rmtque_next;	// Next entry in queue
+	void*				rmtque_parm;	// What request has response in queue
+	rrq::rrq_repeat*	rmtque_message;	// What message is pending
+	rdb*				rmtque_rdb;		// What database has pending msg
 
 	/* Fn that receives queued entry */
-	bool	(*rmtque_function) (struct trdb*,
-								rem_port*,
-								struct rmtque*,
-								ISC_STATUS*,
-								USHORT);
+	t_rmtque_fn			rmtque_function;
 } *RMTQUE;
 
-#endif /* REMOTE_REMOTE_H */
+#endif // REMOTE_REMOTE_H
 

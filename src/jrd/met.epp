@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.92 2004-02-21 09:23:03 skidder Exp $
+$Id: met.epp,v 1.93 2004-02-24 05:34:34 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3344,7 +3344,7 @@ void MET_scan_relation( TDBB tdbb, jrd_rel* relation)
 		{
 			EXT_file(relation,
 					REL.RDB$EXTERNAL_FILE,
-					(SLONG*)&REL.RDB$EXTERNAL_DESCRIPTION);
+					&REL.RDB$EXTERNAL_DESCRIPTION);
 		}
 
 		/* Pick up field specific stuff */

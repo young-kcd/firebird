@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.63 2004-02-20 06:42:59 robocop Exp $ 
+  * $Id: evl.cpp,v 1.64 2004-02-24 05:34:33 robocop Exp $ 
  */
 
 /*
@@ -254,7 +254,8 @@ dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
 		impure->vlu_desc.dsc_sub_type = desc->dsc_sub_type;
 		if (DTYPE_IS_TEXT(desc->dsc_dtype) &&
 			((INTL_TTYPE(desc) == ttype_dynamic) ||
-			 (INTL_GET_CHARSET(desc) == CS_dynamic))) {
+			 (INTL_GET_CHARSET(desc) == CS_dynamic)))
+		{
 			/* Value is a text value, we're assigning it back to the user
 			   process, user process has not specified a subtype, user
 			   process specified dynamic translation and the dsc isn't from
@@ -270,8 +271,8 @@ dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
 		if (msg_invariants && msg_invariants->getCount() > arg_number) {
 			var_invariants = (*msg_invariants)[arg_number];
 			if (var_invariants) {
-				SLONG *ptr, *end;
-				for (ptr = var_invariants->begin(), end = var_invariants->end();
+				const SLONG* ptr = var_invariants->begin();
+				for (const SLONG* const end = var_invariants->end();
 					ptr < end; ptr++)
 				{
 					reinterpret_cast<VLU>((SCHAR *) request + *ptr)->vlu_flags = 0;
@@ -305,8 +306,8 @@ dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
 		var_invariants = reinterpret_cast<VarInvariantArray*>(
 			node->nod_arg[e_dcl_invariants]);
 		if (var_invariants) {
-			SLONG *ptr, *end;
-			for (ptr = var_invariants->begin(), end = var_invariants->end();
+			const SLONG* ptr = var_invariants->begin();
+			for (const SLONG* const end = var_invariants->end();
 				ptr < end; ptr++)
 			{
 				reinterpret_cast<VLU>((SCHAR *) request + *ptr)->vlu_flags = 0;
@@ -390,7 +391,6 @@ BOOLEAN EVL_boolean(TDBB tdbb, jrd_nod* node)
  *      Evaluate a boolean.
  *
  **************************************/
-
 	dsc*   desc[2];
 	USHORT value;
 	SSHORT comparison;
@@ -1162,12 +1162,9 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 
 		switch (node->nod_type) {
 		case nod_gen_id:		/* return a 32-bit generator value */
-			impure->vlu_misc.vlu_long = (SLONG) DPM_gen_id(tdbb,
-														   (SLONG)(IPTR)
-														   node->nod_arg
-														   [e_gen_id], 0,
-														   MOV_get_int64
-														   (values[0], 0));
+			impure->vlu_misc.vlu_long =
+				(SLONG) DPM_gen_id(tdbb, (SLONG)(IPTR) node->nod_arg[e_gen_id],
+									0, MOV_get_int64(values[0], 0));
 			impure->vlu_desc.dsc_dtype = dtype_long;
 			impure->vlu_desc.dsc_length = sizeof(SLONG);
 			impure->vlu_desc.dsc_scale = 0;
@@ -1702,8 +1699,6 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 		delete vtemp.vlu_string;
 		
 	dsc temp;
-	rec* record;
-	USHORT id;
 	double d;
 	SINT64 i;
 
@@ -1711,10 +1706,11 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 	{
 		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 		jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-		id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-		record =
+		const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
+		rec* record =
 			request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
 		vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);
+		
 		switch (from->nod_type)
 		{
 		case nod_agg_min:
@@ -1864,7 +1860,7 @@ void EVL_make_value(TDBB tdbb, const dsc* desc, VLU value)
 		break;
 	}
 
-	{
+	{ // scope
 		UCHAR temp[128], *address;
 		USHORT ttype;
 
@@ -1899,7 +1895,7 @@ void EVL_make_value(TDBB tdbb, const dsc* desc, VLU value)
 
 		if (address && length)
 			MOVE_FAST(address, p, length);
-	}
+	} // scope
 }
 
 

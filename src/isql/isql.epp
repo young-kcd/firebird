@@ -279,36 +279,49 @@ static const SCHAR* alpha_months[] = {
 
 #ifdef NOT_USED_OR_REPLACED
 // There's a local version of this, more complete, in ISQL_get_version()
-static const UCHAR db_version_info[] = { isc_info_ods_version,
+static const UCHAR db_version_info[] =
+{
+	isc_info_ods_version,
 	isc_info_ods_minor_version,
 	isc_info_db_sql_dialect
 };
 #endif
-static const UCHAR blr_bpb[] = { isc_bpb_version1,
-	isc_bpb_source_type, 1, BLOB_blr,
-	isc_bpb_target_type, 1, BLOB_text
-	};
 #ifdef NOT_USED_OR_REPLACED
-static const UCHAR text_bpb[] = {
+static const UCHAR text_bpb[] =
+{
 	isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_text,
-	isc_bpb_target_type, 1, BLOB_text};
+	isc_bpb_target_type, 1, BLOB_text
+};
 #endif
-static const UCHAR acl_bpb[] = {
+static UCHAR predefined_blob_subtype_bpb[] =
+{
 	isc_bpb_version1,
-	isc_bpb_source_type, 1, BLOB_acl, isc_bpb_target_type, 1, BLOB_text};
+	isc_bpb_source_type, 1, 0,
+	isc_bpb_target_type, 1, BLOB_text
+};
+
+// No check on input argument for now.
+inline void set_bpb_for_translation(const unsigned int blob_sub_type)
+{
+	predefined_blob_subtype_bpb[3] = (UCHAR) blob_sub_type;
+}
 
 // Note that these transaction options aren't understood in Version 3.3 
-static const UCHAR default_tpb[] = { isc_tpb_version1, isc_tpb_write,
+static const UCHAR default_tpb[] =
+{
+	isc_tpb_version1, isc_tpb_write,
 	isc_tpb_read_committed, isc_tpb_wait,
 	isc_tpb_no_rec_version
 };
 
 #ifdef NOT_USED_OR_REPLACED
 // CVC: Just in case we need it for R/O operations in the future. 
-static const UCHAR	batch_tpb[] = {isc_tpb_version3, isc_tpb_read,
-				isc_tpb_read_committed, isc_tpb_nowait,
-				isc_tpb_rec_version
+static const UCHAR	batch_tpb[] =
+{
+	isc_tpb_version3, isc_tpb_read,
+	isc_tpb_read_committed, isc_tpb_nowait,
+	isc_tpb_rec_version
 };
 #endif
 
@@ -6048,8 +6061,8 @@ static processing_state print_item_blob(IB_FILE* fp,
 	UCHAR bpb_buffer[64];
 	ISC_BLOB_DESC from_desc;
 	
-	switch (var->sqlsubtype) {
-	case BLOB_text:
+	const int blob_subtype = var->sqlsubtype;
+	if (blob_subtype == BLOB_text) {
 		/* Lookup the remaining descriptor information for the BLOB field,
 		 * most specifically we're interested in the Character Set so
 		 * we can set up a BPB that requests character set transliteration
@@ -6067,17 +6080,12 @@ static processing_state print_item_blob(IB_FILE* fp,
 				bpb = bpb_buffer;
 			}
 		}
-		break;
-	case BLOB_blr:
-		bpb = blr_bpb;
-		bpb_length = sizeof(blr_bpb);
-		break;
-	case BLOB_acl:
-		bpb = acl_bpb;
-		bpb_length = sizeof(acl_bpb);
-		break;
-	default:
-		break;
+	}
+	else if (blob_subtype > BLOB_text && blob_subtype < BLOB_max_predefined_subtype)
+	{
+		bpb = predefined_blob_subtype_bpb;
+		bpb_length = sizeof(predefined_blob_subtype_bpb);
+		set_bpb_for_translation(blob_subtype);
 	}
 
 	FRBRD* blob = NULL;
@@ -6099,7 +6107,8 @@ static processing_state print_item_blob(IB_FILE* fp,
 	{
 		// Special displays for blr or acl subtypes 
 
-		if (var->sqlsubtype == BLOB_blr || var->sqlsubtype == BLOB_acl) {
+		if (blob_subtype > BLOB_text && blob_subtype < BLOB_max_predefined_subtype)
+		{
 			buffer[length--] = 0;
 			for (UCHAR* b = buffer + length; b >= buffer;) {
 				if (*b == '\n' || *b == '\t' || *b == BLANK)

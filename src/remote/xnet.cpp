@@ -63,8 +63,8 @@
 
 static int accept_connection(rem_port*, P_CNCT *);
 static rem_port* xnet_alloc_port(rem_port*, UCHAR *, ULONG, UCHAR *, ULONG);
-static rem_port* aux_connect(rem_port*, PACKET *, XDR_INT(*)(void));
-static rem_port* aux_request(rem_port*, PACKET *);
+static rem_port* aux_connect(rem_port*, PACKET*, t_event_ast);
+static rem_port* aux_request(rem_port*, PACKET*);
 
 static void xnet_cleanup_comm(XCC);
 static void xnet_cleanup_port(rem_port*);
@@ -112,9 +112,9 @@ static xdr_t::xdr_ops xnet_ops =
 #define MAX_PTYPE	ptype_out_of_band
 #endif
 
-static ULONG pages_per_slot = XPS_DEF_PAGES_PER_CLI;
-static ULONG slots_per_map = XPS_DEF_NUM_CLI;
-static XPM client_maps = NULL;
+static ULONG global_pages_per_slot = XPS_DEF_PAGES_PER_CLI;
+static ULONG global_slots_per_map = XPS_DEF_NUM_CLI;
+static XPM global_client_maps = NULL;
 
 #ifdef WIN_NT
 
@@ -221,24 +221,19 @@ rem_port* XNET_analyze(
  *	otherwise return NULL.
  *
  **************************************/
-	RDB rdb;
-	rem_port* port;
-	PACKET *packet;
-	P_CNCT *cnct;
-	TEXT *p, user_id[128], buffer[64];
-
 	*file_length = strlen(file_name);
 
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
-	rdb = (RDB) ALLOC(type_rdb);
-	packet = &rdb->rdb_packet;
+	RDB rdb = (RDB) ALLOC(type_rdb);
+	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
 
+	TEXT user_id[128];
 	user_id[0] = CNCT_user;
-	p = user_id + 2;
+	TEXT* p = user_id + 2;
 	ISC_get_user(p, 0, 0, 0, 0, 0, 0);
 	user_id[1] = strlen(p);
 
@@ -266,7 +261,7 @@ rem_port* XNET_analyze(
 
 /* Establish connection to server */
 
-	cnct = &packet->p_cnct;
+	P_CNCT* cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
@@ -300,7 +295,8 @@ rem_port* XNET_analyze(
 /* If we can't talk to a server, punt.  Let somebody else generate
    an error. */
 
-	if (!(port = XNET_connect(node_name, packet, status_vector, FALSE))) {
+	rem_port* port = XNET_connect(node_name, packet, status_vector, FALSE);
+	if (!port) {
 		ALLR_release((BLK) rdb);
 		return NULL;
 	}
@@ -397,6 +393,7 @@ rem_port* XNET_analyze(
 /* once we've decided on a protocol, concatenate the version 
    string to reflect it...  */
 
+	TEXT buffer[64];
 	sprintf(buffer, "%s/P%d", port->port_version->str_data,
 			port->port_protocol);
 	ALLR_free((UCHAR *) port->port_version);
@@ -463,15 +460,10 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 	XPS xps = NULL;
 
 	XNET_RESPONSE response;
-	ULONG map_num, slot_num;
-	time_t timestamp;
 
 	TEXT name_buffer[128];
 	FILE_ID file_handle = 0;
 	CADDR_T mapped_address = 0;
-	UCHAR *start_ptr;
-
-	ULONG avail;
 
 	if (!xnet_initialized) {
 		xnet_initialized = TRUE;
@@ -523,18 +515,18 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 		return NULL;
 	}
 
-	pages_per_slot = response.pages_per_slot;
-	slots_per_map = response.slots_per_map;
-	map_num = response.map_num;
-	slot_num = response.slot_num;
-	timestamp = response.timestamp;
+	global_pages_per_slot = response.pages_per_slot;
+	global_slots_per_map = response.slots_per_map;
+	const ULONG map_num = response.map_num;
+	const ULONG slot_num = response.slot_num;
+	const time_t timestamp = response.timestamp;
 
 	try {
 
 		XNET_LOCK;
 
 		// see if area is already mapped for this client
-		for (xpm = client_maps; xpm; xpm = xpm->xpm_next) {
+		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
 			if (xpm->xpm_number == map_num &&
 					xpm->xpm_timestamp == timestamp &&
 					!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
@@ -555,7 +547,7 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 			}
 
 			mapped_address = MapViewOfFile(file_handle, FILE_MAP_WRITE, 0L, 0L,
-										   XPS_MAPPED_SIZE(slots_per_map, pages_per_slot));
+										   XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot));
 			if (!mapped_address) {
 				XNET_UNLOCK;
 				throw -1;
@@ -567,8 +559,8 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 				throw -1;
 			}
 
-			xpm->xpm_next = client_maps;
-			client_maps = xpm;
+			xpm->xpm_next = global_client_maps;
+			global_client_maps = xpm;
 			xpm->xpm_count = 0;
 			xpm->xpm_number = map_num;
 			xpm->xpm_handle = file_handle;
@@ -587,7 +579,7 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 
 		xcc->xcc_map_handle = xpm->xpm_handle;
 		xcc->xcc_mapped_addr =
-			(UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(pages_per_slot, slot_num);
+			(UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
 		xcc->xcc_map_num = map_num;
 		xcc->xcc_slot = slot_num;
 		xcc->xcc_xpm = xpm;
@@ -657,8 +649,10 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 		/* we also need to add client side flags or channel pointer as they 
 		   differ from the server side */
 
-		avail =	(ULONG) (XPS_USEFUL_SPACE(pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
-		start_ptr = (UCHAR*) xps + (sizeof(struct xps) + (XNET_EVENT_SPACE * 2));
+		const ULONG avail =
+			(ULONG) (XPS_USEFUL_SPACE(global_pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
+		UCHAR* start_ptr =
+			(UCHAR*) xps + (sizeof(struct xps) + (XNET_EVENT_SPACE * 2));
 
 		/* send channel */
 		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_client_ptr = start_ptr;
@@ -869,12 +863,11 @@ static rem_port* xnet_alloc_port(rem_port* parent,
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	rem_port* port;
-	TEXT buffer[64];
-
-	port = (rem_port*) ALLOCV(type_port, 0);
+	rem_port* port = (rem_port*) ALLOCV(type_port, 0);
 	port->port_type = port_xnet;
 	port->port_state = state_pending;
+
+	TEXT buffer[64];
 	ISC_get_host(buffer, sizeof(buffer));
 	port->port_host = REMOTE_make_string(buffer);
 	port->port_connection = REMOTE_make_string(buffer);
@@ -898,8 +891,7 @@ static rem_port* xnet_alloc_port(rem_port* parent,
 	port->port_receive_packet = receive;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
-	port->port_connect = 
-		reinterpret_cast<rem_port* (*)(rem_port*, PACKET *, void (*)())>(aux_connect);
+	port->port_connect = aux_connect;
 	port->port_request = aux_request;
 	port->port_buff_size = send_length;
 	port->port_status_vector = NULL;
@@ -911,7 +903,8 @@ static rem_port* xnet_alloc_port(rem_port* parent,
 }
 
 
-static rem_port* aux_connect(rem_port* port, PACKET * packet, XDR_INT (*ast)(void))
+// Third param "ast" is unused.
+static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 {
 /**************************************
  *
@@ -1061,7 +1054,7 @@ static rem_port* aux_connect(rem_port* port, PACKET * packet, XDR_INT (*ast)(voi
 }
 
 
-static rem_port* aux_request(rem_port* port, PACKET * packet)
+static rem_port* aux_request(rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -1232,9 +1225,6 @@ static void xnet_cleanup_comm(XCC xcc)
  *  unmap its file, and free it.
  *
  **************************************/
-	XPM xpm;
-	XPM pxpm;
-
 #ifdef WIN_NT
 
 	if (xcc->xcc_event_send_channel_filled) {
@@ -1255,7 +1245,7 @@ static void xnet_cleanup_comm(XCC xcc)
 
 #endif // WIN_NT
 
-	xpm = xcc->xcc_xpm;
+	XPM xpm = xcc->xcc_xpm;
 
 	ALLR_free((UCHAR *) xcc);
 
@@ -1263,16 +1253,18 @@ static void xnet_cleanup_comm(XCC xcc)
 	if (xpm) {
 		xpm->xpm_count--;
 
-		if (!xpm->xpm_count && client_maps) {
+		if (!xpm->xpm_count && global_client_maps) {
 			UnmapViewOfFile(xpm->xpm_address);
 			CloseHandle(xpm->xpm_handle);
 
 			// find xpm in chain and release
-			if (xpm == client_maps) {
-				client_maps = xpm->xpm_next;
+			if (xpm == global_client_maps) {
+				global_client_maps = xpm->xpm_next;
 			}
 			else {
-				for (pxpm = client_maps; pxpm->xpm_next; pxpm = pxpm->xpm_next) {
+				for (XPM pxpm = global_client_maps; pxpm->xpm_next;
+					pxpm = pxpm->xpm_next)
+				{
 					if (pxpm->xpm_next == xpm) {
 						pxpm->xpm_next = xpm->xpm_next;
 						break;
@@ -1347,11 +1339,11 @@ static void disconnect(rem_port* port)
  *	Break a remote connection.
  *
  **************************************/
-	rem_port* parent;
 
 /* If this is a sub-port, unlink it from it's parent */
 
-	if ((parent = port->port_parent) != NULL) {
+	rem_port* parent = port->port_parent;
+	if (parent != NULL) {
 
 		if (port->port_async) {
 			disconnect(port->port_async);
@@ -1430,13 +1422,13 @@ static bool_t xnet_make_map(ULONG map_number, time_t timestamp,
 		                              ISC_get_security_desc(),
 		                              PAGE_READWRITE,
 		                              0L,
-		                              XPS_MAPPED_SIZE(slots_per_map, pages_per_slot),
+		                              XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot),
 		                              name_buffer);
 	if (!(*map_handle) || (*map_handle && ERRNO == ERROR_ALREADY_EXISTS))
 		return FALSE;
 
 	*map_address = MapViewOfFile(*map_handle, FILE_MAP_WRITE, 0, 0,
-								 XPS_MAPPED_SIZE(slots_per_map, pages_per_slot));
+								 XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot));
 	if (!(*map_address)) {
 		CloseHandle(*map_handle);
 		return FALSE;
@@ -1458,16 +1450,14 @@ static XPM xnet_make_xpm(ULONG map_number, time_t timestamp)
  *      Create new xpm structure
  *
  **************************************/
-	XPM xpm = NULL;
 	FILE_ID map_handle = 0;
 	CADDR_T map_address = 0;
-	USHORT i;
 
 	if (!xnet_make_map(map_number, timestamp, &map_handle, &map_address))
 		return NULL;
 
 /* allocate a structure and initialize it */
-	xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
+	XPM xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
 	if (!xpm)
 		return NULL;
 
@@ -1477,13 +1467,13 @@ static XPM xnet_make_xpm(ULONG map_number, time_t timestamp)
 	xpm->xpm_count = 0;
 	xpm->xpm_timestamp = timestamp;
 
-	for (i = 0; i < slots_per_map; i++) {
+	for (USHORT i = 0; i < global_slots_per_map; i++) {
 		xpm->xpm_ids[i] = XPM_FREE;
 	}
 	xpm->xpm_flags = 0;
 
-	xpm->xpm_next = client_maps;
-	client_maps = xpm;
+	xpm->xpm_next = global_client_maps;
+	global_client_maps = xpm;
 
 	return xpm;
 }
@@ -1577,7 +1567,7 @@ static void xnet_on_server_shutdown(rem_port* port)
 	ULONG dead_proc_id = XPS(xpm->xpm_address)->xps_server_proc_id;
 
 /* mark all mapped areas connected to server with dead_proc_id */
-	for (xpm = client_maps; xpm; xpm = xpm->xpm_next) {
+	for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
 		if (XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id)
 		{
 			xpm->xpm_flags |= XPMF_SERVER_SHUTDOWN;
@@ -1703,7 +1693,6 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
  **************************************/
 
 	SLONG bytecount = count;
-	SLONG to_copy;
 
 	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = (XCC)port->port_xcc;
@@ -1723,6 +1712,7 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 		}
 #endif
 
+		SLONG to_copy;
 		if (xdrs->x_handy >= bytecount)
 			to_copy = bytecount;
 		else
@@ -1826,8 +1816,6 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
  *
  **************************************/
 	SLONG bytecount = count;
-	SLONG to_copy;
-	DWORD wait_result;
 
 	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = (XCC)port->port_xcc;
@@ -1848,6 +1836,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 		}
 #endif
 		
+		SLONG to_copy;
 		if (xdrs->x_handy >= bytecount)
 			to_copy = bytecount;
 		else
@@ -1860,7 +1849,8 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 				THREAD_EXIT;
 				while (!xnet_shutdown) {
 
-					wait_result = WaitForSingleObject(xcc->xcc_event_send_channel_empted,
+					const DWORD wait_result =
+						WaitForSingleObject(xcc->xcc_event_send_channel_empted,
 													  XNET_SEND_WAIT_TIMEOUT);
 					if (wait_result == WAIT_OBJECT_0)
 						break;
@@ -1953,7 +1943,6 @@ static bool_t xnet_read(XDR * xdrs)
  *	Read a buffer full of data.
  *
  **************************************/
-	DWORD wait_result;
 	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = (XCC)port->port_xcc;
 	XCH xch = (XCH)xcc->xcc_recv_channel;
@@ -1979,7 +1968,8 @@ static bool_t xnet_read(XDR * xdrs)
 		}
 #endif
 
-		wait_result = WaitForSingleObject(xcc->xcc_event_recv_channel_filled,
+		const DWORD wait_result =
+			WaitForSingleObject(xcc->xcc_event_recv_channel_filled,
 		                                  XNET_RECV_WAIT_TIMEOUT);
 		if (wait_result == WAIT_OBJECT_0) {
 			/* Client wrote some data for us(for server) to read*/
@@ -2086,8 +2076,6 @@ void xnet_release_all()
 	if (!xnet_initialized)
 		return;
 
-	XPM xpm, nextxpm;
-
 #ifndef SUPERCLIENT
 	xnet_connect_fini();
 #endif
@@ -2095,14 +2083,15 @@ void xnet_release_all()
 	THD_mutex_lock(&xnet_mutex);
 
 /* release all map stuf left not released by broken ports */
-	for (xpm = nextxpm = client_maps; nextxpm; xpm = nextxpm) {
+	XPM xpm, nextxpm;
+	for (xpm = nextxpm = global_client_maps; nextxpm; xpm = nextxpm) {
 		nextxpm = nextxpm->xpm_next;
 		UnmapViewOfFile(xpm->xpm_address);
 		CloseHandle(xpm->xpm_handle);
 		ALLR_free((UCHAR *) xpm);
 	}
 
-	client_maps = NULL;
+	global_client_maps = NULL;
 
 	THD_mutex_unlock(&xnet_mutex);
 
@@ -2137,12 +2126,12 @@ static bool_t xnet_srv_init()
 
 	// init the limits
 #ifdef SUPERSERVER
-	slots_per_map = XPS_MAX_NUM_CLI;
-	pages_per_slot = XPS_MAX_PAGES_PER_CLI;
+	global_slots_per_map = XPS_MAX_NUM_CLI;
+	global_pages_per_slot = XPS_MAX_PAGES_PER_CLI;
 #else
 	// For classic server there is always only 1 connection and 1 slot
-	slots_per_map = 1;
-	pages_per_slot = XPS_MAX_PAGES_PER_CLI;
+	global_slots_per_map = 1;
+	global_pages_per_slot = XPS_MAX_PAGES_PER_CLI;
 #endif
 
 	xnet_connect_mutex = 0;
@@ -2221,18 +2210,13 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
  *  It's for classic server only
  *
  **************************************/
-
-	STARTUPINFO start_crud;
-	PROCESS_INFORMATION pi;
-	bool_t cp_result;
-
 	if (!XNET_command_line[0]) {
 
 #ifdef CMDLINE_VIA_SERVICE_MANAGER
 
-		SC_HANDLE manager, service;
-
-		if ((manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT)) &&
+		SC_HANDLE service;
+		SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+		if ((manager) &&
 			(service = OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
 		{
 			LPQUERY_SERVICE_CONFIG config;
@@ -2266,6 +2250,8 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
 	}
 
 	sprintf(XNET_p, " -s -x -h %"ULONGFORMAT, (ULONG) client_pid);
+	
+	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
 	start_crud.lpReserved = NULL;
 	start_crud.lpReserved2 = NULL;
@@ -2273,7 +2259,9 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
 	start_crud.lpDesktop = NULL;
 	start_crud.lpTitle = NULL;
 	start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
-	cp_result = CreateProcess(NULL,
+	PROCESS_INFORMATION pi;
+	
+	const bool_t cp_result = CreateProcess(NULL,
 							  XNET_command_line,
 							  NULL,
 							  NULL,
@@ -2317,14 +2305,14 @@ static XPM xnet_get_free_slot(ULONG* map_num, ULONG* slot_num, time_t* timestamp
 	ULONG i = 0, j = 0;
 
 	/* go through list of maps */
-	for (xpm = client_maps; xpm; xpm = xpm->xpm_next) {
+	for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
 		/* find an available unused comm area */
 
-		for (i = 0; i < slots_per_map; i++)
+		for (i = 0; i < global_slots_per_map; i++)
 			if (xpm->xpm_ids[i] == XPM_FREE)
 				break;
 
-		if (i < slots_per_map) {
+		if (i < global_slots_per_map) {
 			xpm->xpm_count++;
 			xpm->xpm_ids[i] = XPM_BUSY;
 			j = xpm->xpm_number;
@@ -2378,20 +2366,17 @@ static rem_port* xnet_get_srv_port(ULONG client_pid, XPM xpm,
  *	Allocates	new rem_port for server side communication .
  *
  **************************************/
-	XCC xcc = NULL;
 	rem_port* port = NULL;
 	TEXT name_buffer[128];
-	UCHAR *p;
-	XPS xps;
-	ULONG avail;
 
 	// allocate a communications control structure and fill it in
-	if (!(xcc = (XCC) ALLR_alloc(sizeof(struct xcc))))
+	XCC xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
+	if (!xcc)
 		return NULL;
 
 	try {
-		p = (UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(pages_per_slot, slot_num);
-		memset(p, (char) 0, XPS_MAPPED_PER_CLI(pages_per_slot));
+		UCHAR* p = (UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
+		memset(p, (char) 0, XPS_MAPPED_PER_CLI(global_pages_per_slot));
 		xcc->xcc_next = NULL;
 		xcc->xcc_mapped_addr = p;
 		xcc->xcc_xpm = xpm;
@@ -2405,7 +2390,7 @@ static rem_port* xnet_get_srv_port(ULONG client_pid, XPM xpm,
 		}
 
 		xcc->xcc_map_num = map_num;
-		xps = (XPS) xcc->xcc_mapped_addr;
+		XPS xps = (XPS) xcc->xcc_mapped_addr;
 		xps->xps_client_proc_id = client_pid;
 
 #ifdef WIN_NT
@@ -2462,7 +2447,8 @@ static rem_port* xnet_get_srv_port(ULONG client_pid, XPM xpm,
 
 		p += sizeof(struct xps);
 
-		avail =	(USHORT) (XPS_USEFUL_SPACE(pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
+		const ULONG avail =
+			(USHORT) (XPS_USEFUL_SPACE(global_pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
 
 		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_buffer = p;	/* client to server events */
 		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_size = XNET_EVENT_SPACE;
@@ -2555,11 +2541,6 @@ void XNET_srv(USHORT flag)
 	ISC_STATUS* status_vector;
 #endif
 
-	DWORD wait_res;
-	ULONG client_pid;
-
-	PXNET_RESPONSE presponse;
-
 	CurrentProcessId = GetCurrentProcessId();
 	XNET_command_line[0] = 0;
 
@@ -2572,7 +2553,7 @@ void XNET_srv(USHORT flag)
 		return;
 	}
 
-	presponse = (PXNET_RESPONSE)xnet_connect_map;
+	PXNET_RESPONSE presponse = (PXNET_RESPONSE)xnet_connect_map;
 
 	while (!xnet_shutdown) {
 
@@ -2580,7 +2561,7 @@ void XNET_srv(USHORT flag)
 //		presponse->proc_id = CurrentProcessId;
 
 		THREAD_EXIT;
-		wait_res = WaitForSingleObject(xnet_connect_event,INFINITE);
+		const DWORD wait_res = WaitForSingleObject(xnet_connect_event, INFINITE);
 		THREAD_ENTER;
 
 		if (wait_res != WAIT_OBJECT_0) {
@@ -2592,11 +2573,12 @@ void XNET_srv(USHORT flag)
 			break;
 
 		// read client process id
-		if ((client_pid = presponse->proc_id) == CurrentProcessId)
+		const ULONG client_pid = presponse->proc_id;
+		if (client_pid == CurrentProcessId)
 			continue; // dummy xnet_connect_event fire -  no connect request
 			
-		presponse->slots_per_map = slots_per_map;
-		presponse->pages_per_slot = pages_per_slot;
+		presponse->slots_per_map = global_slots_per_map;
+		presponse->pages_per_slot = global_pages_per_slot;
 		presponse->timestamp = time_t(0);
 
 #ifdef SUPERSERVER
@@ -2667,11 +2649,10 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
  **************************************/
 
 	rem_port* port = NULL;
-	XPM xpm = NULL;
 	TEXT name_buffer[128];
 
-	slots_per_map = 1;
-	pages_per_slot = XPS_MAX_PAGES_PER_CLI;
+	global_slots_per_map = 1;
+	global_pages_per_slot = XPS_MAX_PAGES_PER_CLI;
 	xnet_response_event = 0;
 
 	// CurrentProcessId used as map number
@@ -2684,7 +2665,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 			throw -1;
 		}
 
-		xpm = xnet_make_xpm(CurrentProcessId, time_t(0));
+		XPM xpm = xnet_make_xpm(CurrentProcessId, time_t(0));
 		if (!xpm) {
 			throw -1;
 		}

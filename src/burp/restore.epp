@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.67 2004-02-20 06:42:30 robocop Exp $
+$Id: restore.epp,v 1.68 2004-02-24 05:34:26 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1454,7 +1454,7 @@ void get_array (burp_rel*	relation,
 	return_length |= get(tdgbl) << 16;
 	return_length |= get(tdgbl) << 24;
 
-	SLONG* blob_id = (SLONG*) ((UCHAR*) record_buffer + field->fld_offset);
+	ISC_QUAD* blob_id = (ISC_QUAD*) ((UCHAR*) record_buffer + field->fld_offset);
 
 	SLONG last_element_dim[MAX_DIMENSION];
 	if (return_length != slice_length)
@@ -1723,7 +1723,7 @@ void get_array (burp_rel*	relation,
 			}
 
 			if (isc_put_slice (status_vector, &DB, &gds_trans,
-				(ISC_QUAD*) blob_id, blr_length, reinterpret_cast<const char*>(blr_buffer),
+				blob_id, blr_length, reinterpret_cast<const char*>(blr_buffer),
 				0,	  // param length for subset of an array handling 
 				NULL,  // param for subset of an array handling 
 				elements_written * field->fld_length,
@@ -1845,7 +1845,7 @@ void get_array (burp_rel*	relation,
 
 
 		if (isc_put_slice (status_vector, &DB, &gds_trans,
-						   (ISC_QUAD*) blob_id, blr_length,
+						   blob_id, blr_length,
 						   reinterpret_cast<const char*>(blr_buffer),
 						   0,	  // param length for subset of an array handling 
 						   NULL,  // param for subset of an array handling 
@@ -2574,8 +2574,9 @@ rec_type get_data (burp_rel*	relation)
 		for (field = relation->rel_fields; field; field = field->fld_next)
 			if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
 			{
-				SLONG* blob_id = (SLONG*) ((SCHAR*) buffer + field->fld_offset);
-				blob_id[0] = blob_id[1] = 0;
+				ISC_QUAD* blob_id = (ISC_QUAD*) ((SCHAR*) buffer + field->fld_offset);
+				blob_id->gds_quad_high = 0;
+				blob_id->gds_quad_low = 0;
 			}
 
 		get_record(&record, tdgbl);

@@ -25,7 +25,7 @@
 #define REMOTE_REMOT_PROTO_H
 
 void		REMOTE_cleanup_transaction (struct rtr *);
-ULONG		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, rem_fmt*);
+ULONG		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);
 void		REMOTE_get_timeout_params (rem_port*, const UCHAR*, USHORT);
 struct rrq*	REMOTE_find_request (struct rrq *, USHORT);
 void		REMOTE_free_packet (rem_port*, struct packet *);

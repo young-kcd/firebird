@@ -66,7 +66,7 @@ static void GetDriveLetter(ULONG, char pchBuf[DRV_STRINGLEN]);
 #ifdef NOT_USED_OR_REPLACED
 static char *MakeVersionString(char *, int, USHORT);
 #endif
-static BOOL CanEndServer(HWND, BOOL);
+static BOOL CanEndServer(HWND, bool);
 
 // Window Procedure
 void WINDOW_shutdown(ULONG);
@@ -93,9 +93,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
  *               substitute for the regular WinMain() function.
  *****************************************************************************/
 	HWND hWnd = NULL;
-	MSG msg;
-	WNDCLASS wcl;
-
 	hInstance = hThisInst;
 	usServerFlags = usServerFlagMask;
 
@@ -137,6 +134,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	}
 
 /* initialize main window */
+	WNDCLASS wcl;
 	wcl.hInstance = hInstance;
 	wcl.lpszClassName = szClassName;
 	wcl.lpfnWndProc = WindowFunc;
@@ -176,11 +174,12 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	SendMessage(hWnd, WM_COMMAND, IDM_CANCEL, 0);
 	UpdateWindow(hWnd);
 
+	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0)) {
 		if (hPSDlg)				// If property sheet dialog is open
 		{
 			// Check if the message is property sheet dialog specific
-			BOOL bPSMsg = PropSheet_IsDialogMessage(hPSDlg, &msg);
+			const BOOL bPSMsg = PropSheet_IsDialogMessage(hPSDlg, &msg);
 
 			// Check if the property sheet dialog is still valid, if not destroy it
 			if (!PropSheet_GetCurrentPageHwnd(hPSDlg)) {
@@ -239,7 +238,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		 * therefore should not be shut down.  
 		 */
 		if (usServerFlags & SRVR_non_service) {
-			return CanEndServer(hWnd, TRUE);
+			return CanEndServer(hWnd, true);
 		}
 
 		return TRUE;
@@ -253,11 +252,12 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		 * destroyed when the user session ends. 
 		 */
 		if (usServerFlags & SRVR_non_service) {
-			if (CanEndServer(hWnd, FALSE)) {
+			if (CanEndServer(hWnd, false)) {
 				if (GetPriorityClass(GetCurrentProcess()) !=
 					NORMAL_PRIORITY_CLASS)
-						SetPriorityClass(GetCurrentProcess(),
-										 NORMAL_PRIORITY_CLASS);
+				{
+					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
+				}
 #ifdef DEV_BUILD
 				gds_alloc_report(ALLOC_verbose, "from server", 0);
 #endif
@@ -454,7 +454,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
-		JRD_num_attachments(reinterpret_cast < char *>(&ulInUseMask),
+		JRD_num_attachments(reinterpret_cast<char*>(&ulInUseMask),
 							sizeof(ULONG), JRD_info_drivemask, &num_att,
 							&num_dbs);
 
@@ -467,10 +467,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 			if (CHECK_VOLUME(pdbcv) && (ulLastMask != pdbcv->dbcv_unitmask))
 				if (CHECK_USAGE(pdbcv)) {
 					char tmp[TMP_STRINGLEN];
-					char *p = tmp;
-					int len;
-
-					len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
+					char* p = tmp;
+					int len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
 					p += len;
 					*p++ = '\r';
 					*p++ = '\n';
@@ -504,10 +502,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		case DBT_DEVICEREMOVEPENDING:
 			if (CHECK_VOLUME(pdbcv) && CHECK_USAGE(pdbcv)) {
 				char tmp[TMP_STRINGLEN];
-				char *p = tmp;
-				int len;
-
-				len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
+				char* p = tmp;
+				int len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
 				p += len;
 				*p++ = '\r';
 				*p++ = '\n';
@@ -560,6 +556,7 @@ void WINDOW_shutdown(ULONG hWnd)
 }
 
 
+// Hmm, maybe some Pascal programmer doing the declaration?
 static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
 {
 /******************************************************************************
@@ -577,7 +574,7 @@ static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
  *               the buffer filled with the drive letters which are on.
  *****************************************************************************/
 	char chDrive = 'A';
-	char *p = pchBuf;
+	char* p = pchBuf;
 
 	while (ulDriveMask) {
 		if (ulDriveMask & 1)
@@ -589,7 +586,7 @@ static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
 }
 
 
-BOOL CanEndServer(HWND hWnd, BOOL bSysExit)
+BOOL CanEndServer(HWND hWnd, bool bSysExit)
 {
 /******************************************************************************
  *
@@ -598,7 +595,7 @@ BOOL CanEndServer(HWND hWnd, BOOL bSysExit)
  ******************************************************************************
  *
  *  Input:  hWnd     - Handle to main application window.
- *	    bSysExit - Flag indicating if the system is going down.
+*	    bSysExit - Flag indicating if the system is going down. UNUSED.
  *
  *  Return: FALSE if user does not want to end the server session
  *          TRUE if user confirmed on server session termination
@@ -606,12 +603,11 @@ BOOL CanEndServer(HWND hWnd, BOOL bSysExit)
  *  Description: This function displays a message mox and queries the user if
  *               the server can be shutdown.
  *****************************************************************************/
-	char szMsgString[MSG_STRINGLEN];
 	USHORT usNumAtt;
 	USHORT usNumDbs;
-
 	JRD_num_attachments(NULL, 0, 0, &usNumAtt, &usNumDbs);
 
+	char szMsgString[MSG_STRINGLEN];
 	sprintf(szMsgString, "%u ", usNumAtt);
 
 	if (!usNumAtt)				/* IF 0 CONNECTIONS, JUST SHUTDOWN */

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.53 2004-02-03 11:25:29 aafemt Exp $
+$Id: why.cpp,v 1.54 2004-02-24 05:34:34 robocop Exp $
 */
 
 #include "firebird.h"
@@ -3534,7 +3534,7 @@ ISC_STATUS API_ROUTINE GDS_GET_SEGMENT(ISC_STATUS * user_status,
 ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS* user_status,
 									 WHY_ATT* db_handle,
 									 WHY_TRA* tra_handle,
-									 SLONG* array_id,
+									 ISC_QUAD* array_id,
 									 USHORT sdl_length,
 									 const UCHAR* sdl,
 									 USHORT param_length,
@@ -3779,7 +3779,7 @@ ISC_STATUS API_ROUTINE GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 ISC_STATUS API_ROUTINE GDS_PUT_SLICE(ISC_STATUS* user_status,
 									 WHY_ATT* db_handle,
 									 WHY_TRA* tra_handle,
-									 SLONG* array_id,
+									 ISC_QUAD* array_id,
 									 USHORT sdl_length,
 									 const UCHAR* sdl,
 									 USHORT param_length,

@@ -75,7 +75,7 @@ static bool check_function(SYM);
 static bool check_range(DUDLEY_FLD);
 static bool check_relation(SYM);
 static void close_blob(FRBRD *);
-static FRBRD* create_blob(SLONG*, USHORT, const UCHAR*);
+static FRBRD* create_blob(ISC_QUAD*, USHORT, const UCHAR*);
 static void drop_cache(DBB);
 static void drop_field(DUDLEY_FLD);
 static void drop_filter(FILTER);
@@ -108,14 +108,14 @@ static void modify_trigger_msg(TRGMSG);
 static void modify_type(TYP);
 static void move_symbol(SYM, SCHAR *, SSHORT);
 static void set_generator(DUDLEY_NOD);
-static void store_acl(SCL, SLONG *);
-static void store_blr(DUDLEY_NOD, SLONG *, DUDLEY_REL);
-static void store_query_header(DUDLEY_NOD, SLONG *);
+static void store_acl(SCL, ISC_QUAD*);
+static void store_blr(DUDLEY_NOD, ISC_QUAD*, DUDLEY_REL);
+static void store_query_header(DUDLEY_NOD, ISC_QUAD*);
 static void store_range(DUDLEY_FLD);
-static void store_text(TXT, SLONG *);
+static void store_text(TXT, ISC_QUAD*);
 static void store_userpriv(USERPRIV, TEXT *, TEXT *, USRE, UPFE);
 static int string_length(SCHAR);
-static void wal_info(UCHAR *, SLONG *, SCHAR *, SLONG *);
+static void wal_info(const UCHAR*, SLONG*, SCHAR*, SLONG*);
 
 static dudley_lls* files_to_delete = NULL;
 static const TEXT alloc_info[] = { isc_info_allocation, isc_info_end };
@@ -320,7 +320,7 @@ void EXE_create_database( DBB dbb)
 	FOR D IN RDB$DATABASE 
 		MODIFY D USING 
 		if (dbb->dbb_description) {
-			store_text(dbb->dbb_description,(SLONG*)  &D.RDB$DESCRIPTION);
+			store_text(dbb->dbb_description, &D.RDB$DESCRIPTION);
 			D.RDB$DESCRIPTION.NULL = FALSE;
 		} 
 		if (dbb->dbb_security_class) {
@@ -345,7 +345,7 @@ void EXE_create_database( DBB dbb)
 
 		log = 0;
 
-		wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
+		wal_info((const UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 	}
 }
 
@@ -413,7 +413,7 @@ void EXE_drop_database( DBB dbb)
 			DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
 			/* msg 327: error in getting write ahead log information */
 
-	wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
+	wal_info((const UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
 	if (isc_detach_database(gds_status, &DB))
 		DDL_error_abort(gds_status, 27, NULL, NULL, NULL, NULL, NULL);
@@ -776,7 +776,7 @@ void EXE_modify_database( DBB dbb)
 		log_files = NULL;
 		log = 0;
 
-		wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
+		wal_info((const UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
 		FOR X IN RDB$LOG_FILES ERASE X;
 		END_FOR;
@@ -834,7 +834,7 @@ void EXE_modify_database( DBB dbb)
 		if (dbb->dbb_flags & DBB_null_description)
 			D.RDB$DESCRIPTION.NULL = TRUE;
 		if (dbb->dbb_description) {
-			store_text(dbb->dbb_description, (SLONG*) &D.RDB$DESCRIPTION);
+			store_text(dbb->dbb_description, &D.RDB$DESCRIPTION);
 			D.RDB$DESCRIPTION.NULL = FALSE;
 		}
 		if (dbb->dbb_security_class) {
@@ -978,7 +978,7 @@ static void add_field( DUDLEY_FLD field)
 		X.RDB$QUERY_NAME.NULL = FALSE;
 	}
 	if (field->fld_description) {
-		store_text(field->fld_description, (SLONG*) &X.RDB$DESCRIPTION);
+		store_text(field->fld_description, &X.RDB$DESCRIPTION);
 		X.RDB$DESCRIPTION.NULL = FALSE;
 	}
 	if (field->fld_edit_string) {
@@ -987,7 +987,7 @@ static void add_field( DUDLEY_FLD field)
 	}
 	if (field->fld_query_header) {
 		X.RDB$QUERY_HEADER.NULL = FALSE;
-		store_query_header(field->fld_query_header, (SLONG*) &X.RDB$QUERY_HEADER);
+		store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 	}
 	if (field->fld_system)
 		X.RDB$SYSTEM_FLAG = field->fld_system;
@@ -1030,8 +1030,10 @@ static void add_files( DBB dbb, FIL files)
 	if (dbb) {
 		if (isc_database_info(gds_status, &DB, sizeof(alloc_info), alloc_info,
 							   sizeof(s), s) || s[0] != isc_info_allocation) 
+		{
 			DDL_err(38, NULL, NULL, NULL, NULL, NULL);
 			/* msg 38: isc_database_info failed */
+		}
 
 		length = gds__vax_integer(reinterpret_cast<const UCHAR*>(s + 1), 2);
 		start = gds__vax_integer(reinterpret_cast<const UCHAR*>(s + 3), length);
@@ -1102,7 +1104,7 @@ static void add_filter( FILTER filter)
 	}
 	MOVE_SYMBOL(filter->filter_entry_point, X.RDB$ENTRYPOINT);
 	if (filter->filter_description) {
-		store_text(filter->filter_description, (SLONG*) &X.RDB$DESCRIPTION);
+		store_text(filter->filter_description, &X.RDB$DESCRIPTION);
 		X.RDB$DESCRIPTION.NULL = FALSE;
 	}
 	END_STORE;
@@ -1143,7 +1145,7 @@ static void add_function( FUNC function)
 	}
 	MOVE_SYMBOL(function->func_entry_point, X.RDB$ENTRYPOINT);
 	if (function->func_description) {
-		store_text(function->func_description, (SLONG*) &X.RDB$DESCRIPTION);
+		store_text(function->func_description, &X.RDB$DESCRIPTION);
 		X.RDB$DESCRIPTION.NULL = FALSE;
 	}
 	X.RDB$RETURN_ARGUMENT = function->func_return_arg;
@@ -1232,8 +1234,8 @@ static void add_global_field( DUDLEY_FLD field)
 	X.RDB$DEFAULT_VALUE.NULL = TRUE;
 
 	if (field->fld_computed) {
-		store_blr(field->fld_computed, (SLONG*) &X.RDB$COMPUTED_BLR, NULL);
-		store_text(field->fld_compute_src, (SLONG*) &X.RDB$COMPUTED_SOURCE);
+		store_blr(field->fld_computed, &X.RDB$COMPUTED_BLR, NULL);
+		store_text(field->fld_compute_src, &X.RDB$COMPUTED_SOURCE);
 		X.RDB$COMPUTED_BLR.NULL = FALSE;
 		X.RDB$COMPUTED_SOURCE.NULL = FALSE;
 		if (!field->fld_dtype) {
@@ -1253,7 +1255,7 @@ static void add_global_field( DUDLEY_FLD field)
 	}
 
 	if (field->fld_default) {
-		store_blr(field->fld_default, (SLONG*) &X.RDB$DEFAULT_VALUE, NULL);
+		store_blr(field->fld_default, &X.RDB$DEFAULT_VALUE, NULL);
 		X.RDB$DEFAULT_VALUE.NULL = FALSE;
 	}
 
@@ -1269,17 +1271,17 @@ static void add_global_field( DUDLEY_FLD field)
 		X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 	}
 	if (field->fld_missing) {
-		store_blr(field->fld_missing, (SLONG*) &X.RDB$MISSING_VALUE, NULL);
+		store_blr(field->fld_missing, &X.RDB$MISSING_VALUE, NULL);
 		X.RDB$MISSING_VALUE.NULL = FALSE;
 	}
 	if (field->fld_validation) {
-		store_blr(field->fld_validation, (SLONG*) &X.RDB$VALIDATION_BLR, NULL);
-		store_text(field->fld_valid_src, (SLONG*) &X.RDB$VALIDATION_SOURCE);
+		store_blr(field->fld_validation, &X.RDB$VALIDATION_BLR, NULL);
+		store_text(field->fld_valid_src, &X.RDB$VALIDATION_SOURCE);
 		X.RDB$VALIDATION_BLR.NULL = FALSE;
 		X.RDB$VALIDATION_SOURCE.NULL = FALSE;
 	}
 	if (field->fld_description) {
-		store_text(field->fld_description, (SLONG*) &X.RDB$DESCRIPTION);
+		store_text(field->fld_description, &X.RDB$DESCRIPTION);
 		X.RDB$DESCRIPTION.NULL = FALSE;
 	}
 	if (field->fld_query_name) {
@@ -1292,7 +1294,7 @@ static void add_global_field( DUDLEY_FLD field)
 	}
 	if (field->fld_query_header) {
 		X.RDB$QUERY_HEADER.NULL = FALSE;
-		store_query_header(field->fld_query_header, (SLONG*) &X.RDB$QUERY_HEADER);
+		store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 	}
 
 	if (field->fld_dimension) {
@@ -1387,7 +1389,7 @@ static void add_index( DUDLEY_IDX index)
 	else
 		X.RDB$INDEX_TYPE.NULL = TRUE;
 	if (index->idx_description) {
-		store_text(index->idx_description, (SLONG*) &X.RDB$DESCRIPTION);
+		store_text(index->idx_description, &X.RDB$DESCRIPTION);
 		X.RDB$DESCRIPTION.NULL = FALSE;
 	}
 	else
@@ -1534,7 +1536,7 @@ static void add_relation( DUDLEY_REL relation)
 
 	MOVE_SYMBOL(relation->rel_name, X.RDB$RELATION_NAME);
 	if (relation->rel_description) {
-		store_text(relation->rel_description, (SLONG*) &X.RDB$DESCRIPTION);
+		store_text(relation->rel_description, &X.RDB$DESCRIPTION);
 		X.RDB$DESCRIPTION.NULL = FALSE;
 	}
 
@@ -1573,12 +1575,12 @@ static void add_security_class( SCL sec_class)
 	STORE X IN RDB$SECURITY_CLASSES 
 		MOVE_SYMBOL(name, X.RDB$SECURITY_CLASS);
 		if (sec_class->scl_description) {
-			store_text(sec_class->scl_description, (SLONG*) &X.RDB$DESCRIPTION);
+			store_text(sec_class->scl_description, &X.RDB$DESCRIPTION);
 			X.RDB$DESCRIPTION.NULL = FALSE;
 		}
 		else
 			X.RDB$DESCRIPTION.NULL = TRUE;
-		store_acl(sec_class, (SLONG*) &X.RDB$ACL);
+		store_acl(sec_class, &X.RDB$ACL);
 	END_STORE;
 }
 
@@ -1620,17 +1622,17 @@ static void add_trigger( DUDLEY_TRG trigger)
 
 		if (trigger->trg_source) {
 			X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-			store_text(trigger->trg_source, (SLONG*) &X.RDB$TRIGGER_SOURCE);
+			store_text(trigger->trg_source, &X.RDB$TRIGGER_SOURCE);
 		}
 		
 		if (trigger->trg_statement) {
 			X.RDB$TRIGGER_BLR.NULL = FALSE;
-			store_blr(trigger->trg_statement, (SLONG*) &X.RDB$TRIGGER_BLR, NULL);
+			store_blr(trigger->trg_statement, &X.RDB$TRIGGER_BLR, NULL);
 		}
 		
 		if (trigger->trg_description) {
 			X.RDB$DESCRIPTION.NULL = FALSE;
-			store_text(trigger->trg_description, (SLONG*) &X.RDB$DESCRIPTION);
+			store_text(trigger->trg_description, &X.RDB$DESCRIPTION);
 		}
 
 	END_STORE;
@@ -1680,7 +1682,7 @@ static void add_type( TYP fldtype)
 		X.RDB$TYPE = fldtype->typ_type;
 		if (fldtype->typ_description) {
 			X.RDB$DESCRIPTION.NULL = FALSE;
-			store_text(fldtype->typ_description, (SLONG*) &X.RDB$DESCRIPTION);
+			store_text(fldtype->typ_description, &X.RDB$DESCRIPTION);
 		}
 	END_STORE;
 }
@@ -1796,8 +1798,8 @@ static void add_view( DUDLEY_REL relation)
 
 	STORE X IN RDB$RELATIONS
 		MOVE_SYMBOL(relation->rel_name, X.RDB$RELATION_NAME);
-		store_blr(rse, (SLONG*) &X.RDB$VIEW_BLR, relation);
-		store_text(relation->rel_view_source, (SLONG*) &X.RDB$VIEW_SOURCE);
+		store_blr(rse, &X.RDB$VIEW_BLR, relation);
+		store_text(relation->rel_view_source, &X.RDB$VIEW_SOURCE);
 		if (relation->rel_security_class) {
 			X.RDB$SECURITY_CLASS.NULL = FALSE;
 			MOVE_SYMBOL(relation->rel_security_class, X.RDB$SECURITY_CLASS);
@@ -1806,7 +1808,7 @@ static void add_view( DUDLEY_REL relation)
 			X.RDB$SECURITY_CLASS.NULL = TRUE;
 
 		if (relation->rel_description) {
-			store_text(relation->rel_description, (SLONG*) &X.RDB$DESCRIPTION);
+			store_text(relation->rel_description, &X.RDB$DESCRIPTION);
 			X.RDB$DESCRIPTION.NULL = FALSE;
 		}
 		else
@@ -1888,7 +1890,7 @@ static void add_view( DUDLEY_REL relation)
 				X.RDB$QUERY_NAME.NULL = FALSE;
 			}
 			if (field->fld_description) {
-				store_text(field->fld_description, (SLONG*) &X.RDB$DESCRIPTION);
+				store_text(field->fld_description, &X.RDB$DESCRIPTION);
 				X.RDB$DESCRIPTION.NULL = FALSE;
 			}
 			if (field->fld_edit_string) {
@@ -1897,7 +1899,7 @@ static void add_view( DUDLEY_REL relation)
 			}
 			if (field->fld_query_header) {
 				X.RDB$QUERY_HEADER.NULL = FALSE;
-				store_query_header(field->fld_query_header,(SLONG*)  &X.RDB$QUERY_HEADER);
+				store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 			}
 			if (field->fld_system)
 				X.RDB$SYSTEM_FLAG = field->fld_system;
@@ -2089,7 +2091,7 @@ static void close_blob(FRBRD *blob)
 }
 
 
-static FRBRD* create_blob( SLONG* blob_id, USHORT bpb_length, const UCHAR* bpb)
+static FRBRD* create_blob( ISC_QUAD* blob_id, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -2105,7 +2107,7 @@ static FRBRD* create_blob( SLONG* blob_id, USHORT bpb_length, const UCHAR* bpb)
 	FRBRD *blob = NULL;
 
 	if (isc_create_blob2(status_vector, &DB, &gds_trans, &blob,
-						 (ISC_QUAD*) blob_id, bpb_length,
+						 blob_id, bpb_length,
 						 reinterpret_cast<const SCHAR*>(bpb)))
 	{
 		DDL_db_error(status_vector, 59, NULL, NULL, NULL, NULL, NULL);
@@ -3400,7 +3402,7 @@ static void modify_field( DUDLEY_FLD field)
 				X.RDB$FIELD_POSITION.NULL = FALSE;
 			}
 			if (field->fld_description) {
-				store_text(field->fld_description, (SLONG*) &X.RDB$DESCRIPTION);
+				store_text(field->fld_description, &X.RDB$DESCRIPTION);
 				X.RDB$DESCRIPTION.NULL = FALSE;
 			}
 			if (field->fld_query_name) {
@@ -3412,7 +3414,7 @@ static void modify_field( DUDLEY_FLD field)
 				X.RDB$EDIT_STRING.NULL = FALSE;
 			}
 			if (field->fld_query_header) {
-				store_query_header(field->fld_query_header, (SLONG*) &X.RDB$QUERY_HEADER);
+				store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 				X.RDB$QUERY_HEADER.NULL = FALSE;
 			}
 
@@ -3490,17 +3492,17 @@ static void modify_global_field( DUDLEY_FLD field)
 			}
 			
 			if (field->fld_missing) {
-				store_blr(field->fld_missing, (SLONG*) &X.RDB$MISSING_VALUE, NULL);
+				store_blr(field->fld_missing, &X.RDB$MISSING_VALUE, NULL);
 				X.RDB$MISSING_VALUE.NULL = FALSE;
 			}
 			if (field->fld_validation) {
-				store_blr(field->fld_validation, (SLONG*) &X.RDB$VALIDATION_BLR, NULL);
-				store_text(field->fld_valid_src, (SLONG*) &X.RDB$VALIDATION_SOURCE);
+				store_blr(field->fld_validation, &X.RDB$VALIDATION_BLR, NULL);
+				store_text(field->fld_valid_src, &X.RDB$VALIDATION_SOURCE);
 				X.RDB$VALIDATION_BLR.NULL = FALSE;
 				X.RDB$VALIDATION_SOURCE.NULL = FALSE;
 			}
 			if (field->fld_description) {
-				store_text(field->fld_description, (SLONG*) &X.RDB$DESCRIPTION);
+				store_text(field->fld_description, &X.RDB$DESCRIPTION);
 				X.RDB$DESCRIPTION.NULL = FALSE;
 			}
 			if (field->fld_query_name) {
@@ -3512,7 +3514,7 @@ static void modify_global_field( DUDLEY_FLD field)
 				X.RDB$EDIT_STRING.NULL = FALSE;
 			}
 			if (field->fld_query_header) {
-				store_query_header(field->fld_query_header, (SLONG*) &X.RDB$QUERY_HEADER);
+				store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 				X.RDB$QUERY_HEADER.NULL = FALSE;
 			}
 		END_MODIFY 
@@ -3553,7 +3555,7 @@ static void modify_index( DUDLEY_IDX index)
 				if (index->idx_flags & IDX_null_description)
 					X.RDB$DESCRIPTION.NULL = TRUE;
 				if (index->idx_description) {
-					store_text(index->idx_description, (SLONG*) &X.RDB$DESCRIPTION);
+					store_text(index->idx_description, &X.RDB$DESCRIPTION);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 				}
 				if (index->idx_flags & IDX_statistics_flag)
@@ -3602,7 +3604,7 @@ static void modify_relation( DUDLEY_REL relation)
 			if (relation->rel_flags & rel_null_description)
 				X.RDB$DESCRIPTION.NULL = TRUE;
 			if (relation->rel_description) {
-				store_text(relation->rel_description, (SLONG*) &X.RDB$DESCRIPTION);
+				store_text(relation->rel_description, &X.RDB$DESCRIPTION);
 				X.RDB$DESCRIPTION.NULL = FALSE;
 			}
 			if (relation->rel_flags & rel_explicit_system)
@@ -3660,17 +3662,17 @@ static void modify_trigger( DUDLEY_TRG trigger)
 
 			if (trigger->trg_source) {
 				X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-				store_text(trigger->trg_source, (SLONG*) &X.RDB$TRIGGER_SOURCE);
+				store_text(trigger->trg_source, &X.RDB$TRIGGER_SOURCE);
 			}
 			
 			if (trigger->trg_statement) {
 				X.RDB$TRIGGER_BLR.NULL = FALSE;
-				store_blr(trigger->trg_statement, (SLONG*) &X.RDB$TRIGGER_BLR, NULL);
+				store_blr(trigger->trg_statement, &X.RDB$TRIGGER_BLR, NULL);
 			}
 			
 			if (trigger->trg_description) {
 				X.RDB$DESCRIPTION.NULL = FALSE;
-				store_text(trigger->trg_description, (SLONG*) &X.RDB$DESCRIPTION);
+				store_text(trigger->trg_description, &X.RDB$DESCRIPTION);
 			}
 		END_MODIFY;
 		if_any = true;
@@ -3731,7 +3733,7 @@ static void modify_type( TYP fldtype)
 			X.RDB$TYPE = fldtype->typ_type;
 			if (fldtype->typ_description) {
 				X.RDB$DESCRIPTION.NULL = FALSE;
-				store_text(fldtype->typ_description, (SLONG*) &X.RDB$DESCRIPTION);
+				store_text(fldtype->typ_description, &X.RDB$DESCRIPTION);
 			}
 		END_MODIFY;
 		if_any = true;
@@ -3882,7 +3884,7 @@ static void set_generator( DUDLEY_NOD node)
 }
 
 
-static void store_acl( SCL scl_class, SLONG * blob_id)
+static void store_acl( SCL scl_class, ISC_QUAD* blob_id)
 {
 /**************************************
  *
@@ -3915,7 +3917,7 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
 }
 
 
-static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
+static void store_blr( DUDLEY_NOD node, ISC_QUAD* blob_id, DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -3961,7 +3963,7 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 }
 
 
-static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
+static void store_query_header( DUDLEY_NOD node, ISC_QUAD* blob_id)
 {
 /**************************************
  *
@@ -3985,7 +3987,8 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 	for (int pos = 0; pos < node->nod_count; pos++) {
 		const sym* symbol = (SYM) node->nod_arg[pos];
 		if (isc_put_segment(status_vector, &blob, symbol->sym_length,
-							 symbol->sym_string)) {
+							 symbol->sym_string))
+		{
 			DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);
 			// msg 93: isc_put_segment failed
 			return;
@@ -4031,7 +4034,7 @@ static void store_range( DUDLEY_FLD field)
 }
 
 
-static void store_text( TXT text, SLONG * blob_id)
+static void store_text( TXT text, ISC_QUAD* blob_id)
 {
 /**************************************
  *
@@ -4044,14 +4047,11 @@ static void store_text( TXT text, SLONG * blob_id)
  *	BLR expression in a blob.
  *
  **************************************/
-
-	FRBRD *blob;
-	USHORT bpb_length;
 	UCHAR bpb[20];
 
-	bpb_length = 0;
+	USHORT bpb_length = 0;
 
-	blob = create_blob(blob_id, bpb_length, bpb);
+	FRBRD* blob = create_blob(blob_id, bpb_length, bpb);
 	LEX_put_text(blob, text);
 	close_blob(blob);
 }
@@ -4132,7 +4132,7 @@ static int string_length( SCHAR dtype)
 }
 
 
-static void wal_info(UCHAR * db_info_buffer,
+static void wal_info(const UCHAR* db_info_buffer,
 					 SLONG * log, SCHAR * cur_log, SLONG * part_offset)
 {
 /**************************************
@@ -4146,13 +4146,11 @@ static void wal_info(UCHAR * db_info_buffer,
  *
  **************************************/
 	UCHAR item;
-	UCHAR *d, *p;
-	SLONG length;
 
-	p = db_info_buffer;
+	const UCHAR* p = db_info_buffer;
 
 	while ((item = *p++) != isc_info_end) {
-		length = gds__vax_integer(p, 2);
+		const SLONG length = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
 		case isc_info_logfile:
@@ -4161,12 +4159,14 @@ static void wal_info(UCHAR * db_info_buffer,
 			break;
 
 		case isc_info_cur_logfile_name:
-			d = p;
-			p += length;
-			length = *d++;
-			memcpy(cur_log, d, length);
-			cur_log[length] = 0;
-			break;
+			{
+				const UCHAR* d = p;
+				p += length;
+				const SLONG length2 = *d++;
+				memcpy(cur_log, d, length2);
+				cur_log[length2] = 0;
+				break;
+			}
 
 		case isc_info_cur_log_part_offset:
 			*part_offset = gds__vax_integer(p, length);

@@ -163,7 +163,7 @@ ISC_STATUS API_ROUTINE isc_drop_database(ISC_STATUS*, FRBRD**);
 ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS*, FRBRD**, USHORT*, USHORT,
 										UCHAR*);
 
-ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS*, FRBRD**, FRBRD**, SLONG*,
+ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS*, FRBRD**, FRBRD**, ISC_QUAD*,
 									 USHORT, const UCHAR*, USHORT, const UCHAR*,
 									 SLONG, UCHAR*, SLONG*);
 
@@ -180,7 +180,7 @@ ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS*, FRBRD**, USHORT,
 
 ISC_STATUS API_ROUTINE isc_put_segment(ISC_STATUS*, FRBRD**, USHORT, const UCHAR*);
 
-ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS*, FRBRD**, FRBRD**, SLONG*,
+ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS*, FRBRD**, FRBRD**, ISC_QUAD*,
 									 USHORT, const UCHAR*, USHORT, const SLONG*,
 									 SLONG, UCHAR*);
 

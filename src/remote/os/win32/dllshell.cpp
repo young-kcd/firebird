@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Remote Interface/Server
- *      MODULE:         dllshell.c
+ *      MODULE:         dllshell.cpp
  *      DESCRIPTION:    Win16 DLL entry and exit functions
  *
  * The contents of this file are subject to the Interbase Public
@@ -51,7 +51,6 @@ void inet_cleanup(void *arg);
 int FAR PASCAL LibMain(HINSTANCE hInst, WORD wDataSegment,
 					   WORD wHeapSize, LPSTR lpszCmdLine)
 {
-	WNDCLASS wndclass_tcp;
 	hInstance = hInst;
 
 	// The startup code for the DLL initializes the local heap (if there is one)
@@ -60,6 +59,7 @@ int FAR PASCAL LibMain(HINSTANCE hInst, WORD wDataSegment,
 		UnlockData(0);
 
 	/* Define an invisible window class used for receiving winsock messages */
+	WNDCLASS wndclass_tcp;
 	wndclass_tcp.style = CS_HREDRAW;
 	wndclass_tcp.lpfnWndProc = inet_wndproc;
 	wndclass_tcp.cbClsExtra = 0;
@@ -102,12 +102,9 @@ int FAR PASCAL WEP(int bSystemExit)
 
 HINSTANCE LoadDll(UCHAR * name)
 {
-	HINSTANCE hlib;
-	UINT fuErrorMode;
+	const UINT fuErrorMode = SetErrorMode(SEM_NOOPENFILEERRORBOX);
 
-	fuErrorMode = SetErrorMode(SEM_NOOPENFILEERRORBOX);
-
-	hlib = LoadLibrary(name);
+	HINSTANCE hlib = LoadLibrary(name);
 
 	SetErrorMode(fuErrorMode);
 
@@ -126,3 +123,4 @@ static void fpe_handler(int signal_number)
 	signal(SIGFPE, fpe_handler);	/* reset handler */
 	fpe_count++;				/* count the event */
 }
+

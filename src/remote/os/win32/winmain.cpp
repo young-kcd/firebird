@@ -66,15 +66,11 @@ void SRVR_WinMain(
  *      Main entrypoint of server.
  *
  **************************************/
-	PACKET send, receive;
-	rem_port* port;
-
 	MSG msg;
-	HWND hWnd;
 	int txt_pos = 0;
 	int step = 5;
 
-	hWnd = InitApplication(nCmdShow, hInstance, hPrevInstance);
+	HWND hWnd = InitApplication(nCmdShow, hInstance, hPrevInstance);
 
 	if (!hWnd) {
 		MessageBox(NULL,
@@ -83,6 +79,7 @@ void SRVR_WinMain(
 		return;
 	}
 
+	PACKET send, receive;
 	zap_packet(&receive);
 	zap_packet(&send);
 	THREAD_ENTER;
@@ -115,7 +112,8 @@ void SRVR_WinMain(
 			 * done in server.c:SRVR_main()
 			 */
 
-			if (!(port = main_port->receive(&receive)))
+			rem_port* port = main_port->receive(&receive);
+			if (!port)
 				break;
 			if (!process_packet(port, &send, &receive, 0))
 				break;
@@ -142,7 +140,6 @@ static int InitApplication(
  *
  **************************************/
 	WNDCLASS wndclass;
-	HWND hWnd;
 
 	if (!hPrevInstance) {
 		wndclass.style = CS_HREDRAW | CS_VREDRAW;
@@ -160,12 +157,13 @@ static int InitApplication(
 			return FALSE;
 	}
 
-	if (!(hWnd = CreateWindow(szAppName, "InterBase Server",
+	HWND hWnd = CreateWindow(szAppName, "InterBase Server",
 							  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 							  WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT,
 							  APP_HSIZE, APP_VSIZE, NULL, NULL, hInstance,
-							  NULL))) return FALSE;
-
+							  NULL);
+	if (!hWnd)
+		return FALSE;
 
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
@@ -189,9 +187,8 @@ static BOOL BlockingHook(void)
  *
  **************************************/
 	MSG msg;
-	BOOL ret;
 
-	ret = (BOOL) PeekMessage(&msg, NULL, 0, 0, PM_REMOVE);
+	const BOOL ret = (BOOL) PeekMessage(&msg, NULL, 0, 0, PM_REMOVE);
 	if (ret) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);

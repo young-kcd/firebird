@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.97 2004-01-28 07:50:38 robocop Exp $
+$Id: inet.cpp,v 1.98 2004-02-24 05:34:40 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -321,8 +321,8 @@ static int		accept_connection(rem_port*, P_CNCT *);
 static void		alarm_handler(int);
 #endif
 static rem_port*		alloc_port(rem_port*);
-static rem_port*		aux_connect(rem_port*, PACKET *, XDR_INT(*)(void));
-static rem_port*		aux_request(rem_port*, PACKET *);
+static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
+static rem_port*		aux_request(rem_port*, PACKET*);
 #if !defined(WIN_NT)
 #ifndef VMS
 static int		check_host(rem_port*, TEXT *, TEXT *, struct passwd *);
@@ -376,8 +376,8 @@ static rem_port*		inet_try_connect(	PACKET*,
 static bool_t	inet_write(XDR *, int);
 static void		inet_zero(SCHAR *, int);
 #if !(defined WIN_NT)
-static int		parse_hosts(TEXT *, TEXT *, TEXT *);
-static int		parse_line(TEXT *, TEXT *, TEXT *, TEXT *);
+static int		parse_hosts(const TEXT*, TEXT*, TEXT*);
+static int		parse_line(TEXT*, TEXT*, TEXT*, TEXT*);
 #endif
 
 #ifdef DEBUG
@@ -446,7 +446,7 @@ static XDR::xdr_ops inet_ops =
 static SLCT INET_select = { 0, 0, 0 };
 static int INET_max_clients;
 #ifdef WIN_NT
-static int INET_initialized = FALSE;
+static bool INET_initialized = false;
 static WSADATA INET_wsadata;
 static TEXT INET_command_line[MAXPATHLEN + 32], *INET_p;
 #endif
@@ -717,16 +717,6 @@ rem_port* INET_connect(const TEXT* name,
  *	is for a server process.
  *
  **************************************/
-	socklen_t l;
-    int n;
-	SOCKET s;
-	TEXT temp[128];
-	struct sockaddr_in address;
-#ifndef VMS
-	struct servent *service;
-	TEXT msg[64];
-#endif
-
 #ifdef DEBUG
 	{
 		if (INET_trace & TRACE_operations) {
@@ -753,6 +743,7 @@ rem_port* INET_connect(const TEXT* name,
 #endif
 
 	const TEXT* protocol = NULL;
+	TEXT temp[128];
 
 	if (name) {
 		strcpy(temp, name);
@@ -792,6 +783,7 @@ rem_port* INET_connect(const TEXT* name,
 
 /* Set up Inter-Net socket address */
 
+	struct sockaddr_in address;
 	inet_zero((SCHAR *) &address, sizeof(address));
 
 #ifdef VMS
@@ -813,6 +805,8 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #else
 
+	TEXT msg[64];
+	
 /* U N I X style sockets */
 
 	address.sin_family = AF_INET;
@@ -850,7 +844,7 @@ rem_port* INET_connect(const TEXT* name,
 
 	THREAD_EXIT;
 
-	service = getservbyname(protocol, "tcp");
+	const struct servent* service = getservbyname(protocol, "tcp");
 #ifdef WIN_NT
 /* On Windows NT/9x, getservbyname can only accomodate
  * 1 call at a time.  In this case it returns the error
@@ -935,6 +929,8 @@ rem_port* INET_connect(const TEXT* name,
 
 /* If we're a host, just make the connection */
 
+    int n;
+    
 	if (packet) {
 		THREAD_EXIT;
 		n = connect((SOCKET) port->port_handle,
@@ -1016,9 +1012,7 @@ rem_port* INET_connect(const TEXT* name,
 		   for some time. */
 
 		if (ERRNO == INET_ADDR_IN_USE) {
-			int retry;
-
-			for (retry = 0; retry < INET_RETRY_CALL; retry++) {
+			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
 				sleep(10);
 				n = bind((SOCKET) port->port_handle,
 						 (struct sockaddr *) &address, sizeof(address));
@@ -1053,8 +1047,8 @@ rem_port* INET_connect(const TEXT* name,
 
 	while (true) {
 		THREAD_EXIT;
-		l = sizeof(address);
-		s = accept((SOCKET) port->port_handle,
+		socklen_t l = sizeof(address);
+		SOCKET s = accept((SOCKET) port->port_handle,
 				   (struct sockaddr *) &address, &l);
 		if (s == INVALID_SOCKET) {
 			THREAD_ENTER;
@@ -1093,7 +1087,6 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
  *	a port block.
  *
  **************************************/
-
 	rem_port* port = alloc_port(0);
 	port->port_status_vector = status_vector;
 	status_vector[0] = isc_arg_gds;
@@ -1253,7 +1246,7 @@ static int accept_connection(rem_port* port,
 	else
 	{
 		TEXT host[MAXHOSTLEN];
-		int trusted = check_host(port, host, name);
+		const int trusted = check_host(port, host, name);
 		if (!trusted) {
 			return FALSE;
 		}
@@ -1282,7 +1275,7 @@ static int accept_connection(rem_port* port,
 
 		TEXT host[MAXHOSTLEN];
 		struct passwd* passwd = getpwnam(name);
-		int trusted = check_host(port, host, name, passwd);
+		const int trusted = check_host(port, host, name, passwd);
 		if (!trusted) {
 			return FALSE;
 		}
@@ -1421,7 +1414,7 @@ static rem_port* alloc_port( rem_port* parent)
 		// I decided to only do it for SS.
 		atexit(&atexit_shutdown_winsock);
 #endif
-		INET_initialized = TRUE;
+		INET_initialized = true;
 	}
 #endif
 
@@ -1471,8 +1464,7 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_receive_packet = receive;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
-	port->port_connect =
-		reinterpret_cast<rem_port* (*)(rem_port*, PACKET*, void (*)())>(aux_connect);
+	port->port_connect = aux_connect;
 	port->port_request = aux_request;
 	port->port_buff_size = (USHORT) INET_remote_buffer;
 
@@ -1489,7 +1481,7 @@ static rem_port* alloc_port( rem_port* parent)
 	return port;
 }
 
-static rem_port* aux_connect(rem_port* port, PACKET* packet, XDR_INT (*ast)(void))
+static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 {
 /**************************************
  *
@@ -1502,14 +1494,13 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, XDR_INT (*ast)(void
  *	done a successfull connect request ("packet" contains the response).
  *
  **************************************/
-	SOCKET n;
 	struct sockaddr_in address;
 
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
 		socklen_t l = sizeof(address);
-		n = accept(port->port_channel, (struct sockaddr *) &address, &l);
+		SOCKET n = accept(port->port_channel, (struct sockaddr *) &address, &l);
 		if (n == INVALID_SOCKET) {
 			inet_error(port, "accept", isc_net_event_connect_err, ERRNO);
 			SOCLOSE(port->port_channel);
@@ -1531,7 +1522,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, XDR_INT (*ast)(void
 
 /* Set up new socket */
 
-	if ((n = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
+	if (n == INVALID_SOCKET) {
 		inet_error(port, "socket", isc_net_event_connect_err, ERRNO);
 		return NULL;
 	}
@@ -1578,7 +1570,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, XDR_INT (*ast)(void
 	return new_port;
 }
 
-static rem_port* aux_request( rem_port* port, PACKET * packet)
+static rem_port* aux_request( rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -1591,7 +1583,6 @@ static rem_port* aux_request( rem_port* port, PACKET * packet)
  *	connection; the server calls aux_request to set up the connection.
  *
  **************************************/
-	SOCKET n;
 	struct sockaddr_in address;
 
 /* Set up new socket */
@@ -1603,7 +1594,8 @@ static rem_port* aux_request( rem_port* port, PACKET * packet)
 				sizeof(address.sin_addr));
 	address.sin_port = htons(Config::getRemoteAuxPort());
 
-	if ((n = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
+	if (n == INVALID_SOCKET) {
 		inet_error(port, "socket", isc_net_event_listen_err, ERRNO);
 		return NULL;
 	}
@@ -1675,11 +1667,10 @@ static int check_host(rem_port* port,
  *	it's an equivalent host.
  *
  **************************************/
-	int length, result;
 	struct sockaddr_in address;
 	TEXT hosts_file[MAXPATHLEN];
 
-	length = sizeof(address);
+	int length = sizeof(address);
 
 	if (getpeername((int) port->port_handle, &address, &length) == -1)
 		return FALSE;
@@ -1688,7 +1679,7 @@ static int check_host(rem_port* port,
 		return FALSE;
 
 	gethosts(hosts_file);
-	result = parse_hosts(hosts_file, host_name, user_name);
+	const int result = parse_hosts(hosts_file, host_name, user_name);
 	if (result == -1)
 		result = FALSE;
 
@@ -1714,29 +1705,25 @@ static int check_host(
  *	the same line formats (see parse_line)
  *
  **************************************/
-	TEXT user[64], rhosts[MAXPATHLEN], *hosts_file;
-	IB_FILE *fp;
-	socklen_t length;
-    int result;
 	struct sockaddr_in address;
-	struct hostent *host;
 
-	length = sizeof(address);
+	socklen_t length = sizeof(address);
 
 	if (getpeername((int) port->port_handle, (struct sockaddr*)&address, &length) == -1)
 		return 0;
 
-
-	if (!(host = gethostbyaddr((SCHAR *) & address.sin_addr, 
-							   sizeof(address.sin_addr), address.sin_family))) 
+	const struct hostent* host = gethostbyaddr((SCHAR *) & address.sin_addr,
+							   sizeof(address.sin_addr), address.sin_family);
+	if (!host)
 	{
 		return 0;
 	}
 
-	result = -1;
+	int result = -1;
 
 	strcpy(host_name, host->h_name);
 
+	TEXT user[64], rhosts[MAXPATHLEN];
 	if (passwd) {
 		strcpy(user, passwd->pw_name);
 		strcpy(rhosts, passwd->pw_dir);
@@ -1747,8 +1734,8 @@ static int check_host(
 		strcpy(user, user_name);
 
 	if (result == -1) {
-		fp = ib_fopen(GDS_HOSTS_FILE, "r");
-		hosts_file = fp ? (TEXT*)GDS_HOSTS_FILE : (TEXT*)HOSTS_FILE;
+		IB_FILE* fp = ib_fopen(GDS_HOSTS_FILE, "r");
+		const TEXT* hosts_file = fp ? (TEXT*)GDS_HOSTS_FILE : (TEXT*)HOSTS_FILE;
 		if (fp)
 			ib_fclose(fp);
 
@@ -1777,23 +1764,19 @@ static bool check_proxy(rem_port* port,
  *	change user_name.
  *
  **************************************/
-	IB_FILE *proxy;
-	TEXT *p;
 	TEXT proxy_file[MAXPATHLEN];
 	TEXT source_user[64];
 	TEXT source_host[MAXHOSTLEN];
 	TEXT target_user[64];
 	TEXT line[128];
-	int c;
-	SLONG length;
-	rem_str* string;
 
 #ifndef VMS
 	strcpy(proxy_file, PROXY_FILE);
 #else
 	gds__prefix(proxy_file, PROXY_FILE);
 #endif
-	if (!(proxy = ib_fopen(proxy_file, "r")))
+	IB_FILE* proxy = ib_fopen(proxy_file, "r");
+	if (!proxy)
 		return false;
 
 /* Read lines, scan, and compare */
@@ -1801,19 +1784,23 @@ static bool check_proxy(rem_port* port,
 	bool result = false;
 
 	for (;;) {
-		for (p = line;
-			 ((c = ib_getc(proxy)) != 0) && c != EOF && c != '\n';)
+		int c;
+		TEXT* p = line;
+		while (((c = ib_getc(proxy)) != 0) && c != EOF && c != '\n')
+		{
 			*p++ = c;
+		}
 		*p = 0;
 		if (sscanf(line, " %[^:]:%s%s", source_host, source_user, target_user)
 			>= 3)
 			if ((!strcmp(source_host, host_name) || !strcmp(source_host, "*"))
 				&& (!strcmp(source_user, user_name)
-					|| !strcmp(source_user, "*"))) {
+					|| !strcmp(source_user, "*")))
+			{
 				ALLR_free(port->port_user_name);
-				length = strlen(target_user);
-				port->port_user_name = string =
-					(rem_str*) ALLOCV(type_str, (int) length);
+				const SLONG length = strlen(target_user);
+				rem_str* string = (rem_str*) ALLOCV(type_str, (int) length);
+				port->port_user_name = string;
 				string->str_length = length;
 				strncpy(string->str_data, target_user, length);
 				strcpy(user_name, target_user);
@@ -2038,16 +2025,13 @@ static int fork( SOCKET old_handle, USHORT flag)
  *	Create a child process.
  *
  **************************************/
-	HANDLE new_handle;
-	PROCESS_INFORMATION pi;
-
 	if (!INET_command_line[0]) {
 
 #ifdef CMDLINE_VIA_SERVICE_MANAGER
 
-		SC_HANDLE manager, service;
-
-		if ((manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT)) &&
+		SC_HANDLE service;
+		SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+		if (manager &&
 			(service =
 			 OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
 		{
@@ -2081,6 +2065,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 		INET_p = INET_command_line + strlen(INET_command_line);
 	}
 
+	HANDLE new_handle;
 	DuplicateHandle(GetCurrentProcess(), (HANDLE) old_handle,
 					GetCurrentProcess(), &new_handle, 0, TRUE,
 					DUPLICATE_SAME_ACCESS);
@@ -2094,6 +2079,8 @@ static int fork( SOCKET old_handle, USHORT flag)
 	start_crud.lpDesktop = NULL;
 	start_crud.lpTitle = NULL;
 	start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
+	
+	PROCESS_INFORMATION pi;
 	if (CreateProcess(NULL, INET_command_line, NULL, NULL, TRUE,
 							(flag & SRVR_high_priority ?
 							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
@@ -2189,7 +2176,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
 										size_t							nEntries)
 {
-	for (size_t i=0; i < nEntries; ++i) {
+	for (size_t i = 0; i < nEntries; ++i) {
 		pDest[i] = pSource[i];
 	}
 }
@@ -2236,7 +2223,7 @@ static void inet_zero( SCHAR* address, int length)
 }
 
 #if !(defined WIN_NT)
-static int parse_hosts( TEXT * file_name, TEXT * host_name, TEXT * user_name)
+static int parse_hosts( const TEXT* file_name, TEXT* host_name, TEXT* user_name)
 {
 /*****************************************************************
  *
@@ -2249,18 +2236,18 @@ static int parse_hosts( TEXT * file_name, TEXT * host_name, TEXT * user_name)
  *	if user_name on host_name should be allowed access.
  *
  *****************************************************************/
-	IB_FILE *fp;
-	int c, result;
-	TEXT *p, line[256], entry1[256], entry2[256];
+	TEXT line[256], entry1[256], entry2[256];
 
-	result = -1;
-	fp = ib_fopen(file_name, "r");
+	int result = -1;
+	IB_FILE* fp = ib_fopen(file_name, "r");
 
 	if (fp) {
 		for (;;) {
 			entry1[0] = entry2[0] = 0;
 			entry1[1] = entry2[1] = 0;
-			for (p = line; (c = ib_getc(fp)) != EOF && c != '\n';)
+			int c;
+			TEXT* p = line;
+			while ((c = ib_getc(fp)) != EOF && c != '\n')
 				*p++ = c;
 			*p = 0;
 			sscanf(line, "%s", entry1);
@@ -3068,11 +3055,13 @@ static int inet_error(
 #ifdef VMS
 		if ((status >= sys_nerr || !sys_errlist[status]) &&
 			status < WIN_NERR && win_errlist[status])
+		{
 			inet_gen_error(port, isc_network_error,
 						   isc_arg_string,
 						   (ISC_STATUS) port->port_connection->str_data,
 						   isc_arg_gds, operation, isc_arg_string,
 						   (ISC_STATUS) win_errlist[status], 0);
+		}
 		else
 #endif
 			inet_gen_error(port, isc_network_error,

@@ -128,7 +128,8 @@ void EXT_erase(RPB * rpb, int *transaction)
 }
 
 
-EXT EXT_file(jrd_rel* relation, const TEXT * file_name, SLONG * description)
+// Third param is unused.
+EXT EXT_file(jrd_rel* relation, const TEXT* file_name, bid* description)
 {
 /**************************************
  *

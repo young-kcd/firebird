@@ -46,7 +46,7 @@
 #define BLOB_format	6
 #define BLOB_tra	7
 #define BLOB_extfile	8
-#define BLOB_max_predefined_type 9
+#define BLOB_max_predefined_subtype 9
 
 
 

@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: protocol.h,v 1.18 2004-01-13 09:52:18 robocop Exp $
+$Id: protocol.h,v 1.19 2004-02-24 05:34:40 robocop Exp $
 */
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
@@ -150,7 +150,7 @@ typedef enum
 
 typedef USHORT OBJCT;
 #define MAX_OBJCT_HANDLES	65000
-
+
 /* Operation (packet) types */
 
 typedef enum
@@ -386,7 +386,7 @@ typedef struct p_resp
 } P_RESP;
 
 #define p_resp_partner	p_resp_blob_id.bid_number
-
+
 /* Attach and create database */
 
 typedef struct p_atch
@@ -566,7 +566,7 @@ typedef struct p_sqlcur {
     CSTRING	p_sqlcur_cursor_name;	/* cursor name */
     USHORT	p_sqlcur_type;		/* type of cursor */
 } P_SQLCUR;
-
+
 /* Generalize packet (sic!) */
 
 typedef struct packet {
@@ -603,5 +603,5 @@ typedef struct packet {
     P_TRRQ	p_trrq;		/* Transact request packet */
 } PACKET;
 
-#endif /* REMOTE_PROTOCOL_H */
+#endif // REMOTE_PROTOCOL_H
 

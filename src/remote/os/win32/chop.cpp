@@ -53,12 +53,10 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
  *				 pointer to a buffer (szShortname).
  *
  **************************************/
-	char *pchLeft, *pchRight, *pchLastRight, *pchLastLeft, *pchEnd, *pchTmp;
-	bool bLeft = true;
-	bool bLeftFull = false;
-	bool bRightFull = false;
+	char *pchTmp;
 
 /* Set pointers to the beginning and the end */
+	char *pchLeft, *pchEnd;
 	pchLeft = pchEnd = szName;
 	while (*pchEnd)
 		pchEnd++;
@@ -73,10 +71,14 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 /* Subtract the room needed for the three dots */
 	dwLen -= 3;
 
-	pchRight = pchEnd;
+	char* pchRight = pchEnd;
 
-	pchLastLeft = pchLeft;
-	pchLastRight = pchRight;
+	char* pchLastLeft = pchLeft;
+	char* pchLastRight = pchRight;
+
+	bool bLeft = true;
+	bool bLeftFull = false;
+	bool bRightFull = false;
 
 	while (!bLeftFull || !bRightFull) {
 		if (bLeft) {

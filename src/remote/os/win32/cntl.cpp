@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Server
- *	MODULE:		cntl.c
+ *	MODULE:		cntl.cpp
  *	DESCRIPTION:	Windows NT service control panel interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -48,13 +48,13 @@ typedef struct thread {
 
 static void WINAPI control_thread(DWORD);
 static int cleanup_thread(void *lpv);
-static void parse_switch(TEXT *, int *);
+static void parse_switch(const TEXT*, int*);
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
 static DWORD current_state;
 static void (*main_handler) ();
-static SERVICE_STATUS_HANDLE service_handle;
-static TEXT* service_name;
+static SERVICE_STATUS_HANDLE global_service_handle;
+static TEXT* global_service_name;
 static HANDLE stop_event_handle;
 static MUTX_T thread_mutex[1];
 static THREAD threads;
@@ -75,7 +75,7 @@ void CNTL_init( void (*handler) (), TEXT* name)
  **************************************/
 
 	main_handler = handler;
-	service_name = name;
+	global_service_name = name;
 }
 
 
@@ -90,10 +90,8 @@ void *CNTL_insert_thread(void)
  * Functional description
  *
  **************************************/
-	THREAD new_thread;
-
 	THREAD_ENTER;
-	new_thread = (THREAD) ALLR_alloc((SLONG) sizeof(struct thread));
+	THREAD new_thread = (THREAD) ALLR_alloc((SLONG) sizeof(struct thread));
 /* NOMEM: ALLR_alloc() handled */
 /* FREE:  in CTRL_remove_thread() */
 
@@ -122,27 +120,17 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
  * Functional description
  *
  **************************************/
-	int flag, status;
-	TEXT *p;
-	DWORD last_error = 0;
-	DWORD temp;
-
-	HANDLE cleanup_thread_handle;
-	DWORD count, return_from_wait;
-#ifndef THREAD_PSCHED
-	DWORD cleanup_thread_id;
-#endif
-
-	service_handle = RegisterServiceCtrlHandler(service_name, control_thread);
-	if (!service_handle)
+	global_service_handle =
+		RegisterServiceCtrlHandler(global_service_name, control_thread);
+	if (!global_service_handle)
 		return;
 
 	THD_mutex_init(thread_mutex);
 
 #if (defined SUPERCLIENT || defined SUPERSERVER)
-	flag = SRVR_multi_client;
+	int flag = SRVR_multi_client;
 #else
-	flag = 0;
+	int flag = 0;
 #endif
 
 /* Parse the command line looking for any additional arguments. */
@@ -150,12 +138,13 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	argv++;
 
 	while (--argc) {
-		p = *argv++;
-		if (*p++ = '-')
+		const TEXT* p = *argv++;
+		if (*p++ == '-') // replaced assignment by comparison
 			parse_switch(p, &flag);
 	}
 
-	status = 1;
+	int status = 1;
+	DWORD temp = 0;
 
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
@@ -168,7 +157,7 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 		temp = WaitForSingleObject(stop_event_handle, INFINITE);
 	}
 
-
+	DWORD last_error = 0;
 	if (temp == WAIT_FAILED || status)
 		last_error = GetLastError();
 
@@ -177,16 +166,19 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 /* set the status with the timer, start the cleanup thread and wait for the
  * cleanup thread to exit or the timer to expire, once we reach the max number
  * of loops or the thread exits set the state to shutdown and exit */
+	HANDLE cleanup_thread_handle;
 #pragma FB_COMPILER_MESSAGE("May we always use gds__thread_start?")
 #ifdef THREAD_PSCHED
 	gds__thread_start(cleanup_thread, NULL, THREAD_medium, 0, 
 		&cleanup_thread_handle);
 #else
+	DWORD cleanup_thread_id;
 	cleanup_thread_handle =
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) cleanup_thread, NULL,
 					 0, &cleanup_thread_id);
 #endif
-	count = 1;
+	DWORD count = 1;
+	DWORD return_from_wait;
 
 	do {
 		count++;
@@ -214,12 +206,10 @@ void CNTL_remove_thread( void *thread)
  * Functional description
  *
  **************************************/
-	THREAD *thread_ptr;
-	THREAD this_thread;
-
 	THD_mutex_lock(thread_mutex);
-	for (thread_ptr = &threads;
-		 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next) {
+	for (THREAD* thread_ptr = &threads;
+		 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next)
+	{
 		if (*thread_ptr == (THREAD) thread) {
 			*thread_ptr = ((THREAD) thread)->thread_next;
 			break;
@@ -227,7 +217,7 @@ void CNTL_remove_thread( void *thread)
 	}
 	THD_mutex_unlock(thread_mutex);
 
-	this_thread = (THREAD) thread;
+	THREAD this_thread = (THREAD) thread;
 	CloseHandle(this_thread->thread_handle);
 
 	THREAD_ENTER;
@@ -247,13 +237,12 @@ void CNTL_shutdown_service( TEXT * message)
  * Functional description
  *
  **************************************/
-	char buffer[256];
-	char *strings[2];
-	HANDLE event_source;
+	const char* strings[2];
 
+	char buffer[256];
 	sprintf(buffer, "%s error: %lu", "Firebird Server", GetLastError());
 
-	event_source = RegisterEventSource(NULL, "Firebird Server");
+	HANDLE event_source = RegisterEventSource(NULL, "Firebird Server");
 	if (event_source) {
 		strings[0] = buffer;
 		strings[1] = message;
@@ -264,8 +253,7 @@ void CNTL_shutdown_service( TEXT * message)
 					NULL,
 					2,
 					0,
-					const_cast < const char **>(reinterpret_cast <
-												char **>(strings)), NULL);
+					const_cast<const char**>(strings), NULL);
 		DeregisterEventSource(event_source);
 	}
 
@@ -286,9 +274,7 @@ static void WINAPI control_thread( DWORD action)
  *	Process a service control request.
  *
  **************************************/
-	DWORD state;
-
-	state = SERVICE_RUNNING;
+	DWORD state = SERVICE_RUNNING;
 
 	switch (action) {
 	case SERVICE_CONTROL_STOP:
@@ -344,24 +330,21 @@ static int cleanup_thread(void *lpv)
 
 /* if we have active attachments then log messages */
 	if (attach_count > 0) {
-		USHORT i, j;
-		TEXT out_message[ERROR_BUFFER_LENGTH + 100];
 		TEXT print_buffer[ERROR_BUFFER_LENGTH], *print_ptr;
-		USHORT num_databases, database_name_length;
-
 		sprintf(print_buffer,
 				"Shutting down the Firebird service with %d active connection(s) to %d database(s)",
 				attach_count, database_count);
 		gds__log(print_buffer);
 
+		TEXT out_message[ERROR_BUFFER_LENGTH + 100];
 		/* just get the ushort value and increment it by a ushort length */
-		num_databases = (USHORT) * ((USHORT *) buff_ptr);
+		const USHORT num_databases = (USHORT) * ((USHORT *) buff_ptr);
 		buff_ptr += sizeof(USHORT);
-		for (i = 0; i < num_databases; i++) {
-			database_name_length = (USHORT) * ((USHORT *) buff_ptr);
+		for (USHORT i = 0; i < num_databases; i++) {
+			const USHORT database_name_length = (USHORT) * ((USHORT *) buff_ptr);
 			buff_ptr += sizeof(USHORT);
 			print_ptr = print_buffer;
-			for (j = 0; j < database_name_length; j++)
+			for (USHORT j = 0; j < database_name_length; j++)
 				*print_ptr++ = *buff_ptr++;
 			*print_ptr = '\0';
 			sprintf(out_message,
@@ -385,7 +368,7 @@ static int cleanup_thread(void *lpv)
 }
 
 
-static void parse_switch( TEXT * switches, int *flag)
+static void parse_switch( const TEXT* switches, int* flag)
 {
 /**************************************
  *
@@ -444,8 +427,6 @@ static USHORT report_status(
  *
  **************************************/
 	SERVICE_STATUS status;
-	USHORT ret;
-
 	status.dwServiceType =
 		(SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS);
 	status.dwServiceSpecificExitCode = 0;
@@ -460,8 +441,10 @@ static USHORT report_status(
 	status.dwCheckPoint = checkpoint;
 	status.dwWaitHint = hint;
 
-	if (!(ret = SetServiceStatus(service_handle, &status)))
+	const USHORT ret = SetServiceStatus(global_service_handle, &status);
+	if (!ret)
 		CNTL_shutdown_service("SetServiceStatus");
 
 	return ret;
 }
+

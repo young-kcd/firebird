@@ -118,12 +118,10 @@ HWND DisplayProperties(HWND hParentWnd,
  *  Description: This function initializes the page(s) of the property sheet,
  *               and then calls the PropertySheet() function to display it.
  *****************************************************************************/
-	PROPSHEETHEADER PSHdr;
-	PROPSHEETPAGE PSPages[1];
-
 	hInstance = hInst;
 	usServerFlags = usServerFlagMask;
 
+	PROPSHEETPAGE PSPages[1];
 	PSPages[0].dwSize = sizeof(PROPSHEETPAGE);
 	PSPages[0].dwFlags = PSP_USETITLE | PSP_HASHELP;
 	PSPages[0].hInstance = hInstance;
@@ -132,6 +130,7 @@ HWND DisplayProperties(HWND hParentWnd,
 	PSPages[0].pfnDlgProc = (DLGPROC) GeneralPage;
 	PSPages[0].pfnCallback = NULL;
 
+	PROPSHEETHEADER PSHdr;
 	PSHdr.dwSize = sizeof(PROPSHEETHEADER);
 	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE |
 		PSH_USEICONID | PSH_MODELESS;
@@ -186,10 +185,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	switch (unMsg) {
 	case WM_INITDIALOG:
 		{
-			char *pszPtr;
 			char szText[MSG_STRINGLEN];
-			char szWindowText[WIN_TEXTLEN];
-
 			lstrcpy(szText, GDS_VERSION);
 			SetDlgItemText(hDlg, IDC_STAT1, szText);
 
@@ -206,11 +202,12 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			SetDlgItemText(hDlg, IDC_PRODNAME, szText);
 
+			char szWindowText[WIN_TEXTLEN];
 			MakeVersionString(szWindowText, WIN_TEXTLEN, usServerFlags);
 			SetDlgItemText(hDlg, IDC_PROTOCOLS, szWindowText);
 
 			GetModuleFileName(hInstance, szWindowText, WIN_TEXTLEN);
-			pszPtr = strrchr(szWindowText, '\\');
+			char* pszPtr = strrchr(szWindowText, '\\');
 			*(pszPtr + 1) = 0x00;
 
 			ChopFileName(szWindowText, szWindowText, 38);
@@ -238,9 +235,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		break;
 	case WM_HELP:
 		{
-			LPHELPINFO lphi;
-
-			lphi = (LPHELPINFO) lParam;
+			LPHELPINFO lphi = (LPHELPINFO) lParam;
 			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
 			{
 				WinHelp(static_cast < HWND > (lphi->hItemHandle),
@@ -295,8 +290,8 @@ static char *MakeVersionString(char *pchBuf, int nLen,
  *  Description: This method is called to get the Version String. This string
  *               is based on the flag set in usServerFlagMask.
  *****************************************************************************/
-	char *p = pchBuf;
-	char *end = p + nLen;
+	char* p = pchBuf;
+	const char const* end = p + nLen;
 
 	if (usServerFlagMask & SRVR_inet) {
 		p += LoadString(hInstance, IDS_TCP, p, end - p);
@@ -334,12 +329,13 @@ static void RefreshUserCount(HWND hDlg)
  *  Description: This method calls the JRD_num_attachments() function to get
  *               the number of active attachments to the server.
  *****************************************************************************/
-	char szText[MSG_STRINGLEN];
 	USHORT num_att = 0;
 	USHORT num_dbs = 0;
 	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
 	JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
+
+	char szText[MSG_STRINGLEN];
 	sprintf(szText, "%d", num_att);
 	SetDlgItemText(hDlg, IDC_STAT2, szText);
 	sprintf(szText, "%d", num_dbs);

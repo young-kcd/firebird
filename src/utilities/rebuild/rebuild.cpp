@@ -64,8 +64,8 @@ static void db_error(int);
 static void dump(IB_FILE *, RBDB, ULONG, ULONG, UCHAR);
 static void dump_tips(IB_FILE *, RBDB);
 static void format_header(RBDB, header_page*, int, ULONG, ULONG, ULONG, ULONG);
-static void format_index_root(IRT, int, SSHORT, SSHORT);
-static void format_pointer(PPG, int, SSHORT, SSHORT, int, SSHORT, SLONG *);
+static void format_index_root(index_root_page*, int, SSHORT, SSHORT);
+static void format_pointer(pointer_page*, int, SSHORT, SSHORT, int, SSHORT, SLONG *);
 static void format_pip(page_inv_page*, int, int);
 static void format_tip(tx_inv_page*, int, SLONG);
 static void get_next_file(RBDB, header_page*);
@@ -224,11 +224,11 @@ int main( int argc, char *argv[])
 	gdbb->tdbb_transaction = &dull;
 	dull.tra_number = header->hdr_next_transaction;
 	gdbb->tdbb_database->dbb_max_records = (rbdb->rbdb_page_size
-											- sizeof(struct dpg)) /
-		(sizeof(dpg::dpg_repeat) + OFFSETA(RHD, rhd_data));
+											- sizeof(struct data_page)) /
+		(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
 	gdbb->tdbb_database->dbb_pcontrol = &dim;
 	gdbb->tdbb_database->dbb_dp_per_pp = (rbdb->rbdb_page_size
-										  - OFFSETA(PPG, ppg_page)) * 8 / 34;
+										  - OFFSETA(pointer_page*, ppg_page)) * 8 / 34;
 	gdbb->tdbb_database->dbb_pcontrol->pgc_bytes = rbdb->rbdb_page_size
 		- OFFSETA(page_inv_page*, pip_bits);
 	gdbb->tdbb_database->dbb_pcontrol->pgc_ppp =
@@ -654,7 +654,7 @@ static void format_header(
 
 
 static void format_index_root(
-							  IRT page,
+							  index_root_page* page,
 							  int page_size, SSHORT relation_id, SSHORT count)
 {
 /**************************************
@@ -676,7 +676,7 @@ static void format_index_root(
 
 
 static void format_pointer(
-						   PPG page,
+						   pointer_page* page,
 						   int page_size,
 						   SSHORT relation_id,
 						   SSHORT sequence,
@@ -793,7 +793,9 @@ static void get_next_file( RBDB rbdb, header_page* header)
 	next = &rbdb->rbdb_next;
 	for (p = header->hdr_data, end = p + header->hdr_page_size;
 		 p < end && *p != HDR_end; p += 2 + p[1])
-		if (*p == HDR_file) {
+	{
+		if (*p == HDR_file)
+		{
 			next_rbdb = (RBDB) RBDB_alloc(sizeof(rbdb) + (SSHORT) p[1]);
 			next_rbdb->rbdb_file.fil_length = (SSHORT) p[1];
 			strncpy(next_rbdb->rbdb_file.fil_name, p + 2, (SSHORT) p[1]);
@@ -801,6 +803,7 @@ static void get_next_file( RBDB rbdb, header_page* header)
 			next = &next_rbdb->rbdb_next;
 			break;
 		}
+	}
 }
 
 
@@ -1120,7 +1123,7 @@ static void rebuild( RBDB rbdb)
 	for (ULONG number = 5898; (number < 5899) && (page = RBDB_read(rbdb, number));
 		 number++)
 	{
-		ppg* pointer = (PPG) page;
+		pointer_page* pointer = (pointer_page*) page;
 /*    format_pointer (page, page_size, 25, 3, 1, 37, page_numbers);   */
 
 		RBDB_write(rbdb, page, number);
@@ -1174,7 +1177,7 @@ static void write_headers(
 			{
 			ib_fprintf(file, "pointer page, checksum %d\n",
 					   page->pag_checksum);
-			const ppg* pointer = (PPG) page;
+			const pointer_page* pointer = (pointer_page*) page;
 			ib_fprintf(file,
 					   "\trelation %d, sequence %ld, next pip %ld, active slots %d\n",
 					   pointer->ppg_relation, pointer->ppg_sequence,
@@ -1192,7 +1195,7 @@ static void write_headers(
 		case pag_data:
 			{
 			ib_fprintf(file, "data page, checksum %d\n", page->pag_checksum);
-			const dpg* data = (DPG) page;
+			const data_page* data = (data_page*) page;
 			ib_fprintf(file,
 					   "\trelation %d, sequence %ld, records on page %d\n",
 					   data->dpg_relation, data->dpg_sequence,
@@ -1221,7 +1224,7 @@ static void write_headers(
 			{
 			ib_fprintf(file, "btree page (bucket), checksum %d\n",
 					   page->pag_checksum);
-			const btr* bucket = (BTR) page;
+			const btree_page* bucket = (btree_page*) page;
 			ib_fprintf(file, "\trelation %d, right sibling bucket: %ld,\n",
 					   bucket->btr_relation, bucket->btr_sibling);
 			ib_fprintf(file, "\tdata length %d, index id %d, level %d\n",
@@ -1239,7 +1242,7 @@ static void write_headers(
 		case pag_blob:
 			{
 			ib_fprintf(file, "blob page, checksum %d\n", page->pag_checksum);
-			const blp* blob = (BLP) page;
+			const blob_page* blob = (blob_page*) page;
 			ib_fprintf(file, "\tlead page: %ld, sequence: %ld, length: %d\n",
 					   blob->blp_lead_page, blob->blp_sequence,
 					   blob->blp_length);

@@ -993,7 +993,6 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
 	TDBB tdbb = GET_THREAD_DATA;
 
 	BLK handle1 = NULL;
-	BLK handle2 = NULL;
 
 /* add all new triggers, that were added since the database was created */
 	for (const jrd_trg* trig = triggers; trig->trg_length > 0; trig++)
@@ -1005,6 +1004,7 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
 		}
 	}
 
+	BLK handle2 = NULL;
 	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; message++)
 	{
 		if ((message->trg_ods_version >
@@ -1109,7 +1109,6 @@ static void add_security_to_sys_rel(TDBB	tdbb,
  *      privilege.
  *
  **************************************/
-	BLK handle1;
 	TEXT sec_class_name[100];
 	TEXT default_class[32];
 
@@ -1132,6 +1131,8 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 	sprintf(default_class, "%s%" QUADFORMAT "d", DEFAULT_CLASS,
 			DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS),
 					   0, (SINT64) 1));
+
+	BLK handle1;
 
 	for (int cnt = 0; cnt < 6; cnt++)
 	{
@@ -1250,7 +1251,8 @@ static void add_trigger(TEXT* trigger_name, BLK* handle1, BLK* handle2)
 
 /* Look for any related trigger messages */
 
-	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; ++message)
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name;
+		++message)
 	{
 		if (!strcmp(message->trigmsg_name, trigger->trg_name))
 		{

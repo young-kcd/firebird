@@ -2558,7 +2558,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 						ATT* db_handle,
 						jrd_tra** tra_handle,
-						SLONG* array_id,
+						ISC_QUAD* array_id,
 						USHORT sdl_length,
 						const UCHAR* sdl,
 						USHORT param_length,
@@ -2598,7 +2598,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 		jrd_tra* transaction =
 			find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
 	
-		if (!array_id[0] && !array_id[1]) {
+		if (!array_id->gds_quad_low && !array_id->gds_quad_high) {
 			MOVE_CLEAR(slice, slice_length);
 			*return_length = 0;
 		}
@@ -2761,7 +2761,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 						ATT* db_handle,
 						jrd_tra** tra_handle,
-						SLONG* array_id,
+						ISC_QUAD* array_id,
 						USHORT sdl_length,
 						const UCHAR* sdl,
 						USHORT param_length,

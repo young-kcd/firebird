@@ -1299,12 +1299,13 @@ ULONG DPM_get_blob(TDBB tdbb,
 		return 0UL;
 	}
 
-for (bool one_time = true; one_time; one_time = false)
-{
+	// Do not delete this scope. It makes goto compatible with variables
+	// defined in their minimal scope.
+	{
 	const SLONG page_number = ppage->ppg_page[slot];
 	if (!page_number)
 	{
-		break;
+		goto punt;
 	}
 
 	data_page* page = (data_page*) CCH_HANDOFF(tdbb,
@@ -1313,17 +1314,17 @@ for (bool one_time = true; one_time; one_time = false)
 							(SSHORT)((delete_flag) ? LCK_write : LCK_read),
 							pag_data);
 	if (line >= page->dpg_count) {
-		break;
+		goto punt;
 	}
 
 	data_page::dpg_repeat* index = &page->dpg_rpt[line];
 	if (index->dpg_offset == 0) {
-		break;
+		goto punt;
 	}
 
 	blh* header = (BLH) ((SCHAR *) page + index->dpg_offset);
 	if (!(header->blh_flags & rhd_blob)) {
-		break;
+		goto punt;
 	}
 
 /* We've got the blob header and everything looks ducky.  Get the header
@@ -1361,7 +1362,7 @@ for (bool one_time = true; one_time; one_time = false)
 	}
 
 	if (header->blh_flags & rhd_damaged) {
-		break;
+		goto punt;
 	}
 
 /* Retrieve the data either into page clump (level 0) or page vector (levels
@@ -1399,8 +1400,9 @@ for (bool one_time = true; one_time; one_time = false)
 	rpb.rpb_line = line;
 	DPM_delete(tdbb, &rpb, prior_page);
 	return rpb.rpb_page;
-}
+	} // scope
 
+punt:
 	CCH_RELEASE(tdbb, &rpb.rpb_window);
 	blob->blb_flags |= BLB_damaged;
 	return 0UL;

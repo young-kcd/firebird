@@ -116,9 +116,8 @@ static void disconnect(rem_port*);
 static REM_MSG dump_cache(rem_port*, ISC_STATUS *, rrq::rrq_repeat *);
 #endif
 static void enqueue_receive(rem_port*,
-							bool(*fn) (struct trdb *, rem_port*,
-										  struct rmtque *, ISC_STATUS *, USHORT),
-							RDB, void *, void *);
+							t_rmtque_fn,
+							RDB, void*, rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static ISC_STATUS error(ISC_STATUS *);
 #ifndef MULTI_THREAD
@@ -295,7 +294,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	UCHAR	new_dpb[MAXPATHLEN];
 	UCHAR* new_dpb_ptr = new_dpb;
-	rem_port* port = 0; // MAX_OTHER_PARAMS uses port_dummy_packet_interval
+	rem_port* port = 0; // MAX_OTHER_PARAMS uses port's port_dummy_packet_interval
 
 	if ((dpb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
 		 MAX_OTHER_PARAMS) > sizeof(new_dpb))
@@ -1901,8 +1900,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 			/* Queue up receipt of the pending data */
 
-			enqueue_receive(port, batch_dsql_fetch, rdb, (void *) statement,
-							NULL);
+			enqueue_receive(port, batch_dsql_fetch, rdb, statement, NULL);
 
 			fb_assert(statement->rsr_rows_pending > 0
 				   || (!statement->rsr_select_format));
@@ -2510,7 +2508,8 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 				   incomplete read */
 
 				if (l == buffer_length &&
-					l == blob->rbl_length && (blob->rbl_flags & RBL_segment)) {
+					l == blob->rbl_length && (blob->rbl_flags & RBL_segment))
+				{
 					*v = isc_segment;
 				}
 
@@ -2560,7 +2559,8 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 			   of size 65535 or 65534. */
 
 			if (buffer_length > blob->rbl_buffer_length - sizeof(USHORT) &&
-				blob->rbl_buffer_length <= MAX_USHORT - sizeof(USHORT)) {
+				blob->rbl_buffer_length <= MAX_USHORT - sizeof(USHORT))
+			{
 				ULONG new_size = buffer_length + sizeof(USHORT);
 
 				if (new_size > MAX_USHORT)	/* Check if we've overflown */
@@ -4937,7 +4937,7 @@ static bool batch_dsql_fetch(trdb*	trdb,
 	fb_assert(que->rmtque_function == batch_dsql_fetch);
 
 	RDB     rdb       = que->rmtque_rdb;
-	RSR     statement = (RSR) que->rmtque_parm;
+	RSR     statement = static_cast<rsr*>(que->rmtque_parm);
 	PACKET* packet    = &rdb->rdb_packet;
 
 	fb_assert(port == rdb->rdb_port);
@@ -5095,9 +5095,8 @@ static bool batch_gds_receive(trdb*		trdb,
 	fb_assert(que->rmtque_function == batch_gds_receive);
 
 	RDB rdb = que->rmtque_rdb;
-	rrq* request = reinterpret_cast<rrq*>(que->rmtque_parm);
-	rrq::rrq_repeat* tail =
-		reinterpret_cast<rrq::rrq_repeat*>(que->rmtque_message);
+	rrq* request = static_cast<rrq*>(que->rmtque_parm);
+	rrq::rrq_repeat* tail = que->rmtque_message;
 	PACKET *packet = &rdb->rdb_packet;
 
 	fb_assert(port == rdb->rdb_port);
@@ -6352,11 +6351,10 @@ static bool receive_queued_packet(struct trdb*	trdb,
 
 
 static void enqueue_receive(rem_port* port,
-							bool(*fn) (struct trdb *, rem_port*,
-									   struct rmtque *, ISC_STATUS *, USHORT),
+							t_rmtque_fn fn,
 							RDB rdb,
-							void *parm,
-							void *parm1)
+							void* parm,
+							rrq::rrq_repeat* parm1)
 {
 /**************************************
  *
@@ -6374,7 +6372,7 @@ static void enqueue_receive(rem_port* port,
 	que->rmtque_next = NULL;
 	que->rmtque_function = fn;
 	que->rmtque_parm = parm;
-	que->rmtque_message = reinterpret_cast < rrq::rrq_repeat * >(parm1);
+	que->rmtque_message = parm1;
 	que->rmtque_rdb = rdb;
 
 /* Walk to the end of the current queue */

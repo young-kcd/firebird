@@ -65,12 +65,12 @@ static void extract_rfr(const TEXT*);
 static void extract_security(void);
 static void extract_triggers(void);
 static void extract_trig_msgs(const TEXT *);
-static void extract_view(const TEXT*, SLONG*, SLONG*, bool, bool, bool, bool*);
+static void extract_view(const TEXT*, ISC_QUAD*, ISC_QUAD*, bool, bool, bool, bool*);
 static void extract_views(void);
-static void field_attributes(SLONG*, const TEXT*, SLONG*, const TEXT*, SSHORT);
+static void field_attributes(ISC_QUAD*, const TEXT*, ISC_QUAD*, const TEXT*, SSHORT);
 static void format_acl(const SCHAR *);
 static char name_trunc(const TEXT *, TEXT *);
-static void print_blob(SLONG *, TEXT);
+static void print_blob(ISC_QUAD*, TEXT);
 static void put_comment(USHORT);
 static void put_error(USHORT, const TEXT*);
 static void set_capabilities(void);
@@ -379,11 +379,11 @@ static void extract_acls(void)
 	                   S.RDB$SECURITY_CLASS);
 	        if (!blob_null(S.RDB$DESCRIPTION)) {
 	            ib_fprintf(output_file, "\n\t{");
-	            print_blob((SLONG*) &S.RDB$DESCRIPTION, 'u');
+	            print_blob(&S.RDB$DESCRIPTION, 'u');
 	            ib_fprintf(output_file, "}");
 	        }
 	        if (!blob_null(S.RDB$ACL))
-	            print_blob((SLONG*) &S.RDB$ACL, 'a');
+	            print_blob(&S.RDB$ACL, 'a');
 	        ib_fprintf(output_file, ";\n");
 	    }
     END_FOR;
@@ -448,12 +448,12 @@ static void extract_computed(const TEXT * relation_name, bool first)
         }
         ib_fprintf(output_file, " computed by (");
         
-        print_blob((SLONG*) &F.RDB$COMPUTED_SOURCE, 'u');
+        print_blob(&F.RDB$COMPUTED_SOURCE, 'u');
         ib_fprintf(output_file, ")");
         if (!RFR.RDB$FIELD_POSITION.NULL)
             ib_fprintf(output_file, "\tposition %d", RFR.RDB$FIELD_POSITION);
-        field_attributes((SLONG*) &RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
-                         (SLONG*) &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
+        field_attributes(&RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
+                         &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
                          RFR.RDB$SYSTEM_FLAG);
         
     END_FOR;
@@ -484,7 +484,7 @@ static void extract_database(const TEXT * DB_file_name)
 	       FOR D IN RDB$DATABASE 
                if (!blob_null(D.RDB$DESCRIPTION)) {
                    ib_fprintf(output_file, "\n\t{");
-                   print_blob((SLONG*) &D.RDB$DESCRIPTION, 'u');
+                   print_blob(&D.RDB$DESCRIPTION, 'u');
                    ib_fprintf(output_file, "}");
                } 
                if (!D.RDB$SECURITY_CLASS.NULL) {
@@ -498,7 +498,7 @@ static void extract_database(const TEXT * DB_file_name)
         FOR D IN RDB$DATABASE 
             if (!blob_null(D.RDB$DESCRIPTION)) {
                 ib_fprintf(output_file, "\n\t{");
-                print_blob((SLONG*) &D.RDB$DESCRIPTION, 'u');
+                print_blob(&D.RDB$DESCRIPTION, 'u');
                 ib_fprintf(output_file, "}");
             } 
         END_FOR;
@@ -710,13 +710,13 @@ static void extract_fields(void)
         
         if (!blob_null(F.RDB$VALIDATION_SOURCE)) {
             ib_fprintf(output_file, "\n\tvalid if (");
-            print_blob((SLONG*) &F.RDB$VALIDATION_SOURCE, 'u');
+            print_blob(&F.RDB$VALIDATION_SOURCE, 'u');
             ib_fprintf(output_file, ")");
         }
         
         if (!blob_null(F.RDB$MISSING_VALUE)) {
             ib_fprintf(output_file, "\n\tmissing_value is ");
-            print_blob((SLONG*) &F.RDB$MISSING_VALUE, 'm');
+            print_blob(&F.RDB$MISSING_VALUE, 'm');
         }
         
         /*
@@ -724,8 +724,8 @@ static void extract_fields(void)
           default_value (&F.RDB$DEFAULT_VALUE);
         */
         
-        field_attributes((SLONG*) &F.RDB$DESCRIPTION, F.RDB$QUERY_NAME,
-                         (SLONG*) &F.RDB$QUERY_HEADER, F.RDB$EDIT_STRING,
+        field_attributes(&F.RDB$DESCRIPTION, F.RDB$QUERY_NAME,
+                         &F.RDB$QUERY_HEADER, F.RDB$EDIT_STRING,
                          F.RDB$SYSTEM_FLAG);
         ib_fprintf(output_file, ";\n");
         
@@ -765,7 +765,7 @@ static void extract_filters(void)
 		ib_fprintf(output_file, "\n\tentry_point '%s'", s);
 		if (!blob_null(F.RDB$DESCRIPTION)) {
 		   ib_fprintf(output_file, "\n\t{");
-		   print_blob((SLONG*) &F.RDB$DESCRIPTION, 'u');
+		   print_blob(&F.RDB$DESCRIPTION, 'u');
 		   ib_fprintf(output_file, "}");
 		}
 		ib_fprintf(output_file, ";\n");
@@ -805,7 +805,7 @@ static void extract_functions(void)
 		ib_fprintf(output_file, "\n\tentry_point '%s'", s);
 		if (!blob_null(FUNC.RDB$DESCRIPTION)) {
 			ib_fprintf(output_file, "\n\t{");
-			print_blob((SLONG*) &FUNC.RDB$DESCRIPTION, 'u');
+			print_blob(&FUNC.RDB$DESCRIPTION, 'u');
 			ib_fprintf(output_file, "}");
 		}
 
@@ -1048,7 +1048,7 @@ static void extract_indexes(void)
         
         if (!blob_null(I.RDB$DESCRIPTION)) {
             ib_fprintf(output_file, "\n\t{");
-               print_blob((SLONG*) &I.RDB$DESCRIPTION, 'u');
+               print_blob(&I.RDB$DESCRIPTION, 'u');
                ib_fprintf(output_file, "}");
         }
         
@@ -1116,7 +1116,7 @@ static void extract_relations(void)
                 ib_fprintf(output_file, "\n\tsystem_flag %d", R.RDB$SYSTEM_FLAG);
             if (!blob_null(R.RDB$DESCRIPTION)) {
                 ib_fprintf(output_file, "\n\t{");
-                print_blob((SLONG*) &R.RDB$DESCRIPTION, 'u');
+                print_blob(&R.RDB$DESCRIPTION, 'u');
                 ib_fprintf(output_file, "}");
             }
             extract_rfr(R.RDB$RELATION_NAME);
@@ -1138,7 +1138,7 @@ static void extract_relations(void)
                 ib_fprintf(output_file, "\n\tsystem_flag %d", R.RDB$SYSTEM_FLAG);
             if (!blob_null(R.RDB$DESCRIPTION)) {
                 ib_fprintf(output_file, "\n\t{");
-                print_blob((SLONG*) &R.RDB$DESCRIPTION, 'u');
+                print_blob(&R.RDB$DESCRIPTION, 'u');
                 ib_fprintf(output_file, "}");
             }
             extract_rfr(R.RDB$RELATION_NAME);
@@ -1189,8 +1189,8 @@ static void extract_rfr(const TEXT * relation_name)
         if (!RFR.RDB$FIELD_POSITION.NULL)
             ib_fprintf(output_file, "\tposition %d", RFR.RDB$FIELD_POSITION);
         
-        field_attributes((SLONG*) &RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
-                         (SLONG*) &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
+        field_attributes(&RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
+                         &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
                          RFR.RDB$SYSTEM_FLAG);
     END_FOR;
 
@@ -1355,12 +1355,12 @@ static void extract_triggers(void)
             /* msg 262: **** trigger source for trigger %s must be recreated **** */
         }
         else {
-            print_blob((SLONG*) &T.RDB$TRIGGER_SOURCE, 'u');
+            print_blob(&T.RDB$TRIGGER_SOURCE, 'u');
         }
         ib_fprintf(output_file, "\n\tend_trigger");
         if (!blob_null(T.RDB$DESCRIPTION)) {
             ib_fprintf(output_file, "\n\t{");
-            print_blob((SLONG*) &T.RDB$DESCRIPTION, 'u');
+            print_blob(&T.RDB$DESCRIPTION, 'u');
             ib_fprintf(output_file, "}");
         }
         extract_trig_msgs(T.RDB$TRIGGER_NAME);
@@ -1410,8 +1410,8 @@ static void extract_trig_msgs(const TEXT * trigger_name)
 
 
 static void extract_view(const TEXT * rel_name,
-						 SLONG * source,
-						 SLONG * description,
+						 ISC_QUAD* source,
+						 ISC_QUAD* description,
 						 bool source_null,
 						 bool desc_null,
 						 bool system_flag,
@@ -1486,8 +1486,8 @@ static void extract_views(void)
 			SORTED BY V.RDB$RELATION_NAME
 			source_null = (V.RDB$VIEW_SOURCE.NULL);
 			desc_null = (blob_null(V.RDB$DESCRIPTION));
-			extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
-						 (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
+			extract_view(V.RDB$RELATION_NAME, &V.RDB$VIEW_SOURCE,
+						 &V.RDB$DESCRIPTION, source_null, desc_null,
 						 (V.RDB$SYSTEM_FLAG), &first);
 	
 		END_FOR;
@@ -1548,8 +1548,8 @@ static void extract_views(void)
 					V.RDB$RELATION_NAME EQ view_name
 					source_null = (V.RDB$VIEW_SOURCE.NULL);
 					desc_null = (blob_null(V.RDB$DESCRIPTION));
-					extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
-								 (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
+					extract_view(V.RDB$RELATION_NAME, &V.RDB$VIEW_SOURCE,
+								 &V.RDB$DESCRIPTION, source_null, desc_null,
 								 (V.RDB$SYSTEM_FLAG), &first);
 	
 				END_FOR;
@@ -1568,8 +1568,8 @@ static void extract_views(void)
 			V.RDB$RELATION_NAME EQ viewp->view_name
 			source_null = (V.RDB$VIEW_SOURCE.NULL);
 			desc_null = (blob_null(V.RDB$DESCRIPTION));
-			extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
-						 (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
+			extract_view(V.RDB$RELATION_NAME, &V.RDB$VIEW_SOURCE,
+						 &V.RDB$DESCRIPTION, source_null, desc_null,
 						 (V.RDB$SYSTEM_FLAG), &first);
 	
 		END_FOR;
@@ -1577,10 +1577,10 @@ static void extract_views(void)
 }
 
 
-static void field_attributes(SLONG * descr,
-							 const TEXT * query_name,
-							 SLONG * query_header,
-							 const TEXT * edit_string, SSHORT system_flag)
+static void field_attributes(ISC_QUAD* descr,
+							 const TEXT* query_name,
+							 ISC_QUAD* query_header,
+							 const TEXT* edit_string, SSHORT system_flag)
 {
 /**************************************
  *
@@ -1594,7 +1594,7 @@ static void field_attributes(SLONG * descr,
  **************************************/
 	TEXT s[256];
 
-	if (descr && (descr[0] || descr[1])) {
+	if (descr && (descr->gds_quad_low || descr->gds_quad_high)) {
 		ib_fprintf(output_file, "\n\t{");
 		print_blob(descr, 'u');
 		ib_fprintf(output_file, "}");
@@ -1606,7 +1606,8 @@ static void field_attributes(SLONG * descr,
 	if (query_name && name_trunc(query_name, s))
 		ib_fprintf(output_file, "\n\tquery_name %s", s);
 
-	if (query_header && (query_header[0] || query_header[1])) {
+	if (query_header && (query_header->gds_quad_low || query_header->gds_quad_high))
+	{
 		ib_fprintf(output_file, "\n\tquery_header ");
 		print_blob(query_header, 'h');
 	}
@@ -1756,7 +1757,7 @@ static char name_trunc(const TEXT * in, TEXT * out)
 }
 
 
-static void print_blob(SLONG* blob_id, TEXT type)
+static void print_blob(ISC_QUAD* blob_id, TEXT type)
 {
 /**************************************
  *
@@ -1787,7 +1788,7 @@ static void print_blob(SLONG* blob_id, TEXT type)
 	bpb = r = bpb_buffer;
 
 	if (isc_open_blob2(status_vector, &DB, &gds_trans, &blob,
-						(ISC_QUAD*) blob_id, (USHORT) (r - bpb),
+						blob_id, (USHORT) (r - bpb),
 						bpb))
 	{
 		gds__print_status(status_vector);
@@ -2084,8 +2085,8 @@ static void view_fields(const TEXT * view_name)
             if (!RFR.RDB$FIELD_POSITION.NULL)
                 ib_fprintf(output_file, "\tposition %d", RFR.RDB$FIELD_POSITION);
             
-            field_attributes((SLONG*) &RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
-                             (SLONG*) &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
+            field_attributes(&RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
+                             &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
                              RFR.RDB$SYSTEM_FLAG);
         }            
 	END_FOR;
