@@ -1436,13 +1436,23 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 			return unsupported(user_status);
 		}
 
+		// 24-Mar-2004 Nickolay Samofatov
+		// Unconditionally deallocate existing formats that are left from 
+		// previous executions (possibly with different statement if 
+		// isc_dsql_prepare is called multiple times). 
+		// This should cure SF#919246
+		if (statement->rsr_bind_format) {
+			ALLR_RELEASE(statement->rsr_bind_format);
+			statement->rsr_bind_format = NULL;
+		}
+		if (port->port_statement && port->port_statement->rsr_select_format) {
+			ALLR_RELEASE(port->port_statement->rsr_select_format);
+			port->port_statement->rsr_select_format = NULL;
+		}
+
 		/* Parse the blr describing the message, if there is any. */
 
 		if (in_blr_length) {
-			if (statement->rsr_bind_format) {
-				ALLR_RELEASE(statement->rsr_bind_format);
-				statement->rsr_bind_format = NULL;
-			}
 			if ((message = PARSE_messages(in_blr, in_blr_length)) != (REM_MSG) - 1) {
 				statement->rsr_bind_format = (FMT) message->msg_address;
 				ALLR_RELEASE(message);
@@ -1456,10 +1466,6 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 			if (!port->port_statement)
 				port->port_statement = (RSR) ALLOC(type_rsr);
 
-			if (port->port_statement->rsr_select_format) {
-				ALLR_RELEASE(port->port_statement->rsr_select_format);
-				port->port_statement->rsr_select_format = NULL;
-			}
 			if ((message = PARSE_messages(out_blr, out_blr_length)) != (REM_MSG) - 1) {
 				port->port_statement->rsr_select_format =
 					(FMT) message->msg_address;
@@ -2159,13 +2165,16 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 			return unsupported(user_status);
 		}
 
+		// Free existing format unconditionally. 
+		// This is also related to SF#919246
+		if (statement->rsr_bind_format) {
+			ALLR_RELEASE(statement->rsr_bind_format);
+			statement->rsr_bind_format = NULL;
+		}
+
 		/* Parse the blr describing the message, if there is any. */
 
 		if (blr_length) {
-			if (statement->rsr_bind_format) {
-				ALLR_RELEASE(statement->rsr_bind_format);
-				statement->rsr_bind_format = NULL;
-			}
 			if ((message = PARSE_messages(blr, blr_length)) != (REM_MSG) - 1) {
 				statement->rsr_bind_format = (FMT) message->msg_address;
 				ALLR_RELEASE(message);
