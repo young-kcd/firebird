@@ -51,6 +51,7 @@
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../common/config/config.h"
 
 using namespace Jrd;
 
@@ -498,6 +499,7 @@ void ERR_punt(void)
 		gds__log_status(tdbb->tdbb_attachment->att_filename ?
 			tdbb->tdbb_attachment->att_filename.c_str() : NULL,
 			tdbb->tdbb_status_vector);
+ 		if (Config::getBugcheckAbort()) abort();
 	}
 
 	Firebird::status_exception::raise(tdbb->tdbb_status_vector);

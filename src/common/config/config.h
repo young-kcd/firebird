@@ -103,7 +103,8 @@ class Config
 		KEY_DATABASE_ACCESS,						// 38
 		KEY_UDF_ACCESS,								// 39
 		KEY_TEMP_DIRECTORIES,						// 40
-		KEY_TRACE_DSQL								// 41
+ 		KEY_BUGCHECK_ABORT,							// 41
+		KEY_TRACE_DSQL								// 42
 	};
 
 public:
@@ -317,6 +318,11 @@ public:
 		DSQL trace bitmask
 	*/
 	static int getTraceDSQL();
+
+ 	/*
+ 		Abort on BUGCHECK and structured exceptions
+ 	*/
+ 	static bool getBugcheckAbort();
 };
 
 namespace Firebird {

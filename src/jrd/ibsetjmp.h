@@ -46,11 +46,13 @@
 #define START_CHECK_FOR_EXCEPTIONS(err)	{ \
 					SIGJMP_BUF	sigenv; \
 					int		sig; \
-					memcpy(&tdbb->tdbb_sigsetjmp, &sigenv, sizeof sigenv); \
-					if (sig = SIGSETJMP (sigenv, 1)) \
-					    ISC_exception_post(sig, err); \
-					ISC_sync_signals_set();
-#define END_CHECK_FOR_EXCEPTIONS(err)   ISC_sync_signals_reset(); }
+					if (!Config::getBugcheckAbort()) { \
+						memcpy(&tdbb->tdbb_sigsetjmp, &sigenv, sizeof sigenv); \
+						if (sig = SIGSETJMP (sigenv, 1)) \
+					    	ISC_exception_post(sig, err); \
+						ISC_sync_signals_set(); \
+					}
+#define END_CHECK_FOR_EXCEPTIONS(err)   if (!Config::getBugcheckAbort()) ISC_sync_signals_reset(); }
 #endif /* SUPER_SERVER */
 
 #endif /* UNIX */

@@ -35,6 +35,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "../common/config/config.h"
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/y_ref.h"
