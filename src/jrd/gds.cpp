@@ -839,8 +839,8 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		code = (*vector)[1];
 	}
 
-	TEXT* args[10];
-	TEXT** arg = args;
+	const TEXT* args[10];
+	const TEXT** arg = args;
 	const char* const* const argend = arg + FB_NELEM(args);
 
 	/* Parse and collect any arguments that may be present */
@@ -870,22 +870,27 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 				/* We need a temporary buffer when cstrings are involved.
 				   Give up if we can't get one. */
 
-				p = temp = (TEXT*) gds__alloc((SLONG) BUFFER_SMALL);
+				p = temp = (TEXT*) gds__alloc((SLONG) temp_len);
 				/* FREE: at procedure exit */
 				if (!temp)		/* NOMEM: */
 					return 0;
 			}
-			l = (int) *v++;
+			l = 1 + (int) *v++; // CVC: Add one for the needed terminator.
 			q = (const TEXT*) *v++;
-			*arg++ = p;
 
 			/* ensure that we do not overflow the buffer allocated */
 			l = (temp_len < l) ? temp_len : l;
 			if (l)
-				do {
+			{
+				*arg++ = p;
+				while (--l) // CVC: Decrement first to make room for the null terminator.
 					*p++ = *q++;
-				} while (--l);
-			*p++ = 0;
+					
+				*p++ = 0;
+			}
+			else // No space at all, pass the empty string.
+				*arg++ = "";
+				
 			continue;
 
 		default:
