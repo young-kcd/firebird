@@ -25,7 +25,7 @@
  * December 2001 Mike Nordell: Major overhaul to (try to) make it C++
  */
 /*
-$Id: dsql.cpp,v 1.7 2001-12-24 02:50:48 tamlin Exp $
+$Id: dsql.cpp,v 1.8 2001-12-29 11:41:22 tamlin Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -3944,7 +3944,7 @@ static void punt(void)
 
 	tdsql = GET_THREAD_DATA;
 
-	Firebird::status_longjmp_error::raise(tdsql->tsql_status[1]);
+	Firebird::status_exception::raise(tdsql->tsql_status[1]);
 }
 
 

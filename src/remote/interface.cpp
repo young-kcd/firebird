@@ -4678,7 +4678,7 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 			statement->rsr_rows_pending = 0;
 			--statement->rsr_batch_count;
 			dequeue_receive(port);
-			Firebird::status_longjmp_error::raise(user_status[1]);
+			Firebird::status_exception::raise(user_status[1]);
 		}
 
 		if (packet->p_operation != op_fetch_response) {
@@ -4839,7 +4839,7 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
 			tail->rrq_rows_pending = 0;
 			--tail->rrq_batch_count;
 			dequeue_receive(port);
-			Firebird::status_longjmp_error::raise(user_status[1]);
+			Firebird::status_exception::raise(user_status[1]);
 		}
 
 		if (packet->p_operation != op_send) {
@@ -5844,7 +5844,7 @@ static void move_error( STATUS status, ...)
 	if (p_args >= end_args)
 		end_args[-1] = gds_arg_end;
 
-	Firebird::status_longjmp_error::raise(trdb->trdb_status_vector[1]);
+	Firebird::status_exception::raise(trdb->trdb_status_vector[1]);
 }
 
 

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//  $Id: par.cpp,v 1.5 2001-12-29 11:41:22 tamlin Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: par.cpp,v 1.5 2001-12-29 11:41:22 tamlin Exp $
 //
 
 #include "firebird.h"
@@ -1156,12 +1156,7 @@ SYM PAR_symbol(enum sym_t type)
 
 void PAR_unwind()
 {
-
-#pragma FB_COMPILER_MESSAGE("Fix! Wierd jmp_buf use! This might crash!")
-
-	//longjmp(*PAR_jmp_buf, (SLONG) 1);
-
-	Firebird::status_longjmp_error::raise(1);
+	Firebird::status_exception::raise(1);
 }
 
 

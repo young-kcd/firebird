@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.6 2001-12-24 02:50:49 tamlin Exp $
+//  $Id: gpre.cpp,v 1.7 2001-12-29 11:41:22 tamlin Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.6 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: gpre.cpp,v 1.7 2001-12-29 11:41:22 tamlin Exp $
 //
 
 #define GPRE_MAIN
@@ -925,7 +925,7 @@ void CPR_abort()
 {
 
 	++fatals;
-	Firebird::status_longjmp_error::raise(1);
+	Firebird::status_exception::raise(1);
 }
 
 

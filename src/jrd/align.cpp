@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.3 2001-12-24 02:50:50 tamlin Exp $
+$Id: align.cpp,v 1.4 2001-12-29 11:41:22 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -156,5 +156,5 @@ static int check_double()
 
 static void handler()
 {
-	Firebird::status_longjmp_error::raise(1);
+	Firebird::status_exception::raise(1);
 }

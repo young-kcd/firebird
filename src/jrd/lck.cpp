@@ -61,7 +61,7 @@ extern "C" {
 #define getpid()	0
 #endif
 
-static void bug_lck(TEXT *);
+static void bug_lck(TEXT*);
 static void check_lock(LCK, USHORT);
 static BOOLEAN compatible(LCK, LCK, USHORT);
 static void enqueue(TDBB, LCK, USHORT, SSHORT);
@@ -485,12 +485,10 @@ SLONG LCK_get_owner_handle(TDBB tdbb, enum lck_t lock_type)
  *	return the right kind of lock owner given a lock type.
  *
  **************************************/
-	DBB dbb;
-	ATT attachment;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
-	attachment = tdbb->tdbb_attachment;
+	DBB dbb = tdbb->tdbb_database;
+	ATT attachment = tdbb->tdbb_attachment;
 	switch (lock_type) {
 	case LCK_database:
 	case LCK_bdb:
@@ -513,7 +511,7 @@ SLONG LCK_get_owner_handle(TDBB tdbb, enum lck_t lock_type)
 		return LCK_OWNER_HANDLE_ATT;
 	default:
 		bug_lck("Invalid lock type in LCK_get_owner_handle ()");
-		/* Not Reached - bug_lck longjmp's out */
+		/* Not Reached - bug_lck calls ERR_post */
 		return 0;
 	}
 }
@@ -924,7 +922,7 @@ void LCK_write_data(LCK lock, SLONG data)
 #endif
 
 
-static void bug_lck(TEXT * string)
+static void bug_lck(TEXT* string)
 {
 /**************************************
  *

@@ -61,12 +61,12 @@
 //
 // This is a debug option ONLY and SHOULD NEVER be enabled in a production build
 // because of its significant performance penality.
-static const bool ENABLE_FREQUENT_VERIFICATION = true;
+static const bool ENABLE_FREQUENT_VERIFICATION = false;
 
 
 
 // These next variables control the Red Zone debugging offered by the memory pool
-static const bool ENABLE_RED_ZONES     = true;	// set to false to disable the red zones
+static const bool ENABLE_RED_ZONES     = false;	// set to false to disable the red zones
 static const int  RED_ZONE_FILL        = 0xFD;
 static const int  BEFORE_RED_ZONE_SIZE = 3;		// The size of the red zone BEFORE the memory,
 												//  in ALLOCATION UNITS! Does NOT need to be set to
@@ -308,7 +308,7 @@ extern "C" {
 static void ERR_bugcheck(int number)
 {
 	// What to do?
-	Firebird::status_longjmp_error::raise(number);
+	Firebird::status_exception::raise(number);
 }
 }
 #endif
@@ -320,7 +320,7 @@ static void ERR_bugcheck(int number)
 
 static void private_ERR_bugcheck(int number)
 {
-	Firebird::status_longjmp_error::raise(number);
+	Firebird::status_exception::raise(number);
 }
 
 // TMN: FIXFIX

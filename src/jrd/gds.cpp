@@ -3868,7 +3868,7 @@ static void blr_error(CTL control, TEXT * string, TEXT * arg1)
 	blr_format(control, string, arg1);
 	offset = 0;
 	PRINT_LINE;
-	Firebird::status_longjmp_error::raise(-1);
+	Firebird::status_exception::raise(-1);
 }
 
 

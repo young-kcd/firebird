@@ -36,6 +36,7 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/enc_proto.h"
+#include "../include/fb_exception.h"
 
 #ifdef WIN_NT
 #include <io.h>
@@ -210,7 +211,7 @@ static struct tdba *gddba;
 #endif
 
 #define EXIT(code)	            {  tddba->exit_code = code;        \
-                                   LONGJMP(tddba->dba_env, 1);  }
+                                   Firebird::status_exception::raise(1);  }
 
 
 #ifdef NETWARE_386

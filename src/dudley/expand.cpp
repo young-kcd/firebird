@@ -217,7 +217,7 @@ static void expand_error(
  **************************************/
 
 	DDL_err(number, arg1, arg2, arg3, arg4, arg5);
-	Firebird::status_longjmp_error::raise(TRUE);
+	Firebird::status_exception::raise(TRUE);
 }
 
 

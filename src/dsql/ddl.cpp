@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.5 2001-12-24 02:50:48 tamlin Exp $
+ * $Id: ddl.cpp,v 1.6 2001-12-29 11:41:22 tamlin Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -255,7 +255,7 @@ void DDL_execute(REQ request)
 	}
 
 	if (s) {
-		Firebird::status_longjmp_error::raise(tdsql->tsql_status[1]);
+		Firebird::status_exception::raise(tdsql->tsql_status[1]);
 	}
 }
 
@@ -4708,7 +4708,7 @@ static void modify_relation( REQ request)
 		METD_drop_relation(request, relation_name);
 		request->req_relation = 0;
 		tdsql->tsql_setjmp = old_env;
-		Firebird::status_longjmp_error::raise(tdsql->tsql_status[1]);
+		Firebird::status_exception::raise(tdsql->tsql_status[1]);
 	}
 }
 

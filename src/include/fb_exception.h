@@ -29,19 +29,19 @@
 
 namespace Firebird {
 
-class status_longjmp_error : public std::exception
+class status_exception : public std::exception
 {
 public:
-	explicit status_longjmp_error(STATUS s)
+	explicit status_exception(STATUS s)
 	:	m_s(s)
 	{}
-	virtual ~status_longjmp_error() {}
+	virtual ~status_exception() {}
 	virtual const char* what() const
-		{ return "Firebird::status_longjmp_error"; }
+		{ return "Firebird::status_exception"; }
 	STATUS value() const { return m_s; }
 
 	// TMN: to be moved into its own source file!
-	static void raise(STATUS s) { throw status_longjmp_error(s); }
+	static void raise(STATUS s) { throw status_exception(s); }
 
 private:
 	STATUS m_s;

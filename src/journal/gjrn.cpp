@@ -206,7 +206,7 @@ int CLIB_ROUTINE main( int argc,
 		exit(FINI_OK);
 
 	}	// try
-	catch (const Firebird::status_longjmp_error& e) {
+	catch (const Firebird::status_exception& e) {
 		exit(e.value());
 	}
 }
@@ -233,7 +233,7 @@ void GJRN_abort( int number)
 	gjrn_msg_partial(0, 0, 0, 0, 0, 0);	/* msg 0: gbak:: */
 	GJRN_printf(1, NULL, NULL, NULL, NULL);	/* msg 1: exiting journal utility due to errors */
 
-	Firebird::status_longjmp_error::raise(FINI_ERROR);
+	Firebird::status_exception::raise(FINI_ERROR);
 }
 
 
@@ -441,7 +441,7 @@ static int start_disable( int argc, SCHAR ** argv)
 		if ((*argv)[0] != '-') {
 			if (database) {
 				GJRN_printf(12, database, NULL, NULL, NULL);	/* msg 12: database file name (%s) already specified */
-				Firebird::status_longjmp_error::raise(FINI_ERROR);
+				Firebird::status_exception::raise(FINI_ERROR);
 			}
 			database = *argv++;
 			continue;
@@ -540,7 +540,7 @@ static int start_dump( int argc, SCHAR ** argv)
 		if ((*argv)[0] != '-') {
 			if (database) {
 				GJRN_printf(12, database, NULL, NULL, NULL);	/* msg 12: database file name (%s) already specified */
-				Firebird::status_longjmp_error::raise(FINI_ERROR);
+				Firebird::status_exception::raise(FINI_ERROR);
 			}
 			database = *argv++;
 			continue;
@@ -575,7 +575,7 @@ static int start_dump( int argc, SCHAR ** argv)
 				old_file_size = atoi(*argv++);
 				if (old_file_size <= 0) {
 					GJRN_printf(16, NULL, NULL, NULL, NULL);	/* msg 16: online dump file size must be greater than zero */
-					Firebird::status_longjmp_error::raise(FINI_ERROR);
+					Firebird::status_exception::raise(FINI_ERROR);
 				}
 			}
 			else
@@ -699,7 +699,7 @@ static int start_dump( int argc, SCHAR ** argv)
 			if (handle)
 				gds__detach_database(status_vector, GDS_REF(handle));
 
-			Firebird::status_longjmp_error::raise(FINI_ERROR);
+			Firebird::status_exception::raise(FINI_ERROR);
 		}
 
 		if (handle)
@@ -759,7 +759,7 @@ static int start_enable( int argc, SCHAR ** argv)
 		if ((*argv)[0] != '-') {
 			if (database) {
 				GJRN_printf(12, database, NULL, NULL, NULL);	/* msg 12: database file name (%s) already specified */
-				Firebird::status_longjmp_error::raise(FINI_ERROR);
+				Firebird::status_exception::raise(FINI_ERROR);
 			}
 			database = *argv++;
 			continue;

@@ -865,7 +865,7 @@ extern struct tgbl *gdgbl;
 // I had funnies with this cast
 #define EXIT(code)	            {  tdgbl->exit_code = ((volatile int)code);          \
 												if (tdgbl->burp_env != NULL)        \
-											  		Firebird::status_longjmp_error::raise(1);  }
+											  		Firebird::status_exception::raise(1);  }
 #else
 
 #error Dont do this, it hurts!

@@ -288,8 +288,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, USHORT mask)
 		if (request) {
 			CMP_release(tdbb, (REQ) request);
 		}
-//		LONGJMP(*(JMP_BUF*)&tdbb->tdbb_setjmp, (int) tdbb->tdbb_status_vector[1]);
-		Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
 }
 
@@ -977,8 +976,7 @@ static BOOLEAN check_user_group(CONST TEXT*	acl,
 	catch (...) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		delete buffer;
-//		LONGJMP(*(JMP_BUF*)&tdbb->tdbb_setjmp, (int) tdbb->tdbb_status_vector[1]);
-		Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
 
 	return (n != number);
@@ -1129,8 +1127,7 @@ static SLONG compute_access(TDBB		tdbb,
 	catch (...) {
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		delete str_buffer;
-//		LONGJMP(*(JMP_BUF*)&tdbb->tdbb_setjmp, (int) tdbb->tdbb_status_vector[1]);
-		Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
 
 	return privileges;

@@ -110,7 +110,7 @@ void ERRD_error( int code, const char* text)
 	sprintf(s, "** DSQL error: %s **\n", text);
 	TRACE(s);
 
-	Firebird::status_longjmp_error::raise(code);
+	Firebird::status_exception::raise(code);
 }
 
 
@@ -212,7 +212,7 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
 }
 
 
-void ERRD_post( STATUS status, ...)
+void ERRD_post(STATUS status, ...)
 {
 /**************************************
  *
@@ -222,15 +222,17 @@ void ERRD_post( STATUS status, ...)
  *
  * Functional description
  *	Post an error, copying any potentially
- *	transient data before we do the longjmp.
+ *	transient data before we punt.
  *
  **************************************/
-	STATUS *status_vector;
-	STATUS tmp_status[ISC_STATUS_LENGTH], warning_status[ISC_STATUS_LENGTH];
-	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
-	int warning_count = 0, warning_indx = 0;
 
-	status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
+	STATUS tmp_status[ISC_STATUS_LENGTH];
+	STATUS warning_status[ISC_STATUS_LENGTH];
+	int tmp_status_len = 0;
+	int status_len = 0;
+	int warning_indx = 0;
+
+	STATUS*status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
 
 /* stuff the status into temp buffer */
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
@@ -242,7 +244,8 @@ void ERRD_post( STATUS status, ...)
 
 	if (status_vector[0] != gds_arg_gds ||
 		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != gds_arg_warning)) {
+		 status_vector[2] != gds_arg_warning))
+	{
 		/* this is a blank status vector */
 		status_vector[0] = gds_arg_gds;
 		status_vector[1] = gds_dsql_error;
@@ -253,27 +256,36 @@ void ERRD_post( STATUS status, ...)
 	if (status_len)
 		--status_len;
 
-/* check for duplicated error code */
-	for (i = 0; i < ISC_STATUS_LENGTH; i++) {
-		if (status_vector[i] == gds_arg_end && i == status_len)
+	// check for duplicated error code
+	int i;
+	for (i = 0; i < ISC_STATUS_LENGTH; i++)
+	{
+		if (status_vector[i] == gds_arg_end && i == status_len) {
 			break;				/* end of argument list */
+		}
 
-		if (i && i == warning_indx)
+		if (i && i == warning_indx) {
 			break;				/* vector has no more errors */
+		}
 
 		if (status_vector[i] == tmp_status[1] && i &&
 			status_vector[i - 1] != gds_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 			(memcmp(&status_vector[i], &tmp_status[1],
-					sizeof(STATUS) * (tmp_status_len - 2)) == 0)) {
+					sizeof(STATUS) * (tmp_status_len - 2)) == 0))
+		{
 			/* duplicate found */
 			ERRD_punt();
 		}
 	}
 
-/* if the status_vector has only warnings then adjust err_status_len */
-	if ((err_status_len = i) == 2 && warning_indx)
+	// if the status_vector has only warnings then adjust err_status_len
+	int err_status_len = i;
+	if (err_status_len == 2 && warning_indx) {
 		err_status_len = 0;
+	}
+
+	int warning_count = 0;
 
 	if (warning_indx) {
 		/* copy current warning(s) to a temp buffer */
@@ -283,14 +295,17 @@ void ERRD_post( STATUS status, ...)
 		PARSE_STATUS(warning_status, warning_count, warning_indx);
 	}
 
-/* add the status into a real buffer right in between last error
-   and first warning */
+	// add the status into a real buffer right in between last
+	// error and first warning
 
-	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
+	i = err_status_len + tmp_status_len;
+	if (i < ISC_STATUS_LENGTH)
+	{
 		MOVE_FASTER(tmp_status, &status_vector[err_status_len],
 					sizeof(STATUS) * tmp_status_len);
 		/* copy current warning(s) to the status_vector */
-		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH) {
+		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
+		{
 			MOVE_FASTER(warning_status, &status_vector[i - 1],
 						sizeof(STATUS) * warning_count);
 
@@ -323,7 +338,7 @@ void ERRD_punt(void)
 
 /* Give up whatever we were doing and return to the user. */
 
-	Firebird::status_longjmp_error::raise(tdsql->tsql_status[1]);
+	Firebird::status_exception::raise(tdsql->tsql_status[1]);
 }
 
 

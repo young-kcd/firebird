@@ -1767,7 +1767,7 @@ static void report_walw_bug_or_error(
 		ib_fprintf(DEBUG_FD, "WAL writer encountered error, code=%d\n", code);
 	}
 
-	Firebird::status_longjmp_error::raise(status_vector[1]);
+	Firebird::status_exception::raise(status_vector[1]);
 }
 
 

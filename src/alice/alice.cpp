@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.9 2001-12-28 05:14:41 tamlin Exp $
+//	$Id: alice.cpp,v 1.10 2001-12-29 11:41:21 tamlin Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -90,7 +90,7 @@ struct tgbl *gdgbl;
 #define	ALICE_MSG_FAC	3
 
 #define EXIT(code)	{  tdgbl->exit_code = (code);	\
-						Firebird::status_longjmp_error::raise(1);  }
+						Firebird::status_exception::raise(1);  }
 
 #if defined (WIN95) && !defined (GUI_TOOLS)
 static bool fAnsiCP = false;

@@ -522,7 +522,7 @@ void DLL_EXPORT ERR_punt(void)
 
 #pragma FB_COMPILER_MESSAGE("FIXME! C functions can not throw! FIXME!")
 
-	Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
+	Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 }
 #endif
 
@@ -596,7 +596,7 @@ void DLL_EXPORT ERR_warning(STATUS status, ...)
  *
  * Functional description
  *	Write an error out to the status vector but
- *	don't longjmp back to the user.  This allows
+ *	don't throw an exception.  This allows
  *	sending a warning message back to the user
  *	without stopping execution of a request.  Note
  *	that subsequent errors can supersede this one.

@@ -227,11 +227,8 @@ static struct tdba *gddba;
 #define RESTORE_THREAD_DATA
 #endif
 
-//#define EXIT(code)	            {  tddba->exit_code = code;        \
-//                                   LONGJMP(*reinterpret_cast<jmp_buf*>(&tddba->dba_env), 1);  }
-
 #define EXIT(code)	            {  tddba->exit_code = code;        \
-									Firebird::status_longjmp_error::raise(0);  }
+									Firebird::status_exception::raise(0);  }
 
 #define GSTAT_MSG_FAC	21
 

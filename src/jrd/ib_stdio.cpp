@@ -87,7 +87,7 @@
  */
 
 /*
-$Id: ib_stdio.cpp,v 1.3 2001-12-24 02:50:51 tamlin Exp $
+$Id: ib_stdio.cpp,v 1.4 2001-12-29 11:41:23 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -371,8 +371,8 @@ int ib__sflush(register IB_FILE * fp)
 	n = fp->_p - p;				/* write this much */
 
 	/*
-	 * Set these immediately to avoid problems with longjmp and to allow
-	 * exchange buffering (via setvbuf) in user write function.
+	 * Set these immediately to allow exchange buffering
+	 * (via setvbuf) in user write function.
 	 */
 	fp->_p = p;
 	fp->_w = t & (IB__SLBF | IB__SNBF) ? 0 : fp->_bf._size;
@@ -4012,7 +4012,7 @@ int ib__swbuf(register int c, register IB_FILE * fp)
 	register int n;
 
 	/*
-	 * In case we cannot write, or longjmp takes us out early,
+	 * In case we cannot write, or an exception takes us out early,
 	 * make sure _w is 0 (if fully- or un-buffered) or -_bf._size
 	 * (if line buffered) so that we will get called again.
 	 * If we did not do this, a sufficient number of ib_putc()

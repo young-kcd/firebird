@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: exe.cpp,v 1.5 2001-12-28 06:31:38 tamlin Exp $
+$Id: exe.cpp,v 1.6 2001-12-29 11:41:22 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -116,7 +116,7 @@ static NOD send_msg(TDBB, register NOD);
 static void set_error(TDBB, XCP);
 static NOD stall(TDBB, register NOD);
 static NOD store(TDBB, register NOD, SSHORT);
-static BOOLEAN test_error(TDBB, XCP);
+static BOOLEAN test_error(TDBB, const XCP);
 static void trigger_failure(TDBB, REQ);
 static void validate(TDBB, NOD);
 
@@ -651,7 +651,7 @@ void EXE_receive(TDBB		tdbb,
 		transaction->tra_save_point = request->req_proc_sav_point;
 		request->req_proc_sav_point = save_sav_point;
 		release_proc_save_points(request);
-		Firebird::status_longjmp_error::raise(-1);
+		Firebird::status_exception::raise(-1);
 	}
 }
 
@@ -1171,7 +1171,7 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 
 	}	// try
 	catch (...) {
-		Firebird::status_longjmp_error::raise(-1);
+		Firebird::status_exception::raise(-1);
 	}
 
 /* if the stream is navigational, it is now positioned on a crack */
@@ -1336,7 +1336,7 @@ static void execute_procedure(TDBB tdbb, NOD node)
 		proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
 		proc_request->req_timestamp = 0;
 		delete temp_buffer;
-		Firebird::status_longjmp_error::raise(-1);
+		Firebird::status_exception::raise(-1);
 	}
 
 	tdbb->tdbb_default = old_pool;
@@ -1424,7 +1424,7 @@ static REQ execute_triggers(TDBB	tdbb,
 			release_triggers(tdbb, vector);
 		}
 		if (!trigger) {
-			Firebird::status_longjmp_error::raise(-1);
+			Firebird::status_exception::raise(-1);
 		}
 		return trigger;
 	}
@@ -1636,7 +1636,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
     }													\
 	catch (std::exception&) {							\
 		if (dbb->dbb_flags & DBB_bugcheck) {				\
-			Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);	\
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);	\
 		}																\
     	BUGCHECK (290); /* msg 290 error during savepoint backout */	\
 	}
@@ -1663,15 +1663,16 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 	VOLATILE NOD node = in_node;
 
-/* Catch errors so we can unwind cleanly */
+	// Catch errors so we can unwind cleanly
 
 	SSHORT error_pending = FALSE;
 
 	try {
 
-/* Execute stuff until we drop */
+	// Execute stuff until we drop
 
-	while (node && !(request->req_flags & req_stall)) {
+	while (node && !(request->req_flags & req_stall))
+	{
 #ifdef MULTI_THREAD
 
 		if (request->req_operation == req::req_evaluate &&
@@ -1829,8 +1830,9 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 					/* If an error is still pending when the savepoint is 
 					   supposed to end, then the application didn't handle the
 					   error and the savepoint should be undone. */
-					if (error_pending)
+					if (error_pending) {
 						++transaction->tra_save_point->sav_verb_count;
+					}
 					VERB_CLEANUP;
 				}
 
@@ -1874,9 +1876,10 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 			case req::req_unwind:
 				{
-					VOLATILE NOD handlers, *ptr, *end;
+					VOLATILE NOD *ptr, *end;
 
-					if (request->req_flags & req_leave) {
+					if (request->req_flags & req_leave)
+					{
 			/** Although the req_operation is set to req_unwind
 			    it is not an error case if req_leave bit is set.
 			    req_leave bit indicates that we hit an EXIT 
@@ -1886,7 +1889,8 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 						node = node->nod_parent;
 						break;
 					}
-					if (transaction != dbb->dbb_sys_trans) {
+					if (transaction != dbb->dbb_sys_trans)
+					{
 						MOVE_FAST((SCHAR *) request + node->nod_impure,
 								  &count, sizeof(SLONG));
 						/* Since there occurred an error (req_unwind), undo all savepoints
@@ -1899,18 +1903,21 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 							VERB_CLEANUP;
 						}
 					}
-					if ( (handlers = node->nod_arg[e_blk_handlers]) ) {
+
+					VOLATILE NOD handlers = node->nod_arg[e_blk_handlers];
+					if (handlers)
+					{
 						ULONG prev_req_error_handler;
 
 						node = node->nod_parent;
 						for (ptr = handlers->nod_arg,
 							 end = ptr + handlers->nod_count; ptr < end;
 							 ptr++)
-								if (test_error
-									(tdbb,
-									 reinterpret_cast <
-									 xcp *
-									 >((*ptr)->nod_arg[e_err_conditions]))) {
+						{
+							const XCP pXcp =
+								reinterpret_cast<XCP>((*ptr)->nod_arg[e_err_conditions]);
+							if (test_error(tdbb, pXcp))
+							{
 								request->req_operation = req::req_evaluate;
 								node = (*ptr)->nod_arg[e_err_action];
 								error_pending = FALSE;
@@ -1949,19 +1956,23 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 								tdbb->tdbb_request = request;
 								/* The error is dealt with by the application, cleanup
 								   this block's savepoint. */
-								if (transaction != dbb->dbb_sys_trans) {
-									for (save_point =
-										 transaction->tra_save_point;
-										 save_point
-										 && count <= save_point->sav_number;
-										 save_point =
-										 transaction->tra_save_point)
-							   VERB_CLEANUP;
+								if (transaction != dbb->dbb_sys_trans)
+								{
+									for (save_point = transaction->tra_save_point;
+										 save_point &&
+											 count <= save_point->sav_number;
+										 save_point = transaction->tra_save_point)
+									{
+										VERB_CLEANUP;
+									}
 								}
 							}
+						}
 					}
 					else
+					{
 						node = node->nod_parent;
+					}
 
 					/* If the application didn't have an error handler, then
 					   the error will still be pending.  Undo the block by
@@ -2307,13 +2318,15 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 		default:
 			BUGCHECK(168);		/* msg 168 looper: action not yet implemented */
 		}
+
 #ifdef HSDEBUGSTACK
 		TestStack();
 #endif
 #if defined(DEBUG_GDS_ALLOC) && defined(PROD_BUILD)
 		memory_count++;
-		if ((memory_count % memory_debug) == 0)
+		if ((memory_count % memory_debug) == 0) {
 			ALL_check_memory();
+		}
 #endif
 	}
 
@@ -2324,7 +2337,8 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 #ifdef SCROLLABLE_CURSORS
 		&& !(request->req_flags & req_async_processing)
 #endif
-		) {
+		)
+	{
 		request->req_flags &= ~(req_active | req_reserved);
 		request->req_timestamp = 0;
 		release_blobs(tdbb, request);
@@ -2335,9 +2349,9 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	tdbb->tdbb_transaction = (tdbb->tdbb_request = old_request) ?
 		old_request->req_transaction : NULL;
 
-/* in the case of a pending error condition (one which did not
-   result in a exception to the top of looper), we need to delete
-   the last savepoint */
+	// in the case of a pending error condition (one which did not
+	// result in a exception to the top of looper), we need to
+	// delete the last savepoint
 
 	if (error_pending) {
 		if (transaction != dbb->dbb_sys_trans) {
@@ -2358,9 +2372,9 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 		ERR_punt();
 	}
 
-/* if the request was aborted, assume that we have already
-   longjmp'ed to the top of looper, and therefore that the last 
-   savepoint has already been deleted */
+		// if the request was aborted, assume that we have already
+		// longjmp'ed to the top of looper, and therefore that the
+		// last savepoint has already been deleted
 
 		if (request->req_flags & req_abort) {
 			ERR_post(gds_req_sync, 0);
@@ -2370,7 +2384,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	catch (...) {
 		/* If the database is already bug-checked, then get out. */
 		if (dbb->dbb_flags & DBB_bugcheck) {
-			Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 		}
 
 #ifdef GATEWAY
@@ -2612,7 +2626,7 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 
 		}	// try
 		catch (...) {
-			Firebird::status_longjmp_error::raise(-1);
+			Firebird::status_exception::raise(-1);
 		}
 
 		/* if the stream is navigational, we must position the stream on the new 
@@ -3403,30 +3417,25 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
  *	Execute a STORE statement.
  *
  **************************************/
-	DBB dbb;
-	register REQ request;
-	STA impure;
+
 	REQ trigger;
 	FMT format;
-	SSHORT stream, n;
+	SSHORT n;
 	USHORT length;
 	REC record;
-	RPB *rpb;
 	DSC *desc;
-	REL relation;
-	TRA transaction;
 	register UCHAR *p;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	BLKCHK(node, type_nod);
 
-	request = tdbb->tdbb_request;
-	transaction = request->req_transaction;
-	impure = (STA) ((SCHAR *) request + node->nod_impure);
-	stream = (USHORT) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
-	rpb = &request->req_rpb[stream];
-	relation = rpb->rpb_relation;
+	REQ    request     = tdbb->tdbb_request;
+	TRA    transaction = request->req_transaction;
+	STA    impure      = (STA) ((SCHAR *) request + node->nod_impure);
+	SSHORT stream      = (USHORT) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
+	RPB*   rpb         = &request->req_rpb[stream];
+	REL    relation    = rpb->rpb_relation;
 
 	switch (request->req_operation) {
 	case req::req_evaluate:
@@ -3448,71 +3457,83 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 			(which_trig != POST_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_pre_store,
 										0, record)))
-				trigger_failure(tdbb, trigger);
+		{
+			trigger_failure(tdbb, trigger);
+		}
 #endif
 
-		if (node->nod_arg[e_sto_validate])
+		if (node->nod_arg[e_sto_validate]) {
 			validate(tdbb, node->nod_arg[e_sto_validate]);
+		}
 
 		/* For optimum on-disk record compression, zero all unassigned
 		   fields. In addition, zero the tail of assigned varying fields
 		   so that previous remnants don't defeat compression efficiency. */
 
-		for (n = 0; n < format->fmt_count; n++) {
+		for (n = 0; n < format->fmt_count; n++)
+		{
 			desc = &format->fmt_desc[n];
-			if (!desc->dsc_address)
+			if (!desc->dsc_address) {
 				continue;
-			p = record->rec_data + (SLONG) desc->dsc_address;
-			if (TEST_NULL(record, n)) {
-				if ( (length = desc->dsc_length) )
-					do
-						*p++ = 0;
-					while (--length);
 			}
-			else if (desc->dsc_dtype == dtype_varying) {
-				VARY *vary;
-
-				vary = (VARY *) p;
-				if ((length = desc->dsc_length - sizeof(USHORT)) >
-					vary->vary_length) {
+			p = record->rec_data + (SLONG) desc->dsc_address;
+			if (TEST_NULL(record, n))
+			{
+				length = desc->dsc_length;
+				if (length) {
+					do {
+						*p++ = 0;
+					} while (--length);
+				}
+			}
+			else if (desc->dsc_dtype == dtype_varying)
+			{
+				VARY* vary = (VARY *) p;
+				length = desc->dsc_length - sizeof(USHORT);
+				if (length > vary->vary_length)
+				{
 					p = reinterpret_cast<UCHAR*>(vary->vary_string + vary->vary_length);
 					length -= vary->vary_length;
-					do
+					do {
 						*p++ = 0;
-					while (--length);
+					} while (--length);
 				}
 			}
 		}
 
 #ifndef GATEWAY
-		if (relation->rel_file)
+		if (relation->rel_file) {
 			EXT_store(rpb, reinterpret_cast < int *>(transaction));
-		else if (!relation->rel_view_rse) {
+		}
+		else if (!relation->rel_view_rse)
+		{
 			SSHORT bad_index;
 			REL bad_relation;
-			IDX_E error_code;
 
 			VIO_store(tdbb, rpb, transaction);
-			if ((error_code = IDX_store(tdbb,
+			IDX_E error_code = IDX_store(tdbb,
 										rpb,
 										transaction,
 										&bad_relation,
-										reinterpret_cast <
-										USHORT *
-										>(&bad_index))))
-					ERR_duplicate_error(error_code, bad_relation, bad_index);
+										reinterpret_cast<USHORT*>(&bad_index));
+			if (error_code) {
+				ERR_duplicate_error(error_code, bad_relation, bad_index);
+			}
 		}
 
 		if (relation->rel_post_store &&
 			(which_trig != PRE_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_post_store,
 										0, record)))
-				trigger_failure(tdbb, trigger);
+		{
+			trigger_failure(tdbb, trigger);
+		}
 
 		request->req_records_inserted++;
 
-		if (transaction != dbb->dbb_sys_trans)
+		if (transaction != dbb->dbb_sys_trans) {
 			--transaction->tra_save_point->sav_verb_count;
+		}
 #else
 		VIO_store(tdbb, rpb, transaction, node->nod_arg[e_sto_sql]);
 #endif
@@ -3543,10 +3564,12 @@ static NOD store(TDBB tdbb, register NOD node, SSHORT which_trig)
 
 #ifndef GATEWAY
 	p = record->rec_data;
-	if ( (n = (format->fmt_count + 7) >> 3) )
-		do
+	n = (format->fmt_count + 7) >> 3;
+	if (n) {
+		do {
 			*p++ = 0xff;
-		while (--n);
+		} while (--n);
+	}
 #else
 	EXE_set_fields_null(tdbb, record, format);
 #endif
@@ -3596,7 +3619,7 @@ static NOD stream(TDBB tdbb, register NOD node)
 #endif
 
 
-static BOOLEAN test_error(TDBB tdbb, XCP conditions)
+static BOOLEAN test_error(TDBB tdbb, const XCP conditions)
 {
 /**************************************
  *
@@ -3608,15 +3631,15 @@ static BOOLEAN test_error(TDBB tdbb, XCP conditions)
  *	Test for match of current state with list of error conditions.
  *
  **************************************/
-	SSHORT i, sqlcode;
-	STATUS *status_vector;
 
 	SET_TDBB(tdbb);
-	status_vector = tdbb->tdbb_status_vector;
-	sqlcode = gds__sqlcode(status_vector);
+	STATUS* status_vector = tdbb->tdbb_status_vector;
+	SSHORT  sqlcode       = gds__sqlcode(status_vector);
 
-	for (i = 0; i < conditions->xcp_count; i++) {
-		switch (conditions->xcp_rpt[i].xcp_type) {
+	for (SSHORT i = 0; i < conditions->xcp_count; ++i)
+	{
+		switch (conditions->xcp_rpt[i].xcp_type)
+		{
 		case xcp_sql_code:
 			if (sqlcode == conditions->xcp_rpt[i].xcp_code) {
 				status_vector[0] = 0;
@@ -3635,7 +3658,8 @@ static BOOLEAN test_error(TDBB tdbb, XCP conditions)
 
 		case xcp_xcp_code:
 			if ((status_vector[1] == gds_except) &&
-				(status_vector[3] == conditions->xcp_rpt[i].xcp_code)) {
+				(status_vector[3] == conditions->xcp_rpt[i].xcp_code))
+			{
 				status_vector[0] = 0;
 				status_vector[1] = 0;
 				return TRUE;
@@ -3666,37 +3690,47 @@ static void trigger_failure(TDBB tdbb, REQ trigger)
  *	Trigger failed, report error.
  *
  **************************************/
-	TEXT *msg;
-	STATUS code;
 
 	SET_TDBB(tdbb);
 	EXE_unwind(tdbb, trigger);
+
 	trigger->req_attachment = NULL;
 	trigger->req_flags &= ~req_in_use;
 	trigger->req_timestamp = 0;
-	if (trigger->req_flags & req_leave) {
+
+	if (trigger->req_flags & req_leave)
+	{
 		trigger->req_flags &= ~req_leave;
+		TEXT* msg;
 		if (trigger->req_trg_name &&
-			(msg =
-			 MET_trigger_msg(tdbb, trigger->req_trg_name,
-							 trigger->req_label))) {
-			if (trigger->req_flags & req_sys_trigger) {
-				code = PAR_symbol_to_gdscode(msg);
+			(msg = MET_trigger_msg(tdbb,
+									trigger->req_trg_name,
+									trigger->req_label)))
+		{
+			if (trigger->req_flags & req_sys_trigger)
+			{
+				STATUS code = PAR_symbol_to_gdscode(msg);
 				if (code)
+				{
 					ERR_post(gds_integ_fail,
 							 gds_arg_number, (SLONG) trigger->req_label,
 							 gds_arg_gds, code, 0);
+				}
 			}
 			ERR_post(gds_integ_fail,
 					 gds_arg_number, (SLONG) trigger->req_label,
 					 gds_arg_gds, gds_random, gds_arg_string, msg, 0);
 		}
 		else
+		{
 			ERR_post(gds_integ_fail, gds_arg_number,
 					 (SLONG) trigger->req_label, 0);
+		}
 	}
 	else
+	{
 		ERR_punt();
+	}
 }
 #endif
 
@@ -3713,10 +3747,11 @@ static void validate(TDBB tdbb, NOD list)
  *	Execute a list of validation expressions.
  *
  **************************************/
-	NOD *ptr1, *ptr2;
 
 	SET_TDBB(tdbb);
 	BLKCHK(list, type_nod);
+
+	NOD *ptr1, *ptr2;
 
 	for (ptr1 = list->nod_arg, ptr2 = ptr1 + list->nod_count;
 		 ptr1 < ptr2; ptr1++)

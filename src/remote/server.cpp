@@ -333,7 +333,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 #ifdef DEV_BUILD
 #ifdef DEBUG
 		if ((request_count++ % 4) == 0) {
-			Firebird::status_longjmp_error::raise(gds__virmemexh);
+			Firebird::status_exception::raise(gds__virmemexh);
 		}
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
@@ -357,7 +357,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 #ifdef DEV_BUILD
 #ifdef DEBUG
 			if ((request_count % 5) == 0) {
-				Firebird::status_longjmp_error::raise(gds__virmemexh);
+				Firebird::status_exception::raise(gds__virmemexh);
 			}
 #endif /* DEBUG */
 #endif /* DEV_BUILD */

@@ -1442,7 +1442,7 @@ static void error_post(STATUS status, ...)
 
 	// Give up whatever we were doing and return to the user.
 
-	Firebird::status_longjmp_error::raise(UDSQL_error->dsql_status[1]);
+	Firebird::status_exception::raise(UDSQL_error->dsql_status[1]);
 }
 
 

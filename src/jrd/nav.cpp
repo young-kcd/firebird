@@ -1154,7 +1154,7 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
 	catch (...) {
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		Firebird::status_longjmp_error::raise(-1);
+		Firebird::status_exception::raise(-1);
 	}
 }
 #endif
@@ -1350,7 +1350,7 @@ static BOOLEAN find_record(
 	catch (...) {
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		Firebird::status_longjmp_error::raise(-1);
+		Firebird::status_exception::raise(-1);
 	}
 }
 #endif
@@ -1710,7 +1710,7 @@ static BOOLEAN get_record(
 		tdbb->tdbb_attachment->att_flags |=
 			(old_att_flags & ATT_no_cleanup);
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		Firebird::status_longjmp_error::raise(-1);
+		Firebird::status_exception::raise(-1);
 	}
 
 	return result;

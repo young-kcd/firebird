@@ -95,7 +95,7 @@ void ERRQ_database_error( DBB dbb, STATUS * status_vector)
 		ERRQ_msg_put(458, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg458 ** connection to database %s lost ** */
 
 	if (QLI_env) {
-		Firebird::status_longjmp_error::raise(-1);
+		Firebird::status_exception::raise(-1);
 	}
 }
 
@@ -122,7 +122,7 @@ void ERRQ_error(
 	ERRQ_error_format(number, arg1, arg2, arg3, arg4, arg5);
 
 	if (QLI_env)
-		Firebird::status_longjmp_error::raise(-1);
+		Firebird::status_exception::raise(-1);
 	else {
 		ERRQ_pending();
 		ERRQ_exit(FINI_ERROR);

@@ -522,7 +522,7 @@ static USHORT process_statement( USHORT flush_flag)
 	return FALSE;
 
 	}	// try
-	catch (const Firebird::status_longjmp_error& e) {
+	catch (const Firebird::status_exception& e) {
 		GEN_release();
 		return e.value();
 	}
