@@ -44,9 +44,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	ISC_STATUS_ARRAY status;
 	isc_svc_handle svc_handle = NULL;
 	char svc_name[256];
-	char *sptr, sendbuf[512];
-	char respbuf[256], *p = respbuf;
-	unsigned short path_length;
 
 	if (argc != 2 && argc != 1) {
 		printf("Usage %s \n      %s filename\n");
@@ -59,7 +56,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	else
 		strcpy(fname, argv[1]);
 
-	sptr = sendbuf;
 	strcpy(buffer, fname);
 	printf("Filename to dump pool info = %s \n", buffer);
 	sprintf(svc_name, "localhost:anonymous");
@@ -68,14 +64,19 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		return 0;
 	}
 
-	path_length = strlen(buffer);
+	const unsigned short path_length = strlen(buffer);
+
+	char sendbuf[512];
+	char* sptr = sendbuf;
 	*sptr = isc_info_svc_dump_pool_info;
 	++sptr;
 	add_word(sptr, path_length);
 	strcpy(sptr, buffer);
 	sptr += path_length;
+
+	char respbuf[256];
 	if (isc_service_query
-		(status, &svc_handle, NULL, 0, NULL, sptr - sendbuf, sendbuf, 256,
+		(status, &svc_handle, NULL, 0, NULL, sptr - sendbuf, sendbuf, sizeof(respbuf),
 		 respbuf))
 	{
 		printf("Failed to query service\n");
