@@ -22,6 +22,7 @@
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ *	02 Nov 2001: Mike Nordell - Synch with FB1 changes.
  */
 
 #ifdef _MSC_VER
@@ -82,6 +83,33 @@ static BOOLEAN nt_error(TEXT *, FIL, STATUS, STATUS *);
 
 static USHORT ostype;
 
+#ifdef SUPERSERVER_V2
+static const DWORD g_dwShareFlags = 0;	/* no sharing */
+static const DWORD g_dwExtraFlags = FILE_FLAG_OVERLAPPED |
+									FILE_FLAG_NO_BUFFERING |
+									FILE_FLAG_RANDOM_ACCESS;
+#elif SUPERSERVER
+/* TMN: Disable file sharing */
+static const DWORD g_dwShareFlags = 0;	/* no sharing */
+static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
+#else
+static const DWORD g_dwShareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
+static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
+#endif
+
+
+/* A little helper function to clean up closing of file handles. */
+static bool MaybeCloseFile(SLONG* pFile)
+{
+	if (pFile && (HANDLE)*pFile != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle((HANDLE)*pFile);
+		*pFile = (SLONG) INVALID_HANDLE_VALUE;
+		return true;
+	}
+	return false;
+}
+
 
 
 /**************************************
@@ -130,21 +158,16 @@ void PIO_close(FIL main_file)
 
 	for (file = main_file; file; file = file->fil_next)
 	{
-		if ((HANDLE) file->fil_desc != INVALID_HANDLE_VALUE)
+		if (MaybeCloseFile(&file->fil_desc) ||
+			MaybeCloseFile(&file->fil_force_write_desc))
 		{
-			CloseHandle((HANDLE) file->fil_desc);
-			file->fil_desc = (SLONG) INVALID_HANDLE_VALUE;
-			if ((HANDLE) file->fil_force_write_desc != INVALID_HANDLE_VALUE)
-			{
-				CloseHandle((HANDLE) file->fil_force_write_desc);
-			}
-			file->fil_force_write_desc = (SLONG) INVALID_HANDLE_VALUE;
 #ifdef SUPERSERVER_V2
 			for (i = 0; i < MAX_FILE_IO; i++)
 			{
 				if (file->fil_io_events[i])
 				{
 					CloseHandle((HANDLE) file->fil_io_events[i]);
+					file->fil_io_events[i] = 0;
 				}
 			}
 #endif
@@ -188,17 +211,10 @@ FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
 	TEXT workspace[MAXPATHLEN];
 	TEXT *file_name;
 
-#ifdef SUPERSERVER_V2
-	const DWORD dwShareFlags = 0;	/* no sharing */
-	const DWORD dwExtraFlags = FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING;
-#else
-	const DWORD dwShareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
-	const DWORD dwExtraFlags = 0;
-#endif
-
 	file_name = string;
 
-	if (length) {
+	if (length)
+	{
 		MOVE_FAST(file_name, workspace, length);
 		workspace[length] = 0;
 		file_name = workspace;
@@ -206,13 +222,15 @@ FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
 
 	desc = CreateFile(file_name,
 					  GENERIC_READ | GENERIC_WRITE,
-					  dwShareFlags,
+					  g_dwShareFlags,
 					  NULL,
 					  (overwrite ? CREATE_ALWAYS : CREATE_NEW),
 					  FILE_ATTRIBUTE_NORMAL |
-					  FILE_FLAG_RANDOM_ACCESS | dwExtraFlags, 0);
+					  g_dwExtraFlags,
+					  0);
 
-	if (desc == INVALID_HANDLE_VALUE) {
+	if (desc == INVALID_HANDLE_VALUE)
+	{
 		ERR_post(isc_io_error,
 				 gds_arg_string, "CreateFile (create)",
 				 gds_arg_cstring,
@@ -264,12 +282,17 @@ void PIO_flush(FIL main_file)
  **************************************/
 	FIL file;
 
-	for (file = main_file; file; file = file->fil_next) {
+	for (file = main_file; file; file = file->fil_next)
+	{
 		if (ostype == OS_CHICAGO)
+		{
 			THD_MUTEX_LOCK(file->fil_mutex);
+		}
 		FlushFileBuffers((HANDLE) file->fil_desc);
 		if (ostype == OS_CHICAGO)
+		{
 			THD_MUTEX_UNLOCK(file->fil_mutex);
+		}
 	}
 }
 
@@ -288,26 +311,25 @@ void PIO_force_write(FIL file, USHORT flag)
  **************************************/
 	HANDLE desc;
 
-#ifdef SUPERSERVER_V2
-	const DWORD dwShareFlags = 0;	/* no sharing */
-	const DWORD dwExtraFlags = FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING;
-#else
-	const DWORD dwShareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
-	const DWORD dwExtraFlags = 0;
-#endif
-
-	if (flag) {
-		if (!(file->fil_flags & FIL_force_write_init)) {
+	if (flag)
+	{
+		if (!(file->fil_flags & FIL_force_write_init))
+		{
+			/* TMN: Close the existing handle since we're now opening */
+			/* the files for exclusive access */
+			MaybeCloseFile(&file->fil_desc);
 			desc = CreateFile(file->fil_string,
 							  GENERIC_READ | GENERIC_WRITE,
-							  dwShareFlags,
+							  g_dwShareFlags,
 							  NULL,
 							  OPEN_EXISTING,
 							  FILE_ATTRIBUTE_NORMAL |
 							  FILE_FLAG_WRITE_THROUGH |
-							  FILE_FLAG_RANDOM_ACCESS | dwExtraFlags, 0);
+							  g_dwExtraFlags,
+							  0);
 
-			if (desc == INVALID_HANDLE_VALUE) {
+			if (desc == INVALID_HANDLE_VALUE)
+			{
 				ERR_post(isc_io_error,
 						 gds_arg_string,
 						 "CreateFile (force write)",
@@ -315,15 +337,18 @@ void PIO_force_write(FIL file, USHORT flag)
 						 file->fil_length,
 						 ERR_string(file->fil_string, file->fil_length),
 						 isc_arg_gds, isc_io_access_err,
-						 gds_arg_win32, GetLastError(), 0);
+						 gds_arg_win32,
+						 GetLastError(),
+						 0);
 			}
 
 			/* TMN: Take note! Assumes sizeof(long) == sizeof(void*) ! */
-			file->fil_force_write_desc = reinterpret_cast < long >(desc);
+			file->fil_force_write_desc = reinterpret_cast<SLONG>(desc);
 		}
 		file->fil_flags |= (FIL_force_write | FIL_force_write_init);
 	}
-	else {
+	else
+	{
 		file->fil_flags &= ~FIL_force_write;
 	}
 }
@@ -351,15 +376,18 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 	desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
 
-	if (ostype == OS_CHICAGO) {
+	if (ostype == OS_CHICAGO)
+	{
 		THD_MUTEX_LOCK(file->fil_mutex);
-		if (SetFilePointer(desc, 0, NULL, FILE_BEGIN) == -1) {
+		if (SetFilePointer(desc, 0, NULL, FILE_BEGIN) == -1)
+		{
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 			nt_error("SetFilePointer", file, isc_io_read_err, 0);
 		}
 		overlapped_ptr = NULL;
 	}
-	else {
+	else
+	{
 		memset(&overlapped, 0, sizeof(OVERLAPPED));
 		overlapped_ptr = &overlapped;
 #ifdef SUPERSERVER_V2
@@ -370,14 +398,21 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 	}
 
 #ifdef ISC_DATABASE_ENCRYPTION
-	if (dbb->dbb_encrypt_key) {
+	if (dbb->dbb_encrypt_key)
+	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		if (!ReadFile
-			(desc, spare_buffer, length, &actual_length, overlapped_ptr)
-			|| actual_length != length) {
+		if (!ReadFile(	desc,
+						spare_buffer,
+						length,
+						&actual_length,
+						overlapped_ptr)
+				|| actual_length != (DWORD)length)
+		{
 			if (ostype == OS_CHICAGO)
+			{
 				THD_MUTEX_UNLOCK(file->fil_mutex);
+			}
 			nt_error("ReadFile", file, isc_io_read_err, 0);
 		}
 
@@ -387,23 +422,31 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 	else
 #endif
 	{
-		if (ReadFile(desc, address, length, &actual_length, overlapped_ptr) &&
-			actual_length == length);
+		if (!ReadFile(	desc,
+						address,
+						length,
+						&actual_length,
+						overlapped_ptr)
+				|| actual_length != (DWORD)length)
+		{
 #ifdef SUPERSERVER_V2
-		else
-			if (!GetOverlappedResult
-				(desc, overlapped_ptr, &actual_length, TRUE)
-				|| actual_length != length) {
-			CloseHandle(overlapped.hEvent);
-			nt_error("GetOverlappedResult", file, isc_io_read_err, 0);
-		}
+			if (!GetOverlappedResult(	desc,
+										overlapped_ptr,
+										&actual_length,
+										TRUE)
+					|| actual_length != length)
+			{
+					CloseHandle(overlapped.hEvent);
+					nt_error("GetOverlappedResult", file, isc_io_read_err, 0);
+			}
 #else
-		else {
 			if (ostype == OS_CHICAGO)
+			{
 				THD_MUTEX_UNLOCK(file->fil_mutex);
+			}
 			nt_error("ReadFile", file, isc_io_read_err, 0);
-		}
 #endif
+		}
 	}
 
 #ifdef SUPERSERVER_V2
@@ -499,14 +542,6 @@ FIL PIO_open(DBB dbb,
 	TEXT temp[MAXPATHLEN], *ptr;
 	HANDLE desc;
 
-#ifdef SUPERSERVER_V2
-	const DWORD dwShareFlags = 0;	/* no sharing */
-	const DWORD dwExtraFlags = FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING;
-#else
-	const DWORD dwShareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
-	const DWORD dwExtraFlags = 0;
-#endif
-
 	if (string) {
 		ptr = string;
 		if (length) {
@@ -526,11 +561,12 @@ FIL PIO_open(DBB dbb,
 
 	desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
-					  dwShareFlags,
+					  g_dwShareFlags,
 					  NULL,
 					  OPEN_EXISTING,
 					  FILE_ATTRIBUTE_NORMAL |
-					  FILE_FLAG_RANDOM_ACCESS | dwExtraFlags, 0);
+					  g_dwExtraFlags,
+					  0);
 
 	if (desc == INVALID_HANDLE_VALUE) {
 		/* Try opening the database file in ReadOnly mode.
@@ -543,7 +579,7 @@ FIL PIO_open(DBB dbb,
 						  NULL,
 						  OPEN_EXISTING,
 						  FILE_ATTRIBUTE_NORMAL |
-						  FILE_FLAG_RANDOM_ACCESS | dwExtraFlags, 0);
+						  g_dwExtraFlags, 0);
 
 		if (desc == INVALID_HANDLE_VALUE) {
 			ERR_post(isc_io_error,
@@ -617,11 +653,15 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 #endif
 	{
 		if (!ReadFile(desc, page, size, &actual_length, overlapped_ptr) ||
-			actual_length != size) {
+			actual_length != size)
+		{
 #ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult
-				(desc, overlapped_ptr, &actual_length, TRUE)
-				|| actual_length != size) {
+			if (!GetOverlappedResult(	desc,
+										overlapped_ptr,
+										&actual_length,
+										TRUE)
+				|| actual_length != size)
+			{
 				release_io_event(file, overlapped_ptr);
 				return nt_error("GetOverlappedResult", file, isc_io_read_err,
 								status_vector);
@@ -835,10 +875,12 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS* status_vector)
 		if (WriteFile(desc, page, size, &actual_length, overlapped_ptr) &&
 			actual_length == size);
 #ifdef SUPERSERVER_V2
-		else
-			if (!GetOverlappedResult
-				(desc, overlapped_ptr, &actual_length, TRUE)
-				|| actual_length != size) {
+		else if (!GetOverlappedResult(	desc,
+										overlapped_ptr,
+										&actual_length,
+										TRUE)
+				|| actual_length != size)
+		{
 			release_io_event(file, overlapped_ptr);
 			return nt_error("GetOverlappedResult", file, isc_io_write_err,
 							status_vector);
