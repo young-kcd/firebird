@@ -13,3 +13,4 @@ extern void GSEC_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 extern void GSEC_print_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 
 #endif // GSEC_PROTO_H
+
