@@ -4177,8 +4177,8 @@ static void prepare_console_debug (int level, int *yydeb)
  *
  *************************************/
     DSQL_debug = level;
-    if (level > 10)
-        *yydeb = level;
+    if (level > 100)
+        *yydeb = level - 100;
     /* CVC: I added this code form Mike Nordell to see the output from internal
        operations that's generated in DEV build when DEBUG <n> is typed into isql.exe.
        When n>0, the output console is activated; otherwise it's closed. */
