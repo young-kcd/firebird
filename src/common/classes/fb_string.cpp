@@ -29,7 +29,7 @@ namespace {
 	private:
 		char m[32];
 	public:
-		strBitMask(Firebird::AbstractString::const_pointer s, int l) {
+		strBitMask(Firebird::AbstractString::const_pointer s, Firebird::AbstractString::size_type l) {
 			memset(m, 0, sizeof(m));
 			if (l == Firebird::AbstractString::npos) {
 				l = strlen(s);
@@ -317,7 +317,7 @@ namespace Firebird {
 				--e;
 			}
 		}
-		int NewLength = e - b + 1;
+		size_type NewLength = e - b + 1;
 
 		if (NewLength == length())
 			return;
