@@ -14,11 +14,6 @@
 
 ::===========
 :MAIN
-::provisional, copy all fdbs to the same directory
-cp dbs\metadata.fdb %ROOT_PATH%\generated\yachts.lnk
-cp dbs\jrd\security.fdb %ROOT_PATH%\generated\security.fdb
-cp dbs\msgs\msg.fdb %ROOT_PATH%\generated\msg.fdb
-cp dbs\qli\help.fdb %ROOT_PATH%\generated\help.fdb
 
 @if "%1"=="BOOT" (set BOOTBUILD=1) else (set BOOTBUILD=0)
 @echo.
@@ -30,7 +25,7 @@ cp dbs\qli\help.fdb %ROOT_PATH%\generated\help.fdb
 ::===========
 :PREPROCESS
 @echo Processing %1/%2.epp
-@del ..\..\generated\%1\%2.cpp
+@del ..\..\generated\%1\%2.cpp 2>nul
 @echo Calling GPRE for %1/%2.epp
 @if "%3"=="" (call :GPRE_M %1 %2) else (call :GPRE_GDS %1 %2)
 @echo.
