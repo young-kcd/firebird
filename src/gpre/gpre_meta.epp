@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.19 2003-04-16 10:17:00 aafemt Exp $
+ *	$Id: gpre_meta.epp,v 1.20 2003-06-30 10:48:03 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -274,7 +274,7 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 	\n\tServer Ver                   : %d\
         \n\tCompile time db Ver          : %d\
 	\n\tCompile time db Sql Dialect  : %d\
-	\n\tClient Sql dialect set to    : %d\n\n", \sw_server_version, sw_ods_version, compiletime_db_dialect, \sw_sql_dialect);
+	\n\tClient Sql dialect set to    : %d\n\n", sw_server_version, sw_ods_version, compiletime_db_dialect, sw_sql_dialect);
 #endif
 #ifdef SCROLLABLE_CURSORS
 

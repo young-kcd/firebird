@@ -97,6 +97,10 @@
 #define PUT_NUMERIC(attribute, value)	put_numeric ((attribute), (value))
 #define PUT_ASCIZ(attribute, string)	put_asciz ((attribute), (string))
 
+#ifdef DEBUG
+static UCHAR debug_on = 0;		/* able to turn this on in debug mode */
+#endif
+
 static void  bad_attribute(USHORT, USHORT);
 static void  file_not_empty(void);
 static SLONG get_numeric(void);
