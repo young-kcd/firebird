@@ -185,10 +185,8 @@ namespace Firebird {
 		if (lastpos < 0) {
 			return npos;
 		}
-		if (pos != npos) {
-			if (pos < lastpos) {
-				lastpos = pos;
-			}
+		if (pos < lastpos) {
+			lastpos = pos;
 		}
 		const_pointer start = c_str();
 		const_pointer end = &start[lastpos];
@@ -205,10 +203,8 @@ namespace Firebird {
 		if (lastpos < 0) {
 			return npos;
 		}
-		if (pos != npos) {
-			if (pos < lastpos) {
-				lastpos = pos;
-			}
+		if (pos < lastpos) {
+			lastpos = pos;
 		}
 		const_pointer start = c_str();
 		const_pointer end = &start[lastpos];
@@ -234,7 +230,7 @@ namespace Firebird {
 	AbstractString::size_type AbstractString::find_last_of(const_pointer s, size_type pos, size_type n) const {
 		strBitMask sm(s, n);
 		int lpos = length() - 1;
-		if (pos != npos && pos < lpos) {
+		if (pos < lpos) {
 			lpos = pos;
 		}
 		const_pointer p = &c_str()[lpos];
@@ -260,7 +256,7 @@ namespace Firebird {
 	AbstractString::size_type AbstractString::find_last_not_of(const_pointer s, size_type pos, size_type n) const {
 		strBitMask sm(s, n);
 		int lpos = length() - 1;
-		if (pos != npos && pos < lpos) {
+		if (pos < lpos) {
 			lpos = pos;
 		}
 		const_pointer p = &c_str()[lpos];
