@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.34 2002-09-18 12:50:04 eku Exp $"
+#ident "$Id: config.h.in,v 1.35 2002-09-19 10:51:31 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -64,6 +64,7 @@
 #undef HAVE_SETPGID
 #undef SETPGRP_VOID
 #undef HAVE_FLOCK
+#undef HAVE_INITGROUPS
 
 /* Types */
 #undef socklen_t

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.45 2002-09-18 12:50:01 eku Exp $
+dnl $Id: configure.in,v 1.46 2002-09-19 10:51:29 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -190,6 +190,7 @@ AC_FUNC_FORK
 AC_CHECK_FUNCS(setgrp setpgid)
 AC_FUNC_SETPGRP 
 AC_CHECK_FUNCS(flock)
+AC_CHECK_FUNCS(initgroups)
 
 
 dnl Check for other things

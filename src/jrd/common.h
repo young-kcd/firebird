@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.29 2002-09-18 12:50:03 eku Exp $
+$Id: common.h,v 1.30 2002-09-19 10:51:30 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -170,7 +170,6 @@ int shutdown(int s, int how);
 #ifdef i386
 #define I386    1
 /* Change version string into SINIXZ */
-#define INTL
 #define IMPLEMENTATION  isc_info_db_impl_sinixz  /* 64 */
 #endif /* i386 */
 
@@ -206,7 +205,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MAP_ANONYMOUS
 #define MAP_ANNON
 #define LSEEK_OFFSET_CAST (off_t)
-#define INTL
 
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t)length)
 #define MOVE_FAST(from,to,length)	memcpy (to, from, (int) (length))
@@ -379,7 +377,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 /*#define ALIGNMENT       4*/
 /*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
-#define INTL
 #else /* sparc */
 
 #ifdef i386
@@ -411,7 +408,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define KILLER_SIGNALS
 #define UNIX            1
 #define CURSES_KEYPAD   1
-#define INTL
 
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 /*#define ALIGNMENT       8*/
@@ -446,7 +442,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #ifdef ultrix
 #define BSD_UNIX        1
-#define INTL
 #define INTL_BACKEND
 #define UNIX            1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
@@ -541,7 +536,6 @@ typedef unsigned int64 UATOM;
 #define FINI_OK         1
 #define FINI_ERROR      44
 #define STARTUP_ERROR   46		/* this is also used in iscguard.h, make sure these match */
-#define INTL
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* VMS */
@@ -565,7 +559,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
-#define INTL
 #else /* AIX PowerPC */
 #define AIX_PPC
 #define KILLER_SIGNALS
@@ -580,7 +573,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
-#define INTL
 
 #define VA_START(list,parmN)    va_start (list, parmN)	/* TMC 081700 */
 #define QUADFORMAT "ll"			/* TMC 081700 */
@@ -599,7 +591,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 	(defined(__BORLANDC__) && defined(__WIN32__))
 #define WIN_NT
 #define NO_PYXIS
-#define NOINITGROUPS
 #define NO_NFS
 #undef LINKS_EXIST
 
@@ -634,7 +625,6 @@ typedef unsigned __int64 UINT64;
 #endif
 
 #define                 IEEE
-#define INTL
 #define VA_START(list,parmN)    va_start (list, parmN)
 #define API_ROUTINE     __stdcall
 #define API_ROUTINE_VARARG      __cdecl
@@ -683,12 +673,10 @@ typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #define I386            1
 #define UNIX            1
 #define CURSES_KEYPAD   1
-#define NOINITGROUPS
 
 #ifdef M_UNIX
 #define SCO_UNIX        1
 #define IMPLEMENTATION  isc_info_db_impl_isc_sco_unix /* 42 */
-#define INTL
 #define INTL_BACKEND
 #else
 #define FB_ALIGN(n,b)      ((n+1) & ~1)
@@ -712,7 +700,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 /*
 #define KILLER_SIGNALS
 */
-#define INTL
 #define IMPLEMENTATION  isc_info_db_impl_sco_ev /* 59 */
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)    memcpy (to, from, (unsigned int) (length))
@@ -746,7 +733,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define I386          1
 #endif /* DG_X86 */
 #define                 IEEE
-#define INTL
 #define INTL_BACKEND
 
 #ifndef MAXPATHLEN
@@ -761,7 +747,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #if (defined(__osf__) && defined(__alpha))
 #include <stddef.h>
 #define DECOSF
-#define INTL
 #define NO_PYXIS
 #define KILLER_SIGNALS
 #define UNIX            1
@@ -799,7 +784,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 /*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_sgi  /* 41 */
 #define                 IEEE
-#define INTL
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 
 #ifndef MAXPATHLEN
@@ -846,7 +830,6 @@ typedef unsigned long DWORD;
 #undef LINKS_EXIST
 #define VA_START(list,parmN)    va_start (list, parmN)
 
-#define INTL
 #define INTL_BACKEND
 #define SYNC_WRITE_DEFAULT      1
 
@@ -861,7 +844,6 @@ typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 
 
 #ifdef UNIXWARE
-#define INTL
 #define KILLER_SIGNALS
 #define NO_PYXIS
 #define I386            1
