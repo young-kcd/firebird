@@ -342,16 +342,10 @@ typedef const void (*PFN_SERV_t) ();
 
 static const serv services[] =
 {
-#ifndef NOT_USED_OR_REPLACED
-#ifdef WIN_NT
+
 	{ isc_action_max, "print_cache", "-svc", "bin/fb_cache_print", NULL, 0 },
 	{ isc_action_max, "print_locks", "-svc", "bin/fb_lock_print", NULL, 0 },
 	{ isc_action_max, "start_cache", "-svc", "bin/fb_cache_manager", NULL, 0 },
-#else
-	{ isc_action_max, "print_cache", "-svc", "bin/gds_cache_print", NULL, 0 },
-	{ isc_action_max, "print_locks", "-svc", "bin/gds_lock_print", NULL, 0 },
-	{ isc_action_max, "start_cache", "-svc", "bin/gds_cache_manager", NULL, 0 },
-#endif							/* WIN_NT */
 	{ isc_action_max, "analyze_database", "-svc", "bin/gstat", NULL, 0 },
 	{ isc_action_max, "backup", "-svc -b", "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
 	{ isc_action_max, "create", "-svc -c", "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
@@ -379,8 +373,8 @@ static const serv services[] =
 	{ isc_action_svc_modify_user, "Modify User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
 	{ isc_action_svc_display_user, "Display User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
 	{ isc_action_svc_properties, "Database Properties", NULL, "bin/gfix",	reinterpret_cast<PFN_SERV_t>(MAIN_GFIX), 0 },
-	{ isc_action_svc_lock_stats, "Lock Stats", NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
-	{ isc_action_svc_db_stats, "Database Stats", NULL, NULL,	reinterpret_cast<PFN_SERV_t>(MAIN_GSTAT), 0 },
+	{ isc_action_svc_lock_stats, "Lock Stats", NULL, "bin/fb_lock_print",	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
+	{ isc_action_svc_db_stats, "Database Stats", NULL, "bin/gstat",	reinterpret_cast<PFN_SERV_t>(MAIN_GSTAT), 0 },
 	{ isc_action_svc_get_ib_log, "Get Log File", NULL, NULL,	reinterpret_cast<PFN_SERV_t>(SVC_read_ib_log), 0 },
 /* actions with no names are undocumented */
 	{ isc_action_svc_set_config, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
@@ -390,32 +384,6 @@ static const serv services[] =
 	{ isc_action_svc_set_env_msg, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
 	{ 0, NULL, NULL, NULL, NULL, 0 }
 };
-#else							/* LINUX: disallow services API for 6.0 Linux Classic */
-	{isc_action_max, "anonymous", NULL, NULL, NULL, 0},
-#ifdef SUPERSERVER
-	{isc_action_max, "query_server", NULL, NULL, NULL, 0},
-	{isc_action_max, "service_mgr", NULL, NULL, NULL, 0},
-	{isc_action_svc_backup, "Backup Database", NULL, "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0},
-	{isc_action_svc_restore, "Restore Database", NULL, "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0},
-	{isc_action_svc_repair, "Repair Database", NULL, "bin/gfix",	reinterpret_cast<PFN_SERV_t>(MAIN_GFIX), 0},
-	{isc_action_svc_add_user, "Add User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0},
-	{isc_action_svc_delete_user, "Delete User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0},
-	{isc_action_svc_modify_user, "Modify User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0},
-	{isc_action_svc_display_user, "Display User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0},
-	{isc_action_svc_properties, "Database Properties", NULL, "bin/gfix",	reinterpret_cast<PFN_SERV_t>(MAIN_GFIX), 0},
-	{isc_action_svc_lock_stats, "Lock Stats", NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0},
-	{isc_action_svc_db_stats, "Database Stats", NULL, NULL,	reinterpret_cast<PFN_SERV_t>(MAIN_GSTAT), 0},
-	{isc_action_svc_get_ib_log, "Get Log File", NULL, NULL,	reinterpret_cast<PFN_SERV_t>(SVC_read_ib_log), 0},
-/* actions with no names are undocumented */
-	{isc_action_svc_set_config, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0},
-	{isc_action_svc_default_config, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0},
-	{isc_action_svc_set_env, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0},
-	{isc_action_svc_set_env_lock, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0},
-	{isc_action_svc_set_env_msg, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0},
-#endif
-    {0, NULL, NULL, NULL, NULL, 0}
-};
-#endif /* LINUX */
 
 /* The SERVER_CAPABILITIES_FLAG is used to mark architectural
 ** differences across servers.  This allows applications like server
