@@ -131,7 +131,7 @@
 #undef SUPPORT_RAW_DEVICES
 
 /* Inet service name and port (UNIX only) */
-#define FB_SERVICE_NAME "gdb_db"
+#define FB_SERVICE_NAME "gds_db"
 #define FB_SERVICE_PORT 3050
 
 /* Maximum allowed pathname length */

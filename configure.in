@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.66 2002-11-06 13:03:20 dimitr Exp $
+dnl $Id: configure.in,v 1.67 2002-11-06 13:38:49 dimitr Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -121,7 +121,7 @@ AC_ARG_WITH(readline,
    esac])
 AC_SUBST(READLINE_FLG)
 
-FB_SERVICE_NAME=gdb_db
+FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
 AC_ARG_WITH(service-name,
   [  --with-service-name     specify inet service name (default=gds_db)],
