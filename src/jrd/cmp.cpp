@@ -1603,15 +1603,18 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
 			desc->dsc_dtype = dtype_text;
 			ULONG rc_len;
-			if (desc1.dsc_dtype <= dtype_varying) {
+			if (desc1.dsc_dtype <= dtype_varying)
+			{
 			    rc_len = DSC_string_length(&desc1);
 				desc->dsc_ttype() = desc1.dsc_ttype();
 			}
-			else {
+			else
+			{
 			    rc_len = DSC_convert_to_text_length(desc1.dsc_dtype);
 				desc->dsc_ttype() = ttype_ascii;
 			}
-			if (desc2.dsc_dtype <= dtype_varying) {
+			if (desc2.dsc_dtype <= dtype_varying)
+			{
 				rc_len += DSC_string_length (&desc2);
 				if (((desc->dsc_ttype() == CS_ASCII) || (desc->dsc_ttype() == CS_NONE)) &&
 					(desc2.dsc_ttype() != CS_NONE)) 
@@ -1619,12 +1622,15 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 					desc->dsc_ttype() = desc2.dsc_ttype();
 				}
 			}
-			else {
+			else
+			{
 				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
 			}
 			// error() is a local routine in par.cpp, so we use plain ERR_post
-			if (rc_len > MAX_FORMAT_SIZE) {
-				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
+			if (rc_len > MAX_COLUMN_SIZE)
+			{
+				rc_len = MAX_COLUMN_SIZE - sizeof (USHORT);
+				ERR_post_warning(isc_concat_overflow, 0);
 			}
 			desc->dsc_length = static_cast<USHORT>(rc_len);
 			desc->dsc_scale = 0;
@@ -1762,24 +1768,80 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		}
 
 	case nod_substr:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		if (desc->dsc_dtype == dtype_blob)
 		{
-			DSC	desc1, desc2;
-			CMP_get_desc(tdbb, csb, node->nod_arg [1], &desc1);
-			CMP_get_desc(tdbb, csb, node->nod_arg [2], &desc2);
+			CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
+
+			DSC desc1, desc2, desc3;
+
+			jrd_nod* offset_node = node->nod_arg[1];
+			jrd_nod* decrement_node = NULL;
+			if (offset_node->nod_type == nod_subtract2)
+			{
+				// This node is created by the DSQL layer, but the
+				// system BLR code bypasses it and uses zero-based
+				// string offsets instead
+				decrement_node = offset_node->nod_arg[1];
+				CMP_get_desc(tdbb, csb, decrement_node, &desc3);
+				offset_node = offset_node->nod_arg[0];
+			}
+			CMP_get_desc(tdbb, csb, offset_node, &desc1);
+
+			jrd_nod* length_node = node->nod_arg[2];
+			CMP_get_desc(tdbb, csb, length_node, &desc2);
+
+			ULONG rc_len = 0;
+
 			if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
 			{
 				desc->dsc_flags |= DSC_null;
 			}
-			desc->dsc_dtype = dtype_varying;
-			desc->dsc_ttype() = desc->dsc_scale;
-			desc->dsc_scale = 0;
-			// We may suppose length of MAX_SSHORT here, but it will cause issues
-			// with concatenation. Let's be optimistic...
-			desc->dsc_length = sizeof(USHORT);
+			else
+			{
+				if (offset_node->nod_type == nod_literal &&
+					desc1.dsc_dtype == dtype_long)
+				{
+					SLONG offset = MOV_get_long(&desc1, 0);
+					if (decrement_node &&
+						decrement_node->nod_type == nod_literal &&
+						desc3.dsc_dtype == dtype_long)
+					{
+						offset -= MOV_get_long(&desc3, 0);
+					}
+					// error() is a local routine in par.c, so we use plain ERR_post
+					if (offset < 0 || offset > MAX_COLUMN_SIZE - sizeof(USHORT))
+					{
+						ERR_post(isc_bad_substring_param,
+								 isc_arg_string, "offset", 0);
+					}
+				}
+				if (length_node->nod_type == nod_literal &&
+					desc2.dsc_dtype == dtype_long)
+				{
+					const SLONG lenght = MOV_get_long(&desc2, 0);
+					// error() is a local routine in par.c, so we use plain ERR_post
+					if (lenght < 0 || lenght > MAX_COLUMN_SIZE - sizeof(USHORT))
+					{
+						ERR_post(isc_bad_substring_param,
+								 isc_arg_string, "length", 0);
+					}
+					// Set up the given length
+					rc_len = lenght;
+				}
+			}
+			if (desc->dsc_dtype == dtype_blob)
+			{
+				if (!rc_len && !(desc->dsc_flags & DSC_null))
+				{
+					// We don't know how big will the resulting string be
+					rc_len = MAX_COLUMN_SIZE - sizeof(USHORT);
+				}
+				desc->dsc_dtype = dtype_varying;
+				desc->dsc_ttype() = desc->dsc_scale;
+				desc->dsc_scale = 0;
+				desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
+			}
+			return;
 		}
-		return;
 
 	case nod_function:
 		{
@@ -3570,7 +3632,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	// perform any post-processing here
 
-	if (node->nod_type == nod_assignment) {
+	if (node->nod_type == nod_assignment)
+	{
 		sub = node->nod_arg[e_asgn_to];
 		if (sub->nod_type != nod_field &&
 			sub->nod_type != nod_argument && sub->nod_type != nod_variable)

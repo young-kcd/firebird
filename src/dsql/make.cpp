@@ -388,14 +388,9 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 				desc->dsc_ttype() = ttype_ascii;
 			ULONG length = sizeof(USHORT) +
 				DSC_string_length(&desc1) + DSC_string_length(&desc2);
-			if (length > MAX_SSHORT) {
-				length = MAX_SSHORT;
-				/* dimitr: should we post a warning about truncated descriptor length?
-				ERRD_post_warning (isc_sqlwarn,
-								   isc_arg_gds, isc_imp_exc, 
-								   isc_arg_gds, isc_blktoobig,
-								   0);
-				*/
+			if (length > MAX_COLUMN_SIZE)
+			{
+				length = MAX_COLUMN_SIZE - sizeof (USHORT);
 			}
 			desc->dsc_length = length;
 			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
@@ -418,29 +413,32 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 		/* Beware that JRD treats substring() always as returning CHAR
 		instead	of VARCHAR for historical reasons. */
-		if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob) {
+		if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob)
+		{
 			dsql_nod* for_node = node->nod_arg[e_substr_length];
-			fb_assert (for_node->nod_desc.dsc_dtype == dtype_long);
 			// Migrate the charset from the blob to the string. 
 			desc->dsc_ttype() = desc1.dsc_scale;
-			const SLONG len = *(SLONG *) for_node->nod_desc.dsc_address;
+			// Set maximum possible length
+			SLONG length = MAX_COLUMN_SIZE - sizeof(USHORT);
+			if (for_node->nod_type == nod_constant &&
+				for_node->nod_desc.dsc_dtype == dtype_long)
+			{
+				// We have a constant passed as length, so
+				// use the real length
+				length = *(SLONG *) for_node->nod_desc.dsc_address;
+				if (length <= MAX_COLUMN_SIZE - sizeof(USHORT) && length >= 0)
+				{
+					length = MAX_COLUMN_SIZE - sizeof(USHORT);
+				}
+			}
 			/* For now, our substring() doesn't handle MBCS blobs,
 			neither at the DSQL layer nor at the JRD layer. */
-			if (len <= (SLONG) MAX_COLUMN_SIZE - (SLONG) sizeof (USHORT) && len >= 0) {
-				desc->dsc_length = sizeof (USHORT) + len;
-			}
-			else {
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -204,
-						isc_arg_gds, isc_dsql_datatype_err,
-						isc_arg_gds, isc_imp_exc,
-						isc_arg_gds, isc_field_name,
-						isc_arg_string, "substring()", // field->fld_name
-						0);
-			}
+			desc->dsc_length = sizeof(USHORT) + length;
 		}
-		else {
+		else
+		{
 			desc->dsc_ttype() = ttype_ascii;
-			desc->dsc_length = sizeof (USHORT) + DSC_string_length (&desc1);
+			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
 		}
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.98 2004-07-26 21:32:41 skidder Exp $ 
+  * $Id: evl.cpp,v 1.99 2004-08-02 19:49:12 dimitr Exp $ 
  */
 
 /*
@@ -3229,6 +3229,12 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 							 reinterpret_cast<vary*>(temp2),
 							 sizeof(temp2), &temp3);
 
+		if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
+		{
+		    ERR_post(isc_concat_overflow, 0);
+		    return NULL;
+		}
+
 		dsc desc;
 		desc.dsc_dtype = dtype_text;
 		desc.dsc_sub_type = 0;
@@ -4859,10 +4865,13 @@ static dsc* substring(
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 
-	if (offset_arg < 0 || offset_arg > MAX_USHORT ||
-		length_arg < 0 || length_arg > MAX_USHORT)
+	if (offset_arg < 0 || offset_arg > MAX_USHORT)
 	{
-		ERR_post(isc_arith_except, 0);
+		ERR_post(isc_bad_substring_param, isc_arg_string, "offset", 0);
+	}
+	else if (length_arg < 0 || length_arg > MAX_USHORT)
+	{
+		ERR_post(isc_bad_substring_param, isc_arg_string, "length", 0);
 	}
 	USHORT offset = (USHORT) offset_arg;
 	USHORT length = (USHORT) length_arg;
