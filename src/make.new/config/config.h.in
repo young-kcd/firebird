@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.45 2002-11-05 16:49:05 skywalker Exp $"
+#ident "$Id: config.h.in,v 1.46 2002-11-06 07:21:30 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -21,7 +21,6 @@
 /* Headers */
 #undef HAVE_ASSERT_H
 #undef HAVE_CTYPE_H
-#undef HAVE_CRYPT_H 
 #undef HAVE_ERRNO_H
 #undef HAVE_EDITLINE_H
 #undef HAVE_FCNTL_H
@@ -50,6 +49,7 @@
 #undef HAVE_UNISTD_H
 #undef HAVE_VARARGS_H
 #undef HAVE_VFORK_H
+#undef HAVE_CRYPT_H 
 
 /* Functions */
 #undef HAVE_STRLCPY

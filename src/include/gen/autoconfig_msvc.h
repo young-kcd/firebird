@@ -66,9 +66,9 @@
 #undef HAVE_READLINE_READLINE_H
 #undef HAVE_EDITLINE_H
 #undef HAVE_UNISTD_H
-#undef HAVE_CRYPT_H 
 #undef HAVE_VARARGS_H
 #undef HAVE_VFORK_H
+#undef HAVE_CRYPT_H 
 
 /* Functions */
 #undef HAVE_STRLCPY
