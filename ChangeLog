@@ -1,3 +1,19 @@
+2004-06-26 00:12  skidder
+
+	* firebird2/src/jrd/: cmp.cpp (1.132), evl.cpp (1.93), exe.h
+	(1.54), opt.cpp (1.175), rse.cpp (1.73), rse.h (1.33):
+	
+	Somewhat simplify invariant tracking stuff. It is more pessimistic
+	now, but should work more reliably when invariants are modified
+	(see QMDB tests for details)
+
+2004-06-25 03:44  skidder
+
+	* firebird2/src/include/firebird.h (1.27):
+	
+	Disable thread priority scheduler for now because it causes too
+	many random failures during QMDB testing
+
 2004-06-23 18:40  skidder
 
 	* firebird2/src/jrd/opt.cpp (1.174):
