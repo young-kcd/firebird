@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ClumpletWriter.cpp,v 1.4 2004-11-15 16:34:47 alexpeshkoff Exp $
+ *  $Id: ClumpletWriter.cpp,v 1.5 2004-11-27 08:13:39 robocop Exp $
  *
  */
 
@@ -78,7 +78,7 @@ void ClumpletWriter::size_overflow() {
 void ClumpletWriter::insertInt(UCHAR tag, SLONG value) {
 #if defined(WORDS_BIGENDIAN)
 	UCHAR bytes[4];
-	UCHAR* ptr = &value;
+	const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
 	bytes[0] = ptr[3];
 	bytes[1] = ptr[2];
 	bytes[2] = ptr[1];
@@ -92,7 +92,7 @@ void ClumpletWriter::insertInt(UCHAR tag, SLONG value) {
 void ClumpletWriter::insertBigInt(UCHAR tag, SINT64 value) {
 #if defined(WORDS_BIGENDIAN)
 	UCHAR bytes[8];
-	UCHAR* ptr = static_cast<UCHAR*>(&value);
+	const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
 	bytes[0] = ptr[7];
 	bytes[1] = ptr[6];
 	bytes[2] = ptr[5];
