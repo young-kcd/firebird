@@ -733,7 +733,7 @@ static void readNextInputLine(const char* prompt)
 
 			// Read the line
 			char buffer[MAX_USHORT];
-			if(fgets(buffer, sizeof(buffer), Ifp) != NULL)
+			if (fgets(buffer, sizeof(buffer), Ifp) != NULL)
 			{
 				size_t lineSize = strlen(buffer);
 				lastInputLine = (char*) malloc(lineSize + 1);
