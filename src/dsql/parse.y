@@ -1996,7 +1996,7 @@ alter_clause	: EXCEPTION symbol_exception_name sql_string
 		| DATABASE init_alter_db alter_db
 			{ $$ = make_node (nod_mod_database, (int) e_adb_count,
 				make_list ($3)); }
-				| DOMAIN alter_column_name alter_domain_ops
+		| DOMAIN alter_column_name alter_domain_ops
 						{ $$ = make_node (nod_mod_domain, (int) e_alt_count,
 										  $2, make_list ($3)); }
 		| INDEX alter_index_clause
