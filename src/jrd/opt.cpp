@@ -123,6 +123,7 @@ static bool form_river(thread_db*, OptimizerBlk*, USHORT, UCHAR *, UCHAR *, Rive
 						  jrd_nod**, jrd_nod*);
 static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*, NodeStack*, UCHAR);
 static RecordSource* gen_boolean(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
+static void gen_deliver_unmapped(thread_db*, NodeStack*, jrd_nod*, NodeStack*, UCHAR);
 static RecordSource* gen_first(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static void gen_join(thread_db*, OptimizerBlk*, UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
 static RecordSource* gen_navigation(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, str*, index_desc*, jrd_nod**);
@@ -140,7 +141,7 @@ static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*,
 static RecordSource*	gen_skip (thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static RecordSource* gen_sort(thread_db*, OptimizerBlk*, UCHAR *, UCHAR *, RecordSource*, jrd_nod*, bool);
 static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
-static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT);
+static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
 static void get_inactivities(const CompilerScratch*, ULONG*);
 static IndexedRelationship* indexed_relationship(thread_db*, OptimizerBlk*, USHORT);
 static str* make_alias(thread_db*, CompilerScratch*, CompilerScratch::csb_repeat*);
@@ -424,22 +425,42 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		{
 			const SSHORT i = (SSHORT) key_streams[0];
 			compute_dbkey_streams(csb, node, key_streams);
+
+			NodeStack::const_iterator stack_end;
+			if (parent_stack) {
+				stack_end = conjunct_stack.merge(*parent_stack);
+			}
 			rsb =
 				gen_union(tdbb, opt, node, key_streams + i + 1,
-						  (USHORT) (key_streams[0] - i));
+						  (USHORT) (key_streams[0] - i), &conjunct_stack, stream);
+			if (parent_stack) {
+				conjunct_stack.split(stack_end, *parent_stack);
+			}
+
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR)(IPTR) node->nod_arg[e_uni_stream];
 			break;
 		}
 		case nod_aggregate:
+		{
 			fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 			fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
+
+			NodeStack::const_iterator stack_end;
+			if (parent_stack) {
+				stack_end = conjunct_stack.merge(*parent_stack);
+			}
 			rsb = gen_aggregate(tdbb, opt, node, &conjunct_stack, stream);
+			if (parent_stack) {
+				conjunct_stack.split(stack_end, *parent_stack);
+			}
+
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR)(IPTR) node->nod_arg[e_agg_stream];
 			break;
+		}
 		case nod_procedure:
 			rsb = gen_procedure(tdbb, opt, node);
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
@@ -4043,95 +4064,16 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	rse->rse_sorted = node->nod_arg[e_agg_group];
 	jrd_nod* map = node->nod_arg[e_agg_map];
 
-	/* 
-	AB: Try to distribute items from the HAVING CLAUSE to the WHERE CLAUSE.
-	Zip thru stack of booleans looking for fields that belong to shellStream.
-	Those fields are mappings. Mappings that hold a plain field may be used 
-	to distribute. Handle the simple cases only.
-	*/
+	// AB: Try to distribute items from the HAVING CLAUSE to the WHERE CLAUSE.
+	// Zip thru stack of booleans looking for fields that belong to shellStream.
+	// Those fields are mappings. Mappings that hold a plain field may be used 
+	// to distribute. Handle the simple cases only.
 	NodeStack deliverStack;
-	for (NodeStack::iterator stack1(*parent_stack); stack1.hasData(); ++stack1) {
-		jrd_nod* boolean = stack1.object();
-
-		// Reduce to simple comparisons
-		if (!((boolean->nod_type == nod_eql) ||
-			(boolean->nod_type == nod_gtr) ||
-			(boolean->nod_type == nod_geq) ||
-			(boolean->nod_type == nod_leq) ||
-			(boolean->nod_type == nod_lss) ||
-			(boolean->nod_type == nod_starts) ||
-			(boolean->nod_type == nod_missing))) 
-		{
-			continue;
-		}
-
-		// At least 1 mapping should be used in the arguments
-		int indexArg;
-		bool mappingFound = false;
-		for (indexArg = 0; (indexArg < boolean->nod_count) && !mappingFound; indexArg++) {
-			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
-			if ((booleanNode->nod_type == nod_field) && 
-				((USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream)) 
-			{
-				mappingFound = true;
-			}
-		}
-		if (!mappingFound) {
-			continue;
-		}
-
-		// Create new node and assign the correct existing arguments
-		jrd_nod* deliverNode = PAR_make_node(tdbb, boolean->nod_count);
-		deliverNode->nod_count = boolean->nod_count;
-		deliverNode->nod_type = boolean->nod_type;
-		deliverNode->nod_flags = boolean->nod_flags;
-		bool wrongNode = false;
-		for (indexArg = 0; (indexArg < boolean->nod_count) && (!wrongNode); indexArg++) {
-			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
-			// Check if node is a mapping and if so unmap it.
-			if ((booleanNode->nod_type == nod_field) && 
-				((USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream)) 
-			{
-				USHORT fieldId = (USHORT)(IPTR) booleanNode->nod_arg[e_fld_id];
-				if (fieldId >= map->nod_count) {
-					wrongNode = true;
-				}
-				booleanNode = map->nod_arg[fieldId]->nod_arg[e_asgn_from];
-			}
-			// Only allow simple expressions. This can be expanded by checking
-			// complete expression if it doesn't hide any aggregate-function.
-			switch (booleanNode->nod_type) {
-				case nod_argument:
-				case nod_current_date:
-				case nod_current_role:
-				case nod_current_time:
-				case nod_current_timestamp:
-				case nod_field:
-				case nod_gen_id:
-				case nod_gen_id2:
-				case nod_internal_info:
-				case nod_literal:
-				case nod_null:
-				case nod_user_name:
-				case nod_variable:
-					deliverNode->nod_arg[indexArg] = booleanNode;
-					break;
-				default:
-					wrongNode = true;
-			}
-		}
-		if (wrongNode) {
-			delete deliverNode;
-		}
-		else {			
-			deliverStack.push(deliverNode);
-		}
-	}
+	gen_deliver_unmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
 
 	// try to optimize MAX and MIN to use an index; for now, optimize
 	// only the simplest case, although it is probably possible
 	// to use an index in more complex situations
-
 	jrd_nod** ptr;
 	jrd_nod* agg_operator;
 	if ((map->nod_count == 1) &&
@@ -4267,6 +4209,110 @@ static RecordSource* gen_boolean(thread_db* tdbb, OptimizerBlk* opt,
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
 	return rsb;
 }
+
+static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack, 
+								 jrd_nod* map, NodeStack* parentStack, 
+								 UCHAR shellStream)
+{
+/**************************************
+ *
+ *	g e n _ d e l i v e r _ s t a c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Make new boolean nodes from nodes that
+ *	contain a field from the given shellStream.
+ *  Those fields are references (mappings) to 
+ *	other nodes and are used by aggregates and
+ *	union rse's.
+ *
+ **************************************/
+	DEV_BLKCHK(map, type_nod);
+	SET_TDBB(tdbb);
+
+	for (NodeStack::iterator stack1(*parentStack); stack1.hasData(); ++stack1) {
+		jrd_nod* boolean = stack1.object();
+
+		// Reduce to simple comparisons
+		if (!((boolean->nod_type == nod_eql) ||
+			(boolean->nod_type == nod_gtr) ||
+			(boolean->nod_type == nod_geq) ||
+			(boolean->nod_type == nod_leq) ||
+			(boolean->nod_type == nod_lss) ||
+			(boolean->nod_type == nod_starts) ||
+			(boolean->nod_type == nod_missing))) 
+		{
+			continue;
+		}
+
+		// At least 1 mapping should be used in the arguments
+		int indexArg;
+		bool mappingFound = false;
+		for (indexArg = 0; (indexArg < boolean->nod_count) && !mappingFound; indexArg++) {
+			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
+			if ((booleanNode->nod_type == nod_field) && 
+				((USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream)) 
+			{
+				mappingFound = true;
+			}
+		}
+		if (!mappingFound) {
+			continue;
+		}
+
+		// Create new node and assign the correct existing arguments
+		jrd_nod* deliverNode = PAR_make_node(tdbb, boolean->nod_count);
+		deliverNode->nod_count = boolean->nod_count;
+		deliverNode->nod_type = boolean->nod_type;
+		deliverNode->nod_flags = boolean->nod_flags;
+		bool wrongNode = false;
+		for (indexArg = 0; (indexArg < boolean->nod_count) && (!wrongNode); indexArg++) {
+			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
+			// Only allow simple expressions. Check if node is a mapping 
+			// and if so unmap it.
+			// This can be expanded by checking complete expression
+			// (Then don't forget to leave aggregate-functions alone 
+			//  in case of aggregate rse)
+			if ((booleanNode->nod_type == nod_field) && 
+				((USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream)) 
+			{
+				USHORT fieldId = (USHORT)(IPTR) booleanNode->nod_arg[e_fld_id];
+				if (fieldId >= map->nod_count) {
+					wrongNode = true;
+				}
+				booleanNode = map->nod_arg[fieldId]->nod_arg[e_asgn_from];
+			}
+
+			switch (booleanNode->nod_type) {
+				case nod_argument:
+				case nod_current_date:
+				case nod_current_role:
+				case nod_current_time:
+				case nod_current_timestamp:
+				case nod_field:
+				case nod_gen_id:
+				case nod_gen_id2:
+				case nod_internal_info:
+				case nod_literal:
+				case nod_null:
+				case nod_user_name:
+				case nod_variable:
+					deliverNode->nod_arg[indexArg] = booleanNode;
+					break;
+				default:
+					wrongNode = true;
+			}
+		}
+		if (wrongNode) {
+			delete deliverNode;
+		}
+		else {			
+			deliverStack->push(deliverNode);
+		}
+	}		
+}
+
 
 
 static RecordSource* gen_first(thread_db* tdbb, OptimizerBlk* opt,
@@ -5833,7 +5879,8 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 
 static RecordSource* gen_union(thread_db* tdbb,
 					 OptimizerBlk* opt,
-					 jrd_nod* union_node, UCHAR * streams, USHORT nstreams)
+					 jrd_nod* union_node, UCHAR * streams, USHORT nstreams, 
+					 NodeStack* parent_stack, UCHAR shellStream)
 {
 /**************************************
  *
@@ -5861,8 +5908,17 @@ static RecordSource* gen_union(thread_db* tdbb,
 	RecordSource** rsb_ptr = rsb->rsb_arg;
 	jrd_nod** ptr = clauses->nod_arg;
 	for (const jrd_nod* const* const end = ptr + count; ptr < end;) {
-		*rsb_ptr++ = OPT_compile(tdbb, csb, (RecordSelExpr*) * ptr++, NULL);
-		*rsb_ptr++ = (RecordSource*) * ptr++;
+
+		RecordSelExpr* rse = (RecordSelExpr*) * ptr++;
+		jrd_nod* map = (jrd_nod*) * ptr++;
+
+		// AB: Try to distribute booleans from the top rse for a UNION to 
+		// the WHERE clause of every single rse.
+		NodeStack deliverStack;
+		gen_deliver_unmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
+
+		*rsb_ptr++ = OPT_compile(tdbb, csb, rse, &deliverStack);
+		*rsb_ptr++ = (RecordSource*) map;
 	}
 
 /* Save the count and numbers of the streams that make up the union */
