@@ -68,11 +68,11 @@ USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
 
 	for (;;)
 		switch (*out++ = *in++) {
-		case gds_info_end:
-		case gds_info_truncated:
+		case isc_info_end:
+		case isc_info_truncated:
 			return out - start;
 
-		case gds_info_version:
+		case isc_info_firebird_version:
 			l = strlen((char *) (p = version));
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
@@ -82,7 +82,7 @@ USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
 				while (--l);
 			break;
 
-		case gds_info_db_id:
+		case isc_info_db_id:
 			l = strlen((SCHAR *) (p = id));
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
@@ -92,14 +92,14 @@ USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
 				while (--l);
 			break;
 
-		case gds_info_implementation:
+		case isc_info_implementation:
 			if (merge_setup(&in, &out, end, 2))
 				return 0;
 			PUT(out, (UCHAR) impl);
 			PUT(out, (UCHAR) class_);
 			break;
 
-		case gds_info_base_level:
+		case isc_info_base_level:
 			if (merge_setup(&in, &out, end, 1))
 				return 0;
 			PUT(out, (UCHAR) base_level);

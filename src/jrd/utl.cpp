@@ -172,7 +172,7 @@ static const SCHAR blob_items[] =
 /* gds__version stuff */
 
 static const UCHAR info[] =
-	{ isc_info_version, isc_info_implementation, isc_info_end };
+	{ isc_info_firebird_version, isc_info_implementation, isc_info_end };
 
 static const UCHAR ods_info[] =
 	{ isc_info_ods_version, isc_info_ods_minor_version, isc_info_end };
@@ -1311,7 +1311,7 @@ int API_ROUTINE gds__version(
 			len = static_cast < USHORT > (gds__vax_integer(p, 2));
 			p += 2;
 			switch (item) {
-			case isc_info_isc_version:
+			case isc_info_firebird_version:
 				versions = (TEXT *) p;
 				break;
 

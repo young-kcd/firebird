@@ -505,8 +505,8 @@ int INF_database_info(
 
 		case isc_info_isc_version:
 			STUFF(p, 1);
-			STUFF(p, sizeof(GDS_VERSION) - 1);
-			for (q = GDS_VERSION; *q;)
+			STUFF(p, sizeof(ISC_VERSION) - 1);
+			for (q = ISC_VERSION; *q;)
 				STUFF(p, *q++);
 			length = p - buffer;
 			break;
@@ -518,7 +518,7 @@ int INF_database_info(
 				STUFF(p, *q++);
 			length = p - buffer;
 			break;
-	   
+
 		case isc_info_db_id:
 			str = tdbb->tdbb_attachment->att_filename;
 			STUFF(p, 2);
