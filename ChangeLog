@@ -1,3 +1,122 @@
+2004-08-27 01:27  brodsom
+
+	* firebird2/src/remote/: remote.cpp (1.38), server.cpp (1.90),
+	xnet.cpp (1.51), os/win32/srvr_w32.cpp (1.23):
+	
+	Fix ,silence non initialized warnings
+
+2004-08-26 23:47  brodsom
+
+	* firebird2/src/jrd/: btr.cpp (1.112), cmp.cpp (1.145),
+	evl_string.h (1.17), met.epp (1.135), opt.cpp (1.186):
+	
+	Fix signed/unsigned comparisons
+
+2004-08-26 23:44  brodsom
+
+	* firebird2/src/gpre/: cme.cpp (1.32), cob.cpp (1.48), exp.cpp
+	(1.36), gpre.cpp (1.63), gpre_meta.epp (1.45), gpre_meta_boot.cpp
+	(1.43):
+	
+	Assert or silence uninitialized warning
+
+2004-08-26 21:23  brodsom
+
+	* firebird2/src/jrd/svc.h (1.32):
+	
+	Fix multiline comment
+
+2004-08-26 21:09  brodsom
+
+	* firebird2/src/burp/burp.cpp (1.86):
+	
+	Assert on non initialized variable
+
+2004-08-26 20:49  brodsom
+
+	* firebird2/src/utilities/install/: install_reg.cpp (1.11),
+	install_svc.cpp (1.14):
+	
+	Fix non initialized variables
+
+2004-08-26 20:48  brodsom
+
+	* firebird2/src/dudley/: ddl.cpp (1.36), exe.epp (1.52), expand.cpp
+	(1.24), expr.cpp (1.24), extract.epp (1.36), generate.cpp (1.17),
+	parse.cpp (1.44):
+	
+	Fix, assert or silence non initialized warnings
+
+2004-08-26 20:28  brodsom
+
+	* firebird2/src/common/: classes/stack.h (1.13),
+	config/dir_list.cpp (1.20):
+	
+	Fix signed/unsigned comparisons
+
+2004-08-26 20:22  brodsom
+
+	* firebird2/src/alice/alice_meta.epp (1.41):
+	
+	Silence uninitialized warnings
+
+2004-08-26 20:14  brodsom
+
+	* firebird2/src/lock/lock.cpp (1.108):
+	
+	Silence uninitialized warnings
+
+2004-08-26 19:54  brodsom
+
+	* firebird2/src/msgs/build_file.epp (1.24):
+	
+	Fix format warning
+
+2004-08-26 19:51  brodsom
+
+	* firebird2/src/msgs/messages.sql (1.2):
+	
+	Maintain previous isql con_prompt definition
+
+2004-08-26 13:10  aafemt
+
+	* firebird2/src/isql/isql.epp (1.95):
+	
+	Make prompt visible in MSYS
+
+2004-08-26 13:07  robocop
+
+	* firebird2/src/jrd/: dpm.epp (1.54), dyn.epp (1.67), dyn_def.epp
+	(1.75), dyn_mod.epp (1.51), grant.epp (1.47), met.epp (1.134),
+	scl.epp (1.61):
+	
+	Got rid of redundant cast to jrd_req*
+
+2004-08-26 13:04  robocop
+
+	* firebird2/src/common/classes/alloc.cpp (1.65):
+	
+	misc
+
+2004-08-26 13:03  robocop
+
+	* firebird2/src/jrd/ini.epp (1.56):
+	
+	After writing to Ann, I confirmed this GDML statement needs to be
+	compiled and freed only once, not in each pass of the loop
+
+2004-08-26 12:28  aafemt
+
+	* firebird2/src/isql/isql.epp (1.94):
+	
+	Rework statement pre-parsing. Now it doesn't swallow tabs
+
+2004-08-26 06:21  robocop
+
+	* firebird2/builds/win32/prepare.bat (1.33):
+	
+	Invoke isql in silent mode
+
 2004-08-25 13:43  aafemt
 
 	* firebird2/src/isql/isql.epp (1.93):
