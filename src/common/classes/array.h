@@ -99,6 +99,7 @@ public:
 		ensureCapacity(L.count);
 		memcpy(data, L.data, sizeof(T) * L.count);
 		count = L.count;
+		return *this;
 	}
 	const T& operator[](int index) const {
   		return getElement(index);
