@@ -24,12 +24,10 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.10 2004-10-30 06:03:06 robocop Exp $
+ *  $Id: sparse_bitmap.h,v 1.11 2004-11-03 08:36:14 skidder Exp $
  *
  */
 
-// FIXME, FIXME: migrate SparseBitmap::Accessor to current_bucket!
- 
 #ifndef SPARSE_BITMAP_H
 #define SPARSE_BITMAP_H
 
@@ -536,7 +534,7 @@ public:
 	private:
 		SparseBitmap* bitmap;
 		BitmapTreeAccessor treeAccessor;
-		BUNCH_T bit_mask; // MIGRATE TO current_bucket to stop search early
+		BUNCH_T bit_mask;
 		T current_value;
 	};
 private:
