@@ -43,7 +43,7 @@
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 
-#include "../jrd/arg.h"
+#include "../jrd/log2.h"
 
 /*
 Documentation on the REPLAY_OSRI_API_CALLS_SUBSYSTEM.
