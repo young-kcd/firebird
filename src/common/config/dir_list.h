@@ -113,8 +113,7 @@ public:
 	// Last parameter defines required access rights
 	// to the file - like access().
 	void expandFileName(PathName& path, 
-						const PathName& name,
-						int access) const;
+						const PathName& name) const;
 };
 
 class TempDirectoryList : protected DirectoryList {

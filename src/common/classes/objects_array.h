@@ -183,29 +183,35 @@ namespace Firebird
 	template <typename T>
 	class ObjectComparator {
 	public:
-		static bool greaterThan(const T& i1, const T& i2) {
+		static bool greaterThan(const T i1, const T i2) {
 			return *i1 > *i2;
 		}
 	};
 
 	// Dynamic sorted array of simple objects
-	template <typename Value,
-		typename Storage = InlineStorage<Value*, 32>, 
-		typename Key = Value*, 
-		typename KeyOfValue = ObjectKeyValue<Value>, 
-		typename Cmp = DefaultComparator<Key> >
-	class SortedObjectsArray : public ObjectsArray<Value, 
-			SortedArray <Value*, Storage, Key, KeyOfValue, Cmp> >
+	template <typename ObjectValue,
+		typename ObjectStorage = InlineStorage<ObjectValue*, 32>, 
+		typename ObjectKey = ObjectValue, 
+		typename ObjectKeyOfValue = DefaultKeyValue<ObjectValue*>, 
+		typename ObjectCmp = ObjectComparator<const ObjectKey*> >
+	class SortedObjectsArray : public ObjectsArray<ObjectValue, 
+			SortedArray <ObjectValue*, ObjectStorage, const ObjectKey*, 
+			ObjectKeyOfValue, ObjectCmp> >
 	{
 	private:
-		typedef ObjectsArray <Value, SortedArray<Value*, 
-				Storage, Key, KeyOfValue, Cmp> > inherited;
+		typedef ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
+				ObjectCmp> > inherited;
 	public:
 		explicit SortedObjectsArray(MemoryPool& p) : 
-			ObjectsArray <Value, SortedArray<Value*, 
-				Storage, Key, KeyOfValue, Cmp> >(p) { }
-		bool find(const Key& item, size_t& pos) {
-			return inherited::find(item, pos);
+			ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
+				ObjectCmp> >(p) { }
+		bool find(const ObjectKey& item, size_t& pos) const {
+			const ObjectKey* const pItem = &item;
+			return static_cast<const SortedArray<ObjectValue*, 
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
+				ObjectCmp>*>(this)->find(pItem, pos);
 		}
 	};
 

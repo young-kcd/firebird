@@ -136,6 +136,18 @@ template <typename P>
 	};
 
 template <typename P>
+	class FirstPointerKey 
+	{
+	public:
+		typedef typename P::first_type Pair_first_type;
+		static const Pair_first_type* 
+			generate(const void* sender, const P* Item) 
+		{ 
+			return &Item->first; 
+		}
+	};
+
+template <typename P>
 	class FirstObjectKey 
 	{
 	public:

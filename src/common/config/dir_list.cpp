@@ -228,14 +228,13 @@ bool DirectoryList::isPathInList(const PathName& path) const
 
 void DirectoryList::expandFileName (
 					PathName& path, 
-					const PathName& name,
-					int access) 
+					const PathName& name) 
 const 
 {
 	fb_assert(mode != NotInitialized);
     for (size_t i = 0; i < getCount(); i++) {
 		PathUtils::concatPath(path, (*this)[i], name);
-		if (PathUtils::canAccess(path, access)) {
+		if (PathUtils::canAccess(path, 4)) {
 			return;
 		}
 	}

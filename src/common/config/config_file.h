@@ -62,9 +62,10 @@ class ConfigFile : public Firebird::AutoStorage
 	typedef Firebird::PathName string;
 
 	typedef Firebird::Pair<Firebird::Full<string, string> > Parameter;
+
     typedef Firebird::SortedObjectsArray <Parameter, 
 		Firebird::InlineStorage<Parameter *, 100>,
-		string, Firebird::FirstObjectKey<Parameter> > mymap_t;
+		string, Firebird::FirstPointerKey<Parameter> > mymap_t;
 
 public:
 	ConfigFile(MemoryPool& p, bool ExceptionOnError) 
