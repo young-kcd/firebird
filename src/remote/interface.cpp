@@ -135,7 +135,7 @@ static bool get_single_user(USHORT, const SCHAR*);
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static ISC_STATUS info(ISC_STATUS*, RDB, P_OP, USHORT, USHORT, USHORT,
 					const SCHAR*, USHORT, const SCHAR*, USHORT, SCHAR*);
-static bool init(ISC_STATUS *, rem_port*, P_OP, const Firebird::PathName&, UCHAR *, USHORT);
+static bool init(ISC_STATUS *, rem_port*, P_OP, Firebird::PathName&, UCHAR *, USHORT);
 static RTR make_transaction(RDB, USHORT);
 static ISC_STATUS mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(ISC_STATUS, ...);
@@ -5933,7 +5933,7 @@ static ISC_STATUS info(
 static bool init(ISC_STATUS* user_status,
 				 rem_port* port,
 				 P_OP op,
-				 const Firebird::PathName& file_name,
+				 Firebird::PathName& file_name,
 				 UCHAR* dpb,
 				 USHORT dpb_length)
 {
@@ -5956,11 +5956,13 @@ static bool init(ISC_STATUS* user_status,
 	P_ATCH* attach = &packet->p_atch;
 	packet->p_operation = op;
 	attach->p_atch_file.cstr_length = file_name.length();
-	attach->p_atch_file.cstr_address = (UCHAR *) file_name.c_str();
+	attach->p_atch_file.cstr_address = 
+			reinterpret_cast<UCHAR*>(file_name.begin());
 	attach->p_atch_dpb.cstr_length = dpb_length;
 	attach->p_atch_dpb.cstr_address = dpb;
 
-	if (!send_packet(rdb->rdb_port, packet, user_status)) {
+	if (!send_packet(rdb->rdb_port, packet, user_status)) 
+	{
 		disconnect(port);
 		return false;
 	}
