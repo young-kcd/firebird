@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gpre,v 1.17 2004-12-09 19:18:20 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std

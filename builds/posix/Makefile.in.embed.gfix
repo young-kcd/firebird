@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gfix,v 1.12 2004-12-09 19:18:20 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
