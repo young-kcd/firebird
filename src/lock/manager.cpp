@@ -27,11 +27,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/divorce.h"
-#ifdef LINKS_EXIST
-#include "../isc_lock/lock_proto.h"
-#else
 #include "../lock/lock_proto.h"
-#endif
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>

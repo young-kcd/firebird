@@ -27,11 +27,7 @@
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
 #include "../jrd/isc.h"
-#ifdef LINKS_EXIST
-#include "../isc_lock/lock.h"
-#else
 #include "../lock/lock.h"
-#endif
 
 #ifdef WIN_NT
 #include <process.h>

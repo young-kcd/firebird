@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.53 2002-12-31 19:32:24 nmcc Exp $
+$Id: common.h,v 1.54 2003-02-10 15:06:02 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -75,9 +75,6 @@ $Id: common.h,v 1.53 2002-12-31 19:32:24 nmcc Exp $
 /*
   do not use links in source code to maintain platform neutraility
 */
-
-#undef LINKS_EXIST
-
 
 #ifdef PROD_BUILD
 #ifdef DEV_BUILD
@@ -531,7 +528,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #ifdef WIN_NT
 #define NO_PYXIS
 #define NO_NFS
-#undef LINKS_EXIST
 
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
@@ -624,7 +620,6 @@ typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) (int);
 #endif
 
 #define                 IEEE
-#undef LINKS_EXIST
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* M_I386 */

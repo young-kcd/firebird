@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.29 2003-02-07 15:23:18 brodsom Exp $
+$Id: lock.cpp,v 1.30 2003-02-10 15:05:53 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -38,13 +38,8 @@ $Id: lock.cpp,v 1.29 2003-02-07 15:23:18 brodsom Exp $
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
-#ifdef LINKS_EXIST
-#include "../isc_lock/lock.h"
-#include "../isc_lock/lock_proto.h"
-#else
 #include "../lock/lock.h"
 #include "../lock/lock_proto.h"
-#endif /* LINKS_EXIST */
 #include "gen/codes.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"

@@ -39,11 +39,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/isc.h"
 #include "../jrd/time.h"
-#ifdef LINKS_EXIST
-#include "../isc_lock/lock.h"
-#else
 #include "../lock/lock.h"
-#endif /* LINKS_EXIST */
 #include "../jrd/gdsassert.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
