@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.108 2004-05-17 22:29:41 brodsom Exp $
+$Id: inet.cpp,v 1.109 2004-05-18 16:26:23 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -210,9 +210,9 @@ static bool first_time = true;
 #ifdef HAVE_SYS_TIMEB_H
 # include <sys/timeb.h>
 #endif
-#define TRACE_packets		(1 << 0)	/* bit 0 */
-#define TRACE_operations	(1 << 1)	/* bit 1 */
-#define TRACE_summary		(1 << 2)	/* bit 2 */
+const int TRACE_packets		= 1 << 0;	/* bit 0 */
+const int TRACE_operations	= 1 << 1;	/* bit 1 */
+const int TRACE_summary		= 1 << 2;	/* bit 2 */
 
 static int INET_trace = TRACE_summary | TRACE_packets | TRACE_operations;
 static time_t INET_start_time = 0;

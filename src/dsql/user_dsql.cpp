@@ -1001,7 +1001,7 @@ ISC_STATUS API_ROUTINE isc_describe(ISC_STATUS* status_vector,
 {
 	return isc_embed_dsql_describe(status_vector,
 								   statement_name,
-								   (USHORT) DIALECT_sqlda,
+								   DIALECT_sqlda,
 								   reinterpret_cast<XSQLDA*>(sqlda));
 }
 
@@ -1011,7 +1011,7 @@ ISC_STATUS API_ROUTINE isc_describe_bind(ISC_STATUS* status_vector,
 {
 	return isc_embed_dsql_describe_bind(status_vector,
 										statement_name,
-										(USHORT) DIALECT_sqlda,
+										DIALECT_sqlda,
 										reinterpret_cast<XSQLDA*>(sqlda));
 }
 
@@ -1027,7 +1027,7 @@ ISC_STATUS API_ROUTINE isc_execute(ISC_STATUS* status_vector,
 	return isc_embed_dsql_execute(status_vector,
 								  tra_handle,
 								  statement_name,
-								  (USHORT) DIALECT_sqlda,
+								  DIALECT_sqlda,
 								  reinterpret_cast<XSQLDA*>(sqlda));
 }
 
@@ -1040,7 +1040,7 @@ ISC_STATUS API_ROUTINE isc_execute_immediate(ISC_STATUS* status_vector,
 										db_handle, tra_handle,
 										(USHORT) ((sql_length) ? *sql_length :
 												  0), sql,
-										(USHORT) DIALECT_sqlda, NULL);
+										DIALECT_sqlda, NULL);
 }
 
 #ifdef VMS
@@ -1064,7 +1064,7 @@ ISC_STATUS API_ROUTINE isc_fetch(ISC_STATUS* status_vector,
 {
 	return isc_embed_dsql_fetch(status_vector,
 								cursor_name,
-								(USHORT) DIALECT_sqlda,
+								DIALECT_sqlda,
 								reinterpret_cast<XSQLDA*>(sqlda));
 }
 
@@ -1075,7 +1075,7 @@ ISC_STATUS API_ROUTINE isc_fetch_a(ISC_STATUS* status_vector,
 	return isc_embed_dsql_fetch_a(status_vector,
 								  sqlcode,
 								  cursor_name,
-								  (USHORT) DIALECT_sqlda,
+								  DIALECT_sqlda,
 								  reinterpret_cast<XSQLDA*>(sqlda));
 }
 
@@ -1086,7 +1086,7 @@ ISC_STATUS API_ROUTINE isc_open(ISC_STATUS* status_vector,
 	return isc_embed_dsql_open(status_vector,
 							   tra_handle,
 							   cursor_name,
-							   (USHORT) DIALECT_sqlda,
+							   DIALECT_sqlda,
 							   reinterpret_cast<XSQLDA*>(sqlda));
 }
 
@@ -1104,7 +1104,7 @@ ISC_STATUS API_ROUTINE isc_prepare(	ISC_STATUS*	status_vector,
 									statement_name,
 									(USHORT) ((sql_length) ? *sql_length : 0),
 									sql,
-									(USHORT) DIALECT_sqlda,
+									DIALECT_sqlda,
 									reinterpret_cast<XSQLDA*>(sqlda));
 }
 

@@ -26,8 +26,8 @@
 
 // SQLDA dialects 
 
-#define DIALECT_sqlda	0
-#define DIALECT_xsqlda	1
+const USHORT DIALECT_sqlda	= 0;
+const USHORT DIALECT_xsqlda	= 1;
 
 typedef struct
 {

@@ -48,9 +48,9 @@
 #endif
 
 /* Startup Configuration Entry point for regcfg.exe. */
-#define SVC_CONFIG          4
-#define REGCFG_ENTRYPOINT   "LaunchInstReg"
-#define REGCFG_DLL	        "REGCFG.DLL"
+//#define SVC_CONFIG          4
+//#define REGCFG_ENTRYPOINT   "LaunchInstReg"
+//#define REGCFG_DLL	        "REGCFG.DLL"
 typedef void (__cdecl * LPFNREGCFG) (char *, short);
 
 // Define an array of dword pairs,
@@ -676,7 +676,7 @@ void start_and_watch_server(const char* server_name)
 
        		const int ret_val = WaitForSingleObject(procHandle, INFINITE);
 			if (ret_val == WAIT_ABANDONED)
-				exit_status = (DWORD) CRASHED;
+				exit_status = CRASHED;
 			else if (ret_val == WAIT_OBJECT_0)
 				exit_status = NORMAL_EXIT;
 

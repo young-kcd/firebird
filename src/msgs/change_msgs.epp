@@ -36,13 +36,13 @@
 
 DATABASE DB = "msg.fdb";
 
-#define FAC_SQL_POSITIVE	14
-#define FAC_SQL_NEGATIVE	13
+//#define FAC_SQL_POSITIVE	14
+//#define FAC_SQL_NEGATIVE	13
 
-#define LOWER_A         'a'
-#define UPPER_A         'A'
-#define LOWER_Z         'z'
-#define UPPER_Z         'Z'
+const char LOWER_A	= 'a';
+const char UPPER_A	= 'A';
+const char LOWER_Z	= 'z';
+const char UPPER_Z	= 'Z';
 
 static void ascii_str_upper(UCHAR *);
 static void explicit_print(TEXT *);

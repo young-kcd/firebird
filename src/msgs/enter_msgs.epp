@@ -50,13 +50,13 @@ static int store_sql_msg(void);
 static int translate(UCHAR *, UCHAR *, SSHORT);
 static bool get_symbol( UCHAR *);
 
-#define FAC_SQL_POSITIVE	14
-#define FAC_SQL_NEGATIVE	13
+const int FAC_SQL_POSITIVE	= 14;
+const int FAC_SQL_NEGATIVE	= 13;
 
-#define	LOWER_A		'a'
-#define	UPPER_A		'A'
-#define LOWER_Z		'z'
-#define UPPER_Z		'Z'
+const char LOWER_A		= 'a';
+const char UPPER_A		= 'A';
+const char LOWER_Z		= 'z';
+const char UPPER_Z		= 'Z';
 
 
 int main( int argc, char **argv)

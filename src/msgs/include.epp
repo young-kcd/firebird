@@ -37,9 +37,9 @@ static int put_error(FILE *, SCHAR **, SCHAR *, SSHORT);
 static int put_symbol(FILE *, SCHAR *, SCHAR *, SLONG, SSHORT);
 static int put_symbols(FILE *, SCHAR **, SCHAR *, SSHORT);
 
-#define OPT_byte	1
-#define OPT_signed	2
-#define OPT_sans_dollar	4
+const SSHORT OPT_byte		= 1;
+const SSHORT OPT_signed		= 2;
+const SSHORT OPT_sans_dollar	= 4;
 
 static SSHORT defaults;
 static SCHAR *formats[40], *format_ptr, format_buffer[1024];

@@ -50,9 +50,9 @@
 DATABASE DB = "msg.fdb";
 
 
-#define INCLUDE_INDICATOR	"indicator.incl"
-#define MESSAGE_INDICATOR	"indicator.msg"
-#define LOCALE_INDICATOR	"indicator.loc"
+const char* INCLUDE_INDICATOR	= "indicator.incl";
+const char* MESSAGE_INDICATOR	= "indicator.msg";
+const char* LOCALE_INDICATOR	= "indicator.loc";
 
 
 int CLIB_ROUTINE main( int argc, char *argv[])

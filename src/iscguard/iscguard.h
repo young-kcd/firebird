@@ -16,24 +16,27 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#define GUARDIAN_APP_NAME        "Firebird Guardian"
-#define GUARDIAN_APP_LABEL       "Firebird Guardian"
-#define GUARDIAN_CLASS_NAME      "FB_Guard"
-#define	FBSERVER	    "fbserver.exe"
-#define GUARDIAN_HELP_FILE "fbserver.hlp"
+#ifndef ISCGUARD_H
+#define ISCGUARD_H
+
+const char* GUARDIAN_APP_NAME		= "Firebird Guardian";
+const char* GUARDIAN_APP_LABEL		= "Firebird Guardian";
+const char* GUARDIAN_CLASS_NAME		= "FB_Guard";
+const char* FBSERVER				= "fbserver.exe";
+const char* GUARDIAN_HELP_FILE		= "fbserver.hlp";
 
 /* Help Constants */
-#define ibs_server_directory    8060
-#define ibs_guard_version       8080
-#define ibs_guard_log           8090
+const DWORD ibs_server_directory	= 8060;
+const DWORD ibs_guard_version		= 8080;
+const DWORD ibs_guard_log			= 8090;
 
 #define WM_SWITCHICONS  WM_USER + 3
 
-#define START_ONCE      0
-#define START_FOREVER   1
+const short START_ONCE		= 0;
+const short START_FOREVER	= 1;
 
-#define NORMAL_EXIT	0
-#define CRASHED		-1
+const DWORD NORMAL_EXIT		= 0;
+const DWORD CRASHED			= (DWORD) -1;
 
 typedef void (*FPTR_VOID) ();
 
@@ -44,3 +47,4 @@ struct log_info {
 	log_info* next;
 };
 
+#endif // ISCGUARD_H

@@ -26,8 +26,6 @@
 #include "ld_proto.h"
 #include "lc_ascii.h"
 
-#define ASCII_SPACE	32			// ASCII code for space
-
 static inline void FAMILY_ASCII(TEXTTYPE cache,
 								TTYPE_ID id_number,
 								pfn_INTL_init name,
@@ -418,7 +416,7 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 
 #define LANGASCII_MAX_KEY	(MAX_KEY)
 
-//#define ASCII_SPACE	32			// ASCII code for space
+#define ASCII_SPACE	32			// ASCII code for space
 
 #define	ASCII7_UPPER(ch) \
 	((((UCHAR) (ch) >= (UCHAR) ASCII_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_LOWER_Z)) \
@@ -429,21 +427,21 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 		? (UCHAR) ((ch)-ASCII_UPPER_A+ASCII_LOWER_A) \
 		: (UCHAR) (ch))
 
-#define CP1251_UPPER_A 0xC0
-#define CP1251_LOWER_A 0xE0
-#define CP1251_UPPER_YA 0xDF
-#define CP1251_LOWER_YA 0xFF
+const UCHAR CP1251_UPPER_A		= 0xC0;
+const UCHAR CP1251_LOWER_A		= 0xE0;
+const UCHAR CP1251_UPPER_YA		= 0xDF;
+const UCHAR CP1251_LOWER_YA		= 0xFF;
 
-#define CP1251_UPPER_EX0 0xA8	// ¨
-#define CP1251_LOWER_EX0 0xB8	// ¸
-#define CP1251_UPPER_EX1 0xA5	// ¥
-#define CP1251_LOWER_EX1 0xB4	// ´
-#define CP1251_UPPER_EX2 0xAA	// ª
-#define CP1251_LOWER_EX2 0xBA	// º
-#define CP1251_UPPER_EX3 0xAF	// ¯
-#define CP1251_LOWER_EX3 0xBF	// ¿
-#define CP1251_UPPER_EX4 0xB2	// ²
-#define CP1251_LOWER_EX4 0xB3	// ³
+const UCHAR CP1251_UPPER_EX0	= 0xA8;	// ¨
+const UCHAR CP1251_LOWER_EX0	= 0xB8;	// ¸
+const UCHAR CP1251_UPPER_EX1	= 0xA5;	// ¥
+const UCHAR CP1251_LOWER_EX1	= 0xB4;	// ´
+const UCHAR CP1251_UPPER_EX2	= 0xAA;	// ª
+const UCHAR CP1251_LOWER_EX2	= 0xBA;	// º
+const UCHAR CP1251_UPPER_EX3	= 0xAF;	// ¯
+const UCHAR CP1251_LOWER_EX3	= 0xBF;	// ¿
+const UCHAR CP1251_UPPER_EX4	= 0xB2;	// ²
+const UCHAR CP1251_LOWER_EX4	= 0xB3;	// ³
 
 static inline UCHAR CP1251_UPPER(UCHAR ch)
 {

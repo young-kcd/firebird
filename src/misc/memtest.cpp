@@ -56,9 +56,9 @@
 #endif
 
 
-#define TEST_REPEATS	6		/* Number of times to repeat timing */
-#define	MCOUNT		10000		/* Number of operations per timing */
-#define	MAXSIZE		8196		/* Max size of buffer to copy */
+const int TEST_REPEATS	= 6;		/* Number of times to repeat timing */
+const int MCOUNT		= 10000;	/* Number of operations per timing */
+const int MAXSIZE		= 8196;		/* Max size of buffer to copy */
 
 ULONG force_alignment_dummy1;
 UCHAR source[MAXSIZE + sizeof(ULONG) * 2];
@@ -255,10 +255,10 @@ do_test_memset(dest, size)
 	report_time(message_buffer);
 
 /* Guesses for optimal length for each algorithm */
-#define SIZE_OPTIMAL_MEMSET_INLINE	16
-#define SIZE_OPTIMAL_MEMSET_MEMSET	160
-#define SIZE_OPTIMAL_MEMCPY_INLINE	16
-#define SIZE_OPTIMAL_MEMCPY_MEMCPY	160
+const int SIZE_OPTIMAL_MEMSET_INLINE	= 16;
+const int SIZE_OPTIMAL_MEMSET_MEMSET	= 160;
+const int SIZE_OPTIMAL_MEMCPY_INLINE	= 16;
+const int SIZE_OPTIMAL_MEMCPY_MEMCPY	= 160;
 
 	init_time();
 	for (r = 0; r < TEST_REPEATS; r++) {

@@ -31,7 +31,7 @@
 
 #include "../jrd/os/path_utils.h"
 
-#define CONFIG_FILE "firebird.conf"
+static const char* CONFIG_FILE	= "firebird.conf";
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
