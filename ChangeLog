@@ -1,3 +1,22 @@
+2004-09-06 21:17  dimitr
+
+	* firebird2/src/dsql/parse.y (1.145):
+	
+	Allowed UNION DISTINCT equal to just UNION (see chapter 7.13 of the
+	SQL spec).
+
+2004-09-06 10:46  alexpeshkoff
+
+	* firebird2/src/jrd/dfw.epp (1.123):
+	
+	small optimization - noticed by Claudio
+
+2004-09-06 10:14  alexpeshkoff
+
+	* firebird2/src/dsql/: alld.cpp (1.30), dsql.cpp (1.121):
+	
+	fixed problems, noticed by Claudio
+
 2004-09-05 23:50  dimitr
 
 	* firebird2/src/dsql/make.cpp (1.75):
