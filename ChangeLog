@@ -1,3 +1,138 @@
+2003-11-04 13:18  paul_reeves
+
+	*
+	
+	file FirebirdInstallEnvironmentChecks.inc was initially added on
+	branch B1_5_Release.
+	firebird2/src/install/arch-specific/win32/FirebirdInstallEnvironmen
+	tChecks.inc:
+
+2003-11-04 13:18  paul_reeves
+
+	*
+	
+	file FirebirdInstallSupportFunctions.inc was initially added on
+	branch B1_5_Release.
+	firebird2/src/install/arch-specific/win32/FirebirdInstallSupportFun
+	ctions.inc:
+
+2003-11-04 13:18  paul_reeves
+
+	* firebird2/: builds/win32/make_all.bat, doc/Firebird_conf.txt,
+	doc/README.user, doc/WhatsNew,
+	
+	Extensive reworking of install script for Win32. Main new feature
+	is better analysis of existing previous installs. This is necessary
+	to support new client library installation requirements.
+	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
+	c,
+	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+	, src/install/arch-specific/win32/FirebirdInstall_15.iss,
+	src/install/arch-specific/win32/Readme.txt, src/jrd/isc_version.rc,
+	src/jrd/version.rc:
+
+2003-11-04 13:12  eku
+
+	* firebird2/builds/install/arch-specific/sinixz/prototype.in:
+	
+	Updated file list.
+
+2003-11-04 12:35  aafemt
+
+	* firebird2/src/jrd/: bookmark.h, evl.cpp, evl_proto.h, exe.h,
+	exe_proto.h, rse.cpp:
+	
+	'struct' cleanup
+
+2003-11-04 09:34  eku
+
+	* firebird2/configure.in:
+	
+	Added comment as requested by Claudio.
+
+2003-11-04 07:45  eku
+
+	* firebird2/configure.in:
+	
+	Work around a problem with some Linux distros.
+
+2003-11-04 07:25  eku
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.intl,
+	builds/posix/Makefile.in.libfbclient:
+	
+	Undo my latest changes as requested by Nickolay Samofatov.
+
+2003-11-04 04:49  brodsom
+
+	* firebird2/src/isql/isql.epp:
+	
+	Fix for bug 781610 (-- comments in isql)
+
+2003-11-04 02:35  brodsom
+
+	* firebird2/src/isql/isql.epp:
+	
+	Correct bug in isql (Noticed by Arno)
+
+2003-11-04 01:21  brodsom
+
+	* firebird2/src/jrd/jrd.h:
+	
+	Correction (Replacing assert with fb_assert)
+
+2003-11-04 00:56  brodsom
+
+	* firebird2/src/: utilities/ibmgr/srvrmgr.cpp,
+	utilities/install/install_svc.cpp, dsql/parse.cpp:
+	
+	Replacing assert with fb_assert
+
+2003-11-04 00:53  brodsom
+
+	* firebird2/src/: jrd/sdl.cpp, jrd/sdw.cpp, jrd/sort.cpp,
+	jrd/sort_mem.cpp, jrd/sqz.cpp, jrd/status.cpp, jrd/svc.cpp,
+	jrd/thd.cpp, jrd/tra.cpp, jrd/utl.cpp, jrd/why.cpp,
+	jrd/ExecuteStatement.cpp, jrd/cvt.cpp, jrd/cvt2.cpp, jrd/dfw.epp,
+	jrd/dls.cpp, jrd/dsc.cpp, jrd/dyn.epp, jrd/dyn_def.epp,
+	jrd/dyn_mod.epp, jrd/dyn_util.epp, jrd/err.cpp, jrd/event.cpp,
+	jrd/evl.cpp, jrd/evl_like.cpp, jrd/exe.cpp, jrd/filters.cpp,
+	jrd/flu.cpp, jrd/fun.epp, jrd/gds.cpp, jrd/gdsassert.h,
+	jrd/idx.cpp, jrd/ini.epp, jrd/intl.cpp, jrd/intl_builtin.cpp,
+	jrd/intl_classes.h, jrd/isc_sync.cpp, jrd/jrd.cpp, jrd/jrd.h,
+	jrd/jrn.cpp, jrd/lck.cpp, jrd/met.epp, jrd/mov.cpp, jrd/nbak.cpp,
+	jrd/opt.cpp, jrd/pag.cpp, jrd/par.cpp, jrd/perf.cpp, jrd/pwd.cpp,
+	jrd/rpb_chain.cpp, jrd/rpb_chain.h, jrd/rse.cpp, jrd/rse.h,
+	jrd/sch.cpp, jrd/scl.epp, jrd/blob_filter.cpp, jrd/btr.cpp,
+	jrd/cch.cpp, jrd/cmp.cpp, jrd/os/posix/isc_ipc.cpp,
+	jrd/os/vms/vmsevent.cpp, lock/lock.cpp, lock/print.cpp,
+	misc/memtest.cpp, misc/print.cpp, qli/parse.cpp,
+	remote/interface.cpp, remote/parser.cpp, remote/protocol.cpp,
+	remote/remote.cpp, remote/server.cpp, utilities/guard/util.cpp:
+	
+	Replacing assert with fb_assert
+
+2003-11-04 00:49  brodsom
+
+	* firebird2/src/: alice/all.cpp, alice/exe.cpp, burp/spit.cpp,
+	burp/burp.cpp, burp/canonical.cpp, burp/mvol.cpp, burp/restore.epp,
+	common/classes/alloc.cpp, common/classes/array.h,
+	common/classes/class_test.cpp, common/classes/semaphore.h,
+	common/classes/tree.h, common/classes/vector.h, dsql/dsql.h,
+	dsql/errd.cpp, dsql/gen.cpp, dsql/hsh.cpp, dsql/make.cpp,
+	dsql/metd.epp, dsql/parse.y, dsql/pass1.cpp, dsql/ddl.cpp,
+	dsql/dsql.cpp, dudley/trn.cpp, gpre/cmd.cpp, gpre/cme.cpp,
+	gpre/cmp.cpp, gpre/gpre.cpp, gpre/gpre.h, gpre/gpre_meta.epp,
+	gpre/gpre_meta_boot.cpp, gpre/par.cpp, gpre/sql.cpp,
+	intl/cv_big5.cpp, intl/cv_gb2312.cpp, intl/cv_jis.cpp,
+	intl/cv_ksc.cpp, intl/cv_narrow.cpp, intl/cv_unicode_fss.cpp,
+	intl/lc_ascii.cpp, intl/lc_big5.cpp, intl/lc_dos.cpp,
+	intl/lc_iso8859_1.cpp, intl/lc_iso8859_2.cpp, intl/lc_jis.cpp,
+	intl/lc_ksc.cpp, intl/lc_narrow.cpp, intl/lc_unicode_ucs2.cpp,
+	intl/ld.cpp, intl/ld2.cpp, intl/ldcommon.h:
+	
+	Replacing assert with fb_assert
+
 2003-11-03 22:40  skidder
 
 	* firebird2/src/jrd/met.epp:
