@@ -1,5 +1,12 @@
 
   **************
+  * v1.5 Alpha 2
+  **************
+
+    * Fixed Alpha 1 bug.
+        Views are not being created correctly (missing records in RDB$VIEW_RELATIONS).
+
+  **************
   * v1.5 Alpha 1
   **************
 
