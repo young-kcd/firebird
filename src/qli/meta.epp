@@ -2872,6 +2872,7 @@ static void get_log_names(
 
 /* loop up to 10 times to allow the file to be archived */
 
+#ifndef SUPERCLIENT
 	while (TRUE) {
 		loop++;
 		if (WALF_get_linked_logs_info
@@ -2936,6 +2937,7 @@ static void get_log_names(
 		}
 		part_offset = next_offset;
 	}
+#endif
 }
 
 

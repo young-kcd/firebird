@@ -2910,6 +2910,7 @@ static void get_log_names(SCHAR * db_name,
 
 /* loop up to 10 times to allow the file to be archived */
 
+#ifndef SUPERCLIENT
 	while (TRUE) {
 		loop++;
 		if (WALF_get_linked_logs_info(gds_status, expanded_name, cur_log,
@@ -2967,6 +2968,7 @@ static void get_log_names(SCHAR * db_name,
 		}
 		part_offset = next_offset;
 	}
+#endif
 }
 
 

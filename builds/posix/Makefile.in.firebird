@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.37.2.9 2003-11-25 23:18:50 bellardo Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.10 2003-11-26 19:42:12 bellardo Exp $
 #
 
 ROOT=..
@@ -376,7 +376,7 @@ embed_qli:
 
 super_targets: $(PLAT_SUPER_PRE_TARGET) libfbserver fbserver libfbclient \
 		client_gfix client_gbak client_isql client_gpre client_util \
-		$(PLAT_SUPER_POST_TARGET) # client_gdef
+		client_qli client_gdef $(PLAT_SUPER_POST_TARGET)
 
 libfbserver:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbserver $@
@@ -401,6 +401,9 @@ client_isql:
 
 client_util:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.util	
+
+client_qli:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.qli
 
 # Not sure we need this target in super - problems with WAL includes
 # MOD 04-Oct-2002
