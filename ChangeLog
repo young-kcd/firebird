@@ -1,3 +1,156 @@
+2003-03-07 22:30  tamlin
+
+	* firebird2/src/isql/isql.epp:
+	
+	Fix integer overflow bug + initialize some variables.
+
+2003-03-07 17:58  brodsom
+
+	* firebird2/builds/posix/prefix.mingw.README.html:
+	
+	Modify MinGW instructions
+
+2003-03-07 08:41  eku
+
+	* firebird2/: src/make.new/config/config.guess,
+	src/make.new/config/config.sub, aclocal.m4, autogen.sh,
+	configure.in:
+	
+	Started to use libtool (http://www.gnu.org/software/libtool/). It
+	will eventually handle all platform specific compile and link
+	issues! Removed generated files from the view (config.guess and
+	config.sub).
+
+2003-03-07 01:35  brodsom
+
+	* firebird2/src/: jrd/opt.cpp, remote/ibconfig.cpp,
+	remote/window.cpp:
+	
+	Avoid undefined function warning
+
+2003-03-07 01:35  brodsom
+
+	* firebird2/src/alice/alice.cpp:
+	
+	Avoid unused function warning
+
+2003-03-07 00:25  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.libfbclient,
+	Makefile.in.libfbembed, prefix.mingw:
+	
+	Update instructions, remove win_libs and give instructions to patch
+	manually libfbclient and libfbembed
+
+2003-03-07 00:20  brodsom
+
+	* firebird2/builds/posix/prefix.mingw.README.html:
+	
+	Update instructions
+
+2003-03-06 16:29  brodsom
+
+	* firebird2/src/intlcpp/: cv_unicode_fss.cpp, cv_big5.cpp,
+	cv_gb2312.cpp, cv_jis.cpp, cv_ksc.cpp, cv_narrow.cpp:
+	
+	Update intlcpp. (change the functions order in cv_unicode_fss to be
+	the same that in intl)
+
+2003-03-06 16:16  brodsom
+
+	* firebird2/src/utilities/: registry.cpp, install_svc.cpp:
+	
+	Use C++ cast.
+
+2003-03-06 14:22  brodsom
+
+	* firebird2/configure.in:
+	
+	Remove lstdc++ from mingw platform libs
+
+2003-03-06 14:16  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.fbserver,
+	Makefile.in.inet_server, prefix.mingw:
+	
+	Move cntl.cpp to OS_ServerFiles
+
+2003-03-06 13:22  brodsom
+
+	* firebird2/src/: gpre/noform.cpp, intl/lc_big5.h,
+	intl/collations/xx88592czech.h:
+	
+	Add newline at end of file
+
+2003-03-06 02:14  brodsom
+
+	* firebird2/configure.in:
+	
+	Changes fro MINGW build (forgoten commit) -Add directory
+
+2003-03-06 02:13  brodsom
+
+	* firebird2/src/remote/ibconfig.cpp:
+	
+	Remove wrong comment (/*...../*....*/)
+
+2003-03-06 02:09  brodsom
+
+	* firebird2/src/jrd/blob_filter.epp:
+	
+	Blob_filter is not a epp file since 1999, change the name to .cpp
+	and modify the makefiles
+
+2003-03-06 01:43  brodsom
+
+	* firebird2/builds/win32/: msvc6/engine_classic.dsp,
+	msvc6/engine_embed.dsp, msvc6/engine.dsp, msvc7/engine.vcproj,
+	msvc7/engine_classic.vcproj, msvc7/engine_embed.vcproj:
+	
+	Blob_filter is not a epp file since 1999, change the name to .cpp
+	and modify the makefiles
+
+2003-03-06 01:38  brodsom
+
+	* firebird2/builds/posix/: make.shared.variables, Makefile.in.jrd:
+	
+	Blob_filter is not a epp file since 1999, change the name to .cpp
+	and modify the makefiles
+
+2003-03-06 01:35  brodsom
+
+	* firebird2/: src/jrd/blob_filter.cpp,
+	builds/mac_os_x/CS/CS.pbproj/project.pbxproj,
+	builds/mac_os_x/CS/Helpers.make, builds/win32/preprocess.bat:
+	
+	Blob_filter is not a epp file since 1999, change the name to .cpp
+	and modify the makefiles
+
+2003-03-06 01:27  brodsom
+
+	* firebird2/builds/posix/prefix.mingw.README.html:
+	
+	Changes for MinGW build.  -Build instructions.
+
+2003-03-06 01:16  brodsom
+
+	* firebird2/builds/posix/Makefile.in.libfbclient:
+	
+	Changes for MinGW build.  -Patch previous commit
+
+2003-03-06 00:43  brodsom
+
+	* firebird2/src/include/firebird.h:
+	
+	-Changes for MINGW build -SERVER_SHUTDOWN must be defined for
+	WIN_NT
+
+2003-03-06 00:36  brodsom
+
+	* firebird2/src/jrd/utl_proto.h:
+	
+	Changes for MINGW build -Correct bad function declaration.
+
 2003-03-05 21:59  brodsom
 
 	* firebird2/builds/posix/Makefile.in.inet_server:
