@@ -326,6 +326,7 @@ const int op_set_error	= 17;
 const int op_literals	= 18;
 const int op_relation	= 20;
 const int op_exec_into	= 21;
+const int op_cursor_stmt	= 22;
 
 static const UCHAR
 	/* generic print formats */
@@ -381,7 +382,9 @@ static const UCHAR
 	range_relation[] = { op_line, op_verb, op_indent, op_relation, op_line, 0},
 	extract[]	= { op_line, op_byte, op_verb, 0},
 	user_savepoint[]	= { op_byte, op_byte, op_literal, op_line, 0},
-	exec_into[] = { op_word, op_line, op_indent, op_exec_into, 0};
+	exec_into[] = { op_word, op_line, op_indent, op_exec_into, 0},
+	dcl_cursor[] = { op_word, op_line, op_verb, 0},
+	cursor_stmt[] = { op_cursor_stmt, 0 };
 
 #include "../jrd/blp.h"
 
@@ -3382,8 +3385,22 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 		}
 
+		case op_cursor_stmt: {
+			blr_operator = blr_print_byte(control);
+			blr_print_word(control);
+			if (blr_operator == blr_cursor_fetch) {
+#ifdef SCROLLABLE_CURSORS
+				if (BLR_PEEK == blr_seek) {
+					blr_print_verb(control, level);
+				}
+#endif
+			}
+			offset = blr_print_line(control, (SSHORT) offset);
+			break;
+		}
+
 		default:
-			fb_assert(FALSE);
+			fb_assert(false);
 			break;
 		}
 }

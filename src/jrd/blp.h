@@ -140,13 +140,9 @@ static const struct
 	{"post_arg", two},
 	{"exec_into", exec_into},
 	{"user_savepoint", user_savepoint},
-	
-	/* These are actually cursor operations added in Firebird 2.0 */
-    {"divide2", two},
-	{"agg_total2", one},
-	
+	{"dcl_cursor", dcl_cursor},
+	{"cursor_stmt", cursor_stmt},
 	{"current_database", zero}, 
-	
     /* These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete */
 	{"agg_average2", one}, {"agg_average_distinct2", one},	/* 170 */
 	{"average2", two}, 
