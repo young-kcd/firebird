@@ -927,8 +927,8 @@ static void show_dbb_parameters( DBB database)
 
 static int show_field_detail(
 							 DBB database,
-							 const TEXT * relation_name,
-							 const TEXT * field_name,
+							 const TEXT* relation_name,
+							 const TEXT* field_name,
 							 qli_syntax* idx_node)
 {
 /**************************************
@@ -1072,7 +1072,6 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
  *
  **************************************/
 	DBB database;
-	qli_symbol* symbol;
 
 // Find the long field name (including query name) 
 
@@ -1091,7 +1090,8 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
 
 	for (field = fields; field; field = field->fld_next) {
 		USHORT l = field->fld_name->sym_length;
-		if (symbol = field->fld_query_name)
+		const qli_symbol* symbol = field->fld_query_name;
+		if (symbol)
 			l += symbol->sym_length + 3;
 		max_name = MAX(max_name, l);
 	}
@@ -1102,7 +1102,7 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
 		if (QLI_abort)
 			return;
 
-		symbol = field->fld_name;
+		const qli_symbol* symbol = field->fld_name;
 		USHORT l = symbol->sym_length;
 		printf("        %s", symbol->sym_string);
 
@@ -1298,7 +1298,7 @@ static void show_fld( qli_syntax* field_node)
  *	is a list of 1, 2, or 3 name blocks,
  *	contain the [[database.]relation.]field
  *	specification.  Figure out what we've
- *	got and let somebody else  do all the work.
+ *	got and let somebody else do all the work.
  *
  **************************************/
 	qli_syntax* idx_node = NULL;
@@ -1322,14 +1322,14 @@ static void show_fld( qli_syntax* field_node)
 			for (qli_symbol* symbol = ((NAM) * ptr)->nam_symbol; symbol;
 				 symbol = symbol->sym_homonym)
 			{
-				if (symbol->sym_type = SYM_database) {
+				if (symbol->sym_type == SYM_database) {
 					database = (DBB) symbol->sym_object;
 					break;
 				}
 			}
 	}
 
-	TEXT *string = (relation_name) ? relation_name->nam_string : NULL;
+	const TEXT *string = (relation_name) ? relation_name->nam_string : NULL;
 	TEXT s[65];
 
 	if (string)
@@ -1376,12 +1376,11 @@ static void show_func( QFN func)
  *	with that name.
  *
  **************************************/
-	DBB database;
-
 	int count = 0;
 	NAM name = func->qfn_name;
 
-	if (database = func->qfn_database) {
+	DBB database = func->qfn_database;
+	if (database) {
 		if (!(database->dbb_capabilities & DBB_cap_functions)) {
 			// Msg417 Functions are not supported in database %s.
 			ERRQ_msg_put(417, database->dbb_symbol->sym_string, NULL, NULL,
@@ -1554,8 +1553,8 @@ static int show_funcs_detail( DBB database)
 
 static int show_insecure_fields(
 								DBB database,
-								const TEXT * relation_name,
-								const TEXT * field_name)
+								const TEXT* relation_name,
+								const TEXT* field_name)
 {
 /**************************************
  *
@@ -1667,8 +1666,7 @@ static void show_gbl_field( qli_syntax* field_node)
  *	otherwise show them all.
  *
  **************************************/
-	NAM field_name = NULL, name;
-	qli_symbol* symbol;
+	NAM field_name = NULL;
 	DBB database = NULL;
 
 	for (qli_syntax** ptr = field_node->syn_arg + field_node->syn_count - 1;
@@ -1678,10 +1676,11 @@ static void show_gbl_field( qli_syntax* field_node)
 			field_name = (NAM) * ptr;
 		}
 		else {
-			for (name = (NAM) *ptr, symbol = name->nam_symbol;
+			NAM name = (NAM) *ptr;
+			for (qli_symbol* symbol = name->nam_symbol;
 				symbol; symbol = symbol->sym_homonym)
 			{
-				if (symbol->sym_type = SYM_database) {
+				if (symbol->sym_type == SYM_database) {
 					database = (DBB) symbol->sym_object;
 					break;
 				}
@@ -1709,7 +1708,7 @@ static void show_gbl_field( qli_syntax* field_node)
 }
 
 
-static int show_gbl_field_detail( DBB database, const TEXT * field_name)
+static int show_gbl_field_detail( DBB database, const TEXT* field_name)
 {
 /**************************************
  *
@@ -1883,9 +1882,9 @@ static int show_indices_detail( qli_rel* relation)
 			// I found truncate_string(). But later replaced it by fb_utils::fb_exact_name().
 			fb_utils::fb_exact_name(X.RDB$INDEX_NAME);
 			ERRQ_msg_put(450, X.RDB$INDEX_NAME,
-						 (X.RDB$UNIQUE_FLAG) ? (char*) " (unique)" : (char*) "",
-						 (type == 1) ? (char*) " (descending)" : (char*) "",
-						 (X.RDB$INDEX_INACTIVE) ? (char*) " (inactive)" : (char*) "", NULL);	// Msg450 Index %s%s%s%s
+						 (X.RDB$UNIQUE_FLAG) ? " (unique)" : "",
+						 (type == 1) ? " (descending)" : "",
+						 (X.RDB$INDEX_INACTIVE) ? " (inactive)" : "", NULL);	// Msg450 Index %s%s%s%s
 
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index])
 				Y IN RDB$INDEX_SEGMENTS WITH
@@ -1919,7 +1918,7 @@ static int show_indices_detail( qli_rel* relation)
 			++count;
 			fb_utils::fb_exact_name(X.RDB$INDEX_NAME);
 			ERRQ_msg_put(290, X.RDB$INDEX_NAME,
-						 (X.RDB$UNIQUE_FLAG) ? (char*) " (unique)" : (char*) "", NULL, NULL, NULL);	// Msg290 Index %s%s
+						 (X.RDB$UNIQUE_FLAG) ? " (unique)" : "", NULL, NULL, NULL);	// Msg290 Index %s%s
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index])
 				Y IN RDB$INDEX_SEGMENTS WITH
 					Y.RDB$INDEX_NAME EQ X.RDB$INDEX_NAME
@@ -2010,12 +2009,12 @@ static void show_proc( QPR proc)
  *	with that name.
  *
  **************************************/
-	FB_API_HANDLE blob;
 	NAM name = proc->qpr_name;
 
 	DBB database = proc->qpr_database;
 	if (database) {
-		if (blob = PRO_fetch_procedure(database, (TEXT*) name->nam_string))
+		FB_API_HANDLE blob = PRO_fetch_procedure(database, (TEXT*) name->nam_string);
+		if (blob)
 			display_procedure(database, (const UCHAR*) name->nam_string, blob);
 		else {
 			ERRQ_msg_put(126,	// Msg126 Procedure %s not found in database %s
@@ -2027,7 +2026,8 @@ static void show_proc( QPR proc)
 
 	int count = 0;
 	for (database = QLI_databases; database; database = database->dbb_next) {
-		if (blob = PRO_fetch_procedure(database, (TEXT*) name->nam_string)) {
+		FB_API_HANDLE blob = PRO_fetch_procedure(database, (TEXT*) name->nam_string);
+		if (blob) {
 			display_procedure(database, (const UCHAR*) name->nam_string, blob);
 			count++;
 		}
@@ -2055,7 +2055,7 @@ static void show_procs( DBB database)
  **************************************/
 	buf_type buffer;
 
-	SSHORT width = get_window_size(sizeof(buffer) - 1);
+	const SSHORT width = get_window_size(sizeof(buffer) - 1);
 
 	PRO_setup(database);
 	ERRQ_msg_put(128, database->dbb_filename,	// Msg128 Procedures in database %s (%s): 
@@ -2103,7 +2103,7 @@ static void show_rel_detail( qli_rel* relation)
  *	security class, etc.
  *
  **************************************/
-	const TEXT *relation_name = relation->rel_symbol->sym_string;
+	const TEXT* relation_name = relation->rel_symbol->sym_string;
 	DBB database = relation->rel_database;
 	MET_meta_transaction(database, false);
 
@@ -2168,7 +2168,6 @@ static void show_rels( DBB dbb, enum show_t sw, SSHORT width)
  *      or system_relations for a specific database.
  *
  **************************************/
-	qli_rel* relation;
 	buf_type buffer;
 
 	switch (sw) {
@@ -2176,7 +2175,7 @@ static void show_rels( DBB dbb, enum show_t sw, SSHORT width)
 		{
 			show_dbb(dbb);
 			buffer[0] = 0;
-			for (relation = dbb->dbb_relations; relation;
+			for (const qli_rel* relation = dbb->dbb_relations; relation;
 				 relation = relation->rel_next)
 			{
 				if (!(relation->rel_flags & REL_system))
@@ -2191,7 +2190,7 @@ static void show_rels( DBB dbb, enum show_t sw, SSHORT width)
 		{
 			show_dbb(dbb);
 			buffer[0] = 0;
-			for (relation = dbb->dbb_relations; relation;
+			for (const qli_rel* relation = dbb->dbb_relations; relation;
 				 relation = relation->rel_next)
 			{
 				if (relation->rel_flags & REL_system)
@@ -2408,7 +2407,7 @@ static void show_trig( qli_rel* relation)
 }
 
 
-static int show_trigger_detail( DBB database, const TEXT * relation_name)
+static int show_trigger_detail( DBB database, const TEXT* relation_name)
 {
 /**************************************
  *
