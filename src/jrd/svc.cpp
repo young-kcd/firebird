@@ -586,11 +586,8 @@ Service* SVC_attach(USHORT	service_length,
  * decrypt function).
  */
 	if (options.spb_password) {
-		UCHAR* s = reinterpret_cast<UCHAR*>(service->svc_enc_password);
-		const UCHAR* p2 = (UCHAR *) ENC_crypt(options.spb_password, PASSWORD_SALT) + 2;
-		const int l = strlen((const char*) p2);
-		MOVE_FASTER(p2, s, l);
-		service->svc_enc_password[l] = 0;
+		ENC_crypt(service->svc_enc_password, sizeof service->svc_enc_password, 
+			options.spb_password, PASSWORD_SALT);
 	}
 
 	if (options.spb_password_enc) {
@@ -935,7 +932,7 @@ ISC_STATUS SVC_query2(Service* service,
 
 		   isc_info_svc_get_config     - called from within remote/ibconfig.cpp
 		   isc_info_svc_dump_pool_info - called from within utilities/print_pool.cpp
-		   isc_info_svc_user_dbpath    - called from within utilities/security.cpp
+//		   isc_info_svc_user_dbpath    - called from within utilities/security.cpp
 		 */
 		if (service->svc_user_flag == SVC_user_none)
 		{
@@ -943,7 +940,7 @@ ISC_STATUS SVC_query2(Service* service,
 			{
 			case isc_info_svc_get_config:
 			case isc_info_svc_dump_pool_info:
-			case isc_info_svc_user_dbpath:
+//			case isc_info_svc_user_dbpath:
 				break;
 			default:
 				ERR_post(isc_bad_spb_form, 0);

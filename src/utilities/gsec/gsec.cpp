@@ -32,6 +32,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/msg_encode.h"
+#include "../jrd/isc_f_proto.h"
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/gsec_proto.h"
 #include "../jrd/jrd_pwd.h"
@@ -41,6 +42,8 @@
 #include "../utilities/gsec/secur_proto.h"
 #include "../utilities/gsec/gsecswi.h"
 #include "../utilities/common/cmd_util_proto.h"
+
+#include "../utilities/gsec/call_service.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -75,6 +78,7 @@ static void printhelp(void);
 #ifndef SUPERSERVER
 static int output_main(Jrd::Service*, const UCHAR*);
 #endif
+inline void msg_get(USHORT number, TEXT* msg);
 
 void inline gsec_exit(int code, tsec* tdsec)
 {
@@ -121,7 +125,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	the specified argc/argv to SECURITY_exec_line (see below).
  *
  **************************************/
-	return common_main(argc, argv, output_main, NULL);
+ 	return common_main(argc, argv, output_main, NULL);
 }
 
 static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
@@ -138,6 +142,20 @@ static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
  **************************************/
 	fprintf(stderr, "%s", output_buf);
 	return 0;
+}
+
+inline void envPick(TEXT* dest, size_t size, const TEXT* var)
+{
+	if (dest && (!dest[0]))
+	{
+		const TEXT* val = getenv(var);
+		if (val)
+		{
+			--size;
+			strncpy(dest, val, size);
+			dest[size] = 0;
+		}
+	}
 }
 
 #endif /* SUPERSERVER */
@@ -170,16 +188,11 @@ int common_main(int argc,
 	tsec* tdsec = &tsecInstance;
 	tsec::putSpecific(tdsec);
 
-	tdsec->tsec_user_data =
-		(internal_user_data*) gds__alloc(sizeof(internal_user_data));
-/* NOMEM: return error, FREE: during function exit in the SETJMP */
-	if (tdsec->tsec_user_data == NULL) {
-		gsec_exit(FINI_ERROR, tdsec);
-	}
+	internal_user_data u;
+	tdsec->tsec_user_data = &u;
 	memset((void *) tdsec->tsec_user_data, 0, sizeof(internal_user_data));
 
 	try {
-
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
@@ -197,7 +210,7 @@ int common_main(int argc,
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
 		tdsec->tsec_service_gsec = true;
 		tdsec->tsec_service_thd = true;
-		tdsec->tsec_service_blk = (Jrd::Service*) output_data;
+		tdsec->tsec_service_blk = output_data;
 		tdsec->tsec_status = tdsec->tsec_service_blk->svc_status;
 		argv++;
 		argc--;
@@ -205,7 +218,6 @@ int common_main(int argc,
 #endif
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		tdsec->tsec_service_gsec = true;
-		// tdsec->output_proc = output_svc;
 		long redir_in = atol(argv[2]);
 		long redir_out = atol(argv[3]);
 		long redir_err = atol(argv[4]);
@@ -230,55 +242,86 @@ int common_main(int argc,
 	ISC_STATUS* status = tdsec->tsec_status;
 	SSHORT ret = parse_cmd_line(argc, argv, tdsec);
 	
-	TEXT user_info_name[MAXPATHLEN];	/* user info database name */
-	const TEXT* u;
-
-	if (user_data->database_entered)
-		u = user_data->database_name;
-	else {
-#ifdef SUPERSERVER
-/* there is no need to call the services manager to get this information */
-		SecurityDatabase::getPath(user_info_name);
-#else
-		SECURITY_get_db_path(NULL, user_info_name);
+#ifndef SUPERCLIENT
+	TEXT database_name[MAXPATHLEN];
+	SecurityDatabase::getPath(database_name);
 #endif
-		u = user_info_name;
+
+	const TEXT* serverName = "";
+	if (user_data->server_entered)
+	{
+		if (tdsec->tsec_service_gsec)
+		{
+			GSEC_error(GsecMsg16, NULL, NULL, NULL, NULL, NULL);
+		}
+		serverName = user_data->server_name;
 	}
+
+#ifdef SUPERCLIENT
+	const bool useServices = true;
+#else //SUPERCLIENT
+	bool useServices = serverName[0] ? true : false;
 
     char dpb_buffer[256];
 	char* dpb = dpb_buffer;
-	*dpb++ = isc_dpb_version1;
+	FB_API_HANDLE db_handle = 0;
 
-	if (user_data->dba_user_name_entered) {
-		*dpb++ = isc_dpb_user_name;
-		*dpb++ = strlen(user_data->dba_user_name);
-		for (const char* p = user_data->dba_user_name; *p;)
-			*dpb++ = *p++;
+	if (! useServices) 
+	{
+		*dpb++ = isc_dpb_version1;
+		*dpb++ = isc_dpb_gsec_attach;
+		*dpb++ = 1;	// size of parameter
+		*dpb++ = 1; // not 0 - ues, we are gsec
+
+		if (user_data->dba_user_name_entered) {
+			*dpb++ = isc_dpb_user_name;
+			*dpb++ = strlen(user_data->dba_user_name);
+			for (const char* p = user_data->dba_user_name; *p;)
+				*dpb++ = *p++;
+		}
+
+		if (user_data->dba_password_entered) {
+			if (tdsec->tsec_service_gsec)
+				*dpb++ = isc_dpb_password_enc;
+			else
+				*dpb++ = isc_dpb_password;
+			*dpb++ = strlen(user_data->dba_password);
+			for (const char* p = user_data->dba_password; *p;)
+				*dpb++ = *p++;
+		}
+
+		if (user_data->sql_role_name_entered) {
+			*dpb++ = isc_dpb_sql_role_name;
+			*dpb++ = strlen(user_data->sql_role_name);
+			for (const char* p = user_data->sql_role_name; *p;)
+				*dpb++ = *p++;
+		}
+
+		const SSHORT dpb_length = dpb - dpb_buffer;
+
+		if (isc_attach_database(status, 0, database_name, &db_handle, dpb_length, dpb_buffer))
+			GSEC_error_redirect(status, GsecMsg15, NULL, NULL);
 	}
 
-	if (user_data->dba_password_entered) {
-		if (tdsec->tsec_service_gsec)
-			*dpb++ = isc_dpb_password_enc;
-		else
-			*dpb++ = isc_dpb_password;
-		*dpb++ = strlen(user_data->dba_password);
-		for (const char* p = user_data->dba_password; *p;)
-			*dpb++ = *p++;
+#endif //SUPERCLIENT
+
+	isc_svc_handle sHandle = 0;
+	if (useServices)
+	{
+#ifndef SUPERSERVER
+		envPick(user_data->dba_user_name, sizeof user_data->dba_user_name, "ISC_USER");
+		envPick(user_data->dba_password, sizeof user_data->dba_password, "ISC_PASSWORD");
+#endif //SUPERSERVER
+		sHandle = attachRemoteServiceManager(
+					status,
+					user_data->dba_user_name,
+					user_data->dba_password,
+					serverName);
+		if (! sHandle)
+		{
+			GSEC_error_redirect(status, GsecMsg15, NULL, NULL);
+		}
 	}
-
-	if (user_data->sql_role_name_entered) {
-		*dpb++ = isc_dpb_sql_role_name;
-		*dpb++ = strlen(user_data->sql_role_name);
-		for (const char* p = user_data->sql_role_name; *p;)
-			*dpb++ = *p++;
-	}
-
-	const SSHORT dpb_length = dpb - dpb_buffer;
-	FB_API_HANDLE db_handle = 0;		/* user info database handle */
-
-	if (isc_attach_database(status, 0, u, &db_handle, dpb_length, dpb_buffer))
-		GSEC_error_redirect(status, GsecMsg15, NULL, NULL);
-
 
 	if (!tdsec->tsec_interactive) {
 		if (ret == 0) {
@@ -290,12 +333,24 @@ int common_main(int argc,
 			if (user_data->operation == DIS_OPER)
 				tdsec->tsec_service_blk->svc_started();
 #endif
-			ret = SECURITY_exec_line(status, db_handle, user_data,
-									 data_print, NULL);
+#ifndef SUPERCLIENT
+			if (! useServices)
+			{
+				ret = SECURITY_exec_line(status, db_handle, 
+							user_data, data_print, NULL);
+			}
+			else
+#endif //SUPERCLIENT
+			{
+				callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
+				ret = status[1] ? GsecMsg75 : 0;
+			}
 			if (ret) {
 				GSEC_print(ret, user_data->user_name, NULL, NULL, NULL, NULL);
 				if (status[1])
+				{
 					GSEC_print_status(status);
+				}
 			}
 		}
 	}
@@ -312,13 +367,24 @@ int common_main(int argc,
 				if (ret == 1)
 					break;
 				if (ret == 0) {
-					ret = SECURITY_exec_line(status, db_handle, user_data,
-											 data_print, NULL);
+#ifndef SUPERCLIENT
+					if (!useServices)
+					{
+						ret = SECURITY_exec_line(status, db_handle, 
+							user_data, data_print, NULL);
+					}
+					else
+#endif //SUPERCLIENT
+					{
+						callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
+						ret = status[1] ? GsecMsg75 : 0;
+					}
 					if (ret) {
 						GSEC_print(ret, user_data->user_name, NULL, NULL,
 								   NULL, NULL);
-						if (status[1])
+						if (status[1]) {
 							GSEC_print_status(status);
+						}
 						break;
 					}
 				}
@@ -326,10 +392,20 @@ int common_main(int argc,
 		}
 	}
 
+#ifndef SUPERCLIENT
 	if (db_handle) {
 		ISC_STATUS_ARRAY loc_status;
 		if (isc_detach_database(loc_status, &db_handle)) {
 			GSEC_error_redirect(loc_status, 0, NULL, NULL);
+		}
+	}
+#endif //SUPERCLIENT
+	if (sHandle)
+	{
+		ISC_STATUS_ARRAY loc_status;
+		detachRemoteServiceManager(loc_status, sHandle);
+		if (loc_status[1]) {
+			GSEC_print_status(loc_status);
 		}
 	}
 
@@ -345,11 +421,6 @@ int common_main(int argc,
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_env = NULL;
 		const int exit_code = tdsec->tsec_exit_code;
-
-		if (tdsec->tsec_user_data != NULL)
-		{
-			gds__free(tdsec->tsec_user_data);
-		}
 
 		/* All returns occur from this point - even normal returns */
 		return exit_code;
@@ -580,39 +651,39 @@ static bool get_switches(
 				user_data->gid_entered = true;
 				break;
 			case IN_SW_GSEC_SYSU:
-				strncpy(user_data->sys_user_name, string, 128);
+				strncpy(user_data->sys_user_name, string, sizeof(user_data->sys_user_name));
 				user_data->sys_user_entered = true;
 				break;
 			case IN_SW_GSEC_GROUP:
-				strncpy(user_data->group_name, string, 128);
+				strncpy(user_data->group_name, string, sizeof(user_data->group_name));
 				user_data->group_name_entered = true;
 				break;
 			case IN_SW_GSEC_FNAME:
-				strncpy(user_data->first_name, string, 17);
+				strncpy(user_data->first_name, string, sizeof(user_data->first_name));
 				user_data->first_name_entered = true;
 				break;
 			case IN_SW_GSEC_MNAME:
-				strncpy(user_data->middle_name, string, 17);
+				strncpy(user_data->middle_name, string, sizeof(user_data->middle_name));
 				user_data->middle_name_entered = true;
 				break;
 			case IN_SW_GSEC_LNAME:
-				strncpy(user_data->last_name, string, 17);
+				strncpy(user_data->last_name, string, sizeof(user_data->last_name));
 				user_data->last_name_entered = true;
 				break;
-			case IN_SW_GSEC_DATABASE:
-				strncpy(user_data->database_name, string, 512);
-				user_data->database_entered = true;
+			case IN_SW_GSEC_SERVER:
+				strncpy(user_data->server_name, string, sizeof(user_data->server_name));
+				user_data->server_entered = true;
 				break;
 			case IN_SW_GSEC_DBA_USER_NAME:
-				strncpy(user_data->dba_user_name, string, 133);
+				strncpy(user_data->dba_user_name, string, sizeof(user_data->dba_user_name));
 				user_data->dba_user_name_entered = true;
 				break;
 			case IN_SW_GSEC_DBA_PASSWORD:
-				strncpy(user_data->dba_password, string, 33);
+				strncpy(user_data->dba_password, string, sizeof(user_data->dba_password));
 				user_data->dba_password_entered = true;
 				break;
 			case IN_SW_GSEC_SQL_ROLE_NAME:
-				strncpy(user_data->sql_role_name, string, 33);
+				strncpy(user_data->sql_role_name, string, sizeof(user_data->sql_role_name));
 				user_data->sql_role_name_entered = true;
 				break;
 			case IN_SW_GSEC_Z:
@@ -715,7 +786,7 @@ static bool get_switches(
 			case IN_SW_GSEC_FNAME:
 			case IN_SW_GSEC_MNAME:
 			case IN_SW_GSEC_LNAME:
-			case IN_SW_GSEC_DATABASE:
+			case IN_SW_GSEC_SERVER:
 			case IN_SW_GSEC_DBA_USER_NAME:
 			case IN_SW_GSEC_DBA_PASSWORD:
 			case IN_SW_GSEC_SQL_ROLE_NAME:
@@ -785,13 +856,13 @@ static bool get_switches(
 					user_data->last_name_specified = true;
 					user_data->last_name[0] = '\0';
 					break;
-				case IN_SW_GSEC_DATABASE:
-					if (user_data->database_specified) {
+				case IN_SW_GSEC_SERVER:
+					if (user_data->server_specified) {
 						err_msg_no = GsecMsg78;
 						break;
 					}
-					user_data->database_specified = true;
-					user_data->database_name[0] = '\0';
+					user_data->server_specified = true;
+					user_data->server_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_DBA_USER_NAME:
 					if (user_data->dba_user_name_specified) {
@@ -825,7 +896,7 @@ static bool get_switches(
 				break;
 			case IN_SW_GSEC_Z:
 				if (!tdsec->tsec_sw_version) {
-					SECURITY_msg_get(GsecMsg39, msg);
+					msg_get(GsecMsg39, msg);
 					util_output("%s %s\n", msg, GDS_VERSION);
 				}
 				tdsec->tsec_sw_version = true;
@@ -942,7 +1013,7 @@ static void printhelp(void)
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg87, NULL, NULL, NULL, NULL, NULL);
-/* -database <security database> */
+/* -server <server to manage> */
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg88, NULL, NULL, NULL, NULL, NULL);
@@ -1277,3 +1348,20 @@ void GSEC_print_partial(
 	util_output("%s ", buffer);
 }
 
+
+inline void msg_get(USHORT number, TEXT* msg)
+{
+/**************************************
+ *
+ *	m s g _ g e t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Retrieve a message from the error file
+ *
+ **************************************/
+
+	gds__msg_format(NULL, GSEC_MSG_FAC, number, MSG_LENGTH, msg,
+					NULL, NULL, NULL, NULL, NULL);
+}

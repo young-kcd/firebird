@@ -26,6 +26,7 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
@@ -37,6 +38,8 @@
 #include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../common/config/config.h"
+#include "../common/classes/objects_array.h"
 
 using namespace Jrd;
 
@@ -55,7 +58,7 @@ const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_long, 0,
 	blr_long, 0,
 	blr_short, 0,
-	blr_text, 34, 0,
+	blr_text, UCHAR(MAX_PASSWORD_LENGTH + 2), 0,
 	blr_message, 0, 1, 0,
 	blr_cstring, 129, 0,
 	blr_receive, 0,
@@ -107,6 +110,121 @@ const UCHAR SecurityDatabase::TPB[4] = {
 
 SecurityDatabase SecurityDatabase::instance;
 
+#ifndef EMBEDDED
+namespace {
+// Disable attempts to brutforce logins/passwords
+	class FailedLogin
+	{
+	public:
+		Firebird::string login;
+		int	failCount;
+		time_t lastAttempt;
+		FailedLogin(Firebird::MemoryPool& p) 
+			: login(p), failCount(0), lastAttempt(time(0)) {}
+		static const Firebird::string& generate(const void* sender, const FailedLogin* f)
+		{
+			return f->login;
+		}
+	};
+
+	const size_t MAX_CONCURRENT_FAILURES = 16;
+	const int MAX_FAILED_ATTEMPTS = 4;
+	const int FAILURE_DELAY = 8; // seconds
+
+	class FailedLogins : private Firebird::SortedObjectsArray<FailedLogin, 
+		Firebird::InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
+		const Firebird::string, FailedLogin> 
+	{
+	private:
+		// as long as we have voluntary threads scheduler,
+		// this mutex should be entered AFTER that scheduler entered!
+		Firebird::Mutex fullAccess;
+
+		typedef Firebird::SortedObjectsArray<FailedLogin, 
+			Firebird::InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
+			const Firebird::string, FailedLogin> inherited;
+
+	public:
+		FailedLogins(MemoryPool& p) : inherited(p) {}
+
+		void loginFail(const char* login)
+		{
+			//Firebird::MutexLockGuard(fullAccess);
+			fullAccess.enter();
+			FailedLogin& l = get(login);
+			if (++(l.failCount) >= MAX_FAILED_ATTEMPTS)
+			{
+				sleepThread();
+				l.failCount = 0;
+			}
+			fullAccess.leave();
+		}
+
+		void loginSuccess(const char* login)
+		{
+			//Firebird::MutexLockGuard(fullAccess);
+			fullAccess.enter();
+			size_t pos;
+			if (find(login, pos))
+			{
+				remove(pos);
+			}
+			fullAccess.leave();
+		}
+
+	private:
+		FailedLogin& get(const char* login)
+		{
+			size_t pos;
+			if (find(login, pos))
+			{
+				(*this)[pos].lastAttempt = time(0);
+				return (*this)[pos];
+			}
+
+checkForFreeSpace:
+			if (getCount() >= MAX_CONCURRENT_FAILURES)
+			{
+				// try to perform old entries collection
+				for (iterator i = begin(); i != end(); )
+				{
+					time_t t = time(0);
+					if (t - i->lastAttempt >= FAILURE_DELAY)
+					{
+						remove(i);
+					}
+					else
+					{
+						++i;
+					}
+				}
+			}
+			if (getCount() >= MAX_CONCURRENT_FAILURES)
+			{
+				// it seems we are under attack - too many wrong logins !!!
+				// therefore sleep for a while and clear failures cache
+				sleepThread();
+				goto checkForFreeSpace;
+			}
+
+			FailedLogin& rc = add();
+			rc.login = login;
+			return rc;
+		}
+
+		void sleepThread()
+		{
+			THREAD_EXIT();
+			fullAccess.leave();
+			THD_sleep(1000 * FAILURE_DELAY);
+			THREAD_ENTER();
+			fullAccess.enter();
+		}
+	};
+
+	Firebird::InitInstance<FailedLogins> iFailedLogins;
+}
+#endif //EMBEDDED
 
 /******************************************************************************
  *
@@ -146,7 +264,8 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	if (pwd)
 		*pwd = '\0';
 
-	strncpy(uname, user_name, 129);
+	strncpy(uname, user_name, sizeof uname);
+	uname[sizeof uname - 1] = 0;
 
 	// Attach database and compile request
 
@@ -182,8 +301,11 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 				*uid = user.uid;
 			if (gid)
 				*gid = user.gid;
-			if (pwd)
-				strncpy(pwd, user.password, 32);
+			if (pwd) 
+			{
+				strncpy(pwd, user.password, MAX_PASSWORD_LENGTH);
+				pwd[MAX_PASSWORD_LENGTH] = 0;
+			}
 		}
 	}
 
@@ -280,11 +402,6 @@ bool SecurityDatabase::prepare()
  *	Public interface
  */
 
-void SecurityDatabase::getPath(TEXT* path_buffer)
-{
-	gds__prefix(path_buffer, USER_INFO_NAME);
-}
-
 void SecurityDatabase::initialize()
 {
 	instance.init();
@@ -322,9 +439,12 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	THREAD_EXIT();
 	instance.mutex.aquire();
 	THREAD_ENTER();
-	TEXT pw1[33];
+	TEXT pw1[MAX_PASSWORD_LENGTH + 1];
 	const bool found = instance.lookup_user(name, uid, gid, pw1);
+	pw1[MAX_PASSWORD_LENGTH] = 0;
 	instance.mutex.release();
+	Firebird::string storedHash(pw1, MAX_PASSWORD_LENGTH);
+	storedHash.rtrim();
 
 	// Punt if the user has specified neither a raw nor an encrypted password,
 	// or if the user has specified both a raw and an encrypted password, 
@@ -333,20 +453,38 @@ void SecurityDatabase::verifyUser(TEXT* name,
 
 	if ((!password && !password_enc) || (password && password_enc) || !found)
 	{
+		iFailedLogins().loginFail(name);
 		ERR_post(isc_login, 0);
 	}
 
-	TEXT pwt[33];
-	if (password) {
-		strcpy(pwt, ENC_crypt(password, PASSWORD_SALT));
+	TEXT pwt[MAX_PASSWORD_LENGTH + 2];
+	if (password) 
+	{
+		ENC_crypt(pwt, sizeof pwt, password, PASSWORD_SALT);
 		password_enc = pwt + 2;
 	}
-	TEXT pw2[33];
-	strcpy(pw2, ENC_crypt(password_enc, PASSWORD_SALT));
-	if (strncmp(pw1, pw2 + 2, 11)) {
-		ERR_post(isc_login, 0);
+
+	Firebird::string newHash;
+	hash(newHash, name, password_enc, storedHash);
+	if (newHash != storedHash)
+	{
+		bool legacyHash = Config::getLegacyHash();
+		if (legacyHash)
+		{
+			newHash.resize(MAX_PASSWORD_LENGTH + 2);
+			ENC_crypt(newHash.begin(), newHash.length(), password_enc, PASSWORD_SALT);
+			newHash.resize(strlen(newHash.c_str()));
+			newHash.erase(0, 2);
+			legacyHash = newHash == storedHash;
+		}
+		if (! legacyHash) 
+		{
+			iFailedLogins().loginFail(name);
+			ERR_post(isc_login, 0);
+		}
 	}
 
+	iFailedLogins().loginSuccess(name);
 #endif
 
 	*node_id = 0;

@@ -43,15 +43,14 @@
 #include "../jrd/why_proto.h"
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
+#include "../utilities/gsec/call_service.h"
 
 #include "../jrd/event.h"
 #include "../jrd/alt_proto.h"
 
 #if !defined(BOOT_BUILD)
-bool is_valid_server(ISC_STATUS* status, const TEXT* server);
-#endif
-FB_API_HANDLE open_security_db(ISC_STATUS*, const TEXT*, const TEXT*, int, const TEXT*);
-void get_security_error(ISC_STATUS*, int);
+static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, internal_user_data&);
+#endif // BOOT_BUILD
 
 SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
 										 SCHAR** result_buffer,
@@ -810,6 +809,36 @@ int API_ROUTINE isc_blob_edit(
 					  name_length);
 }
 
+int API_ROUTINE isc_blob_load(
+							  ISC_STATUS* status_vector,
+							  ISC_QUAD* blob_id,
+							  FB_API_HANDLE* database,
+							  FB_API_HANDLE* transaction,
+							  const SCHAR* file_name, const SSHORT* name_length)
+{
+/**************************************
+ *
+ *	i s c _ b l o b _ l o a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Translate a pascal callable load
+ *	into an internal load call.
+ *
+ **************************************/
+
+	if (status_vector)
+		status_vector[1] = 0;
+
+	return blob__load((SLONG *) blob_id, database, transaction, file_name,
+					  name_length);
+}
+
+#if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
+// AP: isc_*_user entrypoints are used only in any kind of embedded 
+// server (both posix and windows) and fbclient
+
 // CVC: Who was the genius that named the input param "user_data" when the
 // function uses "struct user_data userInfo" to define a different variable type
 // only few lines below? Same for the other two isc_*_user functions.
@@ -831,7 +860,7 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
  **************************************/
 #ifdef BOOT_BUILD
 return 1;
-#else
+#else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = ADD_OPER;
 
@@ -959,48 +988,8 @@ return 1;
 		userInfo.last_name_specified = false;
 	}
 
-	FB_API_HANDLE db_handle = open_security_db(status,
-								 input_user_data->dba_user_name,
-								 input_user_data->dba_password,
-								 input_user_data->protocol, input_user_data->server);
-	if (db_handle) {
-		ISC_STATUS_ARRAY user_status;
-		const USHORT retval =
-			SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
-		/* if retval != 0 then there was a gsec error */
-		if (retval)
-			get_security_error(status, retval);
-
-		isc_detach_database(user_status, &db_handle);
-	}
-	return status[1];			/* security database not opened */
-#endif
-}
-
-int API_ROUTINE isc_blob_load(
-							  ISC_STATUS* status_vector,
-							  ISC_QUAD* blob_id,
-							  FB_API_HANDLE* database,
-							  FB_API_HANDLE* transaction,
-							  const SCHAR* file_name, const SSHORT* name_length)
-{
-/**************************************
- *
- *	i s c _ b l o b _ l o a d
- *
- **************************************
- *
- * Functional description
- *	Translate a pascal callable load
- *	into an internal load call.
- *
- **************************************/
-
-	if (status_vector)
-		status_vector[1] = 0;
-
-	return blob__load((SLONG *) blob_id, database, transaction, file_name,
-					  name_length);
+	return executeSecurityCommand(status, input_user_data, userInfo);
+#endif // BOOT_BUILD
 }
 
 ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
@@ -1021,7 +1010,7 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
  **************************************/
 #ifdef BOOT_BUILD
 return 1;
-#else
+#else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = DEL_OPER;
 
@@ -1050,22 +1039,8 @@ return 1;
 		return status[1];
 	}
 
-	FB_API_HANDLE db_handle = open_security_db(status,
-								 input_user_data->dba_user_name,
-								 input_user_data->dba_password,
-								 input_user_data->protocol, input_user_data->server);
-	if (db_handle) {
-		ISC_STATUS_ARRAY user_status;
-		const USHORT retval =
-			SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
-		/* if retval != 0 then there was a gsec error */
-		if (retval)
-			get_security_error(status, retval);
-
-		isc_detach_database(user_status, &db_handle);
-	}
-	return status[1];			/* security database not opened */
-#endif
+	return executeSecurityCommand(status, input_user_data, userInfo);
+#endif // BOOT_BUILD
 }
 
 ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
@@ -1086,7 +1061,7 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
  **************************************/
 #ifdef BOOT_BUILD
 return 1;
-#else
+#else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = MOD_OPER;
 
@@ -1208,185 +1183,51 @@ return 1;
 		userInfo.last_name_specified = false;
 	}
 
-	FB_API_HANDLE db_handle = open_security_db(status,
-								 input_user_data->dba_user_name,
-								 input_user_data->dba_password,
-								 input_user_data->protocol, input_user_data->server);
-	if (db_handle) {
-		ISC_STATUS_ARRAY user_status;
-		const USHORT retval =
-			SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
-		/* if retval != 0 then there was a gsec error */
-		if (retval)
-			get_security_error(status, retval);
-		isc_detach_database(user_status, &db_handle);
-	}
-	return status[1];			/* security database not opened */
-#endif
+	return executeSecurityCommand(status, input_user_data, userInfo);
+#endif // BOOT_BUILD
 }
 
 
 #if !defined(BOOT_BUILD)
-// Replaces the original ugly macro. Now the function that calls is_valid_server
-// is responsible for returning NULL to its invoker in turn.
-// It simply makes sure there's something in the string containing the
-// server's name; otherwise it fills the status vector with an error.
-bool is_valid_server(ISC_STATUS* status, const TEXT* server)
-{
-	if (!server || !*server)
-	{
-	    status[0] = isc_arg_gds;
-	    status[1] = isc_bad_protocol;
-	    status[2] = isc_arg_end;
-	    return false;
-	}
-	return true;
-}
-#endif
 
-
-FB_API_HANDLE open_security_db(
-					   ISC_STATUS* status,
-					   const TEXT* username,
-					   const TEXT* password, int protocol, const TEXT* server)
+static ISC_STATUS executeSecurityCommand(
+					ISC_STATUS* status,
+					const USER_SEC_DATA* input_user_data,
+					internal_user_data& userInfo
+)
 {
 /**************************************
  *
- *      o p e n _ s e c u r i t y _ d b
- *
- **************************************
- *
- * Functional description
- *     Opens the security database 
- *
- * Returns the database handle if successful
- * Returns NULL otherwise
- *
- **************************************/
-#ifdef BOOT_BUILD
-return 0;
-#else
-	TEXT default_security_db[MAXPATHLEN], connect_string[1024];
-	TEXT sec_server[256];
-
-	switch (protocol) {
-	case sec_protocol_tcpip:
-		if (!is_valid_server(status, server))
-			return 0;
-		sprintf(sec_server, "%s:", server);
-		SECURITY_get_db_path(sec_server, default_security_db);
-		sprintf(connect_string, "%s%s", sec_server, default_security_db);
-		break;
-
-	case sec_protocol_netbeui:
-		if (!is_valid_server(status, server))
-			return 0;
-		sprintf(sec_server, "\\\\%s\\", server);
-		SECURITY_get_db_path(sec_server, default_security_db);
-		sprintf(connect_string, "%s%s", sec_server, default_security_db);
-		break;
-
-	case sec_protocol_local:
-		SECURITY_get_db_path(NULL, default_security_db);
-		sprintf(connect_string, "%s", default_security_db);
-		break;
-
-	default:
-	    is_valid_server(status, NULL); // let it to set the error status
-		return 0;
-	}
-
-	TEXT* database = connect_string;
-	char dpb_buffer[256];
-	char* dpb = dpb_buffer;
-	*dpb++ = isc_dpb_version1;
-
-	if (username) {
-		*dpb++ = isc_dpb_user_name;
-		*dpb++ = strlen(username);
-		for (const char* p = username; *p;)
-			*dpb++ = *p++;
-	}
-
-	if (password) {
-		*dpb++ = isc_dpb_password;
-		*dpb++ = strlen(password);
-		for (const char* p = password; *p;)
-			*dpb++ = *p++;
-	}
-
-	const SSHORT dpb_length = dpb - dpb_buffer;
-
-	FB_API_HANDLE db_handle = 0;
-	if (isc_attach_database(status, 0, database, &db_handle, dpb_length,
-		dpb_buffer))
-	{
-		db_handle = 0;
-	}
-
-	return db_handle;
-#endif
-}
-
-void get_security_error(ISC_STATUS* status, int gsec_err)
-{
-/**************************************
- *
- *      g e t _ s e c u r i t y _ e r r o r
+ *      e x e c u t e S e c u r i t y C o m m a n d
  *
  **************************************
  *
  * Functional description
  *
- *    Converts the gsec error code to an isc
- *    error code and adds it to the status vector
+ *    Executes command according to input_user_data
+ *    and userInfo. Use direct access to database or
+ *	  call service manager depending on protocol used.
+ *	  Embedded may use direct access to database or
+ *	  service manager depending upon used protocol,
+ *	  client always calls remote service manager.
  **************************************/
 
-	switch (gsec_err) {
-	case GsecMsg19:			/* gsec - add record error */
-		status[0] = isc_arg_gds;
-		status[1] = isc_error_adding_sec_record;
-		status[2] = isc_arg_end;
-		return;
-
-	case GsecMsg20:			/* gsec - modify record error */
-		status[0] = isc_arg_gds;
-		status[1] = isc_error_modifying_sec_record;
-		status[2] = isc_arg_end;
-		return;
-
-	case GsecMsg21:			/* gsec - find/modify record error */
-		status[0] = isc_arg_gds;
-		status[1] = isc_error_modifying_sec_record;
-		status[2] = isc_arg_end;
-		return;
-
-	case GsecMsg22:			/* gsec - record not found for user: */
-		status[0] = isc_arg_gds;
-		status[1] = isc_usrname_not_found;
-		status[2] = isc_arg_end;
-		return;
-
-	case GsecMsg23:			/* gsec - delete record error */
-		status[0] = isc_arg_gds;
-		status[1] = isc_error_deleting_sec_record;
-		status[2] = isc_arg_end;
-		return;
-
-	case GsecMsg24:			/* gsec - find/delete record error */
-		status[0] = isc_arg_gds;
-		status[1] = isc_error_deleting_sec_record;
-		status[2] = isc_arg_end;
-		return;
-
-	case GsecMsg75:			/* gsec error */
-		status[0] = isc_arg_gds;
-		status[1] = isc_error_updating_sec_db;
-		status[2] = isc_arg_end;
-		return;
-
-	default:
-		return;
+	isc_svc_handle handle = attachRemoteServiceManager(
+				status,
+				input_user_data->dba_user_name,
+				input_user_data->dba_password,
+				input_user_data->protocol, 
+				input_user_data->server);
+	if (handle)
+	{
+		callRemoteServiceManager(status, handle, userInfo, 0, 0);
+		ISC_STATUS_ARRAY user_status;
+		detachRemoteServiceManager(user_status, handle);
 	}
+
+	return status[1];
 }
 
+#endif // BOOT_BUILD
+
+#endif // !defined(SUPERSERVER) || defined EMBEDDED

@@ -313,6 +313,7 @@ struct dpb
 	bool	dpb_overwrite;
 	bool	dpb_sec_attach;
 	bool	dpb_disable_wal;
+	bool	dpb_gsec_attach;
 	SLONG	dpb_connect_timeout;
 	SLONG	dpb_dummy_packet_interval;
 	bool	dpb_db_readonly;
@@ -342,8 +343,10 @@ static SLONG	get_parameter(const UCHAR**);
 static TEXT*	get_string_parameter(const UCHAR**, TEXT**, ULONG*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, thread_db*);
 static void		verify_request_synchronization(jrd_req*& request, SSHORT level);
-static bool		verify_database_name(const Firebird::PathName&, ISC_STATUS*);
-
+namespace {
+	enum vdnResult {vdnFail, vdnOk, vdnSecurity};
+}
+static vdnResult	verify_database_name(const Firebird::PathName&, ISC_STATUS*);
 #if defined (WIN_NT)
 #ifdef SERVER_SHUTDOWN
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
@@ -556,15 +559,21 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
-		ISC_expand_filename(expanded_name, expanded_name);
+	{
+		ISC_expand_filename(expanded_name, false);
+	}
 	else
+	{
 		expanded_name = expanded_filename;
+	}
 
 	thread_db thd_context;
 	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 /* If database name is not alias, check it against conf file */
-	if (!is_alias && !verify_database_name(expanded_filename, user_status)) {
+	vdnResult vdn = verify_database_name(expanded_filename, user_status);
+	if (!is_alias && vdn == vdnFail)
+	{
 		JRD_restore_context();
 		return user_status[1];
 	}
@@ -637,6 +646,19 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (ISC_check_if_remote(expanded_name, true)) {
 			ERR_post(isc_unavailable, 0);
 		}
+	}
+
+/* If database to be opened is SecurityDatabase, than only 
+   gsec or SecurityDatabase may open it. This protects from use
+   of old gsec to write wrong password hashes into it. */
+	if (vdn == vdnSecurity && !options.dpb_gsec_attach && !options.dpb_sec_attach)
+	{
+		ERR_post(isc_no_priv,
+				 isc_arg_string, "direct",
+				 isc_arg_string, "security database",
+				 isc_arg_string, 
+				 ERR_string(file_name, file_length), 
+				 0);
 	}
 
 /* Worry about encryption key */
@@ -1697,9 +1719,13 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
-		ISC_expand_filename(expanded_name, expanded_name);
+	{
+		ISC_expand_filename(expanded_name, false);
+	}
 	else
+	{
 		expanded_name = expanded_filename;
+	}
 
 	thread_db thd_context;
 	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
@@ -1768,7 +1794,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	// Check for DatabaseAccess
-	if (!is_alias && !verify_database_name(expanded_name, user_status)) 
+	if (!is_alias && verify_database_name(expanded_name, user_status) == vdnFail) 
 	{
 		ERR_punt();
 	}
@@ -3722,7 +3748,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		CMP_verify_access(tdbb, request);
 
 		jrd_nod* node;
-		for (int i = 0; i < csb->csb_rpt.getCount(); i++)
+		for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 		{
 			if ( (node = csb->csb_rpt[i].csb_message) )
 			{
@@ -5179,6 +5205,12 @@ static void get_options(const UCHAR*	dpb,
 			p += l;
 			break;
 
+		case isc_dpb_gsec_attach:
+			l = *p++;
+			options->dpb_gsec_attach = l && *p;
+			p += l;
+			break;
+
 		case isc_dpb_disable_wal:
 			options->dpb_disable_wal = true;
 			l = *p++;
@@ -6397,19 +6429,18 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
     @param status
 
  **/
-static bool verify_database_name(const Firebird::PathName& name, ISC_STATUS* status)
+static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS* status)
 {
 	// Check for security.fdb
 	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
 	static Firebird::PathName ExpandedSecurityNameBuffer(*getDefaultMemoryPool());
 	if (! SecurityNameBuffer[0]) {
 		SecurityDatabase::getPath(SecurityNameBuffer);
-		ISC_expand_filename(SecurityNameBuffer, ExpandedSecurityNameBuffer);
+		ExpandedSecurityNameBuffer = SecurityNameBuffer;
+		ISC_expand_filename(ExpandedSecurityNameBuffer, false);
 	}
-	if (name == SecurityNameBuffer)
-		return true;
-	if (name == ExpandedSecurityNameBuffer)
-		return true;
+	if (name == SecurityNameBuffer || name == ExpandedSecurityNameBuffer)
+		return vdnSecurity;
 	
 	// Check for .conf
 	if (!ISC_verify_database_access(name)) {
@@ -6421,8 +6452,8 @@ static bool verify_database_name(const Firebird::PathName& name, ISC_STATUS* sta
 		status[4] = isc_arg_string;
 		status[5] = (ISC_STATUS)(U_IPTR) ERR_cstring(name.c_str());
 		status[6] = isc_arg_end;
-		return false;
+		return vdnFail;
 	}
-	return true;
+	return vdnOk;
 }
 

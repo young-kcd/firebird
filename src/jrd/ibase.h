@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.94 2004-10-28 22:42:51 skidder Exp $
+$Id: ibase.h,v 1.95 2004-11-07 14:50:31 alexpeshkoff Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1238,9 +1238,10 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dpb_sql_dialect               63
 #define isc_dpb_set_db_readonly           64
 #define isc_dpb_set_db_sql_dialect        65
-#define isc_dpb_gfix_attach		  66
-#define isc_dpb_gstat_attach		  67
-#define isc_dpb_set_db_charset			68
+#define isc_dpb_gfix_attach			66
+#define isc_dpb_gstat_attach		67
+#define isc_dpb_set_db_charset		68
+#define isc_dpb_gsec_attach         69
 
 /*********************************/
 /* isc_dpb_verify specific flags */
@@ -1394,7 +1395,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_info_svc_get_users		68	/* Returns the user information from isc_action_svc_display_users */
 
 /******************************************************
- * Parameters for isc_action_{add|delete|modify)_user *
+ * Parameters for isc_action_{add|del|mod|disp)_user  *
  ******************************************************/
 
 #define isc_spb_sec_userid            5

@@ -46,7 +46,7 @@ const int IN_SW_GSEC_MOD			= 12;	/* modify a user */
 const int IN_SW_GSEC_QUIT			= 13;	/* quit from interactive session */
 const int IN_SW_GSEC_HELP			= 14;	/* help */
 const int IN_SW_GSEC_Z				= 15;	/* version */
-const int IN_SW_GSEC_DATABASE		= 16;	/* database, if other than installed */
+const int IN_SW_GSEC_SERVER			= 16;	/* remote server to manage */
 const int IN_SW_GSEC_DBA_USER_NAME	= 17;	/* Database Admin. User name */
 const int IN_SW_GSEC_DBA_PASSWORD	= 18;	/* Database Admin. Password */
 const int IN_SW_GSEC_SQL_ROLE_NAME	= 19;	/* SQL Role to assume */
@@ -69,10 +69,10 @@ static struct in_sw_tab_t gsec_in_sw_table [] = {
     {IN_SW_GSEC_MOD,		0,				"MODIFY",	0, 0, 0, FALSE,	0,	2, NULL},	/* modify user */
     {IN_SW_GSEC_QUIT,		0,				"QUIT",		0, 0, 0, FALSE,	0,	1, NULL},	/* exit command line interface */
     {IN_SW_GSEC_HELP,		0,				"HELP",		0, 0, 0, FALSE,	0,	1, NULL},	/* print help */
-    {IN_SW_GSEC_Z,		0,				"Z",		0, 0, 0, FALSE,	0,	1, NULL},	/* version */
-    {IN_SW_GSEC_DATABASE,	isc_spb_dbname,			"DATABASE",	0, 0, 0, FALSE,	0,	2, NULL},	/* specify database to use */
-    {IN_SW_GSEC_DBA_USER_NAME,	0,				"USER",		0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. User name */
-    {IN_SW_GSEC_DBA_PASSWORD, 	0,				"PASSWORD",	0, 0, 0, FALSE,	0,	2, NULL},	/* Database Admin. Password */
+    {IN_SW_GSEC_Z,			0,				"Z",		0, 0, 0, FALSE,	0,	1, NULL},	/* version */
+    {IN_SW_GSEC_SERVER,		0,				"SERVER",	0, 0, 0, FALSE,	0,	2, NULL},	/* specify database to use */
+    {IN_SW_GSEC_DBA_USER_NAME,	0,			"USER",		0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. User name */
+    {IN_SW_GSEC_DBA_PASSWORD, 	0,			"PASSWORD",	0, 0, 0, FALSE,	0,	2, NULL},	/* Database Admin. Password */
     {IN_SW_GSEC_SQL_ROLE_NAME,	isc_spb_sql_role_name,		"ROLE",		0, 0, 0, FALSE,	0,	2, NULL},	/* SQL Role to assume */
     {IN_SW_GSEC_0,		0,				NULL,		0, 0, 0, FALSE,	0,	0, NULL}		/* End of List */
 };
