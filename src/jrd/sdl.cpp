@@ -34,7 +34,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sdl_proto.h"
-#include "memory_routines.h"
 
 #ifndef DEV_BUILD
 #define _assert(ex)
@@ -64,7 +63,7 @@
 typedef struct sdl_arg {
 	USHORT sdl_arg_mode;
 	ADS sdl_arg_desc;
-	char *sdl_arg_sdl;
+	UCHAR *sdl_arg_sdl;
 	UCHAR *sdl_arg_array;
 	SLONG *sdl_arg_variables;
 	SDL_walk_callback sdl_arg_callback;
@@ -83,11 +82,12 @@ typedef struct rng {
 	SDL_INFO rng_info;
 } *RNG;
 
-static char *compile(char *, SDL_ARG);
+static UCHAR *compile(UCHAR *, SDL_ARG);
 static ISC_STATUS error(ISC_STATUS *, ...);
 static BOOLEAN execute(SDL_ARG);
-static char *get_range(char *, RNG, SLONG *, SLONG *);
-static char *sdl_desc(char *, DSC *);
+static UCHAR *get_range(UCHAR *, RNG, SLONG *, SLONG *);
+static SSHORT get_word(UCHAR *&);
+static UCHAR *sdl_desc(UCHAR *, DSC *);
 static IPTR *stuff(IPTR, SDL_ARG);
 
 
@@ -159,7 +159,7 @@ SLONG DLL_EXPORT SDL_compute_subscript(
 
 
 ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
-							char * sdl, SDL_INFO info, SLONG * vector)
+							UCHAR * sdl, SDL_INFO info, SLONG * vector)
 {
 /**************************************
  *
@@ -172,7 +172,7 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
  *	element descriptor.
  *
  **************************************/
-	char *p;
+	UCHAR *p;
 	TEXT *q;
 	USHORT n, offset;
 	SLONG min, max;
@@ -201,22 +201,22 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
 			break;
 
 		case gds_sdl_fid:
-			info->sdl_info_fid = gather_short(p);
+			info->sdl_info_fid = get_word(p);
 			break;
 
 		case gds_sdl_rid:
-			info->sdl_info_rid = gather_short(p);
+			info->sdl_info_rid = get_word(p);
 			break;
 
 		case gds_sdl_field:
 			for (n = *p++, q = info->sdl_info_field; n; --n)
-				*q++ = *p++;
+				*q++ = (TEXT) *p++;
 			*q = 0;
 			break;
 
 		case gds_sdl_relation:
 			for (n = *p++, q = info->sdl_info_relation; n; --n)
-				*q++ = *p++;
+				*q++ = (TEXT) *p++;
 			*q = 0;
 			break;
 
@@ -236,7 +236,7 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
 }
 
 
-char *DLL_EXPORT SDL_prepare_slice(char * sdl, USHORT sdl_length)
+UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 {
 /**************************************
  *
@@ -249,7 +249,7 @@ char *DLL_EXPORT SDL_prepare_slice(char * sdl, USHORT sdl_length)
  *	blr_d_float to blr_double.
  *
  **************************************/
-	char *	new_sdl, * old_sdl;
+	UCHAR *new_sdl, *old_sdl;
 	DSC	junk;
 	USHORT	n;
 
@@ -269,7 +269,7 @@ char *DLL_EXPORT SDL_prepare_slice(char * sdl, USHORT sdl_length)
 				{
 					if (new_sdl == old_sdl)
 					{
-						new_sdl = (char*)gds__alloc((SLONG) sdl_length);
+						new_sdl = (UCHAR*)gds__alloc((SLONG) sdl_length);
 						/* FREE: apparently never freed */
 						if (!new_sdl)
 						{	/* NOMEM: ignore operation */
@@ -309,7 +309,7 @@ char *DLL_EXPORT SDL_prepare_slice(char * sdl, USHORT sdl_length)
 
 int DLL_EXPORT SDL_walk(
 						ISC_STATUS * status_vector,
-						char * sdl,
+						UCHAR * sdl,
 						USHORT mode,
 						UCHAR * array,
 ADS array_desc, SLONG * variables, SDL_walk_callback callback, SLICE argument)
@@ -324,7 +324,7 @@ ADS array_desc, SLONG * variables, SDL_walk_callback callback, SLICE argument)
  *	Walk a slice.  
  *
  **************************************/
-	char *p;
+	UCHAR *p;
 	DSC junk;
 	USHORT n, offset;
 	struct sdl_arg arg;
@@ -382,7 +382,7 @@ ADS array_desc, SLONG * variables, SDL_walk_callback callback, SLICE argument)
 }
 
 
-static char *compile(char * sdl, SDL_ARG arg)
+static UCHAR *compile(UCHAR * sdl, SDL_ARG arg)
 {
 /**************************************
  *
@@ -397,7 +397,7 @@ static char *compile(char * sdl, SDL_ARG arg)
  **************************************/
 	SLONG n, count, variable, value, operator_;
 	IPTR *label;
-	char op, *p, *ptr1, *expressions[16], **expr;
+	UCHAR op, *p, *ptr1, *expressions[16], **expr;
 
 #define STUFF(word, arg)	if (!stuff ((IPTR) word, arg)) return NULL
 #define COMPILE(p, arg)		if (!(p = compile (p, arg))) return NULL
@@ -455,13 +455,14 @@ static char *compile(char * sdl, SDL_ARG arg)
 		return p;
 
 	case gds_sdl_short_integer:
-		value = get_short(p);
+		value = (SSHORT) (p[0] | (p[1] << 8));
 		STUFF(op_literal, arg);
 		STUFF(value, arg);
 		return p + 2;
 
 	case gds_sdl_long_integer:
-		value = get_long(p);
+		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
+		        ((SLONG) p[3] << 24));
 		STUFF(op_literal, arg);
 		STUFF(value, arg);
 		return p + 4;
@@ -744,7 +745,7 @@ static BOOLEAN execute(SDL_ARG arg)
 }
 
 
-static char *get_range(char * sdl, RNG arg, SLONG * min, SLONG * max)
+static UCHAR *get_range(UCHAR * sdl, RNG arg, SLONG * min, SLONG * max)
 {
 /**************************************
  *
@@ -758,7 +759,7 @@ static char *get_range(char * sdl, RNG arg, SLONG * min, SLONG * max)
  *
  **************************************/
 	SLONG n, variable, value, min1, max1, min2, max2, junk1, junk2;
-	char *p, op;
+	UCHAR *p, op;
 	SDL_INFO info;
 
 	p = sdl;
@@ -794,12 +795,13 @@ static char *get_range(char * sdl, RNG arg, SLONG * min, SLONG * max)
 		return p;
 
 	case gds_sdl_short_integer:
-		value = get_short(p);
+		value = (SSHORT) (p[0] | (p[1] << 8));
 		*min = *max = value;
 		return p + 2;
 
 	case gds_sdl_long_integer:
-		value = get_long(p);
+		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
+		        ((SLONG) p[3] << 24));
 		*min = *max = value;
 		return p + 4;
 
@@ -855,8 +857,28 @@ static char *get_range(char * sdl, RNG arg, SLONG * min, SLONG * max)
 	}
 }
 
+inline SSHORT get_word(UCHAR* &ptr)
+{
+/**************************************
+ *
+ * g e t _ w o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	gather a int16 from two little-endian
+ *  unsigned chars and advance the pointer
+ *
+ **************************************/
+   SSHORT n;
 
-static char *sdl_desc(char * ptr, DSC * desc)
+   n = *ptr++;
+   n |= (*ptr++) << 8;
+
+   return n;
+}
+
+static UCHAR *sdl_desc(UCHAR * ptr, DSC * desc)
 {
 /**************************************
  *
@@ -869,7 +891,7 @@ static char *sdl_desc(char * ptr, DSC * desc)
  *	Return updated pointer is successful, otherwise NULL.
  *
  **************************************/
-	char *sdl;
+	UCHAR *sdl;
 
 	sdl = ptr;
 	desc->dsc_scale = 0;
@@ -880,7 +902,7 @@ static char *sdl_desc(char * ptr, DSC * desc)
 	switch (*sdl++) {
 	case blr_text2:
 		desc->dsc_dtype = dtype_text;
-		INTL_ASSIGN_TTYPE(desc, gather_short(sdl));
+		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
 		break;
 
 	case blr_text:
@@ -891,7 +913,7 @@ static char *sdl_desc(char * ptr, DSC * desc)
 
 	case blr_cstring2:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_TTYPE(desc, gather_short(sdl));
+		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
 		break;
 
 	case blr_cstring:
@@ -902,7 +924,7 @@ static char *sdl_desc(char * ptr, DSC * desc)
 
 	case blr_varying2:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_TTYPE(desc, gather_short(sdl));
+		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
 		desc->dsc_length = sizeof(USHORT);
 		break;
 
@@ -978,13 +1000,13 @@ static char *sdl_desc(char * ptr, DSC * desc)
 	case dtype_long:
 	case dtype_quad:
 	case dtype_int64:
-		desc->dsc_scale = *sdl++;
+		desc->dsc_scale = static_cast<SCHAR>(*sdl++);
 		break;
 
 	case dtype_text:
 	case dtype_cstring:
 	case dtype_varying:
-		desc->dsc_length += gather_short(sdl);
+		desc->dsc_length += get_word(sdl);
 		break;
 
 	default:

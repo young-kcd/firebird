@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.33 2003-08-10 22:52:48 brodsom Exp $
+$Id: restore.epp,v 1.34 2003-08-15 10:23:42 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -179,7 +179,7 @@ static USHORT	recompute_length (BURP_REL);
 static BOOLEAN	restore (TEXT *, TEXT *);
 static void     restore_security_class (TEXT *, TEXT *);
 static void	store_blr_gen_id (GDS_NAME, SINT64);
-static void	stuff_string (SCHAR **, TEXT *);
+static void	stuff_string (UCHAR **, TEXT *);
 static void 	update_global_field (void);
 static void     general_on_error (void);
 #ifdef NOT_USED_OR_REPLACED
@@ -1405,7 +1405,7 @@ SLONG		*blob_id, return_length, slice_length, *range, *end_ranges,
 		lcount;
 USHORT		blr_length, count, field_number, field_length;
 UCHAR		*buffer, *p;
-char		*blr, blr_buffer [200]; /* enough for a sdl with 16 dimensions */
+UCHAR		*blr, blr_buffer [200]; /* enough for a sdl with 16 dimensions */
 LSTRING		xdr_buffer, xdr_slice;
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
@@ -1734,7 +1734,7 @@ if (return_length != slice_length)
 		GDS_REF (gds_trans), 
 		(ISC_QUAD*)GDS_VAL (blob_id),
 		blr_length,
-		blr_buffer,
+		reinterpret_cast<char*>(blr_buffer),
 		0,	  /* param length for subset of an array handling */
 		(ISC_LONG*) 0,  /* param for subset of an array handling */
 		elements_written*field->fld_length,
@@ -1857,7 +1857,7 @@ else
 	    GDS_REF (gds_trans), 
 	    (ISC_QUAD*)GDS_VAL (blob_id),
 	    blr_length,
-	    blr_buffer,
+	    reinterpret_cast<char*>(blr_buffer),
 	    0,	  /* param length for subset of an array handling */
 	    (ISC_LONG*) 0,  /* param for subset of an array handling */
 	    return_length,
@@ -2319,7 +2319,7 @@ BURP_FLD	field;
 FRBRD		*request;
 int		records;
 TEXT		*p;
-SCHAR		*blr, *blr_buffer;
+UCHAR		*blr, *blr_buffer;
 RCRD_OFFSET	offset;
 USHORT		l;
 ULONG		length, old_length;
@@ -2358,7 +2358,7 @@ if (tdgbl->RESTORE_format >= 2)
 
 /* Time to generate blr to store data.  Whoppee. */
 
-blr = blr_buffer = (SCHAR*) BURP_ALLOC (200 + length + count * 18);
+blr = blr_buffer = (UCHAR*) BURP_ALLOC (200 + length + count * 18);
 STUFF (blr_version4);
 STUFF (blr_begin);
 STUFF (blr_message);
@@ -2502,9 +2502,10 @@ if (isc_compile_request (status_vector,
 	GDS_REF (tdgbl->db_handle), 
 	 GDS_REF (request), 
 	blr_length, 
-	GDS_VAL (blr_buffer)))
+	reinterpret_cast<char*>(GDS_VAL (blr_buffer))))
     {
-    isc_print_blr (blr_buffer, (isc_callback)NULL_PTR, NULL_PTR, 0);
+    isc_print_blr(reinterpret_cast<char*>(blr_buffer), (isc_callback)NULL_PTR,
+				  NULL_PTR, 0);
     if (!tdgbl->gbl_sw_incremental)
 	BURP_error_redirect (status_vector, 27, 0, 0); 
 /* msg 27 gds__compile_request failed */
@@ -6985,7 +6986,7 @@ STUFF (blr_begin);
     STUFF (blr_begin);
         STUFF (blr_assignment);
 	    STUFF (blr_gen_id);
-	    stuff_string ((SCHAR**) &blr, gen_name);
+	    stuff_string (&blr, gen_name);
 	    if (tdgbl->RESTORE_format >= 6)
 	      {
 		STUFF (blr_literal); STUFF (blr_int64); STUFF (0); STUFF_INT64 (value);
@@ -7033,7 +7034,7 @@ isc_release_request (status_vector,
 }
 
 static void stuff_string (
-    SCHAR	**ptr,
+    UCHAR	**ptr,
     TEXT	*string)
 {
 /**************************************
@@ -7046,7 +7047,7 @@ static void stuff_string (
  *	Stuff a name input a BLR string -- byte count first.
  *
  **************************************/
-SCHAR	*blr;
+UCHAR	*blr;
 
 blr = *ptr;
 STUFF (strlen (string));

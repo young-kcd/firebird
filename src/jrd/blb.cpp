@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.32 2003-08-09 20:58:34 brodsom Exp $
+$Id: blb.cpp,v 1.33 2003-08-15 10:23:45 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -628,7 +628,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 SLONG BLB_get_slice(TDBB tdbb,
 					JRD_TRA transaction,
 					BID blob_id,
-					char * sdl,
+					UCHAR * sdl,
 					USHORT param_length,
 					SLONG * param, SLONG slice_length, UCHAR * slice)
 {
@@ -1330,7 +1330,7 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 void BLB_put_slice(	TDBB	tdbb,
 					JRD_TRA		transaction,
 					BID		blob_id,
-					char*	sdl,
+					UCHAR*	sdl,
 					USHORT	param_length,
 					SLONG*	param,
 					SLONG	slice_length,

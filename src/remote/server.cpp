@@ -2509,7 +2509,7 @@ ISC_STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 		send->p_operation = op_slice;
 		response->p_slr_slice.lstr_address = slice;
 		response->p_slr_slice.lstr_length = response->p_slr_length;
-		response->p_slr_sdl = reinterpret_cast<char*>(stuff->p_slc_sdl.cstr_address);
+		response->p_slr_sdl = stuff->p_slc_sdl.cstr_address;
 		response->p_slr_sdl_length = stuff->p_slc_sdl.cstr_length;
 		this->send(send);
 		response->p_slr_sdl = 0;

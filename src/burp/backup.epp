@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.29 2003-08-13 11:07:32 robocop Exp $
+$Id: backup.epp,v 1.30 2003-08-15 10:23:42 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -1091,9 +1091,8 @@ static void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 	ULONG return_length, slice_length;
 	SLONG *returned_range, range_buffer[16];	/* enough for 16 dimensions */
 	LSTRING xdr_buffer, xdr_slice;
-	char blr_buffer[200];		/* enough for a sdl with 16 dimensions */
-	char *blr;
-	UCHAR *slice, *p;
+	UCHAR blr_buffer[200];		/* enough for a sdl with 16 dimensions */
+	UCHAR *blr, *slice, *p;
 	USHORT blr_length, count, field_length;
 	TGBL tdgbl;
 

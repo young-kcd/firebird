@@ -45,9 +45,9 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 #define ARRAY_DESC_COLUMN_MAJOR		1	/* Set for FORTRAN */
 
 typedef struct gen {
-	char *gen_sdl;
-	char **gen_sdl_ptr;
-	char *gen_end;
+	UCHAR *gen_sdl;
+	UCHAR **gen_sdl_ptr;
+	UCHAR *gen_end;
 	ISC_STATUS *gen_status;
 	SSHORT gen_internal;
 } *GEN;
@@ -56,13 +56,13 @@ static void adjust_length(ISC_ARRAY_DESC *);
 static void copy_exact_name (char *, char*, SSHORT);
 static ISC_STATUS copy_status(ISC_STATUS *, ISC_STATUS *);
 static ISC_STATUS error(ISC_STATUS *, SSHORT, ...);
-static ISC_STATUS gen_sdl(ISC_STATUS *, ISC_ARRAY_DESC *, SSHORT *, char **,
+static ISC_STATUS gen_sdl(ISC_STATUS *, ISC_ARRAY_DESC *, SSHORT *, UCHAR **,
 					  SSHORT *, BOOLEAN);
 static ISC_STATUS lookup_desc(ISC_STATUS *, FRBRD **, FRBRD **, SCHAR *, SCHAR *,
 						  ISC_ARRAY_DESC *, SCHAR *);
 static ISC_STATUS stuff(GEN, SSHORT, ...);
 static ISC_STATUS stuff_literal(GEN, SLONG);
-static ISC_STATUS stuff_string(GEN, char, char *);
+static ISC_STATUS stuff_string(GEN, UCHAR, SCHAR *);
 
 /* STUFF_SDL used in place of STUFF to avoid confusion with BLR STUFF
    macro defined in dsql.h */
@@ -75,7 +75,7 @@ static ISC_STATUS stuff_string(GEN, char, char *);
 ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS * status,
 									 ISC_ARRAY_DESC * desc,
 									 SSHORT * sdl_buffer_length,
-                                     char * sdl_buffer, SSHORT * sdl_length)
+                                     UCHAR * sdl_buffer, SSHORT * sdl_length)
 {
 /**************************************
  *
@@ -108,7 +108,7 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS * status,
  * Functional description
  *
  **************************************/
-	char *sdl, sdl_buffer[512];
+	UCHAR *sdl, sdl_buffer[512];
 	SSHORT sdl_length;
 
 	sdl_length = sizeof(sdl_buffer);
@@ -118,7 +118,10 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS * status,
 		return status[1];
 
 	isc_get_slice(status, db_handle, trans_handle, array_id,
-				  sdl_length, sdl, 0, (ISC_LONG*) NULL_PTR,
+// SD: I do not complain but in ibase.h sdl is a plain char in functions'
+//     declaration while it is UCHAR in the functions' implementations. Damned legacy!
+				  sdl_length, reinterpret_cast<char*>(sdl),
+				  0, (ISC_LONG*) NULL_PTR,
 				  *slice_length, array, slice_length);
 
 	if (sdl != sdl_buffer)
@@ -204,7 +207,7 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS * status,
  * Functional description
  *
  **************************************/
-	char *sdl, sdl_buffer[512];
+	UCHAR *sdl, sdl_buffer[512];
 	SSHORT sdl_length;
 
 	sdl_length = sizeof(sdl_buffer);
@@ -214,7 +217,8 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS * status,
 		return status[1];
 
 	isc_put_slice(status, db_handle, trans_handle, array_id,
-				  sdl_length, sdl, 0, (ISC_LONG*) NULL_PTR, *slice_length, array);
+				  sdl_length, reinterpret_cast<char*>(sdl),
+				  0, (ISC_LONG*) NULL_PTR, *slice_length, array);
 
 	if (sdl != sdl_buffer)
 		gds__free((SLONG *) sdl);
@@ -387,7 +391,7 @@ static ISC_STATUS error( ISC_STATUS * status, SSHORT count, ...)
 static ISC_STATUS gen_sdl(ISC_STATUS * status,
 					  ISC_ARRAY_DESC * desc,
 					  SSHORT * sdl_buffer_length,
-					  char ** sdl_buffer,
+					  UCHAR ** sdl_buffer,
                       SSHORT * sdl_length, BOOLEAN internal_flag)
 {
 /**************************************
@@ -562,7 +566,7 @@ static ISC_STATUS stuff( GEN gen, SSHORT count, ...)
  *	Stuff a SDL byte.
  *
  **************************************/
-	char c, *new_sdl;
+	UCHAR c, *new_sdl;
 	va_list ptr;
 	SSHORT new_len, current_len;
 
@@ -575,7 +579,7 @@ static ISC_STATUS stuff( GEN gen, SSHORT count, ...)
 		/* The sdl buffer is too small.  Allocate a larger one. */
 
 		new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
-		new_sdl = (char *) gds__alloc(new_len);
+		new_sdl = (UCHAR *) gds__alloc(new_len);
 		if (!new_sdl)
 			return error(gen->gen_status, 5, (ISC_STATUS) gds_misc_interpreted,
 						 (ISC_STATUS) gds_arg_string,
@@ -631,7 +635,7 @@ static ISC_STATUS stuff_literal( GEN gen, SLONG literal)
 }
 
 
-static ISC_STATUS stuff_string( GEN gen, char sdl, char * string)
+static ISC_STATUS stuff_string( GEN gen, UCHAR sdl, SCHAR * string)
 {
 /**************************************
  *

@@ -80,7 +80,7 @@ static bool_t xdr_request(XDR *, USHORT, USHORT, USHORT);
 static bool_t xdr_semi_opaque(XDR *, REM_MSG, FMT);
 static bool_t xdr_semi_opaque_slice(XDR *, LSTRING *);
 #endif
-static bool_t xdr_slice(XDR *, LSTRING *, USHORT, char *);
+static bool_t xdr_slice(XDR *, LSTRING *, USHORT, UCHAR *);
 static bool_t xdr_status_vector(XDR *, ISC_STATUS *, TEXT * strings[]);
 static bool_t xdr_sql_blr(XDR *, SLONG, CSTRING *, int, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR *, SLONG);
@@ -608,7 +608,7 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 		else
 			if (!xdr_slice(xdrs, &slice->p_slc_slice,
 						   slice->p_slc_sdl.cstr_length,
-						   reinterpret_cast<char *>(slice->p_slc_sdl.cstr_address))) return P_FALSE;
+						   slice->p_slc_sdl.cstr_address)) return P_FALSE;
 		DEBUG_PRINTSIZE(p->p_operation);
 		return P_TRUE;
 
@@ -1449,7 +1449,7 @@ static bool_t xdr_semi_opaque_slice( XDR * xdrs, LSTRING * slice)
 
 static bool_t xdr_slice(
 						XDR * xdrs,
-						LSTRING * slice, USHORT sdl_length, char * sdl)
+						LSTRING * slice, USHORT sdl_length, UCHAR * sdl)
 {
 /**************************************
  *

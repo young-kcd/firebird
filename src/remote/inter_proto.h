@@ -56,11 +56,11 @@ extern ISC_STATUS	REM_prepare (ISC_STATUS *, struct rtr **, struct rsr **, USHOR
 extern ISC_STATUS	REM_set_cursor_name (ISC_STATUS *, struct rsr **, TEXT *, USHORT);
 extern ISC_STATUS	REM_sql_info (ISC_STATUS *, struct rsr **, SSHORT, SCHAR *, SSHORT, SCHAR *);
 extern ISC_STATUS	REM_get_segment (ISC_STATUS *, struct rbl **, USHORT *, USHORT, UCHAR *);
-extern ISC_STATUS	REM_get_slice (ISC_STATUS *, struct rdb **, struct rtr **, BID, USHORT, char *, USHORT, UCHAR *, SLONG, UCHAR *, SLONG *);
+extern ISC_STATUS	REM_get_slice (ISC_STATUS *, struct rdb **, struct rtr **, BID, USHORT, UCHAR *, USHORT, UCHAR *, SLONG, UCHAR *, SLONG *);
 extern ISC_STATUS	REM_open_blob2 (ISC_STATUS *, struct rdb **, struct rtr **, struct rbl **, BID, USHORT, UCHAR *);
 extern ISC_STATUS	REM_prepare_transaction (ISC_STATUS *, struct rtr **, USHORT, UCHAR *);
 extern ISC_STATUS	REM_put_segment (ISC_STATUS *, struct rbl **, USHORT, UCHAR *);
-extern ISC_STATUS	REM_put_slice (ISC_STATUS *, struct rdb **, struct rtr **, BID, USHORT, char *, USHORT, UCHAR *, SLONG, UCHAR *);
+extern ISC_STATUS	REM_put_slice (ISC_STATUS *, struct rdb **, struct rtr **, BID, USHORT, UCHAR *, USHORT, UCHAR *, SLONG, UCHAR *);
 extern ISC_STATUS	REM_que_events (ISC_STATUS *, struct rdb **, SLONG *, SSHORT, UCHAR *, void (*)(void*, USHORT, UCHAR*), void *);
 extern ISC_STATUS	REM_query_service (ISC_STATUS *, struct rdb **, USHORT, SCHAR *, USHORT, SCHAR *, USHORT, SCHAR *);
 extern ISC_STATUS	REM_receive (ISC_STATUS *, struct rrq **, USHORT, USHORT, UCHAR *, SSHORT);
