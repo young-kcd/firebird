@@ -1886,7 +1886,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 		message = statement->rsr_message;
 
 #ifdef DEBUG
-		ib_fprintf(ib_stdout, "Rows Pending in REM_fetch=%d\n",
+		ib_fprintf(ib_stdout, "Rows Pending in REM_fetch=%lu\n",
 				   statement->rsr_rows_pending);
 #endif
 
@@ -1941,7 +1941,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 						sqldata->p_sqldata_messages / 2;
 #ifdef DEBUG
 				ib_fprintf(ib_stdout,
-						   "Recalculating Rows Pending in REM_fetch=%d\n",
+						   "Recalculating Rows Pending in REM_fetch=%lu\n",
 						   statement->rsr_rows_pending);
 #endif
 				}
@@ -5171,7 +5171,7 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 				statement->rsr_rows_pending = 0;
 #ifdef DEBUG
 				ib_fprintf(ib_stdout,
-						   "Resetting Rows Pending in batch_dsql_fetch=%d\n",
+						   "Resetting Rows Pending in batch_dsql_fetch=%lu\n",
 						   statement->rsr_rows_pending);
 #endif
 			}
@@ -5186,7 +5186,7 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 		statement->rsr_rows_pending--;
 #ifdef DEBUG
 		ib_fprintf(ib_stdout,
-				   "Decrementing Rows Pending in batch_dsql_fetch=%d\n",
+				   "Decrementing Rows Pending in batch_dsql_fetch=%lu\n",
 				   statement->rsr_rows_pending);
 #endif
 		if (clear_queue == FALSE) {

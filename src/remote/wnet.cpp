@@ -1716,7 +1716,7 @@ static int packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 
 #ifdef DEBUG
 	if (WNET_trace)
-		packet_print("send", buffer, buffer_length);
+		packet_print("send", (UCHAR*)buffer, buffer_length);
 #endif
 
 	port->port_flags &= ~PORT_pend_ack;

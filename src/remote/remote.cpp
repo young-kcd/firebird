@@ -215,9 +215,9 @@ ULONG REMOTE_compute_batch_size(PORT port,
 		char *p;
 		if (p = getenv("DEBUG_BATCH_SIZE"))
 			result = atoi(p);
-		ib_fprintf(ib_stderr, "row_size = %d num_packets = %d\n",
+		ib_fprintf(ib_stderr, "row_size = %lu num_packets = %d\n",
 				   row_size, num_packets);
-		ib_fprintf(ib_stderr, "result = %d\n", result);
+		ib_fprintf(ib_stderr, "result = %lu\n", result);
 	}
 #endif
 
@@ -435,7 +435,7 @@ void DLL_EXPORT REMOTE_get_timeout_params(
 
 	port->port_dummy_timeout = port->port_dummy_packet_interval;
 #ifdef DEBUG
-	ib_printf("REMOTE_get_timeout dummy = %d conn = %d\n",
+	ib_printf("REMOTE_get_timeout dummy = %lu conn = %lu\n",
 			  port->port_dummy_packet_interval, port->port_connect_timeout);
 	ib_fflush(ib_stdout);
 #endif

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.69 2003-06-25 07:39:04 dimitr Exp $
+$Id: inet.cpp,v 1.70 2003-06-30 11:26:38 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -832,8 +832,8 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 			ib_fflush(ib_stdout);
 		};
 		INET_start_time = inet_debug_timer();
-		if ((p = getenv("INET_force_error")) != NULL) {
-			INET_force_error = atoi(p);
+		if ((p = (UCHAR*) getenv("INET_force_error")) != NULL) {
+			INET_force_error = atoi((const char*)p);
 		}
 	}
 #endif
@@ -1518,7 +1518,7 @@ static PORT alloc_port( PORT parent)
 #ifdef DEBUG
 		{
 			char messg[128];
-			sprintf(messg, " Info: Remote Buffer Size set to %d",
+			sprintf(messg, " Info: Remote Buffer Size set to %ld",
 					INET_remote_buffer);
 			gds__log(messg, 0);
 		}
@@ -2001,13 +2001,13 @@ static void disconnect( PORT port)
 
 #ifdef DEBUG
 	if (INET_trace & TRACE_summary) {
-		ib_fprintf(ib_stdout, "INET_count_send = %d packets\n",
+		ib_fprintf(ib_stdout, "INET_count_send = %lu packets\n",
 				   INET_count_send);
-		ib_fprintf(ib_stdout, "INET_bytes_send = %d bytes\n",
+		ib_fprintf(ib_stdout, "INET_bytes_send = %lu bytes\n",
 				   INET_bytes_send);
-		ib_fprintf(ib_stdout, "INET_count_recv = %d packets\n",
+		ib_fprintf(ib_stdout, "INET_count_recv = %lu packets\n",
 				   INET_count_recv);
-		ib_fprintf(ib_stdout, "INET_bytes_recv = %d bytes\n",
+		ib_fprintf(ib_stdout, "INET_bytes_recv = %lu bytes\n",
 				   INET_bytes_recv);
 		ib_fflush(ib_stdout);
 	}
@@ -2483,7 +2483,7 @@ static PORT receive( PORT main_port, PACKET * packet)
 				static ULONG op_rec_count = 0;
 				op_rec_count++;
 				if (INET_trace & TRACE_operations) {
-					ib_fprintf(ib_stdout, "%04d: OP Recd %5d opcode %d\n",
+					ib_fprintf(ib_stdout, "%04lu: OP Recd %5lu opcode %d\n",
 							   inet_debug_timer(),
 							   op_rec_count, packet->p_operation);
 					ib_fflush(ib_stdout);
@@ -2522,7 +2522,7 @@ static PORT receive( PORT main_port, PACKET * packet)
 				static ULONG op_rec_count = 0;
 				op_rec_count++;
 				if (INET_trace & TRACE_operations) {
-					ib_fprintf(ib_stdout, "%05d: OP Recd %5d opcode %d\n",
+					ib_fprintf(ib_stdout, "%05lu: OP Recd %5lu opcode %d\n",
 							   inet_debug_timer(),
 							   op_rec_count, packet->p_operation);
 					ib_fflush(ib_stdout);
@@ -2844,7 +2844,7 @@ static int send_full( PORT port, PACKET * packet)
 		static ULONG op_sent_count = 0;
 		op_sent_count++;
 		if (INET_trace & TRACE_operations) {
-			ib_fprintf(ib_stdout, "%05d: OP Sent %5d opcode %d\n",
+			ib_fprintf(ib_stdout, "%05lu: OP Sent %5lu opcode %d\n",
 					   inet_debug_timer(),
 					   op_sent_count, packet->p_operation);
 			ib_fflush(ib_stdout);
@@ -2873,7 +2873,7 @@ static int send_partial( PORT port, PACKET * packet)
 		static ULONG op_sentp_count = 0;
 		op_sentp_count++;
 		if (INET_trace & TRACE_operations) {
-			ib_fprintf(ib_stdout, "%05d: OP Sent %5d opcode %d (partial)\n",
+			ib_fprintf(ib_stdout, "%05lu: OP Sent %5lu opcode %d (partial)\n",
 					   inet_debug_timer(),
 					   op_sentp_count, packet->p_operation);
 			ib_fflush(ib_stdout);
@@ -3530,7 +3530,7 @@ static void packet_print(
 		while (--l);
 
 	ib_fprintf(ib_stdout,
-			   "%05d:    PKT %s\t(%4d): length = %4d, checksum = %d\n",
+			   "%05lu:    PKT %s\t(%4d): length = %4d, checksum = %d\n",
 			   inet_debug_timer(), string, counter, length, sum);
 	ib_fflush(ib_stdout);
 }
@@ -3662,7 +3662,7 @@ static int packet_receive(
 #ifdef DEBUG
 				if (INET_trace & TRACE_operations)
 				{
-					ib_fprintf(ib_stdout, "%05d: OP Sent: op_dummy\n",
+					ib_fprintf(ib_stdout, "%05lu: OP Sent: op_dummy\n",
 							   inet_debug_timer());
 					ib_fflush(ib_stdout);
 				}
@@ -3859,7 +3859,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 		INET_count_send++;
 		INET_bytes_send += buffer_length;
 		if (INET_trace & TRACE_packets)
-			packet_print("send", buffer, buffer_length, INET_count_send);
+			packet_print("send", (UCHAR*) buffer, buffer_length, INET_count_send);
 		INET_force_error--;
 		if (INET_force_error == 0) {
 			INET_force_error = 1;

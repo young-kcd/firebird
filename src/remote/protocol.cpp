@@ -163,7 +163,7 @@ extern bool_t xdr_free();
 
 #ifdef DEBUG
 static ULONG xdr_save_size = 0;
-#define DEBUG_PRINTSIZE(p)  ib_fprintf (ib_stderr, "xdr_protocol: %s op %d size %d\n", \
+#define DEBUG_PRINTSIZE(p)  ib_fprintf (ib_stderr, "xdr_protocol: %s op %d size %lu\n", \
 		((xdrs->x_op == XDR_FREE)   ? "free" : \
 		 (xdrs->x_op == XDR_ENCODE) ? "enc " : \
 		 (xdrs->x_op == XDR_DECODE) ? "dec " : \

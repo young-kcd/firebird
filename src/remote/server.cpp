@@ -52,7 +52,9 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/why_proto.h"
-
+#ifdef DEBUG
+#include "gen/codes.h"
+#endif
 #ifdef SUPERSERVER
 #include "../jrd/isc_i_proto.h"
 #endif
@@ -330,7 +332,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 #ifdef DEV_BUILD
 #ifdef DEBUG
 		if ((request_count++ % 4) == 0) {
-			Firebird::status_exception::raise(gds__virmemexh);
+			Firebird::status_exception::raise(gds_virmemexh);
 		}
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
@@ -354,7 +356,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 #ifdef DEV_BUILD
 #ifdef DEBUG
 			if ((request_count % 5) == 0) {
-				Firebird::status_exception::raise(gds__virmemexh);
+				Firebird::status_exception::raise(gds_virmemexh);
 			}
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
@@ -463,11 +465,13 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 		 */
 		if (port != NULL)
 		{
+/*
 #ifdef DEV_BUILD
 #ifdef DEBUG
 			ConsolePrintf("%%ISERVER-F-NOPORT, no port in a storm\r\n");
-#endif /* DEBUG */
-#endif /* DEV_BUILD */
+#endif 
+#endif 
+*/
 			gds__log("SRVR_multi_thread: forcefully disconnecting a port");
 
 			/* To handle recursion within the error handler */
@@ -476,12 +480,14 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 				if (request != NULL) {
 					/* Send client a real status indication of why we disconnected them */
 					/* Note that send_response() can post errors that wind up in this same handler */
+/*
 #ifdef DEV_BUILD
 #ifdef DEBUG
 					ConsolePrintf
 						("%%ISERVER-F-NOMEM, virtual memory exhausted\r\n");
-#endif /* DEBUG */
-#endif /* DEV_BUILD */
+#endif 
+#endif 
+*/
 					port->send_response(&request->req_send, 0, 0,
 								  status_vector);
 					port->disconnect(&request->req_send, &request->req_receive);
