@@ -3230,6 +3230,8 @@ static void get_procedure_dependencies(DeferredWork* work)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
+	const bool gbak = (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment);
+
 	jrd_prc* procedure = NULL;
 	bid blob_id;
 	blob_id.clear();
@@ -3257,7 +3259,7 @@ static void get_procedure_dependencies(DeferredWork* work)
 
 	if (procedure && !blob_id.isEmpty())
 	{
-		jrd_req* request = 0;
+		jrd_req* request = NULL;
 		/* Nickolay Samofatov: allocate statement memory pool... */
 		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
 		// block is used to ensure MET_verify_cache
@@ -3265,8 +3267,9 @@ static void get_procedure_dependencies(DeferredWork* work)
 		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id, &request,
-							NULL, work->dfw_name, obj_procedure);
+			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id,
+								 gbak ? NULL : &request,
+								 NULL, work->dfw_name, obj_procedure);
 			if (request)
 			{
 				CMP_release(tdbb, request);
@@ -3301,12 +3304,13 @@ static void get_trigger_dependencies( DeferredWork* work)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
+	const bool gbak = (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment);
+
 	jrd_rel* relation = NULL;
-
-	jrd_req* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
-
 	bid blob_id;
 	blob_id.clear();
+
+	jrd_req* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle)
 		X IN RDB$TRIGGERS WITH
@@ -3325,12 +3329,15 @@ static void get_trigger_dependencies( DeferredWork* work)
 
 	if (relation && !blob_id.isEmpty())
 	{
-		jrd_req* request = 0;
+		jrd_req* request = NULL;
 		/* Nickolay Samofatov: allocate statement memory pool... */
 		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
+
 		MET_get_dependencies(tdbb, relation, NULL, NULL, &blob_id,
-							 &request, NULL, work->dfw_name, obj_trigger);
+							 gbak ? NULL : &request,
+							 NULL, work->dfw_name, obj_trigger);
 		if (request)
 		{
 			CMP_release(tdbb, request);
