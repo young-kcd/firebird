@@ -945,7 +945,7 @@ void FBMemoryPool::print_pool_callback(void * mem, int type, void *cook)
 			break;
 
 		case 2:
-			ib_fprintf(cookie->out, "\tSegment %p: %d bytes, %ld used, "
+			ib_fprintf(cookie->out, "\tSegment %p: %d bytes, %d used, "
 									"%2.2f%% overhead\n", seg,
 				((UCHAR*)seg->end - (UCHAR*)seg->start) +
 					(SEGMENT_ALLOC_UNITS << ALLOC_ALIGN_SHIFT),
@@ -954,7 +954,7 @@ void FBMemoryPool::print_pool_callback(void * mem, int type, void *cook)
 			break;
 
 		case 3:
-			ib_fprintf(cookie->out, "\t\t%9p FreeBlock: %ld bytes\n",
+			ib_fprintf(cookie->out, "\t\t%9p FreeBlock: %d bytes\n",
 						frb, frb->length << ALLOC_ALIGN_SHIFT);
 			break;
 
@@ -988,7 +988,7 @@ void FBMemoryPool::print_pool_callback(void * mem, int type, void *cook)
 						ib_fprintf(cookie->out, "Object type %d: ",
 								header.type);
 				}
-				ib_fprintf(cookie->out, "%ld bytes\n",
+				ib_fprintf(cookie->out, "%d bytes\n",
 								header.length << ALLOC_ALIGN_SHIFT);
 				if (header.type > 0 && cookie->detail_func) {
 						(*cookie->detail_func)(header.type, mem,

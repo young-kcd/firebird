@@ -192,7 +192,7 @@ JMB: As part of the c++ conversion I removed the check for lck block type.
 #endif
 
 #ifndef LCK_CHECK_LOCK
-#define LCK_CHECK_LOCK		(TRUE)	/* nothing */
+#define LCK_CHECK_LOCK(x)		(TRUE)	/* nothing */
 #endif
 
 

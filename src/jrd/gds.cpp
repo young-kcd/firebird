@@ -31,8 +31,10 @@
 #define LOCAL_SHLIB_DEFS
 #endif
 
-#define ISC_TIME_SECONDS_PRECISION		10000L
-#define ISC_TIME_SECONDS_PRECISION_SCALE	-4
+// 11 Sept 2002 Nickolay Samofatov
+// this defined in included dsc.h
+//#define ISC_TIME_SECONDS_PRECISION		10000L
+//#define ISC_TIME_SECONDS_PRECISION_SCALE	-4
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1773,7 +1775,7 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 			if (gds__msg_format(0, fac, (USHORT) decoded,
 								128, s, args[0], args[1], args[2], args[3],
 								args[4]) < 0) {
-				if ((decoded < (sizeof(messages) / sizeof(messages[0])) - 1)
+				if ((decoded < (int)(sizeof(messages) / sizeof(messages[0])) - 1)
 					&& (decoded >= 0))
 					sprintf(s, messages[decoded], args[0], args[1], args[2],
 							args[3], args[4]);
@@ -1786,7 +1788,7 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 	case gds_arg_interpreted:
 		p = s;
 		q = (TEXT *) (*vector)[1];
-		while ((*p++ = *q++) != NULL);
+		while ((*p++ = *q++) /*!= NULL*/);
 		break;
 
 	case gds_arg_netware:

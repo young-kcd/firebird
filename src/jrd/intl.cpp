@@ -132,12 +132,14 @@
 #define INTL_TRACE(args)
 #endif
 
-#define IS_TEXT(x)      (((x)->dsc_dtype == dtype_text)   ||\
-			 ((x)->dsc_dtype == dtype_varying)||\
-			 ((x)->dsc_dtype == dtype_cstring))
 #else
 #define INTL_TRACE(args)
 #endif
+/* 11 Sept 2002, Nickolay Samofatov. It is used only in asserts,
+   move it out DEV_BUILD section and let optimizer optimize it out */
+#define IS_TEXT(x)      (((x)->dsc_dtype == dtype_text)   ||\
+			 ((x)->dsc_dtype == dtype_varying)||\
+			 ((x)->dsc_dtype == dtype_cstring))
 
 #define TTYPE_TO_CHARSET(tt)    ((SSHORT)((tt) & 0x00FF))
 #define TTYPE_TO_COLLATION(tt)  ((SSHORT)((tt) >> 8))
@@ -792,7 +794,6 @@ int DLL_EXPORT INTL_data(DSC * pText)
 }
 #endif
 
-
 #ifdef DEV_BUILD
 int DLL_EXPORT INTL_data_or_binary(DSC * pText)
 {
@@ -807,6 +808,13 @@ int DLL_EXPORT INTL_data_or_binary(DSC * pText)
  **************************************/
 
 	return (INTL_data(pText) || (pText->dsc_ttype == ttype_binary));
+}
+#else
+// 11 Sent 2002, Nickolay Samofatov
+// Used only in asserts, but let optimizer wipe it out
+int DLL_EXPORT INTL_data_or_binary(DSC * pText)
+{
+  return TRUE;
 }
 #endif
 

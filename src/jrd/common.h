@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.26 2002-09-11 11:30:44 eku Exp $
+$Id: common.h,v 1.27 2002-09-11 19:37:29 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -85,6 +85,7 @@ $Id: common.h,v 1.26 2002-09-11 11:30:44 eku Exp $
 #ifdef LINUX
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
+#define __LINE__IS_INT
 
 #ifdef SUPERSERVER
 #define SET_TCP_NO_DELAY

@@ -75,8 +75,8 @@ extern "C" {
  *
  */
 #ifdef DEV_BUILD
-// #define DEV_BLKCHK(blk,type)
-#define DEV_BLKCHK(blk,type)    if (blk) {BLKCHK (blk, type);}
+#define DEV_BLKCHK(blk,type)
+//#define DEV_BLKCHK(blk,type)    if (blk) {BLKCHK (blk, type);}
 #else
 #define DEV_BLKCHK(blk,type)	/* nothing */
 #endif
