@@ -1,3 +1,16 @@
+2004-10-16 01:07  skidder
+
+	* firebird2/src/: jrd/isc_sync.cpp (1.94),
+	remote/os/win32/srvr_w32.cpp (1.24):
+	
+	Improve firebird reliability in failure cases on Windows
+
+2004-10-15 07:50  robocop
+
+	* firebird2/src/common/classes/fb_string.cpp (1.26):
+	
+	Some folks couldn't compile...
+
 2004-10-15 00:11  skidder
 
 	* firebird2/src/jrd/isc_sync.cpp (1.93):
