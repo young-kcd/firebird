@@ -80,7 +80,7 @@ extern bool sw_trace;
 static bool get_line(IB_FILE *, TEXT *, USHORT);
 static int nextchar(const bool);
 static void next_line(const bool);
-static void retchar(const SSHORT);
+static void retchar();
 static bool scan_number(SSHORT, TEXT **);
 static int skip_white(void);
 
@@ -235,7 +235,7 @@ TOK LEX_edit_string(void)
 			for (;;) {
 				const SSHORT d = nextchar(false);
 				if (d == '\n') {
-					retchar(d);
+					retchar();
 					break;
 				}
 				*p++ = d;
@@ -245,10 +245,12 @@ TOK LEX_edit_string(void)
 		c = nextchar(true);
 	}
 
-	retchar(c);
+	retchar();
 
-	if (p[-1] == ',')
-		retchar(*--p);
+	if (p[-1] == ','){
+		retchar();
+		p--;
+	}
 
 	token->tok_length = p - token->tok_string;
 	*p = 0;
@@ -321,13 +323,13 @@ TOK LEX_filename(void)
 		*p++ = c;
 	}
 
-	retchar(c);
+	retchar();
 
 // Drop trailing semi-colon to avoid confusion
 
 	if (p[-1] == ';') {
-		retchar(c);
-		--p;
+		retchar();
+		p--;
 	}
 
 // complain on unterminated quoted string
@@ -857,7 +859,7 @@ TOK LEX_token(void)
 	if (char_class & CHR_letter) {
 		for (c = nextchar(true); classes[c] & CHR_ident; c = nextchar(true))
 			*p++ = c;
-		retchar(c);
+		retchar();
 		token->tok_type = tok_ident;
 	}
 	else if (((char_class & CHR_digit) || c == '.') && scan_number(c, &p))
@@ -867,7 +869,7 @@ TOK LEX_token(void)
 		SSHORT next;
 		while (true) {
 			if (!(next = nextchar(false)) || next == '\n') {
-				retchar(next);
+				retchar();
 				IBERROR(63);	// Msg 63 unterminated quoted string
 				break;
 			}
@@ -879,7 +881,7 @@ TOK LEX_token(void)
 
 			if (next == c) {
 				const SSHORT peek = nextchar(false);
-				retchar(peek);
+				retchar();
 				if (peek != c)
 					break;
 				nextchar(false);
@@ -898,7 +900,10 @@ TOK LEX_token(void)
 		token->tok_type = tok_punct;
 		*p++ = nextchar(true);
 		if (!HSH_lookup(token->tok_string, 2))
-			retchar(*--p);
+		{
+			retchar();
+			p--;
+		}
 	}
 
 	token->tok_length = p - token->tok_string;
@@ -1138,7 +1143,7 @@ static void next_line(const bool eof_ok)
 }
 
 
-static void retchar(const SSHORT c) // unused, now checked in DEBUG mode.
+static void retchar()
 {
 /**************************************
  *
@@ -1152,8 +1157,7 @@ static void retchar(const SSHORT c) // unused, now checked in DEBUG mode.
  **************************************/
 
 // CVC: Too naive implementation: what if the pointer is at the beginning?
-// What if the character being returned isn't the character that was gotten?
-	fb_assert(QLI_line && QLI_line->line_ptr[-1] == c);
+	fb_assert(QLI_line)
 	--QLI_line->line_ptr;
 }
 
@@ -1179,7 +1183,8 @@ static bool scan_number(SSHORT c,
 //   character is really a digit, otherwise backout
 
 	if (c == '.') {
-		retchar(c = nextchar(true));
+		retchar();
+		c = nextchar(true);
 		if (!(classes[c] & CHR_digit))
 			return false;
 		dot = true;
@@ -1214,7 +1219,7 @@ static bool scan_number(SSHORT c,
 		}
 	}
 
-	retchar(c);
+	retchar();
 	*ptr = p;
 
 	return true;
@@ -1243,7 +1248,7 @@ static int skip_white(void)
 		if (c == '/') {
 		    SSHORT next;
 			if ((next = nextchar(true)) != '*') {
-				retchar(next);
+				retchar();
 				return c;
 			}
 			c = nextchar(false);
