@@ -1563,7 +1563,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			DSC desc1, desc2;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			desc->dsc_dtype = dtype_text;
+			desc->dsc_dtype = dtype_varying;
 			ULONG rc_len;
 			if (desc1.dsc_dtype <= dtype_varying)
 			{
@@ -1588,13 +1588,12 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			{
 				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
 			}
-			// error() is a local routine in par.cpp, so we use plain ERR_post
-			if (rc_len > MAX_COLUMN_SIZE)
+			if (rc_len > MAX_COLUMN_SIZE - sizeof(USHORT))
 			{
-				rc_len = MAX_COLUMN_SIZE - sizeof (USHORT);
+				rc_len = MAX_COLUMN_SIZE - sizeof(USHORT);
 				ERR_post_warning(isc_concat_overflow, 0);
 			}
-			desc->dsc_length = static_cast<USHORT>(rc_len);
+			desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 			return;
