@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.92 2004-06-08 13:39:34 alexpeshkoff Exp $ 
+  * $Id: evl.cpp,v 1.93 2004-06-25 22:12:19 skidder Exp $ 
  */
 
 /*
@@ -242,8 +242,6 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 
 /* The only nodes that can be assigned to are: argument, field and variable. */
 
-	VarInvariantArray* var_invariants;
-	MsgInvariantArray* msg_invariants;
 	int arg_number;
 
 	switch (node->nod_type) {
@@ -271,28 +269,9 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 			INTL_ASSIGN_DSC(&impure->vlu_desc,
 							tdbb->tdbb_attachment->att_charset, COLLATE_NONE);
 		}
-		// Clear out dependent invariants
-		msg_invariants = reinterpret_cast<MsgInvariantArray*>(
-			message->nod_arg[e_msg_invariants]);
-		if (msg_invariants && msg_invariants->getCount() > arg_number) {
-			var_invariants = (*msg_invariants)[arg_number];
-			if (var_invariants) {
-				const SLONG* ptr = var_invariants->begin();
-				for (const SLONG* const end = var_invariants->end();
-					ptr < end; ptr++)
-				{
-					reinterpret_cast<impure_value*>((SCHAR *) request + *ptr)->vlu_flags = 0;
-				}
-			}
-		}
 		return &impure->vlu_desc;
 
 	case nod_field:
-		// 23-Nov-2003, Nickolay Samofatov. In theory, we should track
-		// dependent invariants for fields too, but current engine
-		// doesn't seem to be able to produce statements where anomalies 
-		// may happen. I checked triggers and insert/update statements.
-		// All seem to work fine.
 		record =
 			request->req_rpb[(int) (IPTR) node->nod_arg[e_fld_stream]].rpb_record;
 		EVL_field(0, record, (USHORT)(IPTR) node->nod_arg[e_fld_id],
@@ -308,17 +287,6 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 		// Calculate descriptor
 		node = node->nod_arg[e_var_variable];
 		impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-		// Clear out dependent invariants
-		var_invariants = reinterpret_cast<VarInvariantArray*>(
-			node->nod_arg[e_dcl_invariants]);
-		if (var_invariants) {
-			const SLONG* ptr = var_invariants->begin();
-			for (const SLONG* const end = var_invariants->end();
-				ptr < end; ptr++)
-			{
-				reinterpret_cast<impure_value*>((SCHAR *) request + *ptr)->vlu_flags = 0;
-			}
-		}
 		return &impure->vlu_desc;
 
 	default:

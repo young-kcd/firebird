@@ -823,6 +823,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	if (rse->rse_writelock)
 		rsb->rsb_flags |= rsb_writelock;
 
+	// Assign pointer to list of dependent invariant values
+	rsb->rsb_invariants = rse->rse_invariants;
+
 	return rsb;
 }
 

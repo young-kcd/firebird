@@ -1983,83 +1983,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_async_message = csb->csb_async_message;
 #endif
 
-	// Walk over invariant nodes and bind them to variables so
-	// assignment to variables can clear out dependent invariants
-	jrd_nod** link_ptr = csb->csb_invariants.begin();
-	for (const jrd_nod* const* const link_end = csb->csb_invariants.end();
-		 link_ptr < link_end; link_ptr++)
-	{
-		jrd_node_base* i_node;
-		switch ((*link_ptr)->nod_type) {
-		case nod_max:
-		case nod_min:
-		case nod_count:
-		case nod_count2:
-		case nod_average:
-		case nod_total:
-		case nod_from:
-			i_node = (*link_ptr)->nod_arg[e_stat_rse];
-			break;
-		case nod_ansi_all:
-		case nod_ansi_any:
-		case nod_any:
-		case nod_exists:
-		case nod_unique:
-			i_node = (*link_ptr)->nod_arg[e_any_rse];
-			break;
-		case nod_like:
-		case nod_contains:
-			i_node = *link_ptr;
-			break;
-		}
-		if (!i_node->nod_variables) {
-			continue;
-		}
-		// Put dependent invariants to variables blocks
-		jrd_nod** ptr = i_node->nod_variables->begin();
-		for (const jrd_nod* const* const end = i_node->nod_variables->end();
-			 ptr < end; ptr++)
-		{
-			VarInvariantArray** var_invariants;
-			switch ((*ptr)->nod_type) {
-			case nod_argument: 
-				{
-					jrd_nod* msg = (*ptr)->nod_arg[e_arg_message];
-					MsgInvariantArray* msg_invariants;
-					if (!msg->nod_arg[e_msg_invariants]) {
-						msg_invariants = FB_NEW(*tdbb->tdbb_default) 
-							MsgInvariantArray(*tdbb->tdbb_default);
-						msg->nod_arg[e_msg_invariants] = 
-							reinterpret_cast<jrd_nod*>(msg_invariants);
-					}
-					else {
-						msg_invariants = reinterpret_cast<MsgInvariantArray *>(
-							msg->nod_arg[e_msg_invariants]);
-					}
-					const SLONG arg_number = (SLONG) (IPTR)(*ptr)->nod_arg[e_arg_number];
-					if (msg_invariants->getCount() <= arg_number) {
-						msg_invariants->grow(arg_number + 1);
-					}
-					var_invariants = &(*msg_invariants)[arg_number];
-					break;
-				}
-			case nod_variable:
-				var_invariants = reinterpret_cast<VarInvariantArray**>(
-					&(*ptr)->nod_arg[e_var_variable]->nod_arg[e_dcl_invariants]);
-				break;
-			}
-
-			if (!(*var_invariants)) {
-				*var_invariants = FB_NEW(*tdbb->tdbb_default) 
-					VarInvariantArray(*tdbb->tdbb_default);
-			}
-			int pos;
-			if (!(*var_invariants)->find((*link_ptr)->nod_impure, pos))
-				(*var_invariants)->insert(pos, (*link_ptr)->nod_impure);
-		}
-	}
-
-
 	// Take out existence locks on resources used in request. This is
 	// a little complicated since relation locks MUST be taken before
 	// index locks.
@@ -3232,7 +3155,6 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 	return PAR_make_list(tdbb, stack);
 }
 
-
 static jrd_nod* pass1(thread_db* tdbb,
 					 CompilerScratch* csb,
 					 jrd_nod* node,
@@ -3292,6 +3214,25 @@ static jrd_nod* pass1(thread_db* tdbb,
 			ptr[2] = pass1(tdbb, csb, ptr[2], view, view_stream, validate_expr);
 		}
 		csb->csb_current_nodes.pop();
+
+		// If there is no top-level RSE present and patterns are not constant,
+		// unmark node as invariant because it may be dependent on data or variables.
+		// See the same for nod_contains below.
+		if ((node->nod_flags & nod_invariant) && 
+			(ptr[1]->nod_type != nod_literal || 
+			 (node->nod_count == 3 && ptr[2]->nod_type != nod_literal)))
+		{
+			jrd_node_base **ctx_node, **end;
+			for (ctx_node = csb->csb_current_nodes.begin(),
+				 end = csb->csb_current_nodes.end(); 
+				ctx_node < end;	ctx_node++)
+			{
+				if ((*ctx_node)->nod_type == nod_rse)
+					break;
+			}
+			if (ctx_node >= end)
+				node->nod_flags &= ~nod_invariant;
+		}
 		return node;
 
 	case nod_contains:
@@ -3303,23 +3244,27 @@ static jrd_nod* pass1(thread_db* tdbb,
 		csb->csb_current_nodes.push(node);
 		ptr[1] = pass1(tdbb, csb, ptr[1], view, view_stream, validate_expr);
 		csb->csb_current_nodes.pop();
+
+		// If there is no top-level RSE present and patterns are not constant,
+		// unmark node as invariant because it may be dependent on data or variables.
+		// See the same for nod_like above.
+		if ((node->nod_flags & nod_invariant) && (ptr[1]->nod_type != nod_literal))
+		{
+			jrd_node_base **ctx_node, **end;
+			for (ctx_node = csb->csb_current_nodes.begin(),
+				 end = csb->csb_current_nodes.end(); 
+				 ctx_node < end; ctx_node++)
+			{
+				if ((*ctx_node)->nod_type == nod_rse)
+					break;
+			}
+			if (ctx_node >= end)
+				node->nod_flags &= ~nod_invariant;
+		}
 		return node;
 
 	case nod_variable:
 	case nod_argument:
-		{
-			for (jrd_node_base **i_node = csb->csb_current_nodes.begin(); 
-				 i_node < csb->csb_current_nodes.end(); i_node++) 
-			{
-				if (!(*i_node)->nod_variables) 
-				{
-					(*i_node)->nod_variables = 
-						FB_NEW(*tdbb->tdbb_default) 
-							Firebird::Array<jrd_nod*>(*tdbb->tdbb_default);
-				}
-				(*i_node)->nod_variables->add(node);
-			}
-		}
 		break;
 
 	case nod_field:
@@ -5076,6 +5021,20 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		break;
 	}
 
+	// Bind values of invariant nodes to top-level RSE (if present)
+	if (node->nod_flags & nod_invariant)
+	{
+		if (csb->csb_current_nodes.getCount()) {
+			jrd_node_base* rse_node = csb->csb_current_nodes[0];
+			fb_assert(rse_node->nod_type == nod_rse);
+			RecordSelExpr* top_rse = static_cast<RecordSelExpr*>(rse_node);
+			if (!top_rse->rse_invariants)
+				top_rse->rse_invariants = 
+					FB_NEW(*tdbb->tdbb_default) VarInvariantArray(*tdbb->tdbb_default);
+			top_rse->rse_invariants->add(node->nod_impure);
+		}
+	}
+
 	// finish up processing of record selection expressions
 
 	if (rse_node) {
@@ -5102,6 +5061,9 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
+
+	// Maintain stack of RSEe for scoping purposes
+	csb->csb_current_nodes.push(rse);
 
 	if (rse->rse_first) {
 		pass2(tdbb, csb, rse->rse_first, 0);
@@ -5172,6 +5134,7 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 		pass2(tdbb, csb, rse->rse_async_message, 0);
 	}
 #endif
+	csb->csb_current_nodes.pop();
 }
 
 

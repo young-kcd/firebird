@@ -88,7 +88,6 @@ public:
 	UCHAR	nod_flags;
 	SCHAR	nod_scale;			/* Target scale factor */
 	USHORT	nod_count;			/* Number of arguments */
-	Firebird::Array<jrd_nod*> *nod_variables; /* Variables and arguments this node depends on */
 };
 
 
@@ -136,6 +135,7 @@ public:
 	jrd_nod*	rse_projection;
 	jrd_nod*	rse_aggregate;	/* singleton aggregate for optimizing to index */
 	jrd_nod*	rse_plan;		/* user-specified access plan */
+	VarInvariantArray *rse_invariants; /* Invariant nodes bound to top-level RSE */
 #ifdef SCROLLABLE_CURSORS
 	jrd_nod*	rse_async_message;	/* asynchronous message to send for scrolling */
 #endif
@@ -251,9 +251,8 @@ const int e_arg_length		= 4;
 
 const int e_msg_number		= 0;
 const int e_msg_format		= 1;
-const int e_msg_invariants	= 2;
-const int e_msg_next		= 3;
-const int e_msg_length		= 4;
+const int e_msg_next		= 2;
+const int e_msg_length		= 3;
 
 const int e_fld_stream		= 0;
 const int e_fld_id			= 1;
@@ -395,9 +394,8 @@ const int e_var_variable	= 1;
 const int e_var_length		= 2;
 
 const int e_dcl_id			= 0;
-const int e_dcl_invariants	= 1;
-const int e_dcl_desc		= 2;
-const int e_dcl_length		= (2 + sizeof (DSC)/sizeof (::Jrd::jrd_nod*));	/* Room for descriptor */
+const int e_dcl_desc		= 1;
+const int e_dcl_length		= (1 + sizeof (DSC)/sizeof (::Jrd::jrd_nod*));	/* Room for descriptor */
 
 const int e_dep_object		= 0;	/* node for registering dependencies */
 const int e_dep_object_type	= 1;
@@ -650,9 +648,6 @@ typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAcc
 // CVC: Mike comment seems to apply only when the conversion to C++
 // was being done. It's almost impossible that a repeating structure of
 // the compiler scratch block be available to outsiders.
-
-typedef Firebird::SortedArray<SLONG> VarInvariantArray;
-typedef Firebird::Array<VarInvariantArray*> MsgInvariantArray;
 
 class CompilerScratch : public pool_alloc<type_csb>
 {

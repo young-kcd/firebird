@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.72 2004-06-08 13:39:36 alexpeshkoff Exp $
+ * $Id: rse.cpp,v 1.73 2004-06-25 22:12:19 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -611,6 +611,16 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 	SET_TDBB(tdbb);
 
 	jrd_req* request = tdbb->tdbb_request;
+
+	// Initialize dependent invariants if any
+	if (rsb->rsb_invariants) {
+		SLONG *ptr, *end;
+		for (ptr = rsb->rsb_invariants->begin(), end = rsb->rsb_invariants->end();
+			ptr < end; ptr++)
+		{
+			reinterpret_cast<impure_value*>((SCHAR *) request + *ptr)->vlu_flags = 0;
+		}
+	}
 
 	while (true) {
 		IRSB_INDEX impure = (IRSB_INDEX) ((SCHAR *) request + rsb->rsb_impure);

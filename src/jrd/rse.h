@@ -77,6 +77,9 @@ enum rsb_t
 typedef rsb_t RSB_T;
 
 
+// Array which stores relative pointers to impure areas of invariant nodes
+typedef Firebird::SortedArray<SLONG> VarInvariantArray;
+
 // Record source block
 
 class RecordSource : public pool_alloc_rpt<RecordSource*, type_rsb>
@@ -104,6 +107,7 @@ public:
 	StreamStack*	rsb_left_inner_streams;
 	StreamStack*	rsb_left_streams;
 	RsbStack*		rsb_left_rsbs;
+	VarInvariantArray *rsb_invariants; /* Invariant nodes bound to top-level RSB */
 
 	RecordSource* rsb_arg[1];
 };
