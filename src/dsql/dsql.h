@@ -403,7 +403,7 @@ public:
 	DLLS	req_context;
     DLLS    req_union_context;	//!< Save contexts for views of unions
 	struct sym* req_name;		//!< Name of request
-	struct sym* req_cursor;		//!< Cursor symbol. if any
+	struct sym* req_cursor;		//!< Cursor symbol, if any
 	dbb*	req_dbb;			//!< Database handle
 	FRBRD*	req_trans;			//!< Database transaction handle
 	class opn* req_open_cursor;

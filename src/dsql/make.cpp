@@ -1330,8 +1330,9 @@ DSQL_NOD MAKE_field(DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
 	}
 
 	if ((field->fld_flags & FLD_nullable) ||
-	(context->ctx_flags & CTX_outer_join))
-			node->nod_desc.dsc_flags = DSC_nullable;
+		(context->ctx_flags & CTX_outer_join)) {
+		node->nod_desc.dsc_flags = DSC_nullable;
+	}
 
 	return node;
 }
