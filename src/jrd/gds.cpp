@@ -377,9 +377,9 @@ static const UCHAR
 
 #include "../jrd/blp.h"
 
-const char* FB_LOCK_ENV		= "FIREBIRD_LOCK";
-const char* FB_MSG_ENV		= "FIREBIRD_MSG";
-const char* FB_TMP_ENV		= "FIREBIRD_TMP";
+const char* const FB_LOCK_ENV		= "FIREBIRD_LOCK";
+const char* const FB_MSG_ENV		= "FIREBIRD_MSG";
+const char* const FB_TMP_ENV		= "FIREBIRD_TMP";
 
 #ifdef WIN_NT
 #define EXPAND_PATH(relative, absolute)		_fullpath(absolute, relative, MAXPATHLEN)

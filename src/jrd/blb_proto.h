@@ -35,7 +35,7 @@ void   BLB_cancel(Jrd::thread_db*, Jrd::blb*);
 void   BLB_close(Jrd::thread_db*, Jrd::blb*);
 Jrd::blb*   BLB_create(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*);
 Jrd::blb*   BLB_create2(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, USHORT, const UCHAR*);
-void   BLB_garbage_collect(Jrd::thread_db*, const Jrd::RecordStack&, const Jrd::RecordStack&, SLONG, Jrd::jrd_rel*);
+void   BLB_garbage_collect(Jrd::thread_db*, Jrd::RecordStack&, Jrd::RecordStack&, SLONG, Jrd::jrd_rel*);
 Jrd::blb*   BLB_get_array(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, Jrd::internal_array_desc*);
 SLONG  BLB_get_data(Jrd::thread_db*, Jrd::blb*, UCHAR*, SLONG);
 USHORT BLB_get_segment(Jrd::thread_db*, Jrd::blb*, UCHAR*, USHORT);

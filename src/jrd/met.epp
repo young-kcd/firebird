@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.115 2004-05-02 23:05:01 skidder Exp $
+$Id: met.epp,v 1.116 2004-05-09 05:47:58 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -157,26 +157,29 @@ static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
 		return;
 	}
 			
-	for (int i = 0; i<vector->getCount(); i++) 
+	for (int i = 0; i < vector->getCount(); i++) 
 	{
 		(*vector)[i].release(tdbb);
 	}
 }
 
-static void inc_int_use_count(jrd_req* req) {
+
+static void inc_int_use_count(jrd_req* req)
+{
 	// Increment int_use_count for all procedures in resource list of request
-	const ResourceList& list = req->req_resources;
+	ResourceList& list = req->req_resources;
 	int i;
-	for(list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+	for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
 	    i < list.getCount(); i++) 
 	{
-		const Resource& resource = list[i];
+		Resource& resource = list[i];
 		if (resource.rsc_type != Resource::rsc_procedure) 
 			break;
 		fb_assert(resource.rsc_prc->prc_int_use_count >= 0);
 		++resource.rsc_prc->prc_int_use_count;
 	}
 }
+
 
 // Increment int_use_count for all procedures used by triggers
 static void post_used_procedures(trig_vec* vector)
@@ -186,7 +189,7 @@ static void post_used_procedures(trig_vec* vector)
 		return;
 	}
 			
-	for (int i = 0; i<vector->getCount(); i++) 
+	for (int i = 0; i < vector->getCount(); i++) 
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r && !CMP_clone_is_active(r))
@@ -195,6 +198,7 @@ static void post_used_procedures(trig_vec* vector)
 		}
 	}
 }
+
 
 void MET_update_partners(thread_db* tdbb)
 {
@@ -226,6 +230,7 @@ void MET_update_partners(thread_db* tdbb)
 	}
 }
 
+
 void adjust_dependencies(jrd_prc* procedure) {
 	if (procedure->prc_int_use_count == -1) {
 	// Already processed
@@ -234,12 +239,12 @@ void adjust_dependencies(jrd_prc* procedure) {
 	procedure->prc_int_use_count = -1; // Mark as undeletable
 	if (procedure->prc_request) {
 		// Loop over procedures from resource list of prc_request
-		const ResourceList& list = procedure->prc_request->req_resources;
+		ResourceList& list = procedure->prc_request->req_resources;
 		int i;
 		for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
 			 i < list.getCount(); i++) 
 		{
-			const Resource& resource = list[i];
+			Resource& resource = list[i];
 			if (resource.rsc_type != Resource::rsc_procedure) 
 				break;
 			procedure = resource.rsc_prc;
@@ -250,6 +255,7 @@ void adjust_dependencies(jrd_prc* procedure) {
 		}
 	}
 }
+
 
 #ifdef DEV_BUILD
 void MET_verify_cache(thread_db* tdbb) {
@@ -343,6 +349,7 @@ void MET_verify_cache(thread_db* tdbb) {
 	}
 }
 #endif
+
 
 void MET_clear_cache(thread_db* tdbb)
 {
@@ -448,6 +455,7 @@ void MET_clear_cache(thread_db* tdbb)
 	MET_verify_cache(tdbb);
 #endif
 }
+
 
 bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 {
@@ -4075,7 +4083,7 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 	*vector_ptr = NULL;
 	int i;
 
-	for (i = 0; i<vector->getCount(); i++) 
+	for (i = 0; i < vector->getCount(); i++) 
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r && CMP_clone_is_active(r))
@@ -4084,7 +4092,7 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 		}
 	}
 
-	for (i = 0; i<vector->getCount(); i++) 
+	for (i = 0; i < vector->getCount(); i++) 
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r) 
@@ -4262,7 +4270,7 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 	Trigger& t = vector->add();
 	if (blrBlob) 
 	{
-		int length = blrBlob->blb_length + 10;
+		const SLONG length = blrBlob->blb_length + 10;
 		UCHAR* ptr = t.blr.getBuffer(length);
 		BLB_get_data(tdbb, blrBlob, ptr, length);
 	}

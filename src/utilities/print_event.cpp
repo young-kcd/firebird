@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Event manager
- *	MODULE:		print.cpp
+ *	MODULE:		print_event.cpp
  *	DESCRIPTION:	Global region print utility
  *
  * The contents of this file are subject to the Interbase Public
@@ -141,7 +141,7 @@ static void event_list(void)
 			printf("    \"%-15s\" count: %6ld Interest",
 					  event->evnt_name, event->evnt_count);
 
-			{
+			{ // scope
 				RINT interest;
 				srq *interest_que;
 				/* Print out the interest list for this event */
@@ -161,7 +161,7 @@ static void event_list(void)
 						printf("%6d ", process->prb_process_id);
 					}
 				}
-			}
+			} // scope
 			printf("\n");
 		}
 	}

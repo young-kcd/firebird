@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.66 2004-05-07 10:48:05 brodsom Exp $
+$Id: why.cpp,v 1.67 2004-05-09 05:47:59 robocop Exp $
 */
 
 #include "firebird.h"
@@ -163,7 +163,7 @@ inline bool is_network_error(const ISC_STATUS* vector)
 static BOOLEAN shutdown_flag = FALSE;
 #endif /* SERVER_SHUTDOWN && !SUPERCLIENT && !REQUESTER */
 
-typedef ISC_STATUS(*PTR) (ISC_STATUS * user_status, ...);
+typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
 
 /* Database cleanup handlers */
 
@@ -316,10 +316,10 @@ inline static WHY_HNDL allocate_handle(int implementation, Jrd::jrd_tra* h, int 
 static ISC_STATUS bad_handle(ISC_STATUS *, ISC_STATUS);
 
 #ifdef DEV_BUILD
-static void check_status_vector(ISC_STATUS *, ISC_STATUS);
+static void check_status_vector(const ISC_STATUS*, ISC_STATUS);
 #endif
-static ISC_STATUS error(ISC_STATUS *, ISC_STATUS *);
-static ISC_STATUS error2(ISC_STATUS *, ISC_STATUS *);
+static ISC_STATUS error(const ISC_STATUS*, const ISC_STATUS*);
+static ISC_STATUS error2(const ISC_STATUS*, const ISC_STATUS*);
 static void event_ast(void*, USHORT, const UCHAR*);
 static void exit_handler(event_t*);
 static WHY_TRA find_transaction(WHY_DBB, WHY_TRA);
@@ -5115,7 +5115,7 @@ static ISC_STATUS bad_handle(ISC_STATUS * user_status,
 
 
 #ifdef DEV_BUILD
-static void check_status_vector(ISC_STATUS * status,
+static void check_status_vector(const ISC_STATUS* status,
 								ISC_STATUS expected)
  {
 /**************************************
@@ -5129,12 +5129,9 @@ static void check_status_vector(ISC_STATUS * status,
  *
  **************************************/
 
-	ISC_STATUS *s, code;
-	ULONG length;
-
 #define SV_MSG(x)	{ fprintf (stderr, "%s %d check_status_vector: %s\n", __FILE__, __LINE__, (x)); BREAKPOINT (__LINE__); }
 
-	s = status;
+	const ISC_STATUS* s = status;
 	if (!s) {
 		SV_MSG("Invalid status vector");
 		return;
@@ -5151,10 +5148,15 @@ static void check_status_vector(ISC_STATUS * status,
 		&& (s[1] != FB_SUCCESS
 			|| (s[2] != isc_arg_end && s[2] != isc_arg_gds
 				&& s[2] !=
-				isc_arg_warning))) SV_MSG("Success vector expected");
+				isc_arg_warning)))
+	{
+		SV_MSG("Success vector expected");
+	}
+
+	ULONG length;
 
 	while (*s != isc_arg_end) {
-		code = *s++;
+		const ISC_STATUS code = *s++;
 		switch (code) {
 		case isc_arg_warning:
 		case isc_arg_gds:
@@ -5172,15 +5174,13 @@ static void check_status_vector(ISC_STATUS * status,
 			/* If the error code is valid, then I better be able to retrieve a
 			 * proper facility code from it ... let's find out */
 			if (*s && (*s & ISC_MASK) == ISC_MASK) {
-				const struct _facilities *facs;
-				int fac_code;
-				BOOLEAN found = 0;
+				bool found = false;
 
-				facs = facilities;
-				fac_code = GET_FACILITY(*s);
+				const struct _facilities* facs = facilities;
+				const int fac_code = GET_FACILITY(*s);
 				while (facs->facility) {
 					if (facs->fac_code == fac_code) {
-						found = 1;
+						found = true;
 						break;
 					}
 					facs++;
@@ -5200,11 +5200,11 @@ static void check_status_vector(ISC_STATUS * status,
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
-			length = strlen((char *) *s);
+			length = strlen((const char*) *s);
 			/* This check is heuristic, not deterministic */
 			if (length > 1024 - 1)
 				SV_MSG("suspect length value");
-			if (*((UCHAR *) * s) == 0xCB)
+			if (*((const UCHAR *) * s) == 0xCB)
 				SV_MSG("string in freed memory");
 			s++;
 			break;
@@ -5217,7 +5217,7 @@ static void check_status_vector(ISC_STATUS * status,
 			   from a byte value */
 			if (length > 1024 - 1)
 				SV_MSG("suspect length value");
-			if (*((UCHAR *) * s) == 0xCB)
+			if (*((const UCHAR *) * s) == 0xCB)
 				SV_MSG("string in freed memory");
 			s++;
 			break;
@@ -5233,7 +5233,7 @@ static void check_status_vector(ISC_STATUS * status,
 			SV_MSG("invalid status code");
 			return;
 		}
-		if ((s - status) >= 20)
+		if ((s - status) >= ISC_STATUS_LENGTH)
 			SV_MSG("vector too long");
 	}
 
@@ -5255,8 +5255,8 @@ void WHY_cleanup_transaction(WHY_TRA transaction)
 	}
 }
 
-static ISC_STATUS error(ISC_STATUS * user_status,
-						ISC_STATUS * local)
+static ISC_STATUS error(const ISC_STATUS* user_status,
+						const ISC_STATUS* local)
 {
 /**************************************
  *
@@ -5277,8 +5277,8 @@ static ISC_STATUS error(ISC_STATUS * user_status,
 }
 
 
-static ISC_STATUS error2(ISC_STATUS * user_status,
-						 ISC_STATUS * local)
+static ISC_STATUS error2(const ISC_STATUS* user_status,
+						 const ISC_STATUS* local)
 {
 /**************************************
  *

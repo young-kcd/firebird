@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: fb_tls.h,v 1.5 2004-05-03 12:20:01 brodsom Exp $
+ *  $Id: fb_tls.h,v 1.6 2004-05-09 05:47:44 robocop Exp $
  *
  */
  
@@ -88,7 +88,7 @@ private:
 	DWORD key;	
 };
 } // namespace Firebird
-# define TLS_DECLARE(TYPE, NAME) Firebird::Win32Tls<TYPE> NAME
+# define TLS_DECLARE(TYPE, NAME) ::Firebird::Win32Tls<TYPE> NAME
 # define TLS_GET(NAME) NAME.get()
 # define TLS_SET(NAME,VALUE) NAME.set(VALUE)
 
@@ -130,7 +130,7 @@ private:
 
 } // namespace Firebird
 
-# define TLS_DECLARE(TYPE, NAME) Firebird::TlsValue<TYPE> NAME
+# define TLS_DECLARE(TYPE, NAME) ::Firebird::TlsValue<TYPE> NAME
 # define TLS_GET(NAME) NAME.get()
 # define TLS_SET(NAME,VALUE) NAME.set(VALUE)
 

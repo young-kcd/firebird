@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.84 2004-05-07 07:57:20 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.85 2004-05-09 05:47:58 robocop Exp $ 
  */
 
 /*
@@ -446,7 +446,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 				// Check that data type of operand is still the same.
 				// It may change due to multiple formats present in stream
-				// Tystem tables are the good example of such streams -
+				// System tables are the good example of such streams -
 				// data coming from ini.epp has ASCII ttype, user data is UNICODE_FSS
 				if ((impure->vlu_flags & VLU_computed) &&
 					(impure->vlu_desc.dsc_dtype != desc[0]->dsc_dtype ||

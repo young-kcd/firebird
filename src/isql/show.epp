@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.46 2004-05-02 23:04:56 skidder Exp $
+ * $Id: show.epp,v 1.47 2004-05-09 05:47:55 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -137,7 +137,7 @@ const SCHAR* Integral_subtypes[] = {
 
 // Blob subtypes
 
-const int MAXSUBTYPES		= 8;
+const int MAX_BLOBSUBTYPES	= 8;
 
 const SCHAR* Sub_types[] = {
 	"UNKNOWN",					// NTX: keyword
@@ -1592,7 +1592,7 @@ static void show_charsets(
 
 	TEXT char_sets[86];			/* CHARACTER SET <name31> COLLATE <name31> */
 	char_sets[0] = 0;
-	if ((char_set_id != default_char_set_id) || collation){
+	if ((char_set_id != default_char_set_id) || collation) {
 		if (show_charset && !show_collation)
 			ISQL_get_character_sets(char_set_id, 0, false, char_sets);
 		else if (!show_charset && show_collation)
@@ -1600,7 +1600,7 @@ static void show_charsets(
 		else
 			ISQL_get_character_sets(char_set_id, collation, false, char_sets);
 	}
-	if (char_sets[0]){
+	if (char_sets[0]) {
 		if (doIndent)
 			ISQL_printf(Out, spaces);
 		ISQL_printf(Out, char_sets);
@@ -2034,7 +2034,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 				sprintf (Print_buffer, " segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 				ISQL_printf (Out, Print_buffer);
 				const SSHORT subtype  = FLD.RDB$FIELD_SUB_TYPE;
-				if (subtype >= 0 && subtype <= MAXSUBTYPES) {
+				if (subtype >= 0 && subtype <= MAX_BLOBSUBTYPES) {
 					sprintf (Print_buffer, "%s", Sub_types[subtype]);
 					ISQL_printf (Out, Print_buffer);
 				}
@@ -3145,7 +3145,7 @@ static processing_state show_table(
 			sprintf (Print_buffer, " segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 			ISQL_printf (Out, Print_buffer);
 			const SSHORT subtype  = FLD.RDB$FIELD_SUB_TYPE;
-			if (subtype >= 0 && subtype <= MAXSUBTYPES)
+			if (subtype >= 0 && subtype <= MAX_BLOBSUBTYPES)
 			{
 				sprintf (Print_buffer, "%s", Sub_types[subtype]);
 				ISQL_printf (Out, Print_buffer);
@@ -3411,9 +3411,10 @@ static processing_state show_trigger(
 
 	// Show triggers for the named object
 	// and avoid check constraints
-	char triggerName[32];
-	char relationName[32];
-	if (isTriggerName){
+	BASED_ON RDB$TRIGGERS.RDB$TRIGGER_NAME triggerName;
+	BASED_ON RDB$TRIGGERS.RDB$RELATION_NAME relationName;
+
+	if (isTriggerName) {
 		sprintf(triggerName,"%s",object);
 		relationName[0] = '\0';
 	}

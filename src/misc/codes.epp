@@ -343,7 +343,7 @@ static void build_msgfac_h(void)
 	fprintf(msgfac, "/******************************/\n");
 	fprintf(msgfac, "\n");
 
-	fprintf(msgfac, "typedef struct _facilities {\n");
+	fprintf(msgfac, "struct _facilities {\n");
 	fprintf(msgfac, "\tint  fac_code;\n");
 	fprintf(msgfac, "\tchar *facility;\n");
 	fprintf(msgfac, "\t};\n\n");

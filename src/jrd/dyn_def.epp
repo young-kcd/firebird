@@ -1991,7 +1991,7 @@ void DYN_define_index(Global*		gbl,
 					TEXT *str = seg_list.pop();
 					strcpy(X.RDB$FIELD_NAME, str);
 					X.RDB$FIELD_POSITION = --fld_count;
-					delete str;
+					delete[] str;
 				END_STORE;
 			}
 			if (!DYN_REQUEST(drq_s_idx_segs))

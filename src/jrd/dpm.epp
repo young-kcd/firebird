@@ -1939,9 +1939,8 @@ SLONG DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 //		q = (UCHAR *) &(vector->[0]);
 		/* Figure out precedence pages, if any */
 		vcl::iterator ptr, end;
-		for (ptr = vector->begin(), end = vector->end(); ptr < end;) {
+		for (ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr) {
             stack.push(*ptr);
-			ptr++;
         }
 	}
 

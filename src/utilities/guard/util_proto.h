@@ -1,7 +1,7 @@
 /*
  *      PROGRAM:        UTILITIES shared functions prototypes.
  *      MODULE:         util_proto.h
- *      DESCRIPTION:    Prototype header file for util.c
+ *      DESCRIPTION:    Prototype header file for util.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,9 +24,9 @@
 #ifndef UTIL_PROTO_H
 #define UTIL_PROTO_H
 
-pid_t	UTIL_start_process(char *process, char **argv);
+pid_t	UTIL_start_process(const char* process, char** argv);
 int 	UTIL_wait_for_child(pid_t child_pid); 
-int 	UTIL_ex_lock(char *file); 
+int 	UTIL_ex_lock(const char* file);
 void	UTIL_ex_unlock(int fd_file); 
 
 #endif // UTIL_PROTO_H

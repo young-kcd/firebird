@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.28 2004-05-07 07:52:47 brodsom Exp $
+ * $Id: isql.h,v 1.29 2004-05-09 05:47:55 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -90,8 +90,8 @@ const int SQL_objects	= 0;
 const int ALL_objects	= 1;
 
 const size_t WORDLENGTH			= 32;
-static const char* DEFTERM		= ";";
-static const char* DEFCHARSET	= "NONE";
+static const char* const DEFTERM		= ";";
+static const char* const DEFCHARSET	= "NONE";
 const int NULL_DISP_LEN			= 6;
 
 // Error codes 

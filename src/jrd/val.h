@@ -123,6 +123,11 @@ class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
 	UserFunction(MemoryPool& p) : fun_exception_message(p) { }
 };
 
+// Those two defines seems an intention to do something that wasn't completed.
+// UDfs that return values like now or boolean Udfs. See rdb$functions.rdb$function_type.
+//#define FUN_value	0
+//#define FUN_boolean	1
+
 /* Blob passing structure */
 // CVC: Moved to fun.epp where it belongs.
 

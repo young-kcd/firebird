@@ -321,7 +321,7 @@ int LCK_convert_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT w
 /* SuperServer: Do Not release engine here, it creates a race
    condition - more than one thread RUNNING in the engine.
    We check out of the scheduler later - in wait_for_request()
-   in lock/lock.c - when we are going to wait on wakeup event.
+   in lock/lock.cpp - when we are going to wait on wakeup event.
 */
 #ifndef SUPERSERVER
 	SCH_exit();
@@ -676,7 +676,7 @@ int LCK_lock_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait
 /* SuperServer: Do Not release engine here, it creates a race
    condition - more than one thread RUNNING in the engine.
    We check out of the scheduler later - in wait_for_request()
-   in lock/lock.c - when we are going to wait on wakeup event.
+   in lock/lock.cpp - when we are going to wait on wakeup event.
 */
 #ifndef SUPERSERVER
 		SCH_exit();
@@ -701,7 +701,8 @@ int LCK_lock_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait
 
 			if (status[1] == isc_deadlock ||
 				status[1] == isc_lock_conflict ||
-				status[1] == isc_lock_timeout) {
+				status[1] == isc_lock_timeout)
+			{
 				return FALSE;
 			}
 			else {
@@ -1586,8 +1587,10 @@ static bool internal_enqueue(
 }
 
 
-static void set_lock_attachment(Lock* lock, Attachment* attachment) {
-	if (lock->lck_attachment == attachment) return;
+static void set_lock_attachment(Lock* lock, Attachment* attachment)
+{
+	if (lock->lck_attachment == attachment)
+		return;
 
 	// Disable delivery of ASTs for the moment while queue of locks is in flux
 	LCK_ast_inhibit();

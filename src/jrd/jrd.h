@@ -562,7 +562,7 @@ const USHORT PRC_being_altered		= 64;	/* Procedure is getting altered */
 
 const USHORT PRC_check_existence	= 128;	/* Existence lock released */
 
-const USHORT MAX_PROC_ALTER			= 64;	/* No. of times an in-cache procedure can be altered */
+//const USHORT MAX_PROC_ALTER			= 64;	/* No. of times an in-cache procedure can be altered */
 
 
 
@@ -932,7 +932,7 @@ struct ihndl
 	void*	ihndl_object;
 };
 
-// dupilcate context of firebird string to store in jrd_nod::nod_arg
+// duplicate context of firebird string to store in jrd_nod::nod_arg
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 {
 	char* rc = (char*) p.allocate(s.length() + 1, 0
@@ -944,7 +944,7 @@ inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 	return rc;
 }
 
-inline char* stringDup(MemoryPool& p, const char* s, int l)
+inline char* stringDup(MemoryPool& p, const char* s, size_t l)
 {
 	char* rc = (char*) p.allocate(l + 1, 0
 #ifdef DEBUG_GDS_ALLOC

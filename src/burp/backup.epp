@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.56 2004-05-02 23:03:42 skidder Exp $
+$Id: backup.epp,v 1.57 2004-05-09 05:47:41 robocop Exp $
 */
 
 #include "firebird.h"
@@ -3514,7 +3514,7 @@ void write_relations(void)
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	isc_req_handle req_handle1 = 0L, req_handle2 = 0, req_handle3 = 0, req_handle4 = 0;
+	isc_req_handle req_handle1 = 0, req_handle2 = 0, req_handle3 = 0, req_handle4 = 0;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 

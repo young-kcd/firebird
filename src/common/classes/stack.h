@@ -102,7 +102,7 @@ namespace Firebird {
 				if (value <= inherited::getCount())
 					return true;
 
-				for(const Entry * stk = this; stk && value > 0; stk = stk->next)
+				for(const Entry* stk = this; stk && value > 0; stk = stk->next)
 					value -= stk->getCount();
 
 				return (value <= 0);
@@ -144,7 +144,7 @@ namespace Firebird {
 
 	private:
 		// disable use of default operator=
-		Stack<Object, Capacity>& operator= (Stack<Object, Capacity>& s);
+		Stack<Object, Capacity>& operator= (const Stack<Object, Capacity>& s);
 
 	public:
 		void takeOwnership (Stack<Object, Capacity>& s) {
@@ -153,6 +153,9 @@ namespace Firebird {
 			stk = s.stk;
 			s.stk = 0;
 		}
+
+		class iterator;
+		friend class iterator;
 
 		class iterator {
 		private:
@@ -163,7 +166,7 @@ namespace Firebird {
 			int elem;
 
 		public:
-			explicit iterator(const Stack<Object, Capacity>& s) 
+			explicit iterator(Stack<Object, Capacity>& s)
 				: stk(s.stk), elem(stk ? stk->getCount() : 0) { }
 			iterator(const iterator& i) 
 				: stk(i.stk), elem(i.elem) { }
@@ -190,10 +193,10 @@ namespace Firebird {
 					if (value < elem)
 						return true;
 				
-					value -= elem-1;
+					value -= elem - 1;
 				}
 
-				if(stk && stk->next)
+				if (stk && stk->next)
 					return stk->next->hasMore(value);
 				else
 					return false;
@@ -227,7 +230,8 @@ namespace Firebird {
 
 			bool operator== (const Stack<Object, Capacity>& s) const
 			{
-				return (s == *this);
+			return (this->stk == s.stk) &&
+				   (s.stk ? this->elem == s.stk->getCount() : true);
 			}
 
 			bool operator!= (const Stack<Object, Capacity>& s) const
@@ -235,26 +239,146 @@ namespace Firebird {
 				return !(*this == s);
 			}
 
-			iterator& operator= (const iterator& i) {
+			iterator& operator= (iterator& i) {
 				stk = i.stk;
 				elem = i.elem;
 				return *this;
 			}
 
-			iterator& operator= (const Stack<Object, Capacity>& s) {
+			iterator& operator= (Stack<Object, Capacity>& s) {
 				stk = s.stk;
 				elem = stk ? stk->getCount() : 0;
 				return *this;
 			}
-		};
+			
+			//friend void class Stack<Object, Capacity>::clear (const iterator &mark);
+		}; // iterator
+
+		class const_iterator;
+		friend class const_iterator;
+		
+		class const_iterator {
+		private:
+			friend class ::Firebird::Stack<Object, Capacity>;
+			const Entry* stk;
+			int elem;
+
+		public:
+			explicit const_iterator(const Stack<Object, Capacity>& s)
+				: stk(s.stk), elem(stk ? stk->getCount() : 0) { }
+			const_iterator(const iterator& i)
+				: stk(i.stk), elem(i.elem) { }
+			const_iterator(const const_iterator& i)
+				: stk(i.stk), elem(i.elem) { }
+			const_iterator() : stk(0), elem(0) { }
+
+			const_iterator& operator++()
+			{
+				fb_assert(stk);
+				if (--elem <= 0) {
+					if ((stk = stk->next))
+					{
+						elem = stk->getCount();
+					}
+				}
+				return *this;
+			}
+
+			bool hasMore(int value) const
+			{
+				fb_assert(value >= 0);
+
+				if (elem)
+				{
+					if (value < elem)
+						return true;
+
+					value -= elem - 1;
+				}
+
+				if (stk && stk->next)
+					return stk->next->hasMore(value);
+				else
+					return false;
+			}
+
+			bool notEmpty() const
+			{
+				return stk;
+			}
+
+			bool isEmpty() const
+			{
+				return !stk;
+			}
+
+			const Object object() const
+			{
+				fb_assert(stk);
+				return stk->getObject(elem - 1);
+			}
+
+			bool operator== (const iterator &i) const
+			{
+				return (stk == i.stk) && (elem == i.elem);
+			}
+
+			bool operator== (const const_iterator &i) const
+			{
+				return (stk == i.stk) && (elem == i.elem);
+			}
+
+			bool operator!= (const iterator &i) const
+			{
+				return !(*this == i);
+			}
+
+			bool operator!= (const const_iterator &i) const
+			{
+				return !(*this == i);
+			}
+
+			bool operator== (const Stack<Object, Capacity>& s) const
+			{
+			return (this->stk == s.stk) &&
+				   (s.stk ? this->elem == s.stk->getCount() : true);
+			}
+
+			bool operator!= (const Stack<Object, Capacity>& s) const
+			{
+				return !(*this == s);
+			}
+
+			const_iterator& operator= (const iterator& i) {
+				stk = i.stk;
+				elem = i.elem;
+				return *this;
+			}
+
+			const_iterator& operator= (const const_iterator& i) {
+				stk = i.stk;
+				elem = i.elem;
+				return *this;
+			}
+
+			const_iterator& operator= (const Stack<Object, Capacity>& s) {
+				stk = s.stk;
+				elem = stk ? stk->getCount() : 0;
+				return *this;
+			}
+			
+			//friend const const_iterator class Stack<Object, Capacity>::merge(Stack<Object, Capacity>& s);
+			//void class Stack<Object, Capacity>::split (const const_iterator &mark, Stack<Object, Capacity>& s);
+		}; // const_iterator
+
 
 		// Merge stack "s" to the end of current one.
 		// Returns - iterator to Split stacks again.
 		// This iterator will be used as "bookmark" for Split later.
-		const iterator merge(Stack<Object, Capacity>& s)
+		const const_iterator merge(Stack<Object, Capacity>& s)
 		{
 			fb_assert(&getPool() == &s.getPool());
-			iterator rc(s);
+			const const_iterator rc(s);
 			Entry **e = &stk;
 			while (*e) 
 			{
@@ -266,7 +390,7 @@ namespace Firebird {
 		}
 
 		// Split stacks at mark
-		void split (const iterator &mark, Stack<Object, Capacity>& s)
+		void split (const const_iterator &mark, Stack<Object, Capacity>& s)
 		{
 			fb_assert(&getPool() == &s.getPool());
 			fb_assert(!s.stk);
@@ -339,10 +463,6 @@ namespace Firebird {
 			}
 		}
 
-	private:
-		friend class ::Firebird::Stack<Object,Capacity>::iterator;
-
-	public:
 		int getCount() const {
 			int rc = 0;
 			for (Entry* entry = stk; entry; entry = entry->next)
@@ -379,13 +499,22 @@ namespace Firebird {
 
 		bool operator== (const iterator &i) const
 		{
-			return (i.stk == stk) && 
-				   (stk ? i.elem == stk->getCount() : true);
+			return i == *this;
 		}
 
 		bool operator!= (const iterator &i) const
 		{
-			return !(*this == i);
+			return !(i == *this);
+		}
+
+		bool operator== (const const_iterator &i) const
+		{
+			return i == *this;
+		}
+
+		bool operator!= (const const_iterator &i) const
+		{
+			return !(i == *this);
 		}
 
 		void assign(Stack<Object,Capacity>& v) {
@@ -407,3 +536,4 @@ namespace Firebird {
 }
 
 #endif // CLASSES_STACK_H
+

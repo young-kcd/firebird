@@ -777,7 +777,7 @@ void SCL_init(bool create,
 			{
 				*name = strlen(p);
 				strcpy(name + 1, p);
-				if (!check_string(reinterpret_cast<UCHAR*>(name), 
+				if (!check_string(reinterpret_cast<const UCHAR*>(name), 
 								  REL.RDB$OWNER_NAME))
 				{
 					user->usr_flags |= USR_owner;
@@ -1007,7 +1007,7 @@ static bool check_user_group(const UCHAR* acl,
 
 			// convert unix group name to unix group id
 
-			n = ISC_get_user_group_id(reinterpret_cast<TEXT*>(user_group_name));
+			n = ISC_get_user_group_id(reinterpret_cast<const TEXT*>(user_group_name));
 		}
 	}
 

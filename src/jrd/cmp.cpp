@@ -232,6 +232,7 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	return clone;
 }
 
+
 inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, trig_vec* vec)
 /**************************************
  *
@@ -257,6 +258,7 @@ inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, 
 	}
 }
 
+
 static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request) 
 {
 /**************************************
@@ -281,7 +283,8 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
 			if (prc && prc->prc_request)
 				build_external_access(tdbb, list, prc->prc_request);
-		} else {
+		}
+		else {
 			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
 
 			if (!relation) continue;
@@ -308,6 +311,7 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 		}
 	}
 }
+
 
 static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view)
 {
@@ -370,6 +374,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 		}
 	}
 }
+
 
 void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 {
@@ -434,6 +439,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 						 access->acc_mask, access->acc_type, access->acc_name);
 	}
 }
+
 
 jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool validate)
 {
@@ -2156,6 +2162,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	return request;
 }
+
 
 void CMP_post_access(thread_db* tdbb,
 					 CompilerScratch* csb,

@@ -161,7 +161,7 @@ static void print_order(OptimizerBlk*, USHORT, double, double);
 #endif
 static USHORT river_count(USHORT, jrd_nod**);
 static bool river_reference(const River*, const jrd_nod*, bool* field_found = NULL);
-static bool search_stack(jrd_nod*, const NodeStack&);
+static bool search_stack(const jrd_nod*, const NodeStack&);
 static void set_active(OptimizerBlk*, const River*);
 static void set_direction(const jrd_nod*, jrd_nod*);
 static void set_inactive(OptimizerBlk*, const River*);
@@ -465,8 +465,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 					}
 				}
 
-				NodeStack::iterator stackSavepoint(conjunct_stack);
-				NodeStack::iterator stack_end;
+				const NodeStack::iterator stackSavepoint(conjunct_stack);
+				NodeStack::const_iterator stack_end;
 				NodeStack deliverStack;
 
 				if (rse->rse_jointype != blr_inner) {
@@ -610,7 +610,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	//   but be sure that opt->opt_base_conjuncts contains the real "base"
 
 	// find the end of the conjunct stack.
-	NodeStack::iterator stack_end;
+	NodeStack::const_iterator stack_end;
 	if (parent_stack)
 	{
 		stack_end = conjunct_stack.merge(*parent_stack);
@@ -688,7 +688,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		// AB: If previous rsb's are already on the stack we can't use
 		// an navigational-retrieval for an ORDER BY cause the next
-		// streams are JOINed to the previous onces
+		// streams are JOINed to the previous ones
 		if (rivers_stack.notEmpty()) {
 			sort = NULL;
 			outer_rivers = true;
@@ -792,11 +792,11 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		delete csb->csb_rpt[stream].csb_idx;
 		csb->csb_rpt[stream].csb_idx = 0;
 
-        // CVC: The following line added because OPT_compile is recursive, both directly
-        //   and through gen_union(), too. Otherwise, we happen to step on deallocated memory
-        //   and this is the cause of the crashes with indices that have plagued IB since v4.
+		// CVC: The following line added because OPT_compile is recursive, both directly
+		//   and through gen_union(), too. Otherwise, we happen to step on deallocated memory
+		//   and this is the cause of the crashes with indices that have plagued IB since v4.
 
-        csb->csb_rpt[stream].csb_indices = 0;
+		csb->csb_rpt[stream].csb_indices = 0;
 	}
 
 	DEBUG
@@ -814,9 +814,10 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}	// try
 	catch (const std::exception&) {
 		for (SSHORT i = 0; i < streams[0]; i++) {
-			SSHORT stream = streams[i + 1];
+			const SSHORT stream = streams[i + 1];
 			delete csb->csb_rpt[stream].csb_idx;
 			csb->csb_rpt[stream].csb_idx = 0;
+			csb->csb_rpt[stream].csb_indices = 0; // Probably needed to be safe
 		}
 		delete opt;
 		throw;
@@ -1217,7 +1218,7 @@ static bool augment_stack(jrd_nod* node, NodeStack& stack)
  **************************************/
 	DEV_BLKCHK(node, type_nod);
 
-	for (NodeStack::iterator temp(stack); temp.notEmpty(); ++temp) {
+	for (NodeStack::const_iterator temp(stack); temp.notEmpty(); ++temp) {
 		if (node_equality(node, temp.object())) {
 			return false;
 		}
@@ -2140,7 +2141,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
    sequence (A = B, C = D, B = C) */
 
 	for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class) {
-		for (NodeStack::iterator stack2(*eq_class); stack2.notEmpty(); ++stack2) {
+		for (NodeStack::const_iterator stack2(*eq_class); stack2.notEmpty(); ++stack2) {
 			for (Firebird::ObjectsArray<NodeStack>::iterator eq_class2(eq_class); 
 				++eq_class2 != classes.end();)
 			{
@@ -2193,11 +2194,11 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 		{
 			continue;
 		}
-		jrd_nod* node1 = boolean->nod_arg[0];
-		jrd_nod* node2 = boolean->nod_arg[1];
+		const jrd_nod* node1 = boolean->nod_arg[0];
+		const jrd_nod* node2 = boolean->nod_arg[1];
 		bool reverse = false;
 		if (node1->nod_type != nod_field) {
-			jrd_nod* swap_node = node1;
+			const jrd_nod* swap_node = node1;
 			node1 = node2;
 			node2 = swap_node;
 			reverse = true;
@@ -2751,7 +2752,7 @@ static bool expression_contains(const jrd_nod* node, NOD_T node_type)
  *
  * Functional description
  *  Search if somewhere in the expression the give 
- *  node_type is burried. Return true if a unknown
+ *  node_type is buried. Return true if a unknown
  *  node is passed.
  *
  **************************************/
@@ -5858,7 +5859,7 @@ static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, RiverStack& 
  **************************************/
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
-	int count = stack.getCount();
+	const int count = stack.getCount();
 	if (count == 1) {
 		return stack.pop()->riv_rsb;
 	}
@@ -6951,7 +6952,7 @@ static bool river_reference(const River* river, const jrd_nod* node, bool* field
 }
 
 
-static bool search_stack(jrd_nod* node, const NodeStack& stack)
+static bool search_stack(const jrd_nod* node, const NodeStack& stack)
 {
 /**************************************
  *
@@ -6964,7 +6965,7 @@ static bool search_stack(jrd_nod* node, const NodeStack& stack)
  *
  **************************************/
 	DEV_BLKCHK(node, type_nod);
-	for (NodeStack::iterator iter(stack); iter.notEmpty(); ++iter) {
+	for (NodeStack::const_iterator iter(stack); iter.notEmpty(); ++iter) {
 		if (node_equality(node, iter.object())) {
 			return true;
 		}

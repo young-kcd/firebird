@@ -1009,7 +1009,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 /* Release interest in relation/procedure existence for transaction */
 
-	for (Resource* rsc = transaction->tra_resources.begin(); rsc < transaction->tra_resources.end(); rsc++) {
+	for (Resource* rsc = transaction->tra_resources.begin();
+		rsc < transaction->tra_resources.end(); rsc++)
+	{
 		switch (rsc->rsc_type) {
 		case Resource::rsc_procedure:
 			CMP_decrement_prc_use_count(tdbb, rsc->rsc_prc);
@@ -2724,7 +2726,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
 
 	isc_attach_database(status_vector, 0, database,
 						 &db_handle, dpb_length,
-						 reinterpret_cast<char*>(sweep_dpb));
+						 reinterpret_cast<const char*>(sweep_dpb));
 
 	JRD_thread_security_disable(false);
 

@@ -101,7 +101,7 @@ public:
 	Lock*	lck_parent;
 	Lock*	lck_next;		/* lck_next and lck_prior form a doubly linked list of locks 
 							   bound to attachment. Used in MULTI_THREAD builds only */
-	Lock*	lck_att_next;	/* Next in chain owned by attachment (RLCK, currntly unused) */
+	Lock*	lck_att_next;	/* Next in chain owned by attachment (RLCK, currently unused) */
 	Lock*	lck_prior;
 	Lock*	lck_collision;	/* collisions in compatibility table */
 	Lock*	lck_identical;	/* identical locks in compatibility table */

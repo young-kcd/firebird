@@ -83,7 +83,7 @@ static void delete_security_class(thread_db*, TEXT *);
 static void finish_security_class(UCHAR**, USHORT, UCharBuffer&, ULONG*);
 static void get_object_info(thread_db*, const TEXT*, SSHORT,
 							TEXT*, TEXT*, TEXT*, bool*);
-static USHORT get_public_privs(thread_db*, TEXT *, SSHORT);
+static USHORT get_public_privs(thread_db*, const TEXT*, SSHORT);
 static void get_user_privs(thread_db*, UCHAR**, TEXT*,
 						   SSHORT, TEXT*, USHORT, UCharBuffer&, ULONG*);
 static void grant_user(UCHAR**, TEXT*, SSHORT, USHORT, UCharBuffer&, ULONG*);
@@ -94,7 +94,7 @@ static void purge_default_class(TEXT*, SSHORT);
 static USHORT save_field_privileges(thread_db*, UCharBuffer&, UCHAR**,
 									TEXT*, TEXT*, USHORT, ULONG*);
 static void save_security_class(thread_db*, const TEXT*, const UCHAR*, USHORT);
-static USHORT trans_sql_priv(TEXT *);
+static USHORT trans_sql_priv(const TEXT*);
 static SLONG squeeze_acl(UCHAR*, UCHAR**, TEXT*, SSHORT);
 static bool check_string(const UCHAR*, const TEXT*);
 
@@ -402,7 +402,7 @@ static void finish_security_class(UCHAR**	acl_ptr,
 
 
 static USHORT get_public_privs(
-							   thread_db* tdbb, TEXT* object_name, SSHORT obj_type)
+							   thread_db* tdbb, const TEXT* object_name, SSHORT obj_type)
 {
 /**************************************
  *
@@ -649,7 +649,7 @@ static void grant_user(UCHAR**	acl_ptr,
 
 #ifdef NOT_USED_OR_REPLACED
 static void grant_views(
-						UCHAR ** acl_ptr,
+						UCHAR** acl_ptr,
 						USHORT privs, UCharBuffer& start_ptr, ULONG * length_ptr)
 {
 /**************************************
@@ -725,7 +725,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 static USHORT save_field_privileges(
 									thread_db* tdbb,
 									UCharBuffer& str_relation_buffer,
-									UCHAR ** acl_ptr,
+									UCHAR** acl_ptr,
 TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 {
 /**************************************
@@ -999,7 +999,7 @@ static void save_security_class(thread_db*	tdbb,
 
 	bid blob_id;
 	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id);
-	BLB_put_segment(tdbb, blob, (UCHAR*)(buffer), length);
+	BLB_put_segment(tdbb, blob, (const UCHAR*)(buffer), length);
 	BLB_close(tdbb, blob);
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
@@ -1035,7 +1035,7 @@ static void save_security_class(thread_db*	tdbb,
 }
 
 
-static USHORT trans_sql_priv( TEXT * privileges)
+static USHORT trans_sql_priv(const TEXT* privileges)
 {
 /**************************************
  *

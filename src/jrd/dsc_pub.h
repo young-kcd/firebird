@@ -28,7 +28,7 @@
 
 
 //
-// The following flags are used in a internal structure dsc (dsc.h) or in the external one paramdsc (ibase.h)
+// The following flags are used in an internal structure dsc (dsc.h) or in the external one paramdsc (ibase.h)
 //
 
 // values for dsc_flags

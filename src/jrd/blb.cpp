@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.73 2004-05-02 23:04:57 skidder Exp $
+$Id: blb.cpp,v 1.74 2004-05-09 05:47:57 robocop Exp $
 */
 
 #include "firebird.h"
@@ -284,8 +284,8 @@ blb* BLB_create2(thread_db* tdbb,
 //
 void BLB_garbage_collect(
 						 thread_db* tdbb,
-						 const RecordStack& going, 
-						 const RecordStack& staying, 
+						 RecordStack& going,
+						 RecordStack& staying,
 						 SLONG prior_page, jrd_rel* relation)
 {
 /**************************************

@@ -972,7 +972,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	// Don't run internal handles thru the security gauntlet.
 
-	bool internal = TLS_GET(thread_security_disabled);
+	const bool internal = TLS_GET(thread_security_disabled);
 
 	SCL_init(false,
 			 options.dpb_sys_user_name,
@@ -1896,7 +1896,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	// Don't run internal handles thru the security gauntlet.
 
-	bool internal = TLS_GET(thread_security_disabled);
+	const bool internal = TLS_GET(thread_security_disabled);
 
 	SCL_init(true,
 			 options.dpb_sys_user_name,

@@ -624,10 +624,14 @@ struct ExternalAccess
 	{ }
 
 	static bool greaterThan(const ExternalAccess& i1, const ExternalAccess& i2) {
-		if (i1.exa_action != i2.exa_action) return i1.exa_action > i2.exa_action;
-		if (i1.exa_prc_id != i2.exa_prc_id) return i1.exa_prc_id > i2.exa_prc_id;
-		if (i1.exa_rel_id != i2.exa_rel_id) return i1.exa_rel_id > i2.exa_rel_id;
-		if (i1.exa_view_id != i2.exa_view_id) return i1.exa_view_id > i2.exa_view_id;
+		if (i1.exa_action != i2.exa_action)
+			return i1.exa_action > i2.exa_action;
+		if (i1.exa_prc_id != i2.exa_prc_id)
+			return i1.exa_prc_id > i2.exa_prc_id;
+		if (i1.exa_rel_id != i2.exa_rel_id)
+			return i1.exa_rel_id > i2.exa_rel_id;
+		if (i1.exa_view_id != i2.exa_view_id)
+			return i1.exa_view_id > i2.exa_view_id;
 		return false; // Equal
 	}
 };

@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.5 2004-05-01 14:17:49 brodsom Exp $
+ * $Id: guard.cpp,v 1.6 2004-05-09 05:48:33 robocop Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -68,23 +68,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *      process takes 1 argument:  -f (default) or -o
  *
  **************************************/
-	TEXT **end, *p, c;
-	USHORT option = FOREVER;	/* holds FOREVER or ONETIME */
-	TEXT user_name[256];		/* holds the user name */
+	USHORT option = FOREVER;	/* holds FOREVER or ONETIME  or IGNORE */
 	bool done = true;
-	int fd_guard;
-	pid_t child_pid;
-	TEXT *prog_name = argv[0];
-	TEXT *server_args[2];
-	TEXT process_name[1024];
+	const TEXT* prog_name = argv[0];
 
-	ULONG old_mask;
-	ULONG new_mask = 0000;
-
-	end = argc + argv;
+	const TEXT* const* const end = argc + argv;
 	argv++;
 	while (argv < end) {
-		p = *argv++;
+		const TEXT* p = *argv++;
 		if (*p++ == '-')
 			switch (UPPER(*p)) {
 			case 'F':
@@ -107,11 +98,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}							/* while */
 
 /* check user id */
+	TEXT user_name[256];		/* holds the user name */
 	ISC_get_user(user_name, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (strcmp(user_name, INTERBASE_USER) && strcmp(user_name, "root")
 		&& strcmp(user_name, FIREBIRD_USER)
-		&& strcmp(user_name, INTERBASE_USER_SHORT)) {
+		&& strcmp(user_name, INTERBASE_USER_SHORT))
+	{
 		/* invalid user bail out */
 		fprintf(stderr,
 				   "%s: Invalid user (must be %s, %s, %s or root).\n",
@@ -121,9 +114,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 /* get and set the umask for the current process */
-	old_mask = umask(new_mask);
+	const ULONG new_mask = 0000;
+	const ULONG old_mask = umask(new_mask);
 
 /* exclusive lock the file */
+	int fd_guard;
 	if ((fd_guard = UTIL_ex_lock(GUARD_FILE)) < 0) {
 		/* could not get exclusive lock -- some other guardian is running */
 		if (fd_guard == -2)
@@ -136,6 +131,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	umask(old_mask);
 
 /* move the server name into the argument to be passed */
+	TEXT process_name[1024];
+	TEXT* server_args[2];
 	server_args[0] = process_name;
 	server_args[1] = NULL;
 
@@ -144,7 +141,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 		gds__log("%s: guardian starting %s\n",
 				 prog_name, SUPER_SERVER_BINARY);
-		child_pid = UTIL_start_process(SUPER_SERVER_BINARY, server_args);
+		pid_t child_pid = UTIL_start_process(SUPER_SERVER_BINARY, server_args);
 		if (child_pid == -1) {
 			/* could not fork the server */
 			gds__log("%s: guardian could not start %s\n", prog_name,

@@ -29,7 +29,7 @@
 /*   ISC message facilities   */
 /******************************/
 
-typedef struct _facilities {
+struct _facilities {
 	int  fac_code;
 	char *facility;
 	};

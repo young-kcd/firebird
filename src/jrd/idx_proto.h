@@ -49,7 +49,7 @@ void IDX_delete_index(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 void IDX_delete_indices(Jrd::thread_db*, Jrd::jrd_rel*);
 Jrd::idx_e IDX_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, Jrd::jrd_rel**,
 							USHORT*);
-void IDX_garbage_collect(Jrd::thread_db*, Jrd::record_param*, const Jrd::RecordStack&, const Jrd::RecordStack&);
+void IDX_garbage_collect(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordStack&, Jrd::RecordStack&);
 Jrd::idx_e IDX_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
 							 Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT *);
 Jrd::idx_e IDX_modify_check_constraints(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,

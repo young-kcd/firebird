@@ -139,12 +139,14 @@ const int UNKNOWN_LEN		= 20;	// Unknown type: %d
 
 const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
 
-static inline void commit_trans(isc_tr_handle* x){
+static inline void commit_trans(isc_tr_handle* x)
+{
 	if (isc_commit_transaction (isc_status, x)) {
 		ISQL_errmsg (isc_status); 
 		isc_rollback_transaction (isc_status, x);
 	}
 }
+
 
 typedef struct indev {
 	indev* indev_next;
@@ -2602,7 +2604,7 @@ static processing_state create_db(const TEXT* statement,
 			if (D__trans)
 				commit_trans(&D__trans);
 			if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
-					ISQL_errmsg(isc_status);
+				ISQL_errmsg(isc_status);
 		}
 
 		// Allocate a new user statement for the database 

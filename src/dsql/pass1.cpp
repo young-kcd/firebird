@@ -197,7 +197,7 @@ static bool invalid_reference(const dsql_ctx*, const dsql_nod*,
 	const dsql_nod*, bool, bool);
 static bool node_match(const dsql_nod*, const dsql_nod*, bool);
 static dsql_nod* pass1_alias_list(dsql_req*, dsql_nod*);
-static dsql_ctx* pass1_alias(dsql_req*, const DsqlContextStack&, dsql_str*);
+static dsql_ctx* pass1_alias(dsql_req*, DsqlContextStack&, dsql_str*);
 static dsql_str* pass1_alias_concat(const dsql_str*, const dsql_str*);
 static dsql_nod* pass1_any(dsql_req*, dsql_nod*, NOD_TYPE);
 static dsql_rel* pass1_base_table(dsql_req*, const dsql_rel*, const dsql_str*);
@@ -206,7 +206,7 @@ static dsql_nod* pass1_coalesce(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_collate(dsql_req*, dsql_nod*, const dsql_str*);
 static dsql_nod* pass1_constant(dsql_req*, dsql_nod*);
 static dsql_ctx* pass1_cursor_context(dsql_req*, const dsql_nod*, const dsql_nod*);
-static dsql_nod* pass1_cursor_name(const dsql_req*, const dsql_str*, bool);
+static dsql_nod* pass1_cursor_name(dsql_req*, const dsql_str*, bool);
 static dsql_nod* pass1_cursor_reference(dsql_req*, const dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_dbkey(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_delete(dsql_req*, dsql_nod*);
@@ -632,7 +632,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
 					  isc_arg_gds, isc_dsql_subselect_err, 0);
 
-		DsqlContextStack::iterator base(*request->req_context);
+		const DsqlContextStack::iterator base(*request->req_context);
 		node = MAKE_node(nod_via, e_via_count);
 		dsql_nod* rse = PASS1_rse(request, input, input->nod_arg[e_sel_order],
 					  input->nod_arg[e_sel_rows], NULL);
@@ -647,7 +647,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_exists:
 	case nod_singular:
 		{
-		DsqlContextStack::iterator base(*request->req_context);
+		const DsqlContextStack::iterator base(*request->req_context);
 		node = MAKE_node(input->nod_type, 1);
 		input = input->nod_arg[0];
 		node->nod_arg[0] =
@@ -780,7 +780,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 						  isc_arg_gds, isc_dsql_subselect_err, 0);
 
 			if (sub2->nod_arg[e_sel_singleton]) {
-				DsqlContextStack::iterator base(*request->req_context);
+				const DsqlContextStack::iterator base(*request->req_context);
 				node = MAKE_node(input->nod_type, 2);
 				node->nod_arg[0] = PASS1_node(request, input->nod_arg[0], false);
 				dsql_nod* temp = MAKE_node(nod_via, e_via_count);
@@ -1047,7 +1047,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 #endif
 
 	dsql_nod* node;
-	DsqlContextStack::iterator base(*request->req_context);
+	const DsqlContextStack::iterator base(*request->req_context);
 
 // Dispatch on node type.  Fall thru on easy ones 
 
@@ -1571,7 +1571,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		// make sure the cursor doesn't exist
 		pass1_cursor_name(request, (dsql_str*) input->nod_arg[e_cur_name], false);
 		// temporarily hide unnecessary contexts and process our RSE
-		DsqlContextStack* base_context = request->req_context;
+		DsqlContextStack* const base_context = request->req_context;
 		DsqlContextStack temp;
 		request->req_context = &temp;
 		input->nod_arg[e_cur_rse] =
@@ -1937,7 +1937,7 @@ static dsql_nod* ambiguity_check(dsql_req* request, dsql_nod* node,
 	TEXT* b = buffer;
 	TEXT* p = 0;
 
-	for (DsqlContextStack::iterator stack(ambiguous_contexts); stack.notEmpty(); ++stack)
+	for (DsqlContextStack::const_iterator stack(ambiguous_contexts); stack.notEmpty(); ++stack)
 	{
 		const dsql_ctx* context = stack.object();
 		const dsql_rel* relation = context->ctx_relation;
@@ -2905,7 +2905,7 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	DEV_BLKCHK(input, dsql_type_nod);
 
 	dsql_nod* select = input->nod_arg[1];
-	DsqlContextStack::iterator base(*request->req_context);
+	const DsqlContextStack::iterator base(*request->req_context);
 
 	dsql_nod* node = MAKE_node(ntype, 1);
 	dsql_nod* temp = MAKE_node(input->nod_type, 2);
@@ -3315,7 +3315,7 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, const dsql_nod* cursor
     @param string
 
  **/
-static dsql_nod* pass1_cursor_name(const dsql_req* request, const dsql_str* string,
+static dsql_nod* pass1_cursor_name(dsql_req* request, const dsql_str* string,
 	bool existance_flag)
 {
 	DEV_BLKCHK(string, dsql_type_str);
@@ -5127,7 +5127,7 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
     @param alias
 
  **/
-static dsql_ctx* pass1_alias(dsql_req* request, const DsqlContextStack& stack, dsql_str* alias)
+static dsql_ctx* pass1_alias(dsql_req* request, DsqlContextStack& stack, dsql_str* alias)
 {
 	dsql_ctx* relation_context = NULL;
 
@@ -6052,13 +6052,13 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	// process all the sub-rse's.
 	{ // scope block
 	dsql_nod** uptr = union_node->nod_arg;
-	DsqlContextStack::iterator const base(*request->req_context);
+	const DsqlContextStack::const_iterator base(*request->req_context);
 	dsql_nod** ptr = input->nod_arg;
 	for (const dsql_nod* const* const end = ptr + input->nod_count; ptr < end;
 		 ++ptr, ++uptr)
 	{
 		*uptr = PASS1_rse(request, *ptr, NULL, NULL, NULL);
-        while (*(request->req_context) != base) 
+        while (*(request->req_context) != base)
 		{
             request->req_union_context.push(request->req_context->pop());
         }

@@ -146,7 +146,7 @@ static bool write_page(thread_db*, BufferDesc*, const bool, ISC_STATUS*, const b
 static void unmark(thread_db*, WIN *);
 static void update_write_direction(thread_db*, BufferDesc*);
 
-const long MIN_BUFFER_SEGMENT	= 65536L;
+const SLONG MIN_BUFFER_SEGMENT	= 65536L;
 
 /* Given pointer a field in the block, find the block */
 

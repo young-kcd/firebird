@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.21 2004-05-06 18:07:02 brodsom Exp $
+$Id: thd.h,v 1.22 2004-05-09 05:47:59 robocop Exp $
 */
 
 #ifndef JRD_THD_H
@@ -76,7 +76,7 @@ $Id: thd.h,v 1.21 2004-05-06 18:07:02 brodsom Exp $
    including the whole world tends to break things (Microsoft also
    doesn't believe in benign naming conversions) we must copy code. */
 
-typedef struct IB_RTL_CRITICAL_SECTION
+struct IB_RTL_CRITICAL_SECTION
 {
 	void*	DebugInfo;
 	ULONG	LockCount;

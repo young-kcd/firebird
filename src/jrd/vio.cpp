@@ -100,7 +100,7 @@ static bool check_user(thread_db*, const dsc*);
 static void delete_record(thread_db*, record_param*, SLONG, JrdMemoryPool*);
 static UCHAR* delete_tail(thread_db*, record_param*, SLONG, UCHAR*, const UCHAR*);
 static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
-static void garbage_collect(thread_db*, record_param*, SLONG, const RecordStack&);
+static void garbage_collect(thread_db*, record_param*, SLONG, RecordStack&);
 static void garbage_collect_idx(thread_db*, record_param*, record_param*, Record*);
 #ifdef GARBAGE_THREAD
 static void THREAD_ROUTINE garbage_collector(Database*);
@@ -3413,7 +3413,7 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 
 static void garbage_collect(thread_db* tdbb,
 							record_param* rpb, SLONG prior_page, 
-							const RecordStack& staying)
+							RecordStack& staying)
 {
 /**************************************
  *
@@ -4511,7 +4511,7 @@ static void replace_record(thread_db*		tdbb,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
-		printf("replace_record (record_param %"SLONGFORMAT", stack, transaction %"
+		printf("replace_record (record_param %"SLONGFORMAT", transaction %"
 				  SLONGFORMAT")\n",
 				  rpb->rpb_number, transaction ? transaction->tra_number : 0);
 	}

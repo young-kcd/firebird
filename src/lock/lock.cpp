@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.93 2004-05-05 21:54:17 brodsom Exp $
+$Id: lock.cpp,v 1.94 2004-05-09 05:48:21 robocop Exp $
 */
 
 #include "firebird.h"
@@ -148,12 +148,12 @@ static ULONG debug_acquire_count = 0;
 #endif
 
 #ifdef DEBUG_TRACE
-#define LOCK_TRACE(x)	{ time_t t; time (&t); printf ("%s", ctime(&t) ); printf x ; fflush (stdout); gds__log x ;}
+#define LOCK_TRACE(x)	{ time_t t; time(&t); printf("%s", ctime(&t) ); printf x; fflush (stdout); gds__log x;}
 #endif
 
 #ifdef DEBUG
 SSHORT LOCK_debug_level = 0;
-#define DEBUG_MSG(l,x)	if ((l) <= LOCK_debug_level) { time_t t; time (&t); printf ("%s", ctime(&t) ); printf x ; fflush (stdout); gds__log x ; }
+#define DEBUG_MSG(l,x)	if ((l) <= LOCK_debug_level) { time_t t; time(&t); printf("%s", ctime(&t) ); printf x; fflush (stdout); gds__log x; }
 #endif
 
 #ifndef DEBUG_MSG

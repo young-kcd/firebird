@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.4 2004-04-28 22:18:58 brodsom Exp $
+$Id: util.cpp,v 1.5 2004-05-09 05:48:33 robocop Exp $
 */
 
 #include "firebird.h"
@@ -65,7 +65,7 @@ $Id: util.cpp,v 1.4 2004-04-28 22:18:58 brodsom Exp $
 #include "../jrd/isc_proto.h"
 
 
-pid_t UTIL_start_process(char *process, char **argv)
+pid_t UTIL_start_process(const char* process, char** argv)
 {
 /**************************************
  *
@@ -148,13 +148,15 @@ int UTIL_wait_for_child( pid_t child_pid)
 		   WCOREDUMP(child_exit_status) ||
 #endif
 		   WIFSIGNALED(child_exit_status) || !WIFEXITED(child_exit_status))
+	{
 		return (-1);
+	}
 
 	return (0);
 }
 
 
-int UTIL_ex_lock( TEXT * file)
+int UTIL_ex_lock(const TEXT* file)
 {
 /**************************************
  *

@@ -580,8 +580,8 @@ IDX_E IDX_erase(thread_db* tdbb,
 
 void IDX_garbage_collect(thread_db*			tdbb, 
 						 record_param*		rpb, 
-						 const RecordStack& going, 
-						 const RecordStack& staying)
+						 RecordStack& going,
+						 RecordStack& staying)
 {
 /**************************************
  *
