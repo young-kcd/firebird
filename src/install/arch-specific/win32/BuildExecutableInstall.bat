@@ -53,11 +53,11 @@ for %%v in ( %1 %2 %3 %4 %5 )  do (
 
 
 :SED_MAGIC
-:: Do some sed magic to make sure that the final product 
+:: Do some sed magic to make sure that the final product
 :: includes the version string in the filename.
-:: If the Firebird Unix tools for Win32 aren't on 
+:: If the Firebird Unix tools for Win32 aren't on
 :: the path this will fail! Use of the cygwin tools has not
-:: been tested and may produce unexpected results. 
+:: been tested and may produce unexpected results.
 ::========================================================
 sed /"#define PRODUCT_VER_STRING"/!d %ROOT_PATH%\src\jrd\build_no.h > %temp%.\b$1.bat
 sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.bat %temp%.\b$1.bat
@@ -78,10 +78,10 @@ del %temp%.\b$?.bat
 
 :COPY_XTRA
 :: system dll's we need
-:: (You may need to download and extract the 
+:: (You may need to download and extract the
 :: vcredist stuff to your MSDevDir for this to work.
 ::=====================
-@if DEFINED MSDevDir ( 
+@if DEFINED MSDevDir (
 @if %msvc_version% EQU 6 (
  (@copy "%MSDevDir%\vcredist\msvcrt.dll" %ROOT_PATH%\output\system32\ 2>nul)
  (@copy "%MSDevDir%\vcredist\msvcp%msvc_version%0.dll" %ROOT_PATH%\output\system32\ 2>nul)
@@ -96,7 +96,7 @@ del %temp%.\b$?.bat
 
 @echo Copying ib_util etc
 for %%v in ( ib_util.h ib_util.pas ) do (
-	((copy %ROOT_PATH%\src\extlib\%%v %ROOT_PATH%\output\include\%%v > nul) || 	(@echo Copying %%v failed.)) 
+	((copy %ROOT_PATH%\src\extlib\%%v %ROOT_PATH%\output\include\%%v > nul) || 	(@echo Copying %%v failed.))
 )
 
 
@@ -117,12 +117,12 @@ for %%v in (fbclient ib_util) do @(
 @echo Started copying docs...
 @copy %ROOT_PATH%\doc\*.* %ROOT_PATH%\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of main documentation tree failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
-@if EXIST "%ROOT_PATH%\output\doc\Firebird_v15.104_ReleaseNotes.pdf" ren %ROOT_PATH%\output\doc\Firebird_v15.104_ReleaseNotes.pdf Firebird_v15_ReleaseNotes.pdf 
+@if EXIST "%ROOT_PATH%\output\doc\Firebird_v15.104_ReleaseNotes.pdf" ren %ROOT_PATH%\output\doc\Firebird_v15.104_ReleaseNotes.pdf Firebird_v15_ReleaseNotes.pdf
 
 @echo Copying udf library scripts...
 
-(copy %ROOT_PATH%\src\extlib\ib_udf.sql %ROOT_PATH%\output\UDF\ib_udf.sql > nul) || 	(@echo Copying %%v failed.) 
-(copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\UDF\fbudf.sql > nul) || 	(@echo Copying %%v failed.) 
+(copy %ROOT_PATH%\src\extlib\ib_udf.sql %ROOT_PATH%\output\UDF\ib_udf.sql > nul) || 	(@echo Copying %%v failed.)
+(copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\UDF\fbudf.sql > nul) || 	(@echo Copying %%v failed.)
 
 @copy %ROOT_PATH%\src\extlib\fbudf\fbudf.txt %ROOT_PATH%\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY fbudf doc failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
@@ -136,7 +136,7 @@ for %%v in (fbclient ib_util) do @(
 
 @copy %ROOT_PATH%\src\install\arch-specific\win32\installation_readme.txt %ROOT_PATH%\output\doc\installation_readme.txt > nul
 
-:: This stuff doesn't make much sense to Windows users, although the troubleshooting doc 
+:: This stuff doesn't make much sense to Windows users, although the troubleshooting doc
 :: could be made more platform agnostic.
 @for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.mingw.html README.build.msvc.html fb2-todo.txt install_win32.txt *.*~) do (
   (@del %ROOT_PATH%\output\doc\%%v 2>nul)
@@ -168,7 +168,7 @@ if DEFINED FB_EXTERNAL_DOCS (
 @echo Completed copying docs.
 
 ::rename the examples directory
-:: /Y is not necessary in a script, but is added to document 
+:: /Y is not necessary in a script, but is added to document
 :: that no prompting will take place
 if EXIST %ROOT_PATH%\output\v5_examples (
 @move /Y %ROOT_PATH%\output\v5_examples %ROOT_PATH%\output\examples > nul 2>&1
@@ -179,17 +179,17 @@ if EXIST %ROOT_PATH%\output\v5_examples (
 :IBASE_H
 :: Concatenate header files into ibase.h
 ::======================================
-:: o This section of code takes two header files, strips comments and 
+:: o This section of code takes two header files, strips comments and
 ::   inserts them into ibase.h for distribution. The only drawback is that
 ::   it strips all the comments.
 :: o No error checking is done.
 :: o Take note that different versions of sed use different
 ::   string delimiters. The firebird_tools version uses double quotes - ".
 ::   The cygwin one probably uses single quotes.
-:: o The script 'strip_comments.sed' is taken from 
+:: o The script 'strip_comments.sed' is taken from
 ::      http://sed.sourceforge.net/grabbag/scripts/testo.htm
 
-setlocal 
+setlocal
 set OUTPATH=%ROOT_PATH%\output\include
 for %%v in ( %ROOT_PATH%\src\include\fb_types.h %ROOT_PATH%\src\jrd\blr.h ) do (
   del %OUTPATH%\%%~nxv 2> nul
@@ -197,9 +197,9 @@ for %%v in ( %ROOT_PATH%\src\include\fb_types.h %ROOT_PATH%\src\jrd\blr.h ) do (
   sed -n -f strip_comments.sed %OUTPATH%\%%~nxv > %OUTPATH%\%%~nv.more
   more /s %OUTPATH%\%%~nv.more > %OUTPATH%\%%~nv.sed
 )
-ren %OUTPATH%\ibase.h ibase.sed 
+ren %OUTPATH%\ibase.h ibase.sed
 sed -e "/#include \"fb_types\.h\"/r %OUTPATH%\fb_types.h" -e "/#include \"fb_types\.h\"/d" -e "/#include \"blr\.h\"/r %OUTPATH%\blr.h" -e "/#include \"blr\.h\"/d" %OUTPATH%\ibase.sed > %OUTPATH%\ibase.h
-del %OUTPATH%\ibase.sed %OUTPATH%\fb_types.* %OUTPATH%\blr.* 
+del %OUTPATH%\ibase.sed %OUTPATH%\fb_types.* %OUTPATH%\blr.*
 endlocal
 @goto :EOF
 
@@ -241,8 +241,8 @@ endlocal
 :: firebird.msg is generated as part of the build process
 :: in builds\win32 by build_msg.bat copying from there to output dir
 ::=================================================================
-@if not exist %ROOT_PATH%\output\firebird.msg ( 
-	(@copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg > nul) 
+@if not exist %ROOT_PATH%\output\firebird.msg (
+	(@copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg > nul)
 	(@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy firebird.msg ) & (goto :EOF)))
 )
 @goto :EOF
@@ -250,7 +250,7 @@ endlocal
 :TOUCH_LOCAL
 ::==========
 :: Note 1: This doesn't seem to make any difference to whether local libraries are used.
-:: Note 2: MS documentation was incorrectly interpreted. .local files should not be created 
+:: Note 2: MS documentation was incorrectly interpreted. .local files should not be created
 ::         for libraries, they should be created for executables.
 :: Create libname.local files for each locally installed library
 ::for %%v in ( fbclient msvcrt msvcp%MSVC_VERSION%0 )  do touch %ROOT_PATH%\output\bin\%%v.local
@@ -270,19 +270,19 @@ for %%v in (bin doc doc\sql.extensions help include intl lib udf examples ) do (
 )
 
 :: Now remove stuff that is not needed.
-for %%v in (bin\gpre_boot.exe bin\gpre_static.exe doc\installation_readme.txt ) do ( 
-	@del %ROOT_PATH%\zip_pack\%%v 
+for %%v in (bin\gpre_boot.exe bin\gpre_static.exe doc\installation_readme.txt bin\fbembed.dll bin\fbembed.pdb ) do (
+	@del %ROOT_PATH%\zip_pack\%%v
 )
 
 ::grab install notes for zip pack
 @copy %ROOT_PATH%\doc\install_win32.txt %ROOT_PATH%\zip_pack\doc\README_installation.txt > nul
 
 :: Add license
-for %%v in (IPLicense.txt IDPLicense.txt ) do ( 
-	@copy %ROOT_PATH%\src\install\misc\%%v %ROOT_PATH%\zip_pack\%%v > nul 
+for %%v in (IPLicense.txt IDPLicense.txt ) do (
+	@copy %ROOT_PATH%\src\install\misc\%%v %ROOT_PATH%\zip_pack\%%v > nul
 )
 
-::And readme 
+::And readme
 @copy %ROOT_PATH%\src\install\arch-specific\win32\readme.txt %ROOT_PATH%\zip_pack\ > nul
 
 goto :EOF
@@ -293,10 +293,10 @@ goto :EOF
 if "%FBBUILD_ZIP_PACK%" NEQ "1" goto :EOF
 if defined PKZIP (
 	if "%SHIP_PDB%" == "ship_pdb" (
-		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip	
+		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip
 		%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip %ROOT_PATH%\zip_pack\*.*
 	) else (
-		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32.zip	
+		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32.zip
 	 	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32.zip %ROOT_PATH%\zip_pack\*.*
 	)
 ) else (
@@ -329,11 +329,11 @@ for %%v in ( doc intl udf ) do (@mkdir %ROOT_PATH%\emb_pack\%%v 2>nul)
 @copy %ROOT_PATH%\doc\WhatsNew %ROOT_PATH%\emb_pack\doc\WhatsNew.txt > nul
 
 :: Add license
-for %%v in (IPLicense.txt IDPLicense.txt ) do ( 
-	@copy %ROOT_PATH%\src\install\misc\%%v %ROOT_PATH%\emb_pack\%%v > nul 
+for %%v in (IPLicense.txt IDPLicense.txt ) do (
+	@copy %ROOT_PATH%\src\install\misc\%%v %ROOT_PATH%\emb_pack\%%v > nul
 )
 
-::And readme 
+::And readme
 @copy %ROOT_PATH%\src\install\arch-specific\win32\readme.txt %ROOT_PATH%\emb_pack\ > nul
 
 
@@ -348,12 +348,12 @@ if "%FBBUILD_EMB_PACK%" NEQ "1" goto :EOF
 ::Now we can zip it up and copy the package to the install images directory.
 if defined PKZIP (
 	if "%SHIP_PDB%" == "ship_pdb" (
-		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32_pdb.zip 	
+		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32_pdb.zip
 		%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32_pdb.zip %ROOT_PATH%\emb_pack\*.*
 	) else (
 	 	del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32.zip
 	 	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32.zip %ROOT_PATH%\emb_pack\*.*
-	)		
+	)
 ) else (
 @Echo.
 @Echo Couldn't find pkzip.
@@ -369,8 +369,8 @@ goto :EOF
 ::While building and testing this feature might be annoying, so we don't do it.
 ::==========================================================
 @if /I "%BUILDTYPE%"=="release" (
-	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\output\*.*) 
-	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\emb_pack\*.*) 
+	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\output\*.*)
+	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\emb_pack\*.*)
 	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\zip_pack\*.*)
 )
 @goto :EOF
@@ -379,7 +379,7 @@ goto :EOF
 :ISX_PACK
 ::=======
 :: Now let's go and build the installable .exe
-:: Obviously this will fail if InnoSetup 
+:: Obviously this will fail if InnoSetup
 :: Extensions is not installed.
 ::=================================================
 if "%FBBUILD_ISX_PACK%" NEQ "1" goto :EOF
@@ -394,14 +394,14 @@ if NOT DEFINED INNO_SETUP_PATH (@echo INNO_SETUP_PATH variable not defined & got
 ::===
 @echo.
 @echo.
-@echo   Parameters can be passed in any order. 
+@echo   Parameters can be passed in any order.
 @echo   Currently the recognised params are:
 @echo.
 @echo       DEBUG  Use binaries from 'debug' dir, not 'release' dir.
-@echo              (Requires a debug build. NOTE: A debug build is  
+@echo              (Requires a debug build. NOTE: A debug build is
 @echo               not required to create packages with debug info.)
-@echo.    
-@echo       PDB    Include pdb files. 
+@echo.
+@echo       PDB    Include pdb files.
 @echo              (These files roughly double the size of the package.)
 @echo.
 @echo       ISX    Create installable binary from InnoSetup Extensions compiler.
@@ -410,10 +410,10 @@ if NOT DEFINED INNO_SETUP_PATH (@echo INNO_SETUP_PATH variable not defined & got
 @echo       ZIP    Create Zip package.
 @echo              (PKZIP is currently used and the PKZIP env var must be set.)
 @echo.
-@echo       EMB    Create Embedded package. 
+@echo       EMB    Create Embedded package.
 @echo              (PKZIP is currently used and the PKZIP env var must be set.)
 @echo.
-@echo       ALL    Build InnoSetup, Zip and Embedded packages. 
+@echo       ALL    Build InnoSetup, Zip and Embedded packages.
 @echo.
 @echo       HELP   This help screen.
 @echo.
@@ -434,7 +434,7 @@ if NOT DEFINED INNO_SETUP_PATH (@echo INNO_SETUP_PATH variable not defined & got
 
 @Echo.
 @Echo Reading command-line parameters
-@(@call :SET_PARAMS %1 %2 )|| (@echo Error calling SET_PARAMS & @goto :EOF) 
+@(@call :SET_PARAMS %1 %2 )|| (@echo Error calling SET_PARAMS & @goto :EOF)
 @Echo.
 @Echo Setting version number
 @(@call :SED_MAGIC ) || (@echo Error calling SED_MAGIC & @goto :EOF)
