@@ -1274,6 +1274,10 @@ proc_block	: proc_statement
 		;
 
 full_proc_block	: BEGIN
+		  END
+			{ $$ = make_node (nod_block, e_blk_count,
+					NULL, NULL);}
+		| BEGIN
 		  proc_statements
 		  END
 			{ $$ = make_node (nod_block, e_blk_count,

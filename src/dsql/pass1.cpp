@@ -1058,11 +1058,16 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 	case nod_block:
 		if (input->nod_arg[e_blk_errs])
 			request->req_error_handlers++;
-		else {
+		else if (input->nod_arg[e_blk_action]) {
 			input->nod_count = 1;
 			if (!request->req_error_handlers)
 				input->nod_type = nod_list;
 		}
+		else {
+			input->nod_count = 0;
+			input->nod_type = nod_list;
+		}
+
 	case nod_list:
 		node = MAKE_node(input->nod_type, input->nod_count);
 		ptr2 = node->nod_arg;
