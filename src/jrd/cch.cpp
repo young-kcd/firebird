@@ -1074,7 +1074,7 @@ void CCH_fini(TDBB tdbb)
 
 	if ( (bcb = dbb->dbb_bcb) ) {
 		while (bcb->bcb_memory)
-			gds__free(LLS_POP(&bcb->bcb_memory));
+			MemoryPool::external_free(LLS_POP(&bcb->bcb_memory));
 #ifdef CACHE_WRITER
 		/* Dispose off any associated latching semaphores */
 		while (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) {
@@ -3766,8 +3766,8 @@ static void expand_buffers(TDBB tdbb, ULONG number)
 		/* if current segment is exhausted, allocate another */
 
 		if (!num_in_seg) {
-			memory = (UCHAR *)gds__alloc((SLONG) dbb->dbb_page_size *
-											  (num_per_seg + 1));
+			memory = (UCHAR *)MemoryPool::external_alloc((SLONG) dbb->dbb_page_size *
+														 (num_per_seg + 1));
 			LLS_PUSH(memory, &new_->bcb_memory);
 			memory = (UCHAR *) (((U_IPTR) memory + dbb->dbb_page_size - 1) &
 								~((int) dbb->dbb_page_size - 1));
@@ -4644,7 +4644,7 @@ static ULONG memory_init(TDBB tdbb, BCB bcb, ULONG number)
 
 			do {
 				try {
-					memory = (UCHAR *)gds__alloc(memory_size);
+					memory = (UCHAR *)MemoryPool::external_alloc(memory_size);
 					break;
 				} catch(...) {
 					/* Either there's not enough virtual memory or there is
@@ -4678,7 +4678,7 @@ static ULONG memory_init(TDBB tdbb, BCB bcb, ULONG number)
 			   overhead. Reduce this number by a 25% fudge factor to
 			   leave some memory for useful work. */
 
-			gds__free(LLS_POP(&bcb->bcb_memory));
+			MemoryPool::external_free(LLS_POP(&bcb->bcb_memory));
 			memory = 0;
 			for (tail2 = old_tail; tail2 < tail; tail2++)
 				tail2->bcb_bdb = dealloc_bdb(tail2->bcb_bdb);
