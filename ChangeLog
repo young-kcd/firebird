@@ -1,4 +1,88 @@
-2002-02-24  pcisar
+2002-03-11  skywalker
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/alice/all.h:
+	* src/alice/info.h:
+	* src/alice/tdr.cpp:
+	* src/gpre/gpre.h:
+	* src/include/fb_types.h:
+	* src/include/gen/codes.h:
+	* src/jrd/alt_use_sec.h:
+	* src/jrd/build_no.h:
+	* src/jrd/common.h:
+	* src/jrd/cvt_proto.h:
+	* src/jrd/gdsold.h:
+	* src/jrd/ibase.h:
+	* src/jrd/isc_file.cpp:
+	* src/jrd/isc_sync.cpp:
+	* src/jrd/license.h:
+	* src/jrd/perf.h:
+	* src/remote/inet.cpp:
+	* src/remote/protocol.cpp:
+	* src/remote/remote_def.h:
+	* src/v5_examples/empbuild.c:
+	* src/wal/wal.cpp:
+	* src/wal/walw.cpp:
+		Main changes were to add cr to end of the files.
+		cvt_proto.h removed a duplicate extern directive
+		gen/codes.h added back appolo error code, since it was still used
+
+2002-02-26  dimitr
+	* generated/alice/makefile:
+	* generated/burp/makefile:
+	* generated/dsql/makefile:
+	* generated/dudley/makefile:
+	* generated/gpre/makefile:
+	* generated/isql/makefile:
+	* generated/jrd/makefile:
+	* generated/makefile:
+	* generated/msgs/makefile:
+	* generated/utilities/makefile:
+		Updated makefiles
+
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+2002-02-25  dimitr
+	* src/jrd/license.h:
+		Fixed the invalid removal of an ambiguity I've commited before
+		and fixed the real problem that was there.
+
+	* src/common/memory/allocators.cpp:
+		Fixed a compilation error in the release mode
+
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/include/gen/codes.h:
+	* src/jrd/why.c:
+		Correction to the clean up of the Apollo port
+
+	* src/jrd/cvt_proto.h:
+		Fixed a linking error
+
+2002-02-25  pcisar
 	* src/misc/writeBuildNum.sh:
 		increment build number
 
@@ -27,6 +111,10 @@
 	* src/dsql/parse.cpp:
 		Code cleanup, corrected some mistakes (;-[) in my removal of
 		the Win3.1 port.
+
+2002-02-24  pcisar
+	* src/misc/writeBuildNum.sh:
+		increment build number
 
 2002-02-23  dimitr
 	* src/misc/writeBuildNum.sh:
@@ -85,10 +173,6 @@
 	* src/misc/writeBuildNum.sh:
 		increment build number
 
-2002-02-19  pcisar
-	* src/misc/writeBuildNum.sh:
-		increment build number
-
 2002-02-19  seanleyne
 	* src/misc/writeBuildNum.sh:
 		increment build number
@@ -97,6 +181,14 @@
 		Correction, deleted a little too much code in my clean up of
 		the Appolo port.  Thanks to Claudio V. for the second set of
 		eyes.
+
+2002-02-19  pcisar
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+2002-02-16  pcisar
+	* src/misc/writeBuildNum.sh:
+		increment build number
 
 2002-02-16  seanleyne
 	* src/include/gen/autoconfig_msvc.h:
@@ -396,10 +488,6 @@
 	* src/remote/remote_def.h:
 		Code cleanup of obsolete EPSON port
 
-2002-02-16  pcisar
-	* src/misc/writeBuildNum.sh:
-		increment build number
-
 2002-01-28  skywalker
 	* src/misc/writeBuildNum.sh:
 		Changed string == to = for shell compatibility.
@@ -458,6 +546,14 @@
 
 	* src/jrd/blb.cpp:
 		Cleaning up
+
+2002-01-04  tamlin
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/jrd/tpc.cpp:
+		Objects are not allowed to live on the stack if you want to ask
+		a pool of their type.
 
 2002-01-04  skywalker
 	* src/alice/alice.cpp:
@@ -555,14 +651,6 @@
 	* configure:
 	* configure.in:
 		Changed one or two of the headers that are checked for.
-
-2002-01-04  tamlin
-	* src/misc/writeBuildNum.sh:
-		increment build number
-
-	* src/jrd/tpc.cpp:
-		Objects are not allowed to live on the stack if you want to ask
-		a pool of their type.
 
 2001-12-30  pcisar
 	* src/misc/writeBuildNum.sh:
