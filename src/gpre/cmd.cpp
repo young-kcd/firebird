@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.33 2004-05-02 23:04:15 skidder Exp $
+//	$Id: cmd.cpp,v 1.34 2004-05-12 19:34:42 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1883,7 +1883,6 @@ static bool create_view(gpre_req* request,
 		field = relation->rel_fields;
 		fields = relation->rel_view_rse->rse_fields;
 		gpre_nod* and_nod = 0;
-		gpre_nod* eq_nod = 0;
 		gpre_nod* or_node = 0;
 		SSHORT count = 0;
 		gpre_lls* stack = NULL;

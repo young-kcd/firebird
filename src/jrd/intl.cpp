@@ -283,16 +283,16 @@ CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id) :
 	typedef USHORT (*CSInitFunc)(charset*, SSHORT, SSHORT);
 	CSInitFunc csInitFunc = 
 		reinterpret_cast<CSInitFunc>(lookup_init_function(type_charset, cs_id, 0));
-	charset* cs = FB_NEW(p) charset;
-	memset(cs, 0, sizeof(charset));
+	charset* csL = FB_NEW(p) charset;
+	memset(csL, 0, sizeof(charset));
 
-	if (!csInitFunc || (*csInitFunc)(cs, cs_id, 0) != 0)
+	if (!csInitFunc || (*csInitFunc)(csL, cs_id, 0) != 0)
 	{
-		delete cs;
-		cs = NULL;
+		delete csL;
+		csL = NULL;
 	}
 
-	this->cs = cs;
+	this->cs = csL;
 }
 
 CsConvert CharSetContainer::lookupConverter(thread_db* tdbb, CHARSET_ID to_cs)

@@ -2542,8 +2542,8 @@ static processing_state create_db(const TEXT* statement,
 
 		if (p && strlen(p) > 0) {
 			temp_local_stmt_str = p;
-			bool done = false;
-			while (!done) {
+			bool done2 = false;
+			while (!done2) {
 				const TEXT* str_begin = NULL;
 				const TEXT* str_end = NULL;
 				literal_string_type str_flag = INIT_STR_FLAG;
@@ -2556,7 +2556,7 @@ static processing_state create_db(const TEXT* statement,
 					STDERROUT(errbuf, 1);
 					return (FAIL);
 				}
-				copy_str(&temp_str, &temp_local_stmt_str, &done,
+				copy_str(&temp_str, &temp_local_stmt_str, &done2,
 						 str_begin, str_end, str_flag);
 			}
 		}

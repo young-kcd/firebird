@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.13 2004-04-18 02:50:38 skidder Exp $
+ *  $Id: nbak.h,v 1.14 2004-05-12 19:37:23 brodsom Exp $
  *
  */
  
@@ -74,9 +74,9 @@ public:
     }
 	AllocItem() {
 	}
-	AllocItem(ULONG db_page, ULONG diff_page) {
-		this->db_page = db_page;
-		this->diff_page = diff_page;
+	AllocItem(ULONG db_pageL, ULONG diff_pageL) {
+		this->db_page = db_pageL;
+		this->diff_page = diff_pageL;
 	}
 };
 

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.104 2004-05-06 18:08:41 brodsom Exp $
+$Id: inet.cpp,v 1.105 2004-05-12 19:39:07 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -734,12 +734,12 @@ rem_port* INET_connect(const TEXT* name,
 	}
 
 	if (!protocol) {
-		const unsigned short port = Config::getRemoteServicePort();
+		const unsigned short port2 = Config::getRemoteServicePort();
 		const char* Service = Config::getRemoteServiceName();
-		if (port) {
+		if (port2) {
 			// EKU: since temp is 128 byte long, the port number will always
 			// fit into the buffer, hence snprintf replaced with sprintf
-			sprintf(temp, "%hu", port);
+			sprintf(temp, "%hu", port2);
 			protocol = temp;
 		}
 		else {

@@ -73,8 +73,8 @@ private:
 		/// The constructor requires the name of the module.  The initial reference count
 		///  is 1, to indicate that the PluginManager itself has a reference.  This is
 		///  verified in debug builds in the PluginManager destructor.
-		Module(MemoryPool& p, const Firebird::PathName& name)
-			: refCnt(1), module_name(p, name), prev(0), next(0) {}
+		Module(MemoryPool& p, const Firebird::PathName& nameL)
+			: refCnt(1), module_name(p, nameL), prev(0), next(0) {}
 		/// The destructor is responsible for removing the module from the array.
 		virtual ~Module();
 		/// aquire indicates the interest of a particular piece of engine code in
@@ -233,8 +233,8 @@ private:
 	class BuiltinModule : public Module
 	{
 	public:
-		BuiltinModule(MemoryPool& p, const Firebird::PathName& name) 
-			: Module(p, name), symbols(p) {}
+		BuiltinModule(MemoryPool& p, const Firebird::PathName& nameL) 
+			: Module(p, nameL), symbols(p) {}
 		
 	private:
 		typedef Firebird::Pair<Firebird::Left<Firebird::string, void*> > Symbol;
@@ -250,8 +250,8 @@ private:
 	class PluginModule : public Module
 	{
 	public:
-		PluginModule(MemoryPool& p, const Firebird::PathName &name, ModuleLoader::Module *mod)
-			: Module(p, name), module(mod) {}
+		PluginModule(MemoryPool& p, const Firebird::PathName &nameL, ModuleLoader::Module *mod)
+			: Module(p, nameL), module(mod) {}
 			
 	private:
 		ModuleLoader::Module *module;

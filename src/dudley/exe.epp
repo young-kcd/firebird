@@ -2812,7 +2812,7 @@ static void get_global_fields(void)
 }
 
 
-static void get_relations( DBB database)
+static void get_relations( DBB databaseL)
 {
 /**************************************
  *
@@ -2834,7 +2834,7 @@ static void get_relations( DBB database)
 		relation->rel_name = symbol =
 			get_symbol(SYM_relation, R.RDB$RELATION_NAME, (DUDLEY_CTX) relation);
 		HSH_insert(symbol);
-		relation->rel_database = database;
+		relation->rel_database = databaseL;
 		relation->rel_next = database->dbb_relations;
 		database->dbb_relations = relation;
 		relation->rel_system = R.RDB$SYSTEM_FLAG;
@@ -2951,7 +2951,7 @@ static SYM get_symbol( enum sym_t type, TEXT * string, DUDLEY_CTX object)
 }
 
 
-static void get_triggers( DBB database)
+static void get_triggers( DBB databaseL)
 {
 /**************************************
  *

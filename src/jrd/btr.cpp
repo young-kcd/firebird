@@ -4379,10 +4379,10 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		// Update leftPointer to scratch page. 
 		leftPointer = (UCHAR*)newBucket + (leftPointer - (UCHAR*)left_page) - 
 			jumpersOriginalSize;
-		const SCHAR flags = newBucket->pag_flags;
+		const SCHAR flags2 = newBucket->pag_flags;
 		gcPointer = BTreeNode::getPointerFirstNode(gc_page);
 		//
-		BTreeNode::readNode(&leftNode, leftPointer, flags, leafPage);
+		BTreeNode::readNode(&leftNode, leftPointer, flags2, leafPage);
 		// Calculate the total amount of compression on page as the combined 
 		// totals of the two pages, plus the compression of the first node 
 		// on the g-c'ed page, minus the prefix of the END_BUCKET node to 
@@ -4399,7 +4399,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		leftNode.recordNumber = gcNode.recordNumber;
 		leftNode.pageNumber = gcNode.pageNumber;
 		leftNode.data = gcNode.data + prefix;
-		leftPointer = BTreeNode::writeNode(&leftNode, leftPointer, flags, leafPage);
+		leftPointer = BTreeNode::writeNode(&leftNode, leftPointer, flags2, leafPage);
 
 		// Update page-size.
 		newBucket->btr_length = (leftPointer - (UCHAR*)newBucket);
@@ -4488,7 +4488,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		for (int i = 0; i < jumpNodes->getCount(); i++) {
 			// Update offset to real position with new jump nodes.
 			walkJumpNode[i].offset += jumpersNewSize;
-			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags2);
 			if (walkJumpNode[i].data) {
 				delete[] walkJumpNode[i].data;
 			}
@@ -4613,15 +4613,15 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 
 		// check whether it is empty
 		parentPointer = BTreeNode::getPointerFirstNode(parent_page);
-		IndexNode parentNode;
-		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
-		if (parentNode.isEndBucket || parentNode.isEndLevel) {
+		IndexNode parentNode2;
+		parentPointer = BTreeNode::readNode(&parentNode2, parentPointer, flags, false);
+		if (parentNode2.isEndBucket || parentNode2.isEndLevel) {
 			return contents_empty;
 		}
 
 		// check whether there is just one node
-		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
-		if (parentNode.isEndBucket || parentNode.isEndLevel) {
+		parentPointer = BTreeNode::readNode(&parentNode2, parentPointer, flags, false);
+		if (parentNode2.isEndBucket || parentNode2.isEndLevel) {
 			return contents_single;
 		}
 
@@ -5353,10 +5353,10 @@ static SLONG insert_node(thread_db* tdbb,
 		bucket->btr_length = newBucket->btr_length + jumpersNewSize - jumpersOriginalSize;
 
 		if (fragmentedOffset) {
-			IndexJumpNode* walkJumpNode = jumpNodes->begin();
+			IndexJumpNode* walkJumpNode2 = jumpNodes->begin();
 			for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
-				if (walkJumpNode[i].data) {
-					delete[] walkJumpNode[i].data;
+				if (walkJumpNode2[i].data) {
+					delete[] walkJumpNode2[i].data;
 				}
 			}
 		}

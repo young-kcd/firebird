@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.41 2004-05-02 23:04:15 skidder Exp $
+//	$Id: cob.cpp,v 1.42 2004-05-12 19:34:42 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -706,7 +706,7 @@ void COB_name_init(bool ansi)
 //		calls.
 //  
 
-void COB_print_buffer(TEXT* output_buffer,
+void COB_print_buffer(TEXT* output_bufferL,
 					  bool function_call)
 {
 	TEXT s[80], *p;
@@ -723,7 +723,7 @@ void COB_print_buffer(TEXT* output_buffer,
 
 	p = s;
 
-	for (const TEXT* q = output_buffer; *q; q++) {
+	for (const TEXT* q = output_bufferL; *q; q++) {
 		*p++ = *q;
 
 		/*  If we have a single or double quote, toggle the
@@ -826,7 +826,7 @@ void COB_print_buffer(TEXT* output_buffer,
 	}
 	*p = 0;
 	fprintf(out_file, "%s", s);
-	output_buffer[0] = 0;
+	output_bufferL[0] = 0;
 }
 
 

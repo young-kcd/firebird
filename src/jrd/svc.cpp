@@ -596,9 +596,9 @@ Service* SVC_attach(USHORT	service_length,
  */
 	if (options.spb_password) {
 		UCHAR* s = reinterpret_cast<UCHAR*>(service->svc_enc_password);
-		const UCHAR* p = (UCHAR *) ENC_crypt(options.spb_password, PASSWORD_SALT) + 2;
-		const int l = strlen((const char*) p);
-		MOVE_FASTER(p, s, l);
+		const UCHAR* p2 = (UCHAR *) ENC_crypt(options.spb_password, PASSWORD_SALT) + 2;
+		const int l = strlen((const char*) p2);
+		MOVE_FASTER(p2, s, l);
 		service->svc_enc_password[l] = 0;
 	}
 
@@ -1075,12 +1075,12 @@ ISC_STATUS SVC_query2(Service* service,
 		case isc_info_svc_dump_pool_info:
 			{
 				char fname[MAXPATHLEN];
-				size_t length = isc_vax_integer(items, sizeof(USHORT));
-				if (length >= sizeof(fname))
-					length = sizeof(fname) - 1; // truncation
+				size_t length2 = isc_vax_integer(items, sizeof(USHORT));
+				if (length2 >= sizeof(fname))
+					length2 = sizeof(fname) - 1; // truncation
 				items += sizeof(USHORT);
-				strncpy(fname, items, length);
-				fname[length] = 0;
+				strncpy(fname, items, length2);
+				fname[length2] = 0;
 				JRD_print_all_counters(fname);
 				break;
 			}
@@ -1485,12 +1485,12 @@ void SVC_query(Service*		service,
 		case isc_info_svc_dump_pool_info:
 			{
 				char fname[MAXPATHLEN];
-				size_t length = isc_vax_integer(items, sizeof(USHORT));
-				if (length >= sizeof(fname))
-					length = sizeof(fname) - 1; // truncation
+				size_t length2 = isc_vax_integer(items, sizeof(USHORT));
+				if (length2 >= sizeof(fname))
+					length2 = sizeof(fname) - 1; // truncation
 				items += sizeof(USHORT);
-				strncpy(fname, items, length);
-				fname[length] = 0;
+				strncpy(fname, items, length2);
+				fname[length2] = 0;
 				JRD_print_all_counters(fname);
 				break;
 			}

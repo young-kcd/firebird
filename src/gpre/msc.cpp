@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.20 2004-04-28 22:05:56 brodsom Exp $
+//	$Id: msc.cpp,v 1.21 2004-05-12 19:34:43 brodsom Exp $
 //
 //  
 //  
@@ -301,21 +301,21 @@ void MSC_init(void)
 bool MSC_match(KWWORDS keyword)
 {
 
-	if (token.tok_keyword == KW_none && token.tok_symbol) {
+	if (token_global.tok_keyword == KW_none && token_global.tok_symbol) {
 		gpre_sym* symbol;
-		for (symbol = token.tok_symbol->sym_collision; symbol;
+		for (symbol = token_global.tok_symbol->sym_collision; symbol;
 			 symbol = symbol->sym_collision)
 		{
-			if ((strcmp(symbol->sym_string, token.tok_string) ==
+			if ((strcmp(symbol->sym_string, token_global.tok_string) ==
 								 0) && symbol->sym_keyword != KW_none) 
 			{
-				token.tok_symbol = symbol;
-				token.tok_keyword = static_cast < kwwords > (symbol->sym_keyword);
+				token_global.tok_symbol = symbol;
+				token_global.tok_keyword = static_cast < kwwords > (symbol->sym_keyword);
 			}
 		}
 	}
 
-	if ((int) token.tok_keyword != (int) keyword)
+	if ((int) token_global.tok_keyword != (int) keyword)
 		return false;
 
 	CPR_token();

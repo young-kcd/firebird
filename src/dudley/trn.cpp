@@ -437,7 +437,7 @@ static void add_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
 }
 
 
-static void add_files( STR dyn, FIL files, DBB database)
+static void add_files( STR dyn, FIL files, DBB databaseL)
 {
 /**************************************
  *
@@ -460,7 +460,7 @@ static void add_files( STR dyn, FIL files, DBB database)
 		files = file;
 	}
 
-	if (!database && files)
+	if (!databaseL && files)
 		put_number(dyn, isc_dyn_def_shadow, files->fil_shadow_number);
 
 	for (file = files; file; file = file->fil_next) {
@@ -472,7 +472,7 @@ static void add_files( STR dyn, FIL files, DBB database)
 		check_dyn(dyn, 1);
 		STUFF(isc_dyn_end);
 	}
-	if (!database && files) {
+	if (!databaseL && files) {
 		check_dyn(dyn, 1);
 		STUFF(isc_dyn_end);
 	}
@@ -1139,7 +1139,7 @@ static void gen_dyn_pas(void *user_arg, SSHORT offset, const char* string)
 }
 
 
-static void modify_database( STR dyn, DBB database)
+static void modify_database( STR dyn, DBB databaseL)
 {
 /**************************************
  *
@@ -1152,32 +1152,32 @@ static void modify_database( STR dyn, DBB database)
  *
  **************************************/
 
-	if (!(database->dbb_files ||
-		  database->dbb_security_class ||
-		  database->dbb_description ||
-		  (database->
+	if (!(databaseL->dbb_files ||
+		  databaseL->dbb_security_class ||
+		  databaseL->dbb_description ||
+		  (databaseL->
 		   dbb_flags & (DBB_null_security_class | DBB_null_description))))
 			return;
 
 	check_dyn(dyn, 1);
 	STUFF(isc_dyn_mod_database);
 
-	add_files(dyn, database->dbb_files, database);
-	if (database->dbb_flags & DBB_null_security_class) {
+	add_files(dyn, databaseL->dbb_files, databaseL);
+	if (databaseL->dbb_flags & DBB_null_security_class) {
 		check_dyn(dyn, 3);
 		STUFF(isc_dyn_security_class);
 		STUFF_WORD(0);
 	}
 	else
 		put_symbol(dyn, isc_dyn_security_class,
-				   database->dbb_security_class);
-	if (database->dbb_flags & DBB_null_description) {
+				   databaseL->dbb_security_class);
+	if (databaseL->dbb_flags & DBB_null_description) {
 		check_dyn(dyn, 3);
 		STUFF(isc_dyn_description);
 		STUFF_WORD(0);
 	}
-	else if (database->dbb_description)
-		put_text(dyn, isc_dyn_description, database->dbb_description);
+	else if (databaseL->dbb_description)
+		put_text(dyn, isc_dyn_description, databaseL->dbb_description);
 
 	check_dyn(dyn, 1);
 	STUFF(isc_dyn_end);

@@ -1676,7 +1676,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 void *ISC_make_signal(
 	  bool create_flag,
 	  bool manual_reset,
-	  int process_id,
+	  int process_idL,
 	  int signal_number)
 {
 /**************************************
@@ -1698,7 +1698,7 @@ void *ISC_make_signal(
 		return CreateEvent(NULL, man_rst, FALSE, NULL);
 
 	TEXT event_name[64];
-	sprintf(event_name, "_interbase_process%u_signal%d", process_id, signal_number);
+	sprintf(event_name, "_interbase_process%u_signal%d", process_idL, signal_number);
 
 	HANDLE hEvent;
 	if (create_flag) {

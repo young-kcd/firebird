@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.52 2004-05-06 08:41:18 alexpeshkoff Exp $
+$Id: fun.epp,v 1.53 2004-05-12 19:37:17 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -203,7 +203,6 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 
 	DSC temp_desc;
 	double  d;
-	double* dp;
 
 	// Process arguments
 	const fun_repeat* end = function->fun_rpt + 1 + function->fun_count;
@@ -378,6 +377,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 #else
 				d = MOV_get_double(input);
 #endif
+				double* dp;
 				if (tail->fun_mechanism == FUN_value)
 				{
 					dp = (double *) arg_ptr;

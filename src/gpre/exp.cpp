@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.32 2004-05-02 23:04:16 skidder Exp $
+//	$Id: exp.cpp,v 1.33 2004-05-12 19:34:43 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -258,7 +258,7 @@ gpre_ctx* EXP_context(gpre_req* request, gpre_sym* initial_symbol)
 gpre_fld* EXP_field(gpre_ctx** rcontext)
 {
 	gpre_sym* symbol;
-	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym) {
+	for (symbol = token_global.tok_symbol; symbol; symbol = symbol->sym_homonym) {
 		if (symbol->sym_type == SYM_context)
 			break;
 	}
@@ -275,10 +275,10 @@ gpre_fld* EXP_field(gpre_ctx** rcontext)
 
 	TEXT s[128];
 	SQL_resolve_identifier("<Field Name>", s);
-	gpre_fld* field = MET_field(relation, token.tok_string);
+	gpre_fld* field = MET_field(relation, token_global.tok_string);
 	if (!field) {
 		sprintf(s, "field \"%s\" is not defined in relation %s",
-				token.tok_string, relation->rel_symbol->sym_string);
+				token_global.tok_string, relation->rel_symbol->sym_string);
 		PAR_error(s);
 	}
 
@@ -310,32 +310,32 @@ GPRE_NOD EXP_literal(void)
 {
 	switch (sw_sql_dialect) {
 	case 1:
-		if (!(token.tok_type == tok_number || isQuoted(token.tok_type)))
+		if (!(token_global.tok_type == tok_number || isQuoted(token_global.tok_type)))
 			return NULL;
 		break;
 	default:
-		if (!(token.tok_type == tok_number || token.tok_type == tok_sglquoted))
+		if (!(token_global.tok_type == tok_number || token_global.tok_type == tok_sglquoted))
 			return NULL;
 	}
 
 	ref* reference = (REF) MSC_alloc(REF_LEN);
 	gpre_nod* node = MSC_unary(nod_literal, (GPRE_NOD) reference);
-	if (isQuoted(token.tok_type)) {
-	    TEXT* string = (TEXT *) MSC_alloc(token.tok_length + 3);
+	if (isQuoted(token_global.tok_type)) {
+	    TEXT* string = (TEXT *) MSC_alloc(token_global.tok_length + 3);
 		reference->ref_value = string;
 		strcat(string, "\'");
-		MSC_copy(token.tok_string, token.tok_length, string + 1);
-		strcat((string + token.tok_length + 1), "\'");
-		token.tok_length += 2;
+		MSC_copy(token_global.tok_string, token_global.tok_length, string + 1);
+		strcat((string + token_global.tok_length + 1), "\'");
+		token_global.tok_length += 2;
 	}
 	else {
-		TEXT* string = (TEXT *) MSC_alloc(token.tok_length + 1);
+		TEXT* string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
 		reference->ref_value = string;
-		MSC_copy(token.tok_string, token.tok_length, string);
+		MSC_copy(token_global.tok_string, token_global.tok_length, string);
 	}
 
 // ** Begin date/time/timestamp *
-	switch (token.tok_keyword) {
+	switch (token_global.tok_keyword) {
 	case KW_DATE:
 		reference->ref_flags |= REF_sql_date;
 		break;
@@ -350,12 +350,12 @@ GPRE_NOD EXP_literal(void)
 	/** Do not put a default here **/
 	}
 // ** End date/time/timestamp *
-	if ((token.tok_type == tok_sglquoted && (token.tok_charset)) ||
-		((isQuoted(token.tok_type) && (sw_sql_dialect == 1))
-		 && (token.tok_charset)))
+	if ((token_global.tok_type == tok_sglquoted && (token_global.tok_charset)) ||
+		((isQuoted(token_global.tok_type) && (sw_sql_dialect == 1))
+		 && (token_global.tok_charset)))
 	{
 		reference->ref_flags |= REF_ttype;
-		gpre_sym* symbol = token.tok_charset;
+		gpre_sym* symbol = token_global.tok_charset;
 		reference->ref_ttype =
 			((INTLSYM) (symbol->sym_object))->intlsym_ttype;
 	}
@@ -379,16 +379,16 @@ SINT64 EXP_SINT64_ordinal(bool advance_flag)
 {
 	const bool negate = (MSC_match(KW_MINUS));
 
-	if (token.tok_type != tok_number)
+	if (token_global.tok_type != tok_number)
 		CPR_s_error("<number>");
 
 	const char format[8] = "%"QUADFORMAT"d";
 	SINT64 n;
-	sscanf(token.tok_string, format, &n);
+	sscanf(token_global.tok_string, format, &n);
 	
 	char buffer[64];
 	sprintf(buffer, format, n);
-	if (strcmp(buffer, token.tok_string) != 0)
+	if (strcmp(buffer, token_global.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
@@ -407,13 +407,13 @@ SLONG EXP_SLONG_ordinal(bool advance_flag)
 {
 	const bool negate = (MSC_match(KW_MINUS));
 
-	if (token.tok_type != tok_number)
+	if (token_global.tok_type != tok_number)
 		CPR_s_error("<number>");
 
-	const SLONG n = atoi(token.tok_string);
+	const SLONG n = atoi(token_global.tok_string);
 	char buffer[32];
 	sprintf(buffer, "%"SLONGFORMAT, n);
-	if (strcmp(buffer, token.tok_string) != 0)
+	if (strcmp(buffer, token_global.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
@@ -433,10 +433,10 @@ SSHORT EXP_SSHORT_ordinal(bool advance_flag)
 {
 	const bool negate = (MSC_match(KW_MINUS));
 
-	if (token.tok_type != tok_number)
+	if (token_global.tok_type != tok_number)
 		CPR_s_error("<number>");
 
-	const SLONG n = atoi(token.tok_string);
+	const SLONG n = atoi(token_global.tok_string);
 	if (negate && n > -1L * MIN_SSHORT)
 		PAR_error("Numeric value out of range");
 	else if (!negate && n > (SLONG) MAX_SSHORT)
@@ -457,13 +457,13 @@ SSHORT EXP_SSHORT_ordinal(bool advance_flag)
 
 ULONG EXP_ULONG_ordinal(bool advance_flag)
 {
-	if (token.tok_type != tok_number)
+	if (token_global.tok_type != tok_number)
 		CPR_s_error("<unsigned number>");
 
-	const ULONG n = atoi(token.tok_string);
+	const ULONG n = atoi(token_global.tok_string);
 	char buffer[32];
 	sprintf(buffer, "%"ULONGFORMAT, n);
-	if (strcmp(buffer, token.tok_string) != 0)
+	if (strcmp(buffer, token_global.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
@@ -480,10 +480,10 @@ ULONG EXP_ULONG_ordinal(bool advance_flag)
 
 USHORT EXP_USHORT_ordinal(bool advance_flag)
 {
-	if (token.tok_type != tok_number)
+	if (token_global.tok_type != tok_number)
 		CPR_s_error("<unsigned number>");
 
-	const ULONG n = atoi(token.tok_string);
+	const ULONG n = atoi(token_global.tok_string);
 	if (n > MAX_USHORT)
 		PAR_error("Numeric value out of range");
 
@@ -643,23 +643,23 @@ gpre_rel* EXP_relation(void)
 	gpre_rel* relation = NULL;
 
 	SQL_resolve_identifier("<identifier>", s);
-	gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_database);
+	gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_database);
 	if (symbol) {
 		dbb* db = (DBB) symbol->sym_object;
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("period after database name");
 		SQL_resolve_identifier("<Table name>", s);
-		relation = MET_get_relation(db, token.tok_string, "");
+		relation = MET_get_relation(db, token_global.tok_string, "");
 	}
 	else {
 		for (dbb* db = isc_databases; db; db = db->dbb_next) {
-		    gpre_rel* temp = MET_get_relation(db, token.tok_string, "");
+		    gpre_rel* temp = MET_get_relation(db, token_global.tok_string, "");
 			if (temp) {
 				if (!relation)
 					relation = temp;
 				else {
-					sprintf(s, "relation %s is ambiguous", token.tok_string);
+					sprintf(s, "relation %s is ambiguous", token_global.tok_string);
 					PAR_get_token();
 					PAR_error(s);
 				}
@@ -867,11 +867,11 @@ GPRE_NOD EXP_subscript(gpre_req* request)
 
 //  Special case literals 
 
-	if (token.tok_type == tok_number) {
+	if (token_global.tok_type == tok_number) {
 		node->nod_type = nod_literal;
-		TEXT* string = (TEXT *) MSC_alloc(token.tok_length + 1);
+		TEXT* string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
 		reference->ref_value = string;
-		MSC_copy(token.tok_string, token.tok_length, string);
+		MSC_copy(token_global.tok_string, token_global.tok_length, string);
 		PAR_get_token();
 		return node;
 	}
@@ -899,12 +899,12 @@ static bool check_relation(void)
 //  it for the relation name.  If it's an unqualified relation
 //  name, search all databases for the name 
 
-	gpre_sym* symbol = token.tok_symbol;
+	gpre_sym* symbol = token_global.tok_symbol;
 	if (symbol && symbol->sym_type == SYM_database)
 		return true;
 
 	for (dbb* db = isc_databases; db; db = db->dbb_next) {
-		if (MET_get_relation(db, token.tok_string, ""))
+		if (MET_get_relation(db, token_global.tok_string, ""))
 			return true;
 	}
 
@@ -924,7 +924,7 @@ static GPRE_NOD lookup_field(gpre_ctx* context)
 	char s[132];
 
 	SQL_resolve_identifier("<Field Name>", s);
-	gpre_fld* field = MET_field(context->ctx_relation, token.tok_string);
+	gpre_fld* field = MET_field(context->ctx_relation, token_global.tok_string);
 	if (!field)
 		return NULL;
 
@@ -1159,7 +1159,7 @@ static GPRE_NOD par_boolean( gpre_req* request)
 
 static GPRE_NOD par_field( gpre_req* request)
 {
-	const gpre_sym* symbol = token.tok_symbol;
+	const gpre_sym* symbol = token_global.tok_symbol;
 	if (!symbol)
 		CPR_s_error("qualified field reference");
 		
@@ -1170,7 +1170,7 @@ static GPRE_NOD par_field( gpre_req* request)
 		upcase_flag = true;
 		if (!MSC_match(KW_LEFT_PAREN))
 			CPR_s_error("left parenthesis");
-		if (!(symbol = token.tok_symbol))
+		if (!(symbol = token_global.tok_symbol))
 			CPR_s_error("qualified field reference");
 	}
 
@@ -1272,8 +1272,8 @@ static GPRE_NOD par_native_value( gpre_req* request, gpre_fld* field)
 
 //  Special case literals 
 
-	if (token.tok_type == tok_number || token.tok_type == tok_sglquoted
-		|| (token.tok_type == tok_dblquoted && sw_sql_dialect == 1))
+	if (token_global.tok_type == tok_number || token_global.tok_type == tok_sglquoted
+		|| (token_global.tok_type == tok_dblquoted && sw_sql_dialect == 1))
 	{
 		gpre_nod* anode = EXP_literal();
 		return anode;
@@ -1339,7 +1339,7 @@ static GPRE_NOD par_over( gpre_ctx* context)
 	do {
 		gpre_nod* field1 = lookup_field(context);
 		if (!field1) {
-			sprintf(s, "OVER field %s undefined", token.tok_string);
+			sprintf(s, "OVER field %s undefined", token_global.tok_string);
 			PAR_error(s);
 		}
 		gpre_nod* field2 = NULL;
@@ -1350,7 +1350,7 @@ static GPRE_NOD par_over( gpre_ctx* context)
 				break;
 		}
 		if (!field2) {
-			sprintf(s, "OVER field %s undefined", token.tok_string);
+			sprintf(s, "OVER field %s undefined", token_global.tok_string);
 			PAR_error(s);
 		}
 		boolean = make_and(boolean, MSC_binary(nod_eq, field1, field2));
@@ -1395,7 +1395,7 @@ static GPRE_NOD par_primitive_value( gpre_req* request, gpre_fld* field)
 	if (node)
 		return node;
 
-	const gpre_sym* symbol = token.tok_symbol;
+	const gpre_sym* symbol = token_global.tok_symbol;
 	if (!symbol || (symbol->sym_type != SYM_context))
 		return par_native_value(request, field);
 
@@ -1522,7 +1522,7 @@ static GPRE_NOD par_udf( gpre_req* request, USHORT type, gpre_fld* field)
 //  Check for user defined functions 
 
 	udf* new_udf;
-	for (gpre_sym* symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (gpre_sym* symbol = token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_udf && (new_udf = (udf*) symbol->sym_object) &&
 			// request->req_database == new_udf->udf_database &&
 			new_udf->udf_type == type)

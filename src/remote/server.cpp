@@ -85,7 +85,7 @@
 			status_vector [0] = isc_arg_gds;						\
 			status_vector [1] = err;								\
 			status_vector [2] = isc_arg_end;						\
-			return port->send_response(send, 0, 0, status_vector);	\
+			return port->send_response(sendL, 0, 0, status_vector);	\
 		}															\
 	}
 
@@ -98,7 +98,7 @@
 			status_vector [0] = isc_arg_gds;						\
 			status_vector [1] = err;								\
 			status_vector [2] = isc_arg_end;						\
-			return this->send_response(send, 0, 0, status_vector);	\
+			return this->send_response(sendL, 0, 0, status_vector);	\
 		}															\
 	}
 
@@ -1065,7 +1065,7 @@ static USHORT check_statement_type( RSR statement)
 }
 
 
-ISC_STATUS rem_port::compile(P_CMPL* compile, PACKET* send)
+ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 {
 /**************************************
  *
@@ -1081,8 +1081,8 @@ ISC_STATUS rem_port::compile(P_CMPL* compile, PACKET* send)
 
 	RDB rdb = this->port_context;
 	FB_API_HANDLE handle = 0;
-	const UCHAR* blr = compile->p_cmpl_blr.cstr_address;
-	USHORT blr_length = compile->p_cmpl_blr.cstr_length;
+	const UCHAR* blr = compileL->p_cmpl_blr.cstr_address;
+	USHORT blr_length = compileL->p_cmpl_blr.cstr_length;
 
 	THREAD_EXIT;
 	isc_compile_request(status_vector, &rdb->rdb_handle, &handle, blr_length,
@@ -1090,7 +1090,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compile, PACKET* send)
 	THREAD_ENTER;
 
 	if (status_vector[1])
-		return this->send_response(send, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector);
 
 /* Parse the request to find the messages */
 
@@ -1103,30 +1103,30 @@ ISC_STATUS rem_port::compile(P_CMPL* compile, PACKET* send)
 
 /* Allocate block and merge into data structures */
 
-	rrq* request = (rrq*) ALLOCV(type_rrq, max_msg + 1);
+	rrq* requestL = (rrq*) ALLOCV(type_rrq, max_msg + 1);
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("compile(server)           allocate request %x\n", request);
 #endif
-	request->rrq_handle = handle;
-	request->rrq_rdb = rdb;
-	request->rrq_max_msg = max_msg;
+	requestL->rrq_handle = handle;
+	requestL->rrq_rdb = rdb;
+	requestL->rrq_max_msg = max_msg;
 	OBJCT object = 0;
 	
-	if (request->rrq_id = this->get_id(&request->rrq_header))
+	if (requestL->rrq_id = this->get_id(&requestL->rrq_header))
 	{
-		object = request->rrq_id;
-		request->rrq_next = rdb->rdb_requests;
-		rdb->rdb_requests = request;
+		object = requestL->rrq_id;
+		requestL->rrq_next = rdb->rdb_requests;
+		rdb->rdb_requests = requestL;
 	}
 	else {
 		THREAD_EXIT;
-		isc_release_request(status_vector, &request->rrq_handle);
+		isc_release_request(status_vector, &requestL->rrq_handle);
 		THREAD_ENTER;
-		ALLR_release(request);
+		ALLR_release(requestL);
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_too_many_handles;
 		status_vector[2] = isc_arg_end;
-		return this->send_response(send, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector);
 	}
 
 	while (message) {
@@ -1136,7 +1136,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compile, PACKET* send)
 		message->msg_prior = message;
 #endif
 
-		rrq::rrq_repeat* tail = request->rrq_rpt + message->msg_number;
+		rrq::rrq_repeat* tail = requestL->rrq_rpt + message->msg_number;
 		tail->rrq_message = message;
 		tail->rrq_xdr = message;
 		tail->rrq_format = (rem_fmt*) message->msg_address;
@@ -1145,11 +1145,11 @@ ISC_STATUS rem_port::compile(P_CMPL* compile, PACKET* send)
 		message = next;
 	}
 
-	return this->send_response(send, object, 0, status_vector);
+	return this->send_response(sendL, object, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::ddl(P_DDL* ddl, PACKET* send)
+ISC_STATUS rem_port::ddl(P_DDL* ddlL, PACKET* sendL)
 {
 /**************************************
  *
@@ -1167,23 +1167,23 @@ ISC_STATUS rem_port::ddl(P_DDL* ddl, PACKET* send)
 	CHECK_HANDLE_MEMBER(transaction,
 						RTR,
 						type_rtr,
-						ddl->p_ddl_transaction,
+						ddlL->p_ddl_transaction,
 						isc_bad_trans_handle);
 
 	RDB rdb = this->port_context;
-	const UCHAR* blr = ddl->p_ddl_blr.cstr_address;
-	const USHORT blr_length = ddl->p_ddl_blr.cstr_length;
+	const UCHAR* blr = ddlL->p_ddl_blr.cstr_address;
+	const USHORT blr_length = ddlL->p_ddl_blr.cstr_length;
 
 	THREAD_EXIT;
 	isc_ddl(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
 			blr_length, reinterpret_cast<const char*>(blr));
 	THREAD_ENTER;
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-void rem_port::disconnect(PACKET* send, PACKET* receive)
+void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 {
 /**************************************
  *
@@ -1203,8 +1203,8 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 	RDB rdb = this->port_context;
 
 	if (!rdb) {
-		REMOTE_free_packet(this, send);
-		REMOTE_free_packet(this, receive);
+		REMOTE_free_packet(this, sendL);
+		REMOTE_free_packet(this, receiveL);
 		this->disconnect();
 		return;
 	}
@@ -1278,8 +1278,8 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 			THREAD_ENTER;
 		}
 
-	REMOTE_free_packet(this, send);
-	REMOTE_free_packet(this, receive);
+	REMOTE_free_packet(this, sendL);
+	REMOTE_free_packet(this, receiveL);
 
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("disconnect(server)        free rdb         %x\n", rdb);
@@ -1344,7 +1344,7 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 }
 
 
-void rem_port::drop_database(P_RLSE* release, PACKET* send)
+void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 {
 /**************************************
  *
@@ -1367,7 +1367,7 @@ void rem_port::drop_database(P_RLSE* release, PACKET* send)
 	if (status_vector[1]
 		&& (status_vector[1] != isc_drdb_completed_with_errs))
 	{
-		this->send_response(send, 0, 0, status_vector);
+		this->send_response(sendL, 0, 0, status_vector);
 		return;
 	};
 
@@ -1386,7 +1386,7 @@ void rem_port::drop_database(P_RLSE* release, PACKET* send)
 	if (this->port_statement)
 		release_statement(&this->port_statement);
 
-	this->send_response(send, 0, 0, status_vector);
+	this->send_response(sendL, 0, 0, status_vector);
 }
 
 
@@ -1420,7 +1420,7 @@ static REM_MSG dump_cache( rrq::rrq_repeat* tail)
 #endif
 
 
-ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
 {
 /**************************************
  *
@@ -1452,11 +1452,11 @@ ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* send)
 		release_blob(blob);
 	}
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* sendL)
 {
 /**************************************
  *
@@ -1477,7 +1477,7 @@ ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* send)
 	THREAD_ENTER;
 
 	if (status_vector[1])
-		return this->send_response(send, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector);
 
 	while (rdb->rdb_events)
 		release_event(rdb->rdb_events);
@@ -1494,11 +1494,11 @@ ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* send)
 	if (this->port_statement)
 		release_statement(&this->port_statement);
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* sendL)
 {
 /**************************************
  *
@@ -1510,27 +1510,27 @@ ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* send)
  *	End a request.
  *
  **************************************/
-	rrq* request;
+	rrq* requestL;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(request,
+	CHECK_HANDLE_MEMBER(requestL,
 						rrq*,
 						type_rrq,
 						release->p_rlse_object,
 						isc_bad_req_handle);
 
 	THREAD_EXIT;
-	isc_release_request(status_vector, &request->rrq_handle);
+	isc_release_request(status_vector, &requestL->rrq_handle);
 	THREAD_ENTER;
 
 	if (!status_vector[1])
-		release_request(request);
+		release_request(requestL);
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* send)
+ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 {
 /*****************************************
  *
@@ -1558,7 +1558,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* send)
 	THREAD_ENTER;
 
 	if (status_vector[1])
-		return this->send_response(send, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector);
 
 	if (!statement->rsr_handle) {
 		release_sql_request(statement);
@@ -1573,11 +1573,11 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* send)
 
 	const USHORT object = (statement) ? statement->rsr_id : (USHORT) - 1;
 
-	return this->send_response(send, object, 0, status_vector);
+	return this->send_response(sendL, object, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* sendL)
 {
 /**************************************
  *
@@ -1630,11 +1630,11 @@ ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* s
 			release_transaction(transaction);
 		}
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
+ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 {
 /*****************************************
  *
@@ -1751,10 +1751,10 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
 		this->port_statement->rsr_format =
 			this->port_statement->rsr_select_format;
 
-		send->p_operation = op_sql_response;
-		send->p_sqldata.p_sqldata_messages = (status_vector[1]
+		sendL->p_operation = op_sql_response;
+		sendL->p_sqldata.p_sqldata_messages = (status_vector[1]
 											  || !out_msg) ? 0 : 1;
-		this->send_partial(send);
+		this->send_partial(sendL);
 	}
 
 	if (!status_vector[1]) {
@@ -1772,14 +1772,14 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
 		}
 	}
 
-	return this->send_response(	send,
+	return this->send_response(	sendL,
 								(OBJCT) (transaction ? transaction->rtr_id : 0),
 								0,
 								status_vector);
 }
 
 
-ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send)
+ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* sendL)
 {
 /*****************************************
  *
@@ -1865,10 +1865,10 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		this->port_statement->rsr_format =
 			this->port_statement->rsr_select_format;
 
-		send->p_operation = op_sql_response;
-		send->p_sqldata.p_sqldata_messages = (status_vector[1]
+		sendL->p_operation = op_sql_response;
+		sendL->p_sqldata.p_sqldata_messages = (status_vector[1]
 											  || !out_msg) ? 0 : 1;
-		this->send_partial(send);
+		this->send_partial(sendL);
 	}
 
 	if (!status_vector[1]) {
@@ -1888,14 +1888,14 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		statement->rsr_rtr = transaction;
 	}
 
-	return this->send_response(	send,
+	return this->send_response(	sendL,
 								(OBJCT) (transaction ? transaction->rtr_id : 0),
 								0,
 								status_vector);
 }
 
 
-ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* send)
+ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 {
 /*****************************************
  *
@@ -1917,7 +1917,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* send)
 						isc_bad_req_handle);
 
 	if (statement->rsr_flags & RSR_blob) {
-		return this->fetch_blob(sqldata, send);
+		return this->fetch_blob(sqldata, sendL);
 	}
 
 	USHORT msg_length;
@@ -1952,8 +1952,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* send)
 
 /* Get ready to ship the data out */
 
-	P_SQLDATA* response = &send->p_sqldata;
-	send->p_operation = op_fetch_response;
+	P_SQLDATA* response = &sendL->p_sqldata;
+	sendL->p_operation = op_fetch_response;
 	response->p_sqldata_statement = sqldata->p_sqldata_statement;
 	response->p_sqldata_status = 0;
 	response->p_sqldata_messages = 1;
@@ -1977,7 +1977,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* send)
 			&& !statement->rsr_msgs_waiting)
 		{
 			statement->rsr_flags &= ~RSR_stream_err;
-			return this->send_response(send, 0, 0,
+			return this->send_response(sendL, 0, 0,
 								 statement->rsr_status_vector);
 		}
 
@@ -2009,7 +2009,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* send)
 					break;
 				}
 				else {
-					return this->send_response(send, 0, 0, status_vector);
+					return this->send_response(sendL, 0, 0, status_vector);
 				}
 			}
 			message->msg_address = message->msg_buffer;
@@ -2030,7 +2030,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* send)
 
 		/* There's a buffer waiting -- send it */
 
-		if (!this->send_partial(send)) {
+		if (!this->send_partial(sendL)) {
 			return FALSE;
 		}
 		message->msg_address = NULL;
@@ -2043,7 +2043,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* send)
 
 	response->p_sqldata_status = s;
 	response->p_sqldata_messages = 0;
-	this->send(send);
+	this->send(sendL);
 	if (message) {
 		message->msg_address = NULL;
 	}
@@ -2100,7 +2100,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* send)
 }
 
 
-ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* send)
+ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 {
 /*****************************************
  *
@@ -2133,8 +2133,8 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* send)
 
 /* Get ready to ship the data out */
 
-	P_SQLDATA* response = &send->p_sqldata;
-	send->p_operation = op_fetch_response;
+	P_SQLDATA* response = &sendL->p_sqldata;
+	sendL->p_operation = op_fetch_response;
 	response->p_sqldata_statement = sqldata->p_sqldata_statement;
 	response->p_sqldata_status = 0;
 	response->p_sqldata_messages = 1;
@@ -2158,11 +2158,11 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* send)
 		response->p_sqldata_status = s;
 		response->p_sqldata_messages =
 			(status_vector[1] == isc_segstr_eof) ? 0 : 1;
-		this->send_partial(send);
+		this->send_partial(sendL);
 		message->msg_address = NULL;
 	}
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
@@ -2264,7 +2264,7 @@ static bool get_next_msg_no(rrq* request,
 }
 
 
-ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* send)
+ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 {
 /**************************************
  *
@@ -2306,7 +2306,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* send)
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("get_segment(server)       allocate buffer  %x\n", buffer);
 #endif
-	send->p_resp.p_resp_data.cstr_address = buffer;
+	sendL->p_resp.p_resp_data.cstr_address = buffer;
 
 /* Be backwards compatible */
 
@@ -2320,7 +2320,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* send)
 						reinterpret_cast<char*>(buffer));
 		THREAD_ENTER;
 		const ISC_STATUS status =
-			this->send_response(send, blob->rbl_id, length, status_vector);
+			this->send_response(sendL, blob->rbl_id, length, status_vector);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("get_segment(server)       free buffer      %x\n", buffer);
 #endif
@@ -2369,7 +2369,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* send)
 		}
 	}
 
-	const ISC_STATUS status = this->send_response(send,
+	const ISC_STATUS status = this->send_response(sendL,
 								(OBJCT)state,
 								(USHORT) (p - buffer),
 								status_vector);
@@ -2389,7 +2389,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* send)
 }
 
 
-ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* send)
+ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -2428,7 +2428,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* send)
 		printf("get_slice(server)         allocate buffer  %x\n", slice);
 #endif
 	}
-	P_SLR* response = &send->p_slr;
+	P_SLR* response = &sendL->p_slr;
 
 	THREAD_EXIT;
 	isc_get_slice(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
@@ -2442,14 +2442,14 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* send)
 
 	ISC_STATUS status;
 	if (status_vector[1])
-		status = this->send_response(send, 0, 0, status_vector);
+		status = this->send_response(sendL, 0, 0, status_vector);
 	else {
-		send->p_operation = op_slice;
+		sendL->p_operation = op_slice;
 		response->p_slr_slice.lstr_address = slice;
 		response->p_slr_slice.lstr_length = response->p_slr_length;
 		response->p_slr_sdl = stuff->p_slc_sdl.cstr_address;
 		response->p_slr_sdl_length = stuff->p_slc_sdl.cstr_length;
-		this->send(send);
+		this->send(sendL);
 		response->p_slr_sdl = 0;
 		status = FB_SUCCESS;
 	}
@@ -2466,7 +2466,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* send)
 }
 
 
-ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* send)
+ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -2616,9 +2616,9 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* send)
 
 /* Send a response that includes the segment. */
 
-	send->p_resp.p_resp_data.cstr_address = buffer;
+	sendL->p_resp.p_resp_data.cstr_address = buffer;
 
-	const ISC_STATUS status = this->send_response(send, stuff->p_info_object,
+	const ISC_STATUS status = this->send_response(sendL, stuff->p_info_object,
 						   stuff->p_info_buffer_length, status_vector);
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("info(server)              free buffer      %x\n", buffer);
@@ -2629,7 +2629,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* send)
 }
 
 
-ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* send)
+ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* sendL)
 {
 /*****************************************
  *
@@ -2672,7 +2672,7 @@ ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* send)
 					reinterpret_cast<const char*>(msg));
 	THREAD_ENTER;
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
@@ -2705,7 +2705,7 @@ static RTR make_transaction (RDB rdb, FB_API_HANDLE handle)
 }
 
 
-ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
+ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -2743,7 +2743,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
 					   (ISC_QUAD*) &stuff->p_blob_id, bpb_length, bpb);
 	else
 		isc_create_blob2(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
-						 &handle, (ISC_QUAD*) &send->p_resp.p_resp_blob_id,
+						 &handle, (ISC_QUAD*) &sendL->p_resp.p_resp_blob_id,
 						 bpb_length, reinterpret_cast<const char*>(bpb));
 	THREAD_ENTER;
 
@@ -2779,11 +2779,11 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
 		}
 	}
 
-	return this->send_response(send, object, 0, status_vector);
+	return this->send_response(sendL, object, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* send)
+ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -2813,11 +2813,11 @@ ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* send)
 	}
 	THREAD_ENTER;
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* send)
+ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* sendL)
 {
 /*****************************************
  *
@@ -2896,7 +2896,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* send)
 	if (status_vector[1]) {
 		if (buffer != local_buffer)
 			ALLR_free(buffer);
-		return this->send_response(send, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector);
 	}
 
 	REMOTE_reset_statement(statement);
@@ -2911,10 +2911,10 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* send)
 
 /* Send a response that includes the info requested. */
 
-	send->p_resp.p_resp_data.cstr_address = buffer;
+	sendL->p_resp.p_resp_data.cstr_address = buffer;
 
 	const ISC_STATUS status =
-		this->send_response(send,
+		this->send_response(sendL,
 							state,
 							prepare->p_sqlst_buffer_length,
 							status_vector);
@@ -2928,7 +2928,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* send)
 
 
 bool process_packet(rem_port* port,
-					PACKET* send,
+					PACKET* sendL,
 					PACKET* receive,
 					rem_port** result)
 {
@@ -2955,7 +2955,7 @@ bool process_packet(rem_port* port,
 		switch (op)
 		{
 		case op_connect:
-			if (!accept_connection(port, &receive->p_cnct, send)) {
+			if (!accept_connection(port, &receive->p_cnct, sendL)) {
 				rem_str* string = port->port_user_name;
 				if (string) {
 					sprintf(msg,
@@ -2978,20 +2978,20 @@ bool process_packet(rem_port* port,
 			break;
 
 		case op_compile:
-			port->compile(&receive->p_cmpl, send);
+			port->compile(&receive->p_cmpl, sendL);
 			break;
 
 		case op_attach:
 		case op_create:
-			attach_database(port, op, &receive->p_atch, send);
+			attach_database(port, op, &receive->p_atch, sendL);
 			break;
 
 		case op_service_attach:
-			port->service_attach(&receive->p_atch, send);
+			port->service_attach(&receive->p_atch, sendL);
 			break;
 
 		case op_service_start:
-			port->service_start(&receive->p_info, send);
+			port->service_start(&receive->p_info, sendL);
 			break;
 
 		case op_disconnect:
@@ -3004,7 +3004,7 @@ bool process_packet(rem_port* port,
 					port != server->srvr_parent_port)
 				{
 
-					port->disconnect(send, receive);
+					port->disconnect(sendL, receive);
 					port = NULL;
 					break;
 				}
@@ -3014,37 +3014,37 @@ bool process_packet(rem_port* port,
 					{
 						gds__log("SERVER/process_packet: Multi-client server shutdown", 0);
 					}
-					port->disconnect(send, receive);
+					port->disconnect(sendL, receive);
 					THD_restore_specific();
 					return false;
 				}
 			}
 
 		case op_receive:
-			port->receive_msg(&receive->p_data, send);
+			port->receive_msg(&receive->p_data, sendL);
 			break;
 
 		case op_send:
-			port->send_msg(&receive->p_data, send);
+			port->send_msg(&receive->p_data, sendL);
 			break;
 
 		case op_start:
 		case op_start_and_receive:
-			port->start(op, &receive->p_data, send);
+			port->start(op, &receive->p_data, sendL);
 			break;
 
 		case op_start_and_send:
 		case op_start_send_and_receive:
-			port->start_and_send(op, &receive->p_data, send);
+			port->start_and_send(op, &receive->p_data, sendL);
 			break;
 
 		case op_transact:
-			port->transact_request(&receive->p_trrq, send);
+			port->transact_request(&receive->p_trrq, sendL);
 			break;
 
 		case op_reconnect:
 		case op_transaction:
-			port->start_transaction(op, &receive->p_sttr, send);
+			port->start_transaction(op, &receive->p_sttr, sendL);
 			break;
 
 		case op_prepare:
@@ -3052,52 +3052,52 @@ bool process_packet(rem_port* port,
 		case op_rollback_retaining:
 		case op_commit:
 		case op_commit_retaining:
-			port->end_transaction(op, &receive->p_rlse, send);
+			port->end_transaction(op, &receive->p_rlse, sendL);
 			break;
 
 		case op_detach:
-			port->end_database(&receive->p_rlse, send);
+			port->end_database(&receive->p_rlse, sendL);
 			break;
 
 		case op_service_detach:
-			port->service_end(&receive->p_rlse, send);
+			port->service_end(&receive->p_rlse, sendL);
 			break;
 
 		case op_drop_database:
-			port->drop_database(&receive->p_rlse, send);
+			port->drop_database(&receive->p_rlse, sendL);
 			break;
 
 		case op_create_blob:
 		case op_open_blob:
 		case op_create_blob2:
 		case op_open_blob2:
-			port->open_blob(op, &receive->p_blob, send);
+			port->open_blob(op, &receive->p_blob, sendL);
 			break;
 
 		case op_batch_segments:
 		case op_put_segment:
-			port->put_segment(op, &receive->p_sgmt, send);
+			port->put_segment(op, &receive->p_sgmt, sendL);
 			break;
 
 		case op_get_segment:
-			port->get_segment(&receive->p_sgmt, send);
+			port->get_segment(&receive->p_sgmt, sendL);
 			break;
 
 		case op_seek_blob:
-			port->seek_blob(&receive->p_seek, send);
+			port->seek_blob(&receive->p_seek, sendL);
 			break;
 
 		case op_cancel_blob:
 		case op_close_blob:
-			port->end_blob(op, &receive->p_rlse, send);
+			port->end_blob(op, &receive->p_rlse, sendL);
 			break;
 
 		case op_prepare2:
-			port->prepare(&receive->p_prep, send);
+			port->prepare(&receive->p_prep, sendL);
 			break;
 
 		case op_release:
-			port->end_request(&receive->p_rlse, send);
+			port->end_request(&receive->p_rlse, sendL);
 			break;
 
 		case op_info_blob:
@@ -3106,76 +3106,76 @@ bool process_packet(rem_port* port,
 		case op_info_transaction:
 		case op_service_info:
 		case op_info_sql:
-			port->info(op, &receive->p_info, send);
+			port->info(op, &receive->p_info, sendL);
 			break;
 
 		case op_que_events:
-			port->que_events(&receive->p_event, send);
+			port->que_events(&receive->p_event, sendL);
 			break;
 
 		case op_cancel_events:
-			cancel_events(port, &receive->p_event, send);
+			cancel_events(port, &receive->p_event, sendL);
 			break;
 
 		case op_connect_request:
-			aux_request(port, &receive->p_req, send);
+			aux_request(port, &receive->p_req, sendL);
 			break;
 
 #ifdef NOT_USED_OR_REPLACED
 		case op_aux_connect:
-			aux_connect(port, &receive->p_req, send);
+			aux_connect(port, &receive->p_req, sendL);
 			break;
 #endif
 
 		case op_ddl:
-			port->ddl(&receive->p_ddl, send);
+			port->ddl(&receive->p_ddl, sendL);
 			break;
 
 		case op_get_slice:
-			port->get_slice(&receive->p_slc, send);
+			port->get_slice(&receive->p_slc, sendL);
 			break;
 
 		case op_put_slice:
-			port->put_slice(&receive->p_slc, send);
+			port->put_slice(&receive->p_slc, sendL);
 			break;
 
 		case op_allocate_statement:
-			allocate_statement(port, &receive->p_rlse, send);
+			allocate_statement(port, &receive->p_rlse, sendL);
 			break;
 
 		case op_execute:
 		case op_execute2:
-			port->execute_statement(op, &receive->p_sqldata, send);
+			port->execute_statement(op, &receive->p_sqldata, sendL);
 			break;
 
 		case op_exec_immediate:
 		case op_exec_immediate2:
-			port->execute_immediate(op, &receive->p_sqlst, send);
+			port->execute_immediate(op, &receive->p_sqlst, sendL);
 			break;
 
 		case op_fetch:
-			port->fetch(&receive->p_sqldata, send);
+			port->fetch(&receive->p_sqldata, sendL);
 			break;
 
 		case op_free_statement:
-			port->end_statement(&receive->p_sqlfree, send);
+			port->end_statement(&receive->p_sqlfree, sendL);
 			break;
 
 		case op_insert:
-			port->insert(&receive->p_sqldata, send);
+			port->insert(&receive->p_sqldata, sendL);
 			break;
 
 		case op_prepare_statement:
-			port->prepare_statement(&receive->p_sqlst, send);
+			port->prepare_statement(&receive->p_sqlst, sendL);
 			break;
 
 		case op_set_cursor:
-			port->set_cursor(&receive->p_sqlcur, send);
+			port->set_cursor(&receive->p_sqlcur, sendL);
 			break;
 
 		case op_dummy:
-			send->p_operation = op_dummy;
-			port->send(send);
+			sendL->p_operation = op_dummy;
+			port->send(sendL);
 			break;
 
 		default:
@@ -3192,11 +3192,11 @@ bool process_packet(rem_port* port,
 				if (port->port_type == port_inet)
 					port->disconnect();
 				else
-					port->disconnect(send, receive);
+					port->disconnect(sendL, receive);
 				THD_restore_specific();
 				return false;
 			}
-			port->disconnect(send, receive);
+			port->disconnect(sendL, receive);
 			port = NULL;
 		}
 
@@ -3212,8 +3212,8 @@ bool process_packet(rem_port* port,
 		gds__log("SERVER/process_packet: out of memory", 0);
 
 		/*  It would be nice to log an error to the user, instead of just terminating them!  */
-		port->send_response(send, 0, 0, trdb->trdb_status_vector);
-		port->disconnect(send, receive);	/*  Well, how about this...  */
+		port->send_response(sendL, 0, 0, trdb->trdb_status_vector);
+		port->disconnect(sendL, receive);	/*  Well, how about this...  */
 
 		THD_restore_specific();
 		return false;
@@ -3223,7 +3223,7 @@ bool process_packet(rem_port* port,
 }
 
 
-ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
+ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 {
 /**************************************
  *
@@ -3255,7 +3255,7 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
 		isc_put_segment(status_vector, &blob->rbl_handle, length,
 						reinterpret_cast<const char*>(p));
 		THREAD_ENTER;
-		return this->send_response(send, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector);
 	}
 
 /* We've got a batch of segments.  This is only slightly more complicated */
@@ -3270,15 +3270,15 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* send)
 						reinterpret_cast<const char*>(p));
 		THREAD_ENTER;
 		if (status_vector[1])
-			return this->send_response(send, 0, 0, status_vector);
+			return this->send_response(sendL, 0, 0, status_vector);
 		p += length;
 	}
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* send)
+ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -3302,9 +3302,9 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* send)
 	RDB rdb = this->port_context;
 
 	THREAD_EXIT;
-	send->p_resp.p_resp_blob_id = stuff->p_slc_id;
+	sendL->p_resp.p_resp_blob_id = stuff->p_slc_id;
 	isc_put_slice(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
-				  (ISC_QUAD*) &send->p_resp.p_resp_blob_id,
+				  (ISC_QUAD*) &sendL->p_resp.p_resp_blob_id,
 				  stuff->p_slc_sdl.cstr_length,
 				  reinterpret_cast<char*>(stuff->p_slc_sdl.cstr_address),
 				  stuff->p_slc_parameters.cstr_length,
@@ -3313,11 +3313,11 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* send)
 				  stuff->p_slc_slice.lstr_address);
 	THREAD_ENTER;
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* send)
+ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -3376,12 +3376,12 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* send)
 		event->rvnt_id = 0;
 	}
 
-	return this->send_response(send, (OBJCT) id, 0, status_vector);
+	return this->send_response(sendL, (OBJCT) id, 0, status_vector);
 }
 
 
 ISC_STATUS rem_port::receive_after_start(	P_DATA*	data,
-									PACKET*	send,
+									PACKET*	sendL,
 									ISC_STATUS*	status_vector)
 {
 /**************************************
@@ -3409,16 +3409,16 @@ ISC_STATUS rem_port::receive_after_start(	P_DATA*	data,
 
 	USHORT msg_number;
 	if (!get_next_msg_no(request, level, &msg_number)) {
-		return this->send_response(send, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector);
 	}
 
-	send->p_operation = op_response_piggyback;
-	P_RESP* response = &send->p_resp;
+	sendL->p_operation = op_response_piggyback;
+	P_RESP* response = &sendL->p_resp;
 	response->p_resp_object = msg_number;
 	response->p_resp_status_vector = status_vector;
 	response->p_resp_data.cstr_length = 0;
 
-	this->send_partial(send);
+	this->send_partial(sendL);
 
 /* Fill in packet to fool receive into thinking that it has been
    called directly by the client. */
@@ -3442,11 +3442,11 @@ ISC_STATUS rem_port::receive_after_start(	P_DATA*	data,
 											   format);
 	}
 
-	return this->receive_msg(data, send);
+	return this->receive_msg(data, sendL);
 }
 
 
-ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* send)
+ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 {
 /**************************************
  *
@@ -3482,11 +3482,11 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* send)
 
 /* Get ready to ship the data out */
 
-	send->p_operation = op_send;
-	send->p_data.p_data_request = data->p_data_request;
-	send->p_data.p_data_message_number = msg_number;
-	send->p_data.p_data_incarnation = level;
-	send->p_data.p_data_messages = 1;
+	sendL->p_operation = op_send;
+	sendL->p_data.p_data_request = data->p_data_request;
+	sendL->p_data.p_data_message_number = msg_number;
+	sendL->p_data.p_data_incarnation = level;
+	sendL->p_data.p_data_messages = 1;
 
 #ifdef SCROLLABLE_CURSORS
 /* check the direction and offset for possible redirection; if the user 
@@ -3526,7 +3526,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* send)
 
 			if (request->rrq_status_vector[1]) {
 				const ISC_STATUS res =
-					this->send_response(send, 0, 0,
+					this->send_response(sendL, 0, 0,
 								  request->rrq_status_vector);
 				memset(request->rrq_status_vector, 0,
 					   sizeof(request->rrq_status_vector));
@@ -3544,7 +3544,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* send)
 #endif
 			THREAD_ENTER;
 			if (status_vector[1])
-				return this->send_response(send, 0, 0, status_vector);
+				return this->send_response(sendL, 0, 0, status_vector);
 
 #ifdef SCROLLABLE_CURSORS
 			/* set the appropriate flags according to the way we just scrolled 
@@ -3611,13 +3611,13 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* send)
 			break;
 		}
 
-		if (!this->send_partial(send))
+		if (!this->send_partial(sendL))
 			return FALSE;
 		message->msg_address = NULL;
 	}
 
-	send->p_data.p_data_messages = 0;
-	this->send(send);
+	sendL->p_data.p_data_messages = 0;
+	this->send(sendL);
 	message->msg_address = NULL;
 
 /* Bump up the message pointer to resync with rrq_xdr (rrq_xdr 
@@ -3994,7 +3994,7 @@ static REM_MSG scroll_cache(
 #endif
 
 
-ISC_STATUS rem_port::seek_blob(P_SEEK * seek, PACKET* send)
+ISC_STATUS rem_port::seek_blob(P_SEEK * seek, PACKET* sendL)
 {
 /**************************************
  *
@@ -4023,13 +4023,13 @@ ISC_STATUS rem_port::seek_blob(P_SEEK * seek, PACKET* send)
 	isc_seek_blob(status_vector, &blob->rbl_handle, mode, offset, &result);
 	THREAD_ENTER;
 
-	send->p_resp.p_resp_blob_id.bid_number = result;
+	sendL->p_resp.p_resp_blob_id.bid_number = result;
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* send)
+ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
 {
 /**************************************
  *
@@ -4062,11 +4062,11 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* send)
 
 	message->msg_address = NULL;
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::send_response(	PACKET*	send,
+ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 							OBJCT	object,
 							USHORT	length,
 							const ISC_STATUS* status_vector)
@@ -4177,14 +4177,14 @@ ISC_STATUS rem_port::send_response(	PACKET*	send,
 /* Format and send response.  Note: the blob_id and data address fields
    of the response packet may contain valid data.  Don't trash them. */
 
-	send->p_operation = op_response;
+	sendL->p_operation = op_response;
 
-	P_RESP* response = &send->p_resp;
+	P_RESP* response = &sendL->p_resp;
 	response->p_resp_object = object;
 	response->p_resp_status_vector = new_vector;
 	response->p_resp_data.cstr_length = length;
 
-	this->send(send);
+	this->send(sendL);
 
 	return exit_code;
 }
@@ -4234,7 +4234,7 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 }
 
 
-ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* send)
+ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
 {
 /**************************************
  *
@@ -4246,7 +4246,7 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* send)
  *	Connect to an Interbase service.
  *
  **************************************/
-	send->p_operation = op_accept;
+	sendL->p_operation = op_accept;
 	FB_API_HANDLE handle = 0;
 	const UCHAR* service_name = attach->p_atch_file.cstr_address;
 	const USHORT service_length = attach->p_atch_file.cstr_length;
@@ -4314,11 +4314,11 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* send)
 		rdb->rdb_flags |= RDB_service;
 	}
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::service_end(P_RLSE * release, PACKET* send)
+ISC_STATUS rem_port::service_end(P_RLSE * release, PACKET* sendL)
 {
 /**************************************
  *
@@ -4338,11 +4338,11 @@ ISC_STATUS rem_port::service_end(P_RLSE * release, PACKET* send)
 	isc_service_detach(status_vector, &rdb->rdb_handle);
 	THREAD_ENTER;
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* send)
+ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -4367,11 +4367,11 @@ ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* send)
 					  reinterpret_cast<char*>(stuff->p_info_items.cstr_address));
 	THREAD_ENTER;
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* send)
+ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* sendL)
 {
 /*****************************************
  *
@@ -4399,7 +4399,7 @@ ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* send)
 						sqlcur->p_sqlcur_type);
 	THREAD_ENTER;
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
@@ -4438,7 +4438,7 @@ void set_server( rem_port* port, USHORT flags)
 }
 
 
-ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* send)
+ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* sendL)
 {
 /**************************************
  *
@@ -4476,16 +4476,16 @@ ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* send)
 	if (!status_vector[1]) {
 		request->rrq_rtr = transaction;
 		if (operation == op_start_and_receive)
-			return this->receive_after_start(data, send, status_vector);
+			return this->receive_after_start(data, sendL, status_vector);
 	}
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
 ISC_STATUS rem_port::start_and_send(P_OP	operation,
 							P_DATA*	data,
-							PACKET*	send)
+							PACKET*	sendL)
 {
 /**************************************
  *
@@ -4528,15 +4528,15 @@ ISC_STATUS rem_port::start_and_send(P_OP	operation,
 	if (!status_vector[1]) {
 		request->rrq_rtr = transaction;
 		if (operation == op_start_send_and_receive) {
-			return this->receive_after_start(data, send, status_vector);
+			return this->receive_after_start(data, sendL, status_vector);
 		}
 	}
 
-	return this->send_response(send, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector);
 }
 
 
-ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
+ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -4607,7 +4607,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 		}
 	}
 
-	return this->send_response(send, object, 0, status_vector);
+	return this->send_response(sendL, object, 0, status_vector);
 }
 
 
@@ -4805,7 +4805,7 @@ static int THREAD_ROUTINE thread(void* flags)
 #endif
 
 
-ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* send)
+ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 {
 /**************************************
  *
@@ -4852,12 +4852,12 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* send)
 	THREAD_ENTER;
 
 	if (status_vector[1])
-		return this->send_response(send, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector);
 
-	P_DATA* data = &send->p_data;
-	send->p_operation = op_transact_response;
+	P_DATA* data = &sendL->p_data;
+	sendL->p_operation = op_transact_response;
 	data->p_data_messages = 1;
-	this->send(send);
+	this->send(sendL);
 
 	return FB_SUCCESS;
 }

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.28 2004-05-02 23:04:15 skidder Exp $
+//	$Id: cmp.cpp,v 1.29 2004-05-12 19:34:42 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1580,9 +1580,9 @@ static void cmp_store( gpre_req* request)
 		const SSHORT count = list->nod_count;
 		if (count > 1)
 			STUFF(blr_begin);
-		gpre_nod** ptr = list->nod_arg;
-		for (const gpre_nod* const* const end = ptr + count; ptr < end; ptr++)
-			cmp_assignment(*ptr, request);
+		gpre_nod** ptr2 = list->nod_arg;
+		for (const gpre_nod* const* const end = ptr2 + count; ptr2 < end; ptr2++)
+			cmp_assignment(*ptr2, request);
 		if (count > 1)
 			STUFF(blr_end);
 		STUFF(blr_end);

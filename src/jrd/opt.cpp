@@ -5336,8 +5336,8 @@ static RecordSource* gen_sort(thread_db* tdbb,
 
 	if (dbkey_streams) {
         ptr = &dbkey_streams[1];
-		for (const UCHAR* const end_ptr = dbkey_streams + dbkey_streams[0];
-			ptr <= end_ptr; ptr++, map_item++)
+		for (const UCHAR* const end_ptrL = dbkey_streams + dbkey_streams[0];
+			ptr <= end_ptrL; ptr++, map_item++)
 		{
 			map_item->smb_field_id = SMB_DBKEY;
 			map_item->smb_stream = *ptr;

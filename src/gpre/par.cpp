@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.47 2004-05-02 23:04:17 skidder Exp $
+//  $Id: par.cpp,v 1.48 2004-05-12 19:34:43 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -138,17 +138,17 @@ act* PAR_action(const TEXT* base_dir)
 	enum kwwords keyword;
 	jmp_buf env;
 
-	gpre_sym* symbol = token.tok_symbol;
+	gpre_sym* symbol = token_global.tok_symbol;
 
 	if (!symbol) {
 		cur_statement = NULL;
 		return NULL;
 	}
 
-	if ((USHORT) token.tok_keyword >= (USHORT) KW_start_actions &&
-		(USHORT) token.tok_keyword <= (USHORT) KW_end_actions)
+	if ((USHORT) token_global.tok_keyword >= (USHORT) KW_start_actions &&
+		(USHORT) token_global.tok_keyword <= (USHORT) KW_end_actions)
 	{
-		keyword = token.tok_keyword;
+		keyword = token_global.tok_keyword;
 		switch (keyword)
 		{
 		case KW_READY:
@@ -319,7 +319,7 @@ act* PAR_action(const TEXT* base_dir)
 		catch (const std::exception&) {
 			sw_sql = false;
 			/* This is to force GPRE to get the next symbol. Fix for bug #274. DROOT */
-			token.tok_symbol = NULL;
+			token_global.tok_symbol = NULL;
 			return NULL;
 		}
 
@@ -379,7 +379,7 @@ SSHORT PAR_blob_subtype(DBB db)
 {
 //  Check for symbol type name
 
-	if (token.tok_type == tok_ident) {
+	if (token_global.tok_type == tok_ident) {
 		gpre_rel* relation;
 		gpre_fld* field;
 		if (!(relation = MET_get_relation(db, "RDB$FIELDS", "")) ||
@@ -389,7 +389,7 @@ SSHORT PAR_blob_subtype(DBB db)
 		}
 		
 		SSHORT const_subtype;
-		if (!MET_type(field, token.tok_string, &const_subtype))
+		if (!MET_type(field, token_global.tok_string, &const_subtype))
 			CPR_s_error("blob sub_type");
 		PAR_get_token();
 		return const_subtype;
@@ -434,48 +434,48 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 //  parse the compiletime options 
 
 	for (;;) {
-		if (MSC_match(KW_FILENAME) && (!isQuoted(token.tok_type)))
+		if (MSC_match(KW_FILENAME) && (!isQuoted(token_global.tok_type)))
 			CPR_s_error("quoted file name");
 
-		if (isQuoted(token.tok_type)) {
+		if (isQuoted(token_global.tok_type)) {
 			if (base_directory) {
-				db->dbb_filename = string = (TEXT *) MSC_alloc(token.tok_length + 
+				db->dbb_filename = string = (TEXT *) MSC_alloc(token_global.tok_length + 
 													strlen(base_directory) + 1);
 				MSC_copy_cat(base_directory, strlen(base_directory), 
-						 token.tok_string, token.tok_length, string);
+						 token_global.tok_string, token_global.tok_length, string);
 			}
 			else {
-				db->dbb_filename = string = (TEXT *) MSC_alloc(token.tok_length + 1);
-				MSC_copy(token.tok_string, token.tok_length, string);
+				db->dbb_filename = string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
+				MSC_copy(token_global.tok_string, token_global.tok_length, string);
 			}
-			token.tok_length += 2;
+			token_global.tok_length += 2;
 		}
 		else if (MSC_match(KW_PASSWORD)) {
-			if (!isQuoted(token.tok_type))
+			if (!isQuoted(token_global.tok_type))
 				CPR_s_error("quoted password");
 			db->dbb_c_password = string =
-				(TEXT *) MSC_alloc(token.tok_length + 1);
-			MSC_copy(token.tok_string, token.tok_length, string);
+				(TEXT *) MSC_alloc(token_global.tok_length + 1);
+			MSC_copy(token_global.tok_string, token_global.tok_length, string);
 		}
 		else if (MSC_match(KW_USER)) {
-			if (!isQuoted(token.tok_type))
+			if (!isQuoted(token_global.tok_type))
 				CPR_s_error("quoted user name");
-			db->dbb_c_user = string = (TEXT *) MSC_alloc(token.tok_length + 1);
-			MSC_copy(token.tok_string, token.tok_length, string);
+			db->dbb_c_user = string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
+			MSC_copy(token_global.tok_string, token_global.tok_length, string);
 		}
 		else if (MSC_match(KW_LC_MESSAGES)) {
-			if (!isQuoted(token.tok_type))
+			if (!isQuoted(token_global.tok_type))
 				CPR_s_error("quoted language name");
 			db->dbb_c_lc_messages = string =
-				(TEXT *) MSC_alloc(token.tok_length + 1);
-			MSC_copy(token.tok_string, token.tok_length, string);
+				(TEXT *) MSC_alloc(token_global.tok_length + 1);
+			MSC_copy(token_global.tok_string, token_global.tok_length, string);
 		}
 		else if (!sql && MSC_match(KW_LC_CTYPE)) {
-			if (!isQuoted(token.tok_type))
+			if (!isQuoted(token_global.tok_type))
 				CPR_s_error("quoted character set name");
 			db->dbb_c_lc_ctype = string =
-				(TEXT *) MSC_alloc(token.tok_length + 1);
-			MSC_copy(token.tok_string, token.tok_length, string);
+				(TEXT *) MSC_alloc(token_global.tok_length + 1);
+			MSC_copy(token_global.tok_string, token_global.tok_length, string);
 		}
 		else
 			break;
@@ -528,18 +528,18 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 				: PAR_native_value(false, false);
 	}
 
-	if ((sw_language == lang_ada) && (token.tok_keyword == KW_HANDLES)) {
+	if ((sw_language == lang_ada) && (token_global.tok_keyword == KW_HANDLES)) {
 		PAR_get_token();
-		if (isQuoted(token.tok_type))
+		if (isQuoted(token_global.tok_type))
 			CPR_s_error("quoted file name");
-		MSC_copy(token.tok_string, token.tok_length, s);
+		MSC_copy(token_global.tok_string, token_global.tok_length, s);
 		strcat(s, ".");
 		if (!ada_package[0] || !strcmp(ada_package, s))
 			strcpy(ada_package, s);
 		else {
 			sprintf(s,
 					"Ada handle package \"%s\" already in use, ignoring package %s",
-					ada_package, token.tok_string);
+					ada_package, token_global.tok_string);
 			CPR_warn(s);
 		}
 		PAR_get_token();
@@ -597,7 +597,7 @@ bool PAR_end()
 		return (MSC_match(KW_SEMI_COLON));
 	}
 
-	return (token.tok_keyword == KW_SEMI_COLON);
+	return (token_global.tok_keyword == KW_SEMI_COLON);
 }
 
 
@@ -630,7 +630,7 @@ act* PAR_event_init(bool sql)
 //  make up statement node 
 
 	SQL_resolve_identifier("<identifier>", req_name);
-	strcpy(token.tok_string, req_name);
+	strcpy(token_global.tok_string, req_name);
 	gpre_nod* init = MSC_node(nod_event_init, 4);
 	init->nod_arg[0] = (GPRE_NOD) PAR_symbol(SYM_dummy);
 	init->nod_arg[3] = (GPRE_NOD) isc_databases;
@@ -641,7 +641,7 @@ act* PAR_event_init(bool sql)
 //  parse optional database handle 
 
 	if (!MSC_match(KW_LEFT_PAREN)) {
-		if ((symbol = token.tok_symbol) && (symbol->sym_type == SYM_database))
+		if ((symbol = token_global.tok_symbol) && (symbol->sym_type == SYM_database))
 			init->nod_arg[3] = (GPRE_NOD) symbol->sym_object;
 		else
 			CPR_s_error("left parenthesis or database handle");
@@ -658,7 +658,7 @@ act* PAR_event_init(bool sql)
 		if (MSC_match(KW_RIGHT_PAREN))
 			break;
 
-		if (!sql && (symbol = token.tok_symbol)
+		if (!sql && (symbol = token_global.tok_symbol)
 			&& symbol->sym_type == SYM_context)
 		{
 			gpre_ctx* context;
@@ -709,7 +709,7 @@ act* PAR_event_wait(bool sql)
 
 	act* action = MSC_action(0, ACT_event_wait);
 	SQL_resolve_identifier("<identifier>", req_name);
-	strcpy(token.tok_string, req_name);
+	strcpy(token_global.tok_string, req_name);
 	action->act_object = (REF) PAR_symbol(SYM_dummy);
 	if (!sql)
 		PAR_end();
@@ -792,7 +792,7 @@ void PAR_init()
 
 static inline void gobble(SCHAR*& string, SCHAR*& s1)
 {
-	s1 = token.tok_string;
+	s1 = token_global.tok_string;
 	while (*s1) 
 		*string++ = *s1++; 
 	PAR_get_token();
@@ -819,10 +819,10 @@ TEXT* PAR_native_value(bool array_ref,
 	double quotes.
     **/
 		if (sw_sql_dialect == 1) {
-			if (isQuoted(token.tok_type)) {
+			if (isQuoted(token_global.tok_type)) {
 				enum tok_t typ;
-				typ = token.tok_type;
-				token.tok_length += 2;
+				typ = token_global.tok_type;
+				token_global.tok_length += 2;
 				*string++ = '\"';
 				gobble(string, s1);
 				*string++ = '\"';
@@ -830,10 +830,10 @@ TEXT* PAR_native_value(bool array_ref,
 			}
 		}
 		else if (sw_sql_dialect == 2) {
-			if (token.tok_type == tok_dblquoted)
+			if (token_global.tok_type == tok_dblquoted)
 				PAR_error("Ambiguous use of double quotes in dialect 2");
-			else if (token.tok_type == tok_sglquoted) {
-				token.tok_length += 2;
+			else if (token_global.tok_type == tok_sglquoted) {
+				token_global.tok_length += 2;
 				*string++ = '\"';
 				gobble(string, s1);
 				*string++ = '\"';
@@ -841,8 +841,8 @@ TEXT* PAR_native_value(bool array_ref,
 			}
 		}
 		else if (sw_sql_dialect == 3) {
-			if (token.tok_type == tok_sglquoted) {
-				token.tok_length += 2;
+			if (token_global.tok_type == tok_sglquoted) {
+				token_global.tok_length += 2;
 				*string++ = '\"';
 				gobble(string, s1);
 				*string++ = '\"';
@@ -850,54 +850,54 @@ TEXT* PAR_native_value(bool array_ref,
 			}
 		}
 
-		if (token.tok_keyword == KW_AMPERSAND || token.tok_keyword == KW_ASTERISK)
+		if (token_global.tok_keyword == KW_AMPERSAND || token_global.tok_keyword == KW_ASTERISK)
 			gobble(string, s1);
-		if (token.tok_type != tok_ident)
+		if (token_global.tok_type != tok_ident)
 			CPR_s_error("identifier");
 		gobble(string, s1);
 
 		/* For ADA, gobble '<attribute> */
 
-		if ((sw_language == lang_ada) && (token.tok_string[0] == '\'')) {
+		if ((sw_language == lang_ada) && (token_global.tok_string[0] == '\'')) {
 			gobble(string, s1);
 		}
-		keyword = token.tok_keyword;
+		keyword = token_global.tok_keyword;
 		if (keyword == KW_LEFT_PAREN) {
 			parens = 1;
 			while (parens) {
 				enum tok_t typ;
-				typ = token.tok_type;
+				typ = token_global.tok_type;
 				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
 				gobble(string, s1);
 				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
-				keyword = token.tok_keyword;
+				keyword = token_global.tok_keyword;
 				if (keyword == KW_RIGHT_PAREN)
 					parens--;
 				else if (keyword == KW_LEFT_PAREN)
 					parens++;
 			}
 			gobble(string, s1);
-			keyword = token.tok_keyword;
+			keyword = token_global.tok_keyword;
 		}
 		while (keyword == KW_L_BRCKET) {
 			brackets = 1;
 			while (brackets) {
 				gobble(string, s1);
-				keyword = token.tok_keyword;
+				keyword = token_global.tok_keyword;
 				if (keyword == KW_R_BRCKET)
 					brackets--;
 				else if (keyword == KW_L_BRCKET)
 					brackets++;
 			}
 			gobble(string, s1);
-			keyword = token.tok_keyword;
+			keyword = token_global.tok_keyword;
 		}
 
 		while ((keyword == KW_CARAT) && (sw_language == lang_pascal)) {
 			gobble(string, s1);
-			keyword = token.tok_keyword;
+			keyword = token_global.tok_keyword;
 		}
 
 		if (
@@ -1047,13 +1047,13 @@ gpre_sym* PAR_symbol(enum sym_t type)
 	gpre_sym* symbol;
 	TEXT s[128];
 
-	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (symbol = token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (type == SYM_dummy || symbol->sym_type == type) {
-			sprintf(s, "symbol %s is already in use", token.tok_string);
+			sprintf(s, "symbol %s is already in use", token_global.tok_string);
 			PAR_error(s);
 		}
 
-	symbol = MSC_symbol(SYM_cursor, token.tok_string, token.tok_length, 0);
+	symbol = MSC_symbol(SYM_cursor, token_global.tok_string, token_global.tok_length, 0);
 	PAR_get_token();
 
 	return symbol;
@@ -1080,7 +1080,7 @@ void PAR_unwind()
 void PAR_using_db()
 {
 	while (true) {
-		gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_database);
+		gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_database);
 		if (symbol) {
 			DBB db = (DBB) symbol->sym_object;
 			db->dbb_flags |= DBB_in_trans;
@@ -1208,7 +1208,7 @@ static act* par_any()
 
 static act* par_array_element()
 {
-	if (!MSC_find_symbol(token.tok_symbol, SYM_context))
+	if (!MSC_find_symbol(token_global.tok_symbol, SYM_context))
 		return NULL;
 
 	gpre_ctx* context;
@@ -1277,8 +1277,8 @@ static act* par_based()
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("dot in qualified field reference");
 		SQL_resolve_identifier("<fieldname>", t_str);
-		if (!(field = MET_field(relation, token.tok_string))) {
-			sprintf(s, "undefined field %s", token.tok_string);
+		if (!(field = MET_field(relation, token_global.tok_string))) {
+			sprintf(s, "undefined field %s", token_global.tok_string);
 			PAR_error(s);
 		}
 		if (SQL_DIALECT_V5 == sw_sql_dialect) {
@@ -1292,8 +1292,8 @@ static act* par_based()
 			}
 		}
 		PAR_get_token();
-		if (sw_language == lang_cobol && token.tok_keyword == KW_DOT) {
-			strcpy(tmpChar, token.tok_string);
+		if (sw_language == lang_cobol && token_global.tok_keyword == KW_DOT) {
+			strcpy(tmpChar, token_global.tok_string);
 		}
 		if (MSC_match(KW_DOT)) {
 			if (!MSC_match(KW_SEGMENT)) {
@@ -1317,25 +1317,25 @@ static act* par_based()
 		based_on->bas_field = field;
 	}
 	else {
-		based_on->bas_rel_name = (STR) MSC_alloc(token.tok_length + 1);
-		MSC_copy(token.tok_string, token.tok_length,
+		based_on->bas_rel_name = (STR) MSC_alloc(token_global.tok_length + 1);
+		MSC_copy(token_global.tok_string, token_global.tok_length,
 			based_on->bas_rel_name->str_string);
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			PAR_error("expected qualified field name");
 		else {
-			based_on->bas_fld_name = (STR) MSC_alloc(token.tok_length + 1);
-			MSC_copy(token.tok_string, token.tok_length,
+			based_on->bas_fld_name = (STR) MSC_alloc(token_global.tok_length + 1);
+			MSC_copy(token_global.tok_string, token_global.tok_length,
 				based_on->bas_fld_name->str_string);
 			ambiguous_flag = false;
 			PAR_get_token();
 			if (MSC_match(KW_DOT)) {
 				based_on->bas_db_name = based_on->bas_rel_name;
 				based_on->bas_rel_name = based_on->bas_fld_name;
-				based_on->bas_fld_name = (STR) MSC_alloc(token.tok_length + 1);
-				MSC_copy(token.tok_string, token.tok_length,
+				based_on->bas_fld_name = (STR) MSC_alloc(token_global.tok_length + 1);
+				MSC_copy(token_global.tok_string, token_global.tok_length,
 					based_on->bas_fld_name->str_string);
-				if (token.tok_keyword == KW_SEGMENT)
+				if (token_global.tok_keyword == KW_SEGMENT)
 					ambiguous_flag = true;
 				PAR_get_token();
 				if (MSC_match(KW_DOT)) {
@@ -1406,9 +1406,9 @@ static act* par_based()
 
 	if (notSegment)
 		return action;
-	if (token.tok_keyword == KW_SEMI_COLON ||
-		(sw_language == lang_cobol && token.tok_keyword == KW_DOT)) {
-		strcpy(based_on->bas_terminator, token.tok_string);
+	if (token_global.tok_keyword == KW_SEMI_COLON ||
+		(sw_language == lang_cobol && token_global.tok_keyword == KW_DOT)) {
+		strcpy(based_on->bas_terminator, token_global.tok_string);
 		PAR_get_token();
 	}
 
@@ -1446,7 +1446,7 @@ static blb* par_blob()
 {
 	gpre_sym* symbol;
 
-	if (!(symbol = MSC_find_symbol(token.tok_symbol, SYM_blob)))
+	if (!(symbol = MSC_find_symbol(token_global.tok_symbol, SYM_blob)))
 		CPR_s_error("blob handle");
 
 	PAR_get_token();
@@ -1484,7 +1484,7 @@ static act* par_blob_action( ACT_T type)
 
 static act* par_blob_field()
 {
-	const SSHORT first = token.tok_first;
+	const SSHORT first = token_global.tok_first;
 
 	blb* blob = par_blob();
 
@@ -1565,8 +1565,8 @@ static act* par_derived_from()
 	SQL_resolve_identifier("<Field Name>", s);
 	
 	gpre_fld* field;
-	if (!(field = MET_field(relation, token.tok_string))) {
-		sprintf(s, "undefined field %s", token.tok_string);
+	if (!(field = MET_field(relation, token_global.tok_string))) {
+		sprintf(s, "undefined field %s", token_global.tok_string);
 		PAR_error(s);
 	}
 	PAR_get_token();
@@ -1578,7 +1578,7 @@ static act* par_derived_from()
 	based_on->bas_variables->lls_object =
 		(GPRE_NOD) PAR_native_value(false, false);
 
-	strcpy(based_on->bas_terminator, token.tok_string);
+	strcpy(based_on->bas_terminator, token_global.tok_string);
 	PAR_get_token();
 
 	return action;
@@ -1724,7 +1724,7 @@ static act* par_end_modify()
 	PAR_end();
 	upd* modify = (upd*) MSC_pop(&cur_modify);
 
-	if (errors)
+	if (errors_global)
 		return NULL;
 
 	gpre_req* request = modify->upd_request;
@@ -1799,7 +1799,7 @@ static act* par_end_stream()
 {
 	gpre_sym* symbol;
 
-	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_stream)
+	if (!(symbol = token_global.tok_symbol) || symbol->sym_type != SYM_stream)
 		CPR_s_error("stream cursor");
 
 	gpre_req* request = (gpre_req*) symbol->sym_object;
@@ -1836,7 +1836,7 @@ static act* par_end_store(bool special)
 	gpre_req* request = begin_action->act_request;
 
 	if (request->req_type == REQ_store) {
-		if (errors)
+		if (errors_global)
 			return NULL;
 
 		// Make up an assignment list for all field references 
@@ -1929,7 +1929,7 @@ static act* par_end_store(bool special)
 static act* par_erase()
 {
 	gpre_sym* symbol;
-	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_context)
+	if (!(symbol = token_global.tok_symbol) || symbol->sym_type != SYM_context)
 		CPR_s_error("context variable");
 
 	gpre_ctx* source = symbol->sym_object;
@@ -1961,7 +1961,7 @@ static act* par_erase()
 static act* par_fetch()
 {
 	gpre_sym* symbol;
-	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_stream)
+	if (!(symbol = token_global.tok_symbol) || symbol->sym_type != SYM_stream)
 		return NULL;
 
 	gpre_req* request = (gpre_req*) symbol->sym_object;
@@ -1989,7 +1989,7 @@ static act* par_finish()
 
 	if (!terminator())
 		while (true) {
-			if ((symbol = token.tok_symbol)
+			if ((symbol = token_global.tok_symbol)
 				&& (symbol->sym_type == SYM_database)) {
 				ready = (rdy*) MSC_alloc(RDY_LEN);
 				ready->rdy_next = (rdy*) action->act_object;
@@ -2032,11 +2032,11 @@ static act* par_for()
 	symbol = NULL;
 	dup_symbol = false;
 
-	if (!(token.tok_keyword == KW_FIRST) && !(token.tok_keyword == KW_LEFT_PAREN)) {
-		if (token.tok_symbol)
+	if (!(token_global.tok_keyword == KW_FIRST) && !(token_global.tok_keyword == KW_LEFT_PAREN)) {
+		if (token_global.tok_symbol)
 			dup_symbol = true;
 
-		symbol = MSC_symbol(SYM_cursor, token.tok_string, token.tok_length, 0);
+		symbol = MSC_symbol(SYM_cursor, token_global.tok_string, token_global.tok_length, 0);
 		PAR_get_token();
 
 		if (!MSC_match(KW_IN)) {
@@ -2044,11 +2044,11 @@ static act* par_for()
 			return NULL;
 		}
 		if (dup_symbol) {
-			sprintf(s, "symbol %s is already in use", token.tok_string);
+			sprintf(s, "symbol %s is already in use", token_global.tok_string);
 			PAR_error(s);
 		}
 
-		if ((temp = token.tok_symbol) && temp->sym_type == SYM_context)
+		if ((temp = token_global.tok_symbol) && temp->sym_type == SYM_context)
 			return par_open_blob(ACT_blob_for, symbol);
 	}
 
@@ -2144,8 +2144,8 @@ static act* par_modify()
 
 //  If the next token isn't a context variable, we can't continue 
 
-	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_context) {
-		sprintf(s, "%s is not a valid context variable", token.tok_string);
+	if (!(symbol = token_global.tok_symbol) || symbol->sym_type != SYM_context) {
+		sprintf(s, "%s is not a valid context variable", token_global.tok_string);
 		PAR_error(s);
 	}
 
@@ -2295,8 +2295,8 @@ static act* par_open_blob( ACT_T act_op, gpre_sym* symbol)
 //The current token however might be the same context variable. 
 //If so, get the symbol for it.
 //*  
-	if (token.tok_keyword == KW_none)
-		token.tok_symbol = HSH_lookup(token.tok_string);
+	if (token_global.tok_keyword == KW_none)
+		token_global.tok_symbol = HSH_lookup(token_global.tok_string);
 
 	act* action = MSC_action(request, act_op);
 	action->act_object = (REF) blob;
@@ -2397,7 +2397,7 @@ static act* par_ready()
 
 	act* action = MSC_action(0, ACT_ready);
 
-	if (token.tok_keyword == KW_CACHE)
+	if (token_global.tok_keyword == KW_CACHE)
 		CPR_s_error("database name or handle");
 
 	while (!terminator()) {
@@ -2410,7 +2410,7 @@ static act* par_ready()
 		if (MSC_match(KW_DEFAULT)) {
 			if (!MSC_match(KW_CACHE))
 				CPR_s_error("database name or handle");
-			default_buffers = atoi(token.tok_string);
+			default_buffers = atoi(token_global.tok_string);
 			CPR_eol_token();
 			MSC_match(KW_BUFFERS);
 			continue;
@@ -2420,13 +2420,13 @@ static act* par_ready()
 		ready->rdy_next = (rdy*) action->act_object;
 		action->act_object = (REF) ready;
 
-		if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_database) {
+		if (!(symbol = token_global.tok_symbol) || symbol->sym_type != SYM_database) {
 			ready->rdy_filename = PAR_native_value(false, false);
 			if (MSC_match(KW_AS))
 				need_handle = true;
 		}
 
-		if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_database) {
+		if (!(symbol = token_global.tok_symbol) || symbol->sym_type != SYM_database) {
 			if (!isc_databases || isc_databases->dbb_next || need_handle) {
 				need_handle = false;
 				CPR_s_error("database handle");
@@ -2447,7 +2447,7 @@ static act* par_ready()
 		db = ready->rdy_database;
 		for (;;) {
 			if (MSC_match(KW_CACHE)) {
-				buffers = atoi(token.tok_string);
+				buffers = atoi(token_global.tok_string);
 				CPR_eol_token();
 				MSC_match(KW_BUFFERS);
 			}
@@ -2658,7 +2658,7 @@ static act* par_release()
 	MSC_match(KW_FOR);
 
 	gpre_sym* symbol;
-	if ((symbol = token.tok_symbol) && (symbol->sym_type == SYM_database)) {
+	if ((symbol = token_global.tok_symbol) && (symbol->sym_type == SYM_database)) {
 		action->act_object = (REF) symbol->sym_object;
 		PAR_get_token();
 	}
@@ -2752,8 +2752,8 @@ static act* par_store()
 //The current token however might be the same context variable. 
 //If so, get the symbol for it.
 //*  
-	if (token.tok_keyword == KW_none)
-		token.tok_symbol = HSH_lookup(token.tok_string);
+	if (token_global.tok_keyword == KW_none)
+		token_global.tok_symbol = HSH_lookup(token_global.tok_string);
 	MSC_match(KW_USING);
 
 	return action;
@@ -2818,12 +2818,12 @@ static act* par_start_transaction()
 
 //  get the transaction handle  
 
-	if (!token.tok_symbol)
+	if (!token_global.tok_symbol)
 		trans->tra_handle = PAR_native_value(false, true);
 
 //  loop reading the various transaction options 
 
-	while (!(token.tok_keyword == KW_RESERVING) && !(token.tok_keyword == KW_USING) && 
+	while (!(token_global.tok_keyword == KW_RESERVING) && !(token_global.tok_keyword == KW_USING) && 
 		!terminator()) 
 	{
 		if (MSC_match(KW_READ_ONLY)) {
@@ -2948,7 +2948,7 @@ static act* par_type()
 
 // ***
 //gpre_sym*	symbol;
-//symbol = token.tok_symbol;
+//symbol = token_global.tok_symbol;
 //relation = (gpre_rel*) symbol->sym_object;
 //PAR_get_token();
 //** 
@@ -2966,7 +2966,7 @@ static act* par_type()
 
 	SQL_resolve_identifier("<Field Name>", s);
 	gpre_fld* field;
-	if (!(field = MET_field(relation, token.tok_string)))
+	if (!(field = MET_field(relation, token_global.tok_string)))
 		return NULL;
 
 	PAR_get_token();
@@ -2977,8 +2977,8 @@ static act* par_type()
 //  Lookup type.  If we can't find it, complain bitterly 
 
 	SSHORT type;
-	if (!MET_type(field, token.tok_string, &type)) {
-		sprintf(s, "undefined type %s", token.tok_string);
+	if (!MET_type(field, token_global.tok_string, &type)) {
+		sprintf(s, "undefined type %s", token_global.tok_string);
 		PAR_error(s);
 	}
 
@@ -3004,7 +3004,7 @@ static act* par_variable()
 //  see if this variable token is the first thing in a statement.
 //  
 
-	const USHORT first = token.tok_first;
+	const USHORT first = token_global.tok_first;
 	gpre_ctx* context;
 	gpre_fld* field = EXP_field(&context);
 
@@ -3147,23 +3147,23 @@ static bool terminator()
 //  For C, right brace ("}") must also be a terminator. 
 
 	if (sw_language == lang_c) {
-		if (MSC_match(KW_SEMI_COLON) || token.tok_keyword == KW_ELSE ||
-			token.tok_keyword == KW_ON_ERROR || token.tok_keyword == KW_R_BRACE)
+		if (MSC_match(KW_SEMI_COLON) || token_global.tok_keyword == KW_ELSE ||
+			token_global.tok_keyword == KW_ON_ERROR || token_global.tok_keyword == KW_R_BRACE)
 		{
 			return true;
 		}
 	}
 	else if (sw_language == lang_ada) {
-		if (MSC_match(KW_SEMI_COLON) || token.tok_keyword == KW_ELSE || 
-			token.tok_keyword == KW_ON_ERROR)
+		if (MSC_match(KW_SEMI_COLON) || token_global.tok_keyword == KW_ELSE || 
+			token_global.tok_keyword == KW_ON_ERROR)
 		{
 			return true;
 		}
 	}
 	else {
-		if (token.tok_keyword == KW_SEMI_COLON || token.tok_keyword == KW_ELSE ||
-			token.tok_keyword == KW_ON_ERROR ||
-			(sw_language == lang_cobol && token.tok_keyword == KW_DOT))
+		if (token_global.tok_keyword == KW_SEMI_COLON || token_global.tok_keyword == KW_ELSE ||
+			token_global.tok_keyword == KW_ON_ERROR ||
+			(sw_language == lang_cobol && token_global.tok_keyword == KW_DOT))
 		{
 			return true;
 		}

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.67 2004-05-09 05:47:59 robocop Exp $
+$Id: why.cpp,v 1.68 2004-05-12 19:37:23 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -5334,7 +5334,7 @@ static void event_ast(void* buffer_void,
 
 
 #ifndef REQUESTER
-static void exit_handler(event_t* why_event)
+static void exit_handler(event_t* why_eventL)
 {
 /**************************************
  *
@@ -5348,7 +5348,7 @@ static void exit_handler(event_t* why_event)
  **************************************/
 
 #ifdef WIN_NT
-	CloseHandle((void *) why_event->event_handle);
+	CloseHandle((void *) why_eventL->event_handle);
 #endif
 
 	why_initialized = FALSE;

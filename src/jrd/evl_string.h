@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.11 2004-05-03 21:43:56 brodsom Exp $
+ *  $Id: evl_string.h,v 1.12 2004-05-12 19:37:17 brodsom Exp $
  *
  */
 
@@ -364,37 +364,37 @@ LikeEvaluator<CharType>::LikeEvaluator(
 	// optimize out piSkipMore nodes
 	bool directMatch = true;
 	for (int i = 0; i < patternItems.getCount();) {
-		PatternItem *item = &patternItems[i];
-		switch (item->type) {
+		PatternItem *itemL = &patternItems[i];
+		switch (itemL->type) {
 		case piEscapedString: {
-			const CharType *curPos = item->str.data;
-			item->str.data = 
-				reinterpret_cast<CharType*>(alloc(item->str.length * sizeof(CharType)));
-			for (SSHORT j = 0; j < item->str.length; j++) {
+			const CharType *curPos = itemL->str.data;
+			itemL->str.data = 
+				reinterpret_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
+			for (SSHORT j = 0; j < itemL->str.length; j++) {
 				if (*curPos == escape_char) 
 					curPos++;
-				item->str.data[j] = *curPos++;
+				itemL->str.data[j] = *curPos++;
 			}
-			item->type = piSearch;			
+			itemL->type = piSearch;			
 			// Note: fall into
 			}
 		case piSearch:
 			if (directMatch)
-				item->type = piDirectMatch;
+				itemL->type = piDirectMatch;
 			else {
-				item->str.kmpNext = 
-					reinterpret_cast<SSHORT*>(alloc((item->str.length + 1) * sizeof(SSHORT)));
-				preKmp<CharType>(item->str.data, item->str.length, item->str.kmpNext);
+				itemL->str.kmpNext = 
+					reinterpret_cast<SSHORT*>(alloc((itemL->str.length + 1) * sizeof(SSHORT)));
+				preKmp<CharType>(itemL->str.data, itemL->str.length, itemL->str.kmpNext);
 				directMatch = true;
 			}
 			break;
 		case piSkipMore:
 			// Optimize out piSkipMore
 			directMatch = false;
-			if (item->skipCount != 0) {
+			if (itemL->skipCount != 0) {
 				// Convert this node to SkipFixed if possible
-				item->type = piSkipFixed;
-				item->match_any = true;
+				itemL->type = piSkipFixed;
+				itemL->match_any = true;
 			}
 			else {
 				if (i > 0) {
@@ -409,8 +409,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 					continue;
 				}
 				// Our pattern is single %
-				item->type = piNone;
-				item->match_any = true;
+				itemL->type = piNone;
+				itemL->match_any = true;
 			}
 			break;
 		}

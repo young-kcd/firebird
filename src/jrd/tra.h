@@ -229,9 +229,9 @@ public:
     }
 	UndoItem() {
 	}
-	UndoItem(SLONG rec_number, Record* rec_data) {
-		this->rec_number = rec_number;
-		this->rec_data = rec_data;
+	UndoItem(SLONG rec_numberL, Record* rec_dataL) {
+		this->rec_number = rec_numberL;
+		this->rec_data = rec_dataL;
 	}
 };
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.61 2004-05-02 23:04:16 skidder Exp $
+ * $Id: gpre.h,v 1.62 2004-05-12 19:34:43 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -1463,7 +1463,7 @@ EXTERN gpre_req* requests;
 EXTERN gpre_lls* events;
 EXTERN FILE *out_file;
 EXTERN LANG_T sw_language;
-EXTERN int line, errors, warnings, fatals;
+EXTERN int line_global, errors_global, warnings_global, fatals_global;
 EXTERN act* global_functions;
 EXTERN dbd global_db_list[32];
 EXTERN USHORT global_db_count;

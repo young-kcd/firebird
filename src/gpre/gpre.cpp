@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.56 2004-04-28 22:05:56 brodsom Exp $
+//  $Id: gpre.cpp,v 1.57 2004-05-12 19:34:43 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
 	SSHORT c;
 #endif
 
-    errors = warnings = fatals = 0;
+    errors_global = warnings_global = fatals_global = 0;
 
 	bool use_lang_internal_gxx_output;
 
@@ -884,26 +884,26 @@ int main(int argc, char* argv[])
 
 	if (!sw_standard_out) {
 		fclose(out_file);
-		if (errors)
+		if (errors_global)
 			unlink(out_file_name);
 	}
 
-	if (errors || warnings) {
-		if (!errors)
+	if (errors_global || warnings_global) {
+		if (!errors_global)
 			fprintf(stderr, "No errors, ");
-		else if (errors == 1)
+		else if (errors_global == 1)
 			fprintf(stderr, "1 error, ");
 		else
-			fprintf(stderr, "%3d errors, ", errors);
-		if (!warnings)
+			fprintf(stderr, "%3d errors, ", errors_global);
+		if (!warnings_global)
 			fprintf(stderr, "no warnings\n");
-		else if (warnings == 1)
+		else if (warnings_global == 1)
 			fprintf(stderr, "1 warning\n");
 		else
-			fprintf(stderr, "%3d warnings\n", warnings);
+			fprintf(stderr, "%3d warnings\n", warnings_global);
 	}
 
-	CPR_exit((errors) ? FINI_ERROR : FINI_OK);
+	CPR_exit((errors_global) ? FINI_ERROR : FINI_OK);
 	return 0;
 
 }
@@ -916,7 +916,7 @@ int main(int argc, char* argv[])
 
 void CPR_abort()
 {
-	++fatals;
+	++fatals_global;
 	throw std::exception();
 }
 
@@ -957,7 +957,7 @@ void CPR_bugcheck(const TEXT* string)
 
 void CPR_end_text(gpre_txt* text)
 {
-	text->txt_length = (USHORT) (token.tok_position - text->txt_position - 1);
+	text->txt_length = (USHORT) (token_global.tok_position - text->txt_position - 1);
 }
 
 
@@ -968,8 +968,8 @@ void CPR_end_text(gpre_txt* text)
 
 int CPR_error(const TEXT* string)
 {
-	fprintf(stderr, "(E) %s:%d: %s\n", file_name, line + 1, string);
-	errors++;
+	fprintf(stderr, "(E) %s:%d: %s\n", file_name, line_global + 1, string);
+	errors_global++;
 
 	return 0;
 }
@@ -1009,8 +1009,8 @@ void CPR_exit( int stat)
 
 void CPR_warn(const TEXT* string)
 {
-	fprintf(stderr, "(W) %s:%d: %s\n", file_name, line + 1, string);
-	warnings++;
+	fprintf(stderr, "(W) %s:%d: %s\n", file_name, line_global + 1, string);
+	warnings_global++;
 }
 
 
@@ -1030,12 +1030,12 @@ TOK CPR_eol_token()
 
 //  Save the information from the previous token 
 
-	prior_token = token;
+	prior_token = token_global;
 	prior_token.tok_position = last_position;
 
 	last_position =
-		token.tok_position + token.tok_length + token.tok_white_space - 1;
-	TEXT* p = token.tok_string;
+		token_global.tok_position + token_global.tok_length + token_global.tok_white_space - 1;
+	TEXT* p = token_global.tok_string;
 	SSHORT num_chars = 0;
 
 //  skip spaces 
@@ -1070,8 +1070,8 @@ TOK CPR_eol_token()
 	}
 
 	if (c == EOF) {
-		token.tok_symbol = NULL;
-		token.tok_keyword = KW_none;
+		token_global.tok_symbol = NULL;
+		token_global.tok_keyword = KW_none;
 		return NULL;
 	}
 
@@ -1088,19 +1088,19 @@ TOK CPR_eol_token()
 //  NOTE: the fact that the length of this token is set to 0, is used as an
 //  indicator elsewhere that it was a faked token 
 
-	token.tok_string[0] = ';';
-	token.tok_string[1] = 0;
-	token.tok_type = tok_punct;
-	token.tok_length = 0;
-	token.tok_white_space = 0;
-	token.tok_position = position;
-	token.tok_symbol = HSH_lookup(token.tok_string);
-	token.tok_keyword = (KWWORDS) token.tok_symbol->sym_keyword;
+	token_global.tok_string[0] = ';';
+	token_global.tok_string[1] = 0;
+	token_global.tok_type = tok_punct;
+	token_global.tok_length = 0;
+	token_global.tok_white_space = 0;
+	token_global.tok_position = position;
+	token_global.tok_symbol = HSH_lookup(token_global.tok_string);
+	token_global.tok_keyword = (KWWORDS) token_global.tok_symbol->sym_keyword;
 
 	if (sw_trace)
-		puts(token.tok_string);
+		puts(token_global.tok_string);
 
-	return &token;
+	return &token_global;
 }
 
 
@@ -1174,7 +1174,7 @@ void CPR_raw_read()
 			*p++ = (SCHAR) c;
 
 		if (c == '\n') { // Changed assignment to comparison. Probable archaic bug
-			line++;
+			line_global++;
 			line_position = 0;
 			if (!continue_char)
 				return;
@@ -1183,7 +1183,7 @@ void CPR_raw_read()
 		else {
 			line_position++;
 			if (classes[c] != CHR_WHITE)
-				continue_char = (token.tok_keyword == KW_AMPERSAND);
+				continue_char = (token_global.tok_keyword == KW_AMPERSAND);
 		}
 	}
 }
@@ -1198,7 +1198,7 @@ void CPR_s_error(const TEXT* string)
 {
 	TEXT s[512];
 
-	sprintf(s, "expected %s, encountered \"%s\"", string, token.tok_string);
+	sprintf(s, "expected %s, encountered \"%s\"", string, token_global.tok_string);
 	CPR_error(s);
 	PAR_unwind();
 }
@@ -1212,7 +1212,7 @@ void CPR_s_error(const TEXT* string)
 gpre_txt* CPR_start_text()
 {
 	gpre_txt* text = (gpre_txt*) MSC_alloc(TXT_LEN);
-	text->txt_position = token.tok_position - 1;
+	text->txt_position = token_global.tok_position - 1;
 
 	return text;
 }
@@ -1395,7 +1395,7 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	MET_fini(NULL);
 	PAR_fini();
 
-	if (errors)
+	if (errors_global)
 		return end_position;
 
 	for (gpre_req* request = requests; request; request = request->req_next)
@@ -1406,7 +1406,7 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	fseek(input_file, start_position, 0);
 	input_char = input_buffer;
 
-	if (!errors)
+	if (!errors_global)
 		pass2(start_position);
 
 	return end_position;
@@ -1421,7 +1421,7 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 //		new extension is given, use it.
 //  
 
-static bool file_rename(TEXT* file_name,
+static bool file_rename(TEXT* file_nameL,
 						const TEXT* extension,
 						const TEXT* new_extension)
 {
@@ -1429,18 +1429,18 @@ static bool file_rename(TEXT* file_name,
 
 //  go to the end of the file name 
 
-	for (p = file_name; *p; p++);
+	for (p = file_nameL; *p; p++);
 
 	TEXT* terminator = p;
 
 //  back up to the last extension (if any) 
 
 #if defined(VMS)
-	while ((p != file_name) && (*p != '.') && (*p != ']'))
+	while ((p != file_nameL) && (*p != '.') && (*p != ']'))
 #elif defined(WIN_NT)
-	while ((p != file_name) && (*p != '.') && (*p != '/') && (*p != '\\'))
+	while ((p != file_nameL) && (*p != '.') && (*p != '/') && (*p != '\\'))
 #else
-	while ((p != file_name) && (*p != '.') && (*p != '/'))
+	while ((p != file_nameL) && (*p != '.') && (*p != '/'))
 #endif
 
 	--p;
@@ -1959,14 +1959,14 @@ static TOK get_token()
 
 //  Save the information from the previous token 
 
-	prior_token = token;
+	prior_token = token_global;
 	prior_token.tok_position = last_position;
 
 	last_position =
-		token.tok_position + token.tok_length + token.tok_white_space - 1;
-	int start_line = line;
+		token_global.tok_position + token_global.tok_length + token_global.tok_white_space - 1;
+	int start_line = line_global;
 	SLONG start_position = position;
-	token.tok_charset = NULL;
+	token_global.tok_charset = NULL;
 
 	SSHORT c = skip_white();
 
@@ -1989,32 +1989,32 @@ static TOK get_token()
 		}
 		if (sw_sql && line != start_line) {
 			return_char(c);
-			token.tok_string[0] = ';';
-			token.tok_string[1] = 0;
-			token.tok_type = tok_punct;
-			token.tok_length = 0;
-			token.tok_white_space = 0;
-			token.tok_position = start_position + 1;
-			token.tok_symbol = HSH_lookup(token.tok_string);
-			token.tok_keyword = (KWWORDS) token.tok_symbol->sym_keyword;
+			token_global.tok_string[0] = ';';
+			token_global.tok_string[1] = 0;
+			token_global.tok_type = tok_punct;
+			token_global.tok_length = 0;
+			token_global.tok_white_space = 0;
+			token_global.tok_position = start_position + 1;
+			token_global.tok_symbol = HSH_lookup(token_global.tok_string);
+			token_global.tok_keyword = (KWWORDS) token_global.tok_symbol->sym_keyword;
 			return &token;
 		}
 	}
 #endif
 //  Get token rolling 
 
-	p = token.tok_string;
-	end = p + sizeof(token.tok_string);
+	p = token_global.tok_string;
+	end = p + sizeof(token_global.tok_string);
 	*p++ = (TEXT) c;
 
 	if (c == EOF) {
-		token.tok_symbol = NULL;
-		token.tok_keyword = KW_none;
+		token_global.tok_symbol = NULL;
+		token_global.tok_keyword = KW_none;
 		return NULL;
 	}
 
-	token.tok_position = position;
-	token.tok_white_space = 0;
+	token_global.tok_position = position;
+	token_global.tok_white_space = 0;
 	UCHAR char_class = classes[c];
 
 #ifdef GPRE_ADA
@@ -2038,7 +2038,7 @@ static TOK get_token()
 			}
 		}
 		return_char(c);
-		token.tok_type = tok_introducer;
+		token_global.tok_type = tok_introducer;
 	}
 	else if (char_class & CHR_LETTER) {
 		while (true) {
@@ -2052,7 +2052,7 @@ static TOK get_token()
 				*p++ = '_';
 		}
 		return_char(c);
-		token.tok_type = tok_ident;
+		token_global.tok_type = tok_ident;
 	}
 	else if (char_class & CHR_DIGIT) {
 #ifdef GPRE_FORTRAN
@@ -2063,7 +2063,7 @@ static TOK get_token()
 			*p++ = (TEXT) c;
 		if (label) {
 			*p = 0;
-			remember_label(token.tok_string);
+			remember_label(token_global.tok_string);
 		}
 		if (c == '.') {
 			*p++ = (TEXT) c;
@@ -2081,10 +2081,10 @@ static TOK get_token()
 				*p++ = (TEXT) c;
 		}
 		return_char(c);
-		token.tok_type = tok_number;
+		token_global.tok_type = tok_number;
 	}
 	else if ((char_class & CHR_QUOTE) || (char_class & CHR_DBLQUOTE)) {
-		token.tok_type = (char_class & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
+		token_global.tok_type = (char_class & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
 		for (;;) {
 			next = nextchar();
 			if (sw_language == lang_cobol && sw_ansi && next == '\n') {
@@ -2101,7 +2101,7 @@ static TOK get_token()
 						break;
 					}
 					next = nextchar();
-					token.tok_white_space += line_position - 1;
+					token_global.tok_white_space += line_position - 1;
 				}
 				else {
 					CPR_error("unterminated quoted string");
@@ -2115,9 +2115,9 @@ static TOK get_token()
 				/*  Decrement, then increment line counter, for accuracy of 
 				   the error message for an unterminated quoted string. */
 
-				line--;
+				line_global--;
 				CPR_error("unterminated quoted string");
-				line++;
+				line_global++;
 				break;
 			}
 
@@ -2129,7 +2129,7 @@ static TOK get_token()
 			{
 				peek = nextchar();
 				if (peek == '\n') {
-					token.tok_white_space += 2;
+					token_global.tok_white_space += 2;
 				}
 				else if (p < end) {
 					*p++ = (TEXT) next;
@@ -2150,7 +2150,7 @@ static TOK get_token()
 					break;
 				}
 				else
-					token.tok_white_space++;
+					token_global.tok_white_space++;
 			}
 		}
 	}
@@ -2170,67 +2170,67 @@ static TOK get_token()
 					*p++ = (TEXT) c;
 			}
 			return_char(c);
-			token.tok_type = tok_number;
+			token_global.tok_type = tok_number;
 		}
 		else {
 			return_char(c);
-			token.tok_type = tok_punct;
+			token_global.tok_type = tok_punct;
 			*p++ = nextchar();
 			*p = 0;
-			if (!HSH_lookup(token.tok_string))
+			if (!HSH_lookup(token_global.tok_string))
 				return_char(*--p);
 		}
 	}
 	else {
-		token.tok_type = tok_punct;
+		token_global.tok_type = tok_punct;
 		*p++ = nextchar();
 		*p = 0;
-		if (!HSH_lookup(token.tok_string))
+		if (!HSH_lookup(token_global.tok_string))
 			return_char(*--p);
 	}
 
 	gpre_sym* symbol;
 
-	token.tok_length = p - token.tok_string;
+	token_global.tok_length = p - token_global.tok_string;
 	*p++ = 0;
-	if (isQuoted(token.tok_type)) {
-		strip_quotes(token);
+	if (isQuoted(token_global.tok_type)) {
+		strip_quotes(token_global);
 	/** If the dialect is 1 then anything that is quoted is
 	a string. Don not lookup in the hash table to prevent 
 	parsing confusion. 
     **/
 		if (sw_sql_dialect != SQL_DIALECT_V5)
-			token.tok_symbol = symbol = HSH_lookup(token.tok_string);
+			token_global.tok_symbol = symbol = HSH_lookup(token_global.tok_string);
 		else
-			token.tok_symbol = symbol = NULL;
+			token_global.tok_symbol = symbol = NULL;
 		if (symbol && symbol->sym_type == SYM_keyword)
-			token.tok_keyword = (KWWORDS) symbol->sym_keyword;
+			token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
 		else
-			token.tok_keyword = KW_none;
+			token_global.tok_keyword = KW_none;
 	}
 	else if (sw_case) {
 		if (!override_case) {
-			token.tok_symbol = symbol = HSH_lookup2(token.tok_string);
+			token_global.tok_symbol = symbol = HSH_lookup2(token_global.tok_string);
 			if (symbol && symbol->sym_type == SYM_keyword)
-				token.tok_keyword = (KWWORDS) symbol->sym_keyword;
+				token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
 			else
-				token.tok_keyword = KW_none;
+				token_global.tok_keyword = KW_none;
 		}
 		else {
-			token.tok_symbol = symbol = HSH_lookup(token.tok_string);
+			token_global.tok_symbol = symbol = HSH_lookup(token_global.tok_string);
 			if (symbol && symbol->sym_type == SYM_keyword)
-				token.tok_keyword = (KWWORDS) symbol->sym_keyword;
+				token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
 			else
-				token.tok_keyword = KW_none;
+				token_global.tok_keyword = KW_none;
 			override_case = false;
 		}
 	}
 	else {
-		token.tok_symbol = symbol = HSH_lookup(token.tok_string);
+		token_global.tok_symbol = symbol = HSH_lookup(token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
-			token.tok_keyword = (KWWORDS) symbol->sym_keyword;
+			token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
 		else
-			token.tok_keyword = KW_none;
+			token_global.tok_keyword = KW_none;
 	}
 
 // ** Take care of GDML context variables. Context variables are inserted 
@@ -2240,24 +2240,24 @@ static TOK get_token()
 //IF symbol is null AND it is not a quoted string AND -e switch was specified
 //THEN search again using HSH_lookup2().
 //*  
-	if ((token.tok_symbol == NULL) && (!isQuoted(token.tok_type)) && sw_case) {
-		token.tok_symbol = symbol = HSH_lookup2(token.tok_string);
+	if ((token_global.tok_symbol == NULL) && (!isQuoted(token_global.tok_type)) && sw_case) {
+		token_global.tok_symbol = symbol = HSH_lookup2(token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
-			token.tok_keyword = (KWWORDS) symbol->sym_keyword;
+			token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
 		else
-			token.tok_keyword = KW_none;
+			token_global.tok_keyword = KW_none;
 	}
 
 //  for FORTRAN, make note of the first token in a statement 
 
 	fb_assert(first_position <= MAX_USHORT);
-	token.tok_first = (USHORT) first_position;
+	token_global.tok_first = (USHORT) first_position;
 	first_position = FALSE;
 
 	if (sw_trace)
-		puts(token.tok_string);
+		puts(token_global.tok_string);
 
-	return &token;
+	return &token_global;
 }
 
 
@@ -2273,7 +2273,7 @@ static int nextchar()
 	line_position++;
 	const SSHORT c = get_char(input_file);
 	if (c == '\n') {
-		line++;
+		line_global++;
 		prior_line_position = line_position;
 		line_position = 0;
 	}
@@ -2343,9 +2343,9 @@ static SLONG pass1(const TEXT* base_directory)
 
 	while (CPR_token())
 	{
-		while (token.tok_symbol)
+		while (token_global.tok_symbol)
 		{
-			const SLONG start = token.tok_position;
+			const SLONG start = token_global.tok_position;
 			act* action = PAR_action(base_directory);
 			if (action)
 			{
@@ -2397,8 +2397,8 @@ static SLONG pass1(const TEXT* base_directory)
 					return last_position;
 				}
 
-				if (!token.tok_length &&
-					((int) token.tok_keyword == (int) KW_SEMI_COLON))
+				if (!token_global.tok_length &&
+					((int) token_global.tok_keyword == (int) KW_SEMI_COLON))
 				{
 					break;
 				}
@@ -2723,7 +2723,7 @@ static void return_char( SSHORT c)
 //  note putting back a new line results in incorrect line_position value 
 
 	if (c == '\n') {
-		--line;
+		--line_global;
 	}
 
 	*input_char++ = (TEXT) c;

@@ -1211,20 +1211,20 @@ int API_ROUTINE gds__msg_close(void *handle)
  *
  **************************************/
 
-	gds_msg* message = reinterpret_cast<gds_msg*>(handle);
+	gds_msg* messageL = reinterpret_cast<gds_msg*>(handle);
 
-	if (!message) {
+	if (!messageL) {
 		if (!global_default_msg) {
 			return 0;
 		}
-		message = global_default_msg;
+		messageL = global_default_msg;
 	}
 
 	global_default_msg = NULL;
 
-	const int fd = message->msg_file;
+	const int fd = messageL->msg_file;
 
-	FREE_LIB_MEMORY(message);
+	FREE_LIB_MEMORY(messageL);
 
 	if (fd <= 0)
 		return 0;
@@ -1332,14 +1332,14 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
  **************************************/
 // Handle default message file
 	int status = -1;
-	gds_msg* message;
-	if (!(message = (GDS_MSG) handle) && !(message = global_default_msg)) {
+	gds_msg* messageL;
+	if (!(messageL = (GDS_MSG) handle) && !(messageL = global_default_msg)) {
 		/* Try environment variable setting first */
 
 		TEXT* p = getenv("ISC_MSGS");
 		if (p == NULL ||
 			(status =
-			 gds__msg_open(reinterpret_cast<void**>(&message), p)))
+			 gds__msg_open(reinterpret_cast<void**>(&messageL), p)))
 		{
 			TEXT translated_msg_file[sizeof(MSG_FILE_LANG) + LOCALE_MAX + 1];
 
@@ -1358,7 +1358,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 				sprintf(translated_msg_file, MSG_FILE_LANG, p);
 				gds__prefix_msg(msg_file, translated_msg_file);
 				status =
-					gds__msg_open(reinterpret_cast<void**>(&message),
+					gds__msg_open(reinterpret_cast<void**>(&messageL),
 								  msg_file);
 			}
 			else
@@ -1368,7 +1368,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 				gds__prefix_msg(msg_file, MSG_FILE);
 				status =
-					gds__msg_open(reinterpret_cast<void**>(&message),
+					gds__msg_open(reinterpret_cast<void**>(&messageL),
 								  msg_file);
 			}
 			gds__free((SLONG *) msg_file);
@@ -1377,27 +1377,27 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		if (status)
 			return status;
 
-		global_default_msg = message;
+		global_default_msg = messageL;
 	}
 
 /* Search down index levels to the leaf.  If we get lost, punt */
 
 	const ULONG code = MSG_NUMBER(facility, number);
 	const msgnod* const end = 
-		(MSGNOD) ((SCHAR *) message->msg_bucket + message->msg_bucket_size);
-	ULONG position = message->msg_top_tree;
+		(MSGNOD) ((SCHAR *) messageL->msg_bucket + messageL->msg_bucket_size);
+	ULONG position = messageL->msg_top_tree;
 
 	status = 0;
 	for (USHORT n = 1; !status; n++) {
-		if (lseek(message->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
+		if (lseek(messageL->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
 			status = -6;
-		else if (read(message->msg_file, message->msg_bucket,
-					  message->msg_bucket_size) < 0)
+		else if (read(messageL->msg_file, messageL->msg_bucket,
+					  messageL->msg_bucket_size) < 0)
 			status = -7;
-		else if (n == message->msg_levels)
+		else if (n == messageL->msg_levels)
 			break;
 		else {
-			for (const msgnod* node = (MSGNOD) message->msg_bucket; !status; node++) {
+			for (const msgnod* node = (MSGNOD) messageL->msg_bucket; !status; node++) {
 				if (node >= end) {
 					status = -8;
 					break;
@@ -1412,7 +1412,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 	if (!status) {
 		/* Search the leaf */
-		for (const msgrec* leaf = (MSGREC) message->msg_bucket; !status;
+		for (const msgrec* leaf = (MSGREC) messageL->msg_bucket; !status;
 			 leaf = NEXT_LEAF(leaf)) 
 		{
 			if (leaf >= (MSGREC) end || leaf->msgrec_code > code) {
@@ -1469,27 +1469,27 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 		return -4;
 	}
 
-	gds_msg* message =
+	gds_msg* messageL =
 		(GDS_MSG) ALLOC_LIB_MEMORY((SLONG) sizeof(gds_msg) +
 							   header.msghdr_bucket_size - 1);
 /* FREE: in gds__msg_close */
-	if (!message) {				/* NOMEM: return non-open error */
+	if (!messageL) {				/* NOMEM: return non-open error */
 		close(n);
 		return -5;
 	}
 
 #ifdef DEBUG_GDS_ALLOC
 /* This will only be freed if the client closes the message file for us */
-	gds_alloc_flag_unfreed((void *) message);
+	gds_alloc_flag_unfreed((void *) messageL);
 #endif
 
-	message->msg_file = n;
-	message->msg_bucket_size = header.msghdr_bucket_size;
-	message->msg_levels = header.msghdr_levels;
-	message->msg_top_tree = header.msghdr_top_tree;
+	messageL->msg_file = n;
+	messageL->msg_bucket_size = header.msghdr_bucket_size;
+	messageL->msg_levels = header.msghdr_levels;
+	messageL->msg_top_tree = header.msghdr_top_tree;
 
 
-	*handle = message;
+	*handle = messageL;
 
 	return 0;
 }
@@ -1976,7 +1976,7 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 
 SLONG API_ROUTINE gds__ftof(const SCHAR* string,
 							const USHORT length1,
-							SCHAR* field,
+							SCHAR* fieldL,
 							const USHORT length2)
 {
 /**************************************
@@ -1999,12 +1999,12 @@ SLONG API_ROUTINE gds__ftof(const SCHAR* string,
 	USHORT l = MIN(length1, length2);
 	if (l > 0)
 		do {
-			*field++ = *string++;
+			*fieldL++ = *string++;
 		} while (--l);
 
 	if (fill > 0)
 		do {
-			*field++ = ' ';
+			*fieldL++ = ' ';
 		} while (--fill);
 
 	return 0;
@@ -2564,7 +2564,7 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
 
 void API_ROUTINE gds__vtof(
 						   const SCHAR* string,
-						   SCHAR* field, USHORT length)
+						   SCHAR* fieldL, USHORT length)
 {
 /**************************************
  *
@@ -2580,19 +2580,19 @@ void API_ROUTINE gds__vtof(
  **************************************/
 
 	while (*string) {
-		*field++ = *string++;
+		*fieldL++ = *string++;
 		if (--length <= 0)
 			return;
 	}
 
 	if (length > 0)
 		do {
-			*field++ = ' ';
+			*fieldL++ = ' ';
 		} while (--length);
 }
 
 
-void API_ROUTINE gds__vtov(const SCHAR* string, char* field, SSHORT length)
+void API_ROUTINE gds__vtov(const SCHAR* string, char* fieldL, SSHORT length)
 {
 /**************************************
  *
@@ -2610,9 +2610,9 @@ void API_ROUTINE gds__vtov(const SCHAR* string, char* field, SSHORT length)
 
 	--length;
 
-	while ((*field++ = *string++) != 0)
+	while ((*fieldL++ = *string++) != 0)
 		if (--length <= 0) {
-			*field = 0;
+			*fieldL = 0;
 			return;
 		}
 }

@@ -1884,8 +1884,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 				TRA_commit(tdbb, transaction, false);
 			}
 		}
-		catch (const std::exception& ex) {
-			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		catch (const std::exception& ex2) {
+			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex2);
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;

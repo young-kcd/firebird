@@ -1423,12 +1423,12 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 			}
 
 			if (!port->port_statement->rsr_buffer) {
-				REM_MSG message = (REM_MSG) ALLOCV(type_msg, 0);
-				port->port_statement->rsr_buffer = message;
-				port->port_statement->rsr_message = message;
-				message->msg_next = message;
+				REM_MSG message2 = (REM_MSG) ALLOCV(type_msg, 0);
+				port->port_statement->rsr_buffer = message2;
+				port->port_statement->rsr_message = message2;
+				message2->msg_next = message2;
 #ifdef SCROLLABLE_CURSORS
-				message->msg_prior = message;
+				message2->msg_prior = message2;
 #endif
 				port->port_statement->rsr_fmt_length = 0;
 			}

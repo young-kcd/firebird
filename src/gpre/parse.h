@@ -73,7 +73,7 @@ inline bool isQuoted(const int typ)
 #define EXTERN	extern
 #endif
 
-EXTERN tok token;
+EXTERN tok token_global;
 
 #undef EXTERN
 

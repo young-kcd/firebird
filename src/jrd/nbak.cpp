@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.30 2004-04-30 22:45:38 brodsom Exp $
+ *  $Id: nbak.cpp,v 1.31 2004-05-12 19:37:23 brodsom Exp $
  *
  */
 
@@ -720,11 +720,11 @@ void BackupManager::end_backup(bool recover) {
 		
 		if (all.getFirst()) {
 			do {
-				WIN window(all.current().db_page);
-				Ods::pag* page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
+				WIN window2(all.current().db_page);
+				Ods::pag* page = CCH_FETCH(tdbb, &window2, LCK_write, pag_undefined);
 				if (page->pag_scn != current_scn)
-					CCH_MARK(tdbb, &window);
-				CCH_RELEASE(tdbb, &window);
+					CCH_MARK(tdbb, &window2);
+				CCH_RELEASE(tdbb, &window2);
 			} while (all.getNext());
 		}
 		CCH_flush(tdbb, FLUSH_ALL, 0); // Really write changes to main database file

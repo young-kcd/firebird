@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.43 2004-05-02 23:04:17 skidder Exp $
+//	$Id: sql.cpp,v 1.44 2004-05-12 19:34:44 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -150,9 +150,9 @@ static swe* global_whenever_list;
 static inline bool end_of_command(void)
 {
 	return ((sw_language != lang_cobol) &&
-		((int) token.tok_keyword == (int) KW_SEMI_COLON)) ||
+		((int) token_global.tok_keyword == (int) KW_SEMI_COLON)) ||
 		 ((sw_language == lang_cobol) &&
-		 ((int) token.tok_keyword == (int) KW_END_EXEC));
+		 ((int) token_global.tok_keyword == (int) KW_END_EXEC));
 }
 
 static inline bool range_short_integer(const SLONG x)
@@ -176,7 +176,7 @@ act* SQL_action(const TEXT* base_directory)
 	enum kwwords keyword;
 
 
-	switch (keyword = token.tok_keyword) {
+	switch (keyword = token_global.tok_keyword) {
 	case KW_ALTER:
 	case KW_COMMENT:
 	case KW_CONNECT:
@@ -485,9 +485,9 @@ void SQL_par_field_collate( gpre_req* request, gpre_fld* field)
 			(field->fld_dtype != dtype_cstring) &&
 			(field->fld_dtype != dtype_varying))
 				PAR_error("COLLATE applies only to character columns");
-		if (token.tok_type != tok_ident)
+		if (token_global.tok_type != tok_ident)
 			CPR_s_error("<collation name>");
-		gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_collate);
+		gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_collate);
 		if (!symbol)
 			PAR_error("The named COLLATION was not found");
 		field->fld_collate = (INTLSYM) symbol->sym_object;
@@ -528,7 +528,7 @@ void SQL_par_field_dtype(gpre_req* request,
 	char s[ERROR_LENGTH];
 	bool sql_date = false;
 
-	switch (keyword = token.tok_keyword) {
+	switch (keyword = token_global.tok_keyword) {
 	case KW_SMALLINT:
 	case KW_INT:
 	case KW_INTEGER:
@@ -566,7 +566,7 @@ void SQL_par_field_dtype(gpre_req* request,
 		if (sw_sql_dialect == 1)
 			CPR_s_error("<data type>");
 		PAR_get_token();
-		if (token.tok_keyword == KW_DATE)
+		if (token_global.tok_keyword == KW_DATE)
 			PAR_get_token();
 		else
 			CPR_s_error("<data type>");
@@ -626,14 +626,14 @@ void SQL_par_field_dtype(gpre_req* request,
 		break;
 
 	case KW_LONG:
-		if (!(token.tok_keyword == KW_FLOAT))
+		if (!(token_global.tok_keyword == KW_FLOAT))
 			CPR_s_error("FLOAT");
 		PAR_get_token();
 		field->fld_dtype = dtype_double;
 		break;
 
 	case KW_DOUBLE:
-		if (!(token.tok_keyword == KW_PRECISION))
+		if (!(token_global.tok_keyword == KW_PRECISION))
 			CPR_s_error("PRECISION");
 		PAR_get_token();
 		field->fld_dtype = dtype_double;
@@ -659,7 +659,7 @@ void SQL_par_field_dtype(gpre_req* request,
 		break;
 
 	case KW_NATIONAL:
-		if (!(token.tok_keyword == KW_CHAR))
+		if (!(token_global.tok_keyword == KW_CHAR))
 			CPR_s_error("CHARACTER");
 		PAR_get_token();
 		field->fld_flags |= FLD_national;
@@ -763,7 +763,7 @@ void SQL_par_field_dtype(gpre_req* request,
 	}
 
 	if (MSC_match(KW_CHAR)) {
-		gpre_sym* symbol;
+		gpre_sym* symbol2;
 		if ((field->fld_dtype != dtype_text) &&
 			(field->fld_dtype != dtype_cstring) &&
 			(field->fld_dtype != dtype_varying) &&
@@ -783,11 +783,11 @@ void SQL_par_field_dtype(gpre_req* request,
 
 		if (!MSC_match(KW_SET))
 			CPR_s_error("SET");
-		if (token.tok_type != tok_ident)
+		if (token_global.tok_type != tok_ident)
 			CPR_s_error("<character set name>");
-		if (!(symbol = MSC_find_symbol(token.tok_symbol, SYM_charset)))
+		if (!(symbol2 = MSC_find_symbol(token_global.tok_symbol, SYM_charset)))
 			PAR_error("The named CHARACTER SET was not found");
-		field->fld_character_set = (INTLSYM) symbol->sym_object;
+		field->fld_character_set = (INTLSYM) symbol2->sym_object;
 		PAR_get_token();
 	}
 
@@ -980,7 +980,7 @@ void SQL_relation_name(TEXT * r_name,
 	TEXT* t_str = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<Table name>", t_str);
 
-	gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_database);
+	gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_database);
 	if (symbol) {
 		strcpy(db_name, symbol->sym_name);
 		PAR_get_token();
@@ -989,20 +989,20 @@ void SQL_relation_name(TEXT * r_name,
 	}
 
 	SQL_resolve_identifier("<Table name>", t_str);
-	if (token.tok_length > NAME_SIZE)
+	if (token_global.tok_length > NAME_SIZE)
 		PAR_error("Table, owner, or database name too long");
 
-	strcpy(r_name, token.tok_string);
+	strcpy(r_name, token_global.tok_string);
 	PAR_get_token();
 
 	if (MSC_match(KW_DOT)) {
 		// the table name was really a owner specifier 
 
-		if (token.tok_length > NAME_SIZE)
+		if (token_global.tok_length > NAME_SIZE)
 			PAR_error("TABLE name too long");
 		strcpy(owner_name, r_name);
 		SQL_resolve_identifier("<Table name>", t_str);
-		strcpy(r_name, token.tok_string);
+		strcpy(r_name, token_global.tok_string);
 		PAR_get_token();
 	}
 }
@@ -1016,8 +1016,8 @@ void SQL_relation_name(TEXT * r_name,
 TEXT *SQL_var_or_string(bool string_only)
 {
 
-	if ((token.tok_type != tok_sglquoted && sw_sql_dialect == 3) ||
-		(!isQuoted(token.tok_type) && sw_sql_dialect == 1))
+	if ((token_global.tok_type != tok_sglquoted && sw_sql_dialect == 3) ||
+		(!isQuoted(token_global.tok_type) && sw_sql_dialect == 1))
 	{
 		if (string_only)
 			CPR_s_error("<quoted string>");
@@ -1036,7 +1036,7 @@ TEXT *SQL_var_or_string(bool string_only)
 static act* act_alter(void)
 {
 
-	switch (token.tok_keyword) {
+	switch (token_global.tok_keyword) {
 
 	case KW_DATABASE:
 	case KW_SCHEMA:
@@ -1206,7 +1206,7 @@ static act* act_alter_domain(void)
 
 	while (!end_of_command()) {
 		if (MSC_match(KW_SET)) {
-			if (token.tok_keyword == KW_DEFAULT) {
+			if (token_global.tok_keyword == KW_DEFAULT) {
 				field->fld_default_source = CPR_start_text();
 				PAR_get_token();
 			}
@@ -1219,7 +1219,7 @@ static act* act_alter_domain(void)
 				field->fld_default_value = MSC_node(nod_null, 0);
 			else {
 				if (MSC_match(KW_MINUS)) {
-					if (token.tok_type != tok_number)
+					if (token_global.tok_type != tok_number)
 						CPR_s_error("<number>");
 
 					GPRE_NOD literal_node = EXP_literal();
@@ -1233,7 +1233,7 @@ static act* act_alter_domain(void)
 		}
 		else if (MSC_match(KW_ADD)) {
 			MSC_match(KW_CONSTRAINT);
-			if (token.tok_keyword == KW_CHECK) {
+			if (token_global.tok_keyword == KW_CHECK) {
 				cnstrt* cnstrt_str = par_field_constraint(request, field, 0);
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
@@ -1279,7 +1279,7 @@ static act* act_alter_index(void)
 
 	gpre_req* request = MSC_request(REQ_ddl);
 
-	if (token.tok_length > NAME_SIZE)
+	if (token_global.tok_length > NAME_SIZE)
 		PAR_error("Index name too long");
 
 	SQL_resolve_identifier("<column name>", i_name);
@@ -1347,7 +1347,7 @@ static act* act_alter_table(void)
 
 	while (!end_of_command()) {
 		if (MSC_match(KW_ADD)) {
-			switch (token.tok_keyword) {
+			switch (token_global.tok_keyword) {
 			case KW_CONSTRAINT:
 			case KW_PRIMARY:
 			case KW_UNIQUE:
@@ -1365,14 +1365,14 @@ static act* act_alter_table(void)
 			}
 		}
 		else if (MSC_match(KW_DROP)) {
-			if (token.tok_keyword == KW_CONSTRAINT) {
+			if (token_global.tok_keyword == KW_CONSTRAINT) {
 				PAR_get_token();
 				cnstrt_str = (CNSTRT) MSC_alloc(CNSTRT_LEN);
 				cnstrt_str->cnstrt_flags |= CNSTRT_delete;
 				cnstrt_str->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 				SQL_resolve_identifier("<constraint name>",
 									   cnstrt_str->cnstrt_name->str_string);
-				if (token.tok_length > NAME_SIZE)
+				if (token_global.tok_length > NAME_SIZE)
 					PAR_error("Constraint name too long");
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
@@ -1393,11 +1393,11 @@ static act* act_alter_table(void)
 
 				   Option RESTRICT is default behaviour.
 				 */
-				if (token.tok_keyword == KW_CASCADE) {
+				if (token_global.tok_keyword == KW_CASCADE) {
 					PAR_error("Unsupported construct CASCADE");
 					PAR_get_token();
 				}
-				else if (token.tok_keyword == KW_RESTRICT) {
+				else if (token_global.tok_keyword == KW_RESTRICT) {
 					PAR_get_token();
 				}
 			}
@@ -1446,14 +1446,14 @@ static act* act_connect(void)
 			ready->rdy_next = (rdy*) action->act_object;
 			action->act_object = (REF) ready;
 
-			gpre_sym* symbol = token.tok_symbol;
+			gpre_sym* symbol = token_global.tok_symbol;
 			if (!symbol || symbol->sym_type != SYM_database) {
 				ready->rdy_filename = SQL_var_or_string(false);
 				if (MSC_match(KW_AS))
 					need_handle = true;
 			}
 
-			symbol = token.tok_symbol;
+			symbol = token_global.tok_symbol;
 			if (!symbol || symbol->sym_type != SYM_database) {
 				if (!isc_databases || isc_databases->dbb_next || need_handle) {
 					need_handle = false;
@@ -1602,8 +1602,8 @@ static act* act_create(void)
 	if (MSC_match(KW_VIEW))
 		return (act_create_view());
 
-	if (token.tok_keyword == KW_UNIQUE || token.tok_keyword == KW_ASCENDING ||
-		token.tok_keyword == KW_DESCENDING || token.tok_keyword == KW_INDEX) {
+	if (token_global.tok_keyword == KW_UNIQUE || token_global.tok_keyword == KW_ASCENDING ||
+		token_global.tok_keyword == KW_DESCENDING || token_global.tok_keyword == KW_INDEX) {
 		bool descending = false;
 		bool unique = false;
 		while (true) {
@@ -1666,11 +1666,11 @@ static act* act_create_database(void)
 //  get database name 
 
 	DBB db = NULL;
-	if (isQuoted(token.tok_type)) {
+	if (isQuoted(token_global.tok_type)) {
 		db = dup_dbb(isc_databases);
-		TEXT* string = (TEXT*) MSC_alloc(token.tok_length + 1);
+		TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
 		db->dbb_filename = string;
-		MSC_copy(token.tok_string, token.tok_length, string);
+		MSC_copy(token_global.tok_string, token_global.tok_length, string);
 		if (!isc_databases->dbb_filename)
 			isc_databases->dbb_filename = string;
 		PAR_get_token();
@@ -1745,7 +1745,7 @@ static act* act_create_domain(void)
 
 //  Check if default value was specified 
 
-	if (token.tok_keyword == KW_DEFAULT) {
+	if (token_global.tok_keyword == KW_DEFAULT) {
 		field->fld_default_source = CPR_start_text();
 		PAR_get_token();
 
@@ -1755,7 +1755,7 @@ static act* act_create_domain(void)
 			field->fld_default_value = MSC_node(nod_null, 0);
 		else {
 			if (MSC_match(KW_MINUS)) {
-				if (token.tok_type != tok_number)
+				if (token_global.tok_type != tok_number)
 					CPR_s_error("<number>");
 
 				GPRE_NOD literal_node = EXP_literal();
@@ -1775,7 +1775,7 @@ static act* act_create_domain(void)
 	bool in_constraints = true;
 
 	while (in_constraints) {
-		switch (token.tok_keyword) {
+		switch (token_global.tok_keyword) {
 		case KW_CONSTRAINT:
 		case KW_CHECK:
 		case KW_NOT:
@@ -1815,7 +1815,7 @@ static act* act_create_generator(void)
 	else
 		PAR_error("Can only CREATE GENERATOR in context of single database");
 
-	if (token.tok_length > NAME_SIZE)
+	if (token_global.tok_length > NAME_SIZE)
 		PAR_error("Generator name too long");
 
 
@@ -1843,7 +1843,7 @@ static act* act_create_index(bool dups,
 
 //  get index and table names and create index and relation blocks 
 
-	if (token.tok_length > NAME_SIZE)
+	if (token_global.tok_length > NAME_SIZE)
 		PAR_error("Index name too long");
 
 	SCHAR i_name[NAME_SIZE + 1];
@@ -1956,10 +1956,10 @@ static act* act_create_table(void)
 	if (MSC_match(KW_EXTERNAL)) {
 		TEXT* string = NULL;
 		MSC_match(KW_FILE);
-		if (isQuoted(token.tok_type)) {
-			string = (TEXT*) MSC_alloc(token.tok_length + 1);
+		if (isQuoted(token_global.tok_type)) {
+			string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
 			relation->rel_ext_file = string;
-			MSC_copy(token.tok_string, token.tok_length, string);
+			MSC_copy(token_global.tok_string, token_global.tok_length, string);
 			PAR_get_token();
 		}
 		else
@@ -1992,7 +1992,7 @@ static act* act_create_table(void)
 	cnstrt** cnstrt_ptr = &relation->rel_constraints;
 
 	for (;;) {
-		switch (token.tok_keyword) {
+		switch (token_global.tok_keyword) {
 		case KW_CONSTRAINT:
 		case KW_PRIMARY:
 		case KW_UNIQUE:
@@ -2139,7 +2139,7 @@ static act* act_d_section( enum act_t type)
 			CPR_s_error("NAMES ARE");
 		if (!MSC_match(KW_ARE))
 			CPR_s_error("NAMES ARE");
-		gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_charset);
+		gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_charset);
 		if (!symbol)
 			PAR_error("The named CHARACTER SET was not found");
 		if (module_lc_ctype && !strcmp(module_lc_ctype, symbol->sym_string))
@@ -2163,20 +2163,20 @@ static act* act_declare(void)
 	act* action = NULL;
 	DBB db = NULL;
 
-	if (token.tok_symbol && (token.tok_symbol->sym_type == SYM_database)) {
+	if (token_global.tok_symbol && (token_global.tok_symbol->sym_type == SYM_database)) {
 		// must be a database specifier in a DECLARE TABLE statement 
 
-		db = (DBB) token.tok_symbol->sym_object;
+		db = (DBB) token_global.tok_symbol->sym_object;
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error(". (period)");
 		gpre_sym* symbol = PAR_symbol(SYM_dummy);
-		if (token.tok_keyword != KW_TABLE)
+		if (token_global.tok_keyword != KW_TABLE)
 			CPR_s_error("TABLE");
 		return (act_declare_table(symbol, db));
 	}
 
-	switch (token.tok_keyword) {
+	switch (token_global.tok_keyword) {
 	case KW_FILTER:
 		return (act_declare_filter());
 		break;
@@ -2197,10 +2197,10 @@ static act* act_declare(void)
 
 	TEXT t_str[132];  // CVC: is it always enough?
 	SQL_resolve_identifier("<Cursor Name>", t_str);
-	if (token.tok_type == tok_dblquoted)
+	if (token_global.tok_type == tok_dblquoted)
 		delimited = true;
 	else {
-		gpre_sym* symb = HSH_lookup2(token.tok_string);
+		gpre_sym* symb = HSH_lookup2(token_global.tok_string);
 		if (symb &&
 			(symb->sym_type == SYM_cursor ||
 			 symb->sym_type == SYM_delimited_cursor)) {
@@ -2213,7 +2213,7 @@ static act* act_declare(void)
 
 	gpre_sym* symbol = PAR_symbol(SYM_cursor);
 
-	switch (token.tok_keyword) {
+	switch (token_global.tok_keyword) {
 	case KW_TABLE:
 		return (act_declare_table(symbol, 0));
 
@@ -2221,7 +2221,7 @@ static act* act_declare(void)
 	case KW_SCROLL:
 		PAR_get_token();
 		scroll = true;
-		if (token.tok_keyword != KW_CURSOR)
+		if (token_global.tok_keyword != KW_CURSOR)
 			CPR_s_error("CURSOR");
 #endif
 	case KW_CURSOR:
@@ -2317,7 +2317,7 @@ static act* act_declare_filter(void)
 	FLTR filter = (FLTR) MSC_alloc(FLTR_LEN);
 	filter->fltr_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", filter->fltr_name);
-	if (token.tok_length > NAME_SIZE)
+	if (token_global.tok_length > NAME_SIZE)
 		PAR_error("Filter name too long");
 
 	PAR_get_token();
@@ -2468,7 +2468,7 @@ static act* act_declare_udf(void)
 	decl_udf* udf_declaration = (decl_udf*) MSC_alloc(DECL_UDF_LEN);
 	udf_declaration->decl_udf_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", udf_declaration->decl_udf_name);
-	if (token.tok_length > NAME_SIZE)
+	if (token_global.tok_length > NAME_SIZE)
 		PAR_error("external function name too long");
 	PAR_get_token();
 
@@ -2550,7 +2550,7 @@ static act* act_delete(void)
 
 //  Parse the optional alias (context variable) 
 
-	gpre_sym* alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
+	gpre_sym* alias = (token_global.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
 
 //  Now the moment of truth.  If the next few tokens are WHERE CURRENT OF
 //  then this is a sub-action of an existing request.  If not, then it is
@@ -2620,11 +2620,11 @@ static act* act_delete(void)
 	context->ctx_relation = relation;
 
 	bool hsh_rm = false;
-	if (alias && !token.tok_symbol) {
+	if (alias && !token_global.tok_symbol) {
 		alias->sym_type = SYM_context;
 		alias->sym_object = context;
 		context->ctx_symbol = alias;
-		token.tok_symbol = alias;
+		token_global.tok_symbol = alias;
 		HSH_insert(alias);
 		hsh_rm = true;
 	}
@@ -2700,13 +2700,13 @@ static act* act_disconnect(void)
 	if (!all) {
 		if (MSC_match(KW_CURRENT))
 			PAR_error("DISCONNECT CURRENT not supported");
-		gpre_sym* test_symbol = token.tok_symbol;
+		gpre_sym* test_symbol = token_global.tok_symbol;
 		if (!(test_symbol && test_symbol->sym_type == SYM_database))
 		{
 			CPR_s_error("ALL, DEFAULT, or <database handle>");
 		}
 		while (true) {
-			gpre_sym* symbol = token.tok_symbol;
+			gpre_sym* symbol = token_global.tok_symbol;
 			if (symbol && symbol->sym_type == SYM_database) {
 				rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 				ready->rdy_next = (rdy*) action->act_object;
@@ -2741,18 +2741,18 @@ static act* act_drop(void)
 	SCHAR* db_string;
 	TEXT* identifier_name;
 
-	switch (token.tok_keyword) {
+	switch (token_global.tok_keyword) {
 	case KW_DATABASE:
 		{
 		PAR_error("DROP DATABASE not supported");
 
 		request = MSC_request(REQ_ddl);
 		PAR_get_token();
-		if (!isQuoted(token.tok_type))
+		if (!isQuoted(token_global.tok_type))
 			CPR_s_error("<quoted database name>");
 		db = (DBB) MSC_alloc(DBB_LEN);
-		db->dbb_filename = db_string = (TEXT*) MSC_alloc(token.tok_length + 1);
-		MSC_copy(token.tok_string, token.tok_length, db_string);
+		db->dbb_filename = db_string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
+		MSC_copy(token_global.tok_string, token_global.tok_length, db_string);
 		gpre_sym* symbol = PAR_symbol(SYM_dummy);
 		db->dbb_name = symbol;
 		symbol->sym_type = SYM_database;
@@ -2820,7 +2820,7 @@ static act* act_drop(void)
 		PAR_get_token();
 		identifier_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<identifier>", identifier_name);
-		IND index = make_index(request, token.tok_string);
+		IND index = make_index(request, token_global.tok_string);
 		action = MSC_action(request, ACT_drop_index);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) index;
@@ -2925,12 +2925,12 @@ static act* act_execute(void)
 
 		switch (sw_sql_dialect) {
 		case 1:
-			if ((!isQuoted(token.tok_type)) && (!MSC_match(KW_COLON)))
+			if ((!isQuoted(token_global.tok_type)) && (!MSC_match(KW_COLON)))
 				CPR_s_error(": <string expression>");
 			break;
 
 		default:
-			if (token.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
+			if (token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
 				CPR_s_error(": <string expression>");
 			break;
 		}
@@ -3262,10 +3262,10 @@ static act* act_grant_revoke( enum act_t type)
 		}
 		else {
 			MSC_match(KW_USER);
-			if (token.tok_type != tok_ident)
+			if (token_global.tok_type != tok_ident)
 				CPR_s_error("<user name identifier>");
 			else
-				to_upcase(token.tok_string, r_name);
+				to_upcase(token_global.tok_string, r_name);
 			user_dyn = isc_dyn_grant_user;
 			CPR_token();
 		}
@@ -3681,7 +3681,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 //  if the token isn't an identifier, complain 
 
 	TOK f_token = (TOK) MSC_alloc(TOK_LEN);
-	f_token->tok_length = token.tok_length;
+	f_token->tok_length = token_global.tok_length;
 
 	SQL_resolve_identifier("<column_name>", f_token->tok_string);
 	CPR_token();
@@ -3740,7 +3740,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 		if (MSC_match(KW_FROM)) {
 			blob->blb_const_from_type =
 				PAR_blob_subtype(request->req_database);
-			if (token.tok_keyword == KW_CHAR)
+			if (token_global.tok_keyword == KW_CHAR)
 				if (blob->blb_const_from_type == isc_blob_text) {
 					blob->blb_from_charset = par_char_set();
 					if (act_op == ACT_blob_open
@@ -3767,7 +3767,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 		if (!MSC_match(KW_TO))
 			CPR_s_error("TO");
 		blob->blb_const_to_type = PAR_blob_subtype(request->req_database);
-		if (token.tok_keyword == KW_CHAR)
+		if (token_global.tok_keyword == KW_CHAR)
 			if (blob->blb_const_to_type == isc_blob_text) {
 				blob->blb_to_charset = par_char_set();
 				if (act_op == ACT_blob_create
@@ -3859,12 +3859,12 @@ static act* act_prepare(void)
 
 	switch (sw_sql_dialect) {
 	case 1:
-		if ((!isQuoted(token.tok_type)) && (!MSC_match(KW_COLON)))
+		if ((!isQuoted(token_global.tok_type)) && (!MSC_match(KW_COLON)))
 			CPR_s_error(": <string expression>");
 		break;
 
 	default:
-		if (token.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
+		if (token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
 			CPR_s_error(": <string expression>");
 		break;
 	}
@@ -3899,7 +3899,7 @@ static act* act_procedure(void)
 	gpre_lls* values = NULL;
 
 	SSHORT inputs = 0;
-	if (!(token.tok_keyword == KW_RETURNING) && !(token.tok_keyword == KW_SEMI_COLON)) {
+	if (!(token_global.tok_keyword == KW_RETURNING) && !(token_global.tok_keyword == KW_SEMI_COLON)) {
 		// parse input references
 
 		bool paren = MSC_match(KW_LEFT_PAREN);
@@ -3975,7 +3975,7 @@ static act* act_select(void)
 
 	if (!MSC_match(KW_SEMI_COLON)) {
 		TEXT s[ERROR_LENGTH];
-		sprintf(s, "Expected ';', got %s.", token.tok_string);
+		sprintf(s, "Expected ';', got %s.", token_global.tok_string);
 		CPR_warn(s);
 	}
 
@@ -4081,15 +4081,15 @@ static act* act_set_generator(void)
 	else
 		PAR_error("Can SET GENERATOR in context of single database only");
 
-	if (token.tok_length > NAME_SIZE)
+	if (token_global.tok_length > NAME_SIZE)
 		PAR_error("Generator name too long");
 
 	SGEN setgen = (SGEN) MSC_alloc(SGEN_LEN);
-	setgen->sgen_name = (TEXT*) MSC_alloc(token.tok_length + 1);
+	setgen->sgen_name = (TEXT*) MSC_alloc(token_global.tok_length + 1);
 	SQL_resolve_identifier("<identifier>", setgen->sgen_name);
 	if (!MET_generator(setgen->sgen_name, request->req_database)) {
 		SCHAR s[128];
-		sprintf(s, "generator %s not found", token.tok_string);
+		sprintf(s, "generator %s not found", token_global.tok_string);
 		PAR_error(s);
 	}
 	PAR_get_token();
@@ -4142,13 +4142,13 @@ static act* act_set_names(void)
 			db->dbb_r_lc_ctype = value;
 		}
 	}
-	else if (token.tok_type == tok_ident) {
+	else if (token_global.tok_type == tok_ident) {
 		// User is specifying the name of a character set 
 		// Make this the compile time character set 
 
-		TEXT* value = (TEXT*) MSC_alloc(token.tok_length + 1);
-		MSC_copy(token.tok_string, token.tok_length, value);
-		value[token.tok_length] = '\0';
+		TEXT* value = (TEXT*) MSC_alloc(token_global.tok_length + 1);
+		MSC_copy(token_global.tok_string, token_global.tok_length, value);
+		value[token_global.tok_length] = '\0';
 
 		/* Due to the ambiguities involved in having modules expressed
 		 * in multiple compile-time character sets, we disallow it.
@@ -4173,7 +4173,7 @@ static act* act_set_names(void)
 				 * so we can resolve against it.
 				 * So what if we go through this code once for each database...
 				 */
-				if (!(MSC_find_symbol(token.tok_symbol, SYM_charset)))
+				if (!(MSC_find_symbol(token_global.tok_symbol, SYM_charset)))
 					PAR_error("The named CHARACTER SET was not found");
 			}
 		}
@@ -4205,7 +4205,7 @@ static act* act_set_statistics(void)
 		stats->sts_flags = STS_index;
 		stats->sts_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<index name>", stats->sts_name->str_string);
-		if (token.tok_length > NAME_SIZE)
+		if (token_global.tok_length > NAME_SIZE)
 			PAR_error("Index name too long");
 		PAR_get_token();
 	}
@@ -4348,7 +4348,7 @@ static act* act_update(void)
 
 //  Parse the optional alias (context variable) 
 
-	gpre_sym* alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
+	gpre_sym* alias = (token_global.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
 
 //  Now we need the SET list list.  Do this thru a linked list stack 
 
@@ -4364,7 +4364,7 @@ static act* act_update(void)
 		alias->sym_type = SYM_context;
 		alias->sym_object = input_context;
 		HSH_insert(alias);
-		token.tok_symbol = HSH_lookup(token.tok_string);
+		token_global.tok_symbol = HSH_lookup(token_global.tok_string);
 	}
 
 	gpre_lls* stack = NULL;
@@ -4533,9 +4533,9 @@ static act* act_update(void)
 	select->rse_count = 1;
 	select->rse_context[0] = input_context;
 
-	if (!alias && !token.tok_symbol)
+	if (!alias && !token_global.tok_symbol)
 		// may have a relation name put parser didn't know it when it parsed it 
-		token.tok_symbol = HSH_lookup(token.tok_string);
+		token_global.tok_symbol = HSH_lookup(token_global.tok_string);
 
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++) {
 		GPRE_NOD set_item = *ptr;
@@ -4632,13 +4632,13 @@ static act* act_whenever(void)
 		label = NULL;
 	else if ((MSC_match(KW_GO) && MSC_match(KW_TO)) || MSC_match(KW_GOTO)) {
 		MSC_match(KW_COLON);
-		USHORT l = token.tok_length;
+		USHORT l = token_global.tok_length;
 		label = (swe*) MSC_alloc(sizeof(swe) + l);
 		label->swe_condition = condition;
 		label->swe_length = l;
 		if (label->swe_length) {
 			TEXT* p = label->swe_label;
-			const TEXT* q = token.tok_string;
+			const TEXT* q = token_global.tok_string;
 			do {
 				*p++ = *q++;
 			} while (--l);
@@ -4703,7 +4703,7 @@ static void connect_opts(
 {
 	for (;;) {
 		if (MSC_match(KW_CACHE)) {
-			*buffers = atoi(token.tok_string);
+			*buffers = atoi(token_global.tok_string);
 			PAR_get_token();
 			MSC_match(KW_BUFFERS);
 		}
@@ -4712,13 +4712,13 @@ static void connect_opts(
 		else if (MSC_match(KW_PASSWORD))
 			*password = SQL_var_or_string(false);
 		else if (MSC_match(KW_ROLE)) {
-			if (token.tok_type == tok_ident) {
+			if (token_global.tok_type == tok_ident) {
 				// reserve extra bytes for quotes and NULL
-				TEXT* s = (TEXT*) MSC_alloc(token.tok_length + 3);
+				TEXT* s = (TEXT*) MSC_alloc(token_global.tok_length + 3);
 											   
 				SQL_resolve_identifier("<Role Name>", s);
 				s[0] = '\"';
-				strcpy(s + 1, token.tok_string);
+				strcpy(s + 1, token_global.tok_string);
 				strcat(s, "\"");
 				*sql_role = s;
 			}
@@ -4742,10 +4742,10 @@ static void connect_opts(
 static FIL define_cache(void)
 {
 	FIL file = (FIL) MSC_alloc(sizeof(fil));
-	if (isQuoted(token.tok_type)) {
-		TEXT* string = (TEXT*) MSC_alloc(token.tok_length + 1);
+	if (isQuoted(token_global.tok_type)) {
+		TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
 		file->fil_name = string;
-		MSC_copy(token.tok_string, token.tok_length, string);
+		MSC_copy(token_global.tok_string, token_global.tok_length, string);
 		PAR_get_token();
 	}
 	else
@@ -4778,11 +4778,11 @@ static FIL define_cache(void)
 static FIL define_file(void)
 {
 	FIL file = (FIL) MSC_alloc(sizeof(fil));
-	if (isQuoted(token.tok_type)) {
-		TEXT* string = (TEXT*) MSC_alloc(token.tok_length + 1);
+	if (isQuoted(token_global.tok_type)) {
+		TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
 		file->fil_name = string;
-		MSC_copy(token.tok_string, token.tok_length, string);
-		token.tok_length += 2;
+		MSC_copy(token_global.tok_string, token_global.tok_length, string);
+		token_global.tok_length += 2;
 		PAR_get_token();
 	}
 	else
@@ -4819,10 +4819,10 @@ static FIL define_file(void)
 static FIL define_log_file(bool log_serial)
 {
 	FIL file = (FIL) MSC_alloc(sizeof(fil));
-	if (isQuoted(token.tok_type)) {
-		TEXT* string = (TEXT*) MSC_alloc(token.tok_length + 1);
+	if (isQuoted(token_global.tok_type)) {
+		TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
 		file->fil_name = string;
-		MSC_copy(token.tok_string, token.tok_length, string);
+		MSC_copy(token_global.tok_string, token_global.tok_length, string);
 		PAR_get_token();
 	}
 	else
@@ -4892,18 +4892,18 @@ static TEXT *extract_string(bool advance_token)
 {
 	switch (sw_sql_dialect) {
 	case 1:
-		if (!isQuoted(token.tok_type))
+		if (!isQuoted(token_global.tok_type))
 			CPR_s_error("<string>");
 		break;
 
 	default:
-		if (token.tok_type != tok_sglquoted)
+		if (token_global.tok_type != tok_sglquoted)
 			CPR_s_error("<string>");
 		break;
 	}
 
-	TEXT* string = (TEXT*) MSC_alloc(token.tok_length + 1);
-	MSC_copy(token.tok_string, token.tok_length, string);
+	TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
+	MSC_copy(token_global.tok_string, token_global.tok_length, string);
 	if (advance_token)
 		PAR_get_token();
 	return string;
@@ -5199,10 +5199,10 @@ static SSHORT par_char_set(void)
 	if (!MSC_match(KW_SET))
 		CPR_s_error("CHARACTER SET");
 
-	if (token.tok_type != tok_ident)
+	if (token_global.tok_type != tok_ident)
 		CPR_s_error("<character set name>");
 
-	gpre_sym* symbol = MSC_find_symbol(token.tok_symbol, SYM_charset);
+	gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_charset);
 	if (!symbol)
 		PAR_error("The named CHARACTER SET was not found");
 
@@ -5283,16 +5283,16 @@ static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 
 	TEXT t_cur[128];
 	SQL_resolve_identifier("<cursor name>", t_cur);
-	gpre_sym* symbol = HSH_lookup(token.tok_string);
-	token.tok_symbol = symbol;
+	gpre_sym* symbol = HSH_lookup(token_global.tok_string);
+	token_global.tok_symbol = symbol;
 	if (symbol && symbol->sym_type == SYM_keyword)
-		token.tok_keyword = (KWWORDS) symbol->sym_keyword;
+		token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
 	else
-		token.tok_keyword = KW_none;
+		token_global.tok_keyword = KW_none;
 
-	symbol = MSC_find_symbol(token.tok_symbol, SYM_cursor);
+	symbol = MSC_find_symbol(token_global.tok_symbol, SYM_cursor);
 	if (!symbol)
-		symbol = MSC_find_symbol(token.tok_symbol, SYM_delimited_cursor);
+		symbol = MSC_find_symbol(token_global.tok_symbol, SYM_delimited_cursor);
 	if (symbol) {
 		PAR_get_token();
 		if (symbol_ptr)
@@ -5300,7 +5300,7 @@ static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 		return (gpre_req*) symbol->sym_object;
 	}
 	else {
-		symbol = MSC_find_symbol(token.tok_symbol, SYM_dyn_cursor);
+		symbol = MSC_find_symbol(token_global.tok_symbol, SYM_dyn_cursor);
 		if (symbol)
 			PAR_error("DSQL cursors require DSQL update & delete statements");
 	}
@@ -5318,16 +5318,16 @@ static DYN par_dynamic_cursor(void)
 {
 	gpre_sym* symbol = NULL;
 
-	if (token.tok_symbol == NULL) {
+	if (token_global.tok_symbol == NULL) {
 		TEXT t_cur[128];
 		SQL_resolve_identifier("<cursor name>", t_cur);
-		token.tok_symbol = symbol = HSH_lookup(token.tok_string);
+		token_global.tok_symbol = symbol = HSH_lookup(token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
-			token.tok_keyword = (KWWORDS) symbol->sym_keyword;
+			token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
 		else
-			token.tok_keyword = KW_none;
+			token_global.tok_keyword = KW_none;
 	}
-	if (symbol = MSC_find_symbol(token.tok_symbol, SYM_dyn_cursor)) {
+	if (symbol = MSC_find_symbol(token_global.tok_symbol, SYM_dyn_cursor)) {
 		PAR_get_token();
 		return (DYN) symbol->sym_object;
 	}
@@ -5359,7 +5359,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 
 //  Check if default value was specified 
 
-	if (token.tok_keyword == KW_DEFAULT) {
+	if (token_global.tok_keyword == KW_DEFAULT) {
 		field->fld_default_source = CPR_start_text();
 		PAR_get_token();
 
@@ -5377,7 +5377,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 			field->fld_default_value = MSC_node(nod_null, 0);
 		else {
 			if (MSC_match(KW_MINUS)) {
-				if (token.tok_type != tok_number)
+				if (token_global.tok_type != tok_number)
 					CPR_s_error("<number>");
 
 				GPRE_NOD literal_node = EXP_literal();
@@ -5396,7 +5396,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 	bool in_constraints = true;
 
 	while (in_constraints) {
-		switch (token.tok_keyword) {
+		switch (token_global.tok_keyword) {
 		case KW_CONSTRAINT:
 		case KW_PRIMARY:
 		case KW_UNIQUE:
@@ -5450,17 +5450,17 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 
 	cnstrt* new_constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
-	if (token.tok_keyword == KW_CONSTRAINT) {
+	if (token_global.tok_keyword == KW_CONSTRAINT) {
 		PAR_get_token();
 		new_constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
 							   new_constraint->cnstrt_name->str_string);
-		if (token.tok_length > NAME_SIZE)
+		if (token_global.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		PAR_get_token();
 	}
 
-	switch (keyword = token.tok_keyword) {
+	switch (keyword = token_global.tok_keyword) {
 	case KW_NOT:
 		PAR_get_token();
 		if (!MSC_match(KW_NULL))
@@ -5496,7 +5496,7 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 			new_constraint->cnstrt_referred_rel = (STR) MSC_alloc(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
 								   new_constraint->cnstrt_referred_rel->str_string);
-			if (token.tok_length > NAME_SIZE)
+			if (token_global.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			PAR_get_token();
 
@@ -5510,10 +5510,10 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 				EXP_match_paren();
 			}
 
-			if (token.tok_keyword == KW_ON) {
+			if (token_global.tok_keyword == KW_ON) {
 				par_fkey_extension(new_constraint);
 				PAR_get_token();
-				if (token.tok_keyword == KW_ON) {
+				if (token_global.tok_keyword == KW_ON) {
 					par_fkey_extension(new_constraint);
 					PAR_get_token();
 				}
@@ -5657,12 +5657,12 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 //   [ON UPDATE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
 //  
 
-	fb_assert(token.tok_keyword == KW_ON);
+	fb_assert(token_global.tok_keyword == KW_ON);
 	fb_assert(cnstrt_val != NULL);
 
 	PAR_get_token();
 
-	switch (keyword = token.tok_keyword) {
+	switch (keyword = token_global.tok_keyword) {
 	case KW_DELETE:
 		// NOTE: action must be defined only once 
 		if (cnstrt_val->cnstrt_fkey_def_type & REF_DELETE_ACTION)
@@ -5685,10 +5685,10 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 
 	PAR_get_token();
 
-	switch (token.tok_keyword) {
+	switch (token_global.tok_keyword) {
 	case KW_NO:
 		PAR_get_token();
-		if (token.tok_keyword != KW_ACTION)
+		if (token_global.tok_keyword != KW_ACTION)
 			CPR_s_error("ACTION");
 		else if (keyword == KW_DELETE)
 			cnstrt_val->cnstrt_fkey_def_type |= REF_DEL_NONE;
@@ -5703,7 +5703,7 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 		break;
 	case KW_SET:
 		PAR_get_token();
-		switch (token.tok_keyword) {
+		switch (token_global.tok_keyword) {
 		case KW_DEFAULT:
 			if (keyword == KW_DELETE)
 				cnstrt_val->cnstrt_fkey_def_type |= REF_DEL_SET_DEFAULT;
@@ -5744,17 +5744,17 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 
 	cnstrt* constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
-	if (token.tok_keyword == KW_CONSTRAINT) {
+	if (token_global.tok_keyword == KW_CONSTRAINT) {
 		PAR_get_token();
 		constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
 							   constraint->cnstrt_name->str_string);
-		if (token.tok_length > NAME_SIZE)
+		if (token_global.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		PAR_get_token();
 	}
 
-	switch (keyword = token.tok_keyword) {
+	switch (keyword = token_global.tok_keyword) {
 	case KW_PRIMARY:
 	case KW_UNIQUE:
 	case KW_FOREIGN:
@@ -5800,7 +5800,7 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 			constraint->cnstrt_referred_rel = (STR) MSC_alloc(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
 								   constraint->cnstrt_referred_rel->str_string);
-			if (token.tok_length > NAME_SIZE)
+			if (token_global.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			PAR_get_token();
 
@@ -5830,10 +5830,10 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 				num_prim_key_flds != num_for_key_flds)
 					PAR_error
 					("FOREIGN KEY column count does not match PRIMARY KEY");
-			if (token.tok_keyword == KW_ON) {
+			if (token_global.tok_keyword == KW_ON) {
 				par_fkey_extension(constraint);
 				PAR_get_token();
-				if (token.tok_keyword == KW_ON) {
+				if (token_global.tok_keyword == KW_ON) {
 					par_fkey_extension(constraint);
 					PAR_get_token();
 				}
@@ -6040,12 +6040,12 @@ static bool tail_database(enum act_t action_type,
 			MSC_match(KW_PAGES);
 		}
 		else if (MSC_match(KW_USER)) {
-			if (isQuoted(token.tok_type)) {
+			if (isQuoted(token_global.tok_type)) {
 				database->dbb_c_user = string =
-					(TEXT*) MSC_alloc(token.tok_length + 1);
-				MSC_copy(token.tok_string, token.tok_length, string);
+					(TEXT*) MSC_alloc(token_global.tok_length + 1);
+				MSC_copy(token_global.tok_string, token_global.tok_length, string);
 
-				string[token.tok_length - 2] = '\0';
+				string[token_global.tok_length - 2] = '\0';
 				PAR_get_token();
 			}
 			else
@@ -6058,7 +6058,7 @@ static bool tail_database(enum act_t action_type,
 				if (!MSC_match(KW_COLON))
 					CPR_s_error("<colon> or <quoted string>");
 		/** Should I bother about dialects here ?? **/
-				if (isQuoted(token.tok_type))
+				if (isQuoted(token_global.tok_type))
 					CPR_s_error("<host variable>");
 				database->dbb_r_user = PAR_native_value(false, false);
 				extend_dpb = true;
@@ -6068,11 +6068,11 @@ static bool tail_database(enum act_t action_type,
 
 		}
 		else if (MSC_match(KW_PASSWORD)) {
-			if (isQuoted(token.tok_type)) {
+			if (isQuoted(token_global.tok_type)) {
 				database->dbb_c_password = string =
-					(TEXT*) MSC_alloc(token.tok_length + 1);
-				MSC_copy(token.tok_string, token.tok_length, string);
-				string[token.tok_length] = '\0';
+					(TEXT*) MSC_alloc(token_global.tok_length + 1);
+				MSC_copy(token_global.tok_string, token_global.tok_length, string);
+				string[token_global.tok_length] = '\0';
 				PAR_get_token();
 			}
 			else
@@ -6084,7 +6084,7 @@ static bool tail_database(enum act_t action_type,
 			if (sw_language == lang_c) {
 				if (!MSC_match(KW_COLON))
 					CPR_s_error("<colon> or <quoted string>");
-				if (isQuoted(token.tok_type))
+				if (isQuoted(token_global.tok_type))
 					CPR_s_error("<host variable>");
 				database->dbb_r_password = PAR_native_value(false, false);
 				extend_dpb = true;
@@ -6138,7 +6138,7 @@ static bool tail_database(enum act_t action_type,
 //***
 		}
 // ****
-//   else if (token.tok_keyword == KW_DESCRIPTION)
+//   else if (token_global.tok_keyword == KW_DESCRIPTION)
 // database->dbb_description = parse_description();
 //   else if (MSC_match (KW_SECURITY_CLASS))
 // database->dbb_security_class = PARSE_symbol (tok_ident); 
@@ -6234,27 +6234,27 @@ void SQL_resolve_identifier( TEXT * err_mesg, TEXT * str)
 
 	switch (sw_sql_dialect) {
 	case 2:
-		if (token.tok_type == tok_dblquoted)
+		if (token_global.tok_type == tok_dblquoted)
 			PAR_error("Ambiguous use of double quotes in dialect 2");
 	case 1:
-		if (token.tok_type != tok_ident)
+		if (token_global.tok_type != tok_ident)
 			CPR_s_error(err_mesg);
 		else
-			to_upcase(token.tok_string, str);
+			to_upcase(token_global.tok_string, str);
 		break;
 	case 3:
-		if (token.tok_type == tok_dblquoted) {
-			if (token.tok_string[0] == '\"')
-				strip_quotes(token);
-			strcpy(str, token.tok_string);
+		if (token_global.tok_type == tok_dblquoted) {
+			if (token_global.tok_string[0] == '\"')
+				strip_quotes(token_global);
+			strcpy(str, token_global.tok_string);
 		}
-		else if (token.tok_type == tok_ident)
-			to_upcase(token.tok_string, str);
+		else if (token_global.tok_type == tok_ident)
+			to_upcase(token_global.tok_string, str);
 		else
 			CPR_s_error(err_mesg);
 		break;
 	}
-	strcpy(token.tok_string, str);
+	strcpy(token_global.tok_string, str);
 }
 
 
