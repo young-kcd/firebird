@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preinstall.sh.in,v 1.2 2003-10-28 17:58:10 skidder Exp $
+#   $Id: preinstall.sh.in,v 1.3 2004-01-29 06:32:06 skidder Exp $
 # 
 
 
@@ -211,7 +211,7 @@ archivePriorInstallSystemFilesX() {
         echo "--- Warning ----------------------------------------------"
         echo "    The installation target directory: $FBRootDir"
         echo "    Already contains a prior installation of Firebird."
-        echo "    This and files found in /usr/include and /usr/lib will be"
+        echo "    This and files found in /usr/include and @libdir@ will be"
         echo "    archived in the file : ${ArchiveMainFile}"
         echo "" 
 

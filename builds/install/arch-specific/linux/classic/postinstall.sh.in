@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.6 2003-10-31 16:42:48 skidder Exp $
+#   $Id: postinstall.sh.in,v 1.7 2004-01-29 06:32:06 skidder Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -625,14 +625,14 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  Eventually these should be 
     # optional and in a seperate rpm install.  MOD 7-Nov-2002.
 
-    if [ ! -e /usr/lib/libgds.so ]
+    if [ ! -e @libdir@/libgds.so ]
       then
-        ln -s $FBRootDir/lib/libfbembed.so /usr/lib/libgds.so
+        ln -s $FBRootDir/lib/libfbembed.so @libdir@/libgds.so
     fi
 
-    if [ ! -e /usr/lib/libgds.so.0 ]
+    if [ ! -e @libdir@/libgds.so.0 ]
       then
-        ln -s $FBRootDir/lib/libfbembed.so /usr/lib/libgds.so.0
+        ln -s $FBRootDir/lib/libfbembed.so @libdir@/libgds.so.0
     fi
 
 

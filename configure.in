@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.190 2004-01-12 04:58:09 skidder Exp $
+dnl $Id: configure.in,v 1.191 2004-01-29 06:31:49 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -30,6 +30,10 @@ dnl      SHRLIB_EXT       : suffix of shared library files
 
 RAW_DEVICES_FLG=Y
 INSTALL_PREFIX=""
+
+dnl Use /usr/lib for library links on most platforms except some 64-bit ones
+libdir=/usr/lib
+
 case "$target" in
   *-*-darwin*)
     MAKEFILE_PREFIX=darwin
@@ -57,6 +61,8 @@ case "$target" in
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    libdir=/usr/lib64
+    CPU_TYPE=amd64
     ;;
 
   sparc*-*-linux-*)

@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.4 2003-10-28 17:58:10 skidder Exp $
+#   $Id: makeInstallImage.sh.in,v 1.5 2004-01-29 06:32:06 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -99,7 +99,7 @@ copyFiles() {
 #    mkdir $TargetDir/var/adm/fillup-templates
 
 #    mkdir -p $TargetDir/usr/sbin
-    mkdir -p $TargetDir/usr/lib
+    mkdir -p $TargetDir@libdir@
     mkdir -p $TargetDir/usr/include
 
     cp -f $BuiltFBDir/bin/fb_inet_server $DestDir/bin/fb_inet_server 
@@ -188,14 +188,14 @@ copyFiles() {
     echo "#" >> $DestDir/aliases.conf
     
 
-# Create links from /usr/lib to install area.
+# Create links from @libdir@ to install area.
 
     origDir=`pwd`
     cd $DestDir
     for i in lib/libfb*.so*; do ln -s ../../$FBRootDir/$i $origDir/$TargetDir/usr/$i; done
     cd $origDir
-    #ln -s ../../$FBRootDir/lib/libgds.a $TargetDir/usr/lib/libgds.a
-    ln -s ../../$FBRootDir/lib/libib_util.so $TargetDir/usr/lib/libib_util.so
+    #ln -s ../../$FBRootDir/lib/libgds.a $TargetDir@libdir@/libgds.a
+    ln -s ../../$FBRootDir/lib/libib_util.so $TargetDir@libdir@/libib_util.so
 
 
 
