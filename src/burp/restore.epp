@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.38 2003-08-28 12:54:22 brodsom Exp $
+$Id: restore.epp,v 1.39 2003-09-03 16:31:28 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -3609,14 +3609,14 @@ static BOOLEAN get_global_field (void)
 ATT_TYPE	attribute;
 TEXT		temp [GDS_NAME_LEN];
 SSHORT		l;
-GFLD		gfld;
+GFLD		gfield;
 UCHAR	    	scan_next_attr;
 TGBL	    	tdgbl;
 SSHORT		save_subtype;
 
 tdgbl = GET_THREAD_DATA;
 
-gfld = NULL;
+gfield = NULL;
 
 if (tdgbl->RESTORE_format >= 6)
   {
@@ -3729,11 +3729,11 @@ if (tdgbl->RESTORE_format >= 6)
 
 			if (tdgbl->global_trans)
 			    {
-			    if (!gfld)
-				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
+			    if (!gfield)
+				gfield = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
-			    get_blr_blob (&gfld->gfld_vb, 1);
-			    gfld->gfld_flags |= GFLD_validation_blr;
+			    get_blr_blob (&gfield->gfld_vb, 1);
+			    gfield->gfld_flags |= GFLD_validation_blr;
 			    }
 			else
 			    {
@@ -3754,11 +3754,11 @@ if (tdgbl->RESTORE_format >= 6)
 
 			if (tdgbl->global_trans)
 			    {
-			    if (!gfld)
-				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
+			    if (!gfield)
+				gfield = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
-			    get_misc_blob (&gfld->gfld_vs, 0, 1);
-			    gfld->gfld_flags |= GFLD_validation_source;
+			    get_misc_blob (&gfield->gfld_vs, 0, 1);
+			    gfield->gfld_flags |= GFLD_validation_source;
 			    }
 			else
 			    {
@@ -3779,11 +3779,11 @@ if (tdgbl->RESTORE_format >= 6)
 
 			if (tdgbl->global_trans)
 			    {
-			    if (!gfld)
-				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
+			    if (!gfield)
+				gfield = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
-			    get_source_blob (&gfld->gfld_vs2, 1);
-			    gfld->gfld_flags |= GFLD_validation_source2;
+			    get_source_blob (&gfield->gfld_vs2, 1);
+			    gfield->gfld_flags |= GFLD_validation_source2;
 			    }
 			else
 			    {
@@ -3884,8 +3884,8 @@ if (tdgbl->RESTORE_format >= 6)
 		    X.RDB$FIELD_LENGTH = l;
 		}
 
-	    if (gfld)
-		strcpy (gfld->gfld_name, X.RDB$FIELD_NAME);
+	    if (gfield)
+		strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
 
 	    /* V3.3 used a different method from V4.0 for encoding International
 	     * text character set & collation information.  Here we are
@@ -4040,11 +4040,11 @@ else /* RESTORE_format < 6 */
 
 			if (tdgbl->global_trans)
 			    {
-			    if (!gfld)
-				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
+			    if (!gfield)
+				gfield = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
-			    get_blr_blob (&gfld->gfld_vb, 1);
-			    gfld->gfld_flags |= GFLD_validation_blr;
+			    get_blr_blob (&gfield->gfld_vb, 1);
+			    gfield->gfld_flags |= GFLD_validation_blr;
 			    }
 			else
 			    {
@@ -4065,11 +4065,11 @@ else /* RESTORE_format < 6 */
 
 			if (tdgbl->global_trans)
 			    {
-			    if (!gfld)
-				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
+			    if (!gfield)
+				gfield = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
-			    get_misc_blob (&gfld->gfld_vs, 0, 1);
-			    gfld->gfld_flags |= GFLD_validation_source;
+			    get_misc_blob (&gfield->gfld_vs, 0, 1);
+			    gfield->gfld_flags |= GFLD_validation_source;
 			    }
 			else
 			    {
@@ -4090,11 +4090,11 @@ else /* RESTORE_format < 6 */
 
 			if (tdgbl->global_trans)
 			    {
-			    if (!gfld)
-				gfld = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
+			    if (!gfield)
+				gfield = (GFLD)BURP_ALLOC_ZERO(sizeof(gfld));
 
-			    get_source_blob (&gfld->gfld_vs2, 1);
-			    gfld->gfld_flags |= GFLD_validation_source2;
+			    get_source_blob (&gfield->gfld_vs2, 1);
+			    gfield->gfld_flags |= GFLD_validation_source2;
 			    }
 			else
 			    {
@@ -4190,8 +4190,8 @@ else /* RESTORE_format < 6 */
 		    X.RDB$FIELD_LENGTH = l;
 		}
 
-	    if (gfld)
-		strcpy (gfld->gfld_name, X.RDB$FIELD_NAME);
+	    if (gfield)
+		strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
 
 	    /* V3.3 used a different method from V4.0 for encoding International
 	     * text character set & collation information.  Here we are
@@ -4235,10 +4235,10 @@ else /* RESTORE_format < 6 */
     END_ERROR;
 
   }
-if (gfld)
+if (gfield)
     {
-    gfld->gfld_next = tdgbl->gbl_global_fields;
-    tdgbl->gbl_global_fields = gfld;
+    gfield->gfld_next = tdgbl->gbl_global_fields;
+    tdgbl->gbl_global_fields = gfield;
     }
 
 return TRUE;
@@ -7063,7 +7063,7 @@ static void update_global_field (void)
  *	The blobs have been created already.
  *
  **************************************/
-GFLD		n_gfld, gfld;
+GFLD		n_gfield, gfield;
 USHORT		length;
 UCHAR		*p, *q;
 isc_req_handle  req_handle1 = NULL;
@@ -7072,46 +7072,46 @@ TGBL		tdgbl;
 
 tdgbl = GET_THREAD_DATA;
 
-for (gfld = tdgbl->gbl_global_fields; gfld; )
+for (gfield = tdgbl->gbl_global_fields; gfield; )
     {
     FOR (TRANSACTION_HANDLE tdgbl->global_trans REQUEST_HANDLE req_handle1)
-        X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ gfld->gfld_name
+        X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ gfield->gfld_name
     	MODIFY X
 
-	    if (gfld->gfld_flags & GFLD_validation_blr)
+	    if (gfield->gfld_flags & GFLD_validation_blr)
 		{
 		X.RDB$VALIDATION_BLR.NULL = FALSE;
 
 		if (length = sizeof (ISC_QUAD))
 		    {
 		    p = (UCHAR *)&X.RDB$VALIDATION_BLR;
-		    q = (UCHAR *)&gfld->gfld_vb;
+		    q = (UCHAR *)&gfield->gfld_vb;
 
 		    do *p++ = *q++; while (--length);
 		    }
 		}
 		
-	    if (gfld->gfld_flags & GFLD_validation_source)
+	    if (gfield->gfld_flags & GFLD_validation_source)
 		{
 		X.RDB$VALIDATION_SOURCE.NULL = FALSE;
 
 		if (length = sizeof (ISC_QUAD))
 		    {
 		    p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
-		    q = (UCHAR *)&gfld->gfld_vs;
+		    q = (UCHAR *)&gfield->gfld_vs;
 
 		    do *p++ = *q++; while (--length);
 		    }
 		}
 		
-	    if (gfld->gfld_flags & GFLD_validation_source2)
+	    if (gfield->gfld_flags & GFLD_validation_source2)
 		{
 		X.RDB$VALIDATION_SOURCE.NULL = FALSE;
 
 		if (length = sizeof (ISC_QUAD))
 		    {
 		    p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
-		    q = (UCHAR *)&gfld->gfld_vs2;
+		    q = (UCHAR *)&gfield->gfld_vs2;
 
 		    do *p++ = *q++; while (--length);
 		    }
@@ -7126,9 +7126,9 @@ for (gfld = tdgbl->gbl_global_fields; gfld; )
     ON_ERROR
         general_on_error ();
     END_ERROR;
-    n_gfld = gfld->gfld_next;
-    BURP_FREE (gfld);
-    gfld = n_gfld;
+    n_gfield = gfield->gfld_next;
+    BURP_FREE (gfield);
+    gfield = n_gfield;
     }
 if (req_handle1)
     isc_release_request (req_status, &req_handle1);
