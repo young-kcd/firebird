@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.23 2004-09-15 08:35:11 kkuznetsov Exp $
+#  $Id: Makefile.in.libfbclient,v 1.24 2004-09-16 22:32:30 skidder Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -53,8 +53,8 @@ unexport ISC_PASSWORD
 # I would eventually like to set these based on a determination
 # if the file GPRE_STATIC exists or not.
 
-SMD_Source =	$(addprefix remote/,$(Server_main_dummy))
-SMD_Object =	$(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SMD_Source))))
+SMD_Sources =	$(addprefix remote/,$(Server_main_dummy))
+SMD_Objects =	$(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SMD_Sources))))
 
 JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles))
 JRD_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_ClientSources))))
@@ -95,7 +95,7 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(FBCLASSES_ClientObjects)\
 					$(OS_SPECIFIC_Objects)\
 					$(FBCONFIG_Objects) \
-					$(SMD_Object)
+					$(SMD_Objects)
 
 
 .PHONY: libfbclient
