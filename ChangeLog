@@ -1,3 +1,73 @@
+2004-03-25 20:27  skidder
+
+	* firebird2/src/jrd/met.epp:
+	
+	Jim Starkey's fix for random-crash-or-restore problem which Claudio
+	introduced into Firebird codebase some time ago.  This fix probably
+	needs to be backported to B1_5_Release.
+
+2004-03-25 08:44  aafemt
+
+	* firebird2/src/qli/compile.cpp:
+	
+	Fix by Vladimir Tsvigun
+
+2004-03-25 08:38  aafemt
+
+	* firebird2/src/isql/extract.epp:
+	
+	Fix for procedure params extract. Global variables must die!!
+
+2004-03-25 08:33  aafemt
+
+	* firebird2/src/isql/extract.epp:
+	
+	Fix for procedure params extract. Global variables must die!!
+
+2004-03-25 08:00  skidder
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	Add warning about bad code
+
+2004-03-25 07:59  skidder
+
+	* firebird2/src/jrd/req.h:
+	
+	Add comment
+
+2004-03-25 07:55  skidder
+
+	* firebird2/src/jrd/dls.cpp:
+	
+	Fix warning
+
+2004-03-25 07:55  skidder
+
+	* firebird2/src/jrd/blob_filter.cpp:
+	
+	Fix POSIX SS build
+
+2004-03-25 07:50  skidder
+
+	* firebird2/src/common/config/dir_list.cpp:
+	
+	Fix a couple warnings
+
+2004-03-25 07:01  skidder
+
+	* firebird2/builds/install/arch-specific/linux/super/:
+	makeInstallImage.sh.in, rpmfiles.txt.in:
+	
+	Fix HEAD troubles with Linux SS installer
+
+2004-03-25 05:44  skidder
+
+	* firebird2/src/remote/interface.cpp:
+	
+	Fix crashes/lock-ups with multiple calls of isc_dsql_prepare for a
+	single statement like IBO does
+
 2004-03-24 22:43  dimitr
 
 	* firebird2/src/jrd/cmp.cpp:
