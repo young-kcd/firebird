@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.87 2004-09-15 03:47:43 robocop Exp $
+$Id: blb.cpp,v 1.88 2004-09-28 06:27:22 skidder Exp $
 */
 
 #include "firebird.h"
@@ -269,8 +269,7 @@ blb* BLB_create2(thread_db* tdbb,
 
 /* Format blob id and return blob handle */
 
-	blob_id->bid_stuff.bid_temp_id = blob->blb_temp_id;
-	blob_id->bid_relation_id = 0;
+	blob_id->set_temporary(blob->blb_temp_id);
 
 	return blob;
 }
@@ -335,8 +334,7 @@ void BLB_garbage_collect(
 				if (!EVL_field(0, rec2, id, &desc2))
 					continue;
 				const bid* blob2 = (bid*) desc2.dsc_address;
-				if (blob->bid_relation_id == blob2->bid_relation_id &&
-					blob->bid_stuff.bid_number == blob2->bid_stuff.bid_number)
+				if (*blob == *blob2)
 				{
 					SET_NULL(rec2, id);
 				}
@@ -350,8 +348,7 @@ void BLB_garbage_collect(
 				if (!EVL_field(0, rec3, id, &desc2))
 					continue;
 				const bid* blob3 = (bid*) desc2.dsc_address;
-				if (blob->bid_relation_id == blob3->bid_relation_id &&
-					blob->bid_stuff.bid_number == blob3->bid_stuff.bid_number)
+				if (*blob == *blob3)
 				{
 					break;
 				}
@@ -864,8 +861,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 /* If nothing changed, do nothing.  If it isn't broken,
    don't fix it. */
 
-	if (source->bid_relation_id == destination->bid_relation_id &&
-		source->bid_stuff.bid_number == destination->bid_stuff.bid_number)
+	if (*source == *destination)
 	{
 		return;
 	}
@@ -876,8 +872,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	if ((request->req_flags & req_null) || source->isEmpty())
 	{
 		SET_NULL(record, id);
-		destination->bid_relation_id = 0;
-		destination->bid_stuff.bid_number = 0;
+		destination->clear();
 		return;
 	}
 
@@ -918,7 +913,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			materialized_blob = true;
 		}
 		else {
-			if (transaction->tra_blobs.locate(source->bid_stuff.bid_temp_id)) {
+			if (transaction->tra_blobs.locate(source->bid_temp_id())) {
 				blobIndex = &transaction->tra_blobs.current();
 				if (blobIndex->bli_materialized) {
 					if (blobIndex->bli_request) {
@@ -954,8 +949,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	} while (true);
 
 	blob->blb_relation = relation;
-	destination->bid_relation_id = relation->rel_id;
-	destination->bid_stuff.bid_number = DPM_store_blob(tdbb, blob, record);
+	destination->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, record));
 	// This is the only place in the engine where blobs are materialized
 	// If new places appear code below should transform to common sub-routine
 	if (materialized_blob) {
@@ -1016,7 +1010,7 @@ void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, j
 		UCHAR *fromstr = 0;
 		bid temp_bid;
 		DSC blob_desc;
-		MOVE_CLEAR(&temp_bid, sizeof(temp_bid));
+		temp_bid.clear();
 		MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
 		blob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid);
 		blob_desc.dsc_length = MOV_get_string_ptr(from_desc, &ttype, &fromstr, 0, 0);
@@ -1180,7 +1174,7 @@ blb* BLB_open2(thread_db* tdbb,
 	}
 
 	if (!blob_id->bid_relation_id)
-		if (!blob_id->bid_stuff.bid_number)
+		if (blob_id->isEmpty())
 		{
 			blob->blb_flags |= BLB_eof;
 			return blob;
@@ -1196,7 +1190,7 @@ blb* BLB_open2(thread_db* tdbb,
 
 			/* Search the index of transaction blobs for a match */
 			const blb* new_blob = NULL;
-			if (transaction->tra_blobs.locate(blob_id->bid_stuff.bid_temp_id)) {
+			if (transaction->tra_blobs.locate(blob_id->bid_temp_id())) {
 				BlobIndex *current = &transaction->tra_blobs.current();
 				if (!current->bli_materialized)
 					new_blob = current->bli_blob_object;
@@ -1242,7 +1236,7 @@ blb* BLB_open2(thread_db* tdbb,
 			ERR_post(isc_bad_segstr_id, 0);
 	}
 
-	DPM_get_blob(tdbb, blob, blob_id->bid_stuff.bid_number, false, (SLONG) 0);
+	DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), false, (SLONG) 0);
 
 /* If the blob is known to be damaged, ignore it. */
 
@@ -1481,10 +1475,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 		for (array = transaction->tra_arrays; array; array = array->arr_next)
 		{
 			if (array->arr_blob &&
-				array->arr_blob->blb_blob_id.bid_relation_id ==
-				blob_id->bid_relation_id &&
-				array->arr_blob->blb_blob_id.bid_stuff.bid_number ==
-				blob_id->bid_stuff.bid_number)
+				array->arr_blob->blb_blob_id == *blob_id)
 			{
 				break;
 			}
@@ -1509,7 +1500,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 			(array->arr_blob)->blb_blob_id = *blob_id;
 		}
 	}
-	else if (blob_id->bid_stuff.bid_temp_id)
+	else if (blob_id->bid_temp_id())
 	{
 		array = find_array(transaction, blob_id);
 		if (!array) {
@@ -1554,8 +1545,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 		array->arr_effective_length = length;
 	}
 
-	blob_id->bid_stuff.bid_temp_id = array->arr_temp_id;
-	blob_id->bid_relation_id = 0;
+	blob_id->set_temporary(array->arr_temp_id);
 }
 
 
@@ -1965,7 +1955,7 @@ static void delete_blob_id(
 	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans);
 	blob->blb_relation = relation;
 	prior_page =
-		DPM_get_blob(tdbb, blob, blob_id->bid_stuff.bid_number, true,
+		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), true,
 					 prior_page);
 
 	if (!(blob->blb_flags & BLB_damaged))
@@ -1990,7 +1980,7 @@ static ArrayField* find_array(jrd_tra* transaction, const bid* blob_id)
 	ArrayField* array = transaction->tra_arrays;
 
 	for (; array; array = array->arr_next) {
-		if (array->arr_temp_id == blob_id->bid_stuff.bid_temp_id) {
+		if (array->arr_temp_id == blob_id->bid_temp_id()) {
 			break;
 		}
 	}
@@ -2151,9 +2141,9 @@ static void get_replay_blob(thread_db* tdbb, bid* blob_id)
 
 	for (map* map_ptr = dbb->dbb_blob_map; map_ptr; map_ptr = map_ptr->map_next)
 	{
-		if (blob_id->bid_stuff.bid_temp_id == map_ptr->map_old_blob)
+		if (blob_id->bid_temp_id() == map_ptr->map_old_blob)
 		{
-			blob_id->bid_stuff.bid_temp_id = map_ptr->map_new_blob;
+			blob_id->bid_temp_id() = map_ptr->map_new_blob;
 			break;
 		}
 	}

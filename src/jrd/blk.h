@@ -52,7 +52,7 @@ BLKDEF(type_dfw, DeferredWork, 1)	/* deferred work block */
 BLKDEF(type_tfb, TemporaryField, 0)	/* temporary field block */
 BLKDEF(type_str, str, 1)	/* random string block */
 BLKDEF(type_dcc, DataComprControl, 0)	/* data compression control */
-BLKDEF(type_sbm, SparseBitmap, sizeof(((SparseBitmap*) NULL)->sbm_segments[0]))	/* done sparse bit map */
+//BLKDEF(type_sbm, SparseBitmap, sizeof(((SparseBitmap*) NULL)->sbm_segments[0]))	/* done sparse bit map */
 BLKDEF(type_smb, SortMap, sizeof(((SortMap*) NULL)->smb_rpt[0]))	/* done sort map block */
 BLKDEF(type_blb, blb, 1)
 BLKDEF(type_irb, IndexRetrieval, sizeof(((IndexRetrieval*) NULL)->irb_value[0]))	/* Done Index retrieval */

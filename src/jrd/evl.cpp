@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.105 2004-09-25 20:29:51 skidder Exp $ 
+  * $Id: evl.cpp,v 1.106 2004-09-28 06:27:24 skidder Exp $ 
  */
 
 /*
@@ -104,7 +104,6 @@
 #include "../jrd/rlck_proto.h"
 #include "../jrd/rng_proto.h"
 #include "../jrd/rse_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/sort_proto.h"
@@ -296,7 +295,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 }
 
 
-SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
+RecordBitmap* EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -315,45 +314,48 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 
 	switch (node->nod_type) {
 	case nod_bit_and:
-		return SBM_and(EVL_bitmap(tdbb, node->nod_arg[0]),
-					   EVL_bitmap(tdbb, node->nod_arg[1]));
+		return RecordBitmap::bit_and(
+			EVL_bitmap(tdbb, node->nod_arg[0]),
+			EVL_bitmap(tdbb, node->nod_arg[1]));
 
 	case nod_bit_or:
-		return SBM_or(EVL_bitmap(tdbb, node->nod_arg[0]),
-					  EVL_bitmap(tdbb, node->nod_arg[1]));
+		return RecordBitmap::bit_or(
+			EVL_bitmap(tdbb, node->nod_arg[0]),
+			EVL_bitmap(tdbb, node->nod_arg[1]));
 
 	case nod_bit_in:
 		{
-			SparseBitmap** inv_bitmap = EVL_bitmap(tdbb, node->nod_arg[0]);
+			RecordBitmap* inv_bitmap = EVL_bitmap(tdbb, node->nod_arg[0]);
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[1]->nod_arg[e_idx_retrieval]),
-						 inv_bitmap);
+						 &inv_bitmap);
 			return inv_bitmap;
 		}
 
 	case nod_bit_dbkey:
 		{
 			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
-			SBM_reset(&impure->inv_bitmap);
+			RecordBitmap::reset(impure->inv_bitmap);
 			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
 			const USHORT id = 1 + 2 * (USHORT)(IPTR) node->nod_arg[1];
 			const UCHAR* numbers = desc->dsc_address;
-			numbers += id * sizeof(SLONG);
-			SLONG rel_dbkey;
-			MOVE_FAST(numbers, &rel_dbkey, sizeof(SLONG));
-			rel_dbkey -= 1;
-			SBM_set(tdbb, &impure->inv_bitmap, rel_dbkey);
-			return &impure->inv_bitmap;
+			numbers += id * sizeof(SLONG) - 1; // Use 40 bits for the record number
+			RecordNumber rel_dbkey;
+			rel_dbkey.bid_decode(numbers);
+			// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
+			rel_dbkey.setValue(rel_dbkey.getValue() - 1);
+			RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
+			return impure->inv_bitmap;
 		}
 
 	case nod_index:
 		{
 			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
-			SBM_reset(&impure->inv_bitmap);
+			RecordBitmap::reset(impure->inv_bitmap);
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
 						 &impure->inv_bitmap);
-			return &impure->inv_bitmap;
+			return impure->inv_bitmap;
 		}
 
 	default:
@@ -3306,8 +3308,17 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 		impure->vlu_misc.vlu_dbkey[1] = rpb->rpb_b_line;
 	}
 	else {
-		impure->vlu_misc.vlu_dbkey[0] = relation->rel_id;
-		impure->vlu_misc.vlu_dbkey[1] = rpb->rpb_number + 1;
+		// Initialize first 32 bits of DB_KEY
+		impure->vlu_misc.vlu_dbkey[0] = 0;
+
+		// Now, put relation ID into first 16 bits of DB_KEY
+		// We do not assign it as SLONG because of big-endian machines.
+		*(USHORT*)impure->vlu_misc.vlu_dbkey = relation->rel_id;
+
+		// NS: Encode 40-bit record number. Again, I have no idea why we
+		// increment it by one, but retain algorithm as it were before
+		RecordNumber temp(rpb->rpb_number.getValue() + 1);
+		temp.bid_encode(((UCHAR*)impure->vlu_misc.vlu_dbkey) + 3);
 	}
 
 /* Initialize descriptor */
@@ -4340,8 +4351,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 
 		if (request->req_transaction->tra_commit_sub_trans)
 		{
-			if (SBM_test(request->req_transaction->tra_commit_sub_trans,
-			             rpb->rpb_transaction_nr))
+			if (request->req_transaction->tra_commit_sub_trans->test(rpb->rpb_transaction_nr))
 			{
 				 request->req_flags |= req_same_tx_upd;
 			}

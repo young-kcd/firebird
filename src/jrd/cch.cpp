@@ -61,7 +61,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"

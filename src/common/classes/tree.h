@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.40 2004-08-22 21:09:13 skidder Exp $
+ *  $Id: tree.h,v 1.41 2004-09-28 06:27:16 skidder Exp $
  *
  */
 
@@ -149,6 +149,12 @@ public:
     ~BePlusTree() {
 		clear();
 	}
+
+	bool isEmpty() {
+		return 
+			root == NULL || 
+			(level == 0 && ((ItemList*)root)->getCount() == 0);
+	}
 	
 	bool add(const Value& item);
 	
@@ -169,6 +175,57 @@ public:
 	bool getPrev() { return defaultAccessor.getPrev(); }
 	
     Value& current() const { return defaultAccessor.current(); }
+
+	// Returns true if this tree appears to contain more elements than the other
+	bool seemsBiggerThan(const BePlusTree &other) const {
+		if (level != other.level)
+			return level > other.level;
+
+		if (level == 0) {
+			if (root == NULL)
+				return other.root == NULL;
+			if (other.root == NULL)
+				return true;
+			return ((ItemList*) root)->getCount() > ((ItemList*) other.root)->getCount();
+		}
+
+		return ((NodeList*) root)->getCount() > ((NodeList*) other.root)->getCount();
+	}
+
+	// Compute approximate number of leafs in the tree
+	size_t approxCount() {
+		if (!root) return 0;
+
+		if (level == 0) return ((ItemList*)root)->getCount();
+
+		// Tree is large. Roughtly estimate number of leaf nodes using number of
+		// items in root list and depth of the tree. Theoretically possible fill
+		// factor range for the tree on each level for current NEED_MERGE routine
+		// is [0.375, 1]. We take 3/5 = 0.6 as most probable case and 
+		// play from there.
+		size_t items_per_node = LeafCount * 3 / 5;
+		for (int i = 1; i < level; i++)
+			items_per_node *= NodeCount * 3 / 5;
+
+		return ((NodeList*)root)->getCount() * items_per_node;
+	}
+	
+	// Compute approximate memory consumption for tree in bytes
+	size_t approxSize() {
+		if (!root) return 0;
+
+		if (level == 0)
+			return sizeof(ItemList);
+
+		// Tree is large. Roughtly estimate memory consumption using number
+		// of items in root list and depth of the tree. Approach to approximation
+		// is the same as in approxCount() routine above
+		size_t bytes_per_node = sizeof(ItemList);
+		for (int i = 1; i < level; i++)
+			bytes_per_node *= NodeCount * 3 / 5;
+
+		return ((NodeList*)root)->getCount() * bytes_per_node;
+	}
 	
 private:
 	BePlusTree(Allocator *_pool, void *rootPage) : 	pool(_pool), level(0), 
@@ -335,6 +392,7 @@ public:
 				return found || curr;
 			case locLessEqual:
 				if (found) return true;
+				// NOTE: fall into next case statement
 			case locLess:
 				if (curPos == 0) {
 					curr = curr->prev;

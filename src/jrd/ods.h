@@ -33,6 +33,8 @@
 #ifndef JRD_ODS_H
 #define JRD_ODS_H
 
+#include "../jrd/RecordNumber.h"
+
 /*  This macro enables the ability of the engine to connect to databases
  *  from ODS 8 up to the latest.  If this macro is undefined, the engine
  *  only opens a database of the current ODS major version.
@@ -267,7 +269,7 @@ struct IndexNode
 	USHORT length;		// length of data in node
 	SLONG pageNumber;	// page number
 	UCHAR* data;		// Data can be read from here
-	SLONG recordNumber;	// record number
+	RecordNumber recordNumber;	// record number
 	bool isEndBucket;
 	bool isEndLevel;
 };

@@ -27,6 +27,8 @@
 #ifndef JRD_BLB_H
 #define JRD_BLB_H
 
+#include "../jrd/RecordNumber.h"
+
 namespace Jrd {
 
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
@@ -41,13 +43,62 @@ class BlobControl;
 class jrd_req;
 class jrd_tra;
 
-struct bid {
-	ULONG bid_relation_id;		/* Relation id (or null) */
-	union union_bid_stuff {
-		ULONG bid_temp_id;	/* Temporary ID of blob or array. Used for newly created objects (bid_relation_id==0) */
-		ULONG bid_number;	/* Record number */
-	} bid_stuff;
-	bool isEmpty() const { return bid_relation_id == 0 && bid_stuff.bid_number == 0; }
+// This structure must occupy 8 bytes
+struct bid {	
+	USHORT bid_relation_id;		/* Relation id (or null) */
+	UCHAR bid_reserved_for_relation;	/* Reserved for future expansion of relation space. */
+	union {
+		struct {
+			UCHAR bid_temp_pad_byte; /* Pad byte to align bid_temp_id */
+			UCHAR bid_temp_id[4];	/* Temporary ID of blob or array. Used for newly created objects (bid_relation_id==0) 
+									   Must be 4-byte aligned. Declared as char array to prevent compiler from vuluntary
+									   alignment decisions. */
+		} bid_temporary;
+		struct {
+			UCHAR bid_number[5];	/* Record number encoded as 40-bit quantity */
+		} bid_permanent;
+	};
+
+	ULONG& bid_temp_id() {
+		return *reinterpret_cast<ULONG*>(bid_temporary.bid_temp_id);
+	}
+
+	ULONG bid_temp_id() const {
+		return *reinterpret_cast<const ULONG*>(bid_temporary.bid_temp_id);
+	}
+
+	bool isEmpty() const { 
+		// Do not use 8-byte integer to do the check because 
+		// structure is commonly 4-byte aligned on 64-bit platform
+		fb_assert(sizeof(bid) == 8);
+		ULONG* bid_ptr = (ULONG*) this;
+		return bid_ptr[0] == 0 && bid_ptr[1] == 0; 
+	}
+
+	void clear() {
+		memset(this, 0, sizeof(*this));
+	}
+
+	void set_temporary(ULONG temp_id) {
+		clear();
+		bid_temp_id() = temp_id;
+	}
+
+	void set_permanent(USHORT relation_id, RecordNumber num) {
+		clear();
+		bid_relation_id = relation_id;
+		num.bid_encode(bid_permanent.bid_number);
+	}
+
+	RecordNumber get_permanent_number() const {
+		RecordNumber temp;
+		temp.bid_decode(bid_permanent.bid_number);
+		return temp;
+	}
+
+	bool operator == (const bid& other) const {
+		return memcmp(this, &other, sizeof(bid)) == 0;
+	}
 };
 
 /* Your basic blob block. */

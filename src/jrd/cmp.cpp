@@ -76,7 +76,6 @@
 #include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/rng_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/met_proto.h"
@@ -2098,7 +2097,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 			 rpb->rpb_stream_flags |= RPB_s_update;
 		}
 		rpb->rpb_relation = tail->csb_relation;
-		SBM_release(tail->csb_fields);
+
+		delete tail->csb_fields;
 	}
 
 	// make a vector of all used RSEs
@@ -4892,7 +4892,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
 			for (ULONG id = 0; id < format->fmt_count; id++, desc++) {
 				if (desc->dsc_dtype) {
-					SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
+					SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
 				}
 			}
 			csb->csb_impure += sizeof(impure_state);
@@ -4923,9 +4923,9 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_field:
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-			// SMB_set uses SLONG, not USHORT
-			const SLONG id = (SLONG)(IPTR) node->nod_arg[e_fld_id];
-			SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
+			// SMB_SET uses ULONG, not USHORT
+			const ULONG id = (ULONG)(IPTR) node->nod_arg[e_fld_id];
+			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
 			if (node->nod_flags & nod_value) {
 				csb->csb_impure += sizeof(impure_value_ex);
 				break;

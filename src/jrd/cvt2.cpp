@@ -534,9 +534,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 			/* Second test for blob id, checking relation and slot. */
 			bid* bid1 = (bid*) arg1->dsc_address;
 			bid* bid2 = (bid*) arg2->dsc_address;
-			if (bid1->bid_relation_id == bid2->bid_relation_id &&
-				((!bid1->bid_relation_id && bid1->bid_stuff.bid_temp_id == bid2->bid_stuff.bid_temp_id) ||
-				(bid1->bid_relation_id && bid1->bid_stuff.bid_number == bid2->bid_stuff.bid_number)))
+			if (*bid1 == *bid2)
 			{
 				return 0;
 			}

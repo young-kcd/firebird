@@ -36,6 +36,7 @@
 
 #include "../jrd/dsc.h"
 #include "../jrd/lls.h"
+#include "../jrd/sbm.h"
 
 class str;
 struct dsc;
@@ -46,7 +47,6 @@ class jrd_req;
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
-class SparseBitmap;
 struct sort_work_file;
 struct sort_context;
 class CompilerScratch;
@@ -183,7 +183,7 @@ struct irsb_index {
 	ULONG irsb_flags;
 	SLONG irsb_number;
 	SLONG irsb_prefetch_number;
-	SparseBitmap**	irsb_bitmap;
+	RecordBitmap*	irsb_bitmap;
 };
 
 typedef irsb_index *IRSB_INDEX;
@@ -240,12 +240,12 @@ const ULONG irsb_sim_active = 128;		// remote simulated stream request is active
 struct irsb_nav {
 	ULONG irsb_flags;
 	SLONG irsb_nav_expanded_offset;			// page offset of current index node on expanded index page
-	SLONG irsb_nav_number;					// last record number
+	RecordNumber irsb_nav_number;					// last record number
 	SLONG irsb_nav_page;					// index page number
 	SLONG irsb_nav_incarnation;				// buffer/page incarnation counter
 	ULONG irsb_nav_count;					// record count of last record returned
-	SparseBitmap**	irsb_nav_bitmap;			// bitmap for inversion tree
-	SparseBitmap*	irsb_nav_records_visited;	// bitmap of records already retrieved
+	RecordBitmap*	irsb_nav_bitmap;			// bitmap for inversion tree
+	RecordBitmap*	irsb_nav_records_visited;	// bitmap of records already retrieved
 	USHORT irsb_nav_offset;					// page offset of current index node
 	USHORT irsb_nav_lower_length;			// length of lower key value
 	USHORT irsb_nav_upper_length;			// length of upper key value

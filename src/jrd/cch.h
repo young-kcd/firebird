@@ -26,6 +26,7 @@
 
 #include "../include/fb_blk.h"
 #include "../jrd/os/pio.h"
+#include "../jrd/sbm.h"
 
 struct exp_index_buf;
 
@@ -40,7 +41,6 @@ class Precedence;
 class thread_db;
 struct que;
 class BufferDesc;
-class SparseBitmap;
 class BlockingThread;
 class Database;
 
@@ -78,7 +78,7 @@ public:
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
-	SparseBitmap*	bcb_prefetch;	/* Bitmap of pages to prefetch */
+	PageBitmap*	bcb_prefetch;	/* Bitmap of pages to prefetch */
 	bcb_repeat	bcb_rpt[1];
 };
 

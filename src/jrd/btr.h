@@ -33,6 +33,8 @@
 #include "../include/fb_blk.h"
 
 #include "../jrd/err_proto.h"    /* Index error types */
+#include "../jrd/RecordNumber.h"
+#include "../jrd/sbm.h"
 
 /* 64 turns out not to be enough indexes */
 /* #define MAX_IDX		 64	*/	/* that should be plenty of indexes */
@@ -45,7 +47,6 @@ namespace Jrd {
 
 class jrd_rel;
 class jrd_tra;
-class SparseBitmap;
 class vec;
 class jrd_req;
 struct temporary_key;
@@ -129,12 +130,12 @@ const int idx_marker		= 128;	/* marker used in procedure sort_indices */
 /* Index insertion block -- parameter block for index insertions */
 
 struct index_insertion {
-	SLONG iib_number;			/* record number (or lower level page) */
-	SLONG iib_sibling;			/* right sibling page */
+	RecordNumber iib_number;		/* record number (or lower level page) */
+	SLONG iib_sibling;				/* right sibling page */
 	index_desc*	iib_descriptor;		/* index descriptor */
-	jrd_rel*	iib_relation;	/* relation block */
+	jrd_rel*	iib_relation;		/* relation block */
 	temporary_key*	iib_key;		/* varying string for insertion */
-	SparseBitmap* iib_duplicates;	/* spare bit map of duplicates */
+	RecordBitmap* iib_duplicates;	/* spare bit map of duplicates */
 	jrd_tra*	iib_transaction;	/* insertion transaction */
 };
 
@@ -163,7 +164,7 @@ struct temporary_key {
 struct index_sort_record {
 	USHORT isr_key_length;
 	USHORT isr_flags;
-	ULONG isr_record_number;
+	RecordNumber isr_record_number;
 };
 
 const int ISR_secondary	= 1;	// Record is secondary version

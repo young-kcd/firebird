@@ -36,8 +36,6 @@ void ALL_init(void);
 struct blk;
 
 namespace Jrd {
-	class SparseBitmap;
-	class BitmapSegment;
 	class Database;
 	class DataComprControl;
 }
@@ -60,8 +58,6 @@ public:
 	static void deletePool(JrdMemoryPool* pool);
 	static void noDbbDeletePool(JrdMemoryPool* pool);
 
-    Jrd::SparseBitmap* plb_buckets;   /* available bit map buckets */
-    Jrd::BitmapSegment* plb_segments;  /* available bit map segments */
 	Jrd::DataComprControl* plb_dccs;
 };
 

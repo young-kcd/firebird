@@ -29,71 +29,37 @@
 #ifndef JRD_SBM_H
 #define JRD_SBM_H
 
-#include "../jrd/jrd_blks.h"
-#include "../include/fb_blk.h"
-#include "../include/fb_vector.h"
-
-#define BUNCH_BITS	LOG2_BITS_PER_LONG
-#define BUNCH		SLONG
-#define SEGMENT_BITS	10
-#define BITS_BUNCH		(1 << BUNCH_BITS)
-#define BITS_SEGMENT	(1 << SEGMENT_BITS)
-#define BUNCH_SEGMENT	BITS_SEGMENT / BITS_BUNCH
-
-#define BUCKET_BITS		15
-#define BUNCH_BUCKET	(1 << (BUCKET_BITS - SEGMENT_BITS))
-
-// Sparse bit map
+#include "../common/classes/sparse_bitmap.h"
 
 namespace Jrd {
 
-class BitmapSegment;
+// Bitmap of record numbers
+typedef Firebird::SparseBitmap<UINT64> RecordBitmap;
 
-class SparseBitmap : public pool_alloc<type_sbm>
-{
-    public:
-	SparseBitmap(MemoryPool& p, int len)
-	:	sbm_segments(len, p, type_sbm)
-	{
-	}
+// Bitmap of page numbers
+typedef Firebird::SparseBitmap<ULONG> PageBitmap;
 
-	SparseBitmap*	sbm_next;
-	JrdMemoryPool*	sbm_pool;
-	UCHAR			sbm_state;			// State of bitmap
-	UCHAR			sbm_type;			// Root or bucket
-	USHORT			sbm_count;			// Slots allocated
-	USHORT			sbm_used;			// Slots used
-	USHORT			sbm_high_water;		// Maximum slot used
-	SLONG			sbm_number;			// Value when singular
-	typedef			Firebird::vector<BitmapSegment*>	vector_type;
-	typedef			vector_type::iterator	iterator;
-	typedef         vector_type::const_iterator const_iterator;
+// Bitmap of generic 32-bit integers
+typedef Firebird::SparseBitmap<ULONG> UInt32Bitmap;
 
-	vector_type		sbm_segments;
-};
+// Please do not try to turn these macros to inline routines simply.
+// They are used in very performance-sensitive places and we don't want 
+// pool thread-specific pool pointer be expanded unless necessary.
+//
+// Only if you kill thread-specific pool usage (which is certainly incorrect now)
+// you may eliminate these macros safely.
 
-/* States */
+// Bitmap of 64-bit record numbers
+#define RBM_SET(POOL_PTR, BITMAP_PPTR, VALUE) \
+	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW(*(POOL_PTR)) Jrd::RecordBitmap(*(POOL_PTR))))->set(VALUE)
 
-const UCHAR SBM_EMPTY		= 0;
-const UCHAR SBM_SINGULAR	= 1;
-const UCHAR SBM_PLURAL		= 2;
+// Bitmap of 32-bit integers
+#define SBM_SET(POOL_PTR, BITMAP_PPTR, VALUE) \
+	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW(*(POOL_PTR)) Jrd::UInt32Bitmap(*(POOL_PTR))))->set(VALUE)
 
-/* Types */
-
-const UCHAR SBM_BUCKET		= 0;
-const UCHAR SBM_ROOT		= 1;
-
-/* Bit map segment */
-
-class BitmapSegment : public pool_alloc<type_bms>
-{
-public:
-	BitmapSegment*	bms_next;
-	JrdMemoryPool*	bms_pool;
-	SSHORT			bms_min;			// Minimum bit set in segment
-	SSHORT			bms_max;			// Maximum bit set in segment
-	BUNCH			bms_bits[BUNCH_SEGMENT];
-};
+// Bitmap of page numbers
+#define PBM_SET(POOL_PTR, BITMAP_PPTR, VALUE) \
+	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW(*(POOL_PTR)) Jrd::PageBitmap(*(POOL_PTR))))->set(VALUE)
 
 } //namespace Jrd
 

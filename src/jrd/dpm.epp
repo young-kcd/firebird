@@ -50,7 +50,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/pag.h"
-#include "../jrd/sbm.h"
 #include "../jrd/rse.h"
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
@@ -64,7 +63,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/sqz_proto.h"
 #include "../jrd/thd.h"
 
@@ -142,7 +140,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
-		printf("DPM_backout (record_param %"SLONGFORMAT")\n", rpb->rpb_number);
+		printf("DPM_backout (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf
 			("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
@@ -219,9 +217,9 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("DPM_chain (org_rpb %"SLONGFORMAT", new_rpb %"
-			  SLONGFORMAT")\n", org_rpb->rpb_number,
-			  new_rpb ? new_rpb->rpb_number : 0);
+		printf("DPM_chain (org_rpb %"QUADFORMAT"d, new_rpb %"
+			  QUADFORMAT"d)\n", org_rpb->rpb_number.getValue(),
+			  new_rpb ? new_rpb->rpb_number.getValue() : 0);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf
@@ -609,8 +607,8 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("DPM_delete (record_param %"SLONGFORMAT", prior_page %"SLONGFORMAT
-				  ")\n", rpb->rpb_number, prior_page);
+		printf("DPM_delete (record_param %"QUADFORMAT"d, prior_page %"QUADFORMAT
+				  "d)\n", rpb->rpb_number.getValue(), prior_page);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf
@@ -626,7 +624,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 	data_page* page = (data_page*) window->win_buffer;
 	SLONG sequence = page->dpg_sequence;
 	data_page::dpg_repeat* index = &page->dpg_rpt[rpb->rpb_line];
-	const SLONG number = rpb->rpb_number;
+	const RecordNumber number = rpb->rpb_number;
 
 	if (!get_header(window, rpb->rpb_line, rpb)) {
 		CCH_RELEASE(tdbb, window);
@@ -888,14 +886,14 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
 	{
-		printf("DPM_fetch (record_param %"SLONGFORMAT", lock %d)\n", 
-			rpb->rpb_number, lock);
+		printf("DPM_fetch (record_param %"QUADFORMAT"d, lock %d)\n", 
+			rpb->rpb_number.getValue(), lock);
 	}
 	if (debug_flag > DEBUG_READS_INFO)
 		printf("    record %"SLONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
 #endif
 
-	const SLONG number = rpb->rpb_number;
+	const RecordNumber number = rpb->rpb_number;
 	rpb->rpb_window.win_page = rpb->rpb_page;
 	CCH_FETCH(tdbb, &rpb->rpb_window, lock, pag_data);
 
@@ -952,8 +950,8 @@ SSHORT DPM_fetch_back(thread_db* tdbb,
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
 	{
-		printf("DPM_fetch_back (record_param %"SLONGFORMAT", lock %d)\n", 
-			rpb->rpb_number, lock);
+		printf("DPM_fetch_back (record_param %"QUADFORMAT"d, lock %d)\n", 
+			rpb->rpb_number.getValue(), lock);
 	}
 	if (debug_flag > DEBUG_READS_INFO)
 	{
@@ -976,7 +974,7 @@ SSHORT DPM_fetch_back(thread_db* tdbb,
 		return 0;
 	}
 
-	const SLONG number = rpb->rpb_number;
+	const RecordNumber number = rpb->rpb_number;
 	rpb->rpb_page = rpb->rpb_b_page;
 	rpb->rpb_line = rpb->rpb_b_line;
 	if (!get_header(&rpb->rpb_window, rpb->rpb_line, rpb))
@@ -1020,8 +1018,8 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
-		printf("DPM_fetch_fragment (record_param %"SLONGFORMAT", lock %d)\n", 
-			rpb->rpb_number, lock);
+		printf("DPM_fetch_fragment (record_param %"QUADFORMAT"d, lock %d)\n", 
+			rpb->rpb_number.getValue(), lock);
 	if (debug_flag > DEBUG_READS_INFO) {
 		printf("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
 				  " back %"SLONGFORMAT":%d\n",
@@ -1030,7 +1028,7 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 	}
 #endif
 
-	const SLONG number = rpb->rpb_number;
+	const RecordNumber number = rpb->rpb_number;
 	rpb->rpb_page = rpb->rpb_f_page;
 	rpb->rpb_line = rpb->rpb_f_line;
 	CCH_HANDOFF(tdbb, &rpb->rpb_window, rpb->rpb_page, lock, pag_data);
@@ -1203,8 +1201,8 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS) {
-		printf("DPM_get (record_param %"SLONGFORMAT", lock type %d)\n", 
-			rpb->rpb_number, lock_type);
+		printf("DPM_get (record_param %"QUADFORMAT"d, lock type %d)\n", 
+			rpb->rpb_number.getValue(), lock_type);
 	}
 #endif
 
@@ -1212,17 +1210,9 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 	rpb->rpb_prior = NULL;
 
 /* Find starting point */
-	SLONG sequence;
 	USHORT pp_sequence;
 	SSHORT slot, line;
-	DECOMPOSE(rpb->rpb_number, dbb->dbb_max_records, sequence, line);
-	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
-
-/* Check if the record number is OK */
-
-	if ((slot < 0) || (line < 0)) {
-		return false;
-	}
+	rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
 
 /* Find the next pointer page, data page, and record */
 	pointer_page* page = get_pointer_page(tdbb, rpb->rpb_relation, window, pp_sequence,
@@ -1254,7 +1244,7 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 
 ULONG DPM_get_blob(thread_db* tdbb,
 				   blb* blob,
-				   ULONG record_number, bool delete_flag, SLONG prior_page)
+				   RecordNumber record_number, bool delete_flag, SLONG prior_page)
 {
 /**************************************
  *
@@ -1281,18 +1271,18 @@ ULONG DPM_get_blob(thread_db* tdbb,
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS) {
 		printf
-			("DPM_get_blob (blob, record_number %"ULONGFORMAT
-			", delete_flag %d, prior_page %"SLONGFORMAT")\n",
-			 record_number, (int) delete_flag, prior_page);
+			("DPM_get_blob (blob, record_number %"QUADFORMAT
+			"d, delete_flag %d, prior_page %"SLONGFORMAT")\n",
+			 record_number.getValue(), (int) delete_flag, prior_page);
 	}
 #endif
 
 /* Find starting point */
 	SLONG sequence;
 	USHORT pp_sequence;
-	USHORT slot, line;
-	DECOMPOSE(record_number, dbb->dbb_max_records, sequence, line);
-	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
+	SSHORT slot, line;
+
+	record_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);	
 
 /* Find the next pointer page, data page, and record.  If the page or
    record doesn't exist, or the record isn't a blob, give up and
@@ -1435,7 +1425,7 @@ bool DPM_next(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
-		printf("DPM_next (record_param %"SLONGFORMAT")\n", rpb->rpb_number);
+		printf("DPM_next (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 #endif
 
 	WIN* window = &rpb->rpb_window;
@@ -1453,10 +1443,13 @@ bool DPM_next(thread_db* tdbb,
 /* Find starting point */
 
 	if (backwards) {
-		if (rpb->rpb_number > 0) {
-			rpb->rpb_number--;
+		if (rpb->rpb_number.isEmpty())
+			return false;
+
+		if (!rpb->rpb_number.isBof()) {
+			rpb->rpb_number.decrement();
 		}
-		else if (rpb->rpb_number < 0) {
+		else {
 			/*  if the stream was just opened, assume we want to start
 			   at the end of the stream, so compute the last theoretically 
 			   possible rpb_number and go down from there */
@@ -1471,30 +1464,17 @@ bool DPM_next(thread_db* tdbb,
 				return false;
 			}
 			const size_t pp_sequence = vector->count();
-			rpb->rpb_number =
-				(((SLONG)
-				  (pp_sequence * dbb->dbb_dp_per_pp) * dbb->dbb_max_records) -
-				 1);
-			// CVC: After doing local scope, this variable was undeclared
-			// because I moved it below this loop. However, declaring it here
-			// serves no purpose. You may declare "line" above the loop.
-			// However, the DECOMPOSE call below uses "line" as an output param
-			// only, so it doesn't make sense to preserve any prior value.
-			//line = dbb->dbb_max_records - 1;
-		}
-		else {
-			return false;
+			rpb->rpb_number.setValue(
+				((SINT64) pp_sequence) * dbb->dbb_dp_per_pp * dbb->dbb_max_records - 1);
 		}
 	}
 	else {
-		rpb->rpb_number++;
+		rpb->rpb_number.increment();
 	}
 
-	SLONG sequence;
 	SSHORT slot, line;
 	USHORT pp_sequence;
-	DECOMPOSE(rpb->rpb_number, dbb->dbb_max_records, sequence, line);
-	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
+	rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS_INFO) {
@@ -1557,9 +1537,7 @@ bool DPM_next(thread_db* tdbb,
 							 rpb_flags & (rpb_blob | rpb_chained |
 										  rpb_fragment)))
 					{
-						rpb->rpb_number =
-							(((SLONG) pp_sequence * dbb->dbb_dp_per_pp) +
-							 slot) * dbb->dbb_max_records + line;
+						rpb->rpb_number.compose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
 						return true;
 					}
 				}
@@ -1670,7 +1648,7 @@ void DPM_pages(
 
 
 #ifdef SUPERSERVER_V2
-SLONG DPM_prefetch_bitmap(thread_db* tdbb, jrd_rel* relation, SparseBitmap* bitmap, SLONG number)
+SLONG DPM_prefetch_bitmap(thread_db* tdbb, jrd_rel* relation, PageBitmap* bitmap, RecordNumber number)
 {
 /**************************************
  *
@@ -1833,8 +1811,8 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("DPM_store (record_param %"SLONGFORMAT", stack, type %d)\n",
-				  rpb->rpb_number, type);
+		printf("DPM_store (record_param %"QUADFORMAT"d, stack, type %d)\n",
+				  rpb->rpb_number.getValue(), type);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf
@@ -1899,7 +1877,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 }
 
 
-SLONG DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
+RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 {
 /**************************************
  *
@@ -2012,7 +1990,7 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
-		printf("DPM_rewrite_header (record_param %"SLONGFORMAT")\n", rpb->rpb_number);
+		printf("DPM_rewrite_header (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 	if (debug_flag > DEBUG_WRITES_INFO)
 		printf("    record  %"SLONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
 #endif
@@ -2063,8 +2041,8 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("DPM_update (record_param %"SLONGFORMAT", stack, transaction %"SLONGFORMAT")\n",
-				  rpb->rpb_number, transaction ? transaction->tra_number : 0);
+		printf("DPM_update (record_param %"QUADFORMAT"d, stack, transaction %"SLONGFORMAT")\n",
+				  rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf
@@ -2313,10 +2291,10 @@ static void fragment(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
 		printf
-			("fragment (record_param %"SLONGFORMAT
-			 ", available_space %d, dcc, length %d, transaction %"
+			("fragment (record_param %"QUADFORMAT
+			 "d, available_space %d, dcc, length %d, transaction %"
 			 SLONGFORMAT")\n",
-			 rpb->rpb_number, available_space, length,
+			 rpb->rpb_number.getValue(), available_space, length,
 			 transaction ? transaction->tra_number : 0);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
@@ -2709,8 +2687,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 	index->dpg_offset = space;
 	rpb->rpb_page = rpb->rpb_window.win_page;
 	rpb->rpb_line = slot;
-	rpb->rpb_number =
-		(SLONG) page->dpg_sequence * dbb->dbb_max_records + slot;
+	rpb->rpb_number.setValue(((SINT64) page->dpg_sequence) * dbb->dbb_max_records + slot);
 
 	if (record) {
 		record->rec_precedence.push(rpb->rpb_page);
@@ -2852,10 +2829,9 @@ static RHD locate_space(
 /* If there is a preferred page, try there first */
 
 	if (type == DPM_secondary) {
-		SLONG sequence;
-		DECOMPOSE_QUOTIENT(rpb->rpb_number, dbb->dbb_max_records, sequence);
-		USHORT pp_sequence, slot;
-		DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
+		USHORT pp_sequence;
+		SSHORT slot, line;
+		rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
 		const pointer_page* ppage = get_pointer_page(tdbb, relation, window, pp_sequence,
 									   LCK_read);
 		if (ppage)

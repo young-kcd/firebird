@@ -24,12 +24,13 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_test.cpp,v 1.22 2004-08-28 23:14:46 skidder Exp $
+ *  $Id: class_test.cpp,v 1.23 2004-09-28 06:27:16 skidder Exp $
  *
  */
 
 #include "../../include/firebird.h"
 #include "tree.h"
+#include "sparse_bitmap.h"
 #include "alloc.h"
 #include <stdio.h>
 
@@ -65,6 +66,126 @@ void testSortedVector() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 }
 
+const int BITMAP_ITEMS = 1000000;
+
+void testBitmap() {
+    MallocAllocator temp;
+
+    printf("Test Firebird::SparseBitmap\n");
+
+    printf("Fill arrays with test data (%d items)...", BITMAP_ITEMS);
+	Vector<int, BITMAP_ITEMS> v1;
+	int n = 0;
+	int i;
+	for (i = 0; i < BITMAP_ITEMS; i++) {
+		n = n * 45578 - 17651;
+		// Fill it with quasi-random values in range 0...BITMAP_ITEMS-1
+		v1.add(((i + n) % BITMAP_ITEMS + BITMAP_ITEMS) / 2);
+	}
+
+	Vector<int, BITMAP_ITEMS> v2;
+	for (i = 0; i < BITMAP_ITEMS; i++) {
+		n = n * 45578 - 17651;
+		// Fill it with quasi-random values in range 0...BITMAP_ITEMS-1
+		v2.add(((i + n) % BITMAP_ITEMS + BITMAP_ITEMS) / 2);
+	}
+	printf(" DONE\n");
+
+	Firebird::BePlusTree<int> tree(&temp), tree2(&temp);
+	SparseBitmap<ULONG> bitmap(*getDefaultMemoryPool()), bitmap2(*getDefaultMemoryPool());
+
+    printf("Verify SET, TEST operations");
+	// Check set, test
+	for (i = 0; i < BITMAP_ITEMS; i++) {
+		if (!tree.add(v1[i]))
+			if (!bitmap.test(v1[i]))
+				fb_assert(false);
+		bitmap.set(v1[i]);
+	}
+	printf(" DONE\n");
+
+    printf("Check correctness of all bits in bitmap");
+	for (i = -10; i < BITMAP_ITEMS + 10; i++) {
+		if (bitmap.test(i) != tree.locate(i))
+			fb_assert(false);
+	}
+	printf(" DONE\n");
+
+    printf("Verify CLEAR(V) operation for correctness");
+	for (i = 0; i < BITMAP_ITEMS; i++) {		
+		if (tree.locate(v1[i])) {
+			bool result = bitmap.clear(v1[i]);
+			tree.fastRemove();
+			fb_assert(result == true);
+		} else {
+			bool result = bitmap.clear(v1[i]);
+			fb_assert(result == false);
+		}		
+	}
+	printf(" DONE\n");
+
+    printf("Verify AND operation for correctness (and forward iterator)");
+	for (i = 0; i < BITMAP_ITEMS; i++) {
+		tree.add(v1[i]);
+		bitmap.set(v1[i]);
+	}
+	for (i = 0; i < BITMAP_ITEMS; i++) {
+		tree2.add(v2[i]);
+		bitmap2.set(v2[i]);
+	}
+
+	// Calculate AND using trees by hand
+	if (tree2.getFirst())
+		while (true) {
+			if (!tree.locate(tree2.current())) {
+				if (!tree2.fastRemove()) break;
+			}
+			else
+				if (!tree2.getNext()) break;
+		}
+	
+	SparseBitmap<ULONG> *and_res = SparseBitmap<ULONG>::bit_and(&bitmap, &bitmap2);
+
+	bool has1 = tree2.getFirst(), has2 = and_res->getFirst();
+	fb_assert(has1 == has2);
+	fb_assert((ULONG)tree2.current() == and_res->current());
+	while (has1) {
+		has1 = tree2.getNext();
+		has2 = and_res->getNext();
+		fb_assert(has1 == has2);
+		fb_assert((ULONG)tree2.current() == and_res->current());
+	} 
+	printf(" DONE\n");
+	
+
+    printf("Verify OR operation for correctness (and backwards iterator)");
+	tree.clear();
+	bitmap.clear();
+	bitmap2.clear();
+	for (i = 0; i < BITMAP_ITEMS; i++) {
+		tree.add(v1[i]);
+		bitmap.set(v1[i]);
+	}
+	for (i = 0; i < BITMAP_ITEMS; i++) {
+		tree.add(v2[i]);
+		bitmap2.set(v2[i]);
+	}
+
+	SparseBitmap<ULONG> *or_res = SparseBitmap<ULONG>::bit_or(&bitmap, &bitmap2);
+
+	has1 = tree.getLast();
+	has2 = or_res->getLast();
+	fb_assert(has1 == has2);
+	fb_assert((ULONG)tree.current() == or_res->current());
+	while (has1) {
+		has1 = tree.getPrev();
+		has2 = or_res->getPrev();
+		fb_assert(has1 == has2);
+		fb_assert((ULONG)tree.current() == or_res->current());
+	}
+	printf(" DONE\n");
+}
+
 const size_t TEST_ITEMS = 10000;
 
 struct Test {
@@ -79,7 +200,7 @@ void testBePlusTree() {
     MallocAllocator temp;
     printf("Test Firebird::BePlusTree\n");
 	
-    printf("Fill array with test data (%d items)...", TEST_ITEMS);
+    printf("Fill array with test data (%d items)...", (int)TEST_ITEMS);
 	Vector<int, TEST_ITEMS> v;
 	int n = 0;
 	size_t i;
@@ -366,7 +487,7 @@ void testBePlusTree() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 }
 
-const int ALLOC_ITEMS	= 1000000;
+const int ALLOC_ITEMS	= 10000;
 const int MAX_ITEM_SIZE	= 300;
 const int BIG_ITEMS		= ALLOC_ITEMS / 10;
 const int BIG_SIZE		= MAX_ITEM_SIZE * 5;
@@ -478,5 +599,6 @@ int main() {
 	testSortedVector();
 	testBePlusTree();
 	testAllocator();
+	testBitmap();
 }
 

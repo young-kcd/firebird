@@ -566,7 +566,6 @@ VI. ADDITIONAL NOTES
 #include "../jrd/jrd_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
@@ -590,15 +589,15 @@ using namespace Ods;
 
 struct vdr
 {
-	SparseBitmap* vdr_page_bitmap;
+	PageBitmap* vdr_page_bitmap;
 	SLONG vdr_max_page;
 	USHORT vdr_flags;
 	USHORT vdr_errors;
 	SLONG vdr_max_transaction;
 	ULONG vdr_rel_backversion_counter;	/* Counts slots w/rhd_chain */
 	ULONG vdr_rel_chain_counter;	/* Counts chains w/rdr_chain */
-	SparseBitmap* vdr_rel_records;		/* 1 bit per valid record */
-	SparseBitmap* vdr_idx_records;		/* 1 bit per index item */
+	RecordBitmap* vdr_rel_records;		/* 1 bit per valid record */
+	RecordBitmap* vdr_idx_records;		/* 1 bit per index item */
 };
 
 typedef vdr *VDR;
@@ -854,13 +853,13 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
    double allocated (to more than one relation) we'll find it
    when the on-page relation id doesn't match */
 
-	if ((type != pag_data) && SBM_test(control->vdr_page_bitmap, page_number)) {
+	if ((type != pag_data) && PageBitmap::test(control->vdr_page_bitmap, page_number)) {
 		corrupt(tdbb, control, VAL_PAG_DOUBLE_ALLOC, 0, page_number);
 		return fetch_duplicate;
 	}
 
 
-	SBM_set(tdbb, &control->vdr_page_bitmap, page_number);
+	PBM_SET(tdbb->getDefaultPool(), &control->vdr_page_bitmap, page_number);
 
 	return fetch_ok;
 }
@@ -896,7 +895,7 @@ static void garbage_collect(thread_db* tdbb, VDR control)
 		while (p < end && number < control->vdr_max_page) {
 			UCHAR byte = *p++;
 			for (int i = 8; i; --i, byte >>= 1, number++) {
-				if (SBM_test(control->vdr_page_bitmap, number)) {
+				if (PageBitmap::test(control->vdr_page_bitmap, number)) {
 					if (byte & 1) {
 						corrupt(tdbb, control, VAL_PAG_IN_USE, 0, number);
 						if (control->vdr_flags & vdr_update) {
@@ -1246,7 +1245,7 @@ static RTN walk_data_page(thread_db* tdbb,
 				   state of the lone primary record version. */
 
 				if (header->rhd_b_page)
-					SBM_set(tdbb, &control->vdr_rel_records, number);
+					RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number);
 				else {
 					int state;
 					if (header->rhd_transaction < dbb->dbb_oldest_transaction)
@@ -1255,7 +1254,7 @@ static RTN walk_data_page(thread_db* tdbb,
 						state =
 							TRA_fetch_state(tdbb, header->rhd_transaction);
 					if (state == tra_committed || state == tra_limbo)
-						SBM_set(tdbb, &control->vdr_rel_records, number);
+						RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number);
 				}
 			}
 
@@ -1397,7 +1396,7 @@ static RTN walk_index(thread_db* tdbb,
 	SLONG previous_number = 0;
 
 	if (control) {
-		SBM_reset(&control->vdr_idx_records);
+		RecordBitmap::reset(control->vdr_idx_records);
 	}
 
 	bool firstNode = true;
@@ -1496,7 +1495,7 @@ static RTN walk_index(thread_db* tdbb,
 				}
 			}
 
-			if (useAllRecordNumbers && (node.recordNumber >= 0) &&
+			if (useAllRecordNumbers && (node.recordNumber.getValue() >= 0) &&
 				!firstNode && !node.isEndLevel)
 			{
 				// If this node is equal to the previous one and it's
@@ -1530,13 +1529,13 @@ static RTN walk_index(thread_db* tdbb,
 
 			// Record the existance of a primary version of a record
 			if (leafPage && control && (control->vdr_flags & vdr_records)) {
-			  SBM_set(tdbb, &control->vdr_idx_records, node.recordNumber);
+			  RBM_SET(tdbb->getDefaultPool(), &control->vdr_idx_records, node.recordNumber.getValue());
 			}
 
 			// fetch the next page down (if full validation was specified)
 			if (!leafPage && control && (control->vdr_flags & vdr_records)) {
 				const SLONG down_number = node.pageNumber;
-				const SLONG down_record_number = node.recordNumber;
+				const RecordNumber down_record_number = node.recordNumber;
 
 				// Note: control == 0 for the fetch_page() call here 
 				// as we don't want to mark the page as visited yet - we'll 
@@ -1637,16 +1636,15 @@ static RTN walk_index(thread_db* tdbb,
 	// have a corrupt index
 	if (control && (control->vdr_flags & vdr_records)) {
 		THREAD_EXIT();
-		SLONG next_number = -1;
-		while (SBM_next(control->vdr_rel_records, &next_number,
-						RSE_get_forward))
-		{
-			if (!SBM_test(control->vdr_idx_records, next_number)) {
+		RecordBitmap::Accessor accessor(control->vdr_rel_records);
+		if (accessor.getFirst()) do	{
+			SINT64 next_number = accessor.current();
+			if (!RecordBitmap::test(control->vdr_idx_records, next_number)) {
 				THREAD_ENTER();
 				return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS,
 							   relation, id + 1);
 			}
-		}
+		} while(accessor.getNext());
 		THREAD_ENTER();
 	}
 
@@ -1995,7 +1993,7 @@ static RTN walk_relation(thread_db* tdbb, VDR control, jrd_rel* relation)
 	if (control) {
 		control->vdr_rel_backversion_counter = 0;
 		control->vdr_rel_chain_counter = 0;
-		SBM_reset(&control->vdr_rel_records);
+		RecordBitmap::reset(control->vdr_rel_records);
 	}
 	for (SLONG sequence = 0; true; sequence++) {
 		const RTN result = walk_pointer_page(tdbb, control, relation, sequence);

@@ -1163,6 +1163,18 @@ void PAG_init(void)
 	dbb->dbb_max_records = (dbb->dbb_page_size - sizeof(data_page)) /
 		(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
 
+	// Artifically reduce density of records to test high bits of record number
+	// dbb->dbb_max_records = 32000;
+
+/* Optimize record numbers for new 64-bit sparse bitmap implementation 
+   We need to measure if it is beneficial from performance point of view.
+   Price is slightly reduced density of record numbers, but for
+   ODS11 it doesn't matter because record numbers are 40-bit.
+   Benefit is ~1.5 times smaller sparse bitmaps on average and 
+   faster bitmap iteration. */
+//	if (dbb->dbb_ods_version >= ODS_VERSION11)
+//		dbb->dbb_max_records = FB_ALIGN(dbb->dbb_max_records, 64);
+
 /* Compute the number of index roots that will fit on an index root page,
    assuming that each index has only one key */
 

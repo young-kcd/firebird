@@ -62,7 +62,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
@@ -201,7 +200,7 @@ void IDX_create_index(
 	record_param primary, secondary;
 	secondary.rpb_relation = relation;
 	primary.rpb_relation   = relation;
-	primary.rpb_number = -1;
+	primary.rpb_number.setValue(BOF_NUMBER);
 	//primary.rpb_window.win_flags = secondary.rpb_window.win_flags = 0; redundant
 
 	const USHORT key_length = ROUNDUP(BTR_key_length(relation, idx), sizeof(SLONG));
@@ -894,15 +893,16 @@ static IDX_E check_duplicates(
 	index_desc* insertion_idx = insertion->iib_descriptor;
 
 	record_param rpb;
-	rpb.rpb_number = -1;
 	rpb.rpb_relation = insertion->iib_relation;
 	rpb.rpb_record = NULL;
 	// rpb.rpb_window.win_flags = 0; redundant.
 	jrd_rel* relation_1 = insertion->iib_relation;
 
-	while (SBM_next
-		   (insertion->iib_duplicates, &rpb.rpb_number, RSE_get_forward))
-	{
+	RecordBitmap::Accessor accessor(insertion->iib_duplicates);
+
+	if (accessor.getFirst())
+	do {
+		rpb.rpb_number.setValue(accessor.current());
 		if (rpb.rpb_number != insertion->iib_number
 			&& VIO_get_current(tdbb, &rpb, insertion->iib_transaction,
 							   tdbb->getDefaultPool(),
@@ -1025,7 +1025,7 @@ static IDX_E check_duplicates(
 				}
 			}
 		}
-	}
+	} while (accessor.getNext());
 
 	if (rpb.rpb_record)
 		delete rpb.rpb_record;
@@ -1177,7 +1177,7 @@ static IDX_E check_partner_index(
 				retrieval.irb_lower_count = idx->idx_count;
 		}
 
-		SparseBitmap* bitmap = NULL;
+		RecordBitmap* bitmap = NULL;
 		BTR_evaluate(tdbb, &retrieval, &bitmap);
 
 		/* if there is a bitmap, it means duplicates were found */
@@ -1185,7 +1185,7 @@ static IDX_E check_partner_index(
 		if (bitmap) {
 			insertion.iib_descriptor = &partner_idx;
 			insertion.iib_relation = partner_relation;
-			insertion.iib_number = -1;
+			insertion.iib_number.setValue(BOF_NUMBER);
 			insertion.iib_duplicates = bitmap;
 			insertion.iib_transaction = transaction;
 			result =
@@ -1194,7 +1194,7 @@ static IDX_E check_partner_index(
 				result = result ? idx_e_foreign_references_present : idx_e_ok;
 			if (idx->idx_flags & idx_foreign)
 				result = result ? idx_e_ok : idx_e_foreign_target_doesnt_exist;
-			SBM_release(bitmap);
+			delete bitmap;
 		}
 		else if (idx->idx_flags & idx_foreign) {
 			result = idx_e_foreign_target_doesnt_exist;
@@ -1349,7 +1349,7 @@ static IDX_E insert_key(
 
 	if (insertion->iib_duplicates) {
 		result = check_duplicates(tdbb, record, idx, insertion, NULL);
-		SBM_release(insertion->iib_duplicates);
+		delete insertion->iib_duplicates;
 	}
 
 	if (result != idx_e_ok) {

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.76 2004-08-30 18:10:42 alexpeshkoff Exp $
+ * $Id: rse.cpp,v 1.77 2004-09-28 06:27:24 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -70,7 +70,6 @@
 #include "../jrd/rlck_proto.h"
 #include "../jrd/rse_proto.h"
 #include "../jrd/rse_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
@@ -283,7 +282,7 @@ bool RSE_find_dbkey(thread_db* tdbb, RecordSource* rsb, jrd_nod* find_key, jrd_n
 
 	record_param* rpb;
 	IRSB_INDEX impure;
-	SparseBitmap** bitmap;
+	RecordBitmap* bitmap;
 
 	switch (rsb->rsb_type) {
 	case rsb_boolean:
@@ -679,7 +678,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			RLCK_reserve_relation(tdbb, request->req_transaction,
 								  rpb->rpb_relation, false, true);
 
-			rpb->rpb_number = -1;
+			rpb->rpb_number.setValue(BOF_NUMBER);
 			return;
 
 		case rsb_cross:
@@ -748,7 +747,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				for (const RecordSource* const* const end = ptr + (USHORT)(IPTR) *ptr;
 					++ptr <= end;)
 				{
-					request->req_rpb[(USHORT)(IPTR) *ptr].rpb_number = -1;
+					request->req_rpb[(USHORT)(IPTR) *ptr].rpb_number.setValue(BOF_NUMBER);
 				}
 
 				rsb = rsb->rsb_arg[0];
@@ -814,7 +813,7 @@ bool RSE_reset_position(thread_db* tdbb, RecordSource* rsb, record_param* new_rp
  **************************************/
 	record_param* rpb;
 	IRSB_INDEX impure;
-	SparseBitmap** bitmap;
+	RecordBitmap* bitmap;
 
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
@@ -2230,7 +2229,7 @@ static bool get_record(thread_db*	tdbb,
 	case rsb_sequential:
 		if (impure->irsb_flags & irsb_bof)
 		{
-			rpb->rpb_number = -1;
+			rpb->rpb_number.setValue(BOF_NUMBER);
 		}
 
 #ifdef PC_ENGINE
@@ -2263,11 +2262,15 @@ static bool get_record(thread_db*	tdbb,
 		{
 			bool result = false;
 
-			SparseBitmap** bitmap = ((IRSB_INDEX) impure)->irsb_bitmap;
+			RecordBitmap* bitmap = ((IRSB_INDEX) impure)->irsb_bitmap;
 			if (bitmap)
 			{
-				while (SBM_next(*bitmap, &rpb->rpb_number, mode))
-				{
+				// NS: Original code was the following:
+				// while (SBM_next(*bitmap, &rpb->rpb_number, mode))
+				// We assume mode = RSE_get_forward because we do not support
+				// scrollable cursors at the moment.
+				if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext()) do {
+					rpb->rpb_number.setValue(bitmap->current());
 #ifdef SUPERSERVER_V2
 					/* Prefetch next set of data pages from bitmap. */
 
@@ -2286,7 +2289,7 @@ static bool get_record(thread_db*	tdbb,
 						result = true;
 						break;
 					}
-				}
+				} while (bitmap->getNext());
 			}
 
 			if (result)
@@ -2956,7 +2959,7 @@ static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
 			if (id == SMB_TRANS_ID)
 				rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
 			else
-				rpb->rpb_number = *(SLONG *) (from.dsc_address);
+				rpb->rpb_number.setValue(*(SINT64 *) (from.dsc_address));
 			rpb->rpb_stream_flags |= RPB_s_refetch;
 			continue;
 		}
@@ -3179,7 +3182,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, IRSB_SORT impure, UINT
 					if (item->smb_field_id == SMB_TRANS_ID)
 						*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
 					else
-						*(SLONG *) (to.dsc_address) = rpb->rpb_number;
+						*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
 					continue;
 				}
 				if (!EVL_field

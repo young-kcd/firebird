@@ -38,13 +38,13 @@
 #include "../jrd/rpb_chain.h"
 #include "../jrd/exe.h"
 #include "../jrd/blb.h" // For bid structure
+#include "../jrd/sbm.h" // For bid structure
 
 namespace Jrd {
 
 class blb;
 class Lock;
 class jrd_rel;
-class SparseBitmap;
 class vec;
 class Savepoint;
 class Record;
@@ -93,7 +93,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
 	vec*		tra_relation_locks;	/* locks for relations */
-	SparseBitmap*	tra_commit_sub_trans;	/* commited sub-transactions */
+	UInt32Bitmap*	tra_commit_sub_trans;	/* commited sub-transactions */
 	Savepoint*	tra_save_point;	/* list of savepoints  */
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
@@ -181,8 +181,11 @@ const int SAV_trans_level	= 1;	/* savepoint was started by TRA_start */
 const int SAV_event_post	= 2;	/* event posted in the save point */
 const int SAV_user			= 4;	/* named user savepoint as opposed to system ones */
 
-const int SAV_LARGE			= 500;	/* Number of allocated record structs when transaction sweep
-									becomes preferred over transaction savepoint undo */
+/* Maximum size in bytes of transaction-level savepoint data.
+  When transaction-level savepoint gets past this size we drop it and use GC
+  mechanisms to clean out changes done in transaction */
+const ssize_t SAV_LARGE			= 1024 * 1024;	// 1 MB of savepoint undo data is A LOT:
+                                                // ~25K - ~4M changed records
 
 /* Deferred work blocks are used by the meta data handler to keep track
    of work deferred to commit time.  This are usually used to perform
@@ -247,27 +250,27 @@ class DeferredWork : public pool_alloc_rpt<SCHAR, type_dfw>
 
 class UndoItem {
 public:
-	SLONG rec_number;
+	SINT64 rec_number;
 	Record* rec_data;
-    static const SLONG& generate(const void *sender, const UndoItem& item) {
+    static const SINT64& generate(const void *sender, const UndoItem& item) {
 		return item.rec_number;
     }
 	UndoItem() {
 	}
-	UndoItem(SLONG rec_numberL, Record* rec_dataL) {
+	UndoItem(SINT64 rec_numberL, Record* rec_dataL) {
 		this->rec_number = rec_numberL;
 		this->rec_data = rec_dataL;
 	}
 };
 
-typedef Firebird::BePlusTree<UndoItem, SLONG, MemoryPool, UndoItem> UndoItemTree;
+typedef Firebird::BePlusTree<UndoItem, SINT64, MemoryPool, UndoItem> UndoItemTree;
 
 class VerbAction : public pool_alloc<type_vct>
 {
     public:
 	VerbAction* 	vct_next;		/* Next action within verb */
 	jrd_rel*		vct_relation;	/* Relation involved */
-	SparseBitmap*	vct_records;	/* Record involved */
+	RecordBitmap*	vct_records;	/* Record involved */
 	UndoItemTree*	vct_undo;		/* Data for undo records */
 };
 

@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.68 2004-09-01 09:36:44 skidder Exp $
+ *  $Id: alloc.cpp,v 1.69 2004-09-28 06:27:16 skidder Exp $
  *
  */
 
@@ -1711,7 +1711,7 @@ void operator delete[](void* mem) throw()
 	Firebird::MemoryPool::globalFree(mem);
 }
 
-#if defined(DEV_BUILD) && !defined(TESTING_ONLY)
+#if defined(DEV_BUILD)
 void Firebird::AutoStorage::ProbeStack() const {
 	//
 	// AutoStorage() default constructor can be used only 

@@ -106,7 +106,6 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
@@ -711,7 +710,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		dbb->dbb_flags |= DBB_lck_init_done;
 		INI_init();
 		FUN_init();
-		SBM_init();
 		dbb->dbb_file =
 			PIO_open(dbb, expanded_name.c_str(), expanded_name.length(),
 					 options.dpb_trace != 0, NULL, file_name, file_length);
@@ -1844,7 +1842,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	INI_init();
 	FUN_init();
 	PAG_init();
-	SBM_init();
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 	initing_security = true;

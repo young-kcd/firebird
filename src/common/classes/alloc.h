@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.51 2004-09-07 08:35:29 robocop Exp $
+ *  $Id: alloc.h,v 1.52 2004-09-28 06:27:16 skidder Exp $
  *
  */
 
@@ -459,7 +459,6 @@ static inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 #define FB_NEW_RPT(pool,count) new(pool,count)
 #endif
 
-#ifndef TESTING_ONLY
 
 /**
 	This is the allocator template provided to be used with the STL.
@@ -490,6 +489,9 @@ static inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 **/
 namespace Firebird
 {
+
+#ifndef TESTING_ONLY
+
 	template <class T>
 	class allocator
 	{
@@ -548,6 +550,8 @@ namespace Firebird
 		SSHORT type;
 	};
 
+#endif /*TESTING_ONLY*/
+
 	// Permanent storage is used as base class for all objects,
 	// performing memory allocation in methods other than 
 	// constructors of this objects. Permanent means that pool,
@@ -584,7 +588,6 @@ namespace Firebird
 	
 } // namespace Firebird
 
-#endif /*TESTING_ONLY*/
 
 #endif // CLASSES_ALLOC_H
 

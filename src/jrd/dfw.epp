@@ -100,7 +100,6 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
@@ -1849,13 +1848,14 @@ static bool create_relation(thread_db*	tdbb,
 	jrd_req* request;
 	jrd_rel* relation;
 	USHORT rel_id, external_flag;
-	bid blob_id = {0, {0}};
+	bid blob_id;
 	jrd_req* handle;
-	Lock* lock;
+	Lock* lock;	
+
+	blob_id.clear();
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
-
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
@@ -2786,7 +2786,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (relation->rel_gc_bitmap)
 		{
-			SBM_release(relation->rel_gc_bitmap);
+			delete relation->rel_gc_bitmap;
 			relation->rel_gc_bitmap = 0;
 		}
 #endif
@@ -3218,7 +3218,8 @@ static void get_procedure_dependencies(DeferredWork* work)
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_prc* procedure = NULL;
-	bid blob_id = {0, {0}};
+	bid blob_id;
+	blob_id.clear();
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_c_prc_dpd, IRQ_REQUESTS);
 
@@ -3290,7 +3291,10 @@ static void get_trigger_dependencies( DeferredWork* work)
 	jrd_rel* relation = NULL;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
-	bid blob_id = {0, {0}};
+
+	bid blob_id;
+	blob_id.clear();
+
 	FOR(REQUEST_HANDLE handle)
 		X IN RDB$TRIGGERS WITH
 			X.RDB$TRIGGER_NAME EQ work->dfw_name 
@@ -3531,7 +3535,9 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	TemporaryField* stack;
 	TemporaryField* external;
 	jrd_rel* relation;
-	bid blob_id = {0, {0}};
+	bid blob_id;
+	blob_id.clear();
+
 	USHORT n, external_flag = 0;
 	bool computed_field;
 	ISC_STATUS_ARRAY status;

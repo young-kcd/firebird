@@ -57,7 +57,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/rlck_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tpc_proto.h"
@@ -1050,7 +1049,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 /* release the sparse bit map used for commit retain transaction */
 
-	SBM_release(transaction->tra_commit_sub_trans);
+	delete transaction->tra_commit_sub_trans;
 
 	if (transaction->tra_flags & TRA_precommitted)
 		TRA_precommited(tdbb, transaction->tra_number, 0);
@@ -1116,7 +1115,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	
 /* Measure transaction savepoint size if there is one. We'll use it for undo
   only if it is small enough */
-	SLONG count = SAV_LARGE;
+	ssize_t count = SAV_LARGE;
 	if (tran_sav) {
 		for (const Savepoint* temp = transaction->tra_save_point; temp;
 			temp = temp->sav_next)
@@ -1378,7 +1377,7 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, SLONG number)
 		return TPC_snapshot_state(tdbb, number);
 
 	if (trans->tra_commit_sub_trans &&
-		SBM_test(trans->tra_commit_sub_trans, number))
+		UInt32Bitmap::test(trans->tra_commit_sub_trans, number))
 	{
 		return tra_committed;
 	}
@@ -2500,7 +2499,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, const bool com
    its snapshot doesn't contain these operations. */
 
 	if (commit) {
-		SBM_set(tdbb, &transaction->tra_commit_sub_trans,
+		SBM_SET(tdbb->getDefaultPool(), &transaction->tra_commit_sub_trans,
 				transaction->tra_number);
 	}
 

@@ -75,7 +75,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../common/classes/array.h"
@@ -5342,8 +5341,10 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	StreamStack stream_stack;
 	
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++) {
-		SLONG id = -1;
-		while (SBM_next(csb->csb_rpt[*ptr].csb_fields, &id, RSE_get_forward)) {
+		UInt32Bitmap::Accessor accessor(csb->csb_rpt[*ptr].csb_fields);
+
+		if (accessor.getFirst()) do	{
+			ULONG id = accessor.current();
 			items++;
 			id_stack.push(id);
 			stream_stack.push(*ptr);
@@ -5365,7 +5366,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 					break;
 				}
 			}
-		}
+		} while (accessor.getNext());
 	}
 
 /* Now that we know the number of items, allocate a sort map block.  Allocate
@@ -5508,8 +5509,8 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		map_item->smb_field_id = SMB_DBKEY;
 		map_item->smb_stream = *ptr;
 		dsc* desc = &map_item->smb_desc;
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_length = sizeof(SLONG);
+		desc->dsc_dtype = dtype_int64;
+		desc->dsc_length = sizeof(SINT64);
 		desc->dsc_address = (UCHAR *)(IPTR)map_length;
 		map_length += desc->dsc_length;
 	}
@@ -5534,8 +5535,8 @@ static RecordSource* gen_sort(thread_db* tdbb,
 			map_item->smb_field_id = SMB_DBKEY;
 			map_item->smb_stream = *ptr;
 			dsc* desc = &map_item->smb_desc;
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_dtype = dtype_int64;
+			desc->dsc_length = sizeof(SINT64);
 			desc->dsc_address = (UCHAR *)(IPTR)map_length;
 			map_length += desc->dsc_length;
 		}

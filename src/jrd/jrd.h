@@ -658,7 +658,7 @@ public:
 
 	vec*	rel_gc_rec;		/* vector of records for garbage collection */
 #ifdef GARBAGE_THREAD
-	SparseBitmap*	rel_gc_bitmap;	/* garbage collect bitmap of data page sequences */
+	PageBitmap*	rel_gc_bitmap;	/* garbage collect bitmap of data page sequences */
 #endif
 
 	USHORT rel_slot_space;		/* lowest pointer page with slot space */

@@ -37,7 +37,7 @@ void	BTR_create(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, USHORT, Jrd::s
 void	BTR_delete_index(Jrd::thread_db*, Jrd::win*, USHORT);
 //USHORT	BTR_delete_node(Jrd::thread_db*, Ods::btree_page*, USHORT);
 bool	BTR_description(Jrd::thread_db*, Jrd::jrd_rel*, Ods::index_root_page*, Jrd::index_desc*, SSHORT);
-void	BTR_evaluate(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::SparseBitmap**);
+void	BTR_evaluate(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::RecordBitmap**);
 UCHAR*	BTR_find_leaf(Ods::btree_page*, Jrd::temporary_key*, UCHAR*, USHORT*, bool, bool);
 Ods::btree_page*	BTR_find_page(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::win*, Jrd::index_desc*,
 								 Jrd::temporary_key*, Jrd::temporary_key*, bool);

@@ -65,7 +65,7 @@ void	VIO_start_save_point(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_verb_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);
-SLONG	VIO_savepoint_large(const Jrd::Savepoint*, SLONG);
+ssize_t	VIO_savepoint_large(const Jrd::Savepoint*, ssize_t);
 
 #endif // JRD_VIO_PROTO_H
 

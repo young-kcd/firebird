@@ -51,6 +51,7 @@ typedef nod_t NOD_T;
 
 #include "../jrd/err_proto.h"
 #include "../jrd/scl.h"
+#include "../jrd/sbm.h"
 
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
@@ -70,7 +71,6 @@ namespace Jrd {
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
-class SparseBitmap;
 class vec;
 class jrd_prc;
 struct index_desc;
@@ -225,7 +225,7 @@ const int VLU_null		= 2;		/* An invariant sub-query computed to null */
 /* Inversion (i.e. nod_index) impure area */
 
 struct impure_inversion {
-	SparseBitmap* inv_bitmap;
+	RecordBitmap* inv_bitmap;
 };
 
 
@@ -748,7 +748,7 @@ public:
 		IndexDescAlloc* csb_idx;	/* Packed description of indices */
 		jrd_nod* csb_message;			/* Msg for send/receive */
 		Format* csb_format;		/* Default Format for stream */
-		SparseBitmap* csb_fields;		/* Fields referenced */
+		UInt32Bitmap* csb_fields;		/* Fields referenced */
 		float csb_cardinality;		/* Cardinality of relation */
 		jrd_nod* csb_plan;				/* user-specified plan for this relation */
 		UCHAR* csb_map;				/* Stream map for views */

@@ -81,7 +81,7 @@ namespace BTreeNode {
 				const UCHAR* string, USHORT length);
 
 	SLONG findPageInDuplicates(const Ods::btree_page* page, UCHAR* pointer,
-				SLONG previousNumber, SLONG findRecordNumber);
+				SLONG previousNumber, RecordNumber findRecordNumber);
 
 	USHORT getJumpNodeSize(const Ods::IndexJumpNode* jumpNode, SCHAR flags);
 	USHORT getNodeSize(const Ods::IndexNode* indexNode, SCHAR flags, bool leafNode = true);
@@ -113,7 +113,7 @@ namespace BTreeNode {
 	void setEndBucket(Ods::IndexNode* indexNode, bool leafNode = true);
 	void setEndLevel(Ods::IndexNode* indexNode, bool leafNode = true);
 	void setNode(Ods::IndexNode* indexNode, USHORT prefix = 0, USHORT length = 0, 
-		SLONG recordNumber = 0, SLONG pageNumber = 0,
+		RecordNumber recordNumber = RecordNumber(0), SLONG pageNumber = 0,
 		bool isEndBucket = false, bool isEndLevel = false);
 
 } // namespace BTreeNode

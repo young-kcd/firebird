@@ -83,7 +83,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/rng_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sqz_proto.h"
@@ -153,7 +152,7 @@ inline void clearRecordStack(RecordStack& stack)
 	}
 }
 
-SLONG VIO_savepoint_large(const Savepoint* savepoint, SLONG size)
+ssize_t VIO_savepoint_large(const Savepoint* savepoint, ssize_t size)
 {
 /**************************************
  *
@@ -162,17 +161,33 @@ SLONG VIO_savepoint_large(const Savepoint* savepoint, SLONG size)
  **************************************
  *
  * Functional description
- *	Return a measure of how big the current savepoint has gotten.
- *      The number returned is the size minus number of 'SparseBitmap' and 'BitmapSegment'
- *      classes that are allocated.  This number does not take into account
- *	    the data allocated to 'vct_undo'. Function stops counting when return
- *      value gets negative
+ *	Returns an approximate size in bytes of savepoint in-memory data, i.e. a
+ *  measure of how big the current savepoint has gotten.
+ *
+ *  Notes:
+ *
+ *  - This routine does not take into account the data allocated to 'vct_undo'.
+ *   Why? Because this routine is used to estimate size of transaction-level
+ *   savepoint and transaction-level savepoint may not contain undo data as it is
+ *   always the first savepoint in transaction.
+ *
+ *  - Function stops counting when return value gets negative.
+ *
+ *  - We use ssize_t, not SLONG to care of case when user savepoint gets very,
+ *   very big on 64-bit machine. Its size may overflow 32 significant bits of
+ *   SLONG in this case
  *
  **************************************/
 	const VerbAction* verb_actions = savepoint->sav_verb_actions;
 
+	// Iterate all tables changed under this savepoint
 	while (verb_actions) {
-		size -= SBM_size(&verb_actions->vct_records);
+
+		// Estimate size used for record backout bitmaps for this table
+		if (verb_actions->vct_records) {
+			size -= verb_actions->vct_records->approxSize();
+		}
+
 		if (size < 0) {
 			break;
 		}
@@ -211,8 +226,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("VIO_backout (record_param %"SLONGFORMAT", transaction %"SLONGFORMAT
-				  ")\n", rpb->rpb_number,
+		printf("VIO_backout (record_param %"QUADFORMAT"d, transaction %"SLONGFORMAT
+				  ")\n", rpb->rpb_number.getValue(),
 				  transaction ? transaction->tra_number : 0);
 	}
 #endif
@@ -482,9 +497,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
 		printf
-			("VIO_chase_record_version (record_param %"SLONGFORMAT", transaction %"
+			("VIO_chase_record_version (record_param %"QUADFORMAT"d, transaction %"
 			 SLONGFORMAT", pool %p)\n",
-			 rpb->rpb_number, transaction ? transaction->tra_number : 0,
+			 rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 			 (void*) pool);
 	}
 	if (debug_flag > DEBUG_TRACE_ALL_INFO) {
@@ -1045,8 +1060,8 @@ void VIO_data(thread_db* tdbb, record_param* rpb, JrdMemoryPool* pool)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
 	{
-		printf("VIO_data (record_param %"SLONGFORMAT", pool %p)\n",
-					rpb->rpb_number,
+		printf("VIO_data (record_param %"QUADFORMAT"d, pool %p)\n",
+					rpb->rpb_number.getValue(),
 					(void*) pool);
 	}
 	if (debug_flag > DEBUG_READS_INFO)
@@ -1140,8 +1155,8 @@ void VIO_data(thread_db* tdbb, record_param* rpb, JrdMemoryPool* pool)
 	{
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES) {
-			printf ("VIO_erase (record_param %"SLONGFORMAT"d, length %d expected %d)\n", 
-				rpb->rpb_number, length, format->fmt_length);
+			printf ("VIO_erase (record_param %"QUADFORMAT"d, length %d expected %d)\n", 
+				rpb->rpb_number.getValue(), length, format->fmt_length);
 		}
 	
 		if (debug_flag > DEBUG_WRITES_INFO) {
@@ -1185,8 +1200,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
 	{
-		printf("VIO_erase (record_param %"SLONGFORMAT", transaction %"SLONGFORMAT")\n",
-				  rpb->rpb_number, transaction->tra_number);
+		printf("VIO_erase (record_param %"QUADFORMAT"d, transaction %"SLONGFORMAT")\n",
+				  rpb->rpb_number.getValue(), transaction->tra_number);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
@@ -1532,9 +1547,9 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb,
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE)
 	{
-		printf("VIO_garbage_collect (record_param %"SLONGFORMAT", transaction %"
+		printf("VIO_garbage_collect (record_param %"QUADFORMAT"d, transaction %"
 				  SLONGFORMAT")\n",
-				  rpb->rpb_number, transaction ? transaction->tra_number : 0);
+				  rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 	}
 	if (debug_flag > DEBUG_TRACE_INFO)
 	{
@@ -1701,9 +1716,9 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS) {
-		printf("VIO_get (record_param %"SLONGFORMAT", transaction %"SLONGFORMAT
+		printf("VIO_get (record_param %"QUADFORMAT"d, transaction %"SLONGFORMAT
 				  ", pool %p)\n",
-				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
+				  rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 				  (void*) pool);
 	}
 #endif
@@ -1776,9 +1791,9 @@ bool VIO_get_current(
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE) {
-		printf("VIO_get_current (record_param %"SLONGFORMAT", transaction %"
+		printf("VIO_get_current (record_param %"QUADFORMAT"d, transaction %"
 				  SLONGFORMAT", pool %p)\n",
-				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
+				  rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 				  (void*) pool);
 	}
 #endif
@@ -2070,9 +2085,9 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("VIO_modify (org_rpb %"SLONGFORMAT", new_rpb %"SLONGFORMAT
-				  ", transaction %"SLONGFORMAT")\n",
-				  org_rpb->rpb_number, new_rpb->rpb_number,
+		printf("VIO_modify (org_rpb %"QUADFORMAT"d, new_rpb %"QUADFORMAT"d, "
+				"transaction %"SLONGFORMAT")\n",
+				  org_rpb->rpb_number.getValue(), new_rpb->rpb_number.getValue(),
 				  transaction ? transaction->tra_number : 0);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
@@ -2293,9 +2308,9 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("VIO_writelock (org_rpb %"SLONGFORMAT", transaction %"
+		printf("VIO_writelock (org_rpb %"QUADFORMAT"d, transaction %"
 				  SLONGFORMAT")\n",
-				  org_rpb->rpb_number, transaction ? transaction->tra_number : 0);
+				  org_rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf
@@ -2426,9 +2441,9 @@ bool VIO_next_record(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE) {
-		printf("VIO_next_record (record_param %"SLONGFORMAT", transaction %"
+		printf("VIO_next_record (record_param %"QUADFORMAT"d, transaction %"
 				  SLONGFORMAT", pool %p)\n",
-				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
+				  rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 				  (void*) pool);
 	}
 	if (debug_flag > DEBUG_TRACE_INFO) {
@@ -2492,8 +2507,8 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE) {
-		printf("VIO_record (record_param %"SLONGFORMAT", format %d, pool %p)\n",
-				  rpb->rpb_number, format ? format->fmt_version : 0,
+		printf("VIO_record (record_param %"QUADFORMAT"d, format %d, pool %p)\n",
+				  rpb->rpb_number.getValue(), format ? format->fmt_version : 0,
 				  (void*) pool);
 	}
 #endif
@@ -2580,8 +2595,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("VIO_store (record_param %"SLONGFORMAT", transaction %"SLONGFORMAT
-				  ")\n", rpb->rpb_number,
+		printf("VIO_store (record_param %"QUADFORMAT"d, transaction %"SLONGFORMAT
+				  ")\n", rpb->rpb_number.getValue(),
 				  transaction ? transaction->tra_number : 0);
 	}
 #endif
@@ -2778,7 +2793,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 				!(relation->rel_flags & (REL_deleted | REL_deleting)))
 			{
 				rpb.rpb_relation = relation;
-				rpb.rpb_number = -1;
+				rpb.rpb_number.setValue(BOF_NUMBER);
 				rpb.rpb_org_scans = relation->rel_scan_count++;
 				++relation->rel_sweep_count;
 				while (VIO_next_record(tdbb,
@@ -2916,7 +2931,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 		jrd_rel* relation = action->vct_relation;
 		if (sav_point->sav_verb_count || transaction->tra_save_point) {
 			rpb.rpb_relation = relation;
-			rpb.rpb_number = -1;
+			rpb.rpb_number.setValue(BOF_NUMBER);
 			rpb.rpb_record = NULL;
 			rpb.rpb_window.win_flags = 0;
 			rpb.rpb_transaction_nr = transaction->tra_number;
@@ -2925,10 +2940,9 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 				/* This savepoint needs to be undone because the
 				   verb_count is not zero. */
 
-				while (SBM_next
-					   (action->vct_records, &rpb.rpb_number,
-						RSE_get_forward)) 
-				{
+				RecordBitmap::Accessor accessor(action->vct_records);
+				if (accessor.getFirst()) do	{
+					rpb.rpb_number.setValue(accessor.current());
 					if (!DPM_get(tdbb, &rpb, LCK_write)) {
 						BUGCHECK(186);	/* msg 186 record disappeared */
 					}
@@ -2942,7 +2956,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 						BUGCHECK(185);	/* msg 185 wrong record version */
 					}
 					if (!action->vct_undo ||
-						!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number))
+						!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
 					{
 						VIO_backout(tdbb, &rpb, transaction);
 					}
@@ -2994,17 +3008,16 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 							rpb.rpb_record = dead_record;
 						}
 					}
-				}
+				} while (accessor.getNext());
 			}
 			else {
 				/* This savepoint needs to be posted to the previous savepoint. */
 
-				while (SBM_next
-					   (action->vct_records, &rpb.rpb_number,
-						RSE_get_forward)) 
+				RecordBitmap::Accessor accessor(action->vct_records);
+				if (accessor.getFirst()) do
 				{
 					if (!action->vct_undo ||
-						!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number))
+						!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
 					{
 						verb_post(tdbb, transaction, &rpb, 0, 0, false, false);
 					}
@@ -3036,14 +3049,14 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									  0, true, new_ver);
 						}
 					}
-				}
+				} while (accessor.getNext());
 			}
 
 			if (rpb.rpb_record) {
 				delete rpb.rpb_record;
 			}
 		}
-		SBM_release(action->vct_records);
+		delete action->vct_records;
 		if (action->vct_undo) {
 			if (action->vct_undo->getFirst()) {
 				do {
@@ -3229,8 +3242,8 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("delete_record (record_param %"SLONGFORMAT", prior_page %ld, pool %p)\n",
-				  rpb->rpb_number, prior_page,
+		printf("delete_record (record_param %"QUADFORMAT"d, prior_page %"SLONGFORMAT", pool %p)\n",
+				  rpb->rpb_number.getValue(), prior_page,
 				  (void*) pool);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
@@ -3307,8 +3320,8 @@ static UCHAR* delete_tail(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
 		printf
-			("delete_tail (record_param %"SLONGFORMAT", prior_page %ld, tail %p, tail_end %p)\n",
-			 rpb->rpb_number, prior_page, tail, tail_end);
+			("delete_tail (record_param %"QUADFORMAT"d, prior_page %"SLONGFORMAT", tail %p, tail_end %p)\n",
+			 rpb->rpb_number.getValue(), prior_page, tail, tail_end);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf
@@ -3365,9 +3378,9 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("expunge (record_param %"SLONGFORMAT", transaction %"SLONGFORMAT
+		printf("expunge (record_param %"QUADFORMAT"d, transaction %"SLONGFORMAT
 				  ", prior_page %"SLONGFORMAT")\n",
-				  rpb->rpb_number, transaction ? transaction->tra_number : 0,
+				  rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 				  prior_page);
 	}
 #endif
@@ -3443,9 +3456,9 @@ static void garbage_collect(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("garbage_collect (record_param %"SLONGFORMAT", prior_page %"SLONGFORMAT
+		printf("garbage_collect (record_param %"QUADFORMAT"d, prior_page %"SLONGFORMAT
 				  ", staying)\n",
-				  rpb->rpb_number, prior_page);
+				  rpb->rpb_number.getValue(), prior_page);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf
@@ -3695,8 +3708,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 						}
 
 						found = flush = true;
-						rpb.rpb_number = (dp_sequence * dbb->dbb_max_records) - 1;
-						const SLONG last = rpb.rpb_number + dbb->dbb_max_records;
+						rpb.rpb_number.setValue((dp_sequence * dbb->dbb_max_records) - 1);
+						const RecordNumber last(rpb.rpb_number.getValue() + dbb->dbb_max_records);
 
 						/* Attempt to garbage collect all records on the data page. */
 
@@ -3727,7 +3740,7 @@ rel_exit:
 					if (!SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) 
 					{
 						/* If the bitmap is empty then release it */
-						SBM_release(relation->rel_gc_bitmap);
+						delete relation->rel_gc_bitmap;
 						relation->rel_gc_bitmap = 0;
 					}
 					else {
@@ -3978,7 +3991,7 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb)
 	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
 
 	tdbb->setDefaultPool(dbb->dbb_permanent);
-	const SLONG dp_sequence = rpb->rpb_number / dbb->dbb_max_records;
+	const SLONG dp_sequence = rpb->rpb_number.getValue() / dbb->dbb_max_records;
 	SBM_set(tdbb, &relation->rel_gc_bitmap, dp_sequence);
 	tdbb->setDefaultPool(old_pool);
 
@@ -4020,12 +4033,12 @@ static int prepare_update(	thread_db*		tdbb,
 	if (debug_flag > DEBUG_TRACE_ALL) {
 		printf
 			("prepare_update (transaction %"SLONGFORMAT
-			 ", commit_tid read %ld, record_param %"SLONGFORMAT", ",
+			 ", commit_tid read %"SLONGFORMAT", record_param %"QUADFORMAT"d, ",
 			 transaction ? transaction->tra_number : 0, commit_tid_read,
-			 rpb ? rpb->rpb_number : 0);
-		printf(" temp_rpb %"SLONGFORMAT", new_rpb %"SLONGFORMAT", stack)\n",
-				  temp ? temp->rpb_number : 0,
-				  new_rpb ? new_rpb->rpb_number : 0);
+			 rpb ? rpb->rpb_number.getValue() : 0);
+		printf(" temp_rpb %"QUADFORMAT"d, new_rpb %"QUADFORMAT"d, stack)\n",
+				  temp ? temp->rpb_number.getValue() : 0,
+				  new_rpb ? new_rpb->rpb_number.getValue() : 0);
 	}
 	if (debug_flag > DEBUG_TRACE_ALL_INFO) {
 		printf
@@ -4392,7 +4405,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
-		printf("purge (record_param %"SLONGFORMAT")\n", rpb->rpb_number);
+		printf("purge (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 	}
 	if (debug_flag > DEBUG_TRACE_ALL_INFO) {
 		printf
@@ -4512,9 +4525,9 @@ static void replace_record(thread_db*		tdbb,
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
-		printf("replace_record (record_param %"SLONGFORMAT", transaction %"
+		printf("replace_record (record_param %"QUADFORMAT"d, transaction %"
 				  SLONGFORMAT")\n",
-				  rpb->rpb_number, transaction ? transaction->tra_number : 0);
+				  rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 	}
 	if (debug_flag > DEBUG_TRACE_ALL_INFO) {
 		printf
@@ -4593,10 +4606,10 @@ static void update_in_place(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
 		printf
-			("update_in_place (transaction %"SLONGFORMAT", org_rpb %"SLONGFORMAT
-			 ", new_rpb %"SLONGFORMAT")\n",
-			 transaction ? transaction->tra_number : 0, org_rpb->rpb_number,
-			 new_rpb ? new_rpb->rpb_number : 0);
+			("update_in_place (transaction %"SLONGFORMAT", org_rpb %"QUADFORMAT"d, "
+			 "new_rpb %"QUADFORMAT"d)\n",
+			 transaction ? transaction->tra_number : 0, org_rpb->rpb_number.getValue(),
+			 new_rpb ? new_rpb->rpb_number.getValue() : 0);
 	}
 	if (debug_flag > DEBUG_TRACE_ALL_INFO) {
 		printf
@@ -4754,8 +4767,8 @@ static void verb_post(
 		action->vct_relation = rpb->rpb_relation;
 	}
 
-	if (!SBM_test(action->vct_records, rpb->rpb_number)) {
-		SBM_set(tdbb, &action->vct_records, rpb->rpb_number);
+	if (RecordBitmap::test(action->vct_records, rpb->rpb_number.getValue())) {
+		RBM_SET(tdbb->getDefaultPool(), &action->vct_records, rpb->rpb_number.getValue());
 		if (old_data) {
 			/* An update-in-place is being posted to this savepoint, and this
 			   savepoint hasn't seen this record before. */
@@ -4776,7 +4789,7 @@ static void verb_post(
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}
-			action->vct_undo->add(UndoItem(rpb->rpb_number, data));
+			action->vct_undo->add(UndoItem(rpb->rpb_number.getValue(), data));
 		}
 		else if (same_tx) {
 			/* An insert/update followed by a delete is posted to this savepoint,
@@ -4795,11 +4808,11 @@ static void verb_post(
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}
-			action->vct_undo->add(UndoItem(rpb->rpb_number, data));
+			action->vct_undo->add(UndoItem(rpb->rpb_number.getValue(), data));
 		}
 	}
 	else if (same_tx) {
-		if (action->vct_undo && action->vct_undo->locate(Firebird::locEqual, rpb->rpb_number)) {
+		if (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue())) {
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint has already undo for this record. */
 			action->vct_undo->current().rec_data->rec_flags |= REC_same_tx;
@@ -4816,7 +4829,7 @@ static void verb_post(
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}
-			action->vct_undo->add(UndoItem(rpb->rpb_number, data));
+			action->vct_undo->add(UndoItem(rpb->rpb_number.getValue(), data));
 		}
 		if (old_data) {
 			/* The passed old_data will not be used.  Thus, garbage collect. */

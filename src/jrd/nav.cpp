@@ -50,7 +50,6 @@
 #include "../jrd/nav_proto.h"
 #include "../jrd/rng_proto.h"
 #include "../jrd/rse_proto.h"
-#include "../jrd/sbm_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 
@@ -509,7 +508,7 @@ bool NAV_get_record(thread_db* tdbb,
 		|| (!(impure->irsb_flags & irsb_backwards)
 			&& direction != RSE_get_forward))
 	{
-		SBM_reset(&impure->irsb_nav_records_visited);
+		RecordBitmap::reset(impure->irsb_nav_records_visited);
 	}
 
 	if (direction == RSE_get_forward) {
@@ -578,8 +577,7 @@ bool NAV_get_record(thread_db* tdbb,
 
 	// Find the next interesting node.  If necessary, skip to the next page
 	bool page_changed = false;
-	// AB: I don't see number is initialized? 
-	SLONG number;
+	RecordNumber number;
 	Ods::IndexNode node;
 	while (true) {
 		Ods::btree_page* page = (Ods::btree_page*) window.win_buffer;
@@ -734,8 +732,8 @@ bool NAV_get_record(thread_db* tdbb,
 
 		if ((rsb->rsb_arg[RSB_NAV_inversion] &&
 			 (!impure->irsb_nav_bitmap
-			  || !SBM_test(*impure->irsb_nav_bitmap, number)))
-			|| SBM_test(impure->irsb_nav_records_visited, number)
+			  || !RecordBitmap::test(impure->irsb_nav_bitmap, number.getValue())))
+			|| RecordBitmap::test(impure->irsb_nav_records_visited, number.getValue())
 			|| ((rsb->rsb_flags & rsb_project)
 				&& !(impure->irsb_flags & irsb_key_changed))) 
 		{
@@ -825,7 +823,7 @@ bool NAV_reset_position(RecordSource* rsb, record_param* new_rpb)
 	// the same as the one on the rpb, in which case it will 
 	// be updated by find_record()--bug #7426
 
-	const ULONG record_number = new_rpb->rpb_number;
+	const RecordNumber record_number = new_rpb->rpb_number;
 
 	// find the key value of the new position, and set the stream to it
 	temporary_key key_value;
@@ -1065,7 +1063,7 @@ static void expand_index(WIN * window)
 
 
 #ifdef PC_ENGINE
-static bool find_dbkey(RecordSource* rsb, ULONG record_number)
+static bool find_dbkey(RecordSource* rsb, RecordNumber record_number)
 {
 /**************************************
  *
@@ -1623,7 +1621,7 @@ static bool get_record(
 			RSE_MARK_CRACK(tdbb, rsb, 0);
 
 			// mark in the navigational bitmap that we have visited this record
-			SBM_set(tdbb, &impure->irsb_nav_records_visited, rpb->rpb_number);
+			RBM_SET(tdbb->getDefaultPool(), &impure->irsb_nav_records_visited, rpb->rpb_number.getValue());
 		}
 	}
 
@@ -1881,7 +1879,7 @@ static void setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
 	// this record; this is to handle the case where there is more
 	// than one leaf node reference to the same record number; the
 	// bitmap allows us to filter out the multiple references.
-	SBM_reset(&impure->irsb_nav_records_visited);
+	RecordBitmap::reset(impure->irsb_nav_records_visited);
 
 	// the first time we open the stream, compute a bitmap
 	// for the inversion tree--this may cause problems for

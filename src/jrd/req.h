@@ -32,6 +32,7 @@
 #include "../include/fb_blk.h"
 
 #include "../jrd/exe.h"
+#include "../jrd/RecordNumber.h"
 
 #include <vector>
 
@@ -54,7 +55,7 @@ class RecordSource;
 
 struct record_param {
 	record_param() : rpb_window(-1) {}
-	SLONG rpb_number;			/* record number in relation */
+	RecordNumber rpb_number;	/* record number in relation */
 	SLONG rpb_transaction_nr;	/* transaction number */
 	jrd_rel*	rpb_relation;	/* relation of record */
 	Record*		rpb_record;		/* final record block */
@@ -121,7 +122,7 @@ public:
 	USHORT rec_length;			/* how much there is */
 	const Format* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			/* misc record flags */
-	SLONG rec_number;			/* original record_param number - used for undoing multiple updates */
+	RecordNumber rec_number;			/* original record_param number - used for undoing multiple updates */
 	double rec_dummy;			/* this is to force next field to a double boundary */
 	UCHAR rec_data[1];			/* THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY */
 };

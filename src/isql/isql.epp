@@ -5521,14 +5521,14 @@ static SSHORT print_item(TEXT** s,
 
 		// Keep a temp buf, d for building the binary string 
 
-		for (const TEXT* t = var->sqldata; t < var->sqldata + var->sqllen; t += sizeof(SLONG))
+		for (const TEXT* t = var->sqldata; t < var->sqldata + var->sqllen; t++)
 		{
 			if (List) {
-				sprintf(Print_buffer, "%.8"XLONGFORMAT, *(SLONG*) t);
+				sprintf(Print_buffer, "%02X", (unsigned int) (UCHAR) *t);
 				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 			else {
-				sprintf(d, "%.8"XLONGFORMAT, *(SLONG*) t);
+				sprintf(d, "%02X", (unsigned int) (UCHAR) *t);
 				strcat(p, d);
 			}
 		}
