@@ -1,3 +1,9 @@
+2005-04-01 12:26  dimitr
+
+	* firebird2/src/jrd/pwd.cpp (1.40):
+	
+	Fixed lockups spotted by Claudio.
+
 2005-03-31 17:33  dimitr
 
 	* firebird2/builds/win32/msvc7/: engine.vcproj (1.47),
