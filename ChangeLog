@@ -1,3 +1,72 @@
+2005-01-27 00:31  arnobrinkman
+
+	* firebird2/doc/sql.extensions/README.derived_tables.txt (1.1):
+	
+	no message
+
+2005-01-27 00:30  arnobrinkman
+
+	* firebird2/doc/ambiguity.txt (1.1):
+	
+	FB2.0 changes regarding ambiguity and aliases
+
+2005-01-26 19:04  skidder
+
+	* firebird2/src/jrd/exe.cpp (1.140):
+	
+	Fix possible engine lock-up/crash when 'RELEASE SAVEPOINT xxx ONLY'
+	syntax is used or when existing savepoint name is reused in
+	transaction context (when old savepoint with the save name is
+	implicitly released)
+
+2005-01-26 19:01  alexpeshkoff
+
+	* firebird2/src/: common/config/dir_list.cpp (1.24),
+	common/config/dir_list.h (1.15), jrd/ext.cpp (1.59):
+	
+	added feature (requested by Dmitry) - first path in
+	ExternalFilesAccess is used as default when external file is to be
+	initially created
+
+2005-01-26 15:52  hvlad
+
+	* firebird2/src/dsql/parse.y (1.168):
+	
+	Allow EXECUTE BLOCK to work with blob parameters.
+
+2005-01-26 15:49  hvlad
+
+	* firebird2/doc/sql.extensions/README.PSQL_stack_trace.txt (1.1):
+	
+	New readme
+
+2005-01-26 11:37  aafemt
+
+	* firebird2/src/isql/isql.epp (1.129):
+	
+	LF already have been killed in readNextInputLine()
+
+2005-01-26 09:04  robocop
+
+	* firebird2/src/jrd/dyn_def.epp (1.90):
+	
+	Fix the error message for SF Bug #1108909 We want to say we don't
+	have rights to the base table/view, not to the view we are
+	creating, of course.
+
+2005-01-26 09:03  robocop
+
+	* firebird2/src/jrd/cvt2.cpp (1.45):
+	
+	Fix one cause of SF Bug #1108909 We should honor embedded spaces in
+	quoted identifiers.
+
+2005-01-26 08:33  hvlad
+
+	* firebird2/doc/WhatsNew (1.54):
+	
+	Correction
+
 2005-01-26 05:44  robocop
 
 	* firebird2/src/jrd/met.epp (1.153):
