@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.91 2003-12-05 10:35:44 robocop Exp $
+$Id: inet.cpp,v 1.92 2003-12-06 15:52:45 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -748,10 +748,11 @@ PORT INET_connect(const TEXT* name,
 	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = isc_arg_end;
-	const TEXT* protocol = Config::getRemoteServiceName();
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
+
+	const TEXT* protocol = NULL;
 
 	if (name) {
 		strcpy(temp, name);
@@ -773,6 +774,12 @@ PORT INET_connect(const TEXT* name,
 	}
 	else {
 		name = port->port_host->str_data;
+	}
+
+	if (!protocol) {
+		const int port = Config::getRemoteServicePort();
+		const char* svc = Config::getRemoteServiceName();
+		protocol = port ? itoa(port, temp, 10) : svc;
 	}
 
 /* Set up Inter-Net socket address */
@@ -854,11 +861,6 @@ PORT INET_connect(const TEXT* name,
 #endif /* WIN_NT */
 	THREAD_ENTER;
 
-	int port_num = Config::getRemoteServicePort();
-
-	if (port_num) {
-		address.sin_port = htons(port_num);
-	}
 /* Modification by luz (slightly modified by FSG)
     instead of failing here, try applying hard-wired
     translation of "gds_db" into "3050"
@@ -867,12 +869,11 @@ PORT INET_connect(const TEXT* name,
     entry in "services" file, which is important
     for zero-installation clients.
     */
-	else if (!service) {
+	if (!service) {
 		if (strcmp(protocol, FB_SERVICE_NAME) == 0) {
 			/* apply hardwired translation */
 			address.sin_port = htons(FB_SERVICE_PORT);
 		}
-
 		/* modification by FSG 23.MAR.2001 */
 		else {
 			/* modification by FSG 23.MAR.2001 */
