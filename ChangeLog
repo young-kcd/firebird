@@ -1,3 +1,31 @@
+2004-11-10 18:18  makowski
+
+	*
+	
+	Update for the new url for the quick start guide in french on main
+	Firebird site and the french site
+	firebird2/src/install/arch-specific/win32/fr/documents-en-français.
+	txt (1.1.2.2):
+
+2004-11-10 12:29  makowski
+
+	* firebird2/src/install/arch-specific/win32/fr/:
+	custom_messages_fr.inc (1.1.2.3), documents-en-français.txt
+	(1.1.2.1), installation_lisezmoi.txt (1.1.2.2), lisezmoi.txt
+	(1.1.2.2):
+	
+	Update of the files and added a nex file documents-en-français.txt
+	to explain where to find french documentation
+
+2004-11-10 12:29  makowski
+
+	*
+	
+	file documents-en-français.txt was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/win32/fr/documents-en-français.
+	txt (1.1):
+
 2004-11-09 15:35  paul_reeves
 
 	*
