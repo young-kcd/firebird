@@ -345,7 +345,7 @@ extern "C" {
 }
 #endif // WIN_NT
 
-		void AbstractString::upper() {
+	void AbstractString::upper() {
 #ifdef WIN_NT
 			CharUpperBuffA(Modify(), length());
 #else  // WIN_NT
