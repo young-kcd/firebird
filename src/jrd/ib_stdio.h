@@ -350,7 +350,7 @@ __END_DECLS
  */
 #define	ib__sgetc(p) (--(p)->_r < 0 ? ib__srget(p) : (int)(*(p)->_p++))
 #if defined(__GNUC__) && defined(__STDC__)
-	 static __inline int ib__sputc(int _c, IB_FILE * _p)
+	 static inline int ib__sputc(int _c, IB_FILE * _p)
 {
 	if (--_p->_w >= 0 || (_p->_w >= _p->_lbfsize && (char) _c != '\n'))
 		return (*_p->_p++ = _c);
