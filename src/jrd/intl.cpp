@@ -453,12 +453,12 @@ public:
 		return evaluator.getResult();
 	}
 	static void ttype_init(TEXTTYPE txtobj) {
-	    txtobj->texttype_fn_contains_destroy = (FPTR_SHORT) destroy;
-	    txtobj->texttype_fn_contains_reset = (FPTR_SHORT) reset;
-	    txtobj->texttype_fn_contains_process = (FPTR_SHORT) process;
-	    txtobj->texttype_fn_contains_result = (FPTR_SHORT) result;
-	    txtobj->texttype_fn_contains = (FPTR_SHORT) evaluate;
-	    txtobj->texttype_fn_contains_create = (FPTR_SHORT) create;
+	    txtobj->texttype_fn_contains_destroy = destroy;
+	    txtobj->texttype_fn_contains_reset = reset;
+	    txtobj->texttype_fn_contains_process = process;
+	    txtobj->texttype_fn_contains_result = result;
+	    txtobj->texttype_fn_contains = evaluate;
+	    txtobj->texttype_fn_contains_create = create;
 	}
 };
 
@@ -487,12 +487,12 @@ public:
 		return evaluator.getResult();
 	}
 	static void ttype_init(TEXTTYPE txtobj) {
-	    txtobj->texttype_fn_like_destroy = (FPTR_SHORT) destroy;
-	    txtobj->texttype_fn_like_reset = (FPTR_SHORT) reset;
-	    txtobj->texttype_fn_like_process = (FPTR_SHORT) process;
-	    txtobj->texttype_fn_like_result = (FPTR_SHORT) result;
-	    txtobj->texttype_fn_like = (FPTR_SHORT) evaluate;
-	    txtobj->texttype_fn_like_create = (FPTR_SHORT) create;
+	    txtobj->texttype_fn_like_destroy = destroy;
+	    txtobj->texttype_fn_like_reset = reset;
+	    txtobj->texttype_fn_like_process = process;
+	    txtobj->texttype_fn_like_result = result;
+	    txtobj->texttype_fn_like = evaluate;
+	    txtobj->texttype_fn_like_create = create;
 	}
 };
 
@@ -532,9 +532,9 @@ static void finish_texttype_init(TEXTTYPE txtobj)
 		/* Finish initialization of a narrow character object */
 
 		txtobj->texttype_fn_to_wc = nc_to_wc;
-		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_nc_matches;
-		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_nc_sleuth_merge;
-		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_nc_sleuth_check;
+		txtobj->texttype_fn_matches = EVL_nc_matches;
+		txtobj->texttype_fn_sleuth_merge = EVL_nc_sleuth_merge;
+		txtobj->texttype_fn_sleuth_check = EVL_nc_sleuth_check;
 		if (!txtobj->texttype_fn_mbtowc)
 			txtobj->texttype_fn_mbtowc = INTL_builtin_nc_mbtowc;
 
@@ -547,9 +547,12 @@ static void finish_texttype_init(TEXTTYPE txtobj)
 		/* Finish initialization of a wide character object */
 
 		txtobj->texttype_fn_to_wc = reinterpret_cast<pfn_INTL_2wc>(wc_to_wc);
-		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_wc_matches;
-		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_wc_sleuth_merge;
-		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_wc_sleuth_check;
+		txtobj->texttype_fn_matches =
+			reinterpret_cast<texttype::pfn_INTL_matches>(EVL_wc_matches);
+		txtobj->texttype_fn_sleuth_merge =
+			reinterpret_cast<texttype::pfn_INTL_sleuth_merge>(EVL_wc_sleuth_merge);
+		txtobj->texttype_fn_sleuth_check =
+			reinterpret_cast<texttype::pfn_INTL_sleuth_check>(EVL_wc_sleuth_check);
 		if (!txtobj->texttype_fn_mbtowc)
 			txtobj->texttype_fn_mbtowc = INTL_builtin_wc_mbtowc;
 
@@ -559,9 +562,9 @@ static void finish_texttype_init(TEXTTYPE txtobj)
 	else if (txtobj->texttype_fn_to_wc != NULL) {
 		/* Finish initialization of a multibyte character object */
 
-		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_mb_matches;
-		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_mb_sleuth_merge;
-		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_mb_sleuth_check;
+		txtobj->texttype_fn_matches = EVL_mb_matches;
+		txtobj->texttype_fn_sleuth_merge = EVL_mb_sleuth_merge;
+		txtobj->texttype_fn_sleuth_check = EVL_mb_sleuth_check;
 		if (!txtobj->texttype_fn_mbtowc)
 			txtobj->texttype_fn_mbtowc = INTL_builtin_mb_mbtowc;
 

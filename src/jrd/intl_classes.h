@@ -44,19 +44,19 @@
 class TextType
 {
 public:
-	typedef bool   (*FPTR_CONTAINS)(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp);
-	typedef void*  (*FPTR_CONTAINS_CREATE)(thread_db* tdbb, TextType ttype, const UCHAR* p, SSHORT lp);
-	typedef void   (*FPTR_CONTAINS_DESTROY)(void* object);
-	typedef void   (*FPTR_CONTAINS_RESET)(void* object);
-	typedef bool   (*FPTR_CONTAINS_PROCESS)(thread_db* tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
-	typedef bool   (*FPTR_CONTAINS_RESULT)(void* object);
+	//typedef bool   (*FPTR_CONTAINS)(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp);
+	//typedef void*  (*FPTR_CONTAINS_CREATE)(thread_db* tdbb, TextType ttype, const UCHAR* p, SSHORT lp);
+	//typedef void   (*FPTR_CONTAINS_DESTROY)(void* object);
+	//typedef void   (*FPTR_CONTAINS_RESET)(void* object);
+	//typedef bool   (*FPTR_CONTAINS_PROCESS)(thread_db* tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
+	//typedef bool   (*FPTR_CONTAINS_RESULT)(void* object);
 
-	typedef bool   (*FPTR_LIKE)(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
-	typedef void*  (*FPTR_LIKE_CREATE)(thread_db* tdbb, TextType ttype, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
-	typedef void   (*FPTR_LIKE_DESTROY)(void* object);
-	typedef void   (*FPTR_LIKE_RESET)(void* object);
-	typedef bool   (*FPTR_LIKE_PROCESS)(thread_db* tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
-	typedef bool   (*FPTR_LIKE_RESULT)(void* object);
+	//typedef bool   (*FPTR_LIKE)(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
+	//typedef void*  (*FPTR_LIKE_CREATE)(thread_db* tdbb, TextType ttype, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
+	//typedef void   (*FPTR_LIKE_DESTROY)(void* object);
+	//typedef void   (*FPTR_LIKE_RESET)(void* object);
+	//typedef bool   (*FPTR_LIKE_PROCESS)(thread_db* tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
+	//typedef bool   (*FPTR_LIKE_RESULT)(void* object);
 
 	TextType(texttype *_tt) : tt(_tt) {}
 
@@ -137,92 +137,104 @@ public:
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like);
-		return reinterpret_cast<FPTR_LIKE>(tt->texttype_fn_like)(tdbb, tt, s, sl, p, pl, escape);
+		return //reinterpret_cast<FPTR_LIKE>
+			(tt->texttype_fn_like)(tdbb, tt, s, sl, p, pl, escape);
 	}
 	
 	void *like_create(thread_db* tdbb, const UCHAR* p, SSHORT pl, SSHORT escape)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_create);
-		return reinterpret_cast<FPTR_LIKE_CREATE>(tt->texttype_fn_like_create)(tdbb, tt, p, pl, escape);
+		return //reinterpret_cast<FPTR_LIKE_CREATE>
+			(tt->texttype_fn_like_create)(tdbb, tt, p, pl, escape);
 	}
 	
 	void like_reset(void* object)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_reset);
-		reinterpret_cast<FPTR_LIKE_RESET>(tt->texttype_fn_like_reset)(object);
+		//reinterpret_cast<FPTR_LIKE_RESET>
+			(tt->texttype_fn_like_reset)(object);
 	}
 	
 	bool like_result(void* object)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_result);
-		return reinterpret_cast<FPTR_LIKE_RESULT>(tt->texttype_fn_like_result)(object);
+		return //reinterpret_cast<FPTR_LIKE_RESULT>
+			(tt->texttype_fn_like_result)(object);
 	}
 	
 	void like_destroy(void* object)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_destroy);
-		reinterpret_cast<FPTR_LIKE_DESTROY>(tt->texttype_fn_like_destroy)(object);
+		//reinterpret_cast<FPTR_LIKE_DESTROY>
+			(tt->texttype_fn_like_destroy)(object);
 	}
 	
 	bool like_process(thread_db* tdbb, void* object, const UCHAR* s, SSHORT sl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_process);
-		return reinterpret_cast<FPTR_LIKE_PROCESS>(tt->texttype_fn_like_process)(tdbb, tt, object, s, sl);
+		return //reinterpret_cast<FPTR_LIKE_PROCESS>
+			(tt->texttype_fn_like_process)(tdbb, tt, object, s, sl);
 	}
 	
 	bool contains(thread_db* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains);
-		return reinterpret_cast<FPTR_CONTAINS>(tt->texttype_fn_contains)(tdbb, tt, s, sl, p, pl);
+		return //reinterpret_cast<FPTR_CONTAINS>
+			(tt->texttype_fn_contains)(tdbb, tt, s, sl, p, pl);
 	}
 	
 	void *contains_create(thread_db* tdbb, const UCHAR* p, SSHORT pl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains_create);
-		return reinterpret_cast<FPTR_CONTAINS_CREATE>(tt->texttype_fn_contains_create)(tdbb, tt, p, pl);
+		return //reinterpret_cast<FPTR_CONTAINS_CREATE>
+			(tt->texttype_fn_contains_create)(tdbb, tt, p, pl);
 	}
 	
 	void contains_reset(void* object)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains_reset);
-		reinterpret_cast<FPTR_CONTAINS_RESET>(tt->texttype_fn_contains_reset)(object);
+		//reinterpret_cast<FPTR_CONTAINS_RESET>
+			(tt->texttype_fn_contains_reset)(object);
 	}
 	
 	bool contains_result(void* object)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains_result);
-		return reinterpret_cast<FPTR_CONTAINS_RESULT>(tt->texttype_fn_contains_result)(object);
+		return //reinterpret_cast<FPTR_CONTAINS_RESULT>
+			(tt->texttype_fn_contains_result)(object);
 	}
 	
 	void contains_destroy(void* object)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains_destroy);
-		reinterpret_cast<FPTR_CONTAINS_DESTROY>(tt->texttype_fn_contains_destroy)(object);
+		//reinterpret_cast<FPTR_CONTAINS_DESTROY>
+			(tt->texttype_fn_contains_destroy)(object);
 	}
 	
 	bool contains_process(thread_db* tdbb, void* object, const UCHAR* s, SSHORT sl)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_contains_process);
-		return reinterpret_cast<FPTR_CONTAINS_PROCESS>(tt->texttype_fn_contains_process)(tdbb, tt, object, s, sl);
+		return //reinterpret_cast<FPTR_CONTAINS_PROCESS>
+			(tt->texttype_fn_contains_process)(tdbb, tt, object, s, sl);
 	}
 	
 	USHORT matches(thread_db* tdbb, const UCHAR* a, SSHORT b, const UCHAR* c, SSHORT d)
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_matches);
-		return (*(reinterpret_cast<
-					USHORT (*)(thread_db*, TextType, const UCHAR*, short, const UCHAR*, short)>
+		return (*(//reinterpret_cast<
+				//	USHORT (*)(thread_db*, TextType, const UCHAR*, short, const UCHAR*, short)>
 						(tt->texttype_fn_matches)))
 							(tdbb, tt, a, b, c, d);
 	}
@@ -235,8 +247,8 @@ public:
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_sleuth_check);
-		return (*(reinterpret_cast<
-					USHORT(*)(thread_db*, TextType, USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT)>
+		return (*(//reinterpret_cast<
+				//	USHORT(*)(thread_db*, TextType, USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT)>
 						(tt->texttype_fn_sleuth_check)))
 							(tdbb, tt, a, b, c, d, e);
 	}
@@ -250,8 +262,8 @@ public:
 	{
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_sleuth_merge);
-		return (*(reinterpret_cast<
-					USHORT(*)(thread_db*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
+		return (*(//reinterpret_cast<
+				//	USHORT(*)(thread_db*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
 						(tt->texttype_fn_sleuth_merge)))
 							(tdbb, tt, a, b, c, d, e, f);
 	}

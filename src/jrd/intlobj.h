@@ -79,6 +79,10 @@ typedef USHORT (*pfn_INTL_2wc)(texttype*, UCS2_CHAR*, USHORT, const UCHAR*, USHO
 
 typedef SSHORT (*pfn_INTL_mb2wc)(texttype*, UCS2_CHAR*, const UCHAR*, USHORT);
 
+
+struct thread_db;
+class TextType;
+
 typedef struct texttype {
 	// DATA THAT IS USED BY BOTH ENGINE AND DRIVERS --------------------------------
 	struct intl_blk texttype_blk; // Filled by engine for backward compatibility
@@ -111,11 +115,22 @@ typedef struct texttype {
 	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
 
 	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
-	FPTR_SHORT texttype_fn_contains;	/* s1 contains s2? */
-	FPTR_SHORT texttype_fn_like;	/* s1 like s2? */
-	FPTR_SHORT texttype_fn_matches;	/* s1 matches s2 */
-	FPTR_SHORT texttype_fn_sleuth_check;	/* s1 sleuth s2 */
-	FPTR_SHORT texttype_fn_sleuth_merge;	/* aux function for sleuth */
+	typedef bool (*pfn_INTL_contains)(thread_db* tdbb, TextType ttype, const UCHAR* s,
+		SSHORT sl, const UCHAR* p, SSHORT pl);
+	typedef bool (*pfn_INTL_like)(thread_db* tdbb, TextType ttype, const UCHAR* s,
+		SSHORT sl, const UCHAR* p, SSHORT pl, UCS2_CHAR escape);
+	typedef bool (*pfn_INTL_matches)(thread_db* tdbb, TextType, const UCHAR*, SSHORT, 
+		const UCHAR*, SSHORT);
+	typedef bool (*pfn_INTL_sleuth_check)(thread_db* tdbb, TextType, USHORT, 
+		const UCHAR*, USHORT, const UCHAR*,USHORT);
+	typedef USHORT (*pfn_INTL_sleuth_merge)(thread_db* tdbb, TextType, const UCHAR*,
+		USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
+
+	pfn_INTL_contains		texttype_fn_contains;	/* s1 contains s2? */
+	pfn_INTL_like			texttype_fn_like;	/* s1 like s2? */
+	pfn_INTL_matches		texttype_fn_matches;	/* s1 matches s2 */
+	pfn_INTL_sleuth_check	texttype_fn_sleuth_check;	/* s1 sleuth s2 */
+	pfn_INTL_sleuth_merge	texttype_fn_sleuth_merge;	/* aux function for sleuth */
 	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
 
 	// DRIVER API FUNCTIONS. Called by the engine ----------------------------------	
@@ -133,17 +148,26 @@ typedef struct texttype {
 	//\\ END OF COLLATION DRIVER DATA ----------------------------------------------
 
 	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
-	FPTR_SHORT texttype_fn_like_create;
-	FPTR_SHORT texttype_fn_like_destroy;
-	FPTR_SHORT texttype_fn_like_reset;
-	FPTR_SHORT texttype_fn_like_process;
-	FPTR_SHORT texttype_fn_like_result;
+	typedef void* (*pfn_INTL_like_create)(thread_db* tdbb, TextType ttype, 
+		const UCHAR* str, SSHORT length, UCS2_CHAR escape);
+	typedef void* (*pfn_INTL_contains_create)(thread_db* tdbb, TextType ttype, 
+		const UCHAR* str, SSHORT length);
+	typedef void (*pfn_INTL_destroy_reset)(void* object);
+	typedef bool (*pfn_INTL_process)(thread_db* tdbb, TextType ttype, void* object, 
+		const UCHAR* str, SSHORT length);
+	typedef bool (*pfn_INTL_result)(void* object);
 
-	FPTR_SHORT texttype_fn_contains_create;
-	FPTR_SHORT texttype_fn_contains_destroy;
-	FPTR_SHORT texttype_fn_contains_reset;
-	FPTR_SHORT texttype_fn_contains_process;
-	FPTR_SHORT texttype_fn_contains_result;
+	pfn_INTL_like_create		texttype_fn_like_create;
+	pfn_INTL_destroy_reset		texttype_fn_like_destroy;
+	pfn_INTL_destroy_reset		texttype_fn_like_reset;
+	pfn_INTL_process			texttype_fn_like_process;
+	pfn_INTL_result				texttype_fn_like_result;
+
+	pfn_INTL_contains_create	texttype_fn_contains_create;
+	pfn_INTL_destroy_reset		texttype_fn_contains_destroy;
+	pfn_INTL_destroy_reset		texttype_fn_contains_reset;
+	pfn_INTL_process			texttype_fn_contains_process;
+	pfn_INTL_result				texttype_fn_contains_result;
 	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
 } *TEXTTYPE;
 

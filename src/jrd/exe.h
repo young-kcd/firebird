@@ -632,6 +632,7 @@ public:
 
 
 	typedef csb_repeat* rpt_itr;
+	typedef const csb_repeat* rpt_const_itr;
 	Firebird::Array<csb_repeat> csb_rpt;
 };
 

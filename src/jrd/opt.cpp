@@ -5233,7 +5233,7 @@ static void get_inactivities(Csb* csb, ULONG * dependencies)
 		dependencies[n] = (ULONG) - 1;
 	n = 0;
 	Csb::rpt_itr tail = csb->csb_rpt.begin();
-	for (const Csb::rpt_itr end = tail + csb->csb_n_stream;
+	for (const Csb::rpt_const_itr end = tail + csb->csb_n_stream;
 		 tail < end; n++, tail++)
 	{
 		if (tail->csb_flags & csb_active)
