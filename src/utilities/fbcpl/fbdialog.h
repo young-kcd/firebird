@@ -129,23 +129,23 @@ public:
 
     SERVICE_STATUS service_status;
 
-	int m_Error_Status;		//This is set by the calls to SERVICES_
-							//and is also set by GetLastError()
-							//It is tested in ShowError to prevent
-							//the same error message being reported.
+	int m_Error_Status;				//This is set by the calls to SERVICES_
+									//and is also set by GetLastError()
+									//It is tested in ShowError to prevent
+									//the same error message being reported.
 
-	struct STATUS			//This stores the current status
+	struct STATUS					//This stores the current status
 	{
 #ifdef MANAGE_CLASSIC
 		bool UseClassic;
 #endif
 		bool UseGuardian;
-		bool ServicesAvailable;	// Set via UpdateServerStatus()
+		bool ServicesAvailable;		// Set via UpdateServerStatus()
 		int  ServerStatus;
-		bool UseService;		// This is a convenience. It is set when 
-								// ServiceStatus is checked and saves trying 
-								// to do the more complex evaluation of 
-								// ServiceStatus
+		bool UseService;			// This is a convenience. It is set when 
+									// ServiceStatus is checked and saves trying 
+									// to do the more complex evaluation of 
+									// ServiceStatus
 		bool AutoStart;
 		bool WasRunning;			// Set via UpdateServerStatus(). Allows us 
 									// to check if server was running before we 
@@ -162,13 +162,15 @@ public:
 
 	STATUS new_settings;
 
-	bool initialised;			// False on startup
-
-//Get Stuff
+	bool initialised;				// False on startup
+//Check stuff
+	bool CheckServiceInstalled( LPCTSTR service );
 	int DatabasesConnected();
 
 	bool FirebirdInstalled();
 	bool FirebirdRunning();
+
+//Get Stuff
 
 	HWND GetSuperServerHandle();
 #ifdef MANAGE_CLASSIC
@@ -177,7 +179,7 @@ public:
 	HWND GetFirebirdHandle();
 	void GetFullAppPath( CFBDialog::STATUS status, char * app);
 	HWND GetGuardianHandle();
-	bool GetGuardianUseSpecified();
+//	bool GetGuardianUseSpecified();
 	bool GetPreferredArchitecture();
 	void GetServerName( CFBDialog::STATUS status, CString& AppName);
 	int GetServerStatus();
@@ -186,16 +188,22 @@ public:
 	void ViewRegistryEntries();
 
 //Set stuff
-	bool ConfigureRegistryForApp(bool install);
+	bool ConfigureRegistryForApp( CFBDialog::STATUS status );
 	void SetAutoStart( CFBDialog::STATUS status );
+#ifdef FBCPL_UPDATE_CONF
 	void SetGuardianUseInConf( bool UseGuardian );
+#endif
 #ifdef MANAGE_CLASSIC
 	void SetPreferredArchitectureInConf( bool UseClassic );
 #endif
+#ifdef FBCPL_UPDATE_CONF
 	bool UpdateFirebirdConf(CString option, CString value);
+#endif
+
 	
 //Do stuff
 	void ApplyChanges();
+	bool AppInstall( CFBDialog::STATUS status );
 	bool AppRemove();
 	void CloseServiceManager();
 	void DisableApplyButton();
@@ -204,7 +212,6 @@ public:
 	bool OpenServiceManager( DWORD DesiredAccess );
 	void ProcessMessages();
 	void ResetCheckBoxes( CFBDialog::STATUS status );
-	void ResetWarningBox( CFBDialog::STATUS status );
 	bool ServerStop();
 	bool ServerStart( CFBDialog::STATUS status );
 	bool ServiceInstall( CFBDialog::STATUS status );
@@ -214,6 +221,7 @@ public:
 	void ShowError( LPTSTR lpMsgBuf, CString error_title );
 	void UpdateServerStatus();
 	bool UserHasSufficientRights();
+	bool ValidateInstalledServices();
 };
 
 
