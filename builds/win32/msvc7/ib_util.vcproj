@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IB_UTIL_EXPORTS"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\ib_util/ib_util.pch"
 				AssemblerListingLocation="..\..\..\temp\release\ib_util/"
 				ObjectFile="..\..\..\temp\release\ib_util/"
@@ -52,6 +51,7 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_util.def"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\ib_util/ib_util.pdb"
 				ImportLibrary="..\..\..\temp\release\ib_util/ib_util.lib"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -98,7 +98,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\ib_util/ib_util.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\ib_util/"
 				ObjectFile="..\..\..\temp\debug\ib_util/"

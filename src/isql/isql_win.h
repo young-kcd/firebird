@@ -21,25 +21,24 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef ISQL_WIN_H
-#define ISQL_WIN_H
+#ifndef _ISQL_WIN_H_
+#define _ISQL_WIN_H_
 
-// prototypes 
+/* prototypes */
 
-static void close_isql();
+static void close_isql(void);
 static int cmdline_isql(HINSTANCE, LPSTR);
 static void display_page(HWND);
 static SSHORT init_isql(HINSTANCE, HINSTANCE, int);
 static void init_isql_added(HINSTANCE);
 static void init_isql_every(HINSTANCE, int);
 static void init_isql_first(HINSTANCE);
-static SSHORT open_temp_file(HINSTANCE, FILE**, SCHAR*, SSHORT);
+static SSHORT open_temp_file(HINSTANCE, IB_FILE **, SCHAR *, SSHORT);
 static void paint_isql(HWND);
-static void pusharg(const char*);
+static void pusharg(SCHAR *);
 static void setup_scroll(HWND);
-static void test_overwrite();
+static void test_overwrite(void);
 static int windows_isql(HINSTANCE, HINSTANCE, int);
-static void xfer_file(const char*, const char*, bool);
+static void xfer_file(SCHAR *, SCHAR *, SSHORT);
 
-#endif // ISQL_WIN_H 
-
+#endif /* _ISQL_WIN_H_ */

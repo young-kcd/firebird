@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		exe_proto.h
- *	DESCRIPTION:	Prototype header file for exe.cpp
+ *	DESCRIPTION:	Prototype header file for exe.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,18 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_EXE_PROTO_H
-#define QLI_EXE_PROTO_H
+#ifndef _QLI_EXE_PROTO_H_
+#define _QLI_EXE_PROTO_H_
 
-void	EXEC_abort (void);
-void	EXEC_execute(qli_nod*);
-FB_API_HANDLE	EXEC_open_blob(qli_nod*);
-file*	EXEC_open_output(qli_nod*);
-void	EXEC_poll_abort (void);
-dsc*	EXEC_receive(qli_msg*, qli_par*);
-void	EXEC_send(qli_msg*);
-void	EXEC_start_request(qli_req*, qli_msg*);
-void	EXEC_top(qli_nod*);
+extern void		EXEC_abort (void);
+extern void		EXEC_execute (struct qli_nod *);
+extern FRBRD	*EXEC_open_blob (struct qli_nod *);
+extern struct file	*EXEC_open_output (struct qli_nod *);
+extern void		EXEC_poll_abort (void);
+extern struct dsc	*EXEC_receive (struct qli_msg *, struct par *);
+extern void		EXEC_send (struct qli_msg *);
+extern void		EXEC_start_request (struct qli_req *, struct qli_msg *);
+extern void		EXEC_top (struct qli_nod *);
 
-#endif // QLI_EXE_PROTO_H
-
+#endif /* _QLI_EXE_PROTO_H_ */

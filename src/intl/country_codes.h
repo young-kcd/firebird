@@ -24,8 +24,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef INTL_COUNTRY_CODES_H
-#define INTL_COUNTRY_CODES_H
+#ifndef _INTL_COUNTRY_CODES_H_
+#define _INTL_COUNTRY_CODES_H_
 
 #define   CC_C                     0	/* 'C' Language locale */
 
@@ -57,8 +57,9 @@
 #define   CC_GREECE                30	/* TURKEY           */
 #define   CC_TURKEY                90	/* TURKEY           */
 #define   CC_RUSSIA                07	/* RUSSIA           */
+#define   CC_LITHUANIA             370	/* LITHUANIA        */
 
 #define   CC_NORDAN                92	/* NORDAY + DENMARK */
 #define   CC_SWEDFIN               404	/* SWEDIN + FINLAND */
 
-#endif /* INTL_COUNTRY_CODES_H */
+#endif /* _INTL_COUNTRY_CODES_H_ */

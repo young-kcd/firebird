@@ -33,6 +33,8 @@
  *  25 May 2003 - Nickolay Samofatov: Fix several bugs that prevented 
  *    compatibility with Kylix
  * 
+ *
+ *  $Id: config_root.cpp,v 1.6 2003-05-25 00:24:23 skidder Exp $
  */
 
 #include "firebird.h"
@@ -47,26 +49,28 @@
 #include "../jrd/os/config_root.h"
 #include "../jrd/os/path_utils.h"
 
-typedef Firebird::PathName string;
+typedef Firebird::string string;
+
+static const char *CONFIG_FILE = "firebird.conf";
 
 /******************************************************************************
  *
  *	Platform-specific root locator
  */
 
-#if defined SUPERSERVER || defined EMBEDDED
 #ifdef HAVE__PROC_SELF_EXE
+
 static string getExePathViaProcEntry() 
 {
     char buffer[MAXPATHLEN];
-    const int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
+    int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
 	if (len >= 0) {
-		buffer[len] = 0;
+		buffer[len]=0;
 		return buffer;
 	}
 	return "";
 }
-#endif
+
 #endif
 
 /******************************************************************************
@@ -74,12 +78,13 @@ static string getExePathViaProcEntry()
  *	
  */
 
-#if defined SUPERSERVER || defined EMBEDDED
 static string getRootPathFromExePath()
 {
 #ifdef HAVE__PROC_SELF_EXE
 	// get the pathname of the running executable
-	string bin_dir = getExePathViaProcEntry();
+	string bin_dir;
+
+    bin_dir = getExePathViaProcEntry();
 	if (bin_dir.length() == 0) 
 		return "";
 	
@@ -103,9 +108,24 @@ static string getRootPathFromExePath()
 	return "";
 #endif
 }
-#endif
 
-void ConfigRoot::osConfigRoot()
+static string getRootPathFromEnvVar()
+{
+    const char* varPtr = getenv("FIREBIRD");
+
+    string rootpath;
+
+    if (varPtr != NULL) {
+        rootpath = varPtr;
+		if (rootpath[rootpath.length()-1] != PathUtils::dir_sep)
+			rootpath += PathUtils::dir_sep;
+    }
+
+    return rootpath;
+}
+
+
+ConfigRoot::ConfigRoot()
 {
 #if defined SUPERSERVER || defined EMBEDDED
 	// Try getting the root path from the executable
@@ -115,7 +135,23 @@ void ConfigRoot::osConfigRoot()
     }
 #endif
 
+    // Try getting the root path from environment variable
+    root_dir = getRootPathFromEnvVar();
+    if (root_dir.length() != 0) {
+        return;
+    }
+
     // As a last resort get it from the default install directory
     root_dir = string(FB_PREFIX) + PathUtils::dir_sep;    
 }
 
+const char *ConfigRoot::getRootDirectory() const
+{
+	return root_dir.c_str();
+}
+
+const char *ConfigRoot::getConfigFile() const
+{
+	static string file = root_dir + string(CONFIG_FILE);
+	return file.c_str();
+}

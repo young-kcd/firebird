@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		gpre_proto.h
- *	DESCRIPTION:	Prototype header file for gpre.cpp
+ *	DESCRIPTION:	Prototype header file for gpre.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,26 +21,33 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_GPRE_PROTO_H
-#define GPRE_GPRE_PROTO_H
+#ifndef _GPRE_GPRE_PROTO_H_
+#define _GPRE_GPRE_PROTO_H_
 
 #include "../gpre/parse.h"
 
-void	CPR_abort(void);
-#ifdef DEV_BUILD
-void	CPR_assert(const TEXT*, int);
+#ifdef __cplusplus
+extern "C" {
 #endif
-void	CPR_bugcheck(const TEXT*);
-void	CPR_end_text(gpre_txt*);
-int		CPR_error(const TEXT*);
-void	CPR_exit(int);
-void	CPR_warn(const TEXT*);
-TOK		CPR_eol_token(void);
-void	CPR_get_text(TEXT*, const gpre_txt*);
-void	CPR_raw_read(void);
-void	CPR_s_error(const TEXT*);
-gpre_txt*	CPR_start_text(void);
-TOK		CPR_token(void);
 
-#endif // GPRE_GPRE_PROTO_H
+extern void CPR_abort(void);
+#ifdef DEV_BUILD
+extern void CPR_assert(TEXT *, int);
+#endif
+extern void CPR_bugcheck(TEXT *);
+extern void CPR_end_text(TXT);
+extern int CPR_error(TEXT *);
+extern void CPR_exit(int);
+extern void CPR_warn(TEXT *);
+extern TOK CPR_eol_token(void);
+extern void CPR_get_text(TEXT *, TXT);
+extern void CPR_raw_read(void);
+extern void CPR_s_error(TEXT *);
+extern TXT CPR_start_text(void);
+extern TOK CPR_token(void);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _GPRE_GPRE_PROTO_H_ */

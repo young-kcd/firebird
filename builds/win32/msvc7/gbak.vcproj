@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gbak/gbak.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gbak/"
 				ObjectFile="..\..\..\temp\debug\gbak/"
@@ -95,7 +94,6 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gbak/gbak.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gbak/"
 				ObjectFile="..\..\..\temp\release\gbak/"
@@ -115,6 +113,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gbak/gbak.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -152,6 +151,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\canonical.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\misc.cpp">

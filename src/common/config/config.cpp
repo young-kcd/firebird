@@ -1,23 +1,26 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:	Client/Server Common Code
+ *	MODULE:		config.cpp
+ *	DESCRIPTION:	Configuration manager (generic code)
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * Created by: Dmitry Yemanov <yemanov@yandex.ru>
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
 #include "firebird.h"
@@ -32,22 +35,12 @@
 
 #include "../jrd/gdsassert.h"
 
-// config_file works with OS case-sensitivity
-typedef Firebird::PathName string;
+typedef Firebird::string string;
 
 /******************************************************************************
  *
  *	Configuration entries
  */
-
-const char*	GCPolicyCooperative	= "cooperative";
-const char*	GCPolicyBackground	= "background";
-const char*	GCPolicyCombined	= "combined";
-#ifdef SUPERSERVER
-const char*	GCPolicyDefault	= GCPolicyCombined;
-#else
-const char*	GCPolicyDefault	= GCPolicyCooperative;
-#endif
 
 const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
@@ -79,7 +72,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #else
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 262144},		// bytes
 #endif
-#if defined(SINIXZ) || defined(FREEBSD) || defined(NETBSD)
+#ifdef SINIXZ
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores
 #else
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 32},			// semaphores
@@ -93,9 +86,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"SolarisStallValue",		(ConfigValue) 60},			// seconds
 	{TYPE_BOOLEAN,		"TraceMemoryPools",			(ConfigValue) false},		// for internal use only
 	{TYPE_INTEGER,		"PrioritySwitchDelay",		(ConfigValue) 100},			// milliseconds
-	// deprecated
-	//{TYPE_INTEGER,		"DeadThreadsCollection",	(ConfigValue) 50},			// number of PrioritySwitchDelay cycles before dead threads collection
-	{TYPE_BOOLEAN,		"UsePriorityScheduler",		(ConfigValue) true},
+	{TYPE_INTEGER,		"DeadThreadsCollection",	(ConfigValue) 50},			// number of PrioritySwitchDelay cycles before dead threads collection
 	{TYPE_INTEGER,		"PriorityBoost",			(ConfigValue) 5},			// ratio oh high- to low-priority thread ticks in jrd.cpp
 	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
 	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) 0},
@@ -110,21 +101,14 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
 	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true},
-	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation", (ConfigValue) false},
+	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation",(ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
 	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"},	// location(s) of databases
 	{TYPE_STRING,		"UdfAccess",				(ConfigValue) "Restrict UDF"},	// location(s) of UDFs
 	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0},
-#ifdef DEV_BUILD
- 	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) true},	// whether to abort() engine when internal error is found
-#else
- 	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
-#endif
-	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
-	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) false},	// let use old passwd hash verification
-	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault}	// garbage collection policy
+	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false}	// whether to abort() engine when internal error is found
 };
 
 /******************************************************************************
@@ -136,7 +120,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 
 static ConfigImpl *sys_config = NULL;
 #ifdef MULTI_THREAD
-static Firebird::Mutex config_init_lock;
+static Firebird::Spinlock config_init_lock;
 #endif
 
 const ConfigImpl& ConfigImpl::instance()
@@ -147,7 +131,7 @@ const ConfigImpl& ConfigImpl::instance()
 			config_init_lock.enter();
 			if (!sys_config) {
 #endif
-				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
+				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl;
 #ifdef MULTI_THREAD
 			}
 		} catch(const std::exception&) {
@@ -167,14 +151,15 @@ const ConfigImpl& ConfigImpl::instance()
  *	Implementation interface
  */
 
-ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p) 
+ConfigImpl::ConfigImpl()
 {
 	/* Prepare some stuff */
 
 	ConfigFile file(true);
 	root_dir = getRootDirectory();
+	MemoryPool *pool = getDefaultMemoryPool();
 	int size = FB_NELEM(entries);
-	values = FB_NEW(p) ConfigValue[size];
+	values = FB_NEW(*pool) ConfigValue[size];
 
 	string val_sep = ",";
 	file.setConfigFile(getConfigFile());
@@ -207,7 +192,7 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 		case TYPE_STRING:
 			{
 			const char *src = asString(value);
-			char *dst = FB_NEW(p) char[strlen(src) + 1];
+			char *dst = FB_NEW(*pool) char[strlen(src) + 1];
 			strcpy(dst, src);
 			values[i] = (ConfigValue) dst;
 			}
@@ -241,7 +226,7 @@ ConfigImpl::~ConfigImpl()
 	delete[] values;
 }
 
-string ConfigImpl::getValue(ConfigFile& file, const ConfigKey key)
+string ConfigImpl::getValue(ConfigFile& file, ConfigKey key)
 {
 	return file.doesKeyExist(key) ? file.getString(key) : "";
 }
@@ -390,6 +375,14 @@ int Config::getPrioritySwitchDelay()
 	return rc;
 }
 
+int Config::getDeadThreadsCollection()
+{
+	int rc = (int) sysConfig.values[KEY_DEAD_THREADS_COLLECTION];
+	if (rc < 1)
+		rc = 1;
+	return rc;
+}
+
 int Config::getPriorityBoost()
 {
 	int rc = (int) sysConfig.values[KEY_PRIORITY_BOOST];
@@ -400,19 +393,14 @@ int Config::getPriorityBoost()
 	return rc;
 }
 
-bool Config::getUsePriorityScheduler()
-{
-	return (bool) sysConfig.values[KEY_USE_PRIORITY_SCHEDULER];
-}
-
 const char *Config::getRemoteServiceName()
 {
 	return (const char*) sysConfig.values[KEY_REMOTE_SERVICE_NAME];
 }
 
-unsigned short Config::getRemoteServicePort()
+int Config::getRemoteServicePort()
 {
-	return (unsigned short) sysConfig.values[KEY_REMOTE_SERVICE_PORT];
+	return (int) sysConfig.values[KEY_REMOTE_SERVICE_PORT];
 }
 
 const char *Config::getRemotePipeName()
@@ -489,17 +477,3 @@ bool Config::getBugcheckAbort()
 	return (bool) sysConfig.values[KEY_BUGCHECK_ABORT];
 }
 
-int Config::getTraceDSQL()
-{
-	return (int) sysConfig.values[KEY_TRACE_DSQL];
-}
-
-bool Config::getLegacyHash()
-{
-	return (bool) sysConfig.values[KEY_LEGACY_HASH];
-}
-
-const char *Config::getGCPolicy()
-{
-	return (const char *) sysConfig.values[KEY_GC_POLICY];
-}

@@ -22,9 +22,9 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../remote/remote.h"
 #include "../jrd/license.h"
 #include "../remote/ambx_proto.h"
@@ -41,7 +41,7 @@ void main( int argc, char *argv[])
  * Functional description
  *
  **************************************/
-	rem_port* port;
+	PORT port;
 	UCHAR mailbox[256];
 
 	AMBX_mailbox("//frank", mailbox);
@@ -49,7 +49,7 @@ void main( int argc, char *argv[])
 }
 
 
-static rem_port* init_connection( UCHAR * node)
+static PORT init_connection( UCHAR * node)
 {
 /**************************************
  *
@@ -61,7 +61,7 @@ static rem_port* init_connection( UCHAR * node)
  *	Establish connection to remote server.
  *
  **************************************/
-	rem_port* port;
+	PORT port;
 	PACKET packet;
 	P_CNCT *connect;
 	ISC_STATUS_ARRAY status_vector;
@@ -99,7 +99,7 @@ static rem_port* init_connection( UCHAR * node)
 	port->receive(&packet);
 
 	if (packet.p_operation != op_accept) {
-		fprintf(stderr, "remote server refused connection\n");
+		ib_fprintf(ib_stderr, "remote server refused connection\n");
 		return NULL;
 	}
 

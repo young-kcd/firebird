@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		expan_proto.h
- *	DESCRIPTION:	Prototype header file for expand.cpp
+ *	DESCRIPTION:	Prototype header file for expand.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_EXPAN_PROTO_H
-#define QLI_EXPAN_PROTO_H
+#ifndef _QLI_EXPAN_PROTO_H_
+#define _QLI_EXPAN_PROTO_H_
 
-qli_nod*	EXP_expand(qli_syntax*);
+extern struct qli_nod	*EXP_expand (struct syn *);
 
-#endif // QLI_EXPAN_PROTO_H
-
+#endif /* _QLI_EXPAN_PROTO_H_ */

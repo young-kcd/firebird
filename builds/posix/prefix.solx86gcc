@@ -18,13 +18,15 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86gcc,v 1.14 2004-09-15 08:35:12 kkuznetsov Exp $
+# $Id: prefix.solx86gcc,v 1.1.2.7 2004-10-07 21:34:24 skidder Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
 #FirebirdInstallPrefix = @prefix@
+
+LD=@CXX@
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings
 COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer  -fmessage-length=0 -MMD  -fPIC
@@ -58,20 +60,14 @@ OS_ServerFiles=inet_server.cpp
 #still ugly hack - becouse can not move it to configure.in
 GPRECOMMON_Files= ../jrd/thd.cpp ../jrd/isc_sync.cpp
 GPRECommon_Sources= $(GPRECOMMON_Files)
-GFIX_Other_Sources= jrd/isc_sync.cpp jrd/os/posix/isc_ipc.cpp 
-#needed by thd.cpp on Solaris
-DROP_Other_Sources= jrd/sch.cpp jrd/thd.cpp
-LOCKPRINT_Other_Sources=jrd/sch.cpp jrd/thd.cpp
 Server_main_dummy = os/sun/server_main_dummy.cpp
-#REMOTE_ClientFiles  = $(Server_main_dummy)
-
 LIB_LINK_OPTIONS:= -G 
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
 LIB_LINK_MAPFILE= -Xlinker -M
 
-#LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
+LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin fb_lock_print
 
-Physical_IO_Module=os/posix/unix.cpp
+Physical_IO_Module= unix.cpp

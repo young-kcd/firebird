@@ -28,6 +28,8 @@
  *  Contributor(s):
  * 
  *
+ *  $Id: keywords.cpp,v 1.18.2.1 2004-01-26 07:10:12 stryqx Exp $
+ *
  */
 
 
@@ -40,7 +42,7 @@
 #include "dsql.tab.h"
 #include "keywords.h"
 
-static const TOK tokens[] = {
+static const TOK tokens [] = {
 	{NOT_LSS, "!<", 1},
 	{NEQ, "!=", 1},
 	{NOT_GTR, "!>", 1},
@@ -49,7 +51,7 @@ static const TOK tokens[] = {
 	{COMMA, ",", 1}, 
 	{LSS, "<", 1}, 
 	{LEQ, "<=", 1}, 
-	{NEQ, "<>", 1},	// Alias of != 
+	{NEQ, "<>", 1},	/* Alias of != */
 	{EQL, "=", 1},
 	{GTR, ">", 1},
 	{GEQ, ">=", 1},
@@ -63,30 +65,27 @@ static const TOK tokens[] = {
 	{AND, "AND", 1}, 
 	{ANY, "ANY", 1}, 
 	{AS, "AS", 1}, 
-	{ASC, "ASC", 1},	// Alias of ASCENDING 
+	{ASC, "ASC", 1},	/* Alias of ASCENDING */
 	{ASC, "ASCENDING", 1},
 	{AT, "AT", 1},
 	{AUTO, "AUTO", 1},
 	{AVG, "AVG", 1},
-	{BACKUP, "BACKUP", 2},
-//	{BASENAME, "BASE_NAME", 1},
+	{BASENAME, "BASE_NAME", 1},
 	{BEFORE, "BEFORE", 1},
 	{BEGIN, "BEGIN", 1},
 	{BETWEEN, "BETWEEN", 1},
 	{BIGINT, "BIGINT", 2},
 	{BLOB, "BLOB", 1},
-	{BLOCK, "BLOCK", 1},
 	{KW_BREAK, "BREAK", 2}, 
 	{BY, "BY", 1},
-//	{CACHE, "CACHE", 1},
+	{CACHE, "CACHE", 1},
 	{CASCADE, "CASCADE", 1},
 	{CASE, "CASE", 2},
 	{CAST, "CAST", 1},
 	{KW_CHAR, "CHAR", 1},
 	{CHARACTER, "CHARACTER", 1},
 	{CHECK, "CHECK", 1},
-//	{CHECK_POINT_LEN, "CHECK_POINT_LENGTH", 1},
-	{CLOSE, "CLOSE", 2},
+	{CHECK_POINT_LEN, "CHECK_POINT_LENGTH", 1},
 	{COALESCE, "COALESCE", 2},
 	{COLLATE, "COLLATE", 1},
 	{COLUMN, "COLUMN", 2},
@@ -98,7 +97,6 @@ static const TOK tokens[] = {
 	{CONTAINING, "CONTAINING", 1},
 	{COUNT, "COUNT", 1},
 	{CREATE, "CREATE", 1},
-	{CROSS, "CROSS", 2},
 	{CSTRING, "CSTRING", 1},
 	{CURRENT, "CURRENT", 1},
 	{CURRENT_CONNECTION, "CURRENT_CONNECTION", 2},
@@ -119,10 +117,9 @@ static const TOK tokens[] = {
 	{DEFAULT, "DEFAULT", 1},
 	{KW_DELETE, "DELETE", 1},
 	{DELETING, "DELETING", 2},
-	{DESC, "DESC", 1},	// Alias of DESCENDING 
+	{DESC, "DESC", 1},	/* Alias of DESCENDING */
 	{DESC, "DESCENDING", 1},
 	{KW_DESCRIPTOR,	"DESCRIPTOR", 2},
-	{KW_DIFFERENCE, "DIFFERENCE", 2},
 	{DISTINCT, "DISTINCT", 1},
 	{DO, "DO", 1},
 	{DOMAIN, "DOMAIN", 1},
@@ -138,7 +135,6 @@ static const TOK tokens[] = {
 	{EXIT, "EXIT", 1},
 	{EXTERNAL, "EXTERNAL", 1},
 	{EXTRACT, "EXTRACT", 2},
-	{FETCH, "FETCH", 2},
 	{KW_FILE, "FILE", 1},
 	{FILTER, "FILTER", 1},
 	{FIRST, "FIRST", 2},
@@ -154,11 +150,10 @@ static const TOK tokens[] = {
 	{GEN_ID, "GEN_ID", 1},
 	{GRANT, "GRANT", 1},
 	{GROUP, "GROUP", 1},
-//	{GROUP_COMMIT_WAIT, "GROUP_COMMIT_WAIT_TIME", 1},
+	{GROUP_COMMIT_WAIT, "GROUP_COMMIT_WAIT_TIME", 1},
 	{HAVING, "HAVING", 1},
 	{HOUR, "HOUR", 2},
 	{IF, "IF", 1},
-	{IIF, "IIF", 2},
 	{KW_IN, "IN", 1},
 	{INACTIVE, "INACTIVE", 1},
 	{INDEX, "INDEX", 1},
@@ -179,8 +174,8 @@ static const TOK tokens[] = {
 	{LENGTH, "LENGTH", 1},
 	{LEVEL, "LEVEL", 1},
 	{LIKE, "LIKE", 1},
-//	{LOGFILE, "LOGFILE", 1},
-//	{LOG_BUF_SIZE, "LOG_BUFFER_SIZE", 1},
+	{LOGFILE, "LOGFILE", 1},
+	{LOG_BUF_SIZE, "LOG_BUFFER_SIZE", 1},
 	{KW_LONG, "LONG", 1},
 	{MANUAL, "MANUAL", 1},
 	{MAXIMUM, "MAX", 1},
@@ -195,7 +190,6 @@ static const TOK tokens[] = {
 	{NATIONAL, "NATIONAL", 1},
 	{NATURAL, "NATURAL", 1},
 	{NCHAR, "NCHAR", 1},
-	{NEXT, "NEXT", 2},
 	{NO, "NO", 1},
 	{NOT, "NOT", 1},
 	{NULLIF, "NULLIF", 2},
@@ -203,11 +197,10 @@ static const TOK tokens[] = {
 	{NULLS, "NULLS", 2},
 	{LOCK, "LOCK", 2},
 	{KW_NUMERIC, "NUMERIC", 1},
-//	{NUM_LOG_BUFS, "NUM_LOG_BUFFERS", 1},
+	{NUM_LOG_BUFS, "NUM_LOG_BUFFERS", 1},
 	{OF, "OF", 1},
 	{ON, "ON", 1},
 	{ONLY, "ONLY", 1},
-	{OPEN, "OPEN", 2},
 	{OPTION, "OPTION", 1},
 	{OR, "OR", 1},
 	{ORDER, "ORDER", 1},
@@ -227,7 +220,7 @@ static const TOK tokens[] = {
 	{PRIVILEGES, "PRIVILEGES", 1},
 	{PROCEDURE, "PROCEDURE", 1},
 	{PROTECTED, "PROTECTED", 1},
-//	{RAW_PARTITIONS, "RAW_PARTITIONS", 1},
+	{RAW_PARTITIONS, "RAW_PARTITIONS", 1},
 	{DB_KEY, "RDB$DB_KEY", 1},
 	{READ, "READ", 1},
 	{REAL, "REAL", 1},
@@ -235,9 +228,8 @@ static const TOK tokens[] = {
 	{RECREATE, "RECREATE", 2},
 	{REFERENCES, "REFERENCES", 1},
 	{RELEASE, "RELEASE", 2},
-	{RESERVING, "RESERV", 1},	// Alias of RESERVING 
+	{RESERVING, "RESERV", 1},	/* Alias of RESERVING */
 	{RESERVING, "RESERVING", 1},
-	{RESTART, "RESTART", 2},
 	{RESTRICT, "RESTRICT", 1},
 	{RETAIN, "RETAIN", 1},
 	{RETURNING_VALUES, "RETURNING_VALUES", 1},
@@ -247,14 +239,11 @@ static const TOK tokens[] = {
 	{ROLE, "ROLE", 1}, 
 	{ROLLBACK, "ROLLBACK", 1}, 
 	{ROW_COUNT, "ROW_COUNT", 2},
-	{ROWS, "ROWS", 2},
 	{SAVEPOINT, "SAVEPOINT", 2},
-	{SCALAR_ARRAY, "SCALAR_ARRAY", 2},
-	{DATABASE, "SCHEMA", 1},	// Alias of DATABASE 
+	{DATABASE, "SCHEMA", 1},	/* Alias of DATABASE */
 	{SECOND, "SECOND", 2},
 	{SEGMENT, "SEGMENT", 1},
 	{SELECT, "SELECT", 1},
-	{SEQUENCE, "SEQUENCE", 2},
 	{SET, "SET", 1},
 	{SHADOW, "SHADOW", 1},
 	{KW_SHARED, "SHARED", 1},
@@ -268,7 +257,7 @@ static const TOK tokens[] = {
 	{SQLCODE, "SQLCODE", 1},
 	{STABILITY, "STABILITY", 1}, 
 	{STARTING, "STARTING", 1}, 
-	{STARTING, "STARTS", 1},	// Alias of STARTING 
+	{STARTING, "STARTS", 1},	/* Alias of STARTING */
 	{STATEMENT, "STATEMENT", 2},
 	{STATISTICS, "STATISTICS", 1},
 	{SUBSTRING,	"SUBSTRING", 2},
@@ -307,13 +296,13 @@ static const TOK tokens[] = {
 	{WRITE, "WRITE", 1}, 
 	{YEAR, "YEAR", 2}, 
 	{YEARDAY, "YEARDAY", 2}, 
-	{NOT_LSS, "^<", 1},	// Alias of !<
-	{NEQ, "^=", 1},				// Alias of != 
-	{NOT_GTR, "^>", 1},			// Alias of !>
+	{NOT_LSS, "^<", 1},	/* Alias of !< */
+	{NEQ, "^=", 1},				/* Alias of != */
+	{NOT_GTR, "^>", 1},			/* Alias of !> */
 	{CONCATENATE, "||", 1}, 
-	{NOT_LSS, "~<", 1},	// Alias of !<
-	{NEQ, "~=", 1},				// Alias of != 
-	{NOT_GTR, "~>", 1},			// Alias of !>
+	{NOT_LSS, "~<", 1},	/* Alias of !< */
+	{NEQ, "~=", 1},				/* Alias of != */
+	{NOT_GTR, "~>", 1},			/* Alias of !> */
 	{0, 0, 0}
 };
 
@@ -324,13 +313,11 @@ static const TOK tokens[] = {
    MOD 29-June-2002
 */
 
-extern "C" {
-
-int KEYWORD_stringIsAToken(const char* in_str)
+bool KEYWORD_stringIsAToken(const char *in_str)
 {
-    const TOK* tok_ptr = tokens;
-    while (tok_ptr->tok_string) {
-        if (!strcmp(tok_ptr->tok_string, in_str)) {
+    const TOK *tok_ptr = tokens;
+    while (tok_ptr -> tok_string) {
+        if (!strcmp(tok_ptr -> tok_string, in_str)) {
             return true;
         }
         ++tok_ptr;
@@ -341,6 +328,4 @@ int KEYWORD_stringIsAToken(const char* in_str)
 const TOK* KEYWORD_getTokens()
 {
     return tokens;
-}
-
 }

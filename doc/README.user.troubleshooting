@@ -5,15 +5,33 @@ A lot of what is explained below should be done automatically by the install
 process.  It is explanined here just in case it didn't do it correctly for
 your circumstance.
 
+0)  CHECK YOUR IN THE FIREBIRD GROUP
+
+    On unix if your going to work with databases you need to be a
+    member of the group 'firebird'.
+
+    To add a user to the firebird group root user needs to do the
+    following:
+
+    $usermod -G firebird skywalker
+
+    and next time 'skywalker' logs on, he can start working with 
+    firebird databases.
+
+    To list the groups that a user belongs to type the following at the 
+    command line:
+    
+    $groups 
+    
 
 1)  IS IT WORKING HOW DO I TELL?
  
     A quick smoke test to see if it is all working is as follows:
 
     
-    $cd /usr/local/firebird/examples
+    $cd /opt/firebird/examples
 
-    $/usr/local/firebird/bin/isql
+    $/opt/firebird/bin/isql
     >connect employee.gdb;
     >select rdb$relation_name from rdb$relations;
     >exit;
@@ -21,20 +39,20 @@ your circumstance.
 
     (In some cases you may need to provide a password to isql)
 
-    $/usr/local/firebird/bin/isql
+    $/opt/firebird/bin/isql
     >connect employee.gdb user sysdba password <password>;
     >select rdb$relation_name from rdb$relations;
     > show tables;
     >exit;
 
     Where password will be either masterkey, or in the 
-    file /usr/local/firebird/SYSDBA.password.
+    file /opt/firebird/SYSDBA.password.
 
 
     For a test using networking.
 
-    $/usr/local/firebird/bin/isql
-    >connect 'localhost:/usr/local/firebird/examples/employee.gdb'; 
+    $/opt/firebird/bin/isql
+    >connect 'localhost:/opt/firebird/examples/employee.gdb'; 
     >select rdb$relation_name from rdb$relations;
     >exit;
 
@@ -42,6 +60,19 @@ your circumstance.
     the server name.  Remember you may need to specify the username/password
     in to get it to work.
 
+
+    NOTE: To access a database remotely that database needs to belong to the 
+    'firebird' group so the fb server has permission to read and write to
+    it on behalf of the client process.  The following will change the group 
+    ownership of the database to firebird.
+
+    $chgrp firebird mydb.fdb
+
+    The following, which is also common will set both the user and the group
+    ownership to firebird.
+
+    $chown firebird:firebird mydb.fdb
+     
 
 
 2)  HOW DO I CHECK THAT THE SERVER IS RUNNING
@@ -189,8 +220,3 @@ your circumstance.
     of no suitable entry in /etc/host.equiv or some firewall blockage, or the
     most common one, the server is not running.
  
-
-3)  WHY ARE MY DATABASES OWNED BY ROOT
-
-
-4)  WHAT IS THE DIFFERENCE

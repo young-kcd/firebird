@@ -12,7 +12,7 @@
  *     language governing rights and limitations under the License.
  *
  *
- *  The Original Code was created by Claudio Valderrama C. for IBPhoenix.
+ *  The Original Code was created by Claudio Valderama C. for IBPhoenix.
  *  The development of the Original Code was sponsored by Craig Leonardi.
  *
  *  Copyright (c) 2001 IBPhoenix
@@ -24,7 +24,6 @@
 
 set sql dialect 3;
 
--- The Nvl family is deprecated. Use native COALESCE instead.
 --FBUDF_API paramdsc* idNvl(paramdsc* v, paramdsc* v2)
 declare external function invl
 int by descriptor, int by descriptor
@@ -49,7 +48,6 @@ varchar(100) by descriptor, varchar(100) by descriptor,
 varchar(100) by descriptor returns parameter 3
 entry_point 'sNvl' module_name 'fbudf';
 
--- The NullIf family is deprecated. Use native NULLIF instead.
 --FBUDF_API paramdsc* iNullIf(paramdsc* v, paramdsc* v2)
 declare external function inullif
 int by descriptor, int by descriptor
@@ -97,12 +95,6 @@ declare external function addDay
 timestamp, int
 returns timestamp
 entry_point 'addDay' module_name 'fbudf';
-
---FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const int& ndays, ISC_TIMESTAMP* v)
-declare external function addDay2
-timestamp, int, timestamp
-returns parameter 3
-entry_point 'addDay2' module_name 'fbudf';
 
 --FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, int nweeks)
 declare external function addWeek

@@ -17,7 +17,7 @@ fi
 CVSTAG='$Name: not supported by cvs2svn $'
 TAG=`echo $CVSTAG | sed -e 's/\\$Name: not supported by cvs2svn $/\1/' | sed -e 's/ //'`
 if [ "x$TAG" == 'x' ]; then
-    TAG="HEAD"
+    TAG="B1_5_Release"
 fi
 
 MODULE=firebird2
@@ -38,8 +38,6 @@ cd $DIRNAME
 
 echo "Generating configure script"
 NOCONFIGURE=1 . ./autogen.sh > /dev/null
-rm -Rf autom4te.cache
-rm -f aclocal.m4
 cd ..
 tar -cjf $DIRNAME.tar.bz2 $DIRNAME
 echo "New tarball is $DIRNAME.tar.bz2"

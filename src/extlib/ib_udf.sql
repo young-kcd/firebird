@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ib_udf.sql,v 1.5 2004-08-30 15:58:17 skidder Exp $
+ * $Id: ib_udf.sql,v 1.4.2.1 2004-08-30 15:56:22 skidder Exp $
  * Revision 1.2  2000/11/28 06:47:52  fsg
  * Changed declaration of ascii_char in ib_udf.sql
  * to get correct result as proposed by Claudio Valderrama

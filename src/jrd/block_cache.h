@@ -1,5 +1,5 @@
-#ifndef JRD_BLOCK_CACHE_H
-#define JRD_BLOCK_CACHE_H
+#ifndef _JRD_BLOCK_CACHE_H_
+#define _JRD_BLOCK_CACHE_H_
 
 #include "../common/classes/alloc.h"
 #include "../jrd/smp_impl.h"
@@ -57,7 +57,7 @@ BlockCache<T>::~BlockCache()
 	// storage, simple as that.  No need to waste extra processor time
 	// freeing memory just to have it freed again!
 /*	Node *next;
-	while (head)
+	while(head)
 	{
 		next = head->next;
 		delete ((T*)head);
@@ -65,5 +65,4 @@ BlockCache<T>::~BlockCache()
 	} */
 }
 
-#endif // JRD_BLOCK_CACHE_H
-
+#endif

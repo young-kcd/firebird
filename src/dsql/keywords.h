@@ -25,17 +25,15 @@
  * MOD 29-Jun-2002
  */
 
-struct tok {
+typedef struct tok {
     USHORT tok_ident;
-    const char* tok_string;
+    SCHAR *tok_string;
     USHORT tok_version;
-};
+} TOK;
 
-typedef tok TOK;
-
-// These symbols are exported
 extern "C" {
-int KEYWORD_stringIsAToken(const char*);
-const TOK* KEYWORD_getTokens();
-}
 
+extern bool KEYWORD_stringIsAToken(const char*);
+extern const TOK* KEYWORD_getTokens();
+
+}

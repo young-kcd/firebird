@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Shared Cache Manager
- *	MODULE:		cache.cpp
+ *	MODULE:		cache_manager.c
  *	DESCRIPTION:	Manage shared database cache
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,12 +22,12 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include "../jrd/common.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/license.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
@@ -36,9 +36,7 @@
 #include <io.h>
 #endif
 
-// CVC: Obsolete functionality?
-
-static const UCHAR cache_dpb[] = { isc_dpb_version1, isc_dpb_cache_manager };
+static UCHAR cache_dpb[] = { gds_dpb_version1, gds__dpb_cache_manager };
 
 
 int CLIB_ROUTINE main( int argc, char **argv)
@@ -53,10 +51,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Run the shared cache manager.
  *
  **************************************/
-	TEXT c, *p, **end;
+	TEXT *sw_database, c, *p, **end;
 	SLONG db_handle;
 	ISC_STATUS status;
 	ISC_STATUS_ARRAY status_vector;
+	SLONG redir_in, redir_out, redir_err;
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -64,16 +63,16 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
+   by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		argv++;
 		argc--;
 	}
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		long redir_in = atol(argv[2]);
-		long redir_out = atol(argv[3]);
-		long redir_err = atol(argv[4]);
+		redir_in = atol(argv[2]);
+		redir_out = atol(argv[3]);
+		redir_err = atol(argv[4]);
 #ifdef WIN_NT
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
@@ -94,7 +93,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 #ifdef UNIX
 	if (setreuid(0, 0) < 0)
-		printf("Shared cache manager: couldn't set uid to superuser\n");
+		ib_printf("Shared cache manager: couldn't set uid to superuser\n");
 
 #ifdef HAVE_SETPGRP
 #ifdef SETPGRP_VOID
@@ -112,7 +111,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	signal(SIGQUIT, SIG_IGN);
 #endif
 
-	const TEXT* sw_database = "";
+	sw_database = "";
 
 	for (end = argv++ + argc; argv < end;) {
 		p = *argv++;
@@ -126,7 +125,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					break;
 
 				case 'Z':
-					printf("Shared cache manager version %s\n",
+					ib_printf("Shared cache manager version %s\n",
 							  GDS_VERSION);
 					exit(FINI_OK);
 				}
@@ -137,19 +136,21 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	do {
 		db_handle = NULL;
-		status = isc_attach_database(status_vector, 0, sw_database, &db_handle,
-									  sizeof(cache_dpb), cache_dpb);
+		status = gds__attach_database(status_vector,
+									  0,
+									  GDS_VAL(sw_database),
+									  GDS_REF(db_handle),
+									  sizeof(cache_dpb), GDS_VAL(cache_dpb));
 
-		if (status && status != isc_cache_restart) {
-			isc_print_status(status_vector);
+		if (status && status != gds__cache_restart) {
+			gds__print_status(status_vector);
 			gds__log_status(sw_database, status_vector);
 		}
 
 		if (db_handle)
-			isc_detach_database(status_vector, &db_handle);
+			gds__detach_database(status_vector, GDS_REF(db_handle));
 
-	} while (status == isc_cache_restart);
+	} while (status == gds__cache_restart);
 
 	exit(status ? FINI_ERROR : FINI_OK);
 }
-

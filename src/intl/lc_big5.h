@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_big5.cpp
+ *	MODULE:		lc_big5.c
  *	DESCRIPTION:	Language Drivers in the BIG5 family.  
  *
  * The contents of this file are subject to the Interbase Public
@@ -21,8 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
-/* These macros have a duplicate in cv_big5.cpp */
-static USHORT big5_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
-static SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr);
-static USHORT big5_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
-
+/* These macros have a duplicate in cv_big5.c */
+STATIC USHORT big5_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
+STATIC SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
+STATIC USHORT big5_to_lower(TEXTTYPE obj, UCS2_CHAR ch);

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		filte_proto.h
- *	DESCRIPTION:	Prototype Header file for filters.cpp
+ *	DESCRIPTION:	Prototype Header file for filters.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,16 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_FILTE_PROTO_H
-#define JRD_FILTE_PROTO_H
+#ifndef _JRD_FILTE_PROTO_H_
+#define _JRD_FILTE_PROTO_H_
 
-ISC_STATUS filter_acl(USHORT, Jrd::BlobControl*);
-ISC_STATUS filter_blr(USHORT, Jrd::BlobControl*);
-ISC_STATUS filter_format(USHORT, Jrd::BlobControl*);
-ISC_STATUS filter_runtime(USHORT, Jrd::BlobControl*);
-ISC_STATUS filter_text(USHORT, Jrd::BlobControl*);
-ISC_STATUS filter_transliterate_text(USHORT, Jrd::BlobControl*);
-ISC_STATUS filter_trans(USHORT, Jrd::BlobControl*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // JRD_FILTE_PROTO_H
+extern ISC_STATUS filter_acl(USHORT, struct ctl *);
+extern ISC_STATUS filter_blr(USHORT, struct ctl *);
+extern ISC_STATUS filter_format(USHORT, struct ctl *);
+extern ISC_STATUS filter_runtime(USHORT, struct ctl *);
+extern ISC_STATUS filter_text(USHORT, struct ctl *);
+extern ISC_STATUS filter_transliterate_text(USHORT, struct ctl *);
+extern ISC_STATUS filter_trans(USHORT, struct ctl *);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _JRD_FILTE_PROTO_H_ */

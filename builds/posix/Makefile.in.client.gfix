@@ -27,10 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gfix,v 1.10 2004-08-16 12:56:20 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.gfix,v 1.7.2.2 2004-09-17 20:34:21 skidder Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=client.gfix
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -40,8 +40,8 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-GFIX_Other_Sources = jrd/isc.cpp jrd/thd.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
+GFIX_Other_Sources = jrd/isc.cpp \
+common/classes/alloc.cpp common/fb_exception.cpp
 
 GFIX_Files = alice_meta.epp alice.cpp all.cpp exe.cpp tdr.cpp
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
@@ -58,7 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 gfix : $(LIBFBCLIENT_SO) $(GFIX)
 
 $(GFIX):	$(GFIX_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

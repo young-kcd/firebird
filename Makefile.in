@@ -3,4 +3,4 @@
 all: firebird
 
 .DEFAULT:
-	$(MAKE) -C gen $@
+	$(MAKE) -C src $@

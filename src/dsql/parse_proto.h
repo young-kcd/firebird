@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		parse_proto.h
- *	DESCRIPTION:	Prototype Header file for parse.cpp
+ *	DESCRIPTION:	Prototype Header file for parse.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,13 +21,20 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_PARSE_PROTO_H
-#define DSQL_PARSE_PROTO_H
+#ifndef _DSQL_PARSE_PROTO_H_
+#define _DSQL_PARSE_PROTO_H_
 
-int dsql_yyparse(USHORT, USHORT, USHORT, bool*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void LEX_dsql_init(void);
-void LEX_string(const TEXT*, USHORT, SSHORT);
+extern int dsql_yyparse(USHORT, USHORT, USHORT, BOOLEAN *);
 
-#endif //  DSQL_PARSE_PROTO_H
+extern void LEX_dsql_init(void);
+extern void LEX_string(TEXT *, USHORT, SSHORT);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /*  _DSQL_PARSE_PROTO_H_  */

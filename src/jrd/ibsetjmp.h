@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_IBSETJMP_H
-#define JRD_IBSETJMP_H
+#ifndef _JRD_IBSETJMP_H_
+#define _JRD_IBSETJMP_H_
 
 
 #ifdef HAVE_SETJMP_H
@@ -61,7 +61,7 @@
 #ifdef SUPERSERVER
 #include <excpt.h>
 #define START_CHECK_FOR_EXCEPTIONS(err)	__try {
-#define  END_CHECK_FOR_EXCEPTIONS(err) 	} __except ( ISC_exception_post(GetExceptionCode(), err)) { }
+#define  END_CHECK_FOR_EXCEPTIONS(err) 	} __except ( ISC_exception_post(GetExceptionCode(),err)) { }
 #endif /* SUPER_SERVER */
 #endif /* WIN_NT */
 
@@ -75,4 +75,4 @@
 #endif
 
 
-#endif /* JRD_IBSETJMP_H */
+#endif /* _JRD_IBSETJMP_H_ */

@@ -27,10 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gpre,v 1.16 2004-10-07 20:25:40 skidder Exp $
+#  $Id: Makefile.in.client.gpre,v 1.9.2.3 2004-09-17 20:34:21 skidder Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=client.gpre
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -39,12 +39,13 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp common/utils.cpp \
-common/fb_exception.cpp common/classes/alloc.cpp
+
+GPRE_Other_Sources = jrd/dsc.cpp common/fb_exception.cpp
+
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
-		pat.cpp pretty.cpp sqe.cpp sql.cpp cob.cpp \
+		pat.cpp pretty.cpp sqe.cpp sql.cpp cob.cpp noform.cpp \
 		@GPRE_LANGUAGE_MODULES@
 
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files)) $(GPRE_Other_Sources)
@@ -61,7 +62,7 @@ Dependencies = $(AllObjects:.o=.d)
 gpre : $(LIBFBCLIENT_SO) $(GPRE)
 
 $(GPRE):	$(GPRE_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

@@ -118,12 +118,6 @@ EXPORTS
 	gds__version	@84
 	gds__vtof	@85
 	gds__vtov	@86
-	gds__default_printer @87
-
-    gds__alloc_debug
-
-    gds_alloc_flag_unfreed
-    gds_alloc_report
 
 	perf_format	@100
 	perf_get_info	@101
@@ -236,7 +230,6 @@ EXPORTS
 	; Error-handling functions
 
 	isc_interprete	@141
-	fb_interpret
 	isc_print_sqlerror	@150
 	isc_print_status	@151
 	isc_sqlcode	@165
@@ -340,5 +333,5 @@ EXPORTS
 
 	CVT_move	@267
 
-	KEYWORD_stringIsAToken	@271
-	KEYWORD_getTokens	@272
+	KEYWORD_stringIsAToken
+	KEYWORD_getTokens

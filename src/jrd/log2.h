@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	REPLAY Debugging Utility
- *	MODULE:		log2.h
+ *	MODULE:		arg.h
  *	DESCRIPTION:	Arguments for OSRI calls
  *
  * The contents of this file are subject to the Interbase Public
@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef JRD_LOG2_H
-#define JRD_LOG2_H
+#ifndef _JRD_ARG_H_
+#define _JRD_ARG_H_
 
 /* This table will be used to pull off the argument types
    for recording in the log. The status vector is assumed
@@ -106,24 +106,29 @@ static const SCHAR arg_types1[log_max][10] = {
 /* this is the replay log filename definition */
 
 #ifdef VMS
-static const char* LOG_FILE_NAME	= "[SYSMGR]replay.log";
-#elif defined (WIN_NT)
-static const char* LOG_FILE_NAME	= "replay.log";
-#else
-static const char* LOG_FILE_NAME	= FB_PREFIX "/replay.log";
+#define LOG_FILE_NAME	"[SYSMGR]replay.log"
+#endif
+
+#if defined (WIN_NT)
+#define LOG_FILE_NAME	"replay.log"
+#endif /* WIN_NT */
+
+#ifndef LOG_FILE_NAME
+#define LOG_FILE_NAME   FB_PREFIX "/replay.log"
 #endif
 
 /* these are the modes for opening the log file */
 
 #if (defined WIN_NT)
-static const char* MODE_READ	= "rb";
-static const char* MODE_WRITE	= "wb";
-static const char* MODE_APPEND	= "ab";
-#else
-static const char* MODE_READ	= "r";
-static const char* MODE_WRITE	= "w";
-static const char* MODE_APPEND	= "a";
+#define MODE_READ	"rb"
+#define MODE_WRITE	"wb"
+#define MODE_APPEND	"ab"
 #endif
 
-#endif // JRD_LOG2_H
+#ifndef MODE_READ
+#define MODE_READ	"r"
+#define MODE_WRITE	"w"
+#define MODE_APPEND	"a"
+#endif
 
+#endif /* _JRD_ARG_H_ */

@@ -1,5 +1,5 @@
-#ifndef JRD_SMP_IMPL_H
-#define JRD_SMP_IMPL_H
+#ifndef _JRD_SMP_IMPL_H_
+#define _JRD_SMP_IMPL_H_
 
 #include "../jrd/smp.h"
 #include "../jrd/thd.h"
@@ -32,5 +32,4 @@ class V4Mutex : public SmpLock
         MUTX mutex;
 };
 
-#endif // JRD_SMP_IMPL_H
-
+#endif

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		pwd.cpp
+ *	MODULE:		pwd.e
  *	DESCRIPTION:	User information database access
  *
  * The contents of this file are subject to the Interbase Public
@@ -26,24 +26,14 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#include <time.h>
-#include "../jrd/common.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd.h"
-#include "../jrd/thread_proto.h"
-#include "../jrd/jrd_proto.h"
-#include "../common/config/config.h"
-#include "../common/classes/objects_array.h"
-#include "../common/classes/init.h"
-#include "../common/classes/ClumpletWriter.h"
-
-using namespace Jrd;
+#include "../jrd/thd_proto.h"
 
 #ifdef SUPERSERVER
 const bool SecurityDatabase::is_cached = true;
@@ -51,7 +41,7 @@ const bool SecurityDatabase::is_cached = true;
 const bool SecurityDatabase::is_cached = false;
 #endif
 
-// BLR to search database for user name record
+/* BLR to search database for user name record */
 
 const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_version5,
@@ -60,7 +50,7 @@ const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_long, 0,
 	blr_long, 0,
 	blr_short, 0,
-	blr_text, UCHAR(MAX_PASSWORD_LENGTH + 2), 0,
+	blr_text, 34, 0,
 	blr_message, 0, 1, 0,
 	blr_cstring, 129, 0,
 	blr_receive, 0,
@@ -99,7 +89,7 @@ const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_eoc
 };
 
-// Transaction parameter buffer
+/* Transaction parameter buffer */
 
 const UCHAR SecurityDatabase::TPB[4] = {
 	isc_tpb_version1,
@@ -108,130 +98,41 @@ const UCHAR SecurityDatabase::TPB[4] = {
 	isc_tpb_wait
 };
 
-// Static instance of the database
+/* Static instance of the database */
 
 SecurityDatabase SecurityDatabase::instance;
 
-#ifndef EMBEDDED
-namespace {
-// Disable attempts to brutforce logins/passwords
-	class FailedLogin
-	{
-	public:
-		Firebird::string login;
-		int	failCount;
-		time_t lastAttempt;
-		FailedLogin(Firebird::MemoryPool& p) 
-			: login(p), failCount(0), lastAttempt(time(0)) {}
-		static const Firebird::string* generate(const void* sender, const FailedLogin* f)
-		{
-			return &(f->login);
-		}
-	};
 
-	const size_t MAX_CONCURRENT_FAILURES = 16;
-	const int MAX_FAILED_ATTEMPTS = 4;
-	const int FAILURE_DELAY = 8; // seconds
+/******************************************************************************
+ *
+ *	Constructor & destructor
+ */
 
-	class FailedLogins : private Firebird::SortedObjectsArray<FailedLogin, 
-		Firebird::InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
-		const Firebird::string, FailedLogin> 
-	{
-	private:
-		// as long as we have voluntary threads scheduler,
-		// this mutex should be entered AFTER that scheduler entered!
-		Firebird::Mutex fullAccess;
-
-		typedef Firebird::SortedObjectsArray<FailedLogin, 
-			Firebird::InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
-			const Firebird::string, FailedLogin> inherited;
-
-	public:
-		FailedLogins(MemoryPool& p) : inherited(p) {}
-
-		void loginFail(const char* login)
-		{
-			//Firebird::MutexLockGuard(fullAccess);
-			fullAccess.enter();
-			FailedLogin& l = get(login);
-			if (++(l.failCount) >= MAX_FAILED_ATTEMPTS)
-			{
-				sleepThread();
-				l.failCount = 0;
-			}
-			fullAccess.leave();
-		}
-
-		void loginSuccess(const char* login)
-		{
-			//Firebird::MutexLockGuard(fullAccess);
-			fullAccess.enter();
-			size_t pos;
-			if (find(login, pos))
-			{
-				remove(pos);
-			}
-			fullAccess.leave();
-		}
-
-	private:
-		FailedLogin& get(const char* login)
-		{
-			size_t pos;
-			if (find(login, pos))
-			{
-				(*this)[pos].lastAttempt = time(0);
-				return (*this)[pos];
-			}
-
-checkForFreeSpace:
-			if (getCount() >= MAX_CONCURRENT_FAILURES)
-			{
-				// try to perform old entries collection
-				const time_t t = time(0);
-				for (iterator i = begin(); i != end(); )
-				{
-					if (t - i->lastAttempt >= FAILURE_DELAY)
-					{
-						remove(i);
-					}
-					else
-					{
-						++i;
-					}
-				}
-			}
-			if (getCount() >= MAX_CONCURRENT_FAILURES)
-			{
-				// it seems we are under attack - too many wrong logins !!!
-				// therefore sleep for a while and clear failures cache
-				sleepThread();
-				goto checkForFreeSpace;
-			}
-
-			FailedLogin& rc = add();
-			rc.login = login;
-			return rc;
-		}
-
-		void sleepThread()
-		{
-			THREAD_EXIT();
-			fullAccess.leave();
-			THD_sleep(1000 * FAILURE_DELAY);
-			THREAD_ENTER();
-			fullAccess.enter();
-		}
-	};
-
-	Firebird::InitInstance<FailedLogins> iFailedLogins;
+SecurityDatabase::SecurityDatabase()
+	: lookup_db(0), lookup_req(0), counter(0) 
+{
+	THD_MUTEX_INIT(&mutex);
 }
-#endif //EMBEDDED
+
+SecurityDatabase::~SecurityDatabase()
+{
+	THD_MUTEX_DESTROY(&mutex);
+}
 
 /******************************************************************************
  *
  *	Private interface
  */
+
+void SecurityDatabase::lock()
+{
+	THD_MUTEX_LOCK(&mutex);
+}
+
+void SecurityDatabase::unlock()
+{
+	THD_MUTEX_UNLOCK(&mutex);
+}
 
 void SecurityDatabase::fini()
 {
@@ -239,9 +140,9 @@ void SecurityDatabase::fini()
 #ifndef EMBEDDED
 	if (counter == 1 && lookup_db)
 	{
-		THREAD_EXIT();
+		THREAD_EXIT;
 		isc_detach_database(status, &lookup_db);
-		THREAD_ENTER();
+		THREAD_ENTER;
 	}
 #endif
 }
@@ -253,11 +154,11 @@ void SecurityDatabase::init()
 
 bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
 {
-	bool found = false;		// user found flag
+	bool notfound = true;	// user found flag
 	TEXT uname[129];		// user name buffer
 	user_record user;		// user record
 
-	// Start by clearing the output data
+	/* Start by clearing the output data */
 
 	if (uid)
 		*uid = 0;
@@ -266,10 +167,9 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	if (pwd)
 		*pwd = '\0';
 
-	strncpy(uname, user_name, sizeof uname);
-	uname[sizeof uname - 1] = 0;
+	strncpy(uname, user_name, 129);
 
-	// Attach database and compile request
+	/* Attach database and compile request */
 
 	if (!prepare())
 	{
@@ -277,37 +177,34 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 		{
 			isc_detach_database(status, &lookup_db);
 		}
-		THREAD_ENTER();
-		ERR_post(isc_psw_attach, 0);
+		THREAD_ENTER;
+		ERR_post(gds_psw_attach, 0);
 	}
 
-	// Lookup
+	/* Lookup */
 
 	isc_tr_handle lookup_trans = 0;
 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
-		THREAD_ENTER();
-		ERR_post(isc_psw_start_trans, 0);
+		THREAD_ENTER;
+		ERR_post(gds_psw_start_trans, 0);
 	}
 
 	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
 	{
-		while (true)
+		while (1)
 		{
 			isc_receive(status, &lookup_req, 1, sizeof(user), &user, 0);
 			if (!user.flag || status[1])
 				break;
-			found = true;
+			notfound = false;
 			if (uid)
 				*uid = user.uid;
 			if (gid)
 				*gid = user.gid;
-			if (pwd) 
-			{
-				strncpy(pwd, user.password, MAX_PASSWORD_LENGTH);
-				pwd[MAX_PASSWORD_LENGTH] = 0;
-			}
+			if (pwd)
+				strncpy(pwd, user.password, 32);
 		}
 	}
 
@@ -317,55 +214,98 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	{
 		isc_detach_database(status, &lookup_db);
 	}
-	THREAD_ENTER();
+	THREAD_ENTER;
 
-	return found;
+	return notfound;
 }
 
 bool SecurityDatabase::prepare()
 {
 	TEXT user_info_name[MAXPATHLEN];
+	IHNDL ihandle;
+	SCHAR* dpb;
+	SCHAR dpb_buffer[256];
+	SSHORT dpb_len;
+
+	/* dimitr: access to the class members in this routine should be synchronized
+			   when fine grained locking will be implemented for the SS architecture */
 
 	if (lookup_db)
 	{
-		THREAD_EXIT();
+		THREAD_EXIT;
 		return true;
 	}
 
-	THREAD_EXIT();
+	/* Register as internal database handle */
+
+	for (ihandle = internal_db_handles; ihandle; ihandle = ihandle->ihndl_next)
+	{
+		if (ihandle->ihndl_object == NULL)
+		{
+			ihandle->ihndl_object = &lookup_db;
+			break;
+		}
+	}
+
+	if (!ihandle)
+	{
+		ihandle = (IHNDL) gds__alloc ((SLONG) sizeof(struct ihndl));
+		ihandle->ihndl_object = &lookup_db;
+		ihandle->ihndl_next = internal_db_handles;
+		internal_db_handles = ihandle;
+	}
+
+	THREAD_EXIT;
 
 	lookup_db = lookup_req = 0;
 
-	// Initialize the database name
+	/* initialize the data base's name */
+
 	getPath(user_info_name);
 
-	// Perhaps build up a dpb
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	/* Perhaps build up a dpb */
 
-	// Insert username
-	const char* szAuthenticator = "authenticator";
-	dpb.insertString(isc_dpb_user_name, 
-		szAuthenticator, strlen(szAuthenticator));
+	dpb = dpb_buffer;
 
-	// Insert password
-	const char* szPassword = "none";
-	dpb.insertString(isc_dpb_password, 
-		szPassword, strlen(szPassword));
+	*dpb++ = gds_dpb_version1;
 
-	// Attachment is for the security database
-	dpb.insertByte(isc_dpb_sec_attach, TRUE);
+	// insert username
+	static const char szAuthenticator[] = "authenticator";
+	const size_t nAuthNameLen = strlen(szAuthenticator);
+	*dpb++ = gds_dpb_user_name;
+	*dpb++ = nAuthNameLen;
+	memcpy(dpb, szAuthenticator, nAuthNameLen);
+	dpb += nAuthNameLen;
 
-	// Temporarily disable security checks for this thread
-	JRD_thread_security_disable(true);
+	// insert password
+	static const char szPassword[] = "none";
+	const size_t nPswdLen = strlen(szPassword);
+	*dpb++ = gds_dpb_password;
+	*dpb++ = nPswdLen;
+	memcpy(dpb, szPassword, nPswdLen);
+	dpb += nPswdLen;
 
-	isc_attach_database(status, 0, user_info_name, &lookup_db, 
-		dpb.getBufferLength(), 
-		reinterpret_cast<const char*>(dpb.getBuffer()));
-	
-	JRD_thread_security_disable(false);
+	*dpb++ = isc_dpb_sec_attach;	// Attachment is for the security database
+	*dpb++ = 1;						// Parameter value length
+	*dpb++ = TRUE;					// Parameter value
+
+	dpb_len = dpb - dpb_buffer;
+
+	isc_attach_database(status, 0, user_info_name, &lookup_db, dpb_len, dpb_buffer);
+
+	if (status[1] == gds_login)
+	{
+		/* we may be going against a V3 database which does not
+		 * understand this combination */
+
+		isc_attach_database(status, 0, user_info_name, &lookup_db, 0, 0);
+	}
+
+	assert(ihandle->ihndl_object == &lookup_db);
+	ihandle->ihndl_object = NULL;
 
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
-						reinterpret_cast<const char*>(PWD_REQUEST));
+						reinterpret_cast<char*>(const_cast<UCHAR*>(PWD_REQUEST)));
 
 	if (status[1])
 	{
@@ -380,6 +320,11 @@ bool SecurityDatabase::prepare()
  *	Public interface
  */
 
+void SecurityDatabase::getPath(TEXT* path_buffer)
+{
+	gds__prefix(path_buffer, USER_INFO_NAME);
+}
+
 void SecurityDatabase::initialize()
 {
 	instance.init();
@@ -391,80 +336,59 @@ void SecurityDatabase::shutdown()
 }
 
 void SecurityDatabase::verifyUser(TEXT* name,
-								  const TEXT* user_name,
-								  const TEXT* password,
-								  const TEXT* password_enc,
+								  TEXT* user_name,
+								  TEXT* password,
+								  TEXT* password_enc,
 								  int* uid,
 								  int* gid,
 								  int* node_id)
 {
+	bool notfound;
+	TEXT *p, *q, pw1[33], pw2[33], pwt[33];
+
 	if (user_name)
 	{
-		TEXT* p = name;
-		for (const TEXT* q = user_name; *q; ++q, ++p)
+		for (p = name, q = user_name; *q; q++, p++)
 		{
 			*p = UPPER7(*q);
 		}
 		*p = 0;
 	}
 
-#ifndef EMBEDDED
+	/* Look up the user name in the userinfo database and use the parameters
+	   found there.  This means that another database must be accessed, and
+	   that means the current context must be saved and restored. */
 
-	// Look up the user name in the userinfo database and use the parameters
-	// found there. This means that another database must be accessed, and
-	// that means the current context must be saved and restored.
+#ifdef EMBEDDED
+	return;
+#else
+	THREAD_EXIT;
+	instance.lock();
+	THREAD_ENTER;
+	notfound = instance.lookup_user(name, uid, gid, pw1);
+	instance.unlock();
+#endif
 
-	THREAD_EXIT();
-	instance.mutex.aquire();
-	THREAD_ENTER();
-	TEXT pw1[MAX_PASSWORD_LENGTH + 1];
-	const bool found = instance.lookup_user(name, uid, gid, pw1);
-	pw1[MAX_PASSWORD_LENGTH] = 0;
-	instance.mutex.release();
-	Firebird::string storedHash(pw1, MAX_PASSWORD_LENGTH);
-	storedHash.rtrim();
+	/* Punt if the user has specified neither a raw nor an encrypted password,
+	   or if the user has specified both a raw and an encrypted password, 
+	   or if the user name specified was not in the password database
+	   (or if there was no password database - it's still not found) */
 
-	// Punt if the user has specified neither a raw nor an encrypted password,
-	// or if the user has specified both a raw and an encrypted password, 
-	// or if the user name specified was not in the password database
-	// (or if there was no password database - it's still not found)
-
-	if ((!password && !password_enc) || (password && password_enc) || !found)
+	if ((!password && !password_enc) ||
+		(password && password_enc) ||
+		notfound)
 	{
-		iFailedLogins().loginFail(name);
-		ERR_post(isc_login, 0);
+		ERR_post(gds_login, 0);
 	}
 
-	TEXT pwt[MAX_PASSWORD_LENGTH + 2];
-	if (password) 
-	{
-		ENC_crypt(pwt, sizeof pwt, password, PASSWORD_SALT);
+	if (password) {
+		strcpy(pwt, ENC_crypt(password, PASSWORD_SALT));
 		password_enc = pwt + 2;
 	}
-
-	Firebird::string newHash;
-	hash(newHash, name, password_enc, storedHash);
-	if (newHash != storedHash)
-	{
-		bool legacyHash = Config::getLegacyHash();
-		if (legacyHash)
-		{
-			newHash.resize(MAX_PASSWORD_LENGTH + 2);
-			ENC_crypt(newHash.begin(), newHash.length(), password_enc, PASSWORD_SALT);
-			newHash.resize(strlen(newHash.c_str()));
-			newHash.erase(0, 2);
-			legacyHash = newHash == storedHash;
-		}
-		if (! legacyHash) 
-		{
-			iFailedLogins().loginFail(name);
-			ERR_post(isc_login, 0);
-		}
+	strcpy(pw2, ENC_crypt(password_enc, PASSWORD_SALT));
+	if (strncmp(pw1, pw2 + 2, 11)) {
+		ERR_post(gds_login, 0);
 	}
-
-	iFailedLogins().loginSuccess(name);
-#endif
 
 	*node_id = 0;
 }
-

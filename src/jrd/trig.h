@@ -20,8 +20,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#ifndef JRD_TRIG_H
-#define JRD_TRIG_H
+#ifndef _JRD_TRIG_H_
+#define _JRD_TRIG_H_
 
 /* This file contains the trigger blr for the system-defined triggers
    on system relations.  The GDEF source for these triggers is in
@@ -42,11 +42,10 @@
        blr_literal, blr_long, 0, 31,0,0,0,
 */
 
-namespace Jrd {
 
 /* trigger definition structure */
 
-struct jrd_trg
+typedef struct jrd_trg
 {
 	const SCHAR*	trg_name;
 	UCHAR			trg_relation;
@@ -55,43 +54,39 @@ struct jrd_trg
 	const UCHAR*	trg_blr;
 	USHORT			trg_flags;
 	UCHAR			trg_ods_version;
-};
+} JRD_TRG;
 
 /* trigger message structure */
 
-struct trigger_msg
+typedef struct trigger_msg
 {
 	const SCHAR*	trigmsg_name;
 	USHORT			trigmsg_number;
 	const SCHAR*	trigmsg_text;
 	UCHAR			trg_ods_version;
-};
+} TRIGMSG;
 
 /* generator definition structure */
 
-struct gen
+typedef struct gen
 {
 	const SCHAR*	gen_name;
 	USHORT			gen_id;
-	const char*     gen_description;
-};
-
-} //namespace Jrd
+} GEN;
 
 /* generators needed by the system triggers */
 
-static const Jrd::gen generators[] =
+static const GEN generators[] =
 {
-	{ "RDB$SECURITY_CLASS", 0, NULL },
-	{ "SQL$DEFAULT", 0, NULL },
-	{ "RDB$PROCEDURES", 0, "Procedure ID" },
-	{ "RDB$EXCEPTIONS", 0, "Exception ID" },
-	{ "RDB$CONSTRAINT_NAME", 0, "Implicit constraint name" },
-	{ "RDB$FIELD_NAME", 0, "Implicit domain name" },
-	{ "RDB$INDEX_NAME", 0, "Implicit index name" },
-	{ "RDB$TRIGGER_NAME", 0, "Implicit trigger name" },
-	{ "RDB$BACKUP_HISTORY", 0, "Nbackup technology" },
-	{ 0, 0, NULL }
+	{ "RDB$SECURITY_CLASS", 0 },
+	{ "SQL$DEFAULT", 0 },
+	{ "RDB$PROCEDURES", 0 },
+	{ "RDB$EXCEPTIONS", 0 },
+	{ "RDB$CONSTRAINT_NAME", 0 },
+	{ "RDB$FIELD_NAME", 0 },
+	{ "RDB$INDEX_NAME", 0 },
+	{ "RDB$TRIGGER_NAME", 0 },
+	{ 0, 0 }
 };
 
 
@@ -1548,29 +1543,7 @@ static const UCHAR trigger18[] = {
 	blr_field, 0, 14, 'R', 'D', 'B', '$', 'I', 'N', 'D', 'E', 'X', '_', 'N',
 		'A', 'M', 'E',
 	blr_end,
-	blr_begin,
-	blr_if,
-	blr_not,
-	blr_and,
-	blr_eql,
-	blr_field, 0, 14, 'R', 'D', 'B', '$', 'I', 'N', 'D', 'E', 'X', '_', 'N',
-		'A', 'M', 'E',
-	blr_field, 1, 14, 'R', 'D', 'B', '$', 'I', 'N', 'D', 'E', 'X', '_', 'N',
-		'A', 'M', 'E',
-	blr_and,
-	blr_eql,
-	blr_field, 0, 14, 'R', 'D', 'B', '$', 'F', 'I', 'E', 'L', 'D', '_', 'N',
-		'A', 'M', 'E',
-	blr_field, 1, 14, 'R', 'D', 'B', '$', 'F', 'I', 'E', 'L', 'D', '_', 'N',
-		'A', 'M', 'E',
-	blr_eql,
-	blr_field, 0, 18, 'R', 'D', 'B', '$', 'F', 'I', 'E', 'L', 'D', '_', 'P',
-		'O', 'S', 'I', 'T', 'I', 'O', 'N',
-	blr_field, 1, 18, 'R', 'D', 'B', '$', 'F', 'I', 'E', 'L', 'D', '_', 'P',
-		'O', 'S', 'I', 'T', 'I', 'O', 'N',
 	blr_leave, 1,
-	blr_end,
-	blr_end,
 	blr_end,
 	blr_end,
 	blr_eoc,
@@ -2307,5 +2280,4 @@ static const UCHAR trigger35[] = {
 	blr_eoc
 };
 
-#endif /* JRD_TRIG_H */
-
+#endif /* _JRD_TRIG_H_ */

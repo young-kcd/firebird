@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fb_inet_server/fb_inet_server.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fb_inet_server/"
 				ObjectFile="..\..\..\temp\release\fb_inet_server/"
@@ -52,6 +51,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\fb_inet_server/fb_inet_server.pdb"
 				SubSystem="2"
 				StackReserveSize="2097152"/>
 			<Tool
@@ -99,7 +99,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fb_inet_server/fb_inet_server.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fb_inet_server/"
 				ObjectFile="..\..\..\temp\debug\fb_inet_server/"
@@ -158,23 +157,23 @@
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
+				RelativePath="..\..\..\gen\utilities\dba.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
+				RelativePath="..\..\..\src\utilities\ppg.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\caution.ico">
+				RelativePath="..\..\..\src\remote\caution.ico">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\server.ico">
+				RelativePath="..\..\..\src\remote\server.ico">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\window.rc">
+				RelativePath="..\..\..\src\remote\window.rc">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		parse_proto.h
- *	DESCRIPTION:	Prototype header file for parse.cpp
+ *	DESCRIPTION:	Prototype header file for parse.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,14 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_PARSE_PROTO_H
-#define QLI_PARSE_PROTO_H
+#ifndef _QLI_PARSE_PROTO_H_
+#define _QLI_PARSE_PROTO_H_
 
-qli_syntax*	PARQ_parse(void);
-bool	PAR_match (KWWORDS);
-void	PAR_real (void);
-void	PAR_real_token (void);
-void	PAR_token (void);
+extern struct syn	*PARQ_parse (void);
+extern int		PAR_match (KWWORDS);
+extern void		PAR_real (void);
+extern void		PAR_real_token (void);
+extern void		PAR_token (void);
 
-#endif // QLI_PARSE_PROTO_H
-
+#endif /* _QLI_PARSE_PROTO_H_ */

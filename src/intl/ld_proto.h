@@ -29,14 +29,14 @@ extern "C" {
 #endif
 
 #ifdef DEV_BUILD
-void FB_DLL_EXPORT LD_assert(const SCHAR*, int);
+void DLL_EXPORT LD_assert(const SCHAR*, int);
 #endif
 
-USHORT FB_DLL_EXPORT LD_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
-USHORT FB_DLL_EXPORT LD2_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
+USHORT DLL_EXPORT LD_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
+USHORT DLL_EXPORT LD2_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
 
 #ifdef __cplusplus
-} /* extern "C" */
+} // extern "C"
 #endif
 
 #endif /* _INTL_LD_PROTO_H_ */

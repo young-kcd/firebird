@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gsplit/gsplit.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gsplit/"
 				ObjectFile="..\..\..\temp\debug\gsplit/"
@@ -95,7 +94,6 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gsplit/gsplit.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gsplit/"
 				ObjectFile="..\..\..\temp\release\gsplit/"
@@ -115,6 +113,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gsplit/gsplit.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -147,6 +146,9 @@
 		<Filter
 			Name="BURP files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\burp\spit.cpp">
 			</File>

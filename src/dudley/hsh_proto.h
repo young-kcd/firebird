@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		hsh_proto.h
- *	DESCRIPTION:	Prototype header file for hsh.cpp
+ *	DESCRIPTION:	Prototype header file for hsh.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,14 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DUDLEY_HSH_PROTO_H
-#define DUDLEY_HSH_PROTO_H
+#ifndef _DUDLEY_HSH_PROTO_H_
+#define _DUDLEY_HSH_PROTO_H_
 
-void	HSH_init(void);
-void	HSH_insert(SYM);
-SYM		HSH_lookup(const SCHAR*, USHORT);
-void	HSH_remove(SYM);
-SYM		HSH_typed_lookup(const TEXT*, USHORT, enum sym_t);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif /* DUDLEY_HSH_PROTO_H */
+extern void HSH_init(void);
+extern void HSH_insert(SYM);
+extern SYM HSH_lookup(SCHAR *, USHORT);
+extern void HSH_remove(SYM);
+extern SYM HSH_typed_lookup(TEXT *, USHORT, enum sym_t);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _DUDLEY_HSH_PROTO_H_ */

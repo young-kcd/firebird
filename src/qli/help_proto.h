@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		help_proto.h
- *	DESCRIPTION:	Prototype header file for help.cpp
+ *	DESCRIPTION:	Prototype header file for help.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,11 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_HELP_PROTO_H
-#define QLI_HELP_PROTO_H
+#ifndef _QLI_HELP_PROTO_H_
+#define _QLI_HELP_PROTO_H_
 
-void	HELP_fini (void);
-void	HELP_help(qli_syntax*);
+extern void	HELP_fini (void);
+extern void	HELP_help (struct syn *);
 
-#endif // QLI_HELP_PROTO_H
-
+#endif /* _QLI_HELP_PROTO_H_ */

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		allr_proto.h
- *	DESCRIPTION:	Prototype header file for allr.cpp
+ *	DESCRIPTION:	Prototype header file for allr.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,26 +21,30 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef REMOTE_ALLR_PROTO_H
-#define REMOTE_ALLR_PROTO_H
+#ifndef _REMOTE_ALLR_PROTO_H_
+#define _REMOTE_ALLR_PROTO_H_
 
-struct blk;
-struct rem_vec;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef DEBUG_GDS_ALLOC
-#define ALLR_alloc(s)	  ALLR_alloc_debug((s), (TEXT*)__FILE__, (ULONG)__LINE__)
-#define ALLR_block(s, sz) ALLR_block_debug((s), (sz), (TEXT*)__FILE__, (ULONG)__LINE__)
-UCHAR*	ALLR_alloc_debug(ULONG, const TEXT*, ULONG);
-blk*	ALLR_block_debug(UCHAR, ULONG, const TEXT*, ULONG);
+#define ALLR_alloc(s)	  ALLR_alloc_debug ((s),(TEXT*)__FILE__,(ULONG)__LINE__)
+#define ALLR_block(s, sz) ALLR_block_debug ((s), (sz), (TEXT*)__FILE__,(ULONG)__LINE__)
+extern UCHAR	  *DLL_EXPORT ALLR_alloc_debug (ULONG, TEXT*, ULONG);
+extern struct blk *DLL_EXPORT ALLR_block_debug (UCHAR, ULONG, TEXT*, ULONG);
 #else  //DEBUG_GDS_ALLOC
-UCHAR*	ALLR_alloc(ULONG);
-blk*	ALLR_block(UCHAR, ULONG);
+extern UCHAR	  *DLL_EXPORT ALLR_alloc (ULONG);
+extern struct blk *DLL_EXPORT ALLR_block (UCHAR, ULONG);
 #endif //DEBUG_GDS_ALLOC
 
-blk*	ALLR_clone(blk*);
-void	ALLR_free (void *);
-void	ALLR_release (void *);
-rem_vec*	ALLR_vector (rem_vec**, ULONG);
+extern struct blk *ALLR_clone (struct blk *);
+extern void		   ALLR_free (void *);
+extern void		   DLL_EXPORT ALLR_release (void *);
+extern struct vec *ALLR_vector (struct vec **, ULONG);
 
-#endif // REMOTE_ALLR_PROTO_H
+#ifdef __cplusplus
+}	/* extern "C" */
+#endif
 
+#endif /* _REMOTE_ALLR_PROTO_H_ */

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		pag_proto.h
- *	DESCRIPTION:	Prototype header file for pag.cpp
+ *	DESCRIPTION:	Prototype header file for pag.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,41 +21,39 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_PAG_PROTO_H
-#define JRD_PAG_PROTO_H
+#ifndef _JRD_PAG_PROTO_H_
+#define _JRD_PAG_PROTO_H_
 
-namespace Jrd {
-	class Database;
-	struct win;
-}
-namespace Ods {
-	struct pag;
-	struct header_page;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void	PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
-USHORT	PAG_add_file(const TEXT*, SLONG);
-int		PAG_add_header_entry(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
-int		PAG_replace_entry_first(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
-Ods::pag*	PAG_allocate(Jrd::win *);
-SLONG	PAG_attachment_id(void);
-int		PAG_delete_clump_entry(SLONG, USHORT);
-void	PAG_format_header(void);
-void	PAG_format_log(void);
-void	PAG_format_pip(void);
-bool	PAG_get_clump(SLONG, USHORT, USHORT*, UCHAR*);
-void	PAG_header(const TEXT*, USHORT);
-void	PAG_init(void);
-void	PAG_init2(USHORT);
-SLONG	PAG_last_page(void);
-void	PAG_release_page(SLONG, SLONG);
-void	PAG_set_force_write(Jrd::Database*, SSHORT);
-void	PAG_set_no_reserve(Jrd::Database*, USHORT);
-void	PAG_set_db_readonly(Jrd::Database*, bool);
-void	PAG_set_db_SQL_dialect(Jrd::Database*, SSHORT);
-void	PAG_set_page_buffers(ULONG);
-void	PAG_sweep_interval(SLONG);
-//int		PAG_unlicensed(void);
+extern int PAG_add_clump(SLONG, USHORT, USHORT, UCHAR *, USHORT, USHORT);
+extern USHORT PAG_add_file(TEXT *, SLONG);
+extern int PAG_add_header_entry(struct hdr *, USHORT, SSHORT, UCHAR *);
+extern struct pag *PAG_allocate(struct win *);
+extern SLONG PAG_attachment_id(void);
+extern int PAG_delete_clump_entry(SLONG, USHORT);
+extern void PAG_format_header(void);
+extern void PAG_format_log(void);
+extern void PAG_format_pip(void);
+extern int PAG_get_clump(SLONG, USHORT, USHORT *, UCHAR *);
+extern void PAG_header(TEXT *, USHORT);
+extern void PAG_init(void);
+extern void PAG_init2(USHORT);
+extern SLONG PAG_last_page(void);
+extern void PAG_modify_log(SLONG, SLONG);
+extern void PAG_release_page(SLONG, SLONG);
+extern void PAG_set_force_write(struct dbb *, SSHORT);
+extern void PAG_set_no_reserve(struct dbb *, USHORT);
+extern void PAG_set_db_readonly(struct dbb *, SSHORT);
+extern void PAG_set_db_SQL_dialect(struct dbb *, SSHORT);
+extern void PAG_set_page_buffers(ULONG);
+extern void PAG_sweep_interval(SLONG);
+extern int PAG_unlicensed(void);
 
-#endif // JRD_PAG_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_PAG_PROTO_H_ */

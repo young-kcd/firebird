@@ -1,31 +1,33 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:	Client/Server Common Code
+ *	MODULE:		config.h
+ *	DESCRIPTION:	Configuration manager (public interface)
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * Created by: Dmitry Yemanov <yemanov@yandex.ru>
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
-#ifndef COMMON_CONFIG_H
-#define COMMON_CONFIG_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
 #include "fb_string.h"
 #include "fb_vector.h"
-#include "../jrd/os/path_utils.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -58,11 +60,6 @@
 		   in config.cpp module.
 **/
 
-extern const char*	GCPolicyCooperative;
-extern const char*	GCPolicyBackground;
-extern const char*	GCPolicyCombined;
-extern const char*	GCPolicyDefault;
-
 class Config
 {
 	enum ConfigKey
@@ -91,8 +88,7 @@ class Config
 		KEY_SOLARIS_STALL_VALUE,					// 21
 		KEY_TRACE_MEMORY_POOLS,						// 22	
 		KEY_PRIORITY_SWITCH_DELAY,					// 23
-		//KEY_DEAD_THREADS_COLLECTION,				deprecated
-		KEY_USE_PRIORITY_SCHEDULER,					// 24
+		KEY_DEAD_THREADS_COLLECTION,				// 24
 		KEY_PRIORITY_BOOST,							// 25
 		KEY_REMOTE_SERVICE_NAME,					// 26
 		KEY_REMOTE_SERVICE_PORT,					// 27
@@ -109,10 +105,7 @@ class Config
 		KEY_DATABASE_ACCESS,						// 38
 		KEY_UDF_ACCESS,								// 39
 		KEY_TEMP_DIRECTORIES,						// 40
- 		KEY_BUGCHECK_ABORT,							// 41
-		KEY_TRACE_DSQL,								// 42
-		KEY_LEGACY_HASH,							// 43
-		KEY_GC_POLICY								// 44
+		KEY_BUGCHECK_ABORT							// 41
 	};
 
 public:
@@ -238,9 +231,9 @@ public:
 	static int getPrioritySwitchDelay();
 
 	/*
-		Use priority scheduler
+		Dead threads collection
 	*/
-	static bool getUsePriorityScheduler();
+	static int getDeadThreadsCollection();
 
 	/*
 		Priority boost
@@ -255,7 +248,7 @@ public:
 	/*
 		Service port for INET
 	*/
-	static unsigned short getRemoteServicePort();
+	static int getRemoteServicePort();
 
 	/*
 		Pipe name for WNET
@@ -323,34 +316,9 @@ public:
 	static const char *getTempDirectories();
 
 	/*
-		DSQL trace bitmask
+		Abort on BUGCHECK and structured exceptions
 	*/
-	static int getTraceDSQL();
-
- 	/*
- 		Abort on BUGCHECK and structured exceptions
- 	*/
- 	static bool getBugcheckAbort();
-
-	/*
-		Let use of des hash to verify passwords
-	*/
-	static bool getLegacyHash();
-
-	/*
-		GC policy
-	*/
-	static const char *getGCPolicy();
+	static bool getBugcheckAbort();
 };
 
-namespace Firebird {
-
-// Add appropriate file prefix.
-inline void Prefix(PathName& result, const PathName& file)
-{
-	PathUtils::concatPath(result, Config::getRootDirectory(), file);
-}
-
-} //namespace Firebird
-
-#endif // COMMON_CONFIG_H
+#endif // CONFIG_H
