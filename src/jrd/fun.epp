@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.33 2004-01-21 07:18:25 skidder Exp $
+$Id: fun.epp,v 1.34 2004-01-26 13:16:12 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -119,9 +119,9 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
  *
  **************************************/
 
-	SLONG	args[MAX_UDF_ARGUMENTS + 1];
-	UCHAR	temp[800];
-	str*	temp_string;
+	SLONG args[MAX_UDF_ARGUMENTS + 1];
+	UCHAR temp[800];
+	str* temp_string;
 
 	TDBB tdbb = GET_THREAD_DATA;
 
@@ -137,36 +137,35 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 	else
 	{
 		// Need to align the starting address because it consists of
-		//   a number of data blocks with aligned length
+		// a number of data blocks with aligned length
 
 		temp_string =
 			FB_NEW_RPT(*tdbb->tdbb_default,
 				function->fun_temp_length + DOUBLE_ALIGN - 1) str;
 		MOVE_CLEAR(temp_string->str_data, temp_string->str_length);
-		temp_ptr =
-			(UCHAR *) FB_ALIGN((U_IPTR) temp_string->str_data, DOUBLE_ALIGN);
+		temp_ptr = (UCHAR *) FB_ALIGN((U_IPTR) temp_string->str_data, DOUBLE_ALIGN);
 	}
 
 	MOVE_CLEAR(args, sizeof(args));
-	SLONG*		arg_ptr		= args;
-	LLS			blob_stack	= 0;
-	LLS			array_stack = 0;
+	SLONG* arg_ptr = args;
+	LLS	blob_stack	= 0;
+	LLS array_stack = 0;
 	
-	jrd_req*			request		= tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 	// CVC: restoring the null flag seems like a Borland hack to try to
 	// patch a bug with null handling. There's no evident reason to restore it
     // because EVL_expr() resets it every time it's called.	Kept it for now.
-	bool null_flag	= (request->req_flags & req_null) == req_null;
+	bool null_flag	= ((request->req_flags & req_null) == req_null);
 	
-	fun_repeat*	return_ptr	= function->fun_rpt + function->fun_return_arg;
-	jrd_nod**		ptr		= node->nod_arg;
+	fun_repeat*	return_ptr = function->fun_rpt + function->fun_return_arg;
+	jrd_nod** ptr = node->nod_arg;
 
 	value->vlu_desc = return_ptr->fun_desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
-	
+
 	// We don't know or can't handle the data type is some cases.
 	bool unsup_datatype = false;
-	
+
 	// We'll use to this trick to give the UDF a way to signal
     // "I sent a null blob" when not using descriptors.
 	BLOB return_blob_struct = 0;
@@ -187,18 +186,19 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 	{
 		const USHORT ret_length = value->vlu_desc.dsc_length;
 		str* string = value->vlu_string;
-		if (string && string->str_length < ret_length) {
+		if (string && string->str_length < ret_length)
+		{
 			delete string;
 			string = NULL;
 		}
-		if (!string) {
+		if (!string)
+		{
 			string = FB_NEW_RPT(*tdbb->tdbb_default, ret_length) str;
 			string->str_length = ret_length;
 			value->vlu_string = string;
 		}
 		value->vlu_desc.dsc_address = string->str_data;
 	}
-
 
 	DSC temp_desc;
 	double  d;
@@ -209,13 +209,15 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 	for (fun_repeat* tail = function->fun_rpt + 1; tail < end; ++tail)
 	{
 		DSC* input;
-		if (tail == return_ptr) {
+		if (tail == return_ptr)
+		{
 			input = &value->vlu_desc; // (DSC*) value;
 			// CVC: The return param we build for the UDF is not null!!!
 			// This closes SF Bug #544132.
 			request->req_flags &= ~req_null;
 		}	
-		else {
+		else
+		{
 			input = EVL_expr(tdbb, *ptr++);
 		}
 		SLONG**	ap = (SLONG **) arg_ptr;
@@ -223,17 +225,22 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 		// If we're passing data type ISC descriptor, there's
 		// nothing left to be done
 
-		if (tail->fun_mechanism == FUN_descriptor) {
+		if (tail->fun_mechanism == FUN_descriptor)
+		{
             // CVC: We have to protect the UDF from Borland's ill null signaling
             // See EVL_expr(...), case nod_field for reference: the request may be
             // signaling NULL, but the placeholder field created by EVL_field(...)
             // doesn't carry the null flag in the descriptor. Why Borland didn't
             // set on such flag is maybe because it only has local meaning.
             // This closes SF Bug #728839.
-            if ((request->req_flags & req_null) && !(input->dsc_flags & DSC_null))
+            if ((request->req_flags & req_null) && !(input && (input->dsc_flags & DSC_null)))
+            {
 			    *ap++ = 0;
+			}
 			else
+			{
 			    *ap++ = (SLONG *) input;
+			}
 			arg_ptr = (SLONG *) ap;
 			continue;
 		}
@@ -272,22 +279,21 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 			{
 			case dtype_short:
 				{
-					SSHORT s = MOV_get_long(input,
-											(SSHORT) tail->fun_desc.dsc_scale);
-					if (tail->fun_mechanism == FUN_value) {
-						/* For (apparent) portability reasons, SHORT by value
-						 * is always passed as a LONG.  See v3.2 release notes
-						 * Passing by value is not supported in SQL due to
-						 * these problems, but can still occur in GDML.
-						 * 1994-September-28 David Schnepper 
-						 */
+					SSHORT s = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
+					if (tail->fun_mechanism == FUN_value)
+					{
+						// For (apparent) portability reasons, SHORT by value
+						// is always passed as a LONG.  See v3.2 release notes
+						// Passing by value is not supported in SQL due to
+						// these problems, but can still occur in GDML.
+						// 1994-September-28 David Schnepper 
+
 						*arg_ptr++ = (SLONG) s;
 						continue;
 					}
-					{
-						SSHORT* sp = (SSHORT *) temp_ptr;
-						*sp = s;
-					}
+
+					SSHORT* sp = (SSHORT *) temp_ptr;
+					*sp = s;
 				}
 				break;
 
@@ -327,8 +333,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 			case dtype_int64:
 				{
 					SINT64* pi64;
-					SINT64 i64 =
-						MOV_get_int64(input, (SSHORT)tail->fun_desc.dsc_scale);
+					SINT64 i64 = MOV_get_int64(input, (SSHORT) tail->fun_desc.dsc_scale);
 
 					if (tail->fun_mechanism == FUN_value)
 					{
@@ -344,15 +349,15 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 
 			case dtype_real:
 				{
-				float f = (float) MOV_get_double(input);
+					float f = (float) MOV_get_double(input);
 					if (tail->fun_mechanism == FUN_value)
 					{
-						/* For (apparent) portability reasons, FLOAT by value
-						 * is always passed as a DOUBLE.  See v3.2 release notes
-						 * Passing by value is not supported in SQL due to
-						 * these problems, but can still occur in GDML.
-						 * 1994-September-28 David Schnepper 
-						 */
+						// For (apparent) portability reasons, FLOAT by value
+						// is always passed as a DOUBLE.  See v3.2 release notes
+						// Passing by value is not supported in SQL due to
+						// these problems, but can still occur in GDML.
+						// 1994-September-28 David Schnepper 
+
 						double* dp = (double *) arg_ptr;
 						*dp++ = (double) f;
 						arg_ptr = (SLONG *) dp;
@@ -388,12 +393,15 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 			case dtype_text:
 			case dtype_cstring:
 			case dtype_varying:
-				if (tail == return_ptr) {
+				if (tail == return_ptr)
+				{
 					temp_ptr = value->vlu_desc.dsc_address;
 					length = 0;
 				}
 				else
+				{
 					MOV_move(input, &temp_desc);
+				}
 				break;
 
 			// CVC: There's no other solution for now: timestamp can't be returned
@@ -418,45 +426,47 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 
 			case dtype_blob:
 				{
-				// This is not a descriptor pointing to a blob. This is a blob struct.
-				BLOB blob_desc = (BLOB) temp_ptr;
-				blb*  blob;
-				length = sizeof(blob_t);
-				if (tail == return_ptr)
-				{
-					blob =
-						BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
-								   (BID)&value->vlu_misc);
-					return_blob_struct = blob_desc;
-				}
-				else
-				{
-					bid blob_id;
-					if (request->req_flags & req_null)
-						memset(&blob_id, 0, sizeof(bid));
+					// This is not a descriptor pointing to a blob. This is a blob struct.
+					BLOB blob_desc = (BLOB) temp_ptr;
+					blb* blob;
+					length = sizeof(blob_t);
+					if (tail == return_ptr)
+					{
+						blob =
+							BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+									   (BID) &value->vlu_misc);
+						return_blob_struct = blob_desc;
+					}
 					else
 					{
-						if (input->dsc_dtype != dtype_quad &&
-							input->dsc_dtype != dtype_blob)
+						bid blob_id;
+						if (request->req_flags & req_null)
 						{
-							ERR_post(isc_wish_list,
-									 isc_arg_gds, isc_blobnotsup,
-									 isc_arg_string, "conversion", 0);
+							memset(&blob_id, 0, sizeof(bid));
 						}
-						blob_id = *(BID) input->dsc_address;
+						else
+						{
+							if (input->dsc_dtype != dtype_quad &&
+								input->dsc_dtype != dtype_blob)
+							{
+								ERR_post(isc_wish_list,
+										 isc_arg_gds, isc_blobnotsup,
+										 isc_arg_string, "conversion", 0);
+							}
+							blob_id = *(BID) input->dsc_address;
+						}
+						blob = BLB_open(tdbb,
+										tdbb->tdbb_request->req_transaction,
+										&blob_id);
 					}
-					blob = BLB_open(tdbb,
-									tdbb->tdbb_request->req_transaction,
-									&blob_id);
-				}
-				LLS_PUSH(blob, &blob_stack);
-				blob_desc->blob_get_segment = blob_get_segment;
-				blob_desc->blob_put_segment = blob_put_segment;
-				blob_desc->blob_seek = blob_lseek;
-				blob_desc->blob_handle = blob;
-				blob_desc->blob_number_segments = blob->blb_count;
-				blob_desc->blob_max_segment = blob->blb_max_segment;
-				blob_desc->blob_total_length = blob->blb_length;
+					LLS_PUSH(blob, &blob_stack);
+					blob_desc->blob_get_segment = blob_get_segment;
+					blob_desc->blob_put_segment = blob_put_segment;
+					blob_desc->blob_seek = blob_lseek;
+					blob_desc->blob_handle = blob;
+					blob_desc->blob_number_segments = blob->blb_count;
+					blob_desc->blob_max_segment = blob->blb_max_segment;
+					blob_desc->blob_total_length = blob->blb_length;
 				}
 				break;
 
@@ -493,10 +503,10 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 			break;
 
 		case dtype_short:
-			/* For (apparent) portability reasons, SHORT by value
-			 * must always be returned as a LONG.  See v3.2 release notes
-			 * 1994-September-28 David Schnepper 
-			 */
+			// For (apparent) portability reasons, SHORT by value
+			// must always be returned as a LONG.  See v3.2 release notes
+			// 1994-September-28 David Schnepper 
+
 			THREAD_EXIT;
 			value->vlu_misc.vlu_short = (SSHORT)
 				CALL_UDF(function->fun_entrypoint, SLONG);
@@ -504,10 +514,10 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 			break;
 
 		case dtype_real:
-			/* For (apparent) portability reasons, FLOAT by value
-			 * must always be returned as a DOUBLE.  See v3.2 release notes
-			 * 1994-September-28 David Schnepper 
-			 */
+			// For (apparent) portability reasons, FLOAT by value
+			// must always be returned as a DOUBLE.  See v3.2 release notes
+			// 1994-September-28 David Schnepper 
+
 			THREAD_EXIT;
 			value->vlu_misc.vlu_float = (float)
 				CALL_UDF(function->fun_entrypoint, double);
@@ -568,19 +578,25 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 				    break;
 				    
 				case dtype_long:
-				    if (return_dsc) switch(return_dsc->dsc_dtype) {
-                    case dtype_short:
-                        value->vlu_misc.vlu_long = *(SSHORT *) temp_ptr;
-                        break;
-                    case dtype_long:
-                        value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
-                        break;
-                    default:
-                        unsup_datatype = true;
-                        break;
-				    }
+				    if (return_dsc)
+				    {
+				    	switch(return_dsc->dsc_dtype)
+				    	{
+	                    case dtype_short:
+    		                value->vlu_misc.vlu_long = *(SSHORT *) temp_ptr;
+            	            break;
+                	    case dtype_long:
+                    	    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+                        	break;
+	                    default:
+    	                    unsup_datatype = true;
+        	                break;
+					    }
+					}
 				    else
+				    {
 					    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+					}
 					break;
 
 				case dtype_short:
@@ -592,22 +608,28 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 					break;
 
 				case dtype_int64:
-				    if (return_dsc) switch(return_dsc->dsc_dtype) {
-				    case dtype_short:
-				        value->vlu_misc.vlu_int64 = *(SSHORT *) temp_ptr;
-				        break;
-                    case dtype_long:
-                        value->vlu_misc.vlu_int64 = *(SLONG *) temp_ptr;
-                        break;
-				    case dtype_int64:
-				        value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
-				        break;
-				    default:
-                        unsup_datatype = true;
-                        break;
-				    }
+				    if (return_dsc)
+				    {
+					    switch(return_dsc->dsc_dtype)
+					    {
+					    case dtype_short:
+					        value->vlu_misc.vlu_int64 = *(SSHORT *) temp_ptr;
+					        break;
+                	    case dtype_long:
+                    	    value->vlu_misc.vlu_int64 = *(SLONG *) temp_ptr;
+                        	break;
+					    case dtype_int64:
+					        value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
+					        break;
+					    default:
+                	        unsup_datatype = true;
+                    	    break;
+					    }
+					}
 				    else
+				    {
 					    value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
+					}
 					break;
 
 				case dtype_double:
@@ -654,9 +676,11 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 					break;
 				}
 				// check if this is function has the FREE_IT set, if set and
-				//   return_value is not null, then free the return value
+				// return_value is not null, then free the return value
 				if (((SLONG) return_ptr->fun_mechanism < 0) && temp_ptr)
+				{
 					free(temp_ptr);
+				}
 			}
 		}
 	}
@@ -711,11 +735,13 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 	{
 		request->req_flags &= ~req_null;
 	}
-	
+
 	delete temp_string;
-	
+
 	if (null_flag)
+	{
 	   request->req_flags |= req_null;
+	}
 }
 
 
