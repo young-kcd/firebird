@@ -49,7 +49,6 @@ int			ISC_expand_logical(const TEXT*, USHORT, TEXT*);
 int			ISC_expand_share(const TEXT*, TEXT*);
 int			ISC_file_lock(SSHORT);
 int			ISC_file_unlock(SSHORT);
-int			ISC_strip_filename(TEXT*);
 bool		ISC_verify_database_access(const Firebird::PathName&);
 
 #endif // JRD_ISC_FILE_PROTO_H
