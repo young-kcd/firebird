@@ -83,11 +83,11 @@ static SLONG compute_access(TDBB, SCL, JRD_REL, const TEXT*, const TEXT*);
 static TEXT *save_string(TEXT*, TEXT**);
 static SLONG walk_acl(TDBB, const TEXT*, JRD_REL, const TEXT*, const TEXT*, STR*, ULONG*);
 
-static inline void check_and_move(UCHAR* to, UCHAR from, STR* start, ULONG* length_ptr)
+static inline void check_and_move(UCHAR*& to, UCHAR from, STR& start, ULONG* length_ptr)
 {
-	if (((*start)->str_data + *length_ptr) < (to + 1))
+	if ((start->str_data + *length_ptr) < (to + 1))
 	{
-		*start = GRANT_realloc_acl(*start, &to, length_ptr);
+		start = GRANT_realloc_acl(start, &to, length_ptr);
 	}
 	*to++ = from;
 }
@@ -805,19 +805,19 @@ void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, STR* start_ptr, ULONG* length_p
 
 	// Terminate identification criteria, and move privileges
 
-	check_and_move(p, ACL_end, start_ptr, length_ptr);
-	check_and_move(p, ACL_priv_list, start_ptr, length_ptr);
+	check_and_move(p, ACL_end, *start_ptr, length_ptr);
+	check_and_move(p, ACL_priv_list, *start_ptr, length_ptr);
 
 	for (priv = p_names; priv->p_names_priv; priv++)
 	{
 		if (mask & priv->p_names_priv)
 		{
 			assert(priv->p_names_acl <= MAX_UCHAR);
-			check_and_move(p, (UCHAR) priv->p_names_acl, start_ptr, length_ptr);
+			check_and_move(p, (UCHAR) priv->p_names_acl, *start_ptr, length_ptr);
 		}
 	}
 
-	check_and_move(p, 0, start_ptr, length_ptr);
+	check_and_move(p, 0, *start_ptr, length_ptr);
 
 	*acl_ptr = p;
 }
