@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.39 2003-09-03 16:31:28 brodsom Exp $
+$Id: restore.epp,v 1.40 2003-09-08 12:44:01 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -425,6 +425,8 @@ if (!(tdgbl->gbl_sw_deactivate_indexes))
 
 if (tdgbl->global_trans)
     {
+	BURP_verbose (68, NULL, NULL, NULL, NULL, NULL);
+	/* msg 68 committing meta data */
     EXEC SQL COMMIT TRANSACTION tdgbl->global_trans;
     if (gds_status [1])
         general_on_error ();
