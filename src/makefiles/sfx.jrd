@@ -15,8 +15,11 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 #
-# $Id: sfx.jrd,v 1.2 2001-12-24 02:50:52 tamlin Exp $
-# 
+# $Id: sfx.jrd,v 1.3 2002-02-16 02:21:27 seanleyne Exp $
+#
+# 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+#
+
 @SET_MAKE@
 SOURCE=		source
 OBJS=		objs
@@ -181,7 +184,7 @@ JRD_J_MISC=	alt.j gds.j isc.j isc_file.j isc_ipc.j isc_sync.j \
 WHY_O=		why.o
 WHYBK_O=	whybk.o
 
-# I removed qatest.o from the targets to close an ugly 
+# I removed qatest.o from the targets to close an ugly
 # security hole.
 # FSG 18.Dez.2000
 
@@ -242,7 +245,7 @@ CODES_FILES=	$(OBJS)/firebird/include/gds_codes.pas \
 
 # Temporarily removing $(BACKEND_BRIDGE_MISC) from SUPER_OBJECTS
 # Also, whatever SUPER_OBJECTS includes should be forced to build under
-# the 'super_server_objects' target. Currently DSQL, LOCK, REMOTE, 
+# the 'super_server_objects' target. Currently DSQL, LOCK, REMOTE,
 # WAL are included. INTL is not needed.
 SUPER_OBJECTS=	$(DSQL_MISC) $(LOCK_MISC) \
 		$(REMOTE_MISC) $(REGISTER_MISC) \
@@ -442,7 +445,7 @@ gdsflib.so.0.0 $(SUN_FUNCSHR):	functions.bin
 	$(TOUCH) gdsflib.so.0.0
 	$(CHMOD_6) gdsflib.so.0.0
 
-gds.so.o $(SGI_GDSSHR) $(DECOSF_GDSSHR) $(EPSON_GDSSHR) : \
+gds.so.o $(SGI_GDSSHR) $(DECOSF_GDSSHR) : \
 		$(WHY_O) $(JRD_OBJECTS) $(CSI_MISC) $(DSQL_MISC) $(LOCK_MISC) \
 		$(REMOTE_MISC) $(BRIDGE_MISC) $(REGISTER_MISC) \
 		$(INTL_MISC) $(WAL_MISC) $(FUNCTIONS) $(GDSFLIB) $(SECURITY_MISC)
@@ -643,7 +646,7 @@ event_print.exe:	print.o
 
 gds.a:		$(HEAD_OBJECTS) $(NOLINK_MACHINES)
 	-$(RM) gds.a
-	$(AR) gds.a $(HEAD_OBJECTS) 
+	$(AR) gds.a $(HEAD_OBJECTS)
 	-ranlib gds.a
 	$(CHMOD_6) gds.a
 	$(MV) gds.a $(HEAD_LIB)
@@ -654,7 +657,7 @@ gds.a:		$(HEAD_OBJECTS) $(NOLINK_MACHINES)
 # to isolate clients that might use signals from threads.
 # Note that its internal library name is libgds.so for compatibility
 # with existing applications.
-gdspipe.so.0:	$(HEAD_J_OBJECTS) 
+gdspipe.so.0:	$(HEAD_J_OBJECTS)
 	-$(RM) gdspipe.so.0
 	-$(RM) gds.so.0
 	ld $(LD_OPTS) libgds.so.0 $(HEAD_J_OBJECTS) $(LD_LIBS_J) \
@@ -669,7 +672,7 @@ gdspipe.so.0:	$(HEAD_J_OBJECTS)
 # which isn't optimal, but will function fine.
 gds.a.solaris:	$(HEAD_J_OBJECTS)
 	-$(RM) gds.a.solaris
-	$(AR) gds.a $(HEAD_J_OBJECTS) 
+	$(AR) gds.a $(HEAD_J_OBJECTS)
 	-ranlib gds.a
 	$(CHMOD_6) gds.a
 	$(MV) gds.a $(HEAD_LIB)
@@ -697,7 +700,7 @@ bridge.unix:	gds_pipe
 
 gds_pipe.a:	$(FOOT_OBJECTS) $(NOLINK_MACHINES)
 	-$(RM) gds_pipe.a
-	$(AR) gds_pipe.a $(FOOT_OBJECTS) 
+	$(AR) gds_pipe.a $(FOOT_OBJECTS)
 	-ranlib gds_pipe.a
 	$(CHMOD_6) gds_pipe.a
 	$(MV) gds_pipe.a $(FOOT_LIB)
@@ -786,7 +789,7 @@ alt.bin.ps1:	alt.cpp \
 apollo.o:	apollo.cpp $(JRD_H) pio.h cch.h ods.h lck.h $(SOURCE)/lock/plserver.h
 bookmark.o:	bookmark.cpp $(JRD_H) $(EXE_H) $(RSE_H) \
 		all_proto.h bookmark.h $(ERR_PROTO_DEP) err_proto.h evl_proto.h \
-		mov_proto.h $(THD_PROTO_H) 
+		mov_proto.h $(THD_PROTO_H)
 blb.o:		blb.cpp $(JRD_H) blb.h tra.h $(VAL_H) $(EXE_H) req.h ods.h lls.h \
 		blob_filter.h sdl.h ibsetjmp.h $(INTL_H) cch.h constants.h \
 		all_proto.h blb_proto.h blf_proto.h cch_proto.h \
@@ -805,7 +808,7 @@ btr.o:		btr.cpp $(JRD_H) ods.h btr.h $(VAL_H) req.h tra.h $(INTL_H) jrn.h \
 		all_proto.h btr_proto.h $(BTR_PROTO_DEP)$ cch_proto.h dpm_proto.h \
 		$(ERR_PROTO_DEP) err_proto.h evl_proto.h intl_proto.h met_proto.h \
 		mov_proto.h $(NAV_PROTO_H) pag_proto.h pcmet_proto.h \
-		sbm_proto.h sort_proto.h  $(THD_PROTO_H) tra_proto.h 
+		sbm_proto.h sort_proto.h  $(THD_PROTO_H) tra_proto.h
 builtin.o:	builtin.cpp \
 		flu_proto.h gds_proto.h
 cch.o:		cch.cpp $(JRD_H) cch.h que.h lck.h ods.h jrn.h lls.h \
@@ -852,20 +855,20 @@ dfw.o:		dfw.cpp $(JRD_H) $(VAL_H) irq.h tra.h btr.h req.h $(EXE_H) scl.h \
 		event_proto.h exe_proto.h gds_proto.h grant_proto.h \
 		$(IDX_PROTO_H) intl_proto.h isc_f_proto.h $(LCK_PROTO_H) \
 		met_proto.h mov_proto.h pag_proto.h pcmet_proto.h \
-		pio_proto.h scl_proto.h sdw_proto.h $(THD_PROTO_H) 
+		pio_proto.h scl_proto.h sdw_proto.h $(THD_PROTO_H)
 divorce.o:	divorce.cpp
 dls.o:		dls.cpp sort.h dls_proto.h gds_proto.h
 dmp.o:		dmp.cpp $(JRD_H) cch.h pag.h ods.h $(VAL_H) btr.h tra.h lck.h \
 		ibsetjmp.h\
-		cch_proto.h dmp_proto.h gds_proto.h 
+		cch_proto.h dmp_proto.h gds_proto.h
 dpm.cpp:	dpm.epp
 dpm.o:		dpm.cpp $(JRD_H) ods.h req.h sqz.h irq.h blb.h tra.h lls.h \
 		cch.h jrn.h pag.h sbm.h $(RSE_H) lck.h vio_debug.h ibsetjmp.h\
 		all_proto.h cch_proto.h $(CMP_PROTO_DEP) cmp_proto.h dpm_proto.h \
 		$(ERR_PROTO_DEP) err_proto.h exe_proto.h met_proto.h mov_proto.h \
-		pag_proto.h sqz_proto.h $(THD_PROTO_H) 
+		pag_proto.h sqz_proto.h $(THD_PROTO_H)
 dsc.o:		dsc.cpp dsc.h constants.h $(INTL_H) \
-		dsc_proto.h 
+		dsc_proto.h
 dyn.cpp:	dyn.epp
 dyn.o:		dyn.cpp $(JRD_H) tra.h scl.h drq.h flags.h lls.h all.h $(INTL_H) \
 		$(MET_H) btr.h ibsetjmp.h license.h\
@@ -932,7 +935,7 @@ evl.o:		evl.cpp $(JRD_H) $(VAL_H) req.h $(EXE_H) sbm.h blb.h scl.h lck.h \
 		dsc_proto.h $(ERR_PROTO_DEP) err_proto.h evl_proto.h exe_proto.h \
 		fun_proto.h intl_proto.h $(LCK_PROTO_H) mov_proto.h \
 		pag_proto.h rlck_proto.h rse_proto.h sbm_proto.h \
-		$(SCH_PROTO_H) scl_proto.h $(THD_PROTO_H) sort_proto.h 
+		$(SCH_PROTO_H) scl_proto.h $(THD_PROTO_H) sort_proto.h
 exe.o:		exe.cpp $(JRD_H) req.h $(VAL_H) $(EXE_H) tra.h btr.h $(RSE_H) \
 		lck.h $(INTL_H) blb.h ods.h rng.h sbm.h blr.h ibsetjmp.h \
 		all_proto.h bookmark.h blb_proto.h btr_proto.h $(BTR_PROTO_DEP) \

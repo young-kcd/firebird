@@ -14,6 +14,10 @@
 #
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
+#
+# 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+#
+
 
 @SET_MAKE@
 OBJS=		objs
@@ -96,7 +100,7 @@ EXTERNAL_P_OBJECTS=	$(CSI_P_OBJS) dsql_p_objects lock.bin $(PYXIS_P_OBJS) rem_p_
 INCLUDE_DEST=	$(OBJS)/firebird/include/
 
 SRC_DIRS= alice burp dudley dsql extlib gpre intl isql journal jrd lock msgs \
-		  pyxis qli remote super/remote utilities wal 
+		  pyxis qli remote super/remote utilities wal
 
 GPRE=		$(OBJS)/firebird/bin/gpre
 GPRE_BOOT=	$(OBJS)/firebird/bin/gpre_boot
@@ -121,9 +125,9 @@ CODES=source/jrd/codes
 #FSG  093000
 
 # The only difference between firebird and super_firebird is the executables
-# target and in there super just had one more target "super_targets".  The 
-# difference used to be done via a parameter passed into this makefile, but 
-# I've put the change here to reduce the complexity of the build script files. 
+# target and in there super just had one more target "super_targets".  The
+# difference used to be done via a parameter passed into this makefile, but
+# I've put the change here to reduce the complexity of the build script files.
 # MOD 07-Apr-2001.
 
 # I've taken run_codes out pending a decision on how to handle the codes thing
@@ -152,8 +156,8 @@ executables:	alice burp dudley gpre miscFiles $(INTL) isql locks \
 super_executables:	alice burp dudley gpre superMiscFiles $(INTL) isql locks \
 	super_targets pyxis qli remote spit utilities \
 	$(SHARED_AM) $(LINKABLE_LIBS)
-	
-super_targets: 	s_run_codes s_alice s_burp s_dba s_security_c super_client super_server super_utils 
+
+super_targets: 	s_run_codes s_alice s_burp s_dba s_security_c super_client super_server super_utils
 
 phase1: ISC_USER = sysdba
 phase1: ISC_PASSWORD = masterkey
@@ -180,7 +184,7 @@ run_codes:	 force
 
 # NOTE: "journals" removed from "executables" as it currently doesn't
 #	build and isn't used for V4 anyway.
-# 1995-June-7 David Schnepper 
+# 1995-June-7 David Schnepper
 
 
 
@@ -291,7 +295,7 @@ gds_server:	$(ACCESS_METHOD) force
 $(GDSSHR)_PHASE_2:	force
 	$(QUIET_ECHO) "Building GDSSHR..."
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) ALT_O="alt.o.ps1" ALT_BIN="alt.bin.ps1" SECURITY_MISC="" SECURITY_P_MISC="" $(GDSSHR)
-	
+
 $(GDSSHR):	force
 	$(QUIET_ECHO) "Building GDSSHR..."
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) DO_FORCE="force" $(GDSSHR)
@@ -304,7 +308,7 @@ gdslib.apollo:	$(GPRE) $(EXTERNAL_OBJECTS) pyxislib force
 	$(QUIET_ECHO) "Building GDSLIB..."
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) gdslib
 
-gdslib.decosf gdslib.sgi gdslib.epson :	\
+gdslib.decosf gdslib.sgi : \
 	$(GPRE) $(EXTERNAL_OBJECTS) $(GDS_PYXIS) force
 	$(QUIET_ECHO) "Building GDSLIB..."
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) gds.so.o
@@ -315,7 +319,7 @@ gdslib.linux:	\
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) gds.so.linux
 
 gdslib.dylib: \
-	$(GPRE) $(EXTERNAL_OBJECTS) $(GDS_PYXIS) force 
+	$(GPRE) $(EXTERNAL_OBJECTS) $(GDS_PYXIS) force
 	$(QUIET_ECHO) "Building GDSLIB..."
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) gds.dylib
 
@@ -391,9 +395,9 @@ security_c: force
 
 $(GPRE_BOOT) $(GPRE_STATIC): force
 	$(CD) $(OBJS)/gpre && $(MAKE) $(SUBMAKE_FLAGS) $@
-# Run the codes program (for SUPERSERVER hierarchy), 
+# Run the codes program (for SUPERSERVER hierarchy),
 # thus generating codes.h, iberror.h, etc
-s_run_codes:	
+s_run_codes:
 #	force $(CODES)
 	$(QUIET_ECHO) "Running codes in super ..."
 #	$(SH) '$(CD) source/super/jrd; $(CODES)'
@@ -468,7 +472,7 @@ include_sgi:	include_generic
 
 include_so:	include_generic
 	$(CP) source/jrd/gds_sun.f $(INCLUDE_DEST)gds.f
- 
+
 include_darwin: include_generic force
 	$(RM) -rf $(FB_FRAMEWORK)
 	mkdir -p $(FB_FRAMEWORK)/Versions/A/Resources/English.lproj/var
@@ -697,8 +701,8 @@ darwin_installer_common: force
 	$(CP) $(SOURCE)/sandbox/bellardo/darwin/makefile \
 		$(OBJS)/firebird/installer_tmp
 	ln -s $(OBJS)/firebird/bellardo/darwin \
-		$(OBJS)/firebird/installer_tmp/files   
-	ln -s ../.. $(OBJS)/firebird/installer_tmp/source   
+		$(OBJS)/firebird/installer_tmp/files
+	ln -s ../.. $(OBJS)/firebird/installer_tmp/source
 	$(CD) $(OBJS)/firebird/installer_tmp && $(MAKE) install_package
 	$(RM) -rf $(OBJS)/firebird/installer_tmp
 	-$(RM) -rf $(OBJS)/firebird/Firebird.framework
@@ -737,24 +741,24 @@ makedepend:
 	source/qli/depends.mak \
 	source/remote/depends.mak \
 	source/utilities/depends.mak \
-	source/wal/depends.mak 
-	$(SH) '$(CD) source/alice; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/burp; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/csv; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/dsql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/dudley; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/gpre; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/intl; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/lock; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/isql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/journal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/msgs; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/qli; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/remote; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/utilities; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/wal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	
+	source/wal/depends.mak
+	$(SH) '$(CD) source/alice; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/burp; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/csv; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/dsql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/dudley; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/gpre; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/intl; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/lock; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/isql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/journal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/msgs; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/qli; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/remote; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/utilities; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/wal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+
 clean:	clean_executables
 	-$(RM) \
 	$(OBJS)/burp/gbaklib.a \

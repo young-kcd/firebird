@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 /*
-$Id: flu.cpp,v 1.5 2001-12-24 02:50:51 tamlin Exp $
+$Id: flu.cpp,v 1.6 2002-02-16 02:21:27 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -76,9 +79,9 @@ static int condition_handler(int *, int *, int *);
 #endif
 
 
-/* SGI, EPSON, UNIXWARE, M88K, DECOSF specific stuff */
+/* SGI, UNIXWARE, M88K, DECOSF specific stuff */
 
-#if (defined SOLARIS || defined sgi || defined EPSON || defined M88K || defined UNIXWARE || defined NCR3000 || defined DECOSF || defined SCO_EV || defined linux || defined AIX_PPC)
+#if (defined SOLARIS || defined sgi || defined M88K || defined UNIXWARE || defined NCR3000 || defined DECOSF || defined SCO_EV || defined linux || defined AIX_PPC)
 #include <dlfcn.h>
 #define DYNAMIC_SHARED_LIBRARIES
 #include <unistd.h>
@@ -253,7 +256,7 @@ void FLU_unregister_module(MOD module)
  **************************************/
 	MOD *mod;
 	#ifdef DARWIN
-	NSSymbol symbol;  
+	NSSymbol symbol;
 	void (*fini)(void);
 	#endif
 
@@ -292,7 +295,7 @@ void FLU_unregister_module(MOD module)
 	{
 		fini = (void (*)(void)) NSAddressOfSymbol(symbol);
 		fini();
-	}   
+	}
 	NSUnLinkModule (module->mod_handle, 0);
 #endif
 
@@ -475,7 +478,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 
 		const USHORT length = strlen(absolute_module);
 
-		/* call search_for_module with the supplied name, 
+		/* call search_for_module with the supplied name,
 		   and if unsuccessful, then with <name>.sl . */
 		mod = search_for_module(absolute_module, name);
 		if (!mod)
@@ -756,7 +759,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 
 		const USHORT length = strlen(absolute_module);
 
-		/* call search_for_module with the supplied name, 
+		/* call search_for_module with the supplied name,
 		   and if unsuccessful, then with <name>.so . */
 		mod = search_for_module(absolute_module, name);
 
@@ -765,7 +768,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 			mod = search_for_module(absolute_module, name);
 		}
 
-        if (!mod) {  // Start looking for "libxxxx.so" module names 
+        if (!mod) {  // Start looking for "libxxxx.so" module names
             string moduleName = "lib";
             moduleName += (const char*) absolute_module;
 			mod = search_for_module((TEXT*) moduleName.c_str(), name);
@@ -1008,7 +1011,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
  *
  * Functional description
  *	Lookup entrypoint of function.
- *	If ib_path_env_var is defined, make sure 
+ *	If ib_path_env_var is defined, make sure
  *	that the module is in the path defined
  *	by that environment variable.
  *

@@ -1,4 +1,4 @@
-# 
+#
 #   The contents of this file are subject to the Mozilla Public
 #   License Version 1.1 (the "License"); you may not use this file
 #   except in compliance with the License. You may obtain a copy of
@@ -8,26 +8,29 @@
 #   "GPL"), in which case the provisions of the GPL are applicable
 #   instead of those above. You may obtain a copy of the Licence at
 #   http://www.gnu.org/copyleft/gpl.html
-# 
+#
 #   This program is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   Relevant for more details.
-# 
+#
 #   This file was created by members of the firebird development team.
 #   All individual contributions remain the Copyright (C) of those
 #   individuals.  Contributors to this file are either listed here or
 #   can be obtained from a CVS history command.
-# 
+#
 #   All rights reserved.
 #
 #   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-# 
+#
 #   Contributor(s):
-# 
-# 
-#   $Id: Makefile.in.jrd,v 1.10 2002-01-04 11:34:16 skywalker Exp $
-# 
+#
+#
+#   $Id: Makefile.in.jrd,v 1.11 2002-02-16 02:21:27 seanleyne Exp $
+#
+# 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+#
+#
 
 ROOT=../..
 
@@ -40,7 +43,7 @@ include     $(ROOT)/src/make.shared.variables
 
 
 # jrd has it's own rule for using gpre to use gpre boot.
-# I would eventually like to set these based on a determination 
+# I would eventually like to set these based on a determination
 # if the file GPRE_STATIC exists or not.
 
 GPRE_FLAGS = -n -z -gds_cxx -raw -ids
@@ -59,7 +62,7 @@ GPRE_FLAGS = -n -z -gds_cxx -raw -ids
 # This is the very first library built it contains just enough methods
 # to enable a gpre_boot program to built.
 
-BOOT_Sources =	dsc.cpp gds.cpp isc_ipc.cpp isc.cpp dls.cpp 
+BOOT_Sources =	dsc.cpp gds.cpp isc_ipc.cpp isc.cpp dls.cpp
 BOOT_Objects = $(BOOT_Sources:%.cpp=$(OBJ)/%.o)
 
 
@@ -86,27 +89,27 @@ jrdlib_dependencies: $(JRD_Objects)
 
 
 
-# The jrdlib_main will equate to either the libgds.so or libgds.a 
+# The jrdlib_main will equate to either the libgds.so or libgds.a
 # depending upon choices made in make.rules and prefix.xxx where
 # xxx is plaform.
 
-jrdlib_main : $(LIBGDS_LA)  
+jrdlib_main : $(LIBGDS_LA)
 #jrdlib_main : $(LIBGDS_SO) $(LIBGDS_A)
 
 
 $(LIBGDS_SO) : $(GDSLIB_Objects)
 	$(LIB_LINK) $(LIBGDS_LINK_OPTIONS)  -o $@ $^
-	-$(LN) $(@F) $(LIBGDS_SO_X_LNK) 
-	-$(LN) $(notdir $(LIBGDS_SO_X_LNK)) $(LIBGDS_SO_LNK) 
+	-$(LN) $(@F) $(LIBGDS_SO_X_LNK)
+	-$(LN) $(notdir $(LIBGDS_SO_X_LNK)) $(LIBGDS_SO_LNK)
 
 $(LIBGDS_A) : $(GDSLIB_Objects)
 	$(STATICLIB_LINK) $(LIBGDS_LINK_OPTIONS)  $@ $^
 
 
 #____________________________________________________________________________
-# 
+#
 # Everything below here is crap - well maybe that's an overstatement :-).
-# It comes from the original sfx.jrd file and I've left it here for now 
+# It comes from the original sfx.jrd file and I've left it here for now
 # for reference until I finish rewriting the super server make.
 
 CSI_FILES=	$(OBJS)/csv/csi.o $(OBJS)/csv/css.o
@@ -147,7 +150,7 @@ CODES_FILES=	$(OBJS)/firebird/include/gds_codes.pas \
 
 # Temporarily removing $(BACKEND_BRIDGE_MISC) from SUPER_OBJECTS
 # Also, whatever SUPER_OBJECTS includes should be forced to build under
-# the 'super_server_objects' target. Currently DSQL, LOCK, REMOTE, 
+# the 'super_server_objects' target. Currently DSQL, LOCK, REMOTE,
 # WAL are included. INTL is not needed.
 SUPER_OBJECTS=	$(DSQL_MISC) $(LOCK_MISC) \
 		$(REMOTE_MISC) \
@@ -317,7 +320,7 @@ gdslib.so.1.0 $(SUN_GDSSHR):	$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) \
 	$(TOUCH) gdslib.so.1.0
 	$(CHMOD_6) gdslib.so.1.0
 
-# If you really need this and can't do this via a define of NON_DL_COMPATIBLE 
+# If you really need this and can't do this via a define of NON_DL_COMPATIBLE
 # when building flu.cpp then this should work.
 #JRD_P_OBJECTS := $(subst flu.bin, flu_non_dl.bin, $JRD_P_OBJECTS)
 
@@ -342,7 +345,7 @@ gdsflib.so.0.0 $(SUN_FUNCSHR):	functions.bin
 	$(TOUCH) gdsflib.so.0.0
 	$(CHMOD_6) gdsflib.so.0.0
 
-gds.so.o $(SGI_GDSSHR) $(DECOSF_GDSSHR) $(EPSON_GDSSHR) : \
+gds.so.o $(SGI_GDSSHR) $(DECOSF_GDSSHR) : \
 		$(WHY_O) $(JRD_OBJECTS) $(DSQL_MISC) $(LOCK_MISC) \
 		$(REMOTE_MISC) $(BRIDGE_MISC) \
 		$(INTL_MISC) $(WAL_MISC) $(FUNCTIONS)  $(SECURITY_MISC)
@@ -360,7 +363,7 @@ gds.so.o $(SGI_GDSSHR) $(DECOSF_GDSSHR) $(EPSON_GDSSHR) : \
 gds.so.O $(SCO_EV_GDSSHR): \
 	$(WHY_O) $(JRD_OBJECTS) $(DSQL_MISC) $(LOCK_MISC) \
 	$(REMOTE_MISC) $(BRIDGE_MISC) \
-	$(INTL_MISC) $(WAL_MISC)  $(SECURITY_MISC) 
+	$(INTL_MISC) $(WAL_MISC)  $(SECURITY_MISC)
 	-$(RM) gds.so.O
 	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(WHY_O) $(JRD_OBJECTS) \
 		$(DSQL_MISC) $(LOCK_MISC) $(REMOTE_MISC) $(BRIDGE_MISC) \
@@ -375,7 +378,7 @@ libgds.so gds.so.linux: \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
 		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
-		$(FUNCTIONS) 
+		$(FUNCTIONS)
 	-$(RM) gds.so
 	ld $(LD_OPTS) $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
@@ -391,7 +394,7 @@ gds.so.0 $(DG_GDSSHR) $(DG_X86_GDSSHR) $(UNIXWARE_GDSSHR) $(NCR3000_GDSSHR): \
 		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
 		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
-		$(FUNCTIONS) 
+		$(FUNCTIONS)
 	-$(RM) gds.so.0
 	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
@@ -438,7 +441,7 @@ gdsmt.so.0: \
 		$(LOCK_P_MISC) \
 		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
 		$(INTL_P_MISC) $(WAL_P_MISC) \
-		$(FUNCTIONS) 
+		$(FUNCTIONS)
 	-$(RM) gdsmt.so.0
 	ld $(LD_OPTS) libgdsmt.so.0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
 		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
@@ -541,7 +544,7 @@ event_print.exe:	print.o
 
 gds.a:		$(HEAD_OBJECTS) $(NOLINK_MACHINES)
 	-$(RM) gds.a
-	$(AR) gds.a $(HEAD_OBJECTS) 
+	$(AR) gds.a $(HEAD_OBJECTS)
 	-ranlib gds.a
 	$(CHMOD_6) gds.a
 	$(MV) gds.a $(HEAD_LIB)
@@ -552,7 +555,7 @@ gds.a:		$(HEAD_OBJECTS) $(NOLINK_MACHINES)
 # to isolate clients that might use signals from threads.
 # Note that its internal library name is libgds.so for compatibility
 # with existing applications.
-gdspipe.so.0:	$(HEAD_J_OBJECTS) 
+gdspipe.so.0:	$(HEAD_J_OBJECTS)
 	-$(RM) gdspipe.so.0
 	-$(RM) gds.so.0
 	ld $(LD_OPTS) libgds.so.0 $(HEAD_J_OBJECTS) $(LD_LIBS_J) \
@@ -567,7 +570,7 @@ gdspipe.so.0:	$(HEAD_J_OBJECTS)
 # which isn't optimal, but will function fine.
 gds.a.solaris:	$(HEAD_J_OBJECTS)
 	-$(RM) gds.a.solaris
-	$(AR) gds.a $(HEAD_J_OBJECTS) 
+	$(AR) gds.a $(HEAD_J_OBJECTS)
 	-ranlib gds.a
 	$(CHMOD_6) gds.a
 	$(MV) gds.a $(HEAD_LIB)
@@ -595,7 +598,7 @@ bridge.unix:	gds_pipe
 
 gds_pipe.a:	$(FOOT_OBJECTS) $(NOLINK_MACHINES)
 	-$(RM) gds_pipe.a
-	$(AR) gds_pipe.a $(FOOT_OBJECTS) 
+	$(AR) gds_pipe.a $(FOOT_OBJECTS)
 	-ranlib gds_pipe.a
 	$(CHMOD_6) gds_pipe.a
 	$(MV) gds_pipe.a $(FOOT_LIB)
@@ -645,7 +648,7 @@ $(CODES_FILES):
 # different to the newly generated entries.
 #
 # There are also blrtable.h and ids.h which are generated as well.
-# Regeneration is a manual thing, and you will need to 
+# Regeneration is a manual thing, and you will need to
 
 generated_headers: ensureRebuild rebuild_codes ../include/gen/blrtable.h ../include/gen/ids.h
 
@@ -677,19 +680,19 @@ codes:		codes.o $(STDIO) $(LIBGDS_DEP)
 
 # Security requires a database to compile so it cannot be used until
 # after gpre_static and gbak have been built.  The alt.cpp file has a
-# -DPHASE_1_NO_SECURITY macro that disables compilaton of security 
+# -DPHASE_1_NO_SECURITY macro that disables compilaton of security
 # components.  So the early _boot and _static builds use the boot one and
 # the later ones rely on the complete alt.o.  This is controlled by the
-# makefile building a different jrd/alt_use_sec.h at 
+# makefile building a different jrd/alt_use_sec.h at
 
 # BTW: Ann (and I think Jim as well) believe that the security
-# database has no business being applied at this level, and should be 
+# database has no business being applied at this level, and should be
 # removed or moved -  MOD 22-7-2001
 
 # The file alt.cpp can be built in two versions BOOT and normal, where
 # boot does not use the security database and the normal build does.
 # We build a different header file from alt_use_sec.h.pre in the boot and
-# the post boot stages of the build. 
+# the post boot stages of the build.
 
 build_alt_use_boot: alt_use_sec.h.pre
 	sed '/^#undef PHASE_1_BUILD_NO_SECURITY_DB/s/undef/define/' < $^ > alt_use_sec.h
@@ -703,10 +706,10 @@ build_alt_use_main: alt_use_sec.h.pre
 
 # Some of these you have to wonderabout, since here are a number of files
 # that use DATABASE FILENAME = 'ODS.RDB' but ODS.RDB does not exsit
-# For that reason all the .epp files in this directory are compiled 
+# For that reason all the .epp files in this directory are compiled
 # with the following options.
 # fun.epp they allow you to compile without having a database present.
-# The db file ODS.RDB (as used in fun.epp doesn't exist, and was not part 
+# The db file ODS.RDB (as used in fun.epp doesn't exist, and was not part
 # of the original 6.0 build).
 
 
@@ -766,9 +769,9 @@ iscb.bin:	isc.cpp
 	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DBRIDGE $< -o $@
 
 
-# This is the one where dyn_def.epp produced dyn_def.cpp and then the sed 
+# This is the one where dyn_def.epp produced dyn_def.cpp and then the sed
 # script is run to remove a component of it.  This is pretty ugly, and even
-# if we have to live with it, the makefile should be changed to make the 
+# if we have to live with it, the makefile should be changed to make the
 # dependencies clearer.
 
 $(SRC)/dyn_def.cpp : $(SRC)/dyn_def.epp $(SRC)/dyn_def.sed

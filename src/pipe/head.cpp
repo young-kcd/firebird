@@ -19,11 +19,14 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden 
+ * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
- 
- /* $Id: head.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $ */
- 
+
+ /* $Id: head.cpp,v 1.5 2002-02-16 02:21:28 seanleyne Exp $ */
+
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
@@ -64,7 +67,7 @@
 #include <fcntl.h>
 #endif
 
-#if (defined DELTA || defined M88K || defined SCO_UNIX || defined EPSON)
+#if (defined DELTA || defined M88K || defined SCO_UNIX)
 #include <fcntl.h>
 #endif
 
@@ -133,7 +136,7 @@ static void	release_sql_request (RSR);
 static void	release_transaction (RTR);
 static STATUS	send_blob (STATUS *, RBL, USHORT, UCHAR *);
 
-static FILE	*read_pipe = NULL, 
+static FILE	*read_pipe = NULL,
 		*write_pipe = NULL,
 		*event_pipe = NULL;
 static int	event_fd = -1;
@@ -150,11 +153,11 @@ static RDB	connection = NULL;
  * a file lock/unlock for each character IO.  This is a performance
  * drain; however, the main reason for making the change is that
  * getc&putc don't work on (at least) Solaris 2.4 with the -mt CC option.
- * Our testing on Solaris revealed that the standard definitions 
- * of putc/getc would obtain bogus EOF indicators - which would 
+ * Our testing on Solaris revealed that the standard definitions
+ * of putc/getc would obtain bogus EOF indicators - which would
  * cause one end of the pipe connection to terminate after a message.
  *
- * Note also that getc_unlocked & putc_unlocked are macros. 
+ * Note also that getc_unlocked & putc_unlocked are macros.
  *
  * The man page for putc_unlocked/getc_unlocked state that we must
  * do our own file locking to ensure that the usage is MT safe -

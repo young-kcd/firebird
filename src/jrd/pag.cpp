@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 /*
@@ -96,7 +99,7 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 	1		Apollo 68K, Dn 10K
 	2		Sun 68k, Sun Sparc, HP 9000/300, MAC AUX, IMP, DELTA, NeXT, UNIXWARE, DG_X86
-	3		Sun 386i, XENIX, EPSON
+    3       Sun 386i, XENIX
 	4		VMS
 	5		Ultrix/VAX
 	6		Ultrix/MIPS
@@ -209,10 +212,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 #ifdef NETWARE_386
 #define CLASS		8
-#endif
-
-#ifdef EPSON
-#define CLASS		3
 #endif
 
 #ifdef DECOSF

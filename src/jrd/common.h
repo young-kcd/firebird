@@ -28,9 +28,11 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
  *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 /*
-$Id: common.h,v 1.7 2002-02-16 01:58:24 seanleyne Exp $
+$Id: common.h,v 1.8 2002-02-16 02:21:27 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1009,35 +1011,6 @@ typedef unsigned long DWORD;
 #define INTL_BACKEND
 #endif
 
-
-
-#ifdef EPSON
-#define I386            1
-#define VAX             1
-#define UNIX            1
-#define                 IEEE
-#define SETPGRP         setpgrp()
-#define SIGACTION_SUPPORTED
-#define MMAP_SUPPORTED
-#define NO_FLOCK
-#define SMALL_FILE_NAMES
-#define ATEXIT(c)       atexit (c)
-#define KILLER_SIGNALS
-#define INTL
-#define IMPLEMENTATION  51
-#define NO_PYXIS
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
-#define setreuid(ruid,euid)     setuid(euid)
-#define setregid(rgid,egid)     setgid(egid)
-
-#endif /* EPSON */
 
 #ifdef UNIX
 #define NO_CHECKSUM     1

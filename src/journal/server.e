@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Journal Server
  *	MODULE:		server.e
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 #include <stdio.h>
@@ -34,9 +37,6 @@
 #include <types.h>
 #endif
 #ifdef _AIX
-#include <sys/select.h>
-#endif
-#ifdef EPSON
 #include <sys/select.h>
 #endif
 #include "../jrd/common.h"

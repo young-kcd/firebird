@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 #include "firebird.h"
@@ -77,16 +80,18 @@
 #include <vfork.h>
 #endif
 #endif
+
 #if (defined DELTA || defined IMP)
 #include <fcntl.h>
 #include <sys/types.h>
 #endif
-#if (defined EPSON || defined SCO_UNIX)
+
+#ifdef SCO_UNIX
 #include <fcntl.h>
 #endif
 
 /* This is defined in JRD/SCL.H, but including it causes
- * a linker warning.  
+ * a linker warning.
  */
 #define SYSDBA_USER_NAME	"SYSDBA"
 #define SVC_user_dba		2

@@ -1,4 +1,4 @@
-# 
+#
 #   The contents of this file are subject to the Mozilla Public
 #   License Version 1.1 (the "License"); you may not use this file
 #   except in compliance with the License. You may obtain a copy of
@@ -8,26 +8,29 @@
 #   "GPL"), in which case the provisions of the GPL are applicable
 #   instead of those above. You may obtain a copy of the Licence at
 #   http://www.gnu.org/copyleft/gpl.html
-# 
+#
 #   This program is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   Relevant for more details.
-# 
+#
 #   This file was created by members of the firebird development team.
 #   All individual contributions remain the Copyright (C) of those
 #   individuals.  Contributors to this file are either listed here or
 #   can be obtained from a CVS history command.
-# 
+#
 #   All rights reserved.
 #
 #   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-# 
+#
 #   Contributor(s):
-# 
-# 
-#   $Id: Makefile.in.firebird,v 1.13 2002-01-06 13:06:36 skywalker Exp $
-# 
+#
+#
+#   $Id: Makefile.in.firebird,v 1.14 2002-02-16 02:21:27 seanleyne Exp $
+#
+# 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+#
+#
 
 ROOT=..
 
@@ -56,7 +59,7 @@ export LD_LIBRARY_PATH
 
 
 dirs = alice burp dudley dsql extlib gpre intl isql journal jrd lock msgs \
-		  pyxis qli remote super/remote utilities wal 
+		  pyxis qli remote super/remote utilities wal
 
 
 .PHONY: firebird super_firebird $(dirs)
@@ -66,9 +69,9 @@ firebird: updateBuildNum phase1 phase2 phase3
 
 
 #----------------------------------------------------------------------------
-# jrd/build_no.h contains the version and build# fields used throughout the 
-# program and quoted in the tools.  This routine will update the build_no.h 
-# file with the auto update build# script file, writeBuildNum.sh.  The 
+# jrd/build_no.h contains the version and build# fields used throughout the
+# program and quoted in the tools.  This routine will update the build_no.h
+# file with the auto update build# script file, writeBuildNum.sh.  The
 # writeBuildNum.sh script is autoupdated by CVS checkins.
 #
 .PHONY: updateBuildNum
@@ -81,10 +84,10 @@ jrd/build_no.h : misc/writeBuildNum.sh
 #---------------------------------------------------------------------------
 # Phase1: make a gpre_static from scratch so we can parse .e and .epp files
 # to build the rest of the system.  It goes in two bits make a real simple
-# gpre_boot one and use that to build a gpre_static one.  
+# gpre_boot one and use that to build a gpre_static one.
 #
-# gpre_static has a fair bit more in it and we have now actually built most 
-# of the libraries.  With gpre_static we now have enough to build gbak and 
+# gpre_static has a fair bit more in it and we have now actually built most
+# of the libraries.  With gpre_static we now have enough to build gbak and
 # start restoring databases.
 #
 # if $(BIN)/gpre_static exists then phase1 is complete. phase1 does not then
@@ -92,7 +95,7 @@ jrd/build_no.h : misc/writeBuildNum.sh
 # only need on gpre_static to boot after we have one we don't care.
 # (If you really want to rebuild it you need to remove the executable file
 # $(BIN)/gpre_static).
-# 
+#
 .PHONY: phase1 phase1_build jrd_boot gpre_boot gpre_static
 
 
@@ -125,11 +128,11 @@ fbmem_boot :
 
 #--------------------------------------------------------------------------
 #Phase2: We can now start build some of the static utilities needed to build
-#  an empty database (lock manager and create_db).  Then we rebuild all the 
+#  an empty database (lock manager and create_db).  Then we rebuild all the
 #  items we have built in the static library into a dynamic library.
 #  (It's probably possible to directly build the dynamic library - but thats
 #  for another day). We still don't have the security database stuff.
-# 
+#
 # Phase2 is complete with the building of an isc4.gdb user store database
 # in order to do that isql and gdef tools need to be built without security
 # to do that a special alt_boot.o is inserted into the shared library.
@@ -140,10 +143,10 @@ fbmem_boot :
 
 .PHONY: create_db gds_lock_manager refDatabases
 
-phase2 : $(ISC_GDB) 
+phase2 : $(ISC_GDB)
 
 $(ISC_GDB): utilities/isc4.sql utilities/isc4.gdl
-	$(MAKE) phase2_build 
+	$(MAKE) phase2_build
 
 phase2_build: build_alt_use_boot create_db gds_lock_manager empty_db gbak_static \
         ref_databases jrdlib_main gfix gbak gdef msgs isql \
@@ -168,7 +171,7 @@ gbak_static : empty_db
 ref_databases : gbak_static
 	$(MAKE) -C refDatabases $@
 
-jrdlib_dependencies : 
+jrdlib_dependencies :
 	$(MAKE) -C jrd $@
 	$(MAKE) -C dsql $@
 	$(MAKE) -C lock $@
@@ -196,11 +199,11 @@ isc4.gdb: gdef isql 		# build the security database
 #--------------------------------------------------------------------------
 #Phase3: Now we start building the tools we are actually going to use
 #  against the shared library.
-#  an empty database (lock manager and create_db).  Then we rebuild all the 
+#  an empty database (lock manager and create_db).  Then we rebuild all the
 #  items we have built in the static library into a dynamic library.
 #  (It's probably possible to directly build the dynamic library - but thats
 #  for another day). We still don't have the security database stuff.
-# 
+#
 # Notes:
 # mainly we need gdef and isql to be able to build isc4.gdb.  I wonder
 # if we could reduce the tricky dependancy by restoring the isc4.gdb database
@@ -221,7 +224,7 @@ build_alt_use_main:		# alter header file so jrd/alt.cpp DOES use security.
 sysdba_user gstat:			# add sysdba user and build gstat program
 	$(MAKE) -C utilities $@
 
-gfix:     
+gfix:
 	$(MAKE) -C alice $@   	# (alice - all-else )
 
 
@@ -240,7 +243,7 @@ locks:						# the lock manager for classic server
 	$(MAKE) -C lock all
 
 qli:						# the query line interpreter (predates sql interface)
-	$(MAKE) -C qli allx   
+	$(MAKE) -C qli allx
 
 inet_server:				# the classic server
 	$(MAKE) -C remote inet_server
@@ -249,7 +252,7 @@ gpre:					 	# c/c++ embedded SQL code precompiler
 	$(MAKE) -C gpre $@
 
 
-extlib:						# user define functions 
+extlib:						# user define functions
 	$(MAKE) -C extlib all
 
 includes:	include_generic # distribution include files (this one in this file)
@@ -278,12 +281,12 @@ include_generic: $(INCLUDE_DEST)/ib_util.h  \
 
 # ib_util.h actually is a marker for a number of headers
 
-# All these files are #includes in gds.h here we cat them all together 
+# All these files are #includes in gds.h here we cat them all together
 # and remove the embedded #includes to make it simpler for external usage.
 
 GDS_ExtraFiles = misc/gds_header.txt include/fb_types.h \
              jrd/ibase.h jrd/blr.h include/gen/iberror.h \
-             jrd/gdsold.h include/gen/codes.h 
+             jrd/gdsold.h include/gen/codes.h
 
 SRC_GDS_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(GDS_ExtraFiles))
 
@@ -307,7 +310,7 @@ $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
 
 
 # Copy all the other headers to the distribution directory.  we use
-# ib_util.h as the marker for all the files.  
+# ib_util.h as the marker for all the files.
 
 OtherDistribHeaders = extlib/ib_util.h \
 	               jrd/perf.h  \
@@ -320,7 +323,7 @@ $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 	$(CP) $^ $(INCLUDE_DEST)/
 
 
-# There are also gds*f and gds*ada header files around if someone 
+# There are also gds*f and gds*ada header files around if someone
 # wants them.  You might need to hunt around in the old cvs tree for them.
 
 
@@ -328,11 +331,11 @@ $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 #___________________________________________________________________________
 
 # When the msgs.gdb dataabse has changed with new messages a number of header
-# files need to be regenerated.  This is the target to do it.  These new 
+# files need to be regenerated.  This is the target to do it.  These new
 # header files (placed in include/gen) then need to be committed since they
 # are not generally rebuilt from scratch
 
-rebuild_codes : 
+rebuild_codes :
 	$(MAKE) -C jrd $@
 
 
@@ -357,7 +360,7 @@ $(FIREBIRD)/misc/% :: $(SRC_ROOT)/install/misc/%
 
 
 #___________________________________________________________________________
-# 
+#
 
 CLASSIC_ScriptFiles = CSchangeRunUser.sh CSrestoreRootRunUser.sh changeDBAPassword.sh
 SUPER_ScriptFiles = SSchangeRunUser.sh SSrestoreRootRunUser.sh changeDBAPassword.sh
@@ -385,7 +388,7 @@ $(BIN)/% :: $(SRC_ROOT)/install/misc/%
 # Just a note that some of the script files (xinetd/firebird etc) need to h
 # have their paths changed in their shell scripts.
 #___________________________________________________________________________
-# 
+#
 
 .PHONY: install
 
@@ -414,10 +417,10 @@ clean: clean_objs clean_libs clean_exes clean_dbs clean_build
 clean_objs:
 	-echo $(GDSLIB_Objects) | xargs rm -f
 	-echo $(GDSLIB_SharedObjects) | xargs rm -f
-	-rm */*\.o 
+	-rm */*\.o
 	-rm */*\.lo
 	-rm */*\.j
-	-rm */*\.bin 
+	-rm */*\.bin
 	-rm */*\.d
 
 clean_libs:
@@ -535,7 +538,7 @@ EXTERNAL_P_OBJECTS=	$(CSI_P_OBJS) dsql_p_objects lock.bin $(PYXIS_P_OBJS) rem_p_
 
 
 SRC_DIRS= alice burp dudley dsql extlib gpre intl isql journal jrd lock msgs \
-		  pyxis qli remote super/remote utilities wal 
+		  pyxis qli remote super/remote utilities wal
 
 GPRE=		$(OBJS)/firebird/bin/gpre
 GPRE_BOOT=	$(OBJS)/firebird/bin/gpre_boot
@@ -560,9 +563,9 @@ CODES=source/jrd/codes
 #FSG  093000
 
 # The only difference between firebird and super_firebird is the executables
-# target and in there super just had one more target "super_targets".  The 
-# difference used to be done via a parameter passed into this makefile, but 
-# I've put the change here to reduce the complexity of the build script files. 
+# target and in there super just had one more target "super_targets".  The
+# difference used to be done via a parameter passed into this makefile, but
+# I've put the change here to reduce the complexity of the build script files.
 # MOD 07-Apr-2001.
 
 # I've taken run_codes out pending a decision on how to handle the codes thing
@@ -592,7 +595,7 @@ super_executables:	alice burp dudley gpre superMiscFiles $(INTL) isql locks \
 	super_targets pyxis qli remote spit utilities \
 	$(SHARED_AM) $(LINKABLE_LIBS)
 
-super_targets: 	s_run_codes s_alice s_burp s_dba s_security_c super_client super_server super_utils 
+super_targets: 	s_run_codes s_alice s_burp s_dba s_security_c super_client super_server super_utils
 
 #phase1: ISC_USER = sysdba
 #phase1: ISC_PASSWORD = masterkey
@@ -624,7 +627,7 @@ run_codes:	 force
 
 # NOTE: "journals" removed from "executables" as it currently doesn't
 #	build and isn't used for V4 anyway.
-# 1995-June-7 David Schnepper 
+# 1995-June-7 David Schnepper
 
 
 
@@ -746,7 +749,7 @@ gdslib.apollo:	$(GPRE) $(EXTERNAL_OBJECTS) pyxislib force
 	$(QUIET_ECHO) "Building GDSLIB..."
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) gdslib
 
-gdslib.decosf gdslib.sgi gdslib.epson :	\
+gdslib.decosf gdslib.sgi : \
 	$(GPRE) $(EXTERNAL_OBJECTS) $(GDS_PYXIS) force
 	$(QUIET_ECHO) "Building GDSLIB..."
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) gds.so.o
@@ -757,7 +760,7 @@ gdslib.linux:	\
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) gds.so.linux
 
 gdslib.dylib: \
-	$(GPRE) $(EXTERNAL_OBJECTS) $(GDS_PYXIS) force 
+	$(GPRE) $(EXTERNAL_OBJECTS) $(GDS_PYXIS) force
 	$(QUIET_ECHO) "Building GDSLIB..."
 	$(CD) $(OBJS)/jrd && $(MAKE) $(SUBMAKE_FLAGS) gds.dylib
 
@@ -833,9 +836,9 @@ gds.a.solaris:		force
 
 #$(GPRE_BOOT) $(GPRE_STATIC): force
 #	$(CD) $(OBJS)/gpre && $(MAKE) $(SUBMAKE_FLAGS) $@
-# Run the codes program (for SUPERSERVER hierarchy), 
+# Run the codes program (for SUPERSERVER hierarchy),
 # thus generating codes.h, iberror.h, etc
-s_run_codes:	
+s_run_codes:
 #	force $(CODES)
 	$(QUIET_ECHO) "Running codes in super ..."
 #	$(SH) '$(CD) source/super/jrd; $(CODES)'
@@ -1056,8 +1059,8 @@ darwin_installer_common: force
 	$(CP) $(SOURCE)/sandbox/bellardo/darwin/makefile \
 		$(OBJS)/firebird/installer_tmp
 	ln -s $(OBJS)/firebird/bellardo/darwin \
-		$(OBJS)/firebird/installer_tmp/files   
-	ln -s ../.. $(OBJS)/firebird/installer_tmp/source   
+		$(OBJS)/firebird/installer_tmp/files
+	ln -s ../.. $(OBJS)/firebird/installer_tmp/source
 	$(CD) $(OBJS)/firebird/installer_tmp && $(MAKE) install_package
 	$(RM) -rf $(OBJS)/firebird/installer_tmp
 	-$(RM) -rf $(OBJS)/firebird/Firebird.framework
@@ -1096,23 +1099,23 @@ makedepend:
 	source/qli/depends.mak \
 	source/remote/depends.mak \
 	source/utilities/depends.mak \
-	source/wal/depends.mak 
-	$(SH) '$(CD) source/alice; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/burp; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/csv; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/dsql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/dudley; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/gpre; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/intl; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/lock; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/isql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/journal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/msgs; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/qli; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/remote; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/utilities; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/wal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
+	source/wal/depends.mak
+	$(SH) '$(CD) source/alice; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/burp; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/csv; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/dsql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/dudley; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/gpre; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/intl; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/lock; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/isql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/journal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/msgs; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/qli; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/remote; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/utilities; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/wal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
 
 cleanx:	clean_executables
 	-$(RM) \
@@ -1166,7 +1169,7 @@ clean_objx:
 		rm $${ND}/*.a ; \
 		rm $${ND}/*.j ; \
 		rm $${ND}/*.bin ; \
-	done 
+	done
 clean_build_gdbx:
 	-$(RM) \
 	source/example5/*.gdb \
@@ -1177,7 +1180,7 @@ clean_build_gdbx:
 
 
 # The installations need to find a better and possibly linux
-# specific home.  The tar installs should probably work with 
+# specific home.  The tar installs should probably work with
 # other unix type of systems.
 
 # I have seperated super and classic out since I needed different

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 #ifndef _REMOTE_REMOTE_DEF_H_
@@ -108,10 +111,6 @@
 #define ARCHITECTURE		arch_sco_ev
 #endif
 
-#ifdef EPSON
-#define ARCHITECTURE		arch_epson
-#endif
-
 #ifdef _PPC_
 #define ARCHITECTURE		arch_nt_ppc
 #endif
@@ -155,4 +154,3 @@
 #define SRVR_thread_per_port	2048	/* 0x0800 Bind thread to a port */
 #define SRVR_no_icon		4096	/* 0x1000 Tell the server not to show the icon */
 #endif /* _REMOTE_REMOTE_DEF_H_ */
-

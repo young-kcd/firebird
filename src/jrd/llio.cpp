@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 #include "firebird.h"
@@ -67,7 +70,7 @@
 #  endif
 #endif
 
-#if (defined IMP || defined EPSON || defined sparc)
+#if (defined IMP || defined sparc)
 #include <unistd.h>
 #endif
 
@@ -114,7 +117,7 @@ int LLIO_allocate_file_space(
  *        Open (create if necessary) the given file and write 'size'
  *        number of bytes to it.  Each byte is initialized to
  *        the passed fill_char.  If 'overwrite' is FALSE and the file
- *        already exists, return FAILURE. 
+ *        already exists, return FAILURE.
  *
  *        This routine may be used to make sure that the file already
  *        has enough space allocated to it.

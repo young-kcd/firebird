@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 #ifndef _ISC_LOCK_LOCK_H_
@@ -79,10 +82,6 @@
 
 #ifndef EXTEND_SIZE
 #define EXTEND_SIZE     32768
-#endif
-
-#ifdef EPSON
-#define SEMAPHORES      10
 #endif
 
 #ifdef M88K

@@ -20,10 +20,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001 
+ * FSG 16.03.2001
+ *
+ * 2002.02.15 Sean Leyne - This module needs to be cleanedup to remove obsolete "EPSON" port/define
+ *
  */
 /*
-$Id: protocol.h,v 1.3 2001-12-24 02:50:53 tamlin Exp $
+$Id: protocol.h,v 1.4 2002-02-16 02:21:28 seanleyne Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_
@@ -57,9 +60,9 @@ $Id: protocol.h,v 1.3 2001-12-24 02:50:53 tamlin Exp $
 
 #define PROTOCOL_VERSION8	8
 
-/* Protocol 9 includes support for SPX32 
+/* Protocol 9 includes support for SPX32
    SPX32 uses WINSOCK instead of Novell SDK
-   In order to differentiate between the old implementation 
+   In order to differentiate between the old implementation
    of SPX and this one, different PROTOCOL VERSIONS are used */
 
 #define PROTOCOL_VERSION9	9
@@ -69,8 +72,8 @@ $Id: protocol.h,v 1.3 2001-12-24 02:50:53 tamlin Exp $
 
 #define PROTOCOL_VERSION10	10
 
-#ifdef SCROLLABLE_CURSORS 
-This Protocol includes support for scrollable cursors 
+#ifdef SCROLLABLE_CURSORS
+This Protocol includes support for scrollable cursors
 and is purposely being undefined so that changes can be made
 to the remote protocol version to support new features without the 'fear' that
 they will be turned off once SCROLLABLE_CURSORS is turned on.
@@ -176,7 +179,7 @@ typedef enum
 	op_detach			= 21,	/* Detach database */
 	op_compile			= 22,	/* Request based operations */
 	op_start			= 23,
-	op_start_and_send	= 24,	
+	op_start_and_send	= 24,
 	op_send				= 25,
 	op_receive			= 26,
 	op_unwind			= 27,

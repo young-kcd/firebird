@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define*
+ *
  */
 
 #ifndef _JRD_FILE_PARAMS_H_
@@ -98,11 +101,6 @@
 #include <sys/ipc.h>
 #define SUNOS4
 #endif
-#endif
-
-#ifdef EPSON
-#include <sys/types.h>
-#include <sys/ipc.h>
 #endif
 
 #ifdef LINUX

@@ -1,6 +1,7 @@
- /*
-  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
-  */
+/*
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ */
 
 #ifndef AUTOCONFIG_H
 #define AUTOCONFIG_H
@@ -80,6 +81,5 @@
 #undef UNIXWARE
 #undef NCR3000
 #undef IMP
-#undef EPSON
 
 #endif

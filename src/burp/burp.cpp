@@ -22,6 +22,9 @@
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" defines
+ *
  */
 
 #include "firebird.h"
@@ -100,10 +103,6 @@
 
 #if (defined WIN_NT)
 #include <io.h>
-#endif
-
-#ifdef EPSON
-#include <sys/fcntl.h>
 #endif
 
 #ifndef O_CREAT

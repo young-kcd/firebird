@@ -14,6 +14,10 @@
 #
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
+#
+# 2002.02.15 Sean Leyne - This module is now obsolete - "EPSON" port
+#
+
 .SUFFIXES: .c .e
 .e.c:
 	$(GPRE) $(GPRE_FLAGS) $<
@@ -59,7 +63,7 @@ INTL_PIC_FLAGS=         $(CFLAGS)
 INTL_TARGET=		intl_shr_objs
 IO_OBJECTS=		unix.o
 JRD_MISC_OBJECTS=       stubs.o
-LANG_OBJECTS=		
+LANG_OBJECTS=
 LANGUAGES=		cc cxx gdl1 make15
 LD_LIBS=		-ldl
 LD_OPTS=		-G -h
@@ -104,4 +108,3 @@ EXEC_EXT=
 
 
 V3PRINTER=		source/lock/printv3.o
-

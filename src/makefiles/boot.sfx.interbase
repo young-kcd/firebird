@@ -14,11 +14,14 @@
 #
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
-#  
-#             
+#
+#
 # Tom Coleman TMC Systems <tcoleman@autowares.com>
 #
-# $Id: boot.sfx.interbase,v 1.2 2001-12-24 02:50:52 tamlin Exp $
+# $Id: boot.sfx.interbase,v 1.3 2002-02-16 02:21:27 seanleyne Exp $
+#
+# 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+#
 
 
 #== WARNING ==============================================================
@@ -41,7 +44,7 @@ EXTERNAL_P_OBJECTS=	$(CSI_P_OBJS) dsql_p_objects lock.bin $(PYXIS_P_OBJS) rem_p_
 INCLUDE_DEST=	source/interbase/include/
 
 SRC_DIRS= alice burp dudley dsql extlib gpre intl isql journal jrd lock msgs \
-		  pyxis qli remote super/remote utilities wal 
+		  pyxis qli remote super/remote utilities wal
 
 GPRE=		source/interbase/bin/gpre
 GBAK=		source/interbase/bin/gbak
@@ -70,7 +73,7 @@ SCODES=super/source/jrd/codes
 
 firebird:	gds.h includes fireboot run_codes executables help msgs msgs_intl extlib examples completed
 
-#  burp wanted to build gpre	
+#  burp wanted to build gpre
 #  we break this dependency
 #  1) build burp (gbak)
 #  2) use gbak to create the message databases
@@ -81,10 +84,10 @@ fireboot:	burp boot_dbs msgs gpre
 
 boot_dbs:	$(GBAK) $(METADATA) $(MESSAGES) $(HELP) $(ISC)
 
-$(METADATA):	misc/metadata.gbak 
+$(METADATA):	misc/metadata.gbak
 	$(GBAK) -c misc/metadata.gbak $(METADATA)
 
-$(ISC):	misc/isc4.gbak 
+$(ISC):	misc/isc4.gbak
 	$(GBAK) -c misc/isc4.gbak $(ISC)
 
 $(MESSAGES):	misc/msg.gbak
@@ -94,7 +97,7 @@ $(HELP):	misc/help.gbak
 	$(GBAK) -c misc/help.gbak $(HELP)
 
 all_example_dbs:	example_dbs v4_dbs v5_dbs
- 
+
 example_dbs:
 	$(ECHO) "- building example dbs"
 	$(CD) $(REFDBPATH)/examples; \
@@ -107,7 +110,7 @@ example_dbs:
 	$(FBNewBuildBin)/gdef $(FBBuildRoot)/examples/c_guide.gdl; \
 	$(FBNewBuildBin)/gdef $(FBBuildRoot)/examples/stocks.gdl
 	touch example_dbs
- 
+
 v4_dbs:
 	$(ECHO) "- copying example files"
 	$(CP) example4/*.sql $(REFDBPATH)/example4
@@ -122,12 +125,12 @@ v4_dbs:
 	$(SED) -e s/' year'/' proj_year'/g -e s/\(year/\(proj_year/g -e s/\(YEAR/\(PROJ_YEAR/g -e s/' DATE'/' TIMESTAMP'/g $(FBBuildRoot)/example4/intlddl.sql >intlddl.sql; \
 	$(FBNewBuildBin)/isql -i intlbld.sql
 	touch v4_dbs
- 
+
 #	The following were not used but the source files exist
 #	(cd examples; $IBBin/gdef $IBSrc/examples/cs_load.gdl)
 #	(cd examples; $IBBin/gdef $IBSrc/examples/sources.gdl)
 #	(cd examples; $IBBin/gdef $IBSrc/examples/udf_trig.gdl)
- 
+
 v5_dbs:
 	echo "- building examples5"
 	$(CP) example5/*.sql $(REFDBPATH)/example5
@@ -139,7 +142,7 @@ v5_dbs:
 	$(SED) -e s/' year'/' proj_year'/g -e s/' YEAR'/' PROJ_YEAR'/g -e s/' DATE'/' TIMESTAMP'/g $(FBBuildRoot)/example5/intlddl.sql >intlddl.sql; \
 	$(FBNewBuildBin)/isql -i intlbld.sql
 	touch v5_dbs
- 
+
 
 # Run the codes program, thus generating codes.h, iberror.h, etc
 # compare and copy the file only if the files are different
@@ -151,24 +154,24 @@ run_codes:	$(CODES)
 	$(SH) 'if [ ! -f $(INCLUDE_DEST)iberror.h ] ; then $(CP) source/jrd/iberror.h $(INCLUDE_DEST)iberror.h; fi'
 	$(SH) '$(CMP) source/jrd/iberror.h $(INCLUDE_DEST)iberror.h; if [ $$? != 0 ]; then $(CP) source/jrd/iberror.h $(INCLUDE_DEST)iberror.h; fi'
 
-$(CODES) : source/jrd/codes.e 
+$(CODES) : source/jrd/codes.e
 	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" codes'
 
 # NOTE: "journals" removed from "executables" as it currently doesn't
 #	build and isn't used for V4 anyway.
-# 1995-June-7 David Schnepper 
+# 1995-June-7 David Schnepper
 # removed pyxis 3-Aug-00 TMC
 #executables:	alice burp dudley gpre miscFiles $(INTL) isql locks \
 	$(SUPER_SERVER) pyxis qli remote spit utilities \
 	$(SHARED_AM) $(LINKABLE_LIBS)
-	
+
 executables:    alice dudley miscFiles $(INTL) isql locks \
 	$(SUPER_SERVER) pyxis qli remote spit utilities \
 	$(SHARED_AM) $(LINKABLE_LIBS)
 
 super_firebird: gds.h includes fireboot super_targets dudley superMiscFiles $(INTL) isql locks qli remote spit help msgs msgs_intl dba gfix gsec security_db extlib examples completed
 
-super_targets: 	s_run_codes s_alice s_burp s_dba s_security_c super_client super_server super_utils 
+super_targets: 	s_run_codes s_alice s_burp s_dba s_security_c super_client super_server super_utils
 
 
 #added completed according to inprise tree
@@ -266,7 +269,7 @@ gdslib.apollo:	$(GPRE) $(EXTERNAL_OBJECTS) pyxislib force
 	$(QUIET_ECHO) "Building GDSLIB..."
 	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" gdslib'
 
-gdslib.decosf gdslib.sgi gdslib.epson :	\
+gdslib.decosf gdslib.sgi : \
 	$(GPRE) $(EXTERNAL_OBJECTS) $(GDS_PYXIS) force
 	$(QUIET_ECHO) "Building GDSLIB..."
 	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" gds.so.o'
@@ -345,7 +348,7 @@ security_c: force
 	$(QUIET_ECHO) "Building security.c ..."
 	$(SH) '$(CD) source/utilities; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" security.c'
 
-# Run the codes program (for SUPERSERVER hierarchy), 
+# Run the codes program (for SUPERSERVER hierarchy),
 # thus generating codes.h, iberror.h, etc
 # Note the troubling, use of SCODES macro, and source/jrd/codes in the target
 # it's a hack to get around the directory structure stuff.
@@ -353,7 +356,7 @@ s_run_codes:	$(SCODES)
 	$(QUIET_ECHO) "Running codes in super ..."
 	$(SH) '$(CD) source/super/jrd; source/jrd/codes'
 
-$(SCODES) : super/source/jrd/codes.e 
+$(SCODES) : super/source/jrd/codes.e
 	$(SH) '$(CD) super/source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" codes'
 
 
@@ -436,7 +439,7 @@ include_sgi:	include_generic
 
 include_so:	include_generic
 	$(CP) source/jrd/gds_sun.f $(INCLUDE_DEST)gds.f
- 
+
 include_so_ada:	include_generic
 #	$(ECHO) "sm interbase_sol.a $(INCLUDE_DEST)interbase.a" >> sm_include
 
@@ -671,24 +674,24 @@ makedepend:
 	source/qli/depends.mak \
 	source/remote/depends.mak \
 	source/utilities/depends.mak \
-	source/wal/depends.mak 
-	$(SH) '$(CD) source/alice; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/burp; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/csv; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/dsql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/dudley; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/gpre; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/intl; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/lock; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/isql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/journal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/msgs; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/qli; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/remote; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/utilities; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	$(SH) '$(CD) source/wal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak' 
-	
+	source/wal/depends.mak
+	$(SH) '$(CD) source/alice; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/burp; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/csv; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/dsql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/dudley; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/gpre; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/intl; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/lock; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/isql; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/journal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/msgs; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/qli; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/remote; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/utilities; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+	$(SH) '$(CD) source/wal; $(MAKE) CFLAGS="$(CFLAGS)" depends.mak'
+
 clean:	clean_executables
 	-$(RM) \
 	source/burp/gbaklib.a \
@@ -741,7 +744,7 @@ clean_obj:
 		rm $${ND}/*.a ; \
 		rm $${ND}/*.j ; \
 		rm $${ND}/*.bin ; \
-	done 
+	done
 
 clean_build_gdb:
 	-$(RM) \
@@ -752,7 +755,7 @@ clean_build_gdb:
 
 
 # The installations need to find a better and possibly linux
-# specific home.  The tar installs should probably work with 
+# specific home.  The tar installs should probably work with
 # other unix type of systems.
 
 # I have seperated super and classic out since I needed different

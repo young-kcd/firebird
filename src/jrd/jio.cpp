@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 /* NOTE that this module is used only on platforms that use
@@ -56,10 +59,6 @@
 #endif
 
 #ifdef M88K
-#include <fcntl.h>
-#endif
-
-#ifdef EPSON
 #include <fcntl.h>
 #endif
 
@@ -298,7 +297,7 @@ JIO_put(journal, message, size)
 		break;
 	}
 
-/* Compute next available block.  If there isn't room in this segment, write a 
+/* Compute next available block.  If there isn't room in this segment, write a
    dummy block to take the extra space, then allocate new data segment. */
 
 	block = block_number(data.data_items.segment, data.data_items.block);

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup is required of obsolete "EPSON" port
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -330,7 +333,7 @@ int API_ROUTINE gds__blob_size(
 {
 /**************************************
  *
- *	g d s _ $ b l o b _ s i z e 
+ *	g d s _ $ b l o b _ s i z e
  *
  **************************************
  *
@@ -401,8 +404,8 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
  *
  * Functional description
  *	Extend a database parameter block dynamically
- *	to include runtime info.  Generated 
- *	by gpre to provide host variable support for 
+ *	to include runtime info.  Generated
+ *	by gpre to provide host variable support for
  *	READY statement	options.
  *	This expects the list of variable args
  *	to be zero terminated.
@@ -424,7 +427,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 	va_list	args;
 	USHORT	type;
 
-/* calculate length of database parameter block, 
+/* calculate length of database parameter block,
    setting initial length to include version */
 
 	if (!*dpb || !(new_dpb_length = *dpb_size))
@@ -541,10 +544,10 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
  *
  * Functional description
  *	Extend a database parameter block dynamically
- *	to include runtime info.  Generated 
- *	by gpre to provide host variable support for 
+ *	to include runtime info.  Generated
+ *	by gpre to provide host variable support for
  *	READY statement	options.
- *	This expects one arg at a time. 
+ *	This expects one arg at a time.
  *      the length of the string is passed by the caller and hence
  * 	is not expected to be null terminated.
  * 	this call is a variation of isc_expand_dpb without a variable
@@ -554,8 +557,8 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
  *	parameters either nulled or with proper value and type.
  *
  *  	**** This can be modified to be so at a later date, making sure
- *	**** all callers follow the same convention 
- * 
+ *	**** all callers follow the same convention
+ *
  *	Note: dpb_size is signed short only for compatibility
  *	with other calls (isc_attach_database) that take a dpb length.
  *
@@ -563,7 +566,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 	SSHORT length, new_dpb_length;
 	UCHAR *new_dpb, *p, *q;
 
-/* calculate length of database parameter block, 
+/* calculate length of database parameter block,
    setting initial length to include version */
 
 	if (!*dpb || !(new_dpb_length = *dpb_size))

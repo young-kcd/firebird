@@ -20,9 +20,12 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
- /* $Id: isc_ipc.cpp,v 1.6 2001-12-24 02:50:51 tamlin Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.7 2002-02-16 02:21:27 seanleyne Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -98,9 +101,6 @@ typedef void (*CLIB_ROUTINE SIG_FPTR) ();
 #endif
 #ifdef M88K
 #define GT_32_SIGNALS
-#define HANDLER_ADDR_ARG
-#endif
-#ifdef EPSON
 #define HANDLER_ADDR_ARG
 #endif
 #ifdef UNIXWARE

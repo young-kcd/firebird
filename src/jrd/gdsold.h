@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 
@@ -901,7 +904,6 @@ const char gds_info_forced_writes = 52;
 #define gds__info_db_impl_isc_next         46
 #define gds__info_db_impl_isc_dos          47
 #define gds__info_db_impl_isc_winnt        48
-#define gds__info_db_impl_isc_epson        49
 
 #define gds__info_db_class_access          1
 #define gds__info_db_class_y_valve         2
@@ -951,7 +953,6 @@ const char gds_info_db_impl_isc_delta = 45;
 const char gds_info_db_impl_isc_next = 46;
 const char gds_info_db_impl_isc_dos = 47;
 const char gds_info_db_impl_isc_winnt = 48;
-const char gds_info_db_impl_isc_epson = 49;
 
 const char gds_info_db_class_access = 1;
 const char gds_info_db_class_y_valve = 2;
@@ -965,9 +966,6 @@ const char gds_info_db_class_gateway = 11;
 const char gds_info_db_class_cache = 12;
 
 #endif
-
-
-
 
 
 /*****************************/

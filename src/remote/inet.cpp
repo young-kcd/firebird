@@ -20,10 +20,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001 
+ * FSG 16.03.2001
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 /*
-$Id: inet.cpp,v 1.5 2002-01-04 11:34:16 skywalker Exp $
+$Id: inet.cpp,v 1.6 2002-02-16 02:21:28 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -121,7 +124,7 @@ int h_errno;					/* In Other platforms one of the system header files declares t
 extern int h_errno;
 #endif
 
-#if (defined EPSON || defined UNIXWARE || defined NCR3000 || defined M88K)
+#if (defined UNIXWARE || defined NCR3000 || defined M88K)
 #include <sys/sockio.h>
 #endif
 
@@ -162,7 +165,7 @@ extern int h_errno;
 #define sleep(seconds)  Sleep ((seconds) * 1000)
 typedef int socklen_t;
 
-/* 
+/*
 ** Winsock has a typedef for socket, so #define SOCKET to the typedef here
 ** so that it won't be redefined below.
 */
@@ -880,7 +883,7 @@ PORT INET_analyze(	TEXT*	file_name,
 
 	port->port_protocol = packet->p_acpt.p_acpt_version;
 
-/* once we've decided on a protocol, concatenate the version 
+/* once we've decided on a protocol, concatenate the version
    string to reflect it...  */
 
 	sprintf(buffer, "%s/P%d", port->port_version->str_data, port->port_protocol);
@@ -1566,14 +1569,14 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 	}
 
 	{
-/* If the environment varible ISC_INET_SERVER_HOME is set, 
+/* If the environment varible ISC_INET_SERVER_HOME is set,
  * change the home directory to the specified directory.
  * Note that this will overrule the normal setting of
  * the current directory to the effective user's home directory.
  * This feature was added primarily for testing via remote
  * loopback - but does seem to be of good general use, so
  * is activiated for the production product.
- * 1995-February-27 David Schnepper 
+ * 1995-February-27 David Schnepper
  */
 		char* home = getenv("ISC_INET_SERVER_HOME");
 		if (home) {
@@ -1826,7 +1829,7 @@ static PORT aux_request( PORT port, PACKET * packet)
  **************************************
  *
  * Functional description
- *	A remote interface has requested the server prepare an auxiliary 
+ *	A remote interface has requested the server prepare an auxiliary
  *	connection; the server calls aux_request to set up the connection.
  *
  **************************************/
@@ -2192,7 +2195,7 @@ static void cleanup_port( PORT port)
 {
 /**************************************
  *
- *	c l e a n u p _ p o r t 
+ *	c l e a n u p _ p o r t
  *
  **************************************
  *
@@ -2358,9 +2361,9 @@ static int fork( SOCKET old_handle, USHORT flag)
 
 
 //____________________________________________________________
-//  
+//
 //	Copy an array of p_cnct::p_cnct_repeat.
-//  
+//
 static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
 										size_t							nEntries)
@@ -2459,7 +2462,7 @@ static int parse_line(
 {
 /*****************************************************************
  *
- *	p a r s e _ l i n e 
+ *	p a r s e _ l i n e
  *
  *****************************************************************
  *
@@ -2491,7 +2494,7 @@ static int parse_line(
 
 	if (strcmp(entry1, host_name))
 #ifdef UNIX
-#if !(defined XENIX || defined EPSON || defined UNIXWARE || defined NCR3000)
+#if !(defined XENIX || defined UNIXWARE || defined NCR3000)
 		if (entry1[1] == '@') {
 			if (!innetgr(&entry1[2], host_name, 0, 0))
 				return -1;
@@ -2520,7 +2523,7 @@ static int parse_line(
 /* if they're in the user group: + they're in, - they're out */
 
 #ifdef UNIX
-#if !(defined XENIX || defined EPSON || defined UNIXWARE || defined NCR3000)
+#if !(defined XENIX || defined UNIXWARE || defined NCR3000)
 	if (entry2[1] == '@') {
 		if (innetgr(&entry2[2], 0, user_name, 0)) {
 			if (entry2[0] == '+')
@@ -2529,7 +2532,7 @@ static int parse_line(
 				return FALSE;
 		}
 		else {
-			/* if they're NOT in the user group AND we're excluding it 
+			/* if they're NOT in the user group AND we're excluding it
 			   - they're in */
 
 			if (entry2[0] == '-')
@@ -2566,9 +2569,9 @@ static PORT receive( PORT main_port, PACKET * packet)
 
 	if (!(main_port->port_server_flags & SRVR_multi_client)) {
 		/* loop as long as we are receiving dummy packets, just
-		   throwing them away--note that if we are a server we won't 
-		   be receiving them, but it is better to check for them at 
-		   this level rather than try to catch them in all places where 
+		   throwing them away--note that if we are a server we won't
+		   be receiving them, but it is better to check for them at
+		   this level rather than try to catch them in all places where
 		   this routine is called */
 
 		do {

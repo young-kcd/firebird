@@ -19,10 +19,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001 
+ * FSG 16.03.2001
  */
 /*
-$Id: ibase.h,v 1.4 2001-12-24 02:50:51 tamlin Exp $
+$Id: ibase.h,v 1.5 2002-02-16 02:21:27 seanleyne Exp $
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 #ifndef JRD_IBASE_H
@@ -63,7 +66,7 @@ $Id: ibase.h,v 1.4 2001-12-24 02:50:51 tamlin Exp $
 /******************************************************************/
 
 #define ISC_EXPORT GDS_EXPORT
-#define ISC_FAR 
+#define ISC_FAR
 
 #if (defined(_MSC_VER) && defined(_WIN32)) || \
     (defined(__BORLANDC__) && (defined(__WIN32__) || defined(__OS2__)))
@@ -1529,7 +1532,6 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 #define isc_info_db_impl_isc_next         46
 #define isc_info_db_impl_isc_dos          47
 #define isc_info_db_impl_isc_winnt        48
-#define isc_info_db_impl_isc_epson        49
 
 #define isc_info_db_class_access          1
 #define isc_info_db_class_y_valve         2

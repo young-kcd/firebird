@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -93,7 +96,7 @@ typedef struct itm {
 #define MTAB			"/etc/mnttab"
 #endif
 
-#if (defined SOLARIS || defined M88K || defined UNIXWARE || defined NCR3000 || defined EPSON)
+#if (defined SOLARIS || defined M88K || defined UNIXWARE || defined NCR3000)
 #define SV_MNTENT
 #define NON_MNTENT
 #include <sys/mnttab.h>

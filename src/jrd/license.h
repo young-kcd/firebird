@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.4 2002-02-16 01:58:24 seanleyne Exp $
+ * $Id: license.h,v 1.5 2002-02-16 02:21:27 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -35,6 +35,7 @@
  * now be done in 'builds_win32/original/build_no.ksh'.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  *
  */
 
@@ -167,10 +168,6 @@
 #endif
 #endif
 #endif
-#endif
-
-#ifdef EPSON
-#define FB_PLATFORM	"EP"		/* epson */
 #endif
 
 #ifdef ALPHA_NT
