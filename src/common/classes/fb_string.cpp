@@ -118,8 +118,8 @@ namespace Firebird {
 				, __FILE__, __LINE__
 #endif
 			);
-		x.newStorage[n] = 0;
-		return x.newStorage;
+		bigStorage[n] = 0;
+		return bigStorage;
 	}
 
 	AbstractString::pointer AbstractString::baseAppend(size_type n) {
@@ -130,10 +130,10 @@ namespace Firebird {
 #endif
 			);
 		if (x.oldStorage) {
-			memcpy(x.newStorage, x.oldStorage, x.oldSize);
+			memcpy(bigStorage, x.oldStorage, x.oldSize);
 		}
-		x.newStorage[length()] = 0;
-		return &x.newStorage[x.oldSize];
+		bigStorage[length()] = 0;
+		return &bigStorage[x.oldSize];
 	}
 
 	AbstractString::pointer AbstractString::baseInsert(size_type p0, size_type n) {
@@ -147,16 +147,16 @@ namespace Firebird {
 #endif
 			);
 		if (x.oldStorage) {
-			memcpy(x.newStorage, x.oldStorage, p0);
-			memcpy(&x.newStorage[p0 + n], 
+			memcpy(bigStorage, x.oldStorage, p0);
+			memcpy(&bigStorage[p0 + n], 
 					&x.oldStorage[p0], x.oldSize - p0);
 		}
 		else {
-			memmove(&x.newStorage[p0 + n], &x.newStorage[p0], 
+			memmove(&bigStorage[p0 + n], &bigStorage[p0], 
 				x.oldSize - p0);
 		}
-		x.newStorage[length()] = 0;
-		return &x.newStorage[p0];
+		bigStorage[length()] = 0;
+		return &bigStorage[p0];
 	}
 
 	void AbstractString::baseErase(size_type p0, size_type n) {
@@ -168,18 +168,23 @@ namespace Firebird {
 #endif
 			);
 		if (x.oldStorage) {
-			memcpy(x.newStorage, x.oldStorage, p0);
-			memcpy(&x.newStorage[p0], &x.oldStorage[p0 + n], 
+			memcpy(bigStorage, x.oldStorage, p0);
+			memcpy(&bigStorage[p0], &x.oldStorage[p0 + n], 
 				x.oldSize - (p0 + n));
 		}
 		else {
-			memmove(&x.newStorage[p0], 
-				&x.newStorage[p0 + n], x.oldSize - (p0 + n));
+			memmove(&bigStorage[p0], 
+				&bigStorage[p0 + n], x.oldSize - (p0 + n));
 		}
-		x.newStorage[length()] = 0;
+		bigStorage[length()] = 0;
 	}
 
-/*	void AbstractString::reserve(size_type n) {
+/*	
+	*** Firebird::string uses algorithm of freeing memory used by 
+	*** very long strings, when length of string becomes MUCH smaller.
+	*** Obviously, it conflicts with reserve() STL-like method.
+	*** Therefore - no implementation for a while.
+	void AbstractString::reserve(size_type n) {
 		if (n <= actualSize) {
 			return;
 		}
@@ -195,9 +200,9 @@ namespace Firebird {
 			forced = n;
 		}
 		if (x.oldStorage) {
-			memcpy(x.newStorage, x.oldStorage, l);
+			memcpy(bigStorage, x.oldStorage, l);
 		}
-		x.newStorage[l] = 0;
+		bigStorage[l] = 0;
 	}*/
 
 	void AbstractString::resize(size_type n, char_type c) {
@@ -211,12 +216,12 @@ namespace Firebird {
 #endif
 			);
 		if (x.oldStorage) {
-			memcpy(x.newStorage, x.oldStorage, n < x.oldSize ? n : x.oldSize);
+			memcpy(bigStorage, x.oldStorage, n < x.oldSize ? n : x.oldSize);
 		}
 		if (n > x.oldSize) {
-			memset(&x.newStorage[x.oldSize], c, n - x.oldSize);
+			memset(&bigStorage[x.oldSize], c, n - x.oldSize);
 		}
-		x.newStorage[n] = 0;
+		bigStorage[n] = 0;
 	}
 
 	AbstractString::size_type AbstractString::rfind(const_pointer s, size_type pos) const {
@@ -373,12 +378,12 @@ namespace Firebird {
 #endif
 			);
 		if (x.oldStorage) {
-			memcpy(x.newStorage, b, NewLength);
+			memcpy(bigStorage, b, NewLength);
 		}
-		else if (b != x.newStorage) {
-			memmove(x.newStorage, b, NewLength);
+		else if (b != bigStorage) {
+			memmove(bigStorage, b, NewLength);
 		}
-		x.newStorage[NewLength] = 0;
+		bigStorage[NewLength] = 0;
 	}
 
 	void AbstractString::printf(const char* format,...) {

@@ -54,13 +54,8 @@ namespace Firebird
 		static const size_type npos;
 		enum {smallStorageSize = 32, reserveSize = 16, keepSize = 512};
 	protected:
-		union {
-			char_type smallStorage[smallStorageSize];
-// BRS 14/05/04: ISO C++ doesn't allow anonymous struct inside anonymous union
-//			struct {
-				char_type* bigStorage;
-//			};
-		};
+		char_type smallStorage[smallStorageSize];
+		char_type* bigStorage;
 		unsigned short userSize, actualSize;
 	private:
 		inline void checkPos(size_type pos) const {
@@ -96,33 +91,37 @@ namespace Firebird
 		inline pointer createStorage(size_type uSize) {
 			checkSize(uSize);
 			userSize = uSize;
-			if (uSize < smallStorageSize) {
+			if (uSize < smallStorageSize) 
+			{
 				actualSize = smallStorageSize;
-				smallStorage[uSize] = 0;
-				return smallStorage;
+				bigStorage = smallStorage;
 			}
-			allocateStorage(uSize
+			else 
+			{
+				allocateStorage(uSize
 #ifdef DEV_BUILD
-				, __FILE__, __LINE__
+					, __FILE__, __LINE__
 #endif
-				);
+					);
+			}	
 			bigStorage[uSize] = 0;
 			return bigStorage;
 		}
-		// Returns (possibly reallocated) newStorage for current string,
-		// setting values for oldStorage (if string is not
-		// updated inplace) and oldSize. oldStorage
-		// should be released after use if oldSize >= smallStorageSize
+
+		// Temporary structure returned by openStorage()
 		struct StoragePair {
-			pointer newStorage, oldStorage;
+			pointer oldStorage;
 			size_type oldSize;
-			char_type oldSmallStorage[smallStorageSize];
 			~StoragePair() {
 				if (oldSize >= AbstractString::smallStorageSize)
 					delete[] oldStorage;
 			}
 		};
 		friend struct StoragePair;
+		// Creates (possibly reallocated) bigStorage for new string.
+		// Sets values for oldStorage
+		// (if string is not updated inplace) and oldSize.
+		// oldStorage will be released in StoragePair's destructor.
 		inline void openStorage(StoragePair& rc, size_type newSize
 #ifdef DEV_BUILD
 			, const char *file, int line
@@ -132,36 +131,37 @@ namespace Firebird
 			rc.oldStorage = 0;
 			rc.oldSize = userSize;
 			userSize = newSize;
-			if (newSize < smallStorageSize) {
-				if (actualSize > smallStorageSize) {
+
+			// new string fits into smallStorage
+			if (newSize < smallStorageSize) 
+			{
+				// old bigStorage should be deallocated
+				if (actualSize > smallStorageSize) 
+				{
 					rc.oldStorage = bigStorage;
 				}
-				rc.newStorage = smallStorage;
+				bigStorage = smallStorage;
 				actualSize = smallStorageSize;
 				return;
 			}
+
+			// size change was small enough not to reallocate memory
 			if (newSize < actualSize && newSize + keepSize > actualSize) {
-				rc.newStorage = bigStorage;
 				return;
 			}
-			if (actualSize <= smallStorageSize) {
-				memcpy(rc.oldSmallStorage, smallStorage, rc.oldSize);
-				rc.oldStorage = rc.oldSmallStorage;
-			}
-			else {
-				rc.oldStorage = bigStorage;
-			}
+
+			// do memory reallocation
+			rc.oldStorage = bigStorage;
 			allocateStorage(newSize
 #ifdef DEV_BUILD
 				, file, line
 #endif
 				);
-			rc.newStorage = bigStorage;
 		}
+
 		// Returns pointer to current storage.
 		inline pointer getStorage() {
-			return actualSize <= smallStorageSize ? 
-							smallStorage : bigStorage;
+			return bigStorage;
 		}
 	protected:
 		AbstractString(size_type sizeL, const_pointer datap);
@@ -169,12 +169,14 @@ namespace Firebird
 					 const_pointer p2, size_type n2);
 		AbstractString(const AbstractString& v);
 		inline AbstractString() {
+			bigStorage = smallStorage;
 			actualSize = smallStorageSize;
 			userSize = 0;
 			smallStorage[0] = 0;
 		}
 		AbstractString(size_type sizeL, char_type c);
 		inline explicit AbstractString(MemoryPool& p) : AutoStorage(p) {
+			bigStorage = smallStorage;
 			actualSize = smallStorageSize;
 			userSize = 0;
 			smallStorage[0] = 0;
@@ -202,8 +204,7 @@ namespace Firebird
 		void baseTrim(TrimType WhereTrim, const_pointer ToTrim);
 	public:
 		inline const_pointer c_str() const {
-			return actualSize <= smallStorageSize ? 
-							smallStorage : bigStorage;
+			return bigStorage;
 		}
 		inline size_type length() const {
 			return userSize;
