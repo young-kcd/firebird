@@ -3234,9 +3234,11 @@ static bool get_indices(
 		/* if this isn't the first index, put out a comma */
 
 		if (plan[-1] != '(' && plan[-1] != ' ') {
-			if (--plan_length < 0)
+			plan_length -= 2;
+			if (plan_length < 0)
 				return false;
 			*plan++ = ',';
+			*plan++ = ' ';
 		}
 
 		/* now put out the index name */
@@ -3516,9 +3518,11 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		/* if this isn't the first relation, put out a comma */
 
 		if (plan[-1] != '(') {
-			if (--plan_length < 0)
+			plan_length -= 2;
+			if (plan_length < 0)
 				return false;
 			*plan++ = ',';
+			*plan++ = ' ';
 		}
 
 		/* put out the relation name */
@@ -3586,9 +3590,11 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			   but not the first item, then put out a comma */
 
 			if (*parent_join_count && plan[-1] != '(') {
-				if (--plan_length < 0)
+				plan_length -= 2;
+				if (plan_length < 0)
 					return false;
 				*plan++ = ',';
+				*plan++ = ' ';
 			}
 
 			/* put out the join type */
@@ -3665,6 +3671,16 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 					return false;
 			}
 
+			if (rsb_type == gds_info_rsb_navigate &&
+				*explain == gds_info_rsb_indexed)
+			{
+				if (!get_rsb_item(&explain_length, &explain, &plan_length,
+								  &plan, &join_count, level_ptr))
+				{
+					return false;
+				}
+			}
+
 			if (rsb_type == gds_info_rsb_indexed ||
 				rsb_type == gds_info_rsb_ext_indexed) {
 				if (--plan_length < 0)
@@ -3704,9 +3720,11 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			/* if this isn't the first item in the list, put out a comma */
 
 			if (*parent_join_count && plan[-1] != '(') {
-				if (--plan_length < 0)
+				plan_length -= 2;
+				if (plan_length < 0)
 					return false;
 				*plan++ = ',';
+				*plan++ = ' ';
 			}
 
 			p = "SORT (";

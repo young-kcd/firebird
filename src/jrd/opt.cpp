@@ -2295,9 +2295,24 @@ static bool dump_rsb(JRD_REQ request,
 	case rsb_navigate:
 		*buffer++ = gds_info_rsb_navigate;
 		if (!dump_index((JRD_NOD) rsb->rsb_arg[RSB_NAV_index], 
-			&buffer, buffer_length)) 
+						&buffer, buffer_length)) 
 		{
 			return false;
+		}
+		// dimitr:	here we report indicies used to limit
+		//			the navigational-based retrieval
+		if (rsb->rsb_arg[RSB_NAV_inversion]) {
+			*buffer_length -= 2;
+			if (*buffer_length < 0) {
+				return false;
+			}
+			*buffer++ = gds_info_rsb_type;
+			*buffer++ = gds_info_rsb_indexed;
+			if (!dump_index((JRD_NOD) rsb->rsb_arg[RSB_NAV_inversion],
+							&buffer, buffer_length))
+			{
+				return false;
+			}
 		}
 		break;
 
@@ -4559,7 +4574,7 @@ static RSB gen_rsb(TDBB tdbb,
 }
 
 
-static RSB gen_skip (TDBB tdbb, OPT opt, RSB prior_rsb, JRD_NOD node)
+static RSB gen_skip(TDBB tdbb, OPT opt, RSB prior_rsb, JRD_NOD node)
 {
 /**************************************
  *
