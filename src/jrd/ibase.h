@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.24 2003-01-23 03:33:53 brodsom Exp $
+$Id: ibase.h,v 1.25 2003-02-10 16:28:05 alexpeshkoff Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -41,7 +41,6 @@ $Id: ibase.h,v 1.24 2003-01-23 03:33:53 brodsom Exp $
 
 
 #include "fb_types.h"
-#include "y_ref.h"
 
 #define isc_version4
 
