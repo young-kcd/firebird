@@ -269,6 +269,10 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	strncpy(uname, user_name, sizeof uname);
 	uname[sizeof uname - 1] = 0;
 
+	THREAD_EXIT();
+	mutex.aquire();
+	THREAD_ENTER();
+
 	// Attach database and compile request
 
 	if (!prepare())
@@ -280,6 +284,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 			isc_detach_database(status, &tmp);
 		}
 		THREAD_ENTER();
+		mutex.release();
 		ERR_post(isc_psw_attach, 0);
 	}
 
@@ -290,6 +295,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
 		THREAD_ENTER();
+		mutex.release();
 		ERR_post(isc_psw_start_trans, 0);
 	}
 
@@ -320,6 +326,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 		isc_detach_database(status, &lookup_db);
 	}
 	THREAD_ENTER();
+	mutex.release();
 
 	return found;
 }
@@ -416,13 +423,9 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	// found there. This means that another database must be accessed, and
 	// that means the current context must be saved and restored.
 
-	THREAD_EXIT();
-	instance.mutex.aquire();
-	THREAD_ENTER();
 	TEXT pw1[MAX_PASSWORD_LENGTH + 1];
 	const bool found = instance.lookup_user(name, uid, gid, pw1);
 	pw1[MAX_PASSWORD_LENGTH] = 0;
-	instance.mutex.release();
 	Firebird::string storedHash(pw1, MAX_PASSWORD_LENGTH);
 	storedHash.rtrim();
 
