@@ -125,7 +125,7 @@ if "%VS_VER%"=="msvc6" (
 @del %ROOT_PATH%\gen\examples\intlemp.fdb 2>nul
 @%ROOT_PATH%\gen\examples\empbuild.exe %DB_PATH%/gen/examples/employee.fdb
 :: The script intldml.sql contains a reference to intlemp.fdb that must be changed
-@del isql.tmp
+@del isql.tmp 2>nul
 @echo s;intlemp.fdb;%SERVER_NAME%:%ROOT_PATH%\gen\examples\intlemp.fdb;g > isql.tmp
 @%ROOT_PATH%\gen\examples\intlbld.exe %DB_PATH%/gen/examples/intlemp.fdb
 @cd %ROOT_PATH%\builds\win32
