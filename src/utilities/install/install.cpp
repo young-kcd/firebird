@@ -126,7 +126,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		// The target DLL already exists
 		if (! sw_force)
 		{
-			if (targetverMS > targetverMS)
+			if (targetverMS > newverMS)
 				return FB_INSTALL_NEWER_VERSION_FOUND;
 			if (targetverMS == newverMS && targetverLS > newverLS)
 				return FB_INSTALL_NEWER_VERSION_FOUND;
