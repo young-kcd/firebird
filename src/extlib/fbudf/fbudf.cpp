@@ -38,7 +38,10 @@ be easy to add needed headers to stdafx.h after a makefile is built.
 
 #include "stdafx.h"
 
+#ifndef FBUDF_EXPORTS
 #define FBUDF_EXPORTS
+#endif
+
 #include "fbudf.h"
 
 

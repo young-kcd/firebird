@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 
-#if defined __BORLANDC__ && defined __WIN32__
+#ifdef __BORLANDC__
 #define EXPORT _export
 #define MATHERR	_matherr
 #else
