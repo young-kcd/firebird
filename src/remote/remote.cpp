@@ -255,7 +255,7 @@ RRQ DLL_EXPORT REMOTE_find_request(RRQ request, USHORT level)
 
 	request->rrq_levels = (RRQ) ALLR_clone(&request->rrq_header);
 /* NOMEM: handled by ALLR_clone, FREE: REMOTE_remove_request() */
-#ifdef REMOTE_DEBUG_MEMORY
+#ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("REMOTE_find_request       allocate request %x\n",
 			  request->rrq_levels);
 #endif
@@ -271,7 +271,7 @@ RRQ DLL_EXPORT REMOTE_find_request(RRQ request, USHORT level)
 		if (!(format = tail->rrq_format))
 			continue;
 		tail->rrq_xdr = msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
-#ifdef REMOTE_DEBUG_MEMORY
+#ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("REMOTE_find_request       allocate message %x\n", msg);
 #endif
 		msg->msg_next = msg;
@@ -457,7 +457,7 @@ STR DLL_EXPORT REMOTE_make_string(SCHAR * input)
  **************************************/
 	USHORT length = strlen(input);
 	STR string = (STR) ALLOCV(type_str, length);
-#ifdef REMOTE_DEBUG_MEMORY
+#ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("REMOTE_make_string        allocate string  %x\n", string);
 #endif
 	strcpy(string->str_data, input);
@@ -485,7 +485,7 @@ void DLL_EXPORT REMOTE_release_messages( REM_MSG messages)
 		while (TRUE) {
 			temp = message;
 			message = message->msg_next;
-#ifdef REMOTE_DEBUG_MEMORY
+#ifdef DEBUG_REMOTE_MEMORY
 			ib_printf("REMOTE_release_messages   free message     %x\n",
 					  temp);
 #endif
@@ -529,7 +529,7 @@ void DLL_EXPORT REMOTE_release_request( RRQ request)
 		for (; tail <= end; tail++)
 			if (message = tail->rrq_message) {
 				if (!request->rrq_level) {
-#ifdef REMOTE_DEBUG_MEMORY
+#ifdef DEBUG_REMOTE_MEMORY
 					ib_printf
 						("REMOTE_release_request    free format      %x\n",
 						 tail->rrq_format);
@@ -539,7 +539,7 @@ void DLL_EXPORT REMOTE_release_request( RRQ request)
 				REMOTE_release_messages(message);
 			}
 		next = request->rrq_levels;
-#ifdef REMOTE_DEBUG_MEMORY
+#ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("REMOTE_release_request    free request     %x\n", request);
 #endif
 		ALLR_release(request);
@@ -736,7 +736,7 @@ OBJCT DLL_EXPORT REMOTE_set_object(PORT port, BLK object, OBJCT slot)
 		return (OBJCT) NULL;
 
 	port->port_object_vector = new_vector = (VEC) ALLOCV(type_vec, slot + 10);
-#ifdef REMOTE_DEBUG_MEMORY
+#ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("REMOTE_set_object         allocate vector  %x\n", new_vector);
 #endif
 	port->port_objects = new_vector->vec_object;
@@ -748,7 +748,7 @@ OBJCT DLL_EXPORT REMOTE_set_object(PORT port, BLK object, OBJCT slot)
 		end = q + (int) vector->vec_count;
 		while (q < end)
 			*p++ = *q++;
-#ifdef REMOTE_DEBUG_MEMORY
+#ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("REMOTE_release_request    free vector      %x\n", vector);
 #endif
 		ALLR_release(vector);
