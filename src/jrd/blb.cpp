@@ -33,12 +33,15 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.70 2004-04-27 01:45:53 skidder Exp $
+$Id: blb.cpp,v 1.71 2004-04-29 17:48:39 brodsom Exp $
 */
 
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/common.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
+
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/val.h"
@@ -52,7 +55,7 @@ $Id: blb.cpp,v 1.70 2004-04-27 01:45:53 skidder Exp $
 #include "../jrd/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/cch.h"
-#include "../jrd/common.h"
+//#include "../jrd/common.h"
 #include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
@@ -227,7 +230,7 @@ blb* BLB_create2(thread_db* tdbb,
 		filter = find_filter(tdbb, from, to);
 		filter_required = true;
 	}
-	else if (to == BLOB_text && (from_charset != to_charset)) {
+	else if (to == isc_blob_text && (from_charset != to_charset)) {
 		if (from_charset == CS_dynamic)
 			from_charset = tdbb->tdbb_attachment->att_charset;
 		if (to_charset == CS_dynamic)
@@ -985,7 +988,7 @@ void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, j
 		MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
 		blob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid);
 		blob_desc.dsc_length = MOV_get_string_ptr(from_desc, &ttype, &fromstr, 0, 0);
-		if (from_desc->dsc_sub_type == BLOB_text)
+		if (from_desc->dsc_sub_type == isc_blob_text)
 		{
 		/* I have doubts on the merits of this charset assignment since BLB_create2
 		calculates charset internally and assigns it to fields inside blb struct.
@@ -1073,7 +1076,7 @@ blb* BLB_open2(thread_db* tdbb,
 		filter = find_filter(tdbb, from, to);
 		filter_required = true;
 	}
-	else if (to == BLOB_text && (from_charset != to_charset)) {
+	else if (to == isc_blob_text && (from_charset != to_charset)) {
 		if (from_charset == CS_dynamic)
 			from_charset = tdbb->tdbb_attachment->att_charset;
 		if (to_charset == CS_dynamic)
@@ -1693,7 +1696,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 	blb* blob = 0;
 
 	switch (action) {
-	case ACTION_open:
+	case isc_blob_filter_open:
 		blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
 		control->source_handle = blob;
 		control->ctl_total_length = blob->blb_length;
@@ -1701,7 +1704,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 		control->ctl_number_segments = blob->blb_count;
 		return FB_SUCCESS;
 
-	case ACTION_get_segment:
+	case isc_blob_filter_get_segment:
 		blob = control->source_handle;
 		control->ctl_segment_length =
 			BLB_get_segment(tdbb, blob, control->ctl_buffer,
@@ -1714,30 +1717,30 @@ static ISC_STATUS blob_filter(	USHORT	action,
 		}
 		return FB_SUCCESS;
 
-	case ACTION_create:
+	case isc_blob_filter_create:
 		control->source_handle =
 			BLB_create2(tdbb, transaction, blob_id, 0, NULL);
 		return FB_SUCCESS;
 
-	case ACTION_put_segment:
+	case isc_blob_filter_put_segment:
 		blob = control->source_handle;
 		BLB_put_segment(tdbb, blob, control->ctl_buffer,
 						control->ctl_buffer_length);
 		return FB_SUCCESS;
 
-	case ACTION_close:
+	case isc_blob_filter_close:
 		BLB_close(tdbb, control->source_handle);
 		return FB_SUCCESS;
 
-	case ACTION_alloc:
+	case isc_blob_filter_alloc:
 	    // pointer to ISC_STATUS!!!
 		return (ISC_STATUS) FB_NEW(*transaction->tra_pool) BlobControl(*transaction->tra_pool);
 
-	case ACTION_free:
+	case isc_blob_filter_free:
 		delete control;
 		return FB_SUCCESS;
 
-	case ACTION_seek:
+	case isc_blob_filter_seek:
 		return BLB_lseek(control->source_handle, mode, offset);
 
 	default:

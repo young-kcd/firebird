@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.30 2004-02-02 11:01:26 robocop Exp $
+//	$Id: cmd.cpp,v 1.31 2004-04-29 17:47:43 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -34,7 +34,7 @@
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
-#include "../jrd/constants.h"
+//#include "../jrd/constants.h"
 #include "../gpre/cmd_proto.h"
 #include "../gpre/cme_proto.h"
 #include "../gpre/cmp_proto.h"
@@ -2508,7 +2508,7 @@ static void put_dtype( gpre_req* request, const gpre_fld* field)
 		put_numeric(request, isc_dyn_fld_sub_type, field->fld_sub_type);
 		put_numeric(request, isc_dyn_fld_segment_length,
 					field->fld_seg_length);
-		if (field->fld_sub_type == BLOB_text && field->fld_charset_id)
+		if (field->fld_sub_type == isc_blob_text && field->fld_charset_id)
 			put_numeric(request, isc_dyn_fld_character_set,
 						field->fld_charset_id);
 		return;

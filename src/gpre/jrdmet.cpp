@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.14 2004-01-28 07:50:27 robocop Exp $
+//	$Id: jrdmet.cpp,v 1.15 2004-04-29 17:47:43 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -104,7 +104,7 @@ void JRDMET_init( DBB db)
 			else if (field->fld_dtype == dtype_blob) {
 				field->fld_dtype = dtype_blob;
 				field->fld_flags |= FLD_blob;
-				if (gfield->gfld_sub_type == BLOB_text)
+				if (gfield->gfld_sub_type == isc_blob_text)
 					field->fld_charset_id = CS_METADATA;
 			}
 

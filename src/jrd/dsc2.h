@@ -372,29 +372,29 @@ inline bool dsc::isBlob() const
 
 inline bool dsc::isBinaryBlob() const
 {
-	return isBlob() && dsc_sub_type == BLOB_untyped;
+	return isBlob() && dsc_sub_type == isc_blob_untyped;
 }
 
 inline bool dsc::isTextBlob() const
 {
-	return isBlob() && dsc_sub_type == BLOB_text;
+	return isBlob() && dsc_sub_type == isc_blob_text;
 }
 
 inline bool dsc::isMetadataBlob() const
 {
 	return isBlob()
-		&& dsc_sub_type >= BLOB_blr
-		&& dsc_sub_type < BLOB_max_predefined_subtype;
+		&& dsc_sub_type >= isc_blob_blr
+		&& dsc_sub_type < isc_blob_max_predefined_subtype;
 }
 
 inline bool dsc::isReservedBlob() const
 {
-	return isBlob() && dsc_sub_type >= BLOB_max_predefined_subtype;
+	return isBlob() && dsc_sub_type >= isc_blob_max_predefined_subtype;
 }
 
 inline bool dsc::isUserDefinedBlob() const
 {
-	return isBlob() && dsc_sub_type < BLOB_untyped;
+	return isBlob() && dsc_sub_type < isc_blob_untyped;
 }
 
 

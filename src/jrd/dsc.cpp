@@ -863,7 +863,7 @@ void DSC_make_descriptor(DSC* desc,
 	case blr_blob:
 		desc->dsc_length = 2 * sizeof(SLONG);
 		desc->dsc_dtype = dtype_blob;
-		if (sub_type == BLOB_text) {
+		if (sub_type == isc_blob_text) {
 			fb_assert(charset <= MAX_SCHAR);
 			desc->dsc_scale = (SCHAR) charset;
 		}

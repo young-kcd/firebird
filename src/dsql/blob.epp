@@ -63,7 +63,7 @@ void API_ROUTINE isc_blob_default_desc(
  *
  **************************************/
 
-	desc->blob_desc_subtype = BLOB_text;
+	desc->blob_desc_subtype = isc_blob_text;
 	desc->blob_desc_charset = CS_dynamic;
 	desc->blob_desc_segment_size = 80;
 

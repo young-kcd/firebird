@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.43 2004-04-28 22:13:45 brodsom Exp $
+ * $Id: show.epp,v 1.44 2004-04-29 17:48:08 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -239,8 +239,8 @@ static const SCHAR db_items[] = {
  */
 static const UCHAR metadata_text_bpb[] = {
 	isc_bpb_version1,
-	isc_bpb_source_type, 1, BLOB_text,
-	isc_bpb_target_type, 1, BLOB_text,
+	isc_bpb_source_type, 1, isc_blob_text,
+	isc_bpb_target_type, 1, isc_blob_text,
 	isc_bpb_source_interp, 1, CS_METADATA,
 	isc_bpb_target_interp, 1, CS_dynamic
 };

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.38 2004-02-02 11:01:26 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.39 2004-04-29 17:47:43 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -54,8 +54,8 @@ extern bool sw_cstring;
 extern DBB isc_databases;
 
 static const UCHAR blr_bpb[] = { isc_bpb_version1,
-	isc_bpb_source_type, 1, BLOB_blr,
-	isc_bpb_target_type, 1, BLOB_blr
+	isc_bpb_source_type, 1, isc_blob_blr,
+	isc_bpb_target_type, 1, isc_blob_blr
 };
 
 #ifdef SCROLLABLE_CURSORS

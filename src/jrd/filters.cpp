@@ -136,7 +136,7 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
  *	Get next segment from a access control list.
  *
  **************************************/
-	if (action != ACTION_open)
+	if (action != isc_blob_filter_open)
 		return string_filter(action, control);
 
 /* Initialize for retrieval */
@@ -151,7 +151,7 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 
 	USHORT length;
 	const ISC_STATUS status =
-		caller(ACTION_get_segment, control, (USHORT) l, temp, &length);
+		caller(isc_blob_filter_get_segment, control, (USHORT) l, temp, &length);
 		
 	TEXT line[256];
 
@@ -219,7 +219,7 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
  *	doesn't complain.
  *
  **************************************/
-	if (action != ACTION_open)
+	if (action != isc_blob_filter_open)
 		return string_filter(action, control);
 
 /* Initialize for retrieval */
@@ -233,7 +233,7 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
 
 	USHORT length;
 	const ISC_STATUS status =
-		caller(ACTION_get_segment, control, (USHORT) l, temp, &length);
+		caller(isc_blob_filter_get_segment, control, (USHORT) l, temp, &length);
 
 	if (!status) {
 		if ((l > length) && (temp[length - 1] != blr_eoc))
@@ -264,14 +264,14 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
  **************************************/
 /* Unless this is a get segment call, just return success */
 
-	if (action != ACTION_get_segment)
+	if (action != isc_blob_filter_get_segment)
 		return FB_SUCCESS;
 
 /* Loop thru descriptors looking for one with a data type */
 	dsc desc;
 	for (;;) {
         USHORT length;
-		const ISC_STATUS status = caller(ACTION_get_segment,
+		const ISC_STATUS status = caller(isc_blob_filter_get_segment,
 						control,
 						sizeof(desc),
 						reinterpret_cast<UCHAR*>(&desc), &length);
@@ -327,12 +327,12 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
  *	Get next segment from a relation runtime summary blob.
  *
  **************************************/
-	if (action == ACTION_close)
+	if (action == isc_blob_filter_close)
 		return string_filter(action, control);
 
 /* Unless this is a get segment call, just return success */
 
-	if (action != ACTION_get_segment)
+	if (action != isc_blob_filter_get_segment)
 		return FB_SUCCESS;
 
 /* If there is a string filter active, use it first */
@@ -341,7 +341,7 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 		const ISC_STATUS astatus = string_filter(action, control);
 		if (astatus != isc_segstr_eof)
 			return astatus;
-		string_filter(ACTION_close, control);
+		string_filter(isc_blob_filter_close, control);
 	}
 
 /* Loop thru descriptors looking for one with a data type */
@@ -352,7 +352,7 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 
 	USHORT length;
 	const ISC_STATUS status =
-		caller(ACTION_get_segment, control, buff_len, buff, &length);
+		caller(isc_blob_filter_get_segment, control, buff_len, buff, &length);
 
 	if (status == isc_segment)
 		return isc_segstr_eof;
@@ -477,7 +477,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 	BlobControl* source;
 
 	switch (action) {
-	case ACTION_open:
+	case isc_blob_filter_open:
 		source = control->ctl_handle;
 		control->ctl_total_length = source->ctl_total_length;
 		control->ctl_max_segment = source->ctl_max_segment;
@@ -486,23 +486,23 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 			control->ctl_data[3] = 0;
 		return FB_SUCCESS;
 
-	case ACTION_close:
+	case isc_blob_filter_close:
 		if (control->ctl_data[1]) {
 			gds__free((SLONG *) control->ctl_data[1]);
 			control->ctl_data[1] = 0;
 		}
 		return FB_SUCCESS;
 
-	case ACTION_get_segment:
+	case isc_blob_filter_get_segment:
 		break;
 
-	case ACTION_put_segment:
-	case ACTION_create:
-	case ACTION_seek:
+	case isc_blob_filter_put_segment:
+	case isc_blob_filter_create:
+	case isc_blob_filter_seek:
 		return isc_uns_ext;
 
-	case ACTION_alloc:
-	case ACTION_free:
+	case isc_blob_filter_alloc:
+	case isc_blob_filter_free:
 		return FB_SUCCESS;
 
 	default:
@@ -510,7 +510,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 		return isc_uns_ext;
 	}
 
-/* Drop thru for ACTION_get_segment. */
+/* Drop thru for isc_blob_filter_get_segment. */
 
 	const TEXT* left_over = 0;
 	USHORT left_length = 0;
@@ -544,7 +544,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 					(control->ctl_buffer_length - buffer_used > 0)))
 	{
 		USHORT l = control->ctl_buffer_length - buffer_used;
-		const ISC_STATUS status = caller(ACTION_get_segment, control, l,
+		const ISC_STATUS status = caller(isc_blob_filter_get_segment, control, l,
 						control->ctl_buffer + buffer_used, &l);
 		if (status == isc_segment)
 			control->ctl_data[2] = isc_segment;
@@ -582,7 +582,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 			if (!control->ctl_data[1]) {
 				control->ctl_data[1] =
 					(IPTR) gds__alloc((SLONG) control->ctl_buffer_length);
-				/* FREE: above & ACTION_close in this procedure */
+				/* FREE: above & isc_blob_filter_close in this procedure */
 				if (!control->ctl_data[1])	/* NOMEM: */
 					return isc_virmemexh;
 				control->ctl_data[3] = control->ctl_buffer_length;
@@ -673,8 +673,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	USHORT result_length;
 
 	switch (action) {
-	case ACTION_open:
-	case ACTION_create:
+	case isc_blob_filter_open:
+	case isc_blob_filter_create:
 		for (i = 0; i < FB_NELEM(control->ctl_data); i++)
 			control->ctl_data[i] = 0;
 		aux = NULL;
@@ -686,7 +686,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		dest_cs = control->ctl_to_sub_type;
 
 		aux = (ctlaux*) gds__alloc((SLONG) sizeof(*aux));
-		/* FREE: on ACTION_close in this routine */
+		/* FREE: on isc_blob_filter_close in this routine */
 		if (!aux)				/* NOMEM: */
 			return isc_virmemexh;
 #ifdef DEBUG_GDS_ALLOC
@@ -708,7 +708,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			   a filter from <source> to <Unicode>.
 			   recursively using the same routine. */
 
-			if (action == ACTION_open) {
+			if (action == isc_blob_filter_open) {
 				aux->ctlaux_obj1 =
 					INTL_convert_lookup(tdbb, dest_cs, CS_UNICODE_UCS2);
 			}
@@ -728,7 +728,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 			// ISC_STATUS to pointer!
 			aux->ctlaux_subfilter =
-				(BlobControl*) caller(ACTION_alloc, control, 0, NULL, NULL);
+				(BlobControl*) caller(isc_blob_filter_alloc, control, 0, NULL, NULL);
 
 			/* This is freed in BLF_close_filter */
 
@@ -738,7 +738,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			control->ctl_source = filter_transliterate_text;
 			source = control->ctl_handle;
 
-			if (action == ACTION_open) {
+			if (action == isc_blob_filter_open) {
 				control->ctl_from_sub_type = CS_UNICODE_UCS2;
 				aux->ctlaux_subfilter->ctl_to_sub_type = CS_UNICODE_UCS2;
 			}
@@ -755,7 +755,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 				return status;
 		}
 
-		if (action == ACTION_open) {
+		if (action == isc_blob_filter_open) {
 			control->ctl_max_segment =
 				aux->ctlaux_obj1.convert(NULL, 0, NULL,
 						source->ctl_max_segment, &err_code, &err_position);
@@ -779,7 +779,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 				MAX(aux->ctlaux_buffer1_len,
 					(80 * aux->ctlaux_expansion_factor) / EXP_SCALE);
 		}
-		else {					/* ACTION_create */
+		else {					/* isc_blob_filter_create */
 			/* In a create, the source->ctl_max_segment size isn't set (as
 			 * nothing has been written!).  Therefore, take a best guess
 			 * for an appropriate buffer size, allocate that, and re-allocate
@@ -804,7 +804,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		aux->ctlaux_buffer1 =
 			(BYTE *) gds__alloc((SLONG) aux->ctlaux_buffer1_len);
-		/* FREE: on ACTION_close in this procedure */
+		/* FREE: on isc_blob_filter_close in this procedure */
 		if (!aux->ctlaux_buffer1)	/* NOMEM: */
 			return isc_virmemexh;
 
@@ -815,7 +815,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		return FB_SUCCESS;
 
-	case ACTION_close:
+	case isc_blob_filter_close:
 		if (aux && aux->ctlaux_buffer1) {
 			gds__free((SLONG *) aux->ctlaux_buffer1);
 			aux->ctlaux_buffer1 = NULL;
@@ -828,11 +828,11 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		}
 		return FB_SUCCESS;
 
-	case ACTION_get_segment:
+	case isc_blob_filter_get_segment:
 		/* Fall through to handle get_segment below */
 		break;
 
-	case ACTION_put_segment:
+	case isc_blob_filter_put_segment:
 		/* Now convert from the input buffer into the temporary buffer */
 
 		/* How much space do we need to convert? */
@@ -845,7 +845,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			gds__free((SLONG *) aux->ctlaux_buffer1);
 			aux->ctlaux_buffer1_len = result_length;
 			aux->ctlaux_buffer1 = (BYTE *) gds__alloc((SLONG) result_length);
-			/* FREE: above & ACTION_close in this routine */
+			/* FREE: above & isc_blob_filter_close in this routine */
 			if (!aux->ctlaux_buffer1)	/* NOMEM: */
 				return isc_virmemexh;
 		}
@@ -861,7 +861,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		/* hand the text off to the next stage of the filter */
 
-		status = caller(ACTION_put_segment, control, result_length,
+		status = caller(isc_blob_filter_put_segment, control, result_length,
 						aux->ctlaux_buffer1, NULL);
 
 		if (status)
@@ -877,11 +877,11 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		return FB_SUCCESS;
 
-	case ACTION_seek:
+	case isc_blob_filter_seek:
 		return isc_uns_ext;
 
-	case ACTION_alloc:
-	case ACTION_free:
+	case isc_blob_filter_alloc:
+	case isc_blob_filter_free:
 		return FB_SUCCESS;
 
 	default:
@@ -889,7 +889,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		return isc_uns_ext;
 	}
 
-/* Drop thru for ACTION_get_segment. */
+/* Drop thru for isc_blob_filter_get_segment. */
 
 /* Do we already have enough bytes in temp buffer to fill output buffer? */
 
@@ -925,7 +925,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		// into the temporary buffer
 
 		USHORT bytes_read_from_source = 0;
-		status = caller(ACTION_get_segment,
+		status = caller(isc_blob_filter_get_segment,
 						control,
 						(USHORT) (aux->ctlaux_buffer1_len - length),
 						aux->ctlaux_buffer1 + length,
@@ -1004,7 +1004,7 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
  *	Pretty print a transaction description.
  *
  **************************************/
-	if (action != ACTION_open)
+	if (action != isc_blob_filter_open)
 		return string_filter(action, control);
 
 /* Initialize for retrieval */
@@ -1019,7 +1019,7 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 
 	USHORT length;
 	const ISC_STATUS status =
-		caller(ACTION_get_segment, control, (USHORT) l, temp, &length);
+		caller(isc_blob_filter_get_segment, control, (USHORT) l, temp, &length);
 
 	if (!status) {
         TEXT line[256];
@@ -1092,7 +1092,7 @@ static ISC_STATUS caller(
 	source->ctl_buffer = buffer;
 	source->ctl_buffer_length = buffer_length;
 
-	// Warning: it will be pointer to ISC_STATUS when action == ACTION_alloc.
+	// Warning: it will be pointer to ISC_STATUS when action == isc_blob_filter_alloc.
 	const ISC_STATUS status = (*source->ctl_source) (action, source);
 
 	if (return_length)
@@ -1176,14 +1176,14 @@ static ISC_STATUS string_filter(USHORT action, BlobControl* control)
 	USHORT length;
 
 	switch (action) {
-	case ACTION_close:
+	case isc_blob_filter_close:
 		while (string = (TMP) control->ctl_data[0]) {
 			control->ctl_data[0] = (IPTR) string->tmp_next;
 			gds__free(string);
 		}
 		return FB_SUCCESS;
 
-	case ACTION_get_segment:
+	case isc_blob_filter_get_segment:
 		if (!(string = (TMP) control->ctl_data[1]))
 			return isc_segstr_eof;
 		length = string->tmp_length - control->ctl_data[2];
@@ -1199,14 +1199,14 @@ static ISC_STATUS string_filter(USHORT action, BlobControl* control)
 		control->ctl_segment_length = length;
 		return (length <= control->ctl_buffer_length) ? FB_SUCCESS : isc_segment;
 
-	case ACTION_put_segment:
-	case ACTION_create:
-	case ACTION_seek:
-	case ACTION_open:
+	case isc_blob_filter_put_segment:
+	case isc_blob_filter_create:
+	case isc_blob_filter_seek:
+	case isc_blob_filter_open:
 		return isc_uns_ext;
 
-	case ACTION_alloc:
-	case ACTION_free:
+	case isc_blob_filter_alloc:
+	case isc_blob_filter_free:
 		return FB_SUCCESS;
 
 	default:
@@ -1230,7 +1230,7 @@ static void string_put(BlobControl* control, const char* line)
  **************************************/
 	const USHORT l = strlen(line);
 	TMP string = (TMP) gds__alloc((SLONG) (sizeof(tmp) + l));
-/* FREE: on ACTION_close in string_filter() */
+/* FREE: on isc_blob_filter_close in string_filter() */
 	if (!string) {				/* NOMEM: */
 		fb_assert(FALSE);			/* out of memory */
 		return;					/* & No error handling at this level */

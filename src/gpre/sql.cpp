@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.41 2004-02-02 11:01:27 robocop Exp $
+//	$Id: sql.cpp,v 1.42 2004-04-29 17:47:42 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -773,10 +773,10 @@ void SQL_par_field_dtype(gpre_req* request,
 			PAR_error("CHARACTER SET applies only to character columns");
 		}
 
-		if (field->fld_dtype == dtype_blob && field->fld_sub_type == BLOB_untyped)
-			field->fld_sub_type = BLOB_text;
+		if (field->fld_dtype == dtype_blob && field->fld_sub_type == isc_blob_untyped)
+			field->fld_sub_type = isc_blob_text;
 
-		if (field->fld_dtype == dtype_blob && field->fld_sub_type != BLOB_text)
+		if (field->fld_dtype == dtype_blob && field->fld_sub_type != isc_blob_text)
 			PAR_error("CHARACTER SET applies only to character columns");
 
 		if (field->fld_flags & FLD_national)
@@ -802,7 +802,7 @@ void SQL_par_field_dtype(gpre_req* request,
 	}
 	else if ((field->fld_dtype <= dtype_any_text ||
 			  (field->fld_dtype == dtype_blob
-			   && field->fld_sub_type == BLOB_text))
+			   && field->fld_sub_type == isc_blob_text))
 			 && !field->fld_character_set && !field->fld_collate && request
 			 && request->req_database
 			 && request->req_database->dbb_def_charset)
@@ -3742,7 +3742,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 			blob->blb_const_from_type =
 				PAR_blob_subtype(request->req_database);
 			if (token.tok_keyword == KW_CHAR)
-				if (blob->blb_const_from_type == BLOB_text) {
+				if (blob->blb_const_from_type == isc_blob_text) {
 					blob->blb_from_charset = par_char_set();
 					if (act_op == ACT_blob_open
 						&& blob->blb_from_charset != field->fld_charset_id)
@@ -3751,7 +3751,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 				}
 				else
 					PAR_error("Only text BLOBS can specify CHARACTER SET");
-			else if (blob->blb_const_from_type == BLOB_text)
+			else if (blob->blb_const_from_type == isc_blob_text)
 				if (act_op == ACT_blob_create)
 					blob->blb_from_charset = CS_dynamic;
 				else
@@ -3759,7 +3759,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 		}
 		else {
 			blob->blb_const_from_type = field->fld_sub_type;
-			if (blob->blb_const_from_type == BLOB_text)
+			if (blob->blb_const_from_type == isc_blob_text)
 				if (act_op == ACT_blob_create)
 					blob->blb_from_charset = CS_dynamic;
 				else
@@ -3769,7 +3769,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 			CPR_s_error("TO");
 		blob->blb_const_to_type = PAR_blob_subtype(request->req_database);
 		if (token.tok_keyword == KW_CHAR)
-			if (blob->blb_const_to_type == BLOB_text) {
+			if (blob->blb_const_to_type == isc_blob_text) {
 				blob->blb_to_charset = par_char_set();
 				if (act_op == ACT_blob_create
 					&& blob->blb_to_charset != field->fld_charset_id)
@@ -3778,7 +3778,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 			}
 			else
 				PAR_error("Only text BLOBS can specify CHARACTER SET");
-		else if (blob->blb_const_to_type == BLOB_text)
+		else if (blob->blb_const_to_type == isc_blob_text)
 			if (act_op == ACT_blob_create)
 				blob->blb_to_charset = field->fld_charset_id;
 			else
@@ -3796,11 +3796,11 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 		 *  operations are done using blob_ids, and we cannot determine
 		 *  this information from the blob_id within the engine.
 		 */
-		if (field->fld_sub_type == BLOB_text
+		if (field->fld_sub_type == isc_blob_text
 			&& (field->fld_charset_id != CS_NONE))
 		{
-			blob->blb_const_from_type = BLOB_text;
-			blob->blb_const_to_type = BLOB_text;
+			blob->blb_const_from_type = isc_blob_text;
+			blob->blb_const_to_type = isc_blob_text;
 			if (act_op == ACT_blob_create) {
 				blob->blb_from_charset = CS_dynamic;
 				blob->blb_to_charset = field->fld_charset_id;

@@ -1441,7 +1441,7 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 			X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 			X.RDB$FIELD_SUB_TYPE = gfield->gfld_sub_type;
 			X.RDB$SEGMENT_LENGTH = 80;
-			if (gfield->gfld_sub_type == BLOB_text)
+			if (gfield->gfld_sub_type == isc_blob_text)
 			{
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 				X.RDB$CHARACTER_SET_ID = CS_METADATA;

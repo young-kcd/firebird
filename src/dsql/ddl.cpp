@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.96 2004-04-29 14:51:02 brodsom Exp $
+ * $Id: ddl.cpp,v 1.97 2004-04-29 17:47:09 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -476,11 +476,11 @@ void DDL_resolve_intl_type2(dsql_req* request,
 			}
 			field->fld_sub_type = blob_sub_type;
 		}
-		if (field->fld_character_set && (field->fld_sub_type == BLOB_untyped))
+		if (field->fld_character_set && (field->fld_sub_type == isc_blob_untyped))
 		{
-			field->fld_sub_type = BLOB_text;
+			field->fld_sub_type = isc_blob_text;
 		}
-		if (field->fld_character_set && (field->fld_sub_type != BLOB_text))
+		if (field->fld_character_set && (field->fld_sub_type != isc_blob_text))
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
 						isc_dsql_datatype_err, isc_arg_gds,
@@ -492,7 +492,7 @@ void DDL_resolve_intl_type2(dsql_req* request,
 						isc_dsql_datatype_err, isc_arg_gds,
 						isc_collation_requires_text, 0);
 		}
-		if (field->fld_sub_type != BLOB_text) {
+		if (field->fld_sub_type != isc_blob_text) {
 			return;
 		}
 	}
@@ -5460,7 +5460,7 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 		}
 		if (!(request->req_dbb->dbb_flags & DBB_v3))
 		{
-			if (field->fld_sub_type == BLOB_text) {
+			if (field->fld_sub_type == isc_blob_text) {
 				request->append_number(isc_dyn_fld_character_set,
 						   field->fld_character_set_id);
 			}

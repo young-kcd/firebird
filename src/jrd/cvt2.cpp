@@ -28,6 +28,9 @@
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/common.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
+
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/quad.h"
@@ -549,11 +552,11 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 			}
 		}
 	
-		if (arg1->dsc_sub_type == BLOB_text)
+		if (arg1->dsc_sub_type == isc_blob_text)
 			ttype1 = arg1->dsc_scale;       /* Load blob character set */
 		else
 			ttype1 = ttype_none;
-		if (arg2->dsc_sub_type == BLOB_text)
+		if (arg2->dsc_sub_type == isc_blob_text)
 			ttype2 = arg2->dsc_scale;       /* Load blob character set */
 		else
 			ttype2 = ttype_none;
@@ -572,7 +575,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		// Can we have a lightweight, binary comparison?
 		bool both_are_text = false;
 		bool bin_cmp =
-			(arg1->dsc_sub_type != BLOB_text || arg2->dsc_sub_type != BLOB_text);
+			(arg1->dsc_sub_type != isc_blob_text || arg2->dsc_sub_type != isc_blob_text);
 		if (!bin_cmp)
 		{
 			both_are_text = true;
@@ -709,7 +712,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	{
 		UCHAR buffer1[BUFFER_LARGE];
 
-		if (arg1->dsc_sub_type == BLOB_text)
+		if (arg1->dsc_sub_type == isc_blob_text)
 			ttype1 = arg1->dsc_scale;       /* Load blob character set */
 		else
 			ttype1 = ttype_none;
@@ -726,10 +729,10 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 		/* Can we have a lightweight, binary comparison?*/
 		bool bin_cmp =
-			(arg1->dsc_sub_type != BLOB_text || arg2->dsc_dtype > dtype_varying);
+			(arg1->dsc_sub_type != isc_blob_text || arg2->dsc_dtype > dtype_varying);
 		if (!bin_cmp)
 		{
-			if (arg1->dsc_sub_type == BLOB_text)
+			if (arg1->dsc_sub_type == isc_blob_text)
 			{
 				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
 				fb_assert(obj1 != NULL);

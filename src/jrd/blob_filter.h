@@ -86,15 +86,18 @@ class BlobFilter : public pool_alloc<type_blf>
 	BlobFilter(MemoryPool& p) : blf_exception_message(p) { }
 };
 
-
-const int ACTION_open			= 0;
-const int ACTION_get_segment	= 1;
-const int ACTION_close			= 2;
-const int ACTION_create			= 3;
-const int ACTION_put_segment	= 4;
-const int ACTION_alloc			= 5;
-const int ACTION_free			= 6;
-const int ACTION_seek			= 7;
+// BRS 29-Apr-2004
+// replace those constants with public defined ones isc_blob_filter_
+// 
+// const int ACTION_open			= 0;
+// const int ACTION_get_segment	= 1;
+// const int ACTION_close			= 2;
+// const int ACTION_create			= 3;
+// const int ACTION_put_segment	= 4;
+// const int ACTION_alloc			= 5;
+// const int ACTION_free			= 6;
+// const int ACTION_seek			= 7;
+//
 
 const static char* EXCEPTION_MESSAGE = "The blob filter: \t\t%s\n"
 										"\treferencing entrypoint: \t%s\n"

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.71 2004-03-30 08:34:14 robocop Exp $
+$Id: ibase.h,v 1.72 2004-04-29 17:48:39 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -2374,6 +2374,7 @@ enum info_db_provider
 #define isc_blob_format                    6
 #define isc_blob_tra                       7
 #define isc_blob_extfile                   8
+#define isc_blob_max_predefined_subtype    9
 
 /* the range 20-30 is reserved for dBASE and Paradox types */
 

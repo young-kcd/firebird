@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.79 2004-04-25 02:30:30 skidder Exp $ 
+  * $Id: evl.cpp,v 1.80 2004-04-29 17:48:39 brodsom Exp $ 
  */
 
 /*
@@ -64,6 +64,9 @@
 #include <string.h>
 #include <math.h>
 #include "../jrd/common.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
+
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/req.h"
@@ -4371,7 +4374,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 
  	USHORT ttype;
 	if (desc1->dsc_dtype == dtype_blob) {
-		if (desc1->dsc_sub_type == BLOB_text)
+		if (desc1->dsc_sub_type == isc_blob_text)
 			ttype = desc1->dsc_scale;	/* Load blob character set */
 		else
 			ttype = INTL_TTYPE(desc2);
@@ -4514,7 +4517,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		 * but don't transliterate character set if the source blob is binary
 		 */
 
-		if (desc1->dsc_sub_type == BLOB_text) {
+		if (desc1->dsc_sub_type == isc_blob_text) {
 			type1 = desc1->dsc_scale;	/* pick up character set of blob */
 			if (!computed_invariant) {
 				l2 =
@@ -4794,7 +4797,7 @@ static dsc* substring(
 
 	USHORT ttype;
 	TextType obj1 = NULL;
-	if (dtype_blob == value->dsc_dtype && (BLOB_text != value->dsc_sub_type
+	if (dtype_blob == value->dsc_dtype && (isc_blob_text != value->dsc_sub_type
 		|| (ttype = value->dsc_scale) == ttype_ascii || ttype == ttype_none || ttype == ttype_binary
 		|| ((obj1 = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL)) != NULL
 			&& 1 == obj1.getBytesPerChar())))

@@ -34,20 +34,21 @@
  * Subtypes > 0  are InterBase defined 
  */
 
-const int BLOB_untyped	= 0;
-
-/* InterBase defined BLOB subtypes */
-
-const int BLOB_text		= 1;
-const int BLOB_blr		= 2;
-const int BLOB_acl		= 3;
-const int BLOB_ranges	= 4;
-const int BLOB_summary	= 5;
-const int BLOB_format	= 6;
-const int BLOB_tra		= 7;
-const int BLOB_extfile	= 8;
-const int BLOB_max_predefined_subtype = 9;
-
+// BRS 29-Apr-2004
+// replace those constants with public defined ones isc_blob_*
+//
+//const int BLOB_untyped	= 0;
+//
+//const int BLOB_text		= 1;
+//const int BLOB_blr		= 2;
+//const int BLOB_acl		= 3;
+//const int BLOB_ranges	= 4;
+//const int BLOB_summary	= 5;
+//const int BLOB_format	= 6;
+//const int BLOB_tra		= 7;
+//const int BLOB_extfile	= 8;
+//const int BLOB_max_predefined_subtype = 9;
+//
 
 /* Column Limits */
 

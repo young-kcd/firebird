@@ -61,7 +61,7 @@ using namespace Jrd;
 
 /* System provided internal filters for filtering internal
  * subtypes to text.
- * (from_type in [0..8], to_type == BLOB_text)
+ * (from_type in [0..8], to_type == isc_blob_text)
  */
 static const FPTR_BFILTER_CALLBACK filters[] =
 {
@@ -112,7 +112,7 @@ ISC_STATUS BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
 		/* Close this stage of the filter */
 
 		control->ctl_status = user_status;
-		(*control->ctl_source) (ACTION_close, control);
+		(*control->ctl_source) (isc_blob_filter_close, control);
 
 		/* Find the next stage */
 
@@ -121,10 +121,10 @@ ISC_STATUS BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
 			next = NULL;
 
 		/* Free this stage's control block allocated by calling the
-		   final stage with an ACTION_alloc, which is why we call
-		   the final stage with ACTION_free here. */
+		   final stage with an isc_blob_filter_alloc, which is why we call
+		   the final stage with isc_blob_filter_free here. */
 
-		(*callback) (ACTION_free, control);
+		(*callback) (isc_blob_filter_free, control);
 	}
 
 	END_CHECK_FOR_EXCEPTIONS(next->ctl_exception_message.c_str())
@@ -155,7 +155,7 @@ ISC_STATUS BLF_create_blob(thread_db* tdbb,
 
 	return open_blob(tdbb, tra_handle, filter_handle,
 					 blob_id, bpb_length, bpb,
-					 callback, ACTION_create,
+					 callback, isc_blob_filter_create,
 					 filter);
 }
 
@@ -190,7 +190,7 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = isc_arg_end;
 
-	status = (*control->ctl_source) (ACTION_get_segment, control);
+	status = (*control->ctl_source) (isc_blob_filter_get_segment, control);
 
 	if (!status || status == isc_segment)
 		*length = control->ctl_segment_length;
@@ -224,7 +224,7 @@ BlobFilter* BLF_lookup_internal_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 
 /* Check for system defined filter */
 
-	if (to == BLOB_text && from >= 0 && from < FB_NELEM(filters)) {
+	if (to == isc_blob_text && from >= 0 && from < FB_NELEM(filters)) {
 		BlobFilter* result = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
 		result->blf_next = NULL;
 		result->blf_from = from;
@@ -266,7 +266,7 @@ ISC_STATUS BLF_open_blob(thread_db* tdbb,
 					 const_cast<bid*>(blob_id),
 					 bpb_length, bpb,
 					 callback,
-					 ACTION_open, filter);
+					 isc_blob_filter_open, filter);
 }
 
 
@@ -302,7 +302,7 @@ ISC_STATUS BLF_put_segment(thread_db* tdbb,
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = isc_arg_end;
 
-	status = (*control->ctl_source) (ACTION_put_segment, control);
+	status = (*control->ctl_source) (isc_blob_filter_put_segment, control);
 
 	if (status != user_status[1]) {
 		user_status[1] = status;
@@ -380,7 +380,7 @@ static ISC_STATUS open_blob(
 	temp.ctl_internal[2] = NULL;
 	// CVC: Using ISC_STATUS (SLONG) to return a pointer!!!
 	// If we change the function signature, we'll change the public API.
-	BlobControl* prior = (BlobControl*) (*callback) (ACTION_alloc, &temp); // ISC_STATUS to pointer!
+	BlobControl* prior = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp); // ISC_STATUS to pointer!
 	prior->ctl_source = callback;
 	prior->ctl_status = user_status;
 
@@ -392,7 +392,7 @@ static ISC_STATUS open_blob(
 		return user_status[1];
 	}
 
-	BlobControl* control = (BlobControl*) (*callback) (ACTION_alloc, &temp); // ISC_STATUS to pointer!
+	BlobControl* control = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp); // ISC_STATUS to pointer!
 	control->ctl_source = filter->blf_filter;
 	control->ctl_handle = prior;
 	control->ctl_status = user_status;
@@ -407,8 +407,8 @@ static ISC_STATUS open_blob(
  */
 
 	if (filter->blf_filter == filter_transliterate_text) {
-		fb_assert(to == BLOB_text);
-		fb_assert(from == BLOB_text);
+		fb_assert(to == isc_blob_text);
+		fb_assert(from == isc_blob_text);
 		control->ctl_to_sub_type = to_charset;
 		control->ctl_from_sub_type = from_charset;
 	}

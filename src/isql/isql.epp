@@ -292,15 +292,15 @@ static const UCHAR db_version_info[] =
 static const UCHAR text_bpb[] =
 {
 	isc_bpb_version1,
-	isc_bpb_source_type, 1, BLOB_text,
-	isc_bpb_target_type, 1, BLOB_text
+	isc_bpb_source_type, 1, isc_blob_text,
+	isc_bpb_target_type, 1, isc_blob_text
 };
 #endif
 static UCHAR predefined_blob_subtype_bpb[] =
 {
 	isc_bpb_version1,
 	isc_bpb_source_type, 1, 0,
-	isc_bpb_target_type, 1, BLOB_text
+	isc_bpb_target_type, 1, isc_blob_text
 };
 
 // No check on input argument for now.
@@ -6053,7 +6053,7 @@ static processing_state print_item_blob(FILE* fp,
 	ISC_BLOB_DESC from_desc;
 	
 	const int blob_subtype = var->sqlsubtype;
-	if (blob_subtype == BLOB_text) {
+	if (blob_subtype == isc_blob_text) {
 		/* Lookup the remaining descriptor information for the BLOB field,
 		 * most specifically we're interested in the Character Set so
 		 * we can set up a BPB that requests character set transliteration
@@ -6072,7 +6072,7 @@ static processing_state print_item_blob(FILE* fp,
 			}
 		}
 	}
-	else if (blob_subtype > BLOB_text && blob_subtype < BLOB_max_predefined_subtype)
+	else if (blob_subtype > isc_blob_text && blob_subtype < isc_blob_max_predefined_subtype)
 	{
 		bpb = predefined_blob_subtype_bpb;
 		bpb_length = sizeof(predefined_blob_subtype_bpb);
@@ -6098,7 +6098,7 @@ static processing_state print_item_blob(FILE* fp,
 	{
 		// Special displays for blr or acl subtypes 
 
-		if (blob_subtype > BLOB_text && blob_subtype < BLOB_max_predefined_subtype)
+		if (blob_subtype > isc_blob_text && blob_subtype < isc_blob_max_predefined_subtype)
 		{
 			buffer[length--] = 0;
 			for (char* b = buffer + length; b >= buffer;) {
