@@ -3933,7 +3933,9 @@ static RSB gen_retrieval(TDBB tdbb,
 	SSHORT i, j, count, position;
 	Opt::opt_repeat *tail, *idx_tail, *idx_end;
 	BOOLEAN full = FALSE;
+
 	SET_TDBB(tdbb);
+
 #ifdef DEV_BUILD
 	DEV_BLKCHK(opt, type_opt);
 	if (sort_ptr) {
@@ -4013,9 +4015,11 @@ static RSB gen_retrieval(TDBB tdbb,
 		   could be calculated via the index; currently we won't detect that case
 		 */
 
-		IDX **idx_walk = FB_NEW(*tdbb->tdbb_default) IDX*[MAX_INDICES];
-		SLONG *idx_priority_level = FB_NEW(*tdbb->tdbb_default) SLONG[MAX_INDICES];
-	
+		Firebird::vector<IDX*> idx_walk_vector(MAX_INDICES);
+		IDX** idx_walk = &idx_walk_vector[0];
+		Firebird::vector<SLONG> idx_priority_level_vector(MAX_INDICES);
+		SLONG* idx_priority_level = &idx_priority_level_vector[0];
+
 		for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices;
 			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count)) {
 
@@ -4098,13 +4102,13 @@ static RSB gen_retrieval(TDBB tdbb,
 		SSHORT idx_walk_count =
 			sort_indices_by_priority(csb_tail, idx_walk, idx_priority_level);
 
-		delete[] idx_priority_level;
-
 		/* Walk through the indicies based on earlier calculated count and
 		   when necessary build the index */
 
-		SSHORT *conjunct_position = FB_NEW(*tdbb->tdbb_default) SSHORT[MAX_INDICES];
-		Opt::opt_repeat **matching_nodes = FB_NEW(*tdbb->tdbb_default) Opt::opt_repeat*[MAX_INDICES];
+		Firebird::vector<SSHORT> conjunct_position_vector(MAX_INDICES);
+		SSHORT* conjunct_position = &conjunct_position_vector[0];
+		Firebird::vector<Opt::opt_repeat*> matching_nodes_vector(MAX_INDICES);
+		Opt::opt_repeat** matching_nodes = &matching_nodes_vector[0];
 
 		for (i = 0; i < idx_walk_count; i++) {
 
@@ -4182,11 +4186,6 @@ static RSB gen_retrieval(TDBB tdbb,
 				idx->idx_runtime_flags |= idx_used_with_and;
 			}
 		}
-
-		delete[] conjunct_position;
-		delete[] matching_nodes;
-
-		delete[] idx_walk;
 	}
 
 	if (outer_flag) {
@@ -5242,8 +5241,10 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 	used_in_compound = FALSE;
 	compound_selectivity = 1; /* Real maximum selectivity possible is 1 */
 
-	IDX **idx_walk = FB_NEW(*tdbb->tdbb_default) IDX*[MAX_INDICES];
-	SLONG *idx_priority_level = FB_NEW(*tdbb->tdbb_default) SLONG[MAX_INDICES];
+	Firebird::vector<IDX*> idx_walk_vector(MAX_INDICES);
+	IDX** idx_walk = &idx_walk_vector[0];
+	Firebird::vector<SLONG> idx_priority_level_vector(MAX_INDICES);
+	SLONG* idx_priority_level = &idx_priority_level_vector[0];
 
 	idx = csb_tail->csb_idx;
 	if (opt->opt_count) {
@@ -5297,8 +5298,6 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 	SSHORT idx_walk_count =
 		sort_indices_by_priority(csb_tail, idx_walk, idx_priority_level);
 
-	delete[] idx_priority_level;
-
 	accept = TRUE;
 	idx = csb_tail->csb_idx;
 	if (opt->opt_count) {
@@ -5321,8 +5320,6 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 			}
 		}
 	}
-
-	delete[] idx_walk;
 
 	if (!inversion)
 		inversion = OPT_make_dbkey(opt, boolean, stream);
@@ -6283,7 +6280,7 @@ static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
  ***************************************************/
 	IDX * idx_csb[MAX_INDICES];
 	memcpy(idx_csb, idx_walk, sizeof(idx_csb));
-	
+
 	SSHORT idx_walk_count = 0;
 	float selectivity = 1; /* Real maximum selectivity possible is 1 */
 
