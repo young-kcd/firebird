@@ -4756,9 +4756,7 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
 #ifdef HAVE_GETCWD
 		getcwd(cwd, sizeof(cwd));
 #else
-#ifdef HAVE_GETWD
 		getwd(cwd);
-#endif
 #endif
 	}
 	else
