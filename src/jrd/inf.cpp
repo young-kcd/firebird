@@ -350,7 +350,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_allocation:
-			CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0L);
+			CCH_flush(tdbb, FLUSH_ALL, 0L);
 			length = INF_convert(PIO_max_alloc(dbb), buffer);
 			break;
 
@@ -705,7 +705,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_db_size_in_pages:
-			CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0L);
+			CCH_flush(tdbb, FLUSH_ALL, 0L);
 			length = INF_convert(PIO_act_alloc(dbb), buffer);
 			break;
 

@@ -3767,7 +3767,7 @@ rel_exit:
 
 						flush = false;
 						if (transaction) {
-							CCH_flush(tdbb, (USHORT) FLUSH_SWEEP, 0);
+							CCH_flush(tdbb, FLUSH_SWEEP, 0);
 						}
 						continue;
 					}

@@ -774,7 +774,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			return false;
 		}
 	case 4:
-		CCH_flush(tdbb, (USHORT) FLUSH_FINI, 0L);
+		CCH_flush(tdbb, FLUSH_FINI, 0L);
 		max = PIO_max_alloc(dbb) + 1;
 		jrd_req* handle = 0;
 		jrd_req* handle2 = 0;

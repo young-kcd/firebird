@@ -379,14 +379,14 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	if (transaction->tra_flags & TRA_write)
 #endif
-		CCH_flush(tdbb, (USHORT) FLUSH_TRAN, transaction->tra_number);
+		CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 #ifdef GARBAGE_THREAD
 	else if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected)) {
 		/* If the transaction only read data but is a member of a
 		   multi-database transaction with a transaction description
 		   message then flush RDB$TRANSACTIONS. */
 
-		CCH_flush(tdbb, (USHORT) FLUSH_SYSTEM, 0);
+		CCH_flush(tdbb, FLUSH_SYSTEM, 0);
 	}
 #endif
 
@@ -899,14 +899,14 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
 
 	if (transaction->tra_flags & TRA_write)
 #endif
-		CCH_flush(tdbb, (USHORT) FLUSH_TRAN, transaction->tra_number);
+		CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 #ifdef GARBAGE_THREAD
 	else if (transaction->tra_flags & TRA_prepare2) {
 		/* If the transaction only read data but is a member of a
 		   multi-database transaction with a transaction description
 		   message then flush RDB$TRANSACTIONS. */
 
-		CCH_flush(tdbb, (USHORT) FLUSH_SYSTEM, 0);
+		CCH_flush(tdbb, FLUSH_SYSTEM, 0);
 	}
 #endif
 
@@ -1162,10 +1162,10 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			   all dirty buffers for this transaction. */
 
 			if (transaction->tra_flags & TRA_write) {
-				CCH_flush(tdbb, (USHORT) FLUSH_TRAN, transaction->tra_number);
+				CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 				++transaction->tra_save_point->sav_verb_count;	/* cause undo */
 				VIO_verb_cleanup(tdbb, transaction);
-				CCH_flush(tdbb, (USHORT) FLUSH_TRAN, transaction->tra_number);
+				CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 			}
 			else
 				VIO_verb_cleanup(tdbb, transaction);
@@ -1853,7 +1853,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 		   committed since their TID would now be less than the OIT recorded
 		   in the database. */
 
-		CCH_flush(tdbb, (USHORT) FLUSH_SWEEP, 0);
+		CCH_flush(tdbb, FLUSH_SWEEP, 0);
 
 		WIN window(HEADER_PAGE);
 		header_page* header =

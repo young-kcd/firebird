@@ -860,7 +860,7 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 	END_FOR;
 
 	CMP_release(tdbb, (jrd_req*)handle);
-	CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
+	CCH_flush(tdbb, FLUSH_ALL, 0);
 }
 
 

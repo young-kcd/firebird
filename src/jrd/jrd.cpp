@@ -2030,7 +2030,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	JRD_SS_MUTEX_UNLOCK;
 
 	*handle = attachment;
-	CCH_flush(tdbb, (USHORT) FLUSH_FINI, 0);
+	CCH_flush(tdbb, FLUSH_FINI, 0);
 
 	return return_success(tdbb);
 

@@ -3290,7 +3290,7 @@ static SLONG fast_load(thread_db* tdbb,
 			ERR_punt();
 		}
 
-		CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
+		CCH_flush(tdbb, FLUSH_ALL, 0);
 
 		// Calculate selectivity, also per segment when newer ODS
 		selectivity.grow(segments);

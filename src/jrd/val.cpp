@@ -731,7 +731,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 		control.vdr_flags &= ~vdr_update;
 
 	garbage_collect(tdbb, &control);
-	CCH_flush(tdbb, (USHORT) FLUSH_FINI, 0);
+	CCH_flush(tdbb, FLUSH_FINI, 0);
 
 	JrdMemoryPool::deletePool(val_pool);
 	tdbb->tdbb_default = old_pool;
