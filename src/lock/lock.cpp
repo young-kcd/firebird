@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.84 2004-01-21 07:18:29 skidder Exp $
+$Id: lock.cpp,v 1.85 2004-01-31 19:25:20 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -1922,7 +1922,7 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 		SLONG value = ISC_event_clear(LOCK_owner->own_blocking);
 		blocking_action((void*)(IPTR)*owner_offset_ptr);
 		AST_EXIT;
-		event* event_ptr = LOCK_owner->own_blocking;
+		EVENT event_ptr = LOCK_owner->own_blocking;
 		ISC_event_wait(1, &event_ptr, &value, 0, NULL, 0);
 	}
 
