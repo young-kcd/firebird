@@ -30,6 +30,7 @@
 #include "firebird.h"
 #include <stdlib.h>
 #include <windows.h>
+#include "../jrd/jrd.h"
 #include "../iscguard/iscguard.h"
 #include "../utilities/registry.h"
 
