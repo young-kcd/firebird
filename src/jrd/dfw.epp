@@ -785,7 +785,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			{
 				ISC_expand_filename(X.RDB$FILE_NAME, temp);
 				MODIFY X USING
-					strcpy(X.RDB$FILE_NAME, temp.c_str());
+					temp.copy_to(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
 				END_MODIFY;
 			}
 
@@ -903,7 +903,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				WITH F.RDB$FILE_NAME EQ work->dfw_name
 			ISC_expand_filename(F.RDB$FILE_NAME, expanded_fname);
 			MODIFY F USING
-				strcpy(F.RDB$FILE_NAME, expanded_fname.c_str());
+				expanded_fname.copy_to(F.RDB$FILE_NAME, sizeof(F.RDB$FILE_NAME));
 			END_MODIFY;
 
 			for (shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)

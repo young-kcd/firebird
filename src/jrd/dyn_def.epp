@@ -818,7 +818,7 @@ void DYN_define_file(Global*		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES 
-        strcpy(X.RDB$FILE_NAME, temp_f.c_str());
+        temp_f.copy_to(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
 		X.RDB$SHADOW_NUMBER = (SSHORT)shadow_number;
 		X.RDB$FILE_FLAGS = 0;
 		X.RDB$FILE_FLAGS.NULL = FALSE;
@@ -3109,7 +3109,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				if (Path.length() > 0)	{	// path component present in filename
 					ISC_expand_filename(REL.RDB$EXTERNAL_FILE,
 									strlen(REL.RDB$EXTERNAL_FILE),
-									REL.RDB$EXTERNAL_FILE);
+									REL.RDB$EXTERNAL_FILE,
+									sizeof(REL.RDB$EXTERNAL_FILE));
 				}
 				REL.RDB$EXTERNAL_FILE.NULL = FALSE;
 				break;
