@@ -115,6 +115,8 @@ static void notify_garbage_collector(TDBB, RPB *);
 #define PREPARE_OK       0
 #define PREPARE_CONFLICT 1
 #define PREPARE_DELETE   2
+#define PREPARE_LOCKERR  3
+
 static int prepare_update(TDBB, JRD_TRA, SLONG, RPB *, RPB *, RPB *, LLS *, BOOLEAN);
 
 static BOOLEAN purge(TDBB, RPB *);
@@ -2261,11 +2263,10 @@ BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, RSB rsb, JRD_TRA transaction)
 				   &temp, 0, &stack, TRUE))
 		{
 			case PREPARE_CONFLICT:
-				// Do not spin wait if we have nowait transaction
-				if (transaction->tra_flags & TRA_nowait)
-					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 				org_rpb->rpb_stream_flags |= RPB_s_refetch;
 				continue;
+			case PREPARE_LOCKERR:
+				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 			case PREPARE_DELETE:
 				return FALSE;
 		}
@@ -4202,7 +4203,7 @@ static int prepare_update(	TDBB	tdbb,
 				if (!(transaction->tra_flags & TRA_read_committed))
 					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 			case tra_active:
-				return PREPARE_CONFLICT;
+				return PREPARE_LOCKERR;
 
 			case tra_limbo:
 				ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, 0);
