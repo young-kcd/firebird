@@ -1389,21 +1389,23 @@ void VIO_fini(TDBB tdbb)
  **************************************/
 	DBB dbb;
 	SLONG count;
-	EVENT gc_event;
 
 	dbb = tdbb->tdbb_database;
-	gc_event = dbb->dbb_gc_event;
 
 	if (dbb->dbb_flags & DBB_garbage_collector)
 	{
+		EVENT gc_event_fini = dbb->dbb_gc_event_fini;
+		/* initialize finalization event */
+		ISC_event_init(gc_event_fini, 0, 0);
+		count = ISC_event_clear(gc_event_fini);
+
 		dbb->dbb_flags &= ~DBB_garbage_collector;
-		ISC_event_post(gc_event);
-		count = ISC_event_clear(gc_event);
+		ISC_event_post(dbb->dbb_gc_event); /* Wake up running thread */
 		THREAD_EXIT;
-		(void) ISC_event_wait(1, &gc_event, &count, 0, (FPTR_VOID) 0, 0);
+		(void) ISC_event_wait(1, &gc_event_fini, &count, 0, (FPTR_VOID) 0, 0);
 		THREAD_ENTER;
-		/* Now dispose off the garbage collector associated semaphore */
-		ISC_event_fini(gc_event);
+		/* Cleanup finalization event */
+		ISC_event_fini(gc_event_fini);
 	}
 }
 #endif
@@ -1847,31 +1849,33 @@ void VIO_init(TDBB tdbb)
 	DBB dbb;
 	ATT attachment;
 	SLONG count;
-	EVENT gc_event;
 
 	dbb = tdbb->tdbb_database;
 	attachment = tdbb->tdbb_attachment;
 
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->dbb_flags & DBB_read_only) {
 		return;
+	}
 
 /* If there's no presence of a garbage collector running
    then start one up. */
 
 	if (!(dbb->dbb_flags & DBB_garbage_collector)) {
-		gc_event = dbb->dbb_gc_event;
-		ISC_event_init(gc_event, 0, 0);
-		count = ISC_event_clear(gc_event);
+		EVENT gc_event_init = dbb->dbb_gc_event_init;
+		/* Initialize initialization event */
+		ISC_event_init(gc_event_init, 0, 0);
+		count = ISC_event_clear(gc_event_init);
+
 		if (gds__thread_start
 			(reinterpret_cast < FPTR_INT_VOID_PTR > (garbage_collector), dbb,
-			 THREAD_medium, 0, 0))
+			THREAD_medium, 0, 0)) {
 			ERR_bugcheck_msg("cannot start thread");
-
+		}
 		THREAD_EXIT;
-
-		(void) ISC_event_wait(1, &gc_event, &count, 10 * 1000000,
-							  (FPTR_VOID) 0, 0);
+		(void) ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
 		THREAD_ENTER;
+		/* Clean up initialization event */
+		ISC_event_fini(gc_event_init);
 	}
 
 /* Database backups and sweeps perform their own garbage collection
@@ -1881,10 +1885,12 @@ void VIO_init(TDBB tdbb)
 
 	if (dbb->dbb_flags & DBB_garbage_collector &&
 		!(attachment->att_flags & (ATT_no_cleanup | ATT_gbak_attachment))) {
-		if (dbb->dbb_flags & DBB_suspend_bgio)
+		if (dbb->dbb_flags & DBB_suspend_bgio) {
 			attachment->att_flags |= ATT_disable_notify_gc;
-		else
+		}
+		else {
 			attachment->att_flags |= ATT_notify_gc;
+		}
 	}
 }
 #endif
@@ -3418,22 +3424,22 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 /* Surrender if resources to start up aren't available. */
 
 	try {
+		ISC_event_init(gc_event, 0, 0);
 
 /* Pseudo attachment needed for lock owner identification. */
 
-	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_permanent) att();
-	tdbb->tdbb_attachment->att_database = dbb;
-	tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
-	tdbb->tdbb_attachment->att_flags = ATT_garbage_collector;
+		tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_permanent) att();
+		tdbb->tdbb_attachment->att_database = dbb;
+		tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
+		tdbb->tdbb_attachment->att_flags = ATT_garbage_collector;
 
-	rpb.rpb_window.win_flags = WIN_garbage_collector;
+		rpb.rpb_window.win_flags = WIN_garbage_collector;
 
-	LCK_init(tdbb, LCK_OWNER_attachment);
+		LCK_init(tdbb, LCK_OWNER_attachment);
 
 /* Notify our creator that we have started */
-
-	dbb->dbb_flags |= DBB_garbage_collector;
-	ISC_event_post(gc_event);
+		dbb->dbb_flags |= DBB_garbage_collector;
+		ISC_event_post(dbb->dbb_gc_event_init);
 
 	}	// try
 	catch (...) {
@@ -3444,199 +3450,171 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 
 /* Initialize status vector after logging error. */
 
-	MOVE_CLEAR(status_vector, sizeof(status_vector));
+		MOVE_CLEAR(status_vector, sizeof(status_vector));
 
 /* The garbage collector flag is cleared to request the thread
    to finish up and exit. */
 
-	while (dbb->dbb_flags & DBB_garbage_collector)
-	{
-		count = ISC_event_clear(gc_event);
-		dbb->dbb_flags |= DBB_gc_active;
-		found = FALSE;
-		relation = 0;
+		while (dbb->dbb_flags & DBB_garbage_collector) {
+			count = ISC_event_clear(gc_event);
+			dbb->dbb_flags |= DBB_gc_active;
+			found = FALSE;
+			relation = 0;
 
-		/* If background thread activity has been suspended because
-		   of I/O errors then idle until the condition is cleared.
-		   In particular, make worker threads perform their own
-		   garbage collection so that errors are reported to users. */
+			/* If background thread activity has been suspended because
+			   of I/O errors then idle until the condition is cleared.
+			   In particular, make worker threads perform their own
+			   garbage collection so that errors are reported to users. */
 
-		if (dbb->dbb_flags & DBB_suspend_bgio)
-		{
-			ATT attachment;
+			if (dbb->dbb_flags & DBB_suspend_bgio) {
+				ATT attachment;
 
-			for (attachment = dbb->dbb_attachments;
-				 attachment != 0; attachment = attachment->att_next)
-			{
-				if (attachment->att_flags & ATT_notify_gc) {
-					attachment->att_flags &= ~ATT_notify_gc;
-					attachment->att_flags |= ATT_disable_notify_gc;
+				for (attachment = dbb->dbb_attachments;
+					 attachment != 0; attachment = attachment->att_next) {
+					if (attachment->att_flags & ATT_notify_gc) {
+						attachment->att_flags &= ~ATT_notify_gc;
+						attachment->att_flags |= ATT_disable_notify_gc;
+					}
+				}
+
+				while (dbb->dbb_flags & DBB_suspend_bgio) {
+					count = ISC_event_clear(gc_event);
+					THREAD_EXIT;
+					(void) ISC_event_wait(1, &gc_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+					THREAD_ENTER;
+					if (!(dbb->dbb_flags & DBB_garbage_collector)) {
+						goto gc_exit;
+					}
+				}
+
+				for (attachment = dbb->dbb_attachments;
+					 attachment != 0; attachment = attachment->att_next) {
+					if (attachment->att_flags & ATT_disable_notify_gc) {
+						attachment->att_flags &= ~ATT_disable_notify_gc;
+						attachment->att_flags |= ATT_notify_gc;
+					}
 				}
 			}
 
-			while (dbb->dbb_flags & DBB_suspend_bgio)
-			{
-				count = ISC_event_clear(gc_event);
-				THREAD_EXIT;
-				(void) ISC_event_wait(1, &gc_event, &count,
-									  10 * 1000000, (FPTR_VOID) 0, 0);
-				THREAD_ENTER;
-				if (!(dbb->dbb_flags & DBB_garbage_collector))
-					goto gc_exit;
-			}
+			/* Scan relation garbage collection bitmaps for candidate data pages.
+			   Express interest in the relation to prevent it from being deleted
+			   out from under us while garbage collection is in-progress. */
 
-			for (attachment = dbb->dbb_attachments;
-				 attachment != 0; attachment = attachment->att_next)
-			{
-				if (attachment->att_flags & ATT_disable_notify_gc)
-				{
-					attachment->att_flags &= ~ATT_disable_notify_gc;
-					attachment->att_flags |= ATT_notify_gc;
-				}
-			}
-		}
+			VEC vector;
+			for (id = 0; (vector = dbb->dbb_relations) && id < vector->count(); ++id) {
+				relation = (JRD_REL) (*vector)[id];
 
-		/* Scan relation garbage collection bitmaps for candidate data pages.
-		   Express interest in the relation to prevent it from being deleted
-		   out from under us while garbage collection is in-progress. */
+				if (relation && relation->rel_gc_bitmap != 0 &&
+						!(relation->rel_flags & (REL_deleted | REL_deleting))) {
+					++relation->rel_sweep_count;
+					dp_sequence = -1;
+					rpb.rpb_relation = relation;
+					while (SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) {
+						(void) SBM_clear(relation->rel_gc_bitmap, dp_sequence);
 
-		VEC vector;
-		for (id = 0; (vector = dbb->dbb_relations) && id < vector->count(); ++id)
-		{
-			relation = (JRD_REL) (*vector)[id];
+						if (!transaction) {
+							/* Start a "precommitted" transaction by using read-only,
+							   read committed. Of particular note is the absence of a
+							   transaction lock which means the transaction does not
+							   inhibit garbage collection by its very existence. */
 
-			if (relation &&
-				relation->rel_gc_bitmap != 0 &&
-				!(relation->rel_flags & (REL_deleted | REL_deleting)))
-			{
-				++relation->rel_sweep_count;
-				dp_sequence = -1;
-				rpb.rpb_relation = relation;
-				while (SBM_next(relation->rel_gc_bitmap,
-								&dp_sequence,
-								RSE_get_forward))
-				{
-					(void) SBM_clear(relation->rel_gc_bitmap, dp_sequence);
-
-					if (!transaction)
-					{
-						/* Start a "precommitted" transaction by using read-only,
-						   read committed. Of particular note is the absence of a
-						   transaction lock which means the transaction does not
-						   inhibit garbage collection by its very existence. */
-
-						transaction =
-							TRA_start(tdbb, sizeof(gc_tpb),
-									  const_cast<char*>(gc_tpb));
-						tdbb->tdbb_transaction = transaction;
-					}
-					else {
-						/* Refresh our notion of the oldest transactions for
-						   efficient garbage collection. This is very cheap. */
-
-						transaction->tra_oldest = dbb->dbb_oldest_transaction;
-						transaction->tra_oldest_active =
-							dbb->dbb_oldest_snapshot;
-					}
-
-					found = flush = TRUE;
-					rpb.rpb_number = (dp_sequence * dbb->dbb_max_records) - 1;
-					last = rpb.rpb_number + dbb->dbb_max_records;
-
-					/* Attempt to garbage collect all records on the data page. */
-
-					while (VIO_next_record(tdbb,
-											&rpb,
-											NULL,
-											transaction,
-											NULL,
-											FALSE,
-											TRUE))
-					{
-						CCH_RELEASE(tdbb, &rpb.rpb_window);
-						if (!(dbb->dbb_flags & DBB_garbage_collector)) {
-							--relation->rel_sweep_count;
-							goto gc_exit;
+							transaction = TRA_start(tdbb, sizeof(gc_tpb), const_cast<char*>(gc_tpb));
+							tdbb->tdbb_transaction = transaction;
 						}
-						if (relation->rel_flags & REL_deleting)
-							goto rel_exit;
-						if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
-							(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
-						if (rpb.rpb_number >= last)
-							break;
+						else {
+							/* Refresh our notion of the oldest transactions for
+							   efficient garbage collection. This is very cheap. */
+
+							transaction->tra_oldest = dbb->dbb_oldest_transaction;
+							transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
+						}
+
+						found = flush = TRUE;
+						rpb.rpb_number = (dp_sequence * dbb->dbb_max_records) - 1;
+						last = rpb.rpb_number + dbb->dbb_max_records;
+
+						/* Attempt to garbage collect all records on the data page. */
+
+						while (VIO_next_record(tdbb, &rpb, NULL, transaction, NULL, FALSE, TRUE)) {
+							CCH_RELEASE(tdbb, &rpb.rpb_window);
+							if (!(dbb->dbb_flags & DBB_garbage_collector)) {
+								--relation->rel_sweep_count;
+								goto gc_exit;
+							}
+							if (relation->rel_flags & REL_deleting) {
+								goto rel_exit;
+							}
+							if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
+								(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
+							}
+							if (rpb.rpb_number >= last) {
+								break;
+							}
+						}
 					}
-				}
 
 rel_exit:
-				dp_sequence = -1;
-				if (!SBM_next(relation->rel_gc_bitmap,
-								&dp_sequence,
-								RSE_get_forward))
-				{
-					/* If the bitmap is empty then release it */
-
-					SBM_release(relation->rel_gc_bitmap);
-					relation->rel_gc_bitmap = 0;
+					dp_sequence = -1;
+					if (!SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) {
+						/* If the bitmap is empty then release it */
+						SBM_release(relation->rel_gc_bitmap);
+						relation->rel_gc_bitmap = 0;
+					}
+					else {
+						/* Otherwise release bitmap segments that have been cleared. */
+						while (SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) {
+							;	// do nothing
+						}
+					}
+					--relation->rel_sweep_count;
 				}
-				else {
-					/* Otherwise release bitmap segments that have been cleared. */
+			}
 
-					while (SBM_next(relation->rel_gc_bitmap,
-									&dp_sequence,
-									RSE_get_forward))
-					{
-						;	// do nothing
+			/* If there's more work to do voluntarily ask to be rescheduled.
+			   Otherwise, wait for event notification. */
+
+			if (found) {
+				(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
+			}
+			else {
+				dbb->dbb_flags &= ~DBB_gc_pending;
+
+				/* Make no mistake about it, garbage collection is our first
+				   priority. But if there's no garbage left to collect, assist
+				   the overworked cache writer and reader threads. */
+
+				while (dbb->dbb_flags & DBB_garbage_collector &&
+					   !(dbb->dbb_flags & DBB_gc_pending)) {
+					int timeout;
+
+					if (CCH_free_page(tdbb) || CCH_prefetch_pages(tdbb)) {
+						continue;
+					}
+					if (flush) {
+						/* As a last resort, flush garbage collected pages to
+						   disk. This isn't strictly necessary but contributes
+						   to the supply of free pages available for user
+						   transactions. It also reduces the likelihood of
+						   orphaning free space on lower precedence pages that
+						   haven't been written if a crash occurs. */
+
+						flush = FALSE;
+						if (transaction) {
+							CCH_flush(tdbb, (USHORT) FLUSH_SWEEP, 0);
+						}
+						continue;
+					}
+					dbb->dbb_flags &= ~DBB_gc_active;
+					THREAD_EXIT;
+					timeout = ISC_event_wait(1, &gc_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+					THREAD_ENTER;
+					dbb->dbb_flags |= DBB_gc_active;
+					if (!timeout) {
+						count = ISC_event_clear(gc_event);
 					}
 				}
-				--relation->rel_sweep_count;
 			}
 		}
-
-		/* If there's more work to do voluntarily ask to be rescheduled.
-		   Otherwise, wait for event notification. */
-
-		if (found)
-		{
-			(void) JRD_reschedule(tdbb, SWEEP_QUANTUM, TRUE);
-		}
-		else
-		{
-			dbb->dbb_flags &= ~DBB_gc_pending;
-
-			/* Make no mistake about it, garbage collection is our first
-			   priority. But if there's no garbage left to collect, assist
-			   the overworked cache writer and reader threads. */
-
-			while (dbb->dbb_flags & DBB_garbage_collector &&
-				   !(dbb->dbb_flags & DBB_gc_pending)) {
-				int timeout;
-
-				if (CCH_free_page(tdbb) || CCH_prefetch_pages(tdbb))
-					continue;
-				if (flush) {
-					/* As a last resort, flush garbage collected pages to
-					   disk. This isn't strictly necessary but contributes
-					   to the supply of free pages available for user
-					   transactions. It also reduces the likelihood of
-					   orphaning free space on lower precedence pages that
-					   haven't been written if a crash occurs. */
-
-					flush = FALSE;
-					if (transaction)
-						CCH_flush(tdbb, (USHORT) FLUSH_SWEEP, 0);
-					continue;
-				}
-				dbb->dbb_flags &= ~DBB_gc_active;
-				THREAD_EXIT;
-				timeout = ISC_event_wait(1, &gc_event, &count,
-										 10 * 1000000, (FPTR_VOID) 0, 0);
-				THREAD_ENTER;
-				dbb->dbb_flags |= DBB_gc_active;
-				if (!timeout)
-					count = ISC_event_clear(gc_event);
-			}
-		}
-	}
     }
 	catch (...) {
 		/* Perfunctory error reporting -- got any better ideas ? */
@@ -3652,21 +3630,23 @@ gc_exit:
 
     try {
 
-    if (rpb.rpb_record)
-		delete rpb.rpb_record;	/* Possibly allocated from permanent pool. */
-	if (transaction)
-		TRA_commit(tdbb, transaction, FALSE);
-	if (tdbb->tdbb_attachment) {
-		LCK_fini(tdbb, LCK_OWNER_attachment);
-		delete tdbb->tdbb_attachment;
-	}
-	dbb->dbb_flags &=
-		~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
-	ISC_event_post(gc_event);	/* Notify anyone listening of our demise. */
+		if (rpb.rpb_record) {
+			delete rpb.rpb_record;	/* Possibly allocated from permanent pool. */
+		}
+		if (transaction) {
+			TRA_commit(tdbb, transaction, FALSE);
+		}
+		if (tdbb->tdbb_attachment) {
+			LCK_fini(tdbb, LCK_OWNER_attachment);
+			delete tdbb->tdbb_attachment;
+		}
+		dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
+		/* Notify the finalization caller that we're finishing. */
+		ISC_event_post(dbb->dbb_gc_event_fini);	
+		ISC_event_fini(gc_event);
 
-	RESTORE_THREAD_DATA;
-
-	THREAD_EXIT;
+		RESTORE_THREAD_DATA;
+		THREAD_EXIT;
 
 	}	// try
 	catch (...) {

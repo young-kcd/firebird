@@ -195,9 +195,13 @@ public:
 	ULONG dbb_page_buffers;		/* Page buffers from header page */
 
 	EVENT_T dbb_writer_event[1];	/* Event to wake up cache writer */
+	EVENT_T dbb_writer_event_init[1];	/* Event for initialization cache writer */
+	EVENT_T dbb_writer_event_fini[1];	/* Event for finalization cache writer */
 	EVENT_T dbb_reader_event[1];	/* Event to wake up cache reader */
 #ifdef GARBAGE_THREAD
 	EVENT_T dbb_gc_event[1];	/* Event to wake up garbage collector */
+	EVENT_T dbb_gc_event_init[1];	/* Event for initialization garbage collector */
+	EVENT_T dbb_gc_event_fini[1];	/* Event for finalization garbage collector */
 #endif
 	class att *dbb_update_attachment;	/* Attachment with update in process */
 	class btb *dbb_update_que;	/* Attachments waiting for update */

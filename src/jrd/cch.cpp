@@ -992,8 +992,6 @@ void CCH_fini(TDBB tdbb)
 	BOOLEAN flush_error;
 	bcb_repeat *tail, *end;
 #ifdef CACHE_WRITER
-	EVENT event;
-	SLONG count;
 	QUE que;
 	LWT lwt_;
 #endif
@@ -1039,7 +1037,9 @@ void CCH_fini(TDBB tdbb)
 /* Shutdown the dedicated cache reader for this database. */
 
 	if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_reader)) {
-		event = dbb->dbb_reader_event;
+		SLONG count;
+		EVENT event = dbb->dbb_reader_event;
+
 		bcb->bcb_flags &= ~BCB_cache_reader;
 		ISC_event_post(event);
 		count = ISC_event_clear(event);
@@ -1056,14 +1056,18 @@ void CCH_fini(TDBB tdbb)
 /* Shutdown the dedicated cache writer for this database. */
 
 	if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_writer)) {
-		event = dbb->dbb_writer_event;
-		bcb->bcb_flags &= ~BCB_cache_writer;
-		ISC_event_post(event);
+		SLONG count;
+		EVENT event = dbb->dbb_writer_event_fini;
+		/* initialize initialization event */
+		ISC_event_init(event, 0, 0);
 		count = ISC_event_clear(event);
+
+		bcb->bcb_flags &= ~BCB_cache_writer;
+		ISC_event_post(dbb->dbb_writer_event); /* Wake up running thread */
 		THREAD_EXIT;
 		ISC_event_wait(1, &event, &count, 0, (FPTR_VOID) 0, 0);
 		THREAD_ENTER;
-		/* Now dispose off the cache writer associated semaphore */
+		/* Cleanup initialization event */
 		ISC_event_fini(event);
 	}
 #endif
@@ -1429,9 +1433,6 @@ void CCH_init(TDBB tdbb, ULONG number)
 	DBB dbb;
 	BCB bcb_ = 0;
 	SLONG count;
-#ifdef CACHE_READER
-	EVENT event;
-#endif
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1493,7 +1494,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 		dbb->dbb_ast_flags |= DBB_assert_locks;
 
 #ifdef CACHE_READER
-	event = dbb->dbb_reader_event;
+	EVENT event = dbb->dbb_reader_event;
 	ISC_event_init(event, 0, 0);
 	count = ISC_event_clear(event);
 	if (gds__thread_start
@@ -1507,19 +1508,22 @@ void CCH_init(TDBB tdbb, ULONG number)
 #endif
 
 #ifdef CACHE_WRITER
-	if (!(dbb->dbb_flags & DBB_read_only))
-	{
-		EVENT event = dbb->dbb_writer_event;
+	if (!(dbb->dbb_flags & DBB_read_only)) {
+		EVENT event = dbb->dbb_writer_event_init;
+		/* Initialize initialization event */
 		ISC_event_init(event, 0, 0);
 		count = ISC_event_clear(event);
+
 		if (gds__thread_start
 			(reinterpret_cast < FPTR_INT_VOID_PTR > (cache_writer), dbb,
-			 THREAD_high, 0, 0))
+			THREAD_high, 0, 0)) {
 			ERR_bugcheck_msg("cannot start thread");
-
+		}
 		THREAD_EXIT;
 		ISC_event_wait(1, &event, &count, 5 * 1000000, (FPTR_VOID) 0, 0);
 		THREAD_ENTER;
+		/* Clean up initialization event */
+		ISC_event_fini(event);
 	}
 #endif
 }
@@ -3221,143 +3225,151 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
    return, unlike the other try blocks further down the page. */
 
 	try {
-		LCK_init(tdbb, LCK_OWNER_attachment);
 		writer_event = dbb->dbb_writer_event;
+		ISC_event_init(writer_event, 0, 0);
+		LCK_init(tdbb, LCK_OWNER_attachment);
 		bcb = dbb->dbb_bcb;
 		bcb->bcb_flags |= BCB_cache_writer;
-		ISC_event_post(writer_event);
+
+		/* Notify our creator that we have started */
+		ISC_event_post(dbb->dbb_writer_event_init);
 	}
 	catch (...) {
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
+		ISC_event_fini(writer_event);
 		THREAD_EXIT;
 		return;
 	}
 
 	try {
 
-	while (bcb->bcb_flags & BCB_cache_writer)
-	{
-		count = ISC_event_clear(writer_event);
-		bcb->bcb_flags |= BCB_writer_active;
-		starting_page = -1;
+		while (bcb->bcb_flags & BCB_cache_writer)
+		{
+			count = ISC_event_clear(writer_event);
+			bcb->bcb_flags |= BCB_writer_active;
+			starting_page = -1;	
 
-		if (dbb->dbb_flags & DBB_suspend_bgio) {
-			THREAD_EXIT;
-			ISC_event_wait(1, &writer_event, &count, 10 * 1000000,
-						   (FPTR_VOID) 0, 0);
-			THREAD_ENTER;
-			continue;
-		}
-
-#ifdef SUPERSERVER_V2
-		/* Flush buffers for lazy commit */
-
-		if (!(dbb->dbb_flags & DBB_force_write) &&
-			(commit_mask = dbb->dbb_flush_cycle)) {
-			dbb->dbb_flush_cycle = 0;
-			btc_flush(tdbb, commit_mask, FALSE, status_vector);
-		}
-#endif
-
-		if (bcb->bcb_flags & BCB_free_pending) {
-			if (bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1)) {
-				write_buffer(tdbb, bdb, bdb->bdb_page, TRUE, status_vector,
-							 TRUE);
-				bcb = dbb->dbb_bcb;
+			if (dbb->dbb_flags & DBB_suspend_bgio) {
+				THREAD_EXIT;
+				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+				THREAD_ENTER;
+				continue;
 			}
+	
+#ifdef SUPERSERVER_V2
+			/* Flush buffers for lazy commit */
 
-			/* If the cache reader or garbage collector is idle, put
-			   them to work freeing pages. */
-#ifdef CACHE_READER
-			if (bcb->bcb_flags & BCB_cache_reader &&
-				!(bcb->bcb_flags & BCB_reader_active))
-					ISC_event_post(dbb->dbb_reader_event);
+			if (!(dbb->dbb_flags & DBB_force_write) &&
+				(commit_mask = dbb->dbb_flush_cycle)) {
+				dbb->dbb_flush_cycle = 0;
+				btc_flush(tdbb, commit_mask, FALSE, status_vector);
+			}
 #endif
-#ifdef GARBAGE_THREAD
-			if (dbb->dbb_flags & DBB_garbage_collector &&
-				!(dbb->dbb_flags & DBB_gc_active))
-					ISC_event_post(dbb->dbb_gc_event);
-#endif
-		}
 
-		if (dbb->dbb_wal) {
-			if (bcb->bcb_checkpoint)
-				if (bdb = get_buffer(tdbb, CHECKPOINT_PAGE, LATCH_none, 1)) {
-					write_buffer(tdbb, bdb, bdb->bdb_page, TRUE,
-								 status_vector, TRUE);
+			if (bcb->bcb_flags & BCB_free_pending) {
+				if (bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1)) {
+					write_buffer(tdbb, bdb, bdb->bdb_page, TRUE, status_vector, TRUE);
 					bcb = dbb->dbb_bcb;
 				}
-				else
-					bcb->bcb_checkpoint = 0;
 
-			if (!bcb->bcb_checkpoint && !(bcb->bcb_flags & BCB_checkpoint_db))
-				if (WAL_checkpoint_start(status_vector,
-										 dbb->dbb_wal,
-										 &start_chkpt) !=
-					FB_SUCCESS) gds__log_status(dbb->dbb_file->fil_string,
-											 status_vector);
-				else if (start_chkpt)
-					bcb->bcb_flags |= BCB_checkpoint_db;
+				/* If the cache reader or garbage collector is idle, put
+				   them to work freeing pages. */
+#ifdef CACHE_READER
+				if (bcb->bcb_flags & BCB_cache_reader &&
+					!(bcb->bcb_flags & BCB_reader_active)) {
+						ISC_event_post(dbb->dbb_reader_event);
+				}
+#endif
+#ifdef GARBAGE_THREAD
+				if (dbb->dbb_flags & DBB_garbage_collector &&
+					!(dbb->dbb_flags & DBB_gc_active)) {
+						ISC_event_post(dbb->dbb_gc_event);
+				}
+#endif
+			}
 
-			if ((bcb->bcb_flags & BCB_checkpoint_db) && !bcb->bcb_checkpoint) {
-				if (WAL_checkpoint_finish(status_vector, dbb->dbb_wal,
-										  &seq, walname, &p_off,
-										  &off) !=
-					FB_SUCCESS) gds__log_status(dbb->dbb_file->fil_string,
-											 status_vector);
-				else {
-					AIL_checkpoint_finish(status_vector, dbb, seq, walname,
-										  p_off, off);
-					bcb = dbb->dbb_bcb;
-					bcb->bcb_flags &= ~BCB_checkpoint_db;
-					for (tail = bcb->bcb_rpt, end = tail + bcb->bcb_count;
-						 tail < end; tail++) {
-						bdb = tail->bcb_bdb;
-						if (bdb->bdb_length)
-							continue;
-						if (bdb->bdb_flags & BDB_db_dirty) {
-							bdb->bdb_flags |= BDB_checkpoint;
-							++bcb->bcb_checkpoint;
+			if (dbb->dbb_wal) {
+				if (bcb->bcb_checkpoint) {
+					if (bdb = get_buffer(tdbb, CHECKPOINT_PAGE, LATCH_none, 1)) {
+						write_buffer(tdbb, bdb, bdb->bdb_page, TRUE, status_vector, TRUE);
+						bcb = dbb->dbb_bcb;
+					}
+					else {
+						bcb->bcb_checkpoint = 0;
+					}
+				}
+
+				if (!bcb->bcb_checkpoint && !(bcb->bcb_flags & BCB_checkpoint_db)) {
+					if (WAL_checkpoint_start(status_vector, dbb->dbb_wal, 
+						&start_chkpt) != FB_SUCCESS) {
+						gds__log_status(dbb->dbb_file->fil_string, status_vector);
+					}
+					else {
+						if (start_chkpt) {
+							bcb->bcb_flags |= BCB_checkpoint_db;
+						}
+					}
+				}
+
+				if ((bcb->bcb_flags & BCB_checkpoint_db) && !bcb->bcb_checkpoint) {
+					if (WAL_checkpoint_finish(status_vector, dbb->dbb_wal,
+						&seq, walname, &p_off, &off) != FB_SUCCESS) {
+						gds__log_status(dbb->dbb_file->fil_string, status_vector);
+					}
+					else {
+						AIL_checkpoint_finish(status_vector, dbb, seq, walname, p_off, off);
+						bcb = dbb->dbb_bcb;
+						bcb->bcb_flags &= ~BCB_checkpoint_db;
+						for (tail = bcb->bcb_rpt, end = tail + bcb->bcb_count;
+							 tail < end; tail++) {
+							bdb = tail->bcb_bdb;
+							if (bdb->bdb_length) {
+								continue;
+							}
+							if (bdb->bdb_flags & BDB_db_dirty) {
+								bdb->bdb_flags |= BDB_checkpoint;
+								++bcb->bcb_checkpoint;
+							}
 						}
 					}
 				}
 			}
-		}
 
-		/* If there's more work to do voluntarily ask to be rescheduled.
-		   Otherwise, wait for event notification. */
+			/* If there's more work to do voluntarily ask to be rescheduled.
+			   Otherwise, wait for event notification. */
 
-		if ((bcb->bcb_flags & BCB_free_pending) ||
-			bcb->bcb_checkpoint || dbb->dbb_flush_cycle) {
-			(void) JRD_reschedule(tdbb, 0, TRUE);
-		}
+			if ((bcb->bcb_flags & BCB_free_pending) ||
+				bcb->bcb_checkpoint || dbb->dbb_flush_cycle) {
+				(void) JRD_reschedule(tdbb, 0, TRUE);
+			}
 #ifdef CACHE_READER
-		else if (SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) {
-			/* Prefetch some pages in our spare time and in the process
-			   garbage collect the prefetch bitmap. */
-			struct prf prefetch;
+			else if (SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) {
+				/* Prefetch some pages in our spare time and in the process
+				   garbage collect the prefetch bitmap. */
+				struct prf prefetch;
 
-			prefetch_init(&prefetch, tdbb);
-			prefetch_prologue(&prefetch, &starting_page);
-			prefetch_io(&prefetch, status_vector);
-			prefetch_epilogue(&prefetch, status_vector);
-		}
+				prefetch_init(&prefetch, tdbb);
+				prefetch_prologue(&prefetch, &starting_page);
+				prefetch_io(&prefetch, status_vector);
+				prefetch_epilogue(&prefetch, status_vector);
+			}
 #endif
-		else {
-			bcb->bcb_flags &= ~BCB_writer_active;
-			THREAD_EXIT;
-			ISC_event_wait(1, &writer_event, &count, 10 * 1000000,
-						   (FPTR_VOID) 0, 0);
-			THREAD_ENTER;
+			else {
+				bcb->bcb_flags &= ~BCB_writer_active;
+				THREAD_EXIT;
+				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+				THREAD_ENTER;
+			}
+			bcb = dbb->dbb_bcb;
 		}
-		bcb = dbb->dbb_bcb;
-	}
 
-	LCK_fini(tdbb, LCK_OWNER_attachment);
-	delete tdbb->tdbb_attachment;
-	bcb->bcb_flags &= ~BCB_cache_writer;
-	ISC_event_post(writer_event);
-	THREAD_EXIT;
+		LCK_fini(tdbb, LCK_OWNER_attachment);
+		delete tdbb->tdbb_attachment;
+		bcb->bcb_flags &= ~BCB_cache_writer;
+		/* Notify the finalization caller that we're finishing. */
+		ISC_event_post(dbb->dbb_writer_event_fini);
+		ISC_event_fini(writer_event);
+		THREAD_EXIT;
 
 	}	// try
 	catch (...) {
