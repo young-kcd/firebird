@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.30 2003-11-16 01:43:07 brodsom Exp $
+//	$Id: tdr.cpp,v 1.31 2003-11-18 07:58:23 robocop Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -879,7 +879,7 @@ static bool reconnect(FRBRD* handle,
 {
 	ISC_STATUS_ARRAY status_vector;
 
-	const SLONG id = gds__vax_integer((UCHAR *) &number, 4);
+	const SLONG id = gds__vax_integer(reinterpret_cast<const UCHAR*>(&number), 4);
 	FRBRD* transaction = NULL;
 	if (isc_reconnect_transaction(status_vector, &handle, &transaction,
 								   sizeof(id),

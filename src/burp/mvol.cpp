@@ -788,7 +788,7 @@ static SLONG get_numeric(void)
 
 	SSHORT length = get_text((UCHAR*) value, sizeof(value));
 
-	return gds__vax_integer((UCHAR*) value, length);
+	return gds__vax_integer(reinterpret_cast<const UCHAR*>(value), length);
 }
 
 
@@ -1076,8 +1076,8 @@ static void put_numeric( SCHAR attribute, int value)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	ULONG vax_value = gds__vax_integer((UCHAR *) & value, sizeof(value));
-	UCHAR* p = (UCHAR *) &vax_value;
+	const ULONG vax_value = gds__vax_integer(reinterpret_cast<const UCHAR*>(&value), sizeof(value));
+	const UCHAR* p = (UCHAR *) &vax_value;
 
 	put(tdgbl, attribute);
 	put(tdgbl, sizeof(value));
@@ -1263,13 +1263,14 @@ static bool write_header(DESC   handle,
 	}
 	else
 	{
-		ULONG vax_value = gds__vax_integer((UCHAR*) &(tdgbl->mvol_volume_count),
+		const ULONG vax_value = gds__vax_integer(reinterpret_cast<const UCHAR*>(
+											&(tdgbl->mvol_volume_count)),
 											sizeof(tdgbl->mvol_volume_count));
-		const UCHAR *p = (UCHAR *) &vax_value;
-		UCHAR *q = tdgbl->mvol_io_volume;
+		const UCHAR* p = (UCHAR *) &vax_value;
+		UCHAR* q = tdgbl->mvol_io_volume;
 		// CVC: Warning, do we want sizeof(int) or sizeof(some_abstract_FB_type)???
-		// It seems to me we want sizeof(ULONG) for safety.
-		for (USHORT i = 0; i < sizeof(int); i++)
+		// It seems to me we want sizeof(ULONG) for safety. => Done.
+		for (int i = 0; i < sizeof(ULONG); i++)
 		{
 			*q++ = *p++;
 		}

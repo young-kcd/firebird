@@ -262,19 +262,17 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
  **/
 void ERRD_post(ISC_STATUS status, ...)
 {
-
-	ISC_STATUS_ARRAY tmp_status, warning_status;
-	int tmp_status_len = 0;
-	int status_len = 0;
 	int warning_indx = 0;
 
 	ISC_STATUS* status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
 
 /* stuff the status into temp buffer */
+	ISC_STATUS_ARRAY tmp_status;
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
 	STUFF_STATUS(tmp_status, status);
 
 /* calculate length of the status */
+	int tmp_status_len = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
@@ -288,6 +286,7 @@ void ERRD_post(ISC_STATUS status, ...)
 		status_vector[2] = isc_arg_end;
 	}
 
+    int status_len = 0;
 	PARSE_STATUS(status_vector, status_len, warning_indx);
 	if (status_len)
 		--status_len;
@@ -322,6 +321,7 @@ void ERRD_post(ISC_STATUS status, ...)
 	}
 
 	int warning_count = 0;
+	ISC_STATUS_ARRAY warning_status;
 
 	if (warning_indx) {
 		/* copy current warning(s) to a temp buffer */

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Journal Server
- *	MODULE:		journal.e
+ *	MODULE:		journal_vms.e
  *	DESCRIPTION:	Journal server for intermediate file journalling
  *
  * The contents of this file are subject to the Interbase Public

@@ -2731,8 +2731,8 @@ static void put_slice( ICC icc)
 
 	GDS_PUT_SLICE(status_vector, &idb->idb_handle, &transaction->itr_handle,
 				  (ISC_QUAD*) & array_id, sdl_length,
-				  reinterpret_cast <char*>(sdl), param_length,
-				  reinterpret_cast <long*>(params), slice_length, slice);
+				  reinterpret_cast<char*>(sdl), param_length,
+				  reinterpret_cast<long*>(params), slice_length, slice);
 	ips->ips_rel_id = array_id.bid_relation_id;
 	ips->ips_number = array_id.bid_number;
 	send_response(icc, status_vector);

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		rlck.c
+ *	MODULE:		rlck.cpp
  *	DESCRIPTION:	Record and Relation Lock Manager
  *
  * The contents of this file are subject to the Interbase Public

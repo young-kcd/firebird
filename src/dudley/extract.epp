@@ -246,7 +246,7 @@ static void binary_to_ascii(SLONG value, SSHORT scale, TEXT * buffer)
 }
 
 
-static void decompile_blr_literal(const SCHAR * string)
+static void decompile_blr_literal(const SCHAR* string)
 {
 /**************************************
  *
@@ -264,7 +264,7 @@ static void decompile_blr_literal(const SCHAR * string)
 	SSHORT size;
 	SLONG value;
 
-	const SCHAR *p = string;
+	const UCHAR* p = reinterpret_cast<const UCHAR*>(string);
 
 	if ((*p++ != blr_version4) || (*p++ != blr_literal)) {
 		put_comment(250);		/* msg 250: **** unable to decompile missing value *** */
@@ -275,7 +275,7 @@ static void decompile_blr_literal(const SCHAR * string)
 
 	switch (*p++) {
 	case (blr_text):
-		size = gds__vax_integer((UCHAR*) p, 2);
+		size = gds__vax_integer(p, 2);
 		p += 2;
 		*b++ = '"';
 		while (size--)
@@ -286,13 +286,13 @@ static void decompile_blr_literal(const SCHAR * string)
 
 	case (blr_long):
 		scale = *p++;
-		value = gds__vax_integer((UCHAR*) p, 4);
+		value = gds__vax_integer(p, 4);
 		binary_to_ascii(value, scale, buffer);
 		break;
 
 	case (blr_short):
 		scale = *p++;
-		value = gds__vax_integer((UCHAR*) p, 2);
+		value = gds__vax_integer(p, 2);
 		binary_to_ascii(value, scale, buffer);
 		break;
 
@@ -512,9 +512,9 @@ static void extract_database(const TEXT * DB_file_name)
 
         TEXT* d = buffer;
         if (*d++ == isc_info_page_size) {
-            SSHORT length = gds__vax_integer((UCHAR*) d, 2);
+            SSHORT length = gds__vax_integer(reinterpret_cast<const UCHAR*>(d), 2);
             d += 2;
-            page_size = gds__vax_integer((UCHAR*) d, length);
+            page_size = gds__vax_integer(reinterpret_cast<const UCHAR*>(d), length);
             if (page_size)
                 ib_fprintf(output_file, "\n\tpage_size %"SLONGFORMAT, page_size);
         }

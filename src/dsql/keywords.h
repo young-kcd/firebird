@@ -27,13 +27,10 @@
 
 typedef struct tok {
     USHORT tok_ident;
-    SCHAR *tok_string;
+    const char* tok_string;
     USHORT tok_version;
 } TOK;
-
-extern "C" {
 
 bool KEYWORD_stringIsAToken(const char*);
 const TOK* KEYWORD_getTokens();
 
-}

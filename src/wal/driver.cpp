@@ -1,6 +1,6 @@
 /*
  *        PROGRAM:        JRD Write Ahead Log APIs
- *        MODULE:         wal.c
+ *        MODULE:         wal.cpp
  *        DESCRIPTION:    Simple driver for WAL routines
  *
  * The contents of this file are subject to the Interbase Public

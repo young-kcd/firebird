@@ -1063,7 +1063,7 @@ ISC_STATUS filter_trans(USHORT action, CTL control)
 
 			case TDR_TRANSACTION_ID:
 				id =
-					gds__vax_integer(reinterpret_cast < UCHAR * >(p), length);
+					gds__vax_integer(reinterpret_cast<const UCHAR*>(p), length);
 				sprintf(out, "    Transaction id: %ld", id);
 				break;
 

@@ -272,7 +272,7 @@ void METD_drop_relation( dsql_req* request, const dsql_str* name)
 }
 
 
-INTLSYM METD_get_collation(dsql_req* request, const dsql_str* name)
+dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -287,7 +287,7 @@ INTLSYM METD_get_collation(dsql_req* request, const dsql_str* name)
  **************************************/
 	FRBRD *DB, *gds_trans;
 	DBB dbb;
-	INTLSYM iname;
+	dsql_intlsym* iname;
 	dsql_sym* symbol;
 
 /* Start by seeing if symbol is already defined */
@@ -296,8 +296,8 @@ INTLSYM METD_get_collation(dsql_req* request, const dsql_str* name)
 						 name->str_length, SYM_intlsym, 0);
 	for (; symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_intlsym) &&
-			(((INTLSYM) symbol->sym_object)->intlsym_type ==
-			 INTLSYM_collation)) return (INTLSYM) symbol->sym_object;
+			(((dsql_intlsym*) symbol->sym_object)->intlsym_type ==
+			 DSQL_INTLSYM_collation)) return (dsql_intlsym*) symbol->sym_object;
 
 
 /* Now see if it is in the database */
@@ -316,9 +316,9 @@ INTLSYM METD_get_collation(dsql_req* request, const dsql_str* name)
 
 	THREAD_ENTER;
 
-	iname = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) intlsym;
+	iname = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) dsql_intlsym;
 	strcpy(iname->intlsym_name, (TEXT *) name->str_data);
-	iname->intlsym_type = INTLSYM_collation;
+	iname->intlsym_type = DSQL_INTLSYM_collation;
 	iname->intlsym_flags = 0;
 	iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
 	iname->intlsym_collate_id = X.RDB$COLLATION_ID;
@@ -473,7 +473,7 @@ void METD_get_col_default(dsql_req*    request,
 }
 
 
-INTLSYM METD_get_charset(dsql_req* request, USHORT length, const char* name /* UTF-8 */)
+dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* name /* UTF-8 */)
 {
 /**************************************
  *
@@ -488,7 +488,7 @@ INTLSYM METD_get_charset(dsql_req* request, USHORT length, const char* name /* U
  **************************************/
 	FRBRD *DB, *gds_trans;
 	DBB dbb;
-	INTLSYM iname;
+	dsql_intlsym* iname;
 	dsql_sym* symbol;
 
 /* Start by seeing if symbol is already defined */
@@ -496,8 +496,8 @@ INTLSYM METD_get_charset(dsql_req* request, USHORT length, const char* name /* U
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name, length, SYM_intlsym, 0);
 	for (; symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_intlsym) &&
-			(((INTLSYM) (symbol->sym_object))->intlsym_type ==
-			 INTLSYM_charset)) return (INTLSYM) symbol->sym_object;
+			(((dsql_intlsym*) (symbol->sym_object))->intlsym_type ==
+			 DSQL_INTLSYM_charset)) return (dsql_intlsym*) symbol->sym_object;
 
 
 /* Now see if it is in the database */
@@ -520,9 +520,9 @@ INTLSYM METD_get_charset(dsql_req* request, USHORT length, const char* name /* U
 
 	    THREAD_ENTER;
 
-        iname = FB_NEW_RPT(*dbb->dbb_pool, length) intlsym;
+        iname = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_intlsym;
         strcpy(iname->intlsym_name, (char*) name);
-        iname->intlsym_type = INTLSYM_charset;
+        iname->intlsym_type = DSQL_INTLSYM_charset;
         iname->intlsym_flags = 0;
         iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
         iname->intlsym_collate_id = X.RDB$COLLATION_ID;

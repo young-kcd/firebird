@@ -1060,8 +1060,8 @@ static void add_files( DBB dbb, FIL files)
 			DDL_err(38, NULL, NULL, NULL, NULL, NULL);
 			/* msg 38: isc_database_info failed */
 
-		length = gds__vax_integer((UCHAR*) s + 1, 2);
-		start = gds__vax_integer((UCHAR*) s + 3, length);
+		length = gds__vax_integer(reinterpret_cast<const UCHAR*>(s + 1), 2);
+		start = gds__vax_integer(reinterpret_cast<const UCHAR*>(s + 3), length);
 
 		length = (dbb->dbb_length) ? dbb->dbb_length + 1 : 0;
 		start = MAX(start, length);

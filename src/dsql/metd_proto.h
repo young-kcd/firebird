@@ -38,9 +38,9 @@ void METD_drop_function(dsql_req*, const dsql_str*);
 void METD_drop_procedure(dsql_req*, const dsql_str*);
 void METD_drop_relation(dsql_req*, const dsql_str*);
 
-INTLSYM  METD_get_charset(dsql_req*, USHORT, const char* name /* UTF-8 */);
+dsql_intlsym*  METD_get_charset(dsql_req*, USHORT, const char* name /* UTF-8 */);
 USHORT   METD_get_charset_bpc(dsql_req*, SSHORT);
-INTLSYM  METD_get_collation(dsql_req*, const dsql_str*);
+dsql_intlsym* METD_get_collation(dsql_req*, const dsql_str*);
 void     METD_get_col_default(dsql_req*, const char*, const char*, bool*, TEXT*, USHORT);
 dsql_str*      METD_get_default_charset(dsql_req*);
 USHORT   METD_get_domain(dsql_req*, class dsql_fld*, const char* name /* UTF-8 */);

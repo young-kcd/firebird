@@ -323,7 +323,7 @@ enum var_flags_vals {
 // (either collation or character set name)
 
 //! International symbol
-class intlsym : public pool_alloc_rpt<SCHAR, dsql_type_intlsym>
+class dsql_intlsym : public pool_alloc_rpt<SCHAR, dsql_type_intlsym>
 {
 public:
 	dsql_sym*	intlsym_symbol;		//!< Hash symbol for intlsym
@@ -335,12 +335,11 @@ public:
 	USHORT		intlsym_bytes_per_char;
 	TEXT		intlsym_name[2];
 };
-typedef intlsym* INTLSYM;
 
 // values used in intlsym_type
-enum intlsym_type_vals {
-	INTLSYM_collation	= 1,
-	INTLSYM_charset		= 2
+enum dsql_intlsym_type_vals {
+	DSQL_INTLSYM_collation	= 1,
+	DSQL_INTLSYM_charset	= 2
 };
 
 // values used in intlsym_flags
@@ -376,9 +375,9 @@ public:
 	void		append_file_start(ULONG start);
 	void		generate_unnamed_trigger_beginning(	bool		on_update_trigger,
 													const char*	prim_rel_name,
-													dsql_nod* prim_columns,
+													const dsql_nod* prim_columns,
 													const char*	for_rel_name,
-													dsql_nod* for_columns);
+													const dsql_nod* for_columns);
 	// end - member functions that should be private
 
 	dsql_req*	req_parent;		//!< Source request, if cursor update

@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.23 2003-11-10 06:27:45 stryqx Exp $
+ *  $Id: keywords.cpp,v 1.24 2003-11-18 07:58:28 robocop Exp $
  *
  */
 
@@ -323,11 +323,11 @@ static const TOK tokens [] = {
    MOD 29-June-2002
 */
 
-bool KEYWORD_stringIsAToken(const char *in_str)
+bool KEYWORD_stringIsAToken(const char* in_str)
 {
-    const TOK *tok_ptr = tokens;
-    while (tok_ptr -> tok_string) {
-        if (!strcmp(tok_ptr -> tok_string, in_str)) {
+    const TOK* tok_ptr = tokens;
+    while (tok_ptr->tok_string) {
+        if (!strcmp(tok_ptr->tok_string, in_str)) {
             return true;
         }
         ++tok_ptr;
@@ -339,3 +339,4 @@ const TOK* KEYWORD_getTokens()
 {
     return tokens;
 }
+

@@ -69,10 +69,10 @@ static inline void stuff_dpb_long(SCHAR*& dpb, const SLONG blr)
 	stuff_dpb(dpb, blr >> 24);
 }
 
-static void generate_error(ISC_STATUS *, SCHAR *, SSHORT, SSHORT);
-static SSHORT get_next_token(SCHAR **, SCHAR *, SCHAR *, USHORT *);
-static SSHORT get_token(ISC_STATUS *, SSHORT, bool, SCHAR **, SCHAR *,
-						SCHAR *, USHORT *);
+static void generate_error(ISC_STATUS*, const SCHAR*, SSHORT, SSHORT);
+static SSHORT get_next_token(SCHAR**, const SCHAR*, SCHAR*, USHORT*);
+static SSHORT get_token(ISC_STATUS*, SSHORT, bool, SCHAR**, const SCHAR* const,
+						SCHAR*, USHORT*);
 
 struct pp_table {
 	SCHAR symbol[10];
@@ -123,45 +123,36 @@ enum token_vals {
     @param dialect
 
  **/
-int	PREPARSE_execute(
+bool PREPARSE_execute(
 		ISC_STATUS* user_status,
 		FRBRD** db_handle,
 		FRBRD** trans_handle,
 		USHORT stmt_length,
 		SCHAR* stmt,
-		BOOLEAN* stmt_eaten,
+		bool* stmt_eaten,
 		USHORT dialect)
 {
-	TEXT file_name[MAX_TOKEN_SIZE + 1];
-	SCHAR *token, *dpb_array, *dpb, *ch, *stmt_end;
-	SLONG page_size = 0;
-	USHORT dpb_len = 0, token_length;
-	SSHORT i, l, result;
-	bool matched;
-	bool get_out;
-	ISC_STATUS_ARRAY temp_status;
-	FRBRD *temp_db_handle = NULL;
-
-	token = (SCHAR *) gds__alloc((SLONG) MAX_TOKEN_SIZE + 1);
+	char* const token = (SCHAR *) gds__alloc((SLONG) MAX_TOKEN_SIZE + 1);
 /* FREE: by return(s) in this procedure */
 	if (!token) {				/* NOMEM: */
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_virmemexh;
 		user_status[2] = isc_arg_end;
-		return FALSE;
+		return false;
 	}
 
 	if (!stmt_length)
 		stmt_length = strlen(stmt);
-	stmt_end = stmt + stmt_length;
+	const char* const stmt_end = stmt + stmt_length;
 
+	USHORT token_length;
 	if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token,
 				  &token_length) ||
 		token_length != pp_symbols[PP_CREATE].length ||
 		strcmp(token, pp_symbols[PP_CREATE].symbol)) 
 	{
 		gds__free((SLONG *) token);
-		return FALSE;
+		return false;
 	}
 
 	if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token,
@@ -172,26 +163,28 @@ int	PREPARSE_execute(
 		 strcmp(token, pp_symbols[PP_SCHEMA].symbol))) 
 	{
 		gds__free((SLONG *) token);
-		return FALSE;
+		return false;
 	}
 
 	if (get_token(user_status, STRING, false, &stmt, stmt_end, token,
 				  &token_length))
 	{
 		gds__free((SLONG *) token);
-		return TRUE;
+		return true;
 	}
 
+    TEXT file_name[MAX_TOKEN_SIZE + 1];
 	strcpy(file_name, token);
-	*stmt_eaten = FALSE;
-	dpb = dpb_array = (SCHAR *) gds__alloc((SLONG) 2 * MAX_TOKEN_SIZE + 25);
+	*stmt_eaten = false;
+	char* const dpb_array = (SCHAR*) gds__alloc((SLONG) 2 * MAX_TOKEN_SIZE + 25);
+	char* dpb = dpb_array;
 /* FREE: by following return(s) in this procedure */
 	if (!dpb_array) {			/* NOMEM: */
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_virmemexh;
 		user_status[2] = isc_arg_end;
 		gds__free((SLONG *) token);
-		return TRUE;
+		return true;
 	}
 
 	stuff_dpb(dpb, isc_dpb_version1);
@@ -201,21 +194,29 @@ int	PREPARSE_execute(
 	stuff_dpb(dpb, isc_dpb_sql_dialect);
 	stuff_dpb(dpb, 4);
 	stuff_dpb_long(dpb, dialect);
+
+	SLONG page_size = 0;
+	bool matched;
 	do {
-		result = get_next_token(&stmt, stmt_end, token, &token_length);
+		const SSHORT result = get_next_token(&stmt, stmt_end, token, &token_length);
 		if (result == NO_MORE_TOKENS) {
-			*stmt_eaten = TRUE;
+			*stmt_eaten = true;
 			break;
 		}
 		else if (result < 0)
 			break;
 
 		matched = false;
-		for (i = 3; pp_symbols[i].length && !matched; i++) {
+		for (int i = 3; pp_symbols[i].length && !matched; i++) {
 			if (token_length == pp_symbols[i].length &&
-				!strcmp(token, pp_symbols[i].symbol)) {
+				!strcmp(token, pp_symbols[i].symbol)) 
+			{
+				bool get_out = false;
+				SCHAR* ch;
+				SSHORT l;
+				// CVC: What's strange, this routine doesn't check token_length
+				// but it proceeds blindly, trying to exhaust the token itself.
 
-				get_out = false;
 				switch (pp_symbols[i].code) {
 				case PP_PAGE_SIZE:
 				case PP_PAGESIZE:
@@ -313,21 +314,25 @@ int	PREPARSE_execute(
 				if (get_out) {
 					gds__free((SLONG *) dpb_array);
 					gds__free((SLONG *) token);
-					return TRUE;
+					return true;
 				}
 			}
 		}
 
 	} while (matched);
 
-	dpb_len = dpb - dpb_array;
+	const USHORT dpb_len = dpb - dpb_array;
 
 /* This code is because 3.3 server does not recognize isc_dpb_overwrite. */
+	FRBRD* temp_db_handle = NULL;
 	if (!isc_attach_database(user_status, 0, file_name, &temp_db_handle,
 							 dpb_len, dpb_array) ||
 		user_status[1] != isc_io_error) {
-		if (!user_status[1])
+		if (!user_status[1]) {
+			// Swallow status from detach.
+			ISC_STATUS_ARRAY temp_status;
 			isc_detach_database(temp_status, &temp_db_handle);
+		}
 		if (!user_status[1] || user_status[1] == isc_bad_db_format) {
 			user_status[0] = isc_arg_gds;
 			user_status[1] = isc_io_error;
@@ -343,7 +348,7 @@ int	PREPARSE_execute(
 		if (dpb_array)
 			gds__free((SLONG *) dpb_array);
 		gds__free((SLONG *) token);
-		return TRUE;
+		return true;
 	}
 
 	isc_create_database(user_status, 0, file_name,
@@ -354,7 +359,7 @@ int	PREPARSE_execute(
 		gds__free((SLONG *) dpb_array);
 	gds__free((SLONG *) token);
 
-	return TRUE;
+	return true;
 }
 
 
@@ -371,11 +376,10 @@ int	PREPARSE_execute(
 
  **/
 static void generate_error(
-						   ISC_STATUS * user_status,
-						   SCHAR * token, SSHORT error, SSHORT result)
+						   ISC_STATUS* user_status,
+						   const SCHAR* token, SSHORT error, SSHORT result)
 {
 	TEXT err_string[MAX_TOKEN_SIZE + 3];
-	SSHORT length;
 
 	user_status[0] = isc_arg_gds;
 	user_status[1] = isc_sqlerr;
@@ -394,7 +398,7 @@ static void generate_error(
 		if (result) {
 			err_string[0] = (TEXT) result;
 			strcpy(err_string + 1, token);
-			length = strlen(token);
+			const size_t length = strlen(token);
 			err_string[length + 1] = (TEXT) result;
 			err_string[length + 2] = '\0';
 		}
@@ -425,16 +429,14 @@ static void generate_error(
 
  **/
 static SSHORT get_next_token(
-							 SCHAR ** stmt,
-							 SCHAR * stmt_end,
-							 SCHAR * token, USHORT * token_length)
+							 SCHAR** stmt,
+							 const SCHAR* stmt_end,
+							 SCHAR* token, USHORT* token_length)
 {
-	SCHAR *s, *p, *token_end, *start_of_token;
-	UCHAR c, class_;
-	SSHORT length;
+	UCHAR c, char_class;
 
 	*token_length = 0;
-	s = *stmt;
+	SCHAR* s = *stmt;
 
 	for (;;) {
 		if (s >= stmt_end) {
@@ -452,24 +454,24 @@ static SSHORT get_next_token(
 			s++;
 			continue;
 		}
-		class_ = classes[c];
-		if (!(class_ & CHR_WHITE))
+		char_class = classes[c];
+		if (!(char_class & CHR_WHITE))
 			break;
 	}
 
 /* At this point c contains character and class contains character class.
    s is pointing to next character. */
 
-	start_of_token = s - 1;
+	SCHAR* start_of_token = s - 1;
 
 /* In here we handle only 4 cases, STRING, INTEGER, arbitrary
    SYMBOL and single character punctuation. */
 
 /* token can be up to MAX_TOKEN_SIZE and 1 is for null termination */
 
-	p = token;
-	token_end = token + MAX_TOKEN_SIZE + 1;
-	if (class_ & CHR_QUOTE) {
+	SCHAR* p = token;
+	const char* const token_end = token + MAX_TOKEN_SIZE + 1;
+	if (char_class & CHR_QUOTE) {
 		for (; p < token_end; p++) {
 			if (s >= stmt_end)
 				return UNEXPECTED_END_OF_COMMAND;
@@ -495,9 +497,9 @@ static SSHORT get_next_token(
 
 /* Is it an integer? */
 
-	if (class_ & CHR_DIGIT) {
-		for (; s < stmt_end && (classes[c = *s] & CHR_DIGIT); ++s);
-		length = (s - start_of_token);
+	if (char_class & CHR_DIGIT) {
+		for (; s < stmt_end && (classes[c = *s] & CHR_DIGIT); ++s); // empty body
+		const ptrdiff_t length = (s - start_of_token);
 		*stmt = s;
 		if (length > MAX_TOKEN_SIZE) {
 			memcpy(token, start_of_token, MAX_TOKEN_SIZE);
@@ -513,7 +515,7 @@ static SSHORT get_next_token(
 
 /* Is is a symbol */
 
-	if (class_ & CHR_LETTER) {
+	if (char_class & CHR_LETTER) {
 		*p++ = UPPER(c);
 		for (; s < stmt_end && classes[*s] & CHR_IDENT && p < token_end; s++) {
 			*p++ = UPPER(*s);
@@ -555,19 +557,16 @@ static SSHORT get_next_token(
     @param token_length
 
  **/
-static SSHORT get_token(ISC_STATUS * status,
+static SSHORT get_token(ISC_STATUS* status,
 						SSHORT token_type,
 						bool optional,
-						SCHAR ** stmt,
-						SCHAR * stmt_end,
-						SCHAR * token,
-						USHORT * token_length)
+						SCHAR** stmt,
+						const SCHAR* const stmt_end,
+						SCHAR* token,
+						USHORT* token_length)
 {
-	SSHORT result;
-	SCHAR *temp_stmt;
-
-	temp_stmt = *stmt;
-	result = get_next_token(&temp_stmt, stmt_end, token, token_length);
+	SCHAR* temp_stmt = *stmt;
+	const SSHORT result = get_next_token(&temp_stmt, stmt_end, token, token_length);
 
 	switch (result) {
 	case NO_MORE_TOKENS:

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.41 2003-11-16 16:17:38 brodsom Exp $
+$Id: why.cpp,v 1.42 2003-11-18 07:58:34 robocop Exp $
 */
 
 #include "firebird.h"
@@ -2557,13 +2557,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS * user_status,
  **************************************/
 	WHY_TRA crdb_trans_handle;
 	ISC_STATUS_ARRAY local, temp_status;
-	ISC_STATUS *status, *s;
-	BOOLEAN stmt_eaten;
 	SCHAR buffer[16];
 	BOOLEAN ret_v3_error;
 
+    ISC_STATUS* status;
 	GET_STATUS;
 
+	bool stmt_eaten;
 	if (PREPARSE_execute(	status,
 							db_handle,
 							tra_handle,
@@ -2623,7 +2623,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS * user_status,
 		}
 
 		if (ret_v3_error) {
-			s = status;
+			ISC_STATUS* s = status;
 			*s++ = isc_arg_gds;
 			*s++ = isc_srvr_version_too_old;
 			*s = isc_arg_end;

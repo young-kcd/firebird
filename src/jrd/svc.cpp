@@ -1233,7 +1233,7 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 			service_get(service, buffer, 2, GET_BINARY, 0, &length);
 			l =
 				(USHORT) gds__vax_integer(reinterpret_cast <
-										  UCHAR * >(buffer), 2);
+										  UCHAR*>(buffer), 2);
 			service_get(service, buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end))) {
 				THREAD_ENTER;
@@ -3655,7 +3655,7 @@ static BOOLEAN get_action_svc_bitmask(
 	ISC_USHORT count;
 
 	opt =
-		gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
+		gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
 						 sizeof(ISC_ULONG));
 	for (mask = 1, count = (sizeof(ISC_ULONG) * 8) - 1; count; --count) {
 		if (opt & mask) {
@@ -3699,7 +3699,7 @@ static void get_action_svc_string(
  **************************************/
 	ISC_USHORT l, l2;
 
-	l = gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
+	l = gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
 						 sizeof(ISC_USHORT));
 
 	const char* local_server = "localhost:";
@@ -3756,7 +3756,7 @@ static void get_action_svc_data(
 	TEXT buf[64];
 
 	ll =
-		gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
+		gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
 						 sizeof(ISC_ULONG));
 	sprintf(buf, "%lu ", ll);
 	if (*cmd) {
