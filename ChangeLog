@@ -1,3 +1,9 @@
+2004-09-10 06:50  robocop
+
+	* firebird2/src/jrd/ibase.h (1.86):
+	
+	Rollback a mistake I did yesterday in paramvary.
+
 2004-09-09 21:24  skidder
 
 	* firebird2/src/jrd/intlobj_new.h (1.10):
