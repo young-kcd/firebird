@@ -160,10 +160,16 @@ enum redirect_vals {
 	NOOUTPUT = 2
 };
 
-class Tgbl : public thdd
+
+#ifndef SUPERSERVER
+class AliceGlobals;
+extern AliceGlobals* gdgbl;
+#endif
+
+class AliceGlobals : public thdd
 {
 public:
-	Tgbl(AliceMemoryPool* p) : pools(0, (AliceMemoryPool*)0,
+	AliceGlobals(AliceMemoryPool* p) : pools(0, (AliceMemoryPool*)0,
 				pool_vec_t::allocator_type(*p)) {}
 	
 	user_action		ALICE_data;
@@ -183,33 +189,31 @@ public:
 	redirect_vals	sw_redirect;
 	bool			sw_service;
 	bool			sw_service_thd;
-};
-
 
 #ifdef SUPERSERVER
-inline Tgbl* ALICE_get_thread_data() {
-	return (Tgbl*) thdd::getSpecific();
-}
-inline void ALICE_set_thread_data(Tgbl* tdgbl) {
-	tdgbl->thdd_type = THDD_TYPE_TALICE;
-	tdgbl->putSpecific();
-}
-inline void ALICE_restore_thread_data() {
-	thdd::restoreSpecific();
-}
+	static inline AliceGlobals* getSpecific() {
+		return (AliceGlobals*) thdd::getSpecific();
+	}
+	static inline void putSpecific(AliceGlobals* tdgbl) {
+		((thdd*)tdgbl)->thdd_type = THDD_TYPE_TALICE;
+		((thdd*)tdgbl)->putSpecific();
+	}
+	static inline void restoreSpecific() {
+		thdd::restoreSpecific();
+	}
 #else
-extern Tgbl* gdgbl;
-
-inline Tgbl* ALICE_get_thread_data() {
-	return gdgbl;
-}
-inline void ALICE_set_thread_data(Tgbl* tdgbl) {
-	gdgbl = tdgbl;
-	tdgbl->thdd_type = THDD_TYPE_TALICE;
-}
-inline void ALICE_restore_thread_data() {
-}
+	static inline AliceGlobals* getSpecific() {
+		return gdgbl;
+	}
+	static inline void putSpecific(AliceGlobals* tdgbl) {
+		gdgbl = tdgbl;
+		tdgbl->thdd_type = THDD_TYPE_TALICE;
+	}
+	static inline void restoreSpecific() {
+	}
 #endif
+
+};
 
 #endif	// ALICE_ALICE_H
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.24 2004-06-08 13:39:27 alexpeshkoff Exp $
+//	$Id: all.cpp,v 1.25 2004-07-02 10:02:46 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -42,9 +42,9 @@
 
 void ALLA_fini(void)
 {
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-	for (Tgbl::pool_vec_t::iterator curr = tdgbl->pools.begin();
+	for (AliceGlobals::pool_vec_t::iterator curr = tdgbl->pools.begin();
 					curr != tdgbl->pools.end(); ++curr)
 	{
 		AliceMemoryPool::deletePool(*curr);
@@ -64,7 +64,7 @@ void ALLA_fini(void)
 
 void ALLA_init(void)
 {
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 #ifdef NOT_USED_OR_REPLACED
 	tdgbl->ALICE_default_pool = tdgbl->ALICE_permanent_pool =
 		AliceMemoryPool::create_new_pool();
@@ -90,7 +90,7 @@ void AliceMemoryPool::ALLA_push(blk* object, alice_lls** stack)
  *	Push an object on an LLS stack.
  *
  **************************************/
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	AliceMemoryPool* pool = tdgbl->ALICE_default_pool;
 
 	alice_lls* node = pool->lls_cache.newBlock();
@@ -136,7 +136,7 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
  *
  **************************************/
 
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	// TMN: John, is this correct?
     AliceMemoryPool* pool = new(0, parent) AliceMemoryPool(parent);
@@ -169,9 +169,9 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 
 void AliceMemoryPool::deletePool(AliceMemoryPool* pool) 
 {
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-	Tgbl::pool_vec_t::iterator curr;
+	AliceGlobals::pool_vec_t::iterator curr;
 	for (curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
 	{
 		if (*curr == pool)

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.66 2004-06-08 13:39:20 alexpeshkoff Exp $
+//	$Id: alice.cpp,v 1.67 2004-07-02 10:02:46 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -86,12 +86,12 @@ static const USHORT val_err_table[] = {
 // defined in burp.cpp as well, and is not relevant for SUPERSERVER
 
 #ifndef SUPERSERVER
-Tgbl* gdgbl;
+AliceGlobals* gdgbl;
 #endif
 
 const int ALICE_MSG_FAC = 3;
 
-static inline void exit_local(int code, Tgbl* tdgbl)
+static inline void exit_local(int code, AliceGlobals* tdgbl)
 {
 	tdgbl->exit_code = code;
 	Firebird::status_exception::raise();
@@ -193,15 +193,15 @@ int common_main(int			argc,
 	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
-	Tgbl* tdgbl = (Tgbl*) gds__alloc(sizeof(Tgbl));
+	AliceGlobals* tdgbl = (AliceGlobals*) gds__alloc(sizeof(AliceGlobals));
 	if (!tdgbl) {
 		//  NOMEM: return error, FREE: during function exit in the SETJMP
 		return FINI_ERROR;
 	}
 
-	ALICE_set_thread_data(tdgbl);
+	AliceGlobals::putSpecific(tdgbl);
 	SVC_PUTSPECIFIC_DATA;
-	memset((void *) tdgbl, 0, sizeof(Tgbl));
+	memset((void *) tdgbl, 0, sizeof(AliceGlobals));
 	tdgbl->output_proc = output_proc;
 	tdgbl->output_data = output_data;
 	tdgbl->ALICE_permanent_pool = NULL;
@@ -633,7 +633,7 @@ int common_main(int			argc,
 		// Free all unfreed memory used by Gfix itself 
 		ALLA_fini();
 
-		ALICE_restore_thread_data();
+		AliceGlobals::restoreSpecific();
 
 		gds__free(tdgbl);
 
@@ -698,7 +698,7 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
 		int i = 0, j;
-		Tgbl* tdgbl = ALICE_get_thread_data();
+		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
 			while (*status && (++i < ISC_STATUS_LENGTH)) {
@@ -737,7 +737,7 @@ void ALICE_error(USHORT	number,
 				 const TEXT*	arg4,
 				 const TEXT*	arg5)
 {
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	TEXT buffer[256];
 
 #ifdef SUPERSERVER
@@ -780,7 +780,7 @@ static void alice_output(const SCHAR* format, ...)
 	UCHAR buf[1000];
 	int exit_code;
 
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0') {
 		exit_code = tdgbl->output_proc(tdgbl->output_data, (UCHAR *)(""));

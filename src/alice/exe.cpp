@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.35 2004-06-08 13:39:27 alexpeshkoff Exp $
+//	$Id: exe.cpp,v 1.36 2004-07-02 10:02:46 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -84,7 +84,7 @@ static inline void stuff_dpb_long(UCHAR** d, int blr)
 int EXE_action(const TEXT* database, const ULONG switches)
 {
 	UCHAR dpb[128];
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	ALLA_init();
 
@@ -143,7 +143,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 int EXE_two_phase(const TEXT* database, const ULONG switches)
 {
 	UCHAR dpb[128];
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	ALLA_init();
 
@@ -188,7 +188,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 
 static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 {
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	UCHAR* dpb2 = dpb;
 	*dpb2++ = isc_dpb_version1;
@@ -373,7 +373,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 
 static void extract_db_info(const UCHAR* db_info_buffer)
 {
-	Tgbl* tdgbl = ALICE_get_thread_data();
+	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	const UCHAR* p = db_info_buffer;
 
