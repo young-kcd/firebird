@@ -231,7 +231,7 @@ void IDX_create_index(
 	ifl_data.ifl_duplicates = 0;
 	ifl_data.ifl_key_length = key_length;
 
-	bool null_duplicates = false;
+	bool key_is_null = false;
 
 	key_desc.skd_dtype = SKD_bytes;
 	key_desc.skd_flags = SKD_ascending;
@@ -337,13 +337,7 @@ void IDX_create_index(
 			if (result == idx_e_ok) {
 				idx_null_state null_state;
 				BTR_key(tdbb, relation, record, idx, &key, &null_state);
-				if (null_state == idx_nulls_all) {
-					// first null key is not a duplicate
-					if (null_duplicates)
-						ifl_data.ifl_duplicates--;
-					else
-						null_duplicates = true;
-				}
+				key_is_null = (null_state == idx_nulls_all);
 			}
 			else {
 				do {
@@ -414,7 +408,7 @@ void IDX_create_index(
 			isr = (ISR) p;
 			isr->isr_key_length = key.key_length;
 			isr->isr_record_number = primary.rpb_number;
-			isr->isr_flags = (stack) ? ISR_secondary : 0;
+			isr->isr_flags = (stack ? ISR_secondary : 0) | (key_is_null ? ISR_null : 0);
 			if (record != gc_record)
 				delete record;
 		}
@@ -1161,8 +1155,8 @@ static BOOLEAN duplicate_key(UCHAR * record1, UCHAR * record2, IFL ifl_data)
 	rec1 = (ISR) (record1 + ifl_data->ifl_key_length);
 	rec2 = (ISR) (record2 + ifl_data->ifl_key_length);
 
-	if (!(rec1->isr_flags & ISR_secondary) &&
-		!(rec2->isr_flags & ISR_secondary)) {
+	if (!(rec1->isr_flags & (ISR_secondary | ISR_null)) &&
+		!(rec2->isr_flags & (ISR_secondary | ISR_null))) {
 		++ifl_data->ifl_duplicates;
 	}
 
