@@ -24,7 +24,7 @@
 #ifndef _JRD_INTL_CLASSES_H_
 #define _JRD_INTL_CLASSES_H_
 
-#include "../common/memory/memory_pool.h"
+#include "../common/classes/alloc.h"
 
 typedef unsigned short CHARSET_ID;
 typedef unsigned short COLLATE_ID;

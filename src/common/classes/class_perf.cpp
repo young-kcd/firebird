@@ -214,28 +214,28 @@ static void testAllocatorMemoryPool() {
 	int i, n = 0;	
 	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->alloc((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
+		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
 		items.add(temp);
 	}
 	// Deallocate half of small items
 	n = 0;
 	if (items.getFirst()) do {
-		pool->free(items.current().item);
+		pool->deallocate(items.current().item);
 		n++;
 	} while (n < ALLOC_ITEMS/2 && items.getNext());	
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->alloc((n % BIG_SIZE + BIG_SIZE)/2+1)};
+		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE)/2+1)};
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items
 	while (items.getNext()) {
-		pool->free(items.current().item);
+		pool->deallocate(items.current().item);
 	}
 	// Deallocate big items
 	if (bigItems.getFirst()) do {
-		pool->free(bigItems.current().item);
+		pool->deallocate(bigItems.current().item);
 	} while (bigItems.getNext());
 	Firebird::MemoryPool::deletePool(pool);
 	report();

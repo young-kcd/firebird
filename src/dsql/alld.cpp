@@ -94,13 +94,13 @@ void ALLD_fini()
 	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
 		if (*curr) {
-			delete *curr;
+			DsqlMemoryPool::deletePool(*curr);
 		}
 	}
 
 	delete pools;
 	pools = 0;
-	delete DSQL_permanent_pool;
+	DsqlMemoryPool::deletePool(DSQL_permanent_pool);
 	DSQL_permanent_pool = 0;
 	init_flag = false;
 }
@@ -113,7 +113,7 @@ void ALLD_init()
 	if (!init_flag)
 	{
 		init_flag = true;
-		DSQL_permanent_pool = FB_NEW(*getDefaultMemoryPool()) DsqlMemoryPool;
+		DSQL_permanent_pool = DsqlMemoryPool::createPool();
 		pools = FB_NEW(*DSQL_permanent_pool) Firebird::vector<DsqlMemoryPool*>
 					(10, *DSQL_permanent_pool, dsql_type_vec);
 		tdsql->tsql_default = DSQL_permanent_pool;
@@ -144,19 +144,20 @@ BLK DsqlMemoryPool::ALLD_pop(register DLLS *stack)
 	return object;
 }
 
-DsqlMemoryPool::DsqlMemoryPool(int extSize, MemoryPool& p)
-	:	MemoryPool(0, &p),
-		lls_cache(*this)
+DsqlMemoryPool* DsqlMemoryPool::createPool()
 {
+	DsqlMemoryPool *result = (DsqlMemoryPool *)internal_create(sizeof(DsqlMemoryPool));
+	new (&result->lls_cache) BlockCache<class dsql_lls> (*result);
+	
 	if (!DSQL_permanent_pool)
-		return;
+		return result;
 		
 	for(pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
 		if (!*curr)
 		{
-			*curr = this;
-			return;
+			*curr = result;
+			return result;
 		}
 	}
 
@@ -165,22 +166,26 @@ DsqlMemoryPool::DsqlMemoryPool(int extSize, MemoryPool& p)
 	{
 		if (!*curr)
 		{
-			*curr = this;
-			return;
+			*curr = result;
+			return result;
 		}
 	}
 
 	BUGCHECK ("ALLD_fini - finishing before starting");
+	return NULL; //silencer
 }
 
-DsqlMemoryPool::~DsqlMemoryPool()
+void DsqlMemoryPool::deletePool(DsqlMemoryPool *pool)
 {
-	if (this == DSQL_permanent_pool)
+	pool->lls_cache.~BlockCache<class dsql_lls>();
+	MemoryPool::deletePool(pool);
+	
+	if (pool == DSQL_permanent_pool)
 		return;
 		
 	for(pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
-		if (*curr == this)
+		if (*curr == pool)
 		{
 			*curr = 0;
 			return;

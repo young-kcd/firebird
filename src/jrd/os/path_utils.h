@@ -2,7 +2,6 @@
 #define PATH_UTILS_H
 
 #include "fb_string.h"
-#include "../common/memory/memory_pool.h"
 
 
 /** This is a utility class that provides a platform independent way to do some

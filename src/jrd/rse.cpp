@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.17 2002-12-03 18:04:36 dimitr Exp $
+ * $Id: rse.cpp,v 1.18 2003-01-16 17:47:04 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -935,13 +935,13 @@ static void close_merge(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 			if (sfb->sfb_file_name) {
 				close(sfb->sfb_file);
 				unlink(sfb->sfb_file_name);
-				MemoryPool::free_from_system(sfb->sfb_file_name);
+				gds__free(sfb->sfb_file_name);
 			}
 			delete sfb;
 			mfb->mfb_sfb = 0;
 		}
 		if (mfb->mfb_block_data) {
-			MemoryPool::free_from_system(mfb->mfb_block_data);
+			gds__free(mfb->mfb_block_data);
 			mfb->mfb_block_data = 0;
 		}
 	}
@@ -1704,7 +1704,7 @@ static BOOLEAN get_merge_join(
 		mfb = &tail->irsb_mrg_file;
 		key_length = map->smb_key_length * sizeof(ULONG);
 		if (key_length > sizeof(key))
-			first_data = (UCHAR *) MemoryPool::malloc_from_system(key_length);
+			first_data = (UCHAR *) gds__alloc(key_length);
 		else
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
@@ -1721,7 +1721,7 @@ static BOOLEAN get_merge_join(
 		}
 
 		if (first_data != (UCHAR *) key)
-			MemoryPool::free_from_system(first_data);
+			gds__free(first_data);
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -1879,7 +1879,7 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 		mfb = &tail->irsb_mrg_file;
 		key_length = map->smb_key_length * sizeof(ULONG);
 		if (key_length > sizeof(key))
-			first_data = (UCHAR *) MemoryPool::malloc_from_system(key_length);
+			first_data = (UCHAR *) gds__alloc(key_length);
 		else
 			first_data = (UCHAR *) key;
 		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
@@ -1896,7 +1896,7 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 		}
 
 		if (first_data != (UCHAR *) key)
-			MemoryPool::free_from_system(first_data);
+			gds__free(first_data);
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -2950,7 +2950,7 @@ static void open_merge(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 		if (!mfb->mfb_block_data)
 			mfb->mfb_block_data =
 				reinterpret_cast <
-				UCHAR * >(MemoryPool::malloc_from_system(mfb->mfb_block_size));
+				UCHAR * >(gds__alloc(mfb->mfb_block_size));
 	}
 }
 
@@ -3705,7 +3705,7 @@ static void write_merge_block(TDBB tdbb, MFB mfb, ULONG block)
 			SORT_error(tdbb->tdbb_status_vector, sfb_, "open", isc_io_error,
 					   errno);
 		sfb_->sfb_file_name = (SCHAR*)
-			MemoryPool::malloc_from_system((ULONG) (strlen(file_name) + 1));
+			gds__alloc((ULONG) (strlen(file_name) + 1));
 		strcpy(sfb_->sfb_file_name, file_name);
 	}
 

@@ -24,7 +24,6 @@
 #ifndef _ALICE_ALL_H_
 #define _ALICE_ALL_H_
 
-#include "../common/memory/memory_pool.h"
 #include "../jrd/block_cache.h"
 #include "../alice/lls.h"
 
@@ -33,20 +32,22 @@ void		ALLA_fini();				/* get rid of everything */
 
 class AliceMemoryPool : public MemoryPool
 {
+protected:
+	// Dummy constructor and destructor. Should never be called
+	AliceMemoryPool() : MemoryPool(NULL, NULL), lls_cache(*this) {}
+	~AliceMemoryPool() {}	
 public:
+	static AliceMemoryPool *createPool() {
+		AliceMemoryPool *result = (AliceMemoryPool *)internal_create(sizeof(AliceMemoryPool));
+		new (&result->lls_cache) BlockCache<lls> (*result);
+		return result;
+	}
+	static void deletePool(AliceMemoryPool* pool);
 //	static AliceMemoryPool *create_new_pool(MemoryPool* = 0);
 //	AliceMemoryPool(MemoryPool* p = 0)
 //	:	MemoryPool(0, p),
 //		lls_cache(*this)
 //	{}
-	AliceMemoryPool(int extSize = 0, MemoryPool* p = getDefaultMemoryPool())
-	:	MemoryPool(extSize, p),
-		lls_cache(*this)
-	{
-	}
-
-
-	~AliceMemoryPool();
 
 	static class blk* ALLA_pop(class lls**);
 	static void ALLA_push(class blk*, class lls**);

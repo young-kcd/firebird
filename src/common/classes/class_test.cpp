@@ -273,7 +273,7 @@ void testAllocator() {
 	pool->verify_pool();
 	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->alloc((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
+		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
 		items.add(temp);
 	}
 	printf(" DONE\n");
@@ -282,7 +282,7 @@ void testAllocator() {
 	printf("Deallocate half of items in quasi-random order: ");
 	n = 0;
 	if (items.getFirst()) do {
-		pool->free(items.current().item);
+		pool->deallocate(items.current().item);
 		n++;
 	} while (n < ALLOC_ITEMS/2 && items.getNext());
 	printf(" DONE\n");
@@ -293,7 +293,7 @@ void testAllocator() {
 	pool->verify_pool();
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->alloc((n % BIG_SIZE + BIG_SIZE)/2+1)};
+		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE)/2+1)};
 		bigItems.add(temp);
 	}
 	printf(" DONE\n");
@@ -301,14 +301,14 @@ void testAllocator() {
 	
 	printf("Deallocate the rest of small items in quasi-random order: ");
 	while (items.getNext()) {
-		pool->free(items.current().item);
+		pool->deallocate(items.current().item);
 	}
 	printf(" DONE\n");
 	pool->verify_pool();
 	
 	printf("Deallocate big items in quasi-random order: ");
 	if (bigItems.getFirst()) do {
-		pool->free(bigItems.current().item);
+		pool->deallocate(bigItems.current().item);
 	} while (bigItems.getNext());
 	printf(" DONE\n");
 	pool->verify_pool();

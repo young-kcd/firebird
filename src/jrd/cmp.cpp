@@ -364,8 +364,7 @@ JRD_REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 	JrdMemoryPool* old_pool = tdbb->tdbb_default;
 	/* 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool 
 	  and will be freed by CMP_release	*/
-	JrdMemoryPool* new_pool = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
-				JrdMemoryPool;
+	JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
 	tdbb->tdbb_default = new_pool;
 
 	try {
@@ -397,7 +396,7 @@ JRD_REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 			// TMN: Are we not to release the pool, just beqause
 			// we have a request?!
 			// Nickolay Samofatv: It well be freed by CMP_release otherwise
-			delete new_pool;
+			JrdMemoryPool::deletePool(new_pool);
 		}
 		ERR_punt();
 	}
@@ -2161,7 +2160,7 @@ void DLL_EXPORT CMP_release(TDBB tdbb, JRD_REQ request)
 				break;
 			}
 
-	delete request->req_pool;
+	JrdMemoryPool::deletePool(request->req_pool);
 }
 
 

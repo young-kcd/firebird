@@ -18,6 +18,8 @@
  * Copyright (C) Inprise Corporation.
  *
  * Created by: Nickolay Samofatov <skidder@bssys.com>
+ *             
+ * STL allocator is based on one by Mike Nordell and John Bellardo
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
@@ -88,11 +90,11 @@ class MemoryPool {
 private:
 	class InternalAllocator {
 	public:
-		void* alloc(size_t size) {
-			return ((MemoryPool*)this)->internal_alloc(size);
+		void* allocate(size_t size) {
+			return ((MemoryPool*)this)->tree_alloc(size);
 		}
-		void free(void* block) {
-			((MemoryPool*)this)->internal_free(block);
+		void deallocate(void* block) {
+			((MemoryPool*)this)->tree_free(block);
 		}
 	};
 	typedef BePlusTree<BlockInfo, BlockInfo, InternalAllocator, 
@@ -109,7 +111,29 @@ private:
 #else
 	SharedSpinlock lock;
 #endif
+
+	/* Returns NULL in case it cannot allocate requested chunk */
+	static void* external_alloc(size_t size);
+
+	static void external_free(void *blk);
 	
+	void* tree_alloc(size_t size);
+
+	void tree_free(void* block);
+
+	void updateSpare();
+	
+	void addFreeBlock(MemoryBlock *blk);
+		
+	void removeFreeBlock(MemoryBlock *blk);
+	
+	// does all the stuff except locking and exceptions
+	void* internal_alloc(size_t size, SSHORT type = 0
+#ifdef DEBUG_GDS_ALLOC
+		, char *file = NULL, int line = 0
+#endif
+	);
+protected:
 	// Do not allow to create and destroy pool directly from outside
 	MemoryPool(void *first_extent, void *root_page) : 
 		freeBlocks((InternalAllocator*)this, root_page),
@@ -123,49 +147,28 @@ private:
 	~MemoryPool() {
 	}
 	
-	/* Returns NULL in case it cannot allocate requested chunk */
-	static void* external_alloc(size_t size);
-
-	static void external_free(void *blk);
-	
-	void* internal_alloc(size_t size);
-
-	void internal_free(void* block);
-
-	void updateSpare();
-	
-	void addFreeBlock(MemoryBlock *blk);
-		
-	void removeFreeBlock(MemoryBlock *blk);
-	
-	// int_XXX functions do all the stuff except locking and exceptions
-	void* int_alloc(size_t size, SSHORT type = 0
-#ifdef DEBUG_GDS_ALLOC
-		, char *file = NULL, int line = 0
-#endif
-	);
-
+	static MemoryPool* internal_create(size_t instance_size);
 public:
-	static MemoryPool* createPool();
-	
-	static MemoryPool* getProcessPool();
+	static MemoryPool* createPool() {
+		return internal_create(sizeof(MemoryPool));
+	}
 
 	static void deletePool(MemoryPool* pool);
 
-	void* alloc(size_t size, SSHORT type = 0
+	void* allocate(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, char *file = NULL, int line = 0
 #endif
 	);
 
-	void free(void *block);
+	void deallocate(void *block);
 	
-	void verify_pool();
+	bool verify_pool();
 
-	void print_pool(IB_FILE *, bool = false);
+	void print_contents(IB_FILE *, bool = false);
 	
 	static void globalFree(void *block) {
-		((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->pool->free(block);
+		((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->pool->deallocate(block);
 	}
 	
 	void* calloc(size_t size, SSHORT type = 0
@@ -173,21 +176,35 @@ public:
 		, char *file = NULL, int line = 0
 #endif
 	) {
-		void* result = alloc(size, type
+		void* result = allocate(size, type
 #ifdef DEBUG_GDS_ALLOC
 			, file, line
 #endif
 		);
-		memset(result,size,0);
+		memset(result,0,size);
 		return result;	
 	}
 
+	/// Returns the type associated with the allocated memory.
+	static SSHORT blk_type(const void* mem) {
+		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->type;
+	}
+	
+	/// Returns the pool the memory was allocated from.
+	static MemoryPool* blk_pool(const void* mem) {
+		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->pool;
+	}
+	
 	friend class InternalAllocator;
 };
 
 }; // namespace Firebird
 
 #ifndef TESTING_ONLY
+
+using Firebird::MemoryPool;
+
+MemoryPool* getDefaultMemoryPool();
 
 extern "C" {
 #ifdef DEBUG_GDS_ALLOC
@@ -205,32 +222,135 @@ void* operator new(size_t);
 void* operator new[](size_t);
 
 #ifdef DEBUG_GDS_ALLOC
-inline void* operator new(size_t s, Firebird::MemoryPool* pool, char* file, int line) {
-	return pool->alloc(s, 0, file, line);
+inline void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+	return pool.allocate(s, 0, file, line);
+//	return pool.calloc(s, 0, file, line);
 }
-inline void* operator new[](size_t s, Firebird::MemoryPool* pool, char* file, int line) {
-	return pool->alloc(s, 0, file, line);
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+	return pool.allocate(s, 0, file, line);
+//	return pool.calloc(s, 0, file, line);
 }
 #define FB_NEW(pool) new(pool,__FILE__,__LINE__)
 #define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)
 #else
-inline void* operator new(size_t s, Firebird::MemoryPool* pool) {
-	return pool->alloc(s);
+inline void* operator new(size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc) {
+	return pool.allocate(s);
+//	return pool.calloc(s);
 }
-inline void* operator new[](size_t s, Firebird::MemoryPool* pool) {
-	return pool->alloc(s);
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool) throw(std::bad_alloc) {
+	return pool.allocate(s);
+//	return pool.calloc(s);
 }
 #define FB_NEW(pool) new(pool)
 #define FB_NEW_RPT(pool,count) new(pool,count)
 #endif
 
-inline void operator delete(void* mem) {
-	Firebird::MemoryPool::globalFree(mem);
-}
-inline void operator delete[](void* mem) {
-	Firebird::MemoryPool::globalFree(mem);
-}
+// We cannot use inline versions because we have to replace STL delete defined in <new> header
+// One more performance pain we have to take because of STL usage :((
+void operator delete(void* mem) throw();
 
+void operator delete[](void* mem) throw();
+
+/**
+	This is the allocator template provided to be used with the STL.
+	Since the STL is the client of this class look to its documentation
+	to determine what the individual functions and typedefs do.
+
+	In order to use the allocator class you need to instansiate the
+	C++ container template with the allocator.  For example if you
+	want to use a std::vector<int> the declaration would be:
+
+	std::vector<int, MemoryPool::allocator<int> >
+
+	The allocator, by default, allocates all memory from the process
+	wide pool FB_MemoryPool.  Typically this is NOT the behavior you
+	want.  Selection of the correct pool to allocate your memory from is
+	important.  If you select a pool to far down in (a statement pool,
+	for example) you memory may be freed before you are done with it.
+	On the other hand if you always use the global pool you will
+	either leak memory or have to make sure you always delete the objects
+	you create.
+
+	If you decide to allocate the memory from a pool other than the global
+	pool you need to pass an allocator object to the constructor for
+	the STL object.  For example:
+
+	std::vector<int, MemoryPool::allocator<int> > vec(MemoryPool::allocator<int>(poolRef, type));
+	The type is an optional parameter that defaults to 0.
+**/
+namespace Firebird
+{
+	template <class T>
+	class allocator
+	{
+		public:
+		typedef size_t		size_type;
+		typedef ptrdiff_t	difference_type;
+		typedef T*			pointer;
+		typedef const T*	const_pointer;
+		typedef T&			reference;
+		typedef const T&	const_reference;
+		typedef T			value_type;
+	
+		allocator(MemoryPool& p, SSHORT t = 0) : pool(&p), type(t) {}
+		allocator(MemoryPool *p = getDefaultMemoryPool(), SSHORT t = 0) : pool(p), type(t) {}
+	
+		template <class DST>
+		allocator(const allocator<DST> &alloc)
+		: pool(alloc.getPool()), type(alloc.getType()) { }
+
+#ifdef DEBUG_GDS_ALLOC
+		pointer allocate(size_type s, const void * = 0)
+			{ return (pointer) pool->allocate(sizeof(T) * s, 0, __FILE__, __LINE__); }
+		char *_Charalloc(size_type n)
+			{ return (char*) pool->allocate(n, 0, __FILE__, __LINE__); }
+#else
+		pointer allocate(size_type s, const void * = 0)
+			{ return (pointer) pool->allocate(sizeof(T) * s, 0); }
+		char *_Charalloc(size_type n)
+			{ return (char*) pool->allocate(n, 0); }
 #endif
+/*#ifdef DEBUG_GDS_ALLOC
+		pointer allocate(size_type s, const void * = 0)
+			{ return (pointer) pool->calloc(sizeof(T) * s, 0, __FILE__, __LINE__); }
+		char *_Charalloc(size_type n)
+			{ return (char*) pool->calloc(n, 0, __FILE__, __LINE__); }
+#else
+		pointer allocate(size_type s, const void * = 0)
+			{ return (pointer) pool->calloc(sizeof(T) * s, 0); }
+		char *_Charalloc(size_type n)
+			{ return (char*) pool->calloc(n, 0); }
+#endif*/
+			
+		void deallocate(pointer p, size_type s)	{ pool->deallocate(p); }
+		void deallocate(void* p, size_type s) { pool->deallocate(p); }
+		void construct(pointer p, const T& v) { new(p) T(v); }
+		void destroy(pointer p) { p->~T(); }
+	
+		size_type max_size() const { return (size_type)-1 / sizeof(T); }
+	
+		pointer address(reference X) const { return &X; }
+		const_pointer address(const_reference X) const { return &X; }
+	
+		template <class _Tp1> struct rebind {
+			typedef Firebird::allocator<_Tp1> other;
+		};
+
+		bool operator==(const allocator<T>& rhs) const
+		{
+			return pool == rhs.pool && type == rhs.type;
+		}
+
+		MemoryPool *getPool() const { return pool; }
+		SSHORT getType() const { return type; }
+
+	private:
+		MemoryPool *pool;
+		SSHORT type;
+	};
+
+};
+
+#endif /*TESTING_ONLY*/
 
 #endif

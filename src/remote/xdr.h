@@ -67,11 +67,6 @@ typedef	char *	caddr_t;
 #define xdr_destroy(xdr)	(*(*xdr).x_ops->x_destroy)()
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 enum xdr_op { XDR_ENCODE = 0, XDR_DECODE = 1, XDR_FREE = 2 };
 
 typedef struct xdr_t
@@ -104,11 +99,6 @@ struct xdr_discrim
 	enum_t		value;
 	xdrproc_t	proc;
 };
-
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 
 #endif /* REMOTE_XDR_H */

@@ -53,11 +53,11 @@ namespace Firebird {
 
 class MallocAllocator {
 public:
-	void *alloc(size_t size) {
+	void *allocate(size_t size) {
 		return malloc(size);
 	}
-	void free(void *p) {
-		::free(p);
+	void deallocate(void *p) {
+		free(p);
 	}
 };
 
@@ -96,7 +96,7 @@ class BePlusTree {
 public:
 	BePlusTree(Allocator *_pool) : pool(_pool), level(0), curPos(0) 
 	{
-		curr = new (_pool->alloc(sizeof(ItemList))) ItemList();
+		curr = new (_pool->allocate(sizeof(ItemList))) ItemList();
 		root = curr;
 	};
     ~BePlusTree() {
@@ -111,7 +111,7 @@ public:
 		while ( items ) {
 			ItemList *t = items->next;
 			items->~ItemList();
-			pool->free(items);
+			pool->deallocate(items);
 			items = t;
 		}
 		
@@ -122,7 +122,7 @@ public:
 			while ( list ) {
 				NodeList *t = list->next;
 				list->~NodeList();
-				pool->free(list);
+				pool->deallocate(list);
 				list = t;
 			}
 		}
@@ -355,7 +355,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 			level--;
 			NodeList::setNodeParent(root, level, NULL);
 			list->~NodeList();
-			pool->free(list);
+			pool->deallocate(list);
 		} else {		
 			NodeList *temp;
 			if ( (temp = list->prev) && 
@@ -384,7 +384,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 		((NodeList *)node)->~NodeList();
 	else
 		((ItemList *)node)->~ItemList();
-	pool->free(node);
+	pool->deallocate(node);
 }
 
 template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp, int LeafCount, int NodeCount>
@@ -502,9 +502,9 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	// This shouldn't happen very often. Traverse tree up trying to add node
 	ItemList *newLeaf;
 	try {	
-		newLeaf = new(pool->alloc(sizeof(ItemList))) ItemList(leaf); // No re-enterance allowed !!!
-																     // Exception here doesn't 
-																	 // invalidate tree structure
+		newLeaf = new(pool->allocate(sizeof(ItemList))) ItemList(leaf); // No re-enterance allowed !!!
+																	    // Exception here doesn't 
+																		// invalidate tree structure
 	} catch(...) {
 		addErrorValue = item;
 		throw;
@@ -571,9 +571,9 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		
 			// No space found. Allocate NodeList page and climb up the tree
 		
-			NodeList *newList = new(pool->alloc(sizeof(NodeList))) NodeList(nodeList); // No re-enterance allowed !!!
-																					   // Exceptions from this point
-																					   // are cleaned up lower
+			NodeList *newList = new(pool->allocate(sizeof(NodeList))) NodeList(nodeList); // No re-enterance allowed !!!
+																						  // Exceptions from this point
+																					  	  // are cleaned up lower
 		
 			if (pos == NodeCount) {
 				NodeList::setNodeParentAndLevel(newNode, curLevel, newList);
@@ -594,7 +594,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	
 		// This is a worst case. We reached the top of tree but were not able to insert node
 		// Allocate new root page and increase level of our tree
-		nodeList = new(pool->alloc(sizeof(NodeList))) NodeList();
+		nodeList = new(pool->allocate(sizeof(NodeList))) NodeList();
 		nodeList->level = level;
 		nodeList->insert(0,root);
 		NodeList::setNodeParentAndLevel(newNode, level, nodeList);
@@ -606,13 +606,13 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		while (curLevel) {
 			void *lower = (*(NodeList *)newNode)[0];
 			((NodeList *)newNode)->~NodeList();
-			pool->free(newNode);
+			pool->deallocate(newNode);
 			newNode = lower;
 			curLevel--;
 		}
 		addErrorValue = (*(ItemList*)newNode)[0];
 		((ItemList *)newNode)->~ItemList();
-		pool->free(newNode);
+		pool->deallocate(newNode);
 		throw;
 	}
 	return true;

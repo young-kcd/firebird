@@ -1,8 +1,8 @@
 #ifndef INCLUDE_FB_BLK
 #define INCLUDE_FB_BLK
 
-#include "../common/memory/memory_pool.h"
 //#include <vector>
+#include "../common/classes/alloc.h"
 
 struct blk
 {
@@ -19,14 +19,14 @@ class pool_alloc : public blk
     public:
 #ifdef DEBUG_GDS_ALLOC
         void* operator new(size_t s, MemoryPool& p, char* file, int line)
-            { return p.allocate(s, BLOCK_TYPE, file, line); }
+            { return p.calloc(s, BLOCK_TYPE, file, line); }
         void* operator new[](size_t s, MemoryPool& p, char* file, int line)
-            { return p.allocate(s, BLOCK_TYPE, file, line); }
+            { return p.calloc(s, BLOCK_TYPE, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p )
-            { return p.allocate(s, BLOCK_TYPE); }
+            { return p.calloc(s, BLOCK_TYPE); }
         void* operator new[](size_t s, MemoryPool& p)
-            { return p.allocate(s, BLOCK_TYPE); }
+            { return p.calloc(s, BLOCK_TYPE); }
 #endif
 
         void operator delete(void* mem, MemoryPool& p)
@@ -34,8 +34,8 @@ class pool_alloc : public blk
         void operator delete[](void* mem, MemoryPool& p)
             { if (mem) p.deallocate(mem); }
 
-        void operator delete(void* mem) { if (mem) MemoryPool::deallocate(mem); }
-        void operator delete[](void* mem) { if (mem) MemoryPool::deallocate(mem); }
+        void operator delete(void* mem) { if (mem) MemoryPool::globalFree(mem); }
+        void operator delete[](void* mem) { if (mem) MemoryPool::globalFree(mem); }
 
 private:
     /* These operators are off-limits */
@@ -49,14 +49,14 @@ class pool_alloc_rpt : public blk
     public:
 #ifdef DEBUG_GDS_ALLOC
         void* operator new(size_t s, MemoryPool& p, int rpt, char *file, int line)
-            { return p.allocate(s + sizeof(RPT)*rpt, BLOCK_TYPE, file, line); }
+            { return p.calloc(s + sizeof(RPT)*rpt, BLOCK_TYPE, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p, int rpt)
-            { return p.allocate(s + sizeof(RPT)*rpt, BLOCK_TYPE); }
+            { return p.calloc(s + sizeof(RPT)*rpt, BLOCK_TYPE); }
 #endif
         void operator delete(void* mem, MemoryPool& p,int rpt)
             { if (mem) p.deallocate(mem); }
-        void operator delete(void* mem) { if (mem) MemoryPool::deallocate(mem); }
+        void operator delete(void* mem) { if (mem) MemoryPool::globalFree(mem); }
 
     private:
         // These operations are not supported on static repeat-base objects

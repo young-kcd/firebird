@@ -11,7 +11,7 @@
 #define FB_VECTOR_H
  
 #include "../include/fb_types.h"
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 
 #include <vector>
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.7 2002-12-16 15:15:54 alexpeshkoff Exp $
+//	$Id: all.cpp,v 1.8 2003-01-16 17:47:01 skidder Exp $
 //
 
 #include "../alice/all.h"
@@ -39,7 +39,7 @@
 //#include "../alice/all_proto.h"
 //#include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 
 
 //____________________________________________________________
@@ -54,7 +54,7 @@ void ALLA_fini(void)
 	for(tgbl::pool_vec_t::iterator curr = tdgbl->pools.begin();
 					curr != tdgbl->pools.end(); ++curr)
 	{
-		delete *curr;
+		AliceMemoryPool::deletePool(*curr);
 		*curr = 0;
 	}
 	tdgbl->pools.clear();
@@ -79,7 +79,7 @@ void ALLA_init(void)
 		AliceMemoryPool::create_new_pool();
 #else
 	// TMN: John, what pool to use here?
-	tdgbl->ALICE_permanent_pool = FB_NEW(*getDefaultMemoryPool()) AliceMemoryPool;
+	tdgbl->ALICE_permanent_pool = AliceMemoryPool::createPool();
 	tdgbl->ALICE_default_pool = tdgbl->ALICE_permanent_pool;
 #endif
 }
@@ -183,18 +183,18 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 }
 #endif
 
-AliceMemoryPool::~AliceMemoryPool()
-{
+void AliceMemoryPool::deletePool(AliceMemoryPool* pool) {
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	tgbl::pool_vec_t::iterator curr;
 	for(curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
 	{
-		if (*curr == this)
+		if (*curr == pool)
 		{
 			*curr = 0;
 			return;
 		}
 	}
+	pool->lls_cache.~BlockCache<lls>();
+	MemoryPool::deletePool(pool);
 }
-

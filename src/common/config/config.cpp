@@ -171,13 +171,12 @@ ConfigImpl::~ConfigImpl()
 		switch (entries[i].data_type)
 		{
 		case TYPE_STRING:
-			delete[] values[i];
+			delete[] (char*)values[i];
 			break;
 		case TYPE_STRING_VECTOR:
 			;
 		}
 	}
-
 	delete[] values;
 }
 

@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.18 2002-12-07 13:49:37 dimitr Exp $
+$Id: inet_server.cpp,v 1.19 2003-01-16 17:47:05 skidder Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -40,7 +40,6 @@ $Id: inet_server.cpp,v 1.18 2002-12-07 13:49:37 dimitr Exp $
 #include "../jrd/common.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
-#include "../common/memory/memory_pool.h"
 #include "../common/config/config.h"
 #if !(defined VMS)
 #include <sys/param.h>

@@ -63,7 +63,7 @@
 #include "../jrd/enc_proto.h"
 #include "../utilities/gsecswi.h"
 #include "../utilities/dbaswi.h"
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 #ifdef SERVER_SHUTDOWN
 #include "../jrd/jrd_proto.h"
 #endif

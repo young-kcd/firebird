@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.21 2002-12-03 10:14:53 dimitr Exp $
+ * $Id: sort.cpp,v 1.22 2003-01-16 17:47:04 skidder Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -574,7 +574,7 @@ void SORT_fini(SCB scb, ATT att)
 /* --  Morgan Schweers (mrs)  */
 
 	if (rval == TRUE)
-		MemoryPool::free_from_system(scb);
+		gds__free(scb);
 }
 
 
@@ -751,7 +751,7 @@ SCB SORT_init(STATUS * status_vector,
    slot.  */
 
 	try {
-		scb = (SCB) MemoryPool::malloc_from_system((SLONG) SCB_LEN(keys));
+		scb = (SCB) gds__alloc((SLONG) SCB_LEN(keys));
 	} catch(...) {
 /* FREE: scb is freed by SORT_fini(), called by higher level cleanup */
 /* FREE: or later in this module in error cases */
@@ -789,7 +789,7 @@ SCB SORT_init(STATUS * status_vector,
 		/* To debug the merge algorithm, force the in-memory pool to be VERY small */
 		scb->scb_size_memory = 2000;
 		scb->scb_memory =
-			(SORTP *) MemoryPool::malloc_from_system((SLONG) scb->scb_size_memory);
+			(SORTP *) gds__alloc((SLONG) scb->scb_size_memory);
 		/* FREE: scb_memory is freed by local_fini() */
 		#else
 		/* Try to get a big chunk of memory, if we can't try smaller and
@@ -801,7 +801,7 @@ SCB SORT_init(STATUS * status_vector,
 			if (scb->scb_size_memory < MIN_SORT_BUFFER_SIZE)
 				break;
 			else if ( (scb->scb_memory =
-				 (SORTP *) MemoryPool::malloc_from_system((SLONG) scb->scb_size_memory)) )
+				 (SORTP *) gds__alloc((SLONG) scb->scb_size_memory)) )
 			/* FREE: scb_memory is freed by local_fini() */
 				break;
 		#endif /* DEBUG_MERGE */
@@ -810,7 +810,7 @@ SCB SORT_init(STATUS * status_vector,
 		*status_vector++ = gds_sort_mem_err;
 		/* Msg356: sort error: not enough memory */
 		*status_vector = gds_arg_end;
-		MemoryPool::free_from_system(scb);
+		gds__free(scb);
 		return NULL;
 	}
 
@@ -1072,7 +1072,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 
 	for (run_count = 0, run = scb->scb_runs; run; run = run->run_next) {
 		if (run->run_buff_alloc) {
-			MemoryPool::free_from_system(run->run_buffer);
+			gds__free(run->run_buffer);
 			run->run_buff_alloc = 0;
 		}
 		++run_count;
@@ -1081,7 +1081,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 	try {
 		if ((run_count * sizeof(RMH)) > sizeof(streams_local))
 			streams =
-				(RMH *) MemoryPool::malloc_from_system((SLONG) run_count * sizeof(RMH));
+				(RMH *) gds__alloc((SLONG) run_count * sizeof(RMH));
 	/* FREE: streams is freed later in this routine */
 		else
 			streams = streams_local;
@@ -1104,12 +1104,12 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 		assert(!scb->scb_merge_pool);	/* shouldn't have a pool */
 		try {
 			scb->scb_merge_pool =
-				(MRG) MemoryPool::malloc_from_system((SLONG) (count - 1)*sizeof(struct mrg));
+				(MRG) gds__alloc((SLONG) (count - 1)*sizeof(struct mrg));
 		/* FREE: smb_merge_pool freed in local_fini() when the scb is released */
 
 			merge_pool = scb->scb_merge_pool;
 		} catch(...) {
-			MemoryPool::free_from_system(streams);
+			gds__free(streams);
 			*status_vector++ = gds_arg_gds;
 			*status_vector++ = gds_sort_mem_err;
 			*status_vector = gds_arg_end;
@@ -1164,7 +1164,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 	}
 
 	if (streams != streams_local)
-		MemoryPool::free_from_system(streams);
+		gds__free(streams);
 	buffer = (SORTP *) scb->scb_first_pointer;
 	merge->mrg_header.rmh_parent = NULL;
 	scb->scb_merge = merge;
@@ -1200,7 +1200,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 	for (; run; run = run->run_next) {
 		try {
 			run->run_buffer =
-				(ULONG *) MemoryPool::malloc_from_system((SLONG) (size * sizeof(ULONG)));
+				(ULONG *) gds__alloc((SLONG) (size * sizeof(ULONG)));
 			/* FREE: smb_merge_space freed in local_fini() when the scb is released */
 		} catch(...) {
 			*status_vector++ = gds_arg_gds;
@@ -1322,7 +1322,7 @@ static UCHAR *sort_alloc(SCB scb, ULONG size)
 
 	try {
 		block =
-			reinterpret_cast<UCHAR*>(MemoryPool::malloc_from_system((SLONG) size));
+			reinterpret_cast<UCHAR*>(gds__alloc((SLONG) size));
 /* FREE: caller responsible for freeing */
 	} catch(...) {
 		if (!block)
@@ -2251,28 +2251,28 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 
 		if (sfb->sfb_file_name) {
 			unlink(sfb->sfb_file_name);
-			MemoryPool::free_from_system(sfb->sfb_file_name);
+			gds__free(sfb->sfb_file_name);
 			sfb->sfb_file_name = NULL;
 		}
 
 		while ( (space = sfb->sfb_free_wfs) ) {
 			sfb->sfb_free_wfs = space->wfs_next;
-			MemoryPool::free_from_system(space);
+			gds__free(space);
 		}
 
 		while ( (space = sfb->sfb_file_space) ) {
 			sfb->sfb_file_space = space->wfs_next;
-			MemoryPool::free_from_system(space);
+			gds__free(space);
 		}
 
-		MemoryPool::free_from_system(sfb);
+		gds__free(sfb);
 	}
 
 /* get rid of extra merge space */
 
 	while ( (merge_buf = (ULONG **) scb->scb_merge_space) ) {
 		scb->scb_merge_space = *merge_buf;
-		MemoryPool::free_from_system(merge_buf);
+		gds__free(merge_buf);
 	}
 
 /* If runs are allocated and not in the big block, release them.  Then release
@@ -2280,9 +2280,9 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 
 	if (scb->scb_memory) {
 #ifdef DEBUG_MERGE
-		MemoryPool::free_from_system(scb->scb_memory);
+		gds__free(scb->scb_memory);
 #else
-		MemoryPool::free_from_system(scb->scb_memory);
+		gds__free(scb->scb_memory);
 #endif
 		scb->scb_memory = NULL;
 	}
@@ -2291,20 +2291,20 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 	while ( (run = scb->scb_runs) ) {
 		scb->scb_runs = run->run_next;
 		if (run->run_buff_alloc)
-			MemoryPool::free_from_system(run->run_buffer);
-		MemoryPool::free_from_system(run);
+			gds__free(run->run_buffer);
+		gds__free(run);
 	}
 
 /* Clean up the free runs also */
 	while ( (run = scb->scb_free_runs) ) {
 		scb->scb_free_runs = run->run_next;
 		if (run->run_buff_alloc)
-			MemoryPool::free_from_system(run->run_buffer);
-		MemoryPool::free_from_system(run);
+			gds__free(run->run_buffer);
+		gds__free(run);
 	}
 
 	if (scb->scb_merge_pool) {
-		MemoryPool::free_from_system(scb->scb_merge_pool);
+		gds__free(scb->scb_merge_pool);
 		scb->scb_merge_pool = NULL;
 	}
 
@@ -2365,7 +2365,7 @@ static void merge_runs(SCB scb, USHORT n)
 			if (!run->run_buff_alloc) {
 				try {
 					run->run_buffer =
-						(ULONG *) MemoryPool::malloc_from_system((SLONG) rec_size * 2);
+						(ULONG *) gds__alloc((SLONG) rec_size * 2);
 				} catch (...) {
 					/* FREE: smb_merge_space freed in local_fini() when scb released */
 					if (!run->run_buffer)
@@ -2494,7 +2494,7 @@ static void merge_runs(SCB scb, USHORT n)
 
 	scb->scb_free_runs = run->run_next;
 	if (run->run_buff_alloc) {
-		MemoryPool::free_from_system(run->run_buffer);
+		gds__free(run->run_buffer);
 		run->run_buff_alloc = 0;
 	}
 	temp_run.run_header.rmh_type = TYPE_RUN;
@@ -2699,11 +2699,11 @@ static ULONG order(SCB scb)
 	try {
 #ifdef STACK_EFFICIENT
 	buffer =
-		(ULONG *) MemoryPool::malloc_from_system((SLONG) (scb->scb_longs * sizeof(ULONG)));
+		(ULONG *) gds__alloc((SLONG) (scb->scb_longs * sizeof(ULONG)));
 #else
 	if ((scb->scb_longs * sizeof(ULONG)) > sizeof(temp))
 		buffer =
-			(ULONG *) MemoryPool::malloc_from_system((SLONG) (scb->scb_longs*sizeof(ULONG)));
+			(ULONG *) gds__alloc((SLONG) (scb->scb_longs*sizeof(ULONG)));
 	/* FREE: buffer is freed later in this routine */
 	else
 		buffer = temp;
@@ -2796,7 +2796,7 @@ static ULONG order(SCB scb)
 	if (buffer != temp)
 #endif
 		if (buffer != NULL)
-			MemoryPool::free_from_system(buffer);
+			gds__free(buffer);
 
 	return (((SORTP *) output) -
 			((SORTP *) scb->scb_last_record)) / (scb->scb_longs -

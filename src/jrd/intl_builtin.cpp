@@ -1,6 +1,5 @@
 #include "intl_classes.h"
-#include "../common/memory/memory_pool.h"
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 #include "../jrd/intl.h"
 #include "../intl/country_codes.h"
 #include "../jrd/gdsassert.h"

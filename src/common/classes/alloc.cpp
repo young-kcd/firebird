@@ -34,6 +34,7 @@
 
 #define FREE_PATTERN 0xDEADBEEF
 #define ALLOC_PATTERN 0xFEEDABED
+//#define ALLOC_PATTERN 0x0
 #ifdef DEBUG_GDS_ALLOC
 #define PATTERN_FILL(ptr,size,pattern) for (size_t _i=0;_i< size>>2;_i++) ((unsigned int*)(ptr))[_i]=(pattern)
 #else
@@ -61,23 +62,19 @@ static void pool_out_of_memory()
 	throw std::bad_alloc();
 }
 
-static MemoryPool* processMemoryPool = MemoryPool::createPool();
-
-MemoryPool* MemoryPool::getProcessPool() {
-	return processMemoryPool;
-}
+static MemoryPool* processMemoryPool;
 
 void MemoryPool::updateSpare() {
 	do {
 		do {
 			needSpare = false;
 			while (spareLeafs.getCount() < spareLeafs.getCapacity()) {
-				void* temp = int_alloc(sizeof(FreeBlocksTree::ItemList), TYPE_LEAFPAGE);
+				void* temp = internal_alloc(sizeof(FreeBlocksTree::ItemList), TYPE_LEAFPAGE);
 				if (!temp) return;
 				spareLeafs.add(temp);
 			}
 			while (spareNodes.getCount() <= freeBlocks.level) {
-				void* temp = int_alloc(sizeof(FreeBlocksTree::NodeList), TYPE_TREEPAGE);
+				void* temp = internal_alloc(sizeof(FreeBlocksTree::NodeList), TYPE_TREEPAGE);
 				if (!temp) return;
 				spareNodes.add(temp);
 			}
@@ -107,7 +104,7 @@ void MemoryPool::external_free(void *blk) {
 	::free(blk);
 }
 
-void* MemoryPool::internal_alloc(size_t size) {
+void* MemoryPool::tree_alloc(size_t size) {
 	if (size == sizeof(FreeBlocksTree::ItemList))
 		// This condition is to handle case when nodelist and itemlist have equal size
 		if (sizeof(FreeBlocksTree::ItemList)!=sizeof(FreeBlocksTree::NodeList) || 
@@ -129,7 +126,7 @@ void* MemoryPool::internal_alloc(size_t size) {
 	assert(false);
 }
 
-void MemoryPool::internal_free(void* block) {
+void MemoryPool::tree_free(void* block) {
 	((PendingFreeBlock*)block)->next = pendingFree;
 	((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->used = false;
 	pendingFree = (PendingFreeBlock*)block;
@@ -137,13 +134,13 @@ void MemoryPool::internal_free(void* block) {
 	return;
 }
 
-void* MemoryPool::alloc(size_t size, SSHORT type
+void* MemoryPool::allocate(size_t size, SSHORT type
 #ifdef DEBUG_GDS_ALLOC
 	, char* file, int line
 #endif
 ) {
 	lock.enter();
-	void* result = int_alloc(size, type
+	void* result = internal_alloc(size, type
 #ifdef DEBUG_GDS_ALLOC
 		, file, line
 #endif
@@ -151,10 +148,13 @@ void* MemoryPool::alloc(size_t size, SSHORT type
 	if (needSpare) updateSpare();
 	lock.leave();
 	if (!result) pool_out_of_memory();
+	// test with older behavior
+	// memset(result,0,size);
 	return result;
 }
 
-void MemoryPool::verify_pool() {
+bool MemoryPool::verify_pool() {
+#ifdef TESTING_ONLY
 	lock.enter();
 	assert (!pendingFree || needSpare); // needSpare flag should be set if we are in 
 										// a critically low memory condition
@@ -188,9 +188,11 @@ void MemoryPool::verify_pool() {
 		}
 	}
 	lock.leave();
+#endif
+	return true;
 }
 
-void MemoryPool::print_pool(IB_FILE *file, bool used_only) {
+void MemoryPool::print_contents(IB_FILE *file, bool used_only) {
 	lock.enter();
 	for (MemoryExtent *extent = extents; extent; extent=extent->next) {
 		if (!used_only)
@@ -224,12 +226,12 @@ void MemoryPool::print_pool(IB_FILE *file, bool used_only) {
 	lock.leave();
 }
 
-MemoryPool* MemoryPool::createPool() {
+MemoryPool* MemoryPool::internal_create(size_t instance_size) {
 	size_t alloc_size = FB_MAX(
 		// This is the exact initial layout of memory pool in the first extent //
 		MEM_ALIGN(sizeof(MemoryExtent)) +
 		MEM_ALIGN(sizeof(MemoryBlock)) +
-		MEM_ALIGN(sizeof(MemoryPool)) +
+		MEM_ALIGN(instance_size) +
 		MEM_ALIGN(sizeof(MemoryBlock)) +
 		MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)) +
 		MEM_ALIGN(sizeof(MemoryBlock)) +
@@ -246,7 +248,7 @@ MemoryPool* MemoryPool::createPool() {
 	MemoryPool(mem, mem + 
 		MEM_ALIGN(sizeof(MemoryExtent)) + 
 		MEM_ALIGN(sizeof(MemoryBlock)) + 
-		MEM_ALIGN(sizeof(MemoryPool)) + 
+		MEM_ALIGN(instance_size) + 
 		MEM_ALIGN(sizeof(MemoryBlock)));
 	
 	MemoryBlock *poolBlk = (MemoryBlock*) (mem+MEM_ALIGN(sizeof(MemoryExtent)));
@@ -254,13 +256,13 @@ MemoryPool* MemoryPool::createPool() {
 	poolBlk->used = true;
 	poolBlk->last = false;
 	poolBlk->type = TYPE_POOL;
-	poolBlk->length = MEM_ALIGN(sizeof(MemoryPool));
+	poolBlk->length = MEM_ALIGN(instance_size);
 	poolBlk->prev = NULL;
 	
 	MemoryBlock *hdr = (MemoryBlock*) (mem +
 		MEM_ALIGN(sizeof(MemoryExtent)) +
 		MEM_ALIGN(sizeof(MemoryBlock)) +
-		MEM_ALIGN(sizeof(MemoryPool)));
+		MEM_ALIGN(instance_size));
 	hdr->pool = pool;
 	hdr->used = true;
 	hdr->last = false;
@@ -270,13 +272,13 @@ MemoryPool* MemoryPool::createPool() {
 	MemoryBlock *blk = (MemoryBlock *)(mem +
 		MEM_ALIGN(sizeof(MemoryExtent)) +
 		MEM_ALIGN(sizeof(MemoryBlock)) +
-		MEM_ALIGN(sizeof(MemoryPool)) +
+		MEM_ALIGN(instance_size) +
 		MEM_ALIGN(sizeof(MemoryBlock)) +
 		MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)));
 	int blockLength = alloc_size -
 		MEM_ALIGN(sizeof(MemoryExtent)) -
 		MEM_ALIGN(sizeof(MemoryBlock)) -
-		MEM_ALIGN(sizeof(MemoryPool)) -
+		MEM_ALIGN(instance_size) -
 		MEM_ALIGN(sizeof(MemoryBlock)) -
 		MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)) -
 		MEM_ALIGN(sizeof(MemoryBlock));
@@ -307,7 +309,7 @@ void MemoryPool::deletePool(MemoryPool* pool) {
 #endif
 }
 
-void* MemoryPool::int_alloc(size_t size, SSHORT type
+void* MemoryPool::internal_alloc(size_t size, SSHORT type
 #ifdef DEBUG_GDS_ALLOC
 	, char* file, int line
 #endif
@@ -498,10 +500,11 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
 	}
 }
 
-void MemoryPool::free(void *block) {
+void MemoryPool::deallocate(void *block) {
 	lock.enter();
 	MemoryBlock *blk = (MemoryBlock *)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))), *prev;
 	assert(blk->used);
+	assert(blk->pool==this);
 	// Try to merge block with preceding free block
 	if ((prev = blk->prev) && !prev->used) {
 		removeFreeBlock(prev);
@@ -549,6 +552,11 @@ void MemoryPool::free(void *block) {
 
 } /* namespace Firebird */
 
+Firebird::MemoryPool* getDefaultMemoryPool() {
+	if (!Firebird::processMemoryPool) Firebird::processMemoryPool = MemoryPool::createPool();
+	return Firebird::processMemoryPool;
+}
+
 #ifndef TESTING_ONLY
 
 extern "C" {
@@ -558,17 +566,19 @@ void* API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    TEXT* filename,
                                    ULONG lineno)
 {
-	return Firebird::processMemoryPool->alloc(size_request, 0, filename, lineno);
+	return Firebird::processMemoryPool->allocate(size_request, 0, filename, lineno);
+//	return Firebird::processMemoryPool->calloc(size_request, 0, filename, lineno);
 }
 #else
 void* API_ROUTINE gds__alloc(SLONG size_request)
 {
-	return Firebird::processMemoryPool->alloc(size_request);
+	return Firebird::processMemoryPool->allocate(size_request);
+//	return Firebird::processMemoryPool->calloc(size_request);
 }
 #endif
 
 ULONG API_ROUTINE gds__free(void* blk) {
-	Firebird::processMemoryPool->free(blk);
+	Firebird::processMemoryPool->deallocate(blk);
 	return 0;
 }
 
@@ -578,7 +588,8 @@ void* operator new(size_t s) {
 #if defined(DEV_BUILD)
 	printf("You MUST allocate all memory from a pool.  Don't use the default global new().\n");
 #endif	// DEV_BUILD
-	return Firebird::processMemoryPool->alloc(s, 0
+//	return Firebird::processMemoryPool->calloc(s, 0
+	return Firebird::processMemoryPool->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__,__LINE__
 #endif
@@ -589,11 +600,20 @@ void* operator new[](size_t s) {
 #if defined(DEV_BUILD)
 	printf("You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
 #endif	// DEV_BUILD
-	return Firebird::processMemoryPool->alloc(s, 0
+//	return Firebird::processMemoryPool->calloc(s, 0
+	return Firebird::processMemoryPool->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__,__LINE__
 #endif
 	);
+}
+
+void operator delete(void* mem) throw() {
+	Firebird::MemoryPool::globalFree(mem);
+}
+
+void operator delete[](void* mem) throw() {
+	Firebird::MemoryPool::globalFree(mem);
 }
 
 #endif

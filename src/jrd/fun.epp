@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.12 2002-11-17 00:10:49 hippoman Exp $
+$Id: fun.epp,v 1.13 2003-01-16 17:47:04 skidder Exp $
 */
 
 #include "firebird.h"
@@ -575,7 +575,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	catch (...) {
 		delete temp_string;
 		while (array_stack) {
-			delete LLS_POP(&array_stack);
+			delete[] (UCHAR*)LLS_POP(&array_stack);
 		}
 		ERR_punt();
 	}
@@ -590,7 +590,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 
 	while (array_stack)
 	{
-		delete LLS_POP(&array_stack);
+		delete[] (UCHAR*)LLS_POP(&array_stack);
 	}
 
 	if (temp_ptr == NULL || function->fun_return_arg &&
@@ -986,7 +986,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 						tdbb->tdbb_request->req_transaction,
 						(BID)value->dsc_address,
 						array_desc);
-	data = (UCHAR *) MemoryPool::malloc_from_system(array_desc->ads_total_length);
+	data = FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->ads_total_length];
 	BLB_get_data(tdbb, blob, data, array_desc->ads_total_length);
 	dimensions = array_desc->ads_dimensions;
 
@@ -998,13 +998,12 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 	if (to.dsc_dtype != from.dsc_dtype ||
 		to.dsc_scale != from.dsc_scale || to.dsc_length != from.dsc_length) {
 		n = array_desc->ads_count;
-		to.dsc_address = temp =
-			(UCHAR *) MemoryPool::malloc_from_system((SLONG) to.dsc_length * n);
+		to.dsc_address = temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[(SLONG) to.dsc_length * n];
 		from.dsc_address = data;
 		for (; n; --n, to.dsc_address += to.dsc_length,
 			 from.dsc_address += array_desc->ads_element_length)
 				MOV_move(&from, &to);
-		MemoryPool::free_from_system((SCHAR*)data);
+		delete[] data;
 		data = temp;
 	}
 

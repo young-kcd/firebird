@@ -33,7 +33,7 @@
 #include "../alice/all.h"
 #include "../alice/alice_proto.h"
 #include "../include/fb_blk.h"
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 
 #include <vector>
 

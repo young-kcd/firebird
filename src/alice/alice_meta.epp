@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.8 2002-12-16 16:15:54 alexpeshkoff Exp $
+ *	$Id: alice_meta.epp,v 1.9 2003-01-16 17:47:01 skidder Exp $
  */
 
 #include "firebird.h"
@@ -42,7 +42,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../include/fb_exception.h"
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 
 #include <string.h>
 

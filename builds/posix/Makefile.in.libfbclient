@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.5 2002-12-05 16:15:03 kkuznetsov Exp $
+#  $Id: Makefile.in.libfbclient,v 1.6 2003-01-16 17:47:00 skidder Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -83,8 +83,8 @@ FBUTIL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_
 FBCOMMON_ClientSources = $(addprefix common/, $(FBCOMMON_ClientFiles))
 FBCOMMON_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_ClientSources))))
 
-FBMEMORY_ClientSources = $(addprefix common/memory/, $(FBMEMORY_ClientFiles))
-FBMEMORY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBMEMORY_ClientSources))))
+FBCLASSES_ClientSources = $(addprefix common/classes/, $(FBCLASSES_ClientFiles))
+FBCLASSES_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ClientSources))))
 
 
 FBCLIENT_Objects =  $(JRD_ClientObjects) \
@@ -95,7 +95,7 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(SECURITY_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
 					$(FBCOMMON_ClientObjects)\
-					$(FBMEMORY_ClientObjects)
+					$(FBCLASSES_ClientObjects)
 
 
 .PHONY: libfbclient

@@ -1896,9 +1896,9 @@ static UCHAR *get_buffer( IPS comm, USHORT length, USHORT n)
 	if (comm->ips_buffers[n].ips_sv_alloced < length)
 	{
 		if (comm->ips_buffers[n].ips_sv_buffer)
-			gds__sys_free(comm->ips_buffers[n].ips_sv_buffer);
+			gds__free(comm->ips_buffers[n].ips_sv_buffer);
 		comm->ips_buffers[n].ips_sv_alloced = length;
-		comm->ips_buffers[n].ips_sv_buffer = (UCHAR*)gds__sys_alloc((SLONG) length);
+		comm->ips_buffers[n].ips_sv_buffer = (UCHAR*)gds__alloc((SLONG) length);
 	}
 
 	/* Make sure that the buffer returned is empty */
@@ -2032,7 +2032,7 @@ static void get_slice( ICC icc)
 	slice_length = ips_data->ips_cl_size;
 	if (slice_length)
 	{
-		slice = (UCHAR*)gds__sys_alloc(slice_length);
+		slice = (UCHAR*)gds__alloc(slice_length);
 		NOT_NULL(slice, TRUE);
 		memset(slice, 0, slice_length);
 	}
@@ -2043,7 +2043,7 @@ static void get_slice( ICC icc)
 	{
 		if (slice)
 		{
-			gds__sys_free(slice);
+			gds__free(slice);
 		}
 		return;
 	}
@@ -2064,7 +2064,7 @@ static void get_slice( ICC icc)
 	send_response(icc, status_vector);
 	if (slice)
 	{
-		gds__sys_free(slice);
+		gds__free(slice);
 	}
 }
 
@@ -2709,7 +2709,7 @@ static void put_slice( ICC icc)
 	slice_length = ips_data->ips_cl_size;
 	if (slice_length)
 	{
-		slice = (UCHAR*)gds__sys_alloc(slice_length);
+		slice = (UCHAR*)gds__alloc(slice_length);
 		NOT_NULL(slice, TRUE);
 		memset(slice, 0, slice_length);
 	}
@@ -2720,7 +2720,7 @@ static void put_slice( ICC icc)
 	{
 		if (slice)
 		{
-			gds__sys_free(slice);
+			gds__free(slice);
 		}
 		return;
 	}
@@ -2741,7 +2741,7 @@ static void put_slice( ICC icc)
 	send_response(icc, status_vector);
 	if (slice)
 	{
-		gds__sys_free(slice);
+		gds__free(slice);
 	}
 }
 
@@ -3724,7 +3724,7 @@ static void shutdown_attachments( ICC icc)
 	comm = (ips_comm_area *) icc->icc_mapped_addr;
 	for (i = 0; i < MAX_IPS_STRINGS; i++)
 		if (comm->ips_buffers[i].ips_sv_buffer)
-			gds__sys_free(comm->ips_buffers[i].ips_sv_buffer);
+			gds__free(comm->ips_buffers[i].ips_sv_buffer);
 }
 
 

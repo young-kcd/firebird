@@ -26,10 +26,9 @@
 
 #include "../remote/xdr.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+// 15 Jan 2003. Nickolay Samofatov
+// Lower functions need to have C++ linkage to avoid name clash with
+// standard XDR. Firebird XDR is NOT compatible with Sun XDR at interface level
 
 extern bool_t	xdr_bool (register XDR *, register int *);
 extern bool_t	xdr_bytes (register XDR *, register SCHAR * *, u_int *, register u_int);
@@ -49,12 +48,5 @@ extern bool_t	xdr_u_short (register XDR *, register u_short *);
 extern int		xdr_union (XDR *, enum xdr_op *, SCHAR *, struct xdr_discrim *, xdrproc_t);
 extern bool_t	xdr_wrapstring (register XDR *, register SCHAR **);
 extern bool_t	xdr_hyper(register XDR *, SINT64 *);
-
-
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
-
 
 #endif	/* REMOTE_XDR_PROTO_H */

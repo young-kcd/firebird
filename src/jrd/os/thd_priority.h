@@ -36,7 +36,7 @@
 #ifdef THREAD_PSCHED
 
 #include "../jrd/thd.h"
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 #include <process.h>
 #include <windows.h>
 

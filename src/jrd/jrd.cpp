@@ -240,7 +240,7 @@ void trig::compile(tdbb* _tdbb)
 
 		compile_in_progress = TRUE;
 		JrdMemoryPool* old_pool = _tdbb->tdbb_default,
-			*new_pool = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
+			*new_pool = JrdMemoryPool::createPool();
 		/* Allocate statement memory pool */
 		_tdbb->tdbb_default = new_pool;
 		// Trigger request is not compiled yet. Lets do it now
@@ -257,7 +257,7 @@ void trig::compile(tdbb* _tdbb)
 				CMP_release(_tdbb,request);
 				request = NULL;
 			} else {
-				delete new_pool;
+				JrdMemoryPool::deletePool(new_pool);
 			}
 			throw;
 		}
@@ -3838,8 +3838,7 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 	transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
 
 	old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = new_pool = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
-				JrdMemoryPool;
+	tdbb->tdbb_default = new_pool = JrdMemoryPool::createPool();
 
 	csb = PAR_parse(tdbb, reinterpret_cast < UCHAR * >(blr), FALSE);
 	request = CMP_make_request(tdbb, &csb);
@@ -3939,7 +3938,7 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 			if (request) {
 				CMP_release(tdbb, request);
 			} else if (new_pool) {
-				delete new_pool;
+				JrdMemoryPool::deletePool(new_pool);
 			}
 		}	// try
 		catch (...) {
@@ -5626,7 +5625,7 @@ static DBB init(TDBB	tdbb,
 
 	try {
 
-	JrdMemoryPool* perm = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
+	JrdMemoryPool* perm = JrdMemoryPool::createPool();
 	dbb_ = dbb::newDbb(*perm);
 	//temp.blk_type = type_dbb;
 	dbb_->dbb_permanent = perm;

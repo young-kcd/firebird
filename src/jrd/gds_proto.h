@@ -121,8 +121,6 @@ void	API_ROUTINE gds__qtoq(void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
 SLONG	API_ROUTINE gds__sqlcode(STATUS*);
 void	API_ROUTINE gds__sqlcode_s(STATUS*, ULONG*);
-void*	API_ROUTINE gds__sys_alloc(SLONG);
-SLONG	API_ROUTINE gds__sys_free(void*);
 void*	API_ROUTINE gds__temp_file(BOOLEAN, TEXT*, TEXT*);
 void		API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
 BOOLEAN	API_ROUTINE gds__validate_lib_path(TEXT*, TEXT*, TEXT*,

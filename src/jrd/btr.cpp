@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.14 2002-12-15 13:03:57 dimitr Exp $
+$Id: btr.cpp,v 1.15 2003-01-16 17:47:04 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2281,7 +2281,7 @@ static USHORT compress_root(TDBB tdbb, IRT page)
 			root_idx->irt_desc = p - temp;
 		}
 	l = p - temp;
-	MemoryPool::deallocate(temp);
+	tdbb->tdbb_default->deallocate(temp);
 
 	return l;
 }

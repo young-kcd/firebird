@@ -53,7 +53,7 @@ typedef ENUM nod_t {
 class jrd_nod : public pool_alloc_rpt<class jrd_nod*, type_nod>
 {
 public:
-	jrd_nod()
+/*	jrd_nod()
 	:	nod_parent(0),
 		nod_impure(0),
 		nod_type(nod_nop),
@@ -62,7 +62,7 @@ public:
 		nod_count(0)
 	{
 		nod_arg[0] = 0;
-	}
+	}*/
 
 	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Inpure offset from request block */
@@ -548,7 +548,7 @@ class Csb : public pool_alloc<type_csb>
 {
 public:
 	Csb(MemoryPool& p, size_t len)
-	:	csb_blr(0),
+	:	/*csb_blr(0),
 		csb_running(0),
 		csb_node(0),
 		csb_access(0),
@@ -566,7 +566,7 @@ public:
 		csb_n_stream(0),
 		csb_msg_number(0),
 		csb_impure(0),
-		csb_g_flags(0),
+		csb_g_flags(0),*/
 		csb_rpt(len, p, type_csb)
 	{}
 

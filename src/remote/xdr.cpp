@@ -75,9 +75,6 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 #define MAXSTRING_FOR_WRAPSTRING	65535
 
 
-extern "C" {
-
-
 static XDR_INT mem_destroy(register XDR *);
 static bool_t mem_getbytes(register XDR *, register SCHAR *, register u_int);
 static bool_t mem_getlong(register XDR *, register SLONG *);
@@ -1087,5 +1084,3 @@ static bool_t mem_setpostn( register XDR * xdrs, u_int bytecount)
 
 	return TRUE;
 }
-
-} // extern "C"

@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.44 2002-12-24 18:14:49 skidder Exp $
+$Id: met.epp,v 1.45 2003-01-16 17:47:04 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2441,7 +2441,7 @@ void MET_parse_sys_trigger(TDBB tdbb, JRD_REL relation)
 				((trig_flags & TRG_ignore_perm) ? csb_ignore_perm : 0);
 
 			old_pool = tdbb->tdbb_default;
-			tdbb->tdbb_default = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
+			tdbb->tdbb_default = JrdMemoryPool::createPool();
 			PAR_blr(tdbb,
 					relation,
 					const_cast<UCHAR*>(blr),
@@ -2765,7 +2765,7 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 		}
 
 		old_pool = tdbb->tdbb_default;
-		tdbb->tdbb_default = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
+		tdbb->tdbb_default = JrdMemoryPool::createPool();
 		csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
 		csb_->csb_rpt.resize(5);	// vec always allocates one too many
 		csb_->csb_count = 5;

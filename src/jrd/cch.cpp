@@ -1074,7 +1074,7 @@ void CCH_fini(TDBB tdbb)
 
 	if ( (bcb = dbb->dbb_bcb) ) {
 		while (bcb->bcb_memory)
-			MemoryPool::free_from_system(LLS_POP(&bcb->bcb_memory));
+			gds__free(LLS_POP(&bcb->bcb_memory));
 #ifdef CACHE_WRITER
 		/* Dispose off any associated latching semaphores */
 		while (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) {
@@ -2553,12 +2553,12 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 		bdb->bdb_buffer = old_buffer;
 
 	if (spare_buffer)
-		MemoryPool::deallocate(spare_buffer);
+		dbb->dbb_bufferpool->deallocate(spare_buffer);
 
 	}	// try
 	catch (...) {
 		if (spare_buffer) {
-			MemoryPool::deallocate(spare_buffer);
+			dbb->dbb_bufferpool->deallocate(spare_buffer);
 		}
 		ERR_punt();
 	}
@@ -3766,8 +3766,8 @@ static void expand_buffers(TDBB tdbb, ULONG number)
 		/* if current segment is exhausted, allocate another */
 
 		if (!num_in_seg) {
-			memory = (UCHAR *) MemoryPool::malloc_from_system(((SLONG) dbb->dbb_page_size *
-											  (num_per_seg + 1)));
+			memory = (UCHAR *)gds__alloc((SLONG) dbb->dbb_page_size *
+											  (num_per_seg + 1));
 			LLS_PUSH(memory, &new_->bcb_memory);
 			memory = (UCHAR *) (((U_IPTR) memory + dbb->dbb_page_size - 1) &
 								~((int) dbb->dbb_page_size - 1));
@@ -4642,16 +4642,20 @@ static ULONG memory_init(TDBB tdbb, BCB bcb, ULONG number)
 			if (memory_size > (SLONG) (page_size * (number + 1)))
 				memory_size = page_size * (number + 1);
 
-			while (!(memory = (UCHAR *) MemoryPool::malloc_from_system(memory_size))) {
-				/* Either there's not enough virtual memory or there is
-				   but it's not virtually contiguous. Let's find out by
-				   cutting the size in half to see if the buffers can be
-				   scattered over the remaining virtual address space. */
-
-				memory_size >>= 1;
-				if (memory_size < MIN_BUFFER_SEGMENT)	/* Diminishing returns */
-					return buffers;
-			}
+			do {
+				try {
+					memory = (UCHAR *)gds__alloc(memory_size);
+					break;
+				} catch(...) {
+					/* Either there's not enough virtual memory or there is
+					   but it's not virtually contiguous. Let's find out by
+					   cutting the size in half to see if the buffers can be
+					   scattered over the remaining virtual address space. */
+					memory_size >>= 1;
+					if (memory_size < MIN_BUFFER_SEGMENT)	/* Diminishing returns */
+						return buffers;
+				}
+			} while (TRUE);
 
 			LLS_PUSH(memory, &bcb->bcb_memory);
 			memory_end = memory + memory_size;
@@ -4674,7 +4678,7 @@ static ULONG memory_init(TDBB tdbb, BCB bcb, ULONG number)
 			   overhead. Reduce this number by a 25% fudge factor to
 			   leave some memory for useful work. */
 
-			MemoryPool::free_from_system(LLS_POP(&bcb->bcb_memory));
+			gds__free(LLS_POP(&bcb->bcb_memory));
 			memory = 0;
 			for (tail2 = old_tail; tail2 < tail; tail2++)
 				tail2->bcb_bdb = dealloc_bdb(tail2->bcb_bdb);

@@ -113,7 +113,9 @@ class tdbb;
 class dbb : private pool_alloc<type_dbb>
 {
 public:
-	static dbb* newDbb(MemoryPool& p) { return FB_NEW(p) dbb(p); }
+	static dbb* newDbb(MemoryPool& p) { 
+		return FB_NEW(p) dbb(p);
+	}
 	
 	// The deleteDbb function MUST be used to delete a dbb object.
 	// The function hides some tricky order of operations.  Since the
@@ -127,7 +129,7 @@ public:
 			return;
 		JrdMemoryPool *perm = toDelete->dbb_permanent;
 		delete toDelete;
-		delete perm;
+		JrdMemoryPool::deletePool(perm);
 	}
 	
 	class dbb *dbb_next;		/* Next database block in system */
@@ -242,11 +244,11 @@ private:
 		{
 			if (*itr == dbb_bufferpool)
 				dbb_bufferpool = 0;
-			if (*itr != dbb_permanent)
-				delete *itr;
+			if (*itr && *itr != dbb_permanent)
+				JrdMemoryPool::deletePool(*itr);
 		}
 		if (dbb_bufferpool != 0)
-			delete dbb_bufferpool;
+			JrdMemoryPool::deletePool(dbb_bufferpool);
 	}
 	
 	// The delete operators are no-oped because the dbb memory is allocated from the
@@ -375,7 +377,7 @@ typedef dbb* DBB;
 class att : public pool_alloc<type_att>
 {
 public:
-	att()
+/*	att()
 	:	att_database(0),
 		att_next(0),
 		att_blocking(0),
@@ -404,7 +406,7 @@ public:
 		att_working_directory(0)
 	{
 		att_counts[0] = 0;
-	}
+	}*/
 
 	class dbb*	att_database;		// Parent databasea block
 	att*		att_next;			// Next attachment to database
@@ -655,7 +657,7 @@ typedef jrd_fld *JRD_FLD;
 
 /* Index block to cache index information */
 
-class idb
+class idb : public pool_alloc<type_idb>
 {
     public:
 	struct idb*	idb_next;
@@ -707,7 +709,7 @@ public:
 
 	void resize(size_t n, T val = T()) { vector.resize(n, val); }
 
-	void operator delete(void *mem) { MemoryPool::deallocate(mem); }
+	void operator delete(void *mem) { MemoryPool::globalFree(mem); }
 
 protected:
 	vec_base(MemoryPool& p, int len)

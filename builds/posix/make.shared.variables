@@ -205,15 +205,15 @@ FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Source
 
 #________________________________________________________________________
 #
-# common/memory
+# common/classes
 
-FBMEMORY_ClientFiles=allocators.cpp memory_pool.cpp
-FBMEMORY_ServerFiles=
+FBCLASSES_ClientFiles=alloc.cpp
+FBCLASSES_ServerFiles=
 
-FBMEMORY_Files= $(FBMEMORY_ClientFiles) $(FBMEMORY_ServerFiles)
+FBCLASSES_Files= $(FBCLASSES_ClientFiles) $(FBCLASSES_ServerFiles)
 
-FBMEMORY_Sources = $(addprefix common/memory/, $(FBMEMORY_Files))
-FBMEMORY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBMEMORY_Sources))))
+FBCLASSES_Sources = $(addprefix common/classes/, $(FBCLASSES_Files))
+FBCLASSES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_Sources))))
 
 #________________________________________________________________________
 #
@@ -267,7 +267,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(GPRELIB_Objects) \
                 $(SECURITY_Objects) \
                 $(FBUTIL_Objects) \
-				$(FBMEMORY_Objects) \
+				$(FBCLASSES_Objects) \
                 $(FBCOMMON_Objects) \
                 $(FBCONFIG_Objects) \
                 $(BURP_Objects) \

@@ -191,10 +191,11 @@ void ALL_init(void)
 	dbb = tdbb->tdbb_database;
 
 	pool = tdbb->tdbb_default = dbb->dbb_permanent;
-        dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
+    //    dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
 	dbb->dbb_pools[0] = pool;
 
-	dbb->dbb_bufferpool = FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
+	dbb->dbb_bufferpool = JrdMemoryPool::createPool();
+	  //FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
 	dbb->dbb_pools[1] = dbb->dbb_bufferpool;
 }
 

@@ -25,7 +25,7 @@
 #define JRD_ALL_H
 
 #include "../jrd/jrd.h"
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 #include "../jrd/block_cache.h"
 #include "../jrd/lls.h"
 
@@ -42,14 +42,22 @@ void ALL_check_memory(void);
 
 class JrdMemoryPool : public MemoryPool
 {
+protected:
+	// Dummy constructor and destructor. Should never be called
+	JrdMemoryPool() : MemoryPool(NULL, NULL), lls_cache(*this) {}
+	~JrdMemoryPool() {}	
 public:
-	JrdMemoryPool(int extSize = 0, MemoryPool* p = getDefaultMemoryPool())
-	:	MemoryPool(extSize, p),
-		plb_buckets(0),
-		plb_segments(0),
-		plb_dccs(0),
-		lls_cache(*this)
-	{
+	static JrdMemoryPool *createPool() {
+		JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool));
+		result->plb_buckets = NULL;
+		result->plb_segments = NULL;
+		result->plb_dccs = NULL;
+		new (&result->lls_cache) BlockCache<lls> (*result);
+		return result;
+	}
+	static void deletePool(JrdMemoryPool* pool) {
+		pool->lls_cache.~BlockCache<lls>();
+		MemoryPool::deletePool(pool);
 	}
 
 	static class blk* ALL_pop(class lls**);

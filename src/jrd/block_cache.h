@@ -1,8 +1,7 @@
 #ifndef _JRD_BLOCK_CACHE_H_
 #define _JRD_BLOCK_CACHE_H_
 
-#include "../common/memory/memory_pool.h"
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 #include "../jrd/smp_impl.h"
 
 template <class T>

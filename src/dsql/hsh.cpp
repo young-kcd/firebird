@@ -26,6 +26,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/sym.h"
 #include "../jrd/gds.h"
+#include "../jrd/gds_proto.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
@@ -86,7 +87,7 @@ void HSHD_init(void)
 	}
 #endif
 
-	p = (UCHAR *) MemoryPool::malloc_from_system(sizeof(SYM) * HASH_SIZE);
+	p = (UCHAR *) gds__alloc(sizeof(SYM) * HASH_SIZE);
 	memset(p, 0, sizeof(SYM) * HASH_SIZE);
 
 	hash_table = (SYM *) p;
@@ -156,7 +157,7 @@ void HSHD_fini(void)
 		hash_table[i] = NULL;
 	}
 
-	MemoryPool::free_from_system(hash_table);
+	gds__free(hash_table);
 	hash_table = NULL;
 }
 

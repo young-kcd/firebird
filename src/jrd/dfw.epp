@@ -3175,7 +3175,7 @@ static void get_procedure_dependencies(DFW work)
 	{
 		old_pool = tdbb->tdbb_default;
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
+		tdbb->tdbb_default = JrdMemoryPool::createPool();
 		MET_get_dependencies(tdbb,
 							(struct jrd_rel*)NULL_PTR,
 							(TEXT*)NULL_PTR,
@@ -3188,7 +3188,7 @@ static void get_procedure_dependencies(DFW work)
 		if (request)
 			CMP_release(tdbb, request);
 		else
-			delete tdbb->tdbb_default;
+			JrdMemoryPool::deletePool(tdbb->tdbb_default);
 
 		tdbb->tdbb_default = old_pool;
 	}
@@ -3242,7 +3242,7 @@ static void get_trigger_dependencies( DFW work)
 	{
 		JrdMemoryPool *old_pool = tdbb->tdbb_default;
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
+		tdbb->tdbb_default = JrdMemoryPool::createPool();
 		MET_get_dependencies(tdbb, relation,
 							 (TEXT*)NULL_PTR,
 							 (CSB)NULL_PTR,
@@ -3254,7 +3254,7 @@ static void get_trigger_dependencies( DFW work)
 		if (request)
 			CMP_release(tdbb, request);
 		else
-			delete tdbb->tdbb_default;
+			JrdMemoryPool::deletePool(tdbb->tdbb_default);
 			
 		tdbb->tdbb_default = old_pool;
 	}
@@ -4115,7 +4115,7 @@ static void put_summary_blob(BLB blob, RSR_T type, SLONG blob_id[2])
 	assert(blr->blb_length <= MAX_USHORT);
 	USHORT length = (USHORT)blr->blb_length;
 	UCHAR* buffer = (length > sizeof(temp)) ?
-		(UCHAR*) MemoryPool::malloc_from_system((SLONG) blr->blb_length) : temp;
+		(UCHAR*) gds__alloc((SLONG) blr->blb_length) : temp;
 
 	// Setup to cleanup after any error that may occur
 
@@ -4125,13 +4125,13 @@ static void put_summary_blob(BLB blob, RSR_T type, SLONG blob_id[2])
 	}
 	catch (...) {
 		if (buffer != temp) {
-			MemoryPool::free_from_system(buffer);
+			gds__free(buffer);
 		}
 		ERR_punt();
 	}
 
 	if (buffer != temp) {
-		MemoryPool::free_from_system(buffer);
+		gds__free(buffer);
 	}
 }
 
@@ -4156,7 +4156,7 @@ static void put_summary_record(BLB		blob,
 	UCHAR temp[129];
 
 	UCHAR* buffer = (length + 1 > sizeof(temp)) ?
-		(UCHAR *) MemoryPool::malloc_from_system((SLONG) (length + 1)) : temp;
+		(UCHAR *) gds__alloc((SLONG) (length + 1)) : temp;
 
 	UCHAR* p = buffer;
 
@@ -4173,13 +4173,13 @@ static void put_summary_record(BLB		blob,
 	}
 	catch (...) {
 		if (buffer != temp) {
-			MemoryPool::free_from_system(buffer);
+			gds__free(buffer);
 		}
 		ERR_punt();
 	}
 
 	if (buffer != temp) {
-		MemoryPool::free_from_system(buffer);
+		gds__free(buffer);
 	}
 }
 

@@ -10,7 +10,7 @@
 #ifndef FB_MAP_H
 #define FB_MAP_H
  
-#include "../common/memory/allocators.h"
+#include "../common/classes/alloc.h"
 
 #include <map>
 

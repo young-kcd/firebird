@@ -1008,7 +1008,7 @@ JRD_TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 		ERR_post(isc_read_only_database, 0);
 
 
-	tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
+	tdbb->tdbb_default = JrdMemoryPool::createPool();
 	trans = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra();
 	trans->tra_pool = tdbb->tdbb_default;
 	trans->tra_number = gds__vax_integer(id, length);
@@ -1031,7 +1031,7 @@ JRD_TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 		}
 
 		number = trans->tra_number;
-		delete trans->tra_pool;
+		JrdMemoryPool::deletePool(trans->tra_pool);
 
 		gds__msg_lookup(0, JRD_BUGCHK, message, sizeof(text), text, &flags);
 
@@ -1122,7 +1122,7 @@ void TRA_release_transaction(TDBB tdbb, JRD_TRA transaction)
 /* Release the transaction pool. */
 
 	if ( (tra_pool = transaction->tra_pool) )
-		delete tra_pool;
+		JrdMemoryPool::deletePool(tra_pool);
 }
 
 
@@ -1490,7 +1490,7 @@ JRD_TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
    transaction block first, sieze relation locks, the go ahead and
    make up the real transaction block. */
 
-	tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
+	tdbb->tdbb_default = JrdMemoryPool::createPool();
 	temp = FB_NEW_RPT(*tdbb->tdbb_default, 0) jrd_tra;
 	temp->tra_pool = tdbb->tdbb_default;
 	transaction_options(tdbb, temp, reinterpret_cast < UCHAR * >(tpb),

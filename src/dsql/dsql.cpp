@@ -488,7 +488,7 @@ GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
 
 		database = init(db_handle);
 
-		tdsql->tsql_default = FB_NEW(*DSQL_permanent_pool) DsqlMemoryPool;
+		tdsql->tsql_default = DsqlMemoryPool::createPool();
 
 /* allocate the request block */
 
@@ -682,7 +682,7 @@ static STATUS dsql8_execute_immediate_common(STATUS*	user_status,
 
 		database = init(db_handle);
 
-		tdsql->tsql_default = FB_NEW(*DSQL_permanent_pool) DsqlMemoryPool;
+		tdsql->tsql_default = DsqlMemoryPool::createPool();
 
 	/* allocate the request block, then prepare the request */
 
@@ -1325,7 +1325,7 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 /* Because that's the client's allocated statement handle and we
    don't want to trash the context in it -- 2001-Oct-27 Ann Harrison */
 
-		tdsql->tsql_default = FB_NEW(*DSQL_permanent_pool) DsqlMemoryPool;
+		tdsql->tsql_default = DsqlMemoryPool::createPool();
 		request = FB_NEW(*tdsql->tsql_default) dsql_req;
 		request->req_dbb = database;
 		request->req_pool = tdsql->tsql_default;
@@ -2461,7 +2461,7 @@ static void cleanup_database(FRBRD ** db_handle, SLONG flag)
 */
 	if (dbb) {
 		HSHD_finish(dbb);
-		delete dbb->dbb_pool;
+		DsqlMemoryPool::deletePool(dbb->dbb_pool);
 	}
 
 	if (!databases) {
@@ -2966,7 +2966,7 @@ static STATUS execute_request(DSQL_REQ			request,
 			   In either case, there's more than one record. */
 
 			UCHAR* message_buffer =
-				(UCHAR*)MemoryPool::malloc_from_system((ULONG) message->msg_length);
+				(UCHAR*)gds__alloc((ULONG) message->msg_length);
 
 			s = 0;
 			THREAD_EXIT;
@@ -2980,7 +2980,7 @@ static STATUS execute_request(DSQL_REQ			request,
 								0);
 			}
 			THREAD_ENTER;
-			MemoryPool::free_from_system(message_buffer);
+			gds__free(message_buffer);
 
 			/* two successful receives means more than one record
 			   a req_sync error on the first pass above means no records
@@ -3679,7 +3679,7 @@ static DBB init(FRBRD** db_handle)
 		}
 	}
 
-	pool = FB_NEW(*DSQL_permanent_pool) DsqlMemoryPool;
+	pool = DsqlMemoryPool::createPool();
 	database = FB_NEW(*pool) dbb;
 	database->dbb_pool = pool;
 	database->dbb_next = databases;
@@ -4420,7 +4420,7 @@ static void release_request(DSQL_REQ request, USHORT top_level)
 /* Only release the entire request for top level requests */
 
 	if (top_level)
-		delete request->req_pool;
+		DsqlMemoryPool::deletePool(request->req_pool);
 }
 
 

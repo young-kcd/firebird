@@ -14,6 +14,7 @@
 
 #include "../jrd/plugin_manager.h"
 #include "../jrd/os/path_utils.h"
+#include "../jrd/gds_proto.h"
 
 PluginManager::Plugin PluginManager::findPlugin(const Firebird::string &name)
 {

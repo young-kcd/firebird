@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.21 2002-11-30 17:43:18 hippoman Exp $
+$Id: blb.cpp,v 1.22 2003-01-16 17:47:03 skidder Exp $
 */
 
 #include "firebird.h"
@@ -726,7 +726,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 					  reinterpret_cast < void (*)() > (slice_callback),
 					  reinterpret_cast < struct slice *>(&arg));
 
-	MemoryPool::deallocate(data);
+	dbb->dbb_permanent->deallocate(data);
 
 	if (status) {
 		ERR_punt();
@@ -734,7 +734,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 
 	}	// try
 	catch (...) {
-		MemoryPool::deallocate(data);
+		dbb->dbb_permanent->deallocate(data);
 		ERR_punt();
 	}
 
@@ -1498,7 +1498,7 @@ void BLB_release_array(ARR array)
  **************************************/
 
 	if (array->arr_data) {
-		MemoryPool::deallocate(array->arr_data);
+		MemoryPool::globalFree(array->arr_data); // But know that it comes from permanent pool
 	}
 
 	JRD_TRA transaction  = array->arr_transaction;
