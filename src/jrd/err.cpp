@@ -60,6 +60,7 @@ using namespace Jrd;
 
 
 static void internal_error(ISC_STATUS, int);
+static void internal_post(ISC_STATUS status, va_list args);
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
@@ -392,7 +393,26 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void ERR_post_nothrow(ISC_STATUS status, ...)
+{
+	va_list args;
+	va_start(args, status);
+
+	internal_post(status, args);
+};
+
 void ERR_post(ISC_STATUS status, ...)
+{
+	va_list args;
+	va_start(args, status);
+	
+	internal_post(status, args);
+	
+	DEBUG;
+	ERR_punt();
+};
+
+static void internal_post(ISC_STATUS status, va_list args)
 {
 /**************************************
  *
@@ -412,7 +432,7 @@ void ERR_post(ISC_STATUS status, ...)
 
 /* stuff the status into temp buffer */
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
-	STUFF_STATUS(tmp_status, status);
+	STUFF_STATUS_function(tmp_status, status, args);
 
 /* calculate length of the status */
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
@@ -425,8 +445,7 @@ void ERR_post(ISC_STATUS status, ...)
 		/* this is a blank status vector just stuff the status */
 		MOVE_FASTER(tmp_status, status_vector,
 					sizeof(ISC_STATUS) * tmp_status_len);
-		DEBUG;
-		ERR_punt();
+		return;
 	}
 
 	PARSE_STATUS(status_vector, status_len, warning_indx);
@@ -448,8 +467,7 @@ void ERR_post(ISC_STATUS status, ...)
 					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
 		{
 			/* duplicate found */
-			DEBUG;
-			ERR_punt();
+			return;
 		}
 	}
 
@@ -477,8 +495,7 @@ void ERR_post(ISC_STATUS status, ...)
 						sizeof(ISC_STATUS) * warning_count);
 		}
 	}
-	DEBUG;
-	ERR_punt();
+	return;
 }
 #endif
 

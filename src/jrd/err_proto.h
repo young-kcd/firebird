@@ -54,6 +54,7 @@ void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT);
 void	ERR_error(int);
 void	ERR_error_msg(const TEXT*);
 void	ERR_post(ISC_STATUS, ...);
+void	ERR_post_nothrow(ISC_STATUS, ...);
 void	ERR_punt(void);
 void	ERR_warning(ISC_STATUS, ...);
 void	ERR_log(int, int, const TEXT*);

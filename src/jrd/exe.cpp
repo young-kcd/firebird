@@ -172,6 +172,7 @@ static void trigger_failure(thread_db*, jrd_req*);
 static void validate(thread_db*, jrd_nod*);
 inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, record_param*,
 	Record*, jrd_req::req_ta);
+static void stuff_stack_trace(const jrd_req* request);
 
 #ifdef PC_ENGINE
 static jrd_nod* find(thread_db*, jrd_nod*);
@@ -203,6 +204,8 @@ const int MAX_CLONES	= 1000;
 const int ALL_TRIGS	= 0;
 const int PRE_TRIG	= 1;
 const int POST_TRIG	= 2;
+
+const int MAX_STACK_TRACE = 2048;
 
 /* this constant defines how many records are locked
    before we check whether record locking has been
@@ -1748,6 +1751,44 @@ static Lock* implicit_record_lock(jrd_tra* transaction, record_param* rpb)
 #endif
 
 
+static void stuff_stack_trace(const jrd_req* request)
+{
+	Firebird::string sTrace;
+	bool isEmpty = true;
+
+	for(const jrd_req* req = request; req; req = req->req_caller)
+	{
+		Firebird::string name;
+		
+		if (req->req_trg_name) {
+			name = "At trigger '";
+			name += req->req_trg_name;
+		}
+		else if (req->req_procedure) {
+			name = "At procedure '";
+			name += req->req_procedure->prc_name;
+		}
+
+		if (! name.isEmpty())
+		{
+			name.trim();
+
+			if(sTrace.length() + name.length() > MAX_STACK_TRACE)
+				break;
+
+			if (isEmpty) {
+				isEmpty = false;
+				sTrace += name + "'";
+			}
+			else
+				sTrace += "\n" + name + "'";
+		}
+	}
+
+	if (!isEmpty)
+		ERR_post_nothrow(isc_random, isc_arg_string, ERR_cstring(sTrace), 0);
+}
+
 static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 {
 /**************************************
@@ -1813,6 +1854,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 	bool error_pending = false;
 	bool catch_disabled = false;
+	tdbb->tdbb_flags &= ~TDBB_stack_trace_done;
 
 	// Execute stuff until we drop
 
@@ -2765,6 +2807,11 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		error_pending = true;
 		request->req_operation = jrd_req::req_unwind;
 		request->req_label = 0;
+
+		if (! (tdbb->tdbb_flags & TDBB_stack_trace_done) ) {
+			stuff_stack_trace(request); 
+			tdbb->tdbb_flags |= TDBB_stack_trace_done;
+		}
 	}
 	} // while()
 
