@@ -27,7 +27,7 @@
  * Compiler Compatibility
  */
 /*
-$Id: ibase.h,v 1.12 2002-07-02 12:20:50 dimitr Exp $
+$Id: ibase.h,v 1.13 2002-10-13 10:24:43 dimitr Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
@@ -2405,7 +2405,7 @@ const unsigned char gds_dyn_delete_generator       = 217;
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            216
+#define isc_dyn_last_dyn_value            219
 
 /******************************************/
 /* Array slice description language (SDL) */
