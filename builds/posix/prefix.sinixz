@@ -17,105 +17,11 @@
 #
 # Erik Kunze, Philosys GmbH, <kunze@philosys.de>
 #
-# $Id: prefix.sinixz,v 1.6 2002-09-24 12:59:32 eku Exp $
+# $Id: prefix.sinixz,v 1.7 2002-10-04 21:57:20 skidder Exp $
 #
-
-
-# use the following to define conditional DEV/PROD compile
+# 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
-#-Wno-implicit -Wno-uninitialized 
 
-DEBUG_Sources = nodebug.cpp
 PROD_FLAGS=-DNDEBUG -w -DSINIXZ -DUNIX -fwritable-strings
 DEV_FLAGS=-ggdb $(WARNINGS) -DSINIXZ -DUNIX -DDEBUG_GDS_ALLOC -fwritable-strings
-
-#CFLAGS:= $(CFLAGS) -DSINIXZ -DUNIX -fwritable-strings
-
-# If we don't define CXXFLAGS again, our changes to CFLAGS won't take effect
-#    for CXXFLAGS
-#CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
-
-# Determined by configure script
-#LINK_LIBS += -lsocket -lnsl -lresolv -lgen
-
-STATICLINK_LIBS := $(LINK_LIBS)
-
-IO_Sources = unix.cpp
-
-############################# old stuff from FB1 ###############################
-#DEBUG_OBJECTS=		$(DEBUG_OBJECTS)
-#SHRLIB_DIR=		$(SHRLIB_DIR)
-#VERSION_FLAG=		$(VERSION_FLAG)
-#CFLAGS=			$(CFLAGS) -D$(SYSTEM)
-
-#UDF_LINK_CMD=		$(CC)
-#UDF_CFLAGS=		-fPIC -mieee-fp
-#UDF_LFLAGS=		-shared
-#UDF_SHRLIBS=		$(SHRLIB_DIR) -lgds -lm -lc -mieee-fp -ldl -lcrypt
-
-#ACCESS_METHOD=		gdslib.unixware pipe
-#BACKEND_BRIDGE_MISC=	head5.o allp.o
-#BIN_PATH=		/usr/gds/bin
-#BRIDGE_MISC=		head5.o allp.o
-#CHMOD_VAL=		666
-#CURSES_LIB=		-lcurses
-#DSQL_P_OBJS=		dsql_p_objects
-#FORM_OBJECTS=		noform.o
-#FUNCTIONS=		functions.bin
-#GDS_LINK=		$(GDSSHR_LINK)
-#GDSLIB_BACKEND=		source/jrd/gds_b.a
-#GDSLIB_LINK=		-Lsource/jrd -lgds_b -lsocket -lnsl -lresolv -lgen -ldl
-#GDSSHR=			source/interbase/lib/gds.so.0
-#GDSSHR_LINK=		$(SHRLIB_DIR) -lgds -lsocket -lnsl -lresolv -lgen
-#HLPDIR=			source/qli/
-#INTL=			intl
-#INTL_CFLAGS=		$(CFLAGS)
-#INTL_LD_LINE=		$(LD) -G -z text -o gdsintl
-#INTL_P_OBJS=		intl
-#INTL_PIC_FLAGS=		$(PIC_FLAGS)
-#INTL_TARGET=		intl_shr_objs
-#IO_OBJECTS=		unix.o
-#IO_P_OBJECTS=		unix.bin
-#JRD_MISC_OBJECTS=	source/jrd/sun_ftn.o
-#JRD_J_MISC_OBJECTS=	source/jrd/sun_ftn.j 
-#JRD_P_MISC_OBJECTS=	source/jrd/sun_ftn.bin source/jrd/nodebug.bin
-#JRD_MISC_OBJECTS=	stubs.o
-#JRD_P_MISC_OBJECTS=	nodebug.bin stubs.bin
-#LANG_OBJECTS=		ada.o ftn.o cob.o
-#LANGUAGES=		cc cxx microfocus_cob make15 gdl1
-#LANGUAGES=		cc cxx ada microfocus_cob make16 gdl1 sun_ftn
-#LD_LIBS=		-ldl
-#LD_OPTS=		-G -h
-#LOCK_JRD_MISC=
-#LOCK_MANAGER=		manager
-#LOCK_MANAGER=
-#MARION_DB=		-d source/marion.gdb
-#NSL_LIB=		-lnsl
-#PIC_FLAGS=		$(CFLAGS) -fPIC
-#PIPE=			gds.a gds_pipe
-#REG_HELP=		isc_ins_hlp.dat
-#REMOTE_GDSSHR=		$(GDSSHR)
-#REMOTE_GDSSHR_LINK=	$(SERVER_LINK)
-#REMOTE_P_OBJS=		rem_p_objects
-#SCREEN_LIBS=		-lcurses
-#SERVER_LINK=		$(GDSSHR_LINK)
-#SPECIAL_OPT=		sh source/special_opt
-#SOCKET_LIB=		-lsocket -lnsl
-#UTILITIES=		drop
-#VT100_FLAGS=		-DBSD_COMP
-
-#INET_SERVER_DEST=	source/interbase/bin/gds_inet_server
-#DNET_SERVER_DEST=	source/interbase/bin/gds_dnet_server
-#AMBX_SERVER_DEST=	source/interbase/bin/gds_server
-#INET_LIB_DEST=		source/interbase/lib/gds_inet_server.a
-#DNET_LIB_DEST=		source/interbase/lib/gds_dnet_server.a
-
-#AR=			ar r
-#EXPAND_DBNAME=		@echo No need to expand...
-#COMPRESS_DBNAME=	@echo No need to compress...
-
-#ARCH_EXT=		.a
-#EXEC_EXT=
-
-#V3PRINTER=		source/lock/printv3.o

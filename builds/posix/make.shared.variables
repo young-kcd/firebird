@@ -42,7 +42,7 @@ JRD_ServerFiles=  blob_filter.epp dpm.epp dyn.epp dyn_def.epp \
 		rng.cpp rse.cpp sbm.cpp \
 		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
         svc.cpp sym.cpp tpc.cpp tra.cpp val.cpp vio.cpp \
-		$(IO_Sources) $(DEBUG_Sources)
+		unix.cpp nodebug.cpp
 
 
 JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)
