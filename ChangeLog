@@ -1,3 +1,9 @@
+2003-04-22 10:45  alexpeshkoff
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	execute statement cleanup
+
 2003-04-20 18:26  skidder
 
 	* firebird2/doc/fb2-todo.txt:
