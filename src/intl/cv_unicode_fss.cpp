@@ -340,7 +340,7 @@ USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CS_UTFFSS_unicode_to_fss);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_unicode_to_fss));
 
 	*err_code = 0;
 

@@ -38,7 +38,7 @@ USHORT CVBIG5_big5_to_unicode(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CVBIG5_big5_to_unicode);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVBIG5_big5_to_unicode));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
@@ -113,7 +113,7 @@ USHORT CVBIG5_unicode_to_big5(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CVBIG5_unicode_to_big5);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVBIG5_unicode_to_big5));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 

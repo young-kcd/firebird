@@ -106,7 +106,7 @@ USHORT CV_wc_to_wc(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CV_wc_to_wc);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CV_wc_to_wc));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
@@ -157,7 +157,7 @@ USHORT CV_nc_to_unicode(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CV_nc_to_unicode);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CV_nc_to_unicode));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(sizeof(UNICODE) == 2);
 

@@ -41,7 +41,7 @@ USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CVJIS_eucj_to_unicode);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_eucj_to_unicode));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
@@ -136,7 +136,7 @@ USHORT CVJIS_sjis_to_unicode(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CVJIS_sjis_to_unicode);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_sjis_to_unicode));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
@@ -391,7 +391,7 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CVJIS_unicode_to_sjis);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_unicode_to_sjis));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
@@ -466,7 +466,7 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CVJIS_unicode_to_eucj);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_unicode_to_eucj));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 

@@ -44,7 +44,7 @@ USHORT CVKSC_ksc_to_unicode(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CVKSC_ksc_to_unicode);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVKSC_ksc_to_unicode));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
@@ -117,7 +117,7 @@ USHORT CVKSC_unicode_to_ksc(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CVKSC_unicode_to_ksc);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVKSC_unicode_to_ksc));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
