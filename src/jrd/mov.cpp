@@ -184,7 +184,6 @@ void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
  *
  **************************************/
 	ULONG l;
-	UCHAR *p, *q;
 
 	fb_assert(!((U_IPTR) to & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
 	fb_assert(!((U_IPTR) from & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
@@ -212,8 +211,8 @@ void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
 
 /* Finally, copy any trailing bytes */
 	if (l = (length & 3)) {
-		p = (UCHAR *) to;
-		q = (UCHAR *) from;
+		UCHAR* p = (UCHAR *) to;
+		const UCHAR* q = (UCHAR *) from;
 		do
 			*p++ = *q++;
 		while (--l);
@@ -235,7 +234,6 @@ void MOV_fill(SLONG* to, ULONG length)
  *
  **************************************/
 	ULONG l;
-	UCHAR *p;
 
 /* If not longword aligned, fill bytewise until it is */
 
@@ -244,7 +242,7 @@ void MOV_fill(SLONG* to, ULONG length)
 		if (length < l)
 			l = length;
 		length -= l;
-		p = (UCHAR *) to;
+		UCHAR* p = (UCHAR *) to;
 		while (l--)
 			*p++ = 0;
 		to = (SLONG *) p;
@@ -275,7 +273,7 @@ void MOV_fill(SLONG* to, ULONG length)
 
 /* Finally, fill any trailing bytes */
 	if (l = (length & 3)) {
-		p = (UCHAR *) to;
+		UCHAR* p = (UCHAR *) to;
 		do
 			*p++ = 0;
 		while (--l);
@@ -359,7 +357,9 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 #ifdef DEV_BUILD
 	if ((dummy_type != ttype_metadata) &&
 		(dummy_type != ttype_none) && (dummy_type != ttype_ascii))
+	{
 		ERR_bugcheck_msg("Expected METADATA name");
+	}
 #endif
 
 	length = ptr ? MIN(length, buffer_length - 1) : 0;
@@ -573,7 +573,7 @@ void MOV_move(const dsc* from, dsc* to)
 }
 
 
-void MOV_time_stamp(GDS_TIMESTAMP* date)
+void MOV_time_stamp(GDS_TIMESTAMP* datetime)
 {
 /**************************************
  *
@@ -585,5 +585,12 @@ void MOV_time_stamp(GDS_TIMESTAMP* date)
  *	Get the current timestamp in gds format.
  *
  **************************************/
-	*date = Firebird::TimeStamp().value();
+
+	*datetime = Firebird::TimeStamp().value();
+	// CVC: This function is used only by PAG_add_file (for raw devices support)
+	// and PAG_format_header. In late FB v2, timestamp started returning
+	// milliseconds, so if some unexpected incompatbility arises, uncomment
+	// the following line that will get rid of the milliseconds.
+	//datetime->timestamp_time = Firebird::TimeStamp::round_time(datetime->timestamp_time, 0);
 }
+
