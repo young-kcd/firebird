@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.27 2004-05-04 02:53:36 brodsom Exp $
+ * $Id: isql.h,v 1.28 2004-05-07 07:52:47 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -284,9 +284,9 @@ const int BLOB			= 261;
 #endif
 
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH		"fb_q"
+static const char* SCRATCH		= "fb_q";
 #else
-#define SCRATCH		"fb_query_"
+static const char* SCRATCH		= "fb_query_";
 #endif
 
 
