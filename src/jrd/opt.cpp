@@ -1633,8 +1633,10 @@ static bool computable(CSB     csb,
 		if ((n = (USHORT) node->nod_arg[e_fld_stream]) == stream) {
 			return false;
 		}
-		if (idx_use &&
-			!(csb->csb_rpt[n].csb_flags & (csb_made_river | csb_active)))
+		// AB: cbs_made_river has been replaced by find_used_streams()
+		//if (idx_use &&
+		//	!(csb->csb_rpt[n].csb_flags & (csb_made_river | csb_active)))
+		if (idx_use && !(csb->csb_rpt[n].csb_flags & csb_active))
 		{
 			return false;
 		}
@@ -1647,9 +1649,11 @@ static bool computable(CSB     csb,
 		if ((n = (USHORT) node->nod_arg[0]) == stream) {
 			return false;
 		}
-		if (idx_use &&
-			!(csb->csb_rpt[n].
-				 csb_flags & (csb_made_river | csb_active)))
+		// AB: cbs_made_river has been replaced by find_used_streams()
+		//if (idx_use &&
+		//	!(csb->csb_rpt[n].
+		//		 csb_flags & (csb_made_river | csb_active)))
+		if (idx_use && !(csb->csb_rpt[n].csb_flags & csb_active))
 		{
 			return false;
 		}
@@ -4883,16 +4887,27 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	river1->riv_rsb = merge_rsb;
 	stream = river1->riv_streams;
 	stack1 = NULL;
-	LLS_PUSH(river1, &stack1);
 	while (*org_rivers) {
 		river2 = (RIV) LLS_POP(org_rivers);
 		if (TEST_DEP_BIT(selected_rivers, river2->riv_number)) {
 			MOVE_FAST(river2->riv_streams, stream, river2->riv_count);
 			stream += river2->riv_count;
 		}
-		else
-			LLS_PUSH(river2, &stack1);
+		else {
+			// AB: Be sure that the rivers 'order' will be kept.
+			if (stack1) {
+				RIV river3 = (RIV) LLS_POP(&stack1);
+				LLS_PUSH(river2, &stack1);
+				LLS_PUSH(river3, &stack1);
+			}
+			else {
+				LLS_PUSH(river2, &stack1);
+			}
+		}
 	}
+	// AB: Moved LLS_PUSH() from before the while (*org_rivers) loop to here, because
+	// the merged rivers could be refering to other streams on the list.
+	LLS_PUSH(river1, &stack1);
 
 /* Pick up any boolean that may apply */
 
