@@ -186,7 +186,8 @@ int SBM_clear(SBM bitmap, SLONG number)
 
 		slot = number >> BUCKET_BITS;
 
-		if ((int) slot < 0 || slot > bitmap->sbm_high_water ||
+// USHORT slot is never < 0
+		if (slot > bitmap->sbm_high_water ||
 			!(bucket = (SBM) bitmap->sbm_segments[slot]))
 			return FALSE;
 
@@ -200,7 +201,8 @@ int SBM_clear(SBM bitmap, SLONG number)
 
 		slot = number >> SEGMENT_BITS;
 
-		if ((int) slot < 0 || slot > bitmap->sbm_high_water ||
+// USHORT slot is never < 0
+		if (slot > bitmap->sbm_high_water ||
 			!(segment = bitmap->sbm_segments[slot]))
 			return FALSE;
 
@@ -250,7 +252,7 @@ void SBM_dump(IB_FILE * f, SBM bitmap1)
 			   (bitmap1->sbm_state == SBM_PLURAL) ? "Plural" : "Bogus");
 	ib_fprintf(f, " Type: %s", (bitmap1->sbm_type == SBM_BUCKET) ? "Bucket" :
 			   (bitmap1->sbm_type == SBM_ROOT) ? "root" : "Bogus");
-	ib_fprintf(f, " Count %d Used %d high %ld\n",
+	ib_fprintf(f, " Count %d Used %d high %d\n",
 			   bitmap1->sbm_count, bitmap1->sbm_used,
 			   bitmap1->sbm_high_water);
 
@@ -905,7 +907,8 @@ int SBM_test(SBM bitmap, SLONG number)
 
 		slot = number >> BUCKET_BITS;
 
-		if ((int) slot < 0 || slot > bitmap->sbm_high_water ||
+// USHORT slot is never < 0
+		if (slot > bitmap->sbm_high_water ||
 			!(bucket = (SBM) bitmap->sbm_segments[slot]))
 			return FALSE;
 
@@ -919,7 +922,8 @@ int SBM_test(SBM bitmap, SLONG number)
 
 		slot = number >> SEGMENT_BITS;
 
-		if ((int) slot < 0 || slot > bitmap->sbm_high_water ||
+// USHORT slot is never < 0
+		if (slot > bitmap->sbm_high_water ||
 			!(segment = bitmap->sbm_segments[slot]))
 			return FALSE;
 
