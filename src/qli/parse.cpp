@@ -176,12 +176,13 @@ static struct nod_types {
 	NOD_T nod_t_rpt_node;
 	NOD_T nod_t_sql_node;
 } statisticals[] = {
-	KW_MAX, nod_max, nod_rpt_max, nod_agg_max,
-		KW_MIN, nod_min, nod_rpt_min, nod_agg_min,
-		KW_COUNT, nod_count, nod_rpt_count, nod_agg_count,
-		KW_AVERAGE, nod_average, nod_rpt_average, nod_agg_average,
-		KW_TOTAL, nod_total, nod_rpt_total, nod_agg_total,
-		KW_none, nod_any, nod_any};
+	{ KW_MAX, nod_max, nod_rpt_max, nod_agg_max },
+	{ KW_MIN, nod_min, nod_rpt_min, nod_agg_min },
+	{ KW_COUNT, nod_count, nod_rpt_count, nod_agg_count },
+	{ KW_AVERAGE, nod_average, nod_rpt_average, nod_agg_average },
+	{ KW_TOTAL, nod_total, nod_rpt_total, nod_agg_total },
+	{ KW_none, nod_any, nod_any }
+};
 
 static NOD_T relationals[] = {
 	nod_eql, nod_neq, nod_leq, nod_lss, nod_gtr, nod_geq, nod_containing,
