@@ -1,3 +1,29 @@
+2004-10-13 20:45  dimitr
+
+	* firebird2/src/lock/lock.h (1.32):
+	
+	Forgotten commit.
+
+2004-10-13 20:37  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.117), dsql.tab.h (1.43), gen.cpp
+	(1.72), keywords.cpp (1.34), node.h (1.47), parse.cpp (1.129),
+	parse.y (1.152), pass1.cpp (1.163), pass1_proto.h (1.14):
+	
+	The entire RSE handling in the parser is slightly rewritten. New
+	join syntax is introduced.  Notes: 1) Some features are disabled
+	(via isc_wish_list) yet due to their incomplete implementation.  2)
+	The parser may become unstable or cause regressions. It will be
+	fixed ASAP.
+
+2004-10-13 20:17  dimitr
+
+	* firebird2/src/jrd/: drq.h (1.7), dyn_def.epp (1.83), par.cpp
+	(1.104):
+	
+	Some changes to support procedure-based views. Much work is still
+	required.
+
 2004-10-11 19:18  hvlad
 
 	* firebird2/src/jrd/: evl.cpp (1.113), evl_proto.h (1.18):
