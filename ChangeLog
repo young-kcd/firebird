@@ -1,3 +1,11 @@
+2004-06-27 21:06  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.133):
+	
+	1. Yet another attempt to fix that damned double-compile UDF args
+	crap. Hopefully, the last one...  2. Temporary fix for the
+	SUBSTRING (BLOB) issue (until Yaffil merge).
+
 2004-06-27 00:23  skidder
 
 	* firebird2/src/: common/classes/fb_string.cpp (1.17),
