@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.20 2003-06-30 10:48:03 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.21 2003-08-28 10:33:04 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -1539,7 +1539,7 @@ void MET_load_hash_table( DBB dbb)
 		if (!X.RDB$OWNER_NAME.NULL
 			&& (length =
 				symbol_length(X.RDB$OWNER_NAME))) relation->rel_owner =
-				MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, (GPRE_CTX) NULL_PTR);
+				MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, NULL);
 
 		END_FOR;
 	}
@@ -1560,7 +1560,7 @@ void MET_load_hash_table( DBB dbb)
 	HSH_insert(symbol);
 	if (!X.RDB$OWNER_NAME.NULL && (length = symbol_length(X.RDB$OWNER_NAME)))
 		procedure->prc_owner =
-			MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, (GPRE_CTX) NULL_PTR);
+			MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, NULL);
 	END_FOR ON_ERROR
 		/* assume pre V4 database, no procedures */
 		END_ERROR;
