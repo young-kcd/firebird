@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.86 2002-11-14 07:35:50 eku Exp $
+dnl $Id: configure.in,v 1.87 2002-11-14 08:01:45 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -76,8 +76,9 @@ case "$target" in
     MAKEFILE_PREFIX=solx86
     PLATFORM=solx86
     AC_DEFINE(solx86)
-    LOCK_MANAGER=Y
+    LOCK_MANAGER=N
     EDITLINE_FLG=N
+    RAW_DEVICES_FLG=Y
     ;;
 
   sparc-sun-solaris*)
@@ -281,6 +282,11 @@ AC_CHECK_FUNCS(gethostname connect)
 if test "$ac_cv_func_gethostname" = "no"; then
   AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
 fi
+
+if test "$PLATFORM" = "solx86" ; then
+  AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
+fi
+
 if test "$ac_cv_func_connect" = "no"; then
   AC_CHECK_LIB(socket, connect, XE_APPEND(-lsocket,LIBS),, $LIBS)
 fi  
