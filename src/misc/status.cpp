@@ -93,7 +93,9 @@ void PARSE_STATUS(STATUS * status_vector, int &length, int &warning)
 	warning = 0;
 	length = 0;
 
-	for (int i = 0; status_vector[i] != gds_arg_end; i++, length++)
+    int i = 0;
+
+	for (; status_vector[i] != gds_arg_end; i++, length++)
 	{
 		switch (status_vector[i])
 		{
