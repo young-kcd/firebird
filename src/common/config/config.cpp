@@ -115,13 +115,30 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 
 // was: const static ConfigImpl sysConfig;
 
+static ConfigImpl *sys_config = NULL;
+#ifdef MULTI_THREAD
+static Firebird::Spinlock config_init_lock;
+#endif
+
 const ConfigImpl& ConfigImpl::instance()
 {
-	static ConfigImpl *config = 0;
-	if (!config) {
-		config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl;
+	if (!sys_config) {
+#ifdef MULTI_THREAD
+		try {
+			config_init_lock.enter();
+			if (!sys_config) {
+#endif
+				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl;
+#ifdef MULTI_THREAD
+			}
+		} catch(const std::exception&) {
+			config_init_lock.leave();
+			throw;
+		}
+		config_init_lock.leave();
+#endif
 	}
-	return *config;
+	return *sys_config;
 }
 
 #define sysConfig ConfigImpl::instance()
