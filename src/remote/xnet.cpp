@@ -2255,7 +2255,7 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
 	start_crud.cbReserved2 = 0;
 	start_crud.lpDesktop = NULL;
 	start_crud.lpTitle = NULL;
-	start_crud.dwFlags = 0;
+	start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
 	cp_result = CreateProcess(NULL,
 							  XNET_command_line,
 							  NULL,

@@ -511,7 +511,7 @@ PORT WNET_connect(TEXT*		name,
 		start_crud.cbReserved2 = 0;
 		start_crud.lpDesktop = NULL;
 		start_crud.lpTitle = NULL;
-		start_crud.dwFlags = 0;
+		start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
 		ret = CreateProcess(NULL,
 							command_line,
 							NULL,
