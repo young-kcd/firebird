@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.46 2002-11-06 07:08:44 eku Exp $
+$Id: common.h,v 1.47 2002-11-13 12:27:46 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -217,7 +217,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define IEEE
 #define QUADCONST(n) (n##LL)
 #define QUADFORMAT "q"
-#define NON_MNTENT
 #define MAP_ANONYMOUS
 #define MAP_ANNON
 #define LSEEK_OFFSET_CAST (off_t)
@@ -647,31 +646,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* ifndef SCO_EV */
-
-
-#if (defined(__osf__) && defined(__alpha))
-#include <stddef.h>
-#define NO_PYXIS
-#define KILLER_SIGNALS
-#define UNIX            1
-#define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-/*#define ALIGNMENT       8*/
-/*#define DOUBLE_ALIGN    8*/
-#define IMPLEMENTATION  isc_info_db_impl_alpha_osf	/* 52 */
-#define                 IEEE
-
-#define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
-
-
-#define ATOM_DEFINED
-typedef long SATOM;				/* 64 bit */
-typedef unsigned long UATOM;
-
-typedef RETSIGTYPE (*SIG_FPTR) ();
-#endif /* DECOSF */
 
 
 #ifdef UNIX

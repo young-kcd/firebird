@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.56 2002-11-13 07:07:57 eku Exp $"
+#ident "$Id: config.h.in,v 1.57 2002-11-13 12:27:47 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -54,6 +54,7 @@
 #undef HAVE_RPC_RPC_H
 #undef HAVE_RPC_XDR_H
 #undef HAVE_AIO_H
+#undef HAVE_MNTENT_H
 
 
 /* Functions */
@@ -78,6 +79,7 @@
 #undef HAVE_FLOCK
 #undef HAVE_INITGROUPS
 #undef HAVE_GETPAGESIZE
+#undef HAVE_CRYPT
 #undef HAVE_XDR_HYPER
 #undef HAVE_PREAD
 #undef HAVE_PWRITE

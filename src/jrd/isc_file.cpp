@@ -91,7 +91,7 @@ typedef struct itm {
 
 /* Unix/NFS specific stuff */
 
-#if (defined NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
 
@@ -107,7 +107,6 @@ typedef struct itm {
 
 #ifdef SOLARIS
 #define SV_MNTENT
-#define NON_MNTENT
 #include <sys/mnttab.h>
 #define MTAB			"/etc/mnttab"
 #define MTAB_OPEN(path,type)    ib_fopen (path, type)
@@ -127,36 +126,26 @@ typedef struct itm {
 #endif
 
 #ifdef SCO_UNIX
-#define NON_MNTENT
 #define MTAB			"/etc/mount"
 #define MTAB_OPEN(path,type)	popen (path, type)
 #define MTAB_CLOSE(stream)	pclose (stream)
 #define GETWD(buf)		getcwd (buf, MAXPATHLEN)
 #endif
 
-#ifdef DECOSF
-#define NON_MNTENT
-#include <sys/types.h>
-#include <sys/mount.h>
-#endif
-
 #ifdef SINIXZ
 #include <sys/mnttab.h>
 #define SV_MNTENT
-#define NON_MNTENT
 #define MTAB			"/etc/mnttab"
 #define MTAB_OPEN(path,type)	fopen (path, type)
 #define MTAB_CLOSE(stream)	fclose (stream)
 #endif
 
 #ifdef ultrix
-#define NON_MNTENT
 #include <sys/mount.h>
 #include <sys/fs_types.h>
 #endif
 
 #if (defined AIX || defined AIX_PPC)
-#define NON_MNTENT
 #include <sys/vmount.h>
 #endif
 
@@ -173,7 +162,7 @@ typedef struct itm {
 #define GETWD			getwd
 #endif
 
-#ifndef NON_MNTENT
+#ifdef HAVE_MNTENT_H
 #ifdef NFS
 #include <mntent.h>
 #define MTAB_OPEN(path,type)	setmntent (path, "r")
@@ -236,7 +225,7 @@ static void share_name_from_resource(TEXT *, TEXT *, LPNETRESOURCE);
 static void share_name_from_unc(TEXT *, TEXT *, LPREMOTE_NAME_INFO);
 #endif
 
-#if (defined AIX || defined AIX_PPC || defined DECOSF)
+#if (defined AIX || defined AIX_PPC)
 static BOOLEAN get_mounts(MNT *, TEXT *, TEXT **, int *);
 #else
 #ifdef ultrix
@@ -360,7 +349,7 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 #ifdef ultrix
 	while (get_mounts(&mount, mnt_buffer, &context))
 #else
-#if (defined AIX || defined AIX_PPC || defined DECOSF)
+#if (defined AIX || defined AIX_PPC)
 	while (get_mounts(&mount, mnt_buffer, &temp, &context))
 #else
 	if (!(mtab = MTAB_OPEN(MTAB, "r"))) {
@@ -1677,7 +1666,7 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 #endif
 
 
-#ifndef NON_MNTENT
+#ifdef HAVE_MNTENT_H
 #define GET_MOUNTS
 static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 {
@@ -1724,7 +1713,7 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 
 	return FALSE;
 }
-#endif
+#endif /* HAVE_MNTENT_H */
 
 
 #ifndef GET_MOUNTS
