@@ -750,8 +750,8 @@ RETURNS (line1 CHAR(40), line2 CHAR(40), line3 CHAR(40),
 		line4 CHAR(40), line5 CHAR(40), line6 CHAR(40))
 AS
 	DECLARE VARIABLE customer	VARCHAR(25);
-	DECLARE VARIABLE first		VARCHAR(15);
-	DECLARE VARIABLE last		VARCHAR(20);
+	DECLARE VARIABLE first_name		VARCHAR(15);
+	DECLARE VARIABLE last_name		VARCHAR(20);
 	DECLARE VARIABLE addr1		VARCHAR(30);
 	DECLARE VARIABLE addr2		VARCHAR(30);
 	DECLARE VARIABLE city		VARCHAR(25);
@@ -771,15 +771,15 @@ BEGIN
 		address_line2, city, state_province, country, postal_code
 	FROM CUSTOMER
 	WHERE cust_no = :cust_no
-	INTO :customer, :first, :last, :addr1, :addr2,
+	INTO :customer, :first_name, :last_name, :addr1, :addr2,
 		:city, :state, :country, :postcode;
 
 	IF (customer IS NOT NULL) THEN
 		line1 = customer;
-	IF (first IS NOT NULL) THEN
-		line2 = first || ' ' || last;
+	IF (first_name IS NOT NULL) THEN
+		line2 = first_name || ' ' || last_name;
 	ELSE
-		line2 = last;
+		line2 = last_name;
 	IF (addr1 IS NOT NULL) THEN
 		line3 = addr1;
 	IF (addr2 IS NOT NULL) THEN

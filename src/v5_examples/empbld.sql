@@ -21,4 +21,4 @@ set sql dialect 1;
 create database 'empbuild.gdb';
 show version;
 input empddl.sql;
-quit;
+/* quit; */
