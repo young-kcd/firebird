@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.msgs,v 1.2 2001-08-01 08:11:52 skywalker Exp $
+#   $Id: Makefile.in.msgs,v 1.3 2001-08-06 19:36:58 bellardo Exp $
 # 
 
 ROOT=../..
@@ -45,11 +45,21 @@ unexport ISC_PASSWORD
 .PHONY: msgs
 
 
-CHECK_OBJECTS = check_msgs.o
-BUILD_OBJECTS = build_file.o
-ENTER_OBJECTS = enter_msgs.o
-MODIFY_OBJECTS = modify_msgs.o
-CHANGE_OBJECTS = change_msgs.o
+
+CHECK_Sources = check_msgs.cpp
+CHECK_OBJECTS = $(CHECK_Sources:%.cpp=$(OBJ)/%.o)
+
+BUILD_Sources = build_file.cpp
+BUILD_OBJECTS = $(BUILD_Sources:%.cpp=$(OBJ)/%.o)
+
+ENTER_Sources = enter_msgs.cpp
+ENTER_OBJECTS = $(ENTER_Sources:%.cpp=$(OBJ)/%.o)
+
+MODIFY_Sources = modify_msgs.cpp
+MODIFY_OBJECTS = $(MODIFY_Sources:%.cpp=$(OBJ)/%.o)
+
+CHANGE_Sources = change_msgs.cpp
+CHANGE_OBJECTS = $(CHANGE_Sources:%.cpp=$(OBJ)/%.o)
 
 
 AllObjects = $(CHECK_OBJECTS) $(BUILD_OBJECTS) $(ENTER_OBJECTS) \
