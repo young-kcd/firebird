@@ -33,7 +33,7 @@
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #ifndef VMS
 #include <sys/types.h>
 #else

@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 
 /* MOVE_FAST & MOVE_CLEAR have to be defined before #include common.h */
 
