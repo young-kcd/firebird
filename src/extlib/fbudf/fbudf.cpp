@@ -75,6 +75,7 @@ const long tenthmsec_in_day = seconds_in_day * ISC_TIME_SECONDS_PRECISION;
 const short varchar_indicator = sizeof(unsigned short);
 
 
+#ifdef DEV_BUILD
 // This function shouldn't be defined in production.
 FBUDF_API paramdsc* testreflect(paramdsc* rc)
 {
@@ -82,7 +83,7 @@ FBUDF_API paramdsc* testreflect(paramdsc* rc)
 	rc->dsc_flags = 1 | 4; //DSC_null | DSC_nullable;
 	return rc;
 }
-
+#endif
 
 namespace internal
 {
