@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.134 2003-05-14 05:39:55 eku Exp $
+dnl $Id: configure.in,v 1.135 2003-05-25 10:44:56 fsg Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -234,7 +234,7 @@ AC_ARG_WITH(gpre-ada,
   [  --with-gpre-ada         support ADA in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(ada.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GRPE_ADA);;
+          AC_DEFINE(GPRE_ADA);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-ada);;
    esac])
@@ -242,7 +242,7 @@ AC_ARG_WITH(gpre-cobol,
   [  --with-gpre-cobol       support COBOL in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(cob.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GRPE_COBOL);;
+          AC_DEFINE(GPRE_COBOL);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-cobol);;
    esac])
@@ -250,7 +250,7 @@ AC_ARG_WITH(gpre-fortran,
   [  --with-gpre-fortran     support FORTRAN in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(ftn.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GRPE_FORTRAN);;
+          AC_DEFINE(GPRE_FORTRAN);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-fortran);;
    esac])
@@ -258,7 +258,7 @@ AC_ARG_WITH(gpre-pascal,
   [  --with-gpre-pascal      support PASCAL in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(pas.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GRPE_PASCAL);;
+          AC_DEFINE(GPRE_PASCAL);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-pascal);;
    esac])
