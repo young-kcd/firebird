@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: exe.cpp,v 1.4 2001-12-24 02:50:51 tamlin Exp $
+$Id: exe.cpp,v 1.5 2001-12-28 06:31:38 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -174,6 +174,27 @@ static SLONG memory_count = 0;
    locking a record */
 
 #define RECORD_LOCK_CHECK_INTERVAL	10
+
+
+#ifdef PC_ENGINE
+// TMN: RAII class for LCK. Unlocks the LCK on destruction.
+class LCK_RAII_wrapper
+{
+	LCK_RAII_wrapper() : l(0) {}
+	~LCK_RAII_wrapper() {
+		if (l) {
+			RLCK_unlock_record_implicit(l, 0);
+		}
+	}
+	void assign(LCK lock) { l = lck; }
+
+	LCK l;
+
+private:
+	LCK_RAII_wrapper(const LCK_RAII_wrapper&);	// no impl.
+	void operator=(const LCK_RAII_wrapper&);	// no impl.
+};
+#endif
 
 
 
@@ -552,7 +573,6 @@ void EXE_receive(TDBB		tdbb,
 	FMT format;
 	TRA transaction;
 	SAV save_sav_point;
-	JMP_BUF env, *old_env;
 
 	SET_TDBB(tdbb);
 
@@ -583,9 +603,6 @@ void EXE_receive(TDBB		tdbb,
 		if (!transaction->tra_save_point) {
 			VIO_start_save_point(tdbb, transaction);
 		}
-		
-		old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-		tdbb->tdbb_setjmp = (UCHAR *) env;
 	}
 
 	if (request->req_message->nod_type == nod_stall
@@ -620,7 +637,6 @@ void EXE_receive(TDBB		tdbb,
 	execute_looper(tdbb, request, transaction, req::req_proceed);
 
 	if (request->req_flags & req_proc_fetch) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		save_sav_point = transaction->tra_save_point;
 		transaction->tra_save_point = request->req_proc_sav_point;
 		request->req_proc_sav_point = save_sav_point;
@@ -631,7 +647,6 @@ void EXE_receive(TDBB		tdbb,
 	}	//try
 	catch (...)
 	{
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		save_sav_point = transaction->tra_save_point;
 		transaction->tra_save_point = request->req_proc_sav_point;
 		request->req_proc_sav_point = save_sav_point;
@@ -989,9 +1004,7 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 	FMT format;
 	TRA transaction;
 #ifdef PC_ENGINE
-	LCK implicit_lock = NULL;
 	RSB rsb = NULL;
-	JMP_BUF env, *old_env;
 	IRSB impure;
 #endif
 
@@ -1086,6 +1099,8 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 
 	try {
 
+	LCK_RAII_wrapper implicit_lock;
+
 	if (!(transaction->tra_flags & TRA_degree3))
 	{
 		/* check whether record locking is turned on */
@@ -1095,13 +1110,10 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 		{
 			/* get an implicit lock on the record */
 
-			implicit_lock = implicit_record_lock(transaction, rpb);
+			implicit_lock.assign(implicit_record_lock(transaction, rpb));
 
 			/* set up to catch any errors so that we can 
 			   release the implicit lock */
-
-			old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-			tdbb->tdbb_setjmp = (UCHAR *) env;
 		}
 	}
 #endif
@@ -1159,16 +1171,7 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		if (implicit_lock) {
-			RLCK_unlock_record_implicit(implicit_lock, 0);
-		}
 		Firebird::status_longjmp_error::raise(-1);
-	}
-
-	if (implicit_lock) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
-		RLCK_unlock_record_implicit(implicit_lock, 0);
 	}
 
 /* if the stream is navigational, it is now positioned on a crack */
@@ -1254,7 +1257,6 @@ static void execute_procedure(TDBB tdbb, NOD node)
 	STR temp_buffer = NULL;
 	SLONG save_point_number;
 	TRA transaction;
-	JMP_BUF env, *old_env;
 	JrdMemoryPool *old_pool;
 
 	SET_TDBB(tdbb);
@@ -1300,9 +1302,6 @@ static void execute_procedure(TDBB tdbb, NOD node)
 
 /* Catch errors so we can unwind cleanly */
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
 	try {
 
 	transaction = request->req_transaction;
@@ -1331,7 +1330,6 @@ static void execute_procedure(TDBB tdbb, NOD node)
 
 	}	// try
 	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		tdbb->tdbb_default = old_pool;
 		tdbb->tdbb_request = request;
 		EXE_unwind(tdbb, proc_request);
@@ -1341,19 +1339,20 @@ static void execute_procedure(TDBB tdbb, NOD node)
 		Firebird::status_longjmp_error::raise(-1);
 	}
 
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 	tdbb->tdbb_default = old_pool;
 	EXE_unwind(tdbb, proc_request);
 	tdbb->tdbb_request = request;
-	if ( (temp = node->nod_arg[e_esp_outputs]) ) {
+
+	temp = node->nod_arg[e_esp_outputs];
+	if (temp) {
 		NOD *ptr, *end;
 
 		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end;
 			 ptr++)
 			EXE_assignment(tdbb, *ptr);
 	}
-	if (temp_buffer)
-		delete temp_buffer;
+
+	delete temp_buffer;
 	proc_request->req_attachment = NULL;
 	proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
 	proc_request->req_timestamp = 0;
@@ -1361,9 +1360,10 @@ static void execute_procedure(TDBB tdbb, NOD node)
 
 
 #ifndef GATEWAY
-static REQ execute_triggers(
-							TDBB tdbb,
-							VEC * triggers, REC old_rec, REC new_rec)
+static REQ execute_triggers(TDBB	tdbb,
+							VEC*	triggers,
+							REC		old_rec,
+							REC		new_rec)
 {
 /**************************************
  *
@@ -1376,56 +1376,50 @@ static REQ execute_triggers(
  *	if any blow up.
  *
  **************************************/
-	REQ result;
-	vec::iterator ptr, end;
+
 	VOLATILE REQ trigger = NULL;
-	TRA transaction;
-	VOLATILE VEC vector;
-	JMP_BUF env, *old_env;
 
 	DEV_BLKCHK(*triggers, type_vec);
 	DEV_BLKCHK(old_rec, type_rec);
 	DEV_BLKCHK(new_rec, type_rec);
 
-	if (!*triggers)
+	if (!*triggers) {
 		return NULL;
+	}
 
 	SET_TDBB(tdbb);
 
-	transaction = tdbb->tdbb_request->req_transaction;
-	vector = *triggers;
-	result = NULL;
+	TRA transaction = tdbb->tdbb_request->req_transaction;
+	VEC vector = *triggers;
+	REQ result = NULL;
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-
-	try {
-
-	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++) {
-		trigger = EXE_find_request(tdbb, (REQ)(*ptr), FALSE);
-		trigger->req_rpb[0].rpb_record = old_rec;
-		trigger->req_rpb[1].rpb_record = new_rec;
-		trigger->req_timestamp = tdbb->tdbb_request->req_timestamp;
-		EXE_start(tdbb, trigger, transaction);
-		trigger->req_attachment = NULL;
-		trigger->req_flags &= ~req_in_use;
-		trigger->req_timestamp = 0;
-		if (trigger->req_operation == req::req_unwind) {
-			result = trigger;
-			break;
+	try
+	{
+		for (vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
+		{
+			trigger = EXE_find_request(tdbb, (REQ)(*ptr), FALSE);
+			trigger->req_rpb[0].rpb_record = old_rec;
+			trigger->req_rpb[1].rpb_record = new_rec;
+			trigger->req_timestamp = tdbb->tdbb_request->req_timestamp;
+			EXE_start(tdbb, trigger, transaction);
+			trigger->req_attachment = NULL;
+			trigger->req_flags &= ~req_in_use;
+			trigger->req_timestamp = 0;
+			if (trigger->req_operation == req::req_unwind) {
+				result = trigger;
+				break;
+			}
 		}
+
+		if (vector != *triggers) {
+			release_triggers(tdbb, vector);
+		}
+
+		return result;
+
 	}
-
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
-
-	if (vector != *triggers)
-		release_triggers(tdbb, vector);
-
-	return result;
-
-	}	// try
-	catch (...) {
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
+	catch (std::exception&)
+	{
 		if (vector != *triggers) {
 			release_triggers(tdbb, vector);
 		}
@@ -1453,51 +1447,64 @@ static NOD find(TDBB tdbb, register NOD node)
  *	Assume that the stream is open.
  *
  **************************************/
-	register REQ request;
-	RSB rsb;
-	USHORT operator, direction;
 
 	SET_TDBB(tdbb);
-	request = tdbb->tdbb_request;
+	REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-	if (request->req_operation == req::req_evaluate) {
-		rsb = *((RSB *) node->nod_arg[e_find_rsb]);
+	if (request->req_operation == req::req_evaluate)
+	{
+		RSB rsb = *((RSB *) node->nod_arg[e_find_rsb]);
 
-		operator = (USHORT) MOV_get_long(EVL_expr(tdbb,
-												  node->nod_arg
-												  [e_find_operator]), 0);
-		if (operator != blr_eql && operator != blr_leq && operator != blr_lss
-			&& operator != blr_geq && operator != blr_gtr)
+		USHORT operator_ =
+			(USHORT) MOV_get_long(EVL_expr(	tdbb,
+											node->nod_arg
+											[e_find_operator]),
+									0);
+		if (operator_ != blr_eql &&
+			operator_ != blr_leq &&
+			operator_ != blr_lss &&
+			operator_ != blr_geq &&
+			operator_ != blr_gtr)
+		{
 			ERR_post(gds_invalid_operator, 0);
+		}
 
-		direction = (USHORT) MOV_get_long(EVL_expr(tdbb,
+		USHORT direction = (USHORT) MOV_get_long(EVL_expr(tdbb,
 												   node->nod_arg
-												   [e_find_direction]), 0);
-		if (direction != blr_backward && direction != blr_forward
-			&& direction != blr_backward_starting
-			&& direction !=
-			blr_forward_starting) ERR_post(gds_invalid_direction, 0);
+												   [e_find_direction]),
+												   0);
+		if (direction != blr_backward &&
+			direction != blr_forward &&
+			direction != blr_backward_starting &&
+			direction != blr_forward_starting)
+		{
+			ERR_post(gds_invalid_direction, 0);
+		}
 
 		/* try to find the record; the position is defined to be on a crack 
 		   regardless of whether we are at BOF or EOF; also be sure to perpetuate
 		   the forced crack (bug #7024) */
 
-		if (!
-			(RSE_find_record
-			 (tdbb, rsb, operator, direction,
-			  node->nod_arg[e_find_args]))) if (EXE_crack(tdbb, rsb,
-														  irsb_bof | irsb_eof
-														  | irsb_crack))
-				if (EXE_crack(tdbb, rsb, irsb_forced_crack))
+		if (!RSE_find_record(	tdbb,
+								rsb,
+								operator_,
+								direction,
+								node->nod_arg[e_find_args]))
+		{
+			if (EXE_crack(tdbb, rsb, irsb_bof | irsb_eof | irsb_crack))
+			{
+				if (EXE_crack(tdbb, rsb, irsb_forced_crack)) {
 					EXE_mark_crack(tdbb, rsb, irsb_crack | irsb_forced_crack);
-				else if (EXE_crack(tdbb, rsb, irsb_bof))
+				} else if (EXE_crack(tdbb, rsb, irsb_bof)) {
 					EXE_mark_crack(tdbb, rsb, irsb_bof);
-				else if (EXE_crack(tdbb, rsb, irsb_eof))
+				} else if (EXE_crack(tdbb, rsb, irsb_eof)) {
 					EXE_mark_crack(tdbb, rsb, irsb_eof);
-				else
+				} else {
 					EXE_mark_crack(tdbb, rsb, irsb_crack);
-
+				}
+			}
+		}
 		request->req_operation = req::req_return;
 	}
 
@@ -1522,21 +1529,22 @@ static NOD find_dbkey(TDBB tdbb, register NOD node)
  *	resetting the position of the stream to that record.
  *
  **************************************/
-	register REQ request;
-	RSB rsb;
 
 	SET_TDBB(tdbb);
-	request = tdbb->tdbb_request;
+	REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-	if (request->req_operation == req::req_evaluate) {
-		rsb = *((RSB *) node->nod_arg[e_find_dbkey_rsb]);
+	if (request->req_operation == req::req_evaluate)
+	{
+		RSB rsb = *((RSB *) node->nod_arg[e_find_dbkey_rsb]);
 
-		if (!
-			(RSE_find_dbkey
-			 (tdbb, rsb, node->nod_arg[e_find_dbkey_dbkey],
-			  node->nod_arg[e_find_dbkey_version]))) EXE_mark_crack(tdbb, rsb,
-																	irsb_crack);
+		if (!RSE_find_dbkey(tdbb,
+							rsb,
+							node->nod_arg[e_find_dbkey_dbkey],
+							node->nod_arg[e_find_dbkey_version]))
+		{
+			  EXE_mark_crack(tdbb, rsb, irsb_crack);
+		}
 
 		request->req_operation = req::req_return;
 	}
@@ -1607,20 +1615,14 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
  *	execution on stall or request complete.
  *
  **************************************/
-	DBB dbb;
-	STA impure;
-	SSHORT error_pending;
-	SLONG save_point_number;
-	SSHORT which_erase_trig = 0, which_sto_trig = 0, which_mod_trig = 0;
-	REQ old_request;
-	VOLATILE NOD node, top_node = NULL, prev_node;
-	TRA transaction;
-	JMP_BUF env, *old_env;
-	JrdMemoryPool *old_pool;
-#if defined(DEBUG_GDS_ALLOC) && FALSE
-	int node_type;
-#endif
 
+	STA impure;
+	SSHORT which_erase_trig = 0;
+	SSHORT which_sto_trig   = 0;
+	SSHORT which_mod_trig   = 0;
+	VOLATILE NOD top_node = 0;
+	VOLATILE NOD prev_node;
+	TRA transaction;
 
 /* If an error happens during the backout of a savepoint, then the transaction
    must be marked 'dead' because that is the only way to clean up after a
@@ -1628,51 +1630,42 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
    by calling bugcheck.
    To facilitate catching errors during VIO_verb_cleanup, the following
    define is used. */
-#define VERB_CLEANUP							\
-	{								\
-	JMP_BUF env2, *old_env2;					\
-	old_env2 = (JMP_BUF*) tdbb->tdbb_setjmp;			\
-	tdbb->tdbb_setjmp = (UCHAR*) env2;				\
-	if (!SETJMP (env2))						\
-	    {								\
-	    VIO_verb_cleanup (tdbb, transaction);				\
-	    tdbb->tdbb_setjmp = (UCHAR*) old_env2; /* restore old env */\
-	    }								\
-	else								\
-	    {								\
-	    /* Cause bugcheck to longjmp out of looper. */		\
-	    tdbb->tdbb_setjmp = (UCHAR*) old_env; 			\
-	    if (dbb->dbb_flags & DBB_bugcheck)				\
-		LONGJMP (reinterpret_cast<jmp_buf&>(old_env), (int) tdbb->tdbb_status_vector [1]);	\
-	    else							\
-	    	BUGCHECK (290); /* msg 290 error during savepoint backout */\
-	    }								\
+#define VERB_CLEANUP									\
+	try {												\
+	    VIO_verb_cleanup (tdbb, transaction);			\
+    }													\
+	catch (std::exception&) {							\
+		if (dbb->dbb_flags & DBB_bugcheck) {				\
+			Firebird::status_longjmp_error::raise(tdbb->tdbb_status_vector[1]);	\
+		}																\
+    	BUGCHECK (290); /* msg 290 error during savepoint backout */	\
 	}
 
-	if (!(transaction = request->req_transaction))
+	if (!(transaction = request->req_transaction)) {
 		ERR_post(gds_req_no_trans, 0);
+	}
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	BLKCHK(in_node, type_nod);
 
-/* Save the old pool and request to restore on exit */
+	// Save the old pool and request to restore on exit
 
-	old_pool = tdbb->tdbb_default;
+	JrdMemoryPool* old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = request->req_pool;
-	old_request = tdbb->tdbb_request;
+
+	REQ old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = request;
 	tdbb->tdbb_transaction = transaction;
-	save_point_number = (transaction->tra_save_point) ?
+
+	SLONG save_point_number = (transaction->tra_save_point) ?
 		transaction->tra_save_point->sav_number : 0;
 
-	node = in_node;
+	VOLATILE NOD node = in_node;
 
 /* Catch errors so we can unwind cleanly */
 
-	old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-	tdbb->tdbb_setjmp = (UCHAR *) env;
-	error_pending = FALSE;
+	SSHORT error_pending = FALSE;
 
 	try {
 
@@ -1687,7 +1680,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 #endif
 #if defined(DEBUG_GDS_ALLOC) && FALSE
-		node_type = node->nod_type;
+		int node_type = node->nod_type;
 #endif
 		switch (node->nod_type) {
 		case nod_asn_list:
@@ -1734,7 +1727,8 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 		case nod_erase:
 			if ((request->req_operation == req::req_return) &&
-				(node->nod_arg[e_erase_sub_erase])) {
+				(node->nod_arg[e_erase_sub_erase]))
+			{
 				if (!top_node) {
 					top_node = node;
 					which_erase_trig = PRE_TRIG;
@@ -1757,7 +1751,9 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 				node = erase(tdbb, node, ALL_TRIGS);
 				if (!(prev_node->nod_arg[e_erase_sub_erase]) &&
 					which_erase_trig == PRE_TRIG)
+				{
 					which_erase_trig = POST_TRIG;
+				}
 			}
 			break;
 
@@ -1949,7 +1945,6 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 								   engine out of looper there by abruptly
 								   terminating the processing. */
 
-								tdbb->tdbb_setjmp = (UCHAR *) env;
 								tdbb->tdbb_default = request->req_pool;
 								tdbb->tdbb_request = request;
 								/* The error is dealt with by the application, cleanup
@@ -1995,7 +1990,6 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 		case nod_error_handler:
 			if (request->req_flags & req_error_handler && !error_pending) {
-				tdbb->tdbb_setjmp = (UCHAR *) old_env;
 				return node;
 			}
 			node = node->nod_parent;
@@ -2092,14 +2086,18 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 					top_node = NULL;
 					which_mod_trig = ALL_TRIGS;
 				}
-				else
+				else {
 					request->req_operation = req::req_evaluate;
+				}
 			}
 			else {
 				prev_node = node;
 				node = modify(tdbb, node, ALL_TRIGS);
 				if (!(prev_node->nod_arg[e_mod_sub_mod]) &&
-					which_mod_trig == PRE_TRIG) which_mod_trig = POST_TRIG;
+					which_mod_trig == PRE_TRIG)
+				{
+					which_mod_trig = POST_TRIG;
+				}
 			}
 
 			break;
@@ -2336,10 +2334,9 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	tdbb->tdbb_default = old_pool;
 	tdbb->tdbb_transaction = (tdbb->tdbb_request = old_request) ?
 		old_request->req_transaction : NULL;
-	tdbb->tdbb_setjmp = (UCHAR *) old_env;
 
 /* in the case of a pending error condition (one which did not
-   result in a longjmp to the top of looper), we need to delete
+   result in a exception to the top of looper), we need to delete
    the last savepoint */
 
 	if (error_pending) {
@@ -2383,7 +2380,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 			   Set up special error handling in case something
 			   happens there. */
 
-				FRGN_unwind(request);
+			FRGN_unwind(request);
 
 			/* Continue with normal JRD unwind */
 
@@ -2400,7 +2397,6 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 		}
 
 		error_pending = TRUE;
-		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		request->req_operation = req::req_unwind;
 		request->req_label = 0;
 	}
@@ -2408,24 +2404,6 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	return node;
 }
 
-
-#ifdef PC_ENGINE
-// TMN: Quick wrapper to remove one try/catch
-class LCK_RAII_wrapper
-{
-	explicit LCK_RAII_wrapper(LCK lock) : l(lock) {}
-	~LCK_RAII_wrapper() {
-		if (l) {
-		}
-	}
-
-	LCK l;
-
-private:
-	LCK_RAII_wrapper(const LCK_RAII_wrapper&);	// no impl.
-	void operator=(const LCK_RAII_wrapper&);	// no impl.
-};
-#endif
 
 static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 {
@@ -2450,8 +2428,7 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 	TRA transaction;
 #ifdef PC_ENGINE
 	RSB rsb = NULL;
-	LCK implicit_lock = NULL, record_locking;
-	JMP_BUF env, *old_env;
+	LCK record_locking;
 	IRSB irsb;
 #endif
 
@@ -2500,11 +2477,12 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 									   org_rpb,
 									   NULL,
 									   transaction,
-									   reinterpret_cast < BLK >
-									   (tdbb->tdbb_default))))
+									   reinterpret_cast<BLK>(tdbb->tdbb_default))))
+		{
 				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
+		}
 		VIO_data(tdbb, org_rpb,
-				 reinterpret_cast < BLK > (tdbb->tdbb_request->req_pool));
+				 reinterpret_cast<BLK>(tdbb->tdbb_request->req_pool));
 
 		/* If record is present, and the transaction is read committed,
 		 * make sure the record has not been updated.  Also, punt after
@@ -2513,7 +2491,9 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 
 		if ((transaction->tra_flags & TRA_read_committed) &&
 			(tid_fetch != org_rpb->rpb_transaction))
+		{
 				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
+		}
 
 		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
@@ -2540,19 +2520,17 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 		   will be able to read or write the record but not when an explicit
 		   lock has been taken out */
 
-		try {
+		try
+		{
+
+		LCK_RAII_wrapper implicit_lock;
 
 		if (!(transaction->tra_flags & TRA_degree3))
 		{
 			record_locking = RLCK_record_locking(relation);
 			if (record_locking->lck_physical != LCK_PR)
 			{
-				implicit_lock = implicit_record_lock(transaction, org_rpb);
-
-				/* set up to catch any errors so that we can release the lock */
-
-				old_env = (JMP_BUF *) tdbb->tdbb_setjmp;
-				tdbb->tdbb_setjmp = (UCHAR *) env;
+				implicit_lock.assign(implicit_record_lock(transaction, org_rpb));
 			}
 		}
 #endif
@@ -2634,28 +2612,21 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 
 		}	// try
 		catch (...) {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-			if (implicit_lock) {
-				RLCK_unlock_record_implicit(implicit_lock, 0);
-			}
 			Firebird::status_longjmp_error::raise(-1);
-		}
-
-		if (implicit_lock) {
-			tdbb->tdbb_setjmp = (UCHAR *) old_env;
-			RLCK_unlock_record_implicit(implicit_lock, 0);
 		}
 
 		/* if the stream is navigational, we must position the stream on the new 
 		   record version, but first set the record number  */
 
 		new_rpb->rpb_number = org_rpb->rpb_number;
-		if (rsb)
+		if (rsb) {
 			RSE_reset_position(tdbb, rsb, new_rpb);
+		}
 #endif
 #else
-		if (node->nod_arg[e_mod_validate])
+		if (node->nod_arg[e_mod_validate]) {
 			validate(tdbb, node->nod_arg[e_mod_validate]);
+		}
 		VIO_modify(tdbb, org_rpb, new_rpb, transaction,
 				   node->nod_arg[e_mod_sql]);
 #endif

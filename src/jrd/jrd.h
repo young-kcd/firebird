@@ -89,6 +89,11 @@ extern "C" {
 #else
 #define HASH_SIZE 101
 
+
+// fwd. decl.
+class vec;
+
+
 class dbb : private pool_alloc<type_dbb>
 {
 public:
@@ -97,8 +102,8 @@ public:
 	class dbb *dbb_next;		/* Next database block in system */
 	class att *dbb_attachments;	/* Active attachments */
 	struct bcb *dbb_bcb;		/* Buffer control block */
-	struct vec *dbb_relations;	/* relation vector */
-	struct vec *dbb_procedures;	/* scanned procedures */
+	vec*		dbb_relations;	/* relation vector */
+	vec*		dbb_procedures;	/* scanned procedures */
 	struct lck *dbb_lock;		/* granddaddy lock */
 	struct tra *dbb_sys_trans;	/* system transaction */
 	struct fil *dbb_file;		/* files for I/O operations */
@@ -144,8 +149,8 @@ public:
 
 	pool_vec_type dbb_pools;		/* pools */
     USHORT dbb_next_pool_id;
-	struct vec *dbb_internal;	/* internal requests */
-	struct vec *dbb_dyn_req;	/* internal dyn requests */
+	vec*		dbb_internal;	/* internal requests */
+	vec*		dbb_dyn_req;	/* internal dyn requests */
 	struct jrn *dbb_journal;	/* journal block */
 
 	SLONG dbb_oldest_active;	/* Cached "oldest active" transaction */
@@ -183,8 +188,8 @@ public:
 
 	class map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */
-	struct vec *dbb_text_objects;	/* intl text type descriptions */
-	struct vec *dbb_charsets;	/* intl character set descriptions */
+	vec*		dbb_text_objects;	/* intl text type descriptions */
+	vec*		dbb_charsets;	/* intl character set descriptions */
 	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	struct tpc *dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
@@ -368,16 +373,16 @@ public:
 	class scl*	att_security_class;	// security class for database
 	class scl*	att_security_classes;	// security classes
 	class vcl*	att_counts[DBB_max_count];
-	struct vec*	att_relation_locks;	// explicit persistent locks for relations
+	vec*		att_relation_locks;	// explicit persistent locks for relations
 	struct bkm*	att_bookmarks;		// list of bookmarks taken out using this attachment
 	struct lck*	att_record_locks;	// explicit or implicit record locks taken out during attachment
-	struct vec*	att_bkm_quick_ref;	// correspondence table of bookmarks
-	struct vec*	att_lck_quick_ref;	// correspondence table of locks
+	vec*		att_bkm_quick_ref;	// correspondence table of bookmarks
+	vec*		att_lck_quick_ref;	// correspondence table of locks
 	ULONG		att_flags;			// Flags describing the state of the attachment
 	SSHORT		att_charset;		// user's charset specified in dpb
 	class str*	att_lc_messages;	// attachment's preference for message natural language
 	struct lck*	att_long_locks;		// outstanding two phased locks
-	struct vec*	att_compatibility_table;	// hash table of compatible locks
+	vec*		att_compatibility_table;	// hash table of compatible locks
 	class vcl*	att_val_errors;
 	class str*	att_working_directory;	// Current working directory is cached
 };
@@ -429,8 +434,8 @@ class prc : public pool_alloc_rpt<SCHAR, type_prc>
 	struct fmt *prc_input_fmt;
 	struct fmt *prc_output_fmt;
 	struct fmt *prc_format;
-	struct vec *prc_input_fields;	/* vector of field blocks */
-	struct vec *prc_output_fields;	/* vector of field blocks */
+	vec*		prc_input_fields;	/* vector of field blocks */
+	vec*		prc_output_fields;	/* vector of field blocks */
 	struct req *prc_request;	/* compiled procedure request */
 	class str *prc_security_name;	/* pointer to security class name for procedure */
 	USHORT prc_use_count;		/* requests compiled with relation */
@@ -469,17 +474,17 @@ typedef prm* PRM;
    primary/unique keys */
 
 typedef struct prim {
-	struct vec *prim_reference_ids;
-	struct vec *prim_relations;
-	struct vec *prim_indexes;
+	vec* prim_reference_ids;
+	vec* prim_relations;
+	vec* prim_indexes;
 } *PRIM;
 
 /* Foreign references to other relations' primary/unique keys */
 
 typedef struct frgn {
-	struct vec *frgn_reference_ids;
-	struct vec *frgn_relations;
-	struct vec *frgn_indexes;
+	vec* frgn_reference_ids;
+	vec* frgn_relations;
+	vec* frgn_indexes;
 } *FRGN;
 
 /* Relation block; one is created for each relation referenced
@@ -494,11 +499,11 @@ public:
 	USHORT rel_current_fmt;		/* Current format number */
 	UCHAR rel_length;			/* length of ascii relation name */
 	struct fmt *rel_current_format;	/* Current record format */
-	TEXT *rel_name;				/* pointer to ascii relation name */
-	struct vec *rel_formats;	/* Known record formats */
+	TEXT*	rel_name;				/* pointer to ascii relation name */
+	vec*	rel_formats;	/* Known record formats */
 	TEXT *rel_owner_name;		/* pointer to ascii owner */
 	class vcl *rel_pages;		/* vector of pointer page numbers */
-	struct vec *rel_fields;		/* vector of field blocks */
+	vec*	rel_fields;		/* vector of field blocks */
 
 	struct rse *rel_view_rse;	/* view record select expression */
 	class vcx *rel_view_contexts;	/* linked list of view contexts */
@@ -508,7 +513,7 @@ public:
 	SLONG rel_index_root;		/* index root page number */
 	SLONG rel_data_pages;		/* count of relation data pages */
 
-	struct vec *rel_gc_rec;		/* vector of records for garbage collection */
+	vec*	rel_gc_rec;		/* vector of records for garbage collection */
 #ifdef GARBAGE_THREAD
 	struct sbm *rel_gc_bitmap;	/* garbage collect bitmap of data page sequences */
 #endif
@@ -530,12 +535,12 @@ public:
 
 	struct idl *rel_index_locks;	/* index existence locks */
 	struct idb *rel_index_blocks;	/* index blocks for caching index info */
-	struct vec *rel_pre_erase;	/* Pre-operation erase trigger */
-	struct vec *rel_post_erase;	/* Post-operation erase trigger */
-	struct vec *rel_pre_modify;	/* Pre-operation modify trigger */
-	struct vec *rel_post_modify;	/* Post-operation modify trigger */
-	struct vec *rel_pre_store;	/* Pre-operation store trigger */
-	struct vec *rel_post_store;	/* Post-operation store trigger */
+	vec*		rel_pre_erase;	/* Pre-operation erase trigger */
+	vec*		rel_post_erase;	/* Post-operation erase trigger */
+	vec*		rel_pre_modify;	/* Pre-operation modify trigger */
+	vec*		rel_post_modify;	/* Post-operation modify trigger */
+	vec*		rel_pre_store;	/* Pre-operation store trigger */
+	vec*		rel_post_store;	/* Post-operation store trigger */
 	struct prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
 	struct frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };
