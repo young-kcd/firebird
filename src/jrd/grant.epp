@@ -340,7 +340,7 @@ static void define_default_class(
 	desc.dsc_scale = 0;
 	desc.dsc_ttype() = ttype_metadata;
 	desc.dsc_address = (UCHAR *) relation_name;
-	desc.dsc_length = strlen((char*)desc.dsc_address);
+	desc.dsc_length = strlen(relation_name);
 	DFW_post_work(dbb->dbb_sys_trans, dfw_scan_relation, &desc, 0);
 }
 
@@ -480,6 +480,7 @@ static void get_object_info(
 
             if (!REQUEST(irq_grant1))
                 REQUEST(irq_grant1) = request;
+                
 			fb_utils::exact_name_limit(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
 			strcpy(s_class, REL.RDB$SECURITY_CLASS);
 			fb_utils::exact_name_limit(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
@@ -499,7 +500,8 @@ static void get_object_info(
 			REL IN RDB$PROCEDURES WITH
 				REL.RDB$PROCEDURE_NAME EQ object_name
 
-            if (!REQUEST(irq_grant9)) REQUEST(irq_grant9) = request;
+            if (!REQUEST(irq_grant9))
+				REQUEST(irq_grant9) = request;
 
 			fb_utils::exact_name_limit(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
 			strcpy(s_class, REL.RDB$SECURITY_CLASS);
@@ -703,6 +705,7 @@ static void purge_default_class( TEXT* object_name, SSHORT obj_type)
 
         if (!REQUEST(irq_grant8))
             REQUEST(irq_grant8) = request;
+            
 		fb_utils::exact_name_limit(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
 		delete_security_class(tdbb, REL.RDB$DEFAULT_CLASS);
 
@@ -721,7 +724,7 @@ static void purge_default_class( TEXT* object_name, SSHORT obj_type)
 	desc.dsc_scale = 0;
 	desc.dsc_ttype() = ttype_metadata;
 	desc.dsc_address = (UCHAR *) object_name;
-	desc.dsc_length = strlen((char*)desc.dsc_address);
+	desc.dsc_length = strlen(object_name);
 	DFW_post_work(dbb->dbb_sys_trans, dfw_scan_relation, &desc, 0);
 }
 #endif // NOT_USED_OR_REPLACED
@@ -797,6 +800,7 @@ static SecurityClass::flags_t save_field_privileges(
 
         if (!REQUEST(irq_grant6))
             REQUEST(irq_grant6) = request;
+            
 		 fb_utils::exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
 		 fb_utils::exact_name_limit(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
 
@@ -978,7 +982,7 @@ static SecurityClass::flags_t save_field_privileges(
 		desc.dsc_scale = 0;
 		desc.dsc_ttype() = ttype_metadata;
 		desc.dsc_address = (UCHAR *) relation_name;
-		desc.dsc_length = strlen((char*)desc.dsc_address);
+		desc.dsc_length = strlen(relation_name);
 		DFW_post_work(dbb->dbb_sys_trans, dfw_update_format, &desc, 0);
 	}
 
@@ -1008,7 +1012,7 @@ static void save_security_class(thread_db*	tdbb,
 
 	bid blob_id;
 	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id);
-	BLB_put_segment(tdbb, blob, (const UCHAR*)(buffer), length);
+	BLB_put_segment(tdbb, blob, buffer, length);
 	BLB_close(tdbb, blob);
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
