@@ -602,8 +602,8 @@ void SDW_init(USHORT activate, USHORT delete_, SBM sbm_rec)
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_length = key_length;
 	lock->lck_dbb = dbb;
-	lock->lck_object = (BLK) dbb;
-	lock->lck_ast = reinterpret_cast < int (*) () > (SDW_start_shadowing);
+	lock->lck_object = reinterpret_cast<blk*>(dbb);
+	lock->lck_ast = reinterpret_cast<int (*)()>(SDW_start_shadowing);
 
 	if (activate)
 		activate_shadow();

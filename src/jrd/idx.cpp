@@ -498,7 +498,7 @@ IDB IDX_create_index_block(TDBB tdbb, REL relation, UCHAR id)
 	lock->lck_type = LCK_expression;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_ast = reinterpret_cast<lck_ast_t>(index_block_flush);
-	lock->lck_object = (BLK) index_block;
+	lock->lck_object = reinterpret_cast<blk*>(index_block);
 
 	return index_block;
 }

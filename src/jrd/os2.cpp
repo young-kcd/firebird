@@ -619,7 +619,7 @@ static FIL setup_file(
 	dbb->dbb_lock = lock = new(*dbb->dbb_permanent, file_length) lck();
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL_TDBB, lock->lck_type);
-	lock->lck_object = (BLK) dbb;
+	lock->lck_object = reinterpret_cast<blk*>(dbb);
 	lock->lck_length = file_length;
 	lock->lck_ast = CCH_down_grade_dbb;
 	lock->lck_dbb = dbb;

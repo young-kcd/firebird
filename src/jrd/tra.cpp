@@ -184,7 +184,7 @@ BOOLEAN TRA_active_transactions(TDBB tdbb, DBB dbb)
 	MOVE_CLEAR(&temp_lock, sizeof(struct lck));
 	temp_lock.blk_type = type_lck;
 	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_object = (BLK) trans;
+	temp_lock.lck_object = reinterpret_cast<blk*>(trans);
 	temp_lock.lck_type = LCK_tra;
 	temp_lock.lck_owner_handle =
 		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
@@ -1569,7 +1569,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
    in the new transaction's lock. */
 
 	lock->lck_data = active;
-	lock->lck_object = (BLK) trans;
+	lock->lck_object = reinterpret_cast<blk*>(trans);
 
 	if (!LCK_lock_non_blocking(tdbb, lock, LCK_write, TRUE)) {
 #ifndef SUPERSERVER_V2
@@ -1617,7 +1617,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 
 	//MOVE_CLEAR(&temp_lock, sizeof(struct lck));   // Taken care of in lck constructor.
 	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_object = (BLK) trans;
+	temp_lock.lck_object = reinterpret_cast<blk*>(trans);
 	temp_lock.lck_type = LCK_tra;
 	temp_lock.lck_owner_handle =
 		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
@@ -1858,7 +1858,7 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 	MOVE_CLEAR(&temp_lock, sizeof(struct lck));
 	//temp_lock.blk_type = type_lck;
 	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_object = (BLK) trans;
+	temp_lock.lck_object = reinterpret_cast<blk*>(trans);
 	temp_lock.lck_type = LCK_sweep;
 	temp_lock.lck_owner_handle =
 		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
@@ -2343,7 +2343,7 @@ static void compute_oldest_retaining(
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
 		lock->lck_length = sizeof(SLONG);
-		lock->lck_object = (BLK) dbb;
+		lock->lck_object = reinterpret_cast<blk*>(dbb);
 #ifdef VMS
 		if (LCK_lock(tdbb, lock, LCK_EX, FALSE)) {
 			number = 0;
@@ -2398,7 +2398,7 @@ static void compute_oldest_retaining(
 			LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 		temp_lock.lck_parent = dbb->dbb_lock;
 		temp_lock.lck_length = sizeof(SLONG);
-		temp_lock.lck_object = (BLK) transaction;
+		temp_lock.lck_object = reinterpret_cast<blk*>(transaction);
 
 		while (number < youngest_retaining) {
 			temp_lock.lck_key.lck_long = ++number;
@@ -2478,39 +2478,36 @@ static void expand_view_lock(TRA transaction, REL relation, SCHAR lock_type)
  *	view being locked.
  *
  **************************************/
-	LCK lock;
-	REL rel;
-	VCX ctx;
-	TDBB tdbb;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
-/* set up the lock on the relation/view */
+	/* set up the lock on the relation/view */
 
-	lock = RLCK_transaction_relation_lock(transaction, relation);
+	LCK lock = RLCK_transaction_relation_lock(transaction, relation);
 
 	lock->lck_logical = lock_type;
 #ifdef GATEWAY
 	lock->lck_reserved = lock->lck_logical;
 #endif
 
-	if (!(ctx = relation->rel_view_contexts))
+	VCX ctx = relation->rel_view_contexts;
+	if (!ctx) {
 		return;
+	}
 
-	for (; ctx; ctx = ctx->vcx_next) {
-		if (!
-			(rel =
-			 MET_lookup_relation(tdbb, reinterpret_cast < char *>(ctx->vcx_relation_name->str_data)))) ERR_post(gds_bad_tpb_content,	/* should be a BUGCHECK */
-																												gds_arg_gds,
-																												gds_relnotdef,
-																												gds_arg_string,
-																												ERR_cstring
-																												(reinterpret_cast
-																												 <
-																												 char
-																												 *>
-																												 (ctx->vcx_relation_name->str_data)),
-																												0);
+	for (; ctx; ctx = ctx->vcx_next)
+	{
+		REL rel = MET_lookup_relation(tdbb,
+								reinterpret_cast<const char*>(ctx->vcx_relation_name->str_data));
+		if (!rel)
+		{
+			ERR_post(gds_bad_tpb_content,	/* should be a BUGCHECK */
+					gds_arg_gds,
+					gds_relnotdef,
+					gds_arg_string,
+					ERR_cstring(reinterpret_cast<char*>(ctx->vcx_relation_name->str_data)),
+					0);
+		}
 
 		/* force a scan to read view information */
 		MET_scan_relation(tdbb, rel);

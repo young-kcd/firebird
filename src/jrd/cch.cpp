@@ -2601,7 +2601,7 @@ static BDB alloc_bdb(TDBB tdbb, BCB bcb, UCHAR ** memory)
 		throw;
 	}
 	lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_bdb);
-	lock->lck_object = (class blk*) bdb_;
+	lock->lck_object = reinterpret_cast<blk*>(bdb_);
 #endif
 
 	bdb_->bdb_buffer = (PAG) * memory;
@@ -4518,7 +4518,7 @@ static SSHORT lock_buffer(
 
 		if (page_type == pag_header || page_type == pag_transactions) {
 			assert(lock->lck_ast == reinterpret_cast<lck_ast_t>(blocking_ast_bdb));
-			assert(lock->lck_object == (BLK) bdb);
+			assert(lock->lck_object == reinterpret_cast<blk*>(bdb));
 			lock->lck_ast = 0;
 			lock->lck_object = NULL;
 		}
@@ -4535,7 +4535,7 @@ static SSHORT lock_buffer(
 				assert(page_type == pag_header
 					   || page_type == pag_transactions);
 				lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_bdb);
-				lock->lck_object = (class blk*) bdb;
+				lock->lck_object = reinterpret_cast<blk*>(bdb);
 				bdb->bdb_flags |= BDB_no_blocking_ast;
 			}
 			return 1;
@@ -4544,7 +4544,7 @@ static SSHORT lock_buffer(
 		if (!lock->lck_ast) {
 			assert(page_type == pag_header || page_type == pag_transactions);
 			lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_bdb);
-			lock->lck_object = (class blk*) bdb;
+			lock->lck_object = reinterpret_cast<blk*>(bdb);
 		}
 
 		/* Case: a timeout was specified, or the caller didn't want to wait,

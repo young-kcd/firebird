@@ -62,7 +62,7 @@ SLONG MET_lookup_index_name(TDBB, TEXT *, SLONG *, SSHORT *);
 int MET_lookup_partner(TDBB, struct rel *, struct idx *, UCHAR *);
 struct prc *MET_lookup_procedure(TDBB, SCHAR *);
 struct prc *MET_lookup_procedure_id(TDBB, SSHORT, BOOLEAN, USHORT);
-struct rel *MET_lookup_relation(TDBB, CONST SCHAR*);
+struct rel *MET_lookup_relation(TDBB, const char*);
 struct rel *MET_lookup_relation_id(TDBB, SLONG, BOOLEAN);
 struct nod *MET_parse_blob(TDBB, struct rel *, SLONG[2], class Csb **,
 								  struct req **, BOOLEAN, BOOLEAN);

@@ -108,7 +108,7 @@ void RNG_add_page(ULONG page_number)
 		page_lock = CCH_page_lock(tdbb, ERR_jmp);
 		page_lock->lck_key.lck_long = page_number;
 		page_lock->lck_ast = post_event_ast;
-		page_lock->lck_object = (BLK) refresh_range;
+		page_lock->lck_object = reinterpret_cast<blk*>(refresh_range);
 
 		/* if we can get the lock, place it in a vector of page locks for this
 		   refresh range; otherwise just post the range event assuming that the
@@ -332,7 +332,7 @@ void RNG_add_uncommitted_record(RPB * rpb)
 			TRA_transaction_lock(tdbb, (BLK) rpb->rpb_transaction);
 		transaction_lock->lck_key.lck_long = rpb->rpb_transaction;
 		transaction_lock->lck_ast = post_event_ast;
-		transaction_lock->lck_object = (BLK) refresh_range;
+		transaction_lock->lck_object = reinterpret_cast<blk*>(refresh_range);
 
 		/* try to get a shared read on the transaction lock, which will force
 		   the holder of an exclusive lock to downgrade; this is also his notification

@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.6 2002-02-16 03:27:32 seanleyne Exp $
+$Id: lock.cpp,v 1.7 2002-03-31 00:39:01 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -376,12 +376,12 @@ static CONST UCHAR compatibility[] = {
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 
 
-int LOCK_convert(
-				 PTR request_offset,
-				 UCHAR type,
-				 SSHORT lck_wait,
-				 int (*ast_routine) (void *),
-void *ast_argument, STATUS * status_vector)
+int LOCK_convert(PTR		request_offset,
+				 UCHAR		type,
+				 SSHORT		lck_wait,
+				 int		(*ast_routine) (void *),
+				 void*		ast_argument,
+				 STATUS*	status_vector)
 {
 /**************************************
  *
@@ -417,8 +417,9 @@ void *ast_argument, STATUS * status_vector)
 	return convert(request_offset,
 				   type,
 				   lck_wait,
-				   reinterpret_cast < int (*)() > (ast_routine),
-				   static_cast < int *>(ast_argument), status_vector);
+				   reinterpret_cast<int (*)()>(ast_routine),
+				   static_cast<int*>(ast_argument),
+				   status_vector);
 }
 
 
@@ -615,8 +616,8 @@ SLONG LOCK_enq(	PTR		prior_request,
 	request->lrq_state = LCK_none;
 	request->lrq_data = 0;
 	request->lrq_owner = owner_offset;
-	request->lrq_ast_routine = reinterpret_cast < int (*) () > (ast_routine);
-	request->lrq_ast_argument = static_cast < int *>(ast_argument);
+	request->lrq_ast_routine = reinterpret_cast<int (*)()>(ast_routine);
+	request->lrq_ast_argument = static_cast<int*>(ast_argument);
 	insert_tail(&owner->own_requests, &request->lrq_own_requests);
 	QUE_INIT(request->lrq_own_blocks);
 
@@ -1291,8 +1292,8 @@ void LOCK_re_post( int (*ast) (void *), void *arg, PTR owner_offset)
 	owner = (OWN) ABS_PTR(owner_offset);
 	request->lrq_type = type_lrq;
 	request->lrq_flags = LRQ_repost;
-	request->lrq_ast_routine = reinterpret_cast < int (*) () > (ast);
-	request->lrq_ast_argument = static_cast < int *>(arg);
+	request->lrq_ast_routine = reinterpret_cast<int (*)()>(ast);
+	request->lrq_ast_argument = static_cast<int*>(arg);
 	request->lrq_requested = LCK_none;
 	request->lrq_state = LCK_none;
 	request->lrq_owner = owner_offset;
@@ -2084,12 +2085,12 @@ static void bug( STATUS * status_vector, CONST TEXT * string)
 }
 
 
-static BOOLEAN convert(
-					   PTR request_offset,
-					   UCHAR type,
-					   SSHORT lck_wait,
-					   int (*ast_routine) (),
-int *ast_argument, STATUS * status_vector)
+static BOOLEAN convert(PTR		request_offset,
+					   UCHAR	type,
+					   SSHORT	lck_wait,
+					   int		(*ast_routine)(),
+					   int*		ast_argument,
+					   STATUS*	status_vector)
 {
 /**************************************
  *

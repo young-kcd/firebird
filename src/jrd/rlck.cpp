@@ -317,7 +317,7 @@ LCK RLCK_record_locking(REL relation)
    someone gets an incompatible lock */
 
 	lock->lck_ast = start_record_locking;
-	lock->lck_object = (BLK) relation;
+	lock->lck_object = reinterpret_cast<blk*>(relation);
 
 /* now attempt to get a PR on the lock to detect when
    anyone locks a record explicitly */
@@ -569,7 +569,7 @@ void RLCK_signal_refresh(TRA transaction)
 			if (lock) {
 				relation = (REL) lock->lck_object;
 				local_lock->lck_key.lck_long = relation->rel_id;
-				local_lock->lck_object = (BLK) relation;
+				local_lock->lck_object = reinterpret_cast<blk*>(relation);
 				LCK_lock_non_blocking(tdbb, local_lock, LCK_SW, 0);
 				LCK_release(tdbb, local_lock);
 			}
@@ -800,7 +800,7 @@ static LCK allocate_record_lock(TRA transaction, RPB * rpb)
 	lock = new(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_dbb = dbb;
 	lock->lck_attachment = attachment;
-	lock->lck_object = (BLK) dbb;
+	lock->lck_object = reinterpret_cast<blk*>(dbb);
 	lock->lck_type = LCK_record;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 /* use the relation lock as the lock parent */
@@ -863,7 +863,7 @@ static LCK allocate_relation_lock(MemoryPool* pool, REL relation)
 	lock->lck_compatible = (BLK) tdbb->tdbb_attachment;
 /* the lck_object is used here to find the relation
    block from the lock block */
-	lock->lck_object = (BLK) relation;
+	lock->lck_object = reinterpret_cast<blk*>(relation);
 	return lock;
 }
 

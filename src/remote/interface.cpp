@@ -359,31 +359,37 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
 	rdb = port->port_context;
 	ERROR_INIT(env);
 
+	try
+	{
+		/* The client may have set a parameter for dummy_packet_interval.  Add that to the
+		   the DPB so the server can pay attention to it.  Note: allocation code must
+		   ensure sufficient space has been added. */
 
-/* The client may have set a parameter for dummy_packet_interval.  Add that to the
-   the DPB so the server can pay attention to it.  Note: allocation code must
-   ensure sufficient space has been added. */
+		add_other_params(port, new_dpb_ptr, &new_dpb_length);
+		add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
 
-	add_other_params(port, new_dpb_ptr, &new_dpb_length);
-	add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
+		result = init(	user_status,
+						port,
+						op_attach,
+						expanded_name,
+						length,
+						new_dpb_ptr,
+						new_dpb_length);
 
-	result = init(	user_status,
-					port,
-					op_attach,
-					expanded_name,
-					length,
-					new_dpb_ptr,
-					new_dpb_length);
+		if (new_dpb_ptr != new_dpb) {
+			gds__free(new_dpb_ptr);
+		}
+		if (!result) {
+			return error(user_status);
+		}
 
-	if (new_dpb_ptr != new_dpb) {
-		gds__free(new_dpb_ptr);
+		*handle = rdb;
 	}
-	if (!result) {
-		return error(user_status);
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
 	}
-
-	*handle = rdb;
-
 
 	RETURN_SUCCESS;
 }
@@ -420,8 +426,15 @@ STATUS GDS_BLOB_INFO(STATUS*	user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-	status = info(user_status, rdb, op_info_blob, blob->rbl_id, 0,
-				  item_length, items, 0, 0, buffer_length, buffer);
+	try
+	{
+		status = info(user_status, rdb, op_info_blob, blob->rbl_id, 0,
+					  item_length, items, 0, 0, buffer_length, buffer);
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		status = e.value();
+	}
 
 	RESTORE_THREAD_DATA;
 
@@ -462,8 +475,17 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-	if (!release_object(rdb, op_cancel_blob, blob->rbl_id))
-		return error(user_status);
+	try
+	{
+		if (!release_object(rdb, op_cancel_blob, blob->rbl_id)) {
+			return error(user_status);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	release_blob(blob);
 	*blob_handle = NULL;
@@ -498,16 +520,26 @@ STATUS GDS_CANCEL_EVENTS(STATUS * user_status, RDB * handle, SLONG * id)
 
 	port = rdb->rdb_port;
 
-/* Make sure protocol supports action */
+	/* Make sure protocol supports action */
 
-	if (port->port_protocol < PROTOCOL_VERSION6)
+	if (port->port_protocol < PROTOCOL_VERSION6) {
 		return unsupported(user_status);
+	}
 
-/* If the event exists, tell the remote server to cancel it,
-   and delete it from the list */
+	/* If the event exists, tell the remote server to cancel it,
+	   and delete it from the list */
 
-	if (event = find_event(port, *id))
-		send_cancel_event(event);
+	try
+	{
+		if (event = find_event(port, *id)) {
+			send_cancel_event(event);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -540,17 +572,28 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, RBL * blob_handle)
 	ERROR_INIT(env);
 	port = rdb->rdb_port;
 
-	if (!(port->port_flags & PORT_rpc) &&
-		(blob->rbl_flags & RBL_create) && blob->rbl_ptr != blob->rbl_buffer) {
-		if (send_blob(user_status, blob, 0, NULL))
+	try
+	{
+		if (!(port->port_flags & PORT_rpc) &&
+			(blob->rbl_flags & RBL_create) && blob->rbl_ptr != blob->rbl_buffer)
+		{
+			if (send_blob(user_status, blob, 0, NULL)) {
+				return error(user_status);
+			}
+		}
+
+		if (!release_object(rdb, op_close_blob, blob->rbl_id)) {
 			return error(user_status);
+		}
+
+		release_blob(blob);
+		*blob_handle = NULL;
 	}
-
-	if (!release_object(rdb, op_close_blob, blob->rbl_id))
-		return error(user_status);
-
-	release_blob(blob);
-	*blob_handle = NULL;
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -581,12 +624,21 @@ STATUS GDS_COMMIT(STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-	if (!release_object(rdb, op_commit, transaction->rtr_id))
-		return error(user_status);
+	try
+	{
+		if (!release_object(rdb, op_commit, transaction->rtr_id)) {
+			return error(user_status);
+		}
 
-	REMOTE_cleanup_transaction(transaction);
-	release_transaction(transaction);
-	*rtr_handle = NULL;
+		REMOTE_cleanup_transaction(transaction);
+		release_transaction(transaction);
+		*rtr_handle = NULL;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -616,13 +668,23 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-/* Make sure protocol support action */
+	try
+	{
+		/* Make sure protocol support action */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4)
-		return unsupported(user_status);
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
+			return unsupported(user_status);
+		}
 
-	if (!release_object(rdb, op_commit_retaining, transaction->rtr_id))
-		return error(user_status);
+		if (!release_object(rdb, op_commit_retaining, transaction->rtr_id)) {
+			return error(user_status);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -660,67 +722,80 @@ STATUS GDS_COMPILE(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-/* Parse the request in case blr_d_float must be converted to blr_double */
+	try
+	{
+		/* Parse the request in case blr_d_float must be converted to blr_double */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION5)
-		new_blr = PARSE_prepare_messages(blr, blr_length);
-	else
-		new_blr = blr;
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION5) {
+			new_blr = PARSE_prepare_messages(blr, blr_length);
+		} else {
+			new_blr = blr;
+		}
 
-/* Make up a packet for the remote guy */
+		/* Make up a packet for the remote guy */
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_compile;
-	compile = &packet->p_cmpl;
-	compile->p_cmpl_database = rdb->rdb_id;
-	compile->p_cmpl_blr.cstr_length = blr_length;
-	compile->p_cmpl_blr.cstr_address = new_blr;
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_compile;
+		compile = &packet->p_cmpl;
+		compile->p_cmpl_database = rdb->rdb_id;
+		compile->p_cmpl_blr.cstr_length = blr_length;
+		compile->p_cmpl_blr.cstr_address = new_blr;
 
-	(void) send_and_receive(rdb, packet, user_status);
-	if (new_blr != blr)
-		ALLR_free(new_blr);
-	if (user_status[1])
-		return error(user_status);
+		(void) send_and_receive(rdb, packet, user_status);
+		if (new_blr != blr) {
+			ALLR_free(new_blr);
+		}
+		if (user_status[1]) {
+			return error(user_status);
+		}
 
-/* Parse the request to find the messages */
+		/* Parse the request to find the messages */
 
-	message = PARSE_messages(blr, blr_length);
-	max_msg = 0;
+		message = PARSE_messages(blr, blr_length);
+		max_msg = 0;
 
-	for (next = message; next; next = next->msg_next)
-		max_msg = MAX(max_msg, next->msg_number);
+		for (next = message; next; next = next->msg_next) {
+			max_msg = MAX(max_msg, next->msg_number);
+		}
 
-/* Allocate request block */
+		/* Allocate request block */
 
-	*req_handle = request = (RRQ) ALLOCV(type_rrq, max_msg + 1);
-	request->rrq_rdb = rdb;
-	request->rrq_id = packet->p_resp.p_resp_object;
-	request->rrq_max_msg = max_msg;
-	SET_OBJECT(rdb, request, request->rrq_id);
-	request->rrq_next = rdb->rdb_requests;
-	rdb->rdb_requests = request;
+		*req_handle = request = (RRQ) ALLOCV(type_rrq, max_msg + 1);
+		request->rrq_rdb = rdb;
+		request->rrq_id = packet->p_resp.p_resp_object;
+		request->rrq_max_msg = max_msg;
+		SET_OBJECT(rdb, request, request->rrq_id);
+		request->rrq_next = rdb->rdb_requests;
+		rdb->rdb_requests = request;
 
-/* when the messages are parsed, they are linked together; we need 
-   to place the messages in the tail of the request block and create 
-   a queue of length 1 for each message number */
+		/* when the messages are parsed, they are linked together; we need 
+		   to place the messages in the tail of the request block and create 
+		   a queue of length 1 for each message number */
 
-	for (; message; message = next) {
-		next = message->msg_next;
+		for (; message; message = next)
+		{
+			next = message->msg_next;
 
-		message->msg_next = message;
+			message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
-		message->msg_prior = message;
+			message->msg_prior = message;
 #endif
 
-		rrq::rrq_repeat * tail = request->rrq_rpt + message->msg_number;
-		tail->rrq_message = message;
-		tail->rrq_xdr = message;
+			rrq::rrq_repeat * tail = request->rrq_rpt + message->msg_number;
+			tail->rrq_message = message;
+			tail->rrq_xdr = message;
 #ifdef SCROLLABLE_CURSORS
-		tail->rrq_last = NULL;
+			tail->rrq_last = NULL;
 #endif
-		tail->rrq_format = (FMT) message->msg_address;
+			tail->rrq_format = (FMT) message->msg_address;
 
-		message->msg_address = NULL;
+			message->msg_address = NULL;
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
 	}
 
 	RETURN_SUCCESS;
@@ -760,35 +835,43 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 	transaction = *rtr_handle;
 	ERROR_INIT(env);
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_create_blob;
-	p_blob = &packet->p_blob;
-	p_blob->p_blob_transaction = transaction->rtr_id;
+	try
+	{
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_create_blob;
+		p_blob = &packet->p_blob;
+		p_blob->p_blob_transaction = transaction->rtr_id;
 
-	if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION4) {
-		packet->p_operation = op_create_blob2;
-		p_blob->p_blob_bpb.cstr_length = bpb_length;
-		p_blob->p_blob_bpb.cstr_address = bpb;
+		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION4) {
+			packet->p_operation = op_create_blob2;
+			p_blob->p_blob_bpb.cstr_length = bpb_length;
+			p_blob->p_blob_bpb.cstr_address = bpb;
+		}
+
+		(void) send_and_receive(rdb, packet, user_status);
+		p_blob->p_blob_bpb.cstr_length = 0;
+		p_blob->p_blob_bpb.cstr_address = NULL;
+
+		if (user_status[1])
+			return error(user_status);
+
+		*blob_handle = blob = (RBL) ALLOCV(type_rbl, BLOB_LENGTH);
+		*blob_id = packet->p_resp.p_resp_blob_id;
+		blob->rbl_buffer_length = BLOB_LENGTH;
+		blob->rbl_rdb = rdb;
+		blob->rbl_rtr = transaction;
+		blob->rbl_id = packet->p_resp.p_resp_object;
+		blob->rbl_ptr = blob->rbl_buffer = blob->rbl_data;
+		blob->rbl_flags |= RBL_create;
+		SET_OBJECT(rdb, blob, blob->rbl_id);
+		blob->rbl_next = transaction->rtr_blobs;
+		transaction->rtr_blobs = blob;
 	}
-
-	(void) send_and_receive(rdb, packet, user_status);
-	p_blob->p_blob_bpb.cstr_length = 0;
-	p_blob->p_blob_bpb.cstr_address = NULL;
-
-	if (user_status[1])
-		return error(user_status);
-
-	*blob_handle = blob = (RBL) ALLOCV(type_rbl, BLOB_LENGTH);
-	*blob_id = packet->p_resp.p_resp_blob_id;
-	blob->rbl_buffer_length = BLOB_LENGTH;
-	blob->rbl_rdb = rdb;
-	blob->rbl_rtr = transaction;
-	blob->rbl_id = packet->p_resp.p_resp_object;
-	blob->rbl_ptr = blob->rbl_buffer = blob->rbl_data;
-	blob->rbl_flags |= RBL_create;
-	SET_OBJECT(rdb, blob, blob->rbl_id);
-	blob->rbl_next = transaction->rtr_blobs;
-	transaction->rtr_blobs = blob;
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -881,23 +964,32 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 	rdb = port->port_context;
 	ERROR_INIT(env);
 
+	try
+	{
+	/* The client may have set a parameter for dummy_packet_interval.  Add that to the
+	   the DPB so the server can pay attention to it.  Note: allocation code must
+	   ensure sufficient space has been added. */
 
-/* The client may have set a parameter for dummy_packet_interval.  Add that to the
-   the DPB so the server can pay attention to it.  Note: allocation code must
-   ensure sufficient space has been added. */
+		add_other_params(port, new_dpb_ptr, &new_dpb_length);
+		add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
 
-	add_other_params(port, new_dpb_ptr, &new_dpb_length);
-	add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
+		result =
+			init(user_status, port, op_create, expanded_name, length, new_dpb_ptr,
+				 new_dpb_length);
+		if (new_dpb_ptr != new_dpb) {
+			gds__free(new_dpb_ptr);
+		}
+		if (!result) {
+			return error(user_status);
+		}
 
-	result =
-		init(user_status, port, op_create, expanded_name, length, new_dpb_ptr,
-			 new_dpb_length);
-	if (new_dpb_ptr != new_dpb)
-		gds__free(new_dpb_ptr);
-	if (!result)
-		return error(user_status);
-
-	*handle = rdb;
+		*handle = rdb;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -934,40 +1026,48 @@ STATUS GDS_DATABASE_INFO(STATUS*	user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-	if (buffer_length > sizeof(temp)) {
-		temp_buffer = ALLR_alloc((SLONG) buffer_length);
-	} else {
-		temp_buffer = temp;
-	}
-/* NOMEM: ALLR_alloc handled */
-/* FREE:  Normal case later in this procedure, what about error to ERROR_INIT? */
-
-	status = info(user_status, rdb, op_info_database, rdb->rdb_id, 0,
-				  item_length, items, 0, 0, buffer_length,
-				  (SCHAR *) temp_buffer);
-
-	if (!status)
+	try
 	{
-		/* two bytes too much allocated, better safe than sorry */
-		const size_t nLen = strlen(GDS_VERSION) +
-							strlen(port->port_version->str_data) + 4;
-		char* version = (char*)ALLR_alloc(nLen);
+		if (buffer_length > sizeof(temp)) {
+			temp_buffer = ALLR_alloc((SLONG) buffer_length);
+		} else {
+			temp_buffer = temp;
+		}
+		/* NOMEM: ALLR_alloc handled */
+		/* FREE:  Normal case later in this procedure, what about error to ERROR_INIT? */
 
-		port = rdb->rdb_port;
-		
-		sprintf(version, "%s/%s", GDS_VERSION, port->port_version->str_data);
+		status = info(user_status, rdb, op_info_database, rdb->rdb_id, 0,
+					  item_length, items, 0, 0, buffer_length,
+					  (SCHAR *) temp_buffer);
 
-		MERGE_database_info(temp_buffer, (UCHAR *) buffer, buffer_length,
-							IMPLEMENTATION, 3, 1, (UCHAR*)version,
-							(UCHAR *) port->port_host->str_data, 0);
-		ALLR_free(version);
+		if (!status)
+		{
+			port = rdb->rdb_port;
+
+			/* two bytes too much allocated, better safe than sorry */
+			const size_t nLen = strlen(GDS_VERSION) +
+								strlen(port->port_version->str_data) + 4;
+			char* version = (char*)ALLR_alloc(nLen);
+
+			sprintf(version, "%s/%s", GDS_VERSION, port->port_version->str_data);
+
+			MERGE_database_info(temp_buffer, (UCHAR *) buffer, buffer_length,
+								IMPLEMENTATION, 3, 1, (UCHAR*)version,
+								(UCHAR *) port->port_host->str_data, 0);
+			ALLR_free(version);
+		}
+
+		if (temp_buffer != temp) {
+			ALLR_free(temp_buffer);
+		}
+
+		RESTORE_THREAD_DATA;
 	}
-
-	if (temp_buffer != temp) {
-		ALLR_free(temp_buffer);
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
 	}
-
-	RESTORE_THREAD_DATA;
 
 	return status;
 }
@@ -1006,20 +1106,28 @@ STATUS GDS_DDL(STATUS*	user_status,
 	transaction = *rtr_handle;
 	ERROR_INIT(env);
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4)
-		return unsupported(user_status);
+	try
+	{
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
+			return unsupported(user_status);
+		}
 
-/* Make up a packet for the remote guy */
+		/* Make up a packet for the remote guy */
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_ddl;
-	ddl = &packet->p_ddl;
-	ddl->p_ddl_database = rdb->rdb_id;
-	ddl->p_ddl_transaction = transaction->rtr_id;
-	ddl->p_ddl_blr.cstr_length = blr_length;
-	ddl->p_ddl_blr.cstr_address = blr;
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_ddl;
+		ddl = &packet->p_ddl;
+		ddl->p_ddl_database = rdb->rdb_id;
+		ddl->p_ddl_transaction = transaction->rtr_id;
+		ddl->p_ddl_blr.cstr_length = blr_length;
+		ddl->p_ddl_blr.cstr_address = blr;
 
-	status = send_and_receive(rdb, packet, user_status);
+		status = send_and_receive(rdb, packet, user_status);
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		status = e.value();
+	}
 
 	RESTORE_THREAD_DATA;
 
@@ -1051,48 +1159,56 @@ STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
 	ERROR_INIT(env);
 	port = rdb->rdb_port;
 
-	(void) release_object(rdb, op_detach, rdb->rdb_id);
-
-/* If something other than a network error occurred, just return.  Otherwise
-   we need to free up the associated structures, close the socket and
-   scram.  By the way, we should probably create an entry in the log
-   telling the user that an unrecoverable network error occurred and that
-   if there was any uncommitted work, its gone......  Oh well.... */
-
-	if (user_status[1] && user_status[1] != isc_network_error)
+	try
 	{
-		return (error(user_status));
+		(void) release_object(rdb, op_detach, rdb->rdb_id);
+
+		/* If something other than a network error occurred, just return.  Otherwise
+		   we need to free up the associated structures, close the socket and
+		   scram.  By the way, we should probably create an entry in the log
+		   telling the user that an unrecoverable network error occurred and that
+		   if there was any uncommitted work, its gone......  Oh well.... */
+
+		if (user_status[1] && user_status[1] != isc_network_error)
+		{
+			return (error(user_status));
+		}
+
+		while (rdb->rdb_events)
+			release_event(rdb->rdb_events);
+
+		while (rdb->rdb_requests)
+			release_request(rdb->rdb_requests);
+
+		while (rdb->rdb_sql_requests)
+			release_sql_request(rdb->rdb_sql_requests);
+
+		while (rdb->rdb_transactions)
+			release_transaction(rdb->rdb_transactions);
+
+		if (port->port_statement)
+			release_statement(&port->port_statement);
+
+	/* If there is a network error, don't try to send another packet, just
+	   free the packet and disconnect the port. Put something into interbase.log
+	   informing the user of the following. */
+
+		if (user_status[1])
+		{
+			gds__log("REMOTE INTERFACE/gds__detach: Unsuccesful detach from "
+					"database. \n\tUncommitted work may have been lost", 0);
+		}
+
+		disconnect(port);
+		*handle = NULL;
+
+		/* Can't RETURN_SUCCESS here as we've already torn down memory */
 	}
-
-	while (rdb->rdb_events)
-		release_event(rdb->rdb_events);
-
-	while (rdb->rdb_requests)
-		release_request(rdb->rdb_requests);
-
-	while (rdb->rdb_sql_requests)
-		release_sql_request(rdb->rdb_sql_requests);
-
-	while (rdb->rdb_transactions)
-		release_transaction(rdb->rdb_transactions);
-
-	if (port->port_statement)
-		release_statement(&port->port_statement);
-
-/* If there is a network error, don't try to send another packet, just
-   free the packet and disconnect the port. Put something into interbase.log
-   informing the user of the following. */
-
-	if (user_status[1])
+	catch (const Firebird::status_exception& e)
 	{
-		gds__log("REMOTE INTERFACE/gds__detach: Unsuccesful detach from "
-				"database. \n\tUncommitted work may have been lost", 0);
+		RESTORE_THREAD_DATA;
+		return e.value();
 	}
-
-	disconnect(port);
-	*handle = NULL;
-
-	/* Can't RETURN_SUCCESS here as we've already torn down memory */
 
 	RESTORE_THREAD_DATA;
 
@@ -1129,34 +1245,42 @@ STATUS GDS_DROP_DATABASE(STATUS* user_status, RDB* handle)
 	ERROR_INIT(env);
 	port = rdb->rdb_port;
 
-/* Make sure protocol supports the action */
+	try
+	{
+		/* Make sure protocol supports the action */
 
-	if (port->port_protocol < PROTOCOL_VERSION8)
-		return unsupported(user_status);
+		if (port->port_protocol < PROTOCOL_VERSION8)
+			return unsupported(user_status);
 
-	if (!release_object(rdb, op_drop_database, rdb->rdb_id))
-		if (user_status[1] != gds_drdb_completed_with_errs)
-			return error(user_status);
+		if (!release_object(rdb, op_drop_database, rdb->rdb_id))
+			if (user_status[1] != gds_drdb_completed_with_errs)
+				return error(user_status);
 
-	while (rdb->rdb_events)
-		release_event(rdb->rdb_events);
+		while (rdb->rdb_events)
+			release_event(rdb->rdb_events);
 
-	while (rdb->rdb_requests)
-		release_request(rdb->rdb_requests);
+		while (rdb->rdb_requests)
+			release_request(rdb->rdb_requests);
 
-	while (rdb->rdb_sql_requests)
-		release_sql_request(rdb->rdb_sql_requests);
+		while (rdb->rdb_sql_requests)
+			release_sql_request(rdb->rdb_sql_requests);
 
-	while (rdb->rdb_transactions)
-		release_transaction(rdb->rdb_transactions);
+		while (rdb->rdb_transactions)
+			release_transaction(rdb->rdb_transactions);
 
-	if (port->port_statement)
-		release_statement(&port->port_statement);
+		if (port->port_statement)
+			release_statement(&port->port_statement);
 
-	rdb->rdb_status_vector = local_status;
+		rdb->rdb_status_vector = local_status;
 
-	disconnect(port);
-	*handle = NULL;
+		disconnect(port);
+		*handle = NULL;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RESTORE_THREAD_DATA;
 
@@ -1191,30 +1315,38 @@ STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-/* Make sure protocol support action */
+	try
+	{
+		/* Make sure protocol support action */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
-		return unsupported(user_status);
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
+			return unsupported(user_status);
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_allocate_statement;
-	packet->p_rlse.p_rlse_object = rdb->rdb_id;
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_allocate_statement;
+		packet->p_rlse.p_rlse_object = rdb->rdb_id;
 
-	if (send_and_receive(rdb, packet, user_status))
-		return error(user_status);
+		if (send_and_receive(rdb, packet, user_status))
+			return error(user_status);
 
-/* Allocate SQL request block */
+		/* Allocate SQL request block */
 
-	*stmt_handle = statement = (RSR) ALLOC(type_rsr);
-	statement->rsr_rdb = rdb;
-	statement->rsr_id = packet->p_resp.p_resp_object;
-	statement->rsr_next = rdb->rdb_sql_requests;
+		*stmt_handle = statement = (RSR) ALLOC(type_rsr);
+		statement->rsr_rdb = rdb;
+		statement->rsr_id = packet->p_resp.p_resp_object;
+		statement->rsr_next = rdb->rdb_sql_requests;
 
-	rdb->rdb_sql_requests = statement;
+		rdb->rdb_sql_requests = statement;
 
-/* register the object */
+		/* register the object */
 
-	SET_OBJECT(rdb, statement, statement->rsr_id);
+		SET_OBJECT(rdb, statement, statement->rsr_id);
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -1287,126 +1419,138 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
 	rdb = statement->rsr_rdb;
-	if (transaction = *rtr_handle)
+	if (transaction = *rtr_handle) {
 		CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	}
 	ERROR_INIT(env);
 	port = rdb->rdb_port;
 
-/* bag it if the protocol doesn't support it... */
+	/* bag it if the protocol doesn't support it... */
 
 	if (port->port_protocol < PROTOCOL_VERSION7 ||
 		(out_msg_length && port->port_protocol < PROTOCOL_VERSION8))
+	{
 		return unsupported(user_status);
-
-/* Parse the blr describing the message, if there is any. */
-
-	if (in_blr_length) {
-		if (statement->rsr_bind_format) {
-			ALLR_RELEASE(statement->rsr_bind_format);
-			statement->rsr_bind_format = NULL;
-		}
-		if ((message = PARSE_messages(in_blr, in_blr_length)) != (MSG) - 1) {
-			statement->rsr_bind_format = (FMT) message->msg_address;
-			ALLR_RELEASE(message);
-		}
 	}
 
-/* Parse the blr describing the output message.  This is not the fetch
-   message!  That comes later. */
+	try
+	{
+		/* Parse the blr describing the message, if there is any. */
 
-	if (out_blr_length) {
-		if (!port->port_statement)
-			port->port_statement = (RSR) ALLOC(type_rsr);
-
-		if (port->port_statement->rsr_select_format) {
-			ALLR_RELEASE(port->port_statement->rsr_select_format);
-			port->port_statement->rsr_select_format = NULL;
-		}
-		if ((message = PARSE_messages(out_blr, out_blr_length)) != (MSG) - 1) {
-			port->port_statement->rsr_select_format =
-				(FMT) message->msg_address;
-			ALLR_RELEASE(message);
+		if (in_blr_length) {
+			if (statement->rsr_bind_format) {
+				ALLR_RELEASE(statement->rsr_bind_format);
+				statement->rsr_bind_format = NULL;
+			}
+			if ((message = PARSE_messages(in_blr, in_blr_length)) != (MSG) - 1) {
+				statement->rsr_bind_format = (FMT) message->msg_address;
+				ALLR_RELEASE(message);
+			}
 		}
 
-		if (!port->port_statement->rsr_buffer) {
-			port->port_statement->rsr_buffer = message =
-				(MSG) ALLOCV(type_msg, 0);
-			port->port_statement->rsr_message = message;
+		/* Parse the blr describing the output message.  This is not the fetch
+		   message!  That comes later. */
+
+		if (out_blr_length) {
+			if (!port->port_statement)
+				port->port_statement = (RSR) ALLOC(type_rsr);
+
+			if (port->port_statement->rsr_select_format) {
+				ALLR_RELEASE(port->port_statement->rsr_select_format);
+				port->port_statement->rsr_select_format = NULL;
+			}
+			if ((message = PARSE_messages(out_blr, out_blr_length)) != (MSG) - 1) {
+				port->port_statement->rsr_select_format =
+					(FMT) message->msg_address;
+				ALLR_RELEASE(message);
+			}
+
+			if (!port->port_statement->rsr_buffer) {
+				port->port_statement->rsr_buffer = message =
+					(MSG) ALLOCV(type_msg, 0);
+				port->port_statement->rsr_message = message;
+				message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+				message->msg_prior = message;
+#endif
+				port->port_statement->rsr_fmt_length = 0;
+			}
+		}
+
+		if (!statement->rsr_buffer) {
+			statement->rsr_buffer = message = (MSG) ALLOCV(type_msg, 0);
+			statement->rsr_message = message;
+
 			message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
 			message->msg_prior = message;
 #endif
-			port->port_statement->rsr_fmt_length = 0;
+
+			statement->rsr_fmt_length = 0;
 		}
+		else {
+			message = statement->rsr_message = statement->rsr_buffer;
+		}
+
+		message->msg_address = in_msg;
+		statement->rsr_flags &= ~RSR_fetched;
+		statement->rsr_format = statement->rsr_bind_format;
+
+		/* set up the packet for the other guy... */
+
+		packet = &rdb->rdb_packet;
+		packet->p_operation = (out_msg_length) ? op_execute2 : op_execute;
+		sqldata = &packet->p_sqldata;
+		sqldata->p_sqldata_statement = statement->rsr_id;
+		sqldata->p_sqldata_transaction = (transaction) ? transaction->rtr_id : 0;
+		sqldata->p_sqldata_blr.cstr_length = in_blr_length;
+		sqldata->p_sqldata_blr.cstr_address = in_blr;
+		sqldata->p_sqldata_message_number = in_msg_type;
+		sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
+		sqldata->p_sqldata_out_blr.cstr_length = out_blr_length;
+		sqldata->p_sqldata_out_blr.cstr_address = out_blr;
+		sqldata->p_sqldata_out_message_number = out_msg_type;
+
+		if (!send_packet(port, packet, user_status))
+			return error(user_status);
+
+		/* Set up the response packet.  We may receive an SQL response followed
+		   by a normal response packet or simply a response packet. */
+
+		message->msg_address = NULL;
+		if (out_msg_length)
+			port->port_statement->rsr_message->msg_address = out_msg;
+
+		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+
+		if (!receive_packet(port, packet, user_status))
+			return error(user_status);
+
+		if (packet->p_operation != op_sql_response)
+			check_response(rdb, packet);
+		else {
+			port->port_statement->rsr_message->msg_address = NULL;
+			(void) receive_response(rdb, packet);
+		}
+
+		if (user_status[1])
+			return error(user_status);
+
+		if (transaction && !packet->p_resp.p_resp_object) {
+			REMOTE_cleanup_transaction(transaction);
+			release_transaction(transaction);
+			*rtr_handle = NULL;
+		}
+		else if (!transaction && packet->p_resp.p_resp_object)
+			*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
+
+		statement->rsr_rtr = *rtr_handle;
 	}
-
-	if (!statement->rsr_buffer) {
-		statement->rsr_buffer = message = (MSG) ALLOCV(type_msg, 0);
-		statement->rsr_message = message;
-
-		message->msg_next = message;
-#ifdef SCROLLABLE_CURSORS
-		message->msg_prior = message;
-#endif
-
-		statement->rsr_fmt_length = 0;
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
 	}
-	else
-		message = statement->rsr_message = statement->rsr_buffer;
-
-	message->msg_address = in_msg;
-	statement->rsr_flags &= ~RSR_fetched;
-	statement->rsr_format = statement->rsr_bind_format;
-
-/* set up the packet for the other guy... */
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = (out_msg_length) ? op_execute2 : op_execute;
-	sqldata = &packet->p_sqldata;
-	sqldata->p_sqldata_statement = statement->rsr_id;
-	sqldata->p_sqldata_transaction = (transaction) ? transaction->rtr_id : 0;
-	sqldata->p_sqldata_blr.cstr_length = in_blr_length;
-	sqldata->p_sqldata_blr.cstr_address = in_blr;
-	sqldata->p_sqldata_message_number = in_msg_type;
-	sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
-	sqldata->p_sqldata_out_blr.cstr_length = out_blr_length;
-	sqldata->p_sqldata_out_blr.cstr_address = out_blr;
-	sqldata->p_sqldata_out_message_number = out_msg_type;
-
-	if (!send_packet(port, packet, user_status))
-		return error(user_status);
-
-/* Set up the response packet.  We may receive an SQL response followed
-   by a normal response packet or simply a response packet. */
-
-	message->msg_address = NULL;
-	if (out_msg_length)
-		port->port_statement->rsr_message->msg_address = out_msg;
-
-	packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
-
-	if (!receive_packet(port, packet, user_status))
-		return error(user_status);
-
-	if (packet->p_operation != op_sql_response)
-		check_response(rdb, packet);
-	else {
-		port->port_statement->rsr_message->msg_address = NULL;
-		(void) receive_response(rdb, packet);
-	}
-
-	if (user_status[1])
-		return error(user_status);
-
-	if (transaction && !packet->p_resp.p_resp_object) {
-		REMOTE_cleanup_transaction(transaction);
-		release_transaction(transaction);
-		*rtr_handle = NULL;
-	}
-	else if (!transaction && packet->p_resp.p_resp_object)
-		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
-
-	statement->rsr_rtr = *rtr_handle;
 
 	RETURN_SUCCESS;
 }
@@ -1482,131 +1626,151 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 
 	rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	if (transaction = *rtr_handle)
+	if (transaction = *rtr_handle) {
 		CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	}
 	ERROR_INIT(env);
 	port = rdb->rdb_port;
 
-/* bag it if the protocol doesn't support it... */
+	/* bag it if the protocol doesn't support it... */
 
 	if (port->port_protocol < PROTOCOL_VERSION7 ||
 		((in_msg_length || out_msg_length)
-		 && port->port_protocol <
-		 PROTOCOL_VERSION8)) return unsupported(user_status);
-
-/* If the server is pre-6.0, do not send anything if the client dialect is 3 and
-   there is a SQLDA.  This will cause the older server to crash */
-	if (port->port_protocol < PROTOCOL_VERSION10 &&
-		(in_msg_length || out_msg_length) && dialect > SQL_DIALECT_V5)
-		return unsupported(user_status);
-
-	if (!(statement = port->port_statement))
-		statement = port->port_statement = (RSR) ALLOC(type_rsr);
-
-/* reset statement buffers */
-
-	if (!clear_queue(rdb->rdb_port, user_status))
-		return error(user_status);
-
-	REMOTE_reset_statement(statement);
-
-	if (statement->rsr_bind_format) {
-		ALLR_RELEASE(statement->rsr_bind_format);
-		statement->rsr_bind_format = NULL;
+		 && port->port_protocol < PROTOCOL_VERSION8))
+	{
+		 return unsupported(user_status);
 	}
 
-	if (statement->rsr_select_format) {
-		ALLR_RELEASE(statement->rsr_select_format);
-		statement->rsr_select_format = NULL;
-	}
+	try
+	{
+		/* If the server is pre-6.0, do not send anything if the client dialect is 3 and
+		   there is a SQLDA.  This will cause the older server to crash */
+		if (port->port_protocol < PROTOCOL_VERSION10 &&
+			(in_msg_length || out_msg_length) && dialect > SQL_DIALECT_V5)
+		{
+			return unsupported(user_status);
+		}
 
-	if (in_msg_length || out_msg_length) {
-		if (in_blr_length)
-			if ((message = PARSE_messages(in_blr, in_blr_length)) !=
-				(MSG) - 1) {
-				statement->rsr_bind_format = (FMT) message->msg_address;
-				ALLR_RELEASE(message);
+		if (!(statement = port->port_statement)) {
+			statement = port->port_statement = (RSR) ALLOC(type_rsr);
+		}
+
+		/* reset statement buffers */
+
+		if (!clear_queue(rdb->rdb_port, user_status))
+			return error(user_status);
+
+		REMOTE_reset_statement(statement);
+
+		if (statement->rsr_bind_format) {
+			ALLR_RELEASE(statement->rsr_bind_format);
+			statement->rsr_bind_format = NULL;
+		}
+
+		if (statement->rsr_select_format) {
+			ALLR_RELEASE(statement->rsr_select_format);
+			statement->rsr_select_format = NULL;
+		}
+
+		if (in_msg_length || out_msg_length)
+		{
+			if (in_blr_length)
+			{
+				if ((message = PARSE_messages(in_blr, in_blr_length)) !=
+					(MSG) - 1) {
+					statement->rsr_bind_format = (FMT) message->msg_address;
+					ALLR_RELEASE(message);
+				}
 			}
-
-		if (out_blr_length)
-			if ((message = PARSE_messages(out_blr, out_blr_length)) !=
-				(MSG) - 1) {
-				statement->rsr_select_format = (FMT) message->msg_address;
-				ALLR_RELEASE(message);
+			if (out_blr_length)
+			{
+				if ((message = PARSE_messages(out_blr, out_blr_length)) !=
+					(MSG) - 1) {
+					statement->rsr_select_format = (FMT) message->msg_address;
+					ALLR_RELEASE(message);
+				}
 			}
+		}
 
-	}
-
-	if (!statement->rsr_buffer) {
-		statement->rsr_buffer = message = (MSG) ALLOCV(type_msg, 0);
-		statement->rsr_message = message;
-		message->msg_next = message;
+		if (!statement->rsr_buffer)
+		{
+			statement->rsr_buffer = message = (MSG) ALLOCV(type_msg, 0);
+			statement->rsr_message = message;
+			message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
-		message->msg_prior = message;
+			message->msg_prior = message;
 #endif
-		statement->rsr_fmt_length = 0;
+			statement->rsr_fmt_length = 0;
+		}
+		else {
+			message = statement->rsr_message = statement->rsr_buffer;
+		}
+
+		message->msg_address = in_msg;
+
+		/* set up the packet for the other guy... */
+
+		packet = &rdb->rdb_packet;
+		packet->p_operation = (in_msg_length || out_msg_length) ?
+			op_exec_immediate2 : op_exec_immediate;
+		ex_now = &packet->p_sqlst;
+		ex_now->p_sqlst_transaction = (transaction) ? transaction->rtr_id : 0;
+		ex_now->p_sqlst_SQL_dialect = dialect;
+		ex_now->p_sqlst_SQL_str.cstr_length =
+			length ? length : strlen((char *) string);
+		ex_now->p_sqlst_SQL_str.cstr_address = (UCHAR *) string;
+		ex_now->p_sqlst_items.cstr_length = 0;
+		ex_now->p_sqlst_buffer_length = 0;
+		ex_now->p_sqlst_blr.cstr_length = in_blr_length;
+		ex_now->p_sqlst_blr.cstr_address = in_blr;
+		ex_now->p_sqlst_message_number = in_msg_type;
+		ex_now->p_sqlst_messages = (in_msg_length
+									&& statement->rsr_bind_format) ? 1 : 0;
+		ex_now->p_sqlst_out_blr.cstr_length = out_blr_length;
+		ex_now->p_sqlst_out_blr.cstr_address = out_blr;
+		ex_now->p_sqlst_out_message_number = out_msg_type;
+
+		if (!send_packet(port, packet, user_status)) {
+			return error(user_status);
+		}
+
+		/* SEND could have changed the message */
+
+		message = statement->rsr_message;
+
+		/* Set up the response packet.  We may receive an SQL response followed
+		   by a normal response packet or simply a response packet. */
+
+		if (in_msg_length || out_msg_length)
+			port->port_statement->rsr_message->msg_address = out_msg;
+
+		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		if (!receive_packet(rdb->rdb_port, packet, user_status))
+			return error(user_status);
+
+		if (packet->p_operation != op_sql_response)
+			check_response(rdb, packet);
+		else {
+			message->msg_address = NULL;
+			(void) receive_response(rdb, packet);
+		}
+
+		if (user_status[1])
+			return error(user_status);
+
+		if (transaction && !packet->p_resp.p_resp_object) {
+			REMOTE_cleanup_transaction(transaction);
+			release_transaction(transaction);
+			*rtr_handle = NULL;
+		}
+		else if (!transaction && packet->p_resp.p_resp_object)
+			*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
 	}
-	else
-		message = statement->rsr_message = statement->rsr_buffer;
-
-	message->msg_address = in_msg;
-
-/* set up the packet for the other guy... */
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = (in_msg_length || out_msg_length) ?
-		op_exec_immediate2 : op_exec_immediate;
-	ex_now = &packet->p_sqlst;
-	ex_now->p_sqlst_transaction = (transaction) ? transaction->rtr_id : 0;
-	ex_now->p_sqlst_SQL_dialect = dialect;
-	ex_now->p_sqlst_SQL_str.cstr_length =
-		length ? length : strlen((char *) string);
-	ex_now->p_sqlst_SQL_str.cstr_address = (UCHAR *) string;
-	ex_now->p_sqlst_items.cstr_length = 0;
-	ex_now->p_sqlst_buffer_length = 0;
-	ex_now->p_sqlst_blr.cstr_length = in_blr_length;
-	ex_now->p_sqlst_blr.cstr_address = in_blr;
-	ex_now->p_sqlst_message_number = in_msg_type;
-	ex_now->p_sqlst_messages = (in_msg_length
-								&& statement->rsr_bind_format) ? 1 : 0;
-	ex_now->p_sqlst_out_blr.cstr_length = out_blr_length;
-	ex_now->p_sqlst_out_blr.cstr_address = out_blr;
-	ex_now->p_sqlst_out_message_number = out_msg_type;
-
-	if (!send_packet(port, packet, user_status))
-		return error(user_status);
-
-/* SEND could have changed the message */
-
-	message = statement->rsr_message;
-
-/* Set up the response packet.  We may receive an SQL response followed
-   by a normal response packet or simply a response packet. */
-
-	if (in_msg_length || out_msg_length)
-		port->port_statement->rsr_message->msg_address = out_msg;
-
-	packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
-	if (!receive_packet(rdb->rdb_port, packet, user_status))
-		return error(user_status);
-
-	if (packet->p_operation != op_sql_response)
-		check_response(rdb, packet);
-	else {
-		message->msg_address = NULL;
-		(void) receive_response(rdb, packet);
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
 	}
-
-	if (user_status[1])
-		return error(user_status);
-
-	if (transaction && !packet->p_resp.p_resp_object) {
-		REMOTE_cleanup_transaction(transaction);
-		release_transaction(transaction);
-		*rtr_handle = NULL;
-	}
-	else if (!transaction && packet->p_resp.p_resp_object)
-		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
 
 	RETURN_SUCCESS;
 }
@@ -1648,213 +1812,233 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 	port = rdb->rdb_port;
 	ERROR_INIT(env);
 
-/* make sure the protocol supports it */
+	try
+	{
+		/* make sure the protocol supports it */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
-		return unsupported(user_status);
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
+			return unsupported(user_status);
+		}
 
-/* On first fetch, clear the end-of-stream flag & reset the message buffers */
+		/* On first fetch, clear the end-of-stream flag & reset the message buffers */
 
-	if (!(statement->rsr_flags & RSR_fetched)) {
-		statement->rsr_flags &= ~(RSR_eof | RSR_stream_err);
-		statement->rsr_rows_pending = 0;
-		memset(statement->rsr_status_vector, 0,
-			   sizeof(statement->rsr_status_vector));
-		if (message = statement->rsr_message) {
-			statement->rsr_buffer = message;
-			while (TRUE) {
-				message->msg_address = NULL;
-				message = message->msg_next;
-				if (message == statement->rsr_message)
-					break;
+		if (!(statement->rsr_flags & RSR_fetched))
+		{
+			statement->rsr_flags &= ~(RSR_eof | RSR_stream_err);
+			statement->rsr_rows_pending = 0;
+			memset(statement->rsr_status_vector, 0,
+				   sizeof(statement->rsr_status_vector));
+			if (message = statement->rsr_message)
+			{
+				statement->rsr_buffer = message;
+				while (TRUE)
+				{
+					message->msg_address = NULL;
+					message = message->msg_next;
+					if (message == statement->rsr_message) {
+						break;
+					}
+				}
 			}
 		}
-	}
 
-/* Parse the blr describing the message, if there is any. */
+		/* Parse the blr describing the message, if there is any. */
 
-	if (blr_length) {
-		if (statement->rsr_user_select_format &&
-			statement->rsr_user_select_format != statement->rsr_select_format)
-			ALLR_RELEASE(statement->rsr_user_select_format);
-		if ((message = PARSE_messages(blr, blr_length)) != (MSG) - 1) {
-			statement->rsr_user_select_format = (FMT) message->msg_address;
-			ALLR_RELEASE(message);
+		if (blr_length) {
+			if (statement->rsr_user_select_format &&
+				statement->rsr_user_select_format != statement->rsr_select_format)
+				ALLR_RELEASE(statement->rsr_user_select_format);
+			if ((message = PARSE_messages(blr, blr_length)) != (MSG) - 1) {
+				statement->rsr_user_select_format = (FMT) message->msg_address;
+				ALLR_RELEASE(message);
+			}
+			else
+				statement->rsr_user_select_format = NULL;
+			if (statement->rsr_flags & RSR_fetched)
+				blr_length = 0;
+			else {
+				if (statement->rsr_select_format)
+					ALLR_RELEASE(statement->rsr_select_format);
+				statement->rsr_select_format = statement->rsr_user_select_format;
+			}
 		}
-		else
-			statement->rsr_user_select_format = NULL;
-		if (statement->rsr_flags & RSR_fetched)
-			blr_length = 0;
-		else {
-			if (statement->rsr_select_format)
-				ALLR_RELEASE(statement->rsr_select_format);
-			statement->rsr_select_format = statement->rsr_user_select_format;
+
+		if (statement->rsr_flags & RSR_blob) {
+			status = fetch_blob(user_status, statement, blr_length, blr,
+								msg_type, msg_length, msg);
+			RESTORE_THREAD_DATA;
+			return status;
 		}
-	}
-
-	if (statement->rsr_flags & RSR_blob) {
-		status = fetch_blob(user_status, statement, blr_length, blr,
-							msg_type, msg_length, msg);
-		RESTORE_THREAD_DATA;
-		return status;
-	}
 
 
-	if (!statement->rsr_buffer) {
-		statement->rsr_buffer = (MSG) ALLOCV(type_msg, 0);
-		statement->rsr_message = statement->rsr_buffer;
-		statement->rsr_message->msg_next = statement->rsr_message;
+		if (!statement->rsr_buffer) {
+			statement->rsr_buffer = (MSG) ALLOCV(type_msg, 0);
+			statement->rsr_message = statement->rsr_buffer;
+			statement->rsr_message->msg_next = statement->rsr_message;
 #ifdef SCROLLABLE_CURSORS
-		statement->rsr_message->msg_prior = statement->rsr_message;
+			statement->rsr_message->msg_prior = statement->rsr_message;
 #endif
-		statement->rsr_fmt_length = 0;
-	}
+			statement->rsr_fmt_length = 0;
+		}
 
-	message = statement->rsr_message;
+		message = statement->rsr_message;
 
 #ifdef DEBUG
-	ib_fprintf(ib_stdout, "Rows Pending in REM_fetch=%d\n",
-			   statement->rsr_rows_pending);
+		ib_fprintf(ib_stdout, "Rows Pending in REM_fetch=%d\n",
+				   statement->rsr_rows_pending);
 #endif
 
-/* Check to see if data is waiting.  If not, solicite data. */
+		/* Check to see if data is waiting.  If not, solicite data. */
 
-	if ((!(statement->rsr_flags & (RSR_eof | RSR_stream_err)) &&
-		 (!statement->rsr_message->msg_address) &&
-		 (statement->rsr_rows_pending == 0))
-		|| (					/* Low in inventory */
-			   (statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
-			   (statement->rsr_msgs_waiting <= statement->rsr_reorder_level)
-			   &&
-			   /* doing Batch, not RPC */
-			   !(port->port_flags & PORT_rpc) &&
-			   /* not using named pipe on NT */
-			   /* Pipelining causes both server & client to 
-			      write at the same time. In named pipes, writes
-			      block for the other end to read -  and so when both
-			      attempt to write simultaenously, they end up
-			      waiting indefinetly for the other end to read */
-			   (port->port_type != port_pipe) &&
+		if ((!(statement->rsr_flags & (RSR_eof | RSR_stream_err)) &&
+			 (!statement->rsr_message->msg_address) &&
+			 (statement->rsr_rows_pending == 0))
+			|| (					/* Low in inventory */
+				   (statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
+				   (statement->rsr_msgs_waiting <= statement->rsr_reorder_level)
+				   &&
+				   /* doing Batch, not RPC */
+				   !(port->port_flags & PORT_rpc) &&
+				   /* not using named pipe on NT */
+				   /* Pipelining causes both server & client to 
+				      write at the same time. In named pipes, writes
+				      block for the other end to read -  and so when both
+				      attempt to write simultaenously, they end up
+				      waiting indefinetly for the other end to read */
+				   (port->port_type != port_pipe) &&
 #ifdef XNET
-			   (port->port_type != port_xnet) &&
+				   (port->port_type != port_xnet) &&
 #endif
-			   /* We've reached eof or there was an error */
-			   !(statement->rsr_flags & (RSR_eof | RSR_stream_err)) &&
-			   /* No error pending */
-			   (!statement->rsr_status_vector[1]))) {
-		/* set up the packet for the other guy... */
+				   /* We've reached eof or there was an error */
+				   !(statement->rsr_flags & (RSR_eof | RSR_stream_err)) &&
+				   /* No error pending */
+				   (!statement->rsr_status_vector[1])))
+		{
+			/* set up the packet for the other guy... */
 
-		packet = &rdb->rdb_packet;
-		packet->p_operation = op_fetch;
-		sqldata = &packet->p_sqldata;
-		sqldata->p_sqldata_statement = statement->rsr_id;
-		sqldata->p_sqldata_blr.cstr_length = blr_length;
-		sqldata->p_sqldata_blr.cstr_address = blr;
-		sqldata->p_sqldata_message_number = msg_type;
-		if (sqldata->p_sqldata_messages =
-			(statement->rsr_select_format) ? 1 : 0) if (!(port->
-														  port_flags &
-														  PORT_rpc)) {
+			packet = &rdb->rdb_packet;
+			packet->p_operation = op_fetch;
+			sqldata = &packet->p_sqldata;
+			sqldata->p_sqldata_statement = statement->rsr_id;
+			sqldata->p_sqldata_blr.cstr_length = blr_length;
+			sqldata->p_sqldata_blr.cstr_address = blr;
+			sqldata->p_sqldata_message_number = msg_type;
+			if (sqldata->p_sqldata_messages =
+				(statement->rsr_select_format) ? 1 : 0)
+			{
+				if (!(port->port_flags &PORT_rpc))
+				{
 				sqldata->p_sqldata_messages =
-					static_cast < USHORT >
-					(REMOTE_compute_batch_size
-					 (port, 0, op_fetch_response,
-					  statement->rsr_select_format));
+					static_cast<USHORT>(REMOTE_compute_batch_size(port,
+						0, op_fetch_response, statement->rsr_select_format));
 				sqldata->p_sqldata_messages *= 4;
 
-		/** Reorder data when the local buffer is half empty **/
+				/** Reorder data when the local buffer is half empty **/
 
-				statement->rsr_reorder_level =
-					sqldata->p_sqldata_messages / 2;
+					statement->rsr_reorder_level =
+						sqldata->p_sqldata_messages / 2;
 #ifdef DEBUG
 				ib_fprintf(ib_stdout,
 						   "Recalculating Rows Pending in REM_fetch=%d\n",
 						   statement->rsr_rows_pending);
 #endif
+				}
 			}
-		statement->rsr_rows_pending += sqldata->p_sqldata_messages;
+			statement->rsr_rows_pending += sqldata->p_sqldata_messages;
 
-		/* Make the batch request - and force the packet over the wire */
+			/* Make the batch request - and force the packet over the wire */
 
-		if (!send_packet(rdb->rdb_port, packet, user_status))
-			return error(user_status);
+			if (!send_packet(rdb->rdb_port, packet, user_status)) {
+				return error(user_status);
+			}
 
-		statement->rsr_batch_count++;
+			statement->rsr_batch_count++;
 
-		/* Queue up receipt of the pending data */
+			/* Queue up receipt of the pending data */
 
-		enqueue_receive(port, batch_dsql_fetch, rdb, (void *) statement,
-						NULL);
+			enqueue_receive(port, batch_dsql_fetch, rdb, (void *) statement,
+							NULL);
 
-		assert(statement->rsr_rows_pending > 0
-			   || (!statement->rsr_select_format));
-	}
-
-/* Receive queued responses until we have some data for this cursor
-   or an error status has been received. */
-
-/* We've either got data, or some is on the way, or we have an error, or we have EOF */
-
-	assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0)
-		   || statement->rsr_status_vector[1]
-		   || statement->rsr_flags & (RSR_eof));
-
-	while (!(statement->rsr_status_vector[1])	/* received a database error */
-		   &&!(statement->rsr_flags & (RSR_eof))	/* reached end of cursor */
-		   &&!(statement->rsr_msgs_waiting >= 2)	/* Have looked ahead for end of batch */
-		   &&!(statement->rsr_rows_pending == 0)) {	/* Hit end of batch */
-		if (!receive_queued_packet
-			(trdb, port, user_status,
-			 statement->rsr_id)) return error(user_status);
-	}
-
-	if (!statement->rsr_msgs_waiting) {
-		if (statement->rsr_flags & RSR_eof) {
-			statement->rsr_flags &= ~RSR_eof;
-
-			/* Set up status vector and RESTORE_THREAD_DATA in common return_success */
-
-			(void) return_success(rdb);
-			return 100;
+			assert(statement->rsr_rows_pending > 0
+				   || (!statement->rsr_select_format));
 		}
 
-		if (statement->rsr_flags & RSR_stream_err) {
+		/* Receive queued responses until we have some data for this cursor
+		   or an error status has been received. */
 
-			/* The previous batch of receives ended with an error status.
-			   We're all done returning data in the local queue.
-			   Return that error status vector to the user. */
+		/* We've either got data, or some is on the way, or we have an error, or we have EOF */
 
-			/* Stuff in the error result to the user's vector */
+		assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0)
+			   || statement->rsr_status_vector[1]
+			   || statement->rsr_flags & (RSR_eof));
 
-			statement->rsr_flags &= ~RSR_stream_err;
-
-			memcpy(user_status, statement->rsr_status_vector,
-				   sizeof(statement->rsr_status_vector));
-			memset(statement->rsr_status_vector, 0,
-				   sizeof(statement->rsr_status_vector));
-
-			return error(user_status);
+		while (!(statement->rsr_status_vector[1])	/* received a database error */
+			   &&!(statement->rsr_flags & (RSR_eof))	/* reached end of cursor */
+			   &&!(statement->rsr_msgs_waiting >= 2)	/* Have looked ahead for end of batch */
+			   &&!(statement->rsr_rows_pending == 0))
+		{	/* Hit end of batch */
+			if (!receive_queued_packet(trdb, port, user_status,
+										statement->rsr_id))
+			{
+				return error(user_status);
+			}
 		}
-	}
-	statement->rsr_msgs_waiting--;
 
-	message = statement->rsr_message;
-	statement->rsr_message = message->msg_next;
+		if (!statement->rsr_msgs_waiting)
+		{
+			if (statement->rsr_flags & RSR_eof)
+			{
+				statement->rsr_flags &= ~RSR_eof;
 
-	if (statement->rsr_user_select_format == statement->rsr_select_format) {
-		if ((U_IPTR) msg & (ALIGNMENT - 1))
-			memcpy(msg, message->msg_address, msg_length);
-		else
-			mov_faster((SLONG *) message->msg_address, (SLONG *) msg,
-					   msg_length);
-	}
-	else {
-		if (mov_dsql_message
-			(message->msg_address, statement->rsr_select_format, msg,
-			 statement->rsr_user_select_format)) return error(user_status);
-	}
+				/* Set up status vector and RESTORE_THREAD_DATA in common return_success */
 
-	message->msg_address = NULL;
+				(void) return_success(rdb);
+				return 100;
+			}
+
+			if (statement->rsr_flags & RSR_stream_err) {
+
+				/* The previous batch of receives ended with an error status.
+				   We're all done returning data in the local queue.
+				   Return that error status vector to the user. */
+
+				/* Stuff in the error result to the user's vector */
+
+				statement->rsr_flags &= ~RSR_stream_err;
+
+				memcpy(user_status, statement->rsr_status_vector,
+					   sizeof(statement->rsr_status_vector));
+				memset(statement->rsr_status_vector, 0,
+					   sizeof(statement->rsr_status_vector));
+
+				return error(user_status);
+			}
+		}
+		statement->rsr_msgs_waiting--;
+
+		message = statement->rsr_message;
+		statement->rsr_message = message->msg_next;
+
+		if (statement->rsr_user_select_format == statement->rsr_select_format) {
+			if ((U_IPTR) msg & (ALIGNMENT - 1))
+				memcpy(msg, message->msg_address, msg_length);
+			else
+				mov_faster((SLONG *) message->msg_address, (SLONG *) msg,
+						   msg_length);
+		}
+		else {
+			if (mov_dsql_message
+				(message->msg_address, statement->rsr_select_format, msg,
+				 statement->rsr_user_select_format)) return error(user_status);
+		}
+
+		message->msg_address = NULL;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 	RETURN_SUCCESS;
 }
 
@@ -1887,33 +2071,43 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 	rdb = statement->rsr_rdb;
 	ERROR_INIT(env);
 
-/* make sure the protocol supports it */
+	/* make sure the protocol supports it */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
 		return unsupported(user_status);
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_free_statement;
-	free_stmt = &packet->p_sqlfree;
-	free_stmt->p_sqlfree_statement = statement->rsr_id;
-	free_stmt->p_sqlfree_option = option;
-
-	if (send_and_receive(rdb, packet, user_status))
-		return error(user_status);
-
-	statement->rsr_handle = (int *) packet->p_resp.p_resp_object;
-	if (packet->p_resp.p_resp_object == 0xFFFF) {
-		release_sql_request(statement);
-		*stmt_handle = NULL;
 	}
-	else {
-		statement->rsr_flags &= ~RSR_fetched;
-		statement->rsr_rtr = NULL;
 
-		if (!clear_queue(rdb->rdb_port, user_status))
+	try
+	{
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_free_statement;
+		free_stmt = &packet->p_sqlfree;
+		free_stmt->p_sqlfree_statement = statement->rsr_id;
+		free_stmt->p_sqlfree_option = option;
+
+		if (send_and_receive(rdb, packet, user_status)) {
 			return error(user_status);
+		}
 
-		REMOTE_reset_statement(statement);
+		statement->rsr_handle = (int *) packet->p_resp.p_resp_object;
+		if (packet->p_resp.p_resp_object == 0xFFFF) {
+			release_sql_request(statement);
+			*stmt_handle = NULL;
+		}
+		else {
+			statement->rsr_flags &= ~RSR_fetched;
+			statement->rsr_rtr = NULL;
+
+			if (!clear_queue(rdb->rdb_port, user_status))
+				return error(user_status);
+
+			REMOTE_reset_statement(statement);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
 	}
 
 	RETURN_SUCCESS;
@@ -1946,64 +2140,76 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 
 	SET_THREAD_DATA;
 
-/* Check and validate handles, etc. */
+	/* Check and validate handles, etc. */
 
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
 	rdb = statement->rsr_rdb;
 	ERROR_INIT(env);
 
-/* make sure the protocol supports it */
+	/* make sure the protocol supports it */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
 		return unsupported(user_status);
-
-/* Parse the blr describing the message, if there is any. */
-
-	if (blr_length) {
-		if (statement->rsr_bind_format) {
-			ALLR_RELEASE(statement->rsr_bind_format);
-			statement->rsr_bind_format = NULL;
-		}
-		if ((message = PARSE_messages(blr, blr_length)) != (MSG) - 1) {
-			statement->rsr_bind_format = (FMT) message->msg_address;
-			ALLR_RELEASE(message);
-		}
 	}
 
-	if (!statement->rsr_buffer) {
-		statement->rsr_buffer = message = (MSG) ALLOCV(type_msg, 0);
-		statement->rsr_message = message;
-		message->msg_next = message;
+	try
+	{
+		/* Parse the blr describing the message, if there is any. */
+
+		if (blr_length) {
+			if (statement->rsr_bind_format) {
+				ALLR_RELEASE(statement->rsr_bind_format);
+				statement->rsr_bind_format = NULL;
+			}
+			if ((message = PARSE_messages(blr, blr_length)) != (MSG) - 1) {
+				statement->rsr_bind_format = (FMT) message->msg_address;
+				ALLR_RELEASE(message);
+			}
+		}
+
+		if (!statement->rsr_buffer) {
+			statement->rsr_buffer = message = (MSG) ALLOCV(type_msg, 0);
+			statement->rsr_message = message;
+			message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
-		message->msg_prior = message;
+			message->msg_prior = message;
 #endif
-		statement->rsr_fmt_length = 0;
+			statement->rsr_fmt_length = 0;
+		}
+		else {
+			message = statement->rsr_message;
+		}
+
+		message->msg_address = msg;
+		statement->rsr_format = statement->rsr_bind_format;
+
+		/* set up the packet for the other guy... */
+
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_insert;
+		sqldata = &packet->p_sqldata;
+		sqldata->p_sqldata_statement = statement->rsr_id;
+		sqldata->p_sqldata_blr.cstr_length = blr_length;
+		sqldata->p_sqldata_blr.cstr_address = blr;
+		sqldata->p_sqldata_message_number = msg_type;
+		sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
+
+		if (!send_packet(rdb->rdb_port, packet, user_status)) {
+			return error(user_status);
+		}
+
+		message->msg_address = NULL;
+
+		if (!receive_response(rdb, packet)) {
+			return error(user_status);
+		}
 	}
-	else
-		message = statement->rsr_message;
-
-	message->msg_address = msg;
-	statement->rsr_format = statement->rsr_bind_format;
-
-/* set up the packet for the other guy... */
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_insert;
-	sqldata = &packet->p_sqldata;
-	sqldata->p_sqldata_statement = statement->rsr_id;
-	sqldata->p_sqldata_blr.cstr_length = blr_length;
-	sqldata->p_sqldata_blr.cstr_address = blr;
-	sqldata->p_sqldata_message_number = msg_type;
-	sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
-
-	if (!send_packet(rdb->rdb_port, packet, user_status))
-		return error(user_status);
-
-	message->msg_address = NULL;
-
-	if (!receive_response(rdb, packet))
-		return error(user_status);
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -2045,57 +2251,68 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status, RTR * rtr_handle, RSR * stmt_handl
 	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
 	rdb = statement->rsr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
-	if (transaction = *rtr_handle)
+	if (transaction = *rtr_handle) {
 		CHECK_HANDLE(transaction, type_rtr, gds_bad_trans_handle);
+	}
 	ERROR_INIT(env);
 
-/* reset current statement */
+	/* reset current statement */
 
 	if (!clear_queue(rdb->rdb_port, user_status))
 		return error(user_status);
 
 	REMOTE_reset_statement(statement);
 
-/* if we're less than protocol 7, the remote server doesn't support 
- * DSQL, so we're done... */
+	/* if we're less than protocol 7, the remote server doesn't support 
+	 * DSQL, so we're done... */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
 		return unsupported(user_status);
+	}
 
-/* set up the packet for the other guy... */
+	try
+	{
+		/* set up the packet for the other guy... */
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_prepare_statement;
-	prepare = &packet->p_sqlst;
-	prepare->p_sqlst_transaction = (transaction) ? transaction->rtr_id : 0;
-	prepare->p_sqlst_statement = statement->rsr_id;
-	prepare->p_sqlst_SQL_dialect = dialect;
-	prepare->p_sqlst_SQL_str.cstr_length =
-		length ? length : strlen((char *) string);
-	prepare->p_sqlst_SQL_str.cstr_address = (UCHAR *) string;
-	prepare->p_sqlst_items.cstr_length = item_length;
-	prepare->p_sqlst_items.cstr_address = (UCHAR *) items;
-	prepare->p_sqlst_buffer_length = buffer_length;
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_prepare_statement;
+		prepare = &packet->p_sqlst;
+		prepare->p_sqlst_transaction = (transaction) ? transaction->rtr_id : 0;
+		prepare->p_sqlst_statement = statement->rsr_id;
+		prepare->p_sqlst_SQL_dialect = dialect;
+		prepare->p_sqlst_SQL_str.cstr_length =
+			length ? length : strlen((char *) string);
+		prepare->p_sqlst_SQL_str.cstr_address = (UCHAR *) string;
+		prepare->p_sqlst_items.cstr_length = item_length;
+		prepare->p_sqlst_items.cstr_address = (UCHAR *) items;
+		prepare->p_sqlst_buffer_length = buffer_length;
 
-	if (!send_packet(rdb->rdb_port, packet, user_status))
-		return error(user_status);
+		if (!send_packet(rdb->rdb_port, packet, user_status))
+			return error(user_status);
 
-	statement->rsr_flags &= ~RSR_blob;
+		statement->rsr_flags &= ~RSR_blob;
 
-/* Set up for the response packet. */
+		/* Set up for the response packet. */
 
-	response = &packet->p_resp;
-	temp = response->p_resp_data;
-	response->p_resp_data.cstr_allocated = buffer_length;
-	response->p_resp_data.cstr_address = (UCHAR *) buffer;
+		response = &packet->p_resp;
+		temp = response->p_resp_data;
+		response->p_resp_data.cstr_allocated = buffer_length;
+		response->p_resp_data.cstr_address = (UCHAR *) buffer;
 
-	status = receive_response(rdb, packet);
+		status = receive_response(rdb, packet);
 
-	if (response->p_resp_object)
-		statement->rsr_flags |= RSR_blob;
-	response->p_resp_data = temp;
-	if (!status)
-		return error(user_status);
+		if (response->p_resp_object)
+			statement->rsr_flags |= RSR_blob;
+		response->p_resp_data = temp;
+		if (!status) {
+			return error(user_status);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -2136,36 +2353,49 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 
 	SET_THREAD_DATA;
 
-/* Check and validate handles, etc. */
+	/* Check and validate handles, etc. */
 
 	statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, gds_bad_req_handle);
 	rdb = statement->rsr_rdb;
 	ERROR_INIT(env);
 
-/* make sure the protocol supports it */
+	/* make sure the protocol supports it */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
 		return unsupported(user_status);
-
-/* set up the packet for the other guy... */
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_set_cursor;
-	sqlcur = &packet->p_sqlcur;
-	sqlcur->p_sqlcur_statement = statement->rsr_id;
-	if (!cursor) {
-	/** Return CURSOR unknown error **/
-		user_status[1] = isc_dsql_cursor_err;
-		return error(user_status);
 	}
-	name_l = strlen(cursor);
-	sqlcur->p_sqlcur_cursor_name.cstr_length = name_l + 1;
-	sqlcur->p_sqlcur_cursor_name.cstr_address = (UCHAR *) cursor;
-	sqlcur->p_sqlcur_type = type;
 
-	if (send_and_receive(rdb, packet, user_status))
-		return error(user_status);
+	try
+	{
+		/* set up the packet for the other guy... */
+
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_set_cursor;
+		sqlcur = &packet->p_sqlcur;
+		sqlcur->p_sqlcur_statement = statement->rsr_id;
+
+		if (!cursor)
+		{
+			/** Return CURSOR unknown error **/
+			user_status[1] = isc_dsql_cursor_err;
+			return error(user_status);
+		}
+
+		name_l = strlen(cursor);
+		sqlcur->p_sqlcur_cursor_name.cstr_length = name_l + 1;
+		sqlcur->p_sqlcur_cursor_name.cstr_address = (UCHAR *) cursor;
+		sqlcur->p_sqlcur_type = type;
+
+		if (send_and_receive(rdb, packet, user_status)) {
+			return error(user_status);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -2201,13 +2431,21 @@ STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
 	rdb = statement->rsr_rdb;
 	ERROR_INIT(env);
 
-/* make sure the protocol supports it */
+	/* make sure the protocol supports it */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
 		return unsupported(user_status);
+	}
 
-	status = info(user_status, rdb, op_info_sql, statement->rsr_id, 0,
-				  item_length, items, 0, 0, buffer_length, buffer);
+	try
+	{
+		status = info(user_status, rdb, op_info_sql, statement->rsr_id, 0,
+					  item_length, items, 0, 0, buffer_length, buffer);
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		status = e.value();
+	}
 
 	RESTORE_THREAD_DATA;
 
@@ -2254,187 +2492,197 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 	ERROR_INIT(env);
 	port = rdb->rdb_port;
 
-/* Build the primary packet to get the operation started. */
+	/* Build the primary packet to get the operation started. */
 
 	packet = &rdb->rdb_packet;
 	segment = &packet->p_sgmt;
 	response = &packet->p_resp;
 	temp = response->p_resp_data;
 
-/* Handle old protocol.  Also handle new protocol on a blob that has
-   been created rather than opened.   (This should yield an error.) */
+	try
+	{
+		/* Handle old protocol.  Also handle new protocol on a blob that has
+		   been created rather than opened.   (This should yield an error.) */
 
-	if ((port->port_flags & PORT_rpc) || (blob->rbl_flags & RBL_create)) {
-		packet->p_operation = op_get_segment;
-		segment->p_sgmt_length = buffer_length;
-		segment->p_sgmt_blob = blob->rbl_id;
-		segment->p_sgmt_segment.cstr_length = 0;
-		if (!send_packet(rdb->rdb_port, packet, user_status))
-			return error(user_status);
-		response->p_resp_data.cstr_allocated = buffer_length;
-		response->p_resp_data.cstr_address = buffer;
+		if ((port->port_flags & PORT_rpc) || (blob->rbl_flags & RBL_create))
+		{
+			packet->p_operation = op_get_segment;
+			segment->p_sgmt_length = buffer_length;
+			segment->p_sgmt_blob = blob->rbl_id;
+			segment->p_sgmt_segment.cstr_length = 0;
+			if (!send_packet(rdb->rdb_port, packet, user_status)) {
+				return error(user_status);
+			}
+			response->p_resp_data.cstr_allocated = buffer_length;
+			response->p_resp_data.cstr_address = buffer;
 
-		if (!receive_response(rdb, packet)) {
+			if (!receive_response(rdb, packet)) {
+				response->p_resp_data = temp;
+				return error(user_status);
+			}
+
+			*length = response->p_resp_data.cstr_length;
 			response->p_resp_data = temp;
-			return error(user_status);
+			RESTORE_THREAD_DATA;
+			return user_status[1];
 		}
 
-		*length = response->p_resp_data.cstr_length;
+		/* New protocol -- ask for a 1K chunk of blob and 
+		   fill segment requests from it until its time to
+		   get the next section.  In other words, get a bunch,
+		   pass it out piece by piece, then when there isn't 
+		   enough left, ask for more. */
+
+		/* set up the status vector for the calls we're going to fake */
+
+		v = user_status;
+		*v++ = gds_arg_gds;
+		v[0] = SUCCESS;
+		v[1] = gds_arg_end;
+		*length = 0;
+
+		/* if we're already done, stop now */
+
+		if (blob->rbl_flags & RBL_eof) {
+			*v++ = gds_segstr_eof;
+			RESTORE_THREAD_DATA;
+			return user_status[1];
+		}
+
+		/* Here's the loop, passing out data from our basket & refilling it.
+		   Our buffer (described by the structure blob) is counted strings 
+		   <count word> <string> <count word> <string>... */
+
+		while (TRUE) {
+			/* If there's data to be given away, give some away (p points to the
+			   local data) */
+
+			if (blob->rbl_length) {
+				p = blob->rbl_ptr;
+
+				/* If there was a fragment left over last time use it */
+
+				if (l = blob->rbl_fragment_length)
+					blob->rbl_fragment_length = 0;
+
+				/* otherwise pick up the count word as the length, & decrement the
+				   local length */
+
+				else {
+					l = *p++;
+					l += *p++ << 8;
+					blob->rbl_length -= 2;
+				}
+
+				/* Now check that what we've got fits. 
+				   If not, set up the fragment pointer and set the status vector */
+
+				if (l > buffer_length) {
+					blob->rbl_fragment_length = l - buffer_length;
+					l = buffer_length;
+					*v = gds_segment;
+				}
+
+				/* and, just for yucks, see if we're exactly using up the fragment
+				   part of a previous incomplete read - if so mark this as an
+				   incomplete read */
+
+				if (l == buffer_length &&
+					l == blob->rbl_length && (blob->rbl_flags & RBL_segment))
+					*v = gds_segment;
+
+				/* finally set up the return length, decrement the current length,
+				   copy the data, and indicate where to start next time. */
+
+				*length += l;
+				blob->rbl_length -= l;
+				blob->rbl_offset += l;
+				buffer_length -= l;
+
+				if (l) {
+					if (((U_IPTR) buffer & (ALIGNMENT - 1))
+						|| ((U_IPTR) p & (ALIGNMENT - 1)))
+						memcpy(buffer, p, l);
+					else
+						mov_faster((SLONG *) p, (SLONG *) buffer, l);
+				}
+
+				buffer += l;
+				p += l;
+				blob->rbl_ptr = p;
+
+				/* return if we've filled up the caller's buffer, or completed a
+				   segment */
+
+				if (!buffer_length ||
+					blob->rbl_length || !(blob->rbl_flags & RBL_segment)) break;
+			}
+
+			/* We're done with buffer.  If this was the last, we're done */
+
+			if (blob->rbl_flags & RBL_eof_pending) {
+				blob->rbl_flags |= RBL_eof;
+				*v = gds_segstr_eof;
+				break;
+			}
+
+			/* Preparatory to asking for more data, use input buffer length
+			   to cue more efficient blob buffering. */
+
+			/* Allocate 2 extra bytes to handle the special case where the
+			   segment size of blob in the database is equal to the buffer
+			   size that the user has passed.
+
+			   Do not go into this loop if we already have a buffer 
+			   of size 65535 or 65534. */
+
+			if (buffer_length > blob->rbl_buffer_length - sizeof(USHORT) &&
+				blob->rbl_buffer_length <= MAX_USHORT - sizeof(USHORT)) {
+				ULONG new_size = buffer_length + sizeof(USHORT);
+
+				if (new_size > MAX_USHORT)	/* Check if we've overflown */
+					new_size = buffer_length;
+				if (blob->rbl_buffer != blob->rbl_data)
+					ALLR_RELEASE(blob->rbl_buffer);
+				blob->rbl_ptr = blob->rbl_buffer = ALLR_alloc((SLONG) new_size);
+				/* NOMEM: ALLR_alloc handled */
+				/* FREE:  in release_blob()  */
+				blob->rbl_buffer_length = (USHORT) new_size;
+			}
+
+			/* We need more data.  Ask for it politely */
+
+			packet->p_operation = op_get_segment;
+			segment->p_sgmt_length = blob->rbl_buffer_length;
+			segment->p_sgmt_blob = blob->rbl_id;
+			segment->p_sgmt_segment.cstr_length = 0;
+			if (!send_packet(rdb->rdb_port, packet, user_status))
+				return error(user_status);
+
+			response->p_resp_data.cstr_allocated = blob->rbl_buffer_length;
+			response->p_resp_data.cstr_address = blob->rbl_buffer;
+
+			if (!receive_response(rdb, packet)) {
+				response->p_resp_data = temp;
+				return error(user_status);
+			}
+
+			blob->rbl_length = response->p_resp_data.cstr_length;
+			blob->rbl_ptr = blob->rbl_buffer;
+			blob->rbl_flags &= ~RBL_segment;
+			if (response->p_resp_object == 1)
+				blob->rbl_flags |= RBL_segment;
+			else if (response->p_resp_object == 2)
+				blob->rbl_flags |= RBL_eof_pending;
+		}
+
 		response->p_resp_data = temp;
+	}
+	catch (const Firebird::status_exception& e)
+	{
 		RESTORE_THREAD_DATA;
-		return user_status[1];
+		return e.value();
 	}
-
-/* New protocol -- ask for a 1K chunk of blob and 
-   fill segment requests from it until its time to
-   get the next section.  In other words, get a bunch,
-   pass it out piece by piece, then when there isn't 
-   enough left, ask for more. */
-
-/* set up the status vector for the calls we're going to fake */
-
-	v = user_status;
-	*v++ = gds_arg_gds;
-	v[0] = SUCCESS;
-	v[1] = gds_arg_end;
-	*length = 0;
-
-/* if we're already done, stop now */
-
-	if (blob->rbl_flags & RBL_eof) {
-		*v++ = gds_segstr_eof;
-		RESTORE_THREAD_DATA;
-		return user_status[1];
-	}
-
-/* Here's the loop, passing out data from our basket & refilling it.
-   Our buffer (described by the structure blob) is counted strings 
-   <count word> <string> <count word> <string>... */
-
-	while (TRUE) {
-		/* If there's data to be given away, give some away (p points to the
-		   local data) */
-
-		if (blob->rbl_length) {
-			p = blob->rbl_ptr;
-
-			/* If there was a fragment left over last time use it */
-
-			if (l = blob->rbl_fragment_length)
-				blob->rbl_fragment_length = 0;
-
-			/* otherwise pick up the count word as the length, & decrement the
-			   local length */
-
-			else {
-				l = *p++;
-				l += *p++ << 8;
-				blob->rbl_length -= 2;
-			}
-
-			/* Now check that what we've got fits. 
-			   If not, set up the fragment pointer and set the status vector */
-
-			if (l > buffer_length) {
-				blob->rbl_fragment_length = l - buffer_length;
-				l = buffer_length;
-				*v = gds_segment;
-			}
-
-			/* and, just for yucks, see if we're exactly using up the fragment
-			   part of a previous incomplete read - if so mark this as an
-			   incomplete read */
-
-			if (l == buffer_length &&
-				l == blob->rbl_length && (blob->rbl_flags & RBL_segment))
-				*v = gds_segment;
-
-			/* finally set up the return length, decrement the current length,
-			   copy the data, and indicate where to start next time. */
-
-			*length += l;
-			blob->rbl_length -= l;
-			blob->rbl_offset += l;
-			buffer_length -= l;
-
-			if (l) {
-				if (((U_IPTR) buffer & (ALIGNMENT - 1))
-					|| ((U_IPTR) p & (ALIGNMENT - 1)))
-					memcpy(buffer, p, l);
-				else
-					mov_faster((SLONG *) p, (SLONG *) buffer, l);
-			}
-
-			buffer += l;
-			p += l;
-			blob->rbl_ptr = p;
-
-			/* return if we've filled up the caller's buffer, or completed a
-			   segment */
-
-			if (!buffer_length ||
-				blob->rbl_length || !(blob->rbl_flags & RBL_segment)) break;
-		}
-
-		/* We're done with buffer.  If this was the last, we're done */
-
-		if (blob->rbl_flags & RBL_eof_pending) {
-			blob->rbl_flags |= RBL_eof;
-			*v = gds_segstr_eof;
-			break;
-		}
-
-		/* Preparatory to asking for more data, use input buffer length
-		   to cue more efficient blob buffering. */
-
-		/* Allocate 2 extra bytes to handle the special case where the
-		   segment size of blob in the database is equal to the buffer
-		   size that the user has passed.
-
-		   Do not go into this loop if we already have a buffer 
-		   of size 65535 or 65534. */
-
-		if (buffer_length > blob->rbl_buffer_length - sizeof(USHORT) &&
-			blob->rbl_buffer_length <= MAX_USHORT - sizeof(USHORT)) {
-			ULONG new_size = buffer_length + sizeof(USHORT);
-
-			if (new_size > MAX_USHORT)	/* Check if we've overflown */
-				new_size = buffer_length;
-			if (blob->rbl_buffer != blob->rbl_data)
-				ALLR_RELEASE(blob->rbl_buffer);
-			blob->rbl_ptr = blob->rbl_buffer = ALLR_alloc((SLONG) new_size);
-			/* NOMEM: ALLR_alloc handled */
-			/* FREE:  in release_blob()  */
-			blob->rbl_buffer_length = (USHORT) new_size;
-		}
-
-		/* We need more data.  Ask for it politely */
-
-		packet->p_operation = op_get_segment;
-		segment->p_sgmt_length = blob->rbl_buffer_length;
-		segment->p_sgmt_blob = blob->rbl_id;
-		segment->p_sgmt_segment.cstr_length = 0;
-		if (!send_packet(rdb->rdb_port, packet, user_status))
-			return error(user_status);
-
-		response->p_resp_data.cstr_allocated = blob->rbl_buffer_length;
-		response->p_resp_data.cstr_address = blob->rbl_buffer;
-
-		if (!receive_response(rdb, packet)) {
-			response->p_resp_data = temp;
-			return error(user_status);
-		}
-
-		blob->rbl_length = response->p_resp_data.cstr_length;
-		blob->rbl_ptr = blob->rbl_buffer;
-		blob->rbl_flags &= ~RBL_segment;
-		if (response->p_resp_object == 1)
-			blob->rbl_flags |= RBL_segment;
-		else if (response->p_resp_object == 2)
-			blob->rbl_flags |= RBL_eof_pending;
-	}
-
-	response->p_resp_data = temp;
 
 	RESTORE_THREAD_DATA;
 
@@ -2480,60 +2728,70 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 	transaction = *tra_handle;
 	ERROR_INIT(env);
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
 		return unsupported(user_status);
+	}
 
-/* Parse the sdl in case blr_d_float must be converted to blr_double */
+	try
+	{
+		/* Parse the sdl in case blr_d_float must be converted to blr_double */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6)
-		new_sdl = SDL_prepare_slice(sdl, sdl_length);
-	else
-		new_sdl = sdl;
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6) {
+			new_sdl = SDL_prepare_slice(sdl, sdl_length);
+		} else {
+			new_sdl = sdl;
+		}
 
-/* The modified (perhaps) sdl is send to the remote connection.  The
-   original sdl is used to process the slice data when it is received.
-   (This is why both 'new_sdl' and 'sdl' are saved in the packet.) */
+		/* The modified (perhaps) sdl is send to the remote connection.  The
+		   original sdl is used to process the slice data when it is received.
+		   (This is why both 'new_sdl' and 'sdl' are saved in the packet.) */
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_get_slice;
-	data = &packet->p_slc;
-	data->p_slc_transaction = transaction->rtr_id;
-	data->p_slc_id = *array_id;
-	data->p_slc_length = slice_length;
-	data->p_slc_sdl.cstr_length = sdl_length;
-	data->p_slc_sdl.cstr_address = new_sdl;
-	data->p_slc_parameters.cstr_length = param_length;
-	data->p_slc_parameters.cstr_address = param;
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_get_slice;
+		data = &packet->p_slc;
+		data->p_slc_transaction = transaction->rtr_id;
+		data->p_slc_id = *array_id;
+		data->p_slc_length = slice_length;
+		data->p_slc_sdl.cstr_length = sdl_length;
+		data->p_slc_sdl.cstr_address = new_sdl;
+		data->p_slc_parameters.cstr_length = param_length;
+		data->p_slc_parameters.cstr_address = param;
 
-	data->p_slc_slice.lstr_length = 0;
-	data->p_slc_slice.lstr_address = slice;
+		data->p_slc_slice.lstr_length = 0;
+		data->p_slc_slice.lstr_address = slice;
 
-	response = &packet->p_slr;
-	response->p_slr_sdl = sdl;
-	response->p_slr_sdl_length = sdl_length;
-	response->p_slr_slice.lstr_address = slice;
-	response->p_slr_slice.lstr_length = slice_length;
+		response = &packet->p_slr;
+		response->p_slr_sdl = sdl;
+		response->p_slr_sdl_length = sdl_length;
+		response->p_slr_slice.lstr_address = slice;
+		response->p_slr_slice.lstr_length = slice_length;
 
-	err_flag = FALSE;
-	if (!send_packet(rdb->rdb_port, packet, user_status))
-		err_flag = TRUE;
-	else {
-		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
-		if (!receive_packet(rdb->rdb_port, packet, user_status))
+		err_flag = FALSE;
+		if (!send_packet(rdb->rdb_port, packet, user_status))
 			err_flag = TRUE;
-	}
-	if (new_sdl != sdl)
-		gds__free(new_sdl);
-	if (err_flag)
-		return error(user_status);
+		else {
+			packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+			if (!receive_packet(rdb->rdb_port, packet, user_status))
+				err_flag = TRUE;
+		}
+		if (new_sdl != sdl)
+			gds__free(new_sdl);
+		if (err_flag)
+			return error(user_status);
 
-	if (packet->p_operation != op_slice) {
-		check_response(rdb, packet);
-		return error(user_status);
-	}
+		if (packet->p_operation != op_slice) {
+			check_response(rdb, packet);
+			return error(user_status);
+		}
 
-	if (return_length)
-		*return_length = response->p_slr_length;
+		if (return_length)
+			*return_length = response->p_slr_length;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -2584,18 +2842,27 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 		p_blob->p_blob_bpb.cstr_address = bpb;
 	}
 
-	if (send_and_receive(rdb, packet, user_status))
-		return error(user_status);
+	try
+	{
+		if (send_and_receive(rdb, packet, user_status)) {
+			return error(user_status);
+		}
 
-	*blob_handle = blob = (RBL) ALLOCV(type_rbl, BLOB_LENGTH);
-	blob->rbl_rdb = rdb;
-	blob->rbl_rtr = transaction;
-	blob->rbl_id = packet->p_resp.p_resp_object;
-	blob->rbl_buffer_length = BLOB_LENGTH;
-	SET_OBJECT(rdb, blob, blob->rbl_id);
-	blob->rbl_next = transaction->rtr_blobs;
-	blob->rbl_ptr = blob->rbl_buffer = blob->rbl_data;
-	transaction->rtr_blobs = blob;
+		*blob_handle = blob = (RBL) ALLOCV(type_rbl, BLOB_LENGTH);
+		blob->rbl_rdb = rdb;
+		blob->rbl_rtr = transaction;
+		blob->rbl_id = packet->p_resp.p_resp_object;
+		blob->rbl_buffer_length = BLOB_LENGTH;
+		SET_OBJECT(rdb, blob, blob->rbl_id);
+		blob->rbl_next = transaction->rtr_blobs;
+		blob->rbl_ptr = blob->rbl_buffer = blob->rbl_data;
+		transaction->rtr_blobs = blob;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -2629,25 +2896,37 @@ STATUS GDS_PREPARE(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-/* Handle historical version */
+	try
+	{
+		/* Handle historical version */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
-		if (msg_length)
-			return unsupported(user_status);
-		if (!release_object(rdb, op_prepare, transaction->rtr_id))
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
+			if (msg_length) {
+				return unsupported(user_status);
+			}
+			if (!release_object(rdb, op_prepare, transaction->rtr_id)) {
+				return error(user_status);
+			}
+			RETURN_SUCCESS;
+		}
+
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_prepare2;
+		packet->p_prep.p_prep_transaction = transaction->rtr_id;
+		packet->p_prep.p_prep_data.cstr_length = msg_length;
+		packet->p_prep.p_prep_data.cstr_address = msg;
+
+		if (!send_packet(rdb->rdb_port, packet, user_status) ||
+			!receive_response(rdb, packet))
+		{
 			return error(user_status);
-		RETURN_SUCCESS;
+		}
 	}
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_prepare2;
-	packet->p_prep.p_prep_transaction = transaction->rtr_id;
-	packet->p_prep.p_prep_data.cstr_length = msg_length;
-	packet->p_prep.p_prep_data.cstr_address = msg;
-
-	if (!send_packet(rdb->rdb_port, packet, user_status) ||
-		!receive_response(rdb, packet))
-		return error(user_status);
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -2679,7 +2958,7 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 
 	SET_THREAD_DATA;
 
-/* Sniff out handles, etc, and find the various blocks. */
+	/* Sniff out handles, etc, and find the various blocks. */
 
 	CHECK_HANDLE((*blob_handle), type_rbl, gds_bad_segstr_handle);
 	blob = *blob_handle;
@@ -2688,52 +2967,61 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 	ERROR_INIT(env);
 	port = rdb->rdb_port;
 
-/* If this is an ancient protocol, just send the segment.
-   Also handle the new protocol on a blob that has been
-   opened rather than created.   (This should yield an error.) */
+	try
+	{
+		/* If this is an ancient protocol, just send the segment.
+		   Also handle the new protocol on a blob that has been
+		   opened rather than created.   (This should yield an error.) */
 
-	if ((port->port_flags & PORT_rpc) || !(blob->rbl_flags & RBL_create)) {
-		(void) send_blob(user_status, blob, segment_length, segment);
-		RESTORE_THREAD_DATA;
-		return user_status[1];
-	}
-
-/* If the buffer can't hold the complete incoming segment, flush out the
-   buffer.  If the incoming segment is too large to fit into the blob
-   buffer, just send it as a single segment. */
-
-	p = blob->rbl_ptr;
-	l = blob->rbl_buffer_length - (p - blob->rbl_buffer);
-
-	if ((ULONG) segment_length + 2 > l) {
-		if (blob->rbl_ptr > blob->rbl_buffer) {
-			if (send_blob(user_status, blob, 0, NULL)) {
-				RESTORE_THREAD_DATA;
-				return user_status[1];
-			}
-		}
-		if ((ULONG) segment_length + 2 > blob->rbl_buffer_length) {
+		if ((port->port_flags & PORT_rpc) || !(blob->rbl_flags & RBL_create))
+		{
 			(void) send_blob(user_status, blob, segment_length, segment);
 			RESTORE_THREAD_DATA;
 			return user_status[1];
 		}
-		p = blob->rbl_buffer;
+
+		/* If the buffer can't hold the complete incoming segment, flush out the
+		   buffer.  If the incoming segment is too large to fit into the blob
+		   buffer, just send it as a single segment. */
+
+		p = blob->rbl_ptr;
+		l = blob->rbl_buffer_length - (p - blob->rbl_buffer);
+
+		if ((ULONG) segment_length + 2 > l) {
+			if (blob->rbl_ptr > blob->rbl_buffer) {
+				if (send_blob(user_status, blob, 0, NULL)) {
+					RESTORE_THREAD_DATA;
+					return user_status[1];
+				}
+			}
+			if ((ULONG) segment_length + 2 > blob->rbl_buffer_length) {
+				(void) send_blob(user_status, blob, segment_length, segment);
+				RESTORE_THREAD_DATA;
+				return user_status[1];
+			}
+			p = blob->rbl_buffer;
+		}
+
+		/* Move segment length and data into blob buffer */
+
+		*p++ = (UCHAR) segment_length;
+		*p++ = segment_length >> 8;
+
+		if (segment_length) {
+			if (((U_IPTR) segment & (ALIGNMENT - 1))
+				|| ((U_IPTR) p & (ALIGNMENT - 1))) memcpy(p, segment,
+														  segment_length);
+			else
+				mov_faster((SLONG *) segment, (SLONG *) p, segment_length);
+		}
+
+		blob->rbl_ptr = p + segment_length;
 	}
-
-/* Move segment length and data into blob buffer */
-
-	*p++ = (UCHAR) segment_length;
-	*p++ = segment_length >> 8;
-
-	if (segment_length) {
-		if (((U_IPTR) segment & (ALIGNMENT - 1))
-			|| ((U_IPTR) p & (ALIGNMENT - 1))) memcpy(p, segment,
-													  segment_length);
-		else
-			mov_faster((SLONG *) segment, (SLONG *) p, segment_length);
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
 	}
-
-	blob->rbl_ptr = p + segment_length;
 
 	RETURN_SUCCESS;
 }
@@ -2775,46 +3063,58 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 	transaction = *tra_handle;
 	ERROR_INIT(env);
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
 		return unsupported(user_status);
+	}
 
-/* Parse the sdl in case blr_d_float must be converted to blr_double */
+	try
+	{
+		/* Parse the sdl in case blr_d_float must be converted to blr_double */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6)
-		new_sdl = SDL_prepare_slice(sdl, sdl_length);
-	else
-		new_sdl = sdl;
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6) {
+			new_sdl = SDL_prepare_slice(sdl, sdl_length);
+		} else {
+			new_sdl = sdl;
+		}
 
-/* The modified (perhaps) sdl is send to the remote connection.  The
-   original sdl is used to process the slice data before it is sent.
-   (This is why both 'new_sdl' and 'sdl' are saved in the packet.) */
+		/* The modified (perhaps) sdl is send to the remote connection.  The
+		   original sdl is used to process the slice data before it is sent.
+		   (This is why both 'new_sdl' and 'sdl' are saved in the packet.) */
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_put_slice;
-	data = &packet->p_slc;
-	data->p_slc_transaction = transaction->rtr_id;
-	data->p_slc_id = *array_id;
-	data->p_slc_length = slice_length;
-	data->p_slc_sdl.cstr_length = sdl_length;
-	data->p_slc_sdl.cstr_address = new_sdl;
-	data->p_slc_parameters.cstr_length = param_length;
-	data->p_slc_parameters.cstr_address = param;
-	data->p_slc_slice.lstr_length = slice_length;
-	data->p_slc_slice.lstr_address = slice;
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_put_slice;
+		data = &packet->p_slc;
+		data->p_slc_transaction = transaction->rtr_id;
+		data->p_slc_id = *array_id;
+		data->p_slc_length = slice_length;
+		data->p_slc_sdl.cstr_length = sdl_length;
+		data->p_slc_sdl.cstr_address = new_sdl;
+		data->p_slc_parameters.cstr_length = param_length;
+		data->p_slc_parameters.cstr_address = param;
+		data->p_slc_slice.lstr_length = slice_length;
+		data->p_slc_slice.lstr_address = slice;
 
-	response = &packet->p_slr;
-	response->p_slr_sdl = sdl;
-	response->p_slr_sdl_length = sdl_length;
-	response->p_slr_slice.lstr_address = slice;
-	response->p_slr_slice.lstr_length = slice_length;
+		response = &packet->p_slr;
+		response->p_slr_sdl = sdl;
+		response->p_slr_sdl_length = sdl_length;
+		response->p_slr_slice.lstr_address = slice;
+		response->p_slr_slice.lstr_length = slice_length;
 
-	(void) send_and_receive(rdb, packet, user_status);
-	if (new_sdl != sdl)
-		gds__free(new_sdl);
-	if (user_status[1])
-		return error(user_status);
+		(void) send_and_receive(rdb, packet, user_status);
+		if (new_sdl != sdl) {
+			gds__free(new_sdl);
+		}
+		if (user_status[1]) {
+			return error(user_status);
+		}
 
-	*array_id = packet->p_resp.p_resp_blob_id;
+		*array_id = packet->p_resp.p_resp_blob_id;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -2854,64 +3154,81 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 	port = rdb->rdb_port;
 	packet = &rdb->rdb_packet;
 
-/* Make sure protocol support action */
+	/* Make sure protocol support action */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
 		return unsupported(user_status);
-
-/* If there isn't a auxiliary asynchronous port, make one now */
-
-	if (!port->port_async) {
-		packet->p_operation = op_connect_request;
-		request = &packet->p_req;
-		request->p_req_object = rdb->rdb_id;
-		request->p_req_type = P_REQ_async;
-		if (!send_packet(port, packet, user_status)
-			|| !receive_response(rdb, packet)) return error(user_status);
-#ifdef MULTI_THREAD
-		if (!port->connect(packet, 0))
-			return error(user_status);
-
-		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-						  (event_thread), port->port_async, THREAD_high,
-						  THREAD_ast, 0);
-#else
-		if (!port->connect(packet, (void(*)(void))event_handler))
-			return error(user_status);
-#endif
-		port->port_async->port_context = rdb;
 	}
 
-/* Add event block to port's list of active remote events */
+	try
+	{
+		/* If there isn't a auxiliary asynchronous port, make one now */
 
-	rem_event = add_event(port);
+		if (!port->port_async)
+		{
+			packet->p_operation = op_connect_request;
+			request = &packet->p_req;
+			request->p_req_object = rdb->rdb_id;
+			request->p_req_type = P_REQ_async;
+			if (!send_packet(port, packet, user_status)
+				|| !receive_response(rdb, packet))
+			{
+				return error(user_status);
+			}
+#ifdef MULTI_THREAD
+			if (!port->connect(packet, 0)) {
+				return error(user_status);
+			}
 
-	rem_event->rvnt_ast = ast;
-	rem_event->rvnt_arg = arg;
-	rem_event->rvnt_port = port->port_async;
-	rem_event->rvnt_items = items;
-	rem_event->rvnt_length = length;
-	rem_event->rvnt_rdb = rdb;
+			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(event_thread),
+							port->port_async, THREAD_high, THREAD_ast, 0);
+#else
+			if (!port->connect(packet, (void(*)(void))event_handler)) {
+				return error(user_status);
+			}
+#endif
+			port->port_async->port_context = rdb;
+		}
 
-/* Update id value */
+		/* Add event block to port's list of active remote events */
 
-	*id = rem_event->rvnt_id;
+		rem_event = add_event(port);
 
-/* Build the primary packet to get the operation started. */
+		rem_event->rvnt_ast = ast;
+		rem_event->rvnt_arg = arg;
+		rem_event->rvnt_port = port->port_async;
+		rem_event->rvnt_items = items;
+		rem_event->rvnt_length = length;
+		rem_event->rvnt_rdb = rdb;
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_que_events;
+		/* Update id value */
 
-	event = &packet->p_event;
-	event->p_event_database = rdb->rdb_id;
-	event->p_event_items.cstr_length = length;
-	event->p_event_items.cstr_address = items;
-	event->p_event_ast = (SLONG) ast;
-	event->p_event_arg = (SLONG) arg;
-	event->p_event_rid = rem_event->rvnt_id;
+		*id = rem_event->rvnt_id;
 
-	if (!send_packet(port, packet, user_status) ||
-		!receive_response(rdb, packet)) return error(user_status);
+		/* Build the primary packet to get the operation started. */
+
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_que_events;
+
+		event = &packet->p_event;
+		event->p_event_database = rdb->rdb_id;
+		event->p_event_items.cstr_length = length;
+		event->p_event_items.cstr_address = items;
+		event->p_event_ast = (SLONG) ast;
+		event->p_event_arg = (SLONG) arg;
+		event->p_event_rid = rem_event->rvnt_id;
+
+		if (!send_packet(port, packet, user_status) ||
+			!receive_response(rdb, packet))
+		{
+			return error(user_status);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -2956,197 +3273,213 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 	PORT port = rdb->rdb_port;
 	rrq::rrq_repeat * tail = &request->rrq_rpt[msg_type];
 
+	try
+	{
+
 #ifdef SCROLLABLE_CURSORS
-	if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS) {
-		if (!
-			(message =
-			 scroll_cache(user_status, trdb, request, port, tail, &direction,
-						  &offset))) return error(user_status);
-	}
-	else
-#endif
-		message = tail->rrq_message;
-
-#ifdef DEBUG
-	ib_fprintf(ib_stdout, "Rows Pending in REM_receive=%d\n",
-			   tail->rrq_rows_pending);
-#endif
-
-/* Check to see if data is waiting.  If not, solicit data. 
-   Solicit data either when we've run out, or there's a low
-   inventory of messages in local buffers & no shipments on the
-   ether being sent to us. */
-
-	if (!request->rrq_status_vector[1] &&	/* No error pending */
-		((!message->msg_address && tail->rrq_rows_pending == 0) ||	/* No message waiting */
-		 (tail->rrq_rows_pending <= tail->rrq_reorder_level &&	/* Low in inventory */
-		  tail->rrq_msgs_waiting <= tail->rrq_reorder_level &&
-		  !(port->port_flags & PORT_rpc) &&	/* doing Batch, not RPC */
-		  /* Pipelining causes both server & client to 
-		     write at the same time. In named pipes, writes
-		     block for the other end to read -  and so when both
-		     attempt to write simultaenously, they end up
-		     waiting indefinetly for the other end to read */
-		  (port->port_type != port_pipe) &&	/* not named pipe on NT */
-#ifdef XNET
-		  (port->port_type != port_xnet) &&	/* not named pipe on NT */
-#endif
-		  request->rrq_max_msg <= 1))) {	/* there's only one message type */
-		P_DATA *data;
-
-#ifdef DEBUG
-		ib_fprintf(ib_stderr, "Rows Pending %d\n", tail->rrq_rows_pending);
-		if (!message->msg_address)
-			ib_fprintf(ib_stderr, "Out of data - reordering\n");
-		else
-			ib_fprintf(ib_stderr, "Low on inventory - reordering\n");
-#endif
-
-		/* Format a request for data */
-
-		PACKET *packet = &rdb->rdb_packet;
-		packet->p_operation = op_receive;
-		data = &packet->p_data;
-		data->p_data_request = request->rrq_id;
-		data->p_data_message_number = msg_type;
-		data->p_data_incarnation = level;
-#ifdef SCROLLABLE_CURSORS
-		/* if the protocol can handle it, tell the server to scroll before returning records */
-
-		if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS) {
-			data->p_data_direction = direction;
-			data->p_data_offset = offset;
-
-			/* set the appropriate flags according to the way we're about to scroll 
-			   the next layer down, and calculate the offset from the beginning 
-			   of the result set */
-
-			switch (direction) {
-			case blr_forward:
-				tail->rrq_flags &= ~RRQ_backward;
-				tail->rrq_absolute +=
-					(tail->
-					 rrq_flags & RRQ_absolute_backward) ? -offset : offset;
-				break;
-
-			case blr_backward:
-				tail->rrq_flags |= RRQ_backward;
-				tail->rrq_absolute +=
-					(tail->
-					 rrq_flags & RRQ_absolute_backward) ? offset : -offset;
-				break;
-
-			case blr_bof_forward:
-				tail->rrq_flags &= ~RRQ_backward;
-				tail->rrq_flags &= ~RRQ_absolute_backward;
-				tail->rrq_absolute = offset;
-				direction = blr_forward;
-				break;
-
-			case blr_eof_backward:
-				tail->rrq_flags |= RRQ_backward;
-				tail->rrq_flags |= RRQ_absolute_backward;
-				tail->rrq_absolute = offset;
-				direction = blr_backward;
-				break;
+		if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS)
+		{
+			message = scroll_cache(user_status,
+									trdb,
+									request,
+									port,
+									tail,
+									&direction,
+									&offset);
+			if (!message) {
+				return error(user_status);
 			}
 		}
+		else
 #endif
-
-		/* Compute how many to send in a batch.  While this calculation
-		   is the same for each batch (June 1996), perhaps in the future it
-		   could dynamically adjust batching sizes based on fetch patterns */
-
-		if (port->port_flags & PORT_rpc)
-
-			/* This is an RPC (remote procedure call) port - we just do
-			   one at a time processing as that's how RPC works. */
-
-			data->p_data_messages = 1;
-		else {
-			data->p_data_messages =
-				static_cast < USHORT >
-				(REMOTE_compute_batch_size
-				 (port, 0, op_send, tail->rrq_format));
-			tail->rrq_reorder_level = 2 * data->p_data_messages;
-			data->p_data_messages *= 4;
-			tail->rrq_rows_pending += data->p_data_messages;
+			message = tail->rrq_message;
 
 #ifdef DEBUG
-			ib_fprintf(ib_stdout,
-					   "Recalculating Rows Pending in REM_receive=%d\n",
-					   tail->rrq_rows_pending);
+		ib_fprintf(ib_stdout, "Rows Pending in REM_receive=%d\n",
+				   tail->rrq_rows_pending);
 #endif
+
+		/* Check to see if data is waiting.  If not, solicit data. 
+		   Solicit data either when we've run out, or there's a low
+		   inventory of messages in local buffers & no shipments on the
+		   ether being sent to us. */
+
+		if (!request->rrq_status_vector[1] &&	/* No error pending */
+			((!message->msg_address && tail->rrq_rows_pending == 0) ||	/* No message waiting */
+			 (tail->rrq_rows_pending <= tail->rrq_reorder_level &&	/* Low in inventory */
+			  tail->rrq_msgs_waiting <= tail->rrq_reorder_level &&
+			  !(port->port_flags & PORT_rpc) &&	/* doing Batch, not RPC */
+			  /* Pipelining causes both server & client to 
+				 write at the same time. In named pipes, writes
+				 block for the other end to read -  and so when both
+				 attempt to write simultaenously, they end up
+				 waiting indefinetly for the other end to read */
+			  (port->port_type != port_pipe) &&	/* not named pipe on NT */
+#ifdef XNET
+			  (port->port_type != port_xnet) &&	/* not named pipe on NT */
+#endif
+			  request->rrq_max_msg <= 1))) {	/* there's only one message type */
+			P_DATA *data;
+
+#ifdef DEBUG
+			ib_fprintf(ib_stderr, "Rows Pending %d\n", tail->rrq_rows_pending);
+			if (!message->msg_address)
+				ib_fprintf(ib_stderr, "Out of data - reordering\n");
+			else
+				ib_fprintf(ib_stderr, "Low on inventory - reordering\n");
+#endif
+
+			/* Format a request for data */
+
+			PACKET *packet = &rdb->rdb_packet;
+			packet->p_operation = op_receive;
+			data = &packet->p_data;
+			data->p_data_request = request->rrq_id;
+			data->p_data_message_number = msg_type;
+			data->p_data_incarnation = level;
+#ifdef SCROLLABLE_CURSORS
+			/* if the protocol can handle it, tell the server to scroll before returning records */
+
+			if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS) {
+				data->p_data_direction = direction;
+				data->p_data_offset = offset;
+
+				/* set the appropriate flags according to the way we're about to scroll 
+				   the next layer down, and calculate the offset from the beginning 
+				   of the result set */
+
+				switch (direction) {
+				case blr_forward:
+					tail->rrq_flags &= ~RRQ_backward;
+					tail->rrq_absolute +=
+						(tail->
+						 rrq_flags & RRQ_absolute_backward) ? -offset : offset;
+					break;
+
+				case blr_backward:
+					tail->rrq_flags |= RRQ_backward;
+					tail->rrq_absolute +=
+						(tail->
+						 rrq_flags & RRQ_absolute_backward) ? offset : -offset;
+					break;
+
+				case blr_bof_forward:
+					tail->rrq_flags &= ~RRQ_backward;
+					tail->rrq_flags &= ~RRQ_absolute_backward;
+					tail->rrq_absolute = offset;
+					direction = blr_forward;
+					break;
+
+				case blr_eof_backward:
+					tail->rrq_flags |= RRQ_backward;
+					tail->rrq_flags |= RRQ_absolute_backward;
+					tail->rrq_absolute = offset;
+					direction = blr_backward;
+					break;
+				}
+			}
+#endif
+
+			/* Compute how many to send in a batch.  While this calculation
+			   is the same for each batch (June 1996), perhaps in the future it
+			   could dynamically adjust batching sizes based on fetch patterns */
+
+			if (port->port_flags & PORT_rpc)
+
+				/* This is an RPC (remote procedure call) port - we just do
+				   one at a time processing as that's how RPC works. */
+
+				data->p_data_messages = 1;
+			else {
+				data->p_data_messages =
+					static_cast < USHORT >
+					(REMOTE_compute_batch_size
+					 (port, 0, op_send, tail->rrq_format));
+				tail->rrq_reorder_level = 2 * data->p_data_messages;
+				data->p_data_messages *= 4;
+				tail->rrq_rows_pending += data->p_data_messages;
+
+#ifdef DEBUG
+				ib_fprintf(ib_stdout,
+						   "Recalculating Rows Pending in REM_receive=%d\n",
+						   tail->rrq_rows_pending);
+#endif
+			}
+
+#ifdef DEBUG
+			ib_fprintf(ib_stderr, "port_flags %d max_msg %d\n", port->port_flags,
+					   request->rrq_max_msg);
+			ib_fprintf(ib_stderr, "Fetch: Req One batch of %d messages\n",
+					   data->p_data_messages);
+#endif
+
+			if (!send_packet(rdb->rdb_port, packet, user_status))
+				return error(user_status);
+			tail->rrq_batch_count++;
+
+#ifdef DEBUG
+			ib_fprintf(ib_stderr, "Rows Pending %d\n", tail->rrq_rows_pending);
+#endif
+
+			/* Queue up receipt of the pending data */
+
+			enqueue_receive(port, batch_gds_receive, rdb, request, tail);
 		}
 
-#ifdef DEBUG
-		ib_fprintf(ib_stderr, "port_flags %d max_msg %d\n", port->port_flags,
-				   request->rrq_max_msg);
-		ib_fprintf(ib_stderr, "Fetch: Req One batch of %d messages\n",
-				   data->p_data_messages);
-#endif
+		/* Receive queued responses until we have some data for this cursor
+		   or an error status has been received. */
 
-		if (!send_packet(rdb->rdb_port, packet, user_status))
-			return error(user_status);
-		tail->rrq_batch_count++;
+		/* We've either got data, or some is on the way, or we have an error */
 
-#ifdef DEBUG
-		ib_fprintf(ib_stderr, "Rows Pending %d\n", tail->rrq_rows_pending);
-#endif
+		assert(message->msg_address || (tail->rrq_rows_pending > 0)
+			   || request->rrq_status_vector[1]);
 
-		/* Queue up receipt of the pending data */
+		while (!message->msg_address && !request->rrq_status_vector[1])
+			if (!receive_queued_packet(trdb, port, user_status, request->rrq_id))
+				return error(user_status);
 
-		enqueue_receive(port, batch_gds_receive, rdb, request, tail);
-	}
+		if (!message->msg_address && request->rrq_status_vector[1]) {
+			/* The previous batch of receives ended with an error status.
+			   We're all done returning data in the local queue.
+			   Return that error status vector to the user. */
 
-/* Receive queued responses until we have some data for this cursor
-   or an error status has been received. */
+			/* Stuff in the error result to the user's vector */
 
-/* We've either got data, or some is on the way, or we have an error */
+			memcpy(user_status, request->rrq_status_vector,
+				   sizeof(request->rrq_status_vector));
+			memset(request->rrq_status_vector, 0,
+				   sizeof(request->rrq_status_vector));
 
-	assert(message->msg_address || (tail->rrq_rows_pending > 0)
-		   || request->rrq_status_vector[1]);
+			RESTORE_THREAD_DATA;
+			return user_status[1];
+		};
 
-	while (!message->msg_address && !request->rrq_status_vector[1])
-		if (!receive_queued_packet(trdb, port, user_status, request->rrq_id))
-			return error(user_status);
+		/* Copy data from the message buffer to the client buffer */
 
-	if (!message->msg_address && request->rrq_status_vector[1]) {
-		/* The previous batch of receives ended with an error status.
-		   We're all done returning data in the local queue.
-		   Return that error status vector to the user. */
-
-		/* Stuff in the error result to the user's vector */
-
-		memcpy(user_status, request->rrq_status_vector,
-			   sizeof(request->rrq_status_vector));
-		memset(request->rrq_status_vector, 0,
-			   sizeof(request->rrq_status_vector));
-
-		RESTORE_THREAD_DATA;
-		return user_status[1];
-	};
-
-/* Copy data from the message buffer to the client buffer */
-
-	message = tail->rrq_message;
-	if ((U_IPTR) msg & (ALIGNMENT - 1))
-		memcpy(msg, message->msg_address, msg_length);
-	else
-		mov_faster((SLONG *) message->msg_address, (SLONG *) msg, msg_length);
+		message = tail->rrq_message;
+		if ((U_IPTR) msg & (ALIGNMENT - 1))
+			memcpy(msg, message->msg_address, msg_length);
+		else
+			mov_faster((SLONG *) message->msg_address, (SLONG *) msg, msg_length);
 
 #ifdef SCROLLABLE_CURSORS
-	tail->rrq_last = message;
+		tail->rrq_last = message;
 #else
-/* Move the head-of-full-buffer-queue pointer forward */
+		/* Move the head-of-full-buffer-queue pointer forward */
 
-	tail->rrq_message = message->msg_next;
+		tail->rrq_message = message->msg_next;
 
-/* Mark the buffer the message came from as available for reuse */
+		/* Mark the buffer the message came from as available for reuse */
 
-	message->msg_address = NULL;
+		message->msg_address = NULL;
 #endif
-	tail->rrq_msgs_waiting--;
+		tail->rrq_msgs_waiting--;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3185,10 +3518,19 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 	trans->p_sttr_tpb.cstr_length = length;
 	trans->p_sttr_tpb.cstr_address = id;
 
-	if (send_and_receive(rdb, packet, user_status))
-		return error(user_status);
+	try
+	{
+		if (send_and_receive(rdb, packet, user_status)) {
+			return error(user_status);
+		}
 
-	*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
+		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3219,11 +3561,20 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, RRQ * req_handle)
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-	if (!release_object(rdb, op_release, request->rrq_id))
-		return error(user_status);
+	try
+	{
+		if (!release_object(rdb, op_release, request->rrq_id)) {
+			return error(user_status);
+		}
 
-	release_request(request);
-	*req_handle = NULL;
+		release_request(request);
+		*req_handle = NULL;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3264,61 +3615,70 @@ STATUS GDS_REQUEST_INFO(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-/* Check for buffered message.  If there is, report on it locally. */
+	try
+	{
+		/* Check for buffered message.  If there is, report on it locally. */
 
-	for (tail = request->rrq_rpt, end = tail + request->rrq_max_msg;
-		 tail <= end; tail++) {
-		if (!(msg = tail->rrq_message) || !msg->msg_address)
-			continue;
-
-		/* We've got a pending message, respond locally */
-
-		format = tail->rrq_format;
-		out = buffer;
-		info_items = items;
-		end_items = info_items + item_length;
-		while (info_items < end_items) {
-			item = *info_items++;
-			switch (item) {
-			case gds_info_end:
-				break;
-
-			case gds_info_state:
-				data = gds_info_req_send;
-				break;
-
-			case gds_info_message_number:
-				data = msg->msg_number;
-				break;
-
-			case gds_info_message_size:
-				data = format->fmt_length;
-				break;
-
-			default:
-				goto punt;
+		for (tail = request->rrq_rpt, end = tail + request->rrq_max_msg;
+			 tail <= end; tail++)
+		{
+			if (!(msg = tail->rrq_message) || !msg->msg_address) {
+				continue;
 			}
 
-			*out++ = item;
-			if (item == gds_info_end)
-				break;
+			/* We've got a pending message, respond locally */
 
-			*out++ = 2;
-			*out++ = 2 >> 8;
-			*out++ = (UCHAR) data;
-			*out++ = data >> 8;
+			format = tail->rrq_format;
+			out = buffer;
+			info_items = items;
+			end_items = info_items + item_length;
+			while (info_items < end_items) {
+				item = *info_items++;
+				switch (item) {
+				case gds_info_end:
+					break;
+
+				case gds_info_state:
+					data = gds_info_req_send;
+					break;
+
+				case gds_info_message_number:
+					data = msg->msg_number;
+					break;
+
+				case gds_info_message_size:
+					data = format->fmt_length;
+					break;
+
+				default:
+					goto punt;
+				}
+
+				*out++ = item;
+				if (item == gds_info_end)
+					break;
+
+				*out++ = 2;
+				*out++ = 2 >> 8;
+				*out++ = (UCHAR) data;
+				*out++ = data >> 8;
+			}
+
+			RETURN_SUCCESS;
 		}
 
-		RETURN_SUCCESS;
+		/* No message pending, request status from other end */
+
+punt:
+
+		status = info(user_status, rdb, op_info_request, request->rrq_id, level,
+					  item_length, (SCHAR *) items, 0, 0, buffer_length,
+					  (SCHAR *) buffer);
 	}
-
-/* No message pending, request status from other end */
-
-  punt:
-
-	status = info(user_status, rdb, op_info_request, request->rrq_id, level,
-				  item_length, (SCHAR *) items, 0, 0, buffer_length,
-				  (SCHAR *) buffer);
+	catch (const Firebird::status_exception& e)
+	{
+		status = e.value();
+	}
 
 	RESTORE_THREAD_DATA;
 
@@ -3351,13 +3711,23 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-/* Make sure protocol support action */
+	/* Make sure protocol support action */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION10)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION10) {
 		return unsupported(user_status);
+	}
 
-	if (!release_object(rdb, op_rollback_retaining, transaction->rtr_id))
-		return error(user_status);
+	try
+	{
+		if (!release_object(rdb, op_rollback_retaining, transaction->rtr_id)) {
+			return error(user_status);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3388,12 +3758,21 @@ STATUS GDS_ROLLBACK(STATUS * user_status, RTR * rtr_handle)
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-	if (!release_object(rdb, op_rollback, transaction->rtr_id))
-		return error(user_status);
+	try
+	{
+		if (!release_object(rdb, op_rollback, transaction->rtr_id)) {
+			return error(user_status);
+		}
 
-	REMOTE_cleanup_transaction(transaction);
-	release_transaction(transaction);
-	*rtr_handle = NULL;
+		REMOTE_cleanup_transaction(transaction);
+		release_transaction(transaction);
+		*rtr_handle = NULL;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3428,28 +3807,38 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6)
-		return unsupported(user_status);
+	try
+	{
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6) {
+			return unsupported(user_status);
+		}
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_seek_blob;
-	seek = &packet->p_seek;
-	seek->p_seek_blob = blob->rbl_id;
-	seek->p_seek_mode = mode;
-	seek->p_seek_offset = offset;
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_seek_blob;
+		seek = &packet->p_seek;
+		seek->p_seek_blob = blob->rbl_id;
+		seek->p_seek_mode = mode;
+		seek->p_seek_offset = offset;
 
-	if (mode == 1) {
-		seek->p_seek_mode = 0;
-		seek->p_seek_offset = blob->rbl_offset + offset;
+		if (mode == 1) {
+			seek->p_seek_mode = 0;
+			seek->p_seek_offset = blob->rbl_offset + offset;
+		}
+
+		if (send_and_receive(rdb, packet, user_status)) {
+			return error(user_status);
+		}
+
+		blob->rbl_offset = *result = packet->p_resp.p_resp_blob_id.bid_number;
+		blob->rbl_length = 0;
+		blob->rbl_fragment_length = 0;
+		blob->rbl_flags &= ~(RBL_eof | RBL_eof_pending | RBL_segment);
 	}
-
-	if (send_and_receive(rdb, packet, user_status))
-		return error(user_status);
-
-	blob->rbl_offset = *result = packet->p_resp.p_resp_blob_id.bid_number;
-	blob->rbl_length = 0;
-	blob->rbl_fragment_length = 0;
-	blob->rbl_flags &= ~(RBL_eof | RBL_eof_pending | RBL_segment);
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3498,17 +3887,27 @@ STATUS GDS_SEND(STATUS * user_status,
 	data->p_data_message_number = msg_type;
 	data->p_data_incarnation = level;
 
-	if (!send_packet(rdb->rdb_port, packet, user_status))
-		return error(user_status);
+	try
+	{
+		if (!send_packet(rdb->rdb_port, packet, user_status)) {
+			return error(user_status);
+		}
 
-/* Bump up the message pointer to resync with rrq_xdr (rrq_xdr 
-   was incremented by xdr_request in the SEND call).  */
+		/* Bump up the message pointer to resync with rrq_xdr (rrq_xdr 
+		   was incremented by xdr_request in the SEND call).  */
 
-	message->msg_address = NULL;
-	request->rrq_rpt[msg_type].rrq_message = message->msg_next;
+		message->msg_address = NULL;
+		request->rrq_rpt[msg_type].rrq_message = message->msg_next;
 
-	if (!receive_response(rdb, packet))
-		return error(user_status);
+		if (!receive_response(rdb, packet)) {
+			return error(user_status);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3594,30 +3993,41 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 	ERROR_INIT(env);
 
 
-/* make sure the protocol supports it */
+	try
+	{
+		/* make sure the protocol supports it */
 
-	if (port->port_protocol < PROTOCOL_VERSION8) {
-		if (new_spb_ptr != new_spb)
+		if (port->port_protocol < PROTOCOL_VERSION8) {
+			if (new_spb_ptr != new_spb) {
+				gds__free(new_spb_ptr);
+			}
+			disconnect(port);
+			return unsupported(user_status);
+		}
+
+		/* The client may have set a parameter for dummy_packet_interval.  Add that to the
+		   the SPB so the server can pay attention to it.  Note: allocation code must
+		   ensure sufficient space has been added. */
+
+		add_other_params(port, new_spb_ptr, &new_spb_length);
+
+		result =
+			init(user_status, port, op_service_attach, expanded_name, length,
+				 new_spb_ptr, new_spb_length);
+		if (new_spb_ptr != new_spb) {
 			gds__free(new_spb_ptr);
-		disconnect(port);
-		return unsupported(user_status);
+		}
+		if (!result) {
+			return error(user_status);
+		}
+
+		*handle = rdb;
 	}
-
-/* The client may have set a parameter for dummy_packet_interval.  Add that to the
-   the SPB so the server can pay attention to it.  Note: allocation code must
-   ensure sufficient space has been added. */
-
-	add_other_params(port, new_spb_ptr, &new_spb_length);
-
-	result =
-		init(user_status, port, op_service_attach, expanded_name, length,
-			 new_spb_ptr, new_spb_length);
-	if (new_spb_ptr != new_spb)
-		gds__free(new_spb_ptr);
-	if (!result)
-		return error(user_status);
-
-	*handle = rdb;
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3642,25 +4052,35 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, RDB * handle)
 
 	SET_THREAD_DATA;
 
-/* Check and validate handles, etc. */
+	/* Check and validate handles, etc. */
 
 	rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
 	ERROR_INIT(env);
 	port = rdb->rdb_port;
 
-/* make sure the protocol supports it */
+	/* make sure the protocol supports it */
 
-	if (port->port_protocol < PROTOCOL_VERSION8)
+	if (port->port_protocol < PROTOCOL_VERSION8) {
 		return unsupported(user_status);
+	}
 
-	if (!release_object(rdb, op_service_detach, rdb->rdb_id))
-		return error(user_status);
+	try
+	{
+		if (!release_object(rdb, op_service_detach, rdb->rdb_id)) {
+			return error(user_status);
+		}
 
-	disconnect(port);
-	*handle = NULL;
+		disconnect(port);
+		*handle = NULL;
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
-/* Note: Can't RETURN_SUCCESS here as we've torn down memory already */
+	/* Note: Can't RETURN_SUCCESS here as we've torn down memory already */
 
 	RESTORE_THREAD_DATA;
 
@@ -3703,20 +4123,28 @@ STATUS GDS_SERVICE_QUERY(STATUS * user_status,
 
 	SET_THREAD_DATA;
 
-/* Check and validate handles, etc. */
+	/* Check and validate handles, etc. */
 
 	rdb = *svc_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
 	ERROR_INIT(env);
 
-/* make sure the protocol supports it */
+	/* make sure the protocol supports it */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
 		return unsupported(user_status);
+	}
 
-	status = info(user_status, rdb, op_service_info, rdb->rdb_id, 0,
-				  item_length, items, recv_item_length, recv_items,
-				  buffer_length, buffer);
+	try
+	{
+		status = info(user_status, rdb, op_service_info, rdb->rdb_id, 0,
+					  item_length, items, recv_item_length, recv_items,
+					  buffer_length, buffer);
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		status = e.value();
+	}
 
 	RESTORE_THREAD_DATA;
 
@@ -3750,20 +4178,28 @@ STATUS GDS_SERVICE_START(STATUS * user_status,
 
 	SET_THREAD_DATA;
 
-/* Check and validate handles, etc. */
+	/* Check and validate handles, etc. */
 
 	rdb = *svc_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
 	ERROR_INIT(env);
 
-/* make sure the protocol supports it */
+	/* make sure the protocol supports it */
 
-	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8)
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
 		return unsupported(user_status);
+	}
 
-	status =
-		svcstart(user_status, rdb, op_service_start, rdb->rdb_id, 0,
-				 item_length, items);
+	try
+	{
+		status =
+			svcstart(user_status, rdb, op_service_start, rdb->rdb_id, 0,
+					 item_length, items);
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		status = e.value();
+	}
 
 	RESTORE_THREAD_DATA;
 
@@ -3815,41 +4251,52 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 		return error(user_status);
 	}
 
-	if (!clear_queue(rdb->rdb_port, user_status))
-		return error(user_status);
+	try
+	{
+		if (!clear_queue(rdb->rdb_port, user_status)) {
+			return error(user_status);
+		}
 
-	REMOTE_reset_request(request, 0);
-	message = request->rrq_rpt[msg_type].rrq_message;
-	message->msg_address = msg;
+		REMOTE_reset_request(request, 0);
+		message = request->rrq_rpt[msg_type].rrq_message;
+		message->msg_address = msg;
 
-	packet = &rdb->rdb_packet;
-	packet->p_operation = (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) ?
-		op_start_and_send : op_start_send_and_receive;
-	data = &packet->p_data;
-	data->p_data_request = request->rrq_id;
-	data->p_data_transaction = transaction->rtr_id;
-	data->p_data_message_number = msg_type;
-	data->p_data_incarnation = level;
+		packet = &rdb->rdb_packet;
+		packet->p_operation = (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) ?
+			op_start_and_send : op_start_send_and_receive;
+		data = &packet->p_data;
+		data->p_data_request = request->rrq_id;
+		data->p_data_transaction = transaction->rtr_id;
+		data->p_data_message_number = msg_type;
+		data->p_data_incarnation = level;
 
-	if (!send_packet(rdb->rdb_port, packet, user_status))
-		return error(user_status);
+		if (!send_packet(rdb->rdb_port, packet, user_status))
+			return error(user_status);
 
-/* Bump up the message pointer to resync with rrq_xdr (rrq_xdr 
-   was incremented by xdr_request in the SEND call).  */
+		/* Bump up the message pointer to resync with rrq_xdr (rrq_xdr 
+		   was incremented by xdr_request in the SEND call).  */
 
-	message->msg_address = NULL;
-	request->rrq_rpt[msg_type].rrq_message = message->msg_next;
+		message->msg_address = NULL;
+		request->rrq_rpt[msg_type].rrq_message = message->msg_next;
 
-	if (!receive_response(rdb, packet))
-		return error(user_status);
+		if (!receive_response(rdb, packet))
+			return error(user_status);
 
-/* Save the request's transaction. */
+		/* Save the request's transaction. */
 
-	request->rrq_rtr = transaction;
+		request->rrq_rtr = transaction;
 
-	if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION8 &&
-		packet->p_operation == op_response_piggyback)
-		receive_after_start(request, packet->p_resp.p_resp_object);
+		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION8 &&
+			packet->p_operation == op_response_piggyback)
+		{
+			receive_after_start(request, packet->p_resp.p_resp_object);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3894,29 +4341,40 @@ STATUS GDS_START(STATUS * user_status,
 		return error(user_status);
 	}
 
-	if (!clear_queue(rdb->rdb_port, user_status))
-		return error(user_status);
+	try
+	{
+		if (!clear_queue(rdb->rdb_port, user_status)) {
+			return error(user_status);
+		}
 
-	REMOTE_reset_request(request, 0);
-	packet = &rdb->rdb_packet;
-	packet->p_operation = (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) ?
-		op_start : op_start_and_receive;
-	data = &packet->p_data;
-	data->p_data_request = request->rrq_id;
-	data->p_data_transaction = transaction->rtr_id;
-	data->p_data_message_number = 0;
-	data->p_data_incarnation = level;
+		REMOTE_reset_request(request, 0);
+		packet = &rdb->rdb_packet;
+		packet->p_operation = (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) ?
+			op_start : op_start_and_receive;
+		data = &packet->p_data;
+		data->p_data_request = request->rrq_id;
+		data->p_data_transaction = transaction->rtr_id;
+		data->p_data_message_number = 0;
+		data->p_data_incarnation = level;
 
-	if (send_and_receive(rdb, packet, user_status))
-		return error(user_status);
+		if (send_and_receive(rdb, packet, user_status))
+			return error(user_status);
 
-/* Save the request's transaction. */
+		/* Save the request's transaction. */
 
-	request->rrq_rtr = transaction;
+		request->rrq_rtr = transaction;
 
-	if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION8 &&
-		packet->p_operation == op_response_piggyback)
-		receive_after_start(request, packet->p_resp.p_resp_object);
+		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION8 &&
+			packet->p_operation == op_response_piggyback)
+		{
+			receive_after_start(request, packet->p_resp.p_resp_object);
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -3957,10 +4415,19 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 	trans->p_sttr_tpb.cstr_length = tpb_length;
 	trans->p_sttr_tpb.cstr_address = tpb;
 
-	if (send_and_receive(rdb, packet, user_status))
-		return error(user_status);
+	try
+	{
+		if (send_and_receive(rdb, packet, user_status)) {
+			return error(user_status);
+		}
 
-	*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
+		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -4004,94 +4471,107 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 	ERROR_INIT(env);
 	port = rdb->rdb_port;
 
-/* bag it if the protocol doesn't support it... */
+	/* bag it if the protocol doesn't support it... */
 
-	if (port->port_protocol < PROTOCOL_VERSION8)
+	if (port->port_protocol < PROTOCOL_VERSION8) {
 		return unsupported(user_status);
-
-	if (!(procedure = port->port_rpr))
-		procedure = port->port_rpr = (RPR) ALLOC(type_rpr);
-
-	if ((*rtr_handle)->rtr_rdb != rdb) {
-		user_status[0] = gds_arg_gds;
-		user_status[1] = gds_trareqmis;
-		user_status[2] = gds_arg_end;
-		return error(user_status);
 	}
 
-/* Parse the blr describing the messages */
+	try
+	{
+		if (!(procedure = port->port_rpr)) {
+			procedure = port->port_rpr = (RPR) ALLOC(type_rpr);
+		}
 
-	if (procedure->rpr_in_msg) {
-		ALLR_RELEASE(procedure->rpr_in_msg);
-		procedure->rpr_in_msg = NULL;
-	}
-	if (procedure->rpr_in_format) {
-		ALLR_RELEASE(procedure->rpr_in_format);
-		procedure->rpr_in_format = NULL;
-	}
-	if (procedure->rpr_out_msg) {
-		ALLR_RELEASE(procedure->rpr_out_msg);
-		procedure->rpr_out_msg = NULL;
-	}
-	if (procedure->rpr_out_format) {
-		ALLR_RELEASE(procedure->rpr_out_format);
-		procedure->rpr_out_format = NULL;
-	}
+		if ((*rtr_handle)->rtr_rdb != rdb) {
+			user_status[0] = gds_arg_gds;
+			user_status[1] = gds_trareqmis;
+			user_status[2] = gds_arg_end;
+			return error(user_status);
+		}
 
-	if ((message = PARSE_messages(blr, blr_length)) != (MSG) - 1) {
-		while (message) {
-			if (message->msg_number == 0) {
-				procedure->rpr_in_msg = message;
-				procedure->rpr_in_format = (FMT) message->msg_address;
-				message->msg_address = in_msg;
-				message = message->msg_next;
-				procedure->rpr_in_msg->msg_next = NULL;
+		/* Parse the blr describing the messages */
+
+		if (procedure->rpr_in_msg) {
+			ALLR_RELEASE(procedure->rpr_in_msg);
+			procedure->rpr_in_msg = NULL;
+		}
+		if (procedure->rpr_in_format) {
+			ALLR_RELEASE(procedure->rpr_in_format);
+			procedure->rpr_in_format = NULL;
+		}
+		if (procedure->rpr_out_msg) {
+			ALLR_RELEASE(procedure->rpr_out_msg);
+			procedure->rpr_out_msg = NULL;
+		}
+		if (procedure->rpr_out_format) {
+			ALLR_RELEASE(procedure->rpr_out_format);
+			procedure->rpr_out_format = NULL;
+		}
+
+		if ((message = PARSE_messages(blr, blr_length)) != (MSG) - 1) {
+			while (message) {
+				if (message->msg_number == 0) {
+					procedure->rpr_in_msg = message;
+					procedure->rpr_in_format = (FMT) message->msg_address;
+					message->msg_address = in_msg;
+					message = message->msg_next;
+					procedure->rpr_in_msg->msg_next = NULL;
+				}
+				else if (message->msg_number == 1) {
+					procedure->rpr_out_msg = message;
+					procedure->rpr_out_format = (FMT) message->msg_address;
+					message->msg_address = out_msg;
+					message = message->msg_next;
+					procedure->rpr_out_msg->msg_next = NULL;
+				}
+				else {
+					temp = message;
+					message = message->msg_next;
+					ALLR_RELEASE(temp);
+				}
 			}
-			else if (message->msg_number == 1) {
-				procedure->rpr_out_msg = message;
-				procedure->rpr_out_format = (FMT) message->msg_address;
-				message->msg_address = out_msg;
-				message = message->msg_next;
-				procedure->rpr_out_msg->msg_next = NULL;
-			}
-			else {
-				temp = message;
-				message = message->msg_next;
-				ALLR_RELEASE(temp);
+		}
+		/*
+		else
+			error
+		*/
+
+		packet = &rdb->rdb_packet;
+		packet->p_operation = op_transact;
+		trrq = &packet->p_trrq;
+		trrq->p_trrq_database = rdb->rdb_id;
+		trrq->p_trrq_transaction = transaction->rtr_id;
+		trrq->p_trrq_blr.cstr_length = blr_length;
+		trrq->p_trrq_blr.cstr_address = blr;
+		trrq->p_trrq_messages = (in_msg_length) ? 1 : 0;
+
+		if (!send_packet(rdb->rdb_port, packet, user_status))
+			return error(user_status);
+
+		/* Two types of responses are possible, op_transact_response or 
+		   op_response.  When there is an error op_response packet is returned
+		   and it modifies the status vector to indicate the error which occured.
+		   But when success occurs a packet with op_transact_response comes back
+		   which does not change the status vector.
+		 */
+
+		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		if (!receive_packet(port, packet, user_status)) {
+			return error(user_status);
+		}
+
+		if (packet->p_operation != op_transact_response) {
+			if (!check_response(rdb, packet)) {
+				return error(user_status);
 			}
 		}
 	}
-/*
-else
-    error
-*/
-
-	packet = &rdb->rdb_packet;
-	packet->p_operation = op_transact;
-	trrq = &packet->p_trrq;
-	trrq->p_trrq_database = rdb->rdb_id;
-	trrq->p_trrq_transaction = transaction->rtr_id;
-	trrq->p_trrq_blr.cstr_length = blr_length;
-	trrq->p_trrq_blr.cstr_address = blr;
-	trrq->p_trrq_messages = (in_msg_length) ? 1 : 0;
-
-	if (!send_packet(rdb->rdb_port, packet, user_status))
-		return error(user_status);
-
-/* Two types of responses are possible, op_transact_response or 
-   op_response.  When there is an error op_response packet is returned
-   and it modifies the status vector to indicate the error which occured.
-   But when success occurs a packet with op_transact_response comes back
-   which does not change the status vector.
- */
-
-	packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
-	if (!receive_packet(port, packet, user_status))
-		return error(user_status);
-
-	if (packet->p_operation != op_transact_response)
-		if (!check_response(rdb, packet))
-			return error(user_status);
+	catch (const Firebird::status_exception& e)
+	{
+		RESTORE_THREAD_DATA;
+		return e.value();
+	}
 
 	RETURN_SUCCESS;
 }
@@ -4126,10 +4606,17 @@ STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
 	CHECK_HANDLE(rdb, type_rdb, gds_bad_db_handle);
 	ERROR_INIT(env);
 
-	status =
-		info(user_status, rdb, op_info_transaction, transaction->rtr_id, 0,
-			 item_length, (SCHAR *) items, 0, 0, buffer_length,
-			 (SCHAR *) buffer);
+	try
+	{
+		status =
+			info(user_status, rdb, op_info_transaction, transaction->rtr_id, 0,
+				 item_length, (SCHAR *) items, 0, 0, buffer_length,
+				 (SCHAR *) buffer);
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		status = e.value();
+	}
 
 	RESTORE_THREAD_DATA;
 
@@ -5731,21 +6218,21 @@ static STATUS mov_dsql_message(	UCHAR*	from_msg,
 
 	try {
 
-	if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count) {
-		move_error(gds_dsql_sqlda_err, gds_arg_end);
-		/* Msg 263 SQLDA missing or wrong number of variables */
-	}
+		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count) {
+			move_error(gds_dsql_sqlda_err, gds_arg_end);
+			/* Msg 263 SQLDA missing or wrong number of variables */
+		}
 
-	from_desc = from_fmt->fmt_desc;
-	to_desc = to_fmt->fmt_desc;
-	end_desc = to_desc + to_fmt->fmt_count;
-	for (; to_desc < end_desc; from_desc++, to_desc++) {
-		from = *from_desc;
-		to = *to_desc;
-		from.dsc_address = from_msg + (SLONG) from.dsc_address;
-		to.dsc_address = to_msg + (SLONG) to.dsc_address;
-		CVT_move(&from, &to, (FPTR_VOID) move_error);
-	}
+		from_desc = from_fmt->fmt_desc;
+		to_desc = to_fmt->fmt_desc;
+		end_desc = to_desc + to_fmt->fmt_count;
+		for (; to_desc < end_desc; from_desc++, to_desc++) {
+			from = *from_desc;
+			to = *to_desc;
+			from.dsc_address = from_msg + (SLONG) from.dsc_address;
+			to.dsc_address = to_msg + (SLONG) to.dsc_address;
+			CVT_move(&from, &to, (FPTR_VOID) move_error);
+		}
 
 	}	// try
 	catch (...) {

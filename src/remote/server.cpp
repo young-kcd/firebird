@@ -392,7 +392,9 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 			/* If port has an pending request, link this one in */
 
 			for (active = request_que; active; active = active->req_next)
-				if (active->req_port == port) {
+			{
+				if (active->req_port == port)
+				{
 					/* Don't queue a dummy keepalive packet if there is
 					   a pending request against this port. */
 
@@ -415,6 +417,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 #endif
 					goto finished;
 				}
+			}
 
 			/* No port to assign request to, add it to the waiting queue and wake up a
 			 * thread to handle it 
@@ -3018,255 +3021,255 @@ BOOLEAN process_packet(PORT port,
 
 	try {
 
-	switch (op = receive->p_operation)
-	{
-	case op_connect:
-		if (!accept_connection(port, &receive->p_cnct, send)) {
-			if (string = port->port_user_name) {
-				sprintf(msg,
-						"SERVER/process_packet: connection rejected for %*.*s",
-						string->str_length, string->str_length,
-						string->str_data);
-				gds__log(msg, 0);
+		switch (op = receive->p_operation)
+		{
+		case op_connect:
+			if (!accept_connection(port, &receive->p_cnct, send)) {
+				if (string = port->port_user_name) {
+					sprintf(msg,
+							"SERVER/process_packet: connection rejected for %*.*s",
+							string->str_length, string->str_length,
+							string->str_data);
+					gds__log(msg, 0);
+				}
+				if (port->port_server->srvr_flags & SRVR_multi_client)
+					port->port_state = state_broken;
+				else if (port->port_server->srvr_flags & SRVR_mpexl)
+					port->port_state = state_pending;
+				else {
+					gds__log
+						("SERVER/process_packet: connect reject, server exiting",
+						 0);
+					THD_restore_specific();
+					return FALSE;
+				}
 			}
-			if (port->port_server->srvr_flags & SRVR_multi_client)
-				port->port_state = state_broken;
-			else if (port->port_server->srvr_flags & SRVR_mpexl)
-				port->port_state = state_pending;
-			else {
-				gds__log
-					("SERVER/process_packet: connect reject, server exiting",
-					 0);
-				THD_restore_specific();
-				return FALSE;
-			}
-		}
-		break;
-
-	case op_compile:
-		port->compile(&receive->p_cmpl, send);
-		break;
-
-	case op_attach:
-	case op_create:
-		attach_database(port, op, &receive->p_atch, send);
-		break;
-
-	case op_service_attach:
-		port->service_attach(&receive->p_atch, send);
-		break;
-
-	case op_service_start:
-		port->service_start(&receive->p_info, send);
-		break;
-
-	case op_disconnect:
-	case op_exit:
-		if (!(server = port->port_server))
 			break;
-		if ((server->srvr_flags & SRVR_multi_client) &&
-			port != server->srvr_parent_port) {
-#ifdef XNET
-			if (port->port_type == port_xnet) {
+
+		case op_compile:
+			port->compile(&receive->p_cmpl, send);
+			break;
+
+		case op_attach:
+		case op_create:
+			attach_database(port, op, &receive->p_atch, send);
+			break;
+
+		case op_service_attach:
+			port->service_attach(&receive->p_atch, send);
+			break;
+
+		case op_service_start:
+			port->service_start(&receive->p_info, send);
+			break;
+
+		case op_disconnect:
+		case op_exit:
+			if (!(server = port->port_server))
+				break;
+			if ((server->srvr_flags & SRVR_multi_client) &&
+				port != server->srvr_parent_port) {
+	#ifdef XNET
+				if (port->port_type == port_xnet) {
+					port->disconnect(send, receive);
+					THD_restore_specific();
+					return FALSE;
+				}
+	#endif /* XNET */
+				port->disconnect(send, receive);
+				port = NULL;
+				break;
+			}
+			else {
+				if ((server->srvr_flags & SRVR_multi_client) &&
+					port == server->srvr_parent_port)
+						gds__log
+						("SERVER/process_packet: Multi-client server shutdown",
+						 0);
 				port->disconnect(send, receive);
 				THD_restore_specific();
 				return FALSE;
 			}
-#endif /* XNET */
-			port->disconnect(send, receive);
-			port = NULL;
+
+		case op_receive:
+			port->receive_msg(&receive->p_data, send);
+			break;
+
+		case op_send:
+			port->send_msg(&receive->p_data, send);
+			break;
+
+		case op_start:
+		case op_start_and_receive:
+			port->start(op, &receive->p_data, send);
+			break;
+
+		case op_start_and_send:
+		case op_start_send_and_receive:
+			port->start_and_send(op, &receive->p_data, send);
+			break;
+
+		case op_transact:
+			port->transact_request(&receive->p_trrq, send);
+			break;
+
+		case op_reconnect:
+		case op_transaction:
+			port->start_transaction(op, &receive->p_sttr, send);
+			break;
+
+		case op_prepare:
+		case op_rollback:
+		case op_rollback_retaining:
+		case op_commit:
+		case op_commit_retaining:
+			port->end_transaction(op, &receive->p_rlse, send);
+			break;
+
+		case op_detach:
+			port->end_database(&receive->p_rlse, send);
+			break;
+
+		case op_service_detach:
+			port->service_end(&receive->p_rlse, send);
+			break;
+
+		case op_drop_database:
+			port->drop_database(&receive->p_rlse, send);
+			break;
+
+		case op_create_blob:
+		case op_open_blob:
+		case op_create_blob2:
+		case op_open_blob2:
+			port->open_blob(op, &receive->p_blob, send);
+			break;
+
+		case op_batch_segments:
+		case op_put_segment:
+			port->put_segment(op, &receive->p_sgmt, send);
+			break;
+
+		case op_get_segment:
+			port->get_segment(&receive->p_sgmt, send);
+			break;
+
+		case op_seek_blob:
+			port->seek_blob(&receive->p_seek, send);
+			break;
+
+		case op_cancel_blob:
+		case op_close_blob:
+			port->end_blob(op, &receive->p_rlse, send);
+			break;
+
+		case op_prepare2:
+			port->prepare(&receive->p_prep, send);
+			break;
+
+		case op_release:
+			port->end_request(&receive->p_rlse, send);
+			break;
+
+		case op_info_blob:
+		case op_info_database:
+		case op_info_request:
+		case op_info_transaction:
+		case op_service_info:
+		case op_info_sql:
+			port->info(op, &receive->p_info, send);
+			break;
+
+		case op_que_events:
+			port->que_events(&receive->p_event, send);
+			break;
+
+		case op_cancel_events:
+			cancel_events(port, &receive->p_event, send);
+			break;
+
+		case op_connect_request:
+			aux_request(port, &receive->p_req, send);
+			break;
+
+		case op_aux_connect:
+			aux_connect(port, &receive->p_req, send);
+			break;
+
+		case op_ddl:
+			port->ddl(&receive->p_ddl, send);
+			break;
+
+		case op_get_slice:
+			port->get_slice(&receive->p_slc, send);
+			break;
+
+		case op_put_slice:
+			port->put_slice(&receive->p_slc, send);
+			break;
+
+		case op_allocate_statement:
+			allocate_statement(port, &receive->p_rlse, send);
+			break;
+
+		case op_execute:
+		case op_execute2:
+			port->execute_statement(op, &receive->p_sqldata, send);
+			break;
+
+		case op_exec_immediate:
+		case op_exec_immediate2:
+			port->execute_immediate(op, &receive->p_sqlst, send);
+			break;
+
+		case op_fetch:
+			port->fetch(&receive->p_sqldata, send);
+			break;
+
+		case op_free_statement:
+			port->end_statement(&receive->p_sqlfree, send);
+			break;
+
+		case op_insert:
+			port->insert(&receive->p_sqldata, send);
+			break;
+
+		case op_prepare_statement:
+			port->prepare_statement(&receive->p_sqlst, send);
+			break;
+
+		case op_set_cursor:
+			port->set_cursor(&receive->p_sqlcur, send);
+			break;
+
+		case op_dummy:
+			send->p_operation = op_dummy;
+			port->send(send);
+			break;
+
+		default:
+			sprintf(msg, "SERVER/process_packet: don't understand packet type %d",
+					receive->p_operation);
+			gds__log(msg, 0);
+			port->port_state = state_broken;
 			break;
 		}
-		else {
-			if ((server->srvr_flags & SRVR_multi_client) &&
-				port == server->srvr_parent_port)
-					gds__log
-					("SERVER/process_packet: Multi-client server shutdown",
-					 0);
+
+		if (port && port->port_state == state_broken) {
+			if (!port->port_parent) {
+				gds__log("SERVER/process_packet: broken port, server exiting", 0);
+				port->disconnect();
+				THD_restore_specific();
+				return FALSE;
+			}
 			port->disconnect(send, receive);
-			THD_restore_specific();
-			return FALSE;
+			port = NULL;
 		}
 
-	case op_receive:
-		port->receive_msg(&receive->p_data, send);
-		break;
+		if (result)
+			*result = port;
 
-	case op_send:
-		port->send_msg(&receive->p_data, send);
-		break;
-
-	case op_start:
-	case op_start_and_receive:
-		port->start(op, &receive->p_data, send);
-		break;
-
-	case op_start_and_send:
-	case op_start_send_and_receive:
-		port->start_and_send(op, &receive->p_data, send);
-		break;
-
-	case op_transact:
-		port->transact_request(&receive->p_trrq, send);
-		break;
-
-	case op_reconnect:
-	case op_transaction:
-		port->start_transaction(op, &receive->p_sttr, send);
-		break;
-
-	case op_prepare:
-	case op_rollback:
-	case op_rollback_retaining:
-	case op_commit:
-	case op_commit_retaining:
-		port->end_transaction(op, &receive->p_rlse, send);
-		break;
-
-	case op_detach:
-		port->end_database(&receive->p_rlse, send);
-		break;
-
-	case op_service_detach:
-		port->service_end(&receive->p_rlse, send);
-		break;
-
-	case op_drop_database:
-		port->drop_database(&receive->p_rlse, send);
-		break;
-
-	case op_create_blob:
-	case op_open_blob:
-	case op_create_blob2:
-	case op_open_blob2:
-		port->open_blob(op, &receive->p_blob, send);
-		break;
-
-	case op_batch_segments:
-	case op_put_segment:
-		port->put_segment(op, &receive->p_sgmt, send);
-		break;
-
-	case op_get_segment:
-		port->get_segment(&receive->p_sgmt, send);
-		break;
-
-	case op_seek_blob:
-		port->seek_blob(&receive->p_seek, send);
-		break;
-
-	case op_cancel_blob:
-	case op_close_blob:
-		port->end_blob(op, &receive->p_rlse, send);
-		break;
-
-	case op_prepare2:
-		port->prepare(&receive->p_prep, send);
-		break;
-
-	case op_release:
-		port->end_request(&receive->p_rlse, send);
-		break;
-
-	case op_info_blob:
-	case op_info_database:
-	case op_info_request:
-	case op_info_transaction:
-	case op_service_info:
-	case op_info_sql:
-		port->info(op, &receive->p_info, send);
-		break;
-
-	case op_que_events:
-		port->que_events(&receive->p_event, send);
-		break;
-
-	case op_cancel_events:
-		cancel_events(port, &receive->p_event, send);
-		break;
-
-	case op_connect_request:
-		aux_request(port, &receive->p_req, send);
-		break;
-
-	case op_aux_connect:
-		aux_connect(port, &receive->p_req, send);
-		break;
-
-	case op_ddl:
-		port->ddl(&receive->p_ddl, send);
-		break;
-
-	case op_get_slice:
-		port->get_slice(&receive->p_slc, send);
-		break;
-
-	case op_put_slice:
-		port->put_slice(&receive->p_slc, send);
-		break;
-
-	case op_allocate_statement:
-		allocate_statement(port, &receive->p_rlse, send);
-		break;
-
-	case op_execute:
-	case op_execute2:
-		port->execute_statement(op, &receive->p_sqldata, send);
-		break;
-
-	case op_exec_immediate:
-	case op_exec_immediate2:
-		port->execute_immediate(op, &receive->p_sqlst, send);
-		break;
-
-	case op_fetch:
-		port->fetch(&receive->p_sqldata, send);
-		break;
-
-	case op_free_statement:
-		port->end_statement(&receive->p_sqlfree, send);
-		break;
-
-	case op_insert:
-		port->insert(&receive->p_sqldata, send);
-		break;
-
-	case op_prepare_statement:
-		port->prepare_statement(&receive->p_sqlst, send);
-		break;
-
-	case op_set_cursor:
-		port->set_cursor(&receive->p_sqlcur, send);
-		break;
-
-	case op_dummy:
-		send->p_operation = op_dummy;
-		port->send(send);
-		break;
-
-	default:
-		sprintf(msg, "SERVER/process_packet: don't understand packet type %d",
-				receive->p_operation);
-		gds__log(msg, 0);
-		port->port_state = state_broken;
-		break;
-	}
-
-	if (port && port->port_state == state_broken) {
-		if (!port->port_parent) {
-			gds__log("SERVER/process_packet: broken port, server exiting", 0);
-			port->disconnect();
-			THD_restore_specific();
-			return FALSE;
-		}
-		port->disconnect(send, receive);
-		port = NULL;
-	}
-
-	if (result)
-		*result = port;
-
-	THD_restore_specific();
+		THD_restore_specific();
 	
 	}	// try
 	catch (...) {
@@ -4743,7 +4746,7 @@ static void success( STATUS * status_vector)
 }
 
 
-static int THREAD_ROUTINE thread( void *flags)
+static int THREAD_ROUTINE thread(void* flags)
 {
 /**************************************
  *
@@ -4776,17 +4779,20 @@ static int THREAD_ROUTINE thread( void *flags)
 	timedout_count = 0;
 	THREAD_ENTER;
 
-	for (;;) {
+	for (;;)
+	{
 		value = ISC_event_clear(thread_event);
-		if (request = request_que) {
+		if (request = request_que)
+		{
 			inactive_count = 0;
 			timedout_count = 0;
 			request_que = request->req_next;
-			while (request) {
+			while (request)
+			{
 				/* Bind a thread to a port. */
 
-				if (request->req_port->
-					port_server_flags & SRVR_thread_per_port) {
+				if (request->req_port->port_server_flags & SRVR_thread_per_port)
+				{
 					port = request->req_port;
 					request->req_next = free_requests;
 					free_requests = request;
@@ -4804,15 +4810,17 @@ static int THREAD_ROUTINE thread( void *flags)
 
 				/* Validate port.  If it looks ok, process request */
 
-				parent_port =
-					request->req_port->port_server->srvr_parent_port;
-				if (parent_port == request->req_port) {
+				parent_port = request->req_port->port_server->srvr_parent_port;
+				if (parent_port == request->req_port)
+				{
 					process_packet(parent_port, &request->req_send,
 								   &request->req_receive, &port);
 				}
 				else
+				{
 					for (port = parent_port->port_clients; port;
 						 port = port->port_next)
+					{
 
 						if (port == request->req_port
 							&& port->port_state != state_disconnected) {
@@ -4820,20 +4828,25 @@ static int THREAD_ROUTINE thread( void *flags)
 										   &request->req_receive, &port);
 							break;
 						}
+					}
+				}
 
 				/* Take request out of list of active requests */
 
 				for (req_ptr = &active_requests; *req_ptr;
 					 req_ptr = &(*req_ptr)->req_next)
+				{
 					if (*req_ptr == request) {
 						*req_ptr = request->req_next;
 						break;
 					}
+				}
 
 				/* If this is a explicit or implicit disconnect, get rid of
 				   any chained requests */
 
-				if (!port) {
+				if (!port)
+				{
 					while (next = request->req_chain) {
 						request->req_chain = next->req_chain;
 						next->req_next = free_requests;
@@ -4862,7 +4875,7 @@ static int THREAD_ROUTINE thread( void *flags)
 					free_requests = request;
 					request = next;
 				}
-			}
+			}	// while (request)
 		}
 		else {
 			inactive_count++;
