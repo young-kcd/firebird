@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.6 2003-09-11 21:26:20 skidder Exp $
+ *  $Id: rwlock.h,v 1.7 2003-09-13 01:12:45 brodsom Exp $
  *
  */
 
@@ -59,6 +59,33 @@ private:
 	volatile LONG blockedReaders;
 	volatile LONG blockedWriters;
 	HANDLE writers_event, readers_semaphore;
+
+	//
+	// Those inlines are needed due to the different argument taken by msvc6 and msvc7
+	// funcions
+	//
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+	inline LONG InterlockedIncrement_uni(volatile LONG* lock_p){
+		return InterlockedIncrement(const_cast<LONG*>(lock_p));
+	}
+	inline LONG InterlockedDecrement_uni(volatile LONG* lock_p){
+		return InterlockedDecrement(const_cast<LONG*>(lock_p));
+	}
+	inline LONG InterlockedExchangeAdd_uni(volatile LONG* lock_p, LONG value){
+		return InterlockedExchangeAdd(const_cast<LONG*>(lock_p), value);
+	}
+#else
+	inline LONG InterlockedIncrement_uni(volatile LONG* lock_p){
+		return InterlockedIncrement(lock_p);
+	}
+	inline LONG InterlockedDecrement_uni(volatile LONG* lock_p){
+		return InterlockedDecrement(lock_p);
+	}
+	inline LONG InterlockedExchangeAdd_uni(volatile LONG* lock_p, LONG value){
+		return InterlockedExchangeAdd(lock_p, value);
+	}
+#endif
+
 public:
 	RWLock() : lock(0), blockedReaders(0), blockedWriters(0) { 
 		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
@@ -80,45 +107,46 @@ public:
 	}
 	bool tryBeginRead() {
 		if (lock < 0) return false;
-		if (InterlockedIncrement(&lock) > 0) return true;
+		if (InterlockedIncrement_uni(&lock) > 0) return true;
 		// We stepped on writer's toes. Fix our mistake 
-		if (InterlockedDecrement(&lock) == 0)
+		if (InterlockedDecrement_uni(&lock) == 0)
 			unblockWaiting();
 		return false;
 	}
 	bool tryBeginWrite() {
 		if (lock) return false;
-		if (InterlockedExchangeAdd(&lock, -LOCK_WRITER_OFFSET) == 0) return true;
+		if (InterlockedExchangeAdd_uni(&lock, -LOCK_WRITER_OFFSET) == 0) return true;
 		// We stepped on somebody's toes. Fix our mistake
-		if (InterlockedExchangeAdd(&lock, LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
+		if (InterlockedExchangeAdd_uni(&lock, LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
 			unblockWaiting();
 		return false;
 	}
 	void beginRead() {
 		if (!tryBeginRead()) {
-			InterlockedIncrement(&blockedReaders);
+			InterlockedIncrement_uni(&blockedReaders);
 			while (!tryBeginRead())
 				WaitForSingleObject(readers_semaphore, INFINITE);
-			InterlockedDecrement(&blockedReaders); 
+			InterlockedDecrement_uni(&blockedReaders); 
 		}
 	}
 	void beginWrite() {
 		if (!tryBeginWrite()) {
-			InterlockedIncrement(&blockedWriters);
+			InterlockedIncrement_uni(&blockedWriters);
 			while (!tryBeginWrite())
 				WaitForSingleObject(writers_event, INFINITE);
-			InterlockedDecrement(&blockedWriters);
+			InterlockedDecrement_uni(&blockedWriters);
 		}
 	}
 	void endRead() {
-		if (InterlockedDecrement(&lock) == 0)
+		if (InterlockedDecrement_uni(&lock) == 0)
 			unblockWaiting();
 	}
 	void endWrite() {
-		if (InterlockedExchangeAdd(&lock, LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
+		if (InterlockedExchangeAdd_uni(&lock, LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
 			unblockWaiting();
 	}
 };
+
 
 }
 
