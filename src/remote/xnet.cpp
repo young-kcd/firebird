@@ -2366,7 +2366,6 @@ static rem_port* get_server_port(ULONG client_pid,
 		xcc->xcc_map_num = map_num;
 		XPS xps = (XPS) xcc->xcc_mapped_addr;
 		xps->xps_client_proc_id = client_pid;
-
 		xps->xps_server_proc_id = current_process_id;
 
 		// make sure client knows what this server speaks
@@ -2516,9 +2515,6 @@ void XNET_srv(USHORT flag)
 
 	while (!xnet_shutdown) {
 
-		// mark connect area as untouched
-//		presponse->proc_id = getpid();
-
 		THREAD_EXIT();
 		const DWORD wait_res = WaitForSingleObject(xnet_connect_event, INFINITE);
 		THREAD_ENTER();
@@ -2533,9 +2529,9 @@ void XNET_srv(USHORT flag)
 
 		// read client process id
 		const ULONG client_pid = presponse->proc_id;
-		if (client_pid == current_process_id)
+		if (!client_pid)
 			continue; // dummy xnet_connect_event fire - no connect request
-			
+
 		presponse->slots_per_map = global_slots_per_map;
 		presponse->pages_per_slot = global_pages_per_slot;
 		presponse->timestamp = time_t(0);
@@ -2550,7 +2546,7 @@ void XNET_srv(USHORT flag)
 
 		// pack combined mapped area and number
 		if (xpm) {
-			presponse->proc_id = current_process_id;
+			presponse->proc_id = 0;
 			presponse->map_num = map_num;
 			presponse->slot_num = slot_num;
 			presponse->timestamp = timestamp;
