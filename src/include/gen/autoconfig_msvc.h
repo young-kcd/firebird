@@ -90,6 +90,7 @@
 #undef HAVE_FLOCK
 #undef HAVE_INITGROUPS
 #undef HAVE_GETPAGESIZE
+#undef HAVE_XDR_HYPER
 
 /* Types */
 #undef socklen_t

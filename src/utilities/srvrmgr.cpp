@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.8 2002-11-04 11:19:19 eku Exp $
+ * $Id: srvrmgr.cpp,v 1.9 2002-11-04 13:57:12 eku Exp $
  */
 
 #include "firebird.h"
@@ -53,7 +53,6 @@
 
 #define STUFF_WORD(p, value)    {*p++ = value; *p++ = value >> 8;}
 
-#define STATUS_BUFLEN           20	/* status vector length */
 #define SPB_BUFLEN              128	/* service params buffer length */
 #define SEND_BUFLEN             32	/* length of send and resp */
 #define RESP_BUFLEN             128	/* used by isc_service_query */
@@ -314,7 +313,7 @@ static BOOLEAN attach_service( IBMGR_DATA * data)
  *	service depending on thr user name.
  *
  **************************************/
-	STATUS status[STATUS_BUFLEN];
+	STATUS status[ISC_STATUS_LENGTH];
 	TEXT spb[SPB_BUFLEN], *p;
 	TEXT svc_name[128];
 
@@ -376,7 +375,7 @@ static BOOLEAN detach_service( IBMGR_DATA * data)
  *      before, shutdowns the server.
  *
  **************************************/
-	STATUS status[STATUS_BUFLEN];
+	STATUS status[ISC_STATUS_LENGTH];
 
 /* We should be attached if we want to detach
 */
@@ -413,7 +412,7 @@ static BOOLEAN start_shutdown( IBMGR_DATA * data)
  *      Initiate shutdown process
  *
  **************************************/
-	STATUS status[STATUS_BUFLEN];
+	STATUS status[ISC_STATUS_LENGTH];
 	char sendbuf[SEND_BUFLEN];
 	char respbuf[2];
 
@@ -563,7 +562,7 @@ static BOOLEAN server_is_ok( IBMGR_DATA * data)
  *	security database.
  *
  **************************************/
-	STATUS status[STATUS_BUFLEN];
+	STATUS status[ISC_STATUS_LENGTH];
 	TEXT path[MAXPATHLEN];
 	TEXT db_name[128];
 	isc_db_handle db_handle = 0L;
@@ -607,7 +606,7 @@ static BOOLEAN server_is_up( IBMGR_DATA * data)
  *	trying to attach to "anonymous" service.
  *
  **************************************/
-	STATUS status[STATUS_BUFLEN];
+	STATUS status[ISC_STATUS_LENGTH];
 	TEXT svc_name[128];
 	isc_svc_handle svc_handle = NULL;
 	BOOLEAN up;
@@ -658,7 +657,7 @@ static BOOLEAN print_pool( IBMGR_DATA * data)
  *      Make the server print memory pools
  *
  **************************************/
-	STATUS status[STATUS_BUFLEN];
+	STATUS status[ISC_STATUS_LENGTH];
 	char *sptr, sendbuf[512];
 	USHORT path_length;
 	char respbuf[2];

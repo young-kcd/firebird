@@ -55,7 +55,7 @@ void IBERR_append_status(STATUS * status_vector, STATUS status, ...)
 
 /* Now find the end of the passed status vector info */
 
-	for (status_end = status_vector + 20; *status_vector; status_vector++);
+	for (status_end = status_vector + ISC_STATUS_LENGTH; *status_vector; status_vector++);
 
 /* Now append the newly built local status vector to the passed one */
 

@@ -92,7 +92,7 @@ void HSH_init(void)
 	register SSHORT i;
 	struct word *word;
 
-	for (i = 0, word = keywords; i < NUMWORDS; i++, word++) {
+	for (i = 0, word = keywords; i < (SSHORT)NUMWORDS; i++, word++) {
 		for (string = word->keyword; *string; string++);
 		symbol = (SYM) ALLOCPV(type_sym, 0);
 		symbol->sym_type = SYM_keyword;

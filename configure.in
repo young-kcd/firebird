@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.59 2002-11-04 08:07:23 eku Exp $
+dnl $Id: configure.in,v 1.60 2002-11-04 13:57:08 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -222,6 +222,7 @@ AC_FUNC_SETPGRP
 AC_CHECK_FUNCS(flock)
 AC_CHECK_FUNCS(initgroups)
 AC_CHECK_FUNCS(getpagesize)
+AC_CHECK_FUNCS(xdr_hyper)
 
 
 dnl Check for other things

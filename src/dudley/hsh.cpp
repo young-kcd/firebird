@@ -283,7 +283,7 @@ void HSH_init(void)
 	register USHORT i;
 	register SSHORT length;
 
-	for (i = 0; i < NUMWORDS; i++) {
+	for (i = 0; i < (USHORT)NUMWORDS; i++) {
 		string = keywords[i].keyword;
 		for (length = 0; string[length] != '\0'; length++);
 		symbol = (SYM) DDL_alloc(SYM_LEN);

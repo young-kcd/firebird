@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.44 2002-10-31 05:05:56 seanleyne Exp $
+$Id: common.h,v 1.45 2002-11-04 13:57:10 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -337,10 +337,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #ifndef SFIO
 #define NEED_IB_STDIO
 #endif
-/* Define the following macro only on platforms which supply the library
-   routine xdr_hyper.  For other platforms, omit the definition of this
-   macro, and we will supply that function where we need it. */
-#define PLATFORM_SUPPLIES_XDR_HYPER
 
 #ifdef SOLX86
 #define LSEEK_OFFSET_CAST (off_t)

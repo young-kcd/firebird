@@ -6281,7 +6281,7 @@ static void move_error( STATUS status, ...)
 
 	trdb = GET_THREAD_DATA;
 	p_args = trdb->trdb_status_vector;
-	end_args = p_args + 20;
+	end_args = p_args + ISC_STATUS_LENGTH;
 
 	*p_args++ = gds_arg_gds;
 	*p_args++ = gds_random;

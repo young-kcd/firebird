@@ -2950,7 +2950,7 @@ USHORT buffer_length, UCHAR * buffer, USHORT * return_length)
 
 	p = error_buffer;
 
-	for (status = user_status, end = status + 20, stuff =
+	for (status = user_status, end = status + ISC_STATUS_LENGTH, stuff =
 		 message->msg_resp_status; (*status = *stuff++) && status < end;)
 		switch (*status++) {
 		case gds_arg_interpreted:

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csv.cpp,v 1.5 2002-10-24 09:01:25 eku Exp $
+$Id: csv.cpp,v 1.6 2002-11-04 13:57:10 eku Exp $
 */
 
 #include "firebird.h"
@@ -2627,7 +2627,7 @@ static int send_response(
 	if (!status_vector[1])
 		status_vector[2] = gds_arg_end;
 	else
-		for (status = status_vector; *status && status < status_vector + 20;)
+		for (status = status_vector; *status && status < status_vector + ISC_STATUS_LENGTH;)
 			switch (*status++) {
 			case gds_arg_interpreted:
 			case gds_arg_string:
@@ -2665,7 +2665,7 @@ static int send_response(
 /* Start by translating the status vector into "generic" form */
 
 	for (status = status_vector, target = message->msg_resp_status;
-		 (*target++ = *status) && status < status_vector + 20;)
+		 (*target++ = *status) && status < status_vector + ISC_STATUS_LENGTH;)
 		switch (*status++) {
 		case gds_arg_interpreted:
 		case gds_arg_string:

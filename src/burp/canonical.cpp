@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.8 2002-10-31 05:05:53 seanleyne Exp $
+$Id: canonical.cpp,v 1.9 2002-11-04 13:57:09 eku Exp $
 */
 
 #include "firebird.h"
@@ -71,7 +71,7 @@ static bool_t xdr_quad(register XDR*, register SLONG*);
 static int xdr_init(XDR*, LSTRING*, enum xdr_op);
 static bool_t xdr_slice(XDR*, LSTRING*, USHORT, UCHAR*);
 
-#ifdef PLATFORM_SUPPLIES_XDR_HYPER
+#ifdef HAVE_XDR_HYPER
 extern bool_t xdr_hyper(register XDR *, SINT64 *);
 #else
 static bool_t xdr_hyper(register XDR *, SINT64 *);
@@ -937,7 +937,7 @@ static bool_t xdr_slice(XDR* xdrs,
 }
 
 
-#ifndef PLATFORM_SUPPLIES_XDR_HYPER
+#ifndef HAVE_XDR_HYPER
 static bool_t xdr_hyper(register XDR* xdrs, SINT64* pi64)
 {
 /**************************************

@@ -55,7 +55,6 @@ void ShowErrDlg(int, char *, HWND);
 // Symbolic constant definitions
 #define PASSWORD_LEN            33	// MAXIMUM PASSWORD LENGTH DEFINITION
 #define TEMP_BUFLEN             33
-#define STATUS_BUFLEN           20
 #define SEND_BUFLEN             32
 #define RESP_BUFLEN             128
 
@@ -317,7 +316,7 @@ BOOL ReadIBSettings(HWND hDlg)
  *****************************************************************************/
 	BOOL bSuccess;
 	char pchTmp[TEMP_BUFLEN];
-	long pdwStatus[STATUS_BUFLEN];
+	STATUS pdwStatus[ISC_STATUS_LENGTH];
 	isc_svc_handle hService = NULL;
 	char pchRcvBuf[SEND_BUFLEN], pchResBuf[RESP_BUFLEN];
 	char *pchPtr;
@@ -470,7 +469,7 @@ BOOL WriteIBSettings(HWND hDlg)
  *  Description: This method calls the ISC_set_config() function to write the
  *               current OS settings in the config file.
  *****************************************************************************/
-	long pdwStatus[STATUS_BUFLEN];
+	STATUS pdwStatus[ISC_STATUS_LENGTH];
 	isc_svc_handle hService = NULL;
 	char pchSendBuf[SEND_BUFLEN];
 	char *pchPtr;
@@ -637,7 +636,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 	case WM_COMMAND:
 		if (wParam == IDOK) {
 			char szPassword[PASSWORD_LEN];
-			long pdwStatus[STATUS_BUFLEN];
+			STATUS pdwStatus[ISC_STATUS_LENGTH];
 			isc_svc_handle hService = NULL;
 			char szSpb[SPB_BUFLEN];
 			HCURSOR hOldCursor = NULL;
