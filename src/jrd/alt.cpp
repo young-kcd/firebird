@@ -607,7 +607,7 @@ ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS* status_vector,
 void API_ROUTINE gds__event_counts(
 								  ULONG* result_vector,
 								  SSHORT length,
-								  SCHAR* before, const SCHAR* after)
+								  SCHAR* before, const UCHAR* after)
 {
 	isc_event_counts(result_vector, length, before, after);
 }

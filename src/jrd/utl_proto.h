@@ -38,7 +38,7 @@ SLONG	API_ROUTINE_VARARG isc_event_block(SCHAR**, SCHAR**, USHORT, ...);
 USHORT	API_ROUTINE isc_event_block_a(SCHAR**, SCHAR**, USHORT, TEXT**);
 void	API_ROUTINE isc_event_block_s(SCHAR**, SCHAR**, USHORT, TEXT**, USHORT*);
 
-void	API_ROUTINE isc_event_counts(ULONG*, SSHORT, SCHAR*, const SCHAR*);
+void	API_ROUTINE isc_event_counts(ULONG*, SSHORT, SCHAR*, const UCHAR*);
 void	API_ROUTINE isc_get_client_version(SCHAR *);
 int		API_ROUTINE isc_get_client_major_version();
 int		API_ROUTINE isc_get_client_minor_version();

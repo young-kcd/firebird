@@ -876,7 +876,7 @@ void API_ROUTINE isc_event_counts(
 					ULONG* result_vector,
 					SSHORT buffer_length,
 					SCHAR* event_buffer,
-					const SCHAR* result_buffer)
+					const UCHAR* result_buffer)
 {
 /**************************************
  *
@@ -892,7 +892,7 @@ void API_ROUTINE isc_event_counts(
  **************************************/
 	ULONG* vec = result_vector;
 	TEXT* p = event_buffer;
-	const TEXT* q = result_buffer;
+	const UCHAR* q = result_buffer;
 	USHORT length = buffer_length;
 	const TEXT* const end = p + length;
 
@@ -913,7 +913,7 @@ void API_ROUTINE isc_event_counts(
 			gds__vax_integer(reinterpret_cast<const UCHAR*>(p), sizeof(SLONG));
 		p += sizeof(SLONG);
 		const ULONG new_count =
-			gds__vax_integer(reinterpret_cast<const UCHAR*>(q), sizeof(SLONG));
+			gds__vax_integer(q, sizeof(SLONG));
 		q += sizeof(SLONG);
 		*vec++ = new_count - initial_count;
 	}

@@ -73,7 +73,7 @@ ISC_STATUS	API_ROUTINE gds__database_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT,
 
 ISC_STATUS	API_ROUTINE gds__detach_database(ISC_STATUS*, FB_API_HANDLE*);
 
-void		API_ROUTINE gds__event_counts(ULONG*, SSHORT, SCHAR*, const SCHAR*);
+void		API_ROUTINE gds__event_counts(ULONG*, SSHORT, SCHAR*, const UCHAR*);
 
 void		API_ROUTINE gds__get_client_version(SCHAR*);
 
