@@ -44,60 +44,85 @@ class jrd_req;
 class jrd_tra;
 
 // This structure must occupy 8 bytes
-struct bid {	
-	USHORT bid_relation_id;		/* Relation id (or null) */
-	UCHAR bid_reserved_for_relation;	/* Reserved for future expansion of relation space. */
+struct bid {
 	union {
+		// Internal decomposition of the structure
 		struct {
-			UCHAR bid_temp_pad_byte; /* Pad byte to align bid_temp_id */
-			UCHAR bid_temp_id[4];	/* Temporary ID of blob or array. Used for newly created objects (bid_relation_id==0) 
-									   Must be 4-byte aligned. Declared as char array to prevent compiler from vuluntary
-									   alignment decisions. */
-		} bid_temporary;
+			USHORT bid_relation_id;		/* Relation id (or null) */
+			UCHAR bid_reserved_for_relation;	/* Reserved for future expansion of relation space. */
+			UCHAR bid_number[5]; // This is either record number encoded as 40-bit record number
+								 // or 32-bit temporary ID of blob or array prefixed with zero byte
+		} bid_internal;
+
+		// This is how bid structure represented in public API.
+		// Must be present to enforce alignment rules when structure is declared on stack
 		struct {
-			UCHAR bid_number[5];	/* Record number encoded as 40-bit quantity */
-		} bid_permanent;
+			ULONG bid_quad_high;
+			ULONG bid_quad_low;
+		} bid_quad;
 	};
 
 	ULONG& bid_temp_id() {
-		return *reinterpret_cast<ULONG*>(bid_temporary.bid_temp_id);
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		return *reinterpret_cast<ULONG*>(bid_internal.bid_number + 1);
 	}
 
 	ULONG bid_temp_id() const {
-		return *reinterpret_cast<const ULONG*>(bid_temporary.bid_temp_id);
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		return *reinterpret_cast<const ULONG*>(bid_internal.bid_number + 1);
 	}
 
 	bool isEmpty() const { 
-		// Do not use 8-byte integer to do the check because 
-		// structure is commonly 4-byte aligned on 64-bit platform
-		fb_assert(sizeof(bid) == 8);
-		ULONG* bid_ptr = (ULONG*) this;
-		return bid_ptr[0] == 0 && bid_ptr[1] == 0; 
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		return bid_quad.bid_quad_high == 0 && bid_quad.bid_quad_low == 0; 
 	}
 
 	void clear() {
-		memset(this, 0, sizeof(*this));
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		bid_quad.bid_quad_high = 0;
+		bid_quad.bid_quad_low = 0;
 	}
 
 	void set_temporary(ULONG temp_id) {
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
 		clear();
 		bid_temp_id() = temp_id;
 	}
 
 	void set_permanent(USHORT relation_id, RecordNumber num) {
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
 		clear();
-		bid_relation_id = relation_id;
-		num.bid_encode(bid_permanent.bid_number);
+		bid_internal.bid_relation_id = relation_id;
+		num.bid_encode(bid_internal.bid_number);
 	}
 
 	RecordNumber get_permanent_number() const {
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
 		RecordNumber temp;
-		temp.bid_decode(bid_permanent.bid_number);
+		temp.bid_decode(bid_internal.bid_number);
 		return temp;
 	}
 
 	bool operator == (const bid& other) const {
-		return memcmp(this, &other, sizeof(bid)) == 0;
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		return bid_quad.bid_quad_high == other.bid_quad.bid_quad_high && 
+			bid_quad.bid_quad_low == other.bid_quad.bid_quad_low;
 	}
 };
 

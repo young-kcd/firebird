@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.88 2004-09-28 06:27:22 skidder Exp $
+$Id: blb.cpp,v 1.89 2004-09-30 17:45:09 skidder Exp $
 */
 
 #include "firebird.h"
@@ -904,7 +904,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	do {
 		materialized_blob = false;
 		blobIndex = NULL;
-		if (source->bid_relation_id)
+		if (source->bid_internal.bid_relation_id)
 			blob = copy_blob(tdbb, source, destination);
 		else if ((to_desc->dsc_dtype == dtype_array) &&
 				 (array = find_array(transaction, source)) &&
@@ -1173,7 +1173,7 @@ blb* BLB_open2(thread_db* tdbb,
 		return blob;
 	}
 
-	if (!blob_id->bid_relation_id)
+	if (!blob_id->bid_internal.bid_relation_id)
 		if (blob_id->isEmpty())
 		{
 			blob->blb_flags |= BLB_eof;
@@ -1229,9 +1229,9 @@ blb* BLB_open2(thread_db* tdbb,
 
 	vec* vector = dbb->dbb_relations;
 
-	if (blob_id->bid_relation_id >= vector->count() ||
+	if (blob_id->bid_internal.bid_relation_id >= vector->count() ||
 		!(blob->blb_relation =
-		  static_cast<jrd_rel*>( (*vector)[blob_id->bid_relation_id]) ) )
+		  static_cast<jrd_rel*>( (*vector)[blob_id->bid_internal.bid_relation_id]) ) )
 	{
 			ERR_post(isc_bad_segstr_id, 0);
 	}
@@ -1470,7 +1470,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 */
 	ArrayField* array = 0;
 	array_slice arg;
-	if (blob_id->bid_relation_id)
+	if (blob_id->bid_internal.bid_relation_id)
 	{
 		for (array = transaction->tra_arrays; array; array = array->arr_next)
 		{
@@ -1947,7 +1947,7 @@ static void delete_blob_id(
 	if (blob_id->isEmpty())
 		return;
 
-	if (blob_id->bid_relation_id != relation->rel_id)
+	if (blob_id->bid_internal.bid_relation_id != relation->rel_id)
 		CORRUPT(200);			/* msg 200 invalid blob id */
 
 /* Fetch blob */
@@ -2134,7 +2134,7 @@ static void get_replay_blob(thread_db* tdbb, bid* blob_id)
 
 /* we're only interested in newly created blobs */
 
-	if (blob_id->bid_relation_id != 0)
+	if (blob_id->bid_internal.bid_relation_id != 0)
 		return;
 
 /* search the linked list for the old blob id */
