@@ -52,7 +52,7 @@ typedef struct blk {
 #include "../jrd/jrn.h"
 #include "../journal/journal.h"
 #include "../jrd/thd.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../wal/wal.h"
 #include "../jrd/dsc.h"
 #include "../jrd/btr.h"

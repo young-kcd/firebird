@@ -55,7 +55,7 @@
 #include "../jrd/license.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/gds.h"
 #include "../jrd/llio.h"
 #include "../journal/journal.h"
