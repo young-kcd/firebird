@@ -271,7 +271,7 @@ static const SCHAR * const messages[] = {
 	"Dynamic SQL Error",		/* 249, dsql_error */
 	"Invalid command",		/* 250, dsql_command_err */
 	"Data type for constant unknown",		/* 251, dsql_constant_err */
-	"Cursor unknown",		/* 252, dsql_cursor_err */
+	"Cursor %s %s",		/* 252, dsql_cursor_err */
 	"Data type unknown",		/* 253, dsql_datatype_err */
 	"Declared cursor already exists",		/* 254, dsql_decl_err */
 	"Cursor not updatable",		/* 255, dsql_cursor_update_err */
