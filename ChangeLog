@@ -1,3 +1,28 @@
+2005-03-11 01:34  robocop
+
+	* firebird2/doc/WhatsNew (1.60):
+	
+	Misc.
+
+2005-03-10 11:27  aafemt
+
+	* firebird2/src/jrd/Optimizer.cpp (1.12):
+	
+	There is no need for MSVC hacks if MSVC is not used
+
+2005-03-10 11:23  aafemt
+
+	* firebird2/src/remote/inet.cpp (1.140):
+	
+	no more THD_* stuff in client
+
+2005-03-10 03:35  robocop
+
+	* firebird2/doc/: README.isql_enhancements.txt (1.2),
+	sql.extensions/README.ddl.txt (1.2):
+	
+	Write my pending documentation.
+
 2005-03-09 17:26  dimitr
 
 	* firebird2/src/remote/interface.cpp (1.100):
