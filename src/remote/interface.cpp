@@ -4858,7 +4858,7 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 #ifdef UNIX
 
 	if (!port && node_name.isEmpty()) {
-		service_name = "localhost:" + service_name;
+		service_name.insert(0, "localhost:");
 		if (ISC_analyze_tcp(service_name, node_name))
 		{
 			return INET_analyze(service_name, 
@@ -5778,8 +5778,8 @@ static bool get_new_dpb(const UCHAR*	dpb,
 		pw_buffer[l] = 0;
 		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
 		ENC_crypt(pwt, sizeof pwt, reinterpret_cast<char*>(pw_buffer), PASSWORD_SALT);
-		TEXT *pp = pwt + 2;
-		*s++ = strlen((const char*) pp);
+		const char* pp = pwt + 2;
+		*s++ = strlen(pp);
 		while (*pp) {
 			*s++ = *pp++;
 		}
