@@ -1,3 +1,166 @@
+2002-11-11 20:45  hippoman
+
+	* firebird2/src/qli/: blk.h, command.cpp, compile.cpp, eval.cpp,
+	exe.cpp, exe.h, expand.cpp, format.cpp, gener.cpp, noform.cpp,
+	parse.cpp, report.cpp:
+	
+	* Changed NOD struct name to QLI_NOD.
+
+2002-11-11 20:42  hippoman
+
+	* firebird2/src/jrd/: blb.cpp, blk.h, btr.cpp, cmp.cpp, evl.cpp,
+	exe.cpp, exe.h, ext.cpp, inf.cpp, jrd.cpp, nav.cpp, opt.cpp,
+	par.cpp, rng.cpp, rse.cpp:
+	
+	* Changed NOD struct name to JRD_NOD.
+
+2002-11-11 20:19  hippoman
+
+	* firebird2/src/gpre/: c_cxx.cpp, cmd.cpp, cme.cpp, cme_proto.h,
+	cmp.cpp, exp.cpp, exp_proto.h, gpre.h, gpre_meta.epp, gpre_meta.h,
+	gpre_meta_boot.cpp, jrdmet.cpp, msc.cpp, msc_proto.h, par.cpp,
+	sqe.cpp, sqe_proto.h, sql.cpp:
+	
+	* Changed NOD struct name to GPRE_NOD.
+
+2002-11-11 20:11  hippoman
+
+	* firebird2/src/dudley/: ddl.cpp, ddl.h, ddl_proto.h, expand.cpp,
+	expr.cpp, expr_proto.h, gener_proto.h, generate.cpp, parse.cpp,
+	parse_proto.h, trn.cpp:
+	
+	* Changed NOD struct name to DUDLEY_NOD.
+
+2002-11-11 20:08  hippoman
+
+	* firebird2/src/dsql/: blk.h, ddl.cpp, dsql.cpp, gen.cpp,
+	gen_proto.h, make.cpp, metd.epp, metd_proto.h, node.h, parse.cpp,
+	parse.y, pass1.cpp, pass1_proto.h:
+	
+	* Changed NOD struct name to DSQL_NOD.
+
+2002-11-11 19:28  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Increase time interval, given to thread with high priority in
+	JRD_reschedule
+
+2002-11-11 19:08  alexpeshkoff
+
+	* firebird2/src/jrd/os/: win32/thd_priority.cpp, thd_priority.h:
+	
+	Increase time interval, given to thread with high priority in
+	JRD_reschedule Cleanup
+
+2002-11-11 19:05  alexpeshkoff
+
+	* firebird2/src/: common/fb_exception.cpp, include/fb_exception.h:
+	
+	Added 2 new exceptions Cleanup
+
+2002-11-11 17:07  skywalker
+
+	* firebird2/src/install/arch-specific/linux/Makefile.in:
+	
+	Change where rpm file is left.
+
+2002-11-11 17:04  skywalker
+
+	* firebird2/configure.in:
+	
+	Change location of Makefile.install to
+	arch-specific/${MAKEFILE_PREFIX} This 'should' work for Erik as
+	well.
+
+2002-11-11 16:52  kkuznetsov
+
+	* firebird2/src/remote/protocol.cpp:
+	
+	more flesible way
+
+2002-11-11 16:34  kkuznetsov
+
+	* firebird2/src/remote/protocol.cpp:
+	
+	Fix compile error on Solaris 2.6
+
+2002-11-11 16:17  skywalker
+
+	* firebird2/src/install/arch-specific/linux/Makefile.in:
+	
+	Move components from Makefile.in.install to here
+
+2002-11-11 15:48  skywalker
+
+	* firebird2/doc/: README.makefiles, README.user,
+	README.user.troubleshooting:
+	
+	Added troubleshooting guide and simple user intro
+
+2002-11-11 15:08  skywalker
+
+	* firebird2/configure.in:
+	
+	Change of package id to Alpha3
+
+2002-11-11 14:54  skywalker
+
+	* firebird2/src/install/arch-specific/linux/: CSrpmscript,
+	SSrpmscript:
+	
+	Files no longer needed - hangover from old old build process
+
+2002-11-11 14:52  skywalker
+
+	* firebird2/src/install/arch-specific/linux/classic/:
+	install.sh.in, makeInstallImage.sh.in, postinstall.sh.in:
+	
+	Minor changes to install procedure.  makeInstallImage.sh copies doc
+	files and handles missing files from build postinstall.sh handles
+	/etc/services correctly and generate password as well
+
+2002-11-11 14:09  eku
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.firebird,
+	builds/posix/Makefile.in.install,
+	src/install/arch-specific/darwin/Makefile.in,
+	src/install/arch-specific/linux/Makefile.in,
+	src/install/arch-specific/sinixz/Makefile.in:
+	
+	Moved plaform specific installation and packaging rules from
+	builds/posix/Makefile.in.install and
+	builds/posix/Makefile.in.firebird to
+	src/install/arch-specific/<platform>/Makefile.in.
+
+2002-11-11 11:03  dimitr
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Cleanup.
+
+2002-11-11 06:56  skywalker
+
+	* firebird2/src/install/arch-specific/linux/classic/:
+	install.sh.in, makeInstallImage.sh.in, postinstall.sh.in,
+	postuninstall.sh.in, preinstall.sh.in, preuninstall.sh.in,
+	rpmfiles.txt.in, rpmheader.txt.in, tarMainInstall.sh.in,
+	tarMainUninstall.sh.in, tarinstall.sh.in, taruninstall.sh.in:
+	
+	Changes to linux classic package/install
+
+2002-11-11 06:55  skywalker
+
+	* firebird2/builds/posix/Makefile.in.install:
+	
+	Changes to linux classic packaging/install
+
+2002-11-11 06:54  skywalker
+
+	* firebird2/configure.in:
+	
+	Changes to packaging of linux classic build
+
 2002-11-10 17:34  dimitr
 
 	* firebird2/src/ipserver/: ipc.h, ipclient.cpp, ipserver.cpp:
