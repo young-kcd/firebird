@@ -2090,7 +2090,6 @@ void DLL_EXPORT CMP_release(TDBB tdbb, JRD_REQ request)
  *	Release an unneeded and unloved request.
  *
  **************************************/
-	JRD_REQ *next;
 	IDL index;
 	JRD_REL relation;
 	RSC resource;
@@ -2141,13 +2140,21 @@ void DLL_EXPORT CMP_release(TDBB tdbb, JRD_REQ request)
 	RNG_release_ranges(request);
 #endif
 
-	if (request->req_attachment)
-		for (next = &request->req_attachment->att_requests; *next;
-			 next = &(*next)->req_request)
+	if (request->req_attachment) {
+		for (JRD_REQ *next = &request->req_attachment->att_requests; 
+		*next; next = &(*next)->req_request) {
 			if (*next == request) {
 				*next = request->req_request;
+#ifdef DEV_BUILD
+				if (*next) {
+					JRD_REQ req = (*next)->req_request;
+					req++;
+				}
+#endif
 				break;
 			}
+		}
+	}
 
 	JrdMemoryPool::deletePool(request->req_pool);
 }
