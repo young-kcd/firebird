@@ -2356,7 +2356,7 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 		/* create an event semaphore, but make sure it's a new one */
 
 		for (evsem = 0; evsem < 1000; evsem++) {
-			sprintf(name_buffer, IPI_EVENT_THREAD, evsem);
+			sprintf(name_buffer, IPI_EVENT_THREAD, IPI_PREFIX_NAME, evsem);
 			event_semaphore =
 				CreateSemaphore(ISC_get_security_desc(), 0L, 10000L,
 								name_buffer);
@@ -3560,13 +3560,14 @@ static void event_packer( ICC icc)
  *	the server isn't kept waiting
  *
  **************************************/
-	TEXT name_buffer[128];
+	TEXT name_buffer[128], class_buffer[32];
 
 
 	/* init the window, which never really returns */
 
-	sprintf(name_buffer, IPI_EVENT_NAME, icc->icc_file, icc->icc_slot);
-	IPC_window_init((char *) IPI_EVENT_CLASS, (char *) name_buffer,
+	sprintf(name_buffer, IPI_EVENT_NAME, IPI_PREFIX_NAME, icc->icc_file, icc->icc_slot);
+	sprintf(class_buffer, IPI_EVENT_CLASS, IPI_PREFIX_NAME);
+	IPC_window_init((char *) class_buffer, (char *) name_buffer,
 					&event_window, event_semaphore);
 	CloseHandle(event_packer_handle);
 	event_packer_handle = 0;
@@ -3860,7 +3861,7 @@ static SSHORT init( STATUS * user_status, ICC * picc)
 		{
 			/* add new mapping */
 
-			sprintf(name_buffer, IPI_MAPPED_FILE_NAME, mapped_area);
+			sprintf(name_buffer, IPI_MAPPED_FILE_NAME, IPI_PREFIX_NAME, mapped_area);
 			file_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE, name_buffer);
 			if (!file_handle) {
 				THD_mutex_unlock(&clisect);
@@ -3938,11 +3939,11 @@ static SSHORT init( STATUS * user_status, ICC * picc)
 
 		/* get handles of semaphores */
 
-		sprintf(name_buffer, IPI_CLIENT_SEM_NAME,
+		sprintf(name_buffer, IPI_CLIENT_SEM_NAME, IPI_PREFIX_NAME,
 				mapped_area, mapped_position);
 		icc->icc_client_sem = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE,
 											name_buffer);
-		sprintf(name_buffer, IPI_SERVER_SEM_NAME,
+		sprintf(name_buffer, IPI_SERVER_SEM_NAME, IPI_PREFIX_NAME,
 				mapped_area, mapped_position);
 		icc->icc_server_sem = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE,
 											name_buffer);

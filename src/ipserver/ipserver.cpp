@@ -483,10 +483,12 @@ ULONG IPS_start_thread(ULONG client_pid)
 
 	/* create the semaphores and put the handles into the icc */
 
-	sprintf(name_buffer, IPI_CLIENT_SEM_NAME, mapped_area, mapped_position);
+	sprintf(name_buffer, IPI_CLIENT_SEM_NAME, IPI_PREFIX_NAME,
+		mapped_area, mapped_position);
 	icc->icc_client_sem =
 		CreateSemaphore(ISC_get_security_desc(), 0L, 1L, name_buffer);
-	sprintf(name_buffer, IPI_SERVER_SEM_NAME, mapped_area, mapped_position);
+	sprintf(name_buffer, IPI_SERVER_SEM_NAME, IPI_PREFIX_NAME,
+		mapped_area, mapped_position);
 	icc->icc_server_sem =
 		CreateSemaphore(ISC_get_security_desc(), 0L, 1L, name_buffer);
 
@@ -2303,7 +2305,7 @@ static IPM make_map( USHORT map_number)
 
 	/* create the mapped file name and try to open it */
 
-	sprintf(name_buffer, IPI_MAPPED_FILE_NAME, map_number);
+	sprintf(name_buffer, IPI_MAPPED_FILE_NAME, IPI_PREFIX_NAME, map_number);
 	map_handle = CreateFileMapping((HANDLE) 0xFFFFFFFF,
 								   ISC_get_security_desc(),
 								   PAGE_READWRITE,

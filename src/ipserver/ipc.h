@@ -633,14 +633,14 @@ typedef struct {
 
 /* Windows names used to identify various named objects */
 
-#define	IPI_SERVER_NAME		"InterBaseIPIServer"
-#define	IPI_SERVER_CLASS	"InterBaseIPIServerClass"
-#define	IPI_MAPPED_FILE_NAME	"InterBaseIPIMappedArea%d"
-#define	IPI_CLIENT_SEM_NAME	"InterBaseIPIClientSem%d_%d"
-#define	IPI_SERVER_SEM_NAME	"InterBaseIPIServerSem%d_%d"
-#define	IPI_EVENT_NAME		"InterBaseIPIEvent%d"
-#define	IPI_EVENT_CLASS		"InterBaseIPIEventClass"
-#define	IPI_EVENT_THREAD	"InterBaseIPIEventThread%d_%d"
+#define IPI_PREFIX_NAME			"InterBaseIPI"
+
+#define	IPI_MAPPED_FILE_NAME	"%sMappedArea%d"
+#define	IPI_CLIENT_SEM_NAME		"%sClientSem%d_%d"
+#define	IPI_SERVER_SEM_NAME		"%sServerSem%d_%d"
+#define	IPI_EVENT_NAME			"%sEvent%d"
+#define	IPI_EVENT_CLASS			"%sEventClass"
+#define	IPI_EVENT_THREAD		"%sEventThread%d_%d"
 
 /* local event queue structure */
 
