@@ -308,7 +308,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	//gds_alloc_report(0, __FILE__, __LINE__);
 	char name[MAXPATHLEN];
 	gds__prefix(name, "memdebug.log");
-	FILE* file = fopen(name, "w+b");
+	FILE* file = fopen(name, "w+t");
 	if (file) {
 	  fprintf(file, "Global memory pool allocated objects\n");
 	  getDefaultMemoryPool()->print_contents(file);
