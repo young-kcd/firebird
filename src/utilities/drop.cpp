@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: drop.cpp,v 1.7 2002-08-26 12:10:19 eku Exp $
+$Id: drop.cpp,v 1.8 2002-08-26 13:20:05 eku Exp $
 */
 
 #include "firebird.h"
@@ -180,7 +180,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 #if !(defined WIN_NT || defined NETWARE_386 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN)
 	if (!sw_nobridge) {
 		ib_printf("\nBRIDGE RESOURCES\n\n");
-		V3_drop(orig_argc, orig_argv);
+		V3_drop(orig_argc, (UCHAR **)orig_argv);
 	}
 #endif
 
