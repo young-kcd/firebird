@@ -227,7 +227,7 @@ rec_err:
 		memcpy(d->dsc_address, var->sqldata, length);
 		if (d->dsc_scale != var->sqlscale) {
 			double DeltaPow = pow(10, var->sqlscale - d->dsc_scale);
-#define ReScaleLike(t) *((t *)d->dsc_address) *= DeltaPow
+#			define ReScaleLike(t) *((t *)d->dsc_address) *= DeltaPow
 			switch (d->dsc_dtype) {
 			case dtype_short:
 				ReScaleLike(SSHORT);
@@ -245,6 +245,7 @@ rec_err:
 				ReScaleLike(double);
 				break;
 			}
+#			undef ReScaleLike
 		}
     }
 
