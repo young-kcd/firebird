@@ -159,7 +159,7 @@ typedef struct texttype {
 
 // Returns resulting string length or INTL_BAD_STR_LENGTH in case of error
 typedef ULONG (*pfn_INTL_convert) (
-	csconvert* csc, 
+	csconvert* cv, 
 	ULONG srcLen,
 	const UCHAR* src,
 	ULONG dstLen,
@@ -168,13 +168,21 @@ typedef ULONG (*pfn_INTL_convert) (
 	ULONG* offending_source_character	
 );
 
+/* Releases resources associated with conversion */
+typedef void (*pfn_INTL_cv_destroy) (
+	csconvert* cv
+);
+
 struct csconvert {
 	USHORT csconvert_version;
 	CsConvertImpl* csConvert, 
 	const ASCII* csconvert_name;
 
 	/* Conversion routine. Must be present. */
-	pfn_INTL_convert csconvert_convert;
+	pfn_INTL_convert csconvert_fn_convert;
+
+	/* May be omitted if not needed. Is not called for collations embedded into charset interface */
+	pfn_INTL_cv_destroy	csconvert_fn_destroy;
 
 	/* Some space for future extension of conversion interface */
 	void* reserved_for_interface[2];
@@ -217,6 +225,11 @@ typedef ULONG (*pfn_INTL_length) (
 	const UCHAR* src
 );
 
+/* Releases resources associated with charset */
+typedef void (*pfn_INTL_cs_destroy) (
+	charset* cv
+);
+
 struct charset
 {
 	USHORT charset_version;
@@ -229,15 +242,18 @@ struct charset
 	csconvert		charset_from_unicode;
 
 	/* If omitted any string is considered well-formed */
-	pfn_INTL_well_formed	charset_well_formed;
+	pfn_INTL_well_formed	charset_fn_well_formed;
 
 	/* If not set Unicode representation is used to measure string length. */
-	pfn_INTL_length		texttype_fn_length;	/* get length of string in characters */
+	pfn_INTL_length		charset_fn_length;	/* get length of string in characters */
 
 	/* May be omitted for fixed-width character sets. 
 	   If not present for MBCS charset string operation is performed by the engine
        via intermediate translation of string to Unicode */
 	pfn_INTL_substring	charset_fn_substring;	/* get a portion of string */
+
+	/* May be omitted if not needed. Is not called for collations embedded into charset interface */
+	pfn_INTL_cs_destroy	charset_fn_destroy;
 
 	/* Some space for future extension of charset interface */
 	void* reserved_for_interface[5];
