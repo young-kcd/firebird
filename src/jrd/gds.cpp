@@ -716,7 +716,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
 }
 
 
-void API_ROUTINE gds_alloc_report(ULONG flags, const char* filename, int lineno)
+void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int lineno)
 {
 /**************************************
  *
@@ -730,12 +730,13 @@ void API_ROUTINE gds_alloc_report(ULONG flags, const char* filename, int lineno)
  *
  **************************************/
 // Skidder: Calls to this function must be replaced with MemoryPool::print_contents
+	char report_name[MAXPATHLEN];
+	gds__prefix(report_name, "fbsrvreport.txt");
+	// Our new facilities don't expose flags for reporting.
+	const bool used_only = !(flags & ALLOC_verbose);
+	getDefaultMemoryPool()->print_contents(report_name, used_only, filter_filename);
 }
 
-
-/* CVC: See comment below. Basically, it provides the needed const correctness,
-but throws away the const to make the callee happy, knowing that the callee
-indeed treats vector as it was a pointer with the const prefix. */
 
 /**
 isc_interpret
@@ -1703,7 +1704,7 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 		}
 		ib_prefix = ib_prefix_val;
 	}
-	strcat(resultString, ib_prefix);
+	strcpy(resultString, ib_prefix);
 	safe_concat_path(resultString, file);
 }
 #endif /* !defined(VMS) */
@@ -3555,7 +3556,7 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
  *
  * Functional description
  *	Safely appends appendString to resultString using paths rules.
- *  resultString must be at least MAXPATHLEN size.
+ *  resultString must be at most MAXPATHLEN size.
  *
  **************************************/
 	int len = strlen(resultString);

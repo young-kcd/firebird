@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.72 2004-10-25 05:14:05 skidder Exp $
+ *  $Id: alloc.cpp,v 1.73 2004-11-17 08:55:40 robocop Exp $
  *
  */
 
@@ -193,6 +193,9 @@ size_t delayedExtentsPos = 0;
 namespace Firebird {
 
 /****************************** Firebird::MemoryPool ***************************/
+
+static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
+	const char* filter_path, const size_t filter_len);
 
 inline void MemoryPool::increment_usage(size_t size)
 {
@@ -897,7 +900,8 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 	return true;
 }
 
-static void print_block(FILE *file, MemoryBlock *blk, bool used_only)
+static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
+	const char* filter_path, const size_t filter_len)
 {
 	void *mem = blockToPtr<void*>(blk);
 	if (((blk->mbk_flags & MBK_USED) && 
@@ -919,40 +923,50 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only)
 		int size =
 			blk->mbk_flags & MBK_LARGE ? blk->mbk_large_length : blk->small.mbk_length;
 #ifdef DEBUG_GDS_ALLOC
-		if (blk->mbk_flags & MBK_USED) {
-			if (blk->mbk_type > 0)
-				fprintf(file, "%p%s: size=%d type=%d allocated at %s:%d\n", 
-					mem, flags, size, blk->mbk_type, blk->mbk_file, blk->mbk_line);
-			else if (blk->mbk_type == 0)
-				fprintf(file, "%p%s: size=%d allocated at %s:%d\n", 
-					mem, flags, size, blk->mbk_file, blk->mbk_line);
-			else
-				fprintf(file, "%p%s: size=%d type=%d\n", 
-					mem, flags, size, blk->mbk_type);
+		if (blk->mbk_flags & MBK_USED)
+		{
+			if (!filter_path || blk->mbk_file
+				&& !strncmp(filter_path, blk->mbk_file, filter_len))
+			{
+				if (blk->mbk_type > 0)
+					fprintf(file, "%p%s: size=%d type=%d allocated at %s:%d\n",
+						mem, flags, size, blk->mbk_type, blk->mbk_file, blk->mbk_line);
+				else if (blk->mbk_type == 0)
+					fprintf(file, "%p%s: size=%d allocated at %s:%d\n",
+						mem, flags, size, blk->mbk_file, blk->mbk_line);
+				else
+					fprintf(file, "%p%s: size=%d type=%d\n",
+						mem, flags, size, blk->mbk_type);
+			}
 		}
 #else
 		if (blk->mbk_type && (blk->mbk_flags & MBK_USED))
-			fprintf(file, "%p(%s): size=%d type=%d\n", 
+			fprintf(file, "%p%s: size=%d type=%d\n",
 				mem, flags, size, blk->mbk_type);
 #endif
 		else
-			fprintf(file, "%p(%s): size=%d\n", 
+			fprintf(file, "%p%s: size=%d\n",
 				mem, flags, size);
 	}
 }
 
-void MemoryPool::print_contents(const char* filename, bool used_only) {
+void MemoryPool::print_contents(const char* filename, bool used_only,
+	const char* filter_path)
+{
 	FILE *out = fopen(filename, "w");
-	print_contents(out, used_only);
+	print_contents(out, used_only, filter_path);
 	fclose(out);
 }
 
 // This member function can't be const because there are calls to the mutex.
-void MemoryPool::print_contents(FILE *file, bool used_only)
+void MemoryPool::print_contents(FILE *file, bool used_only,
+	const char* filter_path)
 {
 	lock.enter();
 	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld:\n", 
 		this, (long)used_memory.value(), (long)mapped_memory);
+		
+	const size_t filter_len = filter_path ? strlen(filter_path) : 0;
 	// Print extents
 	for (MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
 		if (!used_only)
@@ -961,7 +975,7 @@ void MemoryPool::print_contents(FILE *file, bool used_only)
 			; 
 			blk = next_block(blk))
 		{
-			print_block(file, blk, used_only);			
+			print_block(file, blk, used_only, filter_path, filter_len);
 			if (blk->mbk_flags & MBK_LAST)
 				break;
 		}
@@ -970,7 +984,7 @@ void MemoryPool::print_contents(FILE *file, bool used_only)
 	if (os_redirected) {
 		fprintf(file, "LARGE BLOCKS:\n");
 		for (MemoryBlock *blk = os_redirected; blk; blk = block_list_large(blk)->mrl_next)
-			print_block(file, blk, used_only);
+			print_block(file, blk, used_only, filter_path, filter_len);
 	}
 	lock.leave();
 	// Print redirected blocks
@@ -978,10 +992,10 @@ void MemoryPool::print_contents(FILE *file, bool used_only)
 		fprintf(file, "REDIRECTED TO PARENT %p:\n", parent);
 		parent->lock.enter();
 		for (MemoryBlock *blk = parent_redirected; blk; blk = block_list_small(blk)->mrl_next)
-			print_block(file, blk, used_only);
+			print_block(file, blk, used_only, filter_path, filter_len);
 		parent->lock.leave();
 	}
-	fprintf(file, "********* End of output for pool %p:\n", this);
+	fprintf(file, "********* End of output for pool %p.\n", this);
 }
 
 MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent, MemoryStats &stats) 
@@ -1729,7 +1743,7 @@ void Firebird::AutoStorage::ProbeStack() const {
 	char ProbeVar = '\0';
 	const char *MyStack = &ProbeVar;
 	const char *ThisLocation = (const char *)this;
-	int distance = ThisLocation - MyStack;
+	ptrdiff_t distance = ThisLocation - MyStack;
 	if (distance < 0) {
 		distance = -distance;
 	}

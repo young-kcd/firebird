@@ -221,8 +221,11 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				{
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 				}
-#ifdef DEV_BUILD
-				gds_alloc_report(ALLOC_verbose, "from server", 0);
+#ifdef DEBUG_GDS_ALLOC
+				//gds_alloc_report(ALLOC_verbose, "from server", 0);
+				char fn[] = __FILE__;
+				fn[strlen(fn) - 19] = 0; // all remote files
+				gds_alloc_report(ALLOC_verbose, fn, 0);
 #endif
 				THREAD_ENTER();
 				JRD_shutdown_all();

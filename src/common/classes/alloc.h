@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.54 2004-11-16 05:02:02 robocop Exp $
+ *  $Id: alloc.h,v 1.55 2004-11-17 08:55:40 robocop Exp $
  *
  */
 
@@ -345,10 +345,11 @@ public:
 	bool verify_pool(bool fast_checks_only = false);
 
 	// Print out pool contents. This is debugging routine
-	void print_contents(FILE*, bool = false);
+	void print_contents(FILE*, bool = false, const char* filter_path = 0);
 	
 	// The same routine, but more easily callable from the debugger
-	void print_contents(const char* filename, bool = false);
+	void print_contents(const char* filename, bool = false,
+		const char* filter_path = 0);
 	
 	// Deallocate memory block. Pool is derived from block header
 	static void globalFree(void* block) {
