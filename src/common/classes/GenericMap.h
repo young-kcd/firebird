@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: GenericMap.h,v 1.3 2004-11-25 16:10:38 alexpeshkoff Exp $
+ *  $Id: GenericMap.h,v 1.4 2004-11-29 01:08:38 skidder Exp $
  *
  */
 
@@ -36,6 +36,14 @@
 #include "../common/classes/tree.h"
 
 namespace Firebird {
+
+// typename is necessary for GCC builds in template below, but at the same time
+// it makes MSVC6 unhappy. Let's use it conditionally.
+#if defined _MSC_VER && _MSC_VER < 1300
+#define FB_TYPENAME_OPT
+#else
+#define FB_TYPENAME_OPT typename
+#endif
 
 //
 // Generic map which allows to have POD and non-POD keys and values.
@@ -52,7 +60,7 @@ namespace Firebird {
 //   non-POD key (string), non-POD value (string):
 //     GenericMap<Pair<Full<string, string> > >
 //
-template <typename KeyValuePair, typename KeyComparator = DefaultComparator<KeyValuePair::first_type> >
+template <typename KeyValuePair, typename KeyComparator = DefaultComparator<FB_TYPENAME_OPT KeyValuePair::first_type> >
 class GenericMap : public AutoStorage {
 public:
 	typedef typename KeyValuePair::first_type KeyType;
