@@ -182,8 +182,10 @@ static TEXT *find_switch(int, IN_SW_TAB);
 static USHORT process_switches(USHORT, SCHAR *, TEXT *);
 static void get_options(UCHAR *, USHORT, TEXT *, SPB *);
 static TEXT *get_string_parameter(UCHAR **, TEXT **);
+#ifndef SUPERSERVER
 static void io_error(TEXT *, SLONG, TEXT *, STATUS, BOOLEAN);
 static void service_close(SVC);
+#endif
 static BOOLEAN get_action_svc_bitmask(TEXT **, IN_SW_TAB, TEXT **, USHORT *,
 									  USHORT *);
 static void get_action_svc_string(TEXT **, TEXT **, USHORT *, USHORT *);
@@ -203,8 +205,10 @@ static void service_fork(TEXT *, SVC);
 #endif
 static void service_get(SVC, SCHAR *, USHORT, USHORT, USHORT, USHORT *);
 static void service_put(SVC, SCHAR *, USHORT);
+#ifndef SUPERSERVER
 static void timeout_handler(SVC);
-#ifdef WIN_NT
+#endif
+#if defined(WIN_NT) && !defined(SUPERSERVER)
 static USHORT service_read(SVC, SCHAR *, USHORT, USHORT);
 #endif
 
@@ -2406,6 +2410,7 @@ static TEXT *get_string_parameter(UCHAR ** spb_ptr, TEXT ** opt_ptr)
 }
 
 
+#ifndef SUPERSERVER
 static void io_error(
 					 TEXT * string,
 					 SLONG status,
@@ -2431,7 +2436,7 @@ static void io_error(
 	ERR_post(isc_io_error, isc_arg_string, string, isc_arg_string, filename,
 			 isc_arg_gds, operation, SYS_ERR, status, 0);
 }
-
+#endif
 
 #ifdef WIN_NT
 #ifndef SUPERSERVER
@@ -3426,7 +3431,6 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
 		io_error("ib_fflush", errno, "service pipe", isc_io_write_err, TRUE);
 }
 #endif /* ifndef PIPE_OPERATIONS */
-#endif /* ifndef SUPERSERVER */
 
 
 static void timeout_handler(SVC service)
@@ -3444,6 +3448,7 @@ static void timeout_handler(SVC service)
  *
  **************************************/
 }
+#endif /* ifndef SUPERSERVER */
 
 
 void SVC_cleanup(SVC service)
