@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.8 2004-11-04 06:16:02 robocop Exp $
+  $Id: isql.epp,v 1.32.2.9 2005-02-07 07:29:38 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -41,6 +41,7 @@
   2001.11.23 Claudio Valderrama: skip any number of -- comments but only at
 	the beginning and ignore void statements like block comments followed by
 	a semicolon.
+  2004-11-16 Damyan Ivanov - bail out on error in non-interactive mode.
 
 */
 
@@ -235,6 +236,7 @@ static SSHORT List = FALSE;
 static SSHORT Docount = FALSE;
 static SSHORT Plan = FALSE;
 static SSHORT Planonly = FALSE;
+static SSHORT BailOnError = FALSE;
 static int Termlen = 0;
 static SCHAR ISQL_charset[MAXCHARSET_LENGTH] = { 0 };
 static IB_FILE *Diag;
@@ -493,7 +495,9 @@ SSHORT ISQL_main(int argc, char *argv[])
 
 	default:
 		do_isql();
-		Exit_value = FINI_OK;
+		// keep Exit_value to whatever it is set
+		// by do_isql()
+		// Exit_value = FINI_OK;
 		break;
 	}
 #ifdef MU_ISQL
@@ -662,7 +666,7 @@ static void readNextInputLine(const char* prompt) {
     }
 
 #ifdef HAVE_EDITLINE_H
-    lastInputLine = readline((char*) prompt);
+    lastInputLine = readline(const_cast<char*>(prompt));
 
     if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
         add_history(lastInputLine);
@@ -2262,6 +2266,7 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
 						errbuf, ftmp, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
 		STDERROUT(errbuf, 1);
 		Exit_value = FINI_ERROR;
+		Out = holdout;
 		return END;
 	}
 
@@ -2680,8 +2685,13 @@ static void do_isql(void)
 
 		switch (ret) {
 		case CONT:
-			(void) process_statement(statement, sqldap);
-			Continuation = FALSE;
+			if (process_statement(statement, sqldap) == ERR)
+			{
+				Exit_value = FINI_ERROR;
+				if (!Interactive && BailOnError)
+					Abort_flag = true;
+				Continuation = FALSE;
+			}
 			break;
 
 		case END:
@@ -3507,6 +3517,8 @@ static SSHORT frontend( TEXT * statement)
 			ret = CONT;
 		else if (!strcmp(parms[1], "STATISTICS"))
 			ret = CONT;
+		else if (!strcmp(parms[1], "BAIL"))
+			ret = do_set_command(parms[2], &BailOnError);
 		else
 			ret = ERR;
 	}
@@ -4639,6 +4651,9 @@ static SSHORT print_sets(void)
 	ISQL_printf(Out, Print_buffer);
 	sprintf(Print_buffer, "Warnings:                %s%s",
 			(Warnings) ? "ON" : "OFF", NEWLINE);
+	sprintf(Print_buffer, "Bail on error:                           %s%s",
+				(BailOnError) ? "ON" : "OFF", NEWLINE);
+	ISQL_printf(Out, Print_buffer);
 	ISQL_printf(Out, Print_buffer);
 	return (SKIP);
 }
@@ -5422,6 +5437,8 @@ static SSHORT parse_arg(
 			}
 			else if (c == 'A')
 				ret = EXTRACTALL;
+			else if (c == 'B')
+				BailOnError = TRUE;
 			else if (c == 'E')
 				Echo = TRUE;
 			else if (c == 'M')
@@ -5995,8 +6012,11 @@ static int print_item_blob( IB_FILE * fp, XSQLVAR * var, FRBRD *trans)
 		 * most specifically we're interested in the Character Set so
 		 * we can set up a BPB that requests character set transliteration
 		 */
+		// CVC: Adriano changed trans to D__trans with the following comment:
+		// Fix a bug that occur when a BLOB column is added after the start
+		// of the DML transaction.
 		if (!isc_blob_lookup_desc
-			(isc_status, &DB, &trans, (UCHAR*) var->relname, (UCHAR*) var->sqlname, &from_desc,
+			(isc_status, &DB, &D__trans, (UCHAR*) var->relname, (UCHAR*) var->sqlname, &from_desc,
 			 NULL)) {
 			isc_blob_default_desc(&to_desc, (UCHAR*) var->relname, (UCHAR*) var->sqlname);
 			if (!isc_blob_gen_bpb
@@ -6438,7 +6458,12 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 		/*  This is a non-select DML statement. or trans */
 
 		if (isc_dsql_execute(isc_status, &M__trans, &Stmt, SQL_dialect, NULL))
+		{
 			ISQL_errmsg(isc_status);
+			// CVC: Make this conditional if it causes problems. For example
+			// if (BailOnError)
+			ret = ERR;
+		}
 
 		/* check for warnings */
 		if (isc_status[2] == isc_arg_warning)
