@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.11 2002-03-11 16:34:02 skywalker Exp $
+$Id: inet.cpp,v 1.12 2002-06-24 13:59:58 paul_reeves Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -44,8 +44,20 @@ $Id: inet.cpp,v 1.11 2002-03-11 16:34:02 skywalker Exp $
 
 #include "../jrd/time.h"
 
+/*	
+ * The PWD stuf is a bit of a mess! It probably wont build
+ * properly on Darwin now and why <pwd.h> should be necessary
+ * in HAVE_PWD_H and HAVE_SYS_TYPES_H, I just do not know. 
+ * However, it worked for now (2002-06-24 under Linux). If
+ * anyone gets to fix this mess please delete this comment. PR
+ */
+
 #ifdef DARWIN
 #include </usr/include/pwd.h>
+#endif
+
+#ifdef HAVE_PWD_H
+#include <pwd.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
@@ -59,6 +71,7 @@ $Id: inet.cpp,v 1.11 2002-03-11 16:34:02 skywalker Exp $
 
 
 #ifdef HAVE_SYS_TYPES_H
+#include <pwd.h>
 #include <sys/types.h>
 #endif
 

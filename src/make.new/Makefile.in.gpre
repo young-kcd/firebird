@@ -1,4 +1,4 @@
-# 
+#
 #   The contents of this file are subject to the Mozilla Public
 #   License Version 1.1 (the "License"); you may not use this file
 #   except in compliance with the License. You may obtain a copy of
@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.gpre,v 1.9 2002-01-04 11:34:16 skywalker Exp $
+#   $Id: Makefile.in.gpre,v 1.10 2002-06-24 13:59:57 paul_reeves Exp $
 # 
 
 ROOT=../..
@@ -45,7 +45,7 @@ GPRECommon_Sources = cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
 		pat.cpp pretty.cpp sqe.cpp sql.cpp noform.cpp
 
-GPREBoot_Sources=  gpre_meta_boot.cpp
+GPREBoot_Sources=  gpre_meta_boot.cpp ../common/fb_exception.cpp
 GPRE_Sources=	   gpre_meta.cpp
 
 GPRECommon_Objects = $(GPRECommon_Sources:%.cpp=$(OBJ)/%.o)
