@@ -1,3 +1,21 @@
+2003-06-28 15:59  dimitr
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Fixed metadata cache issues with CREATE OR ALTER statement.
+
+2003-06-28 14:48  dimitr
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	no message
+
+2003-06-28 11:32  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Fixed error handling in the looper.
+
 2003-06-27 19:04  dimitr
 
 	* firebird2/src/jrd/opt.cpp:
