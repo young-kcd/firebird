@@ -51,7 +51,7 @@
  *	Note: "name" is official name per InterBase
  */
 
-#ifndef _INTL_COMPONENT_
+#ifndef INTL_COMPONENT_FB
 
 CHARSET("NONE", CS_NONE, 0, 1, 256, cs_none_init, dummy)
 	END_CHARSET CHARSET("OCTETS", CS_BINARY, 0, 1, 256, cs_binary_init, dummy)
@@ -68,6 +68,7 @@ CHARSET("NONE", CS_NONE, 0, 1, 256, cs_none_init, dummy)
     CSALIAS("UTF-8", CS_UNICODE_FSS) /* Prefered MIME name */
 	END_CHARSET
 #endif
+
 /* V3 SUB_TYPE 220 */
 	CHARSET("SJIS_0208", CS_SJIS, 0, 2, 7007, CS_sjis, JIS220_init)
 	CSALIAS("SJIS", CS_SJIS)

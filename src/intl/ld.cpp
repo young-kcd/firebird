@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		ld.c
+ *	MODULE:		ld.cpp
  *	DESCRIPTION:	Language Driver lookup & support routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -328,7 +328,7 @@ USHORT DLL_EXPORT LD_lookup(USHORT objtype,
 #define COLLATE_ALIAS(name, coll_id)
 #define END_CHARSET
 
-#define _INTL_COMPONENT_
+#define INTL_COMPONENT_FB
 
 #include "../jrd/intlnames.h"
 
@@ -389,7 +389,7 @@ USHORT DLL_EXPORT LD_lookup(USHORT objtype,
 #define COLLATE_ALIAS(name, coll_id)
 #define END_CHARSET
 
-#define _INTL_COMPONENT_
+#define INTL_COMPONENT_FB
 
 
 #include "../jrd/intlnames.h"
