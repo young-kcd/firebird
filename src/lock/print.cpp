@@ -55,6 +55,10 @@
 #  include <sys/param.h>
 #endif
 
+#ifdef WIN_NT
+#include <io.h>
+#endif
+
 #ifndef FPRINTF
 #define FPRINTF         ib_fprintf
 #endif
@@ -118,12 +122,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	to ib_stdout.
  *
  **************************************/
-#ifdef SERVICE_REDIRECT
-	SLONG redir_in;
-	SLONG redir_out;
-	SLONG redir_err;
-#endif
-
 	OUTFILE outfile = ib_stdout;
 
 /* Perform some special handling when run as an Interbase service.  The
@@ -134,16 +132,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		argv++;
 		argc--;
 	}
-//
-// BRS: 15-Sep-2003
-// This code could not be used actually (see SVC_attach, comment by Dmitry)
-// Until a more detailed analysis is made it is preserved under an ifdef
-//
-#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		redir_in = atol(argv[2]);
-		redir_out = atol(argv[3]);
-		redir_err = atol(argv[4]);
+		long redir_in = atol(argv[2]);
+		long redir_out = atol(argv[3]);
+		long redir_err = atol(argv[4]);
 #ifdef WIN_NT
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
@@ -161,7 +153,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		argv += 4;
 		argc -= 4;
 	}
-#endif
 	//const int orig_argc = argc;
 	//SCHAR** orig_argv = argv;
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.45 2003-11-28 06:47:58 robocop Exp $
+//	$Id: alice.cpp,v 1.46 2003-12-14 04:44:46 skidder Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -60,6 +60,10 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef WIN_NT
+#include <io.h>
 #endif
 
 #ifdef SUPERSERVER
@@ -107,6 +111,19 @@ static int output_main(svc*, const UCHAR*);
 static int common_main(int, char**, pfn_svc_output, svc*);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
+
+
+//____________________________________________________________
+//
+//		Routine which is passed to GFIX for calling back when there is output
+//		if gfix is run as a service
+//
+
+static int output_svc(SVC output_data, const UCHAR * output_buf)
+{
+	ib_fprintf(ib_stdout, "%s", output_buf);
+	return 0;
+}
 
 
 #ifdef SUPERSERVER
@@ -177,12 +194,6 @@ int common_main(int			argc,
 				pfn_svc_output	output_proc,
 				svc*		output_data)
 {
-#ifdef SERVICE_REDIRECT
-	SLONG	redir_in;
-	SLONG	redir_out;
-	SLONG	redir_err;
-#endif
-
 #if defined (WIN95)
 	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
@@ -231,18 +242,12 @@ int common_main(int			argc,
 		argv++;
 		argc--;
 	}
-//
-// BRS: 15-Sep-2003
-// This code could not be used actually (see SVC_attach, comment by Dmitry)
-// Until a more detailed analysis is made it is preserved under an ifdef
-//
-#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		tdgbl->sw_service = true;
 		tdgbl->output_proc = output_svc;
-		redir_in = atol(argv[2]);
-		redir_out = atol(argv[3]);
-		redir_err = atol(argv[4]);
+		long redir_in = atol(argv[2]);
+		long redir_out = atol(argv[3]);
+		long redir_err = atol(argv[4]);
 #ifdef WIN_NT
 #if defined (WIN95)
 		fAnsiCP = true;
@@ -269,7 +274,6 @@ int common_main(int			argc,
 		argv += 4;
 		argc -= 4;
 	}
-#endif
 
 	tdgbl->ALICE_data.ua_user = NULL;
 	tdgbl->ALICE_data.ua_password = NULL;

@@ -333,19 +333,13 @@ static const serv services[] =
 	{ isc_action_svc_backup, "Backup Database", NULL, "bin/gbak",	MAIN_GBAK, 0 },
 	{ isc_action_svc_restore, "Restore Database", NULL, "bin/gbak",	MAIN_GBAK, 0 },
 	{ isc_action_svc_repair, "Repair Database", NULL, "bin/gfix",	MAIN_GFIX, 0 },
-// disabled for win32 CS
-#if !(defined(WIN_NT) && !defined(SUPERSERVER))
 	{ isc_action_svc_add_user, "Add User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
 	{ isc_action_svc_delete_user, "Delete User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
 	{ isc_action_svc_modify_user, "Modify User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
 	{ isc_action_svc_display_user, "Display User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
-#endif
 	{ isc_action_svc_properties, "Database Properties", NULL, "bin/gfix",	MAIN_GFIX, 0 },
-// disabled for win32 CS
-#if !(defined(WIN_NT) && !defined(SUPERSERVER))
 	{ isc_action_svc_lock_stats, "Lock Stats", NULL, "bin/fb_lock_print",	TEST_THREAD, 0 },
 	{ isc_action_svc_db_stats, "Database Stats", NULL, "bin/gstat",	MAIN_GSTAT, 0 },
-#endif
 	{ isc_action_svc_get_ib_log, "Get Log File", NULL, NULL,	SVC_read_ib_log, 0 },
 /* actions with no names are undocumented */
 	{ isc_action_svc_set_config, NULL, NULL, NULL,	TEST_THREAD, 0 },
@@ -1800,7 +1794,7 @@ void* SVC_start(SVC service, USHORT spb_length, const SCHAR* spb)
 		if (!(service->svc_flags & SVC_detached))
 			service->svc_flags = 0;
 		service->svc_flags |= SVC_thd_running;
-		if (service->svc_argc && service->svc_switches) {
+		if (service->svc_switches) {
 			gds__free(service->svc_switches);
 			service->svc_switches = NULL;
 		}

@@ -63,6 +63,7 @@
 #endif
 
 #ifdef WIN_NT
+#include <io.h>
 #include "../jrd/jrd_pwd.h"
 #endif
 
@@ -278,11 +279,6 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	bool sw_log = false;
 	bool sw_record = false;
 	bool sw_relation = false;
-#ifdef SERVICE_REDIRECT
-	SLONG redir_in;
-	SLONG redir_out;
-	SLONG redir_err;
-#endif
 	UCHAR *vp, *vend;
 	isc_db_handle db_handle = NULL;
 #ifdef SUPERSERVER
@@ -340,28 +336,27 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	tddba->dba_status = tddba->dba_status_vector;
 	status_vector = tddba->dba_status;
 
+	bool called_as_service = false;
+
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
+		called_as_service = true;
 		argv++;
 		argc--;
 	}
 #ifdef SUPERSERVER
 	else if (!strcmp(argv[1], "-svc_thd")) {
+		called_as_service = true;
 		tddba->dba_service_blk = service;
 		tddba->dba_status = service->svc_status;
 		argv++;
 		argc--;
 	}
 #endif
-//
-// BRS: 15-Sep-2003
-// This code could not be used actually (see SVC_attach, comment by Dmitry)
-// Until a more detailed analysis is made it is preserved under an ifdef
-//
-#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		redir_in = atol(argv[2]);
-		redir_out = atol(argv[3]);
-		redir_err = atol(argv[4]);
+		called_as_service = true;
+		long redir_in = atol(argv[2]);
+		long redir_out = atol(argv[3]);
+		long redir_err = atol(argv[4]);
 #ifdef WIN_NT
 #if defined (WIN95) && !defined (SUPERSERVER)
 		fAnsiCP = true;
@@ -382,7 +377,6 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		argv += 4;
 		argc -= 4;
 	}
-#endif
 	char* name = NULL;
 
 	MOVE_CLEAR(user_buff, sizeof(user_buff));
@@ -635,11 +629,10 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	}
 
 	if (*password) {
-#ifdef SUPERSERVER
-		*dpb++ = isc_dpb_password_enc;
-#else
-		*dpb++ = isc_dpb_password;
-#endif
+		if (called_as_service)
+			*dpb++ = isc_dpb_password_enc;
+		else
+			*dpb++ = isc_dpb_password;
 		*dpb++ = strlen((char*) password);
 		strcpy((char*) dpb, (char*) password);
 		dpb += strlen((char*) password);

@@ -98,11 +98,6 @@ int CLIB_ROUTINE main(int argc,
 	bool found;
 	bool sw_interactive = false;
 	char option_name[32];
-#ifdef SERVICE_REDIRECT
-	SLONG redir_in;
-	SLONG redir_out;
-	SLONG redir_err;
-#endif
 	TEXT msg[128];
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -119,17 +114,11 @@ int CLIB_ROUTINE main(int argc,
 		argv++;
 		argc--;
 	}
-//
-// BRS: 15-Sep-2003
-// This code could not be used actually (see SVC_attach, comment by Dmitry)
-// Until a more detailed analysis is made it is preserved under an ifdef
-//
-#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		sw_service_gjrn = true;
-		redir_in = atol(argv[2]);
-		redir_out = atol(argv[3]);
-		redir_err = atol(argv[4]);
+		long redir_in = atol(argv[2]);
+		long redir_out = atol(argv[3]);
+		long redir_err = atol(argv[4]);
 #ifdef WIN_NT
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
@@ -147,7 +136,6 @@ int CLIB_ROUTINE main(int argc,
 		argv += 4;
 		argc -= 4;
 	}
-#endif
 
 	try {
 

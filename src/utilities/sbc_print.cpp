@@ -153,12 +153,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	int nbuf;
 	int nfree_buf;
 
-#ifdef SERVICE_REDIRECT
-	SLONG redir_in;
-	SLONG redir_out;
-	SLONG redir_err;
-#endif
-
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
@@ -167,16 +161,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		argv++;
 		argc--;
 	}
-//
-// BRS: 15-Sep-2003
-// This code could not be used actually (see SVC_attach, comment by Dmitry)
-// Until a more detailed analysis is made it is preserved under an ifdef
-//
-#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		redir_in = atol(argv[2]);
-		redir_out = atol(argv[3]);
-		redir_err = atol(argv[4]);
+		long redir_in = atol(argv[2]);
+		long redir_out = atol(argv[3]);
+		long redir_err = atol(argv[4]);
 #ifdef WIN_NT
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
@@ -194,7 +182,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		argv += 4;
 		argc -= 4;
 	}
-#endif
 
 	sw_outfile = ib_stderr;
 
