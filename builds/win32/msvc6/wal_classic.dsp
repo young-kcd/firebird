@@ -90,10 +90,6 @@ SOURCE=..\..\..\src\wal\wal.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\wal\wal_prnt.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\wal\walc.cpp
 # End Source File
 # Begin Source File
@@ -103,14 +99,6 @@ SOURCE=..\..\..\src\wal\walf.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\wal\walr.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\wal\walw.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\wal\wstatus.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -135,14 +123,6 @@ SOURCE=..\..\..\src\wal\walf_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\wal\walr_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\wal\walw_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\wal\wstat_proto.h
 # End Source File
 # End Group
 # End Target

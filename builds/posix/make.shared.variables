@@ -121,7 +121,7 @@ INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_
 
 WAL_ClientFiles = 
 
-WAL_ServerFiles=	walf.cpp wal.cpp walc.cpp walr.cpp wstatus.cpp walw.cpp
+WAL_ServerFiles=	walf.cpp wal.cpp walc.cpp walr.cpp walw.cpp
 
 WAL_Files = $(WAL_ClientFiles) $(WAL_ServerFiles)
 

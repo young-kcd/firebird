@@ -107,11 +107,11 @@ static SSHORT wal_put2(ISC_STATUS *, WAL, UCHAR *, USHORT, UCHAR *, USHORT,
 					   SLONG *, SLONG *, SSHORT);
 
 #ifdef WIN_NT
-#define WAL_WRITER	"bin/ibwalwrt"
+#define WAL_WRITER	"bin/walw"
 #endif
 
 #ifndef WAL_WRITER
-#define WAL_WRITER	"bin/gds_wal_writer"
+#define WAL_WRITER	"bin/walw"
 #endif
 
 #define WAIT_TIME	3000000

@@ -176,7 +176,7 @@ int main_walw( char **argv)
  * I change the function name from main to walw_classic_main and
  * added the walw_main.c file.
  */
-int CLIB_ROUTINE walw_classic_main( int argc, char **argv)
+int CLIB_ROUTINE main( int argc, char **argv)
 #endif
 {
 /**************************************
@@ -263,6 +263,8 @@ int CLIB_ROUTINE walw_classic_main( int argc, char **argv)
 	ib_fclose(debug_fd);
 
 	exit(FINI_OK);
+	// make compiler happy
+	return 0;
 }
 
 

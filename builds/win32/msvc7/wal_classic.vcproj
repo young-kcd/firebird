@@ -115,9 +115,6 @@
 				RelativePath="..\..\..\src\wal\wal.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\wal\wal_prnt.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\wal\walc.cpp">
 			</File>
 			<File
@@ -125,12 +122,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\wal\walr.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\wal\walw.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\wal\wstatus.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -150,12 +141,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\wal\walr_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\wal\walw_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\wal\wstat_proto.h">
 			</File>
 		</Filter>
 	</Files>
