@@ -126,7 +126,9 @@ SecurityDatabase::~SecurityDatabase()
 
 void SecurityDatabase::lock()
 {
+	THREAD_EXIT;
 	THD_MUTEX_LOCK(&mutex);
+	THREAD_ENTER;
 }
 
 void SecurityDatabase::unlock()
@@ -169,6 +171,8 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 
 	strncpy(uname, user_name, 129);
 
+	lock();
+
 	/* Attach database and compile request */
 
 	if (!prepare())
@@ -178,6 +182,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 			isc_detach_database(status, &lookup_db);
 		}
 		THREAD_ENTER;
+		unlock();
 		ERR_post(gds_psw_attach, 0);
 	}
 
@@ -188,6 +193,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
 		THREAD_ENTER;
+		unlock();
 		ERR_post(gds_psw_start_trans, 0);
 	}
 
@@ -215,6 +221,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 		isc_detach_database(status, &lookup_db);
 	}
 	THREAD_ENTER;
+	unlock();
 
 	return notfound;
 }
@@ -301,6 +308,11 @@ bool SecurityDatabase::prepare()
 		isc_attach_database(status, 0, user_info_name, &lookup_db, 0, 0);
 	}
 
+	if (status[1])
+	{
+		return false;
+	}
+
 	assert(ihandle->ihndl_object == &lookup_db);
 	ihandle->ihndl_object = NULL;
 
@@ -362,11 +374,7 @@ void SecurityDatabase::verifyUser(TEXT* name,
 #ifdef EMBEDDED
 	return;
 #else
-	THREAD_EXIT;
-	instance.lock();
-	THREAD_ENTER;
 	notfound = instance.lookup_user(name, uid, gid, pw1);
-	instance.unlock();
 #endif
 
 	/* Punt if the user has specified neither a raw nor an encrypted password,
