@@ -4404,23 +4404,18 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++, ptr2++)
 		{
 			sub = *ptr;
-			if (sub->nod_type == nod_position)
-			{
-				if ((slist_node = input->nod_arg[e_sel_list]) && 
-					(slist_node->nod_type == nod_list))
-				{
-					/* an select list is there */
-					position = (ULONG) sub->nod_arg[0];
-					if ((position < 1) || (position > (ULONG) slist_node->nod_count)) 
-					{
+			if (sub->nod_type == nod_constant && sub->nod_desc.dsc_dtype == dtype_long) {
+				position = (ULONG) (sub->nod_arg[0]);
+				slist_node = input->nod_arg[e_sel_list];
+				if ((position < 1) || !slist_node || 
+					(position > (ULONG) slist_node->nod_count)) {
 						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 								gds_arg_gds, gds_dsql_column_pos_err, 
 								gds_arg_string, "GROUP BY", 0);
 						// Invalid column position used in the GROUP BY clause
-					}
-					*ptr2 = PASS1_node(request, slist_node->nod_arg[position - 1], 0);
 				}
-			}
+				*ptr2 = PASS1_node(request, slist_node->nod_arg[position - 1], 0);
+		    }
 			else
 			{
 				*ptr2 = PASS1_node(request, sub, 0);

@@ -3028,23 +3028,18 @@ join_type	: INNER
 
 /* other clauses in the select expression */
 
-group_clause	: GROUP BY grp_column_list
+group_clause	: GROUP BY group_by_list
 			{ $$ = make_list ($3); }
 		|
 			{ $$ = 0; }
 		;
 
-grp_column_list	: grp_column_elem
-		| grp_column_list ',' grp_column_elem
+group_by_list	: group_by_item
+		| group_by_list ',' group_by_item
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-grp_column_elem : column_name
-		| ordinal
-		| udf
-		| group_by_function
-		| column_name COLLATE symbol_collation_name
-			{ $$ = make_node (nod_collate, e_coll_count, (DSQL_NOD) $3, $1); }
+group_by_item : value
 		;
 
 group_by_function	: numeric_value_function
