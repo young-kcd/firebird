@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.26 2003-09-11 02:13:45 brodsom Exp $
+//	$Id: cob.cpp,v 1.27 2003-09-12 09:06:50 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -3756,7 +3756,7 @@ static void gen_start( ACT action, POR port)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
-			if (reference->ref_field-> fld_array_info)
+			if (reference->ref_field->fld_array_info)
 				gen_get_or_put_slice(action, reference, false);
 		}
 
