@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.70 2002-11-07 13:05:35 eku Exp $
+dnl $Id: configure.in,v 1.71 2002-11-07 14:06:13 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -306,7 +306,7 @@ case $PLATFORM in
     FB_PIPE_NAME=interbas
     AC_ARG_WITH(pipe-name,
       [  --with-pipe-name        specify wnet pipe name (default=interbas)],
-      [FB_SERVICE_NAME=${withval}])
+      [FB_PIPE_NAME=${withval}])
     AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
     ;;
