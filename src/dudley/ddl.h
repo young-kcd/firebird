@@ -297,8 +297,7 @@ enum idx_flags_vals {
 
 static inline size_t IDX_LEN(const size_t cnt)
 {
-	fb_assert(cnt != 0);
-	return sizeof (struct dudley_idx) + (cnt - 1) * sizeof (((DUDLEY_IDX) NULL)->idx_field[0]);
+	return sizeof (struct dudley_idx) + (cnt ? cnt - 1 : 0) * sizeof (((DUDLEY_IDX) NULL)->idx_field[0]);
 }
 
 /* Linked list stack stuff */
@@ -346,8 +345,7 @@ typedef struct dudley_nod {
 
 static inline size_t NOD_LEN(const size_t cnt)
 {
-	fb_assert(cnt != 0);
-	return sizeof(dudley_nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) NULL)->nod_arg[0]);
+	return sizeof(dudley_nod) + (cnt ? cnt - 1 : 0) * sizeof (((DUDLEY_NOD) NULL)->nod_arg[0]);
 }
 
 /* Relation block, not to be confused with siblings or in-laws */
