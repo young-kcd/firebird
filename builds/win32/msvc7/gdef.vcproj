@@ -29,7 +29,8 @@
 				AssemblerListingLocation=".\debug\gdef/"
 				ObjectFile=".\debug\gdef/"
 				ProgramDataBaseFileName=".\debug\gdef/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
@@ -87,7 +88,8 @@
 				AssemblerListingLocation=".\release\gdef/"
 				ObjectFile=".\release\gdef/"
 				ProgramDataBaseFileName=".\release\gdef/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

@@ -33,7 +33,8 @@
 				AssemblerListingLocation=".\release\engine_cs/"
 				ObjectFile=".\release\engine_cs/"
 				ProgramDataBaseFileName=".\release\engine_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -76,7 +77,8 @@
 				AssemblerListingLocation=".\debug\engine_cs/"
 				ObjectFile=".\debug\engine_cs/"
 				ProgramDataBaseFileName=".\debug\engine_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>

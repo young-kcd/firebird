@@ -25,11 +25,6 @@
 
 #include "firebird.h"
 
-#ifdef _MSC_VER
-#pragma warning (disable: 4786)	// debug identifier truncated
-#pragma warning (disable: 4800)	// forcing value to bool 'true' or 'false'
-#endif
-
 #include "../../common/config/config.h"
 #include "../../common/config/config_impl.h"
 #include "../../common/config/config_file.h"

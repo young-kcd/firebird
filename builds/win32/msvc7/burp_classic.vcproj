@@ -34,7 +34,8 @@
 				AssemblerListingLocation=".\release\burp_cs/"
 				ObjectFile=".\release\burp_cs/"
 				ProgramDataBaseFileName=".\release\burp_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -77,7 +78,8 @@
 				AssemblerListingLocation=".\debug\burp_cs/"
 				ObjectFile=".\debug\burp_cs/"
 				ProgramDataBaseFileName=".\debug\burp_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>

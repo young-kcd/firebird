@@ -29,7 +29,8 @@
 				AssemblerListingLocation=".\debug\fbembed/"
 				ObjectFile=".\debug\fbembed/"
 				ProgramDataBaseFileName=".\debug\fbembed/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -91,7 +92,8 @@
 				AssemblerListingLocation=".\release\fbembed/"
 				ObjectFile=".\release\fbembed/"
 				ProgramDataBaseFileName=".\release\fbembed/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

@@ -29,7 +29,8 @@
 				AssemblerListingLocation=".\debug\remote_ss/"
 				ObjectFile=".\debug\remote_ss/"
 				ProgramDataBaseFileName=".\debug\remote_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -78,7 +79,8 @@
 				AssemblerListingLocation=".\release\remote_ss/"
 				ObjectFile=".\release\remote_ss/"
 				ProgramDataBaseFileName=".\release\remote_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

@@ -34,7 +34,8 @@
 				AssemblerListingLocation=".\release\ib_util/"
 				ObjectFile=".\release\ib_util/"
 				ProgramDataBaseFileName=".\release\ib_util/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -90,7 +91,8 @@
 				AssemblerListingLocation=".\debug\ib_util/"
 				ObjectFile=".\debug\ib_util/"
 				ProgramDataBaseFileName=".\debug\ib_util/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>

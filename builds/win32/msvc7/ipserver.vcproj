@@ -29,7 +29,8 @@
 				AssemblerListingLocation=".\debug\ipserver/"
 				ObjectFile=".\debug\ipserver/"
 				ProgramDataBaseFileName=".\debug\ipserver/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -78,7 +79,8 @@
 				AssemblerListingLocation=".\release\ipserver/"
 				ObjectFile=".\release\ipserver/"
 				ProgramDataBaseFileName=".\release\ipserver/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

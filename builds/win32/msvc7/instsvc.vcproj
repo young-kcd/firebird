@@ -34,7 +34,8 @@
 				AssemblerListingLocation=".\release\instsvc/"
 				ObjectFile=".\release\instsvc/"
 				ProgramDataBaseFileName=".\release\instsvc/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -85,7 +86,8 @@
 				AssemblerListingLocation=".\debug\instsvc/"
 				ObjectFile=".\debug\instsvc/"
 				ProgramDataBaseFileName=".\debug\instsvc/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>

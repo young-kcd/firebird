@@ -23,11 +23,6 @@
  * 2002.06.04 Dmitry Yemanov - Server-side database alias management.
  */
 
-#if defined(_MSC_VER) && _MSC_VER < 1300
-// Any Microsoft compiler before MSVC7
-#pragma warning(disable: 4786)
-#endif
-
 #include <algorithm>
 
 #include "../common/config/config.h"

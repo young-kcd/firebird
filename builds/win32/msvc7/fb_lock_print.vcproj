@@ -34,7 +34,8 @@
 				AssemblerListingLocation=".\release\fb_lock_print/"
 				ObjectFile=".\release\fb_lock_print/"
 				ProgramDataBaseFileName=".\release\fb_lock_print/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -85,7 +86,8 @@
 				AssemblerListingLocation=".\debug\fb_lock_print/"
 				ObjectFile=".\debug\fb_lock_print/"
 				ProgramDataBaseFileName=".\debug\fb_lock_print/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>

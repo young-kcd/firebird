@@ -34,7 +34,8 @@
 				AssemblerListingLocation=".\release\lock_cs/"
 				ObjectFile=".\release\lock_cs/"
 				ProgramDataBaseFileName=".\release\lock_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -77,7 +78,8 @@
 				AssemblerListingLocation=".\debug\lock_cs/"
 				ObjectFile=".\debug\lock_cs/"
 				ProgramDataBaseFileName=".\debug\lock_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>

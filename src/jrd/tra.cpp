@@ -69,13 +69,6 @@
 
 #include "../jrd/ail.h"
 
-#if defined(WIN_NT) && defined(_MSC_VER)
-#pragma FB_COMPILER_MESSAGE("Fix! warnings turned off!")
-// 4018 - signed/unsigned mismatch
-// 4244 - conversion from 'type1' to 'type2', possible loss of data
-#pragma warning(disable: 4018 4244)
-#endif
-
 #define DYN_MSG_FAC	8
 
 #ifdef VMS

@@ -29,7 +29,8 @@
 				AssemblerListingLocation=".\debug\engine_ss/"
 				ObjectFile=".\debug\engine_ss/"
 				ProgramDataBaseFileName=".\debug\engine_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -77,7 +78,8 @@
 				AssemblerListingLocation=".\release\engine_ss/"
 				ObjectFile=".\release\engine_ss/"
 				ProgramDataBaseFileName=".\release\engine_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

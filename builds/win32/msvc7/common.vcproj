@@ -34,7 +34,8 @@
 				AssemblerListingLocation=".\release\common_ss/"
 				ObjectFile=".\release\common_ss/"
 				ProgramDataBaseFileName=".\release\common_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -78,7 +79,8 @@
 				AssemblerListingLocation=".\debug\common_ss/"
 				ObjectFile=".\debug\common_ss/"
 				ProgramDataBaseFileName=".\debug\common_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>

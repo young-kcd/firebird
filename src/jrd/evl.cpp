@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.29 2003-02-14 02:24:44 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.30 2003-02-16 11:39:22 brodsom Exp $ 
  */
 
 /*
@@ -110,10 +110,6 @@
 #include "../jrd/cvt_proto.h"
 #include "../jrd/misc_func_ids.h"
 //#include "../jrd/authenticate.h"
-
-#if defined(WIN_NT) && defined(_MSC_VER)
-#pragma warning(disable: 4244)
-#endif
 
 #define TEMP_LENGTH     128
 

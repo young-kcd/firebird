@@ -25,10 +25,6 @@
 
 #include "firebird.h"
 
-#ifdef _MSC_VER
-#pragma warning (disable: 4786)	// debug identifier truncated
-#endif
-
 #include "../../common/config/config_file.h"
 
 #ifdef HAVE_STDLIB_H

@@ -29,7 +29,8 @@
 				AssemblerListingLocation=".\debug\wal_ss/"
 				ObjectFile=".\debug\wal_ss/"
 				ProgramDataBaseFileName=".\debug\wal_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -78,7 +79,8 @@
 				AssemblerListingLocation=".\release\wal_ss/"
 				ObjectFile=".\release\wal_ss/"
 				ProgramDataBaseFileName=".\release\wal_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

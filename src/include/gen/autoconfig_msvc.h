@@ -22,15 +22,6 @@
 #ifndef AUTOCONFIG_H
 #define AUTOCONFIG_H
 
-#ifdef _MSC_VER
-// turn off some warnings from the inferior MS compiler
-#pragma warning(disable: 4099)	// class/struct mixups
-#pragma warning(disable: 4251)	// needs to have dll-interface
-#pragma warning(disable: 4291)	// no matching op. delete (there are)
-#pragma warning(disable: 4355)	// 'this' used in base member initializer list
-#pragma warning(disable: 4786)	// debug identifiers are truncated
-#endif
-
 #ifndef _X86_
 #define _X86_
 #endif

@@ -30,7 +30,8 @@
 				AssemblerListingLocation=".\debug\common_cs/"
 				ObjectFile=".\debug\common_cs/"
 				ProgramDataBaseFileName=".\debug\common_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
@@ -79,7 +80,8 @@
 				AssemblerListingLocation=".\release\common_cs/"
 				ObjectFile=".\release\common_cs/"
 				ProgramDataBaseFileName=".\release\common_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

@@ -34,7 +34,8 @@
 				AssemblerListingLocation=".\release\gsec/"
 				ObjectFile=".\release\gsec/"
 				ProgramDataBaseFileName=".\release\gsec/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -85,7 +86,8 @@
 				AssemblerListingLocation=".\debug\gsec/"
 				ObjectFile=".\debug\gsec/"
 				ProgramDataBaseFileName=".\debug\gsec/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>

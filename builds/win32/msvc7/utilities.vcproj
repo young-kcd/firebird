@@ -29,7 +29,8 @@
 				AssemblerListingLocation=".\debug\utilities_ss/"
 				ObjectFile=".\debug\utilities_ss/"
 				ProgramDataBaseFileName=".\debug\utilities_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -78,7 +79,8 @@
 				AssemblerListingLocation=".\release\utilities_ss/"
 				ObjectFile=".\release\utilities_ss/"
 				ProgramDataBaseFileName=".\release\utilities_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool

@@ -34,7 +34,8 @@
 				AssemblerListingLocation=".\release\dsql_server_ss/"
 				ObjectFile=".\release\dsql_server_ss/"
 				ProgramDataBaseFileName=".\release\dsql_server_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -77,7 +78,8 @@
 				AssemblerListingLocation=".\debug\dsql_server_ss/"
 				ObjectFile=".\debug\dsql_server_ss/"
 				ProgramDataBaseFileName=".\debug\dsql_server_ss/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>

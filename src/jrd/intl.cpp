@@ -90,11 +90,6 @@
  * copyright (c) 1992, 1993 by Borland International
  */
 
-#if defined(_MSC_VER) && _MSC_VER < 1300
-// Any Microsoft compiler before MSVC7
-#pragma warning(disable: 4786)
-#endif
-
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"

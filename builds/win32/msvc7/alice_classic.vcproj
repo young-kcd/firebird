@@ -34,7 +34,8 @@
 				AssemblerListingLocation=".\release\alice_cs/"
 				ObjectFile=".\release\alice_cs/"
 				ProgramDataBaseFileName=".\release\alice_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
@@ -77,7 +78,8 @@
 				AssemblerListingLocation=".\debug\alice_cs/"
 				ObjectFile=".\debug\alice_cs/"
 				ProgramDataBaseFileName=".\debug\alice_cs/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>

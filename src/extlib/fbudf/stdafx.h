@@ -28,10 +28,6 @@
 #if !defined(AFX_STDAFX_H__F60BDFDF_7A2D_11D5_8EEB_4854E8274D24__INCLUDED_)
 #define AFX_STDAFX_H__F60BDFDF_7A2D_11D5_8EEB_4854E8274D24__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-
 
 #if defined (_WIN32)
 // Insert your headers here
@@ -49,10 +45,6 @@
 //#ifdef __cplusplus
 //extern "C" {
 //#endif
-
-#if defined (_WIN32)
-#pragma warning(disable:4514) //unreferenced inline function has been removed
-#endif
 
 #ifdef HAVE_MATH_H
 #include <math.h>

@@ -30,7 +30,8 @@
 				AssemblerListingLocation=".\release\fbudf/"
 				ObjectFile=".\release\fbudf/"
 				ProgramDataBaseFileName=".\release\fbudf/"
-				WarningLevel="3"
+				WarningLevel="4"
+				ForcedIncludeFiles="removed_msvc_warnings.h"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
 			<Tool
