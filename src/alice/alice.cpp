@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.47 2003-12-22 09:59:55 robocop Exp $
+//	$Id: alice.cpp,v 1.48 2004-01-07 10:18:38 dimitr Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -137,11 +137,6 @@ int ALICE_main(svc* service)
 {
 	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 					SVC_output, service);
-
-	service->svc_handle = 0;
-	if (service->svc_service->in_use != NULL) {
-		*(service->svc_service->in_use) = FALSE;
-	}
 
 //  Mark service thread as finished.
 //  If service is detached, cleanup memory being used by service.

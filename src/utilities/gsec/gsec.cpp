@@ -97,10 +97,6 @@ int GSEC_main(svc* service)
 	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 						  SVC_output, service);
 
-	service->svc_handle = 0;
-	if (service->svc_service->in_use != NULL)
-		*(service->svc_service->in_use) = FALSE;
-
 /* Mark service thread as finished. */
 /* If service is detached, cleanup memory being used by service. */
 	SVC_finish(service, SVC_finished);

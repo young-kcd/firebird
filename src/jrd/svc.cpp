@@ -2119,10 +2119,6 @@ int SVC_read_ib_log(SVC service)
 	if (file)
 		ib_fclose(file);
 
-	service->svc_handle = 0;
-	if (service->svc_service->in_use != NULL)
-		*(service->svc_service->in_use) = FALSE;
-
 #ifdef SUPERSERVER
 	SVC_finish(service, SVC_finished);
 #else
@@ -2270,7 +2266,6 @@ static void service_close(SVC service)
  **************************************/
 	CloseHandle((HANDLE) service->svc_input);
 	CloseHandle((HANDLE) service->svc_output);
-	CloseHandle((HANDLE) service->svc_handle);
 }
 
 
@@ -3285,6 +3280,10 @@ void SVC_cleanup(SVC service)
 	if (service->svc_status != NULL)
 		gds__free((SLONG *) service->svc_status);
 
+#ifdef WIN_NT
+	CloseHandle((HANDLE) service->svc_handle);
+#endif
+
 //	gds__free((SLONG *) service);
 	delete service;
 }
@@ -3307,21 +3306,34 @@ void SVC_finish(SVC service, USHORT flag)
  *
  **************************************/
 
-	if (!svc_initialized) {
+	if (!svc_initialized)
+	{
 		THD_MUTEX_INIT(svc_mutex);
 		svc_initialized = TRUE;
 	}
 
 	THD_MUTEX_LOCK(svc_mutex);
-	if (service && ((flag == SVC_finished) || (flag == SVC_detached))) {
+	if (service && ((flag == SVC_finished) || (flag == SVC_detached)))
+	{
 		service->svc_flags |= flag;
 		if ((service->svc_flags & SVC_finished) &&
-			(service->svc_flags & SVC_detached)) SVC_cleanup(service);
-		else {
-			if (service->svc_flags & SVC_finished) {
-				service->svc_flags &= ~SVC_thd_running;
-				service->svc_handle = 0;
+			(service->svc_flags & SVC_detached))
+		{
+			SVC_cleanup(service);
+		}
+		else if (service->svc_flags & SVC_finished)
+		{
+			if (service->svc_service && service->svc_service->in_use)
+			{
+				*(service->svc_service->in_use) = FALSE;
 			}
+
+			service->svc_flags &= ~SVC_thd_running;
+
+#ifdef WIN_NT
+			CloseHandle((HANDLE) service->svc_handle);
+#endif
+			service->svc_handle = 0;
 		}
 	}
 	THD_MUTEX_UNLOCK(svc_mutex);

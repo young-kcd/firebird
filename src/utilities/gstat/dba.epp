@@ -906,10 +906,6 @@ int CLIB_ROUTINE main(int argc, char** argv)
 			delete tmp2;
 		}
 
-		service->svc_handle = 0;
-		if (service->svc_service->in_use != NULL)
-			*(service->svc_service->in_use) = FALSE;
-
 		/* Mark service thread as finished and cleanup memory being
 		 * used by service in case if client detached from the service
 		 */
