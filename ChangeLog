@@ -1,3 +1,66 @@
+2004-01-26 17:44  skidder
+
+	* firebird2/src/jrd/common.h:
+	
+	Use plain integer as SLONG/ULONG on 32-bit platforms
+
+2004-01-26 17:32  skidder
+
+	* firebird2/src/include/fb_types.h:
+	
+	Return 32-bit ports to buildable state. Declare SLONG and ISC_LONG
+	as plain integers everywhere
+
+2004-01-26 17:28  skidder
+
+	* firebird2/src/jrd/common.h:
+	
+	Fix a lot of warnings
+
+2004-01-26 14:16  dimitr
+
+	* firebird2/src/jrd/fun.epp:
+	
+	Some style corrections and one bugfix.
+
+2004-01-26 14:14  dimitr
+
+	* firebird2/src/jrd/val.cpp:
+	
+	Minor debugging corrections.
+
+2004-01-26 13:59  dimitr
+
+	* firebird2/src/jrd/val.cpp:
+	
+	Minor debugging corrections.
+
+2004-01-26 13:55  dimitr
+
+	* firebird2/src/jrd/: dfw.epp, dfw.epp:
+	
+	Fixed yet another porting bug. Thanks to Eugene Kilin.
+
+2004-01-26 08:34  skidder
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Fix unix error handling recently broken by Erik in 2.0 branch
+
+2004-01-26 08:10  stryqx
+
+	* firebird2/src/dsql/: keywords.cpp, parse.y:
+	
+	Change PAGE_SIZE to KW_PAGE_SIZE so as not to conflict with system
+	define on FreeBSD.
+
+2004-01-26 08:06  stryqx
+
+	* firebird2/src/dsql/: keywords.cpp, parse.y:
+	
+	Change PAGE_SIZE to KW_PAGE_SIZE so as not to conflict with system
+	define on FreeBSD.
+
 2004-01-23 07:35  skidder
 
 	* firebird2/src/dsql/parse.y:
