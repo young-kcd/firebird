@@ -757,7 +757,9 @@ static ISC_STATUS attach_database(
 	FB_API_HANDLE handle = 0;
 	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT l = attach->p_atch_file.cstr_length;
-	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
+	// CVC: A false sense of constness is worse than no const at all.
+	// Make "dpb" non const until we fix this instead of throwing constness later.
+	UCHAR* dpb = attach->p_atch_dpb.cstr_address;
 	USHORT dl = attach->p_atch_dpb.cstr_length;
 
 /* If we have user identification, append it to database parameter block */
@@ -788,8 +790,8 @@ static ISC_STATUS attach_database(
 	REMOTE_get_timeout_params(port, dpb, dl);
 
 /* Disable remote gsec attachments */
-	UCHAR* p = const_cast<UCHAR*>(dpb);
-	const UCHAR* const end = &dpb[dl];
+	UCHAR* p = dpb;
+	const UCHAR* const end = dpb + dl;
 	while (p < end)
 	{
 		if (p[0] == isc_dpb_gsec_attach && p[1])
@@ -4167,7 +4169,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 							if (l)
 								do {
 									*p++ = *q++;
-								} while (--l && (p < bufferEnd-1));
+								} while (--l && (p < bufferEnd - 1));
 							*p++ = 0;
 							continue;
 						}
