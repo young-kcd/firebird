@@ -57,13 +57,13 @@ struct csconvert;
 
 /* Returned value of INTL_BAD_KEY_LENGTH means that proposed key is too long */
 typedef USHORT (*pfn_INTL_keylength) (
-	CollationImpl* collation, 
+	texttype* tt, 
 	USHORT len
 );
 
 /* Returned value of INTL_BAD_KEY_LENGTH means that key error happened during key construction */
 typedef USHORT (*pfn_INTL_str2key) (
-	CollationImpl* collation, 
+	texttype* tt, 
 	USHORT srcLen, 
 	const UCHAR* src, 
 	USHORT dstLen, 
@@ -71,9 +71,10 @@ typedef USHORT (*pfn_INTL_str2key) (
 	INTL_BOOL partial
 );
 
-/* Compare two potentially long strings using the same rules as in str2key transformation */
-typedef SSHORT (*pfn_INTL_compare) (
-	CollationImpl* collation, 
+/* Compare two potentially long strings using the same rules as in str2key transformation.
+   Return TRUE if str1 > str2 */
+typedef INTL_BOOL (*pfn_INTL_greater) (
+	texttype* tt, 
 	ULONG len1, 
 	const UCHAR* str1, 
 	ULONG len2, 
@@ -83,7 +84,7 @@ typedef SSHORT (*pfn_INTL_compare) (
 
 /* Returns resulting string length in bytes or INTL_BAD_STR_LENGTH in case of error */
 typedef ULONG (*pfn_INTL_str2case) (
-	CollationImpl* collation, 
+	texttype* tt, 
 	ULONG srcLen, 
 	const UCHAR* src, 
 	ULONG dstLen, 
@@ -92,34 +93,16 @@ typedef ULONG (*pfn_INTL_str2case) (
 
 /* Returns FALSE in case of error */
 typedef INTL_BOOL (*pfn_INTL_canonical) (
-	CollationImpl* collation, 
+	texttype* t, 
 	ULONG srcLen,
 	const UCHAR* src,
 	ULONG dstLen,
-	const UCHAR* dst
-);
-
-/* Extracts a portion from a string. Returns INTL_BAD_STR_LENGTH in case of problems. */
-typedef ULONG (*pfn_INTL_substring) (
-	CollationImpl* collation, 
-	ULONG srcLen,
-	const UCHAR* src,
-	ULONG dstLen,
-	UCHAR* dst,
-	ULONG startPos,
-	ULONG length
-);
-
-/* Measures the length of string in characters. Returns INTL_BAD_STR_LENGTH in case of problems. */
-typedef ULONG (*pfn_INTL_length) (
-	CollationImpl* collation, 
-	ULONG srcLen,
-	const UCHAR* src
+	UCHAR* dst
 );
 
 /* Releases resources associated with collation */
 typedef void (*pfn_INTL_tt_destroy) (
-	CollationImpl*
+	texttype* tt
 );
 
 
@@ -140,7 +123,7 @@ typedef struct texttype {
 	pfn_INTL_str2key	texttype_fn_string_to_key;
 
 	/* If not set string is assumed to be binary-comparable for sorting purposes */
-	pfn_INTL_compare	texttype_fn_compare;
+	pfn_INTL_greater	texttype_fn_greater;
 
 	/* If not set string is converted to Unicode and then uppercased via default case folding table */
 	pfn_INTL_str2case	texttype_fn_str_to_upper;	/* Convert string to uppercase */
@@ -153,11 +136,17 @@ typedef struct texttype {
 
 	/* May be omitted if not needed */
 	pfn_INTL_tt_destroy	texttype_fn_destroy;	/* release resources associated with collation */
+
+	/* Some space for future extension of collation interface */
+	void* reserved_for_interface[5];
+
+	/* Some space which may be freely used by collation driver */
+	void* reserved_for_driver[10];
 } *TEXTTYPE;
 
 // Returns resulting string length or INTL_BAD_STR_LENGTH in case of error
 typedef ULONG (*pfn_INTL_convert) (
-	CsConvertImpl* csConvert, 
+	csconvert* csc, 
 	ULONG srcLen,
 	const UCHAR* src,
 	ULONG dstLen,
@@ -168,9 +157,17 @@ typedef ULONG (*pfn_INTL_convert) (
 
 struct csconvert {
 	USHORT csconvert_version;
+	CsConvertImpl* csConvert, 
 	const ASCII* csconvert_name;
 
+	/* Conversion routine. Must be present. */
 	pfn_INTL_convert csconvert_convert;
+
+	/* Some space for future extension of conversion interface */
+	void* reserved_for_interface[2];
+
+	/* Some space which may be freely used by conversion driver */
+	void* reserved_for_driver[10];
 };
 
 /* Conversion error codes */
@@ -184,21 +181,42 @@ struct csconvert {
 
 /* Returns whether string is well-formed or not */
 typedef INTL_BOOL (*pfn_INTL_well_formed) (
-	ULONG len
+	charset* cs, 
+	ULONG len,
 	const UCHAR* str, 
+);
+
+/* Extracts a portion from a string. Returns INTL_BAD_STR_LENGTH in case of problems. */
+typedef ULONG (*pfn_INTL_substring) (
+	charset* cs, 
+	ULONG srcLen,
+	const UCHAR* src,
+	ULONG dstLen,
+	UCHAR* dst,
+	ULONG startPos,
+	ULONG length
+);
+
+/* Measures the length of string in characters. Returns INTL_BAD_STR_LENGTH in case of problems. */
+typedef ULONG (*pfn_INTL_length) (
+	charset* cs, 
+	ULONG srcLen,
+	const UCHAR* src
 );
 
 struct charset
 {
 	USHORT charset_version;
+	CharSetImpl* charset, 
 	const ASCII* charset_name;
 	BYTE charset_min_bytes_per_char;
 	BYTE charset_max_bytes_per_char;
 
-	/* If omitted any string is considered well-formed */
-	pfn_INTL_well_formed	charset_well_formed;
 	csconvert		charset_to_unicode;
 	csconvert		charset_from_unicode;
+
+	/* If omitted any string is considered well-formed */
+	pfn_INTL_well_formed	charset_well_formed;
 
 	/* If not set Unicode representation is used to measure string length. */
 	pfn_INTL_length		texttype_fn_length;	/* get length of string in characters */
@@ -207,6 +225,12 @@ struct charset
 	   If not present for MBCS charset string operation is performed by the engine
        via intermediate translation of string to Unicode */
 	pfn_INTL_substring	charset_fn_substring;	/* get a portion of string */
+
+	/* Some space for future extension of charset interface */
+	void* reserved_for_interface[5];
+
+	/* Some space which may be freely used by charset driver */
+	void* reserved_for_driver[10];
 };
 
 #endif /* JRD_INTLOBJ_NEW_H */
