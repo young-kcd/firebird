@@ -29,7 +29,7 @@
 #include "../intl/country_codes.h"
 #include "../intl/charsets.h"
 #include "../jrd/obj.h"
-
+#include "../jrd/dflt.h"
 
 //******************************
 // names.h

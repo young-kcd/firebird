@@ -86,18 +86,7 @@
 #include "../jrd/execute_statement.h"
 
 /* Pick up relation ids */
-
-#define RELATION(name,id,ods)	id,
-#define FIELD(symbol,name,id,update,ods,new_id,new_ods)
-#define END_RELATION
-
-typedef enum rids {
-#include "../jrd/relations.h"
-rel_MAX} RIDS;
-
-#undef RELATION
-#undef FIELD
-#undef END_RELATION
+#include "../jrd/ini.h"
 
 /* InterBase provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to

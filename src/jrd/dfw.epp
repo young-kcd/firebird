@@ -115,20 +115,7 @@
 #include "gen/iberror.h"
 
 /* Pick up system relation ids */
-
-#define RELATION(name,id,ods)      id,
-#define FIELD(symbol,name,id,update,ods,new_id,new_ods)
-#define END_RELATION
-
-typedef enum rids
-{
-#include "../jrd/relations.h"
-	rel_MAX
-} RIDS;
-
-#undef RELATION
-#undef FIELD
-#undef END_RELATION
+#include "../jrd/ini.h"
 
 /* Define range of user relation ids */
 

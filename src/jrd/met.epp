@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.120 2004-05-17 22:27:56 brodsom Exp $
+$Id: met.epp,v 1.121 2004-05-18 16:40:20 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -109,22 +109,10 @@ $Id: met.epp,v 1.120 2004-05-17 22:27:56 brodsom Exp $
 #endif
 
 /* Pick up relation ids */
-
-#define RELATION(name,id,ods)       id,
-#define FIELD(symbol,name,id,update,ods,new_id,new_ods)
-#define END_RELATION
-
-typedef enum rids {
-#include "../jrd/relations.h"
-	rel_MAX
-} RIDS;
-
-#undef RELATION
-#undef FIELD
-#undef END_RELATION
+#include "../jrd/ini.h"
 
 #define BLR_BYTE        *(csb->csb_running)++
-#define	BLANK			'\040'
+const char BLANK	= '\040';
 
 DATABASE DB = FILENAME "ODS.RDB";
 

@@ -127,18 +127,7 @@ static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, record_param
 static void RefetchRecord(thread_db* tdbb, record_param* rpb, jrd_tra*);
 
 /* Pick up relation ids */
-
-#define RELATION(name, id, ods)	id,
-#define FIELD(symbol, name, id, update, ods, new_id, new_ods)
-#define END_RELATION
-
-typedef enum rids {
-#include "../jrd/relations.h"
-rel_MAX} RIDS;
-
-#undef RELATION
-#undef FIELD
-#undef END_RELATION
+#include "../jrd/ini.h"
 
 #ifdef GARBAGE_THREAD
 static const SCHAR gc_tpb[] = { isc_tpb_version1, isc_tpb_read,
