@@ -1,3 +1,29 @@
+2004-06-22 00:45  skidder
+
+	* firebird2/src/common/classes/tree.h (1.33):
+	
+	Const-correctness
+
+2004-06-22 00:17  skidder
+
+	* firebird2/src/common/classes/alloc.cpp (1.53):
+	
+	Fix bug with wrong output when printing out used only blocks from
+	memory pool
+
+2004-06-21 10:49  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.89):
+	
+	fixed potential inconsistency, noticed by Claudio
+
+2004-06-21 04:48  robocop
+
+	* firebird2/src/: common/classes/tree.h (1.32), dsql/make.cpp
+	(1.69), remote/inet.cpp (1.117):
+	
+	Misc changes
+
 2004-06-19 23:28  arnobrinkman
 
 	* firebird2/src/: dsql/make.cpp (1.68), jrd/align.h (1.7):
