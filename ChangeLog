@@ -1,3 +1,10 @@
+2003-05-17 00:15  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix FB1.5: Optimizer crashed when all indices of a table had the
+	selectivity of 1
+
 2003-05-16 22:34  skidder
 
 	* firebird2/src/: include/fb_types.h, jrd/cch.cpp, jrd/cch_proto.h,
