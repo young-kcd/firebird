@@ -4385,12 +4385,12 @@ static DSQL_NOD pass1_join(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 			request->req_in_outer_join--;
 		break;
 		case nod_join_right:
+			node->nod_arg[e_join_rght_rel] = 
+				PASS1_node(request, input->nod_arg[e_join_rght_rel], proc_flag);
 			request->req_in_outer_join++;
 			node->nod_arg[e_join_left_rel] = 
 				PASS1_node(request, input->nod_arg[e_join_left_rel], proc_flag);
 			request->req_in_outer_join--;
-			node->nod_arg[e_join_rght_rel] = 
-				PASS1_node(request, input->nod_arg[e_join_rght_rel], proc_flag);
 		break;
 		case nod_join_full:
 			request->req_in_outer_join++;
