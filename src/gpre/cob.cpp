@@ -126,7 +126,7 @@ static const char* const ISC_BADDRESS		= "ISC_BADDRESS";
 static const char* const COMMIT			= "commit";
 static const char* const ROLLBACK		= "rollback";
 
-#if defined AIX || defined AIX_PPC || defined sparc || defined SOLX86 || defined HP10 || defined HP11 || defined SINIXZ || defined LINUX || defined DARWIN || defined FREEBSD || defined NETBSD || defined WIN_NT
+#if defined AIX || defined AIX_PPC || defined SOLARIS || defined HP10 || defined HP11 || defined SINIXZ || defined LINUX || defined DARWIN || defined FREEBSD || defined NETBSD || defined WIN_NT
 static const char* const OMITTED 		= "BY VALUE 0";
 static const char* const BY_VALUE		= "BY VALUE ";
 static const char* const END_VALUE		= "";
@@ -222,7 +222,7 @@ static const char* const PUT_SEG_CALL_TEMPLATE	= "%sCALL \"%s\" USING %s, %s%s%d
 static const char* const SQLCODE_CALL_TEMPLATE	= "CALL \"%s\" USING %s, BY REFERENCE SQLCODE";
 #endif // GIVING_SUPPORTED
 
-#if defined AIX || defined AIX_PPC || defined sparc || defined SOLX86 || defined HP10 || defined HP11
+#if defined AIX || defined AIX_PPC || defined SOLARIS || defined HP10 || defined HP11
 static const char* const USAGE_COMP			= " USAGE IS COMP";
 #else
 static const char* const USAGE_COMP			= " USAGE IS COMP";

@@ -43,12 +43,12 @@
 #else
 #define FB_DLL_EXPORT
 #endif
-#if defined(SOLX86)
+//#if defined(SOLX86)
 // this pragmas is used only with gcc 2.95!
 //#define __PRAGMA_REDEFINE_EXTNAME 
 //#define __EXTENSIONS__
 //
-#endif
+//#endif
 
 //
 // Macro for function attribute definition
