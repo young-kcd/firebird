@@ -3651,17 +3651,17 @@ static void pass1_erase(TDBB tdbb, CSB * csb, JRD_NOD node)
 			pass1_update(tdbb, csb, relation, trigger, stream, new_stream,
 						 priv, parent, parent_stream);
 
-		if ((*csb)->csb_rpt[new_stream].csb_flags & csb_view_update) {
-			/* We have a view either updateable or non-updateable */
-
-			node->nod_arg[e_erase_statement] =
-				pass1_expand_view(tdbb, *csb, stream, new_stream, FALSE);
-			node->nod_count =
-				MAX(node->nod_count, (USHORT) e_erase_statement + 1);
-		}
-
 		if (!source)
+		{
+			if ((*csb)->csb_rpt[new_stream].csb_flags & csb_view_update) {
+				node->nod_arg[e_erase_statement] =
+					pass1_expand_view(tdbb, *csb, stream, new_stream, FALSE);
+				node->nod_count =
+					MAX(node->nod_count, (USHORT) e_erase_statement + 1);
+			}
+
 			return;
+		}
 
 		/* We have a updateable view.  If there is a trigger on it, create a
 		   dummy erase record. */
@@ -3726,8 +3726,6 @@ static JRD_NOD pass1_expand_view(
 
 	for (ptr = fields->begin(), end = fields->end(), id = 0;
 			ptr < end; ptr++, id++)
-		// dimitr: let's make computed fields updatable in views
-		// if (*ptr && !((JRD_FLD)(*ptr))->fld_computation) {
 		if (*ptr) {
 			if (remap) {
 				field = MET_get_field(relation, id);
