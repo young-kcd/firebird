@@ -3406,9 +3406,6 @@ static int yday(struct tm *times)
  *
  **************************************/
 	SSHORT day, month, year;
-	const BYTE *days;
-	static const BYTE month_days[] =
-		{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 	day = times->tm_mday;
 	month = times->tm_mon;
@@ -3416,23 +3413,15 @@ static int yday(struct tm *times)
 
 	--day;
 
-	for (days = month_days; days < month_days + month; days++)
-		day += *days;
+	day += (214 * month + 3) / 7;
 
 	if (month < 2)
 		return day;
 
-/* Add a day as we're past the leap-day */
-	if (!(year % 4))
-		day++;
-
-/* Ooops - year's divisible by 100 aren't leap years */
-	if (!(year % 100))
-		day--;
-
-/* Unless they are also divisible by 400! */
-	if (!(year % 400))
-		day++;
+	if (year % 4 == 0 && year % 100 != 0 || year % 400 == 0)
+		--day;
+	else
+		day -= 2;
 
 	return day;
 }
