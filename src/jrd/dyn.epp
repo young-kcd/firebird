@@ -904,7 +904,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				/* This test may become obsolete as we now allow explicit ROLE keyword. */
 				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 					user_type = obj_sql_role;
-					if (!strcmp(user, "NONE")) {
+					if (!strcmp(user, NULL_ROLE)) {
 						DYN_error_punt(false, 195, user, NULL, NULL, NULL, NULL);
 					/* msg 195: keyword NONE could not be used as SQL role name. */
 					}
@@ -935,7 +935,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				DYN_error_punt(false, 188, user, NULL, NULL, NULL, NULL);
 			/* msg 188: Role doesn't exist. */
 			}
-			if (!strcmp(user, "NONE")) {
+			if (!strcmp(user, NULL_ROLE)) {
 				DYN_error_punt(false, 195, user, NULL, NULL, NULL, NULL);
 			/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
@@ -950,7 +950,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				GET_STRING(ptr, object);
 				grant_role_stmt = true;
 				fb_utils::exact_name_limit(object, sizeof(object));
-				if (!strcmp (object, "NONE")) {
+				if (!strcmp (object, NULL_ROLE)) {
 					DYN_error_punt(false, 195, object, NULL, NULL, NULL, NULL);
 				/* msg 195: keyword NONE could not be used as SQL role name. */
 				}
@@ -1630,7 +1630,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			/* This test may become obsolete as we now allow explicit ROLE keyword. */
 			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 				user_type = obj_sql_role;
-				if (!strcmp(user, "NONE")) {
+				if (!strcmp(user, NULL_ROLE)) {
 					DYN_error_punt(false, 195, user, NULL, NULL, NULL, NULL);
 				/* msg 195: keyword NONE could not be used as SQL role name. */
 				}
@@ -1660,7 +1660,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				DYN_error_punt(false, 188, user, NULL, NULL, NULL, NULL);
 			/* msg 188: Role doesn't exist. */
 			}
-			if (!strcmp(user, "NONE")) {
+			if (!strcmp(user, NULL_ROLE)) {
 				DYN_error_punt(false, 195, user, NULL, NULL, NULL, NULL);
 			/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
@@ -1675,7 +1675,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				GET_STRING(ptr, object);
 				fb_utils::exact_name_limit(object, sizeof(object));
 /* CVC: Make this a warning in the future.
-				if (!strcmp(object, "NONE"))
+				if (!strcmp(object, NULL_ROLE))
 					DYN_error_punt(false, 195, object, NULL, NULL, NULL, NULL);
 */
 				/* msg 195: keyword NONE could not be used as SQL role name. */

@@ -3289,7 +3289,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 		ERR_punt();
 	}
 
-	if (strcmp(role_name, "NONE") == 0) {
+	if (strcmp(role_name, NULL_ROLE) == 0) {
 		/************************************************
 		**
 		** keyword NONE could not be used as SQL role name
