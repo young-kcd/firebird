@@ -53,6 +53,7 @@
 #define ODS_VERSION10	10		/* V6.0 features. SQL delimited idetifier,
 								   SQLDATE, and 64-bit exact numeric
 								   type */
+#define ODS_VERSION11   11      /* Firebird 2.0 features */
 
 /* ODS minor version -- minor versions ARE compatible, but may be
    increasingly functional.  Add new minor versions, but leave previous
@@ -91,6 +92,11 @@
 #define ODS_SYSINDEX10	1		/* New system indices */
 #define ODS_CURRENT10	1
 
+/* Minor versions for ODS 11 */
+
+#define ODS_CURRENT11_0	0		/* Firebird 2.0 features. */
+#define ODS_CURRENT11	0
+
 /* useful ODS macros. These are currently used to flag the version of the
    system triggers and system indices in ini.e */
 
@@ -101,6 +107,7 @@
 #define ODS_9_1         ENCODE_ODS (ODS_VERSION9, 1)
 #define ODS_10_0        ENCODE_ODS (ODS_VERSION10, 0)
 #define ODS_10_1        ENCODE_ODS (ODS_VERSION10, 1)
+#define ODS_11_0        ENCODE_ODS (ODS_VERSION11, 0)
 
 /* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and 
    the next 4 bits are major version number */
@@ -109,11 +116,11 @@
 
 /* Set current ODS major and minor version */
 
-#define ODS_VERSION	ODS_VERSION10	/* current ods major version -- always 
+#define ODS_VERSION	ODS_VERSION11	/* current ods major version -- always 
 									   the highest */
-#define ODS_CURRENT	ODS_CURRENT10	/* the highest defined minor version
+#define ODS_CURRENT	ODS_CURRENT11	/* the highest defined minor version
 									   number for this ODS_VERSION!! */
-#define ODS_CURRENT_VERSION	ODS_10_1	/* Current ODS version in use which includes 
+#define ODS_CURRENT_VERSION	ODS_11_0	/* Current ODS version in use which includes 
 										   both Major and Minor ODS versions! */
 
 
@@ -153,6 +160,8 @@ typedef struct pag {
 	ULONG pag_generation;
 	ULONG pag_seqno;			/* WAL seqno of last update */
 	ULONG pag_offset;			/* WAL offset of last update */
+	// We use pag_seqno as SCN number to avoid major ODS version bump
+	ULONG& pag_scn() { return pag_seqno; }
 } *PAG;
 
 
@@ -297,12 +306,12 @@ typedef struct hdr {
 	ULONG hdr_page_buffers;		/* Page buffers for database cache */
 	SLONG hdr_bumped_transaction;	/* Bumped transaction id for log optimization */
 	SLONG hdr_oldest_snapshot;	/* Oldest snapshot of active transactions */
-	SLONG hdr_misc[4];			/* Stuff to be named later */
+	SLONG hdr_backup_pages; /* The amount of pages in files locked for backup */
+	SLONG hdr_misc[3];			/* Stuff to be named later */
 	UCHAR hdr_data[1];			/* Misc data */
 } *HDR;
 
 #define HDR_SIZE        OFFSETA (HDR, hdr_data)
-#define hdr_cache_file	hdr_data
 
 /* Header page clumplets */
 
@@ -323,7 +332,9 @@ typedef struct hdr {
 #define	HDR_password_file_key	9	/* Key to compare to password db */
 #define HDR_backup_info         10	/* WAL backup information */
 #define HDR_cache_file		11	/* Shared cache file */
-#define HDR_max			11		/* Maximum HDR_clump value */
+#define HDR_difference_file 12  /* Delta file that is used during backup lock */
+#define HDR_backup_guid     13  /* UID generated on each switch into backup mode */
+#define HDR_max			14		/* Maximum HDR_clump value */
 
 /* Header page flags */
 
@@ -337,7 +348,8 @@ typedef struct hdr {
 #define hdr_shutdown		0x80	/* 128  database is shutdown */
 #define hdr_SQL_dialect_3	0x100	/* 256  database SQL dialect 3 */
 #define hdr_read_only		0x200	/* 512  Database in ReadOnly. If not set, DB is RW */
-
+/* backup status mask */
+#define hdr_backup_mask     0xC00
 
 typedef struct sfd {
 	SLONG sfd_min_page;			/* Minimum page number */

@@ -494,6 +494,10 @@ static struct LexerState lex;
 %token KW_UPDATING
 %token KW_DELETING
 
+/* tokens added for Firebird 2.0 */
+%token BACKUP
+%token DIFFERENCE
+
 /* precedence declarations for expression evaluation */
 
 %left	OR
@@ -1058,6 +1062,8 @@ db_rem_option   : db_file
 		| db_log_option
 		| DEFAULT CHARACTER SET symbol_character_set_name
 			{ $$ = make_node (nod_dfl_charset, 1, $4);} 
+		| DIFFERENCE KW_FILE sql_string
+			{ $$ = make_node (nod_difference_file, 1, $3); }
 		;
 
 db_log_option   : GROUP_COMMIT_WAIT equals long_integer
@@ -2093,6 +2099,14 @@ db_alter_clause : ADD db_file_list
 			{ $$ = $2; }
 		| ADD db_log
 			{ $$ = $2; }
+		| ADD DIFFERENCE KW_FILE sql_string
+			{ $$ = make_node (nod_difference_file, (int) 1, $4); }
+		| DROP DIFFERENCE KW_FILE
+			{ $$ = make_node (nod_drop_difference, (int) 0, NULL); }
+		| BEGIN BACKUP
+			{ $$ = make_node (nod_begin_backup, (int) 0, NULL); }
+		| END BACKUP
+			{ $$ = make_node (nod_end_backup, (int) 0, NULL); }
 		;
 
 db_log_option_list : db_log_option
@@ -4018,6 +4032,8 @@ non_reserved_word :
     | UPDATING
     | DELETING
 /*  | FIRST | SKIP -- this is handled by the lexer. */
+	| BACKUP                /* added in FB 2.0 */
+	| DIFFERENCE
 	;
 
 %%

@@ -373,6 +373,7 @@ static BOOLEAN shutdown_locks(DBB dbb)
 			LCK_release(tdbb, dbb->dbb_retaining_lock);
 		if (dbb->dbb_lock)
 			LCK_release(tdbb, dbb->dbb_lock);
+		dbb->backup_manager->shutdown_locks();
 		dbb->dbb_ast_flags |= DBB_shutdown_locks;
 	}
 

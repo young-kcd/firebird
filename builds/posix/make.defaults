@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.27 2003-07-11 02:23:58 brodsom Exp $
+#   $Id: make.defaults,v 1.28 2003-08-06 16:30:34 skidder Exp $
 # 
 
 
@@ -214,6 +214,7 @@ GDS_LOCK_MGR    = $(BIN)/fb_lock_mgr
 CREATE_DB       = $(BIN)/create_db$(EXEC_EXT)
 GDS_DROP        = $(BIN)/gds_drop$(EXEC_EXT)
 GSTAT           = $(BIN)/gstat$(EXEC_EXT)
+NBACKUP         = $(BIN)/nbackup$(EXEC_EXT)
 GSEC            = $(BIN)/gsec$(EXEC_EXT)
 GFIX		= $(BIN)/gfix$(EXEC_EXT)
 GDS_REBUILD     = $(BIN)/gds_rebuild$(EXEC_EXT)

@@ -49,11 +49,13 @@
  *
  */
 /*
-$Id: common.h,v 1.73 2003-05-25 00:09:28 skidder Exp $
+$Id: common.h,v 1.74 2003-08-06 16:30:44 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
 #define JRD_COMMON_H
+
+#include "firebird.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -70,6 +72,7 @@ $Id: common.h,v 1.73 2003-05-25 00:09:28 skidder Exp $
 #ifndef INCLUDE_FB_TYPES_H
 #include "../include/fb_types.h"
 #endif
+
 
 
 /*
@@ -923,13 +926,21 @@ typedef struct
 /* Define any debugging symbols and macros here.  This
    ifdef will be executed during development builds. */
 
-#ifdef WIN_NT
-#define TRACE(msg)              gds__log (msg)
+//#ifdef WIN_NT
+#define TRACE(msg)         		gds__log (msg)
+#define TRACE1(msg,p1)     		gds__log (msg,p1)
+#define TRACE2(msg,p1,p2)  		gds__log (msg,p1,p2)
+#define TRACE3(msg,p1,p2,p3) 	gds__log (msg,p1,p2,p3)
+#define TRACE4(msg,p1,p2,p3,p4) gds__log (msg,p1,p2,p3,p4)
 #define DEV_REPORT(msg)         gds__log (msg)
-#endif
+//#endif
 
 #ifndef TRACE
-#define TRACE(msg)              ib_fprintf (ib_stderr, (msg))
+#define TRACE(msg) 				ib_fprintf (ib_stderr,msg)
+#define TRACE1(msg,p1)			ib_fprintf (ib_stderr,msg,p1)
+#define TRACE2(msg,p1,p2)		ib_fprintf (ib_stderr,msg,p1,p2)
+#define TRACE3(msg,p1,p2,p3)	ib_fprintf (ib_stderr,msg,p1,p2,p3)
+#define TRACE4(msg,p1,p2,p3,p4) ib_fprintf (ib_stderr,msg,p1,p2,p3,p4)
 #endif
 
 #ifndef DEV_REPORT
@@ -954,6 +965,10 @@ void GDS_breakpoint(int);
 #define DEV_REPORT(msg)         gds__log (msg)
 #define BREAKPOINT(x)			/* nothing */
 #define TRACE(msg)				/* nothing */
+#define TRACE1(msg,p1)			/* nothing */
+#define TRACE2(msg,p1,p2)		/* nothing */
+#define TRACE3(msg,p1,p2,p3)	/* nothing */
+#define TRACE4(msg,p1,p2,p3,p4)	/* nothing */
 #endif
 
 

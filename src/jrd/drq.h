@@ -177,6 +177,9 @@
 #define drq_e_gens	    127		/* erase generators */
 #define drq_s_f_class	    128 /* set the security class name for a field */
 #define drq_s_u_class	    129 /* find a unique security class name for a field */
-#define drq_MAX             130
+#define drq_l_difference    130 /* Look up a backup difference file */
+#define drq_s_difference    131 /* Store backup difference file */
+#define drq_d_difference    132 /* Delete backup difference file */
+#define drq_MAX             133
 
 #endif /* _JRD_DRQ_H_ */

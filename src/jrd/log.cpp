@@ -375,7 +375,6 @@ void LOG_fini(void)
 	}
 }
 
-
 void LOG_init(TEXT * name, USHORT length)
 {
 /**************************************

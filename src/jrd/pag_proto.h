@@ -31,6 +31,7 @@ extern "C" {
 extern int PAG_add_clump(SLONG, USHORT, USHORT, UCHAR *, USHORT, USHORT);
 extern USHORT PAG_add_file(TEXT *, SLONG);
 extern int PAG_add_header_entry(struct hdr *, USHORT, SSHORT, UCHAR *);
+extern int PAG_replace_entry_first(struct hdr *, USHORT, SSHORT, UCHAR *);
 extern struct pag *PAG_allocate(struct win *);
 extern SLONG PAG_attachment_id(void);
 extern int PAG_delete_clump_entry(SLONG, USHORT);

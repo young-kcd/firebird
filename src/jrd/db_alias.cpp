@@ -35,8 +35,6 @@ typedef Firebird::string string;
 
 const char* ALIAS_FILE = "aliases.conf";
 
-extern "C" {
-
 bool ResolveDatabaseAlias(const char* alias, char* database)
 {
 	TEXT alias_filename[MAXPATHLEN];
@@ -59,6 +57,4 @@ bool ResolveDatabaseAlias(const char* alias, char* database)
 	}
 
 	return false;
-}
-
 }

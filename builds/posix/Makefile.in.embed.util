@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.9 2003-07-15 02:35:53 brodsom Exp $
+#  $Id: Makefile.in.embed.util,v 1.10 2003-08-06 16:30:34 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.util
@@ -39,6 +39,11 @@ include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
+
+
+NBACKUP_Files= nbackup.cpp
+NBACKUP_Sources = $(addprefix utilities/, $(NBACKUP_Files))
+NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sources))))
 
 
 CREATEDB_Files= create_db.cpp
@@ -90,7 +95,7 @@ AllObjects = $(CREATEDB_Objects) $(DROP_Objects) \
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin
+.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin nbackup
 
 all: $(EMBED_UTIL_TARGETS)
 
@@ -105,6 +110,10 @@ create_db: $(CREATE_DB)
 $(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
 	$(LD) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
+nbackup: $(LIBFBEMBED_SO) $(NBACKUP)
+
+$(NBACKUP):	$(NBACKUP_Objects) 
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 gstat : $(LIBFBEMBED_SO) $(GSTAT)

@@ -43,7 +43,10 @@ enum lck_t {
 	LCK_record,					/* Record Lock */
 	LCK_prc_exist,				/* Relation existence lock */
 	LCK_range_relation,			/* Relation refresh range lock */
-	LCK_update_shadow			/* shadow update sync lock */
+	LCK_update_shadow,			/* shadow update sync lock */
+	LCK_backup_state,           /* Lock to synchronize for objects depending on backup status*/
+	LCK_backup_alloc,           /* Lock for page allocation table in backup spare file */
+	LCK_backup_merge            /* Lock for backup delta merge process */
 };
 
 /* Lock owner types */

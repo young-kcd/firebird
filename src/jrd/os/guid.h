@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		flags.h
- *	DESCRIPTION:	Various flag definitions
+ *	MODULE:		guid.h
+ *	DESCRIPTION:	Portable GUID definition
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -17,40 +17,27 @@
  * and its predecessors. Portions created by Inprise Corporation are
  * Copyright (C) Inprise Corporation.
  *
+ * Created by: Nickolay Samofatov <skidder@bssys.com>
+ *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_FLAGS_H_
-#define _JRD_FLAGS_H_
+#ifndef GUID_H
+#define GUID_H
 
-/* flags for RDB$FILE_FLAGS */
+#include "fb_types.h"
 
-#define FILE_shadow	1
-#define FILE_inactive	2
-#define FILE_manual	4
-#define FILE_cache	8
-#define FILE_conditional 16
-/* Flags for backup difference files */
-// File is difference
-#define FILE_difference 32
-// Actively used for backup purposes (ALTER DATABASE BEGIN BACKUP issued)
-#define FILE_backing_up 64
+#define GUID_BUFF_SIZE 39
 
-/* flags for RDB$LOG_FILES */
+typedef struct FB_GUID {
+	USHORT data[8];
+};
 
-#define LOG_serial      1
-#define LOG_default     2
-#define LOG_raw         4
-#define LOG_overflow    8
+extern void GenerateGuid(FB_GUID *guid);
 
-/* flags for RDB$RELATIONS */
+// This functions receive buffers of at least GUID_BUFF_SIZE length
+extern void GuidToString(char* buffer, FB_GUID *guid);
+extern void StringToGuid(FB_GUID *guid, char* buffer);
 
-#define REL_sql		1
-
-/* flags for RDB$TRIGGERS */
-
-#define TRG_sql		0x1
-#define TRG_ignore_perm	0x2		/* trigger ignores permissions checks */
-
-#endif /* _JRD_FLAGS_H_ */
+#endif

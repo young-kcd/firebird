@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.18 2003-07-02 00:16:56 brodsom Exp $
+ *  $Id: keywords.cpp,v 1.19 2003-08-06 16:30:38 skidder Exp $
  *
  */
 
@@ -70,6 +70,7 @@ static const TOK tokens [] = {
 	{AT, "AT", 1},
 	{AUTO, "AUTO", 1},
 	{AVG, "AVG", 1},
+	{BACKUP, "BACKUP", 2},
 	{BASENAME, "BASE_NAME", 1},
 	{BEFORE, "BEFORE", 1},
 	{BEGIN, "BEGIN", 1},
@@ -120,6 +121,7 @@ static const TOK tokens [] = {
 	{DESC, "DESC", 1},	/* Alias of DESCENDING */
 	{DESC, "DESCENDING", 1},
 	{KW_DESCRIPTOR,	"DESCRIPTOR", 2},
+	{DIFFERENCE, "DIFFERENCE", 2},
 	{DISTINCT, "DISTINCT", 1},
 	{DO, "DO", 1},
 	{DOMAIN, "DOMAIN", 1},

@@ -919,32 +919,85 @@ void CCH_fetch_page(
    to rollover to the shadow file.  If the I/O error is
    persistant (more than 3 times) error out of the routine by
    calling CCH_unwind, and eventually punting out. */
-
-	while (!PIO_read(file, bdb, page, status)) {
-		if (!read_shadow) {
-			break;
-		}
-#ifdef SUPERSERVER
-		THREAD_ENTER;
-#endif
-		if (!CCH_rollover_to_shadow(dbb, file, FALSE)) {
+   
+	if (!dbb->backup_manager->lock_state() ||
+		!dbb->backup_manager->actualize_state(status)) 
+	{
+		PAGE_LOCK_RELEASE(bdb->bdb_lock);
+		dbb->backup_manager->unlock_state();
+		CCH_unwind(tdbb, TRUE);
+	}
+	int bak_state = dbb->backup_manager->get_state();
+	ULONG diff_page;
+	if (bak_state == nbak_state_stalled || bak_state == nbak_state_merge) {
+		if (!dbb->backup_manager->lock_alloc() ||
+			!dbb->backup_manager->actualize_alloc(status)) 
+		{
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
+			dbb->backup_manager->unlock_alloc();
+			dbb->backup_manager->unlock_state();
 			CCH_unwind(tdbb, TRUE);
 		}
-		if (file != dbb->dbb_file)
-			file = dbb->dbb_file;
-		else {
-			if (retryCount++ == 3) {
-				ib_fprintf(ib_stderr,
-						   "IO error loop Unwind to avoid a hang\n");
+		diff_page = dbb->backup_manager->get_page_index(bdb->bdb_page);
+		dbb->backup_manager->unlock_alloc();
+		TRACE3("Reading page %d, state=%d, diff page=%d", bdb->bdb_page, bak_state, diff_page);
+	}
+
+	if (bak_state == nbak_state_normal || 
+		(bak_state == nbak_state_stalled && !diff_page) ||
+		// In merge mode, if we are reading past beyond old end of file and page is in .delta file
+		// then we maintain actual page in difference file. Always read it from there.
+		(bak_state == nbak_state_merge && 
+			(!diff_page || (bdb->bdb_page < dbb->backup_manager->get_backup_pages())))
+	   ) 
+	{
+		TRACE3("Reading page %d, state=%d, diff page=%d from DISK", bdb->bdb_page, bak_state, diff_page);
+		// Read page from disk as normal
+		while (!PIO_read(file, bdb, page, status)) {
+			if (!read_shadow) {
+				break;
+			}
+#ifdef SUPERSERVER
+			THREAD_ENTER;
+#endif
+			if (!CCH_rollover_to_shadow(dbb, file, FALSE)) {
 				PAGE_LOCK_RELEASE(bdb->bdb_lock);
+				dbb->backup_manager->unlock_state();
 				CCH_unwind(tdbb, TRUE);
 			}
-		}
+			if (file != dbb->dbb_file)
+				file = dbb->dbb_file;
+			else {
+				if (retryCount++ == 3) {
+					ib_fprintf(ib_stderr,
+							   "IO error loop Unwind to avoid a hang\n");
+					PAGE_LOCK_RELEASE(bdb->bdb_lock);
+					dbb->backup_manager->unlock_state();
+					CCH_unwind(tdbb, TRUE);
+				}
+			}
 #ifdef SUPERSERVER
-		THREAD_EXIT;
+			THREAD_EXIT;
 #endif
+		}
 	}
+	
+	if (diff_page && (
+		bak_state == nbak_state_stalled || 
+	    (bak_state == nbak_state_merge && 
+		 (bdb->bdb_page >= dbb->backup_manager->get_backup_pages() ||
+		  page->pag_scn() < dbb->backup_manager->get_current_scn())
+		)))
+	{		
+		TRACE3("Reading page %d, state=%d, diff page=%d from DIFFERENCE", bdb->bdb_page, bak_state, diff_page);
+		if (!dbb->backup_manager->read_difference(status, diff_page, page)) {
+			PAGE_LOCK_RELEASE(bdb->bdb_lock);
+			dbb->backup_manager->unlock_state();
+			CCH_unwind(tdbb, TRUE);
+		}
+	}
+	
+	dbb->backup_manager->unlock_state();
 
 #ifdef DEBUG_SAVE_BDB_PAGE
 /* This debug option will not work with WAL or existing databases.
@@ -5498,6 +5551,7 @@ static BOOLEAN write_page(
 	BOOLEAN result;
 	ISC_STATUS saved_status;
 	FIL file;
+	ULONG diff_page;
 
 	if (bdb->bdb_flags & BDB_not_valid) {
 		*status++ = gds_arg_gds;
@@ -5553,36 +5607,126 @@ static BOOLEAN write_page(
 		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */
 
-		if (bdb->bdb_page >= 0) {
-#ifdef SUPERSERVER
-			THREAD_EXIT;
-#endif
+		if (bdb->bdb_page >= 0) {		
+			if (!dbb->backup_manager->lock_state() ||
+				!dbb->backup_manager->actualize_state(status)) 
+			{
+				bdb->bdb_flags |= BDB_io_error;
+				dbb->dbb_flags |= DBB_suspend_bgio;
+				dbb->backup_manager->unlock_state();
+				return FALSE;
+			}
+			if (bdb->bdb_page != HEADER_PAGE) // SCN of header page is adjusted in nbak.cpp
+				page->pag_scn() = dbb->backup_manager->get_current_scn(); // Set SCN for the page
 			page->pag_checksum = CCH_checksum(bdb);
-			file = dbb->dbb_file;
-			while (!PIO_write(file, bdb, page, status)) {
-#ifdef SUPERSERVER
-				THREAD_ENTER;
-#endif
-				if (!CCH_rollover_to_shadow(dbb, file, inAst)) {
+			int backup_state = dbb->backup_manager->get_state();
+			if (backup_state == nbak_state_stalled ||
+			    // We write pages that were beyond the end of file to difference file too
+				// This is because we cannot read page from main database file to choose
+				(backup_state == nbak_state_merge && !(tdbb->tdbb_flags & TDBB_backup_merge) &&
+				 bdb->bdb_page >= dbb->backup_manager->get_backup_pages()))
+			{
+				// Write to difference file
+				if (!dbb->backup_manager->lock_alloc() ||
+					!dbb->backup_manager->actualize_alloc(status))
+				{
+					dbb->backup_manager->unlock_alloc();
 					bdb->bdb_flags |= BDB_io_error;
 					dbb->dbb_flags |= DBB_suspend_bgio;
+					dbb->backup_manager->unlock_state();
 					return FALSE;
 				}
+				diff_page = dbb->backup_manager->get_page_index(bdb->bdb_page);
+				dbb->backup_manager->unlock_alloc();
+				if (diff_page) {
+					// Simple case. Write to difference file directly
+					if (!dbb->backup_manager->write_difference(status, diff_page, bdb->bdb_buffer)) {
+						bdb->bdb_flags |= BDB_io_error;
+						dbb->dbb_flags |= DBB_suspend_bgio;
+						dbb->backup_manager->unlock_state();
+						return FALSE;
+					}
+					TRACE2("Write page %u at offset %u (existing) in difference file", bdb->bdb_page, diff_page);
+				} else if (backup_state == nbak_state_stalled) {
+					if (!dbb->backup_manager->lock_alloc_write() || 
+						!dbb->backup_manager->actualize_alloc(status)) 
+					{
+						dbb->backup_manager->unlock_alloc_write();
+						bdb->bdb_flags |= BDB_io_error;
+						dbb->dbb_flags |= DBB_suspend_bgio;
+						dbb->backup_manager->unlock_state();
+						return FALSE;
+					}
+					diff_page = dbb->backup_manager->get_page_index(bdb->bdb_page);
+					if (diff_page) {
+						if (!dbb->backup_manager->write_difference(status, diff_page, bdb->bdb_buffer)) {
+							dbb->backup_manager->unlock_alloc_write();
+							bdb->bdb_flags |= BDB_io_error;
+							dbb->dbb_flags |= DBB_suspend_bgio;
+							dbb->backup_manager->unlock_state();
+							return FALSE;
+						}
+						TRACE2("Write page %u at offset %u (appeared) in difference file", bdb->bdb_page, diff_page);
+					} else {
+						diff_page = dbb->backup_manager->get_next_page();
+						if (!dbb->backup_manager->write_difference(status, diff_page, bdb->bdb_buffer)) {
+							dbb->backup_manager->unlock_alloc_write();
+	  						bdb->bdb_flags |= BDB_io_error;
+							dbb->dbb_flags |= DBB_suspend_bgio;
+							dbb->backup_manager->unlock_state();
+							return FALSE;
+						}
+						TRACE2("Write page %u at offset %u (created) in difference file", bdb->bdb_page, diff_page);
+						if (!dbb->backup_manager->mark_alloc(status, bdb->bdb_page)) {
+							dbb->backup_manager->unlock_alloc_write();
+							bdb->bdb_flags |= BDB_io_error;
+							dbb->dbb_flags |= DBB_suspend_bgio;
+							dbb->backup_manager->unlock_state();
+							return FALSE;
+						}
+					}
+					dbb->backup_manager->unlock_alloc_write();
+				}
+			}
+			if (backup_state == nbak_state_stalled) {
+				// We finished. Adjust transaction accounting and get ready for exit
+				if (bdb->bdb_page == HEADER_PAGE)
+					dbb->dbb_last_header_write =
+						((HDR) page)->hdr_next_transaction;
+			} else {
+				// We need to write our pages to main database files
 #ifdef SUPERSERVER
 				THREAD_EXIT;
 #endif
 				file = dbb->dbb_file;
-			}
+				while (!PIO_write(file, bdb, page, status)) {
+#ifdef SUPERSERVER
+					THREAD_ENTER;
+#endif
+					if (!CCH_rollover_to_shadow(dbb, file, inAst)) {
+						bdb->bdb_flags |= BDB_io_error;
+						dbb->dbb_flags |= DBB_suspend_bgio;
+						dbb->backup_manager->unlock_state();
+						return FALSE;
+					}
+#ifdef SUPERSERVER
+					THREAD_EXIT;
+#endif
+					file = dbb->dbb_file;
+				}
 
 #ifdef SUPERSERVER
-			THREAD_ENTER;
+				THREAD_ENTER;
 #endif
-			if (bdb->bdb_page == HEADER_PAGE)
-				dbb->dbb_last_header_write =
-					((HDR) page)->hdr_next_transaction;
-			if (dbb->dbb_shadow)
-				result =
-					CCH_write_all_shadows(tdbb, 0, bdb, status, 0, inAst);
+				if (bdb->bdb_page == HEADER_PAGE)
+					dbb->dbb_last_header_write =
+						((HDR) page)->hdr_next_transaction;
+				if (dbb->dbb_shadow)
+					result =
+						CCH_write_all_shadows(tdbb, 0, bdb, status, 0, inAst);
+			}
+			dbb->backup_manager->unlock_state();
+			
 		}
 
 #ifdef SUPERSERVER

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.50 2003-06-30 10:47:19 brodsom Exp $
+ * $Id: ddl.cpp,v 1.51 2003-08-06 16:30:38 skidder Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1286,6 +1286,10 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 			element = *ptr;
 
 			switch (element->nod_type) {
+			case nod_difference_file:
+				request->append_cstring(gds_dyn_def_difference, 
+					((STR)element->nod_arg[0])->str_data);
+				break;
 			case nod_file_desc:
 				file = (FIL) element->nod_arg[0];
 				request->append_cstring(gds_dyn_def_file,
@@ -4492,6 +4496,7 @@ static void modify_database( DSQL_REQ request)
 	SSHORT temp_short;
 	SSHORT drop_log = FALSE;
 	SSHORT drop_cache = FALSE;
+	SSHORT drop_difference = FALSE;
 
 	ddl_node = request->req_ddl_node;
 
@@ -4511,6 +4516,9 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 		case nod_drop_cache:
 			drop_cache = TRUE;
 			break;
+		case nod_drop_difference:
+			drop_difference = TRUE;
+			break;
 
 		default:
 			break;
@@ -4522,6 +4530,9 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 	}
 	if (drop_cache) {
 		request->append_uchar(gds_dyn_drop_cache);
+	}
+	if (drop_difference) {
+		request->append_uchar(gds_dyn_drop_difference);
 	}
 
 	elements = ddl_node->nod_arg[e_adb_all];
@@ -4601,6 +4612,16 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 			request->append_uchar(gds_dyn_log_buffer_size);
 			temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
 			request->append_ushort_with_length(temp_short);
+			break;
+		case nod_difference_file:
+			request->append_cstring(gds_dyn_def_difference, 
+				((STR)element->nod_arg[0])->str_data);
+			break;
+		case nod_begin_backup:
+			request->append_uchar(gds_dyn_begin_backup);
+			break;
+		case nod_end_backup:
+			request->append_uchar(gds_dyn_end_backup);
 			break;
 		case nod_drop_log:
 		case nod_drop_cache:

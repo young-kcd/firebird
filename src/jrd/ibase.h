@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.40 2003-07-04 15:17:46 dimitr Exp $
+$Id: ibase.h,v 1.41 2003-08-06 16:30:44 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -2009,6 +2009,10 @@ enum info_db_provider
 #define isc_dyn_drop_log                  194
 #define isc_dyn_drop_cache                195
 #define isc_dyn_def_default_log           202
+#define isc_dyn_def_difference            211
+#define isc_dyn_drop_difference           212
+#define isc_dyn_begin_backup              213
+#define isc_dyn_end_backup                214
 
 /***********************/
 /* View specific stuff */

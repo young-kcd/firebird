@@ -899,6 +899,91 @@ void DYN_define_file(GBL		gbl,
 }
 
 
+void DYN_define_difference(GBL		gbl,
+						   UCHAR**	ptr)
+{
+/**************************************
+ *
+ *	D Y N _ d e f i n e _ d i f f e r e n c e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Define backup difference file.
+ *
+ **************************************/
+	TDBB tdbb;
+	DBB dbb;
+	UCHAR verb;
+	volatile BLK request;
+	USHORT found = FALSE;
+	volatile SSHORT id;
+
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+	request = NULL;
+
+	try {
+
+	id = -1;
+
+	id = drq_l_difference;
+	request = (BLK) CMP_find_request(tdbb, drq_l_difference, DYN_REQUESTS);
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		FIL IN RDB$FILES
+		if (FIL.RDB$FILE_FLAGS & FILE_difference)
+      		found = TRUE;
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_l_difference)) {
+		DYN_REQUEST(drq_l_difference) = request;
+	}
+
+	if (found) {
+		goto dyn_punt_148_fixme;
+	}
+
+	request = (BLK) CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
+	id = drq_s_difference;
+	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		X IN RDB$FILES GET_STRING(ptr, X.RDB$FILE_NAME);
+		X.RDB$FILE_FLAGS = FILE_difference;
+		X.RDB$FILE_FLAGS.NULL = FALSE;
+		X.RDB$FILE_START = 0;
+		X.RDB$FILE_START.NULL = FALSE;
+		X.RDB$FILE_LENGTH.NULL = TRUE;
+		X.RDB$SHADOW_NUMBER.NULL = TRUE;
+	END_STORE;
+
+	if (!DYN_REQUEST(drq_s_difference))
+	{
+		DYN_REQUEST(drq_s_difference) = request;
+	}
+
+	}
+	catch (const std::exception&) {
+		if (id == drq_s_difference)
+		{
+			DYN_rundown_request(request, drq_s_difference);
+			DYN_error_punt(TRUE, 150, NULL, NULL, NULL, NULL, NULL);
+			/* msg 150: STORE RDB$FILES failed */
+		}
+		else
+		{
+			DYN_rundown_request(request, drq_l_difference);
+			DYN_error_punt(TRUE, 156, NULL, NULL, NULL, NULL, NULL);
+			/* msg 156: Shared cache lookup failed */
+		}
+	}
+
+	return;
+
+dyn_punt_148_fixme:
+	DYN_error_punt(FALSE, 148 /*!!!FIXME*/, NULL, NULL, NULL, NULL, NULL);
+	/* msg 148: "Shared cache file already exists" */
+}
+
+
 void DYN_define_filter( GBL gbl, UCHAR ** ptr)
 {
 /**************************************

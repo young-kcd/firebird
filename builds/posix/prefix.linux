@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux,v 1.19 2003-07-14 11:23:04 brodsom Exp $
+#$Id: prefix.linux,v 1.20 2003-08-06 16:30:36 skidder Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 # -fno-builtin is used because GCC 3.0-3.2.2 had bug with builtins expansion
@@ -28,7 +28,7 @@ OS_ServerFiles=inet_server.cpp
 LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec 
-CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup
 
 Physical_IO_Module=os/posix/unix.cpp

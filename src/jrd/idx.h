@@ -36,7 +36,7 @@ struct ini_idx_t {
 	UCHAR ini_idx_index_id;
 	UCHAR ini_idx_version_flag;
 	UCHAR ini_idx_relid;
-	UCHAR ini_idx_unique_flag;
+	UCHAR ini_idx_flags;
 	UCHAR ini_idx_segment_count;
 	struct ini_idx_segment_t {
 		UCHAR ini_idx_rfld_id;
@@ -271,9 +271,15 @@ static const struct ini_idx_t indices[] = {
 /*	define index RDB$INDEX_43 for RDB$RELATION_CONSTRAINTS RDB$INDEX_NAME; */
 	INDEX(43, ODS_10_1, rel_rcon, 0, 1)
 		SEGMENT(f_rcon_iname, idx_metadata),	/* index name */
-	}}
+	}},
 	/* Last index in ODS 10.1 is RDB$INDEX_43 */
 
+/*	define index RDB$INDEX_44 for RDB$BACKUP_HISTORY RDB$LEVEL, RDB$BACKUP_ID; */
+	INDEX(44, ODS_11_0, rel_backup_history, idx_unique | idx_descending, 2)
+		SEGMENT(f_backup_level, idx_numeric),	/* backup level */
+		SEGMENT(f_backup_id, idx_numeric)	/* backup id */
+	}}
+	/* Last index in ODS 11.0 is RDB$INDEX_44 */
 };
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)

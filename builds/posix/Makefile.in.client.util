@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.11 2003-07-15 02:35:53 brodsom Exp $
+#  $Id: Makefile.in.client.util,v 1.12 2003-08-06 16:30:33 skidder Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -39,6 +39,10 @@ include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
+
+
+NBACKUP_Sources= utilities/nbackup.cpp jrd/db_alias.cpp
+NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sources))))
 
 
 CREATEDB_Files= create_db.cpp
@@ -100,7 +104,7 @@ AllObjects = $(CREATEDB_Object) $(DROP_Object) \
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: all create_db gstat gds_drop gds_relay gsec fbguard fbmgr_bin
+.PHONY: all create_db gstat gds_drop gds_relay gsec fbguard fbmgr_bin nbackup
 
 all: $(CLIENT_UTIL_TARGETS)
 
@@ -109,6 +113,11 @@ create_db: $(CREATE_DB)
 $(CREATE_DB):	$(CREATEDB_Objects) 
 	$(LD) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
+
+nbackup: $(LIBFBCLIENT_SO) $(NBACKUP)
+
+$(NBACKUP):	$(NBACKUP_Objects) 
+	$(LD) $(LINK_OPTS) $(NBACKUP_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 gstat : $(LIBFBCLIENT_SO) $(GSTAT)

@@ -489,6 +489,9 @@ SLONG LCK_get_owner_handle(TDBB tdbb, enum lck_t lock_type)
 	case LCK_record_locking:
 	case LCK_prc_exist:
 	case LCK_range_relation:
+	case LCK_backup_state:
+	case LCK_backup_alloc:
+	case LCK_backup_merge:
 		return LCK_OWNER_HANDLE_DBB;
 	case LCK_attachment:
 	case LCK_relation:

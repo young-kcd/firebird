@@ -329,7 +329,11 @@ typedef ENUM nod_t
 	nod_release_savepoint,
 	nod_undo_savepoint,
 	nod_label, /* label support */
-	nod_exec_into /* EXECUTE STATEMENT INTO */
+	nod_exec_into, /* EXECUTE STATEMENT INTO */
+	nod_difference_file,
+	nod_drop_difference,
+	nod_begin_backup,
+	nod_end_backup
 } NOD_TYPE;
 
 

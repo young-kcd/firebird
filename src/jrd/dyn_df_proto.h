@@ -48,5 +48,6 @@ extern void DYN_define_sql_field(GBL, UCHAR **, TEXT *, TEXT *);
 extern void DYN_define_trigger(GBL, UCHAR **, TEXT *, TEXT *, BOOLEAN);
 extern void DYN_define_trigger_msg(GBL, UCHAR **, TEXT *);
 extern void DYN_define_view_relation(GBL, UCHAR **, TEXT *);
+extern void DYN_define_difference(GBL, UCHAR **);
 
 #endif /* _JRD_DYN_DF_PROTO_H_ */

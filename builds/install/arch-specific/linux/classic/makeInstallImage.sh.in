@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.2 2003-07-09 09:21:21 fsg Exp $
+#   $Id: makeInstallImage.sh.in,v 1.3 2003-08-06 16:30:28 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -89,6 +89,7 @@ copyFiles() {
     mkdir $DestDir/intl 
     mkdir $DestDir/lib
     mkdir $DestDir/doc 
+    mkdir $DestDir/doc/sql.extensions 
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
 #    mkdir $TargetDir/etc 
@@ -112,6 +113,7 @@ copyFiles() {
     cp $BuiltFBDir/bin/gfix $DestDir/bin/gfix 
     cp $BuiltFBDir/bin/gpre $DestDir/bin/gpre 
     cp $BuiltFBDir/bin/gsec $DestDir/bin/gsec 
+    cp $BuiltFBDir/bin/nbackup $DestDir/bin/nbackup 
     copyIfExists $BuiltFBDir/bin/gsplit $DestDir/bin/gsplit 
     cp $BuiltFBDir/bin/gstat $DestDir/bin/gstat 
     copyIfExists $BuiltFBDir/bin/isc4.gbak $DestDir/bin/isc4.gbak 
@@ -166,7 +168,10 @@ copyFiles() {
 	    
 
     # Note that this copies files from outside the build tree.
-    cp $BuildRootDir/doc/README.user.* $DestDir/doc
+    cp $BuildRootDir/doc/*.pdf $DestDir/doc
+    cp $BuildRootDir/doc/README.* $DestDir/doc
+    cp $BuildRootDir/doc/sql.extensions/* $DestDir/doc/sql.extensions
+    cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
     cp $BuildRootDir/doc/README.user $DestDir/README
 
     cp $BuiltFBDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd

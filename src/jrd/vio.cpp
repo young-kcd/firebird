@@ -1128,8 +1128,8 @@ void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 	RPB temp;
 	DSC desc, desc2;
 	LLS stack;
-	USHORT id;
-	BOOLEAN same_tx = FALSE;
+	USHORT id, rel_flags;
+	BOOLEAN same_tx = FALSE, name_defined;
 	TEXT relation_name[32], revokee[32], privilege[32], procedure_name[32];
 	SLONG tid_fetch;
 	JRD_REQ request;
@@ -1281,12 +1281,21 @@ void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 			break;
 
 		case rel_files:
-			EVL_field(0, rpb->rpb_record, f_file_name, &desc);
-			if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
-				(id = MOV_get_long(&desc2, 0)))
+			name_defined = EVL_field(0, rpb->rpb_record, f_file_name, &desc);
+			if (EVL_field(0, rpb->rpb_record, f_file_flags, &desc2) && 
+				((rel_flags = MOV_get_long(&desc2, 0)) & FILE_difference))
 			{
-				DFW_post_work(transaction, dfw_delete_shadow, &desc, id);
+				if (rel_flags & FILE_backing_up)
+					DFW_post_work(transaction, dfw_end_backup, &desc, 0);
+				if (name_defined)
+					DFW_post_work(transaction, dfw_delete_difference, &desc, 0);
 			}
+			else
+				if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
+					(id = MOV_get_long(&desc2, 0)))
+				{
+					DFW_post_work(transaction, dfw_delete_shadow, &desc, id);
+				}
 			break;
 
 		case rel_classes:
@@ -1992,6 +2001,7 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 	DSC desc1, desc2;
 	LLS stack;
 	USHORT id;
+	SSHORT new_rel_flags, old_rel_flags;
 
 	SET_TDBB(tdbb);
 
@@ -2106,6 +2116,22 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 			EVL_field(0, org_rpb->rpb_record, f_trg_name, &desc1);
 			DFW_post_work(transaction, dfw_modify_trigger, &desc1, 0);
 			break;
+			
+		case rel_files:
+			EVL_field(0, new_rpb->rpb_record, f_file_name, &desc1);
+			if (EVL_field(0, new_rpb->rpb_record, f_file_flags, &desc2) && 
+				((new_rel_flags = MOV_get_long(&desc2, 0)) & FILE_difference) &&
+				EVL_field(0, org_rpb->rpb_record, f_file_flags, &desc2) &&
+				((old_rel_flags = MOV_get_long(&desc2, 0)) != new_rel_flags))
+			{
+				DFW_post_work(transaction, 
+					new_rel_flags & FILE_backing_up ?
+						dfw_begin_backup :
+						dfw_end_backup,
+					&desc1, 0);
+			}
+			break;
+
 
 		default:
 			break;
@@ -2464,6 +2490,8 @@ void VIO_store(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 	DSC desc, desc2;
 	SSHORT id;
 	JRD_REQ request;
+	USHORT rel_flags;
+	BOOLEAN name_defined;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -2524,15 +2552,28 @@ void VIO_store(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 			break;
 
 		case rel_files:
-			EVL_field(0, rpb->rpb_record, f_file_name, &desc);
+			name_defined = EVL_field(0, rpb->rpb_record, f_file_name, &desc);
 			if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
 				MOV_get_long(&desc2, 0)) {
 				EVL_field(0, rpb->rpb_record, f_file_flags, &desc2);
 				if (!(MOV_get_long(&desc2, 0) & FILE_inactive))
 					DFW_post_work(transaction, dfw_add_shadow, &desc, 0);
 			}
-			else
-				DFW_post_work(transaction, dfw_add_file, &desc, 0);
+			else {
+				if (EVL_field(0, rpb->rpb_record, f_file_flags, &desc2)
+					&& ((rel_flags = MOV_get_long(&desc2, 0)) & FILE_difference))
+				{
+					if (name_defined)
+						DFW_post_work(transaction, dfw_add_difference, &desc, 0);
+					if (rel_flags & FILE_backing_up)
+					{
+						DFW_post_work(transaction, dfw_begin_backup, &desc, 0);
+					}
+				} else
+				{
+					DFW_post_work(transaction, dfw_add_file, &desc, 0);
+				}
+			}
 			break;
 
 		case rel_triggers:

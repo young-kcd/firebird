@@ -132,7 +132,8 @@ RELATION(nam_formats, rel_formats, ODS_8_0)
 	FIELD(f_fmt_rid, nam_r_id, fld_r_id, 0, 0, 0, 0)
 	FIELD(f_fmt_format, nam_fmt, fld_format, 0, 0, 0, 0)
 	FIELD(f_fmt_desc, nam_desc, fld_f_descr, 0, 0, 0, 0)
-	END_RELATION RELATION(nam_classes, rel_classes, ODS_8_0)
+END_RELATION
+RELATION(nam_classes, rel_classes, ODS_8_0)
 	FIELD(f_cls_class, nam_class, fld_class, 1, 0, 0, 0)
 	FIELD(f_cls_acl, nam_acl, fld_acl, 1, 0, 0, 0)
 	FIELD(f_cls_desc, nam_description, fld_description, 1, 0, 0, 0)
@@ -312,4 +313,12 @@ END_RELATION
 RELATION(nam_roles, rel_roles, ODS_9_0)
 	FIELD(f_rol_name, nam_role_name, fld_user, 1, 0, 0, 0)
 	FIELD(f_rol_owner, nam_owner, fld_user, 1, 0, 0, 0)
+END_RELATION
+RELATION(nam_backup_history, rel_backup_history, ODS_11_0)
+	FIELD(f_backup_id, nam_backup_id, fld_backup_id, 1, 0, 0, 0)
+	FIELD(f_backup_time, nam_time, fld_time, 1, 0, 0, 0)
+	FIELD(f_backup_level, nam_backup_level, fld_backup_level, 1, 0, 0, 0)
+	FIELD(f_backup_guid, nam_guid, fld_guid, 1, 0, 0, 0)
+	FIELD(f_backup_scn, nam_scn, fld_scn, 1, 0, 0, 0)
+	FIELD(f_backup_name, nam_file_name, fld_file_name, 1, 0, 0, 0)
 END_RELATION

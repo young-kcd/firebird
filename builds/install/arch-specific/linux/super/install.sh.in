@@ -34,6 +34,7 @@
     cp interbase/bin/gsec /opt/interbase/bin/gsec 
     cp interbase/bin/gsplit /opt/interbase/bin/gsplit 
     cp interbase/bin/gstat /opt/interbase/bin/gstat 
+    cp interbase/bin/nbackup /opt/interbase/bin/nbackup 
     cp interbase/bin/isc4.gbak /opt/interbase/bin/isc4.gbak 
     cp interbase/bin/isql /opt/interbase/bin/isql 
     cp interbase/bin/qli /opt/interbase/bin/qli 

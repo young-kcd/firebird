@@ -12,6 +12,7 @@
     /usr/local/firebird/bin/gsec 
     /usr/local/firebird/bin/gsplit 
     /usr/local/firebird/bin/gstat 
+    /usr/local/firebird/bin/nbackup 
     /usr/local/firebird/bin/security.gbak 
     /usr/local/firebird/bin/isql 
     /usr/local/firebird/bin/qli 

@@ -187,7 +187,11 @@ ENUM dfw_t {
 	dfw_delete_exception, 
 	dfw_unlink_file,
 	dfw_delete_generator,
-	dfw_delete_udf
+	dfw_delete_udf,
+	dfw_add_difference,
+	dfw_delete_difference,
+	dfw_begin_backup,
+	dfw_end_backup
 };
 
 class dfw : public pool_alloc_rpt<SCHAR, type_dfw>

@@ -523,6 +523,66 @@ int PAG_add_header_entry(HDR header, USHORT type, SSHORT len, UCHAR * entry)
 }
 
 
+int PAG_replace_entry_first(HDR header, USHORT type, SSHORT len, UCHAR * entry)
+{
+/***********************************************
+ *
+ *	P A G _ r e p l a c e _ e n t r y _ f i r s t
+ *
+ ***********************************************
+ *
+ * Functional description
+ *	Replace an entry in the header page so it will become first entry
+ *	This will be used mainly for the clumplets used for backup purposes
+ *  because they are needed to be read without page lock
+ *	Will not follow to hdr_next_page
+ *	Will not journal changes made to page.
+ *	RETURNS
+ *		TRUE - modified page
+ *		FALSE - nothing done
+ *
+ **************************************/
+	DBB dbb;
+	UCHAR *q, *p;
+	int free_space;
+	TDBB tdbb;
+
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+	CHECK_DBB(dbb);
+
+	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
+
+	q = entry;
+
+	for (p = header->hdr_data; ((*p != HDR_end) && (*p != type));
+		 p += 2 + p[1]);
+
+	// Remove item if found it somewhere
+	if (*p != HDR_end) {
+		UCHAR l = p[1] + 2;
+		memmove(p, p+l, 
+			header->hdr_end - (p-(UCHAR*)header) - l + 1/*to preserve HDR_end*/);
+		header->hdr_end -= l;
+	}
+	
+	
+	if (!entry) return FALSE; // We were asked just to remove item. We finished.
+	
+	// Check if we got enough space
+	if (dbb->dbb_page_size - header->hdr_end <= len + 2)
+		BUGCHECK(251);
+		
+	// Actually add the item
+	memmove(header->hdr_data + len + 2, header->hdr_data, header->hdr_end - HDR_SIZE + 1);
+	header->hdr_data[0] = type;
+	header->hdr_data[1] = len;
+	memcpy(header->hdr_data+2, entry, len);
+	header->hdr_end += len + 2;
+	
+	return TRUE;
+}
+
 PAG PAG_allocate(WIN * window)
 {
 /**************************************
@@ -796,6 +856,7 @@ void PAG_format_header(void)
 
 	window.win_page = HEADER_PAGE;
 	header = (HDR) CCH_fake(tdbb, &window, 1);
+	header->hdr_header.pag_scn() = 0;
 	MOV_time_stamp(reinterpret_cast <
 				   ISC_TIMESTAMP * >(header->hdr_creation_date));
 	header->hdr_header.pag_type = pag_header;

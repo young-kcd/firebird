@@ -33,6 +33,7 @@
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
 #include "../jrd/all.h"
+#include "../jrd/nbak.h"
 
 #include "../include/fb_vector.h"
 
@@ -231,6 +232,7 @@ public:
 	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	struct tpc *dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
+	class BackupManager *backup_manager; /* physical backup manager */
 	class sym *dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
 private:
@@ -936,6 +938,8 @@ typedef struct tdbb
 #define	TDBB_sweeper			1	/* Thread sweeper or garbage collector */
 #define TDBB_no_cache_unwind	2	/* Don't unwind page buffer cache */
 #define TDBB_prc_being_dropped	4	/* Dropping a procedure  */
+#define TDBB_set_backup_state   8   /* Setting state for backup lock */
+#define TDBB_backup_merge      16   /* Merging changes from difference file */
 
 /* List of internal database handles */
 

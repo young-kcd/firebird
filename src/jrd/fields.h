@@ -117,3 +117,9 @@
 	FIELD(fld_xcp_number	, nam_xcp_number	, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_file_p_offset	, nam_file_p_offset	, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_f_precision	, nam_f_precision	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+
+	FIELD(fld_backup_id		, nam_backup_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+	FIELD(fld_backup_level	, nam_backup_level	, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+	FIELD(fld_guid			, nam_guid			, dtype_text	, 38			, 0						, 0, NULL)
+	FIELD(fld_scn			, nam_scn			, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+	

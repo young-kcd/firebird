@@ -128,6 +128,7 @@
 
 #include "../common/config/config.h"
 #include "../jrd/plugin_manager.h"
+#include "../jrd/db_alias.h"
 
 #ifdef GARBAGE_THREAD
 #include "vio_proto.h"
@@ -625,7 +626,6 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	TEXT alias_buffer[MAXPATHLEN];
 	TEXT file_name_buffer[MAXPATHLEN];
 	TEXT temp_buffer[MAXPATHLEN];
-	extern bool ResolveDatabaseAlias(const char*, char*);
 
 	SSHORT first;
 	ISC_STATUS *status;
@@ -842,13 +842,20 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			dbb->dbb_page_buffers = options.dpb_page_buffers;
 		}
 		CCH_init(tdbb, (ULONG) options.dpb_buffers);
-		PAG_init2(0);
+		
+		// Initialize backup difference subsystem. This must be done before WAL and shadowing
+		// is enabled because nbackup it is a lower level subsystem
+		dbb->backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(dbb, nbak_state_unknown);
+		
+		PAG_init2(0);		
+		
 		if (options.dpb_disable_wal) {
 			/* Forcibly disable WAL before the next step.
 			   We have an exclusive access to the database. */
 			AIL_drop_log_force();
 			options.dpb_disable_wal = FALSE;	/* To avoid further processing below */
 		}
+		
 
 		SBM sbm_recovery = NULL;
 
@@ -1350,12 +1357,15 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	JRD_SS_MUTEX_UNLOCK;
-
-	*handle = attachment;
+	
+	// Recover database after crash during backup difference file merge
+	dbb->backup_manager->end_backup(true/*do recovery*/); 
+	
+	*handle = attachment;	
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_handle_returned, *handle);
-#endif
+#endif	
 
 	return return_success(tdbb);
 
@@ -2006,6 +2016,11 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
 	CCH_init(tdbb, (ULONG) options.dpb_buffers);
+	
+	// Initialize backup difference subsystem. This must be done before WAL and shadowing
+	// is enabled because nbackup it is a lower level subsystem
+	dbb->backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(dbb, nbak_state_normal); 
+	
 	PAG_format_header();
 	INI_init2();
 	PAG_format_log();
@@ -6051,6 +6066,7 @@ static void shutdown_database(DBB dbb, BOOLEAN release_pools)
 #endif
 	CMP_fini(tdbb);
 	CCH_fini(tdbb);
+	delete dbb->backup_manager;
 	FUN_fini(tdbb);
 
 	if (dbb->dbb_shadow_lock)

@@ -86,6 +86,7 @@ static const GEN generators[] =
 	{ "RDB$FIELD_NAME", 0 },
 	{ "RDB$INDEX_NAME", 0 },
 	{ "RDB$TRIGGER_NAME", 0 },
+	{ "RDB$BACKUP_HISTORY", 0 },
 	{ 0, 0 }
 };
 

@@ -25,7 +25,7 @@
 
 #include "tree.h"
 #include "alloc.h"
-#include "../memory/memory_pool.h"
+//#include "../memory/memory_pool.h"
 #include <stdio.h>
 #include <time.h>
 #include <set>
@@ -277,7 +277,7 @@ static void testAllocatorMalloc() {
 	report();
 }
 
-static void testAllocatorOldPool() {
+/*static void testAllocatorOldPool() {
 	printf("Test run for old MemoryPool...\n");
 	start();
 	::MemoryPool *pool = new ::MemoryPool(0,getDefaultMemoryPool());
@@ -314,12 +314,12 @@ static void testAllocatorOldPool() {
 	} while (bigItems.getNext());
 	delete pool;
 	report();
-}
+}*/
 
 int main() {
 	testTree();
 	testAllocatorOverhead();
 	testAllocatorMemoryPool();
 	testAllocatorMalloc();
-	testAllocatorOldPool();
+//	testAllocatorOldPool();
 }

@@ -87,6 +87,7 @@ DATABASE DB = STATIC "ODS.RDB";
 
 static UCHAR alloc_info[] = { gds_info_allocation, gds_info_end };
 static void drop_cache(GBL);
+static void change_backup_mode(GBL, UCHAR verb);
 static void drop_log(GBL);
 
 // Function not defined in this file MOD 04-July-2002
@@ -175,6 +176,10 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 				case gds_dyn_def_file:
 					DYN_define_file(gbl, ptr, (SLONG) 0, &start, 158);
 					break;
+					
+				case gds_dyn_def_difference:
+					DYN_define_difference(gbl, ptr);
+					break;
 
 #ifdef SUPERSERVER
 				case gds_dyn_def_default_log:
@@ -213,6 +218,12 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 
 				case gds_dyn_drop_cache:
 					drop_cache(gbl);
+					break;
+
+				case gds_dyn_drop_difference:
+				case gds_dyn_begin_backup:
+				case gds_dyn_end_backup:
+					change_backup_mode(gbl, verb);
 					break;
 
 				case gds_dyn_drop_log:
@@ -1712,7 +1723,7 @@ static void drop_cache( GBL gbl)
 
 	}
 	catch (const std::exception&) {
-		DYN_rundown_request(request, drq_s_cache);
+		DYN_rundown_request(request, drq_d_cache);
 		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: ERASE RDB$FILE failed */
 	}
@@ -1720,6 +1731,119 @@ static void drop_cache( GBL gbl)
 	if (!found)
 	{
 		DYN_error_punt(FALSE, 149, NULL, NULL, NULL, NULL, NULL);
+		/* msg 149: "Shared cache file not found" */
+	}
+}
+
+
+static void change_backup_mode( GBL gbl, UCHAR verb)
+{
+/**************************************
+ *
+ *	c h a n g e _ b a c k u p _ m o d e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Drop backup difference file for the database,
+ *  begin or end backup
+ *
+ **************************************/
+	TDBB tdbb;
+	DBB dbb;
+	BLK request;
+	USHORT found = FALSE;
+	bool invalid_state = false;
+
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+
+	request = (BLK) CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
+
+	try {
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		X IN RDB$FILES
+
+		if (X.RDB$FILE_FLAGS & FILE_difference) {
+			found = TRUE;
+			switch (verb) {
+			case gds_dyn_drop_difference:
+				ERASE X;
+				break;
+			case gds_dyn_begin_backup:
+				if (X.RDB$FILE_FLAGS & FILE_backing_up) {
+					invalid_state = true;
+				} else {
+					MODIFY X USING
+						X.RDB$FILE_FLAGS |= FILE_backing_up;
+					END_MODIFY;
+				}
+				break;
+			case gds_dyn_end_backup:
+				if (X.RDB$FILE_FLAGS & FILE_backing_up) {
+					if (X.RDB$FILE_NAME.NULL) {
+						ERASE X;
+					}
+					else {
+						MODIFY X USING
+							X.RDB$FILE_FLAGS &= ~FILE_backing_up;
+						END_MODIFY;
+					}
+				} else {
+					invalid_state = true;
+				}
+				break;
+			}
+		}
+
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_d_difference)) {
+		DYN_REQUEST(drq_d_difference) = request;
+	}
+	
+	}
+	catch (const std::exception&) {
+		DYN_rundown_request(request, drq_d_difference); 
+		DYN_error_punt(TRUE, 63, NULL, NULL, NULL, NULL, NULL); /*!!!FIXME!!!*/
+		/* msg 63: ERASE RDB$FILE failed */
+	}
+	
+	if (!found && verb == gds_dyn_begin_backup) try {
+		request = (BLK) CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$FILES 
+			X.RDB$FILE_NAME.NULL = TRUE;
+			X.RDB$FILE_FLAGS.NULL = FALSE;
+			X.RDB$FILE_FLAGS = FILE_difference | FILE_backing_up;
+			X.RDB$FILE_START = 0;
+			X.RDB$FILE_START.NULL = FALSE;
+			X.RDB$FILE_LENGTH.NULL = TRUE;
+			X.RDB$SHADOW_NUMBER.NULL = TRUE;
+		END_STORE;
+		
+		found = true;
+
+		if (!DYN_REQUEST(drq_s_difference))
+		{
+			DYN_REQUEST(drq_s_difference) = request;
+		}		
+	}
+	catch (const std::exception&) {
+		DYN_rundown_request(request, drq_s_difference);
+		DYN_error_punt(TRUE, 150, NULL, NULL, NULL, NULL, NULL);
+		/* msg 150: STORE RDB$FILES failed */
+	}
+	
+	if (invalid_state) {
+		DYN_error_punt(FALSE, 149, NULL, NULL, NULL, NULL, NULL); /*!!!FIXME!!!*/
+		/* msg 149: "Shared cache file not found" */
+	}
+
+	if (!found)
+	{
+		DYN_error_punt(FALSE, 149, NULL, NULL, NULL, NULL, NULL); /*!!!FIXME!!!*/
 		/* msg 149: "Shared cache file not found" */
 	}
 }
