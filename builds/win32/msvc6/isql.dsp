@@ -117,22 +117,6 @@ SOURCE=..\..\..\generated\isql\isql.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\isql\isql_win.cpp
-
-!IF  "$(CFG)" == "isql - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "isql - Win32 Release"
-
-# PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\generated\isql\show.cpp
 # End Source File
 # End Group
