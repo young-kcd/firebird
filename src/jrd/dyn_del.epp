@@ -495,6 +495,7 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 	jrd_req* request = CMP_find_request(tdbb, drq_e_indices, DYN_REQUESTS);
 
 	bool found = false;
+	bool is_expression = false;
 
 	try {
 	GET_STRING(ptr, idx_name);
@@ -508,16 +509,8 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 		strcpy(rel_name, IDX.RDB$RELATION_NAME);
 		fb_utils::fb_exact_name(rel_name);
 		found = true;
+		is_expression = !IDX.RDB$EXPRESSION_BLR.NULL;
 		ERASE IDX;
-
-#ifdef EXPRESSION_INDICES
-		if (IDX.RDB$EXPRESSION_BLR.NULL)
-#endif
-		if (!delete_index_segment_records(gbl, idx_name))
-		{
-			DYN_error_punt(false, 50, NULL, NULL, NULL, NULL, NULL);
-			/* msg 50: "No segments found for index" */
-		}
 	END_FOR;
 	if (!DYN_REQUEST(drq_e_indices))
 		DYN_REQUEST(drq_e_indices) = request;
@@ -533,6 +526,15 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 	{
 		DYN_error_punt(false, 48, NULL, NULL, NULL, NULL, NULL);
 		/* msg 48: "Index not found" */
+	}
+
+#ifdef EXPRESSION_INDICES
+	if (!is_expression)
+#endif
+	if (!delete_index_segment_records(gbl, idx_name))
+	{
+		DYN_error_punt(false, 50, NULL, NULL, NULL, NULL, NULL);
+		/* msg 50: "No segments found for index" */
 	}
 
 	while (*(*ptr)++ != isc_dyn_end) {
