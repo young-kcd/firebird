@@ -471,7 +471,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, SparseBitmap** bit
 	}
 	else {
 		// if there isn't an upper bound, just walk the index to the end of the level
-		UCHAR* endPointer = (UCHAR*)page + page->btr_length;
+		const UCHAR* endPointer = (UCHAR*)page + page->btr_length;
 		const bool descending = (idx.idx_flags & idx_descending);
 		const bool ignoreNulls = 
 			(retrieval->irb_generic & irb_ignore_null_value_key) && (idx.idx_count == 1);
@@ -640,7 +640,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		IndexNode node;
 		while (page->btr_level > 0) {
 			UCHAR* pointer;
-			UCHAR* endPointer = (UCHAR*)page + page->btr_length;
+			const UCHAR* const endPointer = (UCHAR*)page + page->btr_length;
 #ifdef SCROLLABLE_CURSORS
 			if (backwards) {
 				pointer = BTR_last_node(page, NAV_expand_index(window, 0), 0);
@@ -3536,7 +3536,7 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 	}
 	bool firstPass = true;
 	const bool leafPage = (bucket->btr_level == 0);
-	const UCHAR* endPointer = (UCHAR*)bucket + bucket->btr_length;
+	const UCHAR* const endPointer = (UCHAR*)bucket + bucket->btr_length;
 
 	// Find point where we can start search.
 	UCHAR* pointer;
@@ -3634,7 +3634,7 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 				{
 					// AB: When storing equal nodes, recordnumbers should always 
 					// be inserted on this page, because the first node on the next
-					// page could be a equal node with a higher recordnumber then 
+					// page could be a equal node with a higher recordnumber than 
 					// this one and that would cause a overwrite of the first node
 					// in the next page, but the first node of a page may never change!!
 					goto done1;
@@ -3995,7 +3995,7 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 	bool firstPass = true;
 	const bool descending = (idx_flags & idx_descending);
 	const bool allRecordNumber = (flags & btr_all_record_number);
-	const UCHAR* endPointer = (UCHAR*)bucket + bucket->btr_length;
+	const UCHAR* const endPointer = (UCHAR*)bucket + bucket->btr_length;
 
 	if (!allRecordNumber) {
 		find_record_number = NO_VALUE;
@@ -5329,7 +5329,7 @@ static SLONG insert_node(thread_db* tdbb,
 		splitpoint = BTreeNode::readNode(&node, newNode.nodePointer, flags, leafPage);
 		IndexNode dummyNode = newNode;
 		BTreeNode::setEndBucket(&dummyNode, leafPage);
-		USHORT deltaSize = BTreeNode::getNodeSize(&dummyNode, flags, leafPage) - 
+		const USHORT deltaSize = BTreeNode::getNodeSize(&dummyNode, flags, leafPage) - 
 			BTreeNode::getNodeSize(&newNode, flags, leafPage);
 		if (endOfPage && ((splitpoint + jumpersNewSize - jumpersOriginalSize) <= 
 			(UCHAR*)newBucket + dbb->dbb_page_size - deltaSize))
@@ -5412,7 +5412,7 @@ static SLONG insert_node(thread_db* tdbb,
 		splitpoint = BTreeNode::readNode(&newNode, newNode.nodePointer, flags, leafPage);
 		IndexNode dummyNode = newNode;
 		BTreeNode::setEndBucket(&dummyNode, leafPage);
-		USHORT deltaSize = BTreeNode::getNodeSize(&dummyNode, flags, leafPage) - 
+		const USHORT deltaSize = BTreeNode::getNodeSize(&dummyNode, flags, leafPage) - 
 			BTreeNode::getNodeSize(&newNode, flags, leafPage);
 		if (endOfPage && ((UCHAR*)splitpoint <= (UCHAR*)newBucket + 
 			dbb->dbb_page_size - deltaSize))
