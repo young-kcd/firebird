@@ -83,7 +83,7 @@ static const int AFTER_RED_ZONE_SIZE = 3;		// The size of the red zone AFTER the
 
 static const size_t DEFAULT_EXTEND_INC = 16 * 1024;
 
-#if (defined SOLARIS )
+#if (defined(SOLARIS) && !defined(MAP_ANON))
 
 #include "../../jrd/gds_proto.h"
 // extern  UCHAR*        mmap_anon(SLONG);
@@ -1606,7 +1606,7 @@ void* FBMemoryPool::mmap_alloc(size_t size)
 #else
                                 (MAP_ANON |
 #endif
-#if (!defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD))
+#if (!defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) && !defined(SOLARIS))
 /* In LINUX and Darwin there is no such thing as MAP_VARIABLE. Hence, it gives
    compilation error. The equivalent functionality is default,
    if you do not specify MAP_FIXED */
@@ -1621,11 +1621,12 @@ void* FBMemoryPool::mmap_alloc(size_t size)
 #define SYS_ALLOC_DEFINED
 #else
 #ifdef SOLARIS
-    if (!(memory = mmap_anon(size)))        /* Jump thru hoops for Solaris. */
-	{
+   // Solaris <=2.7 does not support map_anon use old code - nmcc dec2002
+   if (!(memory = mmap_anon(size)))        /* Jump thru hoops for Solaris. */
+   {
 		globalAllocLock.release();
         return NULL;
-	}
+   }
 #define SYS_ALLOC_DEFINED
 #endif
 #endif /* MAP_ANONYMOUS */

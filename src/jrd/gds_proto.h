@@ -137,7 +137,7 @@ SINT64	API_ROUTINE isc_portable_integer(UCHAR*, SSHORT);
 void	gds__cleanup(void);
 
 
-#if (defined SOLARIS )
+#if (defined SOLARIS && !defined(MAP_ANON))
 UCHAR*   mmap_anon(SLONG);
 #endif
 

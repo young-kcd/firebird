@@ -419,7 +419,7 @@ SLONG gds_delta_alloc = 0, gds_max_alloc = 0;	/* Used in DBG_memory */
 static SLONG gds_pid = 0;
 #endif
 
-#if (defined SOLARIS && defined SUPERSERVER)
+#if (defined SOLARIS && defined SUPERSERVER && !defined(MAP_ANON))
 static int anon_fd = -1;
 static int page_size = -1;
 #endif
@@ -4357,7 +4357,7 @@ static void cleanup_malloced_memory(void *arg)
 
 	pool = NULL;
 
-#if (defined SOLARIS && defined SUPERSERVER)
+#if (defined SOLARIS && defined SUPERSERVER && !defined(MAP_ANON))
 
 /* Close the file used as the basis for generating
    anonymous virtual memory. Since it is created
@@ -4673,7 +4673,8 @@ static int yday(struct tm *times)
 }
 
 
-#if (defined SOLARIS )
+// Solaris <=2.7 does not support map_anon use old code - nmcc dec2002
+#if (defined(SOLARIS) && !defined(MAP_ANON))
 UCHAR *mmap_anon(SLONG size)
 {
 /**************************************
