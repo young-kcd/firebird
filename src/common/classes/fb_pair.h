@@ -41,10 +41,10 @@ template<typename parLeft, typename parRight>
 	struct Left {
 		typedef parLeft first_type;
 		typedef parRight second_type;
-		Left(MemoryPool& p)	: first(p), second() { }
-		Left(MemoryPool& p, const parLeft& v1, const parRight& v2) 
+		explicit Left(MemoryPool& p) : first(p), second() { }
+		explicit Left(MemoryPool& p, const parLeft& v1, const parRight& v2) 
 			: first(p, v1), second(v2) { }
-		Left(MemoryPool& p, const Left& lp) 
+		explicit Left(MemoryPool& p, const Left& lp) 
 			: first(p, lp.first), second(lp.second) { }
 		parLeft first;
 		parRight second;
@@ -56,10 +56,10 @@ template<typename parLeft, typename parRight>
 	struct Full {
 		typedef parLeft first_type;
 		typedef parRight second_type;
-		Full(MemoryPool& p)	: first(p), second(p) { }
-		Full(MemoryPool& p, const parLeft& v1, const parRight& v2) 
+		explicit Full(MemoryPool& p) : first(p), second(p) { }
+		explicit Full(MemoryPool& p, const parLeft& v1, const parRight& v2) 
 			: first(p, v1), second(p, v2) { }
-		Full(MemoryPool& p, const Full& lp) 
+		explicit Full(MemoryPool& p, const Full& lp) 
 			: first(p, lp.first), second(p, lp.second) { }
 		parLeft first;
 		parRight second;
@@ -71,10 +71,10 @@ template<typename BasePair>
 	struct Pair : public BasePair {
 		typedef typename Pair::first_type Pair_first_type;
 		typedef typename Pair::second_type Pair_second_type;
-		Pair(MemoryPool& p) : BasePair(p) { }
-		Pair(MemoryPool& p, const Pair_first_type& v1, 
+		explicit Pair(MemoryPool& p) : BasePair(p) { }
+		explicit Pair(MemoryPool& p, const Pair_first_type& v1, 
 			const Pair_second_type& v2) : BasePair(p, v1, v2) { }
-		Pair(MemoryPool& p, const Pair& lp) 
+		explicit Pair(MemoryPool& p, const Pair& lp) 
 			: BasePair(p, lp) { }
 		Pair() : BasePair(AutoStorage::getAutoMemoryPool()) { }
 		Pair(const Pair_first_type& v1, const Pair_second_type& v2) 

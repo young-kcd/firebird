@@ -90,6 +90,9 @@ static const SCHAR lock_types[] =
 };
 #endif /* VMS */
 
+using namespace Jrd;
+using namespace Ods;
+
 
 #ifdef SUPERSERVER_V2
 static SLONG bump_transaction_id(thread_db*, WIN *);

@@ -32,6 +32,8 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+namespace Jrd {
+
 #ifdef UNIX
 
 class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
@@ -133,6 +135,8 @@ struct phys_io_blk {
 #define	PIOB_error	1			/* I/O error occurred */
 #define PIOB_success	2		/* I/O successfully completed */
 #define PIOB_pending	4		/* Asynchronous I/O not yet completed */
+
+} //namespace Jrd
 
 #endif // JRD_PIO_H
 

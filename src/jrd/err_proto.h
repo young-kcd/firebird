@@ -26,6 +26,8 @@
 
 #ifndef REQUESTER
 
+namespace Jrd {
+
 /* Index error types */
 
 typedef enum idx_e {
@@ -36,12 +38,15 @@ typedef enum idx_e {
 	idx_e_foreign
 } IDX_E;
 
+	class jrd_rel;
+} //namespace Jrd
+
 bool	ERR_post_warning(ISC_STATUS, ...);
 void	ERR_assert(const TEXT*, int);
 void	ERR_bugcheck(int);
 void	ERR_bugcheck_msg(const TEXT*);
 void	ERR_corrupt(int);
-void	ERR_duplicate_error(enum idx_e, class jrd_rel*, USHORT);
+void	ERR_duplicate_error(Jrd::idx_e, Jrd::jrd_rel*, USHORT);
 void	ERR_error(int);
 void	ERR_error_msg(const TEXT*);
 void	ERR_post(ISC_STATUS, ...);

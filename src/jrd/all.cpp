@@ -67,6 +67,8 @@
 
 #include <algorithm>
 
+using namespace Jrd;
+
 #define PERM_EXTEND_SIZE        (16 * 1024)
 #define CACH_EXTEND_SIZE        (16 * 1024)
 

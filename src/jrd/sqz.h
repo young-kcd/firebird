@@ -27,6 +27,8 @@
 #include "../jrd/all.h"
 #include "../include/fb_blk.h"
 
+namespace Jrd {
+
 class Dcc : public pool_alloc<type_dcc>
 {
     public:
@@ -35,6 +37,8 @@ class Dcc : public pool_alloc<type_dcc>
 	SCHAR *dcc_end;			// End of control string
 	SCHAR dcc_string[128];
 };
+
+} //namespace Jrd
 
 #endif // JRD_SQZ_H
 

@@ -24,21 +24,25 @@
 #ifndef JRD_BLF_PROTO_H
 #define JRD_BLF_PROTO_H
 
+namespace Jrd {
+	class bid;
+}
+
 // Does this file really need the extern C for external blob filters?
 extern "C" {
 
-//class BlobControl;
+//class Jrd::BlobControl;
 
-ISC_STATUS	BLF_close_blob(thread_db*, BlobControl**);
-ISC_STATUS	BLF_create_blob(thread_db*, jrd_tra*, BlobControl**, struct bid*,
+ISC_STATUS	BLF_close_blob(Jrd::thread_db*, Jrd::BlobControl**);
+ISC_STATUS	BLF_create_blob(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::BlobControl**, Jrd::bid*,
 										 USHORT, const UCHAR*,
-										 FPTR_BFILTER_CALLBACK, BlobFilter*);
-ISC_STATUS	BLF_get_segment(thread_db*, BlobControl**, USHORT*, USHORT, UCHAR*);
-BlobFilter*	BLF_lookup_internal_filter(thread_db*, SSHORT, SSHORT);
-ISC_STATUS	BLF_open_blob(thread_db*, jrd_tra*, BlobControl**, const struct bid*,
+										 Jrd::FPTR_BFILTER_CALLBACK, Jrd::BlobFilter*);
+ISC_STATUS	BLF_get_segment(Jrd::thread_db*, Jrd::BlobControl**, USHORT*, USHORT, UCHAR*);
+Jrd::BlobFilter*	BLF_lookup_internal_filter(Jrd::thread_db*, SSHORT, SSHORT);
+ISC_STATUS	BLF_open_blob(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::BlobControl**, const Jrd::bid*,
 									   USHORT, const UCHAR*,
-									   FPTR_BFILTER_CALLBACK, BlobFilter*);
-ISC_STATUS	BLF_put_segment(thread_db*, BlobControl**, USHORT, const UCHAR*);
+									   Jrd::FPTR_BFILTER_CALLBACK, Jrd::BlobFilter*);
+ISC_STATUS	BLF_put_segment(Jrd::thread_db*, Jrd::BlobControl**, USHORT, const UCHAR*);
 
 } /* extern "C" */
 

@@ -29,6 +29,8 @@
  *	Virtual scratch file
  */
 
+namespace Jrd {
+
 class SortMem {
 private:
 
@@ -120,6 +122,8 @@ public:
 	SortMem(sort_work_file*, size_t);
 	~SortMem();
 };
+
+} //namespace Jrd
 
 #endif	// JRD_SORT_MEM_H
 

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.11 2004-03-18 05:55:24 robocop Exp $
+ *  $Id: nbak.h,v 1.12 2004-03-20 14:57:30 alexpeshkoff Exp $
  *
  */
  
@@ -54,6 +54,12 @@ DEFINE_TRACE_ROUTINE(nbak_trace);
 #define NBAK_TRACE(args) /* nothing */
 #define NBAK_TRACE_AST(message) /* nothing */
 #endif
+
+namespace Ods {
+	struct pag;
+}
+
+namespace Jrd {
 
 class Lock;
 class Record;
@@ -129,9 +135,9 @@ public:
 	ULONG allocate_difference_page(ULONG db_page) throw();
 	
 	// Must have ISC_STATUS because it is called from write_page
-	bool write_difference(ISC_STATUS* status, ULONG diff_page, struct pag* page) throw();
+	bool write_difference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page) throw();
 	
-	bool read_difference(ULONG diff_page, struct pag* page) throw();
+	bool read_difference(ULONG diff_page, Ods::pag* page) throw();
 	
 	
 	// Routines to declare and release interest in the main database file
@@ -212,5 +218,7 @@ private:
 #define nbak_state_stalled  0x400   // Main files are locked. Changes are written to diff file
 #define nbak_state_merge    0x800   // Merging changes from diff file into main files
 #define nbak_state_unknown  -1      // State is unknown. Needs to be read from disk
+
+} //namespace Jrd
 
 #endif /* JRD_NBAK_PROTO_H */

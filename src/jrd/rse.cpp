@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.62 2004-03-19 06:14:48 robocop Exp $
+ * $Id: rse.cpp,v 1.63 2004-03-20 14:57:30 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -44,13 +44,13 @@
 #include "../jrd/sbm.h"
 #include "../jrd/lls.h"
 #include "../jrd/sort.h"
-#include "../jrd/sort_mem.h"
 #include "../jrd/intl.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/tra.h"
+#include "../jrd/sort_mem.h"
 #include "gen/iberror.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
@@ -81,6 +81,8 @@
 #if defined(WIN_NT)
 #include <io.h> // close
 #endif
+
+using namespace Jrd;
 
 static void close_merge(thread_db*, Rsb*, IRSB_MRG);
 static void close_procedure(thread_db*, Rsb*);

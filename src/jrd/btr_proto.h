@@ -28,25 +28,25 @@
 #include "../jrd/ods.h"
 #include "../jrd/req.h"
 
-USHORT	BTR_all(thread_db*, jrd_rel*, idx**, idx**, str**, SLONG*);
-void	BTR_create(thread_db*, jrd_rel*, idx*, USHORT, sort_context*, SelectivityList&);
-void	BTR_delete_index(thread_db*, win*, USHORT);
-//USHORT	BTR_delete_node(thread_db*, btree_page*, USHORT);
-bool	BTR_description(jrd_rel*, index_root_page*, idx*, SSHORT);
-void	BTR_evaluate(thread_db*, IndexRetrieval*, SparseBitmap**);
-UCHAR*	BTR_find_leaf(btree_page*, key*, UCHAR*, USHORT*, bool, bool);
-btree_page*	BTR_find_page(thread_db*, IndexRetrieval*, win*, idx*, key*, key*, bool);
-void	BTR_insert(thread_db*, win*, iib*);
-enum idx_e	BTR_key(thread_db*, jrd_rel*, Record*, idx*, key*, idx_null_state*);
-USHORT	BTR_key_length(jrd_rel*, idx*);
-UCHAR*	BTR_last_node(btree_page*, jrd_exp*, struct btx**);
-btree_page*	BTR_left_handoff(thread_db*, win*, btree_page*, SSHORT);
-USHORT	BTR_lookup(thread_db*, jrd_rel*, USHORT, idx*);
-void	BTR_make_key(thread_db*, USHORT, jrd_nod**, idx*, key*, bool);
-bool	BTR_next_index(thread_db*, jrd_rel*, jrd_tra*, idx*, win*);
-void	BTR_remove(thread_db*, win*, iib*);
-void	BTR_reserve_slot(thread_db*, jrd_rel*, jrd_tra*, idx*);
-void	BTR_selectivity(thread_db*, jrd_rel*, USHORT, SelectivityList&);
+USHORT	BTR_all(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::idx**, Jrd::idx**, str**, SLONG*);
+void	BTR_create(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::idx*, USHORT, Jrd::sort_context*, Jrd::SelectivityList&);
+void	BTR_delete_index(Jrd::thread_db*, Jrd::win*, USHORT);
+//USHORT	BTR_delete_node(Jrd::thread_db*, Ods::btree_page*, USHORT);
+bool	BTR_description(Jrd::jrd_rel*, Ods::index_root_page*, Jrd::idx*, SSHORT);
+void	BTR_evaluate(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::SparseBitmap**);
+UCHAR*	BTR_find_leaf(Ods::btree_page*, Jrd::key*, UCHAR*, USHORT*, bool, bool);
+Ods::btree_page*	BTR_find_page(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::win*, Jrd::idx*, Jrd::key*, Jrd::key*, bool);
+void	BTR_insert(Jrd::thread_db*, Jrd::win*, Jrd::iib*);
+Jrd::idx_e	BTR_key(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::Record*, Jrd::idx*, Jrd::key*, Jrd::idx_null_state*);
+USHORT	BTR_key_length(Jrd::jrd_rel*, Jrd::idx*);
+UCHAR*	BTR_last_node(Ods::btree_page*, struct jrd_exp*, struct btx**);
+Ods::btree_page*	BTR_left_handoff(Jrd::thread_db*, Jrd::win*, Ods::btree_page*, SSHORT);
+USHORT	BTR_lookup(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::idx*);
+void	BTR_make_key(Jrd::thread_db*, USHORT, Jrd::jrd_nod**, Jrd::idx*, Jrd::key*, bool);
+bool	BTR_next_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::jrd_tra*, Jrd::idx*, Jrd::win*);
+void	BTR_remove(Jrd::thread_db*, Jrd::win*, Jrd::iib*);
+void	BTR_reserve_slot(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::jrd_tra*, Jrd::idx*);
+void	BTR_selectivity(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);
 
 #endif // JRD_BTR_PROTO_H
 

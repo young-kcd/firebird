@@ -29,20 +29,20 @@
 
 #ifdef DEV_BUILD
 #include "../jrd/ib_stdio.h"
-void SBM_dump(IB_FILE*, SparseBitmap*);
+void SBM_dump(IB_FILE*, Jrd::SparseBitmap*);
 #endif
 
-SparseBitmap**	SBM_and(SparseBitmap**, SparseBitmap**);
-bool		SBM_clear(SparseBitmap*, SLONG);
-bool		SBM_equal(SparseBitmap*, SparseBitmap*);
+Jrd::SparseBitmap**	SBM_and(Jrd::SparseBitmap**, Jrd::SparseBitmap**);
+bool		SBM_clear(Jrd::SparseBitmap*, SLONG);
+bool		SBM_equal(Jrd::SparseBitmap*, Jrd::SparseBitmap*);
 void		SBM_init(void);
-bool		SBM_next(SparseBitmap*, SLONG*, enum rse_get_mode);
-SparseBitmap**	SBM_or(SparseBitmap**, SparseBitmap**);
-void		SBM_release(SparseBitmap*);
-void		SBM_reset(SparseBitmap**);
-void		SBM_set(thread_db*, SparseBitmap**, SLONG);
-bool		SBM_test(const SparseBitmap*, SLONG);
-SLONG		SBM_size(const SparseBitmap* const* const);
+bool		SBM_next(Jrd::SparseBitmap*, SLONG*, Jrd::rse_get_mode);
+Jrd::SparseBitmap**	SBM_or(Jrd::SparseBitmap**, Jrd::SparseBitmap**);
+void		SBM_release(Jrd::SparseBitmap*);
+void		SBM_reset(Jrd::SparseBitmap**);
+void		SBM_set(Jrd::thread_db*, Jrd::SparseBitmap**, SLONG);
+bool		SBM_test(const Jrd::SparseBitmap*, SLONG);
+SLONG		SBM_size(const Jrd::SparseBitmap* const* const);
 
 #endif // JRD_SBM_PROTO_H
 

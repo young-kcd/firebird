@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.57 2004-03-19 06:14:29 robocop Exp $
+//	$Id: alice.cpp,v 1.58 2004-03-20 14:57:13 alexpeshkoff Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -106,9 +106,9 @@ static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
 static void expand_filename(const TEXT*, TEXT*);
 #ifndef SUPERSERVER
-static int output_main(Service*, const UCHAR*);
+static int output_main(Jrd::Service*, const UCHAR*);
 #endif
-static int common_main(int, char**, pfn_svc_output, Service*);
+static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 
@@ -119,7 +119,7 @@ static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 //		if gfix is run as a service
 //
 
-static int output_svc(Service* output_data, const UCHAR * output_buf)
+static int output_svc(Jrd::Service* output_data, const UCHAR * output_buf)
 {
 	ib_fprintf(ib_stdout, "%s", output_buf);
 	return 0;
@@ -133,7 +133,7 @@ static int output_svc(Service* output_data, const UCHAR * output_buf)
 //	Entry point for GFIX in case of service manager.
 //
 
-int ALICE_main(Service* service)
+int ALICE_main(Jrd::Service* service)
 {
 	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 					SVC_output, service);
@@ -170,7 +170,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 //		Routine which is passed to GFIX for calling back when there is output.
 //
 
-static int output_main(Service* output_data, const UCHAR* output_buf)
+static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
 {
 	ib_fprintf(ib_stderr, "%s", output_buf);
 	return 0;
@@ -186,8 +186,8 @@ static int output_main(Service* output_data, const UCHAR* output_buf)
 
 int common_main(int			argc,
 				char*		argv[],
-				pfn_svc_output	output_proc,
-				Service*		output_data)
+				Jrd::pfn_svc_output	output_proc,
+				Jrd::Service*		output_data)
 {
 #if defined (WIN95)
 	fAnsiCP = (GetConsoleCP() == GetACP());
@@ -230,7 +230,7 @@ int common_main(int			argc,
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
 		tdgbl->sw_service = true;
 		tdgbl->sw_service_thd = true;
-		tdgbl->service_blk = (Service*) output_data;
+		tdgbl->service_blk = (Jrd::Service*) output_data;
 		tdgbl->status = tdgbl->service_blk->svc_status;
 		argv++;
 		argc--;

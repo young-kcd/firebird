@@ -820,10 +820,10 @@ typedef struct tgbl
 	ISC_STATUS_ARRAY status_vector;
 	int			exit_code;
 	UCHAR*		head_of_mem_list;
-	pfn_svc_output	output_proc;
-	Service*		output_data;
+	Jrd::pfn_svc_output	output_proc;
+	Jrd::Service*		output_data;
 	IB_FILE*	output_file;
-	Service*	service_blk;
+	Jrd::Service*	service_blk;
 	/*
 	 * Link list of global fields that were converted from V3 sub_type
 	 * to V4 char_set_id/collate_id. Needed for local fields conversion.

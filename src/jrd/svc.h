@@ -38,7 +38,9 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 
+namespace Jrd {
 
 #define SERVICE_VERSION		2
 
@@ -90,8 +92,6 @@
 #define SVC_PUTSPECIFIC_DATA	/* nothing */
 #endif
 
-
-void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 
 struct serv_entry; // forward decl.
 
@@ -171,6 +171,8 @@ struct serv_entry
 	pfn_svc_main	serv_thd;
 	bool*			serv_in_use;
 };
+
+} //namespace Jrd
 
 #endif // JRD_SVC_H
 

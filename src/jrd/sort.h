@@ -30,9 +30,11 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+namespace Jrd {
+
 // Forward declaration
-class SortMem;
 struct sort_work_file;
+class SortMem;
 
 /* SORTP is used throughout sort.c as a pointer into arrays of
    longwords(32 bits).   For 16 bit Windows, this must be a huge pointer. 
@@ -285,6 +287,8 @@ struct sort_context
 #define scb_sorted		2		/* stream has been sorted */
 
 #define SCB_LEN(n_k)	(sizeof (sort_context) + (SLONG)(n_k) * sizeof (sort_key_def))
+
+} //namespace Jrd
 
 #endif // JRD_SORT_H
 

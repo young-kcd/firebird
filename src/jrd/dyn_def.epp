@@ -83,6 +83,8 @@
 #include "../jrd/os/path_utils.h"
 #include "../common/utils_proto.h"
 
+using namespace Jrd;
+
 #ifdef SUPERSERVER
 #define V4_THREADING
 #endif
@@ -118,14 +120,14 @@ static const UCHAR who_blr[] =
 };
 
 
-static void check_unique_name(thread_db*, GBL, const TEXT*, bool);
-static bool find_field_source(thread_db*, GBL, const TEXT*, USHORT, const TEXT*, TEXT*);
-static bool get_who(thread_db*, GBL, SCHAR*);
-static bool is_it_user_name(GBL, const TEXT*, thread_db*);
+static void check_unique_name(thread_db*, gbl*, const TEXT*, bool);
+static bool find_field_source(thread_db*, gbl*, const TEXT*, USHORT, const TEXT*, TEXT*);
+static bool get_who(thread_db*, gbl*, SCHAR*);
+static bool is_it_user_name(gbl*, const TEXT*, thread_db*);
 static USHORT skip_blr_blob(const UCHAR** ptr);
 
 
-void DYN_define_cache( GBL gbl, const UCHAR** ptr)
+void DYN_define_cache( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -138,7 +140,7 @@ void DYN_define_cache( GBL gbl, const UCHAR** ptr)
  *
  **************************************/
 	UCHAR verb;
-	BLK request;
+	jrd_req* request;
 	SSHORT id = -1;
 
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -220,7 +222,7 @@ dyn_punt_148:
 }
 
 
-void DYN_define_constraint(GBL		gbl,
+void DYN_define_constraint(gbl*		gbl,
 						   const UCHAR**	ptr,
 						   const TEXT*	relation_name,
 						   TEXT*	field_name)
@@ -237,7 +239,7 @@ void DYN_define_constraint(GBL		gbl,
  *	constraint, also an index for the constraint.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier constraint_name, index_name, referred_index_name;
@@ -516,7 +518,7 @@ void DYN_define_constraint(GBL		gbl,
 		request = CMP_find_request(tdbb, drq_s_ref_con, DYN_REQUESTS);
 		id = drq_s_ref_con;
 		
-		BLK old_request = NULL;
+		jrd_req* old_request = NULL;
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			REF IN RDB$REF_CONSTRAINTS
@@ -620,7 +622,7 @@ dyn_punt_false_126:
 }
 
 
-void DYN_define_dimension(GBL		gbl,
+void DYN_define_dimension(gbl*		gbl,
 						  const UCHAR**	ptr,
 						  const TEXT*		relation_name,
 						  TEXT*		field_name)
@@ -641,7 +643,7 @@ void DYN_define_dimension(GBL		gbl,
 	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR verb;
-	BLK request;
+	jrd_req* request;
 
 	request = CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
 
@@ -704,7 +706,7 @@ void DYN_define_dimension(GBL		gbl,
 }
 
 
-void DYN_define_exception( GBL gbl, const UCHAR** ptr)
+void DYN_define_exception( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -717,7 +719,7 @@ void DYN_define_exception( GBL gbl, const UCHAR** ptr)
  *
  **************************************/
 
-	BLK request;
+	jrd_req* request;
 	UCHAR verb;
 	SqlIdentifier exception_name;
 
@@ -777,7 +779,7 @@ void DYN_define_exception( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_file(GBL		gbl,
+void DYN_define_file(gbl*		gbl,
 					 const UCHAR**	ptr,
 					 SLONG		shadow_number,
 					 SLONG*		start,
@@ -794,7 +796,7 @@ void DYN_define_file(GBL		gbl,
  *
  **************************************/
 	UCHAR verb;
-	BLK request;
+	jrd_req* request;
 	SLONG temp;
 	USHORT man_auto;
 	SSHORT id;
@@ -890,7 +892,7 @@ void DYN_define_file(GBL		gbl,
 }
 
 
-void DYN_define_difference(GBL		gbl,
+void DYN_define_difference(gbl*		gbl,
 						   const UCHAR**	ptr)
 {
 /**************************************
@@ -903,7 +905,7 @@ void DYN_define_difference(GBL		gbl,
  *	Define backup difference file.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	SSHORT id = -1;
 
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -972,7 +974,7 @@ dyn_punt_216:
 }
 
 
-void DYN_define_filter( GBL gbl, const UCHAR** ptr)
+void DYN_define_filter( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -987,7 +989,7 @@ void DYN_define_filter( GBL gbl, const UCHAR** ptr)
 
 	UCHAR verb;
 	SqlIdentifier filter_name;
-	BLK request;
+	jrd_req* request;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
@@ -1067,7 +1069,7 @@ void DYN_define_filter( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_function( GBL gbl, const UCHAR** ptr)
+void DYN_define_function( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1082,7 +1084,7 @@ void DYN_define_function( GBL gbl, const UCHAR** ptr)
 
 	UCHAR verb;
 	SqlIdentifier function_name;
-	BLK request;
+	jrd_req* request;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
@@ -1168,7 +1170,7 @@ void DYN_define_function( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
+void DYN_define_function_arg(gbl* gbl, const UCHAR** ptr, TEXT* function_name)
 {
 /**************************************
  *
@@ -1181,7 +1183,7 @@ void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
  *
  **************************************/
 	UCHAR verb;
-	BLK request = NULL;
+	jrd_req* request = NULL;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
@@ -1295,7 +1297,7 @@ void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
 }
 
 
-void DYN_define_generator( GBL gbl, const UCHAR** ptr)
+void DYN_define_generator( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1311,7 +1313,7 @@ void DYN_define_generator( GBL gbl, const UCHAR** ptr)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request;
+	jrd_req* request;
 	SqlIdentifier generator_name;
 
 	generator_name[0] = 0;
@@ -1359,7 +1361,7 @@ void DYN_define_generator( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_global_field(GBL		gbl,
+void DYN_define_global_field(gbl*		gbl,
 							 const UCHAR**	ptr,
 							 const TEXT*		relation_name,
 							 TEXT*		field_name)
@@ -1380,7 +1382,7 @@ void DYN_define_global_field(GBL		gbl,
 
 	UCHAR verb;
 	SqlIdentifier global_field_name;
-	BLK request;
+	jrd_req* request;
 	USHORT dtype;
 
 	global_field_name[0] = 0;
@@ -1608,7 +1610,7 @@ void DYN_define_global_field(GBL		gbl,
 }
 
 
-void DYN_define_index(GBL		gbl,
+void DYN_define_index(gbl*		gbl,
 					  const UCHAR**	ptr,
 					  const TEXT*		relation_name,
 					  UCHAR		index_type,
@@ -1629,7 +1631,7 @@ void DYN_define_index(GBL		gbl,
  *
  **************************************/
 
-	BLK request;
+	jrd_req* request;
 	SSHORT id, old_id;
 	SqlIdentifier index_name;
 	SqlIdentifier referenced_relation;
@@ -1673,7 +1675,7 @@ void DYN_define_index(GBL		gbl,
 
 	referenced_relation[0] = 0;
 	key_length = 0;
-	BLK old_request = NULL;
+	jrd_req* old_request = NULL;
 	
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES 
@@ -2179,7 +2181,7 @@ void DYN_define_index(GBL		gbl,
 }
 
 
-void DYN_define_local_field(GBL		gbl,
+void DYN_define_local_field(gbl*		gbl,
 							const UCHAR**	ptr,
 							const TEXT*	relation_name,
 							TEXT*	field_name)
@@ -2194,7 +2196,7 @@ void DYN_define_local_field(GBL		gbl,
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier local_field_name;
@@ -2408,7 +2410,7 @@ void DYN_define_local_field(GBL		gbl,
 		}
 
 		if (blr) {
-			BLK old_request = request;
+			jrd_req* old_request = request;
 			const SSHORT old_id = id;
 			request = CMP_find_request(tdbb, drq_s_gfields2, DYN_REQUESTS);
 
@@ -2499,7 +2501,7 @@ void DYN_define_local_field(GBL		gbl,
 
 
 void DYN_define_log_file(
-						 GBL gbl,
+						 gbl* gbl,
 						 const UCHAR** ptr,
 						 bool first_log_file, bool default_log)
 {
@@ -2514,7 +2516,7 @@ void DYN_define_log_file(
  *
  **************************************/
 	UCHAR verb;
-	BLK request;
+	jrd_req* request;
 	SSHORT id;
 
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -2629,7 +2631,7 @@ local_punt_false_151:
 }
 
 
-void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
+void DYN_define_parameter( gbl* gbl, const UCHAR** ptr, TEXT* procedure_name)
 {
 /**************************************
  *
@@ -2643,8 +2645,8 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
  **************************************/
 	UCHAR verb;
 	SqlIdentifier parameter_name;
-	BLK request;
-	BLK request2;
+	jrd_req* request;
+	jrd_req* request2;
 	USHORT f_length, f_type, f_charlength, f_seg_length,
 		f_scale_null, f_subtype_null, f_seg_length_null,
 		f_charlength_null, f_precision_null, f_charset_null, f_collation_null;
@@ -2880,7 +2882,7 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 }
 
 
-void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
+void DYN_define_procedure( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -2892,7 +2894,7 @@ void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	UCHAR verb;
 	USHORT sql_prot;
 	SSHORT id;
@@ -3038,7 +3040,7 @@ void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_relation( GBL gbl, const UCHAR** ptr)
+void DYN_define_relation( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3050,7 +3052,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	UCHAR verb;
 	USHORT sql_prot, is_a_view, priv;
 	SSHORT id;
@@ -3161,7 +3163,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 			/* msg 115: "CREATE VIEW failed" */
 
 			if (is_a_view) {
-				BLK old_request = request;
+				jrd_req* old_request = request;
 				const SSHORT old_id = id;
 				request = CMP_find_request(tdbb, drq_l_view_rels, DYN_REQUESTS);
 				id = drq_l_view_rels;
@@ -3263,7 +3265,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_role( GBL gbl, const UCHAR** ptr)
+void DYN_define_role( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3277,7 +3279,7 @@ void DYN_define_role( GBL gbl, const UCHAR** ptr)
  *     ROLES cannot be named the same as any existing user name 
  *
  **************************************/
-	BLK request = NULL;
+	jrd_req* request = NULL;
 	SqlIdentifier dummy_name, owner_name, role_name;
 
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -3383,7 +3385,7 @@ do_error_punt_9:
 }
 
 
-void DYN_define_security_class( GBL gbl, const UCHAR** ptr)
+void DYN_define_security_class( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3399,7 +3401,7 @@ void DYN_define_security_class( GBL gbl, const UCHAR** ptr)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request;
+	jrd_req* request;
 	UCHAR verb;
 
 	request = CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
@@ -3452,7 +3454,7 @@ void DYN_define_security_class( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_sql_field(GBL		gbl,
+void DYN_define_sql_field(gbl*		gbl,
 						  const UCHAR**	ptr,
 						  const TEXT*		relation_name,
 						  TEXT*		field_name)
@@ -3468,7 +3470,7 @@ void DYN_define_sql_field(GBL		gbl,
  *	an global field name.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier sql_field_name;
@@ -3493,7 +3495,7 @@ void DYN_define_sql_field(GBL		gbl,
 
 	request = CMP_find_request(tdbb, drq_s_sql_lfld, DYN_REQUESTS);
 	id = drq_s_sql_lfld;
-	BLK old_request = NULL;
+	jrd_req* old_request = NULL;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS 
@@ -3741,7 +3743,7 @@ void DYN_define_sql_field(GBL		gbl,
 }
 
 
-void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
+void DYN_define_shadow( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -3758,7 +3760,7 @@ void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
 	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR verb;
-	BLK request;
+	jrd_req* request;
 	bool found = false;
 
 	const SLONG shadow_number = DYN_get_number(ptr);
@@ -3808,7 +3810,7 @@ void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_define_trigger(GBL		gbl,
+void DYN_define_trigger(gbl*		gbl,
 						const UCHAR**	ptr,
 						const TEXT*	relation_name,
 						TEXT*	trigger_name,
@@ -3835,7 +3837,7 @@ void DYN_define_trigger(GBL		gbl,
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request;
+	jrd_req* request;
 	UCHAR	verb;
 	SqlIdentifier t;
 
@@ -3986,7 +3988,7 @@ void DYN_define_trigger(GBL		gbl,
 }
 
 
-void DYN_define_trigger_msg(GBL gbl, const UCHAR** ptr, const TEXT* trigger_name)
+void DYN_define_trigger_msg(gbl* gbl, const UCHAR** ptr, const TEXT* trigger_name)
 {
 /**************************************
  *
@@ -4002,7 +4004,7 @@ void DYN_define_trigger_msg(GBL gbl, const UCHAR** ptr, const TEXT* trigger_name
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request;
+	jrd_req* request;
 	UCHAR verb;
 
 	request = CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
@@ -4062,7 +4064,7 @@ void DYN_define_trigger_msg(GBL gbl, const UCHAR** ptr, const TEXT* trigger_name
 }
 
 
-void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
+void DYN_define_view_relation( gbl* gbl, const UCHAR** ptr, const TEXT* view)
 {
 /**************************************
  *
@@ -4078,7 +4080,7 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request;
+	jrd_req* request;
 	UCHAR verb;
 	SSHORT id;
 
@@ -4102,7 +4104,7 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
  * so it's commented our till the better times
  *
 		const SSHORT old_id = id;
-		BLK old_request = request;
+		jrd_req* old_request = request;
 
 		request = CMP_find_request(tdbb, drq_e_view_rels, DYN_REQUESTS);
 		id = drq_e_view_rels;
@@ -4177,7 +4179,7 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
 
 
 static void check_unique_name(	thread_db*	tdbb,
-								GBL		gbl,
+								gbl*		gbl,
 								const TEXT*	object_name,
 								bool	proc_flag)
 {
@@ -4194,7 +4196,7 @@ static void check_unique_name(	thread_db*	tdbb,
  *
  **************************************/
 
-	BLK request;
+	jrd_req* request;
 	bool found = false;
 
 	SET_TDBB(tdbb);
@@ -4256,7 +4258,7 @@ local_punt_false_132:
 
 
 static bool find_field_source(thread_db*	tdbb,
-								 GBL	gbl,
+								 gbl*	gbl,
 								 const TEXT* view_name,
 								 USHORT	context,
 								 const TEXT* local_name,
@@ -4273,7 +4275,7 @@ static bool find_field_source(thread_db*	tdbb,
  *
  **************************************/
 
-	BLK request;
+	jrd_req* request;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -4320,7 +4322,7 @@ that can be used against rdb$fields' rdb$field_name. */
 }
 
 
-static bool get_who( thread_db* tdbb, GBL gbl, SCHAR* output_name)
+static bool get_who( thread_db* tdbb, gbl* gbl, SCHAR* output_name)
 {
 /**************************************
  *
@@ -4332,7 +4334,7 @@ static bool get_who( thread_db* tdbb, GBL gbl, SCHAR* output_name)
  *	Get user name
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 
 	SET_TDBB(tdbb);
 
@@ -4359,7 +4361,7 @@ static bool get_who( thread_db* tdbb, GBL gbl, SCHAR* output_name)
 }
 
 
-bool is_it_user_name(GBL gbl, const TEXT* role_name, thread_db* tdbb)
+bool is_it_user_name(gbl* gbl, const TEXT* role_name, thread_db* tdbb)
 {
 /**************************************
  *
@@ -4373,7 +4375,7 @@ bool is_it_user_name(GBL gbl, const TEXT* role_name, thread_db* tdbb)
  *
  **************************************/
 
-	BLK request;
+	jrd_req* request;
 	USHORT request_id;
 
 	SET_TDBB(tdbb);

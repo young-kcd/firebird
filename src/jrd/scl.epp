@@ -76,6 +76,8 @@
 
 #define	BLOB_BUFFER_SIZE	4096	/* used to read in acl blob */
 
+using namespace Jrd;
+
 DATABASE DB = FILENAME "ODS.RDB";
 
 static bool check_hex(const TEXT*, USHORT);
@@ -234,7 +236,7 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id, US
     const TEXT* idx_name_ptr = index_name;
 	const TEXT* relation_name_ptr = index_name;
 
-	BLK request = NULL;
+	jrd_req* request = NULL;
 
 	// No need to cache this request handle, it's only used when
 	// new constraints are created
@@ -364,7 +366,7 @@ void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
 
 	const scl* s_class = NULL;
 
-	BLK request = CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) SPROC IN RDB$PROCEDURES
 		WITH SPROC.RDB$PROCEDURE_NAME EQ name
@@ -421,7 +423,7 @@ void SCL_check_relation(const dsc* dsc_name, USHORT mask)
 
 	const scl* s_class = NULL;
 
-	BLK request = CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS
 		WITH REL.RDB$RELATION_NAME EQ name
@@ -578,7 +580,7 @@ void SCL_init(bool create,
  *	in, encrypting if necessary.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	TEXT name[129], project[33], organization[33], *p;
 	TEXT role_name[33], login_name[129], *q;
     bool preODS9;
@@ -752,7 +754,8 @@ void SCL_init(bool create,
 		user->usr_flags |= USR_locksmith;
 	}
 
-	BLK handle = NULL, handle1 = NULL;
+	jrd_req* handle = NULL;
+	jrd_req* handle1 = NULL;
 
 	if (!create) {
 		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
@@ -1100,7 +1103,7 @@ static SLONG compute_access(thread_db* tdbb,
 	str_buffer->str_length = BLOB_BUFFER_SIZE - 1;
 	TEXT* buffer = (TEXT*) str_buffer->str_data;
 
-	BLK request = CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) X IN RDB$SECURITY_CLASSES
 		WITH X.RDB$SECURITY_CLASS EQ s_class->scl_name
@@ -1289,8 +1292,8 @@ static SLONG walk_acl(thread_db* tdbb,
 							++q;
 						}
 						hit = false;
-						blk* request =
-							(BLK)CMP_find_request(tdbb, irq_get_role_mem,
+						jrd_req* request =
+							CMP_find_request(tdbb, irq_get_role_mem,
 												   IRQ_REQUESTS);
 
 						FOR(REQUEST_HANDLE request) U IN RDB$USER_PRIVILEGES WITH

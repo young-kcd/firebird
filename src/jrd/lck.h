@@ -25,6 +25,9 @@
 #define JRD_LCK_H
 
 struct blk;
+
+namespace Jrd {
+
 class BlockingThread;
 
 /* Lock types */
@@ -123,6 +126,8 @@ public:
 	} lck_key;
 	SCHAR lck_tail[1];			/* Makes the allocator happy */
 };
+
+} //namespace Jrd
 
 #endif // JRD_LCK_H
 

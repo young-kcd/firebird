@@ -684,31 +684,31 @@ static void prt_lock_activity(
 			FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
 					" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
 					" %9"ULONGFORMAT" ",
-					(header->lhb_operations[LCK_database] -
-					 prior.lhb_operations[LCK_database]) / seconds,
-					(header->lhb_operations[LCK_relation] -
-					 prior.lhb_operations[LCK_relation]) / seconds,
-					(header->lhb_operations[LCK_bdb] -
-					 prior.lhb_operations[LCK_bdb]) / seconds,
-					(header->lhb_operations[LCK_tra] -
-					 prior.lhb_operations[LCK_tra]) / seconds,
-					(header->lhb_operations[LCK_rel_exist] -
-					 prior.lhb_operations[LCK_rel_exist]) / seconds,
-					(header->lhb_operations[LCK_idx_exist] -
-					 prior.lhb_operations[LCK_idx_exist]) / seconds,
+					(header->lhb_operations[Jrd::LCK_database] -
+					 prior.lhb_operations[Jrd::LCK_database]) / seconds,
+					(header->lhb_operations[Jrd::LCK_relation] -
+					 prior.lhb_operations[Jrd::LCK_relation]) / seconds,
+					(header->lhb_operations[Jrd::LCK_bdb] -
+					 prior.lhb_operations[Jrd::LCK_bdb]) / seconds,
+					(header->lhb_operations[Jrd::LCK_tra] -
+					 prior.lhb_operations[Jrd::LCK_tra]) / seconds,
+					(header->lhb_operations[Jrd::LCK_rel_exist] -
+					 prior.lhb_operations[Jrd::LCK_rel_exist]) / seconds,
+					(header->lhb_operations[Jrd::LCK_idx_exist] -
+					 prior.lhb_operations[Jrd::LCK_idx_exist]) / seconds,
 					(header->lhb_operations[0] -
 					 prior.lhb_operations[0]) / seconds);
 
-			prior.lhb_operations[LCK_database] =
-				header->lhb_operations[LCK_database];
-			prior.lhb_operations[LCK_relation] =
-				header->lhb_operations[LCK_relation];
-			prior.lhb_operations[LCK_bdb] = header->lhb_operations[LCK_bdb];
-			prior.lhb_operations[LCK_tra] = header->lhb_operations[LCK_tra];
-			prior.lhb_operations[LCK_rel_exist] =
-				header->lhb_operations[LCK_rel_exist];
-			prior.lhb_operations[LCK_idx_exist] =
-				header->lhb_operations[LCK_idx_exist];
+			prior.lhb_operations[Jrd::LCK_database] =
+				header->lhb_operations[Jrd::LCK_database];
+			prior.lhb_operations[Jrd::LCK_relation] =
+				header->lhb_operations[Jrd::LCK_relation];
+			prior.lhb_operations[Jrd::LCK_bdb] = header->lhb_operations[Jrd::LCK_bdb];
+			prior.lhb_operations[Jrd::LCK_tra] = header->lhb_operations[Jrd::LCK_tra];
+			prior.lhb_operations[Jrd::LCK_rel_exist] =
+				header->lhb_operations[Jrd::LCK_rel_exist];
+			prior.lhb_operations[Jrd::LCK_idx_exist] =
+				header->lhb_operations[Jrd::LCK_idx_exist];
 			prior.lhb_operations[0] = header->lhb_operations[0];
 		}
 
@@ -786,18 +786,18 @@ static void prt_lock_activity(
 		FPRINTF(outfile, "%9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
 				" %9"ULONGFORMAT" %9"ULONGFORMAT" %9"ULONGFORMAT
 				" %9"ULONGFORMAT" ",
-				(header->lhb_operations[LCK_database] -
-				 base.lhb_operations[LCK_database]) / (factor),
-				(header->lhb_operations[LCK_relation] -
-				 base.lhb_operations[LCK_relation]) / (factor),
-				(header->lhb_operations[LCK_bdb] -
-				 base.lhb_operations[LCK_bdb]) / (factor),
-				(header->lhb_operations[LCK_tra] -
-				 base.lhb_operations[LCK_tra]) / (factor),
-				(header->lhb_operations[LCK_rel_exist] -
-				 base.lhb_operations[LCK_rel_exist]) / (factor),
-				(header->lhb_operations[LCK_idx_exist] -
-				 base.lhb_operations[LCK_idx_exist]) / (factor),
+				(header->lhb_operations[Jrd::LCK_database] -
+				 base.lhb_operations[Jrd::LCK_database]) / (factor),
+				(header->lhb_operations[Jrd::LCK_relation] -
+				 base.lhb_operations[Jrd::LCK_relation]) / (factor),
+				(header->lhb_operations[Jrd::LCK_bdb] -
+				 base.lhb_operations[Jrd::LCK_bdb]) / (factor),
+				(header->lhb_operations[Jrd::LCK_tra] -
+				 base.lhb_operations[Jrd::LCK_tra]) / (factor),
+				(header->lhb_operations[Jrd::LCK_rel_exist] -
+				 base.lhb_operations[Jrd::LCK_rel_exist]) / (factor),
+				(header->lhb_operations[Jrd::LCK_idx_exist] -
+				 base.lhb_operations[Jrd::LCK_idx_exist]) / (factor),
 				(header->lhb_operations[0] -
 				 base.lhb_operations[0]) / (factor));
 	}

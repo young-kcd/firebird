@@ -48,6 +48,8 @@
 #include "../jrd/tra.h"
 #include "../jrd/req.h"
 
+using namespace Jrd;
+
 #ifdef VMS
 double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif

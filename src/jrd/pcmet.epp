@@ -50,6 +50,8 @@
 #include "../jrd/pcmet_proto.h"
 #include "../jrd/thd_proto.h"
 
+using namespace Jrd;
+
 DATABASE DB = FILENAME "ODS.RDB";
 
 

@@ -75,6 +75,8 @@
 #include "../jrd/dsc_proto.h"
 #include "../common/utils_proto.h"
 
+using namespace Jrd;
+
 #ifdef SUPERSERVER
 #define V4_THREADING
 #endif
@@ -88,27 +90,27 @@ DATABASE DB = STATIC "ODS.RDB";
 #define MAX_CHARS_FLOAT		13	/* 7 digits + 2 signs + E + decimal + 2 digit exp */
 
 static const UCHAR alloc_info[] = { isc_info_allocation, isc_info_end };
-static void drop_cache(GBL);
-static void change_backup_mode(GBL, UCHAR verb);
-static void drop_log(GBL);
+static void drop_cache(gbl*);
+static void change_backup_mode(gbl*, UCHAR verb);
+static void drop_log(gbl*);
 
 // Function not defined in this file MOD 04-July-2002
-// static void modify_lfield_type(GBL, const UCHAR**, TEXT*, TEXT*);
+// static void modify_lfield_type(gbl*, const UCHAR**, TEXT*, TEXT*);
 
-static void modify_lfield_position(thread_db*, Database*, GBL, const TEXT*, const TEXT*,
+static void modify_lfield_position(thread_db*, Database*, gbl*, const TEXT*, const TEXT*,
 	USHORT, USHORT);
-static bool check_view_dependency(thread_db*, Database*, GBL, const TEXT*, const TEXT*);
-static bool check_sptrig_dependency(thread_db*, Database*, GBL, const TEXT*, const TEXT*);
-static void modify_lfield_index(thread_db*, Database*, GBL, const TEXT*, const TEXT*,
+static bool check_view_dependency(thread_db*, Database*, gbl*, const TEXT*, const TEXT*);
+static bool check_sptrig_dependency(thread_db*, Database*, gbl*, const TEXT*, const TEXT*);
+static void modify_lfield_index(thread_db*, Database*, gbl*, const TEXT*, const TEXT*,
 	const TEXT*);
-static bool field_exists(thread_db*, Database*, GBL, const TEXT*, const TEXT*);
-static bool domain_exists(thread_db*, Database*, GBL, const TEXT*);
-static void get_domain_type(thread_db*, Database*, GBL, DYN_FLD);
+static bool field_exists(thread_db*, Database*, gbl*, const TEXT*, const TEXT*);
+static bool domain_exists(thread_db*, Database*, gbl*, const TEXT*);
+static void get_domain_type(thread_db*, Database*, gbl*, DYN_FLD);
 static ULONG check_update_fld_type(const dyn_fld*, const dyn_fld*);
 static void modify_err_punt(thread_db*, ULONG, const dyn_fld*, const dyn_fld*);
 
 
-void DYN_modify_database( GBL gbl, const UCHAR** ptr)
+void DYN_modify_database( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -125,7 +127,7 @@ void DYN_modify_database( GBL gbl, const UCHAR** ptr)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = NULL;
+	jrd_req* request = NULL;
 
 	try {
 
@@ -255,7 +257,7 @@ dyn_punt_84:
 }
 
 
-void DYN_modify_exception( GBL gbl, const UCHAR** ptr)
+void DYN_modify_exception( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -273,7 +275,7 @@ void DYN_modify_exception( GBL gbl, const UCHAR** ptr)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -322,7 +324,7 @@ void DYN_modify_exception( GBL gbl, const UCHAR** ptr)
 
 
 void DYN_modify_global_field(
-							 GBL gbl,
+							 gbl* gbl,
 							 const UCHAR** ptr,
 							 const TEXT* relation_name, TEXT* field_name)
 {
@@ -337,7 +339,7 @@ void DYN_modify_global_field(
  * Note: a global field here is a SQL domain.
  *
  **************************************/
-	BLK old_request;
+	jrd_req* old_request;
 	UCHAR verb;
 
 	SSHORT field_adjusted_count = 0;
@@ -347,7 +349,7 @@ void DYN_modify_global_field(
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
 	bool found = false;
 	
 	dyn_fld* orig_dom = 0;
@@ -874,7 +876,7 @@ void DYN_modify_global_field(
 }
 
 
-void DYN_modify_index( GBL gbl, const UCHAR** ptr)
+void DYN_modify_index( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -892,7 +894,7 @@ void DYN_modify_index( GBL gbl, const UCHAR** ptr)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -959,7 +961,7 @@ void DYN_modify_index( GBL gbl, const UCHAR** ptr)
 
 
 void DYN_modify_local_field(
-							GBL gbl,
+							gbl* gbl,
 							const UCHAR** ptr,
 							const TEXT* relation_name, TEXT* field_name)
 {
@@ -1049,7 +1051,7 @@ void DYN_modify_local_field(
 			DYN_execute(gbl, ptr, relation_name, field_name, NULL, NULL, NULL);
 		}
 
-	BLK request = CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1154,7 +1156,7 @@ void DYN_modify_local_field(
 }
 
 
-void DYN_modify_procedure( GBL gbl, const UCHAR** ptr)
+void DYN_modify_procedure( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1174,7 +1176,7 @@ void DYN_modify_procedure( GBL gbl, const UCHAR** ptr)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = NULL;
+	jrd_req* request = NULL;
 	bool found = false;
 
 	try {
@@ -1262,7 +1264,7 @@ void DYN_modify_procedure( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_relation( GBL gbl, const UCHAR** ptr)
+void DYN_modify_relation( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1283,7 +1285,7 @@ void DYN_modify_relation( GBL gbl, const UCHAR** ptr)
 	field_name[0] = 0;
 	GET_STRING(ptr, name);
 
-	BLK request = CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1361,7 +1363,7 @@ void DYN_modify_relation( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_trigger( GBL gbl, const UCHAR** ptr)
+void DYN_modify_trigger( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1379,7 +1381,7 @@ void DYN_modify_trigger( GBL gbl, const UCHAR** ptr)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1494,7 +1496,7 @@ void DYN_modify_trigger( GBL gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
+void DYN_modify_trigger_msg( gbl* gbl, const UCHAR** ptr, TEXT* trigger_name)
 {
 /**************************************
  *
@@ -1513,7 +1515,7 @@ void DYN_modify_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
 
 	try {
 
@@ -1565,7 +1567,7 @@ void DYN_modify_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 }
 
 
-void DYN_modify_view( GBL gbl, const UCHAR** ptr)
+void DYN_modify_view( gbl* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -1591,7 +1593,7 @@ void DYN_modify_view( GBL gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 	
-	BLK request = NULL;
+	jrd_req* request = NULL;
 	bool found = false;
 
 	try {
@@ -1663,7 +1665,7 @@ void DYN_modify_view( GBL gbl, const UCHAR** ptr)
 }
 
 
-static void drop_cache( GBL gbl)
+static void drop_cache( gbl* gbl)
 {
 /**************************************
  *
@@ -1678,7 +1680,7 @@ static void drop_cache( GBL gbl)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1711,7 +1713,7 @@ static void drop_cache( GBL gbl)
 }
 
 
-static void change_backup_mode( GBL gbl, UCHAR verb)
+static void change_backup_mode( gbl* gbl, UCHAR verb)
 {
 /**************************************
  *
@@ -1729,7 +1731,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1829,7 +1831,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 }
 
 
-static void drop_log( GBL gbl)
+static void drop_log( gbl* gbl)
 {
 /**************************************
  *
@@ -1844,7 +1846,7 @@ static void drop_log( GBL gbl)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
 	bool found = false;
 
 	try {
@@ -1876,7 +1878,7 @@ static void drop_log( GBL gbl)
 
 static void modify_lfield_position(thread_db* tdbb,
 								   Database* dbb,
-								   GBL gbl,
+								   gbl* gbl,
 								   const TEXT* relation_name,
 								   const TEXT* field_name,
 								   USHORT new_position,
@@ -1908,7 +1910,7 @@ static void modify_lfield_position(thread_db* tdbb,
  *	    if new_position == original_position -- no_op
  *
  ***********************************************************/
-	BLK request = NULL;
+	jrd_req* request = NULL;
 
 	try {
 
@@ -1989,7 +1991,7 @@ static void modify_lfield_position(thread_db* tdbb,
 
 static bool check_view_dependency(thread_db* tdbb,
 									 Database* dbb,
-									 GBL gbl,
+									 gbl* gbl,
 									 const TEXT* relation_name,
 									 const TEXT* field_name)
 {
@@ -2004,7 +2006,7 @@ static bool check_view_dependency(thread_db* tdbb,
  *  CVC: The function never has a chance to return true because it punts.
  *
  ***********************************************************/
-	BLK request = NULL;
+	jrd_req* request = NULL;
 	bool retval = false;
 	const TEXT* view_name = NULL;
 
@@ -2036,7 +2038,7 @@ static bool check_view_dependency(thread_db* tdbb,
 
 static bool check_sptrig_dependency(thread_db* tdbb,
 									   Database* dbb,
-									   GBL gbl,
+									   gbl* gbl,
 									   const TEXT* relation_name,
 									   const TEXT* field_name)
 {
@@ -2050,7 +2052,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
  *	or trigger.  If the field is refereneced, return true, else return
  *  false, but true causes the function to punt instead.
  ***********************************************************/
-	BLK request = NULL;
+	jrd_req* request = NULL;
 	bool retval = false;
 	const TEXT* dep_name = NULL;
 
@@ -2075,7 +2077,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 
 static void modify_lfield_index(thread_db*	tdbb,
 								Database* dbb,
-								GBL		gbl,
+								gbl*		gbl,
 								const TEXT*	relation_name,
 								const TEXT*	field_name,
 								const TEXT*	new_fld_name)
@@ -2090,7 +2092,7 @@ static void modify_lfield_index(thread_db*	tdbb,
  *	with the new field names
  *
  ***********************************************************/
-	BLK request = NULL;
+	jrd_req* request = NULL;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES CROSS IDXS IN RDB$INDEX_SEGMENTS WITH
@@ -2115,7 +2117,7 @@ static void modify_lfield_index(thread_db*	tdbb,
 
 static bool field_exists(thread_db* tdbb,
 							Database* dbb,
-							GBL gbl,
+							gbl* gbl,
 							const TEXT* relation_name,
 							const TEXT* field_name)
 {
@@ -2127,7 +2129,7 @@ static bool field_exists(thread_db* tdbb,
  *  Functional Description:
  *	Checks to see if the given field already exists in a relation
  ***********************************************************/
-	BLK request = NULL;
+	jrd_req* request = NULL;
 	bool retval = false;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -2141,7 +2143,7 @@ static bool field_exists(thread_db* tdbb,
 	return retval;
 }
 
-static bool domain_exists(thread_db* tdbb, Database* dbb, GBL gbl, const TEXT* field_name)
+static bool domain_exists(thread_db* tdbb, Database* dbb, gbl* gbl, const TEXT* field_name)
 {
 /***********************************************************
  *
@@ -2151,7 +2153,7 @@ static bool domain_exists(thread_db* tdbb, Database* dbb, GBL gbl, const TEXT* f
  *  Functional Description:
  *	Checks to see if the given field already exists in a relation
  ***********************************************************/
-	BLK request = NULL;
+	jrd_req* request = NULL;
 	bool retval = false;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -2163,7 +2165,7 @@ static bool domain_exists(thread_db* tdbb, Database* dbb, GBL gbl, const TEXT* f
 	return retval;
 }
 
-void DYN_modify_sql_field(GBL		gbl,
+void DYN_modify_sql_field(gbl*		gbl,
 						  const UCHAR**	ptr,
 						  const TEXT*		relation_name,
 						  TEXT*		field_name)
@@ -2250,8 +2252,8 @@ void DYN_modify_sql_field(GBL		gbl,
 	check_sptrig_dependency(tdbb, dbb, gbl, relation_name,
 							orig_fld->dyn_fld_name);
 
-	BLK request = NULL;
-	BLK first_request = NULL;
+	jrd_req* request = NULL;
+	jrd_req* first_request = NULL;
 	bool found = false;
 	bool dtype, scale, prec, subtype, charlen, collation, fldlen, nullflg,
 		charset;
@@ -2647,7 +2649,7 @@ void DYN_modify_sql_field(GBL		gbl,
 	}
 }
 
-void get_domain_type(thread_db* tdbb, Database* dbb, GBL gbl, DYN_FLD dom_fld)
+void get_domain_type(thread_db* tdbb, Database* dbb, gbl* gbl, DYN_FLD dom_fld)
 {
 /**************************************
  *
@@ -2661,7 +2663,7 @@ void get_domain_type(thread_db* tdbb, Database* dbb, GBL gbl, DYN_FLD dom_fld)
  *      modifying the datatype of a field.
  *
  **************************************/
-	BLK request = NULL;
+	jrd_req* request = NULL;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ dom_fld->dyn_fld_source;

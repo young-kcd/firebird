@@ -24,13 +24,20 @@
 #ifndef JRD_PAG_PROTO_H
 #define JRD_PAG_PROTO_H
 
-class Database;
+namespace Jrd {
+	class Database;
+	struct win;
+}
+namespace Ods {
+	struct pag;
+	struct header_page;
+}
 
 void	PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
 USHORT	PAG_add_file(const TEXT*, SLONG);
-int		PAG_add_header_entry(struct header_page*, USHORT, SSHORT, const UCHAR*);
-int		PAG_replace_entry_first(struct header_page*, USHORT, SSHORT, const UCHAR*);
-struct pag*	PAG_allocate(struct win *);
+int		PAG_add_header_entry(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
+int		PAG_replace_entry_first(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
+Ods::pag*	PAG_allocate(Jrd::win *);
 SLONG	PAG_attachment_id(void);
 int		PAG_delete_clump_entry(SLONG, USHORT);
 void	PAG_format_header(void);
@@ -42,10 +49,10 @@ void	PAG_init(void);
 void	PAG_init2(USHORT);
 SLONG	PAG_last_page(void);
 void	PAG_release_page(SLONG, SLONG);
-void	PAG_set_force_write(Database*, SSHORT);
-void	PAG_set_no_reserve(Database*, USHORT);
-void	PAG_set_db_readonly(Database*, bool);
-void	PAG_set_db_SQL_dialect(Database*, SSHORT);
+void	PAG_set_force_write(Jrd::Database*, SSHORT);
+void	PAG_set_no_reserve(Jrd::Database*, USHORT);
+void	PAG_set_db_readonly(Jrd::Database*, bool);
+void	PAG_set_db_SQL_dialect(Jrd::Database*, SSHORT);
 void	PAG_set_page_buffers(ULONG);
 void	PAG_sweep_interval(SLONG);
 int		PAG_unlicensed(void);

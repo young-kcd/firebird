@@ -25,36 +25,43 @@
 #define JRD_DPM_PROTO_H
 
 // fwd. decl.
-class blb;
+namespace Jrd {
+	class blb;
+	class jrd_rel;
+	struct record_param;
+	class SparseBitmap;
+	class Record;
+	class jrd_tra;
+	struct win;
+}
+namespace Ods {
+	struct pag;
+	struct data_page;
+}
 class lls;
-class jrd_rel;
-struct record_param;
-class SparseBitmap;
-class Record;
-class jrd_tra;
 
-struct pag* DPM_allocate(thread_db*, struct win*);
-void	DPM_backout(thread_db*, record_param*);
-int		DPM_chain(thread_db*, record_param*, record_param*);
-int		DPM_compress(thread_db*, struct data_page*);
-void	DPM_create_relation(thread_db*, jrd_rel*);
-SLONG	DPM_data_pages(thread_db*, jrd_rel*);
-void	DPM_delete(thread_db*, record_param*, SLONG);
-void	DPM_delete_relation(thread_db*, jrd_rel*);
-bool	DPM_fetch(thread_db*, record_param*, USHORT);
-SSHORT	DPM_fetch_back(thread_db*, record_param*, USHORT, SSHORT);
-void	DPM_fetch_fragment(thread_db*, record_param*, USHORT);
-SINT64	DPM_gen_id(thread_db*, SLONG, USHORT, SINT64);
-int		DPM_get(thread_db*, record_param*, SSHORT);
-ULONG	DPM_get_blob(thread_db*, blb*, ULONG, USHORT, SLONG);
-bool	DPM_next(thread_db*, record_param*, USHORT, bool, bool);
-void	DPM_pages(thread_db*, SSHORT, int, ULONG, SLONG);
-SLONG	DPM_prefetch_bitmap(struct thread_db*, jrd_rel*, SparseBitmap*, SLONG);
-void	DPM_scan_pages(thread_db*);
-void	DPM_store(thread_db*, record_param*, lls**, USHORT);
-SLONG	DPM_store_blob(thread_db*, blb*, Record*);
-void	DPM_rewrite_header(thread_db*, record_param*);
-void	DPM_update(thread_db*, record_param*, lls**, const jrd_tra*);
+Ods::pag* DPM_allocate(Jrd::thread_db*, Jrd::win*);
+void	DPM_backout(Jrd::thread_db*, Jrd::record_param*);
+int		DPM_chain(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
+int		DPM_compress(Jrd::thread_db*, Ods::data_page*);
+void	DPM_create_relation(Jrd::thread_db*, Jrd::jrd_rel*);
+SLONG	DPM_data_pages(Jrd::thread_db*, Jrd::jrd_rel*);
+void	DPM_delete(Jrd::thread_db*, Jrd::record_param*, SLONG);
+void	DPM_delete_relation(Jrd::thread_db*, Jrd::jrd_rel*);
+bool	DPM_fetch(Jrd::thread_db*, Jrd::record_param*, USHORT);
+SSHORT	DPM_fetch_back(Jrd::thread_db*, Jrd::record_param*, USHORT, SSHORT);
+void	DPM_fetch_fragment(Jrd::thread_db*, Jrd::record_param*, USHORT);
+SINT64	DPM_gen_id(Jrd::thread_db*, SLONG, USHORT, SINT64);
+int		DPM_get(Jrd::thread_db*, Jrd::record_param*, SSHORT);
+ULONG	DPM_get_blob(Jrd::thread_db*, Jrd::blb*, ULONG, USHORT, SLONG);
+bool	DPM_next(Jrd::thread_db*, Jrd::record_param*, USHORT, bool, bool);
+void	DPM_pages(Jrd::thread_db*, SSHORT, int, ULONG, SLONG);
+SLONG	DPM_prefetch_bitmap(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::SparseBitmap*, SLONG);
+void	DPM_scan_pages(Jrd::thread_db*);
+void	DPM_store(Jrd::thread_db*, Jrd::record_param*, lls**, USHORT);
+SLONG	DPM_store_blob(Jrd::thread_db*, Jrd::blb*, Jrd::Record*);
+void	DPM_rewrite_header(Jrd::thread_db*, Jrd::record_param*);
+void	DPM_update(Jrd::thread_db*, Jrd::record_param*, lls**, const Jrd::jrd_tra*);
 
 #endif // JRD_DPM_PROTO_H
 

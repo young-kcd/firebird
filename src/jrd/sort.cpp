@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.58 2004-03-19 06:14:48 robocop Exp $
+ * $Id: sort.cpp,v 1.59 2004-03-20 14:57:30 alexpeshkoff Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -82,6 +82,8 @@
 #ifdef VMS
 double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
+
+using namespace Jrd;
 
 // The sort buffer size should be just under a multiple of the
 // hardware memory page size to account for memory allocator

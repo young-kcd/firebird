@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.69 2004-03-19 06:14:47 robocop Exp $ 
+  * $Id: evl.cpp,v 1.70 2004-03-20 14:57:29 alexpeshkoff Exp $ 
  */
 
 /*
@@ -130,6 +130,8 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
  *  they don't all take them in the same order.  Be careful out there.
  *  The order should be made to agree as part of the next code cleanup.
  */
+
+using namespace Jrd;
 
 static dsc* add(const dsc*, const jrd_nod*, VLU);
 static dsc* add2(const dsc*, const jrd_nod*, VLU);

@@ -24,11 +24,11 @@
 #ifndef JRD_FUN_PROTO_H
 #define JRD_FUN_PROTO_H
 
-void		FUN_evaluate(fun*, jrd_nod*, vlu*);
-void		FUN_fini(thread_db*);
+void		FUN_evaluate(Jrd::fun*, Jrd::jrd_nod*, Jrd::vlu*);
+void		FUN_fini(Jrd::thread_db*);
 void		FUN_init(void);
-fun*		FUN_lookup_function(const TEXT*, bool ShowAccessError);
-fun*		FUN_resolve(class Csb*, fun*, jrd_nod*);
+Jrd::fun*	FUN_lookup_function(const TEXT*, bool ShowAccessError);
+Jrd::fun*	FUN_resolve(class Jrd::Csb*, Jrd::fun*, Jrd::jrd_nod*);
 
 #endif // JRD_FUN_PROTO_H
 

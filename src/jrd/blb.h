@@ -27,6 +27,8 @@
 #ifndef JRD_BLB_H
 #define JRD_BLB_H
 
+namespace Jrd {
+
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
    case, the blob id is 8 bytes (2 longwords) long.  In the case of a
    temporary blob, the first word is NULL and the second word points to
@@ -38,10 +40,11 @@
 class BlobControl;
 class jrd_req;
 class jrd_tra;
-   
-struct bid {
+
+class bid {
+public:
 	ULONG bid_relation_id;		/* Relation id (or null) */
-	union {
+	union union_bid_stuff {
 		ULONG bid_temp_id;	/* Temporary ID of blob or array. Used for newly created objects (bid_relation_id==0) */
 		ULONG bid_number;	/* Record number */
 	} bid_stuff;
@@ -109,6 +112,8 @@ class blb_map : public pool_alloc<type_map>
 	blb*		map_old_blob;
 	blb*		map_new_blob;
 };
+
+} //namespace Jrd
 
 #endif // JRD_BLB_H
 

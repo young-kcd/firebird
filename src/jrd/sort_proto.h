@@ -24,29 +24,31 @@
 #ifndef JRD_SORT_PROTO_H
 #define JRD_SORT_PROTO_H
 
-class Attachment;
-struct sort_key_def;
-struct sort_work_file;
-struct sort_context;
+namespace Jrd {
+	class Attachment;
+	struct sort_key_def;
+	struct sort_work_file;
+	struct sort_context;
+}
 
 #ifdef SCROLLABLE_CURSORS
-void	SORT_diddle_key(UCHAR *, sort_context*, bool);
-void	SORT_get(ISC_STATUS*, sort_context*, ULONG **, RSE_GET_MODE);
-void	SORT_read_block(ISC_STATUS*, sort_work_file*, ULONG, BLOB_PTR *, ULONG);
+void	SORT_diddle_key(UCHAR *, Jrd::sort_context*, bool);
+void	SORT_get(ISC_STATUS*, Jrd::sort_context*, ULONG **, RSE_GET_MODE);
+void	SORT_read_block(ISC_STATUS*, Jrd::sort_work_file*, ULONG, BLOB_PTR *, ULONG);
 #else
-void	SORT_get(ISC_STATUS*, sort_context*, ULONG **);
-ULONG	SORT_read_block(ISC_STATUS*, sort_work_file*, ULONG, BLOB_PTR *,
+void	SORT_get(ISC_STATUS*, Jrd::sort_context*, ULONG **);
+ULONG	SORT_read_block(ISC_STATUS*, Jrd::sort_work_file*, ULONG, BLOB_PTR *,
 							 ULONG);
 #endif
 
-void	SORT_error(ISC_STATUS*, sort_work_file*, TEXT *, ISC_STATUS, int);
-void	SORT_fini(sort_context*, Attachment*);
-sort_context*	SORT_init(ISC_STATUS*, USHORT, USHORT, const sort_key_def*,
-						FPTR_REJECT_DUP_CALLBACK, void*, Attachment*, UINT64);
-void	SORT_put(ISC_STATUS*, sort_context*, ULONG **);
-void	SORT_shutdown(Attachment*);
-bool	SORT_sort(ISC_STATUS*, sort_context*);
-ULONG	SORT_write_block(ISC_STATUS*, sort_work_file*, ULONG, BLOB_PTR *,
+void	SORT_error(ISC_STATUS*, Jrd::sort_work_file*, TEXT *, ISC_STATUS, int);
+void	SORT_fini(Jrd::sort_context*, Jrd::Attachment*);
+Jrd::sort_context*	SORT_init(ISC_STATUS*, USHORT, USHORT, const Jrd::sort_key_def*,
+						Jrd::FPTR_REJECT_DUP_CALLBACK, void*, Jrd::Attachment*, UINT64);
+void	SORT_put(ISC_STATUS*, Jrd::sort_context*, ULONG **);
+void	SORT_shutdown(Jrd::Attachment*);
+bool	SORT_sort(ISC_STATUS*, Jrd::sort_context*);
+ULONG	SORT_write_block(ISC_STATUS*, Jrd::sort_work_file*, ULONG, BLOB_PTR *,
 							  ULONG);
 
 #endif // JRD_SORT_PROTO_H

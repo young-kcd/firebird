@@ -86,6 +86,8 @@ static const TEXT elements[][10] =
 
 #include "gen/codetext.h"
 
+using namespace Jrd;
+
 static void error(Csb*, ...);
 static SSHORT find_proc_field(const jrd_prc*, const TEXT*);
 static jrd_nod* par_args(thread_db*, Csb*, USHORT);
@@ -677,8 +679,8 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const TEXT* name)
 	for (const vec::const_iterator end = list->end() - 1; ptr < end;
 		 ptr++)
 	{
-		const prm* param = (PRM) * ptr;
-		if (!strcmp(name, param->prm_name))
+		const Parameter* param = (Parameter*) * ptr;
+		if (param->prm_name == name)
 			return param->prm_number;
 	}
 
@@ -1136,7 +1138,7 @@ static jrd_nod* par_field(thread_db* tdbb, Csb* csb, SSHORT blr_operator)
 				error(csb,
 					  isc_fldnotdef,
 					  isc_arg_string, ERR_cstring(name),
-					  isc_arg_string, procedure->prc_name->str_data, 0);
+					  isc_arg_string, procedure->prc_name.c_str(), 0);
 		}
 		else {
 			jrd_rel* relation = tail->csb_relation;
@@ -1811,8 +1813,7 @@ static void par_procedure_parms(
 			error(csb,
 				  isc_prcmismat,
 				  isc_arg_string,
-				  ERR_cstring(reinterpret_cast<const char*>
-				  	(procedure->prc_name->str_data)),
+				  ERR_cstring(procedure->prc_name.c_str()),
 				  0);
 		}
 		else
@@ -1884,7 +1885,7 @@ static void par_procedure_parms(
 
 			// default value for parameter 
 			if ((count <= 0) && input_flag) {
-				prm* parameter = (prm*)(*procedure->prc_input_fields)
+				Parameter* parameter = (Parameter*)(*procedure->prc_input_fields)
 					[procedure->prc_inputs - n];
 
 				asgn->nod_arg[asgn_arg1] = parameter->prm_default_val;
@@ -1912,7 +1913,7 @@ static void par_procedure_parms(
 		error(csb,
 			  isc_prcmismat,
 			  isc_arg_string,
-			  ERR_cstring(reinterpret_cast<const char*>(procedure->prc_name->str_data)),
+			  ERR_cstring(procedure->prc_name.c_str()),
 			  0);
 	}
 }

@@ -24,7 +24,7 @@
 #ifndef JRD_GRANT_PROTO_H
 #define JRD_GRANT_PROTO_H
 
-bool GRANT_privileges(thread_db*, SSHORT, class DeferredWork*, jrd_tra*);
+bool GRANT_privileges(Jrd::thread_db*, SSHORT, Jrd::DeferredWork*, Jrd::jrd_tra*);
 STR GRANT_realloc_acl(STR, UCHAR **, ULONG *);
 
 #endif // JRD_GRANT_PROTO_H

@@ -33,6 +33,7 @@
 #include "../jrd/thd_proto.h"
 
 
+using namespace Jrd;
 
 USHORT SQZ_apply_differences(Record* record, const SCHAR* differences,
 	const SCHAR* const end)

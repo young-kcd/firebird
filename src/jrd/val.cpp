@@ -583,6 +583,9 @@ VI. ADDITIONAL NOTES
 static USHORT VAL_debug_level = 0;
 #endif
 
+using namespace Jrd;
+using namespace Ods;
+
 /* Validation/garbage collection/repair control block */
 
 typedef struct vdr
@@ -1151,7 +1154,7 @@ static void walk_database(thread_db* tdbb, VDR control)
 	walk_tip(tdbb, control, page->hdr_next_transaction);
 	walk_generators(tdbb, control);
 
-	VEC vector;
+	vec* vector;
 	for (USHORT i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++) {
 #ifdef DEBUG_VAL_VERBOSE
 		if (i >= 32 /* rel_MAX */ ) // Why not system flag instead?

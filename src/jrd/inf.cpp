@@ -62,7 +62,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
 
-using namespace Firebird;
+using namespace Jrd;
 
 
 /*

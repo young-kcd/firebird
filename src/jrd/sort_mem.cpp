@@ -29,6 +29,8 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/sort_mem.h"
 
+using namespace Jrd;
+
 bool SortMem::is_initialized = false;
 
 size_t SortMem::mem_block_size;

@@ -27,6 +27,7 @@
 /* refresh range block used to store info about a particular
    set of records in a refresh range */
 
+namespace Jrd {
 class Attachment;
 class vec;
 
@@ -54,6 +55,8 @@ class RefreshRange : public pool_alloc_rpt<SCHAR, type_rng>
 #define RNG_posted	1			/* range has already been posted */
 
 #define RANGE_NAME_LENGTH	31	/* max. length of range name for the event */
+
+} //namespace Jrd
 
 #endif // JRD_RNG_H
 

@@ -42,6 +42,8 @@
 #include "../jrd/tra_proto.h"
 #include <memory>
 
+using namespace Jrd;
+
 static TxPageCache* allocate_tpc(thread_db*, ULONG);
 static void cache_transactions(thread_db*, TxPageCache**, ULONG);
 static int extend_cache(thread_db*, SLONG);
@@ -277,7 +279,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 }
 
 
-void TPC_update_cache(thread_db* tdbb, const tx_inv_page* tip_page, SLONG sequence)
+void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG sequence)
 {
 /**************************************
  *
@@ -389,8 +391,8 @@ static void cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
 	oldest = MAX(oldest, dbb->dbb_oldest_transaction);
 #else
 	WIN window(HEADER_PAGE);
-	const header_page* header =
-		(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+	const Ods::header_page* header =
+		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	const ULONG top = header->hdr_next_transaction;
 	oldest = MAX(oldest, (ULONG) header->hdr_oldest_transaction);
 	CCH_RELEASE(tdbb, &window);

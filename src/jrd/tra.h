@@ -37,6 +37,8 @@
 #include "../common/classes/tree.h"
 #include "../jrd/rpb_chain.h"
 
+namespace Jrd {
+
 class blb;
 class Lock;
 class jrd_rel;
@@ -242,6 +244,7 @@ class VerbAction : public pool_alloc<type_vct>
 	UndoItemTree*	vct_undo;		/* Data for undo records */
 };
 
+} //namespace Jrd
 
 #endif // JRD_TRA_H
 

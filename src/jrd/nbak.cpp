@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.27 2004-03-18 05:55:24 robocop Exp $
+ *  $Id: nbak.cpp,v 1.28 2004-03-20 14:57:30 alexpeshkoff Exp $
  *
  */
 
@@ -63,6 +63,8 @@ IMPLEMENT_TRACE_ROUTINE(nbak_trace, "NBAK");
 #endif
 
 /******************************** LOCK FUNCTIONS ******************************/
+
+using namespace Jrd;
 
 #ifndef SUPERSERVER
 void BackupManager::increment_diff_use_count() throw()
@@ -540,7 +542,7 @@ void BackupManager::begin_backup()
 
 	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
-	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true;
 	try {
 		lock_state_write(true);
@@ -561,7 +563,7 @@ void BackupManager::begin_backup()
 		BufferDesc temp_bdb;
 		temp_bdb.bdb_page = 0;
 		temp_bdb.bdb_dbb = database;
-		temp_bdb.bdb_buffer = reinterpret_cast<PAG>(alloc_buffer);
+		temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 		memset(alloc_buffer, 0, database->dbb_page_size);
 		if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, tdbb->tdbb_status_vector))
 			ERR_punt();
@@ -639,7 +641,7 @@ void BackupManager::end_backup(bool recover) {
 
 	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
-	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true;
 
 	try {
@@ -718,7 +720,7 @@ void BackupManager::end_backup(bool recover) {
 		if (all.getFirst()) {
 			do {
 				WIN window(all.current().db_page);
-				PAG page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
+				Ods::pag* page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
 				if (page->pag_scn != current_scn)
 					CCH_MARK(tdbb, &window);
 				CCH_RELEASE(tdbb, &window);
@@ -738,7 +740,7 @@ void BackupManager::end_backup(bool recover) {
 	// We finished. We need to reflect it in our database header page
 	window.win_page = HEADER_PAGE;
 	window.win_flags = 0;
-	header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	state_locked = false;
 	header_locked = true;
 	try {
@@ -817,7 +819,7 @@ bool BackupManager::actualize_alloc() throw()
 			// Get offset of pointer page. We can do so because page sizes are powers of 2
 			temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size/sizeof(ULONG)-1);
 			temp_bdb.bdb_dbb = database;
-			temp_bdb.bdb_buffer = reinterpret_cast<PAG>(alloc_buffer);
+			temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 		
 			if (!PIO_read(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 				return false;
@@ -880,8 +882,8 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 	BufferDesc temp_bdb;
 	temp_bdb.bdb_page = last_allocated_page+1;
 	temp_bdb.bdb_dbb = database;
-	temp_bdb.bdb_buffer = reinterpret_cast<PAG>(empty_buffer);
-	if (!PIO_write(diff_file, &temp_bdb, (PAG)empty_buffer, status_vector))
+	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
+	if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector))
 		return 0;
 	
 	const bool alloc_page_full = alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 2;
@@ -889,15 +891,15 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 		// Pointer page is full. Its time to create new one.
 		temp_bdb.bdb_page = last_allocated_page + 2;
 		temp_bdb.bdb_dbb = database;
-		temp_bdb.bdb_buffer = reinterpret_cast<PAG>(empty_buffer);
-		if (!PIO_write(diff_file, &temp_bdb, (PAG)empty_buffer, status_vector))
+		temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
+		if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector))
 			return 0;
 	}
 
 	// Write new item to the allocation table
 	temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size / sizeof(ULONG) - 1);
 	temp_bdb.bdb_dbb = database;
-	temp_bdb.bdb_buffer = reinterpret_cast<PAG>(alloc_buffer);
+	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 	alloc_buffer[++alloc_buffer[0]] = db_page;
 	if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 		return 0;
@@ -923,7 +925,7 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 	return last_allocated_page;
 }
 
-bool BackupManager::write_difference(ISC_STATUS* status, ULONG diff_page, struct pag* page) throw()
+bool BackupManager::write_difference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page) throw()
 {
 	BufferDesc temp_bdb;
 	temp_bdb.bdb_page = diff_page;
@@ -934,7 +936,7 @@ bool BackupManager::write_difference(ISC_STATUS* status, ULONG diff_page, struct
 	return true;
 }
 	
-bool BackupManager::read_difference(ULONG diff_page, struct pag* page) throw()
+bool BackupManager::read_difference(ULONG diff_page, Ods::pag* page) throw()
 {
 	BufferDesc temp_bdb;
 	temp_bdb.bdb_page = diff_page;
@@ -1040,8 +1042,8 @@ void BackupManager::set_difference(const char* filename) {
 	
 	if (filename) {
 		WIN window(HEADER_PAGE);
-		header_page* header =
-			(header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+		Ods::header_page* header =
+			(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		PAG_replace_entry_first(header, HDR_difference_file, 
 			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
@@ -1066,7 +1068,7 @@ bool BackupManager::actualize_state() throw() {
 			
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;
-	header_page* header = reinterpret_cast<header_page*>(spare_buffer);
+	Ods::header_page* header = reinterpret_cast<Ods::header_page*>(spare_buffer);
 	BufferDesc temp_bdb;
 	temp_bdb.bdb_page = HEADER_PAGE;
 	temp_bdb.bdb_dbb = database;

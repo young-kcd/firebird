@@ -30,6 +30,7 @@
 #include "../jrd/thd_proto.h"
 
 
+using namespace Jrd;
 
 static SSHORT hash_func(const SCHAR*);
 

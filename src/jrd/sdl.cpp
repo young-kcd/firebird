@@ -38,6 +38,8 @@
 
 #define COMPILE_SIZE	256
 
+using namespace Jrd;
+
 struct sdl_arg {
 	USHORT sdl_arg_mode;
 	internal_array_desc* sdl_arg_desc;

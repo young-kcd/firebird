@@ -29,24 +29,28 @@
 #include "../jrd/rse.h"
 #include "../jrd/lls.h"
 
-class jrd_req;
-class jrd_rel;
-class jrd_nod;
+namespace Jrd {
+	class jrd_req;
+	class jrd_rel;
+	class jrd_nod;
+	class rse;
+	class Rsb;
+}
 
-bool OPT_access_path(const jrd_req*, SCHAR*, SSHORT, USHORT*);
-class Rsb* OPT_compile(thread_db*, class Csb *,
-							   class rse*, class lls*);
+bool OPT_access_path(const Jrd::jrd_req*, SCHAR*, SSHORT, USHORT*);
+Jrd::Rsb* OPT_compile(Jrd::thread_db*, class Jrd::Csb *,
+					   Jrd::rse*, class lls*);
 							   
 // Begin only exported for VMS
-jrd_nod* OPT_make_dbkey(struct opt *, jrd_nod*,
+Jrd::jrd_nod* OPT_make_dbkey(struct opt *, Jrd::jrd_nod*,
 								  USHORT);
-jrd_nod* OPT_make_index(thread_db*, struct opt *, jrd_rel*,
-								  struct idx *);
-int OPT_match_index(struct opt *, USHORT, struct idx *);
+Jrd::jrd_nod* OPT_make_index(Jrd::thread_db*, struct opt *, Jrd::jrd_rel*,
+								  struct Jrd::idx *);
+int OPT_match_index(struct opt*, USHORT, struct Jrd::idx*);
 // End only exported for VMS
 
-void OPT_set_index(thread_db*, jrd_req *, class Rsb **, jrd_rel*,
-						  struct idx *);
+void OPT_set_index(Jrd::thread_db*, Jrd::jrd_req*, Jrd::Rsb **, Jrd::jrd_rel*,
+						  struct Jrd::idx*);
 
 #endif // JRD_OPT_PROTO_H
 

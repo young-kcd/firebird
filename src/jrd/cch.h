@@ -25,6 +25,9 @@
 #define JRD_CCH_H
 
 #include "../include/fb_blk.h"
+#include "../jrd/os/pio.h"
+
+namespace Jrd {
 
 class Lock;
 class Precedence;
@@ -84,7 +87,7 @@ class BufferDesc : public pool_alloc<type_bdb>
 	Lock*		bdb_lock;				/* Lock block for buffer */
 	que			bdb_que;				/* Buffer que */
 	que			bdb_in_use;				/* queue of buffers in use */
-	struct pag*	bdb_buffer;				/* Actual buffer */
+	struct Ods::pag*	bdb_buffer;				/* Actual buffer */
 	struct jrd_exp*	bdb_expanded_buffer;	/* expanded index buffer */
 	BlockingThread*	bdb_blocked;			/* Blocked attachments block */
 	SLONG		bdb_page;				/* Database page number in buffer */
@@ -231,6 +234,8 @@ class Prefetch : public pool_alloc<type_prf>
 };
 
 #define PRF_active	1			/* prefetch block currently in use */
+
+} //namespace Jrd
 
 #endif // JRD_CCH_H
 

@@ -133,10 +133,10 @@ typedef struct tsec {
     bool				tsec_sw_version;
     bool				tsec_service_gsec;
     bool				tsec_service_thd;
-    pfn_svc_output		tsec_output_proc;
-    Service*				tsec_output_data;
+	Jrd::pfn_svc_output	tsec_output_proc;
+    Jrd::Service*		tsec_output_data;
     IB_FILE*			tsec_output_file;
-    Service*				tsec_service_blk;
+    Jrd::Service*		tsec_service_blk;
 } *TSEC;
 
 #define GsecMsg0	0	/* empty message */

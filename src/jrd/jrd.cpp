@@ -124,9 +124,12 @@
 #include "../jrd/plugin_manager.h"
 #include "../jrd/db_alias.h"
 
+
 #ifdef GARBAGE_THREAD
 #include "vio_proto.h"
 #endif
+
+using namespace Jrd;
 
 #ifdef SERVER_SHUTDOWN
 typedef struct dbf {
@@ -218,7 +221,7 @@ static REC_MUTX_T databases_rec_mutex;
 #define TEXT    SCHAR
 #endif	// WIN_NT
 
-void trig::compile(thread_db* tdbb)
+void Jrd::trig::compile(thread_db* tdbb)
 {
 	if (!request && !compile_in_progress)
 	{
@@ -227,7 +230,7 @@ void trig::compile(thread_db* tdbb)
 		compile_in_progress = true;
 		JrdMemoryPool* old_pool = tdbb->tdbb_default,
 			*new_pool = JrdMemoryPool::createPool();
-		/* Allocate statement memory pool */
+		// Allocate statement memory pool
 		tdbb->tdbb_default = new_pool;
 		// Trigger request is not compiled yet. Lets do it now
 		try {
@@ -260,9 +263,10 @@ void trig::compile(thread_db* tdbb)
 	}
 }
 
-void trig::release(thread_db* tdbb)
+void Jrd::trig::release(thread_db* tdbb)
 {
-	if (!blr/*sys_trigger*/ || !request || CMP_clone_is_active(request)) {
+	if (!blr //sys_trigger
+				|| !request || CMP_clone_is_active(request)) {
 		return; // FALSE;
 	}
 	
@@ -340,6 +344,7 @@ typedef struct dpb
 	TEXT*	dpb_set_db_charset;
 } DPB;
 
+static void Unused(thread_db*);
 static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
 static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);
 static void		cleanup(void*);
@@ -2438,7 +2443,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
    lock and start dropping files. */
 
    	WIN window(HEADER_PAGE);
-	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_ods_version = 0;
 	CCH_RELEASE(tdbb, &window);
@@ -5897,7 +5902,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 
 	if (dbb->dbb_relations)
 	{
-		VEC vector = dbb->dbb_relations;
+		vec* vector = dbb->dbb_relations;
 		vec::iterator ptr = vector->begin(), end = vector->end();
 
 		for (; ptr < end; ++ptr)

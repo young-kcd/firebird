@@ -141,6 +141,8 @@
 
 #define	SVC_TRMNTR	'\377'
 
+using namespace Jrd;
+
 /* This checks if the service has forked a process.  If not,
    it will post the isc_svcnoexe error. */
 

@@ -26,40 +26,43 @@
 
 #include "../jrd/req.h"
 
-class Attachment;
-class jrd_tra;
-class Resource;
-class Database;
+namespace Jrd {
+	class Attachment;
+	class jrd_tra;
+	class Resource;
+	class Database;
+}
+
 struct blk;
 
-bool	TRA_active_transactions(thread_db*, Database*);
-void	TRA_cleanup(thread_db*);
-void	TRA_commit(thread_db*, jrd_tra*, const bool);
-void	TRA_extend_tip(thread_db*, ULONG, struct win *);
-int		TRA_fetch_state(thread_db*, SLONG);
-void	TRA_get_inventory(thread_db*, UCHAR*, ULONG, ULONG);
-int		TRA_get_state(thread_db*, SLONG);
+bool	TRA_active_transactions(Jrd::thread_db*, Jrd::Database*);
+void	TRA_cleanup(Jrd::thread_db*);
+void	TRA_commit(Jrd::thread_db*, Jrd::jrd_tra*, const bool);
+void	TRA_extend_tip(Jrd::thread_db*, ULONG, struct Jrd::win *);
+int		TRA_fetch_state(Jrd::thread_db*, SLONG);
+void	TRA_get_inventory(Jrd::thread_db*, UCHAR*, ULONG, ULONG);
+int		TRA_get_state(Jrd::thread_db*, SLONG);
 
 #ifdef SUPERSERVER_V2
-void	TRA_header_write(thread_db*, Database*, SLONG);
+void	TRA_header_write(Jrd::thread_db*, Jrd::Database*, SLONG);
 #endif
-void	TRA_init(thread_db*);
-void	TRA_invalidate(Database*, ULONG);
-void	TRA_link_transaction(thread_db*, jrd_tra*);
-void	TRA_post_resources(thread_db*, jrd_tra*, Resource*);
-bool	TRA_precommited(thread_db*, SLONG, SLONG);
-void	TRA_prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
-jrd_tra*	TRA_reconnect(thread_db*, const UCHAR*, USHORT);
-void	TRA_release_transaction(thread_db*, jrd_tra*);
-void	TRA_rollback(thread_db*, jrd_tra*, const bool);
-void	TRA_set_state(thread_db*, jrd_tra*, SLONG, SSHORT);
-void	TRA_shutdown_attachment(thread_db*, Attachment*);
-int		TRA_snapshot_state(thread_db*, const jrd_tra*, SLONG);
-jrd_tra*	TRA_start(thread_db*, int, const SCHAR*);
+void	TRA_init(Jrd::thread_db*);
+void	TRA_invalidate(Jrd::Database*, ULONG);
+void	TRA_link_transaction(Jrd::thread_db*, Jrd::jrd_tra*);
+void	TRA_post_resources(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::Resource*);
+bool	TRA_precommited(Jrd::thread_db*, SLONG, SLONG);
+void	TRA_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
+Jrd::jrd_tra*	TRA_reconnect(Jrd::thread_db*, const UCHAR*, USHORT);
+void	TRA_release_transaction(Jrd::thread_db*, Jrd::jrd_tra*);
+void	TRA_rollback(Jrd::thread_db*, Jrd::jrd_tra*, const bool);
+void	TRA_set_state(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, SSHORT);
+void	TRA_shutdown_attachment(Jrd::thread_db*, Jrd::Attachment*);
+int		TRA_snapshot_state(Jrd::thread_db*, const Jrd::jrd_tra*, SLONG);
+Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, int, const SCHAR*);
 int		TRA_state(const UCHAR*, ULONG, ULONG);
-bool	TRA_sweep(thread_db*, jrd_tra*);
-Lock*	TRA_transaction_lock(thread_db*, blk*);
-int		TRA_wait(thread_db*, jrd_tra*, SLONG, bool);
+bool	TRA_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
+Jrd::Lock*	TRA_transaction_lock(Jrd::thread_db*, blk*);
+int		TRA_wait(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, bool);
 
 #endif // JRD_TRA_PROTO_H
 

@@ -150,6 +150,8 @@
 #define MAX_PAGE_SIZE		16384
 #define DEFAULT_PAGE_SIZE	4096
 
+namespace Ods {
+
 /* Basic page header */
 
 typedef struct pag
@@ -176,7 +178,7 @@ struct blob_page : public pag
 	SLONG blp_page[1];			/* Page number if level 1 */
 };
 
-#define BLP_SIZE	OFFSETA (blob_page*, blp_page)
+#define BLP_SIZE	OFFSETA (Ods::blob_page*, blp_page)
 
 #define blp_pointers	1		/* Blob pointer page, not data page */
 
@@ -261,7 +263,7 @@ struct data_page : public pag
 	} dpg_rpt[1];
 };
 
-#define DPG_SIZE	(sizeof (data_page) - sizeof (data_page::dpg_repeat))
+#define DPG_SIZE	(sizeof (Ods::data_page) - sizeof (Ods::data_page::dpg_repeat))
 
 #define dpg_orphan	1			/* Data page is NOT in pointer page */
 #define dpg_full	2			/* Pointer page is marked FULL */
@@ -338,7 +340,7 @@ struct header_page : public pag
 	UCHAR hdr_data[1];			/* Misc data */
 };
 
-#define HDR_SIZE        OFFSETA (header_page*, hdr_data)
+#define HDR_SIZE        OFFSETA (Ods::header_page*, hdr_data)
 
 /* Header page clumplets */
 
@@ -458,7 +460,7 @@ typedef struct rhd {
 	UCHAR rhd_data[1];
 } *RHD;
 
-#define RHD_SIZE	OFFSETA (RHD, rhd_data)
+#define RHD_SIZE	OFFSETA (Ods::rhd*, rhd_data)
 
 /* Record header for fragmented record */
 
@@ -473,7 +475,7 @@ typedef struct rhdf {
 	UCHAR rhdf_data[1];			/* Blob data */
 } *RHDF;
 
-#define RHDF_SIZE	OFFSETA (RHDF, rhdf_data)
+#define RHDF_SIZE	OFFSETA (Ods::rhdf*, rhdf_data)
 
 /* Record header for blob header */
 
@@ -491,7 +493,7 @@ typedef struct blh {
 } *BLH;
 
 #define blh_data	blh_page
-#define BLH_SIZE	OFFSETA (BLH, blh_page)
+#define BLH_SIZE	OFFSETA (Ods::blh*, blh_page)
 
 #define rhd_deleted	1			/* record is logically deleted */
 #define rhd_chain	2			/* record is an old version */
@@ -530,7 +532,7 @@ struct log_info_page : public pag
 	UCHAR log_data[1];
 };
 
-#define LIP_SIZE	OFFSETA (log_info_page*, log_data);
+#define LIP_SIZE	OFFSETA (Ods::log_info_page*, log_data);
 
 /* additions for write ahead log, almost obsolete. */
 
@@ -551,6 +553,8 @@ struct log_info_page : public pag
 //#define LOG_bufsize		7		/* Buffer size */
 //#define LOG_grp_cmt_wait	8	/* Group commit wait time */
 #define LOG_max			8		/* Maximum LOG_clump value */
+
+} //namespace Jrd
 
 #endif // JRD_ODS_H
 

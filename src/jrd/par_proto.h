@@ -24,17 +24,22 @@
 #ifndef JRD_PAR_PROTO_H
 #define JRD_PAR_PROTO_H
 
-class jrd_nod;
+namespace Jrd {
+	class jrd_nod;
+	class Csb;
+	class jrd_rel;
+	class jrd_req;
+}
 
-jrd_nod*	PAR_blr(thread_db*, class jrd_rel*, const UCHAR*, class Csb*,
-					class Csb**, class jrd_req**, const bool, USHORT);
-USHORT		PAR_desc(class Csb*, struct dsc*);
-jrd_nod*	PAR_gen_field(thread_db*, USHORT, USHORT);
-jrd_nod*	PAR_make_field(thread_db*, class Csb*, USHORT, const TEXT*);
-jrd_nod*	PAR_make_list(thread_db*, class lls*);
-jrd_nod*	PAR_make_node(thread_db*, int);
-class Csb*	PAR_parse(thread_db*, const UCHAR*, USHORT);
-SLONG		PAR_symbol_to_gdscode(const char*);
+Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, Jrd::Csb*,
+					Jrd::Csb**, Jrd::jrd_req**, const bool, USHORT);
+USHORT			PAR_desc(Jrd::Csb*, struct dsc*);
+Jrd::jrd_nod*	PAR_gen_field(Jrd::thread_db*, USHORT, USHORT);
+Jrd::jrd_nod*	PAR_make_field(Jrd::thread_db*, Jrd::Csb*, USHORT, const TEXT*);
+Jrd::jrd_nod*	PAR_make_list(Jrd::thread_db*, class lls*);
+Jrd::jrd_nod*	PAR_make_node(Jrd::thread_db*, int);
+Jrd::Csb*		PAR_parse(Jrd::thread_db*, const UCHAR*, USHORT);
+SLONG			PAR_symbol_to_gdscode(const char*);
 
 #endif // JRD_PAR_PROTO_H
 

@@ -24,44 +24,46 @@
 #ifndef JRD_RLCK_PROTO_H
 #define JRD_RLCK_PROTO_H
 
+namespace Jrd {
+	class Lock;
+	class jrd_rel;
+	class jrd_tra;
+	struct record_param;
+	class Attachment;
+}
+struct blk;
+
 #ifdef PC_ENGINE
 
-class Lock;
-class jrd_rel;
-class jrd_tra;
-struct record_param;
-struct blk;
-class Attachment;
-
-Lock* RLCK_lock_record(record_param*, USHORT, lock_ast_t, blk*);
+Jrd::Lock* RLCK_lock_record(Jrd::record_param*, USHORT, lock_ast_t, blk*);
 									
-Lock* RLCK_lock_record_implicit(jrd_tra*, record_param*,
+Jrd::Lock* RLCK_lock_record_implicit(Jrd::jrd_tra*, Jrd::record_param*,
 											 USHORT, lock_ast_t, blk*);
-Lock* RLCK_lock_relation(jrd_rel*, USHORT, lock_ast_t, blk*);
-Lock* RLCK_range_relation(jrd_tra*, jrd_rel*, lock_ast_t, blk*);
-Lock* RLCK_record_locking(jrd_rel*);
-void RLCK_release_lock(Lock*);
-void RLCK_release_locks(class Attachment*);
+Jrd::Lock* RLCK_lock_relation(Jrd::jrd_rel*, USHORT, lock_ast_t, blk*);
+Jrd::Lock* RLCK_range_relation(Jrd::jrd_tra*, Jrd::jrd_rel*, lock_ast_t, blk*);
+Jrd::Lock* RLCK_record_locking(Jrd::jrd_rel*);
+void RLCK_release_lock(Jrd::Lock*);
+void RLCK_release_locks(Jrd::Attachment*);
 #endif
-Lock* RLCK_reserve_relation(struct thread_db*, jrd_tra*,
-										 jrd_rel*, bool, bool);
+Jrd::Lock* RLCK_reserve_relation(Jrd::thread_db*, Jrd::jrd_tra*,
+										 Jrd::jrd_rel*, bool, bool);
 
 /* TMN: This header did not match the implementation.
  * I moved the #ifdef as noted
  */
 /* #ifdef PC_ENGINE */
-void RLCK_shutdown_attachment(class Attachment*);
-void RLCK_shutdown_database(class Database*);
+void RLCK_shutdown_attachment(Jrd::Attachment*);
+void RLCK_shutdown_database(Jrd::Database*);
 #ifdef PC_ENGINE
-void RLCK_signal_refresh(jrd_tra*);
+void RLCK_signal_refresh(Jrd::jrd_tra*);
 #endif
 
-Lock* RLCK_transaction_relation_lock(jrd_tra*, jrd_rel*);
+Jrd::Lock* RLCK_transaction_relation_lock(Jrd::jrd_tra*, Jrd::jrd_rel*);
 
 #ifdef PC_ENGINE
-void RLCK_unlock_record(Lock*, record_param*);
-void RLCK_unlock_record_implicit(Lock*, record_param*);
-void RLCK_unlock_relation(Lock*, jrd_rel*);
+void RLCK_unlock_record(Lock*, Jrd::record_param*);
+void RLCK_unlock_record_implicit(Lock*, Jrd::record_param*);
+void RLCK_unlock_relation(Lock*, Jrd::jrd_rel*);
 #endif
 
 #endif // JRD_RLCK_PROTO_H

@@ -24,38 +24,42 @@
 #ifndef JRD_CCH_PROTO_H
 #define JRD_CCH_PROTO_H
 
-void		CCH_shutdown_database(Database*);
+namespace Ods {
+	struct pag;
+}
 
-USHORT		CCH_checksum(BufferDesc*);
+void		CCH_shutdown_database(Jrd::Database*);
+
+USHORT		CCH_checksum(Jrd::BufferDesc*);
 int			CCH_down_grade_dbb(void*);
-bool		CCH_exclusive(thread_db*, USHORT, SSHORT);
-bool		CCH_exclusive_attachment(thread_db*, USHORT, SSHORT);
-void		CCH_expand(thread_db*, ULONG);
-pag*		CCH_fake(thread_db*, win*, SSHORT);
-pag*		CCH_fetch(thread_db*, win*, USHORT, SSHORT, SSHORT, SSHORT, bool);
-SSHORT		CCH_fetch_lock(thread_db*, win*, USHORT, SSHORT, SSHORT, SSHORT);
-void		CCH_fetch_page(thread_db*, win*, SSHORT, bool);
-void		CCH_fini(thread_db*);
-void		CCH_flush(thread_db*, USHORT, SLONG);
-bool		CCH_free_page(thread_db*);
-SLONG		CCH_get_incarnation(win*);
-pag*		CCH_handoff(thread_db*, win*, SLONG, SSHORT, SSHORT, SSHORT, SSHORT);
-void		CCH_init(thread_db*, ULONG);
-void		CCH_mark(thread_db*, win*, USHORT);
-void		CCH_mark_must_write(thread_db*, win*);
-void		CCH_must_write(win*);
-Lock*		CCH_page_lock(thread_db*);
-void		CCH_precedence(thread_db*, win*, SLONG);
-void		CCH_prefetch(thread_db*, SLONG*, SSHORT);
-bool		CCH_prefetch_pages(thread_db*);
-void		CCH_release(thread_db*, win*, bool);
-void		CCH_release_and_free(win*);
-void		CCH_release_exclusive(thread_db*);
-bool		CCH_rollover_to_shadow(Database*, jrd_file*, const bool);
-void		CCH_unwind(thread_db*, bool);
-bool		CCH_validate(win*);
-void		CCH_flush_database(thread_db*);
-bool		CCH_write_all_shadows(thread_db*, Shadow*, BufferDesc*,
+bool		CCH_exclusive(Jrd::thread_db*, USHORT, SSHORT);
+bool		CCH_exclusive_attachment(Jrd::thread_db*, USHORT, SSHORT);
+void		CCH_expand(Jrd::thread_db*, ULONG);
+Ods::pag*	CCH_fake(Jrd::thread_db*, Jrd::win*, SSHORT);
+Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SSHORT, SSHORT, bool);
+SSHORT		CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SSHORT, SSHORT);
+void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, SSHORT, bool);
+void		CCH_fini(Jrd::thread_db*);
+void		CCH_flush(Jrd::thread_db*, USHORT, SLONG);
+bool		CCH_free_page(Jrd::thread_db*);
+SLONG		CCH_get_incarnation(Jrd::win*);
+Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, SLONG, SSHORT, SSHORT, SSHORT, SSHORT);
+void		CCH_init(Jrd::thread_db*, ULONG);
+void		CCH_mark(Jrd::thread_db*, Jrd::win*, USHORT);
+void		CCH_mark_must_write(Jrd::thread_db*, Jrd::win*);
+void		CCH_must_write(Jrd::win*);
+Jrd::Lock*	CCH_page_lock(Jrd::thread_db*);
+void		CCH_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
+void		CCH_prefetch(Jrd::thread_db*, SLONG*, SSHORT);
+bool		CCH_prefetch_pages(Jrd::thread_db*);
+void		CCH_release(Jrd::thread_db*, Jrd::win*, bool);
+void		CCH_release_and_free(Jrd::win*);
+void		CCH_release_exclusive(Jrd::thread_db*);
+bool		CCH_rollover_to_shadow(Jrd::Database*, Jrd::jrd_file*, const bool);
+void		CCH_unwind(Jrd::thread_db*, bool);
+bool		CCH_validate(Jrd::win*);
+void		CCH_flush_database(Jrd::thread_db*);
+bool		CCH_write_all_shadows(Jrd::thread_db*, Jrd::Shadow*, Jrd::BufferDesc*,
 					 ISC_STATUS*, USHORT, const bool);
 
 /* macros for dealing with cache pages */

@@ -27,6 +27,8 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+namespace Jrd {
+
 /* Note: The BlobControl class is the internal version of the
  * blob control structure (ISC_BLOB_CTL) which is in ibase.h.
  * Therefore this structure should be kept in sync with that one,
@@ -36,28 +38,36 @@
 // There's already a PTR defined for events, equivalent to SLONG.
 // Therefore, redefined PTR here as FPTR_BFILTER_CALLBACK
 class BlobControl;
+class blb;
 typedef ISC_STATUS (*FPTR_BFILTER_CALLBACK)(USHORT, BlobControl*);
 
 
 class BlobControl : public pool_alloc<type_ctl>
 {
 public:
-	FPTR_BFILTER_CALLBACK	ctl_source;				/* Source filter */
-	BlobControl*	ctl_source_handle;		/* Argument to pass to source filter */
+	FPTR_BFILTER_CALLBACK	ctl_source;	/* Source filter */
+	union {
+		blb*		source_handle;		/* Argument to pass to source filter */
+		BlobControl* ctl_handle;
+	};
 	SSHORT		ctl_to_sub_type;		/* Target type */
 	SSHORT		ctl_from_sub_type;		/* Source type */
 	USHORT		ctl_buffer_length;		/* Length of buffer */
 	USHORT		ctl_segment_length;		/* Length of current segment */
 	USHORT		ctl_bpb_length;			/* Length of blob parameter block */
-	const UCHAR*		ctl_bpb;				/* Address of blob parameter block */
+	// left char* for API compatibility
+	const UCHAR*	ctl_bpb;			/* Address of blob parameter block */
 	UCHAR*		ctl_buffer;				/* Address of segment buffer */
 	SLONG		ctl_max_segment;		/* Length of longest segment */
 	SLONG		ctl_number_segments;	/* Total number of segments */
 	SLONG		ctl_total_length;		/* Total length of blob */
-	ISC_STATUS*		ctl_status;				/* Address of status vector */
+	ISC_STATUS*		ctl_status;			/* Address of status vector */
 	IPTR		ctl_data[8];			/* Application specific data */
-	void*	ctl_internal[3];		/* Firebird internal-use only */
-	const UCHAR*	ctl_exception_message;	/* Message to use in case of filter exception */
+	void*	ctl_internal[3];			/* Firebird internal-use only */
+	Firebird::string	ctl_exception_message;	/* Message to use in case of filter exception */
+public:
+	BlobControl(MemoryPool& p) 
+		: ctl_exception_message(p) { }
 };
 
 
@@ -67,11 +77,13 @@ public:
 class BlobFilter : public pool_alloc<type_blf>
 {
     public:
-	BlobFilter*	blf_next;					/* Next known filter */
+	BlobFilter*	blf_next;				/* Next known filter */
 	SSHORT		blf_from;				/* Source sub-type */
 	SSHORT		blf_to;					/* Target sub-type */
-	FPTR_BFILTER_CALLBACK	blf_filter;		/* Entrypoint of filter */
-	STR			blf_exception_message;	/* message to be used in case of filter exception */
+	FPTR_BFILTER_CALLBACK	blf_filter;	/* Entrypoint of filter */
+	Firebird::string	blf_exception_message;	/* message to be used in case of filter exception */
+    public:
+	BlobFilter(MemoryPool& p) : blf_exception_message(p) { }
 };
 
 
@@ -89,6 +101,8 @@ class BlobFilter : public pool_alloc<type_blf>
 	"\treferencing entrypoint: \t%s\n"	\
 	"\t             in module: \t%s\n"	\
 	"\tcaused the fatal exception:"
+
+} //namespace Jrd
 
 #endif /* JRD_BLF_H */
 

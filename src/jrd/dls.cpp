@@ -35,6 +35,8 @@
 #include "../jrd/file_params.h"
 #include "../common/config/dir_list.h"
 
+using namespace Jrd;
+
 static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
 
 /*  Note that the only kind of writing permitted on the fdls list is

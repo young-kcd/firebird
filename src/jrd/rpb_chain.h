@@ -32,6 +32,8 @@
 
 // req.h defines struct record_param
 
+namespace Jrd {
+
 class traRpbListElement
 {
 public:
@@ -68,5 +70,8 @@ public:
 	int PushRpb(record_param* value);
 	bool PopRpb(record_param* value, int Level);
 };
+
+} //namespace Jrd
+
 #endif	//JRD_RPB_CHAIN_H
 

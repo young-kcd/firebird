@@ -24,28 +24,30 @@
 #ifndef JRD_EXT_PROTO_H
 #define JRD_EXT_PROTO_H
 
-struct bid;
-class ExternalFile;
+namespace Jrd {
+	class bid;
+	class ExternalFile;
+}
 
-void	EXT_close(Rsb*);
-void	EXT_erase(record_param*, int*);
-ExternalFile*	EXT_file(jrd_rel*, const TEXT*, bid*);
-void	EXT_fini(jrd_rel*);
-int	EXT_get(Rsb*);
-void	EXT_modify(record_param*, record_param*, int*);
+void	EXT_close(Jrd::Rsb*);
+void	EXT_erase(Jrd::record_param*, int*);
+Jrd::ExternalFile*	EXT_file(Jrd::jrd_rel*, const TEXT*, Jrd::bid*);
+void	EXT_fini(Jrd::jrd_rel*);
+int	EXT_get(Jrd::Rsb*);
+void	EXT_modify(Jrd::record_param*, Jrd::record_param*, int*);
 
 #ifdef VMS
-int	EXT_open(Rsb*);
+int	EXT_open(Jrd::Rsb*);
 #else
-void	EXT_open(Rsb*);
+void	EXT_open(Jrd::Rsb*);
 #endif
-Rsb*	EXT_optimize(Opt*, SSHORT, jrd_nod**);
-void	EXT_ready(jrd_rel*);
-void	EXT_store(record_param*, int*);
-void	EXT_trans_commit(jrd_tra*);
-void	EXT_trans_prepare(jrd_tra*);
-void	EXT_trans_rollback(jrd_tra*);
-void	EXT_trans_start(jrd_tra*);
+Jrd::Rsb*	EXT_optimize(Jrd::Opt*, SSHORT, Jrd::jrd_nod**);
+void	EXT_ready(Jrd::jrd_rel*);
+void	EXT_store(Jrd::record_param*, int*);
+void	EXT_trans_commit(Jrd::jrd_tra*);
+void	EXT_trans_prepare(Jrd::jrd_tra*);
+void	EXT_trans_rollback(Jrd::jrd_tra*);
+void	EXT_trans_start(Jrd::jrd_tra*);
 
 #endif // JRD_EXT_PROTO_H
 

@@ -64,7 +64,7 @@ static bool fAnsiCP = false;
 struct tsec *gdsec;
 #endif
 
-static int common_main(int, char**, pfn_svc_output, Service*);
+static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
 
 static void data_print(void*, const internal_user_data*, bool);
@@ -73,7 +73,7 @@ static bool get_switches(int, const TEXT* const*, const in_sw_tab_t*, tsec*, boo
 static SSHORT parse_cmd_line(int, const TEXT* const*, tsec*);
 static void printhelp(void);
 #ifndef SUPERSERVER
-static int output_main(Service*, const UCHAR*);
+static int output_main(Jrd::Service*, const UCHAR*);
 #endif
 
 void inline gsec_exit(int code, TSEC tdsec)
@@ -84,7 +84,7 @@ void inline gsec_exit(int code, TSEC tdsec)
 }
 
 #ifdef SUPERSERVER
-int GSEC_main(Service* service)
+int GSEC_main(Jrd::Service* service)
 {
 /**********************************************
  *
@@ -124,7 +124,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	return 0;
 }
 
-static int output_main(Service* output_data, const UCHAR* output_buf)
+static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
 {
 /**************************************
  *
@@ -144,8 +144,8 @@ static int output_main(Service* output_data, const UCHAR* output_buf)
 
 int common_main(int argc,
 				char* argv[],
-				pfn_svc_output output_proc,
-				Service* output_data)
+				Jrd::pfn_svc_output output_proc,
+				Jrd::Service* output_data)
 {
 /**************************************
  *
@@ -210,7 +210,7 @@ int common_main(int argc,
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
 		tdsec->tsec_service_gsec = true;
 		tdsec->tsec_service_thd = true;
-		tdsec->tsec_service_blk = (Service*) output_data;
+		tdsec->tsec_service_blk = (Jrd::Service*) output_data;
 		tdsec->tsec_status = tdsec->tsec_service_blk->svc_status;
 		argv++;
 		argc--;

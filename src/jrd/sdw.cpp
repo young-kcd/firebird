@@ -52,6 +52,9 @@
 #include "../jrd/thd_proto.h"
 
 
+using namespace Jrd;
+using namespace Ods;
+
 
 static void activate_shadow(void);
 static Shadow* allocate_shadow(jrd_file*, USHORT, USHORT);

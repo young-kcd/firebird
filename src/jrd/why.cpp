@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.59 2004-03-18 05:55:25 robocop Exp $
+$Id: why.cpp,v 1.60 2004-03-20 14:57:31 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -199,7 +199,7 @@ inline WHY_HNDL allocate_handle(int implementation, dsql_req* h, int handle_type
 	return handle;
 }
 
-inline WHY_HNDL allocate_handle(int implementation, jrd_tra* h, int handle_type)
+inline WHY_HNDL allocate_handle(int implementation, Jrd::jrd_tra* h, int handle_type)
 {
 	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_tra = h;
@@ -4711,7 +4711,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 
 	if (transaction->next)
 	{
-		sub = allocate_handle(SUBSYSTEMS, (class jrd_tra *)0, HANDLE_transaction);
+		sub = allocate_handle(SUBSYSTEMS, (class Jrd::jrd_tra *)0, HANDLE_transaction);
 		if (!sub)
 		{
 			/* No memory. Make a half-hearted attempt to rollback all sub-transactions. */

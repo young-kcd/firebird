@@ -42,11 +42,15 @@ const char* const NOT_NULL_CNSTRT	= "NOT NULL";
 
 #define GET_STRING_2(from,to)	DYN_get_string ((const TEXT**)from, (TEXT*)to, sizeof (to), false)
 
+namespace Jrd {
 
-typedef struct gbl
+class bid;
+class jrd_tra;
+
+struct gbl
 {
 	jrd_tra* gbl_transaction;
-} *GBL;
+};
 
 typedef struct dyn_fld {
 	dsc dyn_dsc;
@@ -63,11 +67,13 @@ typedef struct dyn_fld {
 
 } *DYN_FLD;
 
+} //namespace Jrd
+
 void	DYN_error(bool, USHORT, const TEXT*, const TEXT*, const TEXT*,
 				const TEXT*, const TEXT*);
 void	DYN_error_punt(bool, USHORT, const TEXT*, const TEXT*,
 				const TEXT*, const TEXT*, const TEXT*);
-void	DYN_execute(GBL, const UCHAR**, const TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void	DYN_execute(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 SLONG	DYN_get_number(const UCHAR**);
 USHORT	DYN_get_string(const TEXT**, TEXT*, USHORT, bool);
 
@@ -75,17 +81,17 @@ USHORT	DYN_get_string(const TEXT**, TEXT*, USHORT, bool);
 // void	DYN_get_string2(TEXT**, TEXT*, USHORT);
 
 // This function doesn't need to be exported currently.
-bool	DYN_is_it_sql_role(GBL, const TEXT*, TEXT*, thread_db*);
-USHORT	DYN_put_blr_blob(GBL, const UCHAR**, struct bid*);
+bool	DYN_is_it_sql_role(Jrd::gbl*, const TEXT*, TEXT*, Jrd::thread_db*);
+USHORT	DYN_put_blr_blob(Jrd::gbl*, const UCHAR**, Jrd::bid*);
 
 // This function is not defined anywhere.
-//USHORT	DYN_put_blr_blob2(GBL, const UCHAR**, ISC_QUAD *);
+//USHORT	DYN_put_blr_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
 
-USHORT	DYN_put_text_blob(GBL, const UCHAR**, struct bid*);
+USHORT	DYN_put_text_blob(Jrd::gbl*, const UCHAR**, Jrd::bid*);
 // This function is not defined anywhere.
-//USHORT	DYN_put_text_blob2(GBL, const UCHAR**, ISC_QUAD *);
+//USHORT	DYN_put_text_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
 
-void	DYN_rundown_request(BLK, SSHORT);
+void	DYN_rundown_request(Jrd::jrd_req*, SSHORT);
 USHORT	DYN_skip_attribute(const UCHAR**);
 
 // This function is not defined anywhere.

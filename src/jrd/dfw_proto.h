@@ -24,15 +24,15 @@
 #ifndef JRD_DFW_PROTO_H
 #define JRD_DFW_PROTO_H
 
-USHORT DFW_assign_index_type(DeferredWork*, SSHORT, SSHORT);
-void DFW_delete_deferred(jrd_tra*, SLONG);
-void DFW_merge_work(jrd_tra*, SLONG, SLONG);
+USHORT DFW_assign_index_type(Jrd::DeferredWork*, SSHORT, SSHORT);
+void DFW_delete_deferred(Jrd::jrd_tra*, SLONG);
+void DFW_merge_work(Jrd::jrd_tra*, SLONG, SLONG);
 void DFW_perform_system_work(void);
-void DFW_perform_work(jrd_tra*);
-void DFW_perform_post_commit_work(jrd_tra*);
-DeferredWork* DFW_post_work(jrd_tra*, enum dfw_t, dsc*, USHORT);
-void DFW_post_work_arg(jrd_tra*, DeferredWork*, dsc*, USHORT);
-void DFW_update_index(const TEXT*, USHORT, const SelectivityList&);
+void DFW_perform_work(Jrd::jrd_tra*);
+void DFW_perform_post_commit_work(Jrd::jrd_tra*);
+Jrd::DeferredWork* DFW_post_work(Jrd::jrd_tra*, enum Jrd::dfw_t, dsc*, USHORT);
+void DFW_post_work_arg(Jrd::jrd_tra*, Jrd::DeferredWork*, dsc*, USHORT);
+void DFW_update_index(const TEXT*, USHORT, const Jrd::SelectivityList&);
 
 #endif // JRD_DFW_PROTO_H
 

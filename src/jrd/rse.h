@@ -36,14 +36,19 @@
 
 #include "../jrd/dsc.h"
 
+class str;
+
+namespace Jrd {
+
 class jrd_req;
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
 class SparseBitmap;
-class str;
 struct sort_work_file;
 struct sort_context;
+class jrd_prc;
+class fmt;
 
 // Record source block (RSB) types
 
@@ -84,8 +89,8 @@ public:
 	Rsb* rsb_next;						// next rsb, if appropriate
 	jrd_rel*	rsb_relation;			// relation, if appropriate
 	str*		rsb_alias;				// SQL alias for relation
-	class jrd_prc* rsb_procedure;		// procedure, if appropriate
-	class fmt* rsb_format;				// format, if appropriate
+	jrd_prc* rsb_procedure;		// procedure, if appropriate
+	fmt* rsb_format;				// format, if appropriate
 	jrd_nod* rsb_any_boolean;	// any/all boolean
 	Rsb* rsb_arg[1];
 };
@@ -411,6 +416,8 @@ typedef enum rse_get_mode {
 	RSE_get_last,
 	RSE_get_next
 } RSE_GET_MODE;
+
+} //namespace Jrd
 
 #endif // JRD_RSE_H
 

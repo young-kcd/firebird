@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.59 2004-03-19 06:14:46 robocop Exp $
+$Id: blb.cpp,v 1.60 2004-03-20 14:57:28 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -71,6 +71,8 @@ $Id: blb.cpp,v 1.59 2004-03-19 06:14:46 robocop Exp $
 #include "../jrd/thd_proto.h"
 #include "../jrd/dsc_proto.h"
 
+using namespace Jrd;
+typedef Ods::blob_page blob_page;
 
 inline bool SEGMENTED(const blb* blob)
 {
@@ -231,7 +233,7 @@ blb* BLB_create2(thread_db* tdbb,
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
-			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter();
+			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
 			filter->blf_filter = filter_transliterate_text;
 			filter_required = true;
 		}
@@ -1072,7 +1074,7 @@ blb* BLB_open2(thread_db* tdbb,
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
-			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter();
+			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
 			filter->blf_filter = filter_transliterate_text;
 			filter_required = true;
 		}
@@ -1659,9 +1661,9 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
    database page size. */
 
 	blob->blb_clump_size = dbb->dbb_page_size -
-							sizeof(data_page) -
-							sizeof(data_page::dpg_repeat) -
-							sizeof(blh);
+							sizeof(Ods::data_page) -
+							sizeof(Ods::data_page::dpg_repeat) -
+							sizeof(Ods::blh);
 	blob->blb_max_pages = blob->blb_clump_size >> SHIFTLONG;
 	blob->blb_pointers = (dbb->dbb_page_size - BLP_SIZE) >> SHIFTLONG;
 	blob->blb_temp_id = ++transaction->tra_next_blob_id;
@@ -1705,14 +1707,14 @@ static ISC_STATUS blob_filter(	USHORT	action,
 	switch (action) {
 	case ACTION_open:
 		blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
-		control->ctl_source_handle = (BlobControl*) blob;
+		control->source_handle = blob;
 		control->ctl_total_length = blob->blb_length;
 		control->ctl_max_segment = blob->blb_max_segment;
 		control->ctl_number_segments = blob->blb_count;
 		return FB_SUCCESS;
 
 	case ACTION_get_segment:
-		blob = (blb*) control->ctl_source_handle;
+		blob = control->source_handle;
 		control->ctl_segment_length =
 			BLB_get_segment(tdbb, blob, control->ctl_buffer,
 							control->ctl_buffer_length);
@@ -1725,31 +1727,30 @@ static ISC_STATUS blob_filter(	USHORT	action,
 		return FB_SUCCESS;
 
 	case ACTION_create:
-		control->ctl_source_handle =
-			(BlobControl*) BLB_create2(tdbb, transaction, blob_id, 0, NULL);
+		control->source_handle =
+			BLB_create2(tdbb, transaction, blob_id, 0, NULL);
 		return FB_SUCCESS;
 
 	case ACTION_put_segment:
-		blob = (blb*) control->ctl_source_handle;
+		blob = control->source_handle;
 		BLB_put_segment(tdbb, blob, control->ctl_buffer,
 						control->ctl_buffer_length);
 		return FB_SUCCESS;
 
 	case ACTION_close:
-		BLB_close(tdbb,
-				  reinterpret_cast<blb*>(control->ctl_source_handle));
+		BLB_close(tdbb, control->source_handle);
 		return FB_SUCCESS;
 
 	case ACTION_alloc:
 	    // pointer to ISC_STATUS!!!
-		return (ISC_STATUS) FB_NEW(*transaction->tra_pool) BlobControl();
+		return (ISC_STATUS) FB_NEW(*transaction->tra_pool) BlobControl(*transaction->tra_pool);
 
 	case ACTION_free:
 		delete control;
 		return FB_SUCCESS;
 
 	case ACTION_seek:
-		return BLB_lseek((blb*) control->ctl_source_handle, mode, offset);
+		return BLB_lseek(control->source_handle, mode, offset);
 
 	default:
 		ERR_post(isc_uns_ext, 0);

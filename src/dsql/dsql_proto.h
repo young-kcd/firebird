@@ -24,12 +24,17 @@
 #ifndef DSQL_DSQL_PROTO_H
 #define DSQL_DSQL_PROTO_H
 
+#include "fb_string.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-class Attachment;
-class jrd_tra;
+namespace Jrd {
+	class Attachment;
+	class jrd_tra;
+}
+
 class dsql_req;
 
 ISC_STATUS dsql8_allocate_statement(ISC_STATUS*, FRBRD**, dsql_req**);
@@ -63,9 +68,9 @@ ISC_STATUS dsql8_sql_info(ISC_STATUS*, dsql_req**, USHORT,
 										const SCHAR*, USHORT, SCHAR*);
 
 ISC_STATUS callback_execute_immediate(ISC_STATUS* status,
-									Attachment* jrd_attachment_handle,
-									jrd_tra* jrd_transaction_handle,
-									const TEXT* sql_operator, int len);
+									Jrd::Attachment* jrd_attachment_handle,
+									Jrd::jrd_tra* jrd_transaction_handle,
+									const Firebird::string& sql_operator);
 
 
 #ifdef __cplusplus

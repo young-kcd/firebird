@@ -27,6 +27,8 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+namespace Jrd {
+
 /* Shadowing block */
 
 class Shadow : public pool_alloc<type_sdw>
@@ -53,6 +55,8 @@ class Shadow : public pool_alloc<type_sdw>
 
 #define SDW_INVALID	(SDW_shutdown | SDW_delete | SDW_rollover | SDW_conditional)
 #define SDW_IGNORE	(SDW_shutdown | SDW_delete)
+
+} //namespace Jrd
 
 #endif // JRD_SDW_H
 

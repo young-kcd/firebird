@@ -24,12 +24,14 @@
 #ifndef JRD_EXT_H
 #define JRD_EXT_H
 
+namespace Jrd {
+
 /* External file access block */
 
 class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 {
     public:
-	fmt*	ext_format;			/* External format */
+	Jrd::fmt*	ext_format;			/* External format */
 	UCHAR*	ext_stuff;			/* Random stuff */
 	USHORT	ext_flags;			/* Misc and cruddy flags */
 #ifdef VMS
@@ -61,6 +63,8 @@ typedef struct irsb_ext {
 #define rpb_ext_pos	rpb_page
 #define rpb_ext_isi	rpb_f_page
 #define rpb_ext_dbkey	rpb_b_page
+
+} //namespace Jrd
 
 #endif // JRD_EXT_H
 

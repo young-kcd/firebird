@@ -199,6 +199,7 @@ static const SQUAD quad_max_int = { LONG_MAX, -1 };
 #include "../jrd/quad.cpp"
 #endif
 
+using namespace Jrd;
 
 double CVT_date_to_double(const dsc* desc, FPTR_ERROR err)
 {

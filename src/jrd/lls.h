@@ -33,7 +33,7 @@
 class lls : public pool_alloc<type_lls>
 {
 	public:
-		BLK lls_object;
+		blk* lls_object;
 		lls* lls_next;
 };
 typedef lls *LLS;

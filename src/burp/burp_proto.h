@@ -25,7 +25,7 @@
 #define BURP_BURP_PROTO_H
 
 #ifdef SUPERSERVER
-int BURP_main(Service* service);
+int BURP_main(Jrd::Service* service);
 #endif
 
 void	BURP_abort(void);

@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.40 2004-03-19 06:14:47 robocop Exp $
+$Id: fun.epp,v 1.41 2004-03-20 14:57:29 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -67,6 +67,8 @@ $Id: fun.epp,v 1.40 2004-03-19 06:14:47 robocop Exp $
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/blb.h"
 
+using namespace Jrd;
+
 #ifdef VMS
 #define CALL_UDF(ptr, udftype)     (*(udftype (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
 #else
@@ -85,16 +87,12 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 /* Updated definitions from the static functions in fun.epp */
 
 typedef struct blob_t {
-//	SSHORT(*blob_get_segment) ();
 	SSHORT (*blob_get_segment) (blb*, UCHAR*, USHORT, USHORT*);
-//	int* blob_handle;
 	void* blob_handle;
 	SLONG blob_number_segments;
 	SLONG blob_max_segment;
 	SLONG blob_total_length;
-//	void (*blob_put_segment) ();
 	void (*blob_put_segment) (blb*, const UCHAR*, USHORT);
-//	SLONG(*blob_seek) ();
 	SLONG (*blob_seek) (blb*, USHORT, SLONG);
 } *BLOB;
 
@@ -177,7 +175,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 	try {
 #endif
 
-	START_CHECK_FOR_EXCEPTIONS( (TEXT*) function->fun_exception_message);
+	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 
 	// If the return data type is any of the string types,
 	// allocate space to hold value
@@ -685,7 +683,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 		}
 	}
 
-	END_CHECK_FOR_EXCEPTIONS((TEXT*)function->fun_exception_message);
+	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 
 	if (unsup_datatype) {
 		IBERROR(169);			// msg 169 return data type not supported
@@ -811,8 +809,8 @@ FUN FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 	fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
 	FUN prior = NULL;
 
-	blk* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
-	blk* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
+	jrd_req* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
+	jrd_req* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request_fun) X IN RDB$FUNCTIONS
 		WITH X.RDB$FUNCTION_NAME EQ name 
@@ -845,7 +843,8 @@ FUN FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 				l = sizeof(blob_t);
 			length += l;
         END_FOR;
-		FUN function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1) fun;
+		FUN function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1) 
+							  fun(*dbb->dbb_permanent);
 		function->fun_count = count;
 		function->fun_args = args;
 		function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
@@ -865,14 +864,8 @@ FUN FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 		/* Prepare the exception message to be used in case this function ever
 		   causes an exception.  This is done at this time to save us from preparing
 		   (thus allocating) this message every time the function is called. */
-		str* exception_msg =
-			FB_NEW_RPT(*dbb->dbb_permanent,
-						  strlen(EXCEPTION_MESSAGE) + strlen(name) +
-						  strlen(X.RDB$ENTRYPOINT) +
-						  strlen(X.RDB$MODULE_NAME) + 1) str;
-		sprintf((char*)exception_msg->str_data, EXCEPTION_MESSAGE, name,
+		function->fun_exception_message.printf(EXCEPTION_MESSAGE, name,
 				X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
-		function->fun_exception_message = exception_msg;
 
 		function->fun_entrypoint =
 			ISC_lookup_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT,

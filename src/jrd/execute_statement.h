@@ -45,13 +45,14 @@ private:
 	SCHAR	* Buffer;
 	bool	SingleMode;
 	TEXT	* StartOfSqlOperator;
-	XSQLDA	* MakeSqlda(thread_db* tdbb, SSHORT n);
-	ISC_STATUS	ReMakeSqlda(ISC_STATUS *vector, thread_db* tdbb);
+	XSQLDA	* MakeSqlda(Jrd::thread_db* tdbb, SSHORT n);
+	ISC_STATUS	ReMakeSqlda(ISC_STATUS *vector, Jrd::thread_db* tdbb);
 	ULONG	ParseSqlda(void);
 public:
-	void Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTon);
-	bool Fetch(thread_db* tdbb, jrd_nod** FirstVar);
-	void Close(thread_db* tdbb);
+	void Open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool SingleTon);
+	bool Fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** FirstVar);
+	void Close(Jrd::thread_db* tdbb);
+	static void getString(Firebird::string&, const dsc* d, const Jrd::jrd_req* r);
 };
 
 #endif // JRD_EXECUTE_STATEMENT_H

@@ -175,6 +175,8 @@ static size_t getpagesize(void)
 
 #endif
 
+using namespace Jrd;
+
 static void		error(ISC_STATUS*, TEXT*, ISC_STATUS);
 
 #ifdef UNIX

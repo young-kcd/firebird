@@ -141,6 +141,8 @@ typedef enum rids
 
 DATABASE DB = FILENAME "ODS.RDB";
 
+using namespace Jrd;
+
 /*==================================================================
 **
 ** NOTE:
@@ -198,7 +200,7 @@ static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
 static blb*	setup_triggers(thread_db*, jrd_rel*, bool, trig_vec**, blb*);
 static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*,
 	const TEXT*, bool);
-//static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, VEC *, UCHAR *, UCHAR *, BOOLEAN);
+//static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, vec**, UCHAR *, UCHAR *, BOOLEAN);
 //static bool shadow_defined(thread_db*);
 static bool validate_text_type (thread_db*, ISC_STATUS *, TemporaryField*);
 
@@ -692,7 +694,7 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
 
 	if (dbb->dbb_ods_version >= ODS_VERSION11) {
 
-		blk* request = CMP_find_request(tdbb, irq_m_index_seg, IRQ_REQUESTS);
+		jrd_req* request = CMP_find_request(tdbb, irq_m_index_seg, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			SEG IN RDB$INDEX_SEGMENTS WITH SEG.RDB$INDEX_NAME EQ name
@@ -708,7 +710,7 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
 			REQUEST(irq_m_index_seg) = request;
 	}
 
-	blk* request = CMP_find_request(tdbb, irq_m_index, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_m_index, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name
@@ -743,7 +745,6 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  **************************************/
 	USHORT section, shadow_number;
 	SLONG start, max;
-	BLK handle, handle2;
 	Firebird::PathName temp;
 
 	SET_TDBB(tdbb);
@@ -776,7 +777,8 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	case 4:
 		CCH_flush(tdbb, (USHORT) FLUSH_FINI, 0L);
 		max = PIO_max_alloc(dbb) + 1;
-		handle = handle2 = NULL;
+		jrd_req* handle = 0;
+		jrd_req* handle2 = 0;
 
 		/* Check the file name for node name.  This has already been done for 
 		   ** shadows in add_shadow() */
@@ -829,10 +831,10 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 		END_FOR;
 
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 		if (handle2)
 		{
-			CMP_release(tdbb, (jrd_req*)handle2);
+			CMP_release(tdbb, handle2);
 		}
 
 		if (section)
@@ -846,7 +848,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					X.RDB$FILE_LENGTH = start - X.RDB$FILE_START;
 				END_MODIFY;
 			END_FOR;
-			CMP_release(tdbb, (jrd_req*)handle);
+			CMP_release(tdbb, handle);
 		}
 
 		CCH_release_exclusive(tdbb);
@@ -875,7 +877,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *
  **************************************/
 
-	BLK handle;
+	jrd_req* handle;
 	Shadow* shadow;
 	USHORT sequence, add_sequence;
 	bool finished;
@@ -960,7 +962,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				}
 
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 
 		if (finished) {
 			return false;
@@ -1029,7 +1031,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 		break;
 	}
 
@@ -1225,7 +1227,7 @@ static void check_dependencies(thread_db* tdbb,
 
 	if (field_name)
 	{
-		blk* request = CMP_find_request(tdbb, irq_ch_f_dpd, IRQ_REQUESTS);
+		jrd_req* request = CMP_find_request(tdbb, irq_ch_f_dpd, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			DEP IN RDB$DEPENDENCIES
@@ -1253,7 +1255,7 @@ static void check_dependencies(thread_db* tdbb,
 	}
 	else
 	{
-		blk* request = CMP_find_request(tdbb, irq_ch_dpd, IRQ_REQUESTS);
+		jrd_req* request = CMP_find_request(tdbb, irq_ch_dpd, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			DEP IN RDB$DEPENDENCIES
@@ -1439,14 +1441,14 @@ static bool compute_security(	thread_db*	tdbb,
 
 		scl* s_class = SCL_recompute_class(tdbb, work->dfw_name);
 
-		blk* handle = NULL;
+		jrd_req* handle = NULL;
 		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
 			WITH X.RDB$SECURITY_CLASS EQ work->dfw_name
 
             tdbb->tdbb_attachment->att_security_class = s_class;
 
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 		break;
 		}
 	}
@@ -1457,7 +1459,7 @@ static bool compute_security(	thread_db*	tdbb,
       Note: fld_security_class  --> fld_security_name
             rel_security_class  --> rel_security_name
 
-blk* handle = NULL;
+jrd_req* handle = NULL;
 for (request_handle handle) x in rdb$relation_fields 
 	with x.rdb$security_class eq work->dfw_name
     if (relation = MET_lookup_relation (tdbb, x.rdb$relation_name))
@@ -1496,14 +1498,14 @@ static bool create_index(	thread_db*	tdbb,
  *	Create a new index or change the state of an index between active/inactive.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	jrd_rel* relation;
 	jrd_rel* partner_relation;
 	IDX idx;
 	int key_count;
 	SSHORT text_type;
 	SSHORT collate;
-	BLK handle;
+	jrd_req* handle;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -1546,7 +1548,7 @@ static bool create_index(	thread_db*	tdbb,
 			}
 		END_FOR;
 
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 		CCH_release_exclusive(tdbb);
 		return false;
 
@@ -1584,7 +1586,7 @@ static bool create_index(	thread_db*	tdbb,
 					MET_lookup_relation_id(tdbb, REL.RDB$RELATION_ID, false);
 				if (!relation)
 				{
-					EXE_unwind(tdbb, (jrd_req*)request);
+					EXE_unwind(tdbb, request);
 					ERR_post(isc_no_meta_update,
 							 isc_arg_gds, isc_idx_create_err,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
@@ -1598,7 +1600,7 @@ static bool create_index(	thread_db*	tdbb,
 					IDX_statistics(tdbb, relation, id, selectivity);
 					DFW_update_index(work->dfw_name, id, selectivity);
 
-					EXE_unwind(tdbb, (jrd_req*)request);
+					EXE_unwind(tdbb, request);
 					return false;
 				}
 				if (IDX.RDB$INDEX_ID)
@@ -1612,13 +1614,13 @@ static bool create_index(	thread_db*	tdbb,
 				}
 				if (IDX.RDB$INDEX_INACTIVE)
 				{
-					EXE_unwind(tdbb, (jrd_req*)request);
+					EXE_unwind(tdbb, request);
 					return false;
 				}
 				idx.idx_count = IDX.RDB$SEGMENT_COUNT;
 				if (!idx.idx_count || idx.idx_count > MAX_INDEX_SEGMENTS)
 				{
-					EXE_unwind(tdbb, (jrd_req*)request);
+					EXE_unwind(tdbb, request);
 					if (!idx.idx_count)
 						ERR_post(isc_no_meta_update,
 								 isc_arg_gds, isc_idx_seg_err,
@@ -1639,7 +1641,7 @@ static bool create_index(	thread_db*	tdbb,
 				if (!IDX.RDB$FOREIGN_KEY.NULL)
 					idx.idx_flags |= idx_foreign;
 
-				BLK rc_request = NULL;
+				jrd_req* rc_request = NULL;
 
 				FOR(REQUEST_HANDLE rc_request)
 					RC IN RDB$RELATION_CONSTRAINTS WITH
@@ -1650,7 +1652,7 @@ static bool create_index(	thread_db*	tdbb,
 
 				END_FOR;
 
-				CMP_release(tdbb, (jrd_req*)rc_request);
+				CMP_release(tdbb, rc_request);
 			}
 
 			if (++key_count > idx.idx_count ||
@@ -1658,7 +1660,7 @@ static bool create_index(	thread_db*	tdbb,
 				FLD.RDB$FIELD_TYPE == blr_blob ||
 				!FLD.RDB$DIMENSIONS.NULL)
 			{
-				EXE_unwind(tdbb, (jrd_req*)request);
+				EXE_unwind(tdbb, request);
 				if (key_count > idx.idx_count)
 					ERR_post(isc_no_meta_update,
 							 isc_arg_gds, isc_idx_key_err,
@@ -1851,11 +1853,11 @@ static bool create_relation(thread_db*	tdbb,
  *	Create a new relation.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	jrd_rel* relation;
 	USHORT rel_id, external_flag;
 	bid blob_id;
-	BLK handle;
+	jrd_req* handle;
 	Lock* lock;
 
 	SET_TDBB(tdbb);
@@ -1938,7 +1940,7 @@ static bool create_relation(thread_db*	tdbb,
 					}
 					if (rel_id == X.RDB$RELATION_ID)
 					{
-						EXE_unwind(tdbb, (jrd_req*)request);
+						EXE_unwind(tdbb, request);
 						ERR_post(isc_no_meta_update,
 								 isc_arg_gds, isc_table_name,
 								 isc_arg_string, ERR_cstring(work->dfw_name),
@@ -1967,7 +1969,7 @@ static bool create_relation(thread_db*	tdbb,
                             Y.RDB$DBKEY_LENGTH += R.RDB$DBKEY_LENGTH;
 
 						END_FOR;
-						CMP_release(tdbb, (jrd_req*)handle);
+						CMP_release(tdbb, handle);
 					}
 				END_MODIFY
 			END_MODIFY
@@ -2175,7 +2177,7 @@ static bool delete_field(	thread_db*	tdbb,
  **************************************/
 
 	int field_count;
-	BLK handle;
+	jrd_req* handle;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -2204,7 +2206,7 @@ static bool delete_field(	thread_db*	tdbb,
                 field_count++;
 			}
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 
 		if (field_count)
 			ERR_post(isc_no_meta_update,
@@ -2256,7 +2258,7 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		{
-		blk* handle = NULL;
+		jrd_req* handle = NULL;
 		FOR(REQUEST_HANDLE handle)
 			FLD IN RDB$FIELDS WITH
 				FLD.RDB$FIELD_NAME EQ work->dfw_name AND
@@ -2265,7 +2267,7 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work,
             MET_delete_dependencies(tdbb, work->dfw_name, obj_computed);
 
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 		break;
 		}
 	}
@@ -2597,7 +2599,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *	a relation, and if so, clean up after it.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	jrd_rel* relation;
 	Resource* rsc;
 	USHORT wait, view_count, adjusted;
@@ -2639,7 +2641,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)request);
+		CMP_release(tdbb, request);
 
 		if (view_count)
 		{
@@ -2788,7 +2790,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		MET_release_triggers(tdbb, &relation->rel_pre_modify);
 		MET_release_triggers(tdbb, &relation->rel_post_modify);
 	
-		CMP_release(tdbb, (jrd_req*)request);
+		CMP_release(tdbb, request);
 		break;
 	}
 
@@ -2815,10 +2817,10 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *
  **************************************/
 	int rel_exists, field_count, id;
-	BLK handle;
+	jrd_req* handle;
 	TEXT f[32];
 	jrd_rel* relation;
-	VEC vector;
+	vec* vector;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -2852,7 +2854,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				field_count++;
 			}
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 
 		if (field_count)
 			ERR_post(isc_no_meta_update,
@@ -2879,7 +2881,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
             rel_exists++;
 		END_FOR;
 		if (handle)
-			CMP_release(tdbb, (jrd_req*)handle);
+			CMP_release(tdbb, handle);
 
 		/* if table exists, check if this is the last column in the table */
 
@@ -2896,7 +2898,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			END_FOR;
 			if (handle)
 			{
-				CMP_release(tdbb, (jrd_req*)handle);
+				CMP_release(tdbb, handle);
 			}
 
 			if (!field_count)
@@ -3069,7 +3071,7 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 		/* Computed fields are more complicated.  If the global field isn't being
 		   deleted, see if all of the fields it is the source for, are. */
 
-		blk* request = CMP_find_request(tdbb, irq_ch_cmp_dpd, IRQ_REQUESTS);
+		jrd_req* request = CMP_find_request(tdbb, irq_ch_cmp_dpd, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			FLD IN RDB$FIELDS CROSS
@@ -3083,7 +3085,7 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
             if (!find_depend_in_dfw(tdbb, RFR.RDB$FIELD_NAME, obj_computed,
                                     REL.RDB$RELATION_ID, transaction))
 			{
-				EXE_unwind(tdbb, (jrd_req*)request);
+				EXE_unwind(tdbb, request);
 				return false;
 			}
 		END_FOR;
@@ -3115,7 +3117,7 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	blk* request = CMP_find_request(tdbb, irq_r_fld_dim, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_r_fld_dim, IRQ_REQUESTS);
 
 	internal_array_desc::iad_repeat* ranges = 0;
 	FOR (REQUEST_HANDLE request)
@@ -3174,7 +3176,7 @@ static void get_procedure_dependencies(DeferredWork* work)
 	jrd_prc* procedure = NULL;
 	bid blob_id = {0, 0};
 
-	blk* handle = CMP_find_request(tdbb, irq_c_prc_dpd, IRQ_REQUESTS);
+	jrd_req* handle = CMP_find_request(tdbb, irq_c_prc_dpd, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle)
 		X IN RDB$PROCEDURES WITH
@@ -3236,7 +3238,7 @@ static void get_trigger_dependencies( DeferredWork* work)
 
 	jrd_rel* relation = NULL;
 
-	blk* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
+	jrd_req* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
 	bid blob_id = {0, 0};
 	FOR(REQUEST_HANDLE handle)
 		X IN RDB$TRIGGERS WITH
@@ -3425,14 +3427,14 @@ static fmt* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 
 /* Link the format block into the world */
 
-	VEC vector = relation->rel_formats =
+	vec* vector = relation->rel_formats =
 		vec::newVector(*dbb->dbb_permanent, relation->rel_formats,
 					   format->fmt_version + 1);
 	(*vector)[format->fmt_version] = format;
 
 /* Store format in system relation */
 
-	blk* request = CMP_find_request(tdbb, irq_format3, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_format3, IRQ_REQUESTS);
 
 	STORE(REQUEST_HANDLE request)
 		FMTS IN RDB$FORMATS
@@ -3473,13 +3475,12 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *	While we're in the vicinity, also check the updatability of fields.
  *
  **************************************/
-	BLK request_fmt1, request_fmtx;
 	TemporaryField* stack;
 	TemporaryField* external;
 	jrd_rel* relation;
 	blb* blob;
 	bid blob_id;
-	BLK temp;
+	jrd_req* temp;
 	USHORT version, n, external_flag;
 	bool computed_field;
 	ISC_STATUS_ARRAY status;
@@ -3505,7 +3506,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			triggers[n] = NULL;
 		}
 
-		request_fmt1 = CMP_find_request(tdbb, irq_format1, IRQ_REQUESTS);
+		jrd_req* request_fmt1 = CMP_find_request(tdbb, irq_format1, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request_fmt1)
 			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ work->dfw_name
@@ -3516,7 +3517,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				 MET_lookup_relation_id(tdbb, REL.RDB$RELATION_ID, false);
 			if (!relation)
 			{
-				EXE_unwind(tdbb, (jrd_req*)request_fmt1);
+				EXE_unwind(tdbb, request_fmt1);
 				return false;
 			}
 			blob_id = REL.RDB$VIEW_BLR;
@@ -3524,7 +3525,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			external_flag = REL.RDB$EXTERNAL_FILE[0];
 			if (REL.RDB$FORMAT == 255)
 			{
-				EXE_unwind(tdbb, (jrd_req*)request_fmt1);
+				EXE_unwind(tdbb, request_fmt1);
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_table_name,
 						 isc_arg_string, ERR_cstring(work->dfw_name),
@@ -3536,7 +3537,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				blob = BLB_create(tdbb,
 								dbb->dbb_sys_trans,
 								&REL.RDB$RUNTIME);
-				request_fmtx = CMP_find_request(tdbb, irq_format2, IRQ_REQUESTS);
+				jrd_req* request_fmtx = CMP_find_request(tdbb, irq_format2, IRQ_REQUESTS);
 				FOR(REQUEST_HANDLE request_fmtx)
 					RFR IN RDB$RELATION_FIELDS CROSS
 						FLD IN RDB$FIELDS WITH
@@ -3589,7 +3590,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 										X.RDB$TRIGGER_TYPE EQ 1
                                     RFR.RDB$UPDATE_FLAG = 1;
 								END_FOR;
-								CMP_release(tdbb, (jrd_req*)temp);
+								CMP_release(tdbb, temp);
 							}
 						}
 					END_MODIFY;
@@ -3667,8 +3668,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					/* Make sure the text type specified is implemented */
 				    if (!(validate_text_type(tdbb, status, tfb)))
 					{
-						EXE_unwind(tdbb, (jrd_req*)request_fmt1);
-						EXE_unwind(tdbb, (jrd_req*)request_fmtx);
+						EXE_unwind(tdbb, request_fmt1);
+						EXE_unwind(tdbb, request_fmtx);
 						ERR_post(isc_no_meta_update,
 								 isc_arg_gds, isc_random,
 								 isc_arg_string, ERR_cstring(work->dfw_name),
@@ -3744,7 +3745,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
                 FMTS.RDB$FORMAT EQ 0
                 ERASE FMTS;
 			END_FOR;
-			CMP_release(tdbb, (jrd_req*)temp);
+			CMP_release(tdbb, temp);
 			make_format(tdbb, relation, 0, external);
 		}
 
@@ -4246,14 +4247,14 @@ static bool shadow_defined(thread_db* tdbb)
 	Database* dbb = tdbb->tdbb_database;
 
 	bool result = false;
-	BLK  handle = NULL;
+	jrd_req*  handle = NULL;
 
 	FOR(REQUEST_HANDLE handle) FIRST 1 X IN RDB$FILES 
         WITH X.RDB$SHADOW_NUMBER > 0
 		result = true;
 	END_FOR
 
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 
 	return result;
 }
@@ -4320,7 +4321,7 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 
 	/* system triggers */
 
-	blk* request_fmtx = CMP_find_request(tdbb, irq_format4, IRQ_REQUESTS);
+	jrd_req* request_fmtx = CMP_find_request(tdbb, irq_format4, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE request_fmtx) 
 		TRG IN RDB$TRIGGERS 

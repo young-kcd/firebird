@@ -24,6 +24,8 @@
 #ifndef JRD_SCL_H
 #define JRD_SCL_H
 
+namespace Jrd {
+
 /* Security class definition */
 
 class scl : public pool_alloc_rpt<SCHAR, type_scl>
@@ -83,6 +85,8 @@ class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 #define object_table "TABLE"
 #define object_procedure "PROCEDURE"
 #define object_column "COLUMN"
+
+} //namespace Jrd
 
 #endif // JRD_SCL_H
 

@@ -381,6 +381,22 @@ namespace Firebird {
 		x.newStorage[NewLength] = 0;
 	}
 
+	void AbstractString::printf(const char* format,...) {
+		char temp[256];
+		va_list params;
+		va_start(params, format);
+		int l = VSNPRINTF(temp, sizeof(temp), format, params);
+		temp[sizeof(temp) - 1] = 0;
+		if (l < sizeof(temp)) {
+			memcpy(baseAssign(l), temp, l);
+		}
+		else {
+			resize(l);
+			VSNPRINTF(begin(), l + 1, format, params);
+		}
+		va_end(params);
+	}
+
 	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n) {
 		if (CASE_SENSITIVITY)
 			return memcmp(s1, s2, n);

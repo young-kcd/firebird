@@ -37,6 +37,8 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+namespace Jrd {
+ 
 /* Page control block -- used by PAG to keep track of critical
    constants */
 
@@ -50,5 +52,7 @@ class PageControl : public pool_alloc<type_pgc>
 	ULONG pgc_tpt;				/* Transactions per TIP */
 	ULONG pgc_gpg;				/* Generators per generator page */
 };
+
+} //namespace Jrd
 
 #endif /* JRD_PAG_H */

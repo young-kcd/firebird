@@ -24,23 +24,23 @@
 #ifndef JRD_DYN_DL_PROTO_H
 #define JRD_DYN_DL_PROTO_H
 
-void	DYN_delete_constraint(GBL, const UCHAR**, const TEXT*);
-void	DYN_delete_dimensions(GBL, const UCHAR**, const TEXT*, TEXT*);
-void	DYN_delete_exception(GBL, const UCHAR**);
-void	DYN_delete_filter(GBL, const UCHAR**);
-void	DYN_delete_function(GBL, const UCHAR**);
-void	DYN_delete_generator(GBL, const UCHAR**);
-void	DYN_delete_global_field(GBL, const UCHAR**);
-void	DYN_delete_index(GBL, const UCHAR**);
-void	DYN_delete_local_field(GBL, const UCHAR**, const TEXT*, TEXT*);
-void	DYN_delete_parameter(GBL, const UCHAR**, TEXT*);
-void	DYN_delete_procedure(GBL, const UCHAR**);
-void	DYN_delete_relation(GBL, const UCHAR**, const TEXT*);
-void	DYN_delete_role(GBL, const UCHAR**);
-void	DYN_delete_security_class(GBL, const UCHAR**);
-void	DYN_delete_shadow(GBL, const UCHAR**);
-void	DYN_delete_trigger(GBL, const UCHAR**);
-void	DYN_delete_trigger_msg(GBL, const UCHAR**, TEXT*);
+void	DYN_delete_constraint(Jrd::gbl*, const UCHAR**, const TEXT*);
+void	DYN_delete_dimensions(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void	DYN_delete_exception(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_filter(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_function(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_generator(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_global_field(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_index(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_local_field(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void	DYN_delete_parameter(Jrd::gbl*, const UCHAR**, TEXT*);
+void	DYN_delete_procedure(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_relation(Jrd::gbl*, const UCHAR**, const TEXT*);
+void	DYN_delete_role(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_security_class(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_shadow(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_trigger(Jrd::gbl*, const UCHAR**);
+void	DYN_delete_trigger_msg(Jrd::gbl*, const UCHAR**, TEXT*);
 
 #endif // JRD_DYN_DL_PROTO_H
 

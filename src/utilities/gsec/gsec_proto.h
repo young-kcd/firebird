@@ -2,7 +2,7 @@
 #define GSEC_PROTO_H
 
 #ifdef SUPERSERVER
-int		GSEC_main(Service* service);
+int		GSEC_main(Jrd::Service* service);
 #endif
 
 // Output reporting utilities

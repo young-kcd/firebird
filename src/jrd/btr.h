@@ -39,7 +39,10 @@
 
 #define MAX_KEY_LIMIT		(dbb->dbb_page_size / 4)
 
+namespace Jrd {
+
 class jrd_rel;
+class jrd_tra;
 class SparseBitmap;
 class vec;
 
@@ -121,7 +124,6 @@ typedef struct idx {
 
 #define NEXT_IDX(buffer,count)	(IDX*) (buffer + count)
 
-
 /* Index insertion block -- parameter block for index insertions */
 
 typedef struct iib {
@@ -131,7 +133,7 @@ typedef struct iib {
 	jrd_rel*	iib_relation;	/* relation block */
 	struct key *iib_key;		/* varying string for insertion */
 	SparseBitmap* iib_duplicates;	/* spare bit map of duplicates */
-	class jrd_tra *iib_transaction;	/* insertion transaction */
+	jrd_tra *iib_transaction;	/* insertion transaction */
 } IIB;
 
 
@@ -185,7 +187,7 @@ class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 #define irb_descending	16		/* ?Base index uses descending order */
 
 // macros used to manipulate btree nodes
-#define BTR_SIZE	OFFSETA(btree_page*, btr_nodes);
+#define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes);
 
 #define NEXT_NODE(node)	(btn*)(node->btn_data + node->btn_length)
 #define NEXT_NODE_RECNR(node)	(btn*)(node->btn_data + node->btn_length + sizeof(SLONG))
@@ -195,6 +197,8 @@ class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 //#define NEXT_EXPANDED(xxx,yyy)	(BTX) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
+
+} //namespace Jrd
 
 #endif /* JRD_BTR_H */
 

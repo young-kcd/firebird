@@ -70,6 +70,8 @@
 #include "../jrd/jrd_pwd.h"
 #endif
 
+using namespace Ods;
+
 
 /* For Netware the follow DB handle and isc_status is #defined to be a  */
 /* local variable on the stack in main.  This is to avoid multiple      */
@@ -202,10 +204,10 @@ struct tdba {
 	pag* global_buffer;
 	int exit_code;
 #ifdef SUPERSERVER
-	Service* sw_outfile;
+	Jrd::Service* sw_outfile;
 	dba_mem *head_of_mem_list;
 	open_files *head_of_files_list;
-	Service* dba_service_blk;
+	Jrd::Service* dba_service_blk;
 #else
 	IB_FILE* sw_outfile;
 #endif
@@ -253,7 +255,7 @@ static bool fAnsiCP = false;
 
 
 #ifdef SUPERSERVER
-int main_gstat( Service* service)
+int main_gstat(Jrd::Service* service)
 #else
 
 int CLIB_ROUTINE main(int argc, char** argv)
@@ -305,7 +307,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	try {
 
 #ifdef SUPERSERVER
-	Service* sw_outfile = tddba->sw_outfile = service;
+	Jrd::Service* sw_outfile = tddba->sw_outfile = service;
 #else
 	IB_FILE* sw_outfile = tddba->sw_outfile = ib_stdout;
 #endif
@@ -1044,7 +1046,7 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 		page = (const data_page*) tddba->buffer2;
 	}
 
-	SSHORT space = page->dpg_count * sizeof(struct data_page::dpg_repeat);
+	SSHORT space = page->dpg_count * sizeof(data_page::dpg_repeat);
 
 	const data_page::dpg_repeat* tail = page->dpg_rpt;
 	for (const data_page::dpg_repeat* const end = tail + page->dpg_count; tail < end;

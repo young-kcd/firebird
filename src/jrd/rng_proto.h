@@ -26,22 +26,24 @@
 
 #ifdef PC_ENGINE
 
-class jrd_req;
-struct record_param;
-class jrd_nod;
-class RefreshRange;
+namespace Jrd {
+	class jrd_req;
+	struct record_param;
+	class jrd_nod;
+	class RefreshRange;
+}
 
 void RNG_add_page(ULONG);
-void RNG_add_record(record_param*);
-jrd_nod* RNG_add_relation(jrd_nod*);
-void RNG_add_uncommitted_record(record_param*);
-struct dsc *RNG_begin(jrd_nod*, struct vlu *);
-jrd_nod *RNG_delete(jrd_nod*);
-void RNG_delete_ranges(jrd_req *);
-jrd_nod* RNG_end(jrd_nod*);
-void RNG_release_locks(RefreshRange*);
-void RNG_release_ranges(jrd_req *);
-void RNG_shutdown_attachment(class Attachment*);
+void RNG_add_record(Jrd::record_param*);
+jrd_nod* RNG_add_relation(Jrd::jrd_nod*);
+void RNG_add_uncommitted_record(Jrd::record_param*);
+struct dsc *RNG_begin(Jrd::jrd_nod*, Jrd::vlu*);
+jrd_nod *RNG_delete(Jrd::jrd_nod*);
+void RNG_delete_ranges(Jrd::jrd_req *);
+jrd_nod* RNG_end(Jrd::jrd_nod*);
+void RNG_release_locks(Jrd::RefreshRange*);
+void RNG_release_ranges(Jrd::jrd_req *);
+void RNG_shutdown_attachment(Jrd::Attachment*);
 #endif
 
 #endif // JRD_RNG_PROTO_H

@@ -33,6 +33,7 @@
 
 namespace BTreeNode {
 
+using namespace Ods;
 
 USHORT computePrefix(const UCHAR* prevString, USHORT prevLength, 
 			const UCHAR* string, USHORT length)

@@ -34,6 +34,7 @@
 #include "../jrd/dsc.h"
 #include "../jrd/all.h"
 #include "../jrd/nbak.h"
+#include "../jrd/btn.h"
 #if defined(UNIX) && defined(SUPERSERVER)
 #include <setjmp.h>
 #endif
@@ -79,28 +80,30 @@
 #endif
 
 
-/* Thread data block / IPC related data blocks */
-
+// Thread data block / IPC related data blocks
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
 
-/* definition of block types for data allocation in JRD */
+// Definition of block types for data allocation in JRD
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+class str;
+class CharSetContainer;
 
-/* Shutdown lock data */
+namespace Jrd {
 
-typedef union {
+// Shutdown lock data
+union SDATA {
 	struct {
 		SSHORT flag;
 		SSHORT delay;
 	} data_items;
 	SLONG data_long;
-} SDATA;
+};
 
-/* the database block, the topmost block in the metadata 
-   cache for a database */
+// the database block, the topmost block in the metadata 
+// cache for a database
 
 #define HASH_SIZE 101
 
@@ -118,7 +121,6 @@ class jrd_nod;
 class BufferControl;
 class SparseBitmap;
 class BlockingThread;
-class str;
 class jrd_rel;
 class ExternalFile;
 class ViewContext;
@@ -132,7 +134,8 @@ class Symbol;
 class UserId;
 struct sort_context;
 class TxPageCache;
-
+class rse;
+class TextType;
 
 class Database : private pool_alloc<type_dbb>
 {
@@ -250,8 +253,8 @@ public:
 
 	class blb_map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */
-	Firebird::vector<class TextType*>		dbb_text_objects;	/* intl text type descriptions */
-	Firebird::vector<class CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
+	Firebird::vector<TextType*>		dbb_text_objects;	/* intl text type descriptions */
+	Firebird::vector<CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
 //	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	TxPageCache*	dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
@@ -529,8 +532,8 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	fmt*		prc_format;
 	vec*		prc_input_fields;	/* vector of field blocks */
 	vec*		prc_output_fields;	/* vector of field blocks */
-	jrd_req*	prc_request;	/* compiled procedure request */
-	str*		prc_security_name;	/* pointer to security class name for procedure */
+	jrd_req *prc_request;	/* compiled procedure request */
+	Firebird::string prc_security_name;	/* security class name for procedure */
 	USHORT prc_use_count;		/* requests compiled with procedure */
 	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 
 	                               used internally in the MET_clear_cache procedure 
@@ -538,8 +541,12 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 								   (it will usually be 0)
 								*/
 	Lock* prc_existence_lock;	/* existence lock, if any */
-	str*		prc_name;		/* pointer to ascii name */
+	Firebird::string prc_name;	/* ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
+
+	public:
+	jrd_prc(MemoryPool& p) 
+		: prc_security_name(p), prc_name(p) {}
 };
 
 #define PRC_scanned           1		/* Field expressions scanned */
@@ -557,16 +564,18 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 
 /* Parameter block */
 
-class prm : public pool_alloc_rpt<SCHAR, type_prm>
+class Parameter : public pool_alloc_rpt<SCHAR, type_prm>
 {
     public:
 	USHORT 		prm_number;
 	struct dsc 	prm_desc;
 	jrd_nod*	prm_default_val;
-	const TEXT*	prm_name;			/* pointer to asciiz name */
+	Firebird::string prm_name;		/* asciiz name */
 	TEXT 		prm_string[2];		/* one byte for ALLOC and one for the terminating null */
+
+    public:
+
 };
-typedef prm* PRM;
 
 
 /* Primary dependencies from all foreign references to relation's
@@ -620,7 +629,7 @@ public:
 	class vcl*	rel_pages;		/* vector of pointer page numbers */
 	vec*	rel_fields;		/* vector of field blocks */
 
-	class rse* rel_view_rse;	/* view record select expression */
+	rse*	rel_view_rse;	/* view record select expression */
 	ViewContext*	rel_view_contexts;	/* linked list of view contexts */
 
 	TEXT *rel_security_name;	/* pointer to security class name for relation */
@@ -791,7 +800,6 @@ private:
     vec(MemoryPool& p, int len) : vec_base<BlkPtr, type_vec>(p, len) {}
     vec(MemoryPool& p, const vec& base) : vec_base<BlkPtr, type_vec>(p, base) {}
 };
-typedef vec* VEC;
 
 class vcl : public vec_base<SLONG, type_vcl>
 {
@@ -856,35 +864,6 @@ class Symbol : public pool_alloc<type_sym>
 };
 
 
-/* Random string block -- jack of all kludges */
-
-class str : public pool_alloc_rpt<SCHAR, type_str>
-{
-public:
-	USHORT str_length;
-	UCHAR str_data[2];			/* one byte for ALLOC and one for the NULL */
-
-	static bool extend(str*& s, size_t new_len)
-	{
-		fb_assert(s);
-		MemoryPool* pPool = MemoryPool::blk_pool(s);
-		fb_assert(pPool);
-		if (!pPool) {
-			return false;	// runtime safety
-		}
-		// TMN: Note that this violates "common sense" and should be fixed.
-		str* res = FB_NEW_RPT(*pPool, new_len + 1) str;
-		res->str_length = new_len;
-		memcpy(res->str_data, s->str_data, s->str_length + 1);
-		str* old = s;
-		s = res;
-		delete old;
-		return s != 0;
-	}
-};
-typedef str *STR;
-
-
 //
 // Transaction element block
 //
@@ -936,8 +915,8 @@ class BlockingThread : public pool_alloc<type_btb>
 
 typedef struct win {
 	SLONG win_page;
-	struct pag* win_buffer;
-	struct jrd_exp* win_expanded_buffer;
+	Ods::pag* win_buffer;
+	jrd_exp* win_expanded_buffer;
 	class BufferDesc* win_bdb;
 	SSHORT win_scans;
 	USHORT win_flags;
@@ -963,8 +942,7 @@ struct win_for_array: public win
 #define WIN_garbage_collect	8	/* scan left a page for garbage collector */
 
 
-/* Thread specific database block */
-
+// Thread specific database block
 struct thread_db
 {
 	struct thdd	tdbb_thd_data;
@@ -975,8 +953,8 @@ struct thread_db
 	JrdMemoryPool*	tdbb_default;
 	ISC_STATUS*	tdbb_status_vector;
 	void*		tdbb_setjmp;
-	USHORT		tdbb_inhibit;		/* Inhibit context switch if non-zero */
-	SSHORT		tdbb_quantum;		/* Cycles remaining until voluntary schedule */
+	USHORT		tdbb_inhibit;		// Inhibit context switch if non-zero
+	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 	struct iuo	tdbb_mutexes;
 	struct iuo	tdbb_rw_locks;
@@ -1001,6 +979,37 @@ struct ihndl
 	void*	ihndl_object;
 };
 
+} //namespace Jrd
+
+
+/* Random string block -- jack of all kludges */
+
+class str : public pool_alloc_rpt<SCHAR, type_str>
+{
+public:
+	USHORT str_length;
+	UCHAR str_data[2];			/* one byte for ALLOC and one for the NULL */
+
+	static bool extend(str*& s, size_t new_len)
+	{
+		fb_assert(s);
+		MemoryPool* pPool = MemoryPool::blk_pool(s);
+		fb_assert(pPool);
+		if (!pPool) {
+			return false;	// runtime safety
+		}
+		// TMN: Note that this violates "common sense" and should be fixed.
+		str* res = FB_NEW_RPT(*pPool, new_len + 1) str;
+		res->str_length = new_len;
+		memcpy(res->str_data, s->str_data, s->str_length + 1);
+		str* old = s;
+		s = res;
+		delete old;
+		return s != 0;
+	}
+};
+typedef str *STR;
+
 
 /* Threading macros */
 
@@ -1022,7 +1031,7 @@ struct ihndl
 
 #ifndef PLATFORM_GET_THREAD_DATA
 
-extern thread_db* gdbb;
+//extern thread_db* gdbb;
 
 #define PLATFORM_GET_THREAD_DATA (gdbb)
 #endif
@@ -1098,7 +1107,7 @@ extern thread_db* gdbb;
 #if !defined(REQUESTER)
 
 extern int debug;
-extern ihndl* internal_db_handles;
+extern Jrd::ihndl* internal_db_handles;
 
 #endif /* REQUESTER */
 

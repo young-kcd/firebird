@@ -59,14 +59,19 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 #define CMP_TRACE(args) /* nothing */
 #endif
 
+class str;
+
+namespace Jrd {
+
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
 class SparseBitmap;
 class vec;
 class Resource;
-class str;
 class AccessItem;
+struct idx;
+class fmt;
 
 // NOTE: The definition of structures rse and lit must be defined in
 //       exactly the same way as structure jrd_nod through item nod_count.
@@ -390,7 +395,7 @@ struct iasb {
 #define e_dcl_id		0
 #define e_dcl_invariants	1
 #define e_dcl_desc		2
-#define e_dcl_length		(2 + sizeof (DSC)/sizeof (jrd_nod*))	/* Room for descriptor */
+#define e_dcl_length		(2 + sizeof (DSC)/sizeof (Jrd::jrd_nod*))	/* Room for descriptor */
 
 #define e_dep_object		0	/* node for registering dependencies */
 #define e_dep_object_type	1
@@ -616,13 +621,13 @@ public:
 
 		jrd_rel* csb_relation;
 		str* csb_alias;		/* SQL alias name for this instance of relation */
-		class jrd_prc* csb_procedure;
+		jrd_prc* csb_procedure;
 		jrd_rel* csb_view;		/* parent view */
 
-		struct idx* csb_idx;		/* Packed description of indices */
+		idx* csb_idx;		/* Packed description of indices */
 		str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
 		jrd_nod* csb_message;			/* Msg for send/receive */
-		class fmt* csb_format;		/* Default fmt for stream */
+		fmt* csb_format;		/* Default fmt for stream */
 		SparseBitmap* csb_fields;		/* Fields referenced */
 		float csb_cardinality;		/* Cardinality of relation */
 		jrd_nod* csb_plan;				/* user-specified plan for this relation */
@@ -693,6 +698,7 @@ public:
 
 #define XCP_MESSAGE_LENGTH	78	// must correspond to the size of
 								// RDB$EXCEPTIONS.RDB$MESSAGE
+} //namespace Jrd
 
 #endif // JRD_EXE_H
 

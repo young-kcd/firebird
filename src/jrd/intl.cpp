@@ -123,6 +123,8 @@
 #include "../common/classes/init.h"
 #include "../jrd/plugin_manager.h"
 
+using namespace Jrd;
+
 #ifdef DEV_BUILD
 
 #define isprintable(x)  ((((unsigned char)(x)) & 0x7F) >= ' ')

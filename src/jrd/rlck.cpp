@@ -40,6 +40,8 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 
+using namespace Jrd;
+
 #ifdef PC_ENGINE
 static Lock* allocate_record_lock(jrd_tra*, record_param*);
 #endif
@@ -367,7 +369,7 @@ void RLCK_release_locks(Attachment* attachment)
  **************************************/
 
 /* unlock all explicit relation locks */
-	VEC vector = attachment->att_relation_locks;
+	vec* vector = attachment->att_relation_locks;
 	if (vector) {
         vec::iterator lptr = vector->begin();
 		for (const vec::const_iterator lend = vector->end(); lptr < lend; lptr++)
@@ -476,7 +478,7 @@ void RLCK_shutdown_attachment(Attachment* attachment)
 	{
 		LCK_release(tdbb, record_lock);
 	}
-	VEC lock_vector = attachment->att_relation_locks;
+	vec* lock_vector = attachment->att_relation_locks;
 	if (lock_vector) {
 		for (vec::iterator lock = lock_vector->begin(); 
 			lock != lock_vector->end(); ++lock) 
@@ -504,7 +506,7 @@ void RLCK_shutdown_database(Database* dbb)
  *
  **************************************/
 	thread_db* tdbb = GET_THREAD_DATA;
-	VEC vector = dbb->dbb_relations;
+	vec* vector = dbb->dbb_relations;
 	if (!vector)
 		return;
 
@@ -587,7 +589,7 @@ Lock* RLCK_transaction_relation_lock(jrd_tra* transaction, jrd_rel* relation)
  *
  **************************************/
 	Lock* lock;
-	VEC vector = transaction->tra_relation_locks;
+	vec* vector = transaction->tra_relation_locks;
 	if (vector &&
 		(relation->rel_id < vector->count()) &&
 		(lock = (Lock*) (*vector)[relation->rel_id]))
@@ -726,7 +728,7 @@ void RLCK_unlock_relation(Lock* lock, jrd_rel* relation)
  **************************************/
 	thread_db* tdbb = GET_THREAD_DATA;
 	Attachment* attachment = tdbb->tdbb_attachment;
-	VEC vector = attachment->att_relation_locks;
+	vec* vector = attachment->att_relation_locks;
 	if (!vector)
 		return;
 		
@@ -865,7 +867,7 @@ static Lock* attachment_relation_lock(jrd_rel* relation)
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 	Lock* lock;
-	VEC vector = attachment->att_relation_locks;
+	vec* vector = attachment->att_relation_locks;
 	if (vector &&
 		(relation->rel_id < vector->count()) &&
 		(lock = (Lock*) (*vector)[relation->rel_id]))

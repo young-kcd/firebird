@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		scl_proto.h
- *	DESCRIPTION:	Prototype header file for scl.epp
+ *	DESCRIPTION:	Prototype header file for Jrd::scl.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,20 +24,22 @@
 #ifndef JRD_SCL_PROTO_H
 #define JRD_SCL_PROTO_H
 
-class scl;
+namespace Jrd {
+	class scl;
+}
 
-void SCL_check_access(const scl*, SLONG, const TEXT*,
+void SCL_check_access(const Jrd::scl*, SLONG, const TEXT*,
 					  const TEXT*, USHORT, const TEXT*, const TEXT*);
 void SCL_check_procedure(const struct dsc*, USHORT);
 void SCL_check_relation(const struct dsc*, USHORT);
-scl* SCL_get_class(/* INOUT */ TEXT*);
+Jrd::scl* SCL_get_class(/* INOUT */ TEXT*);
 int SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, thread_db*, const bool);
+	const TEXT*, Jrd::thread_db*, const bool);
 void SCL_move_priv(UCHAR**, USHORT, STR*, ULONG*);
-scl* SCL_recompute_class(thread_db*, TEXT*);
-void SCL_release(scl*);
-void SCL_check_index(thread_db*, const TEXT*, UCHAR, USHORT);
+Jrd::scl* SCL_recompute_class(Jrd::thread_db*, TEXT*);
+void SCL_release(Jrd::scl*);
+void SCL_check_index(Jrd::thread_db*, const TEXT*, UCHAR, USHORT);
 
 #endif // JRD_SCL_PROTO_H
 

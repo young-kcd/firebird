@@ -36,6 +36,8 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 
+using namespace Jrd;
+
 #ifdef SUPERSERVER
 const bool SecurityDatabase::is_cached = true;
 #else

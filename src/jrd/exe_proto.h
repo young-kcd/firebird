@@ -24,21 +24,24 @@
 #ifndef JRD_EXE_PROTO_H
 #define JRD_EXE_PROTO_H
 
-class jrd_req;
+namespace Jrd {
+	class jrd_req;
+	class jrd_nod;
+}
 
-void EXE_assignment(thread_db*, class jrd_nod*);
-jrd_req* EXE_find_request(thread_db*, jrd_req *, bool);
-void EXE_receive(thread_db*, jrd_req*, USHORT, USHORT, UCHAR*);
-void EXE_send(thread_db*, jrd_req*, USHORT, USHORT, UCHAR *);
-void EXE_start(thread_db*, jrd_req*, class jrd_tra *);
-void EXE_unwind(thread_db*, jrd_req*);
+void EXE_assignment(Jrd::thread_db*, Jrd::jrd_nod*);
+Jrd::jrd_req* EXE_find_request(Jrd::thread_db*, Jrd::jrd_req*, bool);
+void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, UCHAR*);
+void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, UCHAR*);
+void EXE_start(Jrd::thread_db*, Jrd::jrd_req*, Jrd::jrd_tra*);
+void EXE_unwind(Jrd::thread_db*, Jrd::jrd_req*);
 #ifdef SCROLLABLE_CURSORS
-void EXE_seek(thread_db*, jrd_req*, USHORT, ULONG);
+void EXE_seek(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG);
 #endif
 
 #ifdef PC_ENGINE
-bool EXE_crack(thread_db*, Rsb*, USHORT);
-void EXE_mark_crack(thread_db*, Rsb*, USHORT);
+bool EXE_crack(Jrd::thread_db*, Jrd::Rsb*, USHORT);
+void EXE_mark_crack(Jrd::thread_db*, Jrd::Rsb*, USHORT);
 #endif
 
 

@@ -55,6 +55,8 @@
 #include <windows.h>
 
 
+using namespace Jrd;
+
 #ifdef TEXT
 #undef TEXT
 #endif
@@ -572,7 +574,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -790,7 +792,7 @@ bool PIO_status(phys_io_blk* piob, ISC_STATUS* status_vector)
 #endif
 
 
-bool PIO_write(jrd_file* file, BufferDesc* bdb, PAG page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1107,7 +1109,7 @@ static jrd_file* setup_file(Database*		dbb,
 			try {
 				dbb->dbb_file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
-				if ((reinterpret_cast<header_page*>(header_page_buffer)->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
+				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name, file_length), 0);
 				dbb->dbb_file = NULL; // Will be set again later by the caller				
 			} catch(const std::exception&) {

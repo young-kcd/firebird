@@ -45,6 +45,8 @@
 
 // Sparse bit map
 
+namespace Jrd {
+
 class BitmapSegment;
 
 class SparseBitmap : public pool_alloc<type_sbm>
@@ -92,6 +94,8 @@ public:
 	SSHORT			bms_max;			// Maximum bit set in segment
 	BUNCH			bms_bits[BUNCH_SEGMENT];
 };
+
+} //namespace Jrd
 
 #endif	// JRD_SBM_H
 

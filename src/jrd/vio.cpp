@@ -92,6 +92,8 @@
 #include "../jrd/vio_proto.h"
 
 
+using namespace Jrd;
+
 static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static void check_control(thread_db*);
 static bool check_user(thread_db*, const dsc*);
@@ -3654,7 +3656,7 @@ static void THREAD_ROUTINE garbage_collector(Database* dbb)
 			   Express interest in the relation to prevent it from being deleted
 			   out from under us while garbage collection is in-progress. */
 
-			VEC vector = dbb->dbb_relations;
+			vec* vector = dbb->dbb_relations;
 			for (ULONG id = 0; vector && id < vector->count(); ++id) {
 
 				relation = (jrd_rel*) (*vector)[id];

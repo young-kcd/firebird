@@ -24,17 +24,17 @@
 #ifndef JRD_DYN_MD_PROTO_H
 #define JRD_DYN_MD_PROTO_H
 
-void DYN_modify_database(GBL, const UCHAR**);
-void DYN_modify_exception(GBL, const UCHAR**);
-void DYN_modify_global_field(GBL, const UCHAR**, const TEXT*, TEXT*);
-void DYN_modify_index(GBL, const UCHAR**);
-void DYN_modify_local_field(GBL, const UCHAR**, const TEXT*, TEXT*);
-void DYN_modify_procedure(GBL, const UCHAR**);
-void DYN_modify_relation(GBL, const UCHAR**);
-void DYN_modify_trigger(GBL, const UCHAR**);
-void DYN_modify_trigger_msg(GBL, const UCHAR**, TEXT*);
-void DYN_modify_sql_field(GBL, const UCHAR**, const TEXT*, TEXT*);
-void DYN_modify_view(GBL, const UCHAR**);
+void DYN_modify_database(Jrd::gbl*, const UCHAR**);
+void DYN_modify_exception(Jrd::gbl*, const UCHAR**);
+void DYN_modify_global_field(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void DYN_modify_index(Jrd::gbl*, const UCHAR**);
+void DYN_modify_local_field(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void DYN_modify_procedure(Jrd::gbl*, const UCHAR**);
+void DYN_modify_relation(Jrd::gbl*, const UCHAR**);
+void DYN_modify_trigger(Jrd::gbl*, const UCHAR**);
+void DYN_modify_trigger_msg(Jrd::gbl*, const UCHAR**, TEXT*);
+void DYN_modify_sql_field(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void DYN_modify_view(Jrd::gbl*, const UCHAR**);
 
 
 #endif // JRD_DYN_MD_PROTO_H

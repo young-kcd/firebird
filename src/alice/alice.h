@@ -174,10 +174,10 @@ public:
 	typedef			std::vector<AliceMemoryPool*, Firebird::allocator<AliceMemoryPool*> > pool_vec_t;
 	pool_vec_t		pools;
 	int				exit_code;
-	pfn_svc_output  output_proc;
-	Service*		output_data;
+	Jrd::pfn_svc_output  output_proc;
+	Jrd::Service*	output_data;
 	IB_FILE*		output_file;
-	Service*		service_blk;
+	Jrd::Service*	service_blk;
 	isc_db_handle	db_handle;
 	isc_tr_handle	tr_handle;
 	ISC_STATUS*		status;

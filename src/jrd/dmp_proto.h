@@ -24,13 +24,17 @@
 #ifndef JRD_DMP_PROTO_H
 #define JRD_DMP_PROTO_H
 
+namespace Ods {
+	struct pag;
+}
+
 void DMP_active(void);
 void DMP_btc(void);
 void DMP_btc_errors(void);
 void DMP_btc_ordered(void);
 void DMP_dirty(void);
 void DMP_page(SLONG, USHORT);
-void DMP_fetched_page(const struct pag*, ULONG, ULONG, USHORT);
+void DMP_fetched_page(const struct Ods::pag*, ULONG, ULONG, USHORT);
 
 #endif // JRD_DMP_PROTO_H
 

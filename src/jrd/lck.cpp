@@ -60,6 +60,8 @@
 #endif
 
 
+using namespace Jrd;
+
 static void bug_lck(TEXT*);
 #ifdef MULTI_THREAD
 static void check_lock(Lock*, USHORT);

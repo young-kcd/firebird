@@ -94,9 +94,12 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/isc_f_proto.h"
 
-static void find_clump_space(SLONG, WIN*, PAG*, USHORT, SSHORT, const UCHAR*,
+using namespace Jrd;
+using namespace Ods;
+
+static void find_clump_space(SLONG, WIN*, pag**, USHORT, SSHORT, const UCHAR*,
 							 USHORT);
-static bool find_type(SLONG, WIN*, PAG*, USHORT, USHORT, UCHAR**,
+static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
 						 const UCHAR**);
 
 #define ERR_POST_IF_DATABASE_IS_READONLY(dbb)	{if (dbb->dbb_flags & DBB_read_only) ERR_post (isc_read_only_database, 0);}

@@ -53,6 +53,8 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 
+using namespace Jrd;
+
 #define MOVE_BYTE(x_from, x_to)	*x_to++ = *x_from++;
 
 static int compare_keys(const IDX*, const UCHAR*, USHORT, const KEY*, USHORT);
@@ -63,7 +65,7 @@ static void expand_index(WIN *);
 static bool find_dbkey(Rsb*, ULONG);
 static bool find_record(Rsb*, RSE_GET_MODE, KEY *, USHORT, USHORT);
 #endif
-static BTX find_current(jrd_exp*, btree_page*, const UCHAR*);
+static BTX find_current(jrd_exp*, Ods::btree_page*, const UCHAR*);
 static bool find_saved_node(Rsb*, IRSB_NAV, WIN *, UCHAR **);
 static UCHAR* get_position(thread_db*, Rsb*, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
 static bool get_record(Rsb*, IRSB_NAV, record_param*, KEY *, bool);
@@ -575,9 +577,9 @@ bool NAV_get_record(thread_db* tdbb,
 	bool page_changed = false;
 	// AB: I don't see number is initialized? 
 	SLONG number;
-	IndexNode node;
+	Ods::IndexNode node;
 	while (true) {
-		btree_page* page = (btree_page*) window.win_buffer;
+		Ods::btree_page* page = (Ods::btree_page*) window.win_buffer;
 		const SCHAR flags = page->pag_flags;
 
 		UCHAR* pointer = nextPointer;
@@ -621,8 +623,8 @@ bool NAV_get_record(thread_db* tdbb,
 				break;
 			}
 			if (node.isEndBucket) {
-				page = (btree_page*) window.win_buffer;
-				page = (btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
+				page = (Ods::btree_page*) window.win_buffer;
+				page = (Ods::btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
 					LCK_read, pag_index);
 #ifdef PC_ENGINE
 				RNG_add_page(window.win_page);
@@ -1302,7 +1304,7 @@ static bool find_record(
 #endif
 
 
-static BTX find_current(jrd_exp* expanded_page, btree_page* page, const UCHAR* current_pointer)
+static BTX find_current(jrd_exp* expanded_page, Ods::btree_page* page, const UCHAR* current_pointer)
 {
 /**************************************
  *
@@ -1324,7 +1326,7 @@ static BTX find_current(jrd_exp* expanded_page, btree_page* page, const UCHAR* c
 	const SCHAR flags = page->pag_flags;
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
-	IndexNode node;
+	Ods::IndexNode node;
 	while (pointer < endPointer) {
 		if (pointer == current_pointer) {
 			return expanded_node;
@@ -1359,14 +1361,14 @@ static bool find_saved_node(Rsb* rsb, IRSB_NAV impure,
 	thread_db* tdbb = GET_THREAD_DATA;
 
 	IDX* idx = (IDX*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
-	btree_page* page = (btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
+	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
 	// the outer loop goes through all the sibling pages
 	// looking for the node (in case the page has split);
 	// the inner loop goes through the nodes on each page
 	KEY key;
 	const SCHAR flags = page->pag_flags;
-	IndexNode node;
+	Ods::IndexNode node;
 	while (true) {
 		UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 		const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
@@ -1379,7 +1381,7 @@ static bool find_saved_node(Rsb* rsb, IRSB_NAV impure,
 				return false;
 			}
 			if (node.isEndBucket) {
-				page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
+				page = (Ods::btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
 					LCK_read, pag_index);
 				break;
 			}
@@ -1466,7 +1468,7 @@ static UCHAR* get_position(
 #endif
 
 	// Re-fetch page and get incarnation counter
-	btree_page* page = (btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
+	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
 #ifdef SCROLLABLE_CURSORS
 	// we must ensure that if we are going backwards, we always 
@@ -1480,7 +1482,7 @@ static UCHAR* get_position(
 	UCHAR* pointer = 0;
 	const SCHAR flags = page->pag_flags;
 	const SLONG incarnation = CCH_get_incarnation(window);
-	IndexNode node;
+	Ods::IndexNode node;
 	if (incarnation == impure->irsb_nav_incarnation) {
 		pointer = ((UCHAR*) page + impure->irsb_nav_offset);
 		if (!expanded_page) {		
@@ -1517,7 +1519,7 @@ static UCHAR* get_position(
 	}
 
 	const bool found = find_saved_node(rsb, impure, window, &pointer);
-	page = (btree_page*) window->win_buffer;
+	page = (Ods::btree_page*) window->win_buffer;
 	if (pointer) {
 		*expanded_node = find_current(window->win_expanded_buffer, page, pointer);
 		if (direction == RSE_get_backward) {
@@ -1698,7 +1700,7 @@ static UCHAR* nav_open(
 		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
 	IDX *idx = (IDX *) ((SCHAR *) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	KEY lower, upper;
-	btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
+	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
 		&upper, (direction == RSE_get_backward));
 	impure->irsb_nav_page = window->win_page;
 
@@ -1771,11 +1773,11 @@ static UCHAR* nav_open(
 		while (!(pointer = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
 									  0, (idx->idx_flags & idx_descending) != 0, true)))
 		{
-			  page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
+			  page = (Ods::btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
 				  LCK_read, pag_index);
 		}
 
-		IndexNode node;
+		Ods::IndexNode node;
 		BTreeNode::readNode(&node, pointer, page->pag_flags, true);
 
 		impure->irsb_nav_length = node.prefix + node.length;

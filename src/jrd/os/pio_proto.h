@@ -24,32 +24,36 @@
 #ifndef JRD_PIO_PROTO_H
 #define JRD_PIO_PROTO_H
 
-class jrd_file;
-class Database;
+namespace Jrd {
+	class jrd_file;
+	class Database;
+}
+
 struct blk;
 
-int		PIO_add_file(Database*, jrd_file*, const TEXT*, SLONG);
-void	PIO_close(jrd_file*);
-jrd_file*	PIO_create(Database*, const TEXT*, SSHORT, bool);
+int		PIO_add_file(Jrd::Database*, Jrd::jrd_file*, const TEXT*, SLONG);
+void	PIO_close(Jrd::jrd_file*);
+Jrd::jrd_file*	PIO_create(Jrd::Database*, const TEXT*, SSHORT, bool);
 int		PIO_connection(const TEXT*, USHORT*);
 int		PIO_expand(const TEXT*, USHORT, TEXT*);
-void	PIO_flush(jrd_file*);
-void	PIO_force_write(jrd_file*, bool);
-void	PIO_header(Database*, SCHAR*, int);
-SLONG	PIO_max_alloc(Database*);
-SLONG	PIO_act_alloc(Database*);
-jrd_file*	PIO_open(Database*, const TEXT*, SSHORT, bool,
+void	PIO_flush(Jrd::jrd_file*);
+void	PIO_force_write(Jrd::jrd_file*, bool);
+void	PIO_header(Jrd::Database*, SCHAR*, int);
+SLONG	PIO_max_alloc(Jrd::Database*);
+SLONG	PIO_act_alloc(Jrd::Database*);
+Jrd::jrd_file*	PIO_open(Jrd::Database*, const TEXT*, SSHORT, bool,
 							blk*, const TEXT*, USHORT);
-bool	PIO_read(jrd_file*, class BufferDesc*, struct pag*, ISC_STATUS*);
+bool	PIO_read(Jrd::jrd_file*, class Jrd::BufferDesc*, struct Ods::pag*, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2
-bool	PIO_read_ahead(Database*, SLONG, SCHAR*, SLONG, struct phys_io_blk*,
-						  ISC_STATUS*);
-bool		PIO_status(struct phys_io_blk*, ISC_STATUS*);
+bool	PIO_read_ahead(Jrd::Database*, SLONG, SCHAR*, SLONG, 
+				   struct Jrd::phys_io_blk*, ISC_STATUS*);
+bool	PIO_status(struct Jrd::phys_io_blk*, ISC_STATUS*);
 #endif
 
 int		PIO_unlink(const TEXT*);
-bool	PIO_write(jrd_file*, class BufferDesc*, struct pag*, ISC_STATUS*);
+bool	PIO_write(Jrd::jrd_file*, class Jrd::BufferDesc*, 
+				  struct Ods::pag*, ISC_STATUS*);
 
 #endif // JRD_PIO_PROTO_H
 

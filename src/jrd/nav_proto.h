@@ -26,22 +26,27 @@
 
 #include "../jrd/rse.h"
 
-struct record_param;
-class jrd_nod;
-class Rsb;
-class Bookmark;
+namespace Jrd {
+	struct record_param;
+	class jrd_nod;
+	class Rsb;
+	class Bookmark;
+	struct win;
+	struct irsb_nav;
+}
 
 #ifdef SCROLLABLE_CURSORS
-struct jrd_exp* NAV_expand_index(struct win*, struct irsb_nav*);
+struct jrd_exp* NAV_expand_index(Jrd::win*, Jrd::irsb_nav*);
 #endif
-bool NAV_get_record(thread_db* tdbb, Rsb*, struct irsb_nav*, record_param*,
-							  enum rse_get_mode);
+bool NAV_get_record(Jrd::thread_db* tdbb, Jrd::Rsb*, Jrd::irsb_nav*, 
+					Jrd::record_param*, Jrd::rse_get_mode);
 
 #ifdef PC_ENGINE
-bool NAV_find_record(Rsb*, USHORT, USHORT, jrd_nod*);
-void NAV_get_bookmark(Rsb*, struct irsb_nav*, Bookmark*);
-bool NAV_reset_position(Rsb*, record_param*);
-bool NAV_set_bookmark(Rsb*, struct irsb_nav*, record_param*, Bookmark*);
+bool NAV_find_record(Jrd::Rsb*, USHORT, USHORT, Jrd::jrd_nod*);
+void NAV_get_bookmark(Jrd::Rsb*, Jrd::irsb_nav*, Bookmark*);
+bool NAV_reset_position(Jrd::Rsb*, Jrd::record_param*);
+bool NAV_set_bookmark(Jrd::Rsb*, Jrd::irsb_nav*, Jrd::record_param*, 
+					  Jrd::Bookmark*);
 #endif
 
 #endif // JRD_NAV_PROTO_H

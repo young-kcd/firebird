@@ -25,30 +25,30 @@
 #define JRD_CMP_PROTO_H
 
 #include "../jrd/req.h"
-// req.h includes exe.h => Csb and Csb::csb_repeat.
+// req.h includes exe.h => Jrd::Csb and Jrd::Csb::csb_repeat.
 
-bool CMP_clone_is_active(const jrd_req*);
-jrd_nod* CMP_clone_node(thread_db*, Csb*, jrd_nod*);
-jrd_req* CMP_clone_request(thread_db*, jrd_req*, USHORT, bool);
-jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
-jrd_req* CMP_compile2(thread_db*, const UCHAR*, USHORT);
-Csb::csb_repeat* CMP_csb_element(Csb*, USHORT);
-void CMP_expunge_transaction(jrd_tra*);
-void CMP_decrement_prc_use_count(thread_db*, jrd_prc*);
-jrd_req* CMP_find_request(thread_db*, USHORT, USHORT);
-void CMP_fini(thread_db*);
-fmt* CMP_format(thread_db*, Csb*, USHORT);
-void CMP_get_desc(thread_db*, Csb*, jrd_nod*, dsc*);
-IndexLock* CMP_get_index_lock(thread_db*, jrd_rel*, USHORT);
-SLONG CMP_impure(Csb*, USHORT);
-jrd_req* CMP_make_request(thread_db*, Csb*);
-void CMP_post_access(thread_db*, Csb*, const TEXT*, SLONG,
+bool CMP_clone_is_active(const Jrd::jrd_req*);
+Jrd::jrd_nod* CMP_clone_node(Jrd::thread_db*, Jrd::Csb*, Jrd::jrd_nod*);
+Jrd::jrd_req* CMP_clone_request(Jrd::thread_db*, Jrd::jrd_req*, USHORT, bool);
+Jrd::jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
+Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR*, USHORT);
+Jrd::Csb::csb_repeat* CMP_csb_element(Jrd::Csb*, USHORT);
+void CMP_expunge_transaction(Jrd::jrd_tra*);
+void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
+Jrd::jrd_req* CMP_find_request(Jrd::thread_db*, USHORT, USHORT);
+void CMP_fini(Jrd::thread_db*);
+Jrd::fmt* CMP_format(Jrd::thread_db*, Jrd::Csb*, USHORT);
+void CMP_get_desc(Jrd::thread_db*, Jrd::Csb*, Jrd::jrd_nod*, dsc*);
+Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
+SLONG CMP_impure(Jrd::Csb*, USHORT);
+Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::Csb*);
+void CMP_post_access(Jrd::thread_db*, Jrd::Csb*, const TEXT*, SLONG,
 					 const TEXT*, const TEXT*, USHORT, const TEXT*,
 					 const TEXT*);
-void CMP_post_resource(thread_db*, Resource**, blk*, enum Resource::rsc_s, USHORT);
-void CMP_release_resource(Resource**, enum Resource::rsc_s, USHORT);
-void CMP_release(thread_db*, jrd_req*);
-void CMP_shutdown_database(thread_db*);
+void CMP_post_resource(Jrd::thread_db*, Jrd::Resource**, blk*, Jrd::Resource::rsc_s, USHORT);
+void CMP_release_resource(Jrd::Resource**, Jrd::Resource::rsc_s, USHORT);
+void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
+void CMP_shutdown_database(Jrd::thread_db*);
 
 #endif // JRD_CMP_PROTO_H
 

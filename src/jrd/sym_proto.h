@@ -24,11 +24,13 @@
 #ifndef JRD_SYM_PROTO_H
 #define JRD_SYM_PROTO_H
 
-class Symbol;
+namespace Jrd {
+	class Symbol;
+}
 
-void	SYM_insert(Symbol*);
-Symbol*	SYM_lookup(const TEXT*);
-void	SYM_remove(Symbol*);
+void			SYM_insert(Jrd::Symbol*);
+Jrd::Symbol*	SYM_lookup(const TEXT*);
+void			SYM_remove(Jrd::Symbol*);
 
 #endif // JRD_SYM_PROTO_H
 

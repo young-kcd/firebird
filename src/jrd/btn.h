@@ -68,45 +68,45 @@ struct dynKey
 };
 
 typedef Firebird::vector<dynKey*> keyList;
-typedef Firebird::HalfStaticArray<IndexJumpNode, 32> jumpNodeList;
+typedef Firebird::HalfStaticArray<Ods::IndexJumpNode, 32> jumpNodeList;
 
 namespace BTreeNode {
 
 	USHORT computePrefix(const UCHAR* prevString, USHORT prevLength, 
 				const UCHAR* string, USHORT length);
 
-	SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
+	SLONG findPageInDuplicates(const Ods::btree_page* page, UCHAR* pointer,
 				SLONG previousNumber, SLONG findRecordNumber);
 
-	USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, SCHAR flags);
-	USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode = true);
-	UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo = NULL);
+	USHORT getJumpNodeSize(const Ods::IndexJumpNode* jumpNode, SCHAR flags);
+	USHORT getNodeSize(const Ods::IndexNode* indexNode, SCHAR flags, bool leafNode = true);
+	UCHAR* getPointerFirstNode(Ods::btree_page* page, Ods::IndexJumpInfo* jumpInfo = NULL);
 
-	bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode);
+	bool keyEquality(USHORT length, const UCHAR* data, const Ods::IndexNode* indexNode);
 
 #ifdef SCROLLABLE_CURSORS
 	UCHAR* lastNode(btree_page* page, jrd_exp* expanded_page, BTX* expanded_node);
 #endif
 
-	UCHAR* nextNode(IndexNode* node, UCHAR* pointer, 
+	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer, 
 				SCHAR flags,  BTX* expanded_node);
-	UCHAR* previousNode(IndexNode* node, UCHAR* pointer,
+	UCHAR* previousNode(Ods::IndexNode* node, UCHAR* pointer,
 				SCHAR flags,  BTX* expanded_node);
 
 	void quad_put(SLONG value, UCHAR *data);
 
-	UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer);
-	UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, SCHAR flags);
-	UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, 
+	UCHAR* readJumpInfo(Ods::IndexJumpInfo* jumpInfo, UCHAR* pagePointer);
+	UCHAR* readJumpNode(Ods::IndexJumpNode* jumpNode, UCHAR* pagePointer, SCHAR flags);
+	UCHAR* readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, 
 		bool leafNode);
 
-	UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo);
-	UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, SCHAR flags);
-	UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, 
+	UCHAR* writeJumpInfo(Ods::btree_page* page, const Ods::IndexJumpInfo* jumpInfo);
+	UCHAR* writeJumpNode(Ods::IndexJumpNode* jumpNode, UCHAR* pagePointer, SCHAR flags);
+	UCHAR* writeNode(Ods::IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, 
 		bool leafNode, bool withData = true);
 
-	void setEndBucket(IndexNode* indexNode, bool leafNode = true);
-	void setEndLevel(IndexNode* indexNode, bool leafNode = true);
+	void setEndBucket(Ods::IndexNode* indexNode, bool leafNode = true);
+	void setEndLevel(Ods::IndexNode* indexNode, bool leafNode = true);
 
 } // namespace BTreeNode
 

@@ -33,6 +33,8 @@
 #include "../jrd/sbm_proto.h"
 #include "../jrd/thd_proto.h"
 
+using namespace Jrd;
+
 static void bucket_reset(SparseBitmap*);
 static void clear_bucket(SparseBitmap*);
 static void clear_segment(BitmapSegment*);

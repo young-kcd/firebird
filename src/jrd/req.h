@@ -35,6 +35,8 @@
 
 #include <vector>
 
+namespace Jrd {
+
 class Lock;
 class fmt;
 class jrd_rel;
@@ -308,6 +310,8 @@ class AccessItem : public pool_alloc<type_acc>
 	const TEXT*	acc_type;
 	USHORT		acc_mask;
 };
+
+} //namespace Jrd
 
 #endif // JRD_REQ_H
 

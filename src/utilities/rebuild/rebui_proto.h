@@ -24,11 +24,15 @@
 #ifndef UTILITIES_REBUI_PROTO_H
 #define UTILITIES_REBUI_PROTO_H
 
+namespace Jrd {
+	struct pag;
+}
+
 SCHAR*		RBDB_alloc (SLONG);
 void		RBDB_close (struct rbdb *);
 void		RBDB_open (struct rbdb *);
-struct pag*	RBDB_read (struct rbdb *, SLONG);
-void		RBDB_write (struct rbdb *, struct pag *, SLONG);
+Ods::pag*	RBDB_read (struct rbdb *, SLONG);
+void		RBDB_write (struct rbdb *, Ods::pag *, SLONG);
 
 #endif // UTILITIES_REBUI_PROTO_H
 

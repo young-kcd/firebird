@@ -43,8 +43,9 @@
 #define	WHY_NO_API 
 #include "../jrd/why_proto.h"
 
-#include "../common/classes/auto.h"
 #include "../jrd/execute_statement.h"
+
+using namespace Jrd;
 
 WHY_DBB GetWhyAttachment(ISC_STATUS* status,
 						  Attachment* jrd_attachment_handle);
@@ -84,33 +85,21 @@ const static struct {
 void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTon)
 {
 	SET_TDBB(tdbb);
-	Sqlda = 0;
-	Transaction = 0;
-	Buffer = 0;
-	StartOfSqlOperator = 0;
-	SingleMode = SingleTon;
-
-	fb_assert(tdbb->tdbb_transaction->tra_pool);
-	// We allocated char[N]; therefore, make sure we deallocate char's and with delete[]
-	Firebird::AutoPtrFromString<vary> v = reinterpret_cast<vary*> (
-		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
-	v->vary_length = BUFFER_LARGE;
-	UCHAR* p = 0;
-	const dsc* desc = EVL_expr(tdbb, sql);
-	const SLONG l = (desc && !(tdbb->tdbb_request->req_flags & req_null)) ?
-		MOV_get_string(desc, &p, v, BUFFER_LARGE) : 0;
-	if (! p) {
-		tdbb->tdbb_status_vector[0] = isc_arg_gds;
-		tdbb->tdbb_status_vector[1] = isc_exec_sql_invalid_arg;
-		tdbb->tdbb_status_vector[4] = isc_arg_end;
-		ERR_punt();
-	}
 	if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
 		tdbb->tdbb_status_vector[0] = isc_arg_gds;
 		tdbb->tdbb_status_vector[1] = isc_exec_sql_max_call_exceeded;
 		tdbb->tdbb_status_vector[2] = isc_arg_end;
 		ERR_punt();
 	}
+
+	Sqlda = 0;
+	Transaction = 0;
+	Buffer = 0;
+	SingleMode = SingleTon;
+
+	fb_assert(tdbb->tdbb_transaction->tra_pool);
+	Firebird::string SqlText;
+	getString(SqlText, EVL_expr(tdbb, sql), tdbb->tdbb_request);
 
 	Attachment = GetWhyAttachment(tdbb->tdbb_status_vector,
 								  tdbb->tdbb_attachment);
@@ -134,12 +123,6 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 
 	// For normal diagnostic
 	const int max_diag_len = 50;
-	int diag_len = strlen((const TEXT*) p);
-	if (diag_len > max_diag_len)
-		diag_len = max_diag_len;
-	StartOfSqlOperator = FB_NEW(*tdbb->tdbb_transaction->tra_pool) TEXT[diag_len + 1];
-	strncpy(StartOfSqlOperator, (const TEXT*) p, diag_len);
-	StartOfSqlOperator[diag_len] = 0;
 
 	// this check uses local error handler for local status vector
 	ISC_STATUS_ARRAY local;
@@ -150,7 +133,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	Chk(isc_dsql_allocate_statement(status, &Attachment, &Statement));
 
 	Chk(isc_dsql_prepare(status, &Transaction, &Statement,
-            (USHORT)l, (TEXT*) p, SQL_DIALECT_CURRENT, Sqlda));
+		SqlText.length(), SqlText.c_str(), SQL_DIALECT_CURRENT, Sqlda));
     if (! Sqlda->sqld) {  // Non-select statement - reject for a while
 		/*Chk(isc_dsql_execute(status, &Transaction,
                &Statement, SQLDA_VERSION1, 0)); */
@@ -321,8 +304,6 @@ void ExecuteStatement::Close(thread_db* tdbb)
 	Transaction = 0;
 	delete[] Buffer;
 	Buffer = 0;
-	delete[] StartOfSqlOperator;
-	StartOfSqlOperator = 0;
 }
 
 XSQLDA* ExecuteStatement::MakeSqlda(thread_db* tdbb, short n)
@@ -360,3 +341,17 @@ ULONG ExecuteStatement::ParseSqlda(void)
     return offset;
 }
 
+void ExecuteStatement::getString(Firebird::string& s, const dsc* d, const jrd_req* r) {
+	char buffer[BUFFER_LARGE + sizeof(vary)];
+	vary* v = reinterpret_cast<vary*>(buffer);
+	v->vary_length = BUFFER_LARGE;
+
+	UCHAR* p = 0;
+	const SSHORT l = (d && !(r->req_flags & req_null)) ?
+		MOV_get_string(d, &p, v, BUFFER_LARGE) : 0; // !!! How call Msgs ?
+	if (! p) {
+		ERR_post(isc_exec_sql_invalid_arg, 0);
+	}
+
+	s.assign((char*)p, l);
+}

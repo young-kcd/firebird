@@ -66,6 +66,9 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/tra_proto.h"
 
+using namespace Jrd;
+using namespace Ods;
+
 
 /*********************************************
       eliminate this conversion - kk

@@ -53,11 +53,12 @@
 #define FPRINTF		ib_fprintf
 #endif
 
-
+// gstat directly reads database files, therefore
+using namespace Ods;
 
 void PPG_print_header(const header_page* header, SLONG page,
 #ifdef SUPERSERVER
-					  Service* outfile)
+					  Jrd::Service* outfile)
 #else
 					  IB_FILE* outfile)
 #endif
@@ -285,7 +286,7 @@ void PPG_print_header(const header_page* header, SLONG page,
 
 void PPG_print_log(const log_info_page* logp, SLONG page,
 #ifdef SUPERSERVER
-				   Service* outfile)
+				   Jrd::Service* outfile)
 #else
 				   IB_FILE* outfile)
 #endif

@@ -80,6 +80,8 @@
 #include "../jrd/dbg_proto.h"
 #include "../common/classes/array.h"
 
+using namespace Jrd;
+
 #ifdef DEV_BUILD
 #define OPT_DEBUG
 #endif
@@ -2376,19 +2378,16 @@ static bool dump_rsb(const jrd_req* request,
         // the whole plan. Not acceptable.
 
         if (procedure->prc_request->req_fors.getCount() == 0) {
-			const str* n = procedure->prc_name;
-            length = (n && n->str_data) ? n->str_length : 0;
-            *buffer_length -= 6 + length;
+			const Firebird::string& n = procedure->prc_name;
+            *buffer_length -= 6 + n.length();
             if (*buffer_length < 0) {
                 return false;
 			}
             *buffer++ = isc_info_rsb_begin;
             *buffer++ = isc_info_rsb_relation;
-            *buffer++ = (SCHAR) length;
-            name = (SCHAR*) n->str_data;
-            while (length--) {
-                *buffer++ = *name++;
-			}
+            *buffer++ = (SCHAR) n.length();
+			memcpy(buffer, n.c_str(), n.length());
+			buffer += n.length();
             *buffer++ = isc_info_rsb_type;
             *buffer++ = isc_info_rsb_sequential;
             *buffer++ = isc_info_rsb_end;

@@ -59,6 +59,8 @@
 #include "../jrd/os/path_utils.h"
 #include "../common/classes/init.h"
 
+using namespace Jrd;
+
 namespace {
 	IB_FILE *ext_fopen(const char *filename, const char *mode);
 

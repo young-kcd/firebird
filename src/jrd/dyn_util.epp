@@ -59,6 +59,8 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 
+using namespace Jrd;
+
 #ifdef SUPERSERVER
 #define V4_THREADING
 #endif
@@ -108,10 +110,10 @@ static const UCHAR prot_blr[] = {
 
 
 SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
-							  GBL		gbl,
+							  gbl*		gbl,
 							  SSHORT	id,
 							  const SCHAR*	generator_name,
-							  BLK*		request)
+							  jrd_req**		request)
 {
 /**************************************
  *
@@ -162,7 +164,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 }
 
 
-void DYN_UTIL_generate_constraint_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
+void DYN_UTIL_generate_constraint_name( thread_db* tdbb, gbl* gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -174,7 +176,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
  *	Generate a name unique to RDB$RELATION_CONSTRAINTS.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -223,7 +225,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
 }
 
 
-void DYN_UTIL_generate_field_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
+void DYN_UTIL_generate_field_name( thread_db* tdbb, gbl* gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -235,7 +237,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
  *	Generate a name unique to RDB$FIELDS.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -285,7 +287,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
 
 void DYN_UTIL_generate_field_position(
 									  thread_db* tdbb,
-									  GBL gbl,
+									  gbl* gbl,
 									  const TEXT* relation_name,
 									  SLONG* field_pos)
 {
@@ -299,7 +301,7 @@ void DYN_UTIL_generate_field_position(
  *	Generate a field position if not specified
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 	SLONG field_position = -1;
 
 	if (!relation_name)
@@ -340,7 +342,7 @@ void DYN_UTIL_generate_field_position(
 
 
 void DYN_UTIL_generate_index_name(thread_db* tdbb,
-								  GBL gbl, TEXT* buffer, UCHAR verb)
+								  gbl* gbl, TEXT* buffer, UCHAR verb)
 {
 /**************************************
  *
@@ -352,7 +354,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb,
  *	Generate a name unique to RDB$INDICES.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -406,7 +408,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb,
 }
 
 
-void DYN_UTIL_generate_trigger_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
+void DYN_UTIL_generate_trigger_name( thread_db* tdbb, gbl* gbl, TEXT* buffer)
 {
 /**************************************
  *
@@ -418,7 +420,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
  *	Generate a name unique to RDB$TRIGGERS.
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -466,7 +468,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, GBL gbl, TEXT* buffer)
 
 
 bool DYN_UTIL_get_prot(thread_db*		tdbb,
-						  GBL		gbl,
+						  gbl*		gbl,
 						  const SCHAR*	rname,
 						  const SCHAR*	fname,
 						  USHORT*	prot_mask)
@@ -517,7 +519,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 
 
 void DYN_UTIL_store_check_constraints(thread_db*	tdbb,
-									  GBL	gbl,
+									  gbl*	gbl,
 									  const TEXT*	constraint_name,
 									  const TEXT*	trigger_name)
 {
@@ -530,7 +532,7 @@ void DYN_UTIL_store_check_constraints(thread_db*	tdbb,
  * Functional description
  *
  **************************************/
-	BLK request;
+	jrd_req* request;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;

@@ -41,6 +41,8 @@
 #include "../jrd/constants.h"
 #include "../jrd/intlobj.h"
 
+namespace Jrd {
+
 class TextType
 {
 public:
@@ -146,7 +148,7 @@ public:
 		fb_assert(tt);
 		fb_assert(tt->texttype_fn_like_create);
 		return //reinterpret_cast<FPTR_LIKE_CREATE>
-			(tt->texttype_fn_like_create)(tdbb, tt, p, pl, escape);
+			(tt->texttype_fn_like_create)(tdbb, *this, p, pl, escape);
 	}
 	
 	void like_reset(void* object)
@@ -388,6 +390,8 @@ static inline bool operator !=(const CharSet& cs1, const CharSet& cs2)
 {
 	return cs1.getStruct() != cs2.getStruct();
 }
+
+} //namespace Jrd
 
 #endif /* JRD_INTL_CLASSES_H */
 

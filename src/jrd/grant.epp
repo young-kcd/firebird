@@ -56,6 +56,8 @@
 #include "../jrd/thd_proto.h"
 #include "../common/utils_proto.h"
 
+using namespace Jrd;
+
 /* privileges given to the owner of a relation */
 
 #define OWNER_PRIVS	SCL_control | SCL_read | SCL_write | SCL_delete | SCL_protect
@@ -330,7 +332,7 @@ static void define_default_class(
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), 0,
 						   (SINT64) 1));
 
-		blk* request = CMP_find_request(tdbb, irq_grant7, IRQ_REQUESTS);
+		jrd_req* request = CMP_find_request(tdbb, irq_grant7, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$RELATIONS
@@ -379,7 +381,7 @@ static void delete_security_class( thread_db* tdbb, TEXT * s_class)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK handle = NULL;
+	jrd_req* handle = NULL;
 
 	FOR(REQUEST_HANDLE handle)
 		CLS IN RDB$SECURITY_CLASSES
@@ -438,7 +440,7 @@ static USHORT get_public_privs(
 
 	USHORT public_priv = 0;
 
-	BLK request = CMP_find_request(tdbb, irq_grant5, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_grant5, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		PRV IN RDB$USER_PRIVILEGES
@@ -487,7 +489,7 @@ static void get_object_info(
 	*view = false;
 
 	if (obj_type == obj_relation) {
-		blk* request = CMP_find_request(tdbb, irq_grant1, IRQ_REQUESTS);
+		jrd_req* request = CMP_find_request(tdbb, irq_grant1, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$RELATIONS WITH
@@ -508,7 +510,7 @@ static void get_object_info(
 			REQUEST(irq_grant1) = request;
 	}
 	else {
-		blk* request = CMP_find_request(tdbb, irq_grant9, IRQ_REQUESTS);
+		jrd_req* request = CMP_find_request(tdbb, irq_grant9, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$PROCEDURES WITH
@@ -558,7 +560,7 @@ static void get_user_privs(thread_db*		tdbb,
 	SSHORT user_type = -2;
 	USHORT priv = 0;
 
-	BLK request = CMP_find_request(tdbb, irq_grant2, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_grant2, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		PRV IN RDB$USER_PRIVILEGES
@@ -708,7 +710,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
 
-	BLK request = CMP_find_request(tdbb, irq_grant8, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_grant8, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		REL IN RDB$RELATIONS
@@ -800,8 +802,8 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	user[0] = 0;
 	aggregate_public = public_priv;
 
-	blk* request = CMP_find_request(tdbb, irq_grant6, IRQ_REQUESTS);
-	blk* request2 = NULL;
+	jrd_req* request = CMP_find_request(tdbb, irq_grant6, IRQ_REQUESTS);
+	jrd_req* request2 = NULL;
 
 	FOR(REQUEST_HANDLE request)
 		FLD IN RDB$RELATION_FIELDS CROSS
@@ -1037,7 +1039,7 @@ static void save_security_class(thread_db*	tdbb,
 	BLB_put_segment(tdbb, blob, buffer, length);
 	BLB_close(tdbb, blob);
 
-	blk* request = CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
 
 	bool found = false;
 	FOR(REQUEST_HANDLE request)

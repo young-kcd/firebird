@@ -42,6 +42,7 @@
        blr_literal, blr_long, 0, 31,0,0,0,
 */
 
+namespace Jrd {
 
 /* trigger definition structure */
 
@@ -74,9 +75,11 @@ struct gen
 	USHORT			gen_id;
 };
 
+} //namespace Jrd
+
 /* generators needed by the system triggers */
 
-static const gen generators[] =
+static const Jrd::gen generators[] =
 {
 	{ "RDB$SECURITY_CLASS", 0 },
 	{ "SQL$DEFAULT", 0 },

@@ -24,31 +24,31 @@
 #ifndef JRD_DYN_DF_PROTO_H
 #define JRD_DYN_DF_PROTO_H
 
-void DYN_define_cache(GBL, const UCHAR**);
-void DYN_define_constraint(GBL, const UCHAR**, const TEXT*, TEXT*);
-void DYN_define_dimension(GBL, const UCHAR**, const TEXT*, TEXT*);
-void DYN_define_exception(GBL, const UCHAR**);
-void DYN_define_file(GBL, const UCHAR**, SLONG, SLONG*, USHORT);
-void DYN_define_filter(GBL, const UCHAR**);
-void DYN_define_function(GBL, const UCHAR**);
-void DYN_define_function_arg(GBL, const UCHAR**, TEXT*);
-void DYN_define_generator(GBL, const UCHAR**);
-void DYN_define_global_field(GBL, const UCHAR**, const TEXT*, TEXT*);
-void DYN_define_index(GBL, const UCHAR**, const TEXT*, UCHAR, TEXT*, TEXT*,
+void DYN_define_cache(Jrd::gbl*, const UCHAR**);
+void DYN_define_constraint(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_dimension(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_exception(Jrd::gbl*, const UCHAR**);
+void DYN_define_file(Jrd::gbl*, const UCHAR**, SLONG, SLONG*, USHORT);
+void DYN_define_filter(Jrd::gbl*, const UCHAR**);
+void DYN_define_function(Jrd::gbl*, const UCHAR**);
+void DYN_define_function_arg(Jrd::gbl*, const UCHAR**, TEXT*);
+void DYN_define_generator(Jrd::gbl*, const UCHAR**);
+void DYN_define_global_field(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_index(Jrd::gbl*, const UCHAR**, const TEXT*, UCHAR, TEXT*, TEXT*,
 							 TEXT*, UCHAR *);
-void DYN_define_local_field(GBL, const UCHAR**, const TEXT*, TEXT*);
-void DYN_define_log_file(GBL, const UCHAR**, bool, bool);
-void DYN_define_parameter(GBL, const UCHAR**, TEXT*);
-void DYN_define_procedure(GBL, const UCHAR**);
-void DYN_define_relation(GBL, const UCHAR**);
-void DYN_define_role(GBL, const UCHAR**);
-void DYN_define_security_class(GBL, const UCHAR**);
-void DYN_define_shadow(GBL, const UCHAR**);
-void DYN_define_sql_field(GBL, const UCHAR**, const TEXT*, TEXT*);
-void DYN_define_trigger(GBL, const UCHAR**, const TEXT*, TEXT*, const bool);
-void DYN_define_trigger_msg(GBL, const UCHAR**, const TEXT*);
-void DYN_define_view_relation(GBL, const UCHAR**, const TEXT*);
-void DYN_define_difference(GBL, const UCHAR**);
+void DYN_define_local_field(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_log_file(Jrd::gbl*, const UCHAR**, bool, bool);
+void DYN_define_parameter(Jrd::gbl*, const UCHAR**, TEXT*);
+void DYN_define_procedure(Jrd::gbl*, const UCHAR**);
+void DYN_define_relation(Jrd::gbl*, const UCHAR**);
+void DYN_define_role(Jrd::gbl*, const UCHAR**);
+void DYN_define_security_class(Jrd::gbl*, const UCHAR**);
+void DYN_define_shadow(Jrd::gbl*, const UCHAR**);
+void DYN_define_sql_field(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*);
+void DYN_define_trigger(Jrd::gbl*, const UCHAR**, const TEXT*, TEXT*, const bool);
+void DYN_define_trigger_msg(Jrd::gbl*, const UCHAR**, const TEXT*);
+void DYN_define_view_relation(Jrd::gbl*, const UCHAR**, const TEXT*);
+void DYN_define_difference(Jrd::gbl*, const UCHAR**);
 
 #endif // JRD_DYN_DF_PROTO_H
 

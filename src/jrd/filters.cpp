@@ -41,6 +41,8 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/thd_proto.h"
 
+using namespace Jrd;
+
 static ISC_STATUS caller(USHORT, BlobControl*, USHORT, UCHAR*, USHORT*);
 static void dump_blr(void*, SSHORT, const char*);
 static void move(const char*, char*, USHORT);
@@ -138,7 +140,7 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 
 /* Initialize for retrieval */
 	UCHAR buffer[512];
-	const SLONG l = control->ctl_source_handle->ctl_total_length;
+	const SLONG l = control->ctl_handle->ctl_total_length;
 	UCHAR* const temp =
 		(l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
@@ -221,7 +223,7 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
 
 /* Initialize for retrieval */
 	UCHAR buffer[512];
-	const SLONG l = 1 + control->ctl_source_handle->ctl_total_length;
+	const SLONG l = 1 + control->ctl_handle->ctl_total_length;
 	UCHAR* const temp =
 		(l <=(SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
@@ -475,7 +477,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 
 	switch (action) {
 	case ACTION_open:
-		source = control->ctl_source_handle;
+		source = control->ctl_handle;
 		control->ctl_total_length = source->ctl_total_length;
 		control->ctl_max_segment = source->ctl_max_segment;
 		control->ctl_number_segments = source->ctl_number_segments;
@@ -676,7 +678,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			control->ctl_data[i] = 0;
 		aux = NULL;
 
-		source = control->ctl_source_handle;
+		source = control->ctl_handle;
 		control->ctl_number_segments = source->ctl_number_segments;
 
 		source_cs = control->ctl_from_sub_type;
@@ -731,9 +733,9 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 			*(aux->ctlaux_subfilter) = *control;
 
-			control->ctl_source_handle = aux->ctlaux_subfilter;
+			control->ctl_handle = aux->ctlaux_subfilter;
 			control->ctl_source = filter_transliterate_text;
-			source = control->ctl_source_handle;
+			source = control->ctl_handle;
 
 			if (action == ACTION_open) {
 				control->ctl_from_sub_type = CS_UNICODE_UCS2;
@@ -1006,7 +1008,7 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 
 /* Initialize for retrieval */
 	UCHAR buffer[512];
-	const SLONG l = control->ctl_source_handle->ctl_total_length;
+	const SLONG l = control->ctl_handle->ctl_total_length;
 	UCHAR* const temp =
 		(l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
 	UCHAR* p = temp;
@@ -1084,7 +1086,7 @@ static ISC_STATUS caller(
  *	Call next source filter.
  *
  **************************************/
-	BlobControl* source = control->ctl_source_handle;
+	BlobControl* source = control->ctl_handle;
 	source->ctl_status = control->ctl_status;
 	source->ctl_buffer = buffer;
 	source->ctl_buffer_length = buffer_length;

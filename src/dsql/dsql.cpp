@@ -802,23 +802,21 @@ ISC_STATUS	dsql8_execute_immediate(
  
 
     @param sql
-    @param l
     @param crdb
 
  **/
-static bool check_for_create_database(const TEXT* sql,
-									  int l,
+static bool check_for_create_database(const Firebird::string& sql,
 									  const TEXT* crdb)
 {
-	for (; l--; sql++) {
-    	switch (*sql) {
+	for (int i = 0; i < sql.length(); i++) {
+    	switch (sql[i]) {
         	case '\t':
         	case '\n':
         	case '\r':
         	case ' ':
             	continue;
         }
-	    if (tolower(*sql) != *crdb++)
+	    if (tolower(sql[i]) != *crdb++)
     	    break;
 	    if (! *crdb)
     	    return true;
@@ -838,21 +836,19 @@ static bool check_for_create_database(const TEXT* sql,
     @param jrd_attachment_handle
     @param jrd_transaction_handle
     @param sql_operator
-    @param len
 
  **/
 ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
-								   Attachment* jrd_attachment_handle,
-								   jrd_tra* jrd_transaction_handle,
-    							   const TEXT* sql_operator,
-    							   int len)
+								   Jrd::Attachment* jrd_attachment_handle,
+								   Jrd::jrd_tra* jrd_transaction_handle,
+								   const Firebird::string& sql_operator)
 {
 	// Other requests appear to be incorrect in this context 
 	long requests = (1 << REQ_INSERT) | (1 << REQ_DELETE) | (1 << REQ_UPDATE)
 			      | (1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE);
 
-	if (check_for_create_database(sql_operator, len, "createdatabase") ||
-		check_for_create_database(sql_operator, len, "createschema"))
+	if (check_for_create_database(sql_operator, "createdatabase") ||
+		check_for_create_database(sql_operator, "createschema"))
 	{
 		requests = 0;
 	}
@@ -892,14 +888,15 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 
 	// 3. Call execute... function 
 	return dsql8_execute_immediate_common(status,
-										  &why_db_handle, &why_trans_handle,
-										  len, sql_operator, database->dbb_db_SQL_dialect,
-										  0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
+						&why_db_handle, &why_trans_handle,
+						sql_operator.length(), sql_operator.c_str(), 
+						database->dbb_db_SQL_dialect,
+						0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
 }
 
 
 WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
-						  Attachment* jrd_attachment_handle)
+						  Jrd::Attachment* jrd_attachment_handle)
 {
 	THREAD_EXIT;
 	THD_MUTEX_LOCK (&databases_mutex);

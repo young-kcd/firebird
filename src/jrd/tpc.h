@@ -24,6 +24,8 @@
 #ifndef JRD_TPC_H
 #define JRD_TPC_H
 
+namespace Jrd {
+
 class TxPageCache : public pool_alloc_rpt<SCHAR, type_tpc>
 {
     public:
@@ -31,5 +33,7 @@ class TxPageCache : public pool_alloc_rpt<SCHAR, type_tpc>
 	SLONG			tpc_base;				/* id of first transaction in this block */
 	UCHAR			tpc_transactions[1];	/* two bits per transaction */
 };
+
+} //namespace Jrd
 
 #endif /* JRD_TPC_H */

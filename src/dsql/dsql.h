@@ -620,6 +620,7 @@ struct tsql
 	}
 
 #undef fb_assert
+void ERRD_assert_msg(const char*, const char*, ULONG);
 #define fb_assert(ex)	{if (!(ex)) {ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__);}}
 
 #else // PROD_BUILD

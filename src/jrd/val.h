@@ -51,6 +51,8 @@
 
 #ifndef REQUESTER
 
+namespace Jrd {
+
 class ArrayField;
 class blb;
 class jrd_req;
@@ -106,7 +108,7 @@ struct fun_repeat {
 class fun : public pool_alloc_rpt<fun_repeat, type_fun>
 {
     public:
-	STR			fun_exception_message;	/* message containing the exception error message */
+	Firebird::string fun_exception_message;	/* message containing the exception error message */
 	fun*		fun_homonym;		/* Homonym functions */
 	Symbol*		fun_symbol;			/* Symbol block */
 	int (*fun_entrypoint) ();		/* Function entrypoint */
@@ -116,6 +118,8 @@ class fun : public pool_alloc_rpt<fun_repeat, type_fun>
 	USHORT		fun_type;			/* Type of function */
 	ULONG		fun_temp_length;	/* Temporary space required */
     fun_repeat fun_rpt[1];
+    public:
+	fun(MemoryPool& p) : fun_exception_message(p) { }
 };
 typedef fun* FUN;
 
@@ -198,6 +202,7 @@ class ArrayField : public pool_alloc_rpt<internal_array_desc::iad_repeat, type_a
 
 #endif /* REQUESTER */
 
+} //namespace Jrd
 
 #endif /* JRD_VAL_H */
 

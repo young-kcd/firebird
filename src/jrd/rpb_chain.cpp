@@ -23,6 +23,8 @@
 #include "firebird.h"
 #include "../jrd/rpb_chain.h"
 
+using namespace Jrd;
+
 #ifdef DEBUG_GDS_ALLOC
 #define ExecAssert(x) fb_assert(x)
 #else  //DEBUG_GDS_ALLOC

@@ -52,6 +52,8 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 
+using namespace Jrd;
+
 #define JRD_FAILURE_SPACE	2048
 #define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 

@@ -62,7 +62,7 @@ BLKDEF(type_ext, ExternalFile, 1)	/* External file */
 BLKDEF(type_mfb, merge_file, 0)	/* merge (equivalence) file block */
 BLKDEF(type_riv, River, 1)	/* River block -- used in optimizer */
 BLKDEF(type_usr, UserId, 0)	/* User identification block */
-BLKDEF(type_att, Attachment, 0)	/* Database attachment */
+BLKDEF(type_att, Jrd::Attachment, 0)	/* Database attachment */
 BLKDEF(type_sym, Symbol, 0)
 BLKDEF(type_fun, fun, sizeof(((fun*) NULL)->fun_rpt[0]))	/* Done Function definition */
 BLKDEF(type_irl, IndexedRelationship, 0)
