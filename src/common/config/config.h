@@ -100,7 +100,8 @@ class Config
 		KEY_CREATE_INTERNAL_WINDOW,					// 33
 		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 34
 		KEY_REMOTE_AUX_PORT,						// 35
-		KEY_REMOTE_BIND_ADDRESS						// 36
+		KEY_REMOTE_BIND_ADDRESS,					// 36
+		KEY_EXTERNAL_FILES_DIRECTORY				// 37
 	};
 
 public:
@@ -289,6 +290,11 @@ public:
 		Server binding NIC address
 	*/
 	static const char *getRemoteBindAddress();
+
+	/*
+		Directory list for external tables
+	*/
+	static const char *getExternalTablesDirectory();
 };
 
 #endif // CONFIG_H

@@ -97,7 +97,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true},
 	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation",(ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
-	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0}
+	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
+	{TYPE_STRING,		"ExternalTablesDirs",		(ConfigValue) "External"}	// location(s) of external tables
 };
 
 /******************************************************************************
@@ -418,4 +419,9 @@ int Config::getRemoteAuxPort()
 const char *Config::getRemoteBindAddress()
 {
 	return (const char*) sysConfig.values[KEY_REMOTE_BIND_ADDRESS];
+}
+
+const char *Config::getExternalTablesDirectory()
+{
+	return (const char*) sysConfig.values[KEY_EXTERNAL_FILES_DIRECTORY];
 }
