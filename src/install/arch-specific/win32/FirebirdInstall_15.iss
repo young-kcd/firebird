@@ -32,6 +32,7 @@ This script is not finished. Please don't try to use it yet.
 ;Either classic_server_install or super_server_install
 ;Default to SuperServer if not defined
 #define super_server_install
+#define msvc_version "7"
 ;#define classic_server_install
 #define FirebirdURL "http://www.firebirdsql.org"
 #define BaseVer "1_5"
@@ -50,7 +51,7 @@ DefaultDirName={code:InstallDir|{pf}\FirebirdSQL\Firebird\{#BaseVer}}
 DefaultGroupName=Firebird
 AllowNoIcons=true
 SourceDir=..\..\..\..\..\firebird2
-LicenseFile=src\install\arch-specific\win32\IPLicense.txt
+LicenseFile=src\install\misc\IPLicense.txt
 InfoBeforeFile=src\install\arch-specific\win32\installation_readme.txt
 InfoAfterFile=src\install\arch-specific\win32\readme.txt
 AlwaysShowComponentsList=true
@@ -158,7 +159,7 @@ Source: builds\win32\output\bin\fbclient.dll; DestDir: {app}\bin; Components: Cl
 ;Source: builds\win32\output\bin\gds32.dll; DestDir: {sys}\; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
 ;Source: builds\win32\output\bin\fbclient.dll; DestDir: {sys}\; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder;
 Source: src\install\arch-specific\win32\msvcrt.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
-Source: src\install\arch-specific\win32\msvcp60.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
+Source: src\install\arch-specific\win32\msvcp{#msvc_version}0.dll; DestDir: {sys}\; Components: ClientComponent; Flags: uninsneveruninstall sharedfile onlyifdoesntexist;
 Source: src\extlib\fbudf\fbudf.sql; DestDir: {app}\examples; Components: ServerComponent;  Flags: ignoreversion;
 Source: src\extlib\fbudf\fbudf.txt; DestDir: {app}\doc; Components: ServerComponent;  Flags: ignoreversion;
 Source: src\extlib\ib_util.pas; DestDir: {app}\include; Components: DevAdminComponent;  Flags: ignoreversion;
