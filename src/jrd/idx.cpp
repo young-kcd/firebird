@@ -238,7 +238,7 @@ void IDX_create_index(
 							1,
 							&key_desc,
 							reinterpret_cast < BOOLEAN(*)() > (duplicate_key),
-							&ifl_data, tdbb->tdbb_attachment);
+							&ifl_data, tdbb->tdbb_attachment, 0);
 
 	if (!sort_handle)
 		ERR_punt();

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.20 2002-11-11 19:42:44 hippoman Exp $ 
+  * $Id: evl.cpp,v 1.21 2002-11-16 17:41:11 dimitr Exp $ 
  */
 
 /*
@@ -3712,7 +3712,7 @@ static SSHORT init_agg_distinct(TDBB tdbb, JRD_NOD node)
 		SORT_init(tdbb->tdbb_status_vector,
 				  ROUNDUP_LONG(sort_key->skd_length), 1, sort_key,
 				  reinterpret_cast < BOOLEAN(*)() > (reject_duplicate), 0,
-				  tdbb->tdbb_attachment);
+				  tdbb->tdbb_attachment, 0);
 
 	if (!(asb_impure->iasb_sort_handle = (SLONG *) handle))
 		ERR_punt();

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.16 2002-11-14 08:23:53 dimitr Exp $
+ * $Id: sort.cpp,v 1.17 2002-11-16 17:41:12 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -739,7 +739,10 @@ SCB SORT_init(STATUS * status_vector,
 			  USHORT record_length,
 			  USHORT keys,
 			  SKD * key_description,
-			  BOOLEAN(*call_back) (), void *user_arg, ATT att)
+			  BOOLEAN(*call_back) (),
+			  void *user_arg,
+			  ATT att,
+			  ULONG max_records)
 {
 /**************************************
  *
@@ -785,6 +788,8 @@ SCB SORT_init(STATUS * status_vector,
 	scb->scb_dup_callback = call_back;
 	scb->scb_dup_callback_arg = user_arg;
 	scb->scb_keys = keys;
+
+	scb->scb_max_records = max_records;
 
 	p = scb->scb_description;
 	q = key_description;

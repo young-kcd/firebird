@@ -38,7 +38,7 @@ extern ULONG SORT_read_block(STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 extern void SORT_error(STATUS *, struct sfb *, TEXT *, STATUS, int);
 extern void SORT_fini(struct scb *, struct att *);
 extern struct scb *SORT_init(STATUS *, USHORT, USHORT, struct skd *,
-							 BOOLEAN(*)(), void *, struct att *);
+							 BOOLEAN(*)(), void *, struct att *, ULONG);
 extern int SORT_put(STATUS *, struct scb *, ULONG **);
 extern void SORT_shutdown(struct att *);
 extern int SORT_sort(STATUS *, struct scb *);
