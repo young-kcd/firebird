@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.31 2003-11-11 12:08:36 brodsom Exp $
+ *  $Id: fb_types.h,v 1.32 2003-11-14 11:12:28 aafemt Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -84,6 +84,9 @@ struct GDS_QUAD_t {
 
 typedef struct GDS_QUAD_t GDS_QUAD;
 typedef struct GDS_QUAD_t ISC_QUAD;
+
+#define	isc_quad_high	gds_quad_high
+#define	isc_quad_low	gds_quad_low
 
 // Basic data types
 
