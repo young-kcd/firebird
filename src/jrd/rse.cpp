@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.19 2003-01-17 13:46:56 dimitr Exp $
+ * $Id: rse.cpp,v 1.20 2003-01-18 14:54:40 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -44,6 +44,7 @@
 #include "../jrd/sbm.h"
 #include "../jrd/lls.h"
 #include "../jrd/sort.h"
+#include "../jrd/sort_mem.h"
 #include "../jrd/intl.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
@@ -937,6 +938,7 @@ static void close_merge(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 				unlink(sfb->sfb_file_name);
 				gds__free(sfb->sfb_file_name);
 			}
+			delete sfb->sfb_mem;
 			delete sfb;
 			mfb->mfb_sfb = 0;
 		}
@@ -3481,10 +3483,10 @@ static ULONG read_merge_block(TDBB tdbb, MFB mfb, ULONG block)
 
 	assert(mfb->mfb_sfb && mfb->mfb_sfb->sfb_file_name);
 
-	SORT_read_block(tdbb->tdbb_status_vector,
-					mfb->mfb_sfb,
-					mfb->mfb_block_size * block,
-					mfb->mfb_block_data, mfb->mfb_block_size);
+	mfb->mfb_sfb->sfb_mem->read(tdbb->tdbb_status_vector,
+								mfb->mfb_block_size * block,
+								reinterpret_cast<char*>(mfb->mfb_block_data),
+								mfb->mfb_block_size);
 
 	return block;
 }
@@ -3708,10 +3710,12 @@ static void write_merge_block(TDBB tdbb, MFB mfb, ULONG block)
 		sfb_->sfb_file_name = (SCHAR*)
 			gds__alloc((ULONG) (strlen(file_name) + 1));
 		strcpy(sfb_->sfb_file_name, file_name);
+
+		sfb_->sfb_mem = FB_NEW (*getDefaultMemoryPool()) SortMem(sfb_, mfb->mfb_block_size);
 	}
 
-	SORT_write_block(tdbb->tdbb_status_vector,
-					 sfb_,
-					 mfb->mfb_block_size * block,
-					 mfb->mfb_block_data, mfb->mfb_block_size);
+	sfb_->sfb_mem->write(tdbb->tdbb_status_vector,
+						 mfb->mfb_block_size * block,
+						 reinterpret_cast<char*>(mfb->mfb_block_data),
+						 mfb->mfb_block_size);
 }
