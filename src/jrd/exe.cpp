@@ -31,7 +31,7 @@
  * to count virtual operations, not real I/O on the underlying tables.
  */
 /*
-$Id: exe.cpp,v 1.11 2002-06-30 09:58:20 dimitr Exp $
+$Id: exe.cpp,v 1.12 2002-06-30 10:15:57 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1067,10 +1067,10 @@ static void cleanup_rpb(TDBB tdbb, RPB *rpb)
 		{
 			VARY *vary;
 			
-			vary = (VARY*) p;
-			if ((length = desc->dsc_length - sizeof (USHORT)) > vary->vary_length)
+			vary = reinterpret_cast<VARY*>(p);
+			if ((length = desc->dsc_length - sizeof(USHORT)) > vary->vary_length)
 			{
-				p = vary->vary_string + vary->vary_length;
+				p = reinterpret_cast<UCHAR*>(vary->vary_string + vary->vary_length);
 				length -= vary->vary_length;
 				do *p++ = 0; while (--length);
 			}

@@ -172,8 +172,8 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 		if (!_access(ib_file_path, 4))
 		{
 			relation->rel_file = file =
-				new(*dbb->dbb_permanent, strlen(tb_file_path) + 1) ext();
-			strcpy(file->ext_filename, absolute_file);
+				new(*dbb->dbb_permanent, strlen(ib_file_path) + 1) ext();
+			strcpy(reinterpret_cast<char*>(file->ext_filename), absolute_file);
 			found_dir = TRUE;
 		}
 		dir_list = dir_list->edls_next;
@@ -183,7 +183,7 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 	{
 		relation->rel_file = file =
 			new(*dbb->dbb_permanent, strlen(file_name) + 1) ext();
-		strcpy(file->ext_filename, file_name);
+		strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 	}
 #else
 	relation->rel_file = file =
