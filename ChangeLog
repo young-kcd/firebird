@@ -1,3 +1,36 @@
+2004-07-03 02:13  brodsom
+
+	* firebird2/src/: alice/all.cpp (1.26), burp/backup.epp (1.62),
+	burp/burp.cpp (1.82), burp/burp.h (1.54), burp/misc.cpp (1.13),
+	burp/mvol.cpp (1.39), burp/mvol_proto.h (1.8), burp/restore.epp
+	(1.80):
+	
+	Put thread functions into thread class
+
+2004-07-02 12:45  brodsom
+
+	* firebird2/src/: iscguard/cntl_guard.cpp (1.17),
+	iscguard/cntlg_proto.h (1.5), jrd/svc.cpp (1.126), jrd/svc.h
+	(1.30), jrd/thd.cpp (1.35), jrd/thd.h (1.33), jrd/os/thd_priority.h
+	(1.17), remote/os/win32/cntl.cpp (1.14),
+	remote/os/win32/cntl_proto.h (1.6):
+	
+	Hack to fix mingw build (due to a mingw bug).
+
+2004-07-02 12:02  brodsom
+
+	* firebird2/src/alice/: alice.cpp (1.67), alice.h (1.40),
+	alice_meta.epp (1.39), all.cpp (1.25), exe.cpp (1.36), tdr.cpp
+	(1.39):
+	
+	Put thread functions into thread class
+
+2004-07-02 09:26  brodsom
+
+	* firebird2/src/dsql/dsql.cpp (1.114):
+	
+	Correction (noticed by Claudio)
+
 2004-07-01 18:41  hvlad
 
 	* firebird2/src/jrd/cvt2.cpp (1.40):
