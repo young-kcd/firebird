@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.44 2003-02-14 09:26:15 dimitr Exp $
+$Id: exe.cpp,v 1.45 2003-03-01 19:19:21 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -102,6 +102,8 @@ $Id: exe.cpp,v 1.44 2003-02-14 09:26:15 dimitr Exp $
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/isc_s_proto.h"
+
+#include "../jrd/ExecuteStatement.h"
 
 extern "C" {
 
@@ -175,8 +177,6 @@ static SLONG memory_count = 0;
 #ifndef MAX_CLONES
 #define MAX_CLONES	1000
 #endif
-
-#define MAX_CALLBACKS	50
 
 #define ALL_TRIGS	0
 #define PRE_TRIG	1
@@ -2397,6 +2397,31 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			if (request->req_operation == jrd_req::req_evaluate)
 				request->req_operation = jrd_req::req_return;
 			node = node->nod_parent;
+			break;
+
+		case nod_exec_into: 
+			{
+			class ExecuteStatement * impure = 
+				(class ExecuteStatement *) 
+					((SCHAR *) request + node->nod_impure);
+			switch (request->req_operation) {
+			case jrd_req::req_evaluate:
+				impure->Open(tdbb, node->nod_arg[0], node->nod_count - 2, 
+						node->nod_arg[1] ? false : true);
+			case jrd_req::req_return:
+			case jrd_req::req_sync:
+				if (impure->Fetch(tdbb, &node->nod_arg[2])) {
+					request->req_operation = jrd_req::req_evaluate;
+					node = node->nod_arg[1];
+					break;
+				}
+				request->req_operation = jrd_req::req_return;
+			default:
+				// if have active opened request - close it
+				impure->Close(tdbb);
+				node = node->nod_parent;
+			}
+			}
 			break;
 
 		case nod_post:

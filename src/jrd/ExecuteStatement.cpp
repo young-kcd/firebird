@@ -174,15 +174,18 @@ bool ExecuteStatement::Fetch(TDBB tdbb, JRD_NOD * JrdVar) {
 	STATUS local[ISC_STATUS_LENGTH], *status = local;
 	memset(local, 0, sizeof(local));
 	status = local;
+	tdbb->tdbb_transaction->tra_callback_count++;
 	THREAD_EXIT;
     if (isc_dsql_fetch(status, &Statement,
                 SQLDA_VERSION1, Sqlda) == 100) {
 		isc_dsql_free_statement(status, &Statement, DSQL_drop);
 		THREAD_ENTER;
+		tdbb->tdbb_transaction->tra_callback_count--;
 		Statement = 0;
 		return false;
     }
 	THREAD_ENTER;
+	tdbb->tdbb_transaction->tra_callback_count--;
 	if (status[0] == 1 && status[1]) {
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
 		Firebird::status_exception::raise(status[1]);
@@ -223,15 +226,18 @@ rec_err:
     }
 
 	if (SingleMode) {
+		tdbb->tdbb_transaction->tra_callback_count++;
 		THREAD_EXIT;
 		if (isc_dsql_fetch(status, &Statement,
                 SQLDA_VERSION1, Sqlda) == 100) {
 			isc_dsql_free_statement(status, &Statement, DSQL_drop);
 			THREAD_ENTER;
+			tdbb->tdbb_transaction->tra_callback_count--;
 			Statement = 0;
 			return false;
 		}
 		THREAD_ENTER;
+		tdbb->tdbb_transaction->tra_callback_count--;
 		if (! (status[0] == 1 && status[1])) {
 			status[0] = gds_arg_gds;
 			status[1] = gds_sing_select_err;
@@ -245,10 +251,12 @@ rec_err:
 
 void ExecuteStatement::Close(TDBB tdbb) {
 	if (Statement) {
+		tdbb->tdbb_transaction->tra_callback_count++;
 		THREAD_EXIT;
 		// for a while don't check for errors while freeing statement
 		isc_dsql_free_statement(0, &Statement, DSQL_drop);
 		THREAD_ENTER;
+		tdbb->tdbb_transaction->tra_callback_count--;
 		Statement = 0;
 	}
 	delete Sqlda;

@@ -85,6 +85,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	/* DBG_supervisor */
+#include "../jrd/ExecuteStatement.h"
 
 /* Pick up relation ids */
 
@@ -4717,6 +4718,10 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			/* Check for syntax errors in the calculation */
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_a);
 		}
+		break;
+
+	case nod_exec_into:
+		csb->csb_impure += sizeof(class ExecuteStatement);
 		break;
 
 	default:

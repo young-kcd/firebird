@@ -200,3 +200,7 @@ NODE(nod_asn_list, asn_list, "")
 
 /* Internal engine info */
 		  NODE(nod_internal_info, internal_info, "INTERNAL INFO")
+
+/* EXECUTE VARCHAR INTO ...*/
+		  NODE(nod_exec_into, exec_sql_into, "EXECUTE VARCHAR INTO")
+

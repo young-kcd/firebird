@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.38 2003-02-28 12:57:12 brodsom Exp $
+$Id: par.cpp,v 1.39 2003-03-01 19:19:21 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -2375,9 +2375,25 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 	case blr_agg_total_distinct:
 	case blr_agg_average_distinct:
 	case blr_post:
-	case blr_exec_sql:
 	case blr_internal_info:
 		*arg++ = parse(tdbb, csb, sub_type);
+		break;
+
+	case blr_exec_sql:
+		*arg++ = parse(tdbb, csb, sub_type);
+		break;
+
+	case blr_exec_into:
+		n = BLR_WORD + 2 /*e_exec_into_count - 1*/ ;
+		node = PAR_make_node(tdbb, n);
+		arg = node->nod_arg;
+		*arg++ = parse(tdbb, csb, VALUE);
+		if (BLR_BYTE) // singleton
+			*arg++ = 0;
+		else
+			*arg++ = parse(tdbb, csb, STATEMENT);
+		for (n=2/*e_exec_into_list*/; n<node->nod_count; n++)
+			*arg++ = parse(tdbb, csb, VALUE);
 		break;
 
 	case blr_post_arg:

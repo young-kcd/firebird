@@ -91,6 +91,7 @@ static const VERB verbs[] = {
 	PAIR(nod_post, blr_post, 2, 1, STATEMENT, VALUE),
 	PAIR(nod_post, blr_post_arg, 2, 2, STATEMENT, VALUE),
 	PAIR(nod_exec_sql, blr_exec_sql, 1, 1, STATEMENT, VALUE),
+	PAIR(nod_exec_into, blr_exec_into, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_internal_info, blr_internal_info, 1, 1, VALUE, VALUE),
 	PAIR2(nod_add, blr_add, 2, 2, VALUE, VALUE),
 	PAIR(nod_agg_count, blr_agg_count, 1, 0, VALUE, VALUE),

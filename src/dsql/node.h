@@ -315,7 +315,7 @@ typedef ENUM nod_t
     nod_udf_param, /* there should be a way to signal a param by descriptor! */
     nod_limit, /* limit support */
     nod_redef_procedure, /* allows silent creation/overwriting of a procedure. */
-	nod_exec_sql, /* EXECUTE VARCHAR */
+	nod_exec_sql, /* EXECUTE STATEMENT */
 	nod_internal_info, /* internal engine info */
 	nod_searched_case, /* searched CASE function */
 	nod_simple_case, /* simple CASE function */
@@ -328,7 +328,8 @@ typedef ENUM nod_t
 	nod_for_update, /* FOR UPDATE clause */
 	nod_user_savepoint, /* Savepoints support */
 	nod_undo_savepoint,
-	nod_label /* label support */
+	nod_label, /* label support */
+	nod_exec_into /* EXECUTE STATEMENT INTO */
 } NOD_TYPE;
 
 
@@ -449,8 +450,13 @@ typedef dsql_nod* DSQL_NOD;
 #define e_pst_argument	1
 #define e_pst_count	2
 
-#define e_exec_vc	0			/* nod_exec_sql */
-#define e_exec_vc_count	1
+#define e_exec_sql_stmnt	0	/* nod_exec_sql */
+#define e_exec_sql_count	1
+
+#define e_exec_into_stmnt	0	/* nod_exec_into */
+#define e_exec_into_block	1
+#define e_exec_into_list	2
+#define e_exec_into_count	3
 
 #define e_internal_info	0		/* nod_internal_info */
 #define e_internal_info_count	1

@@ -924,6 +924,31 @@ STATUS callback_execute_immediate( STATUS* status,
 }
 
 
+WHY_DBB	GetWhyAttachment (STATUS* status,
+						  class att* jrd_attachment_handle)
+{
+	DBB	database;
+
+	THREAD_EXIT;
+	THD_MUTEX_LOCK (&databases_mutex);
+	for (database = databases; database; database = database->dbb_next)
+	{
+	    if (database->dbb_database_handle->handle.h_dbb == jrd_attachment_handle)
+		{
+			break;
+		}
+	}
+	if (! database) {
+    	status[0] = gds_arg_gds;
+    	status[1] = gds_bad_db_handle;
+    	status[2] = gds_arg_end;
+	}
+	THD_MUTEX_UNLOCK (&databases_mutex);
+    THREAD_ENTER;
+	return database ? database->dbb_database_handle : 0;
+}
+
+
 /**
   
  	dsql_fetch

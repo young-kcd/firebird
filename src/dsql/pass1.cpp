@@ -1308,9 +1308,24 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 
     case nod_exec_sql:
 		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_exec_vc] = PASS1_node(request,
-											  input->nod_arg[e_exec_vc],
-											  proc_flag);
+		node->nod_arg[e_exec_sql_stmnt] = PASS1_node(request,
+						input->nod_arg[e_exec_sql_stmnt],
+						proc_flag);
+		return node;
+
+    case nod_exec_into:
+		node = MAKE_node(input->nod_type, input->nod_count);
+		node->nod_arg[e_exec_into_stmnt] = PASS1_node(request,
+					input->nod_arg[e_exec_into_stmnt],
+					proc_flag);
+		node->nod_arg[e_exec_into_block] = input->nod_arg[e_exec_into_block] ? 
+					PASS1_statement(request,
+						input->nod_arg[e_exec_into_block],
+						proc_flag) : 
+					0;
+		node->nod_arg[e_exec_into_list] = PASS1_node(request,
+					input->nod_arg[e_exec_into_list], 
+					proc_flag);
 		return node;
 
 	case nod_rollback:

@@ -291,5 +291,6 @@
 /* This codes reuse BLR code space */
 
 #define blr_post_arg		(unsigned char)163
+#define blr_exec_into		(unsigned char)164
 
 #endif /* _JRD_BLR_H_ */
