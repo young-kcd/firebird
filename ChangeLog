@@ -1,3 +1,44 @@
+2003-09-25 14:12  eku
+
+	* firebird2/src/jrd/: pag.cpp, os/posix/unix.cpp:
+	
+	Fix for databases on raw devices: Detect a database continuation
+	file by its header page.
+
+2003-09-25 13:48  robocop
+
+	* firebird2/src/: alice/alice.cpp, alice/alice_meta.epp,
+	alice/alice_proto.h, alice/all.cpp, alice/exe.cpp, alice/tdr.cpp,
+	burp/backup.epp, burp/burp.cpp, burp/burp.h, burp/burp_proto.h,
+	burp/canonical.cpp, burp/misc.cpp, burp/mvol.cpp, burp/restore.epp,
+	burp/spit.cpp, dsql/all.h, dsql/alld_proto.h, dsql/dsql.h,
+	extlib/ib_udf.c, gpre/ada.cpp, gpre/c_cxx.cpp, gpre/cme.cpp,
+	gpre/ftn.cpp, gpre/int.cpp, gpre/int_cxx.cpp, gpre/pas.cpp,
+	gpre/sql.cpp, ipserver/ipserver.cpp, isql/isql.epp,
+	isql/isql_proto.h, jrd/alt.cpp, jrd/gds.cpp, jrd/gds_proto.h,
+	jrd/gdsold.h, jrd/ibase.h, jrd/intlobj.h, jrd/isc.cpp,
+	jrd/isc_file.cpp, jrd/isc_sync.cpp, jrd/jrd.cpp, jrd/jrn.cpp,
+	jrd/met.epp, jrd/perf.cpp, jrd/scl.epp, jrd/scl_proto.h,
+	jrd/svc.cpp, jrd/utl.cpp, qli/all.cpp, qli/all_proto.h, qli/blk.h,
+	qli/comma_proto.h, qli/command.cpp, qli/compile.cpp, qli/compile.h,
+	qli/dtr.cpp, qli/dtr.h, qli/err.cpp, qli/err_proto.h, qli/eval.cpp,
+	qli/eval_proto.h, qli/exe.cpp, qli/exe.h, qli/exe_proto.h,
+	qli/expan_proto.h, qli/expand.cpp, qli/format.cpp, qli/format.h,
+	qli/gener.cpp, qli/help.epp, qli/help_proto.h, qli/hsh.cpp,
+	qli/hsh_proto.h, qli/lex.cpp, qli/lex_proto.h, qli/meta.epp,
+	qli/mov.cpp, qli/mov_proto.h, qli/nounix.cpp, qli/parse.cpp,
+	qli/parse.h, qli/parse_proto.h, qli/picstr.cpp, qli/proc.epp,
+	qli/proc_proto.h, qli/repor_proto.h, qli/report.cpp, qli/report.h,
+	qli/reqs.h, qli/show.epp, qli/show_proto.h, remote/inet.cpp,
+	remote/remote.h, remote/server.cpp, remote/xnet.cpp,
+	remote/os/win32/ibconfig.cpp, remote/os/win32/wnet.cpp,
+	utilities/gsec/gsec.cpp, utilities/gsec/gsec_proto.h,
+	utilities/gstat/dba.epp:
+	
+	Cleanup, const correctness, variables in scope, etc.  Having done
+	my best to merge everyone else's changes, I hope the tree can be
+	build with whatever other tools != MSVC6.
+
 2003-09-24 17:36  skidder
 
 	* firebird2/src/burp/burp.h:
