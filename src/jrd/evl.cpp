@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.97 2004-07-20 22:56:32 skidder Exp $ 
+  * $Id: evl.cpp,v 1.98 2004-07-26 21:32:41 skidder Exp $ 
  */
 
 /*
@@ -446,9 +446,17 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 						// Search object depends on operand data type.
 						// Thus save data type which we use to compute invariant
-					    impure->vlu_desc.dsc_dtype = desc[0]->dsc_dtype;
-					    impure->vlu_desc.dsc_sub_type = desc[0]->dsc_sub_type;
-					    impure->vlu_desc.dsc_scale = desc[0]->dsc_scale;
+						if (desc[0]) {
+							impure->vlu_desc.dsc_dtype = desc[0]->dsc_dtype;
+							impure->vlu_desc.dsc_sub_type = desc[0]->dsc_sub_type;
+							impure->vlu_desc.dsc_scale = desc[0]->dsc_scale;
+						} else {
+							// Indicate we do not know type of expression.
+							// This code will force pattern recompile for the next non-null value
+							impure->vlu_desc.dsc_dtype = 0;
+							impure->vlu_desc.dsc_sub_type = 0;
+							impure->vlu_desc.dsc_scale = 0;
+						}
 					}
 				}
 			}
