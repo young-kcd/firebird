@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.40 2004-11-23 05:36:37 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.41 2004-11-29 10:06:34 alexpeshkoff Exp $
  *
  */
  
@@ -566,7 +566,7 @@ void nbackup::backup_database(int level, const char* fname)
 			switch (isc_dsql_fetch(status, &stmt, 1, out_sqlda)) {
 			case 100: /* No more records available */
 				b_error::raise("Cannot find record for database \"%s\" backup level %d "
-					"in the backup history", database, level - 1);
+					"in the backup history", database.c_str(), level - 1);
 			case 0: 
 				if (guid_null || scn_null)
 					b_error::raise("Internal error. History query returned null SCN or GUID");
