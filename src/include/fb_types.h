@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.20 2003-04-10 10:48:20 aafemt Exp $
+ *  $Id: fb_types.h,v 1.21 2003-04-16 10:10:14 aafemt Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -162,6 +162,8 @@ typedef int (*FPTR_INT_VOID_PTR) (void *);
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
 
+#define ISC_STATUS_LENGTH	20
+typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
 
 /* Number of elements in an arry */
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
