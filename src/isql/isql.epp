@@ -776,7 +776,7 @@ int getNextInputChar()
  **************************************
  *
  * Functional description
- *	Read next char from input discarding 0x0D characters
+ *	Read next char from input
  *
  *
  **************************************/
@@ -794,17 +794,12 @@ int getNextInputChar()
 	}
 
 	// If at end of line return \n
-	char c;
-	do {
-		if (getColumn == inputLen) //(int) strlen(lastInputLine))
-		{
-			getColumn = -1;
-			return '\n';
-		}
-		c = lastInputLine[getColumn++];
-	} while (c == 0x0D);
-
-	return c;
+	if (getColumn == inputLen) //(int) strlen(lastInputLine))
+	{
+		getColumn = -1;
+		return '\n';
+	}
+	return lastInputLine[getColumn++];
 }
 
 void ISQL_copy_SQL_id(const TEXT* in_str,
