@@ -32,10 +32,6 @@
  *
  */
 
-#ifdef SHLIB_DEFS
-#define LOCAL_SHLIB_DEFS
-#endif
-
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
@@ -421,12 +417,12 @@ static ULONG num_attached = 0;
 #endif /* GOVERNOR */
 
 
-#if !defined(REQUESTER) && !defined(SHLIB_DEFS)
+#if !defined(REQUESTER)
 
 int		debug;
 IHNDL	internal_db_handles = 0;
 
-#endif	// !REQUESTER && !SHLIB_DEFS */
+#endif	// !REQUESTER
 
 
 //____________________________________________________________
@@ -591,14 +587,6 @@ BOOLEAN invalid_client_SQL_dialect = FALSE;
 static const char* CRYPT_IMAGE = "fbcrypt";
 static const char* ENCRYPT = "encrypt";
 static const char* DECRYPT = "decrypt";
-
-
-#ifdef SHLIB_DEFS
-} // extern "C"
-/**  Use shdef.h which has all shared lib defs **/
-#include "shdef.h"
-extern "C" {
-#endif
 
 
 /* every GDS function now has a DLL_EXPORT */

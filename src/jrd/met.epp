@@ -37,17 +37,13 @@
  *
  */
 /*
-$Id: met.epp,v 1.68 2003-09-01 07:58:04 brodsom Exp $
+$Id: met.epp,v 1.69 2003-09-22 17:52:27 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
 #define _STLP_CCTYPE
 #endif
 
-
-#ifdef SHLIB_DEFS
-#define LOCAL_SHLIB_DEFS
-#endif
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -148,28 +144,6 @@ static void store_dependencies(TDBB, CSB, const TEXT*, USHORT);
 static void terminate(TEXT*, USHORT);
 static BOOLEAN verify_TRG_ignore_perm(TDBB, TEXT*);
 
-
-#ifdef SHLIB_DEFS
-#define strlen          (*_libgds_strlen)
-#define strcmp          (*_libgds_strcmp)
-#define strcpy          (*_libgds_strcpy)
-#define vsprintf        (*_libgds_vsprintf)
-#define memcmp          (*_libgds_memcmp)
-#define strncmp         (*_libgds_strncmp)
-#define memset          (*_libgds_memset)
-#define _iob            (*_libgds__iob)
-#define ib_fprintf         (*_libgds_fprintf)
-
-extern int strlen();
-extern int strcmp();
-extern char *strcpy();
-extern int vsprintf();
-extern int memcmp();
-extern int strncmp();
-extern void *memset();
-extern IB_FILE _iob[];
-extern int ib_fprintf();
-#endif
 
 
 // Decompile all triggers from vector

@@ -21,10 +21,6 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifdef SHLIB_DEFS
-#define LOCAL_SHLIB_DEFS
-#endif
-
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"
@@ -71,12 +67,6 @@
 #include "../jrd/thd_proto.h"
 
 #include <algorithm>
-
-#ifdef SHLIB_DEFS
-#define strlen		(*_libgds_strlen)
-
-extern int strlen();
-#endif
 
 #define PERM_EXTEND_SIZE        (16 * 1024)
 #define CACH_EXTEND_SIZE        (16 * 1024)

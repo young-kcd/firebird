@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.37 2003-08-28 13:15:23 brodsom Exp $
+$Id: isc.cpp,v 1.38 2003-09-22 17:52:27 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -165,26 +165,6 @@ static int wait_test(SSHORT *);
 #define FOPEN_WRITE_TYPE "w"
 #endif
 
-
-#ifdef SHLIB_DEFS
-#define strchr          (*_libgds_strchr)
-#define geteuid         (*_libgds_geteuid)
-#define getpwuid        (*_libgds_getpwuid)
-#define _ctype          (*_libgds__ctype)
-#define readlink        (*_libgds_readlink)
-#define gethostname     (*_libgds_gethostname)
-#define endpwent        (*_libgds_endpwent)
-#define getegid         (*_libgds_getegid)
-
-extern SCHAR *strchr();
-extern uid_t geteuid();
-extern struct passwd *getpwuid();
-extern SCHAR _ctype[];
-extern int readlink();
-extern void gethostname();
-extern void endpwent();
-extern gid_t getegid();
-#endif
 
 #ifndef REQUESTER
 void DLL_EXPORT ISC_ast_enter(void)

@@ -665,12 +665,6 @@ static RTN walk_tip(TDBB, VDR, SLONG);
 
 static const SLONG end_level = END_LEVEL, end_bucket = END_BUCKET;
 
-#ifdef SHLIB_DEFS
-#define vsprintf	(*_libgds_vsprintf)
-
-extern int vsprintf();
-#endif
-
 BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 {
 /**************************************

@@ -86,12 +86,6 @@
 
 static void io_error(ISC_STATUS *, TEXT *, TEXT *, ISC_STATUS);
 
-#ifdef SHLIB_DEFS
-#define fsync		(*_libgds_fsync)
-
-extern int fsync();
-#endif
-
 
 int LLIO_allocate_file_space(
 							 ISC_STATUS * status_vector,

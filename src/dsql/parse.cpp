@@ -144,11 +144,7 @@ static const char NULL_STRING [] = "";
 #define TRIGGER_TYPE_SUFFIX(slot1, slot2, slot3) \
 	((slot1 << 1) | (slot2 << 3) | (slot3 << 5))
 
-#ifndef SHLIB_DEFS
 DSQL_NOD		DSQL_parse;
-#else
-extern DSQL_NOD	DSQL_parse;
-#endif
 
 static void	yyerror (TEXT *);
 
@@ -5112,14 +5108,10 @@ typedef int YYSTYPE;
 #endif
 static int yynerrs;
 
-#ifndef SHLIB_DEFS
 int DSQL_yyerrflag;
-#endif
 
 
-#ifndef SHLIB_DEFS
 int DSQL_yychar;
-#endif
 
 short *DSQL_DSQL_yyssp;
 static YYSTYPE *yyvsp;

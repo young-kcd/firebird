@@ -27,10 +27,6 @@
  *
  */
 
-#ifdef SHLIB_DEFS
-#define LOCAL_SHLIB_DEFS
-#endif
-
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
@@ -147,52 +143,6 @@ union fcntlun {
 	int val;
 	struct flock *lockdes;
 };
-#endif
-
-#ifdef SHLIB_DEFS
-#define strlen		(*_libgds_strlen)
-#define close		(*_libgds_close)
-#define open		(*_libgds_open)
-#define errno		(*_libgds_errno)
-#define lseek		(*_libgds_lseek)
-#define read		(*_libgds_read)
-#define fstat		(*_libgds_fstat)
-#define write		(*_libgds_write)
-#define fcntl		(*_libgds_fcntl)
-#define ib_fprintf		(*_libgds_fprintf)
-#define ib_fflush		(*_libgds_fflush)
-#define sscanf		(*_libgds_sscanf)
-#define access		(*_libgds_access)
-#define ib_fopen		(*_libgds_fopen)
-#define ib_fclose		(*_libgds_fclose)
-#define ib_fputs		(*_libgds_fputs)
-#define ib_fgets		(*_libgds_fgets)
-#define strcat		(*_libgds_strcat)
-#define strcpy		(*_libgds_strcpy)
-#define fsync		(*_libgds_fsync)
-#define _iob            (*_libgds__iob)
-
-extern int strlen();
-extern int close();
-extern int open();
-extern int errno;
-extern off_t lseek();
-extern int read();
-extern int fstat();
-extern int write();
-extern int fcntl();
-extern int ib_fprintf();
-extern int ib_fflush();
-extern int sscanf();
-extern int access();
-extern IB_FILE *ib_fopen();
-extern int ib_fclose();
-extern int ib_fputs();
-extern SCHAR *ib_fgets();
-extern SCHAR *strcat();
-extern SCHAR *strcpy();
-extern int fsync();
-extern IB_FILE _iob[];
 #endif
 
 

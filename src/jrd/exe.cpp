@@ -106,11 +106,6 @@
 extern "C" {
 
 
-#ifdef SHLIB_DEFS
-#undef send
-#endif
-
-
 static void assign_xcp_message(TDBB, STR *, const TEXT *);
 static void cleanup_rpb(TDBB, RPB *);
 static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);

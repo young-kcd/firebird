@@ -32,10 +32,6 @@
 
 #define IO_RETRY	20
 
-#ifdef SHLIB_DEFS
-#define LOCAL_SHLIB_DEFS
-#endif
-
 // 11 Sept 2002 Nickolay Samofatov
 // this defined in included dsc.h
 //#define ISC_TIME_SECONDS_PRECISION		10000L
@@ -323,78 +319,6 @@ static struct
 	SLONG arg[1];
 } exit_description;
 #endif
-
-
-
-#ifdef SHLIB_DEFS
-#define sprintf		(*_libgds_sprintf)
-#define vsprintf	(*_libgds_vsprintf)
-#define strlen		(*_libgds_strlen)
-#define strcpy		(*_libgds_strcpy)
-#define _iob		(*_libgds__iob)
-#define getpid		(*_libgds_getpid)
-#define ib_fprintf	(*_libgds_fprintf)
-#define ib_printf	(*_libgds_printf)
-#define ib_fopen	(*_libgds_fopen)
-#define ib_fclose	(*_libgds_fclose)
-#define strerror	(*_libgds_strerror)
-#define malloc		(*_libgds_malloc)
-#define gettimeofday(*_libgds_gettimeofday)
-#define ctime		(*_libgds_ctime)
-#define getenv		(*_libgds_getenv)
-#define lseek		(*_libgds_lseek)
-#define read		(*_libgds_read)
-#define memcpy		(*_libgds_memcpy)
-#define open		(*_libgds_open)
-#define strcat		(*_libgds_strcat)
-#define ib_fputs	(*_libgds_fputs)
-#define ib_fputc	(*_libgds_fputc)
-#define mktemp		(*_libgds_mktemp)
-#define unlink		(*_libgds_unlink)
-#define close		(*_libgds_close)
-#define strncmp		(*_libgds_strncmp)
-#define time		(*_libgds_time)
-#define ib_fflush	(*_libgds_fflush)
-#define errno		(*_libgds_errno)
-#define umask		(*_libgds_umask)
-#define atexit		(*_libgds_atexit)
-#define ib_vfprintf	(*_libgds_vfprintf)
-
-extern int sprintf();
-extern int vsprintf();
-extern int strlen();
-extern SCHAR *strcpy();
-extern IB_FILE _iob[];
-extern pid_t getpid();
-extern int ib_fprintf();
-extern int ib_printf();
-extern IB_FILE *ib_fopen();
-extern int ib_fclose();
-extern int sys_nerr;
-extern SCHAR *strerror();
-extern void *malloc();
-extern int gettimeofday();
-extern SCHAR *ctime();
-extern SCHAR *getenv();
-extern off_t lseek();
-extern int read();
-extern void *memcpy();
-extern int open();
-extern SCHAR *strcat();
-extern int ib_fputs();
-extern int ib_fputc();
-extern SCHAR *mktemp();
-extern int unlink();
-extern int close();
-extern int strncmp();
-extern time_t time();
-extern int ib_fflush();
-extern int errno;
-extern mode_t umask();
-extern int atexit();
-extern int ib_vfprintf();
-#endif /* SHLIB_DEFS */
-
 
 /* BLR Pretty print stuff */
 

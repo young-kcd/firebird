@@ -41,10 +41,6 @@
  *
  */
 
-#ifdef SHLIB_DEFS
-#define LOCAL_SHLIB_DEFS
-#endif
-
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
@@ -222,66 +218,6 @@ static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
 /* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
 static BOOLEAN get_server(TEXT *, TEXT *);
-#endif
-#endif
-
-#ifdef SHLIB_DEFS
-#define strlen		(*_libgds_strlen)
-#define strcmp		(*_libgds_strcmp)
-#define strcpy		(*_libgds_strcpy)
-#define _iob		(*_libgds__iob)
-#define errno		(*_libgds_errno)
-#define ib_fopen		(*_libgds_fopen)
-#define ib_fclose		(*_libgds_fclose)
-#define open		(*_libgds_open)
-#define strcat		(*_libgds_strcat)
-#define strncpy		(*_libgds_strncpy)
-#define strchr		(*_libgds_strchr)
-#define getpwnam	(*_libgds_getpwnam)
-#define geteuid		(*_libgds_geteuid)
-#define getpwuid	(*_libgds_getpwuid)
-#define close		(*_libgds_close)
-#define ib_fscanf		(*_libgds_fscanf)
-#define _ctype		(*_libgds__ctype)
-#define readlink	(*_libgds_readlink)
-
-extern int strlen();
-extern int strcmp();
-extern SCHAR *strcpy();
-extern IB_FILE _iob[];
-extern int errno;
-extern IB_FILE *ib_fopen();
-extern int ib_fclose();
-extern int open();
-extern SCHAR *strcat();
-extern SCHAR *strncpy();
-extern SCHAR *strchr();
-extern struct passwd *getpwnam();
-extern uid_t geteuid();
-extern struct passwd *getpwuid();
-extern int close();
-extern int ib_fscanf();
-extern SCHAR _ctype[];
-extern int readlink();
-
-#ifndef SCO
-#define GETWD		(*_libgds_getwd)
-#define setmntent	(*_libgds_setmntent)
-#define getmntent	(*_libgds_getmntent)
-#define endmntent	(*_libgds_endmntent)
-
-extern SCHAR *GETWD();
-extern IB_FILE *setmntent();
-extern struct mntent *getmntent();
-extern int endmntent();
-#else
-#define getcwd		(*_libgds_getcwd)
-#define popen		(*_libgds_popen)
-#define pclose		(*_libgds_pclose)
-
-extern IB_FILE *popen();
-extern IB_FILE *pclose();
-extern SCHAR *getcwd();
 #endif
 #endif
 

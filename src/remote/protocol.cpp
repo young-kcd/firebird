@@ -121,45 +121,6 @@ static STR gfloat_buffer;
 #endif
 
 
-#ifdef SHLIB_DEFS
-
-#  undef connect
-#  define xdr_enum	(*_libgds_xdr_enum)
-#  define xdr_short	(*_libgds_xdr_short)
-#  define xdr_u_short	(*_libgds_xdr_u_short)
-#  define xdr_long	(*_libgds_xdr_long)
-#  define xdr_opaque	(*_libgds_xdr_opaque)
-#  define xdr_string	(*_libgds_xdr_string)
-#  define xdr_float       (*_libgds_xdr_float)
-#  define xdr_double      (*_libgds_xdr_double)
-#  define	xdr_wrapstring	(*_libgds_xdr_wrapstring)
-#   define xdr_free    (*_libgds_xdr_free)
-
-#ifdef NOT_USED_OR_REPLACED
-// TMN: Patched away this for now, it should probably be removed.
-// Now why the ... would anyone want to define functions differently
-// in an implementation file than they  are defined in their header?!
-
-extern bool_t xdr_enum();
-extern bool_t xdr_short();
-extern bool_t xdr_u_short();
-extern bool_t xdr_long();
-extern bool_t xdr_opaque();
-extern bool_t xdr_string();
-extern bool_t xdr_float();
-extern bool_t xdr_double();
-extern bool_t xdr_wrapstring();
-extern bool_t xdr_free();
-
-#else // NOT_USED_OR_REPLACED
-
-#  include "../remote/xdr_proto.h"
-
-#endif // NOT_USED_OR_REPLACED
-
-#endif // SHLIB_DEFS
-
-
 
 #ifdef DEBUG
 static ULONG xdr_save_size = 0;

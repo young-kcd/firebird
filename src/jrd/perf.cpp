@@ -80,12 +80,6 @@ extern void ftime();
 #define TICK	CLK_TCK
 #endif
 
-#ifdef SHLIB_DEFS
-#define times		(*_libgds_times)
-
-extern clock_t times();
-#endif
-
 
 int API_ROUTINE perf_format(
 						PERF * before,

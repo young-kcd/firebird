@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.34 2003-06-16 15:42:58 alexpeshkoff Exp $
+$Id: flu.cpp,v 1.35 2003-09-22 17:52:27 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -58,13 +58,6 @@ using namespace std;
 #include "../jrd/common.h"
 #include "../jrd/flu.h"
 #include "../jrd/gdsassert.h"
-
-#ifdef SHLIB_DEFS
-// TMN: Why the ... declare this one in the middle of a buch of includes?!
-extern "C" {
-#define FUNCTIONS_entrypoint	(*_libgds_FUNCTIONS_entrypoint)
-}
-#endif
 
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"

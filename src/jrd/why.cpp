@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.28 2003-09-15 12:19:22 robocop Exp $
+$Id: why.cpp,v 1.29 2003-09-22 17:52:27 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -117,18 +117,6 @@ $Id: why.cpp,v 1.28 2003-09-15 12:19:22 robocop Exp $
 
 #ifndef F_TLOCK
 #define F_TLOCK		2
-#endif
-
-#ifdef SHLIB_DEFS
-#define lockf		(*_libgds_lockf)
-#define _assert		(*_libgds__assert)
-#define strchr		(*_libgds_strchr)
-#define access		(*_libgds_access)
-
-extern int lockf();
-extern void _assert();
-extern SCHAR *strchr();
-extern int access();
 #endif
 
 #define IO_RETRY	20

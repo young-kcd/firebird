@@ -52,10 +52,6 @@ static TEXT *attach_failures = NULL, *attach_failures_ptr;
 static void cleanup_memory(void *);
 static SLONG get_parameter(UCHAR **);
 
-#ifdef SHLIB_DEFS
-#define xdrmem_create	(*_libgds_xdrmem_create)
-#endif
-
 extern void DLL_EXPORT THD_init_data();
 
 

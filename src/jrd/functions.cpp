@@ -55,14 +55,6 @@ static FN isc_functions[] = {
 	{0, 0, 0}
 };
 
-#ifdef SHLIB_DEFS
-#define strcmp		(*_libfun_strcmp)
-#define sprintf		(*_libfun_sprintf)
-
-extern int strcmp();
-extern int sprintf();
-#endif
-
 
 FPTR_INT FUNCTIONS_entrypoint(char *module, char *entrypoint)
 {

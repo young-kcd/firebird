@@ -37,10 +37,6 @@
  *
  */
 
-#ifdef SHLIB_DEFS
-#define LOCAL_SHLIB_DEFS
-#endif
-
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
@@ -219,72 +215,6 @@ static void make_object_name(TEXT *, const TEXT *, const TEXT *);
 
 #if defined FREEBSD || defined NETBSD || defined DARWIN
 #define sigset      signal
-#endif
-
-#ifdef SHLIB_DEFS
-#define sprintf		(*_libgds_sprintf)
-#define strlen		(*_libgds_strlen)
-#define strcmp		(*_libgds_strcmp)
-#define strcpy		(*_libgds_strcpy)
-#define _iob		(*_libgds__iob)
-#define shmdt		(*_libgds_shmdt)
-#define ib_fprintf	(*_libgds_fprintf)
-#define errno		(*_libgds_errno)
-#define ib_fopen	(*_libgds_fopen)
-#define ib_fclose	(*_libgds_fclose)
-#define open		(*_libgds_open)
-#define semctl		(*_libgds_semctl)
-#define semop		(*_libgds_semop)
-#define umask		(*_libgds_umask)
-#define close		(*_libgds_close)
-#define _ctype		(*_libgds__ctype)
-#define sigvector	(*_libgds_sigvec)
-#define pause		(*_libgds_pause)
-#define lockf		(*_libgds_lockf)
-#define shmget		(*_libgds_shmget)
-#define shmat		(*_libgds_shmat)
-#define shmctl		(*_libgds_shmctl)
-#define ftok		(*_libgds_ftok)
-#define semget		(*_libgds_semget)
-#define sigset		(*_libgds_sigset)
-#define sbrk		(*_libgds_sbrk)
-#define setitimer	(*_libgds_setitimer)
-#define alarm		(*_libgds_alarm)
-#define sigprocmask	(*_libgds_sigprocmask)
-#define sigsuspend	(*_libgds_sigsuspend)
-#define sigaddset	(*_libgds_sigaddset)
-
-extern int sprintf();
-extern int strlen();
-extern int strcmp();
-extern SCHAR *strcpy();
-extern IB_FILE _iob[];
-extern int shmdt();
-extern int ib_fprintf();
-extern int errno;
-extern IB_FILE *ib_fopen();
-extern int ib_fclose();
-extern int open();
-extern int semctl();
-extern int semop();
-extern mode_t umask();
-extern int close();
-extern SCHAR _ctype[];
-extern int sigvector();
-extern int pause();
-extern int lockf();
-extern int shmget();
-extern int shmctl();
-extern key_t ftok();
-extern int semget();
-extern void (*sigset()) ();
-extern SCHAR *sbrk();
-extern int setitimer();
-extern int alarm();
-extern SCHAR *shmat();
-extern int sigprocmask();
-extern int sigsuspend();
-extern int sigaddset();
 #endif
 
 

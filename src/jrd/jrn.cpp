@@ -26,10 +26,6 @@
  *
  */
 
-#ifdef SHLIB_DEFS
-#define LOCAL_SHLIB_DEFS
-#endif
-
 #include "firebird.h"
 #include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
@@ -101,36 +97,6 @@ static int journal_close(ISC_STATUS *, JRN);
 static int jrn_put(ISC_STATUS *, JRN, JRNH *, USHORT, UCHAR *, USHORT);
 static int retry_connect(ISC_STATUS *, JRN *, TEXT *, USHORT, LTJC *, USHORT,
 						 UCHAR *, USHORT);
-
-#ifdef SHLIB_DEFS
-#define strlen		(*_libgds_strlen)
-#define strcpy		(*_libgds_strcpy)
-#define errno		(*_libgds_errno)
-#define ib_fopen		(*_libgds_fopen)
-#define ib_fclose		(*_libgds_fclose)
-#define close		(*_libgds_close)
-#define ib_fscanf		(*_libgds_fscanf)
-#define connect		(*_libgds_connect)
-#define send		(*_libgds_send)
-#define socket		(*_libgds_socket)
-#define recv		(*_libgds_recv)
-#define sleep		(*_libgds_sleep)
-#define memcpy		(*_libgds_memcpy)
-
-extern int strlen();
-extern SCHAR *strcpy();
-extern int errno;
-extern IB_FILE *ib_fopen();
-extern int ib_fclose();
-extern int close();
-extern int ib_fscanf();
-extern int connect();
-extern int send();
-extern int socket();
-extern int recv();
-extern uint sleep();
-extern void *memcpy();
-#endif
 
 
 /*************************************************************************

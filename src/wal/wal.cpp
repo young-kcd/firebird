@@ -111,16 +111,6 @@ static SSHORT wal_put2(ISC_STATUS *, WAL, UCHAR *, USHORT, UCHAR *, USHORT,
 #define MAX_WAITERS	20
 #define WALBLK_EFFECTIVE_OFFSET(wblk) (wblk->walblk_cur_offset?wblk->walblk_cur_offset:BLK_HDROVHD)
 
-#ifdef SHLIB_DEFS
-#define execl		(*_libgds_execl)
-#define waitpid		(*_libgds_waitpid)
-#define _exit		(*_libgds__exit)
-
-extern int execl();
-extern int waitpid();
-extern void _exit();
-#endif
-
 
 SSHORT WAL_attach( ISC_STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
 {

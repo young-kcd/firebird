@@ -371,24 +371,6 @@ static const serv services[] =
 
 #endif /* SERVER_CAPABILITIES */
 
-#ifdef SHLIB_DEFS
-#define pipe		(*_libgds_pipe)
-#define waitpid		(*_libgds_waitpid)
-#define _exit		(*_libgds__exit)
-#define dup		(*_libgds_dup)
-#define ib_fdopen		(*_libgds_fdopen)
-#define execvp		(*_libgds_execvp)
-#define statistics	(*_libgds_stat)
-
-extern int pipe();
-extern pid_t waitpid();
-extern void _exit();
-extern int dup();
-extern IB_FILE *ib_fdopen();
-extern int execvp();
-extern int statistics();
-#endif
-
 
 extern "C" {
 

@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.73 2003-09-18 10:24:03 aafemt Exp $
+$Id: lock.cpp,v 1.74 2003-09-22 17:53:29 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -334,22 +334,6 @@ static HANDLE	wakeup_event[1];
 #define LOCK_MANAGER	"bin/fb_lock_mgr"
 #endif
 
-
-#ifdef SHLIB_DEFS
-#define strerror	(*_libgds_strerror)
-#define waitpid		(*_libgds_waitpid)
-#define execl		(*_libgds_execl)
-#define _exit		(*_libgds__exit)
-#define statistics	(*_libgds_stat)
-#define chmod		(*_libgds_chmod)
-
-extern SCHAR *strerror();
-extern int waitpid();
-extern int execl();
-extern void _exit();
-extern int statistics();
-extern int chmod();
-#endif
 
 #if defined WIN_NT && defined USE_BLOCKING_THREAD
 static HANDLE blocking_action_thread_handle;

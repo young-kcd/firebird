@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: builtin.cpp,v 1.5 2002-11-04 11:19:02 eku Exp $
+ * $Id: builtin.cpp,v 1.6 2003-09-22 17:52:27 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -48,12 +48,6 @@ FSG 18.Dez.2000
 
 	{NULL, NULL, NULL}			/* End of list marker */
 };
-
-#ifdef SHLIB_DEFS
-#define strcmp		(*_libgds_strcmp)
-
-extern int strcmp();
-#endif
 
 
 FPTR_INT BUILTIN_entrypoint(TEXT * module, TEXT * entrypoint)

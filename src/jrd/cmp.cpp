@@ -127,10 +127,6 @@ rel_MAX} RIDS;
 
 #define MAX_REQUEST_SIZE	10485760	// 10 MB - just to be safe
 
-#ifdef SHLIB_DEFS
-#undef access
-#endif
-
 static UCHAR *alloc_map(TDBB, CSB *, USHORT);
 static JRD_NOD catenate_nodes(TDBB, LLS);
 static JRD_NOD copy(TDBB, CSB *, JRD_NOD, UCHAR *, USHORT, USHORT);

@@ -128,12 +128,6 @@ static TEXT *wal_failures = NULL, *wal_failures_ptr;
 
 #define statistics	stat
 
-#ifdef SHLIB_DEFS
-#define statistics	(*_libgds_stat)
-
-extern int statistics();
-#endif
-
 
 void WALC_acquire( WAL WAL_handle, WALS * address)
 {

@@ -8,14 +8,10 @@ s/^yytabelem yy/static const yytabelem yy/
 s/^yytoktype yy/static const yytoktype yy/
 s/^char \* yy/static char * yy/
 s/^static int yychar;/\
-#ifndef SHLIB_DEFS\
 int yychar;\
-#endif\
 /
 s/^static int yyerrflag;/\
-#ifndef SHLIB_DEFS\
 int yyerrflag;\
-#endif\
 /
 s/yychar/DSQL_yychar/g
 s/yyerrflag/DSQL_yyerrflag/g

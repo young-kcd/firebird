@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.75 2003-09-13 09:15:06 brodsom Exp $
+$Id: inet.cpp,v 1.76 2003-09-22 17:54:59 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -460,81 +460,6 @@ static int INET_initialized = FALSE;
 static WSADATA INET_wsadata;
 static TEXT INET_command_line[MAXPATHLEN + 32], *INET_p;
 #endif
-
-
-#ifdef SHLIB_DEFS
-#define select		(*_libgds_select)
-#define gethostname	(*_libgds_gethostname)
-#define connect		(*_libgds_connect)
-#define execl		(*_libgds_execl)
-#define getservbyname	(*_libgds_getservbyname)
-#define gethostbyname	(*_libgds_gethostbyname)
-#define setsockopt	(*_libgds_setsockopt)
-#define bind		(*_libgds_bind)
-#define listen		(*_libgds_listen)
-#define accept		(*_libgds_accept)
-#define setreuid	(*_libgds_setreuid)
-#define setregid	(*_libgds_setregid)
-#define chdir		(*_libgds_chdir)
-#define getsockname	(*_libgds_getsockname)
-#define getpeername	(*_libgds_getpeername)
-#define gethostbyaddr	(*_libgds_gethostbyaddr)
-#define xdrmem_create	(*_libgds_xdrmem_create)
-#define innetgr		(*_libgds_innetgr)
-#define getppid		(*_libgds_getppid)
-#define getgroups	(*_libgds_getgroups)
-#define bzero		(*_libgds_bzero)
-#define shutdown	(*_libgds_shutdown)
-#define setitimer	(*_libgds_setitimer)
-#define pause		(*_libgds_pause)
-#define getenv		(*_libgds_getenv)
-#ifndef SCO
-//#define initgroups      (*_libgds_initgroups)
-#define sigvector       (*_libgds_sigvec)
-#else
-#define htonl		(*_libgds_htonl)
-#define ntohl		(*_libgds_ntohl)
-#endif /* SCO */
-#define h_errno		(*_libgds_h_errno)
-#define errno		(*_libgds_errno)
-
-extern int select();
-extern void gethostname();
-extern int connect();
-extern int execl();
-extern struct servent *getservbyname();
-extern struct hostent *gethostbyname();
-extern int setsockopt();
-extern int bind();
-extern int listen();
-extern int accept();
-extern int setreuid();
-extern int setregid();
-extern int chdir();
-extern int getsockname();
-extern int getpeername();
-extern struct hostent *gethostbyaddr();
-extern int xdrmem_create();
-extern int innetgr();
-extern int getgroups();
-extern int bzero();
-extern int shutdown();
-extern int setitimer();
-extern int pause();
-extern char *getenv();
-
-#ifndef SCO
-//extern int initgroups();
-extern int sigvector();
-extern int getppid();
-#else
-extern ulong htonl();
-extern ulong ntohl();
-extern pid_t getppid();
-#endif /* SCO */
-extern int h_errno;
-extern int errno;
-#endif /* SHLIB_DEFS */
 
 
 #ifdef VMS

@@ -39,10 +39,6 @@
  *
  */
 
-#ifdef SHLIB_DEFS
-#define LOCAL_SHLIB_DEFS
-#endif
-
 #include "firebird.h"
 #include <limits.h>
 #include "../jrd/ib_stdio.h"
@@ -262,46 +258,6 @@ static const TEXT *const impl_implementation[] = {
 
 
 extern "C" {
-
-#ifdef SHLIB_DEFS
-#define strlen		(*_libgds_strlen)
-#define _iob		(*_libgds_iob)
-#define ib_printf		(*_libgds_printf)
-#define ib_fopen		(*_libgds_fopen)
-#define ib_fclose		(*_libgds_fclose)
-#define getenv		(*_libgds_getenv)
-#define ib_fputc		(*_libgds_fputc)
-#define mktemp		(*_libgds_mktemp)
-#define unlink		(*_libgds_unlink)
-#define statistics	(*_libgds_stat)
-#define sprintf		(*_libgds_sprintf)
-#define system		(*_libgds_system)
-#define ib_fgetc		(*_libgds_fgetc)
-#define ib_fgets		(*_libgds_fgets)
-#define strcat		(*_libgds_strcat)
-#define strcpy		(*_libgds_strcpy)
-#define strncpy		(*_libgds_strncpy)
-#define ib_fprintf		(*_libgds_fprintf)
-
-extern int strlen();
-extern IB_FILE _iob[];
-extern int ib_printf();
-extern IB_FILE *ib_fopen();
-extern int ib_fclose();
-extern SCHAR *getenv();
-extern int ib_fputc();
-extern SCHAR *mktemp();
-extern int unlink();
-extern int statistics();
-extern int sprintf();
-extern int system();
-extern int ib_fgetc();
-extern SCHAR *ib_fgets();
-extern SCHAR *strcat();
-extern SCHAR *strcpy();
-extern SCHAR *strncpy();
-extern int ib_fprintf();
-#endif
 
 
 #ifdef VMS

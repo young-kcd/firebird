@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.82 2003-09-13 18:35:38 skidder Exp $
+$Id: common.h,v 1.83 2003-09-22 17:52:27 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -948,15 +948,6 @@ void GDS_breakpoint(int);
 #endif
 #endif
 
-
-
-/* shared library definitions */
-
-#ifdef SHLIB_DEFS
-#ifndef LOCAL_SHLIB_DEFS
-#include "../jrd/shdef.h"
-#endif
-#endif
 
 #ifndef DLL_EXPORT
 #define DLL_EXPORT
