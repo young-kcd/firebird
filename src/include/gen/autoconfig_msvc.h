@@ -70,6 +70,12 @@
 #undef HAVE_VFORK_H
 #undef HAVE_CRYPT_H 
 
+#undef HAVE_NETCONFIG_H
+#undef HAVE_NETINET_IN_H
+#undef HAVE_RPC_RPC_H
+#undef HAVE_RPC_XDR_H
+
+
 /* Functions */
 #undef HAVE_STRLCPY
 #undef HAVE_STRLCAT

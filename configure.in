@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.78 2002-11-12 09:17:47 eku Exp $
+dnl $Id: configure.in,v 1.79 2002-11-12 12:30:06 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -177,6 +177,13 @@ AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(varargs.h)
 AC_CHECK_HEADERS(crypt.h)
+
+AC_CHECK_HEADERS(netinet/in.h)
+
+AC_CHECK_HEADERS(rpc/rpc.h)
+AC_CHECK_HEADERS(netconfig.h)
+
+AC_CHECK_HEADERS(rpc/xdr.h)
 
 
 dnl Check for libraries
