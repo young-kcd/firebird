@@ -2,7 +2,7 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.9 2003-10-30 07:26:27 eku Exp $
+# $Id: autogen.sh,v 1.10 2003-11-10 11:25:05 aafemt Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
@@ -11,9 +11,9 @@ DIE=0
 VER=`autoconf --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
 case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
- 2\.[1-4][0-9] | 2\.5[0-6][a-z]* )
+ 2\.[1-4][0-9] | 2\.5[0-5][a-z]* )
   echo
-  echo "**Error**: You must have autoconf 2.57 or later installed."
+  echo "**Error**: You must have autoconf 2.56 or later installed."
   echo "Download the appropriate package for your distribution/OS,"
   echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/autoconf/"
   DIE=1
