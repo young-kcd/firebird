@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.13 2002-09-27 00:20:08 bellardo Exp $
+  $Id: isql.epp,v 1.14 2002-09-27 01:29:50 bellardo Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -56,9 +56,6 @@
 #include <string.h>
 #include <signal.h>
 #include <math.h>
-#ifdef DARWIN
-#include </usr/include/math.h>
-#endif
 #include <ctype.h>
 #include <errno.h>
 
