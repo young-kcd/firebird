@@ -521,6 +521,7 @@ void JRD_print_pools(const char* filename) {
 	fclose(out);	
 }
 
+
 ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 								SSHORT	file_length,
 								const TEXT*	file_name,
