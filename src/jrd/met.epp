@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.105 2004-04-10 03:30:01 skidder Exp $
+$Id: met.epp,v 1.106 2004-04-10 03:56:34 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -173,7 +173,7 @@ void post_used_procedures(thread_db* tdbb, trig_vec* vector)
 
 	trig_vec::iterator ptr = vector->begin();
 	for (const trig_vec::const_iterator end = vector->end(); ptr < end; ptr++) {
-		if (ptr->request && !CMP_clone_active(ptr->request)) {
+		if (ptr->request && !CMP_clone_is_active(ptr->request)) {
 			for (Resource* resource = ptr->request->req_resources; resource;
 				 resource = resource->rsc_next)
 			{
