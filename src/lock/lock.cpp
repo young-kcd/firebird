@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.83 2004-01-03 10:59:43 robocop Exp $
+$Id: lock.cpp,v 1.84 2004-01-21 07:18:29 skidder Exp $
 */
 
 #include "firebird.h"
@@ -736,7 +736,7 @@ void LOCK_fini( ISC_STATUS * status_vector, PTR * owner_offset)
 	release_mutex();
 
 #ifdef USE_BLOCKING_SIGNALS
-	ISC_signal_cancel(LOCK_block_signal, blocking_action,  (void *)offset);
+	ISC_signal_cancel(LOCK_block_signal, blocking_action,  (void *)(IPTR)offset);
 #endif
 
 	*owner_offset = (PTR)0;
@@ -798,7 +798,7 @@ int LOCK_init(
 #ifdef USE_BLOCKING_SIGNALS
 	if (LOCK_owner_offset)
 		ISC_signal(LOCK_block_signal, blocking_action,
-				   (void *) LOCK_owner_offset);
+				   (void *)(IPTR) LOCK_owner_offset);
 #endif
 
 /* Initialize process level stuffs for different platforms.

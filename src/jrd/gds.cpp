@@ -2394,7 +2394,7 @@ void* API_ROUTINE gds__temp_file(
 	strcat(file_name, TEMP_PATTERN);
 	
 #ifdef HAVE_MKSTEMP
-	result = (void *)mkstemp(file_name);
+	result = (void *)(IPTR)mkstemp(file_name);
 #else
 	if (mktemp(file_name) == (char *)0)
 		return (void *)-1;
@@ -2407,7 +2407,7 @@ void* API_ROUTINE gds__temp_file(
 		return result;
 
 	if (stdio_flag)
-		if (!(result = ib_fdopen((int) result, "w+")))
+		if (!(result = ib_fdopen((int)(IPTR)result, "w+")))
 			return (void *)-1;
 
 	if (expanded_string)

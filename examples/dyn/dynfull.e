@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: dynfull.e,v 1.2 2003-07-11 03:08:44 brodsom Exp $
+$Id: dynfull.e,v 1.3 2004-01-21 07:16:05 skidder Exp $
 */
 
 #include "example.h"
@@ -119,7 +119,7 @@ void process_statement(ARG(XSQLDA * *, sqldap),
 	ARGLIST(XSQLDA	**sqldap)
 	ARGLIST(char	*query)
 {
-	long	buffer[MAXLEN];
+	int	buffer[MAXLEN];
 	XSQLVAR	*var;
 	XSQLDA *sqlda;
 	short	num_cols, i;
@@ -338,7 +338,7 @@ ARGLIST(XSQLVAR	*var)
 					field_width = 6;
 					break;
 				    case SQL_LONG:
-					value = (ISC_INT64) *(long *) var->sqldata;
+					value = (ISC_INT64) *(int *) var->sqldata;
 					field_width = 11;
 					break;
 				    case SQL_INT64:

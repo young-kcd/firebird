@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.26 2004-01-03 10:59:38 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.27 2004-01-21 07:16:15 skidder Exp $
 //
 
 #include "firebird.h"
@@ -693,8 +693,12 @@ static void make_port( POR port, int column)
 			break;
 
 		case dtype_quad:
-		case dtype_blob:
 			ib_fprintf(out_file, "    ISC_QUAD  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
+			break;
+			
+		case dtype_blob:
+			ib_fprintf(out_file, "    bid  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 

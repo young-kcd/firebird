@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.40 2003-11-28 06:48:12 robocop Exp $
+//  $Id: par.cpp,v 1.41 2004-01-21 07:16:15 skidder Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -3077,7 +3077,7 @@ static ACT par_type()
 
 	PAR_get_token();
 	action = MSC_action(0, ACT_type_number);
-	action->act_object = (REF) (ULONG) type;
+	action->act_object = (REF) (IPTR) type;
 
 	return action;
 }

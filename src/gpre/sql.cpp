@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.38 2004-01-06 10:33:11 robocop Exp $
+//	$Id: sql.cpp,v 1.39 2004-01-21 07:16:15 skidder Exp $
 //
 
 #include "firebird.h"
@@ -2851,7 +2851,7 @@ static ACT act_drop(void)
 		SLONG num = EXP_USHORT_ordinal(true);
 		if (!range_positive_short_integer(num))
 			PAR_error("Shadow number out of range");
-		action->act_object = (REF) num;
+		action->act_object = (REF)(IPTR)num;
 		}
 		return action;
 

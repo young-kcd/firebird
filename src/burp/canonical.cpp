@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.32 2004-01-13 09:52:09 robocop Exp $
+$Id: canonical.cpp,v 1.33 2004-01-21 07:16:08 skidder Exp $
 */
 
 #include "firebird.h"
@@ -486,7 +486,7 @@ static bool_t xdr_datum(XDR* xdrs, DSC* desc, UCHAR* buffer)
  **************************************/
 	SSHORT n;
 
-	UCHAR* p = buffer + (int) desc->dsc_address;
+	UCHAR* p = buffer + (IPTR) desc->dsc_address;
 
 	switch (desc->dsc_dtype)
 	{
@@ -654,7 +654,7 @@ static bool_t xdr_slice(XDR* xdrs,
  *	Move a slice of an array under
  *
  **************************************/
-	if (!xdr_long(xdrs, reinterpret_cast<long*>(&slice->lstr_length)))
+	if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(&slice->lstr_length)))
 		  return FALSE;
 
 // Handle operation specific stuff, particularly memory allocation/deallocation 

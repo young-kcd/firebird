@@ -704,7 +704,7 @@ static BOOLEAN execute(SDL_ARG arg)
 			}
 			element_desc = array_desc->ads_rpt[value].ads_desc;
 			element_desc.dsc_address = (BLOB_PTR *) arg->sdl_arg_array +
-				(SLONG) element_desc.dsc_address +
+				(IPTR) element_desc.dsc_address +
 				(array_desc->ads_element_length * subscript);
 
 			/* Is this element within the array bounds? */

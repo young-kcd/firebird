@@ -555,7 +555,7 @@ statement	: alter
 		| set
 		| update
 		| KW_DEBUG signed_short_integer
-			{ prepare_console_debug ((int) $2, &yydebug);
+			{ prepare_console_debug ((IPTR) $2, &yydebug);
 			  $$ = make_node (nod_null, (int) 0, NULL); }
 		;
 
@@ -757,7 +757,7 @@ udf_data_type	: simple_type
 		| CSTRING '(' pos_short_integer ')' charset_clause
 			{ 
 			lex.g_field->fld_dtype = dtype_cstring; 
-			lex.g_field->fld_character_length = (USHORT)(ULONG) $3; }
+			lex.g_field->fld_character_length = (USHORT)(IPTR) $3; }
 		;
 
 arg_desc_list1	: 
@@ -1125,7 +1125,7 @@ db_cache	: CACHE sql_string cache_length
 				  yyabandon (-260, isc_cache_redef);
 				  */ /* Cache redefined */ /*
 			  lex.g_file = make_file();
-			  lex.g_file->fil_length = (SLONG) $3;
+			  lex.g_file->fil_length = (IPTR) $3;
 			  lex.g_file->fil_name = (dsql_str*) $2;
 			  lex.cache_defined = TRUE;
 			  $$ = (dsql_nod*) make_node (nod_cache_file_desc, (int) 1,
@@ -1163,7 +1163,7 @@ logfile_attrs	:
 		;
 
 logfile_attr	: KW_SIZE equals long_integer
-			{ lex.g_file->fil_length = (SLONG) $3; }
+			{ lex.g_file->fil_length = (IPTR) $3; }
 /*
 		| RAW_PARTITIONS equals pos_short_integer
 			{ lex.g_file->fil_partitions = (SSHORT) $3; 
@@ -1183,9 +1183,9 @@ file_desc	: file_clause
 		;
 
 file_clause	: STARTING file_clause_noise long_integer
-			{ lex.g_file->fil_start = (SLONG) $3;}
+			{ lex.g_file->fil_start = (IPTR) $3;}
 		| LENGTH equals long_integer page_noise
-			{ lex.g_file->fil_length = (SLONG) $3;}
+			{ lex.g_file->fil_length = (IPTR) $3;}
 		;
 
 file_clause_noise :
@@ -1977,35 +1977,35 @@ trigger_type_prefix	: BEFORE
 		;
 
 trigger_type_suffix	: INSERT
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 0, 0), CONSTANT_SLONG); }
 		| UPDATE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 0, 0), CONSTANT_SLONG); }
 		| KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 0, 0), CONSTANT_SLONG); }
 		| INSERT OR UPDATE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 2, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 2, 0), CONSTANT_SLONG); }
 		| INSERT OR KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 3, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 3, 0), CONSTANT_SLONG); }
 		| UPDATE OR INSERT
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 1, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 1, 0), CONSTANT_SLONG); }
 		| UPDATE OR KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 3, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 3, 0), CONSTANT_SLONG); }
 		| KW_DELETE OR INSERT
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 1, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 1, 0), CONSTANT_SLONG); }
 		| KW_DELETE OR UPDATE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 2, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 2, 0), CONSTANT_SLONG); }
 		| INSERT OR UPDATE OR KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 2, 3), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 2, 3), CONSTANT_SLONG); }
 		| INSERT OR KW_DELETE OR UPDATE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (1, 3, 2), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 3, 2), CONSTANT_SLONG); }
 		| UPDATE OR INSERT OR KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 1, 3), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 1, 3), CONSTANT_SLONG); }
 		| UPDATE OR KW_DELETE OR INSERT
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (2, 3, 1), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 3, 1), CONSTANT_SLONG); }
 		| KW_DELETE OR INSERT OR UPDATE
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 1, 2), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 1, 2), CONSTANT_SLONG); }
 		| KW_DELETE OR UPDATE OR INSERT
-			{ $$ = MAKE_constant ((dsql_str*) trigger_type_suffix (3, 2, 1), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 2, 1), CONSTANT_SLONG); }
 		;
 
 trigger_position : POSITION nonneg_short_integer
@@ -2312,7 +2312,7 @@ array_spec	: array_range
 		;
 
 array_range	: signed_long_integer
-				{ if ((SLONG) $1 < 1)
+				{ if ((IPTR) $1 < 1)
 			 		$$ = make_node (nod_list, (int) 2, 
 					MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG),
 					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG));
@@ -2418,26 +2418,26 @@ blob_type	: BLOB blob_subtype blob_segsize charset_clause
 		| BLOB '(' unsigned_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
-			lex.g_field->fld_seg_length = (USHORT)(ULONG) $3;
+			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
 			lex.g_field->fld_sub_type = 0;
 			}
 		| BLOB '(' unsigned_short_integer ',' signed_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
-			lex.g_field->fld_seg_length = (USHORT)(ULONG) $3;
-			lex.g_field->fld_sub_type = (USHORT)(ULONG) $5;
+			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
+			lex.g_field->fld_sub_type = (USHORT)(IPTR) $5;
 			}
 		| BLOB '(' ',' signed_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
 			lex.g_field->fld_seg_length = 80;
-			lex.g_field->fld_sub_type = (USHORT)(ULONG) $4;
+			lex.g_field->fld_sub_type = (USHORT)(IPTR) $4;
 			}
 		;
 
 blob_segsize	: SEGMENT KW_SIZE unsigned_short_integer
 		  	{
-			lex.g_field->fld_seg_length = (USHORT)(ULONG) $3;
+			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
 		  	}
 		|
 		  	{
@@ -2447,7 +2447,7 @@ blob_segsize	: SEGMENT KW_SIZE unsigned_short_integer
 
 blob_subtype	: SUB_TYPE signed_short_integer
 			{
-			lex.g_field->fld_sub_type = (USHORT)(ULONG) $2;
+			lex.g_field->fld_sub_type = (USHORT)(IPTR) $2;
 			}
 		| SUB_TYPE symbol_blob_subtype_name
 			{
@@ -2473,7 +2473,7 @@ charset_clause	: CHARACTER SET symbol_character_set_name
 national_character_type	: national_character_keyword '(' pos_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_text; 
-			lex.g_field->fld_character_length = (USHORT)(ULONG) $3; 
+			lex.g_field->fld_character_length = (USHORT)(IPTR) $3; 
 			lex.g_field->fld_flags |= FLD_national;
 			}
 		| national_character_keyword
@@ -2485,7 +2485,7 @@ national_character_type	: national_character_keyword '(' pos_short_integer ')'
 		| national_character_keyword VARYING '(' pos_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_varying; 
-			lex.g_field->fld_character_length = (USHORT)(ULONG) $4; 
+			lex.g_field->fld_character_length = (USHORT)(IPTR) $4; 
 			lex.g_field->fld_flags |= FLD_national;
 			}
 		;
@@ -2493,7 +2493,7 @@ national_character_type	: national_character_keyword '(' pos_short_integer ')'
 character_type	: character_keyword '(' pos_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_text; 
-			lex.g_field->fld_character_length = (USHORT)(ULONG) $3; 
+			lex.g_field->fld_character_length = (USHORT)(IPTR) $3; 
 			}
 		| character_keyword
 			{ 
@@ -2503,7 +2503,7 @@ character_type	: character_keyword '(' pos_short_integer ')'
 		| varying_keyword '(' pos_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_varying; 
-			lex.g_field->fld_character_length = (USHORT)(ULONG) $3; 
+			lex.g_field->fld_character_length = (USHORT)(IPTR) $3; 
 			}
 		;
 
@@ -2548,10 +2548,10 @@ prec_scale	:
 				}
 		| '(' signed_long_integer ')'
 			{		 
-			if ( ((SLONG) $2 < 1) || ((SLONG) $2 > 18) )
+			if ( ((IPTR) $2 < 1) || ((IPTR) $2 > 18) )
 				yyabandon (-842, isc_precision_err);
 				/* Precision most be between 1 and 18. */ 
-			if ((SLONG) $2 > 9)
+			if ((IPTR) $2 > 9)
 				{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) &&
 				   (db_dialect	 >  SQL_DIALECT_V5) ) ||
@@ -2588,7 +2588,7 @@ prec_scale	:
 					}
 				}
 			else 
-				if ((SLONG) $2 < 5)
+				if ((IPTR) $2 < 5)
 					{
 					lex.g_field->fld_dtype = dtype_short; 
 					lex.g_field->fld_length = sizeof (SSHORT); 
@@ -2598,17 +2598,17 @@ prec_scale	:
 					lex.g_field->fld_dtype = dtype_long; 
 					lex.g_field->fld_length = sizeof (SLONG); 
 					}
-			lex.g_field->fld_precision = (USHORT)(ULONG) $2;
+			lex.g_field->fld_precision = (USHORT)(IPTR) $2;
 			}
 		| '(' signed_long_integer ',' signed_long_integer ')'
 			{ 
-			if ( ((SLONG) $2 < 1) || ((SLONG) $2 > 18) )
+			if ( ((IPTR) $2 < 1) || ((IPTR) $2 > 18) )
 				yyabandon (-842, isc_precision_err);
 				/* Precision should be between 1 and 18 */ 
-			if (((SLONG) $4 > (SLONG) $2) || ((SLONG) $4 < 0))
+			if (((IPTR) $4 > (IPTR) $2) || ((IPTR) $4 < 0))
 				yyabandon (-842, isc_scale_nogt);
 				/* Scale must be between 0 and precision */
-			if ((SLONG) $2 > 9)
+			if ((IPTR) $2 > 9)
 				{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) &&
 				   (db_dialect	 >  SQL_DIALECT_V5) ) ||
@@ -2646,7 +2646,7 @@ prec_scale	:
 				}
 			else
 				{
-				if ((SLONG) $2 < 5)
+				if ((IPTR) $2 < 5)
 					{
 					lex.g_field->fld_dtype = dtype_short; 
 					lex.g_field->fld_length = sizeof (SSHORT); 
@@ -2657,8 +2657,8 @@ prec_scale	:
 					lex.g_field->fld_length = sizeof (SLONG); 
 					}
 				}
-			lex.g_field->fld_precision = (USHORT)(ULONG) $2;
-			lex.g_field->fld_scale = - (SSHORT)(SLONG) $4;
+			lex.g_field->fld_precision = (USHORT)(IPTR) $2;
+			lex.g_field->fld_scale = - (SSHORT)(IPTR) $4;
 			}
 		;
 
@@ -2672,7 +2672,7 @@ decimal_keyword	: DECIMAL
 
 float_type	: KW_FLOAT precision_opt
 			{ 
-			if ((SLONG) $2 > 7)
+			if ((IPTR) $2 > 7)
 				{
 				lex.g_field->fld_dtype = dtype_double;
 				lex.g_field->fld_length = sizeof (double); 
@@ -2875,7 +2875,7 @@ restr_option	: table_list table_lock
 		;
 
 table_lock	: FOR lock_type lock_mode
-			{ $$ = make_flag_node (nod_lock_mode, (SSHORT) ((SSHORT)(SLONG) $2 | (SSHORT)(SLONG) $3), (SSHORT) 0, NULL); }
+			{ $$ = make_flag_node (nod_lock_mode, (SSHORT) ((SSHORT)(IPTR) $2 | (SSHORT)(IPTR) $3), (SSHORT) 0, NULL); }
 		|
 			{ $$ = 0; }
 		;
@@ -3851,32 +3851,32 @@ sql_string	: STRING			/* string in current charset */
 
 signed_short_integer	:	nonneg_short_integer
 		| '-' neg_short_integer
-			{ $$ = (dsql_nod*) - (SLONG) $2; }
+			{ $$ = (dsql_nod*) - (IPTR) $2; }
 		;
 
 nonneg_short_integer	: NUMBER
-			{ if ((SLONG) $1 > SHRT_POS_MAX)
+			{ if ((IPTR) $1 > SHRT_POS_MAX)
 				yyabandon (-842, isc_expec_short);
 				/* Short integer expected */
 			  $$ = $1;}
 		;
 
 neg_short_integer : NUMBER
-			{ if ((SLONG) $1 > SHRT_NEG_MAX)
+			{ if ((IPTR) $1 > SHRT_NEG_MAX)
 				yyabandon (-842, isc_expec_short);
 				/* Short integer expected */
 			  $$ = $1;}
 		;
 
 pos_short_integer : nonneg_short_integer
-			{ if ((SLONG) $1 == 0)
+			{ if ((IPTR) $1 == 0)
 				yyabandon (-842, isc_expec_positive);
 				/* Positive number expected */
 			  $$ = $1;}
 		;
 
 unsigned_short_integer : NUMBER
-			{ if ((SLONG) $1 > SHRT_UNSIGNED_MAX)
+			{ if ((IPTR) $1 > SHRT_UNSIGNED_MAX)
 				yyabandon (-842, isc_expec_ushort);
 				/* Unsigned short integer expected */
 			  $$ = $1;}
@@ -3884,7 +3884,7 @@ unsigned_short_integer : NUMBER
 
 signed_long_integer	:	long_integer
 		| '-' long_integer
-			{ $$ = (dsql_nod*) - (SLONG) $2; }
+			{ $$ = (dsql_nod*) - (IPTR) $2; }
 		;
 
 long_integer	: NUMBER
@@ -4409,7 +4409,7 @@ static dsql_nod* make_parameter (void)
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
 	node->nod_count = 1;
-	node->nod_arg[0] = (dsql_nod*)(ULONG) lex.param_number++;
+	node->nod_arg[0] = (dsql_nod*)(IPTR) lex.param_number++;
 
 	return node;
 }
@@ -4964,7 +4964,7 @@ int LexerState::yylex (
 
 				if (!have_decimal && (number <= MAX_SLONG))
 				{
-					yylval = (dsql_nod*) (ULONG) number;
+					yylval = (dsql_nod*) (IPTR) number;
 					return NUMBER;
 				}
 				else

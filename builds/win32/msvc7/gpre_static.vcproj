@@ -174,9 +174,6 @@
 				RelativePath="..\..\..\src\gpre\hsh.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\int.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\gpre\int_cxx.cpp">
 			</File>
 			<File

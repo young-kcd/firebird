@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: apifull.c,v 1.3 2003-08-13 11:06:02 robocop Exp $
+$Id: apifull.c,v 1.4 2004-01-21 07:16:04 skidder Exp $
 */
 
 #include <stdlib.h>
@@ -81,7 +81,7 @@ int main (ARG(int, argc), ARG(char **, argv))
 ARGLIST(int    argc)
 ARGLIST(char **argv)
 {
-    long                   query[MAXLEN];
+    int                   query[MAXLEN];
     XSQLDA    *            sqlda;
     char                   db_name[128];
 
@@ -161,16 +161,16 @@ process_statement (ARG(XSQLDA **, sqldap),
 ARGLIST(XSQLDA  **sqldap)
 ARGLIST(char    *query)
 {
-    long            buffer[MAXLEN];
+    int            buffer[MAXLEN];
     XSQLDA          *sqlda;
     XSQLVAR         *var;
     short           num_cols, i;
     short           length, alignment, type, offset;
-    long            fetch_stat;
+    int            fetch_stat;
     static char     stmt_info[] = { isc_info_sql_stmt_type };
     char            info_buffer[20];
     short           l;
-    long            statement_type;
+    int            statement_type;
 
     sqlda = *sqldap;
 
@@ -398,7 +398,7 @@ ARGLIST(XSQLVAR    *var)
 			field_width = 6;
 			break;
 		    case SQL_LONG:
-			value = (ISC_INT64) *(long *) var->sqldata;
+			value = (ISC_INT64) *(int *) var->sqldata;
 			field_width = 11;
 			break;
 		    case SQL_INT64:

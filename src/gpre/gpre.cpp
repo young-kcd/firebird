@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.48 2004-01-03 10:59:38 robocop Exp $
+//  $Id: gpre.cpp,v 1.49 2004-01-21 07:16:15 skidder Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -619,7 +619,7 @@ int main(int argc, char* argv[])
 
 		case IN_SW_GPRE_G:
 			sw_language			= lang_internal;
-			gen_routine			= INT_action;
+			gen_routine			= INT_CXX_action;
 			sw_cstring			= false;
 			transaction_name	= "dbb->dbb_sys_trans";
 			sw_know_interp		= TRUE;

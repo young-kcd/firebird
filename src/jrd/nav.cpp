@@ -459,7 +459,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 #endif
 
 	init_fetch(impure);
-	IDX *idx = (IDX*) ((SCHAR*) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	IDX *idx = (IDX*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
 	// The bitmap is only valid when we are continuing on in one 
 	// direction.  It is of no help when we change direction,
@@ -502,7 +502,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 #else
 		MOVE_FAST(
 				  (impure->irsb_nav_data +
-				   (SLONG) rsb->rsb_arg[RSB_NAV_key_length]), upper.key_data,
+				   (IPTR) rsb->rsb_arg[RSB_NAV_key_length]), upper.key_data,
 				  upper.key_length);
 #endif
 	}
@@ -510,7 +510,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 		lower.key_length = impure->irsb_nav_lower_length;
 		MOVE_FAST(
 				  (impure->irsb_nav_data +
-				   (SLONG) rsb->rsb_arg[RSB_NAV_key_length]), lower.key_data,
+				   (IPTR) rsb->rsb_arg[RSB_NAV_key_length]), lower.key_data,
 				  lower.key_length);
 	}
 
@@ -1352,7 +1352,7 @@ static bool find_saved_node(RSB rsb, IRSB_NAV impure,
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
 
-	IDX *idx = (IDX*) ((SCHAR*) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	IDX *idx = (IDX*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	BTR page = (BTR) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
 	// the outer loop goes through all the sibling pages
@@ -1570,7 +1570,7 @@ static BOOLEAN get_record(
 
 	TDBB tdbb = GET_THREAD_DATA;
 	jrd_req* request = tdbb->tdbb_request;
-	IDX *idx = (IDX*) ((SCHAR*) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	IDX *idx = (IDX*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
 	KEY value;
 	USHORT old_att_flags;
@@ -1606,7 +1606,7 @@ static BOOLEAN get_record(
 	{
 		BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record,
 				reinterpret_cast<struct idx *>((SCHAR*) impure +
-					(SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]),
+					(IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]),
 				&value,	0);
 		if (compare_keys(idx, key->key_data, key->key_length, &value, FALSE)) {
 			result = FALSE;
@@ -1702,7 +1702,7 @@ static UCHAR* nav_open(
 	// Find the starting leaf page
 	retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
 	retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
-	IDX *idx = (IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	IDX *idx = (IDX *) ((SCHAR *) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	BTR page = BTR_find_page(tdbb, retrieval, window, idx, &lower, 
 		&upper, (direction == RSE_get_backward));
 	impure->irsb_nav_page = window->win_page;
@@ -1744,7 +1744,7 @@ static UCHAR* nav_open(
 		if (retrieval->irb_upper_count) {
 			impure->irsb_nav_upper_length = upper.key_length;
 			MOVE_FAST(upper.key_data, (impure->irsb_nav_data +
-				(SLONG) rsb->rsb_arg[RSB_NAV_key_length]),
+				(IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
 				upper.key_length);
 		}
 		if (retrieval->irb_lower_count) {
@@ -1755,7 +1755,7 @@ static UCHAR* nav_open(
 		if (retrieval->irb_lower_count) {
 			impure->irsb_nav_lower_length = lower.key_length;
 			MOVE_FAST(lower.key_data, (impure->irsb_nav_data +
-				(SLONG) rsb->rsb_arg[RSB_NAV_key_length]),
+				(IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
 				lower.key_length);
 		}
 		if (retrieval->irb_upper_count) {

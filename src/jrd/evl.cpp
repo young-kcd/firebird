@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.59 2004-01-13 09:52:13 robocop Exp $ 
+  * $Id: evl.cpp,v 1.60 2004-01-21 07:18:25 skidder Exp $ 
  */
 
 /*
@@ -247,7 +247,7 @@ dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
 		arg_number = (int) (IPTR)node->nod_arg[e_arg_number];
 		desc = &format->fmt_desc[arg_number];
 		impure->vlu_desc.dsc_address =
-			(UCHAR *) request + message->nod_impure + (int) desc->dsc_address;
+			(UCHAR *) request + message->nod_impure + (IPTR) desc->dsc_address;
 		impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
 		impure->vlu_desc.dsc_length = desc->dsc_length;
 		impure->vlu_desc.dsc_scale = desc->dsc_scale;
@@ -288,7 +288,7 @@ dsc* EVL_assign_to(TDBB tdbb, jrd_nod* node)
 		// All seem to work fine.
 		record =
 			request->req_rpb[(int) (IPTR) node->nod_arg[e_fld_stream]].rpb_record;
-		EVL_field(0, record, (USHORT)(ULONG) node->nod_arg[e_fld_id],
+		EVL_field(0, record, (USHORT)(IPTR) node->nod_arg[e_fld_id],
 				  &impure->vlu_desc);
 		if (!impure->vlu_desc.dsc_address)
 			ERR_post(isc_read_only_field, 0);
@@ -352,7 +352,7 @@ SBM* EVL_bitmap(TDBB tdbb, jrd_nod* node)
 			inv* impure = (INV) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			SBM_reset(&impure->inv_bitmap);
 			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
-			const USHORT id = 1 + 2 * (USHORT)(ULONG) node->nod_arg[1];
+			const USHORT id = 1 + 2 * (USHORT)(IPTR) node->nod_arg[1];
 			const UCHAR* numbers = desc->dsc_address;
 			numbers += id * sizeof(SLONG);
 			SLONG rel_dbkey;
@@ -822,10 +822,10 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 			}
 			const jrd_nod* message = node->nod_arg[e_arg_message];
 			const fmt* format = (FMT) message->nod_arg[e_msg_format];
-			desc = &format->fmt_desc[(int)(ULONG) node->nod_arg[e_arg_number]];
+			desc = &format->fmt_desc[(int)(IPTR) node->nod_arg[e_arg_number]];
 
 			impure->vlu_desc.dsc_address = (UCHAR *) request +
-				message->nod_impure + (int) desc->dsc_address;
+				message->nod_impure + (IPTR) desc->dsc_address;
 			impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
 			impure->vlu_desc.dsc_length = desc->dsc_length;
 			impure->vlu_desc.dsc_scale = desc->dsc_scale;
@@ -850,9 +850,9 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 			 * the relation block is referenced. 
 			 * Reference: Bug 10116, 10424 
 			 */
-			if (!EVL_field(request->req_rpb[(USHORT)(ULONG) node->nod_arg[e_fld_stream]].rpb_relation,
+			if (!EVL_field(request->req_rpb[(USHORT)(IPTR) node->nod_arg[e_fld_stream]].rpb_relation,
 							record,
-							(USHORT)(ULONG) node->nod_arg[e_fld_id],
+							(USHORT)(IPTR) node->nod_arg[e_fld_id],
 							&impure->vlu_desc))
 			{
 				request->req_flags |= req_null;
@@ -984,7 +984,7 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 	case nod_extract:
 		{
 			impure = (VLU) ((SCHAR *) request + node->nod_impure);
-			const ULONG extract_part = (ULONG) node->nod_arg[e_extract_part];
+ 			const ULONG extract_part = (IPTR) node->nod_arg[e_extract_part];
 			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_extract_value]);
 
 			impure->vlu_desc.dsc_dtype = dtype_short;
@@ -1162,7 +1162,7 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 		switch (node->nod_type) {
 		case nod_gen_id:		/* return a 32-bit generator value */
 			impure->vlu_misc.vlu_long = (SLONG) DPM_gen_id(tdbb,
-														   (SLONG)
+														   (SLONG)(IPTR)
 														   node->nod_arg
 														   [e_gen_id], 0,
 														   MOV_get_int64
@@ -1177,11 +1177,7 @@ dsc* EVL_expr(TDBB tdbb, jrd_nod* node)
 
 		case nod_gen_id2:
 			impure->vlu_misc.vlu_int64 = DPM_gen_id(tdbb,
-													(SLONG)
-													node->nod_arg[e_gen_id],
-													0,
-													MOV_get_int64(values[0],
-																  0));
+				(IPTR) node->nod_arg[e_gen_id], 0, MOV_get_int64(values[0], 0));
 			impure->vlu_desc.dsc_dtype = dtype_int64;
 			impure->vlu_desc.dsc_length = sizeof(SINT64);
 			impure->vlu_desc.dsc_scale = 0;
@@ -1368,7 +1364,7 @@ bool EVL_field(jrd_rel* relation, REC record, USHORT id, dsc* desc)
 		return false;
 	}
 
-	desc->dsc_address = record->rec_data + (int) desc->dsc_address;
+	desc->dsc_address = record->rec_data + (IPTR) desc->dsc_address;
 
 	if (TEST_NULL(record, id)) {
 		desc->dsc_flags |= DSC_null;
@@ -1710,7 +1706,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 	{
 		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 		jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-		id = (USHORT)(ULONG) field->nod_arg[e_fld_id];
+		id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
 		record =
 			request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
 		vlux* impure = (vlux*) ((SCHAR *) request + from->nod_impure);

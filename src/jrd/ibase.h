@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.64 2004-01-12 06:58:26 skidder Exp $
+$Id: ibase.h,v 1.65 2004-01-21 07:18:25 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -53,13 +53,16 @@ $Id: ibase.h,v 1.64 2004-01-12 06:58:26 skidder Exp $
 
 #define ISC_FAR
 
-#if SIZEOF_LONG == 8
+// It is difficult to detect 64-bit long from the redistributable header
+// we do not care of 16-bit platforms anymore thus we may use plain "int"
+// which is 32-bit on all platforms we support
+//#if SIZEOF_LONG == 8
 typedef	int		ISC_LONG;
 typedef	unsigned int	ISC_ULONG;
-#else
-typedef	signed long	ISC_LONG;
-typedef	unsigned long	ISC_ULONG;
-#endif
+//#else
+//typedef	signed long	ISC_LONG;
+//typedef	unsigned long	ISC_ULONG;
+//#endif
 
 typedef	signed short	ISC_SHORT;
 typedef	unsigned short	ISC_USHORT;
@@ -93,8 +96,8 @@ typedef ISC_LONG isc_resv_handle;
 /*******************************************************************/
 
 #ifndef ISC_TIMESTAMP_DEFINED
-typedef long			ISC_DATE;
-typedef unsigned long	ISC_TIME;
+typedef int			ISC_DATE;
+typedef unsigned int	ISC_TIME;
 typedef struct
 {
 	ISC_DATE timestamp_date;

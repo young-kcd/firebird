@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.84 2004-01-16 10:43:20 hvlad Exp $
+ * $Id: ddl.cpp,v 1.85 2004-01-21 07:16:11 skidder Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1091,13 +1091,13 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 	if (constant)
 	{
 		request->append_number(isc_dyn_trg_sequence,
-				   (SSHORT)(SLONG) (constant ? constant->nod_arg[0] : 0));
+				   (SSHORT) (constant ? (IPTR) constant->nod_arg[0] : 0));
 	}
 
 	constant = node->nod_arg[e_cnstr_type];
 	if (constant != NULL)
 	{
-		const SSHORT type = (SSHORT)(SLONG) constant->nod_arg[0];
+		const SSHORT type = (SSHORT)(IPTR) constant->nod_arg[0];
 		request->append_number(isc_dyn_trg_type, type);
 	}
 
@@ -1232,7 +1232,7 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 
 			switch (element->nod_type) {
 			case nod_file_length:
-				start = (SLONG) (element->nod_arg[0]) + 1;
+				start = (IPTR) (element->nod_arg[0]) + 1;
 				break;
 
 			default:
@@ -1309,25 +1309,25 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 
 			case nod_group_commit_wait:
 				request->append_uchar(isc_dyn_log_group_commit_wait);
-				temp_long = (SLONG) (element->nod_arg[0]);
+				temp_long = (IPTR) (element->nod_arg[0]);
 				request->append_ulong_with_length(temp_long);
 				break;
 
 			case nod_check_point_len:
 				request->append_uchar(isc_dyn_log_check_point_length);
-				temp_long = (SLONG) (element->nod_arg[0]);
+				temp_long = (IPTR) (element->nod_arg[0]);
 				request->append_ulong_with_length(temp_long);
 				break;
 
 			case nod_num_log_buffers:
 				request->append_uchar(isc_dyn_log_num_of_buffers);
-				temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
+				temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
 				request->append_ushort_with_length(temp_short);
 				break;
 
 			case nod_log_buffer_size:
 				request->append_uchar(isc_dyn_log_buffer_size);
-				temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
+				temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
 				request->append_ushort_with_length(temp_short);
 				break;
 
@@ -1613,11 +1613,11 @@ static void define_dimensions( dsql_req* request, const dsql_fld* field)
 		request->append_number(isc_dyn_def_dimension, position);
 		const dsql_nod* element = *ptr++;
 		request->append_uchar(isc_dyn_dim_lower);
-		const SLONG lrange = (SLONG) (element->nod_arg[0]);
+		const SLONG lrange = (IPTR) (element->nod_arg[0]);
 		request->append_ulong_with_length(lrange);
 		element = *ptr;
 		request->append_uchar(isc_dyn_dim_upper);
-		const SLONG hrange = (SLONG) (element->nod_arg[0]);
+		const SLONG hrange = (IPTR) (element->nod_arg[0]);
 		request->append_ulong_with_length(hrange);
 		request->append_uchar(isc_dyn_end);
 		if (lrange >= hrange)
@@ -2009,9 +2009,9 @@ static void define_filter( dsql_req* request)
 	request->append_cstring(isc_dyn_def_filter,
 				((dsql_str*) (ptr[e_filter_name]))->str_data);
 	request->append_number(isc_dyn_filter_in_subtype,
-			   (SSHORT)(SLONG) ((ptr[e_filter_in_type])->nod_arg[0]));
+			   (SSHORT)(IPTR) ((ptr[e_filter_in_type])->nod_arg[0]));
 	request->append_number(isc_dyn_filter_out_subtype,
-			   (SSHORT)(SLONG) ((ptr[e_filter_out_type])->nod_arg[0]));
+			   (SSHORT)(IPTR) ((ptr[e_filter_out_type])->nod_arg[0]));
 	request->append_cstring(isc_dyn_func_entry_point,
 				((dsql_str*) (ptr[e_filter_entry_pt]))->str_data);
 	request->append_cstring(isc_dyn_func_module_name,
@@ -2817,16 +2817,16 @@ static void define_shadow(dsql_req* request)
 				  isc_arg_gds, isc_dsql_shadow_number_err, 0);
 	}
 
-	request->append_number(isc_dyn_def_shadow, (SSHORT)(SLONG) (ptr[e_shadow_number]));
+	request->append_number(isc_dyn_def_shadow, (SSHORT)(IPTR) (ptr[e_shadow_number]));
 	request->append_cstring(isc_dyn_def_file, ((dsql_str*) (ptr[e_shadow_name]))->str_data);
 	request->append_number(isc_dyn_shadow_man_auto,
-			   (SSHORT)(SLONG) ((ptr[e_shadow_man_auto])->nod_arg[0]));
+			   (SSHORT)(IPTR) ((ptr[e_shadow_man_auto])->nod_arg[0]));
 	request->append_number(isc_dyn_shadow_conditional,
-			   (SSHORT)(SLONG) ((ptr[e_shadow_conditional])->nod_arg[0]));
+			   (SSHORT)(IPTR) ((ptr[e_shadow_conditional])->nod_arg[0]));
 
 	request->append_file_start(0);
 
-	SLONG length = (SLONG) ptr[e_shadow_length];
+	SLONG length = (IPTR) ptr[e_shadow_length];
 	request->append_file_length(length);
 
 	request->append_uchar(isc_dyn_end);
@@ -2846,7 +2846,7 @@ static void define_shadow(dsql_req* request)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_dsql_file_length_err,
-						  isc_arg_number, (SLONG) file->fil_name->str_data,
+						  isc_arg_number, (ISC_STATUS) file->fil_name->str_data,
 						  // Preceding file did not specify length, so %s must include starting page number 
 						  0);
 			}
@@ -2952,15 +2952,15 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 	dsql_nod* constant = node->nod_arg[e_trg_active];
 	if (constant)
 		request->append_number(isc_dyn_trg_inactive,
-				   (SSHORT)(SLONG) constant->nod_arg[0]);
+				   (SSHORT)(IPTR) constant->nod_arg[0]);
 
 	if (constant = node->nod_arg[e_trg_position])
 		request->append_number(isc_dyn_trg_sequence,
-				   (SSHORT)(SLONG) constant->nod_arg[0]);
+				   (SSHORT)(IPTR) constant->nod_arg[0]);
 
 	if (constant = node->nod_arg[e_trg_type]) {
-		request->append_number(isc_dyn_trg_type, (SSHORT)(SLONG) constant->nod_arg[0]);
-		trig_type = (USHORT)(ULONG) constant->nod_arg[0];
+		request->append_number(isc_dyn_trg_type, (SSHORT)(IPTR) constant->nod_arg[0]);
+		trig_type = (USHORT)(IPTR) constant->nod_arg[0];
 	}
 	else {
 		fb_assert(node->nod_type == nod_mod_trigger);
@@ -3041,7 +3041,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 		for (const dsql_nod* const* ptr = temp->nod_arg; ptr < end; ++ptr)
 		{
 			const dsql_nod*    message = *ptr;
-			const SSHORT number  = (SSHORT)(SLONG) message->nod_arg[e_msg_number];
+			const SSHORT number  = (SSHORT)(IPTR) message->nod_arg[e_msg_number];
 			if (message->nod_type == nod_del_trigger_msg)
 			{
 				request->append_number(isc_dyn_delete_trigger_msg, number);
@@ -3143,7 +3143,7 @@ static void define_udf( dsql_req* request)
 
         // CVC: This is case of "returns parameter <N>"
 
-		position = (SSHORT)(SLONG) (ret_val_ptr[1]->nod_arg[0]);
+		position = (SSHORT)(IPTR) (ret_val_ptr[1]->nod_arg[0]);
 		// Function modifies an argument whose value is the function return value 
 
 		if (!arguments || position > arguments->nod_count || position < 1) {
@@ -3170,7 +3170,7 @@ static void define_udf( dsql_req* request)
 		{
         /* CVC: I need to test returning blobs by descriptor before allowing the
 		change there. For now, I ignore the return type specification. */
-			bool free_it = ((SSHORT)(SLONG) ret_val_ptr[1]->nod_arg[0] < 0);
+			bool free_it = ((SSHORT)(IPTR) ret_val_ptr[1]->nod_arg[0] < 0);
 			request->append_number(isc_dyn_def_function_arg, blob_position);
 			request->append_number(isc_dyn_func_mechanism,
 					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * FUN_blob_struct));
@@ -3181,7 +3181,7 @@ static void define_udf( dsql_req* request)
 		{
 			request->append_number(isc_dyn_def_function_arg, (SSHORT) 0);
 			request->append_number(isc_dyn_func_mechanism,
-					   (SSHORT)(SLONG) (ret_val_ptr[1]->nod_arg[0]));
+					   (SSHORT)(IPTR) (ret_val_ptr[1]->nod_arg[0]));
 		}
 
 		request->append_cstring(isc_dyn_function_name, udf_name);
@@ -3217,7 +3217,7 @@ static void define_udf( dsql_req* request)
 			request->append_number(isc_dyn_def_function_arg, (SSHORT) position);
 
             if (param_node[e_udf_param_type]) {
-                SSHORT arg_mechanism = (SSHORT)(SLONG) (param_node[e_udf_param_type]->nod_arg[0]);
+                SSHORT arg_mechanism = (SSHORT)(IPTR) (param_node[e_udf_param_type]->nod_arg[0]);
 				request->append_number(isc_dyn_func_mechanism, arg_mechanism);
             }
             else if (field->fld_dtype == dtype_blob) {
@@ -3815,14 +3815,14 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 	if (constant)
 	{
 		request->append_number(isc_dyn_trg_sequence,
-				   (SSHORT)(SLONG) (constant ? constant->nod_arg[0] : 0));
+				   (SSHORT)(IPTR) (constant ? constant->nod_arg[0] : 0));
 	}
 
 	constant = node->nod_arg[e_cnstr_type];
 	USHORT trig_type;
 	if (constant)
 	{
-		trig_type = (USHORT)(ULONG) constant->nod_arg[0];
+		trig_type = (USHORT)(IPTR) constant->nod_arg[0];
 		request->append_number(isc_dyn_trg_type, trig_type);
 	}
 	else
@@ -4288,7 +4288,7 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 
 	case nod_del_shadow:
 		request->append_number(isc_dyn_delete_shadow,
-				   (SSHORT)(SLONG) (node->nod_arg[0]));
+				   (SSHORT)(IPTR) (node->nod_arg[0]));
 		request->append_uchar(isc_dyn_end);
 		break;
 
@@ -4733,25 +4733,25 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 
 		case nod_group_commit_wait:
 			request->append_uchar(isc_dyn_log_group_commit_wait);
-			temp_long = (SLONG) (element->nod_arg[0]);
+			temp_long = (IPTR) (element->nod_arg[0]);
 			request->append_ulong_with_length(temp_long);
 			break;
 
 		case nod_check_point_len:
 			request->append_uchar(isc_dyn_log_check_point_length);
-			temp_long = (SLONG) (element->nod_arg[0]);
+			temp_long = (IPTR) (element->nod_arg[0]);
 			request->append_ulong_with_length(temp_long);
 			break;
 
 		case nod_num_log_buffers:
 			request->append_uchar(isc_dyn_log_num_of_buffers);
-			temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
+			temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
 			request->append_ushort_with_length(temp_short);
 			break;
 
 		case nod_log_buffer_size:
 			request->append_uchar(isc_dyn_log_buffer_size);
-			temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
+			temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
 			request->append_ushort_with_length(temp_short);
 			break;
 		case nod_difference_file:
@@ -5216,7 +5216,7 @@ static void modify_relation( dsql_req* request)
 				const_node = element->nod_arg[e_mod_fld_pos_new_position];
 
                 /* CVC: Since now the parser accepts pos=1..N, let's subtract one here. */
-                constant = (SSHORT)(SLONG) const_node->nod_arg[0] - 1;
+                constant = (SSHORT)(IPTR) const_node->nod_arg[0] - 1;
 
 				request->append_cstring(isc_dyn_rel_name,
 							relation_name->str_data);

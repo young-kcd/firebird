@@ -4576,8 +4576,8 @@ static SSHORT lock_buffer(
 		   error, and log it to firebird.log. */
 
 		gds__msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
-						(TEXT *) bdb->bdb_page, 
-						(TEXT *) (SLONG) page_type, 0, 0, 0);
+						(TEXT *) (IPTR) bdb->bdb_page, 
+						(TEXT *) (IPTR) page_type, 0, 0, 0);
 		IBERR_append_status(status, isc_random, isc_arg_string,
 							ERR_cstring(errmsg), 0);
 		ERR_log(JRD_BUGCHK, 215, errmsg);	/* msg 215 page %ld, page type %ld lock conversion denied */
@@ -4625,8 +4625,8 @@ static SSHORT lock_buffer(
    error, and log it to firebird.log. */
 
 	gds__msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
-					(TEXT*) bdb->bdb_page, 
-					(TEXT*) (SLONG) page_type, 0, 0, 0);
+					(TEXT*) (IPTR) bdb->bdb_page, 
+					(TEXT*) (IPTR) page_type, 0, 0, 0);
 	IBERR_append_status(status, isc_random, isc_arg_string,
 						ERR_cstring(errmsg), 0);
 	ERR_log(JRD_BUGCHK, 216, errmsg);	/* msg 216 page %ld, page type %ld lock denied */

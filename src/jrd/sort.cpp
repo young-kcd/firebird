@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.52 2003-12-24 13:04:59 dimitr Exp $
+ * $Id: sort.cpp,v 1.53 2004-01-21 07:18:25 skidder Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -1771,7 +1771,7 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 			// Create a scratch file
 
 			sfb->sfb_file =
-				(int) gds__temp_file(FALSE, SCRATCH, file_name,
+				(int) (IPTR) gds__temp_file(FALSE, SCRATCH, file_name,
 									 sfb->sfb_dls->dls_directory, TRUE);
 
 			// allocate the file name even if the file is not open,

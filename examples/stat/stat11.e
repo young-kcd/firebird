@@ -42,8 +42,8 @@ char Db_name[128];
 EXEC SQL
 	SET DATABASE empdb = COMPILETIME "employee.fdb" RUNTIME :Db_name;
 
-long		cust_no;
-long		tot;
+int		cust_no;
+int		tot;
 char	ord_stat[8];
 
 EXEC SQL

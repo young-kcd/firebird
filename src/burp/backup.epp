@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.48 2004-01-13 09:52:09 robocop Exp $
+$Id: backup.epp,v 1.49 2004-01-21 07:16:08 skidder Exp $
 */
 
 #include "firebird.h"
@@ -478,7 +478,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	UINT64 cumul_count = MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr);
 	if (cumul_count <= MAX_SLONG) {
 		SLONG tempcount = cumul_count;
-		BURP_verbose(176, (void*) tempcount, NULL, NULL, NULL, NULL);
+		BURP_verbose(176, (void*) (IPTR)tempcount, NULL, NULL, NULL, NULL);
 		// msg 176 closing file, committing, and finishing.  %ld bytes written 
 	}
 	else {
@@ -1383,7 +1383,7 @@ void put_blob( burp_fld* field, ISC_QUAD * blob_id, ULONG count)
 			break;
 
 		default:
-			BURP_error_redirect(NULL, 21, (void*) (ULONG) item, NULL);
+			BURP_error_redirect(NULL, 21, (void*) (IPTR) item, NULL);
 			// msg 21 don't understand blob info item %ld 
 		}
 	}
@@ -1489,7 +1489,7 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 			break;
 
 		default:
-			BURP_print(79, (void *) (ULONG) item, NULL, NULL, NULL, NULL);
+			BURP_print(79, (void *) (IPTR) item, NULL, NULL, NULL, NULL);
 			// msg 79 don't understand blob info item %ld  
 			return false;
 		}
@@ -1668,7 +1668,7 @@ void put_data(burp_rel* relation)
 			break;
 
 		default:
-			BURP_error_redirect(NULL, 26, (void *) (SLONG) field->fld_type, NULL);
+			BURP_error_redirect(NULL, 26, (void *) (IPTR) field->fld_type, NULL);
 			// msg 26 datatype %ld not understood 
 			break;
 		}
@@ -1813,7 +1813,7 @@ void put_data(burp_rel* relation)
 		records++;
 		// Verbose records 
 		if ((records % BACKUP_VERBOSE_INTERVAL) == 0)
-			BURP_verbose(108, (void *) (SLONG) records, NULL, NULL, NULL, NULL);
+			BURP_verbose(108, (void *) (IPTR) records, NULL, NULL, NULL, NULL);
 
 		put(tdgbl, (UCHAR) (rec_data));
 		put_numeric(att_data_length, record_length);
@@ -1864,7 +1864,7 @@ void put_data(burp_rel* relation)
 	if (xdr_buffer.lstr_address)
 		BURP_free(xdr_buffer.lstr_address);
 
-	BURP_verbose(108, (void *) (SLONG) records, NULL, NULL, NULL, NULL);
+	BURP_verbose(108, (void *) (IPTR) records, NULL, NULL, NULL, NULL);
 // msg 108 %ld records written 
 
 	if (isc_release_request(status_vector, &request))
@@ -2774,7 +2774,7 @@ void write_database( const TEXT* dbb_file)
 
 	put_asciz(att_file_name, dbb_file);
 
-	BURP_verbose(77, dbb_file, (void *) (ULONG) page_size, NULL, NULL, NULL);
+	BURP_verbose(77, dbb_file, (void *) (IPTR) page_size, NULL, NULL, NULL);
 // msg 77 database %s has a page size of %ld bytes. 
 
 	put(tdgbl, (UCHAR) (att_end));
@@ -3129,7 +3129,7 @@ void write_generators(void)
 		put(tdgbl, att_end);
 		MISC_terminate (X.RDB$GENERATOR_NAME, temp, l, sizeof(temp));
 #pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
-		BURP_verbose (165, temp, (void*) (SLONG) value, NULL, NULL, NULL);
+		BURP_verbose (165, temp, (void*) (IPTR) value, NULL, NULL, NULL);
 		// msg 165 writing generator %s value %ld
 	END_FOR;
 	ON_ERROR

@@ -627,8 +627,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
 		if (align)
 			message->msg_length = FB_ALIGN(message->msg_length, align);
-		parameter->par_desc.dsc_address =
-			(UCHAR *) (SLONG) message->msg_length;
+		parameter->par_desc.dsc_address = (UCHAR*)(IPTR)message->msg_length;
 		// CVC: No check for overflow here? Should be < 64K
 		message->msg_length += parameter->par_desc.dsc_length;
 		if (request->req_blr_string)
@@ -647,8 +646,8 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 	for (parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)
 	{
-			parameter->par_desc.dsc_address =
-			message->msg_buffer + (SLONG) parameter->par_desc.dsc_address;
+		parameter->par_desc.dsc_address = message->msg_buffer + 
+			(IPTR)parameter->par_desc.dsc_address;
 	}
 }
 
@@ -1635,7 +1634,7 @@ static void gen_error_condition( dsql_req* request, const dsql_nod* node)
 	switch (node->nod_type) {
 	case nod_sqlcode:
 		stuff(request, blr_sql_code);
-		stuff_word(request, (USHORT)(ULONG) node->nod_arg[0]);
+		stuff_word(request, (USHORT)(IPTR) node->nod_arg[0]);
 		return;
 
 	case nod_gdscode:
@@ -2293,7 +2292,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 	constant_desc.dsc_sub_type = 0;
 	constant_desc.dsc_flags = 0;
 	constant_desc.dsc_length = sizeof(SSHORT);
-	constant_desc.dsc_address = (UCHAR *) & constant;
+	constant_desc.dsc_address = (UCHAR*) & constant;
 
 // Set up parameter for things in the select list 
 	dsql_nod* list = rse->nod_arg[e_rse_items];
@@ -2710,7 +2709,7 @@ static void gen_sort( dsql_req* request, dsql_nod* list)
 	{
 		dsql_nod* nulls_placement = (*ptr)->nod_arg[e_order_nulls];
 		if (nulls_placement) {
-			switch ((SLONG)nulls_placement->nod_arg[0]) {
+			switch ((IPTR)nulls_placement->nod_arg[0]) {
 				case NOD_NULLS_FIRST:
 					stuff(request, blr_nullsfirst);
 					break;

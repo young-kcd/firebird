@@ -244,7 +244,7 @@ int EXT_get(RSB rsb)
 	rec* record = rpb->rpb_record;
 	const fmt* format = record->rec_format;
 
-	const SSHORT offset = (SSHORT) (SLONG) format->fmt_desc[0].dsc_address;
+	const SSHORT offset = (SSHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	UCHAR* p = record->rec_data + offset;
 	SSHORT l = record->rec_length - offset;
 
@@ -283,7 +283,7 @@ int EXT_get(RSB rsb)
 		const lit* literal = (LIT) field->fld_missing_value;
 		if (literal) {
 			desc = *desc_ptr;
-			desc.dsc_address = record->rec_data + (int) desc.dsc_address;
+			desc.dsc_address = record->rec_data + (IPTR) desc.dsc_address;
 			if (!MOV_compare(&literal->lit_desc, &desc))
 				continue;
 		}
@@ -475,7 +475,7 @@ void EXT_store(RPB * rpb, int *transaction)
 			desc_ptr->dsc_length &&
 			TEST_NULL(record, i))
 		{
-			UCHAR* p = record->rec_data + (int) desc_ptr->dsc_address;
+			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
 			const lit* literal = (LIT) field->fld_missing_value;
 			if (literal) {
 				desc = *desc_ptr;
@@ -492,7 +492,7 @@ void EXT_store(RPB * rpb, int *transaction)
 		}
 	}
 
-	const USHORT offset = (USHORT) (ULONG) format->fmt_desc[0].dsc_address;
+	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	const UCHAR* p = record->rec_data + offset;
 	USHORT l = record->rec_length - offset;
 

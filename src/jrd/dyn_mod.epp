@@ -2955,7 +2955,7 @@ static void modify_err_punt(TDBB tdbb,
 		DYN_error_punt(false,
 						208,
 						orig_fld_def->dyn_fld_name,
-						(TEXT*)DSC_string_length(&orig_fld_def->dyn_dsc),
+						(TEXT*)(IPTR)DSC_string_length(&orig_fld_def->dyn_dsc),
 						NULL,
 						NULL,
 						NULL);

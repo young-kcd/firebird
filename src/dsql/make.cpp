@@ -101,7 +101,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		node->nod_desc.dsc_length = sizeof(SLONG);
 		node->nod_desc.dsc_scale = 0;
 		node->nod_desc.dsc_sub_type = 0;
-		node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
+		node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
 		node->nod_arg[0] = (dsql_nod*) constant;
 		break;
 
@@ -119,7 +119,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		node->nod_desc.dsc_scale = static_cast < char >(constant->str_length);
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_length = sizeof(double);
-		node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
+		node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
 		node->nod_desc.dsc_ttype = ttype_ascii;
 		node->nod_arg[0] = (dsql_nod*) constant;
 		break;
@@ -137,7 +137,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			node->nod_desc.dsc_length = sizeof(SINT64);
 			node->nod_desc.dsc_scale = 0;
 			node->nod_desc.dsc_sub_type = 0;
-			node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
+			node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
 
 			/* Now convert the string to an int64.  We can omit testing for
 			   overflow, because we would never have gotten here if yylex
@@ -182,7 +182,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			node->nod_desc.dsc_sub_type = 0;
 			node->nod_desc.dsc_scale = 0;
 			node->nod_desc.dsc_length = type_lengths[node->nod_desc.dsc_dtype];
-			node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
+			node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
 
 			// Set up a descriptor to point to the string 
 
@@ -192,7 +192,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			tmp.dsc_flags = 0;
 			tmp.dsc_ttype = ttype_ascii;
 			tmp.dsc_length = static_cast<USHORT>(constant->str_length);
-			tmp.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
+			tmp.dsc_address = (UCHAR*) constant->str_data;
 
 			// Now invoke the string_to_date/time/timestamp routines 
 
@@ -209,7 +209,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		node->nod_desc.dsc_scale = 0;
 		node->nod_desc.dsc_length =
 			static_cast<USHORT>(constant->str_length);
-		node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
+		node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
 		node->nod_desc.dsc_ttype = ttype_dynamic;
 		// carry a pointer to the constant to resolve character set in pass1 
 		node->nod_arg[0] = (dsql_nod*) constant;
@@ -245,7 +245,7 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 	node->nod_desc.dsc_sub_type = 0;
 	node->nod_desc.dsc_scale = 0;
 	node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
-	node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
+	node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
 	node->nod_desc.dsc_ttype = character_set;
 // carry a pointer to the constant to resolve character set in pass1 
 	node->nod_arg[0] = (dsql_nod*) constant;

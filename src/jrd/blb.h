@@ -34,13 +34,14 @@
    word contains the relation id of the blob and the second the record
    number of the first segment-clump.  The two types of blobs can be
    reliably distinguished by a zero or non-zero relation id. */
-
+   
 typedef struct bid {
 	ULONG bid_relation_id;		/* Relation id (or null) */
 	union {
-		class blb *bid_blob;	/* Pointer to blob block */
-		ULONG bid_number;		/* Record number */
+		ULONG bid_temp_id;	/* Temporary ID of blob or array. Used for newly created objects (bid_relation_id==0) */
+		ULONG bid_number;	/* Record number */
 	} bid_stuff;
+	bool isEmpty() const { return bid_relation_id == 0 && bid_stuff.bid_number == 0; }
 } *BID;
 
 /* Your basic blob block. */
@@ -74,6 +75,7 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	ULONG blb_length;			/* Total length of data sans segments */
 	ULONG blb_lead_page;		/* First page number */
 	ULONG blb_seek;				/* Seek location */
+	ULONG blb_temp_id;          // ID of newly created blob in transaction
 	/* blb_data must be longword aligned */
 	UCHAR blb_data[1];			/* A page's worth of blob */
 };

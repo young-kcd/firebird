@@ -1215,6 +1215,10 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 
 }
 
+static void print_version(void* dummy, const char* version) {
+	ib_printf("\t%s\n", version);
+}
+
 
 int API_ROUTINE isc_version(FRBRD** handle,
 							 FPTR_VERSION_CALLBACK routine, void* user_arg)
@@ -1229,10 +1233,8 @@ int API_ROUTINE isc_version(FRBRD** handle,
  *	Obtain and print information about a database.
  *
  **************************************/
-	if (!routine) {
-		routine = (FPTR_VERSION_CALLBACK) ib_printf;
-		user_arg = (void*)"\t%s\n";
-	}
+	if (!routine)
+		routine = print_version;
 
 	UCHAR buffer[256];
 	UCHAR* buf = buffer;

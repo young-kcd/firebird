@@ -51,7 +51,7 @@ typedef struct dsc
 	USHORT	dsc_length;
 	SSHORT	dsc_sub_type;
 	USHORT	dsc_flags;
-	UCHAR*	dsc_address;
+	UCHAR*	dsc_address; // Used either as offset in a message or as a pointer
 } DSC;
 
 /* values for dsc_flags */

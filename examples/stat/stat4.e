@@ -43,7 +43,7 @@ EXEC SQL
 int main (void)
 {
 	char	dept[4];
-	long		lvl = 1;
+	int		lvl = 1;
 
 	/* Describe the new table's structure. */
 	EXEC SQL
@@ -102,7 +102,7 @@ return 1;
 void build_tree (void)
 {
 	char	dept[4];
-	long		lvl = 1;
+	int		lvl = 1;
 
 	EXEC SQL
 		WHENEVER SQLERROR GO TO Error2;

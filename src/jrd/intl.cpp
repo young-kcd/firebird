@@ -367,7 +367,7 @@ public:
 		SSHORT err_code;
 		USHORT err_pos;
 		SSHORT out_len = obj.to_wc(NULL, 0, str, len, &err_code, &err_pos);
-		if (out_len > sizeof(tempBuffer))
+		if (out_len > (int) sizeof(tempBuffer))
 			out_str = FB_NEW(*tdbb->tdbb_default) UCS2_CHAR[out_len/2];
 		else
 			out_str = tempBuffer;
@@ -392,7 +392,7 @@ public:
 	UpcaseConverter(TDBB tdbb, TextType obj, const UCHAR* &str, SSHORT &len) : 
 		PrevConverter(tdbb, obj, str, len) 
 	{
-		if (len > sizeof(tempBuffer))
+		if (len > (int) sizeof(tempBuffer))
 			out_str = FB_NEW(*tdbb->tdbb_default) UCHAR[len];
 		else
 			out_str = tempBuffer;

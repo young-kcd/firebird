@@ -44,9 +44,9 @@
 typedef struct blob {
 	short	(*blob_get_segment) ();
 	void	*blob_handle;
-	long	blob_number_segments;
-	long	blob_max_segment;
-	long	blob_total_length;
+	int	blob_number_segments;
+	int	blob_max_segment;
+	int	blob_total_length;
 	void	(*blob_put_segment) ();
 } *BLOB;
 
@@ -60,13 +60,13 @@ char	buffer[256];
 char	buffer2[512];	/* for string concatenation */
 char	datebuf[12];	/* for date string */
 
-long	r_long;
+int	r_long;
 double	r_double;
 float	r_float;
 short	r_short;
 
 struct	tm *tbuf;
-long	time_sec;
+int	time_sec;
 
 ISC_QUAD newdate;
 
@@ -209,10 +209,10 @@ char* EXPORT fn_trunc(char* s, short* m)
 /* ==============================================================
    fn_doy() return the nth day of the year, by value.
    ============================================================== */
-long EXPORT fn_doy()
+int EXPORT fn_doy()
 {
 	char buf[4];	/* for day */
-	long i;
+	int i;
 
         time (&time_sec);
         tbuf = localtime(&time_sec);
@@ -290,7 +290,7 @@ char* EXPORT fn_sysdate()
   fn_add2 (a, b) - returns a + b
   =============================================== */
 
-long EXPORT fn_add2(long* a, long* b)
+int EXPORT fn_add2(int* a, int* b)
 {
 	return (*a + *b);
 }
@@ -360,7 +360,7 @@ double* EXPORT fn_sqrt(double* n)
  fn_blob_linecount() returns the number of lines in a blob 
   =============================================================*/
 
-long EXPORT fn_blob_linecount(BLOB b)
+int EXPORT fn_blob_linecount(BLOB b)
 {
     char *buf, *p;
 	short length, actual_length;
@@ -391,7 +391,7 @@ long EXPORT fn_blob_linecount(BLOB b)
  do not count newlines, so get rid of the newlines. 
  ==============================================================*/
 
-long EXPORT fn_blob_bytecount(BLOB b)
+int EXPORT fn_blob_bytecount(BLOB b)
 {
 	/* Null values */
 	if (!b->blob_handle)
@@ -408,12 +408,12 @@ long EXPORT fn_blob_bytecount(BLOB b)
  Newlines are eliminated to make for better printing.
   =============================================================*/
  
-char* EXPORT fn_blob_substr(BLOB b, long* m, long* n)
+char* EXPORT fn_blob_substr(BLOB b, int* m, int* n)
 {
 	char *buf, *p, *q;
-	long i = 0;
-	long curr_bytecount = 0;
-        long begin, end; 
+	int i = 0;
+	int curr_bytecount = 0;
+        int begin, end; 
 	short length, actual_length;
  
 	char *buffer = (char *)malloc(256);
@@ -426,12 +426,12 @@ char* EXPORT fn_blob_substr(BLOB b, long* m, long* n)
 
         if (*m > *n || *m < 1L || *n < 1L) 
 		return "";
-	if (b->blob_total_length < (long)*m) 
+	if (b->blob_total_length < (int)*m) 
 		return "";
 
 	begin = *m;				/* beginning position */
 
-	if (b->blob_total_length < (long)*n) 
+	if (b->blob_total_length < (int)*n) 
 		end = b->blob_total_length;	/* ending position */
 	else
 		end = *n;

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.48 2004-01-13 09:52:13 robocop Exp $
+$Id: blb.cpp,v 1.49 2004-01-21 07:16:18 skidder Exp $
 */
 
 #include "firebird.h"
@@ -241,7 +241,7 @@ BLB BLB_create2(TDBB tdbb,
 		if (BLF_create_blob(tdbb,
 							transaction,
 							&blob->blb_filter,
-							reinterpret_cast<SLONG*>(blob_id),
+							(SLONG*)blob_id,
 							bpb_length,
 							bpb,
 							// CVC: This cast is very suspicious to me.
@@ -268,7 +268,7 @@ BLB BLB_create2(TDBB tdbb,
 
 /* Format blob id and return blob handle */
 
-	blob_id->bid_stuff.bid_blob = blob;
+	blob_id->bid_stuff.bid_temp_id = blob->blb_temp_id;
 	blob_id->bid_relation_id = 0;
 
 	return blob;
@@ -850,8 +850,8 @@ void BLB_move(TDBB tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	jrd_req* request = tdbb->tdbb_request;
 	bid* source = (bid*) from_desc->dsc_address;
 	bid* destination = (bid*) to_desc->dsc_address;
-	const USHORT id = (USHORT) (ULONG) field->nod_arg[e_fld_id];
-	RPB* rpb = &request->req_rpb[(int) field->nod_arg[e_fld_stream]];
+	const USHORT id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
+	RPB* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
 	jrd_rel* relation = rpb->rpb_relation;
 	rec* record = rpb->rpb_record;
 
@@ -867,8 +867,7 @@ void BLB_move(TDBB tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 /* If either the source value is null or the blob id itself is null (all
    zeros, then the blob is null. */
 
-	if ((request->req_flags & req_null) || (!source->bid_relation_id &&
-											!source->bid_stuff.bid_blob))
+	if ((request->req_flags & req_null) || source->isEmpty())
 	{
 		SET_NULL(record, id);
 		destination->bid_relation_id = 0;
@@ -912,7 +911,7 @@ void BLB_move(TDBB tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		}
 		else {
 			for (blob = transaction->tra_blobs; blob; blob = blob->blb_next)
-				if (blob == source->bid_stuff.bid_blob)
+				if (blob->blb_temp_id == source->bid_stuff.bid_temp_id)
 				{
 					materialized_blob = true;
 					break;
@@ -1117,7 +1116,7 @@ BLB BLB_open2(TDBB tdbb,
 			for (new_blob = transaction->tra_blobs; new_blob; 
 				new_blob = new_blob->blb_next) 
 			{
-				if (new_blob == blob_id->bid_stuff.bid_blob) {
+				if (new_blob->blb_temp_id == blob_id->bid_stuff.bid_temp_id) {
 					break;
 				}
 			}
@@ -1143,7 +1142,7 @@ BLB BLB_open2(TDBB tdbb,
 					(UCHAR *) ((BLP) new_blob->blb_data)->blp_data;
 			}
 			return blob;
-		}
+	  }
 
 /* Ordinarily, we would call MET_relation to get the relation id.
    However, since the blob id must be consider suspect, this is
@@ -1430,7 +1429,7 @@ void BLB_put_slice(	TDBB	tdbb,
 			(array->arr_blob)->blb_blob_id = *blob_id;
 		}
 	}
-	else if (blob_id->bid_stuff.bid_blob)
+	else if (blob_id->bid_stuff.bid_temp_id)
 	{
 		array = find_array(transaction, blob_id);
 		if (!array) {
@@ -1476,7 +1475,7 @@ void BLB_put_slice(	TDBB	tdbb,
 		array->arr_effective_length = length;
 	}
 
-	blob_id->bid_stuff.bid_blob = (BLB) array;
+	blob_id->bid_stuff.bid_temp_id = array->arr_temp_id;
 	blob_id->bid_relation_id = 0;
 }
 
@@ -1621,6 +1620,7 @@ static ARR alloc_array(jrd_tra* transaction, ADS proto_desc)
 		  ,__FILE__, __LINE__
 #endif
 		);
+	array->arr_temp_id = transaction->tra_next_blob_id++;
 
 	return array;
 }
@@ -1659,6 +1659,7 @@ static BLB allocate_blob(TDBB tdbb, jrd_tra* transaction)
 							sizeof(blh);
 	blob->blb_max_pages = blob->blb_clump_size >> SHIFTLONG;
 	blob->blb_pointers = (dbb->dbb_page_size - BLP_SIZE) >> SHIFTLONG;
+	blob->blb_temp_id = transaction->tra_next_blob_id++;
 
 	return blob;
 }
@@ -1784,8 +1785,11 @@ static void check_BID_validity(const blb* blob, TDBB tdbb)
  **************************************/
 
 	if (!blob ||
-		MemoryPool::blk_type(blob) != type_blb ||
-		blob->blb_attachment != tdbb->tdbb_attachment ||
+		// Nickolay Samofatov. This checks are now unnecessary since we
+		// look up blob using temp_id inside the transaction blobs only.
+		// They were unreliable, anyway.
+		//   MemoryPool::blk_type(blob) != type_blb ||
+		//   blob->blb_attachment != tdbb->tdbb_attachment ||
 		blob->blb_level > 2 || !(blob->blb_flags & BLB_temporary))
 	{
 		ERR_post(isc_bad_segstr_id, 0);
@@ -1937,7 +1941,7 @@ static void delete_blob_id(
 
 /* If the blob is null, don't bother to delete it.  Reasonable? */
 
-	if (!blob_id->bid_stuff.bid_number && !blob_id->bid_relation_id)
+	if (blob_id->isEmpty())
 		return;
 
 	if (blob_id->bid_relation_id != relation->rel_id)
@@ -1973,7 +1977,7 @@ static ARR find_array(jrd_tra* transaction, const bid* blob_id)
 	arr* array = transaction->tra_arrays;
 
 	for (; array; array = array->arr_next) {
-		if (array == (ARR) blob_id->bid_stuff.bid_blob) {
+		if (array->arr_temp_id == blob_id->bid_stuff.bid_temp_id) {
 			break;
 		}
 	}
@@ -2134,9 +2138,9 @@ static void get_replay_blob(TDBB tdbb, bid* blob_id)
 
 	for (map* map_ptr = dbb->dbb_blob_map; map_ptr; map_ptr = map_ptr->map_next)
 	{
-		if (blob_id->bid_stuff.bid_blob == map_ptr->map_old_blob)
+		if (blob_id->bid_stuff.bid_temp_id == map_ptr->map_old_blob)
 		{
-			blob_id->bid_stuff.bid_blob = map_ptr->map_new_blob;
+			blob_id->bid_stuff.bid_temp_id = map_ptr->map_new_blob;
 			break;
 		}
 	}

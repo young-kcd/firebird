@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.88 2004-01-16 12:59:15 hvlad Exp $
+$Id: met.epp,v 1.89 2004-01-21 07:18:25 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -124,21 +124,19 @@ typedef enum rids {
 #undef END_RELATION
 
 #define BLR_BYTE        *(csb->csb_running)++
-#define NULL_BLOB(id)   (!id.gds_quad_high && !id.gds_quad_low)
-
 #define	BLANK			'\040'
 
 DATABASE DB = FILENAME "ODS.RDB";
 
 static int blocking_ast_procedure(void* ast_object);
 static int blocking_ast_relation(void* ast_object);
-static void get_trigger(TDBB, jrd_rel*, SLONG[2], TRIG_VEC*, const TEXT*, bool, USHORT);
+static void get_trigger(TDBB, jrd_rel*, BID, TRIG_VEC*, const TEXT*, bool, USHORT);
 static bool get_type(TDBB, SSHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(TDBB, jrd_rel*);
 static void name_copy(TEXT*, const TEXT*);
 static USHORT name_length(const TEXT *);
-static jrd_nod* parse_param_blr(TDBB, jrd_prc*, SLONG[2], Csb*);
-static jrd_nod* parse_procedure_blr(TDBB, jrd_prc*, SLONG[2], Csb*);
+static jrd_nod* parse_param_blr(TDBB, jrd_prc*, BID, Csb*);
+static jrd_nod* parse_procedure_blr(TDBB, jrd_prc*, BID, Csb*);
 static BOOLEAN par_messages(TDBB, const UCHAR*, USHORT, jrd_prc*, Csb*);
 static BOOLEAN resolve_charset_and_collation(TDBB, SSHORT*, const UCHAR*,
 											 const UCHAR*);
@@ -831,7 +829,7 @@ FMT MET_format(TDBB tdbb, jrd_rel* relation, USHORT number)
 		{
             REQUEST(irq_r_format) = request;
 		}
-		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)&X.RDB$DESCRIPTOR);
+		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$DESCRIPTOR);
 		const USHORT count = blob->blb_length / sizeof(struct dsc);
 		format = fmt::newFmt(*dbb->dbb_permanent, count);
 		format->fmt_count = count;
@@ -845,7 +843,7 @@ FMT MET_format(TDBB tdbb, jrd_rel* relation, USHORT number)
 			if (desc->dsc_address)
 			{
 				format->fmt_length =
-					(ULONG) desc->dsc_address + desc->dsc_length;
+					(IPTR) desc->dsc_address + desc->dsc_length;
 				break;
 			}
 		}
@@ -940,7 +938,7 @@ jrd_nod* MET_get_dependencies(TDBB			tdbb,
 						 jrd_rel*			relation,
 						 TEXT*			blob,
 						 Csb*			view_csb,
-						 SLONG			blob_id[2],
+						 BID blob_id,
 						 jrd_req**			request,
 						 Csb**			csb_ptr,
 						 const TEXT*	object_name,
@@ -1176,7 +1174,7 @@ void MET_load_trigger(
 			{
 				get_trigger(tdbb,
 							relation,
-							(SLONG*)&TRG.RDB$TRIGGER_BLR,
+							&TRG.RDB$TRIGGER_BLR,
 							triggers + trigger_action,
 							TRG.RDB$TRIGGER_NAME,
 							(bool) TRG.RDB$SYSTEM_FLAG,
@@ -1796,21 +1794,21 @@ bool MET_lookup_partner(
 								   index_number + 1);
 
 				(*references->frgn_reference_ids)[index_number] =
-					(BLK) (IDX.RDB$INDEX_ID - 1);
+					(BLK)(IPTR)(IDX.RDB$INDEX_ID - 1);
 
 				references->frgn_relations =
 					vec::newVector(*dbb->dbb_permanent, references->frgn_relations,
 								   index_number + 1);
 
 				(*references->frgn_relations)[index_number] =
-					(BLK) (ULONG) partner_relation->rel_id;
+					(BLK) (IPTR) partner_relation->rel_id;
 
 				references->frgn_indexes = 
 					vec::newVector(*dbb->dbb_permanent, references->frgn_indexes,
 								   index_number + 1);
 
 				(*references->frgn_indexes)[index_number] =
-					(BLK) (IND.RDB$INDEX_ID - 1);
+					(BLK) (IPTR) (IND.RDB$INDEX_ID - 1);
 
 				index_number++;
 			}
@@ -1875,21 +1873,21 @@ bool MET_lookup_partner(
 								   index_number + 1);
 
 				(*dependencies->prim_reference_ids)[index_number] =
-					(BLK) (IDX.RDB$INDEX_ID - 1);
+					(BLK) (IPTR) (IDX.RDB$INDEX_ID - 1);
 
 				dependencies->prim_relations = 
 					vec::newVector(*dbb->dbb_permanent, dependencies->prim_relations,
 								   index_number+1);
 
 				(*dependencies->prim_relations)[index_number] =
-					(BLK) (ULONG) partner_relation->rel_id;
+					(BLK) (IPTR) partner_relation->rel_id;
 
 				dependencies->prim_indexes =
 					vec::newVector(*dbb->dbb_permanent, dependencies->prim_indexes,
 								   index_number+1);
 
 				(*dependencies->prim_indexes)[index_number] =
-					(BLK) (IND.RDB$INDEX_ID - 1);
+					(BLK) (IPTR) (IND.RDB$INDEX_ID - 1);
 
 				index_number++;
 			}
@@ -1943,13 +1941,13 @@ bool MET_lookup_partner(
 				 index_number < (int) references->frgn_reference_ids->count();
 				 index_number++)
 			{
-				if (idx->idx_id == (UCHAR)(ULONG) (*references->frgn_reference_ids)
+				if (idx->idx_id == (UCHAR)(IPTR) (*references->frgn_reference_ids)
 											[index_number])
 				{
 					idx->idx_primary_relation =
-						(USHORT)(ULONG) (*references->frgn_relations)[index_number];
+						(USHORT)(IPTR) (*references->frgn_relations)[index_number];
 					idx->idx_primary_index =
-						(UCHAR)(ULONG) (*references->frgn_indexes)[index_number];
+						(UCHAR)(IPTR) (*references->frgn_indexes)[index_number];
 					return true;
 				}
 			}
@@ -1965,7 +1963,7 @@ bool MET_lookup_partner(
 				 index_number < (int) dependencies->prim_reference_ids->count();
 				 index_number++)
 			{
-				if (idx->idx_id == (UCHAR)(ULONG) (*dependencies->prim_reference_ids)
+				if (idx->idx_id == (UCHAR)(IPTR) (*dependencies->prim_reference_ids)
 											[index_number])
 				{
 					idx->idx_foreign_primaries =
@@ -2323,7 +2321,7 @@ jrd_rel* MET_lookup_relation_id(TDBB tdbb, SLONG id, BOOLEAN return_deleted)
 
 jrd_nod* MET_parse_blob(TDBB		tdbb,
 				   jrd_rel*		relation,
-				   SLONG	blob_id[2],
+				   BID		blob_id,
 				   Csb**		csb_ptr,
 				   jrd_req**		request_ptr,
 				   BOOLEAN	trigger,
@@ -2347,7 +2345,7 @@ jrd_nod* MET_parse_blob(TDBB		tdbb,
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
-	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
+	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	const SLONG length = blob->blb_length + 10;
 	str* temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
@@ -2519,7 +2517,7 @@ void MET_prepare( TDBB tdbb, jrd_tra* transaction, USHORT length,
 			RDB$TRANSACTIONS.RDB$TRANSACTION_STATE.LIMBO;
 		blb* blob =
 			BLB_create(tdbb, dbb->dbb_sys_trans,
-					   (BID)&X.RDB$TRANSACTION_DESCRIPTION);
+					   &X.RDB$TRANSACTION_DESCRIPTION);
 		BLB_put_segment(tdbb, blob, msg, length);
 		BLB_close(tdbb, blob);
 	END_STORE;
@@ -2729,7 +2727,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 
 					Csb *csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
 					parameter->prm_default_val = 
-						parse_param_blr(tdbb, procedure, (SLONG*)&F.RDB$DEFAULT_VALUE, csb_);
+						parse_param_blr(tdbb, procedure, &F.RDB$DEFAULT_VALUE, csb_);
 					
 					delete csb_;
 					tdbb->tdbb_default = old_pool;
@@ -2761,7 +2759,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 					{
 						*desc = parameter->prm_desc;
 						length = MET_align(&*desc, length);
-						desc->dsc_address = (UCHAR *) length;
+						desc->dsc_address = (UCHAR *) (IPTR) length;
 						length += desc->dsc_length;
 					}
 				}
@@ -2771,7 +2769,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 			old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = JrdMemoryPool::createPool();
 			Csb* csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
-			parse_procedure_blr(tdbb, procedure, (SLONG*)&P.RDB$PROCEDURE_BLR, csb_);
+			parse_procedure_blr(tdbb, procedure, &P.RDB$PROCEDURE_BLR, csb_);
 			procedure->prc_request->req_procedure = procedure;
 			for (i = 0; i < csb_->csb_rpt.getCount(); i++)
 			{
@@ -3303,7 +3301,7 @@ void MET_scan_relation( TDBB tdbb, jrd_rel* relation)
 		{
 			relation->rel_flags |= REL_sql_relation;
 		}
-		if (!NULL_BLOB(REL.RDB$VIEW_BLR))
+		if (!REL.RDB$VIEW_BLR.isEmpty())
 		{
 			/* parse the view blr, getting dependencies on relations, etc. at the same time */
 
@@ -3311,7 +3309,7 @@ void MET_scan_relation( TDBB tdbb, jrd_rel* relation)
 			{
 				relation->rel_view_rse =
 				(RSE) MET_get_dependencies(tdbb, relation, NULL, NULL,
-											(SLONG*)&REL.RDB$VIEW_BLR, NULL, 
+											&REL.RDB$VIEW_BLR, NULL, 
 											&csb_, REL.RDB$RELATION_NAME,
 											obj_view);
 			}
@@ -3319,7 +3317,7 @@ void MET_scan_relation( TDBB tdbb, jrd_rel* relation)
 			{
 				relation->rel_view_rse =
 					(RSE) MET_parse_blob(tdbb, relation,
-										(SLONG*)&REL.RDB$VIEW_BLR, &csb_,
+										&REL.RDB$VIEW_BLR, &csb_,
 										NULL, FALSE, FALSE);
 			}
 
@@ -3339,7 +3337,7 @@ void MET_scan_relation( TDBB tdbb, jrd_rel* relation)
 		/* Pick up field specific stuff */
 
 		UCHAR* buffer;
-		blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)&REL.RDB$RUNTIME);
+		blob = BLB_open(tdbb, dbb->dbb_sys_trans, &REL.RDB$RUNTIME);
 		if (blob->blb_max_segment < sizeof(temp))
 		{
 			buffer = temp;
@@ -3751,7 +3749,7 @@ static int blocking_ast_relation(void* ast_object)
 static void get_trigger(
 						TDBB tdbb,
 						jrd_rel* relation,
-						SLONG blob_id[2],
+						BID blob_id,
 						TRIG_VEC* ptr,
 						const TEXT* name, bool sys_trigger, USHORT flags)
 {
@@ -3767,12 +3765,11 @@ static void get_trigger(
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (!blob_id[0] && !blob_id[1]) {
+	if (blob_id->isEmpty())
 		return;
-	}
 
 	DBB dbb = tdbb->tdbb_database;
-	BLB blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
+	BLB blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	SLONG length = blob->blb_length + 10;
 	STR blr = FB_NEW_RPT(*dbb->dbb_permanent,length) str();
 	BLB_get_data(tdbb, blob, blr->str_data, length);
@@ -3939,12 +3936,12 @@ static USHORT name_length(const TEXT* name)
 }
 
 static jrd_nod* parse_param_blr(TDBB tdbb, 
-		jrd_prc* procedure, SLONG blob_id[2], Csb* csb)
+		jrd_prc* procedure, BID blob_id, Csb* csb)
 {
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
-	BLB		blob   = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
+	BLB		blob   = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	SLONG	length = blob->blb_length + 10;
 	STR		temp   = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
 
@@ -3960,7 +3957,7 @@ static jrd_nod* parse_param_blr(TDBB tdbb,
 
 static jrd_nod* parse_procedure_blr(
 							   TDBB tdbb,
-							   jrd_prc* procedure, SLONG blob_id[2], Csb* csb)
+							   jrd_prc* procedure, BID blob_id, Csb* csb)
 {
 /**************************************
  *
@@ -3975,7 +3972,7 @@ static jrd_nod* parse_procedure_blr(
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
 
-	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
+	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	const SLONG length = blob->blb_length + 10;
 	// CVC: Warning: the str class is limited by 64K
 	str* temp = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
@@ -4035,7 +4032,7 @@ static BOOLEAN par_messages(TDBB	tdbb,
 			if (align) {
 				offset = FB_ALIGN(offset, align);
 			}
-			desc->dsc_address = (UCHAR *) (ULONG) offset;
+			desc->dsc_address = (UCHAR *) (IPTR) offset;
 			offset += desc->dsc_length;
 		}
 		format->fmt_length = offset;
@@ -4317,7 +4314,7 @@ static void store_dependencies(TDBB			tdbb,
 		jrd_nod* node = (jrd_nod*) LLS_POP(&csb->csb_dependencies);
 		if (!node->nod_arg[e_dep_object])
 			continue;
-		const SSHORT dpdo_type = (SSHORT) (SLONG) node->nod_arg[e_dep_object_type];
+		const SSHORT dpdo_type = (SSHORT) (IPTR) node->nod_arg[e_dep_object_type];
         jrd_rel* relation = NULL;
         jrd_prc* procedure = NULL;
         const TEXT* dpdo_name;
@@ -4332,7 +4329,7 @@ static void store_dependencies(TDBB			tdbb,
             break;
         case obj_exception:
 			{
-				const SLONG number = (SLONG) node->nod_arg [e_dep_object];
+				const SLONG number = (IPTR) node->nod_arg [e_dep_object];
 				MET_lookup_exception (tdbb, number, name, NULL);
 				dpdo_name = name;
 				break;
@@ -4340,7 +4337,7 @@ static void store_dependencies(TDBB			tdbb,
             /* CVC: Here I'm going to track those pesky things named generators and UDFs. */
 		case obj_generator:
 			{
-				const SLONG number = (SLONG) node->nod_arg [e_dep_object];
+				const SLONG number = (IPTR) node->nod_arg [e_dep_object];
 				MET_lookup_generator_id (tdbb, number, name);
 				dpdo_name = name;
 				break;
@@ -4360,7 +4357,7 @@ static void store_dependencies(TDBB			tdbb,
 		{
 			if (field_node->nod_type == nod_field)
 			{
-				const SSHORT fld_id = (SSHORT) (SLONG) field_node->nod_arg[0];
+				const SSHORT fld_id = (SSHORT) (IPTR) field_node->nod_arg[0];
 				if (relation)
 				{
 					const jrd_fld* field = MET_get_field(relation, fld_id);

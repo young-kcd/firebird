@@ -3796,7 +3796,7 @@ void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
 	}
 
 	if (found) {
-		DYN_error_punt(false, 165, (TEXT*) shadow_number, NULL, NULL, NULL,
+		DYN_error_punt(false, 165, (TEXT*)(IPTR)shadow_number, NULL, NULL, NULL,
 					   NULL);
 		/* msg 165: "Shadow %ld already exists" */
 	}

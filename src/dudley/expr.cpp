@@ -363,7 +363,7 @@ static CON make_numeric_constant( TEXT * string, USHORT length)
 	constant->con_desc.dsc_dtype = dtype_long;
 	constant->con_desc.dsc_length = sizeof(SLONG);
 	number = (SLONG *) constant->con_data;
-	constant->con_desc.dsc_address = (UCHAR *) number;
+	constant->con_desc.dsc_address = (UCHAR*) (IPTR) number;
 	scale = 0;
 
 	do {
@@ -673,7 +673,7 @@ static CON parse_literal(void)
 		constant->con_desc.dsc_dtype = dtype_text;
 		constant->con_desc.dsc_ttype = ttype_ascii;
 		p = (TEXT *) constant->con_data;
-		constant->con_desc.dsc_address = (UCHAR *) p;
+		constant->con_desc.dsc_address = (UCHAR*) p;
 		if (constant->con_desc.dsc_length = l)
 			do
 				*p++ = *q++;

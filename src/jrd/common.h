@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.97 2004-01-12 06:58:26 skidder Exp $
+$Id: common.h,v 1.98 2004-01-21 07:18:25 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -98,10 +98,14 @@ $Id: common.h,v 1.97 2004-01-12 06:58:26 skidder Exp $
 #ifdef LINUX
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
+
+// SLONG is a 32-bit integer on 64-bit platforms
+#if SIZEOF_LONG == 4
 #define SLONGFORMAT "ld"
 #define ULONGFORMAT "lu"
 #define XLONGFORMAT "lX"
 #define xLONGFORMAT "lx"
+#endif
 
 
 //format for __LINE__
@@ -275,7 +279,6 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define QUADFORMAT "q"
 #define MAP_ANONYMOUS
 #define MAP_ANNON
-#define LSEEK_OFFSET_CAST (off_t)
 
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t)length)
 #define MOVE_FAST(from,to,length)	memcpy (to, from, (int) (length))
@@ -384,10 +387,6 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 */
 #if (!defined(SFIO) && defined(SUPERSERVER))
 #error "need to use SFIO"
-#endif
-
-#ifdef SOLX86
-#define LSEEK_OFFSET_CAST (off_t)
 #endif
 
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
@@ -865,8 +864,8 @@ typedef struct
 
 #define JRD_BUGCHK 15			/* facility code for bugcheck messages */
 #ifndef OFFSET
-#define OFFSET(struct,fld)      ((int) &((struct) NULL)->fld)
-#define OFFSETA(struct,fld)     ((int) ((struct) NULL)->fld)
+#define OFFSET(struct,fld)      ((IPTR) &((struct) NULL)->fld)
+#define OFFSETA(struct,fld)     ((IPTR) ((struct) NULL)->fld)
 #endif
 
 #ifndef ODS_ALIGNMENT

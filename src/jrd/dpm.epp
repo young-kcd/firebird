@@ -1943,7 +1943,7 @@ SLONG DPM_store_blob(TDBB tdbb, BLB blob, REC record)
 	if (blob->blb_level > 0) {
 		vcl::iterator ptr, end;
 		for (ptr = vector->begin(), end = vector->end(); ptr < end;) {
-            LLS_PUSH((BLK) * ptr++, &stack);
+            LLS_PUSH((BLK)(IPTR)*ptr++, &stack);
         }
     }
 
@@ -2079,7 +2079,7 @@ void DPM_update( TDBB tdbb, RPB * rpb, LLS * stack, jrd_tra* transaction)
 
 	DEBUG if (stack) {
 		while (*stack) {
-			CCH_precedence(tdbb, &rpb->rpb_window, (SLONG) LLS_POP(stack));
+			CCH_precedence(tdbb, &rpb->rpb_window, (IPTR) LLS_POP(stack));
 		}
 	}
 
@@ -2681,7 +2681,7 @@ static UCHAR* find_space(TDBB	tdbb,
    If the page need to be compressed, compress it. */
 
 	while (*stack) {
-		CCH_precedence(tdbb, &rpb->rpb_window, (SLONG) LLS_POP(stack));
+		CCH_precedence(tdbb, &rpb->rpb_window, (SLONG)(IPTR)LLS_POP(stack));
 	}
 	CCH_MARK(tdbb, &rpb->rpb_window);
 
@@ -2706,7 +2706,7 @@ static UCHAR* find_space(TDBB	tdbb,
 		(SLONG) page->dpg_sequence * dbb->dbb_max_records + slot;
 
 	if (record) {
-		LLS_PUSH((BLK) rpb->rpb_page, &record->rec_precedence);
+		LLS_PUSH((BLK)(IPTR)rpb->rpb_page, &record->rec_precedence);
 	}
 
 	return (UCHAR *) page + space;
@@ -2917,7 +2917,7 @@ static RHD locate_space(
 	}
 
 	if (record) {
-		LLS_PUSH((BLK) window->win_page, &record->rec_precedence);
+		LLS_PUSH((BLK)(IPTR)window->win_page, &record->rec_precedence);
 	}
 
 #ifdef VIO_DEBUG

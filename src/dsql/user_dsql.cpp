@@ -88,7 +88,7 @@ struct dsql_name
 
 
 static void		cleanup(void*);
-static void		cleanup_database(FRBRD**, SLONG);
+static void		cleanup_database(FRBRD**, void*);
 static ISC_STATUS	error();
 static void		error_post(ISC_STATUS, ...);
 static dsql_name*		lookup_name(const SCHAR*, dsql_name*);
@@ -1343,7 +1343,7 @@ static void cleanup(void* arg)
 //
 //		the cleanup handler called when a database is closed
 //
-static void cleanup_database(FRBRD** db_handle, SLONG dummy)
+static void cleanup_database(FRBRD** db_handle, void* dummy)
 {
 	if (!db_handle || !databases) {
 		return;

@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.25 2003-11-28 06:48:12 robocop Exp $
+//	$Id: sqe.cpp,v 1.26 2004-01-21 07:16:15 skidder Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -2197,7 +2197,7 @@ static void par_order(GPRE_REQ request,
 		else if (MSC_match(KW_DESCENDING))
 			direction = TRUE;
 		count++;
-		MSC_push((GPRE_NOD) direction, &directions);
+		MSC_push((GPRE_NOD)(IPTR)direction, &directions);
 		MSC_push(sort, &items);
 		if (!MSC_match(KW_COMMA))
 			break;

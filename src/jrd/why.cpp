@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.49 2004-01-03 10:59:41 robocop Exp $
+$Id: why.cpp,v 1.50 2004-01-21 07:18:26 skidder Exp $
 */
 
 #include "firebird.h"
@@ -171,7 +171,7 @@ typedef struct clean
 		DatabaseCleanupRoutine*	DatabaseRoutine;
 		TransactionCleanupRoutine *TransactionRoutine;
 	};
-	SLONG clean_arg;
+	void* clean_arg;
 } *CLEAN;
 
 /* Transaction element block */
@@ -1457,7 +1457,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
 											 WHY_ATT * handle,
 											 DatabaseCleanupRoutine * routine,
-											 SCHAR* arg)
+											 void* arg)
 {
 /**************************************
  *
@@ -1488,7 +1488,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
 	clean->clean_next = database->cleanup;
 	database->cleanup = clean;
 	clean->DatabaseRoutine = routine;
-	clean->clean_arg = (SLONG) arg;
+	clean->clean_arg = arg;
 
 	status[0] = isc_arg_gds;
 	status[1] = 0;
@@ -4827,7 +4827,7 @@ ISC_STATUS API_ROUTINE GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS * user_status,
 												WHY_TRA * tra_handle,
 												TransactionCleanupRoutine *routine,
-												SLONG arg)
+												void* arg)
 {
 /**************************************
  *

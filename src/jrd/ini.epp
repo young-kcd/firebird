@@ -693,7 +693,7 @@ void INI_init2(void)
 				if (n-- > 0)
 				{
 					format->fmt_length = (USHORT)MET_align(&*desc, format->fmt_length);
-					desc->dsc_address = (UCHAR*) (SLONG) format->fmt_length;
+					desc->dsc_address = (UCHAR*) (IPTR) format->fmt_length;
 					format->fmt_length += desc->dsc_length;
 				}
 			}
@@ -1150,13 +1150,13 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 	strcpy(sec_class_name, "SQL$");
 	strcat(sec_class_name, rel_name);
 
-    ISC_QUAD blob_id_1;
-	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id_1);
+    bid blob_id_1;
+	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id_1);
 	BLB_put_segment(tdbb, blob, acl, acl_length);
 	BLB_close(tdbb, blob);
 
-    ISC_QUAD blob_id_2;
-	blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id_2);
+    bid blob_id_2;
+	blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id_2);
 	BLB_put_segment(tdbb, blob, acl, acl_length);
 	BLB_close(tdbb, blob);
 
@@ -1366,7 +1366,7 @@ static void store_global_field(TDBB tdbb, GFLD* gfield, BLK* handle)
 	jrd_tra* trans = dbb->dbb_sys_trans;
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$FIELDS
-		PAD(names[gfield->gfld_name], X.RDB$FIELD_NAME);
+		PAD(names[(USHORT)gfield->gfld_name], X.RDB$FIELD_NAME);
 		X.RDB$FIELD_LENGTH = gfield->gfld_length;
 		X.RDB$FIELD_SCALE = 0;
 		X.RDB$SYSTEM_FLAG = RDB_system;
@@ -1376,7 +1376,7 @@ static void store_global_field(TDBB tdbb, GFLD* gfield, BLK* handle)
 		X.RDB$SEGMENT_LENGTH.NULL = TRUE;
 		if (gfield->gfld_dflt_blr)
 		{
-			blb* blob = BLB_create(tdbb, trans, (BID)&X.RDB$DEFAULT_VALUE);
+			blb* blob = BLB_create(tdbb, trans, &X.RDB$DEFAULT_VALUE);
 			BLB_put_segment(tdbb,
 							blob,
 							gfield->gfld_dflt_blr,
@@ -1623,7 +1623,7 @@ static void store_trigger(TDBB tdbb, const jrd_trg* trigger, BLK* handle)
 		X.RDB$SYSTEM_FLAG = RDB_system;
 		X.RDB$TRIGGER_TYPE = trigger->trg_type;
 		X.RDB$FLAGS = trigger->trg_flags;
-		blb* blob = BLB_create(tdbb, trans, (BID)&X.RDB$TRIGGER_BLR);
+		blb* blob = BLB_create(tdbb, trans, &X.RDB$TRIGGER_BLR);
 		BLB_put_segment(tdbb,
 						blob,
 						trigger->trg_blr,

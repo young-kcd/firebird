@@ -881,7 +881,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
 			return;
 		}
 		gds__msg_format(NULL, ISQL_MSG_FAC, 0, sizeof(errbuf), errbuf,
-						(TEXT*) isc_sqlcode(status), NULL, NULL, NULL, NULL);
+						(TEXT*)(IPTR)isc_sqlcode(status), NULL, NULL, NULL, NULL);
 		TRANSLATE_CP;
 		STDERROUT(errbuf, 1);
 		gds_interprete_cpp(errbuf, &vec);
@@ -6028,8 +6028,8 @@ static processing_state print_item_blob(IB_FILE* fp,
 		return CONT;
 
 	if ((var->sqlsubtype != Doblob) && (Doblob != ALL_BLOBS)) {
-		ISQL_msg_get(BLOB_SUBTYPE, msg, (TEXT*) (SLONG) Doblob,
-					 (TEXT*) (SLONG) var->sqlsubtype, NULL, NULL, NULL);
+		ISQL_msg_get(BLOB_SUBTYPE, msg, (TEXT*) (IPTR) Doblob,
+					 (TEXT*) (IPTR) var->sqlsubtype, NULL, NULL, NULL);
 		/* Blob display set to subtype %d. This blob: subtype = %d\n */
 		ISQL_printf(fp, msg);
 		if (buffer)

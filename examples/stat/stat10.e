@@ -186,7 +186,7 @@ return (0);
  */
 int count_types (void)
 {
-	long cnt;
+	int cnt;
 
 	EXEC SQL
 		SELECT COUNT(DISTINCT currency) INTO :cnt FROM country;
@@ -205,7 +205,7 @@ return (0);
  */
 int count_records (void)
 {
-	long cnt;
+	int cnt;
 
 	/* Use the database handle along with the table name. */
 	EXEC SQL

@@ -693,7 +693,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 									  true, true,
 									// Pass 0 here to restore older parameter
 									// ordering behavior unconditionally.
-									  (USHORT)(ULONG) input->nod_arg[0]);
+									  (USHORT)(IPTR) input->nod_arg[0]);
 		return node;
 
 	case nod_param_val:
@@ -2150,7 +2150,7 @@ static void explode_asterisk(dsql_req* request, dsql_nod* node,
 			dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
 			derived_field->nod_arg[e_derived_field_value] = select_item->nod_arg[e_derived_field_value];
 			derived_field->nod_arg[e_derived_field_name] = select_item->nod_arg[e_derived_field_name];
-			derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(ULONG) request->req_scope_level;
+			derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) request->req_scope_level;
 			derived_field->nod_desc = select_item->nod_desc;
 			LLS_PUSH(derived_field, stack);
 		}
@@ -3646,7 +3646,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 			dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
 			derived_field->nod_arg[e_derived_field_value] = select_item;
 			derived_field->nod_arg[e_derived_field_name] = list->nod_arg[count];
-			derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(ULONG) request->req_scope_level;
+			derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) request->req_scope_level;
 			derived_field->nod_desc = select_item->nod_desc;
 
 			rse->nod_arg[e_rse_items]->nod_arg[count] = derived_field;
@@ -4477,7 +4477,7 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 			}
 		}
 		else if ((sub->nod_type == nod_constant) && (sub->nod_desc.dsc_dtype == dtype_long)) {
-			const ULONG position = (ULONG) (sub->nod_arg[0]);
+			const ULONG position = (IPTR) (sub->nod_arg[0]);
 			if ((position < 1) || !select_list || 
 				(position > (ULONG) select_list->nod_count))
 			{
@@ -4818,7 +4818,7 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, TSQL tdsql, dsql_no
 				dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
 				derived_field->nod_arg[e_derived_field_value] = select_item;
 				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) alias;
-				derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(ULONG) request->req_scope_level;
+				derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) request->req_scope_level;
 				derived_field->nod_desc = select_item->nod_desc;
 				return derived_field;
 			}
@@ -4836,7 +4836,7 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, TSQL tdsql, dsql_no
 				dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
 				derived_field->nod_arg[e_derived_field_value] = select_item->nod_arg[e_alias_value];
 				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) alias;
-				derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(ULONG) request->req_scope_level;
+				derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) request->req_scope_level;
 				derived_field->nod_desc = select_item->nod_desc;
 				return derived_field;
 			}
@@ -4851,7 +4851,7 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, TSQL tdsql, dsql_no
 				// with orginal map.
 				if (derived_field->nod_type == nod_derived_field) {
 					derived_field->nod_arg[e_derived_field_value] = select_item;
-					derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(ULONG) request->req_scope_level;
+					derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) request->req_scope_level;
 					derived_field->nod_desc = select_item->nod_desc;
 					return derived_field;
 				}
@@ -5851,7 +5851,7 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* s_lis
 		}
 
 		if (node1->nod_type == nod_constant && node1->nod_desc.dsc_dtype == dtype_long) {
-			const ULONG position = (ULONG) (node1->nod_arg[0]);
+			const ULONG position = (IPTR) (node1->nod_arg[0]);
 			if ((position < 1) || !s_list || 
 				(position > (ULONG) s_list->nod_count))
 			{
@@ -6123,7 +6123,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 						  isc_arg_gds, isc_order_by_err,	// invalid ORDER BY clause.
 						  0);
 			}
-			const SLONG number = (SLONG) position->nod_arg[0];
+			const SLONG number = (IPTR) position->nod_arg[0];
 			if (number < 1 || number > union_items->nod_count) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_command_err,

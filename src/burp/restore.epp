@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.61 2004-01-13 09:52:09 robocop Exp $
+$Id: restore.epp,v 1.62 2004-01-21 07:16:08 skidder Exp $
 */
 
 #include "firebird.h"
@@ -685,7 +685,7 @@ void add_files (const UCHAR* file_name)
 				general_on_error ();
 			END_ERROR;
 				MISC_release_request_silent(req_handle1);
-			BURP_verbose (57, file->fil_name, (void*) start, NULL, NULL, NULL);
+			BURP_verbose (57, file->fil_name, (void*)(IPTR)start, NULL, NULL, NULL);
 			// msg 57 adding file %s, starting at page %ld 
 		}
 		else if (((signed long )file->fil_length) >= start - 1)
@@ -1028,7 +1028,7 @@ void create_database (const TEXT* file_name)
 		isc_version(&DB, BURP_output_version, (void*)"\t%s\n");
 	}
 
-	BURP_verbose (74, file_name, (void*) page_size, NULL, NULL, NULL);
+	BURP_verbose (74, file_name, (void*) (IPTR)page_size, NULL, NULL, NULL);
 	// msg 74 created database %s, page_size %ld bytes 
 }
 
@@ -2399,7 +2399,7 @@ rec_type get_data (burp_rel*	relation)
 			break;
 
 		default:
-			BURP_error (26, true, isc_arg_number, (void*) (SLONG) field->fld_type,
+			BURP_error (26, true, isc_arg_number, (void*) (IPTR) field->fld_type,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 			// msg 26 datatype %ld not understood 
 			break;
@@ -2515,8 +2515,8 @@ rec_type get_data (burp_rel*	relation)
 				old_length = recompute_length (relation);
 			if (l != old_length)
 			{
-				BURP_error(40, true, isc_arg_number, (void*)length,
-							 isc_arg_number, (void*) (ULONG) l,
+				BURP_error(40, true, isc_arg_number, (void*)(IPTR)length,
+							 isc_arg_number, (void*) (IPTR) l,
 							 0, NULL, 0, NULL, 0, NULL);
 				// msg 40 wrong length record, expected %ld encountered %ld 
 			}
@@ -2566,7 +2566,7 @@ rec_type get_data (burp_rel*	relation)
 		records++;
 
 		if ((records % RESTORE_VERBOSE_INTERVAL) == 0)
-			BURP_verbose(107, (void*) (SLONG) records, NULL, NULL, NULL, NULL);
+			BURP_verbose(107, (void*) (IPTR) records, NULL, NULL, NULL, NULL);
 
 		for (field = relation->rel_fields; field; field = field->fld_next)
 			if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
@@ -2690,7 +2690,7 @@ rec_type get_data (burp_rel*	relation)
 		if (gds_status[1])
 			EXEC SQL SET TRANSACTION;
 	}
-	BURP_verbose (107, (void*) (SLONG) records, NULL, NULL, NULL, NULL);
+	BURP_verbose (107, (void*) (IPTR) records, NULL, NULL, NULL, NULL);
 	// msg 107 %ld records restored 
 
 	return record;
@@ -4806,7 +4806,7 @@ bool get_relation()
 			break;
 
 		default:
-			BURP_error(43, true, isc_arg_number, (void*) record,
+			BURP_error(43, true, isc_arg_number, (void*) (IPTR) record,
 							0, NULL, 0, NULL, 0, NULL, 0, NULL);
 			// msg 43 don't recognize record type %ld 
 			break;
@@ -6157,7 +6157,7 @@ rec_type ignore_data (burp_rel*		relation)
 			break;
 	}
 
-	BURP_verbose (106, (void*) records, NULL, NULL, NULL, NULL);
+	BURP_verbose (106, (void*)(IPTR) records, NULL, NULL, NULL, NULL);
 	// msg 106 %ld records ignored 
 
 	return record;
@@ -6325,7 +6325,7 @@ bool restore (const TEXT* file_name,
 
 	if (tdgbl->RESTORE_format < 1 || tdgbl->RESTORE_format > ATT_BACKUP_FORMAT)
 	{
-		BURP_error(44, true, isc_arg_number, (void*)(ULONG)tdgbl->RESTORE_format,
+		BURP_error(44, true, isc_arg_number, (void*)(IPTR)tdgbl->RESTORE_format,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 44 Expected backup version 1, 2, or 3.  Found %ld 
 	}
@@ -6346,7 +6346,7 @@ bool restore (const TEXT* file_name,
 	USHORT db_version = check_db_version();
 	if (db_version < DB_VERSION_CURRENT)
 	{
-		BURP_error(51, true, isc_arg_number, (void*) (ULONG) db_version,
+		BURP_error(51, true, isc_arg_number, (void*) (IPTR) db_version,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 51 database format %ld is too old to restore to 
 	}
@@ -6568,7 +6568,7 @@ bool restore (const TEXT* file_name,
 			break;
 
 		default:
-			BURP_error(43, true, isc_arg_number, (void*) record,
+			BURP_error(43, true, isc_arg_number, (void*) (IPTR) record,
 						0, NULL, 0, NULL, 0, NULL, 0, NULL);
 			// msg 43 don't recognize record type %ld 
 			break;
@@ -6751,7 +6751,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	if (!value)
 	{
 #pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
-		BURP_verbose (185, gen_name, (void*) (SLONG) value, NULL, NULL, NULL);
+		BURP_verbose (185, gen_name, (void*) (IPTR) value, NULL, NULL, NULL);
 		// msg 185 restoring generator %s value: %ld 
 		return;
 	}
@@ -6831,7 +6831,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	}
 
 #pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
-	BURP_verbose (185, gen_name, (void*) (SLONG) value, NULL, NULL, NULL);
+	BURP_verbose (185, gen_name, (void*) (IPTR) value, NULL, NULL, NULL);
 	// msg 185 restoring generator %s value: %ld 
 
 	isc_release_request (status_vector, &gen_id_reqh);

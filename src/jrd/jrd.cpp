@@ -1659,7 +1659,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	
 	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_handle_returned, *blob_handle);
-		LOG_call(log_handle_returned, blob_id->bid_stuff.bid_blob);
+		LOG_call(log_handle_returned, blob_id->bid_stuff.bid_temp_id);
 	#endif
 	}
 	catch (const std::exception&)
@@ -3776,7 +3776,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
     jrd_nod* in_message = NULL;
 	jrd_nod* out_message = NULL;
 	jrd_nod* node;
-	for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
+	for (int i = 0; i < csb->csb_rpt.getCount(); i++)
 	{
 		if ( (node = csb->csb_rpt[i].csb_message) )
 		{

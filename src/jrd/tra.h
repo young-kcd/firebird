@@ -67,6 +67,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	class traRpbList *tra_rpblist;	/* active RPB's of given transaction */
 	UCHAR tra_use_count;			/* use count for safe AST delivery */
 	UCHAR tra_callback_count;		/* callback count for 'execute statement' */
+	ULONG tra_next_blob_id;         // ID of the next blob or array created in this transaction
 	UCHAR tra_transactions[1];
 };
 

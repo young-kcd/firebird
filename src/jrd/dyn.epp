@@ -665,7 +665,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, USHORT size, bool err_flag)
 	return length;
 }
 
-USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, ISC_QUAD* blob_id)
+USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, BID blob_id)
 {
 /**************************************
  *
@@ -689,7 +689,7 @@ USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, ISC_QUAD* blob_id)
 	}
 
 	try {
-		BLB blob = BLB_create(tdbb, gbl->gbl_transaction, (BID)blob_id);
+		BLB blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
@@ -703,7 +703,7 @@ USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, ISC_QUAD* blob_id)
 	return length;
 }
 
-USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, ISC_QUAD* blob_id)
+USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, BID blob_id)
 {
 /**************************************
  *
@@ -730,7 +730,7 @@ USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, ISC_QUAD* blob_id)
 	const UCHAR* end = NULL;
 
 	try {
-		BLB blob = BLB_create(tdbb, gbl->gbl_transaction, (BID)blob_id);
+		BLB blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
 
 		for (end = p + length; p < end; p += TEXT_BLOB_LENGTH)
 		{

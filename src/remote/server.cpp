@@ -2452,7 +2452,7 @@ ISC_STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 				  stuff->p_slc_parameters.cstr_length,
 				  (const ISC_LONG*) stuff->p_slc_parameters.cstr_address,
 				  stuff->p_slc_length, slice,
-				  reinterpret_cast<long*>(&response->p_slr_length));
+				  reinterpret_cast<SLONG*>(&response->p_slr_length));
 	THREAD_ENTER;
 
 	if (status_vector[1])
@@ -4260,9 +4260,12 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 	p_event->p_event_items.cstr_length = length;
 	// Probalby should define this item with CSTRING_CONST instead.
 	p_event->p_event_items.cstr_address = const_cast<UCHAR*>(items);
+	
+	// Nickolay Samofatov: We keep this values and even pass them to the client
+	// (as 32-bit values) when event is fired, but client ignores them.
 	p_event->p_event_ast = event->rvnt_ast;
-	// CVC: Using SLONG to keep pointer!
-	p_event->p_event_arg = (SLONG) event->rvnt_arg;
+	p_event->p_event_arg = (SLONG)(IPTR) event->rvnt_arg;
+	
 	p_event->p_event_rid = event->rvnt_rid;
 
 	port->send(&packet);
@@ -4396,7 +4399,7 @@ ISC_STATUS port::service_start(P_INFO * stuff, PACKET* send)
 	THREAD_EXIT;
 	isc_service_start(status_vector,
 					  &rdb->rdb_handle,
-					  reinterpret_cast<long*>(reserved),
+					  reinterpret_cast<SLONG*>(reserved),
 					  stuff->p_info_items.cstr_length,
 					  reinterpret_cast<char*>(stuff->p_info_items.cstr_address));
 	THREAD_ENTER;

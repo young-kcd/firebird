@@ -927,7 +927,7 @@ int INF_request_info(const jrd_req* request,
 			node = request->req_message;
 			if (item == isc_info_message_number)
 				length =
-					INF_convert((SLONG) node->nod_arg[e_msg_number],
+					INF_convert((IPTR) node->nod_arg[e_msg_number],
 								buffer_ptr);
 			else {
 				format = (FMT) node->nod_arg[e_msg_format];

@@ -379,11 +379,11 @@ ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS* status_vector,
 
 ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS * status_vector,
 										FRBRD **db_handle,
-										DatabaseCleanupRoutine *routine, SLONG arg)
+										DatabaseCleanupRoutine *routine, void* arg)
 {
 
 	return isc_database_cleanup(status_vector, (FRBRD **) db_handle,
-								 routine, (SCHAR*) arg);
+								 routine, arg);
 }
 
 ISC_STATUS API_ROUTINE gds__database_info(ISC_STATUS* status_vector,

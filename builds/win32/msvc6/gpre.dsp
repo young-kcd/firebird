@@ -150,10 +150,6 @@ SOURCE=..\..\..\src\gpre\hsh.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\gpre\int.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\gpre\int_cxx.cpp
 # End Source File
 # Begin Source File

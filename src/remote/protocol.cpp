@@ -531,10 +531,13 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			MAP(xdr_short,
 				reinterpret_cast<SSHORT&>(event->p_event_database));
 			MAP(xdr_cstring, event->p_event_items);
-#pragma FB_COMPILER_MESSAGE("p_event_ast is a pointer to function forced to SLONG!")
+			
+			// Nickolay Samofatov: this values are parsed, but are ignored by the client.
+			// Values are useful only for debugging, anyway since upper words of pointers
+			// are trimmed for 64-bit clients
 			MAP(xdr_long, reinterpret_cast<SLONG&>(event->p_event_ast));
-#pragma FB_COMPILER_MESSAGE("p_event_arg is a void* stored as SLONG!")
 			MAP(xdr_long, event->p_event_arg);
+			
 			MAP(xdr_long, event->p_event_rid);
 			DEBUG_PRINTSIZE(p->p_operation);
 			return P_TRUE;
@@ -984,7 +987,7 @@ static bool_t xdr_datum( XDR* xdrs, DSC* desc, BLOB_PTR* buffer)
  **************************************/
 	SSHORT n;
 
-	BLOB_PTR* p = buffer + (ULONG) desc->dsc_address;
+	BLOB_PTR* p = buffer + (IPTR) desc->dsc_address;
 
 	switch (desc->dsc_dtype) {
 	case dtype_text:
@@ -1367,7 +1370,7 @@ static bool_t xdr_semi_opaque( XDR* xdrs, REM_MSG message, FMT format)
 		for (desc = format->fmt_desc, end = desc + format->fmt_count;
 			 desc < end; desc++)
 			if (desc->dsc_dtype == dtype_d_float) {
-				convert = (double *) (msg_address + (int) desc->dsc_address);
+				convert = (double *) (msg_address + (IPTR)desc->dsc_address);
 				*convert = MTH$CVT_D_G(convert);
 			}
 
@@ -1382,7 +1385,7 @@ static bool_t xdr_semi_opaque( XDR* xdrs, REM_MSG message, FMT format)
 			if (desc->dsc_dtype == dtype_d_float) {
 				convert =
 					(double *) (message->msg_address +
-								(int) desc->dsc_address);
+								(IPTR) desc->dsc_address);
 				*convert = MTH$CVT_G_D(convert);
 			}
 		return TRUE;

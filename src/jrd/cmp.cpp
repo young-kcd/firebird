@@ -756,9 +756,9 @@ void CMP_get_desc(TDBB tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 
 	case nod_field:
 		{
-			const USHORT id = (USHORT) (ULONG) node->nod_arg[e_fld_id];
+			const USHORT id = (USHORT) (IPTR) node->nod_arg[e_fld_id];
 			const fmt* format =
-				CMP_format(tdbb, csb, (USHORT) (ULONG) node->nod_arg[e_fld_stream]);
+				CMP_format(tdbb, csb, (USHORT) (IPTR) node->nod_arg[e_fld_stream]);
 			if (id >= format->fmt_count) {
 				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
@@ -776,9 +776,9 @@ void CMP_get_desc(TDBB tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 		{
 			jrd_nod* sub = node->nod_arg[e_scl_field];
 			jrd_rel* relation =
-				csb->csb_rpt[(USHORT)(ULONG) sub->
+				csb->csb_rpt[(USHORT)(IPTR) sub->
 							 nod_arg[e_fld_stream]].csb_relation;
-			const USHORT id = (USHORT)(ULONG) sub->nod_arg[e_fld_id];
+			const USHORT id = (USHORT)(IPTR) sub->nod_arg[e_fld_id];
 			const jrd_fld* field = MET_get_field(relation, id);
 			const arr* array;
 			if (!field || !(array = field->fld_array)) {
@@ -1513,7 +1513,7 @@ void CMP_get_desc(TDBB tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 		return;
 
 	case nod_extract:
-		if ((ULONG) node->nod_arg[e_extract_part] == blr_extract_second) {
+		if ((IPTR) node->nod_arg[e_extract_part] == blr_extract_second) {
 			// QUADDATE - SECOND returns a float, or scaled!
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof(ULONG);
@@ -1570,7 +1570,7 @@ void CMP_get_desc(TDBB tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 		{
 			const jrd_nod* message = node->nod_arg[e_arg_message];
 			const fmt* format = (FMT) message->nod_arg[e_msg_format];
-			*desc = format->fmt_desc[(int) node->nod_arg[e_arg_number]];
+			*desc = format->fmt_desc[(IPTR) node->nod_arg[e_arg_number]];
 			return;
 		}
 
@@ -2534,14 +2534,14 @@ static jrd_nod* copy(TDBB tdbb,
 				--field_id;
 			}
 			else {
-				field_id = (USHORT)(ULONG) input->nod_arg[e_fld_id];
+				field_id = (USHORT)(IPTR) input->nod_arg[e_fld_id];
 			}
-			stream = (USHORT)(ULONG) input->nod_arg[e_fld_stream];
+			stream = (USHORT)(IPTR) input->nod_arg[e_fld_stream];
 			if (remap_fld) {
 				jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 				jrd_fld* field = MET_get_field(relation, field_id);
 				if (field->fld_source)
-					field_id = (USHORT)(ULONG) field->fld_source->nod_arg[e_fld_id];
+					field_id = (USHORT)(IPTR) field->fld_source->nod_arg[e_fld_id];
 			}
 			if (remap)
 				stream = remap[stream];
@@ -2652,7 +2652,7 @@ static jrd_nod* copy(TDBB tdbb,
 			node->nod_type = input->nod_type;
 			node->nod_count = 0;
 
-			stream = (USHORT)(ULONG) input->nod_arg[e_rel_stream];
+			stream = (USHORT)(IPTR) input->nod_arg[e_rel_stream];
 
 			// Last entry in the remap contains the the original stream number.
 			// Get that stream number so that the flags can be copied 
@@ -2661,7 +2661,7 @@ static jrd_nod* copy(TDBB tdbb,
 			const int relative_stream = (stream) ? remap[stream - 1] : stream;
 			new_stream = csb->csb_n_stream++;
 			fb_assert(new_stream <= MAX_STREAMS);
-			node->nod_arg[e_rel_stream] = (jrd_nod*) (SLONG) new_stream;
+			node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) new_stream;
 			remap[stream] = (UCHAR) new_stream;
 
 			node->nod_arg[e_rel_context] = input->nod_arg[e_rel_context];
@@ -2731,16 +2731,16 @@ static jrd_nod* copy(TDBB tdbb,
 				copy(tdbb, csb, input->nod_arg[e_prc_inputs], remap, field_id,
 					 node->nod_arg[e_prc_in_msg], remap_fld);
 
-			stream = (USHORT)(ULONG) input->nod_arg[e_prc_stream];
+			stream = (USHORT)(IPTR) input->nod_arg[e_prc_stream];
 			new_stream = csb->csb_n_stream++;
 			fb_assert(new_stream <= MAX_STREAMS);
-			node->nod_arg[e_prc_stream] = (jrd_nod*) (SLONG) new_stream;
+			node->nod_arg[e_prc_stream] = (jrd_nod*) (IPTR) new_stream;
 			remap[stream] = (UCHAR) new_stream;
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
 			csb_repeat* element = CMP_csb_element(csb, new_stream);
 			// SKIDDER: Maybe we need to check if we really found a procedure?
 			element->csb_procedure = MET_lookup_procedure_id(tdbb,
-			  (SSHORT)(SLONG) node->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
+			  (SSHORT)(IPTR) node->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
 
 			csb->csb_rpt[new_stream].csb_flags |=
 				csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
@@ -2754,11 +2754,11 @@ static jrd_nod* copy(TDBB tdbb,
 		node = PAR_make_node(tdbb, e_agg_length);
 		node->nod_type = input->nod_type;
 		node->nod_count = 0;
-		stream = (USHORT)(ULONG) input->nod_arg[e_agg_stream];
+		stream = (USHORT)(IPTR) input->nod_arg[e_agg_stream];
 		fb_assert(stream <= MAX_STREAMS);
 		new_stream = csb->csb_n_stream++;
 		fb_assert(new_stream <= MAX_STREAMS);
-		node->nod_arg[e_agg_stream] = (jrd_nod*) (SLONG) new_stream;
+		node->nod_arg[e_agg_stream] = (jrd_nod*) (IPTR) new_stream;
 		// fb_assert(new_stream <= MAX_UCHAR);
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
@@ -2782,11 +2782,11 @@ static jrd_nod* copy(TDBB tdbb,
 		node = PAR_make_node(tdbb, e_uni_length);
 		node->nod_type = input->nod_type;
 		node->nod_count = 2;
-		stream = (USHORT)(ULONG) input->nod_arg[e_uni_stream];
+		stream = (USHORT)(IPTR) input->nod_arg[e_uni_stream];
 		fb_assert(stream <= MAX_STREAMS);
 		new_stream = csb->csb_n_stream++;
 		fb_assert(new_stream <= MAX_STREAMS);
-		node->nod_arg[e_uni_stream] = (jrd_nod*) (SLONG) new_stream;
+		node->nod_arg[e_uni_stream] = (jrd_nod*) (IPTR) new_stream;
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
 
@@ -2893,7 +2893,7 @@ static void expand_view_nodes(TDBB tdbb,
 		jrd_nod* node = PAR_make_node(tdbb, 1);
 		node->nod_count = 0;
 		node->nod_type = type;
-		node->nod_arg[0] = (jrd_nod*) (SLONG) stream;
+		node->nod_arg[0] = (jrd_nod*) (IPTR) stream;
 		LLS_PUSH(node, stack);
 	}
 }
@@ -2922,7 +2922,7 @@ static void ignore_dbkey(TDBB tdbb, Csb* csb, RSE rse, jrd_rel* view)
 	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end;) {
 		jrd_nod* node = *ptr++;
 		if (node->nod_type == nod_relation) {
-			const USHORT stream = (USHORT)(ULONG) node->nod_arg[e_rel_stream];
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
 			const csb_repeat* tail = &csb->csb_rpt[stream];
 			const jrd_rel* relation = tail->csb_relation;
@@ -3176,7 +3176,7 @@ static jrd_nod* pass1(TDBB tdbb,
 			jrd_fld* field;
 			UCHAR *map, local_map[MAP_LENGTH];
 
-			stream = (USHORT)(ULONG) node->nod_arg[e_fld_stream];
+			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 
 			// Look at all rse's which are lower in scope than the rse which this field 
 			// is referencing, and mark them as varying - the rule is that if a field 
@@ -3202,7 +3202,7 @@ static jrd_nod* pass1(TDBB tdbb,
 			if (!(relation = tail->csb_relation) ||
 				!(field =
 				  MET_get_field(relation,
-								(USHORT)(ULONG) node->nod_arg[e_fld_id])))
+								(USHORT)(IPTR) node->nod_arg[e_fld_id])))
 			{
 				break;
 			}
@@ -3312,9 +3312,9 @@ static jrd_nod* pass1(TDBB tdbb,
 		{
 			sub = node->nod_arg[e_asgn_from];
 			if (sub->nod_type == nod_field) {
-				stream = (USHORT)(ULONG) sub->nod_arg[e_fld_stream];
+				stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
 				jrd_fld* field = MET_get_field(csb->csb_rpt[stream].csb_relation,
-									  (USHORT)(ULONG) sub->nod_arg[e_fld_id]);
+									  (USHORT)(IPTR) sub->nod_arg[e_fld_id]);
 				if (field)
 					node->nod_arg[e_asgn_missing2] = field->fld_missing_value;
 			}
@@ -3322,10 +3322,10 @@ static jrd_nod* pass1(TDBB tdbb,
 			sub = node->nod_arg[e_asgn_to];
 			if (sub->nod_type != nod_field)
 				break;
-			stream = (USHORT)(ULONG) sub->nod_arg[e_fld_stream];
+			stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
 			tail = &csb->csb_rpt[stream];
 			jrd_fld* field = MET_get_field(tail->csb_relation,
-							   (USHORT)(ULONG) sub->nod_arg[e_fld_id]);
+							   (USHORT)(IPTR) sub->nod_arg[e_fld_id]);
 			if (!field) {
 				break;
 			}
@@ -3337,13 +3337,13 @@ static jrd_nod* pass1(TDBB tdbb,
 		break;
 
 	case nod_modify:
-		stream = (USHORT)(ULONG) node->nod_arg[e_mod_new_stream];
+		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 		tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_modify;
 		pass1_modify(tdbb, csb, node);
 		// fb_assert(node->nod_arg [e_mod_new_stream] <= MAX_USHORT);
 		if ( (node->nod_arg[e_mod_validate] = make_validation(tdbb, csb,
-							(USHORT)(ULONG) node->
+							(USHORT)(IPTR) node->
 							nod_arg[e_mod_new_stream])) )
 		{
 			node->nod_count =
@@ -3352,7 +3352,7 @@ static jrd_nod* pass1(TDBB tdbb,
 		break;
 
 	case nod_erase:
-		stream = (USHORT)(ULONG) node->nod_arg[e_erase_stream];
+		stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
 		tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
 		pass1_erase(tdbb, csb, node);
@@ -3367,12 +3367,12 @@ static jrd_nod* pass1(TDBB tdbb,
 
 	case nod_store:
 		sub = node->nod_arg[e_sto_relation];
-		stream = (USHORT)(ULONG) sub->nod_arg[e_rel_stream];
+		stream = (USHORT)(IPTR) sub->nod_arg[e_rel_stream];
 		tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
 		sub = pass1_store(tdbb, csb, node);
 		if (sub) {
-			stream = (USHORT)(ULONG) sub->nod_arg[e_rel_stream];
+			stream = (USHORT)(IPTR) sub->nod_arg[e_rel_stream];
 			if ((!node->nod_arg[e_sto_sub_store]) &&
 				(node->nod_arg[e_sto_validate] =
 				 make_validation(tdbb, csb, stream)))
@@ -3402,7 +3402,7 @@ static jrd_nod* pass1(TDBB tdbb,
 
 	case nod_aggregate:
 		fb_assert((int) (IPTR) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-		csb->csb_rpt[(USHORT)(ULONG) node->nod_arg[e_agg_stream]].csb_flags |=
+		csb->csb_rpt[(USHORT)(IPTR) node->nod_arg[e_agg_stream]].csb_flags |=
 			csb_no_dbkey;
 		ignore_dbkey(tdbb, csb, (RSE) node->nod_arg[e_agg_rse], view);
 		node->nod_arg[e_agg_rse] =
@@ -3427,7 +3427,7 @@ static jrd_nod* pass1(TDBB tdbb,
 	case nod_dbkey:
 		{
 			const NOD_T type = node->nod_type;
-			stream = (USHORT)(ULONG) node->nod_arg[0];
+			stream = (USHORT)(IPTR) node->nod_arg[0];
 
 			if (!csb->csb_rpt[stream].csb_map)
 				return node;
@@ -3443,7 +3443,7 @@ static jrd_nod* pass1(TDBB tdbb,
 			node->nod_count = 0;
 			node->nod_type = type;
 			node->nod_flags |= nod_agg_dbkey;
-			node->nod_arg[0] = (jrd_nod*) (SLONG) stream;
+			node->nod_arg[0] = (jrd_nod*) (IPTR) stream;
 			return node;
 		}
 
@@ -3466,7 +3466,7 @@ static jrd_nod* pass1(TDBB tdbb,
 		break;
 
 	case nod_cardinality:
-		stream = (USHORT)(ULONG) node->nod_arg[e_card_stream];
+		stream = (USHORT)(IPTR) node->nod_arg[e_card_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_compute;
 		break;
 
@@ -3529,7 +3529,7 @@ static void pass1_erase(TDBB tdbb, Csb* csb, jrd_nod* node)
 	// to support views of views, loop until we hit a real relation
 
 	for (;;) {
-		USHORT new_stream = (USHORT)(ULONG) node->nod_arg[e_erase_stream];
+		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
 		USHORT stream = new_stream;
 		csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
@@ -3548,7 +3548,7 @@ static void pass1_erase(TDBB tdbb, Csb* csb, jrd_nod* node)
 
 		if (relation->rel_view_rse && trigger) {
 			new_stream = csb->csb_n_stream++;
-			node->nod_arg[e_erase_stream] = (jrd_nod*) (SLONG) new_stream;
+			node->nod_arg[e_erase_stream] = (jrd_nod*) (IPTR) new_stream;
 			CMP_csb_element(csb, new_stream)->csb_relation = relation;
 		}
 
@@ -3595,8 +3595,8 @@ static void pass1_erase(TDBB tdbb, Csb* csb, jrd_nod* node)
 
 		parent = relation;
 		parent_stream = stream;
-		new_stream = (USHORT)(ULONG) source->nod_arg[e_rel_stream];
-		node->nod_arg[e_erase_stream] = (jrd_nod*) (SLONG) map[new_stream];
+		new_stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
+		node->nod_arg[e_erase_stream] = (jrd_nod*) (IPTR) map[new_stream];
 	}
 }
 
@@ -3638,7 +3638,7 @@ static jrd_nod* pass1_expand_view(TDBB tdbb,
 				const jrd_fld* field = MET_get_field(relation, id);
 				if (field->fld_source) {
 					new_id =
-						(USHORT)(ULONG) (field->fld_source)->nod_arg[e_fld_id];
+						(USHORT)(IPTR) (field->fld_source)->nod_arg[e_fld_id];
 				}
 				else {
 					new_id = id;
@@ -3697,8 +3697,8 @@ static void pass1_modify(TDBB tdbb, Csb* csb, jrd_nod* node)
 	// to support views of views, loop until we hit a real relation
 
 	for (;;) {
-		USHORT stream = (USHORT)(ULONG) node->nod_arg[e_mod_org_stream];
-		USHORT new_stream = (USHORT)(ULONG) node->nod_arg[e_mod_new_stream];
+		USHORT stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
+		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 		csb_repeat* tail = &csb->csb_rpt[new_stream];
 		tail->csb_flags |= csb_modify;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
@@ -3738,7 +3738,7 @@ static void pass1_modify(TDBB tdbb, Csb* csb, jrd_nod* node)
 			node->nod_count =
 				MAX(node->nod_count, (USHORT) e_mod_map_view + 1);
 			UCHAR* map = csb->csb_rpt[stream].csb_map;
-			stream = (USHORT)(ULONG) source->nod_arg[e_rel_stream];
+			stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
 			stream = map[stream];
 			const USHORT view_stream = new_stream;
 
@@ -3746,17 +3746,17 @@ static void pass1_modify(TDBB tdbb, Csb* csb, jrd_nod* node)
 
 			map =
 				alloc_map(tdbb, csb,
-						  (SSHORT)(SLONG) node->nod_arg[e_mod_new_stream]);
+						  (SSHORT)(IPTR) node->nod_arg[e_mod_new_stream]);
 			source = copy(tdbb, csb, source, map, 0, NULL, false);
 			fb_assert((int) (IPTR) source->nod_arg[e_rel_stream] <= MAX_STREAMS);
-			map[new_stream] = (UCHAR)(ULONG) source->nod_arg[e_rel_stream];
+			map[new_stream] = (UCHAR)(IPTR) source->nod_arg[e_rel_stream];
 			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, true);
-			view_node->nod_arg[e_mod_org_stream] = (jrd_nod*) (SLONG) stream;
+			view_node->nod_arg[e_mod_org_stream] = (jrd_nod*) (IPTR) stream;
 			view_node->nod_arg[e_mod_new_stream] =
 				source->nod_arg[e_rel_stream];
 			view_node->nod_arg[e_mod_map_view] = NULL;
 			node->nod_arg[e_mod_sub_mod] = view_node;
-			new_stream = (USHORT)(ULONG) source->nod_arg[e_rel_stream];
+			new_stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
 			view_node->nod_arg[e_mod_statement] =
 				pass1_expand_view(tdbb, csb, view_stream, new_stream, true);
 			node->nod_count =
@@ -3769,14 +3769,14 @@ static void pass1_modify(TDBB tdbb, Csb* csb, jrd_nod* node)
 			// View passes muster - do some translation. Start with source stream.
 
 			UCHAR* map = csb->csb_rpt[stream].csb_map;
-			stream = (USHORT)(ULONG) source->nod_arg[e_rel_stream];
-			node->nod_arg[e_mod_org_stream] = (jrd_nod*) (SLONG) map[stream];
+			stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
+			node->nod_arg[e_mod_org_stream] = (jrd_nod*) (IPTR) map[stream];
 
 			// next, do update stream
 
 			map =
 				alloc_map(tdbb, csb,
-						  (SSHORT)(SLONG) node->nod_arg[e_mod_new_stream]);
+						  (SSHORT)(IPTR) node->nod_arg[e_mod_new_stream]);
 			source = copy(tdbb, csb, source, map, 0, NULL, false);
 			node->nod_arg[e_mod_new_stream] = source->nod_arg[e_rel_stream];
 		}
@@ -4024,7 +4024,7 @@ static void pass1_source(TDBB     tdbb,
 	if (source->nod_type == nod_procedure) {
 		pass1(tdbb, csb, source, parent_view, view_stream, false);
 		jrd_prc* procedure = MET_lookup_procedure_id(tdbb,
-		  (SSHORT)(SLONG) source->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
+		  (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
 		post_procedure_access(tdbb, csb, procedure);
 		CMP_post_resource(tdbb, &csb->csb_resources, (BLK) procedure,
 						  rsc_procedure, procedure->prc_id);
@@ -4056,7 +4056,7 @@ static void pass1_source(TDBB     tdbb,
 					  view->rel_id);
 	source->nod_arg[e_rel_view] = (jrd_nod*) parent_view;
 
-	const USHORT stream = (USHORT)(ULONG) source->nod_arg[e_rel_stream];
+	const USHORT stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
 	csb_repeat* element = CMP_csb_element(csb, stream);
 	element->csb_view = parent_view;
 	fb_assert(view_stream <= MAX_STREAMS);
@@ -4069,7 +4069,7 @@ static void pass1_source(TDBB     tdbb,
 			 vcx_ptr = &(*vcx_ptr)->vcx_next)
 		{
 			if ((*vcx_ptr)->vcx_context ==
-				(USHORT)(ULONG) source->nod_arg[e_rel_context])
+				(USHORT)(IPTR) source->nod_arg[e_rel_context])
 			{
 				element->csb_alias = (*vcx_ptr)->vcx_context_name;
 				break;
@@ -4215,7 +4215,7 @@ static jrd_nod* pass1_store(TDBB tdbb, Csb* csb, jrd_nod* node)
 
 	for (;;) {
 		jrd_nod* original = node->nod_arg[e_sto_relation];
-		USHORT stream = (USHORT)(ULONG) original->nod_arg[e_rel_stream];
+		USHORT stream = (USHORT)(IPTR) original->nod_arg[e_rel_stream];
 		csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
 		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
@@ -4272,7 +4272,7 @@ static jrd_nod* pass1_store(TDBB tdbb, Csb* csb, jrd_nod* node)
 			node->nod_arg[e_sto_relation] =
 				copy(tdbb, csb, source, map, 0, NULL, false);
 			const USHORT new_stream =
-				(USHORT)(ULONG) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
+				(USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 			node->nod_arg[e_sto_statement] =
 				pass1_expand_view(tdbb, csb, stream, new_stream, true);
 			node->nod_arg[e_sto_statement] =
@@ -4632,9 +4632,9 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 		// AB: Mark the streams involved with an UPDATE statement
 		// active. So that the optimizer can use indices for 
 		// eventually used sub-selects.
-		stream = (USHORT)(ULONG) node->nod_arg[e_mod_org_stream];
+		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
-		stream = (USHORT)(ULONG) node->nod_arg[e_mod_new_stream];
+		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 	}
 
@@ -4648,9 +4648,9 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 
 	if (node->nod_type == nod_modify) {
 		// AB: Remove the previous flags
-		stream = (USHORT)(ULONG) node->nod_arg[e_mod_org_stream];
+		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
-		stream = (USHORT)(ULONG) node->nod_arg[e_mod_new_stream];
+		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 	}
 
@@ -4742,7 +4742,7 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 
 	case nod_modify:
 		{
-			stream = (USHORT)(ULONG) node->nod_arg[e_mod_org_stream];
+			stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_update;
 			const fmt* format = CMP_format(tdbb, csb, stream);
 			fmt::fmt_desc_const_iterator desc = format->fmt_desc.begin();
@@ -4772,15 +4772,15 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 		break;
 
 	case nod_erase:
-		stream = (USHORT)(ULONG) node->nod_arg[e_erase_stream];
+		stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_update;
 		break;
 
 	case nod_field:
 		{
-			stream = (USHORT)(ULONG) node->nod_arg[e_fld_stream];
+			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 			// SMB_set uses SLONG, not USHORT
-			SLONG id = (SLONG)(ULONG) node->nod_arg[e_fld_id];
+			SLONG id = (SLONG)(IPTR) node->nod_arg[e_fld_id];
 			SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
 			if (node->nod_flags & nod_value) {
 				csb->csb_impure += sizeof(vlux);
@@ -4854,7 +4854,7 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 		pass2_rse(tdbb, csb, (RSE) node->nod_arg[e_agg_rse]);
 		pass2(tdbb, csb, node->nod_arg[e_agg_map], node);
 		pass2(tdbb, csb, node->nod_arg[e_agg_group], node);
-		stream = (USHORT)(ULONG) node->nod_arg[e_agg_stream];
+		stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
 		fb_assert(stream <= MAX_STREAMS);
 		process_map(tdbb, csb, node->nod_arg[e_agg_map],
 					&csb->csb_rpt[stream].csb_format);
@@ -4969,7 +4969,7 @@ static void pass2_rse(TDBB tdbb, Csb* csb, RSE rse)
 	{
 		jrd_nod* node = *ptr;
 		if (node->nod_type == nod_relation) {
-			USHORT stream = (USHORT)(ULONG) node->nod_arg[e_rel_stream];
+			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (jrd_nod*) rse);
 		}
@@ -4977,12 +4977,12 @@ static void pass2_rse(TDBB tdbb, Csb* csb, RSE rse)
 			pass2_rse(tdbb, csb, (RSE) node);
 		}
 		else if (node->nod_type == nod_procedure) {
-			USHORT stream = (USHORT)(ULONG) node->nod_arg[e_prc_stream];
+			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_prc_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (jrd_nod*) rse);
 		}
 		else if (node->nod_type == nod_aggregate) {
-			USHORT stream = (USHORT)(ULONG) node->nod_arg[e_agg_stream];
+			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
 			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (jrd_nod*) rse);
@@ -5038,7 +5038,7 @@ static jrd_nod* pass2_union(TDBB tdbb, Csb* csb, jrd_nod* node)
 	// make up a format block sufficiently large to hold instantiated record
 
 	jrd_nod* clauses = node->nod_arg[e_uni_clauses];
-	const USHORT id = (USHORT)(ULONG) node->nod_arg[e_uni_stream];
+	const USHORT id = (USHORT)(IPTR) node->nod_arg[e_uni_stream];
 	fmt** format = &csb->csb_rpt[id].csb_format;
 
 	// process alternating rse and map blocks
@@ -5082,7 +5082,7 @@ static void plan_check(Csb* csb, RSE rse)
 		ptr < end; ptr++)
 	{
 		if ((*ptr)->nod_type == nod_relation) {
-			const USHORT stream = (USHORT)(ULONG) (*ptr)->nod_arg[e_rel_stream];
+			const USHORT stream = (USHORT)(IPTR) (*ptr)->nod_arg[e_rel_stream];
 			if (!(csb->csb_rpt[stream].csb_plan)) {
 				ERR_post(isc_no_stream_plan, isc_arg_string,
 						 csb->csb_rpt[stream].csb_relation->rel_name, 0);
@@ -5134,7 +5134,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 
 	// find the tail for the relation specified in the rse
 
-	const USHORT stream = (USHORT)(ULONG) plan_relation_node->nod_arg[e_rel_stream];
+	const USHORT stream = (USHORT)(IPTR) plan_relation_node->nod_arg[e_rel_stream];
 	csb_repeat* tail = &csb->csb_rpt[stream];
 
 	// if the plan references a view, find the real base relation 
@@ -5276,7 +5276,7 @@ static void plan_set(Csb* csb, RSE rse, jrd_nod* plan)
 					 plan_relation->rel_name, 0);
 		}
 
-		plan_relation_node->nod_arg[e_rel_stream] = (jrd_nod*) (SLONG) *map;
+		plan_relation_node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) *map;
 	}
 
 	// make some validity checks
@@ -5405,15 +5405,15 @@ static RSB post_rse(TDBB tdbb, Csb* csb, RSE rse)
 	{
 		jrd_nod* node = *ptr;
 		if (node->nod_type == nod_relation) {
-			USHORT stream = (USHORT)(ULONG) node->nod_arg[e_rel_stream];
+			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 		else if (node->nod_type == nod_procedure) {
-			USHORT stream = (USHORT)(ULONG) node->nod_arg[e_prc_stream];
+			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_prc_stream];
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 		else if (node->nod_type == nod_aggregate) {
-			USHORT stream = (USHORT)(ULONG) node->nod_arg[e_agg_stream];
+			USHORT stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
 			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
@@ -5612,7 +5612,7 @@ static void process_map(TDBB tdbb, Csb* csb, jrd_nod* map, fmt** input_format)
 	{
 		jrd_nod* assignment = *ptr;
 		jrd_nod* field = assignment->nod_arg[e_asgn_to];
-		const USHORT id = (USHORT)(ULONG) field->nod_arg[e_fld_id];
+		const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
 		if (id >= format->fmt_count) {
 			format->fmt_desc.resize(id + 1);
 		}
@@ -5686,7 +5686,7 @@ static void process_map(TDBB tdbb, Csb* csb, jrd_nod* map, fmt** input_format)
 		if (align) {
 			format->fmt_length = FB_ALIGN(format->fmt_length, align);
 		}
-		desc3->dsc_address = (UCHAR *) (SLONG) format->fmt_length;
+		desc3->dsc_address = (UCHAR *) (IPTR) format->fmt_length;
 		format->fmt_length += desc3->dsc_length;
 	}
 }
@@ -5751,7 +5751,7 @@ static bool stream_in_rse(USHORT stream, RSE rse)
 		// for aggregates, check current rse, if not found then check 
 		// the sub-rse
 		if (sub->nod_type == nod_aggregate) {
-			if ((stream == (USHORT)(ULONG) sub->nod_arg[e_rel_stream]) ||
+			if ((stream == (USHORT)(IPTR) sub->nod_arg[e_rel_stream]) ||
 				(stream_in_rse(stream, (RSE) sub->nod_arg[e_agg_rse])))
 			{
 				return true;	// do not mark as variant
@@ -5759,7 +5759,7 @@ static bool stream_in_rse(USHORT stream, RSE rse)
 		}
 
 		if ((sub->nod_type == nod_relation) &&
-			(stream == (USHORT)(ULONG) sub->nod_arg[e_rel_stream]))
+			(stream == (USHORT)(IPTR) sub->nod_arg[e_rel_stream]))
 		{
 			return true;		// do not mark as variant
 		}

@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.32 2004-01-13 09:52:14 robocop Exp $
+$Id: fun.epp,v 1.33 2004-01-21 07:18:25 skidder Exp $
 */
 
 #include "firebird.h"
@@ -65,6 +65,7 @@ $Id: fun.epp,v 1.32 2004-01-13 09:52:14 robocop Exp $
 #include "../jrd/thd_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/isc_s_proto.h"
+#include "../jrd/blb.h"
 
 #ifdef VMS
 #define CALL_UDF(ptr, udftype)     (*(udftype (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
@@ -425,18 +426,14 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 				{
 					blob =
 						BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
-								   (BID) & value->vlu_misc);
+								   (BID)&value->vlu_misc);
 					return_blob_struct = blob_desc;
 				}
 				else
 				{
-					SLONG* blob_id;
+					bid blob_id;
 					if (request->req_flags & req_null)
-					{
-						SLONG null_quad[2];
-						null_quad[0] = null_quad[1] = 0;
-						blob_id = null_quad;
-					}
+						memset(&blob_id, 0, sizeof(bid));
 					else
 					{
 						if (input->dsc_dtype != dtype_quad &&
@@ -446,11 +443,11 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 									 isc_arg_gds, isc_blobnotsup,
 									 isc_arg_string, "conversion", 0);
 						}
-						blob_id = (SLONG *) input->dsc_address;
+						blob_id = *(BID) input->dsc_address;
 					}
 					blob = BLB_open(tdbb,
 									tdbb->tdbb_request->req_transaction,
-									(BID)blob_id);
+									&blob_id);
 				}
 				LLS_PUSH(blob, &blob_stack);
 				blob_desc->blob_get_segment = blob_get_segment;

@@ -2683,7 +2683,7 @@ void VIO_store(TDBB tdbb, RPB * rpb, jrd_tra* transaction)
 	rpb->rpb_flags = 0;
 	rpb->rpb_transaction = transaction->tra_number;
 	rpb->rpb_window.win_flags = 0;
-	LLS_PUSH((BLK) - rpb->rpb_transaction, &rpb->rpb_record->rec_precedence);
+	LLS_PUSH((BLK) (IPTR) -rpb->rpb_transaction, &rpb->rpb_record->rec_precedence);
 	DPM_store(tdbb, rpb, &rpb->rpb_record->rec_precedence, DPM_primary);
 
 #ifdef VIO_DEBUG
@@ -4268,7 +4268,7 @@ static int prepare_update(	TDBB	tdbb,
 				DPM_store(tdbb, temp, stack, DPM_secondary);
 				continue;
 			}
-			LLS_PUSH((BLK) temp->rpb_page, stack);
+			LLS_PUSH((BLK) (IPTR)temp->rpb_page, stack);
 			return PREPARE_OK;
 
 		case tra_active:
@@ -4649,7 +4649,7 @@ retry:
 		temp2.rpb_number = org_rpb->rpb_number;
 		DPM_store(tdbb, &temp2, stack, DPM_secondary);
 
-		LLS_PUSH((BLK) temp2.rpb_page, stack);
+		LLS_PUSH((BLK)(IPTR)temp2.rpb_page, stack);
 	}
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write)) {

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.32 2003-12-31 05:35:49 robocop Exp $
+ * $Id: show.epp,v 1.33 2004-01-21 07:16:17 skidder Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -349,7 +349,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 		case isc_info_db_size_in_pages:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(NUMBER_PAGES, msg, (TEXT*) value_out, NULL,
+				ISQL_msg_get(NUMBER_PAGES, msg, (TEXT*) (IPTR)value_out, NULL,
 							 NULL, NULL, NULL);
 				sprintf(info, msg);
 			}
@@ -361,7 +361,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 		case isc_info_sweep_interval:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(SWEEP_INTERV, msg, (TEXT*) value_out, NULL,
+				ISQL_msg_get(SWEEP_INTERV, msg, (TEXT*)(IPTR) value_out, NULL,
 							 NULL, NULL, NULL);
 				sprintf(info, msg);
 			}
@@ -397,7 +397,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 		case isc_info_num_wal_buffers:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(NUM_WAL_BUFF, msg, (TEXT*) value_out, NULL,
+				ISQL_msg_get(NUM_WAL_BUFF, msg, (TEXT*)(IPTR)value_out, NULL,
 							 NULL, NULL, NULL);
 				sprintf(info, msg);
 			}
@@ -409,7 +409,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 		case isc_info_wal_buffer_size:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(WAL_BUFF_SIZE, msg, (TEXT*) value_out, NULL,
+				ISQL_msg_get(WAL_BUFF_SIZE, msg, (TEXT*)(IPTR)value_out, NULL,
 							 NULL, NULL, NULL);
 				sprintf(info, msg);
 			}
@@ -420,7 +420,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 		case isc_info_wal_ckpt_length:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(CKPT_LENGTH, msg, (TEXT*) value_out, NULL, NULL,
+				ISQL_msg_get(CKPT_LENGTH, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
 							 NULL, NULL);
 				sprintf(info, msg);
 			}
@@ -432,7 +432,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 		case isc_info_wal_cur_ckpt_interval:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(CKPT_INTERV, msg, (TEXT*) value_out, NULL, NULL,
+				ISQL_msg_get(CKPT_INTERV, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
 							 NULL, NULL);
 				sprintf(info, msg);
 			}
@@ -444,7 +444,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 		case isc_info_wal_grpc_wait_usecs:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(WAL_GRPC_WAIT, msg, (TEXT*) value_out, NULL,
+				ISQL_msg_get(WAL_GRPC_WAIT, msg, (TEXT*)(IPTR)value_out, NULL,
 							 NULL, NULL, NULL);
 				sprintf(info, msg);
 			}
@@ -456,7 +456,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 		case isc_info_base_level:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(BASE_LEVEL, msg, (TEXT*) value_out, NULL, NULL,
+				ISQL_msg_get(BASE_LEVEL, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
 							 NULL, NULL);
 				sprintf(info, msg);
 			}
@@ -467,7 +467,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 		case isc_info_limbo:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(LIMBO, msg, (TEXT*) value_out, NULL, NULL, NULL,
+				ISQL_msg_get(LIMBO, msg, (TEXT*)(IPTR)value_out, NULL, NULL, NULL,
 							 NULL);
 				sprintf(info, msg);
 			}

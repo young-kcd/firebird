@@ -1001,15 +1001,15 @@ static IDX_E check_foreign_key(
 			 index_number++)
 		{
 			if (idx->idx_id !=
-				(UCHAR)(ULONG) (*idx->idx_foreign_primaries)[index_number])
+				(UCHAR)(IPTR) (*idx->idx_foreign_primaries)[index_number])
 			{
 				continue;
 			}
 			partner_relation =
 				MET_relation(tdbb,
-							 (int) (*idx->idx_foreign_relations)[index_number]);
+							 (IPTR) (*idx->idx_foreign_relations)[index_number]);
 			index_id =
-				(USHORT)(ULONG) (*idx->idx_foreign_indexes)[index_number];
+				(USHORT)(IPTR) (*idx->idx_foreign_indexes)[index_number];
 			if ( (result =
 				check_partner_index(tdbb, relation, record, transaction, idx,
 									partner_relation, index_id)) )

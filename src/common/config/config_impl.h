@@ -50,7 +50,7 @@ class ConfigImpl : public ConfigRoot
 	};
 
 	typedef char* ConfigKey;
-	typedef void* ConfigValue;
+	typedef IPTR ConfigValue;
 
 	struct ConfigEntry
 	{

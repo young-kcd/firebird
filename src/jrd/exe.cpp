@@ -404,7 +404,7 @@ void EXE_assignment(TDBB tdbb, jrd_nod* node)
 
 	if (to->nod_type == nod_field)
 	{
-		const SSHORT id = (USHORT)(ULONG) to->nod_arg[e_fld_id];
+		const SSHORT id = (USHORT)(IPTR) to->nod_arg[e_fld_id];
 		REC record = request->req_rpb[(int) (IPTR) to->nod_arg[e_fld_stream]].rpb_record;
 		if (null) {
 			SET_NULL(record, id);
@@ -650,7 +650,7 @@ void EXE_receive(TDBB		tdbb,
 	const jrd_nod* message = request->req_message;
 	const fmt* format = (FMT) message->nod_arg[e_msg_format];
 
-	if (msg != (USHORT)(ULONG) message->nod_arg[e_msg_number])
+	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
 		ERR_post(isc_req_sync, 0);
 
 	if (length != format->fmt_length) {
@@ -795,7 +795,7 @@ void EXE_send(TDBB		tdbb,
 			 ptr++)
 		{
 			message = (*ptr)->nod_arg[e_send_message];
-			if ((USHORT)(ULONG) message->nod_arg[e_msg_number] == msg) {
+			if ((USHORT)(IPTR) message->nod_arg[e_msg_number] == msg) {
 				request->req_next = *ptr;
 				break;
 			}
@@ -806,7 +806,7 @@ void EXE_send(TDBB		tdbb,
 
 	const fmt* format = (FMT) message->nod_arg[e_msg_format];
 
-	if (msg != (USHORT)(ULONG) message->nod_arg[e_msg_number])
+	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
 		ERR_post(isc_req_sync, 0);
 
 	if (length != format->fmt_length) {
@@ -1050,7 +1050,7 @@ static void cleanup_rpb(TDBB tdbb, RPB *rpb)
 		const dsc* desc = &format->fmt_desc[n];
 		if (!desc->dsc_address)
 			continue;
-		UCHAR* p = record->rec_data + (SLONG) desc->dsc_address;
+		UCHAR* p = record->rec_data + (IPTR) desc->dsc_address;
 		if (TEST_NULL(record, n))
 		{
 			USHORT length = desc->dsc_length;
@@ -2106,7 +2106,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 			case jrd_req::req_evaluate:
 				if (transaction != dbb->dbb_sys_trans) {
 
-					UCHAR operation = (UCHAR) (ULONG) node->nod_arg[e_sav_operation];
+					UCHAR operation = (UCHAR) (IPTR) node->nod_arg[e_sav_operation];
 					TEXT * node_savepoint_name = (TEXT*) node->nod_arg[e_sav_name]; 
 
 					// Skip the savepoint created by EXE_start
@@ -2420,7 +2420,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 				break;
 
 			case jrd_req::req_unwind:
-				if ((request->req_label == (USHORT)(ULONG) node->nod_arg[e_lbl_label]) &&
+				if ((request->req_label == (USHORT)(IPTR) node->nod_arg[e_lbl_label]) &&
 						(request->req_flags & (req_leave | req_error_handler))) {
 					request->req_flags &= ~req_leave;
 					request->req_operation = jrd_req::req_return;
@@ -2434,7 +2434,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_leave:
 			request->req_flags |= req_leave;
 			request->req_operation = jrd_req::req_unwind;
-			request->req_label = (USHORT)(ULONG) node->nod_arg[0];
+			request->req_label = (USHORT)(IPTR) node->nod_arg[0];
 			node = node->nod_parent;
 			break;
 
@@ -2743,7 +2743,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_set_generator:
 			if (request->req_operation == jrd_req::req_evaluate) {
 				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
-				DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
+				DPM_gen_id(tdbb, (IPTR) node->nod_arg[e_gen_id], 1,
 								  MOV_get_int64(desc, 0));
 				request->req_operation = jrd_req::req_return;
 			}
@@ -2753,7 +2753,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_set_generator2:
 			if (request->req_operation == jrd_req::req_evaluate) {
 				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
-				DPM_gen_id(tdbb, (SLONG) node->nod_arg[e_gen_id], 1,
+				DPM_gen_id(tdbb, (IPTR) node->nod_arg[e_gen_id], 1,
 								  MOV_get_int64(desc, 0));
 				request->req_operation = jrd_req::req_return;
 			}
@@ -2874,11 +2874,11 @@ static jrd_nod* modify(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 	jrd_tra* transaction = request->req_transaction;
 	sta* impure = (STA) ((SCHAR *) request + node->nod_impure);
 
-	const SSHORT org_stream = (USHORT)(ULONG) node->nod_arg[e_mod_org_stream];
+	const SSHORT org_stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 	RPB* org_rpb = &request->req_rpb[org_stream];
 	jrd_rel* relation = org_rpb->rpb_relation;
 
-	const SSHORT new_stream = (USHORT)(ULONG) node->nod_arg[e_mod_new_stream];
+	const SSHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 	RPB* new_rpb = &request->req_rpb[new_stream];
 
 #ifdef PC_ENGINE
@@ -3837,7 +3837,7 @@ static jrd_nod* store(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 	jrd_req*    request     = tdbb->tdbb_request;
 	jrd_tra*    transaction = request->req_transaction;
 	STA    impure      = (STA) ((SCHAR *) request + node->nod_impure);
-	SSHORT stream      = (USHORT)(ULONG) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
+	SSHORT stream      = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 	RPB*   rpb         = &request->req_rpb[stream];
 	jrd_rel*    relation    = rpb->rpb_relation;
 
@@ -4189,8 +4189,8 @@ static void validate(TDBB tdbb, jrd_nod* list)
 			const TEXT*	name = 0;
 			if (node->nod_type == nod_field)
 			{
-				const USHORT stream = (USHORT)(ULONG) node->nod_arg[e_fld_stream];
-				const USHORT id = (USHORT)(ULONG) node->nod_arg[e_fld_id];
+				const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
+				const USHORT id = (USHORT)(IPTR) node->nod_arg[e_fld_id];
 				const jrd_rel* relation = request->req_rpb[stream].rpb_relation;
 
 				const jrd_fld* field;

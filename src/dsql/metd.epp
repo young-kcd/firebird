@@ -1027,7 +1027,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
                 if (d->dsc_dtype == dtype_varying) {
                     d->dsc_length += sizeof (USHORT);
                 }
-                d->dsc_address = 0;
+                d->dsc_address = NULL;
                 
                 if (!X.RDB$CHARACTER_SET_ID.NULL) {
                     if (d->dsc_dtype != dtype_blob) {

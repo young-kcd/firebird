@@ -99,8 +99,8 @@ nested FOR loops are added.
 #endif
 
 static void		cleanup(void*);
-static void		cleanup_database(FRBRD**, SLONG);
-static void		cleanup_transaction(FRBRD*, SLONG);
+static void		cleanup_database(FRBRD**, void*);
+static void		cleanup_transaction(FRBRD*, void*);
 static void		close_cursor(dsql_req*);
 static USHORT	convert(SLONG, UCHAR*);
 static ISC_STATUS	error();
@@ -603,7 +603,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 			ISC_STATUS_ARRAY local_status;
 			gds__transaction_cleanup(local_status,
 								 trans_handle,
-								 cleanup_transaction, 0);
+								 cleanup_transaction, NULL);
 			THREAD_ENTER;
 		}
 
@@ -1055,7 +1055,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 				desc.dsc_scale = 0;
 				desc.dsc_length = sizeof(USHORT);
 				desc.dsc_flags = 0;
-				desc.dsc_address = (UCHAR *) & direction;
+				desc.dsc_address = (UCHAR*) & direction;
 
 				offset_parameter = message->msg_parameters;
 				parameter = offset_parameter->par_next;
@@ -1065,7 +1065,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 				desc.dsc_scale = 0;
 				desc.dsc_length = sizeof(SLONG);
 				desc.dsc_flags = 0;
-				desc.dsc_address = (UCHAR *) & offset;
+				desc.dsc_address = (UCHAR*) & offset;
 
 				MOVD_move(&desc, &offset_parameter->par_desc);
 
@@ -1098,8 +1098,8 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 			parameter = request->req_blob->blb_segment;
 			par* null = parameter->par_null;
 			USHORT* ret_length =
-				(USHORT *) (dsql_msg_buf + (SLONG) null->par_user_desc.dsc_address);
-			UCHAR* buffer = dsql_msg_buf + (SLONG) parameter->par_user_desc.dsc_address;
+				(USHORT *) (dsql_msg_buf + (IPTR) null->par_user_desc.dsc_address);
+			UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
 			THREAD_EXIT;
 			s = isc_get_segment(tdsql->tsql_status, &request->req_handle,
 							ret_length, parameter->par_user_desc.dsc_length,
@@ -1270,7 +1270,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 			par* parameter = request->req_blob->blb_segment;
 			const SCHAR* buffer =
 				reinterpret_cast<const SCHAR*>(
-					dsql_msg_buf + (SLONG) parameter->par_user_desc.dsc_address);
+					dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address);
 			THREAD_EXIT;
 			const ISC_STATUS s =
 				isc_put_segment(tdsql->tsql_status, &request->req_handle,
@@ -1832,7 +1832,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	TEXT s[64];
 
 	TEXT* p = buffer;
-	p += sprintf(p, "%.7X ", (unsigned int) node);
+	p += sprintf(p, "%p ", node);
 
 	if (column) {
 		USHORT l = column * 3;
@@ -2736,7 +2736,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_parameter:
 		if (node->nod_column) {
 			trace_line("%sparameter: %d\n",	buffer,
-				(USHORT)(ULONG)node->nod_arg[e_par_parameter]);
+				(USHORT)(IPTR)node->nod_arg[e_par_parameter]);
 		}
 		else {
 			const par* param = (par*) node->nod_arg[e_par_parameter];
@@ -2834,7 +2834,7 @@ static void cleanup( void *arg)
     @param flag
 
  **/
-static void cleanup_database(FRBRD ** db_handle, SLONG flag)
+static void cleanup_database(FRBRD ** db_handle, void* flag)
 {
 	DBB *dbb_ptr, dbb;
 
@@ -2895,7 +2895,7 @@ static void cleanup_database(FRBRD ** db_handle, SLONG flag)
     @param arg
 
  **/
-static void cleanup_transaction (FRBRD * tra_handle, SLONG arg)
+static void cleanup_transaction (FRBRD * tra_handle, void* arg)
 {
 	ISC_STATUS_ARRAY local_status;
 	OPN *open_cursor_ptr, open_cursor;
@@ -3498,7 +3498,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 static SSHORT filter_sub_type( dsql_req* request, const dsql_nod* node)
 {
 	if (node->nod_type == nod_constant)
-		return (SSHORT)(SLONG) node->nod_arg[0];
+		return (SSHORT)(IPTR) node->nod_arg[0];
 
 	const par* parameter = (par*) node->nod_arg[e_par_parameter];
 	const par* null = parameter->par_null;
@@ -4299,7 +4299,7 @@ static void map_in_out(	dsql_req*		request,
 			 // Make sure the message given to us is long enough 
 
 			DSC    desc   = parameter->par_user_desc;
-			USHORT length = (SLONG) desc.dsc_address + desc.dsc_length;
+			USHORT length = (IPTR) desc.dsc_address + desc.dsc_length;
 			if (length > msg_length)
 				break;
 			if (!desc.dsc_dtype)
@@ -4309,8 +4309,7 @@ static void map_in_out(	dsql_req*		request,
 			par* null = parameter->par_null;
 			if (null != NULL)
 			{
-				const USHORT null_offset =
-					(USHORT)(ULONG) (null->par_user_desc.dsc_address);
+				const USHORT null_offset = (IPTR) null->par_user_desc.dsc_address;
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 					break;
@@ -4325,7 +4324,7 @@ static void map_in_out(	dsql_req*		request,
 				}
 			}
 
-			desc.dsc_address = dsql_msg_buf + (SLONG) desc.dsc_address;
+			desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
 			if (!request)
 				MOVD_move(&parameter->par_desc, &desc);
 			else if (!flag || *flag >= 0)
@@ -4555,7 +4554,7 @@ static USHORT parse_blr(
 		USHORT align = type_alignments[desc.dsc_dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);
-		desc.dsc_address = (UCHAR *) (ULONG) offset;
+		desc.dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc.dsc_length;
 
 		if (*blr++ != blr_short || *blr++ != 0)
@@ -4577,7 +4576,7 @@ static USHORT parse_blr(
 					null->par_user_desc.dsc_dtype = dtype_short;
 					null->par_user_desc.dsc_scale = 0;
 					null->par_user_desc.dsc_length = sizeof(SSHORT);
-					null->par_user_desc.dsc_address = (UCHAR*)(ULONG) null_offset;
+					null->par_user_desc.dsc_address = (UCHAR*)(IPTR) null_offset;
 				}
 			}
 		}

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.39 2003-11-28 06:48:11 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.40 2004-01-21 07:16:15 skidder Exp $
 //
 
 #include "firebird.h"
@@ -140,8 +140,8 @@ static TEXT* global_status_name;
 const int INDENT	= 3;
 
 static const char* const NULL_STRING	= "(char *)0";
-static const char* const NULL_STATUS	= "(long*) 0L";
-static const char* const NULL_SQLDA	= "(XSQLDA*) 0L";
+static const char* const NULL_STATUS	= "NULL";
+static const char* const NULL_SQLDA	= "NULL";
 
 #ifdef VMS
 static const char* const GDS_INCLUDE	= "\"interbase:[syslib]ibase.h\"";
@@ -151,7 +151,7 @@ static const char* const GDS_INCLUDE	= "<Firebird/ibase.h>";
 static const char* const GDS_INCLUDE	= "<ibase.h>";
 #endif
 
-static const char* const DCL_LONG	= "long";
+static const char* const DCL_LONG	= "int";
 static const char* const DCL_QUAD	= "ISC_QUAD";
 
 static inline void begin(const int column)
@@ -1978,7 +1978,7 @@ static SSHORT gen_event_block( const act* action)
 	SYM event_name = (SYM) init->nod_arg[0];
 
 	int ident = CMP_next_ident();
-	init->nod_arg[2] = (GPRE_NOD) ident;
+	init->nod_arg[2] = (GPRE_NOD)(IPTR)ident;
 
 	printa(0, "static %schar\n   *isc_%da, *isc_%db;", CONST_STR, ident,
 		   ident);
@@ -2016,7 +2016,7 @@ static void gen_event_init( const act* action, int column)
 
 	args.pat_database = (DBB) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) init->nod_arg[2];
+	args.pat_value1 = (IPTR) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
 
 //  generate call to dynamically generate event blocks 
@@ -2081,7 +2081,7 @@ static void gen_event_wait( const act* action, int column)
 		GPRE_NOD event_init = (GPRE_NOD) event_action->act_object;
 		SYM stack_name = (SYM) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
-			ident = (int) event_init->nod_arg[2];
+			ident = (IPTR) event_init->nod_arg[2];
 			database = (DBB) event_init->nod_arg[3];
 		}
 	}
@@ -3461,7 +3461,7 @@ static void gen_trans( const act* action, int column)
 static void gen_type( const act* action, int column)
 {
 
-	printa(column, "%ld", (SLONG) action->act_object);
+	printa(column, "%"SLONGFORMAT, (SLONG)(IPTR)action->act_object);
 }
 
 

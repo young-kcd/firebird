@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.21 2003-12-22 10:00:14 robocop Exp $
+//	$Id: cme.cpp,v 1.22 2004-01-21 07:16:15 skidder Exp $
 //
 
 #include "firebird.h"
@@ -253,7 +253,7 @@ void CME_expr(GPRE_NOD node, GPRE_REQ request)
 // ** Begin date/time/timestamp support *
 	case nod_extract:
 		STUFF(blr_extract);
-		switch ((KWWORDS) (int) node->nod_arg[0])
+		switch ((KWWORDS) (IPTR) node->nod_arg[0])
 		{
 		case KW_YEAR:
 			STUFF(blr_extract_year);
@@ -480,7 +480,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 // ** Begin date/time/timestamp support *
 	case nod_extract:
 		{
-			KWWORDS kw_word = (KWWORDS) (int) node->nod_arg[0];
+			KWWORDS kw_word = (KWWORDS) (IPTR) node->nod_arg[0];
 			CME_get_dtype(node->nod_arg[1], f);
 			switch (f->fld_dtype)
 			{
@@ -1514,7 +1514,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 		from.dsc_flags = 0;
 		from.dsc_dtype = dtype_text;
 		from.dsc_length = length;
-		from.dsc_address = (UCHAR *) buffer;
+		from.dsc_address = (UCHAR*) buffer;
 		dsc to;
 		to.dsc_sub_type = 0;
 		to.dsc_flags = 0;
@@ -1524,7 +1524,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 			STUFF(blr_sql_date);
 			to.dsc_dtype = dtype_sql_date;
 			to.dsc_length = sizeof(ISC_DATE);
-			to.dsc_address = (UCHAR *) & dt;
+			to.dsc_address = (UCHAR*) & dt;
 			MOVG_move(&from, &to);
 			STUFF_WORD(dt);
 			STUFF_WORD(dt >> 16);
@@ -1536,7 +1536,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 			STUFF(blr_timestamp);
 			to.dsc_dtype = dtype_timestamp;
 			to.dsc_length = sizeof(ISC_TIMESTAMP);
-			to.dsc_address = (UCHAR *) & ts;
+			to.dsc_address = (UCHAR*) & ts;
 			MOVG_move(&from, &to);
 			STUFF_WORD(ts.timestamp_date);
 			STUFF_WORD(ts.timestamp_date >> 16);
@@ -1550,7 +1550,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 			STUFF(blr_sql_time);
 			to.dsc_dtype = dtype_sql_time;
 			to.dsc_length = sizeof(ISC_DATE);
-			to.dsc_address = (UCHAR *) & itim;
+			to.dsc_address = (UCHAR*) & itim;
 			MOVG_move(&from, &to);
 			STUFF_WORD(itim);
 			STUFF_WORD(itim >> 16);

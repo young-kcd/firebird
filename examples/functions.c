@@ -35,18 +35,18 @@ extern char	*fn_strcat();
 extern char	*fn_substr();
 extern char	*fn_trim();
 extern char	*fn_trunc();
-extern long	fn_doy();
+extern int	fn_doy();
 extern short	*fn_moy();
 extern char	*fn_dow();
 extern char	*fn_sysdate();
-extern long	fn_add2();
+extern int	fn_add2();
 extern double	fn_mul();
 extern double	fn_fact();
 extern double	fn_abs();
 extern double	fn_max();
 extern double	fn_sqrt();
-extern long	fn_blob_linecount();
-extern long	fn_blob_bytecount();
+extern int	fn_blob_linecount();
+extern int	fn_blob_bytecount();
 extern char	*fn_blob_substr();
 
 static FN	isc_functions [] = {
