@@ -1149,7 +1149,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
 		DWORD bytesWritten;
 		SetFilePointer(trace_file_handle, 0, NULL, FILE_END);
 		WriteFile(trace_file_handle, buffer, p-buffer, &bytesWritten, NULL);
-		if (bytesWritten != p-buffer) {
+		if (bytesWritten != (DWORD) (p - buffer) ) {
 			// Handle the case when file was deleted by another process on Win9x
 			// On WinNT we are not going to notice that fact :(
 			CloseHandle(trace_file_handle);
