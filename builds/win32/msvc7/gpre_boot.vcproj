@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -29,6 +29,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\gpre_boot/gpre_boot.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gpre_boot/"
@@ -77,9 +78,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD,_WINDOWS,_USRDLL,CLIENT"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gpre_boot/gpre_boot.pch"

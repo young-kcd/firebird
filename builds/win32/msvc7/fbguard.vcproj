@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -30,6 +30,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbguard/fbguard.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbguard/"
@@ -82,9 +83,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER,DEV_BUILD"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbguard/fbguard.pch"

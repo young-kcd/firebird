@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -30,6 +30,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,WIN32,_X86_"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\wal_cs/wal_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\wal_cs/"
@@ -69,9 +70,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,_X86_,DEV_BUILD"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\wal_cs/wal_classic.pch"

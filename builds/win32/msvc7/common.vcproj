@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -30,6 +30,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\common_ss/common.pch"
 				AssemblerListingLocation="..\..\..\temp\release\common_ss/"
@@ -69,9 +70,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,SUPERSERVER"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"

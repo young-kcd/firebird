@@ -20,9 +20,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbembed/fbembed.pch"
@@ -78,7 +80,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -88,6 +90,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbembed/fbembed.pch"

@@ -20,9 +20,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,DEV_BUILD,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gsplit/gsplit.pch"
@@ -74,7 +76,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -84,6 +86,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\gsplit/gsplit.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gsplit/"

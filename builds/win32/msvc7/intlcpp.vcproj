@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -30,6 +30,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\intlcpp/intlcpp.pch"
 				AssemblerListingLocation="..\..\..\temp\release\intlcpp/"
@@ -82,9 +83,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\intlcpp/intlcpp.pch"

@@ -20,9 +20,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD,WIN32,_X86_"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
 				PrecompiledHeaderFile="..\..\..\temp\debug\isql/isql.pch"
@@ -74,7 +76,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -84,6 +86,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="4"
 				PrecompiledHeaderFile="..\..\..\temp\release\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\release\isql/"

@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHc- "
+				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -29,6 +29,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
 				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
+				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\gpre/gpre.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gpre/"
@@ -77,9 +78,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
 				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD"
+				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gpre/gpre.pch"
