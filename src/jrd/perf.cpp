@@ -74,7 +74,7 @@ static SCHAR *report =
 extern void ftime();
 #endif
 
-#if defined(WIN_NT)
+#if defined(WIN_NT) && !defined(CLOCKS_PER_SEC)
 #define TICK	100
 #endif
 
