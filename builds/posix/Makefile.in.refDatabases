@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.9 2002-12-09 01:38:13 nmcc Exp $
+#  $Id: Makefile.in.refDatabases,v 1.10 2002-12-29 14:18:21 nmcc Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -74,6 +74,7 @@ empty.gdb : $(BIN)/create_db
 # of .epp files require to compile is yachts.lnk. MOD 05-Aug-2002
 
 yachts.lnk: empty.gdb
+	$(RM) -f yachts.lnk
 	ln -fs $(SRC_ROOT)/empty.gdb yachts.lnk
 
 
@@ -91,6 +92,7 @@ msg.gdb:	$(SRC_ROOT)/msgs/msg.gbak
 	chmod 444 $@
 
 help.gdb:	$(FIREBIRD)/help/help.gdb
+	$(RM) -f $@
 	ln -fs $^ $@
 
 $(FIREBIRD)/help/help.gdb:	$(SRC_ROOT)/misc/help.gbak
@@ -99,6 +101,7 @@ $(FIREBIRD)/help/help.gdb:	$(SRC_ROOT)/misc/help.gbak
 	chmod 444 $@
 
 isc4.gdb:	$(FIREBIRD)/isc4.gdb
+	$(RM) -f $@
 	ln -fs $^ $@
 
 $(FIREBIRD)/isc4.gdb:	$(SRC_ROOT)/misc/isc4.gbak
