@@ -1779,7 +1779,11 @@ from_view_list	: view_table
 
 view_table : joined_view_table
 		| table_name
+/* AB: Temporary disable derived tables in VIEWS
+   a derived table could hold a selectable SP for example, which by default isn't
+   allowed in VIEWs.
 		| derived_table
+*/
 		;
 
 joined_view_table	: view_table join_type JOIN view_table ON search_condition
@@ -2956,7 +2960,7 @@ table_reference	: joined_table
 
 /* AB: derived table support */
 derived_table :
-		'(' union_expr ')' as_noise correlation_name derived_column_list
+		'(' select ')' as_noise correlation_name derived_column_list
 			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6); }
 		;
 

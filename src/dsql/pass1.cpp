@@ -186,7 +186,7 @@ static DSQL_NOD pass1_cursor(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static DSQL_CTX pass1_cursor_context(DSQL_REQ, DSQL_NOD, DSQL_NOD);
 static DSQL_NOD pass1_dbkey(DSQL_REQ, DSQL_NOD);
 static DSQL_NOD pass1_delete(DSQL_REQ, DSQL_NOD);
-static DSQL_NOD pass1_derived_table(DSQL_REQ, DSQL_NOD);
+static DSQL_NOD pass1_derived_table(DSQL_REQ, DSQL_NOD, bool);
 static DSQL_NOD pass1_field(DSQL_REQ, DSQL_NOD, USHORT);
 static bool pass1_found_aggregate(DSQL_NOD, USHORT, USHORT, bool);
 static bool pass1_found_field(DSQL_NOD, USHORT, USHORT, bool *);
@@ -611,7 +611,7 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 				  gds_arg_gds, gds_dsql_command_err, 0);
 
 	case nod_derived_table:
-		return pass1_derived_table(request, input);
+		return pass1_derived_table(request, input, proc_flag);
 
 	case nod_select_expr:
 		if (proc_flag)
@@ -3318,12 +3318,8 @@ static DSQL_NOD pass1_delete( DSQL_REQ request, DSQL_NOD input)
     @param input
 
  **/
-static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
+static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 {
-	// NOTE! nod_flags from nod_alias is used to store also scope_level,
-	// because the scope_level will never become extreme high this will
-	// be never a problem.
-
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
@@ -3338,11 +3334,6 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 	// Create the context now, because we need to know it for the tables inside.
 	DSQL_CTX context = PASS1_make_context(request, node);	
 
-	// Pass the rse, because the derived table should start at the
-	// current scope_level we use pass1_rse instead of PASS1_rse and
-	// we decrememt the current_scope level, because _always_ 
-	// PASS1_rse is called from pass1_rse from this node (nod_list)!!
-
 	// Save some values to restore after rse process.
 	DLLS req_base = request->req_context;
 	DLLS req_union_base = request->req_union_context;
@@ -3351,12 +3342,12 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 	request->req_context = NULL;
 	request->req_union_context = NULL;
 	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
-	
-	request->req_scope_level--;
+
+	// Call PASS1_statement (for nod_select) which will call internally PASS1_rse.
+	// nod_select can contain ORDER BY information.
 	DSQL_NOD rse = 
-		pass1_rse(request, input->nod_arg[e_derived_table_rse], NULL, NULL);
+		PASS1_statement(request, input->nod_arg[e_derived_table_rse], proc_flag);
 	context->ctx_rse = node->nod_arg[e_derived_table_rse] = rse;
-	request->req_scope_level++;
 
 	// Finish off by cleaning up contexts and put them into req_dt_context
 	// so create view (ddl) can deal with it.
