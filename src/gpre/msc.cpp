@@ -25,10 +25,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.7 2003-09-05 10:14:08 aafemt Exp $
+//	$Id: msc.cpp,v 1.8 2003-09-05 14:55:59 brodsom Exp $
 //
 //  
-//$Id: msc.cpp,v 1.7 2003-09-05 10:14:08 aafemt Exp $
+//$Id: msc.cpp,v 1.8 2003-09-05 14:55:59 brodsom Exp $
 //  
 
 // ***************************************************
@@ -318,16 +318,17 @@ BOOLEAN MSC_match(KWWORDS keyword)
 {
 
 	if (token.tok_keyword == KW_none && token.tok_symbol) {
-		SYM sym;
-		for (sym = token.tok_symbol->sym_collision; sym;
-			 sym =
-			 sym->
-			 sym_collision) if ((strcmp(sym->sym_string, token.tok_string) ==
-								 0) && sym->sym_keyword != KW_none) {
-				token.tok_symbol = sym;
-				token.tok_keyword =
-					static_cast < kwwords > (sym->sym_keyword);
+		SYM symbol;
+		for (symbol = token.tok_symbol->sym_collision; symbol;
+			 symbol = symbol->sym_collision)
+		{
+			if ((strcmp(symbol->sym_string, token.tok_string) ==
+								 0) && symbol->sym_keyword != KW_none) 
+			{
+				token.tok_symbol = symbol;
+				token.tok_keyword = static_cast < kwwords > (symbol->sym_keyword);
 			}
+		}
 	}
 
 	if ((int) token.tok_keyword != (int) keyword)

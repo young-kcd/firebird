@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.15 2003-09-05 10:14:08 aafemt Exp $
+//	$Id: sql.cpp,v 1.16 2003-09-05 14:55:58 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1180,7 +1180,8 @@ static ACT act_alter_domain(void)
 	ACT action;
 	GPRE_REQ request;
 	GPRE_FLD field;
-	CNSTRT *cnstrt_ptr, cnstrt;
+	CNSTRT * cnstrt_ptr;
+	CNSTRT cnstrt_str;
 	GPRE_NOD literal_node;
 
 //  create request block 
@@ -1231,19 +1232,19 @@ static ACT act_alter_domain(void)
 		else if (MATCH(KW_ADD)) {
 			MATCH(KW_CONSTRAINT);
 			if (token.tok_keyword == KW_CHECK) {
-				cnstrt = par_field_constraint(request, field, 0);
-				*cnstrt_ptr = cnstrt;
-				cnstrt_ptr = &cnstrt->cnstrt_next;
+				cnstrt_str = par_field_constraint(request, field, 0);
+				*cnstrt_ptr = cnstrt_str;
+				cnstrt_ptr = &cnstrt_str->cnstrt_next;
 			}
 			else
 				PAR_error("Invalid constraint.");
 		}
 		else if (MATCH(KW_DROP)) {
 			if (MATCH(KW_CONSTRAINT)) {
-				cnstrt = (CNSTRT) ALLOC(CNSTRT_LEN);
-				cnstrt->cnstrt_flags |= CNSTRT_delete;
-				*cnstrt_ptr = cnstrt;
-				cnstrt_ptr = &cnstrt->cnstrt_next;
+				cnstrt_str = (CNSTRT) ALLOC(CNSTRT_LEN);
+				cnstrt_str->cnstrt_flags |= CNSTRT_delete;
+				*cnstrt_ptr = cnstrt_str;
+				cnstrt_ptr = &cnstrt_str->cnstrt_next;
 			}
 			else if (MATCH(KW_DEFAULT)) {
 				field->fld_default_value = MAKE_NODE(nod_erase, 0);
@@ -1314,7 +1315,8 @@ static ACT act_alter_table(void)
 	GPRE_FLD field, *ptr;
 	GPRE_REQ request;
 	GPRE_REL relation;
-	CNSTRT cnstrt, *cnstrt_ptr;
+	CNSTRT cnstrt_str;
+	CNSTRT *cnstrt_ptr;
 	GPRE_CTX context;
 
 //  create request block 
@@ -1356,9 +1358,9 @@ static ACT act_alter_table(void)
 			case KW_UNIQUE:
 			case KW_FOREIGN:
 			case KW_CHECK:
-				cnstrt = par_table_constraint(request, relation);
-				*cnstrt_ptr = cnstrt;
-				cnstrt_ptr = &cnstrt->cnstrt_next;
+				cnstrt_str = par_table_constraint(request, relation);
+				*cnstrt_ptr = cnstrt_str;
+				cnstrt_ptr = &cnstrt_str->cnstrt_next;
 				break;
 
 			default:
@@ -1370,15 +1372,15 @@ static ACT act_alter_table(void)
 		else if (MATCH(KW_DROP)) {
 			if (token.tok_keyword == KW_CONSTRAINT) {
 				ADVANCE_TOKEN;
-				cnstrt = (CNSTRT) ALLOC(CNSTRT_LEN);
-				cnstrt->cnstrt_flags |= CNSTRT_delete;
-				cnstrt->cnstrt_name = (STR) ALLOC(NAME_SIZE + 1);
+				cnstrt_str = (CNSTRT) ALLOC(CNSTRT_LEN);
+				cnstrt_str->cnstrt_flags |= CNSTRT_delete;
+				cnstrt_str->cnstrt_name = (STR) ALLOC(NAME_SIZE + 1);
 				SQL_resolve_identifier("<constraint name>",
-									   (TEXT *) cnstrt->cnstrt_name);
+									   (TEXT *) cnstrt_str->cnstrt_name);
 				if (token.tok_length > NAME_SIZE)
 					PAR_error("Constraint name too long");
-				*cnstrt_ptr = cnstrt;
-				cnstrt_ptr = &cnstrt->cnstrt_next;
+				*cnstrt_ptr = cnstrt_str;
+				cnstrt_ptr = &cnstrt_str->cnstrt_next;
 				ADVANCE_TOKEN;
 			}
 			else {
@@ -1440,7 +1442,7 @@ static ACT act_connect(void)
 	GPRE_REQ request;
 	SYM symbol;
 	RDY ready;
-	DBB dbb;
+	DBB db;
 	BOOLEAN need_handle;
 	USHORT default_buffers, buffers = 0;
 	TEXT *user = NULL, *password = NULL, *sql_role = NULL;
@@ -1484,9 +1486,9 @@ static ACT act_connect(void)
 			/* pick up the possible parameters, in any order */
 
 			buffers = 0;
-			dbb = ready->rdy_database;
-			connect_opts(&dbb->dbb_r_user, &dbb->dbb_r_password,
-						 &dbb->dbb_r_sql_role, &dbb->dbb_r_lc_messages,
+			db = ready->rdy_database;
+			connect_opts(&db->dbb_r_user, &db->dbb_r_password,
+						 &db->dbb_r_sql_role, &db->dbb_r_lc_messages,
 						 &buffers);
 
 			request = NULL;
@@ -1497,8 +1499,8 @@ static ACT act_connect(void)
 			   make sure that we generate variables for the request so that the 
 			   dpb can be extended at runtime */
 
-			if (dbb->dbb_r_user || dbb->dbb_r_password || dbb->dbb_r_sql_role
-				|| dbb->dbb_r_lc_messages || dbb->dbb_r_lc_ctype) {
+			if (db->dbb_r_user || db->dbb_r_password || db->dbb_r_sql_role
+				|| db->dbb_r_lc_messages || db->dbb_r_lc_ctype) {
 				if (!request)
 					request =
 						PAR_set_up_dpb_info(ready, action, default_buffers);
@@ -1508,9 +1510,9 @@ static ACT act_connect(void)
 			/* ...and if there are compile time user or password specified,
 			   make sure there will be a dpb generated for them */
 
-			if (!request && (dbb->dbb_c_user || dbb->dbb_c_password ||
-							 dbb->dbb_c_sql_role ||
-							 dbb->dbb_c_lc_messages || dbb->dbb_c_lc_ctype))
+			if (!request && (db->dbb_c_user || db->dbb_c_password ||
+							 db->dbb_c_sql_role ||
+							 db->dbb_c_lc_messages || db->dbb_c_lc_ctype))
 					request =
 					PAR_set_up_dpb_info(ready, action, default_buffers);
 
@@ -1525,12 +1527,12 @@ static ACT act_connect(void)
 
 	connect_opts(&user, &password, &sql_role, &lc_messages, &buffers);
 
-	for (dbb = isc_databases; dbb; dbb = dbb->dbb_next)
-		if (dbb->dbb_runtime || !(dbb->dbb_flags & DBB_sqlca)) {
+	for (db = isc_databases; db; db = db->dbb_next)
+		if (db->dbb_runtime || !(db->dbb_flags & DBB_sqlca)) {
 			ready = (RDY) ALLOC(RDY_LEN);
 			ready->rdy_next = (RDY) action->act_object;
 			action->act_object = (REF) ready;
-			ready->rdy_database = dup_dbb(dbb);
+			ready->rdy_database = dup_dbb(db);
 		}
 
 	if (!action->act_object)
@@ -1546,11 +1548,11 @@ static ACT act_connect(void)
 			   make sure that we generate variables for the request so that the 
 			   dpb can be extended at runtime */
 
-			dbb = ready->rdy_database;
-			if (user || password || lc_messages || dbb->dbb_r_lc_ctype) {
-				dbb->dbb_r_user = user;
-				dbb->dbb_r_password = password;
-				dbb->dbb_r_lc_messages = lc_messages;
+			db = ready->rdy_database;
+			if (user || password || lc_messages || db->dbb_r_lc_ctype) {
+				db->dbb_r_user = user;
+				db->dbb_r_password = password;
+				db->dbb_r_lc_messages = lc_messages;
 				if (!request)
 					request =
 						PAR_set_up_dpb_info(ready, action, default_buffers);
@@ -1560,9 +1562,9 @@ static ACT act_connect(void)
 			/* ...and if there are compile time user or password specified,
 			   make sure there will be a dpb generated for them */
 
-			if (!request && (dbb->dbb_c_user || dbb->dbb_c_password ||
-							 dbb->dbb_c_sql_role ||
-							 dbb->dbb_c_lc_ctype || dbb->dbb_c_lc_messages))
+			if (!request && (db->dbb_c_user || db->dbb_c_password ||
+							 db->dbb_c_sql_role ||
+							 db->dbb_c_lc_ctype || db->dbb_c_lc_messages))
 					request =
 					PAR_set_up_dpb_info(ready, action, default_buffers);
 		}
@@ -1740,7 +1742,7 @@ static ACT act_create_domain(void)
 	ACT action;
 	GPRE_REQ request;
 	GPRE_FLD field;
-	CNSTRT *cnstrt;
+	CNSTRT *cnstrt_ptr;
 	int in_constraints;
 	GPRE_NOD literal_node;
 
@@ -1788,7 +1790,7 @@ static ACT act_create_domain(void)
 
 //  Check for any column level constraints 
 
-	cnstrt = &field->fld_constraints;
+	cnstrt_ptr = &field->fld_constraints;
 	in_constraints = TRUE;
 
 	while (in_constraints) {
@@ -1796,8 +1798,8 @@ static ACT act_create_domain(void)
 		case KW_CONSTRAINT:
 		case KW_CHECK:
 		case KW_NOT:
-			*cnstrt = par_field_constraint(request, field, 0);
-			cnstrt = &(*cnstrt)->cnstrt_next;
+			*cnstrt_ptr = par_field_constraint(request, field, 0);
+			cnstrt_ptr = &(*cnstrt_ptr)->cnstrt_next;
 			break;
 
 		default:
@@ -5811,7 +5813,7 @@ static DYN par_statement(void)
 //		or ALTER TABLE statements.
 //  
 
-static void par_fkey_extension( CNSTRT cnstrt)
+static void par_fkey_extension(CNSTRT cnstrt_val)
 {
 	enum kwwords keyword;
 
@@ -5823,24 +5825,24 @@ static void par_fkey_extension( CNSTRT cnstrt)
 //  
 
 	assert(token.tok_keyword == KW_ON)
-		assert(cnstrt != NULL);
+		assert(cnstrt_val != NULL);
 
 	ADVANCE_TOKEN;
 
 	switch (keyword = token.tok_keyword) {
 	case KW_DELETE:
 		/* NOTE: action must be defined only once */
-		if (cnstrt->cnstrt_fkey_def_type & REF_DELETE_ACTION)
+		if (cnstrt_val->cnstrt_fkey_def_type & REF_DELETE_ACTION)
 			SYNTAX_ERROR("UPDATE");
 		else
-			cnstrt->cnstrt_fkey_def_type |= REF_DELETE_ACTION;
+			cnstrt_val->cnstrt_fkey_def_type |= REF_DELETE_ACTION;
 		break;
 	case KW_UPDATE:
 		/* NOTE: action must be defined only once */
-		if (cnstrt->cnstrt_fkey_def_type & REF_UPDATE_ACTION)
+		if (cnstrt_val->cnstrt_fkey_def_type & REF_UPDATE_ACTION)
 			SYNTAX_ERROR("DELETE");
 		else
-			cnstrt->cnstrt_fkey_def_type |= REF_UPDATE_ACTION;
+			cnstrt_val->cnstrt_fkey_def_type |= REF_UPDATE_ACTION;
 		break;
 	default:
 		/* unexpected keyword */
@@ -5856,30 +5858,30 @@ static void par_fkey_extension( CNSTRT cnstrt)
 		if (token.tok_keyword != KW_ACTION)
 			SYNTAX_ERROR("ACTION");
 		else if (keyword == KW_DELETE)
-			cnstrt->cnstrt_fkey_def_type |= REF_DEL_NONE;
+			cnstrt_val->cnstrt_fkey_def_type |= REF_DEL_NONE;
 		else
-			cnstrt->cnstrt_fkey_def_type |= REF_UPD_NONE;
+			cnstrt_val->cnstrt_fkey_def_type |= REF_UPD_NONE;
 		break;
 	case KW_CASCADE:
 		if (keyword == KW_DELETE)
-			cnstrt->cnstrt_fkey_def_type |= REF_DEL_CASCADE;
+			cnstrt_val->cnstrt_fkey_def_type |= REF_DEL_CASCADE;
 		else
-			cnstrt->cnstrt_fkey_def_type |= REF_UPD_CASCADE;
+			cnstrt_val->cnstrt_fkey_def_type |= REF_UPD_CASCADE;
 		break;
 	case KW_SET:
 		ADVANCE_TOKEN;
 		switch (token.tok_keyword) {
 		case KW_DEFAULT:
 			if (keyword == KW_DELETE)
-				cnstrt->cnstrt_fkey_def_type |= REF_DEL_SET_DEFAULT;
+				cnstrt_val->cnstrt_fkey_def_type |= REF_DEL_SET_DEFAULT;
 			else
-				cnstrt->cnstrt_fkey_def_type |= REF_UPD_SET_DEFAULT;
+				cnstrt_val->cnstrt_fkey_def_type |= REF_UPD_SET_DEFAULT;
 			break;
 		case KW_NULL:
 			if (keyword == KW_DELETE)
-				cnstrt->cnstrt_fkey_def_type |= REF_DEL_SET_NULL;
+				cnstrt_val->cnstrt_fkey_def_type |= REF_DEL_SET_NULL;
 			else
-				cnstrt->cnstrt_fkey_def_type |= REF_UPD_SET_NULL;
+				cnstrt_val->cnstrt_fkey_def_type |= REF_UPD_SET_NULL;
 			break;
 		default:
 			/* unexpected keyword */

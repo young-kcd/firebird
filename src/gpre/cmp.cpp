@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.13 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: cmp.cpp,v 1.14 2003-09-05 14:55:59 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1966,13 +1966,14 @@ static void make_send( POR port, GPRE_REQ request)
 
 static void update_references( REF references)
 {
-	REF ref, source;
+	REF re;
+	REF source;
 
-	for (ref = references; ref; ref = ref->ref_next) {
-		source = ref->ref_source;
-		source->ref_port = ref->ref_port;
-		source->ref_parameter = ref->ref_parameter;
-		source->ref_ident = ref->ref_ident;
+	for (re = references; re; re = re->ref_next) {
+		source = re->ref_source;
+		source->ref_port = re->ref_port;
+		source->ref_parameter = re->ref_parameter;
+		source->ref_ident = re->ref_ident;
 	}
 }
 

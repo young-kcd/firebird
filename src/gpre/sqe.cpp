@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.12 2003-09-05 10:14:08 aafemt Exp $
+//	$Id: sqe.cpp,v 1.13 2003-09-05 14:55:58 brodsom Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -3493,14 +3493,14 @@ static GPRE_CTX resolve_asterisk( TOK q_token, rse* selection)
 static void set_ref( GPRE_NOD expr, GPRE_FLD field_ref)
 {
 	GPRE_NOD *ptr, *end;
-	REF ref;
+	REF re;
 
 	assert_IS_NOD(expr);
 
-	ref = (REF) expr->nod_arg[0];
+	re = (REF) expr->nod_arg[0];
 	switch (expr->nod_type) {
 	case nod_value:
-		ref->ref_field = field_ref;
+		re->ref_field = field_ref;
 		break;
 
 	case nod_agg_count:

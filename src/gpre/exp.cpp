@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.14 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: exp.cpp,v 1.15 2003-09-05 14:55:59 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1007,7 +1007,7 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 //		selection expression.
 //  
 
-void EXP_rse_cleanup( RSE rse)
+void EXP_rse_cleanup( RSE rs)
 {
 	GPRE_NOD node;
 	GPRE_CTX *context, *end;
@@ -1015,8 +1015,8 @@ void EXP_rse_cleanup( RSE rse)
 
 //  Clean up simple context variables 
 
-	context = rse->rse_context;
-	end = context + rse->rse_count;
+	context = rs->rse_context;
+	end = context + rs->rse_count;
 
 	for (; context < end; context++)
 		if ((*context)->ctx_symbol)
@@ -1024,12 +1024,12 @@ void EXP_rse_cleanup( RSE rse)
 
 //  If this is an aggregate, clean up the underlying rse 
 
-	if (rse->rse_aggregate)
-		EXP_rse_cleanup(rse->rse_aggregate);
+	if (rs->rse_aggregate)
+		EXP_rse_cleanup(rs->rse_aggregate);
 
 //  If this is a union, clean up each of the primitive rse's 
 
-	if (node = rse->rse_union)
+	if (node = rs->rse_union)
 		for (i = 0; i < node->nod_count; i++)
 			EXP_rse_cleanup((RSE) node->nod_arg[i]);
 }

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.13 2003-09-05 10:14:08 aafemt Exp $
+//	$Id: pas.cpp,v 1.14 2003-09-05 14:55:58 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1280,7 +1280,7 @@ static void gen_database( ACT action, int column)
 	POR port;
 	BLB blob;
 	USHORT count, flag;
-	TPB tpb;
+	TPB tpb_val;
 #ifdef PYXIS
 	FORM form;
 #endif
@@ -1356,8 +1356,8 @@ static void gen_database( ACT action, int column)
 	count = 0;
 	for (db = isc_databases; db; db = db->dbb_next) {
 		count++;
-		for (tpb = db->dbb_tpbs; tpb; tpb = tpb->tpb_dbb_next)
-			gen_tpb(tpb, indent);
+		for (tpb_val = db->dbb_tpbs; tpb_val; tpb_val = tpb_val->tpb_dbb_next)
+			gen_tpb(tpb_val, indent);
 	}
 
 	printa(indent,
@@ -2349,13 +2349,13 @@ static void gen_form_display( ACT action, int column)
 	GPRE_REQ request;
 	REF reference, master;
 	POR port;
-	DBB dbb;
+	DBB db;
 	TEXT s[32], *status, out[16];
 	int code;
 
 	display = (FINT) action->act_object;
 	request = display->fint_request;
-	dbb = request->req_database;
+	db = request->req_database;
 	port = request->req_ports;
 	status = (action->act_error) ? "gds__status" : "gds__null^";
 
@@ -2374,7 +2374,7 @@ static void gen_form_display( ACT action, int column)
 
 	printa(column,
 		   "pyxis__drive_form (%s, %s, %s, gds__window, %s, gds__%d, %s);",
-		   status, dbb->dbb_name->sym_string, request->req_trans,
+		   status, db->dbb_name->sym_string, request->req_trans,
 		   request->req_handle, port->por_ident, out);
 }
 #endif
@@ -2401,13 +2401,13 @@ static void gen_form_for( ACT action, int column)
 	GPRE_REQ request;
 	FORM form;
 	TEXT *status;
-	DBB dbb;
+	DBB db;
 	int indent;
 
 	indent = column + INDENT;
 	request = action->act_request;
 	form = request->req_form;
-	dbb = request->req_database;
+	db = request->req_database;
 	status = status_vector(action);
 
 //  Get database attach and transaction started 
@@ -2423,7 +2423,7 @@ static void gen_form_for( ACT action, int column)
 	align(indent);
 	ib_fprintf(out_file, "pyxis__load_form (%s, %s, %s, %s, %d, '%s');",
 			   status,
-			   dbb->dbb_name->sym_string,
+			   db->dbb_name->sym_string,
 			   request->req_trans,
 			   request->req_form_handle,
 			   strlen(form->form_name->sym_string),
@@ -2562,7 +2562,7 @@ static void gen_item_end( ACT action, int column)
 	GPRE_REQ request;
 	REF reference;
 	POR port;
-	DBB dbb;
+	DBB db;
 	TEXT s[32], *status, index[16];
 
 	request = action->act_request;
@@ -2590,7 +2590,7 @@ static void gen_item_end( ACT action, int column)
 		return;
 	}
 
-	dbb = request->req_database;
+	db = request->req_database;
 	port = request->req_ports;
 
 //  Initialize field options 
@@ -2604,7 +2604,7 @@ static void gen_item_end( ACT action, int column)
 	ib_fprintf(out_file,
 			   "pyxis__insert (%s, %s, %s, %s, gds__%d);",
 			   status,
-			   dbb->dbb_name->sym_string,
+			   db->dbb_name->sym_string,
 			   request->req_trans, request->req_handle, port->por_ident);
 }
 #endif
@@ -2991,15 +2991,15 @@ static void gen_procedure( ACT action, int column)
 	TEXT *pattern;
 	GPRE_REQ request;
 	POR in_port, out_port;
-	DBB dbb;
+	DBB db;
 
 	column += INDENT;
 	request = action->act_request;
 	in_port = request->req_vport;
 	out_port = request->req_primary;
 
-	dbb = request->req_database;
-	args.pat_database = dbb;
+	db = request->req_database;
+	args.pat_database = db;
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
 	args.pat_request = request;
@@ -3782,7 +3782,7 @@ static void gen_t_start( ACT action, int column)
 {
 	DBB db;
 	GPRE_TRA trans;
-	TPB tpb;
+	TPB tpb_val;
 	int count;
 	TEXT *filename;
 
@@ -3802,9 +3802,9 @@ static void gen_t_start( ACT action, int column)
 //  On non-VMS machines, fill in the tpb vector (aka TEB). 
 
 	count = 0;
-	for (tpb = trans->tra_tpb; tpb; tpb = tpb->tpb_tra_next) {
+	for (tpb_val = trans->tra_tpb; tpb_val; tpb_val = tpb_val->tpb_tra_next) {
 		count++;
-		db = tpb->tpb_database;
+		db = tpb_val->tpb_database;
 		if (sw_auto)
 			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
 				printa(column, "if (%s = nil) then",
@@ -3814,9 +3814,9 @@ static void gen_t_start( ACT action, int column)
 			}
 
 #ifndef VMS
-		printa(column, "gds__teb[%d].tpb_len := %d;", count, tpb->tpb_length);
+		printa(column, "gds__teb[%d].tpb_len := %d;", count, tpb_val->tpb_length);
 		printa(column, "gds__teb[%d].tpb_ptr := ADDR(gds__tpb_%d);",
-			   count, tpb->tpb_ident);
+			   count, tpb_val->tpb_ident);
 		printa(column, "gds__teb[%d].dbb_ptr := ADDR(%s);",
 			   count, db->dbb_name->sym_string);
 #endif
@@ -3831,12 +3831,12 @@ static void gen_t_start( ACT action, int column)
 		   (trans->tra_handle) ? trans->tra_handle : "gds__trans",
 		   trans->tra_db_count);
 
-	for (tpb = trans->tra_tpb; tpb; tpb = tpb->tpb_tra_next) {
+	for (tpb_val = trans->tra_tpb; tpb_val; tpb_val = tpb_val->tpb_tra_next) {
 		ib_putc(',', out_file);
 		align(column + INDENT);
 		ib_fprintf(out_file, "%%REF %s, %%IMMED %d, %%REF gds__tpb_%d",
-				   tpb->tpb_database->dbb_name->sym_string,
-				   tpb->tpb_length, tpb->tpb_ident);
+				   tpb_val->tpb_database->dbb_name->sym_string,
+				   tpb_val->tpb_length, tpb_val->tpb_ident);
 	}
 	ib_fprintf(out_file, ")");
 #else
@@ -3855,16 +3855,16 @@ static void gen_t_start( ACT action, int column)
 //		Generate a TPB in the output file
 //  
 
-static void gen_tpb( TPB tpb, int column)
+static void gen_tpb( TPB tpb_val, int column)
 {
 	TEXT *text, buffer[80], c, *p;
 	int length;
 
 	printa(column, "gds__tpb_%d\t: %s [1..%d] of char := %s",
-		   tpb->tpb_ident, PACKED_ARRAY, tpb->tpb_length, OPEN_BRACKET);
+		   tpb_val->tpb_ident, PACKED_ARRAY, tpb_val->tpb_length, OPEN_BRACKET);
 
-	length = tpb->tpb_length;
-	text = (TEXT *) tpb->tpb_string;
+	length = tpb_val->tpb_length;
+	text = (TEXT *) tpb_val->tpb_string;
 	p = buffer;
 
 	while (--length) {

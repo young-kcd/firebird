@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: noform.cpp,v 1.6 2003-03-06 12:22:20 brodsom Exp $
+//	$Id: noform.cpp,v 1.7 2003-09-05 14:55:59 brodsom Exp $
 //
 
 #ifdef PYXIS
@@ -42,7 +42,9 @@ typedef int *HANDLE;
 //		Lookup field in form.
 //  
 
-GPRE_FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
+GPRE_FLD FORM_lookup_field(FORM form,
+						   HANDLE object,
+						   char *string)
 {
 
 	return 0;
@@ -55,7 +57,8 @@ GPRE_FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
 //		use.
 //  
 
-FORM FORM_lookup_form(DBB dbb, UCHAR * string)
+FORM FORM_lookup_form(DBB db,
+					  UCHAR * string)
 {
 
 	return 0;
@@ -67,7 +70,8 @@ FORM FORM_lookup_form(DBB dbb, UCHAR * string)
 //		Lookup sub-form of a given form.
 //  
 
-FORM FORM_lookup_subform(FORM parent, GPRE_FLD field)
+FORM FORM_lookup_subform(FORM parent,
+						 GPRE_FLD field)
 {
 
 	return NULL;

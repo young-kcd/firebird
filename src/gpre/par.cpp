@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.24 2003-09-05 10:14:08 aafemt Exp $
+//  $Id: par.cpp,v 1.25 2003-09-05 14:55:58 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.24 2003-09-05 10:14:08 aafemt Exp $
+//	$Id: par.cpp,v 1.25 2003-09-05 14:55:58 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -498,7 +498,7 @@ ACT PAR_action(TEXT* base_dir)
 //		Parse a blob subtype -- either a signed number or a symbolic name.
 //  
 
-SSHORT PAR_blob_subtype(DBB dbb)
+SSHORT PAR_blob_subtype(DBB db)
 {
 	GPRE_REL relation;
 	GPRE_FLD field;
@@ -507,9 +507,11 @@ SSHORT PAR_blob_subtype(DBB dbb)
 //  Check for symbol type name 
 
 	if (token.tok_type == tok_ident) {
-		if (!(relation = MET_get_relation(dbb, "RDB$FIELDS", "")) ||
+		if (!(relation = MET_get_relation(db, "RDB$FIELDS", "")) ||
 			!(field = MET_field(relation, "RDB$FIELD_SUB_TYPE")))
+		{
 			PAR_error("error during BLOB SUB_TYPE lookup");
+		}
 		if (!MET_type(field, token.tok_string, &const_subtype))
 			SYNTAX_ERROR("blob sub_type");
 		ADVANCE_TOKEN;
@@ -606,12 +608,12 @@ ACT PAR_database(USHORT sql, TEXT* base_directory)
 		ADVANCE_TOKEN;
 	}
 
-	if ((sw_auto)
-		&& (db->dbb_c_password || db->dbb_c_user || db->dbb_c_lc_ctype
-			|| db->
-			dbb_c_lc_messages))
+	if ((sw_auto) && (db->dbb_c_password || db->dbb_c_user || db->dbb_c_lc_ctype
+			|| db->dbb_c_lc_messages))
+	{
 			CPR_warn
 			("PASSWORD, USER and NAMES options require -manual switch to gpre.");
+	}
 
 	if (!db->dbb_filename)
 		SYNTAX_ERROR("quoted file name");
@@ -3120,7 +3122,7 @@ static ACT par_ready()
 	GPRE_REQ request;
 	SYM symbol;
 	RDY ready;
-	DBB dbb;
+	DBB db;
 	BOOLEAN need_handle;
 	USHORT default_buffers, buffers;
 
@@ -3175,7 +3177,7 @@ static ACT par_ready()
 		/* pick up the possible parameters, in any order */
 
 		buffers = 0;
-		dbb = ready->rdy_database;
+		db = ready->rdy_database;
 		for (;;) {
 			if (MATCH(KW_CACHE)) {
 				buffers = atoi(token.tok_string);
@@ -3183,14 +3185,14 @@ static ACT par_ready()
 				MATCH(KW_BUFFERS);
 			}
 			else if (MATCH(KW_USER))
-				dbb->dbb_r_user = PAR_native_value(FALSE, FALSE);
+				db->dbb_r_user = PAR_native_value(FALSE, FALSE);
 			else if (MATCH(KW_PASSWORD))
-				dbb->dbb_r_password = PAR_native_value(FALSE, FALSE);
+				db->dbb_r_password = PAR_native_value(FALSE, FALSE);
 			else if (MATCH(KW_LC_MESSAGES))
-				dbb->dbb_r_lc_messages = PAR_native_value(FALSE, FALSE);
+				db->dbb_r_lc_messages = PAR_native_value(FALSE, FALSE);
 			else if (MATCH(KW_LC_CTYPE)) {
-				dbb->dbb_r_lc_ctype = PAR_native_value(FALSE, FALSE);
-				dbb->dbb_know_subtype = 2;
+				db->dbb_r_lc_ctype = PAR_native_value(FALSE, FALSE);
+				db->dbb_know_subtype = 2;
 			}
 			else
 				break;
@@ -3204,8 +3206,9 @@ static ACT par_ready()
 		   make sure that we generate variables for the request so that the 
 		   dpb can be extended at runtime */
 
-		if (dbb->dbb_r_user || dbb->dbb_r_password ||
-			dbb->dbb_r_lc_messages || dbb->dbb_r_lc_ctype) {
+		if (db->dbb_r_user || db->dbb_r_password ||
+			db->dbb_r_lc_messages || db->dbb_r_lc_ctype)
+		{
 			if (!request)
 				request = PAR_set_up_dpb_info(ready, action, default_buffers);
 			request->req_flags |= REQ_extend_dpb;
@@ -3214,9 +3217,11 @@ static ACT par_ready()
 		/* ...and if there are compile time user or password specified,
 		   make sure there will be a dpb generated for them */
 
-		if (!request && (dbb->dbb_c_user || dbb->dbb_c_password ||
-						 dbb->dbb_c_lc_messages || dbb->dbb_c_lc_ctype))
+		if (!request && (db->dbb_c_user || db->dbb_c_password ||
+						 db->dbb_c_lc_messages || db->dbb_c_lc_ctype))
+		{
 			request = PAR_set_up_dpb_info(ready, action, default_buffers);
+		}
 
 		MATCH(KW_COMMA);
 	}
@@ -3234,12 +3239,12 @@ static ACT par_ready()
 
 //  No explicit databases -- pick up all known 
 
-	for (dbb = isc_databases; dbb; dbb = dbb->dbb_next)
-		if (dbb->dbb_runtime || !(dbb->dbb_flags & DBB_sqlca)) {
+	for (db = isc_databases; db; db = db->dbb_next)
+		if (db->dbb_runtime || !(db->dbb_flags & DBB_sqlca)) {
 			ready = (RDY) ALLOC(RDY_LEN);
 			ready->rdy_next = (RDY) action->act_object;
 			action->act_object = (REF) ready;
-			ready->rdy_database = dbb;
+			ready->rdy_database = db;
 		}
 
 	if (!action->act_object)
@@ -3254,21 +3259,23 @@ static ACT par_ready()
 			   make sure that we generate variables for the request so that the 
 			   dpb can be extended at runtime */
 
-			dbb = ready->rdy_database;
-			if (dbb->dbb_r_user || dbb->dbb_r_password ||
-				dbb->dbb_r_lc_messages || dbb->dbb_r_lc_ctype) {
+			db = ready->rdy_database;
+			if (db->dbb_r_user || db->dbb_r_password ||
+				db->dbb_r_lc_messages || db->dbb_r_lc_ctype) 
+			{
 				if (!request)
-					request =
-						PAR_set_up_dpb_info(ready, action, default_buffers);
+					request = PAR_set_up_dpb_info(ready, action, default_buffers);
 				request->req_flags |= REQ_extend_dpb;
 			}
 
 			/* ...and if there are compile time user or password specified,
 			   make sure there will be a dpb generated for them */
 
-			if (!request && (dbb->dbb_c_user || dbb->dbb_c_password ||
-							 dbb->dbb_c_lc_messages || dbb->dbb_c_lc_ctype))
+			if (!request && (db->dbb_c_user || db->dbb_c_password ||
+							 db->dbb_c_lc_messages || db->dbb_c_lc_ctype))
+			{
 				request = PAR_set_up_dpb_info(ready, action, default_buffers);
+			}
 		}
 
 	return action;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.17 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: ada.cpp,v 1.18 2003-09-05 14:55:59 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1266,7 +1266,7 @@ static void gen_database( ACT action, int column)
 	FORM form;
 #endif
 	LLS stack_ptr;
-	TPB tpb;
+	TPB tpb_val;
 	REF reference;
 	GPRE_FLD field;
 	BOOLEAN array_flag;
@@ -1385,8 +1385,8 @@ static void gen_database( ACT action, int column)
 	count = 0;
 	for (db = isc_databases; db; db = db->dbb_next) {
 		count++;
-		for (tpb = db->dbb_tpbs; tpb; tpb = tpb->tpb_dbb_next)
-			gen_tpb(tpb, column + INDENT);
+		for (tpb_val = db->dbb_tpbs; tpb_val; tpb_val = tpb_val->tpb_dbb_next)
+			gen_tpb(tpb_val, column + INDENT);
 	}
 
 	printa(column,
@@ -2266,13 +2266,13 @@ static void gen_form_display( ACT action, int column)
 	GPRE_REQ request;
 	REF reference, master;
 	POR port;
-	DBB dbb;
+	DBB db;
 	TEXT s[32], out[16];
 	int code;
 
 	display = (FINT) action->act_object;
 	request = display->fint_request;
-	dbb = request->req_database;
+	db = request->req_database;
 	port = request->req_ports;
 
 //  Initialize field options 
@@ -2290,7 +2290,7 @@ static void gen_form_display( ACT action, int column)
 
 	printa(column,
 		   "interbase.drive_form (%s %s%s, %s%s, %sisc_window, %s, isc_%d'address, %s'address)",
-		   status_vector(action), ada_package, dbb->dbb_name->sym_string,
+		   status_vector(action), ada_package, db->dbb_name->sym_string,
 		   ada_package, request->req_trans, ADA_WINDOW_PACKAGE,
 		   request->req_handle, port->por_ident, out);
 }

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.16 2003-09-05 10:14:08 aafemt Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.17 2003-09-05 14:55:59 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -117,7 +117,7 @@ GPRE_FLD MET_context_field( GPRE_CTX context, char *string)
  *		database can't be opened, return FALSE.
  */  
 
-BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
+BOOLEAN MET_database(DBB db, BOOLEAN print_version)
 {
 	/* 
 	   ** Each info item requested will return 
@@ -132,7 +132,7 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 
 #ifndef REQUESTER
 	if (sw_language == lang_internal) {
-		JRDMET_init(dbb);
+		JRDMET_init(db);
 		return TRUE;
 	}
 #endif
@@ -187,9 +187,10 @@ USHORT MET_domain_lookup(GPRE_REQ request, GPRE_FLD field, char *string)
  *		Gets the default value for a domain of an existing table
  */  
 
-BOOLEAN MET_get_domain_default(DBB dbb,
+BOOLEAN MET_get_domain_default(DBB db,
 							   TEXT * domain_name,
-							   TEXT * buffer, USHORT buff_length)
+							   TEXT * buffer,
+							   USHORT buff_length)
 {
 	SCHAR name[NAME_SIZE];
 	BOOLEAN has_default;
@@ -236,20 +237,20 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
  *		of the fields.
  */  
 
-LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
+LLS MET_get_primary_key(DBB db, TEXT * relation_name)
 {
 	SLONG *gds__trans;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, relation_name);
 
-	if (dbb == NULL)
+	if (db == NULL)
 		return NULL;
 
-	if ((dbb->dbb_handle == NULL) && !MET_database(dbb, FALSE))
+	if ((db->dbb_handle == NULL) && !MET_database(db, FALSE))
 		CPR_exit(FINI_ERROR);
 
-	assert(dbb->dbb_transaction == NULL);
+	assert(db->dbb_transaction == NULL);
 	gds__trans = NULL;
 	assert(0);
 	return FALSE;
@@ -359,7 +360,7 @@ void MET_fini( DBB end)
  *		If found, return string. If not, return NULL.
  */  
 
-SCHAR *MET_generator(TEXT * string, DBB dbb)
+SCHAR *MET_generator(TEXT * string, DBB db)
 {
 	SYM symbol;
 	SCHAR name[NAME_SIZE];
@@ -368,7 +369,10 @@ SCHAR *MET_generator(TEXT * string, DBB dbb)
 
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_generator) &&
-			(dbb == (DBB) (symbol->sym_object))) return symbol->sym_string;
+			(db == (DBB) (symbol->sym_object))) 
+		{
+			return symbol->sym_string;
+		}
 
 	return NULL;
 }
@@ -470,7 +474,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT * length)
  *		This function has been cloned into MET_get_udf
  */  
 
-GPRE_PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
+GPRE_PRC MET_get_procedure(DBB db, TEXT * string, TEXT * owner_name)
 {
 	SYM symbol;
 	GPRE_PRC procedure;
@@ -483,10 +487,13 @@ GPRE_PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_procedure &&
 			(procedure = (GPRE_PRC) symbol->sym_object) &&
-			procedure->prc_database == dbb &&
+			procedure->prc_database == db &&
 			(!owner[0] ||
 			 (procedure->prc_owner
-			  && !strcmp(owner, procedure->prc_owner->sym_string)))) break;
+			  && !strcmp(owner, procedure->prc_owner->sym_string)))) 
+		{
+			break;
+		}
 
 	if (!procedure)
 		return NULL;
@@ -505,7 +512,7 @@ GPRE_PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
  *		Return a relation block (if name is found) or NULL.
  */  
 
-GPRE_REL MET_get_relation(DBB dbb, TEXT * string, TEXT * owner_name)
+GPRE_REL MET_get_relation(DBB db, TEXT * string, TEXT * owner_name)
 {
 	SYM symbol;
 	GPRE_REL relation;
@@ -517,11 +524,14 @@ GPRE_REL MET_get_relation(DBB dbb, TEXT * string, TEXT * owner_name)
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_relation &&
 			(relation = (GPRE_REL) symbol->sym_object) &&
-			relation->rel_database == dbb &&
+			relation->rel_database == db &&
 			(!owner[0] ||
 			 (relation->rel_owner
 			  && !strcmp(owner,
-						 relation->rel_owner->sym_string)))) return relation;
+						 relation->rel_owner->sym_string))))
+		{
+			return relation;
+		}
 
 	return NULL;
 }
@@ -551,19 +561,22 @@ INTLSYM MET_get_text_subtype(SSHORT ttype)
  *		This function was cloned from MET_get_procedure
  */  
 
-UDF MET_get_udf(DBB dbb, TEXT * string)
+UDF MET_get_udf(DBB db, TEXT * string)
 {
 	SYM symbol;
-	UDF udf;
+	UDF udf_val;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
-	udf = NULL;
+	udf_val = NULL;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_udf &&
-			(udf = (UDF) symbol->sym_object) && udf->udf_database == dbb)
+			(udf_val = (UDF) symbol->sym_object) && udf_val->udf_database == db)
+		{
 			break;
-	if (!udf)
+		}
+
+	if (!udf_val)
 		return NULL;
 
 	assert(0);
@@ -593,7 +606,7 @@ GPRE_REL MET_get_view_relation(GPRE_REQ request,
  *		Return an index block (if name is found) or NULL.
  */  
 
-IND MET_index(DBB dbb, TEXT * string)
+IND MET_index(DBB db, TEXT * string)
 {
 	SYM symbol;
 	IND index;
@@ -606,8 +619,10 @@ IND MET_index(DBB dbb, TEXT * string)
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_index &&
 			(index = (IND) symbol->sym_object) &&
-			index->ind_relation->rel_database == dbb)
+			index->ind_relation->rel_database == db)
+		{
 			return index;
+		}
 
 	if (sw_language == lang_internal)
 		return NULL;
@@ -623,7 +638,7 @@ IND MET_index(DBB dbb, TEXT * string)
  *       into the symbol (hash) table.
  */  
 
-void MET_load_hash_table( DBB dbb)
+void MET_load_hash_table( DBB db)
 {
 /*  If this is an internal ISC access method invocation, don't do any of this
  *  stuff
@@ -723,7 +738,7 @@ BOOLEAN MET_type(GPRE_FLD field, TEXT * string, SSHORT * ptr)
  *		   FALSE otherwise
  */  
 
-BOOLEAN MET_trigger_exists(DBB dbb, TEXT * trigger_name)
+BOOLEAN MET_trigger_exists(DBB db, TEXT * trigger_name)
 {
 	SCHAR name[NAME_SIZE];
 
@@ -760,7 +775,7 @@ static SLONG array_size( GPRE_FLD field)
  *		See if field is array.
  */  
 
-static void get_array( DBB dbb, TEXT * field_name, GPRE_FLD field)
+static void get_array( DBB db, TEXT * field_name, GPRE_FLD field)
 {
 	assert(0);
 	return;
@@ -785,13 +800,14 @@ static void get_array( DBB dbb, TEXT * field_name, GPRE_FLD field)
  *		0 if the name could not be resolved.
  */  
 
-static int get_intl_char_subtype(
-								 SSHORT * id,
-								 UCHAR * name, USHORT length, DBB dbb)
+static int get_intl_char_subtype(SSHORT * id,
+								 UCHAR * name,
+								 USHORT length,
+								 DBB db)
 {
 	assert(id != NULL);
 	assert(name != NULL);
-	assert(dbb != NULL);
+	assert(db != NULL);
 
 	assert(0);
 	return (0);
