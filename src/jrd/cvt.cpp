@@ -73,6 +73,13 @@
 # endif
 #endif
 
+#ifdef HAVE_SYS_TIMES_H
+#include <sys/times.h>
+#endif
+#ifdef HAVE_SYS_TIMEB_H
+# include <sys/timeb.h>
+#endif
+
 #if !(defined REQUESTER && defined SUPERCLIENT)
 #include "../jrd/intl_classes.h"
 #endif
@@ -2530,6 +2537,15 @@ static void string_to_datetime(
 
 					if (strcmp(temp, NOW) == 0) {
 						isc_encode_timestamp(&times2, date);
+#ifdef HAVE_GETTIMEOFDAY
+						struct timeval tp;
+						GETTIMEOFDAY(&tp);
+						date->timestamp_time += tp.tv_usec / 100;
+#else
+						struct timeb time_buffer;
+						ftime(&time_buffer);
+						date->timestamp_time += time_buffer.millitm * 10;
+#endif
 						return;
 					}
 					if (expect_type == expect_sql_time) {
