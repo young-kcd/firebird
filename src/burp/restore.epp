@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.28 2003-04-16 10:16:40 aafemt Exp $
+$Id: restore.epp,v 1.29 2003-06-03 10:14:11 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -2031,7 +2031,7 @@ if (isc_create_blob (status_vector,
 
 /* Allocate blob buffer is static buffer is too short */
 
-if (!length || length + 1 <= (USHORT)(sizeof (static_buffer)) )
+if (!length || length < (USHORT)(sizeof (static_buffer)) )
     buffer = static_buffer;
 else
     {
