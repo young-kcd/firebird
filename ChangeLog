@@ -1,3 +1,60 @@
+2003-01-19 19:32  kkuznetsov
+
+	* firebird2/src/common/classes/locks.h:
+	
+	Dummy inplementation of Spin-Lock let me return to compiling on
+	Solx86
+
+2003-01-19 15:42  dimitr
+
+	* firebird2/src/include/fb_types.h:
+	
+	One of my previous commits has broken generated ibase.h. Fixed.
+
+2003-01-19 15:30  dimitr
+
+	* firebird2/: src/jrd/alt.cpp, src/jrd/ibase.h, src/jrd/utl.cpp,
+	src/jrd/utl_proto.h, builds/win32/fbclient.def,
+	builds/win32/fbclient_debug.def:
+	
+	Let's return version of the client library via API. Interface is
+	IB7-compliant.
+
+2003-01-19 15:12  dimitr
+
+	* firebird2/builds/win32/msvc6/: fbclient.dsp, remote.dsp,
+	remote_classic.dsp:
+	
+	Link with XNET support.
+
+2003-01-19 13:28  dimitr
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Cleanup.
+
+2003-01-19 13:18  dimitr
+
+	* firebird2/src/: remote/interface.cpp, remote/remote.h,
+	remote/server.cpp, remote/srvr_w32.cpp, remote/window.cpp,
+	remote/window.h, remote/xnet.cpp, remote/xnet.h,
+	remote/xnet_proto.h, ipserver/ipclient.cpp:
+	
+	XNET support on win32. Untested.
+
+2003-01-19 12:46  dimitr
+
+	* firebird2/src/ipserver/: ipclient.cpp, ips.h:
+	
+	Cleanup.
+
+2003-01-19 12:44  dimitr
+
+	* firebird2/src/jrd/: isc_f_proto.h, isc_file.cpp:
+	
+	Temporary hack to make XNET working as a true remote protocol and
+	be able to use both XNET and IPC.
+
 2003-01-18 22:45  skidder
 
 	* firebird2/src/: common/classes/alloc.cpp, common/classes/alloc.h,
