@@ -107,7 +107,7 @@ static struct in_sw_tab_t gdef_in_sw_table[] = {
 };
 
 #ifndef SUPERSERVER
-void CLIB_ROUTINE main( int argc, char *argv[])
+int CLIB_ROUTINE main( int argc, char *argv[])
 {
 /**************************************
  *
