@@ -1,3 +1,19 @@
+2004-04-18 12:09  paul_reeves
+
+	*
+	
+	Update build number to (more) correct value for Fb 1.5. Add support
+	to generate fbclient_bor.lib from Implib.
+	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
+	t (1.10.2.8):
+
+2004-04-18 12:06  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/: fbdialog.cpp (1.1.2.8),
+	fbdialog.h (1.1.2.5):
+	
+	cpl applet - Fix timing issues under XP/Win2k3.
+
 2004-04-17 04:34  skidder
 
 	* firebird2/src/install/misc/firebird.conf (1.28.2.5):
