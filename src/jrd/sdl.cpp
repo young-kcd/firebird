@@ -36,7 +36,13 @@
 #include "../jrd/sdl_proto.h"
 
 #ifndef DEV_BUILD
+#ifdef _assert
+#undef _assert
+#endif
 #define _assert(ex)
+#ifdef assert
+#undef assert
+#endif
 #define assert(ex)
 
 #else	// DEV_BUILD
