@@ -297,10 +297,10 @@ void PluginManager::PluginModule::unload_module()
 
 const char *PluginManager::ENGINE_PLUGIN_DIR = "plugins";
 
-#ifndef DARWIN
-const char *PluginManager::ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT =  "register_plugin";
-#else
+#ifdef DARWIN
 const char *PluginManager::ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT =  "_register_plugin";
+#else
+const char *PluginManager::ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT =  "register_plugin";
 #endif
 
 void PluginManager::load_engine_plugins()
