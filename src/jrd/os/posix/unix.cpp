@@ -1262,7 +1262,7 @@ raw_devices_validate_database (
 					gds_arg_unix, errno, 0);
 
 	/* Validate database header. Code lifted from PAG_header. */
-	if (hp->hdr_header.pag_type != pag_header || hp->hdr_sequence)
+	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
 		goto quit;
 
 #ifdef ODS_8_TO_CURRENT
@@ -1286,8 +1286,10 @@ raw_devices_validate_database (
 
   quit:
 #ifdef DEV_BUILD
-	gds__log ("raw_devices_validate_database: %s -> %s\n",
-				file_name, retval ? "true" : "false");
+	gds__log ("raw_devices_validate_database: %s -> %s%s\n",
+		 file_name,
+		 retval ? "true" : "false",
+		 retval && hp->hdr_sequence != 0 ? " (continuation file)" : "");
 #endif
 	return retval;
 }

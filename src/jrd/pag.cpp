@@ -389,6 +389,19 @@ USHORT PAG_add_file(TEXT * file_name, SLONG start)
 	header->hdr_data[0] = HDR_end;
 	header->hdr_end = HDR_SIZE;
 	next->fil_sequence = sequence;
+
+#ifdef SUPPORT_RAW_DEVICES
+/* The following lines (taken from PAG_format_header) are needed to identify
+   this file in raw_devices_validate_database as a valid database attachment. */
+	MOV_time_stamp (header->hdr_creation_date);
+	header->hdr_ods_version        = ODS_VERSION;
+	header->hdr_implementation     = CLASS;
+	header->hdr_ods_minor          = ODS_CURRENT;
+	header->hdr_ods_minor_original = ODS_CURRENT;
+	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
+    		header->hdr_flags |= hdr_SQL_dialect_3;
+#endif
+
 	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
 	PIO_write(dbb->dbb_file, window.win_bdb, window.win_buffer,
 			  tdbb->tdbb_status_vector);
