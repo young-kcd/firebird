@@ -196,7 +196,7 @@
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
-    * SGEC improvement
+    * GSEC improvement
         Now GSEC returns the error code when used as a non-interactive utility
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
