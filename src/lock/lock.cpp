@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.56.2.6 2003-11-25 06:37:57 bellardo Exp $
+$Id: lock.cpp,v 1.56.2.7 2004-03-29 04:35:49 skidder Exp $
 */
 
 #include "firebird.h"
@@ -3158,8 +3158,9 @@ static void init_owner_block(
 	{
 #if defined WIN_NT && defined SUPERSERVER
 		// TMN: This Win32 EVENT is never deleted!
+		// Skidder: But it may be reused along with the owner block
 		owner->own_wakeup_hndl =
-			ISC_make_signal(TRUE, TRUE, LOCK_pid, LOCK_wakeup_signal);
+			ISC_make_signal(TRUE, TRUE, LOCK_pid, 0);
 #endif
 #ifdef USE_WAKEUP_EVENTS
 #if (defined WIN_NT && defined SUPERSERVER)
@@ -3234,7 +3235,9 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 	PTR *prior;
 
 #ifdef WIN_NT
-	if (ISC_mutex_init(MUTEX, LOCK_FILE)) {
+	char buffer[MAXPATHLEN];
+	gds__prefix_lock(buffer, LOCK_FILE);
+	if (ISC_mutex_init(MUTEX, buffer)) {
 		bug(NULL, "mutex init failed");
 	}
 #endif
