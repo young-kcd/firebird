@@ -28,7 +28,12 @@ private:
 			: refCnt(0), module_name(name), prev(0), next(0) {}
 		virtual ~Module();
 		void aquire() { refCnt++; }
-		void release() { refCnt--; if (refCnt == 0) delete this; }
+		/* 23 Sep 2002, Nickolay Samofatov commented it out because 
+		  otherwise it caused nasty memory corruption. 
+		  LoadAllPlugins function puts plugins with refCnt=0 to the list. 
+		  I'd add destructor to the PluginManager to free memory...
+		  */
+		void release() { refCnt--; /*if (refCnt == 0) delete this;*/ }
 		const Firebird::string& name() const { return module_name; }
 		virtual void *lookupSymbol(Firebird::string&) = 0;
 		
