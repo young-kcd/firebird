@@ -1,3 +1,46 @@
+2003-10-03 14:45  dimitr
+
+	* firebird2/src/: utilities/dbaswi.h, jrd/ibase.h, jrd/svc.cpp:
+	
+	Backported SvcAPI gstat fix.
+
+2003-10-03 14:33  dimitr
+
+	* firebird2/src/utilities/: dba.epp, gstat/dba.epp:
+	
+	Corrected gstat version info output.
+
+2003-10-03 14:28  dimitr
+
+	* firebird2/src/jrd/: jrd_pwd.h, pwd.cpp:
+	
+	A few corrections.
+
+2003-10-03 14:19  dimitr
+
+	* firebird2/src/jrd/: jrd_pwd.h, pwd.cpp:
+	
+	Correction in the security database cache code.
+
+2003-10-03 12:36  dimitr
+
+	* firebird2/src/common/config/: config.cpp, config.cpp:
+	
+	Increased a default size of the lock table, after discussion with
+	Nickolay.
+
+2003-10-03 12:14  aafemt
+
+	* firebird2/src/jrd/jrd.h:
+	
+	Only unix superserver uses long jump
+
+2003-10-03 12:04  dimitr
+
+	* firebird2/doc/license/README.license.usage.txt:
+	
+	Added usage rules
+
 2003-10-03 03:59  brodsom
 
 	* firebird2/src/: dsql/alld.cpp, dsql/array_proto.h,
