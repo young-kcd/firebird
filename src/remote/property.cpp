@@ -28,16 +28,16 @@
  *
  */
 
-/* Since it's a Win32-only file, we might as well assert it*/
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__WIN32__)
-#error This is a Win32 only file.
-#endif
-
 #include "firebird.h"
 #include <windows.h>
 #include <shellapi.h>
 #include <prsht.h>
 #include <dbt.h>
+
+/* Since it's a Win32-only file, we might as well assert it*/
+#if !defined(WIN_NT)
+#error This is a Win32 only file.
+#endif
 
 #define BOOLEAN_DEFINED
 #define MSG_DEFINED

@@ -70,7 +70,7 @@
 
 #define FAR_VARIABLE
 
-#ifdef WIN32
+#ifdef WIN_NT
 #define DLL_EXPORT	__declspec(dllexport)
 #else
 #define DLL_EXPORT
@@ -1030,9 +1030,13 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.12 2002-11-06 07:19:00 eku Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.13 2003-01-18 19:50:16 dimitr Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.12  2002/11/06 07:19:00  eku
+//	Do not redefine MAXPATHLEN. Always use the value supplied by the operating
+//	system (header files).
+//	
 //	Revision 1.11  2002/10/31 05:09:27  seanleyne
 //	Removed support for obsolete "MS_DOS" define
 //	
