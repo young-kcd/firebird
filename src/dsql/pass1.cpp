@@ -2749,13 +2749,12 @@ static NOD pass1_coalesce( REQ request, NOD input, USHORT proc_flag)
 	pass1_put_args_on_stack(request, input->nod_arg [1], &stack, proc_flag);
 	node->nod_arg[0] = MAKE_list(stack);
 
-	/* Set describer for output node */
+	/* Set descriptor for output node */
 	MAKE_desc(&node->nod_desc, node);
 
 	/* Set parameter-types if parameters are there */
 	for (ptr = node->nod_arg[0]->nod_arg, end = ptr + node->nod_arg[0]->nod_count; 
-	     ptr < end; ptr++)
-	{
+	     ptr < end; ptr++) {
 		set_parameter_type(*ptr, node, FALSE);
 	}
 
@@ -3864,7 +3863,7 @@ static void pass1_put_args_on_stack( REQ request, NOD input, DLLS *stack, USHORT
  **************************************
  *
  * Functional description
- *	Put recursivly non list nodes on stack
+ *	Put recursive non list nodes on the stack
  *
  **************************************/
 	NOD	*ptr, *end;
@@ -3872,14 +3871,12 @@ static void pass1_put_args_on_stack( REQ request, NOD input, DLLS *stack, USHORT
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	if (input->nod_type != nod_list)
-	{
+	if (input->nod_type != nod_list) {
 		LLS_PUSH(PASS1_node(request, input, proc_flag), stack);
 		return;
 	}
 
-	for (ptr = input->nod_arg, end = ptr + input->nod_count; ptr < end; ptr++)
-	{
+	for (ptr = input->nod_arg, end = ptr + input->nod_count; ptr < end; ptr++) {
 		pass1_put_args_on_stack(request, *ptr, stack, proc_flag);
 	}
 }
@@ -4421,8 +4418,7 @@ static NOD pass1_searched_case( REQ request, NOD input, USHORT proc_flag)
 
 	/* build boolean-expression list */
 	stack = NULL;
-	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++,ptr++)
-	{
+	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++,ptr++) {
 		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
 	}
 	node->nod_arg[e_searched_case_search_conditions] = MAKE_list(stack);
@@ -4430,8 +4426,7 @@ static NOD pass1_searched_case( REQ request, NOD input, USHORT proc_flag)
 	/* build when_result list including else_result at the end */
 	/* else_result is included for easy handling in MAKE_desc() */
 	stack = NULL;
-	for (ptr = list->nod_arg, end = ptr + list->nod_count, ptr++; ptr < end; ptr++,ptr++)
-	{
+	for (ptr = list->nod_arg, end = ptr + list->nod_count, ptr++; ptr < end; ptr++,ptr++) {
 		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
 	}
 	pass1_put_args_on_stack(request, input->nod_arg[1], &stack, proc_flag);
@@ -4443,8 +4438,7 @@ static NOD pass1_searched_case( REQ request, NOD input, USHORT proc_flag)
 	/* Set parameter-types if parameters are there */
 	for (ptr = node->nod_arg[e_searched_case_search_conditions]->nod_arg, 
 		 end = ptr + node->nod_arg[e_searched_case_search_conditions]->nod_count; 
-		 ptr < end; ptr++)
-	{
+		 ptr < end; ptr++) {
 		set_parameter_type(*ptr, node, FALSE);
 	}
 
@@ -4530,15 +4524,17 @@ static NOD pass1_simple_case( REQ request, NOD input, USHORT proc_flag)
 
 	/* build when_operand list */
 	stack = NULL;
-	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++,ptr++)
+	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++,ptr++) {
 		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
+	}
 	node->nod_arg[e_simple_case_when_operands] = MAKE_list(stack);
 
 	/* build when_result list including else_result at the end */
 	/* else_result is included for easy handling in MAKE_desc() */
 	stack = NULL;
-	for (ptr = list->nod_arg, end = ptr + list->nod_count, ptr++; ptr < end; ptr++,ptr++)
+	for (ptr = list->nod_arg, end = ptr + list->nod_count, ptr++; ptr < end; ptr++,ptr++) {
 		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
+	}
 	pass1_put_args_on_stack(request, input->nod_arg [2], &stack, proc_flag);
 	node->nod_arg[e_simple_case_results] = MAKE_list(stack);
 
@@ -4549,8 +4545,9 @@ static NOD pass1_simple_case( REQ request, NOD input, USHORT proc_flag)
 	node1 = MAKE_node(nod_list, list->nod_count + 1);
 	i = 0;
 	node1->nod_arg[i++] = node->nod_arg[e_simple_case_case_operand];
-	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++, i++)
+	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++, i++) {
 		node1->nod_arg[i] = *ptr;
+	}
 	MAKE_desc_from_list(&node1->nod_desc, node1);
 	/* Set parameter describe information */
 	set_parameter_type(node->nod_arg[e_simple_case_case_operand], node1, FALSE);
