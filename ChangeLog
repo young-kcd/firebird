@@ -1,3 +1,39 @@
+2005-04-04 14:57  kkuznetsov
+
+	* firebird2/src/remote/protocol.cpp (1.49):
+	
+	Temporally block assertion on Solaris platform to go testing
+
+2005-04-04 14:53  kkuznetsov
+
+	* firebird2/: src/remote/inet.cpp (1.141),
+	src/common/config/config.cpp (1.61),
+	builds/install/misc/firebird.conf (1.15):
+	
+	Allow setting TCP_NODELAY socket option in Classic Server and make
+	if default true on both arhitecture.
+
+2005-04-04 10:33  robocop
+
+	* firebird2/src/isql/: extract.epp (1.56), show.epp (1.69):
+	
+	This is my first attempt in four years to fix the nonsense code I
+	wrote for grants extraction in FB1.
+
+2005-04-04 10:31  robocop
+
+	* firebird2/src/isql/isql.epp (1.139):
+	
+	Isql shouldn't try to connect twice when extracting metadata, since
+	the second attempt may produce a confusing message (the db name has
+	been made null at this time).
+
+2005-04-04 10:29  robocop
+
+	* firebird2/src/jrd/isc_file.cpp (1.94):
+	
+	A better fix.
+
 2005-04-03 12:09  robocop
 
 	* firebird2/src/jrd/isc_file.cpp (1.93):
