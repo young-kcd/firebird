@@ -7150,11 +7150,6 @@
 			path = dba.epp;
 			refType = 4;
 		};
-		F616C8D00200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = dba_full.epp;
-			refType = 4;
-		};
 		F616C8D10200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = dbaswi.h;
