@@ -4023,7 +4023,7 @@ static void delete_exception (dsql_req*     request,
  **************************************/
     const dsql_str* string = (dsql_str*) node->nod_arg[0];
     fb_assert(string);
-    if (node->nod_type == nod_redef_procedure || silent_deletion) {
+    if (node->nod_type == nod_redef_exception || silent_deletion) {
         if (!METD_get_exception(request, string)) {
                 return;
         }
