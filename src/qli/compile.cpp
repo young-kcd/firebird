@@ -672,18 +672,17 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
 		return compile_field(node, request, internal_flag);
 
 	case nod_variable:
-		field = (QLI_FLD) node->nod_arg[e_fld_field];
+		field = (qli_fld*) node->nod_arg[e_fld_field];
 		node->nod_desc.dsc_address = field->fld_data;
-#ifdef PYXIS
-	case nod_form_field:
 		make_descriptor(node, &node->nod_desc);
-		if (internal_flag) {
+		if (internal_flag)
+		{
 			node->nod_export = parm = make_parameter(request->req_send, node);
 			parm->par_value = node;
 			parm->par_desc = node->nod_desc;
 		}
 		return node;
-#endif
+
 	case nod_upcase:
 		value = node->nod_arg[0];
 		node->nod_arg[0] = compile_field(value, request, internal_flag);
