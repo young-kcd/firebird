@@ -165,7 +165,9 @@ static BOOLEAN send_packet(PORT, PACKET *, ISC_STATUS *);
 #ifdef NOT_USED_OR_REPLACED
 static BOOLEAN send_partial_packet(PORT, PACKET *, ISC_STATUS *);
 #endif
+#ifdef MULTI_THREAD
 static void server_death(PORT);
+#endif
 static void stuff_vax_integer(UCHAR *, SLONG, USHORT);
 static ISC_STATUS svcstart(ISC_STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *);
 static ISC_STATUS unsupported(ISC_STATUS *);
@@ -7152,7 +7154,7 @@ static void send_cancel_event(RVNT event)
 	if (event->rvnt_id)
 	{
 		THREAD_EXIT;
-		(*event->rvnt_ast)(event->rvnt_arg, (SSHORT) 0, (UCHAR*) NULL);
+		(*event->rvnt_ast)(event->rvnt_arg, (SSHORT) 0, NULL);
 		THREAD_ENTER;
 		event->rvnt_id = 0;
 	}
@@ -7254,7 +7256,7 @@ static void server_death(PORT port)
 			if (event->rvnt_id)
 			{
 				THREAD_EXIT;
-				(*event->rvnt_ast) (event->rvnt_arg, (SSHORT) 0, (UCHAR *) NULL);
+				(*event->rvnt_ast) (event->rvnt_arg, (SSHORT) 0, NULL);
 				THREAD_ENTER;
 				event->rvnt_id = 0;
 			}
