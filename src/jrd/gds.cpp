@@ -97,6 +97,9 @@
 
 #endif /* VMS */
 
+
+#include "fbutil/FirebirdConfig.h"
+
 /* Turn on V4 mutex protection for gds__alloc/free */
 
 #ifdef WIN_NT
@@ -608,7 +611,7 @@ static const UCHAR
 	rid[]		= { op_word, op_byte, op_line, 0},
 	rid2[]		= { op_word, op_byte, op_literal, op_pad, op_byte, op_line, 0},
 	union_ops[] = { op_byte, op_byte, op_line, op_union, 0},
-	map[]		= { op_word, op_line, op_map, 0},
+    map[]  	    = { op_word, op_line, op_map, 0},
 	function[]	= { op_byte, op_literal, op_byte, op_line, op_args, 0},
 	gen_id[]	= { op_byte, op_literal, op_line, op_verb, 0},
 	declare[]	= { op_word, op_dtype, op_line, 0},
@@ -2368,7 +2371,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, TEXT * passed_string)
 
 
 #ifndef VMS
-void API_ROUTINE gds__prefix(TEXT * string, TEXT * root)
+void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
 {
 /**************************************
  *
@@ -2388,15 +2391,13 @@ void API_ROUTINE gds__prefix(TEXT * string, TEXT * root)
 	CFStringRef     msgFilePath;
 	#endif      
 
-	string[0] = 0;
+	resultString[0] = 0;
 
 	if (ib_prefix == NULL) {
-		if ( !(ib_prefix = getenv(ISC_ENV)) || ib_prefix[0] == 0)
-		{
+		if ( !(ib_prefix = getenv(ISC_ENV)) || ib_prefix[0] == 0) {
 #if defined(WIN_NT)
 			ib_prefix = ib_prefix_val;
-			if (ISC_get_registry_var("RootDirectory", ib_prefix, MAXPATHLEN, 0) != -1)
-			{
+			if (ISC_get_registry_var("RootDirectory", ib_prefix, MAXPATHLEN, 0) != -1) {
 				TEXT *p = ib_prefix + strlen(ib_prefix);
 				if (p != ib_prefix)
 					if (p[-1] == '\\')
@@ -2436,19 +2437,33 @@ void API_ROUTINE gds__prefix(TEXT * string, TEXT * root)
 			else
 #endif
 			{
-				ib_prefix = ISC_PREFIX;
-				strcat(ib_prefix_val, ib_prefix);
-			}
+              // Try and get value from config file.
+              const string regPrefix = FirebirdConfig::getSysString("RootDirectory");
+              int len = regPrefix.length();
+              if ( len > 0) {
+                  if (len > sizeof(ib_prefix_val)) {
+                      ib_perror("ib_prefix path size too large - truncated");                      
+                  }
+                  strncpy(ib_prefix_val, regPrefix.c_str(), sizeof(ib_prefix_val) -1);
+                  ib_prefix_val[sizeof(ib_prefix_val) -1] = 0;
+                  ib_prefix = ib_prefix_val;
+              }
+              else {
+				  ib_prefix = ISC_PREFIX;
+				  strcat(ib_prefix_val, ib_prefix);
+              }
+            }
 #endif
 			ib_prefix = ib_prefix_val;
 		}
 	}
-	strcat(string, ib_prefix);
+	strcat(resultString, ib_prefix);
+
 #ifndef NETWARE_386
-	if (string[strlen(string) - 1] != '/')
-		strcat(string, "/");
+	if (resultString[strlen(resultString) - 1] != '/')
+		strcat(resultString, "/");
 #endif
-	strcat(string, root);
+	strcat(resultString, root);
 }
 #endif /* !defined(VMS) */
 

@@ -24,7 +24,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc.cpp,v 1.3 2001-07-29 17:42:22 skywalker Exp $
+$Id: isc.cpp,v 1.4 2001-08-20 08:15:33 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -782,6 +782,7 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 #if !defined(WIN_NT)	// implemented in isc_win32.cpp
 #ifdef PC_PLATFORM
 #ifndef NETWARE_386
+
 int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 									  int*	id,
 									  int*	group,
@@ -897,6 +898,8 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 
 	return (euid == 0);
 }
+
+
 #endif
 
 

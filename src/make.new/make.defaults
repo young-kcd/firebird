@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.7 2001-08-13 08:14:38 skywalker Exp $
+#   $Id: make.defaults,v 1.8 2001-08-20 08:15:33 skywalker Exp $
 # 
 
 
@@ -89,7 +89,9 @@ LIBGDS_A = $(LIB)/libgds.a
 ifdef UseSharedLibraries   
     LIBGDS_LA = $(LIBGDS_SO)
     LIBGDS_DEP =
-    LIBGDS_LINK = $(LIBGDS_SO)
+#    LIBGDS_LINK = $(LIBGDS_SO)
+    LIBGDS_LINK =
+    LINK_LIBS := -L$(LIB) -lgds $(LINK_LIBS)
 else
     LIBGDS_LA = $(LIBGDS_A)
     LIBGDS_DEP = $(LIBGDS_LA)

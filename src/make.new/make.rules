@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.rules,v 1.7 2001-08-14 17:41:39 skywalker Exp $
+#   $Id: make.rules,v 1.8 2001-08-20 08:15:33 skywalker Exp $
 # 
 
 #____________________________________________________________________________
@@ -121,8 +121,8 @@ else
 
     LIB_LINK= ld -shared 
     STATICLIB_LINK= ar cruvs 
-#    LIB_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib
-    LIB_LINK_OPTIONS =
+    LIB_LINK_OPTIONS = -soname libgds.so.2 -rpath /usr/lib
+#    LIB_LINK_OPTIONS =
 
     EXE_LINK = @CC@
     STATICEXE_LINK = @CXX@

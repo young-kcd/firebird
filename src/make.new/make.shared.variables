@@ -133,7 +133,7 @@ SECURITY_SharedObjects = $(SECURITY_Objects:.o=.lo)
 #
 # fbutil
 
-FBUTIL_Sources=FirebirdConfig.cpp
+FBUTIL_Sources=FirebirdConfig.cpp FirebirdConfigFile.cpp
 
 FBUTIL_Objects = $(FBUTIL_Sources:%.cpp=$(GEN_ROOT)/fbutil/%.o)
 FBUTIL_SharedObjects = $(FBUTIL_Objects:.o=.lo)

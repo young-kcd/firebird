@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.firebird,v 1.7 2001-08-15 18:10:36 skywalker Exp $
+#   $Id: Makefile.in.firebird,v 1.8 2001-08-20 08:15:33 skywalker Exp $
 # 
 
 ROOT=..
@@ -40,6 +40,7 @@ include     $(ROOT)/src/make.shared.variables
 
 ISC_USER=	sysdba
 ISC_PASSWORD=	masterkey
+LD_LIBRARY_PATH=/home/odonohue/src/firebird2/gen/firebird/lib
 
 export ISC_USER
 export ISC_PASSWORD
@@ -187,7 +188,7 @@ isc4.gdb: gdef isql 		# build the security database
 phase3: build_alt_use_main jrdlib_main sysdba_user \
 	    gfix gbak gdef msgs isql $(INTL) locks qli inet_server  \
         gsplit gstat gds_relay gsec gds_drop gpre \
-	    extlib msgs_intl includes examples
+	    extlib msgs_intl includes examples otherfiles
 
 build_alt_use_main:		# alter header file so jrd/alt.cpp DOES use security.
 	$(MAKE) -C jrd $@   # alter utilities to build the security objects
@@ -234,6 +235,7 @@ examples: includes
 	$(MAKE) -C v5_examples v5_examples
 
 
+otherfiles: misc_files script_files
 
 
 
@@ -366,6 +368,11 @@ $(BIN)/% :: $(SRC_ROOT)/install/misc/%
 
 install:
 	$(MAKE) -C install $@
+
+
+packages:
+	$(MAKE) -C install $@
+
 
 installclassic:
 	$(SRC_ROOT)/install/classic/CSpreinstall.sh

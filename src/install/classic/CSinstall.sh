@@ -87,26 +87,25 @@
     cp -f $BuildDir/include/ibase.h /usr/include/ibase.h 
     cp -f $BuildDir/include/ib_util.h /usr/include/ib_util.h 
 
-    cp $BuildDir/include/gds.f $DestDir/include 
-    cp $BuildDir/include/gds.hxx $DestDir/include 
+#    cp $BuildDir/include/gds.f $DestDir/include 
+#    cp $BuildDir/include/gds.hxx $DestDir/include 
     cp $BuildDir/include/*.h $DestDir/include 
 
-    cp -f $BuildDir/lib/gds.so /usr/lib/libgds.so.0 
+    cp -f $BuildDir/lib/libgds.so /usr/lib/libgds.so.0 
     if [ -L /usr/lib/libgds.so ]
       then
         rm -f /usr/lib/libgds.so
     fi
     ln -s libgds.so.0 /usr/lib/libgds.so
 
-    cp -f $BuildDir/lib/gds.a /usr/lib/libgds.a 
+#    cp -f $BuildDir/lib/gds.a /usr/lib/libgds.a 
     cp -f $BuildDir/lib/ib_util.so /usr/lib/libib_util.so 
 
 
     cp $BuildDir/intl/libgdsintl.so $DestDir/intl/
-    cp $BuildDir/UDF/ib_udf $DestDir/UDF/ib_udf 
+    cp $BuildDir/UDF/ib_udf.so $DestDir/UDF/
 
-    cp $BuildDir/services.isc $DestDir/services.isc
-    cp $BuildDir/README $DestDir/README
+#    cp $BuildDir/README $DestDir/README
 
     cp $BuildDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
 
