@@ -811,6 +811,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 	IDX_E result = idx_e_ok;
 	index_desc::idx_repeat* tail = idx->idx_rpt;
+	key->key_flags = 0;
 
 	try {
 
@@ -1180,6 +1181,8 @@ void BTR_make_key(thread_db* tdbb,
 	fb_assert(idx != NULL);
 	fb_assert(exprs != NULL);
 	fb_assert(key != NULL);
+
+	key->key_flags = 0;
 
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 
@@ -2326,6 +2329,7 @@ static void copy_key(const temporary_key* in, temporary_key* out)
  **************************************/
 
 	out->key_length = in->key_length;
+	out->key_flags = in->key_flags;
 	memcpy(out->key_data, in->key_data, in->key_length);
 }
 
