@@ -1,3 +1,16 @@
+2003-01-27 12:46  dimitr
+
+	* firebird2/src/: common/classes/alloc.cpp, common/classes/alloc.h,
+	jrd/inf.cpp:
+	
+	Fixed linkage issues on win32.
+
+2003-01-27 11:54  brodsom
+
+	* firebird2/src/intl/depends.mak:
+	
+	Patch cv_narrow.o depends
+
 2003-01-26 19:12  fsg
 
 	* firebird2/builds/posix/Makefile.in.intl:
