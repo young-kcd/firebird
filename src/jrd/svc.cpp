@@ -2046,11 +2046,9 @@ void SVC_read_ib_log(SVC service)
  **************************************/
 	IB_FILE *file;
 	TEXT name[MAXPATHLEN], buffer[100];
-	BOOLEAN svc_started = FALSE;
+	bool svc_started = false;
 #ifdef SUPERSERVER
-	ISC_STATUS *status;
-
-	status = service->svc_status;
+	ISC_STATUS *status = service->svc_status;
 	*status++ = isc_arg_gds;
 #endif
 
@@ -2061,7 +2059,7 @@ void SVC_read_ib_log(SVC service)
 		*status++ = isc_arg_end;
 #endif
 		SVC_STARTED(service);
-		svc_started = TRUE;
+		svc_started = true;
 		while (!ib_feof(file) && !ib_ferror(file)) {
 			ib_fgets(buffer, sizeof(buffer), file);
 #ifdef SUPERSERVER
@@ -2086,7 +2084,9 @@ void SVC_read_ib_log(SVC service)
 		*status++ = isc_arg_end;
 #endif
 		if (!svc_started)
+		{
 			SVC_STARTED(service);
+		}
 	}
 
 	if (file)
