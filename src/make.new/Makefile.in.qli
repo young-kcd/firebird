@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.qli,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.qli,v 1.2 2001-08-01 08:11:52 skywalker Exp $
 # 
 
 ROOT=../..
@@ -38,6 +38,20 @@ include     $(ROOT)/src/make.shared.variables
 
 @SET_MAKE@
 
+
+QLI_Sources=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
+		expand.cpp exe.cpp noform.cpp format.cpp gener.cpp help.cpp \
+		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
+		report.cpp show.cpp
+
+QLI_Objects = $(QLI_Sources:%.cpp=$(OBJ)/%.o)
+
+AllObjects = $(QLI_Objects) 
+
+Dependencies = $(AllObjects:.o=.d)
+
+
+
 .PHONY: allx qli
 
 
@@ -47,14 +61,9 @@ allx:	qli   # allx is used since there is a local all.cpp file.
 # qli
 #
 #
-
-QLI_OBJECTS=	all.o command.o compile.o dtr.o err.o eval.o expand.o exe.o \
-	    noform.o format.o gener.o help.o hsh.o lex.o meta.o \
-		mov.o parse.o picstr.o proc.o report.o show.o
-
 qli : $(QLI)
 
-$(QLI): $(QLI_OBJECTS) $(LIBGDS_LA)
+$(QLI): $(QLI_Objects) $(LIBGDS_LA)
 	$(CXX) $(LINK_OPTS) $^ -o $@  $(LINK_LIBS)
 	$(CHMOD_S7) $@
 
@@ -66,10 +75,9 @@ $(QLI): $(QLI_OBJECTS) $(LIBGDS_LA)
 # need to be rebuilt here.
 
 
-meta.cpp:	yachts.lnk meta.epp
-proc.cpp:	yachts.lnk proc.epp
-show.cpp:	yachts.lnk show.epp
-help.cpp:	help.gdb help.epp
+# These need to change to $(GEN_SRC) at some stage
+$(SRC)/meta.cpp $(SRC)/proc.cpp $(SRC)/show.cpp: yachts.lnk 
+$(SRC)/help.cpp:	help.gdb 
 
 
 yachts.lnk:
@@ -79,5 +87,5 @@ help.gdb:
 	ln -fs $(SRC_ROOT)/refDatabases/help.gdb help.gdb
 
 
-
+-include $(Dependencies)
 

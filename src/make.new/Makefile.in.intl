@@ -1,4 +1,3 @@
-
 # 
 #   The contents of this file are subject to the Mozilla Public
 #   License Version 1.1 (the "License"); you may not use this file
@@ -27,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.intl,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.intl,v 1.2 2001-08-01 08:11:52 skywalker Exp $
 # 
 
 ROOT=../..
@@ -39,32 +38,36 @@ include     $(ROOT)/src/make.shared.variables
 
 @SET_MAKE@
 
-INTL_OBJECTS1=	ld.o         cv_narrow.o \
-		cs_narrow.o  lc_ascii.o lc_narrow.o lc_latin1.o lc_dos.o \
-		cs_unicode.o lc_unicode.o \
-		cs_utffss.o \
-		cs_big5.o    cv_big5.o   lc_big5.o \
-		cs_gb2312.o  cv_gb2312.o lc_gb2312.o \
-		cs_jis.o     cv_jis.o    lc_jis.o \
-		cs_ksc.o     cv_ksc.o    lc_ksc.o
+INTL_Sources1=	ld.c         cv_narrow.c \
+		cs_narrow.c  lc_ascii.c lc_narrow.c lc_latin1.c lc_dos.c \
+		cs_unicode.c lc_unicode.c \
+		cs_utffss.c \
+		cs_big5.c    cv_big5.c   lc_big5.c \
+		cs_gb2312.c  cv_gb2312.c lc_gb2312.c \
+		cs_jis.c     cv_jis.c    lc_jis.c \
+		cs_ksc.c     cv_ksc.c    lc_ksc.c
 
-INTL_OBJECTS2=	ld2.o
-INTL_OBJECTS=	$(INTL_OBJECTS1) $(INTL_OBJECTS2)
+INTL_Sources2=	ld2.c
 
+INTL_Objects1 = $(INTL_Sources1:%.c=$(OBJ)/%.o)
+INTL_Objects2 = $(INTL_Sources2:%.c=$(OBJ)/%.o)
 
 # ld2.cpp contains the lookup that is used if the objects are in the same
 # library as the libgds.a (or .so).
 
 
 
-# 
-INTL_P_OBJECTS1=$(INTL_OBJECTS1:%.o=%.lo)
+AllObjects=	$(INTL_Objects1) $(INTL_Objects2)
 
-INTL_DIR = $(INTERBASE)/intl
+Dependencies = $(AllObjects:.o=.d)
+
+
+INTL_DIR = $(FIREBIRD)/intl
+
 
 intl: $(LIBGDSINTL_LA)
 
-$(LIBGDSINTL_LA) : $(INTL_OBJECTS1)
+$(LIBGDSINTL_LA) : $(INTL_Objects1)
 	$(LIB_LINK)  $(LIB_LINK_OPTIONS) -o$(LIBGDSINTL_LA) $(^:.o=.lo)
 
 
@@ -75,3 +78,4 @@ $(LIBGDSINTL_LA) : $(INTL_OBJECTS1)
 # MOD 26-July-2001
 
 
+-include $(Dependencies)

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.burp,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.burp,v 1.2 2001-08-01 08:11:52 skywalker Exp $
 # 
 
 ROOT=../..
@@ -42,19 +42,28 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-BURP_OBJECTS=	backup.o burp.o canonical.o misc.o mvol.o restore.o
-SPIT_OBJECTS=	spit.o
+BURP_Sources=	backup.cpp burp.cpp canonical.cpp misc.cpp mvol.cpp restore.cpp
+SPIT_Sources=	spit.cpp
+
+BURP_Objects = $(BURP_Sources:%.cpp=$(OBJ)/%.o)
+SPIT_Objects = $(SPIT_Sources:%.cpp=$(OBJ)/%.o)
 
 
-.PHONY: gbak_static
+AllObjects = $(BURP_Objects) $(SPIT_Objects)
 
+Dependencies = $(AllObjects:.o=.d)
+
+
+
+.PHONY: gbak_static gbak gsplit
+
+
+all:	gbak_static gbak gsplit
 
 gbak_static : $(BIN)/gbak_static
 
-$(BIN)/gbak_static : $(BURP_OBJECTS) $(LIB)/jrd_static.a  
+$(BIN)/gbak_static : $(BURP_Objects) $(LIB)/jrd_static.a  
 	$(CXX) $(LINK_OPTS) $^ -o $@ $(COREFOUNDATION_LINK) $(LINK_LIBS)
-
-
 
 
 
@@ -66,159 +75,29 @@ $(BIN)/gbak_static : $(BURP_OBJECTS) $(LIB)/jrd_static.a
 
 gbak:   $(BIN)/gbak
 
-$(BIN)/gbak: $(BURP_OBJECTS) $(LIBGDS_LA)
+$(BIN)/gbak: $(BURP_Objects) $(LIBGDS_LA)
 	$(CXX) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
+
 
 gsplit : $(BIN)/gsplit
 
 # be careful of split vs spit here the public name is gsplit the internal
 # one is spit, so be careful the macros have the right name.
 
-$(BIN)/gsplit: $(SPIT_OBJECTS) $(LIBGDS_LA)
+$(BIN)/gsplit: $(SPIT_Objects) $(LIBGDS_LA)
 	$(CXX) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
+
+# These should be changed to GEN_SRC at some point in time.
+
+$(SRC)/restore.cpp $(SRC)/backup.cpp : yachts.lnk
+
+
 yachts.lnk:
-	ln -fs ../refDatabases/empty.gdb yachts.lnk
+	ln -fs $(SRC_ROOT)/refDatabases/empty.gdb yachts.lnk
 
 
-# don't forget spit...
-
-
-all:		burp$(EXEC_EXT) spit$(EXEC_EXT)
-
-# JMB $(JRD_LINK) already in shared library
-burp:		burplib.a $(BURP_REMOTE_LINK) $(GDSSHR)
-	-$(RM) burp
-	$(CXX) $(LINK_OPTS) $(BURP_OBJECTS) $(T_SWITCH) \
-	$(BURP_REMOTE_LINK) -o burp $(GDSSHR_LINK) $(SO_NETWORK_LIB)
-	$(CHMOD_7) burp
-	$(MV) burp $(BURP)
-	$(TOUCH) burp
-	$(CHMOD_6) burp
-
-#burp/gbak_static gbak_static $(OBJS)/firebird/bin/gbak_static: \
-#		$(OBJS)/jrd/jrd_static.a burplib.a
-#	$(CXX) burplib.a $(OBJS)/jrd/jrd_static.a -o gbak_static \
-#		$(COREFOUNDATION_LINK) $(GPRE_STATIC_LINK_OPTS) $(DROP_LINK)
-#	$(MV) gbak_static $(OBJS)/firebird/bin/gbak_static
-
-burp.exe:	burplib.lib $(JRD_LINK) $(BURP_REMOTE_LINK)
-	-$(RM) burp.exe
-	$(CC) $(LINK_OPTS) $(O_EXE_SWITCH)burp \
-	$(BURP_OBJECTS) $(JRD_LINK) $(BURP_REMOTE_LINK) $(GDSSHR_LINK) $(WSOCKLIB)
-	$(MV) burp.exe $(BURP)
-	$(RM) burp.exe
-	$(TOUCH) burp.exe
-
-burplib.a:	$(BURP_OBJECTS) $(JRD_LINK)
-	-$(RM) burplib.a
-	$(AR) burplib.a $(BURP_OBJECTS) $(SCO_OBJS_BURPLIB)
-	-ranlib burplib.a
-	$(CHMOD_6) burplib.a
-
-libgbaklib.a:	burplib.a
-	-$(RM) libgbaklib.a
-	$(CP) burplib.a $(OBJS)/firebird/lib/gbaklib.a
-	$(TOUCH) libgbaklib.a
-	$(CHMOD_6) libgbaklib.a
-
-burplib.lib:	$(BURP_OBJECTS)
-	-$(RM) burplib.lib
-	$(IMPLIB) -out:burplib.lib $(BURP_OBJECTS)
-	$(TOUCH) burplib.lib
-
-#spit:		$(SPIT_OBJECTS)
-#	-$(RM) spit
-#	$(CC) $(LINK_OPTS) $(SPIT_OBJECTS) $(STDIO) -o spit 
-#	$(CHMOD_7) spit
-#	$(MV) spit $(SPIT)
-#	$(TOUCH) spit
-#	$(CHMOD_6) spit
-
-spit.exe:	$(SPIT_OBJECTS)
-	-$(RM) spit.exe
-	$(CC) $(LINK_OPTS) $(O_EXE_SWITCH)spit \
-	$(SPIT_OBJECTS) $(GDSSHR_LINK)
-	$(MV) spit.exe $(SPIT)
-	$(RM) spit.exe
-	$(TOUCH) spit.exe
-
-
-#$(OBJS)/dbs/empty.gdb.dummy:	force
-#	$(CD) $(OBJS)/dbs && $(MAKE) empty.gdb.dummy
-
-debug:		$(BURP_OBJECTS) $(GDSLIB_BACKEND)
-	$(CXX) $(LINK_OPTS) $(CXX_INCLUDE_DIRS) -g $(BURP_OBJECTS) -o burp_dbg $(GDSLIB_LINK)
-
-debug_nt:	$(BURP_OBJECTS)
-	$(CXX) $(DEBUG_LINK_OPTS) $(CXX_INCLUDE_DIRS) $(O_EXE_SWITCH)burp_dbg $(BURP_OBJECTS) $(GDSLIB_LINK)
-
-$(OBJS)/jrd/jrd_static.a:
-	$(CD) $(OBJS)/jrd && $(MAKE) $@
-
-all.o:		all.cpp $(QLI_HEADERS) 
-backup.cpp:	yachts.lnk backup.epp
-backup.o:	backup.cpp burp.h \
-		backu_proto.h burp_proto.h canon_proto.h mvol_proto.h \
-		$(SOURCE)/remote/protocol.h \
-		$(SOURCE)/jrd/align.h
-burp.h:		$(SOURCE)/jrd/dsc.h
-#	$(TOUCH) burp.h
-burp.o:		burp.cpp burp.h \
-		burp_proto.h backu_proto.h mvol_proto.h resto_proto.h \
-		$(SOURCE)/jrd/license.h $(SOURCE)/jrd/why_proto.h
-canonical.o:	canonical.cpp burp.h \
-		canon_proto.h \
-		$(SOURCE)/remote/remote.h $(SOURCE)/jrd/sdl.h $(SOURCE)/jrd/align.h
-spit.o:		spit.cpp spit.h
-misc.o:		misc.cpp burp.h \
-		burp_proto.h misc_proto.h
-mvol.o:		mvol.cpp burp.h \
-		burp_proto.h mvol_proto.h \
-		$(SOURCE)/jrd/gds_proto.h
-restore.cpp:	yachts.lnk restore.epp
-restore.o:	restore.cpp burp.h \
-		burp_proto.h canon_proto.h misc_proto.h mvol_proto.h \
-		resto_proto.h \
-		$(SOURCE)/jrd/align.h $(SOURCE)/jrd/flags.h \
-		$(SOURCE)/jrd/obj.h $(SOURCE)/remote/protocol.h
-
-$(GDSSHR) $(GDSLIB_BACKEND) $(JRD_LINK):
-	$(CD) $(OBJS)/jrd && $(MAKE) ALT_O="alt.o.ps1" ALT_BIN="alt.bin.ps1" SECURITY_MISC="" SECURITY_P_MISC="" CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
-$(REMOTE_LINK) remote_dummy:
-	$(CD) $(OBJS)/remote && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
-
-force:
-
-# This entry is used to programatically update the include file dependencies 
-# for all *.c files in the current directory.
-#
-# Note that it is specific to Solaris by using the -xM1 compiler option.
-# This option has CC generate dependency lines for the makefile - but
-# does not generate object files.
-# It is likely that a similar option exists on other platforms.
-#
-# It is recommended that depends.mak be created on a platform
-# that supports such an option.  depends.mak is not platform dependent, it uses
-# the standard makefile output format, as can be copied to platforms
-# that don't have a -xM1 feature in the c compiler.
-#
-depends.mak:
-	-$(RM) depends.out
-	-$(CC) $(CFLAGS) -xM1 *.c 1>&2 > depends.out
-	-$(RM) depends.mak
-	$(ECHO) "# depends.mak - burp"                           > depends.mak
-	$(ECHO) "# Created by 'make depends.mak'"               >> depends.mak
-	date "+# Created on %Y-%m-%d"                           >> depends.mak
-	sed -e "s:source/[a-z/]*/source:source:g" -e "s:source/burp/::g"\
-		depends.out |sort|uniq >> depends.mak
-	-$(RM) depends.out
-
-# In the event that a platform does not support the make directive "include" - 
-# concatenate "depends.mak" with the makefile.
-#
-#include depends.mak
-
+-include $(Dependencies)

@@ -2204,23 +2204,23 @@ EOF
 esac
 
 case "$target" in
-*-*-darwin*) MAKEFILE_PREFIX=prefix.darwin ; PLATFORM=DARWIN ; cat >> confdefs.h <<\EOF
+*-*-darwin*) MAKEFILE_PREFIX=darwin ; PLATFORM=DARWIN ; cat >> confdefs.h <<\EOF
 #define DARWIN 1
 EOF
 ;;
-*-*-freebsd*) MAKEFILE_PREFIX=prefix.freebsd ; PLATFORM=FREEBSD ; cat >> confdefs.h <<\EOF
+*-*-freebsd*) MAKEFILE_PREFIX=freebsd ; PLATFORM=FREEBSD ; cat >> confdefs.h <<\EOF
 #define FREEBSD 1
 EOF
 ;;
-*-*-linux*) MAKEFILE_PREFIX=prefix.linux ; PLATFORM=LINUX ; cat >> confdefs.h <<\EOF
+*-*-linux*) MAKEFILE_PREFIX=linux ; PLATFORM=LINUX ; cat >> confdefs.h <<\EOF
 #define LINUX 1
 EOF
  ;;
-*-*-netbsd*) MAKEFILE_PREFIX=prefix.netbsd ; PLATFORM=NETBSD ; cat >> confdefs.h <<\EOF
+*-*-netbsd*) MAKEFILE_PREFIX=netbsd ; PLATFORM=NETBSD ; cat >> confdefs.h <<\EOF
 #define NETBSD 1
 EOF
  ;;
-*-*-hpux*) MAKEFILE_PREFIX=prefix.hpux ; PLATFORM=hpux ; cat >> confdefs.h <<\EOF
+*-*-hpux*) MAKEFILE_PREFIX=hpux ; PLATFORM=hpux ; cat >> confdefs.h <<\EOF
 #define hpux 1
 EOF
  ;;
@@ -2363,7 +2363,7 @@ ac_given_srcdir=$srcdir
 trap 'rm -fr `echo "\
 src/make.rules:src/make.new/make.rules \
 src/make.defaults:src/make.new/make.defaults \
-src/make.platform:src/make.new/${MAKEFILE_PREFIX} \
+src/make.platform:src/make.new/prefix.${MAKEFILE_PREFIX} \
 src/make.shared.variables:src/make.new/make.shared.variables \
 src/fbutil/Makefile:src/make.new/Makefile.in.fbutil \
 src/alice/Makefile:src/make.new/Makefile.in.alice \
@@ -2386,6 +2386,7 @@ src/qli/Makefile:src/make.new/Makefile.in.qli \
 src/remote/Makefile:src/make.new/Makefile.in.remote \
 src/utilities/Makefile:src/make.new/Makefile.in.utilities \
 src/wal/Makefile:src/make.new/Makefile.in.wal \
+src/install/Makefile:src/install/Makefile.in:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in \
 src/Makefile:src/make.new/Makefile.in.firebird \
 Makefile:Makefile.in \
  src/include/gen/autoconfig.h:src/make.new/config/config.h.in" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
@@ -2490,7 +2491,7 @@ cat >> $CONFIG_STATUS <<EOF
 CONFIG_FILES=\${CONFIG_FILES-"\
 src/make.rules:src/make.new/make.rules \
 src/make.defaults:src/make.new/make.defaults \
-src/make.platform:src/make.new/${MAKEFILE_PREFIX} \
+src/make.platform:src/make.new/prefix.${MAKEFILE_PREFIX} \
 src/make.shared.variables:src/make.new/make.shared.variables \
 src/fbutil/Makefile:src/make.new/Makefile.in.fbutil \
 src/alice/Makefile:src/make.new/Makefile.in.alice \
@@ -2513,6 +2514,7 @@ src/qli/Makefile:src/make.new/Makefile.in.qli \
 src/remote/Makefile:src/make.new/Makefile.in.remote \
 src/utilities/Makefile:src/make.new/Makefile.in.utilities \
 src/wal/Makefile:src/make.new/Makefile.in.wal \
+src/install/Makefile:src/install/Makefile.in:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in \
 src/Makefile:src/make.new/Makefile.in.firebird \
 Makefile:Makefile.in \
 "}

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.isql,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+#   $Id: Makefile.in.isql,v 1.2 2001-08-01 08:11:52 skywalker Exp $
 # 
 
 ROOT=../..
@@ -50,44 +50,58 @@ unexport ISC_PASSWORD
 all:		isql
 
 
+ISQL_Sources=	extract.cpp isql.cpp show.cpp
 
-ISQL_OBJECTS=	extract.o isql.o show.o
-
-
-isql:   $(BIN)/isql
+ISQL_Objects = $(ISQL_Sources:%.cpp=$(OBJ)/%.o)
 
 
-#$(BIN)/isql: $(ISQL_OBJECTS) $(LIBGDS_LA)
-#	$(LIBTOOL) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
-#	$(CXX) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
-#	$(CHMOD_7) $@
+AllObjects = $(ISQL_Objects)
 
-$(BIN)/isql: $(ISQL_OBJECTS) $(LIBGDS_LA)
+Dependencies = $(AllObjects:.o=.d)
+
+
+all:	isql # muisql
+
+isql:   $(ISQL)
+
+
+
+$(ISQL): $(ISQL_Objects) $(LIBGDS_LA)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
 	$(CHMOD_7) $@
 
 
-extract.cpp:	yachts.lnk extract.epp
+
+# muisql - is a special compile mode for tcs system.
+# it needs special mu library and special compile of isql 
+# I have left all this here in case anyone want it.
+# but it's not part of the main build
+
+muisql: $(MUISQL)
+
+$(MUISQL): $(ISQL_Objects) $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
+	$(CHMOD_7) $@
+
+# Again this wants to change to $(GEN_SRC) directory 
+
+$(SRC)/extract.cpp $(SRC)/isql.cpp $(SRC)/show.cpp :	yachts.lnk
 
 yachts.lnk:	
-	ln -sf ../refDatabases/empty.gdb yachts.lnk
+	ln -sf $(SRC_ROOT)/refDatabases/empty.gdb yachts.lnk
 
 
 
-
-ISQL_LINK_OBJS=	$(ISQL_OBJECTS)
-JRD_LINK=
-
-MUISQL_LINK_OBJS= extract.o muisql.o show.o
-
-
-#isql:		isqllib.a $(ISQL_OBJECTS) $(GDSSHR)
-#	-$(RM) isql
-#	$(CXX) $(LINK_OPTS) $(ISQL_LINK_OBJS) -o isql $(GDSSHR_LINK) -lm
-#	$(CHMOD_7) isql
-#	$(MV) isql $(ISQL)
-#	$(TOUCH) isql
-#	$(CHMOD_6) isql
+#muisql.o:	isql.cpp
+#	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DMU_ISQL $< -o $@
+#
+#
+#ISQL_LINK_OBJS=	$(ISQL_OBJECTS)
+#JRD_LINK=
+#
+#MUISQL_LINK_OBJS= extract.o muisql.o show.o
+#
+#
 
 muisql:		isql muisql.o
 	-$(RM) muisql
@@ -97,11 +111,6 @@ muisql:		isql muisql.o
 	-$(TOUCH) muisql
 	-$(CHMOD_6) muisql
 
-isql.cpp:	yachts.lnk isql.epp
-show.cpp:	yachts.lnk show.epp
 
 
-muisql.o:	isql.cpp
-	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DMU_ISQL $< -o $@
-
-
+-include $(Dependencies)

@@ -28,6 +28,10 @@
 
 #include <stdlib.h>
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
 DATABASE DB = "msg.gdb";
 
 #define FAC_SQL_POSITIVE	14

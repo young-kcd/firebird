@@ -41,11 +41,11 @@ powerpc) AC_DEFINE(PowerPC) ;;
 esac
 
 case "$target" in
-*-*-darwin*) MAKEFILE_PREFIX=prefix.darwin ; PLATFORM=DARWIN ; AC_DEFINE(DARWIN);;
-*-*-freebsd*) MAKEFILE_PREFIX=prefix.freebsd ; PLATFORM=FREEBSD ; AC_DEFINE(FREEBSD);;
-*-*-linux*) MAKEFILE_PREFIX=prefix.linux ; PLATFORM=LINUX ; AC_DEFINE(LINUX) ;;
-*-*-netbsd*) MAKEFILE_PREFIX=prefix.netbsd ; PLATFORM=NETBSD ; AC_DEFINE(NETBSD) ;;
-*-*-hpux*) MAKEFILE_PREFIX=prefix.hpux ; PLATFORM=hpux ; AC_DEFINE(hpux) ;;
+*-*-darwin*) MAKEFILE_PREFIX=darwin ; PLATFORM=DARWIN ; AC_DEFINE(DARWIN);;
+*-*-freebsd*) MAKEFILE_PREFIX=freebsd ; PLATFORM=FREEBSD ; AC_DEFINE(FREEBSD);;
+*-*-linux*) MAKEFILE_PREFIX=linux ; PLATFORM=LINUX ; AC_DEFINE(LINUX) ;;
+*-*-netbsd*) MAKEFILE_PREFIX=netbsd ; PLATFORM=NETBSD ; AC_DEFINE(NETBSD) ;;
+*-*-hpux*) MAKEFILE_PREFIX=hpux ; PLATFORM=hpux ; AC_DEFINE(hpux) ;;
 esac
 
 AC_SUBST(PLATFORM)
@@ -85,7 +85,7 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/help])
 AC_OUTPUT( \
 src/make.rules:src/make.new/make.rules \
 src/make.defaults:src/make.new/make.defaults \
-src/make.platform:src/make.new/${MAKEFILE_PREFIX} \
+src/make.platform:src/make.new/prefix.${MAKEFILE_PREFIX} \
 src/make.shared.variables:src/make.new/make.shared.variables \
 src/fbutil/Makefile:src/make.new/Makefile.in.fbutil \
 src/alice/Makefile:src/make.new/Makefile.in.alice \
@@ -108,6 +108,7 @@ src/qli/Makefile:src/make.new/Makefile.in.qli \
 src/remote/Makefile:src/make.new/Makefile.in.remote \
 src/utilities/Makefile:src/make.new/Makefile.in.utilities \
 src/wal/Makefile:src/make.new/Makefile.in.wal \
+src/install/Makefile:src/install/Makefile.in:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in \
 src/Makefile:src/make.new/Makefile.in.firebird \
 Makefile:Makefile.in \
 )
