@@ -1095,7 +1095,7 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 		case isc_info_svc_dump_pool_info:
 			{
 				char fname[MAXPATHLEN];
-				int length = isc_vax_integer(items, sizeof(USHORT));
+				size_t length = isc_vax_integer(items, sizeof(USHORT));
 				if (length >= sizeof(fname))
 					length = sizeof(fname) - 1; // truncation
 				items += sizeof(USHORT);
@@ -1498,7 +1498,7 @@ void SVC_query(SVC		service,
 		case isc_info_svc_dump_pool_info:
 			{
 				char fname[MAXPATHLEN];
-				int length = isc_vax_integer(items, sizeof(USHORT));
+				size_t length = isc_vax_integer(items, sizeof(USHORT));
 				if (length >= sizeof(fname))
 					length = sizeof(fname) - 1; // truncation
 				items += sizeof(USHORT);
