@@ -166,6 +166,13 @@ SOURCE=..\..\..\src\dsql\pass1.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\dsql\preparse.cpp
+
+!IF  "$(CFG)" == "dsql_server - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "dsql_server - Win32 Release"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
