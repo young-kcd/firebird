@@ -3740,24 +3740,18 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
     @param streams
 
  **/
-static dsql_nod* pass1_expand_select_list(dsql_req* request, dsql_nod* list, dsql_nod* streams)
+static dsql_nod* pass1_expand_select_list(dsql_req* request, dsql_nod* list,
+	dsql_nod* streams)
 {
+	if (!list)
+		list = streams;
+		
 	DsqlNodStack stack;
-	if (list) {
-		dsql_nod** ptr = list->nod_arg;
-		for (const dsql_nod* const* const end = ptr + list->nod_count; 
-			ptr < end; ptr++) 
-		{
-			pass1_expand_select_node(request, *ptr, stack);
-		}
-	}
-	else {
-		dsql_nod** ptr = streams->nod_arg;
-		for (const dsql_nod* const* const end = ptr + streams->nod_count;
-			ptr < end; ptr++)
-		{
-			pass1_expand_select_node(request, *ptr, stack);
-		}
+	dsql_nod** ptr = list->nod_arg;
+	for (const dsql_nod* const* const end = ptr + list->nod_count;
+		ptr < end; ptr++)
+	{
+		pass1_expand_select_node(request, *ptr, stack);
 	}
 	dsql_nod* node = MAKE_list(stack);
 	return node;
@@ -3831,7 +3825,7 @@ static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodS
 	}
 	else if (node->nod_type == nod_field_name) {
 		dsql_nod* select_item = pass1_field(request, node, true, NULL);
-		// The node could be an relation so call recursivly.
+		// The node could be a relation so call recursively.
 		pass1_expand_select_node(request, select_item, stack);
 	}
 	else {
@@ -4710,7 +4704,7 @@ static bool pass1_found_sub_select(const dsql_nod* node)
  	pass1_group_by_list
   
     @brief	Process GROUP BY list, which may contain
-			a ordinal or alias which references to the
+			an ordinal or alias which references the
 			select list. 
 
     @param request
@@ -5069,7 +5063,7 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
   
  	pass1_lookup_alias
   
-    @brief	Lookup an matching item in the select list.
+    @brief	Lookup a matching item in the select list.
 			Return node if found else return NULL.
 			If more matches are found we raise ambiguity error.
 
@@ -6190,7 +6184,7 @@ static dsql_nod* pass1_simple_case( dsql_req* request, dsql_nod* input, bool pro
  	pass1_sort
   
     @brief	Process ORDER BY list, which may contain
-			a ordinal or alias which references to the
+			an ordinal or alias which references the
 			select list.
 
     @param request
