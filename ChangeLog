@@ -1,3 +1,16 @@
+2005-02-01 14:59  kkuznetsov
+
+	* firebird2/doc/README.install.Solaris_on_Intel (1.1.2.3):
+	
+	Document updated for Super Server
+
+2005-02-01 10:01  kkuznetsov
+
+	* firebird2/: configure.in (1.141.2.35), src/utilities/srvrmgr.cpp
+	(1.13.2.6):
+	
+	Last cosmetic changes to Solx86
+
 2005-01-28 17:08  kkuznetsov
 
 	* firebird2/src/install/arch-specific/solx86gcc/SS/prototype.in
