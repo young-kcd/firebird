@@ -112,10 +112,10 @@ typedef struct walc {
 	TEXT *walc_mapfile;
 } *WALC;
 
-static SSHORT check_base_name(STATUS *, TEXT *);
+static SSHORT check_base_name(ISC_STATUS *, TEXT *);
 static void cleanup(void *);
 static void init_group_commit_blocks(GRP_COMMIT *);
-static SSHORT setup_wal_params(STATUS *, TEXT *, USHORT, WALC, SSHORT,
+static SSHORT setup_wal_params(ISC_STATUS *, TEXT *, USHORT, WALC, SSHORT,
 							   UCHAR *);
 static void wals_initialize(WALC, SH_MEM, int);
 
@@ -149,7 +149,7 @@ void WALC_acquire( WAL WAL_handle, WALS * address)
  **************************************/
 	WALS WAL_segment;
 	SLONG length;
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	*address = WAL_segment = WAL_handle->wal_segment;
 	ISC_inhibit();
@@ -199,7 +199,7 @@ void WALC_alarm_handler( EVENT event)
 }
 
 
-SSHORT WALC_bug( STATUS * status_vector, TEXT * dbname, TEXT * string)
+SSHORT WALC_bug( ISC_STATUS * status_vector, TEXT * dbname, TEXT * string)
 {
 /**************************************
  *
@@ -211,7 +211,7 @@ SSHORT WALC_bug( STATUS * status_vector, TEXT * dbname, TEXT * string)
  *	Disasterous WAL bug.  Issue message and abort process.
  *
  **************************************/
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	IBERR_build_status(local_status, gds_wal_bugcheck,
 					   gds_arg_string, dbname,
@@ -308,7 +308,7 @@ SSHORT WALC_check_writer(WAL WAL_handle)
 }
 
 
-void WALC_fini( STATUS * status_vector, WAL * WAL_handle)
+void WALC_fini( ISC_STATUS * status_vector, WAL * WAL_handle)
 {
 /**************************************
  *
@@ -358,7 +358,7 @@ void WALC_fini( STATUS * status_vector, WAL * WAL_handle)
 }
 
 
-SSHORT WALC_init(STATUS * status_vector,
+SSHORT WALC_init(ISC_STATUS * status_vector,
 				 WAL * WAL_handle,
 				 TEXT * dbname,
 				 USHORT db_page_len,
@@ -518,7 +518,7 @@ void WALC_release( WAL WAL_handle)
 }
 
 
-void WALC_save_status_strings( STATUS * vector)
+void WALC_save_status_strings( ISC_STATUS * vector)
 {
 /**************************************
  *
@@ -533,7 +533,7 @@ void WALC_save_status_strings( STATUS * vector)
  *
  **************************************/
 	TEXT *p;
-	STATUS status;
+	ISC_STATUS status;
 	USHORT l;
 
 /* allocate space for failure strings if it hasn't already been allocated */
@@ -563,7 +563,7 @@ void WALC_save_status_strings( STATUS * vector)
 
 			if (wal_failures_ptr + l > wal_failures + WAL_FAILURE_SPACE)
 				wal_failures_ptr = wal_failures;
-			*vector++ = (STATUS) wal_failures_ptr;
+			*vector++ = (ISC_STATUS) wal_failures_ptr;
 			while (l--)
 				*wal_failures_ptr++ = *p++;
 			break;
@@ -616,7 +616,7 @@ void WALC_setup_buffer_block( WALS WAL_segment, WALBLK * wblk, SSHORT ckpt)
 }
 
 
-static SSHORT check_base_name( STATUS * status_vector, TEXT * base_name)
+static SSHORT check_base_name( ISC_STATUS * status_vector, TEXT * base_name)
 {
 /**************************************
  *
@@ -703,7 +703,7 @@ static void init_group_commit_blocks( GRP_COMMIT * grpc_blks)
 
 
 static SSHORT setup_wal_params(
-							   STATUS * status_vector,
+							   ISC_STATUS * status_vector,
 							   TEXT * dbname,
 							   USHORT db_page_len,
 							   WALC wal_args, SSHORT wpb_length, UCHAR * wpb)

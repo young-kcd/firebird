@@ -212,8 +212,8 @@ typedef struct tdba {
 #else
 	IB_FILE *sw_outfile;
 #endif
-	STATUS *dba_status;
-	STATUS dba_status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS *dba_status;
+	ISC_STATUS dba_status_vector[ISC_STATUS_LENGTH];
 } *TDBA;
 
 #ifdef GET_THREAD_DATA
@@ -302,7 +302,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	JMP_BUF env;
 	isc_tr_handle transact1;
 	isc_req_handle request1, request2, request3;
-	STATUS *status_vector;
+	ISC_STATUS *status_vector;
 #if defined (WIN95) && !defined (SUPERSERVER)
 	BOOL fAnsiCP;
 #endif
@@ -824,10 +824,10 @@ int CLIB_ROUTINE main(int argc, char **argv)
 
 		if (status_vector[1])
 		{
-			STATUS *vector;
+			ISC_STATUS *vector;
 			SCHAR s[1024];
 #ifdef SUPERSERVER
-			STATUS *status;
+			ISC_STATUS *status;
 			int i = 0, j;
 
 			status = tddba->dba_service_blk->svc_status;

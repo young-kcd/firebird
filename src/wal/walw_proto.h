@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-extern SSHORT	WALW_writer (STATUS *, struct wal *);
+extern SSHORT	WALW_writer (ISC_STATUS *, struct wal *);
 
 #ifdef __cplusplus
 }	/* extern "C" */

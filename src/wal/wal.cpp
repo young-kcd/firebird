@@ -91,19 +91,19 @@ extern void main_walw(SCHAR **);
 #endif
 
 static SLONG copy_buffer(WALS, WALBLK *, UCHAR *, USHORT, UCHAR *, USHORT);
-static SSHORT fork_writer(STATUS *, WAL);
-static SSHORT grpc_do_group_commit(STATUS *, WAL, SSHORT);
+static SSHORT fork_writer(ISC_STATUS *, WAL);
+static SSHORT grpc_do_group_commit(ISC_STATUS *, WAL, SSHORT);
 static void grpc_finish_group_commit(WAL, SSHORT);
-static SSHORT grpc_wait_for_grouping(STATUS *, WAL, SSHORT);
-static SSHORT grpc_wait_for_group_commit_finish(STATUS *, WAL, SSHORT,
+static SSHORT grpc_wait_for_grouping(ISC_STATUS *, WAL, SSHORT);
+static SSHORT grpc_wait_for_group_commit_finish(ISC_STATUS *, WAL, SSHORT,
 												GRP_COMMIT *);
 static void inform_wal_writer(WAL);
 static SSHORT next_buffer_available(WALS);
 static void setup_buffer_for_writing(WAL, WALS, SSHORT);
-static SSHORT shutdown_writer(STATUS *, WAL, SSHORT);
-static SSHORT sync_with_wal_writer(STATUS *, WAL);
-static SSHORT wait_for_writer(STATUS *, WAL);
-static SSHORT wal_put2(STATUS *, WAL, UCHAR *, USHORT, UCHAR *, USHORT,
+static SSHORT shutdown_writer(ISC_STATUS *, WAL, SSHORT);
+static SSHORT sync_with_wal_writer(ISC_STATUS *, WAL);
+static SSHORT wait_for_writer(ISC_STATUS *, WAL);
+static SSHORT wal_put2(ISC_STATUS *, WAL, UCHAR *, USHORT, UCHAR *, USHORT,
 					   SLONG *, SLONG *, SSHORT);
 
 #ifdef WIN_NT
@@ -129,7 +129,7 @@ extern void _exit();
 #endif
 
 
-SSHORT WAL_attach( STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
+SSHORT WAL_attach( ISC_STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
 {
 /**************************************
  *
@@ -144,7 +144,7 @@ SSHORT WAL_attach( STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
  *
  **************************************/
 	int ret;
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	ret = WALC_init(status_vector, WAL_handle, dbname, 0,
 					NULL, 0L, FALSE, 1L, 0, NULL, FALSE);
@@ -161,7 +161,7 @@ SSHORT WAL_attach( STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
 }
 
 
-SSHORT WAL_checkpoint_finish(STATUS * status_vector,
+SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
 							 WAL WAL_handle,
 							 SLONG * log_seqno,
 							 SCHAR * logname,
@@ -231,7 +231,7 @@ SSHORT WAL_checkpoint_finish(STATUS * status_vector,
 }
 
 
-SSHORT WAL_checkpoint_force(STATUS * status_vector,
+SSHORT WAL_checkpoint_force(ISC_STATUS * status_vector,
 							WAL WAL_handle,
 							SLONG * log_seqno,
 							SCHAR * logname,
@@ -262,7 +262,7 @@ SSHORT WAL_checkpoint_force(STATUS * status_vector,
 }
 
 
-SSHORT WAL_checkpoint_start(STATUS * status_vector,
+SSHORT WAL_checkpoint_start(ISC_STATUS * status_vector,
 							WAL WAL_handle, SSHORT * ckpt_start)
 {
 /**************************************
@@ -292,7 +292,7 @@ SSHORT WAL_checkpoint_start(STATUS * status_vector,
 }
 
 
-SSHORT WAL_checkpoint_recorded(STATUS * status_vector, WAL WAL_handle)
+SSHORT WAL_checkpoint_recorded(ISC_STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
@@ -325,7 +325,7 @@ SSHORT WAL_checkpoint_recorded(STATUS * status_vector, WAL WAL_handle)
 }
 
 
-SSHORT WAL_commit(STATUS * status_vector,
+SSHORT WAL_commit(ISC_STATUS * status_vector,
 				  WAL WAL_handle,
 				  UCHAR * commit_logrec,
 				  USHORT len, SLONG * log_seqno, SLONG * log_offset)
@@ -412,7 +412,7 @@ SSHORT WAL_commit(STATUS * status_vector,
 }
 
 
-void WAL_fini( STATUS * status_vector, WAL * WAL_handle)
+void WAL_fini( ISC_STATUS * status_vector, WAL * WAL_handle)
 {
 /**************************************
  *
@@ -430,7 +430,7 @@ void WAL_fini( STATUS * status_vector, WAL * WAL_handle)
 
 
 SSHORT WAL_flush(
-				 STATUS * status_vector,
+				 ISC_STATUS * status_vector,
 				 WAL WAL_handle,
 				 SLONG * log_seqno, SLONG * log_offset, BOOLEAN conditional)
 {
@@ -518,7 +518,7 @@ SSHORT WAL_flush(
 }
 
 
-SSHORT WAL_init(STATUS * status_vector,
+SSHORT WAL_init(ISC_STATUS * status_vector,
 				WAL * WAL_handle,
 				SCHAR * dbname,
 				USHORT db_page_len,
@@ -548,7 +548,7 @@ SSHORT WAL_init(STATUS * status_vector,
  *
  **************************************/
 	SSHORT ret;
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	ret = WALC_init(status_vector,
 					WAL_handle,
@@ -568,7 +568,7 @@ SSHORT WAL_init(STATUS * status_vector,
 }
 
 
-SSHORT WAL_journal_disable(STATUS * status_vector, WAL WAL_handle)
+SSHORT WAL_journal_disable(ISC_STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
@@ -612,7 +612,7 @@ SSHORT WAL_journal_disable(STATUS * status_vector, WAL WAL_handle)
 }
 
 
-SSHORT WAL_journal_enable(STATUS * status_vector,
+SSHORT WAL_journal_enable(ISC_STATUS * status_vector,
 						  WAL WAL_handle,
 						  SCHAR * jrn_dirname,
 						  USHORT jrn_data_len, SCHAR * jrn_data)
@@ -664,7 +664,7 @@ SSHORT WAL_journal_enable(STATUS * status_vector,
 }
 
 
-SSHORT WAL_put(STATUS * status_vector,
+SSHORT WAL_put(ISC_STATUS * status_vector,
 			   WAL WAL_handle,
 			   UCHAR * logrec1,
 			   USHORT len1,
@@ -704,7 +704,7 @@ SSHORT WAL_put(STATUS * status_vector,
 }
 
 
-BOOLEAN WAL_rollover_happened(STATUS * status_vector,
+BOOLEAN WAL_rollover_happened(ISC_STATUS * status_vector,
 							  WAL WAL_handle,
 							  SLONG * new_seqno,
 							  TEXT * new_logname,
@@ -768,7 +768,7 @@ void WAL_rollover_recorded( WAL WAL_handle)
 
 
 SSHORT WAL_set_checkpoint_length(
-								 STATUS * status_vector,
+								 ISC_STATUS * status_vector,
 								 WAL WAL_handle, SLONG ckpt_length)
 {
 /**************************************
@@ -819,7 +819,7 @@ void WAL_set_cleanup_flag( WAL WAL_handle)
 
 
 SSHORT WAL_set_grpc_wait_time(
-							  STATUS * status_vector,
+							  ISC_STATUS * status_vector,
 							  WAL WAL_handle, SLONG wait_usecs)
 {
 /**************************************
@@ -848,7 +848,7 @@ SSHORT WAL_set_grpc_wait_time(
 }
 
 
-SSHORT WAL_set_rollover_log(STATUS * status_vector,
+SSHORT WAL_set_rollover_log(ISC_STATUS * status_vector,
 							WAL WAL_handle, LGFILE * rollover_log_info)
 {
 /**************************************
@@ -888,7 +888,7 @@ SSHORT WAL_set_rollover_log(STATUS * status_vector,
 }
 
 
-SSHORT WAL_shutdown(STATUS * status_vector,
+SSHORT WAL_shutdown(ISC_STATUS * status_vector,
 					WAL WAL_handle,
 					SLONG * log_seqno,
 					SCHAR * logname,
@@ -922,7 +922,7 @@ SSHORT WAL_shutdown(STATUS * status_vector,
 }
 
 
-SSHORT WAL_shutdown_old_writer(STATUS * status_vector, SCHAR * dbname)
+SSHORT WAL_shutdown_old_writer(ISC_STATUS * status_vector, SCHAR * dbname)
 {
 /**************************************
  *
@@ -943,7 +943,7 @@ SSHORT WAL_shutdown_old_writer(STATUS * status_vector, SCHAR * dbname)
  *
  ************************************/
 	WAL WAL_handle;
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 
 	WAL_handle = NULL;
 
@@ -959,7 +959,7 @@ SSHORT WAL_shutdown_old_writer(STATUS * status_vector, SCHAR * dbname)
 }
 
 
-SSHORT WAL_status(STATUS * status_vector,
+SSHORT WAL_status(ISC_STATUS * status_vector,
 				  WAL WAL_handle,
 				  SLONG * log_seqno,
 				  SCHAR * logname,
@@ -1067,7 +1067,7 @@ static SLONG copy_buffer(
 
 
 #ifdef SUPERSERVER
-static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
+static SSHORT fork_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
@@ -1106,7 +1106,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
 
 
 #ifndef SUPERSERVER
-static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
+static SSHORT fork_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
@@ -1175,7 +1175,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
 
 
 static SSHORT grpc_do_group_commit(
-								   STATUS * status_vector,
+								   ISC_STATUS * status_vector,
 								   WAL WAL_handle, SSHORT grpc_blknum)
 {
 /**************************************
@@ -1251,7 +1251,7 @@ static void grpc_finish_group_commit( WAL WAL_handle, SSHORT grpc_blknum)
 
 
 static SSHORT grpc_wait_for_grouping(
-									 STATUS * status_vector,
+									 ISC_STATUS * status_vector,
 									 WAL WAL_handle, SSHORT grpc_blknum)
 {
 /**************************************
@@ -1332,7 +1332,7 @@ static SSHORT grpc_wait_for_grouping(
 
 
 static SSHORT grpc_wait_for_group_commit_finish(
-												STATUS * status_vector,
+												ISC_STATUS * status_vector,
 												WAL WAL_handle,
 												SSHORT grpc_blknum,
 GRP_COMMIT * grpc)
@@ -1462,7 +1462,7 @@ static void setup_buffer_for_writing(
 	wblk = WAL_BLOCK(CUR_BUF);
 	if (wblk->walblk_cur_offset <= BLK_HDROVHD) {
 		WALC_release(WAL_handle);
-		WALC_bug((STATUS *) NULL, WAL_handle->wal_dbname,
+		WALC_bug((ISC_STATUS *) NULL, WAL_handle->wal_dbname,
 				 "An empty WAL buffer submitted for writing");
 	}
 
@@ -1473,7 +1473,7 @@ static void setup_buffer_for_writing(
 
 
 static SSHORT shutdown_writer(
-							  STATUS * status_vector,
+							  ISC_STATUS * status_vector,
 							  WAL WAL_handle, SSHORT inform_close_to_jserver)
 {
 /**************************************
@@ -1514,7 +1514,7 @@ static SSHORT shutdown_writer(
 }
 
 
-static SSHORT sync_with_wal_writer( STATUS * status_vector, WAL WAL_handle)
+static SSHORT sync_with_wal_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
@@ -1556,7 +1556,7 @@ static SSHORT sync_with_wal_writer( STATUS * status_vector, WAL WAL_handle)
 }
 
 
-static SSHORT wait_for_writer( STATUS * status_vector, WAL WAL_handle)
+static SSHORT wait_for_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
@@ -1600,7 +1600,7 @@ static SSHORT wait_for_writer( STATUS * status_vector, WAL WAL_handle)
 
 
 static SSHORT wal_put2(
-					   STATUS * status_vector,
+					   ISC_STATUS * status_vector,
 					   WAL WAL_handle,
 					   UCHAR * logrec1,
 					   USHORT len1,

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.17 2003-03-02 17:47:22 fsg Exp $
+ * $Id: drop.cpp,v 1.18 2003-04-10 10:38:38 aafemt Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -213,7 +213,7 @@ static void remove_resource(
  * Functional description
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SH_MEM_T shmem_data;
 	SLONG key, shmid, semid;
 	TEXT expanded_filename[MAXPATHLEN];
@@ -286,7 +286,7 @@ static void remove_resource(
  * Functional description
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG length, key, semid;
 	TEXT expanded_filename[MAXPATHLEN];
 	int pid;
@@ -406,7 +406,7 @@ static void shut_manager( TEXT * label)
  *	to releasing shared resources.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG owner_handle;
 
 	if (!(strcmp(label, "lock manager"))) {

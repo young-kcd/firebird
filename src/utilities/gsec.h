@@ -137,8 +137,8 @@ typedef struct tsec {
     struct user_data	*tsec_user_data;
     int			tsec_exit_code;
     jmp_buf*	tsec_env;
-    STATUS		*tsec_status;
-    STATUS		tsec_status_vector[ISC_STATUS_LENGTH];
+    ISC_STATUS		*tsec_status;
+    ISC_STATUS		tsec_status_vector[ISC_STATUS_LENGTH];
     BOOLEAN		tsec_interactive;
     BOOLEAN		tsec_sw_version;
     BOOLEAN		tsec_service_gsec;

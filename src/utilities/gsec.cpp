@@ -64,8 +64,8 @@ struct tsec *gdsec;
 
 int UTIL_gsec(int, char **, OUTPUTPROC, SLONG);
 /* Output reporting utilities */
-void UTIL_print_status(STATUS *);
-void UTIL_error_redirect(STATUS *, USHORT, TEXT *, TEXT *);
+void UTIL_print_status(ISC_STATUS *);
+void UTIL_error_redirect(ISC_STATUS *, USHORT, TEXT *, TEXT *);
 void UTIL_error(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 void UTIL_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 void UTIL_print_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
@@ -180,7 +180,7 @@ int UTIL_gsec(
  *	the specified argc/argv to SECURITY_exec_line (see below).
  *
  **************************************/
-	STATUS *status;
+	ISC_STATUS *status;
 	FRBRD *db_handle = NULL;		/* user info database handle */
 	TEXT user_info_name[MAXPATHLEN], *u;	/* user info database name */
 	SLONG redir_in, redir_out, redir_err;
@@ -365,7 +365,7 @@ int UTIL_gsec(
 	}
 
 	if (db_handle) {
-		STATUS loc_status[ISC_STATUS_LENGTH];
+		ISC_STATUS loc_status[ISC_STATUS_LENGTH];
 		if (isc_detach_database(loc_status, &db_handle))
 			UTIL_error_redirect(loc_status, 0, NULL, NULL);
 	}
@@ -1139,7 +1139,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv, TSEC tdsec)
 	return ret;
 }
 
-void UTIL_print_status( STATUS * status_vector)
+void UTIL_print_status( ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1154,10 +1154,10 @@ void UTIL_print_status( STATUS * status_vector)
  **************************************/
 #ifdef SUPERSERVER
 	TSEC tdsec;
-	STATUS *status;
+	ISC_STATUS *status;
 	int i = 0, j;
 #endif
-	STATUS *vector;
+	ISC_STATUS *vector;
 	SCHAR s[1024];
 
 	if (status_vector) {
@@ -1219,7 +1219,7 @@ static void util_output( const SCHAR * format, ...)
 }
 
 void UTIL_error_redirect(
-						 STATUS * status_vector,
+						 ISC_STATUS * status_vector,
 						 USHORT errcode, TEXT * arg1, TEXT * arg2)
 {
 /**************************************
@@ -1254,7 +1254,7 @@ void UTIL_error(
  **************************************/
 #ifdef SUPERSERVER
 	TSEC tdsec;
-	STATUS *status;
+	ISC_STATUS *status;
 
 	tdsec = GET_THREAD_DATA;
 	status = tdsec->tsec_service_blk->svc_status;

@@ -53,7 +53,7 @@
 extern "C" {
 
 
-void CMD_UTIL_put_svc_status(STATUS* svc_status,
+void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT  facility,
 							 USHORT  errcode,
 							 USHORT arg1_t, const void* arg1,
@@ -73,7 +73,7 @@ void CMD_UTIL_put_svc_status(STATUS* svc_status,
  *
  **************************************/
 
-	STATUS tmp_status[ISC_STATUS_LENGTH], warning_status[ISC_STATUS_LENGTH];
+	ISC_STATUS tmp_status[ISC_STATUS_LENGTH], warning_status[ISC_STATUS_LENGTH];
 	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
 	int warning_count = 0, warning_indx = 0;
 	BOOLEAN duplicate = FALSE;
@@ -81,7 +81,7 @@ void CMD_UTIL_put_svc_status(STATUS* svc_status,
 	/* stuff the status into temp buffer */
 
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
-	STATUS *status = tmp_status;
+	ISC_STATUS *status = tmp_status;
 	*status++ = isc_arg_gds;
 	*status++ = ENCODE_ISC_MSG(errcode, facility);
 	tmp_status_len = 3;
@@ -112,7 +112,7 @@ void CMD_UTIL_put_svc_status(STATUS* svc_status,
 	if (svc_status[0] != gds_arg_gds ||
 		(svc_status[0] == gds_arg_gds && svc_status[1] == 0 &&
 		 svc_status[2] != isc_arg_warning)) {
-		MOVE_FASTER(tmp_status, svc_status, sizeof(STATUS) * tmp_status_len);
+		MOVE_FASTER(tmp_status, svc_status, sizeof(ISC_STATUS) * tmp_status_len);
 	}
 	else {
 		PARSE_STATUS(svc_status, status_len, warning_indx);
@@ -131,7 +131,7 @@ void CMD_UTIL_put_svc_status(STATUS* svc_status,
 				svc_status[i - 1] != isc_arg_warning &&
 				i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 				(memcmp(&svc_status[i], &tmp_status[1],
-						sizeof(STATUS) * (tmp_status_len - 2)) == 0)) {
+						sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0)) {
 				/* duplicate found */
 				duplicate = TRUE;
 				break;
@@ -146,7 +146,7 @@ void CMD_UTIL_put_svc_status(STATUS* svc_status,
 				/* copy current warning(s) to a temp buffer */
 				MOVE_CLEAR(warning_status, sizeof(warning_status));
 				MOVE_FASTER(&svc_status[warning_indx], warning_status,
-							sizeof(STATUS) * (ISC_STATUS_LENGTH -
+							sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH -
 											  warning_indx));
 				PARSE_STATUS(warning_status, warning_count, warning_indx);
 			}
@@ -155,12 +155,12 @@ void CMD_UTIL_put_svc_status(STATUS* svc_status,
 			   and first warning */
 			if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
 				MOVE_FASTER(tmp_status, &svc_status[err_status_len],
-							sizeof(STATUS) * tmp_status_len);
+							sizeof(ISC_STATUS) * tmp_status_len);
 				/* copy current warning(s) to the status_vector */
 				if (warning_count
 					&& i + warning_count - 1 < ISC_STATUS_LENGTH) {
 					MOVE_FASTER(warning_status, &svc_status[i - 1],
-								sizeof(STATUS) * warning_count);
+								sizeof(ISC_STATUS) * warning_count);
 				}
 			}
 		}

@@ -35,11 +35,11 @@
 static void dispose_walr_handle(WALR);
 static SSHORT get_next_logname(WALRS, SCHAR **, SLONG *);
 static SSHORT log_close(WALR);
-static SSHORT log_open(STATUS *, WALRS, SCHAR *, SLONG, SLONG);
-static SSHORT read_next_block(STATUS *, WALRS);
+static SSHORT log_open(ISC_STATUS *, WALRS, SCHAR *, SLONG, SLONG);
+static SSHORT read_next_block(ISC_STATUS *, WALRS);
 
 
-SSHORT WALR_close( STATUS * status_vector, WALRS * WALRS_handle)
+SSHORT WALR_close( ISC_STATUS * status_vector, WALRS * WALRS_handle)
 {
 /**************************************
  *
@@ -63,7 +63,7 @@ SSHORT WALR_close( STATUS * status_vector, WALRS * WALRS_handle)
 }
 
 
-SSHORT WALR_fixup_log_header(STATUS * status_vector, WALRS WALRS_handle)
+SSHORT WALR_fixup_log_header(ISC_STATUS * status_vector, WALRS WALRS_handle)
 {
 /**************************************
  *
@@ -98,7 +98,7 @@ SSHORT WALR_fixup_log_header(STATUS * status_vector, WALRS WALRS_handle)
 }
 
 
-SSHORT WALR_get(STATUS * status_vector,
+SSHORT WALR_get(ISC_STATUS * status_vector,
 				WALRS WALRS_handle,
 				UCHAR * logrec,
 				USHORT * len, SLONG * log_seqno, SLONG * log_offset)
@@ -199,7 +199,7 @@ SSHORT WALR_get_blk_timestamp(WALRS WALRS_handle, SLONG * timestamp)
 }
 
 
-SSHORT WALR_open(STATUS * status_vector,
+SSHORT WALR_open(ISC_STATUS * status_vector,
 				 WALRS * WALRS_handle,
 				 SCHAR * dbname,
 				 int numlogs,
@@ -358,7 +358,7 @@ static SSHORT log_close( WALR WALR_handle)
 
 
 static SSHORT log_open(
-					   STATUS * status_vector,
+					   ISC_STATUS * status_vector,
 					   WALRS WALRS_handle,
 					   SCHAR * logname,
 					   SLONG log_partition_offset, SLONG offset)
@@ -545,7 +545,7 @@ static SSHORT log_open(
 }
 
 
-static SSHORT read_next_block( STATUS * status_vector, WALRS WALRS_handle)
+static SSHORT read_next_block( ISC_STATUS * status_vector, WALRS WALRS_handle)
 {
 /**************************************
  *

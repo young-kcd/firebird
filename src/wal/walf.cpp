@@ -34,7 +34,7 @@
 #include "../jrd/misc_proto.h"
 
 
-SSHORT WALF_delink_log(STATUS * status_vector,
+SSHORT WALF_delink_log(ISC_STATUS * status_vector,
 					   SCHAR * dbname,
 					   SCHAR * logname, SLONG log_partition_offset)
 {
@@ -112,7 +112,7 @@ SSHORT WALF_delink_log(STATUS * status_vector,
 }
 
 
-SSHORT WALF_delink_prev_log(STATUS * status_vector,
+SSHORT WALF_delink_prev_log(ISC_STATUS * status_vector,
 							SCHAR * dbname,
 							SCHAR * logname, SLONG log_partition_offset)
 {
@@ -186,7 +186,7 @@ void WALF_dispose_log_header( WALFH log_header)
 }
 
 
-SSHORT WALF_get_linked_logs_info(STATUS * status_vector,
+SSHORT WALF_get_linked_logs_info(ISC_STATUS * status_vector,
 								 SCHAR * dbname,
 								 SCHAR * starting_logname,
 								 SLONG starting_log_partition_offset,
@@ -269,7 +269,7 @@ SSHORT WALF_get_linked_logs_info(STATUS * status_vector,
 }
 
 
-SSHORT WALF_get_log_info(STATUS * status_vector,
+SSHORT WALF_get_log_info(ISC_STATUS * status_vector,
 						 SCHAR * dbname,
 						 SCHAR * logname,
 						 SLONG log_partition_offset,
@@ -316,7 +316,7 @@ SSHORT WALF_get_log_info(STATUS * status_vector,
 }
 
 
-SSHORT WALF_get_next_log_info(STATUS * status_vector,
+SSHORT WALF_get_next_log_info(ISC_STATUS * status_vector,
 							  SCHAR * dbname,
 							  SCHAR * logname,
 							  SLONG log_partition_offset,
@@ -394,7 +394,7 @@ SSHORT WALF_get_next_log_info(STATUS * status_vector,
 }
 
 
-SSHORT WALF_get_all_next_logs_info(STATUS * status_vector,
+SSHORT WALF_get_all_next_logs_info(ISC_STATUS * status_vector,
 								   SCHAR * dbname,
 								   SCHAR * starting_logname,
 								   SLONG starting_log_partition_offset,
@@ -541,7 +541,7 @@ SSHORT WALF_get_all_next_logs_info(STATUS * status_vector,
 }
 
 
-SSHORT WALF_init_p_log(STATUS * status_vector,
+SSHORT WALF_init_p_log(ISC_STATUS * status_vector,
 					   SCHAR * dbname,
 					   SCHAR * logname, SLONG logsize, SSHORT num_partitions)
 {
@@ -613,7 +613,7 @@ SSHORT WALF_init_p_log(STATUS * status_vector,
 }
 
 
-SSHORT WALF_open_partitioned_log_file(STATUS * status_vector,
+SSHORT WALF_open_partitioned_log_file(ISC_STATUS * status_vector,
 									  SCHAR * dbname,
 									  SCHAR * logname,
 									  P_LOGFH p_log_header, SLONG * p_log_fd)
@@ -669,7 +669,7 @@ SSHORT WALF_open_partitioned_log_file(STATUS * status_vector,
 }
 
 
-SSHORT WALF_open_log_file(STATUS * status_vector,
+SSHORT WALF_open_log_file(ISC_STATUS * status_vector,
 						  SCHAR * dbname,
 						  SCHAR * logname,
 						  SLONG log_partition_offset,
@@ -732,7 +732,7 @@ SSHORT WALF_open_log_file(STATUS * status_vector,
 }
 
 
-SSHORT WALF_set_log_header_flag(STATUS * status_vector,
+SSHORT WALF_set_log_header_flag(ISC_STATUS * status_vector,
 								SCHAR * dbname,
 								SCHAR * logname,
 								SLONG log_partition_offset,
@@ -787,7 +787,7 @@ SSHORT WALF_set_log_header_flag(STATUS * status_vector,
 }
 
 
-SSHORT WALF_update_log_header(STATUS * status_vector,
+SSHORT WALF_update_log_header(ISC_STATUS * status_vector,
 							  SCHAR * logname,
 							  SLONG log_partition_offset,
 							  WALFH log_header, SLONG log_fd)
@@ -829,7 +829,7 @@ SSHORT WALF_update_log_header(STATUS * status_vector,
 }
 
 
-SSHORT WALF_update_partitioned_log_hdr(STATUS * status_vector,
+SSHORT WALF_update_partitioned_log_hdr(ISC_STATUS * status_vector,
 									   SCHAR * logname,
 									   P_LOGFH p_log_header, SLONG p_log_fd)
 {

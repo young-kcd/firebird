@@ -76,11 +76,11 @@ static void do_mem_benchmark(void);
 static void do_sem_benchmark(WAL);
 static SLONG get_tod(void);
 static BOOLEAN get_word(SCHAR *);
-static void partitioned_logfile_create(STATUS *, SCHAR *);
-static void partitioned_logfile_info(STATUS *, SCHAR *);
+static void partitioned_logfile_create(ISC_STATUS *, SCHAR *);
+static void partitioned_logfile_info(ISC_STATUS *, SCHAR *);
 static void print_help(void);
-static SSHORT read_log(STATUS *, SCHAR *, SCHAR *, SLONG);
-static void toggle_debug_msg_flag(STATUS *, WAL);
+static SSHORT read_log(ISC_STATUS *, SCHAR *, SCHAR *, SLONG);
+static void toggle_debug_msg_flag(ISC_STATUS *, WAL);
 
 static ULONG base_seconds;
 
@@ -96,7 +96,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  * Functional description
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	WAL WAL_handle;
 	SCHAR dbname[256];
 	SCHAR local_dbname[256];
@@ -636,7 +636,7 @@ static BOOLEAN get_word( SCHAR * buffer)
 
 
 static void partitioned_logfile_create(
-									   STATUS * status_vector, SCHAR * dbname)
+									   ISC_STATUS * status_vector, SCHAR * dbname)
 {
 /**************************************
  *
@@ -668,7 +668,7 @@ static void partitioned_logfile_create(
 }
 
 
-static void partitioned_logfile_info( STATUS * status_vector, SCHAR * dbname)
+static void partitioned_logfile_info( ISC_STATUS * status_vector, SCHAR * dbname)
 {
 /**************************************
  *
@@ -713,7 +713,7 @@ static void partitioned_logfile_info( STATUS * status_vector, SCHAR * dbname)
 
 
 static SSHORT read_log(
-					   STATUS * status_vector,
+					   ISC_STATUS * status_vector,
 					   SCHAR * dbname,
 					   SCHAR * logname, SLONG log_partition_offset)
 {
@@ -832,7 +832,7 @@ static void print_help(void)
 }
 
 
-static void toggle_debug_msg_flag( STATUS * status_vector, WAL WAL_handle)
+static void toggle_debug_msg_flag( ISC_STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *

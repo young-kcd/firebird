@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-void CMD_UTIL_put_svc_status(STATUS* svc_status,
+void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT  facility,
 							 USHORT  errcode,
 							 USHORT arg1_t, const void* arg1,

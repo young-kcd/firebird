@@ -26,14 +26,14 @@
 
 extern void	WALC_acquire (struct wal *, struct wals **);
 extern void	WALC_alarm_handler (struct event *);
-extern SSHORT	WALC_bug (STATUS *, TEXT *, TEXT *);
+extern SSHORT	WALC_bug (ISC_STATUS *, TEXT *, TEXT *);
 extern void	WALC_build_dbg_filename (TEXT *, TEXT *);
 extern void	WALC_build_logname (TEXT *, TEXT *, SLONG);
 extern SSHORT	WALC_check_writer (struct wal *);
-extern void	WALC_fini (STATUS *, struct wal **);
-extern SSHORT	WALC_init (STATUS *, struct wal **, TEXT *, USHORT, TEXT *, SLONG, SSHORT, SLONG, SSHORT, UCHAR *, USHORT);
+extern void	WALC_fini (ISC_STATUS *, struct wal **);
+extern SSHORT	WALC_init (ISC_STATUS *, struct wal **, TEXT *, USHORT, TEXT *, SLONG, SSHORT, SLONG, SSHORT, UCHAR *, USHORT);
 extern void	WALC_release (struct wal *);
-extern void	WALC_save_status_strings (STATUS *);
+extern void	WALC_save_status_strings (ISC_STATUS *);
 extern void	WALC_setup_buffer_block (struct wals *, struct walblk *, SSHORT);
 
 #endif	/* _WAL_WALC_PROTO_H_ */

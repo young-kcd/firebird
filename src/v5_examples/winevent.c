@@ -71,7 +71,7 @@ typedef struct _EventBlk {
 */
 char            szAppName [] = "Events";
 HINSTANCE       hInstance;
-STATUS          status[ISC_STATUS_LENGTH];
+ISC_STATUS          status[ISC_STATUS_LENGTH];
 
 
 /* 

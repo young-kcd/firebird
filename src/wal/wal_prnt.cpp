@@ -54,7 +54,7 @@ int CLIB_ROUTINE main( int argc, SCHAR ** argv)
  * Functional description
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	WAL WAL_handle;
 	SCHAR dbname[256];
 	int ret;
