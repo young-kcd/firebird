@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ib_udf.sql,v 1.4 2003-02-04 17:27:38 dimitr Exp $
+ * $Id: ib_udf.sql,v 1.5 2004-08-30 15:58:17 skidder Exp $
  * Revision 1.2  2000/11/28 06:47:52  fsg
  * Changed declaration of ascii_char in ib_udf.sql
  * to get correct result as proposed by Claudio Valderrama
@@ -355,15 +355,15 @@ DECLARE EXTERNAL FUNCTION log10
  *	will not work with international and 
  *	non-ascii characters.
  *	Note: This function is NOT limited to
- *	receiving and returning only 80 characters,
+ *	receiving and returning only 255 characters,
  *	rather, it can use as long as 32767 
  * 	characters which is the limit on an 
  *	INTERBASE character string.
  *
  *****************************************/
 DECLARE EXTERNAL FUNCTION lower 
-	CSTRING(80)
-	RETURNS CSTRING(80) FREE_IT
+	CSTRING(255)
+	RETURNS CSTRING(255) FREE_IT
 	ENTRY_POINT 'IB_UDF_lower' MODULE_NAME 'ib_udf';
 
 /*****************************************
@@ -377,15 +377,15 @@ DECLARE EXTERNAL FUNCTION lower
  *	of the input string until length of the result
  *	string becomes equal to the given number.
  *	Note: This function is NOT limited to
- *	receiving and returning only 80 characters,
+ *	receiving and returning only 255 characters,
  *	rather, it can use as long as 32767 
  * 	characters which is the limit on an 
  *	INTERBASE character string.
  *
  *****************************************/
 DECLARE EXTERNAL FUNCTION lpad 
-	CSTRING(80), INTEGER, CSTRING(1)
-	RETURNS CSTRING(80) FREE_IT
+	CSTRING(255), INTEGER, CSTRING(1)
+	RETURNS CSTRING(255) FREE_IT
 	ENTRY_POINT 'IB_UDF_lpad' MODULE_NAME 'ib_udf';
 
 /*****************************************
@@ -398,15 +398,15 @@ DECLARE EXTERNAL FUNCTION lpad
  *	Removes leading spaces from the input
  *	string.
  *	Note: This function is NOT limited to
- *	receiving and returning only 80 characters,
+ *	receiving and returning only 255 characters,
  *	rather, it can use as long as 32767 
  * 	characters which is the limit on an 
  *	INTERBASE character string.
  *
  *****************************************/
 DECLARE EXTERNAL FUNCTION ltrim 
-	CSTRING(80)
-	RETURNS CSTRING(80) FREE_IT
+	CSTRING(255)
+	RETURNS CSTRING(255) FREE_IT
 	ENTRY_POINT 'IB_UDF_ltrim' MODULE_NAME 'ib_udf';
 
 /*****************************************
@@ -467,15 +467,15 @@ DECLARE EXTERNAL FUNCTION rand
  *	of the input string until length of the result
  *	string becomes equal to the given number.
  *	Note: This function is NOT limited to
- *	receiving and returning only 80 characters,
+ *	receiving and returning only 255 characters,
  *	rather, it can use as long as 32767 
  * 	characters which is the limit on an 
  *	INTERBASE character string.
  *
  *****************************************/
 DECLARE EXTERNAL FUNCTION rpad 
-	CSTRING(80), INTEGER, CSTRING(1)
-	RETURNS CSTRING(80) FREE_IT
+	CSTRING(255), INTEGER, CSTRING(1)
+	RETURNS CSTRING(255) FREE_IT
 	ENTRY_POINT 'IB_UDF_rpad' MODULE_NAME 'ib_udf';
 
 /*****************************************
@@ -488,15 +488,15 @@ DECLARE EXTERNAL FUNCTION rpad
  *	Removes trailing spaces from the input
  *	string.
  *	Note: This function is NOT limited to
- *	receiving and returning only 80 characters,
+ *	receiving and returning only 255 characters,
  *	rather, it can use as long as 32767 
  * 	characters which is the limit on an 
  *	INTERBASE character string.
  *
  *****************************************/
 DECLARE EXTERNAL FUNCTION rtrim 
-	CSTRING(80)
-	RETURNS CSTRING(80) FREE_IT
+	CSTRING(255)
+	RETURNS CSTRING(255) FREE_IT
 	ENTRY_POINT 'IB_UDF_rtrim' MODULE_NAME 'ib_udf';
 
 /*****************************************
@@ -582,7 +582,7 @@ DECLARE EXTERNAL FUNCTION sqrt
  *	of s which starts at position m and
  *	ending at position n.
  *	Note: This function is NOT limited to
- *	receiving and returning only 80 characters,
+ *	receiving and returning only 255 characters,
  *	rather, it can use as long as 32767 
  * 	characters which is the limit on an 
  *	INTERBASE character string.
@@ -592,8 +592,8 @@ DECLARE EXTERNAL FUNCTION sqrt
  *
  *****************************************/
 DECLARE EXTERNAL FUNCTION substr 
-	CSTRING(80), SMALLINT, SMALLINT
-	RETURNS CSTRING(80) FREE_IT
+	CSTRING(255), SMALLINT, SMALLINT
+	RETURNS CSTRING(255) FREE_IT
 	ENTRY_POINT 'IB_UDF_substr' MODULE_NAME 'ib_udf';
 
 /*****************************************
@@ -607,15 +607,15 @@ DECLARE EXTERNAL FUNCTION substr
  *	of s which starts at position i and
  *	ends at position i+l-1, being l the length.
  *	Note: This function is NOT limited to
- *	receiving and returning only 80 characters,
+ *	receiving and returning only 255 characters,
  *	rather, it can use as long as 32767 
  * 	characters which is the limit on an 
  *	INTERBASE character string.
  *
  *****************************************/
 DECLARE EXTERNAL FUNCTION substrlen 
-	CSTRING(80), SMALLINT, SMALLINT
-	RETURNS CSTRING(80) FREE_IT
+	CSTRING(255), SMALLINT, SMALLINT
+	RETURNS CSTRING(255) FREE_IT
 	ENTRY_POINT 'IB_UDF_substrlen' MODULE_NAME 'ib_udf';
 
 /*****************************************
