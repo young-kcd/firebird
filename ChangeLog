@@ -1,3 +1,36 @@
+2004-02-24 08:21  skidder
+
+	* firebird2/src/remote/interface.cpp:
+	
+	Make it build after Claudio cleanup
+
+2004-02-24 06:49  robocop
+
+	* firebird2/src/remote/os/win32/dllshell.cpp:
+	
+	Remove dllshell.cpp as the only reference is inside
+	builds\win32\old_makes\ treats it as plain C file, it's a Win16
+	remnant and John doesn't need it either for Mac_os_x.
+
+2004-02-24 06:34  robocop
+
+	* firebird2/src/: alice/alice_meta.epp, burp/backup.epp,
+	burp/restore.epp, dudley/exe.epp, dudley/extract.epp,
+	isql/isql.epp, jrd/constants.h, jrd/dpm.epp, jrd/dsc.h,
+	jrd/entry.h, jrd/evl.cpp, jrd/ext.cpp, jrd/ext_proto.h,
+	jrd/ini.epp, jrd/jrd.cpp, jrd/jrd_proto.h, jrd/met.epp,
+	jrd/why.cpp, jrd/why_proto.h, jrd/os/vms/extvms.cpp,
+	remote/inet.cpp, remote/interface.cpp, remote/protocol.h,
+	remote/remot_proto.h, remote/remote.cpp, remote/remote.h,
+	remote/server.cpp, remote/xnet.cpp, remote/os/win32/chop.cpp,
+	remote/os/win32/cntl.cpp, remote/os/win32/dllshell.cpp,
+	remote/os/win32/property.cpp, remote/os/win32/window.cpp,
+	remote/os/win32/winmain.cpp, remote/os/win32/wnet.cpp,
+	utilities/rebuild/rebuild.cpp:
+	
+	Cleanup Reduce reinterpret and C casts Fix isql so it can show all
+	predefined blob types in readable form.
+
 2004-02-22 12:13  paul_reeves
 
 	* firebird2/: builds/win32/make_all.bat,
