@@ -713,8 +713,6 @@ static void readNextInputLine(const char* prompt)
  *  Otherwise return the line up to EOF (excluded) or '\n' (included)
  **************************************/
 
-	while (true) {
-
 		if (lastInputLine != NULL) {
 			free(lastInputLine);
 			lastInputLine = NULL;
@@ -776,18 +774,6 @@ static void readNextInputLine(const char* prompt)
 			if (lastInputLine != NULL)
 				lastInputLine[pos] = '\0';
 		}
-
-		if (lastInputLine != NULL //&& strlen(lastInputLine) >= 2 redundant
-			&& lastInputLine[0] == '-' && lastInputLine[1] == '-')
-		{
-			if (Interactive || Echo) {
-				fprintf(stdout, "%s\n", lastInputLine);
-				fflush(stdout);
-			}
-		}
-		else
-			break;
-	}
 
 	getColumn = 0;
 
