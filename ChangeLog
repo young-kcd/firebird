@@ -1,3 +1,15 @@
+2004-09-14 18:11  skidder
+
+	* firebird2/builds/install/misc/firebird.init.d.mandrake.in (1.2):
+	
+	Add newline printed after Firebird SS service startup
+
+2004-09-14 03:06  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.11):
+	
+	Little INTL interface changes as discussed with Adriano
+
 2004-09-13 23:06  dimitr
 
 	* firebird2/src/jrd/: cmp.cpp (1.147), met.epp (1.138), opt.cpp
