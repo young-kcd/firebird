@@ -19,6 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.11.21 Claudio Valderrama: Finally solved the mystery of DSQL
+ * not recognizing when a UDF returns NULL. This fixes SF bug #484399.
+ * See case nod_udf in MAKE_desc().
+ * 2001.02.23 Claudio Valderrama: Fix SF bug #518350 with substring()
+ * and text blobs containing charsets other than ASCII/NONE/BINARY.
  */
  
 //This MUST be before any other includes
@@ -371,6 +376,7 @@ void MAKE_desc( DSC * desc, NOD node)
 		return;
 
 	case nod_upcase:
+    case nod_substr:
 		MAKE_desc(&desc1, node->nod_arg[0]);
 		if (desc1.dsc_dtype <= dtype_any_text) {
 			*desc = desc1;
@@ -378,10 +384,36 @@ void MAKE_desc( DSC * desc, NOD node)
 		}
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_scale = 0;
-		desc->dsc_ttype = ttype_ascii;
-		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
-		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
-		return;
+
+        /* Beware that JRD treats substring() always as returning CHAR
+           instead	of VARCHAR for historical reasons. */
+        if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob) {
+            SLONG len = 0;
+            NOD for_node = node->nod_arg [e_substr_length];
+            assert (for_node->nod_desc.dsc_dtype == dtype_long);
+            /* Migrate the charset from the blob to the string. */
+            desc->dsc_ttype = desc1.dsc_scale;
+            len = *(SLONG *) for_node->nod_desc.dsc_address;
+            /* For now, our substring() doesn't handle MBCS blobs,
+               neither at the DSQL layer nor at the JRD layer. */
+            if (len <= (ULONG) MAX_COLUMN_SIZE - sizeof (USHORT) && len >= 0) {
+                desc->dsc_length = sizeof (USHORT) + len;
+            }
+            else {
+                ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -204,
+                           gds_arg_gds, gds__dsql_datatype_err,
+                           gds_arg_gds, gds__imp_exc, 
+                           gds_arg_gds, gds__field_name,
+                           gds_arg_string, "substring()", /* field->fld_name,*/
+                           0);
+            }
+		}
+        else {
+            desc->dsc_ttype = ttype_ascii;
+            desc->dsc_length = sizeof (USHORT) + DSC_string_length (&desc1);
+		}
+        desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
+        return;
 
 	case nod_cast:
 		field = (FLD) node->nod_arg[e_cast_target];
@@ -824,7 +856,11 @@ void MAKE_desc( DSC * desc, NOD node)
 		desc->dsc_dtype = static_cast<UCHAR>(udf->udf_dtype);
 		desc->dsc_length = udf->udf_length;
 		desc->dsc_scale = static_cast<SCHAR>(udf->udf_scale);
-		desc->dsc_flags = 0;
+        /* CVC: Setting flags to zero obviously impeded DSQL to acknowledge
+           the fact that any UDF can return NULL simply returning a NULL 
+           pointer. */
+        desc->dsc_flags = DSC_nullable;
+
 		desc->dsc_ttype = udf->udf_sub_type;
 		return;
 
@@ -845,12 +881,27 @@ void MAKE_desc( DSC * desc, NOD node)
 		node->nod_flags |= NOD_COMP_DIALECT;
 		return;
 
+    case nod_limit:
+        if (node->nod_desc.dsc_scale <= SQL_DIALECT_V5) {
+            desc->dsc_dtype = dtype_long; 
+            desc->dsc_length = sizeof (SLONG);
+        }
+        else {
+            desc->dsc_dtype = dtype_int64; 
+            desc->dsc_length = sizeof (SINT64);
+        }
+        desc->dsc_sub_type = 0;
+        desc->dsc_scale = 0;
+        desc->dsc_flags = 0; /* Can first/skip accept NULL in the future? */
+        return;
+
 	case nod_field:
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 203,
 				  gds_arg_gds, gds_dsql_field_ref, 0);
 		return;
 
 	case nod_user_name:
+    case nod_current_role:
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;

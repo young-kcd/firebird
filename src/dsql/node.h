@@ -19,6 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.6.12 Claudio Valderrama: add break_* constants.
+ * 2001.6.30 Claudio valderrama: Jim Starkey suggested to hold information
+ * about source line in each node that's created.
+ * 2001.07.28 John Bellardo: Added e_rse_limit to nod_rse and nod_limit.
+ * 2001.08.03 John Bellardo: Reordered args to no_sel for new LIMIT syntax
  */
 
 #ifndef _DSQL_NODE_H_
@@ -28,12 +33,12 @@
 
 /* an enumeration of the possible node types in a syntax tree */
 
-typedef ENUM nod_t
+typedef ENUM nod_t 
 {
 	nod_unknown_type = 0,
-	nod_commit = 1,	/* Commands, not executed. */
-	nod_rollback,
-	nod_trans,
+    nod_commit = 1,	/* Commands, not executed. */
+    nod_rollback,
+    nod_trans,
 	nod_prepare,
 	nod_create,
 	nod_define,
@@ -96,7 +101,7 @@ typedef ENUM nod_t
 	nod_open,
 	nod_all,	/* ALL privileges */
 	nod_execute,				/* EXECUTE privilege */
-	nod_for,					/* created in context recognition phase to map to blr */
+    nod_for,					/* created in context recognition phase to map to blr */
 	nod_store,
 	nod_modify,
 	nod_erase,
@@ -294,11 +299,18 @@ typedef ENUM nod_t
 	nod_mod_domain_type,
 	nod_mod_field_name,
 	nod_mod_field_type,
-	nod_mod_field_pos,
-	/* EXECUTE VARCHAR */
-	nod_exec_sql,
-	/* Internal engine info */
-	nod_internal_info
+    nod_mod_field_pos,
+
+    /* CVC: SQL requires that DROP VIEW and DROP table are independent. */
+    nod_del_view,
+    nod_current_role, /* nod_role_name is already taken but only for DDL. */
+    nod_breakleave,
+    nod_redef_relation, /* allows silent creation/overwriting of a relation. */
+    nod_udf_param, /* there should be a way to signal a param by descriptor! */
+    nod_limit, /* limit support */
+    nod_redef_procedure, /* allows silent creation/overwriting of a procedure. */
+	nod_exec_sql, /* EXECUTE VARCHAR */
+	nod_internal_info /* Internal engine info */
 } NOD_TYPE;
 
 
@@ -311,6 +323,8 @@ class nod : public pool_alloc_rpt<class nod*, dsql_type_nod>
 public:
 	NOD_TYPE nod_type;			/* Type of node */
 	DSC nod_desc;				/* Descriptor */
+    USHORT       nod_line;		/* Source line of the statement. */
+    USHORT       nod_column;		/* Source column of the statement. */
 	USHORT nod_count;			/* Number of arguments */
 	USHORT nod_flags;
 	struct nod *nod_arg[1];
@@ -436,7 +450,12 @@ typedef nod *NOD;
 #define e_rse_first	5
 #define e_rse_singleton	6
 #define e_rse_plan	7
-#define e_rse_count	8
+#define e_rse_skip	8
+#define e_rse_count	9
+
+#define e_limit_skip	0	/* nod_limit */
+#define e_limit_length	1
+#define e_limit_count	2
 
 #define e_par_parameter	0		/* nod_parameter */
 #define e_par_count	1
@@ -445,7 +464,9 @@ typedef nod *NOD;
 #define e_flp_into	1
 #define e_flp_cursor	2
 #define e_flp_action	3
-#define e_flp_count	4
+/* CVC: This node added to support basic BREAK functionality */
+#define e_flp_number	4
+#define e_flp_count	5
 
 #define e_cur_name	0			/* nod_cursor */
 #define e_cur_context	1
@@ -470,15 +491,16 @@ typedef nod *NOD;
 #define e_msg_text	1
 #define e_msg_count	2
 
-#define e_sel_distinct	0		/* nod_select_expr */
-#define e_sel_list	1
-#define e_sel_from	2
-#define e_sel_where	3
-#define e_sel_group	4
-#define e_sel_having	5
-#define e_sel_plan	6
-#define e_sel_singleton	7
-#define e_sel_count	8
+#define e_sel_limit	0	/* nod_select_expr */
+#define e_sel_distinct	1
+#define e_sel_list	2
+#define e_sel_from	3
+#define e_sel_where	4
+#define e_sel_group	5
+#define e_sel_having	6
+#define e_sel_plan	7
+#define e_sel_singleton	8
+#define e_sel_count	9
 
 #define e_ins_relation	0		/* nod_insert */
 #define e_ins_fields	1
@@ -734,9 +756,9 @@ typedef nod *NOD;
 
 /* SQL extract() function */
 
+#define e_extract_part  0	/* constant representing part to extract */
+#define e_extract_value	1	/* Must be a time or date value */
 #define e_extract_count	2
-#define e_extract_part  0		/* constant representing part to extract */
-#define e_extract_value	1		/* Must be a time or date value */
 
 /* SQL CURRENT_TIME, CURRENT_DATE, CURRENT_TIMESTAMP */
 
@@ -762,5 +784,20 @@ typedef nod *NOD;
 #define e_mod_fld_pos_orig_name		0	/* nod_mod_field_position */
 #define e_mod_fld_pos_new_position	1
 #define e_mod_fld_pos_count		2
+
+/* CVC: blr_leave used to emulate break */
+#define e_break_number	0	/* nod_breakleave */
+#define e_break_count	1
+
+/* SQL substring() function */
+
+#define e_substr_value	0	/* Anything that can be treated as a string */
+#define e_substr_start	1	/* Where the slice starts */
+#define e_substr_length	2	/* The length of the slice */
+#define e_substr_count	3
+
+#define e_udf_param_field	0
+#define e_udf_param_type	1 /* Basically, by_reference or by_descriptor */
+#define e_udf_param_count	2
 
 #endif /* _DSQL_NODE_H_ */

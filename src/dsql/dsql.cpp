@@ -23,9 +23,13 @@
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
  * December 2001 Mike Nordell: Major overhaul to (try to) make it C++
+ * 2001.6.3 Claudio Valderrama: fixed a bad behaved loop in get_plan_info()
+ * and get_rsb_item() that caused a crash when plan info was requested.
+ * 2001.6.9 Claudio Valderrama: Added nod_del_view, nod_current_role and nod_breakleave.
+ *
  */
 /*
-$Id: dsql.cpp,v 1.14 2002-06-28 13:49:47 dimitr Exp $
+$Id: dsql.cpp,v 1.15 2002-06-29 06:56:51 skywalker Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -1306,8 +1310,21 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 
 		init(0);
 
-		old_request = *req_handle;
-		database = old_request->req_dbb;
+    old_request = *req_handle;
+    if (!old_request) {
+        ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -901,
+                   gds_arg_gds, gds__bad_req_handle,
+                   0);
+    }
+
+    if (old_request) {
+        database = old_request->req_dbb;
+        if (!(database) {
+            ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -901,
+                       gds_arg_gds, gds__bad_req_handle,
+                       0);
+        }
+    }
 
 /* check to see if old request has an open cursor */
 
@@ -1321,9 +1338,10 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
    to prepare the new one. */
 /* It would be really *nice* to know *why* we want to
    keep the old request around -- 1994-October-27 David Schnepper */
+/* Because that's the client's allocated statement handle and we
+   don't want to trash the context in it -- 2001-Oct-27 Ann Harrison */
 
 		tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
-
 		request = new(*tdsql->tsql_default) req;
 		request->req_dbb = database;
 		request->req_pool = tdsql->tsql_default;
@@ -1904,6 +1922,10 @@ void DSQL_pretty(NOD node, int column)
 	case nod_def_relation:
 		verb = "define relation";
 		break;
+   /* CVC: New node redef_relation. */
+    case nod_redef_relation:    
+        verb = "redefine relation";    
+        break;
 	case nod_def_view:
 		verb = "define view";
 		break;
@@ -1925,9 +1947,17 @@ void DSQL_pretty(NOD node, int column)
 	case nod_del_relation:
 		verb = "delete relation";
 		break;
+    /* CVC: New node del_view. */
+    case nod_del_view:     
+        verb = "delete view";       
+        break;
 	case nod_def_procedure:
 		verb = "define procedure";
 		break;
+    /* CVC: New node redef_procedure. */
+    case nod_redef_procedure:  
+        verb = "redefine procedure"; 
+        break;
 	case nod_del_procedure:
 		verb = "delete porcedure";
 		break;
@@ -2144,9 +2174,13 @@ void DSQL_pretty(NOD node, int column)
 	case nod_user_name:
 		verb = "user_name";
 		break;
+        /* CVC: New node current_role. */
+    case nod_current_role: 
+        verb = "current_role";  
+        break;
 	case nod_values:
 		verb = "values";
-		break;
+        break;
 	case nod_via:
 		verb = "via";
 		break;
@@ -2169,7 +2203,13 @@ void DSQL_pretty(NOD node, int column)
 	case nod_subtract2:
 		verb = "subtract2";
 		break;
-
+    case nod_limit:    
+        verb = "limit";     
+        break;
+    /* CVC: New node breakleave. */
+    case nod_breakleave:   
+        verb = "breakleave";    
+        break;
 	case nod_aggregate:
 		verb = "aggregate";
 		PRINTF("%s%s\n", buffer, verb);
@@ -2247,6 +2287,31 @@ void DSQL_pretty(NOD node, int column)
 		string = (STR) node->nod_arg[e_vrn_name];
 		PRINTF("%s\"\n", string->str_data);
 		FREE_MEM_RETURN;
+
+    case nod_udf:
+        PRINTF ("%sfunction: \"", buffer);  
+    /* nmcc: how are we supposed to tell which type of nod_udf this is ?? */
+    /* CVC: The answer is that nod_arg[0] can be either the udf name or the
+    pointer to udf struct returned by METD_get_function, so we should resort
+    to the block type. The replacement happens in pass1_udf(). */
+        switch (node->nod_arg [e_udf_name]->nod_header.blk_type) {
+        case type_udf:
+            PRINTF ("%s\"\n", ((UDF) node->nod_arg [e_udf_name])->udf_name);
+            break;
+        case type_str:  
+            string = (STR) node->nod_arg [e_udf_name];
+            PRINTF ("%s\"\n", string->str_data);
+            break;
+        default:
+            PRINTF ("%s\"\n", "<ERROR>");
+            break;
+        }
+        ptr++;
+
+        if (node->nod_count == 2) {
+            DSQL_pretty (*ptr, column + 1);
+        }
+        FREE_MEM_RETURN;
 
 	case nod_udf:
 		PRINTF("%sfunction: \"%s\"\n", buffer, *ptr++);
@@ -3056,7 +3121,7 @@ static USHORT get_plan_info(
  **************************************/
 	SCHAR explain_buffer[256], *explain, *plan, *explain_ptr, *buffer_ptr;
 	SSHORT explain_length, i;
-	USHORT join_count = 0, level = 0;
+    //	USHORT join_count = 0, level = 0;
 	TSQL tdsql;
 	STATUS s;
 
@@ -3105,6 +3170,10 @@ static USHORT get_plan_info(
 		explain_length += (UCHAR) (*explain++) << 8;
 
 		plan = buffer_ptr;
+
+        /* CVC: What if we need to do 2nd pass? Those variables were only initialized
+           at the begining of the function hence they had trash the second time. */
+        USHORT join_count = 0, level = 0;
 
 		/* keep going until we reach the end of the explain info */
 
@@ -3261,7 +3330,10 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 		break;
 
 	case gds_info_rsb_end:
-		(*level_ptr)--;
+        if (*level_ptr) {
+            (*level_ptr)--;
+        }
+        /* else --*parent_join_count; ??? */
 		break;
 
 	case gds_info_rsb_relation:
@@ -3352,9 +3424,12 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			/* put out the join type */
 
 			if (rsb_type == gds_info_rsb_cross ||
-				rsb_type == gds_info_rsb_left_cross) p = "JOIN (";
-			else
+				rsb_type == gds_info_rsb_left_cross) {
+                p = "JOIN (";
+            }
+			else {
 				p = "MERGE (";
+            }
 
 			if ((plan_length -= strlen(p)) < 0)
 				return FAILURE;
@@ -3365,10 +3440,16 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 			explain_length--;
 			join_count = (USHORT) * explain++;
-			while (join_count)
+			while (join_count) {
 				if (get_rsb_item(&explain_length, &explain, &plan_length,
 								 &plan, &join_count, level_ptr))
 					return FAILURE;
+                /* CVC: Here's the additional stop condition. */
+                if (!*level_ptr) {
+                    break;
+                }
+            }
+
 
 			/* put out the final parenthesis for the join */
 

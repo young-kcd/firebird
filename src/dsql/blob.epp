@@ -19,6 +19,14 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.09.10 Claudio Valderrama: get_name() was preventing the API calls
+ *   isc_blob_default_desc, isc_blob_lookup_desc & isc_blob_set_desc
+ *   from working properly with dialect 3 names. Therefore, incorrect names
+ *   could be returned or a lookup for a blob field could fail. In addition,
+ *   a possible buffer overrun due to unchecked bounds was closed. The fc
+ *   get_name() as been renamed copy_exact_name().
+ *
  */
 
 #include "firebird.h"
@@ -31,9 +39,9 @@
 
 DATABASE DB = STATIC "yachts.lnk";
 
+static void copy_exact_name (UCHAR *, UCHAR *, SSHORT);
 static STATUS copy_status(STATUS *, STATUS *);
 static STATUS error(STATUS *, SSHORT, ...);
-static void get_name(UCHAR *, UCHAR *);
 
 
 void API_ROUTINE isc_blob_default_desc(
@@ -57,8 +65,11 @@ void API_ROUTINE isc_blob_default_desc(
 	desc->blob_desc_subtype = BLOB_text;
 	desc->blob_desc_charset = CS_dynamic;
 	desc->blob_desc_segment_size = 80;
-	get_name(field_name, desc->blob_desc_field_name);
-	get_name(relation_name, desc->blob_desc_relation_name);
+
+    copy_exact_name (field_name, desc->blob_desc_field_name,
+                     sizeof(desc->blob_desc_field_name));
+    copy_exact_name (relation_name, desc->blob_desc_relation_name,
+                     sizeof(desc->blob_desc_relation_name));
 }
 
 
@@ -143,8 +154,11 @@ STATUS API_ROUTINE isc_blob_lookup_desc(STATUS * status,
 
 	DB = *db_handle;
 	gds_trans = *trans_handle;
-	get_name(field_name, desc->blob_desc_field_name);
-	get_name(relation_name, desc->blob_desc_relation_name);
+
+    copy_exact_name (field_name, desc->blob_desc_field_name, 
+                     sizeof(desc->blob_desc_field_name));
+    copy_exact_name (relation_name, desc->blob_desc_relation_name, 
+                     sizeof(desc->blob_desc_relation_name));
 
 	flag = FALSE;
 
@@ -153,13 +167,17 @@ STATUS API_ROUTINE isc_blob_lookup_desc(STATUS * status,
 		X.RDB$RELATION_NAME EQ desc->blob_desc_relation_name AND
 		X.RDB$FIELD_NAME EQ desc->blob_desc_field_name flag = TRUE;
 
-	desc->blob_desc_subtype = Y.RDB$FIELD_SUB_TYPE;
-	desc->blob_desc_charset = Y.RDB$CHARACTER_SET_ID;
-	desc->blob_desc_segment_size = Y.RDB$SEGMENT_LENGTH;
+	    desc->blob_desc_subtype = Y.RDB$FIELD_SUB_TYPE;
+        desc->blob_desc_charset = Y.RDB$CHARACTER_SET_ID;
+        desc->blob_desc_segment_size = Y.RDB$SEGMENT_LENGTH;
 
-	if (global)
-		get_name((UCHAR *) Y.RDB$FIELD_NAME, global);
-	END_FOR ON_ERROR return copy_status(gds_status, status);
+        if (global) {
+            copy_exact_name ((UCHAR *) Y.RDB$FIELD_NAME, global, 
+                             sizeof(Y.RDB$FIELD_NAME));
+        }
+	END_FOR 
+    ON_ERROR 
+      return copy_status(gds_status, status);
 	END_ERROR;
 
 	if (!flag)
@@ -196,14 +214,46 @@ STATUS API_ROUTINE isc_blob_set_desc(STATUS * status,
  *
  **************************************/
 
-	get_name(field_name, desc->blob_desc_field_name);
-	get_name(relation_name, desc->blob_desc_relation_name);
+    copy_exact_name (field_name, desc->blob_desc_field_name, 
+                     sizeof(desc->blob_desc_field_name));
+    copy_exact_name (relation_name, desc->blob_desc_relation_name, 
+                     sizeof(desc->blob_desc_relation_name));
 
 	desc->blob_desc_subtype = subtype;
 	desc->blob_desc_charset = charset;
 	desc->blob_desc_segment_size = segment_size;
 
 	return error(status, 1, (STATUS) SUCCESS);
+}
+
+
+
+
+static void copy_exact_name ( 
+    UCHAR   *from,
+    UCHAR   *to,
+    SSHORT  bsize)
+{
+/**************************************
+ *
+ *  c o p y _ e x a c t _ n a m e
+ *
+ **************************************
+ *
+ * Functional description 
+ *  Copy null terminated name ot stops at bsize - 1.
+ *  CVC: This is just another fc like DYN_terminate.
+ *
+ **************************************/
+ 
+    UCHAR *from_end = from + bsize - 1, *to2 = to - 1;
+    while (*from && from < from_end) {
+        if (*from != ' ') {
+            to2 = to;
+        }
+        *to++ = *from++;
+    }
+    *++to2 = 0;
 }
 
 
@@ -257,22 +307,3 @@ static STATUS error( STATUS * status, SSHORT count, ...)
 	return status[1];
 }
 
-
-static void get_name( UCHAR * from, UCHAR * to)
-{
-/**************************************
- *
- *	g e t _ n a m e 
- *
- **************************************
- *
- * Functional description
- *	Copy null or blank terminated name.
- *
- **************************************/
-
-	while (*from && *from != ' ')
-		*to++ = *from++;
-
-	*to = 0;
-}

@@ -19,6 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 
+ * 27 Nov 2001  Ann W. Harrison - preserve string arguments in
+ *              ERRD_post_warning
+
  */
 
 #include "firebird.h"
@@ -102,15 +106,26 @@ void ERRD_error( int code, const char* text)
  *	so that strings will be handled.
  *
  **************************************/
-	TEXT s[256];
+	TEXT s[256], *p;
 	TSQL tdsql;
+    STATUS	*status_vector;
 
 	tdsql = GET_THREAD_DATA;
 
 	sprintf(s, "** DSQL error: %s **\n", text);
 	TRACE(s);
 
-	Firebird::status_exception::raise(code);
+    if (status_vector = tdsql->tsql_status) {
+        *status_vector++ = gds_arg_gds;
+        *status_vector++ = gds__random;
+        *status_vector++ = gds_arg_cstring;
+        *status_vector++ = strlen (s);
+        *status_vector++ = s;
+        *status_vector++ = gds_arg_end;
+    }
+
+    ERRD_punt();
+
 }
 
 
@@ -158,32 +173,34 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
 	if (indx + 3 < ISC_STATUS_LENGTH) {
 		status_vector[indx++] = gds_arg_warning;
 		status_vector[indx++] = status;
-		while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH))
+		while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH)) {
+
+            char* pszTmp = NULL;
 			switch (status_vector[indx++] = type) {
 			case gds_arg_warning:
 				status_vector[indx++] = (STATUS) va_arg(args, STATUS);
 				break;
 
-			case gds_arg_string:
-				{
-					const char* pszTmp = va_arg(args, char*);
-					if (strlen(pszTmp) >= MAX_ERRSTR_LEN) {
-						status_vector[(indx - 1)] = gds_arg_cstring;
-						status_vector[indx++] = MAX_ERRSTR_LEN;
-					}
-					status_vector[indx++] = reinterpret_cast<STATUS>(pszTmp);
-				}
+			case gds_arg_string: 
+                pszTmp = va_arg(args, char*);
+                if (strlen(pszTmp) >= MAX_ERRSTR_LEN) {
+                    status_vector[(indx - 1)] = gds_arg_cstring;
+                    status_vector[indx++] = MAX_ERRSTR_LEN;
+                }
+                status_vector[indx++] = ERR_cstring(pszTmp);
 				break;
 
-			case gds_arg_interpreted:
-				status_vector[indx++] = (STATUS) va_arg(args, TEXT *);
+			case gds_arg_interpreted: 
+                pszTmp = va_arg(args, char*);
+                status_vector[indx++] = ERR_cstring(pszTmp);
 				break;
 
-			case gds_arg_cstring:
-				len = va_arg(args, int);
-				status_vector[indx++] =
-					(STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
-				status_vector[indx++] = (STATUS) va_arg(args, TEXT *);
+			case gds_arg_cstring: 
+                len = va_arg(args, int);
+                status_vector[indx++] =
+                    (STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
+                char* pszTmp = va_arg(args, char*);
+                status_vector[indx++] = ERR_cstring(pszTmp);                
 				break;
 
 			case gds_arg_number:
@@ -201,6 +218,7 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
 				status_vector[indx++] = (STATUS) va_arg(args, int);
 				break;
 			}
+        }
 		status_vector[indx] = gds_arg_end;
 		return TRUE;
 	}

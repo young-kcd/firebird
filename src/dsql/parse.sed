@@ -33,3 +33,4 @@ s/dsql_yyparse __P((void));/dsql_yyparse __P((USHORT, USHORT, USHORT, BOOLEAN *)
 s/dsql_yyparse(void)/dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous)/g
 s/dsql_yyparse()/dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous)/g
 s/YYLEX()/YYLEX(client_dialect, db_dialect, parser_version, stmt_ambiguous)/g
+s/extern char \*getenv()/extern char *getenv(const char*)/g

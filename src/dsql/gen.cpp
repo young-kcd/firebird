@@ -18,10 +18,13 @@
  * Copyright (C) Inprise Corporation.
  *
  * All Rights Reserved.
- * Contributor(s): ______________________________________.
+ * Contributor(s): ______________________________________
+ * 2001.6.21 Claudio Valderrama: BREAK and SUBSTRING.
+ * 2001.07.28: John Bellardo:  Added code to generate blr_skip.
+ *
  */
 /*
-$Id: gen.cpp,v 1.5 2002-06-14 12:07:18 dimitr Exp $
+$Id: gen.cpp,v 1.6 2002-06-29 06:56:51 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -203,6 +206,15 @@ void GEN_expr( REQ request, NOD node)
 	case nod_current_date:
 		STUFF(blr_current_date);
 		return;
+
+    case nod_current_role:
+        STUFF (blr_current_role);
+        return;
+
+    case nod_breakleave:
+        STUFF (blr_leave);
+        STUFF (0);
+        return;
 
 	case nod_udf:
 		gen_udf(request, node);
@@ -422,6 +434,9 @@ void GEN_expr( REQ request, NOD node)
 	case nod_upcase:
 		operator_ = blr_upcase;
 		break;
+	case nod_substr:	
+        operator = blr_substring;		
+        break;
 	case nod_cast:
 		gen_cast(request, node);
 		return;
@@ -673,7 +688,10 @@ void GEN_request( REQ request, NOD node)
 	STUFF(blr_begin);
 
 	if (request->req_type == REQ_SELECT ||
-		request->req_type == REQ_SELECT_UPD) gen_select(request, node);
+		request->req_type == REQ_SELECT_UPD ||
+		request->req_type == REQ_EMBED_SELECT) {
+        gen_select(request, node);
+    }
 	else {
 		message = request->req_send;
 		if (!message->msg_parameter)
@@ -1009,6 +1027,11 @@ void GEN_statement( REQ request, NOD node)
 		STUFF(0);
 		return;
 
+    case nod_breakleave:
+        STUFF (blr_leave);
+        STUFF ((int) node->nod_arg [e_break_number]);
+        return;
+	
 	case nod_store:
 		if ((temp = node->nod_arg[e_sto_rse]) != NULL) {
 			STUFF(blr_for);
@@ -1504,6 +1527,13 @@ static void gen_for_select( REQ request, NOD for_select)
 
 	rse = for_select->nod_arg[e_flp_select];
 
+    /* CVC: Only put a label if this is not singular; otherwise,
+       what loop is the user trying to abandon? */
+    if (for_select->nod_arg [e_flp_action]) {
+        STUFF (blr_label);
+        STUFF ((int) for_select->nod_arg [e_flp_number]);
+    }
+
 /* Generate FOR loop */
 
 	STUFF(blr_for);
@@ -1898,6 +1928,11 @@ static void gen_rse( REQ request, NOD rse)
 		GEN_expr(request, node);
 	}
 
+    if ((node = rse->nod_arg [e_rse_skip]) != NULL) {
+        STUFF (blr_skip);
+        GEN_expr (request, node);
+    }
+
 	if ((node = rse->nod_arg[e_rse_boolean]) != NULL) {
 		STUFF(blr_boolean);
 		GEN_expr(request, node);
@@ -2073,6 +2108,21 @@ static void gen_select( REQ request, NOD rse)
 			parameter->par_name = parameter->par_alias = "GEN_ID";
 		else if (item->nod_type == nod_gen_id2)
 			parameter->par_name = parameter->par_alias = "GEN_ID";
+        else if (item->nod_type == nod_user_name)
+            parameter->par_name = parameter->par_alias  = "USER";
+        else if (item->nod_type == nod_current_role)
+            parameter->par_name = parameter->par_alias  = "ROLE";
+        else if (item->nod_type == nod_substr) {
+            /* CVC: SQL starts at 1 but C starts at zero. */
+            /*NOD node = item->nod_arg [e_substr_start];
+              --(*(SLONG *) (node->nod_desc.dsc_address));
+              FIXED IN PARSE.Y; here it doesn't catch expressions: Bug 450301. */
+            parameter->par_name = parameter->par_alias  = "SUBSTRING";
+        }
+        else if (item->nod_type == nod_cast)
+            parameter->par_name = parameter->par_alias	= "CAST";
+        else if (item->nod_type == nod_upcase)
+            parameter->par_name = parameter->par_alias	= "UPPER";
 	}
 
 /* Set up parameter to handle EOF */

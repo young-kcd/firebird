@@ -20,10 +20,20 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.11.26 Claudio Valderrama: include udf_arguments and udf_flags
+ *   in the udf struct, so we can load the arguments and check for
+ *   collisions between dropping and redefining the udf concurrently.
+ *   This closes SF Bug# 409769.
+ *
  */
 
 #ifndef _DSQL_DSQL_H_
 #define _DSQL_DSQL_H_
+
+#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+#include <stdio.h>
+#endif
 
 #include "../jrd/common.h"
 #include "../dsql/all.h"
@@ -196,6 +206,8 @@ typedef dsql_rel* DSQL_REL;
 
 #define REL_new_relation	1	// relation is newly defined, not committed yet
 #define REL_dropped			2	// relation has been dropped
+#define REL_view            4   // relation is a view 
+
 
 class fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>
 {
@@ -289,6 +301,9 @@ public:
 	USHORT		udf_length;
 	SSHORT		udf_character_set_id;
 	USHORT		udf_character_length;
+    struct nod  *udf_arguments;
+    USHORT      udf_flags;
+
 	TEXT		udf_name[2];
 };
 typedef udf* UDF;
@@ -303,6 +318,11 @@ enum FUN_T
 	FUN_blob_struct,
 	FUN_scalar_array
 };
+
+/* udf_flags bits */
+
+#define UDF_new_udf        1   /* udf is newly declared, not committed yet */
+#define UDF_dropped        2   /* udf has been dropped */
 
 // Variables - input, output & local
 
@@ -394,6 +414,7 @@ public:
 	req*	req_offspring;	// Cursor update requests
 	DsqlMemoryPool*	req_pool;
 	DLLS	req_context;
+    DLLS    req_union_context; // Save contexts for views of unions
 	struct sym* req_name;		// Name of request
 	struct sym* req_cursor;		// Cursor symbol. if any
 	dbb*	req_dbb;		// Database handle
@@ -592,11 +613,20 @@ typedef tsql* TSQL;
 #ifndef SHLIB_DEFS
 #ifdef DSQL_MAIN
 int DSQL_debug;
-#else
-extern int DSQL_debug;
+#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+FILE       *redirected_output;
 #endif
 #else
 extern int DSQL_debug;
+#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+extern FILE    *redirected_output;
+#endif
+#endif
+#else
+extern int DSQL_debug;
+#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+extern FILE    *redirected_output;
+#endif
 #endif
 
 

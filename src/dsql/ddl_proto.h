@@ -29,6 +29,6 @@ void DDL_generate(class req*, struct nod*);
 int	DDL_ids(class req*);
 void DDL_put_field_dtype(class req*, class fld*, USHORT);
 void DDL_resolve_intl_type(class req*, class fld*, class str*);
-
+void DDL_resolve_intl_type2 (struct req *, struct fld *, struct str *, BOOLEAN);
 
 #endif /* _DSQL_DDL_PROTO_H_ */

@@ -19,6 +19,70 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.5.26: Claudio Valderrama: field names should be skimmed from trailing
+ *
+ * 2001.5.26: Claudio Valderrama: COMPUTED fields will be skipped if a dummy
+ *       "insert into tbl values(...)" sentence is issued.
+ *
+ * 2001.5.26: Claudio Valderrama: field names should be skimmed from trailing
+ *
+ * 2001.5.26: Claudio Valderrama: field names should be skimmed from trailing
+ *		blanks to allow reliable comparisons in pass1_field. Same for table and
+ *		and index names in plans.
+ *
+ * 2001.5.29: Claudio Valderrama: handle DROP VIEW case in pass1_statement().
+ *
+ * 2001.6.12: Claudio Valderrama: add basic BREAK capability to procedures.
+ *
+ * 2001.6.27: Claudio Valderrama: pass1_variable() now gives the name of the
+ * variable it can't find in the error message.
+ *
+ * 2001.6.30: Claudio Valderrama: Enhanced again to provide (line, col), see node.h.
+ *
+ * 2001.7.28: John Bellardo: added code to handle nod_limit and associated fields.
+ *
+ * 2001.08.14 Claudio Valderrama: fixed crash with trigger and CURRENT OF <cursor> syntax.
+ *
+ * 2001.09.10 John Bellardo: fixed gen_rse to attribute skip/first nodes to the parent_rse
+ *   if present instead of the child rse.  BUG #451798
+ *
+ * 2001.09.26 Claudio Valderrama: ambiguous field names are rejected from now.
+ *
+ * 2001.10.01 Claudio Valderrama: check constraints are allowed to have ambiguous field
+ *   names because they use OLD and NEW as aliases of the same table. However, if the
+ *   check constraint has an embedded ambiguous SELECT statement, it won't be detected.
+ *   The code should be revisited if check constraints' before delete triggers are used
+ *   for whatever reason. Currently they are never generated. The code can be improved
+ *   to not report errors for fields between NEW and OLD contexts but complain otherwise.
+ *
+ * 2001.10.05 Neil McCalden: validate udf and parameters when comparing select list and
+ *   group by list, to detect invalid SQL statements when grouping by UDFs.
+ *
+ * 2001.10.23 Ann Harrison:  allow reasonable checking of ambiguous names in unions.
+ *   Remembering, later, that LLS_PUSH expects an object, not an LLS block.  Also
+ *   stuck in the code for handling variables in pass1 - it apparently doesn't happen
+ *   because the code returned an uninitialized pointer.
+ *
+ * 2001.11.17 Neil McCalden: Add aggregate_in_list procedure to handle cases
+ *   where select statement has aggregate as a parameter to a udf which does
+ *   not have to be in a group by clause.
+ *
+ * 2001.11.21 Claudio Valderrama: don't try to detect ambiguity in pass1_field()
+ *   if the field or output procedure parameter has been fully qualified!!!
+ *
+ * 2001.11.27 Ann Harrison:  Redo the amiguity checking so as to give better
+ *   error messages, return warnings for dialect 1, and simplify.
+ *
+ * 2001.11.28 Claudio Valderrama: allow udf arguments to be query parameters.
+ *   Honor the code in the parser that already accepts those parameters.
+ *   This closes SF Bug# 409769.
+ *
+ * 2001.11.29 Claudio Valderrama: make the nice new ambiguity checking code do the
+ *   right thing instead of crashing the engine and restore fix from 2001.11.21.
+ *
+ * 2001.12.21 Claudio Valderrama: Fix SF Bug #494832 - pass1_variable() should work
+ *   with def_proc, mod_proc, redef_proc, def_trig and mod_trig node types.
  */
 
 #include "firebird.h"
@@ -50,13 +114,15 @@
 ASSERT_FILENAME					/* Define things assert() needs */
 static BOOLEAN aggregate_found(REQ, NOD, NOD *);
 static BOOLEAN aggregate_found2(REQ, NOD, NOD *, BOOLEAN *);
+static BOOLEAN	aggregate_in_list (NOD, BOOLEAN *, NOD);
+static NOD ambiguity_check (NOD, REQ, FLD, DLLS, DLLS);
 static void assign_fld_dtype_from_dsc(FLD, DSC *);
 static NOD compose(NOD, NOD, NOD_TYPE);
 static NOD copy_field(NOD, CTX);
 static NOD copy_fields(NOD, CTX);
 static void explode_asterisk(NOD, NOD, DLLS *);
 static NOD explode_outputs(REQ, PRC);
-static void field_error(TEXT *, TEXT *);
+static void field_error(TEXT *, TEXT *, NOD);
 static PAR find_dbkey(REQ, NOD);
 static PAR find_record_version(REQ, NOD);
 static BOOLEAN invalid_reference(NOD, NOD);
@@ -80,7 +146,7 @@ static NOD pass1_rse(REQ, NOD, NOD);
 static NOD pass1_sel_list(REQ, NOD);
 static NOD pass1_sort(REQ, NOD, NOD);
 static NOD pass1_udf(REQ, NOD, USHORT);
-static void pass1_udf_args(REQ, NOD, DLLS *, USHORT);
+static void pass1_udf_args(REQ, NOD, UDF, USHORT, DLLS *, USHORT);
 static NOD pass1_union(REQ, NOD, NOD);
 static NOD pass1_update(REQ, NOD);
 static NOD pass1_variable(REQ, NOD);
@@ -90,6 +156,7 @@ static FLD resolve_context(REQ, STR, STR, CTX);
 static BOOLEAN set_parameter_type(NOD, NOD, BOOLEAN);
 static void set_parameters_name(NOD, NOD);
 static void set_parameter_name(NOD, NOD, DSQL_REL);
+static TEXT *pass_exact_name (TEXT*);
 
 STR temp_collation_name = NULL;
 
@@ -101,6 +168,9 @@ STR temp_collation_name = NULL;
 								   * Bug 10061, bsriram - 19-Apr-1999
 								 */
 
+#ifndef PRINTF
+#define PRINTF		ib_printf
+#endif
 
 
 CTX PASS1_make_context( REQ request, NOD relation_node)
@@ -143,6 +213,10 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
 	else
 		relation_name = (STR) relation_node->nod_arg[e_rln_name];
 
+    /* CVC: Let's skim the context, too. */
+    if (relation_name && relation_name->str_data)
+        pass_exact_name ( (TEXT*) relation_name->str_data);
+
 	DEV_BLKCHK(relation_name, dsql_type_str);
 
 	if ((relation_node->nod_type == nod_rel_proc_name) &&
@@ -150,6 +224,9 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
 	{
 		if (!(procedure = METD_get_procedure(request, relation_name)))
 		{
+            TEXT linecol [64];
+            sprintf (linecol, "At line %d, column %d.",
+                     (int) relation_node->nod_line, (int) relation_node->nod_column);
 			ERRD_post(	gds_sqlerr,
 						gds_arg_number,
 						(SLONG) - 204,
@@ -159,7 +236,9 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
 						gds_random,
 						gds_arg_string,
 						relation_name->str_data,
-						0);
+                        gds_arg_gds, gds_random,
+                        gds_arg_string, linecol,
+                        0);
 		}
 	}
 	else
@@ -171,6 +250,9 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
 		}
 		if (!relation && !procedure)
 		{
+            TEXT linecol [64];
+            sprintf (linecol, "At line %d, column %d.",
+                     (int) relation_node->nod_line, (int) relation_node->nod_column);
 			ERRD_post(	gds_sqlerr,
 						gds_arg_number,
 						(SLONG) - 204,
@@ -180,15 +262,23 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
 						gds_random,
 						gds_arg_string,
 						relation_name->str_data,
+                        gds_arg_gds, gds_random,
+                        gds_arg_string, linecol,
 						0);
 		}
 	}
 
-	if (procedure && !procedure->prc_out_count)
+	if (procedure && !procedure->prc_out_count) {
+        TEXT linecol [64];
+        sprintf (linecol, "At line %d, column %d.",
+                 (int) relation_node->nod_line, (int) relation_node->nod_column);
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 84,
 				  gds_arg_gds, gds_dsql_procedure_use_err,
-				  gds_arg_string, relation_name->str_data, 0);
-
+				  gds_arg_string, relation_name->str_data, 
+                  gds_arg_gds, gds_random,
+                  gds_arg_string, linecol,
+                  0);
+    }
 /* Set up context block */
 
 	context = new(*tdsql->tsql_default) ctx;
@@ -262,12 +352,11 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
 			count = 0;
 		}
 
-		if (!(request->req_type & REQ_procedure))
-		{
+		if (!(request->req_flags & REQ_procedure)) {
 			if (count != procedure->prc_in_count)
-			{
-				ERRD_post(gds_prcmismat, gds_arg_string,
-						  relation_name->str_data, 0);
+            {
+                    ERRD_post(gds_prcmismat, gds_arg_string,
+                              relation_name->str_data, 0);
 			}
 
 			if (count)
@@ -290,13 +379,14 @@ CTX PASS1_make_context( REQ request, NOD relation_node)
 		}
 	}
 
-/* push the context onto the request context stack 
-   for matching fields against */
+    /* push the context onto the request context stack 
+       for matching fields against */
 
 	LLS_PUSH(context, &request->req_context);
-
+    
 	return context;
-}
+}   
+    
 
 
 NOD PASS1_node(REQ request, NOD input, USHORT proc_flag)
@@ -454,7 +544,9 @@ NOD PASS1_node(REQ request, NOD input, USHORT proc_flag)
 			return pass1_field(request, input, 0);
 
 	case nod_variable:
-#pragma FB_COMPILER_MESSAGE("BUGBUG! Function returns uninitialized variable!")
+        node = MAKE_node (input->nod_type, e_var_count);
+        node->nod_arg [0] = input->nod_arg [0];
+        node->nod_desc = input->nod_desc;
 		return node;
 
 	case nod_var_name:
@@ -794,7 +886,6 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 	DLLS base;
 	FLD field, field2;
 	STR name;
-	struct nod desc_node;
 	USHORT count;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -812,6 +903,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 
 	switch (input->nod_type) {
 	case nod_def_relation:
+    case nod_redef_relation:
 	case nod_def_index:
 	case nod_def_view:
 	case nod_def_constraint:
@@ -819,6 +911,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 	case nod_mod_relation:
 	case nod_mod_exception:
 	case nod_del_relation:
+    case nod_del_view:
 	case nod_del_index:
 	case nod_del_exception:
 	case nod_grant:
@@ -857,6 +950,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 		return input;
 
 	case nod_def_procedure:
+    case nod_redef_procedure:
 	case nod_mod_procedure:
 		request->req_type = REQ_DDL;
 		request->req_flags |= REQ_procedure;
@@ -971,8 +1065,11 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 		node->nod_flags = input->nod_flags;
 		cursor = node->nod_arg[e_flp_cursor] = input->nod_arg[e_flp_cursor];
 		if (cursor && (procedure = request->req_ddl_node) &&
-			((procedure->nod_type == nod_def_procedure) ||
-			 (procedure->nod_type == nod_mod_procedure))) {
+			(procedure->nod_type == nod_def_procedure ||
+			 procedure->nod_type == nod_redef_procedure ||
+			 procedure->nod_type == nod_mod_procedure ||
+             procedure->nod_type == nod_def_trigger || 
+             procedure->nod_type == nod_mod_trigger )) {
 			cursor->nod_arg[e_cur_next] = procedure->nod_arg[e_prc_cursors];
 			procedure->nod_arg[e_prc_cursors] = cursor;
 			cursor->nod_arg[e_cur_context] = node;
@@ -991,15 +1088,23 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 			*ptr2++ = PASS1_node(request, *ptr, proc_flag);
 			DEV_BLKCHK(*(ptr2 - 1), dsql_type_nod);
 		}
-		if (input->nod_arg[e_flp_action])
-			node->nod_arg[e_flp_action] = PASS1_statement(request,
-														  input->
-														  nod_arg
+		if (input->nod_arg[e_flp_action]) {
+            /* CVC: Let's add the ability to BREAK the for_select same as the while.
+               but only if the command is FOR SELECT, otherwise we have singular SELECT. */
+            node->nod_arg [e_flp_number] = (NOD) request->req_loop_number++;
+
+			node->nod_arg[e_flp_action] = PASS1_statement(request, 
+                                                          input->nod_arg
 														  [e_flp_action],
 														  proc_flag);
+        }
+
 		if (cursor && procedure
-			&& ((procedure->nod_type == nod_def_procedure)
-				|| (procedure->nod_type == nod_mod_procedure)))
+			&& (procedure->nod_type == nod_def_procedure ||
+                procedure->nod_type == nod_redef_procedure ||
+                procedure->nod_type == nod_mod_procedure ||
+                procedure->nod_type == nod_def_trigger ||
+                procedure->nod_type == nod_mod_trigger))
 			procedure->nod_arg[e_prc_cursors] = cursor->nod_arg[e_cur_next];
 
 		if (request->req_error_handlers &&
@@ -1117,6 +1222,10 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 					  gds_arg_gds, gds_random, gds_arg_string, "EXIT", 0);
 		return input;
 
+    case nod_breakleave:
+        input->nod_arg [e_break_number] = (NOD) (request->req_loop_number - 1);
+        return input;
+
 	case nod_return:
 		if (request->req_flags & REQ_trigger)
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
@@ -1166,10 +1275,13 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 		node->nod_arg[e_while_cond] = PASS1_node(request,
 												 input->nod_arg[e_while_cond],
 												 proc_flag);
+
+        /* CVC: loop numbers should be incremented before analyzing the body
+           to preserve nesting <==> increasing level number. */
+        node->nod_arg [e_while_number] = (NOD) request->req_loop_number++;
 		node->nod_arg[e_while_action] =
-			PASS1_statement(request, input->nod_arg[e_while_action],
-							proc_flag);
-		node->nod_arg[e_while_number] = (NOD) request->req_loop_number++;
+        PASS1_statement(request, input->nod_arg[e_while_action],
+                        proc_flag);
 		break;
 
 	case nod_abort:
@@ -1344,6 +1456,182 @@ static BOOLEAN aggregate_found2(
 	default:
 		return FALSE;
 	}
+}
+
+
+static BOOLEAN aggregate_in_list (NOD sub, BOOLEAN *field, NOD list)
+{
+/**************************************
+ *
+ *	a g g r e g a t e _ i n _ l i s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check for an aggregate expression in a
+ *	node or list/chain of nodes.
+ *
+ **************************************/
+    BOOLEAN	aggregate;
+    NOD	*ptr, *end;
+    
+    DEV_BLKCHK (sub, dsql_type_nod);
+
+    switch (sub->nod_type) {
+            
+            /* handle the simple case of a straightforward aggregate */
+
+    case nod_agg_average:
+    case nod_agg_average2:
+    case nod_agg_total2:
+    case nod_agg_max:
+    case nod_agg_min:
+    case nod_agg_total:
+    case nod_agg_count:
+    case nod_aggregate:
+    case nod_map:
+        return TRUE;
+        
+    case nod_field:
+        /* field is only ok if it also appears in group by */
+        *field = invalid_reference (sub, list);	
+        return FALSE;
+    case nod_constant:
+        return FALSE;
+        
+        /* for expressions in which an aggregate might
+           be buried, recursively check for one */
+        
+    case nod_add:
+    case nod_concatenate:
+    case nod_divide:
+    case nod_multiply:
+    case nod_negate:
+    case nod_substr:
+    case nod_subtract:
+    case nod_add2:
+    case nod_divide2:
+    case nod_multiply2:
+    case nod_subtract2:
+    case nod_upcase:
+    case nod_extract:
+    case nod_list:
+        aggregate = FALSE;
+        for (ptr = sub->nod_arg, end = ptr + sub->nod_count; ptr < end; ptr++)
+            {
+                DEV_BLKCHK (*ptr, dsql_type_nod);
+                aggregate |= aggregate_in_list (*ptr,field,list);
+            }
+            return aggregate;
+
+    case nod_cast:
+    case nod_udf:
+    case nod_gen_id:
+    case nod_gen_id2:
+        if (sub->nod_count == 2)
+            return (aggregate_in_list (sub->nod_arg[1],field,list));
+        else 
+            return FALSE;
+        
+    default:
+        return FALSE;
+    }
+}
+
+
+static NOD ambiguity_check (NOD node, REQ request, FLD field, 
+                            DLLS relations,DLLS procedures)
+{
+/**************************************
+ *
+ *	a m b i g u i t y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check for ambiguity in a field
+ *  reference.  We've got these nice lists
+ *  of procedures and relations and if there
+ *  is more than one, things are bad.
+ *
+ **************************************/
+    
+    TEXT   buffer[1024], *b, *p;
+    DSQL_REL    relation;
+    PRC	    procedure;
+    USHORT	loop;
+    
+    buffer[0] = 0;
+    b = buffer;
+    p = 0;
+    loop = 0;
+    
+    if ((relations && relations->lls_next)
+        ||(procedures && procedures->lls_next)
+        ||(procedures && relations))
+        /* nothing to do */;
+    else {
+        if (relations)
+            LLS_POP (&relations);
+        if (procedures)
+            LLS_POP (&procedures);
+        return node;
+    }
+
+    while ((relations) && (relation = (DSQL_REL) LLS_POP (&relations))) {
+        if (strlen (b) > (sizeof (buffer) - 50))
+            continue;
+        if (++loop > 2)
+            strcat (buffer, "and ");
+        if (!(relation->rel_flags & REL_view))
+            strcat (buffer, "table ");
+        else
+            strcat (buffer, "view ");
+        strcat (buffer, relation->rel_name);
+        strcat (buffer, " ");
+        if (!p)
+            p = b + strlen (b);
+    }
+
+    while ((procedures) && (procedure = (PRC) LLS_POP (&procedures))) {
+        if (strlen (b) > (sizeof (buffer) - 50))
+            continue;
+        if (++loop > 2)
+            strcat (buffer, "and ");
+        strcat (b, "procedure ");
+        strcat (b, procedure->prc_name);
+        strcat (b, " ");
+        if (!p)
+            p = b + strlen (b);
+    }
+    
+    if (p)
+        *--p = 0;
+    
+    if (request->req_client_dialect >= SQL_DIALECT_V6) {
+        if (node) {
+            delete node;
+        }
+        ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -204,
+                   gds_arg_gds, isc_dsql_ambiguous_field_name,
+                   gds_arg_string, buffer,
+                   gds_arg_string, ++p,
+                   gds_arg_gds, gds_random,
+                   gds_arg_string, field->fld_name,
+                   0);
+        return NULL;
+    }
+
+
+    ERRD_post_warning (isc_sqlwarn, gds_arg_number, (SLONG) 204,
+                       gds_arg_warning, isc_dsql_ambiguous_field_name,
+                       gds_arg_string, buffer,
+                       gds_arg_string, ++p,
+                       gds_arg_gds, gds_random,
+                       gds_arg_string, field->fld_name,
+                       0);
+    
+    return node;
 }
 
 
@@ -1614,7 +1902,7 @@ static NOD explode_outputs( REQ request, PRC procedure)
 }
 
 
-static void field_error( TEXT * qualifier_name, TEXT * field_name)
+static void field_error( TEXT * qualifier_name, TEXT * field_name, NOD flawed_node)
 {
 /**************************************
  *
@@ -1626,7 +1914,7 @@ static void field_error( TEXT * qualifier_name, TEXT * field_name)
  *	Report a field parsing recognition error.
  *
  **************************************/
-	TEXT field_string[64];
+    TEXT field_string [64], linecol [64];
 
 	if (qualifier_name) {
 		sprintf(field_string, "%s.%s", qualifier_name,
@@ -1634,13 +1922,25 @@ static void field_error( TEXT * qualifier_name, TEXT * field_name)
 		field_name = field_string;
 	}
 
+    if (flawed_node)
+        sprintf (linecol, "At line %d, column %d.",
+                 (int) flawed_node->nod_line, (int) flawed_node->nod_column);
+    else
+        sprintf (linecol, "At unknown line and column.");
+
 	if (field_name)
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
 				  gds_arg_gds, gds_dsql_field_err,
-				  gds_arg_gds, gds_random, gds_arg_string, field_name, 0);
+				  gds_arg_gds, gds_random, gds_arg_string, field_name,
+                  gds_arg_gds, gds_random,
+                  gds_arg_string, linecol,
+                  0);
 	else
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
-				  gds_arg_gds, gds_dsql_field_err, 0);
+				  gds_arg_gds, gds_dsql_field_err, 
+                  gds_arg_gds, gds_random,
+                  gds_arg_string, linecol,
+                  0);
 }
 
 
@@ -1845,11 +2145,65 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
 	{
 		if ((node->nod_type == nod_gen_id) ||
 			(node->nod_type == nod_gen_id2) ||
-			(node->nod_type == nod_udf) || (node->nod_type == nod_cast))
-		{
+			(node->nod_type == nod_cast)) {
 			if (node->nod_count == 2)
 				invalid |= invalid_reference(node->nod_arg[1], list);
 		}
+        else if (node->nod_type == nod_udf) {
+
+            NOD reference;
+            BOOLEAN non_agg_field;
+            
+            if (!list) { /* validating select element with no group by */
+                if (node->nod_count == 2)
+                    invalid = invalid_reference (node->nod_arg [1], list);
+                return invalid;
+            }
+
+            /* does this udf appear in list of group by  */
+            for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
+                    DEV_BLKCHK(*ptr, dsql_type_nod);
+                    reference = *ptr;
+                    if ((*ptr)->nod_type == nod_cast)  {
+                        reference = (*ptr)->nod_arg[e_cast_source];
+                    }
+                    DEV_BLKCHK(reference, type_nod);
+                    if (reference->nod_type == nod_udf) {
+                        if (node_match (node, reference) == TRUE) {
+                            /* select item exists in group by */
+                            return FALSE;
+                        }
+                    }
+            }
+		
+            /*	if we have got here this udf element is not in group by 
+                but it may still be valid if it has aggregate functions 
+                as parameters in which case it points to a list to be traversed
+                if it doesn't then it is invalid
+            */
+            
+            if (node->nod_count == 2) {		
+                if(aggregate_in_list (node->nod_arg [1], &non_agg_field,list) == TRUE) {
+                    /* abs(trunc(sum(total)+field)) is not valid in select list
+                       unless it also appears in the group by clause when its
+                       value is then known
+                    */
+                    if (non_agg_field == TRUE) {
+                        invalid = TRUE;
+                    }
+                    else {
+                        invalid = FALSE;
+                    }
+                }
+                else {
+                    invalid = TRUE;
+                }
+                return invalid;			
+            }
+            
+            return TRUE;			
+        }
+
 #ifdef	CHECK_HAVING
 /*
 ******************************************************
@@ -1948,6 +2302,7 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
 			case nod_current_time:
 			case nod_current_timestamp:
 			case nod_user_name:
+            case nod_current_role:
 			case nod_internal_info:
 				return FALSE;
 			}
@@ -2626,7 +2981,7 @@ static NOD pass1_dbkey( REQ request, NOD input)
 /* field unresolved */
 
 	field_error(reinterpret_cast <
-				char *>(qualifier ? qualifier->str_data : 0), DB_KEY_STRING);
+				char *>(qualifier ? qualifier->str_data : 0), DB_KEY_STRING, input);
 
 	return NULL;
 }
@@ -2695,16 +3050,34 @@ static NOD pass1_field( REQ request, NOD input, USHORT list)
  *	If list is TRUE, then this function can detect and
  *	return a relation node if there is no name.   This
  *	is used for cases of "SELECT <table_name>.* ...".
+ *  CVC: The function attempts to detect
+ *  if an unqualified field appears in more than one context
+ *  and hence it returns the number of occurrences. This was
+ *  added to allow the caller to detect ambiguous commands like
+ *  select * from t1 join t2 on t1.f=t2.f order by common_field.
+ *  While inoffensive on inner joins, it changes the result on outer joins.
  *
  **************************************/
-	NOD node, indices;
+	NOD node = 0, indices; /* Changes made need this var initialized. */
 	STR name, qualifier;
 	FLD field;
 	DLLS stack;
 	CTX context;
+    DLLS	relations, procedures;
+    NOD ddl_node;
+    BOOLEAN is_check_constraint;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
+
+    /* CVC: This shameful hack added to allow CHECK constraint implementation via triggers
+       to be able to work. */
+
+    if ((ddl_node = request->req_ddl_node) != 0 && ddl_node->nod_type == nod_def_constraint)
+        is_check_constraint = TRUE;
+    else
+        is_check_constraint = FALSE;
+
 
 /* handle an array element */
 
@@ -2726,6 +3099,46 @@ static NOD pass1_field( REQ request, NOD input, USHORT list)
 	DEV_BLKCHK(name, dsql_type_str);
 	DEV_BLKCHK(qualifier, dsql_type_str);
 
+
+    /* CVC: Let's strip trailing blanks or comparisons may fail in dialect 3. */
+    if (name && name->str_data)
+        pass_exact_name ( (TEXT*) name->str_data);
+
+    /* CVC: PLEASE READ THIS EXPLANATION IF YOU NEED TO CHANGE THIS CODE.
+       You should ensure that this function:
+       1.- Never returns NULL. In such case, it such fall back to an invocation
+       to field_error() near the end of this function. None of the multiple callers
+       of this function (inside this same module) expect a null pointer, hence they
+       will crash the engine in such case.
+       2.- Doesn't allocate more than one field in "node". Either you put a break,
+       keep the current "continue" or call ALLD_release if you don't want nor the
+       continue neither the break if node is already allocated. If it isn't evident,
+       but this variable is initialized to zero in the declaration above. You
+       may write an explicit line to set it to zero here, before the loop.
+       3.- Doesn't waste cycles if qualifier is not null. The problem is not the cycles
+       themselves, but the fact that you'll detect an ambiguity that doesn't exist: if
+       the field appears in more than one context but it's always qualified, then
+       there's no ambiguity. There's PASS1_make_context() that prevents a context's
+       alias from being reused. However, other places in the code don't check that you
+       don't create a join or subselect with the same context without disambiguating it
+       with different aliases. This is the place where resolve_context() is called for
+       that purpose. In the future, it will be fine if we force the use of the alias as
+       the only allowed qualifier if the alias exists. Hopefully, we will eliminate
+       some day this construction: "select table.field from table t" because it
+       should be "t.field" instead.
+       4.- Doesn't verify code derived automatically from check constraints. They are
+       ill-formed by nature but making that code generation more orthodox is not a
+       priority. Typically, they only check a field against a contant. The problem
+       appears when they check a field against a subselect, for example. For now,
+       allow the user to write ambiguous subselects in check() statements.
+       5.- Doesn't attempt to use "relations" and "procedures" after ambiguity_check()
+       has been called, because this function will POP() those stacks but they
+       are passed as values, hence they aren't updated upon return.
+       Claudio Valderrama - 2001.1.29.
+    */
+
+    relations = procedures = NULL;
+
 /* Try to resolve field against various contexts;
    if there is an alias, check only against the first matching */
 
@@ -2733,26 +3146,32 @@ static NOD pass1_field( REQ request, NOD input, USHORT list)
 	{
 		/* resolve_context() checks the type of the   */
 		/* given context, so the cast to CTX is safe. */
-		field = resolve_context(request,
-								name,
-								qualifier,
-								reinterpret_cast<CTX>(stack->lls_object));
+
+        context = reinterpret_cast<CTX>(stack->lls_object);
+        field = resolve_context (request, name, qualifier, context);
+
 		if (field)
 		{
 			if (list && !name) {
 				node = MAKE_node(nod_relation, e_rel_count);
-				node->nod_arg[e_rel_context] =
-					reinterpret_cast<NOD>(stack->lls_object);
+				node->nod_arg[e_rel_context] = reinterpret_cast<NOD>(stack->lls_object);
 				return node;
 			}
 
 			if (!name)
 				break;
 
-			for (; field; field = field->fld_next)
-				if (!strcmp
-					(reinterpret_cast < const char *>(name->str_data),
-					 field->fld_name)) break;
+			for (; field; field = field->fld_next) {
+				if (!strcmp(reinterpret_cast < const char *>(name->str_data), field->fld_name)) {
+                    if (!is_check_constraint && !qualifier) {
+                        if (context->ctx_relation)
+                            LLS_PUSH (context->ctx_relation, &relations);
+                        if (context->ctx_procedure)
+                            LLS_PUSH (context->ctx_procedure, &procedures);
+                    }
+                    break;
+                }
+            }
 
 			if (qualifier && !field)
 				break;
@@ -2761,10 +3180,10 @@ static NOD pass1_field( REQ request, NOD input, USHORT list)
 				/* Intercept any reference to a field with datatype that
 				   did not exist prior to V6 and post an error */
 
-				if (request->req_client_dialect <= SQL_DIALECT_V5)
-					if (field->fld_dtype == dtype_sql_date ||
-						field->fld_dtype == dtype_sql_time ||
-						field->fld_dtype == dtype_int64) {
+				if (request->req_client_dialect <= SQL_DIALECT_V5 &&
+					(field->fld_dtype == dtype_sql_date ||
+                     field->fld_dtype == dtype_sql_time ||
+                     field->fld_dtype == dtype_int64)) {
 						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
 								  gds_arg_gds, gds_dsql_field_err,
 								  gds_arg_gds, gds_random,
@@ -2776,29 +3195,64 @@ static NOD pass1_field( REQ request, NOD input, USHORT list)
 								  DSC_dtype_tostring(static_cast < UCHAR >
 													 (field->fld_dtype)), 0);
 						return NULL;
-					};
-				context = (CTX) stack->lls_object;
+                };
+
+                /* CVC: Stop here if this is our second or third iteration.
+                   Anyway, we can't report more than one ambiguity to the status vector. */
+                if (node)
+                    continue;
+
 				if (indices)
 					indices = PASS1_node(request, indices, FALSE);
 				node = MAKE_field(context, field, indices);
+
+
+                /* remember the agg context so that we can post the agg to its map. */
+
 				if (context->ctx_parent) {
 					if (!request->req_inhibit_map)
 						node = post_map(node, context->ctx_parent);
 					else if (request->req_context != stack)
-						/* remember the agg context so that we can post
-						   the agg to its map.     
-						 */
 						request->req_outer_agg_context = context->ctx_parent;
 				}
-				return node;
+                if (is_check_constraint || qualifier) {
+                    break;
+                }
 			}
 		}
 	}
 
+    /* CVC: We can't return blindly if this is a check constraint, because there's
+       the possibility of an invalid field that wasn't found. The multiple places that
+       call this function pass1_field() don't expect a NULL pointer, hence will crash.
+       Don't check ambiguity if we don't have a field.
+    */
+
+    if (!is_check_constraint && !qualifier && field) {
+        node = ambiguity_check (node, request, field, relations, procedures);
+    }
+    else {
+        /* This else is superflous as we post none in the loop above
+           when there's a check constraint or qualifier, but be safe if
+           the code structure changes in the future. */
+        while (relations) {
+            LLS_POP (&relations);
+        }
+        while (procedures) {
+            LLS_POP (&procedures);
+        }
+	}
+
+    if (node) {
+        return node;    
+    }
 
 	field_error(qualifier ? (TEXT *) qualifier->str_data : (TEXT *) 0,
-				name ? (TEXT *) name->str_data : (TEXT *) 0);
+				name ? (TEXT *) name->str_data : (TEXT *) 0, input);
 
+    /* CVC: field_error() calls ERRD_post() that never returns, so the next line
+       is only to make the compiler happy. */
+    
 	return NULL;
 }
 
@@ -2849,9 +3303,14 @@ static NOD pass1_insert( REQ request, NOD input)
 	if (fields = input->nod_arg[e_ins_fields])
 		fields = PASS1_node(request, fields, 0);
 	else {
+        /* CVC: Ann Harrison requested to skip COMPUTED fields in INSERT w/o field list. */
 		stack = NULL;
-		for (field = relation->rel_fields; field; field = field->fld_next)
+		for (field = relation->rel_fields; field; field = field->fld_next) {
+            if (field->fld_flags & FLD_computed) {
+                continue;
+            }
 			LLS_PUSH(MAKE_field(context, field, 0), &stack);
+        }
 		fields = MAKE_list(stack);
 	}
 
@@ -3045,15 +3504,19 @@ static CTX pass1_alias( REQ request, STR alias)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(alias, dsql_type_str);
 
-/* look through all contexts at this scope level
-   to find one that has a relation name or alias
-   name which matches the identifier passed */
-
+    /* look through all contexts at this scope level
+       to find one that has a relation name or alias
+       name which matches the identifier passed */
+    
 	for (stack = request->req_context; stack; stack = stack->lls_next) {
 		context = (CTX) stack->lls_object;
 		if (context->ctx_scope_level != request->req_scope_level)
 			continue;
 
+        /* CVC: Getting rid of trailing spaces */
+        if (alias && alias->str_data)
+            pass_exact_name ( (TEXT*) alias->str_data);
+        
 		/* check for matching alias */
 
 		if (context->ctx_alias &&
@@ -3187,6 +3650,25 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 		list->nod_arg[0] = aggregate;
 	}
 
+/* Process LIMIT, if any */
+    if (node = input->nod_arg [e_sel_limit]) {
+        NOD aux_rse = parent_rse ? parent_rse : rse;
+        /* CVC: This line is a hint because set_parameter_type() doesn't receive
+           the dialect currently as an argument. */
+        node->nod_desc.dsc_scale = request->req_client_dialect;
+        
+        if (node->nod_arg [e_limit_length]) {
+            sub = PASS1_node (request, node->nod_arg [e_limit_length], 0);
+            aux_rse->nod_arg [e_rse_first] = sub;
+            set_parameter_type (sub, node, FALSE);
+        }
+        if (node->nod_arg [e_limit_skip]) {
+            sub = PASS1_node (request, node->nod_arg [e_limit_skip], 0);
+            aux_rse->nod_arg [e_rse_skip] = sub;
+            set_parameter_type (sub, node, FALSE);
+        }
+    }
+    
 /* Process boolean, if any */
 
 	if (node = input->nod_arg[e_sel_where]) {
@@ -3197,11 +3679,17 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 
 /* Process GROUP BY clause, if any */
 
-	if (node = input->nod_arg[e_sel_group])
+	if (node = input->nod_arg[e_sel_group]) {
 		aggregate->nod_arg[e_agg_group] = PASS1_node(request, node, 0);
+    }
 
 	if (parent_context)
 		LLS_PUSH(parent_context, &request->req_context);
+
+#ifdef DEV_BUILD
+	if (DSQL_debug > 2)
+		DSQL_pretty(input, 0);
+#endif
 
 /* Process select list, if any.  If not, generate one */
 
@@ -3383,8 +3871,9 @@ static NOD pass1_sort( REQ request, NOD input, NOD s_list)
 		node2 = MAKE_node(nod_order, e_order_count);
 		node2->nod_arg[1] = node1->nod_arg[1];
 		node1 = node1->nod_arg[0];
-		if (node1->nod_type == nod_field_name)
+		if (node1->nod_type == nod_field_name) {
 			node2->nod_arg[0] = pass1_field(request, node1, 0);
+        }
 		else if (node1->nod_type == nod_position) {
 			position = (ULONG) (node1->nod_arg[0]);
 			if ((position < 1) || !s_list
@@ -3449,7 +3938,7 @@ static NOD pass1_udf( REQ request, NOD input, USHORT proc_flag)
 	node->nod_arg[0] = (NOD) udf;
 	if (input->nod_count == 2) {
 		stack = NULL;
-		pass1_udf_args(request, input->nod_arg[1], &stack, proc_flag);
+		pass1_udf_args(request, input->nod_arg[1], udf, 0, &stack, proc_flag);
 		node->nod_arg[1] = MAKE_list(stack);
 	}
 
@@ -3457,9 +3946,8 @@ static NOD pass1_udf( REQ request, NOD input, USHORT proc_flag)
 }
 
 
-static void pass1_udf_args(
-						   REQ request,
-						   NOD input, DLLS * stack, USHORT proc_flag)
+static void pass1_udf_args(REQ request, NOD input, UDF udf, USHORT arg_pos, 
+                           DLLS * stack, USHORT proc_flag)
 {
 /**************************************
  *
@@ -3472,17 +3960,31 @@ static void pass1_udf_args(
  *
  **************************************/
 	NOD *ptr, *end;
+    NOD temp, args;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
+    DEV_BLKCHK (udf, dsql_type_udf);
 
 	if (input->nod_type != nod_list) {
-		LLS_PUSH(PASS1_node(request, input, proc_flag), stack);
-		return;
+        temp = PASS1_node (request, input, proc_flag);
+        args = udf->udf_arguments;
+        if (temp->nod_type == nod_parameter) {
+            if (args && args->nod_count > arg_pos) {
+                set_parameter_type (temp, args->nod_arg [arg_pos], FALSE);
+            }
+            else {
+                ; 
+                /* We should complain here in the future! The parameter is
+                   out of bounds or the function doesn't declare input params. */
+            }
+        }
+        LLS_PUSH (temp, stack);
+        return;
 	}
 
 	for (ptr = input->nod_arg, end = ptr + input->nod_count; ptr < end; ptr++)
-		pass1_udf_args(request, *ptr, stack, proc_flag);
+		pass1_udf_args(request, *ptr, udf, arg_pos++, stack, proc_flag);
 }
 
 
@@ -3530,17 +4032,10 @@ static NOD pass1_union( REQ request, NOD input, NOD order_list)
 	for (ptr = input->nod_arg, end = ptr + input->nod_count; ptr < end;
 		 ptr++, uptr++) {
 		*uptr = PASS1_rse(request, *ptr, 0);
-	 /**
-     Do Not pop-off the sub-rse's from the context. This will be
-     needed to generate the correct dyn for view with  unions in
-     it{dsql/ddl.c define_view()}. Note that the rse's will be 
-     popped off later in reset_context_stack(){dsql/ddl.c} after 
-     the dyn generation and at the end of PASS1_statement() after 
-     blr generation.
-     -Sudesh 06/03/1999
-     while (request->req_context != base)
-	LLS_POP (&request->req_context);
-     **/
+        while (request->req_context != base) {
+            LLS_PUSH(request->req_context->lls_object, &request->req_union_context);
+            LLS_POP(&request->req_context);
+        }
 	}
 
 /* generate a context for the union itself */
@@ -3725,7 +4220,7 @@ static NOD pass1_variable( REQ request, NOD input)
  *
  **************************************/
 	NOD procedure_node, var_nodes, var_node, *ptr, *end;
-	STR var_name;
+	STR var_name = 0;
 	VAR var;
 	SSHORT position;
 
@@ -3737,7 +4232,7 @@ static NOD pass1_variable( REQ request, NOD input)
 			if (request->req_flags & REQ_trigger)
 				return pass1_field(request, input, 0);
 			else
-				field_error(0, 0);
+				field_error(0, 0, input);
 		}
 		var_name = (STR) input->nod_arg[e_fln_name];
 	}
@@ -3747,10 +4242,12 @@ static NOD pass1_variable( REQ request, NOD input)
 
 	if ((procedure_node = request->req_ddl_node) &&
 		(procedure_node->nod_type == nod_def_procedure ||
+		 procedure_node->nod_type == nod_redef_procedure ||
 		 procedure_node->nod_type == nod_mod_procedure ||
 		 procedure_node->nod_type == nod_def_trigger ||
 		 procedure_node->nod_type == nod_mod_trigger)) {
 		if (procedure_node->nod_type == nod_def_procedure ||
+            procedure_node->nod_type == nod_redef_procedure ||
 			procedure_node->nod_type == nod_mod_procedure) {
 			/* Try to resolve variable name against input, output
 			   and local variables */
@@ -3792,9 +4289,14 @@ static NOD pass1_variable( REQ request, NOD input)
 			}
 	}
 
-/* field unresolved */
+    /* field unresolved */
 
-	field_error(0, 0);
+    /* CVC: That's all [the fix], folks! */
+
+    if (var_name)
+        field_error (0, (TEXT *) var_name->str_data, input);
+    else 
+        field_error (0, 0, input);
 
 	return NULL;
 }
@@ -4033,6 +4535,7 @@ static BOOLEAN set_parameter_type(
 	case nod_subtract2:
 	case nod_upcase:
 	case nod_extract:
+    case nod_limit:
 		result = 0;
 		for (ptr = in_node->nod_arg, end = ptr + in_node->nod_count;
 			 ptr < end; ptr++)
@@ -4144,4 +4647,38 @@ static void set_parameter_name( NOD par_node, NOD fld_node, DSQL_REL relation)
 	default:
 		return;
 	}
+}
+
+static TEXT *pass_exact_name (TEXT* str)
+{
+/**************************************
+ *
+ *      p a s s _ e x a c t _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Skim trailing blanks from identifiers.
+ *	CVC: I had to add this function because metd_exact_name
+ *	usage forced the inclusion of metd.c that currently
+ *	isn't used on other directories.
+ *
+ **************************************/
+    TEXT *p;
+
+    for (p = str; *p; ++p) { // go to end of string
+        ;
+    }
+
+    for (--p; p >= str && *p == '\x20'; --p) { // remove spaces from end
+        ;
+    }
+
+    /* Write *++p = 0; if you like instead of two lines. */
+
+    ++p;
+
+    *p = 0;
+
+    return str;
 }

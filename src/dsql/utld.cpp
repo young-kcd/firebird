@@ -19,9 +19,15 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 21 Nov 01 - Ann Harrison - Turn off the code in parse_sqlda that 
+ *    decides that two statements are the same based on their message
+ *    descriptions because it misleads some code in remote/interface.c
+ *    and causes problems when two statements are prepared.
  */
+
 /*
-$Id: utld.cpp,v 1.5 2002-04-04 16:22:14 bellardo Exp $
+$Id: utld.cpp,v 1.6 2002-06-29 06:56:51 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -340,8 +346,13 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 			dasup->dasup_clauses[clause].dasup_blr_length = 0;
 		}
 
-		same_flag =
-			(blr_len == dasup->dasup_clauses[clause].dasup_blr_length);
+		same_flag = (blr_len == dasup->dasup_clauses[clause].dasup_blr_length);
+
+        /* turn off same_flag because it breaks execute & execute2 when
+           more than one statement is prepared */
+
+        same_flag = FALSE;
+
 		dasup->dasup_clauses[clause].dasup_blr_length = blr_len;
 
 		/* Generate the blr for the message and at the same time, determine
@@ -352,10 +363,17 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 	/** The define SQL_DIALECT_V5 is not available here, Hence using
 	constant 1.
     **/
-		if (dialect > 1)
+		if (dialect > 1) {
 			CH_STUFF(p, blr_version5)
-		else
-			CH_STUFF(p, blr_version4)
+                }
+        else if ((SCHAR) *(p) == (SCHAR) (blr_version4)) {
+            (p)++; 
+        }
+        else {
+            *(p)++ = (blr_version4); 
+            same_flag = FALSE;
+        }
+        
 		CH_STUFF(p, blr_begin);
 		CH_STUFF(p, blr_message);
 		CH_STUFF(p, 0);

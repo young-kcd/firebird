@@ -17,6 +17,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *       2001.08.03   John Bellardo changed LIMIT token to SKIP
+ *       2001.07.28   John Bellardo added tokens for FIRST and LIMIT
    See dsql/parse.y for a chronological list. */
     {NOT_LSS, "!<", 1},
 	{NEQ, "!=", 1},
@@ -50,6 +52,7 @@
 	{BEGIN, "BEGIN", 1},
 	{BETWEEN, "BETWEEN", 1},
 	{BLOB, "BLOB", 1},
+    {KW_BREAK, "BREAK", 2}, 
 	{BY, "BY", 1},
 	{CACHE, "CACHE", 1},
 	{CASCADE, "CASCADE", 1},
@@ -72,8 +75,10 @@
 	{CSTRING, "CSTRING", 1},
 	{CURRENT, "CURRENT", 1},
 	{CURRENT_DATE, "CURRENT_DATE", 2},
+    {CURRENT_ROLE, "CURRENT_ROLE", 2},
 	{CURRENT_TIME, "CURRENT_TIME", 2},
 	{CURRENT_TIMESTAMP, "CURRENT_TIMESTAMP", 2},
+    {CURRENT_USER, "CURRENT_USER", 2},
 	{CURSOR, "CURSOR", 1},
 	{DATABASE, "DATABASE", 1},
 	{DATE, "DATE", 1},
@@ -86,6 +91,7 @@
     {DELETE, "DELETE", 1}, 
     {DESC, "DESC", 1},	/* Alias of DESCENDING */
 	{DESC, "DESCENDING", 1},
+    {KW_DESCRIPTOR,	"DESCRIPTOR", 2},
 	{DISTINCT, "DISTINCT", 1},
 	{DO, "DO", 1},
 	{DOMAIN, "DOMAIN", 1},
@@ -103,6 +109,7 @@
 	{EXTRACT, "EXTRACT", 2},
 	{KW_FILE, "FILE", 1},
 	{FILTER, "FILTER", 1},
+    {FIRST,    "FIRST", 2},
 	{KW_FLOAT, "FLOAT", 1},
 	{FOR, "FOR", 1},
 	{FOREIGN, "FOREIGN", 1},
@@ -186,6 +193,7 @@
 	{READ, "READ", 1},
 	{REAL, "REAL", 1},
 	{VERSION, "RECORD_VERSION", 1},
+    {RECREATE, "RECREATE", 2},
 	{REFERENCES, "REFERENCES", 1}, 
     {RESERVING, "RESERV", 1},	/* Alias of RESERVING */
 	{RESERVING, "RESERVING", 1},
@@ -206,6 +214,7 @@
 	{SHARED, "SHARED", 1},
 	{SINGULAR, "SINGULAR", 1},
 	{SIZE, "SIZE", 1},
+    {SKIP,     "SKIP", 2},
 	{SMALLINT, "SMALLINT", 1},
 	{SNAPSHOT, "SNAPSHOT", 1},
 	{SOME, "SOME", 1},
@@ -215,6 +224,7 @@
     {STARTING, "STARTING", 1}, 
     {STARTING, "STARTS", 1},	/* Alias of STARTING */
 	{STATISTICS, "STATISTICS", 1},
+    {SUBSTRING,	"SUBSTRING", 2},
 	{SUB_TYPE, "SUB_TYPE", 1},
 	{SUM, "SUM", 1},
 	{SUSPEND, "SUSPEND", 1},
