@@ -455,7 +455,8 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 			count = context->ctx_proc_inputs->nod_count;
 		}
 
-		if (!(request->req_flags & REQ_procedure)) {
+		if (!(request->req_flags & REQ_procedure))
+		{
 			if (count > procedure->prc_in_count || 
 				count < procedure->prc_in_count - procedure->prc_def_count)
 			{
@@ -1094,13 +1095,12 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_mod_trigger:
 	case nod_replace_trigger:
 		request->req_type = REQ_DDL;
-		request->req_flags |= REQ_procedure;
-		request->req_flags |= REQ_trigger;
+		request->req_flags |= (REQ_block | REQ_procedure | REQ_trigger);
 		return input;
 
 	case nod_del_procedure:
 		request->req_type = REQ_DDL;
-		request->req_flags |= REQ_procedure;
+		request->req_flags |= (REQ_block | REQ_procedure);
 		return input;
 
 	case nod_def_procedure:
@@ -1109,7 +1109,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_replace_procedure:
 		{
 		request->req_type = REQ_DDL;
-		request->req_flags |= REQ_procedure;
+		request->req_flags |= (REQ_block | REQ_procedure);
 
 		const dsql_nod* variables = input->nod_arg[e_prc_dcls];
 		if (variables) {
@@ -1247,7 +1247,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		}
 		else
 			request->req_type = REQ_EXEC_BLOCK;
-		request->req_flags |= REQ_exec_block;
+		request->req_flags |= REQ_block;
 
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exe_blk_inputs] = 
@@ -1454,7 +1454,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
         return input;
 
 	case nod_return:
-		if (request->req_flags & REQ_trigger)
+		if (request->req_flags & REQ_trigger) // triggers only
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown 
 					isc_arg_gds, isc_random, isc_arg_string, "SUSPEND", 0);
@@ -1519,7 +1519,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_user_savepoint:
-		if (request->req_flags & REQ_procedure)
+		if (request->req_flags & REQ_block) // blocks, procedures and triggers
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown 
 					isc_arg_gds, isc_random, isc_arg_string, "SAVEPOINT", 0);
@@ -1527,7 +1527,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_release_savepoint:
-		if (request->req_flags & REQ_procedure)
+		if (request->req_flags & REQ_block) // blocks, procedures and triggers
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown 
 					isc_arg_gds, isc_random, isc_arg_string, "RELEASE", 0);
@@ -1535,7 +1535,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_undo_savepoint:
-		if (request->req_flags & REQ_procedure)
+		if (request->req_flags & REQ_block) // blocks, procedures and triggers
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown 
 					isc_arg_gds, isc_random, isc_arg_string, "ROLLBACK", 0);
@@ -3560,7 +3560,7 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input)
 
 	const dsql_nod* cursor = input->nod_arg[e_del_cursor];
 	dsql_nod* relation = input->nod_arg[e_del_relation];
-	if (cursor && (request->req_flags & (REQ_procedure | REQ_exec_block))) {
+	if (cursor && (request->req_flags & REQ_block)) {
 		dsql_nod* anode = MAKE_node(nod_erase_current, e_erc_count);
 		anode->nod_arg[e_erc_context] =
 			(dsql_nod*) pass1_cursor_context(request, cursor, relation);
@@ -6506,7 +6506,7 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input)
 
 	dsql_nod* cursor = input->nod_arg[e_upd_cursor];
 	dsql_nod* relation = input->nod_arg[e_upd_relation];
-	if (cursor && (request->req_flags & (REQ_procedure | REQ_exec_block))) {
+	if (cursor && (request->req_flags & REQ_block)) {
 		dsql_nod* anode = MAKE_node(nod_modify_current, e_mdc_count);
 		anode->nod_arg[e_mdc_context] =
 			(dsql_nod*) pass1_cursor_context(request, cursor, relation);
@@ -6616,7 +6616,7 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
     const dsql_str* var_name = 0;
 	if (input->nod_type == nod_field_name) {
 		if (input->nod_arg[e_fln_context]) {
-			if (request->req_flags & REQ_trigger)
+			if (request->req_flags & REQ_trigger) // triggers only
 				return pass1_field(request, input, false);
 			else
 				field_error(0, 0, input);
@@ -6629,10 +6629,12 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 	DEV_BLKCHK(var_name, dsql_type_str);
 
     dsql_nod* var_nodes;
-	if (request->req_flags & REQ_procedure) {
+	if (request->req_flags & REQ_procedure) // procedures and triggers
+	{
 		dsql_nod* procedure_node = request->req_ddl_node;
 		fb_assert(procedure_node);
-		if (!(request->req_flags & REQ_trigger)) {
+		if (!(request->req_flags & REQ_trigger)) // no, procedures only
+		{
 			// try to resolve variable name against input and output parameters
 			var_nodes = procedure_node->nod_arg[e_prc_inputs];
 			if (var_nodes)

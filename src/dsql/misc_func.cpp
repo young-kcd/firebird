@@ -28,9 +28,9 @@ const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] = {
 	{"<UNKNOWN>", 0},
 	{"CURRENT_CONNECTION", 0},
 	{"CURRENT_TRANSACTION", 0},
-	{"GDSCODE", REQ_procedure | REQ_exec_block},
-	{"SQLCODE", REQ_procedure | REQ_exec_block},
-	{"ROW_COUNT", REQ_procedure | REQ_exec_block},
+	{"GDSCODE", REQ_block},
+	{"SQLCODE", REQ_block},
+	{"ROW_COUNT", REQ_block},
 	{"INSERTING/UPDATING/DELETING", REQ_trigger}
 };
 
