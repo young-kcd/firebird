@@ -32,7 +32,6 @@
 #include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/msg_encode.h"
-#include "../jrd/jrd.h"
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/gsec_proto.h"
 #include "../jrd/jrd_pwd.h"
@@ -71,9 +70,7 @@ static bool get_line(int *, SCHAR **, TEXT *, TSEC);
 static bool get_switches(int, TEXT **, IN_SW_TAB, TSEC, bool *);
 static SSHORT parse_cmd_line(int, TEXT **, TSEC);
 static void printhelp(void);
-#ifdef SUPERSERVER
-static int output_svc(SLONG, UCHAR *);
-#else
+#ifndef SUPERSERVER
 static int output_main(SLONG, UCHAR *);
 #endif
 
@@ -109,24 +106,6 @@ int GSEC_main(SVC service)
 	SVC_finish(service, SVC_finished);
 
 	return exit_code;
-}
-
-
-int output_svc( SLONG output_data, UCHAR * output_buf)
-{
-/**************************************
- *
- *	o u t p u t _ s v c
- *
- **************************************
- *
- * Functional description
- *	Routine which is passed to GBAK for calling back when there is output.
- *
- **************************************/
-
-	SVC_fprintf((SVC) output_data, "%s", output_buf);
-	return 0;
 }
 
 #else
