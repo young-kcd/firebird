@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.18 2003-01-16 17:47:04 skidder Exp $
+ * $Id: rse.cpp,v 1.19 2003-01-17 13:46:56 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3696,6 +3696,7 @@ static void write_merge_block(TDBB tdbb, MFB mfb, ULONG block)
 
 	if (!(sfb_ = mfb->mfb_sfb)) {
 		sfb_ = mfb->mfb_sfb = FB_NEW(*getDefaultMemoryPool()) sfb;
+		memset(sfb_, 0, sizeof(struct sfb));
 	}
 	if (!sfb_->sfb_file_name) {
 		TEXT file_name[128];
