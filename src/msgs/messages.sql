@@ -3172,5 +3172,6 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('bad_shutdown_mode', 'SHUT_database', 'shut.cpp', NULL, 0, 515, NULL, 'Target shutdown mode is invalid for database "%s"', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('concat_overflow', NULL, 'evl.cpp', NULL, 0, 516, NULL, 'Concatenation overflow. Resulting string cannot exceed 32K in length.', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('bad_substring_param', NULL, 'evl.cpp', NULL, 0, 517, NULL, 'Invalid %s parameter to SUBSTRING. Only positive integers are allowed.', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('HLP_SETPLANONLY', 'help', 'isql.epp', NULL, 17, 109, NULL, '    SET HEADING            -- toggle display of query column titles', NULL, NULL);
 
 COMMIT WORK;
