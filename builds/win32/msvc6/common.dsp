@@ -88,6 +88,10 @@ LIB32=link.exe -lib
 
 SOURCE=..\..\..\src\common\classes\alloc.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\locks.cpp
+# End Source File
 # End Group
 # Begin Group "EXCEPTION files"
 
