@@ -1,3 +1,364 @@
+2002-08-28 10:02  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.607):
+	
+	increment build number
+
+2002-08-28 10:02  eku
+
+	* firebird2/configure.in (1.39):
+	
+	Another C&P error.
+
+2002-08-28 09:51  eku
+
+	* firebird2/configure.in (1.38):
+	
+	Fixed C&P error.
+
+2002-08-28 09:51  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.606):
+	
+	increment build number
+
+2002-08-28 09:11  eku
+
+	* firebird2/src/extlib/fbudf/stdafx.h (1.2):
+	
+	Needs include file common.h to compile.
+
+2002-08-28 09:10  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.604), writeBuildNum.sh
+	(1.605):
+	
+	increment build number
+
+2002-08-28 09:10  eku
+
+	* firebird2/src/remote/inet_server.cpp (1.8):
+	
+	Use SIG_FPTR from common.h.
+
+2002-08-28 09:03  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.603):
+	
+	increment build number
+
+2002-08-28 09:03  eku
+
+	* firebird2/configure.in (1.37):
+	
+	Check which network libraries (socket, nsl, resolv) are needed.
+	configure will set the variable LIBS to the correct value. Setting
+	this in prefix.XXX should no longer be neccessary. If it doesn't
+	work for you, please extend the tests in configure.in, rather than
+	defining this in prefix.your_system.
+	
+	Another autoconf cleanup:  o check for the existence of the
+	function strcasecmp and stricmp  o replaced STRICMP
+
+2002-08-28 08:50  eku
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h (1.24),
+	jrd/common.h (1.24), jrd/svc.cpp (1.14),
+	make.new/config/config.h.in (1.30), utilities/security.epp (1.7):
+	
+	Another autoconf cleanup:  o check for the existence of the
+	function strcasecmp and stricmp  o replaced STRICMP
+
+2002-08-28 08:50  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.601), writeBuildNum.sh
+	(1.600), writeBuildNum.sh (1.599), writeBuildNum.sh (1.602):
+	
+	increment build number
+
+2002-08-28 08:12  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.598):
+	
+	increment build number
+
+2002-08-28 08:12  dimitr
+
+	* firebird2/builds/win32/msvc6/fbclient.dsp (1.2):
+	
+	Cleaned up fbclient.dll contents.
+
+2002-08-27 21:26  dimitr
+
+	* firebird2/src/: ipserver/ipclient.cpp (1.4), remote/serve_proto.h
+	(1.2), remote/srvr_w32.cpp (1.7), remote/window.cpp (1.4),
+	remote/xnet.cpp (1.4), remote/xnet_proto.h (1.2):
+	
+	Finilized Borland's implementation of XNET (win32 only). Seems to
+	work ;-)
+
+2002-08-27 21:26  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.596), writeBuildNum.sh
+	(1.597):
+	
+	increment build number
+
+2002-08-27 13:58  dimitr
+
+	* firebird2/src/jrd/: idx.h (1.2), ods.h (1.2):
+	
+	Minor ODS change (version 10.1). New indices on system tables:	 -
+	define index RDB$INDEX_41	for RDB$INDICES      
+	RDB$FOREIGN_KEY;   - define index RDB$INDEX_42	     for
+	RDB$RELATION_CONSTRAINTS       RDB$RELATION_NAME,
+	RDB$CONSTRAINT_TYPE;
+
+2002-08-27 13:58  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.595):
+	
+	increment build number
+
+2002-08-27 13:47  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.594), writeBuildNum.sh
+	(1.593):
+	
+	increment build number
+
+2002-08-27 13:47  dimitr
+
+	* firebird2/src/: include/fb_types.h (1.7), jrd/common.h (1.23):
+	
+	Moved SIG_FPTR type declaration from fb_types.h to common.h.  Hence
+	we've got the codebase compiled on win32 again, and it shouldn't
+	break other builds, IMHO.
+
+2002-08-27 13:23  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.591):
+	
+	Updated FB version.
+
+2002-08-27 13:23  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.592):
+	
+	increment build number
+
+2002-08-27 13:07  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.590):
+	
+	increment build number
+
+2002-08-27 13:07  dimitr
+
+	* firebird2/src/jrd/: isc_proto.h (1.3), isc_win32.cpp (1.5):
+	
+	Removed duplicated registry path constants.
+
+2002-08-27 13:01  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.589):
+	
+	increment build number
+
+2002-08-27 13:01  dimitr
+
+	* firebird2/builds/win32/msvc6/intl.dsp (1.4):
+	
+	Small correction.
+
+2002-08-27 09:48  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.588):
+	
+	increment build number
+
+2002-08-27 09:48  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.12), dsql.cpp (1.20), node.h
+	(1.9), parse.cpp (1.21), parse.y (1.20), pass1.cpp (1.16):
+	
+	Implemented CREATE OR ALTER statement for
+	procedures/triggers/views.
+
+2002-08-26 21:41  arnobrinkman
+
+	* firebird2/src/misc/writeBuildNum.sh (1.587):
+	
+	increment build number
+
+2002-08-26 21:40  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.15):
+	
+	Added code in pass1_simple_case for handeling parameters in
+	case_operand together with when_operands.  The method used to get
+	the derciber for parameters is taken from MAKE_desc_from_list in
+	make.cpp Example : SELECT CASE FieldA WHEN :param1 THEN 1 WHEN 2
+	THEN 2 ELSE NULL END FROM TableA Note : At least one "know
+	describer" must be in the list else no describer could be guested
+	(logic but...) !
+
+2002-08-26 15:50  dimitr
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.3), fbclient.def
+	(1.1), fbclient.dsp (1.1), fbclient_debug.def (1.1), gds32.def
+	(1.3), gds32.dsp (1.4), gds32_debug.def (1.3):
+	
+	Renamed the win32 client library.
+
+2002-08-26 15:50  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.586):
+	
+	increment build number
+
+2002-08-26 15:20  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.585):
+	
+	increment build number
+
+2002-08-26 15:20  eku
+
+	* firebird2/src/utilities/drop.cpp (1.8):
+	
+	Fixed GCC 3.1 compile problem with missing cast operator.
+
+2002-08-26 14:18  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.582), writeBuildNum.sh
+	(1.581), writeBuildNum.sh (1.580), writeBuildNum.sh (1.579),
+	writeBuildNum.sh (1.583), writeBuildNum.sh (1.584):
+	
+	increment build number
+
+2002-08-26 14:18  eku
+
+	* firebird2/src/: burp/mvol.cpp (1.6), jrd/isc_file.cpp (1.11),
+	jrd/jrd.cpp (1.14), jrd/llio.cpp (1.7), jrd/thd.cpp (1.6),
+	jrd/y-valve.cpp (1.5), jrd/os/posix/mod_loader.cpp (1.3),
+	remote/xnet.cpp (1.3), utilities/srvrmgr.cpp (1.4), wal/walw.cpp
+	(1.9):
+	
+	Added / replaced ifdef's around unistd.h with the define
+	HAVE_UNISTD_H generated by autoconf.
+
+2002-08-26 14:14  eku
+
+	* firebird2/src/jrd/isc_sync.cpp (1.15):
+	
+	Another autoconf cleanup:  o check for the existence of the
+	function mmap  o replaced MMAP_SUPPORTED by HAVE_MMAP
+	
+	Moved the (multiple) definition of SIG_FPTR to fb_types.h.
+
+2002-08-26 14:13  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.576), writeBuildNum.sh
+	(1.575), writeBuildNum.sh (1.577), writeBuildNum.sh (1.578):
+	
+	increment build number
+
+2002-08-26 14:13  eku
+
+	* firebird2/src/: include/fb_types.h (1.6), jrd/isc_cray.cpp (1.5),
+	jrd/isc_ipc.cpp (1.16), remote/inet.cpp (1.18):
+	
+	Moved the (multiple) definition of SIG_FPTR to fb_types.h.
+
+2002-08-26 14:10  eku
+
+	* firebird2/src/: jrd/common.h (1.22), jrd/event.cpp (1.9),
+	jrd/isc_s_proto.h (1.3), lock/lock.cpp (1.10), lock/print.cpp
+	(1.5), utilities/drop.cpp (1.7), utilities/dropv3.cpp (1.7),
+	wal/walc.cpp (1.4):
+	
+	Another autoconf cleanup:  o check for the existence of the
+	function mmap  o replaced MMAP_SUPPORTED by HAVE_MMAP
+
+2002-08-26 14:10  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.571), writeBuildNum.sh
+	(1.574), writeBuildNum.sh (1.573), writeBuildNum.sh (1.572):
+	
+	increment build number
+
+2002-08-26 13:59  eku
+
+	* firebird2/: configure.in (1.36),
+	src/include/gen/autoconfig_msvc.h (1.23),
+	src/make.new/config/config.h.in (1.29):
+	
+	Another autoconf cleanup:  o check for the existence of the
+	function mmap  o replaced MMAP_SUPPORTED by HAVE_MMAP
+
+2002-08-26 13:59  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.570), writeBuildNum.sh
+	(1.569), writeBuildNum.sh (1.568):
+	
+	increment build number
+
+2002-08-26 10:51  eku
+
+	* firebird2/src/qli/help.epp (1.3):
+	
+	Fixed format string (GCC 3.2 won't compile this file).
+
+2002-08-26 10:51  eku
+
+	* firebird2/src/misc/writeBuildNum.sh (1.567):
+	
+	increment build number
+
+2002-08-26 09:51  dimitr
+
+	* firebird2/src/jrd/db_alias.cpp (1.3):
+	
+	Learnt the alias management code to handle both possible path
+	separators correctly.
+
+2002-08-26 09:51  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.566):
+	
+	increment build number
+
+2002-08-24 12:53  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.22):
+	
+	Corrected MSVC related autoconf stuff.
+
+2002-08-24 12:53  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.565):
+	
+	increment build number
+
+2002-08-24 11:40  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.564):
+	
+	increment build number
+
+2002-08-24 11:40  dimitr
+
+	* firebird2/src/jrd/svc.cpp (1.13):
+	
+	Added missing #endif.
+
+2002-08-22 15:11  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.563):
+	
+	increment build number
+
 2002-08-22 13:30  eku
 
 	* firebird2/: configure.in (1.35),
