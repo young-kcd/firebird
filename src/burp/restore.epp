@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.82 2004-08-30 10:07:00 robocop Exp $
+$Id: restore.epp,v 1.83 2004-10-30 05:58:48 robocop Exp $
 */
 
 #include "firebird.h"
@@ -146,7 +146,7 @@ USHORT	recompute_length (burp_rel*);
 bool	restore (const TEXT*, const TEXT*);
 void	restore_security_class (const TEXT*, const TEXT*);
 USHORT	get_view_base_relation_count(const TEXT*, USHORT);
-void	store_blr_gen_id (const TEXT*, SINT64);
+void	store_blr_gen_id (const TEXT*, SINT64, const ISC_QUAD*);
 void	update_global_field();
 void	update_view_dbkey_lengths();
 void	general_on_error();
@@ -3436,6 +3436,10 @@ bool get_generator()
 	BurpGlobals*	    tdgbl = BurpGlobals::getSpecific();
 
 	skip_init(&scan_next_attr);
+	
+	ISC_QUAD gen_desc = {0, 0};
+	bool got_desc = false;
+	
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
 		switch (attribute)
@@ -3454,6 +3458,16 @@ bool get_generator()
 			value = get_int64();
 			break;
 
+			case att_gen_description:
+				if (tdgbl->RESTORE_format >= 7)
+				{
+					get_source_blob (&gen_desc, false);
+					got_desc = gen_desc.gds_quad_high || gen_desc.gds_quad_low;
+				}
+				else
+					bad_attribute(scan_next_attr, attribute, 93);
+				break;
+
 		default:
 			bad_attribute (scan_next_attr, attribute, 93);
 			// msg 93 index
@@ -3461,7 +3475,7 @@ bool get_generator()
 		}
 	}
 
-	store_blr_gen_id (name, value);
+	store_blr_gen_id (name, value, got_desc ? &gen_desc: NULL);
 
 	return true;
 }
@@ -4979,7 +4993,7 @@ bool get_relation_data()
 
 		case rec_gen_id:
 			gen_id = get_numeric();
-			store_blr_gen_id (name, gen_id);
+			store_blr_gen_id (name, gen_id, NULL);
 			get_record(&record, tdgbl);
 			break;
 
@@ -5021,55 +5035,105 @@ bool get_sql_roles()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
-		X IN RDB$ROLES
+	if (tdgbl->RESTORE_format >= 7)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
+			X IN RDB$ROLES
 
-		X.RDB$ROLE_NAME.NULL = TRUE;
-		X.RDB$OWNER_NAME.NULL = TRUE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG.NULL = TRUE;
-		skip_init(&scan_next_attr);
+			X.RDB$ROLE_NAME.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG.NULL = TRUE;
+			skip_init(&scan_next_attr);
 
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
-			case att_role_name:
-				X.RDB$ROLE_NAME.NULL = FALSE;
-				l = GET_TEXT(X.RDB$ROLE_NAME);
-				MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
-				/************************************************
-				**
-				** msg 251, restoring SQL role: %s
-				**
-				*************************************************/
-				BURP_verbose (251, temp, NULL, NULL, NULL, NULL);
-				break;
+				switch (attribute)
+				{
+				case att_role_name:
+					X.RDB$ROLE_NAME.NULL = FALSE;
+					l = GET_TEXT(X.RDB$ROLE_NAME);
+					MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
+					/************************************************
+					**
+					** msg 251, restoring SQL role: %s
+					**
+					*************************************************/
+					BURP_verbose (251, temp, NULL, NULL, NULL, NULL);
+					break;
 
-			case att_role_owner_name:
-				X.RDB$OWNER_NAME.NULL = FALSE;
-				GET_TEXT(X.RDB$OWNER_NAME);
-				break;
-				
-			case att_role_description:
-				get_source_blob (&X.RDB$DESCRIPTION, false);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-			    break;
+				case att_role_owner_name:
+					X.RDB$OWNER_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$OWNER_NAME);
+					break;
 
-			default:
-				/*************************************************
-				**
-				** msg 250, Bad attribute for restoring SQL role
-				**
-				**************************************************/
-				bad_attribute (scan_next_attr, attribute, 250);
-				break;
+				case att_role_description:
+					get_source_blob (&X.RDB$DESCRIPTION, false);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+				    break;
+
+				default:
+					/*************************************************
+					**
+					** msg 250, Bad attribute for restoring SQL role
+					**
+					**************************************************/
+					bad_attribute (scan_next_attr, attribute, 250);
+					break;
+				}
 			}
-		}
-	END_STORE
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+		END_STORE
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
+			X IN RDB$ROLES
+
+			X.RDB$ROLE_NAME.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG.NULL = TRUE;
+			skip_init(&scan_next_attr);
+
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_role_name:
+					X.RDB$ROLE_NAME.NULL = FALSE;
+					l = GET_TEXT(X.RDB$ROLE_NAME);
+					MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
+					/************************************************
+					**
+					** msg 251, restoring SQL role: %s
+					**
+					*************************************************/
+					BURP_verbose (251, temp, NULL, NULL, NULL, NULL);
+					break;
+
+				case att_role_owner_name:
+					X.RDB$OWNER_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$OWNER_NAME);
+					break;
+
+				default:
+					/*************************************************
+					**
+					** msg 250, Bad attribute for restoring SQL role
+					**
+					**************************************************/
+					bad_attribute (scan_next_attr, attribute, 250);
+					break;
+				}
+			}
+		END_STORE
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 
 	return true;
 }
@@ -5083,7 +5147,7 @@ bool is_ascii_name (const TEXT *name, const SSHORT len)
  **************************************
  *
  * Functional description
- *	Check if the input text is valid ASCII name
+ *	Check if the input text is valid ASCII uppercased name
  *
  **************************************/
 	SSHORT i = 0;
@@ -6736,7 +6800,8 @@ USHORT get_view_base_relation_count (const TEXT* current_view_name,
 
 
 void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
-					   SINT64	value)
+					   SINT64	value,
+					   const ISC_QUAD* gen_desc)
 {
 /**************************************
  *
@@ -6750,13 +6815,32 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
-		X IN RDB$GENERATORS
-		strcpy (X.RDB$GENERATOR_NAME, gen_name);
-	END_STORE;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+	if (tdgbl->RESTORE_format >= 7)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
+			X IN RDB$GENERATORS
+			strcpy (X.RDB$GENERATOR_NAME, gen_name);
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			if (gen_desc)
+			{
+				X.RDB$DESCRIPTION = *gen_desc;
+				X.RDB$DESCRIPTION.NULL = FALSE;
+			}
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
+			X IN RDB$GENERATORS
+			strcpy (X.RDB$GENERATOR_NAME, gen_name);
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 
 	if (!value)
 	{

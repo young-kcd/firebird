@@ -168,12 +168,15 @@ and trigger-new is:
 /* ATT_BACKUP_FORMAT has been increased to 5. It allows us to distinguish
    backup format between IB3.3/IB4.0 and IB4.5 in case of migration
    problem */
+
 /* Version 6:		Supports SQL Time & Date columns.
 			RDB$FIELD_PRECISION
 			SQL Dialect from database header
 			SQL_INT64 columns and generator values
  */
-const int ATT_BACKUP_FORMAT		= 6;
+ 
+// Version 7: RDB$DESCRIPTION in roles and generators.
+const int ATT_BACKUP_FORMAT		= 7;
 
 // format version number for ranges for arrays 
 
@@ -427,6 +430,7 @@ enum att_type {
 	att_gen_generator = SERIES,
 	att_gen_value,
 	att_gen_value_int64,
+	att_gen_description,
 
 	// Stored procedure attributes 
 

@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.66 2004-10-07 09:19:19 robocop Exp $
+$Id: backup.epp,v 1.67 2004-10-30 05:58:47 robocop Exp $
 */
 
 #include "firebird.h"
@@ -153,7 +153,7 @@ enum backup_capabilities
 	BCK_ods8			= 2048,	// stored procedures & exceptions & constraints
 	BCK_ods9			= 4096,	// SQL roles
 	BCK_ods10			= 8192,	// FIELD_PRECISION
-	BCK_ods11           = 16384 // rdb$description in rdb$roles
+	BCK_ods11           = 16384 // rdb$description in rdb$roles and rdb$generators
 };
 
 #ifdef DEBUG
@@ -1303,7 +1303,9 @@ void put_asciz( const SCHAR attribute, const TEXT* string)
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	ULONG l = strlen(string);
+	const ULONG l = strlen(string);
+#pragma FB_COMPILER_MESSAGE("CVC: Check that file doesn't exceed 255 in length!")
+	// We'll have to ensure that length < MAX_FILE_NAME_LENGTH
 
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (l));
@@ -3122,24 +3124,54 @@ void write_generators(void)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	FOR (REQUEST_HANDLE req_handle1)
-		X IN RDB$GENERATORS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
-		put(tdgbl, rec_generator);
-		const SSHORT l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
-		SINT64 value = 0;
-		if (!tdgbl->gbl_sw_meta) {
-			value = get_gen_id (X.RDB$GENERATOR_NAME, l);
-			put_int64 (att_gen_value_int64, value);
-		}
-		put(tdgbl, att_end);
-		MISC_terminate (X.RDB$GENERATOR_NAME, temp, l, sizeof(temp));
+	if (tdgbl->BCK_capabilities & BCK_ods11)
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$GENERATORS
+			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_generator);
+			const SSHORT l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
+			SINT64 value = 0;
+			if (!tdgbl->gbl_sw_meta) {
+				value = get_gen_id (X.RDB$GENERATOR_NAME, l);
+				put_int64 (att_gen_value_int64, value);
+			}
+			if (!X.RDB$DESCRIPTION.NULL) {
+				put_source_blob (att_gen_description, att_gen_description,
+								 &X.RDB$DESCRIPTION);
+			}
+			put(tdgbl, att_end);
+			MISC_terminate (X.RDB$GENERATOR_NAME, temp, l, sizeof(temp));
 #pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
-		BURP_verbose (165, temp, (void*) (IPTR) value, NULL, NULL, NULL);
-		// msg 165 writing generator %s value %ld
-	END_FOR;
-	ON_ERROR
-		general_on_error();
-	END_ERROR;
+			BURP_verbose (165, temp, (void*) (IPTR) value, NULL, NULL, NULL);
+			// msg 165 writing generator %s value %ld
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$GENERATORS
+			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_generator);
+			const SSHORT l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
+			SINT64 value = 0;
+			if (!tdgbl->gbl_sw_meta) {
+				value = get_gen_id (X.RDB$GENERATOR_NAME, l);
+				put_int64 (att_gen_value_int64, value);
+			}
+			put(tdgbl, att_end);
+			MISC_terminate (X.RDB$GENERATOR_NAME, temp, l, sizeof(temp));
+#pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
+			BURP_verbose (165, temp, (void*) (IPTR) value, NULL, NULL, NULL);
+			// msg 165 writing generator %s value %ld
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
 
 	MISC_release_request_silent(req_handle1);
 } 
