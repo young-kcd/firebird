@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.26 2003-07-24 10:21:38 aafemt Exp $
+$Id: backup.epp,v 1.27 2003-08-10 22:52:48 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -3265,7 +3265,8 @@ static void write_generators(void)
         PUT_INT64 (att_gen_value_int64, value);
         PUT (att_end);
         MISC_terminate ( (UCHAR*) X.RDB$GENERATOR_NAME, (UCHAR*) temp, l, sizeof (temp));
-        BURP_verbose (165, temp, (void*) value, NULL, NULL, NULL);
+#pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
+        BURP_verbose (165, temp, (void*) (SLONG) value, NULL, NULL, NULL);
      
         /* msg 165 writing generator %s value %ld */
 	END_FOR;

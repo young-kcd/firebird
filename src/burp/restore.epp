@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.32 2003-07-24 10:21:38 aafemt Exp $
+$Id: restore.epp,v 1.33 2003-08-10 22:52:48 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -6953,7 +6953,8 @@ END_ERROR;
 
 if (!value)
     {
-    BURP_verbose (185, gen_name, (void*) value, NULL_PTR, NULL_PTR, NULL_PTR);
+#pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
+    BURP_verbose (185, gen_name, (void*) (SLONG) value, NULL_PTR, NULL_PTR, NULL_PTR);
 	/* msg 185 restoring generator %s value: %ld */
     return;
     }                                                       
@@ -7023,7 +7024,8 @@ if (isc_start_request (
 /* msg 42 Failed in store_blr_gen_id */
     }
 
-BURP_verbose (185, gen_name, (void*) value, NULL_PTR, NULL_PTR, NULL_PTR);
+#pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
+BURP_verbose (185, gen_name, (void*) (SLONG) value, NULL_PTR, NULL_PTR, NULL_PTR);
 /* msg 185 restoring generator %s value: %ld */
 
 isc_release_request (status_vector, 
