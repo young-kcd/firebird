@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.34 2003-02-13 10:11:14 dimitr Exp $
+$Id: par.cpp,v 1.35 2003-02-17 08:41:59 eku Exp $
 */
 
 #include "firebird.h"
@@ -1473,7 +1473,7 @@ static JRD_NOD par_message(TDBB tdbb, CSB * csb)
 
 	SET_TDBB(tdbb);
 
-/* Get message number, it in the compile scratch block, and
+/* Get message number, register it in the compile scratch block, and
    allocate a node to represent the message */
 
 	n = (unsigned int) BLR_BYTE;

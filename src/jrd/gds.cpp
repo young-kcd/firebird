@@ -3189,7 +3189,7 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
  **************************************
  *
  * Functional description
- *	Una cleanup handler.
+ *	Unregister a cleanup handler.
  *
  **************************************/
 	CLEAN *clean_ptr, clean;

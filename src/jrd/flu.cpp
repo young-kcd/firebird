@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.26 2003-02-13 23:11:58 bellardo Exp $
+$Id: flu.cpp,v 1.27 2003-02-17 08:41:58 eku Exp $
 */
 
 #include "firebird.h"
@@ -246,7 +246,7 @@ void FLU_unregister_module(MOD module)
  **************************************
  *
  * Functional description
- *	Uninterest in an external function module.
+ *	Unregister interest in an external function module.
  *	Unload module if it's uninteresting.
  *
  **************************************/

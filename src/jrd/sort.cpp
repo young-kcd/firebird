@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.29 2003-02-14 02:24:43 brodsom Exp $
+ * $Id: sort.cpp,v 1.30 2003-02-17 08:42:00 eku Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -2924,7 +2924,7 @@ static void sort(SCB scb)
 
 /* Make another pass and eliminate duplicates.  It's possible to do this
    is the same pass the final ordering, but the logic is complicated enough
-   to screw up optimizations.  Better two fast passes than one
+   to screw up register optimizations.  Better two fast passes than one
    slow pass, I suppose.  Prove me wrong and win a trip for two to
    Cleveland, Ohio. */
 

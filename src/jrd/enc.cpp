@@ -695,7 +695,7 @@ int des_cipher(const char *in, char *out, long salt, int num_iter)
 		do {
 
 #define	SPTAB(t, i)	(*(long *)((unsigned char *)t + i*(sizeof(long)/4)))
-			/* use this if "k" is allocated to a ... */
+			/* use this if "k" is allocated to a register ... */
 #define	DOXOR(x,y,i)	k=B.b[i]; x^=SPTAB(SPE[0][i],k); y^=SPTAB(SPE[1][i],k);
 
 #define	CRUNCH(p0, p1, q0, q1)	\
