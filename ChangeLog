@@ -1,3 +1,33 @@
+2003-11-17 19:34  skidder
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Fix problem with long stream blobs
+
+2003-11-17 19:09  skidder
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Fix problem with long stream blobs
+
+2003-11-17 17:04  skidder
+
+	* firebird2/builds/win32/make_boot.bat:
+	
+	Fix MSVC7 build
+
+2003-11-17 02:43  brodsom
+
+	* firebird2/src/jrd/flu.h:
+	
+	-Simplify ifdef
+
+2003-11-17 02:05  brodsom
+
+	* firebird2/src/jrd/flu.h:
+	
+	-Simplify ifdef
+
 2003-11-16 23:10  skidder
 
 	* firebird2/src/jrd/: evl_string.h, evl_string_test.cpp:
