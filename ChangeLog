@@ -1,3 +1,61 @@
+2004-08-30 20:10  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.70), alice/alice.h (1.43),
+	alice/all.cpp (1.28), alice/all.h (1.11), alice/all_proto.h (1.6),
+	alice/exe.cpp (1.37), jrd/all.cpp (1.38), jrd/blb.cpp (1.86),
+	jrd/btr.cpp (1.114), jrd/cch.cpp (1.103), jrd/cmp.cpp (1.146),
+	jrd/cvt.cpp (1.50), jrd/dfw.epp (1.122), jrd/dyn.epp (1.68),
+	jrd/exe.cpp (1.122), jrd/idx.cpp (1.65), jrd/jrd.cpp (1.177),
+	jrd/jrd.h (1.112), jrd/jrd_proto.h (1.32), jrd/met.epp (1.137),
+	jrd/nav.cpp (1.44), jrd/opt.cpp (1.188), jrd/pcmet.epp (1.28),
+	jrd/rse.cpp (1.76), jrd/sch.cpp (1.29), jrd/thd.cpp (1.37),
+	jrd/thd.h (1.37), jrd/tra.cpp (1.85), jrd/val.cpp (1.56),
+	jrd/vio.cpp (1.109), jrd/vio_proto.h (1.22), dsql/alld.cpp (1.29),
+	dsql/dsql.cpp (1.119), dsql/dsql.h (1.67), common/classes/alloc.h
+	(1.50), burp/burp.cpp (1.87), burp/burp.h (1.57),
+	common/config/config_file.cpp (1.25), common/config/config_file.h
+	(1.9), utilities/gstat/dba.epp (1.46), utilities/gsec/gsec.cpp
+	(1.34), utilities/gsec/gsec.h (1.19), remote/interface.cpp (1.88),
+	remote/remote.cpp (1.39), remote/remote.h (1.41), remote/server.cpp
+	(1.92), ipserver/ipc.h (1.24):
+	
+	added (and used in sources) template to change and restore default
+	pool
+
+2004-08-30 19:15  alexpeshkoff
+
+	* firebird2/src/msgs/msg.sql (1.2):
+	
+	fixed posix boot build - posix filenames case-sensitive
+
+2004-08-30 17:58  skidder
+
+	* firebird2/src/extlib/ib_udf.sql (1.5):
+	
+	Extent default length for UDF arguments slightly
+
+2004-08-30 12:10  robocop
+
+	* firebird2/src/isql/show.epp (1.54):
+	
+	When a role hasn't been granted, tell that. Do not hide the role
+	(wasted two minutes to discover it wasn't gbak problem). Also, show
+	the role's description.
+
+2004-08-30 12:07  robocop
+
+	* firebird2/src/isql/isql.epp (1.99):
+	
+	Misc
+
+2004-08-30 12:07  robocop
+
+	* firebird2/src/burp/: backup.epp (1.65), burp.h (1.56),
+	restore.epp (1.82):
+	
+	Gbak should backup/restore the new field rdb$description in
+	rdb$roles, depending on ODS.
+
 2004-08-29 13:24  dimitr
 
 	* firebird2/src/jrd/: cch.cpp (1.102), cch.h (1.23):
