@@ -2356,6 +2356,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 		case nod_current_role:
 		case nod_internal_info:
 		case nod_dbkey:
+		case nod_plan_expr:
 			return FALSE;
 		}
 
