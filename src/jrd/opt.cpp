@@ -282,12 +282,10 @@ bool OPT_access_path(const jrd_req* request,
 	SCHAR* begin = buffer;
 
 /* loop through all RSEs in the request, 
-   and describe the rsb tree for that rsb;
-   go backwards because items were popped
-   off the stack backwards */
+   and describe the rsb tree for that rsb */
 
 	SLONG i;
-	for (i = request->req_fors.getCount() - 1; i >= 0; i--) {
+	for (i = 0; i < request->req_fors.getCount(); i++) {
 		RecordSource* rsb = request->req_fors[i];
 		if (rsb && !dump_rsb(request, rsb, &buffer, &buffer_length))
 			break;
@@ -295,7 +293,7 @@ bool OPT_access_path(const jrd_req* request,
 
 	*return_length = buffer - begin;
 
-	return (i < 0);
+	return (i >= request->req_fors.getCount());
 }
 
 
