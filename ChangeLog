@@ -1,3 +1,41 @@
+2004-12-11 01:08  robocop
+
+	* firebird2/src/dsql/preparse.cpp (1.35):
+	
+	Misc.
+
+2004-12-10 23:54  robocop
+
+	* firebird2/src/: dudley/exe.epp (1.58), gpre/gpre_meta.epp (1.50),
+	jrd/utl_proto.h (1.18):
+	
+	Misc.
+
+2004-12-10 23:50  robocop
+
+	* firebird2/src/: alice/exe.cpp (1.42), alice/tdr.cpp (1.44),
+	burp/restore.epp (1.87), common/classes/ClumpletReader.cpp (1.8),
+	common/classes/ClumpletReader.h (1.9),
+	common/classes/ClumpletWriter.cpp (1.7),
+	common/classes/ClumpletWriter.h (1.6):
+	
+	Misc.
+
+2004-12-10 21:50  robocop
+
+	* firebird2/src/include/: fb_types.h (1.47), firebird.h (1.30):
+	
+	Changing the license with permission from Mark, Mike and John.
+
+2004-12-10 15:51  robocop
+
+	* firebird2/builds/posix/: Makefile.in.embed.gbak (1.10),
+	Makefile.in.embed.gdef (1.9), Makefile.in.embed.gfix (1.13),
+	Makefile.in.embed.gpre (1.18), Makefile.in.embed.isql (1.10),
+	Makefile.in.embed.qli (1.16), Makefile.in.embed.util (1.18):
+	
+	Misc.
+
 2004-12-09 20:18  alexpeshkoff
 
 	* firebird2/: builds/posix/Makefile.in.embed.gbak (1.9),
