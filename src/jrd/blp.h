@@ -143,7 +143,7 @@
     {"set_generator2", gen_id}, */
 	{"post_arg", one },
 	{"exec_into", exec_into },
-	{"user_savepoint", two },
+	{"user_savepoint", user_savepoint},
 	{"?", zero },
 	{"?", zero },
 	{"?", zero },
@@ -157,7 +157,7 @@
     {"current_role", zero},
     {"skip", one}, 
 /* New BLR in FB2 */
-	{"execute_statement", one},
+	{"exec_sql", one},
 	{"internal_info", one},
 	{"nullsfirst", zero},
 	{"writelock", zero},

@@ -485,6 +485,7 @@ static const UCHAR
 	lock_relation[] = { op_line, op_indent, op_relation, op_line, op_verb, 0},
 	range_relation[] = { op_line, op_verb, op_indent, op_relation, op_line, 0},
 	extract[]	= { op_line, op_byte, op_verb, 0},
+	user_savepoint[]	= { op_byte, op_byte, op_literal, op_line, 0},
 	exec_into[] = { op_line, op_exec_into, 0};
 
 static const struct
