@@ -3172,7 +3172,8 @@ static jrd_nod* pass1(thread_db* tdbb,
  * function.)
  * 
  **************************************/
-	jrd_nod* sub, **ptr, **end;
+	jrd_nod* sub;
+	jrd_nod** ptr;
 	USHORT stream;
 	CompilerScratch::csb_repeat* tail;
 	jrd_prc* procedure;
@@ -3563,7 +3564,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	ptr = node->nod_arg;
 
-	for (end = ptr + node->nod_count; ptr < end; ptr++) {
+	for (jrd_nod** end = ptr + node->nod_count; ptr < end; ptr++) {
 		*ptr = pass1(tdbb, csb, *ptr, view, view_stream, validate_expr);
 	}
 
