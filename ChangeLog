@@ -1,3 +1,72 @@
+2003-05-07 21:14  skidder
+
+	* firebird2/src/remote/xdr.cpp:
+	
+	Mark probable problem for non-Intel ports
+
+2003-05-07 15:48  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fix invalid assertion failures in DEV_BUILD
+
+2003-05-07 15:46  skidder
+
+	* firebird2/src/include/fb_types.h:
+	
+	Fix a reason of several observed xdr-related crashes. Bug was
+	introduced during initial C++ porting effort
+
+2003-05-07 13:13  skidder
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	No more messages about forbidden usage of global operator new in
+	DEV_BUILD. C++ library from RH8.0 does that routinely and this
+	causes crashes because stderr messages go to TCP socket from
+	fb_inet_server
+
+2003-05-07 12:30  dimitr
+
+	* firebird2/builds/win32/fbclient_boot.mak:
+	
+	Fixed win32 build process.
+
+2003-05-07 09:51  dimitr
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Since CS doesn't lock processes while waiting for incoming aux
+	connection, it's potentially dangerous to use one definite port for
+	event processing.
+
+2003-05-07 09:25  dimitr
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Corrected default value, as suggested by Nickolay.
+
+2003-05-07 09:22  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Added comment.
+
+2003-05-07 09:08  dimitr
+
+	* firebird2/src/remote/interface.cpp:
+	
+	Const correctness suggested by Claudio.
+
+2003-05-07 09:06  dimitr
+
+	* firebird2/src/jrd/: jrd_pwd.h, pwd.cpp:
+	
+	It's useless to care about handle leaks when both the engine and
+	thread scheduler are shutdown.	Please also note, that THREAD_*
+	macros shouldn't be used in atexit()-handlers or static
+	destructors.
+
 2003-05-07 03:57  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp:
