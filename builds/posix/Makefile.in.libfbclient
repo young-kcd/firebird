@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.8 2003-03-05 17:16:32 brodsom Exp $
+#  $Id: Makefile.in.libfbclient,v 1.9 2003-03-06 00:16:52 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -95,7 +95,7 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(SECURITY_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
 					$(FBCOMMON_ClientObjects)\
-					$(FBCLASSES_ClientObjects)
+					$(FBCLASSES_ClientObjects)\
 					$(OS_SPECIFIC_Objects)\
 					$(FBCONFIG_Objects)
 
