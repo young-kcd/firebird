@@ -202,7 +202,7 @@ static void event_table_dump(void)
 	prt_que("\tProcesses", &EVENT_header->evh_processes);
 	prt_que("\tEvents", &EVENT_header->evh_events);
 
-	for (offset = sizeof(struct evh); offset < EVENT_header->evh_length;
+	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
 		 offset += block->hdr_length) {
 		ib_printf("\n%.5ld ", offset);
 		block = (HDR *) ABS_PTR(offset);

@@ -57,7 +57,7 @@ enum {
 
 static void print(const SCHAR **, int, const SCHAR *);
 
-typedef struct {
+struct VERB {
 	UCHAR blr;
 	SCHAR const *internal;
 	SCHAR const *internal2;
@@ -65,7 +65,7 @@ typedef struct {
 	SCHAR const *count;
 	SCHAR const *type;
 	SCHAR const *sub_type;
-} VERB;
+};
 
 static const VERB verbs[] = {
 	PAIR(nod_assignment, blr_assignment, e_asgn_length, 2, STATEMENT, VALUE),
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
  *	Spit out a conversion table.
  *
  **************************************/
-	const VERB *verb;
+	const VERB* verb;
 	int max, blr;
 
 	for (blr = 0; blr < FB_NELEM(table); blr++) {

@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.2 2003-09-01 07:52:18 brodsom Exp $
+$Id: align.cpp,v 1.3 2003-09-18 10:28:34 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -34,7 +34,7 @@ typedef struct xyz {
 #define EVEN		"((n+1) & ~1)"
 #define NO_OP		"(n)"
 
-typedef struct alignment {
+struct alignment {
 	short rule_offset;
 	short rule_length;
 	short rule_faults;
@@ -42,9 +42,9 @@ typedef struct alignment {
 	short rule_double_align;
 	char *rule_rule;
 	char *rule_system;
-} ALIGNMENT;
+};
 
-static ALIGNMENT rules[] = {
+static alignment rules[] = {
 	1, 9, 0, 4, 4, NO_OP, "VMS",	/* VMS */
 	2, 10, 0, 4, 4, EVEN, "MC 68K",	/* Generic Motorola */
 	4, 12, 0, 4, 4, MAJOR_MINOR, "VAX Ultrix, 386i, RT",	/* VAX Ultrix */
@@ -69,10 +69,10 @@ int main(int argc, char *argv[])
 	long vector[3];
 #endif
 	short offset, length, faults;
-	ALIGNMENT *rule;
+	alignment* rule;
 
 	offset = (int) &((XYZ) NULL)->b;
-	length = sizeof(struct xyz);
+	length = sizeof(xyz);
 	faults = check_double();
 
 	for (rule = rules; rule->rule_offset; ++rule)
