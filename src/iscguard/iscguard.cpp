@@ -66,9 +66,13 @@ static DWORD aMenuHelpIDs[] = {
 /* Function prototypes */
 static LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 static int WINDOW_main(int);
+#ifdef NOT_USED_OR_REPLACED
 static void StartGuardian(HWND);
+#endif
 static unsigned short parse_args(LPSTR, USHORT *);
+#ifdef NOT_USED_OR_REPLACED
 static void HelpCmd(HWND, HINSTANCE, WPARAM);
+#endif
 //extern char* ChopFileName (char*, char*, long);
 
 void start_and_watch_server(char *);
@@ -257,7 +261,7 @@ static int WINDOW_main(int option)
 		(thread_id =
 		 _beginthread(reinterpret_cast <
 					  void (*)(void *) >(start_and_watch_server), 0,
-					  FBSERVER)) == -1) {
+					  (char *)FBSERVER)) == -1) {
 		/* error starting server thread */
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
@@ -934,7 +938,9 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 			break;
 		case PSN_HELP:
+#ifdef NOT_USED_OR_REPLACED
 			/*          HelpCmd(hDlg, hInstance, ibsp_Server_Information_Properties); */
+#endif
 			break;
 		}
 		break;
@@ -1106,13 +1112,14 @@ void write_log(int log_action, char *buff)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
 {
 /****************************************************************
  *                                              
  *  H e l p C m d
  *
-/****************************************************************
+ ****************************************************************
  *
  *  Input:     hWnd     - Handle of dialog box from which help was
  *                        invoked.
@@ -1138,3 +1145,4 @@ void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
 
 	return;
 }
+#endif

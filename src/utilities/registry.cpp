@@ -77,7 +77,7 @@ USHORT REGISTRY_install(HKEY hkey_node,
 								(DWORD) (len + 1))) != ERROR_SUCCESS
 		|| (status =
 			RegSetValueEx(hkey_kit, "Version", 0, REG_SZ,
-						  reinterpret_cast<UCHAR*>(GDS_VERSION),
+						  reinterpret_cast<UCHAR*>((char *)GDS_VERSION),
 						  (DWORD) sizeof(GDS_VERSION))) != ERROR_SUCCESS) {
 		(*err_handler) (status, "RegSetValueEx", hkey_kit);
 		if (disp == REG_CREATED_NEW_KEY)

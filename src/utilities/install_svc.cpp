@@ -35,7 +35,7 @@
 #define REMOTE_EXECUTABLE \
 	((sw_arch == ARCH_SS) ? REMOTE_SS_EXECUTABLE : REMOTE_CS_EXECUTABLE)
 
-extern USHORT svc_error(SLONG, TEXT *, SC_HANDLE);
+static USHORT svc_error(SLONG, TEXT *, SC_HANDLE);
 static void usage(void);
 
 static struct {
@@ -43,16 +43,16 @@ static struct {
 	USHORT abbrev;
 	USHORT code;
 } commands[] = {
-	"CONFIGURE", 1, COMMAND_CONFIG,
-	"INSTALL", 1, COMMAND_INSTALL,
-	"REMOVE", 1, COMMAND_REMOVE,
-	"START", 3, COMMAND_START,
-	"STOP", 3, COMMAND_STOP,
-	NULL, 0, 0
+	{"CONFIGURE", 1, COMMAND_CONFIG},
+	{"INSTALL", 1, COMMAND_INSTALL},
+	{"REMOVE", 1, COMMAND_REMOVE},
+	{"START", 3, COMMAND_START},
+	{"STOP", 3, COMMAND_STOP},
+	{NULL, 0, 0}
 };
 
 
-void CLIB_ROUTINE main( int argc, char **argv)
+int CLIB_ROUTINE main( int argc, char **argv)
 {
 /**************************************
  *
@@ -194,7 +194,7 @@ void CLIB_ROUTINE main( int argc, char **argv)
 		/* do the install of the server */
 		status =
 			SERVICES_install(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
-							 REMOTE_EXECUTABLE, directory, NULL, sw_startup,
+							 (char*)REMOTE_EXECUTABLE, directory, NULL, sw_startup,
 							 svc_error);
 		if (status == FB_SUCCESS)
 			ib_printf("Service \"%s\" successfully created.\n",

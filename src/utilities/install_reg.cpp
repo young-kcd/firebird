@@ -38,10 +38,13 @@ static struct {
 	USHORT abbrev;
 	USHORT code;
 } commands[] = {
-"INSTALL", 1, COMMAND_INSTALL, "REMOVE", 1, COMMAND_REMOVE, NULL, 0, 0};
+	{"INSTALL", 1, COMMAND_INSTALL}, 
+	{"REMOVE", 1, COMMAND_REMOVE}, 
+	{NULL, 0, 0}
+	};
 
 
-void CLIB_ROUTINE main( int argc, char **argv)
+int CLIB_ROUTINE main( int argc, char **argv)
 {
 /**************************************
  *
