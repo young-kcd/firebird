@@ -4346,15 +4346,19 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 			return NULL;
 		}
 
-		if ( (ptr[sort->nod_count] && !(idx->idx_flags & idx_descending))
-			|| (!ptr[sort->nod_count] && (idx->idx_flags & idx_descending))
-			// for ODS11 default nulls placement always may be matched to index
-			|| (dbb->dbb_ods_version >= ODS_VERSION11 && (
+		if (// for ODS11 default nulls placement always may be matched to index
+			(dbb->dbb_ods_version >= ODS_VERSION11 && (
 			  (reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first && ptr[sort->nod_count])
 			    || (reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_last && !ptr[sort->nod_count])))
 			// for ODS10 and earlier indices always placed nulls at the end of dataset
 			|| (dbb->dbb_ods_version < ODS_VERSION11 && 
-			  reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first) )
+			  reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]) == rse_nulls_first)
+#ifdef SCROLLABLE_CURSORS
+			)
+#else
+			|| (ptr[sort->nod_count] && !(idx->idx_flags & idx_descending))
+			|| (!ptr[sort->nod_count] && (idx->idx_flags & idx_descending)) )
+#endif
 		{
 			return NULL;
 		}
