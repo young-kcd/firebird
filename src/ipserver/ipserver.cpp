@@ -233,7 +233,7 @@ static ipserver_private_data_t ipserver_private_data =
 };
 
 
-#ifdef  IP_TRACE
+#ifdef  DEBUG_IP_TRACE
 static const char* op_strings[] =
 {
 	"op_attach",
@@ -512,7 +512,7 @@ ULONG IPS_start_thread(ULONG client_pid)
 
 	/* return combined mapped area and number */
 
-#ifdef  IP_TRACE
+#ifdef  DEBUG_IP_TRACE
 	gds__log("ipserver icc %8lX, comm %8lX", icc, comm);
 #endif
 
@@ -611,7 +611,7 @@ static void ipi_server( ICC icc)
 			break;
 		GET_COMM_OBJECT;
 		comm->ips_ops_count++;
-#ifdef  IP_TRACE
+#ifdef  DEBUG_IP_TRACE
 		{
 			char line[200];
 			sprintf(line, "%8lX %8lX %8lX %d ipserver %s",
@@ -3162,7 +3162,7 @@ static BOOL send_and_wait( ICC icc)
 	if (!ReleaseSemaphore(icc->icc_client_sem, 1L, NULL))
 	{
 		icc->icc_flags |= ICCF_SHUTDOWN;
-#ifdef  IP_TRACE
+#ifdef  DEBUG_IP_TRACE
 		gds__log("ipserver send of send and wait failed %lX %ld",
 				 (long) icc, (long) GetLastError());
 #endif
@@ -3176,7 +3176,7 @@ static BOOL send_and_wait( ICC icc)
 	if (result != WAIT_OBJECT_0)
 	{
 		icc->icc_flags |= ICCF_SHUTDOWN;
-#ifdef  IP_TRACE
+#ifdef  DEBUG_IP_TRACE
 		gds__log("ipserver wait of send and wait failed %lX %ld",
 				 (long) icc, (long) GetLastError());
 #endif
@@ -3262,7 +3262,7 @@ static void send_no_wait( ICC icc)
 
 	if (!ReleaseSemaphore(icc->icc_client_sem, 1L, NULL))
 	{
-#ifdef  IP_TRACE
+#ifdef  DEBUG_IP_TRACE
 		gds__log("ipserver send no wait failed %lX %ld",
 				 (long) icc, (long) GetLastError());
 #endif
@@ -4100,7 +4100,7 @@ static BOOL wait_no_send( ICC icc)
 
 		if (result1 != WAIT_TIMEOUT)
 		{
-#ifdef  IP_TRACE
+#ifdef  DEBUG_IP_TRACE
 			gds__log("ipserver wait no send failed %lX %ld %ld",
 					 (long) icc, result1, error1);
 			gds__log("ipserver ids %lX %lX",
@@ -4119,7 +4119,7 @@ static BOOL wait_no_send( ICC icc)
 
 		if (result2 != WAIT_TIMEOUT)
 		{
-#ifdef  IP_TRACE
+#ifdef  DEBUG_IP_TRACE
 			gds__log("ip server wait no send failed again %lX %ld %ld",
 					 (long) icc, result2, error2);
 #endif

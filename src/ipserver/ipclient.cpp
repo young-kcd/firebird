@@ -3466,7 +3466,7 @@ static STATUS check_response( ICC icc, STATUS * user_status)
  *      copy stage.
  *
  **************************************/
-#ifdef	IP_TRACE
+#ifdef	DEBUG_IP_TRACE
 	ips_comm_area *comm;
 
 
@@ -3488,7 +3488,7 @@ static STATUS check_response( ICC icc, STATUS * user_status)
 	/* communications failure - database is now unavailable */
 
 	icc->icc_flags |= ICCF_SERVER_SHUTDOWN;
-#ifdef	IP_TRACE
+#ifdef	DEBUG_IP_TRACE
 	gds__log("ipclient comm failure %lX", (long) icc);
 #endif
 	user_status[0] = isc_arg_gds;
@@ -3917,7 +3917,7 @@ static SSHORT init( STATUS * user_status, ICC * picc)
 		icc->icc_slot = mapped_position;
 		icc->icc_ipm = ipm;
 		icc->icc_flags = 0;
-#ifdef	IP_TRACE
+#ifdef	DEBUG_IP_TRACE
 		gds__log("ipclient icc %8lX, comm %8lX, number %lX",
 				 icc, comm, number);
 #endif
