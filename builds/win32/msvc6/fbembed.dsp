@@ -97,6 +97,10 @@ SOURCE=..\..\..\src\jrd\perf.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\pwd.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\why.cpp
 # End Source File
 # End Group
@@ -106,24 +110,10 @@ SOURCE=..\..\..\src\jrd\why.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\allr.cpp
-
-!IF  "$(CFG)" == "fbembed - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\xdr.cpp
-
-!IF  "$(CFG)" == "fbembed - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # Begin Group "UTILITIES files"
