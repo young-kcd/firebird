@@ -4240,7 +4240,7 @@ static bool find_field_source(thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
+	jrd_req* request = NULL;
 
 /* CVC: It seems the logic of this function was changed over time. It's unlikely
 it will cause a failure that leads to call DYN_error_punt(), unless the request finds
@@ -4252,6 +4252,8 @@ that can be used against rdb$fields' rdb$field_name. */
 	bool found = false;
 	
 	try {
+		request = CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
+
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			VRL IN RDB$VIEW_RELATIONS CROSS
 				RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
@@ -4269,6 +4271,31 @@ that can be used against rdb$fields' rdb$field_name. */
 		END_FOR;
 		if (!DYN_REQUEST(drq_l_fld_src2)) {
 			DYN_REQUEST(drq_l_fld_src2) = request;
+		}
+
+		if (!found)
+		{
+			request = CMP_find_request(tdbb, drq_l_fld_src3, DYN_REQUESTS);
+
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				VRL IN RDB$VIEW_RELATIONS CROSS
+					PPR IN RDB$PROCEDURE_PARAMETERS
+					WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
+					VRL.RDB$VIEW_NAME EQ view_name AND
+					VRL.RDB$VIEW_CONTEXT EQ context AND
+					PPR.RDB$PARAMETER_NAME EQ local_name 
+
+				if (!DYN_REQUEST(drq_l_fld_src3)) {
+					DYN_REQUEST(drq_l_fld_src3) = request;
+				}
+
+				found = true;
+				fb_utils::exact_name_limit(PPR.RDB$FIELD_SOURCE, sizeof(PPR.RDB$FIELD_SOURCE));
+				strcpy(output_field_name, PPR.RDB$FIELD_SOURCE);
+			END_FOR;
+			if (!DYN_REQUEST(drq_l_fld_src3)) {
+				DYN_REQUEST(drq_l_fld_src3) = request;
+			}
 		}
 	}
 	catch (const std::exception& ex) {

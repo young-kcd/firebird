@@ -414,14 +414,14 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
        such view that has field "z x". This closes Firebird Bug #227758. */
 	Firebird::string name = base_field;
     fb_utils::exact_name(name);
+	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+	jrd_prc* procedure = csb->csb_rpt[stream].csb_procedure;
 
-    const SSHORT id =
+	const SSHORT id = procedure ? find_proc_field(procedure, name) :
 		MET_lookup_field (tdbb, csb->csb_rpt[stream].csb_relation, name.c_str(), 0);
 
 	if (id < 0)
 		return NULL;
-
-	jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
 
 /* If rel_fields is NULL this means that the relation is
  * in a temporary state (partially loaded).  In this case
@@ -439,12 +439,23 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
  * be incorrect for us (the server) to perform the rollback
  * implicitly, because this is a task for the user to do, and
  * should never be decided by the server. This fixes bug 10052 */
-	if (!temp_rel->rel_fields) {
-		ERR_post(isc_depend_on_uncommitted_rel, 0);
+
+	jrd_fld* field = NULL;
+
+	if (procedure)
+	{
+		field = (jrd_fld*) (*procedure->prc_output_fields)[id];
+	}
+	else if (relation)
+	{
+		if (!relation->rel_fields) {
+			ERR_post(isc_depend_on_uncommitted_rel, 0);
+		}
+		field = (jrd_fld*) (*relation->rel_fields)[id];
 	}
 
 	jrd_nod* temp_node = PAR_gen_field(tdbb, stream, id);
-	jrd_fld* field = (jrd_fld*) (*temp_rel->rel_fields)[id];
+
 	if (field) {
 		if (field->fld_default_value && field->fld_not_null)
 			temp_node->nod_arg[e_fld_default_value] =
