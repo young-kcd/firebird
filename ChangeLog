@@ -1,3 +1,72 @@
+2003-08-13 13:45  robocop
+
+	* firebird2/src/jrd/fun.epp:
+	
+	Fix SF Bugs #544132 and #728839.  Added some ugly code, too.  More
+	correct null signaling may cause surprise to UDF devs used to some
+	bugs.
+
+2003-08-13 13:26  alexpeshkoff
+
+	* firebird2/builds/win32/msvc6/gfix.dsp:
+	
+	Also fix MSVC6 gfix build in head branch
+
+2003-08-13 13:13  alexpeshkoff
+
+	* firebird2/builds/win32/msvc6/gfix.dsp:
+	
+	Fixed MSVC6 gfix build
+
+2003-08-13 13:11  robocop
+
+	* firebird2/builds/win32/msvc6/fbserver.dsp:
+	
+	Committed... just in case
+
+2003-08-13 13:11  robocop
+
+	* firebird2/src/jrd/cch.cpp:
+	
+	Kill two warnings in Win32
+
+2003-08-13 13:09  robocop
+
+	* firebird2/src/dsql/gen.cpp:
+	
+	There are less unnamed fields now.  Changed the code style, too.
+
+2003-08-13 13:08  robocop
+
+	* firebird2/src/dsql/utld.cpp:
+	
+	Little C->C++ style change
+
+2003-08-13 13:07  robocop
+
+	* firebird2/src/burp/backup.epp:
+	
+	Since stringstream is no longer used, remove the header.
+
+2003-08-13 13:06  robocop
+
+	* firebird2/examples/api/apifull.c:
+	
+	Let's hope the cure is not worse than the sickness Took VARY from
+	ibase.h
+
+2003-08-13 13:01  skidder
+
+	* firebird2/src/common/classes/vector.h:
+	
+	Change header comment
+
+2003-08-13 12:45  aafemt
+
+	* firebird2/src/jrd/: btr.cpp, nav.cpp, val.cpp:
+	
+	replacing BTR_get_quad() by get_long
+
 2003-08-12 21:54  skidder
 
 	* firebird2/: builds/misc/msg.gbak, lang_helpers/gds_codes.ftn,
