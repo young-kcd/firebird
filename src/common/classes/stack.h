@@ -99,7 +99,7 @@ namespace Firebird {
 			{
 				fb_assert(value >= 0);
 				
-				if (value <= getCount())
+				if (value <= inherited::getCount())
 					return true;
 
 				for(const Entry * stk = this; stk && value > 0; stk = stk->next)
