@@ -76,18 +76,16 @@
 #include <unistd.h>
 #endif
 
-#include <netinet/tcp.h>
 
 
 #ifdef SUPERSERVER
 #ifdef	WIN_NT
 #define FD_SETSIZE 1024
 #endif
-
-
 #endif /* SUPERSERVER */
 
 #if !(defined VMS || defined WIN_NT)
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 /* EKU: SINIX-Z does not define INADDR_NONE */
