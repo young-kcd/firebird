@@ -1763,6 +1763,7 @@ static processing_state add_row(const TEXT* tabname)
 	if (sqlda->sqld > sqlda->sqln) {
 		ISQL_FREE(sqlda);
 		sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_cols)));
+		sqlda->version = SQLDA_VERSION1;
 		sqlda->sqld = sqlda->sqln = n_cols;
 
 		//  We must re-describe the sqlda, no need to re-prepare 
@@ -6187,7 +6188,7 @@ static int process_statement(const TEXT* string,
  *	than embedded dynamic statements.  The user request
  *	is placed on transaction M__trans, while all
  *	background work is on the default gds_trans.
- *	THis function now returns CONT (success) or ERR
+ *	This function now returns CONT (success) or ERR
  **************************************/
 	processing_state ret = CONT;
 	static const SCHAR sqlda_info[] = { isc_info_sql_stmt_type };
