@@ -588,7 +588,7 @@ using namespace Ods;
 
 /* Validation/garbage collection/repair control block */
 
-typedef struct vdr
+struct vdr
 {
 	SparseBitmap* vdr_page_bitmap;
 	SLONG vdr_max_page;
@@ -599,7 +599,9 @@ typedef struct vdr
 	ULONG vdr_rel_chain_counter;	/* Counts chains w/rdr_chain */
 	SparseBitmap* vdr_rel_records;		/* 1 bit per valid record */
 	SparseBitmap* vdr_idx_records;		/* 1 bit per index item */
-} *VDR;
+};
+
+typedef vdr *VDR;
 
 // vdr_flags
 
@@ -607,18 +609,18 @@ const USHORT vdr_update		= 2;		/* fix simple things */
 const USHORT vdr_repair		= 4;		/* fix non-simple things (-mend) */
 const USHORT vdr_records		= 8;		/* Walk all records */
 
-typedef enum {
+enum FETCH_CODE{
 	fetch_ok,
 	fetch_checksum,
 	fetch_type,
 	fetch_duplicate
-} FETCH_CODE;
+};
 
-typedef enum {
+enum RTN {
 	rtn_ok,
 	rtn_corrupt,
 	rtn_eof
-} RTN;
+};
 
 static const TEXT msg_table[][52] = {
 	"Page %ld wrong type (expected %d encountered %d)",	/* 0 */

@@ -69,11 +69,13 @@ static const UCHAR char_tab[128] =
 
 /* Miscellaneous filter stuff (should be moved someday) */
 
-typedef struct tmp {
+struct tmp {
 	tmp* tmp_next;
 	USHORT tmp_length;
 	TEXT tmp_string[1];
-} *TMP;
+};
+
+typedef tmp *TMP;
 
 #ifdef VMS
 const char* const WILD_CARD_UIC = "<*,*>";

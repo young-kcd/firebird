@@ -66,10 +66,12 @@ const UCHAR TIMESTAMP_SIZE	= 8;
 
 
 #define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	type,
-typedef enum gflds {
+enum gflds {
 #include "../jrd/fields.h"
-gfld_MAX} GFLDS;
+gfld_MAX};
 #undef FIELD
+
+typedef gflds GFLDS;
 
 /* Pick up actual global fields */
 
@@ -106,12 +108,14 @@ static const struct gfld gfields[] = {
 #define RELATION(name, id, ods) id,
 #define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)
 #define END_RELATION
-typedef enum rids {
+enum rids {
 #include "../jrd/relations.h"
-rel_MAX} RIDS;
+rel_MAX};
 #undef RELATION
 #undef FIELD
 #undef END_RELATION
+
+typedef rids RIDS;
 
 /* Pick up relations themselves */
 
@@ -179,11 +183,13 @@ static const rtyp types[] = {
 #ifndef GPRE
 /* obtain international names */
 
-typedef struct initcharset {
+struct initcharset {
 	const UCHAR* init_charset_name;
 	SSHORT init_charset_id;
 	USHORT init_charset_bytes_per_char;
-} CS_TYPE;
+};
+
+typedef initcharset CS_TYPE;
 
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2) \
 	{ (const UCHAR *) (name), (cs_id), (bytes)},
@@ -200,11 +206,13 @@ static const CS_TYPE cs_types[] = {
 #undef COLLATION
 #undef END_CHARSET
 
-typedef struct initcollation {
+struct initcollation {
 	const UCHAR *init_collation_name;
 	SSHORT init_collation_charset;
 	SSHORT init_collation_id;
-} COLL_TYPE;
+};
+
+typedef initcollation COLL_TYPE;
 
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2) \
 	{ (const UCHAR *) (name), (cs_id), (coll_id) },

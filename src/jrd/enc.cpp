@@ -241,7 +241,7 @@ int des_cipher(const char* in, char* out, long salt, int num_iter);
  * 8% performance penalty.
  */
 
-typedef union {
+union C_block{
 	unsigned char b[8];
 	struct {
 #if defined(LONG_IS_32_BITS)
@@ -253,7 +253,7 @@ typedef union {
 		long i1:32;
 #endif
 	} b32;
-} C_block;
+};
 
 
 /*

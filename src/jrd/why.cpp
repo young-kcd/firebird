@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.73 2004-05-23 23:26:31 brodsom Exp $
+$Id: why.cpp,v 1.74 2004-05-24 17:28:33 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -166,7 +166,7 @@ typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
 
 /* Database cleanup handlers */
 
-typedef struct clean
+struct clean
 {
 	struct clean* clean_next;
 	union {
@@ -174,16 +174,20 @@ typedef struct clean
 		TransactionCleanupRoutine *TransactionRoutine;
 	};
 	void* clean_arg;
-} *CLEAN;
+};
+
+typedef clean *CLEAN;
 
 /* Transaction element block */
 
-typedef struct teb
+struct teb
 {
 	FB_API_HANDLE *teb_database;
 	int teb_tpb_length;
 	UCHAR *teb_tpb;
-} TEB;
+};
+
+typedef teb TEB;
 
 #ifdef DEBUG_GDS_ALLOC
 #define alloc(x) alloc_debug(x, __FILE__, __LINE__)
@@ -551,17 +555,17 @@ const int PROC_CANCEL_OPERATION	= 53;
 
 const int PROC_count			= 54;
 
-typedef struct
+struct ENTRY
 {
 	TEXT *name;
 	PTR address;
-} ENTRY;
+};
 
-typedef struct
+struct IMAGE
 {
 	TEXT *name;
 	TEXT *path;
-} IMAGE;
+};
 
 /* Define complicated table for multi-subsystem world */
 

@@ -73,10 +73,12 @@
 //
 namespace Jrd {
 
-typedef struct que {
+struct que {
 	struct que* que_forward;
 	struct que* que_backward;
-} *QUE;
+};
+
+typedef que *QUE;
 
 }
 // Self-relative queue BASE should be defined in the source which includes this
@@ -97,10 +99,12 @@ typedef struct que {
 
 /* Self-relative que block.  Offsets are from the block itself. */
 
-typedef struct srq {
+struct srq {
 	SRQ_PTR srq_forward;			/* Forward offset */
 	SRQ_PTR srq_backward;			/* Backward offset */
-} *SRQ;
+};
+
+typedef srq *SRQ;
 
 
 #endif /* JRD_QUE_H */

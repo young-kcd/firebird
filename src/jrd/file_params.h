@@ -117,11 +117,13 @@ static const char* LOGFILE		= "[syserr]firebird.log";
 static const char* ISC_LOGICAL	= "interbase:";
 static const char* ISC_LOGICAL_LOCK	= "interbase_lock:";
 
-typedef struct isc_vms_prefix
+struct isc_vms_prefix
 {
 	TEXT*	isc_prefix;
 	TEXT*	vms_prefix;
-} *ISC_VMS_PREFIX;
+};
+
+typedef struct isc_vms_prefix *ISC_VMS_PREFIX;
 
 static struct isc_vms_prefix trans_prefix[] =
 {

@@ -32,13 +32,15 @@ namespace Jrd {
 
 /* Index error types */
 
-typedef enum idx_e {
+enum idx_e {
 	idx_e_ok = 0,
 	idx_e_duplicate,
 	idx_e_keytoobig,
 	idx_e_conversion,
 	idx_e_foreign
-} IDX_E;
+};
+
+typedef idx_e IDX_E;
 
 class jrd_rel;
 } //namespace Jrd

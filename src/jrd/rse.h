@@ -152,42 +152,54 @@ const ULONG MERGE_BLOCK_SIZE	= 65536;
 
 // Impure area formats for the various RecordSource types
 
-typedef struct irsb {
+struct irsb {
 	ULONG irsb_flags;
 	USHORT irsb_count;
-} *IRSB;
+};
 
-typedef struct irsb_first_n {
+typedef irsb *IRSB;
+
+struct irsb_first_n {
 	ULONG irsb_flags;
 	SLONG irsb_number;
     SINT64 irsb_count;
-} *IRSB_FIRST;
+};
 
-typedef struct irsb_skip_n {
+typedef irsb_first_n *IRSB_FIRST;
+
+struct irsb_skip_n {
     ULONG irsb_flags;
     SLONG irsb_number;
     SINT64 irsb_count;
-} *IRSB_SKIP;
+};
 
-typedef struct irsb_index {
+typedef irsb_skip_n *IRSB_SKIP;
+
+struct irsb_index {
 	ULONG irsb_flags;
 	SLONG irsb_number;
 	SLONG irsb_prefetch_number;
 	SparseBitmap**	irsb_bitmap;
-} *IRSB_INDEX;
+};
 
-typedef struct irsb_sort {
+typedef irsb_index *IRSB_INDEX;
+
+struct irsb_sort {
 	ULONG irsb_flags;
 	sort_context*	irsb_sort_handle;
-} *IRSB_SORT;
+};
 
-typedef struct irsb_procedure {
+typedef irsb_sort *IRSB_SORT;
+
+struct irsb_procedure {
 	ULONG 		irsb_flags;
 	jrd_req*	irsb_req_handle;
 	str*		irsb_message;
-} *IRSB_PROCEDURE;
+};
 
-typedef struct irsb_mrg {
+typedef irsb_procedure *IRSB_PROCEDURE;
+
+struct irsb_mrg {
 	ULONG irsb_flags;
 	USHORT irsb_mrg_count;				// next stream in group
 	struct irsb_mrg_repeat {
@@ -198,15 +210,19 @@ typedef struct irsb_mrg {
 		SSHORT irsb_mrg_order;			// logical merge order by substream
 		merge_file irsb_mrg_file;		// merge equivalence file
 	} irsb_mrg_rpt[1];
-} *IRSB_MRG;
+};
 
-typedef struct irsb_sim {
+typedef irsb_mrg *IRSB_MRG;
+
+struct irsb_sim {
 	ULONG irsb_flags;
 	USHORT irsb_sim_rid;				// next relation id
 	USHORT irsb_sim_fid;				// next field id
 	jrd_req *irsb_sim_req1;		// request handle #1
 	jrd_req *irsb_sim_req2;		// request handle #2
-} *IRSB_SIM;
+};
+
+typedef irsb_sim *IRSB_SIM;
 
 const ULONG irsb_sim_alias = 32;		// duplicate relation but w/o user name
 const ULONG irsb_sim_eos = 64;			// encountered end of stream
@@ -217,7 +233,7 @@ const ULONG irsb_sim_active = 128;		// remote simulated stream request is active
 // which holds information used to get back to 
 // the current location within an index
 
-typedef struct irsb_nav {
+struct irsb_nav {
 	ULONG irsb_flags;
 	SLONG irsb_nav_expanded_offset;			// page offset of current index node on expanded index page
 	SLONG irsb_nav_number;					// last record number
@@ -231,7 +247,9 @@ typedef struct irsb_nav {
 	USHORT irsb_nav_upper_length;			// length of upper key value
 	USHORT irsb_nav_length;					// length of expanded key
 	UCHAR irsb_nav_data[1];					// expanded key, upper bound, and index desc
-} *IRSB_NAV;
+};
+
+typedef irsb_nav *IRSB_NAV;
 
 // flags for the irsb_flags field
 
@@ -417,14 +435,16 @@ const USHORT bkm_forced_crack = 8;
 
 // types for navigating through a stream
 
-typedef enum rse_get_mode {
+enum rse_get_mode {
 	RSE_get_forward,
 	RSE_get_backward,
 	RSE_get_current,
 	RSE_get_first,
 	RSE_get_last,
 	RSE_get_next
-} RSE_GET_MODE;
+};
+
+typedef rse_get_mode RSE_GET_MODE;
 
 } //namespace Jrd
 

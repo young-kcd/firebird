@@ -36,7 +36,7 @@
 //   See MET_format() and make_format() in MET.EPP for enlightenment.
 
 
-typedef struct dsc
+struct dsc
 {
 	typedef UCHAR dtype_t;
 	typedef SCHAR scale_t;
@@ -141,8 +141,9 @@ typedef struct dsc
 	//bid		asArrayId() const;
 	SINT64		asSBigInt() const;
 	UINT64		asUBigInt() const;
-} DSC;
+};
 
+typedef dsc DSC;
 
 // Data types
 

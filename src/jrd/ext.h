@@ -53,10 +53,12 @@ const int EXT_opened	= 1;	/* File has been opened */
 const int EXT_eof		= 2;	/* Positioned at EOF */
 const int EXT_readonly	= 4;	/* File could only be opened for read */
 
-typedef struct irsb_ext {
+struct irsb_ext {
 	USHORT irsb_flags;			/* flags (a whole word!) */
 	UCHAR irsb_ext_dbkey[8];	/* DBKEY */
-} *IRSB_EXT;
+};
+
+typedef irsb_ext* IRSB_EXT;
 
 /* Overload record parameter block with external file stuff */
 

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: msg.h,v 1.5 2004-05-06 18:07:02 brodsom Exp $
+$Id: msg.h,v 1.6 2004-05-24 17:28:33 brodsom Exp $
 */
 
 #ifndef JRD_MSG_H
@@ -34,30 +34,36 @@ const UCHAR MSG_MINOR_VERSION	= 0;
 
 /* Message file header block */
 
-typedef struct isc_msghdr {
+struct isc_msghdr {
 	UCHAR msghdr_major_version;	// Version number
 	UCHAR msghdr_minor_version;	// Version number
 	USHORT msghdr_bucket_size;	// Bucket size of B-tree
 	ULONG msghdr_top_tree;		// Start address of first index bucket
 	ULONG msghdr_origin;		// Origin for data records, unused.
 	USHORT msghdr_levels;		// Levels in tree
-} ISC_MSGHDR;
+};
+
+typedef isc_msghdr ISC_MSGHDR;
 
 /* Index node */
 
-typedef struct msgnod {
+struct msgnod {
 	ULONG msgnod_code;			/* Message code */
 	ULONG msgnod_seek;			/* Offset of next bucket or message */
-} *MSGNOD;
+};
+
+typedef msgnod *MSGNOD;
 
 /* Leaf node */
 
-typedef struct msgrec {
+struct msgrec {
 	ULONG msgrec_code;			/* Message code */
 	USHORT msgrec_length;		/* Length of message text */
 	USHORT msgrec_flags;		/* Misc flags */
 	TEXT msgrec_text[1];		/* Text of message */
-} *MSGREC;
+};
+
+typedef msgrec *MSGREC;
 
 #define NEXT_LEAF(leaf)	(MSGREC) \
 	((SCHAR*) leaf + FB_ALIGN(OFFSETA (MSGREC, msgrec_text) + leaf->msgrec_length, sizeof (SLONG)))

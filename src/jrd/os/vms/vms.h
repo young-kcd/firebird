@@ -35,7 +35,7 @@ const SSHORT DVI$_DEVLOCKNAM	= 240;
 
 /* ACP File Information block */
 
-typedef struct fib$ {
+struct fib$ {
 	SLONG fib$l_acctl;
 	SSHORT fib$w_fid[3];
 	SSHORT fib$w_did[3];
@@ -44,7 +44,9 @@ typedef struct fib$ {
 	SSHORT fib$w_exctl;
 	SLONG fib$l_exsz;
 	SLONG fib$l_exvbn;
-} FIB$;
+};
+
+typedef fib$ FIB$;
 
 // fib$w_exclt
 const SSHORT FIB$M_EXTEND	= 128;
@@ -55,19 +57,21 @@ const SLONG FIB$M_WRITETHRU	= 524288;
 // fib$w_nmctl
 const SSHORT FIB$M_FINDFID	= 2048;
 
-typedef struct atr$ {
+struct atr$ {
 	SSHORT atr$w_size;
 	SSHORT atr$w_type;
 	SCHAR *atr$l_addr;
 	SLONG atr$l_zero;
-} ATR$;
+};
+
+typedef atr$ ATR$;
 
 // atr$w_size
 const SSHORT ATR$S_RECATTR	= 32;
 // atr$w_type
 const SSHORT ATR$C_RECATTR	= 4;
 
-typedef struct fab$ {
+struct fab$ {
 	SCHAR fat$b_rtype;
 	SCHAR fat$b_rattrib;
 	SSHORT fat$w_rsize;
@@ -82,6 +86,8 @@ typedef struct fab$ {
 	SSHORT fat$w_reserved[3];
 	SSHORT fat$w_not_used;
 	SSHORT fat$w_versions;
-} FAT$;
+};
+
+typedef fab$ FAT$;
 
 #endif /* JRD_VMS_H */

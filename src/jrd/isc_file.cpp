@@ -91,12 +91,13 @@ const char* LOGICAL_NAME_TABLE	= "LNM$FILE_DEV";
 const char* DEFAULT_FILE_NAME	= ".fdb";
 const char INET_FLAG		= '^';
 
-typedef struct itm {
+struct itm {
 	SSHORT itm_length;
 	SSHORT itm_code;
 	SCHAR *itm_buffer;
 	SSHORT *itm_return_length;
-} ITM;
+};
+typedef itm ITM;
 
 #else /* of ifdef VMS */
 const char INET_FLAG		= ':';
@@ -161,11 +162,12 @@ const char* MTAB		= "/etc/mtab";
 #endif
 
 
-typedef struct mnt {
+struct mnt {
 	TEXT *mnt_node;
 	TEXT *mnt_mount;
 	TEXT *mnt_path;
-} MNT;
+};
+typedef mnt MNT;
 
 
 #ifndef MAXHOSTLEN

@@ -50,14 +50,16 @@
 /* must be careful with alignment on structures like this that are
    not run through the ALL routine */
 
-typedef struct thread {
+struct thread {
 	struct thread *thread_next;	/* Next thread to be scheduled */
 	struct thread *thread_prior;	/* Prior thread */
 	event_t thread_stall[1];	/* Generic event to stall thread */
 	FB_THREAD_ID thread_id;			/* Current thread id */
 	USHORT thread_count;		/* AST disable count */
 	USHORT thread_flags;		/* Flags */
-} *THREAD;
+};
+
+typedef thread *THREAD;
 
 //  thread_flags
 

@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.28 2004-05-22 02:11:34 brodsom Exp $
+$Id: thd.h,v 1.29 2004-05-24 17:28:33 brodsom Exp $
 */
 
 #ifndef JRD_THD_H
@@ -119,10 +119,12 @@ const int SWEEP_QUANTUM		= 10;	/* Make sweeps less disruptive */
 
 /* Thread specific data */
 
-typedef struct thdd {
+struct thdd {
 	void *thdd_prior_context;
 	ULONG thdd_type;		/* what kind of structure this is */
-} *THDD;
+};
+
+typedef thdd *THDD;
 
 /* Thread structure types */
 
@@ -137,36 +139,47 @@ const USHORT THDD_TYPE_TSEC	= 8;		/* used by gsec */
 
 /* General purpose in use object structure */
 
-typedef struct iuo {
+struct iuo {
 	struct iuo *iuo_next;
 	void *iuo_object[10];
 	USHORT iuo_in_use_count;
-} *IUO;
+};
+
+typedef iuo *IUO;
 
 /* Mutex structure */
 
-typedef struct mutx_t {
+struct mutx_t {
 	THD_MUTEX_STRUCT mutx_mutex;
-} MUTX_T, *MUTX;
+};
+
+typedef mutx_t MUTX_T;
+typedef mutx_t* MUTX;
 
 /* Recursive mutex structure */
-typedef struct rec_mutx_t {
+struct rec_mutx_t {
 	MUTX_T rec_mutx_mtx[1];
 	FB_THREAD_ID rec_mutx_id;
 	SLONG rec_mutx_count;
-} REC_MUTX_T, *REC_MUTX;
+};
+
+typedef rec_mutx_t REC_MUTX_T;
+typedef rec_mutx_t *REC_MUTX;
 
 /* Combined mutex and condition variable structure */
 #ifndef SOLARIS
-typedef struct cond_t {
+struct cond_t {
 	THD_MUTEX_STRUCT cond_mutex;
 	THD_COND_STRUCT cond_cond;
-} COND_T, *COND;
+};
+
+typedef cond_t COND_T;
+typedef cond_t *COND;
 
 #endif
 /* Read/write lock structure */
 
-typedef struct wlck_t {
+struct wlck_t {
 #ifdef THD_RWLOCK_STRUCT
 	THD_RWLOCK_STRUCT wlck_wlock;
 #else
@@ -174,7 +187,10 @@ typedef struct wlck_t {
 	int wlck_count;
 	int wlck_waiters;
 #endif
-} WLCK_T, *WLCK;
+};
+
+typedef wlck_t WLCK_T;
+typedef wlck_t *WLCK;
 
 const int WLCK_read		= 1;
 const int WLCK_write	= 2;

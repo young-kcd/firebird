@@ -49,7 +49,7 @@ union any_handle {
 	Jrd::jrd_tra* h_tra;
 };
 
-typedef struct why_hndl
+struct why_hndl
 {
 	UCHAR				type;
 	UCHAR				flags;
@@ -67,8 +67,16 @@ typedef struct why_hndl
 	FB_API_HANDLE*		user_handle;
 	struct clean*		cleanup;
 	TEXT*				db_path;
-} *WHY_HNDL, *WHY_REQ, *WHY_DBB, *WHY_TRA, 
-  *WHY_BLB, *WHY_ATT, *WHY_STMT, *WHY_SVC;
+};
+
+typedef why_hndl *WHY_HNDL;
+typedef why_hndl *WHY_REQ;
+typedef why_hndl *WHY_DBB;
+typedef why_hndl *WHY_TRA;
+typedef why_hndl *WHY_BLB;
+typedef why_hndl *WHY_ATT;
+typedef why_hndl *WHY_STMT;
+typedef why_hndl *WHY_SVC;
 
 const int HANDLE_invalid		= 0;
 const int HANDLE_database		= 1;

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.119 2004-05-24 11:23:41 kkuznetsov Exp $
+$Id: common.h,v 1.120 2004-05-24 17:28:32 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -793,11 +793,11 @@ typedef unsigned long UATOM;
 #ifndef ISC_TIMESTAMP_DEFINED
 typedef SLONG ISC_DATE;
 typedef ULONG ISC_TIME;
-typedef struct
+struct ISC_TIMESTAMP
 {
 	ISC_DATE timestamp_date;
 	ISC_TIME timestamp_time;
-} ISC_TIMESTAMP;
+};
 #define ISC_TIMESTAMP_DEFINED
 #endif	/* ISC_TIMESTAMP_DEFINED */
 

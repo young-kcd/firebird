@@ -194,14 +194,16 @@ static char ib_prefix_msg_val[MAXPATHLEN];
 
 
 // This structure is used to parse the firebird.msg file.
-typedef struct gds_msg
+struct gds_msg
 {
 	ULONG msg_top_tree;
 	int msg_file;
 	USHORT msg_bucket_size;
 	USHORT msg_levels;
 	SCHAR msg_bucket[1];
-} *GDS_MSG;
+};
+
+typedef gds_msg *GDS_MSG;
 
 // CVC: This structure has a totally different layout than "class ctl" from
 // blob_filter.h and "struct isc_blob_ctl" from ibase.h. These two should match
@@ -249,12 +251,14 @@ static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
 
 /* Generic cleanup handlers */
 
-typedef struct clean
+struct clean
 {
 	struct clean*	clean_next;
 	void			(*clean_routine)(void*);
 	void*			clean_arg;
-} *CLEAN;
+};
+
+typedef clean *CLEAN;
 
 static CLEAN	cleanup_handlers = NULL;
 static gds_msg* global_default_msg = NULL;

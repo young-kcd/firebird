@@ -44,12 +44,14 @@ typedef void *HMOD;
 
 /* External function module descriptor */
 
-typedef struct mod {
+struct mod {
 	HMOD mod_handle;			/* Handle to search for entrypoints */
 	mod* mod_next;				/* Linked list of open modules */
 	SLONG mod_use_count;		/* Databases interested in module */
 	USHORT mod_length;			/* Module name length */
 	TEXT mod_name[1];			/* Module name */
-} *MOD;
+};
+
+typedef mod *MOD;
 
 #endif /* JRD_FLU_H */

@@ -99,11 +99,11 @@ static inline void check_and_move(UCHAR*& to, UCHAR from, UCharBuffer& start, UL
 	*to++ = from;
 }
 
-typedef struct {
+struct P_NAMES {
 	USHORT p_names_priv;
 	USHORT p_names_acl;
 	const TEXT* p_names_string;
-} P_NAMES;
+};
 
 static const P_NAMES p_names[] =
 {

@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.11 2004-05-13 23:20:26 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.12 2004-05-24 17:31:47 brodsom Exp $ */
 
 #include <windows.h>
 #include <process.h>
@@ -78,12 +78,14 @@ static int process_id = 0;
 
 const USHORT MAX_OPN_EVENTS	= 40;
 
-typedef struct opn_event {
+struct opn_event {
 	SLONG opn_event_pid;
 	SLONG opn_event_signal;		/* pseudo-signal number */
 	HANDLE opn_event_lhandle;	/* local handle to foreign event */
 	ULONG opn_event_age;
-} *OPN_EVENT;
+};
+
+typedef opn_event *OPN_EVENT;
 
 static struct opn_event opn_events[MAX_OPN_EVENTS];
 static USHORT opn_event_count;

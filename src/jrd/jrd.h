@@ -585,19 +585,23 @@ class Parameter : public pool_alloc_rpt<SCHAR, type_prm>
 /* Primary dependencies from all foreign references to relation's
    primary/unique keys */
 
-typedef struct prim {
+struct prim {
 	vec* prim_reference_ids;
 	vec* prim_relations;
 	vec* prim_indexes;
-} *PRIM;
+};
+
+typedef prim *PRIM;
 
 /* Foreign references to other relations' primary/unique keys */
 
-typedef struct frgn {
+struct frgn {
 	vec* frgn_reference_ids;
 	vec* frgn_relations;
 	vec* frgn_indexes;
-} *FRGN;
+};
+
+typedef frgn *FRGN;
 
 // Relation trigger definition
 class Trigger {
@@ -843,11 +847,13 @@ typedef vcl* VCL;
 //
 // Transaction element block
 //
-typedef struct teb {
+struct teb {
 	Attachment** teb_database;
 	int teb_tpb_length;
 	UCHAR* teb_tpb;
-} TEB;
+};
+
+typedef teb TEB;
 
 /* Blocking Thread Block */
 
@@ -863,7 +869,7 @@ class BlockingThread : public pool_alloc<type_btb>
 // and reside in ods.h, although I watched a place with 1 and others with members
 // of a struct.
 
-typedef struct win {
+struct win {
 	SLONG win_page;
 	Ods::pag* win_buffer;
 	exp_index_buf* win_expanded_buffer;
@@ -871,7 +877,9 @@ typedef struct win {
 	SSHORT win_scans;
 	USHORT win_flags;
 	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
-} WIN;
+};
+
+typedef win WIN;
 
 // This is a compilation artifact: I wanted to be sure I would pick all old "win"
 // declarations at the top, so "win" was built with a mandatory argument in
@@ -1041,7 +1049,7 @@ inline void SET_TDBB(Jrd::thread_db* &tdbb) {
 	}
 	CHECK_TDBB(tdbb);
 }
-inline  void SET_DBB(Jrd::Database* &dbb) {
+inline void SET_DBB(Jrd::Database* &dbb) {
 	if (dbb == NULL) {
 		dbb = GET_DBB();
 	}

@@ -164,12 +164,14 @@ static const struct {			/* Used in make_int64_key() */
 
 /* enumerate the possible outcomes of deleting a node */
 
-typedef enum contents {
+enum contents {
 	contents_empty = 0,
 	contents_single,
 	contents_below_threshold,
 	contents_above_threshold
-} CONTENTS;
+};
+
+typedef contents CONTENTS;
 
 static SLONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, SLONG*, 
 					  SLONG*, SLONG*);

@@ -89,13 +89,13 @@ const ULONG MAX_FORMAT_SIZE	= 65535;
 #ifndef REQUESTER
 /* Function definition block */
 
-typedef enum {
+enum FUN_T {
 		FUN_value,
 		FUN_reference,
 		FUN_descriptor,
 		FUN_blob_struct,
 		FUN_scalar_array
-} FUN_T;
+};
 
 struct fun_repeat {
 	DSC fun_desc;			/* Datatype info */

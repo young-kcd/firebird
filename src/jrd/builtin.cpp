@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: builtin.cpp,v 1.8 2003-12-22 10:00:46 robocop Exp $
+ * $Id: builtin.cpp,v 1.9 2004-05-24 17:28:32 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -30,11 +30,11 @@
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
 
-typedef struct {
+struct FN {
 	const TEXT* fn_module;
 	const TEXT* fn_entrypoint;
 	FPTR_INT fn_function;
-} FN;
+};
 
 static const FN isc_builtin_functions[] = {
 /*    Internal functions available for QA testing only */

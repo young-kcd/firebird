@@ -29,11 +29,13 @@
 
 /* Transaction element block */
 
-typedef struct teb {
+struct teb {
 	int *teb_database;
 	int teb_tpb_length;
 	SCHAR *teb_tpb;
-} TEB;
+};
+
+typedef teb TEB;
 
 int RDB$MSG_VECTOR[20];
 

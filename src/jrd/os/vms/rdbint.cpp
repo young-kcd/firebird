@@ -36,18 +36,26 @@ const char* RDB_IMAGE	= "RDBVMSSHR";
 
 //#define rdb$bad_req_handle	20480058
 
-typedef struct handle {
+struct handle {
 	int *handle;
 	int *messages;
 	struct handle *parent;
 	struct handle *next;
-} *HANDLE, *REQ, *DBB, *HND_TRA, *HND_BLB;
+};
 
-typedef struct teb {
+typedef handle *HANDLE;
+typedef handle *REQ;
+typedef handle *DBB;
+typedef handle *HND_TRA;
+typedef handle *HND_BLB;
+
+struct teb {
 	DBB* teb_database;
 	int teb_tpb_length;
 	UCHAR *teb_tpb;
-} TEB;
+};
+
+typedef teb TEB;
 
 static USHORT debug_flags;
 static UCHAR *temp_buffer;

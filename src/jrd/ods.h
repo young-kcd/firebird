@@ -159,7 +159,7 @@ namespace Ods {
 
 /* Basic page header */
 
-typedef struct pag
+struct pag
 {
 	SCHAR pag_type;
 	SCHAR pag_flags;
@@ -168,7 +168,9 @@ typedef struct pag
 	// We renamed pag_seqno for SCN number usage to avoid major ODS version bump
 	ULONG pag_scn;			/* WAL seqno of last update */
 	ULONG reserved;			/* Was used for WAL */
-} *PAG;
+};
+
+typedef pag *PAG;
 
 
 /* Blob page */
@@ -304,9 +306,11 @@ struct irtd_ods10 {
 	USHORT irtd_itype;
 };
 
-typedef struct irtd : public irtd_ods10 {
+struct irtd : public irtd_ods10 {
 	float irtd_selectivity;
-} IRTD;
+};
+
+typedef irtd IRTD;
 
 const USHORT irt_unique		= 1;
 const USHORT irt_descending	= 2;
@@ -396,12 +400,13 @@ const USHORT hdr_shutdown_full		= 0x1000;
 const USHORT hdr_shutdown_single	= 0x1080;
 
 /*
-typedef struct sfd {
+struct sfd {
 	SLONG sfd_min_page;			// Minimum page number
 	SLONG sfd_max_page;			// Maximum page number
 	UCHAR sfd_index;			// Sequence of secondary file
 	UCHAR sfd_file[1];			// Given file name
-} SFD; 
+};
+typedef sfd SFD; 
 */
 
 /* Page Inventory Page */
@@ -458,20 +463,22 @@ struct generator_page : public pag
 
 /* Record header */
 
-typedef struct rhd {
+struct rhd {
 	SLONG rhd_transaction;		/* transaction id */
 	SLONG rhd_b_page;			/* back pointer */
 	USHORT rhd_b_line;			/* back line */
 	USHORT rhd_flags;			/* flags, etc */
 	UCHAR rhd_format;			/* format version */
 	UCHAR rhd_data[1];
-} *RHD;
+};
+
+typedef rhd *RHD;
 
 #define RHD_SIZE	OFFSETA (Ods::rhd*, rhd_data)
 
 /* Record header for fragmented record */
 
-typedef struct rhdf {
+struct rhdf {
 	SLONG rhdf_transaction;		/* transaction id */
 	SLONG rhdf_b_page;			/* back pointer */
 	USHORT rhdf_b_line;			/* back line */
@@ -480,13 +487,15 @@ typedef struct rhdf {
 	SLONG rhdf_f_page;			/* next fragment page */
 	USHORT rhdf_f_line;			/* next fragment line */
 	UCHAR rhdf_data[1];			/* Blob data */
-} *RHDF;
+};
+
+typedef rhdf *RHDF;
 
 #define RHDF_SIZE	OFFSETA (Ods::rhdf*, rhdf_data)
 
 /* Record header for blob header */
 
-typedef struct blh {
+struct blh {
 	SLONG blh_lead_page;		/* First data page number */
 	SLONG blh_max_sequence;		/* Number of data pages */
 	USHORT blh_max_segment;		/* Longest segment */
@@ -497,7 +506,9 @@ typedef struct blh {
 	USHORT blh_sub_type;		/* Blob sub-type */
 	USHORT blh_unused;
 	SLONG blh_page[1];			/* Page vector for blob pages */
-} *BLH;
+};
+
+typedef blh *BLH;
 
 #define BLH_SIZE	OFFSETA (Ods::blh*, blh_page)
 

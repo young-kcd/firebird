@@ -26,7 +26,7 @@
 
 /* Record types for record summary blob records */
 
-typedef enum rsr_t {
+enum rsr_t {
 	RSR_field_id,
 	RSR_field_name,
 	RSR_view_context,
@@ -50,7 +50,9 @@ typedef enum rsr_t {
 	RSR_field_length,
 	RSR_field_sub_type,
 	RSR_field_not_null
-} RSR_T;
+};
+	
+typedef rsr_t RSR_T;
 
 /* Temporary field block */
 

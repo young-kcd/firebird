@@ -41,7 +41,7 @@ const int FAST_ALLOC	= 16;
 
 const int EVH_HASH_SIZE	= 7;
 
-typedef struct evh {
+struct evh {
 	SLONG evh_length;			/* Current length of global section */
 	UCHAR evh_version;			/* Version number of global section */
 	srq evh_events;				/* Known processes */
@@ -51,7 +51,9 @@ typedef struct evh {
 	MTX_T evh_mutex[1];			/* Mutex controlling access */
 	SLONG evh_request_id;		/* Next request id */
 	SRQ_PTR evh_hash_table[EVH_HASH_SIZE];
-} *EVH;
+};
+
+typedef evh *EVH;
 
 /* Common block header */
 

@@ -43,13 +43,15 @@ const int IN_INDEX		= 2;
 const int IN_RELATION	= 3;
 const int IN_VIEW		= 4;
 
-typedef struct met {
+struct met {
 	UCHAR met_op;
 	UCHAR *met_mblr;
 	UCHAR *met_dyn;
 	USHORT met_mblr_length;
 	USHORT met_dyn_length;
-} *MET;
+};
+
+typedef met *MET;
 
 static int global_area, global_level, global_duplicates;
 

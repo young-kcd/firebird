@@ -31,12 +31,14 @@ enum s_type {
 	symb_absolute
 };
 
-typedef struct symb {
+struct symb {
 	char *symb_string;
 	int (**symb_value) ();
 	enum s_type symb_type;
 	short symb_size;
-} *SYMB;
+};
+
+typedef symb *SYMB;
 
 #endif // JRD_DBG_H
 

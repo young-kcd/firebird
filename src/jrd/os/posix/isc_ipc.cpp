@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.13 2004-05-13 23:19:50 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.14 2004-05-24 17:30:00 brodsom Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -86,7 +86,7 @@
 
 //#define LOCAL_SEMAPHORES 4
 
-typedef struct sig {
+struct sig {
 	struct sig* sig_next;
 	int sig_signal;
 	union {
@@ -97,7 +97,9 @@ typedef struct sig {
 	} sig_routine;
 	void* sig_arg;
 	USHORT sig_flags;
-} *SIG;
+};
+
+typedef sig *SIG;
 
 // flags
 const USHORT SIG_user		= 0;		/* Our routine */

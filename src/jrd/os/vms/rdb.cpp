@@ -41,24 +41,32 @@ const USHORT DBTYPE_ISC	= 37;
 
 /* Transaction element block */
 
-typedef struct teb {
+struct teb {
 	int *teb_database;
 	int teb_tpb_length;
 	SCHAR *teb_tpb;
-} TEB;
+};
 
-typedef enum {
+typedef teb TEB;
+
+enum IMPL {
 	impl_rdb = 1,
 	impl_gds
-} IMPL;
+};
 
-typedef struct handle {
+struct handle {
 	IMPL implementation;
 	int *handle;
 	int *messages;
 	struct handle *parent;
 	struct handle *next;
-} *HANDLE, *REQ, *DBB, *HND_TRA, *HND_BLB;
+};
+
+typedef handle *HANDLE;
+typedef handle *REQ;
+typedef handle *DBB;
+typedef handle *HND_TRA;
+typedef handle *HND_BLB;
 
 static HND_TRA* dyn_tra_handle;
 static ISC_STATUS_ARRAY status_vector;

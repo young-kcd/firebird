@@ -30,7 +30,7 @@ const size_t TCB_STACKSIZE	= 65536;
 
 /* Thread control block */
 
-typedef struct tcb {
+struct tcb {
 	struct tcb *tcb_next;
 	int (*tcb_routine) ();
 	long tcb_routine_arg;
@@ -39,7 +39,9 @@ typedef struct tcb {
 	pthread_cond_t tcb_cond_wait;
 	pthread_t tcb_tid;
 	char tcb_flags;
-} *TCB;
+};
+
+typedef tcb *TCB;
 
 // tcb_flags
 const char TCB_active	= 1;			/* Thread control block is active. */

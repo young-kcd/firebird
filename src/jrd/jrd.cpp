@@ -285,7 +285,7 @@ void Jrd::Trigger::release(thread_db* tdbb)
 
 /* Option block for database parameter block */
 
-typedef struct dpb
+struct dpb
 {
 	const TEXT*	dpb_sys_user_name;
 	const TEXT*	dpb_user_name;
@@ -340,7 +340,9 @@ typedef struct dpb
 	USHORT	dpb_sql_dialect;
 	USHORT	dpb_set_db_sql_dialect;
 	TEXT*	dpb_set_db_charset;
-} DPB;
+};
+
+typedef dpb DPB;
 
 static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
 static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);

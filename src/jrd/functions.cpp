@@ -33,11 +33,11 @@
 extern "C" {
 
 
-typedef struct {
+struct FN {
 	const char* fn_module;
 	const char* fn_entrypoint;
 	FPTR_INT fn_function;
-} FN;
+};
 
 
 // FPTR_INT FUNCTIONS_entrypoint(char*, char*);

@@ -33,7 +33,7 @@ private:
 	Symbol*	sym_collision;	/* collision pointer */
 
 public:
-	typedef enum sym_t {
+	enum sym_t {
 		rel,					/* relation block */
 		fld,					/* field block */
 		fun,					/* UDF function block */
@@ -41,7 +41,8 @@ public:
 		sql,					/* SQL request cache block */
 		blr,					/* BLR request cache block */
 		label					/* CVC: I need to track labels if LEAVE is implemented. */
-	} SYM_T;
+	};
+	typedef sym_t SYM_T;
 	Firebird::string	sym_string;	// symbol value
 	SYM_T	sym_type;		/* symbol type */
 	BLK		sym_object;		/* general pointer to object */

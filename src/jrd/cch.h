@@ -194,14 +194,14 @@ mark        -        0     -         0  */
 
 /* LATCH types */
 
-typedef enum
+enum LATCH
 {
 	LATCH_none,
 	LATCH_shared,
 	LATCH_io,
 	LATCH_exclusive,
 	LATCH_mark
-} LATCH;
+};
 
 /* LWT -- Latch wait block */
 

@@ -41,23 +41,27 @@ const USHORT ISC_MEM_REMOVE		= 2;
 /* InterBase platform-specific synchronization data structures */
 
 #ifdef VMS
-typedef struct itm {
+struct itm {
 	SSHORT itm_length;
 	SSHORT itm_code;
 	SCHAR *itm_buffer;
 	SSHORT *itm_return_length;
-} ITM;
+};
+
+typedef itm ITM;
 
 struct event_t {
 	SLONG event_pid;
 	SLONG event_count;
 };
 
-typedef struct wait {
+struct wait {
 	USHORT wait_count;
 	event_t* wait_events;
 	SLONG *wait_values;
-} WAIT;
+};
+
+typedef wait WAIT;
 
 /* Lock status block */
 
@@ -70,16 +74,18 @@ struct lock_status {
 
 /* Poke block (for asynchronous poking) */
 
-typedef struct poke {
+struct poke {
 	struct poke *poke_next;
 	lock_status poke_lksb;
 	SLONG poke_parent_id;
 	USHORT poke_value;
 	USHORT poke_use_count;
-} *POKE;
+};
+
+typedef poke* POKE;
 
 #define SH_MEM_STRUCTURE_DEFINED
-typedef struct sh_mem {
+struct sh_mem {
 	int sh_mem_system_flag;
 	UCHAR *sh_mem_address;
 	SLONG sh_mem_length_mapped;
@@ -88,7 +94,9 @@ typedef struct sh_mem {
 	SLONG sh_mem_retadr[2];
 	SLONG sh_mem_channel;
 	TEXT sh_mem_filename[128];
-} SH_MEM_T, *SH_MEM;
+};
+typedef struct sh_mem SH_MEM_T;
+typedef struct sh_mem* SH_MEM;
 #endif
 
 
@@ -99,16 +107,20 @@ typedef struct sh_mem {
 
 
 #ifdef ANY_THREADING
-typedef struct mtx {
+struct mtx {
 	THD_MUTEX_STRUCT mtx_mutex[1];
-} MTX_T, *MTX;
+};
+typedef mtx MTX_T;
+typedef mtx* MTX;
 #else
-typedef struct mtx {
+struct mtx {
 	SLONG mtx_semid;
 	SSHORT mtx_semnum;
 	SCHAR mtx_use_count;
 	SCHAR mtx_wait;
-} MTX_T, *MTX;
+};
+typedef mtx MTX_T;
+typedef mtx* MTX;
 #endif /* ANY_THREADING */
 
 
@@ -131,23 +143,28 @@ struct event_t
 
 
 #define SH_MEM_STRUCTURE_DEFINED
-typedef struct sh_mem
+struct sh_mem
 {
 	int sh_mem_semaphores;
 	UCHAR *sh_mem_address;
 	SLONG sh_mem_length_mapped;
 	SLONG sh_mem_mutex_arg;
 	SLONG sh_mem_handle;
-} SH_MEM_T, *SH_MEM;
+};
+typedef sh_mem SH_MEM_T;
+typedef sh_mem *SH_MEM;
 #endif /* UNIX */
 
 
 #ifdef WIN_NT
 #define MTX_STRUCTURE_DEFINED
-typedef struct mtx
+struct mtx
 {
 	void*	mtx_handle;
-} MTX_T, *MTX;
+};
+
+typedef mtx MTX_T;
+typedef mtx *MTX;
 
 struct event_t
 {
@@ -159,7 +176,7 @@ struct event_t
 };
 
 #define SH_MEM_STRUCTURE_DEFINED
-typedef struct sh_mem
+struct sh_mem
 {
 	UCHAR*	sh_mem_address;
 	SLONG	sh_mem_length_mapped;
@@ -170,8 +187,9 @@ typedef struct sh_mem
 	void*	sh_mem_hdr_object;
 	SLONG*	sh_mem_hdr_address;
 	TEXT	sh_mem_name[256];
-} SH_MEM_T, *SH_MEM;
-
+};
+typedef sh_mem SH_MEM_T;
+typedef sh_mem *SH_MEM;
 #define THREAD_HANDLE_DEFINED
 typedef void *THD_T;
 #endif
@@ -179,24 +197,28 @@ typedef void *THD_T;
 
 #ifndef MTX_STRUCTURE_DEFINED
 #define MTX_STRUCTURE_DEFINED
-typedef struct mtx
+struct mtx
 {
 	SSHORT	mtx_event_count[3];
 	SCHAR	mtx_use_count;
 	SCHAR	mtx_wait;
-} MTX_T, *MTX;
+};
+typedef mtx MTX_T;
+typedef mtx *MTX;
 #endif
 #undef MTX_STRUCTURE_DEFINED
 
 #ifndef SH_MEM_STRUCTURE_DEFINED
 #define SH_MEM_STRUCTURE_DEFINED
-typedef struct sh_mem
+struct sh_mem
 {
 	UCHAR*	sh_mem_address;
 	SLONG	sh_mem_length_mapped;
 	SLONG	sh_mem_mutex_arg;
 	SLONG	sh_mem_handle;
-} SH_MEM_T, *SH_MEM;
+};
+typedef sh_mem SH_MEM_T;
+typedef sh_mem *SH_MEM;
 #endif
 #undef SH_MEM_STRUCTURE_DEFINED
 
@@ -209,14 +231,16 @@ typedef ULONG THD_T;
 
 /* Interprocess communication configuration structure */
 
-typedef struct ipccfg
+struct ipccfg
 {
 	const char*	ipccfg_keyword;
 	SCHAR		ipccfg_key;
 	SLONG*		ipccfg_variable;
 	SSHORT		ipccfg_parent_offset;	/* Relative offset of parent keyword */
 	USHORT		ipccfg_found;		/* TRUE when keyword has been set */
-} *IPCCFG;
+};
+
+typedef ipccfg *IPCCFG;
 
 /* AST actions taken by SCH_ast() */
 
