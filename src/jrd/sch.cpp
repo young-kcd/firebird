@@ -79,7 +79,7 @@ static THREAD active_thread = NULL;
 static THREAD ast_thread = NULL;
 static MUTX_T thread_mutex[1];
 volatile static USHORT init_flag = FALSE;
-static USHORT multi_threaded = FALSE, enabled = FALSE;
+static USHORT enabled = FALSE;
 
 #define ABORT	abort()
 
@@ -139,10 +139,6 @@ int API_ROUTINE gds__thread_enable(int enable_flag)
 	if (enable_flag) {
 		enabled = TRUE;
 		SCH_init();
-		if (enable_flag < 0 && !multi_threaded) {
-			multi_threaded = TRUE;
-			THD_INIT;
-		}
 	}
 
 	return enabled;
@@ -400,18 +396,16 @@ void SCH_enter(void)
 
 /* Special case single thread case */
 
-	if (!multi_threaded) {
-		if (active_thread || ast_thread) {
-			multi_threaded = TRUE;
-		} else if (free_threads) {
-			thread = active_thread = free_threads;
-			free_threads = NULL;
-			thread->thread_next = thread->thread_prior = thread;
-			thread->thread_flags = 0;
-			thread->thread_id = THD_get_thread_id();
-			return;
-		}
+#ifndef MULTI_THREAD
+	if (free_threads) {
+		thread = active_thread = free_threads;
+		free_threads = NULL;
+		thread->thread_next = thread->thread_prior = thread;
+		thread->thread_flags = 0;
+		thread->thread_id = THD_get_thread_id();
+		return;
 	}
+#endif
 
 	if (!init_flag) {
 		SCH_init();
@@ -470,17 +464,15 @@ void SCH_exit(void)
  *	scheduler, and release thread block.
  *
  **************************************/
-	THREAD thread, prior, next;
-	int mutex_state;
-
 	SCH_validate();
 
-	if (!multi_threaded && !ast_thread) {
-		free_threads = active_thread;
-		active_thread = NULL;
-		free_threads->thread_next = NULL;
-		return;
-	}
+#ifndef MULTI_THREAD
+	free_threads = active_thread;
+	active_thread = NULL;
+	free_threads->thread_next = NULL;
+#else
+	THREAD thread, prior, next;
+	int mutex_state;
 
 	if (mutex_state = THD_mutex_lock(thread_mutex))
 		mutex_bugcheck("mutex lock", mutex_state);
@@ -511,6 +503,7 @@ void SCH_exit(void)
 
 	if (mutex_state = THD_mutex_unlock(thread_mutex))
 		mutex_bugcheck("mutex unlock", mutex_state);
+#endif
 }
 
 
@@ -561,6 +554,7 @@ void SCH_init(void)
 			if (mutex_state = THD_mutex_init(thread_mutex))
 				mutex_bugcheck("mutex init", mutex_state);
 #ifdef MULTI_THREAD
+			THD_INIT;
 		}
 	} catch (const std::exception&) {
 		scheduler_init_lock.leave();
@@ -635,13 +629,12 @@ BOOLEAN SCH_validate(void)
 		return FALSE;
 	}
 
-	if (!multi_threaded)
-		return TRUE;
-
+#ifdef MULTI_THREAD
 	if (active_thread->thread_id != THD_get_thread_id()) {
 		gds__log("SCH_validate -- wrong thread");
 		return FALSE;
 	}
+#endif
 
 	return TRUE;
 }
@@ -928,11 +921,14 @@ static BOOLEAN schedule_active(int hiber_flag)
  *	If a context switch actually happened, return TRUE.
  *
  **************************************/
+#ifndef MULTI_THREAD
+	return FALSE;
+#else
 	THREAD thread;
 	int mutex_state;
 	BOOLEAN ret;
 
-	if (!active_thread || !multi_threaded)
+	if (!active_thread)
 		return FALSE;
 
 	if (mutex_state = THD_mutex_lock(thread_mutex))
@@ -962,6 +958,7 @@ static BOOLEAN schedule_active(int hiber_flag)
 		mutex_bugcheck("mutex unlock", mutex_state);
 
 	return ret;
+#endif
 }
 
 
