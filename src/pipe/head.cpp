@@ -32,7 +32,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.21 2003-01-03 12:52:35 alexpeshkoff Exp $ */
+ /* $Id: head.cpp,v 1.22 2003-02-07 14:41:36 kkuznetsov Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -157,8 +157,8 @@ static TEXT	error_text [1024];
  * there is no MT issue.
  *  15-September-1995 David Schnepper & Morgan Schweers
  */
-#define	GETC_UNLOCKED		getc_unlocked
-#define	PUTC_UNLOCKED		putc_unlocked
+#define	GETC_UNLOCKED		ib_getc_unlocked
+#define	PUTC_UNLOCKED		ib_putc_unlocked
 #endif
 
 #ifndef	GETC_UNLOCKED

@@ -99,6 +99,8 @@
 
 #define ib_gets		gets
 #define ib_sprintf	sprintf
+#define ib_getc_unlocked getc_unlocked
+#define ib_putc_unlocked putc_unlocked
 
 #else /* NEED_IB_STDIO */
 
