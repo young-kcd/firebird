@@ -1,3 +1,91 @@
+2005-01-17 16:59  kkuznetsov
+
+	* firebird2/src/utilities/ibmgr/srvrmgr.cpp (1.26):
+	
+	Some cleanup
+
+2005-01-17 11:05  kkuznetsov
+
+	* firebird2/src/utilities/ibmgr/srvrmgr.cpp (1.25):
+	
+	Minor fix
+
+2005-01-17 10:16  robocop
+
+	* firebird2/src/dsql/: ddl.cpp (1.126), dsql.tab.h (1.49),
+	parse.cpp (1.140), parse.y (1.166):
+	
+	First attempt to fix SF Bug #512975.  Please let me know if the
+	problem disappears or there's a bad side effect that I didn't
+	detect.
+
+2005-01-17 09:55  robocop
+
+	* firebird2/src/gpre/sql.cpp (1.62):
+	
+	Fix SF Bug #1103740 Both quoted and non-quoted cursors should be
+	checked for duplication.  Now, duplicate quoted identifiers used
+	for cursors will get something like: (E) gpretest.e:29: symbol
+	a_nice_long_long_long_cusor_name_for_customer is alrea dy in use
+
+2005-01-17 07:48  robocop
+
+	* firebird2/src/gpre/: par.cpp (1.61), sql.cpp (1.61):
+	
+	Fix SF Bug #1103683 for gpre.  Now, database aliases can't be
+	longer than 31 bytes. Example:	  EXEC SQL		  SET
+	DATABASE "DB0" = COMPILETIME
+	"G:\\DB\\Firebird\\examples\\EMPLOYEE.GDB" Here DB0 can be longer
+	provided that it doesn't go beyond 31 bytes. As pointed out by Paul
+	Beach, it makes little sense to have a reference that's longer than
+	the physical path of the db.
+
+2005-01-17 07:43  robocop
+
+	* firebird2/src/gpre/c_cxx.cpp (1.64):
+	
+	Fix SF Bug #1103670.  Now, quoted cursor names can be opened,
+	closed and reopened in gpre without losing their names.
+
+2005-01-17 06:41  robocop
+
+	* firebird2/src/gpre/sql.cpp (1.60):
+	
+	Fix error message.
+
+2005-01-17 06:39  robocop
+
+	* firebird2/src/gpre/: sqe.cpp (1.39), sql.cpp (1.59):
+	
+	Fix more inconsistencies in gpre related to SF Bug #1103666,
+	supposedly caused by the starfishes.
+
+2005-01-17 06:31  robocop
+
+	* firebird2/src/gpre/: par.cpp (1.60), sql.cpp (1.58):
+	
+	Fix more inconsistencies in gpre related to SF Bug #1103666.  The
+	others were fixed as part of fixing SF Bug #504978 about truncation
+	of variables.
+
+2005-01-17 06:22  robocop
+
+	* firebird2/src/gpre/: cme.cpp (1.35), exp.cpp (1.38):
+	
+	Misc.
+
+2005-01-17 06:02  robocop
+
+	* firebird2/src/gpre/: cme.cpp (1.34), exp.cpp (1.37), gpre.cpp
+	(1.73), gpre.h (1.78), gpre_meta.epp (1.52), par.cpp (1.59),
+	parse.h (1.12), sqe.cpp (1.38), sql.cpp (1.57), sql_proto.h (1.12):
+	
+	Fix SF Bug #504978. Restore gpre ability to work with variables up
+	to 63 bytes in length. Now that the lengths are expressed by
+	constants instead of random values in each place, the limit may be
+	increased further. The problem happened between IB5 and IB6 at
+	Borland.
+
 2005-01-16 13:35  dimitr
 
 	* firebird2/src/common/config/: config.cpp (1.60), config.h (1.35):
