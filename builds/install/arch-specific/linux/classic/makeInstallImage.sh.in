@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.9 2005-03-13 16:04:33 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.10 2005-03-15 11:46:11 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -194,7 +194,7 @@ copyFiles() {
 
 
 # link include files to /usr/include 
-	for i in gds.h iberror.h ibase.h ib_util.h
+	for i in iberror.h ibase.h ib_util.h
 	   do
 		   ln -s ../../$FBRootDir/include/$i $TargetDir/usr/include/$i
 	   done
