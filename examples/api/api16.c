@@ -71,7 +71,7 @@ ARGLIST(char **argv)
 	long		count[2], i = 0;
 	ISC_STATUS_ARRAY Vector;
 	char		ids[2][15];
-        int             first = 1;
+	int             first = 1;
 	int	 	ret = 0;
 	/* Transaction parameter block for read committed */
 	static char  	isc_tpb[5] = {isc_tpb_version1,
@@ -81,7 +81,7 @@ ARGLIST(char **argv)
 				      isc_tpb_no_rec_version};
 	if (argc > 1)
                 strcpy(dbname, argv[1]);
-        else
+    else
 		strcpy(dbname, "employee.fdb");
 
 
@@ -148,13 +148,13 @@ ARGLIST(char **argv)
                  /* Check for first ast_call.  isc_que_events fires
                     each event to get processing started */
 
-                  if ( first )
-                     {
+            if ( first )
+            {
                       first = 0;
                       event_flag = 0;
-                     }
-                  else
-                     {
+            }
+            else
+            {
                     
 			event_flag = 0; 
 			/* event_counts will compare the various events 
@@ -191,19 +191,19 @@ ARGLIST(char **argv)
 			/* Close cursor */
 			isc_dsql_free_statement(status, &stmt, DSQL_close);
 
-                    }
+			}
 
  	 	 /* Re-queue for the next event */
 
-		 if (isc_que_events(status, &DB, &event_id, length, 
-		    event_buffer, ast_routine, result_buffer))
+		 	if (isc_que_events(status, &DB, &event_id, length,
+		    	event_buffer, ast_routine, result_buffer))
    		      {ERREXIT(status, 1)};
 		}
 
 		/* This does not block, but as a sample program there is nothing
 		** else for us to do, so we will take a nap
 		*/
-	SLEEP(1);
+		SLEEP(1);
 	}
 	isc_commit_transaction(status, &trans);
 
@@ -236,3 +236,4 @@ ARGLIST(USHORT length)
 	while (length--)
 		*(UCHAR*)result++ = *updated++;
 }
+
