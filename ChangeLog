@@ -1,3 +1,21 @@
+2005-01-20 13:35  dimitr
+
+	* firebird2/doc/sql.extensions/README.keywords (1.1):
+	
+	Some docs.
+
+2005-01-20 13:33  dimitr
+
+	* firebird2/src/dsql/parse.y (1.167):
+	
+	More compatibility modes for the parser.
+
+2005-01-20 12:29  dimitr
+
+	* firebird2/src/burp/restore.epp (1.88):
+	
+	More correct fix for restore.
+
 2005-01-19 10:00  robocop
 
 	* firebird2/src/utilities/nbackup.cpp (1.45):
