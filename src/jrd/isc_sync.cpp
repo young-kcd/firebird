@@ -2369,7 +2369,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 /* Get an exclusive lock on the file until the initialization process
    is complete.  That way potential race conditions are avoided. */
 
-#if !(defined sun || defined DARWIN)
+#ifndef HAVE_FLOCK
 	if (lockf(ib_fileno(fp), F_LOCK, 0)) {
 		error(status_vector, "lockf", errno);
 #else

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.16 2002-10-29 03:37:49 seanleyne Exp $
+$Id: flu.cpp,v 1.17 2002-11-12 07:59:19 eku Exp $
 */
 
 #include "firebird.h"
@@ -80,9 +80,6 @@ static int condition_handler(int *, int *, int *);
 #include <libgen.h>
 #define IB_UDF_DIR 	"UDF/"
 #endif
-
-
-/* SGI specific stuff */
 
 #if (defined SOLARIS || defined SCO_EV || defined linux || defined AIX_PPC || defined SINIXZ || defined FREEBSD)
 #include <dlfcn.h>

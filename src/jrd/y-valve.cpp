@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.15 2002-11-06 07:08:45 eku Exp $
+$Id: y-valve.cpp,v 1.16 2002-11-12 07:59:19 eku Exp $
 */
 
 #include "firebird.h"
@@ -5812,11 +5812,11 @@ static STATUS open_marker_file(STATUS * status,
 			}
 
 			/* Place an advisory lock on the marker file. */
-			#ifdef DARWIN
+#ifdef HAVE_FLOCK
 			if (flock(fd, LOCK_EX ) != -1) {
-			#else
+#else
 			if (lockf(fd, F_TLOCK, 0) != -1) {
-			#endif
+#endif
 				size = sizeof(marker_contents);
 				for (j = 0; j < IO_RETRY; j++) {
 					if ((bytes = read(fd, marker_contents, size)) != -1)
