@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.8 2003-03-20 11:11:50 aafemt Exp $
+#  $Id: Makefile.in,v 1.9 2003-05-29 13:40:00 skidder Exp $
 #
 ROOT=..
 
@@ -134,8 +134,8 @@ install: buildTarDir
 rpmfile: $(RPMFile)
 
 $(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir
-	rpm --define='_topdir @BUILD_ROOT_DIR@/gen/RPM' -bb $(GEN_ROOT)/install/rpmscript
-#	rpm -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
+	rpmbuild --define='_topdir @BUILD_ROOT_DIR@/gen/RPM' -bb $(GEN_ROOT)/install/rpmscript
+#	rpmbuild -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
 	cp @BUILD_ROOT_DIR@/gen/RPM/RPMS/i686/$(RPMFile) $(GEN_ROOT)
 
 
