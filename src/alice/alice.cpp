@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.12 2002-04-04 05:31:13 bellardo Exp $
+//	$Id: alice.cpp,v 1.13 2002-06-29 05:33:02 skywalker Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -390,7 +390,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 
 		if (table->in_sw_value & (sw_housekeeping)) {
 			if (--argc <= 0) {
-				ALICE_error(9);	/* msg 9: number of transactions per sweep required */
+				ALICE_error(113);	/* msg 113: dialect number required */
 			}
 			ALICE_down_case(*argv++, string);
 			if ((!(tdgbl->ALICE_data.ua_sweep_interval = atoi(string)))
