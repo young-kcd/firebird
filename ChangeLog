@@ -1,3 +1,35 @@
+2004-11-09 15:35  paul_reeves
+
+	*
+	
+	file installation_readme_hu.txt was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/win32/hu/installation_readme_hu
+	.txt (1.1):
+
+2004-11-09 15:23  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/pt/instalação_leia-me.txt
+	(1.1):
+	
+	file instalação_leia-me.txt was initially added on branch
+	B1_5_Release.
+
+2004-11-09 14:06  hvlad
+
+	* firebird2/builds/install/misc/firebird.conf (1.12):
+	
+	Added config file parameter for the garbage collection policy
+
+2004-11-09 13:59  hvlad
+
+	* firebird2/src/: common/config/config.cpp (1.57),
+	common/config/config.h (1.33), jrd/jrd.cpp (1.187), jrd/jrd.h
+	(1.120), jrd/tra.cpp (1.93), jrd/vio.cpp (1.121):
+	
+	Add config file parameter for the garbage collection policy
+
 2004-11-08 13:53  asfernandes
 
 	* firebird2/builds/win32/msvc7/: engine.vcproj (1.42),
