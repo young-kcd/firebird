@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.35 2004-06-05 09:36:56 robocop Exp $
+//	$Id: exp.cpp,v 1.36 2004-08-26 21:44:11 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -770,15 +770,13 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 					continue;
 				}
 				gpre_nod* item = par_value(request, 0);
-				gpre_nod* upcase;
-				if (insensitive) {
-					upcase = MSC_node(nod_upcase, 1);
-					upcase->nod_arg[0] = item;
-				}
 				count++;
 				MSC_push((GPRE_NOD) (IPTR) ((direction) ? 1 : 0), &directions);
-				if (insensitive)
+				if (insensitive) {
+					gpre_nod* upcase = MSC_node(nod_upcase, 1);
+					upcase->nod_arg[0] = item;
 					MSC_push(upcase, &items);
+				}
 				else
 					MSC_push(item, &items);
 				if (!MSC_match(KW_COMMA))

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.42 2004-05-24 17:13:37 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.43 2004-08-26 21:44:11 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -444,6 +444,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	default:
 		CPR_error("datatype not supported");
+		return 0; // silence non initialized warning
 	}
 
 	*length = l;

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.47 2004-06-05 09:36:56 robocop Exp $
+//	$Id: cob.cpp,v 1.48 2004-08-26 21:44:11 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -1026,6 +1026,7 @@ static void gen_based( const act* action)
 	}
 	else if (field->fld_array_info) {
 		CPR_error("Based on currently not implemented for arrays.");
+		return; // silence non initialized warning
 //  
 //     TBD - messy
 //   datatype = field->fld_array_info->ary_dtype;
@@ -2501,7 +2502,7 @@ static void gen_event_wait( const act* action)
 	GPRE_NOD event_init;
 	gpre_sym* event_name;
 	gpre_sym* stack_name;
-	DBB database;
+	DBB database = NULL;
 	gpre_lls* stack_ptr;
 	const act* event_action;
 	SSHORT column;
@@ -2531,7 +2532,7 @@ static void gen_event_wait( const act* action)
 	if (ident < 0) {
 		sprintf(s, "event handle \"%s\" not found", event_name->sym_string);
 		CPR_error(s);
-        return;
+		return; // silence non initialized warning
 	}
 
 	column = strlen(names[COLUMN]);
@@ -3959,6 +3960,11 @@ static void gen_whenever(const swe* label)
 		case SWE_not_found:
 			condition = "SQLCODE = 100";
 			break;
+
+		default:
+			// condition undefined
+			fb_assert(false);
+			return;
 		}
 		fprintf(gpreGlob.out_file, "%sIF (%s) THEN GO TO %s",
 				   names[COLUMN], condition, label->swe_label);

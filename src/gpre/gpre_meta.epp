@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.44 2004-06-03 07:31:09 robocop Exp $
+ *	$Id: gpre_meta.epp,v 1.45 2004-08-26 21:44:11 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -566,7 +566,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 
 	START_TRANSACTION;
 
-    bool has_default = false;
+	bool has_default = false;
 	FOR(REQUEST_HANDLE database->dbb_field_request)
 	RFR IN RDB$RELATION_FIELDS CROSS F IN RDB$FIELDS WITH
 		RFR.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
@@ -581,6 +581,9 @@ bool MET_get_column_default(const gpre_rel* relation,
 		else if (!F.RDB$DEFAULT_VALUE.NULL) {
 			blob_id = &F.RDB$DEFAULT_VALUE;
 			has_default = true;
+		}
+		else {
+			blob_id = NULL; // silence non initialized warning
 		}
 
 		if (has_default) {
@@ -1069,6 +1072,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	default:
 		CPR_error("datatype not supported");
+		return 0; // silence non initialized warning
 	}
 
 	*length = l;

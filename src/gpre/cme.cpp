@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.31 2004-06-05 09:36:56 robocop Exp $
+//	$Id: cme.cpp,v 1.32 2004-08-26 21:44:11 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -581,8 +581,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		}
 		else
 		{
-			dtype_max =
-				DSC_multiply_result[field1.fld_dtype][field2.fld_dtype];
+			dtype_max =	DSC_multiply_result[field1.fld_dtype][field2.fld_dtype];
 			if (dtype_max == dtype_unknown)
 			{
 				CPR_error("Invalid operand used in multiplication");
@@ -668,26 +667,32 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 				  is_date_and_time(field1.fld_dtype, field2.fld_dtype)))
 			{
 				CPR_error("Invalid use of timestamp/date/time value");
+				return; // silence non initialized warning
 			}
-			else
+			else{
 				dtype_max = MAX(field1.fld_dtype, field2.fld_dtype);
-			if (DTYPE_IS_BLOB(dtype_max))
-				CPR_error("Invalid use of blob/array value");
+				if (DTYPE_IS_BLOB(dtype_max)){
+					CPR_error("Invalid use of blob/array value");
+					return; // silence non initialized warning
+				}
+			}
 		}
 		else
 		{
 // ** Dialect is > 1 *
 
 			if (node->nod_type == nod_plus)
-				dtype_max =
-					DSC_add_result[field1.fld_dtype][field2.fld_dtype];
+				dtype_max = DSC_add_result[field1.fld_dtype][field2.fld_dtype];
 			else
-				dtype_max =
-					DSC_sub_result[field1.fld_dtype][field2.fld_dtype];
-			if (dtype_max == dtype_unknown)
+				dtype_max = DSC_sub_result[field1.fld_dtype][field2.fld_dtype];
+			if (dtype_max == dtype_unknown){
 				CPR_error("Illegal operands used in addition");
-			else if (dtype_max == DTYPE_CANNOT)
+				return; // silence non initialized warning
+			}
+			else if (dtype_max == DTYPE_CANNOT){
 				CPR_error("expression evaluation not supported");
+				return; // silence non initialized warning
+			}
 		}
 
         switch (dtype_max)
@@ -775,8 +780,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		}
 		else
 		{
-			dtype_max =
-				DSC_multiply_result[field1.fld_dtype][field2.fld_dtype];
+			dtype_max = DSC_multiply_result[field1.fld_dtype][field2.fld_dtype];
 			if (dtype_max == dtype_unknown)
 				CPR_error("Illegal operands used in division");
 			else if (dtype_max == DTYPE_CANNOT)

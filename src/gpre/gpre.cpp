@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.62 2004-06-05 09:36:56 robocop Exp $
+//  $Id: gpre.cpp,v 1.63 2004-08-26 21:44:11 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -1671,7 +1671,7 @@ static bool get_switches(int			argc,
 						 SW_TAB		sw_table,
 						 TEXT**		file_array)
 {
-	USHORT in_sw;
+	USHORT in_sw = 0; // silence uninitialized warning
 
 //  
 //  Read all the switches and arguments, acting only on those
