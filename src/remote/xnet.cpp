@@ -430,7 +430,6 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 	InterlockedExchange((LPLONG) &test_xnet_initialized, xnet_initialized);
 	if (!test_xnet_initialized) {
 		InterlockedExchange((LPLONG) &xnet_initialized, TRUE);
-		THD_mutex_init(&xnet_mutex);
 		CurrentProcessId = GetCurrentProcessId();
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 		InterlockedExchange((LPLONG) &xnet_mutex_ready, (LONG) TRUE);
