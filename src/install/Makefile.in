@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in,v 1.4 2001-08-14 17:41:39 skywalker Exp $
+#   $Id: Makefile.in,v 1.5 2001-08-15 18:10:35 skywalker Exp $
 # 
 
 ROOT=../..
@@ -38,7 +38,7 @@ include     $(ROOT)/src/make.defaults
 include     $(ROOT)/src/make.platform
 include     $(ROOT)/src/make.shared.variables
 
-INSTALLDIR=@prefix@
+FirebirdInstallPrefix=@prefix@
 
  @SET_MAKE@
 
@@ -55,166 +55,68 @@ INSTALLDIR=@prefix@
 
 BuildRoot=$(GEN_ROOT)
 
-InstallRoot=$(SRC_ROOT)/install/linux
-#RedhatPackageDir=/usr/src/redhat/RPMS/i386
-RedhatPackageDir=/usr/src/RPM/RPMS/i386
-
-Version=@FIREBIRD_VERSION@-1
+InstallRoot=.
 
 
-ClassicTarFile=FirebirdCS-$(Version).tar.gz
-SuperTarFile=FirebirdSS-$(Version).tar.gz
+FirebirdVersion=@FIREBIRD_VERSION@
+ArchType=@FIREBIRD_ARCH_TYPE@
 
-ClassicRPMFile=FirebirdCS-$(Version).i386.rpm
-SuperRPMFile=FirebirdSS-$(Version).i386.rpm
+PackageVersion=$(FirebirdVersion)-1
 
-ClassicSrcDir=$(InstallRoot)/classic
-SuperSrcDir=$(InstallRoot)/super
+FirebirdBuildPrefix=$(GEN_ROOT)
 
-LastClassicInstallFlg=.classicinstallflg
-LastSuperInstallFlg=.superinstallflg
-
-
-install: run@FIREBIRD_ARCH_TYPE@install
-package : @FIREBIRD_ARCH_TYPE@packages
+export FirebirdBuildPrefix
+export FirebirdInstallPrefix
+export PackageVersion
 
 
-runclassicinstall: $(LastClassicInstallFlg)
+ifeq ($(ArchType),classic)
+	ArchPrefix=CS
+else
+	ArchPrefix=SS
+endif
 
-$(LastClassicInstallFlg) : $(BIN)/gsec
-	(cd $(ROOT); sh src/install/classic/CSTarInstall.sh)
+
+# This means something like: FirebirdCS-2.0.0-1.tar.gz
+TarFile=Firebird$(ArchPrefix)-$(PackageVersion).tar.gz
+PkgSrcDir=$(InstallRoot)/$(ArchType)
+
+
+LastInstallFlg=.lastinstallflg
+
+
+install: runinstall
+dist : packages
+
+
+runinstall: $(LastInstallFlg)
+
+
+$(LastInstallFlg) : $(BIN)/gsec
+	$(ArchType)/$(ArchPrefix)TarInstall.sh
 #	(cd $(ROOT); sh $(InstallRoot)/classic/CSTarInstall.sh)
-	touch $(LastClassicInstallFlg)
-
-
-
-runsuperinstall: $(LastSuperInstallFlg)
-
-$(LastSuperInstallFlg) : interbase/bin/gsec
-	sh $(InstallRoot)/super/SSTarInstall.sh
-	touch $(LastSuperInstallFlg)
+#	touch $(LastInstallFlg)
 
 
 
 
-$(ClassicTarFile) : csinstall runclassicinstall
-	mv csinstall install
-	tar -czf $(ClassicTarFile) install
-	mv install csinstall
+
+packages: tarfile
+
+tarfile:  $(TarFile)
+
+$(TarFile) :  buildInstallDir
+	(cd $(GEN_ROOT); tar -czf $(TarFile) install)
 
 
-$(ClassicRPMFile): CSrpmscript
-	rpm -bb CSrpmscript
-	cp $(RedhatPackageDir)/$(ClassicRPMFile) .
+TarInstallDir=$(GEN_ROOT)/install
 
-
-
-
-#__ for ron ________
-
-classicpackages: classictarfile classicrpmfile
-
-
-classictarfile: runclassicinstall $(ClassicTarFile)
-
-classicrpmfile: runclassicinstall $(ClassicRPMFile)
-
-
-superpackages: supertarfile superrpmfile
-
-
-
-supertarfile: runsuperinstall $(SuperTarFile)
-
-superrpmfile: runsuperinstall $(SuperRPMFile)
-
-
-
-$(SuperTarFile) : ssinstall runsuperinstall
-	mv ssinstall install
-	tar -czf $(SuperTarFile) install
-	mv install ssinstall
-
-
-$(SuperRPMFile): SSrpmscript
-	rpm -bb SSrpmscript
-	cp $(RedhatPackageDir)/$(SuperRPMFile) .
-
-
-CSrpmscript: 
-	echo $@
-	cat $(ClassicSrcDir)/CSrpmheader.txt > $@
-	echo "" >> $@
-	echo "%prep" >> $@
-#	cat $(ClassicSrcDir)/CSprepinstall.sh >> $@
-	echo "" >> $@
-	echo "%build" >> $@
-#	cat $(ClassicSrcDir)/CSbuildinstall.sh >> $@
-	echo "" >> $@
-	echo "%install" >> $@
-#	cat $(ClassicSrcDir)/CSinstall.sh >> $@
-	echo "" >> $@
-	echo "%files" >> $@
-	cat $(ClassicSrcDir)/CSrpmfiles.txt >> $@
-	echo "" >> $@
-	echo "%pre" >> $@
-	cat $(ClassicSrcDir)/CSpreinstall.sh >> $@
-	echo "" >> $@
-	echo "%post" >> $@
-	cat $(ClassicSrcDir)/CSpostinstall.sh >> $@
-	echo "" >> $@
-	echo "%preun" >> $@
-	cat $(ClassicSrcDir)/CSpreuninstall.sh >> $@
-	echo "" >> $@
-	echo "%postun" >> $@
-	cat $(ClassicSrcDir)/CSpostuninstall.sh >> $@
-
-SSrpmscript: 
-	echo $@
-	cat $(SuperSrcDir)/SSrpmheader.txt > $@
-	echo "" >> $@
-	echo "%prep" >> $@
-#	cat $(SuperSrcDir)/SSprepinstall.sh >> $@
-	echo "" >> $@
-	echo "%build" >> $@
-#	cat $(SuperSrcDir)/SSbuildinstall.sh >> $@
-	echo "" >> $@
-	echo "%install" >> $@
-#	cat $(SuperSrcDir)/SSinstall.sh >> $@
-	echo "" >> $@
-	echo "%files" >> $@
-	cat $(SuperSrcDir)/SSrpmfiles.txt >> $@
-	echo "" >> $@
-	echo "%pre" >> $@
-	cat $(SuperSrcDir)/SSpreinstall.sh >> $@
-	echo "" >> $@
-	echo "%post" >> $@
-	cat $(SuperSrcDir)/SSpostinstall.sh >> $@
-	echo "" >> $@
-	echo "%preun" >> $@
-	cat $(SuperSrcDir)/SSpreuninstall.sh >> $@
-	echo "" >> $@
-	echo "%postun" >> $@
-	cat $(SuperSrcDir)/SSpostuninstall.sh >> $@
-
-
-CSTarInstallDir=csinstall
-
-csinstall:
-	mkdir -p $(CSTarInstallDir)/scripts
+buildInstallDir:
+	mkdir -p $(TarInstallDir)/scripts
 #	(cd $(BuildRoot); tar -czf - interbase ) | cat > $(CSTarInstallDir)/interbase.tar.gz
-	cp $(ClassicSrcDir)/CSpreinstall.sh $(CSTarInstallDir)/scripts
-	cp $(ClassicSrcDir)/CSinstall.sh $(CSTarInstallDir)/scripts
-	cp $(ClassicSrcDir)/CSpostinstall.sh $(CSTarInstallDir)/scripts
-	cp $(ClassicSrcDir)/CSTarInstall.sh $(CSTarInstallDir)/install.sh
-	tar -czf $(CSTarInstallDir)/interbase.tar.gz interbase
+	cp $(PkgSrcDir)/??preinstall.sh $(TarInstallDir)/scripts
+	cp $(PkgSrcDir)/??install.sh $(TarInstallDir)/scripts
+	cp $(PkgSrcDir)/??postinstall.sh $(TarInstallDir)/scripts
+	cp $(PkgSrcDir)/??TarInstall.sh $(TarInstallDir)/install.sh
+	(cd $(GEN_ROOT); tar -czf install/firebird.tar.gz firebird)
 
-SSTarInstallDir=ssinstall
-
-ssinstall:
-	mkdir -p $(SSTarInstallDir)/scripts
-	cp $(SuperSrcDir)/SSpreinstall.sh $(SSTarInstallDir)/scripts
-	cp $(SuperSrcDir)/SSinstall.sh $(SSTarInstallDir)/scripts
-	cp $(SuperSrcDir)/SSpostinstall.sh $(SSTarInstallDir)/scripts
-	cp $(SuperSrcDir)/SSTarInstall.sh $(SSTarInstallDir)/install.sh
-	tar -czf $(SSTarInstallDir)/interbase.tar.gz interbase

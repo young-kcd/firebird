@@ -2261,8 +2261,10 @@ FIREBIRD_ARCH_TYPE=classic
 #FIREBIRD_ARCH_TYPE=super
 
 
-# THe following file defines the version number strings
+# The following file defines the version number strings
 source src/misc/writeBuildNum.sh
+
+
 
 
 #AC_DEFINE_UNQUOTED(FB_BUILD_TYPE, "$BuildType")

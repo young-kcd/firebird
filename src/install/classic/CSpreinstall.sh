@@ -126,14 +126,14 @@ archivePriorInstallSystemFiles() {
     cd /
 
 
-    DestFile="opt/interbase"
+    DestFile="$FBRootDir"
     if [ -e "$DestFile"  ]
       then
         echo ""
         echo ""
         echo ""
         echo "--- Warning ----------------------------------------------"
-        echo "    The installation target directory: $IBRootDir"
+        echo "    The installation target directory: $FBRootDir"
         echo "    Already contains a prior installation of InterBase/Firebird."
         echo "    This and files found in /usr/include and /usr/lib will be"
         echo "    archived in the file : ${ArchiveMainFile}"
@@ -215,11 +215,15 @@ checkForRPMInstall() {
 
 #= Main Pre ================================================================
 
-    INSTALLDIR=%prefix%
-    IBRootDir=$INSTALLDIR/firebird
-    IBBin=$IBRootDir/bin
+
+    if  [ -z "$FirebirdInstallPrefix" ]
+       then
+        FirebirdInstallPrefix=%prefix%
+    fi
+    FBRootDir=$FirebirdInstallPrefix/firebird
+    FBBin=$FBRootDir/bin
     ArchiveDateTag=`date +"%Y%m%d_%H%M"`
-    ArchiveMainFile="${IBRootDir}_${ArchiveDateTag}.tar.gz"
+    ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar.gz"
 
 
 

@@ -10,14 +10,27 @@
 # If this is a tar.gz install rather than the result of a build then
 # We assume the files have already been copied here manually.
 
-    BuildDir=gen/firebird
-    DestDir=/opt/interbase
-
-    if [ -z "$InteractiveInstall" ] 
-      then
-        ScriptsSrcDir=src/install/linux
-        cp $ScriptsSrcDir/misc/README $BuildDir
+    if  [ -z "$FirebirdInstallPrefix" ]
+       then
+        FirebirdInstallPrefix=%prefix%
     fi
+
+
+    if  [ -z "$FirebirdBuildPrefix" ]
+       then
+        FirebirdBuildPrefix="."
+    fi
+
+    BuildDir=$FirebirdBuildPrefix/firebird
+    DestDir=$FirebirdInstallPrefix/firebird
+
+
+#  I think this is done as part of the build now.
+#    if [ -z "$InteractiveInstall" ] 
+#      then
+#        ScriptsSrcDir=src/install/linux
+#        cp $ScriptsSrcDir/misc/README $BuildDir
+#    fi
 
 # The guts of the tranfer of files to /opt and other directories
 
@@ -96,9 +109,4 @@
     cp $BuildDir/README $DestDir/README
 
     cp $BuildDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
-
-    # June 23 2000, 6:00AM 
-    #TIMESTAMP="200006230600.00" 
-    #cd $DestDir/ 
-    #touch -t $TIMESTAMP `find . -print` 
 

@@ -83,13 +83,14 @@ export InteractiveInstall
 
 checkInstallUser
 
-# Ok, here we are installing from a CVS tree
+# Ok, If the env variable exists then we are doing
+# the install from the CVS tree
 
-if [ -e gen ]
+if [ ! -z "$FirebirdInstallPrefix" ]
   then
-    ScriptsSrcDir=./src/install/
+    ScriptsSrcDir=.
 
-    ( $ScriptsSrcDir/classic/CSpreinstall.sh )
+    ($ScriptsSrcDir/classic/CSpreinstall.sh )
 
     ($ScriptsSrcDir/classic/CSinstall.sh)
 

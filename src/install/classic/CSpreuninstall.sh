@@ -35,12 +35,18 @@ checkIfServerRunning() {
 # This is a bit simple, but should work for now.  
 # cron will remove files in /tmp after a while. 
 
-    IBRootDir=/opt/interbase
-    IBBin=$IBRootDir/bin
+
+    if  [ -z "$FirebirdInstallPrefix" ]
+       then
+        FirebirdInstallPrefix=%prefix%
+    fi
+
+    FBRootDir=$FirebirdInstallPrefix/firebird
+    FBBin=$FBRootDir/bin
 
     checkIfServerRunning
 
-    cd $IBRootDir
+    cd $FBRootDir
     
     if [ -f isc4.gdb ] 
       then 

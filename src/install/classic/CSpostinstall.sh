@@ -70,7 +70,7 @@ addFirebirdUser() {
     testStr=`grep firebird /etc/passwd`
     if [ -z "$testDir" ]
       then
-        useradd -o -r -m -d $IBRootDir -s /bin/bash \
+        useradd -o -r -m -d $FBRootDir -s /bin/bash \
             -c "Firebird Database Administrator" -g firebird -u 84 firebird 
 
         # >/dev/null 2>&1 
@@ -114,7 +114,7 @@ EOF
 updateInetdEntry() {
 
     FileName=/etc/inetd.conf
-    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $IBBin/gds_inet_server gds_inet_server # InterBase Database Remote Server"
+    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $FBBin/gds_inet_server gds_inet_server # InterBase Database Remote Server"
     oldLine=`grep "^gds_db" $FileName`
 
     replaceLineInFile "$FileName" "$newLine" "$oldLine"
@@ -125,7 +125,7 @@ updateInetdEntry() {
 
 updateXinetdEntry() {
 
-    cp $IBRootDir/misc/firebird.xinetd /etc/xinetd.d/firebird
+    cp $FBRootDir/misc/firebird.xinetd /etc/xinetd.d/firebird
     changeXinetdServiceUser
 }
 
@@ -156,7 +156,7 @@ updateInetdServiceEntry() {
 
 keepOrigDBAPassword() {
 
-    DBAPasswordFile=$IBRootDir/SYSDBA.password
+    DBAPasswordFile=$FBRootDir/SYSDBA.password
     
     NewPasswd='masterkey'
     echo "Firebird initial install password " > $DBAPasswordFile
@@ -186,7 +186,7 @@ keepOrigDBAPassword() {
 
 generateNewDBAPassword() {
 
-    DBAPasswordFile=$IBRootDir/SYSDBA.password
+    DBAPasswordFile=$FBRootDir/SYSDBA.password
     
     NewPasswd=`/usr/bin/mkpasswd -l 8`
 
@@ -201,7 +201,7 @@ generateNewDBAPassword() {
     echo "" >> $DBAPasswordFile
     chmod u=r,go= $DBAPasswordFile
 
-    $IBBin/gsec -user sysdba -password masterkey <<EOF
+    $FBBin/gsec -user sysdba -password masterkey <<EOF
 modify sysdba -pw $NewPasswd
 EOF
 
@@ -219,7 +219,7 @@ askUserForNewDBAPassword() {
     while [ -z "$NewPasswd" ]
       do
 # If using a generated password
-#         DBAPasswordFile=$IBRootDir/SYSDBA.password
+#         DBAPasswordFile=$FBRootDir/SYSDBA.password
 #         NewPasswd=`mkpasswd -l 8`
 #         echo "Password for SYSDBA on `hostname` is : $NewPasswd" > $DBAPasswordFile
 #         chmod ga-rwx $DBAPasswordFile
@@ -228,7 +228,7 @@ askUserForNewDBAPassword() {
           NewPasswd=$Answer
           if [ ! -z "$NewPasswd" ]
             then
-             $IBBin/gsec -user sysdba -password masterkey <<EOF
+             $FBBin/gsec -user sysdba -password masterkey <<EOF
 modify sysdba -pw $NewPasswd
 EOF
               echo ""
@@ -274,13 +274,13 @@ changeDBAPassword() {
 fixFilePermissions() {
 
     # Turn other access off.
-    chmod -R o= $IBRootDir
+    chmod -R o= $FBRootDir
 
 
     # Now fix up the mess.
 
     # fix up directories 
-    for i in `find $IBRootDir -print`
+    for i in `find $FBRootDir -print`
     do
         FileName=$i
         if [ -d $FileName ]
@@ -290,7 +290,7 @@ fixFilePermissions() {
     done
 
 
-    cd $IBBin
+    cd $FBBin
 
 
     # set up the defaults for bin
@@ -315,7 +315,7 @@ fixFilePermissions() {
     done
 
 
-    cd $IBRootDir
+    cd $FBRootDir
 
     # Fix lock files
     for i in isc_init1 isc_lock1 isc_event1 
@@ -380,12 +380,12 @@ fixFilePermissions() {
 fixFilePermissionsRoot() {
 
     # Turn other access off.
-    chmod -R o= $IBRootDir
+    chmod -R o= $FBRootDir
 
     # Now fix up the mess.
 
     # fix up directories 
-    for i in `find $IBRootDir -print`
+    for i in `find $FBRootDir -print`
     do
         FileName=$i
         if [ -d $FileName ]
@@ -395,7 +395,7 @@ fixFilePermissionsRoot() {
     done
 
 
-    cd $IBBin
+    cd $FBBin
 
 
     # set up the defaults for bin
@@ -413,7 +413,7 @@ fixFilePermissionsRoot() {
     done
 
 
-    cd $IBRootDir
+    cd $FBRootDir
 
     # Fix lock files
     for i in isc_init1 isc_lock1 isc_event1 
@@ -486,15 +486,21 @@ resetInetdServer() {
 #= Main Post ===============================================================
 
     # Make sure the links are in place 
-    if [ ! -L /opt/interbase -a ! -d /opt/interbase ] 
-      then 
-    # Main link and... 
-        ln -s $RPM_INSTALL_PREFIX/interbase /opt/interbase 
-    fi 
+    if  [ -z "$FirebirdInstallPrefix" ]
+       then
+        FirebirdInstallPrefix=%prefix%
+    fi
+
+# Hopefully we are done with this link.
+#    if [ ! -L /opt/interbase -a ! -d /opt/interbase ] 
+#      then 
+#    # Main link and... 
+#        ln -s $RPM_INSTALL_PREFIX/interbase /opt/interbase 
+#    fi 
 
 
-    IBRootDir=/opt/interbase
-    IBBin=$IBRootDir/bin
+    FBRootDir=$FirebirdInstallPrefix/firebird
+    FBBin=$FBRootDir/bin
     RunUser=root
 #    RunUser=firebird
 
@@ -516,7 +522,7 @@ resetInetdServer() {
 
 
     # Create Lock files
-    cd $IBRootDir
+    cd $FBRootDir
 
     for i in isc_init1 isc_lock1 isc_event1 
       do
@@ -529,7 +535,7 @@ resetInetdServer() {
 
 
     # Update ownership and SUID bits for programs.
-    chown -R $RunUser.$RunUser $IBRootDir
+    chown -R $RunUser.$RunUser $FBRootDir
     if [ "$RunUser" = "root" ]
       then
         fixFilePermissionsRoot
@@ -545,7 +551,7 @@ resetInetdServer() {
     resetInetdServer
 
 
-    cd $IBRootDir
+    cd $FBRootDir
     # Change sysdba password
     changeDBAPassword
 

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.firebird,v 1.6 2001-08-15 05:37:55 skywalker Exp $
+#   $Id: Makefile.in.firebird,v 1.7 2001-08-15 18:10:36 skywalker Exp $
 # 
 
 ROOT=..
@@ -362,9 +362,9 @@ $(BIN)/% :: $(SRC_ROOT)/install/misc/%
 #___________________________________________________________________________
 # 
 
+.PHONY: install
 
-
-installx:
+install:
 	$(MAKE) -C install $@
 
 installclassic:
@@ -372,7 +372,7 @@ installclassic:
 #	$(SRC_ROOT)/install/classic/CSinstall.sh
 #	$(SRC_ROOT)/install/classic/CSpostinstall.sh
 
-builddist:
+dist:
 	$(MAKE) -C install $@
 
 
