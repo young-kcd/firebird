@@ -31,7 +31,7 @@
 #include "../utilities/install_nt.h"
 #include "../remote/chop_proto.h"
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__BORLANDC__)
 #include <process.h>			/* _beginthread */
 #endif
 
@@ -767,11 +767,7 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 	PSPages[0].dwSize = sizeof(PROPSHEETPAGE);
 	PSPages[0].dwFlags = PSP_USETITLE;
 	PSPages[0].hInstance = hInstance;
-#ifdef  __BORLANDC__			/* Anonymous unions not working in BC */
-	PSPages[0].DUMMYUNIONNAME.pszTemplate = MAKEINTRESOURCE(IDD_PROPSHEET);
-#else
 	PSPages[0].pszTemplate = MAKEINTRESOURCE(IDD_PROPSHEET);
-#endif
 	PSPages[0].pszTitle = MAKEINTRESOURCE(IDS_PROP_TITLE);
 	PSPages[0].pfnDlgProc = (DLGPROC) GeneralPage;
 	PSPages[0].pfnCallback = NULL;
@@ -781,20 +777,11 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 		PSH_USEICONID | PSH_MODELESS;
 	PSHdr.hwndParent = hParentWnd;
 	PSHdr.hInstance = hInstance;
-#ifdef  __BORLANDC__			/* Anonymous unions not working in BC */
-	PSHdr.DUMMYUNIONNAME.pszIcon = MAKEINTRESOURCE(IDI_IBGUARD);
-#else
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBGUARD);
-#endif
 	PSHdr.pszCaption = (LPSTR) APP_NAME;
 	PSHdr.nPages = sizeof(PSPages) / sizeof(PROPSHEETPAGE);
-#ifdef  __BORLANDC__			/* Anonymous unions not working in BC */
-	PSHdr.DUMMYUNIONNAME2.nStartPage = 0;
-	PSHdr.DUMMYUNIONNAME3.ppsp = (LPCPROPSHEETPAGE) & PSPages;
-#else
 	PSHdr.nStartPage = 0;
 	PSHdr.ppsp = (LPCPROPSHEETPAGE) & PSPages;
-#endif
 	PSHdr.pfnCallback = NULL;
 
 	hPSDlg = (HWND) PropertySheet(&PSHdr);
@@ -1083,7 +1070,8 @@ void write_log(int log_action, char *buff)
 			FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 						  FORMAT_MESSAGE_ARGUMENT_ARRAY |
 						  FORMAT_MESSAGE_FROM_STRING,
-						  tmp_buff, 0, 0, (LPTSTR) & lpMsgBuf, 0, act_buff);
+						  tmp_buff, 0, 0, (LPTSTR) & lpMsgBuf, 0,
+						  reinterpret_cast < va_list * >(act_buff));
 			strncpy(act_buff[0], (LPTSTR) lpMsgBuf,
 					strlen(reinterpret_cast < const char *>(lpMsgBuf)) - 1);
 			LocalFree(lpMsgBuf);
