@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.103 2004-03-30 04:10:49 robocop Exp $
+$Id: met.epp,v 1.104 2004-03-31 17:59:58 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -55,6 +55,7 @@ $Id: met.epp,v 1.103 2004-03-30 04:10:49 robocop Exp $
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
+#include "../jrd/sym.h"
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
 #include "../jrd/tra.h"
@@ -1406,37 +1407,33 @@ int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const TEXT* name,
 	Database* dbb = tdbb->tdbb_database;
 
 /* Start by checking field names that we already know */
-	for (;;)
+	vec* vector = relation->rel_fields;
+
+	if (vector)
 	{
-		vec* vector = relation->rel_fields;
+		const UCHAR length = strlen(name);
+		USHORT id = 0;
+		vec::iterator fieldIter = vector->begin();
 
-		if (vector)
+		for (const vec::const_iterator end = vector->end();  fieldIter < end; fieldIter++, id++)
 		{
-			const UCHAR length = strlen(name);
-			USHORT id = 0;
-			vec::iterator fieldIter = vector->begin();
-
-			for (const vec::const_iterator end = vector->end();  fieldIter < end; fieldIter++, id++)
-				if (*fieldIter) 
+			if (*fieldIter) 
+			{
+				jrd_fld* field = reinterpret_cast<jrd_fld*>(*fieldIter);
+				if (field->fld_length == length && strcmp (field->fld_name, name) == 0)
 				{
-					jrd_fld* field = reinterpret_cast<jrd_fld*>(*fieldIter);
-					if (field->fld_length == length && strcmp (field->fld_name, name) == 0)
+					if (!security_name) 
+						return id;
+					const size_t nl2 = name_length (security_name);
+					if (field->fld_security_name) 
 					{
-						if (!security_name) 
+						const size_t nl = name_length(field->fld_security_name);
+						if (nl == nl2 && !strncmp(field->fld_security_name, security_name, nl)) 
 							return id;
-						const size_t nl2 = name_length (security_name);
-						if (field->fld_security_name) 
-						{
-							const size_t nl = name_length(field->fld_security_name);
-							if (nl == nl2 && !strncmp(field->fld_security_name, security_name, nl)) 
-								return id;
-						}
 					}
 				}
+			}
 		}
-		if (relation->rel_flags & REL_scanned)
-			break;
-		MET_scan_relation (tdbb, relation);
 	}
 
 /* Not found.  Next, try system relations directly */
@@ -1678,7 +1675,7 @@ void MET_lookup_index(thread_db* tdbb,
 
 
 SLONG MET_lookup_index_name(thread_db* tdbb,
-							const TEXT* index_name,
+							const Firebird::string& index_name,
 							SLONG* relation_id, SSHORT* status)
 {
 /**************************************
@@ -1702,7 +1699,7 @@ SLONG MET_lookup_index_name(thread_db* tdbb,
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$INDICES WITH
-			X.RDB$INDEX_NAME EQ index_name
+			X.RDB$INDEX_NAME EQ index_name.c_str()
 
         if (!REQUEST(irq_l_index_name))
             REQUEST(irq_l_index_name) = request;
@@ -1982,7 +1979,7 @@ bool MET_lookup_partner(
 }
 
 
-jrd_prc* MET_lookup_procedure(thread_db* tdbb, SCHAR * name, bool noscan)
+jrd_prc* MET_lookup_procedure(thread_db* tdbb, const Firebird::string& name, bool noscan)
 {
 /**************************************
  *
@@ -2010,27 +2007,21 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, SCHAR * name, bool noscan)
 			if (procedure && !(procedure->prc_flags & PRC_obsolete)
 				&& ((procedure->prc_flags & PRC_scanned) || noscan)
 				&& !(procedure->prc_flags & PRC_being_scanned)
-				&& !(procedure->prc_flags & PRC_being_altered)
-				&& procedure->prc_name)
+				&& !(procedure->prc_flags & PRC_being_altered))
 			{
-				const SCHAR* p = (SCHAR*)procedure->prc_name.c_str();
-				for (const SCHAR* q = name; *p == *q; p++, q++)
+				if (procedure->prc_name == name) 
 				{
-					if (*p == 0) {
-						if (procedure->prc_flags & PRC_check_existence) {
-							check_procedure = procedure;
-							LCK_lock(tdbb, check_procedure->prc_existence_lock,
-								LCK_SR, TRUE);
-							break;
-						}
-						else {
-							return procedure;
-						}
+					if (procedure->prc_flags & PRC_check_existence) 
+					{
+						check_procedure = procedure;
+						LCK_lock(tdbb, check_procedure->prc_existence_lock,
+							LCK_SR, TRUE);
+						break;
+					}
+					else {
+						return procedure;
 					}
   				}
-			}
-			if (check_procedure) {
-				break;
 			}
 		}
 	}
@@ -2042,7 +2033,7 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, SCHAR * name, bool noscan)
 	jrd_req* request = CMP_find_request(tdbb, irq_l_procedure, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
-		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ name
+		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ name.c_str()
 
         if (!REQUEST(irq_l_procedure)) 
             REQUEST(irq_l_procedure) = request;
@@ -2710,11 +2701,10 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				/* should be error if field already exists */
 				Parameter* parameter = 
 					FB_NEW_RPT(*dbb->dbb_permanent, name_length(PA.RDB$PARAMETER_NAME)) 
-					Parameter(*dbb->dbb_permanent);
+					Parameter();
 				parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
 				(*vector)[parameter->prm_number] = (BLK) parameter;
 				name_copy(parameter->prm_string, PA.RDB$PARAMETER_NAME);
-				parameter->prm_name = parameter->prm_string;
 				DSC_make_descriptor(&parameter->prm_desc, F.RDB$FIELD_TYPE,
 									F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
 									F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
@@ -3404,12 +3394,12 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				strcpy((char*)field->fld_name, (char*)p);
 				field->fld_length = strlen(field->fld_name);
 
-                // CVC: Be paranoid and allow the possible trigger(s) to have a
-                //   not null security class to work on, even if we only take it
-                //   from the relation itself.
-                if (!field->fld_security_name && !REL.RDB$DEFAULT_CLASS.NULL) {
-                    field->fld_security_name = MET_save_name (tdbb, REL.RDB$DEFAULT_CLASS);
-                }
+				// CVC: Be paranoid and allow the possible trigger(s) to have a
+				//   not null security class to work on, even if we only take it
+				//   from the relation itself.
+				if (!field->fld_security_name && !REL.RDB$DEFAULT_CLASS.NULL) {
+					field->fld_security_name = MET_save_name (tdbb, REL.RDB$DEFAULT_CLASS);
+				}
 
 				break;
 
@@ -4356,11 +4346,11 @@ static void store_dependencies(thread_db*	tdbb,
 			}
         case obj_udf:
 			{
-			    UserFunction* udf = (UserFunction*) node->nod_arg [e_dep_object];
-                dpdo_name = udf->fun_symbol->sym_string;
-		    }
-            break;
-        }
+				UserFunction* udf = (UserFunction*) node->nod_arg [e_dep_object];
+				dpdo_name = udf->fun_symbol->sym_string.c_str();
+			}
+			break;
+		}
 
 		jrd_nod* field_node = node->nod_arg[e_dep_field];
 
