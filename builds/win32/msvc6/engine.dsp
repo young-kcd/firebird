@@ -37,8 +37,8 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "release\engine_ss"
-# PROP Intermediate_Dir "release\engine_ss"
+# PROP Output_Dir "..\..\..\temp\release\engine_ss"
+# PROP Intermediate_Dir "..\..\..\temp\release\engine_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /YX /FD /EHc- /c
@@ -60,8 +60,8 @@ LIB32=link.exe -lib
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug\engine_ss"
-# PROP Intermediate_Dir "debug\engine_ss"
+# PROP Output_Dir "..\..\..\temp\debug\engine_ss"
+# PROP Intermediate_Dir "..\..\..\temp\debug\engine_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "SERVER_SHUTDOWN" /D "DEV_BUILD" /FD /GZ /c

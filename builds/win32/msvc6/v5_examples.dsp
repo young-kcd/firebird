@@ -32,13 +32,13 @@ RSC=rc.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "release/v5_examples"
-# PROP BASE Intermediate_Dir "release/v5_examples"
+# PROP BASE Output_Dir "..\..\..\temp\release\v5_examples"
+# PROP BASE Intermediate_Dir "..\..\..\temp\release\v5_examples"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "release/v5_examples"
-# PROP Intermediate_Dir "release/v5_examples"
+# PROP Output_Dir "..\..\..\temp\release\v5_examples"
+# PROP Intermediate_Dir "..\..\..\temp\release\v5_examples"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
@@ -56,13 +56,13 @@ LINK32=link.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "debug/v5_examples"
-# PROP BASE Intermediate_Dir "debug/v5_examples"
+# PROP BASE Output_Dir "..\..\..\temp\debug\v5_examples"
+# PROP BASE Intermediate_Dir "..\..\..\temp\debug\v5_examples"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug/v5_examples"
-# PROP Intermediate_Dir "debug/v5_examples"
+# PROP Output_Dir "..\..\..\temp\debug\v5_examples"
+# PROP Intermediate_Dir "..\..\..\temp\debug\v5_examples"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "GPRE_FORTRAN" /D "GPRE_PASCAL" /D "GPRE_COBOL" /D "GPRE_ADA" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FR /FD /GZ /c

@@ -37,8 +37,8 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "release\engine_es"
-# PROP Intermediate_Dir "release\engine_es"
+# PROP Output_Dir "..\..\..\temp\release\engine_es"
+# PROP Intermediate_Dir "..\..\..\temp\release\engine_es"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /EHc- /c
@@ -49,7 +49,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"release\engine_es\engine.lib"
+# ADD LIB32 /nologo /out:"..\..\..\temp\release\engine_es\engine.lib"
 
 !ELSEIF  "$(CFG)" == "engine_embed - Win32 Debug"
 
@@ -60,8 +60,8 @@ LIB32=link.exe -lib
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug\engine_es"
-# PROP Intermediate_Dir "debug\engine_es"
+# PROP Output_Dir "..\..\..\temp\debug\engine_es"
+# PROP Intermediate_Dir "..\..\..\temp\debug\engine_es"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /FD /GZ /c
@@ -73,7 +73,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"debug\engine_es\engine.lib"
+# ADD LIB32 /nologo /out:"..\..\..\temp\debug\engine_es\engine.lib"
 
 !ENDIF 
 

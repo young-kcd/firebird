@@ -37,8 +37,8 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug\dsql_server_cs"
-# PROP Intermediate_Dir "debug\dsql_server_cs"
+# PROP Output_Dir "..\..\..\temp\debug\dsql_server_cs"
+# PROP Intermediate_Dir "..\..\..\temp\debug\dsql_server_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "DEBUG" /D "_DEBUG" /D "_LIB" /D "_WINDOWS" /D "WIN32" /D "DEV_BUILD" /D "_MBCS" /D "_X86_" /FD /GZ /c
@@ -49,7 +49,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"debug\dsql_server_cs\dsql_server.lib"
+# ADD LIB32 /nologo /out:"..\..\..\temp\debug\dsql_server_cs\dsql_server.lib"
 
 !ELSEIF  "$(CFG)" == "dsql_server_classic - Win32 Release"
 
@@ -60,8 +60,8 @@ LIB32=link.exe -lib
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "release\dsql_server_cs"
-# PROP Intermediate_Dir "release\dsql_server_cs"
+# PROP Output_Dir "..\..\..\temp\release\dsql_server_cs"
+# PROP Intermediate_Dir "..\..\..\temp\release\dsql_server_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "DEBUG" /D "NDEBUG" /D "_LIB" /D "_WINDOWS" /D "SUPERSERVER" /D "NOMSG" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_LIB" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /EHc- /c
@@ -72,7 +72,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"release\dsql_server_cs\dsql_server.lib"
+# ADD LIB32 /nologo /out:"..\..\..\temp\release\dsql_server_cs\dsql_server.lib"
 
 !ENDIF 
 

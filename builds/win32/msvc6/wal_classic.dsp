@@ -37,8 +37,8 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "debug\wal_cs"
-# PROP Intermediate_Dir "debug\wal_cs"
+# PROP Output_Dir "..\..\..\temp\debug\wal_cs"
+# PROP Intermediate_Dir "..\..\..\temp\debug\wal_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FD /GZ /c
@@ -49,7 +49,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"debug\wal_cs\wal.lib"
+# ADD LIB32 /nologo /out:"..\..\..\temp\debug\wal_cs\wal.lib"
 
 !ELSEIF  "$(CFG)" == "wal_classic - Win32 Release"
 
@@ -60,8 +60,8 @@ LIB32=link.exe -lib
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "release\wal_cs"
-# PROP Intermediate_Dir "release\wal_cs"
+# PROP Output_Dir "..\..\..\temp\release\wal_cs"
+# PROP Intermediate_Dir "..\..\..\temp\release\wal_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_LIB" /D "SUPERSERVER" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
@@ -73,7 +73,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"release\wal_cs\wal.lib"
+# ADD LIB32 /nologo /out:"..\..\..\temp\release\wal_cs\wal.lib"
 
 !ENDIF 
 
