@@ -116,14 +116,14 @@
         Dmitry Yemanov <yemanov@yandex.ru>
 
     * Fixed unregistered bug.
-	    Enabled aggregate functions from different parent context to be used inside another aggregate function.
-	  Example:
-	    SELECT MAX((SELECT COUNT(*) FROM RDB$RELATIONS)) FROM RDB$RELATIONS
+        Enabled aggregate functions from different parent context to be used inside another aggregate function.
+      Example:
+        SELECT MAX((SELECT COUNT(*) FROM RDB$RELATIONS)) FROM RDB$RELATIONS
       Contributor(s):
         Arno Brinkman <firebird@abvisie.nl>
 
     * Fixed RC1 bug.
-		Aggregates from a different parent context were not allowed in the HAVING clause.
+        Aggregates from a different parent context were not allowed in the HAVING clause.
       Contributor(s):
         Arno Brinkman <firebird@abvisie.nl>
 
