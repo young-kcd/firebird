@@ -33,7 +33,7 @@
 :BUILD_EMPBUILD
 @echo.
 @echo Building empbuild.fdb
-@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\ %ROOT_PATH%\gen\examples\ > nul
+@copy %ROOT_PATH%\output\bin\ %ROOT_PATH%\gen\examples\ > nul
 @copy /y %ROOT_PATH%\examples\empbuild\*.sql   %ROOT_PATH%\gen\examples\ > nul
 @copy /y %ROOT_PATH%\examples\empbuild\*.inp   %ROOT_PATH%\gen\examples\ > nul
 
