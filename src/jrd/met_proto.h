@@ -84,6 +84,7 @@ void MET_scan_relation(TDBB, struct rel *);
 TEXT *MET_trigger_msg(TDBB, TEXT *, USHORT);
 void MET_update_shadow(TDBB, struct sdw *, USHORT);
 void MET_update_transaction(TDBB, struct tra *, USHORT);
+void MET_update_partners(TDBB);
 
 
 #ifdef __cplusplus

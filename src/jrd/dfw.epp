@@ -2321,6 +2321,7 @@ static bool delete_index(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 									work->dfw_name,
 									obj_expression_index);
 		}
+		MET_update_partners(tdbb);
 
 		if (index)
 		{

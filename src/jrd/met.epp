@@ -35,7 +35,7 @@
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.21 2002-09-28 20:58:39 skidder Exp $
+$Id: met.epp,v 1.22 2002-09-30 14:21:33 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -188,6 +188,39 @@ void release_cached_triggers(TDBB tdbb, TRIG_VEC vector)
 		ptr->release(tdbb);
 }
 
+void MET_update_partners(TDBB tdbb)
+{
+/**************************************
+ *
+ *      M E T _ u p d a t e _ p a r t n e r s
+ *
+ **************************************
+ *
+ * Functional description
+ *      Mark all relations to update their links to FK partners
+ *      Called when any index is deleted because engine don't know
+ *      was it used in any FK or not
+ *
+ **************************************/
+ 
+	DBB				dbb;
+	VEC				relations;
+	REL				relation;
+	vec::iterator	ptr, end;
+
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	relations = dbb->dbb_relations;
+
+	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
+	{
+		relation = REL(*ptr);
+		if (!relation) continue;		
+		relation->rel_flags |= REL_check_partners;
+	}
+}
+
 void MET_clear_cache(TDBB tdbb)
 {
 /**************************************
@@ -204,7 +237,6 @@ void MET_clear_cache(TDBB tdbb)
 	VEC				relations;
 	REL				relation;
 	vec::iterator	ptr, end;
-	trig_vec::iterator tptr, tend;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
