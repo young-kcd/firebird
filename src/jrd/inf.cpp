@@ -393,11 +393,11 @@ int INF_database_info(
 			break;
 #else
 		case isc_info_current_memory:
-			length = INF_convert(process_current_memory, buffer);
+			length = INF_convert(MemoryPool::process_current_memory, buffer);
 			break;
 
 		case isc_info_max_memory:
-			length = INF_convert(process_max_memory, buffer);
+			length = INF_convert(MemoryPool::process_max_memory, buffer);
 			break;
 #endif
 

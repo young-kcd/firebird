@@ -54,8 +54,8 @@
 
 namespace Firebird {
 
-int process_max_memory = 0;
-int process_current_memory = 0;
+int MemoryPool::process_max_memory = 0;
+int MemoryPool::process_current_memory = 0;
 
 // Helper function to reduce code size, since many compilers
 // generate quite a bit of code at the point of the throw.
@@ -234,6 +234,9 @@ void MemoryPool::print_contents(IB_FILE *file, bool used_only) {
 }
 
 MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int *max_mem) {
+	if (!cur_mem) cur_mem = &process_current_memory;
+	if (!max_mem) max_mem = &process_max_memory;
+
 	size_t alloc_size = FB_MAX(
 		// This is the exact initial layout of memory pool in the first extent //
 		MEM_ALIGN(sizeof(MemoryExtent)) +

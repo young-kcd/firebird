@@ -81,8 +81,6 @@ struct PendingFreeBlock {
 	PendingFreeBlock *next;
 };
 
-extern int process_current_memory, process_max_memory;
-
 // Memory pool based on B+ tree of free memory blocks
 
 // We are going to have two target architectures:
@@ -92,7 +90,7 @@ extern int process_current_memory, process_max_memory;
 // MemoryPool inheritance looks weird because we cannot use
 // any pointers to functions in shared memory. VMT usage in
 // MemoryPool and its descendants is prohibited
-class MemoryPool {
+class FB_DLL_EXPORT MemoryPool {
 private:
 	class InternalAllocator {
 	public:
@@ -164,8 +162,11 @@ protected:
 	}
 	
 	static MemoryPool* internal_create(size_t instance_size, 
-		int *cur_mem = &process_current_memory, int *max_mem = &process_max_memory);
+		int *cur_mem = NULL, int *max_mem = NULL);
 public:
+	static int process_max_memory;
+	static int process_current_memory;
+
 	// Move usage stats to another location
 	void moveStats(int *cur_mem, int *max_mem) {
 		*cur_mem = *cur_memory;
