@@ -2875,10 +2875,16 @@ static void find_best(TDBB tdbb,
 	}
 
 	// Compute delta and total estimate cost to fetch this stream.
-	double position_cost, position_cardinality;
-	estimate_cost(tdbb, opt, stream, &position_cost, &position_cardinality);
-	double new_cost = cost + cardinality * position_cost;
-	double new_cardinality = position_cardinality * cardinality;
+	double position_cost, position_cardinality, new_cost, new_cardinality;
+
+	if (!plan_node) {
+		estimate_cost(tdbb, opt, stream, &position_cost,
+					  &position_cardinality);
+		new_cost = cost + cardinality * position_cost;
+		new_cardinality = position_cardinality * cardinality;
+	}
+	// dimitr:	any clue why the above variables are not initialized
+	//			in the case of an explicit plan?
 
 	++opt->opt_combinations;
 	// If the partial order is either longer than any previous partial order,
