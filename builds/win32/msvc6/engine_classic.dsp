@@ -404,10 +404,6 @@ SOURCE=..\..\..\src\jrd\rse.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sbm.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\sch.cpp
 # End Source File
 # Begin Source File
@@ -1115,10 +1111,6 @@ SOURCE=..\..\..\src\jrd\rse_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sbm.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\sbm_proto.h
 # End Source File
 # Begin Source File
 
