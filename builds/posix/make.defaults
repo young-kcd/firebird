@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.24 2003-07-08 01:05:22 brodsom Exp $
+#   $Id: make.defaults,v 1.25 2003-07-08 10:45:47 brodsom Exp $
 # 
 
 
@@ -248,7 +248,7 @@ GPRE_CURRENT    = $(BIN)/gpre_current$(EXEC_EXT)
 # From msgs
 CHECK_MESSAGES  = $(BIN)/check_messages$(EXEC_EXT)
 BUILD_FILE      = $(BIN)/build_file$(EXEC_EXT)
-INTERBASE_MSG   = $(FIREBIRD)/firebird.msg
+FIREBIRD_MSG    = $(FIREBIRD)/firebird.msg
 
 ENTER_MESSAGES  = $(BIN)/enter_messages$(EXEC_EXT)
 MODIFY_MESSAGES = $(BIN)/modify_messages$(EXEC_EXT)

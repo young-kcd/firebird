@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.11 2003-07-03 15:47:46 brodsom Exp $
+#  $Id: Makefile.in.msgs,v 1.12 2003-07-08 10:45:47 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=msgs
@@ -134,7 +134,7 @@ $(CHANGE_MESSAGES):	$(CHANGE_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
 
 message_file : $(FIREBIRD)/firebird.msg
 
-$(INTERBASE_MSG) : $(BUILD_FILE) indicator.msg
+$(FIREBIRD_MSG) : $(BUILD_FILE) indicator.msg
 	$(BIN)/build_file -d $(MSGSDIR)master_msg_db.lnk -f $@
 	$(CHMOD_6) $@
 
