@@ -56,9 +56,10 @@ namespace Firebird
 	protected:
 		union {
 			char_type smallStorage[smallStorageSize];
-			struct {
+// BRS 14/05/04: ISO C++ don't allow anonymous struct inside anonymous union
+//			struct {
 				char_type* bigStorage;
-			};
+//			};
 		};
 		unsigned short userSize, actualSize;
 	private:
