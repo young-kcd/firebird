@@ -1,3 +1,79 @@
+2003-01-25 09:55  dimitr
+
+	* firebird2/builds/win32/: build_all.bat, build_boot.bat,
+	prepare.bat, preprocess.bat:
+	
+	Updated batch files.
+
+2003-01-25 04:14  brodsom
+
+	* firebird2/builds/posix/Makefile.in.intl:
+	
+	New charsets (update posix build)
+
+2003-01-25 04:13  brodsom
+
+	* firebird2/builds/win32/msvc6/intl.dsp:
+	
+	New charsets (update msvc6 build)
+
+2003-01-25 04:11  brodsom
+
+	* firebird2/src/: jrd/filters.cpp, jrd/intl.cpp, jrd/intl.h,
+	jrd/intl_builtin.cpp, jrd/intlnames.h, burp/restore.epp:
+	
+	New charsets (....)
+
+2003-01-25 04:09  brodsom
+
+	* firebird2/src/intl/: cs_unicode.c, cs_utffss.c, lc_latin1.c,
+	lc_latin2.c, lc_unicode.c, charsets/cs_latin1.h,
+	charsets/cs_latin2.h:
+	
+	remove renamed sources
+
+2003-01-25 04:08  brodsom
+
+	* firebird2/src/intl/: cs_unicode_fss.c, cs_unicode_ucs2.c,
+	lc_iso8859_1.c, lc_iso8859_2.c, lc_unicode_ucs2.c:
+	
+	change source names
+
+2003-01-25 04:04  brodsom
+
+	* firebird2/src/intl/: utils/mapdump.c, utils/maptest.cpp,
+	utils/maptest2.c, depends.mak, lc_ascii.c, ld.c, moved_files.txt,
+	conversions/tx437_lat1.h, conversions/tx865_lat1.h, charsets.h,
+	cs_big5.c, cs_gb2312.c, cs_jis.c, cs_ksc.c, cs_narrow.c,
+	cv_narrow.c:
+	
+	New character sets (update intl sources)
+
+2003-01-25 04:03  brodsom
+
+	* firebird2/src/intl/charsets/: cs_861.h, cs_863.h, cs_865.h,
+	cs_w1250.h, cs_w1251.h, cs_w1252.h, cs_w1253.h, cs_w1254.h,
+	cs_437.h, cs_850.h, cs_852.h, cs_857.h, cs_860.h:
+	
+	New character sets (update old ones)
+
+2003-01-25 04:02  brodsom
+
+	* firebird2/src/intl/charsets/: cs_w1257.h, cs_737.h, cs_775.h,
+	cs_858.h, cs_862.h, cs_864.h, cs_866.h, cs_869.h, cs_iso8859_1.h,
+	cs_iso8859_13.h, cs_iso8859_2.h, cs_iso8859_3.h, cs_iso8859_4.h,
+	cs_iso8859_5.h, cs_iso8859_6.h, cs_iso8859_7.h, cs_iso8859_8.h,
+	cs_iso8859_9.h, cs_w1255.h, cs_w1256.h:
+	
+	New character sets
+
+2003-01-25 02:50  hippoman
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	Some fixes to to DSQL_pretty: -. Added some missing verbs and
+	mispellings -. Fixed a bug displaying parameters info.
+
 2003-01-24 23:57  hippoman
 
 	* firebird2/builds/win32/msvc7/: Firebird2.sln, alice.vcproj,
