@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.124 2003-03-05 15:38:03 brodsom Exp $
+dnl $Id: configure.in,v 1.125 2003-03-06 01:14:46 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -660,6 +660,7 @@ mkdir -p gen/embed.gdef/dudley
 mkdir -p gen/embed.qli/qli
 mkdir -p gen/embed.gpre/gpre
 mkdir -p gen/inet_server/remote
+mkdir -p gen/inet_server/ipserver
 mkdir -p gen/msgs/msgs
 mkdir -p gen/extlib/extlib
 mkdir -p gen/extlib/extlib/fbudf
