@@ -109,8 +109,8 @@
 #define MANUAL 365
 #define MAXIMUM 366
 #define MAX_SEGMENT 367
-#define MESSAGE 368
-#define MERGE 369
+#define MERGE 368
+#define MESSAGE 369
 #define MINIMUM 370
 #define MODULE_NAME 371
 #define NAMES 372

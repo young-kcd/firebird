@@ -1999,32 +1999,38 @@ alter_column_name  : keyword_or_column
 		   { $$ = make_node (nod_field_name, (int) e_fln_count,
 						NULL, $1); }
 		   ;
-	
-keyword_or_column	: COLUMN
-			| TYPE
-			| EXTRACT
-			| YEAR
-			| MONTH
-			| DAY
-			| HOUR
-			| MINUTE
-			| SECOND
-			| WEEKDAY
-			| YEARDAY
-			| TIME
-			| TIMESTAMP
-			| CURRENT_DATE
-			| CURRENT_TIME
-			| CURRENT_TIMESTAMP
-			| CURRENT_USER /* CVC: Added the following except SYMBOL. */
-			| CURRENT_ROLE
-			| SYMBOL
-			| KW_BREAK
-			| SUBSTRING
-			| KW_DESCRIPTOR
-			| CURRENT_CONNECTION
-			| CURRENT_TRANSACTION
-			;
+
+/* below are reserved words that could be used as identifiers in the previous versions */
+
+keyword_or_column	: valid_symbol_name
+		| COLUMN				/* added in IB 6.0 */
+		| TYPE
+		| EXTRACT
+		| YEAR
+		| MONTH
+		| DAY
+		| HOUR
+		| MINUTE
+		| SECOND
+		| WEEKDAY
+		| YEARDAY
+		| TIME
+		| TIMESTAMP
+		| CURRENT_DATE
+		| CURRENT_TIME
+		| CURRENT_TIMESTAMP		/* added in FB 1.0 */
+		| CURRENT_USER
+		| CURRENT_ROLE
+		| FIRST
+		| SKIP
+		| CURRENT_CONNECTION	/* added in FB 1.5 */
+		| CURRENT_TRANSACTION
+		| ROW_COUNT
+		| SAVEPOINT
+		| INSERTING
+		| UPDATING
+		| DELETING
+		;
 
 col_opt		: ALTER
 		    { $$ = NULL; }
@@ -3924,16 +3930,16 @@ valid_symbol_name	: SYMBOL
 /* list of non-reserved words */
 
 non_reserved_word :
-	KW_BREAK
-	| COALESCE
+	KW_BREAK				/* added in FB 1.0 */
 	| KW_DESCRIPTOR
+	| SUBSTRING
+	| COALESCE				/* added in FB 1.5 */
 	| LAST
 	| LEAVE
 	| LOCK
 	| NULLIF
 	| NULLS
 	| STATEMENT
-	| SUBSTRING
 	| USING
 	;
 
