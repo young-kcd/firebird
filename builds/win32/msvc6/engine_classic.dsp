@@ -426,7 +426,7 @@ SOURCE=..\..\..\src\jrd\vio.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\why.c
+SOURCE=..\..\..\src\jrd\why.cpp
 # End Source File
 # Begin Source File
 

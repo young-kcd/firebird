@@ -34,16 +34,14 @@
 #include "../utilities/gsec.h"
 #include "../utilities/secur_proto.h"
 
-/* DATABASE DB = STATIC FILENAME "isc.gdb"; */
-
-DATABASE DB = STATIC FILENAME "isc4.gdb";
+DATABASE DB = STATIC FILENAME "isc.gdb";
 
 #define MAX_PASSWORD_LENGTH	31
 #define SYSDBA_USER_NAME	"SYSDBA"
 
 
 SSHORT SECURITY_exec_line(STATUS * isc_status,
-						  void *DB,
+						  FRBRD *DB,
 						  USER_DATA user_data,
 						  void (*display_func) (void *, USER_DATA, BOOLEAN),
 						  void *callback_arg)
@@ -111,7 +109,7 @@ SSHORT SECURITY_exec_line(STATUS * isc_status,
 	SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
 	SCHAR encrypted2[MAX_PASSWORD_LENGTH + 2];
 	STATUS tmp_status[ISC_STATUS_LENGTH];
-	void *gds__trans;
+	FRBRD *gds__trans;
 	BOOLEAN found;
 	SSHORT ret = 0;
 

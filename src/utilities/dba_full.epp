@@ -53,7 +53,7 @@
 /* For Netware the follow DB handle and isc_status is #defined to be a  */
 /* local variable on the stack in main.  This is to avoid multiple      */
 /* threading problems with module level statics.                        */
-DATABASE DB = STATIC "/gds/dev_nt/utilities/yachts.lnk";
+DATABASE DB = STATIC "yachts.lnk";
 #define DB          db_handle
 #define isc_status  status_vector
 

@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-extern SSHORT	SECURITY_exec_line (STATUS *, void *, 
+extern SSHORT	SECURITY_exec_line (STATUS *, struct why_hndl *, 
 			struct user_data *, 
 			void (*)(void *, USER_DATA, BOOLEAN),
 			void *);

@@ -180,7 +180,7 @@ SOURCE=..\..\..\src\jrd\utl.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\why.c
+SOURCE=..\..\..\src\jrd\why.cpp
 # End Source File
 # End Group
 # Begin Group "DSQL files"
