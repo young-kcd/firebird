@@ -992,8 +992,10 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
 		ERR_post(isc_wrong_ods,
 				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length),
-				 isc_arg_number, (SLONG) header->hdr_ods_version,
-				 isc_arg_number, (SLONG) ODS_VERSION | ODS_TYPE_CURRENT, 0);
+				 isc_arg_number, (SLONG) (header->hdr_ods_version & ~ODS_TYPE_MASK), 
+				 isc_arg_number, (SLONG) (header->hdr_ods_version & ODS_TYPE_MASK),
+				 isc_arg_number, (SLONG) ODS_VERSION, 
+				 isc_arg_number, (SLONG) ODS_TYPE_CURRENT, 0);
 	}
 
 /****
