@@ -111,9 +111,9 @@ keepOrigDBAPassword() {
     echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your should password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "/opt/interbase/bin/gsec program as show below:" >> $DBAPasswordFile
+    echo "/usr/local/firebird/bin/gsec program as show below:" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
-    echo ">cd /opt/interbase" >> $DBAPasswordFile
+    echo ">cd /usr/local/firebird" >> $DBAPasswordFile
     echo ">bin/gsec -user sysdba -password <password>" >> $DBAPasswordFile
     echo "GSEC>modify sysdba -pw <newpassword>" >> $DBAPasswordFile
     echo "GSEC>quit" >> $DBAPasswordFile
@@ -145,9 +145,9 @@ generateNewDBAPassword() {
     echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "/opt/interbase/bin/gsec program as show below:" >> $DBAPasswordFile
+    echo "/usr/local/firebird/bin/gsec program as show below:" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
-    echo ">cd /opt/interbase" >> $DBAPasswordFile
+    echo ">cd /usr/local/firebird" >> $DBAPasswordFile
     echo ">bin/gsec -user sysdba -password <password>" >> $DBAPasswordFile
     echo "GSEC>modify sysdba -pw <newpassword>" >> $DBAPasswordFile
     echo "GSEC>quit" >> $DBAPasswordFile
@@ -221,14 +221,14 @@ changeDBAPassword() {
 #= Main Post ===============================================================
 
     # Make sure the links are in place 
-    if [ ! -L /opt/interbase -a ! -d /opt/interbase ] 
+    if [ ! -L /usr/local/firebird -a ! -d /usr/local/firebird ] 
       then 
     # Main link and... 
-        ln -s $RPM_INSTALL_PREFIX/interbase /opt/interbase 
+        ln -s $RPM_INSTALL_PREFIX/interbase /usr/local/firebird 
     fi 
 
 
-    IBRootDir=/opt/interbase
+    IBRootDir=/usr/local/firebird
     IBBin=$IBRootDir/bin
     RunUser=root
 
