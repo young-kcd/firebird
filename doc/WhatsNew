@@ -343,7 +343,8 @@
 
     * Major code cleanup.
       Contributor(s):
-        Sean Leyne <sleyne@atkin.com>
+        Sean Leyne <sleyne@atkin.com>,
+        Erik Kunze <erik.kunze@philosys.de>
 
     * New memory manager.
       Contributor(s):
