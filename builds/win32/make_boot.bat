@@ -64,7 +64,6 @@
 @echo Building message file and codes header...
 @%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D localhost:%DB_PATH%/gen/dbs/msg.fdb
 @%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen %ROOT_PATH%\lang_helpers
-@%ROOT_PATH%\gen\relations %ROOT_PATH%\src\include\gen
 ::=======
 @echo Building BLR Table
 @call blrtable.bat
@@ -105,15 +104,13 @@ if "%VS_VER%"=="msvc6" (
 @echo.
 @echo Building build_msg and codes...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" "codes - Win32 Release" "relations - Win32 Release" /REBUILD /OUT boot3.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" "codes - Win32 Release" /REBUILD /OUT boot3.log
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project build_msg /rebuild release /OUT boot3.log
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project codes  /rebuild release /OUT boot4.log
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project relations  /rebuild release /OUT boot4.log
 )
 @copy %ROOT_PATH%\temp\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
 @copy %ROOT_PATH%\temp\release\codes\codes.exe   %ROOT_PATH%\gen\ > nul
-@copy %ROOT_PATH%\temp\release\relations\relations.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
 
 ::==============
