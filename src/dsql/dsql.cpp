@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.26 2002-10-30 06:40:45 seanleyne Exp $
+$Id: dsql.cpp,v 1.27 2002-11-09 08:05:26 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -1759,6 +1759,7 @@ void DSQL_pretty(NOD node, int column)
  **************************************/
 	MAP map;
 	DSQL_REL relation;
+	PRC procedure;
 	CTX context;
 	FLD field;
 	STR string;
@@ -2276,11 +2277,17 @@ void DSQL_pretty(NOD node, int column)
 	case nod_field:
 		context = (CTX) node->nod_arg[e_fld_context];
 		relation = context->ctx_relation;
+ 		procedure = context->ctx_procedure;
 		field = (FLD) node->nod_arg[e_fld_field];
 		PRINTF("%sfield %s.%s, context %d\n", buffer,
-			   relation->rel_name, field->fld_name, context->ctx_context);
+ 			(relation != NULL ? 
+ 				relation->rel_name : 
+ 				(procedure != NULL ? 
+ 					procedure->prc_name : 
+ 					"unknown_db_object")), 
+ 			field->fld_name, context->ctx_context);
 		FREE_MEM_RETURN;
-
+	
 	case nod_field_name:
 		PRINTF("%sfield name: \"", buffer);
 		string = (STR) node->nod_arg[e_fln_context];
@@ -2288,10 +2295,10 @@ void DSQL_pretty(NOD node, int column)
 			PRINTF("%s.", string->str_data);
 		string = (STR) node->nod_arg[e_fln_name];
         if (string != 0) {
-            PRINTF("%s\"\n", string);
+            PRINTF("%s\"\n", string->str_data);
         }
         else {
-            PRINTF("%s\"\n","*");
+            PRINTF("%s\"\n", "*");
         }
 		FREE_MEM_RETURN;
 
@@ -2313,8 +2320,17 @@ void DSQL_pretty(NOD node, int column)
 	case nod_relation:
 		context = (CTX) node->nod_arg[e_rel_context];
 		relation = context->ctx_relation;
-		PRINTF("%srelation %s, context %d\n",
-			   buffer, relation->rel_name, context->ctx_context);
+		procedure = context->ctx_procedure;
+ 		if( relation != NULL ){ 
+ 			PRINTF("%srelation %s, context %d\n",
+ 				buffer, relation->rel_name, context->ctx_context);
+ 		} else if ( procedure != NULL ) { 
+ 			PRINTF("%sprocedure %s, context %d\n",
+ 				buffer, procedure->prc_name, context->ctx_context);
+ 		} else {
+ 			PRINTF("%sUNKNOWN DB OBJECT, context %d\n",
+ 			buffer, context->ctx_context);
+ 		}
 		FREE_MEM_RETURN;
 
 	case nod_variable:
