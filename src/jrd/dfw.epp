@@ -3177,7 +3177,7 @@ static void get_procedure_dependencies(DeferredWork* work)
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_prc* procedure = NULL;
-	bid blob_id = {0, 0};
+	bid blob_id = {0, {0}};
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_c_prc_dpd, IRQ_REQUESTS);
 
@@ -3242,7 +3242,7 @@ static void get_trigger_dependencies( DeferredWork* work)
 	jrd_rel* relation = NULL;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
-	bid blob_id = {0, 0};
+	bid blob_id = {0, {0}};
 	FOR(REQUEST_HANDLE handle)
 		X IN RDB$TRIGGERS WITH
 			X.RDB$TRIGGER_NAME EQ work->dfw_name 
