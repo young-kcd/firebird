@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: opt.cpp,v 1.7 2002-06-14 12:09:36 dimitr Exp $
+$Id: opt.cpp,v 1.8 2002-06-20 10:10:27 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2486,14 +2486,11 @@ static void find_best(TDBB tdbb,
 	for (tail = opt->opt_rpt, fv = flag_vector; tail < opt_end; tail++) {
 		*fv++ = tail->opt_flags & (opt_stream_used | opt_used);
 	}
-/* Compute delta and total estimate cost to fetch this stream;
-   if a plan was specified, don't bother */
-	if (!plan_node) {
-		estimate_cost(tdbb, opt, stream, &position_cost,
-					  &position_cardinality);
-		new_cost = cost + cardinality * position_cost;
-		new_cardinality = position_cardinality * cardinality;
-	}
+/* Compute delta and total estimate cost to fetch this stream */
+	estimate_cost(tdbb, opt, stream, &position_cost,
+				  &position_cardinality);
+	new_cost = cost + cardinality * position_cost;
+	new_cardinality = position_cardinality * cardinality;
 
 	++opt->opt_combinations;
 /* If the partial order is either longer than any previous partial order,
