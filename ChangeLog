@@ -1,3 +1,98 @@
+2003-10-29 16:18  fsg
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	minor correction FSG
+
+2003-10-29 11:52  robocop
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h, alice/exe.cpp,
+	alice/exe_proto.h, alice/tdr.cpp, alice/tdr_proto.h,
+	burp/backu_proto.h, burp/backup.epp, burp/burp.cpp, burp/burp.h,
+	burp/canonical.cpp, burp/resto_proto.h, burp/restore.epp,
+	dsql/dsql.cpp, dsql/metd.epp, dudley/ddl.cpp, dudley/ddl.h,
+	dudley/ddl_proto.h, dudley/exe.epp, dudley/expand.cpp,
+	dudley/extract.epp, dudley/generate.cpp, dudley/trn.cpp,
+	extlib/fbudf/fbudf.cpp, gpre/ada.cpp, gpre/c_cxx.cpp, gpre/cmd.cpp,
+	gpre/cme.cpp, gpre/cme_proto.h, gpre/cob.cpp, gpre/exp.cpp,
+	gpre/exp_proto.h, gpre/ftn.cpp, gpre/gpre.cpp, gpre/gpre.h,
+	gpre/gpre_meta.epp, gpre/gpre_meta.h, gpre/gpre_meta_boot.cpp,
+	gpre/gpre_proto.h, gpre/int.cpp, gpre/int_cxx.cpp,
+	gpre/lang_proto.h, gpre/par.cpp, gpre/pas.cpp, gpre/pat.cpp,
+	gpre/pat.h, ipserver/ipapi_proto.h, ipserver/ipc.h,
+	ipserver/ipclient.cpp, ipserver/ipserver.cpp, isql/extract.epp,
+	isql/isql.epp, isql/show.epp, isql/show_proto.h, journal/gjrn.cpp,
+	journal/gjrn_proto.h, journal/journal.h, journal/oldr.cpp,
+	journal/oldr_proto.h, journal/rebui_proto.h, journal/rebuild.epp,
+	journal/server.epp, jrd/alt.cpp, jrd/blb.cpp, jrd/blb.h,
+	jrd/blb_proto.h, jrd/blf_proto.h, jrd/blob_filter.cpp,
+	jrd/blob_filter.h, jrd/dfw.epp, jrd/dyn_mod.epp, jrd/entry.h,
+	jrd/err.cpp, jrd/event.cpp, jrd/event_proto.h, jrd/filte_proto.h,
+	jrd/filters.cpp, jrd/fun.epp, jrd/gds.cpp, jrd/gds_proto.h,
+	jrd/gdsold.h, jrd/grant.epp, jrd/ibase.h, jrd/iberr.cpp,
+	jrd/iberr_proto.h, jrd/inf.cpp, jrd/inf_proto.h, jrd/ini.epp,
+	jrd/isc.cpp, jrd/isc_f_proto.h, jrd/isc_file.cpp, jrd/isc_proto.h,
+	jrd/isc_s_proto.h, jrd/jrd.cpp, jrd/jrd_proto.h, jrd/llio.cpp,
+	jrd/llio_proto.h, jrd/met.epp, jrd/met_proto.h, jrd/old.cpp,
+	jrd/old.h, jrd/old_proto.h, jrd/opt.cpp, jrd/opt_proto.h,
+	jrd/pag.cpp, jrd/pag_proto.h, jrd/perf.cpp, jrd/rec.cpp,
+	jrd/rec_proto.h, jrd/sdl.cpp, jrd/sdl.h, jrd/sdl_proto.h,
+	jrd/svc.cpp, jrd/svc.h, jrd/svc_proto.h, jrd/tra.cpp,
+	jrd/tra_proto.h, jrd/utl.cpp, jrd/utl_proto.h, jrd/val.h,
+	jrd/why.cpp, jrd/why_proto.h, jrd/os/pio_proto.h,
+	jrd/os/posix/unix.cpp, jrd/os/vms/dfloat_stub.cpp,
+	jrd/os/vms/rdb.cpp, jrd/os/vms/rdbint.cpp, jrd/os/vms/vms.cpp,
+	jrd/os/win32/winnt.cpp, qli/exe.cpp, qli/gener.cpp, qli/meta.epp,
+	qli/proc.epp, qli/show.epp, remote/inet.cpp, remote/inet_proto.h,
+	remote/inet_server.cpp, remote/inter_proto.h, remote/interface.cpp,
+	remote/merge.cpp, remote/merge_proto.h, remote/parse_proto.h,
+	remote/parser.cpp, remote/proto_proto.h, remote/protocol.cpp,
+	remote/protocol.h, remote/remot_proto.h, remote/remote.cpp,
+	remote/remote.h, remote/serve_proto.h, remote/server.cpp,
+	remote/xdr.cpp, remote/xdr.h, remote/xdr_proto.h, remote/xnet.cpp,
+	remote/os/win32/ibconfig.cpp, remote/os/win32/wnet.cpp,
+	utilities/cache.cpp, utilities/print_pool.cpp,
+	utilities/run_service.cpp, utilities/stats.epp,
+	utilities/gsec/gsec.cpp, utilities/gsec/security.epp,
+	utilities/gstat/dba.epp, utilities/gstat/dba_full.epp,
+	utilities/ibmgr/srvrmgr.cpp, wal/walr.cpp, wal/walr_proto.h:
+	
+	const correctness placed some variables in context fixed some
+	function signatures closed a few possible buffer overruns sorry to
+	the platform maintainers, I can't verify what I did for non-Win32
+	builds
+
+2003-10-29 08:57  eku
+
+	* firebird2/configure.in:
+	
+	Removed redundant test for socklen_t. Minor cleanup.
+
+2003-10-29 08:00  stryqx
+
+	* firebird2/src/jrd/thd.h:
+	
+	Fix build on FreeBSD
+
+2003-10-29 07:07  stryqx
+
+	* firebird2/src/jrd/jrd.h:
+	
+	Progress the SuperServer build on FreeBSD 5.x
+
+2003-10-29 06:18  stryqx
+
+	* firebird2/src/jrd/thd.h:
+	
+	Fix build on FreeBSD
+
+2003-10-29 01:29  brodsom
+
+	* firebird2/src/: dudley/lex.cpp, gpre/gpre.cpp, jrd/jrd.cpp,
+	jrd/nbak.cpp, misc/codes.epp, qli/meta.epp:
+	
+	Remove unneeded MINGW ifdef
+
 2003-10-28 23:47  arnobrinkman
 
 	* firebird2/src/jrd/cmp.cpp:
