@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.26 2002-12-02 09:43:49 eku Exp $
+$Id: lock.cpp,v 1.27 2002-12-07 13:23:08 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -53,6 +53,7 @@ $Id: lock.cpp,v 1.26 2002-12-02 09:43:49 eku Exp $
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../common/config/config.h"
 #include <errno.h>
 
 #ifdef HAVE_SYS_TYPES_H
@@ -268,22 +269,22 @@ static PTR LOCK_owner_offset = 0;
 static OWN LOCK_owner = 0;
 static SSHORT volatile LOCK_asts = -1;
 static int LOCK_pid = 0, LOCK_version = 0;
-static SLONG LOCK_shm_size = 0, LOCK_sem_count = 0;
+static SLONG LOCK_shm_size, LOCK_sem_count;
 
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
-static SLONG LOCK_solaris_stall = 60;	/* seconds - def value for solaris stall */
+static SLONG LOCK_solaris_stall;
 #endif
 
-static SLONG LOCK_block_signal = 0;
+static SLONG LOCK_block_signal;
 
 #ifdef WAKEUP_SIGNAL
 static SLONG LOCK_wakeup_signal = 0;
 #endif
 
-static SLONG LOCK_ordering = 0;
+static SLONG LOCK_ordering;
 static SLONG LOCK_hash_slots;
 static SLONG LOCK_scan_interval;
-static SLONG LOCK_acquire_spins = 0;
+static SLONG LOCK_acquire_spins;
 static SH_MEM_T LOCK_data;
 static BOOLEAN start_manager = FALSE;
 static TEXT LOCK_bug_buffer[128];
@@ -297,33 +298,8 @@ static HANDLE	wakeup_event[1];
 #endif
 #endif
 
-// TMN: This struct must not be const, it's modified by ISC.
-static struct ipccfg LOCK_hdrtbl[] =
-{
-/* 5.5 SCO Port: Classic server on SCO - following is not supported */
-#if (!(defined WIN_NT) && !(defined SCO_EV))
-	{"V4_LOCK_MEM_SIZE"		, -1, &LOCK_shm_size		, 0, 0},
-	{"ANY_LOCK_MEM_SIZE"		, -1, &LOCK_shm_size		, -1, 0},
-#endif
-#ifdef STATIC_SEMAPHORES
-	{"V4_LOCK_SEM_COUNT"		, -1, &LOCK_sem_count		, 0, 0},
-	{"ANY_LOCK_SEM_COUNT"	, -1, &LOCK_sem_count		, -1, 0},
-#endif
-	{"V4_LOCK_SIGNAL"		, -1, &LOCK_block_signal	, 0, 0},
-	{"ANY_LOCK_SIGNAL"		, -1, &LOCK_block_signal	, -1, 0},
-	{"V4_LOCK_GRANT_ORDER"	, -1, &LOCK_ordering		, 0, 0},
-	{"LOCK_HASH_SLOTS"		, -1, &LOCK_hash_slots		, 0, 0},
-	{"DEADLOCK_TIMEOUT"		, -1, &LOCK_scan_interval	, 0, 0},
-	{"LOCK_ACQUIRE_SPINS"	, -1, &LOCK_acquire_spins	, 0, 0},
-#if (defined SOLARIS_MT && !defined SUPERSERVER)
-	{"V4_SOLARIS_STALL_VALUE", -1, &LOCK_solaris_stall	, 0, 0},
-#endif
-     {NULL, 0, NULL, 0, 0}
-};
-
 #define GET_TIME	time (NULL)
 
-#define WAIT_TIME	10
 #define HASH_MIN_SLOTS	101
 #define HASH_MAX_SLOTS	2048
 #define HISTORY_BLOCKS	256
@@ -3042,23 +3018,21 @@ static STATUS init_lock_table( STATUS * status_vector)
 	TEXT *lock_file;
 	TEXT buffer[MAXPATHLEN];
 
-	LOCK_shm_size = DEFAULT_SIZE;
-	LOCK_sem_count = SEMAPHORES;
-	LOCK_block_signal = BLOCKING_SIGNAL;
+	LOCK_shm_size = Config::getLockMemSize();
+	LOCK_sem_count = Config::getLockSemCount();
+	LOCK_block_signal = Config::getLockSignal();
 #ifdef WAKEUP_SIGNAL
 	LOCK_wakeup_signal = WAKEUP_SIGNAL;
 #endif
-	LOCK_hash_slots = HASH_MIN_SLOTS;
-	LOCK_scan_interval = WAIT_TIME;
-	LOCK_acquire_spins = 0;
+	LOCK_hash_slots = Config::getLockHashSlots();
+	LOCK_scan_interval = Config::getDeadlockTimeout();
+	LOCK_acquire_spins = Config::getLockAcquireSpins();
 
 /* LOCK_ordering is TRUE (ON) by default.  It may be changed 
    by the V4_LOCK_GRANT_ORDER option in the configuration file.
    A value of 0 for that option turns lock ordering off */
 
-	LOCK_ordering = TRUE;
-
-	ISC_get_config(LOCK_HEADER, const_cast<ipccfg*>(LOCK_hdrtbl));
+	LOCK_ordering = Config::getLockGrantOrder();
 
 	if (LOCK_hash_slots < HASH_MIN_SLOTS)
 		LOCK_hash_slots = HASH_MIN_SLOTS;
@@ -3066,6 +3040,8 @@ static STATUS init_lock_table( STATUS * status_vector)
 		LOCK_hash_slots = HASH_MAX_SLOTS;
 
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
+	LOCK_solaris_stall = Config::getSolarisStallValue();
+
 	if (LOCK_solaris_stall < SOLARIS_MIN_STALL)
 		LOCK_solaris_stall = SOLARIS_MIN_STALL;
 	if (LOCK_solaris_stall > SOLARIS_MAX_STALL)

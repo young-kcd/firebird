@@ -76,7 +76,16 @@ class Config
 		KEY_IPC_MAP_SIZE,							// 9
 		KEY_DEFAULT_DB_CACHE_PAGES,					// 10
 		KEY_CONNECTION_TIMEOUT,						// 11
-		KEY_DUMMY_PACKET_INTERVAL					// 12
+		KEY_DUMMY_PACKET_INTERVAL,					// 12
+		KEY_LOCK_MEM_SIZE,							// 13
+		KEY_LOCK_SEM_COUNT,							// 14
+		KEY_LOCK_SIGNAL,							// 15
+		KEY_LOCK_GRANT_ORDER,						// 16
+		KEY_LOCK_HASH_SLOTS,						// 17
+		KEY_LOCK_ACQUIRE_SPINS,						// 18
+		KEY_EVENT_MEM_SIZE,							// 19
+		KEY_DEADLOCK_TIMEOUT,						// 20
+		KEY_SOLARIS_STALL_VALUE						// 21
 	};
 
 public:
@@ -145,6 +154,51 @@ public:
 		Dummy packet interval
 	*/
 	static int getDummyPacketInterval();
+
+	/*
+		Lock manager memory size
+	*/
+	static int getLockMemSize();
+
+	/*
+		Lock manager semaphore count
+	*/
+	static int getLockSemCount();
+
+	/*
+		Lock manager signal number
+	*/
+	static int getLockSignal();
+
+	/*
+		Lock manager grant order
+	*/
+	static bool getLockGrantOrder();
+
+	/*
+		Lock manager hash slots
+	*/
+	static int getLockHashSlots();
+
+	/*
+		Lock manager acquire spins
+	*/
+	static bool getLockAcquireSpins();
+
+	/*
+		Event manager memory size
+	*/
+	static int getEventMemSize();
+
+	/*
+		Deadlock timeout
+	*/
+	static int getDeadlockTimeout();
+
+	/*
+		Solaris stall value
+	*/
+	static int getSolarisStallValue();
 };
 
 #endif // CONFIG_H

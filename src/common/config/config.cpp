@@ -50,22 +50,35 @@ typedef Firebird::string string;
 const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
 	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
-	{TYPE_INTEGER,		"SortMemBlockSize",			(ConfigValue) 1048576},
-	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 268435456},
+	{TYPE_INTEGER,		"SortMemBlockSize",			(ConfigValue) 1048576},		// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 268435456},	// bytes
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
 	{TYPE_BOOLEAN,		"OldParameterOrdering",		(ConfigValue) false},
-	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},
+	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
 	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) false},
-	{TYPE_INTEGER,		"IpcMapSize",				(ConfigValue) 4096},
+	{TYPE_INTEGER,		"IpcMapSize",				(ConfigValue) 4096},		// bytes
 #ifdef SUPERSERVER
-	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 2048},
+	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 2048},		// pages
 #else
-	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 75},
+	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 75},			// pages
 #endif
-	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},
-	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 60}
+	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
+	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 60},			// seconds
+	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 262144},		// bytes
+#ifdef SINIXZ
+	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores
+#else
+	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 32},			// semaphores
+#endif
+	{TYPE_INTEGER,		"LockSignal",				(ConfigValue) 16},			// signal #
+	{TYPE_BOOLEAN,		"LockGrantOrder",			(ConfigValue) true},
+	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 101},			// slots
+	{TYPE_BOOLEAN,		"LockRequireSpins",			(ConfigValue) false},
+	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
+	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
+	{TYPE_INTEGER,		"SolarisStallValue",		(ConfigValue) 60}			// seconds
 };
 
 /******************************************************************************
@@ -245,4 +258,49 @@ int Config::getConnectionTimeout()
 int Config::getDummyPacketInterval()
 {
 	return (int) sysConfig.values[KEY_DUMMY_PACKET_INTERVAL];
+}
+
+int Config::getLockMemSize()
+{
+	return (int) sysConfig.values[KEY_LOCK_MEM_SIZE];
+}
+
+int Config::getLockSemCount()
+{
+	return (int) sysConfig.values[KEY_LOCK_SEM_COUNT];
+}
+
+int Config::getLockSignal()
+{
+	return (int) sysConfig.values[KEY_LOCK_SIGNAL];
+}
+
+bool Config::getLockGrantOrder()
+{
+	return (bool) sysConfig.values[KEY_LOCK_GRANT_ORDER];
+}
+
+int Config::getLockHashSlots()
+{
+	return (int) sysConfig.values[KEY_LOCK_HASH_SLOTS];
+}
+
+bool Config::getLockAcquireSpins()
+{
+	return (bool) sysConfig.values[KEY_LOCK_ACQUIRE_SPINS];
+}
+
+int Config::getEventMemSize()
+{
+	return (int) sysConfig.values[KEY_EVENT_MEM_SIZE];
+}
+
+int Config::getDeadlockTimeout()
+{
+	return (int) sysConfig.values[KEY_DEADLOCK_TIMEOUT];
+}
+
+int Config::getSolarisStallValue()
+{
+	return (int) sysConfig.values[KEY_SOLARIS_STALL_VALUE];
 }

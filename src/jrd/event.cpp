@@ -43,6 +43,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/isc_i_proto.h"
+#include "../common/config/config.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -131,15 +132,6 @@ static SH_MEM_T EVENT_data;
 #if defined(WIN_NT)
 static MTX_T event_mutex[1];
 #endif
-
-static struct ipccfg EVENT_hdrtbl[] =
-{
-#if !(defined WIN_NT)
-	{"V4_EVENT_MEM_SIZE", -1, &EVENT_default_size, 0, 0},
-	{"ANY_EVENT_MEM_SIZE", -1, &EVENT_default_size, -1, 0},
-#endif
-	{NULL, -1, NULL, 0, 0}
-};
 
 /* Wildcard characters */
 
@@ -326,8 +318,7 @@ EVH EVENT_init(STATUS * status_vector, USHORT server_flag)
 	if (EVENT_header)
 		return EVENT_header;
 
-	EVENT_default_size = EVENT_DEFAULT_SIZE;
-	ISC_get_config(LOCK_HEADER, EVENT_hdrtbl);
+	EVENT_default_size = Config::getEventMemSize();
 
 #ifdef SERVER
 	EVENT_data.sh_mem_address = EVENT_header =
