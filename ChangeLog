@@ -1,3 +1,15 @@
+2004-07-01 18:41  hvlad
+
+	* firebird2/src/jrd/cvt2.cpp (1.40):
+	
+	Fixed incorrect comparison of TEXT BLOBs with STR
+
+2004-07-01 18:12  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/Makefile.in (1.1):
+	
+	file Makefile.in was initially added on branch B1_5_Release.
+
 2004-07-01 02:46  skidder
 
 	* firebird2/src/dsql/ddl.cpp (1.107):
