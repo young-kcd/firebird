@@ -825,9 +825,8 @@ create	 	: CREATE create_clause
 			{ $$ = $2; }
 				; 
 
-create_clause	: EXCEPTION symbol_exception_name sql_string
-			{ $$ = make_node (nod_def_exception, (int) e_xcp_count, 
-						$2, $3); }
+create_clause	: EXCEPTION exception_clause
+			{ $$ = $2; }
 		| unique_opt order_direction INDEX symbol_index_name ON simple_table_name index_definition
 			{ $$ = make_node (nod_def_index, (int) e_idx_count, 
 					$1, $2, $4, $6, $7); }
@@ -870,6 +869,8 @@ recreate_clause	: PROCEDURE rprocedure_clause
 		| DOMAIN rdomain_clause
 			{ $$ = $2; }
 */
+		| EXCEPTION rexception_clause
+			{ $$ = $2; }
 		;
 
 replace	: CREATE OR ALTER replace_clause
@@ -884,6 +885,31 @@ replace_clause	: PROCEDURE replace_procedure_clause
 		| VIEW replace_view_clause
 			{ $$ = $2; }
 */
+		| EXCEPTION replace_exception_clause
+			{ $$ = $2; }
+		;
+
+
+/* CREATE EXCEPTION */
+
+exception_clause	: symbol_exception_name sql_string
+			{ $$ = make_node (nod_def_exception, (int) e_xcp_count, 
+						$1, $2); }
+		;
+
+rexception_clause	: symbol_exception_name sql_string
+			{ $$ = make_node (nod_redef_exception, (int) e_xcp_count, 
+						$1, $2); }
+		;
+
+replace_exception_clause	: symbol_exception_name sql_string
+			{ $$ = make_node (nod_replace_exception, (int) e_xcp_count, 
+						$1, $2); }
+		;
+
+alter_exception_clause	: symbol_exception_name sql_string
+			{ $$ = make_node (nod_mod_exception, (int) e_xcp_count, 
+						$1, $2); }
 		;
 
 
@@ -1975,9 +2001,8 @@ alter		: ALTER alter_clause
 			{ $$ = $2; }
 				; 
 
-alter_clause	: EXCEPTION symbol_exception_name sql_string
-			{ $$ = make_node (nod_mod_exception, (int) e_xcp_count, 
-						$2, $3); }
+alter_clause	: EXCEPTION alter_exception_clause
+			{ $$ = $2; }
 		| TABLE simple_table_name alter_ops
 			{ $$ = make_node (nod_mod_relation, (int) e_alt_count, 
 						$2, make_list ($3)); }

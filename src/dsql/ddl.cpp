@@ -133,6 +133,7 @@ static void define_upd_cascade_trg(dsql_req*, const dsql_nod*, const dsql_nod*,
 	const dsql_nod*, const char*, const char*);
 static void define_view(dsql_req*, NOD_TYPE);
 static void define_view_trigger(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*);
+static void delete_exception(dsql_req*, dsql_nod*, bool);
 static void delete_procedure(dsql_req*, dsql_nod*, bool);
 static void delete_relation_view(dsql_req*, dsql_nod*, bool);
 static void fix_default_source(dsql_str*);
@@ -1778,20 +1779,29 @@ static void define_exception( dsql_req* request, NOD_TYPE op)
  **************************************/
 	const dsql_nod* ddl_node = request->req_ddl_node;
 	const dsql_str* name = (dsql_str*) ddl_node->nod_arg[e_xcp_name];
-	const dsql_str* text = (dsql_str*) ddl_node->nod_arg[e_xcp_text];
 
-	if (op == nod_def_exception)
-		request->append_cstring(isc_dyn_def_exception, name->str_data);
-	else if (op == nod_mod_exception)
-		request->append_cstring(isc_dyn_mod_exception, name->str_data);
-	else
-		request->append_cstring(isc_dyn_del_exception, name->str_data);
-
-	if (op != nod_del_exception) {
-		fb_assert(text->str_length <= MAX_USHORT);
-		request->append_string(isc_dyn_xcp_msg, text->str_data, text->str_length);
-		request->append_uchar(isc_dyn_end);
+	if (op == nod_replace_exception) {
+		if (METD_get_exception(request, name)) {
+			define_exception(request, nod_mod_exception);
+		}
+		else {
+			define_exception(request, nod_def_exception);
+		}
 	}
+	else if (op == nod_def_exception || op == nod_redef_exception) {
+		request->append_cstring(isc_dyn_def_exception, name->str_data);
+	}
+	else if (op == nod_mod_exception) {
+		request->append_cstring(isc_dyn_mod_exception, name->str_data);
+	}
+	else {
+		fb_assert(false);
+	}
+
+	const dsql_str* text = (dsql_str*) ddl_node->nod_arg[e_xcp_text];
+	fb_assert(text->str_length <= MAX_USHORT);
+	request->append_string(isc_dyn_xcp_msg, text->str_data, text->str_length);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -2364,7 +2374,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			dsql_nod* node = parameter->nod_arg[e_dfl_default];
 			if (node)
 			{
-				node = PASS1_node(request, node, 0);
+				node = PASS1_node(request, node, false);
 				request->begin_blr(isc_dyn_fld_default_value);
 				GEN_expr(request, node);
 				request->end_blr();
@@ -2653,7 +2663,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	request->append_uchar(0);
 	request->req_loop_level = 0;
 	GEN_statement(request,
-		PASS1_statement(request, node->nod_arg[e_exe_blk_body], 1));
+		PASS1_statement(request, node->nod_arg[e_exe_blk_body], true));
 	if (outputs)
 		request->req_type = REQ_SELECT_BLOCK;
 	else
@@ -3996,6 +4006,33 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 }
 
 
+static void delete_exception (dsql_req*     request,
+                              dsql_nod*     node,
+                              bool silent_deletion)
+{
+/**************************************
+ *
+ *	d e l e t e _ e x c e p t i o n
+ *
+ **************************************
+ *
+ * Function
+ *  Do nothing and don't throw error if the exception doesn't exist
+ *  and silent_deletion is true.
+ *
+ **************************************/
+    const dsql_str* string = (dsql_str*) node->nod_arg[0];
+    fb_assert(string);
+    if (node->nod_type == nod_redef_procedure || silent_deletion) {
+        if (!METD_get_exception(request, string)) {
+                return;
+        }
+    }
+    request->append_cstring(isc_dyn_del_exception, string->str_data);
+    request->append_uchar(isc_dyn_end);
+}
+
+
 static void delete_procedure (dsql_req*     request,
                               dsql_nod*     node,
                               bool silent_deletion)
@@ -4017,12 +4054,11 @@ static void delete_procedure (dsql_req*     request,
     if (node->nod_type == nod_redef_procedure || silent_deletion) {
         dsql_prc* procedure = METD_get_procedure (request, string);
         if (!procedure) {
-                return;
+            return;
         }
     }
     request->append_cstring(isc_dyn_delete_procedure, string->str_data);
     request->append_uchar(isc_dyn_end);
-
 }
 
 
@@ -4249,8 +4285,19 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 
 	case nod_def_exception:
 	case nod_mod_exception:
-	case nod_del_exception:
+	case nod_replace_exception:
 		define_exception(request, node->nod_type);
+		break;
+
+    case nod_redef_exception:
+        stuff(request, isc_dyn_begin);
+        delete_exception(request, node, true);	// silent
+        define_exception(request, node->nod_type);
+        stuff(request, isc_dyn_end);
+        break;
+
+	case nod_del_exception:
+        delete_exception(request, node, false);	// no silent
 		break;
 
 	case nod_def_procedure:
@@ -4265,7 +4312,6 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
         define_procedure(request, node->nod_type);
         stuff(request, isc_dyn_end);
         break;
-
 
 	case nod_def_constraint:
 		define_constraint_trigger(request, node);

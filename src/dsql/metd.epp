@@ -859,6 +859,47 @@ USHORT METD_get_domain_default(dsql_req* request,
 }
 
 
+bool METD_get_exception(dsql_req* request, const dsql_str* name)
+{
+/**************************************
+ *
+ *	M E T D _ g e t _ e x c e p t i o n 
+ *
+ **************************************
+ *
+ * Functional description
+ *	Look up an exception.
+ *
+ **************************************/
+	dsql_dbb* dbb;
+	bool found = false;
+
+	dbb = request->req_dbb;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
+
+	THREAD_EXIT();
+
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_exception])
+		X IN RDB$EXCEPTIONS WITH
+		X.RDB$EXCEPTION_NAME EQ name->str_data;
+
+		THREAD_ENTER();
+
+		found = true;
+
+		THREAD_EXIT();
+        
+	END_FOR 
+    ON_ERROR 
+    END_ERROR;
+
+	THREAD_ENTER();
+
+	return found;
+}
+
+
 dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 {
 /**************************************
@@ -1701,7 +1742,7 @@ dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USH
 }
 
 
-USHORT METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT* value)
+bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT* value)
 {
 /**************************************
  *
@@ -1714,13 +1755,11 @@ USHORT METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHOR
  *
  **************************************/
 	dsql_dbb* dbb;
-	USHORT found;
+	bool found = false;
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 	gds_trans = request->req_trans;
-
-	found = FALSE;
 
 	THREAD_EXIT();
 
@@ -1730,7 +1769,7 @@ USHORT METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHOR
 
 		THREAD_ENTER();
 
-		found = TRUE;
+		found = true;
 		*value = X.RDB$TYPE;
 
 		THREAD_EXIT();

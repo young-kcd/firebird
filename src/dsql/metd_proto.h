@@ -41,12 +41,13 @@ USHORT   METD_get_col_default(dsql_req*, const char*, const char*, bool*, TEXT*,
 dsql_str*      METD_get_default_charset(dsql_req*);
 USHORT   METD_get_domain(dsql_req*, class dsql_fld*, const char* name); // UTF-8
 USHORT   METD_get_domain_default(dsql_req*, const TEXT*, bool*, TEXT*, USHORT);
+bool METD_get_exception(dsql_req*, const dsql_str*);
 dsql_udf*      METD_get_function(dsql_req*, const dsql_str*);
 dsql_nod* METD_get_primary_key(dsql_req*, const dsql_str*);
 dsql_prc* METD_get_procedure(dsql_req*, const dsql_str*);
 dsql_rel* METD_get_relation(dsql_req*, const dsql_str*);
 dsql_str*      METD_get_trigger_relation(dsql_req*, const dsql_str*, USHORT*);
-USHORT   METD_get_type(dsql_req*, const dsql_str*, char*, SSHORT*);
+bool   METD_get_type(dsql_req*, const dsql_str*, char*, SSHORT*);
 dsql_rel* METD_get_view_relation(dsql_req*   request,
 								const char* view_name,         // UTF-8
 								const char* relation_or_alias, // UTF-8

@@ -139,8 +139,9 @@ enum irq_type_t {
     irq_type        = 13,    //!< lookup a symbolic name in RDB$TYPES   
     irq_col_default = 14,    //!< lookup default for a column           
     irq_domain_2    = 15,    //!< lookup a domain
+    irq_exception   = 16,    //!< lookup an exception
 
-    irq_MAX         = 16
+    irq_MAX         = 17
 };
 
 // dsql_node definition

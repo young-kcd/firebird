@@ -2310,8 +2310,14 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_exception:
 		verb = "def_exception";
 		break;
+	case nod_redef_exception:
+		verb = "redef_exception";
+		break;
 	case nod_mod_exception:
 		verb = "mod_exception";
+		break;
+	case nod_replace_exception:
+		verb = "replace_exception";
 		break;
 	case nod_del_exception:
 		verb = "del_exception";

@@ -193,6 +193,10 @@ void DYN_delete_exception( Global* gbl, const UCHAR** ptr)
 		DYN_error_punt(false, 144, NULL, NULL, NULL, NULL, NULL);
 		/* msg 144: "Exception not found" */
 	}
+
+	if (*(*ptr)++ != isc_dyn_end) {
+		DYN_unsupported_verb();
+	}
 }
 
 

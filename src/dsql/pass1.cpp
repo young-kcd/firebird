@@ -1069,45 +1069,47 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	switch (input->nod_type) {
 	case nod_def_relation:
     case nod_redef_relation:
+	case nod_mod_relation:
+	case nod_del_relation:
 	case nod_def_index:
+	case nod_mod_index:
+	case nod_del_index:
 	case nod_def_view:
 	case nod_redef_view:
-	case nod_def_constraint:
-	case nod_def_exception:
-	case nod_mod_relation:
 	case nod_mod_view:
 	case nod_replace_view:
-	case nod_mod_exception:
-	case nod_del_relation:
     case nod_del_view:
-	case nod_del_index:
+	case nod_def_constraint:
+	case nod_def_exception:
+	case nod_redef_exception:
+	case nod_mod_exception:
+	case nod_replace_exception:
 	case nod_del_exception:
 	case nod_grant:
 	case nod_revoke:
 	case nod_def_database:
 	case nod_mod_database:
 	case nod_def_generator:
+	case nod_del_generator:
 	case nod_def_role:
 	case nod_del_role:
-	case nod_del_generator:
 	case nod_def_filter:
 	case nod_del_filter:
 	case nod_def_domain:
-	case nod_del_domain:
 	case nod_mod_domain:
+	case nod_del_domain:
 	case nod_def_udf:
 	case nod_del_udf:
 	case nod_def_shadow:
 	case nod_del_shadow:
-	case nod_mod_index:
 	case nod_set_statistics:
 		request->req_type = REQ_DDL;
 		return input;
 
-	case nod_del_trigger:
 	case nod_def_trigger:
 	case nod_mod_trigger:
 	case nod_replace_trigger:
+	case nod_del_trigger:
 		request->req_type = REQ_DDL;
 		request->req_flags |= (REQ_block | REQ_procedure | REQ_trigger);
 		return input;
@@ -1288,7 +1290,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exe_blk_inputs] = 
-			PASS1_node(request, input->nod_arg[e_exe_blk_inputs], 0);
+			PASS1_node(request, input->nod_arg[e_exe_blk_inputs], false);
 		node->nod_arg[e_exe_blk_outputs] = 
 			input->nod_arg[e_exe_blk_outputs];
 

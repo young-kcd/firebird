@@ -334,7 +334,9 @@ enum nod_t
 	nod_param_val,		// default value for SP parameters support
 	nod_rows,	// ROWS support
 	nod_query_spec,
-	nod_equiv
+	nod_equiv,
+	nod_redef_exception, // RECREATE EXCEPTION
+	nod_replace_exception // CREATE OR ALTER EXCEPTION
 };
 
 typedef nod_t NOD_TYPE;
