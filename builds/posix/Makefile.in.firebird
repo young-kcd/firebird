@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.38 2003-07-08 12:24:12 brodsom Exp $
+#  $Id: Makefile.in.firebird,v 1.39 2003-07-09 00:46:55 brodsom Exp $
 #
 
 ROOT=..
@@ -495,7 +495,7 @@ endif
 misc_files : $(INSTALL_MiscFiles)
 
 
-$(FIREBIRD)/misc/% :: $(SRC_ROOT)/install/misc/%
+$(FIREBIRD)/misc/% :: $(BLD_ROOT)/install/misc/%
 	$(CP) $^ $@
 
 
@@ -517,15 +517,15 @@ endif
 script_files : $(INSTALL_ScriptFiles)
 
 
-$(BIN)/% :: $(SRC_ROOT)/install/classic/%
+$(BIN)/% :: $(BLD_ROOT)/install/classic/%
 	$(CP) $^ $@
 	$(CHMOD) ugo=rx $@
 
-$(BIN)/% :: $(SRC_ROOT)/install/super/%
+$(BIN)/% :: $(BLD_ROOT)/install/super/%
 	$(CP) $^ $@
 	$(CHMOD) ugo=rx $@
 
-$(BIN)/% :: $(SRC_ROOT)/install/misc/%
+$(BIN)/% :: $(BLD_ROOT)/install/misc/%
 	$(CP) $^ $@
 	$(CHMOD) ugo=rx $@
 
