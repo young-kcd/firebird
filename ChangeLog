@@ -1,3 +1,118 @@
+2003-10-27 23:27  skidder
+
+	* firebird2/src/: common/classes/alloc.cpp, common/classes/alloc.h,
+	common/classes/tree.h, gpre/cmd.cpp, include/firebird.h,
+	intl/ldcommon.h:
+	
+	Ugly hack to make Firebird compatible with host applications using
+	STL
+
+2003-10-27 23:07  skidder
+
+	* firebird2/lang_helpers/: gds_codes.ftn, gds_codes.pas:
+	
+	Update codes
+
+2003-10-27 19:42  skidder
+
+	* firebird2/: configure.in, builds/posix/prefix.solaris,
+	src/jrd/common.h, src/lock/lock.cpp, src/lock/lock.h:
+	
+	Forward port Solaris fixes
+
+2003-10-27 19:30  skidder
+
+	* firebird2/: configure.in, builds/posix/prefix.solaris,
+	src/gpre/exp.cpp, src/intl/lc_ascii.c, src/jrd/common.h,
+	src/lock/lock.cpp, src/lock/lock.h:
+	
+	LP32 Solaris/Sparc/GCC port. Seems to work
+
+2003-10-27 19:29  skidder
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	Make B1_5_Release compile on Linux
+
+2003-10-27 19:00  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/:
+	misc/changeDBAPassword.sh.in, misc/firebird.initd.in,
+	super/install.sh.in, super/SSchangePasswd.sh.in,
+	super/makeInstallImage.sh.in, super/miniInstall.sh,
+	super/postinstall.sh.in, super/postuninstall.sh.in,
+	super/preinstall.sh.in, super/preuninstall.sh.in,
+	super/rpmfiles.txt.in, super/tarinstall.sh.in:
+	
+	Port SS build changes from 1_5_Release
+
+2003-10-27 18:53  alexpeshkoff
+
+	* firebird2/configure.in:
+	
+	Port SS build changes from 1_5_Release
+
+2003-10-27 12:30  paulbeach
+
+	* firebird2/src/jrd/rse.h:
+	
+	Add Comments to RSB types
+
+2003-10-27 10:28  robocop
+
+	* firebird2/builds/: win32/blrtable.bat, win32/msvc6/fbclient.dsp,
+	win32/msvc6/fbclient_static.dsp, win32/msvc7/fbclient.vcproj,
+	win32/msvc7/fbclient_static.vcproj, posix/prefix.solaris,
+	posix/prefix.solx86, posix/prefix.solx86gcc:
+	
+	We made EXACT_NUMERICS unconditional in FB1 and the macro was
+	removed
+
+2003-10-27 10:25  robocop
+
+	* firebird2/builds/win32/msvc6/: remote.dsp, remote_classic.dsp:
+	
+	Get rid of SUPERCLIENT Add explicitly proto_proto.h to the headers
+	list
+
+2003-10-27 03:41  brodsom
+
+	* firebird2/builds/install/arch-specific/mingw/prepare_mingw.sh:
+	
+	Corrections
+
+2003-10-27 02:51  brodsom
+
+	* firebird2/builds/install/arch-specific/mingw/Makefile.in:
+	
+	Restore dummy file
+
+2003-10-27 02:29  brodsom
+
+	* firebird2/src/iscguard/iscguard.rc:
+	
+	Fix
+
+2003-10-27 02:14  brodsom
+
+	* firebird2/configure.in:
+	
+	-Add resources to iscguard
+
+2003-10-27 02:10  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.client.util,
+	Makefile.in.libfbclient, make.shared.targets, prefix.mingw:
+	
+	-Add resources to iscguard -Generate import library for fbclient.
+
+2003-10-27 02:09  brodsom
+
+	* firebird2/builds/install/arch-specific/mingw/: Makefile.in,
+	prepare_mingw.bat, prepare_mingw.sh:
+	
+	Toward installable MinGW build
+
 2003-10-26 13:27  dimitr
 
 	* firebird2/: src/include/gen/msgs.h, builds/misc/msg.gbak:
