@@ -245,7 +245,7 @@ global:
 # Error-handling functions
 
 	isc_interprete;
-	isc_interpret;
+	fb_interpret;
 	isc_print_sqlerror;
 	isc_print_status;
 	isc_sqlcode;

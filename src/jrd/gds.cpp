@@ -742,7 +742,7 @@ void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int 
 
 
 /**
-isc_interpret
+fb_interpret
 
 	@brief Buffer overrun-aware version of the old gds__interprete
 	without the double underscore and without the misspelling.
@@ -756,7 +756,7 @@ isc_interpret
 	    that was filled by an API call that reported an error. The function
 	    positions the pointer on the next element of the vector.
 **/
-SLONG API_ROUTINE isc_interpret(char* s, int bufsize, const ISC_STATUS** vector)
+SLONG API_ROUTINE fb_interpret(char* s, int bufsize, const ISC_STATUS** vector)
 {
 	return safe_interpret(s, bufsize, vector);
 }
@@ -767,8 +767,10 @@ that, unlike int* that can be assigned to const int* transparently to the caller
 int** CANNOT be assigned to const int**, so applications would have to be
 fixed to provide such const int**; while it may be more correct from the
 semantic POV, we can't estimate how much work it's for app developers.
-Therefore, we go back to the old signature and provide isc_interpret
-for compliance, to be used inside the engine, too. September, 2003. */
+Therefore, we go back to the old signature and provide fb_interpret
+for compliance, to be used inside the engine, too. September, 2003.
+November, 2004: We agree that fb_interpret is the new, safe interface.
+Both gds__interprete and isc_interprete are deprecated. */
 
 SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 {

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.74 2004-11-10 04:14:26 robocop Exp $
+//	$Id: alice.cpp,v 1.75 2004-11-28 01:01:43 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -673,7 +673,7 @@ void ALICE_print(USHORT	number,
 
 //____________________________________________________________
 //
-//		Print error message. Use isc_interpret
+//		Print error message. Use fb_interpret
 //		to allow redirecting output.
 //
 
@@ -697,14 +697,14 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 #endif
 
 		SCHAR s[1024];
-		if (isc_interpret(s, sizeof(s), &vector))
+		if (fb_interpret(s, sizeof(s), &vector))
 		{
 			translate_cp(s);
 			alice_output("%s\n", s);
 
 			// Continuation of error
 			s[0] = '-';
-			while (isc_interpret(s + 1, sizeof(s) - 1, &vector)) {
+			while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
 				translate_cp(s);
 				alice_output("%s\n", s);
 			}

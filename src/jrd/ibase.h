@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.96 2004-11-26 01:00:42 skidder Exp $
+$Id: ibase.h,v 1.97 2004-11-28 01:02:21 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -570,7 +570,7 @@ ISC_LONG FB_API_DEPRECATED ISC_EXPORT isc_interprete(ISC_SCHAR*,
 									 ISC_STATUS**);
 									 
 /* This const params version used in the engine and other places. */
-ISC_LONG ISC_EXPORT isc_interpret(ISC_SCHAR*,
+ISC_LONG ISC_EXPORT fb_interpret(ISC_SCHAR*,
 								 int,
 								 const ISC_STATUS**);
 									 

@@ -1472,7 +1472,7 @@ void BURP_print_status(const ISC_STATUS* status_vector)
  **************************************
  *
  * Functional description
- *	Print error message. Use isc_interpret
+ *	Print error message. Use fb_interpret
  *	to allow redirecting output.
  *
  **************************************/
@@ -1491,11 +1491,11 @@ void BURP_print_status(const ISC_STATUS* status_vector)
 #endif
 
         SCHAR s[1024];
-		if (isc_interpret(s, sizeof(s), &vector)) {
+		if (fb_interpret(s, sizeof(s), &vector)) {
 			translate_cp(s);
 			BURP_msg_partial(256, 0, 0, 0, 0, 0); // msg 256: gbak: ERROR: 
 			burp_output("%s\n", s);
-			while (isc_interpret(s, sizeof(s), &vector)) {
+			while (fb_interpret(s, sizeof(s), &vector)) {
 				translate_cp(s);
 				BURP_msg_partial(256, 0, 0, 0, 0, 0); // msg 256: gbak: ERROR:
 				burp_output("    %s\n", s);
@@ -1514,7 +1514,7 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
  **************************************
  *
  * Functional description
- *	Print warning message. Use isc_interpret
+ *	Print warning message. Use fb_interpret
  *	to allow redirecting output.
  *
  **************************************/
@@ -1525,11 +1525,11 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
 		// print the warning message 
 		const ISC_STATUS* vector = &status_vector[2];
 		SCHAR s[1024];
-		if (isc_interpret(s, sizeof(s), &vector)) {
+		if (fb_interpret(s, sizeof(s), &vector)) {
 			translate_cp(s);
 			BURP_msg_partial(255, 0, 0, 0, 0, 0); // msg 255: gbak: WARNING: 
 			burp_output("%s\n", s);
-			while (isc_interpret(s, sizeof(s), &vector)) {
+			while (fb_interpret(s, sizeof(s), &vector)) {
 				translate_cp(s);
 				BURP_msg_partial(255, 0, 0, 0, 0, 0); // msg 255: gbak: WARNING: 
 				burp_output("    %s\n", s);
