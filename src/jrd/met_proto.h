@@ -49,7 +49,7 @@ struct fld *MET_get_field(struct rel *, USHORT);
 void MET_get_shadow_files(TDBB, USHORT);
 int MET_get_walinfo(TDBB, struct logfiles **, ULONG *,
 						   struct logfiles **);
-void MET_load_trigger(TDBB, struct rel *, TEXT *, VEC *);
+void MET_load_trigger(TDBB, struct rel *, TEXT *, TRIG_VEC *);
 void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB, TEXT *, TEXT *);
 void MET_lookup_cnstrt_for_trigger(TDBB, TEXT *, TEXT *, TEXT *);
 void MET_lookup_exception(TDBB, SLONG, /* INOUT */ TEXT*, /* INOUT */ TEXT*);
@@ -75,7 +75,7 @@ struct rel *MET_relation(TDBB, USHORT);
 extern BOOLEAN 		MET_relation_owns_trigger (TDBB, const TEXT *, const TEXT *);
 extern BOOLEAN		MET_relation_default_class (TDBB, const TEXT *, const TEXT *);
 void MET_release_existence(struct rel *);
-void MET_release_triggers(TDBB, VEC *);
+void MET_release_triggers(TDBB, TRIG_VEC *);
 void MET_remove_procedure(TDBB, int, PRC);
 void MET_revoke(TDBB, struct tra *, TEXT *, TEXT *, TEXT *);
 TEXT*MET_save_name(TDBB, CONST TEXT*);

@@ -104,6 +104,7 @@ extern "C" {
 
 // fwd. decl.
 class vec;
+class tdbb;
 
 
 class dbb : private pool_alloc<type_dbb>
@@ -502,6 +503,22 @@ typedef struct frgn {
 	vec* frgn_indexes;
 } *FRGN;
 
+// Relation trigger definition
+typedef struct trig {
+    class str* blr; // BLR code
+	req* request; // Compiled request. Gets filled on first invocation
+	BOOLEAN sys_trigger;
+	USHORT flags; // Flags as they are in RDB$TRIGGERS table
+	class rel* relation; // Trigger parent relation
+	class str* name; // Trigger name
+	void compile(tdbb* _tdbb); // Ensure that trigger is compiled
+	BOOLEAN release(); // Try to free trigger request
+} *TRIG;
+
+typedef Firebird::vector<trig> trig_vec;
+
+typedef trig_vec* TRIG_VEC;
+
 /* Relation block; one is created for each relation referenced
    in the database, though it is not really filled out until
    the relation is scanned */
@@ -550,12 +567,12 @@ public:
 
 	struct idl *rel_index_locks;	/* index existence locks */
 	struct idb *rel_index_blocks;	/* index blocks for caching index info */
-	vec*		rel_pre_erase;	/* Pre-operation erase trigger */
-	vec*		rel_post_erase;	/* Post-operation erase trigger */
-	vec*		rel_pre_modify;	/* Pre-operation modify trigger */
-	vec*		rel_post_modify;	/* Post-operation modify trigger */
-	vec*		rel_pre_store;	/* Pre-operation store trigger */
-	vec*		rel_post_store;	/* Post-operation store trigger */
+	trig_vec   *rel_pre_erase; 	/* Pre-operation erase trigger */
+	trig_vec   *rel_post_erase;	/* Post-operation erase trigger */
+	trig_vec   *rel_pre_modify;	/* Pre-operation modify trigger */
+	trig_vec   *rel_post_modify;	/* Post-operation modify trigger */
+	trig_vec   *rel_pre_store;		/* Pre-operation store trigger */
+	trig_vec   *rel_post_store;	/* Post-operation store trigger */
 	struct prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
 	struct frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };

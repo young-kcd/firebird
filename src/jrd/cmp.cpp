@@ -30,7 +30,7 @@
  *   This closes the heart of SF Bug #518282.
  */
 /*
-$Id: cmp.cpp,v 1.9 2002-08-22 08:20:25 dimitr Exp $
+$Id: cmp.cpp,v 1.10 2002-09-19 16:02:56 skidder Exp $
 */
 
 #include "firebird.h"
@@ -140,7 +140,7 @@ static void pass1_modify(TDBB, CSB *, NOD);
 static RSE pass1_rse(TDBB, CSB *, RSE, REL, USHORT);
 static void pass1_source(TDBB, CSB *, RSE, NOD, NOD *, LLS *, REL, USHORT);
 static NOD pass1_store(TDBB, CSB *, NOD);
-static NOD pass1_update(TDBB, CSB *, REL, VEC, USHORT, USHORT, USHORT, REL,
+static NOD pass1_update(TDBB, CSB *, REL, TRIG_VEC, USHORT, USHORT, USHORT, REL,
 						USHORT);
 static NOD pass2(TDBB, register CSB, register NOD, NOD);
 static void pass2_rse(TDBB, CSB, RSE);
@@ -149,7 +149,7 @@ static void plan_check(CSB, RSE);
 static void plan_set(CSB, RSE, NOD);
 static void post_procedure_access(TDBB, CSB, PRC);
 static RSB post_rse(TDBB, CSB, RSE);
-static void	post_trigger_access(TDBB, CSB, REL, VEC, REL);
+static void	post_trigger_access(TDBB, CSB, REL, TRIG_VEC, REL);
 static void process_map(TDBB, CSB, NOD, FMT *);
 static BOOLEAN stream_in_rse(USHORT, RSE);
 static SSHORT strcmp_space(TEXT *, TEXT *);
@@ -3305,7 +3305,7 @@ static void pass1_erase(TDBB tdbb, CSB * csb, NOD node)
 	NOD source, view_node;
 	UCHAR *map;
 	USHORT stream, new_stream, parent_stream = 0;
-	VEC trigger;
+	TRIG_VEC trigger;
 	csb_repeat *tail;
 	USHORT priv;
 
@@ -3479,7 +3479,7 @@ static void pass1_modify(TDBB tdbb, CSB * csb, NOD node)
 	REL relation, parent, view;
 	UCHAR *map;
 	USHORT view_stream, stream, new_stream, parent_stream = 0;
-	VEC trigger;
+	TRIG_VEC trigger;
 	csb_repeat *tail;
 	USHORT priv;
 
@@ -3972,7 +3972,7 @@ static NOD pass1_store(TDBB tdbb, CSB * csb, NOD node)
 	REL relation, parent, view;
 	UCHAR *map;
 	USHORT stream, new_stream, trigger_seen, parent_stream = 0;
-	VEC trigger;
+	TRIG_VEC trigger;
 	csb_repeat *tail;
 	USHORT priv;
 
@@ -4069,7 +4069,7 @@ static NOD pass1_update(
 						TDBB tdbb,
 						CSB * csb,
 						REL relation,
-						VEC trigger,
+						TRIG_VEC trigger,
 						USHORT stream,
 USHORT update_stream, USHORT priv, REL view, USHORT view_stream)
 {
@@ -4093,7 +4093,7 @@ USHORT update_stream, USHORT priv, REL view, USHORT view_stream)
 
 	DEV_BLKCHK(*csb, type_csb);
 	DEV_BLKCHK(relation, type_rel);
-	DEV_BLKCHK(trigger, type_vec);
+	//DEV_BLKCHK(trigger, type_vec);
 	DEV_BLKCHK(view, type_rel);
 
 /* Unless this is an internal request, check access permission */
@@ -5116,7 +5116,7 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 }
 
 
-static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, VEC triggers, REL view)
+static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, TRIG_VEC triggers, REL view)
 {
 /**************************************
  *
@@ -5147,20 +5147,21 @@ static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, VEC trig
  *
  **************************************/
 	ACC access;
-	vec::iterator ptr, end;
+	trig_vec::iterator ptr, end;
 	USHORT read_only;
 
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(triggers, type_vec);
+	//DEV_BLKCHK(triggers, type_vec);
 	DEV_BLKCHK(view, type_rel);
 
 	if (!triggers)
 		return;
 
-	for (ptr = triggers->begin(), end = triggers->end(); ptr < end; ptr++)
-		if (*ptr) {
+	for (ptr = triggers->begin(), end = triggers->end(); ptr < end; ptr++) {
+		ptr->compile(tdbb);
+		if (ptr->request) {
 			/* CVC: Definitely, I'm going to disable this check because REFERENCES should
 			be checked only at DDL time. If we discover another thing in the fluffy SQL
 			standard, we can revisit those lines.
@@ -5176,7 +5177,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, VEC trig
 			   we must check for read-only to make sure people don't abuse the
 			   REFERENCES privilege */
 
-			for (access = ((REQ)(*ptr))->req_access; access;
+			for (access = ptr->request->req_access; access;
 				 access = access->acc_next) {
 				/* CVC:	Can't make any sense of this code, hence I disabled it.
 				if (read_only && (access->acc_mask & SCL_read)) {
@@ -5243,11 +5244,12 @@ static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, VEC trig
 					CMP_post_access(tdbb, csb, access->acc_security_name,
 									(access->
 									 acc_view) ? access->acc_view : view,
-									((REQ)(*ptr))->req_trg_name, 0, access->acc_mask,
+									ptr->request->req_trg_name, 0, access->acc_mask,
 									access->acc_type, access->acc_name);
 				}
 			}
 		}
+	}
 }
 
 

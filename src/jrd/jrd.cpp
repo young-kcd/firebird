@@ -124,6 +124,7 @@
 #include "../jrd/ail.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/old_proto.h"
+#include "../jrd/flags.h"
 
 #include "../fbutil/FirebirdConfig.h"
 
@@ -221,6 +222,35 @@ static REC_MUTX_T databases_rec_mutex;
 #undef TEXT
 #define TEXT    SCHAR
 #endif	// WIN_NT
+
+void trig::compile(tdbb* _tdbb) {
+	if (!request) {
+		JrdMemoryPool* old_pool;
+		
+		SET_TDBB(_tdbb);
+
+		old_pool = _tdbb->tdbb_default;
+		_tdbb->tdbb_default = new(*getDefaultMemoryPool()) JrdMemoryPool;
+		// Trigger request is not compiled yet. Lets do it now
+		PAR_blr(_tdbb, relation, blr->str_data, 
+				(CSB)NULL_PTR, (CSB*)NULL_PTR, &request, TRUE, 
+				(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
+		_tdbb->tdbb_default = old_pool;
+		
+		if (name)
+			request->req_trg_name = (TEXT *)name->str_data;
+		if (sys_trigger)
+	  		request->req_flags |= req_sys_trigger;
+		if (flags & TRG_ignore_perm)
+	  		request->req_flags |= req_ignore_perm;
+	}
+}
+
+// Not yet implemented. 
+// Inteded to be used when process is asked to release resources
+BOOLEAN trig::release() {
+	return FALSE;
+}
 
 extern "C" {
 

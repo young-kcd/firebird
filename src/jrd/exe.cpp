@@ -31,7 +31,7 @@
  * to count virtual operations, not real I/O on the underlying tables.
  */
 /*
-$Id: exe.cpp,v 1.16 2002-09-18 12:50:03 eku Exp $
+$Id: exe.cpp,v 1.17 2002-09-19 16:02:57 skidder Exp $
 */
 
 #include "firebird.h"
@@ -121,13 +121,12 @@ static NOD erase(TDBB, NOD, SSHORT);
 static void execute_looper(TDBB, REQ, TRA, ENUM req::req_s);
 static void exec_sql(TDBB, REQ, DSC *);
 static void execute_procedure(TDBB, NOD);
-static REQ execute_triggers(TDBB, VEC *, REC, REC);
+static REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC);
 static NOD looper(TDBB, REQ, NOD);
 static NOD modify(TDBB, register NOD, SSHORT);
 static NOD receive_msg(TDBB, register NOD);
 static void release_blobs(TDBB, REQ);
 static void release_proc_save_points(REQ);
-static void release_triggers(TDBB, VEC);
 #ifdef SCROLLABLE_CURSORS
 static NOD seek_rse(TDBB, REQ, NOD);
 static void seek_rsb(TDBB, REQ, RSB, USHORT, SLONG);
@@ -1504,10 +1503,10 @@ static void execute_procedure(TDBB tdbb, NOD node)
 }
 
 
-static REQ execute_triggers(TDBB	tdbb,
-							VEC*	triggers,
-							REC		old_rec,
-							REC		new_rec)
+static REQ execute_triggers(TDBB		tdbb,
+							TRIG_VEC*	triggers,
+							REC			old_rec,
+							REC			new_rec)
 {
 /**************************************
  *
@@ -1523,7 +1522,7 @@ static REQ execute_triggers(TDBB	tdbb,
 
 	volatile REQ trigger = NULL;
 
-	DEV_BLKCHK(*triggers, type_vec);
+	//DEV_BLKCHK(*triggers, type_vec);
 	DEV_BLKCHK(old_rec, type_rec);
 	DEV_BLKCHK(new_rec, type_rec);
 
@@ -1534,14 +1533,15 @@ static REQ execute_triggers(TDBB	tdbb,
 	SET_TDBB(tdbb);
 
 	TRA transaction = tdbb->tdbb_request->req_transaction;
-	VEC vector = *triggers;
+	TRIG_VEC vector = *triggers;
 	REQ result = NULL;
 
 	try
 	{
-		for (vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
+		for (trig_vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
 		{
-			trigger = EXE_find_request(tdbb, (REQ)(*ptr), FALSE);
+			ptr->compile(tdbb);
+			trigger = EXE_find_request(tdbb, ptr->request, FALSE);
 			trigger->req_rpb[0].rpb_record = old_rec;
 			trigger->req_rpb[1].rpb_record = new_rec;
 			trigger->req_timestamp = tdbb->tdbb_request->req_timestamp;
@@ -1553,10 +1553,11 @@ static REQ execute_triggers(TDBB	tdbb,
 				result = trigger;
 				break;
 			}
+			trigger = (REQ)NULL_PTR;
 		}
 
 		if (vector != *triggers) {
-			release_triggers(tdbb, vector);
+			MET_release_triggers(tdbb, &vector);
 		}
 
 		return result;
@@ -1565,10 +1566,11 @@ static REQ execute_triggers(TDBB	tdbb,
 	catch (std::exception&)
 	{
 		if (vector != *triggers) {
-			release_triggers(tdbb, vector);
+			MET_release_triggers(tdbb, &vector);
 		}
 		if (!trigger) {
-			Firebird::status_exception::raise(-1);
+		  throw; // trigger probally fails to compile
+		  //Firebird::status_exception::raise(-1);
 		}
 		return trigger;
 	}
@@ -3015,35 +3017,6 @@ static void release_proc_save_points(REQ request)
 		transaction->tra_save_free = sav_point;
 	}
 	request->req_proc_sav_point = NULL;
-}
-
-
-static void release_triggers(TDBB tdbb, VEC vector)
-{
-/**************************************
- *
- *	r e l e a s e _ t r i g g e r s
- *
- **************************************
- *
- * Functional description
- *	Release vector of triggers if inactive.
- *
- **************************************/
-	vec::iterator ptr, end;
-
-	SET_TDBB(tdbb);
-
-	// JMB todo: Fix data type in the vector
-	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
-		if (*ptr && CMP_clone_active((REQ)(*ptr)))
-			return;
-
-	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
-		if (*ptr)
-			CMP_release(tdbb, (REQ)(*ptr));
-
-	delete vector;
 }
 
 

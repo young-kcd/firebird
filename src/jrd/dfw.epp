@@ -186,14 +186,14 @@ static bool	find_depend_in_dfw(TDBB, TEXT*, USHORT, USHORT, TRA);
 static void get_array_desc(TDBB, TEXT*, ADS);
 static void get_procedure_dependencies(DFW);
 static void get_trigger_dependencies(DFW);
-static void	load_trigs(TDBB, REL, VEC *);
+static void	load_trigs(TDBB, REL, TRIG_VEC *);
 static FMT	make_format(TDBB, REL, USHORT *, TFB);
 static USHORT name_length(TEXT *);
 static void put_summary_blob(BLB, enum rsr_t, SLONG[2]);
 static void put_summary_record(BLB, enum rsr_t, UCHAR *, USHORT);
 static void	setup_array(TDBB, BLB, TEXT *, USHORT, TFB);
-static BLB	setup_triggers(TDBB, REL, BOOLEAN, VEC *, BLB);
-static void	setup_trigger_details(TDBB, REL, BLB, VEC *, TEXT*, TEXT*, BOOLEAN);
+static BLB	setup_triggers(TDBB, REL, BOOLEAN, TRIG_VEC *, BLB);
+static void	setup_trigger_details(TDBB, REL, BLB, TRIG_VEC *, TEXT*, TEXT*, BOOLEAN);
 //static void	setup_trigger_details(TDBB, REL, BLB, VEC *, UCHAR *, UCHAR *, BOOLEAN);
 static bool shadow_defined(TDBB);
 static bool validate_text_type (TDBB, STATUS *, TFB);
@@ -3277,7 +3277,7 @@ static void get_trigger_dependencies( DFW work)
 }
 
 
-static void load_trigs(TDBB tdbb, REL relation, VEC * triggers)
+static void load_trigs(TDBB tdbb, REL relation, TRIG_VEC * triggers)
 {
 /**************************************
  *
@@ -3291,7 +3291,7 @@ static void load_trigs(TDBB tdbb, REL relation, VEC * triggers)
  *      place ie the relation block. 
  *
  **************************************/
-	VEC tmp_vector;
+	TRIG_VEC tmp_vector;
 
 	tmp_vector = relation->rel_pre_store;
 	relation->rel_pre_store = triggers[TRIGGER_PRE_STORE];
@@ -3500,7 +3500,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 	ADS array;
 	STATUS status[20];
 	SSHORT collation;
-	VEC triggers[TRIGGER_MAX];
+	TRIG_VEC triggers[TRIGGER_MAX];
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -3517,7 +3517,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		computed_field = FALSE;
 
 		for (n = 0; n < TRIGGER_MAX; n++) {
-			triggers[n] = (VEC) NULL_PTR;
+			triggers[n] = (TRIG_VEC) NULL_PTR;
 		}
 
 		request_fmt1 =
@@ -4199,7 +4199,7 @@ static void setup_array(TDBB tdbb, BLB blob, TEXT* field_name, USHORT n, TFB tfb
 }
 
 
-static BLB setup_triggers(TDBB tdbb, REL relation, BOOLEAN null_view, VEC * triggers, BLB blob)
+static BLB setup_triggers(TDBB tdbb, REL relation, BOOLEAN null_view, TRIG_VEC * triggers, BLB blob)
 {
 /**************************************
  *
@@ -4311,7 +4311,7 @@ static BLB setup_triggers(TDBB tdbb, REL relation, BOOLEAN null_view, VEC * trig
 static void setup_trigger_details(TDBB tdbb,
 								  REL relation,
 								  BLB blob,
-								  VEC * triggers,
+								  TRIG_VEC * triggers,
 								  TEXT * trigger_name,
 								  TEXT * relation_name, 
 								  BOOLEAN null_view)

@@ -20,7 +20,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  * 2001.6.25 Claudio Valderrama: Finish MET_lookup_generator_id() by
  *	assigning it a number in the compiled requests table.
  *
@@ -32,10 +31,11 @@
  * 2001.10.04 Claudio Valderrama: MET_relation_default_class() determines if the
  *   given security class name is the default security class for a relation.
  *   Modify MET_lookup_field() so it can verify the field's security class, too.
- *
+ * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
+ * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.15 2002-09-11 11:30:44 eku Exp $
+$Id: met.epp,v 1.16 2002-09-19 16:02:58 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -132,7 +132,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 static void blocking_ast_procedure(PRC);
 static void blocking_ast_relation(REL);
-static void get_trigger(TDBB, REL, SLONG[2], VEC *, TEXT *, BOOLEAN, USHORT);
+static void get_trigger(TDBB, REL, SLONG[2], TRIG_VEC *, TEXT *, BOOLEAN, USHORT);
 static BOOLEAN get_type(TDBB, SSHORT *, UCHAR *, UCHAR *);
 static void lookup_view_contexts(TDBB, REL);
 static void name_copy(TEXT *, TEXT *);
@@ -142,7 +142,7 @@ static BOOLEAN par_messages(TDBB, UCHAR *, USHORT, PRC, CSB *);
 static BOOLEAN resolve_charset_and_collation(TDBB, SSHORT *, UCHAR *,
 											 UCHAR *);
 static STR save_name(TDBB, CONST TEXT*);
-static void save_trigger_request(DBB, VEC*, REQ);
+static void save_trigger_data(TDBB, TRIG_VEC*, REL, REQ, STR, TEXT*, BOOLEAN, USHORT);
 static void store_dependencies(TDBB, CSB, CONST TEXT*, USHORT);
 static void terminate(TEXT*, USHORT);
 static BOOLEAN verify_TRG_ignore_perm(TDBB, TEXT*);
@@ -886,7 +886,7 @@ int MET_get_walinfo(
 
 void MET_load_trigger(
 					  TDBB tdbb,
-					  REL relation, TEXT * trigger_name, VEC * triggers)
+					  REL relation, TEXT * trigger_name, TRIG_VEC* triggers)
 {
 /**************************************
  *
@@ -2185,11 +2185,11 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
  *
  **************************************/
 	DBB		dbb;
-	BLK*	trigger;	/* should really be "TRG**" */
+	BLK*	trigger; /* should really be "TRG**" */
 	const UCHAR*	blr;
 	UCHAR	type;
 	const TEXT*	name;
-	VEC*	ptr;
+	TRIG_VEC*	ptr;
 	REQ		request;
 	JrdMemoryPool	*old_pool;
 	USHORT	trig_flags;
@@ -2286,7 +2286,7 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
 				request->req_flags |= req_ignore_perm;
 			}
 
-			save_trigger_request(dbb, ptr, request);
+			save_trigger_data(tdbb, ptr, relation, request, NULL, NULL, FALSE, 0);
 		}
 	}
 
@@ -3038,7 +3038,8 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 	DBB dbb;
 	USHORT n, length, view_context, field_id;
 	ARR array;
-	VEC vector, triggers[TRIGGER_MAX], tmp_vector;
+	TRIG_VEC triggers[TRIGGER_MAX], tmp_vector;
+	VEC vector;
 	FLD field;
 	BLK request;
 	CSB csb_;
@@ -3083,7 +3084,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 	sys_triggers = (relation->rel_flags & REL_sys_triggers) ? TRUE : FALSE;
 	relation->rel_flags &= ~(REL_get_dependencies | REL_sys_triggers);
 	for (n = 0; n < TRIGGER_MAX; n++)
-		triggers[n] = (VEC) NULL_PTR;
+		triggers[n] = (TRIG_VEC) NULL_PTR;
 	old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = dbb->dbb_permanent;
 
@@ -3593,7 +3594,7 @@ static void get_trigger(
 						TDBB tdbb,
 						REL relation,
 						SLONG blob_id[2],
-						VEC * ptr,
+						TRIG_VEC* ptr,
 						TEXT * name, BOOLEAN sys_trigger, USHORT flags)
 {
 /**************************************
@@ -3606,7 +3607,9 @@ static void get_trigger(
  *      Get trigger.
  *
  **************************************/
-	REQ request;
+	SET_TDBB(tdbb);
+	
+ 
 	JrdMemoryPool* old_pool;
 
 	SET_TDBB(tdbb);
@@ -3616,25 +3619,15 @@ static void get_trigger(
 
 	old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = new(*getDefaultMemoryPool()) JrdMemoryPool;
-	MET_parse_blob(	tdbb,
-					relation,
-					blob_id,
-					(CSB*) NULL_PTR,
-					&request,
-					TRUE,
-					(BOOLEAN)((flags & TRG_ignore_perm) ? TRUE : FALSE));
 
+	DBB dbb = tdbb->tdbb_database;
+	BLB blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
+	SLONG length = blob->blb_length + 10;
+	STR blr = new(*tdbb->tdbb_default,length) str();
+	BLB_get_data(tdbb, blob, blr->str_data, length);
 	tdbb->tdbb_default = old_pool;
-
-	if (name)
-		request->req_trg_name = MET_save_name(tdbb, name);
-	if (sys_trigger)
-		request->req_flags |= req_sys_trigger;
-
-	if (flags & TRG_ignore_perm)
-		request->req_flags |= req_ignore_perm;
-
-	save_trigger_request(tdbb->tdbb_database, ptr, request);
+	  
+	save_trigger_data(tdbb, ptr, relation, NULL, blr, name, sys_trigger, flags);
 }
 
 
@@ -3916,7 +3909,7 @@ static BOOLEAN par_messages(TDBB	tdbb,
 }
 
 
-void MET_release_triggers( TDBB tdbb, VEC * vector_ptr)
+void MET_release_triggers( TDBB tdbb, TRIG_VEC* vector_ptr)
 {
 /***********************************************
  *
@@ -3930,8 +3923,8 @@ void MET_release_triggers( TDBB tdbb, VEC * vector_ptr)
  *      else do the work.
  *
  **************************************/
-	VEC vector;
-	vec::iterator ptr, end;
+	TRIG_VEC vector;
+	trig_vec::iterator ptr, end;
 
 
 	if (!(vector = *vector_ptr))
@@ -3943,7 +3936,7 @@ void MET_release_triggers( TDBB tdbb, VEC * vector_ptr)
 
 	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
 	{
-		if (*ptr && CMP_clone_active((REQ)(*ptr)))
+		if (ptr->request && CMP_clone_active(ptr->request))
 		{
 			return;
 		}
@@ -3951,10 +3944,13 @@ void MET_release_triggers( TDBB tdbb, VEC * vector_ptr)
 
 	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
 	{
-		if (*ptr)
-		{
-			CMP_release(tdbb, (REQ)(*ptr));
-		}
+		if (ptr->request)
+		  CMP_release(tdbb, ptr->request);
+		else
+		  if (ptr->name)
+		    delete ptr->name;
+		if (ptr->blr)
+		  delete ptr->blr;
 	}
 
 	delete vector;
@@ -4110,30 +4106,40 @@ static STR save_name(TDBB tdbb, CONST TEXT* name)
 }
 
 
-static void save_trigger_request(DBB dbb, VEC * ptr, REQ request)
+static void save_trigger_data(TDBB tdbb, TRIG_VEC* ptr, REL relation, REQ request, STR blr, 
+							  TEXT* name, BOOLEAN sys_trigger, USHORT flags)
 {
 /**************************************
  *
- *      s a v e _ t r i g g e r _ r e q u e s t
+ *      s a v e _ t r i g g e r _ d a t a
  *
  **************************************
  *
  * Functional description
- *      Get trigger.
+ *      Save trigger data to passed vector
  *
  **************************************/
-
-	USHORT n      = (*ptr) ? (*ptr)->count() : 0;
-	VEC    vector = *ptr;
+	USHORT n      = (*ptr) ? (*ptr)->size() : 0;
+	TRIG_VEC vector = *ptr;
 
 	if (!vector) {
-		vector = vec::newVector(*dbb->dbb_permanent, n + 1);
+		vector = new(*tdbb->tdbb_database->dbb_permanent) 
+		  trig_vec(n+1, *tdbb->tdbb_database->dbb_permanent);
 		*ptr = vector;
 	} else {
 		vector->resize(n + 1);
 	}
 
-	(*vector)[n] = (BLK) request;
+	trig& t = (*vector)[n];
+	t.blr = blr;
+	if (name)
+		t.name = save_name(tdbb, name);
+	else
+		t.name = NULL;
+	t.flags = flags;
+	t.sys_trigger = sys_trigger;
+	t.request = request;
+	t.relation = relation;
 }
 
 
