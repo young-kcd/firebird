@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: evl_string.h,v 1.14 2004-06-30 01:38:57 skidder Exp $
+ *  $Id: evl_string.h,v 1.15 2004-07-07 15:48:57 skidder Exp $
  *
  */
 
@@ -68,7 +68,7 @@ public:
 	}
 	bool processNextChunk(const CharType* data, SSHORT data_len) 
 	{
-		fb_assert(data_len);
+		// Should work fine when called with data_len equal to zero
 		if (!result || offset >= pattern_len)
 			return false;
 		const SSHORT comp_length = 
@@ -158,7 +158,7 @@ public:
 	}
 
 	bool processNextChunk(const CharType* data, SSHORT data_len) {		
-		fb_assert(data_len);
+		// Should work fine when called with data_len equal to zero
 		if (result)
 			return false;
 		SSHORT data_pos = 0;
@@ -415,8 +415,12 @@ LikeEvaluator<CharType>::LikeEvaluator(
 
 template <typename CharType>
 bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data_len) {
-	fb_assert(data_len);
 	fb_assert(patternItems.getCount());
+
+	// If called with empty buffer just return if more data can change the result of evaluation
+	if (!data_len) {
+		return branches.getCount() != 0;
+	}
 
 	if (match_type == MATCH_FIXED)
 		match_type = MATCH_NONE;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.95 2004-07-07 03:47:11 robocop Exp $ 
+  * $Id: evl.cpp,v 1.96 2004-07-07 15:48:57 skidder Exp $ 
  */
 
 /*
@@ -4669,7 +4669,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 				while (!(blob->blb_flags & BLB_eof)) {
 					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (l1 && !evaluator->process(tdbb, obj, buffer, l1))
+					if (!evaluator->process(tdbb, obj, buffer, l1))
 						break;
 				}
 
@@ -4699,7 +4699,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 				while (!(blob->blb_flags & BLB_eof)) {
 					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (l1 && !evaluator->process(tdbb, obj, buffer, l1))
+					if (!evaluator->process(tdbb, obj, buffer, l1))
 						break;
 				}
 

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: evl_string_test.cpp,v 1.5 2004-06-30 01:38:57 skidder Exp $
+ *  $Id: evl_string_test.cpp,v 1.6 2004-07-07 15:48:57 skidder Exp $
  *
  */
 
@@ -48,10 +48,8 @@ public:
 
 	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);
-		if (len) {
-			bool needMore = processNextChunk(data, len);
-			assert(more == needMore);
-		}
+		bool needMore = processNextChunk(data, len);
+		assert(more == needMore);
 		assert(getResult() == result);
 	}
 };
@@ -63,10 +61,8 @@ public:
 
 	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);
-		if (len) {
-			bool needMore = processNextChunk(data, len);
-			assert(more == needMore);
-		}
+		bool needMore = processNextChunk(data, len);
+		assert(more == needMore);
 		assert(getResult() == result);
 	}
 };
@@ -78,10 +74,8 @@ public:
 
 	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);
-		if (len) {
-			bool needMore = processNextChunk(data, len);
-			assert(more == needMore);
-		}
+		bool needMore = processNextChunk(data, len);
+		assert(more == needMore);
 		assert(getResult() == result);
 	}
 };
