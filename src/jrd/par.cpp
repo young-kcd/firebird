@@ -1648,7 +1648,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 			access_type->nod_arg[0] = (jrd_nod*) (IPTR) relation_id;
 			access_type->nod_arg[1] = (jrd_nod*) (IPTR) index_id;
-			access_type->nod_arg[2] = (jrd_nod*) ALL_cstring(name);
+			access_type->nod_arg[2] = (jrd_nod*) ALL_cstring(tdbb->tdbb_default, name);
 
 			if (BLR_PEEK == blr_indices)
 				// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
@@ -1703,7 +1703,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				*arg++ = (jrd_nod*) (IPTR) relation_id;
 				*arg++ = (jrd_nod*) (IPTR) index_id;
-				*arg++ = (jrd_nod*) ALL_cstring(name);
+				*arg++ = (jrd_nod*) ALL_cstring(tdbb->tdbb_default, name);
 			}
 			break;
 			}
@@ -2418,7 +2418,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			*arg++ = (jrd_nod*) (IPTR) BLR_BYTE;
 			Firebird::string name;
 			par_name(csb, name);
-			*arg++ = (jrd_nod*) ALL_cstring(name);
+			*arg++ = (jrd_nod*) ALL_cstring(tdbb->tdbb_default, name);
 			break;
 		}
 

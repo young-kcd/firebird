@@ -30,7 +30,6 @@
 #include "../jrd/lls.h"
 #include "fb_string.h"
 
-TEXT* ALL_cstring(const Firebird::string& in_string);
 void ALL_fini(void);
 void ALL_init(void);
 
@@ -65,6 +64,8 @@ public:
     Jrd::BitmapSegment* plb_segments;  /* available bit map segments */
 	Jrd::DataComprControl* plb_dccs;
 };
+
+TEXT* ALL_cstring(JrdMemoryPool* pool, const Firebird::string& in_string);
 
 #endif	// JRD_ALL_H
 

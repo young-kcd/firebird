@@ -52,7 +52,7 @@ typedef nod_t NOD_T;
 #include "../jrd/err_proto.h"
 
 // This macro enables DSQL tracing code
-//#define CMP_DEBUG
+#define CMP_DEBUG
 
 #ifdef CMP_DEBUG
 DEFINE_TRACE_ROUTINE(cmp_trace);

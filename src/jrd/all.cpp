@@ -124,7 +124,7 @@ void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {
 	MemoryPool::deletePool(pool);
 }
 
-TEXT* ALL_cstring(const Firebird::string& in_string)
+TEXT* ALL_cstring(JrdMemoryPool* pool, const Firebird::string& in_string)
 {
 /**************************************
  *
@@ -138,22 +138,7 @@ TEXT* ALL_cstring(const Firebird::string& in_string)
  *	return to the user or where ever.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	JrdMemoryPool* pool = tdbb->tdbb_default;
-	if (!pool) {
-		if (tdbb->tdbb_transaction)
-			pool = tdbb->tdbb_transaction->tra_pool;
-		else if (tdbb->tdbb_request)
-			pool = tdbb->tdbb_request->req_pool;
-
-		/* theoretically this shouldn't happen, but just in case */
-
-		if (!pool)
-			return NULL;
-	}
-
-	TEXT* p = FB_NEW(*pool) TEXT[in_string.length()];
+	TEXT* p = FB_NEW(*pool) TEXT[in_string.length() + 1];
 	strcpy(p, in_string.c_str());
 	return p;
 }
