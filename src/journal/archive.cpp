@@ -64,7 +64,7 @@ int CLIB_ROUTINE main(int argc,
 	USHORT ret_val;
 	SLONG size;
 	SLONG db_id;
-	ISC_STATUS *status;
+	ISC_STATUS_ARRAY status;
 	JRN journal = NULL;
 
 	argv++;
