@@ -1,3 +1,17 @@
+2004-12-15 21:15  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.183):
+	
+	remove optimization in DSQL, this is now done in the optimizer (the
+	place where it belongs)
+
+2004-12-15 21:12  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.210):
+	
+	fix wrong join order with parameters/variables/constants after my
+	last commits
+
 2004-12-13 20:43  dimitr
 
 	* firebird2/src/jrd/dyn_del.epp (1.40):
