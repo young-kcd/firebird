@@ -1082,6 +1082,10 @@ C --
       PARAMETER (GDS__invalid_cursor_state             = 335544834)
       INTEGER*4 GDS__bad_shutdown_mode               
       PARAMETER (GDS__bad_shutdown_mode                = 335544835)
+      INTEGER*4 GDS__concat_overflow                 
+      PARAMETER (GDS__concat_overflow                  = 335544836)
+      INTEGER*4 GDS__bad_substring_param             
+      PARAMETER (GDS__bad_substring_param              = 335544837)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
