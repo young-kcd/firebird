@@ -5455,8 +5455,19 @@ static void put_descriptor(dsql_req* request, const dsc* desc)
 	else {
 		request->append_number(isc_dyn_fld_length, desc->dsc_length);
 	}
-	request->append_number(isc_dyn_fld_scale, desc->dsc_scale);
-	request->append_number(isc_dyn_fld_sub_type, desc->dsc_sub_type);
+	if (desc->dsc_dtype <= dtype_any_text) {
+		request->append_number(isc_dyn_fld_character_set, DSC_GET_CHARSET(desc));
+	}
+	else if (desc->dsc_dtype == dtype_blob) {
+		request->append_number(isc_dyn_fld_sub_type, desc->dsc_sub_type);
+		if (desc->dsc_sub_type == isc_blob_text) {
+			request->append_number(isc_dyn_fld_character_set, desc->dsc_scale);
+		}
+	}
+	else {
+		request->append_number(isc_dyn_fld_sub_type, desc->dsc_sub_type);
+		request->append_number(isc_dyn_fld_scale, desc->dsc_scale);
+	}
 }
 
 
