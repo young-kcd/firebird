@@ -77,7 +77,7 @@ template<typename BasePair>
 		Pair(MemoryPool& p, const Pair& lp) 
 			: BasePair(p, lp) { }
 		Pair() : BasePair(AutoStorage::getAutoMemoryPool()) { }
-		Pair(const BasePair::first_type& v1, const BasePair::second_type& v2) 
+		Pair(const Pair_first_type& v1, const Pair_second_type& v2) 
 			: BasePair(AutoStorage::getAutoMemoryPool(), v1, v2) { }
 		Pair(const Pair& lp) 
 			: BasePair(AutoStorage::getAutoMemoryPool(), lp) { }
