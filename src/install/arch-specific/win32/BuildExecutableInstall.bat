@@ -2,7 +2,7 @@
 ::  The contents of this file are subject to the  Initial Developer's Public
 ::  License Version 1.0 (the "License"). You may not use this file except
 ::  in compliance with the License. You may obtain a copy of the License at
-::    http://www.ibphoenix.com/idpl.html
+::    http://www.ibphoenix.com?a=ibphoenix&page=ibp_idpl
 ::  Software distributed under the License is distributed on an "AS IS" basis,
 ::  WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
 ::  for the specific language governing rights and limitations under the
@@ -208,8 +208,11 @@ endlocal
 
 :TOUCH_LOCAL
 ::==========
+:: Note 1: This doesn't seem to make any difference to whether local libraries are used.
+:: Note 2: MS documentation was incorrectly interpreted. .local files should not be created 
+::         for libraries, they should be created for executables.
 :: Create libname.local files for each locally installed library
-for %%v in ( gds32 fbclient msvcrt msvcp%MSVC_VERSION%0 )  do touch %ROOT_PATH%\output\bin\%%v.local
+::for %%v in ( gds32 fbclient msvcrt msvcp%MSVC_VERSION%0 )  do touch %ROOT_PATH%\output\bin\%%v.local
 @goto :EOF
 
 :TOUCH_ALL
@@ -276,9 +279,9 @@ start FirebirdInstall_%PRODUCT_VER_STRING%.iss
 @Echo fb_msg
 @(@call :FB_MSG ) || (@goto :EOF)
 @Echo.
-@Echo Creating .local files for libraries
-@(@call :TOUCH_LOCAL ) || (@goto :EOF)
-@Echo.
+::@Echo Creating .local files for libraries
+::@(@call :TOUCH_LOCAL ) || (@goto :EOF)
+::@Echo.
 @(@call :TOUCH_ALL ) || (@goto :EOF)
 @Echo Now let's run InnoSetup extensions
 @Echo.

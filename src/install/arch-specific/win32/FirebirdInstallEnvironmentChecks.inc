@@ -2,7 +2,7 @@
   The contents of this file are subject to the  Initial Developer's Public
   License Version 1.0 (the "License"). You may not use this file except
   in compliance with the License. You may obtain a copy of the License at
-    http://www.ibphoenix.com/idpl.html
+    http://www.ibphoenix.com?a=ibphoenix&page=ibp_idpl
   Software distributed under the License is distributed on an "AS IS" basis,
   WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
   for the specific language governing rights and limitations under the
@@ -35,10 +35,13 @@
 
     function FirebirdOneRunning: boolean;
 
-    function InstallGds32: boolean;
-    function InstallGds32Stub: boolean;   (deprecated.)
-    
     function InstallCPLApplet: boolean;
+    function ShowInstallCPLAppletTask: boolean;
+    function CopyGds32: boolean;
+    function ShowCopyGds32Task: boolean;
+    function CopyFbClientLib: boolean;
+    function ShowCopyFbClientLibTask: boolean;
+    
     
  *)
 
@@ -231,7 +234,7 @@ var
 begin
 
   ProductsInstalled := 0;
-  ProductsInstalledCount:=0;
+  ProductsInstalledCount := 0;
 
   //Test for gds32 version in <sys>
   if FileExists(GetSysPath+'\gds32.dll') then begin
@@ -471,49 +474,52 @@ var
 
 
 procedure SetupSharedFilesArray;
+//All shared files go in this list. Use 
+// find /n "sharedfile" FirebirdInstall_15.iss
+//to list them in the order they appear in the setup script
 begin
-if UsingWin2k then
-  SetArrayLength(SharedFileArray,21)
-else
-  SetArrayLength(SharedFileArray,18);
+SetArrayLength(SharedFileArray,24);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
-SharedFileArray[1].Filename := ExpandConstant('{app}')+'\firebird.msg';
-
-SharedFileArray[2].Filename := ExpandConstant('{app}')+'\bin\fbclient.dll';
-
-SharedFileArray[3].Filename := ExpandConstant('{app}')+'\bin\instreg.exe';
-SharedFileArray[4].Filename := ExpandConstant('{app}')+'\bin\gbak.exe';
-SharedFileArray[5].Filename := ExpandConstant('{app}')+'\bin\gfix.exe';
-SharedFileArray[6].Filename := ExpandConstant('{app}')+'\bin\gsec.exe';
-SharedFileArray[7].Filename := ExpandConstant('{app}')+'\bin\gsplit.exe';
-SharedFileArray[8].Filename := ExpandConstant('{app}')+'\bin\gstat.exe';
-SharedFileArray[9].Filename := ExpandConstant('{app}')+'\bin\fbguard.exe';
-SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fb_lock_print.exe';
-SharedFileArray[11].Filename := ExpandConstant('{app}')+'\bin\ib_util.dll';
-SharedFileArray[12].Filename := ExpandConstant('{app}')+'\bin\instsvc.exe';
-SharedFileArray[13].Filename := ExpandConstant('{app}')+'\bin\fbintl.dll';
+SharedFileArray[1].Filename := ExpandConstant('{app}')+'\IDPLicense.txt';
+SharedFileArray[2].Filename := ExpandConstant('{app}')+'\firebird.msg';
+SharedFileArray[3].Filename := ExpandConstant('{app}')+'\bin\gbak.exe';
+SharedFileArray[4].Filename := ExpandConstant('{app}')+'\bin\gfix.exe';
+SharedFileArray[5].Filename := ExpandConstant('{app}')+'\bin\gsec.exe';
+SharedFileArray[6].Filename := ExpandConstant('{app}')+'\bin\gsplit.exe';
+SharedFileArray[7].Filename := ExpandConstant('{app}')+'\bin\gstat.exe';
+SharedFileArray[8].Filename := ExpandConstant('{app}')+'\bin\fbguard.exe';
+SharedFileArray[9].Filename := ExpandConstant('{app}')+'\bin\fb_lock_print.exe';
 
 if ClassicInstallChosen then
-  SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\fb_inet_server.exe'
+  SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fb_inet_server.exe'
 else
-  SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\fbserver.exe';
+  SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fbserver.exe';
+
+SharedFileArray[11].Filename := ExpandConstant('{app}')+'\bin\ib_util.dll';
+SharedFileArray[12].Filename := ExpandConstant('{app}')+'\bin\instclient.exe';
+SharedFileArray[13].Filename := ExpandConstant('{app}')+'\bin\instreg.exe';
+SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\instsvc.exe';
+
+SharedFileArray[15].Filename := ExpandConstant('{sys}')+'\gds32.dll';
+SharedFileArray[16].Filename := ExpandConstant('{sys}')+'\fbclient.dll';
+
+SharedFileArray[17].Filename := ExpandConstant('{app}')+'\bin\fbclient.dll';
+
+SharedFileArray[18].Filename := ExpandConstant('{app}')+'\bin\msvcrt.dll';
+SharedFileArray[19].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.dll';
+
+SharedFileArray[20].Filename := ExpandConstant('{app}')+'\bin\fbintl.dll';
+
+SharedFileArray[21].Filename := ExpandConstant('{app}')+'\UDF\ib_udf.dll';
+SharedFileArray[22].Filename := ExpandConstant('{app}')+'\UDF\fbudf.dll';
+
 
 if UsingWinNT then
-  SharedFileArray[15].Filename := ExpandConstant('{sys}')+'\Firebird2Control.cpl'
+  SharedFileArray[23].Filename := ExpandConstant('{sys}')+'\Firebird2Control.cpl'
 else
-  SharedFileArray[15].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
+  SharedFileArray[23].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
 
-SharedFileArray[16].Filename := ExpandConstant('{app}')+'\bin\msvcrt.dll';
-SharedFileArray[17].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.dll';
-
-//SharedFileArray[18].Filename := ExpandConstant('{sys}')+'\gds32.dll';
-
-if UsingWin2k then begin
-  SharedFileArray[18].Filename := ExpandConstant('{app}')+'\bin\fbclient.local';
-  SharedFileArray[19].Filename := ExpandConstant('{app}')+'\bin\msvcrt.local';
-  SharedFileArray[20].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.local';
-end;
 
 
 end;
@@ -637,27 +643,52 @@ begin
 end;
 
 
-function InstallGds32: boolean;
-begin
-  result := ConfigureFirebird;
-end;
-
-
-function InstallGds32Stub: boolean;
-var
-  i: integer;
-begin
-  result := Not ConfigureFirebird;
-end;
-
-
 function InstallCPLApplet: boolean;
 begin
-  result := not NoCPL;
+  result := False;
+  if ConfigureFirebird then
+    result := ( (not NoCPL) OR (ShouldProcessEntry('ServerComponent', 'InstallCPLAppletTask')= srYes) );
 end;
 
 
-function CopyGDS32: boolean;
+function ShowInstallCPLAppletTask: boolean;
 begin
+  //If NOCPL is on the command line then don't offer the task in UI mode.
+  result := ((not NoCPL) and ConfigureFirebird);
+end;
+
+
+
+function CopyGds32: boolean;
+begin
+  //Note that we invert the value of NOLEGACYCLIENT so we provide the 
+  //correct answer to the question 'Do we copy GDS32 to <sys>' which is 
+  //the default behaviour.
+  result := False;
+  if ConfigureFirebird then
+    result := ( (not NoLegacyClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientAsGds32Task')= srYes) ); 
+end;
+
+
+function ShowCopyGds32Task: boolean;
+begin
+  //If NOGDS32 is on the command line then don't offer the task in UI mode.
   result := ((not NoLegacyClient) and ConfigureFirebird);
 end;
+
+
+function CopyFbClientLib: boolean;
+begin
+//Note that the default for this is the opposite to CopyGds32.
+  result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) ); 
+end;
+
+
+function ShowCopyFbClientLibTask: boolean;
+//See note for ShowCopyGds32Task. 
+begin
+  result := False;
+  if ConfigureFirebird then
+    result := ((not CopyFbClient) and ConfigureFirebird);
+end;
+

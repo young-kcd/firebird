@@ -34,6 +34,12 @@ for %%v in ( %1 %2 ) do (
 @echo The following errors and warnings occurred during the build:
 @type make_all.log | findstr error(s)
 @echo.
+@echo.
+@echo If no errors occurred you may now build the examples with
+@echo.
+@echo    make_examples.bat
+@echo.
+
 @goto :END
 
 ::===========
