@@ -1,3 +1,50 @@
+2004-12-16 13:45  aafemt
+
+	* firebird2/src/isql/isql.epp (1.124):
+	
+	Fix for AV on EOF in interactive mode
+
+2004-12-16 11:23  aafemt
+
+	* firebird2/src/isql/isql.epp (1.123):
+	
+	Parser must parse, not input routine
+
+2004-12-16 11:13  aafemt
+
+	* firebird2/src/isql/isql.epp (1.122):
+	
+	Redundant comment
+
+2004-12-16 04:10  robocop
+
+	* firebird2/src/: gpre/ada.cpp (1.47), gpre/c_cxx.cpp (1.60),
+	gpre/ftn.cpp (1.54), gpre/pas.cpp (1.47), gpre/pretty.cpp (1.31),
+	gpre/sql.cpp (1.52), jrd/opt.cpp (1.211):
+	
+	Misc.
+
+2004-12-16 04:05  robocop
+
+	* firebird2/src/utilities/gstat/dba.epp (1.53):
+	
+	Local variable overrode global, useless variable.
+
+2004-12-16 04:02  robocop
+
+	* firebird2/src/: dudley/extract.epp (1.41), gpre/ada.cpp (1.46),
+	gpre/c_cxx.cpp (1.59), gpre/cob.cpp (1.56), gpre/ftn.cpp (1.53),
+	gpre/gpre_meta.epp (1.51), gpre/pas.cpp (1.46), gpre/pretty.cpp
+	(1.30), gpre/sql.cpp (1.51), jrd/dyn_def.epp (1.88),
+	jrd/dyn_del.epp (1.41), jrd/dyn_mod.epp (1.56), jrd/par.cpp
+	(1.111), jrd/qatest.cpp (1.17), jrd/svc.cpp (1.134), lock/lock.cpp
+	(1.112), lock/print.cpp (1.46), qli/mov.cpp (1.37), qli/show.epp
+	(1.39), remote/interface.cpp (1.98), remote/protocol.cpp (1.48),
+	remote/server.cpp (1.107), utilities/install/install_svc.cpp
+	(1.17), utilities/rebuild/rebuild.cpp (1.17):
+	
+	Misc.
+
 2004-12-15 21:15  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.183):
