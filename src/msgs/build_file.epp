@@ -206,7 +206,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			ascii_str_to_upper(this_locale);
 			if (!strcmp(this_locale, "ALL")) {
 				FOR LC IN LOCALES // do all locales except piglatin
-					WITH LC.LOCALE != "pg_PG" AND LC.LOCALE != "piglatin";
+					WITH LC.LOCALE != 'pg_PG' AND LC.LOCALE != 'piglatin';
 					locale = LC.LOCALE;
 					strcpy(this_locale, LC.LOCALE);
 					printf("build_file: building locale %s", this_locale);
@@ -326,7 +326,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 			FOR Y IN TRANSMSGS WITH Y.FAC_CODE = X.FAC_CODE
 				AND Y.NUMBER = X.NUMBER
 					AND Y.LOCALE = locale
-					AND Y.TEXT NOT MISSING AND Y.TEXT != " ";
+					AND Y.TEXT NOT MISSING AND Y.TEXT != ' ';
 				strcpy(msg_text, Y.TEXT);
 				len = strlen(msg_text);
 				found_one++;
