@@ -604,7 +604,7 @@ static int accept_connection( PORT port, P_CNCT * cnct)
 	TEXT name[64], password[64], *id, *end, *p;
 	STR string;
 	int i, length, l;
-	BOOLEAN revert_flag;
+	BOOL revert_flag;
 	TEXT uname[128];
 	SLONG name_len;
 #ifndef REQUESTER

@@ -88,7 +88,13 @@ static void prt_que(UCHAR *, SRQ, FPTR_VOID, int, int);
 static void prt_que_back(UCHAR *, SRQ, FPTR_VOID, int, int);
 static void print_sccb(void);
 
-static int sw_mru, sw_nbuf, sw_header, sw_page, sw_user, sw_free, sw_all;
+static bool sw_mru;
+static bool sw_nbuf;
+static bool sw_header;
+static bool sw_page;
+static bool sw_user;
+static bool sw_free;
+static bool sw_all;
 static TEXT *dbname, sw_file[257];
 
 static SHB CASH_header;
@@ -197,37 +203,37 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		while (c = *p++)
 			switch (UPPER(c)) {
 			case 'M':
-				sw_mru = TRUE;
+				sw_mru = true;
 				break;
 
 			case 'N':
-				sw_nbuf = TRUE;
+				sw_nbuf = true;
 				nbuf = atoi(*argv++);
 				--argc;
 				break;
 
 			case 'P':
-				sw_page = TRUE;
+				sw_page = true;
 				page_no = atoi(*argv++);
 				--argc;
 				break;
 
 			case 'F':
-				sw_free = TRUE;
+				sw_free = true;
 				nfree_buf = atoi(*argv++);
 				--argc;
 				break;
 
 			case 'H':
-				sw_header = TRUE;
+				sw_header = true;
 				break;
 
 			case 'A':
-				sw_all = TRUE;
+				sw_all = true;
 				break;
 
 			case 'U':
-				sw_user = TRUE;
+				sw_user = true;
 				break;
 
 			case '-':
@@ -276,7 +282,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	if (sw_all)
-		sw_page = sw_header = sw_user = TRUE;
+		sw_page = sw_header = sw_user = true;
 
 /* print the shared cache header */
 

@@ -59,7 +59,7 @@ static HANDLE stop_event_handle;
 static MUTX_T thread_mutex[1];
 static THREAD threads;
 static HANDLE hMutex = NULL;
-static BOOLEAN bGuarded = FALSE;
+static bool bGuarded = false;
 
 
 void CNTL_init( void (*handler) (), TEXT * name)
@@ -294,7 +294,7 @@ static void control_thread( DWORD action)
 	switch (action) {
 	case SERVICE_CONTROL_STOP:
 		report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, 3000);
-		if (bGuarded == TRUE)
+		if (bGuarded == true)
 			ReleaseMutex(hMutex);
 		SetEvent(stop_event_handle);
 		return;
@@ -309,7 +309,7 @@ static void control_thread( DWORD action)
 			UINT error_mode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
 				SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT;
 			SetErrorMode(error_mode);
-			bGuarded = TRUE;
+			bGuarded = true;
 			WaitForSingleObject(hMutex, INFINITE);
 		}
 		break;

@@ -43,12 +43,12 @@
 DATABASE DB = "msg.fdb";
 
 static void ascii_str_upper(UCHAR *);
-static int get_sql_class(UCHAR *);
-static int get_sql_code(SSHORT *);
-static int get_sql_subclass(UCHAR *);
+static bool get_sql_class(UCHAR *);
+static bool get_sql_code(SSHORT *);
+static bool get_sql_subclass(UCHAR *);
 static int store_sql_msg(void);
 static int translate(UCHAR *, UCHAR *, SSHORT);
-static int get_symbol( UCHAR *);
+static bool get_symbol( UCHAR *);
 
 #define FAC_SQL_POSITIVE	14
 #define FAC_SQL_NEGATIVE	13
@@ -81,7 +81,7 @@ int main( int argc, char **argv)
 	UCHAR nstring[32];
 	SSHORT count;
 	SSHORT sql_num;
-	BOOLEAN public_msg;
+	bool public_msg;
 
 /* Setup the 'strings' so that element 0 is really 0 */
 	memset(facility, 0, sizeof(facility));
@@ -140,12 +140,12 @@ int main( int argc, char **argv)
 							ib_printf("Public [y/n]: ");
 							ib_gets((char*) pub);
 							if (*pub == 'Y' || *pub == 'y')
-								public_msg = TRUE;
+								public_msg = true;
 							else
-								public_msg = FALSE;
+								public_msg = false;
 						}
 						else
-							public_msg = TRUE;
+							public_msg = true;
 
 						ib_printf(" Symbol: ");
 						if (!ib_gets((char*) symbol))
@@ -245,7 +245,7 @@ static void ascii_str_upper( UCHAR * str)
 }
 
 
-static int get_sql_class( UCHAR * sql_class)
+static bool get_sql_class( UCHAR * sql_class)
 {
 /**************************************
  *
@@ -255,7 +255,7 @@ static int get_sql_class( UCHAR * sql_class)
  *
  * Functional description
  *	get a two character sql_class string
- *	return TRUE if we get one, otherwise FALSE
+ *	return true if we get one, otherwise false
  *
  **************************************/
 	SSHORT length;
@@ -268,16 +268,16 @@ static int get_sql_class( UCHAR * sql_class)
 			break;
 
 		if (length == 2)
-			return TRUE;
+			return true;
 		else
 			ib_fprintf(ib_stderr, "Sqlclass is two characters!\n");
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static int get_sql_code( SSHORT * sql_code)
+static bool get_sql_code( SSHORT * sql_code)
 {
 /**************************************
  *
@@ -287,7 +287,7 @@ static int get_sql_code( SSHORT * sql_code)
  *
  * Functional description
  *	prompt for sql_code and convert it to a number
- *	return TRUE on success, otherwise FALSE
+ *	return true on success, otherwise false
  *	Issue a warning if the SQL code is not in the SQLERR facility
  *
  **************************************/
@@ -296,9 +296,8 @@ static int get_sql_code( SSHORT * sql_code)
 	SSHORT sign;
 	SSHORT sql_num;
 	SSHORT srch_num, got_it;
-	int ret;
+	bool ret = false;
 
-	ret = FALSE;
 	while (1) {
 		ib_printf(" SQLCODE: ");
 		if (!ib_gets((char*) nstring))
@@ -327,7 +326,7 @@ static int get_sql_code( SSHORT * sql_code)
 		if (*p && isdigit(*p)) {
 			sql_num = sign * atoi((char*) p);
 			*sql_code = sql_num;
-			ret = TRUE;
+			ret = true;
 			break;
 		}
 		else {
@@ -364,7 +363,7 @@ static int get_sql_code( SSHORT * sql_code)
 }
 
 
-static int get_sql_subclass( UCHAR * sql_sub_class)
+static bool get_sql_subclass( UCHAR * sql_sub_class)
 {
 /**************************************
  *
@@ -374,7 +373,7 @@ static int get_sql_subclass( UCHAR * sql_sub_class)
  *
  * Functional description
  *	get a three character sql_subclass string
- *	return TRUE if we get one, otherwise FALSE
+ *	return true if we get one, otherwise false
  *
  **************************************/
 	SSHORT length;
@@ -387,18 +386,18 @@ static int get_sql_subclass( UCHAR * sql_sub_class)
 			break;
 
 		if (length == 3)
-			return TRUE;
+			return true;
 		else {
 			ib_fprintf(ib_stderr, "Sqlsubclass is three characters!\n");
 			continue;
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static int get_symbol( UCHAR * symbol)
+static bool get_symbol( UCHAR * symbol)
 {
 /**************************************
  *
@@ -408,18 +407,18 @@ static int get_symbol( UCHAR * symbol)
  *
  * Functional description
  *	insist on getting the symbol
- *	return TRUE when we get one
- *	or FALSE if user breaks out
+ *	return true when we get one
+ *	or false if user breaks out
  *
  **************************************/
-	while (1) {
+	while (true) {
 		ib_fprintf(ib_stderr, "Symbols are required for system errors!\n");
 		ib_printf(" Symbol: ");
 		ib_gets((char*) symbol);
 		if (!strlen((char*) symbol) || !isalnum(symbol[0]))
-			return FALSE;
+			return false;
 		else
-			return TRUE;
+			return true;
 	}
 }
 

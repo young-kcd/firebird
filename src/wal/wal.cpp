@@ -704,7 +704,7 @@ SSHORT WAL_put(ISC_STATUS * status_vector,
 }
 
 
-BOOLEAN WAL_rollover_happened(ISC_STATUS * status_vector,
+bool WAL_rollover_happened(ISC_STATUS * status_vector,
 							  WAL WAL_handle,
 							  SLONG * new_seqno,
 							  TEXT * new_logname,
@@ -726,14 +726,14 @@ BOOLEAN WAL_rollover_happened(ISC_STATUS * status_vector,
  *
  ***************************************/
 	WALS WAL_segment;
-	BOOLEAN happened;
+	bool happened;
 
-	happened = FALSE;
+	happened = false;
 
 	WALC_acquire(WAL_handle, &WAL_segment);
 	WAL_CHECK_BUG(WAL_handle, WAL_segment);
 	if (WAL_segment->wals_flags & WALS_ROLLOVER_HAPPENED) {
-		happened = TRUE;
+		happened = true;
 		*new_seqno = WAL_segment->wals_log_seqno;
 		strcpy(new_logname, WAL_segment->wals_logname);
 		*new_log_partition_offset = WAL_segment->wals_log_partition_offset;

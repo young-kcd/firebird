@@ -29,7 +29,7 @@ DATABASE DB = "msg.fdb";
 
 IB_FILE *output;
 
-static int check_option(SCHAR *, SSHORT *, SCHAR **);
+static bool check_option(SCHAR *, SSHORT *, SCHAR **);
 static int define_format(SCHAR *, SCHAR *);
 static int gen(SCHAR *, SCHAR *);
 static int process_line(IB_FILE *, SCHAR *);
@@ -57,11 +57,11 @@ void main( int argc, char **argv)
  *	Generate include files.
  *
  **************************************/
-	SCHAR **end, *p, *file, *language, *db_name, sw_all;
+	SCHAR **end, *p, *file, *language, *db_name;
+	bool sw_all = false;
 
 	file = db_name = 0;
 	language = "C";
-	sw_all = 0;
 
 	for (end = argv + argc, ++argv; argv < end;) {
 		p = *argv++;
@@ -80,7 +80,7 @@ void main( int argc, char **argv)
 				continue;
 
 			case 'A':
-				sw_all = TRUE;
+				sw_all = true;
 				continue;
 			}
 		ib_printf("Bad switch %s\n", *p);
@@ -107,7 +107,7 @@ void main( int argc, char **argv)
 }
 
 
-static int check_option(
+static bool check_option(
 						SCHAR * string,
 						SSHORT * option_ptr, SCHAR ** format_ptr)
 {
@@ -125,29 +125,29 @@ static int check_option(
 
 	if (!strcmp(string, "BYTE")) {
 		*option_ptr |= OPT_byte;
-		return TRUE;
+		return true;
 	}
 
 	if (!strcmp(string, "SIGNED")) {
 		*option_ptr |= OPT_signed;
-		return TRUE;
+		return true;
 	}
 
 	if (!strcmp(string, "SANS_DOLLAR")) {
 		*option_ptr |= OPT_sans_dollar;
-		return TRUE;
+		return true;
 	}
 
 	if (!format_ptr)
-		return FALSE;
+		return false;
 
 	for (format = formats; *format; format += 2)
 		if (!strcmp(string, *format)) {
 			*format_ptr = format[1];
-			return TRUE;
+			return true;
 		}
 
-	return FALSE;
+	return false;
 }
 
 

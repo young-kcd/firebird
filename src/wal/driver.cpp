@@ -75,7 +75,7 @@
 static void do_mem_benchmark(void);
 static void do_sem_benchmark(WAL);
 static SLONG get_tod(void);
-static BOOLEAN get_word(SCHAR *);
+static bool get_word(SCHAR *);
 static void partitioned_logfile_create(ISC_STATUS *, SCHAR *);
 static void partitioned_logfile_info(ISC_STATUS *, SCHAR *);
 static void print_help(void);
@@ -306,7 +306,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	print_help();
 	while (1) {
 		ib_printf("WAL>");
-		if (get_word(buff) == FALSE)
+		if (get_word(buff) == false)
 			break;
 		if (!strlen(buff))
 			continue;
@@ -611,7 +611,7 @@ static SLONG get_tod(void)
 }
 
 
-static BOOLEAN get_word( SCHAR * buffer)
+static bool get_word( SCHAR * buffer)
 {
 /**************************************
  *
@@ -626,12 +626,12 @@ static BOOLEAN get_word( SCHAR * buffer)
 
 	while ((c = ib_getchar()) != '\n') {
 		if (c == EOF)
-			return FALSE;
+			return false;
 		*buffer++ = c;
 	}
 	*buffer = 0;
 
-	return TRUE;
+	return true;
 }
 
 

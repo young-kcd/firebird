@@ -724,7 +724,7 @@ static SSHORT setup_wal_params(
 	SLONG ckpt_intrvl;
 	UCHAR *p, *q;
 	int i, j;
-	BOOLEAN done;
+	bool done;
 	LGFILE *log_file;
 	TEXT err_buffer[16];
 
@@ -754,9 +754,9 @@ static SSHORT setup_wal_params(
 
 /* Now see if wal parameter block specifies any parameters */
 
-	done = FALSE;
+	done = false;
 	if ((p = wpb) == NULL)
-		done = TRUE;			/* Nothing to parse from the wal paramater block */
+		done = true; // Nothing to parse from the wal paramater block
 
 	q = p + wpb_length;
 	while (!done && (p < q)) {
@@ -826,7 +826,7 @@ static SSHORT setup_wal_params(
 			break;
 
 		case WAL_PARAM_END:
-			done = TRUE;
+			done = true;
 			break;
 
 		default:

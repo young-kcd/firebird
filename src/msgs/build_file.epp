@@ -100,7 +100,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************/
 	TEXT *p, **end_args, db_file[256], filename[256],
 		*pathname, pathbuffer[256], *locale;
-	USHORT sw_bad;
+	bool sw_bad;
 	USHORT sw_warning;
 	SSHORT len;
 	BASED ON LOCALES.LOCALE this_locale;
@@ -115,9 +115,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	for (++argv; argv < end_args;) {
 		p = *argv++;
-		sw_bad = FALSE;
+		sw_bad = false;
 		if (*p != '-')
-			sw_bad = TRUE;
+			sw_bad = true;
 		else
 			switch (UPPER(p[1])) {
 			case 'D':
@@ -142,7 +142,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			default:
-				sw_bad = TRUE;
+				sw_bad = true;
 			}
 		if (sw_bad) {
 			ib_printf("Invalid option \"%s\".  Valid options are:\n", p);

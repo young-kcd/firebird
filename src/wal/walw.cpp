@@ -136,13 +136,13 @@ static SSHORT discard_prev_logs(ISC_STATUS *, SCHAR *, SCHAR *, SLONG, SSHORT);
 static void finishup_checkpoint(WALS);
 static SSHORT flush_all_buffers(ISC_STATUS *, WAL);
 static SSHORT get_logfile_index(WALS, SCHAR *);
-static BOOLEAN get_log_usability(ISC_STATUS *, SCHAR *, SCHAR *, SLONG);
+static bool get_log_usability(ISC_STATUS *, SCHAR *, SCHAR *, SLONG);
 static SSHORT get_next_logname(ISC_STATUS *, WALS, SCHAR *, SLONG *, SLONG *);
 static SSHORT get_next_prealloc_logname(ISC_STATUS *, WALS, SCHAR *, SLONG *,
 										SLONG *);
 static SSHORT get_next_serial_logname(ISC_STATUS *, WALS, SCHAR *, SLONG *,
 									  SLONG *);
-static BOOLEAN get_next_usable_partition(ISC_STATUS *, SCHAR *, SCHAR *, SLONG *);
+static bool get_next_usable_partition(ISC_STATUS *, SCHAR *, SCHAR *, SLONG *);
 static SSHORT get_overflow_logname(ISC_STATUS *, WALS, SCHAR *, SLONG *, SLONG *);
 static void get_time_stamp(SLONG *);
 static SSHORT increase_buffers(ISC_STATUS *, WAL, SSHORT);
@@ -359,16 +359,19 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 	SSHORT ret;
 	WALS WAL_segment;
 	WALBLK *wblk;
-	SSHORT bufnum, first_logfile;
+	SSHORT bufnum;
+	SSHORT first_logfile;
 	WALFH log_header;
-	int buffer_full, journal_enable_or_disable, rollover_required;
-	BOOLEAN acquired;
+	int buffer_full;
+	int journal_enable_or_disable;
+	int rollover_required;
+	bool acquired;
 	EVENT ptr;
 	SLONG value;
 	SLONG log_type;
 #define WALW_WRITER_RETURN(code) {gds__free((SLONG*)log_header); return(code);}
 
-	acquired = FALSE;
+	acquired = false;
 	log_header = (WALFH) gds__alloc(WALFH_LENGTH);
 /* NOMEM: return failure, FREE: error returns & macro WALW_WRITER_RETURN */
 	if (!log_header) {
@@ -388,7 +391,7 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 	WAL_TERMINATOR_SET(log_terminator_block);
 
 	WALC_acquire(WAL_handle, &WAL_segment);
-	acquired = TRUE;
+	acquired = true;
 	if (PRINT_DEBUG_MSGS) {
 		ib_fprintf(DEBUG_FD,
 				   "====================================================\n");
@@ -449,7 +452,7 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 		WAL_segment->wals_flags &= ~WALS_FIRST_TIME_LOG;
 	}
 	WALC_release(WAL_handle);
-	acquired = FALSE;
+	acquired = false;
 
 	if (ret != FB_SUCCESS) {
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
@@ -461,7 +464,7 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 
 	for (;;) {
 		WALC_acquire(WAL_handle, &WAL_segment);
-		acquired = TRUE;
+		acquired = true;
 		WAL_CHECK_BUG_ERROR(WAL_handle, WAL_segment);
 
 		/* First find out the work to be done. */
@@ -495,7 +498,7 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 			value = ISC_event_clear(ptr);
 			WAL_segment->wals_flags &= ~WALS_WRITER_INFORMED;
 			WALC_release(WAL_handle);
-			acquired = FALSE;
+			acquired = false;
 			ISC_event_wait(1, &ptr, &value, WALW_WRITER_TIMEOUT_USECS,
 						   reinterpret_cast < void (*)() >
 						   (WALC_alarm_handler), ptr);
@@ -513,7 +516,7 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 			   other concurrent activities may go on in the meantime. */
 
 			WALC_release(WAL_handle);
-			acquired = FALSE;
+			acquired = false;
 
 			if ((ret = write_wal_block(status_vector, wblk,
 									   WAL_segment->wals_logname,
@@ -524,7 +527,7 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 												  gds_wal_err_logwrite);
 
 			WALC_acquire(WAL_handle, &WAL_segment);
-			acquired = TRUE;
+			acquired = true;
 
 			wblk = WAL_BLOCK(bufnum);
 			release_wal_block(WAL_segment, wblk);
@@ -603,7 +606,7 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 		}
 
 		WALC_release(WAL_handle);
-		acquired = FALSE;
+		acquired = false;
 	}
 
 /* Do cleanup and shutdown. */
@@ -617,7 +620,7 @@ SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 	WAL_segment->wals_flags |= WALS_WRITER_DONE;
 	WAL_segment->wals_writer_pid = 0;
 	WALC_release(WAL_handle);
-	acquired = FALSE;
+	acquired = false;
 
 	if (JOURNAL_HANDLE)
 		JRN_fini(status_vector, &(JOURNAL_HANDLE));
@@ -956,7 +959,7 @@ static SSHORT get_logfile_index( WALS WAL_segment, SCHAR * logname)
 }
 
 
-static BOOLEAN get_log_usability(
+static bool get_log_usability(
 								 ISC_STATUS * status_vector,
 								 SCHAR * dbname,
 								 SCHAR * logname, SLONG log_partition_offset)
@@ -972,12 +975,12 @@ static BOOLEAN get_log_usability(
  *	If logname is usable, new_logname and new_offset are updated.
  *
  **************************************/
-	BOOLEAN found;
+	bool found;
 	SLONG log_seqno;
 	SLONG log_length;
 	SLONG log_flag;
 
-	found = FALSE;
+	found = false;
 	log_flag = 0;
 	if (WALF_get_log_info
 		(status_vector, dbname, logname, log_partition_offset, &log_seqno,
@@ -985,11 +988,11 @@ static BOOLEAN get_log_usability(
 		/* Check the log flag */
 
 		if (!(log_flag & WALFH_KEEP_FOR_RECV))
-			found = TRUE;
+			found = true;
 	}
 	else						/* The log file has not apparently been used for logging purpose
 								   before or it is brand new.  So we can use it. */
-		found = TRUE;
+		found = true;
 
 	if (found) {
 		/* We have found a pre-allocated file which can be reused. */
@@ -1052,13 +1055,14 @@ SLONG * new_offset, SLONG * log_type)
  *
  **************************************/
 	LOGF *logf;
-	SSHORT i, j, count, found;
+	SSHORT i, j, count;
+	bool found;
 	SLONG p_offset;
 
 	i = j =
 		(WAL_segment->wals_cur_logfile + 1) % WAL_segment->wals_max_logfiles;
 	count = 0;
-	found = FALSE;
+	found = false;
 	p_offset = 0L;
 
 	while (TRUE) {
@@ -1194,11 +1198,11 @@ SLONG * new_offset, SLONG * log_type)
 }
 
 
-static BOOLEAN get_next_usable_partition(
-										 ISC_STATUS * status_vector,
-										 SCHAR * dbname,
-										 SCHAR * master_logname,
-SLONG * new_offset)
+static bool get_next_usable_partition(
+										ISC_STATUS * status_vector,
+										SCHAR * dbname,
+										SCHAR * master_logname,
+										SLONG * new_offset)
 {
 /**************************************
  *
@@ -1215,7 +1219,7 @@ SLONG * new_offset)
 	P_LOGFH p_log_header;
 	SLONG p_log_fd;
 	int i, j, count;
-	BOOLEAN found;
+	bool found;
 	SLONG p_offset;
 
 	p_log_header = (P_LOGFH) gds__alloc(P_LOGFH_LENGTH);
@@ -1233,8 +1237,8 @@ SLONG * new_offset)
 
 	i = j = (p_log_header->p_logfh_curp + 1) % p_log_header->p_logfh_maxp;
 	count = 0;
-	found = FALSE;
-	while (TRUE) {
+	found = false;
+	while (true) {
 		if ((j == i) && (count > 1))	/* We have exhausted all the partitions */
 			break;
 		p_offset = PARTITION_OFFSET(p_log_header, j);

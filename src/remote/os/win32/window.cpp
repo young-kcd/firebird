@@ -250,8 +250,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
  *               them.
  *****************************************************************************/
 	static ULONG ulLastMask = 0L;
-	static BOOLEAN bInTaskBar = FALSE;
-	static BOOLEAN bStartup = FALSE;
+	static BOOL bInTaskBar = FALSE;
+	static bool bStartup = false;
 
 	ULONG ulInUseMask = 0L;
 	PDEV_BROADCAST_VOLUME pdbcv;

@@ -56,7 +56,9 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
  *
  **************************************/
 	char *pchLeft, *pchRight, *pchLastRight, *pchLastLeft, *pchEnd, *pchTmp;
-	BOOLEAN bLeft = TRUE, bLeftFull = FALSE, bRightFull = FALSE;
+	bool bLeft = true;
+	bool bLeftFull = false;
+	bool bRightFull = false;
 
 /* Set pointers to the beginning and the end */
 	pchLeft = pchEnd = szName;
@@ -83,7 +85,7 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 			while (!bLeftFull && pchLeft++ && !PATHSEP(*pchLeft)
 				   && pchLeft < pchRight);
 			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
-				bLeftFull = TRUE;
+				bLeftFull = true;
 				pchLeft = pchLastLeft;
 			}
 			else
@@ -93,13 +95,13 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 			while (!bRightFull && pchRight-- && !PATHSEP(*pchRight)
 				   && pchLeft < pchRight);
 			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
-				bRightFull = TRUE;
+				bRightFull = true;
 				pchRight = pchLastRight;
 			}
 			else
 				pchLastRight = pchRight;
 		}
-		bLeft = bLeft ? FALSE : TRUE;
+		bLeft = bLeft ? false : true;
 	}
 
 	for (pchTmp = szShortName, pchLeft = szName;

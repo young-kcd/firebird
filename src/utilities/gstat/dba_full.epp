@@ -196,7 +196,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	SCHAR **end, *name, *p, temp[1024], file_name[1024];
 	double average;
 	SSHORT n;
-	USHORT sw_system, sw_data, sw_index, sw_version, sw_header, sw_log;
+	bool sw_system;
+	bool sw_data;
+	bool sw_index;
+	bool sw_version;
+	bool sw_header;
+	bool sw_log;
 	SLONG page;
 	SLONG redir_in, redir_out, redir_err;
 	UCHAR *vp, *vend;
@@ -213,7 +218,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	isc_req_handle request1, request2, request3;
 	ISC_STATUS_ARRAY status_vector;
 #if defined (WIN95)
-	BOOL fAnsiCP;
+	bool fAnsiCP;
 #endif
 
 	SET_THREAD_DATA;
@@ -245,7 +250,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	sw_outfile = tddba->sw_outfile = ib_stderr;
 
 #if defined (WIN95)
-	fAnsiCP = FALSE;
+	fAnsiCP = false;
 #endif
 
 /* Perform some special handling when run as an Interbase service.  The
@@ -262,7 +267,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		redir_err = atol(argv[4]);
 #ifdef WIN_NT
 #if defined (WIN95)
-		fAnsiCP = TRUE;
+		fAnsiCP = true;
 #endif
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
@@ -282,38 +287,38 @@ int CLIB_ROUTINE main( int argc, char **argv)
 #endif
 
 	name = NULL;
-	sw_log = sw_system = sw_data = sw_index = sw_version = sw_header = FALSE;
+	sw_log = sw_system = sw_data = sw_index = sw_version = sw_header = false;
 
 	for (end = argv + argc, ++argv; argv < end;) {
 		p = *argv++;
 		if (*p == '-')
 			switch (UPPER(p[1])) {
 			case 'S':
-				sw_system = TRUE;
+				sw_system = true;
 				break;
 
 			case 'D':
-				sw_data = TRUE;
+				sw_data = true;
 				break;
 
 			case 'I':
-				sw_index = TRUE;
+				sw_index = true;
 				break;
 
 			case 'A':
-				sw_index = sw_data = TRUE;
+				sw_index = sw_data = true;
 				break;
 
 			case 'Z':
-				sw_version = TRUE;
+				sw_version = true;
 				break;
 
 			case 'H':
-				sw_header = TRUE;
+				sw_header = true;
 				break;
 
 			case 'L':
-				sw_log = TRUE;
+				sw_log = true;
 				break;
 
 			default:
@@ -330,7 +335,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	if (!sw_data && !sw_index)
-		sw_data = sw_index = TRUE;
+		sw_data = sw_index = true;
 
 #if defined (WIN95)
 	if (!fAnsiCP) {
@@ -338,7 +343,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 		ulConsoleCP = GetConsoleCP();
 		if (ulConsoleCP == GetACP())
-			fAnsiCP = TRUE;
+			fAnsiCP = true;
 		else if (ulConsoleCP != GetOEMCP()) {
 			FPRINTF(sw_outfile,
 					"WARNING: The current codepage is not supported.  Any use of any\n"

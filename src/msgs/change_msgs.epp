@@ -46,12 +46,12 @@ DATABASE DB = "msg.fdb";
 
 static void ascii_str_upper(UCHAR *);
 static void explicit_print(TEXT *);
-static int get_sql_class(UCHAR *);
-static int get_sql_subclass(UCHAR *);
+static bool get_sql_class(UCHAR *);
+static bool get_sql_subclass(UCHAR *);
 #ifdef NOT_USED_OR_REPLACED
-static int get_symbol(UCHAR *);
+static bool get_symbol(UCHAR *);
 #endif
-static SSHORT mustget(SCHAR *);
+static bool mustget(SCHAR *);
 static int translate(SCHAR *, SCHAR *, SSHORT);
 
 
@@ -98,7 +98,7 @@ int main( int argc, char **argv)
 		FOR X IN FACILITIES WITH X.FACILITY = facility
 			count++;
 			for (;;) {
-				BOOLEAN sys_error = FALSE;
+				bool sys_error = false;
 
 				ib_printf("Message number (%d) ? ", msg_number + 1);
 				if (!ib_gets(input))
@@ -127,7 +127,7 @@ int main( int argc, char **argv)
 					ib_printf("SQLCODE: %d\n", Z.SQL_CODE);
 					ib_printf("   SQL_CLASS:    %s\n", Z.SQL_CLASS);
 					ib_printf("SQL_SUBCLASS: %s\n", Z.SQL_SUBCLASS);
-					sys_error = TRUE;
+					sys_error = true;
 				END_FOR
 
 				ib_printf(" Modify? ");
@@ -298,7 +298,7 @@ static void explicit_print( TEXT * string)
 }
 
 
-static int get_sql_class( UCHAR * sql_class)
+static bool get_sql_class( UCHAR * sql_class)
 {
 /**************************************
  *
@@ -308,7 +308,7 @@ static int get_sql_class( UCHAR * sql_class)
  *
  * Functional description
  *	get a two character sql_class string
- *	return TRUE if we get one, otherwise FALSE
+ *	return true if we get one, otherwise false
  *
  **************************************/
 	SSHORT length;
@@ -321,16 +321,16 @@ static int get_sql_class( UCHAR * sql_class)
 			break;
 
 		if (length == 2)
-			return TRUE;
+			return true;
 		else
 			ib_fprintf(ib_stderr, "Sqlclass is two characters!\n");
 	}
 
-	return FALSE;
+	return false;
 }
 
 
-static int get_sql_subclass( UCHAR * sql_sub_class)
+static bool get_sql_subclass( UCHAR * sql_sub_class)
 {
 /**************************************
  *
@@ -340,7 +340,7 @@ static int get_sql_subclass( UCHAR * sql_sub_class)
  *
  * Functional description
  *	get a three character sql_subclass string
- *	return TRUE if we get one, otherwise FALSE
+ *	return true if we get one, otherwise false
  *
  **************************************/
 	SSHORT length;
@@ -353,15 +353,15 @@ static int get_sql_subclass( UCHAR * sql_sub_class)
 			break;
 
 		if (length == 3)
-			return TRUE;
+			return true;
 		else
 			ib_fprintf(ib_stderr, "Sqlsubclass is three characters!\n");
 	}
-	return FALSE;
+	return false;
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static int get_symbol( UCHAR * symbol)
+static bool get_symbol( UCHAR * symbol)
 {
 /**************************************
  *
@@ -371,20 +371,20 @@ static int get_symbol( UCHAR * symbol)
  *
  * Functional description
  *	insist on getting the symbol
- *	return TRUE when we get one
+ *	return true when we get one
  *
  **************************************/
-	while (TRUE) {
+	while (true) {
 		ib_fprintf(ib_stderr, "Symbols are required for system errors!\n");
 		ib_printf(" Symbol: ");
 		ib_gets((char*) symbol);
 		if (strlen((char*) symbol))
-			return TRUE;
+			return true;
 	}
 }
 #endif
 
-static SSHORT mustget( SCHAR * s)
+static bool mustget( SCHAR * s)
 {
 /**************************************
  *
@@ -393,13 +393,13 @@ static SSHORT mustget( SCHAR * s)
  **************************************
  *
  * Functional description
- *	gets & returns a string.  Returns FALSE
+ *	gets & returns a string.  Returns false
  *	if string is empty.
  *
  **************************************/
 
 	if (!ib_gets((char*) s))
-		return FALSE;
+		return false;
 
 	return (s[0] != 0);
 }
