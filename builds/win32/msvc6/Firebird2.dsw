@@ -237,6 +237,21 @@ Package=<4>
 
 ###############################################################################
 
+Project: "ib_udf"=.\ib_udf.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name ib_util
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "ib_util"=.\ib_util.dsp - Package Owner=<4>
 
 Package=<5>
