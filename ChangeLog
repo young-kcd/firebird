@@ -1,3 +1,44 @@
+2004-09-15 00:01  skidder
+
+	* firebird2/src/: common/classes/alloc.h (1.21.2.4),
+	common/classes/array.h (1.3.2.4), common/classes/tree.h (1.13.2.3),
+	common/classes/vector.h (1.1.2.2), jrd/cmp.cpp (1.52.2.14),
+	jrd/cmp_proto.h (1.7.2.2), jrd/dfw.epp (1.45.2.7), jrd/exe.cpp
+	(1.68.2.10), jrd/exe.h (1.15.2.3), jrd/idx.cpp (1.16.2.7),
+	jrd/jrd.cpp (1.76.2.8), jrd/met.epp (1.61.2.5), jrd/opt.cpp
+	(1.73.2.21), jrd/opt_proto.h (1.4.2.1), jrd/req.h (1.11.2.3),
+	jrd/rpb_chain.h (1.2.2.1), jrd/scl.epp (1.21.2.4), jrd/scl_proto.h
+	(1.4.2.2), jrd/tra.cpp (1.38.2.2), jrd/tra.h (1.13.2.2),
+	jrd/tra_proto.h (1.4.2.1):
+	
+	Commit patch prepared by Daniel Urban improving request resource
+	tracking logic. This is the largest change we plan to backport to
+	1.5.2 and only because of very high users demand. Change spent in
+	HEAD a few months and seems stable. Backport fix was tested by a
+	number of users
+
+2004-09-14 23:24  skidder
+
+	* firebird2/src/common/config/config_file.cpp (1.11.2.3):
+	
+	Migrate Firebird 1.5 out from STL streams usage. It doesn't work in
+	most versions of GCC in one form or another
+
+2004-09-14 23:13  skidder
+
+	* firebird2/src/common/classes/auto.h (1.9.2.1):
+	
+	Backport AutoPtr (used by other code to be committed)
+
+2004-09-14 18:17  skidder
+
+	*
+	
+	Add newline printed after Firebird SS service startup (backported
+	to B1_5_Release)
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.mand
+	rake.in (1.1.2.3):
+
 2004-09-13 07:22  skidder
 
 	* firebird2/src/jrd/val.h (1.10.2.2):
@@ -406,11 +447,24 @@
 	Import (unmodified) libedit-2.6.9 to provide line editing
 	capabilities for isql
 
+2004-05-03 19:05  skidder
+
+	* firebird2/src/common/classes/auto.h (1.9):
+	
+	Close a couple potential tins of worms spotted by Claudio in my
+	previous commits
+
 2004-05-03 15:15  paul_reeves
 
 	* firebird2/src/install/arch-specific/win32/Readme.txt (1.2.2.5):
 	
 	Supply updated readme.txt for Fb 1.5.1 on Win32
+
+2004-05-03 03:53  skidder
+
+	* firebird2/src/common/classes/auto.h (1.8):
+	
+	Care about quirks of Windows platform
 
 2004-04-30 06:59  paul_reeves
 
@@ -1042,11 +1096,59 @@
 	services configuration info on OSes that support it (Win2K, WinXP,
 	Win2K3).
 
+2004-03-20 16:45  alexpeshkoff
+
+	* firebird2/src/common/classes/auto.h (1.7):
+	
+	1. introduced Jrd and Ods namespaces 2. cleanup of blk* request
+	conversions 3. fixed memory allocation in Execute Statement ***
+	posix build fixes ***
+
+2004-03-20 15:30  alexpeshkoff
+
+	* firebird2/src/common/classes/auto.h (1.6):
+	
+	1. dropped unneeded AutoPtrFromString 2. added private copy
+	constructor and assignment to avoid errors
+
+2004-03-18 06:54  robocop
+
+	* firebird2/src/common/classes/auto.h (1.5):
+	
+	Cleanup. In geeky words: PandoraBox* pbox =
+	reinterpret_cast<PandoraBox*>(&can_of_worms); pbox->open();
+	pbox->flush(); Nickolay may want to undo my ods.h changes if gcc
+	insists in its crusade against non-PODs and poodles.
+
 2004-03-16 19:01  bellardo
 
 	* firebird2/src/install/arch-specific/darwin/Makefile.in (1.2.2.9):
 	
 	Fix small bug in makefile
+
+2004-03-15 20:10  alexpeshkoff
+
+	* firebird2/src/common/classes/auto.h (1.4):
+	
+	fixing posix build
+
+2004-03-14 14:08  alexpeshkoff
+
+	* firebird2/src/common/classes/auto.h (1.3):
+	
+	May use _any_ way to delete pointer, not only operator delete
+
+2004-03-11 06:03  robocop
+
+	* firebird2/src/common/classes/auto.h (1.2):
+	
+	Cleanup Some minor corrections Second step to rename
+
+2004-03-05 10:37  alexpeshkoff
+
+	* firebird2/src/common/classes/auto.h (1.1):
+	
+	1. front-ported blob returning fix 2.correct license
 
 2004-03-05 08:21  skidder
 
