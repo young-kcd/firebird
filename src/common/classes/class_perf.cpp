@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_perf.cpp,v 1.13 2004-08-10 04:10:47 skidder Exp $
+ *  $Id: class_perf.cpp,v 1.14 2004-08-22 21:31:19 skidder Exp $
  *
  */
 
@@ -41,12 +41,12 @@ void start() {
 	t = clock();
 }
 
-const int TEST_ITEMS	= 100000;
+const int TEST_ITEMS	= 5000000;
 
-void report(int scale) {
+void report(int scaleNode, int scaleTree) {
 	clock_t d = clock();
-	printf("Add+remove %d elements from tree of scale %d took %d milliseconds. \n", 
-		TEST_ITEMS,	scale, (int)(d-t)*1000/CLOCKS_PER_SEC);
+	printf("Add+remove %d elements from tree of scale %d/%d took %d milliseconds. \n", 
+		TEST_ITEMS,	scaleNode, scaleTree, (int)(d-t)*1000/CLOCKS_PER_SEC);
 }
 
 using namespace Firebird;
@@ -66,14 +66,14 @@ static void testTree() {
 	
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>, 
-		DefaultComparator<int>, 10, 10> tree10(NULL);
+		DefaultComparator<int>, 30, 30> tree30(NULL);
 	for (i=0; i<TEST_ITEMS;i++)
-		tree10.add((*v)[i]);
+		tree30.add((*v)[i]);
 	for (i=0; i<TEST_ITEMS;i++) {
-		if (tree10.locate((*v)[i]))
-			tree10.fastRemove();
+		if (tree30.locate((*v)[i]))
+			tree30.fastRemove();
 	}
-	report(10);
+	report(30, 30);
 
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>, 
@@ -84,7 +84,7 @@ static void testTree() {
 		if (tree50.locate((*v)[i]))
 			tree50.fastRemove();
 	}
-	report(50);
+	report(50, 50);
 	
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>, 
@@ -95,7 +95,7 @@ static void testTree() {
 		if (tree75.locate((*v)[i]))
 			tree75.fastRemove();
 	}
-	report(75);
+	report(75, 75);
 	
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>, 
@@ -106,7 +106,18 @@ static void testTree() {
 		if (tree100.locate((*v)[i]))
 			tree100.fastRemove();
 	}
-	report(100);
+	report(100, 100);
+
+	start();
+	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>, 
+		DefaultComparator<int>, 100, 250> tree100_250(NULL);
+	for (i=0; i<TEST_ITEMS;i++)
+		tree100_250.add((*v)[i]);
+	for (i=0; i<TEST_ITEMS;i++) {
+		if (tree100_250.locate((*v)[i]))
+			tree100_250.fastRemove();
+	}
+	report(100, 250);
 	
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>, 
@@ -117,29 +128,7 @@ static void testTree() {
 		if (tree200.locate((*v)[i]))
 			tree200.fastRemove();
 	}
-	report(200);
-	
-	start();
-	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>, 
-		DefaultComparator<int>, 250, 250> tree250(NULL);
-	for (i=0; i<TEST_ITEMS;i++)
-		tree250.add((*v)[i]);
-	for (i=0; i<TEST_ITEMS;i++) {
-		if (tree250.locate((*v)[i]))
-			tree250.fastRemove();
-	}
-	report(250);
-	
-	start();
-	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>, 
-		DefaultComparator<int>, 500, 500> tree500(NULL);
-	for (i=0; i<TEST_ITEMS;i++)
-		tree500.add((*v)[i]);
-	for (i=0; i<TEST_ITEMS;i++) {
-		if (tree500.locate((*v)[i]))
-			tree500.fastRemove();
-	}
-	report(500);
+	report(250, 250);
 	
 	std::set<int> stlTree;
 	start();
@@ -158,7 +147,7 @@ void report() {
 	printf("Operation took %d milliseconds.\n", (int)(d-t)*1000/CLOCKS_PER_SEC);
 }
 
-const int ALLOC_ITEMS	= 10000000;
+const int ALLOC_ITEMS	= 5000000;
 const int MAX_ITEM_SIZE = 50;
 const int BIG_ITEMS		= ALLOC_ITEMS / 10;
 const int BIG_SIZE		= MAX_ITEM_SIZE * 5;
