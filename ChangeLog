@@ -1,3 +1,9 @@
+2003-04-18 12:30  paul_reeves
+
+	* firebird2/builds/win32/preprocess.bat:
+	
+	Update reference to downloadable file.
+
 2003-04-17 22:58  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp:
