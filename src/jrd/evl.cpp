@@ -3286,19 +3286,17 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		UCHAR* p = impure->vlu_desc.dsc_address;
 
 		if (length1) {
-			do {
-				*p++ = *address1++;
-			} while (--length1);
+			memcpy(p, address1, length1);
+			p += length1;
 		}
 
 		if (length2) {
-			do {
-				*p++ = *address2++;
-			} while (--length2);
+			memcpy(p, address2, length2);
 		}
 
-		if (temp3)
+		if (temp3) {
 			delete temp3;
+		}
 	}
 	return &impure->vlu_desc;
 }

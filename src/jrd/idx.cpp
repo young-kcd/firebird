@@ -399,9 +399,9 @@ void IDX_create_index(
 
 			if (l > 0) {
                 const UCHAR* q = key.key_data;
-				do {
-					*p++ = *q++;
-				} while (--l);
+				memcpy(p, q, l);
+				p += l;
+				q += l;
 			}
 			if ( (l = key_length - key.key_length) ) {
 				do {
