@@ -1561,12 +1561,12 @@ bool Mnt::get()
 	const char* start = device;
 	
 	if (n<5)
-	{ return false;}
+	return false;
 
 	const char* iflag = strchr(device, ':');
 	if (iflag)
 	{
-		node = tstring( start , size_t(iflag-start) );
+		node = tstring( start , size_t(iflag - start) );
 		path = tstring( ++iflag );
 	}
 	else {

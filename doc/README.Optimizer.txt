@@ -25,7 +25,7 @@ B) Try to deliver conjuntions made on a UNION inside every single stream.
 C) Cardinality calculation has been improved for a better estimated value.
 
 D) MERGE/SORT operation may now be generated for inner joins using equality 
-   comparsion on expressions.
+   comparison on expressions.
 
    SELECT Count(*) FROM
      Relations r
@@ -33,7 +33,7 @@ D) MERGE/SORT operation may now be generated for inner joins using equality
    WHERE
      rc.CategoryID = 3
 
-E) When a UNIQUE index can be fully matched (equality) used on a relation, use this 
+E) When a UNIQUE index used on a relation can be fully matched (equality), use this 
    index and forget any possible indexes.
 
 F) Indexed order read with an OUTER JOIN.
@@ -56,7 +56,7 @@ G) Ignore NULL values in index scan for operators other than IS NULL and Equival
    Note: This works currently only at single segment indexes.
 
 
-H) Calculate with more accurate selectivity for compound indexes which are partially 
+H) Calculate with more accuracy selectivity for compound indexes which are partially 
    matched with conjunctions. Due this we can now use cost-based approach also for 
    partially matched indexes. 
 
@@ -76,7 +76,7 @@ J) STARTING WITH can be used inside compound indexes on every segment, but only 
    SELECT * FROM Relations WHERE FirstName = 'Joe' and LastName STARTING WITH 'D'
 
 K) Use AND conjunctions also inside OR conjunctions to help with matching on a 
-   compound index. The same calculation for every left and right node of a OR 
+   compound index. The same calculation for every left and right node of an OR 
    conjunction is used as for the AND conjunctions.
 
    Example:

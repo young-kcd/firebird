@@ -4716,10 +4716,9 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	const bool ods11orHigher = (dbb->dbb_ods_version >= ODS_VERSION11);
 	if (ods11orHigher && !relation->rel_file) {
 		// For ODS11 and higher databases we can use new calculations
-		InversionCandidate* candidate = NULL;
 		OptimizerRetrieval* optimizerRetrieval = FB_NEW(*tdbb->getDefaultPool()) 
 			OptimizerRetrieval(*tdbb->getDefaultPool(), opt, stream, outer_flag, inner_flag, sort_ptr);
-		candidate = optimizerRetrieval->getInversion(&rsb);
+		InversionCandidate* candidate = optimizerRetrieval->getInversion(&rsb);
 		if (candidate && candidate->inversion) {
 			inversion = candidate->inversion;			
 		}
@@ -5735,11 +5734,11 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 	SET_TDBB(tdbb);
 
 	// Check if node is a mapping and if so unmap it, but
-	// only for root nodes (not contained in an other node).
+	// only for root nodes (not contained in another node).
 	// This can be expanded by checking complete expression
 	// (Then don't forget to leave aggregate-functions alone 
 	//  in case of aggregate rse)
-	// Because this is only to help using a index we keep 
+	// Because this is only to help using an index we keep 
 	// it simple.
 	if ((node->nod_type == nod_field) && 
 		((USHORT)(IPTR) node->nod_arg[e_fld_stream] == shellStream)) 
