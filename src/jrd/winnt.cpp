@@ -395,16 +395,11 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 #endif
 	}
 
-#ifdef ISC_DATABASE_ENCRYPTION
 	if (dbb->dbb_encrypt_key)
 	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		if (!ReadFile(	desc,
-						spare_buffer,
-						length,
-						&actual_length,
-						overlapped_ptr)
+		if (!ReadFile(desc, spare_buffer, length, &actual_length, overlapped_ptr)
 				|| actual_length != (DWORD)length)
 		{
 			if (ostype == OS_CHICAGO)
@@ -414,24 +409,16 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 			nt_error("ReadFile", file, isc_io_read_err, 0);
 		}
 
-		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data,
+		(*dbb->dbb_decrypt) (reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data),
 							 spare_buffer, length, address);
 	}
 	else
-#endif
 	{
-		if (!ReadFile(	desc,
-						address,
-						length,
-						&actual_length,
-						overlapped_ptr)
+		if (!ReadFile(desc, address, length, &actual_length, overlapped_ptr)
 				|| actual_length != (DWORD)length)
 		{
 #ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult(	desc,
-										overlapped_ptr,
-										&actual_length,
-										TRUE)
+			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE)
 					|| actual_length != length)
 			{
 					CloseHandle(overlapped.hEvent);
@@ -619,16 +606,11 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 	desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
 
-#ifdef ISC_DATABASE_ENCRYPTION
 	if (dbb->dbb_encrypt_key)
 	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		if (!ReadFile(desc,
-					spare_buffer,
-					size,
-					&actual_length,
-					overlapped_ptr)
+		if (!ReadFile(desc, spare_buffer, size, &actual_length, overlapped_ptr)
 			|| actual_length != size)
 		{
 			if (ostype == OS_CHICAGO) {
@@ -637,20 +619,16 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 		}
 
-		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data,
+		(*dbb->dbb_decrypt) (reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data),
 							 spare_buffer, size, page);
 	}
 	else
-#endif
 	{
 		if (!ReadFile(desc, page, size, &actual_length, overlapped_ptr) ||
 			actual_length != size)
 		{
 #ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult(	desc,
-										overlapped_ptr,
-										&actual_length,
-										TRUE)
+			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE)
 				|| actual_length != size)
 			{
 				release_io_event(file, overlapped_ptr);
@@ -661,8 +639,7 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 			if (ostype == OS_CHICAGO) {
 				THD_MUTEX_UNLOCK(file->fil_mutex);
 			}
-			return nt_error("ReadFile", file, isc_io_read_err,
-							status_vector);
+			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 #endif
 		}
 	}
@@ -851,11 +828,10 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS* status_vector)
 	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
 
-#ifdef ISC_DATABASE_ENCRYPTION
 	if (dbb->dbb_encrypt_key) {
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key->str_data,
+		(*dbb->dbb_encrypt) (reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data),
 							 page, size, spare_buffer);
 
 		if (!WriteFile(desc, spare_buffer, size, &actual_length, overlapped_ptr)
@@ -864,21 +840,16 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS* status_vector)
 			if (ostype == OS_CHICAGO) {
 				THD_MUTEX_UNLOCK(file->fil_mutex);
 			}
-			return nt_error("WriteFile", file, isc_io_write_err,
-							status_vector);
+			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 		}
 	}
 	else
-#endif
 	{
 		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) &&
 			actual_length == size)
 		{
 #ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult(	desc,
-										overlapped_ptr,
-										&actual_length,
-										TRUE)
+			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE)
 				|| actual_length != size)
 			{
 				release_io_event(file, overlapped_ptr);
@@ -889,8 +860,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS* status_vector)
 			if (ostype == OS_CHICAGO) {
 				THD_MUTEX_UNLOCK(file->fil_mutex);
 			}
-			return nt_error("WriteFile", file, isc_io_write_err,
-							status_vector);
+			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 #endif
 		}
 	}
