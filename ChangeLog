@@ -1,3 +1,18 @@
+2003-02-23 11:23  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	A bit reworked fixed-size vector allocations. Thanks to Mike for
+	the hint.
+
+2003-02-23 02:36  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	bugfix: DISTINCT with sub-selects (context already in use (BLR
+	error)). Distinct items are now correctly parsed and not just
+	copied from the select-list.
+
 2003-02-22 22:54  skidder
 
 	* firebird2/src/jrd/: ibase.h, inf.cpp:
