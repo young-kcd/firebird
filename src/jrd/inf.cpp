@@ -1080,7 +1080,7 @@ static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
 	end = p + length - 6;
 
 	for (relation_id = 0, ptr = vector->begin();
-		 relation_id < vector->count() && buffer < end; ++relation_id)
+		 relation_id < vector->count() && p < end; ++relation_id)
 		if (n = *ptr++) {
 			STUFF_WORD(p, relation_id);
 			p += INF_convert(n, reinterpret_cast < char *>(p));
