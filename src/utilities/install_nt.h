@@ -25,17 +25,17 @@
 #define _UTILITIES_INSTALL_NT_H_
 
 #if (defined SUPERCLIENT || defined SUPERSERVER)
-#define REMOTE_SERVICE		"InterBaseServer"
+#define REMOTE_SERVICE		"FirebirdServer"
 #define REMOTE_DISPLAY_NAME	"Firebird Server"
 #define REMOTE_EXECUTABLE	"bin\\fbserver"
-#define ISCGUARD_SERVICE	"Firebird Guardian"
-#define ISCGUARD_DISPLAY_NAME "Firebird Guardian Service"
+#define ISCGUARD_SERVICE	"FirebirdGuardian"
+#define ISCGUARD_DISPLAY_NAME "Firebird Guardian"
 #define ISCGUARD_EXECUTABLE	"bin\\fbguard"
-#define GUARDIAN_MUTEX      "InterBaseGuardianMutex"
+#define GUARDIAN_MUTEX      "FirebirdGuardianMutex"
 /* Starting with 128 the service prams are user defined */
 #define SERVICE_CREATE_GUARDIAN_MUTEX 128
 #else
-#define REMOTE_SERVICE		"InterBaseRemoteService"
+#define REMOTE_SERVICE		"FirebirdRemoteService"
 #define REMOTE_DISPLAY_NAME	"Firebird Remote Service"
 #define REMOTE_EXECUTABLE	"bin\\fb_inet_server"
 #endif
