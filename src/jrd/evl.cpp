@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.96 2004-07-07 15:48:57 skidder Exp $ 
+  * $Id: evl.cpp,v 1.97 2004-07-20 22:56:32 skidder Exp $ 
  */
 
 /*
@@ -418,7 +418,9 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				// It may change due to multiple formats present in stream
 				// System tables are the good example of such streams -
 				// data coming from ini.epp has ASCII ttype, user data is UNICODE_FSS
-				if ((impure->vlu_flags & VLU_computed) &&
+				//
+				// Note that value descriptor may be NULL pointer if value is SQL NULL
+				if ((impure->vlu_flags & VLU_computed) && desc[0] &&
 					(impure->vlu_desc.dsc_dtype != desc[0]->dsc_dtype ||
 					 impure->vlu_desc.dsc_sub_type != desc[0]->dsc_sub_type ||
 					 impure->vlu_desc.dsc_scale != desc[0]->dsc_scale)
