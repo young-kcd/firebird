@@ -668,19 +668,21 @@ static bool ShortToLongPathName(tstring& Path)
             Path[right] = 0;
 		}
 
-        // See what FindFirstFile makes of the path so far.
+        // Call FindFirstFile on the path.
         hf = FindFirstFile(Path.c_str(), &fd);
-        if (hf == INVALID_HANDLE_VALUE)
-		{
-			break;
-		}
-        FindClose(hf);
 
         // Put back the separator.
         if (npos != right)
 		{
             Path[right] = sep;
 		}
+
+        // See what FindFirstFile makes of the path so far.
+        if (hf == INVALID_HANDLE_VALUE)
+		{
+			break;
+		}
+        FindClose(hf);
 
         // The file was found - replace the short name with the long.
         const size old_len = (npos == right) ? Path.length() - left : right - left;
