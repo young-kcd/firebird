@@ -164,7 +164,7 @@ static MUTX_T cursors_mutex;
 
 
 #ifdef DSQL_DEBUG
-IMPLEMENT_TRACE_ROUTINE(dsql_trace, "DSQL");
+IMPLEMENT_TRACE_ROUTINE(dsql_trace, "DSQL")
 #endif
 
 //////////////////////////////////////////////////////////////////
@@ -201,7 +201,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*		user_status,
 							 USHORT		msg_length,
 							 UCHAR*		dsql_msg_buf
 #ifdef SCROLLABLE_CURSORS
-							 , USHORT direction, SLONG offset)
+							 , USHORT direction, SLONG offset
 #else
 							);
 #endif

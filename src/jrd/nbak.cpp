@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.38 2004-06-08 13:39:35 alexpeshkoff Exp $
+ *  $Id: nbak.cpp,v 1.39 2004-06-13 23:46:32 brodsom Exp $
  *
  */
 
@@ -61,7 +61,7 @@
 #endif
 
 #ifdef NBAK_DEBUG
-IMPLEMENT_TRACE_ROUTINE(nbak_trace, "NBAK");
+IMPLEMENT_TRACE_ROUTINE(nbak_trace, "NBAK")
 #endif
 
 /******************************** LOCK FUNCTIONS ******************************/

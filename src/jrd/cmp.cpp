@@ -156,7 +156,7 @@ static USHORT base_stream(CompilerScratch*, jrd_nod**, bool);
 #endif
 
 #ifdef CMP_DEBUG
-IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP");
+IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP")
 #endif
 
 bool CMP_clone_is_active(const jrd_req* request)

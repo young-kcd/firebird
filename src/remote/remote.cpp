@@ -38,7 +38,7 @@
 #include "../common/config/config.h"
 
 #ifdef REMOTE_DEBUG
-IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE");
+IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 #endif
 
 int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
