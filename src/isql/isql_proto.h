@@ -36,17 +36,17 @@ void	ISQL_copy_SQL_id(const TEXT*, TEXT*, TEXT);
 //								SCHAR**,
 //								SCHAR*,
 //								SCHAR*, IB_FILE*, IB_FILE*, IB_FILE*);
-bool	ISQL_dbcheck(void);
+bool	ISQL_dbcheck();
 void	ISQL_disconnect_database(bool);
 void	ISQL_errmsg(const ISC_STATUS*);
 void	ISQL_warning(ISC_STATUS*);
-void	ISQL_exit_db(void);
+void	ISQL_exit_db();
 // CVC: Not found.
 //int		ISQL_extract(TEXT*, int, IB_FILE*, IB_FILE*, IB_FILE*);
 int		ISQL_frontend_command(TEXT*, IB_FILE*, IB_FILE*, IB_FILE*);
 bool	ISQL_get_base_column_null_flag(const TEXT*, const SSHORT, const TEXT*);
 void	ISQL_get_character_sets(SSHORT, SSHORT, bool, TEXT*);
-SSHORT	ISQL_get_default_char_set_id(void);
+SSHORT	ISQL_get_default_char_set_id();
 void	ISQL_get_default_source(const TEXT*, TEXT*, ISC_QUAD*);
 SSHORT	ISQL_get_field_length(const TEXT*);
 SSHORT	ISQL_get_index_segments(TEXT*, const TEXT*, bool);
@@ -55,12 +55,14 @@ void	ISQL_get_version(bool);
 SSHORT	ISQL_init(IB_FILE*, IB_FILE*);
 bool	ISQL_is_domain(TEXT*);
 SSHORT	ISQL_main(int, char**);
-void	ISQL_make_upper(UCHAR*);
-void	ISQL_msg_get(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void	ISQL_make_upper(TEXT*);
+void	ISQL_msg_get(USHORT, TEXT*, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
 void	ISQL_print_validation(IB_FILE*, ISC_QUAD*, bool, FRBRD*);
 void	ISQL_printf(IB_FILE*, const char*);
 void	ISQL_query_database(SSHORT*, IB_FILE*, IB_FILE*, IB_FILE*);
-void	ISQL_reset_settings(void);
+void	ISQL_remove_and_unescape_quotes(TEXT* string, const char quote);
+void	ISQL_reset_settings();
 void	ISQL_ri_action_print(const TEXT*, const TEXT*, bool);
 int		ISQL_sql_statement(TEXT*, IB_FILE*, IB_FILE*, IB_FILE*);
 void	ISQL_truncate_term(TEXT*, USHORT);

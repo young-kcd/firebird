@@ -26,7 +26,7 @@
 
 /* prototypes */
 
-static void close_isql(void);
+static void close_isql();
 static int cmdline_isql(HINSTANCE, LPSTR);
 static void display_page(HWND);
 static SSHORT init_isql(HINSTANCE, HINSTANCE, int);
@@ -37,7 +37,7 @@ static SSHORT open_temp_file(HINSTANCE, IB_FILE **, SCHAR *, SSHORT);
 static void paint_isql(HWND);
 static void pusharg(SCHAR *);
 static void setup_scroll(HWND);
-static void test_overwrite(void);
+static void test_overwrite();
 static int windows_isql(HINSTANCE, HINSTANCE, int);
 static void xfer_file(SCHAR *, SCHAR *, SSHORT);
 

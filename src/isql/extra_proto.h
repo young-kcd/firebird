@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Interactive SQL utility
  *	MODULE:		extra_proto.h
- *	DESCRIPTION:	Prototype header file for extract.e
+ *	DESCRIPTION:	Prototype header file for extract.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,9 +24,11 @@
 #ifndef ISQL_EXTRA_PROTO_H
 #define ISQL_EXTRA_PROTO_H
 
-SSHORT	EXTRACT_ddl(int, SCHAR *);
-SSHORT	EXTRACT_list_table(SCHAR *, SCHAR *, bool, SSHORT);
-void	EXTRACT_list_view(SCHAR *);
-int		EXTRACT_list_grants (SCHAR *);
+SSHORT	EXTRACT_ddl(int, SCHAR*);
+SSHORT	EXTRACT_list_table(const SCHAR*, const SCHAR*, bool, SSHORT);
+// CVC: Not found.
+//void	EXTRACT_list_view(SCHAR*);
+int		EXTRACT_list_grants (const SCHAR*);
 
 #endif // ISQL_EXTRA_PROTO_H
+

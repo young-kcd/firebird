@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.16 2003-11-16 11:43:20 brodsom Exp $
+ * $Id: isql.h,v 1.17 2003-11-30 06:41:29 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -233,13 +233,13 @@
 
 EXTERN isc_tr_handle M__trans;
 EXTERN isc_tr_handle D__trans;
-EXTERN isc_stmt_handle Stmt;
+EXTERN isc_stmt_handle global_Stmt;
 EXTERN IB_FILE *Ofp, *Out, *Ifp, *Errfp;
-EXTERN SCHAR Term[MAXTERM_LENGTH];
-EXTERN SCHAR Db_name[128];
-EXTERN SCHAR Target_db[128];
+EXTERN SCHAR global_Term[MAXTERM_LENGTH];
+EXTERN SCHAR global_Db_name[128];
+EXTERN SCHAR global_Target_db[128];
 EXTERN SCHAR User[128], Password[128], Role[128], Charset[128];
-EXTERN SCHAR Numbufs[16];		/* # of cache buffers on connect */
+EXTERN SCHAR global_Numbufs[16];		/* # of cache buffers on connect */
 EXTERN bool Merge_stderr;
 EXTERN USHORT SQL_dialect;
 EXTERN USHORT db_SQL_dialect;
@@ -305,6 +305,18 @@ struct sqltypes {
 #endif
 
 #define TAB_AS_SPACES "        "
+
+const char BLANK		= '\040';
+const char DBL_QUOTE	= '\042';
+const char SINGLE_QUOTE	= '\'';
+
+const SCHAR wal_items[] = {
+	isc_info_num_wal_buffers,
+	isc_info_wal_buffer_size,
+	isc_info_wal_ckpt_length,
+	isc_info_wal_grpc_wait_usecs,
+	isc_info_end
+};
 
 #endif /* ISQL_ISQL_H */
 

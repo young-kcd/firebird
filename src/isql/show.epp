@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.28 2003-11-28 06:48:19 robocop Exp $
+ * $Id: show.epp,v 1.29 2003-11-30 06:41:29 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -70,19 +70,19 @@ extern bool V33;
 
 static void local_fprintf(const char*, const char*);
 static void remove_delimited_double_quotes(TEXT*);
-static void make_priv_string(USHORT, UCHAR*);
+static void make_priv_string(USHORT, char*);
 static int show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*);
 static int show_check(const SCHAR*);
-static void show_db(void);
-static int show_dialect(void);
+static void show_db();
+static int show_dialect();
 static int show_domains(const SCHAR*);
-static int show_exceptions(SCHAR*);
+static int show_exceptions(const SCHAR*);
 static int show_filters(const SCHAR*);
 static int show_functions(const SCHAR*);
 static int show_generators(const SCHAR*);
 static void show_index(SCHAR*, SCHAR*, const SSHORT, const SSHORT, const SSHORT);
-static int show_indices(SCHAR**);
+static int show_indices(const SCHAR* const*);
 static int show_proc(const SCHAR*);
 static int show_role(const SCHAR*);
 static int show_table(const SCHAR*);
@@ -92,11 +92,7 @@ static TEXT Print_buffer[512];
 static TEXT SQL_identifier[BUFFER_LENGTH128];
 static TEXT SQL_id_for_grant[BUFFER_LENGTH128];
 
-#define	BLANK		'\040'
-#define	DBL_QUOTE	'\042'
-#define	MAX_NAME_LENGTH	31
-
-// Initialize types 
+// Initialize types
 
 static const SCHAR* Object_types[] = {
 	"Table",
@@ -110,67 +106,67 @@ static const SCHAR* Object_types[] = {
 	"User",
 	"Domain",
 	"Index",
-    "Count [error if used]",
-    "User group",
-    "SQL role",
-    "Generator",
-    "User Defined Function"
+	"Count [error if used]",
+	"User group",
+	"SQL role",
+	"Generator",
+	"User Defined Function"
 };
 
 extern const sqltypes Column_types[] = {
-	{SMALLINT, "SMALLINT"},		// NTX: keyword 
-	{INTEGER, "INTEGER"},		// NTX: keyword 
-	{QUAD, "QUAD"},				// NTX: keyword 
-	{FLOAT, "FLOAT"},			// NTX: keyword 
-	{FCHAR, "CHAR"},			// NTX: keyword 
-	{DOUBLE_PRECISION, "DOUBLE PRECISION"},	// NTX: keyword 
-	{VARCHAR, "VARCHAR"},		// NTX: keyword 
-	{CSTRING, "CSTRING"},		// NTX: keyword 
-	{BLOB_ID, "BLOB_ID"},		// NTX: keyword 
-	{BLOB, "BLOB"},				// NTX: keyword 
-	{blr_sql_time, "TIME"},		// NTX: keyword 
-	{blr_sql_date, "DATE"},		// NTX: keyword 
-	{blr_timestamp, "TIMESTAMP"},	// NTX: keyword 
-	{blr_int64, "BIGINT"},		// NTX: keyword 
+	{SMALLINT, "SMALLINT"},		// NTX: keyword
+	{INTEGER, "INTEGER"},		// NTX: keyword
+	{QUAD, "QUAD"},				// NTX: keyword
+	{FLOAT, "FLOAT"},			// NTX: keyword
+	{FCHAR, "CHAR"},			// NTX: keyword
+	{DOUBLE_PRECISION, "DOUBLE PRECISION"},	// NTX: keyword
+	{VARCHAR, "VARCHAR"},		// NTX: keyword
+	{CSTRING, "CSTRING"},		// NTX: keyword
+	{BLOB_ID, "BLOB_ID"},		// NTX: keyword
+	{BLOB, "BLOB"},				// NTX: keyword
+	{blr_sql_time, "TIME"},		// NTX: keyword
+	{blr_sql_date, "DATE"},		// NTX: keyword
+	{blr_timestamp, "TIMESTAMP"},	// NTX: keyword
+	{blr_int64, "BIGINT"},		// NTX: keyword
 	{0, ""}
 };
 
-// Integral subtypes 
+// Integral subtypes
 
 #define MAX_INTSUBTYPES	2
 
 const SCHAR* Integral_subtypes[] = {
-	"UNKNOWN",					// Defined type, NTX: keyword 
-	"NUMERIC",					// NUMERIC, NTX: keyword 
-	"DECIMAL"					// DECIMAL, NTX: keyword 
+	"UNKNOWN",					// Defined type, NTX: keyword
+	"NUMERIC",					// NUMERIC, NTX: keyword
+	"DECIMAL"					// DECIMAL, NTX: keyword
 };
 
-// Blob subtypes 
+// Blob subtypes
 
 #define MAXSUBTYPES 8
 
 const SCHAR* Sub_types[] = {
-	"UNKNOWN",					// NTX: keyword 
-	"TEXT",						// NTX: keyword 
-	"BLR",						// NTX: keyword 
-	"ACL",						// NTX: keyword 
-	"RANGES",					// NTX: keyword 
-	"SUMMARY",					// NTX: keyword 
-	"FORMAT",					// NTX: keyword 
-	"TRANSACTION_DESCRIPTION",	// NTX: keyword 
-	"EXTERNAL_FILE_DESCRIPTION"	// NTX: keyword 
+	"UNKNOWN",					// NTX: keyword
+	"TEXT",						// NTX: keyword
+	"BLR",						// NTX: keyword
+	"ACL",						// NTX: keyword
+	"RANGES",					// NTX: keyword
+	"SUMMARY",					// NTX: keyword
+	"FORMAT",					// NTX: keyword
+	"TRANSACTION_DESCRIPTION",	// NTX: keyword
+	"EXTERNAL_FILE_DESCRIPTION"	// NTX: keyword
 };
 
 const SCHAR* Trigger_prefix_types[] = {
-	"BEFORE",			// NTX: keyword 
-	"AFTER"				// NTX: keyword 
+	"BEFORE",			// NTX: keyword
+	"AFTER"				// NTX: keyword
 };
 
 const SCHAR* Trigger_suffix_types[] = {
 	"",
-	"INSERT",			// NTX: keyword 
-	"UPDATE",			// NTX: keyword 
-	"DELETE"			// NTX: keyword 
+	"INSERT",			// NTX: keyword
+	"UPDATE",			// NTX: keyword
+	"DELETE"			// NTX: keyword
 };
 
 /* CVC: Notice that
@@ -179,12 +175,12 @@ BY ISC_DESCRIPTOR is the default for BLOBs and can't be used explicitly;
 BY SCALAR_ARRAY_DESCRIPTOR should be supported in DSQL in the future, since
 the server has already the capability to deliver arrays to UDFs. */
 #define MAX_UDFPARAM_TYPES 4
-const SCHAR	*UDF_param_types[] = {
-	" BY VALUE",			// NTX: keyword 
-	"",						// BY REFERENCE 
-	" BY DESCRIPTOR",		// NTX: keyword in FB 
+const SCHAR* UDF_param_types[] = {
+	" BY VALUE",			// NTX: keyword
+	"",						// BY REFERENCE
+	" BY DESCRIPTOR",		// NTX: keyword in FB
 	"",						/* BY ISC_DESCRIPTOR => BLOB */
-	" BY SCALAR ARRAY DESCRIPTOR"	// Should be NTX: keyword 
+	" BY SCALAR ARRAY DESCRIPTOR"	// Should be NTX: keyword
 	" ERROR-type-unknown"
 };
 
@@ -200,20 +196,20 @@ const SCHAR	*UDF_param_types[] = {
 
 static const struct {
 	USHORT priv_flag;
-	const SCHAR* priv_string;
+	const char* priv_string;
 } privs[] = {
-	{ priv_DELETE, "DELETE"},		// NTX: keyword 
-	{ priv_EXECUTE, "EXECUTE"},	// NTX: keyword 
-	{ priv_INSERT, "INSERT"},		// NTX: keyword 
-	{ priv_SELECT, "SELECT"},		// NTX: keyword 
-	{ priv_UPDATE, "UPDATE"},		// NTX: keyword 
-	{ priv_REFERENCES, "REFERENCES"},	// NTX: keyword 
+	{ priv_DELETE, "DELETE"},		// NTX: keyword
+	{ priv_EXECUTE, "EXECUTE"},	// NTX: keyword
+	{ priv_INSERT, "INSERT"},		// NTX: keyword
+	{ priv_SELECT, "SELECT"},		// NTX: keyword
+	{ priv_UPDATE, "UPDATE"},		// NTX: keyword
+	{ priv_REFERENCES, "REFERENCES"},	// NTX: keyword
 	{ 0, NULL}
 };
 
 /* strlen of each element above, + strlen(", ") for separators */
 
-#define MAX_PRIV_LIST	(6+2+7+2+6+2+6+2+6+2+10+1)
+const int MAX_PRIV_LIST = (6 + 2 + 7 + 2 + 6 + 2 + 6 + 2 + 6 + 2 + 10 + 1);
 
 
 static const SCHAR db_dialect_info[] = {
@@ -221,8 +217,8 @@ static const SCHAR db_dialect_info[] = {
 	isc_info_end
 };
 
-// Added support to display FORCED WRITES status. - PR 27-NOV-2001 
-// Added support to display transaction info when next_transaction id is fixed. 
+// Added support to display FORCED WRITES status. - PR 27-NOV-2001
+// Added support to display transaction info when next_transaction id is fixed.
 static const SCHAR db_items[] = {
 	isc_info_page_size,
 	isc_info_db_size_in_pages,
@@ -236,13 +232,6 @@ static const SCHAR db_items[] = {
 	isc_info_end
 };
 
-static const SCHAR wal_items[] = {
-	isc_info_num_wal_buffers,
-	isc_info_wal_buffer_size,
-	isc_info_wal_ckpt_length,
-	isc_info_wal_grpc_wait_usecs,
-	isc_info_end
-};
 
 /* BPB to force transliteration of any shown system blobs from
  * Database character set (CS_METADATA) to process character set
@@ -258,7 +247,7 @@ static const UCHAR metadata_text_bpb[] = {
 	isc_bpb_target_interp, 1, CS_dynamic
 };
 
-// trigger action helpers 
+// trigger action helpers
 
 #define TRIGGER_ACTION_PREFIX(value) \
 	((value + 1) & 1)
@@ -286,7 +275,6 @@ const char* trigger_action(int type)
 }
 
 
-
 bool SHOW_dbb_parameters(FRBRD* db_handle,
 						 SCHAR* info_buf,
 						 const SCHAR* db_items,
@@ -295,14 +283,14 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 {
 /**************************************
  *
- *	S H O W _ d b b _ p a r a m e t e r s 
+ *	S H O W _ d b b _ p a r a m e t e r s
  *
  **************************************
  *
  * Functional description
  *	Show db_info on this database
  *
- *	Arguments:  
+ *	Arguments:
  *	    db_handle -- database handle
  *	    info_buf -- info_bufput file pointer
  *	    db_items -- list of db_info items to process
@@ -330,11 +318,11 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 	if (isc_database_info(status_vector, &db_handle, item_length,
 						  db_items, BUFFER_LENGTH128, buffer))
 	{
-        ISQL_errmsg(status_vector);
-        ISQL_FREE (buffer);
-        ISQL_FREE (msg);
-        return false;
-    }
+		ISQL_errmsg(status_vector);
+		ISQL_FREE (buffer);
+		ISQL_FREE (msg);
+		return false;
+	}
 
 	*info_buf = '\0';
 	SCHAR* info = info_buf;
@@ -380,30 +368,30 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 				sprintf(info, "Sweep interval = %ld %s", value_out, NEWLINE);
 			break;
 
-        case isc_info_forced_writes:
-            value_out = isc_vax_integer (d, length);
-            sprintf (info, "Forced Writes are %s %s", (value_out==1 ? "ON" : "OFF"), NEWLINE);
-            break;
+		case isc_info_forced_writes:
+			value_out = isc_vax_integer (d, length);
+			sprintf (info, "Forced Writes are %s %s", (value_out==1 ? "ON" : "OFF"), NEWLINE);
+			break;
 
-        case isc_info_oldest_transaction :
-            value_out = isc_vax_integer (d, length);
-            sprintf (info, "Transaction - oldest = %ld %s", value_out, NEWLINE);
-            break;
-            
-        case isc_info_oldest_active :
-            value_out = isc_vax_integer (d, length);
-            sprintf (info, "Transaction - oldest active = %ld %s", value_out, NEWLINE);
-            break;
- 	
-        case isc_info_oldest_snapshot :
-            value_out = isc_vax_integer (d, length);
-            sprintf (info, "Transaction - oldest snapshot = %ld %s", value_out, NEWLINE);
-            break;
- 	
-        case isc_info_next_transaction :
-            value_out = isc_vax_integer (d, length);
-            sprintf (info, "Transaction - Next = %ld %s", value_out, NEWLINE);
-            break;
+		case isc_info_oldest_transaction :
+			value_out = isc_vax_integer (d, length);
+			sprintf (info, "Transaction - oldest = %ld %s", value_out, NEWLINE);
+			break;
+
+		case isc_info_oldest_active :
+			value_out = isc_vax_integer (d, length);
+			sprintf (info, "Transaction - oldest active = %ld %s", value_out, NEWLINE);
+			break;
+
+		case isc_info_oldest_snapshot :
+			value_out = isc_vax_integer (d, length);
+			sprintf (info, "Transaction - oldest snapshot = %ld %s", value_out, NEWLINE);
+			break;
+
+		case isc_info_next_transaction :
+			value_out = isc_vax_integer (d, length);
+			sprintf (info, "Transaction - Next = %ld %s", value_out, NEWLINE);
+			break;
 
 		case isc_info_num_wal_buffers:
 			value_out = isc_vax_integer(d, length);
@@ -494,7 +482,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 	ISQL_FREE(buffer);
 	ISQL_FREE(msg);
 
-    return true;
+	return true;
 }
 
 
@@ -512,14 +500,14 @@ int SHOW_grants(SCHAR* object,
  *	Placeholder for SHOW_grants2 without additional message.
  *
  **************************************/
-    return SHOW_grants2 (object, terminator, obj_type, NULL);
+	return SHOW_grants2 (object, terminator, obj_type, NULL);
 }
 
 
 int SHOW_grants2 (SCHAR* object,
 				  const SCHAR* terminator,
 				  USHORT obj_type,
-				  TEXT* optional_msg)
+				  const TEXT* optional_msg)
 {
 /**************************************
  *
@@ -543,14 +531,8 @@ int SHOW_grants2 (SCHAR* object,
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER prev_user;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANT_OPTION prev_option;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$FIELD_NAME prev_field;
-	SCHAR c, with_option[18];
-	SCHAR priv_string[MAX_PRIV_LIST];
-	SCHAR col_string[BUFFER_LENGTH128];
 	SCHAR user_string[44];
-	USHORT priv_flags;
-	SSHORT prev_field_null;
 	bool first = true;
-	SCHAR role_name[BUFFER_LENGTH128];
 
 	if (!*object)
 		return ERR;
@@ -559,357 +541,359 @@ int SHOW_grants2 (SCHAR* object,
 
 	prev_option = -1;
 	prev_user[0] = '\0';
-	priv_string[0] = '\0';
-	col_string[0] = '\0';
-	with_option[0] = '\0';
-	priv_flags = 0;
-	prev_field_null = -1;
 	prev_field[0] = '\0';
+	char priv_string[MAX_PRIV_LIST] = "";
+	char col_string[BUFFER_LENGTH128] = "";
+	char with_option[18] = "";
+	USHORT priv_flags = 0;
+	SSHORT prev_field_null = -1;
 
-    if (obj_type == obj_relation || obj_type == 255) {
+	if (obj_type == obj_relation || obj_type == 255) {
 
-        // Find the user specified relation and show its privileges 
+		// Find the user specified relation and show its privileges
 
-        FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ object;
-	
-	        // This query only finds tables, eliminating owner privileges 
-	
+		FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ object;
+
+	        // This query only finds tables, eliminating owner privileges
+
 	        FOR PRV IN RDB$USER_PRIVILEGES CROSS
-                REL IN RDB$RELATIONS WITH
-                PRV.RDB$RELATION_NAME EQ object AND
-                REL.RDB$RELATION_NAME EQ object AND
-                PRV.RDB$PRIVILEGE     NE 'M'    AND
-                REL.RDB$OWNER_NAME    NE PRV.RDB$USER
-                SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
-	
+				REL IN RDB$RELATIONS WITH
+				PRV.RDB$RELATION_NAME EQ object AND
+				REL.RDB$RELATION_NAME EQ object AND
+				PRV.RDB$PRIVILEGE     NE 'M'    AND
+				REL.RDB$OWNER_NAME    NE PRV.RDB$USER
+				SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
+
 	            ISQL_blankterm (PRV.RDB$USER);
-	
-                // Sometimes grant options are null, sometimes 0.  Both same 
-	
-                if (PRV.RDB$GRANT_OPTION.NULL)
-                    PRV.RDB$GRANT_OPTION = 0;
-	
-                if (PRV.RDB$FIELD_NAME.NULL)
-                    PRV.RDB$FIELD_NAME[0] = '\0';
-	
-                // Print a new grant statement for each new user or change of option 
-	
-                if ((prev_user[0] && strcmp (prev_user, PRV.RDB$USER)) ||
-                    (prev_field_null != -1 &&
-                     prev_field_null != PRV.RDB$FIELD_NAME.NULL) ||
-                    (!prev_field_null && strcmp (prev_field, PRV.RDB$FIELD_NAME)) ||
-                    (prev_option != -1 && prev_option != PRV.RDB$GRANT_OPTION)) {
 
-                    make_priv_string (priv_flags, (UCHAR*) priv_string);
+				// Sometimes grant options are null, sometimes 0.  Both same
 
-                    if (first && optional_msg)
-                        ISQL_printf (Out, optional_msg);
+				if (PRV.RDB$GRANT_OPTION.NULL)
+					PRV.RDB$GRANT_OPTION = 0;
 
-                    first = false;
-	
-                    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                        ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
-                    else
-                        strcpy (SQL_identifier, object);
-                    
-                    sprintf (Print_buffer, "GRANT %s%s ON %s TO %s%s%s%s", priv_string, 
-                             col_string, SQL_identifier, user_string, 
-                             with_option, terminator, NEWLINE);
-                    ISQL_printf (Out, Print_buffer);
-                    
-                    // re-initialize strings 
-                    
-                    priv_string[0] = '\0';
-                    with_option[0] = '\0';
-                    col_string[0] = '\0';
-                    priv_flags = 0;
-                }
-	
-                // At each row, store this value for the next compare of contol break 
-            
-                strcpy (prev_user, PRV.RDB$USER);
-                prev_option = PRV.RDB$GRANT_OPTION;
-                prev_field_null = PRV.RDB$FIELD_NAME.NULL;
-                strcpy (prev_field, PRV.RDB$FIELD_NAME);
-            
-                switch (PRV.RDB$USER_TYPE) {
-                case obj_relation:
-                case obj_view:
-                case obj_trigger:
-                case obj_procedure:
-                case obj_sql_role:
-                    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-                        ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
-                    }
-                    else
-                        strcpy (SQL_identifier, PRV.RDB$USER);
-                    break;
-                default:
-                    strcpy (SQL_identifier, PRV.RDB$USER);
-                    break;
-                }
-	
-                switch (PRV.RDB$USER_TYPE) {
-                case obj_view:
-                    sprintf (user_string, "VIEW %s", SQL_identifier);
-                    break;
-                case obj_trigger:
-                    sprintf (user_string, "TRIGGER %s", SQL_identifier);
-                    break;
-                case obj_procedure:
-                    sprintf (user_string, "PROCEDURE %s", SQL_identifier);
-                    break;
-                case obj_user:
-                    if (strcmp(SQL_identifier, "PUBLIC"))
-                        sprintf (user_string, "USER %s", SQL_identifier);
-                    else
-                        strcpy (user_string, SQL_identifier);
-                    break;
-                case obj_user_group:
-                    sprintf (user_string, "GROUP %s", SQL_identifier);
-                    break;
-                case obj_sql_role:
-                    sprintf (user_string, "ROLE %s", SQL_identifier);
-                    break;
-                default:
-                    strcpy (user_string, SQL_identifier);
-                    break;
-                }
-            
-                // Only the first character is used for permissions 
-            
-                c = PRV.RDB$PRIVILEGE[0];
-            
-                switch (c) { 
-                case 'S':
-                    priv_flags |= priv_SELECT;
-                break;
-                case 'I':
-                    priv_flags |= priv_INSERT;
-                    break;
-                case 'U':
-                    priv_flags |= priv_UPDATE;
-                    break;
-                case 'D':
-                    priv_flags |= priv_DELETE;
-                    break;
-                case 'R':
-                    priv_flags |= priv_REFERENCES;
-                    break;
-                case 'X':
-                    // Execute should not be here -- special handling below 
-                    break;
-                default:
-                    priv_flags |= priv_UNKNOWN;
-                }
-	
-                // Column level privileges for update and references only 
-                if (PRV.RDB$FIELD_NAME.NULL) {
-                    *col_string = '\0';
-                }
-                else {
-                    ISQL_blankterm (PRV.RDB$FIELD_NAME);
-                    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-                        ISQL_copy_SQL_id (PRV.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
-                        sprintf(col_string, " (%s)", SQL_identifier);
-                    }
-                    else {
-                        sprintf(col_string, " (%s)", PRV.RDB$FIELD_NAME);
-                    }
-                }
-	
-                if (PRV.RDB$GRANT_OPTION)
-                    strcpy (with_option, " WITH GRANT OPTION");
-                
-            END_FOR
-            ON_ERROR
-                ISQL_errmsg (isc_status);
+				if (PRV.RDB$FIELD_NAME.NULL)
+					PRV.RDB$FIELD_NAME[0] = '\0';
+
+				// Print a new grant statement for each new user or change of option
+
+				if ((prev_user[0] && strcmp (prev_user, PRV.RDB$USER)) ||
+					(prev_field_null != -1 &&
+					 prev_field_null != PRV.RDB$FIELD_NAME.NULL) ||
+					(!prev_field_null && strcmp (prev_field, PRV.RDB$FIELD_NAME)) ||
+					(prev_option != -1 && prev_option != PRV.RDB$GRANT_OPTION))
+				{
+
+					make_priv_string (priv_flags, priv_string);
+
+					if (first && optional_msg)
+						ISQL_printf (Out, optional_msg);
+
+					first = false;
+
+					if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+					else
+						strcpy (SQL_identifier, object);
+
+					sprintf (Print_buffer, "GRANT %s%s ON %s TO %s%s%s%s", priv_string,
+							 col_string, SQL_identifier, user_string,
+							 with_option, terminator, NEWLINE);
+					ISQL_printf (Out, Print_buffer);
+
+					// re-initialize strings
+
+					priv_string[0] = '\0';
+					with_option[0] = '\0';
+					col_string[0] = '\0';
+					priv_flags = 0;
+				}
+
+				// At each row, store this value for the next compare of contol break
+
+				strcpy (prev_user, PRV.RDB$USER);
+				prev_option = PRV.RDB$GRANT_OPTION;
+				prev_field_null = PRV.RDB$FIELD_NAME.NULL;
+				strcpy (prev_field, PRV.RDB$FIELD_NAME);
+
+				switch (PRV.RDB$USER_TYPE) {
+				case obj_relation:
+				case obj_view:
+				case obj_trigger:
+				case obj_procedure:
+				case obj_sql_role:
+					if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+						ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+					}
+					else
+						strcpy (SQL_identifier, PRV.RDB$USER);
+					break;
+				default:
+					strcpy (SQL_identifier, PRV.RDB$USER);
+					break;
+				}
+
+				switch (PRV.RDB$USER_TYPE) {
+				case obj_view:
+					sprintf (user_string, "VIEW %s", SQL_identifier);
+					break;
+				case obj_trigger:
+					sprintf (user_string, "TRIGGER %s", SQL_identifier);
+					break;
+				case obj_procedure:
+					sprintf (user_string, "PROCEDURE %s", SQL_identifier);
+					break;
+				case obj_user:
+					if (strcmp(SQL_identifier, "PUBLIC"))
+						sprintf (user_string, "USER %s", SQL_identifier);
+					else
+						strcpy (user_string, SQL_identifier);
+					break;
+				case obj_user_group:
+					sprintf (user_string, "GROUP %s", SQL_identifier);
+					break;
+				case obj_sql_role:
+					sprintf (user_string, "ROLE %s", SQL_identifier);
+					break;
+				default:
+					strcpy (user_string, SQL_identifier);
+					break;
+				}
+
+				// Only the first character is used for permissions
+
+				const char c = PRV.RDB$PRIVILEGE[0];
+
+				switch (c) {
+				case 'S':
+					priv_flags |= priv_SELECT;
+				break;
+				case 'I':
+					priv_flags |= priv_INSERT;
+					break;
+				case 'U':
+					priv_flags |= priv_UPDATE;
+					break;
+				case 'D':
+					priv_flags |= priv_DELETE;
+					break;
+				case 'R':
+					priv_flags |= priv_REFERENCES;
+					break;
+				case 'X':
+					// Execute should not be here -- special handling below
+					break;
+				default:
+					priv_flags |= priv_UNKNOWN;
+				}
+
+				// Column level privileges for update and references only
+				if (PRV.RDB$FIELD_NAME.NULL) {
+					*col_string = '\0';
+				}
+				else {
+					ISQL_blankterm (PRV.RDB$FIELD_NAME);
+					if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+						ISQL_copy_SQL_id (PRV.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+						sprintf(col_string, " (%s)", SQL_identifier);
+					}
+					else {
+						sprintf(col_string, " (%s)", PRV.RDB$FIELD_NAME);
+					}
+				}
+
+				if (PRV.RDB$GRANT_OPTION)
+					strcpy (with_option, " WITH GRANT OPTION");
+
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg (isc_status);
 	            return ERR;
-            END_ERROR;
-	
-            // Print last case if there was anything to print 
-	
-            if (prev_option != -1) {
-                make_priv_string (priv_flags, (UCHAR*) priv_string);
-                if (first && optional_msg)
-                    ISQL_printf (Out, optional_msg);
-                first = false;
-            
-                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                    ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
-                else
-                    strcpy (SQL_identifier, object);
-            
-                sprintf (Print_buffer, "GRANT %s%s ON %s TO %s%s%s%s", 
-                         priv_string, col_string,
-                         SQL_identifier, user_string, with_option, terminator, NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-            }
-        
-        END_FOR
-        ON_ERROR 
-            ISQL_errmsg(isc_status);
+			END_ERROR;
+
+			// Print last case if there was anything to print
+
+			if (prev_option != -1) {
+				make_priv_string (priv_flags, priv_string);
+				if (first && optional_msg)
+					ISQL_printf (Out, optional_msg);
+				first = false;
+
+				if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+				else
+					strcpy (SQL_identifier, object);
+
+				sprintf (Print_buffer, "GRANT %s%s ON %s TO %s%s%s%s",
+						 priv_string, col_string,
+						 SQL_identifier, user_string, with_option, terminator, NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+			}
+
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 	        return ERR;
 	    END_ERROR;
 
-        if (!first)
-            return (SKIP);
-    }
+		if (!first)
+			return (SKIP);
+	}
 
-// No relation called "object" was found, try procedure "object" 
-    if (obj_type == obj_procedure || obj_type == 255) {
+// No relation called "object" was found, try procedure "object"
+	if (obj_type == obj_procedure || obj_type == 255) {
 
-        FOR FIRST 1 P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ object
-	
-	        // Part two is for stored procedures only 
-	
+		FOR FIRST 1 P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ object
+
+	        // Part two is for stored procedures only
+
 	        FOR PRV IN RDB$USER_PRIVILEGES CROSS
-                PRC IN RDB$PROCEDURES WITH
-                PRV.RDB$OBJECT_TYPE = obj_procedure AND
-                PRV.RDB$RELATION_NAME EQ object AND
-                PRC.RDB$PROCEDURE_NAME EQ object AND
-                PRV.RDB$PRIVILEGE EQ 'X' AND
-                PRC.RDB$OWNER_NAME NE PRV.RDB$USER
-                SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
-         
-                if (first && optional_msg)
-                    ISQL_printf (Out, optional_msg);
+				PRC IN RDB$PROCEDURES WITH
+				PRV.RDB$OBJECT_TYPE = obj_procedure AND
+				PRV.RDB$RELATION_NAME EQ object AND
+				PRC.RDB$PROCEDURE_NAME EQ object AND
+				PRV.RDB$PRIVILEGE EQ 'X' AND
+				PRC.RDB$OWNER_NAME NE PRV.RDB$USER
+				SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
 
-                first = false;
-                ISQL_blankterm (PRV.RDB$USER);
-            
-                switch (PRV.RDB$USER_TYPE) {
-                case obj_relation:
-                case obj_view:
-                case obj_trigger:
-                case obj_procedure:
-                case obj_sql_role:
-                    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-                        ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
-                    }
-                    else
-                        strcpy (SQL_identifier, PRV.RDB$USER);
-                    break;
-                default:
-                    strcpy (SQL_identifier, PRV.RDB$USER);
-                    break;
-                }
-            
-                switch (PRV.RDB$USER_TYPE) {
-                case obj_view:
-                    sprintf (user_string, "VIEW %s", SQL_identifier);
-                    break;
-                case obj_trigger:
-                    sprintf (user_string, "TRIGGER %s", SQL_identifier);
-                    break;
-                case obj_procedure:
-                    sprintf (user_string, "PROCEDURE %s", SQL_identifier);
-                    break;
-                case obj_user:
-                    if (strcmp(SQL_identifier, "PUBLIC"))
-                        sprintf (user_string, "USER %s", SQL_identifier);
-                    else
-                        strcpy (user_string, SQL_identifier);
-                    break;
-                case obj_user_group:
-                    sprintf (user_string, "GROUP %s", SQL_identifier);
-                    break;
-                case obj_sql_role:
-                    sprintf (user_string, "ROLE %s", SQL_identifier);
-                    break;
-                default:
-                    strcpy (user_string, SQL_identifier);
-                    break;
-                }
-            
-                if (PRV.RDB$GRANT_OPTION)
-                    strcpy (with_option, " WITH GRANT OPTION");
-                else 
-                    with_option[0] = '\0';
-                
-                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {                    
-                    ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
-                }
-                else
-                    strcpy (SQL_identifier, object);
-	
-                sprintf (Print_buffer, "GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s", 
-                         SQL_identifier, user_string, with_option, terminator, NEWLINE);
-                first = false;
-                ISQL_printf (Out, Print_buffer);
-           
-            END_FOR
+				if (first && optional_msg)
+					ISQL_printf (Out, optional_msg);
+
+				first = false;
+				ISQL_blankterm (PRV.RDB$USER);
+
+				switch (PRV.RDB$USER_TYPE) {
+				case obj_relation:
+				case obj_view:
+				case obj_trigger:
+				case obj_procedure:
+				case obj_sql_role:
+					if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+						ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+					}
+					else
+						strcpy (SQL_identifier, PRV.RDB$USER);
+					break;
+				default:
+					strcpy (SQL_identifier, PRV.RDB$USER);
+					break;
+				}
+
+				switch (PRV.RDB$USER_TYPE) {
+				case obj_view:
+					sprintf (user_string, "VIEW %s", SQL_identifier);
+					break;
+				case obj_trigger:
+					sprintf (user_string, "TRIGGER %s", SQL_identifier);
+					break;
+				case obj_procedure:
+					sprintf (user_string, "PROCEDURE %s", SQL_identifier);
+					break;
+				case obj_user:
+					if (strcmp(SQL_identifier, "PUBLIC"))
+						sprintf (user_string, "USER %s", SQL_identifier);
+					else
+						strcpy (user_string, SQL_identifier);
+					break;
+				case obj_user_group:
+					sprintf (user_string, "GROUP %s", SQL_identifier);
+					break;
+				case obj_sql_role:
+					sprintf (user_string, "ROLE %s", SQL_identifier);
+					break;
+				default:
+					strcpy (user_string, SQL_identifier);
+					break;
+				}
+
+				if (PRV.RDB$GRANT_OPTION)
+					strcpy (with_option, " WITH GRANT OPTION");
+				else
+					with_option[0] = '\0';
+
+				if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+					ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+				}
+				else
+					strcpy (SQL_identifier, object);
+
+				sprintf (Print_buffer, "GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s",
+						 SQL_identifier, user_string, with_option, terminator, NEWLINE);
+				first = false;
+				ISQL_printf (Out, Print_buffer);
+
+			END_FOR
 	        ON_ERROR
-                ISQL_errmsg (isc_status);
-                return (ERR);
+				ISQL_errmsg (isc_status);
+				return (ERR);
 	        END_ERROR
 	    END_FOR
-	    ON_ERROR 
-            ISQL_errmsg(isc_status);
-            return (ERR);
+	    ON_ERROR
+			ISQL_errmsg(isc_status);
+			return (ERR);
 	    END_ERROR;
 
-        if (!first)
-            return (SKIP);
-    }
+		if (!first)
+			return (SKIP);
+	}
 
-// No procedure called "object" was found, try role "object" 
+// No procedure called "object" was found, try role "object"
+	SCHAR role_name[BUFFER_LENGTH128];
 
-    if (obj_type == obj_sql_role || obj_type == 255) {
-        // No procedure called "object" was found, try role "object" 
-        /* CVC: This code could be superseded by SHOW_grant_roles() below
-           with the sole difference of the sort fields. */
+	if (obj_type == obj_sql_role || obj_type == 255) {
+		// No procedure called "object" was found, try role "object"
+		/* CVC: This code could be superseded by SHOW_grant_roles() below
+		   with the sole difference of the sort fields. */
 
-        FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object
-	
-            FOR PRV IN RDB$USER_PRIVILEGES WITH
-                PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
-                PRV.RDB$USER_TYPE     EQ obj_user     AND
-                PRV.RDB$RELATION_NAME EQ object       AND
-                PRV.RDB$PRIVILEGE     EQ 'M'
-                SORTED BY  PRV.RDB$USER
-	
-                ISQL_blankterm (PRV.RDB$RELATION_NAME);
-                strcpy (role_name, PRV.RDB$RELATION_NAME);
-                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                    ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
-                else
-                    strcpy (SQL_identifier, role_name);
-            
-                ISQL_blankterm (PRV.RDB$USER);
-                strcpy (user_string, PRV.RDB$USER);
-            
-                if (PRV.RDB$GRANT_OPTION)
-                    strcpy (with_option, " WITH ADMIN OPTION");
-                else
-                    with_option[0] = '\0';
-            
-                sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
-                         user_string, with_option, terminator, NEWLINE);
-            
-                if (first && optional_msg)
-                    ISQL_printf (Out, optional_msg);
+		FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object
 
-                first = false;
-                ISQL_printf (Out, Print_buffer);
-            
-            END_FOR
+			FOR PRV IN RDB$USER_PRIVILEGES WITH
+				PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
+				PRV.RDB$USER_TYPE     EQ obj_user     AND
+				PRV.RDB$RELATION_NAME EQ object       AND
+				PRV.RDB$PRIVILEGE     EQ 'M'
+				SORTED BY  PRV.RDB$USER
+
+				ISQL_blankterm (PRV.RDB$RELATION_NAME);
+				strcpy (role_name, PRV.RDB$RELATION_NAME);
+				if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
+				else
+					strcpy (SQL_identifier, role_name);
+
+				ISQL_blankterm (PRV.RDB$USER);
+				strcpy (user_string, PRV.RDB$USER);
+
+				if (PRV.RDB$GRANT_OPTION)
+					strcpy (with_option, " WITH ADMIN OPTION");
+				else
+					with_option[0] = '\0';
+
+				sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
+						 user_string, with_option, terminator, NEWLINE);
+
+				if (first && optional_msg)
+					ISQL_printf (Out, optional_msg);
+
+				first = false;
+				ISQL_printf (Out, Print_buffer);
+
+			END_FOR
 	        ON_ERROR
 	            ISQL_errmsg (isc_status);
 	            return (ERR);
 	        END_ERROR;
-	
+
 	    END_FOR
-	    ON_ERROR 
-            ISQL_errmsg(isc_status);
+	    ON_ERROR
+			ISQL_errmsg(isc_status);
 	        return (ERR);
 	    END_ERROR;
 
-        if (!first)
-            return (SKIP);
-    }
+		if (!first)
+			return (SKIP);
+	}
 
-    return NOT_FOUND;
+	return NOT_FOUND;
 }
 
 
@@ -926,12 +910,12 @@ void SHOW_grant_roles(const SCHAR* terminator,
  *	Placeholder for SHOW_grant_roles2 without additional message.
  *
  **************************************/
-    SHOW_grant_roles2 (terminator, first, 0);
+	SHOW_grant_roles2 (terminator, first, 0);
 }
 
 void SHOW_grant_roles2 (const SCHAR* terminator,
 						bool* first,
-						TEXT* optional_msg)
+						const TEXT* optional_msg)
 {
 /**************************************
  *
@@ -948,7 +932,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 	char with_option[18];
 	char user_string[44];
 
-// process role "object" 
+// process role "object"
 
 	FOR PRV IN RDB$USER_PRIVILEGES WITH
 	    PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
@@ -956,36 +940,36 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 	    PRV.RDB$PRIVILEGE     EQ 'M'
 	    SORTED BY  PRV.RDB$RELATION_NAME, PRV.RDB$USER
 
-        if (first) {
-            if (*first && optional_msg) {
-                ISQL_printf (Out, optional_msg);
-            }
-            *first = false;
-        }
-	
+		if (first) {
+			if (*first && optional_msg) {
+				ISQL_printf (Out, optional_msg);
+			}
+			*first = false;
+		}
+
 	    ISQL_blankterm (PRV.RDB$USER);
 	    strcpy (user_string, PRV.RDB$USER);
-	
+
 	    if (PRV.RDB$GRANT_OPTION)
 	        strcpy (with_option, " WITH ADMIN OPTION");
 	    else
 	        with_option[0] = '\0';
-	
+
 	    ISQL_blankterm (PRV.RDB$RELATION_NAME);
 	    if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-            ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
-            sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
-                     user_string, with_option, terminator, NEWLINE);
-        }
+			ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
+			sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
+					 user_string, with_option, terminator, NEWLINE);
+		}
 	    else
-            sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", PRV.RDB$RELATION_NAME,
-                     user_string, with_option, terminator, NEWLINE);
-        
+			sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", PRV.RDB$RELATION_NAME,
+					 user_string, with_option, terminator, NEWLINE);
+
 	    ISQL_printf (Out, Print_buffer);
-        
+
 	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	END_ERROR;
 
 }
@@ -1005,7 +989,7 @@ void SHOW_print_metadata_text_blob(IB_FILE* fp,
  *
  **************************************/
 
-// Don't bother with null blobs 
+// Don't bother with null blobs
 
 	if (blobid->gds_quad_high == 0 && blobid->gds_quad_low == 0)
 		return;
@@ -1047,7 +1031,7 @@ void SHOW_print_metadata_text_blob(IB_FILE* fp,
 }
 
 
-int SHOW_metadata(SCHAR** cmd,
+int SHOW_metadata(const SCHAR* const* cmd,
 				  SCHAR** lcmd)
 {
 /**************************************
@@ -1064,20 +1048,16 @@ int SHOW_metadata(SCHAR** cmd,
  *
  **************************************/
 	int ret = SKIP;
-	TEXT msg_string[MSG_LENGTH];
-	TEXT key_string[MSG_LENGTH];
 	int key = 0;
 
-// Can't show nothing, return an error 
-
-	*key_string = '\0';
+// Can't show nothing, return an error
 
 	if (!cmd[1])
 		return (ERR);
-
-// Only show version works if there is no db attached 
-
+		
+// Only show version works if there is no db attached
 	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER"))) {
+		TEXT msg_string[MSG_LENGTH];
 		gds__msg_format(NULL, ISQL_MSG_FAC, VERSION, sizeof(msg_string),
 						msg_string, FB_VERSION, NULL, NULL, NULL, NULL);
 		sprintf(Print_buffer, "%s%s", msg_string, NEWLINE);
@@ -1189,11 +1169,11 @@ int SHOW_metadata(SCHAR** cmd,
 		{
 			if (*cmd[2])
 			{
-                FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
-                    key = NO_INDICES_ON_REL;
-                END_FOR
-                ON_ERROR
-					// Ignore any error 
+				FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
+					key = NO_INDICES_ON_REL;
+				END_FOR
+				ON_ERROR
+					// Ignore any error
 				END_ERROR;
 				if (!key)
 					key = NO_REL_OR_INDEX;
@@ -1222,7 +1202,8 @@ int SHOW_metadata(SCHAR** cmd,
 		}
 	}
 	else if ((!strcmp(cmd[1], "EXCEPTION")) ||
-			 (!strcmp(cmd[1], "EXCEPTIONS"))) {
+			 (!strcmp(cmd[1], "EXCEPTIONS")))
+	{
 		if (*cmd[2] == '"') {
 			remove_delimited_double_quotes(lcmd[2]);
 			ret = show_exceptions(lcmd[2]);
@@ -1268,7 +1249,8 @@ int SHOW_metadata(SCHAR** cmd,
 		}
 	}
 	else if ((!strcmp(cmd[1], "GENERATOR")) ||
-			 (!strcmp(cmd[1], "GENERATORS")) || (!strcmp(cmd[1], "GEN"))) {
+			 (!strcmp(cmd[1], "GENERATORS")) || (!strcmp(cmd[1], "GEN")))
+	{
 		if (*cmd[2] == '"') {
 			remove_delimited_double_quotes(lcmd[2]);
 			ret = show_generators(lcmd[2]);
@@ -1291,51 +1273,52 @@ int SHOW_metadata(SCHAR** cmd,
 			}
 			else
 				strcpy(SQL_id_for_grant, cmd[2]);
-            ret = SHOW_grants (SQL_id_for_grant, "", 255);
+			ret = SHOW_grants (SQL_id_for_grant, "", 255);
 		}
 		else {
 			strcpy(SQL_id_for_grant, cmd[2]);
-            ret = EXTRACT_list_grants ("");
-        }
+			ret = EXTRACT_list_grants ("");
+		}
 
 		if (ret == NOT_FOUND) {
-            if (*cmd[2]) {
-                FOR FIRST 1 R IN RDB$RELATIONS 
-                    WITH R.RDB$RELATION_NAME EQ SQL_id_for_grant;
+			if (*cmd[2]) {
+				FOR FIRST 1 R IN RDB$RELATIONS
+					WITH R.RDB$RELATION_NAME EQ SQL_id_for_grant;
 
-                    key = NO_GRANT_ON_REL;
-                END_FOR
+					key = NO_GRANT_ON_REL;
+				END_FOR
 			    ON_ERROR
-                    // Ignore any error 
+					// Ignore any error
 				END_ERROR;
-                if (!key) {
-                    FOR FIRST 1 P IN RDB$PROCEDURES 
-                        WITH P.RDB$PROCEDURE_NAME EQ SQL_id_for_grant;
+				if (!key) {
+					FOR FIRST 1 P IN RDB$PROCEDURES
+						WITH P.RDB$PROCEDURE_NAME EQ SQL_id_for_grant;
 
-                        key = NO_GRANT_ON_PROC;
-                    END_FOR
-                    ON_ERROR
-                        // Ignore any error 
+						key = NO_GRANT_ON_PROC;
+					END_FOR
+					ON_ERROR
+						// Ignore any error
 				    END_ERROR;
-                }
-                if (!key) {
-                    FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ SQL_id_for_grant;
-                        key = NO_GRANT_ON_ROL;
-                    END_FOR
+				}
+				if (!key) {
+					FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ SQL_id_for_grant;
+						key = NO_GRANT_ON_ROL;
+					END_FOR
 				    ON_ERROR
-                        // Ignore any error 
+						// Ignore any error
 				    END_ERROR;
-                }
-                if (!key)
-                    key = NO_REL_OR_PROC_OR_ROLE;
-            }
-            else {
-                key = NO_GRANT_ON_ANY;
-            }
-        }
+				}
+				if (!key)
+					key = NO_REL_OR_PROC_OR_ROLE;
+			}
+			else {
+				key = NO_GRANT_ON_ANY;
+			}
+		}
 	}
 	else if ((!strcmp(cmd[1], "PROCEDURE")) ||
-			 (!strcmp(cmd[1], "PROC")) || (!strcmp(cmd[1], "PROCEDURES"))) {
+			 (!strcmp(cmd[1], "PROC")) || (!strcmp(cmd[1], "PROCEDURES")))
+	{
 		if (*cmd[2] == '"') {
 			remove_delimited_double_quotes(lcmd[2]);
 			ret = show_proc(lcmd[2]);
@@ -1351,7 +1334,8 @@ int SHOW_metadata(SCHAR** cmd,
 		}
 	}
 	else if ((!strcmp(cmd[1], "TRIGGER")) ||
-			 (!strcmp(cmd[1], "TRIG")) || (!strcmp(cmd[1], "TRIGGERS"))) {
+			 (!strcmp(cmd[1], "TRIG")) || (!strcmp(cmd[1], "TRIGGERS")))
+	{
 		if (*cmd[2] == '"') {
 			remove_delimited_double_quotes(lcmd[2]);
 			ret = show_trigger(lcmd[2], true);
@@ -1361,11 +1345,11 @@ int SHOW_metadata(SCHAR** cmd,
 
 		if (ret == NOT_FOUND)
 			if (*cmd[2]) {
-                FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
-                    key = NO_TRIGGERS_ON_REL;
-                END_FOR
+				FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
+					key = NO_TRIGGERS_ON_REL;
+				END_FOR
 				ON_ERROR
-					// Ignore any error 
+					// Ignore any error
 				END_ERROR;
 				if (!key)
 					key = NO_REL_OR_TRIGGER;
@@ -1383,11 +1367,11 @@ int SHOW_metadata(SCHAR** cmd,
 
 		if (ret == NOT_FOUND) {
 			if (*cmd[2]) {
-                FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
-                    key = NO_CHECKS_ON_REL;
-                END_FOR
+				FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
+					key = NO_CHECKS_ON_REL;
+				END_FOR
 				ON_ERROR
-					// Ignore any error 
+					// Ignore any error
 				END_ERROR;
 			}
 			if (!key)
@@ -1400,13 +1384,14 @@ int SHOW_metadata(SCHAR** cmd,
 		return (ERR);
 
 	if (ret == NOT_FOUND) {
+		TEXT key_string[MSG_LENGTH];
 		if (*cmd[2] == '"')
-			gds__msg_format(NULL, ISQL_MSG_FAC, key, sizeof(msg_string),
-							msg_string, lcmd[2], NULL, NULL, NULL, NULL);
+			gds__msg_format(NULL, ISQL_MSG_FAC, key, sizeof(key_string),
+							key_string, lcmd[2], NULL, NULL, NULL, NULL);
 		else
-			gds__msg_format(NULL, ISQL_MSG_FAC, key, sizeof(msg_string),
-							msg_string, cmd[2], NULL, NULL, NULL, NULL);
-		STDERROUT(msg_string, 1);
+			gds__msg_format(NULL, ISQL_MSG_FAC, key, sizeof(key_string),
+							key_string, cmd[2], NULL, NULL, NULL, NULL);
+		STDERROUT(key_string, 1);
 	}
 
 	return (ret);
@@ -1443,39 +1428,16 @@ static void remove_delimited_double_quotes(TEXT* string)
  **************************************
  *
  * Functional description
- *	remove the delimited double quotes. Blanks could be part of
- *	delimited SQL identifier.
+ *	Remove the delimited double quotes. Blanks could be part of
+ *	delimited SQL identifier. Unescape embedded double quotes.
  *
  **************************************/
-	const size_t cmd_len = strlen(string);
-	UCHAR* q = (UCHAR*) string;
-	const UCHAR* p = q;
-	const UCHAR* const end_of_str = p + cmd_len;
-
-	for (int cnt = 1; cnt < cmd_len && p < end_of_str; cnt++) {
-		p++;
-		if (cnt < cmd_len - 1) {
-			*q = *p;
-			if (p + 1 < end_of_str) {
-				const UCHAR* next_char = p + 1;
-				if (*next_char == DBL_QUOTE)	// skip the escape double quote 
-					p++;
-			}
-			else {
-				p++;
-				*q = '\0';
-			}
-		}
-		else
-			*q = '\0';
-		q++;
-	}
-	*q = '\0';
+	ISQL_remove_and_unescape_quotes(string, DBL_QUOTE);
 }
 
 
 static void make_priv_string(USHORT flags,
-							 UCHAR* string)
+							 char* string)
 {
 /**************************************
  *
@@ -1484,15 +1446,15 @@ static void make_priv_string(USHORT flags,
  **************************************
  *
  * Functional description
- *	Given a bit-vector of privileges, turn it into a 
+ *	Given a bit-vector of privileges, turn it into a
  *	string list.
  *
  **************************************/
-	for (USHORT i = 0; privs[i].priv_string; i++) {
+	for (int i = 0; privs[i].priv_string; i++) {
 		if (flags & privs[i].priv_flag) {
 			if (*string)
-				strcat((char*) string, ", ");
-			strcat((char*) string, privs[i].priv_string);
+				strcat(string, ", ");
+			strcat(string, privs[i].priv_string);
 		}
 	}
 }
@@ -1507,7 +1469,7 @@ static int show_all_tables(SSHORT flag)
  **************************************
  *
  *	Print the names of all user tables from
- *	rdb$relations.  We use a dynamic query 
+ *	rdb$relations.  We use a dynamic query
  *
  *	Parameters:  flag -- 0, show user tables
  *	1, show system tables only; -1, show views only
@@ -1517,37 +1479,37 @@ static int show_all_tables(SSHORT flag)
 	bool first = true;
 
 	if (flag == -1) {
-		// Views 
+		// Views
 	    FOR REL IN RDB$RELATIONS WITH
-            REL.RDB$VIEW_BLR NOT MISSING
-            SORTED BY REL.RDB$RELATION_NAME
-	   
-            first = false;
-            sprintf (Print_buffer, "%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
-            ISQL_printf (Out, Print_buffer);
+			REL.RDB$VIEW_BLR NOT MISSING
+			SORTED BY REL.RDB$RELATION_NAME
+
+			first = false;
+			sprintf (Print_buffer, "%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
+			ISQL_printf (Out, Print_buffer);
 	        odd = !odd;
-	
+
 	    END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    return ERR;
 		END_ERROR;
 	}
 	else {
 	    // The flag is not always set for non-system objects... this
 	    // query may potentially fail.
-        FOR REL IN RDB$RELATIONS WITH
-            REL.RDB$SYSTEM_FLAG EQ flag
-            SORTED BY REL.RDB$RELATION_NAME
-	
-            first = false;
-            sprintf (Print_buffer, "%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
-            ISQL_printf (Out, Print_buffer);
+		FOR REL IN RDB$RELATIONS WITH
+			REL.RDB$SYSTEM_FLAG EQ flag
+			SORTED BY REL.RDB$RELATION_NAME
+
+			first = false;
+			sprintf (Print_buffer, "%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
+			ISQL_printf (Out, Print_buffer);
 	        odd = !odd;
-            
+
 	    END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    return ERR;
 		END_ERROR;
 	}
@@ -1563,7 +1525,7 @@ static int show_all_tables(SSHORT flag)
 static void show_charsets(const SCHAR* relation_name,
 						  const SCHAR* field_name)
 {
-/************************************* 
+/*************************************
 *
 *	s h o w _ c h a r s e t s
 *
@@ -1576,25 +1538,25 @@ static void show_charsets(const SCHAR* relation_name,
 	SSHORT collation, char_set_id;
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
 
-// If there is a relation_name, this is a real column, look up collation 
+// If there is a relation_name, this is a real column, look up collation
 /* in rdb$relation_fields */
 
 	if (!V33 && relation_name) {
 	    FOR RRF IN RDB$RELATION_FIELDS CROSS
-            FLD IN RDB$FIELDS
-            WITH RRF.RDB$FIELD_NAME EQ field_name AND
-            RRF.RDB$RELATION_NAME EQ relation_name AND
-            RRF.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
-	
-            char_set_id = 0;
-            if (!FLD.RDB$CHARACTER_SET_ID.NULL)
-                char_set_id = FLD.RDB$CHARACTER_SET_ID;
-            collation = 0;
+			FLD IN RDB$FIELDS
+			WITH RRF.RDB$FIELD_NAME EQ field_name AND
+			RRF.RDB$RELATION_NAME EQ relation_name AND
+			RRF.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
+
+			char_set_id = 0;
+			if (!FLD.RDB$CHARACTER_SET_ID.NULL)
+				char_set_id = FLD.RDB$CHARACTER_SET_ID;
+			collation = 0;
 	        if (!RRF.RDB$COLLATION_ID.NULL)
-                collation = RRF.RDB$COLLATION_ID;
+				collation = RRF.RDB$COLLATION_ID;
 	        else if (!FLD.RDB$COLLATION_ID.NULL)
-                collation = FLD.RDB$COLLATION_ID;
-        END_FOR
+				collation = FLD.RDB$COLLATION_ID;
+		END_FOR
 		ON_ERROR
 #ifdef DEV_BUILD
 			ib_fprintf(ib_stderr, "show_charsets(%s %s) failed\n",
@@ -1605,7 +1567,7 @@ static void show_charsets(const SCHAR* relation_name,
 	else if (!V33) {
 	    FOR FLD IN RDB$FIELDS WITH
 	        FLD.RDB$FIELD_NAME EQ field_name
-	
+
 	        char_set_id = 0;
 	        collation = 0;
 	        if (!FLD.RDB$CHARACTER_SET_ID.NULL)
@@ -1621,7 +1583,7 @@ static void show_charsets(const SCHAR* relation_name,
 		END_ERROR;
 	}
 
-    TEXT char_sets[86];			/* CHARACTER SET <name31> COLLATE <name31> */
+	TEXT char_sets[86];			/* CHARACTER SET <name31> COLLATE <name31> */
 	char_sets[0] = 0;
 	if ((char_set_id != default_char_set_id) || collation)
 		ISQL_get_character_sets(char_set_id, collation, false, char_sets);
@@ -1643,37 +1605,37 @@ static int show_check(const SCHAR* object)
  *
  **************************************/
 	bool first = true;
-// Only V4 databases have this information 
+// Only V4 databases have this information
 
 	if (!V4)
 		return (SKIP);
 
 	if (!*object)
 		return (ERR);
-// Query gets the check clauses for triggers stored for check constraints 
+// Query gets the check clauses for triggers stored for check constraints
 
-	FOR TRG IN RDB$TRIGGERS CROSS 
+	FOR TRG IN RDB$TRIGGERS CROSS
 	   CHK IN RDB$CHECK_CONSTRAINTS WITH
 	   TRG.RDB$TRIGGER_TYPE EQ 1 AND
 	   TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME AND
 	   CHK.RDB$TRIGGER_NAME STARTING WITH "CHECK" AND
 	   TRG.RDB$RELATION_NAME EQ object
 	   SORTED BY CHK.RDB$CONSTRAINT_NAME
-	
-	    // Use print_blob to print the blob 
+
+	    // Use print_blob to print the blob
 	    first = false;
-	
+
 	    sprintf (Print_buffer, "CONSTRAINT %s:%s  ",
 			ISQL_blankterm(CHK.RDB$CONSTRAINT_NAME), NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
-	
+
 	    if (!TRG.RDB$TRIGGER_SOURCE.NULL)
-            SHOW_print_metadata_text_blob (Out, &TRG.RDB$TRIGGER_SOURCE);
+			SHOW_print_metadata_text_blob (Out, &TRG.RDB$TRIGGER_SOURCE);
 	    ISQL_printf (Out, NEWLINE);
-	
-    END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return (ERR);
 	END_ERROR;
 	if (first)
@@ -1682,7 +1644,7 @@ static int show_check(const SCHAR* object)
 }
 
 
-static void show_db(void)
+static void show_db()
 {
 /**************************************
  *
@@ -1695,100 +1657,100 @@ static void show_db(void)
  *
  **************************************/
 
-// First print the name of the database 
+// First print the name of the database
 
-	sprintf(Print_buffer, "Database: %s%s", Db_name, NEWLINE);
+	sprintf(Print_buffer, "Database: %s%s", global_Db_name, NEWLINE);
 	ISQL_printf(Out, Print_buffer);
-// Get the owner name 
+// Get the owner name
 	FOR REL IN RDB$RELATIONS WITH
 	    REL.RDB$RELATION_NAME = "RDB$DATABASE"
-	
+
 	    if (!REL.RDB$OWNER_NAME.NULL) {
-            sprintf (Print_buffer, "%sOwner: %s%s", TAB_AS_SPACES, REL.RDB$OWNER_NAME, NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-        }
+			sprintf (Print_buffer, "%sOwner: %s%s", TAB_AS_SPACES, REL.RDB$OWNER_NAME, NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+		}
 	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return;
 	END_ERROR;
 
-// Query for files 
+// Query for files
 
 	FOR FIL IN RDB$FILES SORTED BY FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_SEQUENCE,
-        FIL.RDB$FILE_SEQUENCE
-	
-	    // reset nulls to zero 
-	
+		FIL.RDB$FILE_SEQUENCE
+
+	    // reset nulls to zero
+
 	    if (FIL.RDB$FILE_FLAGS.NULL)
-            FIL.RDB$FILE_FLAGS = 0;
-        if (FIL.RDB$FILE_LENGTH.NULL)
-            FIL.RDB$FILE_LENGTH = 0;
+			FIL.RDB$FILE_FLAGS = 0;
+		if (FIL.RDB$FILE_LENGTH.NULL)
+			FIL.RDB$FILE_LENGTH = 0;
 	    if (FIL.RDB$FILE_SEQUENCE.NULL)
-            FIL.RDB$FILE_SEQUENCE = 0;
+			FIL.RDB$FILE_SEQUENCE = 0;
 	    if (FIL.RDB$FILE_START.NULL)
-            FIL.RDB$FILE_START = 0;
+			FIL.RDB$FILE_START = 0;
 	/*
 	This line used to terminate the file name at the first space.  This does
 	not seem necessary, and creates problems since Windows 95 allows embeded
 	spaces in file names.
-	
+
 	    ISQL_blankterm (FIL.RDB$FILE_NAME);
 	*/
-	
+
 	    if (FIL.RDB$FILE_FLAGS == 0) {
-            sprintf (Print_buffer, " File %d: \"%s\", length %ld, start %ld%s", 
-                     FIL.RDB$FILE_SEQUENCE, FIL.RDB$FILE_NAME,
-                     FIL.RDB$FILE_LENGTH, FIL.RDB$FILE_START, NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-        }
-        
+			sprintf (Print_buffer, " File %d: \"%s\", length %ld, start %ld%s",
+					 FIL.RDB$FILE_SEQUENCE, FIL.RDB$FILE_NAME,
+					 FIL.RDB$FILE_LENGTH, FIL.RDB$FILE_START, NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+		}
+
 	    if (FIL.RDB$FILE_FLAGS & FILE_cache) {
-            sprintf (Print_buffer, " Cache: %s, length %ld%s",
-                     FIL.RDB$FILE_NAME, FIL.RDB$FILE_LENGTH, NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-        }
-        
+			sprintf (Print_buffer, " Cache: %s, length %ld%s",
+					 FIL.RDB$FILE_NAME, FIL.RDB$FILE_LENGTH, NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+		}
+
 	    if (FIL.RDB$FILE_FLAGS & FILE_shadow) {
-            if (FIL.RDB$FILE_SEQUENCE) {
-                sprintf (Print_buffer, "%sfile %s ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
-                ISQL_printf (Out, Print_buffer);
-            }
-            else {
-                sprintf (Print_buffer, " Shadow %d: \"%s\" ", 
-                         FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_NAME);
-                ISQL_printf (Out, Print_buffer);
-                if (FIL.RDB$FILE_FLAGS & FILE_inactive) {
-                    sprintf (Print_buffer, "inactive ");
-                    ISQL_printf (Out, Print_buffer);
-                }
-                if (FIL.RDB$FILE_FLAGS & FILE_manual) {
-                    sprintf (Print_buffer, "manual ");
-                    ISQL_printf (Out, Print_buffer);
-                }
-                else {
-                    sprintf (Print_buffer, "auto ");
-                    ISQL_printf (Out, Print_buffer);
-                }
-                if (FIL.RDB$FILE_FLAGS & FILE_conditional) {
-                    sprintf (Print_buffer, "conditional ");
-                    ISQL_printf (Out, Print_buffer);
-                }
-            }
-            if (FIL.RDB$FILE_LENGTH) {
-                sprintf (Print_buffer, "length %ld ", FIL.RDB$FILE_LENGTH);
-                ISQL_printf (Out, Print_buffer);
-            }
-            if (FIL.RDB$FILE_START) {
-                sprintf (Print_buffer, "starting %ld", FIL.RDB$FILE_START);
-                ISQL_printf (Out, Print_buffer);
-            }
-            ISQL_printf (Out, NEWLINE);
-        }
-	
+			if (FIL.RDB$FILE_SEQUENCE) {
+				sprintf (Print_buffer, "%sfile %s ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
+				ISQL_printf (Out, Print_buffer);
+			}
+			else {
+				sprintf (Print_buffer, " Shadow %d: \"%s\" ",
+						 FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_NAME);
+				ISQL_printf (Out, Print_buffer);
+				if (FIL.RDB$FILE_FLAGS & FILE_inactive) {
+					sprintf (Print_buffer, "inactive ");
+					ISQL_printf (Out, Print_buffer);
+				}
+				if (FIL.RDB$FILE_FLAGS & FILE_manual) {
+					sprintf (Print_buffer, "manual ");
+					ISQL_printf (Out, Print_buffer);
+				}
+				else {
+					sprintf (Print_buffer, "auto ");
+					ISQL_printf (Out, Print_buffer);
+				}
+				if (FIL.RDB$FILE_FLAGS & FILE_conditional) {
+					sprintf (Print_buffer, "conditional ");
+					ISQL_printf (Out, Print_buffer);
+				}
+			}
+			if (FIL.RDB$FILE_LENGTH) {
+				sprintf (Print_buffer, "length %ld ", FIL.RDB$FILE_LENGTH);
+				ISQL_printf (Out, Print_buffer);
+			}
+			if (FIL.RDB$FILE_START) {
+				sprintf (Print_buffer, "starting %ld", FIL.RDB$FILE_START);
+				ISQL_printf (Out, Print_buffer);
+			}
+			ISQL_printf (Out, NEWLINE);
+		}
+
 	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return;
 	END_ERROR;
 
@@ -1801,15 +1763,15 @@ static void show_db(void)
 		return;
 	}
 
-// First general database parameters 
+// First general database parameters
 
 	bool translate = true;
-	
-	if (SHOW_dbb_parameters(DB, info_buf, db_items, sizeof(db_items), translate)) {
-        ISQL_printf(Out, info_buf);
-    }
 
-// Only v4 databases have log_files 
+	if (SHOW_dbb_parameters(DB, info_buf, db_items, sizeof(db_items), translate)) {
+		ISQL_printf(Out, info_buf);
+	}
+
+// Only v4 databases have log_files
 
 	if (!V4) {
 		ISQL_FREE(info_buf);
@@ -1820,74 +1782,74 @@ static void show_db(void)
 
 	FOR LOG IN RDB$LOG_FILES SORTED BY LOG.RDB$FILE_FLAGS, LOG.RDB$FILE_SEQUENCE
 	    SORTED BY LOG.RDB$FILE_FLAGS, LOG.RDB$FILE_SEQUENCE
-	
-	    // If there are log files, print Wal statistics 
-	
+
+	    // If there are log files, print Wal statistics
+
 	    is_wal = true;
-	
-	    // reset nulls to zero 
-	
-        if (LOG.RDB$FILE_FLAGS.NULL)
-            LOG.RDB$FILE_FLAGS = 0;
+
+	    // reset nulls to zero
+
+		if (LOG.RDB$FILE_FLAGS.NULL)
+			LOG.RDB$FILE_FLAGS = 0;
 	    if (LOG.RDB$FILE_LENGTH.NULL)
-            LOG.RDB$FILE_LENGTH = 0;
+			LOG.RDB$FILE_LENGTH = 0;
 	    if (LOG.RDB$FILE_SEQUENCE.NULL)
-            LOG.RDB$FILE_SEQUENCE = 0;
+			LOG.RDB$FILE_SEQUENCE = 0;
 	    ISQL_blankterm (LOG.RDB$FILE_NAME);
-        
+
 	    if (LOG.RDB$FILE_FLAGS & LOG_overflow) {
-            sprintf (Print_buffer, "overflow: %s, ", LOG.RDB$FILE_NAME);
-            ISQL_printf (Out, Print_buffer);
-        }
+			sprintf (Print_buffer, "overflow: %s, ", LOG.RDB$FILE_NAME);
+			ISQL_printf (Out, Print_buffer);
+		}
 	    else if (LOG.RDB$FILE_FLAGS & LOG_serial) {
-            sprintf (Print_buffer, "Logfile serial: %s, ", LOG.RDB$FILE_NAME);
-            ISQL_printf (Out, Print_buffer);
-        }
+			sprintf (Print_buffer, "Logfile serial: %s, ", LOG.RDB$FILE_NAME);
+			ISQL_printf (Out, Print_buffer);
+		}
 	    else if (LOG.RDB$FILE_FLAGS & LOG_default) {
-            sprintf (Print_buffer, "Logfile default, ");
-            ISQL_printf (Out, Print_buffer);
-        }
+			sprintf (Print_buffer, "Logfile default, ");
+			ISQL_printf (Out, Print_buffer);
+		}
 	    else if (LOG.RDB$FILE_FLAGS & LOG_raw) {
-            sprintf (Print_buffer, "Logfile raw: %s, %d partitions, ", LOG.RDB$FILE_NAME, LOG.RDB$FILE_PARTITIONS);
-            ISQL_printf (Out, Print_buffer);
-        }
+			sprintf (Print_buffer, "Logfile raw: %s, %d partitions, ", LOG.RDB$FILE_NAME, LOG.RDB$FILE_PARTITIONS);
+			ISQL_printf (Out, Print_buffer);
+		}
 	    else {
-            
-            sprintf (Print_buffer, "Logfile #%d: %s, ", LOG.RDB$FILE_SEQUENCE, LOG.RDB$FILE_NAME);
-            ISQL_printf (Out, Print_buffer);
-        }
+			sprintf (Print_buffer, "Logfile #%d: %s, ", LOG.RDB$FILE_SEQUENCE, LOG.RDB$FILE_NAME);
+			ISQL_printf (Out, Print_buffer);
+		}
 	    sprintf (Print_buffer, "length %ld%s", LOG.RDB$FILE_LENGTH, NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
-        
+
 	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    if (info_buf)
-            ISQL_FREE(info_buf);
+			ISQL_FREE(info_buf);
 	    return;
 	END_ERROR;
 
-// And now for Rich's show db parameters 
+// And now for Rich's show db parameters
 
-	if (is_wal 
-        && SHOW_dbb_parameters(DB, info_buf, wal_items,
-                            sizeof(wal_items), translate)) {
+	if (is_wal
+		&& SHOW_dbb_parameters(DB, info_buf, wal_items,
+							sizeof(wal_items), translate))
+	{
 		ISQL_printf(Out, info_buf);
 	}
 
 	if (V4) {
-	    FOR DBB IN RDB$DATABASE 
-            WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING
-            AND DBB.RDB$CHARACTER_SET_NAME NE " ";
-	        sprintf (Print_buffer, "Default Character set: %s%s", 
-                     DBB.RDB$CHARACTER_SET_NAME,
-                     NEWLINE);
-            ISQL_printf (Out, Print_buffer);
+	    FOR DBB IN RDB$DATABASE
+			WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING
+			AND DBB.RDB$CHARACTER_SET_NAME NE " "
+	        sprintf (Print_buffer, "Default Character set: %s%s",
+					 DBB.RDB$CHARACTER_SET_NAME,
+					 NEWLINE);
+			ISQL_printf (Out, Print_buffer);
 	    END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    if (info_buf)
-                ISQL_FREE(info_buf);
+				ISQL_FREE(info_buf);
 		    return;
 		END_ERROR;
 	}
@@ -1896,7 +1858,7 @@ static void show_db(void)
 }
 
 
-static int show_dialect(void)
+static int show_dialect()
 {
 /**************************************
  *
@@ -1904,23 +1866,25 @@ static int show_dialect(void)
  *
  **************************************
  *
- *	Print out the SQL dialect information 
+ *	Print out the SQL dialect information
  *
  **************************************/
 
-	if (db_SQL_dialect > 0)
+	if (db_SQL_dialect > 0) {
 		sprintf(Print_buffer, "%38s%d%s%d",
 				"Client SQL dialect is set to: ", SQL_dialect,
 				" and database SQL dialect is: ", db_SQL_dialect);
-	else if (SQL_dialect == 0)
+	}
+	else if (SQL_dialect == 0) {
 		sprintf(Print_buffer, "%38s%s",
 				"Client SQL dialect has not been set",
 				" and no database has been connected yet.");
-	else
+	}
+	else {
 		sprintf(Print_buffer, "%38s%d%s",
 				"Client SQL dialect is set to: ", SQL_dialect,
 				". No database has been connected.");
-
+	}
 	ISQL_printf(Out, Print_buffer);
 	ISQL_printf(Out, NEWLINE);
 	return SKIP;
@@ -1929,7 +1893,7 @@ static int show_dialect(void)
 
 static int show_domains(const SCHAR* domain_name)
 {
-/************************************* 
+/*************************************
 *
 *	s h o w _ d o m a i n s
 *
@@ -1942,199 +1906,209 @@ static int show_domains(const SCHAR* domain_name)
 	bool first = true;
 
 	if (!*domain_name) {
-		//  List all domain names in columns 
+		//  List all domain names in columns
 		if (V4) {
-            FOR FLD IN RDB$FIELDS WITH
-                FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
-                AND FLD.RDB$SYSTEM_FLAG NE 1
-                SORTED BY FLD.RDB$FIELD_NAME
-                
-                first = false;
-                sprintf (Print_buffer, "%38s%s", FLD.RDB$FIELD_NAME, (odd ? " " : NEWLINE));
-                ISQL_printf (Out, Print_buffer);
-                odd = !odd;
-            END_FOR
-            ON_ERROR 
-                ISQL_errmsg(isc_status);
+			FOR FLD IN RDB$FIELDS WITH
+				FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
+				AND FLD.RDB$SYSTEM_FLAG NE 1
+				SORTED BY FLD.RDB$FIELD_NAME
+
+				first = false;
+				sprintf (Print_buffer, "%38s%s", FLD.RDB$FIELD_NAME, (odd ? " " : NEWLINE));
+				ISQL_printf (Out, Print_buffer);
+				odd = !odd;
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
 		        return ERR;
-            END_ERROR;
-        }
+			END_ERROR;
+		}
 		else {
-			// V3 databases will list all gdml fields as well 
-            FOR FLD IN RDB$FIELDS WITH
-                FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
-                AND FLD.RDB$SYSTEM_FLAG NE 1
-                SORTED BY FLD.RDB$FIELD_NAME
-	
-                if (strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0 &&
-                    isdigit (FLD.RDB$FIELD_NAME[4]))
-                    continue;
-	
-                first = false;
-                sprintf (Print_buffer, "%38s%s", FLD.RDB$FIELD_NAME, (odd ? " " : NEWLINE));
-                ISQL_printf (Out, Print_buffer);
-                odd = !odd;
-            END_FOR
-			ON_ERROR 
-                ISQL_errmsg(isc_status);
+			// V3 databases will list all gdml fields as well
+			FOR FLD IN RDB$FIELDS WITH
+				FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
+				AND FLD.RDB$SYSTEM_FLAG NE 1
+				SORTED BY FLD.RDB$FIELD_NAME
+
+				if (strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0 &&
+					isdigit (FLD.RDB$FIELD_NAME[4]))
+				{
+					continue;
+				}
+
+				first = false;
+				sprintf (Print_buffer, "%38s%s", FLD.RDB$FIELD_NAME, (odd ? " " : NEWLINE));
+				ISQL_printf (Out, Print_buffer);
+				odd = !odd;
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
 			    return ERR;
 			END_ERROR;
 		}
 		if (!first)
 			ISQL_printf(Out, NEWLINE);
 	}
-	else {						// List named domain 
+	else {						// List named domain
 
 	    FOR FLD IN RDB$FIELDS WITH
-            FLD.RDB$FIELD_NAME EQ domain_name;
-	
-            first = false;
-            // Print the name of the domain 
-            ISQL_blankterm (FLD.RDB$FIELD_NAME);
-            sprintf (Print_buffer, "%-32s", FLD.RDB$FIELD_NAME);
-            ISQL_printf (Out, Print_buffer);
-	
-            // Array dimensions 
-            if (!FLD.RDB$DIMENSIONS.NULL) {
-                sprintf (Print_buffer, "ARRAY OF ");
-                ISQL_printf (Out, Print_buffer);
-                ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
-                sprintf (Print_buffer, "%s                                ",
-                         NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-            }
-	
-            // Look through types array 
-	
-            for (SSHORT i = 0; Column_types[i].type; i++)
+			FLD.RDB$FIELD_NAME EQ domain_name;
+
+			first = false;
+			// Print the name of the domain
+			ISQL_blankterm (FLD.RDB$FIELD_NAME);
+			sprintf (Print_buffer, "%-32s", FLD.RDB$FIELD_NAME);
+			ISQL_printf (Out, Print_buffer);
+
+			// Array dimensions
+			if (!FLD.RDB$DIMENSIONS.NULL) {
+				sprintf (Print_buffer, "ARRAY OF ");
+				ISQL_printf (Out, Print_buffer);
+				ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
+				sprintf (Print_buffer, "%s                                ",
+						 NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+			}
+
+			// Look through types array
+
+			for (int i = 0; Column_types[i].type; i++)
 	            if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
-                    bool precision_known = false;
-                    
-                    if (major_ods >= ODS_VERSION10) {
-                        // Handle Integral subtypes NUMERIC and DECIMAL 
-                        if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
-                            (FLD.RDB$FIELD_TYPE == INTEGER) ||
-                            (FLD.RDB$FIELD_TYPE == blr_int64)) {
-                            FOR FLD1 IN RDB$FIELDS WITH
-                                FLD1.RDB$FIELD_NAME EQ domain_name;
-                                /* We are ODS >= 10 and could be any Dialect */
-                                if (!FLD1.RDB$FIELD_PRECISION.NULL) {
-                                    /* We are Dialect >=3 since FIELD_PRECISION
-                                       is non-NULL */
-                                    if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
-                                        FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES) {
-                                        sprintf (Print_buffer, "%s(%d, %d)", 
-                                                 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-                                                 FLD1.RDB$FIELD_PRECISION,
-                                                 -FLD1.RDB$FIELD_SCALE);
-                                        precision_known = true;
-                                    }
-                                }
-                            END_FOR
-                            ON_ERROR
-                                ISQL_errmsg (isc_status);
-                                return ERR;
-                            END_ERROR;
-                        }
-                    }
-                    
-                    if (!precision_known) {
-                        // Take a stab at numerics and decimals 
-                        if ((FLD.RDB$FIELD_TYPE == SMALLINT) && 
-                            (FLD.RDB$FIELD_SCALE < 0))
-                            sprintf (Print_buffer, 
-                                     "NUMERIC(4, %d)", 
-                                     -FLD.RDB$FIELD_SCALE);
-	
-                        else if ((FLD.RDB$FIELD_TYPE == INTEGER) && 
-                                 (FLD.RDB$FIELD_SCALE < 0))
-                            sprintf (Print_buffer, 
-                                     "NUMERIC(9, %d)", 
-                                     -FLD.RDB$FIELD_SCALE);
-                        
-                        else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-                                 (FLD.RDB$FIELD_SCALE < 0))
-                            sprintf (Print_buffer, 
-                                     "NUMERIC(15, %d)", 
-                                     -FLD.RDB$FIELD_SCALE);
-                        else
-                            sprintf (Print_buffer, "%s", Column_types[i].type_name);
-                    }
-                    
-                    ISQL_printf (Out, Print_buffer);
-                    
+					bool precision_known = false;
+
+					if (major_ods >= ODS_VERSION10) {
+						// Handle Integral subtypes NUMERIC and DECIMAL
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
+							(FLD.RDB$FIELD_TYPE == INTEGER) ||
+							(FLD.RDB$FIELD_TYPE == blr_int64))
+						{
+							FOR FLD1 IN RDB$FIELDS WITH
+								FLD1.RDB$FIELD_NAME EQ domain_name;
+								/* We are ODS >= 10 and could be any Dialect */
+								if (!FLD1.RDB$FIELD_PRECISION.NULL) {
+									/* We are Dialect >=3 since FIELD_PRECISION
+									   is non-NULL */
+									if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
+										FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+									{
+										sprintf (Print_buffer, "%s(%d, %d)",
+												 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
+												 FLD1.RDB$FIELD_PRECISION,
+												 -FLD1.RDB$FIELD_SCALE);
+										precision_known = true;
+									}
+								}
+							END_FOR
+							ON_ERROR
+								ISQL_errmsg (isc_status);
+								return ERR;
+							END_ERROR;
+						}
+					}
+
+					if (!precision_known) {
+						// Take a stab at numerics and decimals
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
+							(FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (Print_buffer,
+									 "NUMERIC(4, %d)",
+									 -FLD.RDB$FIELD_SCALE);
+	                    }
+						else if ((FLD.RDB$FIELD_TYPE == INTEGER) &&
+								 (FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (Print_buffer,
+									 "NUMERIC(9, %d)",
+									 -FLD.RDB$FIELD_SCALE);
+						}
+						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
+								 (FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (Print_buffer,
+									 "NUMERIC(15, %d)",
+									 -FLD.RDB$FIELD_SCALE);
+						}
+						else {
+							sprintf (Print_buffer, "%s", Column_types[i].type_name);
+						}
+					}
+
+					ISQL_printf (Out, Print_buffer);
+
 	                break;
-                }
-	
-            // Length for CHARs 
-            if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
-	            // Don't test character_length in a V3 database 
+				}
+
+			// Length for CHARs
+			if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
+	            // Don't test character_length in a V3 database
 	            if (!V4) {
 	                sprintf (Print_buffer, "(%d)", FLD.RDB$FIELD_LENGTH);
-                    ISQL_printf (Out, Print_buffer);
-                }
+					ISQL_printf (Out, Print_buffer);
+				}
 	            else {
 	                sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
-                    ISQL_printf (Out, Print_buffer);
-                }
-            }
-	
-            // Blob domains 
-            if (FLD.RDB$FIELD_TYPE == BLOB) {
+					ISQL_printf (Out, Print_buffer);
+				}
+			}
+
+			// Blob domains
+			if (FLD.RDB$FIELD_TYPE == BLOB) {
 	            sprintf (Print_buffer, " segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
-                ISQL_printf (Out, Print_buffer);
-                const SSHORT subtype  = FLD.RDB$FIELD_SUB_TYPE;
+				ISQL_printf (Out, Print_buffer);
+				const SSHORT subtype  = FLD.RDB$FIELD_SUB_TYPE;
 	            if (subtype >= 0 && subtype <= MAXSUBTYPES) {
-                    sprintf (Print_buffer, "%s", Sub_types[subtype]);
-                    ISQL_printf (Out, Print_buffer);
-                }
-                else {
-                    sprintf (Print_buffer, "%d", subtype);
-                    ISQL_printf (Out, Print_buffer);
-                }
-            }   
-            
-            // Show international character sets and collations 
-            if (V4 && (FLD.RDB$FIELD_TYPE == FCHAR || 
-                       FLD.RDB$FIELD_TYPE == VARCHAR  ||
-                       FLD.RDB$FIELD_TYPE == BLOB))
-                show_charsets(NULL, FLD.RDB$FIELD_NAME);
-	
-            
-            if (V4) {
-                if (FLD.RDB$NULL_FLAG != 1) {
-                    sprintf (Print_buffer, " Nullable");
-                    ISQL_printf (Out, Print_buffer);
-                }
-                else {
-                    sprintf (Print_buffer, " Not Null");
-                    ISQL_printf (Out, Print_buffer);
-                }
-            }
-            ISQL_printf (Out, NEWLINE);
-            
+					sprintf (Print_buffer, "%s", Sub_types[subtype]);
+					ISQL_printf (Out, Print_buffer);
+				}
+				else {
+					sprintf (Print_buffer, "%d", subtype);
+					ISQL_printf (Out, Print_buffer);
+				}
+			}
+
+			// Show international character sets and collations
+			if (V4 && (FLD.RDB$FIELD_TYPE == FCHAR ||
+					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
+					   FLD.RDB$FIELD_TYPE == BLOB))
+			{
+				show_charsets(NULL, FLD.RDB$FIELD_NAME);
+			}
+
+			if (V4) {
+				if (FLD.RDB$NULL_FLAG != 1) {
+					sprintf (Print_buffer, " Nullable");
+					ISQL_printf (Out, Print_buffer);
+				}
+				else {
+					sprintf (Print_buffer, " Not Null");
+					ISQL_printf (Out, Print_buffer);
+				}
+			}
+			ISQL_printf (Out, NEWLINE);
+
 	        if (V4) {
 				ISC_QUAD default_source;
-                ISQL_get_default_source (NULL, FLD.RDB$FIELD_NAME, 
-                                         &default_source);
-                if (default_source.gds_quad_high) {
-                    sprintf (Print_buffer, "                                ");
-                    ISQL_printf (Out, Print_buffer);
-                    SHOW_print_metadata_text_blob (Out, &default_source);
-                    ISQL_printf (Out, NEWLINE);
-                }
-            }
-	
-            if (!FLD.RDB$VALIDATION_SOURCE.NULL) {
-                sprintf (Print_buffer, "                                ");
-                ISQL_printf (Out, Print_buffer);
+				ISQL_get_default_source (NULL, FLD.RDB$FIELD_NAME,
+										 &default_source);
+				if (default_source.gds_quad_high) {
+					sprintf (Print_buffer, "                                ");
+					ISQL_printf (Out, Print_buffer);
+					SHOW_print_metadata_text_blob (Out, &default_source);
+					ISQL_printf (Out, NEWLINE);
+				}
+			}
+
+			if (!FLD.RDB$VALIDATION_SOURCE.NULL) {
+				sprintf (Print_buffer, "                                ");
+				ISQL_printf (Out, Print_buffer);
 	            SHOW_print_metadata_text_blob (Out, &FLD.RDB$VALIDATION_SOURCE);
-                ISQL_printf (Out, NEWLINE);
-            }
-	
+				ISQL_printf (Out, NEWLINE);
+			}
+
 	    END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    return (ERR);
 		END_ERROR;
 	}
@@ -2144,7 +2118,7 @@ static int show_domains(const SCHAR* domain_name)
 }
 
 
-static int show_exceptions(SCHAR* object)
+static int show_exceptions(const SCHAR* object)
 {
 /**************************************
  *
@@ -2162,69 +2136,69 @@ static int show_exceptions(SCHAR* object)
 	bool first = true;
 	SCHAR type[20];
 
-    ISQL_blankterm (object);
-    
-	FOR EXC IN RDB$EXCEPTIONS 
+	//ISQL_blankterm (object); It already comes trimmed.
+
+	FOR EXC IN RDB$EXCEPTIONS
 	    SORTED BY EXC.RDB$EXCEPTION_NAME
-	
+
 	    ISQL_blankterm (EXC.RDB$EXCEPTION_NAME);
-	    // List all objects if none specified, or just the named exception 
-	
+	    // List all objects if none specified, or just the named exception
+
 	    if (!*object || !strcmp (EXC.RDB$EXCEPTION_NAME, object)) {
-            if (first) {
-                sprintf (Print_buffer, "Exception Name                  Used by, Type%s=============================== =============================================%s", NEWLINE, NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-            }
-            first = false;
-	
-            sprintf (Print_buffer, "%-31s ", EXC.RDB$EXCEPTION_NAME);
-            ISQL_printf (Out, Print_buffer);
-	
-            // Look up dependent objects --procedures and triggers 
-            bool first_dep = true;
-            FOR DEP IN RDB$DEPENDENCIES WITH
-                DEP.RDB$DEPENDED_ON_TYPE = 7 AND
-                DEP.RDB$DEPENDED_ON_NAME EQ EXC.RDB$EXCEPTION_NAME
-                SORTED BY DEP.RDB$DEPENDENT_TYPE, DEP.RDB$DEPENDENT_NAME
-                
-                if (!first_dep) {
-                    sprintf (Print_buffer, "                                ");
-                    ISQL_printf (Out, Print_buffer);
-                }
-                first_dep = false;
-            
-                ISQL_blankterm (DEP.RDB$DEPENDENT_NAME);
-                
-                strcpy (type, "Unknown");
-                if (DEP.RDB$DEPENDENT_TYPE == 2)
-                    strcpy (type, "Trigger");
-                if (DEP.RDB$DEPENDENT_TYPE == 5)
-                    strcpy (type, "Stored procedure");
-                
-                sprintf (Print_buffer, "%s, %s%s", 
-                         DEP.RDB$DEPENDENT_NAME, 
-                         type,
-                         NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-            END_FOR
-            ON_ERROR
-                ISQL_errmsg (isc_status);
-                return ERR;
-            END_ERROR;
-	
-            sprintf (Print_buffer, "%s  %s%s", (first_dep ? NEWLINE : ""), 
-                     EXC.RDB$MESSAGE,
-                     NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-        }
+			if (first) {
+				sprintf (Print_buffer, "Exception Name                  Used by, Type%s=============================== =============================================%s", NEWLINE, NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+			}
+			first = false;
+
+			sprintf (Print_buffer, "%-31s ", EXC.RDB$EXCEPTION_NAME);
+			ISQL_printf (Out, Print_buffer);
+
+			// Look up dependent objects --procedures and triggers
+			bool first_dep = true;
+			FOR DEP IN RDB$DEPENDENCIES WITH
+				DEP.RDB$DEPENDED_ON_TYPE = 7 AND
+				DEP.RDB$DEPENDED_ON_NAME EQ EXC.RDB$EXCEPTION_NAME
+				SORTED BY DEP.RDB$DEPENDENT_TYPE, DEP.RDB$DEPENDENT_NAME
+
+				if (!first_dep) {
+					sprintf (Print_buffer, "                                ");
+					ISQL_printf (Out, Print_buffer);
+				}
+				first_dep = false;
+
+				ISQL_blankterm (DEP.RDB$DEPENDENT_NAME);
+
+				strcpy (type, "Unknown");
+				if (DEP.RDB$DEPENDENT_TYPE == 2)
+					strcpy (type, "Trigger");
+				if (DEP.RDB$DEPENDENT_TYPE == 5)
+					strcpy (type, "Stored procedure");
+
+				sprintf (Print_buffer, "%s, %s%s",
+						 DEP.RDB$DEPENDENT_NAME,
+						 type,
+						 NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg (isc_status);
+				return ERR;
+			END_ERROR;
+
+			sprintf (Print_buffer, "%s  %s%s", (first_dep ? NEWLINE : ""),
+					 EXC.RDB$MESSAGE,
+					 NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+		}
 	    if (!first)
 	        ISQL_printf (Out, NEWLINE);
-    END_FOR
-	ON_ERROR 
-        if (!V33) {
-            ISQL_errmsg(isc_status);
-            return ERR;
-        }
+	END_FOR
+	ON_ERROR
+		if (!V33) {
+			ISQL_errmsg(isc_status);
+			return ERR;
+		}
 	END_ERROR;
 	if (first)
 		return (NOT_FOUND);
@@ -2247,17 +2221,16 @@ static int show_filters(const SCHAR* object)
 	bool odd = true;
 	bool first = true;
 
-
-// Show all functions 
+// Show all functions
 	if (!*object) {
 		FOR FIL IN RDB$FILTERS
 		SORTED BY FIL.RDB$FUNCTION_NAME
-	
-		first = false;
-		ISQL_blankterm (FIL.RDB$FUNCTION_NAME);
-		sprintf (Print_buffer, "%-38s%s", FIL.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
-		ISQL_printf (Out, Print_buffer);
-		odd = !odd;
+
+			first = false;
+			ISQL_blankterm (FIL.RDB$FUNCTION_NAME);
+			sprintf (Print_buffer, "%-38s%s", FIL.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+			ISQL_printf (Out, Print_buffer);
+			odd = !odd;
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
@@ -2271,29 +2244,29 @@ static int show_filters(const SCHAR* object)
 			return NOT_FOUND;
 	}
 
-// We have a filter name, so expand on it 
+// We have a filter name, so expand on it
 	FOR FIL IN RDB$FILTERS WITH
 	   FIL.RDB$FUNCTION_NAME EQ object
-	
+
 	   first = false;
-	
-       ISQL_blankterm (FIL.RDB$FUNCTION_NAME);
-       ISQL_blankterm (FIL.RDB$MODULE_NAME);
+
+	   ISQL_blankterm (FIL.RDB$FUNCTION_NAME);
+	   ISQL_blankterm (FIL.RDB$MODULE_NAME);
 	   ISQL_blankterm (FIL.RDB$ENTRYPOINT);
-       
-       sprintf (Print_buffer, "BLOB Filter: %s %s%sInput subtype: %d Output subtype: %d%s",
-                FIL.RDB$FUNCTION_NAME, NEWLINE, 
-                TAB_AS_SPACES, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE, NEWLINE);
-       ISQL_printf (Out, Print_buffer);
-       sprintf (Print_buffer, "%sFilter library is %s%s%sEntry point is %s%s%s", 
-                TAB_AS_SPACES, FIL.RDB$MODULE_NAME, NEWLINE,
-                TAB_AS_SPACES, FIL.RDB$ENTRYPOINT, NEWLINE, 
-                NEWLINE);
-       ISQL_printf (Out, Print_buffer);
-       
-    END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+
+	   sprintf (Print_buffer, "BLOB Filter: %s %s%sInput subtype: %d Output subtype: %d%s",
+				FIL.RDB$FUNCTION_NAME, NEWLINE,
+				TAB_AS_SPACES, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE, NEWLINE);
+	   ISQL_printf (Out, Print_buffer);
+	   sprintf (Print_buffer, "%sFilter library is %s%s%sEntry point is %s%s%s",
+				TAB_AS_SPACES, FIL.RDB$MODULE_NAME, NEWLINE,
+				TAB_AS_SPACES, FIL.RDB$ENTRYPOINT, NEWLINE,
+				NEWLINE);
+	   ISQL_printf (Out, Print_buffer);
+
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return ERR;
 	END_ERROR;
 
@@ -2318,12 +2291,12 @@ static int show_functions(const SCHAR* object)
 	bool first = true;
 	bool odd = true;
 
-// Show all functions 
+// Show all functions
 	if (!*object)
 	{
 		FOR FUN IN RDB$FUNCTIONS
 			SORTED BY FUN.RDB$FUNCTION_NAME
-	
+
 			first = false;
 			ISQL_blankterm (FUN.RDB$FUNCTION_NAME);
 			sprintf (Print_buffer, "%-38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
@@ -2343,146 +2316,146 @@ static int show_functions(const SCHAR* object)
 			return NOT_FOUND;
 	}
 	FOR FUN IN RDB$FUNCTIONS CROSS
-        FNA IN RDB$FUNCTION_ARGUMENTS WITH
-        FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
-        FUN.RDB$FUNCTION_NAME EQ object
-        SORTED BY FNA.RDB$ARGUMENT_POSITION
-	
-        ISQL_blankterm (FUN.RDB$FUNCTION_NAME);
-        ISQL_blankterm (FUN.RDB$MODULE_NAME);
-        ISQL_blankterm (FUN.RDB$ENTRYPOINT);
-        if (first) {
-            sprintf (Print_buffer, "%sFunction %s:%s", 
-                     NEWLINE,
-                     FUN.RDB$FUNCTION_NAME,
-                     NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-            sprintf (Print_buffer, "Function library is %s%s", 
-	            FUN.RDB$MODULE_NAME,
-                     NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-            sprintf (Print_buffer, "Entry point is %s%s", 
-                     FUN.RDB$ENTRYPOINT,
-                     NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-        }
+		FNA IN RDB$FUNCTION_ARGUMENTS WITH
+		FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
+		FUN.RDB$FUNCTION_NAME EQ object
+		SORTED BY FNA.RDB$ARGUMENT_POSITION
 
-        SSHORT ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
+		ISQL_blankterm (FUN.RDB$FUNCTION_NAME);
+		ISQL_blankterm (FUN.RDB$MODULE_NAME);
+		ISQL_blankterm (FUN.RDB$ENTRYPOINT);
+		if (first) {
+			sprintf (Print_buffer, "%sFunction %s:%s",
+					 NEWLINE,
+					 FUN.RDB$FUNCTION_NAME,
+					 NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+			sprintf (Print_buffer, "Function library is %s%s",
+	            FUN.RDB$MODULE_NAME,
+					 NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+			sprintf (Print_buffer, "Entry point is %s%s",
+					 FUN.RDB$ENTRYPOINT,
+					 NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+		}
+
+		SSHORT ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
 		if (ptype > MAX_UDFPARAM_TYPES + 1 || ptype < 0) {
 			ptype = MAX_UDFPARAM_TYPES + 1;
-        }
+		}
 
-        first = false;
-        if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
-            sprintf (Print_buffer, "Returns %s%s ",
-                     UDF_param_types[ptype],
-                     (FNA.RDB$MECHANISM < 0 ? "FREE_IT " : ""));
-            ISQL_printf (Out, Print_buffer);
-        }
-        else {
-            sprintf (Print_buffer, "Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION,
-                     UDF_param_types[ptype]);
-            ISQL_printf (Out, Print_buffer);
-        }
-        for (SSHORT i = 0; Column_types[i].type; i++)
+		first = false;
+		if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
+			sprintf (Print_buffer, "Returns %s%s ",
+					 UDF_param_types[ptype],
+					 (FNA.RDB$MECHANISM < 0 ? "FREE_IT " : ""));
+			ISQL_printf (Out, Print_buffer);
+		}
+		else {
+			sprintf (Print_buffer, "Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION,
+					 UDF_param_types[ptype]);
+			ISQL_printf (Out, Print_buffer);
+		}
+		for (int i = 0; Column_types[i].type; i++)
 		{
-            if (FNA.RDB$FIELD_TYPE == Column_types[i].type)
+			if (FNA.RDB$FIELD_TYPE == Column_types[i].type)
 			{
-                bool precision_known = false;
-	       
-                // Handle Integral subtypes NUMERIC and DECIMAL 
-                if ( (major_ods >= ODS_VERSION10) &&
-                     ((FNA.RDB$FIELD_TYPE == SMALLINT) ||
-                      (FNA.RDB$FIELD_TYPE == INTEGER) ||
-                      (FNA.RDB$FIELD_TYPE == blr_int64)) )
+				bool precision_known = false;
+
+				// Handle Integral subtypes NUMERIC and DECIMAL
+				if ( (major_ods >= ODS_VERSION10) &&
+					 ((FNA.RDB$FIELD_TYPE == SMALLINT) ||
+					  (FNA.RDB$FIELD_TYPE == INTEGER) ||
+					  (FNA.RDB$FIELD_TYPE == blr_int64)) )
 				{
-                    FOR FNA1 IN RDB$FUNCTION_ARGUMENTS WITH
-                        FNA1.RDB$FUNCTION_NAME = FNA.RDB$FUNCTION_NAME AND
-                        FNA1.RDB$ARGUMENT_POSITION = FNA.RDB$ARGUMENT_POSITION
-                        
-                        /* We are ODS >= 10 */
-                        if (!FNA1.RDB$FIELD_PRECISION.NULL)
+					FOR FNA1 IN RDB$FUNCTION_ARGUMENTS WITH
+						FNA1.RDB$FUNCTION_NAME = FNA.RDB$FUNCTION_NAME AND
+						FNA1.RDB$ARGUMENT_POSITION = FNA.RDB$ARGUMENT_POSITION
+
+						/* We are ODS >= 10 */
+						if (!FNA1.RDB$FIELD_PRECISION.NULL)
 						{
-                            /* We are Dialect >=3 since FIELD_PRECISION is
-                               non-NULL */
-                            if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
-                                FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+							/* We are Dialect >=3 since FIELD_PRECISION is
+							   non-NULL */
+							if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
+								FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 							{
-                                sprintf (Print_buffer, "%s(%d, %d)", 
-                                         Integral_subtypes[FNA1.RDB$FIELD_SUB_TYPE],
-                                         FNA1.RDB$FIELD_PRECISION,
-                                         -FNA1.RDB$FIELD_SCALE);
-                                precision_known = true;
-                            }
-                        }
-                    END_FOR
+								sprintf (Print_buffer, "%s(%d, %d)",
+										 Integral_subtypes[FNA1.RDB$FIELD_SUB_TYPE],
+										 FNA1.RDB$FIELD_PRECISION,
+										 -FNA1.RDB$FIELD_SCALE);
+								precision_known = true;
+							}
+						}
+					END_FOR
 	               ON_ERROR
 	                   ISQL_errmsg (isc_status);
 	                   return ERR;
 	               END_ERROR;
-                }
-	
-                if (!precision_known)
+				}
+
+				if (!precision_known)
 				{
-                    // Take a stab at numerics and decimals 
-                    if ((FNA.RDB$FIELD_TYPE == SMALLINT) && (FNA.RDB$FIELD_SCALE < 0))
+					// Take a stab at numerics and decimals
+					if ((FNA.RDB$FIELD_TYPE == SMALLINT) && (FNA.RDB$FIELD_SCALE < 0))
 					{
-                        sprintf (Print_buffer, "NUMERIC(4, %d)", -FNA.RDB$FIELD_SCALE);
-                    }
-                    else if ((FNA.RDB$FIELD_TYPE == INTEGER) && (FNA.RDB$FIELD_SCALE < 0))
+						sprintf (Print_buffer, "NUMERIC(4, %d)", -FNA.RDB$FIELD_SCALE);
+					}
+					else if ((FNA.RDB$FIELD_TYPE == INTEGER) && (FNA.RDB$FIELD_SCALE < 0))
 					{
-                        sprintf (Print_buffer, "NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
-                    }
-                    else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) && 
-                             (FNA.RDB$FIELD_SCALE < 0))
+						sprintf (Print_buffer, "NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
+					}
+					else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
+							 (FNA.RDB$FIELD_SCALE < 0))
 					{
-                        sprintf (Print_buffer, "NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
-                    }
-                    else
+						sprintf (Print_buffer, "NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
+					}
+					else
 					{
-                        sprintf (Print_buffer, "%s", Column_types[i].type_name);
-                    }
-                }
-                ISQL_printf (Out, Print_buffer);
-                break;
-            }
-            
-        }
-        // Print length where appropriate 
-        if ((FNA.RDB$FIELD_TYPE == FCHAR) || (FNA.RDB$FIELD_TYPE == VARCHAR)
-            || (FNA.RDB$FIELD_TYPE == CSTRING))
+						sprintf (Print_buffer, "%s", Column_types[i].type_name);
+					}
+				}
+				ISQL_printf (Out, Print_buffer);
+				break;
+			}
+
+		}
+		// Print length where appropriate
+		if ((FNA.RDB$FIELD_TYPE == FCHAR) || (FNA.RDB$FIELD_TYPE == VARCHAR)
+			|| (FNA.RDB$FIELD_TYPE == CSTRING))
 		{
-            if (V4)
+			if (V4)
 			{
-                FOR V4FNA IN RDB$FUNCTION_ARGUMENTS CROSS
-                    CHARSET IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
-                    WITH V4FNA.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
-                    V4FNA.RDB$ARGUMENT_POSITION EQ FNA.RDB$ARGUMENT_POSITION
-                    
-                    ISQL_blankterm (CHARSET.RDB$CHARACTER_SET_NAME);
-                    sprintf (Print_buffer, "(%d) CHARACTER SET %s", 
-                             (FNA.RDB$FIELD_LENGTH / MAX (1,CHARSET.RDB$BYTES_PER_CHARACTER)),
-                             CHARSET.RDB$CHARACTER_SET_NAME);
-                    ISQL_printf (Out, Print_buffer);
-	
-                END_FOR
+				FOR V4FNA IN RDB$FUNCTION_ARGUMENTS CROSS
+					CHARSET IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
+					WITH V4FNA.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
+					V4FNA.RDB$ARGUMENT_POSITION EQ FNA.RDB$ARGUMENT_POSITION
+
+					ISQL_blankterm (CHARSET.RDB$CHARACTER_SET_NAME);
+					sprintf (Print_buffer, "(%d) CHARACTER SET %s",
+							 (FNA.RDB$FIELD_LENGTH / MAX (1,CHARSET.RDB$BYTES_PER_CHARACTER)),
+							 CHARSET.RDB$CHARACTER_SET_NAME);
+					ISQL_printf (Out, Print_buffer);
+
+				END_FOR
 	            ON_ERROR
-                    ISQL_errmsg (isc_status);
+					ISQL_errmsg (isc_status);
 	                return ERR;
-                END_ERROR;
-            }
-            else
-			{ // V3 - Note: This is the BYTE length, not the CHAR length 
-                sprintf (Print_buffer, "(%d)", FNA.RDB$FIELD_LENGTH);
-                ISQL_printf (Out, Print_buffer);
-            }
-        }
-	
-        ISQL_printf (Out, NEWLINE);
-        
+				END_ERROR;
+			}
+			else
+			{ // V3 - Note: This is the BYTE length, not the CHAR length
+				sprintf (Print_buffer, "(%d)", FNA.RDB$FIELD_LENGTH);
+				ISQL_printf (Out, Print_buffer);
+			}
+		}
+
+		ISQL_printf (Out, NEWLINE);
+
 	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return ERR;
 	END_ERROR;
 	if (first)
@@ -2510,103 +2483,84 @@ static int show_generators(const SCHAR* object)
 	XSQLDA sqlda;
 	SINT64 genid64 = 0;
 	SLONG genid = 0;
-	TEXT query[100], gen_name[MAX_NAME_LENGTH * 2];
+	TEXT query[100], gen_name[WORDLENGTH * 2];
 
-// Show all generators  or named generator 
-	FOR GEN IN RDB$GENERATORS 
+// Show all generators  or named generator
+	FOR GEN IN RDB$GENERATORS
 	    SORTED BY GEN.RDB$GENERATOR_NAME
-	
+
 	    ISQL_blankterm (GEN.RDB$GENERATOR_NAME);
-	
-	    if ((!*object && GEN.RDB$SYSTEM_FLAG.NULL) || 
-            (!strcmp (GEN.RDB$GENERATOR_NAME, object))) {
-            
-            // Get the current id for each generator 
-	
-            if (strchr (GEN.RDB$GENERATOR_NAME, DBL_QUOTE)) {
-                TEXT* q1 = gen_name;
-                *q1++ = DBL_QUOTE;
-                for (const TEXT* p1 = GEN.RDB$GENERATOR_NAME; *p1; p1++) {
-                    *q1 = *p1;
-                    q1++;
-                    if (*p1 == DBL_QUOTE) {
-                        *q1 = DBL_QUOTE;
-                        q1++;
-                    }
-                }
-                *q1++ = DBL_QUOTE;
-                *q1 = '\0';
-            }
-            else {
-                if (SQL_dialect == SQL_DIALECT_V6) {
-                    TEXT* q1 = gen_name;
-                    *q1++ = DBL_QUOTE;
-                    for (const TEXT* p1 = GEN.RDB$GENERATOR_NAME; *p1; p1++) {
-                        *q1 = *p1;
-                        q1++;
-                    }
-                    *q1++ = DBL_QUOTE;
-                    *q1 = '\0';
-                }
-                else
-                    strcpy(gen_name, GEN.RDB$GENERATOR_NAME);
-            }
-	
-            sprintf (query, "SELECT GEN_ID(%s, 0) FROM RDB$DATABASE", gen_name);
-	
+
+	    if ((!*object && GEN.RDB$SYSTEM_FLAG.NULL) ||
+			(!strcmp (GEN.RDB$GENERATOR_NAME, object)))
+		{
+
+			// Get the current id for each generator
+
+			const bool delimited_yes = strchr(GEN.RDB$GENERATOR_NAME, DBL_QUOTE) != 0;
+			if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
+				ISQL_copy_SQL_id (GEN.RDB$GENERATOR_NAME, gen_name, DBL_QUOTE);
+			}
+			else { // If we are extracting in dialect 1, identifiers may cause failures.
+				strcpy(gen_name, GEN.RDB$GENERATOR_NAME);
+			}
+
+			sprintf (query, "SELECT GEN_ID(%s, 0) FROM RDB$DATABASE", gen_name);
+
 			isc_stmt_handle stmt = 0;
-            isc_dsql_allocate_statement (isc_status, &DB, &stmt);
-            sqlda.sqln = 1;
-            sqlda.version = 1;
-	   
-            /* If the user has set his client dialect to 1, we take that to
-               mean that he wants to see just the lower 32 bits of the
-               generator, as in V5.  Otherwise, we show him the whole 64-bit
-               value.
-            */
-            if (isc_dsql_prepare (isc_status, &gds_trans, &stmt, 0, query, 
-                                  SQL_dialect, &sqlda)) {
-                ISQL_errmsg (isc_status);
-                continue;
-            };
-            if (SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
-                sqlda.sqlvar[0].sqldata = (SCHAR*) &genid64;
-            else
-                sqlda.sqlvar[0].sqldata = (SCHAR*) &genid;
-            sqlda.sqlvar[0].sqlind = &indicator;
-            
-            // Singleton select needs no fetch 
-            if (isc_dsql_execute2 (isc_status, &gds_trans, &stmt, 
-                                   SQL_dialect, NULL, &sqlda))
+			isc_dsql_allocate_statement (isc_status, &DB, &stmt);
+			sqlda.sqln = 1;
+			sqlda.version = 1;
+
+			/* If the user has set his client dialect to 1, we take that to
+			   mean that he wants to see just the lower 32 bits of the
+			   generator, as in V5.  Otherwise, we show him the whole 64-bit
+			   value.
+			*/
+			if (isc_dsql_prepare (isc_status, &gds_trans, &stmt, 0, query,
+								  SQL_dialect, &sqlda))
 			{
-                ISQL_errmsg (isc_status);
-            }
-            else
+				ISQL_errmsg (isc_status);
+				continue;
+			};
+			if (SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
+				sqlda.sqlvar[0].sqldata = (SCHAR*) &genid64;
+			else
+				sqlda.sqlvar[0].sqldata = (SCHAR*) &genid;
+			sqlda.sqlvar[0].sqlind = &indicator;
+
+			// Singleton select needs no fetch
+			if (isc_dsql_execute2 (isc_status, &gds_trans, &stmt,
+								   SQL_dialect, NULL, &sqlda))
 			{
-                found = true;
-                if( SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
+				ISQL_errmsg (isc_status);
+			}
+			else
+			{
+				found = true;
+				if( SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
 				{
-                    sprintf (Print_buffer,
-                             "Generator %s, current value is %" QUADFORMAT "d%s", 
-                             GEN.RDB$GENERATOR_NAME, 
-                             genid64,
-                             NEWLINE);
+					sprintf (Print_buffer,
+							 "Generator %s, current value is %" QUADFORMAT "d%s",
+							 GEN.RDB$GENERATOR_NAME,
+							 genid64,
+							 NEWLINE);
 				}
-                else
+				else
 				{
-                    sprintf (Print_buffer, "Generator %s, current value is %ld%s", 
-                             GEN.RDB$GENERATOR_NAME, 
-                             genid,
-                             NEWLINE);
+					sprintf (Print_buffer, "Generator %s, current value is %ld%s",
+							 GEN.RDB$GENERATOR_NAME,
+							 genid,
+							 NEWLINE);
 				}
-                ISQL_printf (Out, Print_buffer);
-            }
-            if (isc_dsql_free_statement (isc_status, &stmt, DSQL_drop))
-                ISQL_errmsg (isc_status);
-        }
-    END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+				ISQL_printf (Out, Print_buffer);
+			}
+			if (isc_dsql_free_statement (isc_status, &stmt, DSQL_drop))
+				ISQL_errmsg (isc_status);
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return ERR;
 	END_ERROR;
 	if (!found)
@@ -2634,7 +2588,7 @@ static void show_index(SCHAR* relation_name,
  *
  **************************************/
 
-// Strip trailing blanks 
+// Strip trailing blanks
 
 	ISQL_blankterm(relation_name);
 	ISQL_blankterm(index_name);
@@ -2644,7 +2598,7 @@ static void show_index(SCHAR* relation_name,
 			(index_type == 1 ? " DESCENDING" : ""), relation_name);
 	ISQL_printf(Out, Print_buffer);
 
-// Get column names 
+// Get column names
 
 	SCHAR* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512);
 	if (!collist) {
@@ -2665,7 +2619,7 @@ static void show_index(SCHAR* relation_name,
 }
 
 
-static int show_indices(SCHAR** cmd)
+static int show_indices(const SCHAR* const* cmd)
 {
 /**************************************
  *
@@ -2683,36 +2637,36 @@ static int show_indices(SCHAR** cmd)
  **************************************/
 	bool first = true;
 
-// The names stored in the database are all upper case 
+// The names stored in the database are all upper case
 
 	const SCHAR* name = cmd[2];
 
 	if (*name) {
 	    FOR IDX1 IN RDB$INDICES WITH
-            IDX1.RDB$RELATION_NAME EQ name OR 
-            IDX1.RDB$INDEX_NAME EQ name
-            SORTED BY IDX1.RDB$INDEX_NAME
-            
-            if (IDX1.RDB$INDEX_INACTIVE.NULL)
-                IDX1.RDB$INDEX_INACTIVE = 0;
-        
-            show_index (IDX1.RDB$RELATION_NAME, IDX1.RDB$INDEX_NAME,
-                        IDX1.RDB$UNIQUE_FLAG, IDX1.RDB$INDEX_TYPE, IDX1.RDB$INDEX_INACTIVE);
-	
+			IDX1.RDB$RELATION_NAME EQ name OR
+			IDX1.RDB$INDEX_NAME EQ name
+			SORTED BY IDX1.RDB$INDEX_NAME
+
+			if (IDX1.RDB$INDEX_INACTIVE.NULL)
+				IDX1.RDB$INDEX_INACTIVE = 0;
+
+			show_index (IDX1.RDB$RELATION_NAME, IDX1.RDB$INDEX_NAME,
+						IDX1.RDB$UNIQUE_FLAG, IDX1.RDB$INDEX_TYPE, IDX1.RDB$INDEX_INACTIVE);
+
 #ifdef EXPRESSION_INDICES
-            if (!IDX1.RDB$EXPRESSION_BLR.NULL) {
-                sprintf (Print_buffer, " COMPUTED BY ");
-                ISQL_printf (Out, Print_buffer);
-                if (!IDX1.RDB$EXPRESSION_SOURCE.NULL)
-                    SHOW_print_metadata_text_blob (Out, &IDX1.RDB$EXPRESSION_SOURCE);
-                ISQL_printf (Out, NEWLINE);
-            }
+			if (!IDX1.RDB$EXPRESSION_BLR.NULL) {
+				sprintf (Print_buffer, " COMPUTED BY ");
+				ISQL_printf (Out, Print_buffer);
+				if (!IDX1.RDB$EXPRESSION_SOURCE.NULL)
+					SHOW_print_metadata_text_blob (Out, &IDX1.RDB$EXPRESSION_SOURCE);
+				ISQL_printf (Out, NEWLINE);
+			}
 #endif
-            
-            first = false;
-        END_FOR
-            ON_ERROR ISQL_errmsg(isc_status);
-            return ERR;
+
+			first = false;
+		END_FOR
+			ON_ERROR ISQL_errmsg(isc_status);
+			return ERR;
 		END_ERROR;
 		if (first)
 			return (NOT_FOUND);
@@ -2722,29 +2676,29 @@ static int show_indices(SCHAR** cmd)
 	else
 	{
 	    FOR IDX2 IN RDB$INDICES CROSS
-            REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH 
-            REL.RDB$SYSTEM_FLAG NE 1 OR 
-            REL.RDB$SYSTEM_FLAG MISSING 
-            SORTED BY IDX2.RDB$RELATION_NAME, IDX2.RDB$INDEX_NAME
-	
-            first = false;
-	
-            show_index (IDX2.RDB$RELATION_NAME, IDX2.RDB$INDEX_NAME,
-                        IDX2.RDB$UNIQUE_FLAG, IDX2.RDB$INDEX_TYPE, IDX2.RDB$INDEX_INACTIVE);
-	
+			REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
+			REL.RDB$SYSTEM_FLAG NE 1 OR
+			REL.RDB$SYSTEM_FLAG MISSING
+			SORTED BY IDX2.RDB$RELATION_NAME, IDX2.RDB$INDEX_NAME
+
+			first = false;
+
+			show_index (IDX2.RDB$RELATION_NAME, IDX2.RDB$INDEX_NAME,
+						IDX2.RDB$UNIQUE_FLAG, IDX2.RDB$INDEX_TYPE, IDX2.RDB$INDEX_INACTIVE);
+
 #ifdef EXPRESSION_INDICES
-            if (!IDX2.RDB$EXPRESSION_BLR.NULL) {
-                sprintf (Print_buffer, " COMPUTED BY ");
-                ISQL_printf (Out, Print_buffer);
-                if (!IDX2.RDB$EXPRESSION_SOURCE.NULL)
-                    SHOW_print_metadata_text_blob (Out, &IDX2.RDB$EXPRESSION_SOURCE);
-                ISQL_printf (Out, NEWLINE);
-            }
+			if (!IDX2.RDB$EXPRESSION_BLR.NULL) {
+				sprintf (Print_buffer, " COMPUTED BY ");
+				ISQL_printf (Out, Print_buffer);
+				if (!IDX2.RDB$EXPRESSION_SOURCE.NULL)
+					SHOW_print_metadata_text_blob (Out, &IDX2.RDB$EXPRESSION_SOURCE);
+				ISQL_printf (Out, NEWLINE);
+			}
 #endif
-	
-        END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    return (ERR);
 		END_ERROR;
 		if (first)
@@ -2771,189 +2725,196 @@ static int show_proc(const SCHAR* procname)
  *
  **************************************/
 
-// If this is not a V4 database, just return 
+// If this is not a V4 database, just return
 
 	if (!V4)
 		return (SKIP);
 
-// If no procedure name was given, just list the procedures 
+// If no procedure name was given, just list the procedures
 
 	if (!procname || !strlen(procname)) {
 		/* This query gets the procedure name  the next query
-		   **   gets all the dependencies if any 
+		   **   gets all the dependencies if any
 		 */
 		bool first_proc = true;
 
 	    FOR PRC IN RDB$PROCEDURES
-            SORTED BY PRC.RDB$PROCEDURE_NAME
-	
-            if (first_proc) {
-                sprintf (Print_buffer, 
-                         "Procedure Name                    Dependency, Type%s", NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-                sprintf (Print_buffer, 
-                         "================================= ======================================%s", NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-                first_proc = false;
-            }
-	
-        // Strip trailing blanks 
-        
-            ISQL_blankterm (PRC.RDB$PROCEDURE_NAME);
-            sprintf (Print_buffer, "%-34s", PRC.RDB$PROCEDURE_NAME);
-            ISQL_printf (Out, Print_buffer);
-            
-            bool first_dep = true;
-            FOR DEP IN RDB$DEPENDENCIES WITH
-                PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
-                REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-                SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-                
-                ISQL_blankterm (DEP.RDB$DEPENDED_ON_NAME);
-            // Get column type name to print 
-                if (!first_dep) {
-                    sprintf (Print_buffer, "%s%34s", NEWLINE, "");
-                    ISQL_printf (Out, Print_buffer);
-                }
-                first_dep = false;
-                sprintf (Print_buffer, "%s, %s", DEP.RDB$DEPENDED_ON_NAME, 
-                         Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
-                ISQL_printf (Out, Print_buffer);
-            END_FOR
+			SORTED BY PRC.RDB$PROCEDURE_NAME
+
+			if (first_proc) {
+				sprintf (Print_buffer,
+						 "Procedure Name                    Dependency, Type%s", NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+				sprintf (Print_buffer,
+						 "================================= ======================================%s", NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+				first_proc = false;
+			}
+
+		// Strip trailing blanks
+
+			ISQL_blankterm (PRC.RDB$PROCEDURE_NAME);
+			sprintf (Print_buffer, "%-34s", PRC.RDB$PROCEDURE_NAME);
+			ISQL_printf (Out, Print_buffer);
+
+			bool first_dep = true;
+			FOR DEP IN RDB$DEPENDENCIES WITH
+				PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
+				REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+				SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+
+				ISQL_blankterm (DEP.RDB$DEPENDED_ON_NAME);
+			// Get column type name to print
+				if (!first_dep) {
+					sprintf (Print_buffer, "%s%34s", NEWLINE, "");
+					ISQL_printf (Out, Print_buffer);
+				}
+				first_dep = false;
+				sprintf (Print_buffer, "%s, %s", DEP.RDB$DEPENDED_ON_NAME,
+						 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+				ISQL_printf (Out, Print_buffer);
+			END_FOR
 	        ON_ERROR
 	            ISQL_errmsg (isc_status);
 	            return (ERR);
 	        END_ERROR;
-            ISQL_printf (Out, NEWLINE);
-	
+			ISQL_printf (Out, NEWLINE);
+
 	    END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    return (ERR);
 		END_ERROR;
 		if (first_proc)
 			return NOT_FOUND;
 		return (SKIP);
 	}
-    
-// A procedure was named, so print all the info on that procedure 
+
+// A procedure was named, so print all the info on that procedure
 
 	SCHAR type_name[33];
 	SCHAR lenstring[33] = "";
 	bool first = true;
 
 	FOR PRC IN RDB$PROCEDURES WITH
-        PRC.RDB$PROCEDURE_NAME EQ procname
-        first = false;
-	
-        sprintf (Print_buffer, "Procedure text:%s", NEWLINE);
+		PRC.RDB$PROCEDURE_NAME EQ procname
+		first = false;
+
+		sprintf (Print_buffer, "Procedure text:%s", NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
 	    sprintf (Print_buffer, "=============================================================================%s", NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
-        
+
 	    if (!PRC.RDB$PROCEDURE_SOURCE.NULL)
-            SHOW_print_metadata_text_blob (Out, &PRC.RDB$PROCEDURE_SOURCE);
+			SHOW_print_metadata_text_blob (Out, &PRC.RDB$PROCEDURE_SOURCE);
 	    sprintf (Print_buffer, "%s=============================================================================%s", NEWLINE, NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
-        
+
 	    sprintf (Print_buffer, "Parameters:%s", NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
-	   
+
 	    FOR PRM IN RDB$PROCEDURE_PARAMETERS CROSS
-            FLD IN RDB$FIELDS WITH
-            PRC.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
-            PRM.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
-            SORTED BY PRM.RDB$PARAMETER_TYPE, PRM.RDB$PARAMETER_NUMBER
-	
-            ISQL_blankterm (PRM.RDB$PARAMETER_NAME);
-            // Get column type name to print 
-	        // Look through types array 
-        
-            for (SSHORT i = 0; Column_types[i].type; i++)
-                if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
-                    bool precision_known = false;
-                    
-                    if (major_ods >= ODS_VERSION10) {
-                        // Handle Integral subtypes NUMERIC and DECIMAL 
-                        
-                        if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
-                            (FLD.RDB$FIELD_TYPE == INTEGER) ||
-                            (FLD.RDB$FIELD_TYPE == blr_int64)) {
-                            FOR FLD1 IN RDB$FIELDS
-                                WITH FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
-                                /* We are ODS >= 10 and could be any Dialect */
-                                if (!FLD1.RDB$FIELD_PRECISION.NULL) {
-                                    /* We are Dialect >=3 since FIELD_PRECISION is
-                                       non-NULL */
-                                    if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
-                                        FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES) {
-                                        sprintf (type_name, "%s(%d, %d)", 
-                                                 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-                                                 FLD1.RDB$FIELD_PRECISION,
-                                                 -FLD1.RDB$FIELD_SCALE);
-                                        precision_known = true;
-                                    }
-                                }
-                            END_FOR
-                            ON_ERROR
-                                ISQL_errmsg (isc_status);
+			FLD IN RDB$FIELDS WITH
+			PRC.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
+			PRM.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
+			SORTED BY PRM.RDB$PARAMETER_TYPE, PRM.RDB$PARAMETER_NUMBER
+
+			ISQL_blankterm (PRM.RDB$PARAMETER_NAME);
+			// Get column type name to print
+	        // Look through types array
+
+			for (SSHORT i = 0; Column_types[i].type; i++)
+				if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
+					bool precision_known = false;
+
+					if (major_ods >= ODS_VERSION10) {
+						// Handle Integral subtypes NUMERIC and DECIMAL
+
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
+							(FLD.RDB$FIELD_TYPE == INTEGER) ||
+							(FLD.RDB$FIELD_TYPE == blr_int64))
+						{
+							FOR FLD1 IN RDB$FIELDS
+								WITH FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
+								/* We are ODS >= 10 and could be any Dialect */
+								if (!FLD1.RDB$FIELD_PRECISION.NULL) {
+									/* We are Dialect >=3 since FIELD_PRECISION is
+									   non-NULL */
+									if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
+										FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+									{
+										sprintf (type_name, "%s(%d, %d)",
+												 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
+												 FLD1.RDB$FIELD_PRECISION,
+												 -FLD1.RDB$FIELD_SCALE);
+										precision_known = true;
+									}
+								}
+							END_FOR
+							ON_ERROR
+								ISQL_errmsg (isc_status);
 	                            return ERR;
-                            END_ERROR;
-                        } // if field_type ... 
-                    } // if major_ods ... 
-                    
-                    if (!precision_known) {
-                        // Take a stab at numerics and decimals 
-                        if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
-                            sprintf (type_name, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
-                        else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0))
-                            sprintf (type_name, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
-                        else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-                                 (FLD.RDB$FIELD_SCALE < 0))
-                            sprintf (type_name, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
-                        else
-                            strcpy(type_name, Column_types[i].type_name);
-                    }
-                    break;
-                }
-            /* Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
-               FSG 19.Nov.2000
-            */     
-            if (((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
-                !FLD.RDB$CHARACTER_LENGTH.NULL)
+							END_ERROR;
+						} // if field_type ...
+					} // if major_ods ...
+
+					if (!precision_known) {
+						// Take a stab at numerics and decimals
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0)) {
+							sprintf (type_name, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
+						}
+						else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0)) {
+							sprintf (type_name, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
+						}
+						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
+								 (FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (type_name, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
+						}
+						else {
+							strcpy(type_name, Column_types[i].type_name);
+						}
+					}
+					break;
+				}
+			/* Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
+			   FSG 19.Nov.2000
+			*/
+			if (((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
+				!FLD.RDB$CHARACTER_LENGTH.NULL)
 			{
-                sprintf (lenstring, "(%d)", FLD.RDB$CHARACTER_LENGTH);
+				sprintf (lenstring, "(%d)", FLD.RDB$CHARACTER_LENGTH);
 			}
 			else {
 				// CVC: the original programmer initialized it only once,
 				// outside the loop, so it may contain garbage from previous iteration.
 				strcpy(lenstring, "");
 			}
-            
-            sprintf (Print_buffer, "%-33s %s %s%s ", PRM.RDB$PARAMETER_NAME,
-                     (PRM.RDB$PARAMETER_TYPE ? "OUTPUT" : "INPUT"),
-                     type_name, lenstring);
-            ISQL_printf (Out, Print_buffer);
-            
-            // Show international character sets and collations 
-            
-            if (V4 && (FLD.RDB$FIELD_TYPE == FCHAR ||
-                       FLD.RDB$FIELD_TYPE == VARCHAR  ||
-                       FLD.RDB$FIELD_TYPE == BLOB))
+
+			sprintf (Print_buffer, "%-33s %s %s%s ", PRM.RDB$PARAMETER_NAME,
+					 (PRM.RDB$PARAMETER_TYPE ? "OUTPUT" : "INPUT"),
+					 type_name, lenstring);
+			ISQL_printf (Out, Print_buffer);
+
+			// Show international character sets and collations
+
+			if (V4 && (FLD.RDB$FIELD_TYPE == FCHAR ||
+					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
+					   FLD.RDB$FIELD_TYPE == BLOB))
 			{
-                show_charsets(NULL, FLD.RDB$FIELD_NAME);
+				show_charsets(NULL, FLD.RDB$FIELD_NAME);
 			}
-            ISQL_printf (Out, NEWLINE);
-            
+			ISQL_printf (Out, NEWLINE);
+
 	    END_FOR
-        ON_ERROR
+		ON_ERROR
 	       ISQL_errmsg (isc_status);
 	       return ERR;
 	    END_ERROR;
-	
+
 	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return ERR;
 	END_ERROR;
 	if (first)
@@ -2964,87 +2925,84 @@ static int show_proc(const SCHAR* procname)
 
 static int show_role(const SCHAR* object)
 {
-	bool first = true;
-	bool odd = true;
-
-	if (object == NULL) {		// show role with no parameters, show all roles 
+	if (object == NULL) {		// show role with no parameters, show all roles
 /**************************************
  *	Print the names of all roles from
- *	RDB$ROLES.  We use a dynamic query 
+ *	RDB$ROLES.  We use a dynamic query
  *	If there is any roles, then returns SKIP.
  *	Otherwise returns NOT_FOUND.
  **************************************/
+		bool first = true;
+		bool odd = true;
 
-        FOR X IN RDB$ROLES WITH
-            X.RDB$ROLE_NAME NOT MISSING
-            SORTED BY X.RDB$ROLE_NAME
-            
-            first = false;
+		FOR X IN RDB$ROLES WITH
+			X.RDB$ROLE_NAME NOT MISSING
+			SORTED BY X.RDB$ROLE_NAME
+
+			first = false;
 	        sprintf (Print_buffer, "%38s%s", X.RDB$ROLE_NAME, (odd ? " " : NEWLINE));
-            ISQL_printf (Out, Print_buffer);
-            odd = !odd;
-            
-        END_FOR
-        ON_ERROR 
-            ISQL_errmsg(isc_status);
-		    return ERR;
-        END_ERROR;
+			ISQL_printf (Out, Print_buffer);
+			odd = !odd;
 
-        if (!first)
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+		    return ERR;
+		END_ERROR;
+
+		if (!first)
 		{
-            ISQL_printf(Out, NEWLINE);
-            return SKIP;
-        }
-        else
+			ISQL_printf(Out, NEWLINE);
+			return SKIP;
+		}
+		else
 		{
-            return NOT_FOUND;
+			return NOT_FOUND;
 		}
 	}
 	else
 	{
-		// show role with role supplied, display users granted this role 
+		// show role with role supplied, display users granted this role
 		SCHAR role_name[BUFFER_LENGTH128];
-		SCHAR user_string[44];
-		
-        FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object;
-            first = false;
-	
-            FOR PRV IN RDB$USER_PRIVILEGES WITH
-                PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
-                PRV.RDB$USER_TYPE     EQ obj_user     AND
-                PRV.RDB$RELATION_NAME EQ object       AND
-                PRV.RDB$PRIVILEGE     EQ 'M'
-                SORTED BY  PRV.RDB$USER
-	
-                ISQL_blankterm (PRV.RDB$RELATION_NAME);
-                strcpy (role_name, PRV.RDB$RELATION_NAME);
-                if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-                    ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
-                else
-                    strcpy (SQL_identifier, role_name);
-                
-                ISQL_blankterm (PRV.RDB$USER);
-                strcpy (user_string, PRV.RDB$USER);
-                sprintf(Print_buffer, "%s\n", user_string);
-                
-                first = false;
-                ISQL_printf (Out, Print_buffer);
-                
-            END_FOR
+		bool first = true;
+
+		FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object
+			first = false;
+
+			FOR PRV IN RDB$USER_PRIVILEGES WITH
+				PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
+				PRV.RDB$USER_TYPE     EQ obj_user     AND
+				PRV.RDB$RELATION_NAME EQ object       AND
+				PRV.RDB$PRIVILEGE     EQ 'M'
+				SORTED BY  PRV.RDB$USER
+
+				ISQL_blankterm (PRV.RDB$RELATION_NAME);
+				strcpy (role_name, PRV.RDB$RELATION_NAME);
+				if (db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
+				else
+					strcpy (SQL_identifier, role_name);
+
+				ISQL_blankterm (PRV.RDB$USER);
+				sprintf(Print_buffer, "%s\n", PRV.RDB$USER);
+
+				ISQL_printf (Out, Print_buffer);
+
+			END_FOR
 	        ON_ERROR
-                ISQL_errmsg (isc_status);
+				ISQL_errmsg (isc_status);
 	            return (ERR);
 	        END_ERROR;
-	
+
 	    END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    return (ERR);
 		END_ERROR;
 
 		if (first)
 			return (NOT_FOUND);
-        
+
 		return (SKIP);
 	}
 }
@@ -3062,34 +3020,34 @@ static int show_table(const SCHAR* relation_name)
  *	shows columns, types, info for a given table name
  *	and text of views.
  *	Use a SQL query to get the info and print it.
- *	This also shows integrity constraints and triggers 
+ *	This also shows integrity constraints and triggers
  *
  *	relation_name -- Name of table to investigate
  *
  **************************************/
 	bool first = true;
 
-// Query to obtain relation information 
+// Query to obtain relation information
 
 	FOR REL IN RDB$RELATIONS
 	    WITH REL.RDB$RELATION_NAME EQ relation_name
 	    if (first) {
-            if (!REL.RDB$EXTERNAL_FILE.NULL) {
-                sprintf (Print_buffer, "External file: %s\n", REL.RDB$EXTERNAL_FILE);
-                ISQL_printf (Out, Print_buffer);
-            }
-        }
-        first = false;
-    END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+			if (!REL.RDB$EXTERNAL_FILE.NULL) {
+				sprintf (Print_buffer, "External file: %s\n", REL.RDB$EXTERNAL_FILE);
+				ISQL_printf (Out, Print_buffer);
+			}
+		}
+		first = false;
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return ERR;
 	END_ERROR;
 
 	if (first)
 		return (NOT_FOUND);
 
-/* 
+/*
 *FOR RFR IN RDB$RELATION_FIELDS CROSS
 	REL IN RDB$RELATIONS CROSS
 	FLD IN RDB$FIELDS WITH
@@ -3100,218 +3058,219 @@ static int show_table(const SCHAR* relation_name)
 */
 
 	FOR RFR IN RDB$RELATION_FIELDS CROSS
-        FLD IN RDB$FIELDS WITH
-        RFR.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
-        RFR.RDB$RELATION_NAME EQ relation_name 
-        SORTED BY RFR.RDB$FIELD_POSITION, RFR.RDB$FIELD_NAME
-        
-	    // Get length of colname to align columns for printing 
-        
+		FLD IN RDB$FIELDS WITH
+		RFR.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
+		RFR.RDB$RELATION_NAME EQ relation_name
+		SORTED BY RFR.RDB$FIELD_POSITION, RFR.RDB$FIELD_NAME
+
+	    // Get length of colname to align columns for printing
+
 	    ISQL_blankterm (RFR.RDB$FIELD_NAME);
-	
-	    // Print the column name in first column 
-	
-        sprintf (Print_buffer, "%-32s", RFR.RDB$FIELD_NAME);  
-        ISQL_printf (Out, Print_buffer);
-	
-	    // Decide if this is a user-created domain 
-	    if (!((strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0) && 
-              isdigit (FLD.RDB$FIELD_NAME[4]) &&
-              FLD.RDB$SYSTEM_FLAG != 1))
+
+	    // Print the column name in first column
+
+		sprintf (Print_buffer, "%-32s", RFR.RDB$FIELD_NAME);
+		ISQL_printf (Out, Print_buffer);
+
+	    // Decide if this is a user-created domain
+	    if (!((strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0) &&
+			  isdigit (FLD.RDB$FIELD_NAME[4]) &&
+			  FLD.RDB$SYSTEM_FLAG != 1))
 		{
-            ISQL_blankterm (FLD.RDB$FIELD_NAME);
-            sprintf (Print_buffer, "(%s) ", FLD.RDB$FIELD_NAME);
-            ISQL_printf (Out, Print_buffer);
-        }
-	
-	    // Detect the existence of arrays 
-        
+			ISQL_blankterm (FLD.RDB$FIELD_NAME);
+			sprintf (Print_buffer, "(%s) ", FLD.RDB$FIELD_NAME);
+			ISQL_printf (Out, Print_buffer);
+		}
+
+	    // Detect the existence of arrays
+
 	    if (!FLD.RDB$DIMENSIONS.NULL) {
-            sprintf (Print_buffer, "ARRAY OF ");
-            ISQL_printf (Out, Print_buffer);
+			sprintf (Print_buffer, "ARRAY OF ");
+			ISQL_printf (Out, Print_buffer);
 	        ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
-            sprintf (Print_buffer, "%s                                ", NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-        }
-        
-	    // If a computed field, show the source and exit 
+			sprintf (Print_buffer, "%s                                ", NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+		}
+
+	    // If a computed field, show the source and exit
 	    // Note that view columns which are computed are dealt with later.
 	    if (!FLD.RDB$COMPUTED_BLR.NULL) {
-            sprintf (Print_buffer, "Computed by: ");
-            ISQL_printf (Out, Print_buffer);
-            if (!FLD.RDB$COMPUTED_SOURCE.NULL)
-                SHOW_print_metadata_text_blob (Out, &FLD.RDB$COMPUTED_SOURCE);
-            ISQL_printf (Out, NEWLINE);
-            continue;
-        }
-        
-        
-	    // Look through types array 
-        
+			sprintf (Print_buffer, "Computed by: ");
+			ISQL_printf (Out, Print_buffer);
+			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
+				SHOW_print_metadata_text_blob (Out, &FLD.RDB$COMPUTED_SOURCE);
+			ISQL_printf (Out, NEWLINE);
+			continue;
+		}
+
+
+	    // Look through types array
+
 	    for (SSHORT i = 0; Column_types[i].type; i++)
-            if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
-                bool precision_known = false;
-	
-                if (major_ods >= ODS_VERSION10) {
-                    // Handle Integral subtypes NUMERIC and DECIMAL 
-                    if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
-                        (FLD.RDB$FIELD_TYPE == INTEGER) ||
-                        (FLD.RDB$FIELD_TYPE == blr_int64)) { 
-                        FOR FLD1 IN RDB$FIELDS WITH
-                            FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
-	           
-                            /* We are ODS >= 10 and could be any Dialect */
-                            if (!FLD1.RDB$FIELD_PRECISION.NULL) {
-                                /* We are Dialect >=3 since FIELD_PRECISION is
-                                   non-NULL */
-                                if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
-                                    FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES) { 
-                                    sprintf (Print_buffer, "%s(%d, %d)", 
-                                             Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-                                             FLD1.RDB$FIELD_PRECISION,
-                                             -FLD1.RDB$FIELD_SCALE);
-                                    precision_known = true;
-                                }
-                            }
-                        END_FOR
+			if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
+				bool precision_known = false;
+
+				if (major_ods >= ODS_VERSION10) {
+					// Handle Integral subtypes NUMERIC and DECIMAL
+					if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
+						(FLD.RDB$FIELD_TYPE == INTEGER) ||
+						(FLD.RDB$FIELD_TYPE == blr_int64))
+					{
+						FOR FLD1 IN RDB$FIELDS WITH
+							FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
+
+							/* We are ODS >= 10 and could be any Dialect */
+							if (!FLD1.RDB$FIELD_PRECISION.NULL) {
+								/* We are Dialect >=3 since FIELD_PRECISION is
+								   non-NULL */
+								if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
+									FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+								{
+									sprintf (Print_buffer, "%s(%d, %d)",
+											 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
+											 FLD1.RDB$FIELD_PRECISION,
+											 -FLD1.RDB$FIELD_SCALE);
+									precision_known = true;
+								}
+							}
+						END_FOR
 	                    ON_ERROR
-                            ISQL_errmsg (isc_status);
+							ISQL_errmsg (isc_status);
 	                        return ERR;
 	                    END_ERROR;
-                    }
-                }
-                
-                if (!precision_known) {
-                    // Take a stab at numerics and decimals 
-                    if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0)) {
-                        sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
-                    }
-                    else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0)) {
-                        sprintf (Print_buffer, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
-                    }
-                    else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) && 
-                             (FLD.RDB$FIELD_SCALE < 0)) {
-                        sprintf (Print_buffer, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
-                    }
-                    else
-                        {
-                            sprintf (Print_buffer, "%s", Column_types[i].type_name);
-                        }
-                }
-                ISQL_printf (Out, Print_buffer);
-                break;
-            }
-	
+					}
+				}
+
+				if (!precision_known) {
+					// Take a stab at numerics and decimals
+					if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0)) {
+						sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
+					}
+					else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0)) {
+						sprintf (Print_buffer, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
+					}
+					else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
+							 (FLD.RDB$FIELD_SCALE < 0)) {
+						sprintf (Print_buffer, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
+					}
+					else {
+						sprintf (Print_buffer, "%s", Column_types[i].type_name);
+					}
+				}
+				ISQL_printf (Out, Print_buffer);
+				break;
+			}
+
 	    if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
-            // Don't test character_length in a V3 database 
-            
-            if (!V4)
+			// Don't test character_length in a V3 database
+
+			if (!V4)
 			{
-                sprintf (Print_buffer, "(%d)", FLD.RDB$FIELD_LENGTH);
-                ISQL_printf (Out, Print_buffer);
-            }
-            else
+				sprintf (Print_buffer, "(%d)", FLD.RDB$FIELD_LENGTH);
+				ISQL_printf (Out, Print_buffer);
+			}
+			else
 			{
-                sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
-                ISQL_printf (Out, Print_buffer);
-            }
-	
-	        // Show international character sets and collations 
-            
-            if (V4)
-                show_charsets  (relation_name, RFR.RDB$FIELD_NAME);
-        }
-	
+				sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
+				ISQL_printf (Out, Print_buffer);
+			}
+
+	        // Show international character sets and collations
+
+			if (V4)
+				show_charsets  (relation_name, RFR.RDB$FIELD_NAME);
+		}
+
 	    if (FLD.RDB$FIELD_TYPE == BLOB) {
-            sprintf (Print_buffer, " segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
-            ISQL_printf (Out, Print_buffer);
-            const SSHORT subtype  = FLD.RDB$FIELD_SUB_TYPE;
-            if (subtype >= 0 && subtype <= MAXSUBTYPES)
+			sprintf (Print_buffer, " segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
+			ISQL_printf (Out, Print_buffer);
+			const SSHORT subtype  = FLD.RDB$FIELD_SUB_TYPE;
+			if (subtype >= 0 && subtype <= MAXSUBTYPES)
 			{
-                sprintf (Print_buffer, "%s", Sub_types[subtype]);
-                ISQL_printf (Out, Print_buffer);
-            }
-            else
+				sprintf (Print_buffer, "%s", Sub_types[subtype]);
+				ISQL_printf (Out, Print_buffer);
+			}
+			else
 			{
-                sprintf (Print_buffer, "%d", subtype);
-                ISQL_printf (Out, Print_buffer);
-            }
-	
-	        // Show international character sets and collations 
-	
-            if (V4)
-                show_charsets  (relation_name, RFR.RDB$FIELD_NAME);
-        }
-	
+				sprintf (Print_buffer, "%d", subtype);
+				ISQL_printf (Out, Print_buffer);
+			}
+
+	        // Show international character sets and collations
+
+			if (V4)
+				show_charsets  (relation_name, RFR.RDB$FIELD_NAME);
+		}
+
 	    if (!FLD.RDB$COMPUTED_BLR.NULL) {
-            // A view expression. Other computed fields will not reach this point.
-            sprintf (Print_buffer, " Expression%s", NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-            continue;
-        }
-        
+			// A view expression. Other computed fields will not reach this point.
+			sprintf (Print_buffer, " Expression%s", NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+			continue;
+		}
+
 	    /* The null flag is either 1 or null (for nullable) */
-        
+
 	    if (V4)
 		{
-            if (RFR.RDB$NULL_FLAG == 1 || FLD.RDB$NULL_FLAG == 1 ||
-                (!RFR.RDB$BASE_FIELD.NULL && 
-                 !ISQL_get_null_flag (relation_name, RFR.RDB$FIELD_NAME)))
+			if (RFR.RDB$NULL_FLAG == 1 || FLD.RDB$NULL_FLAG == 1 ||
+				(!RFR.RDB$BASE_FIELD.NULL &&
+				 !ISQL_get_null_flag (relation_name, RFR.RDB$FIELD_NAME)))
 			{
-                sprintf (Print_buffer, " Not Null ");
-                ISQL_printf (Out, Print_buffer);
-            }
-            else
+				sprintf (Print_buffer, " Not Null ");
+				ISQL_printf (Out, Print_buffer);
+			}
+			else
 			{
-                sprintf (Print_buffer, " Nullable ");
-                ISQL_printf (Out, Print_buffer);
-            }
-        }
-        
-	    // Handle defaults for columns 
-        
+				sprintf (Print_buffer, " Nullable ");
+				ISQL_printf (Out, Print_buffer);
+			}
+		}
+
+	    // Handle defaults for columns
+
 	    if (V4) {
-            if (!RFR.RDB$DEFAULT_SOURCE.NULL)
-                SHOW_print_metadata_text_blob (Out, &RFR.RDB$DEFAULT_SOURCE);
-            else if (!FLD.RDB$DEFAULT_SOURCE.NULL)
-                SHOW_print_metadata_text_blob (Out, &FLD.RDB$DEFAULT_SOURCE);
-        }
+			if (!RFR.RDB$DEFAULT_SOURCE.NULL)
+				SHOW_print_metadata_text_blob (Out, &RFR.RDB$DEFAULT_SOURCE);
+			else if (!FLD.RDB$DEFAULT_SOURCE.NULL)
+				SHOW_print_metadata_text_blob (Out, &FLD.RDB$DEFAULT_SOURCE);
+		}
 	    ISQL_printf (Out, NEWLINE);
-	
-	    // Validation clause for domains 
+
+	    // Validation clause for domains
 	    if (!FLD.RDB$VALIDATION_SOURCE.NULL) {
-            sprintf (Print_buffer, "                                ");
-            ISQL_printf (Out, Print_buffer);
-            SHOW_print_metadata_text_blob (Out, &FLD.RDB$VALIDATION_SOURCE);
-            ISQL_printf (Out, NEWLINE);
-        }
-	
+			sprintf (Print_buffer, "                                ");
+			ISQL_printf (Out, Print_buffer);
+			SHOW_print_metadata_text_blob (Out, &FLD.RDB$VALIDATION_SOURCE);
+			ISQL_printf (Out, NEWLINE);
+		}
+
 	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return ERR;
 	END_ERROR;
 
-// If this is a view and there were columns, print the view text 
+// If this is a view and there were columns, print the view text
 
 	if (!first) {
 	    FOR REL IN RDB$RELATIONS WITH
-            REL.RDB$RELATION_NAME EQ relation_name AND
-            REL.RDB$VIEW_BLR NOT MISSING
-            
-            sprintf (Print_buffer, "View Source:%s==== ======%s", NEWLINE, NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-            if (!REL.RDB$VIEW_SOURCE.NULL)
-                SHOW_print_metadata_text_blob (Out, &REL.RDB$VIEW_SOURCE);
-            ISQL_printf (Out, NEWLINE);
-        END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+			REL.RDB$RELATION_NAME EQ relation_name AND
+			REL.RDB$VIEW_BLR NOT MISSING
+
+			sprintf (Print_buffer, "View Source:%s==== ======%s", NEWLINE, NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+			if (!REL.RDB$VIEW_SOURCE.NULL)
+				SHOW_print_metadata_text_blob (Out, &REL.RDB$VIEW_SOURCE);
+			ISQL_printf (Out, NEWLINE);
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    return ERR;
 		END_ERROR;
 	}
 
-// Handle any referential or primary constraint on this table 
+// Handle any referential or primary constraint on this table
 
 	if (V4) {
 		SCHAR* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512);
@@ -3323,83 +3282,83 @@ static int show_table(const SCHAR* relation_name)
 			return ERR;
 		}
 
-		// Static queries for obtaining referential constraints 
+		// Static queries for obtaining referential constraints
 
 	    FOR RELC1 IN RDB$RELATION_CONSTRAINTS WITH
-            RELC1.RDB$RELATION_NAME EQ relation_name
-            SORTED BY RELC1.RDB$CONSTRAINT_TYPE, RELC1.RDB$CONSTRAINT_NAME
-	
-            ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, false);
-            if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "PRIMARY", 7)) {
-                ISQL_blankterm (RELC1.RDB$CONSTRAINT_NAME);
-                sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-                sprintf (Print_buffer, "  Primary key (%s)%s", collist, NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-            }
-            else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "UNIQUE", 6)) {
-                ISQL_blankterm (RELC1.RDB$CONSTRAINT_NAME);
-                sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-                sprintf (Print_buffer, "  Unique key (%s)%s", collist, NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-            }
-            else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "FOREIGN", 7)) {
-                ISQL_blankterm (RELC1.RDB$CONSTRAINT_NAME);
-                sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-                ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, false);
-                sprintf (Print_buffer, "  Foreign key (%s)", collist);
-                ISQL_printf (Out, Print_buffer);
-                
-                FOR RELC2 IN RDB$RELATION_CONSTRAINTS CROSS
-                    REFC IN RDB$REF_CONSTRAINTS WITH
-                    RELC2.RDB$CONSTRAINT_NAME EQ REFC.RDB$CONST_NAME_UQ AND
-                    REFC.RDB$CONSTRAINT_NAME EQ RELC1.RDB$CONSTRAINT_NAME
-                    
-                    ISQL_get_index_segments (collist, RELC2.RDB$INDEX_NAME, false);
-                    ISQL_blankterm (RELC2.RDB$RELATION_NAME);
-                
-                    sprintf (Print_buffer, "    References %s (%s)", 
-                             RELC2.RDB$RELATION_NAME, collist);
-                    ISQL_printf (Out, Print_buffer);
-                    
-                    if (!REFC.RDB$UPDATE_RULE.NULL) {
-                        ISQL_truncate_term (REFC.RDB$UPDATE_RULE,
-                                            sizeof(REFC.RDB$UPDATE_RULE));
-                        ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " On Update",
-                                              false);
-                    }
-                    
-                    if (!REFC.RDB$DELETE_RULE.NULL) {
-                        ISQL_truncate_term (REFC.RDB$DELETE_RULE,
-                                            sizeof(REFC.RDB$DELETE_RULE));
-                        ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " On Delete", 
-                                              false);
-                    }
-                    
-                    sprintf (Print_buffer, "%s", NEWLINE);
-                    ISQL_printf (Out, Print_buffer);
-	    
-                END_FOR
+			RELC1.RDB$RELATION_NAME EQ relation_name
+			SORTED BY RELC1.RDB$CONSTRAINT_TYPE, RELC1.RDB$CONSTRAINT_NAME
+
+			ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, false);
+			if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "PRIMARY", 7)) {
+				ISQL_blankterm (RELC1.RDB$CONSTRAINT_NAME);
+				sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+				sprintf (Print_buffer, "  Primary key (%s)%s", collist, NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+			}
+			else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "UNIQUE", 6)) {
+				ISQL_blankterm (RELC1.RDB$CONSTRAINT_NAME);
+				sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+				sprintf (Print_buffer, "  Unique key (%s)%s", collist, NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+			}
+			else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "FOREIGN", 7)) {
+				ISQL_blankterm (RELC1.RDB$CONSTRAINT_NAME);
+				sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+				ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, false);
+				sprintf (Print_buffer, "  Foreign key (%s)", collist);
+				ISQL_printf (Out, Print_buffer);
+
+				FOR RELC2 IN RDB$RELATION_CONSTRAINTS CROSS
+					REFC IN RDB$REF_CONSTRAINTS WITH
+					RELC2.RDB$CONSTRAINT_NAME EQ REFC.RDB$CONST_NAME_UQ AND
+					REFC.RDB$CONSTRAINT_NAME EQ RELC1.RDB$CONSTRAINT_NAME
+
+					ISQL_get_index_segments (collist, RELC2.RDB$INDEX_NAME, false);
+					ISQL_blankterm (RELC2.RDB$RELATION_NAME);
+
+					sprintf (Print_buffer, "    References %s (%s)",
+							 RELC2.RDB$RELATION_NAME, collist);
+					ISQL_printf (Out, Print_buffer);
+
+					if (!REFC.RDB$UPDATE_RULE.NULL) {
+						ISQL_truncate_term (REFC.RDB$UPDATE_RULE,
+											sizeof(REFC.RDB$UPDATE_RULE));
+						ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " On Update",
+											  false);
+					}
+
+					if (!REFC.RDB$DELETE_RULE.NULL) {
+						ISQL_truncate_term (REFC.RDB$DELETE_RULE,
+											sizeof(REFC.RDB$DELETE_RULE));
+						ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " On Delete",
+											  false);
+					}
+
+					sprintf (Print_buffer, "%s", NEWLINE);
+					ISQL_printf (Out, Print_buffer);
+
+				END_FOR
 	            ON_ERROR
-                    ISQL_errmsg (isc_status);
+					ISQL_errmsg (isc_status);
 	                return ERR;
-                END_ERROR;
-            }
-            
+				END_ERROR;
+			}
+
 	    END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    return ERR;
 		END_ERROR;
 
 	    FOR R_C IN RDB$RELATION_CONSTRAINTS CROSS
 	        C_C IN RDB$CHECK_CONSTRAINTS
 	        WITH R_C.RDB$RELATION_NAME   EQ relation_name
-            AND R_C.RDB$CONSTRAINT_TYPE EQ 'NOT NULL'
-            AND R_C.RDB$CONSTRAINT_NAME EQ C_C.RDB$CONSTRAINT_NAME
-            
+			AND R_C.RDB$CONSTRAINT_TYPE EQ 'NOT NULL'
+			AND R_C.RDB$CONSTRAINT_NAME EQ C_C.RDB$CONSTRAINT_NAME
+
 	        if (strncmp (R_C.RDB$CONSTRAINT_NAME, "INTEG_", 6)) {
 	            ISQL_blankterm (C_C.RDB$TRIGGER_NAME);
 	            ISQL_blankterm (R_C.RDB$CONSTRAINT_NAME);
@@ -3409,27 +3368,27 @@ static int show_table(const SCHAR* relation_name)
 	            sprintf (Print_buffer, "  Not Null Column (%s)%s",
 	                     C_C.RDB$TRIGGER_NAME, NEWLINE);
 	            ISQL_printf (Out, Print_buffer);
-            }
+			}
 	    END_FOR
-		ON_ERROR 
-            ISQL_errmsg(isc_status);
+		ON_ERROR
+			ISQL_errmsg(isc_status);
 		    ISQL_FREE(collist);
-            return ERR;
+			return ERR;
 		END_ERROR;
-		
+
 		if (collist)
 			ISQL_FREE(collist);
 	}
 
 
-    // Do check constraints 
+	// Do check constraints
 
 	show_check(relation_name);
-    
-    // Do triggers 
-    
+
+	// Do triggers
+
 	show_trigger(relation_name, false);
-    
+
 	if (first)
 		return (NOT_FOUND);
 	return SKIP;
@@ -3452,70 +3411,70 @@ static int show_trigger(const SCHAR* object,
 	bool first = true;
 	bool skip = false;
 
-    // Show all triggers 
+	// Show all triggers
 	if (!*object)
 	{
 		if (V4)
 		{
-            FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS
-                WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
-                TRG.RDB$RELATION_NAME = REL.RDB$RELATION_NAME AND
-                NOT (ANY CHK IN RDB$CHECK_CONSTRAINTS WITH
-                     TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME)
-                SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_NAME
-	
-                if (first)
+			FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS
+				WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
+				TRG.RDB$RELATION_NAME = REL.RDB$RELATION_NAME AND
+				NOT (ANY CHK IN RDB$CHECK_CONSTRAINTS WITH
+					 TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME)
+				SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_NAME
+
+				if (first)
 				{
-                    sprintf (Print_buffer, 
-                             "Table name                       Trigger name%s", NEWLINE);
-                    ISQL_printf (Out, Print_buffer);
-                    sprintf (Print_buffer, 
-                             "===========                      ============%s", NEWLINE);
-                    ISQL_printf (Out, Print_buffer);
-                    first = false;
-                }
-	
-                ISQL_blankterm (TRG.RDB$TRIGGER_NAME);
-                ISQL_blankterm (TRG.RDB$RELATION_NAME);
-                sprintf (Print_buffer, "%-32s %s%s%s", 
-                         TRG.RDB$RELATION_NAME, 
-                         TRG.RDB$TRIGGER_NAME, 
-                         (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),
-                         NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-            END_FOR
-            ON_ERROR 
-                ISQL_errmsg(isc_status);
-                return ERR;
+					sprintf (Print_buffer,
+							 "Table name                       Trigger name%s", NEWLINE);
+					ISQL_printf (Out, Print_buffer);
+					sprintf (Print_buffer,
+							 "===========                      ============%s", NEWLINE);
+					ISQL_printf (Out, Print_buffer);
+					first = false;
+				}
+
+				ISQL_blankterm (TRG.RDB$TRIGGER_NAME);
+				ISQL_blankterm (TRG.RDB$RELATION_NAME);
+				sprintf (Print_buffer, "%-32s %s%s%s",
+						 TRG.RDB$RELATION_NAME,
+						 TRG.RDB$TRIGGER_NAME,
+						 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),
+						 NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ERR;
 			END_ERROR;
 		}
 		else
-		{					// V3 databases 
-            FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS
-                WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
-                TRG.RDB$RELATION_NAME = REL.RDB$RELATION_NAME
-                SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_NAME
-                
-                if (first) {
-                    sprintf (Print_buffer, 
-                             "Table name                       Trigger name%s", NEWLINE);
-                    ISQL_printf (Out, Print_buffer);
-                    sprintf (Print_buffer, 
-                             "===========                      ============%s", NEWLINE);
-                    ISQL_printf (Out, Print_buffer);
-                    first = false;
-                }
-	
-                ISQL_blankterm (TRG.RDB$TRIGGER_NAME);
-                ISQL_blankterm (TRG.RDB$RELATION_NAME);
-                sprintf (Print_buffer, "%-32s %s%s%s", TRG.RDB$RELATION_NAME, 
-                         TRG.RDB$TRIGGER_NAME, 
-                         (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),
-                         NEWLINE);
-                ISQL_printf (Out, Print_buffer);
-            END_FOR
-			ON_ERROR 
-                ISQL_errmsg(isc_status);
+		{					// V3 databases
+			FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS
+				WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
+				TRG.RDB$RELATION_NAME = REL.RDB$RELATION_NAME
+				SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_NAME
+
+				if (first) {
+					sprintf (Print_buffer,
+							 "Table name                       Trigger name%s", NEWLINE);
+					ISQL_printf (Out, Print_buffer);
+					sprintf (Print_buffer,
+							 "===========                      ============%s", NEWLINE);
+					ISQL_printf (Out, Print_buffer);
+					first = false;
+				}
+
+				ISQL_blankterm (TRG.RDB$TRIGGER_NAME);
+				ISQL_blankterm (TRG.RDB$RELATION_NAME);
+				sprintf (Print_buffer, "%-32s %s%s%s", TRG.RDB$RELATION_NAME,
+						 TRG.RDB$TRIGGER_NAME,
+						 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),
+						 NEWLINE);
+				ISQL_printf (Out, Print_buffer);
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
 			    return ERR;
 			END_ERROR;
 		}
@@ -3525,61 +3484,61 @@ static int show_trigger(const SCHAR* object,
 			return (SKIP);
 	}
 
-// Show triggers for the named object 
-// In V4 databases we also want to avoid check constraints 
+// Show triggers for the named object
+// In V4 databases we also want to avoid check constraints
 
 	FOR TRG IN RDB$TRIGGERS WITH
-        (TRG.RDB$RELATION_NAME EQ object OR
-         TRG.RDB$TRIGGER_NAME EQ object)
-        SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_TYPE, 
-        TRG.RDB$TRIGGER_SEQUENCE, TRG.RDB$TRIGGER_NAME;
-	
-        skip = false;
-        if (V4) {
-            // Skip triggers for check constraints 
-            FOR FIRST 1 CHK IN RDB$CHECK_CONSTRAINTS WITH
-                TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME 
-                skip = true;
-            END_FOR
-            ON_ERROR
-                ISQL_errmsg (isc_status);
+		(TRG.RDB$RELATION_NAME EQ object OR
+		 TRG.RDB$TRIGGER_NAME EQ object)
+		SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_TYPE,
+		TRG.RDB$TRIGGER_SEQUENCE, TRG.RDB$TRIGGER_NAME;
+
+		skip = false;
+		if (V4) {
+			// Skip triggers for check constraints
+			FOR FIRST 1 CHK IN RDB$CHECK_CONSTRAINTS WITH
+				TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME
+				skip = true;
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg (isc_status);
 	            return ERR;
-            END_ERROR;
-        }
+			END_ERROR;
+		}
 	    if (skip)
-            continue;
+			continue;
 	    ISQL_blankterm (TRG.RDB$TRIGGER_NAME);
 	    ISQL_blankterm (TRG.RDB$RELATION_NAME);
-        
+
 	    if (first) {
-            sprintf (Print_buffer, "%sTriggers on Table %s:%s", 
-                     NEWLINE, 
-                     TRG.RDB$RELATION_NAME,
-                     NEWLINE);
-            ISQL_printf (Out, Print_buffer);
+			sprintf (Print_buffer, "%sTriggers on Table %s:%s",
+					 NEWLINE,
+					 TRG.RDB$RELATION_NAME,
+					 NEWLINE);
+			ISQL_printf (Out, Print_buffer);
 	        first = false;
-        }
-        
+		}
+
 	    sprintf (Print_buffer, "%s, Sequence: %d, Type: %s, %s%s",
 	             TRG.RDB$TRIGGER_NAME,
-                 TRG.RDB$TRIGGER_SEQUENCE,
-                 trigger_action (TRG.RDB$TRIGGER_TYPE),
-                 (TRG.RDB$TRIGGER_INACTIVE ? "Inactive" : "Active"), 
-                 NEWLINE);
+				 TRG.RDB$TRIGGER_SEQUENCE,
+				 trigger_action (TRG.RDB$TRIGGER_TYPE),
+				 (TRG.RDB$TRIGGER_INACTIVE ? "Inactive" : "Active"),
+				 NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
-        
+
 	    if (show_source) {
-            // Use print_blob to print the blob 
-            
-            if (!TRG.RDB$TRIGGER_SOURCE.NULL)
-                SHOW_print_metadata_text_blob (Out, &TRG.RDB$TRIGGER_SOURCE);
-            sprintf (Print_buffer, "%s+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%s", NEWLINE, NEWLINE);
-            ISQL_printf (Out, Print_buffer);
-        }
-        
+			// Use print_blob to print the blob
+
+			if (!TRG.RDB$TRIGGER_SOURCE.NULL)
+				SHOW_print_metadata_text_blob (Out, &TRG.RDB$TRIGGER_SOURCE);
+			sprintf (Print_buffer, "%s+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%s", NEWLINE, NEWLINE);
+			ISQL_printf (Out, Print_buffer);
+		}
+
 	END_FOR
-	ON_ERROR 
-        ISQL_errmsg(isc_status);
+	ON_ERROR
+		ISQL_errmsg(isc_status);
 	    return ERR;
 	END_ERROR;
 	if (first)

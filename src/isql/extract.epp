@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.20 2003-11-28 06:48:18 robocop Exp $
+ * $Id: extract.epp,v 1.21 2003-11-30 06:41:29 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -65,40 +65,37 @@ extern USHORT major_ods;
 extern USHORT minor_ods;
 extern bool V33;
 
-static void list_all_grants(void);
-static int	list_all_grants2 (bool, SCHAR*);
-static void list_all_procs(void);
+static void list_all_grants();
+static int	list_all_grants2 (bool, const SCHAR*);
+static void list_all_procs();
 static void list_all_tables(SSHORT, SSHORT);
-static void list_all_triggers(void);
-static void list_check(void);
-static void list_create_db(void);
-static void list_domain_table(SCHAR*, SSHORT);
+static void list_all_triggers();
+static void list_check();
+static void list_create_db();
+static void list_domain_table(const SCHAR*, SSHORT);
 static void list_domains(SSHORT);
-static void list_exception(void);
-static void list_filters(void);
-static void list_foreign(void);
-static void list_functions(void);
-static void list_generators(void);
-static void list_index(void);
-static void list_views(void);
+static void list_exception();
+static void list_filters();
+static void list_foreign();
+static void list_functions();
+static void list_generators();
+static void list_index();
+static void list_views();
 
 static void get_procedure_args(char*);
 
 #define MAX_INTSUBTYPES	2
 #define MAXSUBTYPES	8
 #define MAX_UDFPARAM_TYPES 4
-#define BLANK		'\040'
-#define DBL_QUOTE	'\042'
-#define SINGLE_QUOTE	'\''
 
-extern IB_FILE *Out;
+extern IB_FILE* Out;
 
 // Command terminator and procedure terminator 
 
 extern const sqltypes Column_types[];
-extern const SCHAR *Integral_subtypes[];
-extern const SCHAR *Sub_types[];
-extern const SCHAR *UDF_param_types[];
+extern const SCHAR* Integral_subtypes[];
+extern const SCHAR* Sub_types[];
+extern const SCHAR* UDF_param_types[];
 
 extern const char* trigger_action(int);
 
@@ -116,7 +113,7 @@ static TEXT SQL_identifier2[BUFFER_LENGTH128];
 
 
 SSHORT EXTRACT_ddl(int flag,
-				   SCHAR * tabname)
+				   SCHAR* tabname)
 {
 /**************************************
  *
@@ -133,11 +130,10 @@ SSHORT EXTRACT_ddl(int flag,
 	SSHORT ret_code = FINI_OK;
 	bool did_attach = false;
 	bool did_start = false;
-	SSHORT default_char_set_id;
 
 	if (!DB)
 	{
-		if (isc_attach_database(gds_status, 0, Db_name, &DB, 0, NULL))
+		if (isc_attach_database(gds_status, 0, global_Db_name, &DB, 0, NULL))
 		{
 			ISQL_errmsg(gds_status);
 			return (SSHORT) FINI_ERROR;
@@ -197,7 +193,7 @@ SSHORT EXTRACT_ddl(int flag,
 		did_start = true;
 	}
 
-	default_char_set_id = ISQL_get_default_char_set_id();
+	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
 
 // If a table name was passed, extract only that table and domains 
 	if (*tabname)
@@ -249,7 +245,7 @@ SSHORT EXTRACT_ddl(int flag,
 }
 
 
-int EXTRACT_list_grants (SCHAR *terminator)
+int EXTRACT_list_grants(const SCHAR* terminator)
 {
 /**************************************
  *
@@ -264,12 +260,12 @@ int EXTRACT_list_grants (SCHAR *terminator)
  *	If a new_name is passed, substitute it for relation_name
  *
  **************************************/
-	return list_all_grants2 (false, terminator);
+	return list_all_grants2(false, terminator);
 }
 
 
-SSHORT EXTRACT_list_table(SCHAR * relation_name,
-						  SCHAR * new_name,
+SSHORT EXTRACT_list_table(const SCHAR* relation_name,
+						  const SCHAR* new_name,
 						  bool domain_flag,
 						  SSHORT default_char_set_id)
 {
@@ -357,7 +353,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
 			first = false;
 			// Do we need to print domains 
 			if (domain_flag)
-				list_domain_table (relation_name,default_char_set_id);
+				list_domain_table (relation_name, default_char_set_id);
 
 			ISQL_blankterm (REL.RDB$OWNER_NAME);
 			sprintf (Print_buffer, "%s/* Table: %s, Owner: %s */%s",
@@ -659,7 +655,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
 
 // Do primary and unique keys only. references come later 
 
-	SCHAR* collist = (SCHAR *) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
+	SCHAR* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
 	if (!collist)
 	{
 		isc_status[0] = isc_arg_gds;
@@ -716,7 +712,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
 
 // Check constaints are now deferred
 
-	sprintf(Print_buffer, ")%s%s", Term, NEWLINE);
+	sprintf(Print_buffer, ")%s%s", global_Term, NEWLINE);
 	ISQL_printf(Out, Print_buffer);
 
 	if (collist)
@@ -922,7 +918,7 @@ static void get_procedure_args(char* proc_name)
 }
 
 
-static void list_all_grants ()
+static void list_all_grants()
 {
 /**************************************
  *
@@ -936,12 +932,12 @@ static void list_all_grants ()
  *	Wrapper around list_all_grants2().
  *
  **************************************/
-	list_all_grants2 (true, Term);
+	list_all_grants2(true, global_Term);
 }
 
 
-static int list_all_grants2 (bool show_role_list,
-							 SCHAR *terminator)
+static int list_all_grants2(bool show_role_list,
+							const SCHAR* terminator)
 {
 /**************************************
  *
@@ -1120,8 +1116,8 @@ static void list_all_procs()
  **************************************/
 	bool header = true;
 	TEXT msg[MSG_LENGTH];
-	static const SCHAR *create_procedure_str1 = "CREATE PROCEDURE %s ";
-	static const SCHAR *create_procedure_str2 = "BEGIN EXIT; END %s%s";
+	static const SCHAR* create_procedure_str1 = "CREATE PROCEDURE %s ";
+	static const SCHAR* create_procedure_str2 = "BEGIN EXIT; END %s%s";
 
 
 //  First the dummy procedures 
@@ -1135,7 +1131,7 @@ static void list_all_procs()
 			ISQL_printf (Out, Print_buffer);
 			sprintf (Print_buffer, "SET AUTODDL OFF;%s", NEWLINE);
 			ISQL_printf (Out, Print_buffer);
-			sprintf (Print_buffer, "SET TERM %s %s%s", Procterm, Term, NEWLINE);
+			sprintf (Print_buffer, "SET TERM %s %s%s", Procterm, global_Term, NEWLINE);
 			ISQL_printf (Out, Print_buffer);
 			sprintf (Print_buffer, "%s/* Stored procedures */%s", NEWLINE, NEWLINE);
 			ISQL_printf (Out, Print_buffer);
@@ -1199,7 +1195,7 @@ static void list_all_procs()
 
 	END_FOR
 	ON_ERROR
-		ISQL_msg_get(GEN_ERR, msg, (TEXT *) isc_sqlcode(gds_status), NULL,
+		ISQL_msg_get(GEN_ERR, msg, (TEXT*) isc_sqlcode(gds_status), NULL,
 					 NULL, NULL, NULL);
 		STDERROUT(msg, 1);			/* Statement failed, SQLCODE = %d\n\n */
 		ISQL_errmsg(gds_status);
@@ -1209,9 +1205,9 @@ static void list_all_procs()
 // Only reset the terminators is there were procs to print 
 	if (!header)
 	{
-		sprintf(Print_buffer, "SET TERM %s %s%s", Term, Procterm, NEWLINE);
+		sprintf(Print_buffer, "SET TERM %s %s%s", global_Term, Procterm, NEWLINE);
 		ISQL_printf(Out, Print_buffer);
-		sprintf(Print_buffer, "COMMIT WORK %s%s", Term, NEWLINE);
+		sprintf(Print_buffer, "COMMIT WORK %s%s", global_Term, NEWLINE);
 		ISQL_printf(Out, Print_buffer);
 		sprintf(Print_buffer, "SET AUTODDL ON;%s", NEWLINE);
 		ISQL_printf(Out, Print_buffer);
@@ -1291,7 +1287,7 @@ static void list_all_triggers()
 
 		if (header)
 		{
-			sprintf (Print_buffer, "SET TERM %s %s%s", Procterm, Term, NEWLINE);
+			sprintf (Print_buffer, "SET TERM %s %s%s", Procterm, global_Term, NEWLINE);
 			ISQL_printf (Out, Print_buffer);
 			sprintf (Print_buffer,
 					 "%s/* Triggers only will work for SQL triggers */%s",
@@ -1352,13 +1348,13 @@ static void list_all_triggers()
 	{
 		sprintf(Print_buffer, "COMMIT WORK %s%s", Procterm, NEWLINE);
 		ISQL_printf(Out, Print_buffer);
-		sprintf(Print_buffer, "SET TERM %s %s%s", Term, Procterm, NEWLINE);
+		sprintf(Print_buffer, "SET TERM %s %s%s", global_Term, Procterm, NEWLINE);
 		ISQL_printf(Out, Print_buffer);
 	}
 }
 
 
-static void list_check(void)
+static void list_check()
 {
 /**************************************
  *
@@ -1417,7 +1413,7 @@ static void list_check(void)
 		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (Out, &TRG.RDB$TRIGGER_SOURCE);
 
-		sprintf (Print_buffer, "%s%s", Term, NEWLINE);
+		sprintf (Print_buffer, "%s%s", global_Term, NEWLINE);
 		ISQL_printf (Out, Print_buffer);
 
 	END_FOR
@@ -1428,7 +1424,7 @@ static void list_check(void)
 }
 
 
-static void print_set(bool * set_used)
+static void print_set(bool* set_used)
 {
 /**************************************
  *
@@ -1459,7 +1455,7 @@ static void print_set(bool * set_used)
 }
 
 
-static void list_create_db(void)
+static void list_create_db()
 {
 /**************************************
  *
@@ -1472,45 +1468,28 @@ static void list_create_db(void)
  *	the page size in a comment with the extracted db name
  *
  **************************************/
-	SCHAR info_buf[20];
 	static const SCHAR page_items[] = {
 		isc_info_page_size,
 		isc_info_end
 	};
-	static const SCHAR wal_items[] = {
-		isc_info_num_wal_buffers,
-		isc_info_wal_buffer_size,
-		isc_info_wal_grpc_wait_usecs,
-		isc_info_wal_ckpt_length,
-		isc_info_end
-	};
 
+// Comment out the create database if no db param was specified
 	bool nodb = false;
-	bool first = true;
-	bool first_file = true;
-	bool has_wal = false;
-	bool set_used = false;
-	bool translate = false;
-	SCHAR *d;
-	SCHAR *buffer;
-	SCHAR item;
-	int length;
-	SLONG value_out;
-
-	buffer = NULL;
-// Comment out the create database if no db param was specified 
-	if (!*Target_db)
+	if (!*global_Target_db)
 	{
 		ISQL_printf(Out, "/* ");
-		strcpy(Target_db, Db_name);
+		strcpy(global_Target_db, global_Db_name);
 		nodb = true;
 	}
-	sprintf(Print_buffer, "CREATE DATABASE '%s'", Target_db);
+	sprintf(Print_buffer, "CREATE DATABASE '%s'", global_Target_db);
 	ISQL_printf(Out, Print_buffer);
 
 	// Get the page size from db_info call 
-	if (!SHOW_dbb_parameters(DB, info_buf, const_cast<char*>(page_items), sizeof(page_items),
-						translate)) {
+	SCHAR info_buf[20];
+	const bool translate = false; // ???
+	if (!SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items),
+						translate))
+	{
 		sprintf(Print_buffer, " %s", info_buf);
 		ISQL_printf(Out, Print_buffer);
 	}
@@ -1537,13 +1516,14 @@ static void list_create_db(void)
 	}
 	else
 	{
-		sprintf(Print_buffer, "%s%s", Term, NEWLINE);
+		sprintf(Print_buffer, "%s%s", global_Term, NEWLINE);
 		ISQL_printf(Out, Print_buffer);
 	}
 
 // List secondary files and shadows as alter db and create shadow in comment 
 
-
+	bool first = true;
+	
 	FOR FIL IN RDB$FILES
 		SORTED BY FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_SEQUENCE
 
@@ -1641,6 +1621,10 @@ static void list_create_db(void)
 		return;
 	END_ERROR;
 
+	bool first_file = true;
+	first = true; // CVC: I'm not sure if this line should be added here.
+	bool has_wal = false;
+
 	FOR WAL IN RDB$LOG_FILES
 		SORTED BY WAL.RDB$FILE_FLAGS, WAL.RDB$FILE_SEQUENCE
 
@@ -1726,9 +1710,10 @@ static void list_create_db(void)
 **
 **************************************************************/
 
+	bool set_used = false;
 	if (has_wal)
 	{
-		buffer = (SCHAR *) ISQL_ALLOC(BUFFER_LENGTH128);
+		char* buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH128);
 		if (!buffer)
 		{
 			isc_status[0] = isc_arg_gds;
@@ -1742,12 +1727,12 @@ static void list_create_db(void)
 			(gds_status, &DB, sizeof(wal_items), wal_items, BUFFER_LENGTH128,
 			 buffer))
 		{
-			for (d = buffer; *d != isc_info_end;)
+			for (const char* d = buffer; *d != isc_info_end;)
 			{
-				item = *d++;
-				length = isc_vax_integer(d, 2);
+				const char item = *d++;
+				const int length = isc_vax_integer(d, 2);
 				d += 2;
-				value_out = isc_vax_integer(d, length);
+				const SLONG value_out = isc_vax_integer(d, length);
 				switch (item)
 				{
 				case isc_info_end:
@@ -1798,14 +1783,14 @@ static void list_create_db(void)
 		}
 		else
 		{
-			sprintf(Print_buffer, "%s%s%s", Term, NEWLINE, NEWLINE);
+			sprintf(Print_buffer, "%s%s%s", global_Term, NEWLINE, NEWLINE);
 			ISQL_printf(Out, Print_buffer);
 		}
 	}
 }
 
 
-static void list_domain_table(SCHAR * table_name,
+static void list_domain_table(const SCHAR* table_name,
 							  SSHORT default_char_set_id)
 {
 /**************************************
@@ -1991,7 +1976,7 @@ static void list_domain_table(SCHAR * table_name,
 				ISQL_printf (Out, char_sets);
 		}
 
-		sprintf (Print_buffer, "%s%s", Term, NEWLINE);
+		sprintf (Print_buffer, "%s%s", global_Term, NEWLINE);
 		ISQL_printf (Out, Print_buffer);
 	END_FOR
 	ON_ERROR
@@ -2185,7 +2170,7 @@ static void list_domains(SSHORT default_char_set_id)
 				ISQL_printf (Out, char_sets);
 		}
 
-		sprintf (Print_buffer, "%s%s", Term, NEWLINE);
+		sprintf (Print_buffer, "%s%s", global_Term, NEWLINE);
 		ISQL_printf (Out, Print_buffer);
 	END_FOR
 	ON_ERROR
@@ -2195,7 +2180,7 @@ static void list_domains(SSHORT default_char_set_id)
 }
 
 
-static void list_exception(void)
+static void list_exception()
 {
 /**************************************
  *
@@ -2227,11 +2212,11 @@ static void list_exception(void)
 		{
 			ISQL_copy_SQL_id (EXC.RDB$EXCEPTION_NAME, SQL_identifier, DBL_QUOTE);
 			sprintf (Print_buffer, "CREATE EXCEPTION %s %s%s%s",
-					 SQL_identifier, SQL_identifier2, Term, NEWLINE);
+					 SQL_identifier, SQL_identifier2, global_Term, NEWLINE);
 		}
 		else
 			sprintf (Print_buffer, "CREATE EXCEPTION %s %s%s%s",
-					 EXC.RDB$EXCEPTION_NAME, SQL_identifier2, Term, NEWLINE);
+					 EXC.RDB$EXCEPTION_NAME, SQL_identifier2, global_Term, NEWLINE);
 
 		ISQL_printf (Out, Print_buffer);
 
@@ -2243,7 +2228,7 @@ static void list_exception(void)
 }
 
 
-static void list_filters(void)
+static void list_filters()
 {
 /**************************************
  *
@@ -2279,7 +2264,7 @@ static void list_filters(void)
 
 		sprintf (Print_buffer, "DECLARE FILTER %s INPUT_TYPE %d OUTPUT_TYPE %d%s%sENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
 				 FIL.RDB$FUNCTION_NAME, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE,
-				 NEWLINE, TAB_AS_SPACES, FIL.RDB$ENTRYPOINT, FIL.RDB$MODULE_NAME, Term, NEWLINE,
+				 NEWLINE, TAB_AS_SPACES, FIL.RDB$ENTRYPOINT, FIL.RDB$MODULE_NAME, global_Term, NEWLINE,
 				 NEWLINE);
 		ISQL_printf (Out, Print_buffer);
 
@@ -2304,10 +2289,7 @@ static void list_foreign()
  *	List all foreign key constraints and alter the tables
  *
  **************************************/
-	SCHAR *collist;
-
-	collist = NULL;
-	collist = (SCHAR *) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
+	SCHAR* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
 	if (!collist)
 	{
 		isc_status[0] = isc_arg_gds;
@@ -2404,7 +2386,7 @@ static void list_foreign()
 			ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " ON DELETE", true);
 		}
 
-		sprintf (Print_buffer, "%s%s", Term, NEWLINE);
+		sprintf (Print_buffer, "%s%s", global_Term, NEWLINE);
 		ISQL_printf (Out, Print_buffer);
 
 	END_FOR
@@ -2419,7 +2401,7 @@ static void list_foreign()
 }
 
 
-static void list_functions(void)
+static void list_functions()
 {
 /**************************************
  *
@@ -2441,15 +2423,15 @@ static void list_functions(void)
 	bool firstarg = true;
 	bool printarg = true;
 	SSHORT i, ptype;
-	SCHAR *return_buffer;
-	SCHAR *type_buffer;
-	SCHAR *buffer;
+	SCHAR* return_buffer;
+	SCHAR* type_buffer;
+	SCHAR* buffer;
 
 	buffer = NULL;
 	type_buffer = NULL;
 	return_buffer = NULL;
 
-	buffer = (SCHAR *) ISQL_ALLOC(BUFFER_LENGTH360);
+	buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH360);
 	if (!buffer)
 	{
 		isc_status[0] = isc_arg_gds;
@@ -2459,7 +2441,7 @@ static void list_functions(void)
 		return;
 	}
 
-	type_buffer = (SCHAR *) ISQL_ALLOC(BUFFER_LENGTH128);
+	type_buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH128);
 	if (!type_buffer)
 	{
 		isc_status[0] = isc_arg_gds;
@@ -2470,7 +2452,7 @@ static void list_functions(void)
 		return;
 	}
 
-	return_buffer = (SCHAR *) ISQL_ALLOC(BUFFER_LENGTH128);
+	return_buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH128);
 	if (!return_buffer)
 	{
 		isc_status[0] = isc_arg_gds;
@@ -2664,7 +2646,7 @@ static void list_functions(void)
 		sprintf (Print_buffer, "ENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
 				 FUN.RDB$ENTRYPOINT,
 				 FUN.RDB$MODULE_NAME,
-				 Term,
+				 global_Term,
 				 NEWLINE,
 				 NEWLINE);
 		ISQL_printf (Out, Print_buffer);
@@ -2686,7 +2668,7 @@ static void list_functions(void)
 
 
 
-static void list_generators(void)
+static void list_generators()
 {
 /**************************************
  *
@@ -2716,7 +2698,7 @@ static void list_generators(void)
 
 		sprintf (Print_buffer, "CREATE GENERATOR %s%s%s",
 				 SQL_identifier,
-				 Term,
+				 global_Term,
 				 NEWLINE);
 		ISQL_printf (Out, Print_buffer);
 	END_FOR
@@ -2744,12 +2726,9 @@ static void list_index()
  *	Uses get_index_segment to provide a key list for each index
  *
  **************************************/
-	SCHAR *collist;
 	bool first = true;
 
-
-	collist = NULL;
-	collist = (SCHAR *) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
+	char* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
 	if (!collist)
 	{
 		isc_status[0] = isc_arg_gds;
@@ -2803,7 +2782,7 @@ static void list_index()
 
 		if (ISQL_get_index_segments (collist, IDX.RDB$INDEX_NAME, true))
 		{
-			sprintf (Print_buffer, "%s)%s%s", collist, Term, NEWLINE);
+			sprintf (Print_buffer, "%s)%s%s", collist, global_Term, NEWLINE);
 			ISQL_printf (Out, Print_buffer);
 		}
 
@@ -2888,7 +2867,7 @@ static void list_views()
 		if (!REL.RDB$VIEW_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (Out, &REL.RDB$VIEW_SOURCE);
 
-		sprintf (Print_buffer, "%s%s", Term, NEWLINE);
+		sprintf (Print_buffer, "%s%s", global_Term, NEWLINE);
 		ISQL_printf (Out, Print_buffer);
 
 	END_FOR
