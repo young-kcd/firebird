@@ -141,6 +141,10 @@ SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\timestamp.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\utils.cpp
 # End Source File
 # End Group
@@ -178,6 +182,10 @@ SOURCE=..\..\..\src\common\config\dir_list.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\os\fbsyslog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\timestamp.h
 # End Source File
 # Begin Source File
 
