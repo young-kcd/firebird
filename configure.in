@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.90 2002-11-16 02:17:13 skywalker Exp $
+dnl $Id: configure.in,v 1.91 2002-11-18 02:57:39 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -589,6 +589,7 @@ dnl EKU: handle platform specific installation and packaging
 case $PLATFORM in
   LINUX)
     mkdir -p gen/install/scripts
+    mkdir -p gen/install/misc
     INSTALL_SRC_DIR=src/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([
        gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
@@ -602,10 +603,14 @@ case $PLATFORM in
        gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
        gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
        gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
+       gen/install/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
+       gen/install/misc/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
       ],[
        chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null
       ])
     ;;
+
+
 
   SINIX-Z)
     AC_CONFIG_FILES([

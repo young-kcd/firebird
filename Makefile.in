@@ -2,5 +2,5 @@
 
 all: firebird
 
-firebird firebird_super install package packages dist clean clobber:
+firebird install package packages dist clean clobber:
 	$(MAKE) -C src $@
