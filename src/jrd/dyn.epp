@@ -666,6 +666,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, USHORT size, bool err_flag)
 	return length;
 }
 
+
 TEXT* DYN_dup_string(MemoryPool& pool, const TEXT** ptr, bool trim, USHORT size)
 {
 /**************************************
@@ -680,7 +681,6 @@ TEXT* DYN_dup_string(MemoryPool& pool, const TEXT** ptr, bool trim, USHORT size)
  *	Returns newly allocated string.
  *
  **************************************/
-	USHORT e = 0;
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
@@ -701,6 +701,7 @@ TEXT* DYN_dup_string(MemoryPool& pool, const TEXT** ptr, bool trim, USHORT size)
 
 	return stringDup(pool, p, length);
 }
+
 
 USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 {
