@@ -1,3 +1,81 @@
+2002-11-30 18:43  hippoman
+
+	* firebird2/src/: jrd/blb.cpp, jrd/cmp.cpp, jrd/evl.cpp,
+	jrd/exe.cpp, jrd/ext.cpp, jrd/idx.cpp, jrd/idx_proto.h,
+	jrd/ini.epp, jrd/jrd.h, jrd/met.epp, jrd/met_proto.h, jrd/par.cpp,
+	jrd/scl.epp, qli/blk.h, qli/compile.cpp, qli/dtr.h, qli/eval.cpp,
+	qli/exe.cpp, qli/exe.h, qli/expand.cpp, qli/format.cpp,
+	qli/gener.cpp, qli/meta.epp, qli/meta_proto.h, qli/parse.cpp,
+	qli/show.epp:
+	
+	Changed struct fld and FLD to local module names
+
+2002-11-30 18:37  hippoman
+
+	* firebird2/src/: dudley/ddl.h, dudley/exe.epp, dudley/expand.cpp,
+	dudley/generate.cpp, dudley/parse.cpp, dudley/trn.cpp,
+	gpre/ada.cpp, gpre/c_cxx.cpp, gpre/cmd.cpp, gpre/cme.cpp,
+	gpre/cme_proto.h, gpre/cmp.cpp, gpre/cmp_proto.h, gpre/cob.cpp,
+	gpre/exp.cpp, gpre/exp_proto.h, gpre/form.cpp, gpre/form.h,
+	gpre/form_proto.h, gpre/ftn.cpp, gpre/gpre.cpp, gpre/gpre.h,
+	gpre/gpre_meta.epp, gpre/gpre_meta.h, gpre/gpre_meta_boot.cpp,
+	gpre/int.cpp, gpre/int_cxx.cpp, gpre/jrdmet.cpp, gpre/noform.cpp,
+	gpre/par.cpp, gpre/par_proto.h, gpre/pas.cpp, gpre/sqe.cpp,
+	gpre/sqe_proto.h, gpre/sql.cpp, gpre/sql_proto.h:
+	
+	Changed struct fld and FLD to local module names
+
+2002-11-30 18:34  hippoman
+
+	* firebird2/src/: burp/backup.epp, burp/burp.h, burp/canonical.cpp,
+	burp/restore.epp, dsql/blk.h, dsql/ddl.cpp, dsql/ddl_proto.h,
+	dsql/dsql.cpp, dsql/dsql.h, dsql/gen.cpp, dsql/make.cpp,
+	dsql/make_proto.h, dsql/metd.epp, dsql/metd_proto.h,
+	dsql/parse.cpp, dsql/parse.y, dsql/pass1.cpp:
+	
+	Changed struct fld and FLD to local module names
+
+2002-11-30 18:30  hippoman
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj,
+	engine_classic.vcproj, fb_lock_print.vcproj, fbclient.vcproj,
+	gdef.vcproj, gfix.vcproj, qli.vcproj:
+	
+	Fixed the build, isc_win32.cpp has been removed
+
+2002-11-30 16:08  skidder
+
+	* firebird2/: configure.in, builds/posix/prefix.mingw,
+	builds/win32/msvc6/alice.dsp, builds/win32/msvc6/alice_classic.dsp,
+	builds/win32/msvc6/burp.dsp, builds/win32/msvc6/burp_classic.dsp,
+	builds/win32/msvc6/common.dsp, builds/win32/msvc6/dsql_server.dsp,
+	builds/win32/msvc6/dsql_server_classic.dsp,
+	builds/win32/msvc6/engine.dsp,
+	builds/win32/msvc6/engine_classic.dsp,
+	builds/win32/msvc6/fb_inet_server.dsp,
+	builds/win32/msvc6/fb_lock_print.dsp,
+	builds/win32/msvc6/fbclient.dsp, builds/win32/msvc6/fbembed.dsp,
+	builds/win32/msvc6/fbserver.dsp, src/common/config/config.cpp,
+	src/common/config/config.h, src/common/config/config_impl.h,
+	src/gpre/ftn.cpp, src/iscguard/iscguard.cpp, src/jrd/gds.cpp,
+	src/jrd/sort_mem.cpp, src/jrd/os/win32/config_root.cpp,
+	src/remote/srvr_w32.cpp:
+	
+	New changes by Dmitry Emanov. Configuration manager and Windows
+	build environment improvements
+
+2002-11-29 05:10  seanleyne
+
+	* firebird2/src/jrd/flu.cpp:
+	
+	Small change
+
+2002-11-29 05:06  seanleyne
+
+	* firebird2/src/jrd/flu.cpp:
+	
+	Code cleanup, removed obsolete "HM300" port
+
 2002-11-28 16:44  kkuznetsov
 
 	* firebird2/src/: msgs/change_msgs.epp, msgs/enter_msgs.epp,
