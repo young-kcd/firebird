@@ -44,13 +44,12 @@
 #include "../include/fb_exception.h"
 
 #ifdef WIN_NT
-#include <io.h>
 #include <windows.h>
-#include <stdlib.h>
 #include "../jrd/jrd_pwd.h"
-#define TEXT		SCHAR
 #endif
 
+#define LOCKSMITH_USER "SYSDBA"
+#define LOCKSMITH_PASSWORD "masterkey"
 
 /* For Netware the follow DB handle and isc_status is #defined to be a  */
 /* local variable on the stack in main.  This is to avoid multiple      */
@@ -196,7 +195,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	FIL current;
 	SCHAR **end, *p, temp[1024], file_name[1024];
 	double average;
-	SSHORT n;
 	bool sw_system;
 	bool sw_data;
 	bool sw_index;
@@ -229,7 +227,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	SET_THREAD_DATA;
 	memset(tddba, 0, sizeof(*tddba));
 	memset(&status_vector, 0, sizeof(status_vector));
-	tddba->dba_env = env;
+	tddba->dba_env = (UCHAR*) env;
 
 	if (SETJMP(env)) {
 		int exit_code;
@@ -481,7 +479,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	dpb_length = dpb - dpb_string;
 
 	isc_attach_database(status_vector, 0, name, &DB, dpb_length,
-						dpb_string);
+						(char*) dpb_string);
 	if (status_vector[1])
 		dba_full_exit(FINI_ERROR, tddba);
 #else
@@ -631,7 +629,7 @@ static SCHAR *alloc( SLONG size)
  *
  **************************************/
 	SCHAR *block, *p;
-	block = p = gds__alloc(size);
+	block = p = (SCHAR*) gds__alloc(size);
 	do
 		*p++ = 0;
 	while (--size);
@@ -653,8 +651,6 @@ static void analyze_data( REL relation)
  *
  **************************************/
 	PPG pointer_page;
-	DPG data_page;
-	SSHORT n;
 	SLONG next_pp, *ptr, *end;
 	TDBA tddba;
 
@@ -664,13 +660,13 @@ static void analyze_data( REL relation)
 
 	for (next_pp = relation->rel_pointer_page; next_pp;
 		 next_pp = pointer_page->ppg_next) {
-		move(db_read(next_pp), pointer_page, tddba->page_size);
+		move((SCHAR*) db_read(next_pp), (SCHAR*) pointer_page, tddba->page_size);
 		for (ptr = pointer_page->ppg_page, end =
 			 ptr + pointer_page->ppg_count; ptr < end; ptr++) {
 			++relation->rel_slots;
 			if (*ptr) {
 				++relation->rel_data_pages;
-				if (!analyze_data_page(relation, db_read(*ptr)))
+				if (!analyze_data_page(relation, (DPG) db_read(*ptr)))
 					FPRINTF(tddba->sw_outfile,
 							"    Expected data on page %ld\n", *ptr);
 			}
@@ -691,8 +687,8 @@ static bool analyze_data_page( REL relation, DPG page)
  *	Analyze space utilization for data page.
  *
  **************************************/
-	SSHORT bucket, space, base;
-	struct dpg_repeat *tail, *end;
+	SSHORT bucket, space;
+	struct dpg::dpg_repeat *tail, *end;
 	TDBA tddba;
 
 	tddba = GET_THREAD_DATA;
@@ -700,7 +696,7 @@ static bool analyze_data_page( REL relation, DPG page)
 	if (page->dpg_header.pag_type != pag_data)
 		return false;
 
-	space = page->dpg_count * sizeof(struct dpg_repeat);
+	space = page->dpg_count * sizeof(struct dpg::dpg_repeat);
 
 	for (tail = page->dpg_rpt, end = tail + page->dpg_count; tail < end;
 		 tail++)
@@ -732,7 +728,6 @@ static void analyze_index( REL relation, IDX index)
  **************************************/
 	BTR bucket;
 	IRT index_root;
-	IRTD *desc;
 	BTN node;
 	SSHORT n, space, duplicates, key_length, l, page_count;
 	bool dup;
@@ -766,7 +761,7 @@ static void analyze_index( REL relation, IDX index)
 		FPRINTF(tddba->sw_outfile, "\nlevel %ld:\n", bucket->btr_level);
 
 		right_sibling = page;
-		move(bucket->btr_nodes[0].btn_number, &page, sizeof(page));
+		move((SCHAR*) bucket->btr_nodes[0].btn_number, (SCHAR*) &page, sizeof(page));
 
 		node_count = 0;
 		prior_page = 0;
@@ -803,7 +798,7 @@ static void analyze_index( REL relation, IDX index)
 			FPRINTF(tddba->sw_outfile, "\nnodes:");
 			for (node = bucket->btr_nodes;;
 				 node = (BTN) (node->btn_data + node->btn_length)) {
-				move(node->btn_number, &number, sizeof(number));
+				move((SCHAR*) node->btn_number, (SCHAR*) &number, sizeof(number));
 
 				if (!(node_page_count % 4))
 					FPRINTF(tddba->sw_outfile, "\n");
@@ -887,7 +882,7 @@ static void analyze_index( REL relation, IDX index)
 		node_page_count = 0;
 		for (node = bucket->btr_nodes;;
 			 node = (BTN) (node->btn_data + node->btn_length)) {
-			move(node->btn_number, &number, sizeof(number));
+			move((SCHAR*) node->btn_number, (SCHAR*) &number, sizeof(number));
 
 			if (!(node_page_count % 4))
 				FPRINTF(tddba->sw_outfile, "\n");
@@ -923,7 +918,7 @@ static void analyze_index( REL relation, IDX index)
 			index->idx_data_length += node->btn_length;
 			l = node->btn_length + node->btn_prefix;
 			if (node == bucket->btr_nodes)
-				dup = key_equality(key_length, key, node);
+				dup = key_equality(key_length, (SCHAR*) key, node);
 			else
 				dup = !node->btn_length && l == key_length;
 			if (dup) {
@@ -1108,9 +1103,11 @@ static PAG db_read( SLONG page_number)
 		 FILE_BEGIN) == -1)
 		db_error(GetLastError());
 
-	if (!ReadFile
-		(fil->fil_desc, tddba->global_buffer, tddba->page_size,
-		 &actual_length, NULL)) db_error(GetLastError());
+	if (!ReadFile(fil->fil_desc, tddba->global_buffer, tddba->page_size,
+					reinterpret_cast<LPDWORD>(&actual_length), NULL)) 
+	{
+		db_error(GetLastError());
+	}
 	if (actual_length != tddba->page_size) {
 		FPRINTF(tddba->sw_outfile, "Unexpected end of database file.\n");
 		dba_full_exit(FINI_ERROR, tddba);
@@ -1377,7 +1374,7 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 			header->hdr_implementation);
 	FPRINTF(sw_outfile, "    Shadow count\t%ld\n", header->hdr_shadow_count);
 
-	isc_decode_date(header->hdr_creation_date, &time);
+	isc_decode_date((ISC_QUAD*)header->hdr_creation_date, &time);
 	FPRINTF(sw_outfile, "    Creation date\t%s %d, %d %d:%02d:%02d\n",
 			months[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			time.tm_hour, time.tm_min, time.tm_sec);
@@ -1412,17 +1409,17 @@ FPRINTF (sw_outfile, "    Creation date    \n", header->hdr_creation_date);
 			break;
 
 		case HDR_last_page:
-			move(p + 2, &number, sizeof(number));
+			move((SCHAR*) (p + 2), (SCHAR*) &number, sizeof(number));
 			FPRINTF(sw_outfile, "\tLast logical page: %ld\n", number);
 			break;
 
 		case HDR_unlicensed:
-			move(p + 2, &number, sizeof(number));
+			move((SCHAR*) (p + 2), (SCHAR*) &number, sizeof(number));
 			FPRINTF(sw_outfile, "\tUnlicensed accesses: %ld\n", number);
 			break;
 
 		case HDR_sweep_interval:
-			move(p + 2, &number, sizeof(number));
+			move((SCHAR*) (p + 2), (SCHAR*) &number, sizeof(number));
 			FPRINTF(sw_outfile, "\tSweep interval: %ld\n", number);
 			break;
 
