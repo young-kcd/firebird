@@ -488,7 +488,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 	gds__vtov(fname, in_msg.field_name, sizeof(in_msg.field_name));
 	EXE_start(tdbb, request, gbl->gbl_transaction);
 	EXE_send(tdbb, request, 0, sizeof(in_msg), (UCHAR*)&in_msg);
-	EXE_receive(tdbb, request, 1, sizeof(USHORT), (UCHAR*)prot_mask);
+	EXE_receive(tdbb, request, 1, sizeof(SecurityClass::flags_t), (UCHAR*)prot_mask);
 
 	DYN_rundown_request(request, drq_l_prot_mask);
 
