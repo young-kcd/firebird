@@ -149,8 +149,6 @@ extern int ib_printf();
 #define BSTR_output	1
 #define BSTR_alloc	2
 
-extern "C" {
-
 static int dump(GDS_QUAD *, FRBRD *, FRBRD *, IB_FILE *);
 static int edit(GDS_QUAD *, FRBRD *, FRBRD *, SSHORT, SCHAR *);
 static int get_ods_version(FRBRD **, USHORT *, USHORT *);
@@ -263,6 +261,7 @@ static const TEXT *const impl_implementation[] = {
 };
 
 
+extern "C" {
 
 #ifdef SHLIB_DEFS
 #define strlen		(*_libgds_strlen)
@@ -356,7 +355,7 @@ int API_ROUTINE gds__blob_size(
 #pragma FB_COMPILER_MESSAGE("Fix! Bad casts.")
 
 	if (gds__blob_info(status_vector, b, sizeof(blob_items),
-					   const_cast < char *>(blob_items),
+					   const_cast<char*>(blob_items),
 					   sizeof(buffer), buffer)) {
 		gds__print_status(status_vector);
 		return FALSE;
@@ -366,10 +365,10 @@ int API_ROUTINE gds__blob_size(
 
 	while ((item = *p++) != gds_info_end) {
 		l =
-			static_cast < SSHORT >
-			(gds__vax_integer(reinterpret_cast < UCHAR * >(p), 2));
+			static_cast<SSHORT>
+			(gds__vax_integer(reinterpret_cast<UCHAR*>(p), 2));
 		p += 2;
-		n = gds__vax_integer(reinterpret_cast < UCHAR * >(p), l);
+		n = gds__vax_integer(reinterpret_cast<UCHAR*>(p), l);
 		p += l;
 		switch (item) {
 		case gds_info_blob_max_segment:
@@ -472,7 +471,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR ** dpb, SSHORT * dpb_size, ...)
 		/* Note: gds__free done by GPRE generated code */
 
 		new_dpb = (UCHAR*)gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
-		p = reinterpret_cast < char *>(new_dpb);
+		p = reinterpret_cast<char*>(new_dpb);
 		/* FREE: done by client process in GPRE generated code */
 		if (!new_dpb)
 		{			/* NOMEM: don't trash existing dpb */
@@ -541,9 +540,10 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 {
 /**************************************
  *
- *	i s c _ e x p a n d _ d p b
+ *	i s c _ m o d i f y _ d p b
  *
  **************************************
+ * CVC: this description seems copy/paste from isc_expand_dpb.
  *
  * Functional description
  *	Extend a database parameter block dynamically
@@ -967,10 +967,10 @@ SCHAR * result_buffer)
 		/* get the change in count */
 
 		initial_count =
-			gds__vax_integer(reinterpret_cast < UCHAR * >(p), sizeof(SLONG));
+			gds__vax_integer(reinterpret_cast<UCHAR*>(p), sizeof(SLONG));
 		p += sizeof(SLONG);
 		new_count =
-			gds__vax_integer(reinterpret_cast < UCHAR * >(q), sizeof(SLONG));
+			gds__vax_integer(reinterpret_cast<UCHAR*>(q), sizeof(SLONG));
 		q += sizeof(SLONG);
 		*vec++ = new_count - initial_count;
 	}
@@ -1143,15 +1143,15 @@ void API_ROUTINE isc_set_login(UCHAR ** dpb, SSHORT * dpb_size)
 
 	if (username && !user_seen) {
 		if (password && !password_seen)
-			isc_expand_dpb(reinterpret_cast < char **>(dpb), dpb_size,
+			isc_expand_dpb(reinterpret_cast<char**>(dpb), dpb_size,
 						   gds_dpb_user_name, username, gds_dpb_password,
 						   password, 0);
 		else
-			isc_expand_dpb(reinterpret_cast < char **>(dpb), dpb_size,
+			isc_expand_dpb(reinterpret_cast<char**>(dpb), dpb_size,
 						   gds_dpb_user_name, username, 0);
 	}
 	else if (password && !password_seen)
-		isc_expand_dpb(reinterpret_cast < char **>(dpb), dpb_size,
+		isc_expand_dpb(reinterpret_cast<char**>(dpb), dpb_size,
 					   gds_dpb_password, password, 0);
 #endif
 }
@@ -1253,7 +1253,7 @@ void API_ROUTINE isc_set_single_user(UCHAR ** dpb,
 		}
 
 	if (!single_user_seen)
-		isc_expand_dpb(reinterpret_cast < char **>(dpb), dpb_size,
+		isc_expand_dpb(reinterpret_cast<char**>(dpb), dpb_size,
 					   isc_dpb_reserved, single_user, 0);
 
 }
@@ -1293,9 +1293,8 @@ int API_ROUTINE gds__version(
 		if (isc_database_info(status_vector,
 							  handle,
 							  sizeof(info),
-							  reinterpret_cast < char *>(const_cast <
-														 UCHAR * >(info)),
-							  buf_len, reinterpret_cast < char *>(buf))) {
+							  reinterpret_cast<char*>(const_cast<UCHAR*>(info)),
+							  buf_len, reinterpret_cast<char*>(buf))) {
 			if (buf != buffer)
 				gds__free((SLONG *) buf);
 			return FB_FAILURE;
@@ -1306,7 +1305,7 @@ int API_ROUTINE gds__version(
 
 		while (!redo && *p != isc_info_end && p < buf + buf_len) {
 			item = *p++;
-			len = static_cast < USHORT > (gds__vax_integer(p, 2));
+			len = static_cast<USHORT>(gds__vax_integer(p, 2));
 			p += 2;
 			switch (item) {
 			case isc_info_firebird_version:
@@ -1353,16 +1352,16 @@ int API_ROUTINE gds__version(
 		l = *versions++;
 		if (implementation >= FB_NELEM(impl_implementation)
 			|| !(implementation_string =
-				 const_cast < char *>(impl_implementation[implementation])))
+				 const_cast<char*>(impl_implementation[implementation])))
 			implementation_string = "**unknown**";
 		if (class_ >= FB_NELEM(impl_class) ||
-			!(class_string = const_cast < char *>(impl_class[class_])))
+			!(class_string = const_cast<char*>(impl_class[class_])))
 			class_string = "**unknown**";
 		sprintf(s, "%s (%s), version \"%.*s\"",
 				implementation_string, class_string, l, versions);
 
 #pragma FB_COMPILER_MESSAGE("Fix! Bad function ptr type cast!")
-		reinterpret_cast < void (*) (...) > (*routine) (user_arg, s);
+		reinterpret_cast<void (*)(...)>(*routine)(user_arg, s);
 		versions += l;
 	}
 
@@ -1374,7 +1373,7 @@ int API_ROUTINE gds__version(
 
 	sprintf(s, "on disk structure version %d.%d", ods_version,
 			ods_minor_version);
-	reinterpret_cast < void (*) (...) > (*routine) (user_arg, s);
+	reinterpret_cast<void (*)(...)>(*routine)(user_arg, s);
 
 	return FB_SUCCESS;
 }
@@ -1503,7 +1502,9 @@ int API_ROUTINE BLOB_close(BSTREAM * bstream)
 		if (l > 0)
 			if (gds__put_segment(status_vector, &bstream->bstr_blob, l,
 								 bstream->bstr_buffer)) 
+			{
 				return FALSE;
+			}
 	}
 
 	gds__close_blob(status_vector, &bstream->bstr_blob);
@@ -1545,7 +1546,7 @@ int API_ROUTINE blob__display(
 		*p = 0;
 	}
 
-	return BLOB_display(reinterpret_cast < GDS_QUAD * >(blob_id), *database,
+	return BLOB_display(reinterpret_cast<GDS_QUAD*>(blob_id), *database,
 						*transaction, temp);
 }
 
@@ -1610,7 +1611,7 @@ int API_ROUTINE blob__dump(
 		*p = 0;
 	}
 
-	return BLOB_dump(reinterpret_cast < GDS_QUAD * >(blob_id), *database,
+	return BLOB_dump(reinterpret_cast<GDS_QUAD*>(blob_id), *database,
 					 *transaction, temp);
 }
 
@@ -1701,7 +1702,7 @@ int API_ROUTINE blob__edit(
 		*p = 0;
 	}
 
-	return BLOB_edit(reinterpret_cast < GDS_QUAD * >(blob_id), *database,
+	return BLOB_edit(reinterpret_cast<GDS_QUAD*>(blob_id), *database,
 					 *transaction, temp);
 }
 
@@ -1751,7 +1752,7 @@ int API_ROUTINE BLOB_get(BSTREAM * bstream)
 			return *bstream->bstr_ptr++ & 0377;
 
 		gds__get_segment(status_vector, &bstream->bstr_blob,
-						 reinterpret_cast <USHORT *>(&bstream->bstr_cnt),
+						 reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
 						 bstream->bstr_length, bstream->bstr_buffer);
 		if (status_vector[1] && status_vector[1] != gds_segment) {
 			bstream->bstr_ptr = 0;
@@ -1794,7 +1795,7 @@ int API_ROUTINE blob__load(
 		*p = 0;
 	}
 
-	return BLOB_load(reinterpret_cast < GDS_QUAD * >(blob_id), *database,
+	return BLOB_load(reinterpret_cast<GDS_QUAD*>(blob_id), *database,
 					 *transaction, temp);
 }
 
@@ -1885,14 +1886,18 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 	if (*mode == 'w' || *mode == 'W') {
 		if (gds__create_blob2(status_vector, &database, &transaction, &blob,
 							  blob_id, bpb_length,
-							  reinterpret_cast < char *>(bpb))) 
+							  reinterpret_cast<char*>(bpb)))
+		{
 			return NULL;
+		}
 	}
 	else if (*mode == 'r' || *mode == 'R') {
 		if (gds__open_blob2(status_vector, &database, &transaction, &blob,
 							blob_id, bpb_length,
-							reinterpret_cast < char *>(bpb))) 
+							reinterpret_cast<char*>(bpb)))
+		{
 			return NULL;
+		}
 	}
 	else
 		return NULL;
@@ -2003,6 +2008,8 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM * bstream)
 	return TRUE;
 }
 
+} // extern "C"
+
 
 #ifdef VMS
 static display(GDS_QUAD * blob_id, void *database, void *transaction)
@@ -2084,7 +2091,7 @@ static int dump(
 
 	blob = NULL;
 	if (gds__open_blob2(status_vector, &database, &transaction, &blob, blob_id,
-						bpb_length, reinterpret_cast < char *>(bpb))) {
+						bpb_length, reinterpret_cast<char*>(bpb))) {
 		gds__print_status(status_vector);
 		return FALSE;
 	}
@@ -2095,7 +2102,7 @@ static int dump(
 
 	for (;;) {
 		gds__get_segment(status_vector, &blob,
-						 reinterpret_cast < USHORT * >(&l),
+						 reinterpret_cast<USHORT*>(&l),
 						 short_length, buffer);
 		if (status_vector[1] && status_vector[1] != gds_segment) {
 			if (status_vector[1] != gds_segstr_eof)
@@ -2230,9 +2237,8 @@ static int get_ods_version(
 	isc_database_info(status_vector,
 					  handle,
 					  sizeof(ods_info),
-					  reinterpret_cast < char *>(const_cast <
-												 UCHAR * >(ods_info)),
-					  sizeof(buffer), reinterpret_cast < char *>(buffer));
+					  reinterpret_cast<char*>(const_cast<UCHAR*>(ods_info)),
+					  sizeof(buffer), reinterpret_cast<char*>(buffer));
 
 	if (status_vector[1])
 		return FB_FAILURE;
@@ -2240,9 +2246,9 @@ static int get_ods_version(
 	p = buffer;
 
 	while ((item = *p++) != gds_info_end) {
-		l = static_cast < USHORT > (gds__vax_integer(p, 2));
+		l = static_cast<USHORT>(gds__vax_integer(p, 2));
 		p += 2;
-		n = static_cast < USHORT > (gds__vax_integer(p, l));
+		n = static_cast<USHORT>(gds__vax_integer(p, l));
 		p += l;
 		switch (item) {
 		case gds_info_ods_version:
@@ -2300,7 +2306,7 @@ static int load(
 		c = ib_fgetc(file);
 		if (ib_feof(file))
 			break;
-		*p++ = static_cast < TEXT > (c);
+		*p++ = static_cast<TEXT>(c);
 		if ((c != '\n') && p < buffer_end)
 			continue;
 		l = p - buffer;
@@ -2324,5 +2330,3 @@ static int load(
 	return TRUE;
 }
 
-
-} // extern "C"
