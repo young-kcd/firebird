@@ -26,7 +26,7 @@ N O T E S
 
 When engine processes each record falling under explicit lock 
 statement it either returns most current committed record version
-or exception.
+or raises exception.
 
 Wait behaviour and conflict reporting depends on the transaction 
 parameters specified in the TPB block.
@@ -34,7 +34,7 @@ parameters specified in the TPB block.
 TPB mode                      Behavior
 -------------------------------------------------------------
 isc_tpb_consistency           Explicit locks are overriden by
-                              implicit or exlicit table-level locks
+                              implicit or explicit table-level locks
 							  and are ignored
 							  
 isc_tpb_concurrency +         If record is modified by any committed
