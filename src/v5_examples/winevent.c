@@ -78,7 +78,7 @@ STATUS          status[ISC_STATUS_LENGTH];
 ** FUNCTION PROTOTYPES 
 */
 
-#ifdef _BORLANDC
+#ifdef __BORLANDC__
 #pragma argsused
 #endif
 
