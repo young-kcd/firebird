@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.16 2003-11-08 07:39:06 bellardo Exp $
+#  $Id: Makefile.in.client.util,v 1.17 2003-12-02 16:03:43 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -66,6 +66,9 @@ GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources)))
 GSTAT_Files =  dba.epp ppg.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files))
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
+GSTAT_JRD_Files =  btn.cpp
+GSTAT_JRD_Sources = $(addprefix jrd/, $(GSTAT_JRD_Files))
+GSTAT_JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_JRD_Sources))))
 
 
 FBGUARD_Files =  guard.cpp util.cpp
@@ -132,8 +135,8 @@ $(LOCKPRINT):	$(LOCKPRINT_Objects)
 
 gstat : $(LIBFBCLIENT_SO) $(GSTAT)
 
-$(GSTAT):	$(GSTAT_Objects)
-	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+$(GSTAT):	$(GSTAT_Objects) $(GSTAT_JRD_Objects)
+	$(LD) $(LINK_OPTS) $(GSTAT_Objects) $(GSTAT_JRD_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 
