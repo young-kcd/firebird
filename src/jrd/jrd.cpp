@@ -1982,9 +1982,9 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 	if (!is_alias && !verify_database_name(expanded_name, user_status)) {
-		JRD_restore_context();
-		return user_status[1];
+		ERR_punt();
 	}
+	user_status[0] = 0; // Clear status vector.
 	dbb->dbb_file =
 		PIO_create(dbb, expanded_name, length_expanded, options.dpb_overwrite);
 	first_dbb_file = dbb->dbb_file;
