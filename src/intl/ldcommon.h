@@ -74,6 +74,6 @@ typedef USHORT UNICODE;
 
 #define CHARSET_RETURN	return (0)
 
-extern void CV_convert_init(CSCONVERT, SSHORT, SSHORT, FPTR_SHORT, const void*, const void*);
+void CV_convert_init(CSCONVERT, SSHORT, SSHORT, FPTR_SHORT, const void*, const void*);
 
 #endif /* _INTL_LDCOMMON_H_ */

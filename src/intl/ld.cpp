@@ -32,12 +32,12 @@
 
 /* Commented out to make Linux version work because it is inaccessiable on all 
   known platforms. Nickolay Samofatov, 10 Sept 2002
-extern void gds__log(UCHAR*, ...);
+void gds__log(UCHAR*, ...);
 */
 
-#define	EXTERN_texttype(name)	extern USHORT name (TEXTTYPE, SSHORT, SSHORT)
-#define EXTERN_convert(name)	extern USHORT name (CSCONVERT, SSHORT, SSHORT)
-#define EXTERN_charset(name)	extern USHORT name (CHARSET, SSHORT, SSHORT)
+#define	EXTERN_texttype(name)	USHORT name (TEXTTYPE, SSHORT, SSHORT)
+#define EXTERN_convert(name)	USHORT name (CSCONVERT, SSHORT, SSHORT)
+#define EXTERN_charset(name)	USHORT name (CHARSET, SSHORT, SSHORT)
 
 EXTERN_texttype(DOS101_init);
 EXTERN_texttype(DOS101_c2_init);

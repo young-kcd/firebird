@@ -21,18 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_KANJI_PROTO_H_
-#define _JRD_KANJI_PROTO_H_
+#ifndef JRD_KANJI_PROTO_H
+#define JRD_KANJI_PROTO_H
 
-extern USHORT KANJI_check_euc(UCHAR *, USHORT);
-extern USHORT KANJI_check_sjis(UCHAR *, USHORT);
-extern USHORT KANJI_euc2sjis(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *);
-extern USHORT KANJI_euc_byte2short(UCHAR *, USHORT *, USHORT);
-extern USHORT KANJI_euc_len(UCHAR *, USHORT, USHORT *);
-extern USHORT KANJI_sjis2euc(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *);
-extern USHORT KANJI_sjis_byte2short(UCHAR *, USHORT *, USHORT);
-extern USHORT KANJI_sjis2euc5(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *,
+USHORT KANJI_check_euc(UCHAR *, USHORT);
+USHORT KANJI_check_sjis(UCHAR *, USHORT);
+USHORT KANJI_euc2sjis(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *);
+USHORT KANJI_euc_byte2short(UCHAR *, USHORT *, USHORT);
+USHORT KANJI_euc_len(UCHAR *, USHORT, USHORT *);
+USHORT KANJI_sjis2euc(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *);
+USHORT KANJI_sjis_byte2short(UCHAR *, USHORT *, USHORT);
+USHORT KANJI_sjis2euc5(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *,
 							  USHORT *, USHORT *);
-extern USHORT KANJI_sjis_len(UCHAR *, USHORT, USHORT *);
+USHORT KANJI_sjis_len(UCHAR *, USHORT, USHORT *);
 
-#endif /* _JRD_KANJI_PROTO_H_ */
+#endif // JRD_KANJI_PROTO_H
