@@ -147,24 +147,22 @@
 /* This checks if the service has forked a process.  If not,
    it will post the isc_svcnoexe error. */
 
-#define IS_SERVICE_RUNNING(service) \
-				if (!(service->svc_flags & SVC_forked)) {\
-				    THREAD_ENTER; \
-				    ERR_post (isc_svcnoexe, isc_arg_string, \
-				    service->svc_service->serv_name, 0); }
+static inline void is_service_running(SVC service)
+{
+	if (!(service->svc_flags & SVC_forked)) {
+		THREAD_ENTER;
+		ERR_post (isc_svcnoexe, isc_arg_string,
+		service->svc_service->serv_name, 0); 
+	}
+}
 
-#define NEED_ADMIN_PRIVS(svc)	{*status++ = isc_insufficient_svc_privileges; \
-		      	         *status++ = isc_arg_string; \
-				 *status++ = (ISC_STATUS) ERR_string(svc,strlen(svc)); \
-				 *status++ = isc_arg_end; }
-
-#define ERR_FILE_IN_USE		{ TEXT buffer[MAXPATHLEN]; \
-		                  gds__prefix (buffer, LOCK_HEADER); \
- 		                  *status++ = isc_file_in_use; \
-		                  *status++ = isc_arg_string; \
-		                  *status++ = (ISC_STATUS) ERR_string (buffer, strlen(buffer)); \
-                                  *status++ = isc_arg_end; }
-
+static inline void need_admin_privs(ISC_STATUS *status, char* message)
+{
+	*status++ = isc_insufficient_svc_privileges;
+	*status++ = isc_arg_string;
+	*status++ = (ISC_STATUS) ERR_string(message,strlen(message)); 
+	*status++ = isc_arg_end;
+}
 
 /* Option block for service parameter block */
 
@@ -1010,7 +1008,7 @@ int SVC_output(SLONG output_data, UCHAR * output_buf)
 				WHY_set_shutdown(FALSE);
 			}
 			else
-				NEED_ADMIN_PRIVS("isc_info_svc_svr_online");
+				need_admin_privs(status, "isc_info_svc_svr_online");
 			break;
 
 		case isc_info_svc_svr_offline:
@@ -1020,7 +1018,7 @@ int SVC_output(SLONG output_data, UCHAR * output_buf)
 				WHY_set_shutdown(TRUE);
 			}
 			else
-				NEED_ADMIN_PRIVS("isc_info_svc_svr_offline");
+				need_admin_privs(status, "isc_info_svc_svr_offline");
 			break;
 #endif /* SERVER_SHUTDOWN */
 
@@ -1081,7 +1079,7 @@ int SVC_output(SLONG output_data, UCHAR * output_buf)
 				THREAD_EXIT;
 			}
 			else
-				NEED_ADMIN_PRIVS("isc_info_svc_default_config");
+				need_admin_privs("isc_info_svc_default_config");
 			break;
 
 		case isc_info_svc_set_config:
@@ -1092,7 +1090,7 @@ int SVC_output(SLONG output_data, UCHAR * output_buf)
 				THREAD_EXIT;
 			}
 			else {
-				NEED_ADMIN_PRIVS("isc_info_svc_set_config");
+				need_admin_privs("isc_info_svc_set_config");
 			}
 			break;
 */
@@ -1480,7 +1478,7 @@ void SVC_query(SVC		service,
 				THREAD_EXIT;
 			}
 			else
-				NEED_ADMIN_PRIVS("isc_info_svc_default_config");
+				need_admin_privs("isc_info_svc_default_config");
 			break;
 
 		case isc_info_svc_set_config:
@@ -1491,7 +1489,7 @@ void SVC_query(SVC		service,
 				THREAD_EXIT;
 			}
 			else {
-				NEED_ADMIN_PRIVS("isc_info_svc_set_config");
+				need_admin_privs("isc_info_svc_set_config");
 			}
 			break;
 */
@@ -2491,12 +2489,12 @@ static void service_get(SVC service,
 	USHORT bytes_read;
 /* Kludge for PeekNamedPipe to work on Win NT 3.5 */
 	UCHAR temp_buf[600];
-	SLONG temp_len;
+	DWORD temp_len;
 	BOOLEAN windows_nt = ISC_is_WinNT();
 
 	*return_length = 0;
 	service->svc_flags &= ~SVC_timeout;
-	IS_SERVICE_RUNNING(service)
+	is_service_running(service);
 
 		if (timeout) {
 		/* If a timeout period was given, check every .1 seconds to see if
@@ -2511,7 +2509,8 @@ static void service_get(SVC service,
 			   length from &temp_len until it works */
 			if (windows_nt
 				&& !PeekNamedPipe((HANDLE) service->svc_input, temp_buf, 600,
-								  (ULONG*) &temp_len, (ULONG*) &n, NULL)) {
+								  &temp_len, (ULONG*) &n, NULL))
+				{
 				if (GetLastError() == ERROR_BROKEN_PIPE) {
 					service->svc_flags |= SVC_finished;
 					break;
@@ -2527,7 +2526,7 @@ static void service_get(SVC service,
 				dwCurrentFilePosition =
 					SetFilePointer(service->svc_input, 0, NULL, FILE_CURRENT);
 
-				if (temp_len && temp_len == (SLONG) dwCurrentFilePosition)
+				if (temp_len && temp_len == dwCurrentFilePosition)
 					SetFilePointer(service->svc_input, 0, NULL, FILE_BEGIN);
 			}
 
@@ -2539,7 +2538,8 @@ static void service_get(SVC service,
 				buf += bytes_read;
 
 				if (bytes_read < temp_len
-					|| service->svc_flags & SVC_finished) {
+					|| service->svc_flags & SVC_finished) 
+				{
 					/* We stopped w/out reading full length, must have hit
 					   a newline or special character. */
 					break;
@@ -2551,7 +2551,8 @@ static void service_get(SVC service,
 				   on the other end of the pipe is still active. */
 				if (!windows_nt &&
 					WaitForSingleObject((HANDLE) service->svc_handle,
-										1) != WAIT_TIMEOUT) {
+										1) != WAIT_TIMEOUT)
+				{
 					service->svc_flags |= SVC_finished;
 					break;
 				}
@@ -2587,13 +2588,15 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
  **************************************/
 	SLONG n;
 
-	IS_SERVICE_RUNNING(service)
+	is_service_running(service);
 
 		while (length) {
 		if (!WriteFile((HANDLE) service->svc_output, buffer, (SLONG) length,
 					   (ULONG*) &n, NULL))
+		{
 			io_error("WriteFile", GetLastError(), "service pipe",
 					 isc_io_write_err, TRUE);
+		}
 		length -= (USHORT) n;
 		buffer += n;
 	}
@@ -2626,7 +2629,8 @@ static USHORT service_read(SVC service, SCHAR * buffer, USHORT length, USHORT fl
 		n = 0;
 		len = (flags & GET_BINARY) ? length : 1;
 		if (ReadFile((HANDLE) service->svc_input, buf, len, (ULONG*) &n, NULL) ||
-			GetLastError() == ERROR_BROKEN_PIPE) {
+			GetLastError() == ERROR_BROKEN_PIPE)
+		{
 			if (!n) {
 				service->svc_flags |= SVC_finished;
 				break;
@@ -2805,10 +2809,7 @@ static void service_fork(void (*service_executable) (), SVC service)
 
 	THREAD_EXIT;
 	gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(service_executable),
-						service,
-						0,
-						0,
-						(void*)&service->svc_handle);
+						service, 0, 0, (void*)&service->svc_handle);
 	THREAD_ENTER;
 }
 
@@ -3139,7 +3140,7 @@ static void service_get(
 	SSHORT iter = 0;
 	int errno_save;
 
-	IS_SERVICE_RUNNING(service)
+	is_service_running(service)
 
 		errno = 0;
 	service->svc_flags &= ~SVC_timeout;
@@ -3202,7 +3203,7 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
  *
  **************************************/
 
-	IS_SERVICE_RUNNING(service)
+	is_service_running(service)
 
 		while (length--) {
 		if (ib_putc(*buffer, (IB_FILE *) service->svc_output) != EOF)
