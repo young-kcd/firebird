@@ -40,7 +40,9 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #ifndef	WIN_NT
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #ifdef DARWIN
 #include </usr/include/pwd.h>
 #else

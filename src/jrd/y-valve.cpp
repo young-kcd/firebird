@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.4 2002-04-04 11:37:14 dimitr Exp $
+$Id: y-valve.cpp,v 1.5 2002-08-26 12:18:12 eku Exp $
 */
 
 #include "firebird.h"
@@ -81,7 +81,9 @@ $Id: y-valve.cpp,v 1.4 2002-04-04 11:37:14 dimitr Exp $
 #include <errno.h>
 #include <fcntl.h>
 #if !(defined SEEK_END && defined F_OK)
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #endif
 #endif
 

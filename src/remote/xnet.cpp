@@ -54,7 +54,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

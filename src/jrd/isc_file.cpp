@@ -185,7 +185,9 @@ typedef struct mnt {
 /* Unix specific stuff */
 
 #ifdef UNIX
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/file.h>

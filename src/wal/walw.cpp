@@ -71,7 +71,7 @@
 #include <signal.h>
 #endif
 
-#ifdef sparc
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 

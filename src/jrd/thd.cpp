@@ -52,7 +52,7 @@ extern int BeginThread(void (*__func) (void *), void *__stackP,
 #define STACK_SIZE	128000
 #endif
 
-#ifdef UNIX
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 

@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.3 2001-12-24 02:50:53 tamlin Exp $
+ * $Id: srvrmgr.cpp,v 1.4 2002-08-26 12:18:12 eku Exp $
  */
 
 #include "firebird.h"
@@ -28,7 +28,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <sys/wait.h>
 

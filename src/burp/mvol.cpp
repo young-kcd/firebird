@@ -51,7 +51,7 @@
 #if (defined WIN_NT || (defined PC_PLATFORM && !defined NETWARE_386))
 #include <io.h>
 #endif
-#ifdef unix
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
