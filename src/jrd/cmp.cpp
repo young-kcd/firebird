@@ -3152,6 +3152,7 @@ static jrd_nod* pass1(TDBB tdbb,
 		}
 		csb->csb_current_nodes.pop();
 		return node;
+
 	case nod_contains:
 		ptr = node->nod_arg;
 		ptr[0] = pass1(tdbb, csb, ptr[0], view, view_stream, validate_expr);
@@ -3162,6 +3163,7 @@ static jrd_nod* pass1(TDBB tdbb,
 		ptr[1] = pass1(tdbb, csb, ptr[1], view, view_stream, validate_expr);
 		csb->csb_current_nodes.pop();
 		return node;
+
 	case nod_variable:
 	case nod_argument:
 		{
@@ -3178,6 +3180,7 @@ static jrd_nod* pass1(TDBB tdbb,
 			}
 		}
 		break;
+
 	case nod_field:
 		{
 			jrd_rel* relation;
@@ -3455,11 +3458,6 @@ static jrd_nod* pass1(TDBB tdbb,
 			node->nod_arg[0] = (jrd_nod*) (IPTR) stream;
 			return node;
 		}
-
-	case nod_function:
-		pass1(tdbb, csb, node->nod_arg[e_fun_args], view, view_stream,
-			  validate_expr);
-		break;
 
 	case nod_abort:
 		pass1(tdbb, csb, node->nod_arg[e_xcp_msg], view, view_stream,
@@ -4493,15 +4491,14 @@ static jrd_nod* pass2(TDBB tdbb, Csb* csb, jrd_nod* const node, jrd_nod* parent)
 
 	case nod_function:
 		{
-			jrd_nod* value = node->nod_arg[e_fun_args];
-			fun* function = (FUN) node->nod_arg[e_fun_function];
-			pass2(tdbb, csb, value, node);
 			// For gbak attachments, there is no need to resolve the UDF function */
 			// Also if we are dropping a procedure don't bother resolving the
 			// UDF that the procedure invokes.
 			if (!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment) &&
 				!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
 			{
+				jrd_nod* value = node->nod_arg[e_fun_args];
+				fun* function = (FUN) node->nod_arg[e_fun_function];
 				node->nod_arg[e_fun_function] =
 					(jrd_nod*) FUN_resolve(csb, function, value);
 				if (!node->nod_arg[e_fun_function]) {
