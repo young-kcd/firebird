@@ -1,3 +1,15 @@
+2004-04-17 04:34  skidder
+
+	* firebird2/src/install/misc/firebird.conf (1.28.2.5):
+	
+	Implement Paul B. suggestion about dangerous config file option
+
+2004-04-17 03:13  skidder
+
+	* firebird2/src/jrd/fun.epp (1.22.2.4):
+	
+	Fix UDF problems in 64-bit builds
+
 2004-04-15 04:15  skidder
 
 	* firebird2/src/install/arch-specific/linux/super/rpmfiles.txt.in
