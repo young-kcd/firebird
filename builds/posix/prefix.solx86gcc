@@ -14,11 +14,11 @@
 #
 # All Rights Reserved.
 # Contributor(s): __Konstantin Kuznetsov___________________________________.
-# This file can be used to build FB on Solaris 8 x 86 with gcc 2.95 and bash
+# This file can be used to build FB on Solaris 8 x 86 with gcc 3.3.3 and bash
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86gcc,v 1.7 2004-02-13 10:14:39 stryqx Exp $
+# $Id: prefix.solx86gcc,v 1.8 2004-04-30 11:44:07 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -27,7 +27,7 @@
 #FirebirdInstallPrefix = @prefix@
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
-COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fwritable-strings
+COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP  
 
 #SFIO= /export/home/interbase/SfIO
 #SfIO is a pretty portable stdIO 
