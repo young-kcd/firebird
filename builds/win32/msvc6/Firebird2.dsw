@@ -75,6 +75,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "common_static"=.\common_static.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "dsql_server"=.\dsql_server.dsp - Package Owner=<4>
 
 Package=<5>
@@ -202,6 +214,21 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name common
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "fbclient_static"=.\fbclient_static.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name common_static
     End Project Dependency
 }}}
 
@@ -403,6 +430,21 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name common
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "gpre_static"=.\gpre_static.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name fbclient_static
     End Project Dependency
 }}}
 
