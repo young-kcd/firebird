@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.76 2002-11-11 16:04:42 skywalker Exp $
+dnl $Id: configure.in,v 1.77 2002-11-12 07:46:32 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -354,6 +354,8 @@ NEW_FIREBIRD_DIR=$GEN_ROOT/firebird
 AC_SUBST(BUILD_ROOT_DIR)
 AC_SUBST(NEW_FIREBIRD_DIR)
 
+AC_DEFINE_UNQUOTED(ISC_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
+
 AC_CONFIG_COMMANDS_PRE([
 mkdir -p gen/csv
 mkdir -p gen/dudley
@@ -380,8 +382,6 @@ mkdir -p gen/codes
 mkdir -p gen/codes/jrd
 
 mkdir -p gen/install
-mkdir -p gen/install/scripts
-mkdir -p gen/install/sinixz
 
 mkdir -p gen/common
 mkdir -p gen/common/memory
@@ -504,24 +504,45 @@ mkdir -p gen/libfbembed/common/config
 ])
 
 
-dnl I've used AC_CONFIG_COMMMANDS since it seems to work 
-dnl but I did think I wanted AC_CONFIG_COMMANDS_POST, but I couldn't get
-dnl it to work as I expected. MOD 10-Nov-2002
-
-AC_CONFIG_COMMANDS([postinstall],
-[
-chmod a+x gen/install/scripts/*.sh
-chmod a+x gen/install/sinixz/*
-chmod a+x gen/install/*sh
-])
-
-
-
 MAKE_SRC_DIR=builds/posix
 
-INSTALL_SRC_DIR=src/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
 
-AC_DEFINE_UNQUOTED(ISC_PREFIX,$(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
+dnl EKU: handle platform specific installation and packaging
+
+case $PLATFORM in
+  LINUX)
+    mkdir -p gen/install/scripts
+    INSTALL_SRC_DIR=src/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
+    AC_CONFIG_FILES([
+       gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
+       gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
+       gen/install/scripts/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
+       gen/install/scripts/tarMainInstall.sh:${INSTALL_SRC_DIR}/tarMainInstall.sh.in
+       gen/install/scripts/taruninstall.sh:${INSTALL_SRC_DIR}/taruninstall.sh.in
+       gen/install/scripts/tarMainUninstall.sh:${INSTALL_SRC_DIR}/tarMainUninstall.sh.in
+       gen/install/scripts/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
+       gen/install/scripts/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
+       gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
+       gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
+       gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
+      ],[
+       chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null
+      ])
+    ;;
+
+  SINIX-Z)
+    AC_CONFIG_FILES([
+       gen/install/pkginfo:src/install/arch-specific/sinixz/pkginfo.in
+       gen/install/prototype:src/install/arch-specific/sinixz/prototype.in
+       gen/install/preinstall:src/install/arch-specific/sinixz/preinstall.in
+       gen/install/postinstall:src/install/arch-specific/sinixz/postinstall.in
+       gen/install/postremove:src/install/arch-specific/sinixz/postremove.in
+      ],[
+       chmod a+x gen/install/pre* gen/install/post* 2>/dev/null
+      ])
+    ;;
+esac
+
 
 AC_OUTPUT(
 gen/make.rules:${MAKE_SRC_DIR}/make.rules
@@ -562,34 +583,10 @@ gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
-
 gen/Makefile.install:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
-
 Makefile:Makefile.in
-dnl Linux start
-dnl
-gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
-gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
-gen/install/scripts/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
-gen/install/scripts/tarMainInstall.sh:${INSTALL_SRC_DIR}/tarMainInstall.sh.in
-gen/install/scripts/taruninstall.sh:${INSTALL_SRC_DIR}/taruninstall.sh.in
-gen/install/scripts/tarMainUninstall.sh:${INSTALL_SRC_DIR}/tarMainUninstall.sh.in
-gen/install/scripts/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
-gen/install/scripts/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
-gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
-gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
-gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-
-dnl gen/src/install/misc/firebird.xinetd
-dnl Linux end
-dnl SINIX-Z start
-gen/install/sinixz/pkginfo:src/install/arch-specific/sinixz/pkginfo.in
-gen/install/sinixz/prototype:src/install/arch-specific/sinixz/prototype.in
-gen/install/sinixz/preinstall:src/install/arch-specific/sinixz/preinstall.in
-gen/install/sinixz/postinstall:src/install/arch-specific/sinixz/postinstall.in
-gen/install/sinixz/postremove:src/install/arch-specific/sinixz/postremove.in
-dnl SINIX-Z end
 )
+
 
 dnl AC_DEFINE_UNQUOTED(FB_BUILD_TYPE, "$BuildType")
 dnl AC_DEFINE_UNQUOTED(FB_MAJOR_VER, "$MajorVer")
@@ -600,7 +597,6 @@ dnl AC_DEFINE_UNQUOTED(PRODUCT_VER_STRING, "$PRODUCT_VER_STRING")
 dnl AC_DEFINE_UNQUOTED(FILE_VER_NUMBER, $FILE_VER_NUMBER)
 dnl AC_DEFINE_UNQUOTED(FILE_VER_STRING, "$FILE_VER_STRING")
 dnl AC_DEFINE_UNQUOTED(LICENSE_VER_STRING, "$FILE_VER_STRING")
-
 
 
 
