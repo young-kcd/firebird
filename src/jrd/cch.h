@@ -78,16 +78,16 @@ class bdb : public pool_alloc<type_bdb>
 	struct que	bdb_in_use;				/* queue of buffers in use */
 	struct pag*	bdb_buffer;				/* Actual buffer */
 	struct exp*	bdb_expanded_buffer;	/* expanded index buffer */
-	struct bdb*	bdb_jrn_bdb;			/* BDB containing journal records */
+	bdb*		bdb_jrn_bdb;			/* BDB containing journal records */
 	struct btb*	bdb_blocked;			/* Blocked attachments block */
 	SLONG		bdb_page;				/* Database page number in buffer */
 	ULONG		bdb_sequence;
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */
-	struct bdb*	bdb_left;				/* dirty page binary tree link */
-	struct bdb*	bdb_right;				/* dirty page binary tree link */
-	struct bdb*	bdb_parent;				/* dirty page binary tree link */
+	bdb*		bdb_left;				/* dirty page binary tree link */
+	bdb*		bdb_right;				/* dirty page binary tree link */
+	bdb*		bdb_parent;				/* dirty page binary tree link */
 	struct que	bdb_lower;				/* lower precedence que */
 	struct que	bdb_higher;				/* higher precedence que */
 	struct que	bdb_waiters;			/* latch wait que */
@@ -143,8 +143,8 @@ typedef bdb *BDB;
 class pre : public pool_alloc<type_pre>
 {
     public:
-	struct bdb*	pre_hi;
-	struct bdb*	pre_low;
+	bdb*		pre_hi;
+	bdb*		pre_low;
 	struct que	pre_lower;
 	struct que	pre_higher;
 	SSHORT		pre_flags;
@@ -223,7 +223,7 @@ class prf : public pool_alloc<type_prf>
 	SCHAR*		prf_aligned_buffer;	/* buffer address aligned for raw (OS cache bypass) I/O */
 	SCHAR*		prf_io_buffer;		/* I/O buffer address */
 	UCHAR		prf_flags;
-	struct bdb*	prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
+	bdb*		prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
 	SCHAR		prf_unaligned_buffer[PREFETCH_MAX_TRANSFER + MIN_PAGE_SIZE];
 };
 typedef prf *PRF;

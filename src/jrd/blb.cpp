@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.38 2003-10-08 08:42:43 robocop Exp $
+$Id: blb.cpp,v 1.39 2003-10-20 10:53:52 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -370,16 +370,15 @@ BLB BLB_get_array(TDBB tdbb, JRD_TRA transaction, BID blob_id, ADS desc)
 
 	blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
 
-	if (blob->blb_length < sizeof(struct ads)) {
+	if (blob->blb_length < sizeof(ads)) {
 		BLB_close(tdbb, blob);
 		IBERROR(193);			/* msg 193 null or invalid array */
 	}
 
-	BLB_get_segment(tdbb, blob, reinterpret_cast < UCHAR * >(desc),
-					sizeof(struct ads));
+	BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc), sizeof(ads));
 
-	if ( (n = desc->ads_length - sizeof(struct ads)) )
-		BLB_get_segment(tdbb, blob, (UCHAR *) desc + sizeof(struct ads), n);
+	if ( (n = desc->ads_length - sizeof(ads)) )
+		BLB_get_segment(tdbb, blob, (UCHAR*) desc + sizeof(ads), n);
 
 	return blob;
 }
@@ -630,7 +629,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 					BID blob_id,
 					UCHAR * sdl,
 					USHORT param_length,
-					SLONG * param, SLONG slice_length, UCHAR * slice)
+					SLONG* param, SLONG slice_length, UCHAR* slice_addr)
 {
 /**************************************
  *
@@ -647,12 +646,12 @@ SLONG BLB_get_slice(TDBB tdbb,
 	ISC_STATUS status;
 	UCHAR *data;
 	SLONG offset, length, variables[64], stuff[ADS_LEN(16) / 4], from, to;
-	struct sdl_info info;
-	struct slice arg;
-        DBB dbb;
+	sdl_info info;
+	slice arg;
+    DBB database;
 
 	SET_TDBB(tdbb);
-        dbb = GET_DBB;
+    database = GET_DBB;
 	tdbb->tdbb_default = transaction->tra_pool;
 
 /* Checkout slice description language */
@@ -668,7 +667,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 
 /* Get someplace to put data */
 
-	data = (UCHAR*) dbb->dbb_permanent->allocate(desc->ads_total_length, 0
+	data = (UCHAR*) database->dbb_permanent->allocate(desc->ads_total_length, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__, __LINE__
 #endif
@@ -711,8 +710,8 @@ SLONG BLB_get_slice(TDBB tdbb,
 /* Walk array */
 
 	arg.slice_desc = info.sdl_info_element;
-	arg.slice_desc.dsc_address = slice;
-	arg.slice_end = (BLOB_PTR *) slice + slice_length;
+	arg.slice_desc.dsc_address = slice_addr;
+	arg.slice_end = (BLOB_PTR*) slice_addr + slice_length;
 	arg.slice_count = 0;
 	arg.slice_element_length = info.sdl_info_element.dsc_length;
 	arg.slice_direction = FALSE;	/* fetching from array */
@@ -726,9 +725,9 @@ SLONG BLB_get_slice(TDBB tdbb,
 					  desc,
 					  variables,
 					  slice_callback,
-					  reinterpret_cast < struct slice *>(&arg));
+					  &arg);
 
-	dbb->dbb_permanent->deallocate(data);
+	database->dbb_permanent->deallocate(data);
 
 	if (status) {
 		ERR_punt();
@@ -736,7 +735,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 
 	}	// try
 	catch (const std::exception&) {
-		dbb->dbb_permanent->deallocate(data);
+		database->dbb_permanent->deallocate(data);
 		ERR_punt();
 	}
 
@@ -974,7 +973,7 @@ void BLB_move_from_string(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD
 		USHORT ttype = 0;
 		BLB blob = 0;
 		UCHAR *fromstr = 0;
-		struct bid temp_bid;
+		bid temp_bid;
 		DSC blob_desc;
 		MOVE_CLEAR(&temp_bid, sizeof(temp_bid));
 		MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
@@ -1337,7 +1336,7 @@ void BLB_put_slice(	TDBB	tdbb,
 					USHORT	param_length,
 					SLONG*	param,
 					SLONG	slice_length,
-					UCHAR*	slice)
+					UCHAR*	slice_addr)
 {
 /**************************************
  *
@@ -1354,8 +1353,8 @@ void BLB_put_slice(	TDBB	tdbb,
 	SLONG	variables[64];
 	SLONG	temp[ADS_LEN(16) / 4];
 	SSHORT	n;
-	struct	sdl_info info;
-	struct	slice arg;
+	sdl_info info;
+	slice arg;
 
 	SET_TDBB(tdbb);
 	tdbb->tdbb_default = transaction->tra_pool;
@@ -1458,8 +1457,8 @@ void BLB_put_slice(	TDBB	tdbb,
 /* Walk array */
 
 	arg.slice_desc = info.sdl_info_element;
-	arg.slice_desc.dsc_address = slice;
-	arg.slice_end = (BLOB_PTR *) slice + slice_length;
+	arg.slice_desc.dsc_address = slice_addr;
+	arg.slice_end = (BLOB_PTR *) slice_addr + slice_length;
 	arg.slice_count = 0;
 	arg.slice_element_length = info.sdl_info_element.dsc_length;
 	arg.slice_direction = TRUE;	/* storing INTO array */
@@ -1662,9 +1661,9 @@ static BLB allocate_blob(TDBB tdbb, JRD_TRA transaction)
    database page size. */
 
 	blob->blb_clump_size = dbb->dbb_page_size -
-							sizeof(struct dpg) -
+							sizeof(dpg) -
 							sizeof(dpg::dpg_repeat) -
-							sizeof(struct blh);
+							sizeof(blh);
 	blob->blb_max_pages = blob->blb_clump_size >> SHIFTLONG;
 	blob->blb_pointers = (dbb->dbb_page_size - BLP_SIZE) >> SHIFTLONG;
 

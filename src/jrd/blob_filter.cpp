@@ -351,7 +351,7 @@ static ISC_STATUS open_blob(
 	CTL prior, control;
 	SSHORT from, to;
 	USHORT from_charset, to_charset;
-	struct ctl temp;
+	ctl temp;
 	DBB dbb;
 	ISC_STATUS *user_status;
 

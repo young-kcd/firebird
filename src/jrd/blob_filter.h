@@ -36,8 +36,8 @@
 class ctl : public pool_alloc<type_ctl>
 {
 public:
-	ISC_STATUS	(*ctl_source)(USHORT, struct ctl*);		/* Source filter */
-	struct ctl*	ctl_source_handle;		/* Argument to pass to source filter */
+	ISC_STATUS	(*ctl_source)(USHORT, ctl*);		/* Source filter */
+	ctl*		ctl_source_handle;		/* Argument to pass to source filter */
 	SSHORT		ctl_to_sub_type;		/* Target type */
 	SSHORT		ctl_from_sub_type;		/* Source type */
 	USHORT		ctl_buffer_length;		/* Length of buffer */
@@ -62,7 +62,7 @@ typedef ISC_STATUS(*PTR) (USHORT, CTL);
 class blf : public pool_alloc<type_blf>
 {
     public:
-	class blf*	blf_next;				/* Next known filter */
+	blf*	blf_next;					/* Next known filter */
 	SSHORT		blf_from;				/* Source sub-type */
 	SSHORT		blf_to;					/* Target sub-type */
 	PTR		blf_filter;		/* Entrypoint of filter */

@@ -1363,7 +1363,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_VOID err)
 		case dtype_text:
 			{
 				GDS_TIMESTAMP date;
-				struct tm times;
+				tm times;
 
 				string_to_datetime(from, &date, expect_timestamp, err);
 
@@ -1451,7 +1451,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_VOID err)
 		case dtype_text:
 			{
 				GDS_TIMESTAMP date;
-				struct tm times;
+				tm times;
 
 				string_to_datetime(from, &date, expect_sql_date, err);
 				isc_decode_timestamp(&date, &times);
@@ -1467,7 +1467,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_VOID err)
 		case dtype_timestamp:
 			{
 				GDS_TIMESTAMP new_date;
-				struct tm times;
+				tm times;
 
 				new_date.timestamp_date =
 					((GDS_TIMESTAMP *) from->dsc_address)->timestamp_date;
@@ -2452,7 +2452,7 @@ static void string_to_datetime(
 	bool have_english_month = false;
 	bool dot_separator_seen = false;
 	time_t clock;
-	struct tm times, times2;
+	tm times, times2;
 	TEXT buffer[100];			/* arbitrarily large */
 
 	const char* string;

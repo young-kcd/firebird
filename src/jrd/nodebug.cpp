@@ -23,9 +23,8 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/dbg_proto.h"
 
-int DBG_supervisor(int arg)
+extern "C" int DBG_supervisor(int arg)
 {
 
 	return TRUE;

@@ -28,15 +28,15 @@
 extern "C" {
 #endif
 
-USHORT DFW_assign_index_type(struct dfw *, SSHORT, SSHORT);
-void DFW_delete_deferred(struct jrd_tra *, SLONG);
-void DFW_merge_work(struct jrd_tra *, SLONG, SLONG);
+USHORT DFW_assign_index_type(dfw*, SSHORT, SSHORT);
+void DFW_delete_deferred(jrd_tra*, SLONG);
+void DFW_merge_work(jrd_tra*, SLONG, SLONG);
 void DFW_perform_system_work(void);
-void DFW_perform_work(struct jrd_tra *);
-void DFW_perform_post_commit_work(struct jrd_tra *);
-class dfw * DFW_post_work(struct jrd_tra *, enum dfw_t, struct dsc *, USHORT);
-void DFW_post_work_arg(struct jrd_tra *, class dfw *, struct dsc *, USHORT);
-void DFW_update_index(struct dfw *, USHORT, float);
+void DFW_perform_work(jrd_tra*);
+void DFW_perform_post_commit_work(jrd_tra*);
+dfw* DFW_post_work(jrd_tra*, enum dfw_t, dsc*, USHORT);
+void DFW_post_work_arg(jrd_tra*, dfw*, dsc*, USHORT);
+void DFW_update_index(dfw*, USHORT, float);
 
 #ifdef __cplusplus
 } /* extern "C" */

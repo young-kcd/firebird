@@ -48,7 +48,6 @@
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"
-#include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/gds_proto.h"
@@ -57,6 +56,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/nav_proto.h"
+#include "../jrd/dbg_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/pcmet_proto.h"
 #include "../jrd/sbm_proto.h"
@@ -347,7 +347,7 @@ bool BTR_description(JRD_REL relation,
  **************************************/
 	irt::irt_repeat * irt_desc;
 	idx::idx_repeat * idx_desc;
-	struct irtd *irtd;
+	irtd* field_type_desc;
 	USHORT i;
 
 	if (id >= root->irt_count) {
@@ -376,11 +376,11 @@ bool BTR_description(JRD_REL relation,
 	idx->idx_expression_request = NULL;
 
 	// pick up field ids and type descriptions for each of the fields
-	irtd = (IRTD *) ((UCHAR *) root + irt_desc->irt_desc);
+	field_type_desc = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
 	idx_desc = idx->idx_rpt;
-	for (i = 0; i < idx->idx_count; i++, irtd++, idx_desc++) {
-		idx_desc->idx_field = irtd->irtd_field;
-		idx_desc->idx_itype = irtd->irtd_itype;
+	for (i = 0; i < idx->idx_count; i++, field_type_desc++, idx_desc++) {
+		idx_desc->idx_field = field_type_desc->irtd_field;
+		idx_desc->idx_itype = field_type_desc->irtd_itype;
 	}
 #ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn) {

@@ -59,7 +59,7 @@ typedef struct idx {
 	struct vec *idx_foreign_primaries;	/* ids for primary/unique indexes with partners */
 	struct vec *idx_foreign_relations;	/* ids for foreign key partner relations */
 	struct vec *idx_foreign_indexes;	/* ids for foreign key partner indexes */
-	struct jrd_nod *idx_expression;	/* node tree for indexed expresssion */
+	jrd_nod* idx_expression;	/* node tree for indexed expresssion */
 	struct dsc idx_expression_desc;	/* descriptor for expression result */
 	struct jrd_req *idx_expression_request;	/* stored request for expression evaluation */
 	struct idx_repeat {
@@ -121,7 +121,7 @@ typedef struct idx {
 typedef struct iib {
 	SLONG iib_number;			/* record number (or lower level page) */
 	SLONG iib_sibling;			/* right sibling page */
-	struct idx *iib_descriptor;	/* index descriptor */
+	idx* iib_descriptor;		/* index descriptor */
 	struct jrd_rel *iib_relation;	/* relation block */
 	struct key *iib_key;		/* varying string for insertion */
 	struct sbm *iib_duplicates;	/* spare bit map of duplicates */
@@ -192,7 +192,7 @@ typedef struct btx {
 typedef struct exp {
 	USHORT exp_length;
 	ULONG exp_incarnation;
-	struct btx exp_nodes[1];
+	btx exp_nodes[1];
 } *EXP;
 
 #define EXP_SIZE	OFFSETA (EXP, exp_nodes)

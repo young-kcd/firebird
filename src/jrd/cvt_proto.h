@@ -24,21 +24,21 @@
 #ifndef JRD_CVT_PROTO_H
 #define JRD_CVT_PROTO_H
 
-double		CVT_date_to_double(const struct dsc*, FPTR_VOID);
+double		CVT_date_to_double(const dsc*, FPTR_VOID);
 void		CVT_double_to_date(double, SLONG[2], FPTR_VOID);
-double		CVT_get_double(const struct dsc*, FPTR_VOID);
-SLONG		CVT_get_long(const struct dsc*, SSHORT, FPTR_VOID);
-SINT64		CVT_get_int64(const struct dsc*, SSHORT, FPTR_VOID);
+double		CVT_get_double(const dsc*, FPTR_VOID);
+SLONG		CVT_get_long(const dsc*, SSHORT, FPTR_VOID);
+SINT64		CVT_get_int64(const dsc*, SSHORT, FPTR_VOID);
 UCHAR		CVT_get_numeric(const UCHAR*, const USHORT, SSHORT*, double*, FPTR_VOID);
-SQUAD		CVT_get_quad(const struct dsc*, SSHORT, FPTR_VOID);
-USHORT		CVT_get_string_ptr(const struct dsc*, USHORT*, UCHAR**,
-								 struct vary*, USHORT, FPTR_VOID);
-GDS_DATE	CVT_get_sql_date(const struct dsc*, FPTR_VOID);
-GDS_TIME	CVT_get_sql_time(const struct dsc*, FPTR_VOID);
-GDS_TIMESTAMP CVT_get_timestamp(const struct dsc*, FPTR_VOID);
-USHORT		CVT_make_string(const struct dsc*, USHORT, const char**, struct vary*,
+SQUAD		CVT_get_quad(const dsc*, SSHORT, FPTR_VOID);
+USHORT		CVT_get_string_ptr(const dsc*, USHORT*, UCHAR**,
+								 vary*, USHORT, FPTR_VOID);
+GDS_DATE	CVT_get_sql_date(const dsc*, FPTR_VOID);
+GDS_TIME	CVT_get_sql_time(const dsc*, FPTR_VOID);
+GDS_TIMESTAMP CVT_get_timestamp(const dsc*, FPTR_VOID);
+USHORT		CVT_make_string(const dsc*, USHORT, const char**, vary*,
 							  USHORT, FPTR_VOID);
-extern "C" void CVT_move(const struct dsc*, struct dsc*, FPTR_VOID);
+extern "C" void CVT_move(const dsc*, dsc*, FPTR_VOID);
 
 #endif // JRD_CVT_PROTO_H
 

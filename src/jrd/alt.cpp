@@ -48,12 +48,6 @@
 
 #include "../jrd/event.h"
 
-typedef struct teb {
-	FRBRD **teb_database;
-	int teb_tpb_length;
-	UCHAR *teb_tpb;
-} TEB;
-
 #if !defined(BOOT_BUILD)
 bool is_valid_server(ISC_STATUS* status, const TEXT* server);
 #endif
@@ -252,14 +246,23 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
 												 FRBRD **tra_handle,
 												 SSHORT count, ...)
 {
-	TEB tebs[16], *teb, *end;
+
+struct teb_t {
+	FRBRD **teb_database;
+	int teb_tpb_length;
+	UCHAR *teb_tpb;
+};
+
+	teb_t tebs[16];
+	teb_t* teb;
+	teb_t* end;
 	ISC_STATUS status;
 	va_list ptr;
 
 	if (count <= FB_NELEM(tebs))
 		teb = tebs;
 	else
-		teb = (TEB *) gds__alloc(((SLONG) sizeof(struct teb) * count));
+		teb = (teb_t*) gds__alloc(((SLONG) sizeof(teb_t) * count));
 	/* FREE: later in this module */
 
 	if (!teb) {					/* NOMEM: */

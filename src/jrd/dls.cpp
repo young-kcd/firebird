@@ -153,11 +153,11 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
  **************************************/
 
 	MDLS *mdls;
-	DLS new_dls, dls;
+	DLS new_dls;
 
 /* allocate dls structure */
 
-	new_dls = (DLS) gds__alloc((SLONG) (sizeof(struct dls) +
+	new_dls = (DLS) gds__alloc((SLONG) (sizeof(dls) +
 										sizeof(TEXT) * strlen(dir_name)));
 	if (!new_dls)
 		return FALSE;
@@ -188,10 +188,10 @@ BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
 		mdls->mdls_dls = new_dls;
 	}
 	else {
-		dls = mdls->mdls_dls;
-		while (dls->dls_next)
-			dls = dls->dls_next;
-		dls->dls_next = new_dls;
+		DLS dls_iterator = mdls->mdls_dls;
+		while (dls_iterator->dls_next)
+			dls_iterator = dls_iterator->dls_next;
+		dls_iterator->dls_next = new_dls;
 	}
 
 #ifdef V4_THREADING

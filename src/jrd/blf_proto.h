@@ -26,16 +26,14 @@
 
 extern "C" {
 
-ISC_STATUS	BLF_close_blob(TDBB, struct ctl **);
-ISC_STATUS	BLF_create_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
+ISC_STATUS	BLF_close_blob(TDBB, ctl**);
+ISC_STATUS	BLF_create_blob(TDBB, JRD_TRA, ctl**, SLONG*,
 										 USHORT, UCHAR *, ISC_STATUS(*)(), BLF);
-ISC_STATUS	BLF_get_segment(TDBB, struct ctl **, USHORT *,
-										 USHORT, UCHAR *);
+ISC_STATUS	BLF_get_segment(TDBB, ctl**, USHORT*, USHORT, UCHAR *);
 BLF			BLF_lookup_internal_filter(TDBB, SSHORT, SSHORT);
-ISC_STATUS	BLF_open_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
+ISC_STATUS	BLF_open_blob(TDBB, JRD_TRA, ctl**, SLONG*,
 									   USHORT, UCHAR *, ISC_STATUS(*)(), BLF);
-ISC_STATUS	BLF_put_segment(TDBB, struct ctl **, USHORT,
-										 UCHAR *);
+ISC_STATUS	BLF_put_segment(TDBB, ctl**, USHORT, UCHAR*);
 
 } /* extern "C" */
 

@@ -24,8 +24,8 @@
 #ifndef JRD_BOOKMARK_H
 #define JRD_BOOKMARK_H
 
-struct bkm*	BKM_allocate(struct rsb*, USHORT);
-struct bkm*	BKM_lookup(struct jrd_nod*);
-void		BKM_release(struct jrd_nod*);
+bkm*	BKM_allocate(rsb*, USHORT);
+bkm*	BKM_lookup(jrd_nod*);
+void	BKM_release(jrd_nod*);
 
 #endif /* JRD_BOOKMARK_H */

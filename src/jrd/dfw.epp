@@ -635,7 +635,7 @@ void DFW_perform_post_commit_work(JRD_TRA transaction)
 }
 
 
-class dfw * DFW_post_work( JRD_TRA transaction, enum dfw_t type, DSC * desc, USHORT id)
+dfw* DFW_post_work(JRD_TRA transaction, enum dfw_t type, DSC* desc, USHORT id)
 {
 /**************************************
  *
@@ -3254,7 +3254,7 @@ static void get_array_desc( TDBB tdbb, TEXT * field_name, ADS desc)
  **************************************/
 	DBB dbb;
 	BLK request;
-	struct ads::ads_repeat *ranges;
+	ads::ads_repeat *ranges;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -3605,7 +3605,7 @@ static FMT make_format(TDBB tdbb, JRD_REL relation, USHORT * version, TFB stack)
 						blob,
 //						(UCHAR*) &*(format->fmt_desc.begin()),
 						(UCHAR*) &(format->fmt_desc[0]),
-						(USHORT)(format->fmt_count * sizeof(struct dsc)));
+						(USHORT)(format->fmt_count * sizeof(dsc)));
 		BLB_close(tdbb, blob);
     END_STORE;
 
@@ -4438,7 +4438,7 @@ static void setup_array(TDBB tdbb, BLB blob, TEXT* field_name, USHORT n, TFB tfb
 	put_summary_record(blob, RSR_dimensions, (UCHAR*) &n, sizeof(n));
 	tfb->tfb_flags |= TFB_array;
 	array = reinterpret_cast<ADS>(stuff);
-	MOVE_CLEAR(array, (SLONG) sizeof(struct ads));
+	MOVE_CLEAR(array, (SLONG) sizeof(ads));
 	array->ads_dimensions = n;
 	array->ads_struct_count = 1;
 	array->ads_rpt[0].ads_desc = tfb->tfb_desc;

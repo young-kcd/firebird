@@ -29,46 +29,42 @@ extern "C" {
 #endif
 
 void		CCH_do_log_shutdown(TDBB, SSHORT);
-void		CCH_shutdown_database(struct dbb *);
+void		CCH_shutdown_database(dbb*);
 
-USHORT		CCH_checksum(struct bdb *);
+USHORT		CCH_checksum(bdb*);
 int			CCH_down_grade_dbb(void *ast_argument);
 BOOLEAN		CCH_exclusive(TDBB, USHORT, SSHORT);
 BOOLEAN		CCH_exclusive_attachment(TDBB, USHORT, SSHORT);
 void		CCH_expand(TDBB, ULONG);
-struct pag*	CCH_fake(TDBB, struct win *, SSHORT);
-struct pag*	CCH_fetch(TDBB, struct win *, USHORT, SSHORT,
-						 SSHORT, SSHORT, BOOLEAN);
-SSHORT		CCH_fetch_lock(TDBB, struct win *, USHORT, SSHORT,
-						 SSHORT, SSHORT);
-void		CCH_fetch_page(TDBB, struct win *, SSHORT, BOOLEAN);
+pag*		CCH_fake(TDBB, win*, SSHORT);
+pag*		CCH_fetch(TDBB, win*, USHORT, SSHORT, SSHORT, SSHORT, BOOLEAN);
+SSHORT		CCH_fetch_lock(TDBB, win*, USHORT, SSHORT, SSHORT, SSHORT);
+void		CCH_fetch_page(TDBB, win*, SSHORT, BOOLEAN);
 void		CCH_fini(TDBB);
 void		CCH_flush(TDBB, USHORT, SLONG);
 BOOLEAN		CCH_free_page(TDBB);
-SLONG		CCH_get_incarnation(struct win *);
-struct pag*	CCH_handoff(TDBB, struct win *, SLONG, SSHORT,
-							   SSHORT, SSHORT, SSHORT);
+SLONG		CCH_get_incarnation(win*);
+pag*		CCH_handoff(TDBB, win*, SLONG, SSHORT, SSHORT, SSHORT, SSHORT);
 void		CCH_init(TDBB, ULONG);
-void		CCH_journal_page(TDBB, struct win *);
-void		CCH_journal_record(TDBB, struct win *, UCHAR *, USHORT, UCHAR *,
-							   USHORT);
-void		CCH_mark(TDBB, struct win *, USHORT);
-void		CCH_mark_must_write(TDBB, struct win *);
-void		CCH_must_write(struct win *);
-struct lck*	CCH_page_lock(TDBB);
-void		CCH_precedence(TDBB, struct win *, SLONG);
-void		CCH_prefetch(struct tdbb *, SLONG *, SSHORT);
+void		CCH_journal_page(TDBB, win*);
+void		CCH_journal_record(TDBB, win*, UCHAR*, USHORT, UCHAR*, USHORT);
+void		CCH_mark(TDBB, win*, USHORT);
+void		CCH_mark_must_write(TDBB, win*);
+void		CCH_must_write(win*);
+lck*		CCH_page_lock(TDBB);
+void		CCH_precedence(TDBB, win*, SLONG);
+void		CCH_prefetch(tdbb*, SLONG*, SSHORT);
 BOOLEAN		CCH_prefetch_pages(TDBB);
-void		CCH_recover_shadow(TDBB, struct sbm *);
-void		CCH_release(TDBB, struct win *, BOOLEAN);
-void		CCH_release_and_free(struct win *);
+void		CCH_recover_shadow(TDBB, sbm*);
+void		CCH_release(TDBB, win*, BOOLEAN);
+void		CCH_release_and_free(win*);
 void		CCH_release_exclusive(TDBB);
 void		CCH_release_journal(TDBB, SLONG);
-BOOLEAN		CCH_rollover_to_shadow(struct dbb *, struct fil *, BOOLEAN);
+BOOLEAN		CCH_rollover_to_shadow(dbb*, fil*, BOOLEAN);
 void		CCH_unwind(TDBB, BOOLEAN);
-BOOLEAN		CCH_validate(struct win *);
+BOOLEAN		CCH_validate(win*);
 void		CCH_flush_database(TDBB tdbb);
-BOOLEAN		CCH_write_all_shadows(TDBB, struct sdw *, struct bdb *,
+BOOLEAN		CCH_write_all_shadows(TDBB, sdw*, bdb*,
 					 ISC_STATUS *, USHORT, BOOLEAN);
 
 /* macros for dealing with cache pages */

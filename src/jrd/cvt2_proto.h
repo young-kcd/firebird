@@ -24,11 +24,11 @@
 #ifndef JRD_CVT2_PROTO_H
 #define JRD_CVT2_PROTO_H
 
-SSHORT	CVT2_compare(const struct dsc*, const struct dsc*, FPTR_VOID);
-SSHORT	CVT2_blob_compare(const struct dsc*, const struct dsc*, FPTR_VOID);
-void	CVT2_get_name(const struct dsc*, TEXT*, FPTR_VOID);
-USHORT	CVT2_make_string2(const struct dsc*, USHORT, UCHAR**, struct vary*,
-								USHORT, struct str**, FPTR_VOID);
+SSHORT	CVT2_compare(const dsc*, const dsc*, FPTR_VOID);
+SSHORT	CVT2_blob_compare(const dsc*, const dsc*, FPTR_VOID);
+void	CVT2_get_name(const dsc*, TEXT*, FPTR_VOID);
+USHORT	CVT2_make_string2(const dsc*, USHORT, UCHAR**, vary*,
+								USHORT, str**, FPTR_VOID);
 
 #endif // JRD_CVT2_PROTO_H
 

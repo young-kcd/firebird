@@ -133,7 +133,7 @@ static void journal_buffer(ISC_STATUS *, BDB);
 static SSHORT latch_bdb(TDBB, LATCH, BDB, SLONG, SSHORT);
 static SSHORT lock_buffer(TDBB, BDB, SSHORT, SSHORT);
 static ULONG memory_init(TDBB, BCB, ULONG);
-static void page_validation_error(TDBB, struct win *, SSHORT);
+static void page_validation_error(TDBB, win*, SSHORT);
 #ifdef CACHE_READER
 static void prefetch_epilogue(PRF, ISC_STATUS *);
 static void prefetch_init(PRF, TDBB);
@@ -2157,7 +2157,7 @@ void CCH_prefetch(TDBB tdbb, SLONG * pages, SSHORT count)
    empty but check anyway. */
 
 	if (first_page) {
-		struct prf prefetch;
+		prf prefetch;
 
 		prefetch_init(&prefetch, tdbb);
 		prefetch_prologue(&prefetch, &first_page);
@@ -3369,7 +3369,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 	ISC_STATUS_ARRAY status_vector;
 	EVENT reader_event;
 	BOOLEAN found;
-	struct prf prefetch1, prefetch2;
+	prf prefetch1, prefetch2;
 	PRF post_prefetch, next_prefetch;
 
 	THREAD_ENTER;
@@ -3684,7 +3684,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 			else if (SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) {
 				/* Prefetch some pages in our spare time and in the process
 				   garbage collect the prefetch bitmap. */
-				struct prf prefetch;
+				prf prefetch;
 
 				prefetch_init(&prefetch, tdbb);
 				prefetch_prologue(&prefetch, &starting_page);
@@ -4875,7 +4875,7 @@ static SSHORT lock_buffer(
 		 * Marion change # 18270, 13-Oct-1994
 		 */
 
-		struct lck refresh;
+		lck refresh;
 
 		refresh.lck_dbb = dbb;
 		refresh.lck_type = LCK_bdb;

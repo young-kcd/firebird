@@ -812,8 +812,8 @@ void AIL_init_log_page(LIP logp, SLONG seqno)
 
 /* First zero out the whole structure except for the page header portion */
 
-	len = sizeof(struct log_info_page) - sizeof(struct pag);
-	p = (UCHAR *) logp + sizeof(struct pag);
+	len = sizeof(log_info_page) - sizeof(pag);
+	p = (UCHAR *) logp + sizeof(pag);
 	do
 		*p++ = 0;
 	while (--len);

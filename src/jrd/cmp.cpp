@@ -4515,7 +4515,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 	case nod_agg_max:
 	case nod_agg_count:
 		node->nod_count = 0;
-		csb->csb_impure += sizeof(struct vlux);
+		csb->csb_impure += sizeof(vlux);
 		break;
 
 	case nod_ansi_all:
@@ -4524,7 +4524,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 	case nod_exists:
 	case nod_unique:
 		if (node->nod_flags & nod_invariant)
-			csb->csb_impure += sizeof(struct vlu);
+			csb->csb_impure += sizeof(vlu);
 		break;
 
 	case nod_block:
@@ -4536,7 +4536,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			DSC *desc;
 
 			desc = (DSC *) (node->nod_arg + e_dcl_desc);
-			csb->csb_impure += sizeof(struct vlu) + desc->dsc_length;
+			csb->csb_impure += sizeof(vlu) + desc->dsc_length;
 		}
 		break;
 
@@ -4549,7 +4549,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			DSC descriptor_a;
 
 			node->nod_count = 0;
-			csb->csb_impure += sizeof(struct vlu);
+			csb->csb_impure += sizeof(vlu);
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 		}
 		break;
@@ -4560,7 +4560,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			DSC descriptor_a;
 
 			node->nod_count = 0;
-			csb->csb_impure += sizeof(struct vlux);
+			csb->csb_impure += sizeof(vlux);
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 		}
 		break;
@@ -4587,7 +4587,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			for (id = 0; id < format->fmt_count; id++, desc++)
 				if (desc->dsc_dtype)
 					SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
-			csb->csb_impure += sizeof(struct sta);
+			csb->csb_impure += sizeof(sta);
 		}
 		break;
 
@@ -4601,7 +4601,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		/* FALL INTO */
 
 	case nod_store:
-		csb->csb_impure += sizeof(struct sta);
+		csb->csb_impure += sizeof(sta);
 		break;
 
 	case nod_erase:
@@ -4614,13 +4614,13 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		id = (USHORT)(ULONG) node->nod_arg[e_fld_id];
 		SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
 		if (node->nod_flags & nod_value) {
-			csb->csb_impure += sizeof(struct vlux);
+			csb->csb_impure += sizeof(vlux);
 			break;
 		}
 		/* FALL INTO */
 
 	case nod_argument:
-		csb->csb_impure += sizeof(struct dsc);
+		csb->csb_impure += sizeof(dsc);
 		break;
 
 	case nod_concatenate:
@@ -4659,7 +4659,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			DSC descriptor_a;
 
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			csb->csb_impure += sizeof(struct vlu);
+			csb->csb_impure += sizeof(vlu);
 		}
 		break;
 
@@ -4677,7 +4677,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			DSC descriptor_a;
 
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			csb->csb_impure += sizeof(struct vlu);
+			csb->csb_impure += sizeof(vlu);
 		}
 		break;
 
