@@ -207,7 +207,7 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
  **************************************/
 	Database* dbb;
 	Attachment* att;
-	int i, j, k, col;
+	int i, j, k;
 
 	/*fprintf(fptr, "\n\tALL_xx block types\n");
 	fprintf(fptr, "\t------------------");
