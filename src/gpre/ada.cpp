@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.20 2003-09-11 02:13:46 brodsom Exp $
+//	$Id: ada.cpp,v 1.21 2003-09-12 08:55:47 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1169,7 +1169,7 @@ static void gen_database( ACT action, int column)
 	TPB tpb_val;
 	REF reference;
 	GPRE_FLD field;
-	bool array_flag;
+	bool array_flag = false;
 
 	if (first_flag++ != 0)
 		return;

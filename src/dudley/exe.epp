@@ -2237,7 +2237,8 @@ static void drop_field( DUDLEY_FLD field)
 		X.RDB$RELATION_NAME EQ relation->rel_name->sym_string AND
 		X.RDB$FIELD_NAME EQ field->fld_name->sym_string
 		FOR Y IN RDB$RELATION_FIELDS WITH
-			Y.RDB$FIELD_NAME = X.RDB$BASE_FIELD if_any = true;
+			Y.RDB$FIELD_NAME = X.RDB$BASE_FIELD
+			if_any = true;
 		END_FOR 
 
 		if (!if_any) {
