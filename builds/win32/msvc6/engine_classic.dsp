@@ -437,18 +437,6 @@ SOURCE=..\..\..\src\jrd\why.c
 SOURCE=..\..\..\src\jrd\winnt.cpp
 # End Source File
 # End Group
-# Begin Group "OS_SPECIFIC files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
-# End Source File
-# End Group
 # Begin Group "Header files"
 
 # PROP Default_Filter ""

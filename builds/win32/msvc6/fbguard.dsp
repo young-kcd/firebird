@@ -104,10 +104,6 @@ SOURCE=..\..\..\src\iscguard\cntl_guard.cpp
 SOURCE=..\..\..\src\iscguard\iscguard.cpp
 # SUBTRACT CPP /D "NOMSG"
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\iscguard\iscguard_utils.cpp
-# End Source File
 # End Group
 # Begin Group "REMOTE files"
 
@@ -139,8 +135,6 @@ SOURCE=..\..\..\src\misc\status.h
 # Begin Source File
 
 SOURCE=..\..\..\src\iscguard\iscguard.rc
-# ADD BASE RSC /l 0x41d /i "..\..\..\src\iscguard" /i "..\..\..\\"
-# ADD RSC /l 0x417 /i "..\..\..\src\iscguard" /i "..\..\..\\"
 # End Source File
 # End Group
 # End Target
