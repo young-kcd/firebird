@@ -213,150 +213,51 @@ USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
 		number >>= 6;
 
 		// Get size for storing remaining bits for number
-		UCHAR tmp = (number & 0x7F);
-		number >>= 7; //13
-		if (number > 0) {
-			tmp |= 0x80;
+		if (number & 0xF0000000) {
+			result += 5;
 		}
-		result++;
-		if (tmp & 0x80) {
-			tmp = (number & 0x7F);
-			number >>= 7; //20
-			if (number > 0) {
-				tmp |= 0x80;
-			}
-			result++;
-			if (tmp & 0x80) {
-				tmp = (number & 0x7F);
-				number >>= 7; //27
-				if (number > 0) {
-					tmp |= 0x80;
-				}
-				result++;
-				if (tmp & 0x80) {
-					tmp = (number & 0x7F);
-					number >>= 7; //34
-					if (number > 0) {
-						tmp |= 0x80;
-					}
-					result++;
-/*
-	Change number to 64-bit type and enable this for 64-bit support
+		else if (number & 0xFFE00000) {
+			result += 4;
+		}
+		else if (number & 0xFFFFC000) {
+			result += 3;
+		}
+		else if (number & 0xFFFFFF80) {
+			result += 2;
+		}
+		else {
+			result += 1;
+		}
 
-					if (tmp & 0x80) {
-						tmp = (number & 0x7F);
-						number >>= 7; //41
-						if (number > 0) {
-							tmp |= 0x80;
-						}
-						result++;
-						if (tmp & 0x80) {
-							tmp = (number & 0x7F);
-							number >>= 7; //48
-							if (number > 0) {
-								tmp |= 0x80;
-							}
-							result++;
-							if (tmp & 0x80) {
-								tmp = (number & 0x7F);
-								number >>= 7; //55
-								if (number > 0) {
-									tmp |= 0x80;
-								}
-								result++; //62 bits written 
-							}
-						}
-					}*/
-				}
-			}
-		}
 
 		if (!leafNode) {
 			// Size needed for page number
 			number = indexNode->pageNumber;
 			if (number < 0) {
-				number = 0;
+				number = 0;		
 			}
 
-			tmp = (number & 0x7F);
-			number >>= 7;
-			if (number > 0) {
-				tmp |= 0x80;
+			if (number & 0xF0000000) {
+				result += 5;
 			}
-			result++; // 7
-			if (tmp & 0x80) {
-				tmp = (number & 0x7F);
-				number >>= 7;
-				if (number > 0) {
-					tmp |= 0x80;
-				}
-				result++; // 14
-				if (tmp & 0x80) {
-					tmp = (number & 0x7F);
-					number >>= 7;
-					if (number > 0) {
-						tmp |= 0x80;
-					}
-					result++; // 21
-					if (tmp & 0x80) {
-						tmp = (number & 0x7F);
-						number >>= 7; 
-						if (number > 0) {
-							tmp |= 0x80;
-						}
-						result++; // 28
-						if (tmp & 0x80) {
-							tmp = (number & 0x7F);
-							number >>= 7;
-							if (number > 0) {
-								tmp |= 0x80;
-							}
-							result++; // 35
-/*
-	Change number to 64-bit type and enable this for 64-bit support
-
-							if (tmp & 0x80) {
-								tmp = (number & 0x7F);
-								number >>= 7;
-								if (number > 0) {
-									tmp |= 0x80;
-								}
-								result++; // 42
-								if (tmp & 0x80) {
-									tmp = (number & 0x7F);
-									number >>= 7;
-									if (number > 0) {
-										tmp |= 0x80;
-									}
-									result++; // 49 
-									if (tmp & 0x80) {
-										tmp = (number & 0x7F);
-										number >>= 7;
-										if (number > 0) {
-											tmp |= 0x80;
-										}
-										result++; // 56 
-										if (tmp & 0x80) {
-											tmp = (number & 0x7F);
-											number >>= 7;
-											if (number > 0) {
-												tmp |= 0x80;
-											}
-											result++; // 62 bits written 
-										}
-									}
-								}
-							}*/
-						}
-					}
-				}
+			else if (number & 0xFFE00000) {
+				result += 4;
+			}
+			else if (number & 0xFFFFC000) {
+				result += 3;
+			}
+			else if (number & 0xFFFFFF80) {
+				result += 2;
+			}
+			else {
+				result += 1;
 			}
 		}
 
 		if (internalFlags != 3) {
 			// Size needed for prefix  
 			number = indexNode->prefix;
-			tmp = (number & 0x7F);
+			UCHAR tmp = (number & 0x7F);
 			number >>= 7;
 			if (number > 0) {
 				tmp |= 0x80;
