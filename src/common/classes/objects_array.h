@@ -54,12 +54,26 @@ namespace Firebird
 				pos = 0;
 			}
  */
-			iterator& operator++() {++pos; return (*this);}
-			iterator operator++(int) {iterator tmp = *this; ++pos; 
-									  return tmp;}
-			iterator& operator--() {--pos; return (*this);}
-			iterator operator--(int) {iterator tmp = *this; --pos; 
-									  return tmp;}
+			iterator& operator++() {
+				++pos;
+				return (*this);
+			}
+			iterator operator++(int) {
+				iterator tmp = *this;
+				++pos;
+				 return tmp;
+			}
+			iterator& operator--() {
+				fb_assert(pos > 0);
+				--pos;
+				return (*this);
+			}
+			iterator operator--(int) {
+				fb_assert(pos > 0);
+				iterator tmp = *this;
+				--pos;
+				 return tmp;
+			}
 			T* operator->() {
 				fb_assert(lst);
 				T* pointer = lst->getPointer(pos);
@@ -105,6 +119,7 @@ namespace Firebird
 			return rc;
 		}
 		void remove(size_t index) {
+			fb_assert(index < getCount());
 			delete getPointer(index);
 			inherited::remove(index);
 		}
