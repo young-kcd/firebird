@@ -806,7 +806,9 @@ int getNextInputChar()
 		getColumn = -1;
 		return '\n';
 	}
-	return lastInputLine[getColumn++];
+    // cast to unsigned char to prevent sign expansion
+    // this way we can distinct russian ya (0xFF) and EOF (usually (-1))
+	return (unsigned char)lastInputLine[getColumn++];
 }
 
 void ISQL_copy_SQL_id(const TEXT* in_str,
