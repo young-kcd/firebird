@@ -62,11 +62,11 @@
 #define CONST
 #endif
 
-#ifdef WIN32
-#define FAR_VARIABLE	__far
-#define DLL_EXPORT	dll_export
-#else
 #define FAR_VARIABLE
+
+#ifdef WIN32
+#define DLL_EXPORT	__declspec(dllexport)
+#else
 #define DLL_EXPORT
 #endif
 
@@ -1035,9 +1035,14 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.6 2002-04-09 23:25:13 bellardo Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.7 2002-06-05 11:02:46 dimitr Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.6  2002/04/09 23:25:13  bellardo
+//	changes necessary to get the intl lib compiling after adding the new
+//	memory management, an additional intl c++ interface, and a slight
+//	refactoring of the intl header files.
+//	
 //	Revision 1.5  2002/02/16 05:06:17  seanleyne
 //	Clean up of change notes in headers
 //	
