@@ -77,7 +77,7 @@ public:
 
 /* Process-local spinlock. Used to manage memory heaps in threaded environment. */
 // Pthreads version of the class
-#ifndef SOLARIS
+#if !defined(SOLARIS) && !defined(DARWIN)
 class Spinlock {
 private:
 	pthread_spinlock_t spinlock;
