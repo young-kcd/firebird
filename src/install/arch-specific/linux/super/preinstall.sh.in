@@ -219,6 +219,7 @@ checkForRPMInstall() {
 
 checkForEx() {
     ex <<EOS >/dev/null 2>&1
+q
 EOS
     if [ $? -ne 0 ]
       then
