@@ -24,11 +24,6 @@
 #ifndef JRD_SVC_H
 #define JRD_SVC_H
 
-// TMN: To be removed once the C++ conversion is completed
-#ifdef INCLUDE_OLD_FB_BLK
-#error You can not include both old_fb_blk.h and this file
-#endif
-
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/isc.h"
 #include "../jrd/svc_undoc.h"
@@ -42,32 +37,32 @@ void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 
 namespace Jrd {
 
-#define SERVICE_VERSION		2
+const ULONG SERVICE_VERSION			= 2;
 
-#define SVC_STDOUT_BUFFER_SIZE	1024
+const int SVC_STDOUT_BUFFER_SIZE	= 1024;
 
 /* Flag of capabilities supported by the server */
-//#define WAL_SUPPORT					  0x1L	/* Write Ahead Log */
-#define MULTI_CLIENT_SUPPORT		  0x2L	/* SuperServer model (vs. multi-inet) */
-#define REMOTE_HOP_SUPPORT			  0x4L	/* Server can connect to other server */
-#define NO_SVR_STATS_SUPPORT		  0x8L	/* Does not support statistics */
-#define NO_DB_STATS_SUPPORT			 0x10L	/* Does not support statistics */
-#define LOCAL_ENGINE_SUPPORT		 0x20L	/* The local 16 bit engine */
-#define NO_FORCED_WRITE_SUPPORT		 0x40L	/* Can not configure sync writes */
-#define NO_SHUTDOWN_SUPPORT			 0x80L	/* Can not shutdown/restart databases */
-#define NO_SERVER_SHUTDOWN_SUPPORT	0x100L	/* Can not shutdown server */
-#define SERVER_CONFIG_SUPPORT		0x200L	/* Can configure server */
-#define QUOTED_FILENAME_SUPPORT		0x400L	/* Can pass quoted filenames in */
+//const ULONG WAL_SUPPORT					= 0x1L;	/* Write Ahead Log */
+const ULONG MULTI_CLIENT_SUPPORT		= 0x2L;	/* SuperServer model (vs. multi-inet) */
+const ULONG REMOTE_HOP_SUPPORT			= 0x4L;	/* Server can connect to other server */
+const ULONG NO_SVR_STATS_SUPPORT		= 0x8L;	/* Does not support statistics */
+const ULONG NO_DB_STATS_SUPPORT			= 0x10L;	/* Does not support statistics */
+const ULONG LOCAL_ENGINE_SUPPORT		= 0x20L;	/* The local 16 bit engine */
+const ULONG NO_FORCED_WRITE_SUPPORT		= 0x40L;	/* Can not configure sync writes */
+const ULONG NO_SHUTDOWN_SUPPORT			= 0x80L;	/* Can not shutdown/restart databases */
+const ULONG NO_SERVER_SHUTDOWN_SUPPORT	= 0x100L;	/* Can not shutdown server */
+const ULONG SERVER_CONFIG_SUPPORT		= 0x200L;	/* Can configure server */
+const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	/* Can pass quoted filenames in */
 
 /* Range definitions for service actions.  Any action outside of
    this range is not supported */
-#define isc_action_min                 1
-#define isc_action_max                 14
+const USHORT isc_action_min				= 1;
+const USHORT isc_action_max				= 14;
 
 /* Range definitions for service actions.  Any action outside of
    this range is not supported */
-#define isc_info_min                  50
-#define isc_info_max                  67
+//define isc_info_min                  50
+//define isc_info_max                  67
 
 
 /* switches for username and password used when a username and/or password
