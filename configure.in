@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.181 2003-11-10 11:25:05 aafemt Exp $
+dnl $Id: configure.in,v 1.182 2003-11-13 00:53:12 stryqx Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -508,6 +508,17 @@ case "$PLATFORM" in
 	dnl      compatibility. Define HAVE_POSIX_THREADS anyway to get
 	dnl      thread support compiled into FIREBIRD.
 	AC_DEFINE(HAVE_POSIX_THREADS)
+    ;;
+
+  FREEBSD)
+    dnl the AC_CHECK_TYPES for socklen_t doesn't include sys/socket.h
+    dnl so test for socklen_t with sys/socket.h included
+    AC_MSG_CHECKING(if sys/socket.h defines socklen_t)
+    AC_TRY_COMPILE([#include <sys/types.h>
+       #include <sys/socket.h>],
+    [socklen_t s;],
+    [AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)])
     ;;
 
   SOLARIS|solx86)
