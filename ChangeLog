@@ -1,3 +1,9 @@
+2004-03-06 12:56  dimitr
+
+	* firebird2/src/jrd/: evl.cpp, exe.h:
+	
+	1) Some cleanup.  2) Fixed memory leak. Thanks to Oleg Loa.
+
 2004-03-05 10:37  alexpeshkoff
 
 	* firebird2/src/: common/classes/auto.h, jrd/ExecuteStatement.cpp,
