@@ -42,7 +42,7 @@
 #include "../remote/chop_proto.h"
 #include "../common/config/config.h"
 
-#if defined(_MSC_VER)
+#ifdef WIN_NT
 #include <process.h>			/* _beginthread */
 #endif
 
