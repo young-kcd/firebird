@@ -134,6 +134,8 @@ static int shutdown_pid = 0;
 /* put into ensure that we have a parent port for the XNET connections */
 static int xnet_server_set = FALSE;
 
+const char *FBCLIENTDLL = "fbclient.dll";
+
 
 int WINAPI WinMain(HINSTANCE	hThisInst,
 				   HINSTANCE	hPrevInst,
@@ -234,6 +236,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 #ifdef SUPERSERVER
 	ISC_enter();
 #endif
+
+	LoadLibrary(FBCLIENTDLL);
 
 	if (connection_handle != INVALID_HANDLE_VALUE) {
 		THREAD_ENTER;
