@@ -155,7 +155,7 @@ void PRO_copy_procedure(
 
 	DB1 = new_database->dbb_handle;
 
-// create blob parameter block since procedure is a text blob 
+// create blob parameter block since procedure is a text blob
 
 	UCHAR* p = bpb;
 
@@ -179,7 +179,7 @@ void PRO_copy_procedure(
 		PRO_close(new_database, new_blob);
 	END_STORE;
 
-// Release the FOR and STORE requests 
+// Release the FOR and STORE requests
 	gds__release_request(gds_status, &store_request);
 	PRO_commit(new_database);
 }
@@ -201,7 +201,7 @@ void PRO_create( DBB database, TEXT * name)
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR bpb[20];
 
-// See if procedure is already in use 
+// See if procedure is already in use
 
 	probe(database, name);
 
@@ -236,7 +236,7 @@ void PRO_create( DBB database, TEXT * name)
 		gds__close_blob(status_vector, &blob);
 	END_STORE;
 
-// Commit the procedure transaction, if there is one 
+// Commit the procedure transaction, if there is one
 
 	PRO_commit(database);
 }
@@ -260,14 +260,14 @@ int PRO_delete_procedure( DBB database, TEXT * name)
 	PRO_setup(database);
 
 	FOR(REQUEST_HANDLE request) X IN DB.QLI$PROCEDURES WITH
-		X.QLI$PROCEDURE_NAME EQ name 
+		X.QLI$PROCEDURE_NAME EQ name
         ERASE X;
 		count++;
 	END_FOR;
 
 	gds__release_request(gds_status, &request);
 
-// Commit the procedure transaction, if there is one 
+// Commit the procedure transaction, if there is one
 
 	PRO_commit(database);
 
@@ -310,7 +310,7 @@ void PRO_edit_procedure( DBB database, TEXT * name)
 		gds__vtof(name, X.QLI$PROCEDURE_NAME, sizeof(X.QLI$PROCEDURE_NAME));
 	END_STORE
 
-// Commit the procedure transaction, if there is one 
+// Commit the procedure transaction, if there is one
 
 	PRO_commit(database);
 }
@@ -439,7 +439,7 @@ FRBRD *PRO_open_blob( DBB database, SLONG * blob_id)
 
 	if (gds__open_blob2(status_vector, &database->dbb_handle,
 						&database->dbb_proc_trans, &blob, (GDS__QUAD*) blob_id,
-						bpb_length, (char*) bpb)) 
+						bpb_length, (char*) bpb))
 		ERRQ_database_error(database, status_vector);
 
 	return blob;
@@ -479,7 +479,7 @@ int PRO_rename_procedure( DBB database, TEXT * old_name, TEXT * new_name)
 
 	gds__release_request(gds_status, &request);
 
-// Commit the procedure transaction, if there is one 
+// Commit the procedure transaction, if there is one
 
 	PRO_commit(database);
 
@@ -556,7 +556,7 @@ void PRO_setup( DBB dbb)
 
 	if (!dbb)
 		IBERROR(77);
-// Msg 77 database handle required 
+// Msg 77 database handle required
 
 /* If we don't have a QLI$PROCEDURES relation, and can't get one, punt */
 
@@ -571,7 +571,7 @@ void PRO_setup( DBB dbb)
 		return;
 	}
 
-/* Sigh.  Relation doesn't exist.  So make it exist. */
+// Sigh.  Relation doesn't exist.  So make it exist.
 
 	create_qli_procedures(dbb);
 
@@ -601,7 +601,7 @@ FRBRD *PRO_transaction( DBB database, int update_flag)
 	FRBRD *transaction;
 
 	if (!database)
-		IBERROR(248);			// Msg248 no active database for operation 
+		IBERROR(248);			// Msg248 no active database for operation
 
 	transaction = (database->dbb_capabilities & DBB_cap_multi_trans) ?
 		database->dbb_proc_trans : NULL;
@@ -620,20 +620,20 @@ FRBRD *PRO_transaction( DBB database, int update_flag)
 		else
 			database->dbb_capabilities |= DBB_cap_multi_trans;
 
-/* If we already have a procedure transaction, there's more nothing to do */
+// If we already have a procedure transaction, there's more nothing to do
 
 	gds_trans = transaction;
 
-// If we only support a single transaction, use the data transaction 
+// If we only support a single transaction, use the data transaction
 
 	if (!gds_trans && (database->dbb_capabilities & DBB_cap_single_trans)) {
 		if (update_flag)
-			IBERROR(249);		// Msg249 Interactive metadata updates are not available on Rdb 
+			IBERROR(249);		// Msg249 Interactive metadata updates are not available on Rdb
 		if (!(gds_trans = database->dbb_transaction))
 			gds_trans = MET_transaction(nod_start_trans, database);
 	}
 
-// otherwise make one more effort to start the transaction 
+// otherwise make one more effort to start the transaction
 
 	else if (!gds_trans) {
 		START_TRANSACTION
@@ -672,7 +672,7 @@ static int clear_out_qli_procedures( DBB dbb)
 		F IN DB.RDB$FIELDS CROSS RFR IN DB.RDB$RELATION_FIELDS WITH
 			RFR.RDB$RELATION_NAME = R.RDB$RELATION_NAME AND
 			RFR.RDB$FIELD_NAME = F.RDB$FIELD_NAME AND
-			R.RDB$RELATION_NAME = "QLI$PROCEDURES" 
+			R.RDB$RELATION_NAME = "QLI$PROCEDURES"
         count++;
 	END_FOR
 	ON_ERROR
@@ -710,7 +710,7 @@ static int clear_out_qli_procedures( DBB dbb)
 
 	FOR(REQUEST_HANDLE req) X IN DB.RDB$RELATION_FIELDS
 		WITH X.RDB$FIELD_NAME = "QLI$PROCEDURE_NAME" OR
-			X.RDB$FIELD_NAME = "QLI$PROCEDURE" 
+			X.RDB$FIELD_NAME = "QLI$PROCEDURE"
         ERASE X;
 		count++;
 	END_FOR
@@ -722,7 +722,7 @@ static int clear_out_qli_procedures( DBB dbb)
 
 	FOR(REQUEST_HANDLE req) X IN DB.RDB$FIELDS
 		WITH X.RDB$FIELD_NAME = "QLI$PROCEDURE_NAME" OR
-			X.RDB$FIELD_NAME = "QLI$PROCEDURE" 
+			X.RDB$FIELD_NAME = "QLI$PROCEDURE"
         ERASE X;
 		count++;
 	END_FOR
@@ -733,7 +733,7 @@ static int clear_out_qli_procedures( DBB dbb)
 	gds__release_request(gds_status, &req);
 
 	FOR(REQUEST_HANDLE req) X IN DB.RDB$RELATIONS
-		WITH X.RDB$RELATION_NAME = "QLI$PROCEDURES" 
+		WITH X.RDB$RELATION_NAME = "QLI$PROCEDURES"
         ERASE X;
 		count++;
 	END_FOR
@@ -757,7 +757,7 @@ static void create_qli_procedures( DBB dbb)
  *
  * Functional description
  *	The procedures relation can't be found.  Clean
- *      out residual trash and (re)create the relation. 
+ *      out residual trash and (re)create the relation.
  *	Before cleaning out the trash, see if somebody
  *	else has set up for us.
  *
@@ -787,14 +787,14 @@ static void create_qli_procedures( DBB dbb)
 		/* Msg 74 Could not create QLI$PROCEDURE field */
 	}
 
-	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl3), 
+	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl3),
 				 (char*) dyn_gdl3)) {
 		PRO_rollback(dbb);
 		IBERROR(75);
 		/* Msg 75 Could not create QLI$PROCEDURES relation */
 	}
 
-	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl4), 
+	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl4),
 				 (char*) dyn_gdl4)) {
 		PRO_rollback(dbb);
 		IBERROR(409);
@@ -823,7 +823,7 @@ static void probe( DBB database, TEXT * name)
 	FRBRD *blob;
 	ISC_STATUS_ARRAY status_vector;
 
-// Probe to see if procedure is already in use 
+// Probe to see if procedure is already in use
 
 	if (blob = PRO_fetch_procedure(database, name)) {
 		gds__close_blob(status_vector, &blob);
@@ -855,8 +855,9 @@ static int upcase_name(const TEXT* name, TEXT* buffer)
 		if (!c)
 			return l;
 		if (++l > 31)
-			IBERROR(79);		// Msg 79 procedure name over 31 characters 
+			IBERROR(79);		// Msg 79 procedure name over 31 characters
 
 	}
 }
+
 

@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_EXPAN_PROTO_H_
-#define _QLI_EXPAN_PROTO_H_
+#ifndef QLI_EXPAN_PROTO_H
+#define QLI_EXPAN_PROTO_H
 
 extern qli_nod*	EXP_expand(syn*);
 
-#endif /* _QLI_EXPAN_PROTO_H_ */
+#endif /* QLI_EXPAN_PROTO_H */

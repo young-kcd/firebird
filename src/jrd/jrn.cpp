@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		jrn.c
+ *	MODULE:		jrn.cpp
  *	DESCRIPTION:	Journalling interface for database system.
  *
  * The contents of this file are subject to the Interbase Public

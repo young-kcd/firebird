@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.18 2003-09-22 08:49:45 brodsom Exp $
+//	$Id: exe.cpp,v 1.19 2003-09-25 11:48:57 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -85,29 +85,22 @@ static inline void stuff_dpb_long(UCHAR **d, int blr)
 int EXE_action(TEXT * database, ULONG switches)
 {
 	UCHAR dpb[128];
-	USHORT dpb_length;
-	bool error;
-	FRBRD *handle;
-	UCHAR error_string[128];
-	USHORT i;
-	TGBL tdgbl;
-
-	tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	ALLA_init();
 
-	for (i = 0; i < MAX_VAL_ERRORS; i++)
+	for (USHORT i = 0; i < MAX_VAL_ERRORS; i++)
 		tdgbl->ALICE_data.ua_val_errors[i] = 0;
 
 //  generate the database parameter block for the attach,
 //  based on the various switches
 
-	dpb_length = build_dpb(dpb, switches);
+	const USHORT dpb_length = build_dpb(dpb, switches);
 
-	error = false;
-	handle = NULL;
+	bool error = false;
+	FRBRD* handle = NULL;
 	gds__attach_database(tdgbl->status, 0, database, &handle, dpb_length,
-						 reinterpret_cast <SCHAR *>(dpb));
+						 reinterpret_cast<SCHAR*>(dpb));
 
 	SVC_STARTED(tdgbl->service_blk);
 
@@ -118,10 +111,11 @@ int EXE_action(TEXT * database, ULONG switches)
 		ALICE_print_status(tdgbl->status);
 
 	if (handle != NULL) {
+		UCHAR error_string[128];
 		if ((switches & sw_validate) && (tdgbl->status[1] != isc_bug_check)) {
 			gds__database_info(tdgbl->status, &handle, sizeof(val_errors),
 							   val_errors, sizeof(error_string),
-							   reinterpret_cast < char *>(error_string));
+							   reinterpret_cast<char*>(error_string));
 
 			extract_db_info(error_string);
 		}
@@ -145,28 +139,22 @@ int EXE_action(TEXT * database, ULONG switches)
 int EXE_two_phase(TEXT * database, ULONG switches)
 {
 	UCHAR dpb[128];
-	USHORT dpb_length;
-	bool error;
-	FRBRD *handle;
-	USHORT i;
-	TGBL tdgbl;
-
-	tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	ALLA_init();
 
-	for (i = 0; i < MAX_VAL_ERRORS; i++)
+	for (USHORT i = 0; i < MAX_VAL_ERRORS; i++)
 		tdgbl->ALICE_data.ua_val_errors[i] = 0;
 
 //  generate the database parameter block for the attach,
 //  based on the various switches
 
-	dpb_length = build_dpb(dpb, switches);
+	const USHORT dpb_length = build_dpb(dpb, switches);
 
-	error = false;
-	handle = NULL;
+	bool error = false;
+	FRBRD* handle = NULL;
 	gds__attach_database(tdgbl->status, 0, database, &handle,
-						 dpb_length,  reinterpret_cast < char *>(dpb));
+						 dpb_length,  reinterpret_cast<char*>(dpb));
 
 	SVC_STARTED(tdgbl->service_blk);
 
@@ -196,15 +184,10 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 
 static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 {
-	UCHAR *dpb2;
-	USHORT dpb_length;
-	SSHORT i;
 	TEXT *q;
-	TGBL tdgbl;
+	TGBL tdgbl = GET_THREAD_DATA;
 
-	tdgbl = GET_THREAD_DATA;
-
-	dpb2 = dpb;
+	UCHAR* dpb2 = dpb;
 	*dpb2++ = gds_dpb_version1;
 	*dpb2++ = isc_dpb_gfix_attach;
 	*dpb2++ = 0;
@@ -235,12 +218,10 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 	else if (switches & sw_housekeeping) {
 		*dpb2++ = gds_dpb_sweep_interval;
 		*dpb2++ = 4;
-		for (i = 0; i < 4;
-			 i++, tdgbl->ALICE_data.ua_sweep_interval =
-			 tdgbl->ALICE_data.ua_sweep_interval >> 8)
+		for (int i = 0; i < 4; i++, (tdgbl->ALICE_data.ua_sweep_interval >>= 8))
 		{
-			/* TMN: Here we should really have the following assert */
-			/* assert(tdgbl->ALICE_data.ua_sweep_interval <= MAX_UCHAR); */
+			// TMN: Here we should really have the following assert 
+			// assert(tdgbl->ALICE_data.ua_sweep_interval <= MAX_UCHAR);
 			*dpb2++ = (UCHAR) tdgbl->ALICE_data.ua_sweep_interval;
 		}
 	}
@@ -253,12 +234,10 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 	else if (switches & sw_buffers) {
 		*dpb2++ = isc_dpb_set_page_buffers;
 		*dpb2++ = 4;
-		for (i = 0; i < 4;
-			 i++, tdgbl->ALICE_data.ua_page_buffers =
-			 tdgbl->ALICE_data.ua_page_buffers >> 8)
+		for (int i = 0; i < 4; i++, (tdgbl->ALICE_data.ua_page_buffers >>= 8))
 		{
-			/* TMN: Here we should really have the following assert */
-			/* assert(tdgbl->ALICE_data.ua_page_buffers <= MAX_UCHAR); */
+			// TMN: Here we should really have the following assert 
+			// assert(tdgbl->ALICE_data.ua_page_buffers <= MAX_UCHAR);
 			*dpb2++ = (UCHAR) tdgbl->ALICE_data.ua_page_buffers;
 		}
 	}
@@ -300,10 +279,10 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 			*dpb2 |= gds_dpb_shut_transaction;
 		dpb2++;
 		*dpb2++ = gds_dpb_shutdown_delay;
-		*dpb2++ = 2;				/* Build room for shutdown delay */
-		/* TMN: Here we should really have the following assert */
-		/* assert(tdgbl->ALICE_data.ua_page_buffers <= MAX_USHORT); */
-		/* or maybe even compare with MAX_SSHORT */
+		*dpb2++ = 2;				// Build room for shutdown delay 
+		// TMN: Here we should really have the following assert 
+		// assert(tdgbl->ALICE_data.ua_page_buffers <= MAX_USHORT);
+		// or maybe even compare with MAX_SSHORT 
 		*dpb2++ = (UCHAR) tdgbl->ALICE_data.ua_shutdown_delay;
 		*dpb2++ = (UCHAR) (tdgbl->ALICE_data.ua_shutdown_delay >> 8);
 	}
@@ -327,8 +306,8 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 
 	if (tdgbl->ALICE_data.ua_user) {
 		*dpb2++ = gds_dpb_user_name;
-		*dpb2++ = strlen(reinterpret_cast <const char *>(tdgbl->ALICE_data.ua_user));
-		for (q = reinterpret_cast <TEXT *>(tdgbl->ALICE_data.ua_user); *q;)
+		*dpb2++ = strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_user));
+		for (q = reinterpret_cast<TEXT*>(tdgbl->ALICE_data.ua_user); *q;)
 			*dpb2++ = *q++;
 	}
 
@@ -337,12 +316,12 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 			*dpb2++ = gds_dpb_password;
 		else
 			*dpb2++ = gds_dpb_password_enc;
-		*dpb2++ = strlen(reinterpret_cast <const char *>(tdgbl->ALICE_data.ua_password));
-		for (q = reinterpret_cast < TEXT * >(tdgbl->ALICE_data.ua_password); *q;)
+		*dpb2++ = strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_password));
+		for (q = reinterpret_cast<TEXT*>(tdgbl->ALICE_data.ua_password); *q;)
 			*dpb2++ = *q++;
 	}
 
-	dpb_length = dpb2 - dpb;
+	USHORT dpb_length = dpb2 - dpb;
 	if (dpb_length == 1)
 		dpb_length = 0;
 
@@ -355,24 +334,20 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 //		Extract database info from string
 //
 
-static void extract_db_info(UCHAR * db_info_buffer)
+static void extract_db_info(UCHAR* db_info_buffer)
 {
 	UCHAR item;
-	UCHAR *p;
-	SLONG length;
-	TGBL tdgbl;
+	TGBL tdgbl = GET_THREAD_DATA;
 
-	tdgbl = GET_THREAD_DATA;
-
-	p = db_info_buffer;
+	UCHAR* p = db_info_buffer;
 
 	while ((item = *p++) != gds_info_end) {
-		length = gds__vax_integer(p, 2);
+		const SLONG length = gds__vax_integer(p, 2);
 		p += 2;
 
-		/* TMN: Here we should really have the following assert */
-		/* assert(length <= MAX_SSHORT); */
-		/* for all cases that use 'length' as input to 'gds__vax_integer' */
+		// TMN: Here we should really have the following assert 
+		// assert(length <= MAX_SSHORT);
+		// for all cases that use 'length' as input to 'gds__vax_integer' 
 		switch (item) {
 		case isc_info_page_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_PAGE_ERRORS] =

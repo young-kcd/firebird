@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
- *      MODULE:         xnet.c
+ *      MODULE:         xnet.cpp
  *      DESCRIPTION:    Interprocess Server Communications module.
  *
  * The contents of this file are subject to the Interbase Public

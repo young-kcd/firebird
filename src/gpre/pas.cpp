@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.21 2003-09-16 14:01:55 brodsom Exp $
+//	$Id: pas.cpp,v 1.22 2003-09-25 11:49:02 robocop Exp $
 //
 
 #include "firebird.h"
@@ -49,7 +49,7 @@
 // why I rather than trying to use it currently remove it from compilation.
 
 
-static void align(int);
+static void align(const int);
 static void asgn_from(ACT, REF, int);
 static void asgn_sqlda_from(REF, int, TEXT *, int);
 static void asgn_to(ACT, REF, int);
@@ -159,25 +159,25 @@ static int first_flag;
 #define GDS_EVENT_COUNTS	"GDS__EVENT_COUNTS"
 #define GDS_EVENT_WAIT		"GDS__EVENT_WAIT"
 
-static inline void begin(int column)
+static inline void begin(const int column)
 {
 	printa(column, "begin");
 }
 
-static inline void endp(int column)
+static inline void endp(const int column)
 {
 	printa(column, "end");
 }
 
-static inline void ends(int column)
+static inline void ends(const int column)
 {
 	printa(column, "end;");
 }
 
-static inline void set_sqlcode(ACT action, int column)
+static inline void set_sqlcode(ACT action, const int column)
 {
 	if (action->act_flags & ACT_sql)
-		printa (column, "SQLCODE := gds__sqlcode (gds__status);");
+		printa(column, "SQLCODE := gds__sqlcode (gds__status);");
 }
 
 //____________________________________________________________
@@ -522,7 +522,7 @@ void PAS_action( ACT action, int column)
 //		Align output to a specific column for output.
 //  
 
-static void align( int column)
+static void align(const int column)
 {
 	int i;
 
@@ -1303,7 +1303,7 @@ static void gen_database( ACT action, int column)
 			for (reference = port->por_references; reference;
 				 reference = reference->ref_next)
 			{
-				if (reference-> ref_flags & REF_fetch_array) {
+				if (reference->ref_flags & REF_fetch_array) {
 					make_array_declaration(reference);
 					array_flag = true;
 				}
@@ -2659,7 +2659,7 @@ static void gen_request( GPRE_REQ request, int column)
 	sw_volatile = FB_DP_VOLATILE;
 	printa(column, " ");
 
-	if (!(request-> req_flags & (REQ_exp_hand | REQ_sql_blob_open |
+	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open |
 		  REQ_sql_blob_create)) && request->req_type != REQ_slice
 		&& request->req_type != REQ_procedure)
 	{
@@ -3760,3 +3760,4 @@ static void t_start_auto( ACT action, GPRE_REQ request, TEXT * vector, int colum
 	set_sqlcode(action, column);
 	ends(column);
 }
+

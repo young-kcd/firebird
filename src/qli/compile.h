@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_COMPILE_H_
-#define _QLI_COMPILE_H_
+#ifndef QLI_COMPILE_H
+#define QLI_COMPILE_H
 
 /* Name nodes -- used to hold names between parse and compilation */
 
@@ -252,4 +252,4 @@ enum set_t {
 #define s_dfi_flag_order       32
 #define s_dfi_flag_statistics  64
 
-#endif /* _QLI_COMPILE_H_ */
+#endif /* QLI_COMPILE_H */

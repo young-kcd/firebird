@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		expand.c
+ *	MODULE:		expand.cpp
  *	DESCRIPTION:	Expand syntax tree -- first phase of compiler
  *
  * The contents of this file are subject to the Interbase Public
@@ -39,7 +39,7 @@
 
 extern USHORT QLI_columns, QLI_lines;
 
-#define MAKE_NODE(type,count)	make_node (type, count)
+#define MAKE_NODE(type, count)	make_node (type, count)
 
 static bool compare_names(NAM, SYM);
 static bool compare_symbols(SYM, SYM);
@@ -88,7 +88,7 @@ static QLI_NOD post_map(QLI_NOD, QLI_CTX);
 static QLI_FLD resolve(SYN, LLS, QLI_CTX *);
 static void resolve_really(QLI_FLD, SYN);
 
-static LLS output_stack;
+static LLS global_output_stack;
 
 
 QLI_NOD EXP_expand( SYN node)
@@ -103,10 +103,6 @@ QLI_NOD EXP_expand( SYN node)
  *	Expand a syntax tree into something richer and more complete.
  *
  **************************************/
-	QLI_NOD expanded, output;
-	QLI_CTX context;
-	LLS right, left;
-
 	switch (node->syn_type) {
 	case nod_commit:
 	case nod_prepare:
@@ -233,25 +229,27 @@ QLI_NOD EXP_expand( SYN node)
 	case nod_sql_al_table:
 		MET_sql_alter_table((QLI_REL) node->syn_arg[0], (QLI_FLD) node->syn_arg[1]);
 		return NULL;
-	}
+	} // end switch, no default case for error
 
-// If there are any variables, make up a context now 
+// If there are any variables, make up a context now
 
-	output_stack = right = left = NULL;
+	LLS right, left;
+	global_output_stack = right = left = NULL;
 
 	if (QLI_variables) {
-		context = (QLI_CTX) ALLOCD(type_ctx);
+		QLI_CTX context = (QLI_CTX) ALLOCD(type_ctx);
 		context->ctx_type = CTX_VARIABLE;
 		context->ctx_variable = QLI_variables;
 		LLS_PUSH(context, &right);
 		LLS_PUSH(context, &left);
 	}
 
-	if (!(expanded = expand_statement(node, right, left)))
+	QLI_NOD expanded = expand_statement(node, right, left);
+	if (!expanded)
 		return NULL;
 
-	while (output_stack) {
-		output = (QLI_NOD) LLS_POP(&output_stack);
+	while (global_output_stack) {
+		QLI_NOD output = (QLI_NOD) LLS_POP(&global_output_stack);
 		output->nod_arg[e_out_statement] = expanded;
 		expanded = output;
 	}
@@ -273,19 +271,20 @@ static bool compare_names( NAM name, SYM symbol)
  *
  **************************************/
 	USHORT l;
-	TEXT *p, *q;
 
 	if (!symbol || (l = name->nam_length) != symbol->sym_length)
 		return false;
 
-	p = symbol->sym_string;
-	q = name->nam_string;
-
 	if (l)
-		do
+	{
+		const TEXT* p = symbol->sym_string;
+		const TEXT* q = name->nam_string;
+
+		do {
 			if (*p++ != *q++)
 				return false;
-		while (--l);
+		} while (--l);
+	}
 
 	return true;
 }
@@ -303,23 +302,23 @@ static bool compare_symbols( SYM symbol1, SYM symbol2)
  *	Compare two symbols (either may be 0).
  *
  **************************************/
-	USHORT l;
-	TEXT *p, *q;
-
 	if (!symbol1 || !symbol2)
 		return false;
 
-	if ((l = symbol1->sym_length) != symbol2->sym_length)
+	USHORT l = symbol1->sym_length;
+	if (l != symbol2->sym_length)
 		return false;
 
-	p = symbol1->sym_string;
-	q = symbol2->sym_string;
-
 	if (l)
-		do
+	{
+		const TEXT* p = symbol1->sym_string;
+		const TEXT* q = symbol2->sym_string;
+
+		do {
 			if (*p++ != *q++)
 				return false;
-		while (--l);
+		} while (--l);
+	}
 
 	return true;
 }
@@ -337,9 +336,7 @@ static SYM copy_symbol( SYM old)
  *	Copy a symbol into the permanent pool.
  *
  **************************************/
-	SYM new_sym;
-
-	new_sym = (SYM) ALLOCPV(type_sym, old->sym_length);
+	SYM new_sym = (SYM) ALLOCPV(type_sym, old->sym_length);
 	new_sym->sym_length = old->sym_length;
 	new_sym->sym_type = old->sym_type;
 	new_sym->sym_string = new_sym->sym_name;
@@ -358,30 +355,29 @@ static void declare_global( QLI_FLD variable, SYN field_node)
  **************************************
  *
  * Functional description
- *	Copy a variable block into the permanent pool as a field.  
- *	Resolve BASED_ON references.  
+ *	Copy a variable block into the permanent pool as a field.
+ *	Resolve BASED_ON references.
  *	Allocate all strings off the field block.
  *
  **************************************/
-	TEXT *p, *q;
-	USHORT l;
-	QLI_FLD new_fld, field, *ptr;
+	QLI_FLD field, *ptr;
 
-/* If it's based_on, flesh it out & check datatype.  */
+// If it's based_on, flesh it out & check datatype.
 
 	if (field_node) {
 		if (field_node->syn_type == nod_index)
 			field_node = field_node->syn_arg[s_idx_field];
 		resolve_really(variable, field_node);
 		if (variable->fld_dtype == dtype_blob)
-			IBERROR(137);		// Msg137 variables may not be based on blob fields. 
+			IBERROR(137);		// Msg137 variables may not be based on blob fields.
 	}
 
-// Get rid of any other variables of the same name 
+// Get rid of any other variables of the same name
 
 	for (ptr = &QLI_variables; field = *ptr; ptr = &field->fld_next)
 		if (!strcmp
-			(field->fld_name->sym_string, variable->fld_name->sym_string)) {
+			(field->fld_name->sym_string, variable->fld_name->sym_string))
+		{
 			*ptr = field->fld_next;
 			ALLQ_release((FRB) field->fld_name);
 			if (field->fld_query_name)
@@ -390,16 +386,17 @@ static void declare_global( QLI_FLD variable, SYN field_node)
 			break;
 		}
 
-/* Next, copy temporary field block into permanent pool.  Fold edit_string
-   query_header into main block to save space and complexity. */
+// Next, copy temporary field block into permanent pool.  Fold edit_string
+//   query_header into main block to save space and complexity.
 
-	l = variable->fld_length;
+	const TEXT* q;
+	USHORT l = variable->fld_length;
 	if (q = variable->fld_edit_string)
 		l += strlen(q);
 	if (q = variable->fld_query_header)
 		l += strlen(q);
 
-	new_fld = (QLI_FLD) ALLOCPV(type_fld, l);
+	QLI_FLD new_fld = (QLI_FLD) ALLOCPV(type_fld, l);
 	new_fld->fld_name = copy_symbol(variable->fld_name);
 	new_fld->fld_dtype = variable->fld_dtype;
 	new_fld->fld_length = variable->fld_length;
@@ -408,9 +405,9 @@ static void declare_global( QLI_FLD variable, SYN field_node)
 	new_fld->fld_sub_type_missing = variable->fld_sub_type_missing;
 	new_fld->fld_flags = variable->fld_flags | FLD_missing;
 
-// Copy query_name, edit string, query header 
+// Copy query_name, edit string, query header
 
-	p = (TEXT *) new_fld->fld_data + new_fld->fld_length;
+	TEXT* p = (TEXT*) new_fld->fld_data + new_fld->fld_length;
 	if (q = variable->fld_edit_string) {
 		new_fld->fld_edit_string = p;
 		while (*p++ = *q++);
@@ -422,7 +419,7 @@ static void declare_global( QLI_FLD variable, SYN field_node)
 		while (*p++ = *q++);
 	}
 
-// Link new variable into variable chain 
+// Link new variable into variable chain
 
 	new_fld->fld_next = QLI_variables;
 	QLI_variables = new_fld;
@@ -440,21 +437,17 @@ static SYN decompile_field( QLI_FLD field, QLI_CTX context)
  * Functional description
  *	Take a perfectly good, completely compiled
  *	field block and regress to a SYN node and
- *	and a NAM block.  
+ *	and a NAM block.
  *	(Needed to support SQL idiocies)
  *
  **************************************/
-	SYN node;
-	NAM name;
-	int args;
+	int args = (context) ? 2 : 1;
 
-	args = (context) ? 2 : 1;
-
-	node = (SYN) ALLOCDV(type_syn, args);
+	SYN node = (SYN) ALLOCDV(type_syn, args);
 	node->syn_type = nod_field;
 	node->syn_count = args;
 
-	name = decompile_symbol(field->fld_name);
+	NAM name = decompile_symbol(field->fld_name);
 	node->syn_arg[0] = (SYN) name;
 
 	if (context) {
@@ -519,20 +512,20 @@ static QLI_NOD expand_assignment( SYN input, LLS right, LLS left)
  *	Expand an assigment statement.  All in all, not too tough.
  *
  **************************************/
-	QLI_NOD node, from, to;
-	QLI_FLD field;
+	QLI_NOD from, to;
 
-	node = MAKE_NODE(input->syn_type, e_asn_count);
+	QLI_NOD node = MAKE_NODE(input->syn_type, e_asn_count);
 	node->nod_arg[e_asn_to] = to =
 		expand_expression(input->syn_arg[s_asn_to], left);
 	node->nod_arg[e_asn_from] = from =
 		expand_expression(input->syn_arg[s_asn_from], right);
 
 	if (to->nod_type == nod_field || to->nod_type == nod_variable) {
-		field = (QLI_FLD) to->nod_arg[e_fld_field];
+		QLI_FLD field = (QLI_FLD) to->nod_arg[e_fld_field];
 		if (field->fld_flags & FLD_computed) {
 			ERRQ_print_error(138, field->fld_name->sym_string, NULL, NULL,
-							 NULL, NULL);	/* Msg138 can't do assignment to computed field */
+							 NULL, NULL);
+			// Msg138 can't do assignment to computed field
 		}
 		if (from->nod_type == nod_prompt)
 			from->nod_arg[e_prm_field] = to->nod_arg[e_fld_field];
@@ -562,16 +555,16 @@ static QLI_NOD expand_any( SYN input, LLS stack)
  *	for existence.
  *
  **************************************/
-	QLI_NOD rse, node, negation, boolean;
+	QLI_NOD rse;
 
-	node = MAKE_NODE(input->syn_type, e_any_count);
+	QLI_NOD node = MAKE_NODE(input->syn_type, e_any_count);
 	node->nod_count = 0;
 	node->nod_arg[e_any_rse] = rse = expand_rse(input->syn_arg[0], &stack);
 
 	if (input->syn_count >= 2 && input->syn_arg[1]) {
-		boolean = MAKE_NODE(nod_missing, 1);
+		QLI_NOD boolean = MAKE_NODE(nod_missing, 1);
 		boolean->nod_arg[0] = expand_expression(input->syn_arg[1], stack);
-		negation = MAKE_NODE(nod_not, 1);
+		QLI_NOD negation = MAKE_NODE(nod_not, 1);
 		negation->nod_arg[0] = boolean;
 		rse->nod_arg[e_rse_boolean] =
 			make_and(rse->nod_arg[e_rse_boolean], negation);
@@ -593,26 +586,25 @@ static QLI_NOD expand_boolean( SYN input, LLS stack)
  *	Expand a statement.
  *
  **************************************/
-	QLI_NOD node, *ptr, value;
-	QLI_FLD field;
+	QLI_NOD value;
 	SSHORT i;
 
-// Make node and process arguments 
+// Make node and process arguments
 
-	node = MAKE_NODE(input->syn_type, input->syn_count);
-	ptr = node->nod_arg;
+	QLI_NOD node = MAKE_NODE(input->syn_type, input->syn_count);
+	QLI_NOD* ptr = node->nod_arg;
 	*ptr++ = value = expand_expression(input->syn_arg[0], stack);
 
 	for (i = 1; i < input->syn_count; i++, ptr++)
 		if (!(*ptr = possible_literal(input->syn_arg[i], stack, true)))
 			*ptr = expand_expression(input->syn_arg[i], stack);
 
-// Try to match any prompts against fields to determine prompt length 
+// Try to match any prompts against fields to determine prompt length
 
 	if (value->nod_type != nod_field)
 		return node;
 
-	field = (QLI_FLD) value->nod_arg[e_fld_field];
+	QLI_FLD field = (QLI_FLD) value->nod_arg[e_fld_field];
 	ptr = &node->nod_arg[1];
 
 	for (i = 1; i < node->nod_count; i++, ptr++)
@@ -623,7 +615,7 @@ static QLI_NOD expand_boolean( SYN input, LLS stack)
 }
 
 
-static void expand_control_break( BRK * ptr, LLS right)
+static void expand_control_break( BRK* ptr, LLS right)
 {
 /**************************************
  *
@@ -636,9 +628,9 @@ static void expand_control_break( BRK * ptr, LLS right)
  *	to handle multiple breaks.
  *
  **************************************/
-	BRK control, list;
+	BRK control;
 
-	list = NULL;
+	BRK list = NULL;
 
 	while (control = *ptr) {
 		*ptr = control->brk_next;
@@ -670,12 +662,11 @@ static void expand_distinct( QLI_NOD rse, QLI_NOD node)
  *
  **************************************/
 	QLI_NOD list;
-	LLS stack;
 
 	if (rse->nod_arg[e_rse_reduced])
 		return;
 
-	stack = NULL;
+	LLS stack = NULL;
 	LLS_PUSH(node, &stack);
 	LLS_PUSH(0, &stack);
 	rse->nod_arg[e_rse_reduced] = list = make_list(stack);
@@ -695,9 +686,8 @@ static void expand_edit_string( QLI_NOD node, ITM item)
  *	Default edit_string and query_header.
  *
  **************************************/
-	QLI_FLD field;
 	FUN function;
-	MAP map;
+	QLI_MAP map;
 
 	switch (node->nod_type) {
 	case nod_min:
@@ -738,7 +728,7 @@ static void expand_edit_string( QLI_NOD node, ITM item)
 		break;
 
 	case nod_map:
-		map = (MAP) node->nod_arg[e_map_map];
+		map = (QLI_MAP) node->nod_arg[e_map_map];
 		expand_edit_string(map->map_node, item);
 		return;
 
@@ -756,9 +746,9 @@ static void expand_edit_string( QLI_NOD node, ITM item)
 		return;
 	}
 
-// Handle fields 
+// Handle fields
 
-	field = (QLI_FLD) node->nod_arg[e_fld_field];
+	QLI_FLD field = (QLI_FLD) node->nod_arg[e_fld_field];
 
 	if (!item->itm_edit_string)
 		item->itm_edit_string = field->fld_edit_string;
@@ -781,15 +771,10 @@ static QLI_NOD expand_erase( SYN input, LLS right, LLS left)
  *	Expand a statement.
  *
  **************************************/
-	QLI_NOD node, loop;
-	LLS contexts;
-	QLI_CTX context;
-	USHORT count;
+	QLI_NOD loop = NULL;
+	USHORT count = 0;
 
-	loop = NULL;
-	count = 0;
-
-// If there is an rse, make up a FOR loop 
+// If there is an rse, make up a FOR loop
 
 	if (input->syn_arg[s_era_rse]) {
 		loop = MAKE_NODE(nod_for, e_for_count);
@@ -797,9 +782,10 @@ static QLI_NOD expand_erase( SYN input, LLS right, LLS left)
 											  &right);
 	}
 
-// Loop thru contexts counting them. 
+// Loop thru contexts counting them.
 
-	for (contexts = right; contexts; contexts = contexts->lls_next) {
+	QLI_CTX context = NULL;
+	for (LLS contexts = right; contexts; contexts = contexts->lls_next) {
 		context = (QLI_CTX) contexts->lls_object;
 		if (context->ctx_variable)
 			continue;
@@ -809,13 +795,13 @@ static QLI_NOD expand_erase( SYN input, LLS right, LLS left)
 	}
 
 	if (count == 0)
-		IBERROR(139);			// Msg139 no context for ERASE 
+		IBERROR(139);			// Msg139 no context for ERASE
 	else if (count > 1)
-		IBERROR(140);			/* Msg140 can't erase from a join */
+		IBERROR(140);			// Msg140 can't erase from a join
 
-// Make up node big enough to hold fixed fields plus all contexts 
+// Make up node big enough to hold fixed fields plus all contexts
 
-	node = MAKE_NODE(nod_erase, e_era_count);
+	QLI_NOD node = MAKE_NODE(nod_erase, e_era_count);
 	node->nod_arg[e_era_context] = (QLI_NOD) context;
 
 	if (!loop)
@@ -839,12 +825,11 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
  *	Expand an expression.
  *
  **************************************/
-	QLI_NOD *ptr, node;
+	QLI_NOD node;
 	CON constant;
 	QLI_CTX context;
 	NAM name;
 	SYN value;
-	SSHORT i;
 
 	switch (input->syn_type) {
 	case nod_field:
@@ -884,7 +869,7 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
 			&& node->nod_arg[e_stt_value])
 			expand_distinct(node->nod_arg[e_stt_rse],
 							node->nod_arg[e_stt_value]);
-// count2 next 2 lines go 
+// count2 next 2 lines go
 		if (input->syn_type == nod_count)
 			node->nod_arg[e_stt_value] = 0;
 		return node;
@@ -901,7 +886,8 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
 				break;
 		}
 		if (!stack)
-			ERRQ_print_error(454, NULL, NULL, NULL, NULL, NULL);	// could not resolve context for aggregate 
+			ERRQ_print_error(454, NULL, NULL, NULL, NULL, NULL);
+			// could not resolve context for aggregate
 /* count2
 	if (value = input->syn_arg [s_stt_value])
 	    {
@@ -925,7 +911,7 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
 	case nod_index:
 		value = input->syn_arg[s_idx_field];
 		if (value->syn_type != nod_field)
-			IBERROR(466);		// Msg466 Only fields may be subscripted 
+			IBERROR(466);		// Msg466 Only fields may be subscripted
 		return expand_field(value, stack, input->syn_arg[s_idx_subs]);
 
 	case nod_list:
@@ -991,16 +977,17 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
 
 	case nod_star:
 		name = (NAM) input->syn_arg[0];
-		ERRQ_print_error(141, name->nam_string, NULL, NULL, NULL, NULL);	/* Msg141 can't be used when a single element is required */
+		ERRQ_print_error(141, name->nam_string, NULL, NULL, NULL, NULL);
+		// Msg141 can't be used when a single element is required
 
 	default:
-		BUGCHECK(135);			// Msg135 expand_expression: not yet implemented 
+		BUGCHECK(135);			// Msg135 expand_expression: not yet implemented
 	}
 
 	node = MAKE_NODE(input->syn_type, input->syn_count);
-	ptr = node->nod_arg;
+	QLI_NOD* ptr = node->nod_arg;
 
-	for (i = 0; i < input->syn_count; i++)
+	for (SSHORT i = 0; i < input->syn_count; i++)
 		*ptr++ = expand_expression(input->syn_arg[i], stack);
 
 	return node;
@@ -1021,37 +1008,41 @@ static QLI_NOD expand_field( SYN input, LLS stack, SYN subs)
  *	sure it goes there.
  *
  **************************************/
-	QLI_NOD node;
-	QLI_FLD field;
-	QLI_CTX context, parent, stream_context, *ptr, *end;
-	NAM name;
-	USHORT i, l;
-	TEXT *p, *q, s[160];
-	LLS save_stack;
+	QLI_CTX context;
 
-	if (!(field = resolve(input, stack, &context)) ||
-		(subs && (context->ctx_variable)))
+	QLI_FLD field = resolve(input, stack, &context);
+	if (!field || (subs && (context->ctx_variable)))
 	{
-		p = s;
-		for (i = 0; i < input->syn_count; i++) {
-			name = (NAM) input->syn_arg[i];
-			q = name->nam_string;
-			if (l = name->nam_length)
-				do
-					*p++ = *q++;
-				while (--l);
-			*p++ = '.';
+	    TEXT s[160];
+		TEXT* p = s;
+		const TEXT* const limit = p + sizeof(s) - 1;
+		for (USHORT i = 0; i < input->syn_count; i++) {
+			NAM name = (NAM) input->syn_arg[i];
+			const TEXT* q = name->nam_string;
+			USHORT l = name->nam_length;
+			if (p < limit) {
+				if (l)
+					do {
+						*p++ = *q++;
+					} while (--l && p < limit);
+				*p++ = '.';
+			}
 		}
 		*--p = 0;
 		if (field)
-			ERRQ_print_error(467, s, NULL, NULL, NULL, NULL);	/* Msg467 "%s" is not a field and so may not be subscripted */
+			ERRQ_print_error(467, s, NULL, NULL, NULL, NULL);
+			// Msg467 "%s" is not a field and so may not be subscripted
 		else
-			ERRQ_print_error(142, s, NULL, NULL, NULL, NULL);	/* Msg142 "%s" is undefined or used out of context */
+			ERRQ_print_error(142, s, NULL, NULL, NULL, NULL);
+			// Msg142 "%s" is undefined or used out of context
 	}
-	node = make_field(field, context);
+
+	QLI_NOD node = make_field(field, context);
 	if (subs)
 		node->nod_arg[e_fld_subs] = expand_expression(subs, stack);
 
+	QLI_CTX parent = NULL;
+	LLS save_stack;
 	for (save_stack = stack; stack; stack = stack->lls_next) {
 		parent = (QLI_CTX) stack->lls_object;
 		if (parent->ctx_type == CTX_AGGREGATE)
@@ -1065,13 +1056,14 @@ static QLI_NOD expand_field( SYN input, LLS stack, SYN subs)
 		   a stream context.  Check out this possibility. */
 
 		for (; save_stack; save_stack = save_stack->lls_next) {
-			stream_context = (QLI_CTX) save_stack->lls_object;
+			QLI_CTX stream_context = (QLI_CTX) save_stack->lls_object;
 			if (stream_context->ctx_type != CTX_STREAM ||
 				stream_context->ctx_stream->nod_type != nod_rse)
 				continue;
 
-			ptr = (QLI_CTX*) stream_context->ctx_stream->nod_arg + e_rse_count;
-			end = ptr + stream_context->ctx_stream->nod_count;
+			QLI_CTX* ptr =
+				(QLI_CTX*) stream_context->ctx_stream->nod_arg + e_rse_count;
+			QLI_CTX* const end = ptr + stream_context->ctx_stream->nod_count;
 			for (; ptr < end; ptr++)
 				if (*ptr == context)
 					break;
@@ -1099,9 +1091,7 @@ static QLI_NOD expand_for( SYN input, LLS right, LLS left)
  *	Expand a statement.
  *
  **************************************/
-	QLI_NOD node;
-
-	node = MAKE_NODE(input->syn_type, e_for_count);
+	QLI_NOD node = MAKE_NODE(input->syn_type, e_for_count);
 	node->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_for_rse], &right);
 	node->nod_arg[e_for_statement] =
 		expand_statement(input->syn_arg[s_for_statement], right, left);
@@ -1126,13 +1116,12 @@ static QLI_NOD expand_function( SYN input, LLS stack)
  *      reference, use any database that matches.
  *
  **************************************/
-	QLI_NOD node;
 	SYM symbol;
 	FUN function;
 	QLI_CTX context;
 	DBB database;
 
-	node = MAKE_NODE(input->syn_type, e_fun_count);
+	QLI_NOD node = MAKE_NODE(input->syn_type, e_fun_count);
 	node->nod_count = 1;
 	if (stack && (context = (QLI_CTX) stack->lls_object)
 		&& (context->ctx_type == CTX_RELATION)) {
@@ -1151,14 +1140,17 @@ static QLI_NOD expand_function( SYN input, LLS stack)
 	}
 	else
 		for (database = QLI_databases; database;
-			 database = database->dbb_next) {
+			 database = database->dbb_next)
+		{
 			for (symbol = (SYM) input->syn_arg[s_fun_function]; symbol;
 				 symbol = symbol->sym_homonym)
+			{
 				if (symbol->sym_type == SYM_function) {
 					function = (FUN) symbol->sym_object;
 					if (function->fun_database == database)
 						break;
 				}
+			}
 			if (symbol)
 				break;
 		}
@@ -1192,13 +1184,13 @@ static QLI_NOD expand_group_by( SYN input, LLS stack, QLI_CTX context)
  *
  **************************************/
 	SYN *ptr, *end;
-	QLI_NOD node, *ptr2;
 
-	node = MAKE_NODE(input->syn_type, input->syn_count);
-	ptr2 = node->nod_arg;
+	QLI_NOD node = MAKE_NODE(input->syn_type, input->syn_count);
+	QLI_NOD* ptr2 = node->nod_arg;
 
 	for (ptr = input->syn_arg, end = ptr + input->syn_count; ptr < end;
-		 ptr++, ptr2++) {
+		 ptr++, ptr2++)
+	{
 		*ptr2 = expand_expression(*ptr, stack);
 		post_map(*ptr2, context);
 	}
@@ -1219,16 +1211,12 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
  *	Expand a statement.
  *
  **************************************/
-	QLI_NOD node, loop, list, *ptr;
-	SYN syn_list, *syn_ptr;
 	LLS contexts;
-	QLI_CTX new_context, context;
-	USHORT count, i;
 
-	loop = NULL;
-	count = 0;
+	QLI_NOD loop = NULL;
+	USHORT count = 0;
 
-// If there is an rse, make up a FOR loop 
+// If there is an rse, make up a FOR loop
 
 	if (input->syn_arg[s_mod_rse]) {
 		loop = MAKE_NODE(nod_for, e_for_count);
@@ -1236,10 +1224,10 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 											  &right);
 	}
 
-// Loop thru contexts counting them. 
+// Loop thru contexts counting them.
 
 	for (contexts = right; contexts; contexts = contexts->lls_next) {
-		context = (QLI_CTX) contexts->lls_object;
+		QLI_CTX context = (QLI_CTX) contexts->lls_object;
 		if (context->ctx_variable)
 			continue;
 		count++;
@@ -1248,21 +1236,21 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 	}
 
 	if (!count)
-		IBERROR(148);			// Msg148 no context for modify 
+		IBERROR(148);			// Msg148 no context for modify
 
-// Make up node big enough to hold fixed fields plus all contexts 
+// Make up node big enough to hold fixed fields plus all contexts
 
-	node = MAKE_NODE(nod_modify, (int) e_mod_count + count);
+	QLI_NOD node = MAKE_NODE(nod_modify, (int) e_mod_count + count);
 	node->nod_count = count;
-	ptr = &node->nod_arg[e_mod_count];
+	QLI_NOD* ptr = &node->nod_arg[e_mod_count];
 
-// Loop thru contexts augmenting left context 
+// Loop thru contexts augmenting left context
 
 	for (contexts = right; contexts; contexts = contexts->lls_next) {
-		context = (QLI_CTX) contexts->lls_object;
+		QLI_CTX context = (QLI_CTX) contexts->lls_object;
 		if (context->ctx_variable)
 			continue;
-		new_context = (QLI_CTX) ALLOCD(type_ctx);
+		QLI_CTX new_context = (QLI_CTX) ALLOCD(type_ctx);
 		*ptr++ = (QLI_NOD) new_context;
 		new_context->ctx_type = CTX_RELATION;
 		new_context->ctx_source = context;
@@ -1273,23 +1261,26 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 			break;
 	}
 
-// Process sub-statement, list of fields, or, sigh, none of the above 
+// Process sub-statement, list of fields, or, sigh, none of the above
 
+	SYN syn_list;
 	if (input->syn_arg[s_mod_statement])
 		node->nod_arg[e_mod_statement] =
 			expand_statement(input->syn_arg[s_mod_statement], right, left);
 	else if (syn_list = input->syn_arg[s_mod_list]) {
-		node->nod_arg[e_mod_statement] = list =
-			MAKE_NODE(nod_list, syn_list->syn_count);
+		QLI_NOD list = MAKE_NODE(nod_list, syn_list->syn_count);
+		node->nod_arg[e_mod_statement] = list;
+
 		ptr = list->nod_arg;
-		syn_ptr = syn_list->syn_arg;
-		for (i = 0; i < syn_list->syn_count; i++, syn_ptr++)
-			*ptr++ =
-				make_assignment(expand_expression((SYN) *syn_ptr, left), (QLI_NOD) *syn_ptr,
-								right);
+		SYN* syn_ptr = syn_list->syn_arg;
+		for (USHORT i = 0; i < syn_list->syn_count; i++, syn_ptr++)
+		{
+			*ptr++ = make_assignment(expand_expression((SYN) *syn_ptr, left),
+									(QLI_NOD) *syn_ptr, right);
+		}
 	}
 	else
-		IBERROR(149);			// Msg149 field list required for modify 
+		IBERROR(149);			// Msg149 field list required for modify
 
 	if (!loop)
 		return node;
@@ -1312,18 +1303,17 @@ static QLI_NOD expand_output( SYN input, LLS right, PRT * print)
  *	Handle the presence (or absence) of an output specification clause.
  *
  **************************************/
-	QLI_NOD output, node;
-
 	if (print)
 		*print = (PRT) ALLOCD(type_prt);
 
 	if (!input)
 		return NULL;
 
-	output = MAKE_NODE(nod_output, e_out_count);
-	LLS_PUSH(output, &output_stack);
+	QLI_NOD output = MAKE_NODE(nod_output, e_out_count);
+	LLS_PUSH(output, &global_output_stack);
 
-	if (!(node = possible_literal(input->syn_arg[s_out_file], right, false)))
+    QLI_NOD node = possible_literal(input->syn_arg[s_out_file], right, false);
+	if (!node)
 		node = expand_expression(input->syn_arg[s_out_file], right);
 
 	output->nod_arg[e_out_file] = node;
@@ -1348,31 +1338,21 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
  *	Expand a statement.
  *
  **************************************/
-	SYN syn_list, syn_item, syn_rse, *sub, *end;
-	ITM item;
-	QLI_NOD node, loop, list, *ptr, rse;
-	QLI_NOD reduced;
-	LLS items, new_right;
-	QLI_CTX context;
-	QLI_REL relation;
-	QLI_FLD field;
+	SYN syn_rse = input->syn_arg[s_prt_rse];
+
+	QLI_NOD loop = NULL;
+	LLS items = NULL;
+	QLI_NOD rse = NULL;
+	USHORT count = 0;
+	LLS new_right = right;
+
+// If an output file or pipe is present, make up an output node
+
 	PRT print;
-	USHORT i, count;
-
-	syn_rse = input->syn_arg[s_prt_rse];
-
-	loop = NULL;
-	items = NULL;
-	rse = NULL;
-	count = 0;
-	new_right = right;
-
-// If an output file or pipe is present, make up an output node 
-
 	expand_output(input->syn_arg[s_prt_output], right, &print);
 
-/* If a record select expression is present, expand it and build a FOR
-   statement. */
+// If a record select expression is present, expand it and build a FOR
+// statement.
 
 	if (syn_rse) {
 		loop = MAKE_NODE(nod_for, e_for_count);
@@ -1383,13 +1363,18 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
    look like items, but are actually lists.  If there aren't items of any kind,
    pick up all fields in the relations from the record selection expression. */
 
-	if (syn_list = input->syn_arg[s_prt_list])
+	SYN syn_item, *sub, *end;
+	SYN syn_list = input->syn_arg[s_prt_list];
+	if (syn_list)
 		for (sub = syn_list->syn_arg, end = sub + syn_list->syn_count;
-			 sub < end; sub++) {
+			 sub < end; sub++)
+		{
 			if (((*sub)->syn_type == nod_print_item)
 				&& (syn_item = (*sub)->syn_arg[s_itm_value])
 				&& (syn_item->syn_type == nod_star))
+			{
 				count += generate_items(syn_item, new_right, (LLS) &items, rse);
+			}
 			else {
 				LLS_PUSH(expand_print_item(*sub, new_right), &items);
 				count++;
@@ -1397,8 +1382,9 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 		}
 	else if (syn_rse && (syn_list = syn_rse->syn_arg[s_rse_reduced]))
 		for (sub = syn_list->syn_arg, end = sub + syn_list->syn_count;
-			 sub < end; sub += 2) {
-			item = (ITM) ALLOCD(type_itm);
+			 sub < end; sub += 2)
+		{
+			ITM item = (ITM) ALLOCD(type_itm);
 			item->itm_type = item_value;
 			item->itm_value = expand_expression(*sub, new_right);
 			expand_edit_string(item->itm_value, item);
@@ -1407,21 +1393,25 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 		}
 	else
 		for (; new_right; new_right = new_right->lls_next) {
-			context = (QLI_CTX) new_right->lls_object;
-			relation = context->ctx_relation;
+			QLI_CTX context = (QLI_CTX) new_right->lls_object;
+			QLI_REL relation = context->ctx_relation;
 			if (!relation || context->ctx_sub_rse)
 				continue;
-			for (field = relation->rel_fields; field; field = field->fld_next) {
+			for (QLI_FLD field = relation->rel_fields; field;
+				field = field->fld_next)
+			{
 				if (
 					(field->fld_system_flag
 					 && field->fld_system_flag != relation->rel_system_flag)
 					|| field->fld_flags & FLD_array)
+				{
 					continue;
-				node = make_field(field, context);
+				}
+				QLI_NOD node = make_field(field, context);
 				if (rse && rse->nod_arg[e_rse_group_by] &&
 					invalid_nod_field(node, rse->nod_arg[e_rse_group_by]))
 					continue;
-				item = (ITM) ALLOCD(type_itm);
+				ITM item = (ITM) ALLOCD(type_itm);
 				item->itm_type = item_value;
 				item->itm_value = make_field(field, context);
 				expand_edit_string(item->itm_value, item);
@@ -1435,22 +1425,24 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 /* If no print object showed up, complain! */
 
 	if (!count)
-		IBERROR(150);			// Msg150 No items in print list 
+		IBERROR(150);			// Msg150 No items in print list
 
 /* Build new print statement.  Unlike the syntax node, the print statement
    has only print items in it. */
 
-	node = MAKE_NODE(input->syn_type, e_prt_count);
-	node->nod_arg[e_prt_list] = list = make_list(items);
+	QLI_NOD node = MAKE_NODE(input->syn_type, e_prt_count);
+	QLI_NOD list = make_list(items);
+	node->nod_arg[e_prt_list] = list;
 	node->nod_arg[e_prt_output] = (QLI_NOD) print;
 
-// If DISTINCT was requested, make up a reduced list. 
+// If DISTINCT was requested, make up a reduced list.
 
 	if (rse && input->syn_arg[s_prt_distinct]) {
-		reduced = MAKE_NODE(nod_list, list->nod_count * 2);
+		QLI_NOD reduced = MAKE_NODE(nod_list, list->nod_count * 2);
 		reduced->nod_count = 0;
-		for (i = 0, ptr = reduced->nod_arg; i < list->nod_count; i++) {
-			item = (ITM) list->nod_arg[i];
+		QLI_NOD* ptr = reduced->nod_arg;
+		for (USHORT i = 0; i < list->nod_count; i++) {
+			ITM item = (ITM) list->nod_arg[i];
 			if (item->itm_value) {
 				*ptr++ = item->itm_value;
 				ptr++;
@@ -1461,7 +1453,7 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 			rse->nod_arg[e_rse_reduced] = reduced;
 	}
 
-// If a FOR loop was generated, splice it in here. 
+// If a FOR loop was generated, splice it in here.
 
 	if (loop) {
 		loop->nod_arg[e_for_statement] = node;
@@ -1488,11 +1480,10 @@ static ITM expand_print_item( SYN syn_item, LLS right)
  *	specifier.
  *
  **************************************/
-	ITM item;
 	SYN syn_expr;
 	QLI_NOD node;
 
-	item = (ITM) ALLOCD(type_itm);
+	ITM item = (ITM) ALLOCD(type_itm);
 
 	switch (syn_item->syn_type) {
 	case nod_print_item:
@@ -1551,10 +1542,8 @@ static QLI_NOD expand_print_list( SYN input, LLS stack)
  *	Expand a print list.
  *
  **************************************/
-	LLS items;
+	LLS items = NULL;
 	SYN *ptr, *end;
-
-	items = NULL;
 
 	for (ptr = input->syn_arg, end = ptr + input->syn_count; ptr < end; ptr++)
 		LLS_PUSH(expand_print_item(*ptr, stack), &items);
@@ -1575,15 +1564,12 @@ static QLI_NOD expand_report( SYN input, LLS right, LLS left)
  *	Expand a report specification.
  *
  **************************************/
-	RPT report;
-	SYN sub;
-	QLI_NOD node, loop;
 	PRT print;
 
-// Start by processing record selection expression 
+// Start by processing record selection expression
 
 	expand_output(input->syn_arg[s_prt_output], right, &print);
-	report = print->prt_report = (RPT) input->syn_arg[s_prt_list];
+	RPT report = print->prt_report = (RPT) input->syn_arg[s_prt_list];
 
 	if (!(print->prt_lines_per_page = report->rpt_lines))
 		print->prt_lines_per_page = QLI_lines;
@@ -1591,20 +1577,22 @@ static QLI_NOD expand_report( SYN input, LLS right, LLS left)
 	if (!report->rpt_columns)
 		report->rpt_columns = QLI_columns;
 
-	loop = MAKE_NODE(nod_report_loop, e_for_count);
+	QLI_NOD loop = MAKE_NODE(nod_report_loop, e_for_count);
 	loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_prt_rse], &right);
-	loop->nod_arg[e_for_statement] = node =
-		MAKE_NODE(nod_report, e_prt_count);
+	QLI_NOD node = MAKE_NODE(nod_report, e_prt_count);
+	loop->nod_arg[e_for_statement] = node;
+
 	node->nod_arg[e_prt_list] = (QLI_NOD) report;
 	node->nod_arg[e_prt_output] = (QLI_NOD) print;
 
-// Process clauses where they exist 
+// Process clauses where they exist
 
 	expand_control_break(&report->rpt_top_rpt, right);
 	expand_control_break(&report->rpt_top_page, right);
 	expand_control_break(&report->rpt_top_breaks, right);
 
-	if (sub = (SYN) report->rpt_detail_line)
+	SYN sub = (SYN) report->rpt_detail_line;
+	if (sub)
 		report->rpt_detail_line = expand_print_list(sub, right);
 
 	expand_control_break(&report->rpt_bottom_breaks, right);
@@ -1627,30 +1615,25 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
  *	Transform a restructure statement into a FOR <rse> STORE.
  *
  **************************************/
-	QLI_NOD node, assignment, loop;
-	SYN rel_node;
-	QLI_REL relation;
-	QLI_FLD field, fld;
-	QLI_CTX context, ctx;
-	LLS stack, search;
 
-// Make a FOR loop to drive the restructure 
+// Make a FOR loop to drive the restructure
 
-	loop = MAKE_NODE(nod_for, e_for_count);
+	QLI_NOD loop = MAKE_NODE(nod_for, e_for_count);
 	loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_asn_from], &right);
 
-// Make a STORE node. 
+// Make a STORE node.
 
-	loop->nod_arg[e_for_statement] = node = MAKE_NODE(nod_store, e_sto_count);
-	rel_node = input->syn_arg[s_asn_to];
-	context = (QLI_CTX) ALLOCD(type_ctx);
+	QLI_NOD node = MAKE_NODE(nod_store, e_sto_count);
+	loop->nod_arg[e_for_statement] = node;
+	SYN rel_node = input->syn_arg[s_asn_to];
+	QLI_CTX context = (QLI_CTX) ALLOCD(type_ctx);
 	node->nod_arg[e_sto_context] = (QLI_NOD) context;
 	context->ctx_type = CTX_RELATION;
 	context->ctx_rse = (QLI_NOD) - 1;
-	relation = context->ctx_relation =
+	QLI_REL relation = context->ctx_relation =
 		(QLI_REL) rel_node->syn_arg[s_rel_relation];
 
-/* If we don't already know about the relation, find out now. */
+// If we don't already know about the relation, find out now.
 
 	if (!(relation->rel_flags & REL_fields))
 		MET_fields(relation);
@@ -1658,22 +1641,24 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 /* Match fields in target relation against fields in the input rse.  Fields
    may match on either name or query name. */
 
-	stack = NULL;
+	LLS stack = NULL;
 
-	for (field = relation->rel_fields; field; field = field->fld_next)
-		if (!(field->fld_flags & FLD_computed)) {
-			for (search = right; search; search = search->lls_next) {
-				ctx = (QLI_CTX) search->lls_object;
+	for (QLI_FLD field = relation->rel_fields; field; field = field->fld_next)
+		if (!(field->fld_flags & FLD_computed))
+		{
+			for (LLS search = right; search; search = search->lls_next) {
+				QLI_CTX ctx = (QLI_CTX) search->lls_object;
 
-				// First look for an exact field name match 
+				// First look for an exact field name match
 
+				QLI_FLD fld;
 				for (fld = ctx->ctx_relation->rel_fields; fld;
-					 fld = fld->fld_next) 
+					 fld = fld->fld_next)
 				{
 					if (compare_symbols(field->fld_name, fld->fld_name))
 						break;
 				}
-				// Next try, target field name matching source query name 
+				// Next try, target field name matching source query name
 
 				if (!fld)
 					for (fld = ctx->ctx_relation->rel_fields; fld;
@@ -1682,7 +1667,7 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 						if (compare_symbols(field->fld_name, fld->fld_query_name))
 							break;
 					}
-				// If nothing yet, look for any old match 
+				// If nothing yet, look for any old match
 
 				if (!fld)
 					for (fld = ctx->ctx_relation->rel_fields; fld;
@@ -1698,7 +1683,7 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 					}
 
 				if (fld) {
-					assignment = MAKE_NODE(nod_assign, e_asn_count);
+					QLI_NOD assignment = MAKE_NODE(nod_assign, e_asn_count);
 					assignment->nod_count = e_asn_count - 1;
 					assignment->nod_arg[e_asn_to] =
 						make_field(field, context);
@@ -1710,7 +1695,7 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 				if (ctx->ctx_rse)
 					break;
 			}
-		  found_field:;
+			found_field:;
 		}
 
 	node->nod_arg[e_sto_statement] = make_list(stack);
@@ -1732,32 +1717,27 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
  *	stack.
  *
  **************************************/
-	QLI_NOD node, boolean, eql_node, *ptr2, *end, parent_rse, temp;
-	QLI_CTX context, parent_context;
-	SYN *ptr, over, field, rel_node, list, value;
-	SYM symbol;
-	QLI_REL relation;
-	LLS old_stack, new_stack, short_stack;
-	USHORT i, j;
-
+	LLS old_stack, new_stack;
 	old_stack = new_stack = *stack;
-	boolean = NULL;
-	node = MAKE_NODE(input->syn_type, (int) e_rse_count + input->syn_count);
+	QLI_NOD boolean = NULL;
+	QLI_NOD node = MAKE_NODE(input->syn_type, (int) e_rse_count + input->syn_count);
 	node->nod_count = input->syn_count;
-	ptr2 = &node->nod_arg[e_rse_count];
+	QLI_NOD* ptr2 = &node->nod_arg[e_rse_count];
 
 /* Decide whether or not this is a GROUP BY, real or imagined
    If it is, disallow normal field type references */
 
-	parent_context = NULL;
-	parent_rse = NULL;
+	QLI_CTX parent_context = NULL;
+	QLI_NOD parent_rse = NULL;
 
 	if (input->syn_arg[s_rse_group_by] || input->syn_arg[s_rse_having])
 		parent_context = (QLI_CTX) ALLOCD(type_ctx);
-	if (list = input->syn_arg[s_rse_list]) {
-		for (i = 0; i < list->syn_count; i++) {
-			value = list->syn_arg[i];
-			if (!(field = value->syn_arg[e_itm_value]))
+	SYN list = input->syn_arg[s_rse_list];
+	if (list) {
+		for (USHORT i = 0; i < list->syn_count; i++) {
+			SYN value = list->syn_arg[i];
+			SYN field = value->syn_arg[e_itm_value];
+			if (!field)
 				continue;
 			if (global_agg(field, input->syn_arg[s_rse_group_by])) {
 				if (!parent_context)
@@ -1777,20 +1757,20 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
 		parent_context->ctx_sub_rse = node;
 	}
 
-// Process the FIRST clause before the context gets augmented 
+// Process the FIRST clause before the context gets augmented
 
 	if (input->syn_arg[s_rse_first])
 		node->nod_arg[e_rse_first] =
 			expand_expression(input->syn_arg[e_rse_first], old_stack);
 
-// Process relations 
+// Process relations
 
-	ptr = input->syn_arg + s_rse_count;
+	SYN* ptr = input->syn_arg + s_rse_count;
 
-	for (i = 0; i < input->syn_count; i++) {
-		rel_node = *ptr++;
-		over = *ptr++;
-		context = (QLI_CTX) ALLOCD(type_ctx);
+	for (USHORT i = 0; i < input->syn_count; i++) {
+		SYN rel_node = *ptr++;
+		SYN over = *ptr++;
+		QLI_CTX context = (QLI_CTX) ALLOCD(type_ctx);
 		*ptr2++ = (QLI_NOD) context;
 		if (i == 0)
 			context->ctx_rse = node;
@@ -1800,20 +1780,20 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
 		}
 		else {
 			context->ctx_type = CTX_RELATION;
-			relation = context->ctx_relation =
+			QLI_REL relation = context->ctx_relation =
 				(QLI_REL) rel_node->syn_arg[s_rel_relation];
 			if (!(relation->rel_flags & REL_fields))
 				MET_fields(relation);
-			symbol = context->ctx_symbol =
+			SYM symbol = context->ctx_symbol =
 				(SYM) rel_node->syn_arg[s_rel_context];
 			if (symbol)
 				symbol->sym_object = (BLK) context;
 			if (over) {
-				short_stack = NULL;
+				LLS short_stack = NULL;
 				LLS_PUSH(context, &short_stack);
-				for (j = 0; j < over->syn_count; j++) {
-					field = over->syn_arg[j];
-					eql_node = MAKE_NODE(nod_eql, 2);
+				for (USHORT j = 0; j < over->syn_count; j++) {
+					syn* field = over->syn_arg[j];
+					QLI_NOD eql_node = MAKE_NODE(nod_eql, 2);
 					eql_node->nod_arg[0] =
 						expand_expression(field, short_stack);
 					eql_node->nod_arg[1] =
@@ -1826,7 +1806,7 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
 		LLS_PUSH(context, &new_stack);
 	}
 
-// Handle explicit boolean 
+// Handle explicit boolean
 
 	if (input->syn_arg[e_rse_boolean])
 		boolean = make_and(boolean,
@@ -1836,7 +1816,7 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
 /* Handle implicit boolean from SQL xxx IN (yyy FROM relation) */
 
 	if (input->syn_arg[s_rse_outer]) {
-		eql_node = MAKE_NODE((enum nod_t)(int)input->syn_arg[s_rse_op], 2);
+		QLI_NOD eql_node = MAKE_NODE((enum nod_t)(int)input->syn_arg[s_rse_op], 2);
 		eql_node->nod_arg[0] =
 			expand_expression(input->syn_arg[s_rse_outer], old_stack);
 		eql_node->nod_arg[1] =
@@ -1849,7 +1829,7 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
 	node->nod_arg[e_rse_boolean] = boolean;
 
 	if (input->syn_arg[s_rse_sort]) {
-		temp = expand_sort(input->syn_arg[e_rse_sort], new_stack, 0);
+		QLI_NOD temp = expand_sort(input->syn_arg[e_rse_sort], new_stack, 0);
 		if (parent_rse)
 			parent_rse->nod_arg[e_rse_sort] = temp;
 		else
@@ -1871,16 +1851,19 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
 
 	node->nod_arg[e_rse_join_type] = (QLI_NOD) input->syn_arg[s_rse_join_type];
 
-// If there is a parent context, set it up here 
+// If there is a parent context, set it up here
 
 	*stack = new_stack;
 
 	if (!parent_context)
 		return node;
 
+    QLI_NOD *end;
+    QLI_CTX context = NULL;
 	for (ptr2 = node->nod_arg + e_rse_count, end = ptr2 + node->nod_count;
-		 ptr2 < end; ptr2++) {
-		context = (QLI_CTX) * ptr2;
+		 ptr2 < end; ptr2++)
+	{
+		context = (QLI_CTX) *ptr2;
 		context->ctx_parent = parent_context;
 	}
 
@@ -1912,25 +1895,20 @@ static QLI_NOD expand_sort( SYN input, LLS stack, QLI_NOD list)
  *	number of keys.  So be careful.
  *
  **************************************/
-	ITM item;
-	SYN *syn_ptr, expr;
-	QLI_NOD node, *ptr;
-	USHORT i;
-
-	node = MAKE_NODE(nod_list, input->syn_count);
+	QLI_NOD node = MAKE_NODE(nod_list, input->syn_count);
 	node->nod_count = input->syn_count / 2;
-	ptr = node->nod_arg;
-	syn_ptr = input->syn_arg;
+	QLI_NOD* ptr = node->nod_arg;
+	SYN* syn_ptr = input->syn_arg;
 
-	for (i = 0; i < node->nod_count; i++) {
-		expr = *syn_ptr++;
-		if (expr->syn_type == nod_position)
-		{	// FIXME: isn't plain 'unsigned long' better here?
+	for (USHORT i = 0; i < node->nod_count; i++) {
+		SYN expr = *syn_ptr++;
+		if (expr->syn_type == nod_position) {
+			// FIXME: isn't plain 'unsigned long' better here?
 			// On 64bit platforms long is 64bit as well as pointer
-			ULONG position = (ULONG) expr->syn_arg[0];
+			const ULONG position = (ULONG) expr->syn_arg[0];
 			if (!list || !position || position > list->nod_count)
-				IBERROR(152);	// Msg152 invalid ORDER BY ordinal 
-			item = (ITM) list->nod_arg[position - 1];
+				IBERROR(152);	// Msg152 invalid ORDER BY ordinal
+			ITM item = (ITM) list->nod_arg[position - 1];
 			*ptr++ = item->itm_value;
 		}
 		else
@@ -2052,7 +2030,7 @@ static QLI_NOD expand_statement( SYN input, LLS right, LLS left)
 		return NULL;
 
 	default:
-		BUGCHECK(136);			// Msg136 expand_statement: not yet implemented 
+		BUGCHECK(136);			// Msg136 expand_statement: not yet implemented
 	}
 
 	return (*routine) (input, right, left);
@@ -2072,17 +2050,9 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
  *	something neat if nothing looks obvious.
  *
  **************************************/
-	QLI_NOD node, assignment, loop;
-	SYN rel_node;
-	QLI_REL relation;
-	QLI_FLD field;
-	SYM symbol;
-	QLI_CTX context, secondary;
-	LLS stack;
+	QLI_NOD loop = NULL;
 
-	loop = NULL;
-
-// If there is an rse, make up a FOR loop 
+// If there is an rse, make up a FOR loop
 
 	if (input->syn_arg[s_sto_rse]) {
 		loop = MAKE_NODE(nod_for, e_for_count);
@@ -2090,31 +2060,35 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
 											  &right);
 	}
 
-	node = MAKE_NODE(input->syn_type, e_sto_count);
+	QLI_NOD node = MAKE_NODE(input->syn_type, e_sto_count);
 
-	rel_node = input->syn_arg[s_sto_relation];
-	context = (QLI_CTX) ALLOCD(type_ctx);
+	SYN rel_node = input->syn_arg[s_sto_relation];
+	QLI_CTX context = (QLI_CTX) ALLOCD(type_ctx);
 	node->nod_arg[e_sto_context] = (QLI_NOD) context;
 	context->ctx_type = CTX_RELATION;
 	context->ctx_rse = (QLI_NOD) - 1;
-	relation = context->ctx_relation =
+	QLI_REL relation = context->ctx_relation =
 		(QLI_REL) rel_node->syn_arg[s_rel_relation];
 
 	if (!(relation->rel_flags & REL_fields))
 		MET_fields(relation);
 
-	if (symbol = context->ctx_symbol = (SYM) rel_node->syn_arg[s_rel_context])
+	SYM symbol = context->ctx_symbol = (SYM) rel_node->syn_arg[s_rel_context];
+	if (symbol)
 		symbol->sym_object = (BLK) context;
 
 	LLS_PUSH(context, &left);
 
-//  If there are field and value lists, process them  
+//  If there are field and value lists, process them
 
 	if (input->syn_arg[s_sto_values]) {
 		if (!input->syn_arg[s_sto_fields]) {
-			stack = NULL;
-			for (field = relation->rel_fields; field; field = field->fld_next)
+			LLS stack = NULL;
+			for (QLI_FLD field = relation->rel_fields; field;
+				field = field->fld_next)
+			{
 				LLS_PUSH(decompile_field(field, 0), &stack);
+			}
 			input->syn_arg[s_sto_fields] = (SYN) stack;
 		}
 		expand_values(input, right);
@@ -2124,7 +2098,7 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
    assignments. */
 
 	if (input->syn_arg[s_sto_statement]) {
-		secondary = (QLI_CTX) ALLOCD(type_ctx);
+		QLI_CTX secondary = (QLI_CTX) ALLOCD(type_ctx);
 		secondary->ctx_type = CTX_RELATION;
 		secondary->ctx_primary = context;
 		LLS_PUSH(secondary, &right);
@@ -2132,8 +2106,10 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
 			expand_statement(input->syn_arg[s_sto_statement], right, left);
 	}
 	else {
-		stack = NULL;
-		for (field = relation->rel_fields; field; field = field->fld_next) {
+		LLS stack = NULL;
+		for (QLI_FLD field = relation->rel_fields; field;
+			field = field->fld_next)
+		{
 			if (field->fld_flags & FLD_computed)
 				continue;
 			if (
@@ -2141,7 +2117,7 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
 				 && field->fld_system_flag != relation->rel_system_flag)
 				|| field->fld_flags & FLD_array)
 				continue;
-			assignment = make_assignment(make_field(field, context), 0, 0);
+			QLI_NOD assignment = make_assignment(make_field(field, context), 0, 0);
 			LLS_PUSH(assignment, &stack);
 		}
 		node->nod_arg[e_sto_statement] = make_list(stack);
@@ -2167,9 +2143,9 @@ static void expand_values( SYN input, LLS right)
  * Functional description
  *	We've got a grungy SQL insert, and we have
  *	to make the value list match the field list.
- *	On the way in, we got the right number of 
+ *	On the way in, we got the right number of
  *	fields.  Now all that's needed is the values
- *	and matching the two lists, and generating 
+ *	and matching the two lists, and generating
  *	assignments.  If the input is from a select,
  *	things may be harder, and if there are wild cards
  *	things will be harder still.  Wild cards come in
@@ -2177,46 +2153,43 @@ static void expand_values( SYN input, LLS right)
  *	a nod_prompt, the second a nod_star.
  *
  **************************************/
-	SSHORT field_count, value_count;
-	SYN value, *ptr, list, assignment;
-	QLI_CTX context;
-	LLS stack, fields, values, temp;
+	SSHORT field_count = 0, value_count = 0;
 
-	field_count = value_count = 0;
+// fields have already been checked and expanded.  Just count them
 
-// fields have already been checked and expanded.  Just count them  
-
-	fields = (LLS) input->syn_arg[s_sto_fields];
+	LLS fields = (LLS) input->syn_arg[s_sto_fields];
+	LLS stack;
 	for (stack = fields; stack; stack = stack->lls_next)
 		field_count++;
 
-/* We're going to want the values in the order listed in the command */
+// We're going to want the values in the order listed in the command
 
-	values = (LLS) input->syn_arg[s_sto_values];
+	LLS values = (LLS) input->syn_arg[s_sto_values];
 	for (; values; LLS_PUSH(LLS_POP(&values), &stack));
 
-// now go through, count, and expand where needed 
+// now go through, count, and expand where needed
 
 	while (stack) {
-		value = (SYN) LLS_POP(&stack);
+		SYN value = (SYN) LLS_POP(&stack);
 		if (input->syn_arg[s_sto_rse] && value->syn_type == nod_prompt) {
 			if (value->syn_arg[0] == 0) {
-				temp = NULL;
+				LLS temp = NULL;
 				for (; right; right = right->lls_next)
 					LLS_PUSH(right->lls_object, &temp);
 				while (temp) {
-					context = (QLI_CTX) LLS_POP(&temp);
+					QLI_CTX context = (QLI_CTX) LLS_POP(&temp);
 					value_count +=
 						generate_fields(context, (LLS) &values,
 										input->syn_arg[s_sto_rse]);
 				}
 			}
 			else
-				IBERROR(542);	/* this was a prompting expression.  won't do at all */
+				IBERROR(542);	// this was a prompting expression.  won't do at all
 		}
 		else if (input->syn_arg[s_sto_rse] && (value->syn_type == nod_star)) {
-			if (!(context = find_context((NAM) value->syn_arg[0], right)))
-				IBERROR(154);	// Msg154 unrecognized context 
+			QLI_CTX context = find_context((NAM) value->syn_arg[0], right);
+			if (!context)
+				IBERROR(154);	// Msg154 unrecognized context
 			value_count +=
 				generate_fields(context, (LLS) &values, input->syn_arg[s_sto_rse]);
 		}
@@ -2226,19 +2199,21 @@ static void expand_values( SYN input, LLS right)
 		}
 	}
 
-// Make assignments from values to fields 
+// Make assignments from values to fields
 
 	if (field_count != value_count)
-		IBERROR(189);			// Msg189 the number of values do not match the number of fields 
+		IBERROR(189);
+		// Msg189 the number of values do not match the number of fields
 
-	list = (SYN) ALLOCDV(type_syn, value_count);
+	SYN list = (SYN) ALLOCDV(type_syn, value_count);
 	list->syn_type = nod_list;
 	list->syn_count = value_count;
 	input->syn_arg[s_sto_statement] = list;
-	ptr = list->syn_arg + value_count;
+	SYN* ptr = list->syn_arg + value_count;
 
 	while (values) {
-		*--ptr = assignment = (SYN) ALLOCDV(type_syn, s_asn_count);
+	    SYN assignment = (SYN) ALLOCDV(type_syn, s_asn_count);
+		*--ptr = assignment;
 		assignment->syn_type = nod_assign;
 		assignment->syn_count = s_asn_count;
 		assignment->syn_arg[s_asn_to] = (SYN) LLS_POP(&fields);
@@ -2260,12 +2235,11 @@ static QLI_CTX find_context( NAM name, LLS contexts)
  *	the context block implicated.
  *
  **************************************/
-	QLI_REL relation;
 	QLI_CTX context;
 
 	for (; contexts; contexts = contexts->lls_next) {
 		context = (QLI_CTX) contexts->lls_object;
-		relation = context->ctx_relation;
+		QLI_REL relation = context->ctx_relation;
 		if (compare_names(name, relation->rel_symbol))
 			break;
 		if (compare_names(name, context->ctx_symbol))
@@ -2290,24 +2264,21 @@ static int generate_fields( QLI_CTX context, LLS values, SYN rse)
  *	input to a store or update.
  *
  **************************************/
-	int count;
-	QLI_REL relation;
-	QLI_FLD field;
-	SYN value, group_list;
-
 	if (context->ctx_type == CTX_AGGREGATE)
 		return 0;
-	group_list = rse->syn_arg[s_rse_group_by];
-	relation = context->ctx_relation;
-	count = 0;
+	SYN group_list = rse->syn_arg[s_rse_group_by];
+	QLI_REL relation = context->ctx_relation;
+	int count = 0;
 
-	for (field = relation->rel_fields; field; field = field->fld_next) {
+	for (QLI_FLD field = relation->rel_fields; field; field = field->fld_next) {
 		if (
 			(field->fld_system_flag
 			 && field->fld_system_flag != relation->rel_system_flag)
 			|| field->fld_flags & FLD_array)
+		{
 			continue;
-		value = decompile_field(field, context);
+		}
+		SYN value = decompile_field(field, context);
 		if (group_list && invalid_syn_field(value, group_list))
 			continue;
 		LLS_PUSH(value, (LLS*) values);
@@ -2329,45 +2300,40 @@ static int generate_items( SYN symbol, LLS right, LLS items, QLI_NOD rse)
  * Functional description
  *	Expand an asterisk expression, which
  *	could be <relation>.* or <alias>.* or <context>.*
- *	into a list of reasonable print items. 
+ *	into a list of reasonable print items.
  *
  *      If the original request included a group by,
  *	include only the grouping fields.
  *
  **************************************/
-	int count;
-	QLI_REL relation;
-	QLI_CTX context;
+	int count = 0;
+	QLI_NOD group_list = (rse) ? rse->nod_arg[e_rse_group_by] : NULL;
+
+// first identify the relation or context
+
 	NAM name;
-	ITM item;
-	QLI_FLD field;
-	QLI_NOD node, group_list;
-
-	count = 0;
-	group_list = (rse) ? rse->nod_arg[e_rse_group_by] : NULL;
-
-// first identify the relation or context 
-
 	if (symbol->syn_count == 1)
 		name = (NAM) symbol->syn_arg[0];
 	else
-		IBERROR(153);			// Msg153 asterisk expressions require exactly one qualifying context 
+		IBERROR(153);
+		// Msg153 asterisk expressions require exactly one qualifying context
 
-	if (!(context = find_context(name, right)))
-		IBERROR(154);			// Msg154 unrecognized context 
+	QLI_CTX context = find_context(name, right);
+	if (!context)
+		IBERROR(154);			// Msg154 unrecognized context
 
-	relation = context->ctx_relation;
+	QLI_REL relation = context->ctx_relation;
 
-	for (field = relation->rel_fields; field; field = field->fld_next) {
+	for (QLI_FLD field = relation->rel_fields; field; field = field->fld_next) {
 		if (
 			(field->fld_system_flag
 			 && field->fld_system_flag != relation->rel_system_flag)
 			|| field->fld_flags & FLD_array)
 			continue;
-		node = make_field(field, context);
+		QLI_NOD node = make_field(field, context);
 		if (group_list && invalid_nod_field(node, group_list))
 			continue;
-		item = (ITM) ALLOCD(type_itm);
+		ITM item = (ITM) ALLOCD(type_itm);
 		item->itm_type = item_value;
 		item->itm_value = make_field(field, context);
 		expand_edit_string(item->itm_value, item);
@@ -2392,7 +2358,7 @@ static bool global_agg( SYN item, SYN group_list)
  *	a sql global aggregate.  If it does, we're
  *	going to make the whole thing a degenerate
  *	group by.  Anyway.  Look for aggregates buried
- *	deep within printable things. 
+ *	deep within printable things.
  *
  *	This recurses.  If it finds a mixture of normal
  *	and aggregates it complains.
@@ -2422,7 +2388,8 @@ static bool global_agg( SYN item, SYN group_list)
 	case nod_substr:
 		{
 			for (ptr = item->syn_arg, end = ptr + item->syn_count; ptr < end;
-				 ptr++) {
+				 ptr++)
+			{
 				if ((*ptr)->syn_type == nod_constant)
 					continue;
 				if (global_agg(*ptr, group_list))
@@ -2455,22 +2422,20 @@ static bool invalid_nod_field( QLI_NOD node, QLI_NOD list)
  *
  *	Validate that an expanded field / context
  *	pair is in a specified list.  Thus is used
- *	in one instance to check that a simple field selected 
- *	through a grouping rse is a grouping field - 
+ *	in one instance to check that a simple field selected
+ *	through a grouping rse is a grouping field -
  *	thus a valid field reference.
  *
  **************************************/
-	QLI_FLD field;
-	QLI_CTX context;
-	bool invalid = false;
 	QLI_NOD *ptr, *end;
+	bool invalid = false;
 
 	if (!list)
 		return true;
 
 	if (node->nod_type == nod_field) {
-		field = (QLI_FLD) node->nod_arg[e_fld_field];
-		context = (QLI_CTX) node->nod_arg[e_fld_context];
+		QLI_FLD field = (QLI_FLD) node->nod_arg[e_fld_field];
+		QLI_CTX context = (QLI_CTX) node->nod_arg[e_fld_context];
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
 			if (field == (QLI_FLD) (*ptr)->nod_arg[e_fld_field]
 				&& context == (QLI_CTX) (*ptr)->nod_arg[e_fld_context])
@@ -2482,6 +2447,7 @@ static bool invalid_nod_field( QLI_NOD node, QLI_NOD list)
 	else
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
 			 ptr++)
+		{
 			switch ((*ptr)->nod_type) {
 			case nod_field:
 			case nod_add:
@@ -2497,6 +2463,7 @@ static bool invalid_nod_field( QLI_NOD node, QLI_NOD list)
 			case nod_upcase:
 				invalid |= invalid_nod_field(*ptr, list);
 			}
+		}
 
 	return invalid;
 }
@@ -2511,21 +2478,19 @@ static bool invalid_syn_field( SYN syn_node, SYN list)
  **************************************
  *
  * Functional description
- *	Make sure an unexpanded simple field selected 
- *	through a grouping rse is a grouping field - 
+ *	Make sure an unexpanded simple field selected
+ *	through a grouping rse is a grouping field -
  *	thus a valid field reference.  For the sake of
  *      argument, we'll match qualified to unqualified
  *	reference, but qualified reference must match
- *	completely. 
+ *	completely.
  *
  *	One more thought.  If this miserable thing is
- *	a wild card, let it through and expand it 
+ *	a wild card, let it through and expand it
  *	correctly later.
  *
  **************************************/
-	SYN element, *ptr, *end;
-	NAM gname, fname, gctx, fctx;
-	SSHORT count;
+	SYN *ptr, *end;
 	bool invalid = false;
 
 	if (syn_node->syn_type == nod_star)
@@ -2535,24 +2500,24 @@ static bool invalid_syn_field( SYN syn_node, SYN list)
 		return true;
 
 	if (syn_node->syn_type == nod_field) {
-		fctx = NULL;
-		fname = (NAM) syn_node->syn_arg[0];
+		NAM fctx = NULL;
+		NAM fname = (NAM) syn_node->syn_arg[0];
 		if (syn_node->syn_count == 2) {
 			fctx = fname;
 			fname = (NAM) syn_node->syn_arg[1];
 		}
 
-		for (count = list->syn_count; count;) {
-			gctx = NULL;
-			element = list->syn_arg[--count];
-			gname = (NAM) element->syn_arg[0];
+		for (SSHORT count = list->syn_count; count;) {
+			NAM gctx = NULL;
+			SYN element = list->syn_arg[--count];
+			NAM gname = (NAM) element->syn_arg[0];
 			if (element->syn_count == 2) {
 				gctx = gname;
 				gname = (NAM) element->syn_arg[1];
 			}
 			if (!strcmp(fname->nam_string, gname->nam_string))
 				if (!gctx || !fctx
-					|| (!strcmp(fctx->nam_string, gctx->nam_string))) 
+					|| !strcmp(fctx->nam_string, gctx->nam_string))
 				{
 					return false;
 				}
@@ -2562,6 +2527,7 @@ static bool invalid_syn_field( SYN syn_node, SYN list)
 	else
 		for (ptr = syn_node->syn_arg, end = ptr + syn_node->syn_count;
 			 ptr < end; ptr++)
+		{
 			switch ((*ptr)->syn_type) {
 			case nod_field:
 			case nod_add:
@@ -2577,6 +2543,7 @@ static bool invalid_syn_field( SYN syn_node, SYN list)
 			case nod_upcase:
 				invalid |= invalid_syn_field(*ptr, list);
 			}
+		}
 
 	return invalid;
 }
@@ -2586,7 +2553,7 @@ static QLI_NOD make_and( QLI_NOD expr1, QLI_NOD expr2)
 {
 /**************************************
  *
- *	m a k e _ a n d 
+ *	m a k e _ a n d
  *
  **************************************
  *
@@ -2595,15 +2562,13 @@ static QLI_NOD make_and( QLI_NOD expr1, QLI_NOD expr2)
  *	a single boolean.
  *
  **************************************/
-	QLI_NOD node;
-
 	if (!expr1)
 		return expr2;
 
 	if (!expr2)
 		return expr1;
 
-	node = MAKE_NODE(nod_and, 2);
+	QLI_NOD node = MAKE_NODE(nod_and, 2);
 	node->nod_arg[0] = expr1;
 	node->nod_arg[1] = expr2;
 
@@ -2623,12 +2588,10 @@ static QLI_NOD make_assignment( QLI_NOD target, QLI_NOD initial, LLS right)
  *	Generate a prompt and assignment to a field.
  *
  **************************************/
-	QLI_NOD assignment, prompt;
-	QLI_FLD field;
-	LLS stack;
+	QLI_NOD prompt;
 
-	field = (QLI_FLD) target->nod_arg[e_fld_field];
-	stack = NULL;
+	QLI_FLD field = (QLI_FLD) target->nod_arg[e_fld_field];
+	LLS stack = NULL;
 	LLS_PUSH(target->nod_arg[e_fld_context], &stack);
 
 	if (field->fld_dtype == dtype_blob) {
@@ -2646,7 +2609,7 @@ static QLI_NOD make_assignment( QLI_NOD target, QLI_NOD initial, LLS right)
 		prompt->nod_arg[e_prm_field] = (QLI_NOD) field;
 	}
 
-	assignment = MAKE_NODE(nod_assign, e_asn_count);
+	QLI_NOD assignment = MAKE_NODE(nod_assign, e_asn_count);
 	assignment->nod_arg[e_asn_to] = target;
 	assignment->nod_arg[e_asn_from] = prompt;
 
@@ -2674,9 +2637,7 @@ static QLI_NOD make_field( QLI_FLD field, QLI_CTX context)
  *	Make a field block.  Not too tough.
  *
  **************************************/
-	QLI_NOD node;
-
-	node = MAKE_NODE(nod_field, e_fld_count);
+	QLI_NOD node = MAKE_NODE(nod_field, e_fld_count);
 	node->nod_count = 0;
 	node->nod_arg[e_fld_field] = (QLI_NOD) field;
 	node->nod_arg[e_fld_context] = (QLI_NOD) context;
@@ -2701,20 +2662,16 @@ static QLI_NOD make_list( LLS stack)
  *	them first.
  *
  **************************************/
-	QLI_NOD node, *ptr;
-	LLS temp;
-	USHORT count;
-
-	temp = stack;
-	count = 0;
+	LLS temp = stack;
+	USHORT count = 0;
 
 	while (temp) {
 		count++;
 		temp = temp->lls_next;
 	}
 
-	node = MAKE_NODE(nod_list, count);
-	ptr = &node->nod_arg[count];
+	QLI_NOD node = MAKE_NODE(nod_list, count);
+	QLI_NOD* ptr = &node->nod_arg[count];
 
 	while (stack)
 		*--ptr = (QLI_NOD) LLS_POP(&stack);
@@ -2735,9 +2692,7 @@ static QLI_NOD make_node( NOD_T type, USHORT count)
  *	Allocate a node and fill in some basic stuff.
  *
  **************************************/
-	QLI_NOD node;
-
-	node = (QLI_NOD) ALLOCDV(type_nod, count);
+	QLI_NOD node = (QLI_NOD) ALLOCDV(type_nod, count);
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -2757,9 +2712,7 @@ static QLI_NOD negate( QLI_NOD expr)
  *	Build negation of expression.
  *
  **************************************/
-	QLI_NOD node;
-
-	node = MAKE_NODE(nod_not, 1);
+	QLI_NOD node = MAKE_NODE(nod_not, 1);
 	node->nod_arg[0] = expr;
 
 	return node;
@@ -2782,12 +2735,7 @@ static QLI_NOD possible_literal(SYN input,
  *	correct "informalities" in relational expressions.
  *
  **************************************/
-	NAM name;
-	CON constant;
-	QLI_NOD node;
 	QLI_CTX context;
-	USHORT l;
-	TEXT *p, *q, c;
 
 /* If the value isn't a field, is qualified, or can be resolved,
    it doesn't qualify for conversion.  Return NULL. */
@@ -2796,30 +2744,30 @@ static QLI_NOD possible_literal(SYN input,
 		input->syn_count != 1 || resolve(input, stack, &context))
 		return NULL;
 
-	name = (NAM) input->syn_arg[0];
-	l = name->nam_length;
-	constant = (CON) ALLOCDV(type_con, l);
+	NAM name = (NAM) input->syn_arg[0];
+	USHORT l = name->nam_length;
+	CON constant = (CON) ALLOCDV(type_con, l);
 	constant->con_desc.dsc_dtype = dtype_text;
 	constant->con_desc.dsc_length = l;
-	p = (TEXT *) constant->con_data;
+	TEXT* p = (TEXT *) constant->con_data;
 	constant->con_desc.dsc_address = (UCHAR *) p;
-	q = name->nam_string;
+	const TEXT* q = name->nam_string;
 
 	if (upper_flag) {
 		if (l)
 			do {
-				c = *q++;
+				const TEXT c = *q++;
 				*p++ = UPPER(c);
 			} while (--l);
 	}
 	else if (l)
 		do {
-			c = *q++;
+			const TEXT c = *q++;
 			*p++ = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
 
 		} while (--l);
 
-	node = MAKE_NODE(nod_constant, 0);
+	QLI_NOD node = MAKE_NODE(nod_constant, 0);
 	node->nod_desc = constant->con_desc;
 
 	return node;
@@ -2838,23 +2786,22 @@ static QLI_NOD post_map( QLI_NOD node, QLI_CTX context)
  *	Post an item to a map for a context.
  *
  **************************************/
-	QLI_NOD new_node;
-	MAP map;
+	QLI_MAP map;
 
-// Check to see if the item has already been posted 
+// Check to see if the item has already been posted
 
 	for (map = context->ctx_map; map; map = map->map_next)
 		if (CMP_node_match(node, map->map_node))
 			break;
 
 	if (!map) {
-		map = (MAP) ALLOCD(type_map);
+		map = (QLI_MAP) ALLOCD(type_map);
 		map->map_next = context->ctx_map;
 		context->ctx_map = map;
 		map->map_node = node;
 	}
 
-	new_node = MAKE_NODE(nod_map, e_map_count);
+	QLI_NOD new_node = MAKE_NODE(nod_map, e_map_count);
 	new_node->nod_count = 0;
 	new_node->nod_arg[e_map_context] = (QLI_NOD) context;
 	new_node->nod_arg[e_map_map] = (QLI_NOD) map;
@@ -2878,8 +2825,6 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
  *	reference).  Return NULL if field can't be resolved.
  *
  **************************************/
-	NAM name, *base, *ptr;
-	QLI_CTX context;
 	QLI_REL relation;
 	QLI_FLD field;
 
@@ -2888,18 +2833,19 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
    that the context name be given explicitly (used for special STORE
    context). */
 
-	base = (NAM *) node->syn_arg;
+	NAM* base = (NAM *) node->syn_arg;
 
 	for (; stack; stack = stack->lls_next) {
-		*out_context = context = (QLI_CTX) stack->lls_object;
-		ptr = base + node->syn_count;
-		name = *--ptr;
+		QLI_CTX context = (QLI_CTX) stack->lls_object;
+		*out_context = context;
+		NAM* ptr = base + node->syn_count;
+		NAM name = *--ptr;
 
 		switch (context->ctx_type) {
 		case CTX_VARIABLE:
 			if (ptr == base)
 				for (field = context->ctx_variable; field;
-					 field = field->fld_next) 
+					 field = field->fld_next)
 				{
 					if (compare_names(name, field->fld_name)
 						|| compare_names(name, field->fld_query_name))
@@ -2919,7 +2865,7 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 
 			for (field = relation->rel_fields; field; field = field->fld_next)
 				if (compare_names(name, field->fld_name) ||
-					compare_names(name, field->fld_query_name)) 
+					compare_names(name, field->fld_query_name))
 				{
 					if (ptr == base)
 						return field;
@@ -2940,7 +2886,7 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 		}
 	}
 
-/* We didn't resolve all name segments.  Let somebody else worry about it. */
+// We didn't resolve all name segments.  Let somebody else worry about it.
 
 	return NULL;
 }
@@ -2956,32 +2902,30 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
  **************************************
  *
  * Functional description
- *	Resolve a field reference entirely.  
+ *	Resolve a field reference entirely.
  *
  **************************************/
-	USHORT offset;
-	bool resolved = false;
-	bool local = false;
-	NAM fld_name = NULL;
-	NAM rel_name = NULL;
-	NAM db_name = NULL;
 	SYM symbol;
-	QLI_FLD field = NULL;
 	QLI_REL relation;
-	DBB dbb;
 
 /* For ease, break down the syntax block.
    It should contain at least one name; two names are a  potential ambiguity:
    check for a dbb (<db>.<glo_fld>), then for a rel (<rel>.<fld>). */
 
-	offset = field_node->syn_count;
-	fld_name = (NAM) field_node->syn_arg[--offset];
+	USHORT offset = field_node->syn_count;
+	NAM fld_name = (NAM) field_node->syn_arg[--offset];
 
+	NAM rel_name = NULL;
+	NAM db_name = NULL;
 	if (offset) {
 		rel_name = (NAM) field_node->syn_arg[--offset];
 		if (offset)
 			db_name = (NAM) field_node->syn_arg[--offset];
 	}
+
+    bool resolved = false;
+    bool local = false;
+    QLI_FLD field = NULL;
 
 	if (field_node->syn_count == 1)
 		resolved = (MET_declare(0, variable, fld_name));
@@ -2990,31 +2934,30 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
 			 symbol = symbol->sym_homonym)
 		{
 			if (symbol->sym_type == SYM_database) {
-				dbb = (DBB) symbol->sym_object;
+				DBB dbb = (DBB) symbol->sym_object;
 				resolved = (MET_declare(dbb, variable, fld_name));
 				break;			// should be only one db in homonym list
 			}
 		}
 
 		if (!resolved) {
-			for (dbb = QLI_databases; dbb && !resolved; dbb = dbb->dbb_next)
+			for (DBB dbb = QLI_databases; dbb && !resolved; dbb = dbb->dbb_next)
 				for (symbol = rel_name->nam_symbol; symbol;
-					 symbol = symbol->sym_homonym) 
+					 symbol = symbol->sym_homonym)
 				{
 					if (symbol->sym_type == SYM_relation
 						&& (relation = (QLI_REL) symbol->sym_object)
-						&& relation->rel_database == dbb) 
+						&& relation->rel_database == dbb)
 					{
 						if (!relation->rel_fields)
 							MET_fields(relation);
 						for (field = relation->rel_fields; field;
-							 field = field->fld_next) 
+							 field = field->fld_next)
 						{
-							if (resolved = local = compare_names (fld_name,
-														   field->fld_name))
-							{
+							resolved = local = compare_names(fld_name,
+														   field->fld_name);
+							if (resolved)
 								break;
-							}
 						}
 						break;	// should be only one rel in homonym list for each db
 					}
@@ -3026,12 +2969,16 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
 		if (!relation->rel_fields)
 			MET_fields(relation);
 		for (field = relation->rel_fields; field; field = field->fld_next)
-			if (resolved = local = compare_names(fld_name, field->fld_name))
+		{
+			resolved = local = compare_names(fld_name, field->fld_name);
+			if (resolved)
 				break;
+		}
 	}
 
 	if (!resolved)
-		IBERROR(155);			// Msg155 field referenced in BASED ON can not be resolved against readied databases 
+		IBERROR(155);
+		// Msg155 field referenced in BASED ON can not be resolved against readied databases
 
 	if (local) {
 		variable->fld_dtype = field->fld_dtype;
@@ -3047,3 +2994,6 @@ static void resolve_really( QLI_FLD variable, SYN field_node)
 			variable->fld_query_name = field->fld_query_name;
 	}
 }
+
+
+

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_EVAL_PROTO_H_
-#define _QLI_EVAL_PROTO_H_
+#ifndef QLI_EVAL_PROTO_H
+#define QLI_EVAL_PROTO_H
 
 extern int		EVAL_boolean (struct qli_nod *);
 extern void		EVAL_break_compute (struct qli_nod *);
@@ -31,4 +31,4 @@ extern void		EVAL_break_init (struct qli_nod *);
 extern struct dsc	*EVAL_parameter (struct par *);
 extern struct dsc	*EVAL_value (struct qli_nod *);
 
-#endif /* _QLI_EVAL_PROTO_H_ */
+#endif /* QLI_EVAL_PROTO_H */

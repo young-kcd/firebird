@@ -29,8 +29,8 @@
  *
  */
 
-#ifndef _DSQL_DSQL_H_
-#define _DSQL_DSQL_H_
+#ifndef DSQL_DSQL_H
+#define DSQL_DSQL_H
 
 #include "../jrd/common.h"
 #include "../dsql/all.h"
@@ -662,4 +662,5 @@ extern unsigned DSQL_debug;
 			(*request->req_blr++ = (UCHAR)(byte)) : GEN_expand_buffer (request, (UCHAR)(byte))
 
 
-#endif // _DSQL_DSQL_H_
+#endif // DSQL_DSQL_H
+

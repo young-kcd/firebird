@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		err_proto.h
- *	DESCRIPTION:	Prototype header file for err.c
+ *	DESCRIPTION:	Prototype header file for err.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -26,17 +26,21 @@
 
 extern void	ERRQ_bugcheck (USHORT);
 extern void	ERRQ_database_error(dbb*, ISC_STATUS*);
-extern void	ERRQ_error (USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern void	ERRQ_error_format (USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
+extern void	ERRQ_error (USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
+extern void	ERRQ_error_format (USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
 extern void	ERRQ_exit (int);
-extern void	ERRQ_msg_format (USHORT, USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern int	ERRQ_msg_get (USHORT, TEXT *);
-extern void	ERRQ_msg_partial (USHORT, const TEXT *, const TEXT *, const TEXT *,
-	const TEXT *, const TEXT *);
-extern void	ERRQ_msg_put (USHORT, const TEXT *, const TEXT *, const TEXT *,
-	const TEXT *, const TEXT *);
+extern void	ERRQ_msg_format (USHORT, USHORT, TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*, const TEXT*);
+extern int	ERRQ_msg_get (USHORT, TEXT*);
+extern void	ERRQ_msg_partial (USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
+extern void	ERRQ_msg_put (USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
 extern void	ERRQ_pending (void);
-extern void	ERRQ_print_error (USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
+extern void	ERRQ_print_error (USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
 extern void	ERRQ_syntax (USHORT);
 
 #endif /* QLI_ERR_PROTO_H */

@@ -32,8 +32,8 @@ extern void	BURP_abort(void);
 extern void	BURP_svc_error(USHORT, USHORT, const void *, USHORT, const void *,
 	USHORT, const void *, USHORT, const void *, USHORT, const void *);
 extern void	BURP_error(USHORT, const void*, const void*, const void*, const void*, const void*);
-extern void	BURP_print_status(ISC_STATUS *);
-extern void	BURP_error_redirect(ISC_STATUS *, USHORT, const void*, const void*);
+extern void	BURP_print_status(const ISC_STATUS*);
+extern void	BURP_error_redirect(const ISC_STATUS*, USHORT, const void*, const void*);
 extern void	BURP_msg_partial(USHORT, const void*, const void*, const void*,
 	const void*, const void*);
 extern void	BURP_msg_put(USHORT, const void*, const void*, const void*,
@@ -42,7 +42,7 @@ extern void	BURP_msg_get(USHORT, TEXT*, const void*, const void*, const void*,
 	const void*, const void*);
 extern void	BURP_output_version(const TEXT *, TEXT *);
 extern void	BURP_print(USHORT, const void*, const void*, const void*, const void*, const void*);
-extern void	BURP_print_warning(ISC_STATUS*);
+extern void	BURP_print_warning(const ISC_STATUS*);
 extern void	BURP_verbose(USHORT, const void*, const void*, const void*, const void*, const void*);
 
 #endif	/*  BURP_BURP_PROTO_H  */

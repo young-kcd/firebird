@@ -80,7 +80,7 @@ static void RefreshIBControls(HWND, BOOL);
 static void RefreshOSControls(HWND, BOOL);
 #endif
 static BOOL ValidateUser(HWND);
-static void PrintCfgStatus(ISC_STATUS *, int, HWND);
+static void PrintCfgStatus(const ISC_STATUS*, int, HWND);
 static void FillSysdbaSPB(char *, char *);
 
 // Define an array of dword pairs,
@@ -672,7 +672,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 	return FALSE;
 }
 
-void PrintCfgStatus(ISC_STATUS * status_vector, int nErrCode, HWND hDlg)
+void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 {
 /**************************************
  *
@@ -685,14 +685,13 @@ void PrintCfgStatus(ISC_STATUS * status_vector, int nErrCode, HWND hDlg)
  *      to allow redirecting output.
  *
  **************************************/
-	ISC_STATUS *vector;
 	SCHAR szErrStr[ERR_BUFLEN];
 	SCHAR szHdrStr[HDR_BUFLEN];
 
 	szErrStr[0] = '\0';
 
 	if (status_vector) {
-		vector = status_vector;
+		const ISC_STATUS* vector = status_vector;
 		if (isc_interprete(szErrStr, &vector)) {
 			SCHAR *ptr = szErrStr + strlen(szErrStr);;
 

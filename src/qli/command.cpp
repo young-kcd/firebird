@@ -60,7 +60,7 @@ int CMD_check_ready(void)
  **************************************
  *
  * Functional description
- *	Make sure at least one database is ready.  If not, give a 
+ *	Make sure at least one database is ready.  If not, give a
  *	message.
  *
  **************************************/
@@ -68,7 +68,7 @@ int CMD_check_ready(void)
 	if (QLI_databases)
 		return FALSE;
 
-	ERRQ_msg_put(95, NULL, NULL, NULL, NULL, NULL);	// Msg95 No databases are currently ready 
+	ERRQ_msg_put(95, NULL, NULL, NULL, NULL, NULL);	// Msg95 No databases are currently ready
 
 	return TRUE;
 }
@@ -83,7 +83,7 @@ void CMD_copy_procedure( SYN node)
  **************************************
  *
  * Functional description
- *	Copy one procedure to another, possibly 
+ *	Copy one procedure to another, possibly
  *	across databases
  *
  **************************************/
@@ -140,7 +140,7 @@ void CMD_delete_proc( SYN node)
 	if (PRO_delete_procedure(proc->qpr_database, proc->qpr_name->nam_string))
 		return;
 
-	ERRQ_msg_put(88, proc->qpr_name->nam_string,	/* Msg88 Procedure %s not found in database %s */
+	ERRQ_msg_put(88, proc->qpr_name->nam_string,	// Msg88 Procedure %s not found in database %s
 				 proc->qpr_database->dbb_symbol->sym_string, NULL, NULL,
 				 NULL);
 }
@@ -194,7 +194,7 @@ void CMD_extract( SYN node)
 				database = QLI_databases;
 			name = proc->qpr_name;
 			if (!(blob = PRO_fetch_procedure(database, name->nam_string))) {
-				ERRQ_msg_put(89,	/* Msg89 Procedure %s not found in database %s */
+				ERRQ_msg_put(89,	// Msg89 Procedure %s not found in database %s
 							 name->nam_string,
 							 database->dbb_symbol->sym_string, NULL, NULL,
 							 NULL);
@@ -264,14 +264,14 @@ void CMD_rename_proc( SYN node)
 		database = QLI_databases;
 
 	if (new_proc->qpr_database && (new_proc->qpr_database != database))
-		IBERROR(84);			// Msg84 Procedures can not be renamed across databases. Try COPY 
+		IBERROR(84);			// Msg84 Procedures can not be renamed across databases. Try COPY
 	NAM old_name = old_proc->qpr_name;
 	NAM new_name = new_proc->qpr_name;
 
 	if (PRO_rename_procedure
 		(database, old_name->nam_string, new_name->nam_string)) return;
 
-	ERRQ_error(85,				/* Msg85 Procedure %s not found in database %s */
+	ERRQ_error(85,				// Msg85 Procedure %s not found in database %s
 			   old_name->nam_string, database->dbb_symbol->sym_string, NULL,
 			   NULL, NULL);
 }
@@ -325,7 +325,7 @@ void CMD_set( SYN node)
 			break;
 
 		case set_form:
-			IBERROR(484);		// FORMs not supported 
+			IBERROR(484);		// FORMs not supported
 			break;
 
 		case set_password:
@@ -340,7 +340,7 @@ void CMD_set( SYN node)
 		case set_prompt:
 			string = (CON) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_prompt_string))
-				ERRQ_error(86, NULL, NULL, NULL, NULL, NULL);	// Msg86 substitute prompt string too long 
+				ERRQ_error(86, NULL, NULL, NULL, NULL, NULL);	// Msg86 substitute prompt string too long
 			strncpy(QLI_prompt_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_prompt_string[string->con_desc.dsc_length] = 0;
@@ -349,7 +349,7 @@ void CMD_set( SYN node)
 		case set_continuation:
 			string = (CON) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_cont_string))
-				ERRQ_error(87, NULL, NULL, NULL, NULL, NULL);	// Msg87 substitute prompt string too long 
+				ERRQ_error(87, NULL, NULL, NULL, NULL, NULL);	// Msg87 substitute prompt string too long
 			strncpy(QLI_cont_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_cont_string[string->con_desc.dsc_length] = 0;
@@ -409,7 +409,7 @@ void CMD_set( SYN node)
 #endif
 
 		default:
-			BUGCHECK(6);		// Msg6 set option not implemented 
+			BUGCHECK(6);		// Msg6 set option not implemented
 		}
 	}
 }
@@ -431,16 +431,16 @@ void CMD_shell( SYN node)
 	USHORT l;
 	CON constant;
 
-// Copy command, inserting extra blank at end. 
+// Copy command, inserting extra blank at end.
 
 	TEXT* p = buffer;
 
 	if (constant = (CON) node->syn_arg[0]) {
 		const TEXT* q = (TEXT*) constant->con_data;
 		if (l = constant->con_desc.dsc_length)
-			do
+			do {
 				*p++ = *q++;
-			while (--l);
+			} while (--l);
 		*p++ = ' ';
 		*p = 0;
 	}
@@ -465,13 +465,13 @@ void CMD_shell( SYN node)
 	int return_status = 0;
 	int mask = 1;
 	int status = lib$spawn(ptr,		// Command to be executed
-					   NULL,	// Command file 
-					   NULL,	// Output file 
+					   NULL,	// Command file
+					   NULL,	// Output file
 					   &mask,	// sub-process characteristics mask
 					   NULL,	// sub-process name
-					   NULL,	// returned process id 
-					   &return_status,	// completion status 
-					   &15);	// event flag for completion 
+					   NULL,	// returned process id
+					   &return_status,	// completion status
+					   &15);	// event flag for completion
 	if (status & 1)
 		while (!return_status)
 			sys$waitfr(15);
@@ -601,4 +601,5 @@ static void extract_procedure(
 	FRBRD* blob = PRO_open_blob(database, blob_id);
 	dump_procedure(database, file, name, length, blob);
 }
+
 

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.10 2003-09-12 16:35:40 brodsom Exp $
+//	$Id: cme.cpp,v 1.11 2003-09-25 11:49:02 robocop Exp $
 //
 
 #include "firebird.h"
@@ -134,7 +134,7 @@ const op_table operators[] =
 };
 
 
-static inline void assign_dtype(gpre_fld *f, gpre_fld *field)
+static inline void assign_dtype(gpre_fld* f, const gpre_fld* field)
 {
 	f->fld_dtype = field->fld_dtype;
 	f->fld_length = field->fld_length;
@@ -147,10 +147,10 @@ static inline void assign_dtype(gpre_fld *f, gpre_fld *field)
 }
 
 /* One of d1,d2 is time, the other is date */
-static inline bool is_date_and_time(USHORT d1, USHORT d2)
+static inline bool is_date_and_time(const USHORT d1, const USHORT d2)
 {
-	return ((((d1)==dtype_sql_time)&&((d2)==dtype_sql_date)) ||
-		   (((d2)==dtype_sql_time)&&((d1)==dtype_sql_date)));
+	return (d1 == dtype_sql_time && d2 == dtype_sql_date) ||
+		   (d2 == dtype_sql_time && d1 == dtype_sql_date);
 }
 
 //____________________________________________________________

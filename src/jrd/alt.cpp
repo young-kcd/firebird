@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         alt.c
+ *      MODULE:         alt.cpp
  *      DESCRIPTION:    Alternative entrypoints
  *
  * The contents of this file are subject to the Interbase Public
@@ -665,12 +665,12 @@ void API_ROUTINE isc_qtoq(GDS_QUAD * quad1, GDS_QUAD * quad2)
 	gds__qtoq(quad1, quad2);
 }
 
-SLONG API_ROUTINE isc_sqlcode(ISC_STATUS * status_vector)
+SLONG API_ROUTINE isc_sqlcode(const ISC_STATUS* status_vector)
 {
 	return gds__sqlcode(status_vector);
 }
 
-void API_ROUTINE isc_sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
+void API_ROUTINE isc_sqlcode_s(const ISC_STATUS* status_vector, ULONG * sqlcode)
 {
 	*sqlcode = gds__sqlcode(status_vector);
 	return;
@@ -712,7 +712,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * status_vector,
 }
 #endif
 
-ISC_STATUS API_ROUTINE isc_interprete(SCHAR * buffer, ISC_STATUS ** status_vector_p)
+ISC_STATUS API_ROUTINE isc_interprete(SCHAR* buffer, const ISC_STATUS** status_vector_p)
 {
 	return gds__interprete(buffer, status_vector_p);
 }

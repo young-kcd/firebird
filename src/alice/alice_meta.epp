@@ -4,7 +4,7 @@
  *____________________________________________________________
  *  
  *		PROGRAM:	Alice (All Else) Utility
- *		MODULE:		met.e
+ *		MODULE:		alice_meta.epp
  *		DESCRIPTION:	Metadata lookup routines
  *  
  *  The contents of this file are subject to the Interbase Public
@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.20 2003-09-23 19:47:22 brodsom Exp $
+ *	$Id: alice_meta.epp,v 1.21 2003-09-25 11:48:57 robocop Exp $
  */
 
 #include "firebird.h"
@@ -69,18 +69,18 @@ static USHORT snarf_blob(SLONG[2], USHORT, TEXT *);
    fields in system relations 
 */
 
-typedef struct rfr_tab_t {
+struct rfr_tab_t {
 	TEXT *relation;
 	TEXT *field;
 	int bit_mask;
-} *RFR_TAB;
+};
 
-static rfr_tab_t rfr_table[] = {
+static const rfr_tab_t rfr_table[] = {
 	{ "RDB$TRANSACTIONS", "RDB$TRANSACTION_DESCRIPTION", CAP_transactions },
 	{ 0, 0, 0 }
 };
 
-static inline void return_error(ISC_STATUS *user_status)
+static inline void return_error(ISC_STATUS* user_status)
 {
 	ALICE_print_status(gds_status);
 	Firebird::status_exception::raise(0);
@@ -92,12 +92,10 @@ static inline void return_error(ISC_STATUS *user_status)
  *		Drop all the entries from RDB$LOG_FILES
  */  
 
-void MET_disable_wal(ISC_STATUS * user_status, isc_db_handle handle)
+void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 {
 	FRBRD *request = NULL;
-	TGBL tdgbl;
-
-	tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = handle))
 		return;
@@ -107,7 +105,8 @@ void MET_disable_wal(ISC_STATUS * user_status, isc_db_handle handle)
 		return_error(user_status); 
 	END_ERROR;
 	FOR(REQUEST_HANDLE request)
-	X IN RDB$LOG_FILES ERASE X;
+	X IN RDB$LOG_FILES
+		ERASE X;
 	END_FOR 
 	COMMIT 
 	ON_ERROR
@@ -123,15 +122,14 @@ void MET_disable_wal(ISC_STATUS * user_status, isc_db_handle handle)
  *		already been attached.
  */  
 
-void MET_get_state(ISC_STATUS * user_status, TDR trans)
+void MET_get_state(ISC_STATUS* user_status, TDR trans)
 {
-	FRBRD *request = NULL;
-	TGBL tdgbl;
-
-	tdgbl = GET_THREAD_DATA;
+	FRBRD* request = NULL;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = trans->tdr_db_handle) ||
-		!(trans->tdr_db_caps & CAP_transactions)) {
+		!(trans->tdr_db_caps & CAP_transactions))
+	{
 		trans->tdr_state = TRA_unknown;
 		return;
 	}
@@ -169,14 +167,11 @@ void MET_get_state(ISC_STATUS * user_status, TDR trans)
  *		in other databases.
  */  
 
-TDR MET_get_transaction(ISC_STATUS * user_status, isc_db_handle handle, SLONG id)
+TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 {
-	FRBRD *request = NULL;
+	FRBRD* request = NULL;
 	TDR trans = NULL;
-	USHORT capabilities;
-	TGBL tdgbl;
-
-	tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = handle))
 		return 0;
@@ -186,7 +181,7 @@ TDR MET_get_transaction(ISC_STATUS * user_status, isc_db_handle handle, SLONG id
 		return_error(user_status);
 	END_ERROR;
 
-	capabilities = get_capabilities(user_status);
+	const USHORT capabilities = get_capabilities(user_status);
 
 	if (capabilities & CAP_transactions) {
 		FOR(REQUEST_HANDLE request)
@@ -223,11 +218,9 @@ TDR MET_get_transaction(ISC_STATUS * user_status, isc_db_handle handle, SLONG id
  *		the database for a particular transaction.
  */  
 
-void MET_set_capabilities(ISC_STATUS * user_status, TDR trans)
+void MET_set_capabilities(ISC_STATUS* user_status, TDR trans)
 {
-	TGBL tdgbl;
-
-	tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = trans->tdr_db_handle))
 		return;
@@ -251,21 +244,16 @@ void MET_set_capabilities(ISC_STATUS * user_status, TDR trans)
  *		Eat a string with a byte-encoded length.
  */  
 
-static STR alloc_string(TEXT ** ptr)
+static STR alloc_string(TEXT** ptr)
 {
-	TEXT *p, *q;
-	USHORT length;
-	STR string;
-	TGBL tdgbl;
+	TGBL tdgbl = GET_THREAD_DATA;
 
-	tdgbl = GET_THREAD_DATA;
+	TEXT* p = *ptr;
 
-	p = *ptr;
+	USHORT length = (USHORT) *p++;
+	STR string = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) str;
 
-	length = (USHORT) * p++;
-	string = FB_NEW_RPT(*tdgbl->ALICE_default_pool, length + 1) str;
-
-	q = (TEXT *) string->str_data;
+	TEXT* q = (TEXT *) string->str_data;
 	while (length--)
 		*q++ = *p++;
 	*q = 0;
@@ -283,25 +271,21 @@ static STR alloc_string(TEXT ** ptr)
  *		the database for a particular transaction.
  */  
 
-static USHORT get_capabilities(ISC_STATUS * user_status)
+static USHORT get_capabilities(ISC_STATUS* user_status)
 {
-	FRBRD *req;
-	RFR_TAB rel_field_table;
 	USHORT capabilities = CAP_none;
-	TGBL tdgbl;
+	TGBL tdgbl = GET_THREAD_DATA;
 
-	tdgbl = GET_THREAD_DATA;
+//  Look for desired fields in system relations 
+	FRBRD* req = NULL;
 
-	req = NULL;
-
-/*  Look for desired fields in system relations */
-
-	for (rel_field_table = rfr_table; rel_field_table->relation;
-		 rel_field_table++) {
-		FOR(REQUEST_HANDLE req) x IN DB.
-			RDB$RELATION_FIELDS WITH x.RDB$RELATION_NAME =
-			rel_field_table->relation AND x.RDB$FIELD_NAME =
-			rel_field_table->field capabilities |= rel_field_table->bit_mask;
+	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation;
+		rel_field_table++)
+	{
+		FOR(REQUEST_HANDLE req) x IN DB.RDB$RELATION_FIELDS
+			WITH x.RDB$RELATION_NAME = rel_field_table->relation
+			AND x.RDB$FIELD_NAME = rel_field_table->field
+			capabilities |= rel_field_table->bit_mask;
 		END_FOR 
 		ON_ERROR 
 			return_error(user_status);
@@ -328,25 +312,22 @@ static TDR get_description(SLONG blob_id[2])
 {
 	SLONG id_length, id;
 	USHORT length;
-	TEXT buffer[1024], *bigger_buffer, *p;
-	TDR trans, ptr;
-	STR host_site, database_path;
-	TGBL tdgbl;
+	TEXT buffer[1024], *bigger_buffer;
+	TGBL tdgbl = GET_THREAD_DATA;
 
-	tdgbl = GET_THREAD_DATA;
-
-	p = buffer;
+	TEXT* p = buffer;
 	if (length = snarf_blob(blob_id, (USHORT) sizeof(buffer), buffer)) {
 		p = bigger_buffer = (TEXT *) gds__alloc((SLONG) length);
 		snarf_blob(blob_id, length, bigger_buffer);
 	}
 
-	trans = NULL;
-	host_site = database_path = NULL;
+	TDR trans = NULL;
+	STR host_site = NULL, database_path = NULL;
 
-/*  skip version number */
-
+//  skip version number 
 	p++;
+	
+	TDR ptr;
 
 	while (*p)
 		switch (*p++) {
@@ -401,11 +382,9 @@ static void parse_fullpath(TDR trans)
 {
 	TEXT *start, *p, *q, *end;
 	USHORT length;
-	TGBL tdgbl;
+	TGBL tdgbl = GET_THREAD_DATA;
 
-	tdgbl = GET_THREAD_DATA;
-
-/*  start at the end of the full pathname */
+//  start at the end of the full pathname 
 
 	start = p = (TEXT*) trans->tdr_fullpath->str_data;
 	while (*p)
@@ -447,7 +426,7 @@ static void parse_fullpath(TDR trans)
 			p -= 2;
 		trans->tdr_filename = p + 1;
 
-		/* now find the last remote node in the chain */
+		// now find the last remote node in the chain 
 
 		while (p > start && (*p == ':' || *p == '^' || *p == '@'))
 			p--;
@@ -478,28 +457,24 @@ static USHORT snarf_blob(SLONG blob_id[2],
 						 USHORT buffer_length, TEXT * buffer)
 {
 	USHORT returned_length;
-	TEXT *ptr, *end;
 	ISC_STATUS status;
-	FRBRD *blob;
-	TGBL tdgbl;
-
-	tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (buffer_length)
 		buffer[0] = 0;
 	if (buffer_length > 1)
 		buffer[1] = 0;
 
-	blob = NULL;
+	FRBRD* blob = NULL;
 	if (gds__open_blob(gds_status, &DB, &gds_trans, &blob, (GDS_QUAD*) blob_id)) {
 		ALICE_print_status(gds_status);
 		return 0;
 	}
 
-/*  get the blob into the buffer, if it fits */
+//  get the blob into the buffer, if it fits 
 
-	ptr = buffer;
-	end = buffer + buffer_length;
+	TEXT* ptr = buffer;
+	TEXT* const end = buffer + buffer_length;
 	for (;;) {
 		if (ptr >= end)
 			break;
@@ -512,7 +487,7 @@ static USHORT snarf_blob(SLONG blob_id[2],
 		ptr += returned_length;
 	}
 
-/*  snarf failed, get length of blob for retry */
+//  snarf failed, get length of blob for retry 
 
 	if (!buffer_length)
 		for (;;) {
@@ -531,3 +506,4 @@ static USHORT snarf_blob(SLONG blob_id[2],
 
 	return buffer_length;
 }
+

@@ -237,7 +237,7 @@ void SHOW_stuff( SYN node)
 				for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 					count += show_security_classes_detail(dbb);
 			if (!count)
-				ERRQ_msg_put(90, NULL, NULL, NULL, NULL, NULL);	// Msg90 No security classes defined 
+				ERRQ_msg_put(90, NULL, NULL, NULL, NULL, NULL);	// Msg90 No security classes defined
 			break;
 
 		case show_security_class:
@@ -246,7 +246,7 @@ void SHOW_stuff( SYN node)
 			for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 				count += show_security_class_detail(dbb, name->nam_string);
 			if (!count)
-				ERRQ_msg_put(91, name->nam_string, NULL, NULL, NULL, NULL);	/* Msg91 Security class %s is not defined */
+				ERRQ_msg_put(91, name->nam_string, NULL, NULL, NULL, NULL);	// Msg91 Security class %s is not defined
 			break;
 
 		case show_views:
@@ -257,7 +257,7 @@ void SHOW_stuff( SYN node)
 				for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 					count += show_views_detail(dbb);
 			if (!count)
-				ERRQ_msg_put(92, NULL, NULL, NULL, NULL, NULL);	// Msg92 No views defined 
+				ERRQ_msg_put(92, NULL, NULL, NULL, NULL, NULL);	// Msg92 No views defined
 			break;
 
 		case show_relation:
@@ -271,7 +271,7 @@ void SHOW_stuff( SYN node)
 			if (value) {
 				show_rel((QLI_REL) value);
 				if (!show_indices_detail((QLI_REL) value))
-					ERRQ_msg_put(93, NULL, NULL, NULL, NULL, NULL);	// Msg93 No indices defined 
+					ERRQ_msg_put(93, NULL, NULL, NULL, NULL, NULL);	// Msg93 No indices defined
 				break;
 			}
 			for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next) {
@@ -281,7 +281,7 @@ void SHOW_stuff( SYN node)
 						if (!(relation->rel_flags & (REL_system | REL_view))) {
 						show_rel(relation);
 						if (!show_indices_detail(relation))
-							ERRQ_msg_put(94, NULL, NULL, NULL, NULL, NULL);	// Msg94 No indices defined 
+							ERRQ_msg_put(94, NULL, NULL, NULL, NULL, NULL);	// Msg94 No indices defined
 					}
 			}
 			break;
@@ -294,7 +294,7 @@ void SHOW_stuff( SYN node)
 					if (!(relation->rel_flags & (REL_system | REL_view))) {
 					show_rel(relation);
 					if (!show_indices_detail(relation))
-						ERRQ_msg_put(94, NULL, NULL, NULL, NULL, NULL);	// Msg94 No indices defined 
+						ERRQ_msg_put(94, NULL, NULL, NULL, NULL, NULL);	// Msg94 No indices defined
 				}
 			break;
 
@@ -387,7 +387,7 @@ void SHOW_stuff( SYN node)
 			break;
 
 		default:
-			BUGCHECK(7);		// Msg7 show option not implemented 
+			BUGCHECK(7);		// Msg7 show option not implemented
 		}
 	}
 }
@@ -412,12 +412,12 @@ static void array_dimensions( DBB database, const TEXT * field_name)
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_dimensions])
 		D IN RDB$FIELD_DIMENSIONS WITH D.RDB$FIELD_NAME = field_name
-			SORTED BY D.RDB$DIMENSION 
+			SORTED BY D.RDB$DIMENSION
 
         if (D.RDB$LOWER_BOUND != 1) {
 			sprintf(p, "%ld:", D.RDB$LOWER_BOUND);
 			while (*++p);
-		} 
+		}
 
         sprintf(p, "%ld, ", D.RDB$UPPER_BOUND);
 		while (*++p);
@@ -546,7 +546,7 @@ static void display_procedure( DBB database, UCHAR * name, FRBRD *blob)
  * Functional description
  *	Show definition of procedure.  Somebody
  *	else has already figured out what database
- *	it's in, and so forth.  
+ *	it's in, and so forth.
  *
  **************************************/
 	UCHAR buffer[256];
@@ -567,7 +567,7 @@ static USHORT get_window_size( int max_width)
 {
 /**************************************
  *
- *	g e t _ w i n d o w _ s i z e 
+ *	g e t _ w i n d o w _ s i z e
  *
  **************************************
  *
@@ -661,7 +661,7 @@ static void show_datatype(
  **************************************/
  	TEXT subtype[32];
  	SSHORT msg = 0;
- 	
+
 	switch (dtype) {
 	case dtype_text:
 		msg = 97;
@@ -697,10 +697,10 @@ static void show_datatype(
 		break;
 
 	case dtype_blob:
-		ERRQ_msg_partial(105, NULL, NULL, NULL, NULL, NULL);	// Msg105 blob 
+		ERRQ_msg_partial(105, NULL, NULL, NULL, NULL, NULL);	// Msg105 blob
 		if (segment_length)
 			ERRQ_msg_partial(106, (TEXT *) (ULONG) segment_length, NULL, NULL,
-							 NULL, NULL);	/* Msg106 , segment length %d */
+							 NULL, NULL);	// Msg106 , segment length %d
 		if (sub_type) {
 			// Only the number in case there's no text name for the type.
 			sprintf(subtype, "%d", sub_type);
@@ -735,23 +735,23 @@ static void show_datatype(
 		break;
 
 	default:
-		BUGCHECK(8);			// Msg8 show_fields: dtype not done 
+		BUGCHECK(8);			// Msg8 show_fields: dtype not done
 	}
 
 	ERRQ_msg_partial(msg, (TEXT *) (ULONG) length, NULL, NULL, NULL, NULL);
 
 	if (dimensions)
-		ERRQ_msg_partial(433, NULL, NULL, NULL, NULL, NULL);	// Msg433  array 
+		ERRQ_msg_partial(433, NULL, NULL, NULL, NULL, NULL);	// Msg433  array
 
 	if (dtype == dtype_short || dtype == dtype_long || dtype == dtype_quad)
 		if (scale)
-			ERRQ_msg_partial(111, (TEXT *) (SLONG) scale, NULL, NULL, NULL, NULL);	/* Msg111 , scale %d */
+			ERRQ_msg_partial(111, (TEXT *) (SLONG) scale, NULL, NULL, NULL, NULL);	// Msg111 , scale %d
 
 	if (dtype == dtype_text ||
 		dtype == dtype_varying || dtype == dtype_cstring)
 	{
 		if (sub_type == 1)
-			ERRQ_msg_partial(112, NULL, NULL, NULL, NULL, NULL);	// Msg112 , subtype fixed 
+			ERRQ_msg_partial(112, NULL, NULL, NULL, NULL, NULL);	// Msg112 , subtype fixed
 		else if (sub_type != 0) {
 			sprintf(subtype, "%d", sub_type);
 			ERRQ_msg_partial(107, subtype, NULL, NULL, NULL, NULL);
@@ -777,14 +777,14 @@ static void show_dbb( DBB database)
 
 	if (database) {
 		if (symbol = database->dbb_symbol)
-			ERRQ_msg_put(113,	/* Msg113 Database %s readied as %s */
+			ERRQ_msg_put(113,	// Msg113 Database %s readied as %s
 						 database->dbb_filename, symbol->sym_string, NULL,
 						 NULL, NULL);
 		else
-			ERRQ_msg_put(114, database->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg114 Database %s */
+			ERRQ_msg_put(114, database->dbb_filename, NULL, NULL, NULL, NULL);	// Msg114 Database %s
 	}
 	else
-		ERRQ_msg_put(115, NULL, NULL, NULL, NULL, NULL);	// Msg115 No databases are currently ready 
+		ERRQ_msg_put(115, NULL, NULL, NULL, NULL, NULL);	// Msg115 No databases are currently ready
 }
 
 
@@ -833,7 +833,7 @@ static void show_dbb_parameters( DBB database)
 	}
 
 	ERRQ_msg_put(116, (TEXT *) (SLONG) page_size, (TEXT *) allocation, NULL,
-				 NULL, NULL);	/* Msg116 Page size is %d bytes.  Current allocation is %d pages. */
+				 NULL, NULL);	// Msg116 Page size is %d bytes.  Current allocation is %d pages.
 
 	MET_meta_transaction(database, FALSE);
 
@@ -856,27 +856,27 @@ static void show_dbb_parameters( DBB database)
 	if (database->dbb_capabilities & DBB_cap_files) {
 		if (database->dbb_capabilities & DBB_cap_shadowing) {
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_files])
-				F IN DB.RDB$FILES SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START 
+				F IN DB.RDB$FILES SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START
 
                 if (F.RDB$SHADOW_NUMBER) {
                     if (!(F.RDB$FILE_FLAGS & FILE_conditional))
 						ERRQ_msg_put(385,
 									 (TEXT *) (SLONG) F.RDB$SHADOW_NUMBER,
 									 F.RDB$FILE_NAME,
-									 (TEXT *) F.RDB$FILE_START, NULL, NULL);	/* Msg385 Shadow %d, File:%s starting at page %d */
+									 (TEXT *) F.RDB$FILE_START, NULL, NULL);	// Msg385 Shadow %d, File:%s starting at page %d
 				}
 				else
-					
-						
+
+
 						ERRQ_msg_put(263, F.RDB$FILE_NAME,
-									 (TEXT *) F.RDB$FILE_START, NULL, NULL, NULL);	/* Msg263 File:%s starting at page %d */
+									 (TEXT *) F.RDB$FILE_START, NULL, NULL, NULL);	// Msg263 File:%s starting at page %d
 			END_FOR;
 		}
 		else {
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_files])
 				F IN DB.RDB$FILES SORTED BY F.RDB$FILE_START
 					ERRQ_msg_put(263, F.RDB$FILE_NAME,
-								 (TEXT *) F.RDB$FILE_START, NULL, NULL, NULL);	/* Msg263 File:%s starting at page %d */
+								 (TEXT *) F.RDB$FILE_START, NULL, NULL, NULL);	// Msg263 File:%s starting at page %d
 			END_FOR;
 		}
 	}
@@ -898,13 +898,11 @@ static int show_field_detail(
  * Functional description
  *	Show everything we know about local
  *	fields with the specified name in a particular
- *	database. 
+ *	database.
  *
  **************************************/
-	USHORT count, dimensions;
-
 	MET_meta_transaction(database, FALSE);
-	count = 0;
+	USHORT count = 0;
 
 	if (!(database->dbb_capabilities & DBB_cap_security))
 		count += show_insecure_fields(database, relation_name, field_name);
@@ -924,11 +922,12 @@ static int show_field_detail(
 		if (relation_name && (strcmp(RFR.RDB$RELATION_NAME, relation_name)))
 			continue;
 
-		if ((dimensions = MET_dimensions(database, F.RDB$FIELD_NAME)) &&
-			(idx_node
-			 && (dimensions !=
-				 (USHORT) idx_node->syn_arg[s_idx_count]->
-				 syn_count))) continue;
+		USHORT dimensions = MET_dimensions(database, F.RDB$FIELD_NAME);
+		if (dimensions && idx_node &&
+			dimensions != (USHORT) idx_node->syn_arg[s_idx_count]->syn_count)
+		{
+			continue;
+		}
 
 		if (count++)
 			ib_printf("\n");
@@ -938,11 +937,11 @@ static int show_field_detail(
 
 		if (!R.RDB$VIEW_BLR.NULL)
 			ERRQ_msg_put(495, RFR.RDB$FIELD_NAME, RFR.RDB$RELATION_NAME,
-						 database->dbb_symbol->sym_string, NULL, NULL);	/* Msg495 Field %s in view %s of database %s */
+						 database->dbb_symbol->sym_string, NULL, NULL);	// Msg495 Field %s in view %s of database %s
 		else
 			ERRQ_msg_put(496, RFR.RDB$FIELD_NAME, RFR.RDB$RELATION_NAME,
-						 database->dbb_symbol->sym_string, NULL, NULL);	/* Msg495 Field %s in relation %s of database %s */
-		ERRQ_msg_put(265, F.RDB$FIELD_NAME, NULL, NULL, NULL, NULL);	/* Msg265 Global field %s */
+						 database->dbb_symbol->sym_string, NULL, NULL);	// Msg495 Field %s in relation %s of database %s
+		ERRQ_msg_put(265, F.RDB$FIELD_NAME, NULL, NULL, NULL, NULL);	// Msg265 Global field %s
 
 		if (!RFR.RDB$BASE_FIELD.NULL) {
 			truncate_string(RFR.RDB$BASE_FIELD);
@@ -952,7 +951,7 @@ static int show_field_detail(
 
 		show_text_blob(database, "\t", 266, (SLONG*) &RFR.RDB$DESCRIPTION, 339,
 					   (SLONG*) &F.RDB$DESCRIPTION, false);
-		ERRQ_msg_put(267, NULL, NULL, NULL, NULL, NULL);	// Msg267 Datatype information: 
+		ERRQ_msg_put(267, NULL, NULL, NULL, NULL, NULL);	// Msg267 Datatype information:
 		ib_printf("\t");
 
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
@@ -995,15 +994,15 @@ static int show_field_instances( DBB database, const TEXT * field_name)
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_field_instance])
 		RFR IN RDB$RELATION_FIELDS WITH RFR.RDB$FIELD_SOURCE = field_name
-			SORTED BY RFR.RDB$RELATION_NAME 
+			SORTED BY RFR.RDB$RELATION_NAME
 
         if (!count++)
 			ERRQ_msg_put(335, field_name, database->dbb_symbol->sym_string,
-						 NULL, NULL, NULL);	/* Msg335 Global field %s is used database %s as: */
+						 NULL, NULL, NULL);	// Msg335 Global field %s is used database %s as:
 		truncate_string(RFR.RDB$FIELD_NAME);
 		truncate_string(RFR.RDB$RELATION_NAME);
 		ERRQ_msg_put(336, RFR.RDB$FIELD_NAME, RFR.RDB$RELATION_NAME, NULL,
-					 NULL, NULL);	/* Msg336 %s in relation %s */
+					 NULL, NULL);	// Msg336 %s in relation %s
 	END_FOR;
 
 	return count;
@@ -1048,7 +1047,7 @@ static void show_fields( QLI_REL relation, QLI_FLD fields)
 		max_name = MAX(max_name, l);
 	}
 
-// Now print the fields 
+// Now print the fields
 
 	for (field = fields; field; field = field->fld_next) {
 		if (QLI_abort)
@@ -1102,14 +1101,14 @@ static void show_filt( QFL filter)
 
 	if (database = filter->qfl_database) {
 		if (!(database->dbb_capabilities & DBB_cap_filters)) {
-			/* Msg439 Filters are not supported in database %s. */
+			// Msg439 Filters are not supported in database %s.
 			ERRQ_msg_put(439, database->dbb_symbol->sym_string, NULL, NULL,
 						 NULL, NULL);
 			return;
 		}
 		count = show_filter_detail(database, name->nam_string);
 		if (!count)
-			/* Msg440 Filter %s is not defined in database %s. */
+			// Msg440 Filter %s is not defined in database %s.
 			ERRQ_msg_put(440, name->nam_string,
 						 database->dbb_symbol->sym_string, NULL, NULL, NULL);
 	}
@@ -1122,10 +1121,10 @@ static void show_filt( QFL filter)
 			}
 		if (!count) {
 			if (any_supported)
-				/* Msg441 Filter %s is not defined in any open database */
+				// Msg441 Filter %s is not defined in any open database
 				ERRQ_msg_put(441, name->nam_string, NULL, NULL, NULL, NULL);
 			else
-				// Msg442 Filters are not supported in any open database. 
+				// Msg442 Filters are not supported in any open database.
 				ERRQ_msg_put(442, NULL, NULL, NULL, NULL, NULL);
 		}
 	}
@@ -1148,11 +1147,11 @@ static int show_filter_detail( DBB database, TEXT * filter_name)
  *
  **************************************/
 	MET_meta_transaction(database, FALSE);
-	
+
 	int count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_filter_detail])
-		F IN RDB$FILTERS WITH F.RDB$FUNCTION_NAME = filter_name 
+		F IN RDB$FILTERS WITH F.RDB$FUNCTION_NAME = filter_name
 
         count++;
 		truncate_string(filter_name);
@@ -1160,9 +1159,9 @@ static int show_filter_detail( DBB database, TEXT * filter_name)
 		ERRQ_msg_put(444,		/* Msg444 Filter %s in database \"%s\" (%s): */
 					 filter_name, database->dbb_filename,
 					 database->dbb_symbol->sym_string, NULL, NULL);
-		ERRQ_msg_put(445, F.RDB$MODULE_NAME, NULL, NULL, NULL, NULL);	/* Msg445 Filter library is %s */
-		ERRQ_msg_put(446, (TEXT *)(SLONG) F.RDB$INPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	/* Msg446 Input sub-type is %d */
-		ERRQ_msg_put(447, (TEXT *)(SLONG) F.RDB$OUTPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	/* Msg447 Output sub-type is %d */
+		ERRQ_msg_put(445, F.RDB$MODULE_NAME, NULL, NULL, NULL, NULL);	// Msg445 Filter library is %s
+		ERRQ_msg_put(446, (TEXT *)(SLONG) F.RDB$INPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	// Msg446 Input sub-type is %d
+		ERRQ_msg_put(447, (TEXT *)(SLONG) F.RDB$OUTPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	// Msg447 Output sub-type is %d
 		show_text_blob(database, "\t", 448, (SLONG*) &F.RDB$DESCRIPTION, 0, NULL,
 					   false);
 	END_FOR;
@@ -1182,11 +1181,11 @@ static void show_filts( DBB database)
  **************************************/
 
 	if (!(database->dbb_capabilities & DBB_cap_filters))
-		/* Msg463 Filters are not supported for database %s. */
+		// Msg463 Filters are not supported for database %s.
 		ERRQ_msg_put(463, database->dbb_symbol->sym_string, NULL, NULL, NULL,
 					 NULL);
 	else if (!(show_filters_detail(database)))
-		/* Msg464 no filters defined for database %s. */
+		// Msg464 no filters defined for database %s.
 		ERRQ_msg_put(464, database->dbb_symbol->sym_string, NULL, NULL, NULL,
 					 NULL);
 }
@@ -1207,12 +1206,12 @@ static int show_filters_detail( DBB database)
 	buf_type buffer;
 	SSHORT width = get_window_size(sizeof(buffer) - 1);
 	buffer[0] = 0;
-	
+
 	MET_meta_transaction(database, FALSE);
 
 	int count = 0;
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_filters]) F IN RDB$FILTERS
-		SORTED BY F.RDB$FUNCTION_NAME 
+		SORTED BY F.RDB$FUNCTION_NAME
 
         if (!count++)
 			  ERRQ_msg_put(449, database->dbb_filename,	/* Msg449 Filters in database %s (%s): */
@@ -1232,14 +1231,14 @@ static void show_fld( SYN field_node)
 {
 /**************************************
  *
- *	s h o w _ f l d 
+ *	s h o w _ f l d
  *
  **************************************
  *
  * Functional description
  *	Show all details about a particular
  *	field.  What we've got coming in
- *	is a list of 1, 2, or 3 name blocks, 
+ *	is a list of 1, 2, or 3 name blocks,
  *	contain the [[database.]relation.]field
  *	specification.  Figure out what we've
  *	got and let somebody else  do all the work.
@@ -1305,7 +1304,7 @@ static void show_func( QFN func)
 {
 /**************************************
  *
- *	s h o w _ f u n c 
+ *	s h o w _ f u n c
  *
  **************************************
  *
@@ -1322,14 +1321,14 @@ static void show_func( QFN func)
 
 	if (database = func->qfn_database) {
 		if (!(database->dbb_capabilities & DBB_cap_functions)) {
-			/* Msg417 Functions are not supported in database %s. */
+			// Msg417 Functions are not supported in database %s.
 			ERRQ_msg_put(417, database->dbb_symbol->sym_string, NULL, NULL,
 						 NULL, NULL);
 			return;
 		}
 		count = show_func_detail(database, name->nam_string);
 		if (!count)
-			/* Msg422 Function %s is not defined in database %s. */
+			// Msg422 Function %s is not defined in database %s.
 			ERRQ_msg_put(422, name->nam_string,
 						 database->dbb_symbol->sym_string, NULL, NULL, NULL);
 	}
@@ -1342,10 +1341,10 @@ static void show_func( QFN func)
 			}
 		if (!count) {
 			if (any_supported)
-				/* Msg423 Function is %s not defined in any open database */
+				// Msg423 Function is %s not defined in any open database
 				ERRQ_msg_put(423, name->nam_string, NULL, NULL, NULL, NULL);
 			else
-				// Msg420 Functions are not supported in any open database. 
+				// Msg420 Functions are not supported in any open database.
 				ERRQ_msg_put(420, NULL, NULL, NULL, NULL, NULL);
 		}
 	}
@@ -1363,8 +1362,8 @@ static int show_func_detail( DBB database, TEXT * func_name)
  * Functional description
  *	Display the following information about a
  *	function with the specified name in a particular
- *	database:  Function name, query name, function 
- *	library, input and output argument datatypes, and 
+ *	database:  Function name, query name, function
+ *	library, input and output argument datatypes, and
  *	description.
  *
  **************************************/
@@ -1389,17 +1388,17 @@ static int show_func_detail( DBB database, TEXT * func_name)
 						 F.RDB$FUNCTION_NAME, database->dbb_filename,
 						 database->dbb_symbol->sym_string, NULL, NULL);
 
-		ERRQ_msg_put(426, F.RDB$MODULE_NAME, NULL, NULL, NULL, NULL);	/* Msg426 Function library is %s */
+		ERRQ_msg_put(426, F.RDB$MODULE_NAME, NULL, NULL, NULL, NULL);	// Msg426 Function library is %s
 
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_func_args])
 			FA IN RDB$FUNCTION_ARGUMENTS WITH
-				FA.RDB$FUNCTION_NAME = func_name SORTED BY FA.RDB$ARGUMENT_POSITION 
+				FA.RDB$FUNCTION_NAME = func_name SORTED BY FA.RDB$ARGUMENT_POSITION
             if (FA.RDB$ARGUMENT_POSITION == 0)
-				ERRQ_msg_partial(427, NULL, NULL, NULL, NULL, NULL);	// Msg427 Return argument is 
+				ERRQ_msg_partial(427, NULL, NULL, NULL, NULL, NULL);	// Msg427 Return argument is
 			else
 				ERRQ_msg_partial(428,
 								 (TEXT *) (SLONG) FA.RDB$ARGUMENT_POSITION,
-								 NULL, NULL, NULL, NULL);	/* Msg428 Argument %d is */
+								 NULL, NULL, NULL, NULL);	// Msg428 Argument %d is
 
 			USHORT array = (FA.RDB$MECHANISM == 2); // funct below wants USHORT
 			show_datatype(database, MET_get_datatype(FA.RDB$FIELD_TYPE),
@@ -1433,11 +1432,11 @@ static void show_funcs( DBB database)
 	if (!(database->dbb_capabilities & DBB_cap_functions))
 		ERRQ_msg_put(461, database->dbb_symbol->sym_string, NULL, NULL, NULL,
 					 NULL);
-	/* 461 - functions aren't supported in this database */
+	// 461 - functions aren't supported in this database
 	if (!(show_funcs_detail(database)))
 		ERRQ_msg_put(462, database->dbb_symbol->sym_string, NULL, NULL, NULL,
 					 NULL);
-	// 462 - no functions are defined in this database 
+	// 462 - no functions are defined in this database
 }
 
 
@@ -1461,7 +1460,7 @@ static int show_funcs_detail( DBB database)
 
 	int count = 0;
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_functions]) F IN RDB$FUNCTIONS
-		SORTED BY F.RDB$FUNCTION_NAME 
+		SORTED BY F.RDB$FUNCTION_NAME
         if (!count++)
 			  ERRQ_msg_put(416, database->dbb_filename,	/* Msg416 Functions in database %s (%s): */
 						   database->dbb_symbol->sym_string, NULL, NULL,
@@ -1516,11 +1515,11 @@ static int show_insecure_fields(
 
 		if (R.RDB$VIEW_BLR.NULL)
 			ERRQ_msg_put(496, RFR.RDB$FIELD_NAME, RFR.RDB$RELATION_NAME,
-						 database->dbb_symbol->sym_string, NULL, NULL);	/* Msg495 Field %s in relation %s of database %s */
+						 database->dbb_symbol->sym_string, NULL, NULL);	// Msg495 Field %s in relation %s of database %s
 		else
 			ERRQ_msg_put(495, RFR.RDB$FIELD_NAME, RFR.RDB$RELATION_NAME,
-						 database->dbb_symbol->sym_string, NULL, NULL);	/* Msg495 Field %s in view %s of database %s */
-		ERRQ_msg_put(338, F.RDB$FIELD_NAME, NULL, NULL, NULL, NULL);	/* Msg338 Global field %s */
+						 database->dbb_symbol->sym_string, NULL, NULL);	// Msg495 Field %s in view %s of database %s
+		ERRQ_msg_put(338, F.RDB$FIELD_NAME, NULL, NULL, NULL, NULL);	// Msg338 Global field %s
 
 		if (!RFR.RDB$BASE_FIELD.NULL) {
 			truncate_string(RFR.RDB$BASE_FIELD);
@@ -1530,7 +1529,7 @@ static int show_insecure_fields(
 
 		show_text_blob(database, "\t", 339, (SLONG*) &RFR.RDB$DESCRIPTION, 339,
 					   (SLONG*) &F.RDB$DESCRIPTION, false);
-		ERRQ_msg_partial(340, NULL, NULL, NULL, NULL, NULL);	// Msg340 Datatype information: 
+		ERRQ_msg_partial(340, NULL, NULL, NULL, NULL, NULL);	// Msg340 Datatype information:
 		ib_printf("\t");
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
 					  F.RDB$FIELD_LENGTH, F.RDB$FIELD_SCALE,
@@ -1555,7 +1554,7 @@ static void show_forms_db( DBB database)
 {
 /**************************************
  *
- *	s h o w _ f o r m s _ d b 
+ *	s h o w _ f o r m s _ d b
  *
  **************************************
  *
@@ -1567,14 +1566,14 @@ static void show_forms_db( DBB database)
 
 	ERRQ_msg_put(120, database->dbb_symbol->sym_string, NULL, NULL, NULL,
 					 NULL);
-	/* Msg120 There are no forms defined for database %s */
+	// Msg120 There are no forms defined for database %s
 }
 
 static void show_gbl_field( SYN field_node)
 {
 /**************************************
  *
- *	s h o w _ g b l _ f i e l d 
+ *	s h o w _ g b l _ f i e l d
  *
  **************************************
  *
@@ -1607,7 +1606,7 @@ static void show_gbl_field( SYN field_node)
 	if (database) {
 		count += show_gbl_field_detail(database, field_name->nam_string);
 		if (!count)
-			ERRQ_msg_put(122,	/* Msg122 Global field %s does not exist in database %s */
+			ERRQ_msg_put(122,	// Msg122 Global field %s does not exist in database %s
 						 field_name->nam_string,
 						 database->dbb_symbol->sym_string, NULL, NULL, NULL);
 	}
@@ -1615,7 +1614,7 @@ static void show_gbl_field( SYN field_node)
 		for (database = QLI_databases; database; database = database->dbb_next)
 			count += show_gbl_field_detail(database, field_name->nam_string);
 		if (!count)
-			ERRQ_msg_put(123, field_name->nam_string, NULL, NULL, NULL, NULL);	/* Msg123 Global field %s does not exist in any open database */
+			ERRQ_msg_put(123, field_name->nam_string, NULL, NULL, NULL, NULL);	// Msg123 Global field %s does not exist in any open database
 	}
 
 }
@@ -1632,7 +1631,7 @@ static int show_gbl_field_detail( DBB database, const TEXT * field_name)
  * Functional description
  *	Show everything we know about a global
  *	field with the specified name in a particular
- *	database. 
+ *	database.
  *
  **************************************/
 	int count = 0;
@@ -1640,18 +1639,18 @@ static int show_gbl_field_detail( DBB database, const TEXT * field_name)
 	MET_meta_transaction(database, FALSE);
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_global_field])
-		F IN RDB$FIELDS WITH F.RDB$FIELD_NAME = field_name 
+		F IN RDB$FIELDS WITH F.RDB$FIELD_NAME = field_name
 
         if (count++)
 			ib_printf("\n");
 		truncate_string(F.RDB$FIELD_NAME);
 
 		ERRQ_msg_put(276, F.RDB$FIELD_NAME, database->dbb_symbol->sym_string,
-					 NULL, NULL, NULL);	/* Msg276 Global field %s in database %s */
+					 NULL, NULL, NULL);	// Msg276 Global field %s in database %s
 
 		show_text_blob(database, "\t", 277, (SLONG*) &F.RDB$DESCRIPTION, 0, NULL,
 					   false);
-		ERRQ_msg_put(278, NULL, NULL, NULL, NULL, NULL);	// Msg278 Datatype information: 
+		ERRQ_msg_put(278, NULL, NULL, NULL, NULL, NULL);	// Msg278 Datatype information:
 		ib_printf("\t");
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
 					  F.RDB$FIELD_LENGTH, F.RDB$FIELD_SCALE,
@@ -1670,7 +1669,7 @@ static int show_gbl_field_detail( DBB database, const TEXT * field_name)
 
 	if (count && !(show_field_instances(database, field_name)))
 		ERRQ_msg_put(284, field_name, database->dbb_symbol->sym_string, NULL,
-					 NULL, NULL);	/* Msg284 %s is not used in any relations in database %s */
+					 NULL, NULL);	// Msg284 %s is not used in any relations in database %s
 
 	return count;
 }
@@ -1697,14 +1696,14 @@ static void show_gbl_fields( DBB database)
 		count += show_gbl_fields_detail(database);
 		if (!count)
 			ERRQ_msg_put(124, database->dbb_symbol->sym_string, NULL, NULL,
-						 NULL, NULL);	/* Msg124 There are no fields defined for database %s */
+						 NULL, NULL);	// Msg124 There are no fields defined for database %s
 	}
 	else {
 		for (database = QLI_databases; database;
 			 database = database->dbb_next) count +=
 				show_gbl_fields_detail(database);
 		if (!count)
-			ERRQ_msg_put(125, NULL, NULL, NULL, NULL, NULL);	// Msg125 There are no fields defined in any open database 
+			ERRQ_msg_put(125, NULL, NULL, NULL, NULL, NULL);	// Msg125 There are no fields defined in any open database
 	}
 }
 
@@ -1718,9 +1717,9 @@ static int show_gbl_fields_detail( DBB database)
  **************************************
  *
  * Functional description
- *	Show everything we know about 
+ *	Show everything we know about
  *	global fields in a particular
- *	database. 
+ *	database.
  *
  **************************************/
 	int count = 0;
@@ -1729,11 +1728,11 @@ static int show_gbl_fields_detail( DBB database)
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_global_fields])
 		F IN RDB$FIELDS WITH F.RDB$SYSTEM_FLAG MISSING OR
-			F.RDB$SYSTEM_FLAG = 0 SORTED BY F.RDB$FIELD_NAME 
+			F.RDB$SYSTEM_FLAG = 0 SORTED BY F.RDB$FIELD_NAME
 
         if (!count++)
 			ERRQ_msg_put(286, database->dbb_symbol->sym_string, NULL, NULL,
-						 NULL, NULL);	/* Msg286 Global fields for database %s: */
+						 NULL, NULL);	// Msg286 Global fields for database %s:
 
 		if (!F.RDB$COMPUTED_BLR.NULL)
 			continue;
@@ -1764,7 +1763,7 @@ static int show_indices_detail( QLI_REL relation)
  *
  **************************************/
 	USHORT count = 0;
-	
+
 	DBB database = relation->rel_database;
 	MET_meta_transaction(database, FALSE);
 
@@ -1792,7 +1791,7 @@ static int show_indices_detail( QLI_REL relation)
 			ERRQ_msg_put(450, X.RDB$INDEX_NAME,
 						 (X.RDB$UNIQUE_FLAG) ? (char*) " (unique)" : (char*) "",
 						 (type == 1) ? (char*) " (descending)" : (char*) "",
-						 (X.RDB$INDEX_INACTIVE) ? (char*) " (inactive)" : (char*) "", NULL);	/* Msg450 Index %s%s%s%s */
+						 (X.RDB$INDEX_INACTIVE) ? (char*) " (inactive)" : (char*) "", NULL);	// Msg450 Index %s%s%s%s
 
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index])
 				Y IN RDB$INDEX_SEGMENTS WITH
@@ -1824,7 +1823,7 @@ static int show_indices_detail( QLI_REL relation)
 			++count;
 			truncate_string(X.RDB$INDEX_NAME);
 			ERRQ_msg_put(290, X.RDB$INDEX_NAME,
-						 (X.RDB$UNIQUE_FLAG) ? (char*) " (unique)" : (char*) "", NULL, NULL, NULL);	/* Msg290 Index %s%s */
+						 (X.RDB$UNIQUE_FLAG) ? (char*) " (unique)" : (char*) "", NULL, NULL, NULL);	// Msg290 Index %s%s
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_index])
 				Y IN RDB$INDEX_SEGMENTS WITH
 					Y.RDB$INDEX_NAME EQ X.RDB$INDEX_NAME
@@ -1904,7 +1903,7 @@ static void show_proc( QPR proc)
 {
 /**************************************
  *
- *	s h o w _ p r o c 
+ *	s h o w _ p r o c
  *
  **************************************
  *
@@ -1922,7 +1921,7 @@ static void show_proc( QPR proc)
 		if (blob = PRO_fetch_procedure(database, (TEXT*) name->nam_string))
 			display_procedure(database, (UCHAR*) name->nam_string, blob);
 		else
-			ERRQ_msg_put(126,	/* Msg126 Procedure %s not found in database %s */
+			ERRQ_msg_put(126,	// Msg126 Procedure %s not found in database %s
 						 name->nam_string, database->dbb_symbol->sym_string,
 						 NULL, NULL, NULL);
 		return;
@@ -2001,7 +2000,7 @@ static void show_rel_detail( QLI_REL relation)
  **************************************
  *
  * Functional description
- *	Ask META to print description, 
+ *	Ask META to print description,
  *	security class, etc.
  *
  **************************************/
@@ -2026,25 +2025,25 @@ static void show_rel_detail( QLI_REL relation)
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_extern])
 			E IN RDB$RELATIONS WITH E.RDB$RELATION_NAME = R.RDB$RELATION_NAME
 				AND E.RDB$EXTERNAL_FILE NOT MISSING
-				ERRQ_msg_put(293, E.RDB$EXTERNAL_FILE, NULL, NULL, NULL, NULL);	/* Msg293 Stored in external file %s */
+				ERRQ_msg_put(293, E.RDB$EXTERNAL_FILE, NULL, NULL, NULL, NULL);	// Msg293 Stored in external file %s
 		END_FOR;
 
 /* OBSOLETE - Handling of DBB_cap_triggers (old V2 style triggers) */
-/* OBSOLETE - Msg294 An erase trigger is defined for %s */
-/* OBSOLETE - Msg295 A modify trigger is defined for %s */
-/* OBSOLETE - Msg296 A store trigger is defined for %s */
+// OBSOLETE - Msg294 An erase trigger is defined for %s
+// OBSOLETE - Msg295 A modify trigger is defined for %s
+// OBSOLETE - Msg296 A store trigger is defined for %s
 
 		if (database->dbb_capabilities & DBB_cap_new_triggers) {
 			USHORT msg = 380;
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_new_trig_exists])
 				X IN RDB$TRIGGERS WITH X.RDB$RELATION_NAME EQ relation->
-					rel_symbol->sym_string 
+					rel_symbol->sym_string
 				if (!X.RDB$TRIGGER_BLR.NULL) {
 					if (msg) {
 						ERRQ_msg_put(msg, NULL, NULL, NULL, NULL, NULL);
 						// Msg380 Trigger defined for this relation
 						msg = 0;
-					} 
+					}
 					ib_printf("\t");
 					show_trigger_status(X.RDB$TRIGGER_NAME,
 										X.RDB$TRIGGER_TYPE,
@@ -2128,7 +2127,7 @@ static USHORT show_security_class_detail( DBB database, const TEXT * name)
         if (truncate_string(S.RDB$SECURITY_CLASS)) {
 			ib_printf("\t%s:\n", S.RDB$SECURITY_CLASS);
 			display_acl(database, (SLONG*) &S.RDB$ACL);
-		} 
+		}
         count++;
 	END_FOR;
 
@@ -2155,9 +2154,9 @@ static USHORT show_security_classes_detail( DBB database)
 
 	USHORT count = 0;
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_secur])
-		S IN RDB$SECURITY_CLASSES 
-        if (!count)	
-				 ERRQ_msg_put(297, database->dbb_symbol->sym_string, NULL, NULL, NULL, NULL);	/* Msg297 Security classes for database %s */
+		S IN RDB$SECURITY_CLASSES
+        if (!count)
+				 ERRQ_msg_put(297, database->dbb_symbol->sym_string, NULL, NULL, NULL, NULL);	// Msg297 Security classes for database %s
 
 		if (truncate_string(S.RDB$SECURITY_CLASS)) {
 			ib_printf("\t%s:\n", S.RDB$SECURITY_CLASS);
@@ -2222,16 +2221,16 @@ static void show_sys_trigs( DBB database)
 		X IN RDB$TRIGGERS WITH X.RDB$SYSTEM_FLAG EQ 1
 			SORTED BY X.RDB$RELATION_NAME, X.RDB$TRIGGER_TYPE,
 			X.RDB$TRIGGER_SEQUENCE,
-			X.RDB$TRIGGER_NAME 
+			X.RDB$TRIGGER_NAME
 
         if (!X.RDB$TRIGGER_BLR.NULL) {
-			ERRQ_msg_put(379, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);	// Msg379 System Triggers 
+			ERRQ_msg_put(379, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);	// Msg379 System Triggers
 			show_trigger_header(X.RDB$TRIGGER_NAME, X.RDB$TRIGGER_TYPE,
 								X.RDB$TRIGGER_SEQUENCE,
 								X.RDB$TRIGGER_INACTIVE, (SLONG*) &X.RDB$DESCRIPTION,
 								database, X.RDB$RELATION_NAME);
-			show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	// Msg377 Source for the trigger is not available.  Trigger BLR: 
-						   376,	// Msg376 Source for the trigger 
+			show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	// Msg377 Source for the trigger is not available.  Trigger BLR:
+						   376,	// Msg376 Source for the trigger
 						   database, X.RDB$RELATION_NAME);
 			show_trigger_messages(database, X.RDB$TRIGGER_NAME);
 			count++;
@@ -2239,7 +2238,7 @@ static void show_sys_trigs( DBB database)
 	END_FOR;
 
 	if (!count)
-		ERRQ_msg_put(378, NULL, NULL, NULL, NULL, NULL);	// Msg378 No system triggers  
+		ERRQ_msg_put(378, NULL, NULL, NULL, NULL, NULL);	// Msg378 No system triggers
 }
 
 
@@ -2297,7 +2296,7 @@ static void show_trig( QLI_REL relation)
 	if (!(show_trigger_detail(relation->rel_database,
 							  relation->rel_symbol->sym_string)))
 			ERRQ_msg_put(129, relation->rel_symbol->sym_string, NULL, NULL,
-						 NULL, NULL);	/* Msg129 No triggers are defined for relation %s */
+						 NULL, NULL);	// Msg129 No triggers are defined for relation %s
 }
 
 
@@ -2320,15 +2319,15 @@ static int show_trigger_detail( DBB database, const TEXT * relation_name)
 	MET_meta_transaction(database, FALSE);
 	int count = 0;
 
-// New style triggers 
+// New style triggers
 
 	if (database->dbb_capabilities & DBB_cap_new_triggers) {
-		ERRQ_msg_put(365, relation_name, NULL, NULL, NULL, NULL);	/* Msg365 Triggers for relation %s */
+		ERRQ_msg_put(365, relation_name, NULL, NULL, NULL, NULL);	// Msg365 Triggers for relation %s
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_new_trigger])
 			X IN RDB$TRIGGERS WITH X.RDB$RELATION_NAME EQ relation_name
 				AND(X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG EQ 0)
 			SORTED BY X.RDB$TRIGGER_TYPE, X.RDB$TRIGGER_SEQUENCE,
-				X.RDB$TRIGGER_NAME 
+				X.RDB$TRIGGER_NAME
 
             if (!X.RDB$TRIGGER_BLR.NULL) {
 				show_trigger_header(X.RDB$TRIGGER_NAME, X.RDB$TRIGGER_TYPE,
@@ -2336,8 +2335,8 @@ static int show_trigger_detail( DBB database, const TEXT * relation_name)
 									X.RDB$TRIGGER_INACTIVE,
 									(SLONG*) &X.RDB$DESCRIPTION, database,
 									relation_name);
-				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	// Msg377 Source for the trigger is not available.  Trigger BLR: 
-							   376,	// Msg376 Source for the trigger 
+				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	// Msg377 Source for the trigger is not available.  Trigger BLR:
+							   376,	// Msg376 Source for the trigger
 							   database, relation_name);
 				show_trigger_messages(database, X.RDB$TRIGGER_NAME);
 				count++;
@@ -2346,16 +2345,16 @@ static int show_trigger_detail( DBB database, const TEXT * relation_name)
 		return count;
 	}
 
-// Old style triggers 
-// OBSOLETE - 1996-Aug-06 David Schnepper  
+// Old style triggers
+// OBSOLETE - 1996-Aug-06 David Schnepper
 
-/* OBSOLETE - Msg298 Triggers for relation %s: */
-// OBSOLETE - Msg299 Source for the erase trigger is not available.  Trigger BLR: 
-/* OBSOLETE - Msg300 Erase trigger for relation %s: */
-// OBSOLETE - Msg301 Source for the modify trigger is not available.  Trigger BLR: 
-/* OBSOLETE - Msg302 Modify trigger for relation %s: */
-// OBSOLETE - Msg303 Source for the store trigger is not available.  Trigger BLR: 
-/* OBSOLETE - Msg304 Store trigger for relation %s: */
+// OBSOLETE - Msg298 Triggers for relation %s:
+// OBSOLETE - Msg299 Source for the erase trigger is not available.  Trigger BLR:
+// OBSOLETE - Msg300 Erase trigger for relation %s:
+// OBSOLETE - Msg301 Source for the modify trigger is not available.  Trigger BLR:
+// OBSOLETE - Msg302 Modify trigger for relation %s:
+// OBSOLETE - Msg303 Source for the store trigger is not available.  Trigger BLR:
+// OBSOLETE - Msg304 Store trigger for relation %s:
 
 	return count;
 }
@@ -2377,7 +2376,7 @@ static void show_trigger_header(
  *****************************************************
  *
  * Functional description
- * 	Display header information for a new style 
+ * 	Display header information for a new style
  *	trigger only.
  *
  *****************************************************/
@@ -2395,7 +2394,7 @@ static void show_trigger_messages( DBB database, const TEXT * name)
  *
  *****************************************************
  *
- *	 Display error messages associated with 
+ *	 Display error messages associated with
  *       a new style (V3) trigger
  *
  *****************************************************/
@@ -2403,7 +2402,7 @@ static void show_trigger_messages( DBB database, const TEXT * name)
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_trig_message])
 		M IN RDB$TRIGGER_MESSAGES WITH M.RDB$TRIGGER_NAME = name
-			SORTED BY M.RDB$MESSAGE_NUMBER 
+			SORTED BY M.RDB$MESSAGE_NUMBER
 
         if (first) {
 			ERRQ_msg_put(456, name, NULL, NULL, NULL, NULL);
@@ -2439,25 +2438,25 @@ static void show_trigger_status(
 	switch (type) {
 	case PRE_STORE:
 		msg_num = 367;
-		break;					// Msg367 pre-store 
+		break;					// Msg367 pre-store
 	case POST_STORE:
 		msg_num = 368;
-		break;					// Msg368 post-store 
+		break;					// Msg368 post-store
 	case PRE_MODIFY:
 		msg_num = 369;
-		break;					// Msg369 pre-modify 
+		break;					// Msg369 pre-modify
 	case POST_MODIFY:
 		msg_num = 370;
-		break;					// Msg370 post-modify 
+		break;					// Msg370 post-modify
 	case PRE_ERASE:
 		msg_num = 371;
-		break;					// Msg371 pre-erase 
+		break;					// Msg371 pre-erase
 	case POST_ERASE:
 		msg_num = 372;
-		break;					// Msg372 post-erase 
+		break;					// Msg372 post-erase
 	default:
 		msg_num = 372;
-		break;					// Should never happen, not worth an error 
+		break;					// Should never happen, not worth an error
 	}
 
 	ERRQ_msg_format(msg_num, sizeof(trigger_type), trigger_type, NULL, NULL,
@@ -2468,7 +2467,7 @@ static void show_trigger_status(
 
 	truncate_string(name);
 	ERRQ_msg_put(366, name, trigger_type, (TEXT *) (ULONG) sequence,
-				 trigger_active, NULL);	/* Msg366 Name: %s, Type: %s, Sequence: %d, Active: %s */
+				 trigger_active, NULL);	// Msg366 Name: %s, Type: %s, Sequence: %d, Active: %s
 }
 
 
@@ -2482,20 +2481,20 @@ static void show_trigs( DBB database)
  *
  * Functional description
  *	Ask META to print all trigger information
- *	for a particular database or all databases.  
+ *	for a particular database or all databases.
  *
  **************************************/
 
 	if (database) {
 		if (!show_triggers_detail(database))
 			ERRQ_msg_put(130, database->dbb_symbol->sym_string, NULL, NULL,
-						 NULL, NULL);	/* Msg130 No triggers are defined in database %s */
+						 NULL, NULL);	// Msg130 No triggers are defined in database %s
 	}
 	else
 		for (database = QLI_databases; database; database = database->dbb_next)
 			if (!show_triggers_detail(database))
 				ERRQ_msg_put(131, database->dbb_symbol->sym_string, NULL, NULL,
-					   NULL, NULL);	/* Msg131 No triggers are defined in database %s */
+					   NULL, NULL);	// Msg131 No triggers are defined in database %s
 }
 
 
@@ -2520,7 +2519,7 @@ static int show_triggers_detail( DBB database)
 
 	if (database->dbb_capabilities & DBB_cap_new_triggers) {
 
-// New style triggers 
+// New style triggers
 
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_new_triggers])
 			X IN RDB$TRIGGERS WITH X.RDB$SYSTEM_FLAG MISSING
@@ -2528,14 +2527,14 @@ static int show_triggers_detail( DBB database)
 				X.RDB$TRIGGER_TYPE, X.RDB$TRIGGER_SEQUENCE, X.RDB$TRIGGER_NAME
             if (!X.RDB$TRIGGER_BLR.NULL) {
 				truncate_string(X.RDB$RELATION_NAME);
-				ERRQ_msg_put(381, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);	/* Msg365 Triggers for relation %s */
+				ERRQ_msg_put(381, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);	// Msg365 Triggers for relation %s
 				show_trigger_header(X.RDB$TRIGGER_NAME, X.RDB$TRIGGER_TYPE,
 									X.RDB$TRIGGER_SEQUENCE,
 									X.RDB$TRIGGER_INACTIVE,
 									(SLONG*) &X.RDB$DESCRIPTION, database,
 									X.RDB$RELATION_NAME);
-				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	// Msg377 Source for the trigger is not available.  Trigger BLR: 
-							   376,	// Msg376 Source for the trigger 
+				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	// Msg377 Source for the trigger is not available.  Trigger BLR:
+							   376,	// Msg376 Source for the trigger
 							   database, X.RDB$RELATION_NAME);
 				show_trigger_messages(database, X.RDB$TRIGGER_NAME);
 				count++;
@@ -2544,18 +2543,18 @@ static int show_triggers_detail( DBB database)
 	}
 	else {
 
-// Old style triggers 
-// OBSOLETE - 1996-Aug-06 David Schnepper  
-/* OBSOLETE - Msg305 Triggers for relation %s: */
+// Old style triggers
+// OBSOLETE - 1996-Aug-06 David Schnepper
+// OBSOLETE - Msg305 Triggers for relation %s:
 
-// OBSOLETE - Msg306 Source for the erase trigger is not available.  Trigger BLR: 
-/* OBSOLETE - Msg307 Erase trigger for relation %s: */
+// OBSOLETE - Msg306 Source for the erase trigger is not available.  Trigger BLR:
+// OBSOLETE - Msg307 Erase trigger for relation %s:
 
-// OBSOLETE - Msg308 Source for the modify trigger is not available.  Trigger BLR: 
-/* OBSOLETE - Msg309 Modify trigger for relation %s: */
+// OBSOLETE - Msg308 Source for the modify trigger is not available.  Trigger BLR:
+// OBSOLETE - Msg309 Modify trigger for relation %s:
 
-// OBSOLETE - Msg310 Source for the store trigger is not available.  Trigger BLR: 
-/* OBSOLETE - Msg311 Store trigger for relation %s: */
+// OBSOLETE - Msg310 Source for the store trigger is not available.  Trigger BLR:
+// OBSOLETE - Msg311 Store trigger for relation %s:
 	}
 
 	return count;
@@ -2581,11 +2580,11 @@ static void show_var( NAM var_name)
 			break;
 
 	if (!variable) {
-		ERRQ_msg_put(474, var_name->nam_string, NULL, NULL, NULL, NULL);	/* Msg474 Variable %s has not been declared */
+		ERRQ_msg_put(474, var_name->nam_string, NULL, NULL, NULL, NULL);	// Msg474 Variable %s has not been declared
 		return;
 	}
 
-	ERRQ_msg_put(471, variable->fld_name->sym_string, NULL, NULL, NULL, NULL);	/* Msg471 Variable %s */
+	ERRQ_msg_put(471, variable->fld_name->sym_string, NULL, NULL, NULL, NULL);	// Msg471 Variable %s
 	ERRQ_msg_put(475, NULL, NULL, NULL, NULL, NULL);
 	ib_printf("\t");
 	show_datatype(NULL, variable->fld_dtype,
@@ -2617,7 +2616,7 @@ static void show_vars(void)
  *
  **************************************/
 
-	ERRQ_msg_put(132, NULL, NULL, NULL, NULL, NULL);	// Msg132 Variables: 
+	ERRQ_msg_put(132, NULL, NULL, NULL, NULL, NULL);	// Msg132 Variables:
 	show_fields(NULL, QLI_variables);
 }
 
@@ -2634,7 +2633,7 @@ static void show_versions(void)
  *	Show the version for QLI and all databases.
  *
  **************************************/
-	ERRQ_msg_put(133, GDS_VERSION, NULL, NULL, NULL, NULL);	/* Msg133 QLI, version %s */
+	ERRQ_msg_put(133, GDS_VERSION, NULL, NULL, NULL, NULL);	// Msg133 QLI, version %s
 
 	for (DBB dbb = QLI_databases; dbb; dbb = dbb->dbb_next) {
 		ERRQ_msg_put(134, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg134 Version(s) for database %s */
@@ -2661,16 +2660,16 @@ static void show_view( QLI_REL relation)
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_view])
 		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->
-			sym_string AND X.RDB$VIEW_BLR NOT MISSING 
+			sym_string AND X.RDB$VIEW_BLR NOT MISSING
 
         if (X.RDB$VIEW_SOURCE.NULL) {
 			ERRQ_msg_put(312, relation->rel_symbol->sym_string, NULL, NULL,
-						 NULL, NULL);	/* Msg312 View source for relation %s is not available.  View BLR: */
+						 NULL, NULL);	// Msg312 View source for relation %s is not available.  View BLR:
 			display_blr(database, (SLONG*) &X.RDB$VIEW_BLR);
 		}
 		else {
 			ERRQ_msg_put(313, relation->rel_symbol->sym_string, NULL, NULL,
-						 NULL, NULL);	/* Msg313 Relation %s is a view defined as: */
+						 NULL, NULL);	// Msg313 Relation %s is a view defined as:
 			show_text_blob(database, "\t", 0, (SLONG*) &X.RDB$VIEW_SOURCE, 0, NULL,
 						   false);
 		}
@@ -2695,13 +2694,13 @@ static int show_views_detail( DBB database)
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_views])
 		X IN RDB$RELATIONS WITH X.RDB$VIEW_BLR NOT MISSING
-			SORTED BY X.RDB$RELATION_NAME 
+			SORTED BY X.RDB$RELATION_NAME
 
-        if (!count++)	
-            ERRQ_msg_put(316, database->dbb_symbol->sym_string, NULL, NULL, NULL, NULL);	/* Msg316 Views in database %s: */
+        if (!count++)
+            ERRQ_msg_put(316, database->dbb_symbol->sym_string, NULL, NULL, NULL, NULL);	// Msg316 Views in database %s:
 
 		truncate_string(X.RDB$RELATION_NAME);
-		ERRQ_msg_put(317, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);	/* Msg317 %s comprised of: */
+		ERRQ_msg_put(317, X.RDB$RELATION_NAME, NULL, NULL, NULL, NULL);	// Msg317 %s comprised of:
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_view_rel])
 			V IN RDB$VIEW_RELATIONS
 				WITH V.RDB$VIEW_NAME = X.RDB$RELATION_NAME
@@ -2786,16 +2785,16 @@ static void view_info(
 		if (RFR.RDB$BASE_FIELD.NULL)
 			ERRQ_msg_put(507, spaces, base_field, RFR.RDB$RELATION_NAME, NULL,
 						 NULL);
-		/* Msg507 %s Based on field %s of relation %s */
+		// Msg507 %s Based on field %s of relation %s
 		else
 			ERRQ_msg_put(508, spaces, base_field, RFR.RDB$RELATION_NAME, NULL,
 						 NULL);
-		/* Msg508 %s Based on field %s of view %s */
+		// Msg508 %s Based on field %s of view %s
 		show_text_blob(dbb, "\t", 349, (SLONG*) &RFR.RDB$DESCRIPTION, 0, NULL,
 					   false);
 
 		if (!RFR.RDB$DESCRIPTION.NULL) {
-			ERRQ_msg_put(349, spaces, base_field, NULL, NULL, NULL);	/* Msg349 %sBase field description for %s: */
+			ERRQ_msg_put(349, spaces, base_field, NULL, NULL, NULL);	// Msg349 %sBase field description for %s:
 			show_text_blob(dbb, "\t\t", 0, (SLONG*) &RFR.RDB$DESCRIPTION, 0, NULL,
 						   false);
 		}
@@ -2808,4 +2807,5 @@ static void view_info(
 		}
 	END_FOR;
 }
+
 

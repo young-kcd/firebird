@@ -127,7 +127,7 @@ TEXT *FMT_format(LLS stack)
 	USHORT j, l, n, lengths[10], *ptr;
 	TEXT *p, *q, *segments[10];
 
-// Start by inverting the item stack into an item que 
+// Start by inverting the item stack into an item que
 
 	LLS temp = stack;
 	stack = NULL;
@@ -191,7 +191,7 @@ TEXT *FMT_format(LLS stack)
 
 		format_value(item, 0);
 
-		// If the item would overflow the line, reset to beginning of line 
+		// If the item would overflow the line, reset to beginning of line
 
 		if (offset + MAX(item->itm_print_length, item->itm_header_length) >
 			QLI_columns) offset = 0;
@@ -220,9 +220,9 @@ TEXT *FMT_format(LLS stack)
 			}
 			if (flag && (l = n)) {
 				BOTTOM_CHECK(bottom, bottom - BOTTOM_LINE + n);
-				do
+				do {
 					*bottom++ = '=';
-				while (--l);
+				} while (--l);
 			}
 			else {
 				item->itm_query_header = NULL;
@@ -240,7 +240,7 @@ TEXT *FMT_format(LLS stack)
 		max_offset = MAX(max_offset, offset);
 	}
 
-// Make another pass checking for overlapping fields 
+// Make another pass checking for overlapping fields
 
 	for (temp = stack; temp; temp = temp->lls_next) {
 		item = (ITM) temp->lls_object;
@@ -261,7 +261,7 @@ TEXT *FMT_format(LLS stack)
 	if (number_segments == 0)
 		return NULL;
 
-// Allocate a string block big enough to hold all lines of the print header 
+// Allocate a string block big enough to hold all lines of the print header
 
 	const ULONG size = (max_offset + 1) * (number_segments + 1) + 2;
 
@@ -272,7 +272,7 @@ TEXT *FMT_format(LLS stack)
 	STR header = (STR) ALLOCDV(type_str, size);
 	p = header->str_data;
 
-// Generate the various lines of the header line at a time. 
+// Generate the various lines of the header line at a time.
 
 	for (j = 0; j < number_segments; j++) {
 		*p++ = '\n';
@@ -292,20 +292,20 @@ TEXT *FMT_format(LLS stack)
 				*p++ = ' ';
 			q = segments[segment];
 			if (l)
-				do
+				do {
 					*p++ = *q++;
-				while (--l);
+				} while (--l);
 		}
 	}
 
-// Make one last pass to put in underlining of headers 
+// Make one last pass to put in underlining of headers
 
 	if (l = bottom - BOTTOM_LINE) {
 		*p++ = '\n';
 		bottom = BOTTOM_LINE;
-		do
+		do {
 			*p++ = *bottom++;
-		while (--l);
+		} while (--l);
 	}
 
 	*p++ = '\n';
@@ -444,11 +444,11 @@ void FMT_print( QLI_NOD list, PRT print)
 	RPT report;
 	ISC_STATUS_ARRAY status_vector;
 
-// Now go thru and make up the first line 
+// Now go thru and make up the first line
 
 	if (!list)
 		return;
-		
+
 	TEXT* buffer = NULL;
 	TEXT* p = BUFFER_INIT;
 	qli_nod** const end = list->nod_arg + list->nod_count;
@@ -514,7 +514,7 @@ void FMT_print( QLI_NOD list, PRT print)
 		while (p < q)
 			*p++ = ' ';
 
-		// Next, handle simple formated values 
+		// Next, handle simple formated values
 
 		if (item->itm_dtype != dtype_blob) {
 			desc = EVAL_value(item->itm_value);
@@ -526,7 +526,7 @@ void FMT_print( QLI_NOD list, PRT print)
 			continue;
 		}
 
-		// Finally, handle blobs 
+		// Finally, handle blobs
 
 		if (!(item->itm_stream = EXEC_open_blob(item->itm_value)))
 			continue;
@@ -544,11 +544,11 @@ void FMT_print( QLI_NOD list, PRT print)
 
 	put_line(print, &p, buffer, '\n');
 
-// Now go back until all blobs have been fetched 
+// Now go back until all blobs have been fetched
 
 	print_blobs(print, (ITM*) list->nod_arg, (ITM*) end);
 
-// Finish by closing all blobs 
+// Finish by closing all blobs
 
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
 		ITM item = (ITM) *ptr;
@@ -581,7 +581,7 @@ void FMT_put(const TEXT* line, PRT print)
 	TEXT* const end = buffer + sizeof(buffer) - 1;
 	const TEXT* q = line;
 	TEXT* p;
-	
+
 	if (print && print->prt_file)
 		while (*q) {
 			for (p = buffer; p < end && *q;)
@@ -596,7 +596,7 @@ void FMT_put(const TEXT* line, PRT print)
 			*p = 0;
 #ifdef DEV_BUILD
 			if (QLI_hex_output) {
-				// Hex mode output to assist debugging of multicharset work 
+				// Hex mode output to assist debugging of multicharset work
 
 				for (p = buffer; p < end && *p; p++)
 					if (is_printable(*p))
@@ -652,7 +652,7 @@ void FMT_report( RPT report)
 
 	report->rpt_column_header = format_report(columns_vec, width, &width);
 
-// Handle report name, if any 
+// Handle report name, if any
 
 	if (report->rpt_name) {
 		const USHORT n =
@@ -660,16 +660,16 @@ void FMT_report( RPT report)
 		USHORT i;
 		for (i = 0; i < n; i++)
 			width = MAX(width, lengths[i] + 15);
-			
+
 		STR string = (STR) ALLOCDV(type_str, width * n);
 		TEXT* p = string->str_data;
 		report->rpt_header = p;
 		for (i = 0; i < n; i++) {
 			USHORT column = (width - lengths[i]) / 2;
 			if (column > 0)
-				do
+				do {
 					*p++ = ' ';
-				while (--column);
+				} while (--column);
 			const TEXT* q = segments[i];
 			const TEXT* const end = q + lengths[i];
 			while (q < end)
@@ -703,7 +703,7 @@ static int decompose_header(SCHAR* string,
 
 	SSHORT n = 0;
 
-// Handle simple name first 
+// Handle simple name first
 
 	if (*string != '"' && *string != '\'')
 		while (*string) {
@@ -752,7 +752,7 @@ static void format_index( ITM item, QLI_NOD field, const bool print_flag)
 		return;
 	}
 
-// Start the label with the current query header, if any 
+// Start the label with the current query header, if any
 
 	USHORT l;
 	const TEXT* q;
@@ -771,7 +771,7 @@ static void format_index( ITM item, QLI_NOD field, const bool print_flag)
 	while (l--)
 		*p++ = *q++;
 
-// Loop through the subscripts, adding to the label 
+// Loop through the subscripts, adding to the label
 
 	const TEXT* r;
 	if (print_flag) {
@@ -780,7 +780,7 @@ static void format_index( ITM item, QLI_NOD field, const bool print_flag)
 	}
 	else
 		r = "[";
-		
+
 	TEXT s[32];
 	QLI_NOD *ptr, *end;
 	for (ptr = args->nod_arg, end = ptr + args->nod_count; ptr < end; ptr++) {
@@ -799,7 +799,7 @@ static void format_index( ITM item, QLI_NOD field, const bool print_flag)
 			break;
 
 		default:
-			// Punt on anything but constants, fields, and variables 
+			// Punt on anything but constants, fields, and variables
 
 			ALL_release((FRB) str);
 			return;
@@ -956,14 +956,14 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 	if (number_segments == 0)
 		return NULL;
 
-// Allocate a string block big enough to hold all lines of the print header 
+// Allocate a string block big enough to hold all lines of the print header
 
 	l = bottom - BOTTOM_LINE;
 	STR header = (STR) ALLOCDV(type_str,
 					  (max_offset + 1) * (number_segments + 1) + 2 + l);
 	p = header->str_data;
 
-// Generate the various lines of the header line at a time. 
+// Generate the various lines of the header line at a time.
 
 	for (j = 0; j < number_segments; j++) {
 		*p++ = '\n';
@@ -988,21 +988,21 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 					*p++ = ' ';
 				q = segments[segment];
 				if (l)
-					do
+					do {
 						*p++ = *q++;
-					while (--l);
+					} while (--l);
 			}
 		}
 	}
 
-// Make one last pass to put in underlining of headers 
+// Make one last pass to put in underlining of headers
 
 	if (l = bottom - BOTTOM_LINE) {
 		*p++ = '\n';
 		bottom = BOTTOM_LINE;
-		do
+		do {
 			*p++ = *bottom++;
-		while (--l);
+		} while (--l);
 	}
 
 	*p++ = '\n';
@@ -1055,7 +1055,7 @@ static void format_value( ITM item, int flags)
 			field = (QLI_FLD) node->nod_arg[e_fld_field];
 			if ((field->fld_flags & FLD_array) && !node->nod_arg[e_fld_subs])
 				ERRQ_print_error(480, field->fld_name->sym_string, NULL, NULL,
-								 NULL, NULL);	/* msg 480 can not format unsubscripted array %s */
+								 NULL, NULL);	// msg 480 can not format unsubscripted array %s
 		}
 
 		if (!(item->itm_picture->pic_missing) &&
@@ -1099,9 +1099,9 @@ static TEXT* get_buffer(STR* str, TEXT* ptr, USHORT length)
 	const TEXT* q = (*str)->str_data;
 
 	if (ptr && (l = ptr - q))
-		do
+		do {
 			*p++ = *q++;
-		while (--l);
+		} while (--l);
 
 	ALL_release((FRB) *str);
 	*str = temp_str;
@@ -1124,7 +1124,7 @@ static int match_expr( QLI_NOD node1, QLI_NOD node2)
  **************************************/
 	QLI_NOD *ptr1, *ptr2, *end;
 
-/* If either is missing, they can't match. */
+// If either is missing, they can't match.
 
 	if (!node1 || !node2)
 		return FALSE;
@@ -1135,12 +1135,12 @@ static int match_expr( QLI_NOD node1, QLI_NOD node2)
 	if (node2->nod_type == nod_reference)
 		node2 = node2->nod_arg[0];
 
-// A constant more or less matches anything 
+// A constant more or less matches anything
 
 	if (node1->nod_type == nod_constant)
 		return TRUE;
 
-/* Hasn't matched yet.  Check for statistical expression */
+// Hasn't matched yet.  Check for statistical expression
 
 	switch (node1->nod_type) {
 	case nod_average:
@@ -1273,7 +1273,7 @@ static int print_line( ITM item, TEXT ** ptr)
 
 	EXEC_poll_abort();
 
-/* If we're already at end of stream, there's nothing to do */
+// If we're already at end of stream, there's nothing to do
 
 	if (!item->itm_stream)
 		return EOF;
@@ -1383,7 +1383,7 @@ static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
 	if (item->itm_query_header && *item->itm_query_header == '-')
 		item->itm_query_header = NULL;
 
-/* If it's a constant, dump it in the next logical column */
+// If it's a constant, dump it in the next logical column
 
 	columns = *columns_vec;
 	if (columns->vec_object[*col_ndx] &&
@@ -1408,7 +1408,7 @@ static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
 			}
 		}
 
-/* Didn't fit -- make a new logical column */
+// Didn't fit -- make a new logical column
 
 	*col_ndx = new_index = col - (LLS *) columns->vec_object;
 	if (new_index >= columns->vec_count) {
@@ -1448,4 +1448,5 @@ static void report_line( QLI_NOD list, VEC * columns_vec)
 		}
 	}
 }
+
 

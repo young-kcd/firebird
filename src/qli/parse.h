@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_PARSE_H_
-#define _QLI_PARSE_H_
+#ifndef QLI_PARSE_H
+#define QLI_PARSE_H
 
 #define MAXSYMLEN	256
 
@@ -95,4 +95,5 @@ EXTERN TEXT	*QLI_prompt;
 
 #undef EXTERN
 
-#endif /* _QLI_PARSE_H_ */
+#endif /* QLI_PARSE_H */
+

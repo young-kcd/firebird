@@ -37,13 +37,17 @@
 #include "ib_udf.h"
 
 #ifndef SOLARIS
-
-int MATHERR(struct exception *e)
+#ifdef WIN_NT
+#define exception_type _exception
+#else
+#define exception_type exception
+#endif
+int MATHERR(struct exception_type *e)
 {
 	return 1;
 }
-
-#endif
+#undef exception_type
+#endif /* SOLARIS */
 
 double EXPORT IB_UDF_abs( double *a)
 {

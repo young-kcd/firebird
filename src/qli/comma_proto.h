@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_COMMA_PROTO_H_
-#define _QLI_COMMA_PROTO_H_
+#ifndef QLI_COMMA_PROTO_H
+#define QLI_COMMA_PROTO_H
 
 extern int	CMD_check_ready(void);
 extern void	CMD_copy_procedure(syn*);
@@ -36,4 +36,4 @@ extern void	CMD_set(syn*);
 extern void	CMD_shell(syn*);
 extern void	CMD_transaction(syn*);
 
-#endif /* _QLI_COMMA_PROTO_H_ */
+#endif /* QLI_COMMA_PROTO_H */

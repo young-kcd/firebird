@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_REPORT_H_
-#define _QLI_REPORT_H_
+#ifndef QLI_REPORT_H
+#define QLI_REPORT_H
 
 /* Control break block */
 
@@ -53,4 +53,4 @@ typedef struct rpt {
     USHORT	rpt_lines;		/* Lines per page */
 } *RPT;
 
-#endif /* _QLI_REPORT_H_ */
+#endif /* QLI_REPORT_H */

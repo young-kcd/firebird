@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_PARSE_PROTO_H_
-#define _QLI_PARSE_PROTO_H_
+#ifndef QLI_PARSE_PROTO_H
+#define QLI_PARSE_PROTO_H
 
 extern syn*		PARQ_parse(void);
 extern int		PAR_match (KWWORDS);
@@ -30,4 +30,4 @@ extern void		PAR_real (void);
 extern void		PAR_real_token (void);
 extern void		PAR_token (void);
 
-#endif /* _QLI_PARSE_PROTO_H_ */
+#endif /* QLI_PARSE_PROTO_H */

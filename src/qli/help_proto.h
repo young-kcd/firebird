@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_HELP_PROTO_H_
-#define _QLI_HELP_PROTO_H_
+#ifndef QLI_HELP_PROTO_H
+#define QLI_HELP_PROTO_H
 
 extern void	HELP_fini (void);
 extern void	HELP_help(syn*);
 
-#endif /* _QLI_HELP_PROTO_H_ */
+#endif /* QLI_HELP_PROTO_H */

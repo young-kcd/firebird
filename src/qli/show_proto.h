@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		show_proto.h
- *	DESCRIPTION:	Prototype header file for show.c
+ *	DESCRIPTION:	Prototype header file for show.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_SHOW_PROTO_H_
-#define _QLI_SHOW_PROTO_H_
+#ifndef QLI_SHOW_PROTO_H
+#define QLI_SHOW_PROTO_H
 
 extern void	SHOW_stuff(syn*);
 
-#endif /* _QLI_SHOW_PROTO_H_ */
+#endif /* QLI_SHOW_PROTO_H */

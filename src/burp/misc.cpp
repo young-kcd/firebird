@@ -52,7 +52,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-/* Add some header space to store a list of blocks allocated for this gbak */
+// Add some header space to store a list of blocks allocated for this gbak 
 	size += ROUNDUP(sizeof(UCHAR *), ALIGNMENT);
 
 	UCHAR* block = (UCHAR*)gds__alloc(size);
@@ -60,7 +60,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
 	if (!block)
 		/* NOMEM: message & abort FREE: all items freed at gbak exit */
 	{
-		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: System memory exhaused */
+		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	// msg 238: System memory exhaused 
 		return NULL;
 	}
 
@@ -92,26 +92,26 @@ void MISC_free_burp( void *free)
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (free != NULL) {
-		/* Point at the head of the allocated block */
+		// Point at the head of the allocated block 
 		UCHAR **block =
 			(UCHAR **) ((UCHAR *) free - ROUNDUP(sizeof(UCHAR *), ALIGNMENT));
 
-		/* Scan for this block in the list of blocks */
+		// Scan for this block in the list of blocks 
 		for (UCHAR **ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) *ptr)
 		{
 			if (*ptr == (UCHAR *) block) {
-				/* Found it - remove it from the list */
+				// Found it - remove it from the list 
 				*ptr = *block;
 
-				/* and free it */
+				// and free it 
 				gds__free((SLONG *) block);
 				return;
 			}
 		}
 
-		/* We should always find the block in the list */
-		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: System memory exhausted */
-		/* (too lazy to add a better message) */
+		// We should always find the block in the list 
+		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	// msg 238: System memory exhausted 
+		// (too lazy to add a better message)
 	}
 }
 
@@ -147,9 +147,9 @@ void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
 
 	if (length) {
 		length = MIN(length, max_length - 1);
-		do
+		do {
 			*to++ = *from++;
-		while (--length);
+		} while (--length);
 		*to++ = '\0';
 	}
 	else {

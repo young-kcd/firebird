@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_SCL_PROTO_H_
-#define _JRD_SCL_PROTO_H_
+#ifndef JRD_SCL_PROTO_H
+#define JRD_SCL_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,4 +44,5 @@ void SCL_check_index(TDBB, TEXT*, UCHAR, USHORT);
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_SCL_PROTO_H_ */
+#endif /* JRD_SCL_PROTO_H */
+

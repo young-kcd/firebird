@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		hsh_proto.h
- *	DESCRIPTION:	Prototype header file for hsh.c
+ *	DESCRIPTION:	Prototype header file for hsh.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,7 +27,8 @@
 extern void		HSH_fini (void);
 extern void		HSH_init (void);
 extern void		HSH_insert(sym*);
-extern sym*		HSH_lookup(SCHAR*, int);
+extern sym*		HSH_lookup(const SCHAR*, int);
 extern void		HSH_remove(sym*);
 
 #endif /* QLI_HSH_PROTO_H */
+

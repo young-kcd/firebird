@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		met.e
+ *	MODULE:		met.epp
  *	DESCRIPTION:	Meta data handler
  *
  * The contents of this file are subject to the Interbase Public
@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.69 2003-09-22 17:52:27 brodsom Exp $
+$Id: met.epp,v 1.70 2003-09-25 11:49:06 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN

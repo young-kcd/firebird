@@ -24,8 +24,8 @@
  *   in the texttype struct so we remain compatible with any IB WRT intl module.
  */
 
-#ifndef _JRD_INTLOBJ_H_
-#define _JRD_INTLOBJ_H_
+#ifndef JRD_INTLOBJ_H
+#define JRD_INTLOBJ_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,7 +69,7 @@ typedef struct intl_blk {
     USHORT blk_length;
 } intl_blk;
 
-typedef unsigned short(*pfn_INTL_init)(struct texttype *,short,short);
+typedef unsigned short(*pfn_INTL_init)(struct texttype*, short, short);
 
 typedef struct texttype {
 	struct intl_blk texttype_blk;
@@ -184,4 +184,5 @@ typedef struct charset
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_INTLOBJ_H_ */
+#endif /* JRD_INTLOBJ_H */
+

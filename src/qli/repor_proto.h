@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		repor_proto.h
- *	DESCRIPTION:	Prototype header file for report.c
+ *	DESCRIPTION:	Prototype header file for report.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_REPOR_PROTO_H_
-#define _QLI_REPOR_PROTO_H_
+#ifndef QLI_REPOR_PROTO_H
+#define QLI_REPOR_PROTO_H
 
 extern void	RPT_report(qli_nod*);
 
-#endif /* _QLI_REPOR_PROTO_H_ */
+#endif /* QLI_REPOR_PROTO_H */

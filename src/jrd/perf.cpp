@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		perf.c
+ *	MODULE:		perf.cpp
  *	DESCRIPTION:	Performance monitoring routines
  *
  * The contents of this file are subject to the Interbase Public

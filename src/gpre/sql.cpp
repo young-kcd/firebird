@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.24 2003-09-13 12:23:31 brodsom Exp $
+//	$Id: sql.cpp,v 1.25 2003-09-25 11:49:02 robocop Exp $
 //
 
 #include "firebird.h"
@@ -149,10 +149,10 @@ static SWE whenever[SWE_max], whenever_list;
 
 static inline bool end_of_command(void)
 {
-	return (((sw_language != lang_cobol) &&
+	return ((sw_language != lang_cobol) &&
 		((int) token.tok_keyword == (int) KW_SEMI_COLON)) ||
 		 ((sw_language == lang_cobol) &&
-		 ((int) token.tok_keyword == (int) KW_END_EXEC)));
+		 ((int) token.tok_keyword == (int) KW_END_EXEC));
 }
 
 
@@ -6291,7 +6291,7 @@ void SQL_resolve_identifier( TEXT * err_mesg, TEXT * str)
 static void dialect1_bad_type(USHORT field_dtype)
 {
 	char buffer[200];
-	char *s = NULL;
+	const char *s = NULL;
 
 	switch (field_dtype) {
 	case dtype_sql_date:

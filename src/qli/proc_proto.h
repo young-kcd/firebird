@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		proc_proto.h
- *	DESCRIPTION:	Prototype header file for proc.c
+ *	DESCRIPTION:	Prototype header file for proc.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_PROC_PROTO_H_
-#define _QLI_PROC_PROTO_H_
+#ifndef QLI_PROC_PROTO_H
+#define QLI_PROC_PROTO_H
 
 extern void	PRO_close(dbb*, FRBRD*);
 extern void	PRO_commit(dbb*);
@@ -40,4 +40,4 @@ extern void	PRO_scan(dbb*, void(*)(), void*);
 extern void	PRO_setup(dbb*);
 extern FRBRD*	PRO_transaction(dbb*, int);
 
-#endif /* _QLI_PROC_PROTO_H_ */
+#endif /* QLI_PROC_PROTO_H */

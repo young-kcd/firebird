@@ -79,11 +79,11 @@ void	API_ROUTINE isc_encode_sql_date(void*, GDS_DATE*);
 void	API_ROUTINE isc_encode_sql_time(void*, GDS_TIME*);
 void	API_ROUTINE isc_encode_timestamp(void*, GDS_TIMESTAMP*);
 ULONG	API_ROUTINE gds__free(void*);
-SLONG	API_ROUTINE gds__interprete(char*, ISC_STATUS**);
-void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, ISC_STATUS*, SSHORT*);
+SLONG	API_ROUTINE gds__interprete(char*, const ISC_STATUS**);
+void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, const ISC_STATUS*, SSHORT*);
 void	API_ROUTINE gds__log(const TEXT*, ...);
 void	API_ROUTINE gds__trace(const TEXT*);
-void	API_ROUTINE gds__log_status(TEXT*, ISC_STATUS*);
+void	API_ROUTINE gds__log_status(TEXT*, const ISC_STATUS*);
 int		API_ROUTINE gds__msg_close(void*);
 SSHORT	API_ROUTINE gds__msg_format(void*  handle,
 									USHORT facility,
@@ -105,7 +105,7 @@ void	API_ROUTINE gds__prefix_lock(TEXT*, const TEXT*);
 void	API_ROUTINE gds__prefix_msg(TEXT*, const TEXT*);
 
 SLONG	API_ROUTINE gds__get_prefix(SSHORT, TEXT*);
-ISC_STATUS	API_ROUTINE gds__print_status(ISC_STATUS*);
+ISC_STATUS	API_ROUTINE gds__print_status(const ISC_STATUS*);
 USHORT	API_ROUTINE gds__parse_bpb(USHORT, UCHAR*, USHORT*, USHORT*);
 USHORT	API_ROUTINE gds__parse_bpb2(USHORT, UCHAR*, SSHORT*, SSHORT*,
 									  USHORT*, USHORT*);
@@ -115,8 +115,8 @@ int		API_ROUTINE gds__print_blr(UCHAR*, FPTR_VOID, SCHAR*, SSHORT);
 void	API_ROUTINE gds__put_error(TEXT*);
 void	API_ROUTINE gds__qtoq(void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
-SLONG	API_ROUTINE gds__sqlcode(ISC_STATUS*);
-void	API_ROUTINE gds__sqlcode_s(ISC_STATUS*, ULONG*);
+SLONG	API_ROUTINE gds__sqlcode(const ISC_STATUS*);
+void	API_ROUTINE gds__sqlcode_s(const ISC_STATUS*, ULONG*);
 void	API_ROUTINE gds__temp_dir(TEXT*);
 void*	API_ROUTINE gds__temp_file(BOOLEAN, TEXT*, TEXT*, TEXT* = NULL, BOOLEAN = FALSE);
 void		API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);

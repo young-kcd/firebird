@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.40 2003-09-23 19:47:50 brodsom Exp $
+$Id: backup.epp,v 1.41 2003-09-25 11:48:59 robocop Exp $
 */
 
 #include "firebird.h"
@@ -158,7 +158,7 @@ enum backup_capabilities
 };
 
 #ifdef DEBUG
-UCHAR debug_on = 0;		/* able to turn this on in debug mode */
+UCHAR debug_on = 0;		// able to turn this on in debug mode 
 #endif
 
 
@@ -268,7 +268,7 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 	gds_trans = NULL;
 
 	BURP_verbose(130, NULL, NULL, NULL, NULL, NULL);
-	/* msg 130 starting transaction */
+	// msg 130 starting transaction 
 
 	if (tdgbl->gbl_sw_ignore_limbo)
 	{
@@ -296,12 +296,12 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 
 
 
-/* decide what type of database we've got */
+// decide what type of database we've got 
 
 	set_capabilities();
 
-/* Write burp record first with other valuable information */
-/* In case of split operation, write a 'split' header first to all the files */
+// Write burp record first with other valuable information 
+// In case of split operation, write a 'split' header first to all the files 
 
 	if (tdgbl->action->act_action == ACT_backup_split)
 	{
@@ -312,7 +312,7 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 			{
 				BURP_error(269, tdgbl->action->act_file->fil_name, 0, 0, 0,
 						   0);
-				/* msg 269 can't write a header record to file %s */
+				// msg 269 can't write a header record to file %s 
 			}
 		}
 		tdgbl->action->act_file = tdgbl->gbl_sw_files;
@@ -322,14 +322,14 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 					reinterpret_cast<const UCHAR*>(file_name),
 					&tdgbl->io_cnt, &tdgbl->io_ptr);
 
-/* Write database record */
+// Write database record 
 
 	write_database(dbb_file);
 
-/* Write global fields */
+// Write global fields 
 
 	BURP_verbose(150, NULL, NULL, NULL, NULL, NULL);
-	/* msg 150  writing global fields */
+	// msg 150  writing global fields 
 	write_global_fields();
 
 	if (tdgbl->BCK_capabilities & BCK_ods6)
@@ -337,65 +337,65 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 		write_field_dimensions();
 
 		BURP_verbose(162, NULL, NULL, NULL, NULL, NULL);
-		/* msg 162  writing shadow files */
+		// msg 162  writing shadow files 
 		write_shadow_files();
 	}
 
-/* Write relations */
+// Write relations 
 
 	BURP_verbose(154, NULL, NULL, NULL, NULL, NULL);
-	/* msg 154 writing relations */
+	// msg 154 writing relations 
 
 	write_relations();
 
 	if (tdgbl->BCK_capabilities & BCK_ffmptt)
 	{
-		/* Write functions */
+		// Write functions 
 		BURP_verbose(148, NULL, NULL, NULL, NULL, NULL);
-		/* msg 148 writing functions */
+		// msg 148 writing functions 
 		write_functions();
 
-		/* Write types */
+		// Write types 
 		BURP_verbose(161, NULL, NULL, NULL, NULL, NULL);
-		/* msg 161  writing types */
+		// msg 161  writing types 
 		write_types();
 
-		/* Write filters */
+		// Write filters 
 		BURP_verbose(146, NULL, NULL, NULL, NULL, NULL);
-		/* msg 146 writing filters */
+		// msg 146 writing filters 
 		write_filters();
 
-		/* Write generators */
+		// Write generators 
 
 		BURP_verbose(164, NULL, NULL, NULL, NULL, NULL);
-		/* msg 164  writing id generators */
+		// msg 164  writing id generators 
 		write_generators();
 	}
 
 	if (tdgbl->BCK_capabilities & BCK_ods8)
 	{
-		/* Write procedures */
+		// Write procedures 
 		BURP_verbose(192, NULL, NULL, NULL, NULL, NULL);
-		/* msg 192 writing stored procedures */
+		// msg 192 writing stored procedures 
 		write_procedures();
 
-		/* Write exceptions */
+		// Write exceptions 
 		BURP_verbose(197, NULL, NULL, NULL, NULL, NULL);
-		/* msg 197 writing exceptions */
+		// msg 197 writing exceptions 
 		write_exceptions();
 
-		/* Write Character Sets */
+		// Write Character Sets 
 		BURP_verbose(msgVerbose_write_charsets, NULL, NULL, NULL, NULL, NULL);
 		write_character_sets();
 
-		/* Write Collations */
+		// Write Collations 
 		BURP_verbose(msgVerbose_write_collations, NULL, NULL, NULL, NULL,
 					 NULL);
 		write_collations();
 
 	}
 
-/* Now go back and write all data */
+// Now go back and write all data 
 
 	for (BURP_REL relation = tdgbl->relations; relation; relation = relation->rel_next) {
 		put(tdgbl, (UCHAR) (rec_relation_data));
@@ -417,15 +417,15 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 /* now for the new triggers in rdb$triggers */
 	if (tdgbl->BCK_capabilities & BCK_ffmptt) {
 		BURP_verbose(159, NULL, NULL, NULL, NULL, NULL);
-		/* msg 159  writing triggers */
+		// msg 159  writing triggers 
 		write_triggers();
 		BURP_verbose(158, NULL, NULL, NULL, NULL, NULL);
-		/* msg 158 writing trigger messages */
+		// msg 158 writing trigger messages 
 		write_trigger_messages();
 		write_user_privileges();
 	}
 
-/* Last, but not least, go back and add any access control lists */
+// Last, but not least, go back and add any access control lists 
 
 	if (tdgbl->BCK_capabilities & BCK_security)
 	{
@@ -436,7 +436,7 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 			l = PUT_TEXT (att_class_security_class, X.RDB$SECURITY_CLASS);
 			MISC_terminate (X.RDB$SECURITY_CLASS, temp, l, sizeof(temp));
 			BURP_verbose (155, temp, NULL, NULL, NULL, NULL);
-			/* msg 155 writing security class %s */
+			// msg 155 writing security class %s 
 			put_blr_blob (att_class_acl, (ISC_QUAD *)&X.RDB$ACL);
 			put_source_blob (att_class_description2, att_class_description,
 							 (ISC_QUAD *)&X.RDB$DESCRIPTION);
@@ -451,32 +451,32 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 
 	if (tdgbl->BCK_capabilities & BCK_ods8)
 	{
-		/* Write relation constraints  */
+		// Write relation constraints  
 		BURP_verbose(206, NULL, NULL, NULL, NULL, NULL);
-		/* msg 206 writing relation constraints */
+		// msg 206 writing relation constraints 
 		write_rel_constraints();
 
-		/* Write referential constraints  */
+		// Write referential constraints  
 		BURP_verbose(209, NULL, NULL, NULL, NULL, NULL);
-		/* msg 209 writing referential constraints */
+		// msg 209 writing referential constraints 
 		write_ref_constraints();
 
-		/* Write check constraints  */
+		// Write check constraints  
 		BURP_verbose(210, NULL, NULL, NULL, NULL, NULL);
-		/* msg 210 writing check constraints */
+		// msg 210 writing check constraints 
 		write_check_constraints();
 
 	}
 
 	if (tdgbl->BCK_capabilities & BCK_ods9)
 	{
-		/* Write SQL roles  */
+		// Write SQL roles  
 		BURP_verbose(248, NULL, NULL, NULL, NULL, NULL);
-		/* msg 248 writing SQL roles */
+		// msg 248 writing SQL roles 
 		write_sql_roles();
 	}
 
-/* Finish up */
+// Finish up 
 
 	put(tdgbl, (UCHAR) (rec_end));
 	
@@ -484,12 +484,12 @@ int BACKUP_backup(TEXT* dbb_file, const TEXT* file_name)
 	if (cumul_count <= MAX_SLONG) {
 		SLONG tempcount = cumul_count;
 		BURP_verbose(176, (void*) tempcount, NULL, NULL, NULL, NULL);
-		/* msg 176 closing file, committing, and finishing.  %ld bytes written */
+		// msg 176 closing file, committing, and finishing.  %ld bytes written 
 	} else {
 		char psz[64];
 		ib_sprintf(psz, "%" QUADFORMAT "d", cumul_count);
 		BURP_verbose(283, psz, NULL, NULL, NULL, NULL);
-		/* msg 283 closing file, committing, and finishing.  %s bytes written */
+		// msg 283 closing file, committing, and finishing.  %s bytes written 
 	}
 	COMMIT;
 	ON_ERROR
@@ -799,7 +799,7 @@ BURP_FLD get_fields( BURP_REL relation)
 			}
 			blob_id = &Y.RDB$COMPUTED_BLR;
 			if (blob_id->gds_quad_low || blob_id->gds_quad_high)
-			field->fld_flags |= FLD_computed;
+				field->fld_flags |= FLD_computed;
 			if (tdgbl->BCK_capabilities & BCK_rfr_sys_flag)
 			{
 				FOR (REQUEST_HANDLE tdgbl->handles_get_fields_req_handle3)
@@ -911,7 +911,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
  *	Read id for a generator;
  *
  **************************************/
-	UCHAR blr_buffer[100];	/* enough to fit blr */
+	UCHAR blr_buffer[100];	// enough to fit blr 
 	SLONG read_msg0;
 	SINT64 read_msg1;
 	ISC_STATUS_ARRAY status_vector;
@@ -927,7 +927,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 */
 	if (tdgbl->BCK_capabilities & BCK_ods10)
 	{
-		/* build the blr with the right relation name and 64-bit results. */
+		// build the blr with the right relation name and 64-bit results. 
 		stuff(&blr, blr_version5);
 		stuff(&blr, blr_begin);
 		stuff(&blr, blr_message);
@@ -958,7 +958,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 	}
 	else
 	{
-		/* build the blr with the right relation name and 32-bit results */
+		// build the blr with the right relation name and 32-bit results 
 		stuff(&blr, blr_version4);
 		stuff(&blr, blr_begin);
 		stuff(&blr, blr_message);
@@ -998,16 +998,16 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 	if (isc_compile_request(status_vector, &DB, &gen_id_reqh,
 							blr_length, (char*) blr_buffer))
 	{
-		/* if there's no gen_id, never mind ... */
+		// if there's no gen_id, never mind ... 
 		return 0;
 	}
 
 	if (isc_start_request(status_vector, &gen_id_reqh,
-						  &gds_trans, /* use the same one generated by gpre */
+						  &gds_trans, // use the same one generated by gpre
 						  0))
 	{
 		BURP_error_redirect(status_vector, 25, NULL, NULL);
-		/* msg 25 Failed in put_blr_gen_id */
+		// msg 25 Failed in put_blr_gen_id 
 	}
 
 	if (tdgbl->BCK_capabilities & BCK_ods10)
@@ -1016,7 +1016,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 						&read_msg1, 0))
 		{
 			BURP_error_redirect(status_vector, 25, NULL, NULL);
-			/* msg 25 Failed in put_blr_gen_id */
+			// msg 25 Failed in put_blr_gen_id 
 		}
 	}
 	else
@@ -1025,7 +1025,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 						&read_msg0, 0))
 		{
 			BURP_error_redirect(status_vector, 25, NULL, NULL);
-			/* msg 25 Failed in put_blr_gen_id */
+			// msg 25 Failed in put_blr_gen_id 
 		}
 		read_msg1 = (SINT64) read_msg0;
 	}
@@ -1063,7 +1063,7 @@ void get_ranges( BURP_FLD field)
 	
 		if (count != X.RDB$DIMENSION)
 			BURP_error_redirect (NULL, 52, field->fld_name, NULL);
-			/* msg 52 array dimension for field %s is invalid */
+			// msg 52 array dimension for field %s is invalid 
 		*rp++ = X.RDB$LOWER_BOUND;
 		*rp++ = X.RDB$UPPER_BOUND;
 		count++;
@@ -1075,7 +1075,7 @@ void get_ranges( BURP_FLD field)
 
 	if (count != field->fld_dimensions)
 		BURP_error_redirect(NULL, 52, field->fld_name, NULL);
-	/* msg 52 array dimension for field %s is invalid */
+	// msg 52 array dimension for field %s is invalid 
 }
 
 
@@ -1092,12 +1092,12 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	SLONG *returned_range, range_buffer[16];	/* enough for 16 dimensions */
-	UCHAR blr_buffer[200];		/* enough for a sdl with 16 dimensions */
+	SLONG *returned_range, range_buffer[16];	// enough for 16 dimensions 
+	UCHAR blr_buffer[200];		// enough for a sdl with 16 dimensions 
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-/* If the array is null, don't store it.  It will be restored as null. */
+// If the array is null, don't store it.  It will be restored as null. 
 
 	if (!blob_id->gds_quad_low && !blob_id->gds_quad_high)
 		return;
@@ -1112,7 +1112,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 	if (tdgbl->gbl_sw_transportable)
 		xdr_buffer.lstr_length = field_length + 3;
 
-/* build the sdl */
+// build the sdl 
 
 	stuff(&blr, isc_sdl_version1);
 
@@ -1185,7 +1185,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 	}
 	UCHAR *slice = BURP_alloc(slice_length);
 
-/* allocate space for the XDR representation */
+// allocate space for the XDR representation 
 
 	if (tdgbl->gbl_sw_transportable)
 	{
@@ -1201,7 +1201,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 					  slice_length, slice, (SLONG*) &return_length))
 	{
 		BURP_print(81, field->fld_name, NULL, NULL, NULL, NULL);
-		/* msg 81 error accessing blob field %s -- continuing */
+		// msg 81 error accessing blob field %s -- continuing 
 		BURP_print_status(status_vector);
 #ifdef DEBUG
 		PRETTY_print_sdl(blr_buffer, NULL, NULL, 0);
@@ -1329,19 +1329,19 @@ void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-/* If the blob is null, don't store it.  It will be restored as null. */
+// If the blob is null, don't store it.  It will be restored as null. 
 
 	if (!blob_id->gds_quad_high && !blob_id->gds_quad_low)
 		return;
 
-/* Open the blob and get it's vital statistics */
+// Open the blob and get it's vital statistics 
 
 	FRBRD *blob = NULL;
 
 	if (isc_open_blob(status_vector, &DB, &gds_trans, &blob, blob_id))
 	{
 		BURP_print(81, field->fld_name, NULL, NULL, NULL, NULL);
-		/* msg 81 error accessing blob field %s -- continuing */
+		// msg 81 error accessing blob field %s -- continuing 
 		BURP_print_status(status_vector);
 		return;
 	}
@@ -1351,7 +1351,7 @@ void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 					  (char*) blob_info))
 	{
 		BURP_error_redirect(status_vector, 20, NULL, NULL);
-		/* msg 20 isc_blob_info failed */
+		// msg 20 isc_blob_info failed 
 	}
 
 	put(tdgbl, (UCHAR) (rec_blob));
@@ -1386,11 +1386,11 @@ void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 
 		default:
 			BURP_error_redirect(NULL, 21, (void*) (ULONG) item, NULL);
-			/* msg 21 don't understand blob info item %ld */
+			// msg 21 don't understand blob info item %ld 
 		}
 	}
 
-/* Allocate a buffer large enough for the largest segment and start grinding. */
+// Allocate a buffer large enough for the largest segment and start grinding. 
 
 	UCHAR* buffer;
 	if (!max_segment || max_segment <= sizeof(static_buffer))
@@ -1408,7 +1408,7 @@ void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 		{
 			BURP_error_redirect(status_vector, 22, NULL, NULL);
 		}
-		/* msg 22 gds__get_segment failed */
+		// msg 22 gds__get_segment failed 
 
 		put(tdgbl, (UCHAR) (segment_length));
 		put(tdgbl, (UCHAR) (segment_length >> 8));
@@ -1421,7 +1421,7 @@ void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 
 	if (isc_close_blob(status_vector, &blob))
 		BURP_error_redirect(status_vector, 23, NULL, NULL);
-	/* msg 23 isc_close_blob failed */
+	// msg 23 isc_close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free(buffer);
@@ -1446,19 +1446,19 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-/* If the blob is null, don't store it.  It will be restored as null. */
+// If the blob is null, don't store it.  It will be restored as null. 
 
 	if (!blob_id->gds_quad_high && !blob_id->gds_quad_low)
 		return false;
 
-/* Open the blob and get it's vital statistics */
+// Open the blob and get it's vital statistics 
 
 	FRBRD *blob = NULL;
 
 	if (isc_open_blob(status_vector, &DB, &gds_trans, &blob, blob_id))
 	{
 		BURP_error_redirect(status_vector, 24, NULL, NULL);
-		/* msg 24 isc_open_blob failed */
+		// msg 24 isc_open_blob failed 
 	}
 
 	if (isc_blob_info(status_vector, &blob, sizeof(blr_items),
@@ -1466,7 +1466,7 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 					  (char*) blob_info))
 	{
 		BURP_error_redirect(status_vector, 20, NULL, NULL);
-		/* msg 20 isc_blob_info failed */
+		// msg 20 isc_blob_info failed 
 	}
 
 	ULONG length = 0;
@@ -1492,7 +1492,7 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 
 		default:
 			BURP_print(79, (void *) (ULONG) item, NULL, NULL, NULL, NULL);
-			/* msg 79 don't understand blob info item %ld  */
+			// msg 79 don't understand blob info item %ld  
 			return false;
 		}
 	}
@@ -1501,18 +1501,18 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 	{
 		if (isc_close_blob(status_vector, &blob))
 			BURP_error_redirect(status_vector, 23, NULL, NULL);
-		/* msg 23 isc_close_blob failed */
+		// msg 23 isc_close_blob failed 
 		return false;
 	}
 
-/* Rdb sometimes gets the length messed up */
+// Rdb sometimes gets the length messed up 
 
 	if (length < max_segment)
 		length = max_segment;
 
 	put_numeric(attribute, (int) length);
 
-/* Allocate a buffer large enough for the largest segment and start grinding. */
+// Allocate a buffer large enough for the largest segment and start grinding. 
 
 	UCHAR* buffer;
 	if (!max_segment || max_segment <= sizeof(static_buffer))
@@ -1534,7 +1534,7 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 	{
 		BURP_error_redirect(status_vector, 23, NULL, NULL);
 	}
-	/* msg 23 isc_close_blob failed */
+	// msg 23 isc_close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free(buffer);
@@ -1672,7 +1672,7 @@ void put_data(BURP_REL relation)
 
 		default:
 			BURP_error_redirect(NULL, 26, (void *) (SLONG) field->fld_type, NULL);
-			/* msg 26 datatype %ld not understood */
+			// msg 26 datatype %ld not understood 
 			break;
 		}
 		if (alignment)
@@ -1682,7 +1682,7 @@ void put_data(BURP_REL relation)
 		offset += length;
 	}
 
-/* Next, build fields for null flags */
+// Next, build fields for null flags 
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -1695,24 +1695,24 @@ void put_data(BURP_REL relation)
 		offset += sizeof(SSHORT);
 	}
 
-/* Finally, make up an EOF field */
+// Finally, make up an EOF field 
 
-	stuff(&blr, blr_short);			/* eof field */
-	stuff(&blr, 0);					/* scale for eof field */
+	stuff(&blr, blr_short);			// eof field 
+	stuff(&blr, 0);					// scale for eof field 
 	SSHORT eof_parameter = count++;
 	RCRD_OFFSET record_length = offset;
 	RCRD_OFFSET eof_offset = FB_ALIGN(offset, sizeof(SSHORT));
 	// To be used later for the buffer size to receive data
 	const FLD_LENGTH length = (USHORT) (eof_offset + sizeof(SSHORT));
 
-/* Build FOR loop, body, and eof handler */
+// Build FOR loop, body, and eof handler 
 
 	stuff(&blr, blr_for);
 	stuff(&blr, blr_rse);
-	stuff(&blr, 1);					/* count of relations */
+	stuff(&blr, 1);					// count of relations 
 	stuff(&blr, blr_rid);
 	stuff_word(&blr, relation->rel_id);
-	stuff(&blr, 0);					/* context variable */
+	stuff(&blr, 0);					// context variable 
 	stuff(&blr, blr_end);
 
 	stuff(&blr, blr_send);
@@ -1763,7 +1763,7 @@ void put_data(BURP_REL relation)
 #endif
 
 
-/* Compile request */
+// Compile request 
 
 	FRBRD *request = NULL;
 	SSHORT blr_length = blr - blr_buffer;
@@ -1771,14 +1771,14 @@ void put_data(BURP_REL relation)
 							blr_length, (SCHAR*) blr_buffer))
 	{
 		BURP_error_redirect(status_vector, 27, NULL, NULL);
-		/* msg 27 isc_compile_request failed */
+		// msg 27 isc_compile_request failed 
 		isc_print_blr((char*) blr_buffer, (isc_callback)NULL, NULL, 0);
 	}
 
 	BURP_free(blr_buffer);
 	
 	BURP_verbose(142, relation->rel_name, NULL, NULL, NULL, NULL);
-	/* msg 142  writing data for relation %s */
+	// msg 142  writing data for relation %s 
 
 	if (isc_start_request(status_vector, &request, &gds_trans, 0))
 	{
@@ -1809,12 +1809,12 @@ void put_data(BURP_REL relation)
 		if (isc_receive(status_vector, &request, 0, length, buffer, 0))
 		{
 			BURP_error_redirect(status_vector, 29, NULL, NULL);
-			/* msg 29 isc_receive failed */
+			// msg 29 isc_receive failed 
 		}
 		if (!*eof)
 			break;
 		records++;
-		/* Verbose records */
+		// Verbose records 
 		if ((records % BACKUP_VERBOSE_INTERVAL) == 0)
 			BURP_verbose(108, (void *) (SLONG) records, NULL, NULL, NULL, NULL);
 
@@ -1835,7 +1835,7 @@ void put_data(BURP_REL relation)
 		else if (record_length)
 			put_block(tdgbl, p, record_length);
 
-		/* Look for any blobs to write */
+		// Look for any blobs to write 
 
 		for (field = relation->rel_fields; field; field = field->fld_next)
 		{
@@ -1849,8 +1849,8 @@ void put_data(BURP_REL relation)
 			}
 		}
 
-		/* Look for any array to write */
-		/* we got back the blob_id for the array from isc_receive in the second param. */
+		// Look for any array to write 
+		// we got back the blob_id for the array from isc_receive in the second param. 
 		for (field = relation->rel_fields; field; field = field->fld_next)
 		{
 			if (field->fld_flags & FLD_array)
@@ -1867,11 +1867,11 @@ void put_data(BURP_REL relation)
 		BURP_free(xdr_buffer.lstr_address);
 
 	BURP_verbose(108, (void *) (SLONG) records, NULL, NULL, NULL, NULL);
-/* msg 108 %ld records written */
+// msg 108 %ld records written 
 
 	if (isc_release_request(status_vector, &request))
 		BURP_error_redirect(status_vector, 30, NULL, NULL);
-	/* msg 30 isc_release_request failed */
+	// msg 30 isc_release_request failed 
 }
 
 
@@ -1934,7 +1934,7 @@ void put_index( BURP_REL relation)
 			l = PUT_TEXT (att_index_name, X.RDB$INDEX_NAME);
 			MISC_terminate (X.RDB$INDEX_NAME, temp, l, sizeof(temp));
 			BURP_verbose (151, temp, NULL, NULL, NULL, NULL);
-			/* msg 151 writing index %s */
+			// msg 151 writing index %s 
 			put_numeric (att_segment_count, X.RDB$SEGMENT_COUNT);
 			put_numeric (att_index_inactive, X.RDB$INDEX_INACTIVE);
 			put_numeric (att_index_unique_flag, X.RDB$UNIQUE_FLAG);
@@ -1963,7 +1963,7 @@ void put_index( BURP_REL relation)
 							  (ISC_QUAD *)&X.RDB$EXPRESSION_BLR);
 			if (!X.RDB$FOREIGN_KEY.NULL)
 				PUT_TEXT (att_index_foreign_key, X.RDB$FOREIGN_KEY);
-				put(tdgbl, att_end);
+			put(tdgbl, att_end);
 	
 		END_FOR;
 		ON_ERROR
@@ -2011,7 +2011,7 @@ void put_index( BURP_REL relation)
 			l = PUT_TEXT (att_index_name, X.RDB$INDEX_NAME);
 			MISC_terminate (X.RDB$INDEX_NAME, temp, l, sizeof(temp));
 			BURP_verbose (151, temp, NULL, NULL, NULL, NULL);
-			/* msg 151 writing index %s */
+			// msg 151 writing index %s 
 			put_numeric (att_segment_count, X.RDB$SEGMENT_COUNT);
 			if (tdgbl->BCK_capabilities & BCK_idx_inactive)
 				FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle4)
@@ -2237,7 +2237,7 @@ void put_relation( BURP_REL relation)
 		relation->rel_fields = field;
 	}
 
-/* Now write the fields in what will become physical backup order */
+// Now write the fields in what will become physical backup order 
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -2245,7 +2245,7 @@ void put_relation( BURP_REL relation)
 		l = PUT_TEXT(att_field_name, field->fld_name);
 		MISC_terminate(field->fld_name, temp, l, sizeof(temp));
 		BURP_verbose(144, temp, NULL, NULL, NULL, NULL);
-		/* msg 144  writing field %s */
+		// msg 144  writing field %s 
 		PUT_TEXT(att_field_source, field->fld_source);
 		if (field->fld_query_name[0])
 			PUT_TEXT(att_field_query_name, field->fld_query_name);
@@ -2370,7 +2370,7 @@ bool put_source_blob(SCHAR		attribute,
 	if (isc_open_blob(status_vector, &DB, &gds_trans, &blob, blob_id))
 	{
 		BURP_error_redirect(status_vector, 24, NULL, NULL);
-		/* msg 24 isc_open_blob failed */
+		// msg 24 isc_open_blob failed 
 	}
 
 	if (isc_blob_info(status_vector, &blob, sizeof(source_items),
@@ -2378,7 +2378,7 @@ bool put_source_blob(SCHAR		attribute,
 					  (SCHAR*) blob_info))
 	{
 		BURP_error_redirect(status_vector, 20, NULL, NULL);
-		/* msg 20 isc_blob_info failed */
+		// msg 20 isc_blob_info failed 
 	}
 
 	SLONG length = 0;
@@ -2408,7 +2408,7 @@ bool put_source_blob(SCHAR		attribute,
 
 		default:
 			BURP_print(79, (void *) (ULONG) item, NULL, NULL, NULL, NULL);
-			/* msg 79 don't understand blob info item %ld  */
+			// msg 79 don't understand blob info item %ld  
 			return false;
 		}
 	}
@@ -2418,19 +2418,19 @@ bool put_source_blob(SCHAR		attribute,
 		if (isc_close_blob(status_vector, &blob))
 		{
 			BURP_error_redirect(status_vector, 23, NULL, NULL);
-			/* msg 23 isc_close_blob failed */
+			// msg 23 isc_close_blob failed 
 		}
 		return false;
 	}
 
-/* Rdb sometimes gets the length messed up */
+// Rdb sometimes gets the length messed up 
 
 	if (length < max_segment)
 		length = max_segment;
 
 	put_numeric(attribute, length + num_seg);
 
-/* Allocate a buffer large enough for the largest segment and start grinding. */
+// Allocate a buffer large enough for the largest segment and start grinding. 
 
 	UCHAR* buffer;
 	if (!max_segment || max_segment <= sizeof(static_buffer))
@@ -2451,7 +2451,7 @@ bool put_source_blob(SCHAR		attribute,
 
 	if (isc_close_blob(status_vector, &blob))
 		BURP_error_redirect(status_vector, 23, NULL, NULL);
-	/* msg 23 isc_close_blob failed */
+	// msg 23 isc_close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free(buffer);
@@ -2742,7 +2742,7 @@ void write_database( const TEXT * dbb_file)
 						  (SCHAR *) db_info_items, sizeof(buffer), buffer))
 	{
 		BURP_error_redirect(status_vector, 31, NULL, NULL);
-		/* msg 31 isc_database_info failed */
+		// msg 31 isc_database_info failed 
 	}
 
 	USHORT page_size = 0, forced_writes, no_reserve,
@@ -2783,8 +2783,8 @@ void write_database( const TEXT * dbb_file)
 				put_numeric(att_page_buffers, page_buffers);
 			break;
 
-		case isc_info_error:	/* old server does not understand new isc_info */
-			break;				/* parametere and returns isc_info_error. skip it */
+		case isc_info_error:	// old server does not understand new isc_info 
+			break;				// parametere and returns isc_info_error. skip it 
 
 		case isc_info_db_sql_dialect:
 			SQL_dialect = (USHORT) isc_vax_integer(d, length);
@@ -2798,7 +2798,7 @@ void write_database( const TEXT * dbb_file)
 
 		default:
 			BURP_error_redirect(status_vector, 31, NULL, NULL);
-			/* msg 31 isc_database_info failed */
+			// msg 31 isc_database_info failed 
 			break;
 		}
 	}
@@ -2806,7 +2806,7 @@ void write_database( const TEXT * dbb_file)
 	put_asciz(att_file_name, dbb_file);
 
 	BURP_verbose(77, dbb_file, (void *) (ULONG) page_size, NULL, NULL, NULL);
-/* msg 77 database %s has a page size of %ld bytes. */
+// msg 77 database %s has a page size of %ld bytes. 
 
 	put(tdgbl, (UCHAR) (att_end));
 
@@ -3067,7 +3067,7 @@ void write_function_args( GDS_NAME funcptr)
 			SSHORT l = PUT_TEXT (att_functionarg_name, X.RDB$FUNCTION_NAME);
 			MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
 			BURP_verbose (141, temp, NULL, NULL, NULL, NULL);
-			/* msg 141 writing argument for function %s */
+			// msg 141 writing argument for function %s 
 			put_numeric (att_functionarg_position, X.RDB$ARGUMENT_POSITION);
 			put_numeric (att_functionarg_mechanism, X.RDB$MECHANISM);
 			put_numeric (att_functionarg_field_type, X.RDB$FIELD_TYPE);
@@ -3082,7 +3082,7 @@ void write_function_args( GDS_NAME funcptr)
 			put(tdgbl, att_end);
 		END_FOR;
 		ON_ERROR
-		 general_on_error();
+			general_on_error();
 		END_ERROR;
 	}
 	else
@@ -3095,7 +3095,7 @@ void write_function_args( GDS_NAME funcptr)
 			SSHORT l = PUT_TEXT (att_functionarg_name, X.RDB$FUNCTION_NAME);
 			MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
 			BURP_verbose (141, temp, NULL, NULL, NULL, NULL);
-			/* msg 141 writing argument for function %s */
+			// msg 141 writing argument for function %s 
 			put_numeric (att_functionarg_position, X.RDB$ARGUMENT_POSITION);
 			put_numeric (att_functionarg_mechanism, X.RDB$MECHANISM);
 			put_numeric (att_functionarg_field_type, X.RDB$FIELD_TYPE);
@@ -3113,12 +3113,12 @@ void write_function_args( GDS_NAME funcptr)
 					if (!(X2.RDB$CHARACTER_SET_ID.NULL))
 						put_numeric (att_functionarg_character_set, X2.RDB$CHARACTER_SET_ID);
 				/* Note that BCK_ods10 canNOT be set if we're in this
-				   ``else'' branch.  Hence there is no need to test that
+				   "else" branch.  Hence there is no need to test that
 				   bit and store the RDB$FIELD_PRECISION. */
 
 				END_FOR;
 				ON_ERROR
-				 general_on_error();
+					general_on_error();
 				END_ERROR;
 			}
 			put(tdgbl, att_end);
@@ -3259,7 +3259,7 @@ void write_global_fields(void)
 
 		END_FOR;
 		ON_ERROR
-		 general_on_error();
+			general_on_error();
 		END_ERROR;
 	}
 	else
@@ -3327,7 +3327,7 @@ void write_global_fields(void)
 					if (!(F.RDB$CHARACTER_SET_ID.NULL))
 						put_numeric (att_field_character_set, F.RDB$CHARACTER_SET_ID);
 					if (!(F.RDB$COLLATION_ID.NULL))
-					put_numeric (att_field_collation_id, F.RDB$COLLATION_ID);
+						put_numeric (att_field_collation_id, F.RDB$COLLATION_ID);
 
 					if (tdgbl->BCK_capabilities & BCK_ods10)
 					{
@@ -3429,7 +3429,7 @@ void write_procedure_prms( GDS_NAME procptr)
 		SSHORT l = PUT_TEXT (att_procedureprm_name, X.RDB$PARAMETER_NAME);
 		MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
 		BURP_verbose (194, temp, NULL, NULL, NULL, NULL);
-		/* msg 194 writing parameter %s for stored procedure */
+		// msg 194 writing parameter %s for stored procedure 
 		put_numeric (att_procedureprm_number, X.RDB$PARAMETER_NUMBER);
 		put_numeric (att_procedureprm_type, X.RDB$PARAMETER_type);
 		PUT_TEXT (att_procedureprm_field_source, X.RDB$FIELD_SOURCE);
@@ -3500,7 +3500,7 @@ void write_rel_constraints(void)
 		SSHORT l = PUT_TEXT (att_rel_constraint_name, X.RDB$CONSTRAINT_NAME);
 		MISC_terminate (X.RDB$CONSTRAINT_NAME, temp, l, sizeof(temp));
 		BURP_verbose (207, temp, NULL, NULL, NULL, NULL);
-		/* msg 207 writing constraint %s */
+		// msg 207 writing constraint %s 
 		PUT_MESSAGE (att_rel_constraint_type, X.RDB$CONSTRAINT_TYPE);
 		PUT_TEXT (att_rel_constraint_rel_name, X.RDB$RELATION_NAME);
 		PUT_TEXT (att_rel_constraint_defer, X.RDB$DEFERRABLE);
@@ -3591,7 +3591,7 @@ void write_relations(void)
 			put_relation (relation);
 		END_FOR;
 		ON_ERROR
-		 general_on_error();
+			general_on_error();
 		END_ERROR;
 	}
 	else
@@ -3623,7 +3623,7 @@ void write_relations(void)
 						put_numeric (att_relation_flags, R.RDB$FLAGS);
 				END_FOR;
 				ON_ERROR
-				 general_on_error();
+					general_on_error();
 				END_ERROR;
 			}
 			if (tdgbl->BCK_capabilities & BCK_security)
@@ -3746,7 +3746,7 @@ void write_sql_roles(void)
 		put(tdgbl, att_end);
 		MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
 		BURP_verbose (249, temp, NULL, NULL, NULL, NULL);
-	/* msg 249 writing SQL role: %s */
+	// msg 249 writing SQL role: %s 
 		
 	END_FOR;
 	ON_ERROR
@@ -3790,7 +3790,7 @@ void write_triggers(void)
 			SSHORT l = PUT_TEXT (att_trig_name, X.RDB$TRIGGER_NAME);
 			MISC_terminate (X.RDB$TRIGGER_NAME, temp, l, sizeof(temp));
 			BURP_verbose (156, temp, NULL, NULL, NULL, NULL);
-			/* msg 156   writing trigger %s */
+			// msg 156   writing trigger %s 
 		
 			PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
 			put_numeric (att_trig_sequence, X.RDB$TRIGGER_SEQUENCE);
@@ -3808,7 +3808,7 @@ void write_triggers(void)
 
 		END_FOR;
 		ON_ERROR
-		 general_on_error();
+			general_on_error();
 		END_ERROR;
 	}
 	else
@@ -3822,7 +3822,7 @@ void write_triggers(void)
 			SSHORT l = PUT_TEXT (att_trig_name, X.RDB$TRIGGER_NAME);
 			MISC_terminate (X.RDB$TRIGGER_NAME, temp, l, sizeof(temp));
 			BURP_verbose (156, temp, NULL, NULL, NULL, NULL);
-			/* msg 156   writing trigger %s */
+			// msg 156   writing trigger %s 
 			
 			PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
 			put_numeric (att_trig_sequence, X.RDB$TRIGGER_SEQUENCE);
@@ -3844,7 +3844,7 @@ void write_triggers(void)
 
 				END_FOR;
 				ON_ERROR
-				 general_on_error();
+					general_on_error();
 				END_ERROR;
 			}
 
@@ -3924,11 +3924,11 @@ void write_types(void)
 		PUT_TEXT (att_type_name, X.RDB$TYPE_NAME);
 		PUT_TEXT (att_type_field_name, X.RDB$FIELD_NAME);
 		BURP_verbose (160, X.RDB$TYPE_NAME, X.RDB$FIELD_NAME, NULL, NULL, NULL);
-			/* msg 160 writing type %s for field %s */
+		// msg 160 writing type %s for field %s 
 		put_numeric (att_type_type, X.RDB$TYPE);
 		put_source_blob (att_type_description2, att_type_description, (ISC_QUAD *)&X.RDB$DESCRIPTION);
 		if (X.RDB$SYSTEM_FLAG)
-		put_numeric (att_type_system_flag, X.RDB$SYSTEM_FLAG);
+			put_numeric (att_type_system_flag, X.RDB$SYSTEM_FLAG);
 		put(tdgbl, att_end);
 	END_FOR;
 	ON_ERROR

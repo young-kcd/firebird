@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
- *	MODULE:		inet.c
+ *	MODULE:		inet.cpp
  *	DESCRIPTION:	TCP/UCP/IP Communications module.
  *
  * The contents of this file are subject to the Interbase Public
@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.77 2003-09-24 14:53:25 dimitr Exp $
+$Id: inet.cpp,v 1.78 2003-09-25 11:49:09 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"

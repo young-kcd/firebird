@@ -465,7 +465,7 @@ typedef struct port
 	ISC_STATUS	receive_msg(P_DATA*, PACKET*);
 	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
 	ISC_STATUS	send_msg(P_DATA*, PACKET*);
-	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, ISC_STATUS*);
+	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*);
 	ISC_STATUS	service_attach(P_ATCH*, PACKET*);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
 	ISC_STATUS	service_start(P_INFO*, PACKET*);

@@ -1082,20 +1082,14 @@ ISC_STATUS port::compile(P_CMPL* compile, PACKET* send)
  *	Compile and request.
  *
  **************************************/
-	RDB rdb;
-	RRQ request;
-	REM_MSG message, next;
-	UCHAR *blr;
-	USHORT max_msg, blr_length;
-	FRBRD *handle;
 	ISC_STATUS_ARRAY status_vector;
 	rrq::rrq_repeat* tail;
 	OBJCT object;
 
-	rdb = this->port_context;
-	handle = NULL;
-	blr = compile->p_cmpl_blr.cstr_address;
-	blr_length = compile->p_cmpl_blr.cstr_length;
+	RDB rdb = this->port_context;
+	FRBRD* handle = NULL;
+	UCHAR* blr = compile->p_cmpl_blr.cstr_address;
+	USHORT blr_length = compile->p_cmpl_blr.cstr_length;
 
 	THREAD_EXIT;
 	isc_compile_request(status_vector, &rdb->rdb_handle, &handle, blr_length,
@@ -1107,15 +1101,16 @@ ISC_STATUS port::compile(P_CMPL* compile, PACKET* send)
 
 /* Parse the request to find the messages */
 
-	message = PARSE_messages(blr, blr_length);
-	max_msg = 0;
+	REM_MSG message = PARSE_messages(blr, blr_length);
+	USHORT max_msg = 0;
 
+	REM_MSG next;
 	for (next = message; next; next = next->msg_next)
 		max_msg = MAX(max_msg, next->msg_number);
 
 /* Allocate block and merge into data structures */
 
-	request = (RRQ) ALLOCV(type_rrq, max_msg + 1);
+	RRQ request = (RRQ) ALLOCV(type_rrq, max_msg + 1);
 #ifdef DEBUG_REMOTE_MEMORY
 	ib_printf("compile(server)           allocate request %x\n", request);
 #endif
@@ -2250,7 +2245,7 @@ static bool get_next_msg_no(RRQ request,
 
 	THREAD_EXIT;
 	isc_request_info(status_vector, &request->rrq_handle, incarnation,
-					 sizeof(request_info), (SCHAR *) request_info,	/* const_cast */
+					 sizeof(request_info), (SCHAR *) request_info,	// const_cast
 					 sizeof(info_buffer), reinterpret_cast<char*>(info_buffer));
 	THREAD_ENTER;
 
@@ -4119,7 +4114,7 @@ ISC_STATUS port::send_msg(P_DATA * data, PACKET* send)
 ISC_STATUS port::send_response(	PACKET*	send,
 							OBJCT	object,
 							USHORT	length,
-							ISC_STATUS*	status_vector)
+							const ISC_STATUS* status_vector)
 {
 /**************************************
  *

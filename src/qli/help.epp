@@ -133,7 +133,7 @@ static int additional_topics( TEXT * parent, TEXT * banner, TEXT * string)
  **************************************/
 	TEXT line[256];
 
-/* Print list of know topics.  When we find the first, 
+/* Print list of know topics.  When we find the first,
    print the banner, if any */
 
 	TEXT* ptr = line;
@@ -161,9 +161,9 @@ static int additional_topics( TEXT * parent, TEXT * banner, TEXT * string)
 		while (ptr < p)
 			*ptr++ = ' ';
 		p = X.TOPIC;
-		do
+		do {
 			*ptr++ = *p++;
-		while (--l);
+		} while (--l);
 		*ptr++ = ' ';
 	END_FOR;
 
@@ -199,12 +199,12 @@ static void print_more(
 
 	ERRQ_msg_get(502, prompt);	/* Msg502 "Subtopic? "  */
 
-// Prompt the user for a line 
+// Prompt the user for a line
 
 	if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 		return;
 
-// Upcase the response and zap the blanks 
+// Upcase the response and zap the blanks
 
 	topics[1] = p = topic;
 
@@ -213,7 +213,7 @@ static void print_more(
 			*p++ = UPPER(*q);
 	*p = 0;
 
-// If we got anything, print the new topic 
+// If we got anything, print the new topic
 
 	if (p != topic)
 		print_topic(level + 1, depth + 1, topics + 1, max_level, parent,
@@ -244,7 +244,7 @@ static void print_topic(
 	TEXT string[128], banner[128], *next, *p, *q, *path, buffer[128],
 		prompt[80];
 
-// Copy the parent string inserting a blank at the end 
+// Copy the parent string inserting a blank at the end
 
 	p = string;
 
@@ -272,7 +272,7 @@ static void print_topic(
 	FOR(LEVEL level) X IN TOPICS WITH X.FACILITY EQ "QLI" AND
 		(X.TOPIC STARTING WITH * topics AND X.PARENT EQ parent) OR
         (X.TOPIC = X.FACILITY AND X.TOPIC = *topics AND X.TOPIC = X.PARENT)
-		SORTED BY X.TOPIC 
+		SORTED BY X.TOPIC
 
         if (QLI_abort)
 			  return;
@@ -303,7 +303,7 @@ static void print_topic(
 				ib_printf("%s%s", INDENT, B.SEGMENT);
 			END_FOR;
 			ERRQ_msg_format(81, sizeof(banner), banner, INDENT, NULL, NULL,
-							NULL, NULL);	/* Msg81 %sSub-topics available: */
+							NULL, NULL);	// Msg81 %sSub-topics available:
 			if (additional_topics(string, banner, INDENT))
 				print_more(level, depth, topics, max_level, string,
 						   error_flag);
@@ -312,8 +312,8 @@ static void print_topic(
 
 	if (!count && error_flag && level > *max_level) {
 		path = strip(parent);
-		ERRQ_msg_put(82, path, *topics, NULL, NULL, NULL);	/* Msg82 No help is available for %s %s */
-		ERRQ_msg_format(83, sizeof(banner), banner, path, NULL, NULL, NULL, NULL);	/* Msg83 Sub-topics available for %s are: */
+		ERRQ_msg_put(82, path, *topics, NULL, NULL, NULL);	// Msg82 No help is available for %s %s
+		ERRQ_msg_format(83, sizeof(banner), banner, path, NULL, NULL, NULL, NULL);	// Msg83 Sub-topics available for %s are:
 		additional_topics(parent, banner, path);
 	}
 }
@@ -345,3 +345,4 @@ static TEXT *strip( TEXT * string)
 
 	return p;
 }
+

@@ -132,7 +132,7 @@ int CMP_node_match( QLI_NOD node1, QLI_NOD node2)
  *
  **************************************/
 	QLI_NOD *ptr1, *ptr2, *end;
-	MAP map1, map2;
+	QLI_MAP map1, map2;
 	USHORT l;
 	UCHAR *p1, *p2;
 
@@ -158,17 +158,17 @@ int CMP_node_match( QLI_NOD node1, QLI_NOD node2)
 			p1 = node1->nod_desc.dsc_address;
 			p2 = node2->nod_desc.dsc_address;
 			if (l = node1->nod_desc.dsc_length)
-				do
+				do {
 					if (*p1++ != *p2++)
 						return FALSE;
-				while (--l);
+				} while (--l);
 			return TRUE;
 		}
 
 	case nod_map:
 		{
-			map1 = (MAP) node1->nod_arg[e_map_map];
-			map2 = (MAP) node2->nod_arg[e_map_map];
+			map1 = (QLI_MAP) node1->nod_arg[e_map_map];
+			map2 = (QLI_MAP) node2->nod_arg[e_map_map];
 			return CMP_node_match(map1->map_node, map2->map_node);
 		}
 
@@ -238,7 +238,7 @@ static QLI_NOD compile_any( QLI_NOD node, QLI_REQ old_request, int internal_flag
 	}
 
 	if (old_request && request->req_database != old_request->req_database)
-		IBERROR(357);			// Msg357 relations from multiple databases in single rse 
+		IBERROR(357);			// Msg357 relations from multiple databases in single rse
 
 	if (old_request && (!receive || !receive->msg_parameters)) {
 		if (receive)
@@ -275,7 +275,7 @@ static QLI_NOD compile_assignment( QLI_NOD node, QLI_REQ request, int statement_
  *	the logic of such things, the 'internal' flags
  *	mean external to qli, but internal to jrd.
  *	As is well known, the seat of the soul is the
- *	dbms). 
+ *	dbms).
  *
  **************************************/
 	QLI_NOD target, initial;
@@ -310,7 +310,7 @@ static QLI_NOD compile_assignment( QLI_NOD node, QLI_REQ request, int statement_
 			compile_expression(initial, request, FALSE);
 
 	if (statement_internal) {
-		node->nod_arg[e_asn_valid] = NULL;	// Memory reclaimed in the main loop 
+		node->nod_arg[e_asn_valid] = NULL;	// Memory reclaimed in the main loop
 		node->nod_flags |= NOD_remote;
 		node = NULL;
 	}
@@ -412,14 +412,14 @@ static QLI_NOD compile_edit( QLI_NOD node, QLI_REQ request)
    can't find the target database. */
 
 	if (!request)
-		BUGCHECK(358);			/* Msg358 can't find database for blob edit */
+		BUGCHECK(358);			// Msg358 can't find database for blob edit
 
-// If there is an input blob, get it now. 
+// If there is an input blob, get it now.
 
 	if (value = node->nod_arg[e_edt_input]) {
 		QLI_FLD field = (QLI_FLD) value->nod_arg[e_fld_field];
 		if (value->nod_type != nod_field || field->fld_dtype != dtype_blob)
-			IBERROR(356);		// Msg356 EDIT argument must be a blob field 
+			IBERROR(356);		// Msg356 EDIT argument must be a blob field
 		node->nod_arg[e_edt_input] =
 			compile_expression(value, request, FALSE);
 	}
@@ -475,11 +475,11 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
  * Functional description
  *	Compile a value.  The value may be used internally as part of
  *	another expression (internal_flag == TRUE) or may be referenced
- *	in the QLI context (internal_flag == FALSE).	
+ *	in the QLI context (internal_flag == FALSE).
  *
  **************************************/
 	QLI_NOD *ptr, *end, value;
-	MAP map;
+	QLI_MAP map;
 	PAR parm;
 	QLI_FLD field;
 
@@ -544,7 +544,7 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
 		return node;
 
 	case nod_map:
-		map = (MAP) node->nod_arg[e_map_map];
+		map = (QLI_MAP) node->nod_arg[e_map_map];
 		map->map_node = value =
 			compile_expression(map->map_node, request, TRUE);
 		make_descriptor(value, &node->nod_desc);
@@ -664,7 +664,7 @@ static QLI_NOD compile_expression( QLI_NOD node, QLI_REQ request, int internal_f
 		return node;
 
 	default:
-		BUGCHECK(359);			// Msg359 compile_expression: not yet implemented 
+		BUGCHECK(359);			// Msg359 compile_expression: not yet implemented
 		return NULL;
 	}
 }
@@ -832,7 +832,7 @@ static QLI_NOD compile_function( QLI_NOD node, QLI_REQ old_request, int internal
 	else
 		request = old_request;
 
-// If there is a value, compile it here 
+// If there is a value, compile it here
 
 	if (!internal_flag) {
 		node->nod_import = parameter =
@@ -1058,7 +1058,7 @@ static QLI_NOD compile_prompt( QLI_NOD node)
 	QLI_FLD field;
 	USHORT prompt_length;
 
-// Make up a plausible prompt length 
+// Make up a plausible prompt length
 
 	if (!(field = (QLI_FLD) node->nod_arg[e_prm_field]))
 		prompt_length = PROMPT_LENGTH;
@@ -1086,7 +1086,7 @@ static QLI_NOD compile_prompt( QLI_NOD node)
 			break;
 		}
 
-/* Allocate string buffer to hold data, a two byte count, 
+/* Allocate string buffer to hold data, a two byte count,
   a possible carriage return, and a null */
 
 	prompt_length += 2 + sizeof(SSHORT);
@@ -1202,7 +1202,7 @@ static QLI_REQ compile_rse(
 		database = &local_dbb;
 	}
 
-// Loop thru relations to make sure only a single database is presented 
+// Loop thru relations to make sure only a single database is presented
 
 	QLI_CTX* ctx_ptr = (QLI_CTX*) node->nod_arg + e_rse_count;
 	QLI_CTX* ctx_end = ctx_ptr + node->nod_count;
@@ -1220,7 +1220,7 @@ static QLI_REQ compile_rse(
 			if (!*database)
 				*database = relation->rel_database;
 			else if (*database != relation->rel_database)
-				IBERROR(357);	// Msg357 relations from multiple databases in single rse 
+				IBERROR(357);	// Msg357 relations from multiple databases in single rse
 		}
 	}
 
@@ -1240,7 +1240,7 @@ static QLI_REQ compile_rse(
 
 	compile_context(node, request, internal_flag);
 
-// Process various clauses 
+// Process various clauses
 
 	if (node->nod_arg[e_rse_first])
 		compile_expression(node->nod_arg[e_rse_first], request, TRUE);
@@ -1266,7 +1266,7 @@ static QLI_REQ compile_rse(
 	if (node->nod_arg[e_rse_having])
 		compile_expression(node->nod_arg[e_rse_having], request, TRUE);
 
-/* If we didn't allocate a new request block, say so by returning NULL */
+// If we didn't allocate a new request block, say so by returning NULL
 
 	if (request == original_request)
 		return NULL;
@@ -1393,7 +1393,7 @@ static QLI_NOD compile_statistical( QLI_NOD node, QLI_REQ old_request, int inter
 	else
 		request = old_request;
 
-// If there is a value, compile it here 
+// If there is a value, compile it here
 
 	if (!internal_flag) {
 		node->nod_import = parameter =
@@ -1440,7 +1440,7 @@ static QLI_NOD compile_store( QLI_NOD node, QLI_REQ request, int internal_flag)
  **************************************/
 	QLI_MSG send;
 
-// Find or make up request for statement 
+// Find or make up request for statement
 
 	QLI_CTX context = (QLI_CTX) node->nod_arg[e_sto_context];
 	QLI_REL relation = context->ctx_relation;
@@ -1491,7 +1491,7 @@ static int computable( QLI_NOD node, QLI_REQ request)
  **************************************/
 	QLI_NOD *ptr, *end, sub;
 	QLI_CTX context;
-	MAP map;
+	QLI_MAP map;
 
 	switch (node->nod_type) {
 	case nod_max:
@@ -1538,7 +1538,7 @@ static int computable( QLI_NOD node, QLI_REQ request)
 		return (request == context->ctx_request);
 
 	case nod_map:
-		map = (MAP) node->nod_arg[e_map_map];
+		map = (QLI_MAP) node->nod_arg[e_map_map];
 		return computable(map->map_node, request);
 
 	case nod_print:
@@ -1608,7 +1608,7 @@ static int computable( QLI_NOD node, QLI_REQ request)
 		if (node->nod_arg[e_asn_valid]) {
 			sub = node->nod_arg[e_asn_from];
 			if (sub->nod_type == nod_prompt)
-				/* Try to do validation in QLI as soon as 
+				/* Try to do validation in QLI as soon as
 				   the user responds to the prompt */
 				return FALSE;
 		}
@@ -1646,7 +1646,7 @@ static int computable( QLI_NOD node, QLI_REQ request)
 		return TRUE;
 
 	default:
-		BUGCHECK(361);			// Msg361 computable: not yet implemented 
+		BUGCHECK(361);			// Msg361 computable: not yet implemented
 		return FALSE;
 	}
 }
@@ -1667,7 +1667,7 @@ static void make_descriptor( QLI_NOD node, DSC * desc)
 	DSC desc1, desc2;
 	QLI_FLD field;
 	PAR parameter;
-	MAP map;
+	QLI_MAP map;
 	FUN function;
 	USHORT dtype;
 
@@ -1695,7 +1695,7 @@ static void make_descriptor( QLI_NOD node, DSC * desc)
 		return;
 
 	case nod_map:
-		map = (MAP) node->nod_arg[e_map_map];
+		map = (QLI_MAP) node->nod_arg[e_map_map];
 		make_descriptor(map->map_node, desc);
 		return;
 
@@ -1846,7 +1846,7 @@ static void make_descriptor( QLI_NOD node, DSC * desc)
 
 	case nod_substr:
 	default:
-		BUGCHECK(362);			// Msg362 make_descriptor: not yet implemented 
+		BUGCHECK(362);			// Msg362 make_descriptor: not yet implemented
 	}
 }
 
@@ -1933,11 +1933,11 @@ static QLI_NOD make_reference( QLI_NOD node, QLI_MSG message)
  **************************************
  *
  * Functional description
- *	Make a reference to a value to be computed in the 
+ *	Make a reference to a value to be computed in the
  *	database context.  Since a field can be referenced
  *	several times, construct reference blocks linking
  *	the single field to the single parameter.  (I think.)
- *	In any event, if a parameter for a field exists, 
+ *	In any event, if a parameter for a field exists,
  *	use it rather than generating an new one.   Make it
  *	parameter2 style if necessary.
  *
@@ -1945,15 +1945,15 @@ static QLI_NOD make_reference( QLI_NOD node, QLI_MSG message)
 	PAR parm;
 
 	if (!message)
-		BUGCHECK(363);			// Msg363 missing message 
+		BUGCHECK(363);			// Msg363 missing message
 
-// Look for an existing field reference 
+// Look for an existing field reference
 
 	for (parm = message->msg_parameters; parm; parm = parm->par_next)
 		if (CMP_node_match(parm->par_value, node))
 			break;
 
-/* Parameter doesn't exits -- make a new one. */
+// Parameter doesn't exits -- make a new one.
 
 	if (!parm) {
 		parm = make_parameter(message, node);
@@ -2019,7 +2019,7 @@ static void release_message( QLI_MSG message)
 			break;
 
 	if (!*ptr)
-		BUGCHECK(364);			// Msg 364 lost message 
+		BUGCHECK(364);			// Msg 364 lost message
 
 	*ptr = message->msg_next;
 	ALL_release((FRB) message);
@@ -2041,4 +2041,5 @@ static int string_length(const dsc* desc)
 
 	return DSC_string_length(desc);
 }
+
 

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		eval.c
+ *	MODULE:		eval.cpp
  *	DESCRIPTION:	Value and boolean expression evaluator
  *
  * The contents of this file are subject to the Interbase Public
@@ -177,7 +177,7 @@ int EVAL_boolean( QLI_NOD node)
 		return result;
 
 	default:
-		BUGCHECK(28);			// Msg28 EVAL_boolean: not finished 
+		BUGCHECK(28);			// Msg28 EVAL_boolean: not finished
 		return FALSE;
 	}
 }
@@ -223,7 +223,7 @@ void EVAL_break_increment( QLI_NOD node)
 
 	DSC* desc1 = &node->nod_desc;
 
-// Knock off count as trivial 
+// Knock off count as trivial
 
 	if (node->nod_type == nod_rpt_count) {
 		*(SLONG *) node->nod_desc.dsc_address += 1;
@@ -236,7 +236,7 @@ void EVAL_break_increment( QLI_NOD node)
 	if (!(desc2 = EVAL_value(node->nod_arg[e_stt_value])))
 		return;
 
-// If this is the first value, just move it in. 
+// If this is the first value, just move it in.
 
 	SLONG count = (SLONG) node->nod_arg[e_stt_default] + 1;
 	if (count == 1) {
@@ -255,10 +255,10 @@ void EVAL_break_increment( QLI_NOD node)
 	node->nod_arg[e_stt_default] = (QLI_NOD) (SLONG) count;
 	desc1->dsc_missing = FALSE;
 
-// Finish off as per operator 
+// Finish off as per operator
 
 	SSHORT comparison;
-	
+
 	switch (node->nod_type) {
 	case nod_rpt_min:
 	case nod_rpt_max:
@@ -485,14 +485,14 @@ DSC *EVAL_value(QLI_NOD node)
 			break;
 
 		default:
-			IBERROR(30);		// Msg30 data type not supported for arithmetic 
+			IBERROR(30);		// Msg30 data type not supported for arithmetic
 		}
 		return desc;
 
 	case nod_prompt:
 		if (!prompt[0][0]) {
-			ERRQ_msg_get(499, prompt[0]);	// Msg499 Re-enter 
-			ERRQ_msg_get(500, prompt[1]);	// Msg500 Enter    
+			ERRQ_msg_get(499, prompt[0]);	// Msg499 Re-enter
+			ERRQ_msg_get(500, prompt[1]);	// Msg500 Enter
 		}
 		return execute_prompt(node);
 
@@ -533,7 +533,7 @@ DSC *EVAL_value(QLI_NOD node)
 		desc->dsc_length = p - desc->dsc_address;
 		return desc;
 	case nod_user_name:
-		IBERROR(31);			// Msg31 user name is supported only in RSEs temporarily 
+		IBERROR(31);			// Msg31 user name is supported only in RSEs temporarily
 
 	case nod_parameter:
 	case nod_position:
@@ -543,7 +543,7 @@ DSC *EVAL_value(QLI_NOD node)
 	case nod_via:
 
 	default:
-		BUGCHECK(29);			// Msg29 EVAL_value: not finished 
+		BUGCHECK(29);			// Msg29 EVAL_value: not finished
 		return NULL;
 	}
 }
@@ -605,14 +605,14 @@ static DSC *execute_concatenate( QLI_NOD node, DSC * value1, DSC * value2)
 	length2 = MAX(MIN(length2, desc->dsc_length - 2 - length1), 0);
 
 	if (length1)
-		do
+		do {
 			*p++ = *address1++;
-		while (--length1);
+		} while (--length1);
 
 	if (length2)
-		do
+		do {
 			*p++ = *address2++;
-		while (--length2);
+		} while (--length2);
 
 	vary->vary_length = p - vary->vary_string;
 
@@ -725,9 +725,9 @@ static DSC *execute_prompt( QLI_NOD node)
 		}
 		else {
 			if (reprompt)
-				sprintf(string, "\07%s: ", prompt[0]);	// Msg497 Re-enter 
+				sprintf(string, "\07%s: ", prompt[0]);	// Msg497 Re-enter
 			else
-				sprintf(string, "%s: ", prompt[1]);	// Msg498 Enter    
+				sprintf(string, "%s: ", prompt[1]);	// Msg498 Enter
 		}
 
 		if (!LEX_get_line(string, value, length)) {
@@ -742,7 +742,7 @@ static DSC *execute_prompt( QLI_NOD node)
 		if (p > value && p[-1] == '\n')
 			*--p = 0;
 
-		// Get rid of trailing blanks on non-text data types 
+		// Get rid of trailing blanks on non-text data types
 
 		if (desc->dsc_dtype > dtype_varying) {
 			while (p > value && p[-1] == ' ')
@@ -759,7 +759,7 @@ static DSC *execute_prompt( QLI_NOD node)
 			return desc;
 		}
 
-		ERRQ_msg_put(32, NULL, NULL, NULL, NULL, NULL);	// Msg32 Input value is too long 
+		ERRQ_msg_put(32, NULL, NULL, NULL, NULL, NULL);	// Msg32 Input value is too long
 		reprompt = TRUE;
 	}
 }
@@ -861,8 +861,8 @@ static TEXT *make_blob_buffer( FRBRD * blob, USHORT * length)
 		*length = max_segment;
 		buffer = (TEXT *) gds__alloc((SLONG) * length);
 #ifdef DEBUG_GDS_ALLOC
-		/* We don't care about QLI specific memory leaks for V4.0 */
-		gds_alloc_flag_unfreed((void *) buffer);	/* QLI: don't care */
+		// We don't care about QLI specific memory leaks for V4.0
+		gds_alloc_flag_unfreed((void *) buffer);	// QLI: don't care
 #endif
 		return buffer;
 	}
@@ -934,22 +934,22 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 
 	l1 = MOVQ_get_string(desc3, &p1, (VARY*) temp1, TEMP_LENGTH);
 
-// Get address and length of search string 
+// Get address and length of search string
 
 	l2 = MOVQ_get_string(desc2, &p2, (VARY*) temp2, TEMP_LENGTH);
 
-// Merge search and control strings 
+// Merge search and control strings
 
 	l2 = sleuth_merge((UCHAR*) p2, (UCHAR*) (p2 + l2), (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control);
 
-// If source is not a blob, do a simple search 
+// If source is not a blob, do a simple search
 
 	if (desc1->dsc_dtype != dtype_blob) {
 		l1 = MOVQ_get_string(desc1, &p1, (VARY*) temp1, TEMP_LENGTH);
 		return sleuth_check(0, (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control, (UCHAR*) (control + l2));
 	}
 
-// Source string is a blob, things get interesting 
+// Source string is a blob, things get interesting
 
 	result = FALSE;
 
@@ -1142,9 +1142,9 @@ static int sleuth_merge(
  *
  * Functional description
  *	Merge the matching pattern and control strings to give a cannonical
- *	matching pattern.  Return the length of the combined string. 
+ *	matching pattern.  Return the length of the combined string.
  *
- * 	What this routine does is to take the language template, strip off 
+ * 	What this routine does is to take the language template, strip off
  *	the prefix and put it in the output string, then parse the definitions
  *	into an array of character pointers.  The index array is the defined
  *	character.   The routine then takes the actual match pattern and uses
@@ -1163,7 +1163,7 @@ static int sleuth_merge(
 	v = vector;
 	t = temp;
 
-// Parse control string into substitution strings and initializing string 
+// Parse control string into substitution strings and initializing string
 
 	while (control < end_control) {
 		c = *control++;
@@ -1192,19 +1192,19 @@ static int sleuth_merge(
 
 	max_op = v - vector;
 
-// Interpret matching string, substituting where appropriate 
+// Interpret matching string, substituting where appropriate
 
 	while (c = *match++) {
 
-		/* if we've got a defined character, slurp the definition */
+		// if we've got a defined character, slurp the definition
 		if (c <= max_op && (p = vector[c])) {
 			while (*p)
 				*comb++ = *p++;
-			/* if we've got the definition of a quote character, slurp the next character too */
+			// if we've got the definition of a quote character, slurp the next character too
 			if (comb[-1] == '@' && *match)
 				*comb++ = *match++;
 		}
-		/* at this point we've got a non-match, but as it might be one of ours, quote it. */
+		// at this point we've got a non-match, but as it might be one of ours, quote it.
 		else {
 			if (special[c] && comb[-1] != '@')
 				*comb++ = '@';
@@ -1212,7 +1212,7 @@ static int sleuth_merge(
 		}
 	}
 
-// Put in trailing stuff 
+// Put in trailing stuff
 
 	while (control < end_control)
 		*comb++ = *control++;
@@ -1258,18 +1258,18 @@ static int string_boolean( QLI_NOD node)
 	if (node->nod_type == nod_sleuth)
 		return sleuth(node, desc1, desc2, desc3);
 
-// Get address and length of strings 
+// Get address and length of strings
 
 	l2 = MOVQ_get_string(desc2, &p2, (VARY*) temp2, TEMP_LENGTH);
 
-// If source is not a blob, do a simple search 
+// If source is not a blob, do a simple search
 
 	if (desc1->dsc_dtype != dtype_blob) {
 		l1 = MOVQ_get_string(desc1, &p1, (VARY*) temp1, TEMP_LENGTH);
 		return string_function(node, l1, p1, l2, p2) ? TRUE : FALSE;
 	}
 
-// Source string is a blob, things get interesting 
+// Source string is a blob, things get interesting
 
 	result = FALSE;
 	blob = EXEC_open_blob(node->nod_arg[0]);
@@ -1279,7 +1279,7 @@ static int string_boolean( QLI_NOD node)
 	if (!(buffer = make_blob_buffer( blob, &buffer_length)))
 		buffer = fixed_buffer;
 
-	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l1, 
+	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l1,
 							 buffer_length, buffer))
 	{
 		if (string_function(node, l1, buffer, l2, p2)) {
@@ -1320,7 +1320,7 @@ static bool string_function(
 	TEXT *q1, *q2, c1, c2, temp[16];
 	SSHORT l;
 
-/* Handle "STARTS WITH" */
+// Handle "STARTS WITH"
 
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
@@ -1331,7 +1331,7 @@ static bool string_function(
 		return true;
 	}
 
-// Handle CONTAINS 
+// Handle CONTAINS
 
 	if (node->nod_type == nod_containing) {
 		while (l1 >= l2) {
@@ -1349,7 +1349,7 @@ static bool string_function(
 		return false;
 	}
 
-// Handle LIKE 
+// Handle LIKE
 
 	if (node->nod_type == nod_like) {
 		c1 = 0;
@@ -1364,7 +1364,7 @@ static bool string_function(
 		return false;
 	}
 
-// Handle MATCHES 
+// Handle MATCHES
 
 	if (node->nod_type == nod_matches)
 		if (matches(p1, l1, p2, l2))
@@ -1372,4 +1372,5 @@ static bool string_function(
 
 	return false;
 }
+
 

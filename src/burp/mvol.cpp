@@ -67,7 +67,7 @@
 #include <unistd.h>
 #endif
 
-const int OPEN_MASK	= 0666;
+const int open_mask	= 0666;
 
 #ifdef VMS
 const char* TERM_INPUT	= "sys$input";
@@ -84,11 +84,13 @@ const char* TERM_OUTPUT	= "/dev/tty";
 
 const int MAX_HEADER_SIZE	= 512;
 
-static inline int get(TGBL tdgbl){
+static inline int get(TGBL tdgbl)
+{
 	return (--(tdgbl->mvol_io_cnt) >= 0 ? *(tdgbl->mvol_io_ptr)++ : 255);
 }
 
-static inline void put(TGBL tdgbl, ULONG c){
+static inline void put(TGBL tdgbl, ULONG c)
+{
 	--(tdgbl->mvol_io_cnt);
 	*(tdgbl->mvol_io_ptr)++ = (UCHAR) (c);
 }
@@ -187,9 +189,6 @@ void MVOL_init_read(const UCHAR*	database_name, // unused?
 					int*	cnt,
 					UCHAR**	ptr)
 {
-	ULONG temp_buffer_size;
-	UCHAR *new_buffer;
-
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	tdgbl->mvol_volume_count = 1;
@@ -205,8 +204,8 @@ void MVOL_init_read(const UCHAR*	database_name, // unused?
 		tdgbl->mvol_old_file[0] = 0;
 	}
 
-	tdgbl->mvol_actual_buffer_size = temp_buffer_size =
-		tdgbl->mvol_io_buffer_size;
+    ULONG temp_buffer_size = tdgbl->mvol_io_buffer_size;
+	tdgbl->mvol_actual_buffer_size = temp_buffer_size;
 	tdgbl->mvol_io_buffer = BURP_alloc(temp_buffer_size);
 	tdgbl->gbl_backup_start_time[0] = 0;
 
@@ -214,7 +213,7 @@ void MVOL_init_read(const UCHAR*	database_name, // unused?
 
 	if (temp_buffer_size > tdgbl->mvol_actual_buffer_size)
 	{
-		new_buffer = BURP_alloc(temp_buffer_size);
+		UCHAR* new_buffer = BURP_alloc(temp_buffer_size);
 		memcpy(new_buffer, tdgbl->mvol_io_buffer, tdgbl->mvol_io_buffer_size);
 		BURP_free(tdgbl->mvol_io_buffer);
 		tdgbl->mvol_io_ptr =
@@ -811,13 +810,11 @@ static SLONG get_numeric(void)
 //
 static int get_text(UCHAR* text, SSHORT length)
 {
-	unsigned int l, l2;
-
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	l = get(tdgbl);
+	ULONG l = get(tdgbl);
 	length -= l;
-	l2 = l;
+	const ULONG l2 = l;
 
 	if (length < 0)
 	{
@@ -844,10 +841,6 @@ static int get_text(UCHAR* text, SSHORT length)
 //
 static DESC next_volume( DESC handle, int mode, bool full_buffer)
 {
-	SCHAR new_file[MAX_FILE_NAME_LENGTH];
-	ULONG temp_buffer_size;
-	USHORT format;
-
 	TGBL tdgbl = GET_THREAD_DATA;
 
 /* We must  close the old handle before the user inserts
@@ -885,6 +878,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 
 // Loop until we have opened a file successfully 
 
+	SCHAR new_file[MAX_FILE_NAME_LENGTH];
     DESC new_desc = INVALID_HANDLE_VALUE;
 	for (;;)
 	{
@@ -903,7 +897,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 		new_desc = MVOL_open(new_file, mode, OPEN_ALWAYS);
 		if (new_desc == INVALID_HANDLE_VALUE)
 #else
-		new_desc = open(new_file, mode, OPEN_MASK);
+		new_desc = open(new_file, mode, open_mask);
 		if (new_desc < 0)
 #endif // WIN_NT 
 		{
@@ -917,7 +911,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 #ifdef WIN_NT
 		if (mode == MODE_WRITE)
 #else
-		if ( (mode = mode & O_WRONLY) || (mode = mode & O_RDWR))
+		if ((O_WRONLY == (mode & O_WRONLY)) || (O_RDWR == (mode & O_RDWR)))
 #endif // WIN_NT 
 		{
 			if (!write_header(new_desc, 0L, full_buffer))
@@ -938,6 +932,8 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 		{
 			// File is open for read only.  Read the header. 
 
+			ULONG temp_buffer_size;
+			USHORT format;
 			if (!read_header(new_desc, &temp_buffer_size, &format, false))
 			{
 				BURP_print(224, new_file, 0, 0, 0, 0);
@@ -1060,7 +1056,7 @@ static void prompt_for_name(SCHAR* name, int length)
 //
 // Write an attribute starting with a null terminated string.
 //
-static void put_asciz( SCHAR attribute, const TEXT * string)
+static void put_asciz( SCHAR attribute, const TEXT* string)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 
@@ -1069,13 +1065,13 @@ static void put_asciz( SCHAR attribute, const TEXT * string)
 	{
 		l++;
 	}
+	fb_assert(l <= MAX_UCHAR);
 
 	put(tdgbl, attribute);
 	put(tdgbl, l);
 	if (l)
 	{
-		do
-		{
+		do {
 			put(tdgbl, *string++);
 		} while (--l);
 	}
@@ -1092,7 +1088,7 @@ static void put_numeric( SCHAR attribute, int value)
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	ULONG vax_value = gds__vax_integer((UCHAR *) & value, sizeof(value));
-	UCHAR *p = (UCHAR *) & vax_value;
+	UCHAR* p = (UCHAR *) &vax_value;
 
 	put(tdgbl, attribute);
 	put(tdgbl, sizeof(value));
@@ -1112,7 +1108,6 @@ static bool read_header(DESC    handle,
 						USHORT* format,
 						bool	init_flag)
 {
-	int attribute, temp;
 	SSHORT l;
 	ULONG temp_buffer_size;
 	TEXT buffer[256], *p, msg[128];
@@ -1132,10 +1127,13 @@ static bool read_header(DESC    handle,
 #endif
 	tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer;
 
-	if ((attribute = (att_type) get(tdgbl)) != rec_burp)
-		BURP_error_redirect(0, 45, NULL, NULL);	// msg 45 expected backup description record 
+	int attribute = get(tdgbl);
+	if (attribute != rec_burp)
+		BURP_error_redirect(0, 45, NULL, NULL);
+		// msg 45 expected backup description record 
 
-	while ((attribute = (att_type) get(tdgbl)) != att_end)
+	int temp;
+	for (attribute = get(tdgbl); attribute != att_end; attribute = get(tdgbl))
 	{
 		switch (attribute)
 		{
@@ -1158,9 +1156,9 @@ static bool read_header(DESC    handle,
 			else
 				p = buffer;
 			if (l)
-				do
+				do {
 					*p++ = get(tdgbl);
-				while (--l);
+				} while (--l);
 			*p = 0;
 			if (!init_flag && strcmp(buffer, tdgbl->gbl_backup_start_time))
 			{

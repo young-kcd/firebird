@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_FORMAT_H_
-#define _QLI_FORMAT_H_
+#ifndef QLI_FORMAT_H
+#define QLI_FORMAT_H
 
 /* Logical column block */
 
@@ -116,4 +116,4 @@ typedef struct pics {
 #define PIC_literal		2	/* We're in a quoted string */
 #define PIC_signed		4	/* This numeric edit string has a sign indicator */
 
-#endif /* _QLI_FORMAT_H_ */
+#endif /* QLI_FORMAT_H */

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.15 2003-09-16 14:01:55 brodsom Exp $
+//	$Id: int.cpp,v 1.16 2003-09-25 11:49:02 robocop Exp $
 //
 
 #include "firebird.h"
@@ -38,7 +38,7 @@
 #include "../gpre/lang_proto.h"
 #include "../jrd/gds_proto.h"
 
-static void align(int);
+static void align(const int);
 static void asgn_from(REF, int);
 #ifdef NOT_USED_OR_REPLACED
 static void asgn_to(REF);
@@ -60,12 +60,12 @@ static void gen_routine(ACT, int);
 static void gen_s_end(ACT, int);
 static void gen_s_fetch(ACT, int);
 static void gen_s_start(ACT, int);
-static void gen_send(GPRE_REQ, POR, int, bool);
-static void gen_start(GPRE_REQ, POR, int, bool);
+static void gen_send(GPRE_REQ, const por*, int, bool);
+static void gen_start(GPRE_REQ, const por*, int, bool);
 static void gen_type(ACT, int);
 static void gen_variable(ACT, int);
 static void make_port(POR, int);
-static void printa(int, TEXT *, ...) ATTRIBUTE_FORMAT(2,3);
+static void printa(const int, const TEXT*, ...) ATTRIBUTE_FORMAT(2,3);
 
 static int first_flag = 0;
 
@@ -75,12 +75,12 @@ static int first_flag = 0;
 #define JRD_VTOF	"jrd_vtof"
 #define VTO_CALL	"%s ((const char*)%s, (char*)%s, %d);"
 
-static inline void begin(int column)
+static inline void begin(const int column)
 {
 	printa(column, "{");
 }
 
-static inline void endp(int column)
+static inline void endp(const int column)
 {
 	printa(column, "}");
 }
@@ -167,7 +167,7 @@ void INT_action( ACT action, int column)
 //		Align output to a specific column for output.
 //  
 
-static void align( int column)
+static void align(const int column)
 {
 	int i;
 
@@ -261,10 +261,9 @@ static void asgn_to( REF reference)
 
 static void gen_at_end( ACT action, int column)
 {
-	GPRE_REQ request;
 	TEXT s[20];
 
-	request = action->act_request;
+	GPRE_REQ request = action->act_request;
 	printa(column, "if (!%s) ", gen_name(s, request->req_eof));
 }
 
@@ -290,12 +289,9 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 
 static void gen_compile( GPRE_REQ request, int column)
 {
-	DBB db;
-	SYM symbol;
-
 	column += INDENT;
-	db = request->req_database;
-	symbol = db->dbb_name;
+	DBB db = request->req_database;
+	SYM symbol = db->dbb_name;
 	ib_fprintf(out_file, "if (!%s)", request->req_handle);
 	align(column);
 	ib_fprintf(out_file,
@@ -311,13 +307,11 @@ static void gen_compile( GPRE_REQ request, int column)
 
 static void gen_database( ACT action, int column)
 {
-	GPRE_REQ request;
-
 	if (first_flag++ != 0)
 		return;
 
 	align(0);
-	for (request = requests; request; request = request->req_next)
+	for (GPRE_REQ request = requests; request; request = request->req_next)
 		gen_request(request);
 }
 
@@ -329,20 +323,17 @@ static void gen_database( ACT action, int column)
 
 static void gen_emodify( ACT action, int column)
 {
-	UPD modify;
-	REF reference;
-	GPRE_FLD field;
 	TEXT s1[20], s2[20];
 
-	modify = (UPD) action->act_object;
+	UPD modify = (UPD) action->act_object;
 
-	for (reference = modify->upd_port->por_references; reference;
+	for (REF reference = modify->upd_port->por_references; reference;
 		 reference = reference->ref_next)
 	{
 		REF source = reference->ref_source;
 		if (!source)
 			continue;
-		field = reference->ref_field;
+		GPRE_FLD field = reference->ref_field;
 		align(column);
 
 		if (field->fld_dtype == dtype_text)
@@ -370,9 +361,7 @@ static void gen_emodify( ACT action, int column)
 
 static void gen_estore( ACT action, int column, bool special)
 {
-	GPRE_REQ request;
-
-	request = action->act_request;
+	GPRE_REQ request = action->act_request;
 	align(column);
 	gen_compile(request, column);
 	gen_start(request, request->req_primary, column, special);
@@ -386,9 +375,7 @@ static void gen_estore( ACT action, int column, bool special)
 
 static void gen_endfor( ACT action, int column)
 {
-	GPRE_REQ request;
-
-	request = action->act_request;
+	GPRE_REQ request = action->act_request;
 	column += INDENT;
 
 	if (request->req_sync)
@@ -405,9 +392,7 @@ static void gen_endfor( ACT action, int column)
 
 static void gen_erase( ACT action, int column)
 {
-	UPD erase;
-
-	erase = (UPD) action->act_object;
+	UPD erase = (UPD) action->act_object;
 	gen_send(erase->upd_request, erase->upd_port, column, false);
 }
 
@@ -419,13 +404,12 @@ static void gen_erase( ACT action, int column)
 
 static void gen_for( ACT action, int column)
 {
-	GPRE_REQ request;
 	TEXT s[20];
 
 	gen_s_start(action, column);
 
 	align(column);
-	request = action->act_request;
+	GPRE_REQ request = action->act_request;
 	ib_fprintf(out_file, "while (1)");
 	column += INDENT;
 	begin(column);
@@ -459,17 +443,15 @@ static TEXT* gen_name(TEXT* string, const REF reference)
 
 static void gen_raw( GPRE_REQ request)
 {
-	UCHAR *blr, c;
-	TEXT buffer[80], *p;
-	int blr_length;
+	TEXT buffer[80];
 
-	blr = request->req_blr;
-	blr_length = request->req_length;
-	p = buffer;
+	UCHAR* blr = request->req_blr;
+	int blr_length = request->req_length;
+	TEXT* p = buffer;
 	align(0);
 
 	while (--blr_length) {
-		c = *blr++;
+		const UCHAR c = *blr++;
 		if ((c >= 'A' && c <= 'Z') || c == '$' || c == '_')
 			sprintf(p, "'%c',", c);
 		else
@@ -536,13 +518,12 @@ static void gen_request( GPRE_REQ request)
 
 static void gen_routine( ACT action, int column)
 {
-	GPRE_REQ request;
-	POR port;
-
-	for (request = (GPRE_REQ) action->act_object; request;
-		 request = request->req_routine) for (port = request->req_ports; port;
-											  port = port->por_next)
+	for (GPRE_REQ request = (GPRE_REQ) action->act_object; request;
+		 request = request->req_routine)
+	{
+		 for (POR port = request->req_ports; port; port = port->por_next)
 			make_port(port, column + INDENT);
+	}
 }
 
 
@@ -553,9 +534,7 @@ static void gen_routine( ACT action, int column)
 
 static void gen_s_end( ACT action, int column)
 {
-	GPRE_REQ request;
-
-	request = action->act_request;
+	GPRE_REQ request = action->act_request;
 	printa(column, "EXE_unwind (tdbb, %s);", request->req_handle);
 }
 
@@ -567,9 +546,7 @@ static void gen_s_end( ACT action, int column)
 
 static void gen_s_fetch( ACT action, int column)
 {
-	GPRE_REQ request;
-
-	request = action->act_request;
+	GPRE_REQ request = action->act_request;
 	if (request->req_sync)
 		gen_send(request, request->req_sync, column, false);
 
@@ -585,13 +562,11 @@ static void gen_s_fetch( ACT action, int column)
 
 static void gen_s_start( ACT action, int column)
 {
-	GPRE_REQ request;
-	POR port;
-
-	request = action->act_request;
+	GPRE_REQ request = action->act_request;
 	gen_compile(request, column);
 
-	if (port = request->req_vport)
+	const por* port = request->req_vport;
+	if (port)
 		asgn_from(port->por_references, column);
 
 	gen_start(request, port, column, false);
@@ -603,7 +578,7 @@ static void gen_s_start( ACT action, int column)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_send( GPRE_REQ request, POR port, int column, bool special)
+static void gen_send( GPRE_REQ request, const por* port, int column, bool special)
 {
 
 	if (special) {
@@ -625,7 +600,7 @@ static void gen_send( GPRE_REQ request, POR port, int column, bool special)
 //		Generate a START.
 //  
 
-static void gen_start( GPRE_REQ request, POR port, int column, bool special)
+static void gen_start( GPRE_REQ request, const por* port, int column, bool special)
 {
 	align(column);
 
@@ -644,7 +619,6 @@ static void gen_start( GPRE_REQ request, POR port, int column, bool special)
 
 static void gen_type( ACT action, int column)
 {
-
 	printa(column, "%ld", (SLONG) action->act_object);
 }
 
@@ -671,19 +645,17 @@ static void gen_variable( ACT action, int column)
 
 static void make_port( POR port, int column)
 {
-	GPRE_FLD field;
-	REF reference;
-	SYM symbol;
-	TEXT *name, s[50];
+	TEXT s[50];
 
 	printa(column, "struct {");
 
-	for (reference = port->por_references; reference;
-		 reference = reference->ref_next) {
+	for (REF reference = port->por_references; reference;
+		 reference = reference->ref_next)
+	{
 		align(column + INDENT);
-		field = reference->ref_field;
-		symbol = field->fld_symbol;
-		name = symbol->sym_string;
+		GPRE_FLD field = reference->ref_field;
+		SYM symbol = field->fld_symbol;
+		TEXT* name = symbol->sym_string;
 		switch (field->fld_dtype) {
 		case dtype_short:
 			ib_fprintf(out_file, "    SSHORT jrd_%d;\t/* %s */",
@@ -756,7 +728,7 @@ static void make_port( POR port, int column)
 //		Print a fixed string at a particular column.
 //  
 
-static void printa( int column, TEXT * string, ...)
+static void printa(const int column, const TEXT* string, ...)
 {
 	va_list ptr;
 
@@ -764,3 +736,4 @@ static void printa( int column, TEXT * string, ...)
 	align(column);
 	ib_vfprintf(out_file, string, ptr);
 }
+

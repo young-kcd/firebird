@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		lex_proto.h
- *	DESCRIPTION:	Prototype header file for lex.c
+ *	DESCRIPTION:	Prototype header file for lex.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_LEX_PROTO_H_
-#define _QLI_LEX_PROTO_H_
+#ifndef QLI_LEX_PROTO_H
+#define QLI_LEX_PROTO_H
 
 extern bool		LEX_active_procedure (void);
 extern void		LEX_edit (SLONG, SLONG);
@@ -35,11 +35,12 @@ extern void		LEX_init (void);
 extern void		LEX_mark_statement (void);
 extern void		LEX_pop_line (void);
 extern void		LEX_procedure(dbb*, FRBRD*);
-extern bool		LEX_push_file (TEXT *, bool);
-extern bool		LEX_push_string (TEXT *);
+extern bool		LEX_push_file (const TEXT*, const bool);
+extern bool		LEX_push_string (const TEXT* const);
 extern void		LEX_put_procedure (FRBRD *, SLONG, SLONG);
 extern void		LEX_real (void);
 extern lls*		LEX_statement_list(void);
 extern tok*		LEX_token(void);
 
-#endif /* _QLI_LEX_PROTO_H_ */
+#endif /* QLI_LEX_PROTO_H */
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		utl.c
+ *	MODULE:		utl.cpp
  *	DESCRIPTION:	User callable routines
  *
  * The contents of this file are subject to the Interbase Public

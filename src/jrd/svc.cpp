@@ -152,16 +152,16 @@ static inline void is_service_running(SVC service)
 	if (!(service->svc_flags & SVC_forked)) {
 		THREAD_ENTER;
 		ERR_post (isc_svcnoexe, isc_arg_string,
-		service->svc_service->serv_name, 0); 
+			service->svc_service->serv_name, 0); 
 	}
 }
 
-static inline void need_admin_privs(ISC_STATUS **status, char* message)
+static inline void need_admin_privs(ISC_STATUS** status, const char* message)
 {
-	ISC_STATUS *stat = *status;
+	ISC_STATUS* stat = *status;
 	*stat++ = isc_insufficient_svc_privileges;
 	*stat++ = isc_arg_string;
-	*stat++ = (ISC_STATUS) ERR_string(message,strlen(message)); 
+	*stat++ = (ISC_STATUS) ERR_string(message, strlen(message)); 
 	*stat++ = isc_arg_end;
 	*status = stat;
 }

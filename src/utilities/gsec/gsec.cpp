@@ -1,7 +1,7 @@
 /*
  *
  *	PROGRAM:	Security data base manager
- *	MODULE:		gsec.c
+ *	MODULE:		gsec.cpp
  *	DESCRIPTION:	Main line routine
  *
  * The contents of this file are subject to the Interbase Public
@@ -1134,7 +1134,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv, TSEC tdsec)
 	return ret;
 }
 
-void GSEC_print_status( ISC_STATUS * status_vector)
+void GSEC_print_status(const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1147,26 +1147,21 @@ void GSEC_print_status( ISC_STATUS * status_vector)
  *	to allow redirecting output.
  *
  **************************************/
-#ifdef SUPERSERVER
-	TSEC tdsec;
-	ISC_STATUS *status;
-	int i = 0, j;
-#endif
-	ISC_STATUS *vector;
-	SCHAR s[1024];
-
 	if (status_vector) {
-		vector = status_vector;
+		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
-		tdsec = GET_THREAD_DATA;
-		status = tdsec->tsec_service_blk->svc_status;
+		TSEC tdsec = GET_THREAD_DATA;
+		ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 		if (status != status_vector) {
+		    int i = 0, j;
 			while (*status && (++i < ISC_STATUS_LENGTH))
 				status++;
 			for (j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++)
 				*status++ = status_vector[j];
 		}
 #endif
+
+		SCHAR s[1024];
 		if (isc_interprete(s, &vector)) {
 			TRANSLATE_CP(s);
 			util_output("%s\n", s);
@@ -1213,8 +1208,7 @@ static void util_output( const SCHAR * format, ...)
 		gsec_exit(exit_code, tdsec);
 }
 
-void GSEC_error_redirect(
-						 ISC_STATUS * status_vector,
+void GSEC_error_redirect(const ISC_STATUS* status_vector,
 						 USHORT errcode, TEXT * arg1, TEXT * arg2)
 {
 /**************************************

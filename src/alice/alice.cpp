@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.36 2003-09-22 14:11:14 brodsom Exp $
+//	$Id: alice.cpp,v 1.37 2003-09-25 11:48:56 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -105,7 +105,7 @@ static bool fAnsiCP = false;
 
 static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
-static void expand_filename(TEXT*, TEXT*);
+static void expand_filename(const TEXT*, TEXT*);
 #ifndef SUPERSERVER
 static int output_main(SLONG, UCHAR*);
 #endif
@@ -182,12 +182,6 @@ int common_main(int			argc,
 				pfn_svc_output	output_proc,
 				SLONG		output_data)
 {
-	IN_SW_TAB table = alice_in_sw_table;
-
-	bool	error;
-	TEXT*	database;
-	TEXT	string[512];
-	ULONG	switches;
 #ifdef SERVICE_REDIRECT
 	SLONG	redir_in;
 	SLONG	redir_out;
@@ -226,7 +220,7 @@ int common_main(int			argc,
 	tdgbl->sw_service_thd = false;
 	tdgbl->service_blk = NULL;
 	tdgbl->status =
-		/* TMN: cast away volatile */
+		// TMN: cast away volatile 
 		(long *) tdgbl->status_vector;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
@@ -287,18 +281,23 @@ int common_main(int			argc,
 
 //  Start by parsing switches
 
-	error = false;
-	switches = 0;
+	bool error = false;
+	ULONG switches = 0;
 	tdgbl->ALICE_data.ua_shutdown_delay = 0;
-	database = NULL;
+	TEXT* database = NULL;
+	TEXT	string[512];
+	
 	argv++;
+	// tested outside the loop
+	const in_sw_tab_t* table = alice_in_sw_table;
 
 	while (--argc > 0)
 	{
 		if ((*argv)[0] != '-')
 		{
 			if (database) {
-				ALICE_error(1, database, 0, 0, 0, 0);	/* msg 1: "data base file name (%s) already given", */
+				ALICE_error(1, database, 0, 0, 0, 0);
+				// msg 1: "data base file name (%s) already given",
 			}
 			database = *argv++;
 
@@ -314,7 +313,7 @@ int common_main(int			argc,
 #endif
 			continue;
 		}
-		ALICE_down_case(*argv++, string);
+		ALICE_down_case(*argv++, string, sizeof(string));
 		if (!string[1]) {
 			continue;
 		}
@@ -322,7 +321,7 @@ int common_main(int			argc,
 		{
 			const TEXT* p = (TEXT*) table->in_sw_name;
 			if (!p) {
-				ALICE_print(2, *--argv, 0, 0, 0, 0);	/* msg 2: invalid switch %s */
+				ALICE_print(2, *--argv, 0, 0, 0, 0);	// msg 2: invalid switch %s 
 				error = true;
 				break;
 			}
@@ -342,11 +341,11 @@ int common_main(int			argc,
 			tdgbl->ALICE_data.ua_debug++;
 		}
 		if (table->in_sw_value == sw_z) {
-			ALICE_print(3, GDS_VERSION, 0, 0, 0, 0);	/* msg 3: gfix version %s */
+			ALICE_print(3, GDS_VERSION, 0, 0, 0, 0);	// msg 3: gfix version %s 
 		}
 		if ((table->in_sw_incompatibilities & switches) ||
 			(table->in_sw_requires && !(table->in_sw_requires & switches))) {
-			ALICE_print(4, 0, 0, 0, 0, 0);	/* msg 4: incompatible switch combination */
+			ALICE_print(4, 0, 0, 0, 0, 0);	// msg 4: incompatible switch combination 
 			error = true;
 			break;
 		}
@@ -354,53 +353,53 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & sw_begin_log) {
 			if (--argc <= 0) {
-				ALICE_error(5);	/* msg 5: replay log pathname required */
+				ALICE_error(5);	// msg 5: replay log pathname required 
 			}
-			expand_filename(*argv++,	/* TMN: cast away volatile */
+			expand_filename(*argv++,	// TMN: cast away volatile 
 							(TEXT *) tdgbl->ALICE_data.ua_log_file);
 		}
 
 		if (table->in_sw_value & (sw_buffers)) {
 			if (--argc <= 0) {
-				ALICE_error(6);	/* msg 6: number of page buffers for cache required */
+				ALICE_error(6);	// msg 6: number of page buffers for cache required 
 			}
-			ALICE_down_case(*argv++, string);
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_page_buffers = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7);	/* msg 7: numeric value required */
+				ALICE_error(7);	// msg 7: numeric value required 
 			}
 			if (tdgbl->ALICE_data.ua_page_buffers < 0) {
-				ALICE_error(8);	/* msg 8: positive numeric value required */
+				ALICE_error(8);	// msg 8: positive numeric value required 
 			}
 		}
 
 		if (table->in_sw_value & (sw_housekeeping)) {
 			if (--argc <= 0) {
-				ALICE_error(113);	/* msg 113: dialect number required */
+				ALICE_error(113);	// msg 113: dialect number required 
 			}
-			ALICE_down_case(*argv++, string);
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_sweep_interval = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7);	/* msg 7: numeric value required */
+				ALICE_error(7);	// msg 7: numeric value required 
 			}
 			if (tdgbl->ALICE_data.ua_sweep_interval < 0) {
-				ALICE_error(8);	/* msg 8: positive numeric value required */
+				ALICE_error(8);	// msg 8: positive numeric value required 
 			}
 		}
 
 		if (table->in_sw_value & (sw_set_db_dialect)) {
 			if (--argc <= 0) {
-				ALICE_error(113);	/* msg 113: dialect info is required XXX */
+				ALICE_error(113);	// msg 113: dialect info is required XXX 
 			}
 
-			ALICE_down_case(*argv++, string);
+			ALICE_down_case(*argv++, string, sizeof(string));
 
 			if ((!(tdgbl->ALICE_data.ua_db_SQL_dialect = atoi(string))) &&
 				(strcmp(string, "0")))
 			{
-				ALICE_error(7);	/* msg 7: numeric value required */
+				ALICE_error(7);	// msg 7: numeric value required 
 			}
 
 			// JMB: Removed because tdgbl->ALICE_data.ua_db_SQL_dialect is
@@ -416,7 +415,7 @@ int common_main(int			argc,
 			if (--argc <= 0) {
 				ALICE_error(10);	/* msg 10: transaction number or "all" required */
 			}
-			ALICE_down_case(*argv++, string);
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string))) {
 				if (strcmp(string, "all")) {
 					ALICE_error(10);	/* msg 10: transaction number or "all" required */
@@ -430,7 +429,7 @@ int common_main(int			argc,
 			if (--argc <= 0) {
 				ALICE_error(11);	/* msg 11: "sync" or "async" required */
 			}
-			ALICE_down_case(*argv++, string);
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_SYNC)) {
 				tdgbl->ALICE_data.ua_force = true;
 			} else if (!strcmp(string, ALICE_SW_ASYNC)) {
@@ -444,7 +443,7 @@ int common_main(int			argc,
 			if (--argc <= 0) {
 				ALICE_error(12);	/* msg 12: "full" or "reserve" required */
 			}
-			ALICE_down_case(*argv++, string);
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, "full")) {
 				tdgbl->ALICE_data.ua_use = true;
 			} else if (!strcmp(string, "reserve")) {
@@ -456,7 +455,7 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & sw_user) {
 			if (--argc <= 0) {
-				ALICE_error(13);	/* msg 13: user name required */
+				ALICE_error(13);	// msg 13: user name required 
 			}
 			tdgbl->ALICE_data.ua_user =
 				const_cast<UCHAR* volatile>(reinterpret_cast<UCHAR*>(*argv++));
@@ -464,7 +463,7 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & sw_password) {
 			if (--argc <= 0) {
-				ALICE_error(14);	/* msg 14: password required */
+				ALICE_error(14);	// msg 14: password required 
 			}
 			tdgbl->ALICE_data.ua_password =
 				const_cast<UCHAR* volatile>(reinterpret_cast<UCHAR*>(*argv++));
@@ -472,9 +471,9 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & sw_disable) {
 			if (--argc <= 0) {
-				ALICE_error(15);	/* msg 15: subsystem name  */
+				ALICE_error(15);	// msg 15: subsystem name  
 			}
-			ALICE_down_case(*argv++, string);
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if (strcmp(string, "wal")) {
 				ALICE_error(16);	/* msg 16: "wal" required */
 			}
@@ -482,18 +481,18 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & (sw_attach | sw_force | sw_tran | sw_cache)) {
 			if (--argc <= 0) {
-				ALICE_error(17);	/* msg 17: number of seconds required */
+				ALICE_error(17);	// msg 17: number of seconds required 
 			}
-			ALICE_down_case(*argv++, string);
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_shutdown_delay = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7);	/* msg 7: numeric value required */
+				ALICE_error(7);	// msg 7: numeric value required 
 			}
 			if (tdgbl->ALICE_data.ua_shutdown_delay < 0
 				|| tdgbl->ALICE_data.ua_shutdown_delay > 32767)
 			{
-				ALICE_error(18);	/* msg 18: numeric value between 0 and 32767 inclusive required */
+				ALICE_error(18);	// msg 18: numeric value between 0 and 32767 inclusive required 
 			}
 		}
 
@@ -501,7 +500,7 @@ int common_main(int			argc,
 			if (--argc <= 0) {
 				ALICE_error(110);	/* msg 110: "read_only" or "read_write" required */
 			}
-			ALICE_down_case(*argv++, string);
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_MODE_RO)) {
 				tdgbl->ALICE_data.ua_read_only = true;
 			} else if (!strcmp(string, ALICE_SW_MODE_RW)) {
@@ -518,7 +517,7 @@ int common_main(int			argc,
 	if ((switches & sw_shut)
 		&& !(switches & ((sw_attach | sw_force | sw_tran | sw_cache))))
 	{
-		ALICE_error(19);	/* msg 19: must specify type of shutdown */
+		ALICE_error(19);	// msg 19: must specify type of shutdown 
 	}
 
 //  catch the case where -z is only command line option
@@ -529,7 +528,7 @@ int common_main(int			argc,
 
 	if (!switches || !(switches & ~(sw_user | sw_password))) {
 #ifndef SUPERSERVER
-		ALICE_print(20, 0, 0, 0, 0, 0);	/* msg 20: please retry, specifying an option */
+		ALICE_print(20, 0, 0, 0, 0, 0);	// msg 20: please retry, specifying an option 
 #endif
 		error = true;
 	}
@@ -550,7 +549,7 @@ int common_main(int			argc,
 	}
 
 	if (!database) {
-		ALICE_error(23);	/* msg 23: please retry, giving a database name */
+		ALICE_error(23);	// msg 23: please retry, giving a database name 
 	}
 
 	//  generate the database parameter block for the attach,
@@ -609,13 +608,13 @@ int common_main(int			argc,
 
 		int exit_code = tdgbl->exit_code;
 
-		/* Close the status output file */
+		// Close the status output file 
 		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
 			ib_fclose(tdgbl->output_file);
 			tdgbl->output_file = NULL;
 		}
 
-		/* Free all unfreed memory used by Gfix itself */
+		// Free all unfreed memory used by Gfix itself 
 		ALLA_fini();
 
 		RESTORE_THREAD_DATA;
@@ -627,7 +626,7 @@ int common_main(int			argc,
 		gds_alloc_report(0, __FILE__, __LINE__);
 #endif
 
-		/* All returns occur from this point - even normal returns */
+		// All returns occur from this point - even normal returns 
 		return exit_code;
 	}	// catch
 
@@ -640,11 +639,10 @@ int common_main(int			argc,
 //		Copy a string, down casing as we go.
 //
 
-void ALICE_down_case(TEXT * in, TEXT * out)
+void ALICE_down_case(const TEXT* in, TEXT* out, const size_t buf_size)
 {
-	TEXT c;
-
-	while (c = *in++) {
+	const TEXT* const end = out + buf_size - 1;
+	for (TEXT c = *in++; c && out < end; c = *in++) {
 		*out++ = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
 	}
 	*out = 0;
@@ -657,11 +655,11 @@ void ALICE_down_case(TEXT * in, TEXT * out)
 //
 
 void ALICE_print(USHORT	number,
-				 TEXT*	arg1,
-				 TEXT*	arg2,
-				 TEXT*	arg3,
-				 TEXT*	arg4,
-				 TEXT*	arg5)
+				 const TEXT*	arg1,
+				 const TEXT*	arg2,
+				 const TEXT*	arg3,
+				 const TEXT*	arg4,
+				 const TEXT*	arg5)
 {
 	TEXT buffer[256];
 
@@ -678,14 +676,11 @@ void ALICE_print(USHORT	number,
 //		to allow redirecting output.
 //
 
-void ALICE_print_status(ISC_STATUS* status_vector)
+void ALICE_print_status(const ISC_STATUS* status_vector)
 {
-	ISC_STATUS*	vector;
-	SCHAR	s[1024];
-
 	if (status_vector)
 	{
-		vector = status_vector;
+		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
 		int i = 0, j;
 		TGBL tdgbl = GET_THREAD_DATA;
@@ -699,11 +694,13 @@ void ALICE_print_status(ISC_STATUS* status_vector)
 			}
 		}
 #endif
+
+		SCHAR s[1024];
 		isc_interprete(s, &vector);
 		translate_cp(s);
 		alice_output("%s\n", s);
 
-		/* Continuation of error */
+		// Continuation of error 
 		s[0] = '-';
 		while (isc_interprete(s + 1, &vector)) {
 			translate_cp(s);
@@ -719,11 +716,11 @@ void ALICE_print_status(ISC_STATUS* status_vector)
 //
 
 void ALICE_error(USHORT	number,
-				 TEXT*	arg1,
-				 TEXT*	arg2,
-				 TEXT*	arg3,
-				 TEXT*	arg4,
-				 TEXT*	arg5)
+				 const TEXT*	arg1,
+				 const TEXT*	arg2,
+				 const TEXT*	arg3,
+				 const TEXT*	arg4,
+				 const TEXT*	arg5)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 	TEXT buffer[256];
@@ -813,9 +810,9 @@ static inline void translate_cp(TEXT* sz)
 //
 //		Fully expand a file name.  If the file doesn't exist, do something
 //		intelligent.
-//
+//      CVC: The above comment is either a joke or a copy/paste.
 
-static void expand_filename(TEXT * filename, TEXT * expanded_name)
+static void expand_filename(const TEXT* filename, TEXT* expanded_name)
 {
 	strcpy(expanded_name, filename);
 }

@@ -82,18 +82,18 @@ static CON missing_value(SLONG *, SYM);
 static SYN parse_blr(UCHAR **, SYM);
 static SYN parse_blr_blob(SLONG *, SYM);
 static void purge_relation(QLI_REL);
-static void put_dyn_string(RLB, TEXT *);
+static void put_dyn_string(RLB, const TEXT*);
 static void rollback_update(DBB);
 static void set_capabilities(DBB);
 static DBB setup_update(DBB);
 static void sql_grant_revoke(SYN, USHORT);
-static void stuff_priv(RLB, USHORT, TEXT *, USHORT, TEXT *, TEXT *);
+static void stuff_priv(RLB, USHORT, const TEXT*, USHORT, const TEXT*, const TEXT*);
 static int truncate_string(TEXT *);
 static void wal_info(UCHAR *, SLONG *, SCHAR *, SLONG *);
 
 static const UCHAR tpb[] = { gds_tpb_version1, gds_tpb_write };
 static const UCHAR db_info[] = { gds_info_implementation, gds_info_end };
-static UCHAR parm_buffer[256];
+static UCHAR global_parm_buffer[256];
 
 static const UCHAR db_log_info[] =
 	{ gds_info_logfile, gds_info_cur_logfile_name,
@@ -131,20 +131,20 @@ static const USHORT blr_dtypes[] = {
 };
 
 
-/* 
-   table used to determine capabilities, checking for specific 
-   fields in system relations 
+/*
+   table used to determine capabilities, checking for specific
+   fields in system relations
 */
 
-typedef struct rfr_tab_t {
+struct rfr_tab_t {
 	const TEXT *relation;
 	const TEXT *field;
 	int bit_mask;
-} *RFR_TAB;
+};
 
 static const rfr_tab_t rfr_table[] = {
 	{ "RDB$INDICES", "RDB$INDEX_INACTIVE", DBB_cap_idx_inactive },
-/* OBSOLETE - 1996-Aug-06 David Schnepper 
+/* OBSOLETE - 1996-Aug-06 David Schnepper
 	{ "RDB$RELATIONS",	"RDB$STORE_TRIGGER",	DBB_cap_triggers },
 */
 	{ "RDB$RELATIONS", "RDB$EXTERNAL_FILE", DBB_cap_extern_file },
@@ -207,7 +207,7 @@ void MET_define_field( DBB database, QLI_FLD field)
 
 	if (check_global_field(database, NULL, field->fld_name->sym_string)) {
 		rollback_update(database);
-		ERRQ_print_error(233, field->fld_name->sym_string, NULL, NULL, NULL, NULL);	/* Msg233 global field %s already exists */
+		ERRQ_print_error(233, field->fld_name->sym_string, NULL, NULL, NULL, NULL);	// Msg233 global field %s already exists
 	}
 
 	define_global_field(database, field, field->fld_name);
@@ -228,25 +228,18 @@ void MET_define_index( SYN node)
  *	Define a new index.
  *
  **************************************/
-	DBB database;
-	QLI_REL relation;
-	SYN fields;
-	QLI_FLD field;
-	NAM *ptr;
-	SYM symbol;
-	int position, present;
-
-	symbol = (SYM) node->syn_arg[s_dfi_name];
-	relation = (QLI_REL) node->syn_arg[s_dfi_relation];
-	fields = node->syn_arg[s_dfi_fields];
-	database = setup_update(relation->rel_database);
+	SYM symbol = (SYM) node->syn_arg[s_dfi_name];
+	QLI_REL relation = (QLI_REL) node->syn_arg[s_dfi_relation];
+	SYN fields = node->syn_arg[s_dfi_fields];
+	DBB database = setup_update(relation->rel_database);
 
 	if (relation->rel_flags & REL_view)
-		IBERROR(234);			/* Msg234 Can't define an index in a view */
+		IBERROR(234);			// Msg234 Can't define an index in a view
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_def_index1])
 		X IN DB.RDB$INDICES WITH X.RDB$INDEX_NAME EQ symbol->sym_string
-			ERRQ_print_error(235, symbol->sym_string, NULL, NULL, NULL, NULL);	/* Msg235 Index %s already exists */
+			ERRQ_print_error(235, symbol->sym_string, NULL, NULL, NULL, NULL);
+			// Msg235 Index %s already exists
 	END_FOR
 	ON_ERROR
 		ERRQ_database_error(database, gds_status);
@@ -288,24 +281,26 @@ void MET_define_index( SYN node)
 		ERRQ_database_error(database, gds_status);
 	END_ERROR;
 
-
-	for (ptr = (NAM *) fields->syn_arg, position = 0;
-		 position < fields->syn_count; ptr++, position++) {
+	NAM* ptr = (NAM*) fields->syn_arg;
+	for (int position = 0; position < fields->syn_count; ptr++, position++)
+	{
 		MET_fields(relation);
 
-		for (present = FALSE, field = relation->rel_fields; field;
-			 field =
-			 field->
-			 fld_next)
-		if (!(strcmp((*ptr)->nam_string, field->fld_name->sym_string))) {
-				present = TRUE;
+		bool present = false;
+		for (QLI_FLD field = relation->rel_fields; field;
+			field = field->fld_next)
+		{
+			if (!(strcmp((*ptr)->nam_string, field->fld_name->sym_string))) {
+				present = true;
 				break;
 			}
+		}
 
 		if (!present) {
 			rollback_update(database);
 			ERRQ_print_error(236, (*ptr)->nam_string,
-							 relation->rel_symbol->sym_string, NULL, NULL, NULL);	/* Msg236 Field %s does not occur in relation %s */
+							 relation->rel_symbol->sym_string, NULL, NULL, NULL);
+			// Msg236 Field %s does not occur in relation %s
 		}
 
 		setup_update(database);
@@ -342,29 +337,24 @@ void MET_define_relation( QLI_REL relation, QLI_REL source)
  *	else.
  *
  **************************************/
-	DBB database;
-	SYM symbol;
-	QLI_FLD field;
-	USHORT position;
-
-	symbol = relation->rel_symbol;
+	SYM symbol = relation->rel_symbol;
 
 	if (source) {
 		source->rel_database = setup_update(source->rel_database);
 		if (!(check_relation(source)))
 			ERRQ_print_error(483, source->rel_symbol->sym_string, NULL, NULL,
-							 NULL, NULL);	/* Msg 483 Relation %s does not exist */
+							 NULL, NULL);	// Msg 483 Relation %s does not exist
 	}
 
-
-	relation->rel_database = database = setup_update(relation->rel_database);
+	DBB database = setup_update(relation->rel_database);
+	relation->rel_database = database;
 
 	if (check_relation(relation))
-		ERRQ_print_error(237, symbol->sym_string, NULL, NULL, NULL, NULL);	/* Msg237 Relation %s already exists */
+		ERRQ_print_error(237, symbol->sym_string, NULL, NULL, NULL, NULL);	// Msg237 Relation %s already exists
 
 
 	STORE(REQUEST_HANDLE database->dbb_requests[REQ_store_relation])
-		X IN DB.RDB$RELATIONS 
+		X IN DB.RDB$RELATIONS
 		strcpy(X.RDB$RELATION_NAME, symbol->sym_string);
 	END_STORE
 	ON_ERROR
@@ -374,10 +364,14 @@ void MET_define_relation( QLI_REL relation, QLI_REL source)
 
 	if (source)
 		clone_fields(relation, source);
-	else
-		for (field = relation->rel_fields, position = 1; field;
-			 field = field->fld_next, position++)
+	else {
+		USHORT position = 1;
+		for (QLI_FLD field = relation->rel_fields; field;
+			field = field->fld_next, position++)
+		{
 			add_field(relation, field, position);
+		}
+	}
 
 	MET_meta_commit(database);
 
@@ -386,13 +380,13 @@ void MET_define_relation( QLI_REL relation, QLI_REL source)
 	database->dbb_relations = relation;
 	relation->rel_database = database;
 
-// Go back and pick up relation id 
+// Go back and pick up relation id
 
 	setup_update(database);
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_relation_id])
 		X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ symbol->sym_string
-			relation->rel_id = X.RDB$RELATION_ID;
+		relation->rel_id = X.RDB$RELATION_ID;
 		symbol = make_symbol(X.RDB$RELATION_NAME, sizeof(X.RDB$RELATION_NAME));
 		symbol->sym_type = SYM_relation;
 		symbol->sym_object = (BLK) relation;
@@ -420,24 +414,20 @@ void MET_define_sql_relation( QLI_REL relation)
  *	Define a new SQL relation, using dynamic ddl.
  *
  **************************************/
-	DBB database;
-	SYM symbol;
-	QLI_FLD field;
-	USHORT position;
-	RLB rlb;
-
-	symbol = relation->rel_symbol;
-	relation->rel_database = database = setup_update(relation->rel_database);
+	SYM symbol = relation->rel_symbol;
+	DBB database = setup_update(relation->rel_database);
+	relation->rel_database = database;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_relation_def])
 		X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ symbol->sym_string
-			ERRQ_print_error(237, symbol->sym_string, NULL, NULL, NULL, NULL);	/* Msg237 Relation %s already exists */
+			ERRQ_print_error(237, symbol->sym_string, NULL, NULL, NULL, NULL);
+			// Msg237 Relation %s already exists
 	END_FOR
 	ON_ERROR
 		ERRQ_database_error(database, gds_status);
 	END_ERROR;
 
-	rlb = NULL;
+	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 
 	STUFF(gds_dyn_version_1);
@@ -448,9 +438,12 @@ void MET_define_sql_relation( QLI_REL relation)
 	STUFF_WORD(2);
 	STUFF_WORD(1);
 
-	for (field = relation->rel_fields, position = 1; field;
+    USHORT position = 1;
+	for (QLI_FLD field = relation->rel_fields; field;
 		 field = field->fld_next, position++)
+	{
 		add_sql_field(relation, field, position, rlb);
+	}
 
 	STUFF(gds_dyn_end);
 	STUFF(gds_dyn_end);
@@ -464,13 +457,13 @@ void MET_define_sql_relation( QLI_REL relation)
 	database->dbb_relations = relation;
 	relation->rel_database = database;
 
-// Go back and pick up relation id 
+// Go back and pick up relation id
 
 	setup_update(database);
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_relation_id])
 		X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ symbol->sym_string
-			relation->rel_id = X.RDB$RELATION_ID;
+		relation->rel_id = X.RDB$RELATION_ID;
 		symbol =
 			make_symbol(X.RDB$RELATION_NAME, sizeof(X.RDB$RELATION_NAME));
 		symbol->sym_type = SYM_relation;
@@ -500,19 +493,12 @@ void MET_delete_database( DBB dbb)
  *	and finish any copies we have active.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-	LLS log_stack, stack;
-	STR string;
-	DBB database, next;
-	UCHAR *dpb = NULL, *p;
-	TEXT *user, *password;
-	USHORT dpb_length = 0, user_length, password_length;
-	SCHAR db_info_buffer[512], cur_log[512], db_name[512];
-	SLONG part_offset, log;
 
-/* generate a database parameter block to 
+/* generate a database parameter block to
    include the user/password, if necessary */
 
+	TEXT* user;
+	USHORT user_length;
 	if (dbb->dbb_user) {
 		user = (TEXT *) dbb->dbb_user->con_data;
 		user_length = dbb->dbb_user->con_desc.dsc_length;
@@ -522,6 +508,8 @@ void MET_delete_database( DBB dbb)
 		user_length = strlen(QLI_default_user);
 	}
 
+	TEXT* password;
+	USHORT password_length;
 	if (dbb->dbb_password) {
 		password = (TEXT *) dbb->dbb_password->con_data;
 		password_length = dbb->dbb_user->con_desc.dsc_length;
@@ -531,7 +519,8 @@ void MET_delete_database( DBB dbb)
 		password_length = strlen(QLI_default_password);
 	}
 
-	dpb = p = parm_buffer;
+	UCHAR* p = global_parm_buffer;
+	UCHAR* const dpb = p;
 	*p++ = gds_dpb_version1;
 
 	if (user_length) {
@@ -548,38 +537,42 @@ void MET_delete_database( DBB dbb)
 			*p++ = *password++;
 	}
 
-	dpb_length = p - parm_buffer;
+	USHORT dpb_length = p - global_parm_buffer;
 
 	if (dpb_length == 1)
 		dpb_length = 0;
 
+	ISC_STATUS_ARRAY status_vector;
 	if (gds__attach_database(status_vector, 0, dbb->dbb_filename,
 							 &dbb->dbb_handle, dpb_length, (char*) dpb))
 			ERRQ_database_error(dbb, status_vector);
 
-	log_stack = stack = NULL;
+	LLS log_stack = NULL, stack = NULL;
 
 	gds_trans = MET_transaction(nod_start_trans, dbb);
 	DB = dbb->dbb_handle;
 
 	FOR F IN DB.RDB$FILES SORTED BY F.RDB$FILE_START
-		string = (STR) ALLOCDV(type_str, strlen(F.RDB$FILE_NAME));
-		LLS_PUSH(string, &stack);
-		strcpy(string->str_data, F.RDB$FILE_NAME);
+		STR astring = (STR) ALLOCDV(type_str, strlen(F.RDB$FILE_NAME));
+		strcpy(astring->str_data, F.RDB$FILE_NAME);
+		LLS_PUSH(astring, &stack);
 	END_FOR
 	ON_ERROR
 		ERRQ_database_error(dbb, gds_status);
 	END_ERROR;
 
-// Get write ahead log information 
+// Get write ahead log information
 
+	TEXT db_info_buffer[512];
 	if (gds__database_info(status_vector, &DB, sizeof(db_log_info),
 						   (char*) db_log_info, sizeof(db_info_buffer),
-						   db_info_buffer)) 
+						   db_info_buffer))
 		ERRQ_database_error(dbb, status_vector);
 
-// extract info from buffer 
+// extract info from buffer
 
+	TEXT cur_log[512];
+	SLONG part_offset, log = 0;
 	wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
 	if (log)
@@ -590,30 +583,34 @@ void MET_delete_database( DBB dbb)
 	if (gds__detach_database(gds_status, &dbb->dbb_handle))
 		gds__print_status(gds_status);
 
-	for (database = QLI_databases; database; database = next) {
+	DBB next = NULL;
+	for (DBB database = QLI_databases; database; database = next) {
 		next = database->dbb_next;
 		if (!strcmp(database->dbb_filename, dbb->dbb_filename))
 			MET_finish(database);
 	}
 
 	if (log) {
+		TEXT db_name[512];
 		ISC_expand_filename(dbb->dbb_filename, 0, db_name);
 		get_log_names(dbb, db_name, &log_stack, cur_log, part_offset, 0, 1);
 	}
 
 	while (stack) {
-		string = (STR) LLS_POP(&stack);
-		if (unlink(string->str_data))
-			ERRQ_print_error(431, string->str_data, NULL, NULL, NULL, NULL);	/* Msg431 Could not drop database file "%s" */
+		STR sstring = (STR) LLS_POP(&stack);
+		if (unlink(sstring->str_data))
+			ERRQ_print_error(431, sstring->str_data, NULL, NULL, NULL, NULL);
+			// Msg431 Could not drop database file "%s"
 	}
 
 	while (log_stack) {
-		string = (STR) LLS_POP(&log_stack);
-		unlink(string->str_data);	// do not check for error 
+		STR lstring = (STR) LLS_POP(&log_stack);
+		unlink(lstring->str_data);	// do not check for error
 	}
 
 	if (unlink(dbb->dbb_filename))
-		ERRQ_print_error(431, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg431 Could not drop database file "%s" */
+		ERRQ_print_error(431, dbb->dbb_filename, NULL, NULL, NULL, NULL);
+		// Msg431 Could not drop database file "%s"
 }
 
 
@@ -629,17 +626,15 @@ void MET_delete_field( DBB database, NAM name)
  *	Delete a global field.
  *
  **************************************/
-	USHORT count;
-	RLB rlb;
-
 	database = setup_update(database);
-	count = 0;
+	USHORT count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_check_fld])
-		RFR IN DB.RDB$RELATION_FIELDS WITH RFR.RDB$FIELD_SOURCE EQ name->
-			nam_string REDUCED TO RFR.RDB$RELATION_NAME 
+		RFR IN DB.RDB$RELATION_FIELDS
+		WITH RFR.RDB$FIELD_SOURCE EQ name->nam_string
+		REDUCED TO RFR.RDB$RELATION_NAME
 		if (!count)
-			  ERRQ_msg_put(238, name->nam_string, NULL, NULL, NULL, NULL);	/* Msg238 Field %s is in use in the following relations: */
+			  ERRQ_msg_put(238, name->nam_string, NULL, NULL, NULL, NULL);	// Msg238 Field %s is in use in the following relations:
 		ib_printf("\t%s\n", RFR.RDB$RELATION_NAME);
 		count++;
 	END_FOR
@@ -649,12 +644,12 @@ void MET_delete_field( DBB database, NAM name)
 
 	if (count)
 		ERRQ_print_error(239, name->nam_string, database->dbb_filename, NULL,
-						 NULL, NULL);	/* Msg239 Field %s is in use in database %s */
+						 NULL, NULL);	// Msg239 Field %s is in use in database %s
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_erase_fld])
 		FLD IN DB.RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ name->nam_string
 
-		rlb = NULL;
+		RLB rlb = NULL;
 		rlb = CHECK_RLB(rlb);
 		STUFF(gds_dyn_version_1);
 		STUFF(gds_dyn_delete_dimensions);
@@ -676,7 +671,7 @@ void MET_delete_field( DBB database, NAM name)
 
 	if (!count)
 		ERRQ_print_error(240, name->nam_string, database->dbb_filename, NULL,
-						 NULL, NULL);	/* Msg240 Field %s is not defined in database %s */
+						 NULL, NULL);	// Msg240 Field %s is not defined in database %s
 
 	MET_meta_commit(database);
 }
@@ -694,10 +689,8 @@ void MET_delete_index( DBB database, NAM name)
  *	Delete an index.
  *
  **************************************/
-	USHORT count;
-
 	database = setup_update(database);
-	count = 0;
+	USHORT count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_erase_index])
 		IDX IN DB.RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name->nam_string
@@ -715,7 +708,7 @@ void MET_delete_index( DBB database, NAM name)
 
 	if (!count)
 		ERRQ_print_error(241, name->nam_string, database->dbb_filename, NULL,
-						 NULL, NULL);	/* Msg241 Index %s is not defined in database %s */
+						 NULL, NULL);	// Msg241 Index %s is not defined in database %s
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_erase_segments])
 		SEG IN DB.RDB$INDEX_SEGMENTS WITH SEG.RDB$INDEX_NAME EQ name->nam_string
@@ -746,13 +739,10 @@ void MET_delete_relation( QLI_REL relation)
  *	Delete a relation.
  *
  **************************************/
-	SYM symbol;
-	RLB rlb;
+// Pass the mess off to dynamic DDL and let it worry
 
-// Pass the mess off to dynamic DDL and let it worry 
-
-	symbol = relation->rel_symbol;
-	rlb = NULL;
+	SYM symbol = relation->rel_symbol;
+	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 	STUFF(gds_dyn_version_1);
 	STUFF(gds_dyn_delete_rel);
@@ -764,7 +754,7 @@ void MET_delete_relation( QLI_REL relation)
 	execute_dynamic_ddl(relation->rel_database, rlb);
 	MET_meta_commit(relation->rel_database);
 
-// Unlink and release various blocks 
+// Unlink and release various blocks
 
 	purge_relation(relation);
 }
@@ -782,12 +772,10 @@ int MET_dimensions( DBB database, TEXT * field_name)
  *	Determine if the field has any dimensions.
  *
  **************************************/
-	USHORT dimensions;
-
 	if (!(database->dbb_capabilities & DBB_cap_dimensions))
 		return 0;
 
-	dimensions = 0;
+	USHORT dimensions = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_fld_dimensions])
 		F IN DB.RDB$FIELDS WITH F.RDB$FIELD_NAME = field_name
@@ -813,21 +801,17 @@ void MET_fields( QLI_REL relation)
  *	Get all fields for a relation.
  *
  **************************************/
-	DBB database;
-	QLI_FLD field, *ptr;
-	SYM symbol;
-	SLONG *blob;
 
-/* If we already have fetched the fields for the relation, 
+/* If we already have fetched the fields for the relation,
    don't do it again. */
 
 	if (relation->rel_flags & REL_fields)
 		return;
 
-	database = relation->rel_database;
+	DBB database = relation->rel_database;
 	MET_meta_transaction(database, FALSE);
 	relation->rel_flags |= REL_fields;
-	ptr = &relation->rel_fields;
+	QLI_FLD* ptr = &relation->rel_fields;
 
 	FOR(REQUEST_HANDLE database->dbb_field_request)
 		RFR IN DB.RDB$RELATION_FIELDS CROSS
@@ -838,10 +822,12 @@ void MET_fields( QLI_REL relation)
 
 		if (RFR.RDB$FIELD_POSITION > relation->rel_max_field_pos)
 			relation->rel_max_field_pos = RFR.RDB$FIELD_POSITION;
-		*ptr = field = (QLI_FLD) ALLOCPV(type_fld, 0);
+		QLI_FLD field = (QLI_FLD) ALLOCPV(type_fld, 0);
+		*ptr = field;
 		ptr = &field->fld_next;
 		field->fld_relation = relation;
-		if (symbol = make_symbol(RFR.RDB$FIELD_NAME, sizeof(RFR.RDB$FIELD_NAME))) {
+		SYM symbol = make_symbol(RFR.RDB$FIELD_NAME, sizeof(RFR.RDB$FIELD_NAME));
+		if (symbol) {
 			symbol->sym_object = (BLK) field;
 			symbol->sym_type = SYM_field;
 			field->fld_name = symbol;
@@ -857,13 +843,14 @@ void MET_fields( QLI_REL relation)
 
 		if (RFL.RDB$SEGMENT_LENGTH.NULL)
 			field->fld_segment_length = 80;
-		else
+		else {
 			field->fld_segment_length =
 				((RFL.RDB$SEGMENT_LENGTH) < 256
 				 && (RFL.RDB$SEGMENT_LENGTH >
 					 0)) ? RFL.RDB$SEGMENT_LENGTH : 255;
+		}
 
-		blob = (SLONG *) & RFR.RDB$QUERY_HEADER;
+		SLONG* blob = (SLONG*) & RFR.RDB$QUERY_HEADER;
 		if (!blob[0] && !blob[1])
 			blob = (SLONG *) & RFL.RDB$QUERY_HEADER;
 		if (blob[0] || blob[1])
@@ -912,20 +899,16 @@ void MET_finish( DBB dbb)
  *	Finish a database and release all associated blocks.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-	DBB *ptr;
+// Get rid of relation and field blocks.
+
 	QLI_REL relation;
-	FUN function;
-	SCHAR count;
-
-// Get rid of relation and field blocks. 
-
 	while (relation = dbb->dbb_relations) {
 		purge_relation(relation);
 	}
 
-// Get rid of any functions 
+// Get rid of any functions
 
+	FUN function;
 	while (function = dbb->dbb_functions) {
 		dbb->dbb_functions = function->fun_next;
 		HSH_remove(function->fun_symbol);
@@ -933,8 +916,9 @@ void MET_finish( DBB dbb)
 		ALL_release((FRB) function);
 	}
 
-// Finally, actually close down database connection. 
+// Finally, actually close down database connection.
 
+	ISC_STATUS_ARRAY status_vector;
 	detach(status_vector, dbb);
 
 	if (dbb->dbb_symbol) {
@@ -942,7 +926,8 @@ void MET_finish( DBB dbb)
 		ALL_release((FRB) dbb->dbb_symbol);
 	}
 
-	for (count = 0, ptr = &QLI_databases; *ptr; ptr = &(*ptr)->dbb_next)
+	int count = 0;
+	for (DBB* ptr = &QLI_databases; *ptr; ptr = &(*ptr)->dbb_next)
 	{
 		if (*ptr == dbb)
 		{
@@ -956,7 +941,7 @@ void MET_finish( DBB dbb)
 	}
 
 	if (!count)
-		BUGCHECK(231);			// Msg231 database block not found for removal 
+		BUGCHECK(231);			// Msg231 database block not found for removal
 
 	if (status_vector[1])
 		ERRQ_database_error(NULL, status_vector);
@@ -977,34 +962,51 @@ int MET_get_datatype( USHORT blr_datatype)
  **************************************/
 	USHORT retvalue;
 
-	if (blr_datatype == blr_text)
+	switch (blr_datatype)
+	{
+	case blr_text:
 		retvalue = dtype_text;
-	else if (blr_datatype == blr_varying)
+		break;
+	case blr_varying:
 		retvalue = dtype_varying;
-	else if (blr_datatype == blr_cstring)
+		break;
+	case blr_cstring:
 		retvalue = dtype_cstring;
-	else if (blr_datatype == blr_short)
+		break;
+	case blr_short:
 		retvalue = dtype_short;
-	else if (blr_datatype == blr_long)
+		break;
+	case blr_long:
 		retvalue = dtype_long;
-	else if (blr_datatype == blr_quad)
+		break;
+	case blr_quad:
 		retvalue = dtype_quad;
-	else if (blr_datatype == blr_float)
+		break;
+	case blr_float:
 		retvalue = dtype_real;
-	else if (blr_datatype == blr_double)
+		break;
+	case blr_double:
 		retvalue = dtype_double;
-	else if (blr_datatype == blr_timestamp)
+		break;
+	case blr_timestamp:
 		retvalue = dtype_timestamp;
-	else if (blr_datatype == blr_sql_date)
+		break;
+	case blr_sql_date:
 		retvalue = dtype_sql_date;
-	else if (blr_datatype == blr_sql_time)
+		break;
+	case blr_sql_time:
 		retvalue = dtype_sql_time;
-	else if (blr_datatype == blr_blob)
+		break;
+	case blr_blob:
 		retvalue = dtype_blob;
-	else if (blr_datatype == blr_int64)
+		break;
+	case blr_int64:
 		retvalue = dtype_int64;
-	else
+		break;
+	default:
 		retvalue = dtype_null;
+		break;
+	}
 
 	return retvalue;
 }
@@ -1026,8 +1028,7 @@ void MET_index_info(const SCHAR* relation_name,
  *	Get info about a particular index.
  *
  **************************************/
-	FRBRD *request_handle = NULL;
-	SCHAR *p;
+	FRBRD* request_handle = NULL;
 
 	SCHAR* b = buffer;
 	FOR(REQUEST_HANDLE request_handle)
@@ -1036,15 +1037,18 @@ void MET_index_info(const SCHAR* relation_name,
 			RDB$INDEX_NAME WITH
 			IDX.RDB$INDEX_NAME EQ index_name AND
 			IDX.RDB$RELATION_NAME EQ relation_name
-			SORTED BY SEG.RDB$FIELD_POSITION 
+			SORTED BY SEG.RDB$FIELD_POSITION
 
+		const SCHAR* p;
 		if (b == buffer) {
+			// CVC: warning: not dialect 3 aware.
 			for (p = IDX.RDB$INDEX_NAME; *p && *p != ' ';) {
 				*b++ = *p++;
 			}
 			*b++ = ' ';
 			*b++ = '(';
-		} 
+		}
+		// CVC: warning: not dialect 3 aware.
 		for (p = SEG.RDB$FIELD_NAME; *p && *p != ' ';) {
 			*b++ = *p++;
 		}
@@ -1060,7 +1064,7 @@ void MET_index_info(const SCHAR* relation_name,
 		if (gds__release_request(gds_status, &request_handle))
 			ERRQ_database_error(NULL, gds_status);
 
-// back up over the last space and finish off 
+// back up over the last space and finish off
 
 	b--;
 	*b++ = ')';
@@ -1082,13 +1086,14 @@ void MET_meta_commit( DBB database)
  *	transaction.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-
 	if (database->dbb_capabilities & DBB_cap_multi_trans)
+	{
+		ISC_STATUS_ARRAY status_vector;
 		if (gds__commit_transaction(status_vector, &database->dbb_meta_trans)) {
 			rollback_update(database);
 			ERRQ_database_error(database, status_vector);
 		}
+	}
 }
 
 
@@ -1123,10 +1128,10 @@ FRBRD *MET_meta_transaction(DBB database, int update_flag)
  *	Setup transaction for meta-data operation.  Set up
  *	DB and gds_trans, and return meta-data transaction
  *	handle for yucks.  If we're doing metadata updates,
- *	and lookups we'll use the metadat date transaction, 
- *	unless this is an rdb database or gateway in which  
+ *	and lookups we'll use the metadat date transaction,
+ *	unless this is an rdb database or gateway in which
  *	case, we'll use the only transacti.
- *	
+ *
  *	In any event, we will set up the met_transaction because
  *	it's widely used and somebody is going to forget to test
  *	that the database is multi_transaction before using it.
@@ -1135,12 +1140,11 @@ FRBRD *MET_meta_transaction(DBB database, int update_flag)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	FRBRD *transaction;
 
 	if (!database)
-		IBERROR(243);			// Msg243 no active database for operation 
+		IBERROR(243);			// Msg243 no active database for operation
 
-	transaction = (database->dbb_capabilities & DBB_cap_multi_trans) ?
+	FRBRD* transaction = (database->dbb_capabilities & DBB_cap_multi_trans) ?
 		database->dbb_meta_trans : NULL;
 
 	DB = database->dbb_handle;
@@ -1163,21 +1167,21 @@ FRBRD *MET_meta_transaction(DBB database, int update_flag)
 		}
 	}
 
-/* If we already have a meta-data transaction, there's more nothing to do */
+// If we already have a meta-data transaction, there's more nothing to do
 
 	gds_trans = transaction;
 
-// If we only support a single transaction, use the data transaction 
+// If we only support a single transaction, use the data transaction
 
 	if (!gds_trans && (database->dbb_capabilities & DBB_cap_single_trans))
 	{
 		if (update_flag)
-			IBERROR(244);		// Msg244 Interactive metadata updates are not available on Rdb 
+			IBERROR(244);		// Msg244 Interactive metadata updates are not available on Rdb
 		if (!(gds_trans = database->dbb_transaction))
 			gds_trans = MET_transaction(nod_start_trans, database);
 	}
 
-// otherwise make one more effort to start the transaction 
+// otherwise make one more effort to start the transaction
 
 	else if (!gds_trans)
 	{
@@ -1204,14 +1208,11 @@ void MET_modify_field( DBB database, QLI_FLD field)
  *	Modify an existing global field.
  *
  **************************************/
-	SYM symbol, field_name;
-	QLI_REL relation;
 	TEXT *p;
-	SSHORT flag;
 
 	database = setup_update(database);
-	field_name = field->fld_name;
-	flag = 0;
+	SYM field_name = field->fld_name;
+	SSHORT flag = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_modify_fld])
 		X IN DB.RDB$FIELDS WITH X.RDB$FIELD_NAME EQ field_name->sym_string
@@ -1236,9 +1237,10 @@ void MET_modify_field( DBB database, QLI_FLD field)
 					X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 					X.RDB$FIELD_SUB_TYPE = field->fld_sub_type;
 				}
-				if (symbol = field->fld_query_name) {
+				SYM asymbol = field->fld_query_name;
+				if (asymbol) {
 					X.RDB$QUERY_NAME.NULL = FALSE;
-					strcpy(X.RDB$QUERY_NAME, symbol->sym_string);
+					strcpy(X.RDB$QUERY_NAME, asymbol->sym_string);
 				}
 				if (field->fld_edit_string) {
 					X.RDB$EDIT_STRING.NULL = FALSE;
@@ -1259,15 +1261,15 @@ void MET_modify_field( DBB database, QLI_FLD field)
 	if (flag <= 0)
 	{
 		rollback_update(database);
-		/* Msg245 global field %s is not defined */
-		/* Msg468 Datatype of field %s may not be changed to or from blob */
+		// Msg245 global field %s is not defined
+		// Msg468 Datatype of field %s may not be changed to or from blob
 		const USHORT nErr = flag ? 468 : 245;
 		ERRQ_print_error(flag, field_name->sym_string, NULL, NULL, NULL, NULL);
 	}
 
 	MET_meta_commit(database);
 
-// Now go back and re-fetch fields for affected databases 
+// Now go back and re-fetch fields for affected databases
 
 	setup_update(database);
 
@@ -1275,14 +1277,15 @@ void MET_modify_field( DBB database, QLI_FLD field)
 		X IN DB.RDB$RELATION_FIELDS WITH X.RDB$FIELD_SOURCE EQ
 			field_name->sym_string REDUCED TO X.RDB$RELATION_NAME
 
-		p = X.RDB$RELATION_NAME; 
+		p = X.RDB$RELATION_NAME;
 		while (*p && *p != ' ') {
 			p++;
 		}
 
-		symbol = HSH_lookup(X.RDB$RELATION_NAME, p - X.RDB$RELATION_NAME);
+		SYM symbol = HSH_lookup(X.RDB$RELATION_NAME, p - X.RDB$RELATION_NAME);
 		for (; symbol; symbol = symbol->sym_homonym)
 		{
+			QLI_REL relation;
 			if (symbol->sym_type == SYM_relation &&
 				(relation = (QLI_REL) symbol->sym_object) &&
 				relation->rel_database == database)
@@ -1311,15 +1314,11 @@ void MET_modify_index( SYN node)
  *	of an index.
  *
  **************************************/
-	DBB database;
-	NAM name;
-	USHORT count;
-
-	name = (NAM) node->syn_arg[s_mfi_name];
-	database = (DBB) node->syn_arg[s_mfi_database];
+	NAM name = (NAM) node->syn_arg[s_mfi_name];
+	DBB database = (DBB) node->syn_arg[s_mfi_database];
 	database = setup_update(database);
 
-	count = 0;
+	USHORT count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_mdf_index])
 		X IN DB.RDB$INDICES WITH X.RDB$INDEX_NAME = name->nam_string
@@ -1348,7 +1347,7 @@ void MET_modify_index( SYN node)
 
 	if (!count)
 		ERRQ_print_error(246, name->nam_string, database->dbb_filename, NULL,
-						 NULL, NULL);	/* Msg246 Index %s does not exist */
+						 NULL, NULL);	// Msg246 Index %s does not exist
 
 	MET_meta_commit(database);
 }
@@ -1366,22 +1365,19 @@ void MET_modify_relation( QLI_REL relation, QLI_FLD fields)
  *	Modify an existing relation.
  *
  **************************************/
-	DBB database;
-	SYM relation_name, field_name;
-	QLI_FLD field;
-	USHORT count;
+	DBB database = setup_update(relation->rel_database);
+	relation->rel_database = database;
+	SYM relation_name = relation->rel_symbol;
 
-	relation->rel_database = database = setup_update(relation->rel_database);
-	relation_name = relation->rel_symbol;
-
-	for (field = fields; field; field = field->fld_next)
+	for (QLI_FLD field = fields; field; field = field->fld_next)
+	{
 		if (field->fld_flags & FLD_drop) {
-			count = 0;
-			field_name = field->fld_name;
+			USHORT count = 0;
+			SYM field_name = field->fld_name;
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_modify_rel])
 				X IN DB.RDB$RELATION_FIELDS WITH
 					X.RDB$FIELD_NAME EQ field_name->sym_string AND
-					X.RDB$RELATION_NAME EQ relation_name->sym_string 
+					X.RDB$RELATION_NAME EQ relation_name->sym_string
 				count++;
 				ERASE X
 				ON_ERROR
@@ -1396,13 +1392,14 @@ void MET_modify_relation( QLI_REL relation, QLI_FLD fields)
 			if (!count) {
 				rollback_update(database);
 				ERRQ_print_error(247, field_name->sym_string, NULL, NULL,
-								 NULL, NULL);	/* Msg247 field %s doesn't exist */
+								 NULL, NULL);	// Msg247 field %s doesn't exist
 			}
 		}
 		else if (field->fld_flags & FLD_modify)
 			change_field(relation, field);
 		else
 			add_field(relation, field, 0);
+	}
 
 	MET_meta_commit(database);
 	setup_update(database);
@@ -1424,23 +1421,17 @@ void MET_ready( SYN node, USHORT create_flag)
  *	fail, all fail.  Fair enough?
  *
  **************************************/
-	DBB temp, dbb;
-	SYN *ptr, *ptr2, *end;
-	ISC_STATUS_ARRAY status_vector;
-	SSHORT dpb_length, length;
-	UCHAR *dpb, *p;
-	TEXT *q;
-	TEXT *lc_ctype;
-
-	p = parm_buffer;
-	temp = (DBB) node->syn_arg[0];
+	UCHAR* p = global_parm_buffer;
+	DBB temp = (DBB) node->syn_arg[0];
 
 /* Only a SQL CREATE DATABASE will have a pagesize parameter,
    so only looking at the first pointer is justified.	*/
 
 	*p++ = gds_dpb_version1;
 
-	if ((lc_ctype = QLI_charset) && (length = strlen(lc_ctype))) {
+	SSHORT length;
+	const TEXT* lc_ctype = QLI_charset;
+	if (lc_ctype && (length = strlen(lc_ctype))) {
 		*p++ = gds_dpb_lc_ctype;
 		*p++ = length;
 		while (*lc_ctype)
@@ -1470,6 +1461,7 @@ void MET_ready( SYN node, USHORT create_flag)
 /* get a username, if specified globally or on
    the command line */
 
+	const TEXT* q;
 	if (temp->dbb_user) {
 		q = (TEXT *) temp->dbb_user->con_data;
 		length = temp->dbb_user->con_desc.dsc_length;
@@ -1485,7 +1477,7 @@ void MET_ready( SYN node, USHORT create_flag)
 			*p++ = *q++;
 	}
 
-// get a password, if specified 
+// get a password, if specified
 
 	if (temp->dbb_password) {
 		q = (TEXT *) temp->dbb_password->con_data;
@@ -1502,20 +1494,24 @@ void MET_ready( SYN node, USHORT create_flag)
 			*p++ = *q++;
 	}
 
-	dpb_length = p - parm_buffer;
+	USHORT dpb_length = p - global_parm_buffer;
+	UCHAR* dpb;
 	if (dpb_length == 1) {
 		dpb = NULL;
 		dpb_length = 0;
 	}
 	else
-		dpb = parm_buffer;
+		dpb = global_parm_buffer;
 
-	end = node->syn_arg + node->syn_count;
+	SYN* const end = node->syn_arg + node->syn_count;
 
-// Start by attaching all databases 
+// Start by attaching all databases
+	ISC_STATUS_ARRAY status_vector;
+	SYN* ptr;
+	DBB dbb;
 
 	for (ptr = node->syn_arg; ptr < end; ptr++) {
-		dbb = (DBB) * ptr;
+		dbb = (DBB) *ptr;
 		if (create_flag)
 			gds__create_database(status_vector, 0, dbb->dbb_filename,
 								 &dbb->dbb_handle, dpb_length, (char*) dpb, 0);
@@ -1526,16 +1522,16 @@ void MET_ready( SYN node, USHORT create_flag)
 			break;
 	}
 
-// If any attach failed, cleanup and give up 
+// If any attach failed, cleanup and give up
 
 	if (ptr < end) {
-		for (ptr2 = node->syn_arg; ptr2 < ptr; ptr2++)
+		for (SYN* ptr2 = node->syn_arg; ptr2 < ptr; ptr2++)
 			detach(gds_status, (DBB) *ptr2);
 		ERRQ_database_error(dbb, status_vector);
 	}
 
 
-// Databases are up and running.  Install each. 
+// Databases are up and running.  Install each.
 
 	for (ptr = node->syn_arg; ptr < end; ptr++)
 		install((DBB) *ptr);
@@ -1555,9 +1551,8 @@ void MET_shutdown(void)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	DBB dbb;
 
-	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
+	for (DBB dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		if (detach(status_vector, dbb))
 			gds__print_status(status_vector);
 }
@@ -1575,15 +1570,10 @@ void MET_sql_alter_table( QLI_REL relation, QLI_FLD fields)
  *	Alter table data based on a SQL metadata request
  *
  **************************************/
-	DBB database;
-	SYM symbol;
-	QLI_FLD field;
-	RLB rlb;
-	USHORT count;
-
-	symbol = relation->rel_symbol;
-	relation->rel_database = database = setup_update(relation->rel_database);
-	count = 0;
+	SYM symbol = relation->rel_symbol;
+	DBB database = setup_update(relation->rel_database);
+	relation->rel_database = database;
+	USHORT count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_relation_def])
 		X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ symbol->sym_string
@@ -1593,10 +1583,10 @@ void MET_sql_alter_table( QLI_REL relation, QLI_FLD fields)
 		ERRQ_database_error(database, gds_status);
 	END_ERROR;
 	if (!count)
-		ERRQ_print_error(414, symbol->sym_string, NULL, NULL, NULL, NULL);	/* Msg237 Relation %s is lost */
+		ERRQ_print_error(414, symbol->sym_string, NULL, NULL, NULL, NULL);	// Msg237 Relation %s is lost
 
 
-	rlb = NULL;
+	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 
 	STUFF(gds_dyn_version_1);
@@ -1604,7 +1594,7 @@ void MET_sql_alter_table( QLI_REL relation, QLI_FLD fields)
 	STUFF(gds_dyn_mod_rel);
 	STUFF_STRING(symbol->sym_string);
 
-	for (field = fields; field; field = field->fld_next) {
+	for (QLI_FLD field = fields; field; field = field->fld_next) {
 		if (field->fld_flags & FLD_add)
 			add_sql_field(relation, field, 0, rlb);
 		else if (field->fld_flags & FLD_drop) {
@@ -1639,16 +1629,12 @@ void MET_sql_cr_view( SYN node)
  *	Create a view from a SQL metadata request
  *
  **************************************/
-	QLI_REL relation;
-	DBB database;
-	SYM symbol;
-	RLB rlb;
+	QLI_REL relation = (QLI_REL) node->syn_arg[s_crv_name];
+	DBB database = setup_update(relation->rel_database);
+	relation->rel_database = database;
+	SYM symbol = relation->rel_symbol;
 
-	relation = (QLI_REL) node->syn_arg[s_crv_name];
-	relation->rel_database = database = setup_update(relation->rel_database);
-	symbol = relation->rel_symbol;
-
-	rlb = NULL;
+	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 	STUFF(gds_dyn_version_1);
 	STUFF(gds_dyn_begin);
@@ -1656,7 +1642,7 @@ void MET_sql_cr_view( SYN node)
 	STUFF(gds_dyn_def_view);
 	STUFF_STRING(symbol->sym_string);
 
-// The meat of the blr generation will go here 
+// The meat of the blr generation will go here
 
 	STUFF(gds_dyn_end);
 	STUFF(gds_dyn_eoc);
@@ -1758,17 +1744,14 @@ static void add_field( QLI_REL relation, QLI_FLD field, USHORT position)
  *	Add a field to a relation.  Do all sorts of sanity checks.
  *
  **************************************/
-	DBB database;
-	SYM relation_name, field_name, symbol, global_field;
-	bool global_flag;
-
-	database = relation->rel_database;
-	relation_name = relation->rel_symbol;
-	field_name = field->fld_name;
-	if (!(global_field = field->fld_based))
+	DBB database = relation->rel_database;
+	SYM relation_name = relation->rel_symbol;
+	SYM field_name = field->fld_name;
+	SYM global_field = field->fld_based;
+	if (!global_field)
 		global_field = field_name;
 
-// Check to see if it already exits in relation 
+// Check to see if it already exits in relation
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_rfr_def])
 		X IN DB.RDB$RELATION_FIELDS WITH
@@ -1776,15 +1759,15 @@ static void add_field( QLI_REL relation, QLI_FLD field, USHORT position)
 			X.RDB$FIELD_NAME EQ field_name->sym_string
 		rollback_update(relation->rel_database);
 		ERRQ_print_error(251, field_name->sym_string,
-						 relation_name->sym_string, NULL, NULL, NULL);	/* Msg251 Field %s already exists in relation %s */
+						 relation_name->sym_string, NULL, NULL, NULL);	// Msg251 Field %s already exists in relation %s
 	END_FOR
 	ON_ERROR
 		ERRQ_database_error(database, gds_status);
 	END_ERROR;
 
-/* Check global field.  Define it if it doesn't exist. */
+// Check global field.  Define it if it doesn't exist.
 
-	global_flag = false;
+	bool global_flag = false;
 	if (!check_global_field(database, field, global_field->sym_string)) {
 		global_flag = true;
 		define_global_field(database, field, global_field);
@@ -1806,6 +1789,7 @@ static void add_field( QLI_REL relation, QLI_FLD field, USHORT position)
 		}
 		else
 			X.RDB$FIELD_POSITION.NULL = TRUE;
+		SYM symbol;
 		if (!global_flag && (symbol = field->fld_query_name)) {
 			X.RDB$QUERY_NAME.NULL = FALSE;
 			strcpy(X.RDB$QUERY_NAME, symbol->sym_string);
@@ -1839,16 +1823,12 @@ static void add_sql_field( QLI_REL relation, QLI_FLD field, USHORT position, RLB
  *	Add a SQL field to a relation via dyn.
  *
  **************************************/
-	DBB database;
-	SYM relation_name, field_name;
-	USHORT l;
-
 	rlb = CHECK_RLB(rlb);
-	database = relation->rel_database;
-	relation_name = relation->rel_symbol;
-	field_name = field->fld_name;
+	DBB database = relation->rel_database;
+	SYM relation_name = relation->rel_symbol;
+	SYM field_name = field->fld_name;
 
-// Check to see if it already exits in relation 
+// Check to see if it already exits in relation
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_rfr_def])
 		X IN DB.RDB$RELATION_FIELDS WITH
@@ -1856,7 +1836,7 @@ static void add_sql_field( QLI_REL relation, QLI_FLD field, USHORT position, RLB
 			X.RDB$FIELD_NAME EQ field_name->sym_string
 		rollback_update(relation->rel_database);
 		ERRQ_print_error(251, field_name->sym_string,
-						 relation_name->sym_string, NULL, NULL, NULL);	/* Msg251 Field %s already exists in relation %s */
+						 relation_name->sym_string, NULL, NULL, NULL);	// Msg251 Field %s already exists in relation %s
 	END_FOR
 	ON_ERROR
 		ERRQ_database_error(database, gds_status);
@@ -1872,10 +1852,8 @@ static void add_sql_field( QLI_REL relation, QLI_FLD field, USHORT position, RLB
 
 	STUFF(gds_dyn_fld_length);
 	STUFF_WORD(2);
-	l =
-		(field->fld_dtype ==
-		 dtype_varying) ? field->fld_length -
-		sizeof(SSHORT) : field->fld_length;
+	const USHORT l = (field->fld_dtype == dtype_varying)
+					? field->fld_length - sizeof(SSHORT) : field->fld_length;
 	STUFF_WORD(l);
 
 	STUFF(gds_dyn_fld_scale);
@@ -1920,17 +1898,12 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
  *	language block to stick it into a new definition.
  *
  **************************************/
-	DBB source_dbb;
-	FRBRD *source_blob;
-	SLONG size, segment_count, max_segment;
 	ISC_STATUS_ARRAY status_vector;
-	USHORT length, buffer_length;
-	TEXT *buffer, fixed_buffer[4096], *p;
 
-	source_dbb =
+	DBB source_dbb =
 		(source->rel_database) ? source->rel_database : QLI_databases;
 	DB = source_dbb->dbb_handle;
-	source_blob = NULL;
+	FRBRD* source_blob = NULL;
 
 	if (gds__open_blob(status_vector, &DB, &source_dbb->dbb_meta_trans,
 					   &source_blob, (GDS__QUAD*) source_blob_id)) {
@@ -1938,8 +1911,12 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
 		ERRQ_database_error(source_dbb, status_vector);
 	}
 
+	SLONG size, segment_count, max_segment;
 	gds__blob_size(&source_blob, (SLONG*) &size, &segment_count, &max_segment);
 
+    TEXT fixed_buffer[4096];
+	TEXT* buffer;
+    USHORT buffer_length;
 	if (max_segment < sizeof(fixed_buffer)) {
 		buffer_length = sizeof(fixed_buffer);
 		buffer = fixed_buffer;
@@ -1951,11 +1928,13 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
 
 	STUFF_WORD((USHORT) size);
 
+	USHORT length;
 	while (!gds__get_segment(status_vector, &source_blob, &length,
-							 buffer_length, buffer)) {
+							 buffer_length, buffer))
+	{
 		while (rlb->rlb_limit - rlb->rlb_data < length)
 			rlb = GEN_rlb_extend(rlb);
-		p = buffer;
+		const TEXT* p = buffer;
 		while (length--)
 			STUFF(*p++);
 	}
@@ -1991,39 +1970,39 @@ static void change_field( QLI_REL relation, QLI_FLD field)
  *	Change optional attributes of a field.
  *
  **************************************/
-	DBB database;
-	SYM relation_name, field_name, symbol, global_field;
-	USHORT count;
-
-	database = relation->rel_database;
-	relation_name = relation->rel_symbol;
-	field_name = field->fld_name;
-	global_field = field->fld_based;
+	DBB database = relation->rel_database;
+	SYM relation_name = relation->rel_symbol;
+	SYM field_name = field->fld_name;
+	SYM global_field = field->fld_based;
 
 	if (field->fld_dtype) {
 		rollback_update(database);
-		ERRQ_print_error(252, NULL, NULL, NULL, NULL, NULL);	// Msg252 datatype can not be changed locally 
+		ERRQ_print_error(252, NULL, NULL, NULL, NULL, NULL);
+		// Msg252 datatype can not be changed locally
 	}
 
 	if (global_field
 		&&
-		!(check_global_field(database, NULL, global_field->sym_string))) {
+		!(check_global_field(database, NULL, global_field->sym_string)))
+	{
 		rollback_update(database);
-		ERRQ_print_error(253, global_field->sym_string, NULL, NULL, NULL, NULL);	/* Msg253 global field %s does not exist */
+		ERRQ_print_error(253, global_field->sym_string, NULL, NULL, NULL, NULL);
+		// Msg253 global field %s does not exist
 	}
 
-// Modify  RFR 
-	count = 0;
+// Modify  RFR
+	USHORT count = 0;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_mdf_rfr])
 		X IN DB.RDB$RELATION_FIELDS WITH
 			X.RDB$RELATION_NAME = relation_name->sym_string AND
-			X.RDB$FIELD_NAME = field_name->sym_string 
+			X.RDB$FIELD_NAME = field_name->sym_string
 		count++;
 		MODIFY X USING
 			if (global_field)
 				strcpy(X.RDB$FIELD_SOURCE, global_field->sym_string);
-			if (symbol = field->fld_query_name)
+			SYM symbol = field->fld_query_name;
+			if (symbol)
 				strcpy(X.RDB$QUERY_NAME, symbol->sym_string);
 			if (field->fld_edit_string)
 				strcpy(X.RDB$EDIT_STRING, field->fld_edit_string);
@@ -2041,7 +2020,7 @@ static void change_field( QLI_REL relation, QLI_FLD field)
 	if (!count) {
 		rollback_update(database);
 		ERRQ_print_error(254, field_name->sym_string,
-						 relation_name->sym_string, NULL, NULL, NULL);	/* Msg254 field %s not found in relation %s */
+						 relation_name->sym_string, NULL, NULL, NULL);	// Msg254 field %s not found in relation %s
 	}
 }
 
@@ -2052,7 +2031,7 @@ static bool check_global_field(DBB database,
 {
 /**************************************
  *
- *	c h e c k _ g l o b a l _ f i e l d 
+ *	c h e c k _ g l o b a l _ f i e l d
  *
  **************************************
  *
@@ -2064,10 +2043,9 @@ static bool check_global_field(DBB database,
  *
  **************************************/
 	bool previously_defined = false;
-	SLONG *blob;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_field_def])
-		X IN DB.RDB$FIELDS WITH X.RDB$FIELD_NAME EQ name 
+		X IN DB.RDB$FIELDS WITH X.RDB$FIELD_NAME EQ name
 
 		if (field)
 		{
@@ -2079,7 +2057,7 @@ static bool check_global_field(DBB database,
 				 X.RDB$FIELD_SCALE != field->fld_scale))
 			{
 				rollback_update(database);
-				ERRQ_print_error(255, name, NULL, NULL, NULL, NULL);	/* Msg255 Datatype conflict with existing global field %s */
+				ERRQ_print_error(255, name, NULL, NULL, NULL, NULL);	// Msg255 Datatype conflict with existing global field %s
 			}
 			field->fld_dtype = MET_get_datatype(X.RDB$FIELD_TYPE);
 			field->fld_length =
@@ -2102,7 +2080,7 @@ static bool check_global_field(DBB database,
 			}
 			if (!field->fld_query_header)
 			{
-				blob = (SLONG *) & X.RDB$QUERY_HEADER;
+				SLONG* blob = (SLONG *) &X.RDB$QUERY_HEADER;
 				if (blob[0] || blob[1])
 				{
 					field->fld_query_header =
@@ -2124,7 +2102,7 @@ static bool check_relation( QLI_REL relation)
 {
 /**************************************
  *
- *	c h e c k _ r e l a t i o n  
+ *	c h e c k _ r e l a t i o n
  *
  **************************************
  *
@@ -2133,14 +2111,12 @@ static bool check_relation( QLI_REL relation)
  *
  **************************************/
 	bool previously_defined = false;
-	FRBRD *spare;
-
-	spare = DB;
+	FRBRD* spare = DB;
 	DB = relation->rel_database->dbb_handle;
 
 	FOR(REQUEST_HANDLE relation->rel_database->dbb_requests[REQ_relation_def]
 		TRANSACTION_HANDLE relation->rel_database->dbb_meta_trans)
-			X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string 
+			X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
 		previously_defined = true;
 	END_FOR
 	ON_ERROR
@@ -2156,7 +2132,7 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 {
 /**************************************
  *
- *	c l o n e _ f i e l d s 
+ *	c l o n e _ f i e l d s
  *
  **************************************
  *
@@ -2169,14 +2145,13 @@ static int clone_fields( QLI_REL target, QLI_REL source)
  *
  *	If it's two different databases, create the global
  *	fields that are missing in the target (except those
- *	that support computed fields), then create the local 
+ *	that support computed fields), then create the local
  *	fields and during that pass create the computed
  *	fields and the SQL fields.
  *
  **************************************/
 	FRBRD *req1, *req2;
 	FRBRD *t_trans, *s_trans;
-	RLB rlb;
 
 	req1 = req2 = NULL;
 	s_trans = t_trans = gds_trans;
@@ -2190,7 +2165,7 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 	if (target->rel_database != source->rel_database)
 		clone_global_fields(target, source);
 
-	rlb = NULL;
+	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 
 	STUFF(gds_dyn_version_1);
@@ -2202,7 +2177,7 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 				CROSS F IN DB.RDB$FIELDS
 				WITH Y.RDB$RELATION_NAME = source->rel_symbol->sym_string
 				AND Y.RDB$FIELD_SOURCE = F.RDB$FIELD_NAME
-				// If SQL made this field, create a new global field for it 
+				// If SQL made this field, create a new global field for it
 		if (F.RDB$COMPUTED_BLR.NULL &&
 			(strncmp("RDB$", Y.RDB$FIELD_NAME, 4)) &&
 			(!(strncmp("RDB$", F.RDB$FIELD_NAME, 4))))
@@ -2345,7 +2320,7 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 {
 /**************************************
  *
- *	c l o n e _ g l o b a l _ f i e l d s 
+ *	c l o n e _ g l o b a l _ f i e l d s
  *
  **************************************
  *
@@ -2353,7 +2328,7 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
  *	Copy the global field definitions required by a relation
  *      from one database into another.  Both databases are
  *	setup correctly.  (Set up the handles again just because
- *	we're compulsive.) 
+ *	we're compulsive.)
  *
  *	In this routine, as in clone fields, be careful to probe
  *	for our extensions rather than just using them so we
@@ -2368,32 +2343,28 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
  *
  **************************************/
 	FRBRD *req1, *req2, *req3;
-	FRBRD *t_trans, *s_trans;
-	TEXT *name;
-	SSHORT first_field, first_dimension, predefined;
-	RLB rlb;
-
 	req1 = req2 = req3 = NULL;
-	s_trans = source->rel_database->dbb_meta_trans;
-	t_trans = target->rel_database->dbb_meta_trans;
+
+	FRBRD* s_trans = source->rel_database->dbb_meta_trans;
+	FRBRD* t_trans = target->rel_database->dbb_meta_trans;
 	DB = source->rel_database->dbb_handle;
 	DB1 = target->rel_database->dbb_handle;
 
-	rlb = NULL;
-	first_field = TRUE;
+	RLB rlb = NULL;
+	bool first_field = true;
 
 	FOR(REQUEST_HANDLE req1
 		TRANSACTION_HANDLE s_trans)
         RFR IN DB.RDB$RELATION_FIELDS CROSS
         Y IN DB.RDB$FIELDS
-        WITH RFR.RDB$RELATION_NAME = source->rel_symbol->sym_string AND 
-        Y.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE REDUCED TO Y.RDB$FIELD_NAME 
+        WITH RFR.RDB$RELATION_NAME = source->rel_symbol->sym_string AND
+        Y.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE REDUCED TO Y.RDB$FIELD_NAME
         if (!Y.RDB$COMPUTED_BLR.NULL ||
             ((strncmp("RDB$",RFR.RDB$FIELD_NAME,4)) &&
              (!(strncmp("RDB$", Y.RDB$FIELD_NAME,4)))))
             continue;
 
-        predefined = FALSE;
+        bool predefined = false;
 
 		FOR(REQUEST_HANDLE req2 TRANSACTION_HANDLE t_trans)
 			A IN DB1.RDB$FIELDS WITH A.RDB$FIELD_NAME = Y.RDB$FIELD_NAME
@@ -2404,15 +2375,18 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
                  (A.RDB$FIELD_SCALE != Y.RDB$FIELD_SCALE)) ||
                 (A.RDB$FIELD_SUB_TYPE.NULL != Y.RDB$FIELD_SUB_TYPE.NULL)
                 || ((!Y.RDB$FIELD_SUB_TYPE.NULL)
-                    && (A.RDB$FIELD_SUB_TYPE != Y.RDB$FIELD_SUB_TYPE))) {
+                    && (A.RDB$FIELD_SUB_TYPE != Y.RDB$FIELD_SUB_TYPE)))
+				{
 
-                name = (TEXT *) ALLQ_malloc((SLONG) sizeof(Y.RDB$FIELD_NAME));
-				strcpy(name, Y.RDB$FIELD_NAME);
-				rollback_update(target->rel_database);
-				ERRQ_error(413, name, NULL, NULL, NULL, NULL);	// conflicting previous definition 
-			}
+                	TEXT* name = (TEXT*) ALLQ_malloc((SLONG) sizeof(Y.RDB$FIELD_NAME));
+					strcpy(name, Y.RDB$FIELD_NAME);
+					rollback_update(target->rel_database);
+					// CVC: When is this memory deallocated?
+					ERRQ_error(413, name, NULL, NULL, NULL, NULL);
+					// conflicting previous definition
+				}
 			else
-				  predefined = TRUE;
+				predefined = true;
 		END_FOR
 		ON_ERROR
 			ERRQ_database_error(target->rel_database, gds_status);
@@ -2425,7 +2399,7 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 			rlb = CHECK_RLB(rlb);
 			STUFF(gds_dyn_version_1);
 			STUFF(gds_dyn_begin);
-			first_field = FALSE;
+			first_field = false;
 		}
 		STUFF(gds_dyn_def_global_fld);
 		STUFF_STRING(Y.RDB$FIELD_NAME);
@@ -2504,19 +2478,19 @@ static int clone_global_fields( QLI_REL target, QLI_REL source)
 
 		if ((target->rel_database->dbb_capabilities & DBB_cap_dimensions) &&
 			(source->rel_database->dbb_capabilities & DBB_cap_dimensions)) {
-			first_dimension = TRUE;
+			bool first_dimension = true;
 			FOR(REQUEST_HANDLE req3 TRANSACTION_HANDLE s_trans)
 				F IN DB.RDB$FIELDS CROSS
 					D IN DB.RDB$FIELD_DIMENSIONS
 					WITH F.RDB$FIELD_NAME = D.RDB$FIELD_NAME AND
-					F.RDB$FIELD_NAME = Y.RDB$FIELD_NAME 
+					F.RDB$FIELD_NAME = Y.RDB$FIELD_NAME
 
                 if (first_dimension) {
-					first_dimension = FALSE;
+					first_dimension = false;
 					STUFF(gds_dyn_fld_dimensions);
 					STUFF_WORD(2);
 					STUFF_WORD(F.RDB$DIMENSIONS);
-				} 
+				}
 
                 STUFF(gds_dyn_def_dimension);
 				STUFF_WORD(2);
@@ -2574,7 +2548,7 @@ static void define_global_field( DBB database, QLI_FLD field, SYM name)
 {
 /**************************************
  *
- *	d e f i n e _ g l o b a l _ f i e l d 
+ *	d e f i n e _ g l o b a l _ f i e l d
  *
  **************************************
  *
@@ -2584,15 +2558,13 @@ static void define_global_field( DBB database, QLI_FLD field, SYM name)
  *	information.
  *
  **************************************/
-	SYM symbol;
-
-
 	if (!field->fld_dtype) {
 		rollback_update(database);
-		ERRQ_print_error(256, name->sym_string, NULL, NULL, NULL, NULL);	/* Msg256 No datatype specified for field %s */
+		ERRQ_print_error(256, name->sym_string, NULL, NULL, NULL, NULL);	// Msg256 No datatype specified for field %s
 	}
+
 	STORE(REQUEST_HANDLE database->dbb_requests[REQ_store_field])
-		X IN DB.RDB$FIELDS 
+		X IN DB.RDB$FIELDS
         strcpy(X.RDB$FIELD_NAME, name->sym_string);
 		X.RDB$FIELD_TYPE = blr_dtypes[field->fld_dtype];
 		X.RDB$FIELD_SCALE = field->fld_scale;
@@ -2604,7 +2576,8 @@ static void define_global_field( DBB database, QLI_FLD field, SYM name)
 		}
 		else
 			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-		if (symbol = field->fld_query_name) {
+		SYM symbol = field->fld_query_name;
+		if (symbol) {
 			X.RDB$QUERY_NAME.NULL = FALSE;
 			strcpy(X.RDB$QUERY_NAME, symbol->sym_string);
 		}
@@ -2636,9 +2609,7 @@ static void delete_fields( QLI_REL relation)
  *	Delete field definitions.
  *
  **************************************/
-	QLI_FLD field;
-
-	while (field = relation->rel_fields) {
+	while (QLI_FLD field = relation->rel_fields) {
 		relation->rel_fields = field->fld_next;
 		ALL_release((FRB) field->fld_name);
 		if (field->fld_query_name)
@@ -2664,13 +2635,11 @@ static ISC_STATUS detach(ISC_STATUS * status_vector,
  *	first failing call, if any.
  *
  **************************************/
-	ISC_STATUS *status;
-	ISC_STATUS_ARRAY alt_vector;
-
 	if (!dbb->dbb_handle)
 		return FB_SUCCESS;
 
-	status = status_vector;
+	ISC_STATUS_ARRAY alt_vector;
+	ISC_STATUS* status = status_vector;
 
 	if (dbb->dbb_transaction)
 		if (gds__commit_transaction(status, &dbb->dbb_transaction))
@@ -2702,9 +2671,7 @@ static void execute_dynamic_ddl( DBB database, RLB rlb)
  *	Execute a ddl command, for better or for worse.
  *
  **************************************/
-	USHORT length;
-
-	length = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
+	const USHORT length = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
 
 	if (QLI_blr)
 		PRETTY_print_dyn((SCHAR*) rlb->rlb_base, (FPTR_INT) ib_printf, "%4d %s\n", 0);
@@ -2766,13 +2733,11 @@ static void get_database_type( DBB new_dbb)
  **************************************
  *
  * Functional description
- *	Ask what type of database this is. 
+ *	Ask what type of database this is.
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	int count;
-	USHORT l;
-	UCHAR item, buffer[1024], *p, *q;
+	UCHAR buffer[1024];
 
 	gds__database_info(status_vector, &new_dbb->dbb_handle, sizeof(db_info),
 					   (char*) db_info, sizeof(buffer), (char*) buffer);
@@ -2780,25 +2745,28 @@ static void get_database_type( DBB new_dbb)
 	if (status_vector[1])
 		ERRQ_database_error(new_dbb, gds_status);
 
-	p = buffer;
+	UCHAR* p = buffer;
 
 	while (*p != gds_info_end && p < buffer + sizeof(buffer)) {
-		item = *p++;
-		l = gds__vax_integer(p, 2);
+		UCHAR item = *p++;
+		USHORT l = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
 		case gds_info_implementation:
-			q = p;
-			count = *q++;
+		{
+			const UCHAR* q = p;
+			int count = *q++;
 			while (count--) {
 				new_dbb->dbb_type = *q++;
 				if (*q++ == gds_info_db_class_access)
 					break;
 			}
 			break;
+		}
 
 		default:
-			ERRQ_error(257, NULL, NULL, NULL, NULL, NULL);	// Msg257 database info call failed 
+			ERRQ_error(257, NULL, NULL, NULL, NULL, NULL);
+			// Msg257 database info call failed
 		}
 		p += l;
 	}
@@ -2823,18 +2791,13 @@ static void get_log_names(
  *
  **************************************/
 	SCHAR next_log[512];
-	SCHAR *cl, *nl;
 	int log_count;
-	int ret_val;
 	bool not_archived;
 	SLONG last_log_flag, next_offset;
-	SLONG log_seqno, log_length;
-	SSHORT loop;
-	STR string;
 
-	loop = 0;
+	SSHORT loop = 0;
 
-// loop up to 10 times to allow the file to be archived 
+// loop up to 10 times to allow the file to be archived
 
 	while (true) {
 		loop++;
@@ -2857,6 +2820,7 @@ static void get_log_names(
 			ERRQ_print_error(431, dbb->dbb_filename, NULL, NULL, NULL, NULL);
 	}
 
+	STR string;
 	if (log_count) {
 		string = (STR) ALLOCDV(type_str, strlen(next_log));
 		LLS_PUSH(string, log_stack);
@@ -2868,12 +2832,13 @@ static void get_log_names(
 		strcpy(string->str_data, cur_log);
 	}
 
-	cl = next_log;
-	nl = cur_log;
+	SCHAR* cl = next_log;
+	SCHAR* nl = cur_log;
 	part_offset = next_offset;
 
+    SLONG log_seqno, log_length;
 	while (log_count) {
-		ret_val = WALF_get_next_log_info(gds_status,
+		int ret_val = WALF_get_next_log_info(gds_status,
 										 db_name,
 										 cl, part_offset,
 										 nl, &next_offset,
@@ -2890,7 +2855,7 @@ static void get_log_names(
 		LLS_PUSH(string, log_stack);
 		strcpy(string->str_data, nl);
 
-		// switch files 
+		// switch files
 
 		if (cl == next_log) {
 			cl = cur_log;
@@ -2918,20 +2883,18 @@ static void get_log_names_serial( LLS * log_stack)
  *
  **************************************/
 	SCHAR next_log[512];
-	STR string;
 
-/* 
- * for round robin log files, some of the log files may not have been used
- * when the database is dropped or log is dropped. Add them to the list
- */
+// for round robin log files, some of the log files may not have been used
+// when the database is dropped or log is dropped. Add them to the list
+
 
 	FOR L IN DB.RDB$LOG_FILES
 		if (L.RDB$FILE_FLAGS & LOG_serial)
 			continue;
 		ISC_expand_filename(L.RDB$FILE_NAME, 0, next_log);
-		string = (STR) ALLOCDV(type_str, strlen(next_log));
-		LLS_PUSH(string, log_stack);
+		STR string = (STR) ALLOCDV(type_str, strlen(next_log));
 		strcpy(string->str_data, next_log);
+		LLS_PUSH(string, log_stack);
 	END_FOR
 	ON_ERROR
 	END_ERROR;
@@ -2950,33 +2913,34 @@ static TEXT *get_query_header( DBB database, SLONG blob_id[2])
  *	Pick up a query header for a field.
  *
  **************************************/
-	FRBRD *blob;
-	ISC_STATUS status;
 	ISC_STATUS_ARRAY status_vector;
-	USHORT length;
-	TEXT header[1024], buffer[1024], *p, *q;
-	blob = NULL;
-
+	TEXT header[1024], buffer[1024];
+	FRBRD* blob = NULL;
 
 	if (gds__open_blob(status_vector, &database->dbb_handle,
 					   &gds_trans, &blob, (GDS__QUAD*) blob_id))
+	{
 		ERRQ_database_error(database, status_vector);
+	}
 
-	p = header;
+	TEXT* p = header;
 
+	// CVC: No bounds check here: it's assumed that 1024 is enough, but "p"
+	// might overflow "header" eventually.
 	for (;;) {
-		status = gds__get_segment(status_vector, &blob, &length, 
+		USHORT length;
+		ISC_STATUS status = gds__get_segment(status_vector, &blob, &length,
 								  sizeof(buffer), buffer);
 		if (status && status != gds_segment)
 			break;
 		if (length && buffer[length - 1] == '\n')
 			--length;
 		buffer[length] = 0;
-		q = buffer;
+		const TEXT* q = buffer;
 		if (*q == '"')
-			do
+			do {
 				*p++ = *q++;
-			while (*q);
+			} while (*q);
 		else {
 			*p++ = '"';
 			while (*q)
@@ -2995,8 +2959,9 @@ static TEXT *get_query_header( DBB database, SLONG blob_id[2])
 		p = header + 1;
 	}
 
-	if (length = p - header)
-		return make_string(header, length);
+	const USHORT len = p - header;
+	if (len)
+		return make_string(header, len);
 
 	return NULL;
 }
@@ -3016,39 +2981,32 @@ static void install( DBB old_dbb)
  *	permanent.
  *
  **************************************/
-	DBB new_dbb;
-	QLI_REL relation;
-	NAM name;
-	SYM symbol, symbol2;
-	FRBRD *request, *request2;
-	SSHORT l;
-	FUN function;
-	TEXT *p, *q;
 
-// Copy the database block to one out of the permanent pool 
+// Copy the database block to one out of the permanent pool
 
-	l = old_dbb->dbb_filename_length;
-	new_dbb = (DBB) ALLOCPV(type_dbb, l);
+	SSHORT l = old_dbb->dbb_filename_length;
+	DBB new_dbb = (DBB) ALLOCPV(type_dbb, l);
 	new_dbb->dbb_filename_length = l;
-	p = new_dbb->dbb_filename;
-	q = old_dbb->dbb_filename;
-	do
+	TEXT* p = new_dbb->dbb_filename;
+	const TEXT* q = old_dbb->dbb_filename;
+	do {
 		*p++ = *q++;
-	while (--l);
+	} while (--l);
 	DB = new_dbb->dbb_handle = old_dbb->dbb_handle;
 	new_dbb->dbb_capabilities = old_dbb->dbb_capabilities;
 
 	new_dbb->dbb_next = QLI_databases;
 	QLI_databases = new_dbb;
 
-// If a name was given, make up a symbol for the database. 
+// If a name was given, make up a symbol for the database.
 
-	if (name = (NAM) old_dbb->dbb_symbol) {
-		new_dbb->dbb_symbol = symbol =
-			make_symbol(name->nam_string, name->nam_length);
-		symbol->sym_type = SYM_database;
-		symbol->sym_object = (BLK) new_dbb;
-		HSH_insert(symbol);
+	NAM name = (NAM) old_dbb->dbb_symbol;
+	if (name) {
+		SYM asymbol = make_symbol(name->nam_string, name->nam_length);
+		new_dbb->dbb_symbol = asymbol;
+		asymbol->sym_type = SYM_database;
+		asymbol->sym_object = (BLK) new_dbb;
+		HSH_insert(asymbol);
 	}
 
 	gds_trans = MET_transaction(nod_start_trans, new_dbb);
@@ -3061,24 +3019,25 @@ static void install( DBB old_dbb)
 	set_capabilities(new_dbb);
 
 /* Get all relations in database.  For each relation make up a
-   relation block, make up a symbol block, and insert the symbol 
+   relation block, make up a symbol block, and insert the symbol
    into the hash table. */
 
-	request = NULL;
+	FRBRD* request = NULL;
 
-	FOR(REQUEST_HANDLE request) X IN DB.RDB$RELATIONS SORTED BY DESCENDING
-		X.RDB$RELATION_NAME relation = (QLI_REL) ALLOCP(type_rel);
+	FOR(REQUEST_HANDLE request) X IN DB.RDB$RELATIONS
+		SORTED BY DESCENDING X.RDB$RELATION_NAME
 
+		QLI_REL relation = (QLI_REL) ALLOCP(type_rel);
 		relation->rel_next = new_dbb->dbb_relations;
 		new_dbb->dbb_relations = relation;
 		relation->rel_database = new_dbb;
 		relation->rel_id = X.RDB$RELATION_ID;
-		symbol = make_symbol(X.RDB$RELATION_NAME, sizeof(X.RDB$RELATION_NAME));
-		symbol->sym_type = SYM_relation;
-		symbol->sym_object = (BLK) relation;
-		relation->rel_symbol = symbol;
-		HSH_insert(symbol);
-		if (strcmp(symbol->sym_string, "QLI$PROCEDURES") == 0)
+		SYM rsymbol = make_symbol(X.RDB$RELATION_NAME, sizeof(X.RDB$RELATION_NAME));
+		rsymbol->sym_type = SYM_relation;
+		rsymbol->sym_object = (BLK) relation;
+		relation->rel_symbol = rsymbol;
+		HSH_insert(rsymbol);
+		if (strcmp(rsymbol->sym_string, "QLI$PROCEDURES") == 0)
 			new_dbb->dbb_flags |= DBB_procedures;
 		if (relation->rel_system_flag = X.RDB$SYSTEM_FLAG)
 			relation->rel_flags |= REL_system;
@@ -3093,22 +3052,23 @@ static void install( DBB old_dbb)
 		if (gds__release_request(gds_status, &request))
 			ERRQ_database_error(new_dbb, gds_status);
 
-// Pick up functions, if appropriate 
+// Pick up functions, if appropriate
 
 	if (new_dbb->dbb_capabilities & DBB_cap_functions) {
-		request2 = NULL;
+		FRBRD* request2 = NULL;
 		FOR(REQUEST_HANDLE request) X IN DB.RDB$FUNCTIONS
-			if (!(symbol = make_symbol(X.RDB$FUNCTION_NAME, sizeof(X.RDB$FUNCTION_NAME)))) 
+		    SYM fsymbol = make_symbol(X.RDB$FUNCTION_NAME, sizeof(X.RDB$FUNCTION_NAME));
+			if (!fsymbol)
                 continue;
-			function = (FUN) ALLOCPV(type_fun, 0);
+			FUN function = (FUN) ALLOCPV(type_fun, 0);
 			function->fun_next = new_dbb->dbb_functions;
 			new_dbb->dbb_functions = function;
-			function->fun_symbol = symbol;
+			function->fun_symbol = fsymbol;
 			function->fun_database = new_dbb;
 			FOR(REQUEST_HANDLE request2) Y IN DB.RDB$FUNCTION_ARGUMENTS WITH
 				Y.RDB$FUNCTION_NAME EQ X.RDB$FUNCTION_NAME AND
 					Y.RDB$ARGUMENT_POSITION EQ X.RDB$RETURN_ARGUMENT
-					function->fun_return.dsc_dtype = MET_get_datatype(Y.RDB$FIELD_TYPE);
+				function->fun_return.dsc_dtype = MET_get_datatype(Y.RDB$FIELD_TYPE);
 				function->fun_return.dsc_length =
 					field_length(function->fun_return.dsc_dtype,
 								 Y.RDB$FIELD_LENGTH);
@@ -3121,14 +3081,14 @@ static void install( DBB old_dbb)
 				function->fun_return.dsc_dtype = dtype_text;
 				function->fun_return.dsc_length = 20;
 			}
-			symbol->sym_type = SYM_function;
-			symbol->sym_object = (BLK) function;
-			HSH_insert(symbol);
+			fsymbol->sym_type = SYM_function;
+			fsymbol->sym_object = (BLK) function;
+			HSH_insert(fsymbol);
 
-			// Insert another symbol if there is a function query name 
+			// Insert another symbol if there is a function query name
 
-			if (symbol2 =
-				make_symbol(X.RDB$QUERY_NAME, sizeof(X.RDB$QUERY_NAME))) {
+            SYM symbol2 = make_symbol(X.RDB$QUERY_NAME, sizeof(X.RDB$QUERY_NAME));
+			if (symbol2) {
 				function->fun_query_name = symbol2;
 				symbol2->sym_type = SYM_function;
 				symbol2->sym_object = (BLK) function;
@@ -3160,9 +3120,7 @@ static SYN make_node( NOD_T type, USHORT count)
  *	Generate a syntax node.
  *
  **************************************/
-	SYN node;
-
-	node = (SYN) ALLOCPV(type_syn, count);
+	SYN node = (SYN) ALLOCPV(type_syn, count);
 	node->syn_count = count;
 	node->syn_type = type;
 
@@ -3183,19 +3141,16 @@ static TEXT *make_string( TEXT * string, SSHORT length)
  *	trailing blanks.  If there's nothing left, return NULL.
  *
  **************************************/
-	STR str;
-	TEXT *p;
-
 	string[length] = 0;
 
 	if (!(length = truncate_string(string)))
 		return NULL;
 
-	str = (STR) ALLOCPV(type_str, length + 1);
-	p = str->str_data;
-	do
+	STR str = (STR) ALLOCPV(type_str, length + 1);
+	TEXT* p = str->str_data;
+	do {
 		*p++ = *string++;
-	while (--length);
+	} while (--length);
 	*p = 0;
 
 	return str->str_data;
@@ -3211,24 +3166,22 @@ static SYM make_symbol( TEXT * string, SSHORT length)
  **************************************
  *
  * Functional description
- *	Make up a symbol from a string.  If the string is all blanks, 
+ *	Make up a symbol from a string.  If the string is all blanks,
  *	don't make up a symbol.  Phooey.
  *
  **************************************/
-	SYM symbol;
-	TEXT *p;
-
 	if (!(length = truncate_string(string)))
 		return NULL;
 
 
-	symbol = (SYM) ALLOCPV(type_sym, length);
+	SYM symbol = (SYM) ALLOCPV(type_sym, length);
 	symbol->sym_type = SYM_relation;
 	symbol->sym_length = length;
-	symbol->sym_string = p = symbol->sym_name;
-	do
+	TEXT* p = symbol->sym_name;
+	symbol->sym_string = p;
+	do {
 		*p++ = *string++;
-	while (--length);
+	} while (--length);
 
 	return symbol;
 }
@@ -3244,12 +3197,10 @@ static CON missing_value( SLONG * blob_id, SYM symbol)
  *
  * Functional description
  *	Get a missing value into a constant
- *	block for later reference.  
+ *	block for later reference.
  *
  **************************************/
-	SYN element;
-
-	element = parse_blr_blob(blob_id, symbol);
+	SYN element = parse_blr_blob(blob_id, symbol);
 	if (element)
 		return ((CON) element->syn_arg[0]);
 	else
@@ -3269,16 +3220,16 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
  *	Parse a BLR expression.
  *
  **************************************/
-	SYN node, *arg;
+	SYN *arg;
 	CON constant;
 	NOD_T operatr;
 	NAM name;
-	UCHAR *p, *blr;
-	SSHORT args, dtype, scale, length, l, op;
+	UCHAR *p;
+	SSHORT dtype, scale, length, l, op;
 
-	blr = *ptr;
-	args = 2;
-	node = NULL;
+	UCHAR* blr = *ptr;
+	SSHORT args = 2;
+	SYN node = NULL;
 
 	switch (op = BLR_BYTE) {
 	case blr_any:
@@ -3382,9 +3333,9 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
 		node->syn_arg[0] = (SYN) name;
 		name->nam_length = length;
 		p = (UCHAR *) name->nam_string;
-		do
+		do {
 			*p++ = BLR_BYTE;
-		while (--length);
+		} while (--length);
 		break;
 
 	case blr_function:
@@ -3500,7 +3451,7 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
 		break;
 
 	default:
-		ERRQ_print_error(258, (TEXT *) op, NULL, NULL, NULL, NULL);	/* Msg258 don't understand BLR operatr %d */
+		ERRQ_print_error(258, (TEXT *) op, NULL, NULL, NULL, NULL);	// Msg258 don't understand BLR operatr %d
 	}
 
 	if (!node) {
@@ -3526,31 +3477,29 @@ static SYN parse_blr_blob( SLONG * blob_id, SYM symbol)
  **************************************
  *
  * Functional description
- *	Gobble up a BLR blob, if possible.  
+ *	Gobble up a BLR blob, if possible.
  *
  **************************************/
-	FRBRD *handle;
 	ISC_STATUS_ARRAY status_vector;
-	SYN node;
-	USHORT length;
-	UCHAR buffer[1024], *ptr;
 
 	if (!blob_id[0] && !blob_id[1])
 		return NULL;
 
-	handle = NULL;
+	FRBRD* handle = NULL;
 
-	if (gds__open_blob(status_vector, &DB, &gds_trans, &handle, 
-					   (GDS__QUAD*) blob_id)) 
+	if (gds__open_blob(status_vector, &DB, &gds_trans, &handle,
+					   (GDS__QUAD*) blob_id))
 		return NULL;
 
-	ptr = buffer;
+	UCHAR buffer[1024];
+	UCHAR* ptr = buffer;
 
 	for (;;) {
-		if (!(length = buffer + sizeof(buffer) - ptr))
+	    USHORT length = buffer + sizeof(buffer) - ptr;
+		if (!length)
 			break;
-		if (gds__get_segment(status_vector, &handle, &length, length, 
-							 (char*) ptr)) 
+		if (gds__get_segment(status_vector, &handle, &length, length,
+							 (char*) ptr))
 			break;
 		ptr += length;
 	}
@@ -3566,7 +3515,7 @@ static SYN parse_blr_blob( SLONG * blob_id, SYM symbol)
 	if (*ptr++ != blr_version4)
 		return NULL;
 
-	node = parse_blr(&ptr, symbol);
+	SYN node = parse_blr(&ptr, symbol);
 
 	if (*ptr != blr_eoc)
 		return NULL;
@@ -3587,22 +3536,19 @@ static void purge_relation(QLI_REL relation)
  *	Purge a relation out of internal data structures.
  *
  **************************************/
-	SYM symbol;
-	QLI_REL *ptr;
-	QLI_FLD field;
-	DBB database;
-
-	symbol = relation->rel_symbol;
-	database = relation->rel_database;
+	SYM symbol = relation->rel_symbol;
+	DBB database = relation->rel_database;
 	HSH_remove(symbol);
 
-	for (ptr = &database->dbb_relations; *ptr; ptr = &(*ptr)->rel_next) {
+	for (QLI_REL* ptr = &database->dbb_relations; *ptr; ptr = &(*ptr)->rel_next)
+	{
 		if (*ptr == relation) {
 			*ptr = relation->rel_next;
 			break;
 		}
 	}
 
+	QLI_FLD field;
 	while (field = relation->rel_fields) {
 		relation->rel_fields = field->fld_next;
 		ALLQ_release((FRB) field->fld_name);
@@ -3616,7 +3562,7 @@ static void purge_relation(QLI_REL relation)
 }
 
 
-static void put_dyn_string( RLB rlb, TEXT * string)
+static void put_dyn_string( RLB rlb, const TEXT* string)
 {
 /**************************************
  *
@@ -3629,7 +3575,7 @@ static void put_dyn_string( RLB rlb, TEXT * string)
  *
  **************************************/
 
-	SSHORT l = strlen(string);
+	const SSHORT l = strlen(string);
 
 	while ((SSHORT) (rlb->rlb_limit - rlb->rlb_data) < l) {
 		rlb = GEN_rlb_extend(rlb);
@@ -3656,12 +3602,13 @@ static void rollback_update( DBB database)
  *	Roll back  a meta-data update.
  *
  **************************************/
-	ISC_STATUS_ARRAY alt_vector;
-
 	if (gds_trans == database->dbb_meta_trans &&
 		(database->dbb_capabilities & DBB_cap_multi_trans))
+	{
+	    ISC_STATUS_ARRAY alt_vector;
 		gds__rollback_transaction(alt_vector, &database->dbb_meta_trans);
-	// Note: No message given if rollback fails 
+		// Note: No message given if rollback fails
+	}
 
 	gds_trans = NULL;
 }
@@ -3684,15 +3631,13 @@ static void set_capabilities( DBB database)
  *	capabilities bits.
  *
  **************************************/
-	FRBRD *req;
-	RFR_TAB rel_field_table;
+	FRBRD* req = NULL;
 
-	req = NULL;
+// Look for desireable fields in system relations
 
-// Look for desireable fields in system relations 
-
-	for (rel_field_table = const_cast<RFR_TAB>(rfr_table); rel_field_table->relation;
-		 rel_field_table++) {
+	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation;
+		 rel_field_table++)
+	{
 		FOR(REQUEST_HANDLE req) x IN DB.RDB$RELATION_FIELDS
 			WITH x.RDB$RELATION_NAME = rel_field_table->relation
 				AND x.RDB$FIELD_NAME = rel_field_table->field
@@ -3722,7 +3667,7 @@ static DBB setup_update( DBB database)
  * Functional description
  *	Get ready to do a meta data update.
  *	If no database was specified, use the
- *	most recently readied one.  
+ *	most recently readied one.
  *
  **************************************/
 
@@ -3746,43 +3691,41 @@ static void sql_grant_revoke( SYN node, USHORT type)
  *	Build a DYN string for a SQL GRANT or REVOKE statement
  *
  *****************************************************/
-	DBB database;
-	QLI_REL relation;
-	NAM *name, *end, *field, *end_field;
-	SYN names, fields;
-	USHORT privileges;
-	TEXT *relation_name;
-	RLB rlb;
+	const USHORT privileges = (USHORT) node->syn_arg[s_grant_privileges];
+	QLI_REL relation = (QLI_REL) node->syn_arg[s_grant_relation];
+	DBB database = setup_update(relation->rel_database);
+	relation->rel_database = database;
+	const TEXT* relation_name = relation->rel_symbol->sym_string;
 
-
-	privileges = (USHORT) node->syn_arg[s_grant_privileges];
-	relation = (QLI_REL) node->syn_arg[s_grant_relation];
-	relation->rel_database = database = setup_update(relation->rel_database);
-	relation_name = relation->rel_symbol->sym_string;
-
-	rlb = NULL;
+	RLB rlb = NULL;
 	rlb = CHECK_RLB(rlb);
 
 	STUFF(gds_dyn_version_1);
 	STUFF(gds_dyn_begin);
 
-// For each user create a separate grant string 
-//      For each specified field create a separate grant string 
+// For each user create a separate grant string
+//      For each specified field create a separate grant string
 
-	names = node->syn_arg[s_grant_users];
-	fields = node->syn_arg[s_grant_fields];
+	SYN names = node->syn_arg[s_grant_users];
+	SYN fields = node->syn_arg[s_grant_fields];
 
+	NAM *name, *end;
 	for (name = (NAM *) names->syn_arg, end = name + names->syn_count;
 		 name < end; name++)
+	{
 		if (fields->syn_count) {
-			for (field = (NAM *) fields->syn_arg, end_field =
-				 field + fields->syn_count; field < end_field; field++)
+		    NAM* field = (NAM *) fields->syn_arg;
+		    NAM* const end_field = field + fields->syn_count;
+			for (; field < end_field; field++)
+			{
 				stuff_priv(rlb, type, relation_name, privileges,
 						   (*name)->nam_string, (*field)->nam_string);
+			}
 		}
 		else
 			stuff_priv(rlb, type, relation_name, privileges,
 					   (*name)->nam_string, NULL);
+	}
 
 	STUFF(gds_dyn_end);
 	STUFF(gds_dyn_eoc);
@@ -3826,8 +3769,8 @@ static int truncate_string( TEXT * string)
 static void stuff_priv(
 					   RLB rlb,
 					   USHORT type,
-					   TEXT * relation,
-					   USHORT privileges, TEXT * user, TEXT * field)
+					   const TEXT* relation,
+					   USHORT privileges, const TEXT* user, const TEXT* field)
 {
 /**************************************
  *
@@ -3839,14 +3782,12 @@ static void stuff_priv(
  *	Stuff a privilege for grant/revoke.
  *
  **************************************/
-	USHORT priv_count;
-
 	rlb = CHECK_RLB(rlb);
 	STUFF(type);
 
-// Stuff privileges first 
+// Stuff privileges first
 
-	priv_count = 0;
+	USHORT priv_count = 0;
 	if (privileges & PRV_select)
 		priv_count++;
 	if (privileges & PRV_insert)
@@ -3905,17 +3846,15 @@ static void wal_info(
  *	Extract wal name and log offset
  *
  **************************************/
-	UCHAR item;
-	UCHAR *d, *p;
-	SLONG length;
-
-	p = db_info_buffer;
 	*log = 0;
 	*part_offset = 0;
 	cur_log[0] = 0;
 
+	UCHAR* p = db_info_buffer;
+	UCHAR item;
+	UCHAR* d;
 	while ((item = *p++) != gds_info_end) {
-		length = gds__vax_integer(p, 2);
+		SLONG length = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
 		case gds_info_logfile:
@@ -3941,3 +3880,5 @@ static void wal_info(
 		}
 	}
 }
+
+

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_DTR_H_
-#define _QLI_DTR_H_
+#ifndef QLI_DTR_H
+#define QLI_DTR_H
 
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
@@ -501,4 +501,4 @@ EXTERN USHORT   QLI_interp;
 
 #include "../qli/all_proto.h"
 
-#endif /* _QLI_DTR_H_ */
+#endif /* QLI_DTR_H */

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		err.c
+ *	MODULE:		err.cpp
  *	DESCRIPTION:	Error handlers
  *
  * The contents of this file are subject to the Interbase Public
@@ -58,11 +58,11 @@ void ERRQ_bugcheck( USHORT number)
 	TEXT s[256];
 
 	ERRQ_msg_format(number, sizeof(s), s, NULL, NULL, NULL, NULL, NULL);
-	ERRQ_error(9, s, NULL, NULL, NULL, NULL);	/* Msg9 INTERNAL: %s */
+	ERRQ_error(9, s, NULL, NULL, NULL, NULL);	// Msg9 INTERNAL: %s
 }
 
 
-void ERRQ_database_error( DBB dbb, ISC_STATUS * status_vector)
+void ERRQ_database_error( DBB dbb, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -101,8 +101,11 @@ void ERRQ_database_error( DBB dbb, ISC_STATUS * status_vector)
 
 void ERRQ_error(
 				USHORT number,
-				TEXT * arg1,
-				TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+				const TEXT* arg1,
+				const TEXT* arg2,
+				const TEXT* arg3,
+				const TEXT* arg4,
+				const TEXT* arg5)
 {
 /**************************************
  *
@@ -131,8 +134,11 @@ void ERRQ_error(
 
 void ERRQ_error_format(
 					   USHORT number,
-					   TEXT * arg1,
-					   TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+					   const TEXT* arg1,
+					   const TEXT* arg2,
+					   const TEXT* arg3,
+					   const TEXT* arg4,
+					   const TEXT* arg5)
 {
 /**************************************
  *
@@ -150,7 +156,8 @@ void ERRQ_error_format(
 	gds__msg_format(0, QLI_MSG_FAC, number, sizeof(s), s,
 					arg1, arg2, arg3, arg4, arg5);
 	gds__msg_format(0, QLI_MSG_FAC, 12, sizeof(ERRQ_message),
-					ERRQ_message, s, NULL, NULL, NULL, NULL);	/* Msg12 ** QLI error: %s ** */
+					ERRQ_message, s, NULL, NULL, NULL, NULL);
+	/* Msg12 ** QLI error: %s ** */
 	QLI_error = (TEXT*) ERRQ_message;
 	QLI_skip_line = TRUE;
 }
@@ -178,9 +185,12 @@ void ERRQ_exit( int status)
 void ERRQ_msg_format(
 					 USHORT number,
 					 USHORT length,
-					 TEXT * string,
-					 TEXT * arg1,
-					 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+					 TEXT* output_string,
+					 const TEXT* arg1,
+					 const TEXT* arg2,
+					 const TEXT* arg3,
+					 const TEXT* arg4,
+					 const TEXT* arg5)
 {
 /**************************************
  *
@@ -193,18 +203,18 @@ void ERRQ_msg_format(
  *
  **************************************/
 
-	gds__msg_format(0, QLI_MSG_FAC, number, length, string, arg1, arg2, arg3,
-					arg4, arg5);
+	gds__msg_format(0, QLI_MSG_FAC, number, length, output_string,
+					arg1, arg2, arg3, arg4, arg5);
 }
 
 
 void ERRQ_msg_partial(
 					  USHORT number,
-					  const TEXT * arg1,
-					  const TEXT * arg2,
-					  const TEXT * arg3,
-					  const TEXT * arg4,
-					  const TEXT * arg5)
+					  const TEXT* arg1,
+					  const TEXT* arg2,
+					  const TEXT* arg3,
+					  const TEXT* arg4,
+					  const TEXT* arg5)
 {
 /**************************************
  *
@@ -225,11 +235,11 @@ void ERRQ_msg_partial(
 
 void ERRQ_msg_put(
 				  USHORT number,
-				  const TEXT * arg1,
-				  const TEXT * arg2,
-				  const TEXT * arg3,
-				  const TEXT * arg4,
-				  const TEXT * arg5)
+				  const TEXT* arg1,
+				  const TEXT* arg2,
+				  const TEXT* arg3,
+				  const TEXT* arg4,
+				  const TEXT* arg5)
 {
 /**************************************
  *
@@ -249,7 +259,7 @@ void ERRQ_msg_put(
 }
 
 
-int ERRQ_msg_get( USHORT number, TEXT * msg)
+int ERRQ_msg_get( USHORT number, TEXT* output_msg)
 {
 /**************************************
  *
@@ -261,12 +271,12 @@ int ERRQ_msg_get( USHORT number, TEXT * msg)
  *	Retrieve a message from the error file
  *
  **************************************/
-	SSHORT l;
 	TEXT buffer[128];
 
-	l = gds__msg_format(0, QLI_MSG_FAC, number, sizeof(buffer), buffer,
+	const SSHORT l = gds__msg_format(0, QLI_MSG_FAC, number,
+						sizeof(buffer), buffer,
 						NULL, NULL, NULL, NULL, NULL);
-	strcpy(msg, buffer);
+	strcpy(output_msg, buffer);
 
 	return (l >= 0);
 }
@@ -294,8 +304,11 @@ void ERRQ_pending(void)
 
 void ERRQ_print_error(
 					  USHORT number,
-					  TEXT * arg1,
-					  TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+					  const TEXT* arg1,
+					  const TEXT* arg2,
+					  const TEXT* arg3,
+					  const TEXT* arg4,
+					  const TEXT* arg5)
 {
 /**************************************
  *
@@ -329,5 +342,8 @@ void ERRQ_syntax( USHORT number)
 	TEXT s[256];
 
 	ERRQ_msg_format(number, sizeof(s), s, NULL, NULL, NULL, NULL, NULL);
-	ERRQ_error(13, s, QLI_token->tok_string, NULL, NULL, NULL);	/* Msg13 expected %s, encountered %s */
+	ERRQ_error(13, s, QLI_token->tok_string, NULL, NULL, NULL);
+	// Msg13 expected %s, encountered %s
 }
+
+

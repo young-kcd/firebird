@@ -90,18 +90,18 @@ typedef struct qli_ctx {
     struct qli_nod*	ctx_rse;		/* RSE node for root context */
     struct qli_nod*	ctx_sub_rse;		/* RSE node aggregate */
     qli_ctx*	ctx_parent;		/* Parent context for map */
-    struct map	*ctx_map;		/* Map items, if any */
+    struct qli_map	*ctx_map;		/* Map items, if any */
     USHORT	ctx_context;		/* Context in request */
 } *QLI_CTX;
 
 /* Aggregate/union map block */
 
-typedef struct map {
+typedef struct qli_map {
     blk		map_header;
-    map*	map_next;			/* Next map in item */
+	qli_map*	map_next;			/* Next map in item */
     struct qli_nod*	map_node;		/* Value for map item */
     USHORT	map_position;		/* Position in map */
-} *MAP;
+} *QLI_MAP;
 
 /* Message block */                                       
 

@@ -2,7 +2,7 @@
 /*
  *	PROGRAM:	Alice (All Else) Utility
  *	MODULE:		alice_proto.h
- *	DESCRIPTION:	Prototype header file for alice.c
+ *	DESCRIPTION:	Prototype header file for alice.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,9 +29,12 @@
 int ALICE_main(SVC service);
 #endif
 
-void	ALICE_down_case(TEXT*, TEXT*);
-void	ALICE_print(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
-void	ALICE_error(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
-void	ALICE_print_status(ISC_STATUS*);
+void	ALICE_down_case(const TEXT*, TEXT*, const size_t);
+void	ALICE_print(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
+void	ALICE_error(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
+void	ALICE_print_status(const ISC_STATUS*);
 
 #endif // ALICE_ALICE_PROTO_H
+

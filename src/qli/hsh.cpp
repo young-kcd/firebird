@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		hsh.c
+ *	MODULE:		hsh.cpp
  *	DESCRIPTION:	Hash table and symbol manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -28,18 +28,20 @@
 #include "../qli/err_proto.h"
 #include "../qli/hsh_proto.h"
 
-#define HASH_SIZE	224
+static int hash(const SCHAR*, int);
+static bool scompare(const SCHAR*, int, const SCHAR*, int);
 
-static int hash(SCHAR *, int);
-static bool scompare(SCHAR *, int, SCHAR *, int);
-
+const int HASH_SIZE = 224;
 static SYM hash_table[HASH_SIZE];
 static SYM key_symbols;
 
-struct word_t {
+struct qli_kword {
 	KWWORDS id;
 	SCHAR *keyword;
-} keywords[] = {
+};
+
+const qli_kword keywords[] =
+{
 #include "../qli/words.h"
    {KW_continuation, "-\n"}
 };
@@ -57,10 +59,8 @@ void HSH_fini(void)
  *	Release space used by keywords.
  *
  **************************************/
-	SYM symbol;
-
 	while (key_symbols) {
-		symbol = key_symbols;
+		SYM symbol = key_symbols;
 		key_symbols = (SYM) key_symbols->sym_object;
 		HSH_remove(symbol);
 		ALL_release((FRB) symbol);
@@ -81,18 +81,17 @@ void HSH_init(void)
  *	inserting all known keywords.
  *
  **************************************/
-	SCHAR *string;
-	SYM symbol;
-	int i;
-	word_t* word;
+	const qli_kword* qword = keywords;
 
-	for (i = 0, word = keywords; i < FB_NELEM(keywords); i++, word++) {
-		for (string = word->keyword; *string; string++);
-		symbol = (SYM) ALLOCPV(type_sym, 0);
+	for (int i = 0; i < FB_NELEM(keywords); i++, qword++) {
+	    const SCHAR* string = qword->keyword;
+		while (*string)
+			++string;
+		SYM symbol = (SYM) ALLOCPV(type_sym, 0);
 		symbol->sym_type = SYM_keyword;
-		symbol->sym_length = string - word->keyword;
-		symbol->sym_string = word->keyword;
-		symbol->sym_keyword = (int) word->id;
+		symbol->sym_length = string - qword->keyword;
+		symbol->sym_string = qword->keyword;
+		symbol->sym_keyword = (int) qword->id;
 		HSH_insert(symbol);
 		symbol->sym_object = (BLK) key_symbols;
 		key_symbols = symbol;
@@ -112,14 +111,12 @@ void HSH_insert( SYM symbol)
  *	Insert a symbol into the hash table.
  *
  **************************************/
-	int h;
-	SYM old;
+	const int h = hash(symbol->sym_string, symbol->sym_length);
 
-	h = hash(symbol->sym_string, symbol->sym_length);
-
-	for (old = hash_table[h]; old; old = old->sym_collision)
+	for (SYM old = hash_table[h]; old; old = old->sym_collision)
 		if (scompare(symbol->sym_string, symbol->sym_length,
-					 old->sym_string, old->sym_length)) {
+					 old->sym_string, old->sym_length))
+		{
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
 			return;
@@ -130,7 +127,7 @@ void HSH_insert( SYM symbol)
 }
 
 
-SYM HSH_lookup(SCHAR * string, int length)
+SYM HSH_lookup(const SCHAR* string, int length)
 {
 /**************************************
  *
@@ -142,13 +139,12 @@ SYM HSH_lookup(SCHAR * string, int length)
  *	Perform a string lookup against hash table.
  *
  **************************************/
-	SYM symbol;
-
-	for (symbol = hash_table[hash(string, length)]; symbol;
+	for (SYM symbol = hash_table[hash(string, length)]; symbol;
 		 symbol = symbol->sym_collision)
-			if (scompare
-				(string, length, symbol->sym_string,
-				 symbol->sym_length)) return symbol;
+	{
+		if (scompare(string, length, symbol->sym_string, symbol->sym_length))
+			return symbol;
+	}
 
 	return NULL;
 }
@@ -158,7 +154,7 @@ void HSH_remove( SYM symbol)
 {
 /**************************************
  *
- *	H S H _ r e m o v e 
+ *	H S H _ r e m o v e
  *
  **************************************
  *
@@ -166,12 +162,11 @@ void HSH_remove( SYM symbol)
  *	Remove a symbol from the hash table.
  *
  **************************************/
-	int h;
-	SYM *next, *ptr, homonym;
+	SYM *ptr, homonym;
 
-	h = hash(symbol->sym_string, symbol->sym_length);
+	const int h = hash(symbol->sym_string, symbol->sym_length);
 
-	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision)
+	for (SYM* next = &hash_table[h]; *next; next = &(*next)->sym_collision)
 		if (symbol == *next)
 			if (homonym = symbol->sym_homonym) {
 				homonym->sym_collision = symbol->sym_collision;
@@ -189,11 +184,11 @@ void HSH_remove( SYM symbol)
 					return;
 				}
 
-	ERRQ_error(27, NULL, NULL, NULL, NULL, NULL);	// Msg 27 HSH_remove failed 
+	ERRQ_error(27, NULL, NULL, NULL, NULL, NULL);	// Msg 27 HSH_remove failed
 }
 
 
-static int hash( SCHAR * string, int length)
+static int hash(const SCHAR* string, int length)
 {
 /**************************************
  *
@@ -205,13 +200,10 @@ static int hash( SCHAR * string, int length)
  *	Returns the hash function of a string.
  *
  **************************************/
-	int value;
-	SCHAR c;
-
-	value = 0;
+	int value = 0;
 
 	while (length--) {
-		c = *string++;
+		const SCHAR c = *string++;
 		value = (value << 1) + UPPER(c);
 	}
 
@@ -219,9 +211,9 @@ static int hash( SCHAR * string, int length)
 }
 
 
-static bool scompare(SCHAR * string1,
+static bool scompare(const SCHAR* string1,
 					 int length1,
-					 SCHAR * string2,
+					 const SCHAR* string2,
 					 int length2)
 {
 /**************************************
@@ -234,14 +226,18 @@ static bool scompare(SCHAR * string1,
  *	Compare two strings
  *
  **************************************/
-	SCHAR c1, c2;
-
 	if (length1 != length2)
 		return false;
 
 	while (length1--)
-		if ((c1 = *string1++) != (c2 = *string2++) && UPPER(c1) != UPPER(c2))
+	{
+		const SCHAR c1 = *string1++;
+		const SCHAR c2 = *string2++;
+		if (c1 != c2 && UPPER(c1) != UPPER(c2))
 			return false;
+	}
 
 	return true;
 }
+
+

@@ -263,9 +263,9 @@ int GDS_EXPORT gds__disable_subsystem(char  *);
 
 int GDS_EXPORT gds__enable_subsystem(char  *);
 
-ISC_STATUS GDS_EXPORT gds__print_status(ISC_STATUS  *);
+ISC_STATUS GDS_EXPORT gds__print_status(const ISC_STATUS*);
 
-ISC_STATUS GDS_EXPORT gds__sqlcode(ISC_STATUS  *);
+ISC_STATUS GDS_EXPORT gds__sqlcode(const ISC_STATUS*);
 
 ISC_STATUS GDS_EXPORT gds__ddl(ISC_STATUS  *,
 							   FRBRD  **,

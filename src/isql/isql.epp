@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interactive SQL utility
- *	MODULE:		isql.e
+ *	MODULE:		isql.epp
  *	DESCRIPTION:	Main line routine
  *
  * The contents of this file are subject to the Interbase Public
@@ -785,7 +785,7 @@ void ISQL_copy_SQL_id(TEXT * in_str,
 }
 
 
-void ISQL_errmsg(ISC_STATUS * status)
+void ISQL_errmsg(const ISC_STATUS* status)
 {
 /**************************************
  *
@@ -798,14 +798,13 @@ void ISQL_errmsg(ISC_STATUS * status)
  *	Simulate isc_print_status exactly, to control ib_stderr 
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
-	ISC_STATUS *vec;
 #if defined (WIN95)
 #define TRANSLATE_CP if (!fAnsiCP) AnsiToOem(errbuf, errbuf)
 #else
 #define TRANSLATE_CP
 #endif
 
-	vec = status;
+	const ISC_STATUS* vec = status;
 	if (Quiet)
 		Exit_value = FINI_ERROR;
 	else {
@@ -814,7 +813,10 @@ void ISQL_errmsg(ISC_STATUS * status)
 			 && vec[2] != gds_arg_warning) || (vec[0] == gds_arg_gds
 											   && vec[1] == 0
 											   && vec[2] == gds_arg_warning
-											   && !Warnings)) return;
+											   && !Warnings))
+		{
+			return;
+		}
 		gds__msg_format(NULL, ISQL_MSG_FAC, 0, sizeof(errbuf), errbuf,
 						(TEXT *) isc_sqlcode(status), NULL, NULL, NULL, NULL);
 		TRANSLATE_CP;
@@ -833,7 +835,7 @@ void ISQL_errmsg(ISC_STATUS * status)
 }
 
 
-void ISQL_warning(ISC_STATUS * status)
+void ISQL_warning(ISC_STATUS* status)
 {
 /**************************************
  *
@@ -845,8 +847,6 @@ void ISQL_warning(ISC_STATUS * status)
  *	Report warning
  *	Simulate isc_print_status exactly, to control ib_stderr
  **************************************/
-	ISC_STATUS *vec;
-	TEXT buf[MSG_LENGTH];
 #if defined (WIN95)
 #define TRANSLATE_CP if (!fAnsiCP) AnsiToOem(buf, buf)
 #else
@@ -854,13 +854,17 @@ void ISQL_warning(ISC_STATUS * status)
 #endif
 
 
-	vec = status;
+	const ISC_STATUS* vec = status;
 	fb_assert(vec[1] == 0);		/* shouldn't be any errors */
 
 	if (!Quiet) {
 		if (vec[0] != gds_arg_gds ||
 			vec[2] != gds_arg_warning ||
-			(vec[2] == gds_arg_warning && !Warnings)) return;
+			(vec[2] == gds_arg_warning && !Warnings))
+		{
+			return;
+		}
+		TEXT buf[MSG_LENGTH];
 		isc_interprete(buf, &vec);
 		TRANSLATE_CP;
 		STDERROUT(buf, 1);

@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         isc.c
+ *      MODULE:         isc.cpp
  *      DESCRIPTION:    General purpose but non-user routines.
  *
  * The contents of this file are subject to the Interbase Public
@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.38 2003-09-22 17:52:27 brodsom Exp $
+$Id: isc.cpp,v 1.39 2003-09-25 11:49:06 robocop Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -229,9 +229,7 @@ int DLL_EXPORT ISC_check_process_existence(SLONG	pid,
 
 #ifdef VMS
 #define CHECK_EXIST
-	ULONG item;
-
-	item = JPI$_PID;
+	ULONG item = JPI$_PID;
 	return (lib$getjpi(&item, &pid, NULL, NULL, NULL, NULL) == SS$_NONEXPR) ?
 		FALSE : TRUE;
 #endif
@@ -270,9 +268,7 @@ int ISC_expand_logical_once(
  *      Expand a logical name.  If it doesn't exist, return 0.
  *
  **************************************/
-	int attr;
 	USHORT l;
-	TEXT *p;
 	ITM items[2];
 	struct dsc$descriptor_s desc1, desc2;
 
@@ -290,7 +286,7 @@ int ISC_expand_logical_once(
 	items[1].itm_length = 0;
 	items[1].itm_code = 0;
 
-	attr = LNM$M_CASE_BLIND;
+	int attr = LNM$M_CASE_BLIND;
 
 	if (!(sys$trnlnm(&attr, &desc2, &desc1, NULL, items) & 1)) {
 		while (file_length--)
@@ -346,12 +342,10 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
  *      Get host name.
  *
  **************************************/
-	TEXT *p;
-
 	if (!ISC_expand_logical_once("SYS$NODE", sizeof("SYS$NODE") - 1, string))
 		strcpy(string, "local");
 	else {
-		p = string;
+		TEXT* p = string;
 		if (*p == '_')
 			++p;
 
@@ -494,11 +488,13 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 
 #ifdef VMS
 int INTERNAL_API_ROUTINE ISC_get_user(
-									  TEXT * name,
-									  int *id,
-									  int *group,
-									  TEXT * project,
-TEXT * organization, int *node, TEXT * user_string)
+									  TEXT* name,
+									  int* id,
+									  int* group,
+									  TEXT* project,
+									TEXT* organization,
+									int* node,
+									TEXT* user_string)
 {
 /**************************************
  *
@@ -510,10 +506,9 @@ TEXT * organization, int *node, TEXT * user_string)
  *      Find out who the user is.
  *
  **************************************/
-	SLONG status, privileges[2];
+	SLONG privileges[2];
 	USHORT uic[2], len0, len1, len2;
 	TEXT *p, *q, *end, user_name[256];
-	ITM items[4];
 
 	if (user_string && *user_string) {
 		for (p = user_name, q = user_string; (*p = *q++) && *p != '.'; p++);
@@ -537,6 +532,7 @@ TEXT * organization, int *node, TEXT * user_string)
 		}
 	}
 	else {
+	    ITM items[4];
 		items[0].itm_code = JPI$_UIC;
 		items[0].itm_length = sizeof(uic);
 		items[0].itm_buffer = uic;
@@ -555,7 +551,7 @@ TEXT * organization, int *node, TEXT * user_string)
 		items[3].itm_code = 0;
 		items[3].itm_length = 0;
 
-		status = sys$getjpiw(NULL, NULL, NULL, items, NULL, NULL, NULL);
+		SLONG status = sys$getjpiw(NULL, NULL, NULL, items, NULL, NULL, NULL);
 
 		if (!(status & 1)) {
 			len1 = 0;
@@ -694,7 +690,7 @@ static BOOLEAN check_user_privilege(void)
 	TOKEN_GROUPS*	ptg       = NULL;
 	DWORD			token_len = 0;
 
-	while (TRUE)
+	while (true)
 	{
 		/* Then we must query the size of the group information associated with
 		   the token.  This is guarenteed to fail the first time through
@@ -955,14 +951,10 @@ void ISC_wake(SLONG process_id)
  *      remote (but on the same CPU).
  *
  **************************************/
-	int status;
-	POKE poke;
-	TEXT string[32];
-	struct dsc$descriptor_s desc;
 
 /* Try to do a simple wake.  If this succeeds, we're done. */
 
-	status = sys$wake(&process_id, 0);
+	int status = sys$wake(&process_id, 0);
 #ifdef __ALPHA
 	THREAD_wakeup();
 #endif
@@ -974,6 +966,7 @@ void ISC_wake(SLONG process_id)
 
 /* Find a free poke block to use */
 
+	POKE poke;
 	for (poke = pokes; poke; poke = poke->poke_next)
 		if (!poke->poke_use_count)
 			break;
@@ -991,6 +984,8 @@ void ISC_wake(SLONG process_id)
 
 	++poke->poke_use_count;
 
+	TEXT string[32];
+	struct dsc$descriptor_s desc;
 	sprintf(string, WAKE_LOCK, process_id);
 	ISC_make_desc(string, &desc, 0);
 
@@ -1022,9 +1017,7 @@ void ISC_wake_init(void)
  *      Set up to be awakened by another process thru a blocking AST.
  *
  **************************************/
-	int status;
 	TEXT string[32];
-	FPTR_INT master;
 	struct dsc$descriptor_s desc;
 
 /* If we already have lock, we're done */
@@ -1035,7 +1028,7 @@ void ISC_wake_init(void)
 	sprintf(string, WAKE_LOCK, getpid());
 	ISC_make_desc(string, &desc, 0);
 
-	status = sys$enqw(0,		/* event flag */
+	int status = sys$enqw(0,		/* event flag */
 					  LCK$K_PWMODE,	/* lock mode */
 					  &wake_lock,	/* Lock status block */
 					  LCK$M_SYSTEM,	/* flags */
@@ -1063,11 +1056,10 @@ static void blocking_ast(void)
  *      Somebody else is trying to post a lock.
  *
  **************************************/
-	int status;
 
 /* Initially down grade the lock to let the other guy complete */
 
-	status = sys$enqw(0,		/* event flag */
+	int status = sys$enqw(0,		/* event flag */
 					  LCK$K_NLMODE,	/* lock mode */
 					  &wake_lock,	/* Lock status block */
 					  LCK$M_CONVERT,	/* flags */
@@ -1114,11 +1106,8 @@ static void poke_ast(POKE poke)
  *      and deque the lock.
  *
  **************************************/
-	int status;
-	LKSB *lksb;
-
-	lksb = &poke->poke_lksb;
-	status = sys$deq(lksb->lksb_lock_id, 0, 0, 0);
+	LKSB* lksb = &poke->poke_lksb;
+	int status = sys$deq(lksb->lksb_lock_id, 0, 0, 0);
 	--poke->poke_use_count;
 }
 #endif
@@ -1170,9 +1159,7 @@ SLONG ISC_get_user_group_id(TEXT * user_group_name)
  **************************************/
 
 	struct group *user_group;
-	SLONG n;
-
-	n = 0;
+	SLONG n = 0;
 
 
 	if ( (user_group = getgrnam(user_group_name)) )
@@ -1199,9 +1186,7 @@ SLONG ISC_get_user_group_id(TEXT * user_group_name)
  *
  **************************************/
 
-	SLONG n;
-
-	n = 0;
+	SLONG n = 0;
 	return (n);
 }
 #endif /* end of ifdef UNIX */
@@ -1214,6 +1199,7 @@ BOOLEAN ISC_is_WinNT()
 {
 	OSVERSIONINFO OsVersionInfo;
 
+	// thread safe??? :-)
 	if (!os_type)
 	{
 		os_type = 1;			/* Default to NT */
@@ -1271,3 +1257,4 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 }
 
 #endif
+

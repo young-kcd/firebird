@@ -42,9 +42,10 @@ public:
 	static void ALLD_push(class blk*, class dsql_lls**);
 
 private:
-	BlockCache<class dsql_lls> lls_cache;  /* Was plb_lls */
+	BlockCache<class dsql_lls> lls_cache;  // Was plb_lls
 };
 
 extern DsqlMemoryPool *DSQL_permanent_pool;
 
 #endif	// DSQL_ALL_H
+

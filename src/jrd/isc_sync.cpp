@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		isc_sync.c
+ *	MODULE:		isc_sync.cpp
  *	DESCRIPTION:	General purpose but non-user routines.
  *
  * The contents of this file are subject to the Interbase Public

@@ -36,8 +36,8 @@ extern int ISQL_create_database(TEXT *,
 								SCHAR *, IB_FILE *, IB_FILE *, IB_FILE *);
 extern bool ISQL_dbcheck(void);
 extern void ISQL_disconnect_database(bool);
-extern void ISQL_errmsg(ISC_STATUS *);
-extern void ISQL_warning(ISC_STATUS *);
+extern void ISQL_errmsg(const ISC_STATUS*);
+extern void ISQL_warning(ISC_STATUS*);
 extern void ISQL_exit_db(void);
 extern int ISQL_extract(TEXT *, int, IB_FILE *, IB_FILE *, IB_FILE *);
 extern int ISQL_frontend_command(TEXT *, IB_FILE *, IB_FILE *, IB_FILE *);
@@ -65,3 +65,4 @@ extern void ISQL_truncate_term(TEXT *, USHORT);
 extern void ISQL_win_err(SCHAR *);
 
 #endif /* ISQL_ISQL_PROTO_H */
+

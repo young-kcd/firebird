@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		gds.c
+ *	MODULE:		gds.cpp
  *	DESCRIPTION:	User callable routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -782,7 +782,7 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
 }
 #endif // DEBUG_GDS_ALLOC
 
-SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
+SLONG API_ROUTINE gds__interprete(char* s, const ISC_STATUS** vector)
 {
 /**************************************
  *
@@ -796,13 +796,6 @@ SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
  *	message is null (end of messages) or invalid, return 0;
  *
  **************************************/
-	TEXT *p, *q, *temp;
-	SSHORT l, temp_len;
-
-	TEXT **arg, *args[10];
-	ISC_STATUS code, *v;
-	UCHAR x;
-	ISC_STATUS decoded;
 #ifdef VMS
 	ISC_STATUS status;
 	TEXT flags[4];
@@ -812,8 +805,8 @@ SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 	if (!**vector)
 		return 0;
 
-	temp = NULL;
-
+	const ISC_STATUS* v;
+	ISC_STATUS code;
 	/* handle a case: "no errors, some warning(s)" */
 	if ((*vector)[1] == 0 && (*vector)[2] == isc_arg_warning) {
 		v = *vector + 4;
@@ -824,16 +817,23 @@ SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 		code = (*vector)[1];
 	}
 
-	arg = args;
+	TEXT* args[10];
+	TEXT** arg = args;
 
 	/* Parse and collect any arguments that may be present */
+	
+	TEXT* p;
+	const TEXT* q;
+	const SSHORT temp_len = (SSHORT) BUFFER_SMALL;
+	TEXT* temp = NULL;
+	SSHORT l;
 
 	for (;;) {
-		x = (UCHAR) * v++;
+		const UCHAR x = (UCHAR) *v++;
 		switch (x) {
 		case gds_arg_string:
 		case gds_arg_number:
-			*arg++ = (TEXT *) * v++;
+			*arg++ = (TEXT*) *v++;
 			continue;
 
 		case gds_arg_cstring:
@@ -842,21 +842,20 @@ SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 				   Give up if we can't get one. */
 
 				p = temp = (TEXT*) gds__alloc((SLONG) BUFFER_SMALL);
-				temp_len = (SSHORT) BUFFER_SMALL;
 				/* FREE: at procedure exit */
 				if (!temp)		/* NOMEM: */
 					return 0;
 			}
-			l = (SSHORT) * v++;
-			q = (TEXT *) * v++;
+			l = (SSHORT) *v++;
+			q = (const TEXT*) *v++;
 			*arg++ = p;
 
 			/* ensure that we do not overflow the buffer allocated */
 			l = (temp_len < l) ? temp_len : l;
 			if (l)
-				do
+				do {
 					*p++ = *q++;
-				while (--l);
+				} while (--l);
 			*p++ = 0;
 			continue;
 
@@ -874,10 +873,11 @@ SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 	case gds_arg_gds:
 		{
 			USHORT fac = 0, class_ = 0;
-			decoded = gds__decode(code, &fac, &class_);
+			const ISC_STATUS decoded = gds__decode(code, &fac, &class_);
 			if (gds__msg_format(0, fac, (USHORT) decoded,
 								128, s, args[0], args[1], args[2], args[3],
-								args[4]) < 0) {
+								args[4]) < 0)
+			{
 				if ((decoded < FB_NELEM(messages) - 1) && (decoded >= 0))
 					sprintf(s, messages[decoded], args[0], args[1], args[2],
 							args[3], args[4]);
@@ -889,14 +889,14 @@ SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 
 	case gds_arg_interpreted:
 		p = s;
-		q = (TEXT *) (*vector)[1];
+		q = (const TEXT*) (*vector)[1];
 		while ((*p++ = *q++) /*!= NULL*/);
 		break;
 
 	case gds_arg_unix:
 		/* The  strerror()  function  returns  the appropriate description
 		   string, or an unknown error message if the error code is unknown. */
-		p = (TEXT*)strerror(code);
+		p = (TEXT*) strerror(code);
 		break;
 
 	case gds_arg_dos:
@@ -949,18 +949,18 @@ SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 		gds__free((SLONG *) temp);
 
 	*vector = v;
-	p = s;
-	while (*p)
-		p++;
+	const TEXT* end = s;
+	while (*end)
+		end++;
 
-	return p - s;
+	return end - s;
 }
 
 
 void API_ROUTINE gds__interprete_a(
 								   SCHAR * s,
 								   SSHORT * length,
-								   ISC_STATUS * vector, SSHORT * offset)
+								   const ISC_STATUS* vector, SSHORT * offset)
 {
 /**************************************
  *
@@ -976,9 +976,7 @@ void API_ROUTINE gds__interprete_a(
  *	the concept of indexing into the vector.
  *
  **************************************/
-	ISC_STATUS *v;
-
-	v = vector + *offset;
+	const ISC_STATUS *v = vector + *offset;
 	*length = (SSHORT) gds__interprete(s, &v);
 	*offset = v - vector;
 }
@@ -1155,7 +1153,7 @@ void API_ROUTINE gds__log(const TEXT * text, ...)
 }
 
 
-void API_ROUTINE gds__log_status(TEXT * database, ISC_STATUS * status_vector)
+void API_ROUTINE gds__log_status(TEXT * database, const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1853,7 +1851,7 @@ void API_ROUTINE gds__prefix_msg(TEXT * string, const TEXT * root)
 #endif
 
 
-ISC_STATUS API_ROUTINE gds__print_status(ISC_STATUS * vec)
+ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 {
 /**************************************
  *
@@ -1865,18 +1863,15 @@ ISC_STATUS API_ROUTINE gds__print_status(ISC_STATUS * vec)
  *	Interprete a status vector.
  *
  **************************************/
-	ISC_STATUS *vector;
-	TEXT *s;
-
 	if (!vec || (!vec[1] && vec[2] == gds_arg_end))
 		return FB_SUCCESS;
 
-	s = (TEXT *) gds__alloc((SLONG) BUFFER_LARGE);
+	TEXT* s = (TEXT *) gds__alloc((SLONG) BUFFER_LARGE);
 /* FREE: at procedure return */
 	if (!s)						/* NOMEM: */
 		return vec[1];
 
-	vector = vec;
+	const ISC_STATUS* vector = vec;
 
 	if (!gds__interprete(s, &vector)) {
 		gds__free((SLONG *) s);
@@ -2180,7 +2175,7 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void *arg)
 }
 
 
-SLONG API_ROUTINE gds__sqlcode(ISC_STATUS * status_vector)
+SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -2199,18 +2194,13 @@ SLONG API_ROUTINE gds__sqlcode(ISC_STATUS * status_vector)
  *	first code for which there is a non-generic SQLCODE, return it.
  *
  **************************************/
-	USHORT code;
-	SLONG sqlcode;
-	ISC_STATUS *s;
-	USHORT have_sqlcode;
-
 	if (!status_vector) {
 		DEV_REPORT("gds__sqlcode: NULL status vector");
 		return GENERIC_SQLCODE;
 	}
 
-	have_sqlcode = FALSE;
-	sqlcode = GENERIC_SQLCODE;	/* error of last resort */
+	bool have_sqlcode = false;
+	SLONG sqlcode = GENERIC_SQLCODE;	/* error of last resort */
 
 /* SQL code -999 (GENERIC_SQLCODE) is generic, meaning "no other sql code
  * known".  Now scan the status vector, seeing if there is ANY sqlcode
@@ -2219,7 +2209,7 @@ SLONG API_ROUTINE gds__sqlcode(ISC_STATUS * status_vector)
  * sqlerr reported.
  */
 
-	s = status_vector;
+	const ISC_STATUS* s = status_vector;
 	while (*s != gds_arg_end)
 	{
 		if (*s == gds_arg_gds)
@@ -2235,13 +2225,13 @@ SLONG API_ROUTINE gds__sqlcode(ISC_STATUS * status_vector)
 				   sql_codes */
 				USHORT fac = 0, class_ = 0;
 
-				code = (USHORT) gds__decode(status_vector[1], &fac, &class_);
+				USHORT code = (USHORT) gds__decode(status_vector[1], &fac, &class_);
 
 				if ((code < FB_NELEM(gds__sql_code)) &&
 					(gds__sql_code[code] != GENERIC_SQLCODE))
 				{
 					sqlcode = gds__sql_code[code];
-					have_sqlcode = TRUE;
+					have_sqlcode = true;
 				}
 			}
 			s++;
@@ -2256,7 +2246,7 @@ SLONG API_ROUTINE gds__sqlcode(ISC_STATUS * status_vector)
 }
 
 
-void API_ROUTINE gds__sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
+void API_ROUTINE gds__sqlcode_s(const ISC_STATUS* status_vector, ULONG* sqlcode)
 {
 /**************************************
  *
@@ -2268,7 +2258,7 @@ void API_ROUTINE gds__sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
  *	Translate GDS error code to SQL error code.  This is a little
  *	imprecise (to say the least) because we don't know the proper
  *	SQL codes.  One must do what what can; stiff upper lip, and all
- *	that.  THIS IS THE COBOL VERSION.  (Some cobols son't have 
+ *	that.  THIS IS THE COBOL VERSION.  (Some cobols don't have
  *	return values for calls...
  *
  **************************************/

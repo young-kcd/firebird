@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.29 2003-09-16 14:01:56 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.30 2003-09-25 11:49:02 robocop Exp $
 //
 
 #include "firebird.h"
@@ -160,20 +160,20 @@ static TEXT *status_name;
 #define DCL_QUAD	"ISC_QUAD"
 #endif
 
-static inline void begin(int column)
+static inline void begin(const int column)
 {
 	printa(column, "{");
 }
 
-static inline void endp(int column)
+static inline void endp(const int column)
 {
 	printa(column, "}");
 }
 
-static inline void set_sqlcode(ACT action, int column)
+static inline void set_sqlcode(ACT action, const int column)
 {
 	if (action->act_flags & ACT_sql)
-		printa (column, "SQLCODE = isc_sqlcode (%s);", status_name);
+		printa(column, "SQLCODE = isc_sqlcode(%s);", status_name);
 }
 
 //____________________________________________________________

@@ -1,7 +1,7 @@
 /*************************************************************************
 **
 **	PROGRAM:		JRD file split utility program
-**	MODULE:			spit.c
+**	MODULE:			spit.cpp
 **	DESCRIPTION:	Command line interpreter for backup file split/join
 **					utility program
 **
@@ -60,11 +60,11 @@
 #include <io.h>
 #endif
 
-static const int MODE_READ	= O_RDONLY;
-static const int MODE_WRITE	= O_WRONLY | O_CREAT;
-static const int MASK		= 0666;
+static const int mode_read	= O_RDONLY;
+static const int mode_write	= O_WRONLY | O_CREAT;
+static const int mask		= 0666;
 
-/* Definitions for GSPLIT */
+// Definitions for GSPLIT 
 enum gsplit_option
 {
 	IN_SW_SPIT_0	= 0,   // the unknowable switch
@@ -214,7 +214,7 @@ int main( int argc, char *argv[])
 
 			switch (sw_replace) {
 			case (IN_SW_SPIT_SP):
-				if (!file_nm_sw) {	/* process file name */
+				if (!file_nm_sw) {	// process file name 
 					file_size = 0;
 					file_num = file_num + 1;
 
@@ -298,8 +298,8 @@ int main( int argc, char *argv[])
 			}					/* and of switch (sw_replace) */
 
 			argv++;
-		}						/* processing function specific command line options */
-	}							/* while (argv < end) */
+		}						// processing function specific command line options 
+	}							// while (argv < end)
 
 	if (!file_list && sw_replace != IN_SW_SPIT_0) {
 		ib_fprintf(ib_stderr,
@@ -399,11 +399,11 @@ static int get_function_option(const SCHAR* prog_name,
 					ret_cd = print_clo(prog_name);
 					return FB_FAILURE;
 				}
-				else			/* compatible option */
+				else			// compatible option 
 					break;
 			}
-		}						/* end of if (!c) */
-	}							/* end of for loop */
+		}						// end of if (!c)
+	}							// end of for loop 
 
 	if (!in_sw_tab->in_sw) {
 		ib_fprintf(ib_stderr, "%s: invalid option '%s'\n", prog_name, string);
@@ -495,7 +495,7 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, double* fi
 
 				*file_size = *file_size * size_indicator;
 			}
-			else {				/* invalid size indicator */
+			else {				// invalid size indicator 
 
 				ib_fprintf(ib_stderr,
 						   "%s: invalid size indicator '%s'\n", prog_name,
@@ -505,7 +505,7 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, double* fi
 			}
 		}
 	}
-	if (*file_size < MIN_FILE_SIZE) {	/* handling user specifies file size 0 */
+	if (*file_size < MIN_FILE_SIZE) {	// handling user specifies file size 0 
 		ib_fprintf(ib_stderr,
 				   "%s: invalid option '%s', minimum file size is 1 megabyte\n",
 				   prog_name, string);
@@ -650,7 +650,7 @@ static int gen_multy_bakup_files(b_fil* file_list,
 			file_size = fl_ptr->b_fil_size - header_rec_len;
 			file_name = fl_ptr->b_fil_name;
 
-			output_fl_desc = open(file_name, MODE_WRITE, MASK);
+			output_fl_desc = open(file_name, mode_write, mask);
 			if (output_fl_desc == -1) {
 				free(io_buffer);
 				ib_fprintf(ib_stderr, "can not open back up file %s\n",
@@ -721,7 +721,7 @@ static int gen_multy_bakup_files(b_fil* file_list,
 							file_name = fl_ptr->b_fil_name;
 
 							output_fl_desc =
-								open(file_name, MODE_WRITE, MASK);
+								open(file_name, mode_write, mask);
 							if (output_fl_desc == -1) {
 								free(io_buffer);
 								ib_fprintf(ib_stderr,
@@ -753,7 +753,7 @@ static int gen_multy_bakup_files(b_fil* file_list,
 									return FB_FAILURE;
 								}
 							}
-							else {	/* got a lot of backup files */
+							else {	// got a lot of backup files 
 
 								ret_cd = flush_io_buff(remaining_io,
 													   remaining_io_len,
@@ -840,21 +840,21 @@ static int read_and_write(FILE_DESC input_file_desc,
 		read_cnt = read(input_file_desc, *io_buffer, io_size);
 
 	switch (read_cnt) {
-	case (0):					/* no more data to be read */
+	case (0):					// no more data to be read 
 		close(output_fl_desc);
 		*end_of_input = true;
 		*byte_read = *byte_read + read_cnt;
 		return FB_SUCCESS;
 		break;
 
-	case (-1):					/* read failed */
+	case (-1):					// read failed 
 		close(output_fl_desc);
 		ib_fprintf(ib_stderr,
 				   "fail to read input from ib_stdin, errno = %d\n", errno);
 		return FB_FAILURE;
 		break;
 
-	default:					/* read ok */
+	default:					// read ok 
 		*byte_read = *byte_read + read_cnt;
 		break;
 	}
@@ -862,15 +862,15 @@ static int read_and_write(FILE_DESC input_file_desc,
 	SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
 
 	switch (write_cnt) {
-	case (-1):					/* write failed */
+	case (-1):					// write failed 
 		close(output_fl_desc);
 		return FB_FAILURE;
 		break;
 
 	default:
-		if (write_cnt == read_cnt)	/* write ok */
+		if (write_cnt == read_cnt)	// write ok 
 			return FB_SUCCESS;
-		else {					/* write less data then it reads in */
+		else {					// write less data then it reads in 
 
 			close(output_fl_desc);
 			*byte_write = write_cnt;
@@ -906,35 +906,35 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 	SLONG read_cnt = read(input_file_desc, *io_buffer, io_size);
 
 	switch (read_cnt) {
-	case (0):					/* no more data to be read */
+	case (0):					// no more data to be read 
 		close(output_fl_desc);
 		*end_of_input = true;
 		return FB_SUCCESS;
 		break;
 
-	case (-1):					/* read failed */
+	case (-1):					// read failed 
 		close(output_fl_desc);
 		ib_fprintf(ib_stderr,
 				   "problem when reading input file, errno = %d\n", errno);
 		return FB_FAILURE;
 		break;
 
-	default:					/* read ok */
+	default:					// read ok 
 		break;
 	}
 
 	SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
 
 	switch (write_cnt) {
-	case (-1):					/* write failed */
+	case (-1):					// write failed 
 		close(output_fl_desc);
 		return FB_FAILURE;
 		break;
 
 	default:
-		if (write_cnt == read_cnt)	/* write ok */
+		if (write_cnt == read_cnt)	// write ok 
 			return FB_SUCCESS;
-		else {					/* write less data then it reads in */
+		else {					// write less data then it reads in 
 
 			ib_fprintf(ib_stderr,
 					   "There is no enough space to write to back up file %s\n",
@@ -995,7 +995,7 @@ static int join_multy_bakup_files( b_fil* file_list)
 			return FB_FAILURE;
 		}
 
-	}							/* end of for loop */
+	}							// end of for loop 
 
 	free(io_buffer);
 	return FB_SUCCESS;
@@ -1025,7 +1025,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 	TEXT num_arr[5], total_arr[5];
 	header_rec hdr_rec;
 
-	FILE_DESC input_fl_desc = open(file_name, MODE_READ);
+	FILE_DESC input_fl_desc = open(file_name, mode_read);
 
 	if (input_fl_desc == -1) {
 		ib_fprintf(ib_stderr, "can not open input file %s\n", file_name);
@@ -1087,24 +1087,24 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 
 	while (true) {
 		switch (read_cnt) {
-		case (0):				/* no more data to be read */
+		case (0):				// no more data to be read 
 			close(input_fl_desc);
 			return FB_SUCCESS;
 			break;
 
-		case (-1):				/* read failed */
+		case (-1):				// read failed 
 			close(input_fl_desc);
 			return FB_FAILURE;
 			break;
 
-		default:				/* this is the last read */
+		default:				// this is the last read 
 			break;
 		}
 
 		SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
 
 		switch (write_cnt) {
-		case (-1):				/* write failed */
+		case (-1):				// write failed 
 			close(input_fl_desc);
 			return FB_FAILURE;
 			break;
@@ -1241,7 +1241,7 @@ static int write_header(b_fil*		fl_ptr,
 	SLONG write_cnt = write(output_fl_desc, header_str, header_rec_len);
 	switch (write_cnt)
 	{
-	case (-1):					/* write failed */
+	case (-1):					// write failed 
 		close(output_fl_desc);
 		return FB_FAILURE;
 		break;
@@ -1301,16 +1301,16 @@ static int flush_io_buff(UCHAR*		remaining_io,
 	}
 
 	switch (write_cnt) {
-	case (-1):					/* write failed */
+	case (-1):					// write failed 
 		close(output_fl_desc);
 		*flush_done = false;
 		return FB_FAILURE;
 		break;
 
 	default:
-		if (write_cnt == remaining_io_len)	/* write ok */
+		if (write_cnt == remaining_io_len)	// write ok 
 			*flush_done = true;
-		else {					/* could not write out all remaining data */
+		else {					// could not write out all remaining data 
 
 			close(output_fl_desc);
 			*flush_done = false;
@@ -1342,15 +1342,15 @@ static int final_flush_io_buff(UCHAR * remaining_io,
 	SLONG write_cnt = write(output_fl_desc, remaining_io, remaining_io_len);
 	switch (write_cnt)
 	{
-	case (-1):					/* write failed */
+	case (-1):					// write failed 
 		close(output_fl_desc);
 		return FB_FAILURE;
 		break;
 
 	default:
-		if (write_cnt == remaining_io_len)	/* write ok */
+		if (write_cnt == remaining_io_len)	// write ok 
 			return FB_SUCCESS;
-		else {					/* could not write out all remaining data */
+		else {					// could not write out all remaining data 
 
 			close(output_fl_desc);
 			return FB_FAILURE;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.26 2003-09-13 12:23:31 brodsom Exp $
+//	$Id: ftn.cpp,v 1.27 2003-09-25 11:49:02 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -919,14 +919,14 @@ static void gen_based( ACT action)
 
 //  print the first variable, then precede the rest with commas 
 
-	bool first_flag_l = true;
+	bool first = true;
 
 	while (based_on->bas_variables) {
 		variable = (TEXT *) POP(&based_on->bas_variables);
-		if (!first_flag_l)
+		if (!first)
 			ib_fprintf(out_file, ",\n%s", CONTINUE);
 		ib_fprintf(out_file, "%s", variable);
-		first_flag_l = false;
+		first = false;
 		if (field->fld_array_info && !(based_on->bas_flags & BAS_segment)) {
 			/*  Print out the dimension part of the declaration  */
 			ib_fprintf(out_file, "(");

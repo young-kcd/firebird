@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_ALL_PROTO_H_
-#define _QLI_ALL_PROTO_H_
+#ifndef QLI_ALL_PROTO_H
+#define QLI_ALL_PROTO_H
 
 extern blk*		ALLQ_alloc(plb*, UCHAR, int);
 extern blk*		ALLQ_extend(blk**, int);
@@ -36,4 +36,5 @@ extern blk*		ALLQ_pop(lls**);
 extern void		ALLQ_release(frb*);
 extern void		ALLQ_rlpool(plb*);
 
-#endif /* _QLI_ALL_PROTO_H_ */
+#endif /* QLI_ALL_PROTO_H */
+

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.45 2003-09-21 13:33:45 skidder Exp $
+$Id: ibase.h,v 1.46 2003-09-25 11:49:06 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -636,8 +636,8 @@ ISC_STATUS ISC_EXPORT isc_get_slice(ISC_STATUS *,
 									void *,
 									ISC_LONG *);
 
-ISC_STATUS ISC_EXPORT isc_interprete(char *,
-									 ISC_STATUS * *);
+ISC_STATUS ISC_EXPORT isc_interprete(char*,
+									 const ISC_STATUS**);
 
 ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS *,
 									isc_db_handle *,
@@ -702,7 +702,7 @@ ISC_STATUS ISC_EXPORT_VARARG isc_start_transaction(ISC_STATUS *,
 												   isc_tr_handle *,
 												   short, ...);
 
-ISC_LONG ISC_EXPORT isc_sqlcode(ISC_STATUS *);
+ISC_LONG ISC_EXPORT isc_sqlcode(const ISC_STATUS*);
 
 void ISC_EXPORT isc_sql_interprete(short,
 								   char *,

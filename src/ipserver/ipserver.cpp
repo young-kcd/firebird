@@ -3256,7 +3256,7 @@ static void send_no_wait( ICC icc)
 }
 
 
-static void send_response( ICC icc, ISC_STATUS * status_vector)
+static void send_response( ICC icc, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -3271,7 +3271,6 @@ static void send_response( ICC icc, ISC_STATUS * status_vector)
 	ISC_STATUS *comm_status;
 	USHORT i, length;
 	ULONG to_copy, size_left;
-	TEXT *p, buffer[1024];
 	TEXT *acursor, *scursor, *abase;
 	ips_comm_area *comm;
 	TEXT *comm_ptr;
@@ -3297,9 +3296,11 @@ static void send_response( ICC icc, ISC_STATUS * status_vector)
 	{
 		/* transfer the status vector, putting strings in the comm area's
 		   data area */
+		TEXT buffer[1024];
 
 		while (*status_vector)
 		{
+		    const TEXT* p;
 			switch (*status_vector)
 			{
 			case isc_arg_interpreted:

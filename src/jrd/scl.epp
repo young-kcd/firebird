@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		scl.e
+ *	MODULE:		scl.epp
  *	DESCRIPTION:	Security class handler
  *
  * The contents of this file are subject to the Interbase Public
@@ -135,9 +135,6 @@ void SCL_check_access(SCL s_class,
  *	object in question.
  *
  **************************************/
-	const P_NAMES* names;
-	SCL att_class;
-
 	TDBB tdbb = GET_THREAD_DATA;
 
 	if (s_class && (s_class->scl_flags & SCL_corrupt))
@@ -150,8 +147,8 @@ void SCL_check_access(SCL s_class,
 
 	ATT attachment = tdbb->tdbb_attachment;
 
-	if ((att_class = attachment->att_security_class) &&
-		!(att_class->scl_flags & mask))
+	SCL att_class = attachment->att_security_class;
+	if (att_class && !(att_class->scl_flags & mask))
 	{
 		type = "DATABASE";
 		name = "";
@@ -179,6 +176,7 @@ void SCL_check_access(SCL s_class,
 		return;
 	}
 
+	const P_NAMES* names;
 	for (names = p_names; names->p_names_priv; names++)
 	{
 		if (names->p_names_priv & mask)
@@ -214,7 +212,6 @@ void SCL_check_index(TDBB tdbb, TEXT* index_name, UCHAR index_id, USHORT mask)
  *      becomes relation_name since index ids are relative to tables.
  *
  *******************************************************/
-	volatile BLK request;
 	SCL s_class, default_s_class;
     TEXT reln_name[32], aux_idx_name[32];
     TEXT *idx_name_ptr = index_name, *relation_name_ptr = index_name;
@@ -231,7 +228,7 @@ void SCL_check_index(TDBB tdbb, TEXT* index_name, UCHAR index_id, USHORT mask)
 
     reln_name[0] = aux_idx_name[0] = 0;
 
-	request = NULL;
+	volatile BLK request = NULL;
 
 	// No need to cache this request handle, it's only used when
 	// new constraints are created
@@ -335,9 +332,7 @@ void SCL_check_procedure(DSC* dsc_name, USHORT mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	BLK request;
-	SCL s_class;
-	TEXT *p, *q, *endp, *endq, name[32];
+	TEXT name[32];
 
 	TDBB tdbb = GET_THREAD_DATA;
 
@@ -345,18 +340,22 @@ void SCL_check_procedure(DSC* dsc_name, USHORT mask)
 
 	assert(dsc_name->dsc_dtype == dtype_text);
 
-	for (p = name, endp = name + sizeof(name) - 1,
-		 q = (TEXT*)dsc_name->dsc_address, endq = q + dsc_name->dsc_length;
-		 q < endq && p < endp && *q;)
+	{ // scope only block
+	TEXT* p = name;
+	const TEXT* const endp = name + sizeof(name) - 1;
+	const TEXT* q = (TEXT*) dsc_name->dsc_address;
+	const TEXT* const endq = q + dsc_name->dsc_length;
+	while (q < endq && p < endp && *q)
 		*p++ = *q++;
 	*p = 0;
+	} // end scope block
     MET_exact_name(name);
 
 	DBB dbb = tdbb->tdbb_database;
 
-	s_class = NULL;
+	SCL s_class = NULL;
 
-	request = (BLK) CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) JRD_PRC IN RDB$PROCEDURES WITH
 		JRD_PRC.RDB$PROCEDURE_NAME EQ name 
@@ -389,9 +388,7 @@ void SCL_check_relation(DSC* dsc_name, USHORT mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	BLK request;
-	SCL s_class;
-	TEXT *p, *q, *endp, *endq, name[32];
+	TEXT name[32];
 
 	TDBB tdbb = GET_THREAD_DATA;
 
@@ -399,18 +396,22 @@ void SCL_check_relation(DSC* dsc_name, USHORT mask)
 
 	assert(dsc_name->dsc_dtype == dtype_text);
 
-	for (p = name, endp = name + sizeof(name) - 1,
-		 q = (TEXT*)dsc_name->dsc_address, endq = q + dsc_name->dsc_length;
-		 q < endq && p < endp && *q;)
+	{ // scope only block
+	TEXT* p = name;
+	const TEXT* const endp = name + sizeof(name) - 1;
+	const TEXT* q = (TEXT*) dsc_name->dsc_address;
+	const TEXT* const endq = q + dsc_name->dsc_length;
+	while (q < endq && p < endp && *q)
 		*p++ = *q++;
 	*p = 0;
+	} // end scope block
 	MET_exact_name(name);
 
 	DBB dbb = tdbb->tdbb_database;
 
-	s_class = NULL;
+	SCL s_class = NULL;
 
-	request = (BLK) CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS WITH
 		REL.RDB$RELATION_NAME EQ name 
@@ -443,9 +444,6 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
  *	class block.
  *
  **************************************/
-	SCL s_class;
-	ATT attachment;
-
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
 
@@ -459,10 +457,11 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 	if (!string[0])
 		return NULL;
 
-	attachment = tdbb->tdbb_attachment;
+	ATT attachment = tdbb->tdbb_attachment;
 
 	// Look for the class already known
 
+	SCL s_class;
 	for (s_class = attachment->att_security_classes;
 		 s_class;
 		 s_class = s_class->scl_next)
@@ -507,18 +506,14 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
  *
  **************************************/
 	JRD_REL relation;
-	JRD_FLD field;
-	SSHORT id;
-	USHORT access;
-	SCL s_class;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	ATT attachment = tdbb->tdbb_attachment;
 
 	// Start with database security class
 
-	access =
-		(s_class = attachment->att_security_class) ? s_class->scl_flags : -1;
+	SCL s_class = attachment->att_security_class;
+	USHORT access = (s_class) ? s_class->scl_flags : -1;
 
 	// If there's a relation, track it down
 
@@ -530,6 +525,9 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 		{
 			access &= s_class->scl_flags;
 		}
+		
+		JRD_FLD field;
+		SSHORT id;
 		if (field_name &&
 			(id = MET_lookup_field(tdbb, relation, field_name, 0)) >= 0 &&
 			(field = MET_get_field(relation, id)) &&
@@ -570,42 +568,33 @@ void SCL_init(bool create,
  *	in, encrypting if necessary.
  *
  **************************************/
-	DBB dbb;
-	BLK handle, handle1;
 	volatile BLK request;
-	USR user;
 	TEXT name[129], project[33], organization[33], *p;
-	USHORT length;
-	int id, group, wheel, node_id;
 	TEXT role_name[33], login_name[129], *q;
-	USHORT major_version, minor_original;
     bool preODS9;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
-	major_version = (SSHORT) dbb->dbb_ods_version;
-	minor_original = (SSHORT) dbb->dbb_minor_original;
+	DBB dbb = tdbb->tdbb_database;
+	USHORT major_version = dbb->dbb_ods_version;
+	USHORT minor_original = dbb->dbb_minor_original;
 
 	*project = *organization = *name = *role_name = *login_name = '\0';
 
-	node_id = 0;
-	id = group = -1;	// CVC: This var contained trash
+	int node_id = 0;
+	int id = -1, group = -1;	// CVC: This var contained trash
 
 #ifdef NO_SECURITY
-	wheel = 1;
+	bool wheel = true;
 #else
+	bool wheel = false;
 	if (!user_name) {
-       wheel = ISC_get_user(name,
+       wheel = (bool) ISC_get_user(name,
                            &id,
                            &group,
                            project,
                            organization,
                            &node_id,
                            sys_user_name);
-	}
-	else
-	{
-		wheel = 0;
 	}
 
 	if (user_name || (id == -1))
@@ -626,7 +615,7 @@ void SCL_init(bool create,
 
 		if (!strcmp(name, SYSDBA_USER_NAME))
 		{
-			wheel = 1;
+			wheel = true;
 		}
 	}
 #endif // NO_SECURITY
@@ -738,9 +727,10 @@ void SCL_init(bool create,
 		strcpy(role_name, "NONE");
 	}
 
-	length = strlen(name) + strlen(role_name) + strlen(project) +
+	USHORT length = strlen(name) + strlen(role_name) + strlen(project) +
 		strlen(organization) + 4;   /* for the terminating nulls */
-	tdbb->tdbb_attachment->att_user = user = FB_NEW_RPT(*dbb->dbb_permanent, length) usr();
+	usr* user = FB_NEW_RPT(*dbb->dbb_permanent, length) usr();
+	tdbb->tdbb_attachment->att_user = user;
 	p = user->usr_data;
 	user->usr_user_name = save_string(name, &p);
 	user->usr_project_name = save_string(project, &p);
@@ -752,7 +742,7 @@ void SCL_init(bool create,
 	if (wheel)
 		user->usr_flags |= USR_locksmith;
 
-	handle = handle1 = NULL;
+	BLK handle = NULL, handle1 = NULL;
 
 	if (!create) {
 		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
@@ -1034,11 +1024,10 @@ static bool check_string(const TEXT* acl, const TEXT* string)
  *
  * Functional description
  *	Check a string against and acl string.  If they don't match,
- *	return TRUE.
+ *	return true.
  *
  **************************************/
 	USHORT l;
-	TEXT c1, c2;
 
 	// Add these asserts to catch calls to this function with NULL,
 	// the caller to this function must check to ensure that the arguments are not
@@ -1052,8 +1041,8 @@ static bool check_string(const TEXT* acl, const TEXT* string)
 	if ( (l = *acl++) )
 	{
 		do {
-			c1 = *acl++;
-			c2 = *string++;
+			TEXT c1 = *acl++;
+			TEXT c2 = *string++;
 			if (UPPER7(c1) != UPPER7(c2))
 				return true;
 		} while (--l);
@@ -1088,10 +1077,7 @@ static SLONG compute_access(TDBB tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	BLK request;
-	BLB blob;
-	TEXT *acl;
-	TEXT *buffer;
+	BLB blob = NULL;
 	volatile STR str_buffer = NULL;
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 
@@ -1106,9 +1092,9 @@ static SLONG compute_access(TDBB tdbb,
 
 	str_buffer = FB_NEW_RPT(*dbb->dbb_permanent, BLOB_BUFFER_SIZE) str();
 	str_buffer->str_length = BLOB_BUFFER_SIZE - 1;
-	buffer = (TEXT*) str_buffer->str_data;
+	TEXT* buffer = (TEXT*) str_buffer->str_data;
 
-	request = (BLK) CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) X IN RDB$SECURITY_CLASSES
 		WITH X.RDB$SECURITY_CLASS EQ s_class->scl_name
@@ -1118,8 +1104,8 @@ static SLONG compute_access(TDBB tdbb,
 
 		privileges |= SCL_exists;
 		blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID) & X.RDB$ACL);
-		acl = buffer;
-		while (TRUE)
+		TEXT* acl = buffer;
+		while (true)
 		{
 			acl += BLB_get_segment(tdbb, blob, (UCHAR*)acl,
 								   (USHORT) (length -
@@ -1141,6 +1127,7 @@ static SLONG compute_access(TDBB tdbb,
 			}
 		}
 		BLB_close(tdbb, blob);
+		blob = NULL;
 		if (acl != buffer)
 		{
 			// TMN: The cast is really a const_cast to
@@ -1163,6 +1150,7 @@ static SLONG compute_access(TDBB tdbb,
 	}
 	catch (const std::exception&) {
 		delete str_buffer;
+		// CVC: we may need to call BLB_close here
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
 
@@ -1183,12 +1171,11 @@ static TEXT *save_string(TEXT* string, TEXT** ptr)
  *	pointer.
  *
  **************************************/
-	TEXT *p, *start;
-
 	if (!*string)
 		return NULL;
 
-	start = p = *ptr;
+	TEXT* p = *ptr;
+	TEXT* const start = p;
 
 	while ( (*p++ = *string++) )
 		;
@@ -1443,3 +1430,4 @@ static SLONG walk_acl(TDBB tdbb,
 
 	return privilege;
 }
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
- *	MODULE:		burp.c
+ *	MODULE:		burp.cpp
  *	DESCRIPTION:	Command line interpreter for backup/restore
  *
  * The contents of this file are subject to the Interbase Public
@@ -106,20 +106,20 @@
 tgbl *gdgbl;
 #endif
 
-const char* FOPEN_WRITE_TYPE = "w";
-const char* FOPEN_READ_TYPE	 = "r";
+const char* fopen_write_type = "w";
+const char* fopen_read_type	 = "r";
 
-const int OPEN_MASK	 = 0666;
+const int open_mask	 = 0666;
 
 #ifdef VMS
-const char* SWITCH_CHAR	= "/";
+const char* switch_char	= "/";
 #else
-const char* SWITCH_CHAR	= "-";
+const char* switch_char	= "-";
 #endif
 
 
-const char* output_suppress	= "SUPPRESS";
-const int BURP_MSG_FAC		= 12;
+const char* const output_suppress	= "SUPPRESS";
+const int burp_msg_fac				= 12;
 
 enum gbak_action
 {
@@ -152,12 +152,14 @@ const ULONG GBYTE	= MBYTE * KBYTE;
 
 #if defined (WIN95)
 static bool fAnsiCP = false;
-static inline void translate_cp(SCHAR *a){
+static inline void translate_cp(SCHAR* a)
+{
 	if (!fAnsiCP) 
 		AnsiToOem(a, a);
 }
 #else
-static inline void translate_cp(SCHAR *a){
+static inline void translate_cp(SCHAR* a)
+{
 }
 #endif
 
@@ -221,7 +223,7 @@ void BURP_svc_error(USHORT errcode,
 
 	ISC_STATUS *status = tdgbl->service_blk->svc_status;
 
-	CMD_UTIL_put_svc_status(status, BURP_MSG_FAC, errcode,
+	CMD_UTIL_put_svc_status(status, burp_msg_fac, errcode,
 							arg1_t, arg1, arg2_t, arg2, arg3_t, arg3,
 							arg4_t, arg4, arg5_t, arg5);
 
@@ -274,10 +276,10 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		if (!string[1])
 			string = "-*NONE*";
 		const in_sw_tab_t* in_sw_tab = burp_in_sw_table;
-		const TEXT *q;
+		const TEXT* q;
 		for (; q = in_sw_tab->in_sw_name; in_sw_tab++)
 		{
-		    TEXT c;
+			TEXT c;
 			for (const TEXT *p = string + 1; c = *p++;)
 				if (UPPER(c) != *q++)
 					break;
@@ -580,7 +582,7 @@ int common_main(int		argc,
 				for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw;
 					 in_sw_tab++)
 					if (in_sw_tab->in_sw_msg) {
-						BURP_msg_put(in_sw_tab->in_sw_msg, (void*)SWITCH_CHAR, 0, 0,
+						BURP_msg_put(in_sw_tab->in_sw_msg, (void*)switch_char, 0, 0,
 									 0, 0);
 					}
 
@@ -685,7 +687,7 @@ int common_main(int		argc,
 
 				const TEXT *p = redirect;
 				TEXT c;
-				const TEXT *q = output_suppress;
+				const TEXT* q = output_suppress;
 				tdgbl->sw_redirect = NOOUTPUT;
 				while (c = *p++) {
 					if (UPPER(c) != *q++) {
@@ -696,7 +698,7 @@ int common_main(int		argc,
 				if (tdgbl->sw_redirect == REDIRECT) { // not NOREDIRECT, and not NOOUTPUT 
 
 					// Make sure the status file doesn't already exist 
-					IB_FILE* tmp_outfile = ib_fopen(redirect, FOPEN_READ_TYPE);
+					IB_FILE* tmp_outfile = ib_fopen(redirect, fopen_read_type);
 					if (tmp_outfile) {
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
@@ -705,7 +707,7 @@ int common_main(int		argc,
 					}
 					if (!
 						(tdgbl->output_file =
-						 ib_fopen(redirect, FOPEN_WRITE_TYPE))) {
+						 ib_fopen(redirect, fopen_write_type))) {
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
 						exit_local(FINI_ERROR, const_cast<tgbl*>(tdgbl));
@@ -1029,7 +1031,7 @@ int common_main(int		argc,
 			if (isc_detach_database(const_cast<ISC_STATUS*>(tdgbl->status_vector),
 									const_cast<isc_db_handle*>(&tdgbl->db_handle)))
 			{
-				BURP_print_status(const_cast<ISC_STATUS*>(tdgbl->status_vector));
+				BURP_print_status(const_cast<const ISC_STATUS*>(tdgbl->status_vector));
 			}
 		}
 
@@ -1108,7 +1110,7 @@ void BURP_error(USHORT errcode,
 	TGBL tdgbl = GET_THREAD_DATA;
 	ISC_STATUS *status = tdgbl->service_blk->svc_status;
 
-	CMD_UTIL_put_svc_status(status, BURP_MSG_FAC, errcode,
+	CMD_UTIL_put_svc_status(status, burp_msg_fac, errcode,
 							isc_arg_string, arg1,
 							isc_arg_string, arg2,
 							isc_arg_string, arg3,
@@ -1123,7 +1125,7 @@ void BURP_error(USHORT errcode,
 }
 
 
-void BURP_error_redirect(	ISC_STATUS* status_vector,
+void BURP_error_redirect(const ISC_STATUS* status_vector,
 							USHORT errcode,
 							const void* arg1,
 							const void* arg2)
@@ -1164,7 +1166,7 @@ void BURP_msg_partial(	USHORT number,
  **************************************/
 	TEXT buffer[256];
 
-	gds__msg_format(NULL, BURP_MSG_FAC, number, sizeof(buffer), buffer,
+	gds__msg_format(NULL, burp_msg_fac, number, sizeof(buffer), buffer,
 					static_cast<const char*>(arg1),
 					static_cast<const char*>(arg2),
 					static_cast<const char*>(arg3),
@@ -1193,7 +1195,7 @@ void BURP_msg_put(	USHORT number,
  **************************************/
 	TEXT buffer[256];
 
-	gds__msg_format(NULL, BURP_MSG_FAC, number, sizeof(buffer), buffer,
+	gds__msg_format(NULL, burp_msg_fac, number, sizeof(buffer), buffer,
 					static_cast<const char*>(arg1),
 					static_cast<const char*>(arg2),
 					static_cast<const char*>(arg3),
@@ -1225,7 +1227,7 @@ void BURP_msg_get(	USHORT number,
 	TEXT buffer[128];
 
 	gds__msg_format(NULL,
-					BURP_MSG_FAC,
+					burp_msg_fac,
 					number,
 					sizeof(buffer),
 					buffer,
@@ -1282,7 +1284,7 @@ void BURP_print(USHORT number,
 }
 
 
-void BURP_print_status( ISC_STATUS * status_vector)
+void BURP_print_status(const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1296,7 +1298,7 @@ void BURP_print_status( ISC_STATUS * status_vector)
  *
  **************************************/
 	if (status_vector) {
-		ISC_STATUS *vector = status_vector;
+		const ISC_STATUS *vector = status_vector;
 #ifdef SUPERSERVER
 		TGBL tdgbl = GET_THREAD_DATA;
 		ISC_STATUS *status = tdgbl->service_blk->svc_status;
@@ -1324,7 +1326,7 @@ void BURP_print_status( ISC_STATUS * status_vector)
 }
 
 
-void BURP_print_warning( ISC_STATUS * status_vector)
+void BURP_print_warning(const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1342,7 +1344,7 @@ void BURP_print_warning( ISC_STATUS * status_vector)
 		assert(status_vector[0] == gds_arg_gds);
 		assert(status_vector[1] == 0);
 		// print the warning message 
-		ISC_STATUS* vector = &status_vector[2];
+		const ISC_STATUS* vector = &status_vector[2];
 		SCHAR s[1024];
 		if (isc_interprete(s, &vector)) {
 			translate_cp(s);
@@ -1585,7 +1587,7 @@ static gbak_action open_files(const TEXT * file1,
 				if ((fil->fil_fd = MVOL_open(fil->fil_name, MODE_WRITE,
 											 CREATE_ALWAYS)) == INVALID_HANDLE_VALUE)
 #else
-				if ((fil->fil_fd = open(fil->fil_name, MODE_WRITE, OPEN_MASK)) == -1)
+				if ((fil->fil_fd = open(fil->fil_name, MODE_WRITE, open_mask)) == -1)
 #endif // WIN_NT 
 
 				{

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		dtr.c
+ *	MODULE:		dtr.cpp
  *	DESCRIPTION:	Top level driving module
  *                         
  * The contents of this file are subject to the Interbase Public
@@ -77,7 +77,7 @@ bool sw_trace;
 USHORT sw_buffers;
 USHORT QLI_lines = 60, QLI_prompt_count, QLI_reprompt, QLI_name_columns = 0;
 
-/* Let's define the default number of columns on a machine by machine basis */
+// Let's define the default number of columns on a machine by machine basis 
 
 #ifdef VMS
 USHORT QLI_columns = 80;
@@ -252,7 +252,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			default:
-				ERRQ_msg_put(469, (TEXT *) c, NULL, NULL, NULL, NULL);	/* Msg469 qli: ignoring unknown switch %c */
+				ERRQ_msg_put(469, (TEXT *) c, NULL, NULL, NULL, NULL);	// Msg469 qli: ignoring unknown switch %c 
 				break;
 			}
 	}
@@ -263,7 +263,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 		ERRQ_msg_put(24, NULL, NULL, NULL, NULL, NULL);	// Msg24 Welcome to QLI Query Language Interpreter 
 
 	if (version_flag)
-		ERRQ_msg_put(25, GDS_VERSION, NULL, NULL, NULL, NULL);	/* Msg25 qli version %s */
+		ERRQ_msg_put(25, GDS_VERSION, NULL, NULL, NULL, NULL);	// Msg25 qli version %s 
 
 	if (application_file)
 		LEX_push_file(application_file, true);
@@ -476,8 +476,8 @@ static bool process_statement(bool flush_flag)
 					dbb->dbb_statistics =
 						(int *) gds__alloc((SLONG) sizeof(PERF));
 #ifdef DEBUG_GDS_ALLOC
-					/* We don't care about QLI specific memory leaks for V4.0 */
-					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	/* QLI: don't care */
+					// We don't care about QLI specific memory leaks for V4.0 
+					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care 
 #endif
 				}
 				perf_get_info(&dbb->dbb_handle, (perf *)dbb->dbb_statistics);
@@ -500,7 +500,7 @@ static bool process_statement(bool flush_flag)
 				perf_get_info(&dbb->dbb_handle, &statistics);
 				perf_format((perf*) dbb->dbb_statistics, &statistics,
 							report, buffer, 0);
-				ERRQ_msg_put(26, dbb->dbb_filename, buffer, NULL, NULL, NULL);	/* Msg26 Statistics for database %s %s  */
+				ERRQ_msg_put(26, dbb->dbb_filename, buffer, NULL, NULL, NULL);	// Msg26 Statistics for database %s %s  
 				QLI_skip_line = TRUE;
 			}
 		}
@@ -533,6 +533,11 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
  *
  **************************************/
 	USHORT msg_number;
+
+#if defined(FPE_INOVF_TRAP) || defined(FPE_INTDIV_TRAP)
+	|| defined(FPE_FLTOVF_TRAP) || defined(FPE_FLTDIV_TRAP)
+	|| defined(FPE_FLTUND_TRAP) || defined(FPE_FLTOVF_FAULT)
+	|| defined(FPE_FLTUND_FAULT)
 
 	switch (code) {
 #ifdef FPE_INOVF_TRAP
@@ -580,6 +585,9 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 	default:
 		msg_number = 21;		// Msg21 arithmetic exception 
 	}
+#else
+	msg_number = 21;
+#endif
 
 	signal(SIGFPE, (void(*)(int)) signal_arith_excp);
 

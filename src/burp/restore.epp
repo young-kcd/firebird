@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.47 2003-09-23 19:47:50 brodsom Exp $
+$Id: restore.epp,v 1.48 2003-09-25 11:48:59 robocop Exp $
 */
 
 #include "firebird.h"
@@ -67,19 +67,19 @@ namespace // unnamed, private
 {
 
 
-const int DB_VERSION_DDL4		= 4;  /* ods4 db */
-const int DB_VERSION_DDL5		= 5;  /* ods5 db */
-const int DB_VERSION_DDL8		= 8;  /* ods8 db */
-const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  /* v4.0 is ods8 */
+const int DB_VERSION_DDL4		= 4;  // ods4 db 
+const int DB_VERSION_DDL5		= 5;  // ods5 db 
+const int DB_VERSION_DDL8		= 8;  // ods8 db 
+const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  // v4.0 is ods8 
 const char* FOREIGN_KEY			= "FOREIGN KEY";
 
-const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys 
+const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys
 										* This setting is used temporarily while
 										* restoring a database. This was required
 										* in order to differentiate a partial
 										* "inactive" state of SOME indices from
 										* "inactive" state of ALL indices (gbak -i)
-										* -bsriram, 11-May-1999      BUG: 10016 
+										* -bsriram, 11-May-1999      BUG: 10016
 										*/
 
 const int RESTORE_VERBOSE_INTERVAL	= 10000;
@@ -92,41 +92,41 @@ const struct s_t_cvtbl {
 	/* NOTE: The magic numbers for collation_id come from ordinal
 	 * position of the COLLATION() entries in jrd/intlnames.h
 	 */
-	{101,	CS_DOS_437,		1},				/* PDOX_ASCII */
-	{102,	CS_DOS_437,		2},				/* PDOX_INTL */
-	{106,	CS_DOS_437,		3},				/* PDOX_SWEDFIN */
-	{160,	CS_DOS_850,		0},				/* codepoint collation */
-	{107,	CS_DOS_865,		0},				/* codepoint collation */
-	{105,	CS_DOS_865,		1},				/* PDOX_NORDAN4 */
-	{139,	CS_ISO8859_1,		1},				/* DA_DA */
-	{140,	CS_ISO8859_1,		2},				/* DU_NL */
-	{141,	CS_ISO8859_1,		3},				/* FI_FI */
-	{142,	CS_ISO8859_1,		4},				/* FR_FR */
-	{143,	CS_ISO8859_1,		5},				/* FR_CA */
-	{144,	CS_ISO8859_1,		6},				/* DE_DE */
-	{145,	CS_ISO8859_1,		7},				/* IS_IS */
-	{146,	CS_ISO8859_1,		8},				/* IT_IT */
-	{148,	CS_ISO8859_1,		9},				/* NO_NO */
-	{149,	CS_ISO8859_1,		10},				/* ES_ES */
-	{151,	CS_ISO8859_1,		11},				/* SV_SV */
-	{152,	CS_ISO8859_1,		12},				/* EN_UK */
-	{153,	CS_ISO8859_1,		14},				/* EN_US */
-	{154,	CS_ISO8859_1,		15},				/* PT_PT */
-	{160,	CS_ISO8859_2,		1},				/* CS_CZ */
-	{180,	CS_NEXT,		1},				/* NXT_US */
-	{181,	CS_NEXT,		2},				/* NXT_GERMANY */
-	{182,	CS_NEXT,		3},				/* NXT_FRANCE */
-	{183,	CS_NEXT,		4},				/* NXT_ITALY */
-	{184,	CS_NEXT,		5},				/* NXT_SPAIN */
-	{201,	CS_UNICODE_FSS,	0},				/* codepoint collation */
-	{220,	CS_SJIS,		0},				/* codepoint collation */
-	{230,	CS_EUCJ,		0}				/* codepoint collation */
+	{101,	CS_DOS_437,		1},				// PDOX_ASCII 
+	{102,	CS_DOS_437,		2},				// PDOX_INTL 
+	{106,	CS_DOS_437,		3},				// PDOX_SWEDFIN 
+	{160,	CS_DOS_850,		0},				// codepoint collation 
+	{107,	CS_DOS_865,		0},				// codepoint collation 
+	{105,	CS_DOS_865,		1},				// PDOX_NORDAN4 
+	{139,	CS_ISO8859_1,		1},				// DA_DA 
+	{140,	CS_ISO8859_1,		2},				// DU_NL 
+	{141,	CS_ISO8859_1,		3},				// FI_FI 
+	{142,	CS_ISO8859_1,		4},				// FR_FR 
+	{143,	CS_ISO8859_1,		5},				// FR_CA 
+	{144,	CS_ISO8859_1,		6},				// DE_DE 
+	{145,	CS_ISO8859_1,		7},				// IS_IS 
+	{146,	CS_ISO8859_1,		8},				// IT_IT 
+	{148,	CS_ISO8859_1,		9},				// NO_NO 
+	{149,	CS_ISO8859_1,		10},				// ES_ES 
+	{151,	CS_ISO8859_1,		11},				// SV_SV 
+	{152,	CS_ISO8859_1,		12},				// EN_UK 
+	{153,	CS_ISO8859_1,		14},				// EN_US 
+	{154,	CS_ISO8859_1,		15},				// PT_PT 
+	{160,	CS_ISO8859_2,		1},				// CS_CZ 
+	{180,	CS_NEXT,		1},				// NXT_US 
+	{181,	CS_NEXT,		2},				// NXT_GERMANY 
+	{182,	CS_NEXT,		3},				// NXT_FRANCE 
+	{183,	CS_NEXT,		4},				// NXT_ITALY 
+	{184,	CS_NEXT,		5},				// NXT_SPAIN 
+	{201,	CS_UNICODE_FSS,	0},				// codepoint collation 
+	{220,	CS_SJIS,		0},				// codepoint collation 
+	{230,	CS_EUCJ,		0}				// codepoint collation 
 	};
 
 enum scan_attr_t {
-	NO_SKIP		= 0,	/* Not in skipping and scanning mode */
-	BEFORE_SKIP	= 1,	/* After skipping, before scanning next byte for valid attribute */
-	AFTER_SKIP	= 2	/* After skipping and after scanning next byte for valid attribute */
+	NO_SKIP		= 0,	// Not in skipping and scanning mode 
+	BEFORE_SKIP	= 1,	// After skipping, before scanning next byte for valid attribute 
+	AFTER_SKIP	= 2	// After skipping and after scanning next byte for valid attribute 
 };
 
 void	add_files(const UCHAR *);
@@ -191,7 +191,7 @@ void	general_on_error (void);
 bool	bug_8183 (TGBL);
 #endif
 #ifdef DEBUG
-UCHAR	debug_on = 0;   /* able to turn this on in the debugger */
+UCHAR	debug_on = 0;   // able to turn this on in the debugger 
 #endif
 
 bool	flag_on_line = true;	/* indicates whether we will bring
@@ -201,7 +201,7 @@ bool	flag_on_line = true;	/* indicates whether we will bring
 #ifdef sparc
 const SSHORT old_sparcs[] =
     {0, 0, 0, 2, 0, 0, 0, 0, 2, 4, 4, 4, 8, 8, 0, 0, 8, 8, 8};
-#endif 
+#endif
 
 //MVOL_read returns int
 static inline int get(tgbl* tdgbl)
@@ -239,21 +239,23 @@ static inline UCHAR* get_block(tgbl* tdgbl, UCHAR* p, ULONG n)
 // When skipping started, scan_next_attr will be changed from NO_SKIP
 // to BEFORE_SKIP. When scanning for next valid attribute after skipping,
 // it will flip-flop between BEFORE_SKIP and AFTER_SKIP. When next valid
-// attribute is found, it will be changed back to NO_SKIP by 'SKIP_SCAN'
+// attribute is found, it will be changed back to NO_SKIP by 'skip_scan'
 
-static inline void SKIP_INIT(scan_attr_t *scan_next_attr)
+static inline void skip_init(scan_attr_t* scan_next_attr)
 {
 	*scan_next_attr = NO_SKIP;
 }
 
-static inline bool SKIP_SCAN(scan_attr_t *scan_next_attr)
+static inline void skip_scan(scan_attr_t* scan_next_attr)
 {
-	return (*scan_next_attr == AFTER_SKIP ?
-		*scan_next_attr = BEFORE_SKIP :
-		*scan_next_attr == BEFORE_SKIP ?
-		*scan_next_attr = NO_SKIP : 0);
+	if (*scan_next_attr == AFTER_SKIP)
+		*scan_next_attr = BEFORE_SKIP;
+	else if (*scan_next_attr == BEFORE_SKIP)
+		*scan_next_attr = NO_SKIP;
+	//else 0; => nothing, no change in the original macro
 }
-/* User Privilege Flags */
+
+// User Privilege Flags
 
 const int USER_PRIV_USER			= 1;
 const int USER_PRIV_GRANTOR			= 2;
@@ -280,8 +282,8 @@ int RESTORE_restore (TEXT	*file_name,
  *	Recreate a database from a backup.
  *
  **************************************/
-	isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle4 = NULL;
-	isc_req_handle	req_handle3 = NULL;
+	isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle3 = NULL;
+	isc_req_handle	req_handle4 = NULL;
 	BASED_ON RDB$INDICES.RDB$INDEX_NAME index_name;
 
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -300,11 +302,11 @@ int RESTORE_restore (TEXT	*file_name,
 		return FINI_ERROR;
 
 	BURP_verbose (76, NULL, NULL, NULL, NULL, NULL);
-	/* msg 76 creating indexes */
+	// msg 76 creating indexes 
 
 	COMMIT;
 	ON_ERROR
-		/* Fix for bug_no 8055: 
+		/* Fix for bug_no 8055:
 		   don't throw away the database just because an index
 		   could not be made */
 		long error_code;
@@ -327,22 +329,22 @@ int RESTORE_restore (TEXT	*file_name,
 						if ( error_code == gds_no_dup )
 						{
 							BURP_print(241, NULL, NULL, NULL, NULL, NULL);
-							/* msg 241 The unique index has duplicate values or NULLs */
+							// msg 241 The unique index has duplicate values or NULLs 
 							BURP_print(242, NULL, NULL, NULL, NULL, NULL);
-							/* msg 242 Delete or Update duplicate values or NULLs, and activate index with */
+							// msg 242 Delete or Update duplicate values or NULLs, and activate index with 
 						}
 						else
 						{
 							BURP_print(244, NULL, NULL, NULL, NULL, NULL);
-							/* msg 244 Not enough disk space to create the sort file for an index */
+							// msg 244 Not enough disk space to create the sort file for an index 
 							BURP_print(245, NULL, NULL, NULL, NULL, NULL);
-							/* msg 245 Set the TMP environment variable to a directory on a filesystem that does have enough space, and activate index with */
+							// msg 245 Set the TMP environment variable to a directory on a filesystem that does have enough space, and activate index with 
 						}
 						BURP_print(243, index_name, NULL, NULL, NULL, NULL);
 						/* msg 243 ALTER INDEX \"%s\" ACTIVE; */
 						END_MODIFY;
 					END_FOR;
-					/* don't bring the database on-line */
+					// don't bring the database on-line 
 					flag_on_line = false;
 					break;
 				default:
@@ -355,18 +357,18 @@ int RESTORE_restore (TEXT	*file_name,
 			END_ERROR
 		}
 	END_ERROR;
-	/* Activate the indices for foreign keys and do another commit  */
+	// Activate the indices for foreign keys and do another commit  
 	if (!(tdgbl->gbl_sw_deactivate_indexes))
 	{
 
-		/* Block added to verbose index creation by Toni Martir */
+		// Block added to verbose index creation by Toni Martir 
 		if (tdgbl->gbl_sw_verbose)
 		{
 			EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
-			if (gds_status [1]) 
+			if (gds_status [1])
 				EXEC SQL SET TRANSACTION;
 
-			/* Activate first indexes that are not foreign keys */
+			// Activate first indexes that are not foreign keys 
 			FOR (REQUEST_HANDLE req_handle1) IDS IN RDB$INDICES WITH
 				IDS.RDB$INDEX_INACTIVE EQ DEFERRED_ACTIVE AND
 				IDS.RDB$FOREIGN_KEY MISSING
@@ -375,13 +377,13 @@ int RESTORE_restore (TEXT	*file_name,
 				ON_ERROR
 					general_on_error();
 				END_ERROR;
-			 
+
 				SAVE
-				/* existing ON_ERROR continues past error, beck */
+				// existing ON_ERROR continues past error, beck 
 				ON_ERROR
 					BURP_print (173, IDS.RDB$INDEX_NAME, NULL, NULL, NULL, NULL);
-					BURP_print_status (isc_status);
-					MODIFY IDS USING 
+					BURP_print_status(isc_status);
+					MODIFY IDS USING
 						IDS.RDB$INDEX_INACTIVE = TRUE;
 					END_MODIFY;
 					ON_ERROR
@@ -402,22 +404,22 @@ int RESTORE_restore (TEXT	*file_name,
 
 
 		EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
-		if (gds_status [1]) 
+		if (gds_status [1])
 			EXEC SQL SET TRANSACTION;
 
 		/* Only activate Foreign keys that have been marked for deferred
-		 * activation. 
-		 * -bsriram, 11-May-1999             BUG: 10016 
+		 * activation.
+		 * -bsriram, 11-May-1999             BUG: 10016
 		 */
 		FOR (REQUEST_HANDLE req_handle1)
-			CNST IN RDB$RELATION_CONSTRAINTS 
+			CNST IN RDB$RELATION_CONSTRAINTS
 			CROSS IDS IN RDB$INDICES WITH
 			CNST.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY AND
 			CNST.RDB$INDEX_NAME EQ IDS.RDB$INDEX_NAME AND
 			IDS.RDB$INDEX_INACTIVE EQ DEFERRED_ACTIVE
 
 
-			MODIFY IDS USING 
+			MODIFY IDS USING
 					IDS.RDB$INDEX_INACTIVE = FALSE;
 			END_MODIFY;
 			ON_ERROR
@@ -425,11 +427,11 @@ int RESTORE_restore (TEXT	*file_name,
 			END_ERROR;
 
 			SAVE
-			/* existing ON_ERROR continues past error, beck */
+			// existing ON_ERROR continues past error, beck 
 			ON_ERROR
 				BURP_print (173, IDS.RDB$INDEX_NAME, NULL, NULL, NULL, NULL);
-				BURP_print_status (isc_status);
-				MODIFY IDS USING 
+				BURP_print_status(isc_status);
+				MODIFY IDS USING
 					IDS.RDB$INDEX_INACTIVE = TRUE;
 				END_MODIFY;
 				ON_ERROR
@@ -451,15 +453,15 @@ int RESTORE_restore (TEXT	*file_name,
 	if (tdgbl->global_trans)
 	{
 		BURP_verbose (68, NULL, NULL, NULL, NULL, NULL);
-		/* msg 68 committing meta data */
+		// msg 68 committing meta data 
 		EXEC SQL COMMIT TRANSACTION tdgbl->global_trans;
 		if (gds_status [1])
 			general_on_error ();
-		/* Check to see if there is a warning */
-		if (gds_status [0] == gds_arg_gds && gds_status [1] == 0 
+		// Check to see if there is a warning 
+		if (gds_status [0] == gds_arg_gds && gds_status [1] == 0
 			&& gds_status [2] != gds_arg_end)
 		{
-			BURP_print_warning (gds_status);
+			BURP_print_warning(gds_status);
 		}
 	}
 
@@ -467,7 +469,7 @@ int RESTORE_restore (TEXT	*file_name,
 	if (gds_status [1])
 		EXEC SQL SET TRANSACTION;
 	/*
-	** Change ownership of any procedures necessary 
+	** Change ownership of any procedures necessary
 	*/
 
 	for (BURP_PRC procedure = tdgbl->procedures; procedure;
@@ -498,7 +500,7 @@ int RESTORE_restore (TEXT	*file_name,
 
 	MISC_release_request_silent(req_handle4);
 
-	/* Change ownership of any relations necessary */
+	// Change ownership of any relations necessary 
 
 	for (BURP_REL relation = tdgbl->relations; relation; relation = relation->rel_next)
 	{
@@ -530,7 +532,7 @@ int RESTORE_restore (TEXT	*file_name,
 	/* Now that changing ownership of tables is over, it is safe to
 	   update the database security class in RDB$DATABASE */
 
-	if (tdgbl->database_security_class[0]) /* Do it only if it's not NULL */
+	if (tdgbl->database_security_class[0]) // Do it only if it's not NULL 
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$DATABASE
@@ -538,10 +540,10 @@ int RESTORE_restore (TEXT	*file_name,
 			strncpy(X.RDB$SECURITY_CLASS, tdgbl->database_security_class,
 				sizeof(X.RDB$SECURITY_CLASS));
 			END_MODIFY;
-		ON_ERROR
-			MISC_release_request_silent(req_handle1);
-			general_on_error ();
-		END_ERROR;
+			ON_ERROR
+				MISC_release_request_silent(req_handle1);
+				general_on_error ();
+			END_ERROR;
 		END_FOR;
 		ON_ERROR
 			MISC_release_request_silent(req_handle1);
@@ -556,19 +558,19 @@ int RESTORE_restore (TEXT	*file_name,
 		general_on_error ();
 	END_ERROR;
 
-	/* Check to see if there is a warning */
-	if (gds_status [0] == gds_arg_gds && gds_status [1] == 0 
+	// Check to see if there is a warning 
+	if (gds_status [0] == gds_arg_gds && gds_status [1] == 0
 		&& gds_status [2] != gds_arg_end)
 	{
-		BURP_print_warning (gds_status);
+		BURP_print_warning(gds_status);
 	}
 
 	BURP_verbose (88, NULL, NULL, NULL, NULL, NULL);
-	/* msg 88 finishing, closing, and going home */
+	// msg 88 finishing, closing, and going home 
 
 	UINT64 cumul_count = MVOL_fini_read();
 
-	/* attach database again to put it online */
+	// attach database again to put it online 
 
 	UCHAR dpb[128];
 	UCHAR *d = dpb;
@@ -599,10 +601,10 @@ int RESTORE_restore (TEXT	*file_name,
 		*d++ = *q++;
 	}
 
-	/* set sync writes to engine default */
+	// set sync writes to engine default 
 	*d++ = (UCHAR) gds_dpb_force_write;
 	*d++ = 1;
-	*d++ = (UCHAR) tdgbl->hdr_forced_writes;	
+	*d++ = (UCHAR) tdgbl->hdr_forced_writes;
 	// set forced writes to the value which was in the header
 
 	SSHORT l = d - dpb;
@@ -624,9 +626,9 @@ int RESTORE_restore (TEXT	*file_name,
 	if (!flag_on_line)
 	{
 		BURP_print(246, NULL, NULL, NULL, NULL, NULL);
-		/* msg 246 Database is not online due to failure to activate one or more indices. */
+		// msg 246 Database is not online due to failure to activate one or more indices. 
 		BURP_print(247, NULL, NULL, NULL, NULL, NULL);
-		/* msg 247 Run gfix -online to bring database online without active indices. */
+		// msg 247 Run gfix -online to bring database online without active indices. 
 		return FINI_DB_NOT_ONLINE;
 	}
 
@@ -634,7 +636,7 @@ int RESTORE_restore (TEXT	*file_name,
 	if (tdgbl->gbl_sw_mode && tdgbl->gbl_sw_mode_val)
 	{
 		BURP_verbose (280, NULL, NULL, NULL, NULL, NULL);
-		/* msg 280: setting database to read-only access */
+		// msg 280: setting database to read-only access 
 
 		d = dpb;
 		*d++ = (UCHAR) gds_dpb_version1;
@@ -659,7 +661,7 @@ int RESTORE_restore (TEXT	*file_name,
 
 		*d++ = (UCHAR) isc_dpb_set_db_readonly;
 		*d++ = 1;
-		*d++ = TRUE;	/* set database to readOnly mode */
+		*d++ = TRUE;	// set database to readOnly mode 
 		l = d - dpb;
 		db_handle = 0;
 		if (isc_attach_database (tdgbl->status_vector, 0, database_name,
@@ -710,13 +712,13 @@ void add_files (const UCHAR	*file_name)
 				X IN RDB$FILES
 				strcpy (X.RDB$FILE_NAME, file->fil_name);
 				X.RDB$FILE_START = start;
-			END_STORE; 
+			END_STORE;
 			ON_ERROR
 				general_on_error ();
 			END_ERROR;
 				MISC_release_request_silent(req_handle1);
 			BURP_verbose (57, file->fil_name, (void*) start, NULL, NULL, NULL);
-				/* msg 57 adding file %s, starting at page %ld */
+			// msg 57 adding file %s, starting at page %ld 
 		}
 		else if (((signed long )file->fil_length) >= start - 1)
 			file->fil_length -= start - 1;
@@ -734,12 +736,12 @@ void add_files (const UCHAR	*file_name)
 	if (count)
 	{
 		BURP_verbose (70, NULL, NULL, NULL, NULL, NULL);
-		  /* msg 70 committing secondary files */
+		  // msg 70 committing secondary files
 		COMMIT
-		/* existing ON_ERROR continues past error, beck */
+		// existing ON_ERROR continues past error, beck
 		ON_ERROR
 			BURP_print (174, NULL, NULL, NULL, NULL, NULL);
-				/* msg 174 cannot commit files */
+				// msg 174 cannot commit files
 			BURP_print_status (tdgbl->status_vector);
 			ROLLBACK;
 			ON_ERROR
@@ -766,7 +768,7 @@ void bad_attribute (scan_attr_t		scan_next_attr,
  * Functional description
  *	We ran into an unsupported attribute.
  *	but it isn't the end of the world.
- *	We will try to skip some bad data and 
+ *	We will try to skip some bad data and
  *	look for next valid attribute to continue the process.
  *
  **************************************/
@@ -782,7 +784,7 @@ void bad_attribute (scan_attr_t		scan_next_attr,
 		gds__msg_format(NULL, 12, type, sizeof(t_name), t_name, NULL, NULL,
 						NULL, NULL, NULL);
 		BURP_print (80, t_name, (void*) bad_attr, NULL, NULL, NULL);
-		/* msg 80  don't recognize %s attribute %ld -- continuing */
+		// msg 80  don't recognize %s attribute %ld -- continuing 
 		skip_l = get(tdgbl);
 		if (skip_l)
 			get_skip(tdgbl, skip_l);
@@ -794,13 +796,13 @@ void bad_attribute (scan_attr_t		scan_next_attr,
 			skip_count = tdgbl->gbl_sw_skip_count;
 			get_skip(tdgbl, skip_count);
 			BURP_print (203, (void*) skip_count, (void*) bad_attr, NULL, NULL, NULL);
-				/*msg 203: skipped %d bytes after reading a bad attribute %d */
+			//msg 203: skipped %d bytes after reading a bad attribute %d 
 		}
 		else
 		{
 			skip_count ++;
 			BURP_print (205, (void*) skip_count, (void*) bad_attr, NULL, NULL, NULL);
-				/* msg 205: skipped %d bytes looking for next valid attribute, encountered attribute %d */
+			// msg 205: skipped %d bytes looking for next valid attribute, encountered attribute %d 
 		}
 		scan_next_attr = AFTER_SKIP;
 	}
@@ -876,7 +878,7 @@ void create_database (const TEXT *file_name)
 	sweep_interval = MAX_ULONG;
 	bool no_reserve = false;
 	bool db_read_only = false, SQL_dialect_flag = false;
-	USHORT forced_writes = 2; /* default for the current platform */
+	USHORT forced_writes = 2; // default for the current platform 
 	ULONG page_buffers = 0;
 
 	rec_type record;
@@ -927,14 +929,14 @@ void create_database (const TEXT *file_name)
 
 	if (record != rec_database)
 		BURP_error_redirect (NULL, 32, 0, 0);
-	/* msg 32 Expected database description record */
+		// msg 32 Expected database description record 
 
 	if (tdgbl->gbl_sw_page_size &&
 		(tdgbl->gbl_sw_page_size < page_size))
 	{
 		BURP_print (110, (void*) page_size,
 					(void*) (ULONG) tdgbl->gbl_sw_page_size, NULL, NULL, NULL);
-	/* msg 110 Reducing the database page size from %ld bytes to %ld bytes */
+		// msg 110 Reducing the database page size from %ld bytes to %ld bytes 
 	}
 
 	if (tdgbl->gbl_sw_page_size)
@@ -945,7 +947,7 @@ void create_database (const TEXT *file_name)
 	if (tdgbl->gbl_sw_no_reserve)
 		no_reserve = tdgbl->gbl_sw_no_reserve != FALSE;
 
-	/* Override attribute setting with user requirement */
+	// Override attribute setting with user requirement 
 	if (tdgbl->gbl_sw_mode)
 		db_read_only = tdgbl->gbl_sw_mode_val;
 	else
@@ -993,17 +995,17 @@ void create_database (const TEXT *file_name)
 		*d++ = (UCHAR) isc_dpb_user_name;
 		*d++ = (UCHAR) strlen (tdgbl->gbl_sw_user);
 		for (q = (UCHAR*) tdgbl->gbl_sw_user; *q;)
-		*d++ = *q++;
+			*d++ = *q++;
 	}
 	if (tdgbl->gbl_sw_password)
 	{
 		if (!tdgbl->gbl_sw_service_gbak)
-		*d++ = (UCHAR) isc_dpb_password;
+			*d++ = (UCHAR) isc_dpb_password;
 		else
-		*d++ = (UCHAR) isc_dpb_password_enc;
+			*d++ = (UCHAR) isc_dpb_password_enc;
 		*d++ = (UCHAR) strlen (tdgbl->gbl_sw_password);
 		for (q = (UCHAR*) tdgbl->gbl_sw_password; *q;)
-		*d++ = *q++;
+			*d++ = *q++;
 	}
 	if (page_buffers)
 	{
@@ -1015,14 +1017,14 @@ void create_database (const TEXT *file_name)
 		*d++ = (UCHAR) (page_buffers >> 24);
 	}
 
-	/* Turn off sync writes during restore */
+	// Turn off sync writes during restore 
 	*d++ = (UCHAR) isc_dpb_force_write;
 	*d++ = 1;
 	*d++ = 0;
 
-	/* 
-	** 
-	** which SQL dialect that this database speaks 
+	/*
+	**
+	** which SQL dialect that this database speaks
 	** When we restore backup files that came from prior
 	** to V6, we force the SQL database dialect to 1
 	**
@@ -1034,8 +1036,8 @@ void create_database (const TEXT *file_name)
 		*d++ = (UCHAR) SQL_dialect;
 	else
 		*d++ = (UCHAR) SQL_DIALECT_V5;
-		
-	/* start database up shut down */
+
+	// start database up shut down 
 	*d++ = (UCHAR) isc_dpb_shutdown;
 	*d++ = 1;
 	*d++ = (UCHAR) isc_dpb_shut_attachment;
@@ -1047,11 +1049,11 @@ void create_database (const TEXT *file_name)
 	l = d - dpb;
 
 	// We'll have to fix the API someday, so const params are declared const.
-	if (isc_create_database (status_vector, 0, (TEXT*) file_name, 
+	if (isc_create_database (status_vector, 0, (TEXT*) file_name,
 							&DB, l, (SCHAR*) dpb, 0))
 	{
 		BURP_error_redirect (status_vector, 33, file_name, 0);
-	/* msg 33 failed to create database %s */
+	// msg 33 failed to create database %s 
 	}
 
 	if (tdgbl->gbl_sw_version)
@@ -1060,9 +1062,9 @@ void create_database (const TEXT *file_name)
 		/* msg 139 Version(s) for database "%s" */
 		isc_version(&DB, (void (*)()) BURP_output_version, (void*) "\t%s\n");
 	}
-		
+
 	BURP_verbose (74, file_name, (void*) page_size, NULL, NULL, NULL);
-	/* msg 74 created database %s, page_size %ld bytes */
+	// msg 74 created database %s, page_size %ld bytes 
 }
 
 void decompress (UCHAR	*buffer,
@@ -1088,8 +1090,8 @@ void decompress (UCHAR	*buffer,
 
 	while (p < end)
 	{
-		/* This change was made to restore National Semi-Conductor's corrupted */
-		/* gbak file and it is in the code base now.  -Andrew                  */
+		// This change was made to restore National Semi-Conductor's corrupted 
+		// gbak file and it is in the code base now.  -Andrew                  
 
 		count = (SCHAR) get(tdgbl);
 		if (count > 0)
@@ -1098,7 +1100,7 @@ void decompress (UCHAR	*buffer,
 			{
 				BURP_print (202, (void*) (SLONG) count,
 							(void*) (ULONG) (end - p), NULL, NULL, NULL);
-				/* msg 202: adjusting a decompression length error: invalid length  %d was adjusted to %d */
+				// msg 202: adjusting a decompression length error: invalid length  %d was adjusted to %d 
 				count = end - p;
 			}
 			p = get_block(tdgbl, p, count);
@@ -1109,7 +1111,7 @@ void decompress (UCHAR	*buffer,
 			{
 				BURP_print(202, (void*) (SLONG) count,
 						   (void*) (ULONG) (p - end), NULL, NULL, NULL);
-				/* msg 202: adjusting a decompression length error: invalid length %d was adjusted to %d */
+				// msg 202: adjusting a decompression length error: invalid length %d was adjusted to %d 
 				count = p - end;
 			}
 			c = get(tdgbl);
@@ -1120,7 +1122,7 @@ void decompress (UCHAR	*buffer,
 
 	if (p > end)
 		BURP_error_redirect (NULL, 34, 0, 0);
-		/* msg 34 RESTORE: decompression length error */
+		// msg 34 RESTORE: decompression length error 
 }
 
 void eat_blob (void)
@@ -1166,7 +1168,7 @@ BURP_REL find_relation (const TEXT	*name)
 				return relation;
 
 	BURP_error_redirect (NULL, 35, name, 0);
-	/* msg 35 can't find relation %s */
+	// msg 35 can't find relation %s 
 
 	return NULL;
 }
@@ -1203,14 +1205,14 @@ bool get_acl (const TEXT	*owner_nm,
  *
  *	open the blob that contains the ACL list
  *	get the ACL list of a relation
- *	replace the owner of the relation in the ACL list with 
+ *	replace the owner of the relation in the ACL list with
  *	  the creator of the relation
  *	create a new blob
  *	store the new ACL list in the new blob
  *
  **************************************/
 
-	static const SCHAR blr_items [] = {isc_info_blob_max_segment, 
+	static const SCHAR blr_items [] = {isc_info_blob_max_segment,
 					 isc_info_blob_total_length,
 					 isc_info_blob_num_segments};
 	ISC_STATUS_ARRAY	status_vector;
@@ -1222,26 +1224,26 @@ bool get_acl (const TEXT	*owner_nm,
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* If the blob is null, don't store it.  It will be restored as null. */
+	// If the blob is null, don't store it.  It will be restored as null. 
 
 	if (!blob_id->gds_quad_high && !blob_id->gds_quad_low)
 		return false;
 
-	/* Open the blob and get it's vital statistics */
+	// Open the blob and get it's vital statistics 
 
 	FRBRD* blob = NULL;
 
 	if (isc_open_blob (status_vector, &DB,  &gds_trans, &blob, blob_id))
 	{
-		/* msg 24 gds__open_blob failed */
-		BURP_error_redirect (status_vector, 24, NULL, NULL); 
+		// msg 24 gds__open_blob failed 
+		BURP_error_redirect (status_vector, 24, NULL, NULL);
 	}
 
 	if (isc_blob_info (status_vector,  &blob, sizeof(blr_items),
 				   (SCHAR *) blr_items, sizeof(blob_info), (SCHAR*) blob_info))
 	{
-		/* msg 20 gds__blob_info failed */
-		BURP_error_redirect (status_vector, 20, NULL, NULL); 
+		// msg 20 gds__blob_info failed 
+		BURP_error_redirect (status_vector, 20, NULL, NULL);
 	}
 
 	SLONG length = 0;
@@ -1265,19 +1267,19 @@ bool get_acl (const TEXT	*owner_nm,
 
 		case isc_info_blob_num_segments:
 			num_segments = (USHORT) n;
-			/* 
-			** we assume that the ACL list was written out as 
+			/*
+			** we assume that the ACL list was written out as
 			** in one big segment
 			**
 			*/
 			if (num_segments > 1) {
-			// CVC: I can't see the effect of assert(true)
-			assert (num_segments > 1);
+				// CVC: I can't see the effect of assert(true)
+				assert (num_segments > 1);
 			}
 			break;
 
 		default:
-			/* msg 79 don't understand blob info item %ld  */
+			// msg 79 don't understand blob info item %ld  
 			BURP_print (79, (void*) (ULONG) item, NULL, NULL, NULL, NULL);
 			// CVC: do you return, without closing the blob, dear function???
 			if (isc_close_blob (status_vector,  &blob))
@@ -1290,19 +1292,19 @@ bool get_acl (const TEXT	*owner_nm,
 	if (!length)
 	{
 		if (isc_close_blob (status_vector,  &blob))
-			/* msg 23 gds__close_blob failed */
-		BURP_error_redirect (status_vector, 23, NULL, NULL);
+			BURP_error_redirect (status_vector, 23, NULL, NULL);
+			// msg 23 gds__close_blob failed 
 		return false;
 	}
 
-	/* Rdb sometimes gets the length messed up */
+	// Rdb sometimes gets the length messed up 
 
 	if (length < max_segment)
 		length = max_segment;
 
-	/* 
-	** Allocate a buffer large enough for the largest segment and start 
-	** grinding. 
+	/*
+	** Allocate a buffer large enough for the largest segment and start
+	** grinding.
 	*/
 
 	if (!max_segment || max_segment <= sizeof(static_buffer))
@@ -1319,12 +1321,12 @@ bool get_acl (const TEXT	*owner_nm,
 	if (isc_close_blob (status_vector,  &blob))
 	{
 		if (buffer != static_buffer)
-		BURP_free (buffer);
-		/* msg 23 gds__close_blob failed */
-		BURP_error_redirect (status_vector, 23, NULL, NULL); 
+			BURP_free (buffer);
+		// msg 23 gds__close_blob failed 
+		BURP_error_redirect (status_vector, 23, NULL, NULL);
 	}
 
-	from = buffer + 3; /* skip ACL_version, ACL_id_list, and id_person */
+	from = buffer + 3; // skip ACL_version, ACL_id_list, and id_person 
 	id_person_len = (int)*from;
 
 	c_1 = (UCHAR*) owner_nm;
@@ -1334,9 +1336,9 @@ bool get_acl (const TEXT	*owner_nm,
 
 	from = buffer;
 	to = new_buffer;
-	*to++ = *from++; /* copy ACL_verion */
-	*to++ = *from++; /* copy ACL_id_list */
-	*to++ = *from++; /* copy id_person */
+	*to++ = *from++; // copy ACL_verion 
+	*to++ = *from++; // copy ACL_id_list 
+	*to++ = *from++; // copy id_person 
 	*to++ = owner_nm_len;
 	new_len = new_len + 4;
 	from = buffer + id_person_len + 4;
@@ -1357,11 +1359,11 @@ bool get_acl (const TEXT	*owner_nm,
 						  &blob_handle, new_blob_id, 0, NULL))
 	{
 		if (buffer != static_buffer)
-		BURP_free (buffer);
+			BURP_free (buffer);
 		if (new_buffer != NULL)
 			BURP_free (new_buffer);
-		/* msg 37 gds__create_blob failed */
-		BURP_error_redirect (status_vector, 37, 0, 0); 
+		// msg 37 gds__create_blob failed 
+		BURP_error_redirect (status_vector, 37, 0, 0);
 	}
 
 	if (isc_put_segment (status_vector, &blob_handle, new_len, (SCHAR*) new_buffer))
@@ -1370,8 +1372,8 @@ bool get_acl (const TEXT	*owner_nm,
 			BURP_free (buffer);
 		if (new_buffer != NULL)
 			BURP_free (new_buffer);
-		/* msg 38 gds__put_segment failed */
-		BURP_error_redirect (status_vector, 38, 0, 0); 
+		// msg 38 gds__put_segment failed 
+		BURP_error_redirect (status_vector, 38, 0, 0);
 	}
 
 	if (isc_close_blob (status_vector, &blob_handle))
@@ -1380,8 +1382,8 @@ bool get_acl (const TEXT	*owner_nm,
 			BURP_free (buffer);
 		if (new_buffer != NULL)
 			BURP_free (new_buffer);
-		/* msg 23 gds__close_blob failed */
-		BURP_error_redirect (status_vector, 23, 0, 0); 
+		// msg 23 gds__close_blob failed 
+		BURP_error_redirect (status_vector, 23, 0, 0);
 	}
 
 	if (buffer != static_buffer)
@@ -1416,20 +1418,20 @@ void get_array (BURP_REL	relation,
 			lcount;
 	USHORT		blr_length, count, field_number, field_length;
 	UCHAR		*buffer, *p;
-	UCHAR		*blr, blr_buffer [200]; /* enough for a sdl with 16 dimensions */
+	UCHAR		*blr, blr_buffer [200]; // enough for a sdl with 16 dimensions 
 	LSTRING		xdr_buffer, xdr_slice;
 	scan_attr_t		scan_next_attr;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* don't free something you don't allocate */
+	// don't free something you don't allocate 
 
 	xdr_buffer.lstr_allocated = 0;
 
-	/* Pick up attributes */
+	// Pick up attributes 
 
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
 	{
 		switch (attribute)
 		{
@@ -1439,18 +1441,18 @@ void get_array (BURP_REL	relation,
 			if (field->fld_number == field_number)
 				break;
 			if (!field)
-			BURP_error_redirect (NULL, 36, 0, 0);
-			/* msg 36 Can't find field for blob */
+				BURP_error_redirect (NULL, 36, 0, 0);
+				// msg 36 Can't find field for blob 
 
 			field_length = field->fld_length;
 			if (field->fld_type == blr_varying)
-			field_length += sizeof(USHORT);
+				field_length += sizeof(USHORT);
 			slice_length = field_length;
-			// 
+			//
 			// Copy the ranges onto a buffer and let the program
 			// mess with the copy rather than the original
 			//
-			memcpy(fld_ranges,field->fld_ranges, sizeof(fld_ranges)); 
+			memcpy(fld_ranges,field->fld_ranges, sizeof(fld_ranges));
 			break;
 
 		case att_array_dimensions:
@@ -1459,13 +1461,13 @@ void get_array (BURP_REL	relation,
 			for (range = fld_ranges; range < end_ranges; range += 2)
 			{
 				if (get_attribute(&attribute, tdgbl) != att_array_range_low)
-					bad_attribute (scan_next_attr, attribute, 58); 
-					/* msg 58 array */
+					bad_attribute (scan_next_attr, attribute, 58);
+					// msg 58 array 
 				else
 					range [0] = get_numeric();
 				if (get_attribute(&attribute, tdgbl) != att_array_range_high)
-					bad_attribute (scan_next_attr, attribute, 58); 
-					/* msg 58 array */
+					bad_attribute (scan_next_attr, attribute, 58);
+					// msg 58 array 
 				else
 					range [1] = get_numeric();
 				slice_length *= (range [1] - range [0] + 1);
@@ -1473,8 +1475,8 @@ void get_array (BURP_REL	relation,
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 58); 
-			/* msg 58 array */
+			bad_attribute (scan_next_attr, attribute, 58);
+			// msg 58 array 
 			break;
 		}
 	}
@@ -1486,7 +1488,7 @@ void get_array (BURP_REL	relation,
 
 	blob_id = (SLONG*) ((UCHAR*) record_buffer + field->fld_offset);
 
-	if (return_length != slice_length) 
+	if (return_length != slice_length)
 	{
 		int current_dim, divisor, elements_remaining;
 		int data_at, elements_written, upper, lower;
@@ -1495,26 +1497,26 @@ void get_array (BURP_REL	relation,
 		// Ugh!  The full array wasn't returned and versions of gbak prior to
 		// V3.2I don't explicitly signal this.  We must recompute the top
 		// element to restore.
-		// 
-		// Double Ugh!  gbak (Versions prior to 5.0) while backing up calculates 
-		// the top dimensions incorrectly So whatever was written as top dimensions 
+		//
+		// Double Ugh!  gbak (Versions prior to 5.0) while backing up calculates
+		// the top dimensions incorrectly So whatever was written as top dimensions
 		// is useless. 5.0 gbak has written correct dimensions, but what the heck
 		// we'll calculate it again
 		//
 
 		elements_remaining = return_length / field_length;
 		//
-		// Backup (versions prior to 5.0) has surely written wrong dimensions. 
-		// Ignore whatever is read in fld_ranges and calculate the dimensions 
-		// of the last element. field->fld_ranges has the max dimensions. 
+		// Backup (versions prior to 5.0) has surely written wrong dimensions.
+		// Ignore whatever is read in fld_ranges and calculate the dimensions
+		// of the last element. field->fld_ranges has the max dimensions.
 		// last_element_dim holds only the upper bounds of each dimension.
 		//
-		for (i1 = 0, i3 = 0; i1 < field->fld_dimensions; i1++) 
+		for (i1 = 0, i3 = 0; i1 < field->fld_dimensions; i1++)
 		{
 			divisor = 1;
 			for (i2 = (2 * (i1 + 1) + 1); i2 <= field->fld_dimensions * 2; i2 += 2)
 				divisor *= (field->fld_ranges[i2] - field->fld_ranges[i2 - 1] + 1);
-			last_element_dim[i1] = 
+			last_element_dim[i1] =
 					(elements_remaining - 1) / divisor + field->fld_ranges[i3];
 			elements_remaining  -=
 					(last_element_dim[i1] - field->fld_ranges[i3]) * divisor;
@@ -1522,15 +1524,15 @@ void get_array (BURP_REL	relation,
 		}
 #ifdef DEBUG
 		ib_fprintf(ib_stderr, "\nLast element upper bounds read from backup file:\n");
-		for(current_dim=1;current_dim<field->fld_dimensions*2;current_dim+=2) 
+		for (current_dim = 1; current_dim < field->fld_dimensions * 2; current_dim += 2)
 			ib_fprintf(ib_stderr,"%ld ",fld_ranges[current_dim]);
 		ib_fprintf(ib_stderr, "\nCalculated Last element upper bounds :\n");
-		for(current_dim=0;current_dim<field->fld_dimensions;current_dim++) 
+		for (current_dim = 0; current_dim < field->fld_dimensions; current_dim++)
 			ib_fprintf(ib_stderr,"%ld ",last_element_dim[current_dim]);
 		ib_fprintf(ib_stderr,"return_length = %ld\n", return_length);
 		ib_fprintf(ib_stderr,"elements_returned = %ld\n", return_length/field_length);
 		ib_fprintf(ib_stderr,"Max dims[");
-		for(current_dim=1;current_dim<field->fld_dimensions*2;current_dim+=2) 
+		for (current_dim = 1; current_dim < field->fld_dimensions * 2; current_dim += 2)
 			ib_fprintf(ib_stderr,"%ld ",field->fld_ranges[current_dim]);
 		ib_fprintf(ib_stderr,"]");
 #endif
@@ -1541,16 +1543,16 @@ void get_array (BURP_REL	relation,
 		// to the engine. When the loop cycles through all dimensions, we would
 		// have written the whole of the irregular slice.
 		//
-		for (current_dim=0; current_dim<field->fld_dimensions; current_dim++) 
+		for (current_dim = 0; current_dim < field->fld_dimensions; current_dim++)
 		{
 			blr = blr_buffer;
 			bool dont_write = false;
 
-			/* build the sdl */
+			// build the sdl 
 
 			stuff(&blr, gds_sdl_version1);
 
-			stuff(&blr, gds_sdl_struct); 
+			stuff(&blr, gds_sdl_struct);
 			stuff(&blr, 1);
 
 			if (field->fld_type == blr_text || field->fld_type == blr_varying)
@@ -1563,7 +1565,7 @@ void get_array (BURP_REL	relation,
 				stuff_word(&blr, field->fld_length);
 			}
 			else if (field->fld_type == blr_short || field->fld_type == blr_long ||
-					 field->fld_type == blr_quad || field->fld_type == blr_int64) 
+					 field->fld_type == blr_quad || field->fld_type == blr_int64)
 			{
 				stuff(&blr, field->fld_type);
 				stuff(&blr, field->fld_scale);
@@ -1572,12 +1574,12 @@ void get_array (BURP_REL	relation,
 				stuff(&blr, field->fld_type);
 
 
-			stuff(&blr, gds_sdl_relation); 
+			stuff(&blr, gds_sdl_relation);
 			stuff_string(&blr, relation->rel_name);
-			stuff(&blr, gds_sdl_field); 
+			stuff(&blr, gds_sdl_field);
 			stuff_string(&blr, field->fld_name);
 
-			/* each element spec starts here  */
+			// each element spec starts here  
 
 #ifdef DEBUG
 			ib_fprintf(ib_stderr,"\nBounds written [");
@@ -1586,7 +1588,7 @@ void get_array (BURP_REL	relation,
 			end_ranges = field->fld_ranges + 2 * field->fld_dimensions;
 			//
 			// Here is the important work. Calculate the the bounds to be written
-			// so that the resulting slice is a rectangular/square slice. 
+			// so that the resulting slice is a rectangular/square slice.
 			// For a 2 dimensional array of size 1..N, 1..M, which is partially
 			// filled, we have already calculated the dims of last element. Say
 			// if this was x,y (x is row, y is column) then we do
@@ -1598,7 +1600,7 @@ void get_array (BURP_REL	relation,
 			//    isc_put_slice(x..x, y..y, 1..z);
 			// This is applicable for any number of dimensions.
 			// Special cases:
-			// for example in case of a 2D array (10,10) and if the last element 
+			// for example in case of a 2D array (10,10) and if the last element
 			// dims were (1,2), we would just do a isc_put_slice(1..1, 1..2).
 			// This is applied for any number of dimensions.
 			//
@@ -1613,7 +1615,7 @@ void get_array (BURP_REL	relation,
 				// we blindly put slices without actually figuring out if we
 				// really need to do so. For eg: if we have a 2D array of
 				// size [10,4] and the last element dims are [6,4] then all
-				// we need to do is is to put one slice as 
+				// we need to do is is to put one slice as
 				//   isc_put_slice(1..6,1..4)
 				// rather than looping through the dimensions and putting
 				//   isc_put_slice(1..5,1..4)
@@ -1623,71 +1625,73 @@ void get_array (BURP_REL	relation,
 				// the Special case should optimize the no of isc_put_slice
 				// we perform.
 				//
-				if( current_dim + 1 == field->fld_dimensions - 1 &&
+				if (current_dim + 1 == field->fld_dimensions - 1 &&
 				  field->fld_dimensions-count == 2       &&
-				   last_element_dim[count + 1]  == range[3] )
+				   last_element_dim[count + 1]  == range[3])
 				{
-					stuff(&blr, gds_sdl_long_integer); 
-					stuff_long(&blr, range [0]);
-					lower = range [0];
+					stuff(&blr, gds_sdl_long_integer);
+					stuff_long(&blr, range[0]);
+					lower = range[0];
 					stuff(&blr, gds_sdl_long_integer);
 					stuff_long(&blr, last_element_dim [count]);
-					upper = last_element_dim [count];
+					upper = last_element_dim[count];
 					elements_written *= (upper - lower + 1);
 					range += 2;
 					count++;
 					stuff(&blr, gds_sdl_do2);
 					stuff(&blr, count);
 					stuff(&blr, gds_sdl_long_integer);
-					stuff_long(&blr, range [0]);
-					lower = range [0];
+					stuff_long(&blr, range[0]);
+					lower = range[0];
 					stuff(&blr, gds_sdl_long_integer);
-					stuff_long(&blr, last_element_dim [count]);
-					upper=last_element_dim [count];
+					stuff_long(&blr, last_element_dim[count]);
+					upper=last_element_dim[count];
 					elements_written *= (upper - lower + 1);
 					++current_dim;
 					break;
 				}
-				if( current_dim == count) 
+				if (current_dim == count)
 				{
 					stuff(&blr, gds_sdl_long_integer);
 					stuff_long(&blr, range [0]);
 					lower = range [0];
-					stuff(&blr, gds_sdl_long_integer); 
+					stuff(&blr, gds_sdl_long_integer);
 					upper = (current_dim == field->fld_dimensions - 1) ?
 					 last_element_dim [count] : (last_element_dim [count] - 1);
-					if( upper < range[0] ) 
+					if (upper < range[0])
 					{
-						/** 
+						/**
 						see Special Case above
 						**/
 						dont_write = true;
 						break;
 					}
-					stuff_long(&blr, upper); 
+					stuff_long(&blr, upper);
 				}
-				else if (current_dim < count) 
+				else if (current_dim < count)
 				{
 					stuff(&blr, gds_sdl_long_integer);
 					stuff_long(&blr, range [0]);
 					stuff(&blr, gds_sdl_long_integer);
-					stuff_long(&blr, range [1]); 
-					upper = range[1]; lower = range[0];
+					stuff_long(&blr, range [1]);
+					upper = range[1];
+					lower = range[0];
 				}
-				else if (current_dim > count) 
+				else if (current_dim > count)
 				{
-					stuff(&blr, gds_sdl_long_integer); 
-					stuff_long(&blr, last_element_dim [count]); 
-					stuff(&blr, gds_sdl_long_integer); 
-					stuff_long(&blr, last_element_dim [count]); 
-					upper=lower=last_element_dim [count];
+					stuff(&blr, gds_sdl_long_integer);
+					stuff_long(&blr, last_element_dim [count]);
+					stuff(&blr, gds_sdl_long_integer);
+					stuff_long(&blr, last_element_dim [count]);
+					upper = lower = last_element_dim[count];
 				}
 				elements_written *= (upper - lower + 1);
 #ifdef DEBUG
 				ib_fprintf(ib_stderr,"%d..%d ",lower,upper);
 #endif
 			}
-			if (dont_write) continue;
+			if (dont_write)
+				continue;
 #ifdef DEBUG
 			ib_fprintf(ib_stderr,"]");
 			ib_fprintf(ib_stderr,"\n Elements Written=%d  ",elements_written);
@@ -1701,7 +1705,7 @@ void get_array (BURP_REL	relation,
 
 			for (count = 0; count < field->fld_dimensions; count++)
 			{
-				stuff(&blr, gds_sdl_variable); 
+				stuff(&blr, gds_sdl_variable);
 				stuff(&blr, count);
 			}
 
@@ -1713,17 +1717,17 @@ void get_array (BURP_REL	relation,
 #endif
 
 			blr_length = blr - blr_buffer;
-	
-			if(data_at == 0)
+
+			if (data_at == 0)
 			{
 				buffer = BURP_alloc (return_length);
 
-				if (tdgbl->gbl_sw_transportable) 
+				if (tdgbl->gbl_sw_transportable)
 				{
 					if (get_attribute(&attribute, tdgbl) != att_xdr_array)
-						/* msg 55 Expected XDR record length */
+						// msg 55 Expected XDR record length 
 						BURP_error_redirect (NULL, 55, 0, 0);
-					else 
+					else
 					{
 						xdr_buffer.lstr_allocated = get(tdgbl);
 						xdr_buffer.lstr_allocated |= get(tdgbl) << 8;
@@ -1733,13 +1737,13 @@ void get_array (BURP_REL	relation,
 						xdr_buffer.lstr_address = BURP_alloc (xdr_buffer.lstr_allocated);
 						xdr_slice.lstr_allocated = xdr_slice.lstr_length = return_length;
 						xdr_slice.lstr_address = buffer;
-						p = xdr_buffer.lstr_address; 
+						p = xdr_buffer.lstr_address;
 					}
 				}
-				else 
+				else
 				{
 					p = buffer;
-					lcount = return_length; 
+					lcount = return_length;
 				}
 
 				if (lcount)
@@ -1749,15 +1753,15 @@ void get_array (BURP_REL	relation,
 					CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
 			}
 
-			if (isc_put_slice (status_vector, &DB, &gds_trans, 
+			if (isc_put_slice (status_vector, &DB, &gds_trans,
 				(ISC_QUAD*) blob_id, blr_length, reinterpret_cast<char*>(blr_buffer),
-				0,	  /* param length for subset of an array handling */
-				NULL,  /* param for subset of an array handling */
+				0,	  // param length for subset of an array handling 
+				NULL,  // param for subset of an array handling 
 				elements_written * field->fld_length,
-				buffer+data_at))
+				buffer + data_at))
 			{
 				BURP_print (81, field->fld_name, NULL, NULL, NULL, NULL);
-				/* msg 81 error accessing blob field %s -- continuing */
+				// msg 81 error accessing blob field %s -- continuing 
 				BURP_print_status (status_vector);
 #ifdef DEBUG
 				PRETTY_print_sdl (blr_buffer, NULL, NULL, 0);
@@ -1770,15 +1774,15 @@ void get_array (BURP_REL	relation,
 #endif
 		}
 	}
-	else 
+	else
 	{ /** This is the regular case we've got the entire array **/
 		blr = blr_buffer;
 
-		/* build the sdl */
+		// build the sdl 
 
 		stuff(&blr, gds_sdl_version1);
 
-		stuff(&blr, gds_sdl_struct); 
+		stuff(&blr, gds_sdl_struct);
 		stuff(&blr, 1);
 
 		if (field->fld_type == blr_text || field->fld_type == blr_varying)
@@ -1800,12 +1804,12 @@ void get_array (BURP_REL	relation,
 			stuff(&blr, field->fld_type);
 
 
-		stuff(&blr, gds_sdl_relation); 
+		stuff(&blr, gds_sdl_relation);
 		stuff_string(&blr, relation->rel_name);
-		stuff(&blr, gds_sdl_field); 
+		stuff(&blr, gds_sdl_field);
 		stuff_string(&blr, field->fld_name);
 
-		/* each element spec starts here  */
+		// each element spec starts here  
 
 		for (range = fld_ranges, count = 0; range < end_ranges; range += 2, count++)
 		{
@@ -1814,7 +1818,7 @@ void get_array (BURP_REL	relation,
 			stuff(&blr, gds_sdl_long_integer);
 			stuff_long(&blr, range [0]);
 			stuff(&blr, gds_sdl_long_integer);
-			stuff_long(&blr, range [1]); 
+			stuff_long(&blr, range [1]);
 		}
 
 		stuff(&blr, gds_sdl_element);
@@ -1844,8 +1848,8 @@ void get_array (BURP_REL	relation,
 		{
 			if (get_attribute(&attribute, tdgbl) != att_xdr_array)
 				BURP_error_redirect (NULL, 55, 0, 0);
-				/* msg 55 Expected XDR record length */
-			else 
+				// msg 55 Expected XDR record length 
+			else
 			{
 				xdr_buffer.lstr_allocated = get(tdgbl);
 				xdr_buffer.lstr_allocated |= get(tdgbl) << 8;
@@ -1855,13 +1859,13 @@ void get_array (BURP_REL	relation,
 				xdr_buffer.lstr_address = BURP_alloc (xdr_buffer.lstr_allocated);
 				xdr_slice.lstr_allocated = xdr_slice.lstr_length = return_length;
 				xdr_slice.lstr_address = buffer;
-				p = xdr_buffer.lstr_address; 
+				p = xdr_buffer.lstr_address;
 			}
 		}
 		else
 		{
 			p = buffer;
-			lcount = return_length; 
+			lcount = return_length;
 		}
 
 		if (lcount)
@@ -1871,15 +1875,15 @@ void get_array (BURP_REL	relation,
 			CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
 
 
-		if (isc_put_slice (status_vector, &DB, &gds_trans, 
+		if (isc_put_slice (status_vector, &DB, &gds_trans,
 						   (ISC_QUAD*) blob_id, blr_length,
 						   reinterpret_cast<char*>(blr_buffer),
-						   0,	  /* param length for subset of an array handling */
-						   NULL,  /* param for subset of an array handling */
+						   0,	  // param length for subset of an array handling 
+						   NULL,  // param for subset of an array handling 
 						return_length, buffer))
 		{
 			BURP_print (81, field->fld_name, NULL, NULL, NULL, NULL);
-			/* msg 81 error accessing blob field %s -- continuing */
+			// msg 81 error accessing blob field %s -- continuing 
 			BURP_print_status (status_vector);
 #ifdef DEBUG
 			PRETTY_print_sdl (blr_buffer, NULL, NULL, 0);
@@ -1916,12 +1920,12 @@ void get_blob (BURP_FLD		fields,
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* Pick up attributes */
+	// Pick up attributes 
 
 	ULONG segments = 0;
 
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
 	{
 		switch (attribute)
 		{
@@ -1942,13 +1946,13 @@ void get_blob (BURP_FLD		fields,
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 64); 
-			/* msg 64 blob */
+			bad_attribute (scan_next_attr, attribute, 64);
+			// msg 64 blob 
 			break;
 		}
 	}
 
-	/* Find the field associated with the blob */
+	// Find the field associated with the blob 
 
 	for (field = fields; field; field = field->fld_next)
 		if (field->fld_number == field_number)
@@ -1956,28 +1960,28 @@ void get_blob (BURP_FLD		fields,
 
 	if (!field)
 		BURP_error_redirect (NULL, 36, 0, 0);
-		/* msg 36 Can't find field for blob */
+		// msg 36 Can't find field for blob 
 
-	/* Create new blob */
+	// Create new blob 
 
 	ISC_QUAD* blob_id = (ISC_QUAD*) ((UCHAR*) record_buffer + field->fld_offset);
 	FRBRD* blob = NULL;
 
-	if (isc_create_blob (status_vector, &DB, &gds_trans, &blob, 
+	if (isc_create_blob (status_vector, &DB, &gds_trans, &blob,
 		(ISC_QUAD*) blob_id))
 	{
-		BURP_error_redirect (status_vector, 37, 0, 0); 
-		/* msg 37 gds__create_blob failed */
+		BURP_error_redirect (status_vector, 37, 0, 0);
+		// msg 37 gds__create_blob failed 
 	}
 
-	/* Allocate blob buffer is static buffer is too short */
+	// Allocate blob buffer is static buffer is too short 
 
 	if (!max_segment || max_segment <= sizeof(static_buffer))
 		buffer = static_buffer;
 	else
 		buffer = BURP_alloc (max_segment);
 
-	/* Eat up blob segments */
+	// Eat up blob segments 
 
 	for (; segments > 0; --segments )
 	{
@@ -1989,12 +1993,12 @@ void get_blob (BURP_FLD		fields,
 		}
 		if (isc_put_segment (status_vector, &blob, length, (SCHAR*) buffer))
 			BURP_error_redirect (status_vector, 38, 0, 0);
-		/* msg 38 gds__put_segment failed */
+		// msg 38 gds__put_segment failed 
 	}
 
 	if (isc_close_blob (status_vector,  &blob))
-		BURP_error_redirect (status_vector, 23, 0, 0); 
-		/* msg 23 gds__close_blob failed */
+		BURP_error_redirect (status_vector, 23, 0, 0);
+		// msg 23 gds__close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free (buffer);
@@ -2016,14 +2020,14 @@ void get_blr_blob (ISC_QUAD	*blob_id,
  *
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
-	UCHAR		*buffer, static_buffer [1024], *p;
+	UCHAR		*buffer, static_buffer[1024], *p;
 	isc_tr_handle	local_trans;
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	ULONG length = (ULONG)get_numeric();
 
-	/* Create new blob */
+	// Create new blob 
 
 	FRBRD* blob = NULL;
 
@@ -2033,12 +2037,14 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 		local_trans = gds_trans;
 
 	if (isc_create_blob (status_vector, &DB, &local_trans, &blob, blob_id))
-		BURP_error_redirect (status_vector, 37, 0, 0); 
-		/* msg 37 gds__create_blob failed */
+	{
+		BURP_error_redirect (status_vector, 37, 0, 0);
+		// msg 37 gds__create_blob failed 
+	}
 
-	/* Allocate blob buffer is static buffer is too short */
+	// Allocate blob buffer is static buffer is too short 
 
-	/* 03 Jun 2003. Nickolay Samofatov. Workaround bug of GCC 3.2.X #11068. 
+	/* 03 Jun 2003. Nickolay Samofatov. Workaround bug of GCC 3.2.X #11068.
 	Original code was:
 	if (!length || length + 1 <= (USHORT)(sizeof(static_buffer)) )
 	*/
@@ -2050,7 +2056,7 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 	if (length)
 	{
 		p = get_block(tdgbl, buffer, length);
-		/* Make sure it has an eoc */
+		// Make sure it has an eoc 
 		if (p[-1] != blr_eoc) {
 			p[0] = blr_eoc;
 			length++;
@@ -2058,12 +2064,12 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 	}
 
 	if (isc_put_segment (status_vector, &blob, length, (SCHAR*) buffer))
-		BURP_error_redirect (status_vector, 38, 0, 0); 
-		/* msg 38 gds__put_segment failed */
+		BURP_error_redirect (status_vector, 38, 0, 0);
+		// msg 38 gds__put_segment failed 
 
 	if (isc_close_blob (status_vector,  &blob))
-		BURP_error_redirect (status_vector, 23, 0, 0); 
-		/* msg 23 gds__close_blob failed */
+		BURP_error_redirect (status_vector, 23, 0, 0);
+		// msg 23 gds__close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free (buffer);
@@ -2097,9 +2103,9 @@ bool get_character_set (void)
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$FUNCTION_NAME.NULL = TRUE;
 		X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
-	   
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -2152,7 +2158,7 @@ bool get_character_set (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, msgErr_restore_charset); 
+				bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
 				/* RDB$CHARSETS */
 				break;
 			}
@@ -2169,7 +2175,7 @@ bool get_chk_constraint (void)
 {
 /**************************************
  *
- *	g e t _ c h k _ c o n s t r a i n t 
+ *	g e t _ c h k _ c o n s t r a i n t
  *
  **************************************
  *
@@ -2186,8 +2192,8 @@ bool get_chk_constraint (void)
 		X IN RDB$CHECK_CONSTRAINTS
 		X.RDB$CONSTRAINT_NAME.NULL = TRUE;
 		X.RDB$TRIGGER_NAME.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -2202,8 +2208,8 @@ bool get_chk_constraint (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 208); 
-				/* msg 208 relation constraint */
+				bad_attribute (scan_next_attr, attribute, 208);
+				// msg 208 relation constraint 
 				break;
 			}
 		}
@@ -2242,8 +2248,8 @@ bool get_collation (void)
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$FUNCTION_NAME.NULL = TRUE;
 
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -2270,9 +2276,8 @@ bool get_collation (void)
 				X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_numeric();
 				break;
 
-			case att_coll_subtype:	/* No longer used: 93-11-15 DBS */
-				/* still present to handle V4 R&D
-				   gbak files */
+			case att_coll_subtype:	// No longer used: 93-11-15 DBS 
+				// still present to handle V4 R&D gbak files
 				get_numeric();
 				break;
 
@@ -2330,12 +2335,12 @@ rec_type get_data (BURP_REL	relation)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* If we're only doing meta-data, ignore data records */
+	// If we're only doing meta-data, ignore data records 
 
 	if (tdgbl->gbl_sw_meta)
 		return ignore_data (relation);
 
-	/* Start by counting the interesting fields */
+	// Start by counting the interesting fields 
 
 	RCRD_OFFSET offset = 0;
 	ULONG length = 0;
@@ -2353,7 +2358,7 @@ rec_type get_data (BURP_REL	relation)
 	if (tdgbl->RESTORE_format >= 2)
 		count += count;
 
-	/* Time to generate blr to store data.  Whoppee. */
+	// Time to generate blr to store data.  Whoppee. 
 
 	UCHAR* const blr_buffer = (UCHAR*) BURP_alloc (200 + length + count * 18);
 	UCHAR* blr = blr_buffer;
@@ -2361,8 +2366,8 @@ rec_type get_data (BURP_REL	relation)
 	stuff(&blr, blr_version4);
 	stuff(&blr, blr_begin);
 	stuff(&blr, blr_message);
-	stuff(&blr, 0);				/* Message number */
-	stuff_word(&blr, count);	/* Number of fields, counting eof */
+	stuff(&blr, 0);				// Message number 
+	stuff_word(&blr, count);	// Number of fields, counting eof 
 
 	// Let's reset count.
 	count = 0;
@@ -2370,16 +2375,16 @@ rec_type get_data (BURP_REL	relation)
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if (field->fld_flags & FLD_computed)
-		continue;
+			continue;
 
-		/* arrays are of various fld_types but are really blobs */
+		// arrays are of various fld_types but are really blobs 
 
 		dtype = field->fld_type;
 		length = field->fld_length;
 		alignment = 4;
 
 		if (field->fld_flags & FLD_array)
-		dtype = blr_blob;
+			dtype = blr_blob;
 
 		if (dtype <= DTYPE_BLR_MAX)
 		{
@@ -2400,9 +2405,9 @@ rec_type get_data (BURP_REL	relation)
 			stuff_word(&blr, field->fld_character_set_id);
 			stuff_word(&blr, field->fld_length);
 			if (dtype == blr_varying)
-			length += sizeof(USHORT);
+				length += sizeof(USHORT);
 			break;
-		
+
 		case blr_short:
 		case blr_long:
 		case blr_quad:
@@ -2425,14 +2430,14 @@ rec_type get_data (BURP_REL	relation)
 			stuff(&blr, blr_quad);
 			stuff(&blr, 0);
 			break;
-			
-		default:   
+
+		default:
 #ifdef SUPERSERVER
 			BURP_svc_error (26, isc_arg_number, (void*) (SLONG) field->fld_type,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #else
 			BURP_error (26, (void*) (SLONG) field->fld_type, 0, 0, 0, 0);
-				/* msg 26 datatype %ld not understood */
+			// msg 26 datatype %ld not understood 
 #endif
 			break;
 		}
@@ -2443,7 +2448,7 @@ rec_type get_data (BURP_REL	relation)
 		offset += length;
 	}
 
-	/* If this is format version 2, build fields for null flags */
+	// If this is format version 2, build fields for null flags 
 
 	if (tdgbl->RESTORE_format >= 2)
 		for (field = relation->rel_fields; field; field = field->fld_next)
@@ -2459,25 +2464,25 @@ rec_type get_data (BURP_REL	relation)
 
 	length = offset;
 
-	/* Build STORE statement */
+	// Build STORE statement 
 
 	stuff(&blr, blr_receive);
 	stuff(&blr, 0);
 	stuff(&blr, blr_store);
 	stuff(&blr, blr_relation);
 	stuff_string(&blr, relation->rel_name);
-	stuff(&blr, 0);			/* context variable */
+	stuff(&blr, 0);			// context variable 
 	stuff(&blr, blr_begin);
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if (field->fld_flags & FLD_computed)
-		continue;
+			continue;
 		stuff(&blr, blr_assignment);
 		if (tdgbl->RESTORE_format >= 2)
 		{
 			stuff(&blr, blr_parameter2);
-			stuff(&blr, 0); 
+			stuff(&blr, 0);
 			stuff_word(&blr, field->fld_parameter);
 			stuff_word(&blr, field->fld_missing_parameter);
 		}
@@ -2496,7 +2501,7 @@ rec_type get_data (BURP_REL	relation)
 	stuff(&blr, blr_end);
 	stuff(&blr, blr_eoc);
 
-	/* Compile request */
+	// Compile request 
 
 	#ifdef DEBUG
 	isc_print_blr (blr_buffer, NULL, NULL, 0);
@@ -2506,26 +2511,26 @@ rec_type get_data (BURP_REL	relation)
 	ISC_STATUS_ARRAY status_vector;
 	USHORT blr_length = blr - blr_buffer;
 
-	if (isc_compile_request (status_vector,  &DB, &request, 
+	if (isc_compile_request (status_vector,  &DB, &request,
 							 blr_length,  reinterpret_cast<char*>(blr_buffer)))
 	{
 		isc_print_blr(reinterpret_cast<char*>(blr_buffer), NULL, NULL, 0);
 		if (!tdgbl->gbl_sw_incremental)
-			BURP_error_redirect (status_vector, 27, 0, 0); 
-			/* msg 27 gds__compile_request failed */
+			BURP_error_redirect (status_vector, 27, 0, 0);
+			// msg 27 gds__compile_request failed 
 		else
 		{
-			BURP_print_status (status_vector); 
+			BURP_print_status (status_vector);
 			BURP_free (blr_buffer);
-			return ignore_data (relation); 
+			return ignore_data (relation);
 		}
 	}
-		
+
 	BURP_free (blr_buffer);
 	buffer = NULL;
 
 	BURP_verbose (124, relation->rel_name, NULL, NULL, NULL, NULL);
-	/* msg 124  restoring data for relation %s */
+	// msg 124  restoring data for relation %s 
 
 	data.lstr_allocated = 0;
 	data.lstr_address = NULL;
@@ -2538,7 +2543,7 @@ rec_type get_data (BURP_REL	relation)
 	{
 		if (get(tdgbl) != att_data_length)
 			BURP_error_redirect (NULL, 39, 0, 0);
-			/* msg 39 expected record length */
+			// msg 39 expected record length 
 		l = (USHORT) get_numeric();
 		if (!tdgbl->gbl_sw_transportable && l != length)
 		{
@@ -2552,18 +2557,18 @@ rec_type get_data (BURP_REL	relation)
 							 0, NULL, 0, NULL, 0, NULL);
 	#else
 				BURP_error (40, (void*) length, (void*)(ULONG) l, 0, 0, 0);
-			/* msg 40 wrong length record, expected %ld encountered %ld */
+				// msg 40 wrong length record, expected %ld encountered %ld 
 	#endif
 			}
 		}
 		if (!buffer)
 			buffer = (SSHORT *) BURP_alloc (MAX (length, l));
 
-		if (tdgbl->gbl_sw_transportable) 
+		if (tdgbl->gbl_sw_transportable)
 		{
 			if (get(tdgbl) != att_xdr_length)
 				BURP_error_redirect (NULL, 55, 0, 0);
-				/* msg 55 Expected XDR record length */
+				// msg 55 Expected XDR record length 
 			else
 			{
 				data.lstr_length = l = (USHORT) get_numeric();
@@ -2581,7 +2586,7 @@ rec_type get_data (BURP_REL	relation)
 			p = (TEXT*) buffer;
 		if (get(tdgbl) != att_data_data)
 			BURP_error_redirect (NULL, 41, 0, 0);
-			/* msg 41 expected data attribute */
+			// msg 41 expected data attribute 
 
 		if (tdgbl->gbl_sw_compress)
 			decompress ((UCHAR*) p, l);
@@ -2595,12 +2600,12 @@ rec_type get_data (BURP_REL	relation)
 
 		if (tdgbl->gbl_sw_transportable)
 			CAN_encode_decode (relation, &data, (UCHAR *)buffer, FALSE);
-		
+
 		records++;
-		
+
 		if ((records % RESTORE_VERBOSE_INTERVAL) == 0)
 			BURP_verbose(107, (void*) (SLONG) records, NULL, NULL, NULL, NULL);
-		
+
 		for (field = relation->rel_fields; field; field = field->fld_next)
 			if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
 			{
@@ -2627,23 +2632,23 @@ rec_type get_data (BURP_REL	relation)
 				if (tdgbl->gbl_sw_incremental)
 				{
 					BURP_print (138, relation->rel_name, NULL, NULL, NULL, NULL);
-					/* msg 138 validation error on field in relation %s */
+					// msg 138 validation error on field in relation %s 
 					BURP_print_status (status_vector);
 				}
 				else
 					BURP_error_redirect (status_vector, 47, 0, 0);
-					/* msg 47 warning -- record could not be restored */
+					// msg 47 warning -- record could not be restored 
 			}
 			else {
 				if (tdgbl->gbl_sw_incremental)
 				{
 					BURP_print (114, relation->rel_name, NULL, NULL, NULL, NULL);
-					/* msg 114 restore failed for record in relation %s */
+					// msg 114 restore failed for record in relation %s 
 					BURP_print_status (status_vector);
 				}
 				else
 					BURP_error_redirect (status_vector, 48, 0, 0);
-				/* msg 48 gds__send failed */
+					// msg 48 gds__send failed 
 			}
 		}
 		if (record != rec_data)
@@ -2658,9 +2663,9 @@ rec_type get_data (BURP_REL	relation)
 	if (tdgbl->gbl_sw_incremental)
 	{
 		BURP_verbose (72, relation->rel_name, NULL, NULL, NULL, NULL);
-		/* msg 72  committing data for relation %s */
+		// msg 72  committing data for relation %s 
 		COMMIT
-		/* existing ON_ERROR continues past error, beck */
+		// existing ON_ERROR continues past error, beck 
 		ON_ERROR
 
 			/* Fix for bug_no 8055:
@@ -2683,24 +2688,24 @@ rec_type get_data (BURP_REL	relation)
 							if ( error_code == gds_no_dup )
 							{
 								BURP_print(241, NULL, NULL, NULL, NULL, NULL);
-								/* msg 241 The unique index has duplicate values or NULLs */
+								// msg 241 The unique index has duplicate values or NULLs 
 								BURP_print(242, NULL, NULL, NULL, NULL, NULL);
-								/* msg 242 Delete or Update duplicate values or NULLs, and activate index with */
+								// msg 242 Delete or Update duplicate values or NULLs, and activate index with 
 							}
 							else
 							{
 								BURP_print(244, NULL, NULL, NULL, NULL, NULL);
-								/* msg 244 Not enough disk space to create the sort file for an index */
+								// msg 244 Not enough disk space to create the sort file for an index 
 								BURP_print(245, NULL, NULL, NULL, NULL, NULL);
-								/* msg 245 Set the TMP environment variable to a directory on a filesystem that does have enough space, and activate index with */
+								// msg 245 Set the TMP environment variable to a directory on a filesystem that does have enough space, and activate index with 
 							}
 							BURP_print(243, index_name, NULL, NULL, NULL, NULL);
 							/* msg 243 ALTER INDEX \"%s\" ACTIVE; */
 							END_MODIFY;
 						END_FOR;
-						/* don't bring the database on-line */
+						// don't bring the database on-line 
 						flag_on_line = false;
-						/* commit one more time */
+						// commit one more time 
 						COMMIT
 						ON_ERROR
 							continue;
@@ -2708,15 +2713,15 @@ rec_type get_data (BURP_REL	relation)
 						break;
 					default:
 						BURP_print (69, relation->rel_name, NULL, NULL, NULL, NULL);
-						/* msg 69 commit failed on relation %s */
+						// msg 69 commit failed on relation %s 
 						BURP_print_status (tdgbl->status_vector);
 						ROLLBACK;
 						ON_ERROR
 							general_on_error ();
 						END_ERROR;
 						break;
-				} /* end of switch */
-			} /* end of while */
+				} // end of switch 
+			} // end of while 
 		END_ERROR;
 
 		EXEC SQL SET TRANSACTION NO_AUTO_UNDO;
@@ -2724,7 +2729,7 @@ rec_type get_data (BURP_REL	relation)
 			EXEC SQL SET TRANSACTION;
 	}
 	BURP_verbose (107, (void*) (SLONG) records, NULL, NULL, NULL, NULL);
-	/* msg 107 %ld records restored */
+	// msg 107 %ld records restored 
 
 	return record;
 }
@@ -2752,8 +2757,8 @@ bool get_exception(void)
 		X IN RDB$EXCEPTIONS
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$MESSAGE.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -2761,7 +2766,7 @@ bool get_exception(void)
 				l = GET_TEXT(X.RDB$EXCEPTION_NAME);
 				MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
 				BURP_verbose (199, temp, NULL, NULL, NULL, NULL);
-				/* msg 199 restoring exception %s */
+				// msg 199 restoring exception %s 
 				break;
 
 			case att_exception_description:
@@ -2780,8 +2785,8 @@ bool get_exception(void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 89); 
-				/* msg 89 function */
+				bad_attribute (scan_next_attr, attribute, 89);
+				// msg 89 function 
 				break;
 			}
 		}
@@ -2817,7 +2822,7 @@ bool cvt_v3_to_v4_intl (SSHORT	dtype,
  *  contain a NULL byte, and can therefore not be represented
  *  using a c-string datatype, always use fixed".
  *
- *  Return true if a conversion was performed, FALSE otherwise.
+ *  Return true if a conversion was performed, false otherwise.
  *
  **************************************/
 	SSHORT	i;
@@ -2827,38 +2832,38 @@ bool cvt_v3_to_v4_intl (SSHORT	dtype,
 		case blr_text2:
 		case blr_varying2:
 		case blr_cstring2:
-			
+
 		case blr_text:
 		case blr_varying:
 		case blr_cstring:
 
-			/* Japanese V3.2 used SCALE 5 to indicate SJIS text */
+			// Japanese V3.2 used SCALE 5 to indicate SJIS text 
 			if (*scale == 5 && ((*sub_type == 0) || (*sub_type == 1)))
-				{
+			{
 				*character_set_id = CS_JIS_0208;
 				*collation_id = 0;
 				BURP_verbose (237, (void*) (SLONG) *scale,
-							  (void*) (SLONG) *character_set_id, 
+							  (void*) (SLONG) *character_set_id,
 							  (void*) (SLONG) *collation_id, NULL, NULL);
-					/* msg 237: Converted V3 scale: %d to 
+					/* msg 237: Converted V3 scale: %d to
 					   character_set_id: %d and callate_id: %d. */
 				*scale = 0;
 				return true;
-				}
+			}
 
-			/* Japanese V3.2 used SCALE 6 to indicate EUCJ text */
+			// Japanese V3.2 used SCALE 6 to indicate EUCJ text 
 			if (*scale == 6 && (*sub_type == 0 || *sub_type == 1))
-				{
+			{
 				*character_set_id = CS_EUCJ;
 				*collation_id = 0;
 				BURP_verbose (237, (void*) (SLONG) *scale,
-							  (void*) (SLONG) *character_set_id, 
+							  (void*) (SLONG) *character_set_id,
 							  (void*) (SLONG) *collation_id, NULL, NULL);
-					/* msg 237: Converted V3 scale: %d to 
+					/* msg 237: Converted V3 scale: %d to
 					   character_set_id: %d and callate_id: %d. */
 				*scale = 0;
 				return true;
-				}
+			}
 
 			/* V3.3 used SCALE 0 and Subtypes in range 100 - 255 for
 			   European text types and collations */
@@ -2867,7 +2872,7 @@ bool cvt_v3_to_v4_intl (SSHORT	dtype,
 				return false;
 
 			if (*sub_type == 0 || *sub_type == 1)
-			/* Do not process sub_type 0,1 conversion */
+			// Do not process sub_type 0,1 conversion 
 				return false;
 
 			for (i = 0; i < cvtbl_len; i ++)
@@ -2877,9 +2882,9 @@ bool cvt_v3_to_v4_intl (SSHORT	dtype,
 					*collation_id = sub_type_cvtbl [i].collation_id;
 
 					BURP_verbose (236, (void*) (SLONG) *sub_type,
-								 (void*) (SLONG) *character_set_id, 
+								 (void*) (SLONG) *character_set_id,
 								 (void*) (SLONG) *collation_id, NULL, NULL);
-						/* msg 236: Converted V3 sub_type: %d to 
+						/* msg 236: Converted V3 sub_type: %d to
 						   character_set_id: %d and callate_id: %d. */
 
 					*sub_type = 0;
@@ -2888,7 +2893,7 @@ bool cvt_v3_to_v4_intl (SSHORT	dtype,
 			return false;
 
 		default:
-			/* Do not process sub_type conversion on non-text field */
+			// Do not process sub_type conversion on non-text field 
 			return false;
 		}
 
@@ -2946,10 +2951,10 @@ BURP_FLD get_field (BURP_REL	relation)
 		X.RDB$DEFAULT_VALUE.NULL = TRUE;
 		X.RDB$NULL_FLAG.NULL = TRUE;
 		X.RDB$COLLATION_ID.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
+		skip_init(&scan_next_attr);
 		while (get_attribute(&attribute, tdgbl) != att_end)
 		{
-			switch (SKIP_SCAN(&scan_next_attr), attribute)
+			switch (skip_scan(&scan_next_attr), attribute)
 			{
 			case att_field_name:
 				field->fld_name_length = GET_TEXT(field->fld_name);
@@ -3098,14 +3103,14 @@ BURP_FLD get_field (BURP_REL	relation)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 84); 
+				bad_attribute (scan_next_attr, attribute, 84);
 				// msg 84 field
 				break;
 			}
 		}
 
 		/* For migration from V3.3 to V4.0 format of International text
-		 * information - search the list of global fields which were 
+		 * information - search the list of global fields which were
 		 * remapped from V3.3 format into V4.0 format.  If we find that
 		 * this local field's source is one of those global fields, then
 		 * remap the local field's information.  This is used to compose
@@ -3150,8 +3155,8 @@ bool get_field_dimensions (void)
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_field_dimensions_req_handle1)
 		X IN RDB$FIELD_DIMENSIONS
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -3172,8 +3177,8 @@ bool get_field_dimensions (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 58); 
-				/* msg 58 array */
+				bad_attribute (scan_next_attr, attribute, 58);
+				// msg 58 array 
 				break;
 			}
 		}
@@ -3206,16 +3211,16 @@ bool get_files (void)
 	STORE (REQUEST_HANDLE tdgbl->handles_get_files_req_handle1)
 		X IN RDB$FILES
 		X.RDB$FILE_FLAGS = 0;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
 			case att_file_filename:
 				GET_TEXT(X.RDB$FILE_NAME);
 				BURP_verbose (116,
-						/* msg 116 restoring file %s */
 					X.RDB$FILE_NAME, NULL, NULL, NULL, NULL);
+				// msg 116 restoring file %s 
 				break;
 
 			case att_file_sequence:
@@ -3241,8 +3246,8 @@ bool get_files (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 85); 
-				/* msg 85 file */
+				bad_attribute (scan_next_attr, attribute, 85);
+				// msg 85 file 
 				break;
 			}
 		}
@@ -3274,15 +3279,15 @@ bool get_filter (void)
 	STORE (REQUEST_HANDLE tdgbl->handles_get_filter_req_handle1)
 		X IN RDB$FILTERS
 		X.RDB$DESCRIPTION.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
 			case att_filter_name:
 				GET_TEXT(X.RDB$FUNCTION_NAME);
 				BURP_verbose (117, X.RDB$FUNCTION_NAME, NULL, NULL, NULL, NULL);
-				/* msg 117 restoring filter %s */
+				// msg 117 restoring filter %s 
 				break;
 
 			case att_filter_description:
@@ -3312,8 +3317,8 @@ bool get_filter (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 87); 
-				/* msg 87  filter */
+				bad_attribute (scan_next_attr, attribute, 87);
+				// msg 87  filter 
 				break;
 			}
 		}
@@ -3347,8 +3352,8 @@ bool get_function (void)
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 		X IN RDB$FUNCTIONS
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -3356,7 +3361,7 @@ bool get_function (void)
 				l = GET_TEXT(X.RDB$FUNCTION_NAME);
 				MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
 				BURP_verbose (118, temp, NULL, NULL, NULL, NULL);
-					/* msg 118 restoring function %s */
+				// msg 118 restoring function %s 
 				break;
 
 			case att_function_description:
@@ -3388,8 +3393,8 @@ bool get_function (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 89); 
-				/* msg 89 function */
+				bad_attribute (scan_next_attr, attribute, 89);
+				// msg 89 function 
 				break;
 			}
 		}
@@ -3399,7 +3404,7 @@ bool get_function (void)
 		general_on_error ();
 	END_ERROR;
 
-	/* at the end of args for a function is the rec_function_end marker */
+	// at the end of args for a function is the rec_function_end marker 
 	while (get(tdgbl) == rec_function_arg)
 		get_function_arg();
 
@@ -3434,8 +3439,8 @@ void get_function_arg()
 		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		X.RDB$FIELD_PRECISION.NULL  = TRUE;
 
-			SKIP_INIT(&scan_next_attr);
-			while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
 				switch (attribute)
 				{
@@ -3443,7 +3448,7 @@ void get_function_arg()
 					l = GET_TEXT(X.RDB$FUNCTION_NAME);
 					MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
 					BURP_verbose (119, temp, NULL, NULL, NULL, NULL);
-						/* msg 119 restoring argument for function %s */
+					// msg 119 restoring argument for function %s 
 					break;
 
 				case att_functionarg_position:
@@ -3482,14 +3487,14 @@ void get_function_arg()
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 90); 
-					/* msg 90 function argument */
+					bad_attribute (scan_next_attr, attribute, 90);
+					// msg 90 function argument 
 					break;
 				}
 			}
 		END_STORE;
 		ON_ERROR
-		general_on_error ();
+			general_on_error ();
 		END_ERROR;
 	}
 	else
@@ -3500,8 +3505,8 @@ void get_function_arg()
 		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 
-			SKIP_INIT(&scan_next_attr);
-			while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
 				switch (attribute)
 				{
@@ -3509,7 +3514,7 @@ void get_function_arg()
 					l = GET_TEXT(X.RDB$FUNCTION_NAME);
 					MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
 					BURP_verbose (119, temp, NULL, NULL, NULL, NULL);
-						/* msg 119 restoring argument for function %s */
+					// msg 119 restoring argument for function %s 
 					break;
 
 				case att_functionarg_position:
@@ -3543,14 +3548,14 @@ void get_function_arg()
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 90); 
-					/* msg 90 function argument */
+					bad_attribute (scan_next_attr, attribute, 90);
+					// msg 90 function argument 
 					break;
 				}
 			}
 		END_STORE;
 		ON_ERROR
-		general_on_error ();
+			general_on_error ();
 		END_ERROR;
 	}
 }
@@ -3577,8 +3582,8 @@ bool get_generator (void)
 	scan_attr_t		scan_next_attr;
 	TGBL	    tdgbl = GET_THREAD_DATA;
 
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
 		switch (attribute)
 		{
@@ -3597,7 +3602,7 @@ bool get_generator (void)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 93); 
+			bad_attribute (scan_next_attr, attribute, 93);
 			// msg 93 index
 			break;
 		}
@@ -3665,8 +3670,8 @@ bool get_global_field (void)
 		X.RDB$FIELD_PRECISION.NULL = TRUE;
 
 			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
-			SKIP_INIT(&scan_next_attr);
-			while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
 				switch (attribute)
 				{
@@ -3674,7 +3679,7 @@ bool get_global_field (void)
 					l = GET_TEXT(X.RDB$FIELD_NAME);
 					MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof(temp));
 					BURP_verbose (121, temp, NULL, NULL, NULL, NULL);
-						/* msg 121  restoring global field %s */
+					// msg 121  restoring global field %s 
 					break;
 
 				case att_field_query_name:
@@ -3713,7 +3718,7 @@ bool get_global_field (void)
 				case att_field_segment_length:
 					X.RDB$SEGMENT_LENGTH = (USHORT) get_numeric();
 					if (X.RDB$SEGMENT_LENGTH)
-					X.RDB$SEGMENT_LENGTH.NULL = FALSE;
+						X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 					break;
 
 				case att_field_computed_blr:
@@ -3733,25 +3738,24 @@ bool get_global_field (void)
 
 				case att_field_validation_blr:
 					if (tdgbl->gbl_sw_novalidity)
-					eat_blob();
+						eat_blob();
 					else
 					{
-					/* if we are going against a V4.0 database,
-					 * restore the global fields in 2 phases.
-					 */
+						// if we are going against a V4.0 database,
+						// restore the global fields in 2 phases.
 
-					if (tdgbl->global_trans)
-					{
-						if (!gfield)
-						gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+						if (tdgbl->global_trans)
+						{
+							if (!gfield)
+								gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
 
-						get_blr_blob (&gfield->gfld_vb, true);
-						gfield->gfld_flags |= GFLD_validation_blr;
-					}
-					else
-					{
-						X.RDB$VALIDATION_BLR.NULL = FALSE;
-						get_blr_blob (&X.RDB$VALIDATION_BLR, false);
+							get_blr_blob (&gfield->gfld_vb, true);
+							gfield->gfld_flags |= GFLD_validation_blr;
+						}
+						else
+						{
+							X.RDB$VALIDATION_BLR.NULL = FALSE;
+							get_blr_blob (&X.RDB$VALIDATION_BLR, false);
 						}
 					}
 					break;
@@ -3761,14 +3765,13 @@ bool get_global_field (void)
 						eat_blob();
 					else
 					{
-						/* if we are going against a V4.0 database,
-						 * restore the global fields in 2 phases.
-						 */
+						// if we are going against a V4.0 database,
+						// restore the global fields in 2 phases.
 
 						if (tdgbl->global_trans)
 						{
 							if (!gfield)
-							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+								gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
 
 							get_misc_blob (&gfield->gfld_vs, 0, true);
 							gfield->gfld_flags |= GFLD_validation_source;
@@ -3786,14 +3789,13 @@ bool get_global_field (void)
 						eat_blob();
 					else
 					{
-						/* if we are going against a V4.0 database,
-						 * restore the global fields in 2 phases.
-						 */
+						// if we are going against a V4.0 database,
+						// restore the global fields in 2 phases.
 
 						if (tdgbl->global_trans)
 						{
 							if (!gfield)
-							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+								gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
 
 							get_source_blob (&gfield->gfld_vs2, true);
 							gfield->gfld_flags |= GFLD_validation_source2;
@@ -3887,8 +3889,8 @@ bool get_global_field (void)
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 92); 
-					/* msg 92  global field */
+					bad_attribute (scan_next_attr, attribute, 92);
+					// msg 92  global field 
 					break;
 				}
 			}
@@ -3901,7 +3903,7 @@ bool get_global_field (void)
 			}
 
 			if (gfield)
-			strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
+				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
 
 			/* V3.3 used a different method from V4.0 for encoding International
 			 * text character set & collation information.  Here we are
@@ -3911,15 +3913,13 @@ bool get_global_field (void)
 			 */
 			save_subtype = X.RDB$FIELD_SUB_TYPE;
 			if (X.RDB$CHARACTER_SET_ID.NULL && X.RDB$COLLATION_ID.NULL &&
-				cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE, 
-				&X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID, 
+				cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE,
+				&X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID,
 				&X.RDB$COLLATION_ID))
 			{
-				BURP_FLD	f;
-
-				/* If some value was reset, set the NULL flag */
+				// If some value was reset, set the NULL flag 
 				if (save_subtype && !X.RDB$FIELD_SUB_TYPE)
-				X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
+					X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 				X.RDB$COLLATION_ID.NULL = FALSE;
 
@@ -3928,7 +3928,7 @@ bool get_global_field (void)
 				 * global field
 				 */
 
-				f = (BURP_FLD) BURP_alloc_zero (sizeof(burp_fld));
+				BURP_FLD f = (BURP_FLD) BURP_alloc_zero (sizeof(burp_fld));
 				strcpy (f->fld_name, X.RDB$FIELD_NAME);
 				f->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
 				f->fld_scale = X.RDB$FIELD_SCALE;
@@ -3940,14 +3940,14 @@ bool get_global_field (void)
 
 		END_STORE;
 		ON_ERROR
-		general_on_error ();
+			general_on_error ();
 		END_ERROR;
 
 	}
 	else /* RESTORE_format < 6 */
 	{
 		/* without rdb$field_precision */
-		
+
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
 		X IN RDB$FIELDS
 
@@ -3979,8 +3979,8 @@ bool get_global_field (void)
 		X.RDB$COLLATION_ID.NULL = TRUE;
 
 			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
-			SKIP_INIT(&scan_next_attr);
-			while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
 				switch (attribute)
 				{
@@ -3988,7 +3988,7 @@ bool get_global_field (void)
 					l = GET_TEXT(X.RDB$FIELD_NAME);
 					MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof(temp));
 					BURP_verbose (121, temp, NULL, NULL, NULL, NULL);
-						/* msg 121  restoring global field %s */
+					// msg 121  restoring global field %s 
 					break;
 
 				case att_field_query_name:
@@ -4027,7 +4027,7 @@ bool get_global_field (void)
 				case att_field_segment_length:
 					X.RDB$SEGMENT_LENGTH = (USHORT) get_numeric();
 					if (X.RDB$SEGMENT_LENGTH)
-					X.RDB$SEGMENT_LENGTH.NULL = FALSE;
+						X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 					break;
 
 				case att_field_computed_blr:
@@ -4047,75 +4047,72 @@ bool get_global_field (void)
 
 				case att_field_validation_blr:
 					if (tdgbl->gbl_sw_novalidity)
-					eat_blob();
+						eat_blob();
 					else
 					{
-					/* if we are going against a V4.0 database,
-					 * restore the global fields in 2 phases.
-					 */
+						// if we are going against a V4.0 database,
+						// restore the global fields in 2 phases.
 
-					if (tdgbl->global_trans)
+						if (tdgbl->global_trans)
 						{
-						if (!gfield)
-						gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+							if (!gfield)
+								gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
 
-						get_blr_blob (&gfield->gfld_vb, true);
-						gfield->gfld_flags |= GFLD_validation_blr;
+							get_blr_blob (&gfield->gfld_vb, true);
+							gfield->gfld_flags |= GFLD_validation_blr;
 						}
-					else
+						else
 						{
-						X.RDB$VALIDATION_BLR.NULL = FALSE;
-						get_blr_blob (&X.RDB$VALIDATION_BLR, false);
+							X.RDB$VALIDATION_BLR.NULL = FALSE;
+							get_blr_blob (&X.RDB$VALIDATION_BLR, false);
 						}
 					}
 					break;
 
 				case att_field_validation_source:
 					if (tdgbl->gbl_sw_novalidity)
-					eat_blob();
+						eat_blob();
 					else
 					{
-					/* if we are going against a V4.0 database,
-					 * restore the global fields in 2 phases.
-					 */
+						// if we are going against a V4.0 database,
+						// restore the global fields in 2 phases.
 
-					if (tdgbl->global_trans)
+						if (tdgbl->global_trans)
 						{
-						if (!gfield)
-						gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+							if (!gfield)
+								gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
 
-						get_misc_blob (&gfield->gfld_vs, 0, true);
-						gfield->gfld_flags |= GFLD_validation_source;
+							get_misc_blob (&gfield->gfld_vs, 0, true);
+							gfield->gfld_flags |= GFLD_validation_source;
 						}
-					else
+						else
 						{
-						X.RDB$VALIDATION_SOURCE.NULL = FALSE;
-						get_misc_blob (&X.RDB$VALIDATION_SOURCE, 0, false);
+							X.RDB$VALIDATION_SOURCE.NULL = FALSE;
+							get_misc_blob (&X.RDB$VALIDATION_SOURCE, 0, false);
 						}
 					}
 					break;
 
 				case att_field_validation_source2:
 					if (tdgbl->gbl_sw_novalidity)
-					eat_blob();
+						eat_blob();
 					else
 					{
-					/* if we are going against a V4.0 database,
-					 * restore the global fields in 2 phases.
-					 */
+						// if we are going against a V4.0 database,
+						// restore the global fields in 2 phases.
 
-					if (tdgbl->global_trans)
+						if (tdgbl->global_trans)
 						{
-						if (!gfield)
-						gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+							if (!gfield)
+								gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
 
-						get_source_blob (&gfield->gfld_vs2, true);
-						gfield->gfld_flags |= GFLD_validation_source2;
+							get_source_blob (&gfield->gfld_vs2, true);
+							gfield->gfld_flags |= GFLD_validation_source2;
 						}
-					else
+						else
 						{
-						X.RDB$VALIDATION_SOURCE.NULL = FALSE;
-						get_source_blob (&X.RDB$VALIDATION_SOURCE, false);
+							X.RDB$VALIDATION_SOURCE.NULL = FALSE;
+							get_source_blob (&X.RDB$VALIDATION_SOURCE, false);
 						}
 					}
 					break;
@@ -4197,7 +4194,7 @@ bool get_global_field (void)
 
 				default:
 					bad_attribute (scan_next_attr, attribute, 92);
-					/* msg 92  global field */
+					// msg 92  global field 
 					break;
 				}
 			}
@@ -4210,7 +4207,7 @@ bool get_global_field (void)
 			}
 
 			if (gfield)
-			strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
+				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
 
 			/* V3.3 used a different method from V4.0 for encoding International
 			 * text character set & collation information.  Here we are
@@ -4221,14 +4218,14 @@ bool get_global_field (void)
 			save_subtype = X.RDB$FIELD_SUB_TYPE;
 			if (X.RDB$CHARACTER_SET_ID.NULL &&
 			X.RDB$COLLATION_ID.NULL &&
-			cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE, 
-				  &X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID, 
+			cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE,
+				  &X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID,
 				  &X.RDB$COLLATION_ID))
 			{
 
-				/* If some value was reset, set the NULL flag */
+				// If some value was reset, set the NULL flag 
 				if (save_subtype && !X.RDB$FIELD_SUB_TYPE)
-				X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
+					X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 				X.RDB$COLLATION_ID.NULL = FALSE;
 
@@ -4249,7 +4246,7 @@ bool get_global_field (void)
 
 		END_STORE;
 		ON_ERROR
-		general_on_error ();
+			general_on_error ();
 		END_ERROR;
 
 	}
@@ -4292,16 +4289,16 @@ bool get_index (BURP_REL		relation)
 		strcpy (X.RDB$RELATION_NAME, relation->rel_name);
 		X.RDB$UNIQUE_FLAG = 0;
 		if (!tdgbl->gbl_sw_deactivate_indexes)
-		X.RDB$INDEX_INACTIVE = FALSE;
+			X.RDB$INDEX_INACTIVE = FALSE;
 		else
-		X.RDB$INDEX_INACTIVE = TRUE;	
+			X.RDB$INDEX_INACTIVE = TRUE;
 		X.RDB$INDEX_TYPE.NULL = TRUE;
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$FOREIGN_KEY.NULL = TRUE;
 		X.RDB$EXPRESSION_SOURCE.NULL = TRUE;
 		X.RDB$EXPRESSION_BLR.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -4321,17 +4318,17 @@ bool get_index (BURP_REL		relation)
 
 			case att_index_inactive:
 				X.RDB$INDEX_INACTIVE = (USHORT) get_numeric();
-				/* Defer foreign key index activation */
-				/* Modified by Toni Martir, all index deferred when verbose */
+				// Defer foreign key index activation 
+				// Modified by Toni Martir, all index deferred when verbose 
 				if (tdgbl->gbl_sw_verbose)
 				{
-					if (X.RDB$INDEX_INACTIVE == FALSE) 
+					if (X.RDB$INDEX_INACTIVE == FALSE)
 						X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
-				} 
+				}
 				else
-				{ 
-				if (X.RDB$INDEX_INACTIVE == FALSE && foreign_index)
-					X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
+				{
+					if (X.RDB$INDEX_INACTIVE == FALSE && foreign_index)
+						X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
 				}
 				if (tdgbl->gbl_sw_deactivate_indexes)
 					X.RDB$INDEX_INACTIVE = TRUE;
@@ -4376,7 +4373,7 @@ bool get_index (BURP_REL		relation)
 
 			case att_index_foreign_key:
 				foreign_index = true;
-				/* Defer foreign key index activation */
+				// Defer foreign key index activation 
 				if (X.RDB$INDEX_INACTIVE == FALSE)
 					X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
 				if (tdgbl->gbl_sw_deactivate_indexes)
@@ -4386,15 +4383,15 @@ bool get_index (BURP_REL		relation)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 93); 
-				/* msg 93 index */
+				bad_attribute (scan_next_attr, attribute, 93);
+				// msg 93 index 
 				break;
 			}
 		}
 
 		count = 0;
 		FOR (REQUEST_HANDLE tdgbl->handles_get_index_req_handle3)
-			RFR IN RDB$RELATION_FIELDS CROSS I_S IN RDB$INDEX_SEGMENTS 
+			RFR IN RDB$RELATION_FIELDS CROSS I_S IN RDB$INDEX_SEGMENTS
 			OVER RDB$FIELD_NAME WITH I_S.RDB$INDEX_NAME = index_name AND
 			RFR.RDB$RELATION_NAME = relation->rel_name
 			count++;
@@ -4460,14 +4457,14 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 	else
 		local_trans = gds_trans;
 
-	if (isc_create_blob2 (status_vector, &DB, &local_trans, &blob, 
+	if (isc_create_blob2 (status_vector, &DB, &local_trans, &blob,
 						  blob_id, bpb_length, (SCHAR*) bpb))
 	{
-		BURP_error_redirect (status_vector, 37, 0, 0); 
-		/* msg 37 gds__create_blob failed */
+		BURP_error_redirect (status_vector, 37, 0, 0);
+		// msg 37 gds__create_blob failed 
 	}
 
-	/* Allocate blob buffer is static buffer is too short */
+	// Allocate blob buffer is static buffer is too short 
 
 	UCHAR *buffer;
 	if (!length || length <= (USHORT)(sizeof(static_buffer)) )
@@ -4481,12 +4478,12 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 	}
 
 	if (isc_put_segment (status_vector, &blob, length, (SCHAR*) buffer))
-		BURP_error_redirect (status_vector, 38, 0, 0); 
-		/* msg 38 gds__put_segment failed */
+		BURP_error_redirect (status_vector, 38, 0, 0);
+		// msg 38 gds__put_segment failed 
 
 	if (isc_close_blob (status_vector, &blob))
-		BURP_error_redirect (status_vector, 23, 0, 0); 
-		/* msg 23 gds__close_blob failed */
+		BURP_error_redirect (status_vector, 23, 0, 0);
+		// msg 23 gds__close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free (buffer);
@@ -4575,8 +4572,8 @@ bool get_procedure (void)
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$SECURITY_CLASS.NULL = TRUE;
 		X.RDB$OWNER_NAME.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -4586,7 +4583,7 @@ bool get_procedure (void)
 						strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
 				MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
 				BURP_verbose (195, temp, NULL, NULL, NULL, NULL);
-				/* msg 195 restoring stored procedure %s */
+				// msg 195 restoring stored procedure %s 
 				break;
 
 			case att_procedure_description:
@@ -4635,8 +4632,8 @@ bool get_procedure (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 89); 
-				/* msg 89 function */
+				bad_attribute (scan_next_attr, attribute, 89);
+				// msg 89 function 
 				break;
 			}
 		}
@@ -4646,7 +4643,7 @@ bool get_procedure (void)
 		general_on_error ();
 	END_ERROR;
 
-	/* at the end of prms for a procedure is the rec_procedure_end marker */
+	// at the end of prms for a procedure is the rec_procedure_end marker 
 
 	while (get(tdgbl) == rec_procedure_prm)
 		get_procedure_prm (procedure_name);
@@ -4684,8 +4681,8 @@ bool get_procedure_prm (GDS_NAME	procptr)
 		X IN RDB$PROCEDURE_PARAMETERS
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		strcpy (X.RDB$PROCEDURE_NAME, procptr);
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -4693,7 +4690,7 @@ bool get_procedure_prm (GDS_NAME	procptr)
 				l = GET_TEXT(X.RDB$PARAMETER_NAME);
 				MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
 				BURP_verbose (196, temp, NULL, NULL, NULL, NULL);
-					/* msg 196 restoring parameter %s for stored procedure */
+				// msg 196 restoring parameter %s for stored procedure 
 				break;
 
 			case att_procedureprm_type:
@@ -4719,8 +4716,8 @@ bool get_procedure_prm (GDS_NAME	procptr)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 90); 
-				/* msg 90 function argument */
+				bad_attribute (scan_next_attr, attribute, 90);
+				// msg 90 function argument 
 				break;
 			}
 		}
@@ -4736,7 +4733,7 @@ bool get_ref_constraint (void)
 {
 /**************************************
  *
- *	g e t _ r e f _ c o n s t r a i n t 
+ *	g e t _ r e f _ c o n s t r a i n t
  *
  **************************************
  *
@@ -4756,8 +4753,8 @@ bool get_ref_constraint (void)
 		X.RDB$MATCH_OPTION.NULL = TRUE;
 		X.RDB$UPDATE_RULE.NULL = TRUE;
 		X.RDB$DELETE_RULE.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -4787,8 +4784,8 @@ bool get_ref_constraint (void)
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 208); 
-					/* msg 208 relation constraint */
+					bad_attribute (scan_next_attr, attribute, 208);
+					// msg 208 relation constraint 
 					break;
 			}
 		}
@@ -4816,7 +4813,7 @@ bool get_relation (void)
  *	with plans.  Assume it is a view if it has
  *	RDB$VIEW_BLR, also assume RDB$VIEW_BLR is
  *	the first blob in the backup file.
- *	
+ *
  *
  **************************************/
 	TEXT		temp [GDS_NAME_LEN];
@@ -4843,7 +4840,7 @@ bool get_relation (void)
 	isc_tr_handle	local_trans;
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* Pick up relation attributes */
+	// Pick up relation attributes 
 
 	BURP_REL relation = (BURP_REL) BURP_alloc_zero (sizeof(burp_rel));
 	relation->rel_next = tdgbl->relations;
@@ -4862,8 +4859,8 @@ bool get_relation (void)
 		X.RDB$EXTERNAL_DESCRIPTION.NULL = TRUE;
 	*/
 
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
 		switch (attribute)
 		{
@@ -4872,7 +4869,7 @@ bool get_relation (void)
 			relation->rel_name_length = l;
 			MISC_terminate (relation->rel_name, temp, l, sizeof(temp));
 			BURP_verbose (167, temp, NULL, NULL, NULL, NULL);
-			/* msg 167 restoring relation %s */
+			// msg 167 restoring relation %s 
 			break;
 
 		case att_relation_security_class:
@@ -4937,12 +4934,12 @@ bool get_relation (void)
 
 		default:
 			bad_attribute (scan_next_attr, attribute, 111);
-			/* msg 111 relation */
+			// msg 111 relation 
 			break;
 		}
 	}
 
-	/* If this is a view and there is a global transaction then use it */
+	// If this is a view and there is a global transaction then use it 
 
 	if (view_blr_null || !tdgbl->global_trans)
 		local_trans = gds_trans;
@@ -4979,7 +4976,7 @@ bool get_relation (void)
 		general_on_error ();
 	END_ERROR;
 
-	/* Eat up misc. records */
+	// Eat up misc. records 
 	BURP_FLD field = NULL;
 	BURP_FLD *ptr = &relation->rel_fields;
 
@@ -4990,22 +4987,22 @@ bool get_relation (void)
 		case rec_relation_end:
 			if (tdgbl->gbl_sw_incremental)
 			{
-			BURP_verbose (170, relation->rel_name, NULL, NULL, NULL, NULL);
-			/* msg 170: committing metadata for relation %s */
+				BURP_verbose (170, relation->rel_name, NULL, NULL, NULL, NULL);
+				// msg 170: committing metadata for relation %s 
 				COMMIT
-				/* existing ON_ERROR continues past error, beck */
+				// existing ON_ERROR continues past error, beck 
 				ON_ERROR
 					BURP_print (171, relation->rel_name, NULL, NULL, NULL, NULL);
-						/* msg 171: error committing metadata for relation %s */
-				BURP_print_status (tdgbl->status_vector);
-				ROLLBACK; 
-				ON_ERROR
-					general_on_error ();
-				END_ERROR;
+					// msg 171: error committing metadata for relation %s 
+					BURP_print_status (tdgbl->status_vector);
+					ROLLBACK;
+					ON_ERROR
+						general_on_error ();
+					END_ERROR;
 				END_ERROR;
 				EXEC SQL SET TRANSACTION NO_AUTO_UNDO;
-					if (gds_status [1])
-						EXEC SQL SET TRANSACTION;
+				if (gds_status [1])
+					EXEC SQL SET TRANSACTION;
 			}
 			return true;
 
@@ -5015,7 +5012,7 @@ bool get_relation (void)
 			return false;
 			ptr = &field->fld_next;
 			break;
-		
+
 		case rec_view:
 			get_view (relation);
 			break;
@@ -5026,19 +5023,19 @@ bool get_relation (void)
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #else
 			BURP_error (43, (void*) record, 0, 0, 0, 0);
-			/* msg 43 don't recognize record type %ld */
+			// msg 43 don't recognize record type %ld 
 #endif
 				break;
 		}
 	}
 
-	/* If we fall thru, there are data records to be gotten */
+	// If we fall thru, there are data records to be gotten 
 	/* we can get here only when restoring ancient gbak'ed files where rec_data
 	   was once embedded into rec_relation ... otherwise, meta commit happens
 	   when we see the first rec_relation_data */
 
 	BURP_verbose (68, NULL, NULL, NULL, NULL, NULL);
-	/* msg 68 committing meta data */
+	// msg 68 committing meta data 
 
 	COMMIT;
 	ON_ERROR
@@ -5058,7 +5055,7 @@ bool get_rel_constraint (void)
 {
 /**************************************
  *
- *	g e t _ r e l _ c o n s t r a i n t 
+ *	g e t _ r e l _ c o n s t r a i n t
  *
  **************************************
  *
@@ -5079,8 +5076,8 @@ bool get_rel_constraint (void)
 		X.RDB$DEFERRABLE.NULL = TRUE;
 		X.RDB$INITIALLY_DEFERRED.NULL = TRUE;
 		X.RDB$INDEX_NAME.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -5115,8 +5112,8 @@ bool get_rel_constraint (void)
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 208); 
-					/* msg 208 relation constraint */
+					bad_attribute (scan_next_attr, attribute, 208);
+					// msg 208 relation constraint 
 					break;
 			}
 		}
@@ -5153,8 +5150,8 @@ bool get_relation_data (void)
 
 	relation = NULL;
 
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
 		switch (attribute)
 		{
@@ -5164,31 +5161,31 @@ bool get_relation_data (void)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 111); 
-			/* msg 111 relation */
+			bad_attribute (scan_next_attr, attribute, 111);
+			// msg 111 relation 
 			break;
 		}
 	}
 
 	if (!relation)
 		BURP_error_redirect (NULL, 49, 0, 0);
-	/* msg 49 no relation name for data */
+	// msg 49 no relation name for data 
 
-	/* Eat up misc. records */
+	// Eat up misc. records 
 
 	get_record(&record, tdgbl);
 
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), TRUE)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), true)
 	{
 		switch (record)
 		{
 		case rec_relation_end:
 			return true;
-		
+
 		case rec_data:
 			record = get_data (relation);
-			/* get_data does a GET_RECORD */
+			// get_data does a GET_RECORD 
 			break;
 
 		case rec_gen_id:
@@ -5196,20 +5193,20 @@ bool get_relation_data (void)
 			store_blr_gen_id (name, gen_id);
 			get_record(&record, tdgbl);
 			break;
-		
+
 		case rec_index:
 			get_index (relation);
 			get_record(&record, tdgbl);
 			break;
-		
-		case rec_trigger:  /* old style trigger */
+
+		case rec_trigger:  // old style trigger 
 			get_trigger_old (relation);
 			get_record(&record, tdgbl);
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 111); 
-			/* msg 111 relation */
+			bad_attribute (scan_next_attr, attribute, 111);
+			// msg 111 relation 
 			get_record(&record, tdgbl);
 			break;
 		}
@@ -5240,9 +5237,9 @@ bool get_sql_roles (void)
 
 		X.RDB$ROLE_NAME.NULL = TRUE;
 		X.RDB$OWNER_NAME.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
+		skip_init(&scan_next_attr);
 
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -5327,8 +5324,8 @@ bool get_security_class (void)
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_security_class_req_handle1)
 		X IN RDB$SECURITY_CLASSES
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			switch (attribute)
@@ -5339,28 +5336,28 @@ bool get_security_class (void)
 				/* Bug fix for bug_no 7299: There was a V3 bug that inserted
 				   garbage security class entry when doing GBAK. In order to
 				   restore the V3 gbak file with this bad security entry to
-				   V4 database. We should check if the security class is a 
-				   valid ASCII name. If not, skip this entry by setting 
-				   'is_valid_sec_class' to FALSE.
+				   V4 database. We should check if the security class is a
+				   valid ASCII name. If not, skip this entry by setting
+				   'is_valid_sec_class' to false.
 				 */
 				is_valid_sec_class = is_ascii_name(X.RDB$SECURITY_CLASS, l);
 				if (!is_valid_sec_class)
-					{
+				{
 					MISC_terminate (X.RDB$SECURITY_CLASS, temp, l, sizeof(temp));
 					BURP_print (234, temp, NULL, NULL, NULL, NULL);
-					/* msg 234   Skipped bad security class entry: %s */
+					// msg 234   Skipped bad security class entry: %s 
 					break;
-					}
+				}
 
 				MISC_terminate (X.RDB$SECURITY_CLASS, temp, l, sizeof(temp));
 				BURP_verbose (125, temp, NULL, NULL, NULL, NULL);
-					/* msg 125   restoring security class %s */
+					// msg 125   restoring security class %s 
 				break;
 
 			case att_class_acl:
 				get_misc_blob (&X.RDB$ACL, 0, false);
 				break;
-				
+
 			case att_class_description:
 				X.RDB$DESCRIPTION.NULL = FALSE;
 				get_misc_blob (&X.RDB$DESCRIPTION, 0, false);
@@ -5372,13 +5369,13 @@ bool get_security_class (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 131); 
-				/* msg 131 security class */
+				bad_attribute (scan_next_attr, attribute, 131);
+				// msg 131 security class 
 				break;
 			}
 		}
-		/* If the security class is not valid ASCII name, don't store it to the */
-		/* database. Simply return from here and the entry is discarded.	*/
+		// If the security class is not valid ASCII name, don't store it to the 
+		// database. Simply return from here and the entry is discarded.
 		if (!is_valid_sec_class)
 		{
 			return true;
@@ -5425,11 +5422,11 @@ void get_source_blob (
 
 	if (isc_create_blob (status_vector, &DB, &local_trans, &blob, blob_id))
 	{
-		BURP_error_redirect (status_vector, 37, 0, 0); 
-		/* msg 37 gds__create_blob failed */
+		BURP_error_redirect (status_vector, 37, 0, 0);
+		// msg 37 gds__create_blob failed 
 	}
 
-	/* Allocate blob buffer is static buffer is too short */
+	// Allocate blob buffer is static buffer is too short 
 
 	UCHAR *buffer;
 	if (!length || length <= (USHORT)(sizeof(static_buffer)) )
@@ -5447,13 +5444,13 @@ void get_source_blob (
 		USHORT seg_len = p - buffer;
 
 		if (isc_put_segment (status_vector, &blob, seg_len, (SCHAR*) buffer))
-		BURP_error_redirect (status_vector, 38, 0, 0); 
-		/* msg 38 gds__put_segment failed */
+			BURP_error_redirect (status_vector, 38, 0, 0);
+			// msg 38 gds__put_segment failed 
 	}
 
 	if (isc_close_blob (status_vector,  &blob))
-		BURP_error_redirect (status_vector, 23, 0, 0); 
-		/* msg 23 gds__close_blob failed */
+		BURP_error_redirect (status_vector, 23, 0, 0);
+		// msg 23 gds__close_blob failed 
 
 	if (buffer != static_buffer)
 		BURP_free (buffer);
@@ -5479,7 +5476,7 @@ USHORT get_text (
 
 	if (length <= l)
 		BURP_error_redirect (NULL, 46, 0, 0);
-		/* msg 46 string truncated */
+		// msg 46 string truncated 
 
 	if (l)
 		text = (TEXT*) get_block(tdgbl, (UCHAR*) text, l);
@@ -5514,8 +5511,8 @@ bool get_trigger_old (
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$TRIGGER_BLR.NULL = TRUE;
 		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -5539,13 +5536,13 @@ bool get_trigger_old (
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 134); 
-				/* msg 134 trigger */
+				bad_attribute (scan_next_attr, attribute, 134);
+				// msg 134 trigger 
 				break;
 			}
 		}
 
-		/* fill in rest of attributes unique to new trigger format */
+		// fill in rest of attributes unique to new trigger format 
 
 		p = X.RDB$TRIGGER_NAME;
 		end = p + 31;
@@ -5570,20 +5567,20 @@ bool get_trigger_old (
 		}
 		else
 		{
-			bad_attribute (scan_next_attr, attribute, 136); 
-			/* msg 136 trigger type */
-			return 0; 
+			bad_attribute (scan_next_attr, attribute, 136);
+			// msg 136 trigger type 
+			return 0;
 		}
 
 		while (*q && p < end)
 			*p++ = *q++;
 		*p = 0;
 		BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL, NULL, NULL, NULL);
-		/* msg 126 restoring trigger %s */
+		// msg 126 restoring trigger %s 
 		strncpy (X.RDB$RELATION_NAME, relation->rel_name, GDS_NAME_LEN);
 		strcpy (name, X.RDB$TRIGGER_NAME);
 		X.RDB$TRIGGER_SEQUENCE = TRIGGER_SEQUENCE_DEFAULT;
-		X.RDB$SYSTEM_FLAG = 0;   /* restore as vanilla user type */
+		X.RDB$SYSTEM_FLAG = 0;   // restore as vanilla user type 
 
 	END_STORE;
 	ON_ERROR
@@ -5593,10 +5590,10 @@ bool get_trigger_old (
 	if (tdgbl->gbl_sw_incremental)
 	{
 		COMMIT
-		/* existing ON_ERROR continues past error, beck */
+		// existing ON_ERROR continues past error, beck 
 		ON_ERROR
 			BURP_print (94, name, NULL, NULL, NULL, NULL);
-			/* msg 94 trigger %s is invalid */
+			// msg 94 trigger %s is invalid 
 			BURP_print_status (tdgbl->status_vector);
 			ROLLBACK;
 			ON_ERROR
@@ -5640,8 +5637,8 @@ bool get_trigger (void)
 		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
 		X.RDB$SYSTEM_FLAG.NULL = TRUE;
 		X.RDB$FLAGS.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -5673,7 +5670,7 @@ bool get_trigger (void)
 				GET_TEXT(X.RDB$TRIGGER_NAME);
 				strcpy (name, X.RDB$TRIGGER_NAME);
 				BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL, NULL, NULL, NULL);
-				/* msg 126 restoring trigger %s */
+				// msg 126 restoring trigger %s 
 				break;
 
 			case att_trig_relation_name:
@@ -5704,8 +5701,8 @@ bool get_trigger (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 134); 
-				/* msg 134 trigger */
+				bad_attribute (scan_next_attr, attribute, 134);
+				// msg 134 trigger 
 				break;
 			}
 		}
@@ -5717,10 +5714,10 @@ bool get_trigger (void)
 	if (tdgbl->gbl_sw_incremental)
 	{
 		COMMIT
-		/* existing ON_ERROR continues past error, beck */
+		// existing ON_ERROR continues past error, beck 
 		ON_ERROR
 			BURP_print (94, name, NULL, NULL, NULL, NULL);
-			/* msg 94 trigger %s is invalid */
+			// msg 94 trigger %s is invalid 
 			BURP_print_status (tdgbl->status_vector);
 			ROLLBACK;
 			ON_ERROR
@@ -5739,7 +5736,7 @@ bool get_trigger_message (void)
 {
 /**************************************
  *
- *	g e t _ t r i g g e r _ m e s s a g e 
+ *	g e t _ t r i g g e r _ m e s s a g e
  *
  **************************************
  *
@@ -5758,8 +5755,8 @@ bool get_trigger_message (void)
 	TGBL tdgbl = GET_THREAD_DATA;
 
 	bool flag = false;
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
 		switch (attribute)
 		{
@@ -5771,11 +5768,11 @@ bool get_trigger_message (void)
 				X.RDB$SYSTEM_FLAG EQ 1 AND X.RDB$TRIGGER_NAME EQ name
 				flag = true;
 			END_FOR;
-				ON_ERROR
-					general_on_error ();
-				END_ERROR;
+			ON_ERROR
+				general_on_error ();
+			END_ERROR;
 			BURP_verbose (127, name, NULL, NULL, NULL, NULL);
-			/* msg 127 restoring trigger message for %s */
+			// msg 127 restoring trigger message for %s 
 			break;
 
 		case att_trigmsg_number:
@@ -5787,8 +5784,8 @@ bool get_trigger_message (void)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 135); 
-			/* msg 135  trigger message */
+			bad_attribute (scan_next_attr, attribute, 135);
+			// msg 135  trigger message 
 			break;
 		}
 	}
@@ -5812,10 +5809,10 @@ bool get_trigger_message (void)
 	if (tdgbl->gbl_sw_incremental)
 	{
 		COMMIT
-		/* existing ON_ERROR continues past error, beck */
+		// existing ON_ERROR continues past error, beck 
 		ON_ERROR
 			BURP_print (94, name, NULL, NULL, NULL, NULL);
-			/* msg 94 trigger %s is invalid */
+			// msg 94 trigger %s is invalid 
 			BURP_print_status (tdgbl->status_vector);
 			ROLLBACK;
 			ON_ERROR
@@ -5853,8 +5850,8 @@ bool get_type (void)
 		X IN RDB$TYPES
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$SYSTEM_FLAG.NULL = TRUE;
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -5886,15 +5883,15 @@ bool get_type (void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 136); 
-				/* msg 136 trigger type */
+				bad_attribute (scan_next_attr, attribute, 136);
+				// msg 136 trigger type 
 				break;
 			}
 		}
 
 		MISC_terminate (X.RDB$TYPE_NAME, temp, l, sizeof(temp));
 		BURP_verbose (128, temp, X.RDB$FIELD_NAME, NULL, NULL, NULL);
-		/* msg 128  restoring type %s for field %s */
+		// msg 128  restoring type %s for field %s 
 
 	END_STORE;
 	ON_ERROR
@@ -5934,18 +5931,18 @@ bool get_user_privilege (void)
 	TGBL tdgbl = GET_THREAD_DATA;
 	user_type = obj_user;
 	object_type = obj_relation;
-								
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
 		switch (attribute)
 		{
 		case att_priv_user:
-			/* default USER_TYPE to USER */
+			// default USER_TYPE to USER 
 			flags |= USER_PRIV_USER;
 			GET_TEXT(user);
 			BURP_verbose (123, user, NULL, NULL, NULL, NULL);
-			/* msg 123 restoring privilege for user %s */
+			// msg 123 restoring privilege for user %s 
 			break;
 
 		case att_priv_grantor:
@@ -5965,7 +5962,7 @@ bool get_user_privilege (void)
 
 		case att_priv_object_name:
 			flags |= USER_PRIV_OBJECT_NAME;
-			/* default OBJECT_TYPE to RELATION */
+			// default OBJECT_TYPE to RELATION 
 			GET_TEXT(relation_name);
 			break;
 
@@ -5986,12 +5983,12 @@ bool get_user_privilege (void)
 
 		default:
 			bad_attribute (scan_next_attr, attribute, 105);
-			/* msg 105 privilege */
+			// msg 105 privilege 
 			break;
 		}
 	}
-				
-	/* Check if object exists */
+
+	// Check if object exists 
 
 	bool exists = false;
 	switch (object_type)
@@ -6001,9 +5998,9 @@ bool get_user_privilege (void)
 		for (BURP_PRC proc = tdgbl->procedures; proc; proc = proc->prc_next)
 			if (!strcmp(proc->prc_name, relation_name))
 			{
-			exists = true;
-			local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
-			break;
+				exists = true;
+				local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+				break;
 			}
 		}
 		break;
@@ -6013,9 +6010,9 @@ bool get_user_privilege (void)
 		for (BURP_REL rel = tdgbl->relations; rel; rel = rel->rel_next)
 			if (!strcmp(rel->rel_name, relation_name))
 			{
-			exists = true;
-			if (rel->rel_flags & REL_view)
-				local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+				exists = true;
+				if (rel->rel_flags & REL_view)
+					local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 			break;
 			}
 		}
@@ -6029,7 +6026,7 @@ bool get_user_privilege (void)
 	if (exists)
 	{
 		if (!local_trans)
-		local_trans = gds_trans;
+			local_trans = gds_trans;
 
 		STORE (TRANSACTION_HANDLE local_trans
 		   REQUEST_HANDLE tdgbl->handles_get_user_privilege_req_handle1) X
@@ -6066,9 +6063,9 @@ bool get_user_privilege (void)
 			}
 
 			   /*
-				* USER_TYPE & OBJECT_TYPE are fields that did not exist before 
-				* V4.0. So, we have to reconstruct them and initialize them to 
-				* reasonable values. If they existed before then user_type and 
+				* USER_TYPE & OBJECT_TYPE are fields that did not exist before
+				* V4.0. So, we have to reconstruct them and initialize them to
+				* reasonable values. If they existed before then user_type and
 				* object_type contain the proper values. If they didn't exist
 				* then user_type and object_type contain the reasonable default
 				* values.
@@ -6081,13 +6078,13 @@ bool get_user_privilege (void)
 			X.RDB$OBJECT_TYPE = object_type;
 
 
-	   /* 
+	   /*
 		* If OBJECT_TYPE didn't exist before and we have a field level
 		* user privileges, then use obj_field instead.
 		*
-		* NOTE: Scanning the V4.0 code base, obj_field has never been 
-		*       used at all. The following code should be uncommented 
-		*       in case we ever introduce obj_field to the picture. 
+		* NOTE: Scanning the V4.0 code base, obj_field has never been
+		*       used at all. The following code should be uncommented
+		*       in case we ever introduce obj_field to the picture.
 		*/
 /***********************************************************
 			if ( !(flags & USER_PRIV_OBJECT_TYPE) )
@@ -6101,7 +6098,7 @@ bool get_user_privilege (void)
 
 		END_STORE;
 		ON_ERROR
-		general_on_error ();
+			general_on_error ();
 		END_ERROR;
 	}
 
@@ -6126,7 +6123,7 @@ bool get_view (BURP_REL		relation)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* If there is a global transaction then use it */
+	// If there is a global transaction then use it 
 
 	local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
@@ -6134,8 +6131,8 @@ bool get_view (BURP_REL		relation)
 		   REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)
 		X IN RDB$VIEW_RELATIONS
 		strcpy (X.RDB$VIEW_NAME, relation->rel_name);
-		SKIP_INIT(&scan_next_attr);
-		while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
@@ -6152,8 +6149,8 @@ bool get_view (BURP_REL		relation)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 140); 
-				/* msg 140 view */
+				bad_attribute (scan_next_attr, attribute, 140);
+				// msg 140 view 
 				break;
 			}
 		}
@@ -6187,13 +6184,13 @@ void ignore_array (BURP_REL		relation)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* don't free something you don't allocate */
+	// don't free something you don't allocate 
 	xdr_buffer.lstr_allocated = 0;
 
-	/* Pick up attributes */
+	// Pick up attributes 
 
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
 	{
 		switch (attribute)
 		{
@@ -6203,8 +6200,8 @@ void ignore_array (BURP_REL		relation)
 			if (field->fld_number == field_number)
 				break;
 			if (!field)
-			BURP_error_redirect (NULL, 36, 0, 0);
-			/* msg 36 Can't find field for blob */
+				BURP_error_redirect (NULL, 36, 0, 0);
+				// msg 36 Can't find field for blob 
 			break;
 
 		case att_array_dimensions:
@@ -6213,21 +6210,21 @@ void ignore_array (BURP_REL		relation)
 			for (range = field->fld_ranges; range < end_ranges; range += 2)
 			{
 				if (get_attribute(&attribute, tdgbl) != att_array_range_low)
-					bad_attribute (scan_next_attr, attribute, 58); 
-					/* msg 58 array */
+					bad_attribute (scan_next_attr, attribute, 58);
+					// msg 58 array 
 				else
 					range [0] = get_numeric();
 				if (get_attribute(&attribute, tdgbl) != att_array_range_high)
-					bad_attribute (scan_next_attr, attribute, 58); 
-					/* msg 58 array */
+					bad_attribute (scan_next_attr, attribute, 58);
+					// msg 58 array 
 				else
 					range [1] = get_numeric();
 			}
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 58); 
-			/* msg 58 array */
+			bad_attribute (scan_next_attr, attribute, 58);
+			// msg 58 array 
 			break;
 		}
 	}
@@ -6241,8 +6238,8 @@ void ignore_array (BURP_REL		relation)
 	{
 		if (get_attribute(&attribute, tdgbl) != att_xdr_array)
 			BURP_error_redirect (NULL, 55, 0, 0);
-			/* msg 55 Expected XDR record length */
-		else 
+			// msg 55 Expected XDR record length 
+		else
 		{
 			xdr_buffer.lstr_allocated = get(tdgbl);
 			xdr_buffer.lstr_allocated |= get(tdgbl) << 8;
@@ -6251,9 +6248,9 @@ void ignore_array (BURP_REL		relation)
 			lcount = xdr_buffer.lstr_length = xdr_buffer.lstr_allocated;
 		}
 	}
-	else 
+	else
 	{
-		lcount = length; 
+		lcount = length;
 	}
 
 	if (lcount)
@@ -6279,12 +6276,12 @@ void ignore_blob (void)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* Pick up attributes */
+	// Pick up attributes 
 
 	segments = 0;
 
-	SKIP_INIT(&scan_next_attr);
-	while (SKIP_SCAN(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
 	{
 		switch (attribute)
 		{
@@ -6305,13 +6302,13 @@ void ignore_blob (void)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 64); 
-			/* msg 64 blob */
+			bad_attribute (scan_next_attr, attribute, 64);
+			// msg 64 blob 
 			break;
 		}
 	}
 
-	/* Eat up blob segments */
+	// Eat up blob segments 
 
 	while (--segments >= 0)
 	{
@@ -6343,18 +6340,20 @@ rec_type ignore_data (BURP_REL		relation)
 	while (true)
 	{
 		if (get(tdgbl) != att_data_length)
-		BURP_error_redirect (NULL, 39, 0, 0);
-	/* msg 39 expected record length */
+			BURP_error_redirect (NULL, 39, 0, 0);
+			// msg 39 expected record length 
 		USHORT l = (USHORT) get_numeric();
-		if (tdgbl->gbl_sw_transportable) 
-		if (get(tdgbl) != att_xdr_length)
-			BURP_error_redirect (NULL, 55, 0, 0);
-			/* msg 55 Expected XDR record length */
-		else
-			l = (USHORT) get_numeric();
+		if (tdgbl->gbl_sw_transportable)
+		{
+			if (get(tdgbl) != att_xdr_length)
+				BURP_error_redirect (NULL, 55, 0, 0);
+				// msg 55 Expected XDR record length 
+			else
+				l = (USHORT) get_numeric();
+		}
 		if (get(tdgbl) != att_data_data)
 			BURP_error_redirect (NULL, 41, 0, 0);
-			/* msg 41 expected data attribute */
+			// msg 41 expected data attribute 
 		if (l) {
 			if (tdgbl->gbl_sw_compress)
 			{
@@ -6380,7 +6379,7 @@ rec_type ignore_data (BURP_REL		relation)
 	}
 
 	BURP_verbose (106, (void*) records, NULL, NULL, NULL, NULL);
-	/* msg 106 %ld records ignored */
+	// msg 106 %ld records ignored 
 
 	return record;
 }
@@ -6418,8 +6417,8 @@ void realign (UCHAR	*buffer,
 
 		// CVC: This code assumes fld_offset < fld_old_offset,
 		// why not use memmove() instead?
-		
-		/* Beware of overlaps here - don't use memcpy */
+
+		// Beware of overlaps here - don't use memcpy 
 		while (l--)
 		*p++ = *q++;
 
@@ -6430,7 +6429,7 @@ void realign (UCHAR	*buffer,
 		}
 	}
 
-	/* If this is format version 2, build fields for null flags */
+	// If this is format version 2, build fields for null flags 
 
 	if (tdgbl->RESTORE_format >= 2)
 	{
@@ -6461,7 +6460,7 @@ USHORT recompute_length (BURP_REL	relation)
  *
  **************************************/
 
-#ifdef sparc 
+#ifdef sparc
 	BURP_FLD	field;
 	ULONG	offset, length, dtype, alignment;
 	const SSHORT	*alignments = old_sparcs;
@@ -6475,7 +6474,7 @@ USHORT recompute_length (BURP_REL	relation)
 		length = field->fld_length;
 		alignment = 4;
 
-		/* arrays are of various fld_types but are really blobs */
+		// arrays are of various fld_types but are really blobs 
 
 		dtype = field->fld_type;
 
@@ -6487,15 +6486,15 @@ USHORT recompute_length (BURP_REL	relation)
 
 		alignment = alignments [gds_cvt_blr_dtype [field->fld_type]];
 		if (dtype == blr_varying)
-		length += sizeof(USHORT);
-		
+			length += sizeof(USHORT);
+
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
 		field->fld_old_offset = offset;
 		offset += length;
 	}
 
-	/* If this is format version 2, build fields for null flags */
+	// If this is format version 2, build fields for null flags 
 
 	if (tdgbl->RESTORE_format >= 2)
 	{
@@ -6509,7 +6508,7 @@ USHORT recompute_length (BURP_REL	relation)
 	}
 
 	return offset;
-#else  
+#else
 	return 0;
 #endif
 }
@@ -6534,29 +6533,31 @@ bool restore (const TEXT	*file_name,
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* Read burp record first */
+	// Read burp record first 
 
-	MVOL_init_read ((UCHAR*) tdgbl->gbl_database_file_name, (UCHAR*) file_name, 
+	MVOL_init_read ((UCHAR*) tdgbl->gbl_database_file_name, (UCHAR*) file_name,
 		&tdgbl->RESTORE_format, &tdgbl->io_cnt, &tdgbl->io_ptr);
 
 	if (tdgbl->gbl_sw_transportable)
 		BURP_verbose (133, NULL, NULL, NULL, NULL, NULL);
-		/* msg 133 transportable backup -- data in XDR format */
+		// msg 133 transportable backup -- data in XDR format 
 	if (tdgbl->gbl_sw_compress)
 		BURP_verbose (61, NULL, NULL, NULL, NULL, NULL);
-		/* msg 61 backup file is compressed */
+		// msg 61 backup file is compressed 
 
 
 	// restore only from those backup files created by current or previous GBAK
 
 	if (tdgbl->RESTORE_format < 1 || tdgbl->RESTORE_format > ATT_BACKUP_FORMAT)
-	#ifdef SUPERSERVER
+	{
+#ifdef SUPERSERVER
 		BURP_svc_error (44, isc_arg_number, (void*)(ULONG)tdgbl->RESTORE_format,
 				0, NULL, 0, NULL, 0, NULL, 0, NULL);
-	#else
+#else
 		BURP_error (44, (void*)(ULONG) tdgbl->RESTORE_format, 0, 0, 0, 0);
-	/* msg 44 Expected backup version 1, 2, or 3.  Found %ld */
-	#endif
+		// msg 44 Expected backup version 1, 2, or 3.  Found %ld 
+#endif
+	}
 
 	create_database (database_name);
 
@@ -6573,16 +6574,18 @@ bool restore (const TEXT	*file_name,
 
 	USHORT db_version = check_db_version();
 	if (db_version < DB_VERSION_CURRENT)
+	{
 #ifdef SUPERSERVER
 		BURP_svc_error (51, isc_arg_number, (void*) (ULONG) db_version,
 				0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #else
 		BURP_error (51, (void*) (ULONG) db_version, 0, 0, 0, 0);
-		/* msg 51 database format %ld is too old to restore to */
+		// msg 51 database format %ld is too old to restore to 
 #endif
+	}
 
 	BURP_verbose (129, NULL, NULL, NULL, NULL, NULL);
-	/* msg 129 started transaction */
+	// msg 129 started transaction 
 
 	while (get_attribute(&attribute, tdgbl) != att_end)
 	{
@@ -6602,7 +6605,7 @@ bool restore (const TEXT	*file_name,
 				X IN RDB$DATABASE
 				MODIFY X USING
 					if (attribute == att_database_description2)
-					get_source_blob (&X.RDB$DESCRIPTION, false);
+						get_source_blob (&X.RDB$DESCRIPTION, false);
 					else
 						get_misc_blob (&X.RDB$DESCRIPTION, 1, false);
 				END_MODIFY;
@@ -6663,19 +6666,19 @@ bool restore (const TEXT	*file_name,
 				return false;
 			flag = true;
 			break;
-		
+
 		case rec_collation:
 			if (!get_collation())
 				return false;
 			flag = true;
 			break;
-		
+
 		case rec_chk_constraint:
 			if (!get_chk_constraint())
 				return false;
 			flag = true;
 			break;
-		
+
 		case rec_global_field:
 			if (!get_global_field())
 				return false;
@@ -6694,19 +6697,19 @@ bool restore (const TEXT	*file_name,
 			flag = true;
 			flag_norel = false;
 			break;
-		
+
 		case rec_ref_constraint:
 			if (!get_ref_constraint())
 				return false;
 			flag = true;
 			break;
-		
+
 		case rec_rel_constraint:
 			if (!get_rel_constraint())
 				return false;
 			flag = true;
 			break;
-		
+
 		case rec_function:
 			if (!get_function())
 				return false;
@@ -6747,7 +6750,7 @@ bool restore (const TEXT	*file_name,
 			if (flag)
 			{
 				BURP_verbose (68, NULL, NULL, NULL, NULL, NULL);
-				/* msg 68 committing meta data */
+				// msg 68 committing meta data 
 				COMMIT;
 				ON_ERROR
 					general_on_error ();
@@ -6761,18 +6764,18 @@ bool restore (const TEXT	*file_name,
 				return false;
 			break;
 
-		case rec_trigger:  /* new trigger type */
+		case rec_trigger:  // new trigger type 
 			if (!get_trigger())
 				return false;
 			flag = true;
 			break;
 
-		case rec_trigger_message: 
+		case rec_trigger_message:
 			if (!get_trigger_message())
 				return false;
 			flag = true;
 			break;
-									  
+
 		case rec_user_privilege:
 			if (!get_user_privilege())
 				return false;
@@ -6803,13 +6806,13 @@ bool restore (const TEXT	*file_name,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 	#else
 			BURP_error (43, (void*) record, 0, 0, 0, 0);
-			/* msg 43 don't recognize record type %ld */
+			// msg 43 don't recognize record type %ld 
 	#endif
 			break;
 		}
 	}
 
-	/* This piece of code is to fix bug 10098: restore of database with 
+	/* This piece of code is to fix bug 10098: restore of database with
 	only domains and no relations aborts with the message ERROR: deadlock
 	This is because insertion of domains into RDB$FIELDS is happening in
 	the default transaction, whereas updation of RDB$FIELDS to add
@@ -6823,18 +6826,18 @@ bool restore (const TEXT	*file_name,
 	{
 		COMMIT;
 		ON_ERROR
-		general_on_error ();
+			general_on_error ();
 		END_ERROR;
 		EXEC SQL SET TRANSACTION NO_AUTO_UNDO;
 		if (gds_status [1])
-		EXEC SQL SET TRANSACTION;
+			EXEC SQL SET TRANSACTION;
 	}
 
-	/* put validation clauses for global fields */
+	// put validation clauses for global fields 
 
 	update_global_field ();
 
-	/* Purge shadow metadata if necessary */
+	// Purge shadow metadata if necessary 
 
 	if (tdgbl->gbl_sw_kill)
 
@@ -6917,7 +6920,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	ISC_STATUS_ARRAY	status_vector;
 
 	TGBL tdgbl = GET_THREAD_DATA;
-				  
+
 	STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 		X IN RDB$GENERATORS
 		strcpy (X.RDB$GENERATOR_NAME, gen_name);
@@ -6930,10 +6933,10 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	{
 #pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
 		BURP_verbose (185, gen_name, (void*) (SLONG) value, NULL, NULL, NULL);
-		/* msg 185 restoring generator %s value: %ld */
+		// msg 185 restoring generator %s value: %ld 
 		return;
 	}
-		
+
 
 	FRBRD *gen_id_reqh = NULL;
 	UCHAR	blr_buffer [100];  // enough to fit blr
@@ -6995,21 +6998,21 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	{
 		isc_print_blr ((SCHAR*) blr_buffer, NULL, NULL, 0);
 		BURP_error_redirect (status_vector, 42, 0, 0);
-		/* msg 42 Failed in store_blr_gen_id */
+		// msg 42 Failed in store_blr_gen_id 
 	}
 
 	if (isc_start_request (status_vector, &gen_id_reqh,
-						   &gds_trans, /* use the same one generated by gpre */
+						   &gds_trans, // use the same one generated by gpre 
 						   0))
 	{
 		isc_print_blr ((SCHAR*) blr_buffer, NULL, NULL, 0);
 		BURP_error_redirect (status_vector, 42, 0, 0);
-		/* msg 42 Failed in store_blr_gen_id */
+		// msg 42 Failed in store_blr_gen_id 
 	}
 
 #pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
 	BURP_verbose (185, gen_name, (void*) (SLONG) value, NULL, NULL, NULL);
-	/* msg 185 restoring generator %s value: %ld */
+	// msg 185 restoring generator %s value: %ld 
 
 	isc_release_request (status_vector, &gen_id_reqh);
 }
@@ -7072,7 +7075,7 @@ void update_global_field (void)
 					do *p++ = *q++; while (--length);
 				}
 			}
-			
+
 			if (gfield->gfld_flags & GFLD_validation_source)
 			{
 				X.RDB$VALIDATION_SOURCE.NULL = FALSE;
@@ -7085,7 +7088,7 @@ void update_global_field (void)
 					do *p++ = *q++; while (--length);
 				}
 			}
-			
+
 			if (gfield->gfld_flags & GFLD_validation_source2)
 			{
 				X.RDB$VALIDATION_SOURCE.NULL = FALSE;
@@ -7098,7 +7101,7 @@ void update_global_field (void)
 					do *p++ = *q++; while (--length);
 				}
 			}
-			
+
 			END_MODIFY;
 			ON_ERROR
 				general_on_error ();
@@ -7129,7 +7132,7 @@ bool bug_8183 (TGBL       tdgbl)
  * Name:	bug_8183
  *
  * Function:	Bug fix for bug_no 8183: It is a migration bug between IB3.3
- *		and IB4.0. Gbak v4.0 can't restore database v3.3 if 
+ *		and IB4.0. Gbak v4.0 can't restore database v3.3 if
  *		database has an index definition with comment field.
  *		It happens because of att_index_description2 attribute
  *		(which indicates that index contains a comment field
@@ -7143,15 +7146,15 @@ bool bug_8183 (TGBL       tdgbl)
  *
  *		This function is trying to recognize the next
  *		data in tdgbl->io_ptr buffer as either name of foreign
- *		key or comment field. Function returns TRUE in case of 
- *		comment field, otherwise FALSE.
+ *		key or comment field. Function returns true in case of
+ *		comment field, otherwise false.
  *
  * Usage:	result = bug_8183(tdgbl);
  *
  * Parameters:	tdgbl - pointer to the structure of global switches
  *		        and data
  *
- * Returns:	result [TRUE/FALSE]
+ * Returns:	result [true/false]
  *
  * Pre:		gbak got an index attribute with value "8" from
  *		backup database.
@@ -7210,4 +7213,5 @@ bool bug_8183 (TGBL       tdgbl)
 #endif
 
 } // namespace
+
 

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		jrd.c
+ *	MODULE:		jrd.cpp
  *	DESCRIPTION:	User visible entrypoints
  *
  * The contents of this file are subject to the Interbase Public
@@ -6645,3 +6645,4 @@ static bool verify_database_name(TEXT *name, ISC_STATUS *status)
 }
 
 } // extern "C"
+

@@ -45,15 +45,19 @@
 #include <fcntl.h>
 #endif
 
-static inline UCHAR* BURP_alloc(ULONG size){
+
+static inline UCHAR* BURP_alloc(ULONG size)
+{
 	return MISC_alloc_burp(size);
 }
 
-static inline UCHAR* BURP_alloc_zero(ULONG size){
+static inline UCHAR* BURP_alloc_zero(ULONG size)
+{
 	return MISC_alloc_burp(size);
 }
 
-static inline void BURP_free(void *block){
+static inline void BURP_free(void* block)
+{
 	MISC_free_burp(block);
 }
 
@@ -625,6 +629,8 @@ enum gfld_flags_vals {
 	GFLD_validation_source2	= 4
 };
 
+// CVC: Could use MAXPATHLEN, but what about restoring in a different system?
+// I need to review if we tolerate different lengths for different OS's here.
 const int MAX_FILE_NAME_LENGTH		= 256;
 
 /* Note that this typedef is also defined in JRD.H and REMOTE.H */
@@ -896,6 +902,8 @@ const int GBAK_IO_BUFFER_SIZE = (16 * (BUFSIZ));
 #else
 const int GBAK_IO_BUFFER_SIZE = (16 * (1024));
 #endif
+#else
+const int GBAK_IO_BUFFER_SIZE = (16 * (IO_BUFFER_SIZE));
 #endif
 
 /* Burp will always write a backup in multiples of the following number
@@ -919,14 +927,12 @@ inline static ULONG BURP_UP_TO_BLOCK(ULONG size)
 #ifdef WIN_NT
 static const int MODE_READ	= GENERIC_READ;
 static const int MODE_WRITE	= GENERIC_WRITE;
-#else 
-#	ifdef VMS
+#elif defined(VMS)
 static const int MODE_READ	= O_RDONLY;
 static const int MODE_WRITE	= O_WRONLY | O_CREAT | O_TRUNC;
-#	else
+#else
 static const int MODE_READ	= O_RDONLY;
 static const int MODE_WRITE	= O_WRONLY | O_CREAT;
-#	endif
 #endif
 
 

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
- *	MODULE:		canonical.c
+ *	MODULE:		canonical.cpp
  *	DESCRIPTION:	
  *
  * The contents of this file are subject to the Interbase Public
@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.27 2003-09-22 14:13:53 brodsom Exp $
+$Id: canonical.cpp,v 1.28 2003-09-25 11:48:59 robocop Exp $
 */
 
 #include "firebird.h"
@@ -209,7 +209,7 @@ ULONG CAN_encode_decode(BURP_REL relation,
 		}
 	}
 
-/* Next, get null flags */
+// Next, get null flags 
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -674,7 +674,7 @@ static bool_t xdr_slice(XDR* xdrs,
 	if (!xdr_long(xdrs, reinterpret_cast<long*>(&slice->lstr_length)))
 		  return FALSE;
 
-/* Handle operation specific stuff, particularly memory allocation/deallocation */
+// Handle operation specific stuff, particularly memory allocation/deallocation 
 
 	switch (xdrs->x_op)
 	{
@@ -712,7 +712,7 @@ static bool_t xdr_slice(XDR* xdrs,
 		return FALSE;
 	}
 
-/* Get descriptor of array element */
+// Get descriptor of array element 
 
 	if (SDL_info(status_vector, sdl, &info, 0))
 		return FALSE;

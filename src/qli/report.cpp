@@ -67,7 +67,7 @@ void RPT_report( QLI_NOD loop)
  **************************************/
 	QLI_REQ request;
 
-// Get to actual report node 
+// Get to actual report node
 
 	QLI_NOD node = loop->nod_arg[e_for_statement];
 	RPT report = (RPT) node->nod_arg[e_prt_list];
@@ -75,7 +75,7 @@ void RPT_report( QLI_NOD loop)
 	print->prt_new_page = (int(*)()) top_of_page;
 	print->prt_page_number = 0;
 
-// Get to actual report node 
+// Get to actual report node
 
 /* If there is a request associated  with the loop, start it and possibly
    send a message slong with it. */
@@ -116,13 +116,13 @@ void RPT_report( QLI_NOD loop)
 	initialize_break(report->rpt_bottom_page);
 	initialize_break(report->rpt_bottom_rpt);
 
-// Force TOP breaks for all fields 
+// Force TOP breaks for all fields
 
 	for (control = report->rpt_top_breaks; control;
 		 control = control->brk_next) FMT_print((QLI_NOD) control->brk_line, print);
 
 	for (;;) {
-		// Check for bottom breaks.  If we find one, force all lower breaks. 
+		// Check for bottom breaks.  If we find one, force all lower breaks.
 
 		for (control = report->rpt_bottom_breaks; control;
 			 control = control->brk_next)
@@ -139,7 +139,7 @@ void RPT_report( QLI_NOD loop)
 		if (print->prt_lines_remaining <= 0)
 			top_of_page(print, false);
 
-		// Now check for top breaks. 
+		// Now check for top breaks.
 
 		for (control = report->rpt_top_breaks; control;
 			 control = control->brk_next)
@@ -150,7 +150,7 @@ void RPT_report( QLI_NOD loop)
 			}
 		}
 
-		// Increment statisticals and print detail line, if any 
+		// Increment statisticals and print detail line, if any
 
 		increment_break(report->rpt_bottom_breaks);
 		increment_break(report->rpt_bottom_page);
@@ -159,7 +159,7 @@ void RPT_report( QLI_NOD loop)
 		if (node = report->rpt_detail_line)
 			FMT_print(node, print);
 
-		/* Get the next record.  If we're at end, we're almost done. */
+		// Get the next record.  If we're at end, we're almost done.
 
 		swap_uchar(message->msg_buffer, report->rpt_buffer);
 		desc = EXEC_receive(message, (PAR) loop->nod_arg[e_for_eof]);
@@ -167,7 +167,7 @@ void RPT_report( QLI_NOD loop)
 			break;
 	}
 
-// Force BOTTOM breaks for all fields 
+// Force BOTTOM breaks for all fields
 
 	swap_uchar(message->msg_buffer, report->rpt_buffer);
 	bottom_break(report->rpt_bottom_breaks, print);
@@ -262,7 +262,7 @@ static bool test_break(BRK control,
 	DSC desc1, desc2, *ptr1, *ptr2;
 	UCHAR *p2;
 
-// Evaluate the two versions of the expression 
+// Evaluate the two versions of the expression
 
 	if (ptr1 = EVAL_value((QLI_NOD) control->brk_field))
 		desc1 = *ptr1;
@@ -275,7 +275,7 @@ static bool test_break(BRK control,
 
 	message->msg_buffer = p1;
 
-// Check for consistently missing 
+// Check for consistently missing
 
 	if (!ptr1 || !ptr2)
 		return (ptr1 != ptr2);
@@ -291,10 +291,10 @@ static bool test_break(BRK control,
 		l = 2 + *(USHORT *) p1;
 
 	if (l)
-		do
+		do {
 			if (*p1++ != *p2++)
 				return true;
-		while (--l);
+		} while (--l);
 
 	return false;
 }
@@ -360,4 +360,5 @@ static void top_of_page(PRT print,
 	if (report->rpt_bottom_page)
 		initialize_break(report->rpt_bottom_page);
 }
+
 

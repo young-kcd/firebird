@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_EXE_PROTO_H_
-#define _QLI_EXE_PROTO_H_
+#ifndef QLI_EXE_PROTO_H
+#define QLI_EXE_PROTO_H
 
 extern void		EXEC_abort (void);
 extern void		EXEC_execute(qli_nod*);
@@ -34,4 +34,4 @@ extern void		EXEC_send(qli_msg*);
 extern void		EXEC_start_request(qli_req*, qli_msg*);
 extern void		EXEC_top(qli_nod*);
 
-#endif /* _QLI_EXE_PROTO_H_ */
+#endif /* QLI_EXE_PROTO_H */
