@@ -93,7 +93,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 {
 /**********************************************
  *
- *    m a i n _ g s e c
+ *    G S E C _ m a i n
  *
  **********************************************
  * Functional Description:
@@ -168,7 +168,7 @@ int common_main(int argc,
 {
 /**************************************
  *
- *	U T I L _ g s e c
+ *	c o m m o n _ m a i n
  *
  **************************************
  *

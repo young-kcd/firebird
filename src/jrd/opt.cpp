@@ -7223,7 +7223,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, jrd_nod* like_node)
  *	into a "starting with" AND a "like".  This
  *	will allow us to use the index for the
  *	starting with, and the LIKE can just tag
- *	aSLONG for the ride.
+ *	along for the ride.
  *	But on the ride it does useful work, consider
  *	match LIKE "ab%c".  This is optimized by adding
  *	AND starting_with "ab", but the LIKE clause is
