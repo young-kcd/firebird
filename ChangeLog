@@ -1,3 +1,86 @@
+2003-04-08 12:41  brodsom
+
+	* firebird2/builds/posix/prefix.mingw.README.html:
+	
+	Update MINGW readme
+
+2003-04-08 12:38  brodsom
+
+	* firebird2/src/isql/: isql.epp, show.epp:
+	
+	Isql warning fixes
+
+2003-04-08 12:37  brodsom
+
+	* firebird2/src/utilities/dba.epp:
+	
+	Utilities warning fixes
+
+2003-04-08 12:36  brodsom
+
+	* firebird2/src/remote/interface.cpp:
+	
+	Avoid nested ifdefs (Thanks to Claudio)
+
+2003-04-08 12:25  aafemt
+
+	* firebird2/src/jrd/codes.epp:
+	
+	Public headers don't use pathes in #include directives any more.
+	Now they can be provided 'as is'
+
+2003-04-08 12:20  aafemt
+
+	* firebird2/: builds/posix/Makefile.in.firebird,
+	builds/posix/make.rules, src/include/gen/codes.h, src/jrd/gdsold.h,
+	src/jrd/ibase.h:
+	
+	Public headers don't use pathes in #include directives any more.
+	Now they can be provided 'as is'
+
+2003-04-08 12:09  aafemt
+
+	* firebird2/builds/posix/Makefile.in.v5_examples:
+	
+	Better exampes' copying
+
+2003-04-08 03:06  brodsom
+
+	* firebird2/src/remote/: xnet.cpp, interface.cpp, parser.cpp,
+	server.cpp:
+	
+	REMOTE warning fixes
+
+2003-04-08 03:03  brodsom
+
+	* firebird2/src/wal/walc.cpp:
+	
+	WAL warning fixes
+
+2003-04-08 03:02  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Lock warning fixes
+
+2003-04-08 03:01  brodsom
+
+	* firebird2/src/dudley/ddl.cpp:
+	
+	Dudley warning fixes
+
+2003-04-08 02:31  brodsom
+
+	* firebird2/src/dsql/: ddl.cpp, dsql.cpp, gen.cpp, pass1.cpp:
+	
+	DSQL warning fixes.
+
+2003-04-08 01:41  brodsom
+
+	* firebird2/src/ipserver/ipserver.cpp:
+	
+	Ipserver warning fixes
+
 2003-04-07 23:51  brodsom
 
 	* firebird2/src/burp/: restore.epp, mvol.cpp, burp.cpp, backup.epp:
