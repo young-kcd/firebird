@@ -34,8 +34,7 @@ copy dbs\qli\help.fdb %ROOT_PATH%\gen\help.fdb > nul
 
 @echo Preprocessing files required to do a boot-build...
 @cd msvc7
-:: @msdev Firebird2Boot.dsw /MAKE "common_static - Win32 Release" "gpre_boot - Win32 Release"  /REBUILD /OUT boot1.log
-@devenv Firebird2Boot.sln /clean /OUT boot1.log
+@devenv Firebird2Boot.sln /project gpre_boot /clean /OUT boot1.log
 @cd ..
 @del gpre_boot.exe 2> nul
 @move msvc7\release\firebird\bin\gpre_boot.exe .
@@ -44,8 +43,7 @@ copy dbs\qli\help.fdb %ROOT_PATH%\gen\help.fdb > nul
 @echo.
 @echo Making necessary boot-build executables...
 @cd msvc7
-:: @msdev Firebird2Boot.dsw /MAKE "fbclient_static - Win32 Release" "gpre_static - Win32 Release"  /REBUILD /OUT boot2.log
-@devenv Firebird2Boot.sln /clean /OUT boot2.log
+@devenv Firebird2Boot.sln /project gpre_static /clean /OUT boot2.log
 @cd ..
 @del gpre_static.exe 2> nul
 @move msvc7\release\firebird\bin\gpre_static.exe .
@@ -54,8 +52,8 @@ copy dbs\qli\help.fdb %ROOT_PATH%\gen\help.fdb > nul
 @call preprocess.bat
 @echo Building message file and codes header...
 @cd msvc7
-:: @msdev Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" "codes - Win32 Release"  /REBUILD /OUT boot3.log
-@devenv Firebird2Boot.sln /clean /OUT boot3.log
+@devenv Firebird2Boot.sln /project codes /clean /OUT boot3.log
+@devenv Firebird2Boot.sln /project build_msg /clean /OUT boot3.log
 @cd ..
 @del build_msg.exe 2> nul
 @move msvc7\release\build_msg\build_msg.exe .
