@@ -81,7 +81,7 @@ namespace Firebird
 				// Order of assignments below is important in case of low memory conditions
 
 				// Grow buffer exponentially to prevent memory fragmentation
-				if (newSize/2 < bufferSize)
+				if (newSize / 2 < bufferSize)
 					newSize = bufferSize * 2;
 
 				// Do not grow buffer beyond string length limit

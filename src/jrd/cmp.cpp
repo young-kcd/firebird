@@ -3564,7 +3564,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	ptr = node->nod_arg;
 
-	for (jrd_nod** end = ptr + node->nod_count; ptr < end; ptr++) {
+	for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++) {
 		*ptr = pass1(tdbb, csb, *ptr, view, view_stream, validate_expr);
 	}
 
