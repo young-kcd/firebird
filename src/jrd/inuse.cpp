@@ -60,8 +60,7 @@ bool INUSE_cleanup(IUO inuse, void (*cleanup_routine) ())
 			ptr < end; ptr++)
 		{
 			if (*ptr) {
-				reinterpret_cast <
-					void (*) (void *) >(*cleanup_routine) (*ptr);
+				reinterpret_cast<FPTR_VOID_PTR>(*cleanup_routine) (*ptr);
 				needed_cleaning = true;
 			}
 		}
