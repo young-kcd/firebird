@@ -4361,7 +4361,7 @@ static void grant_revoke( dsql_req* request)
 	dsql_nod** uptr;
 	dsql_nod** uend;
 
-	USHORT option = 0; // no grant/admin option
+	SSHORT option = 0; // no grant/admin option
 	dsql_nod* ddl_node = request->req_ddl_node;
 	dsql_nod* privs = ddl_node->nod_arg[e_grant_privs];
 
