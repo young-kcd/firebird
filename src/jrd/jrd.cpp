@@ -674,8 +674,12 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	SSHORT length_expanded = strlen(expanded_filename);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
-	if (!verify_database_name(file_name, user_status)) {
-		return user_status[1];
+
+/* If database name is not alias, check it against conf file */
+	if (!is_alias) {
+		if (!verify_database_name(file_name, user_status)) {
+			return user_status[1];
+		}
 	}
 
 /* Unless we're already attached, do some initialization */
