@@ -425,7 +425,6 @@ USHORT guardian_setup(USHORT (*err_handler)(SLONG, TEXT *, SC_HANDLE))
  *
  *************************************************/
 	HKEY hkey;
-	USHORT len;
 	SLONG status;
 
 	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
