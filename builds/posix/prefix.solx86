@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.15 2003-02-11 05:13:36 aafemt Exp $
+# $Id: prefix.solx86,v 1.16 2003-02-20 14:41:17 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -27,18 +27,25 @@
 #FirebirdInstallPrefix = @prefix@
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
-COMM_SOLX_FLAGS:=  -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -fwritable-strings
+COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -fwritable-strings
 
-SFIO= /export/home/interbase/SfIO
+#SFIO= /export/home/interbase/SfIO
 #SfIO is a pretty portable stdIO 
 #from http://www.research.att.com/sw/tools/sfio/
 
+#SFIO_DIR='/export/home/interbase/SfIO'
+#SFIO_FLAGS='-DSFIO -I/export/home/interbase/SfIO/include'
+#SFIO_LDFLAGS='-L/export/home/interbase/SfIO/lib'
+
+SFIO=@SFIO_DIR@
+SFIO_FLAGS=@SFIO_FLAGS@
+SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
 STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
 
 
 ifdef SFIO
-COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS)  -DSFIO -I$(SFIO)/include
+COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS)  $(SFIO_FLAGS) $(SFIO_LDFLAGS)
 endif
 
 COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort)
