@@ -382,7 +382,7 @@ PORT WNET_connect(TEXT*		name,
 	if (packet)
 	{
 		THREAD_EXIT;
-		while (TRUE) {
+		while (true) {
 			port->port_handle = CreateFile(port->port_connection->str_data,
 										   GENERIC_WRITE | GENERIC_READ,
 										   0, NULL, OPEN_EXISTING, 0, NULL);
@@ -410,7 +410,7 @@ PORT WNET_connect(TEXT*		name,
 	THREAD_EXIT;
 	command_line[0] = 0;
 
-	while (TRUE)
+	while (true)
 	{
 		port->port_handle =
 			CreateNamedPipe(port->port_connection->str_data,
@@ -804,7 +804,7 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 		make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
 
 	THREAD_EXIT;
-	while (TRUE) {
+	while (true) {
 		new_port->port_handle =
 			CreateFile(new_port->port_connection->str_data, GENERIC_READ, 0,
 					   NULL, OPEN_EXISTING, 0, NULL);
@@ -1500,13 +1500,11 @@ static bool_t wnet_read( XDR * xdrs)
  *	message sent will handle this.
  *
  **************************************/
-	PORT port;
 	SSHORT length;
-	SCHAR *p, *end;
 
-	port = (PORT) xdrs->x_public;
-	p = xdrs->x_base;
-	end = p + BUFFER_SIZE;
+	PORT port = (PORT) xdrs->x_public;
+	SCHAR* p = xdrs->x_base;
+	const SCHAR* const end = p + BUFFER_SIZE;
 
 /* If buffer is not completely empty, slide down what what's left */
 
@@ -1523,7 +1521,7 @@ if (port->port_flags & PORT_pend_ack)
 	return FALSE;
 */
 
-	while (TRUE) {
+	while (true) {
 		length = end - p;
 		if (!packet_receive
 			(port, reinterpret_cast < UCHAR * >(p), length, &length)) {

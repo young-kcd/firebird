@@ -98,7 +98,7 @@ void SRVR_WinMain(
 				   szAppName, MB_OK | MB_ICONHAND | MB_APPLMODAL);
 		return;
 	}
-	while (TRUE) {
+	while (true) {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
