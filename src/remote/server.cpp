@@ -4690,27 +4690,32 @@ static int THREAD_ROUTINE thread(void* flags)
 
 				/* Validate port.  If it looks ok, process request */
 
-				rem_port* parent_port =
-					request->req_port->port_server->srvr_parent_port;
-				if (parent_port == request->req_port)
+				if (request->req_port->port_state != state_disconnected)
 				{
-					process_packet(parent_port, &request->req_send,
-								   &request->req_receive, &port);
+					rem_port* parent_port =
+						request->req_port->port_server->srvr_parent_port;
+					if (parent_port == request->req_port)
+					{
+						process_packet(parent_port, &request->req_send,
+									   &request->req_receive, &port);
+					}
+					else
+					{
+						for (port = parent_port->port_clients; port;
+							 port = port->port_next)
+						{
+							if (port == request->req_port)
+							{
+								process_packet(port, &request->req_send,
+											   &request->req_receive, &port);
+								break;
+							}
+						}
+					}
 				}
 				else
 				{
-					for (port = parent_port->port_clients; port;
-						 port = port->port_next)
-					{
-
-						if (port == request->req_port
-							&& port->port_state != state_disconnected)
-						{
-							process_packet(port, &request->req_send,
-										   &request->req_receive, &port);
-							break;
-						}
-					}
+					port = NULL;
 				}
 
 				/* Take request out of list of active requests */
