@@ -44,15 +44,15 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/gdsassert.h"
 #ifndef SUPERSERVER
-#include "../utilities/ppg_proto.h"
+#include "../utilities/gstat/ppg_proto.h"
 #endif
-#include "../utilities/dbaswi.h"
+#include "../utilities/gstat/dbaswi.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/enc_proto.h"
 #ifdef SUPERSERVER
-#include "../utilities/cmd_util_proto.h"
+#include "../utilities/common/cmd_util_proto.h"
 #include "../jrd/thd_proto.h"
 #endif
 
@@ -172,7 +172,7 @@ static void dba_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 #endif
 
 #include "../jrd/jrd_pwd.h"
-#include "../utilities/ppg_proto.h"
+#include "../utilities/gstat/ppg_proto.h"
 
 #define FPRINTF		SVC_fprintf
 
@@ -1416,7 +1416,7 @@ static PAG db_read( SLONG page_number)
 	tddba->page_number = page_number;
 
 	for (fil = tddba->files;
-		 page_number > fil->fil_max_page
+		 page_number > (SLONG) fil->fil_max_page
 		 && fil->fil_next;) fil = fil->fil_next;
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
@@ -1424,7 +1424,7 @@ static PAG db_read( SLONG page_number)
 		UInt32x32To64((DWORD) page_number, (DWORD) tddba->page_size);
 	if (SetFilePointer
 		(fil->fil_desc, (LONG) liOffset.LowPart, &liOffset.HighPart,
-		 FILE_BEGIN) == -1) {
+		 FILE_BEGIN) == (DWORD) -1) {
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,

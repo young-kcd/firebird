@@ -26,7 +26,7 @@
 #include "../jrd/common.h"
 #include "../iscguard/cntlg_proto.h"
 #include "../remote/remote.h"
-#include "../utilities/install_nt.h"
+#include "../utilities/install/install_nt.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/gds_proto.h"

@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.8 2003-02-19 06:14:39 eku Exp $
+ * $Id: ibmgr.cpp,v 1.1 2003-07-15 02:39:53 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -45,10 +45,10 @@
 #endif
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
-#include "../utilities/ibmgr.h"
-#include "../utilities/ibmgrswi.h"
+#include "../utilities/ibmgr/ibmgr.h"
+#include "../utilities/ibmgr/ibmgrswi.h"
 #include "../jrd/license.h"
-#include "../utilities/srvrmgr_proto.h"
+#include "../utilities/ibmgr/srvrmgr_proto.h"
 
 
 

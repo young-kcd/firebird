@@ -49,8 +49,8 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/why_proto.h"
-#include "../utilities/gsec.h"
-#include "../utilities/secur_proto.h"
+#include "../utilities/gsec/gsec.h"
+#include "../utilities/gsec/secur_proto.h"
 
 #include "../jrd/gdsold.h"
 

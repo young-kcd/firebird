@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.8 2003-03-28 11:29:18 aafemt Exp $
+#  $Id: Makefile.in.embed.util,v 1.9 2003-07-15 02:35:53 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=embed.util
@@ -51,26 +51,26 @@ DROP_Sources = $(addprefix utilities/, $(DROP_Files))
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
 GSEC_Files =  gsec.cpp
-GSEC_Sources = $(addprefix utilities/, $(GSEC_Files))
+GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files))
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
 
 GSTAT_Files =  dba.epp ppg.cpp
-GSTAT_Sources = $(addprefix utilities/, $(GSTAT_Files))
+GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files))
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
 
 
 IBGUARD_Files =  guard.cpp util.cpp
-IBGUARD_Sources = $(addprefix utilities/, $(IBGUARD_Files))
+IBGUARD_Sources = $(addprefix utilities/guard/, $(IBGUARD_Files))
 IBGUARD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBGUARD_Sources))))
 
 
 IBMGR_Files =  	ibmgr.cpp srvrmgr.cpp
-IBMGR_Sources = $(addprefix utilities/, $(IBMGR_Files))
+IBMGR_Sources = $(addprefix utilities/ibmgr/, $(IBMGR_Files))
 IBMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBMGR_Sources))))
 
 
 REBUILD_Files =  rebuild.cpp rstore.epp rmet.epp 
-REBUILD_Sources = $(addprefix utilities/, $(REBUILD_Files))
+REBUILD_Sources = $(addprefix utilities/rebuild/, $(REBUILD_Files))
 REBUILD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REBUILD_Sources))))
 
 

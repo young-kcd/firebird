@@ -37,7 +37,7 @@
 #include "../iscguard/iscguard.rh"
 #include "../iscguard/iscguard.h"
 #include "../iscguard/cntlg_proto.h"
-#include "../utilities/install_nt.h"
+#include "../utilities/install/install_nt.h"
 #include "../remote/os/win32/window.h"
 #include "../remote/os/win32/chop_proto.h"
 #include "../common/config/config.h"

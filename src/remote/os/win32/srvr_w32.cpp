@@ -89,7 +89,7 @@
 #include "../jrd/license.h"
 #include "../jrd/thd.h"
 #include "../jrd/license.h"
-#include "../utilities/install_nt.h"
+#include "../utilities/install/install_nt.h"
 #include "../remote/os/win32/cntl_proto.h"
 #include "../remote/inet_proto.h"
 #include "../remote/serve_proto.h"

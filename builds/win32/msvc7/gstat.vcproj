@@ -126,7 +126,7 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\gen\utilities\dba.cpp">
+				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\enc.cpp">
@@ -135,7 +135,7 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\ppg.cpp">
+				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
 			</File>
 		</Filter>
 		<Filter

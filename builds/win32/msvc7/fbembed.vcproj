@@ -311,10 +311,10 @@
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\utilities\dba.cpp">
+				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\ppg.cpp">
+				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
 			</File>
 		</Filter>
 		<Filter

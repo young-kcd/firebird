@@ -89,7 +89,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\dba.cpp
+SOURCE=..\..\..\gen\utilities\gstat\dba.cpp
 # End Source File
 # Begin Source File
 
@@ -101,7 +101,7 @@ SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\ppg.cpp
+SOURCE=..\..\..\src\utilities\gstat\ppg.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -113,7 +113,7 @@ SOURCE=..\..\..\src\jrd\enc_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\ppg_proto.h
+SOURCE=..\..\..\src\utilities\gstat\ppg_proto.h
 # End Source File
 # End Group
 # Begin Group "Resource files"

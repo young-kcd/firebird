@@ -26,9 +26,9 @@
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/pag.h"
-#include "../utilities/rebuild.h"
-#include "../utilities/rebui_proto.h"
-#include "../utilities/rmet_proto.h"
+#include "../utilities/rebuild/rebuild.h"
+#include "../utilities/rebuild/rebui_proto.h"
+#include "../utilities/rebuild/rmet_proto.h"
 #include "../jrd/gds_proto.h"
 
 DATABASE DB = STATIC FILENAME "rebuild.fdb";

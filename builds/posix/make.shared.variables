@@ -170,17 +170,26 @@ BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources)))
 #
 # utilities
 
-SECURITY_ClientFiles = security.cpp
+SECURITY_ClientFiles_gsec = security.cpp
 
-SECURITY_ServerFiles:=
+SECURITY_ServerFiles_gsec:=
+SECURITY_ServerFiles_gstat:=
+SECURITY_ServerFiles_common:=
 
 ifeq ($(ArchType),super)
-    SECURITY_ServerFiles:= $(SECURITY_ServerFiles) gsec.cpp dba.epp ppg.cpp cmd_util.cpp
+    SECURITY_ServerFiles_gsec:= $(SECURITY_ServerFiles_gsec) gsec.cpp 
+    SECURITY_ServerFiles_gstat:= $(SECURITY_ServerFiles_gstat) dba.epp ppg.cpp 
+    SECURITY_ServerFiles_common:= $(SECURITY_ServerFiles_common) cmd_util.cpp
 endif
 
-SECURITY_Files = $(SECURITY_ClientFiles) $(SECURITY_ServerFiles)
+SECURITY_Files_gsec = $(SECURITY_ClientFiles_gsec) $(SECURITY_ServerFiles_gsec)
+SECURITY_Files_gstat = $(SECURITY_ServerFiles_gstat)
+SECURITY_Files_common = $(SECURITY_ServerFiles_common)
+SECURITY_Sources_gsec = $(addprefix utilities/gsec/, $(SECURITY_Files_gsec))
+SECURITY_Sources_gstat = $(addprefix utilities/gstat/, $(SECURITY_Files_gstat))
+SECURITY_Sources_common = $(addprefix utilities/common/, $(SECURITY_Files_common))
 
-SECURITY_Sources = $(addprefix utilities/, $(SECURITY_Files))
+SECURITY_Sources = $(SECURITY_Sources_gsec) $(SECURITY_Sources_gstat) $(SECURITY_Sources_common)
 SECURITY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_Sources))))
 
 #________________________________________________________________________

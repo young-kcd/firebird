@@ -34,7 +34,7 @@
 #include "../jrd/thd.h"
 #include "../jrd/iberr.h"
 
-#include "../utilities/install_nt.h"
+#include "../utilities/install/install_nt.h"
 
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"

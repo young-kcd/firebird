@@ -288,7 +288,7 @@ SOURCE=..\..\..\src\remote\xnet.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\security.cpp
+SOURCE=..\..\..\gen\utilities\gsec\security.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

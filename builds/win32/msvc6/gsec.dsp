@@ -93,11 +93,11 @@ SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec.cpp
+SOURCE=..\..\..\src\utilities\gsec\gsec.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\security.cpp
+SOURCE=..\..\..\gen\utilities\gsec\security.cpp
 # End Source File
 # End Group
 # Begin Group "JRD files"
@@ -117,11 +117,11 @@ SOURCE=..\..\..\src\jrd\isc.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec.h
+SOURCE=..\..\..\src\utilities\gsec\gsec.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\secur_proto.h
+SOURCE=..\..\..\src\utilities\gsec\secur_proto.h
 # End Source File
 # End Group
 # Begin Group "Resource files"

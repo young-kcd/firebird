@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.5 2002-09-08 07:56:50 dimitr Exp $
+ * $Id: guard.cpp,v 1.1 2003-07-15 02:39:38 brodsom Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -49,7 +49,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/file_params.h"
-#include "../utilities/util_proto.h"
+#include "../utilities/guard/util_proto.h"
 
 
 int CLIB_ROUTINE main( int argc, char **argv)

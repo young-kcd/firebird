@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70 2003-06-30 11:26:38 brodsom Exp $
+$Id: inet.cpp,v 1.71 2003-07-15 02:43:16 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -137,7 +137,7 @@ extern int h_errno;
 #include <io.h>
 #include <process.h>
 #include <signal.h>
-#include "../utilities/install_nt.h"
+#include "../utilities/install/install_nt.h"
 #define ERRNO		WSAGetLastError()
 #define H_ERRNO		WSAGetLastError()
 #define SOCLOSE		closesocket

@@ -31,8 +31,8 @@
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../utilities/gsec.h"
-#include "../utilities/secur_proto.h"
+#include "../utilities/gsec/gsec.h"
+#include "../utilities/gsec/secur_proto.h"
 
 DATABASE DB = STATIC FILENAME "security.fdb";
 

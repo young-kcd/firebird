@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.13 2003-04-16 10:18:37 aafemt Exp $
+ * $Id: srvrmgr.cpp,v 1.1 2003-07-15 02:39:53 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -48,8 +48,8 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/svc_undoc.h"
-#include "../utilities/ibmgr.h"
-#include "../utilities/srvrmgr_proto.h"
+#include "../utilities/ibmgr/ibmgr.h"
+#include "../utilities/ibmgr/srvrmgr_proto.h"
 
 #define STUFF_WORD(p, value)    {*p++ = value; *p++ = value >> 8;}
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.27 2003-04-10 06:04:41 aafemt Exp $
+//	$Id: alice.cpp,v 1.28 2003-07-15 02:40:52 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -65,7 +65,7 @@
 #endif
 
 #ifdef SUPERSERVER
-#include "../utilities/cmd_util_proto.h"
+#include "../utilities/common/cmd_util_proto.h"
 #endif
 
 #ifdef WIN_NT

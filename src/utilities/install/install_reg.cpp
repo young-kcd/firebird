@@ -27,8 +27,8 @@
 #include <windows.h>
 #include "../jrd/common.h"
 #include "../jrd/license.h"
-#include "../utilities/install_nt.h"
-#include "../utilities/regis_proto.h"
+#include "../utilities/install/install_nt.h"
+#include "../utilities/install/regis_proto.h"
 
 static USHORT reg_error(SLONG, TEXT *, HKEY);
 static void usage(void);

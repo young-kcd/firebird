@@ -60,8 +60,8 @@
 #include "../jrd/utl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/enc_proto.h"
-#include "../utilities/gsecswi.h"
-#include "../utilities/dbaswi.h"
+#include "../utilities/gsec/gsecswi.h"
+#include "../utilities/gstat/dbaswi.h"
 #include "../common/classes/alloc.h"
 #ifdef SERVER_SHUTDOWN
 #include "../jrd/jrd_proto.h"

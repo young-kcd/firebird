@@ -29,9 +29,9 @@
 #include <windows.h>
 #include "../jrd/common.h"
 #include "../jrd/license.h"
-#include "../utilities/install_nt.h"
-#include "../utilities/servi_proto.h"
-#include "../utilities/registry.h"
+#include "../utilities/install/install_nt.h"
+#include "../utilities/install/servi_proto.h"
+#include "../utilities/install/registry.h"
 
 /* Defines */
 #define RUNAS_SERVICE " -s"

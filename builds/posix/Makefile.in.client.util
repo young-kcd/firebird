@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.10 2003-07-14 23:21:39 brodsom Exp $
+#  $Id: Makefile.in.client.util,v 1.11 2003-07-15 02:35:53 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -51,16 +51,16 @@ DROP_Sources = $(addprefix utilities/, $(DROP_Files))
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
 GSEC_Files =  gsec.cpp
-GSEC_Sources = $(addprefix utilities/, $(GSEC_Files))
+GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files))
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
 
 GSTAT_Files =  dba.epp ppg.cpp
-GSTAT_Sources = $(addprefix utilities/, $(GSTAT_Files))
+GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files))
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
 
 
 FBGUARD_Files =  guard.cpp util.cpp
-FBGUARD_Sources = $(addprefix utilities/, $(FBGUARD_Files))
+FBGUARD_Sources = $(addprefix utilities/guard/, $(FBGUARD_Files))
 FBGUARD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBGUARD_Sources))))
 
 IBGUARD_A_Files =  cntl_guard.cpp iscguard.cpp
@@ -71,19 +71,19 @@ IBGUARD_B_Sources = $(addprefix remote/, $(IBGUARD_B_Files))
 IBGUARD_B_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBGUARD_B_Sources))))
 
 FBMGR_Files =  	ibmgr.cpp srvrmgr.cpp
-FBMGR_Sources = $(addprefix utilities/, $(FBMGR_Files))
+FBMGR_Sources = $(addprefix utilities/ibmgr/, $(FBMGR_Files))
 FBMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBMGR_Sources))))
 
 INSTREG_Files =  	install_reg.cpp registry.cpp
-INSTREG_Sources = $(addprefix utilities/, $(INSTREG_Files))
+INSTREG_Sources = $(addprefix utilities/install/, $(INSTREG_Files))
 INSTREG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INSTREG_Sources))))
 
 INSTSVC_Files =  	install_svc.cpp services.cpp
-INSTSVC_Sources = $(addprefix utilities/, $(INSTSVC_Files))
+INSTSVC_Sources = $(addprefix utilities/install/, $(INSTSVC_Files))
 INSTSVC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INSTSVC_Sources))))
 
 REBUILD_Files =  rebuild.cpp rstore.epp rmet.epp 
-REBUILD_Sources = $(addprefix utilities/, $(REBUILD_Files))
+REBUILD_Sources = $(addprefix utilities/rebuild/, $(REBUILD_Files))
 REBUILD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REBUILD_Sources))))
 
 

@@ -89,11 +89,11 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\install_svc.cpp
+SOURCE=..\..\..\src\utilities\install\install_svc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\services.cpp
+SOURCE=..\..\..\src\utilities\install\services.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -101,7 +101,7 @@ SOURCE=..\..\..\src\utilities\services.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\servi_proto.h
+SOURCE=..\..\..\src\utilities\install\servi_proto.h
 # End Source File
 # End Group
 # Begin Group "Resource files"

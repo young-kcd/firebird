@@ -97,11 +97,11 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\dba.cpp
+SOURCE=..\..\..\gen\utilities\gstat\dba.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\ppg.cpp
+SOURCE=..\..\..\src\utilities\gstat\ppg.cpp
 # End Source File
 # End Group
 # Begin Group "Resource files"

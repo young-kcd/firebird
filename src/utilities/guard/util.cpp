@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.8 2002-11-06 07:08:47 eku Exp $
+$Id: util.cpp,v 1.1 2003-07-15 02:39:38 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -60,7 +60,7 @@ $Id: util.cpp,v 1.8 2002-11-06 07:08:47 eku Exp $
 
 #include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
-#include "../utilities/util_proto.h"
+#include "../utilities/guard/util_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 

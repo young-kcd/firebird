@@ -42,6 +42,10 @@
 @mkdir %ROOT_PATH%\gen\qli 2>nul
 @rmdir /s /q %ROOT_PATH%\gen\utilities 2>nul
 @mkdir %ROOT_PATH%\gen\utilities 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\utilities\gstat 2>nul
+@mkdir %ROOT_PATH%\gen\utilities\gstat 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\utilities\gsec 2>nul
+@mkdir %ROOT_PATH%\gen\utilities\gsec 2>nul
 
 ::=======
 @call :gpre_boot

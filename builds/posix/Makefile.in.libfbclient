@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.14 2003-03-31 10:29:15 aafemt Exp $
+#  $Id: Makefile.in.libfbclient,v 1.15 2003-07-15 02:35:53 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -73,8 +73,8 @@ WAL_ClientSources = $(addprefix wal/, $(WAL_ClientFiles))
 WAL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_ClientSources))))
 
 
-SECURITY_ClientSources = $(addprefix utilities/, $(SECURITY_ClientFiles))
-SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources))))
+SECURITY_ClientSources_gsec = $(addprefix utilities/gsec/, $(SECURITY_ClientFiles_gsec))
+SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources_gsec))))
 
 
 FBUTIL_ClientSources = $(addprefix fbutil/, $(FBUTIL_ClientFiles))

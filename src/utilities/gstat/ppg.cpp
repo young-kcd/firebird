@@ -48,7 +48,7 @@ static const TEXT months[][4] = {
 
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
-#include "../utilities/ppg_proto.h"
+#include "../utilities/gstat/ppg_proto.h"
 
 #define exit(code)	{service->svc_handle = 0; return (code);}
 #define FPRINTF		SVC_fprintf

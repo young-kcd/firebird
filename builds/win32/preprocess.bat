@@ -65,7 +65,8 @@ goto :EOF
 @for %%i in (codes, relations, envelope) do @call :PREPROCESS misc %%i
 @for %%i in (build_file) do @call :PREPROCESS msgs %%i
 @for %%i in (help, meta, proc, show) do @call :PREPROCESS qli %%i
-@for %%i in (dba, security) do @call :PREPROCESS utilities %%i
+@for %%i in (dba) do @call :PREPROCESS utilities/gstat %%i
+@for %%i in (security) do @call :PREPROCESS utilities/gsec %%i
 
 @goto :EOF
 

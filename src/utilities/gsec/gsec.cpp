@@ -33,13 +33,13 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/jrd.h"
-#include "../utilities/gsec.h"
+#include "../utilities/gsec/gsec.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/license.h"
 #include "../jrd/svc_proto.h"
-#include "../utilities/secur_proto.h"
-#include "../utilities/gsecswi.h"
-#include "../utilities/cmd_util_proto.h"
+#include "../utilities/gsec/secur_proto.h"
+#include "../utilities/gsec/gsecswi.h"
+#include "../utilities/common/cmd_util_proto.h"
 #ifdef WIN_NT
 #include <windows.h>
 #endif

@@ -89,19 +89,19 @@ LIB32=link.exe -lib
 # PROP Default_Filter "epp"
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\dba.epp
+SOURCE=..\..\..\src\utilities\gstat\dba.epp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\rmet.epp
+SOURCE=..\..\..\src\utilities\rebuild\rmet.epp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\rstore.epp
+SOURCE=..\..\..\src\utilities\rebuild\rstore.epp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\security.epp
+SOURCE=..\..\..\src\utilities\gsec\security.epp
 # End Source File
 # End Group
 # Begin Group "Generated files"
@@ -109,16 +109,16 @@ SOURCE=..\..\..\src\utilities\security.epp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\gen\utilities\security.cpp
+SOURCE=..\..\..\gen\utilities\gsec\security.cpp
 # End Source File
 # End Group
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\cmd_util.cpp
+SOURCE=..\..\..\src\utilities\common\cmd_util.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec.cpp
+SOURCE=..\..\..\src\utilities\gsec\gsec.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -126,15 +126,15 @@ SOURCE=..\..\..\src\utilities\gsec.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\cmd_util_proto.h
+SOURCE=..\..\..\src\utilities\common\cmd_util_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec.h
+SOURCE=..\..\..\src\utilities\gsec\gsec.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\registry.h
+SOURCE=..\..\..\src\utilities\install\registry.h
 # End Source File
 # End Group
 # End Target

@@ -118,7 +118,7 @@
 				Name="epp files"
 				Filter="epp">
 				<File
-					RelativePath="..\..\..\src\utilities\dba.epp">
+					RelativePath="..\..\..\src\utilities\gstat.epp">
 				</File>
 				<File
 					RelativePath="..\..\..\src\utilities\rmet.epp">

@@ -32,7 +32,7 @@
 
 #include "../jrd/os/config_root.h"
 #include "../jrd/os/path_utils.h"
-#include "../utilities/registry.h"
+#include "../utilities/install/registry.h"
 
 typedef Firebird::string string;
 
