@@ -839,7 +839,7 @@ enum node_args {
 	e_current_date_count = 0,
 	e_current_timestamp_count = 0,
 
-	e_alt_dom_name = 0,				// nod_modify_domain
+	e_alt_dom_name = 0,				// nod_mod_domain
 	e_alt_dom_ops,
 	e_alt_dom_count,
 

@@ -650,7 +650,8 @@ void GEN_request( dsql_req* request, dsql_nod* node)
 
 		if (request->req_type == REQ_SELECT ||
 			request->req_type == REQ_SELECT_UPD ||
-			request->req_type == REQ_EMBED_SELECT) {
+			request->req_type == REQ_EMBED_SELECT)
+		{
       	  gen_select(request, node);
   		}
 		else if (request->req_type == REQ_EXEC_BLOCK ||
@@ -780,7 +781,8 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 				stuff(request, isc_tpb_read_committed);
 
 				if ((ptr->nod_count) && (ptr->nod_arg[0]) &&
-					(ptr->nod_arg[0]->nod_type == nod_version)) {
+					(ptr->nod_arg[0]->nod_type == nod_version))
+				{
 					if (ptr->nod_arg[0]->nod_flags & NOD_VERSION)
 						stuff(request, isc_tpb_rec_version);
 					else
@@ -2587,7 +2589,8 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 	gen_parameter(request, request->req_eof);
 
 	for (dsql_par* parameter = message->msg_parameters; parameter;
-		 parameter = parameter->par_next) {
+		 parameter = parameter->par_next)
+	{
 		if (parameter->par_node) {
 			stuff(request, blr_assignment);
 			GEN_expr(request, parameter->par_node);
