@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.36 2003-05-14 05:39:59 eku Exp $
+ * $Id: sort.cpp,v 1.37 2003-05-14 12:32:02 eku Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -3023,7 +3023,7 @@ static void write_trace(
  *
  **************************************/
 	UCHAR file_name[32], data[41], *p;
-#if defined FREEBSD || defined NETBSD
+#ifdef HAVE_MKSTEMP
 	int fd;
 #endif
 

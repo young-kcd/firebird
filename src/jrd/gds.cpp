@@ -2317,7 +2317,10 @@ void * API_ROUTINE gds__temp_file(
 #else
 	if (mktemp(file_name) == (char *)0)
 		return (void *)-1;
-	void *result = (void *)open(file_name, O_RDWR | O_CREAT);
+	void *result;
+	do {
+		result = (void *)open(file_name, O_RDWR | O_EXCL| O_CREAT);
+	} while (result == (void *)-1 && errno == EINTR);
 #endif
 	if (result == (void *)-1)
 		return result;
