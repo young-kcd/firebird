@@ -50,8 +50,10 @@
 #define GDS_NAME_LEN		31
 
 #define MAX_DIMENSION		16
+#ifdef FLINT_CACHE
 #define MIN_CACHE_BUFFERS	250
 #define DEF_CACHE_BUFFERS	1000
+#endif
 
 #define STUFF(c)	*p++ = c
 #define STUFF_WORD(c)	{STUFF (c); STUFF (c >> 8);}
@@ -81,7 +83,9 @@ extern TEXT *DDL_prompt;
 static BOOLEAN check_filename(SYM, USHORT);
 static SYM copy_symbol(SYM);
 static DUDLEY_FLD create_global_field(DUDLEY_FLD);
+#ifdef FLINT_CACHE
 static FIL define_cache(void);
+#endif
 static void define_database(enum act_t);
 static void define_field(void);
 static FIL define_file(void);
@@ -618,7 +622,7 @@ static DUDLEY_FLD create_global_field( DUDLEY_FLD local_field)
 	return global_field;
 }
 
-
+#ifdef FLINT_CACHE
 static FIL define_cache(void)
 {
 /**************************************
@@ -648,7 +652,7 @@ static FIL define_cache(void)
 
 	return file;
 }
-
+#endif
 
 static void define_database( enum act_t action_type)
 {

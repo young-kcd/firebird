@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.10 2003-03-03 08:26:35 brodsom Exp $
+//	$Id: sql.cpp,v 1.11 2003-03-09 02:25:57 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -53,8 +53,10 @@ extern "C" {
 
 
 #define ERROR_LENGTH			128
+#ifdef FLINT_CACHE
 #define MIN_CACHE_BUFFERS		250
 #define DEF_CACHE_BUFFERS		1000
+#endif
 #define DEFAULT_BLOB_SEGMENT_LENGTH	80	/* bytes */
 
 extern ACT cur_routine;
