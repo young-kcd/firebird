@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.68 2002-11-06 20:25:12 skidder Exp $
+dnl $Id: configure.in,v 1.69 2002-11-06 20:37:10 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -480,6 +480,7 @@ mkdir -p gen/libfbembed/jrd/os/posix
 mkdir -p gen/libfbembed/burp
 mkdir -p gen/libfbembed/wal
 mkdir -p gen/libfbembed/common/memory
+mkdir -p gen/libfbembed/common/config
 ])
 
 MAKE_SRC_DIR=builds/posix
