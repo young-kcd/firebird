@@ -167,6 +167,7 @@ public:
 	struct jrd_nod* req_top_node;	/* top of execution tree */
 	struct jrd_nod* req_next;		/* next node for execution */
 	struct vec* req_fors;		/* Vector of for loops, if any */
+	struct vec* req_cursors;	/* Vector of named cursors, if any */
 	struct vec* req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT req_label;			/* label for leave */
 	ULONG req_flags;			/* misc request flags */
@@ -189,7 +190,7 @@ public:
 		req_unwind
 	} req_operation;	/* operation for next node */
 
-    struct xcp_repeat req_last_xcp;	/* last known exception */
+    status_xcp req_last_xcp;	/* last known exception */
 
 	rpb req_rpb[1];		/* record parameter blocks */
 };

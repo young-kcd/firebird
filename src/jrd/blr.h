@@ -26,6 +26,7 @@
  *                            implemented ROWS_AFFECTED system variable
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
  */
 
 #ifndef JRD_BLR_H
@@ -96,7 +97,7 @@
 #define blr_label		(unsigned char)17
 #define blr_leave		(unsigned char)18
 #define blr_store2		(unsigned char)19
-#define blr_post                (unsigned char)20
+#define blr_post		(unsigned char)20
 #define blr_literal		(unsigned char)21
 #define blr_dbkey		(unsigned char)22
 #define blr_field		(unsigned char)23
@@ -190,7 +191,7 @@
 #define blr_force_crack		(unsigned char)111
 #define blr_seek		(unsigned char)112
 #define blr_find		(unsigned char)113
-                                 
+
 /* these indicate directions for blr_seek and blr_find */
 
 #define blr_continue		(unsigned char)0
@@ -287,6 +288,8 @@
 #define blr_post_arg		(unsigned char)163
 #define blr_exec_into		(unsigned char)164
 #define blr_user_savepoint	(unsigned char)165
+#define blr_dcl_cursor		(unsigned char)166
+#define blr_cursor_stmt		(unsigned char)167
 
 /* These codes are actions for user-defined savepoints */
 
@@ -295,5 +298,10 @@
 #define blr_savepoint_undo	(unsigned char)2
 #define blr_savepoint_release_single	(unsigned char)3
 
-#endif /* JRD_BLR_H */
+/* These codes are actions for cursors */
 
+#define blr_cursor_open			(unsigned char)0
+#define blr_cursor_close		(unsigned char)1
+#define blr_cursor_fetch		(unsigned char)2
+
+#endif /* JRD_BLR_H */

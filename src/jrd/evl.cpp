@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.43 2003-10-20 22:41:11 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.44 2003-11-02 11:54:49 dimitr Exp $ 
  */
 
 /*
@@ -4756,7 +4756,7 @@ static SSHORT string_function(
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(node, type_nod);
 
-/* Handle "STARTS WITH" */
+/* Handle STARTS WITH */
 
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
@@ -4775,7 +4775,7 @@ static SSHORT string_function(
 		return obj->contains(tdbb, p1, l1, p2, l2);
 	}
 
-/* Handle LIKE and MATCHES*/
+/* Handle LIKE and MATCHES */
 
 	if (node->nod_type == nod_like) {
 		UCS2_CHAR escape;
@@ -5042,13 +5042,11 @@ static DSC *internal_info(TDBB tdbb, DSC * value, VLU impure)
 		break;
 	case internal_gdscode:
 		impure->vlu_misc.vlu_long =
-			(tdbb->tdbb_request->req_last_xcp.xcp_type == xcp_gds_code) ?
-				tdbb->tdbb_request->req_last_xcp.xcp_code : 0;
+			tdbb->tdbb_request->req_last_xcp.as_gdscode();
 		break;
 	case internal_sqlcode:
 		impure->vlu_misc.vlu_long =
-			(tdbb->tdbb_request->req_last_xcp.xcp_type == xcp_sql_code) ?
-				tdbb->tdbb_request->req_last_xcp.xcp_code : 0;
+			tdbb->tdbb_request->req_last_xcp.as_sqlcode();
 		break;
 	case internal_rows_affected:
 		impure->vlu_misc.vlu_long = tdbb->tdbb_request->req_records_affected;

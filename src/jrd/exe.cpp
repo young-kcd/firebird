@@ -37,8 +37,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
  */
 
 #include "firebird.h"
@@ -103,8 +103,46 @@
 #include "../dsql/dsql_proto.h"
 #include "../jrd/rpb_chain.h"
 
-extern "C" {
+// status_xcp class implementation
 
+status_xcp::status_xcp()
+{
+	clear();
+}
+
+void status_xcp::clear()
+{
+	status[0] = isc_arg_gds;
+	status[1] = FB_SUCCESS;
+	status[2] = isc_arg_end;
+}
+
+void status_xcp::init(const ISC_STATUS* vector)
+{
+	memcpy(status, vector, sizeof(ISC_STATUS_ARRAY));
+}
+
+void status_xcp::copy(ISC_STATUS* vector) const
+{
+	memcpy(vector, status, sizeof(ISC_STATUS_ARRAY));
+}
+
+bool status_xcp::success() const
+{
+	return status[1] == FB_SUCCESS;
+}
+
+SLONG status_xcp::as_gdscode() const
+{
+	return status[1];
+}
+
+SLONG status_xcp::as_sqlcode() const
+{
+	return gds__sqlcode(status);
+}
+
+extern "C" {
 
 static void assign_xcp_message(TDBB, STR *, const TEXT *);
 static void cleanup_rpb(TDBB, RPB *);
@@ -124,10 +162,10 @@ static void seek_rsb(TDBB, JRD_REQ, RSB, USHORT, SLONG);
 #endif
 static JRD_NOD selct(TDBB, JRD_NOD);
 static JRD_NOD send_msg(TDBB, JRD_NOD);
-static void set_error(TDBB, XCP, JRD_NOD);
+static void set_error(TDBB, const xcp_repeat*, JRD_NOD);
 static JRD_NOD stall(TDBB, JRD_NOD);
 static JRD_NOD store(TDBB, JRD_NOD, SSHORT);
-static BOOLEAN test_and_fixup_error(TDBB, const XCP, JRD_REQ);
+static bool test_and_fixup_error(TDBB, const XCP, JRD_REQ);
 static void trigger_failure(TDBB, JRD_REQ);
 static void validate(TDBB, JRD_NOD);
 inline void PreModifyEraseTriggers(TDBB, trig_vec**, SSHORT, RPB*, REC, jrd_req::req_ta);
@@ -178,7 +216,6 @@ static SLONG memory_count = 0;
    locking a record */
 
 #define RECORD_LOCK_CHECK_INTERVAL	10
-
 
 #ifdef PC_ENGINE
 // TMN: RAII class for LCK. Unlocks the LCK on destruction.
@@ -960,8 +997,10 @@ void EXE_unwind(TDBB tdbb, JRD_REQ request)
 			tdbb->tdbb_transaction = request->req_transaction;
 			for (ptr = request->req_fors->begin(), end =
 				 request->req_fors->end(); ptr < end; ptr++)
+			{
 				if (*ptr)
-					RSE_close(tdbb, reinterpret_cast < class Rsb *>((Rsb*)(*ptr)));
+					RSE_close(tdbb, (RSB) *ptr);
+			}
 			tdbb->tdbb_default = old_pool;
 			tdbb->tdbb_request = old_request;
 			tdbb->tdbb_transaction = old_transaction;
@@ -975,7 +1014,6 @@ void EXE_unwind(TDBB tdbb, JRD_REQ request)
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;
 	request->req_timestamp = 0;
-
 }
 
 
@@ -1854,8 +1892,6 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 	// Execute stuff until we drop
 
-	request->req_records_affected = 0;
-
 	while (node && !(request->req_flags & req_stall))
 	{
 	try {
@@ -1893,15 +1929,14 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 
 		case nod_dcl_variable:
 			{
-				VLU variable;
-
-				variable = (VLU) ((SCHAR *) request + node->nod_impure);
+				VLU variable = (VLU) ((SCHAR *) request + node->nod_impure);
 				variable->vlu_desc = *(DSC *) (node->nod_arg + e_dcl_desc);
 				variable->vlu_desc.dsc_flags = 0;
 				variable->vlu_desc.dsc_address =
 					(UCHAR *) & variable->vlu_misc;
 				if (variable->vlu_desc.dsc_dtype <= dtype_varying
-					&& !variable->vlu_string) {
+					&& !variable->vlu_string)
+				{
 					variable->vlu_string =
 						FB_NEW_RPT(*tdbb->tdbb_default,
 									  variable->vlu_desc.dsc_length) str();
@@ -1986,6 +2021,89 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			}
 			break;
 
+		case nod_dcl_cursor:
+			if (request->req_operation == jrd_req::req_evaluate) {
+				USHORT number = (USHORT) (IPTR) node->nod_arg[e_dcl_cursor_number];
+				// set up the cursors vector
+				request->req_cursors = vec::newVector(*request->req_pool,
+					request->req_cursors, number + 1);
+				// store RSB in the vector
+				(*request->req_cursors)[number] = node->nod_arg[e_dcl_cursor_rsb];
+				request->req_operation = jrd_req::req_return;
+			}
+			node = node->nod_parent;
+			break;
+
+		case nod_cursor_stmt:
+			{
+			UCHAR op = (UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op];
+			USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
+			// get RSB and the impure area
+			assert(request->req_cursors && number < request->req_cursors->count());
+			RSB rsb = (RSB) (*request->req_cursors)[number];
+			IRSB impure = (IRSB) ((UCHAR*) tdbb->tdbb_request + rsb->rsb_impure);
+			switch (op) {
+			case blr_cursor_open:
+				if (request->req_operation == jrd_req::req_evaluate) {
+					// check cursor state
+					if (impure->irsb_flags & irsb_open) {
+						ERR_post(gds_invalid_cursor_state, gds_arg_string, "open", 0);
+					}
+					// open cursor
+					RSE_open(tdbb, rsb);
+					request->req_operation = jrd_req::req_return;
+				}
+				node = node->nod_parent;
+				break;
+			case blr_cursor_close:
+				if (request->req_operation == jrd_req::req_evaluate) {
+					// check cursor state
+					if (!(impure->irsb_flags & irsb_open)) {
+						ERR_post(gds_invalid_cursor_state, gds_arg_string, "closed", 0);
+					}
+					// close cursor
+					RSE_close(tdbb, rsb);
+					request->req_operation = jrd_req::req_return;
+				}
+				node = node->nod_parent;
+				break;
+			case blr_cursor_fetch:
+				switch (request->req_operation) {
+				case jrd_req::req_evaluate:
+					// check cursor state
+					if (!(impure->irsb_flags & irsb_open)) {
+						ERR_post(gds_invalid_cursor_state, gds_arg_string, "closed", 0);
+					}
+					// perform preliminary navigation, if specified
+					if (node->nod_arg[e_cursor_stmt_seek]) {
+						node = node->nod_arg[e_cursor_stmt_seek];
+						break;
+					}
+					request->req_records_affected = 0;
+				case jrd_req::req_return:
+					if (!request->req_records_affected) {
+						// fetch one record
+						if (RSE_get_record(tdbb, rsb,
+#ifdef SCROLLABLE_CURSORS
+										   RSE_get_next))
+#else
+										   RSE_get_forward))
+#endif
+						{
+							node = node->nod_arg[e_cursor_stmt_into];
+							request->req_operation = jrd_req::req_evaluate;
+							break;
+						}
+					}
+					request->req_operation = jrd_req::req_return;
+				default:
+					node = node->nod_parent;
+				}
+				break;
+			}
+			}
+			break;
+
 		case nod_abort:
 			switch (request->req_operation) {
 			case jrd_req::req_evaluate:
@@ -1995,20 +2113,13 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 				{
 					/* XCP is defined,
 					   so throw an exception */
-					set_error(tdbb, xcp_node, node->nod_arg[e_xcp_msg]);
+					set_error(tdbb, &xcp_node->xcp_rpt[0], node->nod_arg[e_xcp_msg]);
 				}
-				else if (request->req_last_xcp.xcp_type != 0)
+				else if (!request->req_last_xcp.success())
 				{
 					/* XCP is undefined, but there was a known exception before,
 					   so re-initiate it */
-					struct xcp last_error;
-					last_error.xcp_count = 1;
-					last_error.xcp_rpt[0].xcp_type = request->req_last_xcp.xcp_type;
-					last_error.xcp_rpt[0].xcp_code = request->req_last_xcp.xcp_code;
-					last_error.xcp_rpt[0].xcp_msg = request->req_last_xcp.xcp_msg;
-					request->req_last_xcp.xcp_type = 0;
-					request->req_last_xcp.xcp_msg = 0;
-					set_error(tdbb, &last_error, node->nod_arg[e_xcp_msg]);
+					set_error(tdbb, NULL, NULL);
 				}
 				else
 				{
@@ -2268,7 +2379,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 								   returns back after handling error. This 
 								   makes it necessary that the jmpbuf be reset
 								   so that looper can proceede with the 
-								   preocessing of execution tree. If this is
+								   processing of execution tree. If this is
 								   not done then anymore errors will take the
 								   engine out of looper there by abruptly
 								   terminating the processing. */
@@ -2331,7 +2442,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			node = node->nod_parent;
 			if (request->req_operation == jrd_req::req_unwind)
 				node = node->nod_parent;
-			request->req_last_xcp.xcp_type = 0;
+			request->req_last_xcp.clear();
 			break;
 
 		case nod_label:
@@ -2726,6 +2837,16 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 #endif
 		)
 	{
+		// close active cursors
+		if (request->req_cursors) {
+			for (vec::iterator ptr = request->req_cursors->begin(),
+				end = request->req_cursors->end(); ptr < end; ptr++)
+			{
+				if (*ptr)
+					RSE_close(tdbb, (RSB) *ptr);
+			}
+		}
+
 		request->req_flags &= ~(req_active | req_reserved);
 		request->req_timestamp = 0;
 		release_blobs(tdbb, request);
@@ -3588,7 +3709,7 @@ static JRD_NOD set_bookmark(TDBB tdbb, JRD_NOD node)
 #endif
 
 
-static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
+static void set_error(TDBB tdbb, const xcp_repeat* exception, JRD_NOD msg_node)
 {
 /**************************************
  *
@@ -3601,28 +3722,27 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
  *	and jump to handle error accordingly.
  *
  **************************************/
-	JRD_REQ request;
 	TEXT name[32], relation_name[32], *s, *r;
 	TEXT message[XCP_MESSAGE_LENGTH + 1], temp[XCP_MESSAGE_LENGTH + 1];
-	USHORT length = 0;
-	
+
 	SET_TDBB(tdbb);
 
-	request = tdbb->tdbb_request;
+	JRD_REQ request = tdbb->tdbb_request;
 
-	if (condition->xcp_rpt[0].xcp_msg)
-	{
-		/* pick up message from already initiated exception */
-		length = MIN(condition->xcp_rpt[0].xcp_msg->str_length, sizeof(message) - 1);
-		memcpy(message, condition->xcp_rpt[0].xcp_msg->str_data, length);
-		delete condition->xcp_rpt[0].xcp_msg;
-		condition->xcp_rpt[0].xcp_msg = 0;
+	if (!exception) {
+		// retrieve the status vector and punt
+		request->req_last_xcp.copy(tdbb->tdbb_status_vector);
+		request->req_last_xcp.clear();
+		ERR_punt();
 	}
-	else if (node)
+
+	USHORT length = 0;
+	
+	if (msg_node)
 	{
 		const char* string = 0;
-		/* evaluate exception message and convert it to string */
-		DSC *desc = EVL_expr(tdbb, node);
+		// evaluate exception message and convert it to string
+		DSC* desc = EVL_expr(tdbb, msg_node);
 		if (desc && !(request->req_flags & req_null))
 		{
 			length = MOV_make_string(desc,
@@ -3648,28 +3768,26 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
 	}
 	message[length] = 0;
 
-	switch (condition->xcp_rpt[0].xcp_type) {
+	switch (exception->xcp_type) {
 	case xcp_sql_code:
-		ERR_post(gds_sqlerr,
-				 gds_arg_number, (SLONG) condition->xcp_rpt[0].xcp_code, 0);
+		ERR_post(gds_sqlerr, gds_arg_number, exception->xcp_code, 0);
 
 	case xcp_gds_code:
-		if (condition->xcp_rpt[0].xcp_code == gds_check_constraint) {
+		if (exception->xcp_code == gds_check_constraint) {
 			MET_lookup_cnstrt_for_trigger(tdbb, name, relation_name,
 										  request->req_trg_name);
 			// const CAST
-			s = (name[0]) ? name : (TEXT*)"";
-			r = (relation_name[0]) ? relation_name : (TEXT*)"";
-			ERR_post(condition->xcp_rpt[0].xcp_code,
+			s = (name[0]) ? name : (TEXT*) "";
+			r = (relation_name[0]) ? relation_name : (TEXT*) "";
+			ERR_post(exception->xcp_code,
 					 gds_arg_string, ERR_cstring(s),
 					 gds_arg_string, ERR_cstring(r), 0);
 		}
 		else
-			ERR_post(condition->xcp_rpt[0].xcp_code, 0);
+			ERR_post(exception->xcp_code, 0);
 
 	case xcp_xcp_code:
-		MET_lookup_exception(tdbb, condition->xcp_rpt[0].xcp_code,
-							 name, temp);
+		MET_lookup_exception(tdbb, exception->xcp_code, name, temp);
 		if (message[0])
 			s = message;
 		else if (temp[0])
@@ -3680,12 +3798,11 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
 			s = NULL;
 		if (s)
 			ERR_post(gds_except,
-					 gds_arg_number, (SLONG) condition->xcp_rpt[0].xcp_code,
+					 gds_arg_number, exception->xcp_code,
 					 gds_arg_gds, gds_random, gds_arg_string, ERR_cstring(s),
 					 0);
 		else
-			ERR_post(gds_except, gds_arg_number,
-					 (SLONG) condition->xcp_rpt[0].xcp_code, 0);
+			ERR_post(gds_except, gds_arg_number, exception->xcp_code, 0);
 	}
 }
 
@@ -3988,7 +4105,7 @@ static JRD_NOD stream(TDBB tdbb, JRD_NOD node)
 #endif
 
 
-static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
+static bool test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
 {
 /**************************************
  *
@@ -4001,57 +4118,28 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
  *  Fix type and code of the exception.
  *
  **************************************/
-	SSHORT i, sqlcode;
-	ISC_STATUS *status_vector;
-
 	SET_TDBB(tdbb);
-	status_vector = tdbb->tdbb_status_vector;
-	sqlcode = gds__sqlcode(status_vector);
 
-	const SLONG XCP_SQLCODE = -836;
+	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
+	SSHORT sqlcode = gds__sqlcode(status_vector);
 
- 	delete request->req_last_xcp.xcp_msg;
- 	request->req_last_xcp.xcp_msg = 0;
+	bool found = false;
 
-	for (i = 0; i < conditions->xcp_count; i++)
+	for (USHORT i = 0; i < conditions->xcp_count; i++)
 	{
 		switch (conditions->xcp_rpt[i].xcp_type)
 		{
 		case xcp_sql_code:
 			if (sqlcode == conditions->xcp_rpt[i].xcp_code)
 			{
-				if ((sqlcode != XCP_SQLCODE) || (status_vector[1] != gds_except))
-				{
-					request->req_last_xcp.xcp_type = xcp_sql_code;
-					request->req_last_xcp.xcp_code = sqlcode;
-				}
-				else
-				{
-					request->req_last_xcp.xcp_type = xcp_xcp_code;
-					request->req_last_xcp.xcp_code = status_vector[3];
-				}              
-				status_vector[0] = 0;
-				status_vector[1] = 0;
-				return TRUE;
+				found = true;
 			}
 			break;
 
 		case xcp_gds_code:
 			if (status_vector[1] == conditions->xcp_rpt[i].xcp_code)
 			{
-				if ((sqlcode != XCP_SQLCODE) || (status_vector[1] != gds_except))
-				{
-					request->req_last_xcp.xcp_type = xcp_gds_code;
-					request->req_last_xcp.xcp_code = status_vector[1];
-				}
-				else
-				{
-					request->req_last_xcp.xcp_type = xcp_xcp_code;
-					request->req_last_xcp.xcp_code = status_vector[3];
-				}              
-				status_vector[0] = 0;
-				status_vector[1] = 0;
-				return TRUE;
+				found = true;
 			}
 			break;
 
@@ -4059,41 +4147,25 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
 			if ((status_vector[1] == gds_except) &&
 				(status_vector[3] == conditions->xcp_rpt[i].xcp_code))
 			{
-				request->req_last_xcp.xcp_type = xcp_xcp_code;
-				request->req_last_xcp.xcp_code = status_vector[3];
-				TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
-				assign_xcp_message(tdbb, &request->req_last_xcp.xcp_msg, msg);
-				status_vector[0] = 0;
-				status_vector[1] = 0;
-				return TRUE;
+				found = true;
 			}
 			break;
 
 		case xcp_default:
-			if (sqlcode && (sqlcode != XCP_SQLCODE))
-			{
-				request->req_last_xcp.xcp_type = xcp_sql_code;
-				request->req_last_xcp.xcp_code = sqlcode;
-			}
-			else if (status_vector[1] != gds_except) 
-			{
-				request->req_last_xcp.xcp_type = xcp_gds_code;
-				request->req_last_xcp.xcp_code = status_vector[1];
-			}
-			else
-			{
-				request->req_last_xcp.xcp_type = xcp_xcp_code;
-				request->req_last_xcp.xcp_code = status_vector[3];
-				TEXT *msg = reinterpret_cast<TEXT*>(status_vector[7]);
-				assign_xcp_message(tdbb, &request->req_last_xcp.xcp_msg, msg);
-			}
+			found = true;
+			break;
+		}
+
+		if (found)
+		{
+			request->req_last_xcp.init(status_vector);
 			status_vector[0] = 0;
 			status_vector[1] = 0;
-			return TRUE;
+			break;
 		}
     }
 
-	return FALSE;
+	return found;
 }
 
 
@@ -4236,4 +4308,3 @@ static void validate(TDBB tdbb, JRD_NOD list)
 }
 
 } // extern "C"
-

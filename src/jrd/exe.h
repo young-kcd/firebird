@@ -44,7 +44,6 @@ typedef enum nod_t {
 
 #include "../jrd/dsc.h"
 
-
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
 
@@ -55,9 +54,9 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 #define CMP_TRACE(args) /* nothing */
 #endif
 
-/* NOTE: The definition of structures rse and lit must be defined in
-	 exactly the same way as structure jrd_nod through item nod_count.
-	 If you change one, be sure to change all of them. */
+// NOTE: The definition of structures rse and it must be defined in
+//       exactly the same way as structure jrd_nod through item nod_count.
+//       If you change one, be sure to change all of them.
 
 class jrd_nod : public pool_alloc_rpt<class jrd_nod*, type_nod>
 {
@@ -93,7 +92,6 @@ typedef jrd_nod* JRD_NOD;
 #define nod_evaluate	32		/* (Gateway only) */
 #define nod_agg_dbkey	64		/* dbkey of an aggregate */
 #define nod_invariant	128		/* node is recognized as being invariant */
-
 
 
 /* Special RSE node */
@@ -506,6 +504,16 @@ typedef struct iasb {
 #define e_current_time_length	1
 #define e_current_timestamp_length	1
 
+#define e_dcl_cursor_number		0
+#define e_dcl_cursor_rse		1
+#define e_dcl_cursor_rsb		2
+#define e_dcl_cursor_length		3
+
+#define e_cursor_stmt_op		0
+#define e_cursor_stmt_number	1
+#define e_cursor_stmt_seek		2
+#define e_cursor_stmt_into		3
+#define e_cursor_stmt_length	4
 
 /* Compile scratch block */
 
@@ -639,7 +647,6 @@ typedef Csb* CSB;
 struct xcp_repeat {
 	SSHORT xcp_type;
 	SLONG xcp_code;
-	class str *xcp_msg;
 };
 
 class xcp : public pool_alloc_rpt<xcp_repeat, type_xcp>
@@ -654,6 +661,20 @@ typedef xcp *XCP;
 #define xcp_gds_code	2
 #define xcp_xcp_code	3
 #define xcp_default	4
+
+class status_xcp {
+	ISC_STATUS_ARRAY status;
+
+public:
+	status_xcp();
+
+	void clear();
+	void init(const ISC_STATUS*);
+	void copy(ISC_STATUS*) const;
+	bool success() const;
+	SLONG as_gdscode() const;
+	SLONG as_sqlcode() const;
+};
 
 #define XCP_MESSAGE_LENGTH	78	// must correspond to the size of
 								// RDB$EXCEPTIONS.RDB$MESSAGE

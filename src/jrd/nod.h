@@ -203,3 +203,5 @@ NODE(nod_asn_list, asn_list, "")
 /* EXECUTE VARCHAR INTO ...*/
 		  NODE(nod_exec_into, exec_sql_into, "EXECUTE VARCHAR INTO")
 
+		  NODE(nod_dcl_cursor, declare_cursor, "DECLARE CURSOR")
+		  NODE(nod_cursor_stmt, cursor_stmt, "CURSOR STATEMENT")

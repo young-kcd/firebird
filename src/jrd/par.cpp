@@ -31,11 +31,8 @@
  * 2002.10.29 Mike Nordell - Fixed breakage.
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- *
+ * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
  */
-/*
-$Id: par.cpp,v 1.55 2003-10-16 08:51:01 robocop Exp $
-*/
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -846,8 +843,6 @@ static XCP par_condition(TDBB tdbb, CSB csb)
 		break;
 	}
 
-	exception_list->xcp_rpt[0].xcp_msg = 0;
-
 	return exception_list;
 }
 
@@ -1099,7 +1094,6 @@ static JRD_NOD par_fetch(TDBB tdbb, CSB csb, JRD_NOD for_node)
 
 	SET_TDBB(tdbb);
 
-
 /* Fake RSE */
 
 	for_node->nod_arg[e_for_re] = PAR_make_node(tdbb, 1 + rse_delta + 2);
@@ -1265,18 +1259,15 @@ static JRD_NOD par_function(TDBB tdbb, CSB csb)
  *
  **************************************/
 	JRD_NOD node;
-	FUN function, homonyms;
+	FUN homonyms;
 	TEXT name[32];
-	USHORT count;
 
 	SET_TDBB(tdbb);
 
+	USHORT count = par_name(csb, name);
 
-	count = par_name(csb, name);
-
-
-	function = FUN_lookup_function(name, 
-				!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment));
+	FUN function = FUN_lookup_function(name, 
+					!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment));
 	if (!function) {
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {
 			node = PAR_make_node(tdbb, e_fun_length);
@@ -2532,6 +2523,31 @@ static JRD_NOD parse(TDBB tdbb, CSB csb, USHORT expected, USHORT expected_option
 		else
 			node->nod_arg[e_for_re] = par_rse(tdbb, csb, operator_);
 		node->nod_arg[e_for_statement] = parse(tdbb, csb, sub_type);
+		break;
+
+	case blr_dcl_cursor:
+		node->nod_arg[e_dcl_cursor_number] = (JRD_NOD) (IPTR) BLR_WORD;
+		node->nod_arg[e_dcl_cursor_rse] = parse(tdbb, csb, TYPE_RSE);
+		break;
+
+	case blr_cursor_stmt:
+		n = BLR_BYTE;
+		node->nod_arg[e_cursor_stmt_op] = (JRD_NOD) (IPTR) n;
+		node->nod_arg[e_cursor_stmt_number] = (JRD_NOD) (IPTR) BLR_WORD;
+		switch (n) {
+		case blr_cursor_open:
+		case blr_cursor_close:
+			break;
+		case blr_cursor_fetch:
+#ifdef SCROLLABLE_CURSORS
+			if (BLR_PEEK == blr_seek)
+				node->nod_arg[e_cursor_stmt_seek] = parse(tdbb, csb, STATEMENT);
+#endif
+			node->nod_arg[e_cursor_stmt_into] = parse(tdbb, csb, STATEMENT);
+			break;
+		default:
+			syntax_error(csb, "cursor operation clause");
+		}
 		break;
 
 	case blr_rse:

@@ -33,11 +33,9 @@
  *                            implemented ROWS_AFFECTED system variable
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
- *
+ * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
  */
 
 #include "firebird.h"
@@ -307,9 +305,7 @@ JRD_REQ CMP_clone_request(TDBB tdbb, JRD_REQ request, USHORT level, BOOLEAN vali
 	clone->req_top_node = request->req_top_node;
 	clone->req_trg_name = request->req_trg_name;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
-	clone->req_last_xcp.xcp_type = request->req_last_xcp.xcp_type;
-	clone->req_last_xcp.xcp_code = request->req_last_xcp.xcp_code;
-	clone->req_last_xcp.xcp_msg = request->req_last_xcp.xcp_msg;
+	clone->req_last_xcp = request->req_last_xcp;
 
 	rpb1 = clone->req_rpb;
 	end = rpb1 + clone->req_count;
@@ -1715,9 +1711,9 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 
 	try {
 
-/* Once any expansion required has been done, make a pass to assign offsets
-   into the impure area and throw away any unnecessary crude.  Execution
-   optimizations can be performed here */
+	// Once any expansion required has been done, make a pass to assign offsets
+	// into the impure area and throw away any unnecessary crude. Execution
+	// optimizations can be performed here.
 
 	DEBUG;
 	JRD_NOD node = pass1(tdbb, csb, csb->csb_node, 0, 0, FALSE);
@@ -1726,10 +1722,10 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
 
 	if (csb->csb_impure > MAX_REQUEST_SIZE)
-		IBERROR(226);			/* msg 226 request size limit exceeded */
+		IBERROR(226);			// msg 226 request size limit exceeded
 
-/* Build the final request block.  First, compute the "effective" repeat
-   count of hold the impure areas. */
+	// Build the final request block. First, compute the "effective" repeat
+	// count of hold the impure areas.
 
 	int n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
 	request = FB_NEW_RPT(*tdbb->tdbb_default, n) jrd_req;
@@ -1740,8 +1736,7 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 	request->req_access = csb->csb_access;
 	request->req_variables = csb->csb_variables;
 	request->req_resources = csb->csb_resources;
-	request->req_last_xcp.xcp_type = 0;
-	request->req_last_xcp.xcp_msg = 0;
+	request->req_records_affected = 0;
 	if (csb->csb_g_flags & csb_blr_version4) {
 		request->req_flags |= req_blr_version4;
 	}
@@ -1750,9 +1745,9 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 	request->req_async_message = csb->csb_async_message;
 #endif
 
-/* Take out existence locks on resources used in request.  This is
-   a little complicated since relation locks MUST be taken before
-   index locks */
+	// Take out existence locks on resources used in request. This is
+	// a little complicated since relation locks MUST be taken before
+	// index locks.
 
 	for (RSC resource = request->req_resources; resource;
 		 resource = resource->rsc_next)
@@ -1799,7 +1794,7 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 				break;
 			}
 		default:
-			BUGCHECK(219);		/* msg 219 request of unknown resource */
+			BUGCHECK(219);		// msg 219 request of unknown resource
 		}
 	}
 
@@ -1809,7 +1804,7 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 
 	for (RPB* rpb = request->req_rpb; tail < end; rpb++, tail++)
 	{
-		/* Fetch input stream for update if all booleans matched against indices. */
+		// fetch input stream for update if all booleans matched against indices
 
 		if (tail->csb_flags & csb_update
 			&& !(tail->csb_flags & csb_unmatched)) rpb->rpb_stream_flags |=
@@ -1819,6 +1814,9 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 	}
 
 	USHORT count;
+
+	// make a vector of all used RSEs
+
 	for (temp = csb->csb_fors, count = 0; temp; count++) {
 		temp = temp->lls_next;
 	}
@@ -1832,8 +1830,8 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 		}
 	}
 
-/* make a vector of all invariant-type nodes, so that we will
-   be able to easily reinitialize them when we restart the request */
+	// make a vector of all invariant-type nodes, so that we will
+	// be able to easily reinitialize them when we restart the request
 
 	for (temp = csb->csb_invariants, count = 0; temp; count++) {
 		temp = temp->lls_next;
@@ -1851,7 +1849,7 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 	DEBUG;
 	tdbb->tdbb_request = old_request;
 
-	}	// try
+	} // try
 	catch (const std::exception&) {
 		tdbb->tdbb_request = old_request;
 		ERR_punt();
@@ -3118,7 +3116,6 @@ static JRD_NOD pass1(
 				/* Msg 364 "cannot access column %s in view %s" */
 			}
 
-
 			/* The previous test below is an apparent temporary fix
 			 * put in by Root & Harrison in Summer/Fall 1991.  
 			 * Old Code:
@@ -4263,6 +4260,21 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 #ifdef SCROLLABLE_CURSORS
 		csb->csb_current_rse = rse_node;
 #endif
+		break;
+
+	case nod_dcl_cursor:
+		rse_node = node->nod_arg[e_dcl_cursor_rse];
+		rsb_ptr = (RSB *) & node->nod_arg[e_dcl_cursor_rsb];
+#ifdef SCROLLABLE_CURSORS
+		csb->csb_current_rse = rse_node;
+#endif
+		break;
+
+	case nod_cursor_stmt:
+		if ((UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op] == blr_cursor_fetch) {
+			pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_seek], node);
+			pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_into], node);
+		}
 		break;
 
 #ifdef SCROLLABLE_CURSORS
