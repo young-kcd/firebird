@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_PICST_PROTO_H_
-#define _QLI_PICST_PROTO_H_
+#ifndef QLI_PICST_PROTO_H
+#define QLI_PICST_PROTO_H
 
-extern struct pics	*PIC_analyze (TEXT *, struct dsc *);
+extern struct pics* PIC_analyze (TEXT*, const struct dsc*);
 extern void		PIC_edit (struct dsc *, struct pics *, TEXT **, USHORT);
 extern void		PIC_missing (struct con *, struct pics *);
 
-#endif /* _QLI_PICST_PROTO_H_ */
+#endif /* QLI_PICST_PROTO_H */
+

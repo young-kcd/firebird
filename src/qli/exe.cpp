@@ -79,7 +79,7 @@ static void print_counts(QLI_REQ);
 static void set_null(QLI_MSG);
 static void transaction_state(QLI_NOD, DBB);
 
-/* definitions for SET COUNT */
+// definitions for SET COUNT 
 
 #define COUNT_ITEMS	4
 
@@ -197,7 +197,7 @@ void EXEC_execute( QLI_NOD node)
 			return;
 
 		default:
-			BUGCHECK(33);		/* Msg33 EXEC_execute: not implemented */
+			BUGCHECK(33);		// Msg33 EXEC_execute: not implemented 
 		}
 }
 
@@ -227,20 +227,20 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 	if (!desc)
 		return FALSE;
 
-/* Starting from the print item, work our way back to the database block */
+// Starting from the print item, work our way back to the database block 
 
 	if (node->nod_type == nod_reference)
 		node = node->nod_arg[0];
 
 	if (node->nod_type != nod_field)
-		BUGCHECK(34);			/* Msg34 print_blob: expected field node */
+		BUGCHECK(34);			// Msg34 print_blob: expected field node 
 
 	context = (QLI_CTX) node->nod_arg[e_fld_context];
 	request = context->ctx_request;
 	dbb = request->req_database;
 	blob = NULL;
 
-/* Format blob parameter block */
+// Format blob parameter block 
 
 	p = bpb;
 	*p++ = gds_bpb_version1;
@@ -284,7 +284,7 @@ struct file *EXEC_open_output(QLI_NOD node)
 #endif
 	SSHORT l;
 
-/* Evaluate filename and copy to a null terminated string */
+// Evaluate filename and copy to a null terminated string 
 
 	desc = EVAL_value(node->nod_arg[e_out_file]);
 	l = MOVQ_get_string(desc, &p, (VARY*) temp, sizeof(temp));
@@ -295,7 +295,7 @@ struct file *EXEC_open_output(QLI_NOD node)
 		while (--l);
 	*q = 0;
 
-/* If output is to a file, just do it */
+// If output is to a file, just do it 
 
 	if (!node->nod_arg[e_out_pipe]) {
 		if (file = ib_fopen(filename, FOPEN_WRITE_TYPE))
@@ -305,10 +305,10 @@ struct file *EXEC_open_output(QLI_NOD node)
 		/* Msg42 Can't open output file %s */
 	}
 
-/* Output is to a file.  Setup file and fork process */
+// Output is to a file.  Setup file and fork process 
 
 #ifdef VMS
-	IBERROR(35);				/* Msg35 output pipe is not supported on VMS */
+	IBERROR(35);				// Msg35 output pipe is not supported on VMS 
 #else
 
 #ifdef WIN_NT
@@ -348,7 +348,7 @@ struct file *EXEC_open_output(QLI_NOD node)
 		return (struct file *) file;
 #endif
 
-	IBERROR(37);				/* Msg37 ib_fdopen failed */
+	IBERROR(37);				// Msg37 ib_fdopen failed 
 #endif
 	return NULL;
 }
@@ -371,7 +371,7 @@ void EXEC_poll_abort(void)
 	if (!QLI_abort)
 		return;
 
-	IBERROR(38);				/* Msg38 execution terminated by signal */
+	IBERROR(38);				// Msg38 execution terminated by signal 
 }
 
 
@@ -535,7 +535,7 @@ static DSC *assignment(	QLI_NOD		from_node,
 	}
 
 	if (validation && EVAL_boolean(validation) <= 0) {
-		IBERROR(39);			/* Msg39 field validation error */
+		IBERROR(39);			// Msg39 field validation error 
 	}
 
 	QLI_reprompt = FALSE;
@@ -682,7 +682,7 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 
 	to_blob = from_blob = NULL;
 
-/* Format blob parameter block for the existing blob */
+// Format blob parameter block for the existing blob 
 
 	p = bpb;
 	*p++ = gds_bpb_version1;
@@ -785,7 +785,7 @@ static void execute_abort( QLI_NOD node)
 		/* Msg40 Request terminated by statement: %s */
 	}
 
-	IBERROR(41);				/* Msg41 Request terminated by statement */
+	IBERROR(41);				// Msg41 Request terminated by statement 
 }
 
 
@@ -827,7 +827,7 @@ static void execute_assignment( QLI_NOD node)
 	assignment(from, EVAL_value(to),
 			   node->nod_arg[e_asn_valid], initial, parameter);
 
-/* propagate the missing flag in variable assignments */
+// propagate the missing flag in variable assignments 
 
 	if (to->nod_type == nod_variable) {
 		field = (QLI_FLD) to->nod_arg[e_fld_field];
@@ -938,14 +938,14 @@ static void execute_output( QLI_NOD node)
 	print = (PRT) node->nod_arg[e_out_print];
 	print->prt_file = EXEC_open_output(node);
 
-/* Set up error handling */
+// Set up error handling 
 
 	memcpy(old_env, QLI_env, sizeof(QLI_env));
 	memcpy(QLI_env, env, sizeof(QLI_env));
 
 	try {
 
-/* Finally, execute the query */
+// Finally, execute the query 
 
 	EXEC_execute(node->nod_arg[e_out_statement]);
 	memcpy(QLI_env, old_env, sizeof(QLI_env));
@@ -1103,7 +1103,7 @@ static void print_counts( QLI_REQ request)
 						  sizeof(count_buffer), count_buffer)) 
 		return;
 
-/* print out the counts of any records affected */
+// print out the counts of any records affected 
 
 	for (c = count_buffer; *c != gds_info_end; c += length) {
 		item = *c++;

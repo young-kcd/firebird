@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		gener.c
+ *	MODULE:		gener.cpp
  *	DESCRIPTION:	BLR Generation Module
  *
  * The contents of this file are subject to the Interbase Public
@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.21 2003-09-13 11:47:32 brodsom Exp $
+$Id: gener.cpp,v 1.22 2003-09-15 12:30:28 robocop Exp $
 */
 
 #include "firebird.h"
@@ -41,21 +41,21 @@ $Id: gener.cpp,v 1.21 2003-09-13 11:47:32 brodsom Exp $
 #include "../qli/mov_proto.h"
 #include "../jrd/gds_proto.h"
 
-static void explain(UCHAR *);
-static void explain_index_tree(SSHORT, TEXT *, SCHAR **, SSHORT *);
-static void explain_printf(SSHORT, TEXT *, TEXT *);
+static void explain(const UCHAR*);
+static void explain_index_tree(SSHORT, const TEXT*, const SCHAR**, SSHORT*);
+static void explain_printf(SSHORT, const TEXT*, const TEXT*);
 static void gen_any(QLI_NOD, QLI_REQ);
 static void gen_assignment(QLI_NOD, QLI_REQ);
 static void gen_control_break(BRK, QLI_REQ);
 static void gen_compile(QLI_REQ);
-static void gen_descriptor(DSC *, QLI_REQ);
+static void gen_descriptor(const dsc*, QLI_REQ);
 static void gen_erase(QLI_NOD, QLI_REQ);
 static void gen_expression(QLI_NOD, QLI_REQ);
 static void gen_field(QLI_NOD, QLI_REQ);
 static void gen_for(QLI_NOD, QLI_REQ);
 static void gen_function(QLI_NOD, QLI_REQ);
 static void gen_if(QLI_NOD, QLI_REQ);
-static void gen_literal(DSC *, QLI_REQ);
+static void gen_literal(const dsc*, QLI_REQ);
 static void gen_map(MAP, QLI_REQ);
 static void gen_modify(QLI_NOD, QLI_REQ);
 static void gen_parameter(PAR, QLI_REQ);
@@ -64,13 +64,13 @@ static void gen_report(QLI_NOD, QLI_REQ);
 static void gen_request(QLI_REQ);
 static void gen_rse(QLI_NOD, QLI_REQ);
 static void gen_send_receive(QLI_MSG, USHORT);
-static void gen_sort(QLI_NOD, QLI_REQ, UCHAR);
+static void gen_sort(QLI_NOD, QLI_REQ, const UCHAR);
 static void gen_statement(QLI_NOD, QLI_REQ);
 static void gen_statistical(QLI_NOD, QLI_REQ);
 static void gen_store(QLI_NOD, QLI_REQ);
 
 #ifdef DEV_BUILD
-static SCHAR explain_info[] = { gds_info_access_path };
+static const SCHAR explain_info[] = { gds_info_access_path };
 #endif
 
 
@@ -106,14 +106,14 @@ void GEN_release(void)
  *	of a request.  Just recurse around and release requests.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-	RLB rlb;
-
 	for (; QLI_requests; QLI_requests = QLI_requests->req_next) {
 		if (QLI_requests->req_handle)
+		{
+			ISC_STATUS_ARRAY status_vector;
 			gds__release_request(status_vector, &QLI_requests->req_handle);
+		}
 
-		rlb = QLI_requests->req_blr;
+		RLB rlb = QLI_requests->req_blr;
 		RELEASE_RLB;
 	}
 }
@@ -133,16 +133,13 @@ RLB GEN_rlb_extend(RLB rlb)
  *	and copy generated request language into it
  *
  **************************************/
-	UCHAR *new_string, *old_string;
-	ULONG l;
-
 	if (!rlb)
 		rlb = (RLB) ALLOCD(type_rlb);
 
-	old_string = rlb->rlb_base;
-	l = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
+	UCHAR* old_string = rlb->rlb_base;
+	const ULONG l = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
 	rlb->rlb_length += RLB_BUFFER_SIZE;
-	new_string = (UCHAR*) ALLQ_malloc((SLONG) rlb->rlb_length);
+	UCHAR* new_string = (UCHAR*) ALLQ_malloc((SLONG) rlb->rlb_length);
 	if (old_string) {
 		MOVQ_fast((SCHAR*) old_string, (SCHAR*) new_string, l);
 		ALLQ_free((SCHAR*) old_string);
@@ -185,7 +182,7 @@ void GEN_rlb_release( RLB rlb)
 
 
 #ifdef DEV_BUILD
-static void explain( UCHAR * explain_buffer)
+static void explain(const UCHAR* explain_buffer)
 {
 /**************************************
  *
@@ -198,13 +195,13 @@ static void explain( UCHAR * explain_buffer)
  *	request in pretty-printed form.
  *
  **************************************/
-	SSHORT buffer_length, length, level = 0;
+	SSHORT length, level = 0;
 	SCHAR relation_name[32], *r;
 
 	if (*explain_buffer++ != gds_info_access_path)
 		return;
 
-	buffer_length = *explain_buffer++;
+	SSHORT buffer_length = *explain_buffer++;
 	buffer_length += (*explain_buffer++) << 8;
 
 	while (buffer_length > 0) {
@@ -246,8 +243,9 @@ static void explain( UCHAR * explain_buffer)
 			case gds_info_rsb_indexed:
 				ib_printf("gds_info_rsb_indexed,\n");
 				level++;
-				explain_index_tree(level, relation_name, (SCHAR**) &explain_buffer,
-								   &buffer_length);
+				explain_index_tree(level, relation_name, 
+					reinterpret_cast<const SCHAR**>(&explain_buffer),
+					&buffer_length);
 				level--;
 				break;
 
@@ -267,8 +265,9 @@ static void explain( UCHAR * explain_buffer)
 			case gds_info_rsb_navigate:
 				ib_printf("gds_info_rsb_navigate,\n");
 				level++;
-				explain_index_tree(level, relation_name, (SCHAR**) &explain_buffer,
-								   &buffer_length);
+				explain_index_tree(level, relation_name,
+					reinterpret_cast<const SCHAR**>(&explain_buffer),
+					&buffer_length);
 				level--;
 				break;
 
@@ -344,7 +343,6 @@ static void explain( UCHAR * explain_buffer)
 			break;
 		}
 	}
-
 }
 #endif
 
@@ -352,9 +350,9 @@ static void explain( UCHAR * explain_buffer)
 #ifdef DEV_BUILD
 static void explain_index_tree(
 							   SSHORT level,
-							   TEXT * relation_name,
-							   SCHAR ** explain_buffer_ptr,
-							   SSHORT * buffer_length)
+							   const TEXT* relation_name,
+							   const SCHAR** explain_buffer_ptr,
+							   SSHORT* buffer_length)
 {
 /**************************************
  *
@@ -366,12 +364,11 @@ static void explain_index_tree(
  *	Print out an index tree access path.
  *
  **************************************/
-	SCHAR *explain_buffer;
 	TEXT index_name[32];
 	SCHAR index_info[256];
 	SSHORT length;
 
-	explain_buffer = *explain_buffer_ptr;
+	const SCHAR* explain_buffer = *explain_buffer_ptr;
 
 	(*buffer_length)--;
 
@@ -404,7 +401,7 @@ static void explain_index_tree(
 		explain_printf(level, "gds_info_rsb_index, ", 0);
 		(*buffer_length)--;
 
-		length = (SSHORT) * explain_buffer++;
+		length = (SSHORT) *explain_buffer++;
 		strncpy(index_name, explain_buffer, length);
 		index_name[length] = 0;
 
@@ -428,7 +425,7 @@ static void explain_index_tree(
 
 
 #ifdef DEV_BUILD
-static void explain_printf( SSHORT level, TEXT * control, TEXT * string)
+static void explain_printf( SSHORT level, const TEXT* control, const TEXT* string)
 {
 /**************************************
  *
@@ -466,9 +463,6 @@ static void gen_any( QLI_NOD node, QLI_REQ request)
  **************************************/
 	QLI_REQ new_request;
 	RLB rlb;
-	QLI_MSG send, receive;
-	DSC desc;
-	USHORT value;
 
 /* If there is a request associated with the statement, prepare to
    generate BLR.  Otherwise assume that a request is alrealdy initialized. */
@@ -476,9 +470,10 @@ static void gen_any( QLI_NOD node, QLI_REQ request)
 	if (new_request = (QLI_REQ) node->nod_arg[e_any_request]) {
 		request = new_request;
 		gen_request(request);
-		if (receive = (QLI_MSG) node->nod_arg[e_any_send])
+		QLI_MSG receive = (QLI_MSG) node->nod_arg[e_any_send];
+		if (receive)
 			gen_send_receive(receive, blr_receive);
-		send = (QLI_MSG) node->nod_arg[e_any_receive];
+		QLI_MSG send = (QLI_MSG) node->nod_arg[e_any_receive];
 		gen_send_receive(send, blr_send);
 		rlb = CHECK_RLB(request->req_blr);
 		STUFF(blr_if);
@@ -489,12 +484,14 @@ static void gen_any( QLI_NOD node, QLI_REQ request)
 	STUFF(blr_any);
 	gen_rse(node->nod_arg[e_any_rse], request);
 
+	USHORT value; // not feasible to change it to bool.
+	dsc desc;
 	if (new_request) {
 		desc.dsc_dtype = dtype_short;
 		desc.dsc_length = sizeof(SSHORT);
 		desc.dsc_scale = 0;
 		desc.dsc_sub_type = 0;
-		desc.dsc_address = (UCHAR *) & value;
+		desc.dsc_address = (UCHAR*) &value;
 
 		STUFF(blr_assignment);
 		value = TRUE;
@@ -522,10 +519,7 @@ static void gen_assignment( QLI_NOD node, QLI_REQ request)
  *	Generate an assignment statement.
  *
  **************************************/
-	QLI_NOD target, from, reference, validation;
-	RLB rlb;
-
-	from = node->nod_arg[e_asn_from];
+	qli_nod* from = node->nod_arg[e_asn_from];
 
 // Handle a local expression locally 
 
@@ -536,15 +530,16 @@ static void gen_assignment( QLI_NOD node, QLI_REQ request)
 
 // Generate a remote assignment 
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
 	STUFF(blr_assignment);
-	target = node->nod_arg[e_asn_to];
+	qli_nod* target = node->nod_arg[e_asn_to];
 
 /* If we are referencing a parameter of another request, compile
    the request first, the make a reference.  Otherwise, just compile
    the expression in the context of this request */
 
+	qli_nod* reference;
 	if (reference = target->nod_arg[e_fld_reference]) {
 		gen_expression(from, 0);
 		gen_parameter(reference->nod_import, request);
@@ -552,6 +547,7 @@ static void gen_assignment( QLI_NOD node, QLI_REQ request)
 	else
 		gen_expression(from, request);
 
+	qli_nod* validation;
 	if (validation = node->nod_arg[e_asn_valid])
 		gen_expression(validation, 0);
 
@@ -593,24 +589,18 @@ static void gen_compile( QLI_REQ request)
  *	Finish off BLR generation for a request, and get it compiled.
  *
  **************************************/
-	DBB dbb;
 	ISC_STATUS_ARRAY status_vector;
-	USHORT length;
-	RLB rlb;
-#ifdef DEV_BUILD
-	SCHAR explain_buffer[256];
-#endif
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 	STUFF(blr_end);
 	STUFF(blr_eoc);
 
 	if (QLI_blr)
 		gds__print_blr(rlb->rlb_base, 0, 0, 0);
 
-	length = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
+	USHORT length = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
 
-	dbb = request->req_database;
+	DBB dbb = request->req_database;
 
 	if (gds__compile_request(status_vector, &dbb->dbb_handle,
 							 &request->req_handle, length, 
@@ -620,18 +610,21 @@ static void gen_compile( QLI_REQ request)
 	}
 
 #ifdef DEV_BUILD
+	SCHAR explain_buffer[256];
 	if (QLI_explain &&
 		!gds__request_info(status_vector, &request->req_handle, 0,
-						   sizeof(explain_info), explain_info,
-						   sizeof(explain_buffer), explain_buffer)) 
+						   sizeof(explain_info), const_cast<char*>(explain_info),
+						   sizeof(explain_buffer), explain_buffer))
+	{
 			explain((UCHAR*) explain_buffer);
+	}
 #endif
 
 	RELEASE_RLB;
 }
 
 
-static void gen_descriptor( DSC * desc, QLI_REQ request)
+static void gen_descriptor(const dsc* desc, QLI_REQ request)
 {
 /**************************************
  *
@@ -644,9 +637,7 @@ static void gen_descriptor( DSC * desc, QLI_REQ request)
  *	message declarations and literals.
  *
  **************************************/
-	RLB rlb;
-
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
 	switch (desc->dsc_dtype) {
 
@@ -707,7 +698,7 @@ static void gen_descriptor( DSC * desc, QLI_REQ request)
 		break;
 
 	default:
-		BUGCHECK(352);			/* Msg352 gen_descriptor: dtype not recognized */
+		BUGCHECK(352);			// Msg352 gen_descriptor: dtype not recognized 
 	}
 }
 
@@ -724,17 +715,15 @@ static void gen_erase( QLI_NOD node, QLI_REQ request)
  *	Generate the BLR for an erase statement.  Pretty simple.
  *
  **************************************/
-	QLI_CTX context;
 	QLI_MSG message;
-	RLB rlb;
 
 	if (message = (QLI_MSG) node->nod_arg[e_era_message]) {
 		request = (QLI_REQ) node->nod_arg[e_era_request];
 		gen_send_receive(message, blr_receive);
 	}
 
-	rlb = CHECK_RLB(request->req_blr);
-	context = (QLI_CTX) node->nod_arg[e_era_context];
+	RLB rlb = CHECK_RLB(request->req_blr);
+	QLI_CTX context = (QLI_CTX) node->nod_arg[e_era_context];
 	STUFF(blr_erase);
 	STUFF(context->ctx_context);
 }
@@ -955,7 +944,7 @@ static void gen_expression( QLI_NOD node, QLI_REQ request)
 			gen_parameter(node->nod_export, request);
 			return;
 		}
-		BUGCHECK(353);			/* Msg353 gen_expression: not understood */
+		BUGCHECK(353);			// Msg353 gen_expression: not understood 
 	}
 
 	if (request) {
@@ -985,24 +974,20 @@ static void gen_field( QLI_NOD node, QLI_REQ request)
  *	requests or not.
  *
  **************************************/
-	QLI_FLD field;
-	QLI_CTX context;
-	RLB rlb;
-	QLI_NOD args, *ptr, *end;
-
 /* If there isn't a request specified, this is a reference. */
 
 	if (!request)
 		return;
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
-	field = (QLI_FLD) node->nod_arg[e_fld_field];
-	context = (QLI_CTX) node->nod_arg[e_fld_context];
+	QLI_FLD field = (QLI_FLD) node->nod_arg[e_fld_field];
+	QLI_CTX context = (QLI_CTX) node->nod_arg[e_fld_context];
 
 /* If the field referenced is in this request, just generate a field
    reference. */
 
+	QLI_NOD args;
 	if (context->ctx_request == request) {
 		if (args = node->nod_arg[e_fld_subs])
 			STUFF(blr_index);
@@ -1011,6 +996,7 @@ static void gen_field( QLI_NOD node, QLI_REQ request)
 		STUFF_WORD(field->fld_id);
 		if (args) {
 			STUFF(args->nod_count);
+			QLI_NOD *ptr, *end;
 			for (ptr = args->nod_arg, end = ptr + args->nod_count; ptr < end;
 				 ptr++)
 				gen_expression(*ptr, request);
@@ -1037,12 +1023,8 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
  *	Generate BLR for a FOR loop, included synchronization messages.
  *
  **************************************/
-	QLI_MSG message, continuation;
-	PAR parameter, eof;
-	DSC desc;
-	QLI_NOD sub; 
-	USHORT value, label;
-	RLB rlb;
+	QLI_MSG message;
+	USHORT value;
 
 /* If there is a request associated with the statement, prepare to
    generate BLR.  Otherwise assume that a request is alrealdy initialized. */
@@ -1052,7 +1034,7 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 		gen_request(request);
 	}
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
 /* If the statement requires an end of file marker, build a BEGIN/END around
    the whole statement. */
@@ -1060,12 +1042,12 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 	if (message = (QLI_MSG) node->nod_arg[e_for_receive])
 		STUFF(blr_begin);
 
-/* If there is a message to be sent, build a receive for it */
+// If there is a message to be sent, build a receive for it 
 
 	if (node->nod_arg[e_for_send])
 		gen_send_receive((QLI_MSG) node->nod_arg[e_for_send], blr_receive);
 
-/* Generate the FOR loop proper. */
+// Generate the FOR loop proper. 
 
 	STUFF(blr_for);
 	gen_rse(node->nod_arg[e_for_rse], request);
@@ -1073,13 +1055,16 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 
 /* If data is to be received (included EOF), build a send */
 
+	PAR eof;
+	dsc desc;
+
 	if (message) {
 		gen_send_receive(message, blr_send);
 		STUFF(blr_begin);
 
-		/* Build assigments for all values referenced. */
+		// Build assigments for all values referenced. 
 
-		for (parameter = message->msg_parameters; parameter;
+		for (PAR parameter = message->msg_parameters; parameter;
 			 parameter = parameter->par_next)
 		{
 			if (parameter->par_value) {
@@ -1089,14 +1074,14 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 			}
 		}
 
-		/* Next, make a FALSE for the end of file parameter */
+		// Next, make a FALSE for the end of file parameter 
 
 		eof = (PAR) node->nod_arg[e_for_eof];
 		desc.dsc_dtype = dtype_short;
 		desc.dsc_length = sizeof(SSHORT);
 		desc.dsc_scale = 0;
 		desc.dsc_sub_type = 0;
-		desc.dsc_address = (UCHAR *) & value;
+		desc.dsc_address = (UCHAR*) &value;
 
 		STUFF(blr_assignment);
 		value = FALSE;
@@ -1106,11 +1091,12 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 		STUFF(blr_end);
 	}
 
-/* Build  the body of the loop. */
+// Build  the body of the loop. 
 
-	if (continuation = request->req_continue) {
+	QLI_MSG continuation = request->req_continue;
+	if (continuation) {
 		STUFF(blr_label);
-		label = request->req_label++;
+		USHORT label = request->req_label++;
 		STUFF(label);
 		STUFF(blr_loop);
 		STUFF(blr_select);
@@ -1119,7 +1105,7 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 		STUFF(label);
 	}
 
-	sub = node->nod_arg[e_for_statement];
+	QLI_NOD sub = node->nod_arg[e_for_statement];
 	gen_statement(sub, request);
 
 	STUFF(blr_end);
@@ -1138,7 +1124,7 @@ static void gen_for( QLI_NOD node, QLI_REQ request)
 		STUFF(blr_end);
 	}
 
-/* If this is our request, compile it. */
+// If this is our request, compile it. 
 
 	if (node->nod_arg[e_for_request])
 		gen_compile(request);
@@ -1158,11 +1144,6 @@ static void gen_function( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	QLI_REQ new_request;
-	QLI_NOD args, *ptr, *end;
-	FUN function;
-	SYM symbol;
-	QLI_MSG send, receive;
-	UCHAR *p;
 	RLB rlb;
 
 /* If there is a request associated with the statement, prepare to
@@ -1175,9 +1156,10 @@ static void gen_function( QLI_NOD node, QLI_REQ request)
 	else if (new_request = (QLI_REQ) node->nod_arg[e_fun_request]) {
 		request = new_request;
 		gen_request(request);
-		if (receive = (QLI_MSG) node->nod_arg[e_fun_send])
+		QLI_MSG receive = (QLI_MSG) node->nod_arg[e_fun_send];
+		if (receive)
 			gen_send_receive(receive, blr_receive);
-		send = (QLI_MSG) node->nod_arg[e_fun_receive];
+		QLI_MSG send = (QLI_MSG) node->nod_arg[e_fun_receive];
 		gen_send_receive(send, blr_send);
 		rlb = CHECK_RLB(request->req_blr);
 		STUFF(blr_assignment);
@@ -1188,17 +1170,18 @@ static void gen_function( QLI_NOD node, QLI_REQ request)
 // Generate function body 
 
 	STUFF(blr_function);
-	function = (FUN) node->nod_arg[e_fun_function];
-	symbol = function->fun_symbol;
+	FUN function = (FUN) node->nod_arg[e_fun_function];
+	SYM symbol = function->fun_symbol;
 	STUFF(symbol->sym_length);
-	for (p = (UCHAR *) symbol->sym_string; *p;)
+	for (const UCHAR* p = (UCHAR *) symbol->sym_string; *p;)
 		STUFF(*p++);
 
 // Generate function arguments 
 
-	args = node->nod_arg[e_fun_args];
+	QLI_NOD args = node->nod_arg[e_fun_args];
 	STUFF(args->nod_count);
 
+    QLI_NOD *ptr, *end;
 	for (ptr = args->nod_arg, end = ptr + args->nod_count; ptr < end; ptr++)
 		gen_expression(*ptr, request);
 
@@ -1223,7 +1206,6 @@ static void gen_if( QLI_NOD node, QLI_REQ request)
  *	context IF or a database context IF.
  *
  **************************************/
-	RLB rlb;
 
 /* If the statement is local to QLI, force the sub-
    statements/expressions to be local also.  If not
@@ -1236,7 +1218,9 @@ static void gen_if( QLI_NOD node, QLI_REQ request)
 			gen_statement(node->nod_arg[e_if_false], request);
 	}
 	else {
-		rlb = CHECK_RLB(request->req_blr);
+	    // probably the var is irrelevant, but not the function call,
+	    // as it makes sure there's enough room.
+		RLB rlb = CHECK_RLB(request->req_blr);
 		STUFF(blr_if);
 		gen_expression(node->nod_arg[e_if_boolean], request);
 		STUFF(blr_begin);
@@ -1253,7 +1237,7 @@ static void gen_if( QLI_NOD node, QLI_REQ request)
 }
 
 
-static void gen_literal( DSC * desc, QLI_REQ request)
+static void gen_literal(const dsc* desc, QLI_REQ request)
 {
 /**************************************
  *
@@ -1266,16 +1250,13 @@ static void gen_literal( DSC * desc, QLI_REQ request)
  *
  **************************************/
 	SLONG value;
-	USHORT l;
-	UCHAR *p;
-	RLB rlb;
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
 	STUFF(blr_literal);
 	gen_descriptor(desc, request);
-	p = desc->dsc_address;
-	l = desc->dsc_length;
+	const UCHAR* p = desc->dsc_address;
+	USHORT l = desc->dsc_length;
 
 	switch (desc->dsc_dtype) {
 	case dtype_short:
@@ -1322,13 +1303,11 @@ static void gen_map( MAP map, QLI_REQ request)
  *	Generate a value map for a record selection expression.
  *
  **************************************/
-	USHORT count;
 	MAP temp;
-	RLB rlb;
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
-	count = 0;
+	USHORT count = 0;
 	for (temp = map; temp; temp = temp->map_next)
 		if (temp->map_node->nod_type != nod_function)
 			temp->map_position = count++;
@@ -1356,21 +1335,19 @@ static void gen_modify( QLI_NOD node, QLI_REQ org_request)
  *	Generate a MODIFY statement.  
  *
  **************************************/
-	QLI_REQ request;
 	QLI_NOD *ptr, *end;
-	QLI_CTX context;
-	RLB rlb;
 
-	request = (QLI_REQ) node->nod_arg[e_mod_request];
+	QLI_REQ request = (QLI_REQ) node->nod_arg[e_mod_request];
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
 	if (node->nod_arg[e_mod_send])
 		gen_send_receive((QLI_MSG) node->nod_arg[e_mod_send], blr_receive);
 
 	for (ptr = &node->nod_arg[e_mod_count], end = ptr + node->nod_count;
-		 ptr < end; ptr++) {
-		context = (QLI_CTX) * ptr;
+		 ptr < end; ptr++)
+	{
+		QLI_CTX context = (QLI_CTX) *ptr;
 		STUFF(blr_modify);
 		STUFF(context->ctx_source->ctx_context);
 		STUFF(context->ctx_context);
@@ -1394,12 +1371,9 @@ static void gen_parameter( PAR parameter, QLI_REQ request)
  *	Generate a simple parameter reference.
  *
  **************************************/
-	QLI_MSG message;
-	RLB rlb;
+	RLB rlb = CHECK_RLB(request->req_blr);
 
-	rlb = CHECK_RLB(request->req_blr);
-
-	message = parameter->par_message;
+	QLI_MSG message = parameter->par_message;
 	if (!parameter->par_missing) {
 		STUFF(blr_parameter);
 		STUFF(message->msg_number);
@@ -1426,11 +1400,10 @@ static void gen_print_list( QLI_NOD list, QLI_REQ request)
  *	Generate BLR for a print list.
  *
  **************************************/
-	ITM item;
 	QLI_NOD *ptr, *end;
 
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-		item = (ITM) * ptr;
+		ITM item = (ITM) *ptr;
 		if (item->itm_type == item_value)
 			gen_expression(item->itm_value, request);
 	}
@@ -1449,15 +1422,13 @@ static void gen_report( QLI_NOD node, QLI_REQ request)
  *	Compile the body of a report specification.
  *
  **************************************/
-	RPT report;
-	QLI_NOD list;
-
-	report = (RPT) node->nod_arg[e_prt_list];
+	RPT report = (RPT) node->nod_arg[e_prt_list];
 
 	gen_control_break(report->rpt_top_rpt, request);
 	gen_control_break(report->rpt_top_page, request);
 	gen_control_break(report->rpt_top_breaks, request);
 
+    QLI_NOD list;
 	if (list = report->rpt_detail_line)
 		gen_print_list(list, request);
 
@@ -1479,27 +1450,25 @@ static void gen_request( QLI_REQ request)
  *	Prepare to generation and compile a request.
  *
  **************************************/
-	QLI_MSG message;
 	PAR param, missing_param;
 	STR string;
 	DSC *desc;
-	USHORT alignment;
-	RLB rlb;
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
 	STUFF(blr_version4);
 	STUFF(blr_begin);
 
-/* Build declarations for all messages. */
+// Build declarations for all messages. 
 
-	for (message = request->req_messages; message;
-		 message = message->msg_next) {
+	for (QLI_MSG message = request->req_messages; message;
+		message = message->msg_next)
+	{
 		message->msg_length = 0;
 		for (param = message->msg_parameters; param; param = param->par_next) {
 			desc = &param->par_desc;
 			param->par_parameter = message->msg_parameter++;
-			alignment = type_alignments[desc->dsc_dtype];
+			const USHORT alignment = type_alignments[desc->dsc_dtype];
 			if (alignment)
 				message->msg_length =
 					FB_ALIGN(message->msg_length, alignment);
@@ -1544,12 +1513,9 @@ static void gen_rse( QLI_NOD node, QLI_REQ request)
  *
  **************************************/
 	QLI_NOD list, *ptr, *end;
-	QLI_CTX context;
 	QLI_REL relation;
-	RLB rlb;
-	NOD_T join_type;
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
 	if ((NOD_T) (int) node->nod_arg[e_rse_join_type] == (NOD_T) 0)
 		STUFF(blr_rse);
@@ -1559,7 +1525,7 @@ static void gen_rse( QLI_NOD node, QLI_REQ request)
 
 // Check for aggregate case 
 
-	context = (QLI_CTX) node->nod_arg[e_rse_count];
+	QLI_CTX context = (QLI_CTX) node->nod_arg[e_rse_count];
 
 	if (context->ctx_sub_rse) {
 		STUFF(blr_aggregate);
@@ -1590,7 +1556,8 @@ static void gen_rse( QLI_NOD node, QLI_REQ request)
 // Make relation clauses for all relations 
 
 	for (ptr = &node->nod_arg[e_rse_count], end = ptr + node->nod_count;
-		 ptr < end; ptr++) {
+		 ptr < end; ptr++)
+	{
 		context = (QLI_CTX) * ptr;
 		if (context->ctx_stream)
 			gen_rse(context->ctx_stream, request);
@@ -1620,7 +1587,7 @@ static void gen_rse( QLI_NOD node, QLI_REQ request)
 	if (list = node->nod_arg[e_rse_reduced])
 		gen_sort(list, request, blr_project);
 
-	join_type = (NOD_T) (int) node->nod_arg[e_rse_join_type];
+	NOD_T join_type = (NOD_T) (int) node->nod_arg[e_rse_join_type];
 	if (join_type != (NOD_T) 0 && join_type != nod_join_inner) {
 		STUFF(blr_join_type);
 		if (join_type == nod_join_left)
@@ -1647,17 +1614,14 @@ static void gen_send_receive( QLI_MSG message, USHORT operatr)
  *	Generate a send or receive statement, excluding body.
  *
  **************************************/
-	QLI_REQ request;
-	RLB rlb;
-
-	request = message->msg_request;
-	rlb = CHECK_RLB(request->req_blr);
+	QLI_REQ request = message->msg_request;
+	RLB rlb = CHECK_RLB(request->req_blr);
 	STUFF(operatr);
 	STUFF(message->msg_number);
 }
 
 
-static void gen_sort( QLI_NOD node, QLI_REQ request, UCHAR operatr)
+static void gen_sort( QLI_NOD node, QLI_REQ request, const UCHAR operatr)
 {
 /**************************************
  *
@@ -1670,16 +1634,16 @@ static void gen_sort( QLI_NOD node, QLI_REQ request, UCHAR operatr)
  *
  **************************************/
 	QLI_NOD *ptr, *end;
-	RLB rlb;
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
 	STUFF(operatr);
 	STUFF(node->nod_count);
 
 	request->req_flags |= REQ_project;
 	for (ptr = node->nod_arg, end = ptr + node->nod_count * 2; ptr < end;
-		 ptr += 2) {
+		 ptr += 2)
+	{
 		if (operatr == blr_sort)
 			STUFF((ptr[1]) ? blr_descending : blr_ascending);
 		gen_expression(ptr[0], request);
@@ -1762,7 +1726,7 @@ static void gen_statement( QLI_NOD node, QLI_REQ request)
 		return;
 
 	default:
-		BUGCHECK(354);			/* Msg354 gen_statement: not yet implemented */
+		BUGCHECK(354);			// Msg354 gen_statement: not yet implemented 
 	}
 }
 
@@ -1836,7 +1800,7 @@ static void gen_statistical( QLI_NOD node, QLI_REQ request)
 		break;
 
 	default:
-		BUGCHECK(355);			/* Msg355 gen_statistical: not understood */
+		BUGCHECK(355);			// Msg355 gen_statistical: not understood 
 	}
 
 /* If there is a request associated with the statement, prepare to
@@ -1888,9 +1852,6 @@ static void gen_store( QLI_NOD node, QLI_REQ request)
  *	Generate code for STORE statement.
  *
  **************************************/
-	QLI_REL relation;
-	QLI_CTX context;
-	RLB rlb;
 
 /* If there is a request associated with the statement, prepare to
    generate BLR.  Otherwise assume that a request is alrealdy initialized. */
@@ -1900,30 +1861,31 @@ static void gen_store( QLI_NOD node, QLI_REQ request)
 		gen_request(request);
 	}
 
-	rlb = CHECK_RLB(request->req_blr);
+	RLB rlb = CHECK_RLB(request->req_blr);
 
-/* If there is a message to be sent, build a receive for it */
+// If there is a message to be sent, build a receive for it 
 
 	if (node->nod_arg[e_sto_send])
 		gen_send_receive((QLI_MSG) node->nod_arg[e_sto_send], blr_receive);
 
-/* Generate the STORE statement proper. */
+// Generate the STORE statement proper. 
 
 	STUFF(blr_store);
-	context = (QLI_CTX) node->nod_arg[e_sto_context];
-	relation = context->ctx_relation;
+	QLI_CTX context = (QLI_CTX) node->nod_arg[e_sto_context];
+	QLI_REL relation = context->ctx_relation;
 	STUFF(blr_rid);
 	STUFF_WORD(relation->rel_id);
 	STUFF(context->ctx_context);
 
-/* Build  the body of the loop. */
+// Build  the body of the loop. 
 
 	STUFF(blr_begin);
 	gen_statement(node->nod_arg[e_sto_statement], request);
 	STUFF(blr_end);
 
-/* If this is our request, compile it. */
+// If this is our request, compile it. 
 
 	if (node->nod_arg[e_sto_request])
 		gen_compile(request);
 }
+

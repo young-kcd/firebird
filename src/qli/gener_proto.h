@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_GENER_PROTO_H_
-#define _QLI_GENER_PROTO_H_
+#ifndef QLI_GENER_PROTO_H
+#define QLI_GENER_PROTO_H
 
 extern struct qli_nod	*GEN_generate (struct qli_nod *);
 extern void		GEN_release (void);
 extern struct rlb	*GEN_rlb_extend (struct rlb *);
 extern void		GEN_rlb_release (struct rlb *);
 
-#endif /* _QLI_GENER_PROTO_H_ */
+#endif /* QLI_GENER_PROTO_H */
+

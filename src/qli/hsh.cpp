@@ -189,7 +189,7 @@ void HSH_remove( SYM symbol)
 					return;
 				}
 
-	ERRQ_error(27, NULL, NULL, NULL, NULL, NULL);	/* Msg 27 HSH_remove failed */
+	ERRQ_error(27, NULL, NULL, NULL, NULL, NULL);	// Msg 27 HSH_remove failed 
 }
 
 

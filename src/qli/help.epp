@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		help.e
+ *	MODULE:		help.epp
  *	DESCRIPTION:	Help module.
  *
  * The contents of this file are subject to the Interbase Public
@@ -54,8 +54,8 @@
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
 
 static int additional_topics(TEXT *, TEXT *, TEXT *);
-static void print_more(USHORT, USHORT, TEXT **, USHORT *, TEXT *, USHORT);
-static void print_topic(USHORT, USHORT, TEXT **, USHORT *, TEXT *, USHORT);
+static void print_more(USHORT, USHORT, TEXT **, USHORT *, TEXT *, bool);
+static void print_topic(USHORT, USHORT, TEXT **, USHORT *, TEXT *, bool);
 static TEXT *strip(TEXT *);
 
 
@@ -111,10 +111,10 @@ void HELP_help( SYN node)
 		 ptr++)
 		*topic++ = (*ptr)->nam_string;
 
-	print_topic(0, node->syn_count, topics, &max_level, "", FALSE);
+	print_topic(0, node->syn_count, topics, &max_level, "", false);
 
 	if (max_level < node->syn_count)
-		print_topic(0, node->syn_count, topics, &max_level, "", TRUE);
+		print_topic(0, node->syn_count, topics, &max_level, "", true);
 }
 
 
@@ -130,20 +130,19 @@ static int additional_topics( TEXT * parent, TEXT * banner, TEXT * string)
  *	Print a list of other known topics.
  *
  **************************************/
-	TEXT *p, line[256], *ptr;
-	USHORT topics, l;
+	TEXT line[256];
 
 /* Print list of know topics.  When we find the first, 
    print the banner, if any */
 
-	ptr = line;
-	topics = 0;
-	l = strlen(parent);
+	TEXT* ptr = line;
+	USHORT topics = 0;
+	USHORT l = strlen(parent);
 
 	FOR X IN TOPICS WITH X.PARENT EQ parent SORTED BY X.TOPIC
 		if (QLI_abort)
 			return 0;
-		p = X.TOPIC;
+		TEXT* p = X.TOPIC;
 		while (*p && *p != ' ')
 			p++;
 		if (!(l = p - X.TOPIC))
@@ -180,7 +179,9 @@ static void print_more(
 					   USHORT level,
 					   USHORT depth,
 					   TEXT ** topics,
-					   USHORT * max_level, TEXT * parent, USHORT error_flag)
+					   USHORT * max_level,
+					   TEXT * parent,
+					   bool error_flag) // unused
 {
 /**************************************
  *
@@ -211,11 +212,11 @@ static void print_more(
 			*p++ = UPPER(*q);
 	*p = 0;
 
-/* If we got anything, print the new topic */
+// If we got anything, print the new topic 
 
 	if (p != topic)
 		print_topic(level + 1, depth + 1, topics + 1, max_level, parent,
-					FALSE);
+					false);  // strange, it doesn't use error_flag
 }
 
 
@@ -223,7 +224,7 @@ static void print_topic(
 						USHORT level,
 						USHORT depth,
 						TEXT ** topics,
-						USHORT * max_level, TEXT * parent, USHORT error_flag)
+						USHORT * max_level, TEXT * parent, bool error_flag)
 {
 /**************************************
  *

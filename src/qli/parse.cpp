@@ -572,7 +572,7 @@ static CON make_numeric_constant( TEXT * string, USHORT length)
 	p = string;
 	l = length;
 
-/* If there are a reasonable number of digits, convert to binary */
+// If there are a reasonable number of digits, convert to binary 
 
 	if (length < 9) {
 		constant = (CON) ALLOCDV(type_con, sizeof(SLONG));
@@ -1271,7 +1271,7 @@ static SYN parse_delete(void)
 	rse->syn_count = 1;
 	rse->syn_arg[s_rse_count] = parse_sql_relation();
 
-/* Pick up boolean, if present */
+// Pick up boolean, if present 
 
 	if (MATCH(KW_WITH))
 		rse->syn_arg[s_rse_boolean] = parse_boolean(0);
@@ -1472,7 +1472,7 @@ static int parse_dtype_subtype(void)
  **************************************/
 	int sign;
 
-/* grab KW_SUB_TYPE */
+// grab KW_SUB_TYPE 
 
 	PAR_token();
 	MATCH(KW_IS);
@@ -2043,7 +2043,7 @@ static SYN parse_in( SYN value, NOD_T operatr, USHORT all_flag)
 	rse->syn_arg[s_rse_op] = INT_CAST operatr;
 	rse->syn_arg[s_rse_all_flag] = INT_CAST all_flag;
 
-/* Finally, construct an ANY node */
+// Finally, construct an ANY node 
 
 	node = SYNTAX_NODE(nod_any, 1);
 	node->syn_arg[0] = rse;
@@ -2077,7 +2077,7 @@ static SYN parse_insert(void)
 
 	node->syn_arg[s_sto_relation] = parse_sql_relation();
 
-/* Pick up field list, provided one is present */
+// Pick up field list, provided one is present 
 
 	distinct = fields = values = NULL;
 	PAR_real();
@@ -2353,7 +2353,7 @@ static SYN parse_modify(void)
 
 	PAR_token();
 
-/* If this is a meta-data change, handle it elsewhere */
+// If this is a meta-data change, handle it elsewhere 
 
 	if (MATCH(KW_INDEX))
 		return parse_modify_index();
@@ -2368,7 +2368,7 @@ static SYN parse_modify(void)
 	if (MATCH(KW_RELATION))
 		return parse_modify_relation();
 
-/* Not a meta-data modification, just a simple data modify */
+// Not a meta-data modification, just a simple data modify 
 
 	MATCH(KW_ALL);
 	node = SYNTAX_NODE(nod_modify, s_mod_count);
@@ -2488,7 +2488,7 @@ static SYN parse_modify_relation(void)
 			field->fld_flags |= FLD_drop;
 		}
 		else
-			SYNTAX_ERROR(197);	/* Msg197 ADD, MODIFY, or DROP */
+			SYNTAX_ERROR(197);	// Msg197 ADD, MODIFY, or DROP 
 		field->fld_next = (QLI_FLD) node->syn_arg[1];
 		node->syn_arg[1] = (SYN) field;
 		if (KEYWORD(KW_SEMI))
@@ -2939,7 +2939,7 @@ static SYN parse_prompt(void)
 	PAR_token();
 	node = SYNTAX_NODE(nod_prompt, 1);
 
-/* If there is a period, get the prompt string and make a string node */
+// If there is a period, get the prompt string and make a string node 
 
 	if (MATCH(KW_DOT)) {
 		PAR_real();
@@ -3056,7 +3056,7 @@ static QLI_REL parse_qualified_relation(void)
 
 	PAR_real();
 
-/* If the next token is a database symbol, take it as a qualifier */
+// If the next token is a database symbol, take it as a qualifier 
 
 	if ((db_symbol = QLI_token->tok_symbol)
 		&& db_symbol->sym_type == SYM_database) {
@@ -3341,7 +3341,7 @@ static SYN parse_relational( USHORT * paren_count)
 		node->syn_arg[1] = parse_value(paren_count, &local_flag);
 	}
 
-/* If a negation remains to be handled, zap the node under a NOT. */
+// If a negation remains to be handled, zap the node under a NOT. 
 
 	if (negation)
 		node = negate(node);
@@ -4075,7 +4075,7 @@ static SYN parse_show(void)
 				else {
 					MATCH(KW_RELATION);
 					if (!(value = (BLK) parse_qualified_relation()))
-						SYNTAX_ERROR(222);	/* Msg222 relation_name */
+						SYNTAX_ERROR(222);	// Msg222 relation_name 
 					sw = show_trigger;
 				}
 			}
@@ -5423,7 +5423,7 @@ static SYN parse_update(void)
 			break;
 	}
 
-/* Pick up boolean, if present */
+// Pick up boolean, if present 
 
 	if (MATCH(KW_WITH))
 		rse->syn_arg[s_rse_boolean] = parse_boolean(0);
@@ -5537,7 +5537,7 @@ static QLI_REL resolve_relation( SYM db_symbol, SYM relation_symbol)
 		return NULL;
 	}
 
-/* No database qualifier, so search all databases. */
+// No database qualifier, so search all databases. 
 
 	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		for (temp = relation_symbol; temp; temp = temp->sym_homonym)

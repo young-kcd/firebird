@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.17 2003-09-13 11:47:32 brodsom Exp $
+$Id: all.cpp,v 1.18 2003-09-15 12:30:27 robocop Exp $
 */
 
 /***************************************************
@@ -421,12 +421,12 @@ void ALLQ_release( FRB block)
 	if ((SCHAR *) block == (SCHAR *) free)
 		BUGCHECK(435);			// block released twice 
 
-/* Merge block into list first, then try to combine blocks */
+// Merge block into list first, then try to combine blocks 
 
 	block->frb_next = free;
 	*ptr = block;
 
-/* Try to merge the free block with the next one down. */
+// Try to merge the free block with the next one down. 
 
 	if (free) {
 		if ((SCHAR *) block + block->frb_header.blk_length ==

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		picstr.c
+ *	MODULE:		picstr.cpp
  *	DESCRIPTION:	Picture String Handler
  *
  * The contents of this file are subject to the Interbase Public
@@ -36,7 +36,7 @@
 #define PRECISION	10000
 
 static TEXT *cvt_to_ascii(SLONG, TEXT *, int);
-static TEXT *default_edit_string(DSC *, TEXT *);
+static TEXT *default_edit_string(const dsc*, TEXT *);
 static void edit_alpha(DSC *, PICS, TEXT **, USHORT);
 static void edit_date(DSC *, PICS, TEXT **);
 static void edit_float(DSC *, PICS, TEXT **);
@@ -44,7 +44,8 @@ static void edit_numeric(DSC *, PICS, TEXT **);
 static int generate(PICS);
 static void literal(PICS, TEXT, TEXT **);
 
-static TEXT *alpha_weekdays[] = {
+static const TEXT* alpha_weekdays[] =
+{
 	"Sunday",
 	"Monday",
 	"Tuesday",
@@ -52,18 +53,26 @@ static TEXT *alpha_weekdays[] = {
 	"Thursday",
 	"Friday",
 	"Saturday"
-}, *alpha_months[] = {
+};
+
+static const TEXT* alpha_months[] =
+{
 	"January",
-		"February",
-		"March",
-		"April",
-		"May",
+	"February",
+	"March",
+	"April",
+	"May",
+    "June",
+	"July",
+	"August",
+	"September",
+	"October",
+	"November",
+	"December"
+};
 
-		"June",
-		"July", "August", "September", "October", "November", "December"};
 
-
-PICS PIC_analyze( TEXT * string, DSC * desc)
+PICS PIC_analyze(TEXT* string, const dsc* desc)
 {
 /**************************************
  *
@@ -136,7 +145,7 @@ PICS PIC_analyze( TEXT * string, DSC * desc)
 			break;
 
 		case 'D':
-			/* DB is ambiguous, could be Day Blank or DeBit... */
+			// DB is ambiguous, could be Day Blank or DeBit... 
 			d = UPPER(*picture->pic_pointer);
 			if (d == 'B') {
 				++picture->pic_pointer;
@@ -227,7 +236,7 @@ PICS PIC_analyze( TEXT * string, DSC * desc)
 	if (c == '?')
 		picture->pic_missing = PIC_analyze(picture->pic_pointer, 0);
 
-/* if a DB showed up, and the string is numeric, treat the DB as DeBit */
+// if a DB showed up, and the string is numeric, treat the DB as DeBit 
 
 	if (debit && (picture->pic_digits || picture->pic_hex_digits)) {
 		--picture->pic_days;
@@ -313,7 +322,7 @@ void PIC_edit( DSC * desc, PICS picture, TEXT ** output, USHORT max_length)
 		edit_float(desc, picture, output);
 		return;
 	default:
-		BUGCHECK(68);			/* Msg 68 PIC_edit: class not yet implemented */
+		BUGCHECK(68);			// Msg 68 PIC_edit: class not yet implemented 
 	}
 }
 
@@ -387,7 +396,7 @@ static TEXT *cvt_to_ascii( SLONG number, TEXT * pointer, int length)
 
 
 static TEXT *default_edit_string(
-									DSC * desc, TEXT * buff)
+									const dsc* desc, TEXT * buff)
 {
 /**************************************
  *
@@ -400,13 +409,11 @@ static TEXT *default_edit_string(
  *
  **************************************/
 	TEXT buffer[32];
-	STR string;
-	SSHORT scale;
 
 	if (!buff)
 		buff = buffer;
 
-	scale = desc->dsc_scale;
+	const SSHORT scale = desc->dsc_scale;
 
 	switch (desc->dsc_dtype) {
 	case dtype_text:
@@ -461,7 +468,7 @@ static TEXT *default_edit_string(
 	}
 
 	if (buff == buffer) {
-		string = (STR) ALLOCDV(type_str, strlen(buff));
+		STR string = (STR) ALLOCDV(type_str, strlen(buff));
 		strcpy(string->str_data, buff);
 		buff = string->str_data;
 	}
@@ -485,19 +492,19 @@ static void edit_alpha(
  *	output pointer.
  *
  **************************************/
-	TEXT c, *p, *out, *end, temp[512];
-	USHORT l;
+	TEXT temp[512];
 
-	l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
-	end = p + l;
+	TEXT *p = NULL;
+	USHORT l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
+	TEXT* const end = p + l;
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;
-	out = *output;
+	TEXT* out = *output;
 
 	while (p < end) {
 		if ((out - *output) >= max_length)
 			break;
-		c = generate(picture);
+		TEXT c = generate(picture);
 		if (!c || c == '?')
 			break;
 
@@ -548,13 +555,9 @@ static void edit_date( DSC * desc, PICS picture, TEXT ** output)
  *	output pointer.
  *
  **************************************/
-	SLONG date[2], rel_day, seconds;
+	SLONG date[2], rel_day;
 	DSC temp_desc;
-	TEXT c, d, *p, *out, *month, *weekday, *year, *nmonth, *day,
-		*hours, temp[256], *meridian, *julians;
-	bool sig_day;
-	bool blank;
-	struct tm times;
+	TEXT d, temp[256];
 
 	temp_desc.dsc_dtype = dtype_timestamp;
 	temp_desc.dsc_scale = 0;
@@ -563,21 +566,23 @@ static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 	temp_desc.dsc_address = (UCHAR *) date;
 	MOVQ_move(desc, &temp_desc);
 
+    struct tm times;
 	isc_decode_date((GDS_QUAD*) date, &times);
-	p = temp;
+	TEXT* p = temp;
 
-	nmonth = p;
+	TEXT* nmonth = p;
 	p = cvt_to_ascii((SLONG) times.tm_mon + 1, p, picture->pic_nmonths);
 
-	day = p;
+	TEXT* day = p;
 	p = cvt_to_ascii((SLONG) times.tm_mday, p, picture->pic_days);
 
-	year = p;
+	TEXT* year = p;
 	p = cvt_to_ascii((SLONG) times.tm_year + 1900, p, picture->pic_years);
 
-	julians = p;
+	TEXT* julians = p;
 	p = cvt_to_ascii((SLONG) times.tm_yday + 1, p, picture->pic_julians);
 
+	const TEXT* meridian = "";
 	if (picture->pic_meridian) {
 		if (times.tm_hour >= 12) {
 			meridian = "PM";
@@ -587,12 +592,10 @@ static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 		else
 			meridian = "AM";
 	}
-	else
-		meridian = "";
 
-	seconds = date[1] % (60 * PRECISION);
+	SLONG seconds = date[1] % (60 * PRECISION);
 
-	hours = p;
+	TEXT* hours = p;
 	p = cvt_to_ascii((SLONG) times.tm_hour, p, picture->pic_hours);
 	p = cvt_to_ascii((SLONG) times.tm_min, --p, picture->pic_minutes);
 	p = cvt_to_ascii((SLONG) seconds, --p, 6);
@@ -602,17 +605,18 @@ static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 
 	if ((rel_day = (date[0] + 3) % 7) < 0)
 		rel_day += 7;
-	weekday = alpha_weekdays[rel_day];
-	month = alpha_months[times.tm_mon];
+	const TEXT* weekday = alpha_weekdays[rel_day];
+	const TEXT* month = alpha_months[times.tm_mon];
 
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;
-	out = *output;
-	sig_day = false;
-	blank = true;
+	TEXT* out = *output;
+	
+	bool sig_day = false;
+	bool blank = true;
 
 	for (;;) {
-		c = generate(picture);
+		TEXT c = generate(picture);
 		if (!c || c == '?')
 			break;
 		c = UPPER(c);
@@ -1193,3 +1197,4 @@ static void literal( PICS picture, TEXT c, TEXT ** ptr)
 	*ptr = p;
 	picture->pic_flags &= ~PIC_literal;
 }
+

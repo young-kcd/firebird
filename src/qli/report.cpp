@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		report.c
+ *	MODULE:		report.cpp
  *	DESCRIPTION:	Report writer runtime control
  *
  * The contents of this file are subject to the Interbase Public
@@ -41,7 +41,13 @@ static bool test_break(BRK, RPT, QLI_MSG);
 static void top_break(BRK, PRT);
 static void top_of_page(PRT, bool);
 
-#define SWAP(a,b)	{temp = a; a = b; b = temp;}
+//#define SWAP(a,b)	{temp = a; a = b; b = temp;}
+inline void swap_uchar(UCHAR*& a, UCHAR*& b)
+{
+		UCHAR* temp = a;
+		a = b;
+		b = temp;
+}
 
 
 void RPT_report( QLI_NOD loop)
@@ -59,21 +65,13 @@ void RPT_report( QLI_NOD loop)
  *	absolutely nothing to do.
  *
  **************************************/
-	RPT report;
-	QLI_NOD node;
 	QLI_REQ request;
-	QLI_MSG message;
-	DSC *desc;
-	BRK control;
-	STR string;
-	PRT print;
-	UCHAR *temp;
 
 // Get to actual report node 
 
-	node = loop->nod_arg[e_for_statement];
-	report = (RPT) node->nod_arg[e_prt_list];
-	print = (PRT) node->nod_arg[e_prt_output];
+	QLI_NOD node = loop->nod_arg[e_for_statement];
+	RPT report = (RPT) node->nod_arg[e_prt_list];
+	PRT print = (PRT) node->nod_arg[e_prt_output];
 	print->prt_new_page = (int(*)()) top_of_page;
 	print->prt_page_number = 0;
 
@@ -82,6 +80,7 @@ void RPT_report( QLI_NOD loop)
 /* If there is a request associated  with the loop, start it and possibly
    send a message slong with it. */
 
+	QLI_MSG message;
 	if (request = (QLI_REQ) loop->nod_arg[e_for_request])
 		EXEC_start_request(request, (QLI_MSG) loop->nod_arg[e_for_send]);
 	else if (message = (QLI_MSG) loop->nod_arg[e_for_send])
@@ -95,18 +94,19 @@ void RPT_report( QLI_NOD loop)
 /* Get the first record of the record.  If there isn't anything,
    don't worry about anything. */
 
-	desc = EXEC_receive(message, (PAR) loop->nod_arg[e_for_eof]);
+	dsc* desc = EXEC_receive(message, (PAR) loop->nod_arg[e_for_eof]);
 	if (*(USHORT *) desc->dsc_address)
 		return;
 
 	if (!report->rpt_buffer) {
-		string = (STR) ALLOCDV(type_str, message->msg_length);
+		STR string = (STR) ALLOCDV(type_str, message->msg_length);
 		report->rpt_buffer = (UCHAR *) string->str_data;
 	}
 
 	MOVQ_fast((SCHAR*) message->msg_buffer, (SCHAR*) report->rpt_buffer,
 			  (SLONG) message->msg_length);
 
+	BRK control;
 	if (control = report->rpt_top_rpt)
 		FMT_print((QLI_NOD) control->brk_line, print);
 
@@ -122,15 +122,15 @@ void RPT_report( QLI_NOD loop)
 		 control = control->brk_next) FMT_print((QLI_NOD) control->brk_line, print);
 
 	for (;;) {
-		/* Check for bottom breaks.  If we find one, force all lower breaks. */
+		// Check for bottom breaks.  If we find one, force all lower breaks. 
 
 		for (control = report->rpt_bottom_breaks; control;
 			 control = control->brk_next)
 		{
 			if (test_break(control, report, message)) {
-				SWAP(message->msg_buffer, report->rpt_buffer);
+				swap_uchar(message->msg_buffer, report->rpt_buffer);
 				bottom_break(control, print);
-				SWAP(message->msg_buffer, report->rpt_buffer);
+				swap_uchar(message->msg_buffer, report->rpt_buffer);
 				initialize_break(control);
 				break;
 			}
@@ -139,7 +139,7 @@ void RPT_report( QLI_NOD loop)
 		if (print->prt_lines_remaining <= 0)
 			top_of_page(print, false);
 
-		/* Now check for top breaks. */
+		// Now check for top breaks. 
 
 		for (control = report->rpt_top_breaks; control;
 			 control = control->brk_next)
@@ -150,7 +150,7 @@ void RPT_report( QLI_NOD loop)
 			}
 		}
 
-		/* Increment statisticals and print detail line, if any */
+		// Increment statisticals and print detail line, if any 
 
 		increment_break(report->rpt_bottom_breaks);
 		increment_break(report->rpt_bottom_page);
@@ -161,7 +161,7 @@ void RPT_report( QLI_NOD loop)
 
 		/* Get the next record.  If we're at end, we're almost done. */
 
-		SWAP(message->msg_buffer, report->rpt_buffer);
+		swap_uchar(message->msg_buffer, report->rpt_buffer);
 		desc = EXEC_receive(message, (PAR) loop->nod_arg[e_for_eof]);
 		if (*(USHORT *) desc->dsc_address)
 			break;
@@ -169,7 +169,7 @@ void RPT_report( QLI_NOD loop)
 
 // Force BOTTOM breaks for all fields 
 
-	SWAP(message->msg_buffer, report->rpt_buffer);
+	swap_uchar(message->msg_buffer, report->rpt_buffer);
 	bottom_break(report->rpt_bottom_breaks, print);
 	bottom_break(report->rpt_bottom_rpt, print);
 
@@ -260,15 +260,14 @@ static bool test_break(BRK control,
  *
  **************************************/
 	DSC desc1, desc2, *ptr1, *ptr2;
-	UCHAR *p1, *p2;
-	USHORT l;
+	UCHAR *p2;
 
 // Evaluate the two versions of the expression 
 
 	if (ptr1 = EVAL_value((QLI_NOD) control->brk_field))
 		desc1 = *ptr1;
 
-	p1 = message->msg_buffer;
+	UCHAR* p1 = message->msg_buffer;
 	message->msg_buffer = report->rpt_buffer;
 
 	if (ptr2 = EVAL_value((QLI_NOD) control->brk_field))
@@ -286,7 +285,7 @@ static bool test_break(BRK control,
 
 	p1 = desc1.dsc_address;
 	p2 = desc2.dsc_address;
-	l = desc1.dsc_length;
+	USHORT l = desc1.dsc_length;
 
 	if (desc1.dsc_dtype == dtype_varying)
 		l = 2 + *(USHORT *) p1;
@@ -336,11 +335,10 @@ static void top_of_page(PRT print,
  *	Handle top of page condition.
  *
  **************************************/
-	RPT report;
 	BRK control;
 
 	++print->prt_page_number;
-	report = print->prt_report;
+	RPT report = print->prt_report;
 
 	if (!first_flag) {
 		if (control = report->rpt_bottom_page)
@@ -362,3 +360,4 @@ static void top_of_page(PRT print,
 	if (report->rpt_bottom_page)
 		initialize_break(report->rpt_bottom_page);
 }
+

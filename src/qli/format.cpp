@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		format.c
+ *	MODULE:		format.cpp
  *	DESCRIPTION:	Print planner and formatter
  *
  * The contents of this file are subject to the Interbase Public
@@ -40,39 +40,43 @@
 #include "../qli/picst_proto.h"
 
 extern USHORT QLI_columns, QLI_lines;
+
 #ifdef DEV_BUILD
 extern USHORT QLI_hex_output;
 
-#define PRINTABLE(x) ((((x) >= ' ') && ((x) <= 127)) ||\
-		     ((x) == '\n')||\
-		     ((x) == '\t')||\
-		     ((x) == '\r')||\
-		     ((x) == '\f'))
+inline bool is_printable(const char x)
+{
+	return ((x >= ' ') && (x <= 127)) ||
+		     (x == '\n') ||
+		     (x == '\t') ||
+		     (x == '\r') ||
+		     (x == '\f');
+}
 #endif
 
-static int decompose_header(SCHAR *, SCHAR **, SSHORT *);
-static void format_index(ITM, QLI_NOD, USHORT);
+static int decompose_header(SCHAR*, SCHAR**, SSHORT*);
+static void format_index(ITM, QLI_NOD, const bool);
 static TEXT *format_report(VEC, USHORT, USHORT *);
 static void format_value(ITM, int);
-static TEXT *get_buffer(STR *, TEXT *, USHORT);
+static TEXT* get_buffer(STR*, TEXT*, USHORT);
 static int match_expr(QLI_NOD, QLI_NOD);
 static void print_blobs(PRT, ITM *, ITM *);
 static int print_line(ITM, TEXT **);
 static void put_line(PRT, TEXT **, TEXT *, TEXT);
-static void report_break(BRK, VEC *, int);
+static void report_break(BRK, VEC *, const bool);
 static void report_item(ITM, VEC *, USHORT *);
 static void report_line(QLI_NOD, VEC *);
 
-static STR fmt_buffer, blob_buffer;
+static STR global_fmt_buffer, global_blob_buffer;
 
-#define BOTTOM_INIT			get_buffer (&fmt_buffer, NULL, 1024)
-#define BOTTOM_CHECK(ptr, length)	ptr = get_buffer (&fmt_buffer, ptr, length)
-#define BOTTOM_LINE			fmt_buffer->str_data
+#define BOTTOM_INIT			get_buffer (&global_fmt_buffer, NULL, 1024)
+#define BOTTOM_CHECK(ptr, length)	ptr = get_buffer (&global_fmt_buffer, ptr, length)
+#define BOTTOM_LINE			global_fmt_buffer->str_data
 
-#define BUFFER_INIT			get_buffer (&fmt_buffer, NULL, 1024)
-#define BUFFER_CHECK(ptr, length)	ptr = get_buffer (&fmt_buffer, ptr, length)
-#define BUFFER_BEGINNING		fmt_buffer->str_data
-#define BUFFER_REMAINING(ptr)		(fmt_buffer->str_length - (ptr - fmt_buffer->str_data))
+#define BUFFER_INIT			get_buffer (&global_fmt_buffer, NULL, 1024)
+#define BUFFER_CHECK(ptr, length)	ptr = get_buffer (&global_fmt_buffer, ptr, length)
+#define BUFFER_BEGINNING		global_fmt_buffer->str_data
+#define BUFFER_REMAINING(ptr)		(global_fmt_buffer->str_length - (ptr - global_fmt_buffer->str_data))
 
 int FMT_expression( QLI_NOD node)
 {
@@ -87,12 +91,10 @@ int FMT_expression( QLI_NOD node)
  *	length.
  *
  **************************************/
-	PICS picture;
-	QLI_NOD sub;
 	QLI_FLD field;
 
-	sub = node->nod_arg[e_fmt_value];
-	picture = PIC_analyze((TEXT*) node->nod_arg[e_fmt_edit], &sub->nod_desc);
+	QLI_NOD sub = node->nod_arg[e_fmt_value];
+	PICS picture = PIC_analyze((TEXT*) node->nod_arg[e_fmt_edit], &sub->nod_desc);
 	node->nod_arg[e_fmt_picture] = (QLI_NOD) picture;
 
 	if (node->nod_type == nod_reference)
@@ -120,23 +122,19 @@ TEXT *FMT_format(LLS stack)
  *
  **************************************/
 	ITM item, item2;
-	STR header;
 	QLI_NOD value;
 	SSHORT segment;
-	USHORT j, l, offset, max_offset, number_segments, n, lengths[10], *ptr,
-		flag;
-	LLS temp, temp2;
-	TEXT *line, *p, *q, *segments[10], *bottom;
-	ULONG size;
+	USHORT j, l, n, lengths[10], *ptr;
+	TEXT *p, *q, *segments[10];
 
 // Start by inverting the item stack into an item que 
 
-	temp = stack;
+	LLS temp = stack;
 	stack = NULL;
 
-	if (fmt_buffer) {
-		ALL_release((FRB) fmt_buffer);
-		fmt_buffer = NULL;
+	if (global_fmt_buffer) {
+		ALL_release((FRB) global_fmt_buffer);
+		global_fmt_buffer = NULL;
 	}
 
 	while (temp) {
@@ -147,8 +145,9 @@ TEXT *FMT_format(LLS stack)
 /* Make a pass thru print items computing print lengths and header
    lengths, and the number of header segments. */
 
+	USHORT offset, max_offset, number_segments;
 	number_segments = offset = max_offset = 0;
-	bottom = BOTTOM_INIT;
+	TEXT* bottom = BOTTOM_INIT;
 
 	for (temp = stack; temp; temp = temp->lls_next) {
 		item = (ITM) temp->lls_object;
@@ -174,7 +173,7 @@ TEXT *FMT_format(LLS stack)
 		if (item->itm_type == item_value && (value = item->itm_value)) {
 			if (value->nod_type == nod_reference)
 				value = value->nod_arg[0];
-			format_index(item, value, TRUE);
+			format_index(item, value, true);
 		}
 
 		if (item->itm_query_header)
@@ -192,7 +191,7 @@ TEXT *FMT_format(LLS stack)
 
 		format_value(item, 0);
 
-		/* If the item would overflow the line, reset to beginning of line */
+		// If the item would overflow the line, reset to beginning of line 
 
 		if (offset + MAX(item->itm_print_length, item->itm_header_length) >
 			QLI_columns) offset = 0;
@@ -206,18 +205,18 @@ TEXT *FMT_format(LLS stack)
 			q = BOTTOM_LINE + offset;
 			while (bottom < q)
 				*bottom++ = ' ';
-			flag = TRUE;
+			bool flag = true;
 			if (offset && q[-1] != ' ')
-				flag = FALSE;
+				flag = false;
 			else if (l = MIN(n, bottom - q)) {
 				p = bottom;
 				while (--l)
 					if (*p++ != ' ') {
-						flag = FALSE;
+						flag = false;
 						break;
 					}
 				if (flag && p < bottom && *p != ' ')
-					flag = FALSE;
+					flag = false;
 			}
 			if (flag && (l = n)) {
 				BOTTOM_CHECK(bottom, bottom - BOTTOM_LINE + n);
@@ -247,7 +246,7 @@ TEXT *FMT_format(LLS stack)
 		item = (ITM) temp->lls_object;
 		if (item->itm_type != item_value)
 			continue;
-		for (temp2 = temp->lls_next; temp2; temp2 = temp2->lls_next) {
+		for (LLS temp2 = temp->lls_next; temp2; temp2 = temp2->lls_next) {
 			item2 = (ITM) temp2->lls_object;
 			if (item2->itm_type != item_value)
 				continue;
@@ -264,20 +263,20 @@ TEXT *FMT_format(LLS stack)
 
 // Allocate a string block big enough to hold all lines of the print header 
 
-	size = (max_offset + 1) * (number_segments + 1) + 2;
+	const ULONG size = (max_offset + 1) * (number_segments + 1) + 2;
 
 	if (size >= 60000)
 		ERRQ_print_error(482, (TEXT *)(ULONG) max_offset,
 						 (TEXT *) (number_segments + 1), NULL, NULL, NULL);
 
-	header = (STR) ALLOCDV(type_str, size);
+	STR header = (STR) ALLOCDV(type_str, size);
 	p = header->str_data;
 
-/* Generate the various lines of the header line at a time. */
+// Generate the various lines of the header line at a time. 
 
 	for (j = 0; j < number_segments; j++) {
 		*p++ = '\n';
-		line = p;
+		TEXT* const line = p;
 		for (temp = stack; temp; temp = temp->lls_next) {
 			item = (ITM) temp->lls_object;
 			if (item->itm_type != item_value)
@@ -329,21 +328,19 @@ QLI_NOD FMT_list(QLI_NOD list)
  *	Rebuild and format a list of stuff for vertical formatting.
  *
  **************************************/
-	ITM new_item, *item, *end, *new_ptr;
+	ITM new_item, *item, *end;
 	SYM name;
 	QLI_FLD field;
-	QLI_NOD value, new_nod;
-	USHORT column, expression;
-	DSC *desc;
+	QLI_NOD value;
 	STR header;
 	TEXT *p, *q, c;
 
-	new_nod = (QLI_NOD) ALLOCDV(type_nod, list->nod_count * 2 + 1);
+	QLI_NOD new_nod = (QLI_NOD) ALLOCDV(type_nod, list->nod_count * 2 + 1);
 	new_nod->nod_type = nod_list;
-	new_ptr = (ITM *) new_nod->nod_arg;
-	column = 0;
+	ITM* new_ptr = (ITM*) new_nod->nod_arg;
+	USHORT column = 0;
 
-	for (item = (ITM *) list->nod_arg, end = item + list->nod_count;
+	for (item = (ITM*) list->nod_arg, end = item + list->nod_count;
 		 item < end; item++) {
 		if ((*item)->itm_type != item_value || !(value = (*item)->itm_value))
 			continue;
@@ -351,20 +348,19 @@ QLI_NOD FMT_list(QLI_NOD list)
 		format_value(*item, PIC_suppress_blanks);
 		if (value->nod_type == nod_reference)
 			value = value->nod_arg[0];
+		bool expression = true;
 		if (value->nod_type == nod_field ||
 			value->nod_type == nod_variable ||
 			value->nod_type == nod_function) {
-			expression = FALSE;
+			expression = false;
 			if (value->nod_type != nod_function) {
 				field = (QLI_FLD) value->nod_arg[e_fld_field];
 				name = field->fld_name;
-				format_index(*item, value, FALSE);
+				format_index(*item, value, false);
 			}
 			else
 				name = ((FUN) value->nod_arg[e_fun_function])->fun_symbol;
 		}
-		else
-			expression = TRUE;
 		*new_ptr++ = new_item = (ITM) ALLOCD(type_itm);
 		new_item->itm_type = item_value;
 		new_item->itm_value = value = (QLI_NOD) ALLOCDV(type_nod, 0);
@@ -398,7 +394,7 @@ QLI_NOD FMT_list(QLI_NOD list)
 			new_item->itm_picture = PIC_analyze(0, &value->nod_desc);
 		}
 		else {
-			desc = EVAL_value(value);
+			const dsc* desc = EVAL_value(value);
 			new_item->itm_picture = PIC_analyze(0, desc);
 		}
 
@@ -441,11 +437,10 @@ void FMT_print( QLI_NOD list, PRT print)
  *	Format a print line.  Return the number of lines printed.
  *
  **************************************/
-	ITM item;
 	USHORT l;
 	DSC *desc;
-	TEXT *p, *q, *buffer;
-	QLI_NOD *ptr, *end;
+	TEXT *q;
+	QLI_NOD *ptr;
 	RPT report;
 	ISC_STATUS_ARRAY status_vector;
 
@@ -453,11 +448,13 @@ void FMT_print( QLI_NOD list, PRT print)
 
 	if (!list)
 		return;
-	p = BUFFER_INIT;
-	end = list->nod_arg + list->nod_count;
+		
+	TEXT* buffer = NULL;
+	TEXT* p = BUFFER_INIT;
+	qli_nod** const end = list->nod_arg + list->nod_count;
 
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
-		item = (ITM) * ptr;
+		ITM item = (ITM) *ptr;
 
 		/* Handle formating directives.  Most have been translated into
 		   column assignments and are no-ops. */
@@ -517,7 +514,7 @@ void FMT_print( QLI_NOD list, PRT print)
 		while (p < q)
 			*p++ = ' ';
 
-		/* Next, handle simple formated values */
+		// Next, handle simple formated values 
 
 		if (item->itm_dtype != dtype_blob) {
 			desc = EVAL_value(item->itm_value);
@@ -529,7 +526,7 @@ void FMT_print( QLI_NOD list, PRT print)
 			continue;
 		}
 
-		/* Finally, handle blobs */
+		// Finally, handle blobs 
 
 		if (!(item->itm_stream = EXEC_open_blob(item->itm_value)))
 			continue;
@@ -554,14 +551,14 @@ void FMT_print( QLI_NOD list, PRT print)
 // Finish by closing all blobs 
 
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
-		item = (ITM) * ptr;
+		ITM item = (ITM) *ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
 			gds__close_blob(status_vector, &item->itm_stream);
 	}
 }
 
 
-void FMT_put( TEXT * line, PRT print)
+void FMT_put(const TEXT* line, PRT print)
 {
 /**************************************
  *
@@ -571,19 +568,20 @@ void FMT_put( TEXT * line, PRT print)
  *
  * Functional description
  *	Write out an output file.   Write
- *	fewer than 256 characters at at time
+ *	fewer than 256 characters at a time
  *	to avoid annoying VMS.
  *
  **************************************/
-	TEXT *p, *q, *end, buffer[256];
+	TEXT buffer[256];
 
-	for (p = line; *p; p++)
-		if (*p == '\n' || *p == '\f')
+	for (const TEXT* pnewline = line; *pnewline; pnewline++)
+		if (*pnewline == '\n' || *pnewline == '\f')
 			--print->prt_lines_remaining;
 
-	end = buffer + sizeof(buffer) - 1;
-	q = line;
-
+	TEXT* const end = buffer + sizeof(buffer) - 1;
+	const TEXT* q = line;
+	TEXT* p;
+	
 	if (print && print->prt_file)
 		while (*q) {
 			for (p = buffer; p < end && *q;)
@@ -601,7 +599,7 @@ void FMT_put( TEXT * line, PRT print)
 				// Hex mode output to assist debugging of multicharset work 
 
 				for (p = buffer; p < end && *p; p++)
-					if (PRINTABLE(*p))
+					if (is_printable(*p))
 						ib_fprintf(ib_stdout, "%c", *p);
 					else
 						ib_fprintf(ib_stdout, "[%2.2X]", *(UCHAR *) p);
@@ -628,50 +626,52 @@ void FMT_report( RPT report)
  *
  **************************************/
 	QLI_NOD list;
-	USHORT lengths[16], n, i, column, width;
-	TEXT *segments[16], *p, *q, *end;
-	STR string;
-	VEC columns_vec;
+	USHORT lengths[16];
+	TEXT* segments[16];
 
-	if (fmt_buffer) {
-		ALL_release((FRB) fmt_buffer);
-		fmt_buffer = NULL;
+	if (global_fmt_buffer) {
+		ALL_release((FRB) global_fmt_buffer);
+		global_fmt_buffer = NULL;
 	}
 
-	width = report->rpt_columns;
-	columns_vec = (VEC) ALLOCDV(type_vec, 256);
+	USHORT width = report->rpt_columns;
+	VEC columns_vec = (VEC) ALLOCDV(type_vec, 256);
 	columns_vec->vec_count = 256;
 	columns_vec->vec_object[0] = NULL;
 
-	report_break(report->rpt_top_rpt, &columns_vec, FALSE);
-	report_break(report->rpt_top_page, &columns_vec, FALSE);
-	report_break(report->rpt_top_breaks, &columns_vec, FALSE);
+	report_break(report->rpt_top_rpt, &columns_vec, false);
+	report_break(report->rpt_top_page, &columns_vec, false);
+	report_break(report->rpt_top_breaks, &columns_vec, false);
 
 	if (list = report->rpt_detail_line)
 		report_line(list, &columns_vec);
 
-	report_break(report->rpt_bottom_breaks, &columns_vec, TRUE);
-	report_break(report->rpt_bottom_page, &columns_vec, TRUE);
-	report_break(report->rpt_bottom_rpt, &columns_vec, TRUE);
+	report_break(report->rpt_bottom_breaks, &columns_vec, true);
+	report_break(report->rpt_bottom_page, &columns_vec, true);
+	report_break(report->rpt_bottom_rpt, &columns_vec, true);
 
 	report->rpt_column_header = format_report(columns_vec, width, &width);
 
-/* Handle report name, if any */
+// Handle report name, if any 
 
 	if (report->rpt_name) {
-		n = decompose_header(report->rpt_name, segments, (SSHORT*) lengths);
+		const USHORT n =
+			decompose_header(report->rpt_name, segments, (SSHORT*) lengths);
+		USHORT i;
 		for (i = 0; i < n; i++)
 			width = MAX(width, lengths[i] + 15);
-		string = (STR) ALLOCDV(type_str, width * n);
-		report->rpt_header = p = string->str_data;
+			
+		STR string = (STR) ALLOCDV(type_str, width * n);
+		TEXT* p = string->str_data;
+		report->rpt_header = p;
 		for (i = 0; i < n; i++) {
-			column = (width - lengths[i]) / 2;
+			USHORT column = (width - lengths[i]) / 2;
 			if (column > 0)
 				do
 					*p++ = ' ';
 				while (--column);
-			q = segments[i];
-			end = q + lengths[i];
+			const TEXT* q = segments[i];
+			const TEXT* const end = q + lengths[i];
 			while (q < end)
 				*p++ = *q++;
 			*p++ = '\n';
@@ -680,9 +680,9 @@ void FMT_report( RPT report)
 }
 
 
-static int decompose_header(
-							SCHAR * string,
-							SCHAR ** segments, SSHORT * lengths)
+static int decompose_header(SCHAR* string,
+							SCHAR** segments,
+							SSHORT* lengths)
 {
 /**************************************
  *
@@ -697,12 +697,11 @@ static int decompose_header(
  *
  **************************************/
 	TEXT c;
-	SSHORT n;
 
 	if (!string)
 		return 0;
 
-	n = 0;
+	SSHORT n = 0;
 
 // Handle simple name first 
 
@@ -728,7 +727,7 @@ static int decompose_header(
 }
 
 
-static void format_index( ITM item, QLI_NOD field, USHORT print_flag)
+static void format_index( ITM item, QLI_NOD field, const bool print_flag)
 {
 /**************************************
  *
@@ -740,21 +739,23 @@ static void format_index( ITM item, QLI_NOD field, USHORT print_flag)
  *	Format the label of a subscripted item.
  *
  **************************************/
-	QLI_NOD args, *ptr, *end, subscript;
-	USHORT l, length;
-	TEXT s[32], *p, *q, *r;
-	STR str;
+	QLI_NOD args;
 
 /* Don't bother with anything except non-indexed fields.  Also
    ignore subscripted fields with user specified query headers. */
 
+	{
+	const TEXT* qh;
 	if (field->nod_type != nod_field ||
 		!(args = field->nod_arg[e_fld_subs]) ||
-		((p = item->itm_query_header) && (*p == '"' || *p == '\'')))
+		((qh = item->itm_query_header) && (*qh == '"' || *qh == '\'')))
 		return;
+	}
 
-/* Start the label with the current query header, if any */
+// Start the label with the current query header, if any 
 
+	USHORT l;
+	const TEXT* q;
 	if (item->itm_query_header) {
 		q = item->itm_query_header;
 		l = strlen(item->itm_query_header);
@@ -764,22 +765,26 @@ static void format_index( ITM item, QLI_NOD field, USHORT print_flag)
 		l = ((QLI_FLD) field->nod_arg[e_fld_field])->fld_name->sym_length;
 	}
 
-	length = l + 2;
-	str = NULL;
-	p = get_buffer(&str, NULL, length + 32);
+	USHORT length = l + 2;
+	STR str = NULL;
+	TEXT* p = get_buffer(&str, NULL, length + 32);
 	while (l--)
 		*p++ = *q++;
 
-/* Loop through the subscripts, adding to the label */
+// Loop through the subscripts, adding to the label 
 
+	const TEXT* r;
 	if (print_flag) {
 		r = "_[";
 		length++;
 	}
 	else
 		r = "[";
+		
+	TEXT s[32];
+	QLI_NOD *ptr, *end;
 	for (ptr = args->nod_arg, end = ptr + args->nod_count; ptr < end; ptr++) {
-		subscript = *ptr;
+		QLI_NOD subscript = *ptr;
 		switch (subscript->nod_type) {
 		case nod_constant:
 			sprintf(s, "%ld", MOVQ_get_long(&subscript->nod_desc, 0));
@@ -794,7 +799,7 @@ static void format_index( ITM item, QLI_NOD field, USHORT print_flag)
 			break;
 
 		default:
-			/* Punt on anything but constants, fields, and variables */
+			// Punt on anything but constants, fields, and variables 
 
 			ALL_release((FRB) str);
 			return;
@@ -830,24 +835,23 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
  *
  **************************************/
 	ITM item;
-	STR header;
 	QLI_NOD node;
-	SSHORT segment;
-	USHORT j, l, offset, max_offset, number_segments, n, lengths[10],
-		*ptr, flag, column_width, max_print_width, right_adjust, right_offset;
-	LLS *col, *col_end, temp;
-	TEXT *line, *p, *q, *segments[10], *bottom;
+	USHORT j, l, n, lengths[10], *ptr;
+	TEXT *p, *q, *segments[10];
 
 /* Make a pass thru print items computing print lengths and header
    lengths, and the number of header segments. */
 
+	USHORT number_segments, offset, max_offset;
 	number_segments = offset = max_offset = 0;
-	bottom = BOTTOM_INIT;
+	TEXT* bottom = BOTTOM_INIT;
 
-	col = (LLS *) columns_vec->vec_object;
+	LLS* col = (LLS*) columns_vec->vec_object;
+	LLS* col_end;
+	LLS temp;
 	for (col_end = col + columns_vec->vec_count; col < col_end && *col; col++) {
-		column_width = max_print_width = 0;
-		right_adjust = FALSE;
+		USHORT column_width = 0, max_print_width = 0;
+		bool right_adjust = false;
 		for (temp = *col; temp; temp = temp->lls_next) {
 			item = (ITM) temp->lls_object;
 			switch (item->itm_type) {
@@ -876,7 +880,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 				node = item->itm_value;
 				if (node->nod_desc.dsc_dtype >= dtype_short &&
 					node->nod_desc.dsc_dtype <= dtype_double)
-					right_adjust = TRUE;
+					right_adjust = true;
 			}
 
 			if (item->itm_query_header) {
@@ -897,7 +901,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 		if (offset + column_width > width)
 			offset = 0;
 
-		right_offset = column_width - max_print_width / 2;
+		const USHORT right_offset = column_width - max_print_width / 2;
 
 		for (temp = *col; temp; temp = temp->lls_next) {
 			item = (ITM) temp->lls_object;
@@ -921,18 +925,18 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 				q = BOTTOM_LINE + offset;
 				while (bottom < q)
 					*bottom++ = ' ';
-				flag = TRUE;
+				bool flag = true;
 				if (offset && q[-1] != ' ')
-					flag = FALSE;
+					flag = false;
 				else if (l = MIN(column_width, bottom - q)) {
 					p = bottom;
 					while (--l)
 						if (*p++ != ' ') {
-							flag = FALSE;
+							flag = false;
 							break;
 						}
 					if (flag && p < bottom && *p != ' ')
-						flag = FALSE;
+						flag = false;
 				}
 				if (flag) {
 					BOTTOM_CHECK(bottom, offset + column_width);
@@ -955,19 +959,19 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 // Allocate a string block big enough to hold all lines of the print header 
 
 	l = bottom - BOTTOM_LINE;
-	header =
-		(STR) ALLOCDV(type_str,
+	STR header = (STR) ALLOCDV(type_str,
 					  (max_offset + 1) * (number_segments + 1) + 2 + l);
 	p = header->str_data;
 
-/* Generate the various lines of the header line at a time. */
+// Generate the various lines of the header line at a time. 
 
 	for (j = 0; j < number_segments; j++) {
 		*p++ = '\n';
-		line = p;
-		col = (LLS *) columns_vec->vec_object;
+		TEXT* const line = p;
+		col = (LLS*) columns_vec->vec_object;
 		for (col_end = col + columns_vec->vec_count; col < col_end && *col;
 			 col++)
+		{
 			for (temp = *col; temp; temp = temp->lls_next) {
 				item = (ITM) temp->lls_object;
 				if (item->itm_type != item_value)
@@ -975,7 +979,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 				n =
 					decompose_header(item->itm_query_header, segments,
 									 (SSHORT*) lengths);
-				segment = j - (number_segments - n);
+				SSHORT segment = j - (number_segments - n);
 				if (segment < 0)
 					continue;
 				l = lengths[segment];
@@ -988,6 +992,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 						*p++ = *q++;
 					while (--l);
 			}
+		}
 	}
 
 // Make one last pass to put in underlining of headers 
@@ -1063,7 +1068,7 @@ static void format_value( ITM item, int flags)
 }
 
 
-static TEXT *get_buffer( STR * str, TEXT * ptr, USHORT length)
+static TEXT* get_buffer(STR* str, TEXT* ptr, USHORT length)
 {
 /**************************************
  *
@@ -1077,8 +1082,6 @@ static TEXT *get_buffer( STR * str, TEXT * ptr, USHORT length)
  *	current buffer to the new one.
  *
  **************************************/
-	STR temp_str;
-	TEXT *p, *q;
 	USHORT l;
 
 	if (!*str) {
@@ -1090,10 +1093,10 @@ static TEXT *get_buffer( STR * str, TEXT * ptr, USHORT length)
 	if (length <= (*str)->str_length)
 		return (ptr) ? ptr : (*str)->str_data;
 
-	temp_str = (STR) ALLOCPV(type_str, length);
+	STR temp_str = (STR) ALLOCPV(type_str, length);
 	temp_str->str_length = length;
-	p = temp_str->str_data;
-	q = (*str)->str_data;
+	TEXT* p = temp_str->str_data;
+	const TEXT* q = (*str)->str_data;
 
 	if (ptr && (l = ptr - q))
 		do
@@ -1209,14 +1212,11 @@ static void print_blobs( PRT print, ITM * first, ITM * last)
  *
  **************************************/
 	ITM *ptr, item;
-	USHORT blob_active, do_line, length;
-	TEXT *p, *q, *buffer, *pp;
-	int c;
 
 	if (QLI_abort)
 		return;
 
-	length = 0;
+	USHORT length = 0;
 	for (ptr = first; ptr < last; ptr++) {
 		item = *ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
@@ -1226,25 +1226,25 @@ static void print_blobs( PRT print, ITM * first, ITM * last)
 	}
 
 
-	buffer = get_buffer(&blob_buffer, NULL, length);
+	TEXT* buffer = get_buffer(&global_blob_buffer, NULL, length);
 
 	while (!QLI_abort) {
-		blob_active = FALSE;
-		p = buffer;
-		do_line = FALSE;
+		bool blob_active = false;
+		TEXT* p = buffer;
+		bool do_line = false;
 		for (ptr = first; ptr < last; ptr++) {
 			item = *ptr;
 			if (item->itm_dtype != dtype_blob || !item->itm_stream)
 				continue;
-			q = buffer + item->itm_print_offset;
-			while (p < q)
+			const TEXT* const end = buffer + item->itm_print_offset;
+			while (p < end)
 				*p++ = ' ';
-			pp = p;
-			c = print_line(item, &p);
+			const TEXT* const pp = p;
+			const int c = print_line(item, &p);
 			if (c != EOF)
-				blob_active = TRUE;
+				blob_active = true;
 			if (pp != p || c == '\n')
-				do_line = TRUE;
+				do_line = true;
 		}
 		if (do_line)
 			put_line(print, &p, buffer, '\n');
@@ -1267,8 +1267,7 @@ static int print_line( ITM item, TEXT ** ptr)
  *	last thing printed.
  *
  **************************************/
-	USHORT l, length;
-	TEXT *p;
+	USHORT length;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS status;
 
@@ -1279,8 +1278,8 @@ static int print_line( ITM item, TEXT ** ptr)
 	if (!item->itm_stream)
 		return EOF;
 
-	p = *ptr;
-	l = item->itm_print_length;
+	TEXT* p = *ptr;
+	USHORT l = item->itm_print_length;
 
 
 	if ((status = gds__get_segment(status_vector, &item->itm_stream, &length,
@@ -1332,7 +1331,7 @@ static void put_line( PRT print, TEXT ** ptr, TEXT * buffer, TEXT terminator)
 }
 
 
-static void report_break( BRK control, VEC * columns_vec, int bottom_flag)
+static void report_break( BRK control, VEC * columns_vec, const bool bottom_flag)
 {
 /**************************************
  *
@@ -1449,3 +1448,4 @@ static void report_line( QLI_NOD list, VEC * columns_vec)
 		}
 	}
 }
+

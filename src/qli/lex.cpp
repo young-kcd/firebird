@@ -183,7 +183,7 @@ void LEX_edit( SLONG start, SLONG stop)
 
 	if (ib_fseek(trace_file, start, 0)) {
 		ib_fseek(trace_file, (SLONG) 0, 2);
-		IBERROR(59);			/* Msg 59 ib_fseek failed */
+		IBERROR(59);			// Msg 59 ib_fseek failed 
 	}
 
 	while (++start <= stop) {
@@ -308,7 +308,7 @@ TOK LEX_filename(void)
 	else
 		save = 0;
 
-/* Look for white space or end of line, allowing embedded quoted strings. */
+// Look for white space or end of line, allowing embedded quoted strings. 
 
 	for (;;) {
 		c = nextchar(true);
@@ -331,7 +331,7 @@ TOK LEX_filename(void)
 
 	retchar(c);
 
-/* Drop trailing semi-colon to avoid confusion */
+// Drop trailing semi-colon to avoid confusion 
 
 	if (p[-1] == ';') {
 		retchar(c);
@@ -398,7 +398,7 @@ void LEX_flush(void)
 	while (QLI_line->line_next)
 		LEX_pop_line();
 
-/* Look for a semi-colon */
+// Look for a semi-colon 
 
 	if (QLI_semi)
 		while (QLI_line && QLI_token->tok_keyword != KW_SEMI)
@@ -754,7 +754,7 @@ void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
 
 	if (ib_fseek(trace_file, start, 0)) {
 		ib_fseek(trace_file, (SLONG) 0, 2);
-		IBERROR(62);			/* Msg 62 ib_fseek failed */
+		IBERROR(62);			// Msg 62 ib_fseek failed 
 	}
 
 	length = stop - start;
@@ -766,7 +766,7 @@ void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
 			*p++ = c = ib_getc(trace_file);
 			if (c == '\n') {
 #ifdef PC_FILE_SEEK
-				/* account for the extra line-feed on OS/2 and Windows NT */
+				// account for the extra line-feed on OS/2 and Windows NT 
 
 				if (length)
 					--length;
@@ -776,7 +776,7 @@ void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
 		}
 		if (l = p - buffer)
 			if (gds__put_segment(status_vector, &blob, l, buffer))
-				BUGCHECK(58);	/* Msg 58 gds__put_segment failed */
+				BUGCHECK(58);	// Msg 58 gds__put_segment failed 
 	}
 
 	ib_fseek(trace_file, (SLONG) 0, 2);
@@ -854,7 +854,7 @@ TOK LEX_token(void)
 			break;
 	}
 
-/* If we hit end of file, make up a phoney token */
+// If we hit end of file, make up a phoney token 
 
 	if (!QLI_line) {
 		q = eof_string;
@@ -868,7 +868,7 @@ TOK LEX_token(void)
 	QLI_token->tok_position = QLI_line->line_position +
 		QLI_line->line_ptr - QLI_line->line_data - 1;
 
-/* On end of file, generate furious but phone end of line tokens */
+// On end of file, generate furious but phone end of line tokens 
 
 	class_ = classes[c];
 
@@ -892,7 +892,7 @@ TOK LEX_token(void)
 			if ((p - token->tok_string) >= MAXSYMLEN)
 				ERRQ_msg_put(470, (TEXT *) MAXSYMLEN, NULL, NULL, NULL, NULL);	// Msg 470 literal too long 
 
-			/* If there are 2 quotes in a row, interpret 2nd as a literal */
+			// If there are 2 quotes in a row, interpret 2nd as a literal 
 
 			if (next == c) {
 				peek = nextchar(false);
@@ -1054,7 +1054,7 @@ static void next_line(bool eof_ok)
 		   or command file, check for another command file. */
 
 		if (QLI_line->line_type == line_blob) {
-			/* If the current blob segment contains another line, use it */
+			// If the current blob segment contains another line, use it 
 
 			if ((p = QLI_line->line_ptr) != QLI_line->line_data
 				&& p[-1] == '\n' && *p)
@@ -1214,7 +1214,7 @@ static bool scan_number(SSHORT c,
 			break;
 	}
 
-/* If this is an exponential, eat the exponent sign and digits */
+// If this is an exponential, eat the exponent sign and digits 
 
 	if (UPPER(c) == 'E') {
 		*p++ = c;

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		command.c
+ *	MODULE:		command.cpp
  *	DESCRIPTION:	Interprete commands
  *
  * The contents of this file are subject to the Interbase Public
@@ -41,8 +41,8 @@
 #include <descrip.h>
 #endif
 
-static void dump_procedure(DBB, IB_FILE *, TEXT *, USHORT, FRBRD *);
-static void extract_procedure(IB_FILE *, TEXT *, USHORT, DBB, SLONG *);
+static void dump_procedure(DBB, IB_FILE*, const TEXT*, USHORT, FRBRD *);
+static void extract_procedure(IB_FILE*, const TEXT*, USHORT, DBB, SLONG *);
 
 extern USHORT QLI_lines, QLI_columns, QLI_form_mode, QLI_name_columns;
 
@@ -87,10 +87,8 @@ void CMD_copy_procedure( SYN node)
  *	across databases
  *
  **************************************/
-	QPR new_proc, old_proc;
-
-	old_proc = (QPR) node->syn_arg[0];
-	new_proc = (QPR) node->syn_arg[1];
+	QPR old_proc = (QPR) node->syn_arg[0];
+	QPR new_proc = (QPR) node->syn_arg[1];
 
 	PRO_copy_procedure(old_proc->qpr_database,
 					   old_proc->qpr_name->nam_string,
@@ -112,9 +110,7 @@ void CMD_define_procedure( SYN node)
  *	or in the most recently readied database.
  *
  **************************************/
-	QPR proc;
-
-	proc = (QPR) node->syn_arg[0];
+	QPR proc = (QPR) node->syn_arg[0];
 
 	if (!(proc->qpr_database))
 		proc->qpr_database = QLI_databases;
@@ -136,9 +132,7 @@ void CMD_delete_proc( SYN node)
  *	or in the most recently readied database.
  *
  **************************************/
-	QPR proc;
-
-	proc = (QPR) node->syn_arg[0];
+	QPR proc = (QPR) node->syn_arg[0];
 
 	if (!proc->qpr_database)
 		proc->qpr_database = QLI_databases;
@@ -164,9 +158,7 @@ void CMD_edit_proc( SYN node)
  *	Edit a procedure in the specified database.
  *
  **************************************/
-	QPR proc;
-
-	proc = (QPR) node->syn_arg[0];
+	QPR proc = (QPR) node->syn_arg[0];
 	if (!proc->qpr_database)
 		proc->qpr_database = QLI_databases;
 
@@ -190,10 +182,9 @@ void CMD_extract( SYN node)
 	QPR proc;
 	DBB database;
 	NAM name;
-	IB_FILE *file;
 	FRBRD *blob;
 
-	file = (IB_FILE*) EXEC_open_output((QLI_NOD) node->syn_arg[1]);
+	IB_FILE* file = (IB_FILE*) EXEC_open_output((QLI_NOD) node->syn_arg[1]);
 
 	if (list = node->syn_arg[0])
 		for (ptr = list->syn_arg, end = ptr + list->syn_count; ptr < end;
@@ -240,15 +231,13 @@ void CMD_finish( SYN node)
  *	Perform FINISH.  Either finish listed databases or everything.
  *
  **************************************/
-	USHORT i;
-
 	if (node->syn_count == 0) {
 		while (QLI_databases)
 			MET_finish(QLI_databases);
 		return;
 	}
 
-	for (i = 0; i < node->syn_count; i++)
+	for (USHORT i = 0; i < node->syn_count; i++)
 		MET_finish((DBB) node->syn_arg[i]);
 }
 
@@ -266,20 +255,18 @@ void CMD_rename_proc( SYN node)
  *	or the most recently readied database.
  *
  **************************************/
-	QPR old_proc, new_proc;
 	DBB database;
-	NAM old_name, new_name;
 
-	old_proc = (QPR) node->syn_arg[0];
-	new_proc = (QPR) node->syn_arg[1];
+	QPR old_proc = (QPR) node->syn_arg[0];
+	QPR new_proc = (QPR) node->syn_arg[1];
 
 	if (!(database = old_proc->qpr_database))
 		database = QLI_databases;
 
 	if (new_proc->qpr_database && (new_proc->qpr_database != database))
-		IBERROR(84);			/* Msg84 Procedures can not be renamed across databases. Try COPY */
-	old_name = old_proc->qpr_name;
-	new_name = new_proc->qpr_name;
+		IBERROR(84);			// Msg84 Procedures can not be renamed across databases. Try COPY 
+	NAM old_name = old_proc->qpr_name;
+	NAM new_name = new_proc->qpr_name;
 
 	if (PRO_rename_procedure
 		(database, old_name->nam_string, new_name->nam_string)) return;
@@ -302,18 +289,16 @@ void CMD_set( SYN node)
  *	Set various options.
  *
  **************************************/
-	SYN *ptr, value;
-	enum set_t sw;
-	USHORT i, foo, length;
+	USHORT length;
 	CON string;
 	TEXT *name;
 
-	ptr = node->syn_arg;
+	SYN* ptr = node->syn_arg;
 
-	for (i = 0; i < node->syn_count; i++) {
-		foo = (USHORT)(ULONG) * ptr++;
-		sw = (enum set_t) foo;
-		value = *ptr++;
+	for (USHORT i = 0; i < node->syn_count; i++) {
+		USHORT foo = (USHORT)(ULONG) *ptr++;
+		const enum set_t sw = (enum set_t) foo;
+		SYN value = *ptr++;
 		switch (sw) {
 		case set_blr:
 			QLI_blr = (USHORT)(ULONG) value;
@@ -442,20 +427,16 @@ void CMD_shell( SYN node)
  *	Invoke operating system shell.
  *
  **************************************/
-	TEXT buffer[256], *p, *q;
+	TEXT buffer[256];
 	USHORT l;
 	CON constant;
-#ifdef VMS
-	int status, return_status, mask;
-	struct dsc$descriptor desc, *ptr;
-#endif
 
-/* Copy command, inserting extra blank at end. */
+// Copy command, inserting extra blank at end. 
 
-	p = buffer;
+	TEXT* p = buffer;
 
 	if (constant = (CON) node->syn_arg[0]) {
-		q = (TEXT *) constant->con_data;
+		const TEXT* q = (TEXT*) constant->con_data;
 		if (l = constant->con_desc.dsc_length)
 			do
 				*p++ = *q++;
@@ -471,6 +452,7 @@ void CMD_shell( SYN node)
 #endif
 
 #ifdef VMS
+	struct dsc$descriptor desc, *ptr;
 	if (constant) {
 		desc.dsc$b_dtype = DSC$K_DTYPE_T;
 		desc.dsc$b_class = DSC$K_CLASS_S;
@@ -480,13 +462,13 @@ void CMD_shell( SYN node)
 	}
 	else
 		ptr = NULL;
-	return_status = 0;
-	mask = 1;
-	status = lib$spawn(ptr,		// Command to be executed 
+	int return_status = 0;
+	int mask = 1;
+	int status = lib$spawn(ptr,		// Command to be executed
 					   NULL,	// Command file 
 					   NULL,	// Output file 
-					   &mask,	/* sub-process characteristics mask */
-					   NULL,	/* sub-process name */
+					   &mask,	// sub-process characteristics mask
+					   NULL,	// sub-process name
 					   NULL,	// returned process id 
 					   &return_status,	// completion status 
 					   &15);	// event flag for completion 
@@ -513,7 +495,6 @@ void CMD_transaction( SYN node)
  *
  **************************************/
 	SYN *ptr, *end;
-	DBB database;
 
 /* If there aren't any open databases then obviously
    there isn't anything to commit. */
@@ -523,49 +504,49 @@ void CMD_transaction( SYN node)
 
 	if (node->syn_type == nod_commit)
 		if ((node->syn_count > 1) ||
-			(node->syn_count == 0 && QLI_databases->dbb_next)) {
+			(node->syn_count == 0 && QLI_databases->dbb_next))
+		{
 			node->syn_type = nod_prepare;
 			CMD_transaction(node);
 			node->syn_type = nod_commit;
 		}
 		else if (node->syn_count == 1) {
-			database = (DBB) node->syn_arg[0];
-			database->dbb_flags |= DBB_prepared;
+			DBB tmp_db = (DBB) node->syn_arg[0];
+			tmp_db->dbb_flags |= DBB_prepared;
 		}
 		else
 			QLI_databases->dbb_flags |= DBB_prepared;
 
 
 	if (node->syn_count == 0) {
-		for (database = QLI_databases; database;
-			 database = database->dbb_next) {
+		for (DBB db_iter = QLI_databases; db_iter; db_iter = db_iter->dbb_next)
+		{
 			if ((node->syn_type == nod_commit)
-				&& !(database->dbb_flags & DBB_prepared)) ERRQ_msg_put(465,
-																	   database->
-																	   dbb_symbol->
-																	   sym_string,
-																	   NULL,
-																	   NULL,
-																	   NULL,
-																	   NULL);
+				&& !(db_iter->dbb_flags & DBB_prepared))
+			{
+				ERRQ_msg_put(465, db_iter->dbb_symbol->sym_string,
+							NULL, NULL, NULL, NULL);
+			}
 			else if (node->syn_type == nod_prepare)
-				database->dbb_flags |= DBB_prepared;
-			if (database->dbb_transaction)
-				MET_transaction(node->syn_type, database);
-			if (database->dbb_meta_trans)
-				MET_meta_commit(database);
-			if (database->dbb_proc_trans)
-				PRO_commit(database);
+				db_iter->dbb_flags |= DBB_prepared;
+			if (db_iter->dbb_transaction)
+				MET_transaction(node->syn_type, db_iter);
+			if (db_iter->dbb_meta_trans)
+				MET_meta_commit(db_iter);
+			if (db_iter->dbb_proc_trans)
+				PRO_commit(db_iter);
 		}
 		return;
 	}
 
 	for (ptr = node->syn_arg, end = ptr + node->syn_count; ptr < end; ptr++) {
-		database = (DBB) * ptr;
+		DBB database = (DBB) *ptr;
 		if ((node->syn_type == nod_commit) &&
 			!(database->dbb_flags & DBB_prepared))
+		{
 				ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL,
 							 NULL, NULL, NULL);
+		}
 		else if (node->syn_type == nod_prepare)
 			database->dbb_flags |= DBB_prepared;
 		if (database->dbb_transaction)
@@ -576,8 +557,8 @@ void CMD_transaction( SYN node)
 
 static void dump_procedure(
 						   DBB database,
-						   IB_FILE * file,
-						   TEXT * name, USHORT length, FRBRD *blob)
+						   IB_FILE* file,
+						   const TEXT* name, USHORT length, FRBRD *blob)
 {
 /**************************************
  *
@@ -603,8 +584,8 @@ static void dump_procedure(
 
 
 static void extract_procedure(
-							  IB_FILE * file,
-							  TEXT * name,
+							  IB_FILE* file,
+							  const TEXT* name,
 							  USHORT length, DBB database, SLONG * blob_id)
 {
 /**************************************
@@ -617,8 +598,7 @@ static void extract_procedure(
  *	Extract a procedure from a database.
  *
  **************************************/
-	FRBRD *blob;
-
-	blob = PRO_open_blob(database, blob_id);
+	FRBRD* blob = PRO_open_blob(database, blob_id);
 	dump_procedure(database, file, name, length, blob);
 }
+

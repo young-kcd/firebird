@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_COMPI_PROTO_H_
-#define _QLI_COMPI_PROTO_H_
+#ifndef QLI_COMPI_PROTO_H
+#define QLI_COMPI_PROTO_H
 
 extern struct qli_nod	*CMPQ_compile (struct qli_nod *);
 extern void		CMP_alloc_temp (struct qli_nod *);
 extern int		CMP_node_match (struct qli_nod *, struct qli_nod *);
 
-#endif /* _QLI_COMPI_PROTO_H_ */
+#endif /* QLI_COMPI_PROTO_H */
+

@@ -235,7 +235,7 @@ QLI_NOD EXP_expand( SYN node)
 		return NULL;
 	}
 
-/* If there are any variables, make up a context now */
+// If there are any variables, make up a context now 
 
 	output_stack = right = left = NULL;
 
@@ -374,7 +374,7 @@ static void declare_global( QLI_FLD variable, SYN field_node)
 			field_node = field_node->syn_arg[s_idx_field];
 		resolve_really(variable, field_node);
 		if (variable->fld_dtype == dtype_blob)
-			IBERROR(137);		/* Msg137 variables may not be based on blob fields. */
+			IBERROR(137);		// Msg137 variables may not be based on blob fields. 
 	}
 
 // Get rid of any other variables of the same name 
@@ -408,7 +408,7 @@ static void declare_global( QLI_FLD variable, SYN field_node)
 	new_fld->fld_sub_type_missing = variable->fld_sub_type_missing;
 	new_fld->fld_flags = variable->fld_flags | FLD_missing;
 
-/* Copy query_name, edit string, query header */
+// Copy query_name, edit string, query header 
 
 	p = (TEXT *) new_fld->fld_data + new_fld->fld_length;
 	if (q = variable->fld_edit_string) {
@@ -789,7 +789,7 @@ static QLI_NOD expand_erase( SYN input, LLS right, LLS left)
 	loop = NULL;
 	count = 0;
 
-/* If there is an rse, make up a FOR loop */
+// If there is an rse, make up a FOR loop 
 
 	if (input->syn_arg[s_era_rse]) {
 		loop = MAKE_NODE(nod_for, e_for_count);
@@ -797,7 +797,7 @@ static QLI_NOD expand_erase( SYN input, LLS right, LLS left)
 											  &right);
 	}
 
-/* Loop thru contexts counting them. */
+// Loop thru contexts counting them. 
 
 	for (contexts = right; contexts; contexts = contexts->lls_next) {
 		context = (QLI_CTX) contexts->lls_object;
@@ -994,7 +994,7 @@ static QLI_NOD expand_expression( SYN input, LLS stack)
 		ERRQ_print_error(141, name->nam_string, NULL, NULL, NULL, NULL);	/* Msg141 can't be used when a single element is required */
 
 	default:
-		BUGCHECK(135);			/* Msg135 expand_expression: not yet implemented */
+		BUGCHECK(135);			// Msg135 expand_expression: not yet implemented 
 	}
 
 	node = MAKE_NODE(input->syn_type, input->syn_count);
@@ -1228,7 +1228,7 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 	loop = NULL;
 	count = 0;
 
-/* If there is an rse, make up a FOR loop */
+// If there is an rse, make up a FOR loop 
 
 	if (input->syn_arg[s_mod_rse]) {
 		loop = MAKE_NODE(nod_for, e_for_count);
@@ -1236,7 +1236,7 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 											  &right);
 	}
 
-/* Loop thru contexts counting them. */
+// Loop thru contexts counting them. 
 
 	for (contexts = right; contexts; contexts = contexts->lls_next) {
 		context = (QLI_CTX) contexts->lls_object;
@@ -1273,7 +1273,7 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 			break;
 	}
 
-/* Process sub-statement, list of fields, or, sigh, none of the above */
+// Process sub-statement, list of fields, or, sigh, none of the above 
 
 	if (input->syn_arg[s_mod_statement])
 		node->nod_arg[e_mod_statement] =
@@ -1367,7 +1367,7 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 	count = 0;
 	new_right = right;
 
-/* If an output file or pipe is present, make up an output node */
+// If an output file or pipe is present, make up an output node 
 
 	expand_output(input->syn_arg[s_prt_output], right, &print);
 
@@ -1444,7 +1444,7 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 	node->nod_arg[e_prt_list] = list = make_list(items);
 	node->nod_arg[e_prt_output] = (QLI_NOD) print;
 
-/* If DISTINCT was requested, make up a reduced list. */
+// If DISTINCT was requested, make up a reduced list. 
 
 	if (rse && input->syn_arg[s_prt_distinct]) {
 		reduced = MAKE_NODE(nod_list, list->nod_count * 2);
@@ -1461,7 +1461,7 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 			rse->nod_arg[e_rse_reduced] = reduced;
 	}
 
-/* If a FOR loop was generated, splice it in here. */
+// If a FOR loop was generated, splice it in here. 
 
 	if (loop) {
 		loop->nod_arg[e_for_statement] = node;
@@ -1639,7 +1639,7 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 	loop = MAKE_NODE(nod_for, e_for_count);
 	loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_asn_from], &right);
 
-/* Make a STORE node. */
+// Make a STORE node. 
 
 	loop->nod_arg[e_for_statement] = node = MAKE_NODE(nod_store, e_sto_count);
 	rel_node = input->syn_arg[s_asn_to];
@@ -1673,7 +1673,7 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 					if (compare_symbols(field->fld_name, fld->fld_name))
 						break;
 				}
-				/* Next try, target field name matching source query name */
+				// Next try, target field name matching source query name 
 
 				if (!fld)
 					for (fld = ctx->ctx_relation->rel_fields; fld;
@@ -1682,7 +1682,7 @@ static QLI_NOD expand_restructure( SYN input, LLS right, LLS left)
 						if (compare_symbols(field->fld_name, fld->fld_query_name))
 							break;
 					}
-				/* If nothing yet, look for any old match */
+				// If nothing yet, look for any old match 
 
 				if (!fld)
 					for (fld = ctx->ctx_relation->rel_fields; fld;
@@ -1871,7 +1871,7 @@ static QLI_NOD expand_rse( SYN input, LLS * stack)
 
 	node->nod_arg[e_rse_join_type] = (QLI_NOD) input->syn_arg[s_rse_join_type];
 
-/* If there is a parent context, set it up here */
+// If there is a parent context, set it up here 
 
 	*stack = new_stack;
 
@@ -2050,7 +2050,7 @@ static QLI_NOD expand_statement( SYN input, LLS right, LLS left)
 		return NULL;
 
 	default:
-		BUGCHECK(136);			/* Msg136 expand_statement: not yet implemented */
+		BUGCHECK(136);			// Msg136 expand_statement: not yet implemented 
 	}
 
 	return (*routine) (input, right, left);
@@ -2080,7 +2080,7 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
 
 	loop = NULL;
 
-/* If there is an rse, make up a FOR loop */
+// If there is an rse, make up a FOR loop 
 
 	if (input->syn_arg[s_sto_rse]) {
 		loop = MAKE_NODE(nod_for, e_for_count);
@@ -2106,7 +2106,7 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
 
 	LLS_PUSH(context, &left);
 
-/*  If there are field and value lists, process them  */
+//  If there are field and value lists, process them  
 
 	if (input->syn_arg[s_sto_values]) {
 		if (!input->syn_arg[s_sto_fields]) {
@@ -2182,7 +2182,7 @@ static void expand_values( SYN input, LLS right)
 
 	field_count = value_count = 0;
 
-/* fields have already been checked and expanded.  Just count them  */
+// fields have already been checked and expanded.  Just count them  
 
 	fields = (LLS) input->syn_arg[s_sto_fields];
 	for (stack = fields; stack; stack = stack->lls_next)
@@ -2193,7 +2193,7 @@ static void expand_values( SYN input, LLS right)
 	values = (LLS) input->syn_arg[s_sto_values];
 	for (; values; LLS_PUSH(LLS_POP(&values), &stack));
 
-/* now go through, count, and expand where needed */
+// now go through, count, and expand where needed 
 
 	while (stack) {
 		value = (SYN) LLS_POP(&stack);

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_META_PROTO_H_
-#define _QLI_META_PROTO_H_
+#ifndef QLI_META_PROTO_H
+#define QLI_META_PROTO_H
 
 extern int	MET_declare (struct dbb *, struct qli_fld *, struct nam *);
 extern void	MET_define_field (struct dbb *, struct qli_fld *);
@@ -37,7 +37,7 @@ extern int	MET_dimensions (struct dbb *, TEXT *);
 extern void	MET_fields (struct qli_rel *);
 extern void	MET_finish (struct dbb *);
 extern int	MET_get_datatype (USHORT);
-extern void	MET_index_info (TEXT *, TEXT *, SCHAR *);
+extern void	MET_index_info(const TEXT*, const TEXT*, SCHAR*);
 extern void	MET_meta_commit (struct dbb *);
 extern void	MET_meta_rollback (struct dbb *);
 extern FRBRD	*MET_meta_transaction (struct dbb *, int);
@@ -52,4 +52,5 @@ extern void	MET_sql_grant (struct syn *);
 extern void	MET_sql_revoke (struct syn *);
 extern FRBRD	*MET_transaction (NOD_T, struct dbb *);
 
-#endif /* _QLI_META_PROTO_H_ */
+#endif /* QLI_META_PROTO_H */
+

@@ -47,7 +47,7 @@ static DSC *execute_edit(QLI_NOD);
 static DSC *execute_function(QLI_NOD);
 static DSC *execute_prompt(QLI_NOD);
 static DSC *execute_statistical(QLI_NOD);
-static int like(UCHAR *, SSHORT, UCHAR *, SSHORT, UCHAR);
+static bool like(UCHAR *, SSHORT, UCHAR *, SSHORT, const UCHAR);
 static TEXT *make_blob_buffer(FRBRD *, USHORT *);
 static int matches(TEXT *, SSHORT, TEXT *, SSHORT);
 static int sleuth(QLI_NOD, DSC *, DSC *, DSC *);
@@ -55,13 +55,15 @@ static int sleuth_check(USHORT, UCHAR *, UCHAR *, UCHAR *, UCHAR *);
 static int sleuth_class(USHORT, UCHAR *, UCHAR *, UCHAR);
 static int sleuth_merge(UCHAR *, UCHAR *, UCHAR *, UCHAR *, UCHAR *);
 static int string_boolean(QLI_NOD);
-static int string_function(QLI_NOD, SSHORT, TEXT *, SSHORT, TEXT *);
+static bool string_function(QLI_NOD, SSHORT, TEXT *, SSHORT, TEXT *);
 
 #define	TEMP_LENGTH		128
 #define SLEUTH_insensitive	1
 #define COND_UPPER(c)		((flags & SLEUTH_insensitive) ? UPPER(c) : c)
 
-static UCHAR special[127] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+static const UCHAR special[127] =
+{
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
 		0, 1, 1, 0, 1,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
@@ -174,7 +176,7 @@ int EVAL_boolean( QLI_NOD node)
 		return result;
 
 	default:
-		BUGCHECK(28);			/* Msg28 EVAL_boolean: not finished */
+		BUGCHECK(28);			// Msg28 EVAL_boolean: not finished 
 		return FALSE;
 	}
 }
@@ -216,11 +218,9 @@ void EVAL_break_increment( QLI_NOD node)
  *	Initialize a report-local statistical function.
  *
  **************************************/
-	DSC *desc1, *desc2;
-	SLONG count;
-	SSHORT comparison;
+	DSC *desc2;
 
-	desc1 = &node->nod_desc;
+	DSC* desc1 = &node->nod_desc;
 
 // Knock off count as trivial 
 
@@ -235,9 +235,9 @@ void EVAL_break_increment( QLI_NOD node)
 	if (!(desc2 = EVAL_value(node->nod_arg[e_stt_value])))
 		return;
 
-/* If this is the first value, just move it in. */
+// If this is the first value, just move it in. 
 
-	count = (SLONG) node->nod_arg[e_stt_default] + 1;
+	SLONG count = (SLONG) node->nod_arg[e_stt_default] + 1;
 	if (count == 1) {
 		if (desc2->dsc_missing)
 			desc1->dsc_missing = DSC_missing;
@@ -256,6 +256,8 @@ void EVAL_break_increment( QLI_NOD node)
 
 // Finish off as per operator 
 
+	SSHORT comparison;
+	
 	switch (node->nod_type) {
 	case nod_rpt_min:
 	case nod_rpt_max:
@@ -311,18 +313,15 @@ DSC *EVAL_parameter(PAR parameter)
  *	Compute the descriptor for a parameter.
  *
  **************************************/
-	DSC *desc;
-	QLI_MSG message;
 	PAR missing_parameter;
-	USHORT *missing_flag;
 
-	desc = &parameter->par_desc;
+	dsc* desc = &parameter->par_desc;
 	desc->dsc_missing = FALSE;
-	message = parameter->par_message;
+	QLI_MSG message = parameter->par_message;
 
 	if (missing_parameter = parameter->par_missing) {
-		missing_flag =
-			(USHORT *) (message->msg_buffer + missing_parameter->par_offset);
+		const USHORT* missing_flag =
+			(USHORT*) (message->msg_buffer + missing_parameter->par_offset);
 		desc->dsc_missing = (*missing_flag) ? DSC_missing : 0;
 	}
 
@@ -344,17 +343,16 @@ DSC *EVAL_value(QLI_NOD node)
  *	Evaluate a value node.
  *
  **************************************/
-	QLI_NOD *ptr, *end_ptr;
 	QLI_FLD field;
-	DSC *values[4], **value, *desc, *desc2;
+	DSC *values[4], **value, *desc2;
 	UCHAR *p;
 	double d1;
 
 /* Start by evaluating sub-expressions (where appropriate) */
 
-	desc = &node->nod_desc;
-	ptr = node->nod_arg;
-	end_ptr = ptr + node->nod_count;
+	dsc* desc = &node->nod_desc;
+	QLI_NOD* ptr = node->nod_arg;
+	QLI_NOD* end_ptr = ptr + node->nod_count;
 
 	for (value = values; ptr < end_ptr; ptr++, value++) {
 		*value = EVAL_value(*ptr);
@@ -492,7 +490,7 @@ DSC *EVAL_value(QLI_NOD node)
 
 	case nod_prompt:
 		if (!prompt[0][0]) {
-			ERRQ_msg_get(499, prompt[0]);	/* Msg499 Re-enter */
+			ERRQ_msg_get(499, prompt[0]);	// Msg499 Re-enter 
 			ERRQ_msg_get(500, prompt[1]);	// Msg500 Enter    
 		}
 		return execute_prompt(node);
@@ -544,7 +542,7 @@ DSC *EVAL_value(QLI_NOD node)
 	case nod_via:
 
 	default:
-		BUGCHECK(29);			/* Msg29 EVAL_value: not finished */
+		BUGCHECK(29);			// Msg29 EVAL_value: not finished 
 		return NULL;
 	}
 }
@@ -565,8 +563,8 @@ static SLONG execute_any( QLI_NOD node)
  *	absolutely nothing to do.
  *
  **************************************/
-	QLI_REQ request;
 	QLI_MSG message;
+	QLI_REQ request;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
@@ -595,16 +593,13 @@ static DSC *execute_concatenate( QLI_NOD node, DSC * value1, DSC * value2)
  *	Concatenate two strings.
  *
  **************************************/
-	DSC *desc;
-	VARY *vary;
-	TEXT *p, temp1[32], temp2[32], *address1, *address2;
-	USHORT length1, length2;
+	TEXT temp1[32], temp2[32], *address1, *address2;
 
-	length1 = MOVQ_get_string(value1, &address1, (VARY*)temp1, sizeof(temp1));
-	length2 = MOVQ_get_string(value2, &address2, (VARY*)temp2, sizeof(temp2));
-	desc = &node->nod_desc;
-	vary = (VARY *) desc->dsc_address;
-	p = vary->vary_string;
+	USHORT length1 = MOVQ_get_string(value1, &address1, (VARY*)temp1, sizeof(temp1));
+	USHORT length2 = MOVQ_get_string(value2, &address2, (VARY*)temp2, sizeof(temp2));
+	dsc* desc = &node->nod_desc;
+	VARY* vary = (VARY*) desc->dsc_address;
+	TEXT* p = vary->vary_string;
 	length1 = MIN(length1, desc->dsc_length - 2);
 	length2 = MAX(MIN(length2, desc->dsc_length - 2 - length1), 0);
 
@@ -638,15 +633,10 @@ static DSC *execute_edit( QLI_NOD node)
  *	to quad to get move the id.
  *
  **************************************/
-	SLONG *id;
-	DSC *desc;
-	DBB dbb;
-	TEXT *field_name;
+	DBB dbb = (DBB) node->nod_arg[e_edt_dbb];
+	SLONG* id = (SLONG*) & node->nod_arg[e_edt_id1];
 
-	dbb = (DBB) node->nod_arg[e_edt_dbb];
-	id = (SLONG *) & node->nod_arg[e_edt_id1];
-
-	desc = NULL;
+	dsc* desc = NULL;
 
 	if (node->nod_arg[e_edt_input]) {
 		desc = EVAL_value(node->nod_arg[e_edt_input]);
@@ -659,7 +649,7 @@ static DSC *execute_edit( QLI_NOD node)
 	if (!desc)
 		id[0] = id[1] = 0;
 
-	field_name = (TEXT *) node->nod_arg[e_edt_name];
+	TEXT* field_name = (TEXT *) node->nod_arg[e_edt_name];
 	BLOB_edit((GDS_QUAD_t*)id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
 
 	node->nod_desc.dsc_missing = (id[0] || id[1]) ? 0 : DSC_missing;
@@ -709,20 +699,16 @@ static DSC *execute_prompt( QLI_NOD node)
  *	and if a null string, return MISSING.
  *
  **************************************/
-	TEXT *p, string[128], *value, buffer[256];
-	DSC *desc;
-	USHORT reprompt;
-	VARY *data;
-	int length, l;
+	TEXT string[128], buffer[256];
 
 	ERRQ_pending();
-	reprompt = QLI_reprompt;
-	desc = &node->nod_desc;
-	data = (VARY *) desc->dsc_address;
+	USHORT reprompt = QLI_reprompt;
+	dsc* desc = &node->nod_desc;
+	vary* data = (vary*) desc->dsc_address;
 
-	value =
+	TEXT* value =
 		(desc->dsc_length - 2 <= sizeof(buffer)) ? buffer : data->vary_string;
-	length =
+	const int length =
 		(desc->dsc_length - 2 <=
 		 sizeof(buffer)) ? sizeof(buffer) : desc->dsc_length - 2;
 
@@ -738,7 +724,7 @@ static DSC *execute_prompt( QLI_NOD node)
 		}
 		else {
 			if (reprompt)
-				sprintf(string, "\07%s: ", prompt[0]);	/* Msg497 Re-enter */
+				sprintf(string, "\07%s: ", prompt[0]);	// Msg497 Re-enter 
 			else
 				sprintf(string, "%s: ", prompt[1]);	// Msg498 Enter    
 		}
@@ -751,11 +737,11 @@ static DSC *execute_prompt( QLI_NOD node)
 		if (value[0] == '\t' && value[1] == '\n')
 			return desc;
 
-		p = value + strlen(value);
+		TEXT* p = value + strlen(value);
 		if (p > value && p[-1] == '\n')
 			*--p = 0;
 
-		/* Get rid of trailing blanks on non-text data types */
+		// Get rid of trailing blanks on non-text data types 
 
 		if (desc->dsc_dtype > dtype_varying) {
 			while (p > value && p[-1] == ' ')
@@ -763,10 +749,12 @@ static DSC *execute_prompt( QLI_NOD node)
 			*p = 0;
 		}
 
-		if ((l = p - value) <= desc->dsc_length - 2) {
+		const int l = p - value;
+		if (l <= desc->dsc_length - 2) {
 			if (value != data->vary_string)
 				memcpy(data->vary_string, value, l);
-			desc->dsc_missing = (data->vary_length = l) ? 0 : DSC_missing;
+			data->vary_length = l;
+			desc->dsc_missing = l ? 0 : DSC_missing;
 			return desc;
 		}
 
@@ -802,9 +790,9 @@ static DSC *execute_statistical( QLI_NOD node)
 	return EXEC_receive((QLI_MSG) node->nod_arg[e_stt_receive], node->nod_import);
 }
 
-static int like(
+static bool like(
 				   UCHAR * p1,
-				   SSHORT l1, UCHAR * p2, SSHORT l2, UCHAR escape_char)
+				   SSHORT l1, UCHAR * p2, SSHORT l2, const UCHAR escape_char)
 {
 /**************************************
  *
@@ -821,34 +809,31 @@ static int like(
  *      instead of char-based.
  *
  **************************************/
-	UCHAR c;
-	int escape;
-
-	escape = FALSE;
+	bool escape = false;
 
 	while (--l2 >= 0) {
-		c = *p2++;
+		const UCHAR c = *p2++;
 		if (escape_char && !escape && c == escape_char) {
-			escape = TRUE;
+			escape = true;
 			continue;
 		}
 		if (!escape && c == '%') {
 			if (l2 == 0)
-				return TRUE;
+				return true;
 			while (l1)
 				if (like(p1++, l1--, p2, l2, escape_char))
-					return TRUE;
-			return FALSE;
+					return true;
+			return false;
 		}
 		if (--l1 < 0)
-			return FALSE;
+			return false;
 		if ((escape || c != '_') && c != *p1)
-			return FALSE;
-		escape = FALSE;
+			return false;
+		escape = false;
 		p1++;
 	}
 
-	return (l1) ? FALSE : TRUE;
+	return (l1) ? false : true;
 }
 
 
@@ -956,14 +941,14 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 
 	l2 = sleuth_merge((UCHAR*) p2, (UCHAR*) (p2 + l2), (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control);
 
-/* If source is not a blob, do a simple search */
+// If source is not a blob, do a simple search 
 
 	if (desc1->dsc_dtype != dtype_blob) {
 		l1 = MOVQ_get_string(desc1, &p1, (VARY*) temp1, TEMP_LENGTH);
 		return sleuth_check(0, (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control, (UCHAR*) (control + l2));
 	}
 
-/* Source string is a blob, things get interesting */
+// Source string is a blob, things get interesting 
 
 	result = FALSE;
 
@@ -1206,7 +1191,7 @@ static int sleuth_merge(
 
 	max_op = v - vector;
 
-/* Interpret matching string, substituting where appropriate */
+// Interpret matching string, substituting where appropriate 
 
 	while (c = *match++) {
 
@@ -1265,7 +1250,9 @@ static int string_boolean( QLI_NOD node)
 		(desc2->dsc_missing & DSC_missing) ||
 		(node->nod_arg[2] && (!(desc3 = EVAL_value(node->nod_arg[2])) ||
 							  (desc3->dsc_missing & DSC_missing))))
+	{
 		return FALSE;
+	}
 
 	if (node->nod_type == nod_sleuth)
 		return sleuth(node, desc1, desc2, desc3);
@@ -1274,14 +1261,14 @@ static int string_boolean( QLI_NOD node)
 
 	l2 = MOVQ_get_string(desc2, &p2, (VARY*) temp2, TEMP_LENGTH);
 
-/* If source is not a blob, do a simple search */
+// If source is not a blob, do a simple search 
 
 	if (desc1->dsc_dtype != dtype_blob) {
 		l1 = MOVQ_get_string(desc1, &p1, (VARY*) temp1, TEMP_LENGTH);
-		return string_function(node, l1, p1, l2, p2);
+		return string_function(node, l1, p1, l2, p2) ? TRUE : FALSE;
 	}
 
-/* Source string is a blob, things get interesting */
+// Source string is a blob, things get interesting 
 
 	result = FALSE;
 	blob = EXEC_open_blob(node->nod_arg[0]);
@@ -1293,10 +1280,12 @@ static int string_boolean( QLI_NOD node)
 
 	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l1, 
 							 buffer_length, buffer))
-			if (string_function(node, l1, buffer, l2, p2)) {
+	{
+		if (string_function(node, l1, buffer, l2, p2)) {
 			result = TRUE;
 			break;
 		}
+	}
 
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
@@ -1312,7 +1301,7 @@ static int string_boolean( QLI_NOD node)
 }
 
 
-static int string_function(
+static bool string_function(
 						   QLI_NOD node,
 						   SSHORT l1, TEXT * p1, SSHORT l2, TEXT * p2)
 {
@@ -1334,11 +1323,11 @@ static int string_function(
 
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
-			return FALSE;
+			return false;
 		while (--l2 >= 0)
 			if (*p1++ != *p2++)
-				return FALSE;
-		return TRUE;
+				return false;
+		return true;
 	}
 
 // Handle CONTAINS 
@@ -1351,12 +1340,12 @@ static int string_function(
 			l = l2;
 			do {
 				if (--l < 0)
-					return TRUE;
+					return true;
 				c1 = *q1++;
 				c2 = *q2++;
 			} while (UPPER(c1) == UPPER(c2));
 		}
-		return FALSE;
+		return false;
 	}
 
 // Handle LIKE 
@@ -1365,17 +1354,21 @@ static int string_function(
 		c1 = 0;
 		if (node->nod_count > 2 &&
 			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, (VARY*) temp,
-							sizeof(temp))) c1 = *q1;
+							sizeof(temp)))
+		{
+			c1 = *q1;
+		}
 		if (like((UCHAR*) p1, l1, (UCHAR*) p2, l2, c1))
-			return TRUE;
-		return FALSE;
+			return true;
+		return false;
 	}
 
 // Handle MATCHES 
 
 	if (node->nod_type == nod_matches)
 		if (matches(p1, l1, p2, l2))
-			return TRUE;
+			return true;
 
-	return FALSE;
+	return false;
 }
+

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _QLI_EXE_H_
-#define _QLI_EXE_H_
+#ifndef QLI_EXE_H
+#define QLI_EXE_H
 
 /* Request Language Block  -- used for BLR, DYN, SDL, etc. */
 
@@ -359,4 +359,5 @@ EXTERN QLI_REQ	QLI_requests;			/* Requests in statement */
 
 #undef EXTERN
 
-#endif /* _QLI_EXE_H_ */
+#endif /* QLI_EXE_H */
+

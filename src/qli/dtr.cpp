@@ -99,8 +99,8 @@ typedef struct answer_t {
 
 static int yes_no_loaded = 0;
 static struct answer_t answer_table[] = {
-	{ "", false },					/* NO   */
-	{ "", true },					/* YES  */
+	{ "", false },					// NO   
+	{ "", true },					// YES  
 	{ NULL, false }
 };
 
@@ -132,12 +132,12 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	SLONG debug_value;
 	jmp_buf env;
 
-/* Look at options, if any */
+// Look at options, if any 
 
 	startup_file = STARTUP_FILE;
 
 #ifdef UNIX
-/* If a Unix system, get home directory from environment */
+// If a Unix system, get home directory from environment 
 	startup_file = getenv("HOME");
 	if (startup_file == NULL) {
 		startup_file = ".qli_startup";
@@ -183,7 +183,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			switch (UPPER(c)) {
 			case 'A':
 				if (argv >= arg_end) {
-					ERRQ_msg_put(23, NULL, NULL, NULL, NULL, NULL);	/* Msg23 Please retry, supplying an application script file name  */
+					ERRQ_msg_put(23, NULL, NULL, NULL, NULL, NULL);	// Msg23 Please retry, supplying an application script file name  
 					exit(FINI_ERROR);
 				}
 
@@ -293,7 +293,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			PAR_token();
 		}
 		catch (const std::exception&) {
-			/* try again */
+			// try again 
 			got_started = false;
 			ERRQ_pending();
 		}
@@ -375,7 +375,7 @@ static bool process_statement(bool flush_flag)
 	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		dbb->dbb_flags &= ~DBB_active;
 
-/* If the last statement wrote out anything to the terminal, skip a line */
+// If the last statement wrote out anything to the terminal, skip a line 
 
 	if (QLI_skip_line) {
 		ib_printf("\n");
@@ -402,7 +402,7 @@ static bool process_statement(bool flush_flag)
 /* This needs to be done after setting QLI_prompt to prevent
  * and infinite loop in LEX/next_line.
  */
-/* If there was a prior syntax error, flush the token stream */
+// If there was a prior syntax error, flush the token stream 
 
 	if (flush_flag)
 		LEX_flush();
@@ -432,14 +432,14 @@ static bool process_statement(bool flush_flag)
 
 	EXEC_poll_abort();
 
-/* If the statement was EXIT, force end of file on command input */
+// If the statement was EXIT, force end of file on command input 
 
 	if (syntax_tree->syn_type == nod_exit) {
 		QLI_line = NULL;
 		return false;
 	}
 
-/* If the statement was quit, ask the user if he want to rollback */
+// If the statement was quit, ask the user if he want to rollback 
 
 	if (syntax_tree->syn_type == nod_quit) {
 		QLI_line = NULL;
@@ -482,7 +482,7 @@ static bool process_statement(bool flush_flag)
 				perf_get_info(&dbb->dbb_handle, (perf *)dbb->dbb_statistics);
 			}
 
-/* Execute the request, for better or worse */
+// Execute the request, for better or worse 
 
 	EXEC_top((qli_nod*) execution_tree);
 
@@ -629,7 +629,7 @@ static bool yes_no(USHORT number, TEXT * arg1)
 	if (!yes_no_loaded) {
 		yes_no_loaded = 1;
 		if (!ERRQ_msg_get(498, answer_table[0].answer))	// Msg498 NO    
-			strcpy(answer_table[0].answer, "NO");	/* default if msg_get fails */
+			strcpy(answer_table[0].answer, "NO");	// default if msg_get fails 
 		if (!ERRQ_msg_get(497, answer_table[1].answer))	// Msg497 YES   
 			strcpy(answer_table[1].answer, "YES");
 	}

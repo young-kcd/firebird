@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		proc.e
+ *	MODULE:		proc.epp
  *	DESCRIPTION:	Procedure maintenance routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -42,9 +42,9 @@ DATABASE DB = EXTERN FILENAME "yachts.lnk";
 static int clear_out_qli_procedures(DBB);
 static void create_qli_procedures(DBB);
 static void probe(DBB, TEXT *);
-static int upcase_name(TEXT *, TEXT *);
+static int upcase_name(const TEXT*, TEXT*);
 
-static UCHAR tpb[] = { gds_tpb_version1, gds_tpb_write,
+static const UCHAR tpb[] = { gds_tpb_version1, gds_tpb_write,
 	gds_tpb_concurrency
 };
 
@@ -122,13 +122,11 @@ void PRO_copy_procedure(
  *	existing procedure.
  *
  **************************************/
-	FRBRD *old_blob, *new_blob;
-	FRBRD *store_request;
+	FRBRD *old_blob;
 	ISC_STATUS_ARRAY status_vector;
 	TEXT buffer[255];
 	SSHORT length;
-	USHORT bpb_length;
-	UCHAR bpb[20], *p;
+	UCHAR bpb[20];
 
 	if (!new_database)
 		new_database = QLI_databases;
@@ -151,17 +149,17 @@ void PRO_copy_procedure(
 	if (new_database != old_database)
 		PRO_setup(new_database);
 
-	new_blob = NULL;
-	store_request = NULL;
+	FRBRD* new_blob = NULL;
+	FRBRD* store_request = NULL;
 	probe(new_database, new_name);
 
 	DB1 = new_database->dbb_handle;
 
 // create blob parameter block since procedure is a text blob 
 
-	p = bpb;
+	UCHAR* p = bpb;
 
-	bpb_length = p - bpb;
+	USHORT bpb_length = p - bpb;
 
 	STORE(REQUEST_HANDLE store_request TRANSACTION_HANDLE new_database->dbb_proc_trans)
 		NEW IN DB1.QLI$PROCEDURES USING
@@ -201,22 +199,19 @@ void PRO_create( DBB database, TEXT * name)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	SLONG start, stop;
-	FRBRD *blob;
-	USHORT bpb_length;
-	UCHAR bpb[20], *p;
+	UCHAR bpb[20];
 
 // See if procedure is already in use 
 
 	probe(database, name);
 
-	blob = NULL;
-	start = QLI_token->tok_position;
-	stop = start;
+	FRBRD* blob = NULL;
+	const SLONG start = QLI_token->tok_position;
+	SLONG stop = start;
 
-	p = bpb;
+	UCHAR* p = bpb;
 
-	bpb_length = p - bpb;
+	USHORT bpb_length = p - bpb;
 
 	PRO_setup(database);
 
@@ -241,7 +236,7 @@ void PRO_create( DBB database, TEXT * name)
 		gds__close_blob(status_vector, &blob);
 	END_STORE;
 
-/* Commit the procedure transaction, if there is one */
+// Commit the procedure transaction, if there is one 
 
 	PRO_commit(database);
 }
@@ -259,11 +254,8 @@ int PRO_delete_procedure( DBB database, TEXT * name)
  *	Delete a procedure.
  *
  **************************************/
-	USHORT count;
-	FRBRD *request;
-
-	request = NULL;
-	count = 0;
+	FRBRD* request = NULL;
+	USHORT count = 0;
 
 	PRO_setup(database);
 
@@ -275,7 +267,7 @@ int PRO_delete_procedure( DBB database, TEXT * name)
 
 	gds__release_request(gds_status, &request);
 
-/* Commit the procedure transaction, if there is one */
+// Commit the procedure transaction, if there is one 
 
 	PRO_commit(database);
 
@@ -318,7 +310,7 @@ void PRO_edit_procedure( DBB database, TEXT * name)
 		gds__vtof(name, X.QLI$PROCEDURE_NAME, sizeof(X.QLI$PROCEDURE_NAME));
 	END_STORE
 
-/* Commit the procedure transaction, if there is one */
+// Commit the procedure transaction, if there is one 
 
 	PRO_commit(database);
 }
@@ -337,12 +329,11 @@ FRBRD *PRO_fetch_procedure( DBB database, TEXT * proc)
  *	If the name doesn't exit, return NULL.
  *
  **************************************/
-	FRBRD *blob;
 	TEXT name[32];
 
 	upcase_name(proc, name);
 	PRO_setup(database);
-	blob = NULL;
+	FRBRD* blob = NULL;
 
 	FOR(REQUEST_HANDLE database->dbb_lookup_blob) X IN DB.QLI$PROCEDURES WITH
 		X.QLI$PROCEDURE_NAME EQ name
@@ -369,7 +360,6 @@ bool PRO_get_line(FRBRD *blob,
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	TEXT *p;
 	USHORT length;
 
 	gds__get_segment(status_vector,
@@ -378,7 +368,7 @@ bool PRO_get_line(FRBRD *blob,
 	if (status_vector[1] && status_vector[1] != gds_segment)
 		return false;
 
-	p = buffer + length;
+	TEXT* p = buffer + length;
 
 	if (p[-1] != '\n' && !status_vector[1])
 		*p++ = '\n';
@@ -403,9 +393,7 @@ void PRO_invoke( DBB database, TEXT * name)
  *	we may have to loop through databases.  Whatever...
  *
  **************************************/
-	FRBRD *blob;
-
-	blob = NULL;
+	FRBRD* blob = NULL;
 	if (database) {
 		if (!(blob = PRO_fetch_procedure(database, name)))
 			ERRQ_print_error(71, name, database->dbb_symbol->sym_string, NULL,
@@ -441,15 +429,13 @@ FRBRD *PRO_open_blob( DBB database, SLONG * blob_id)
  *	Open a procedure blob.
  *
  **************************************/
-	FRBRD *blob;
 	ISC_STATUS_ARRAY status_vector;
-	USHORT bpb_length;
-	UCHAR bpb[20], *p;
+	UCHAR bpb[20];
 
-	blob = NULL;
-	p = bpb;
+	FRBRD* blob = NULL;
+	UCHAR* p = bpb;
 
-	bpb_length = p - bpb;
+	USHORT bpb_length = p - bpb;
 
 	if (gds__open_blob2(status_vector, &database->dbb_handle,
 						&database->dbb_proc_trans, &blob, (GDS__QUAD*) blob_id,
@@ -472,16 +458,14 @@ int PRO_rename_procedure( DBB database, TEXT * old_name, TEXT * new_name)
  *	Change the name of a procedure.
  *
  **************************************/
-	USHORT count;
 	ISC_STATUS_ARRAY status_vector;
-	FRBRD *request;
 
-	request = NULL;
+	FRBRD* request = NULL;
 	PRO_setup(database);
 
 	probe(database, new_name);
 
-	count = 0;
+	USHORT count = 0;
 	FOR(REQUEST_HANDLE request) X IN DB.QLI$PROCEDURES WITH
 		X.QLI$PROCEDURE_NAME EQ old_name count++;
 		MODIFY X USING
@@ -495,7 +479,7 @@ int PRO_rename_procedure( DBB database, TEXT * old_name, TEXT * new_name)
 
 	gds__release_request(gds_status, &request);
 
-/* Commit the procedure transaction, if there is one */
+// Commit the procedure transaction, if there is one 
 
 	PRO_commit(database);
 
@@ -538,14 +522,13 @@ void PRO_scan( DBB database, void (*routine) (), void *arg)
  *	Loop thru procedures calling given routine.
  *
  **************************************/
-	TEXT *p;
-
 	PRO_setup(database);
 
 	FOR(REQUEST_HANDLE database->dbb_scan_blobs) X IN DB.QLI$PROCEDURES
 		SORTED BY X.QLI$PROCEDURE_NAME
 
-        p = X.QLI$PROCEDURE_NAME; 
+        TEXT* p = X.QLI$PROCEDURE_NAME;
+        // incorrect for new names with embedded blanks.
 		while (*p && *p != ' ') {
 			p++;
 		}
@@ -641,7 +624,7 @@ FRBRD *PRO_transaction( DBB database, int update_flag)
 
 	gds_trans = transaction;
 
-/* If we only support a single transaction, use the data transaction */
+// If we only support a single transaction, use the data transaction 
 
 	if (!gds_trans && (database->dbb_capabilities & DBB_cap_single_trans)) {
 		if (update_flag)
@@ -680,12 +663,10 @@ static int clear_out_qli_procedures( DBB dbb)
  *	else has set up for us.
  *
  **************************************/
-	int count;
-	FRBRD *req;
 	ISC_STATUS_ARRAY status_vector;
 
-	req = NULL;
-	count = 0;
+	FRBRD* req = NULL;
+	int count = 0;
 
 	FOR(REQUEST_HANDLE req) R IN DB.RDB$RELATIONS CROSS
 		F IN DB.RDB$FIELDS CROSS RFR IN DB.RDB$RELATION_FIELDS WITH
@@ -853,7 +834,7 @@ static void probe( DBB database, TEXT * name)
 }
 
 
-static int upcase_name( TEXT * name, TEXT * buffer)
+static int upcase_name(const TEXT* name, TEXT* buffer)
 {
 /**************************************
  *
@@ -866,13 +847,10 @@ static int upcase_name( TEXT * name, TEXT * buffer)
  *	length is greater than 31 bytes, barf.
  *
  **************************************/
-	USHORT l;
-	TEXT c;
-
-	l = 0;
+	USHORT l = 0;
 
 	while (true) {
-		c = *name++;
+		const TEXT c = *name++;
 		*buffer++ = UPPER(c);
 		if (!c)
 			return l;
@@ -881,3 +859,4 @@ static int upcase_name( TEXT * name, TEXT * buffer)
 
 	}
 }
+

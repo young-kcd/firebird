@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		meta.e
+ *	MODULE:		meta.epp
  *	DESCRIPTION:	Meta-data interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -918,7 +918,7 @@ void MET_finish( DBB dbb)
 	FUN function;
 	SCHAR count;
 
-/* Get rid of relation and field blocks. */
+// Get rid of relation and field blocks. 
 
 	while (relation = dbb->dbb_relations) {
 		purge_relation(relation);
@@ -933,7 +933,7 @@ void MET_finish( DBB dbb)
 		ALL_release((FRB) function);
 	}
 
-/* Finally, actually close down database connection. */
+// Finally, actually close down database connection. 
 
 	detach(status_vector, dbb);
 
@@ -1012,8 +1012,9 @@ int MET_get_datatype( USHORT blr_datatype)
 
 
 #ifdef DEV_BUILD
-void MET_index_info(
-					SCHAR * relation_name, SCHAR * index_name, SCHAR * buffer)
+void MET_index_info(const SCHAR* relation_name,
+					const SCHAR* index_name,
+					SCHAR* buffer)
 {
 /**************************************
  *
@@ -1026,9 +1027,9 @@ void MET_index_info(
  *
  **************************************/
 	FRBRD *request_handle = NULL;
-	SCHAR *b, *p;
+	SCHAR *p;
 
-	b = buffer;
+	SCHAR* b = buffer;
 	FOR(REQUEST_HANDLE request_handle)
 		IDX IN DB.RDB$INDICES CROSS
 			SEG IN DB.RDB$INDEX_SEGMENTS OVER
@@ -1166,7 +1167,7 @@ FRBRD *MET_meta_transaction(DBB database, int update_flag)
 
 	gds_trans = transaction;
 
-/* If we only support a single transaction, use the data transaction */
+// If we only support a single transaction, use the data transaction 
 
 	if (!gds_trans && (database->dbb_capabilities & DBB_cap_single_trans))
 	{
@@ -1266,7 +1267,7 @@ void MET_modify_field( DBB database, QLI_FLD field)
 
 	MET_meta_commit(database);
 
-/* Now go back and re-fetch fields for affected databases */
+// Now go back and re-fetch fields for affected databases 
 
 	setup_update(database);
 
@@ -1484,7 +1485,7 @@ void MET_ready( SYN node, USHORT create_flag)
 			*p++ = *q++;
 	}
 
-/* get a password, if specified */
+// get a password, if specified 
 
 	if (temp->dbb_password) {
 		q = (TEXT *) temp->dbb_password->con_data;
@@ -1525,7 +1526,7 @@ void MET_ready( SYN node, USHORT create_flag)
 			break;
 	}
 
-/* If any attach failed, cleanup and give up */
+// If any attach failed, cleanup and give up 
 
 	if (ptr < end) {
 		for (ptr2 = node->syn_arg; ptr2 < ptr; ptr2++)
@@ -1534,7 +1535,7 @@ void MET_ready( SYN node, USHORT create_flag)
 	}
 
 
-/* Databases are up and running.  Install each. */
+// Databases are up and running.  Install each. 
 
 	for (ptr = node->syn_arg; ptr < end; ptr++)
 		install((DBB) *ptr);
@@ -2201,7 +2202,7 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 				CROSS F IN DB.RDB$FIELDS
 				WITH Y.RDB$RELATION_NAME = source->rel_symbol->sym_string
 				AND Y.RDB$FIELD_SOURCE = F.RDB$FIELD_NAME
-				/* If SQL made this field, create a new global field for it */
+				// If SQL made this field, create a new global field for it 
 		if (F.RDB$COMPUTED_BLR.NULL &&
 			(strncmp("RDB$", Y.RDB$FIELD_NAME, 4)) &&
 			(!(strncmp("RDB$", F.RDB$FIELD_NAME, 4))))
@@ -3040,7 +3041,7 @@ static void install( DBB old_dbb)
 	new_dbb->dbb_next = QLI_databases;
 	QLI_databases = new_dbb;
 
-/* If a name was given, make up a symbol for the database. */
+// If a name was given, make up a symbol for the database. 
 
 	if (name = (NAM) old_dbb->dbb_symbol) {
 		new_dbb->dbb_symbol = symbol =
@@ -3092,7 +3093,7 @@ static void install( DBB old_dbb)
 		if (gds__release_request(gds_status, &request))
 			ERRQ_database_error(new_dbb, gds_status);
 
-/* Pick up functions, if appropriate */
+// Pick up functions, if appropriate 
 
 	if (new_dbb->dbb_capabilities & DBB_cap_functions) {
 		request2 = NULL;
@@ -3660,7 +3661,7 @@ static void rollback_update( DBB database)
 	if (gds_trans == database->dbb_meta_trans &&
 		(database->dbb_capabilities & DBB_cap_multi_trans))
 		gds__rollback_transaction(alt_vector, &database->dbb_meta_trans);
-	/* Note: No message given if rollback fails */
+	// Note: No message given if rollback fails 
 
 	gds_trans = NULL;
 }

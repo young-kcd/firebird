@@ -41,7 +41,7 @@
 
 extern USHORT QLI_columns, QLI_name_columns;
 
-static void array_dimensions(DBB, const TEXT *);
+static void array_dimensions(DBB, const TEXT*);
 static void display_acl(DBB, SLONG[2]);
 static void display_blob(DBB, SLONG[2], const TEXT *, USHORT, UCHAR *, bool);
 static void display_blr(DBB, SLONG[2]);
@@ -103,12 +103,16 @@ static void view_info(DBB, const TEXT *, const TEXT *, SSHORT, SSHORT);
 
 static const SCHAR db_items[] =
 	{ gds_info_page_size, isc_info_db_size_in_pages, gds_info_end };
-static const UCHAR
-  acl_bpb[] = {
-gds_bpb_version1, gds_bpb_source_type, 1, 3,
-
-		gds_bpb_target_type, 1, 1}, blr_bpb[] = {
-gds_bpb_version1, gds_bpb_source_type, 1, 2, gds_bpb_target_type, 1, 1};
+static const UCHAR acl_bpb[] =
+{
+	gds_bpb_version1, gds_bpb_source_type, 1, 3,
+	gds_bpb_target_type, 1, 1
+};
+static const UCHAR blr_bpb[] =
+{
+	gds_bpb_version1, gds_bpb_source_type, 1, 2,
+	gds_bpb_target_type, 1, 1
+};
 
 // It's not the exact definition of blob_id, but since show_blob_info uses
 // pointers to SLONG's...
@@ -731,7 +735,7 @@ static void show_datatype(
 		break;
 
 	default:
-		BUGCHECK(8);			/* Msg8 show_fields: dtype not done */
+		BUGCHECK(8);			// Msg8 show_fields: dtype not done 
 	}
 
 	ERRQ_msg_partial(msg, (TEXT *) (ULONG) length, NULL, NULL, NULL, NULL);
@@ -747,7 +751,7 @@ static void show_datatype(
 		dtype == dtype_varying || dtype == dtype_cstring)
 	{
 		if (sub_type == 1)
-			ERRQ_msg_partial(112, NULL, NULL, NULL, NULL, NULL);	/* Msg112 , subtype fixed */
+			ERRQ_msg_partial(112, NULL, NULL, NULL, NULL, NULL);	// Msg112 , subtype fixed 
 		else if (sub_type != 0) {
 			sprintf(subtype, "%d", sub_type);
 			ERRQ_msg_partial(107, subtype, NULL, NULL, NULL, NULL);
@@ -948,7 +952,7 @@ static int show_field_detail(
 
 		show_text_blob(database, "\t", 266, (SLONG*) &RFR.RDB$DESCRIPTION, 339,
 					   (SLONG*) &F.RDB$DESCRIPTION, false);
-		ERRQ_msg_put(267, NULL, NULL, NULL, NULL, NULL);	/* Msg267 Datatype information: */
+		ERRQ_msg_put(267, NULL, NULL, NULL, NULL, NULL);	// Msg267 Datatype information: 
 		ib_printf("\t");
 
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
@@ -1121,7 +1125,7 @@ static void show_filt( QFL filter)
 				/* Msg441 Filter %s is not defined in any open database */
 				ERRQ_msg_put(441, name->nam_string, NULL, NULL, NULL, NULL);
 			else
-				/* Msg442 Filters are not supported in any open database. */
+				// Msg442 Filters are not supported in any open database. 
 				ERRQ_msg_put(442, NULL, NULL, NULL, NULL, NULL);
 		}
 	}
@@ -1341,7 +1345,7 @@ static void show_func( QFN func)
 				/* Msg423 Function is %s not defined in any open database */
 				ERRQ_msg_put(423, name->nam_string, NULL, NULL, NULL, NULL);
 			else
-				/* Msg420 Functions are not supported in any open database. */
+				// Msg420 Functions are not supported in any open database. 
 				ERRQ_msg_put(420, NULL, NULL, NULL, NULL, NULL);
 		}
 	}
@@ -1433,7 +1437,7 @@ static void show_funcs( DBB database)
 	if (!(show_funcs_detail(database)))
 		ERRQ_msg_put(462, database->dbb_symbol->sym_string, NULL, NULL, NULL,
 					 NULL);
-	/* 462 - no functions are defined in this database */
+	// 462 - no functions are defined in this database 
 }
 
 
@@ -1526,7 +1530,7 @@ static int show_insecure_fields(
 
 		show_text_blob(database, "\t", 339, (SLONG*) &RFR.RDB$DESCRIPTION, 339,
 					   (SLONG*) &F.RDB$DESCRIPTION, false);
-		ERRQ_msg_partial(340, NULL, NULL, NULL, NULL, NULL);	/* Msg340 Datatype information: */
+		ERRQ_msg_partial(340, NULL, NULL, NULL, NULL, NULL);	// Msg340 Datatype information: 
 		ib_printf("\t");
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
 					  F.RDB$FIELD_LENGTH, F.RDB$FIELD_SCALE,
@@ -1647,7 +1651,7 @@ static int show_gbl_field_detail( DBB database, const TEXT * field_name)
 
 		show_text_blob(database, "\t", 277, (SLONG*) &F.RDB$DESCRIPTION, 0, NULL,
 					   false);
-		ERRQ_msg_put(278, NULL, NULL, NULL, NULL, NULL);	/* Msg278 Datatype information: */
+		ERRQ_msg_put(278, NULL, NULL, NULL, NULL, NULL);	// Msg278 Datatype information: 
 		ib_printf("\t");
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
 					  F.RDB$FIELD_LENGTH, F.RDB$FIELD_SCALE,
@@ -2226,7 +2230,7 @@ static void show_sys_trigs( DBB database)
 								X.RDB$TRIGGER_SEQUENCE,
 								X.RDB$TRIGGER_INACTIVE, (SLONG*) &X.RDB$DESCRIPTION,
 								database, X.RDB$RELATION_NAME);
-			show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	/* Msg377 Source for the trigger is not available.  Trigger BLR: */
+			show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	// Msg377 Source for the trigger is not available.  Trigger BLR: 
 						   376,	// Msg376 Source for the trigger 
 						   database, X.RDB$RELATION_NAME);
 			show_trigger_messages(database, X.RDB$TRIGGER_NAME);
@@ -2332,7 +2336,7 @@ static int show_trigger_detail( DBB database, const TEXT * relation_name)
 									X.RDB$TRIGGER_INACTIVE,
 									(SLONG*) &X.RDB$DESCRIPTION, database,
 									relation_name);
-				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	/* Msg377 Source for the trigger is not available.  Trigger BLR: */
+				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	// Msg377 Source for the trigger is not available.  Trigger BLR: 
 							   376,	// Msg376 Source for the trigger 
 							   database, relation_name);
 				show_trigger_messages(database, X.RDB$TRIGGER_NAME);
@@ -2343,14 +2347,14 @@ static int show_trigger_detail( DBB database, const TEXT * relation_name)
 	}
 
 // Old style triggers 
-/* OBSOLETE - 1996-Aug-06 David Schnepper  */
+// OBSOLETE - 1996-Aug-06 David Schnepper  
 
 /* OBSOLETE - Msg298 Triggers for relation %s: */
-/* OBSOLETE - Msg299 Source for the erase trigger is not available.  Trigger BLR: */
+// OBSOLETE - Msg299 Source for the erase trigger is not available.  Trigger BLR: 
 /* OBSOLETE - Msg300 Erase trigger for relation %s: */
-/* OBSOLETE - Msg301 Source for the modify trigger is not available.  Trigger BLR: */
+// OBSOLETE - Msg301 Source for the modify trigger is not available.  Trigger BLR: 
 /* OBSOLETE - Msg302 Modify trigger for relation %s: */
-/* OBSOLETE - Msg303 Source for the store trigger is not available.  Trigger BLR: */
+// OBSOLETE - Msg303 Source for the store trigger is not available.  Trigger BLR: 
 /* OBSOLETE - Msg304 Store trigger for relation %s: */
 
 	return count;
@@ -2435,25 +2439,25 @@ static void show_trigger_status(
 	switch (type) {
 	case PRE_STORE:
 		msg_num = 367;
-		break;					/* Msg367 pre-store */
+		break;					// Msg367 pre-store 
 	case POST_STORE:
 		msg_num = 368;
-		break;					/* Msg368 post-store */
+		break;					// Msg368 post-store 
 	case PRE_MODIFY:
 		msg_num = 369;
-		break;					/* Msg369 pre-modify */
+		break;					// Msg369 pre-modify 
 	case POST_MODIFY:
 		msg_num = 370;
-		break;					/* Msg370 post-modify */
+		break;					// Msg370 post-modify 
 	case PRE_ERASE:
 		msg_num = 371;
-		break;					/* Msg371 pre-erase */
+		break;					// Msg371 pre-erase 
 	case POST_ERASE:
 		msg_num = 372;
-		break;					/* Msg372 post-erase */
+		break;					// Msg372 post-erase 
 	default:
 		msg_num = 372;
-		break;					/* Should never happen, not worth an error */
+		break;					// Should never happen, not worth an error 
 	}
 
 	ERRQ_msg_format(msg_num, sizeof(trigger_type), trigger_type, NULL, NULL,
@@ -2530,7 +2534,7 @@ static int show_triggers_detail( DBB database)
 									X.RDB$TRIGGER_INACTIVE,
 									(SLONG*) &X.RDB$DESCRIPTION, database,
 									X.RDB$RELATION_NAME);
-				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	/* Msg377 Source for the trigger is not available.  Trigger BLR: */
+				show_blob_info((SLONG*) &X.RDB$TRIGGER_BLR, (SLONG*) &X.RDB$TRIGGER_SOURCE, 377,	// Msg377 Source for the trigger is not available.  Trigger BLR: 
 							   376,	// Msg376 Source for the trigger 
 							   database, X.RDB$RELATION_NAME);
 				show_trigger_messages(database, X.RDB$TRIGGER_NAME);
@@ -2541,16 +2545,16 @@ static int show_triggers_detail( DBB database)
 	else {
 
 // Old style triggers 
-/* OBSOLETE - 1996-Aug-06 David Schnepper  */
+// OBSOLETE - 1996-Aug-06 David Schnepper  
 /* OBSOLETE - Msg305 Triggers for relation %s: */
 
-/* OBSOLETE - Msg306 Source for the erase trigger is not available.  Trigger BLR: */
+// OBSOLETE - Msg306 Source for the erase trigger is not available.  Trigger BLR: 
 /* OBSOLETE - Msg307 Erase trigger for relation %s: */
 
-/* OBSOLETE - Msg308 Source for the modify trigger is not available.  Trigger BLR: */
+// OBSOLETE - Msg308 Source for the modify trigger is not available.  Trigger BLR: 
 /* OBSOLETE - Msg309 Modify trigger for relation %s: */
 
-/* OBSOLETE - Msg310 Source for the store trigger is not available.  Trigger BLR: */
+// OBSOLETE - Msg310 Source for the store trigger is not available.  Trigger BLR: 
 /* OBSOLETE - Msg311 Store trigger for relation %s: */
 	}
 
@@ -2613,7 +2617,7 @@ static void show_vars(void)
  *
  **************************************/
 
-	ERRQ_msg_put(132, NULL, NULL, NULL, NULL, NULL);	/* Msg132 Variables: */
+	ERRQ_msg_put(132, NULL, NULL, NULL, NULL, NULL);	// Msg132 Variables: 
 	show_fields(NULL, QLI_variables);
 }
 
