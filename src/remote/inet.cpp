@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.127 2004-11-15 15:52:48 alexpeshkoff Exp $
+$Id: inet.cpp,v 1.128 2004-11-16 06:16:19 robocop Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -3200,7 +3200,7 @@ static rem_port* inet_try_connect(
 	cnct->p_cnct_client = ARCHITECTURE;
 	cnct->p_cnct_file.cstr_length = file_name.length();
 	cnct->p_cnct_file.cstr_address = 
-		reinterpret_cast<UCHAR *>(file_name.begin());
+		reinterpret_cast<UCHAR*>(file_name.begin());
 
 /* If we can't talk to a server, punt.  Let somebody else generate
    an error.  status_vector will have the network error info. */
