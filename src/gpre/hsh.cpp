@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.11 2003-09-05 10:14:08 aafemt Exp $
+//	$Id: hsh.cpp,v 1.12 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -34,9 +34,6 @@
 #include "../gpre/hsh_proto.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"
-
-
-extern "C" {
 
 
 static int hash(SCHAR *);
@@ -273,6 +270,3 @@ static BOOLEAN scompare2( SCHAR * string1, SCHAR * string2)
 
 	return TRUE;
 }
-
-
-} // extern "C"

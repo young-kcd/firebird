@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.23 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: c_cxx.cpp,v 1.24 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -45,9 +45,6 @@
 #include "../gpre/pat_proto.h"
 #include "../gpre/prett_proto.h"
 #include "../jrd/gds_proto.h"
-
-
-extern "C" {
 
 
 extern TEXT *transaction_name;
@@ -4756,5 +4753,3 @@ static void t_start_auto(
 	END;
 }
 
-
-} // extern "C"

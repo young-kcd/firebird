@@ -24,18 +24,10 @@
 #ifndef _QLI_HSH_PROTO_H_
 #define _QLI_HSH_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void		HSH_fini (void);
 extern void		HSH_init (void);
 extern void		HSH_insert (struct sym *);
 extern struct sym	*HSH_lookup (SCHAR *, int);
 extern void		HSH_remove (struct sym *);
-
-#ifdef __cplusplus
-}	/* extern "C" */
-#endif
 
 #endif /* _QLI_HSH_PROTO_H_ */

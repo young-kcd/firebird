@@ -24,10 +24,6 @@
 #ifndef GPRE_GPRE_META_H
 #define GPRE_GPRE_META_H
 
-#ifdef __cplusplus
-//extern "C" {
-#endif
-
 extern GPRE_FLD MET_context_field(GPRE_CTX, char *);
 extern BOOLEAN MET_database(DBB, BOOLEAN);
 extern USHORT MET_domain_lookup(GPRE_REQ, GPRE_FLD, char *);
@@ -51,9 +47,5 @@ extern IND MET_make_index(SCHAR *);
 extern GPRE_REL MET_make_relation(SCHAR *);
 extern BOOLEAN MET_type(GPRE_FLD, TEXT *, SSHORT *);
 extern BOOLEAN MET_trigger_exists(DBB, TEXT *);
-
-#ifdef __cplusplus
-//} /* extern "C" */
-#endif
 
 #endif /* GPRE_GPRE_META_H */

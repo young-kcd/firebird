@@ -29,9 +29,6 @@
 #include "../dudley/hsh_proto.h"
 
 
-extern "C" {
-
-
 #define HASH_SIZE	101
 
 static USHORT hash(SCHAR *, USHORT);
@@ -475,5 +472,3 @@ static bool scompare(SCHAR * string1,
 	return true;
 }
 
-
-} // extern "C"

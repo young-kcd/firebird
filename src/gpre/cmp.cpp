@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.14 2003-09-05 14:55:59 brodsom Exp $
+//	$Id: cmp.cpp,v 1.15 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -43,8 +43,6 @@
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
 
-
-extern "C" {
 
 
 extern TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
@@ -1977,5 +1975,3 @@ static void update_references( REF references)
 	}
 }
 
-
-} // extern "C"

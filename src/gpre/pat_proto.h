@@ -24,14 +24,6 @@
 #ifndef _GPRE_PAT_PROTO_H_
 #define _GPRE_PAT_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void PATTERN_expand(USHORT, TEXT *, PAT *);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_PAT_PROTO_H_ */

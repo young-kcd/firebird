@@ -24,10 +24,6 @@
 #ifndef _GPRE_SQL_PROTO_H_
 #define _GPRE_SQL_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern ACT SQL_action(TEXT*);
 extern void SQL_adjust_field_dtype(GPRE_FLD);
 extern void SQL_init(void);
@@ -39,9 +35,5 @@ extern void SQL_resolve_identifier(TEXT *, TEXT *);
 extern GPRE_REL SQL_view(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
 extern void SQL_relation_name(TEXT *, TEXT *, TEXT *);
 extern TEXT *SQL_var_or_string(BOOLEAN);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_SQL_PROTO_H_ */

@@ -25,10 +25,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.8 2003-09-05 14:55:59 brodsom Exp $
+//	$Id: msc.cpp,v 1.9 2003-09-06 00:52:10 brodsom Exp $
 //
 //  
-//$Id: msc.cpp,v 1.8 2003-09-05 14:55:59 brodsom Exp $
+//$Id: msc.cpp,v 1.9 2003-09-06 00:52:10 brodsom Exp $
 //  
 
 // ***************************************************
@@ -56,9 +56,6 @@
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"
 #include "../jrd/gds_proto.h"
-
-
-extern "C" {
 
 
 extern ACT cur_routine;
@@ -558,5 +555,3 @@ USN MSC_username(SCHAR * name, USHORT name_dyn)
 	return username;
 }
 
-
-} // extern "C"

@@ -26,10 +26,6 @@
 
 #include "../gpre/parse.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern ACT MSC_action(GPRE_REQ, enum act_t);
 extern UCHAR *MSC_alloc(int);
 extern UCHAR *MSC_alloc_permanent(int);
@@ -55,9 +51,5 @@ extern SCHAR *MSC_string(TEXT *);
 extern SYM MSC_symbol(enum sym_t, TEXT *, USHORT, GPRE_CTX);
 extern GPRE_NOD MSC_unary(NOD_T, GPRE_NOD);
 extern USN MSC_username(SCHAR *, USHORT);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_MSC_PROTO_H_ */

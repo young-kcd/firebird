@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.16 2003-09-05 14:55:58 brodsom Exp $
+//	$Id: sql.cpp,v 1.17 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -47,9 +47,6 @@
 #include "../gpre/par_proto.h"
 #include "../gpre/sqe_proto.h"
 #include "../gpre/sql_proto.h"
-
-
-extern "C" {
 
 
 #define ERROR_LENGTH			128
@@ -6449,6 +6446,3 @@ static void dialect1_bad_type(USHORT field_dtype)
 			s);
 	PAR_error(buffer);
 }
-
-
-} // extern "C"

@@ -39,6 +39,7 @@
 #include "gen/codes.h"
 #include "../wal/wal_proto.h"
 #include "../wal/walc_proto.h"
+#include "../wal/walw_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/iberr_proto.h"
 #include "../jrd/isc_proto.h"
@@ -82,13 +83,6 @@
 #define sleep(seconds)	Sleep ((seconds) * 1000)
 #endif
 
-
-extern "C" {
-
-
-#ifdef SUPERSERVER
-extern void main_walw(SCHAR **);
-#endif
 
 static SLONG copy_buffer(WALS, WALBLK *, UCHAR *, USHORT, UCHAR *, USHORT);
 static SSHORT fork_writer(ISC_STATUS *, WAL);
@@ -1720,6 +1714,4 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
 	return FB_SUCCESS;
 }
 
-
-} // extern "C"
 

@@ -24,14 +24,6 @@
 #ifndef _GPRE_JRDME_PROTO_H_
 #define _GPRE_JRDME_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void JRDMET_init(DBB);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_JRDME_PROTO_H_ */

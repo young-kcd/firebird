@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.9 2003-09-05 10:14:08 aafemt Exp $
+//	$Id: pat.cpp,v 1.10 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -36,9 +36,6 @@
 #include "../gpre/gpre_proto.h"
 #include "../gpre/pat_proto.h"
 #include "../gpre/lang_proto.h"
-
-
-extern "C" {
 
 
 extern TEXT *ident_pattern;
@@ -439,5 +436,3 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 	}
 }
 
-
-} // extern "C"

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.25 2003-09-05 14:55:58 brodsom Exp $
+//  $Id: par.cpp,v 1.26 2003-09-06 00:52:10 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.25 2003-09-05 14:55:58 brodsom Exp $
+//	$Id: par.cpp,v 1.26 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -57,9 +57,6 @@
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
 #include "../gpre/sql_proto.h"
-
-
-extern "C" {
 
 
 ACT			cur_routine;
@@ -3971,5 +3968,3 @@ static BOOLEAN terminator()
 	return FALSE;
 }
 
-
-} // extern "C"

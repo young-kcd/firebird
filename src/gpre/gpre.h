@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.36 2003-09-05 10:14:07 aafemt Exp $
+ * $Id: gpre.h,v 1.37 2003-09-06 00:52:10 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -64,10 +64,6 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
@@ -1478,14 +1474,7 @@ typedef struct upd {
 #define UPD_LEN sizeof(upd)
 
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 #include "../jrd/dsc.h"
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 #define dtype_float	dtype_real
 
@@ -1538,13 +1527,7 @@ EXTERN USHORT ada_flags;
 
 #undef EXTERN
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 #include "../gpre/msc_proto.h"
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifndef assert
 #ifdef DEV_BUILD
@@ -1560,10 +1543,6 @@ extern "C" {
 #define assert_IS_SYM(x) assert(!(x) || ((x)->sym_type >= 0 && (x)->sym_type < SYM_LASTSYM))
 #define assert_IS_NOD(x) assert(!(x) || ((x)->nod_type >= 1 && (x)->nod_type < nod_LASTNOD))
 #define assert_IS_ACT(x) assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_GPRE_H_ */
 

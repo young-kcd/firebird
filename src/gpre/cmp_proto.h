@@ -26,10 +26,6 @@
 
 #include "../gpre/form.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void CMP_check(GPRE_REQ, SSHORT);
 extern void CMP_compile_request(GPRE_REQ);
 #ifdef PYXIS
@@ -40,9 +36,5 @@ extern void CMP_init(void);
 extern USHORT CMP_next_ident(void);
 extern void CMP_stuff_symbol(GPRE_REQ, SYM);
 extern void CMP_t_start(GPRE_TRA);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_CMP_PROTO_H_ */

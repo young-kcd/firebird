@@ -24,19 +24,11 @@
 #ifndef _GPRE_HSH_PROTO_H_
 #define _GPRE_HSH_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void HSH_fini(void);
 extern void HSH_init(void);
 extern void HSH_insert(SYM);
 extern SYM HSH_lookup(SCHAR *);
 extern SYM HSH_lookup2(SCHAR *);
 extern void HSH_remove(SYM);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_HSH_PROTO_H_ */

@@ -24,10 +24,6 @@
 #ifndef _GPRE_PAR_PROTO_H_
 #define _GPRE_PAR_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern ACT PAR_action(TEXT*);
 extern SSHORT PAR_blob_subtype(DBB);
 extern ACT PAR_database(USHORT, TEXT*);
@@ -45,9 +41,5 @@ extern GPRE_REQ PAR_set_up_dpb_info(RDY, ACT, USHORT);
 extern SYM PAR_symbol(enum sym_t);
 extern void PAR_unwind(void);
 extern void PAR_using_db(void);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_PAR_PROTO_H_ */

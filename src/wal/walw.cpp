@@ -91,9 +91,6 @@
 #endif
 
 
-extern "C" {
-
-
 #ifdef SUPERSERVER
 #define exit(code)	return (code)
 #ifdef WIN_NT
@@ -166,7 +163,7 @@ static SSHORT write_wal_block(ISC_STATUS *, WALBLK *, SCHAR *, SLONG);
 static void write_wal_statistics(WAL);
 
 static WAL_TERMINATOR(log_terminator_block);
-
+static SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle);
 
 #ifdef SUPERSERVER
 int main_walw( char **argv)
@@ -262,7 +259,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	return 0;
 }
 
-
 #ifdef VMS
 void ERR_post(stuff)
 	 ISC_STATUS stuff;
@@ -332,7 +328,7 @@ void ERR_post(stuff)
 #endif
 
 
-SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
+static SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
@@ -2330,6 +2326,4 @@ static void write_wal_statistics( WAL WAL_handle)
 	}
 }
 
-
-} // extern "C"
 

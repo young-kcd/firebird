@@ -26,21 +26,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.8 2003-09-05 10:14:08 aafemt Exp $
+//	$Id: jrdmet.cpp,v 1.9 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/gds.h"
 #include "../jrd/common.h"
 #include "../jrd/ods.h"
-
-extern "C" {
-
-struct blk {
-	SLONG blk_header;
-};
-
-} // extern "C"
 
 #include "../gpre/gpre.h"
 #include "../jrd/constants.h"
@@ -49,9 +41,6 @@ struct blk {
 #undef GPRE
 #include "../gpre/hsh_proto.h"
 #include "../gpre/jrdme_proto.h"
-
-
-extern "C" {
 
 
 //____________________________________________________________
@@ -153,5 +142,3 @@ void JRDMET_init( DBB db)
 	}
 }
 
-
-} // extern "C"

@@ -26,10 +26,6 @@
 
 #include "../gpre/parse.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void CPR_abort(void);
 #ifdef DEV_BUILD
 extern void CPR_assert(TEXT *, int);
@@ -45,9 +41,5 @@ extern void CPR_raw_read(void);
 extern void CPR_s_error(TEXT *);
 extern TXT CPR_start_text(void);
 extern TOK CPR_token(void);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_GPRE_PROTO_H_ */

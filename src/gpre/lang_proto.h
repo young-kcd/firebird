@@ -24,10 +24,6 @@
 #ifndef _GPRE_LANG_PROTO_H_
 #define _GPRE_LANG_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void ADA_action(ACT, int);
 extern void ADA_print_buffer(TEXT *, int);
 extern int BAS_action(ACT, int);
@@ -42,9 +38,5 @@ extern void INT_action(ACT, int);
 extern void INT_CXX_action(ACT, int);
 extern void PAS_action(ACT, int);
 extern int PLI_action(ACT, int);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_LANG_PROTO_H_ */

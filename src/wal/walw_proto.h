@@ -24,14 +24,8 @@
 #ifndef _WAL_WALW_PROTO_H_
 #define _WAL_WALW_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern SSHORT	WALW_writer (ISC_STATUS *, struct wal *);
-
-#ifdef __cplusplus
-}	/* extern "C" */
+#ifdef SUPERSERVER
+extern int main_walw(SCHAR **);
 #endif
 
 #endif /* _WAL_WALW_PROTO_H_ */

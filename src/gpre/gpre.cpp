@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.29 2003-09-05 10:14:07 aafemt Exp $
+//  $Id: gpre.cpp,v 1.30 2003-09-06 00:52:10 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.29 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: gpre.cpp,v 1.30 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -80,8 +80,6 @@ extern int lib$get_foreign();
 #ifdef MINGW 
 #include <io.h>
 #endif
-
-extern "C" {
 
 #ifdef SMALL_FILE_NAMES
 #define SCRATCH		"fb_q"
@@ -2868,5 +2866,3 @@ static SSHORT skip_white()
 	return c;
 }
 
-
-} // extern "C"

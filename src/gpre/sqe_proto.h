@@ -24,10 +24,6 @@
 #ifndef _GPRE_SQE_PROTO_H_
 #define _GPRE_SQE_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef GPRE_NOD(*pfn_SQE_list_cb) (GPRE_REQ, BOOLEAN, USHORT *, USHORT *);
 
 extern GPRE_NOD SQE_boolean(GPRE_REQ, USHORT *);
@@ -41,9 +37,5 @@ extern BOOLEAN SQE_resolve(GPRE_NOD, GPRE_REQ, RSE);
 extern RSE SQE_select(GPRE_REQ, USHORT);
 extern GPRE_NOD SQE_value(GPRE_REQ, BOOLEAN, USHORT *, USHORT *);
 extern REF SQE_variable(GPRE_REQ, BOOLEAN);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _GPRE_SQE_PROTO_H_ */

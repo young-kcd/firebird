@@ -24,18 +24,10 @@
 #ifndef _DUDLEY_HSH_PROTO_H_
 #define _DUDLEY_HSH_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void HSH_init(void);
 extern void HSH_insert(SYM);
 extern SYM HSH_lookup(SCHAR *, USHORT);
 extern void HSH_remove(SYM);
 extern SYM HSH_typed_lookup(TEXT *, USHORT, enum sym_t);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* _DUDLEY_HSH_PROTO_H_ */

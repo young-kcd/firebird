@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.22 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: ftn.cpp,v 1.23 2003-09-06 00:52:10 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -50,9 +50,7 @@
 #include <string.h>
 #endif
 
-extern "C" {
-	extern UCHAR fortran_labels[];
-} /* extern "C" */
+extern UCHAR fortran_labels[];
 extern DBB isc_databases;
 extern GPRE_REQ requests;
 extern IB_FILE *out_file;
