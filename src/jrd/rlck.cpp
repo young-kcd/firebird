@@ -44,13 +44,11 @@
 static LCK allocate_record_lock(JRD_TRA, RPB *);
 #endif
 static LCK allocate_relation_lock(MemoryPool*, JRD_REL);
-static LCK attachment_relation_lock(JRD_REL);
 #ifdef PC_ENGINE
+static LCK attachment_relation_lock(JRD_REL);
 static void drop_record_lock(LCK);
 static LCK find_record_lock(RPB *);
-#endif
 static BOOLEAN obtain_lock(JRD_TRA, LCK, USHORT);
-#ifdef PC_ENGINE
 static void start_record_locking(JRD_REL);
 #endif
 
@@ -873,7 +871,7 @@ static LCK allocate_relation_lock(MemoryPool* pool, JRD_REL relation)
 	return lock;
 }
 
-
+#ifdef PC_ENGINE
 static LCK attachment_relation_lock(JRD_REL relation)
 {
 /**************************************
@@ -914,7 +912,7 @@ static LCK attachment_relation_lock(JRD_REL relation)
 
 	return lock;
 }
-
+#endif
 
 #ifdef PC_ENGINE
 static void drop_record_lock(LCK record_lock)
@@ -976,7 +974,7 @@ static LCK find_record_lock(RPB * rpb)
 }
 #endif
 
-
+#ifdef PC_ENGINE
 static BOOLEAN obtain_lock(JRD_TRA transaction, LCK lock, USHORT lock_level)
 {
 /**************************************
@@ -1007,7 +1005,7 @@ static BOOLEAN obtain_lock(JRD_TRA transaction, LCK lock, USHORT lock_level)
 		return TRUE;
 	return FALSE;
 }
-
+#endif
 
 #ifdef PC_ENGINE
 static void start_record_locking(JRD_REL relation)

@@ -99,7 +99,9 @@ static void retain_context(TDBB, JRD_TRA, USHORT);
 #ifdef VMS
 static void compute_oldest_retaining(TDBB, JRD_TRA, BOOLEAN);
 #endif
+#ifdef PC_ENGINE
 static void downgrade_lock(JRD_TRA);
+#endif
 static void expand_view_lock(JRD_TRA, JRD_REL, SCHAR);
 static TIP fetch_inventory_page(TDBB, WIN *, SLONG, USHORT);
 static SLONG inventory_page(TDBB, SLONG);
@@ -2347,7 +2349,7 @@ static void compute_oldest_retaining(
 }
 #endif
 
-
+#ifdef PC_ENGINE
 static void downgrade_lock(JRD_TRA transaction)
 {
 /**************************************
@@ -2399,7 +2401,7 @@ static void downgrade_lock(JRD_TRA transaction)
 
 	ISC_ast_exit();
 }
-
+#endif
 
 static void expand_view_lock(JRD_TRA transaction, JRD_REL relation, SCHAR lock_type)
 {
