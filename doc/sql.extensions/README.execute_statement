@@ -108,7 +108,7 @@ EXECUTE STATEMENT is potentially dangerous, because:
      in a manner that would break your statement. For example, a DROP TABLE
      request for the table used in the compiled EXECUTE PROCEDURE statement
      will be granted.
-  3. In general, EXECUTE PROCEDURE operations are rather slow, because the
+  3. In general, EXECUTE STATEMENT operations are rather slow, because the
      statement to be executed has to be prepared each time it is executed
      by this method.
 
