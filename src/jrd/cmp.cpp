@@ -2181,28 +2181,12 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 	IDL index;
 	VEC vector;
 	DBB dbb;
-	USHORT id;
-	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	DEV_BLKCHK(dbb, type_dbb);
-
-
-	/* Release all database specific requests */
-	for (id = 0; id < irq_MAX; id++) {
-		if (request = (JRD_REQ) REQUEST(id)) {
-			CMP_release(tdbb, request);
-		}
-	}
-
-	for (id = 0; id < drq_MAX; id++) {
-		if (request = (JRD_REQ) DYN_REQUEST(id)) {
-			CMP_release(tdbb, request);
-		}
-	}
 
 	if (!(vector = dbb->dbb_relations))
 		return;
