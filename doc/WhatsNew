@@ -265,6 +265,10 @@
       Contributor(s):
         Dmitry Yemanov <yemanov@yandex.ru>
 
+    * Readline (cmd history) support added to ISQL.
+      Contributor(s):
+        Mark O'Donohue <mark.odonohue@cytopia.com.au>
+
     * New BIGINT datatype (SF #446206).
         Allow native SQL usage of 64-bit exact numerics.
       Note:
@@ -309,6 +313,10 @@
       Contributor(s):
         Dmitry Yemanov <yemanov@yandex.ru>
 
+    * New plugin manager and INTL interface.
+      Contributor(s):
+        John Bellardo <bellardo@cs.ucsd.edu>
+
     * In-memory sorting.
         If SORT plan is used for a SQL statement, the sorting is done in memory.
         If there's not enough memory for this operation, old temporary file based method is used.
@@ -332,3 +340,23 @@
         EXECUTE VARCHAR my_var;
       Contributor(s):
         Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * New memory manager.
+      Contributor(s):
+        John Bellardo <bellardo@cs.ucsd.edu>
+        
+    * New exception handling logic.
+      Contributor(s):
+        Mike Nordell <tamlin@algonet.se>,
+        John Bellardo <bellardo@cs.ucsd.edu>
+
+    * New autoconf-based build configuration.
+      Contributor(s):
+        John Bellardo <bellardo@cs.ucsd.edu>,
+        Mark O'Donohue <mark.odonohue@cytopia.com.au>
+        
+    * The code port from C to C++.
+      Contributor(s):
+        Mike Nordell <tamlin@algonet.se>,
+        John Bellardo <bellardo@cs.ucsd.edu>,
+        Mark O'Donohue <mark.odonohue@cytopia.com.au>
