@@ -315,7 +315,8 @@ ISC_STATUS BLF_put_segment(thread_db* tdbb,
 
 // SEH moved to separate function to avoid conflicts 
 // with destructor of BlobControl
-inline void initializeFilter(ISC_STATUS &status,
+inline void initializeFilter(thread_db *tdbb,
+							 ISC_STATUS &status,
 							 BlobControl *control, 
 							 BlobFilter* filter, 
 							 USHORT action)
@@ -418,7 +419,7 @@ static ISC_STATUS open_blob(
 	control->ctl_bpb_length = bpb_length;
 
 	ISC_STATUS status;
-	initializeFilter(status, control, filter, action);
+	initializeFilter(tdbb, status, control, filter, action);
 
 	if (status) {
 		ISC_STATUS_ARRAY local_status;
