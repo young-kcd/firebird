@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.17 2003-02-10 13:28:20 eku Exp $
+$Id: btr.cpp,v 1.18 2003-02-10 17:01:34 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -4472,12 +4472,7 @@ static BOOLEAN scan(TDBB tdbb,
 	flag &= ~irb_equality;
 
 	while (TRUE) {
-#ifdef DN10000
-		number = *(SLONG *)
-			BTN_NUMBER(node);
-#else
 		number = BTR_get_quad(BTN_NUMBER(node));
-#endif
 
 		if (number == END_LEVEL) {
 			return FALSE;
