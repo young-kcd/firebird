@@ -20,11 +20,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" (MAC_AUX) port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Cray" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
+ *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
  *
  */
 

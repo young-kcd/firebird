@@ -20,9 +20,9 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
+ *                          - MAC ("MAC", "MAC_AUX" and "MAC_CP" defines)
+ *                          - XENIX and OS/2
  *
  */
 
@@ -1021,9 +1021,12 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.4 2002-02-16 04:16:08 seanleyne Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.5 2002-02-16 05:06:17 seanleyne Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.4  2002/02/16 04:16:08  seanleyne
+//	Code cleanup of obsolete OS/2 port
+//	
 //	Revision 1.3  2002/02/16 02:49:56  seanleyne
 //	Code cleanup of obsolete XENIX port and missed MAC (MAC_AUX) port items
 //	

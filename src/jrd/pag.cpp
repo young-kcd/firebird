@@ -20,13 +20,9 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "HP9000 s300" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
+ *                          - EPSON, DELTA, IMP, NCR3000, M88K
+ *                          - HP9000 s300 and Apollo
  *
  */
 

@@ -21,15 +21,12 @@
  * Contributor(s): ______________________________________.
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
+ *                          - EPSON, DELTA, IMP, NCR3000 and M88K
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.11 2002-02-16 03:54:54 seanleyne Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.12 2002-02-16 05:06:17 seanleyne Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS

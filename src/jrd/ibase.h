@@ -22,13 +22,10 @@
  * FSG 16.03.2001
  */
 /*
-$Id: ibase.h,v 1.8 2002-02-16 04:16:08 seanleyne Exp $
+$Id: ibase.h,v 1.9 2002-02-16 05:06:17 seanleyne Exp $
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" (MAC_AUX) port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Cray" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
+ *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
  *
  */
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.5 2002-02-16 03:59:02 seanleyne Exp $
+ * $Id: gpre.h,v 1.6 2002-02-16 05:06:17 seanleyne Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -42,8 +42,8 @@
  * in WHERE clauses for sql dialect 2 and 3.
  * (cause a core dump in a test case from C.R. Zamana)
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "HP9000 s300" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
+ *                         - "IMP" and "HP9000 s300"
  *
  */
 

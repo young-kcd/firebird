@@ -16,8 +16,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" define
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
+ *                          - DELTA and IMP
  *
  */
 #ifndef _INTL_LANGDRV_H_
