@@ -1768,7 +1768,7 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 			old_id = id;
 			id = drq_s_grant;
 
-			store_privilege(gbl, object, user, field, p, user_type, obj_type,
+			store_privilege(gbl, object, user, field, pr, user_type, obj_type,
 							0);
 
 			id = old_id;
