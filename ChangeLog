@@ -1,3 +1,45 @@
+2003-11-01 12:32  dimitr
+
+	* firebird2/builds/win32/make_boot.bat:
+	
+	no message
+
+2003-11-01 12:29  dimitr
+
+	* firebird2/src/jrd/: idx.cpp, idx.cpp:
+	
+	Slightly reworked one of the previous bugfixes.
+
+2003-11-01 11:58  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	no message
+
+2003-11-01 11:26  robocop
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h,
+	alice/alice_meta.epp, alice/alice_meta.h, alice/aliceswi.h,
+	alice/all_proto.h, alice/blk.h, alice/exe.cpp, alice/exe_proto.h,
+	alice/lls.h, alice/tdr.cpp, alice/tdr_proto.h, burp/burp.cpp,
+	burp/burp.h, common/classes/semaphore.h, dsql/all.h, dsql/alld.cpp,
+	dsql/alld_proto.h, dsql/ddl.cpp, dsql/dsql.cpp, dsql/dsql.h,
+	dsql/errd_proto.h, dsql/gen.cpp, dsql/gen_proto.h, dsql/make.cpp,
+	dsql/make_proto.h, dsql/metd.epp, dsql/misc_func.cpp, dsql/node.h,
+	dsql/pass1.cpp, ipserver/ipapi_proto.h, ipserver/ipclient.cpp,
+	jrd/alt.cpp, jrd/entry.h, jrd/gdsold.h, jrd/ibase.h, jrd/inf.cpp,
+	jrd/isc.cpp, jrd/isc_proto.h, jrd/jrd.cpp, jrd/jrd.h,
+	jrd/jrd_proto.h, jrd/scl.epp, jrd/scl_proto.h, jrd/svc.cpp,
+	jrd/svc.h, jrd/svc_proto.h, jrd/tra.cpp, jrd/tra_proto.h,
+	jrd/vio.cpp, jrd/why.cpp, jrd/os/vms/rdb.cpp,
+	jrd/os/vms/rdbint.cpp, remote/inet.cpp, remote/inet_proto.h,
+	remote/inter_proto.h, remote/interface.cpp, remote/server.cpp,
+	remote/xnet.cpp, remote/xnet_proto.h, remote/os/win32/srvr_w32.cpp,
+	remote/os/win32/wnet.cpp, remote/os/win32/wnet_proto.h,
+	utilities/gsec/gsec.cpp, utilities/gsec/gsec.h:
+	
+	const correctness and other related changes
+
 2003-10-31 17:42  skidder
 
 	* firebird2/builds/install/:
