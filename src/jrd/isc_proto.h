@@ -30,7 +30,6 @@
 extern "C" {
 #endif
 
-
 extern void DLL_EXPORT ISC_ast_enter(void);
 extern void DLL_EXPORT ISC_ast_exit(void);
 extern int DLL_EXPORT ISC_check_process_existence(SLONG, SLONG, USHORT);
@@ -46,7 +45,6 @@ extern void API_ROUTINE ISC_prefix(TEXT *, TEXT *);
 extern void API_ROUTINE ISC_prefix_lock(TEXT *, TEXT *);
 extern void API_ROUTINE ISC_prefix_msg(TEXT *, TEXT *);
 
-
 #ifdef VMS
 extern int ISC_expand_logical_once(TEXT *, USHORT, TEXT *);
 extern int ISC_make_desc(TEXT *, struct dsc$descriptor *, USHORT);
@@ -55,18 +53,12 @@ extern void ISC_wake(SLONG);
 extern void ISC_wake_init(void);
 #endif
 
-#if defined(WIN_NT)
-
-#define WIN32_REG_KEY_PATH "SOFTWARE\\Firebird\\DBServer"
-#define WIN32_REG_KEY_PATH_CURRENT_VERSION "SOFTWARE\\Firebird\\DBServer\\CurrentVersion"
-
+#ifdef WIN_NT
 extern BOOLEAN ISC_is_WinNT(void);
 extern SSHORT ISC_get_registry_var(TEXT *, TEXT *, SSHORT, void **);
 extern struct _SECURITY_ATTRIBUTES *ISC_get_security_desc(void);
 extern TEXT *ISC_prefix_interbase(TEXT *, TEXT *);
-
-#endif /* WIN_NT */
-
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" */
