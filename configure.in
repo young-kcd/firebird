@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.11 2003-11-06 09:28:58 stryqx Exp $
+dnl $Id: configure.in,v 1.141.2.12 2003-11-09 21:24:10 bellardo Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -604,6 +604,7 @@ mkdir -p temp/libfbclient/common/classes
 mkdir -p temp/libfbclient/common/config
 mkdir -p temp/libfbclient/jrd/os/posix
 mkdir -p temp/libfbclient/jrd/os/win32
+mkdir -p temp/libfbclient/jrd/os/darwin
 mkdir -p temp/client.gbak/burp
 mkdir -p temp/client.gfix/alice
 mkdir -p temp/client.gpre/gpre
