@@ -1353,7 +1353,7 @@ static void expand_share_name(TEXT * share_name)
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 					 "SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Shares",
-					 0, KEY_QUERY_VALUE, &hkey) != ERROR_FBOK) {
+					 0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS) {
 #ifdef STACK_EFFICIENT
 		gds__free((SLONG *) data_buf);
 #endif /* STACK_EFFICIENT */
@@ -1382,7 +1382,7 @@ static void expand_share_name(TEXT * share_name)
 							&d_size);
 	}
 
-	if (ret == ERROR_FBOK) {
+	if (ret == ERROR_SUCCESS) {
 		for (q = data; q && *q;
 			 q = (type_code == REG_MULTI_SZ) ? q + strlen(q) + 1 : NULL) {
 			if (!strnicmp(q, "path", 4)) {
