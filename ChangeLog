@@ -1,3 +1,79 @@
+2003-04-01 23:59  brodsom
+
+	* firebird2/src/jrd/: perf.cpp, isc_sync.cpp, dpm.epp,
+	functions.cpp, codes.epp, codes.epp:
+	
+	Correct formats
+
+2003-04-01 23:56  brodsom
+
+	* firebird2/src/wal/: wstatus.cpp, walw.cpp:
+	
+	Correct formats
+
+2003-04-01 19:58  brodsom
+
+	* firebird2/src/jrd/: sdl.cpp, vio.cpp, dpm.epp, gds.cpp, perf.cpp:
+	
+	Correct formats
+
+2003-04-01 17:36  alexpeshkoff
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	Fixed QLI build
+
+2003-04-01 17:36  alexpeshkoff
+
+	* firebird2/src/remote/: allr_proto.h, allr.cpp:
+	
+	Fixed parameters names & some preprocessing cleanup
+
+2003-04-01 14:37  brodsom
+
+	* firebird2/src/wal/: walc.cpp, walw.cpp, wstatus.cpp:
+	
+	Correct formats
+
+2003-04-01 13:49  brodsom
+
+	* firebird2/src/gpre/: pat.cpp, exp.cpp, c_cxx.cpp:
+	
+	Correct formats
+
+2003-04-01 13:43  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Correct formats
+
+2003-04-01 13:32  brodsom
+
+	* firebird2/src/: utilities/ppg.cpp, utilities/install_reg.cpp,
+	utilities/install_svc.cpp, remote/inet.cpp, remote/wnet.cpp:
+	
+	Correct formats
+
+2003-04-01 13:24  brodsom
+
+	* firebird2/src/jrd/common.h:
+	
+	Correct formats
+
+2003-04-01 01:44  brodsom
+
+	* firebird2/src/: intl/cv_gb2312.c, intl/cv_jis.c,
+	intl/cv_narrow.c, intl/lc_ksc.c, intlcpp/cv_gb2312.cpp,
+	intlcpp/cv_jis.cpp, intlcpp/cv_narrow.cpp, intlcpp/lc_ksc.cpp:
+	
+	Only code formatting changes
+
+2003-04-01 01:40  brodsom
+
+	* firebird2/src/dsql/: parse.y, keywords.cpp, parse.sed:
+	
+	Changes to allow use of bison to create parse.cpp
+
 2003-03-31 21:11  arnobrinkman
 
 	* firebird2/src/dsql/: gen.cpp, make.cpp, pass1.cpp:
