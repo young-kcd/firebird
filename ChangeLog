@@ -1,3 +1,87 @@
+2003-12-01 20:44  dimitr
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Small correction.
+
+2003-12-01 19:36  dimitr
+
+	* firebird2/src/jrd/trig.h:
+	
+	Fixed PK/FK problem caused by my yesterday's commit.  Let's adjust
+	RDB$TRIGGER_18 to allow modifications of RDB$STATISTICS.
+
+2003-12-01 18:53  dimitr
+
+	* firebird2/src/common/classes/array.h:
+	
+	Oops, sorry.
+
+2003-12-01 17:29  dimitr
+
+	* firebird2/src/common/classes/array.h:
+	
+	Correction
+
+2003-12-01 11:25  arnobrinkman
+
+	* firebird2/src/jrd/: btn.cpp, btn.h:
+	
+	Enhanced Index Structure.  1) NULLs on top when sorting on ASC
+	index, DESC stays the same.  2) Support for larger index lengths,
+	can be up to 1/4 page size.  3) Store record-number on
+	non-leafpages for faster lookup in many duplicates.  4) Jump-nodes
+	for faster key-lookup in index on larger page-sizes.  5) Segment
+	selectivity calculation added.
+
+2003-12-01 08:54  epocman
+
+	* firebird2/src/utilities/gdsclient.cpp:
+	
+	const_cast fixup.
+
+2003-12-01 03:51  arnobrinkman
+
+	* firebird2/builds/win32/msvc6/: engine.dsp, engine_classic.dsp,
+	engine_embed.dsp, gstat.dsp:
+	
+	Enhanced Index Structure.  1) NULLs on top when sorting on ASC
+	index, DESC stays the same.  2) Support for larger index lengths,
+	can be up to 1/4 page size.  3) Store record-number on
+	non-leafpages for faster lookup in many duplicates.  4) Jump-nodes
+	for faster key-lookup in index on larger page-sizes.  5) Segment
+	selectivity calculation added.
+
+2003-12-01 03:36  arnobrinkman
+
+	* firebird2/src/: jrd/btr.cpp, jrd/btr.h, jrd/btr_proto.h,
+	jrd/cch.cpp, jrd/constants.h, jrd/idx.cpp, jrd/nav.cpp, jrd/ods.h,
+	jrd/opt.cpp, jrd/rec.cpp, jrd/val.cpp, utilities/gstat/dba.epp,
+	journal/rebuild.epp:
+	
+	Enhanced Index Structure.  1) NULLs on top when sorting on ASC
+	index, DESC stays the same.  2) Support for larger index lengths,
+	can be up to 1/4 page size.  3) Store record-number on
+	non-leafpages for faster lookup in many duplicates.  4) Jump-nodes
+	for faster key-lookup in index on larger page-sizes.  5) Segment
+	selectivity calculation added.
+
+2003-12-01 01:34  epocman
+
+	* firebird2/src/utilities/: gdsclient.cpp, gdsclient_proto.h,
+	install_gds.cpp, install_nt.h:
+	
+	Win32 - Streamlined version info access. Added 'instgds remove'
+	support.
+
+2003-12-01 00:19  epocman
+
+	* firebird2/builds/win32/make_all.bat:
+	
+	Win32 - We don't need to build a gds32.dll anymore (stub or other).
+	Distribution package only needs to include fbclient.dll along with
+	instgds.exe tool.
+
 2003-11-30 22:13  dimitr
 
 	* firebird2/src/: jrd/btr.cpp, jrd/btr.h, jrd/btr_proto.h,
