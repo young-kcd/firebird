@@ -38,9 +38,9 @@
 static USHORT inst_error(ULONG, const TEXT *);
 static void usage(void);
 
-static struct
+static const struct
 {
-	TEXT* name;
+	const TEXT* name;
 	USHORT abbrev;
 	USHORT code;
 } commands[] =
@@ -51,9 +51,9 @@ static struct
 	{NULL, 0, 0}
 };
 
-static struct
+static const struct
 {
-	TEXT* name;
+	const TEXT* name;
 	USHORT abbrev;
 	USHORT code;
 } clients[] =
@@ -106,11 +106,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		{
 			if (sw_command == COMMAND_NONE)
 			{
-				TEXT* cmd;
+				const TEXT* cmd;
 				int i;
 				for (i = 0; cmd = commands[i].name; i++)
 				{
-					TEXT* q;
+					const TEXT* q;
 					for (p = *argv, q = cmd; *p && UPPER(*p) == *q; p++, q++);
 					if (!*p && commands[i].abbrev <= (USHORT) (q - cmd))
 						break;
@@ -124,11 +124,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			}
 			else
 			{
-				TEXT* cln;
+				const TEXT* cln;
 				int i;
 				for (i = 0; cln = clients[i].name; i++)
 				{
-					TEXT* q;
+					const TEXT* q;
 					for (p = *argv, q = cln; *p && UPPER(*p) == *q; p++, q++);
 					if (!*p && clients[i].abbrev <= (USHORT) (q - cln))
 						break;
@@ -269,7 +269,6 @@ static USHORT inst_error(ULONG status, const TEXT * string)
  *
  **************************************/
 	TEXT buffer[512];
-	SSHORT l;
 
 	if (status == 0)
 	{
@@ -280,13 +279,13 @@ static USHORT inst_error(ULONG status, const TEXT * string)
 	{
 		printf("Error %u occurred during \"%s\".\n", status, string);
 
-		if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 								NULL,
 								status,
 								MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 								buffer,
 								sizeof(buffer),
-								NULL)))
+								NULL))
 		{
 			printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}
@@ -340,3 +339,4 @@ static void usage(void)
 
 	exit(FINI_ERROR);
 }
+

@@ -39,9 +39,9 @@ static void svc_query(const char*, const char*, SC_HANDLE manager);
 static USHORT svc_error(SLONG, const TEXT*, SC_HANDLE);
 static void usage(void);
 
-static struct
+static const struct
 {
-	TEXT *name;
+	const TEXT *name;
 	USHORT abbrev;
 	USHORT code;
 } commands[] =
@@ -66,7 +66,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Install or remove a Firebird service.
  *
  **************************************/
-	TEXT *q, *cmd;
 	TEXT directory[MAXPATHLEN];
 	TEXT full_username[128];
 	TEXT oem_username[128];
@@ -106,8 +105,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	{
 		if (**argv != '-')
 		{
+			const TEXT* cmd;
 			for (i = 0; cmd = commands[i].name; i++)
 			{
+				const TEXT* q;
 				for (p = *argv, q = cmd; *p && UPPER(*p) == *q; p++, q++);
 				if (!*p && commands[i].abbrev <= (USHORT) (q - cmd))
 					break;
@@ -206,8 +207,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		{
 			printf("Enter %s user password : ", oem_username);
 			p = keyb_password;
-			q = p + sizeof(keyb_password) - 1;	// keep room for '\0'
-			while (p < q && (*p++ = getch()) != '\r')
+			const TEXT* const end = p + sizeof(keyb_password) - 1;	// keep room for '\0'
+			while (p < end && (*p++ = getch()) != '\r')
 				putch('*'); // Win32 only
 			*(p - 1) = '\0';	// Cuts at '\r'
 			printf("\n");
@@ -470,7 +471,6 @@ static USHORT svc_error( SLONG status, const TEXT* string, SC_HANDLE service)
  *
  **************************************/
 	TEXT buffer[512];
-	SSHORT l;
 
 	if (service != NULL)
 		CloseServiceHandle(service);
@@ -484,13 +484,13 @@ static USHORT svc_error( SLONG status, const TEXT* string, SC_HANDLE service)
 	{
 		printf("Error occurred during \"%s\".\n", string);
 
-		if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 								NULL,
 								status,
 								MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 								buffer,
 								sizeof(buffer),
-								NULL)))
+								NULL))
 		{
 			printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}

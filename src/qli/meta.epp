@@ -79,18 +79,10 @@ static DBB setup_update(DBB);
 static void sql_grant_revoke(qli_syntax*, USHORT);
 static void stuff_priv(qli_rlb*, USHORT, const TEXT*, USHORT, const TEXT*, const TEXT*);
 static int truncate_string(TEXT*);
-static void wal_info(const UCHAR*, SLONG*, SCHAR*, SLONG*);
 
 static const UCHAR tpb[] = { isc_tpb_version1, isc_tpb_write };
 static const UCHAR db_info[] = { isc_info_implementation, isc_info_end };
 static UCHAR global_parm_buffer[256];
-
-static const UCHAR db_log_info[] =
-{
-	isc_info_logfile,
-	isc_info_cur_logfile_name,
-	isc_info_cur_log_part_offset
-};
 
 /*
 static const UCHAR	dpb_trace [] =	{ isc_dpb_version1, isc_dpb_trace, 1, 1 };
@@ -492,7 +484,7 @@ void MET_delete_database( DBB dbb)
 /* generate a database parameter block to
    include the user/password, if necessary */
 
-	TEXT* user;
+	const TEXT* user;
 	USHORT user_length;
 	if (dbb->dbb_user) {
 		user = (TEXT *) dbb->dbb_user->con_data;
@@ -542,7 +534,6 @@ void MET_delete_database( DBB dbb)
 							 &dbb->dbb_handle, dpb_length, (char*) dpb))
 			ERRQ_database_error(dbb, status_vector);
 
-	qli_lls* log_stack = NULL;
 	qli_lls* stack = NULL;
 
 	gds_trans = MET_transaction(nod_start_trans, dbb);
@@ -556,21 +547,6 @@ void MET_delete_database( DBB dbb)
 	ON_ERROR
 		ERRQ_database_error(dbb, gds_status);
 	END_ERROR;
-
-// Get write ahead log information
-
-	TEXT db_info_buffer[512];
-	if (isc_database_info(status_vector, &DB, sizeof(db_log_info),
-						   reinterpret_cast<const char*>(db_log_info),
-						   sizeof(db_info_buffer),
-						   db_info_buffer))
-		ERRQ_database_error(dbb, status_vector);
-
-// extract info from buffer
-
-	TEXT cur_log[512];
-	SLONG part_offset, log = 0;
-	wal_info((const UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
 	MET_transaction(nod_commit, dbb);
 
@@ -589,11 +565,6 @@ void MET_delete_database( DBB dbb)
 		if (unlink(sstring->str_data))
 			ERRQ_print_error(431, sstring->str_data, NULL, NULL, NULL, NULL);
 			// Msg431 Could not drop database file "%s"
-	}
-
-	while (log_stack) {
-		const qli_str* log_string = (qli_str*) ALLQ_pop(&log_stack);
-		unlink(log_string->str_data);	// do not check for error
 	}
 
 	if (unlink(dbb->dbb_filename))
@@ -3690,56 +3661,4 @@ static void stuff_priv(
 
 	STUFF(isc_dyn_end);
 }
-
-
-static void wal_info(
-					 const UCHAR* db_info_buffer,
-					 SLONG* log, SCHAR* cur_log, SLONG* part_offset)
-{
-/**************************************
- *
- *	w a l _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Extract wal name and log offset
- *
- **************************************/
-	*log = 0;
-	*part_offset = 0;
-	cur_log[0] = 0;
-
-	const UCHAR* p = db_info_buffer;
-	UCHAR item;
-	while ((item = *p++) != isc_info_end) {
-		const SLONG length = gds__vax_integer(p, 2);
-		p += 2;
-		switch (item) {
-		case isc_info_logfile:
-			*log = gds__vax_integer(p, length);
-			p += length;
-			break;
-
-		case isc_info_cur_logfile_name:
-			{
-				const UCHAR* d = p;
-				p += length;
-				const SLONG log_length = *d++;
-				memcpy(cur_log, d, log_length);
-				cur_log[log_length] = 0;
-				break;
-			}
-
-		case isc_info_cur_log_part_offset:
-			*part_offset = gds__vax_integer(p, length);
-			p += length;
-			break;
-
-		default:
-			;
-		}
-	}
-}
-
 

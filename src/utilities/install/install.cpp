@@ -521,7 +521,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 
 	// This is a "magic value" that will allow locating the version info.
 	// Windows itself does something equivalent internally.
-	BYTE lookup[] = {'V', 0, 'S', 0, '_', 0,
+	const BYTE lookup[] = {'V', 0, 'S', 0, '_', 0,
 		'V', 0, 'E', 0, 'R', 0, 'S', 0, 'I', 0, 'O', 0, 'N', 0, '_', 0,
 		'I', 0, 'N', 0, 'F', 0, 'O', 0, 0, 0, 0, 0, 0xbd, 0x04, 0xef, 0xfe};
 	BYTE* p = mem;				// First byte of mapped file
@@ -574,7 +574,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	// This patch assumes the original version string has a major version and
 	// a minor version made of a single digit, like 1.5.x.y. It would need
 	// to be updated if we want to use versions like 1.51.x.y.
-	BYTE flookup[] = {'F', 0, 'i', 0, 'l', 0, 'e', 0,
+	const BYTE flookup[] = {'F', 0, 'i', 0, 'l', 0, 'e', 0,
 		'V', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, 0, 0};
 	p = vi;
 	end = vi + viLength;
@@ -606,7 +606,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	// This patch assumes the original version string has a major version and
 	// a minor version made of a single digit, like 1.5.x.y. It would need
 	// to be updated if we want to use versions like 1.51.x.y.
-	BYTE plookup[] = {'P', 0, 'r', 0, 'o', 0, 'd', 0, 'u', 0, 'c', 0, 't', 0,
+	const BYTE plookup[] = {'P', 0, 'r', 0, 'o', 0, 'd', 0, 'u', 0, 'c', 0, 't', 0,
 		'V', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, 0, 0};
 	p = vi;
 	end = vi + viLength;

@@ -78,7 +78,7 @@ static void RefreshOSControls(HWND, BOOL);
 #endif
 static BOOL ValidateUser(HWND);
 static void PrintCfgStatus(const ISC_STATUS*, int, HWND);
-static void FillSysdbaSPB(char *, char *);
+static void FillSysdbaSPB(char*, const char*);
 
 // Define an array of dword pairs,
 // where the first of each pair is the control ID,
@@ -197,12 +197,10 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		break;
 	case WM_HELP:
 		{
-			LPHELPINFO lphi;
-
-			lphi = (LPHELPINFO) lParam;
+			LPHELPINFO lphi = (LPHELPINFO) lParam;
 			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
 			{
-				WinHelp(static_cast < HWND > (lphi->hItemHandle),
+				WinHelp(static_cast<HWND>(lphi->hItemHandle),
 						"IBSERVER.HLP",
 						HELP_WM_HELP, (DWORD) (LPVOID) aMenuHelpIDs1);
 			}
@@ -731,7 +729,7 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 	}
 }
 
-void FillSysdbaSPB(char *szSpb, char *szPasswd)
+void FillSysdbaSPB(char *szSpb, const char* szPasswd)
 {
 /**************************************
  *

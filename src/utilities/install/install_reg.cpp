@@ -33,9 +33,9 @@
 static USHORT reg_error(SLONG, const TEXT*, HKEY);
 static void usage(void);
 
-static struct
+static const struct
 {
-	TEXT* name;
+	const TEXT* name;
 	USHORT abbrev;
 	USHORT code;
 } commands[] =
