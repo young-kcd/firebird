@@ -91,8 +91,13 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) FB_SERVICE_PORT},
 	{TYPE_STRING,		"RemotePipeName",			(ConfigValue) FB_PIPE_NAME},
 	{TYPE_STRING,		"IpcName",					(ConfigValue) FB_IPC_NAME},
+#ifdef WIN_NT
 	{TYPE_STRING,		"MaxUnflushedWrites",		(ConfigValue) 100},
 	{TYPE_STRING,		"MaxUnflushedWriteTime",	(ConfigValue) 5}
+#else
+	{TYPE_STRING,		"MaxUnflushedWrites",		(ConfigValue) -1},
+	{TYPE_STRING,		"MaxUnflushedWriteTime",	(ConfigValue) -1}
+#endif
 };
 
 /******************************************************************************
