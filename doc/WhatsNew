@@ -1,4 +1,50 @@
   **************
+  * v1.5 RC 6
+  **************
+
+    * Fixed RC5 bug.
+        Various issues with server-side database aliases. In particular, restore support for relative paths in local connection strings
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed RC5 bug.
+        Possibly incorrect stream mapping in DSQL parser
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed RC5 bug.
+        CASE/COALESCE expressions have invalid datatype when used with integer arguments
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed RC5 bug.
+        Engine crash during execution of DDL altering long recursive procedure->trigger chains
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed RC5 bug.
+        Thread-safety issues in the SS client library and Windows CS listener process
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed RC5 bug.
+        Fix more Windows CS lock-ups. It passes heavy stress-tests now, seems to be stable
+      Note:
+        Automatic lock table resizing has been disabled for this target. You may need to adjust LockMemSize parameter if you experience "lock manager out of room" errors or failures during database restore
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed RC5 bug.
+        Rollback unplanned change of isc_que_events API function parameter types
+      Contributor(s):
+        Dimitry Sibiryakov <sd@topol.udm.net>
+
+    * Fixed RC5 bug.
+        Engine crashes if IO error happens early during database startup in SS builds
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+  **************
   * v1.5 RC 5
   **************
 
