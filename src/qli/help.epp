@@ -92,7 +92,7 @@ void HELP_help( SYN node)
  **************************************/
 	NAM *ptr, *end;
 	USHORT max_level;
-	TEXT target[128], **topic, *topics[16];
+	TEXT target[MAXPATHLEN], **topic, *topics[16];
 
 	if (!HELP_DB) {
 		gds__prefix(target, TARGET);

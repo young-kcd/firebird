@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.32 2003-04-03 10:09:58 brodsom Exp $
+$Id: isc.cpp,v 1.33 2003-04-06 11:40:25 alexpeshkoff Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -1216,7 +1216,7 @@ SLONG API_ROUTINE ISC_get_prefix(TEXT * passed_string)
 	}
 	return (gds__get_prefix(arg_type, ++passed_string));
 }
-void API_ROUTINE ISC_prefix(TEXT * string, TEXT * root)
+void API_ROUTINE ISC_prefix(TEXT * string, const TEXT * root)
 {
 /**************************************
  *
@@ -1232,7 +1232,7 @@ void API_ROUTINE ISC_prefix(TEXT * string, TEXT * root)
 	gds__prefix(string, root);
 	return;
 }
-void API_ROUTINE ISC_prefix_lock(TEXT * string, TEXT * root)
+void API_ROUTINE ISC_prefix_lock(TEXT * string, const TEXT * root)
 {
 /**************************************
  *
@@ -1248,7 +1248,7 @@ void API_ROUTINE ISC_prefix_lock(TEXT * string, TEXT * root)
 	gds__prefix_lock(string, root);
 	return;
 }
-void API_ROUTINE ISC_prefix_msg(TEXT * string, TEXT * root)
+void API_ROUTINE ISC_prefix_msg(TEXT * string, const TEXT * root)
 {
 /**************************************
  *

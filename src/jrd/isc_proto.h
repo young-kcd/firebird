@@ -41,9 +41,9 @@ extern int INTERNAL_API_ROUTINE ISC_get_user(TEXT *, int *, int *, TEXT *,
 extern SLONG ISC_get_user_group_id(TEXT *);
 extern void ISC_set_user(TEXT *);
 extern SLONG API_ROUTINE ISC_get_prefix(TEXT *);
-extern void API_ROUTINE ISC_prefix(TEXT *, TEXT *);
-extern void API_ROUTINE ISC_prefix_lock(TEXT *, TEXT *);
-extern void API_ROUTINE ISC_prefix_msg(TEXT *, TEXT *);
+extern void API_ROUTINE ISC_prefix(TEXT *, const TEXT *);
+extern void API_ROUTINE ISC_prefix_lock(TEXT *, const TEXT *);
+extern void API_ROUTINE ISC_prefix_msg(TEXT *, const TEXT *);
 
 #ifdef VMS
 extern int ISC_expand_logical_once(TEXT *, USHORT, TEXT *);

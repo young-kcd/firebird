@@ -104,9 +104,9 @@ SSHORT	API_ROUTINE gds__msg_lookup(void*, USHORT, USHORT, USHORT,
 int		API_ROUTINE gds__msg_open(void**, TEXT*);
 void	API_ROUTINE gds__msg_put(void*, USHORT, USHORT, TEXT*, TEXT*,
 									 TEXT*, TEXT*, TEXT*);
-void	API_ROUTINE gds__prefix(TEXT*, TEXT*);
-void	API_ROUTINE gds__prefix_lock(TEXT*, TEXT*);
-void	API_ROUTINE gds__prefix_msg(TEXT*, TEXT*);
+void	API_ROUTINE gds__prefix(TEXT*, const TEXT*);
+void	API_ROUTINE gds__prefix_lock(TEXT*, const TEXT*);
+void	API_ROUTINE gds__prefix_msg(TEXT*, const TEXT*);
 
 SLONG	API_ROUTINE gds__get_prefix(SSHORT, TEXT*);
 STATUS	API_ROUTINE gds__print_status(STATUS*);

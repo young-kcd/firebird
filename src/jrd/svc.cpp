@@ -710,7 +710,7 @@ SVC SVC_attach(USHORT	service_length,
 #endif
 	{
 #ifndef SUPERSERVER
-		gds__prefix(service_path, const_cast<TEXT*>(serv->serv_executable));
+		gds__prefix(service_path, serv->serv_executable);
 		service_fork(service_path, service);
 #else
 		/* if service is single threaded, only call if not currently running */
@@ -1417,6 +1417,7 @@ void SVC_query(SVC		service,
  **************************************/
 	SCHAR item, *items, *end_items, *end, *p, *q;
 	UCHAR buffer[256];
+	TEXT PathBuffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
 	USHORT timeout;
 
@@ -1541,24 +1542,21 @@ void SVC_query(SVC		service,
 		case isc_info_svc_get_env_msg:
 			switch (item) {
 			case isc_info_svc_get_env:
-				gds__prefix(reinterpret_cast < char *>(buffer), "");
+				gds__prefix(PathBuffer, "");
 				break;
 			case isc_info_svc_get_env_lock:
-				gds__prefix_lock(reinterpret_cast < char *>(buffer), "");
+				gds__prefix_lock(PathBuffer, "");
 				break;
 			case isc_info_svc_get_env_msg:
-				gds__prefix_msg(reinterpret_cast < char *>(buffer), "");
+				gds__prefix_msg(PathBuffer, "");
 			}
 
 			/* Note: it is safe to use strlen to get a length of "buffer"
 			   because gds_prefix[_lock|_msg] return a zero-terminated
 			   string
 			 */
-			if (!(info = INF_put_item(item,
-									  strlen(reinterpret_cast <
-											 char *>(buffer)),
-									  reinterpret_cast < char *>(buffer),
-									  info, end))) {
+			if (!(info = INF_put_item(item, strlen(PathBuffer),
+									  PathBuffer, info, end))) {
 				THREAD_ENTER;
 				return;
 			}
@@ -2069,7 +2067,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 
 #ifndef SUPERSERVER
 	if (serv->serv_executable) {
-		gds__prefix(service_path, const_cast<TEXT*>(serv->serv_executable));
+		gds__prefix(service_path, serv->serv_executable);
 		service->svc_flags = SVC_forked;
 		service_fork(service_path, service);
 	}

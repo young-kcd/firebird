@@ -402,6 +402,8 @@ static void		ndate(SLONG, struct tm *);
 static GDS_DATE	nday(struct tm *);
 static void		sanitize(TEXT *);
 
+static void		safe_concat_path(TEXT *destbuf, const TEXT *srcbuf);
+
 /* Generic cleanup handlers */
 
 typedef struct clean
@@ -2345,7 +2347,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, TEXT * passed_string)
 
 
 #ifndef VMS
-void API_ROUTINE gds__prefix(TEXT *resultString, TEXT *file)
+void API_ROUTINE gds__prefix(TEXT *resultString, const TEXT *file)
 {
 /**************************************
  *
@@ -2385,19 +2387,13 @@ void API_ROUTINE gds__prefix(TEXT *resultString, TEXT *file)
 		}
 	}
 	strcat(resultString, ib_prefix);
-
-	int len = strlen(resultString);
-	if (resultString[len - 1] != PathUtils::dir_sep) {
-		resultString[len] = PathUtils::dir_sep;
-		resultString[len + 1] = 0;
-	}
-	strcat(resultString, file);
+	safe_concat_path(resultString, file);
 }
 #endif /* !defined(VMS) */
 
 
 #ifdef VMS
-void API_ROUTINE gds__prefix(TEXT * string, TEXT * root)
+void API_ROUTINE gds__prefix(TEXT * string, const TEXT * root)
 {
 /**************************************
  *
@@ -2447,7 +2443,7 @@ void API_ROUTINE gds__prefix(TEXT * string, TEXT * root)
 
 
 #ifndef VMS
-void API_ROUTINE gds__prefix_lock(TEXT * string, TEXT * root)
+void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
 {
 /********************************************************
  *
@@ -2474,19 +2470,13 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, TEXT * root)
 		}
 	}
 	strcat(string, ib_prefix_lock);
-
-	int len = strlen(string);
-	if (string[len - 1] != PathUtils::dir_sep) {
-		string[len] = PathUtils::dir_sep;
-		string[len + 1] = 0;
-	}
-	strcat(string, root);
+	safe_concat_path(string, root);
 }
 #endif
 
 
 #ifdef VMS
-void API_ROUTINE gds__prefix_lock(TEXT * string, TEXT * root)
+void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
 {
 /************************************************
  *
@@ -2536,7 +2526,7 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, TEXT * root)
 #endif
 
 #ifndef VMS
-void API_ROUTINE gds__prefix_msg(TEXT * string, TEXT * root)
+void API_ROUTINE gds__prefix_msg(TEXT * string, const TEXT * root)
 {
 /********************************************************
  *
@@ -2564,18 +2554,12 @@ void API_ROUTINE gds__prefix_msg(TEXT * string, TEXT * root)
 		}
 	}
 	strcat(string, ib_prefix_msg);
-
-	int len = strlen(string);
-	if (string[len - 1] != PathUtils::dir_sep) {
-		string[len] = PathUtils::dir_sep;
-		string[len + 1] = 0;
-	}
-	strcat(string, root);
+	safe_concat_path(string, root);
 }
 #endif
 
 #ifdef VMS
-void API_ROUTINE gds__prefix_msg(TEXT * string, TEXT * root)
+void API_ROUTINE gds__prefix_msg(TEXT * string, const TEXT * root)
 {
 /************************************************
  *
@@ -4740,6 +4724,31 @@ static void sanitize(TEXT * locale)
 	}
 }
 
+static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
+{
+/**************************************
+ *
+ *	s a f e _ c o n c a t _ p a t h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Safely appends appendString to resultString using paths rules.
+ *  resultString must be at least MAXPATHLEN size.
+ *
+ **************************************/
+	int len = strlen(resultString);
+	if (resultString[len - 1] != PathUtils::dir_sep && len < MAXPATHLEN - 1) {
+		resultString[len++] = PathUtils::dir_sep;
+		resultString[len] = 0;
+	}
+	int alen = strlen(appendString);
+	if (len + alen > MAXPATHLEN - 1)
+		alen = MAXPATHLEN - 1 - len;
+	assert(alen >= 0);
+	memcpy(&resultString[len], appendString, alen);
+	resultString[len + alen] = 0;
+}
 
 #ifdef DEBUG_GDS_ALLOC
 #undef gds__alloc
