@@ -19,8 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
+ * $Id: sort.cpp,v 1.5 2002-04-29 11:22:26 dimitr Exp $
  */
+
+// dimitr: uncomment to use new memory-based sort I/O
+//#define SORT_MEM
 
 #include "firebird.h"
 #include <errno.h>
@@ -43,6 +46,10 @@
 #include "../jrd/all_proto.h"
 #include "../jrd/sch_proto.h"
 
+#ifdef SORT_MEM
+#include "../jrd/sort_mem.h"
+#endif
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -59,17 +66,17 @@
 #include "../jrd/ib_stdio.h"
 #endif
 
-#if defined WIN_NT
+#ifdef WIN_NT
 /* for SEEK_SET */
 #include <stdio.h>
 #endif
 
-#if (defined WIN_NT)
+#ifdef WIN_NT
 #include <io.h>
 #endif
 
-#define IO_RETRY                20
-#define RUN_GROUP               8
+#define IO_RETRY			20
+#define RUN_GROUP			8
 #define	MAX_MERGE_LEVEL		2
 
 #ifdef VMS
@@ -81,7 +88,11 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
    overhead. On most platorms, this saves 4KB to 8KB per sort
    buffer from being allocated but not used. */
 
-#define MAX_SORT_BUFFER_SIZE    131040
+#define SORT_BUFFER_CHUNK_SIZE  4096
+#define MIN_SORT_BUFFER_SIZE    (SORT_BUFFER_CHUNK_SIZE * 4)
+#define MAX_SORT_BUFFER_SIZE    (SORT_BUFFER_CHUNK_SIZE * 32)
+
+#define MAX_TEMPFILE_SIZE       1073741824	// 1GB
 
 #define DIFF_LONGS(a,b)         ((a) - (b))
 #define SWAP_LONGS(a,b,t)       {t=a; a=b; b=t;}
@@ -108,7 +119,8 @@ static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 }, high_key[] = {
 		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
 		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
 		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
-		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX};
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX};
 
 
 #ifdef SCROLLABLE_CURSORS
@@ -154,7 +166,7 @@ IB_FILE *trace_file = NULL;
 #endif
 
 #if (defined WIN_NT || defined NETWARE_386)
-#define SCRATCH         "ib_sort_"
+#define SCRATCH         "fb_sort_"
 #endif
 
 #ifndef SCRATCH
@@ -791,7 +803,8 @@ SCB SORT_init(STATUS * status_vector,
 		too small a chunk - punt and report not enough memory. */
 
 		for (scb->scb_size_memory = MAX_SORT_BUFFER_SIZE;;
-			scb->scb_size_memory -= 5000) if (scb->scb_size_memory < 10000)
+			scb->scb_size_memory -= SORT_BUFFER_CHUNK_SIZE)
+			if (scb->scb_size_memory < MIN_SORT_BUFFER_SIZE)
 				break;
 			else if ( (scb->scb_memory =
 				 (SORTP *) MemoryPool::malloc_from_system((SLONG) scb->scb_size_memory)) )
@@ -928,7 +941,7 @@ ULONG SORT_read_block(
  *      Read a block of stuff from a scratch file.
  *
  **************************************/
-	USHORT len, read_len, i;
+	ULONG len, read_len, i;
 
 #ifdef SORT_TRACE
 	UCHAR *org_address;
@@ -946,7 +959,7 @@ ULONG SORT_read_block(
 /* The following is a crock induced by a VMS C bug */
 
 	while (length) {
-		len = MIN(length, 32768);
+		len = length;
 		for (i = 0; i < IO_RETRY; i++) {
 			if (lseek(sfb->sfb_file, LSEEK_OFFSET_CAST seek, SEEK_SET) == -1) {
 				THREAD_ENTER;
@@ -1226,7 +1239,7 @@ ULONG SORT_write_block(STATUS * status_vector,
  *      Write a block of stuff to the scratch file.
  *
  **************************************/
-	USHORT len, write_len, i;
+	ULONG len, write_len, i;
 
 #ifdef SORT_TRACE
 	write_trace("Write", sfb, seek, address, length);
@@ -1239,7 +1252,7 @@ ULONG SORT_write_block(STATUS * status_vector,
 /* The following is a crock induced by a VMS C bug */
 
 	while (length) {
-		len = MIN(length, 32768);
+		len = length;
 		for (i = 0; i < IO_RETRY; i++) {
 			if (lseek(sfb->sfb_file, LSEEK_OFFSET_CAST seek, SEEK_SET) == -1) {
 				THREAD_ENTER;
@@ -1762,7 +1775,9 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 		   than available space in the current directory, create a new file
 		   and return. */
 
-		if (!sfb || !DLS_get_temp_space(size, sfb)) {
+		if (!sfb || !DLS_get_temp_space(size, sfb) ||
+			(scb->scb_runs->run_seek + size) >= MAX_TEMPFILE_SIZE) {
+
 			sfb = (SFB) sort_alloc(scb, (ULONG) sizeof(struct sfb));
 			/* FREE: scb_sfb chain is freed in local_fini() */
 
@@ -1797,6 +1812,11 @@ static ULONG find_file_space(SCB scb, ULONG size, SFB * ret_sfb)
 			if (sfb->sfb_file == -1)
 				SORT_error(scb->scb_status_vector, sfb, "open",
 						   isc_io_open_err, errno);
+
+			// dimitr: allocate sort memory 
+#ifdef SORT_MEM
+			sfb->sfb_mem = new (*getDefaultMemoryPool()) SortMem(sfb, size);
+#endif
 		}
 
 		*ret_sfb = sfb;
@@ -1981,9 +2001,17 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
 				n = run->run_records * scb->scb_longs * sizeof(ULONG);
 				l = MIN(l, n);
 				run->run_seek =
+				// dimitr: use new sort space management
+#ifdef SORT_MEM
+					run->run_sfb->sfb_mem->read(scb->scb_status_vector,
+												run->run_seek,
+												reinterpret_cast<char*>(run->run_buffer),
+												l);
+#else
 					SORT_read_block(scb->scb_status_vector, run->run_sfb,
 									run->run_seek, (UCHAR *) run->run_buffer,
 									l);
+#endif
 #else
 			}
 			else {
@@ -2018,8 +2046,13 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
 			else
 				run->run_seek -= l;
 
+			// dimitr: use new sort space management
+#ifdef SORT_MEM
+			run->run_sfb->sfb_mem->read(run->run_seek, run->run_buffer, l);
+#else
 			(void) SORT_read_block(scb->scb_status_vector, run->run_sfb,
 								   run->run_seek, run->run_buffer, l);
+#endif
 			run->run_cached = l;
 
 			if (mode == RSE_get_forward) {
@@ -2229,6 +2262,11 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 		scb->scb_sfb = sfb->sfb_next;
 		DLS_put_temp_space(sfb);
 
+		// dimitr: free sort memory
+#ifdef SORT_MEM
+		delete sfb->sfb_mem;
+#endif
+
 		close(sfb->sfb_file);
 
 		if (sfb->sfb_file_name) {
@@ -2422,9 +2460,16 @@ static void merge_runs(SCB scb, USHORT n)
 	{
 		if (q >= (SORT_RECORD *) temp_run.run_end_buffer) {
 			size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer;
+			// dimitr: use new sort space management
+#ifdef SORT_MEM
+			seek = temp_run.run_sfb->sfb_mem->write(scb->scb_status_vector, seek,
+													reinterpret_cast<char*>(temp_run.run_buffer),
+													size);
+#else
 			seek = SORT_write_block(scb->scb_status_vector, temp_run.run_sfb,
 									seek, (UCHAR *) temp_run.run_buffer,
 									size);
+#endif
 			q = reinterpret_cast < sort_record * >(temp_run.run_buffer);
 		}
 		count = scb->scb_longs;
@@ -2440,8 +2485,15 @@ static void merge_runs(SCB scb, USHORT n)
 /* Write the tail of the new run and return any unused space. */
 
 	if ( (size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer) )
+		// dimitr: use new sort space management
+#ifdef SORT_MEM
+		seek = temp_run.run_sfb->sfb_mem->write(scb->scb_status_vector, seek,
+												reinterpret_cast<char*>(temp_run.run_buffer),
+												size);
+#else
 		seek = SORT_write_block(scb->scb_status_vector, temp_run.run_sfb,
 								seek, (UCHAR *) temp_run.run_buffer, size);
+#endif
 
 /* if the records did not fill the allocated run (such as when duplicates are 
    rejected), then free the remainder and diminish the size of the run accordingly */
@@ -2838,9 +2890,16 @@ static void put_run(SCB scb)
 		run->run_records * (scb->scb_longs -
 							SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
 	run->run_seek = find_file_space(scb, run->run_size, &run->run_sfb);
+	// dimitr: use new sort space management
+#ifdef SORT_MEM
+	run->run_sfb->sfb_mem->write(scb->scb_status_vector, run->run_seek,
+								 reinterpret_cast<char*>(scb->scb_last_record),
+								 run->run_size);
+#else
 	(void) SORT_write_block(scb->scb_status_vector, run->run_sfb,
 							run->run_seek, (UCHAR *) scb->scb_last_record,
 							run->run_size);
+#endif
 }
 
 

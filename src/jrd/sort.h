@@ -30,6 +30,9 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+#ifdef SORT_MEM
+class SortMem;
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -246,6 +249,9 @@ typedef struct sfb
 	struct wfs *sfb_file_space;	/* ALLOC: Available space in work file */
 	struct wfs *sfb_free_wfs;	/* ALLOC: Free space in work file */
 	DLS sfb_dls;				/* Place where file is created */
+#ifdef SORT_MEM
+	SortMem* sfb_mem;
+#endif
 } *SFB;
 
 /* Sort Context Block */
