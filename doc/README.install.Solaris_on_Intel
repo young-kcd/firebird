@@ -1,87 +1,139 @@
 ______________________________________________________________________________
-FireBird 1.5 Installation's On Solaris Intel (IA)
+FireBird 1.5.x Installation's On Solaris Intel (IA)
 ______________________________________________________________________________
 
-STATUS:  Still a work in progress 
+STATUS:  Still a work in progress. 
+(Whis file provided AS my english language skils IS. -)
 
-AUTHORS: Konstantin Kuznetsov (kkuznetsov@users.sourceforge.net)
+AUTHORS: Konstantin Kuznetsov (kkuznetsov at users.sourceforge.net)
+	 Place for other members, who have commit rights and want to improve it.
 
 COPYRIGHT: All rights retained by authors.
-           For distribution with Firebird source and binaries
+           For distribution with Firebird sources and binaries
            (Someone who knows this legal stuff will update it later)
 
 1.OVERVIEW
 
   What your got?
-  Solaris Intel Firebird > 1.5 version packages will use following name conversion
+	Solaris Intel Firebird > 1.5 version packages will use following name conversion
 	Firebird-@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-SolX86.pkg.tar.Z
   where 
-	@ARCH_TYPE_SUFFIX@ is ClassicServer or SuperServer
+	@ARCH_TYPE_SUFFIX@ is CS for ClassicServer or SS SuperServer
 	FirebirdVersion - is a version number
 	BuildNum - build number
-	PackageVersion - probably zero
-  Package is a compressed using "compress" utility tar archive included Solaris
-  package and some readme files.
+	PackageVersion - probably zero, it's a good place for it.
+	Package is a compressed using "compress" utility tar archive included Solaris
+	package and this readme file.
 
 2. SOFTWARE REQUREMENTS
-2.1 Classic Server
+2.1 Classic and Super Server 
  
-  Firebird Classic server is compiled on Solaris Intel 2.6 using gcc 3.3.3.
-  So to got it started your need:
+	Firebird  server is compiled on Solaris Intel 2.6 using gcc 3.3.3.
+	So to got it started your need:
 	- Solaris Os version >=2.6 on 32bit Intel (like!) Pentium CPU 
-	  if it's 2.6 recommended patches required	  
+	  all recommended patches required (especially patches for libthread)
 	- GNU C/C+ runtime for gcc 3.3.3 at least libgcc_s.so.1 libstdc++.so.5
 	  on http://sunfreeware.com/ it's called  libgcc-3.3-XXX.
-	  If dont have this files on your machine your can download and install
+	  If dont have this files on your machine, your can download and install
 	  LibGCC-3.x.FB-runtime-Solx86.pkg package placing them into installed FB
 	  directory /usr/local/firebird/lib.
 
 3. INSTALLATION SCENARIO
-3.1 MAIN PROCESS   
+3.1 Classic Server
+3.1.1 MAIN PROCESS   
 	1) Extract package using uncompress and (un) tar -xvf 
 	2) Use pkgadd -d  	Firebird-@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-SolX86.pkg
            to install it running as root
 	3) Verify it working 
 		>isql localhost:/usr/local/firebird/secirity.fdb -user sysdba -pass masterkey
 	or telnet gds_db localhost
-3.2 WHAT INSTALL SCRIPTS TRY DO
+3.1.2 WHAT INSTALL SCRIPTS TRY DO
 	1. add 	this line to /etc/inet/services
-  			gds_db 3050/tcp # Firebird2 Database Remote Protocol
+  		gds_db 3050/tcp # Firebird2 Database Remote Protocol
 	2. add this line to /etc/inet/inetd.conf
-# Firebird2 Database Remote Server
-gds_db stream tcp nowait.30000 root /usr/local/firebird/bin/fb_inet_server fb_inet_server
+		# Firebird2 Database Remote Server
+		gds_db stream tcp nowait.30000 root /usr/local/firebird/bin/fb_inet_server fb_inet_server
 	3. add some variables to /etc/profile
-# Enhance PATH for Firebird2
-PATH=$PATH:/usr/local/firebird/bin
-export PATH
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/firebird/lib:/usr/local/firebird/intl
-export LD_LIBRARY_PATH
-INTERBASE=/usr/local/firebird
-export INTERBASE
+		# Enhance PATH for Firebird2
+		PATH=$PATH:/usr/local/firebird/bin
+		export PATH
+		LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/firebird/lib:/usr/local/firebird/intl
+		export LD_LIBRARY_PATH
+		INTERBASE=/usr/local/firebird
+		export INTERBASE
 	4. backup all these unmodified files in some where /var/sadm/FB2SI/save
 	5. restart inetd
 
+3.2 Super Server
+3.1.1 MAIN PROCESS   
+	1) Extract package using uncompress and (un) tar -xvf 
+	2) Use pkgadd -d  	Firebird-@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-SolX86.pkg
+           to install it running as root
+	3) Try to start it
+	   >/usr/local/firebird/bin/ibmgr.bin -start -forever
+	3) Verify it working 
+		>isql localhost:/usr/local/firebird/secirity.fdb -user sysdba -pass masterkey
+		or telnet gds_db localhost
+	   Some usefull things your can see in firebird.log and in /var/adm/messages	
+	4) Optional: chown it all to 'firebird' user! If your have Classic installed before remove it
+	   from /etc/inetd.conf and restart it to release port 3050!
+	5) Write /etc/init.d/FB_d.rc script, what meets your requarements (example
+	   is /usr/local/firebird/firebird.init.d.example, but it have sysdba password in it)
+	6) Make symlinks "S" "K" to your preferred runlevels
+	7) Enjoy if it is working!
+
+3.1.2 WHAT INSTALL SCRIPTS TRY DO
+	1. add 	this line to /etc/inet/services
+  		gds_db 3050/tcp # Firebird2 Database Remote Protocol
+	2. add some variables to /etc/profile
+		# Enhance PATH for Firebird2
+		PATH=$PATH:/usr/local/firebird/bin
+		export PATH
+		LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/firebird/lib:/usr/local/firebird/intl
+		export LD_LIBRARY_PATH
+		INTERBASE=/usr/local/firebird
+		export INTERBASE
+	3. Create the fbmgr shell script as a traditionally.
+		# Create the fbmgr shell script.
+		cat > $FIREBIRD/bin/fbmgr <<EOF
+		#!/bin/sh
+		FIREBIRD=@prefix@
+		export FIREBIRD
+		mode=\${*}
+		exec \$FIREBIRD/bin/fbmgr.bin \$mode
+		EOF
+		chmod +x $FIREBIRD/bin/fbmgr
+
+	4. backup all these unmodified files in some where /var/sadm/FB2SI/save
+
+
+
 3.3 WHAT YOUR CAN IMPROVE
-	I advise some more to do
+	I advise some more to do:
+
+	First reading documentation!
+	Second - reading documentation too!
 
 	Your can add /usr/local/firebird to LD_LIBRARY_PATH of running FB user
 	or probably inetd start script.
-	Your can add localhost and hostname to /etc/hosts.equiv
+	Your can add localhost and `hostname` to /etc/hosts.equiv
 	Your can check /etc/system parameters for max processes and open files
 	under high load.
+	Don't forget editing firebird.conf and aliases.conf to get it all broken.
 	
 4. SECURITY ISSUES
-	I strongly advise run al type of server (Classic or Super) from non root
+	I strongly advise run all type's of server (Classic or Super) from non root
 	user:
 	1) add group firebird
 	2) add user firebird member of firebird group
 	3) chown -R firebird /usr/local/firebird
 	   chgrp -R firbird /usr/local/firebird
 	4) change user in inetd.conf if your run Classic
+	5) Restart Super from firebird user
 
 5. MORE READINGS
 	www.firebirdsql.org
-	www.ibase.ru (in russian)
+	news://news.atkin.com
 
 6. UNINSTALL
 	pgkrm FB2SI
