@@ -26,11 +26,28 @@ rm src/make.new/config/config.sub 2>/dev/null
 rm src/make.new/config/ltmain.sh 2>/dev/null
 rm src/v5_examples/Makefile 2>/dev/null
 
-# those files apparently aren't removed 
+# Cpp from epp files
 rm src/burp/backup.cpp 2>/dev/null
 rm src/burp/restore.cpp 2>/dev/null
+rm src/dsql/array.cpp 2>/dev/null
+rm src/dsql/blob.cpp 2>/dev/null
+rm src/dsql/metd.cpp 2>/dev/null
 rm src/gpre/gpre_meta.cpp 2>/dev/null
 rm src/jrd/codes.cpp 2>/dev/null
+rm src/jrd/dfw.cpp 2>/dev/null
+rm src/jrd/dpm.cpp 2>/dev/null
+rm src/jrd/dyn.cpp 2>/dev/null
+rm src/jrd/dyn_def.cpp 2>/dev/null
+rm src/jrd/dyn_del.cpp 2>/dev/null
+rm src/jrd/dyn_mod.cpp 2>/dev/null
+rm src/jrd/dyn_util.cpp 2>/dev/null
+rm src/jrd/fun.cpp 2>/dev/null
+rm src/jrd/grant.cpp 2>/dev/null
+rm src/jrd/ini.cpp 2>/dev/null
+rm src/jrd/met.cpp 2>/dev/null
+rm src/jrd/pcmet.cpp 2>/dev/null
+rm src/jrd/scl.cpp 2>/dev/null
+rm src/jrd/ 2>/dev/null
 rm src/msgs/build_file.cpp 2>/dev/null
 rm src/msgs/change_msgs.cpp 2>/dev/null
 rm src/msgs/check_msgs.cpp 2>/dev/null
