@@ -1472,6 +1472,9 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 					input_cursor++;
 				}
 				cursor[index++] = *input_cursor;
+				// CVC: Prevent B.O.
+				if (index == sizeof(cursor) - 1)
+					break;
 			}
 			cursor[index] = 0;
 		}
