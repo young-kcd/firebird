@@ -1,3 +1,29 @@
+2003-06-10 15:39  dimitr
+
+	* firebird2/src/: dsql/dsql.tab.h, dsql/gen.cpp, dsql/keywords.cpp,
+	dsql/node.h, dsql/parse.cpp, dsql/parse.y, dsql/pass1.cpp,
+	jrd/blr.h, jrd/blrtable.cpp, jrd/cmp.cpp, jrd/exe.cpp, jrd/exe.h,
+	jrd/nod.h, jrd/par.cpp:
+	
+	Fixed (hopefully) savepoints implementation: 1) RELEASE SAVEPOINT
+	statement is added 2) SAVEPOINT statement now re-establishes
+	existing savepoint with the same name 3) all savepoint stuff is
+	changed to use single BLR verb
+
+2003-06-10 10:19  eku
+
+	* firebird2/src/install/arch-specific/sinixz/prototype.in:
+	
+	Updated package prototype file.
+
+2003-06-10 01:04  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: More bugfixes for 'no current record for fetch operation'
+	errors.  These were mostly related to queries where a MERGE was
+	done and/or SP/VIEW/Aggregates/Unions were used together.
+
 2003-06-08 22:59  hippoman
 
 	* firebird2/builds/win32/msvc7/: fb_inet_server.vcproj,
