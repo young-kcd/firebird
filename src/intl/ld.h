@@ -100,14 +100,6 @@
 
 /*
 //-----------------------------------------------------------------
-*/
-
-#define LD_MAJOR                  1
-#define LD_MINOR                  1
-#define LD_REV                    1
-
-/*
-//-----------------------------------------------------------------
 // DATA TYPE DEFINITIONS
 //-----------------------------------------------------------------
 */
@@ -117,9 +109,6 @@
 #endif
 #ifndef FALSE
 #define           FALSE 0
-#endif
-#ifndef UNKNOWN
-#define           UNKNOWN -1
 #endif
 
 /*
@@ -444,18 +433,18 @@ struct CompressPair {
 /*
 // Paradox
 */
-
+/*
 #define pxUS                      1
 #define pxINTL                    2
 #define pxJAPANESE                3
 #define pxNORDAN                  4
 #define pxNORDAN4                 5
 #define pxSWEDFIN                 6
-
+*/
 /*
 // dBASE
 */
-
+/*
 #define dbARABIC                  7
 #define dbDANISH                  8
 #define dbDUTCH                   9
@@ -488,11 +477,11 @@ struct CompressPair {
 #define dbPORTUGUESE             36
 #define dbPORTUGUESE2            37
 #define dbRUSSIAN                38
-
+*/
 /*
 // Borland
 */
-
+/*
 #define BorlDANISH               39
 #define BorlDUTCH                40
 #define BorlFINNISH              41
@@ -510,11 +499,11 @@ struct CompressPair {
 #define BorlUS                   53
 #define BorlPORTUGUESE           54
 #define dbUS2                    55
-
+*/
 /*
 // User Defined 201 - 254
 */
-
+/*
 #define USERDEFINED_MIN         201
 #define USERDEFINED_MAX         255
 
@@ -575,9 +564,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.15 2003-02-10 19:25:14 brodsom Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.16 2003-02-12 02:53:47 brodsom Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.15  2003/02/10 19:25:14  brodsom
+//	Remove QLD and PIRANHA defines
+//	
 //	Revision 1.14  2003/02/07 15:07:17  brodsom
 //	Remove MS_DOS and __LDSYS_H
 //	
