@@ -43,6 +43,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../common/config/config.h"
 
 #include <stdarg.h>
 
@@ -1109,11 +1110,11 @@ static STR make_pipe_name(
  *	If a server pid != 0, append it to pipe name  as <>/<pid>
  *
  **************************************/
-	TEXT pipe_name[128], *p, *q, *protocol;
+	TEXT buffer[128], *p, *q, *protocol;
 	TEXT pid[32];
 
 	p = connect_name;
-	q = pipe_name;
+	q = buffer;
 
 	if (!p || *p++ != '\\' || *p++ != '\\')
 		p = ".";
@@ -1124,7 +1125,7 @@ static STR make_pipe_name(
 		*q++ = *p++;
 
 	if (!*p)
-		protocol = FB_SERVICE_NAME;
+		protocol = const_cast<TEXT*>(Config::getRemoteServiceName());
 	else if (*p == '@')
 		protocol = p + 1;
 	else {
@@ -1137,8 +1138,9 @@ static STR make_pipe_name(
 	strcpy(q, PIPE_PREFIX);
 	q += strlen(PIPE_PREFIX);
 	*q++ = '\\';
-	strcpy(q, FB_PIPE_NAME);
-	q += strlen(FB_PIPE_NAME);
+	const char *pipe_name = Config::getRemotePipePrefix();
+	strcpy(q, pipe_name);
+	q += strlen(pipe_name);
 	*q++ = '\\';
 	strcpy(q, suffix_name);
 	q += strlen(suffix_name);
@@ -1147,10 +1149,10 @@ static STR make_pipe_name(
 
 	if (str_pid) {
 		sprintf(pid, "\\%s", str_pid);
-		strcat(pipe_name, pid);
+		strcat(buffer, pid);
 	}
 
-	return REMOTE_make_string(pipe_name);
+	return REMOTE_make_string(buffer);
 }
 
 

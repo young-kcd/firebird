@@ -46,6 +46,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../remote/inet_proto.h"	/* for INET_alloc_port */
+#include "../common/config/config.h"
 
 #include <stdarg.h>
 
@@ -1270,7 +1271,7 @@ ULONG connection_setup(TEXT * name, PACKET * packet, STATUS * status_vector)
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = gds_arg_end;
-	protocol = FB_SERVICE_NAME;
+	protocol = Config::getRemoteServiceName();
 
 /* Set up Inter-Net socket address */
 

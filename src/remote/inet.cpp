@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.46 2002-12-10 11:53:51 eku Exp $
+$Id: inet.cpp,v 1.47 2003-01-15 14:08:11 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -891,7 +891,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = gds_arg_end;
-	protocol = FB_SERVICE_NAME;
+	protocol = const_cast<TEXT*>(Config::getRemoteServiceName());
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
@@ -1024,9 +1024,9 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
     for zero-installation clients.
     */
 	if (!service) {
-		if (strcmp(protocol, FB_SERVICE_NAME) == 0) {
+		if (strcmp(protocol, Config::getRemoteServiceName()) == 0) {
 			/* apply hardwired translation */
-			address.sin_port = htons(FB_SERVICE_PORT);
+			address.sin_port = htons(Config::getRemoteServicePort());
 		}
 
 		/* modification by FSG 23.MAR.2001 */

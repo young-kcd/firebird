@@ -89,7 +89,11 @@ class Config
 		KEY_TRACE_MEMORY_POOLS,						// 22	
 		KEY_PRIORITY_SWITCH_DELAY,					// 23
 		KEY_DEAD_THREADS_COLLECTION,				// 24
-		KEY_PRIORITY_BOOST							// 25	
+		KEY_PRIORITY_BOOST,							// 25
+		KEY_REMOTE_SERVICE_NAME,					// 26
+		KEY_REMOTE_SERVICE_PORT,					// 27
+		KEY_REMOTE_PIPE_PREFIX,						// 28
+		KEY_IPC_PREFIX								// 29
 	};
 
 public:
@@ -223,6 +227,26 @@ public:
 		Priority boost
 	*/
 	static int getPriorityBoost();
+
+	/*
+		Service name for remote protocols
+	*/
+	static const char *getRemoteServiceName();
+
+	/*
+		Service port for INET
+	*/
+	static int getRemoteServicePort();
+
+	/*
+		Pipe prefix for WNET
+	*/
+	static const char *getRemotePipePrefix();
+
+	/*
+		Prefix for IPC-related objects
+	*/
+	static const char *getIpcPrefix();
 };
 
 #endif // CONFIG_H

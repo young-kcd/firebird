@@ -87,6 +87,10 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"PrioritySwitchDelay",		(ConfigValue) 100},			// milliseconds
 	{TYPE_INTEGER,		"DeadThreadsCollection",	(ConfigValue) 50},			// number of PrioritySwitchDelay cycles before dead threads collection
 	{TYPE_INTEGER,		"PriorityBoost",			(ConfigValue) 5},			// ratio oh high- to low-priority thread ticks in jrd.cpp
+	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
+	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) FB_SERVICE_PORT},
+	{TYPE_STRING,		"RemotePipePrefix",			(ConfigValue) FB_PIPE_NAME},
+	{TYPE_STRING,		"IpcPrefix",				(ConfigValue) FB_IPC_NAME}
 };
 
 /******************************************************************************
@@ -342,4 +346,24 @@ int Config::getPriorityBoost()
 	if (rc > 1000)
 		rc = 1000;
 	return rc;
+}
+
+const char *Config::getRemoteServiceName()
+{
+	return (const char*) sysConfig.values[KEY_REMOTE_SERVICE_NAME];
+}
+
+int Config::getRemoteServicePort()
+{
+	return (int) sysConfig.values[KEY_REMOTE_SERVICE_PORT];
+}
+
+const char *Config::getRemotePipePrefix()
+{
+	return (const char*) sysConfig.values[KEY_REMOTE_PIPE_PREFIX];
+}
+
+const char *Config::getIpcPrefix()
+{
+	return (const char*) sysConfig.values[KEY_IPC_PREFIX];
 }
