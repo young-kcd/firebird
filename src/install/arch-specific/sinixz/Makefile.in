@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in,v 1.1 2002-09-06 08:45:39 eku Exp $
+#   $Id: Makefile.in,v 1.2 2002-09-13 07:15:04 eku Exp $
 # 
 
 PGK_FILES=pkginfo prototype preinstall postinstall postremove
@@ -38,4 +38,4 @@ package:
 		rm -rf $(PKG_DIR)/firebird2
 		-mkdir -p $(PKG_DIR)
 		pkgmk -o -d $(PKG_DIR)
-		pkgtrans -s $(PKG_DIR) $(PKG_DIR)/../firebird2.pkg firebird2
+		pkgtrans -s $(PKG_DIR) $(PKG_DIR)/firebird2.pkg firebird2
