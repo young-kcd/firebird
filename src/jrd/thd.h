@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.18 2004-04-20 05:57:28 skidder Exp $
+$Id: thd.h,v 1.19 2004-04-30 18:43:51 skidder Exp $
 */
 
 #ifndef JRD_THD_H
@@ -135,7 +135,7 @@ struct IB_RTL_CRITICAL_SECTION
 #define THREAD_EXIT		SCH_exit()
 #define THREAD_VALIDATE		SCH_validate()
 #define SWEEP_THREAD
-#define GARBAGE_THREAD
+//#define GARBAGE_THREAD
 #else
 #define THREAD_ENTER		gds__thread_enter()
 #define THREAD_EXIT		gds__thread_exit()
