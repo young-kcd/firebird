@@ -20,8 +20,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#ifdef N
-#include "firebird.h"ETWARE_386
+#ifdef NETWARE_386
+#include "firebird.h"
 #include <stddef.h>
 #include <advanced.h>
 #include <string.h>

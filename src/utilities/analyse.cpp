@@ -23,8 +23,8 @@
 
 #include "../jrd/common.h"
 
-#ifdef V
-#include "firebird.h"MS
+#ifdef VMS
+#include "firebird.h"
 #include <types.h>
 #include "times.h"
 #else
