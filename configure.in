@@ -894,15 +894,17 @@ case "$PLATFORM" in
     ;;
 
   solx86)
-    AC_CONFIG_FILES([gen/install/Pkginfo:src/install/arch-specific/solx86gcc/CS/pkginfo.in
-                     gen/install/Prototype:src/install/arch-specific/solx86gcc/CS/prototype.in
-                     gen/install/Preinstall:src/install/arch-specific/solx86gcc/CS/preinstall.in
-                     gen/install/Postinstall:src/install/arch-specific/solx86gcc/CS/postinstall.in
-                     gen/install/Postremove:src/install/arch-specific/solx86gcc/CS/postremove.in
-		     gen/install/prototypelg:src/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
-		     gen/install/pkginfolg:src/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
+
+    AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/pkginfo.in
+                     gen/install/Prototype:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/prototype.in
+                     gen/install/Preinstall:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/preinstall.in
+                     gen/install/Postinstall:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/postinstall.in
+                     gen/install/Postremove:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/postremove.in
+		     gen/install/prototypelg:builds/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
+		     gen/install/pkginfolg:builds/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
       ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
     ;;
+
   
 
 esac
