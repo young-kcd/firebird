@@ -95,7 +95,7 @@ static void check_sorts(RecordSelExpr*);
 static void class_mask(USHORT, jrd_nod**, ULONG *);
 static void clear_bounds(OptimizerBlk*, const index_desc*);
 static jrd_nod* compose(jrd_nod**, jrd_nod*, NOD_T);
-static bool computable(CompilerScratch*, jrd_nod*, SSHORT, bool);
+static bool computable(CompilerScratch*, jrd_nod*, SSHORT, bool, bool);
 static void compute_dependencies(const jrd_nod*, ULONG*);
 static void compute_dbkey_streams(const CompilerScratch*, const jrd_nod*, UCHAR*);
 static void compute_rse_streams(const CompilerScratch*, const RecordSelExpr*, UCHAR*);
@@ -105,7 +105,8 @@ static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
 static bool dump_index(const jrd_nod*, SCHAR**, SSHORT*);
 static bool dump_rsb(const jrd_req*, const RecordSource*, SCHAR**, SSHORT*);
 static bool estimate_cost(thread_db*, OptimizerBlk*, USHORT, double *, double *);
-static bool expression_contains(const jrd_nod*, NOD_T, bool, bool);
+static bool expression_contains(const jrd_nod*, NOD_T);
+static bool expression_contains_stream(const jrd_nod*, UCHAR);
 #ifdef EXPRESSION_INDICES
 static bool expression_equal(thread_db*, jrd_nod*, jrd_nod*);
 #endif
@@ -466,10 +467,14 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 				NodeStack::iterator stackSavepoint(conjunct_stack);
 				NodeStack::iterator stack_end;
+				NodeStack deliverStack;
+
 				if (rse->rse_jointype != blr_inner) {
 					// Make list of nodes that can be delivered to a outer-stream.
-					// In fact this are all nodes except IS NULL (nod_missing).
-					// Note! That for OR nodes this meant the whole node must be ignored.
+					// In fact this are all nodes except when a IS NULL (nod_missing) 
+					// comparision is done.
+					// Note! Don't forget that this can be burried inside a expression
+					// such as "CASE WHEN (FieldX IS NULL) THEN 0 ELSE 1 END = 0"
 					NodeStack::iterator stackItem;
 					if (parent_stack)
 					{
@@ -477,10 +482,11 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 					}
 					for (; stackItem.notEmpty(); ++stackItem) {
 						jrd_nod* deliverNode = stackItem.object();
-						if (!expression_contains(deliverNode, nod_missing, true, true)) {
-							conjunct_stack.push(deliverNode);
+						if (!expression_contains(deliverNode, nod_missing)) {
+							deliverStack.push(deliverNode);
 						}
 					}
+					stack_end = conjunct_stack.merge(deliverStack);
 				}
 				else {
 					if (parent_stack)
@@ -492,13 +498,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				rsb = OPT_compile(tdbb, csb, (RecordSelExpr*) node, &conjunct_stack);
 
 				if (rse->rse_jointype != blr_inner) {
-					if (parent_stack) {
-						// Remove previously added parent conjuctions from the stack.
-						while(conjunct_stack != stackSavepoint)
-						{
-							conjunct_stack.pop();
-						}
-					}
+					// Remove previously added parent conjuctions from the stack.
+					conjunct_stack.split(stack_end, deliverStack);
 				}
 				else {
 					if (parent_stack)
@@ -506,7 +507,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 						conjunct_stack.split(stack_end, *parent_stack);
 					}
 				}
-
 
 				if (rse->rse_jointype == blr_left) {
 					for (SSHORT i = 1; i <= outer_streams[0]; i++) {
@@ -877,7 +877,7 @@ jrd_nod* OPT_make_dbkey(OptimizerBlk* opt, jrd_nod* boolean, USHORT stream)
 /* If the value isn't computable, this has been a waste of time */
 
 	CompilerScratch* csb = opt->opt_csb;
-	if (!computable(csb, value, stream, false)) {
+	if (!computable(csb, value, stream, false, false)) {
 		return NULL;
 	}
 
@@ -1038,7 +1038,7 @@ int OPT_match_index(OptimizerBlk* opt, USHORT stream, index_desc* idx)
 	{
 		jrd_nod* node = tail->opt_conjunct_node;
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-			&& computable(csb, node, -1, true))
+			&& computable(csb, node, -1, true, false))
 		{
 			n += match_index(tdbb, opt, stream, node, idx);
 		}
@@ -1612,7 +1612,8 @@ static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, NOD_T node_type)
 static bool computable(CompilerScratch*     csb,
                        jrd_nod* node,
                        SSHORT  stream,
-                       bool    idx_use)
+                       bool    idx_use,
+					   bool    allowOnlyCurrentStream)
 {
 /**************************************
  *
@@ -1659,7 +1660,7 @@ static bool computable(CompilerScratch*     csb,
 		for (const jrd_nod* const* const end = ptr + clauses->nod_count;
 			ptr < end; ptr += 2)
 		{
-			if (!computable(csb, *ptr, stream, idx_use)) {
+			if (!computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
 				return false;
 			}
 		}
@@ -1668,7 +1669,7 @@ static bool computable(CompilerScratch*     csb,
 		for (const jrd_nod* const* const end = ptr + node->nod_count;
 			ptr < end; ptr++) 
 		{
-			if (!computable(csb, *ptr, stream, idx_use)) {
+			if (!computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
 				return false;
 			}
 		}
@@ -1681,8 +1682,18 @@ static bool computable(CompilerScratch*     csb,
 	
 	switch (node->nod_type) {
 	case nod_field:
-		if ((n = (USHORT)(IPTR) node->nod_arg[e_fld_stream]) == stream) {
-			return false;
+
+		n = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
+
+		if (allowOnlyCurrentStream) {
+			if (n != stream) {
+				return false;
+			}
+		}
+		else {
+			if (n == stream) {
+				return false;
+			}
 		}
 		// AB: cbs_made_river has been replaced by find_used_streams()
 		//if (idx_use &&
@@ -1690,8 +1701,18 @@ static bool computable(CompilerScratch*     csb,
 		return csb->csb_rpt[n].csb_flags & csb_active;
 
 	case nod_dbkey:
-		if ((n = (USHORT)(IPTR) node->nod_arg[0]) == stream) {
-			return false;
+
+		n = (USHORT)(IPTR) node->nod_arg[0];
+
+		if (allowOnlyCurrentStream) {
+			if (n != stream) {
+				return false;
+			}
+		}
+		else {
+			if (n == stream) {
+				return false;
+			}
 		}
 		// AB: cbs_made_river has been replaced by find_used_streams()
 		//if (idx_use &&
@@ -1706,7 +1727,7 @@ static bool computable(CompilerScratch*     csb,
 	case nod_count:
 	case nod_from:
 		if ((sub = node->nod_arg[e_stat_default]) &&
-			!computable(csb, sub, stream, idx_use))
+			!computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
 		{
 			return false;
 		}
@@ -1733,11 +1754,11 @@ static bool computable(CompilerScratch*     csb,
 
 	bool result = true;
 
-	if ((sub = rse->rse_first) && !computable(csb, sub, stream, idx_use)) {
+	if ((sub = rse->rse_first) && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
 		return false;
 	}
 
-    if ((sub = rse->rse_skip) && !computable(csb, sub, stream, idx_use)) {
+    if ((sub = rse->rse_skip) && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
         return false;
 	}
     
@@ -1754,9 +1775,9 @@ static bool computable(CompilerScratch*     csb,
 
 /* Check sub-stream */
 
-	if (((sub = rse->rse_boolean)    && !computable(csb, sub, stream, idx_use)) ||
-	    ((sub = rse->rse_sorted)     && !computable(csb, sub, stream, idx_use)) ||
-	    ((sub = rse->rse_projection) && !computable(csb, sub, stream, idx_use)))
+	if (((sub = rse->rse_boolean)    && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	    ((sub = rse->rse_sorted)     && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	    ((sub = rse->rse_projection) && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)))
 	{
 		result = false;
 	}
@@ -1765,7 +1786,7 @@ static bool computable(CompilerScratch*     csb,
 		((ptr < end) && (result)); ptr++)
 	{
 		if ((*ptr)->nod_type != nod_rse) {
-			if (!computable(csb, (*ptr), stream, idx_use)) {
+			if (!computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream)) {
 				result = false;
 			}
 		}
@@ -1773,7 +1794,7 @@ static bool computable(CompilerScratch*     csb,
 
 /* Check value expression, if any */
 
-	if (result && value && !computable(csb, value, stream, idx_use)) {
+	if (result && value && !computable(csb, value, stream, idx_use, allowOnlyCurrentStream)) {
 		result = false;
 	}
 
@@ -2720,7 +2741,7 @@ static bool estimate_cost(thread_db* tdbb,
 }
 
 
-static bool expression_contains(const jrd_nod* node, NOD_T node_type, bool go_into_or, bool go_into_and)
+static bool expression_contains(const jrd_nod* node, NOD_T node_type)
 {
 /**************************************
  *
@@ -2729,8 +2750,9 @@ static bool expression_contains(const jrd_nod* node, NOD_T node_type, bool go_in
  **************************************
  *
  * Functional description
- *  Search if somewhere in the expression the given
- *  node_type is buried.
+ *  Search if somewhere in the expression the give 
+ *  node_type is burried. Return true if a unknown
+ *  node is passed.
  *
  **************************************/
 	DEV_BLKCHK(node, type_nod);
@@ -2744,19 +2766,330 @@ static bool expression_contains(const jrd_nod* node, NOD_T node_type, bool go_in
 	}
 	else {
 
-		if (go_into_or && (node->nod_type == nod_or)) {
-			return expression_contains(node->nod_arg[0], node_type, go_into_or, go_into_and) ||
-				expression_contains(node->nod_arg[1], node_type, go_into_or, go_into_and);
+		RecordSelExpr* rse = NULL;
+
+		switch (node->nod_type) {
+
+			case nod_cast:
+				return expression_contains(node->nod_arg[e_cast_source], node_type);
+
+			case nod_extract:
+				return expression_contains(node->nod_arg[e_extract_value], node_type);
+
+			case nod_function:
+				return expression_contains(node->nod_arg[e_fun_args], node_type);
+
+			case nod_procedure:
+				return expression_contains(node->nod_arg[e_prc_inputs], node_type);
+
+			case nod_any:
+			case nod_unique:
+			case nod_ansi_any:
+			case nod_ansi_all:
+			case nod_exists:
+				return expression_contains(node->nod_arg[e_any_rse], node_type);
+
+			case nod_field:
+			case nod_dbkey:
+			case nod_argument:
+			case nod_current_date:
+			case nod_current_role:
+			case nod_current_time:
+			case nod_current_timestamp:
+			case nod_gen_id:
+			case nod_gen_id2:
+			case nod_internal_info:
+			case nod_literal:
+			case nod_null:
+			case nod_user_name:
+			case nod_variable:
+				return false;
+
+			case nod_rse:
+				rse = (RecordSelExpr*) node;
+				break;
+
+			case nod_average:
+			case nod_count:
+			case nod_count2:
+			case nod_from:
+			case nod_max:
+			case nod_min:
+			case nod_total:
+				{
+					const jrd_nod* nodeDefault = node->nod_arg[e_stat_rse];
+					if (nodeDefault && expression_contains(nodeDefault, node_type)) {
+						return true;
+					}
+					rse = (RecordSelExpr*) node->nod_arg[e_stat_rse];
+					const jrd_nod* value = node->nod_arg[e_stat_value];
+					if (value && expression_contains(value, node_type)) {
+						return true;
+					}
+				}
+				break;
+
+			case nod_or:
+			case nod_and:
+
+			case nod_add:
+			case nod_add2:
+			case nod_agg_average:
+			case nod_agg_average2:
+			case nod_agg_average_distinct:
+			case nod_agg_average_distinct2:
+			case nod_agg_max:
+			case nod_agg_min:
+			case nod_agg_total:
+			case nod_agg_total2:
+			case nod_agg_total_distinct:
+			case nod_agg_total_distinct2:
+			case nod_concatenate:
+			case nod_divide:
+			case nod_divide2:
+			case nod_multiply:
+			case nod_multiply2:
+			case nod_negate:
+			case nod_subtract:
+			case nod_subtract2:
+
+			case nod_upcase:
+			case nod_substr:
+
+			case nod_like:
+			case nod_between:
+			case nod_sleuth:
+			case nod_missing:
+			case nod_value_if:
+			case nod_matches:
+			case nod_contains:
+			case nod_starts:
+			case nod_eql:
+			case nod_neq:
+			case nod_geq:
+			case nod_gtr:
+			case nod_lss:
+			case nod_leq:
+			{
+				const jrd_nod* const* ptr = node->nod_arg;
+				// Check all sub-nodes of this node.
+				for (const jrd_nod* const* const end = ptr + node->nod_count;
+					ptr < end; ptr++)
+				{
+					if (expression_contains(*ptr, node_type)) {
+						return true;
+					}
+				}
+
+				return false;
+			}
+
+
+			default :
+				return true;
 		}
 
-		if (go_into_and && (node->nod_type == nod_and)) {
-			return expression_contains(node->nod_arg[0], node_type, go_into_or, go_into_and) ||
-				expression_contains(node->nod_arg[1], node_type, go_into_or, go_into_and);
+
+		if (rse) {
+
+			jrd_nod* sub;
+			if ((sub = rse->rse_first) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
+			if ((sub = rse->rse_skip) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
+			if ((sub = rse->rse_boolean) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
+			if ((sub = rse->rse_sorted) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
+			if ((sub = rse->rse_projection) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
 		}
 
 		return false;
 	}
 
+}
+
+
+static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
+{
+/**************************************
+ *
+ *      e x p r e s s i o n _ c o n t a i n s _ s t r e a m
+ *
+ **************************************
+ *
+ * Functional description
+ *  Search if somewhere in the expression the given stream 
+ *  is used. If a unknown node is found it will return true.
+ *
+ **************************************/
+	DEV_BLKCHK(node, type_nod);
+
+	if (!node) {
+		return false;
+	}
+
+	RecordSelExpr* rse = NULL;
+
+	switch (node->nod_type) {
+
+		case nod_field:
+			return ((USHORT)(IPTR) node->nod_arg[e_fld_stream] == stream);
+
+		case nod_dbkey:
+			return ((USHORT)(IPTR) node->nod_arg[0] == stream);
+
+		case nod_cast:
+			return expression_contains_stream(node->nod_arg[e_cast_source], stream);
+
+		case nod_extract:
+			return expression_contains_stream(node->nod_arg[e_extract_value], stream);
+
+		case nod_function:
+			return expression_contains_stream(node->nod_arg[e_fun_args], stream);
+
+		case nod_procedure:
+			return expression_contains_stream(node->nod_arg[e_prc_inputs], stream);
+
+		case nod_any:
+		case nod_unique:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_exists:
+			return expression_contains_stream(node->nod_arg[e_any_rse], stream);
+
+		case nod_argument:
+		case nod_current_date:
+		case nod_current_role:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_internal_info:
+		case nod_literal:
+		case nod_null:
+		case nod_user_name:
+		case nod_variable:
+			return false;
+
+		case nod_rse:
+			rse = (RecordSelExpr*) node;
+			break;
+
+		case nod_average:
+		case nod_count:
+		case nod_count2:
+		case nod_from:
+		case nod_max:
+		case nod_min:
+		case nod_total:
+			{
+				const jrd_nod* nodeDefault = node->nod_arg[e_stat_rse];
+				if (nodeDefault && expression_contains_stream(nodeDefault, stream)) {
+					return true;
+				}
+				rse = (RecordSelExpr*) node->nod_arg[e_stat_rse];
+				const jrd_nod* value = node->nod_arg[e_stat_value];
+				if (value && expression_contains_stream(value, stream)) {
+					return true;
+				}
+			}
+			break;
+
+		// go into the node arguments
+		case nod_add:
+		case nod_add2:
+		case nod_agg_average:
+		case nod_agg_average2:
+		case nod_agg_average_distinct:
+		case nod_agg_average_distinct2:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_total2:
+		case nod_agg_total_distinct:
+		case nod_agg_total_distinct2:
+		case nod_concatenate:
+		case nod_divide:
+		case nod_divide2:
+		case nod_multiply:
+		case nod_multiply2:
+		case nod_negate:
+		case nod_subtract:
+		case nod_subtract2:
+
+		case nod_upcase:
+		case nod_substr:
+
+		case nod_like:
+		case nod_between:
+		case nod_sleuth:
+		case nod_missing:
+		case nod_value_if:
+		case nod_matches:
+		case nod_contains:
+		case nod_starts:
+		case nod_eql:
+		case nod_neq:
+		case nod_geq:
+		case nod_gtr:
+		case nod_lss:
+		case nod_leq:
+		{
+			const jrd_nod* const* ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
+			for (const jrd_nod* const* const end = ptr + node->nod_count;
+				ptr < end; ptr++)
+			{
+				if (expression_contains_stream(*ptr, stream)) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		default :
+			return true;
+	}
+
+	if (rse) {
+
+		jrd_nod* sub;
+		if ((sub = rse->rse_first) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+		if ((sub = rse->rse_skip) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+		if ((sub = rse->rse_boolean) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+		if ((sub = rse->rse_sorted) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+		if ((sub = rse->rse_projection) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+	}
+
+	return false;
 }
 
 
@@ -4408,7 +4741,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 				}
 				jrd_nod* node = tail->opt_conjunct_node;
 				if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				    computable(csb, node, -1, (inner_flag || outer_flag)))
+				    computable(csb, node, -1, (inner_flag || outer_flag), false))
 				{
 					match_index(tdbb, opt, stream, node, idx);
 				}
@@ -4497,7 +4830,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 						 computable(csb,
 						            node,
 									-1,
-									(inner_flag || outer_flag)))
+									(inner_flag || outer_flag),
+									false))
 					{
 						if (match_index(tdbb, opt, stream, node, idx)) {
 							position = 0;
@@ -4594,7 +4928,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
 			jrd_nod* node = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-				&& computable(csb, node, -1, false))
+				&& computable(csb, node, -1, false, false))
 			{
 				compose(return_boolean, node, nod_and);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -4620,29 +4954,32 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
 		}
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-			&& computable(csb, node, -1, false))
+			&& computable(csb, node, -1, false, false))
 		{
 			if (node->nod_type == nod_or) {
 				compose(&inversion, make_inversion(tdbb, opt, node, stream),
 					nod_bit_and); 
 			}
-		}
-	}
-
-	// If no index is used then leave other nodes alone, because they could be used for
-	// building a SORT/MERGE.
-	tail = opt->opt_conjuncts.begin();
-	if (outer_flag || inversion) {
-		for (; tail < opt_end; tail++) {
-			jrd_nod* node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-				&& computable(csb, node, -1, false))
-			{
-				compose(&opt_boolean, node, nod_and);
-				tail->opt_conjunct_flags |= opt_conjunct_used;
-				if (!outer_flag && !(tail->opt_conjunct_flags & opt_conjunct_matched)) {
-					csb_tail->csb_flags |= csb_unmatched;
-				}
+			else {
+				// If no index is used then leave other nodes alone, because they 
+				// could be used for building a SORT/MERGE.
+				if ((inversion && expression_contains_stream(node, stream)) ||
+					(!inversion && computable(csb, node, stream, false, true))) 
+				{
+					// Don't allow adding IS NULL conjunction to outer stream 
+					// from parent node, because a FULL OUTER JOIN could return
+					// wrong results with it.
+					if (!outer_flag ||
+						(outer_flag && !expression_contains(node, nod_missing)))
+					{
+						compose(&opt_boolean, node, nod_and);
+						tail->opt_conjunct_flags |= opt_conjunct_used;
+				
+						if (!outer_flag && !(tail->opt_conjunct_flags & opt_conjunct_matched)) {
+							csb_tail->csb_flags |= csb_unmatched;
+						}
+					}
+				}				
 			}
 		}
 	}
@@ -5234,7 +5571,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		{
 			jrd_nod* node1 = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-				&& computable(opt->opt_csb, node1, -1, false))
+				&& computable(opt->opt_csb, node1, -1, false, false))
 			{
 				compose(&node, node1, nod_and);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -5376,7 +5713,7 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 		{
 			jrd_nod* node = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-				&& computable(csb, node, -1, false))
+				&& computable(csb, node, -1, false, false))
 			{
 				// AB: Why only check for AND structures ? 
 				// Added match_indices for support of "OR" with INNER JOINs */
@@ -5921,7 +6258,7 @@ static jrd_nod* make_starts(thread_db* tdbb,
 			 || idx->idx_rpt[0].idx_itype == idx_byte_array
 			 || idx->idx_rpt[0].idx_itype == idx_metadata
 			 || idx->idx_rpt[0].idx_itype >= idx_first_intl_string)
-		|| !computable(opt->opt_csb, value, stream, false))
+		|| !computable(opt->opt_csb, value, stream, false, false))
 	{
 		return NULL;
 	}
@@ -6094,10 +6431,10 @@ static SSHORT match_index(thread_db* tdbb,
 		/* see if one side or the other is matchable to the index expression */
 
 		if (!expression_equal(tdbb, idx->idx_expression, match) ||
-			!computable(opt->opt_csb, value, stream, true))
+			!computable(opt->opt_csb, value, stream, true, false))
 		{
 			if (expression_equal(tdbb, idx->idx_expression, value) &&
-				computable(opt->opt_csb, match, stream, true))
+				computable(opt->opt_csb, match, stream, true, false))
 			{
 				match = boolean->nod_arg[1];
 				value = boolean->nod_arg[0];
@@ -6113,13 +6450,13 @@ static SSHORT match_index(thread_db* tdbb,
 
 		if (match->nod_type != nod_field ||
 			(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
-			!computable(opt->opt_csb, value, stream, true))
+			!computable(opt->opt_csb, value, stream, true, false))
 		{
 			match = value;
 			value = boolean->nod_arg[0];
 			if (match->nod_type != nod_field ||
 				(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
-				!computable(opt->opt_csb, value, stream, true))
+				!computable(opt->opt_csb, value, stream, true, false))
 			{
 				return 0;
 			}
@@ -6159,7 +6496,8 @@ static SSHORT match_index(thread_db* tdbb,
 						!computable(opt->opt_csb,
 						            boolean->nod_arg[2],
 						            stream,
-						            true))
+						            true,
+									false))
 					{
 						return 0;
 					}
