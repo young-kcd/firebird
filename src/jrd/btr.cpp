@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.32 2003-06-27 16:55:58 dimitr Exp $
+$Id: btr.cpp,v 1.33 2003-06-28 12:48:04 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2375,6 +2375,8 @@ static void copy_key(KEY * in, KEY * out)
 		while (--l);
 	}
 }
+
+
 static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 {
 /**************************************
@@ -2598,6 +2600,8 @@ static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, int *missing)
 
 	return temp;
 }
+
+
 static SLONG fast_load(TDBB tdbb,
 					   JRD_REL relation,
 					   IDX * idx,
