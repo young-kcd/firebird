@@ -1,3 +1,168 @@
+2003-09-17 12:49  aafemt
+
+	* firebird2/src/isql/: extract.epp, isql.epp, isql.h, isql_win.cpp,
+	show.epp:
+	
+	'struct' cleanup
+
+2003-09-17 12:36  aafemt
+
+	* firebird2/src/iscguard/: cntl_guard.cpp, iscguard.cpp,
+	iscguard.h:
+	
+	'struct' cleanup
+
+2003-09-17 11:52  arnobrinkman
+
+	* firebird2/src/: utilities/gstat/dba.epp, jrd/nav.cpp, jrd/ods.h:
+	
+	Remove IGNORE_NULL_IDX_KEY define
+
+2003-09-17 01:22  arnobrinkman
+
+	* firebird2/src/isql/isql.epp:
+	
+	Apply patch from Fred Polizo Jr.  - Display correct OCTETS for
+	varying length characters.
+
+2003-09-17 01:19  arnobrinkman
+
+	* firebird2/src/jrd/: btr.cpp, btr.h, idx.cpp, opt.cpp, val.cpp:
+	
+	Remove IGNORE_NULL_IDX_KEY define.  Still to go : nav.cpp,
+	nav_proto.h, ods.h, dba.epp
+
+2003-09-16 23:45  skidder
+
+	* firebird2/src/common/classes/semaphore.h:
+	
+	Correction
+
+2003-09-16 23:43  skidder
+
+	* firebird2/src/wal/: walc.cpp, walw.cpp:
+	
+	Back out recent header cleanup changes to let the engine compile
+
+2003-09-16 22:59  skidder
+
+	* firebird2/src/remote/: remote.cpp, remote.h, server.cpp:
+	
+	Fix SuperServer 1-minute lock-up under contention bug.	With
+	previous logic all spare threads were notified and performed
+	expensive loop on each request arrival. New logic wakes up only one
+	thread per request. (the same fix was performed in 2.0 SS lock
+	manager to avoid waking up all blocked threads on each lock request
+	resolution).  As an (unexpected) result of this changes SS
+	performance significantly improved. Some artificial tests show
+	timing improvements by factor between 2 and 3.
+
+2003-09-16 22:45  skidder
+
+	* firebird2/src/common/classes/semaphore.h:
+	
+	Implement Firebird::Semaphore class for Windows and POSIX.  Those
+	platforms which do not have POSIX semaphores (Solaris ?) may need
+	to implement this class using BSD or SYSV stuff.
+
+2003-09-16 19:08  dimitr
+
+	* firebird2/src/jrd/: btr.cpp, btr_proto.h:
+	
+	Some cleanup
+
+2003-09-16 16:01  brodsom
+
+	* firebird2/src/gpre/: int.cpp, int_cxx.cpp, pas.cpp, ada.cpp,
+	c_cxx.cpp:
+	
+	Recover some macros as inlines
+
+2003-09-16 15:57  brodsom
+
+	* firebird2/src/dsql/: all.h, alld_proto.h:
+	
+	Cleaning headers
+
+2003-09-16 14:16  brodsom
+
+	* firebird2/src/gpre/pat.cpp:
+	
+	Fix switch with only default warning
+
+2003-09-16 14:15  brodsom
+
+	* firebird2/src/jrd/sdl.cpp:
+	
+	Fix macro redefinition warning
+
+2003-09-16 12:33  aafemt
+
+	* firebird2/src/intl/: cv_unicode_fss.h, lc_narrow.cpp, ld.h,
+	collations/bl88591ca0.h, collations/bl88591da0.h,
+	collations/bl88591de0.h, collations/bl88591es0.h,
+	collations/bl88591fi0.h, collations/bl88591fr0.h,
+	collations/bl88591is0.h, collations/bl88591it0.h,
+	collations/bl88591nl0.h, collations/bl88591no0.h,
+	collations/bl88591pt0.h, collations/bl88591sv0.h,
+	collations/bl88591uk0.h, collations/bl88591us0.h,
+	collations/blNEXTde0.h, collations/blNEXTes0.h,
+	collations/blNEXTfr0.h, collations/blNEXTit0.h,
+	collations/blNEXTus0.h, collations/db437de0.h,
+	collations/db437es1.h, collations/db437fi0.h,
+	collations/db437fr0.h, collations/db437it0.h,
+	collations/db437nl0.h, collations/db437sv0.h,
+	collations/db437uk0.h, collations/db437us0.h,
+	collations/db850cf0.h, collations/db850de0.h,
+	collations/db850es0.h, collations/db850fr0.h,
+	collations/db850it1.h, collations/db850nl0.h,
+	collations/db850pt0.h, collations/db850sv1.h,
+	collations/db850uk0.h, collations/db850us0.h,
+	collations/db852cz0.h, collations/db852po0.h,
+	collations/db852sl0.h, collations/db857tr0.h,
+	collations/db860pt0.h, collations/db863cf1.h,
+	collations/db865da0.h, collations/db865no0.h,
+	collations/db866ru0.h, collations/pd437intl.h,
+	collations/pd437swedfin.h, collations/pd852czech.h,
+	collations/pd852hundc.h, collations/pd852polish.h,
+	collations/pd852slovene.h, collations/pd861iceland.h,
+	collations/pd865nordan40.h, collations/pd866cyrr.h,
+	collations/pw1250czech.h, collations/pw1250hun.h,
+	collations/pw1250hundc.h, collations/pw1250polish.h,
+	collations/pw1250slov.h, collations/pw1251cyrr.h,
+	collations/pw1252i850.h, collations/pw1252intl.h,
+	collations/pw1252nor4.h, collations/pw1252span.h,
+	collations/pw1252swfn.h, collations/pw1253greek1.h,
+	collations/pw1254turk.h, collations/xx1251_ua.h,
+	collations/xx88592czech.h:
+	
+	'struct' removal
+
+2003-09-16 12:18  aafemt
+
+	* firebird2/src/gpre/: ada.cpp, pas.cpp:
+	
+	Add 'void' to functions with no return value
+
+2003-09-16 10:34  robocop
+
+	* firebird2/src/utilities/gsec/gsec_proto.h:
+	
+	Too trivial change
+
+2003-09-16 10:18  brodsom
+
+	* firebird2/src/utilities/: cache.cpp, sbc_print.cpp,
+	gstat/dba_full.epp:
+	
+	-Although not compiled fix unused warning (Thanks to Claudio)
+
+2003-09-16 10:00  brodsom
+
+	* firebird2/src/utilities/gsec/gsec_proto.h:
+	
+	-Add two empty lines at the end.
+
 2003-09-15 23:21  arnobrinkman
 
 	* firebird2/src/dsql/: parse.cpp, parse.y, pass1.cpp:
