@@ -37,9 +37,9 @@
 /*
  *  Add countries.  Must use SET NAMES because this file contains ISO characters.
  */
-COMMIT;
-SET NAMES ISO8859_1;
-CONNECT intlemp.fdb;
+/* COMMIT; */
+/* SET NAMES ISO8859_1; */
+/* CONNECT intlemp.fdb; */
 
 INSERT INTO country (country, currency) VALUES ('USA',         'Dollar');
 INSERT INTO country (country, currency) VALUES ('UK',          'Pound'); 

@@ -107,7 +107,7 @@ sprintf (cmd, "isql %s -i indexoff.sql", Db_name);
 system (cmd);
 
 printf ("Loading  column data\n");
-sprintf (cmd, "isql %s -i intldml.sql", Db_name);
+sprintf (cmd, "isql %s -ch ISO8859_1 -i intldml.sql", Db_name);
 system (cmd);
 printf ("Turning  on indices and triggers \n");
 sprintf (cmd, "isql %s -i indexon.sql", Db_name);
