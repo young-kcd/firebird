@@ -1,3 +1,17 @@
+2004-07-06 15:12  paul_reeves
+
+	* firebird2/src/jrd/isc_version.h (1.1.2.19):
+	
+	Update Build number for 1.5.1
+
+2004-07-06 15:10  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.10.2.13), FirebirdInstall_15.iss
+	(1.5.2.16):
+	
+	Correct minor errors in the Win32 install builder.
+
 2004-07-05 16:21  kkuznetsov
 
 	* firebird2/builds/posix/: Makefile.in.fbserver (1.11.2.4),
