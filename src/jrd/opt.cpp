@@ -101,6 +101,8 @@ static USHORT distribute_equalities(LLS *, CSB, USHORT);
 static BOOLEAN dump_index(JRD_NOD, SCHAR **, SSHORT *);
 static BOOLEAN dump_rsb(JRD_REQ, RSB, SCHAR **, SSHORT *);
 static BOOLEAN estimate_cost(TDBB, OPT, USHORT, double *, double *);
+static bool expression_contains(JRD_NOD, NOD_T);
+static bool expression_contains_stream(JRD_NOD, UCHAR);
 #ifdef EXPRESSION_INDICES
 static BOOLEAN expression_equal(TDBB, JRD_NOD, JRD_NOD);
 #endif
@@ -433,14 +435,45 @@ RSB OPT_compile(TDBB tdbb,
 						csb->csb_rpt[outer_streams[i]].csb_flags |= csb_active;
 					}
 				}
-				*stack_end = parent_stack;
+
+				LLS* stackSavepoint = &conjunct_stack;
+				LLS deliverStack = NULL;
+				if (rse->rse_jointype != blr_inner) {
+					// Make list of nodes that can be delivered to a outer-stream.
+					// In fact this are all nodes except when a IS NULL (nod_missing) 
+					// comparision is done.
+					// Note! Don't forget that this can be burried inside a expression
+					// such as "CASE WHEN (FieldX IS NULL) THEN 0 ELSE 1 END = 0"
+					LLS* stackItem = &parent_stack;
+					for (; *stackItem; stackItem = &(*stackItem)->lls_next) {
+						JRD_NOD deliverNode = (JRD_NOD) (*stackItem)->lls_object;
+						if (!expression_contains(deliverNode, nod_missing)) {
+							LLS_PUSH(deliverNode, &deliverStack);
+						}
+					}
+					*stack_end = deliverStack;
+				}
+				else {
+					*stack_end = parent_stack;
+				}
+
 				rsb = OPT_compile(tdbb, csb, (RSE) node, conjunct_stack);
+
+				if (rse->rse_jointype != blr_inner) {
+					// Remove previously added parent conjuctions from the stack.
+					while (deliverStack) {
+						LLS_POP(&deliverStack);
+					}
+				}
 				*stack_end = NULL;
+
 				if (rse->rse_jointype == blr_left) {
 					for (i = 1; i <= outer_streams[0]; i++) {
 						csb->csb_rpt[outer_streams[i]].csb_flags &= ~csb_active;
 					}
+					
 				}
+
 			} else {
 				rsb = OPT_compile(tdbb, csb, (RSE) node, parent_stack);				
 				find_used_streams(rsb, outer_streams);
@@ -761,8 +794,7 @@ JRD_NOD OPT_make_dbkey(OPT opt_, JRD_NOD boolean, USHORT stream)
  *
  *	This is a little hairy, since view dbkeys are expressed as
  *	concatenations of primitive dbkeys.
- *
- **************************************/
+  **************************************/
 	CSB csb;
 	JRD_NOD value, dbkey;
 	SLONG n;
@@ -2591,6 +2623,358 @@ static BOOLEAN estimate_cost(TDBB tdbb,
 }
 
 
+static bool expression_contains(JRD_NOD node, NOD_T node_type)
+{
+/**************************************
+ *
+ *      e x p r e s s i o n _ c o n t a i n s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Search if somewhere in the expression the give 
+ *  node_type is burried. Return true if a unknown
+ *  node is passed.
+ *
+ **************************************/
+	DEV_BLKCHK(node, type_nod);
+
+	if (!node) {
+		return false;
+	}
+
+	if (node->nod_type == node_type) {
+		return true;
+	}
+	else {
+
+		RSE rse = NULL;
+
+		switch (node->nod_type) {
+
+			case nod_cast:
+				return expression_contains(node->nod_arg[e_cast_source], node_type);
+
+			case nod_extract:
+				return expression_contains(node->nod_arg[e_extract_value], node_type);
+
+			case nod_function:
+				return expression_contains(node->nod_arg[e_fun_args], node_type);
+
+			case nod_procedure:
+				return expression_contains(node->nod_arg[e_prc_inputs], node_type);
+
+			case nod_any:
+			case nod_unique:
+			case nod_ansi_any:
+			case nod_ansi_all:
+			case nod_exists:
+				return expression_contains(node->nod_arg[e_any_rse], node_type);
+
+			case nod_field:
+			case nod_dbkey:
+			case nod_argument:
+			case nod_current_date:
+			case nod_current_role:
+			case nod_current_time:
+			case nod_current_timestamp:
+			case nod_gen_id:
+			case nod_gen_id2:
+			case nod_internal_info:
+			case nod_literal:
+			case nod_null:
+			case nod_user_name:
+			case nod_variable:
+				return false;
+
+			case nod_rse:
+				rse = (RSE) node;
+				break;
+
+			case nod_average:
+			case nod_count:
+			case nod_count2:
+			case nod_from:
+			case nod_max:
+			case nod_min:
+			case nod_total:
+				{
+					JRD_NOD nodeDefault = node->nod_arg[e_stat_rse];
+					if (nodeDefault && expression_contains(nodeDefault, node_type)) {
+						return true;
+					}
+					rse = (RSE) node->nod_arg[e_stat_rse];
+					JRD_NOD value = node->nod_arg[e_stat_value];
+					if (value && expression_contains(value, node_type)) {
+						return true;
+					}
+				}
+				break;
+
+			case nod_or:
+			case nod_and:
+
+			case nod_add:
+			case nod_add2:
+			case nod_agg_average:
+			case nod_agg_average2:
+			case nod_agg_average_distinct:
+			case nod_agg_average_distinct2:
+			case nod_agg_max:
+			case nod_agg_min:
+			case nod_agg_total:
+			case nod_agg_total2:
+			case nod_agg_total_distinct:
+			case nod_agg_total_distinct2:
+			case nod_concatenate:
+			case nod_divide:
+			case nod_divide2:
+			case nod_multiply:
+			case nod_multiply2:
+			case nod_negate:
+			case nod_subtract:
+			case nod_subtract2:
+
+			case nod_upcase:
+			case nod_substr:
+
+			case nod_like:
+			case nod_between:
+			case nod_sleuth:
+			case nod_missing:
+			case nod_value_if:
+			case nod_matches:
+			case nod_contains:
+			case nod_starts:
+			case nod_eql:
+			case nod_neq:
+			case nod_geq:
+			case nod_gtr:
+			case nod_lss:
+			case nod_leq:
+			{
+				JRD_NOD* ptr = node->nod_arg;
+				// Check all sub-nodes of this node.
+				for (JRD_NOD* end = ptr + node->nod_count;
+					ptr < end; ptr++)
+				{
+					if (expression_contains(*ptr, node_type)) {
+						return true;
+					}
+				}
+
+				return false;
+			}
+
+
+			default :
+				return true;
+		}
+
+
+		if (rse) {
+
+			JRD_NOD sub;
+			if ((sub = rse->rse_first) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
+			if ((sub = rse->rse_skip) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
+			if ((sub = rse->rse_boolean) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
+			if ((sub = rse->rse_sorted) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
+			if ((sub = rse->rse_projection) && expression_contains(sub, node_type)) {
+				return true;
+			}
+
+		}
+
+		return false;
+	}
+
+}
+
+
+static bool expression_contains_stream(JRD_NOD node, UCHAR stream)
+{
+/**************************************
+ *
+ *      e x p r e s s i o n _ c o n t a i n s _ s t r e a m
+ *
+ **************************************
+ *
+ * Functional description
+ *  Search if somewhere in the expression the given stream 
+ *  is used. If a unknown node is found it will return true.
+ *
+ **************************************/
+	DEV_BLKCHK(node, type_nod);
+
+	if (!node) {
+		return false;
+	}
+
+	RSE rse = NULL;
+
+	switch (node->nod_type) {
+
+		case nod_field:
+			return ((USHORT)(IPTR) node->nod_arg[e_fld_stream] == stream);
+
+		case nod_dbkey:
+			return ((USHORT)(IPTR) node->nod_arg[0] == stream);
+
+		case nod_cast:
+			return expression_contains_stream(node->nod_arg[e_cast_source], stream);
+
+		case nod_extract:
+			return expression_contains_stream(node->nod_arg[e_extract_value], stream);
+
+		case nod_function:
+			return expression_contains_stream(node->nod_arg[e_fun_args], stream);
+
+		case nod_procedure:
+			return expression_contains_stream(node->nod_arg[e_prc_inputs], stream);
+
+		case nod_any:
+		case nod_unique:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_exists:
+			return expression_contains_stream(node->nod_arg[e_any_rse], stream);
+
+		case nod_argument:
+		case nod_current_date:
+		case nod_current_role:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_internal_info:
+		case nod_literal:
+		case nod_null:
+		case nod_user_name:
+		case nod_variable:
+			return false;
+
+		case nod_rse:
+			rse = (RSE) node;
+			break;
+
+		case nod_average:
+		case nod_count:
+		case nod_count2:
+		case nod_from:
+		case nod_max:
+		case nod_min:
+		case nod_total:
+			{
+				JRD_NOD nodeDefault = node->nod_arg[e_stat_rse];
+				if (nodeDefault && expression_contains_stream(nodeDefault, stream)) {
+					return true;
+				}
+				rse = (RSE) node->nod_arg[e_stat_rse];
+				JRD_NOD value = node->nod_arg[e_stat_value];
+				if (value && expression_contains_stream(value, stream)) {
+					return true;
+				}
+			}
+			break;
+
+		// go into the node arguments
+		case nod_add:
+		case nod_add2:
+		case nod_agg_average:
+		case nod_agg_average2:
+		case nod_agg_average_distinct:
+		case nod_agg_average_distinct2:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_total2:
+		case nod_agg_total_distinct:
+		case nod_agg_total_distinct2:
+		case nod_concatenate:
+		case nod_divide:
+		case nod_divide2:
+		case nod_multiply:
+		case nod_multiply2:
+		case nod_negate:
+		case nod_subtract:
+		case nod_subtract2:
+
+		case nod_upcase:
+		case nod_substr:
+
+		case nod_like:
+		case nod_between:
+		case nod_sleuth:
+		case nod_missing:
+		case nod_value_if:
+		case nod_matches:
+		case nod_contains:
+		case nod_starts:
+		case nod_eql:
+		case nod_neq:
+		case nod_geq:
+		case nod_gtr:
+		case nod_lss:
+		case nod_leq:
+		{
+			JRD_NOD* ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
+			for (JRD_NOD* end = ptr + node->nod_count;
+				ptr < end; ptr++)
+			{
+				if (expression_contains_stream(*ptr, stream)) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		default :
+			return true;
+	}
+
+	if (rse) {
+
+		JRD_NOD sub;
+		if ((sub = rse->rse_first) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+		if ((sub = rse->rse_skip) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+		if ((sub = rse->rse_boolean) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+		if ((sub = rse->rse_sorted) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+		if ((sub = rse->rse_projection) && expression_contains_stream(sub, stream)) {
+			return true;
+		}
+
+	}
+
+	return false;
+}
+
+
 #ifdef EXPRESSION_INDICES
 static BOOLEAN expression_equal(TDBB tdbb, JRD_NOD node1, JRD_NOD node2)
 {
@@ -4371,6 +4755,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 	if (outer_flag) {
 		tail += opt->opt_count;
 	}
+
 	for (; tail < opt_end; tail++)
 	{
 		node = tail->opt_conjunct;
@@ -4384,13 +4769,33 @@ static RSB gen_retrieval(TDBB     tdbb,
 				compose(&inversion, make_inversion(tdbb, opt, node, stream),
 					nod_bit_and); 
 			}
-			compose(&opt_boolean, node, nod_and);
-			tail->opt_flags |= opt_used;
-			if (!outer_flag && !(tail->opt_flags & opt_matched)) {
-				csb_tail->csb_flags |= csb_unmatched;
+		}
+	}
+
+	// If no index is used then leave other nodes alone, because they could be used for
+	// building a SORT/MERGE.
+	tail = opt->opt_rpt;
+	if (outer_flag) {
+		tail += opt->opt_count;
+	}
+	if (outer_flag || inversion) {
+		for (; tail < opt_end; tail++) {
+			node = tail->opt_conjunct;
+			if (!(tail->opt_flags & opt_used)
+				&& computable(csb, node, -1, false))
+			{
+				if (expression_contains_stream(node, stream)) {
+					compose(&opt_boolean, node, nod_and);
+					tail->opt_flags |= opt_used;
+				
+					if (!outer_flag && !(tail->opt_flags & opt_matched)) {
+						csb_tail->csb_flags |= csb_unmatched;
+					}
+				}
 			}
 		}
 	}
+
 
 	if (full)
 		return gen_rsb(tdbb, opt, rsb, inversion, stream, relation, alias,
