@@ -1,3 +1,36 @@
+2005-01-06 19:32  dimitr
+
+	* firebird2/doc/sql.extensions/: README.cursors (1.1),
+	README.leave_labels (1.1):
+	
+	Added some docs.
+
+2005-01-06 19:17  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.186):
+	
+	Fix another check constraint and ambigous field problem.  Are there
+	any more options left?, sigh: tablename, NEW, OLD, TEMP
+
+2005-01-06 17:58  dimitr
+
+	* firebird2/doc/WhatsNew (1.47):
+	
+	A couple of corrections.
+
+2005-01-06 16:06  dimitr
+
+	* firebird2/doc/WhatsNew (1.46):
+	
+	Added all changes up-to-date.
+
+2005-01-06 14:14  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.185):
+	
+	Fix sub-select in derived table issue (context already in used
+	error)
+
 2005-01-05 13:15  dimitr
 
 	* firebird2/src/dsql/make.cpp (1.81):
