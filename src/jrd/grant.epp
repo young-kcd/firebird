@@ -344,6 +344,7 @@ static void define_default_class(
 	DFW_post_work(dbb->dbb_sys_trans, dfw_scan_relation, &desc, 0);
 }
 
+
 #ifdef NOT_USED_OR_REPLACED
 static void delete_security_class( thread_db* tdbb, const TEXT* s_class)
 {
@@ -368,9 +369,10 @@ static void delete_security_class( thread_db* tdbb, const TEXT* s_class)
         ERASE CLS;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 }
 #endif // NOT_USED_OR_REPLACED
+
 
 static void finish_security_class(UCHAR**	acl_ptr,
 								  SecurityClass::flags_t public_priv,
@@ -915,7 +917,7 @@ static SecurityClass::flags_t save_field_privileges(
 		REQUEST(irq_grant6) = request;
 
 	if (request2)
-		CMP_release(tdbb, (jrd_req*)request2);
+		CMP_release(tdbb, request2);
 
 /* flush out the last user's info */
 

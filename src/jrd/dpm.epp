@@ -862,7 +862,7 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 		X.RDB$RELATION_ID EQ relation->rel_id ERASE X;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 	CCH_flush(tdbb, FLUSH_ALL, 0);
 }
 

@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.133 2004-08-16 12:28:19 alexpeshkoff Exp $
+$Id: met.epp,v 1.134 2004-08-26 11:07:57 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -563,7 +563,7 @@ void MET_activate_shadow( thread_db* tdbb)
         ERASE X;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 
 	const char* dbb_file_name = dbb->dbb_file->fil_string;
 
@@ -590,9 +590,9 @@ void MET_activate_shadow( thread_db* tdbb)
 
 	if (handle2)
 	{
-		CMP_release(tdbb, (jrd_req*)handle2);
+		CMP_release(tdbb, handle2);
 	}
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 }
 
 
@@ -751,7 +751,7 @@ void MET_delete_shadow( thread_db* tdbb, USHORT shadow_number)
         ERASE X;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next) {
 		if (shadow->sdw_number == shadow_number) {
@@ -990,7 +990,7 @@ jrd_nod* MET_get_dependencies(thread_db*	tdbb,
 				RLF.RDB$FIELD_NAME EQ object_name
             object_name = FLD.RDB$FIELD_NAME;
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 	}
 
 	store_dependencies(tdbb, csb, object_name, type);
@@ -1084,7 +1084,7 @@ void MET_get_shadow_files( thread_db* tdbb, bool delete_files)
 		}
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 
 /* if any current shadows were not defined in database, mark 
    them to be shutdown since they don't exist anymore */
@@ -1914,7 +1914,7 @@ bool MET_lookup_partner(
 				}
 			END_FOR;
 
-			CMP_release(tdbb, (jrd_req*)request);
+			CMP_release(tdbb, request);
 			return found;
 		}
 
@@ -3584,7 +3584,7 @@ void MET_update_shadow( thread_db* tdbb, Shadow* shadow, USHORT file_flags)
 			FIL.RDB$FILE_FLAGS = file_flags;
 		END_MODIFY;
 	END_FOR;
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 }
 
 
@@ -3796,7 +3796,7 @@ static bool get_type(thread_db* tdbb, SSHORT* id, const UCHAR* name, const TEXT*
         found = true;
 		*id = T.RDB$TYPE;
 	END_FOR;
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 
 	return found;
 }
@@ -4152,7 +4152,7 @@ static bool resolve_charset_and_collation(
 			*id = CS.RDB$CHARACTER_SET_ID;
 
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 
 		return found;
 	}
@@ -4166,7 +4166,7 @@ static bool resolve_charset_and_collation(
 			*id = COL.RDB$CHARACTER_SET_ID;
 
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*)handle);
+		CMP_release(tdbb, handle);
 
 		return found;
 	}
@@ -4184,7 +4184,7 @@ static bool resolve_charset_and_collation(
 		*id = CS.RDB$CHARACTER_SET_ID;
 
 	END_FOR;
-	CMP_release(tdbb, (jrd_req*)handle);
+	CMP_release(tdbb, handle);
 
 	return found;
 }
@@ -4468,7 +4468,7 @@ static bool verify_TRG_ignore_perm(thread_db* tdbb, const TEXT* trig_name)
 			REQUEST(irq_c_trg_perm) = request;
 		}
 
-		EXE_unwind(tdbb, (jrd_req*)request);
+		EXE_unwind(tdbb, request);
 		fb_utils::fb_exact_name_limit(REF.RDB$UPDATE_RULE, sizeof(REF.RDB$UPDATE_RULE));
 		fb_utils::fb_exact_name_limit(REF.RDB$DELETE_RULE, sizeof(REF.RDB$DELETE_RULE));
 

@@ -446,7 +446,7 @@ void DYN_modify_global_field(
 											DIM_DOM.RDB$FIELD_NAME.NULL = FALSE;
 										END_MODIFY;
 									END_FOR;
-									CMP_release (tdbb, (jrd_req*) request);
+									CMP_release (tdbb, request);
 									request = NULL;
 								}
 								/* CVC: End modification. */
@@ -462,7 +462,7 @@ void DYN_modify_global_field(
 														DOM.RDB$FIELD_NAME,
 														DOM.RDB$FIELD_NAME);
 								END_FOR;
-								CMP_release(tdbb, (jrd_req*)request);
+								CMP_release(tdbb, request);
 								request = old_request;
 							END_MODIFY;
 						}
@@ -494,7 +494,7 @@ void DYN_modify_global_field(
 				new_dom->dyn_dsc.dsc_length = DYN_get_number(ptr);
 				if (++field_adjusted_count > 2)
 				{
-					EXE_unwind(tdbb, (jrd_req*)request);
+					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
 				}
 				switch (new_dom->dyn_dtype) {
@@ -518,7 +518,7 @@ void DYN_modify_global_field(
 				new_dom->dyn_dtype = DYN_get_number(ptr);
 				if (++field_adjusted_count > 2)
 				{
-					EXE_unwind(tdbb, (jrd_req*)request);
+					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
 				}
 
@@ -618,7 +618,7 @@ void DYN_modify_global_field(
 
 			case isc_dyn_single_validation:
 				if (single_validate) {
-					EXE_unwind(tdbb, (jrd_req*)request);
+					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 160, NULL, NULL, NULL, NULL, NULL);
 					/* msg 160: "Only one constraint allowed for a domain" */
 					break;
@@ -629,7 +629,7 @@ void DYN_modify_global_field(
 
 			case isc_dyn_fld_validation_blr:
 				if (single_validate && (!FLD.RDB$VALIDATION_BLR.NULL)) {
-					EXE_unwind(tdbb, (jrd_req*)request);
+					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 160, NULL, NULL, NULL, NULL, NULL);
 					/* msg 160: "Only one constraint allowed for a domain" */
 					break;
@@ -729,7 +729,7 @@ void DYN_modify_global_field(
                                         DOM.RDB$FIELD_NAME);
 				END_FOR;
 
-				CMP_release(tdbb, (jrd_req*)request);
+				CMP_release(tdbb, request);
 				request = old_request;
 			}
 
@@ -1954,7 +1954,7 @@ static void modify_lfield_position(thread_db* tdbb,
 		END_MODIFY;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)request);
+	CMP_release(tdbb, request);
 	request = NULL;
 
 /* Once the field position has been changed, make sure that there are no
@@ -1974,7 +1974,7 @@ static void modify_lfield_position(thread_db* tdbb,
 		new_pos += 1;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)request);
+	CMP_release(tdbb, request);
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -2019,7 +2019,7 @@ static bool check_view_dependency(thread_db* tdbb,
 		view_name = Z.RDB$VIEW_NAME;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)request);
+	CMP_release(tdbb, request);
 
 	if (retval)
 		DYN_error_punt(false, 206, field_name, relation_name, view_name, NULL,
@@ -2059,7 +2059,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 		dep_name = DEP.RDB$DEPENDENT_NAME;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)request);
+	CMP_release(tdbb, request);
 
 	if (retval)
 		DYN_error_punt(false, 206, field_name, relation_name, dep_name, NULL,
@@ -2106,7 +2106,7 @@ static void modify_lfield_index(thread_db*	tdbb,
 		END_MODIFY;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)request);
+	CMP_release(tdbb, request);
 }
 
 static bool field_exists(thread_db* tdbb,
@@ -2133,7 +2133,7 @@ static bool field_exists(thread_db* tdbb,
         retval = true;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)request);
+	CMP_release(tdbb, request);
 	return retval;
 }
 
@@ -2155,7 +2155,7 @@ static bool domain_exists(thread_db* tdbb, Database* dbb, Global* gbl, const TEX
         retval = true;
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*)request);
+	CMP_release(tdbb, request);
 	return retval;
 }
 
@@ -2422,7 +2422,7 @@ void DYN_modify_sql_field(Global*		gbl,
 				}
 			}
 		END_FOR; /* FLD in RDB$FIELDS */
-		CMP_release(tdbb, (jrd_req*)request);
+		CMP_release(tdbb, request);
 		request = NULL;
 
 		/* Now that we have all of the information needed, let's check to see if the field type can be modifed */
@@ -2454,7 +2454,7 @@ void DYN_modify_sql_field(Global*		gbl,
                     ERASE FLD;
 				END_FOR;
 
-				CMP_release(tdbb, (jrd_req*)request);
+				CMP_release(tdbb, request);
 				request = NULL;
 			}
 			request = first_request;
@@ -2551,7 +2551,7 @@ void DYN_modify_sql_field(Global*		gbl,
 					strcpy(FLD.RDB$FIELD_NAME, new_fld->dyn_fld_name);
 				END_STORE;
 
-				CMP_release(tdbb, (jrd_req*)request);
+				CMP_release(tdbb, request);
 				request = NULL;
 			}
 			else {				/* the original and new definitions are both base types */
@@ -2597,13 +2597,13 @@ void DYN_modify_sql_field(Global*		gbl,
 
 					END_MODIFY;
 				END_FOR; /* FLD in RDB$FIELDS */
-				CMP_release(tdbb, (jrd_req*)request);
+				CMP_release(tdbb, request);
 				request = NULL;
 			}
 		}						/* else not a domain */
 		request = first_request;
 	END_FOR; /* RFR IN RDB$RELATION_FIELDS */
-	CMP_release(tdbb, (jrd_req*)request);
+	CMP_release(tdbb, request);
 	request = NULL;
 
 	if (!found)
@@ -2678,7 +2678,7 @@ void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld* dom_f
 		dom_fld->dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
 
 	END_FOR;
-	CMP_release(tdbb, (jrd_req*)request);
+	CMP_release(tdbb, request);
 }
 
 static ULONG check_update_fld_type(const dyn_fld* orig_fld,

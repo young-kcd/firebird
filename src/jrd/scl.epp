@@ -255,7 +255,7 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
                 default_s_class = SCL_get_class(REL.RDB$DEFAULT_CLASS);
         END_FOR;
 
-        CMP_release(tdbb, (jrd_req*) request);
+        CMP_release(tdbb, request);
     }
     else {
         idx_name_ptr = aux_idx_name;
@@ -273,7 +273,7 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
                 default_s_class = SCL_get_class(REL.RDB$DEFAULT_CLASS);
         END_FOR;
 	
-        CMP_release (tdbb, (jrd_req*)request);
+        CMP_release (tdbb, request);
     }
 
 	// Check if the relation exists. It may not have been created yet.
@@ -318,11 +318,11 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
 
 	END_FOR;
 
-	CMP_release(tdbb, (jrd_req*) request);
+	CMP_release(tdbb, request);
 	}
 	catch (const std::exception&) {
 		if (request) {
-			CMP_release(tdbb, (jrd_req*) request);
+			CMP_release(tdbb, request);
 		}
 		throw;
 	}
@@ -674,7 +674,7 @@ void SCL_init(bool create,
                     if (!REQUEST(irq_get_role_name))
                         REQUEST(irq_get_role_name) = request;
 
-					EXE_unwind(tdbb, (jrd_req*) request);
+					EXE_unwind(tdbb, request);
 					ERR_post(isc_login_same_as_role_name,
 							 isc_arg_string, ERR_cstring(login_name), 0);
 
@@ -768,7 +768,7 @@ void SCL_init(bool create,
 				tdbb->tdbb_attachment->att_security_class =
 					SCL_get_class(X.RDB$SECURITY_CLASS);
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*) handle);
+		CMP_release(tdbb, handle);
 
 		FOR(REQUEST_HANDLE handle1)
 			FIRST 1 REL IN RDB$RELATIONS
@@ -786,7 +786,7 @@ void SCL_init(bool create,
 				}
 			}
 		END_FOR;
-		CMP_release(tdbb, (jrd_req*) handle1);
+		CMP_release(tdbb, handle1);
 	}
 	else {
 		user->usr_flags |= USR_owner;
