@@ -1,3 +1,28 @@
+2003-06-16 17:42  alexpeshkoff
+
+	* firebird2/src/: jrd/dfw.epp, jrd/ExecuteStatement.cpp,
+	jrd/ExecuteStatement.h, jrd/exe.cpp, jrd/ext.cpp, jrd/flu.cpp,
+	jrd/flu_proto.h, jrd/fun.epp, jrd/jrd.cpp, jrd/met.epp,
+	jrd/why.cpp, dsql/dsql.cpp:
+	
+	fixed diagnostic in EXECUTE STATEMENT & DirectoryList
+
+2003-06-16 00:26  skidder
+
+	* firebird2/src/dsql/parse.y:
+	
+	Oops. Part of my own RELEASE SAVEPOINT implementation leaked into
+	to the previous commit
+
+2003-06-16 00:08  skidder
+
+	* firebird2/src/dsql/parse.y:
+	
+	Make INSERTING/UPDATING/DELETING non-reserved keywords. The patch
+	causes compilation performance degradation for statements
+	containing a lot of braces, but my testing indicated that this
+	effect is surely unmeasurable for nesting level up to 250
+
 2003-06-15 08:03  stryqx
 
 	* firebird2/configure.in:
