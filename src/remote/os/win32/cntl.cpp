@@ -269,7 +269,7 @@ static void WINAPI control_thread( DWORD action)
  *	Process a service control request.
  *
  **************************************/
-	DWORD state = SERVICE_RUNNING;
+	const DWORD state = SERVICE_RUNNING;
 
 	switch (action) {
 	case SERVICE_CONTROL_STOP:

@@ -594,7 +594,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		(backwards && retrieval->irb_upper_count))
 	{
 		// Make a temporary key with length 1 and zero byte, this will return
-		// the first data value after the NULLs for a ASC index.
+		// the first data value after the NULLs for an ASC index.
 		temporary_key firstNotNullKey;
 		firstNotNullKey.key_flags = 0;
 		firstNotNullKey.key_data[0] = 0;
@@ -1916,13 +1916,13 @@ static void compress(thread_db* tdbb,
 	bool temp_is_negative = false;
 	bool int64_key_op = false;
 
-	// For descending index and new index structure we insert 0xFE at the begin. 
+	// For descending index and new index structure we insert 0xFE at the beginning. 
 	// This is only done for values which begin with 0xFE (254) or 0xFF (255) and
 	// is needed to make a difference between a NULL state and a VALUE.
 	// Note! By descending index key is complemented after this compression routine.
 	// Further a NULL state is always returned as 1 byte 0xFF (descending index).
-	const UCHAR desc_end_value_prefix = 0x01; //0xFE
-	const UCHAR desc_end_value_check = 0x00; //0xFF;
+	const UCHAR desc_end_value_prefix = 0x01; // ~0xFE
+	const UCHAR desc_end_value_check = 0x00; // ~0xFF;
 
 	SET_TDBB(tdbb);
 	const Database* dbb = tdbb->tdbb_database;
@@ -2042,7 +2042,8 @@ static void compress(thread_db* tdbb,
 		else {
 			// Leave key_empty flag, because the string is an empty string
 			if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) && 
-				((pad == desc_end_value_prefix) || (pad == desc_end_value_check))) {
+				((pad == desc_end_value_prefix) || (pad == desc_end_value_check)))
+			{
 				*p++ = desc_end_value_prefix;
 			}
 			*p++ = pad;

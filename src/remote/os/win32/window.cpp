@@ -276,18 +276,16 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		switch (wParam) {
 		case IDM_CANCEL:
 			if ((usServerFlags & SRVR_non_service)
-				&& (!(usServerFlags & SRVR_no_icon))) ShowWindow(hWnd,
-																 bInTaskBar ?
-																 SW_HIDE :
-																 SW_MINIMIZE);
+				&& (!(usServerFlags & SRVR_no_icon))) 
+			{
+				ShowWindow(hWnd, bInTaskBar ? SW_HIDE : SW_MINIMIZE);
+			}
 			else
 				ShowWindow(hWnd, SW_HIDE);
 			return TRUE;
 
 		case IDM_OPENPOPUP:
 			{
-				HMENU hPopup = NULL;
-				POINT curPos;
 				char szMsgString[MSG_STRINGLEN];
 
 				// The SetForegroundWindow() has to be called because our window
@@ -296,7 +294,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				//bar and is not the same as a minimized window.
 				SetForegroundWindow(hWnd);
 
-				hPopup = CreatePopupMenu();
+				HMENU hPopup = CreatePopupMenu();
 				LoadString(hInstance, IDS_SHUTDOWN, szMsgString,
 						   MSG_STRINGLEN);
 				AppendMenu(hPopup, MF_STRING, IDM_SHUTDOWN, szMsgString);
@@ -305,6 +303,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				AppendMenu(hPopup, MF_STRING, IDM_PROPERTIES, szMsgString);
 				SetMenuDefaultItem(hPopup, IDM_PROPERTIES, FALSE);
 
+				POINT curPos;
 				GetCursorPos(&curPos);
 				TrackPopupMenu(hPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 							   curPos.x, curPos.y, 0, hWnd, NULL);
@@ -364,14 +363,13 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 
 	case WM_CREATE:
 		if ((usServerFlags & SRVR_non_service)
-			&& (!(usServerFlags & SRVR_no_icon))) {
-			HICON hIcon;
-			NOTIFYICONDATA nid;
-
-			hIcon = (HICON) LoadImage(hInstance,
+			&& (!(usServerFlags & SRVR_no_icon))) 
+		{
+			HICON hIcon = (HICON) LoadImage(hInstance,
 									  MAKEINTRESOURCE(IDI_IBSVR_SMALL),
 									  IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
 
+			NOTIFYICONDATA nid;
 			nid.cbSize = sizeof(NOTIFYICONDATA);
 			nid.hWnd = hWnd;
 			nid.uID = IDI_IBSVR;
@@ -486,7 +484,9 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 					if (MessageBox(hWnd, tmp,
 								   szDrives,
 								   MB_OKCANCEL | MB_ICONHAND) == IDCANCEL)
-							return FALSE;
+					{
+						return FALSE;
+					}
 
 					JRD_shutdown_all();
 					PostMessage(hWnd, WM_DESTROY, 0, 0);

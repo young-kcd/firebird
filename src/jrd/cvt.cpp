@@ -564,12 +564,20 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_d_float:
 #endif
 		if (desc->dsc_dtype == dtype_real)
-			d = *((float*) p), eps = eps_float;
+		{
+			d = *((float*) p);
+			eps = eps_float;
+		}
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double*) p), eps = eps_double;
+		{
+			d = *((double*) p);
+			eps = eps_double;
+		}
 #ifdef VMS
-		else
-			d = CNVT_TO_DFLT((double*) p), eps = eps_double;
+		else {
+			d = CNVT_TO_DFLT((double*) p);
+			eps = eps_double;
+		}
 #endif
 		if (scale > 0)
 			d /= power_of_ten(scale);
@@ -933,6 +941,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	return value;
 }
 
+
 SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 {
 /**************************************
@@ -983,12 +992,20 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_d_float:
 #endif
 		if (desc->dsc_dtype == dtype_real)
-			d = *((float*) p), eps = eps_float;
+		{
+			d = *((float*) p);
+			eps = eps_float;
+		}
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double*) p), eps = eps_double;
+		{
+			d = *((double*) p);
+			eps = eps_double;
+		}
 #ifdef VMS
-		else
-			d = CNVT_TO_DFLT((double*) p), eps = eps_double;
+		else {
+			d = CNVT_TO_DFLT((double*) p);
+			eps = eps_double;
+		}
 #endif
 		if (scale > 0)
 			d /= power_of_ten(scale);

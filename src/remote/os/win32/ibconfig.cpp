@@ -125,14 +125,13 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
  *               dialogs implementation from the Prop. sheet side. That is,
  *               the dialogs are added as pages in the property sheet.
  *****************************************************************************/
-	PROPSHEETPAGE IBPage;
-
 	hIBGrayBrush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	hAppInstance = hInst;
 	bServerApp = TRUE;
 	szService[0] = '\0';
 	szSysDbaPasswd[0] = '\0';
 
+	PROPSHEETPAGE IBPage;
 	IBPage.dwSize = sizeof(PROPSHEETPAGE);
 	IBPage.dwFlags = PSP_USETITLE | PSP_HASHELP;
 	IBPage.hInstance = hInst;
@@ -167,8 +166,8 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
  *               the settings. When the user clicks on the modify button for
  *               the first time, it SYSDBA password is validated.
  *****************************************************************************/
-	static BOOL bModifyMode = FALSE;
-	static BOOL bDirty = FALSE;
+	static bool bModifyMode = false;
+	static bool bDirty = false;
 
 	switch (unMsg) {
 	case WM_INITDIALOG:
@@ -176,8 +175,8 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			if (!ReadIBSettings(hDlg))
 				return FALSE;
 			RefreshIBControls(hDlg, FALSE);
-			bModifyMode = FALSE;
-			bDirty = FALSE;
+			bModifyMode = false;
+			bDirty = false;
 		}
 		break;
 	case WM_CTLCOLORDLG:
@@ -191,7 +190,8 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
-				OsVersionInfo.dwMajorVersion < 4) {
+				OsVersionInfo.dwMajorVersion < 4) 
+			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;
 			}
@@ -222,8 +222,8 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		case IDC_MODRES:
 			if (bModifyMode)	// User clicked on RESET
 			{
-				bModifyMode = FALSE;
-				bDirty = FALSE;
+				bModifyMode = false;
+				bDirty = false;
 				ReadIBSettings(hDlg);
 				RefreshIBControls(hDlg, FALSE);
 				PropSheet_UnChanged(GetParent(hDlg), hDlg);
@@ -233,8 +233,8 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			{
 				if (szSysDbaPasswd[0] || ValidateUser(hDlg)) {
 					RefreshIBControls(hDlg, TRUE);
-					bModifyMode = TRUE;
-					bDirty = FALSE;
+					bModifyMode = true;
+					bDirty = false;
 					SendDlgItemMessage(hDlg, IDC_DBPAGES, EM_SETSEL,
 									   0, (LPARAM) - 1);
 					SetFocus(GetDlgItem(hDlg, IDC_DBPAGES));
@@ -244,13 +244,13 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		case IDC_MAPSIZE:
 			if (bModifyMode && HIWORD(wParam) == CBN_SELCHANGE) {
 				PropSheet_Changed(GetParent(hDlg), hDlg);
-				bDirty = TRUE;
+				bDirty = true;
 			}
 			break;
 		case IDC_DBPAGES:
 			if (bModifyMode && HIWORD(wParam) == EN_UPDATE) {
 				PropSheet_Changed(GetParent(hDlg), hDlg);
-				bDirty = TRUE;
+				bDirty = true;
 			}
 			break;
 		}
@@ -275,8 +275,8 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			if (bDirty)
 				if (WriteIBSettings(hDlg))	// Values written successfully
 				{
-					bModifyMode = FALSE;
-					bDirty = FALSE;
+					bModifyMode = false;
+					bDirty = false;
 					ReadIBSettings(hDlg);
 					RefreshIBControls(hDlg, FALSE);
 					SetFocus(GetDlgItem(hDlg, IDC_MODRES));
@@ -312,23 +312,21 @@ BOOL ReadIBSettings(HWND hDlg)
  *               current IB settings in the config file and then sets these
  *               values to the corresponding controls.
  *****************************************************************************/
-	BOOL bSuccess;
 	char pchTmp[TEMP_BUFLEN];
 	ISC_STATUS_ARRAY pdwStatus;
 	isc_svc_handle hService = NULL;
 	//char pchRcvBuf[SEND_BUFLEN],
 	char pchResBuf[RESP_BUFLEN];
-	char* pchPtr;
 
 	HCURSOR hOldCursor = NULL;
 
 	lCachePages = 0;
 	lMapSize = 0;
-	bSuccess = FALSE;
+	BOOL bSuccess = FALSE;
 
 // Attach to "anonymous" service
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
-	pchPtr = szService + strlen(szService);
+	char* const pchPtr = szService + strlen(szService);
 	strcat(szService, "anonymous");
 	isc_service_attach(pdwStatus, 0, szService, &hService, 0, "");
 
@@ -455,7 +453,6 @@ BOOL WriteIBSettings(HWND hDlg)
 	ISC_STATUS_ARRAY pdwStatus;
 	isc_svc_handle hService = NULL;
 	char pchSendBuf[SEND_BUFLEN];
-	char *pchPtr;
 	short *psLen;
 	char szSpb[SPB_BUFLEN];		// Server parameter block
 	char szResBuf[16];			// Response buffer
@@ -480,7 +477,7 @@ BOOL WriteIBSettings(HWND hDlg)
 
 // Build the complete name to the service
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
-	pchPtr = szService + strlen(szService);
+	char* pchPtr = szService + strlen(szService);
 	strcat(szService, "query_server");
 
 // Attach to "query_server" service
@@ -611,7 +608,8 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
-				OsVersionInfo.dwMajorVersion < 4) {
+				OsVersionInfo.dwMajorVersion < 4) 
+			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;
 			}
@@ -693,7 +691,7 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
 		if (isc_interprete_cpp(szErrStr, &vector)) {
-			SCHAR *ptr = szErrStr + strlen(szErrStr);;
+			SCHAR *ptr = szErrStr + strlen(szErrStr);
 
 			*ptr++ = '\r';
 			*ptr++ = '\n';
@@ -758,13 +756,12 @@ void HelpCmd( HWND hWnd, HINSTANCE hInst, WPARAM wId)
  *  Description:  Invoke the Windows Help facility with context of nId.
  *      
  *****************************************************************/
-	HCURSOR hOldCursor;
 	SCHAR szPathFileName[1024 + 256 + 1];
 
 	GetModuleFileName(hInst, szPathFileName, sizeof(szPathFileName));
 
 /* Show hour glass cursor */
-	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
+	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
 	strcpy(strrchr(szPathFileName, '\\') + 1, SERVER_HELP_FILE);
 	WinHelp(hWnd, szPathFileName, HELP_CONTEXT, wId);
