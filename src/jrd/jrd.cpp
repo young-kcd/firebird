@@ -51,6 +51,12 @@
 #endif
 #include <errno.h>
 
+#if (defined(_WIN32) || defined(WIN32)) && defined(_MSC_VER) && _MSC_VER < 1300
+// Microsoft hard-coded identifiers to be max 255 bytes in debug info.
+// Guess how well that works using C++ and templates...
+#pragma warning(disable: 4786)
+#endif
+
 #define JRD_MAIN
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"
@@ -228,8 +234,10 @@ static REC_MUTX_T databases_rec_mutex;
 #define TEXT    SCHAR
 #endif	// WIN_NT
 
-void trig::compile(tdbb* _tdbb) {
-	if (!request && !compile_in_progress) {
+void trig::compile(tdbb* _tdbb)
+{
+	if (!request && !compile_in_progress)
+	{
 		SET_TDBB(_tdbb);
 
 		compile_in_progress = TRUE;
@@ -243,14 +251,16 @@ void trig::compile(tdbb* _tdbb) {
 					(CSB)NULL_PTR, (CSB*)NULL_PTR, &request, TRUE, 
 					(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
 			_tdbb->tdbb_default = old_pool;
-		}  catch (...) {			
+		}
+		catch (...) {
 			_tdbb->tdbb_default = old_pool;
 			compile_in_progress = FALSE;
 			if (request) {
 				CMP_release(_tdbb,request);
 				request = NULL;
-			} else
+			} else {
 				delete new_pool;
+			}
 			throw;
 		}
 		_tdbb->tdbb_default = old_pool;
@@ -258,20 +268,23 @@ void trig::compile(tdbb* _tdbb) {
 		if (name)
 			request->req_trg_name = (TEXT *)name->str_data;
 		if (sys_trigger)
-	  		request->req_flags |= req_sys_trigger;
+			request->req_flags |= req_sys_trigger;
 		if (flags & TRG_ignore_perm)
-	  		request->req_flags |= req_ignore_perm;
-			
+			request->req_flags |= req_ignore_perm;
+
 		compile_in_progress = FALSE;
 	}
 }
 
-BOOLEAN trig::release(tdbb* _tdbb) {
-	if (!blr/*sys_trigger*/ || !request || CMP_clone_active(request)) 
-		return FALSE;	
+BOOLEAN trig::release(tdbb* _tdbb)
+{
+	if (!blr/*sys_trigger*/ || !request || CMP_clone_active(request)) {
+		return FALSE;
+	}
 	
 	CMP_release(_tdbb, request);
-	request = NULL;	
+	request = NULL;
+	return TRUE;
 }
 
 extern "C" {
