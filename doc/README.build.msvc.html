@@ -9,16 +9,16 @@
 </HEAD>
 
 <BODY>
-<H2>VisualStudio build Notes</H2>
+<H2>VisualStudio Build Notes</H2>
 <hr/>
-Last Update: June 7 2003<br>
+Last Update: November 6 2003<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>0.-Introduction</h3>
 <blockquote>
 
-<p>There are two VisualStudio builds, msvc6 and msvc7. The msvc6 build is the official build of FB in win32.</p>
-<p>Under the directory where you put Firebird sources you will see the following directories</p>
+<p>There are two VisualStudio builds, msvc6 and msvc7. The msvc6 build is currently the official build environment for Firebird in a win32 environment.</p>
+<p>Under the directory where you placed the Firebird sources you will see the following directories</p>
 <ul>
 <li>builds</li>
 <ul>
@@ -35,7 +35,7 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <li>....</li>
 </ul>
 </ul>
-<p>After you build Firebird you also will see the following temporary directories</p>
+<p>After you have built Firebird the following temporary directories will be created.</p>
 <ul>
 <li>gen (cpp files generated from epp, exe and fdb's.)</li>
 <li>temp (compiler temporary)</li>
@@ -46,17 +46,17 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <blockquote>
 
 </blockquote>
-<h3>2.-Prerrequisites</h3>
+<h3>2.-Pre-requisites</h3>
 <blockquote>
 
-<p>To prepare the standard msvc6 build of FB you need:</p>
+<p>To prepare the standard msvc6 build of FB you need to:</p>
 <ul>
 <li>Microsoft VisualStudio 6 or 7.</li>
 <li>A running Firebird server</li>
 </ul>
 
-<p>If you intend to modify the dsql parser file (parse.y) you will need a parser generator, bison or byacc (Berkeley yacc) and the sed utility. At this time byacc 1.9 is the official parser generator although in the future it will be switched to bison. The tested versions of byacc are 1.9 or newer and for bison 1.28 or newer.</p>
-<p>If you intend to prepare an installable build, you will need innosetup and the sed utility.</p>
+<p>If you intend to modify the dsql parser file (parse.y) you will need a parser generator, bison or byacc (Berkeley yacc) and the sed utility. At this time byacc 1.9 is the official parser generator, although in the future it will be switched to bison. The tested versions of byacc are 1.9 or newer and for bison 1.28 or newer.</p>
+<p>If you intend to prepare an installable build, you will also need innosetup and the sed utility.</p>
 <p>To download the utilities use the following links</p>
 <ul>
 <li>My Inno setup extensions 3.0.6.2 <a href="http://www.wintax.nl/isx/">http://www.wintax.nl/isx/</a></li>
@@ -88,30 +88,30 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <ol>
 <li>Open a command line window.</li>
 <li>Go to the firebird2 builds\win32 directory.</li>
-<li>Run the following batches in order (your version of VisualStudio is detected automatically)</li>
+<li>Run the following batch files in order (your version of VisualStudio is detected automatically)</li>
 <ol>
-<li>prepare.bat [FIREBIRD]</li>
+<li>prepare.bat [FIREBIRD] where FIREBIRD is equivalent to the root location of your running Firebird server e.g. C:\Program Files\Firebird.</li>
 <li>make_boot.bat</li>
 <li>make_all.bat [DEBUG] [CLEAN]</li>
-<li>make_examples.bat [DEBUG] [CLEAN] (this is only needed if you want to build examples)</li>
+<li>make_examples.bat [DEBUG] [CLEAN] (this is only needed if you want to build the examples)</li>
 </ol>
 </ol>
 <ul>
-<p>After the build finish, the firebird directory with the binaries is created as "output" below your firebird directory.</p> 
-<li>To make a clean build from scratch after making changes to the code use the clean_all.bat script</li>
+<p>After the build has finished, the firebird directory containing the binaries created by the build are placed in an "output" directory below your main firebird directory.</p> 
+<li>To make a clean build from scratch after making changes to the source code use the clean_all.bat script</li>
 </ul>
 <h4>4.2.-Parser rebuild</h4>
-<p>Remember, you need sed and bison or yacc in the path to rebuild the parser</p>
+<p>Remember, you will need sed and bison or yacc in the path to rebuild the parser</p>
 <p>If you change parser.cpp or parser.sed you will need to rebuild parser.cpp, to do so use parser.bat</p>
 <h4>4.3.-Installer build</h4>
 <p>Remember, you need sed and innosetup in the path to build the installer</p>
 <ul>
 <li>Open a command line window.</li>
 <li>Go to the firebird2 src\install\arch-specific\win32 directory.</li>
-<li>The batch to build the installer is<br>
+<li>The batch file used to build the installer is<br>
 BuildExecutableInstall.bat [DEBUG] [CS]<br>
-Where DEBUG means if the build is a debug one or not and CS means classic server installer.</li>
-<li>After you start the batch, you will get a InnoSetup window. To build the install exe select the option compile, and a new exe will appear in builds/win32/install_image
+Where DEBUG defines if the build is a debug build or not and CS means a classic server installer.</li>
+<li>After you start the batch file, you will get a InnoSetup window. To build the installation executable select the option compile, and a new executable will be created in builds/win32/install_image directory.
 </ul>
 </blockquote>
 </BODY>
