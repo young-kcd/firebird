@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.37 2004-10-03 04:48:51 robocop Exp $
+ * $Id: isql.h,v 1.38 2004-11-17 12:20:49 hvlad Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -96,7 +96,7 @@ const int NULL_DISP_LEN			= 6;
 
 // Error codes 
 
-const int MSG_LENGTH	= 256;
+const int MSG_LENGTH	= 1024;
 const int ISQL_MSG_FAC	= 17;
 
 const int GEN_ERR 					= 0;	// General non-zero SQLCODE error 
