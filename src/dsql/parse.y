@@ -359,7 +359,7 @@ static LexerState lex;
 %token OVERFLOW
 %token PAGE
 %token PAGES
-%token PAGE_SIZE
+%token KW_PAGE_SIZE
 %token PARAMETER
 %token PASSWORD
 %token PLAN
@@ -1042,7 +1042,7 @@ db_initial_desc : db_initial_option
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		; 
  
-db_initial_option: PAGE_SIZE equals pos_short_integer 
+db_initial_option: KW_PAGE_SIZE equals pos_short_integer 
 			{ $$ = make_node (nod_page_size, 1, $3);}
 		| LENGTH equals long_integer page_noise
 			{ $$ = make_node (nod_file_length, 1, $3);}

@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.26 2004-01-16 10:43:21 hvlad Exp $
+ *  $Id: keywords.cpp,v 1.27 2004-01-26 07:06:37 stryqx Exp $
  *
  */
 
@@ -39,10 +39,6 @@
 #include <string.h>
 #endif
 
-// cater for redefinition of PAGE_SIZE
-#ifdef PAGE_SIZE
-#undef PAGE_SIZE
-#endif
 #include "dsql.tab.h"
 #include "keywords.h"
 
@@ -219,7 +215,7 @@ static const TOK tokens[] = {
 	{OVERFLOW, "OVERFLOW", 1},
 	{PAGE, "PAGE", 1},
 	{PAGES, "PAGES", 1},
-	{PAGE_SIZE, "PAGE_SIZE", 1},
+	{KW_PAGE_SIZE, "PAGE_SIZE", 1},
 	{PARAMETER, "PARAMETER", 1},
 	{PASSWORD, "PASSWORD", 1},
 	{PLAN, "PLAN", 1},
