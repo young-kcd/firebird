@@ -1,3 +1,9 @@
+2002-09-13 12:32  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.706):
+	
+	increment build number
+
 2002-09-13 09:15  eku
 
 	* firebird2/src/journal/journal.h (1.3):
