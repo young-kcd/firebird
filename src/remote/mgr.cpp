@@ -64,7 +64,7 @@ static PORT init_connection( UCHAR * node)
 	PORT port;
 	PACKET packet;
 	P_CNCT *connect;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	p_cnct::p_cnct_repeat * protocol;
 
 /* Establish connection to server.  Start by telling the server about

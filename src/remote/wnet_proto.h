@@ -29,9 +29,9 @@ extern "C" {
 #endif
 
 
-extern PORT	WNET_analyze (TEXT *, USHORT *, STATUS *, TEXT *, TEXT *, USHORT);
-extern PORT	WNET_connect (TEXT *, struct packet *, STATUS *, USHORT);
-extern PORT	WNET_reconnect (HANDLE, TEXT *, STATUS *);
+extern PORT	WNET_analyze (TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
+extern PORT	WNET_connect (TEXT *, struct packet *, ISC_STATUS *, USHORT);
+extern PORT	WNET_reconnect (HANDLE, TEXT *, ISC_STATUS *);
 extern PORT	WNET_server (void *);
 
 

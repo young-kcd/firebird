@@ -34,7 +34,7 @@
 #ifdef NOT_USED_OR_REPLACED
 static SSHORT convert(ULONG, UCHAR *);
 #endif
-static STATUS merge_setup(UCHAR **, UCHAR **, UCHAR *, USHORT);
+static ISC_STATUS merge_setup(UCHAR **, UCHAR **, UCHAR *, USHORT);
 
 #if (defined __cplusplus) && (defined SOLX86)
 /* Who else got mixed c and C++ linkage error - let join me. KLK
@@ -164,7 +164,7 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 }
 #endif
 
-static STATUS merge_setup(
+static ISC_STATUS merge_setup(
 						  UCHAR ** in,
 						  UCHAR ** out, UCHAR * end, USHORT delta_length)
 {

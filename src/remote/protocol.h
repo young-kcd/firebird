@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: protocol.h,v 1.9 2003-04-09 13:20:56 dimitr Exp $
+$Id: protocol.h,v 1.10 2003-04-10 10:31:28 aafemt Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_
@@ -368,7 +368,7 @@ typedef struct p_resp
 	OBJCT		p_resp_object;		/* Object id */
 	struct bid	p_resp_blob_id;		/* Blob id */
 	CSTRING		p_resp_data;		/* Data */
-	STATUS*		p_resp_status_vector;
+	ISC_STATUS*	p_resp_status_vector;
 	UCHAR*		p_resp_strings[10];
 } P_RESP;
 

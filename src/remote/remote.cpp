@@ -635,7 +635,7 @@ void DLL_EXPORT REMOTE_reset_statement( RSR statement)
 }
 
 
-void REMOTE_save_status_strings( STATUS * vector)
+void REMOTE_save_status_strings( ISC_STATUS * vector)
 {
 /**************************************
  *
@@ -652,7 +652,7 @@ void REMOTE_save_status_strings( STATUS * vector)
  *
  **************************************/
 	TEXT *p;
-	STATUS status;
+	ISC_STATUS status;
 	USHORT l;
 
 	if (!attach_failures)
@@ -693,7 +693,7 @@ void REMOTE_save_status_strings( STATUS * vector)
 			if (attach_failures_ptr + l >
 				attach_failures + ATTACH_FAILURE_SPACE) attach_failures_ptr =
 					attach_failures;
-			*vector++ = (STATUS) attach_failures_ptr;
+			*vector++ = (ISC_STATUS) attach_failures_ptr;
 			while (l--)
 				*attach_failures_ptr++ = *p++;
 			break;

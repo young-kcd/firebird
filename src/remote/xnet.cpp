@@ -98,7 +98,7 @@ static PORT alloc_port(PORT, UCHAR *, USHORT, UCHAR *, ULONG);
 static PORT aux_connect(PORT, PACKET *, XDR_INT(*)(void));
 static PORT aux_request(PORT, PACKET *);
 #ifdef UNIX
-static ULONG connection_setup(TEXT *, PACKET *, STATUS *);
+static ULONG connection_setup(TEXT *, PACKET *, ISC_STATUS *);
 #endif
 static void cleanup_comm(XCC);
 static void cleanup_port(PORT);
@@ -122,8 +122,8 @@ static bool_t xdrxnet_endofrecord(XDR *, int);
 static void xnet_copy(SCHAR *, SCHAR *, int);
 #endif
 static int xnet_destroy(XDR *);
-static int xnet_error(PORT, TEXT *, STATUS, int);
-static void xnet_gen_error(PORT, STATUS, ...);
+static int xnet_error(PORT, TEXT *, ISC_STATUS, int);
+static void xnet_gen_error(PORT, ISC_STATUS, ...);
 static bool_t xnet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t xnet_getlong(XDR *, SLONG *);
 static u_int xnet_getpostn(XDR *);
@@ -170,7 +170,7 @@ static MUTX_T xnet_mutex;
 PORT XNET_analyze(
 				  TEXT * file_name,
 				  USHORT * file_length,
-				  STATUS * status_vector,
+				  ISC_STATUS * status_vector,
 				  TEXT * node_name, TEXT * user_string, USHORT uv_flag)
 {
 /**************************************
@@ -380,7 +380,7 @@ PORT XNET_analyze(
 
 
 PORT XNET_connect(TEXT * name,
-				  PACKET * packet, STATUS * status_vector, USHORT flag)
+				  PACKET * packet, ISC_STATUS * status_vector, USHORT flag)
 {
 /**************************************
  *
@@ -1170,7 +1170,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 
 
 #ifdef UNIX
-ULONG connection_setup(TEXT * name, PACKET * packet, STATUS * status_vector)
+ULONG connection_setup(TEXT * name, PACKET * packet, ISC_STATUS * status_vector)
  {
 /**************************************
  *
@@ -1964,7 +1964,7 @@ static int xnet_destroy( XDR * xdrs)
 
 static int xnet_error(
 					  PORT port,
-					  TEXT * function, STATUS operation, int status)
+					  TEXT * function, ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -1988,7 +1988,7 @@ static int xnet_error(
 		*p = '\0';
 	if (status) {
 		xnet_gen_error(port, isc_network_error,
-					   gds_arg_string, (STATUS) node_name,
+					   gds_arg_string, (ISC_STATUS) node_name,
 					   isc_arg_gds, operation, SYS_ERR, status, 0);
 #ifdef WIN_NT
 		if (status != ERROR_CALL_NOT_IMPLEMENTED)
@@ -2000,14 +2000,14 @@ static int xnet_error(
 	}
 	else {
 		xnet_gen_error(port, isc_network_error,
-					   gds_arg_string, (STATUS) node_name,
+					   gds_arg_string, (ISC_STATUS) node_name,
 					   isc_arg_gds, operation, 0);
 	}
 	return 0;
 }
 
 
-static void xnet_gen_error( PORT port, STATUS status, ...)
+static void xnet_gen_error( PORT port, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -2021,7 +2021,7 @@ static void xnet_gen_error( PORT port, STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	STATUS *status_vector;
+	ISC_STATUS *status_vector;
 
 	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;

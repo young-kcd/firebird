@@ -81,7 +81,7 @@ static bool_t xdr_semi_opaque(XDR *, REM_MSG, FMT);
 static bool_t xdr_semi_opaque_slice(XDR *, LSTRING *);
 #endif
 static bool_t xdr_slice(XDR *, LSTRING *, USHORT, BLOB_PTR *);
-static bool_t xdr_status_vector(XDR *, STATUS *, TEXT * strings[]);
+static bool_t xdr_status_vector(XDR *, ISC_STATUS *, TEXT * strings[]);
 static bool_t xdr_sql_blr(XDR *, SLONG, CSTRING *, int, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR *, SLONG);
 static bool_t xdr_trrq_blr(XDR *, CSTRING *);
@@ -1461,7 +1461,7 @@ static bool_t xdr_slice(
  *	Move a slice of an array under
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	PORT port;
 	ULONG n;
 	BLOB_PTR *p;
@@ -1686,7 +1686,7 @@ static bool_t xdr_sql_message( XDR * xdrs, SLONG statement_id)
 
 
 static bool_t xdr_status_vector(
-								XDR * xdrs, STATUS * vector, TEXT * strings[])
+								XDR * xdrs, ISC_STATUS * vector, TEXT * strings[])
 {
 /**************************************
  *
@@ -1718,7 +1718,7 @@ static bool_t xdr_status_vector(
 		if (!xdr_long(xdrs, &vec))
 			return FALSE;
 		if (xdrs->x_op == XDR_DECODE)
-			*vector++ = (STATUS) vec;
+			*vector++ = (ISC_STATUS) vec;
 		switch ((USHORT) vec) {
 		case gds_arg_end:
 			return TRUE;
@@ -1747,7 +1747,7 @@ static bool_t xdr_status_vector(
 				}
 				if (!xdr_wrapstring(xdrs, sp))
 					return FALSE;
-				*vector++ = (STATUS) * sp;
+				*vector++ = (ISC_STATUS) * sp;
 				strings++;
 			}
 			break;
@@ -1759,7 +1759,7 @@ static bool_t xdr_status_vector(
 			if (!xdr_long(xdrs, &vec))
 				return FALSE;
 			if (xdrs->x_op == XDR_DECODE)
-				*vector++ = (STATUS) vec;
+				*vector++ = (ISC_STATUS) vec;
 			break;
 		}
 	}

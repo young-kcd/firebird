@@ -81,7 +81,7 @@ static void RefreshIBControls(HWND, BOOL);
 static void RefreshOSControls(HWND, BOOL);
 #endif
 static BOOL ValidateUser(HWND);
-static void PrintCfgStatus(STATUS *, int, HWND);
+static void PrintCfgStatus(ISC_STATUS *, int, HWND);
 static void FillSysdbaSPB(char *, char *);
 
 // Define an array of dword pairs,
@@ -316,7 +316,7 @@ BOOL ReadIBSettings(HWND hDlg)
  *****************************************************************************/
 	BOOL bSuccess;
 	char pchTmp[TEMP_BUFLEN];
-	STATUS pdwStatus[ISC_STATUS_LENGTH];
+	ISC_STATUS pdwStatus[ISC_STATUS_LENGTH];
 	isc_svc_handle hService = NULL;
 	char pchRcvBuf[SEND_BUFLEN], pchResBuf[RESP_BUFLEN];
 	char *pchPtr;
@@ -469,7 +469,7 @@ BOOL WriteIBSettings(HWND hDlg)
  *  Description: This method calls the ISC_set_config() function to write the
  *               current OS settings in the config file.
  *****************************************************************************/
-	STATUS pdwStatus[ISC_STATUS_LENGTH];
+	ISC_STATUS pdwStatus[ISC_STATUS_LENGTH];
 	isc_svc_handle hService = NULL;
 	char pchSendBuf[SEND_BUFLEN];
 	char *pchPtr;
@@ -636,7 +636,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 	case WM_COMMAND:
 		if (wParam == IDOK) {
 			char szPassword[PASSWORD_LEN];
-			STATUS pdwStatus[ISC_STATUS_LENGTH];
+			ISC_STATUS pdwStatus[ISC_STATUS_LENGTH];
 			isc_svc_handle hService = NULL;
 			char szSpb[SPB_BUFLEN];
 			HCURSOR hOldCursor = NULL;
@@ -688,7 +688,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 	return FALSE;
 }
 
-void PrintCfgStatus(STATUS * status_vector, int nErrCode, HWND hDlg)
+void PrintCfgStatus(ISC_STATUS * status_vector, int nErrCode, HWND hDlg)
 {
 /**************************************
  *
@@ -701,7 +701,7 @@ void PrintCfgStatus(STATUS * status_vector, int nErrCode, HWND hDlg)
  *      to allow redirecting output.
  *
  **************************************/
-	STATUS *vector;
+	ISC_STATUS *vector;
 	SCHAR szErrStr[ERR_BUFLEN];
 	SCHAR szHdrStr[HDR_BUFLEN];
 

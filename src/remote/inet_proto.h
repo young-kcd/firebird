@@ -28,9 +28,9 @@
 extern "C" {
 #endif
 
-extern PORT	INET_analyze (TEXT *, USHORT *, STATUS *, TEXT *, TEXT *, USHORT, SCHAR*, SSHORT);
-extern PORT	DLL_EXPORT INET_connect (TEXT *, struct packet *, STATUS *, USHORT, SCHAR*, SSHORT);
-extern PORT	INET_reconnect (HANDLE, TEXT *, STATUS *);
+extern PORT	INET_analyze (TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT, SCHAR*, SSHORT);
+extern PORT	DLL_EXPORT INET_connect (TEXT *, struct packet *, ISC_STATUS *, USHORT, SCHAR*, SSHORT);
+extern PORT	INET_reconnect (HANDLE, TEXT *, ISC_STATUS *);
 extern PORT	DLL_EXPORT INET_server (int);
 extern void	INET_set_clients (int);
 

@@ -39,7 +39,7 @@ extern void DLL_EXPORT	REMOTE_release_messages (struct message *);
 extern void DLL_EXPORT 	REMOTE_release_request (struct rrq *);
 extern void DLL_EXPORT	REMOTE_reset_request (struct rrq *, struct message *);
 extern void DLL_EXPORT	REMOTE_reset_statement (struct rsr *);
-extern void		REMOTE_save_status_strings (STATUS *);
+extern void		REMOTE_save_status_strings (ISC_STATUS *);
 extern OBJCT DLL_EXPORT REMOTE_set_object (struct port *, struct blk *, OBJCT);
 
 #ifdef __cplusplus

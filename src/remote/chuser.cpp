@@ -254,7 +254,7 @@ int chuser( UCHAR * name)
 	struct dsc$descriptor_s desc;
 	SCHAR s[1024];
 	TEXT flags[4];
-	STATUS errstatus;
+	ISC_STATUS errstatus;
 	SSHORT l;
 
 	for (p = username; *name; name++)

@@ -102,49 +102,49 @@ extern "C" {
 static RVNT add_event(PORT);
 static void add_other_params(PORT, UCHAR *, USHORT *);
 static void add_working_directory(UCHAR *, USHORT *, TEXT *);
-static PORT analyze(TEXT *, USHORT *, STATUS *, TEXT *, USHORT, SCHAR *,
+static PORT analyze(TEXT *, USHORT *, ISC_STATUS *, TEXT *, USHORT, SCHAR *,
 					SSHORT, TEXT *);
-static PORT analyze_service(TEXT *, USHORT *, STATUS *, TEXT *, USHORT,
+static PORT analyze_service(TEXT *, USHORT *, ISC_STATUS *, TEXT *, USHORT,
 							SCHAR *, SSHORT);
 static BOOLEAN batch_gds_receive(struct trdb *, PORT, struct rmtque *,
-								 STATUS *, USHORT);
+								 ISC_STATUS *, USHORT);
 static BOOLEAN batch_dsql_fetch(struct trdb *, PORT, struct rmtque *,
-								STATUS *, USHORT);
+								ISC_STATUS *, USHORT);
 static BOOLEAN check_response(RDB, PACKET *);
-static BOOLEAN clear_queue(PORT, STATUS *);
+static BOOLEAN clear_queue(PORT, ISC_STATUS *);
 static void disconnect(PORT);
 #ifdef SCROLLABLE_CURSORS
-static REM_MSG dump_cache(PORT, STATUS *, rrq::rrq_repeat *);
+static REM_MSG dump_cache(PORT, ISC_STATUS *, rrq::rrq_repeat *);
 #endif
 static void enqueue_receive(PORT,
 							BOOLEAN(*fn) (struct trdb *, PORT,
-										  struct rmtque *, STATUS *, USHORT),
+										  struct rmtque *, ISC_STATUS *, USHORT),
 							RDB, void *, void *);
 static void dequeue_receive(PORT);
-static STATUS error(STATUS *);
+static ISC_STATUS error(ISC_STATUS *);
 #ifndef MULTI_THREAD
 static void event_handler(PORT);
 #else
 static void THREAD_ROUTINE event_thread(PORT);
 #endif
-static STATUS fetch_blob(STATUS *, RSR, USHORT, UCHAR *, USHORT, USHORT,
+static ISC_STATUS fetch_blob(ISC_STATUS *, RSR, USHORT, UCHAR *, USHORT, USHORT,
 						 UCHAR *);
 static RVNT find_event(PORT, SLONG);
 static USHORT get_new_dpb(UCHAR *, SSHORT, SSHORT, UCHAR *, USHORT *, TEXT *);
 #ifdef UNIX
 static BOOLEAN get_single_user(USHORT, SCHAR *);
 #endif
-static STATUS handle_error(STATUS *, STATUS);
-static STATUS info(STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *,
+static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
+static ISC_STATUS info(ISC_STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *,
 				   USHORT, SCHAR *, USHORT, SCHAR *);
-static BOOLEAN init(STATUS *, PORT, P_OP, UCHAR *, USHORT, UCHAR *, USHORT);
+static BOOLEAN init(ISC_STATUS *, PORT, P_OP, UCHAR *, USHORT, UCHAR *, USHORT);
 static RTR make_transaction(RDB, USHORT);
-static STATUS mov_dsql_message(UCHAR *, FMT, UCHAR *, FMT);
-static void move_error(STATUS, ...);
+static ISC_STATUS mov_dsql_message(UCHAR *, FMT, UCHAR *, FMT);
+static void move_error(ISC_STATUS, ...);
 static void receive_after_start(RRQ, USHORT);
-static BOOLEAN receive_packet(PORT, PACKET *, STATUS *);
-static BOOLEAN receive_packet_noqueue(PORT, PACKET *, STATUS *);
-static BOOLEAN receive_queued_packet(struct trdb *, PORT, STATUS *, USHORT);
+static BOOLEAN receive_packet(PORT, PACKET *, ISC_STATUS *);
+static BOOLEAN receive_packet_noqueue(PORT, PACKET *, ISC_STATUS *);
+static BOOLEAN receive_queued_packet(struct trdb *, PORT, ISC_STATUS *, USHORT);
 static BOOLEAN receive_response(RDB, PACKET *);
 static void release_blob(RBL);
 static void release_event(RVNT);
@@ -153,22 +153,22 @@ static void release_request(RRQ);
 static void release_statement(RSR *);
 static void release_sql_request(RSR);
 static void release_transaction(RTR);
-static STATUS return_success(RDB);
+static ISC_STATUS return_success(RDB);
 #ifdef SCROLLABLE_CURSORS
-static REM_MSG scroll_cache(STATUS *, struct trdb *, RRQ, PORT, rrq::rrq_repeat *,
+static REM_MSG scroll_cache(ISC_STATUS *, struct trdb *, RRQ, PORT, rrq::rrq_repeat *,
 						USHORT *, ULONG *);
 #endif
-static STATUS send_and_receive(RDB, PACKET *, STATUS *);
-static STATUS send_blob(STATUS *, RBL, USHORT, UCHAR *);
+static ISC_STATUS send_and_receive(RDB, PACKET *, ISC_STATUS *);
+static ISC_STATUS send_blob(ISC_STATUS *, RBL, USHORT, UCHAR *);
 static void send_cancel_event(RVNT);
-static BOOLEAN send_packet(PORT, PACKET *, STATUS *);
+static BOOLEAN send_packet(PORT, PACKET *, ISC_STATUS *);
 #ifdef NOT_USED_OR_REPLACED
-static BOOLEAN send_partial_packet(PORT, PACKET *, STATUS *);
+static BOOLEAN send_partial_packet(PORT, PACKET *, ISC_STATUS *);
 #endif
 static void server_death(PORT);
 static void stuff_vax_integer(UCHAR *, SLONG, USHORT);
-static STATUS svcstart(STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *);
-static STATUS unsupported(STATUS *);
+static ISC_STATUS svcstart(ISC_STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *);
+static ISC_STATUS unsupported(ISC_STATUS *);
 static void zap_packet(PACKET *);
 
 static void mov_faster(SLONG *, SLONG *, USHORT);
@@ -179,9 +179,9 @@ static ULONG remote_event_id = 0;
 #define RETURN_SUCCESS		return return_success (rdb)
 
 #define CHECK_HANDLE(blk,type,error) if (!blk || ((BLK) blk)->blk_type != (UCHAR) type) \
-				return handle_error (user_status, (STATUS) error)
+				return handle_error (user_status, (ISC_STATUS) error)
 
-#define NULL_CHECK(ptr,code)	if (*ptr) return handle_error (user_status, (STATUS) code)
+#define NULL_CHECK(ptr,code)	if (*ptr) return handle_error (user_status, (ISC_STATUS) code)
 
 #define SET_OBJECT(rdb,object,id) REMOTE_set_object (rdb->rdb_port, (struct blk *) object, id)
 
@@ -246,7 +246,7 @@ static ULONG remote_event_id = 0;
 #define GDS_DSQL_SQL_INFO	REM_sql_info
 
 
-STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
+ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						   SSHORT	file_length,
 						   SCHAR*	file_name,
 						   RDB*		handle,
@@ -281,7 +281,7 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 	(void) memset((void *) node_name, 0, (size_t) MAXPATHLEN);
 
-	STATUS* v = user_status;
+	ISC_STATUS* v = user_status;
 
 	*v++ = gds_arg_gds;
 	*v++ = gds_unavailable;
@@ -384,7 +384,7 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
 }
 
 
-STATUS GDS_BLOB_INFO(STATUS*	user_status,
+ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 					 RBL*		blob_handle,
 					 SSHORT		item_length,
 					 SCHAR*		items,
@@ -403,7 +403,7 @@ STATUS GDS_BLOB_INFO(STATUS*	user_status,
  **************************************/
 	RBL blob;
 	RDB rdb;
-	STATUS status;
+	ISC_STATUS status;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -431,7 +431,7 @@ STATUS GDS_BLOB_INFO(STATUS*	user_status,
 }
 
 
-STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
+ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 {
 /**************************************
  *
@@ -483,7 +483,7 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
 }
 
 
-STATUS GDS_CANCEL_EVENTS(STATUS * user_status, RDB * handle, SLONG * id)
+ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, RDB * handle, SLONG * id)
 {
 /**************************************
  *
@@ -534,7 +534,7 @@ STATUS GDS_CANCEL_EVENTS(STATUS * user_status, RDB * handle, SLONG * id)
 }
 
 
-STATUS GDS_CLOSE_BLOB(STATUS * user_status, RBL * blob_handle)
+ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 {
 /**************************************
  *
@@ -588,7 +588,7 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, RBL * blob_handle)
 }
 
 
-STATUS GDS_COMMIT(STATUS * user_status, RTR * rtr_handle)
+ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, RTR * rtr_handle)
 {
 /**************************************
  *
@@ -634,7 +634,7 @@ STATUS GDS_COMMIT(STATUS * user_status, RTR * rtr_handle)
 }
 
 
-STATUS GDS_COMMIT_RETAINING(STATUS * user_status, RTR * rtr_handle)
+ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 {
 /**************************************
  *
@@ -681,7 +681,7 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, RTR * rtr_handle)
 }
 
 
-STATUS GDS_COMPILE(STATUS * user_status,
+ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
 				   RDB * db_handle,
 				   RRQ * req_handle, USHORT blr_length, UCHAR * blr)
 {
@@ -794,7 +794,7 @@ STATUS GDS_COMPILE(STATUS * user_status,
 }
 
 
-STATUS GDS_CREATE_BLOB2(STATUS * user_status,
+ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 						RDB * db_handle,
 						RTR * rtr_handle,
 						RBL * blob_handle,
@@ -870,7 +870,7 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 }
 
 
-STATUS GDS_CREATE_DATABASE(STATUS * user_status,
+ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 						   SSHORT file_length,
 						   SCHAR * file_name,
 						   RDB * handle,
@@ -891,7 +891,7 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 	RDB rdb;
 	PORT port;
 	USHORT length, user_verification, new_dpb_length, result;
-	STATUS *v;
+	ISC_STATUS *v;
 	UCHAR expanded_name[MAXPATHLEN], new_dpb[MAXPATHLEN], *new_dpb_ptr;
 	TEXT user_string[256], *us;
 	TEXT node_name[MAXPATHLEN];
@@ -988,7 +988,7 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 }
 
 
-STATUS GDS_DATABASE_INFO(STATUS*	user_status,
+ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
 						 RDB*		handle,
 						 SSHORT		item_length,
 						 SCHAR*		items,
@@ -1007,7 +1007,7 @@ STATUS GDS_DATABASE_INFO(STATUS*	user_status,
  **************************************/
 	RDB		rdb;
 	PORT	port;
-	STATUS	status;
+	ISC_STATUS	status;
 	UCHAR	temp[1024];
 	UCHAR*	temp_buffer;
 	struct trdb thd_context, *trdb;
@@ -1067,7 +1067,7 @@ STATUS GDS_DATABASE_INFO(STATUS*	user_status,
 }
 
 
-STATUS GDS_DDL(STATUS*	user_status,
+ISC_STATUS GDS_DDL(ISC_STATUS*	user_status,
 			   RDB*		db_handle,
 			   RTR*		rtr_handle,
 			   USHORT	blr_length,
@@ -1086,7 +1086,7 @@ STATUS GDS_DDL(STATUS*	user_status,
 	RTR transaction;
 	PACKET *packet;
 	P_DDL *ddl;
-	STATUS status;
+	ISC_STATUS status;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -1131,7 +1131,7 @@ STATUS GDS_DDL(STATUS*	user_status,
 }
 
 
-STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
+ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
 {
 /**************************************
  *
@@ -1217,7 +1217,7 @@ STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
 }
 
 
-STATUS GDS_DROP_DATABASE(STATUS* user_status, RDB* handle)
+ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, RDB* handle)
 {
 /**************************************
  *
@@ -1231,7 +1231,7 @@ STATUS GDS_DROP_DATABASE(STATUS* user_status, RDB* handle)
  **************************************/
 	RDB rdb;
 	PORT port;
-	STATUS local_status[ISC_STATUS_LENGTH];
+	ISC_STATUS local_status[ISC_STATUS_LENGTH];
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -1286,7 +1286,7 @@ STATUS GDS_DROP_DATABASE(STATUS* user_status, RDB* handle)
 }
 
 
-STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
+ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 						 RDB*		db_handle,
 						 RSR*		stmt_handle)
 {
@@ -1351,7 +1351,7 @@ STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
 }
 
 
-STATUS GDS_DSQL_EXECUTE(STATUS*	user_status,
+ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS*	user_status,
 						RTR*	rtr_handle,
 						RSR*	stmt_handle,
 						USHORT	blr_length,
@@ -1377,7 +1377,7 @@ STATUS GDS_DSQL_EXECUTE(STATUS*	user_status,
 }
 
 
-STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
+ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 						 RTR*		rtr_handle,
 						 RSR*		stmt_handle,
 						 USHORT		in_blr_length,
@@ -1556,7 +1556,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 }
 
 
-STATUS GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
+ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS * user_status,
 							  RDB * db_handle,
 							  RTR * rtr_handle,
 							  USHORT length,
@@ -1584,7 +1584,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
+ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
 							   RDB * db_handle,
 							   RTR * rtr_handle,
 							   USHORT length,
@@ -1777,7 +1777,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_FETCH(STATUS * user_status,
+ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 					  RSR * stmt_handle,
 					  USHORT blr_length,
 					  UCHAR * blr,
@@ -1799,7 +1799,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 	PORT port;
 	PACKET *packet;
 	P_SQLDATA *sqldata;
-	STATUS status;
+	ISC_STATUS status;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2045,7 +2045,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
+ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT option)
 {
 /**************************************
  *
@@ -2117,7 +2117,7 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 }
 
 
-STATUS GDS_DSQL_INSERT(STATUS * user_status,
+ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 					   RSR * stmt_handle,
 					   USHORT blr_length,
 					   UCHAR * blr,
@@ -2218,7 +2218,7 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_PREPARE(STATUS * user_status, RTR * rtr_handle, RSR * stmt_handle,	/* a remote statement block */
+ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * stmt_handle,	/* a remote statement block */
 						USHORT length,
 						TEXT * string,
 						USHORT dialect,
@@ -2321,7 +2321,7 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status, RTR * rtr_handle, RSR * stmt_handl
 }
 
 
-STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
+ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
 						   RSR * stmt_handle, TEXT * cursor, USHORT type)
 {
 /*****************************************
@@ -2404,7 +2404,7 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 }
 
 
-STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
+ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS * user_status,
 						 RSR * stmt_handle,
 						 SSHORT item_length,
 						 SCHAR * items, SSHORT buffer_length, SCHAR * buffer)
@@ -2421,7 +2421,7 @@ STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
  **************************************/
 	RDB rdb;
 	RSR statement;
-	STATUS status;
+	ISC_STATUS status;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2457,7 +2457,7 @@ STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
 }
 
 
-STATUS GDS_GET_SEGMENT(STATUS * user_status,
+ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 					   RBL * blob_handle,
 					   USHORT * length, USHORT buffer_length, UCHAR * buffer)
 {
@@ -2481,7 +2481,7 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 	PORT port;
 	UCHAR *p;
 	USHORT l;
-	STATUS *v;
+	ISC_STATUS *v;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -2694,7 +2694,7 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 }
 
 
-STATUS GDS_GET_SLICE(STATUS * user_status,
+ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 					 RDB * db_handle,
 					 RTR * tra_handle,
 					 BID array_id,
@@ -2800,7 +2800,7 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 }
 
 
-STATUS GDS_OPEN_BLOB2(STATUS * user_status,
+ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS * user_status,
 					  RDB * db_handle,
 					  RTR * rtr_handle,
 					  RBL * blob_handle,
@@ -2871,7 +2871,7 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 }
 
 
-STATUS GDS_PREPARE(STATUS * user_status,
+ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 				   RTR * rtr_handle, USHORT msg_length, UCHAR * msg)
 {
 /**************************************
@@ -2935,7 +2935,7 @@ STATUS GDS_PREPARE(STATUS * user_status,
 }
 
 
-STATUS GDS_PUT_SEGMENT(STATUS * user_status,
+ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
 					   RBL * blob_handle,
 					   USHORT segment_length, UCHAR * segment)
 {
@@ -3030,7 +3030,7 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 }
 
 
-STATUS GDS_PUT_SLICE(STATUS * user_status,
+ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 					 RDB * db_handle,
 					 RTR * tra_handle,
 					 BID array_id,
@@ -3123,7 +3123,7 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 }
 
 
-STATUS GDS_QUE_EVENTS(STATUS * user_status,
+ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
 					  RDB * handle,
 					  SLONG * id,
 					  SSHORT length,
@@ -3237,7 +3237,7 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 }
 
 
-STATUS GDS_RECEIVE(STATUS * user_status,
+ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 				   RRQ * req_handle,
 				   USHORT msg_type,
 				   USHORT msg_length, UCHAR * msg, SSHORT level
@@ -3487,7 +3487,7 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 }
 
 
-STATUS GDS_RECONNECT(STATUS * user_status,
+ISC_STATUS GDS_RECONNECT(ISC_STATUS * user_status,
 					 RDB * db_handle,
 					 RTR * rtr_handle, USHORT length, UCHAR * id)
 {
@@ -3538,7 +3538,7 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 }
 
 
-STATUS GDS_RELEASE_REQUEST(STATUS * user_status, RRQ * req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, RRQ * req_handle)
 {
 /**************************************
  *
@@ -3582,7 +3582,7 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, RRQ * req_handle)
 }
 
 
-STATUS GDS_REQUEST_INFO(STATUS * user_status,
+ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS * user_status,
 						RRQ * req_handle,
 						SSHORT level,
 						SSHORT item_length,
@@ -3604,7 +3604,7 @@ STATUS GDS_REQUEST_INFO(STATUS * user_status,
 	UCHAR *out, item, *info_items, *end_items;
 	USHORT data;
 	FMT format;
-	STATUS status;
+	ISC_STATUS status;
 	rrq::rrq_repeat * tail, *end;
 	struct trdb thd_context, *trdb;
 
@@ -3689,7 +3689,7 @@ punt:
 }
 
 
-STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, RTR * rtr_handle)
+ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 {
 /**************************************
  *
@@ -3736,7 +3736,7 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, RTR * rtr_handle)
 }
 
 
-STATUS GDS_ROLLBACK(STATUS * user_status, RTR * rtr_handle)
+ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, RTR * rtr_handle)
 {
 /**************************************
  *
@@ -3781,7 +3781,7 @@ STATUS GDS_ROLLBACK(STATUS * user_status, RTR * rtr_handle)
 }
 
 
-STATUS GDS_SEEK_BLOB(STATUS * user_status,
+ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 					 RBL * blob_handle,
 					 SSHORT mode, SLONG offset, SLONG * result)
 {
@@ -3847,7 +3847,7 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 }
 
 
-STATUS GDS_SEND(STATUS * user_status,
+ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 				RRQ * req_handle,
 				USHORT msg_type, USHORT msg_length, UCHAR * msg, SSHORT level)
 {
@@ -3916,7 +3916,7 @@ STATUS GDS_SEND(STATUS * user_status,
 }
 
 
-STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
+ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 						  USHORT service_length,
 						  TEXT * service_name,
 						  RDB * handle, USHORT spb_length, SCHAR * spb)
@@ -3934,7 +3934,7 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 	RDB rdb;
 	PORT port;
 	USHORT length, user_verification, new_spb_length, result;
-	STATUS *v;
+	ISC_STATUS *v;
 	UCHAR expanded_name[MAXPATHLEN], new_spb[MAXPATHLEN], *new_spb_ptr;
 	TEXT user_string[256], *us;
 	struct trdb thd_context, *trdb;
@@ -4035,7 +4035,7 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 }
 
 
-STATUS GDS_SERVICE_DETACH(STATUS * user_status, RDB * handle)
+ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
 {
 /**************************************
  *
@@ -4094,7 +4094,7 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, RDB * handle)
 }
 
 
-STATUS GDS_SERVICE_QUERY(STATUS * user_status,
+ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS * user_status,
 						 RDB * svc_handle,
 						 ULONG * reserved,
 						 USHORT item_length,
@@ -4119,7 +4119,7 @@ STATUS GDS_SERVICE_QUERY(STATUS * user_status,
  *	a later date.
  **************************************/
 	RDB rdb;
-	STATUS status;
+	ISC_STATUS status;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4155,7 +4155,7 @@ STATUS GDS_SERVICE_QUERY(STATUS * user_status,
 }
 
 
-STATUS GDS_SERVICE_START(STATUS * user_status,
+ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
 						 RDB * svc_handle,
 						 ULONG * reserved, USHORT item_length, SCHAR * items)
 {
@@ -4175,7 +4175,7 @@ STATUS GDS_SERVICE_START(STATUS * user_status,
  *	a later date.
  **************************************/
 	RDB rdb;
-	STATUS status;
+	ISC_STATUS status;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4211,7 +4211,7 @@ STATUS GDS_SERVICE_START(STATUS * user_status,
 }
 
 
-STATUS GDS_START_AND_SEND(STATUS * user_status,
+ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 						  RRQ * req_handle,
 						  RTR * rtr_handle,
 						  USHORT msg_type,
@@ -4306,7 +4306,7 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 }
 
 
-STATUS GDS_START(STATUS * user_status,
+ISC_STATUS GDS_START(ISC_STATUS * user_status,
 				 RRQ * req_handle,
 				 RTR * rtr_handle, USHORT level)
 {
@@ -4384,7 +4384,7 @@ STATUS GDS_START(STATUS * user_status,
 }
 
 
-STATUS GDS_START_TRANSACTION(STATUS * user_status,
+ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 							 RTR * rtr_handle,
 							 SSHORT count,
 							 RDB * db_handle, SSHORT tpb_length, UCHAR * tpb)
@@ -4437,7 +4437,7 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 }
 
 
-STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
+ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
 							RDB * db_handle,
 							RTR * rtr_handle,
 							USHORT blr_length,
@@ -4581,7 +4581,7 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 }
 
 
-STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
+ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS * user_status,
 							RTR * tra_handle,
 							SSHORT item_length,
 							UCHAR * items,
@@ -4598,7 +4598,7 @@ STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
  **************************************/
 	RTR transaction;
 	RDB rdb;
-	STATUS status;
+	ISC_STATUS status;
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -4629,7 +4629,7 @@ STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
 }
 
 
-STATUS GDS_UNWIND(STATUS * user_status, RRQ * req_handle, USHORT level)
+ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status, RRQ * req_handle, USHORT level)
 {
 /**************************************
  *
@@ -4779,7 +4779,7 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
 
 static PORT analyze(TEXT*	file_name,
 					USHORT*	file_length,
-					STATUS*	status_vector,
+					ISC_STATUS*	status_vector,
 					TEXT*	user_string,
 					USHORT	uv_flag,
 					SCHAR*	dpb,
@@ -4957,7 +4957,7 @@ static PORT analyze(TEXT*	file_name,
 
 static PORT analyze_service(TEXT * service_name,
 							USHORT * service_length,
-							STATUS * status_vector,
+							ISC_STATUS * status_vector,
 							TEXT * user_string,
 							USHORT uv_flag,
 							SCHAR * dpb,
@@ -5048,7 +5048,7 @@ static PORT analyze_service(TEXT * service_name,
 static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 								PORT	port,
 								rmtque*	que,
-								STATUS*	user_status,
+								ISC_STATUS*	user_status,
 								USHORT	id)
 {
 /**************************************
@@ -5088,8 +5088,8 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 
 /* Queue errors within the batched request */
 
-	STATUS tmp_status[ISC_STATUS_LENGTH];
-	STATUS* save_status = packet->p_resp.p_resp_status_vector;
+	ISC_STATUS tmp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS* save_status = packet->p_resp.p_resp_status_vector;
 	packet->p_resp.p_resp_status_vector = tmp_status;
 
 /* Setup the packet structures so it knows what statement we
@@ -5207,7 +5207,7 @@ static BOOLEAN batch_dsql_fetch(trdb*	trdb,
 static BOOLEAN batch_gds_receive(trdb*		trdb,
 								 PORT		port,
 								 rmtque*	que,
-								 STATUS*	user_status,
+								 ISC_STATUS*	user_status,
 								 USHORT		id)
 {
 /**************************************
@@ -5248,8 +5248,8 @@ static BOOLEAN batch_gds_receive(trdb*		trdb,
 	
 	// Queue errors within the batched request
 
-	STATUS tmp_status[ISC_STATUS_LENGTH];
-	STATUS* save_status = packet->p_resp.p_resp_status_vector;
+	ISC_STATUS tmp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS* save_status = packet->p_resp.p_resp_status_vector;
 	packet->p_resp.p_resp_status_vector = tmp_status;
 
 	bool clear_queue = FALSE;	/* indicates whether queue is just being emptied, not retrieved */
@@ -5396,8 +5396,8 @@ static BOOLEAN check_response( RDB rdb, PACKET * packet)
  *	Check response to a remote call.
  *
  **************************************/
-	STATUS *vector;
-	STATUS vec;
+	ISC_STATUS *vector;
+	ISC_STATUS vec;
 	PORT port;
 
 	port = rdb->rdb_port;
@@ -5438,7 +5438,7 @@ static BOOLEAN check_response( RDB rdb, PACKET * packet)
 }
 
 
-static BOOLEAN clear_queue( PORT port, STATUS * user_status)
+static BOOLEAN clear_queue( PORT port, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -5523,7 +5523,7 @@ static void disconnect( PORT port)
 
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG dump_cache(
-					  PORT port, STATUS * user_status, rrq::rrq_repeat * tail)
+					  PORT port, ISC_STATUS * user_status, rrq::rrq_repeat * tail)
 {
 /**************************************
  *
@@ -5559,7 +5559,7 @@ static REM_MSG dump_cache(
 #endif
 
 
-static STATUS error( STATUS * user_status)
+static ISC_STATUS error( ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -5695,8 +5695,8 @@ static void THREAD_ROUTINE event_thread( PORT port)
 #endif /* MULTI_THREAD  */
 
 
-static STATUS fetch_blob(
-						 STATUS * user_status,
+static ISC_STATUS fetch_blob(
+						 ISC_STATUS * user_status,
 						 RSR statement,
 						 USHORT blr_length,
 						 UCHAR * blr,
@@ -6001,7 +6001,7 @@ static BOOLEAN get_single_user(USHORT dpb_length, SCHAR * dpb)
 }
 #endif
 
-static STATUS handle_error( STATUS * user_status, STATUS code)
+static ISC_STATUS handle_error( ISC_STATUS * user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -6026,8 +6026,8 @@ static STATUS handle_error( STATUS * user_status, STATUS code)
 }
 
 
-static STATUS info(
-				   STATUS * user_status,
+static ISC_STATUS info(
+				   ISC_STATUS * user_status,
 				   RDB rdb,
 				   P_OP operation,
 				   USHORT object,
@@ -6096,7 +6096,7 @@ SCHAR * recv_items, USHORT buffer_length, SCHAR * buffer)
 
 
 static BOOLEAN init(
-					STATUS * user_status,
+					ISC_STATUS * user_status,
 					PORT port,
 					P_OP op,
 					UCHAR * file_name,
@@ -6173,7 +6173,7 @@ static RTR make_transaction( RDB rdb, USHORT id)
 }
 
 
-static STATUS mov_dsql_message(	UCHAR*	from_msg,
+static ISC_STATUS mov_dsql_message(	UCHAR*	from_msg,
 								FMT		from_fmt,
 								UCHAR*	to_msg,
 								FMT		to_fmt)
@@ -6267,7 +6267,7 @@ static void mov_faster( SLONG * from, SLONG * to, USHORT length)
 }
 
 
-static void move_error( STATUS status, ...)
+static void move_error( ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -6281,7 +6281,7 @@ static void move_error( STATUS status, ...)
  **************************************/
 	va_list ap;
 	TRDB trdb;
-	STATUS *p_args, *end_args;
+	ISC_STATUS *p_args, *end_args;
 
 /* copy into an array any other arguments which may 
    have been handed to us, then post the error.
@@ -6296,7 +6296,7 @@ static void move_error( STATUS status, ...)
 	*p_args++ = gds_arg_gds;
 	*p_args++ = gds_random;
 	*p_args++ = gds_arg_string;
-	*p_args++ = (STATUS) "Dynamic SQL Error";
+	*p_args++ = (ISC_STATUS) "Dynamic SQL Error";
 	*p_args++ = gds_arg_gds;
 	*p_args++ = gds_sqlerr;
 	*p_args++ = gds_arg_number;
@@ -6306,7 +6306,7 @@ static void move_error( STATUS status, ...)
 
 /* NOTE: This loop could potentially set up a bad status vector */
 
-	while ((*p_args++ = (STATUS) va_arg(ap, STATUS)) && p_args < end_args);
+	while ((*p_args++ = (ISC_STATUS) va_arg(ap, ISC_STATUS)) && p_args < end_args);
 	if (p_args >= end_args)
 		end_args[-1] = gds_arg_end;
 
@@ -6341,7 +6341,7 @@ static void receive_after_start( RRQ request, USHORT msg_type)
 	PORT port;
 	PACKET *packet;
 	rrq::rrq_repeat * tail;
-	STATUS tmp_status[ISC_STATUS_LENGTH];
+	ISC_STATUS tmp_status[ISC_STATUS_LENGTH];
 
 /* Check to see if any data is waiting to happen */
 
@@ -6410,7 +6410,7 @@ static void receive_after_start( RRQ request, USHORT msg_type)
 
 static BOOLEAN receive_packet(
 							  PORT port,
-							  PACKET * packet, STATUS * user_status)
+							  PACKET * packet, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -6441,7 +6441,7 @@ static BOOLEAN receive_packet(
 
 static BOOLEAN receive_packet_noqueue(
 									  PORT port,
-									  PACKET * packet, STATUS * user_status)
+									  PACKET * packet, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -6489,7 +6489,7 @@ static BOOLEAN receive_packet_noqueue(
 
 static BOOLEAN receive_queued_packet(struct trdb*	trdb,
 									 PORT		port,
-									 STATUS*	user_status, USHORT id)
+									 ISC_STATUS*	user_status, USHORT id)
 {
 /**************************************
  *
@@ -6530,7 +6530,7 @@ static BOOLEAN receive_queued_packet(struct trdb*	trdb,
 static void enqueue_receive(
 							PORT port,
 							BOOLEAN(*fn) (struct trdb *, PORT,
-										  struct rmtque *, STATUS *, USHORT),
+										  struct rmtque *, ISC_STATUS *, USHORT),
 RDB rdb, void *parm, void *parm1)
 {
 /**************************************
@@ -6605,7 +6605,7 @@ static BOOLEAN receive_response( RDB rdb, PACKET * packet)
  *
  **************************************/
 
-	STATUS *status;
+	ISC_STATUS *status;
 
 	status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
 
@@ -6806,7 +6806,7 @@ static void release_transaction( RTR transaction)
 }
 
 
-static STATUS return_success( RDB rdb)
+static ISC_STATUS return_success( RDB rdb)
 {
 /**************************************
  *
@@ -6818,7 +6818,7 @@ static STATUS return_success( RDB rdb)
  *	Set up status vector to reflect successful execution.
  *
  **************************************/
-	STATUS *p;
+	ISC_STATUS *p;
 
 	RESTORE_THREAD_DATA;
 
@@ -6842,7 +6842,7 @@ static STATUS return_success( RDB rdb)
 
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG scroll_cache(
-						STATUS * user_status,
+						ISC_STATUS * user_status,
 						struct trdb *trdb,
 						RRQ request,
 						PORT port,
@@ -7023,7 +7023,7 @@ rrq::rrq_repeat * tail, USHORT * direction, ULONG * offset)
 #endif
 
 
-static STATUS send_and_receive(RDB rdb, PACKET* packet, STATUS* user_status)
+static ISC_STATUS send_and_receive(RDB rdb, PACKET* packet, ISC_STATUS* user_status)
 {
 /**************************************
  *
@@ -7050,7 +7050,7 @@ static STATUS send_and_receive(RDB rdb, PACKET* packet, STATUS* user_status)
 }
 
 
-static STATUS send_blob(STATUS*	user_status,
+static ISC_STATUS send_blob(ISC_STATUS*	user_status,
 						RBL		blob,
 						USHORT	buffer_length,
 						UCHAR*	buffer)
@@ -7163,7 +7163,7 @@ static void send_cancel_event(RVNT event)
 }
 
 
-static BOOLEAN send_packet(PORT port, PACKET* packet, STATUS* user_status)
+static BOOLEAN send_packet(PORT port, PACKET* packet, ISC_STATUS* user_status)
 {
 /**************************************
  *
@@ -7196,7 +7196,7 @@ static BOOLEAN send_packet(PORT port, PACKET* packet, STATUS* user_status)
 #ifdef NOT_USED_OR_REPLACED
 static BOOLEAN send_partial_packet(PORT		port,
 								   PACKET*	packet,
-								   STATUS*	user_status)
+								   ISC_STATUS*	user_status)
 {
 /**************************************
  *
@@ -7291,7 +7291,7 @@ static void stuff_vax_integer(UCHAR* ptr, SLONG value, USHORT length)
 }
 
 
-static STATUS svcstart(STATUS*	user_status,
+static ISC_STATUS svcstart(ISC_STATUS*	user_status,
 					   RDB		rdb,
 					   P_OP		operation,
 					   USHORT	object,
@@ -7351,7 +7351,7 @@ static STATUS svcstart(STATUS*	user_status,
 }
 
 
-static STATUS unsupported(STATUS* user_status)
+static ISC_STATUS unsupported(ISC_STATUS* user_status)
 {
 /**************************************
  *

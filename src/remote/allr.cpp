@@ -96,7 +96,7 @@ UCHAR* DLL_EXPORT ALLR_alloc(ULONG size)
 	//        otherwise just an error return
 
 	TRDB trdb = GET_THREAD_DATA;
-	STATUS* status_vector = trdb->trdb_status_vector;
+	ISC_STATUS* status_vector = trdb->trdb_status_vector;
 	if (status_vector) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_virmemexh;
@@ -122,7 +122,7 @@ BLK DLL_EXPORT ALLR_block(UCHAR type, ULONG count)
 	if (type <= (UCHAR) type_MIN || type >= (UCHAR) type_MAX)
 	{
 		TRDB	trdb			= GET_THREAD_DATA;
-		STATUS*	status_vector	= trdb->trdb_status_vector;
+		ISC_STATUS*	status_vector	= trdb->trdb_status_vector;
 
 		if (status_vector)
 		{
@@ -141,11 +141,11 @@ BLK DLL_EXPORT ALLR_block(UCHAR type, ULONG count)
 			if (lookup_result < 1)
 			{
 				status_vector[3] =
-					(STATUS) "request to allocate invalid block type";
+					(ISC_STATUS) "request to allocate invalid block type";
 			}
 			else
 			{
-				status_vector[3] = (STATUS) errmsg;
+				status_vector[3] = (ISC_STATUS) errmsg;
 #ifndef EMBEDDED
 				REMOTE_save_status_strings(trdb->trdb_status_vector);
 #endif

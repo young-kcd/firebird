@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.67 2003-04-09 13:20:55 dimitr Exp $
+$Id: inet.cpp,v 1.68 2003-04-10 10:31:27 aafemt Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -362,7 +362,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 
 static void		inet_copy(SCHAR *, SCHAR *, int);
 static int		inet_destroy(XDR *);
-static void		inet_gen_error(PORT, STATUS, ...);
+static void		inet_gen_error(PORT, ISC_STATUS, ...);
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
@@ -370,7 +370,7 @@ static u_int	inet_getpostn(XDR *);
 static void		inet_handler(PORT);
 #endif
 static caddr_t	inet_inline(XDR *, u_int);
-static int		inet_error(PORT, const TEXT *, STATUS, int);
+static int		inet_error(PORT, const TEXT *, ISC_STATUS, int);
 static bool_t	inet_putlong(XDR *, SLONG *);
 static bool_t	inet_putbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_read(XDR *);
@@ -380,7 +380,7 @@ static PORT		inet_try_connect(	PACKET*,
 									USHORT,
 									TEXT*,
 									TEXT*,
-									STATUS*,
+									ISC_STATUS*,
 									SCHAR*,
 									SSHORT);
 static bool_t	inet_write(XDR *, int);
@@ -589,7 +589,7 @@ static BOOLEAN	port_mutex_inited = 0;
 
 PORT INET_analyze(	TEXT*	file_name,
 					USHORT*	file_length,
-					STATUS*	status_vector,
+					ISC_STATUS*	status_vector,
 					TEXT*	node_name,
 					TEXT*	user_string,
 					USHORT	uv_flag,
@@ -795,7 +795,7 @@ PORT INET_analyze(	TEXT*	file_name,
 
 PORT DLL_EXPORT INET_connect(TEXT * name,
 							 PACKET * packet,
-							 STATUS * status_vector,
+							 ISC_STATUS * status_vector,
 							 USHORT flag, SCHAR * dpb, SSHORT dpb_length)
 {
 /**************************************
@@ -1162,7 +1162,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 	}
 }
 
-PORT INET_reconnect(HANDLE handle, TEXT* name, STATUS* status_vector)
+PORT INET_reconnect(HANDLE handle, TEXT* name, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -2952,7 +2952,7 @@ static XDR_INT inet_destroy( XDR * xdrs)
 	return (XDR_INT)0;
 }
 
-static void inet_gen_error( PORT port, STATUS status, ...)
+static void inet_gen_error( PORT port, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -2966,7 +2966,7 @@ static void inet_gen_error( PORT port, STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	STATUS *status_vector;
+	ISC_STATUS *status_vector;
 
 	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;
@@ -3134,7 +3134,7 @@ static caddr_t inet_inline( XDR * xdrs, u_int bytecount)
 
 static int inet_error(
 					  PORT port,
-					  const TEXT * function, STATUS operation, int status)
+					  const TEXT * function, ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -3158,14 +3158,14 @@ static int inet_error(
 			status < WIN_NERR && win_errlist[status])
 			inet_gen_error(port, isc_network_error,
 						   gds_arg_string,
-						   (STATUS) port->port_connection->str_data,
+						   (ISC_STATUS) port->port_connection->str_data,
 						   isc_arg_gds, operation, gds_arg_string,
-						   (STATUS) win_errlist[status], 0);
+						   (ISC_STATUS) win_errlist[status], 0);
 		else
 #endif
 			inet_gen_error(port, isc_network_error,
 						   gds_arg_string,
-						   (STATUS) port->port_connection->str_data,
+						   (ISC_STATUS) port->port_connection->str_data,
 						   isc_arg_gds, operation, SYS_ERR, status, 0);
 
 		sprintf(msg, "INET/inet_error: %s errno = %d", function, status);
@@ -3176,7 +3176,7 @@ static int inet_error(
 
 		inet_gen_error(port, isc_network_error,
 					   gds_arg_string,
-					   (STATUS) port->port_connection->str_data, isc_arg_gds,
+					   (ISC_STATUS) port->port_connection->str_data, isc_arg_gds,
 					   operation, 0);
 	}
 
@@ -3354,7 +3354,7 @@ static PORT inet_try_connect(
 							 RDB rdb,
 							 USHORT file_length,
 							 TEXT * file_name,
-TEXT * node_name, STATUS * status_vector, SCHAR * dpb, SSHORT dpb_length)
+TEXT * node_name, ISC_STATUS * status_vector, SCHAR * dpb, SSHORT dpb_length)
 {
 /**************************************
  *

@@ -80,7 +80,7 @@ typedef struct rdb
 	struct rrq*		rdb_requests;		/* compiled requests */
 	struct rvnt*	rdb_events;			/* known events */
 	struct rsr*		rdb_sql_requests;	/* SQL requests */
-	STATUS*			rdb_status_vector;
+	ISC_STATUS*		rdb_status_vector;
 	PACKET			rdb_packet;			/* Communication structure */
 } *RDB;
 
@@ -228,7 +228,7 @@ typedef struct rrq
 	USHORT		rrq_id;
 	USHORT		rrq_max_msg;
 	USHORT		rrq_level;
-	STATUS		rrq_status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS	rrq_status_vector[ISC_STATUS_LENGTH];
 	struct		rrq_repeat
 	{
 		struct fmt*		rrq_format;		/* format for this message */
@@ -268,7 +268,7 @@ typedef struct rsr
 	struct fmt*		rsr_format;				/* Format of current message */
 	struct message*	rsr_message;			/* Next message to process */
 	struct message*	rsr_buffer;				/* Next buffer to use */
-	STATUS			rsr_status_vector[ISC_STATUS_LENGTH];	/* saved status for buffered errors */
+	ISC_STATUS		rsr_status_vector[ISC_STATUS_LENGTH];	/* saved status for buffered errors */
 	USHORT			rsr_id;
 	USHORT			rsr_flags;
 	USHORT			rsr_fmt_length;
@@ -371,7 +371,7 @@ typedef struct port
 	SLONG			port_connect_timeout;   /* Connection timeout value */
 	SLONG			port_dummy_packet_interval; /* keep alive dummy packet interval */
 	SLONG			port_dummy_timeout;	/* time remaining until keepalive packet */
-	STATUS*			port_status_vector;
+	ISC_STATUS*		port_status_vector;
 	HANDLE			port_handle;		/* handle for connection (from by OS) */
 	int				port_channel;		/* handle for connection (from by OS) */
 	int				port_misc1;
@@ -426,44 +426,44 @@ typedef struct port
 	 *      to server.cpp and should be _made_ private in due time!
 	 *      That is, if we don't factor these method out.
 	 */
-	STATUS	compile(P_CMPL*, PACKET*);
-	STATUS	ddl(P_DDL*, PACKET*);
+	ISC_STATUS	compile(P_CMPL*, PACKET*);
+	ISC_STATUS	ddl(P_DDL*, PACKET*);
 	void	disconnect(PACKET*, PACKET*);
 	void	drop_database(P_RLSE*, PACKET*);
 
-	STATUS	end_blob(P_OP, P_RLSE*, PACKET*);
-	STATUS	end_database(P_RLSE*, PACKET*);
-	STATUS	end_request(P_RLSE*, PACKET*);
-	STATUS	end_statement(P_SQLFREE*, PACKET*);
-	STATUS	end_transaction(P_OP, P_RLSE*, PACKET*);
-	STATUS	execute_immediate(P_OP, P_SQLST*, PACKET*);
-	STATUS	execute_statement(P_OP, P_SQLDATA*, PACKET*);
-	STATUS	fetch(P_SQLDATA*, PACKET*);
-	STATUS	fetch_blob(P_SQLDATA*, PACKET*);
+	ISC_STATUS	end_blob(P_OP, P_RLSE*, PACKET*);
+	ISC_STATUS	end_database(P_RLSE*, PACKET*);
+	ISC_STATUS	end_request(P_RLSE*, PACKET*);
+	ISC_STATUS	end_statement(P_SQLFREE*, PACKET*);
+	ISC_STATUS	end_transaction(P_OP, P_RLSE*, PACKET*);
+	ISC_STATUS	execute_immediate(P_OP, P_SQLST*, PACKET*);
+	ISC_STATUS	execute_statement(P_OP, P_SQLDATA*, PACKET*);
+	ISC_STATUS	fetch(P_SQLDATA*, PACKET*);
+	ISC_STATUS	fetch_blob(P_SQLDATA*, PACKET*);
 	OBJCT	get_id(BLK);
-	STATUS	get_segment(P_SGMT*, PACKET*);
-	STATUS	get_slice(P_SLC*, PACKET*);
-	STATUS	info(P_OP, P_INFO*, PACKET*);
-	STATUS	insert(P_SQLDATA*, PACKET*);
-	STATUS	open_blob(P_OP, P_BLOB*, PACKET*);
-	STATUS	prepare(P_PREP*, PACKET*);
-	STATUS	prepare_statement(P_SQLST*, PACKET*);
-	STATUS	put_segment(P_OP, P_SGMT*, PACKET*);
-	STATUS	put_slice(P_SLC*, PACKET*);
-	STATUS	que_events(P_EVENT*, PACKET*);
-	STATUS	receive_after_start(P_DATA*, PACKET*, STATUS*);
-	STATUS	receive_msg(P_DATA*, PACKET*);
-	STATUS	seek_blob(P_SEEK*, PACKET*);
-	STATUS	send_msg(P_DATA*, PACKET*);
-	STATUS	send_response(PACKET*, OBJCT, USHORT, STATUS*);
-	STATUS	service_attach(P_ATCH*, PACKET*);
-	STATUS	service_end(P_RLSE*, PACKET*);
-	STATUS	service_start(P_INFO*, PACKET*);
-	STATUS	set_cursor(P_SQLCUR*, PACKET*);
-	STATUS	start(P_OP, P_DATA*, PACKET*);
-	STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
-	STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
-	STATUS	transact_request(P_TRRQ *, PACKET*);
+	ISC_STATUS	get_segment(P_SGMT*, PACKET*);
+	ISC_STATUS	get_slice(P_SLC*, PACKET*);
+	ISC_STATUS	info(P_OP, P_INFO*, PACKET*);
+	ISC_STATUS	insert(P_SQLDATA*, PACKET*);
+	ISC_STATUS	open_blob(P_OP, P_BLOB*, PACKET*);
+	ISC_STATUS	prepare(P_PREP*, PACKET*);
+	ISC_STATUS	prepare_statement(P_SQLST*, PACKET*);
+	ISC_STATUS	put_segment(P_OP, P_SGMT*, PACKET*);
+	ISC_STATUS	put_slice(P_SLC*, PACKET*);
+	ISC_STATUS	que_events(P_EVENT*, PACKET*);
+	ISC_STATUS	receive_after_start(P_DATA*, PACKET*, ISC_STATUS*);
+	ISC_STATUS	receive_msg(P_DATA*, PACKET*);
+	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
+	ISC_STATUS	send_msg(P_DATA*, PACKET*);
+	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, ISC_STATUS*);
+	ISC_STATUS	service_attach(P_ATCH*, PACKET*);
+	ISC_STATUS	service_end(P_RLSE*, PACKET*);
+	ISC_STATUS	service_start(P_INFO*, PACKET*);
+	ISC_STATUS	set_cursor(P_SQLCUR*, PACKET*);
+	ISC_STATUS	start(P_OP, P_DATA*, PACKET*);
+	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
+	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
+	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
 
 #endif	/* __cplusplus */
 
@@ -493,7 +493,7 @@ typedef struct trdb
 {
 	struct thdd	trdb_thd_data;
 	struct rdb*	trdb_database;
-	STATUS*		trdb_status_vector;
+	ISC_STATUS*	trdb_status_vector;
 } *TRDB;
 
 
@@ -519,7 +519,7 @@ typedef struct rmtque
 	BOOLEAN	(*rmtque_function) (struct trdb*,
 								struct port*,
 								struct rmtque*,
-								STATUS*,
+								ISC_STATUS*,
 								USHORT);
 } *RMTQUE;
 

@@ -90,8 +90,8 @@ static int		send_partial(PORT, PACKET *);
 static int		xdrwnet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
 static bool_t	xdrwnet_endofrecord(XDR *, int);
 static int		wnet_destroy(XDR *);
-static int		wnet_error(PORT, TEXT *, STATUS, int);
-static void		wnet_gen_error(PORT, STATUS, ...);
+static int		wnet_error(PORT, TEXT *, ISC_STATUS, int);
+static void		wnet_gen_error(PORT, ISC_STATUS, ...);
 static bool_t	wnet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	wnet_getlong(XDR *, SLONG *);
 static u_int	wnet_getpostn(XDR *);
@@ -128,7 +128,7 @@ static xdr_t::xdr_ops wnet_ops =
 
 PORT WNET_analyze(	TEXT*	file_name,
 					USHORT*	file_length,
-					STATUS*	status_vector,
+					ISC_STATUS*	status_vector,
 					TEXT*	node_name,
 					TEXT*	user_string,
 					USHORT	uv_flag)
@@ -346,7 +346,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 
 PORT WNET_connect(TEXT*		name,
 				  PACKET*	packet,
-				  STATUS*	status_vector,
+				  ISC_STATUS*	status_vector,
 				  USHORT	flag)
 {
 /**************************************
@@ -362,7 +362,7 @@ PORT WNET_connect(TEXT*		name,
  *
  **************************************/
 
-	STATUS status;
+	ISC_STATUS status;
 	TEXT command_line[MAXPATHLEN + 32], *p;
 	USHORT ret;
 
@@ -531,7 +531,7 @@ PORT WNET_connect(TEXT*		name,
 }
 
 
-PORT WNET_reconnect(HANDLE handle, TEXT * name, STATUS * status_vector)
+PORT WNET_reconnect(HANDLE handle, TEXT * name, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -760,7 +760,7 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
  *
  **************************************/
 	PORT new_port;
-	STATUS status;
+	ISC_STATUS status;
 	TEXT *p, str_pid[32];
 	P_RESP *response;
 
@@ -1207,7 +1207,7 @@ static int wnet_destroy( XDR * xdrs)
 
 static int wnet_error(
 					  PORT port,
-					  TEXT * function, STATUS operation, int status)
+					  TEXT * function, ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -1232,7 +1232,7 @@ static int wnet_error(
 
 	if (status) {
 		wnet_gen_error(port, isc_network_error,
-					   gds_arg_string, (STATUS) node_name,
+					   gds_arg_string, (ISC_STATUS) node_name,
 					   isc_arg_gds, operation,
 					   SYS_ERR, status,
 					   0);
@@ -1243,7 +1243,7 @@ static int wnet_error(
 	}
 	else {
 		wnet_gen_error(port, isc_network_error,
-					   gds_arg_string, (STATUS) node_name,
+					   gds_arg_string, (ISC_STATUS) node_name,
 					   isc_arg_gds, operation, 0);
 	}
 
@@ -1251,7 +1251,7 @@ static int wnet_error(
 }
 
 
-static void wnet_gen_error( PORT port, STATUS status, ...)
+static void wnet_gen_error( PORT port, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -1265,7 +1265,7 @@ static void wnet_gen_error( PORT port, STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	STATUS *status_vector;
+	ISC_STATUS *status_vector;
 
 	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;
