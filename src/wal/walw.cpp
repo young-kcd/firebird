@@ -1314,10 +1314,8 @@ static void get_time_stamp( SLONG * date)
  *	(Copied from mov.c)
  *
  **************************************/
-	struct tm times;
-
-	time_t clock = time(NULL);
-	times = *localtime(&clock);
+	const time_t clock = time(NULL);
+	const tm times = *localtime(&clock);
 	isc_encode_date(&times, (GDS_QUAD *) date);
 }
 

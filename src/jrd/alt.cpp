@@ -687,12 +687,12 @@ void API_ROUTINE isc_vtov(SCHAR * string1, SCHAR * string2, SSHORT length)
 	gds__vtov(string1, string2, length);
 }
 
-void API_ROUTINE gds__decode_date(GDS_QUAD * date, void *time_structure)
+void API_ROUTINE gds__decode_date(const GDS_QUAD* date, void* time_structure)
 {
 	isc_decode_date(date, time_structure);
 }
 
-void API_ROUTINE gds__encode_date(void *time_structure, GDS_QUAD * date)
+void API_ROUTINE gds__encode_date(const void* time_structure, GDS_QUAD* date)
 {
 	isc_encode_date(time_structure, date);
 }

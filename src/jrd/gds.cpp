@@ -260,13 +260,13 @@ static void		blr_print_verb(CTL, SSHORT);
 static int		blr_print_word(CTL);
 
 static void		init(void);
-static int		yday(struct tm *);
+static int		yday(const tm*);
 
-static void		ndate(SLONG, struct tm *);
-static GDS_DATE	nday(struct tm *);
-static void		sanitize(TEXT *);
+static void		ndate(SLONG, tm*);
+static GDS_DATE	nday(const tm*);
+static void		sanitize(TEXT*);
 
-static void		safe_concat_path(TEXT *destbuf, const TEXT *srcbuf);
+static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
 
 /* Generic cleanup handlers */
 
@@ -475,7 +475,7 @@ ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* class_)
 }
 
 
-void API_ROUTINE isc_decode_date(GDS_QUAD* date, void* times_arg)
+void API_ROUTINE isc_decode_date(const GDS_QUAD* date, void* times_arg)
 {
 /**************************************
  *
@@ -490,11 +490,11 @@ void API_ROUTINE isc_decode_date(GDS_QUAD* date, void* times_arg)
  *	isc_decode_timestamp
  *
  **************************************/
-	isc_decode_timestamp((GDS_TIMESTAMP*) date, times_arg);
+	isc_decode_timestamp((const GDS_TIMESTAMP*) date, times_arg);
 }
 
 
-void API_ROUTINE isc_decode_sql_date(GDS_DATE* date, void* times_arg)
+void API_ROUTINE isc_decode_sql_date(const GDS_DATE* date, void* times_arg)
 {
 /**************************************
  *
@@ -506,9 +506,7 @@ void API_ROUTINE isc_decode_sql_date(GDS_DATE* date, void* times_arg)
  *	Convert from internal DATE format to UNIX time structure.
  *
  **************************************/
-	struct tm *times;
-
-	times = (struct tm *) times_arg;
+	tm* times = (struct tm*) times_arg;
 	memset(times, 0, sizeof(*times));
 
 	ndate(*date, times);
@@ -518,7 +516,7 @@ void API_ROUTINE isc_decode_sql_date(GDS_DATE* date, void* times_arg)
 }
 
 
-void API_ROUTINE isc_decode_sql_time(GDS_TIME * sql_time, void *times_arg)
+void API_ROUTINE isc_decode_sql_time(const GDS_TIME* sql_time, void* times_arg)
 {
 /**************************************
  *
@@ -530,20 +528,17 @@ void API_ROUTINE isc_decode_sql_time(GDS_TIME * sql_time, void *times_arg)
  *	Convert from internal TIME format to UNIX time structure.
  *
  **************************************/
-	ULONG minutes;
-	struct tm *times;
-
-	times = (struct tm *) times_arg;
+	tm* times = (struct tm*) times_arg;
 	memset(times, 0, sizeof(*times));
 
-	minutes = *sql_time / (ISC_TIME_SECONDS_PRECISION * 60);
+	const ULONG minutes = *sql_time / (ISC_TIME_SECONDS_PRECISION * 60);
 	times->tm_hour = minutes / 60;
 	times->tm_min = minutes % 60;
 	times->tm_sec = (*sql_time / ISC_TIME_SECONDS_PRECISION) % 60;
 }
 
 
-void API_ROUTINE isc_decode_timestamp(GDS_TIMESTAMP * date, void *times_arg)
+void API_ROUTINE isc_decode_timestamp(const GDS_TIMESTAMP* date, void* times_arg)
 {
 /**************************************
  *
@@ -559,10 +554,7 @@ void API_ROUTINE isc_decode_timestamp(GDS_TIMESTAMP * date, void *times_arg)
  *	modules that need to use isc_encode_timestamp
  *
  **************************************/
-	SLONG minutes;
-	struct tm *times;
-
-	times = (struct tm *) times_arg;
+	tm* times = (struct tm*) times_arg;
 	memset(times, 0, sizeof(*times));
 
 	ndate(date->timestamp_date, times);
@@ -570,7 +562,7 @@ void API_ROUTINE isc_decode_timestamp(GDS_TIMESTAMP * date, void *times_arg)
 	if ((times->tm_wday = (date->timestamp_date + 3) % 7) < 0)
 		times->tm_wday += 7;
 
-	minutes = date->timestamp_time / (ISC_TIME_SECONDS_PRECISION * 60);
+	const ULONG minutes = date->timestamp_time / (ISC_TIME_SECONDS_PRECISION * 60);
 	times->tm_hour = minutes / 60;
 	times->tm_min = minutes % 60;
 	times->tm_sec = (date->timestamp_time / ISC_TIME_SECONDS_PRECISION) % 60;
@@ -598,7 +590,7 @@ ISC_STATUS API_ROUTINE gds__encode(ISC_STATUS code, USHORT facility)
 }
 
 
-void API_ROUTINE isc_encode_date(void *times_arg, GDS_QUAD * date)
+void API_ROUTINE isc_encode_date(const void* times_arg, GDS_QUAD* date)
 {
 /**************************************
  *
@@ -613,11 +605,11 @@ void API_ROUTINE isc_encode_date(void *times_arg, GDS_QUAD * date)
  *	isc_encode_timestamp
  *
  **************************************/
-	isc_encode_timestamp(times_arg, (GDS_TIMESTAMP *) date);
+	isc_encode_timestamp(times_arg, (GDS_TIMESTAMP*) date);
 }
 
 
-void API_ROUTINE isc_encode_sql_date(void *times_arg, GDS_DATE * date)
+void API_ROUTINE isc_encode_sql_date(const void* times_arg, GDS_DATE* date)
 {
 /**************************************
  *
@@ -630,11 +622,11 @@ void API_ROUTINE isc_encode_sql_date(void *times_arg, GDS_DATE * date)
  *
  **************************************/
 
-	*date = nday((struct tm *) times_arg);
+	*date = nday((const struct tm*) times_arg);
 }
 
 
-void API_ROUTINE isc_encode_sql_time(void *times_arg, GDS_TIME * isc_time)
+void API_ROUTINE isc_encode_sql_time(const void* times_arg, GDS_TIME* isc_time)
 {
 /**************************************
  *
@@ -646,15 +638,13 @@ void API_ROUTINE isc_encode_sql_time(void *times_arg, GDS_TIME * isc_time)
  *	Convert from UNIX time structure to internal TIME format.
  *
  **************************************/
-	struct tm *times;
-
-	times = (struct tm *) times_arg;
+	const tm* times = (const struct tm*) times_arg;
 	*isc_time = ((times->tm_hour * 60 + times->tm_min) * 60 +
 				 times->tm_sec) * ISC_TIME_SECONDS_PRECISION;
 }
 
 
-void API_ROUTINE isc_encode_timestamp(void *times_arg, GDS_TIMESTAMP * date)
+void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date)
 {
 /**************************************
  *
@@ -670,9 +660,7 @@ void API_ROUTINE isc_encode_timestamp(void *times_arg, GDS_TIMESTAMP * date)
  *	modules that need to use isc_encode_timestamp
  *
  **************************************/
-	struct tm *times;
-
-	times = (struct tm *) times_arg;
+	const tm* times = (const struct tm*) times_arg;
 
 	date->timestamp_date = nday(times);
 	date->timestamp_time =
@@ -1096,7 +1084,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
  *
  **************************************/
 	
-	time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
+	const time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
 	
 	// 07 Sept 2003, Nickolay Samofatov.
 	// Since we cannot call ctime/localtime_r or anything else like this from 
@@ -3499,7 +3487,7 @@ static void init(void)
 }
 
 
-static int yday(struct tm *times)
+static int yday(const struct tm* times)
 {
 /**************************************
  *
@@ -3517,11 +3505,9 @@ static int yday(struct tm *times)
  *	view.)   
  *
  **************************************/
-	SSHORT day, month, year;
-
-	day = times->tm_mday;
-	month = times->tm_mon;
-	year = times->tm_year + 1900;
+	SSHORT day = times->tm_mday;
+	const SSHORT month = times->tm_mon;
+	const SSHORT year = times->tm_year + 1900;
 
 	--day;
 
@@ -3539,7 +3525,7 @@ static int yday(struct tm *times)
 }
 
 
-static void ndate(SLONG nday, struct tm *times)
+static void ndate(SLONG nday, tm* times)
 {
 /**************************************
  *
@@ -3569,10 +3555,9 @@ static void ndate(SLONG nday, struct tm *times)
  *
  **************************************/
 	SLONG year, month, day;
-	SLONG century;
 
 	nday -= 1721119 - 2400001;
-	century = (4 * nday - 1) / 146097;
+	const SLONG century = (4 * nday - 1) / 146097;
 	nday = 4 * nday - 1 - 146097 * century;
 	day = nday / 4;
 
@@ -3599,7 +3584,7 @@ static void ndate(SLONG nday, struct tm *times)
 }
 
 
-static GDS_DATE nday(struct tm *times)
+static GDS_DATE nday(const tm* times)
 {
 /**************************************
  *
@@ -3612,12 +3597,9 @@ static GDS_DATE nday(struct tm *times)
  *	(the number of days since the base date).
  *
  **************************************/
-	SSHORT day, month, year;
-	SLONG c, ya;
-
-	day = times->tm_mday;
-	month = times->tm_mon + 1;
-	year = times->tm_year + 1900;
+	const SSHORT day = times->tm_mday;
+	SSHORT month = times->tm_mon + 1;
+	SSHORT year = times->tm_year + 1900;
 
 	if (month > 2)
 		month -= 3;
@@ -3626,8 +3608,8 @@ static GDS_DATE nday(struct tm *times)
 		year -= 1;
 	}
 
-	c = year / 100;
-	ya = year - 100 * c;
+	const SLONG c = year / 100;
+	const SLONG ya = year - 100 * c;
 
 	return (GDS_DATE) (((SINT64) 146097 * c) / 4 +
 					   (1461 * ya) / 4 +
@@ -3635,7 +3617,7 @@ static GDS_DATE nday(struct tm *times)
 }
 
 
-static void sanitize(TEXT * locale)
+static void sanitize(TEXT* locale)
 {
 /**************************************
  *
@@ -3726,3 +3708,4 @@ void* API_ROUTINE gds__alloc(SLONG size)
 #endif
 
 } // extern "C"
+

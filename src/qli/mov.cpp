@@ -37,7 +37,7 @@ static void timestamp_to_text(SLONG[2], DSC *);
 static void sql_time_to_text(ULONG[1], DSC *);
 static void sql_date_to_text(SLONG[1], DSC *);
 static void mover_error(int, USHORT, USHORT);
-static void now_to_date(tm*, SLONG[2]);
+static void now_to_date(const tm*, SLONG[2]);
 static void numeric_to_text(const dsc*, dsc*);
 static void string_to_date(const TEXT*, USHORT, SLONG[2]);
 static void string_to_time(TEXT *, USHORT, SLONG[2]);
@@ -1172,7 +1172,7 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
 }
 
 
-static void now_to_date(tm* time, SLONG date[2])
+static void now_to_date(const tm* time, SLONG date[2])
 {
 /**************************************
  *
@@ -1336,7 +1336,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 
 	USHORT month_position = 0;
 
-	time_t clock = time(0);
+	const time_t clock = time(0);
 	tm* today = localtime(&clock);
 
 	USHORT i;
@@ -1502,8 +1502,8 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
 	const TEXT* p = string;
 	const TEXT* const end = p + length;
 
-	time_t clock = time(0);
-	tm* today = localtime(&clock);
+	const time_t clock = time(0);
+	const tm* today = localtime(&clock);
 
 	USHORT i;
 	USHORT components[7];

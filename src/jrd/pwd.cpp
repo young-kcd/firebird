@@ -316,11 +316,10 @@ void SecurityDatabase::verifyUser(TEXT* name,
 								  int* gid,
 								  int* node_id)
 {
-	TEXT *p, *q, pw1[33], pw2[33], pwt[33];
-
 	if (user_name)
 	{
-		for (p = name, q = user_name; *q; q++, p++)
+		TEXT* p = name;
+		for (const TEXT* q = user_name; *q; ++q, ++p)
 		{
 			*p = UPPER7(*q);
 		}
@@ -336,6 +335,7 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	THREAD_EXIT;
 	instance.mutex.aquire();
 	THREAD_ENTER;
+	TEXT pw1[33];
 	bool found = instance.lookup_user(name, uid, gid, pw1);
 	instance.mutex.release();
 
@@ -349,10 +349,12 @@ void SecurityDatabase::verifyUser(TEXT* name,
 		ERR_post(gds_login, 0);
 	}
 
+	TEXT pwt[33];
 	if (password) {
 		strcpy(pwt, ENC_crypt(password, PASSWORD_SALT));
 		password_enc = pwt + 2;
 	}
+	TEXT pw2[33];
 	strcpy(pw2, ENC_crypt(password_enc, PASSWORD_SALT));
 	if (strncmp(pw1, pw2 + 2, 11)) {
 		ERR_post(gds_login, 0);

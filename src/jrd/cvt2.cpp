@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		cvt2.c
+ *	MODULE:		cvt2.cpp
  *	DESCRIPTION:	Data mover and converter and comparator, etc.
  *			Routines used ONLY within engine.
  *
@@ -102,7 +102,7 @@ typedef void (*pfn_cvt_private_cludge) (int, int);
 typedef void (*pfn_cvt_private_cludge2) (int, int, ...);
 
 
-SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
+SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_VOID err)
 {
 /**************************************
  *
@@ -508,7 +508,7 @@ SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 }
 
 
-SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
+SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_VOID err)
 {
 /**************************************
  *
@@ -531,7 +531,7 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 	SSHORT ret_val = 0;
 	TextType *obj1 = 0, *obj2 = 0;
 	DSC desc1, desc2;
-	BOOLEAN bin_cmp = FALSE, both_are_text = FALSE;
+	bool bin_cmp = false, both_are_text = false;
 
 	SET_TDBB(tdbb);
 
@@ -583,7 +583,7 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 		bin_cmp = (arg1->dsc_sub_type != BLOB_text || arg2->dsc_sub_type != BLOB_text);
 		if (!bin_cmp)
 		{
-			both_are_text = TRUE;
+			both_are_text = true;
 			if (ttype1 == ttype_dynamic || ttype2 == ttype_dynamic)
 			{
 				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
@@ -747,7 +747,7 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 				assert(obj1);
 				ttype1 = obj1->getType();
 				if (ttype1 == ttype_none || ttype1 == ttype_ascii)
-					bin_cmp = TRUE;
+					bin_cmp = true;
 			}
 			if (arg2->dsc_dtype <= dtype_varying)
 			{
@@ -755,10 +755,10 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 				assert(obj2);
 				ttype2 = obj2->getType();
 				if (ttype2 == ttype_none || ttype2 == ttype_ascii)
-					bin_cmp = TRUE;
+					bin_cmp = true;
 			}
 			if (ttype1 == ttype2)
-				bin_cmp = TRUE;
+				bin_cmp = true;
 		}
 
 		/* I will stop execution here until I can complete this function. */
@@ -789,7 +789,7 @@ SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 }
 
 
-void CVT2_get_name(DSC * desc, TEXT * string, FPTR_VOID err)
+void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_VOID err)
 {
 /**************************************
  *
@@ -814,10 +814,10 @@ void CVT2_get_name(DSC * desc, TEXT * string, FPTR_VOID err)
 }
 
 
-USHORT CVT2_make_string2(DSC * desc,
+USHORT CVT2_make_string2(const dsc* desc,
 						 USHORT to_interp,
-						 UCHAR ** address,
-						 VARY * temp, USHORT length, STR * ptr, FPTR_VOID err)
+						 UCHAR** address,
+						 VARY* temp, USHORT length, STR* ptr, FPTR_VOID err)
 {
 /**************************************
  *
@@ -919,3 +919,4 @@ USHORT CVT2_make_string2(DSC * desc,
 
 	return temp->vary_length;
 }
+

@@ -2534,7 +2534,6 @@ void XNET_srv(USHORT flag)
 	PORT port;
 	ULONG map_num, slot_num;
 	XPM xpm;
-	time_t timestamp;
 
 	ISC_STATUS* status_vector;
 #endif
@@ -2585,7 +2584,7 @@ void XNET_srv(USHORT flag)
 
 #ifdef SUPERSERVER
 
-		timestamp = time(NULL);
+		time_t timestamp = time(NULL);
 		// searhing for free slot
 		XNET_LOCK;
 		xpm = xnet_get_free_slot(&map_num, &slot_num, &timestamp);

@@ -2793,8 +2793,6 @@ static void put_message(SSHORT msg_num,
  *	Write out informational message to the log.
  *
  **************************************/
-	time_t clock;
-	tm times;
 	UCHAR message[MSG_LENGTH];
 
 	if (!log)
@@ -2802,8 +2800,8 @@ static void put_message(SSHORT msg_num,
 
 	GJRN_get_msg(msg_num, (char*) message, NULL, NULL, NULL);
 
-	clock = time(NULL);
-	times = *localtime(&clock);
+	const time_t clock = time(NULL);
+	const tm times = *localtime(&clock);
 
 	fprintf(log, "%.2d:%.2d:%.2d %.2d/%.2d/%.2d %s",
 			times.tm_hour, times.tm_min, times.tm_sec,
@@ -3569,7 +3567,7 @@ static bool test_dup_entry(DJB dbb,
 }
 
 
-static void time_stamp(GDS__QUAD * date)
+static void time_stamp(GDS__QUAD* date)
 {
 /**************************************
  *
@@ -3581,10 +3579,8 @@ static void time_stamp(GDS__QUAD * date)
  *	Get the current time in gds format.
  *
  **************************************/
-	time_t clock;
-	tm times;
-
-	clock = time(NULL);
-	times = *localtime(&clock);
+	const time_t clock = time(NULL);
+	const tm times = *localtime(&clock);
 	gds__encode_date(&times, date);
 }
+

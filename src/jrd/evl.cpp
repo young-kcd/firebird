@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         evl.c
+ *      MODULE:         evl.cpp
  *      DESCRIPTION:    Expression evaluation
  *
  * The contents of this file are subject to the Interbase Public
@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.41 2003-10-03 01:43:56 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.42 2003-10-08 08:42:43 robocop Exp $ 
  */
 
 /*
@@ -861,7 +861,7 @@ DSC* EVL_expr(TDBB tdbb, JRD_NOD node)
 	case nod_current_date:
 	case nod_current_timestamp:
 		{
-			ULONG clock;
+			time_t clock;
 			struct tm times;
 			GDS_TIMESTAMP enc_times;
 
@@ -874,7 +874,7 @@ DSC* EVL_expr(TDBB tdbb, JRD_NOD node)
 				assert(FALSE);
 				clock = time(0);
 			}
-			times = *localtime(reinterpret_cast<time_t*>(&clock));
+			times = *localtime(&clock);
 
 			memset(&impure->vlu_desc, 0, sizeof(impure->vlu_desc));
 			impure->vlu_desc.dsc_address =
@@ -3196,7 +3196,7 @@ static SSHORT compute_agg_distinct(TDBB tdbb, JRD_NOD node)
 
 /* Now get the sorted/projected values and compute the aggregate */
 
-	while (TRUE) {
+	while (true) {
 		SORT_get(tdbb->tdbb_status_vector,
 				 reinterpret_cast < SCB > (asb_impure->iasb_sort_handle),
 				 reinterpret_cast < ULONG ** >(&data)
@@ -5063,3 +5063,4 @@ static DSC *internal_info(TDBB tdbb, DSC * value, VLU impure)
 
 	return &impure->vlu_desc;
 }
+

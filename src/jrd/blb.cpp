@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		blb.c
+ *	MODULE:		blb.cpp
  *	DESCRIPTION:	Blob handler
  *
  * The contents of this file are subject to the Interbase Public
@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.37 2003-10-03 01:34:14 brodsom Exp $
+$Id: blb.cpp,v 1.38 2003-10-08 08:42:43 robocop Exp $
 */
 
 #include "firebird.h"
@@ -89,7 +89,7 @@ static BLP get_next_page(TDBB, BLB, WIN *);
 static void get_replay_blob(TDBB, BID);
 #endif
 static void insert_page(TDBB, BLB);
-static void release_blob(BLB, USHORT);
+static void release_blob(BLB, const bool);
 static void slice_callback(SLICE, ULONG, DSC *);
 static BLB store_array(TDBB, JRD_TRA, BID);
 
@@ -116,7 +116,7 @@ void BLB_cancel(TDBB tdbb, BLB blob)
 	if (blob->blb_flags & BLB_temporary)
 		delete_blob(tdbb, blob, 0);
 
-	release_blob(blob, TRUE);
+	release_blob(blob, true);
 }
 
 
@@ -145,7 +145,7 @@ void BLB_close(TDBB tdbb, class blb* blob)
 	blob->blb_flags |= BLB_closed;
 
 	if (!(blob->blb_flags & BLB_temporary)) {
-		release_blob(blob, TRUE);
+		release_blob(blob, true);
 		return;
 	}
 
@@ -193,7 +193,7 @@ BLB BLB_create2(TDBB tdbb,
 	SSHORT from, to, type;
 	SSHORT from_charset, to_charset;
 	BLF filter;
-	USHORT filter_required = FALSE;
+	bool filter_required = false;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -222,7 +222,7 @@ BLB BLB_create2(TDBB tdbb,
 	filter = NULL;
 	if (to && from != to) {
 		filter = find_filter(tdbb, from, to);
-		filter_required = TRUE;
+		filter_required = true;
 	}
 	else if (to == BLOB_text && (from_charset != to_charset)) {
 		if (from_charset == CS_dynamic)
@@ -233,7 +233,7 @@ BLB BLB_create2(TDBB tdbb,
 			filter = FB_NEW(*dbb->dbb_permanent) blf();
 			filter->blf_filter =
 				reinterpret_cast<ISC_STATUS (*)(USHORT, CTL)>(filter_transliterate_text);
-			filter_required = TRUE;
+			filter_required = true;
 		}
 	}
 
@@ -445,7 +445,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 	WIN window;
 	BLP page;
 	ISC_STATUS status;
-	USHORT length, l, active_page, seek;
+	USHORT length, l, seek;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -515,14 +515,14 @@ USHORT BLB_get_segment(TDBB tdbb,
 	to = segment;
 	from = blob->blb_segment;
 	length = blob->blb_space_remaining;
-	active_page = FALSE;
+	bool active_page = false;
 	window.win_flags = 0;
 	if (blob->blb_flags & BLB_large_scan) {
 		window.win_flags = WIN_large_scan;
 		window.win_scans = 1;
 	}
 
-	while (TRUE) {
+	while (true) {
 
 		/* If the blob is segmented, and this isn't a fragment, pick up
 		   the length of the next segment. */
@@ -541,7 +541,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 				}
 				from = (UCHAR *) page->blp_data;
 				length = page->blp_length;
-				active_page = TRUE;
+				active_page = true;
 			}
 
 			p = (UCHAR *) & blob->blb_fragment_size;
@@ -581,13 +581,13 @@ USHORT BLB_get_segment(TDBB tdbb,
 					CCH_RELEASE(tdbb, &window);
 			}
 			if (!(page = get_next_page(tdbb, blob, &window))) {
-				active_page = FALSE;
+				active_page = false;
 				break;
 			}
 			from = (UCHAR *) page->blp_data + seek;
 			length = page->blp_length - seek;
 			seek = 0;
-			active_page = TRUE;
+			active_page = true;
 		}
 
 		/* If either the buffer or the fragment is exhausted, we're
@@ -821,7 +821,7 @@ void BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
 #endif	// REPLAY_OSRI_API_CALLS_SUBSYSTEM
 
 
-void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
+void BLB_move(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
 {
 /**************************************
  *
@@ -837,9 +837,8 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
  *
  **************************************/
 	BLB blob;
-	ARR array;
 	BID source, destination;
-	USHORT id, materialized_blob, refetch_flag;
+	USHORT id;
 	JRD_REQ request;
 	RPB *rpb;
 	REC record;
@@ -865,7 +864,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 	relation = rpb->rpb_relation;
 	record = rpb->rpb_record;
 
-/* If nothing changed, don't do nothing.  If it isn't broken,
+/* If nothing changed, do nothing.  If it isn't broken,
    don't fix it. */
 
 	if (source->bid_relation_id == destination->bid_relation_id &&
@@ -903,21 +902,23 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 /* If the source is a permanent blob, then the blob must be copied.
    Otherwise find the temporary blob referenced.  */
 
-	array = 0;
+	ARR array = 0;
 
+	bool materialized_blob, refetch_flag;
+	
 	do {
-		materialized_blob = refetch_flag = FALSE;
+		materialized_blob = refetch_flag = false;
 		if (source->bid_relation_id)
 			blob = copy_blob(tdbb, source, relation, destination);
 		else if ((to_desc->dsc_dtype == dtype_array) &&
 				 (array = find_array(transaction, source)) &&
 				 (blob = store_array(tdbb, transaction, source)))
-			materialized_blob = TRUE;
+			materialized_blob = true;
 		else
 			for (blob = transaction->tra_blobs; blob; blob = blob->blb_next)
 				if (blob == source->bid_stuff.bid_blob)
 				{
-					materialized_blob = TRUE;
+					materialized_blob = true;
 					break;
 				}
 
@@ -930,7 +931,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 		}
 
 		if (materialized_blob && !(blob->blb_flags & BLB_temporary)) {
-			refetch_flag = TRUE;
+			refetch_flag = true;
 			source = &blob->blb_blob_id;
 		}
 	} while (refetch_flag);
@@ -945,11 +946,11 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 		if (array)
 			array->arr_request = request;
 	}
-	release_blob(blob, (materialized_blob) ? FALSE : TRUE);
+	release_blob(blob, !materialized_blob);
 }
 
 
-void BLB_move_from_string(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
+void BLB_move_from_string(TDBB tdbb, const dsc* from_desc, dsc* to_desc, JRD_NOD field)
 {
 /**************************************
  *
@@ -1043,7 +1044,7 @@ BLB BLB_open2(TDBB tdbb,
 	SSHORT from, to;
 	SSHORT from_charset, to_charset;
 	BLF filter;
-	USHORT filter_required = FALSE;
+	bool filter_required = false;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1071,7 +1072,7 @@ BLB BLB_open2(TDBB tdbb,
 	filter = NULL;
 	if (to && from != to) {
 		filter = find_filter(tdbb, from, to);
-		filter_required = TRUE;
+		filter_required = true;
 	}
 	else if (to == BLOB_text && (from_charset != to_charset)) {
 		if (from_charset == CS_dynamic)
@@ -1082,7 +1083,7 @@ BLB BLB_open2(TDBB tdbb,
 			filter = FB_NEW(*dbb->dbb_permanent) blf();
 			filter->blf_filter =
 				reinterpret_cast < ISC_STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
-			filter_required = TRUE;
+			filter_required = true;
 		}
 	}
 
@@ -1843,7 +1844,7 @@ static BLB copy_blob(TDBB tdbb, BID source, JRD_REL relation, BID destination)
 		buff = buffer;
 	}
 
-	while (TRUE) {
+	while (true) {
 		USHORT length = BLB_get_segment(tdbb, input, buff, input->blb_max_segment);
 		if (input->blb_flags & BLB_eof) {
 			break;
@@ -1969,7 +1970,7 @@ static void delete_blob_id(
 	if (!(blob->blb_flags & BLB_damaged))
 		delete_blob(tdbb, blob, prior_page);
 
-	release_blob(blob, TRUE);
+	release_blob(blob, true);
 }
 
 
@@ -2261,7 +2262,7 @@ static void insert_page(TDBB tdbb, BLB blob)
 }
 
 
-static void release_blob(BLB blob, USHORT purge_flag)
+static void release_blob(BLB blob, const bool purge_flag)
 {
 /**************************************
  *
@@ -2272,7 +2273,7 @@ static void release_blob(BLB blob, USHORT purge_flag)
  * Functional description
  *      Release a blob and associated blocks.  Among other things,
  *      disconnect it from the transaction.  However, if purge_flag
- *      is FALSE, then only release the associated blocks.
+ *      is false, then only release the associated blocks.
  *
  **************************************/
 	JRD_TRA transaction;

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		exe.c
+ *	MODULE:		exe.cpp
  *	DESCRIPTION:	Statement execution
  *
  * The contents of this file are subject to the Interbase Public
@@ -224,7 +224,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 
 /* Get descriptors of receiving and sending fields/parameters, variables, etc. */
 
-	DSC* missing = NULL;
+	const dsc* missing = NULL;
 	if (node->nod_arg[e_asgn_missing]) {
 		missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing]);
 	}
@@ -234,7 +234,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 
 	request->req_flags &= ~req_null;
 
-	DSC* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
+	const dsc* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
 
 	SSHORT null = (request->req_flags & req_null) ? -1 : 0;
 
@@ -268,7 +268,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 				len = 0;
 			}
 
-			temp.dsc_address = (UCHAR *) & len;
+			temp.dsc_address = (UCHAR *) &len;
 			MOV_move(&temp, indicator);
 
 			if (len) {
@@ -332,11 +332,8 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 	}
 	else
 	{
-		UCHAR *p;
-		USHORT l;
-
-		l = to_desc->dsc_length;
-		p = to_desc->dsc_address;
+		USHORT l = to_desc->dsc_length;
+		UCHAR* p = to_desc->dsc_address;
 		switch (to_desc->dsc_dtype) {
 		case dtype_text:
 			/* YYY - not necessarily the right thing to do */
@@ -369,7 +366,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 
 	if (to->nod_type == nod_field)
 	{
-		SSHORT id = (USHORT)(ULONG) to->nod_arg[e_fld_id];
+		const SSHORT id = (USHORT)(ULONG) to->nod_arg[e_fld_id];
 		REC record = request->req_rpb[(int)(SLONG) to->nod_arg[e_fld_stream]].rpb_record;
 		if (null) {
 			SET_NULL(record, id);
@@ -463,9 +460,6 @@ JRD_REQ EXE_find_request(TDBB tdbb, JRD_REQ request, BOOLEAN validate)
  *	clone it.
  *
  **************************************/
-#ifdef ANY_THREADING
-	DBB dbb;
-#endif
 	JRD_REQ clone, next;
 	USHORT n, clones, count;
 	VEC vector;
@@ -474,7 +468,7 @@ JRD_REQ EXE_find_request(TDBB tdbb, JRD_REQ request, BOOLEAN validate)
 
 	SET_TDBB(tdbb);
 #ifdef ANY_THREADING
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 #endif
 
 /* I found a core file from my test runs that came from a NULL request -
@@ -4242,3 +4236,4 @@ static void validate(TDBB tdbb, JRD_NOD list)
 }
 
 } // extern "C"
+

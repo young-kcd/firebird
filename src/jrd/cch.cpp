@@ -1433,7 +1433,7 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 
 	if (!(dbb->dbb_file->fil_flags & FIL_force_write) && (max_num || max_time))
 	{
-		time_t now = time(0);
+		const time_t now = time(0);
 
 		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_flush_count);
 		

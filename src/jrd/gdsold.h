@@ -132,8 +132,8 @@ ISC_STATUS GDS_EXPORT gds__database_info(ISC_STATUS  *,
 										 short,
 										 char  *);
 
-void GDS_EXPORT gds__decode_date(GDS__QUAD  *,
-								 void  *);
+void GDS_EXPORT gds__decode_date(const GDS__QUAD*,
+								 void*);
 
 ISC_STATUS GDS_EXPORT gds__detach_database(ISC_STATUS  *,
 										   FRBRD  **);
@@ -276,8 +276,8 @@ ISC_STATUS GDS_EXPORT gds__ddl(ISC_STATUS  *,
 ISC_STATUS GDS_EXPORT gds__commit_retaining(ISC_STATUS  *,
 											FRBRD  **);
 
-void GDS_EXPORT gds__encode_date(void  *,
-								 GDS__QUAD  *);
+void GDS_EXPORT gds__encode_date(const void*,
+								 GDS__QUAD*);
 
 ISC_STATUS GDS_EXPORT gds__que_events(ISC_STATUS  *,
 									  FRBRD  **,

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.47 2003-09-29 12:43:06 robocop Exp $
+$Id: ibase.h,v 1.48 2003-10-08 08:42:43 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -483,17 +483,17 @@ ISC_STATUS ISC_EXPORT isc_database_info(ISC_STATUS *,
 										short,
 										char *);
 
-void ISC_EXPORT isc_decode_date(ISC_QUAD *,
-								void *);
+void ISC_EXPORT isc_decode_date(const ISC_QUAD*,
+								void*);
 
-void ISC_EXPORT isc_decode_sql_date(ISC_DATE *,
-									void *);
+void ISC_EXPORT isc_decode_sql_date(const ISC_DATE*,
+									void*);
 
-void ISC_EXPORT isc_decode_sql_time(ISC_TIME *,
-									void *);
+void ISC_EXPORT isc_decode_sql_time(const ISC_TIME*,
+									void*);
 
-void ISC_EXPORT isc_decode_timestamp(ISC_TIMESTAMP *,
-									 void *);
+void ISC_EXPORT isc_decode_timestamp(const ISC_TIMESTAMP*,
+									 void*);
 
 ISC_STATUS ISC_EXPORT isc_detach_database(ISC_STATUS *,
 										  isc_db_handle *);
@@ -585,17 +585,17 @@ ISC_STATUS ISC_EXPORT isc_dsql_sql_info(ISC_STATUS *,
 										short,
 										char *);
 
-void ISC_EXPORT isc_encode_date(void *,
-								ISC_QUAD *);
+void ISC_EXPORT isc_encode_date(const void*,
+								ISC_QUAD*);
 
-void ISC_EXPORT isc_encode_sql_date(void *,
-									ISC_DATE *);
+void ISC_EXPORT isc_encode_sql_date(const void*,
+									ISC_DATE*);
 
-void ISC_EXPORT isc_encode_sql_time(void *,
-									ISC_TIME *);
+void ISC_EXPORT isc_encode_sql_time(const void*,
+									ISC_TIME*);
 
-void ISC_EXPORT isc_encode_timestamp(void *,
-									 ISC_TIMESTAMP *);
+void ISC_EXPORT isc_encode_timestamp(const void*,
+									 ISC_TIMESTAMP*);
 
 ISC_LONG ISC_EXPORT_VARARG isc_event_block(char * *,
 										   char * *,

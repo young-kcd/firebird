@@ -1392,8 +1392,6 @@ void CVT_move(const dsc* from, dsc* to, FPTR_VOID err)
 			{
 				TDBB tdbb = NULL;
 				time_t clock;
-				struct tm times;
-				GDS_TIMESTAMP enc_times;
 
 		/** Cannot call GET_THREAD_DATA because that macro calls 
 		    BUGCHECK i.e. ERR_bugcheck() which is not part of 
@@ -1420,7 +1418,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_VOID err)
 				}
 				else
 					clock = time(0);
-				times = *localtime(&clock);
+				const tm times = *localtime(&clock);
+				GDS_TIMESTAMP enc_times;
 				isc_encode_timestamp(&times, &enc_times);
 				((GDS_TIMESTAMP *) (to->dsc_address))->timestamp_date =
 					enc_times.timestamp_date;

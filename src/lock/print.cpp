@@ -606,11 +606,10 @@ static void prt_lock_activity(
  *	Print a time-series lock activity report 
  *
  **************************************/
-	tm d;
 	ULONG i;
 
 	time_t clock = time(NULL);
-	d = *localtime(&clock);
+	tm d = *localtime(&clock);
 
 	FPRINTF(outfile, "%02d:%02d:%02d ", d.tm_hour, d.tm_min, d.tm_sec);
 

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		mov.c
+ *	MODULE:		mov.cpp
  *	DESCRIPTION:	Data mover and converter and comparator, etc.
  *
  * The contents of this file are subject to the Interbase Public
@@ -41,7 +41,7 @@
 extern "C" {
 
 
-int MOV_compare(DSC * arg1, DSC * arg2)
+int MOV_compare(const dsc* arg1, const dsc* arg2)
 {
 /**************************************
  *
@@ -58,7 +58,7 @@ int MOV_compare(DSC * arg1, DSC * arg2)
 }
 
 
-double MOV_date_to_double(DSC * desc)
+double MOV_date_to_double(const dsc* desc)
 {
 /**************************************
  *
@@ -76,7 +76,8 @@ double MOV_date_to_double(DSC * desc)
 }
 
 
-void MOV_double_to_date2(double real, DSC * dsc)
+// Strange, I don't see this function surfaced as public.
+void MOV_double_to_date2(double real, dsc* desc)
 {
 /**************************************
  *
@@ -91,16 +92,16 @@ void MOV_double_to_date2(double real, DSC * dsc)
 	SLONG fixed[2];
 
 	MOV_double_to_date(real, fixed);
-	switch (dsc->dsc_dtype) {
+	switch (desc->dsc_dtype) {
 	case dtype_timestamp:
-		((SLONG *) dsc->dsc_address)[0] = fixed[0];
-		((SLONG *) dsc->dsc_address)[1] = fixed[1];
+		((SLONG *) desc->dsc_address)[0] = fixed[0];
+		((SLONG *) desc->dsc_address)[1] = fixed[1];
 		break;
 	case dtype_sql_time:
-		((SLONG *) dsc->dsc_address)[0] = fixed[1];
+		((SLONG *) desc->dsc_address)[0] = fixed[1];
 		break;
 	case dtype_sql_date:
-		((SLONG *) dsc->dsc_address)[0] = fixed[0];
+		((SLONG *) desc->dsc_address)[0] = fixed[0];
 		break;
 	default:
 		assert(FALSE);
@@ -130,8 +131,8 @@ void MOV_double_to_date(double real, SLONG fixed[2])
 
 #ifndef VMS
 void MOV_fast(
-			  SCHAR * from,
-			  SCHAR * to, ULONG length)
+			  const SCHAR* from,
+			  SCHAR* to, ULONG length)
 {
 /**************************************
  *
@@ -166,13 +167,13 @@ void MOV_fast(
 		} while (--l);
 
 	if (length &= 15)
-		do
+		do {
 			*to++ = *from++;
-		while (--length);
+		} while (--length);
 }
 
 
-void MOV_faster(SLONG * from, SLONG * to, ULONG length)
+void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
 {
 /**************************************
  *
@@ -223,7 +224,7 @@ void MOV_faster(SLONG * from, SLONG * to, ULONG length)
 #endif
 
 
-void MOV_fill(SLONG * to, ULONG length)
+void MOV_fill(SLONG* to, ULONG length)
 {
 /**************************************
  *
@@ -284,7 +285,7 @@ void MOV_fill(SLONG * to, ULONG length)
 }
 
 
-double MOV_get_double(DSC * desc)
+double MOV_get_double(const dsc* desc)
 {
 /**************************************
  *
@@ -301,7 +302,7 @@ double MOV_get_double(DSC * desc)
 }
 
 
-SLONG MOV_get_long(DSC * desc, SSHORT scale)
+SLONG MOV_get_long(const dsc* desc, SSHORT scale)
 {
 /**************************************
  *
@@ -319,7 +320,7 @@ SLONG MOV_get_long(DSC * desc, SSHORT scale)
 }
 
 
-SINT64 MOV_get_int64(DSC * desc, SSHORT scale)
+SINT64 MOV_get_int64(const dsc* desc, SSHORT scale)
 {
 /**************************************
  *
@@ -337,7 +338,7 @@ SINT64 MOV_get_int64(DSC * desc, SSHORT scale)
 }
 
 
-void MOV_get_metadata_str(DSC * desc, TEXT * buffer, USHORT buffer_length)
+void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 {
 /**************************************
  *
@@ -369,7 +370,7 @@ void MOV_get_metadata_str(DSC * desc, TEXT * buffer, USHORT buffer_length)
 }
 
 
-void MOV_get_name(DSC * desc, TEXT * string)
+void MOV_get_name(const dsc* desc, TEXT* string)
 {
 /**************************************
  *
@@ -386,7 +387,7 @@ void MOV_get_name(DSC * desc, TEXT * string)
 }
 
 
-SQUAD MOV_get_quad(DSC * desc, SSHORT scale)
+SQUAD MOV_get_quad(const dsc* desc, SSHORT scale)
 {
 /**************************************
  *
@@ -405,9 +406,9 @@ SQUAD MOV_get_quad(DSC * desc, SSHORT scale)
 
 
 int MOV_get_string_ptr(
-					   DSC * desc,
-					   USHORT * ttype,
-					   UCHAR ** address, VARY * temp, USHORT length)
+					   const dsc* desc,
+					   USHORT* ttype,
+					   UCHAR** address, VARY* temp, USHORT length)
 {
 /**************************************
  *
@@ -431,7 +432,7 @@ int MOV_get_string_ptr(
 }
 
 
-int MOV_get_string(DSC * desc, UCHAR ** address, VARY * temp, USHORT length)
+int MOV_get_string(const dsc* desc, UCHAR** address, VARY* temp, USHORT length)
 {
 /**************************************
  *
@@ -448,7 +449,7 @@ int MOV_get_string(DSC * desc, UCHAR ** address, VARY * temp, USHORT length)
 }
 
 
-GDS_DATE MOV_get_sql_date(DSC * desc)
+GDS_DATE MOV_get_sql_date(const dsc* desc)
 {
 /**************************************
  *
@@ -465,7 +466,7 @@ GDS_DATE MOV_get_sql_date(DSC * desc)
 }
 
 
-GDS_TIME MOV_get_sql_time(DSC * desc)
+GDS_TIME MOV_get_sql_time(const dsc* desc)
 {
 /**************************************
  *
@@ -482,7 +483,7 @@ GDS_TIME MOV_get_sql_time(DSC * desc)
 }
 
 
-GDS_TIMESTAMP MOV_get_timestamp(DSC * desc)
+GDS_TIMESTAMP MOV_get_timestamp(const dsc* desc)
 {
 /**************************************
  *
@@ -499,7 +500,7 @@ GDS_TIMESTAMP MOV_get_timestamp(DSC * desc)
 }
 
 
-int MOV_make_string(DSC*	     desc,
+int MOV_make_string(const dsc*	     desc,
 					USHORT	     ttype,
 					const char** address,
 					VARY*	     temp,
@@ -530,9 +531,9 @@ int MOV_make_string(DSC*	     desc,
 
 
 int MOV_make_string2(
-					 DSC * desc,
+					 const dsc* desc,
 					 USHORT ttype,
-					 UCHAR ** address, VARY * temp, USHORT length, STR * ptr)
+					 UCHAR** address, VARY* temp, USHORT length, STR* ptr)
 {
 /**************************************
  *
@@ -560,7 +561,7 @@ int MOV_make_string2(
 }
 
 
-void MOV_move(DSC * from, DSC * to)
+void MOV_move(const dsc* from, dsc* to)
 {
 /**************************************
  *
@@ -577,7 +578,7 @@ void MOV_move(DSC * from, DSC * to)
 }
 
 
-void MOV_time_stamp(GDS_TIMESTAMP * date)
+void MOV_time_stamp(GDS_TIMESTAMP* date)
 {
 /**************************************
  *
@@ -589,13 +590,11 @@ void MOV_time_stamp(GDS_TIMESTAMP * date)
  *	Get the current timestamp in gds format.
  *
  **************************************/
-	time_t clock;
-	struct tm times;
-
-	clock = time(NULL);
-	times = *localtime(&clock);
+	const time_t clock = time(NULL);
+	const tm times = *localtime(&clock);
 	isc_encode_timestamp(&times, date);
 }
 
 
 } // extern "C"
+

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		intl_proto.h
- *	DESCRIPTION:	Prototype Header file for intl.c 
+ *	DESCRIPTION:	Prototype Header file for intl.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,13 +27,13 @@
 #include "../jrd/intl_classes.h"
 
 CHARSET_ID	INTL_charset(TDBB, USHORT, FPTR_VOID);
-int			INTL_compare(TDBB, struct dsc *, struct dsc *, FPTR_VOID);
+int			INTL_compare(TDBB, const struct dsc*, const struct dsc*, FPTR_VOID);
 USHORT		INTL_convert_bytes(TDBB, CHARSET_ID, UCHAR *, USHORT, CHARSET_ID, 
 								BYTE *, USHORT, FPTR_VOID);
 CsConvert*	INTL_convert_lookup(TDBB, CHARSET_ID, CHARSET_ID);
 int			INTL_convert_string(struct dsc*, const struct dsc*, FPTR_VOID);
-int			INTL_data(struct dsc *);
-int			INTL_data_or_binary(struct dsc *);
+int			INTL_data(const struct dsc*);
+int			INTL_data_or_binary(const struct dsc*);
 int			INTL_defined_type(TDBB, ISC_STATUS *, SSHORT);
 //SSHORT	INTL_fss_mbtowc(struct texttype **, unsigned short *,
 //										 unsigned char *, USHORT);
@@ -56,3 +56,4 @@ int			INTL_str_to_upper(TDBB, struct dsc *);
 UCHAR		INTL_upper(TDBB, USHORT, UCHAR);
 
 #endif // JRD_INTL_PROTO_H
+

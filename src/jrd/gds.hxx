@@ -264,8 +264,8 @@ extern "C" {
     void     GDS_EXPORT isc_version (gds_db_handle*, gds_callback, long);
   GDS_STATUS GDS_EXPORT isc_vax_integer (const char*, short);
     void     GDS_EXPORT isc_set_debug (long);
-  GDS_STATUS GDS_EXPORT isc_encode_date (void*, GDS_QUAD*);
-  GDS_STATUS GDS_EXPORT isc_decode_date (GDS_QUAD*, void*);
+  GDS_STATUS GDS_EXPORT isc_encode_date (const void*, GDS_QUAD*);
+  GDS_STATUS GDS_EXPORT isc_decode_date (const GDS_QUAD*, void*);
   GDS_STATUS GDS_EXPORT isc_free (long*);
     void     GDS_EXPORT isc_extend_dpb (char**, short*, char*, char*);
     }

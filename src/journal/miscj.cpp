@@ -59,7 +59,7 @@
 #define YESTERDAY	"YESTERDAY"
 
 
-static void now_to_date(tm*, SLONG[2]);
+static void now_to_date(const tm*, SLONG[2]);
 
 static TEXT *months[] = {
 	"JANUARY",
@@ -356,7 +356,7 @@ void MISC_print_journal_syntax(void)
 }
 
 
-int MISC_time_convert(TEXT * string,
+int MISC_time_convert(const TEXT* string,
 					  USHORT length,
 					  SLONG date[2])
 {
@@ -371,17 +371,15 @@ int MISC_time_convert(TEXT * string,
  *	otherwise FB_FAILURE.
  *
  **************************************/
-	TEXT c, *p, temp[15], *t, *end, **month_ptr, *m;
+	TEXT c, temp[15], *t, **month_ptr, *m;
 	USHORT n, month_position, i, components[7];
-	SLONG xclock;
-	tm times, times2;
 
-	p = string;
-	end = p + length;
+	const TEXT* p = string;
+	const TEXT* end = p + length;
 	month_position = 0;
 
-	xclock = time(0);
-	times2 = *localtime(&xclock);
+	const time_t xclock = time(0);
+	tm times2 = *localtime(&xclock);
 
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
@@ -475,6 +473,8 @@ int MISC_time_convert(TEXT * string,
 		return FB_SUCCESS;
 	}
 
+	tm times;
+    
 	if (month_position) {
 		times.tm_mon = components[1];
 		times.tm_mday = components[0];
@@ -514,7 +514,7 @@ int MISC_time_convert(TEXT * string,
 }
 
 
-static void now_to_date(tm* xtime,
+static void now_to_date(const tm* xtime,
 						SLONG date[2])
 {
 /**************************************

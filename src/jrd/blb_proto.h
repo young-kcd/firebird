@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		blb_proto.h
- *	DESCRIPTION:	Prototype header file for blb.c
+ *	DESCRIPTION:	Prototype header file for blb.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -57,8 +57,8 @@ USHORT BLB_get_segment(TDBB, blb*, UCHAR*, USHORT);
 SLONG  BLB_get_slice(TDBB, jrd_tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
 SLONG  BLB_lseek(blb*, USHORT, SLONG);
 
-void BLB_move(TDBB, dsc*, dsc*, jrd_nod*);
-void BLB_move_from_string(TDBB, dsc*, dsc*, jrd_nod*);
+void BLB_move(TDBB, const dsc*, dsc*, jrd_nod*);
+void BLB_move_from_string(TDBB, const dsc*, dsc*, jrd_nod*);
 blb* BLB_open(TDBB, jrd_tra*, bid*);
 blb* BLB_open2(TDBB, jrd_tra*, bid*, USHORT,
 						 UCHAR *);
@@ -78,3 +78,4 @@ void BLB_map_blobs(TDBB, struct blb*, struct blb*);
 #endif
 
 #endif	// JRD_BLB_PROTO_H
+
