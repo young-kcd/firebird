@@ -1318,11 +1318,8 @@ default_value	: constant
 		| current_user
 		| current_role
 		| internal_info
-			{ $$ = $1; }
 		| null_value
-			{ $$ = $1; }
 		| datetime_value_expression
-			{ $$ = $1; }
 		;
 				   
 column_constraint_clause : 
@@ -1669,9 +1666,9 @@ variable	: ':' symbol_variable_name
 							$2); }
 		;
 
-proc_inputs	: rhs_list
+proc_inputs	: value_list
 			{ $$ = make_list ($1); }
-		| '(' rhs_list ')'
+		| '(' value_list ')'
 			{ $$ = make_list ($2); }
 		|
 			{ $$ = NULL; }
@@ -3071,8 +3068,8 @@ select_items	: select_item
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-select_item	: rhs
-		| rhs as_noise symbol_item_alias_name
+select_item	: value
+		| value as_noise symbol_item_alias_name
 			{ $$ = make_node (nod_alias, 2, $1, $3); }
 		;
 
@@ -3132,7 +3129,7 @@ table_proc	: symbol_procedure_name table_proc_inputs as_noise symbol_table_alias
 					(int) e_rpn_count, $1, NULL, $2); }
 		;
 
-table_proc_inputs	: '(' rhs_list ')'
+table_proc_inputs	: '(' value_list ')'
 				{ $$ = make_list ($2); }
 			|
 				{ $$ = NULL; }
@@ -3264,7 +3261,7 @@ extra_indices_opt	: INDEX '(' index_list ')'
 
 /* INSERT statement */
 /* IBO hack: replace column_parens_opt by ins_column_parens_opt. */
-insert		: INSERT INTO simple_table_name ins_column_parens_opt VALUES '(' rhs_list ')'
+insert		: INSERT INTO simple_table_name ins_column_parens_opt VALUES '(' value_list ')'
 			{ $$ = make_node (nod_insert, (int) e_ins_count, 
 			  $3, make_list ($4), make_list ($7), NULL); }
 		| INSERT INTO simple_table_name ins_column_parens_opt ordered_select_expr
@@ -3312,17 +3309,8 @@ assignments	: assignment
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-assignment	: update_column_name '=' rhs
+assignment	: update_column_name '=' value
 			{ $$ = make_node (nod_assign, 2, $3, $1); }
-		;
-
-rhs		: value
-		| null_value
-		;
-
-rhs_list : rhs
-		| rhs_list ',' rhs
-			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
 
@@ -3716,7 +3704,7 @@ value	: column_name
 			  $$ = make_node (nod_dom_value, 0, NULL);
 						}
 		| datetime_value_expression
-			{ $$ = $1; }
+		| null_value
 		;
 
 datetime_value_expression : CURRENT_DATE
@@ -4001,7 +3989,7 @@ udf		: symbol_UDF_name '(' value_list ')'
 			{ $$ = make_node (nod_udf, 1, $1); }
 		;
 
-cast_specification	: CAST '(' rhs AS data_type_descriptor ')'
+cast_specification	: CAST '(' value AS data_type_descriptor ')'
 			{ $$ = make_node (nod_cast, (int) e_cast_count, $5, $3); }
 		;
 
@@ -4015,7 +4003,7 @@ case_abbreviation	: NULLIF '(' value ',' value ')'
 			{ $$ = make_node (nod_searched_case, 2, 
 				make_node (nod_list, 2, make_node (nod_eql, 2, $3, $5), 
 				make_node (nod_null, 0, NULL)), $3); }
-		| COALESCE '(' rhs ',' rhs_list ')'
+		| COALESCE '(' value ',' value_list ')'
 			{ $$ = make_node (nod_coalesce, 2, $3, $5); }
 		;
 
@@ -4053,7 +4041,7 @@ when_operand	: value
 case_operand	: value
 		;
 
-case_result	: rhs
+case_result	: value
 		;
 
 timestamp_part	: YEAR
