@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.103 2002-12-06 13:44:52 eku Exp $
+dnl $Id: configure.in,v 1.104 2002-12-11 20:52:57 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -652,8 +652,8 @@ case "$PLATFORM" in
                      gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-                     gen/install/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
-                     gen/install/misc/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
+                     gen/firebird/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
+                     gen/firebird/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 
