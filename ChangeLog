@@ -1,3 +1,37 @@
+2003-03-10 22:38  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	bugfix: A bug left with using a aggregate sub-query inside a IN
+	clause.
+
+2003-03-10 13:58  brodsom
+
+	* firebird2/src/intl/: cv_unicode_fss.h, cs_unicode_fss.c,
+	cv_unicode_fss.c, cs_unicode_fss.h:
+	
+	Remove cs_unicode_fss.h and use cv_unicode_fss.h
+
+2003-03-10 13:54  brodsom
+
+	* firebird2/src/intlcpp/: cs_unicode_fss.cpp, cv_unicode_fss.cpp,
+	cv_unicode_fss.h, lc_big5.cpp, lc_dos.cpp, lc_jis.cpp, lc_ksc.cpp,
+	cs_unicode_fss.h:
+	
+	Synchronize with intl and remove cs_unicode_fss.h
+
+2003-03-10 13:37  brodsom
+
+	* firebird2/src/jrd/loiter.h:
+	
+	Remove unneeded ifdef.
+
+2003-03-10 08:02  eku
+
+	* firebird2/src/: lock/lock.cpp, utilities/security.epp:
+	
+	Always use gds__prefix to find database system files.
+
 2003-03-09 22:16  skidder
 
 	* firebird2/src/burp/: burp.cpp, restore.epp:
