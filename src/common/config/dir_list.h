@@ -22,6 +22,10 @@
 #ifndef DIR_LIST_H
 #define DIR_LIST_H
 
+#include "fb_types.h"
+#include "fb_string.h"
+#include "fb_vector.h"
+
 //
 // This class is used internally by DirectoryList
 // to store single path in format of pre-parsed
@@ -54,15 +58,10 @@ class DirectoryList {
 private:
 	// ListMode must be changed together with ListKeys in dir_list.cpp
 	enum ListMode {NotInitialized = -1, 
-		None = 0, Restrict = 1, Full = 2};
+		None = 0, Restrict = 1, Full = 2, SimpleList = 3};
 	ListMode Mode;
 	ParsedPath * ConfigDirs;
 	int nDirs;
-	// Initialize loads data from Config Manager.
-	// With simple mutex add-on may be easily used to 
-	// load them dynamically. Now called locally
-	// when IsPathInList() invoked first time.
-	void Initialize(void);
 	// Clear allocated memory and reinitialize
 	void Clear(void) {
 		delete[] ConfigDirs;
@@ -80,6 +79,14 @@ protected:
 	// Used for various configuration parameters - 
 	// returns parameter string from Config Manager.
 	virtual const Firebird::string GetConfigString(void) const = 0;
+	// Initialize loads data from Config Manager.
+	// With simple mutex add-on may be easily used to 
+	// load them dynamically. Now called locally
+	// when IsPathInList() invoked first time.
+	void Initialize(bool simple_mode = false);
+	// May be used in derived classes for custom behaviour
+	size_t DirCount() { return nDirs; }
+	const ParsedPath* DirList() { return ConfigDirs; }
 public:
 	DirectoryList();
 	virtual ~DirectoryList();
@@ -100,4 +107,27 @@ public:
 						const Firebird::string & Name,
 						int Access);
 };
+
+class TempDirectoryList : private DirectoryList {
+public:
+	// directory list item
+	struct Item {
+		Firebird::string dir;
+		size_t size;
+	};
+
+	// public functions
+	size_t Count() const;
+	const Item& operator[](size_t) const;
+
+	TempDirectoryList();
+
+private:
+	// implementation of the inherited function
+	const Firebird::string GetConfigString() const;
+	
+	// private data
+	Firebird::vector<Item> items;
+};
+
 #endif //	DIR_LIST_H

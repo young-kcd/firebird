@@ -33,7 +33,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/file_params.h"
-#include "../jrd/isc_proto.h"
+#include "../common/config/dir_list.h"
 
 static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
 
@@ -76,16 +76,6 @@ BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 
 	assert(size > (ULONG) 0);
 	assert(sfb);
-
-	/* FIXME: temporary workaround until directory lists are handled
-			  properly without need in ISC_get_config. Don't know why,
-			  but Nickolay's one in jrd.cpp didn't work for SINIX-Z.
-			  (dimitr - 2002.12.13) */
-	static bool is_initialized = false;
-	if (!is_initialized) {
-		ISC_get_config(LOCK_HEADER, 0);
-		is_initialized = true;
-	}
 
 	ptr = DLS_get_access();
 
@@ -156,7 +146,7 @@ void DLS_put_temp_space(SFB sfb)
 }
 
 
-BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, TEXT * dir_name)
+BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
 {
 /**************************************
  *
@@ -225,7 +215,7 @@ MDLS *DLS_get_access(void)
 {
 /**************************************
  *
- *      d l s _ _ g e t _ a c c e s s
+ *      D L S _ g e t _ a c c e s s
  *
  **************************************
  *
@@ -233,6 +223,16 @@ MDLS *DLS_get_access(void)
  *      Return pointer to the temporary file configuration
  *
  **************************************/
+
+	static bool is_initialized = false;
+	if (!is_initialized) {
+		is_initialized = true;
+		TempDirectoryList dir_list;
+		for (int i = 0; i < dir_list.Count(); i++) {
+			TempDirectoryList::Item item = dir_list[i];
+			DLS_add_dir(item.size, item.dir.c_str());
+		}
+	}
 
 	return (&DLS_cfg_tmpdir);
 }

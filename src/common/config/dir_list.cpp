@@ -164,19 +164,28 @@ bool DirectoryList::KeyWord(
 	return true;
 }
 
-void DirectoryList::Initialize(void) {
+void DirectoryList::Initialize(bool simple_mode) {
+	if (Mode != NotInitialized)
+		return;
+
 	Clear();
 
 	Firebird::string val = GetConfigString();
-	if (KeyWord(None, val, "None", "") || 
-		KeyWord(Full, val, "Full", "")) {
-		return;
+
+	if (simple_mode) {
+		Mode = SimpleList;
 	}
-	if (! KeyWord(Restrict, val, "Restrict", " \t")) {
-		gds__log("DirectoryList: unknown parameter '%s', "
-			"defaulting to None", val.c_str());
-		Mode = None;
-		return;
+	else {
+		if (KeyWord(None, val, "None", "") || 
+			KeyWord(Full, val, "Full", "")) {
+			return;
+		}
+		if (! KeyWord(Restrict, val, "Restrict", " \t")) {
+			gds__log("DirectoryList: unknown parameter '%s', "
+				"defaulting to None", val.c_str());
+			Mode = None;
+			return;
+		}
 	}
 
 	nDirs = 1;
@@ -221,8 +230,7 @@ bool DirectoryList::IsPathInList(const Firebird::string& path) {
 #ifdef BOOT_BUILD
 	return true;
 #else  //BOOT_BUILD
-	if (Mode == NotInitialized)
-		Initialize();
+	Initialize();
 
 	// Handle special cases
 	switch(Mode) {
@@ -274,4 +282,56 @@ void DirectoryList::ExpandFileName (
 		}
 	}
 	Path = Name;
+}
+
+TempDirectoryList::TempDirectoryList() : items(0)
+{
+	Initialize(true);
+
+	// Get directory list
+	const ParsedPath* dir_list = DirList();
+
+	// Iterate through directories to parse them
+	// and fill the "items" vector
+	for (int i = 0; i < DirCount(); i++) {
+		Item item;
+		Firebird::string dir = dir_list[i];
+		int pos = dir.rfind(" ");
+		long size = atol(dir.substr(pos + 1, Firebird::string::npos).c_str());
+		if (pos != Firebird::string::npos && !size) {
+			pos = Firebird::string::npos;
+		}
+		if (size <= 0) {
+			size = ALLROOM;
+		}
+		item.dir = dir.substr(0, pos);
+		item.size = size;
+		items.push_back(item);
+	}
+}
+
+
+const Firebird::string TempDirectoryList::GetConfigString() const
+{
+	const char* value;
+	if (!(value = Config::getTempDirectories()) &&
+		// Temporary directory configuration has not been defined.
+		// Let's make default configuration.
+		!(value = getenv("INTERBASE_TMP")) && // shouldn't it be FIREBIRD_TMP???
+		!(value = getenv("TMP")) &&
+		!(value = getenv("TEMP")))
+	{
+		value = WORKDIR;
+	}
+	return Firebird::string(value);
+}
+
+size_t TempDirectoryList::Count() const
+{
+	return items.size();
+}
+
+const TempDirectoryList::Item& TempDirectoryList::operator[](size_t i) const
+{
+	return items[i];
 }
