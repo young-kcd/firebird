@@ -1738,6 +1738,7 @@ static void share_name_from_unc(
 #endif /* WIN_NT */
 
 bool ISC_verify_databases_dirs(TEXT *name) {
+#ifndef SUPERCLIENT
 	static class DatabasesDirectoryList : public DirectoryList {
 		virtual const Firebird::string GetConfigString(void) {
 			return Firebird::string(Config::getDatabasesDirs());
@@ -1747,5 +1748,6 @@ bool ISC_verify_databases_dirs(TEXT *name) {
 	if (!iDatabasesDirectoryList.IsPathInList(name)) {
 		return false;
 	}
+#endif
 	return true;
 }
