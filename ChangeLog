@@ -1,3 +1,45 @@
+2004-02-28 20:43  alexpeshkoff
+
+	* firebird2/src/: common/classes/fb_pair.h,
+	common/classes/fb_string.cpp, common/classes/objects_array.h,
+	include/fb_string.h, jrd/intl.cpp, jrd/plugin_manager.cpp,
+	jrd/plugin_manager.h:
+	
+	make our class behave MemoryPools friendly
+
+2004-02-28 20:38  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	removed getenv-related code - now in config_root
+
+2004-02-28 20:32  alexpeshkoff
+
+	* firebird2/src/jrd/: ExecuteStatement.cpp, ExecuteStatement.h,
+	why.cpp, why_proto.h:
+	
+	fixed memory leak in Execute Statement
+
+2004-02-28 20:29  alexpeshkoff
+
+	* firebird2/src/jrd/os/: win32/config_root.cpp, config_root.h:
+	
+	- fixed win32 environment problems - cleanup
+
+2004-02-28 20:19  alexpeshkoff
+
+	* firebird2/src/common/classes/array.h:
+	
+	Made it const-correct
+
+2004-02-28 16:15  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Prevent UDF arguments from being compiled/optimized twice. Every
+	UDF node has nod_count = 1, so the correct handling will be done
+	automagically in both pass1() and pass2().
+
 2004-02-27 13:04  eku
 
 	* firebird2/builds/install/arch-specific/sinixz/prototype.in:
