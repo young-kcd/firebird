@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.cpp,v 1.9 2004-11-16 08:34:35 robocop Exp $
+ *  $Id: guid.cpp,v 1.10 2004-12-02 12:15:33 aafemt Exp $
  *
  */
  
@@ -32,6 +32,7 @@
 #define _WIN32_WINNT 0x0400
 
 #include <windows.h>
+#include <wincrypt.h>
 #include <objbase.h>
 #include <stdio.h>
 
