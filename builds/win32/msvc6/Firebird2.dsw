@@ -213,9 +213,6 @@ Package=<4>
     Project_Dep_Name common
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name ipserver
-    End Project Dependency
-    Begin Project Dependency
     Project_Dep_Name lock
     End Project Dependency
     Begin Project Dependency
@@ -273,9 +270,6 @@ Package=<4>
     Project_Dep_Name dsql_server
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name ipserver
-    End Project Dependency
-    Begin Project Dependency
     Project_Dep_Name lock
     End Project Dependency
     Begin Project Dependency
@@ -289,6 +283,9 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name engine
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name ipserver
     End Project Dependency
 }}}
 

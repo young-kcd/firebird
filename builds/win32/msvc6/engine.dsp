@@ -427,6 +427,13 @@ SOURCE=..\..\..\src\jrd\vio.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\why.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

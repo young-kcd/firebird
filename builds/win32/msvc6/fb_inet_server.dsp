@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /Gi /GX /Zi /Od /Ob0 /I "../../../src/include" /D "_DEBUG" /D "_WINDOWS" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FR /FD /GZ /c
+# ADD CPP /nologo /MDd /Gi /GX /Zi /Od /I "../../../src/include" /D "_DEBUG" /D "_WINDOWS" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FR /FD /GZ /c
 # SUBTRACT CPP /WX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib comctl32.lib wsock32.lib mpr.lib shell32.lib version.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /debug /machine:I386 /out:"debug/firebird/bin/fb_inet_server.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /debug /machine:I386 /out:"debug/firebird/bin/fb_inet_server.exe" /pdbtype:sept
 # SUBTRACT LINK32 /verbose /profile /pdb:none /map
 
 !ELSEIF  "$(CFG)" == "fb_inet_server - Win32 Release"
@@ -83,7 +83,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib comctl32.lib wsock32.lib mpr.lib shell32.lib /nologo /subsystem:windows /incremental:no /machine:I386 /pdbtype:sept
 # SUBTRACT BASE LINK32 /verbose /profile /pdb:none /map /debug
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib comctl32.lib wsock32.lib mpr.lib shell32.lib version.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /machine:I386 /out:"release/firebird/bin/fb_inet_server.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /machine:I386 /out:"release/firebird/bin/fb_inet_server.exe" /pdbtype:sept
 # SUBTRACT LINK32 /verbose /profile /pdb:none /map /debug
 
 !ENDIF 
