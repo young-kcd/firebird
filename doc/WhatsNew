@@ -2,6 +2,11 @@
   * v1.5.2
   **************
 
+    * Fixed 1.5.1 optimiser bug.
+        Fix bug with unneeded fetches in joined relations when "OR" is used on base relation.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
     * Fixed bug SF #728839.
         Left join defeats UDF by mangling a null descriptor.
       Contributor(s):
