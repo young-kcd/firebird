@@ -26,10 +26,6 @@
  *
  */
 
-#if defined(_WIN32) || defined(WIN32) || defined(__WIN32__) || defined(WIN_NT)
-#error This file is not to be used for Win32 builds. Please use isc_sync_win32.cpp
-#endif
-
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
@@ -45,10 +41,7 @@
 #ifdef WIN_NT
 #include <process.h>
 #include <windows.h>
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT		SCHAR
+#include "os/thd_priority.h"
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -235,7 +228,7 @@ THDD THD_get_specific(void)
  *
  **************************************/
 
-	return (THDD) TlsGetValue(specific_key);
+	return THPS_GET((THDD)TlsGetValue(specific_key));
 }
 #endif
 #endif
@@ -315,7 +308,7 @@ void DLL_EXPORT THD_cleanup(void)
  **************************************/
 
 	if (initialized) {
-		initialized--;
+		initialized = FALSE;
 #ifdef WIN_NT
 		TlsFree(specific_key);
 #endif
@@ -329,7 +322,10 @@ void DLL_EXPORT THD_cleanup(void)
 #ifdef ANY_THREADING
 		/* destroy the mutex ib_mutex which was created */
 		THD_mutex_destroy(&ib_mutex);
-#endif
+#ifdef WIN_NT
+		THPS_FINI();
+#endif /* WIN_NT */
+#endif /* ANY_THREADING */
 	}
 }
 
@@ -1393,7 +1389,6 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
  * Functional description
  *
  **************************************/
-	int ret;
 
 	if (rec_mutex->rec_mutx_id != THD_get_thread_id())
 		return FB_FAILURE;
@@ -1715,6 +1710,9 @@ static void init(void)
 	gds__register_cleanup(reinterpret_cast < FPTR_VOID_PTR > (THD_cleanup),
 						  0);
 
+#ifdef WIN_NT
+	THPS_INIT();
+#endif
 #endif /* ANY_THREADING */
 }
 
@@ -1824,7 +1822,7 @@ static void put_specific(THDD new_context)
  *
  **************************************/
 
-	TlsSetValue(specific_key, (LPVOID) new_context);
+	THPS_SET(TlsSetValue(specific_key, (LPVOID) new_context), new_context);
 }
 #endif
 #endif
@@ -2010,12 +2008,10 @@ static int thread_start(int (*routine) (void *),
 	DWORD thread_id;
 	int priority;
 
-	DWORD create = (flags & THREAD_wait) ? CREATE_SUSPENDED : 0;
-
 #ifdef __BORLANDC__
 	handle =
 		(HANDLE) _beginthreadNT((void (_USERENTRY *) (void *)) routine, 0,
-								arg, NULL, create, &thread_id);
+								arg, NULL, CREATE_SUSPENDED, &thread_id);
 
 	if (handle == (HANDLE) - 1) {
 		return errno;
@@ -2032,7 +2028,7 @@ static int thread_start(int (*routine) (void *),
 											   unsigned (__stdcall *) (void *)
 											   >(routine),
 											   arg,
-											   create,
+											   CREATE_SUSPENDED,
 											   reinterpret_cast <
 											   unsigned *>(&thread_id));
 	if (!real_handle) {
@@ -2064,7 +2060,10 @@ static int thread_start(int (*routine) (void *),
 		break;
 	}
 
+	THPS_ATTACH(handle, thread_id, priority);
 	SetThreadPriority(handle, priority);
+	if (! (flags & THREAD_wait))
+		ResumeThread(handle);
 	if (thd_id)
 		*(HANDLE *) thd_id = handle;
 	else
