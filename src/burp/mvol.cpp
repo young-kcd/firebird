@@ -1049,7 +1049,7 @@ static void prompt_for_name(SCHAR* name, int length)
 			BURP_msg_get(229, msg, 0, 0, 0, 0, 0);
 			/* \n\nERROR: Backup incomplete\n */
 			ib_fprintf(term_out, msg);
-			exit(FINI_ERROR);
+			EXIT(FINI_ERROR);
 		}
 
 		/* If the user typed just a carriage return, they
