@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.31.2.1 2004-02-06 07:45:34 skidder Exp $
+$Id: restore.epp,v 1.31.2.2 2004-04-02 23:25:22 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -178,9 +178,11 @@ static void	realign (UCHAR *, BURP_REL);
 static USHORT	recompute_length (BURP_REL);
 static BOOLEAN	restore (TEXT *, TEXT *);
 static void     restore_security_class (TEXT *, TEXT *);
+static USHORT	get_view_base_relation_count(const TEXT*, USHORT);
 static void	store_blr_gen_id (GDS_NAME, SINT64);
 static void	stuff_string (SCHAR **, TEXT *);
 static void 	update_global_field (void);
+static void	update_view_dbkey_lengths();
 static void     general_on_error (void);
 #ifdef NOT_USED_OR_REPLACED
 static BOOLEAN	bug_8183 (TGBL);
@@ -436,6 +438,14 @@ if (tdgbl->global_trans)
 EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
 if (gds_status [1])
     EXEC SQL SET TRANSACTION;
+
+	// AB: Recalculate RDB$DBKEY_LENGTH for VIEWS
+	// When VIEWs are not processed in correct dependency order
+	// then on create time it doesn't know anything from the
+	// VIEW that's referenced.
+	//
+	update_view_dbkey_lengths();
+
 /*
 ** Change ownership of any procedures necessary 
 */
@@ -6923,6 +6933,66 @@ if (req_handle2)
     isc_release_request (req_status, &req_handle2);
 }
 
+
+
+USHORT get_view_base_relation_count (const TEXT* current_view_name,
+									 USHORT depth)
+{
+/**************************************
+ *
+ *	g e t _ v i e w _ b a s e _ r e l a t i o n _ c o u n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return the number of base relations
+ *  (tables) from a view. When a view is
+ *  referenced in the view this function
+ *  is called recursively.
+ *
+ **************************************/
+
+ISC_STATUS_ARRAY	req_status;
+
+	depth++;
+	if (depth > MAX_UPDATE_DBKEY_RECURSION_DEPTH) {
+		return 0;
+	}
+
+	isc_req_handle  req_handle1 = NULL;
+
+	TGBL tdgbl = GET_THREAD_DATA;
+
+	USHORT result = 0;
+
+	FOR (REQUEST_HANDLE req_handle1)
+		V IN RDB$VIEW_RELATIONS
+		CROSS R IN RDB$RELATIONS
+		WITH
+		  V.RDB$VIEW_NAME EQ current_view_name AND
+		  R.RDB$RELATION_NAME EQ V.RDB$RELATION_NAME
+
+		if (R.RDB$VIEW_BLR.NULL) {
+			// This relation is a table, so increment count
+			result++;
+		}
+		else {
+			// Call recursive for VIEWS that are referenced in VIEWS
+			result += get_view_base_relation_count(V.RDB$RELATION_NAME, depth);
+		}
+	END_FOR;
+
+	ON_ERROR
+	    isc_release_request (req_status, &req_handle1);
+		general_on_error();
+	END_ERROR;
+
+    isc_release_request (req_status, &req_handle1);
+
+	return result;
+}
+
+
 static void store_blr_gen_id (
     GDS_NAME	gen_name,
     SINT64	value)
@@ -7144,6 +7214,60 @@ if (req_handle1)
 tdgbl->gbl_global_fields = (GFLD)0;
 }
 
+
+
+void update_view_dbkey_lengths()
+{
+/**************************************
+ *
+ *	u p d a t e _ v i e w _ d b k e y _ l e n g t h s
+ *
+ **************************************
+ *
+ * Functional description
+ *	During the restore process VIEWs could 
+ *  be created that holds other VIEWs and 
+ *  which weren't restored yet.
+ *  Then the RDB$DBKEY_LENGTH for VIEWs is
+ *  calculated wrong. Therefore we need to
+ *  recalculate the DBKEY_LENGTH else we 
+ *  get our famous "arithmetic exception, 
+ *  numeric overflow, or string truncation" error.
+ *
+ **************************************/
+
+	isc_req_handle  req_handle2 = NULL;
+ISC_STATUS_ARRAY	req_status;
+
+	TGBL tdgbl = GET_THREAD_DATA;
+
+	FOR (REQUEST_HANDLE req_handle2)
+		R IN RDB$RELATIONS 
+		WITH 
+		  R.RDB$VIEW_BLR NOT MISSING AND
+		  (R.RDB$SYSTEM_FLAG NE 1 OR R.RDB$SYSTEM_FLAG MISSING)
+
+		const USHORT result = get_view_base_relation_count(R.RDB$RELATION_NAME, 0);
+
+		MODIFY R;
+			R.RDB$DBKEY_LENGTH = (result * 8); // is a constant for DBKEY coded somewhere?
+		END_MODIFY;
+		ON_ERROR
+		    isc_release_request (req_status, &req_handle2);
+			general_on_error();
+		END_ERROR;
+
+	END_FOR;
+
+	ON_ERROR
+	    isc_release_request (req_status, &req_handle2);
+		general_on_error();
+	END_ERROR;
+
+    isc_release_request (req_status, &req_handle2);
+}
+
+
 #ifdef NOT_USED_OR_REPLACED
 static BOOLEAN bug_8183 (
     TGBL       tdgbl)
