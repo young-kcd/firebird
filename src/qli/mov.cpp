@@ -78,7 +78,7 @@ typedef struct dtypes_t {
 } *DTYPES;
 
 static struct dtypes_t dtypes_table[] = {
-	{ dtype_null, "NULL", }
+	{ dtype_null, "NULL", },
 	{ dtype_text, "character string" },
 	{ dtype_cstring, "character string" },
 	{ dtype_varying, "varying string" },
