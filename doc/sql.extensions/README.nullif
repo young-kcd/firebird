@@ -1,0 +1,23 @@
+Function:
+    Speicify an alternative value for a column to return when it has a NULL 
+    value.
+
+Author:
+    Arno Brinkman <firebird@abvisie.nl>
+
+Format:
+
+  <case abbreviation> ::=
+      NULLIF <left paren> <value expression> <comma> <value expression> <right paren>
+
+
+Syntax Rules:
+    1) NULLIF (V1, V2) is equivalent to the following <case specification>:
+         CASE WHEN V1 = V2 THEN NULL ELSE V1 END
+
+
+Examples:
+A)
+  UPDATE PRODUCTS
+    SET STOCK = NULLIF(STOCK,0)
+
