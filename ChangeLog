@@ -1,3 +1,44 @@
+2003-06-27 19:04  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Bugfix for SF #736318.
+
+2003-06-27 18:55  dimitr
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	Cleanup
+
+2003-06-27 18:16  brodsom
+
+	* firebird2/builds/win32/make6_debug_examples.bat:
+	
+	Add batch and dsp to rebuild empbuild.c. (Correction use expand_ex
+	instead of expand)
+
+2003-06-27 18:05  brodsom
+
+	* firebird2/generated/v5_examples/placeholder.txt:
+	
+	Add batch and dsp to rebuild empbuild.c. The script is not included
+	in build process.
+
+2003-06-27 17:59  brodsom
+
+	* firebird2/builds/win32/: msvc6/Firebird2.dsw,
+	msvc6/v5_examples.dsp, make6_debug_examples.bat:
+	
+	Add batch and dsp to rebuild empbuild.c. The script is not included
+	in build process.
+
+2003-06-27 00:14  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: When 1 merge was done no other merge could be generated.
+	for example with 4 stored procedures.
+
 2003-06-26 12:43  dimitr
 
 	* firebird2/src/: jrd/blr.h, jrd/exe.cpp, dsql/gen.cpp,
