@@ -38,6 +38,6 @@ extern GDS_TIME CVT_get_sql_time(struct dsc *, FPTR_VOID);
 extern GDS_TIMESTAMP CVT_get_timestamp(struct dsc *, FPTR_VOID);
 extern USHORT CVT_make_string(struct dsc *, USHORT, UCHAR **, struct vary *,
 							  USHORT, FPTR_VOID);
-extern void DLL_EXPORT CVT_move(struct dsc *, struct dsc *, FPTR_VOID);
+extern "C" extern void DLL_EXPORT CVT_move(struct dsc *, struct dsc *, FPTR_VOID);
 
 #endif /* _JRD_CVT_PROTO_H_ */
