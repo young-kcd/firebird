@@ -18,10 +18,12 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.6 2002-10-04 21:57:21 skidder Exp $
+# $Id: prefix.solx86,v 1.7 2002-11-01 13:21:54 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
+
+
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
 COMM_SOLX_FLAGS:=  -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -fwritable-strings
@@ -42,3 +44,7 @@ COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort)
 
 PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2  -m486 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb  $(WARNINGS)
+
+#still ugly hack - becouse can not move it to configure.in
+GPRECOMMON_Files= ../jrd/thd.cpp ../jrd/isc_sync.cpp
+

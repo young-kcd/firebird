@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.56 2002-10-30 14:49:18 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.57 2002-11-01 13:22:35 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -268,6 +268,22 @@ dnl      netware_386   ((n+1) & ~1)              -> even
 dnl      all others    ((n + b - 1) & ~(b - 1))  -> multiple of b
 dnl
 dnl      volunters are welcome!
+
+
+
+  case $PLATFORM in
+  solx86)
+    # this still not worked. Why knows why?
+    AC_DEFINE(GPRECOMMON_Files)
+    AC_SUBST(GPRECOMMON_Files, " thd.cpp ")
+
+    ;;
+  *)
+
+
+    ;;
+  esac
+
 
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
