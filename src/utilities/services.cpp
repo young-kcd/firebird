@@ -137,6 +137,8 @@ USHORT SERVICES_install(SC_HANDLE manager,
 						TEXT * directory,
 						TEXT * dependencies,
 						USHORT sw_startup,
+						TEXT * nt_user_name,
+						TEXT * nt_user_password,
 						USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
 {
 /**************************************
@@ -153,6 +155,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	TEXT path_name[260];
 	USHORT len;
 	DWORD errnum;
+	DWORD dwServiceType;
 
 	strcpy(path_name, directory);
 	len = strlen(path_name);
@@ -163,16 +166,25 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	strcpy(path_name + len, executable);
 	strcat(path_name, RUNAS_SERVICE);
 
+	dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+	if (nt_user_name) {
+		if (! nt_user_password)
+			nt_user_password = "";
+	}
+	else {
+		dwServiceType |= SERVICE_INTERACTIVE_PROCESS;
+	}
+
 	service = CreateService(manager,
 							service_name,
 							display_name,
 							SERVICE_ALL_ACCESS,
-							SERVICE_WIN32_OWN_PROCESS |
-							SERVICE_INTERACTIVE_PROCESS,
+							dwServiceType,
 							(sw_startup ==
 							 STARTUP_DEMAND) ? SERVICE_DEMAND_START :
 							SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
-							path_name, NULL, NULL, dependencies, NULL, NULL);
+							path_name, NULL, NULL, dependencies, 
+							nt_user_name, nt_user_password);
 
 	if (service == NULL) {
 		errnum = GetLastError();

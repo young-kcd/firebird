@@ -77,6 +77,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	sw_guardian = NO_GUARDIAN;
 	sw_arch = ARCH_SS;
 
+	TEXT *username = 0;
+	TEXT *password = 0;
+
 	end = argv + argc;
 	while (++argv < end)
 		if (**argv != '-') {
@@ -138,6 +141,20 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				sw_arch = ARCH_CS;
 				break;
 
+			case 'L':
+				if (++argv < end) {
+					username = *argv;
+				}
+				if (++argv < end) {
+					if (**argv == '-') {	// Next switch
+						--argv;
+					}
+					else {
+						password = *argv;
+					}
+				}
+				break;
+
 			default:
 				ib_printf("Unknown switch \"%s\"\n", p);
 				usage();
@@ -176,7 +193,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			status =
 				SERVICES_install(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 								 ISCGUARD_EXECUTABLE, directory, NULL, sw_startup,
-								 svc_error);
+								 username, password, svc_error);
 			if (status == FB_SUCCESS)
 				ib_printf("Service \"%s\" successfully created.\n",
 						  ISCGUARD_DISPLAY_NAME);
@@ -193,7 +210,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		status =
 			SERVICES_install(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 							 const_cast<char*>REMOTE_EXECUTABLE, directory, NULL, sw_startup,
-							 svc_error);
+							 username, password, svc_error);
 		if (status == FB_SUCCESS)
 			ib_printf("Service \"%s\" successfully created.\n",
 					  REMOTE_DISPLAY_NAME);
@@ -306,7 +323,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	CloseServiceHandle(manager);
 
-	exit((status == FB_SUCCESS) ? FINI_OK : FINI_ERROR);
+	return (status == FB_SUCCESS) ? FINI_OK : FINI_ERROR;
 }
 
 
@@ -359,9 +376,9 @@ static void usage(void)
 
 	ib_printf("Usage:\n");
 	ib_printf
-		("    instsvc {install Firebird_directory [-auto | -demand] [-superserver | -classic] } [-g] [-z]\n");
+		("    instsvc {install Firebird_directory [-auto | -demand] [-superserver | -classic] } [-guardian] [-login username password] [-z]\n");
 	ib_printf
-		("            {remove                                                                 } [-g] \n");
+		("            {remove                                                                 } [-guardian] \n");
 	ib_printf
 		("            {configure [-boostpriority | -regularpriority]                          }\n");
 	ib_printf

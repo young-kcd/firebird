@@ -40,6 +40,8 @@ extern USHORT	SERVICES_install (SC_HANDLE manager,
 				TEXT	*directory,
 				TEXT	*dependencies,
 				USHORT	sw_startup,
+				TEXT	*nt_user_name,
+				TEXT	*nt_user_password,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 extern USHORT	SERVICES_remove (SC_HANDLE manager,
 				TEXT	*service_name,
