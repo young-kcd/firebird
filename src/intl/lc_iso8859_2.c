@@ -64,6 +64,18 @@ TEXTTYPE_RETURN;
 }
 #include "../intl/collations/undef.h"
 
+TEXTTYPE_ENTRY (ISO88592_c2_init)
+{
+static const ASCII  POSIX[] = "ISO_HUN.ISO8859_2";
+
+#include "../intl/collations/xx88592hun.h"
+
+FAMILY2 (parm1, ISO88592_c2_init, CS_ISO8859_2, CC_HUNGARY);
+
+TEXTTYPE_RETURN;
+}
+#include "../intl/collations/undef.h"
+
 #undef FAMILY2
 #undef NULL_SECONDARY
 #undef NULL_TERTIARY

@@ -116,6 +116,7 @@ EXTERN_texttype (ISO88592_cp_init);
 
 /* latin 2 collations */
 EXTERN_texttype (ISO88592_c1_init);
+EXTERN_texttype (ISO88592_c2_init);
 
 EXTERN_texttype (ISO88593_cp_init);
 EXTERN_texttype (ISO88594_cp_init);
