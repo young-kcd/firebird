@@ -1,3 +1,9 @@
+2004-10-06 13:44  arnobrinkman
+
+	* firebird2/src/jrd/idx.cpp (1.73):
+	
+	bugfix on previous commit
+
 2004-10-05 23:09  arnobrinkman
 
 	* firebird2/src/jrd/: btr.h (1.36), idx.cpp (1.72):
@@ -10,6 +16,16 @@
 	* firebird2/src/jrd/rse.cpp (1.78):
 	
 	Fixed possible resource leaks for procedured subqueries.
+
+2004-10-05 13:09  robocop
+
+	* firebird2/src/misc/upgrade/v2/: ib_udf2_params.txt (1.1),
+	ib_udf_params.txt (1.1), ib_udf_upgrade.sql (1.1):
+	
+	Add the files that show the differences between the old and the new
+	ib_udf library and the script that upgrades system tables directly
+	for people going from v1.5 to v2 that have the udf's already in
+	use.
 
 2004-10-05 09:03  hvlad
 
