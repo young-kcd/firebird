@@ -38,3 +38,4 @@ s/((__unused__))/((__unused__));/g
 /static int yydebug/d
 s/yydebug/dsql_debug/g
 s/yylex ()/yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous)/g
+s/register int \*yyxi = yyexca;/register const yytabelem \*yyxi = yyexca;/g
