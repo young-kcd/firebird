@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.118 2004-11-01 07:51:54 hvlad Exp $ 
+  * $Id: evl.cpp,v 1.119 2004-11-01 08:29:16 dimitr Exp $ 
  */
 
 /*
@@ -944,7 +944,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			// Use the request timestamp
 
 			ISC_TIMESTAMP enc_times;
-			if (!request->req_timestamp.encode(&enc_times))
+			if (!request->req_timestamp.encode(&enc_times,
+					node->nod_type == nod_current_timestamp))
 			{
 				ERR_post(isc_date_range_exceeded, 0);
 			}
@@ -957,9 +958,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			case nod_current_time:
 				impure->vlu_desc.dsc_dtype = dtype_sql_time;
 				impure->vlu_desc.dsc_length = type_lengths[dtype_sql_time];
-				// remove milliseconds, as declared by the SQL spec
-				enc_times.timestamp_time -=
-					enc_times.timestamp_time % ISC_TIME_SECONDS_PRECISION;
 				*(ULONG *) impure->vlu_desc.dsc_address =
 					enc_times.timestamp_time;
 				break;
@@ -972,7 +970,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			case nod_current_timestamp:
 				impure->vlu_desc.dsc_dtype = dtype_timestamp;
 				impure->vlu_desc.dsc_length = type_lengths[dtype_timestamp];
-				// keep milliseconds, as declared by the SQL spec
 				*((ISC_TIMESTAMP *) impure->vlu_desc.dsc_address) = enc_times;
 				break;
 			default:

@@ -81,7 +81,7 @@ public:
 		return true;
 	}
 
-	bool encode(ISC_TIMESTAMP* ts) const
+	bool encode(ISC_TIMESTAMP* ts, bool precise) const
 	{
 		tm times;
 		if (!encode(&times))
@@ -89,7 +89,10 @@ public:
 			return false;
 		}
 		isc_encode_timestamp(&times, ts);
-		ts->timestamp_time += (fractions * 10) % ISC_TIME_SECONDS_PRECISION;
+		if (precise)
+		{
+			ts->timestamp_time += fractions * 10;
+		}
 		return true;
 	}
 

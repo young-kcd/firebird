@@ -1381,14 +1381,14 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
 					tdbb->tdbb_request)
 				{
-					if (!tdbb->tdbb_request->req_timestamp.encode(&enc_times))
+					if (!tdbb->tdbb_request->req_timestamp.encode(&enc_times, false))
 					{
 						(*err)(isc_date_range_exceeded, 0);
 					}
 				}
 				else
 				{
-					if (!Firebird::TimeStamp().encode(&enc_times))
+					if (!Firebird::TimeStamp().encode(&enc_times, false))
 					{
 						(*err)(isc_date_range_exceeded, 0);
 					}
@@ -2499,7 +2499,7 @@ static void string_to_datetime(
 
 					/* fetch the current time */
 
-					if (!Firebird::TimeStamp().encode(date))
+					if (!Firebird::TimeStamp().encode(date, true))
 					{
 						(err)(isc_date_range_exceeded, 0);
 					}
