@@ -700,7 +700,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	++dbb->dbb_use_count;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
-	BOOLEAN initing_security = FALSE;
+	bool initing_security = false;
 #endif
 
 /* The following line seems to fix a bug that appears on
@@ -902,7 +902,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-	initing_security = TRUE;
+	initing_security = true;
 #endif
 
 	if (invalid_client_SQL_dialect)
@@ -1033,7 +1033,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	// Don't run internal handles thru the security gauntlet.
 
-	BOOLEAN internal = FALSE;
+	bool internal = false;
 
 	for (IHNDL ihandle = internal_db_handles;
 		 ihandle;
@@ -1041,22 +1041,22 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	{
 		if (ihandle->ihndl_object == (isc_db_handle *) handle)
 		{
-			internal = TRUE;
+			internal = true;
 			break;
 		}
 	}
 
-	SCL_init(	FALSE,
-				options.dpb_sys_user_name,
-				options.dpb_user_name,
-				options.dpb_password,
-				options.dpb_password_enc,
-				options.dpb_role_name,
-				tdbb,
-				internal);
+	SCL_init(false,
+			 options.dpb_sys_user_name,
+			 options.dpb_user_name,
+			 options.dpb_password,
+			 options.dpb_password_enc,
+			 options.dpb_role_name,
+			 tdbb,
+			 internal);
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
-	initing_security = FALSE;
+	initing_security = false;
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 
@@ -1867,7 +1867,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	++dbb->dbb_use_count;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
-	BOOLEAN initing_security = FALSE;
+	bool initing_security = false;
 #endif
 
 	try {
@@ -1971,12 +1971,12 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	SBM_init();
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-	initing_security = TRUE;
+	initing_security = true;
 #endif
 
 	// Don't run internal handles thru the security gauntlet.
 
-	BOOLEAN internal = FALSE;
+	bool internal = false;
 
 	for (IHNDL ihandle = internal_db_handles;
 		 ihandle;
@@ -1984,22 +1984,22 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	{
 		if (ihandle->ihndl_object == (isc_db_handle *) handle)
 		{
-			internal = TRUE;
+			internal = true;
 			break;
 		}
 	}
 
-	SCL_init(	TRUE,
-				options.dpb_sys_user_name,
-				options.dpb_user_name,
-				options.dpb_password,
-				options.dpb_password_enc,
-				options.dpb_role_name,
-				tdbb,
-				internal);
+	SCL_init(true,
+			 options.dpb_sys_user_name,
+			 options.dpb_user_name,
+			 options.dpb_password,
+			 options.dpb_password_enc,
+			 options.dpb_role_name,
+			 tdbb,
+			 internal);
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
-	initing_security = FALSE;
+	initing_security = false;
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 	if (!is_alias && !verify_database_name(expanded_name, user_status)) {

@@ -31,7 +31,6 @@
 #define _STLP_CCTYPE
 #endif
 
-
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
@@ -73,24 +72,32 @@
 #endif
 
 #define	BLOB_BUFFER_SIZE	4096	/* used to read in acl blob */
-
+/*
 #define CHECK_ACL_BOUND(to, start, length_ptr, check_length)\
           {\
           if (((start)->str_data + *length_ptr) < (to + check_length))  {start = GRANT_realloc_acl( start, &to, length_ptr);} \
           }
 #define CHECK_AND_MOVE(to, from, start, length_ptr) {CHECK_ACL_BOUND (to, start, length_ptr, 1); *(to)++ = from;}
-#define CHECK_MOVE_INCR(to, from, start, length_ptr) {CHECK_ACL_BOUND (to, start, length_ptr, 1); *(to)++ = (from)++;}
-
+*/
 
 DATABASE DB = FILENAME "ODS.RDB";
 
-static BOOLEAN check_hex(const TEXT*, USHORT);
-static BOOLEAN check_number(const TEXT*, USHORT);
-static BOOLEAN check_user_group(const TEXT*, USHORT, STR*, ULONG*);
-static BOOLEAN check_string(const TEXT*, const TEXT*);
+static bool check_hex(const TEXT*, USHORT);
+static bool check_number(const TEXT*, USHORT);
+static bool check_user_group(const TEXT*, USHORT, STR*, ULONG*);
+static bool check_string(const TEXT*, const TEXT*);
 static SLONG compute_access(TDBB, SCL, JRD_REL, const TEXT*, const TEXT*);
 static TEXT *save_string(TEXT*, TEXT**);
 static SLONG walk_acl(TDBB, const TEXT*, JRD_REL, const TEXT*, const TEXT*, STR*, ULONG*);
+
+inline void check_and_move(UCHAR* to, UCHAR from, STR start, ULONG* length_ptr)
+{
+	if ((start->str_data + *length_ptr) < (to + 1))
+	{
+		start = GRANT_realloc_acl(start, &to, length_ptr);
+	}
+	*to++ = from;
+}
 
 typedef struct {
 	USHORT p_names_priv;
@@ -115,13 +122,13 @@ static const P_NAMES p_names[] =
 };
 
 
-void SCL_check_access(SCL			s_class,
-					  SLONG			view_id,
-					  const TEXT*	trg_name,
-					  const TEXT*	prc_name,
-					  USHORT		mask,
-					  const TEXT*	type,
-					  const TEXT*	name)
+void SCL_check_access(SCL s_class,
+					  SLONG view_id,
+					  const TEXT* trg_name,
+					  const TEXT* prc_name,
+					  USHORT mask,
+					  const TEXT* type,
+					  const TEXT* name)
 {
 /**************************************
  *
@@ -135,12 +142,10 @@ void SCL_check_access(SCL			s_class,
  *	object in question.
  *
  **************************************/
-	TDBB			tdbb;
-	const P_NAMES*	names;
-	SCL				att_class;
-	ATT				attachment;
+	const P_NAMES* names;
+	SCL att_class;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	if (s_class && (s_class->scl_flags & SCL_corrupt))
 	{
@@ -150,7 +155,7 @@ void SCL_check_access(SCL			s_class,
 				 0);
 	}
 
-	attachment = tdbb->tdbb_attachment;
+	ATT attachment = tdbb->tdbb_attachment;
 
 	if ((att_class = attachment->att_security_class) &&
 		!(att_class->scl_flags & mask))
@@ -173,10 +178,9 @@ void SCL_check_access(SCL			s_class,
 		}
 	}
 
-/*
-** allow the database owner to back up a database even if he does not have
-** read access to all the tables in the database
-*/
+	// Allow the database owner to back up a database even if he does not have
+	// read access to all the tables in the database
+
 	if ((attachment->att_flags & ATT_gbak_attachment) && (mask & SCL_read))
 	{
 		return;
@@ -191,14 +195,14 @@ void SCL_check_access(SCL			s_class,
 	}
 
 	ERR_post(gds_no_priv,
-			gds_arg_string, names->p_names_string,
-			gds_arg_string, type,
-			gds_arg_string, ERR_cstring(name),
-			0);
+			 gds_arg_string, names->p_names_string,
+			 gds_arg_string, type,
+			 gds_arg_string, ERR_cstring(name),
+			 0);
 }
 
 
-void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
+void SCL_check_index(TDBB tdbb, TEXT* index_name, UCHAR index_id, USHORT mask)
 {
 /******************************************************
  *
@@ -219,15 +223,14 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
  *******************************************************/
 	volatile BLK request;
 	SCL s_class, default_s_class;
-    TEXT    reln_name[32], aux_idx_name[32];
-    TEXT	*idx_name_ptr = index_name, *relation_name_ptr = index_name;
-	DBB dbb;
+    TEXT reln_name[32], aux_idx_name[32];
+    TEXT *idx_name_ptr = index_name, *relation_name_ptr = index_name;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	s_class = default_s_class = NULL;
 
-/* no security to check for if the index is not yet created */
+	// No security to check for if the index is not yet created 
 
     if ((!index_name || !*index_name) && index_id < 1) {
         return;
@@ -237,8 +240,8 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
 
 	request = NULL;
 
-/* No need to cache this request handle, it's only used when
-   new constraints are created */
+	// No need to cache this request handle, it's only used when
+	// new constraints are created
 
     if (index_id < 1) {
         FOR(REQUEST_HANDLE request) IND IN RDB$INDICES
@@ -274,9 +277,8 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
         CMP_release (tdbb, (JRD_REQ)request);
     }
 
-
-/* check if the relation exists. It may not have been created yet.
-   Just return in that case. */
+	// Check if the relation exists. It may not have been created yet.
+	// Just return in that case.
 
 	if (!reln_name || !*reln_name)
 		return;
@@ -285,18 +287,18 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
 
 	request = NULL;
 
-/* set up the exception mechanism, so that we can release the request
-   in case of error in SCL_check_access */
+	// Set up the exception mechanism, so that we can release the request
+	// in case of error in SCL_check_access
 
 	try {
 
-/* check if the field used in the index has the appropriate
-   permission. If the field in question does not have a security class
-   defined, then the default security class for the table applies for that
-   field. */
+	// Check if the field used in the index has the appropriate
+	// permission. If the field in question does not have a security class
+	// defined, then the default security class for the table applies for that
+	// field.
 
-/* No need to cache this request handle, it's only used when
-   new constraints are created */
+	// No need to cache this request handle, it's only used when
+	// new constraints are created
 
 	FOR(REQUEST_HANDLE request) ISEG IN RDB$INDEX_SEGMENTS
 		CROSS RF IN RDB$RELATION_FIELDS
@@ -326,7 +328,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
 }
 
 
-void SCL_check_procedure( DSC * dsc_name, USHORT mask)
+void SCL_check_procedure(DSC* dsc_name, USHORT mask)
 {
 /**************************************
  *
@@ -340,15 +342,13 @@ void SCL_check_procedure( DSC * dsc_name, USHORT mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	BLK request;
 	SCL s_class;
 	TEXT *p, *q, *endp, *endq, name[32];
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
-/* Get the name in CSTRING format, ending on NULL or SPACE */
+	// Get the name in CSTRING format, ending on NULL or SPACE
 
 	assert(dsc_name->dsc_dtype == dtype_text);
 
@@ -359,7 +359,7 @@ void SCL_check_procedure( DSC * dsc_name, USHORT mask)
 	*p = 0;
     MET_exact_name(name);
 
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	s_class = NULL;
 
@@ -382,7 +382,7 @@ void SCL_check_procedure( DSC * dsc_name, USHORT mask)
 }
 
 
-void SCL_check_relation( DSC * dsc_name, USHORT mask)
+void SCL_check_relation(DSC* dsc_name, USHORT mask)
 {
 /**************************************
  *
@@ -396,15 +396,13 @@ void SCL_check_relation( DSC * dsc_name, USHORT mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	BLK request;
 	SCL s_class;
 	TEXT *p, *q, *endp, *endq, name[32];
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
-/* Get the name in CSTRING format, ending on NULL or SPACE */
+	// Get the name in CSTRING format, ending on NULL or SPACE
 
 	assert(dsc_name->dsc_dtype == dtype_text);
 
@@ -415,7 +413,7 @@ void SCL_check_relation( DSC * dsc_name, USHORT mask)
 	*p = 0;
 	MET_exact_name(name);
 
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	s_class = NULL;
 
@@ -452,15 +450,13 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
  *	class block.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	SCL s_class;
 	ATT attachment;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-/* Name may be absent or terminated with NULL or blank.  Clean up name. */
+	// Name may be absent or terminated with NULL or blank.  Clean up name.
 
 	if (!string)
 		return NULL;
@@ -472,7 +468,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 
 	attachment = tdbb->tdbb_attachment;
 
-/* Look for the class already known */
+	// Look for the class already known
 
 	for (s_class = attachment->att_security_classes;
 		 s_class;
@@ -483,7 +479,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 		}
 	}
 
-/* Class isn't known.  So make up a new security class block */
+	// Class isn't known. So make up a new security class block.
 
 	s_class = FB_NEW_RPT(*dbb->dbb_permanent, strlen(string)) scl();
 	strcpy(s_class->scl_name, string);
@@ -517,24 +513,21 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
  *	access for database.
  *
  **************************************/
-	TDBB tdbb;
 	JRD_REL relation;
 	JRD_FLD field;
 	SSHORT id;
 	USHORT access;
 	SCL s_class;
-	ATT attachment;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
+	ATT attachment = tdbb->tdbb_attachment;
 
-	attachment = tdbb->tdbb_attachment;
-
-/* Start with database security class */
+	// Start with database security class
 
 	access =
 		(s_class = attachment->att_security_class) ? s_class->scl_flags : -1;
 
-/* If there's a relation, track it down */
+	// If there's a relation, track it down
 
 	if (relation_name &&
 		(relation = MET_lookup_relation(tdbb, relation_name)))
@@ -560,14 +553,14 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
 }
 
 
-void SCL_init(BOOLEAN	create,
-			  TEXT*		sys_user_name,
-			  TEXT*		user_name,
-			  TEXT*		password,
-			  TEXT*		password_enc,
-			  TEXT*		sql_role,
-			  TDBB		tdbb,
-			  BOOLEAN	internal)
+void SCL_init(bool create,
+			  TEXT* sys_user_name,
+			  TEXT* user_name,
+			  TEXT* password,
+			  TEXT* password_enc,
+			  TEXT* sql_role,
+			  TDBB tdbb,
+			  bool internal)
 {
 /**************************************
  *
@@ -593,7 +586,7 @@ void SCL_init(BOOLEAN	create,
 	int id, group, wheel, node_id;
 	TEXT role_name[33], login_name[129], *q;
 	USHORT major_version, minor_original;
-    BOOLEAN preODS9;
+    bool preODS9;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -603,10 +596,10 @@ void SCL_init(BOOLEAN	create,
 	*project = *organization = *name = *role_name = *login_name = '\0';
 
 	node_id = 0;
-    id = group = -1; /* CVC: This var contained trash. */
+	id = group = -1;	// CVC: This var contained trash
 
 #ifdef NO_SECURITY
-        wheel = 1;
+	wheel = 1;
 #else
 	if (!user_name) {
        wheel = ISC_get_user(name,
@@ -624,30 +617,30 @@ void SCL_init(BOOLEAN	create,
 
 	if (user_name || (id == -1))
 	{
-    	if (!user_name || (!password_enc && !password))
-    	{
-        	ERR_post(gds_login, 0);
-    	}
+		if (!user_name || (!password_enc && !password))
+		{
+			ERR_post(gds_login, 0);
+		}
 
-    	if (!internal)
-    	{
-        	SecurityDatabase::verifyUser(name, user_name, password, password_enc,
+		if (!internal)
+		{
+			SecurityDatabase::verifyUser(name, user_name, password, password_enc,
 										 &id, &group, &node_id);
-       }
+		}
 
-       /* if the name from the user database is defined as SYSDBA,
-          we define that user id as having system privileges */
+		// if the name from the user database is defined as SYSDBA,
+		// we define that user id as having system privileges
 
-       if (!strcmp(name, SYSDBA_USER_NAME))
-       {
-           wheel = 1;
-       }
-   }
+		if (!strcmp(name, SYSDBA_USER_NAME))
+		{
+			wheel = 1;
+		}
+	}
 #endif // NO_SECURITY
 
- /* In case we became WHEEL on an OS that didn't require name SYSDBA,
-  * (Like Unix) force the effective Database User name to be SYSDBA.
-  */
+	// In case we became WHEEL on an OS that didn't require name SYSDBA,
+	// (Like Unix) force the effective Database User name to be SYSDBA
+
 	if (wheel)
 	{
 		strcpy(name, SYSDBA_USER_NAME);
@@ -659,10 +652,11 @@ void SCL_init(BOOLEAN	create,
 **
 ****************************************************************/
 
-    /* CVC: We'll verify the role and wipe it out when it doesn't exist. */
+    // CVC: We'll verify the role and wipe it out when it doesn't exist
 
 	if (ENCODE_ODS(major_version, minor_original) >= ODS_9_0) {
-        preODS9 = FALSE;
+
+        preODS9 = false;
 
 		if (strlen(name) != 0)
 		{
@@ -694,21 +688,21 @@ void SCL_init(BOOLEAN	create,
 			}
 		}
 
-        /* CVC: If this is ODS>=ODS_9_0 and we aren't creating a db and sql_role was specified,
-           then verify it against rdb$roles and rdb$user_privileges. */
+        // CVC: If this is ODS>=ODS_9_0 and we aren't creating a db and sql_role was specified,
+        // then verify it against rdb$roles and rdb$user_privileges
         
         if (!create && sql_role && *sql_role && strcmp (sql_role, "NONE")) {
-            BOOLEAN found = FALSE;
+            bool found = false;
             for (p = login_name, q = name; *p++ = UPPER7 (*q); q++);
             
             request = (BLK) CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
 
-            /* CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
-               uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
-               Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
-               This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
-               If you think that an unknown role cannot be granted, think again: someone made sure
-               in DYN that SYSDBA can do almost anything, including invalid grants. */
+            // CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
+            // uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
+            // Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
+            // This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
+            // If you think that an unknown role cannot be granted, think again: someone made sure
+            // in DYN that SYSDBA can do almost anything, including invalid grants.
 
             FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
                 CROSS UU IN RDB$USER_PRIVILEGES
@@ -724,7 +718,7 @@ void SCL_init(BOOLEAN	create,
                     REQUEST (irq_verify_role_name) = request;
 
                 if (!UU.RDB$USER.NULL)
-                    found = TRUE;
+                    found = true;
 
             END_FOR;
 
@@ -732,18 +726,17 @@ void SCL_init(BOOLEAN	create,
                 REQUEST (irq_verify_role_name) = request;
 
             if (!found)
-                strcpy (role_name, "NONE");
+                strcpy(role_name, "NONE");
         }
     }
-    /* CVC: Let's clean any role in pre-ODS9 attachments. */
+    // CVC: Let's clean any role in pre-ODS9 attachments
     else {
-        preODS9 = TRUE;
+        preODS9 = true;
     }
-
 
 	if (sql_role) {
         if (!preODS9 && strcmp (role_name, "NONE")) {
-            strcpy (role_name, sql_role);
+            strcpy(role_name, sql_role);
         }
         /* CVC: Role is an identifier, it may have embedded blanks. */
         MET_exact_name(role_name);
@@ -795,15 +788,14 @@ void SCL_init(BOOLEAN	create,
 		END_FOR;
 		CMP_release(tdbb, (JRD_REQ) handle1);
 	}
-	else
+	else {
 		user->usr_flags |= USR_owner;
+	}
 
 }
 
 
-void SCL_move_priv(
-				   UCHAR ** acl_ptr,
-				   USHORT mask, STR * start_ptr, ULONG * length_ptr)
+void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, STR* start_ptr, ULONG* length_ptr)
 {
 /**************************************
  *
@@ -815,33 +807,31 @@ void SCL_move_priv(
  *	Given a mask of privileges, move privileges types to acl.
  *
  **************************************/
-	UCHAR *p;
 	const P_NAMES *priv;
 
-	p = *acl_ptr;
+	UCHAR* p = *acl_ptr;
 
-/* terminate identification criteria, and move privileges */
+	// Terminate identification criteria, and move privileges
 
-	CHECK_AND_MOVE(p, ACL_end, *start_ptr, length_ptr);
-	CHECK_AND_MOVE(p, ACL_priv_list, *start_ptr, length_ptr);
+	check_and_move(p, ACL_end, *start_ptr, length_ptr);
+	check_and_move(p, ACL_priv_list, *start_ptr, length_ptr);
 
 	for (priv = p_names; priv->p_names_priv; priv++)
 	{
 		if (mask & priv->p_names_priv)
 		{
 			assert(priv->p_names_acl <= MAX_UCHAR);
-			CHECK_AND_MOVE(p, (UCHAR) priv->p_names_acl, *start_ptr,
-						   length_ptr);
+			check_and_move(p, (UCHAR) priv->p_names_acl, *start_ptr, length_ptr);
 		}
 	}
 
-	CHECK_AND_MOVE(p, 0, *start_ptr, length_ptr);
+	check_and_move(p, 0, *start_ptr, length_ptr);
 
 	*acl_ptr = p;
 }
 
 
-SCL SCL_recompute_class(TDBB tdbb, TEXT * string)
+SCL SCL_recompute_class(TDBB tdbb, TEXT* string)
 {
 /**************************************
  *
@@ -867,7 +857,7 @@ SCL SCL_recompute_class(TDBB tdbb, TEXT * string)
 	if (s_class->scl_flags & SCL_exists)
 		return s_class;
 
-/* Class no long exists -- get rid of it! */
+	// Class no long exists - get rid of it!
 
 	SCL_release(s_class);
 
@@ -875,7 +865,7 @@ SCL SCL_recompute_class(TDBB tdbb, TEXT * string)
 }
 
 
-void SCL_release( SCL s_class)
+void SCL_release(SCL s_class)
 {
 /**************************************
  *
@@ -887,13 +877,10 @@ void SCL_release( SCL s_class)
  *	Release an unneeded and unloved security class.
  *
  **************************************/
-	TDBB tdbb;
 	SCL *next;
-	ATT attachment;
 
-	tdbb = GET_THREAD_DATA;
-
-	attachment = tdbb->tdbb_attachment;
+	TDBB tdbb = GET_THREAD_DATA;
+	ATT attachment = tdbb->tdbb_attachment;
 
 	for (next = &attachment->att_security_classes; *next;
 		 next = &(*next)->scl_next)
@@ -909,7 +896,7 @@ void SCL_release( SCL s_class)
 }
 
 
-static BOOLEAN check_hex(const TEXT* acl, USHORT number)
+static bool check_hex(const TEXT* acl, USHORT number)
 {
 /**************************************
  *
@@ -923,15 +910,13 @@ static BOOLEAN check_hex(const TEXT* acl, USHORT number)
  *
  **************************************/
 	USHORT l;
-	TEXT c;
-	int n;
 
-	n = 0;
+	int n = 0;
 	if ( (l = *acl++) )
 	{
 		do
 		{
-			c = *acl++;
+			TEXT c = *acl++;
 			n *= 10;
 			if (c >= '0' && c <= '9')
 				n += c - '0';
@@ -946,7 +931,7 @@ static BOOLEAN check_hex(const TEXT* acl, USHORT number)
 }
 
 
-static BOOLEAN check_number(const TEXT* acl, USHORT number)
+static bool check_number(const TEXT* acl, USHORT number)
 {
 /**************************************
  *
@@ -960,9 +945,8 @@ static BOOLEAN check_number(const TEXT* acl, USHORT number)
  *
  **************************************/
 	USHORT l;
-	int n;
 
-	n = 0;
+	int n = 0;
 	if ( (l = *acl++) )
 	{
 		do {
@@ -974,10 +958,10 @@ static BOOLEAN check_number(const TEXT* acl, USHORT number)
 }
 
 
-static BOOLEAN check_user_group(const TEXT*	acl,
-								USHORT		number,
-								STR*		start_ptr,
-								ULONG*		length_ptr)
+static bool check_user_group(const TEXT* acl,
+							 USHORT number,
+							 STR* start_ptr,
+							 ULONG* length_ptr)
 {
 /**************************************
  *
@@ -1002,42 +986,37 @@ static BOOLEAN check_user_group(const TEXT*	acl,
  *
  **************************************/
 	USHORT l;
-	SLONG n;
-	TEXT *user_group_name;
-	TEXT one_char;
-	STR buffer;
-	TDBB tdbb;
-	DBB dbb;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
+
+	STR buffer = NULL;
+	SLONG n = 0;
 
 	try {
 
 	buffer = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str();
 
-	n = 0;
 	if ( (l = *acl++) )
 	{
-		if (isdigit(*acl))
-		{	/* this is a group id */
+		if (isdigit(*acl))	// this is a group id
+		{
 			do
 				n = n * UIC_BASE + *acl++ - '0';
 			while (--l);
 		}
-		else
-		{					/* processing group name */
-
-			user_group_name = (TEXT*) buffer->str_data;
+		else				// processing group name
+		{
+			TEXT* user_group_name = (TEXT*) buffer->str_data;
 			do {
-				one_char = *acl++;
+				TEXT one_char = *acl++;
 				*user_group_name++ = LOWWER(one_char);
 			} while (--l);
 			*user_group_name = '\0';
 			user_group_name = (TEXT*) buffer->str_data;
-			/*
-			   ** convert unix group name to unix group id
-			 */
+
+			// convert unix group name to unix group id
+
 			n = ISC_get_user_group_id(user_group_name);
 		}
 	}
@@ -1053,7 +1032,7 @@ static BOOLEAN check_user_group(const TEXT*	acl,
 }
 
 
-static BOOLEAN check_string(const TEXT* acl, const TEXT* string)
+static bool check_string(const TEXT* acl, const TEXT* string)
 {
 /**************************************
  *
@@ -1069,17 +1048,14 @@ static BOOLEAN check_string(const TEXT* acl, const TEXT* string)
 	USHORT l;
 	TEXT c1, c2;
 
-
-/* 
- * add these asserts to catch calls to this function with NULL,
- * the caller to this function must check to ensure that the arguments are not
- * NULL  - Shaunak Mistry 03-May-99.
- */
+	// Add these asserts to catch calls to this function with NULL,
+	// the caller to this function must check to ensure that the arguments are not
+	// NULL  - Shaunak Mistry 03-May-99.
 
 	assert(string != NULL);
 	assert(acl != NULL);
 
-/* JPN: Since Kanji User names are not allowed, No need to fix this UPPER loop. */
+	// JPN: Since Kanji User names are not allowed, no need to fix this UPPER loop
 
 	if ( (l = *acl++) )
 	{
@@ -1087,25 +1063,26 @@ static BOOLEAN check_string(const TEXT* acl, const TEXT* string)
 			c1 = *acl++;
 			c2 = *string++;
 			if (UPPER7(c1) != UPPER7(c2))
-				return TRUE;
+				return true;
 		} while (--l);
 	}
 
-    /* CVC: This was the original check made obsolete by dialect 3.
-       need to check all since can have embedded spaces. */
+	// CVC: This was the original check made obsolete by dialect 3.
+    // Need to check all since can have embedded spaces.
+
     while (*string) {
         if (*string++ != ' ')
-            return TRUE;
+            return true;
     }
-    return FALSE;
+    return false;
 }
 
 
-static SLONG compute_access(TDBB		tdbb,
-							SCL			s_class,
-							JRD_REL		view,
-							const TEXT*	trg_name,
-							const TEXT*	prc_name)
+static SLONG compute_access(TDBB tdbb,
+							SCL s_class,
+							JRD_REL view,
+							const TEXT* trg_name,
+							const TEXT* prc_name)
 {
 /**************************************
  *
@@ -1119,27 +1096,25 @@ static SLONG compute_access(TDBB		tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	DBB dbb;
 	BLK request;
 	BLB blob;
-	SLONG privileges;
 	TEXT *acl;
 	TEXT *buffer;
 	volatile STR str_buffer = NULL;
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	privileges = SCL_scanned;
+	SLONG privileges = SCL_scanned;
 
 	try {
 
-/* Get some space that's not off the stack */
+	// Get some space that's not off the stack
+
 	str_buffer = FB_NEW_RPT(*dbb->dbb_permanent, BLOB_BUFFER_SIZE) str();
 	str_buffer->str_length = BLOB_BUFFER_SIZE - 1;
 	buffer = (TEXT*) str_buffer->str_data;
-
 
 	request = (BLK) CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
 
@@ -1160,7 +1135,9 @@ static SLONG compute_access(TDBB		tdbb,
 											  (sizeof(buffer[0])))));
 			if (blob->blb_flags & BLB_eof)
 				break;
-			/* there was not enough space, realloc point acl to the correct location */
+
+			// There was not enough space, realloc point acl to the correct location
+
 			if (blob->blb_fragment_size)
 			{
 				ULONG old_offset = (ULONG) (acl - buffer);
@@ -1174,10 +1151,8 @@ static SLONG compute_access(TDBB		tdbb,
 		BLB_close(tdbb, blob);
 		if (acl != buffer)
 		{
-			/*
-			 * TMN: The cast is really a const_cast to
-			 * cast away volatile! Bad, bad, bad!
-			 */
+			// TMN: The cast is really a const_cast to
+			// cast away volatile! Bad, bad, bad!
 			privileges |= walk_acl(	tdbb,
 									buffer,
 									view,
@@ -1232,13 +1207,13 @@ static TEXT *save_string(TEXT* string, TEXT** ptr)
 }
 
 
-static SLONG walk_acl(TDBB			tdbb,
-					  const TEXT*	acl,
-					  JRD_REL			view,
-					  const TEXT*	trg_name,
-					  const TEXT*	prc_name,
-					  STR*			start_ptr,
-					  ULONG*		length_ptr)
+static SLONG walk_acl(TDBB tdbb,
+					  const TEXT* acl,
+					  JRD_REL view,
+					  const TEXT* trg_name,
+					  const TEXT* prc_name,
+					  STR* start_ptr,
+					  ULONG* length_ptr)
 {
 /**************************************
  *
@@ -1251,38 +1226,34 @@ static SLONG walk_acl(TDBB			tdbb,
  *	is found, return privileges.
  *
  **************************************/
-	struct usr	user;
-	SLONG		privilege;
-	USHORT		hit;
-	TEXT		c;
-	TEXT*		p;
-	//BOOLEAN		is_member = FALSE;
+	bool hit;
+	TEXT c;
+	TEXT* p;
 	volatile BLK request;
-	DBB			dbb;
-	TEXT* 	role_name;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-/* Munch ACL.  If we find a hit, eat up privileges */
+	// Munch ACL. If we find a hit, eat up privileges.
 
-	user = *tdbb->tdbb_attachment->att_user;
-	role_name = user.usr_sql_role_name;
-	
+	struct usr user = *tdbb->tdbb_attachment->att_user;
+	TEXT* role_name = user.usr_sql_role_name;
+
 	if (view && (view->rel_flags & REL_sql_relation))
 	{
-		/* Use the owner of the view to perform the sql security
-		   checks with: (1) The view user must have sufficient privileges
-		   to the view, and (2a) the view owner must have sufficient 
-		   privileges to the base table or (2b) the view must have
-		   sufficient privileges on the base table. */
+		// Use the owner of the view to perform the sql security
+		// checks with: (1) The view user must have sufficient privileges
+		// to the view, and (2a) the view owner must have sufficient 
+		// privileges to the base table or (2b) the view must have
+		// sufficient privileges on the base table.
+
 		user.usr_user_name = view->rel_owner_name;
 	}
-	privilege = 0;
+	SLONG privilege = 0;
 
 	if (*acl++ != ACL_version)
 	{
-		BUGCHECK(160);			/* msg 160 wrong ACL version */
+		BUGCHECK(160);	// msg 160 wrong ACL version
 	}
 
 	if (user.usr_flags & USR_locksmith)
@@ -1295,24 +1266,24 @@ static SLONG walk_acl(TDBB			tdbb,
 		switch (c)
 		{
 		case ACL_id_list:
-			hit = TRUE;
+			hit = true;
 			while ( (c = *acl++) )
 			{
 				switch (c)
 				{
 				case id_person:
 					if (!(p = user.usr_user_name) || check_string(acl, p))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_project:
 					if (!(p = user.usr_project_name) || check_string(acl, p))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_organization:
 					if (!(p = user.usr_org_name) || check_string(acl, p))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_group:
@@ -1321,19 +1292,19 @@ static SLONG walk_acl(TDBB			tdbb,
 										start_ptr,
 										length_ptr))
 					{
-						hit = FALSE;
+						hit = false;
 					}
 					break;
 
 				case id_sql_role:
 					if (role_name == NULL || check_string(acl, role_name))
-						hit = FALSE;
+						hit = false;
 					else
 					{
 						TEXT login_name[129], *p, *q;
 						for (p = login_name, q = user.usr_user_name;
 							 (*p++ = UPPER7(*q)); q++);
-						hit = FALSE;
+						hit = false;
 						request = (BLK)CMP_find_request(tdbb, irq_get_role_mem,
 												   IRQ_REQUESTS);
 
@@ -1349,7 +1320,7 @@ static SLONG walk_acl(TDBB			tdbb,
                                 REQUEST(irq_get_role_mem) = request;
 
 							if (!U.RDB$USER.NULL)
-								hit = TRUE;
+								hit = true;
 						END_FOR;
 
 						if (!REQUEST(irq_get_role_mem))
@@ -1359,41 +1330,42 @@ static SLONG walk_acl(TDBB			tdbb,
 
 				case id_view:
 					if (!view || check_string(acl, view->rel_name))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_procedure:
 					if (!prc_name || check_string(acl, prc_name))
-						hit = FALSE;
+						hit = false;
 					break;
 
 				case id_trigger:
 					if (!trg_name || check_string(acl, trg_name))
 					{
-						hit = FALSE;
+						hit = false;
 					}
 					break;
 
 				case id_views:
-					/* Disable this catch-all that messes up the view security.
-					   Note that this id_views is not generated anymore, this code
-					   is only here for compatibility.  id_views was only 
-					   generated for SQL. */
-					hit = FALSE;
+					// Disable this catch-all that messes up the view security.
+					// Note that this id_views is not generated anymore, this code
+					// is only here for compatibility. id_views was only 
+					// generated for SQL.
+
+					hit = false;
 					if (!view) {
-						hit = FALSE;
+						hit = false;
 					}
 					break;
 
 				case id_user:
 					if (check_number(acl, user.usr_user_id)) {
-						hit = FALSE;
+						hit = false;
 					}
 					break;
 
 				case id_node:
 					if (check_hex(acl, user.usr_node_id)) {
-						hit = FALSE;
+						hit = false;
 					}
 					break;
 
@@ -1413,9 +1385,9 @@ static SLONG walk_acl(TDBB			tdbb,
 						break;
 
 					case priv_read:
-						/* note that READ access must imply REFERENCES
-						   access for upward compatibility of existing
-						   security classes */
+						// Note that READ access must imply REFERENCES
+						// access for upward compatibility of existing
+						// security classes
 
 						privilege |= SCL_read | SCL_sql_references;
 						break;
@@ -1461,13 +1433,12 @@ static SLONG walk_acl(TDBB			tdbb,
 					default:
 						return SCL_corrupt;
 					}
-				/* For a relation the first hit does not give the privilege. 
-				   Because, there could be some permissions for the table 
-				   (for user1) and some permissions for a column on that 
-				   table for public/user2, causing two hits.
-				   Hence, we do not return at this point.
-				   -- Madhukar Thakur (May 1, 1995)
-				 */
+				// For a relation the first hit does not give the privilege. 
+				// Because, there could be some permissions for the table 
+				// (for user1) and some permissions for a column on that 
+				// table for public/user2, causing two hits.
+				// Hence, we do not return at this point.
+				// -- Madhukar Thakur (May 1, 1995)
 			}
 			else
 				while (*acl++);
