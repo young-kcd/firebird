@@ -25,19 +25,16 @@
 :MAIN
 @call :BUILD_EMPBUILD
 @if "%DBG%"=="" (call :RELEASE) else (call :DEBUG)
-@call :MOVE
 @call :BUILD_EMPLOYEE
+@call :MOVE
 @goto :END
 
 ::===========
 :BUILD_EMPBUILD
 @echo.
 @echo Building empbuild.fdb
-@copy %ROOT_PATH%\src\v5_examples\*.sql   %ROOT_PATH%\gen\v5_examples\ > nul
-@copy %ROOT_PATH%\src\v5_examples\*.inp   %ROOT_PATH%\gen\v5_examples\ > nul
-
-@echo.
-@echo Creating empbuild.fdb
+@copy %ROOT_PATH%\src\v5_examples\*.sql %ROOT_PATH%\gen\v5_examples\ > nul
+@copy %ROOT_PATH%\src\v5_examples\*.inp %ROOT_PATH%\gen\v5_examples\ > nul
 :: Here we must use cd because isql does not have an option to set a base directory
 @cd %ROOT_PATH%\gen\v5_examples
 @del empbuild.fdb 2> nul
@@ -45,8 +42,8 @@
 @cd %ROOT_PATH%\builds\win32
 
 @echo.
-@echo preprocessing empbuild.e
 @echo path = %DB_PATH%/gen/v5_examples
+@echo preprocessing empbuild.e
 @%ROOT_PATH%\gen\gpre_static -r -m -n -z %ROOT_PATH%\src\v5_examples\empbuild.e %ROOT_PATH%\gen\v5_examples\empbuild.c -b localhost:%DB_PATH%/gen/v5_examples/
 @goto :EOF
 
@@ -78,9 +75,17 @@ if "%VS_VER%"=="msvc6" (
 @echo.
 @mkdir %ROOT_PATH%\output\v5_examples 2> nul
 @echo Moving files to output directory
-@copy %ROOT_PATH%\src\v5_examples\* %ROOT_PATH%\output\v5_examples > nul
-@copy %ROOT_PATH%\gen\v5_examples\* %ROOT_PATH%\output\v5_examples > nul
-@copy %ROOT_PATH%\temp\%DBG_DIR%\v5_examples\v5_examples.exe %ROOT_PATH%\gen\v5_examples\empbuild.exe > nul
+@copy %ROOT_PATH%\src\v5_examples\align.h %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\api*.* %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\dyn*.* %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\stat*.* %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\udf*.* %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\example.h %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\employe2.sql %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\readme %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\prefix.win32_bc %ROOT_PATH%\output\v5_examples\makefile.bc > nul
+@copy %ROOT_PATH%\src\v5_examples\prefix.win32_msc %ROOT_PATH%\output\v5_examples\makefile.msc > nul
+@copy %ROOT_PATH%\gen\v5_examples\employee.* %ROOT_PATH%\output\v5_examples > nul
 @goto :EOF
 
 ::===========
@@ -92,7 +97,9 @@ if "%VS_VER%"=="msvc6" (
 :: and empbuild.exe uses isql
 @cd %ROOT_PATH%\gen\v5_examples
 @del %ROOT_PATH%\gen\v5_examples\employee.fdb 2>nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\v5_examples\v5_examples.exe %ROOT_PATH%\gen\v5_examples\empbuild.exe > nul
 @%ROOT_PATH%\gen\v5_examples\empbuild.exe %DB_PATH%/gen/v5_examples/employee.fdb
+@gbak -b localhost:%DB_PATH%/gen/v5_examples/employee.fdb %DB_PATH%/gen/v5_examples/employee.fbk
 @cd %ROOT_PATH%\builds\win32
 
 @goto :EOF
