@@ -826,7 +826,6 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	root->irt_rpt[idx->idx_id].irt_root = new_window.win_page;
 
 	CCH_RELEASE(tdbb, root_window);
-
 }
 
 
@@ -879,8 +878,17 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				// case of reentrance due to recursion or multi-threading
 				fb_assert(idx->idx_expression_request->req_caller == NULL);
 				idx->idx_expression_request->req_caller = tdbb->tdbb_request;
-				if (tdbb->tdbb_request)
-				{
+				
+				// 10 Feb 2005 hvlad
+				// When this code called from IDX_create_index
+				// tdbb->tdbb_request is set to our idx->idx_expression_request
+				// by PCMET_expression_index. Therefore no need to attach\detach
+				// idx_expression_request to the same transaction twice
+				const bool already_attached = 
+					(idx->idx_expression_request->req_caller == 
+					idx->idx_expression_request);
+
+				if (tdbb->tdbb_request && !already_attached) {
 					TRA_attach_request(tdbb->tdbb_request->req_transaction,
 						idx->idx_expression_request);
 				}
@@ -899,7 +907,9 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					isNull = (tdbb->tdbb_request->req_flags & req_null);
 
 				}
-				TRA_detach_request(idx->idx_expression_request);
+				if (!already_attached) {
+					TRA_detach_request(idx->idx_expression_request);
+				}
 				tdbb->tdbb_request = idx->idx_expression_request->req_caller;
 				idx->idx_expression_request->req_caller = NULL;
 			}
@@ -3589,9 +3599,9 @@ static index_root_page* fetch_root(thread_db* tdbb, WIN * window, const jrd_rel*
 
 static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key, 
 									UCHAR* value,
-						   USHORT* return_value, bool descending, 
-						   bool retrieval, bool pointer_by_marker,
-						   RecordNumber find_record_number)
+									USHORT* return_value, bool descending, 
+									bool retrieval, bool pointer_by_marker,
+									RecordNumber find_record_number)
 {
 /**************************************
  *
