@@ -164,7 +164,6 @@ typedef unsigned char	UCHAR;
 #define UCHAR	unsigned char
 #define USHORT	unsigned short
 #define FAR_VARIABLE
-#define const
 #define _JRD_COMMON_H_
 
 codepage_map *get_w1250(void)
