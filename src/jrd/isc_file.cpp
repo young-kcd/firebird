@@ -1154,8 +1154,11 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 		temp2[length] = 0;
 		from = temp2;
 	}
-	else
-		from = from_buff;
+	else {
+		strncpy(temp2, from_buff, MAXPATHLEN);
+		temp2[MAXPATHLEN-1] = 0;
+		from = temp2;
+	}
 
 	to = to_buff;
 
