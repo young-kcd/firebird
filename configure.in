@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.52 2002-10-07 01:29:08 skywalker Exp $
+dnl $Id: configure.in,v 1.53 2002-10-10 06:48:13 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -117,6 +117,7 @@ AC_ARG_WITH(readline,
      no)  READLINE_FLG=N;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-readline);;
    esac])
+AC_SUBST(READLINE_FLG)
 
 dnl Check for system header files
 AC_CHECK_HEADERS(assert.h)
@@ -162,7 +163,7 @@ AC_CHECK_LIB(crypt, main)
 AC_CHECK_LIB(curses, main)
 dnl AC_CHECK_LIB(termcap, main)
 if test "$READLINE_FLG" = "Y"; then
-   AC_SUBST(EDITLINE_A, -ledit)
+  AC_SUBST(EDITLINE_A, -ledit)
 #  AC_CHECK_LIB(readline, main,,, $LIBS)
 fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
