@@ -460,7 +460,6 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	SLONG clock;
 	SLONG redir_in, redir_out, redir_err;
 	volatile SSHORT action = QUIT;
-	BOOLEAN					sw_ods7 = FALSE;
 	USHORT					sw_replace;
 	USHORT					sw_tape;
 	volatile struct tgbl*	tdgbl;
@@ -568,7 +567,6 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	tdgbl->gbl_sw_no_reserve = FALSE;
 	tdgbl->gbl_sw_mode = FALSE;
 	tdgbl->gbl_sw_skip_count = 0;
-	tdgbl->gbl_sw_bug8183 = FALSE;
 	tdgbl->action = NULL;
 	dpb = const_cast<UCHAR*>(tdgbl->dpb_string);
 	tdgbl->dpb_length = 0;
@@ -915,15 +913,6 @@ int DLL_EXPORT BURP_gbak(int		argc,
 			case (IN_SW_BURP_Z):
 				BURP_print(91, (void*) GDS_VERSION, 0, 0, 0, 0);	/* msg 91 gbak version %s */
 				tdgbl->gbl_sw_version = TRUE;
-				break;
-
-#ifdef DEV_BUILD
-			case (IN_SW_BURP_7):
-				sw_ods7 = TRUE;
-				break;
-#endif
-			case (IN_SW_BURP_BUG8183):
-				tdgbl->gbl_sw_bug8183 = TRUE;
 				break;
 
 			default:

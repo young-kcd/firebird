@@ -732,7 +732,6 @@ typedef struct tgbl
     USHORT	gbl_sw_old_descriptions;
     USHORT	gbl_sw_service_gbak;
     USHORT	gbl_sw_service_thd;
-    USHORT	gbl_sw_bug8183;
     USHORT	gbl_sw_convert_ext_tables;
     BOOLEAN	gbl_sw_mode;
     BOOLEAN	gbl_sw_mode_val;

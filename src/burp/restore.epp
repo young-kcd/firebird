@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.20 2003-02-13 09:19:08 dimitr Exp $
+$Id: restore.epp,v 1.21 2003-02-17 23:22:30 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -4350,26 +4350,14 @@ STORE (REQUEST_HANDLE tdgbl->handles_get_index_req_handle1)
 		break;
 
 	    case att_index_foreign_key:
-		/* BUG 8183: For more information see description of */
-		/*           "bug_8183" function below.              */
-                /* Note:     ATT_BACKUP_FORMAT for IB3.3 is equal 4  */
-		if ( (tdgbl->RESTORE_format <= 4) && 
-                     (tdgbl->gbl_sw_bug8183 || bug_8183(tdgbl)) )
-		   {
-		   X.RDB$DESCRIPTION.NULL = FALSE;
-		   get_source_blob (&X.RDB$DESCRIPTION, 0);
-		   }
-		else
-		   {
-                   foreign_index = TRUE;
-		   /* Defer foreign key index activation */
-		   if (X.RDB$INDEX_INACTIVE == FALSE)
-		      X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
-		   if (tdgbl->gbl_sw_deactivate_indexes)
-		       X.RDB$INDEX_INACTIVE = TRUE;
-                   X.RDB$FOREIGN_KEY.NULL = FALSE;
-		   GET_TEXT(X.RDB$FOREIGN_KEY);
-		   }
+		foreign_index = TRUE;
+		/* Defer foreign key index activation */
+		if (X.RDB$INDEX_INACTIVE == FALSE)
+			X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
+		if (tdgbl->gbl_sw_deactivate_indexes)
+			X.RDB$INDEX_INACTIVE = TRUE;
+		X.RDB$FOREIGN_KEY.NULL = FALSE;
+		GET_TEXT(X.RDB$FOREIGN_KEY);
 		break;
 
 	    default:

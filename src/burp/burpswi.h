@@ -60,12 +60,12 @@
 #define IN_SW_BURP_FA        22      /* blocking factor */
 #define IN_SW_BURP_US        23      /* use all space on data page */
 #define IN_SW_BURP_OL        24      /* write RDB$DESCRIPTIONS & SOURCE in old manner */
-#define IN_SW_BURP_7         25      /* force creation of an ODS 7 database */
+/*#define IN_SW_BURP_7         25      * force creation of an ODS 7 database */
 #define IN_SW_BURP_USER      26      /* default user name to use on attach */
 #define IN_SW_BURP_PASS      27      /* default password to use on attach */
 #define IN_SW_BURP_S         28      /* skip some number of bytes if find a bad attribute */
 #define IN_SW_BURP_NT        29      /* build a "non-transportable" backup (V3 default) */
-#define IN_SW_BURP_BUG8183   30      /* use workaround to allow restore database
+/*#define IN_SW_BURP_BUG8183   30      * use workaround to allow restore database
                                    v3.3 with comment field inside of index
                                    definition */
 #define IN_SW_BURP_ROLE      31      /* default SQL role to use on attach */
@@ -153,11 +153,6 @@ static struct in_sw_tab_t burp_in_sw_table [] =
                 /* msg 109: %sY redirect/suppress output (file path or OUTPUT_SUPPRESS) */
     {IN_SW_BURP_Z,    0,				"Z",		    0, 0, 0, FALSE, 104, 0, NULL},
                 /* msg 104: %sZ print version number */
-#ifdef DEV_BUILD
-    {IN_SW_BURP_7,    0,				"7",		    0, 0, 0, FALSE, 0, 0, NULL},
-#endif
-/* next switch is a hidden option in case of bug_no 8183 */
-    {IN_SW_BURP_BUG8183,  0,	"BUG_8183",	0, 0, 0, FALSE, 0, 0, NULL},
 /**************************************************************************/
 /* The next two 'virtual' switches are hidden from user and are needed    */
 /* for services API                                                       */
