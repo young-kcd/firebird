@@ -1,3 +1,10 @@
+2004-10-20 19:42  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.124), server.cpp (1.96):
+	
+	1) Backport my previous fix from B1_5_Release branch 2) Another
+	events-related bugfix 3) Some cleanup
+
 2004-10-20 03:03  robocop
 
 	* firebird2/builds/win32/msvc6/ib_udf.dsp (1.17):
