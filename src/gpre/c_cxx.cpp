@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.21 2003-08-09 18:00:14 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.22 2003-08-12 10:05:47 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1974,13 +1974,10 @@ static void gen_dyn_open( ACT action, int column)
 
 static void gen_dyn_prepare( ACT action, int column)
 {
-	DYN statement;
-	DBB database;
 	TEXT s[64], *transaction;
 	struct gpre_req *request, req_const;
 
-	statement = (DYN) action->act_object;
-	database = statement->dyn_database;
+	DYN statement = (DYN) action->act_object;
 
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -1998,6 +1995,7 @@ static void gen_dyn_prepare( ACT action, int column)
 		column += INDENT;
 	}
 
+    DBB database = statement->dyn_database;
 	printa(column,
 		   "isc_embed_dsql_prepare (%s, &%s, &%s, %s, 0, %s, %d, %s);",
 		   status_name, database->dbb_name->sym_string, transaction,

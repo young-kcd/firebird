@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.11 2003-08-09 18:00:13 brodsom Exp $
+//	$Id: pas.cpp,v 1.12 2003-08-12 10:05:47 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1859,11 +1859,10 @@ static void gen_dyn_open( ACT action, int column)
 
 static void gen_dyn_prepare( ACT action, int column)
 {
-	DYN statement;
-	DBB database;
 	TEXT s[64], *transaction;
 	struct gpre_req *request, req_const;
 
+    DYN statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
 		request = &req_const;
@@ -1881,8 +1880,7 @@ static void gen_dyn_prepare( ACT action, int column)
 		column -= INDENT;
 	}
 
-	statement = (DYN) action->act_object;
-	database = statement->dyn_database;
+	DBB database = statement->dyn_database;
 
 	printa(column,
 		   "isc_embed_dsql_prepare (gds__status, %s, transaction, %s, %s(%s), %s, %d, %s %s);",
