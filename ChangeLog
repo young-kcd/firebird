@@ -1,3 +1,14 @@
+2004-07-16 01:01  arnobrinkman
+
+	* firebird2/src/jrd/: btr.cpp (1.98), btr.h (1.33), opt.cpp
+	(1.176):
+	
+	1) Fix starting with and empty string index problem where empty
+	string is passed in parameter. (STARTING WITH ?) ? = '' 2) New
+	index structure ensures that NULLs cannot hold the same key-value
+	as a data value.  3) Ignore NULLs already on scanning index where
+	possible.
+
 2004-07-14 23:54  skidder
 
 	* firebird2/src/jrd/: thd.cpp (1.36), thd.h (1.34),
