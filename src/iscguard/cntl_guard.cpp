@@ -73,42 +73,6 @@ void CNTL_init( void (*handler) (), TEXT * name)
 }
 
 
-
-#ifdef REMOVE
-void *CNTL_insert_thread(void)
-{
-/**************************************
- *
- *	C N T L _ i n s e r t _ t h r e a d
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	THREAD new_thread;
-
-	THREAD_ENTER;
-	new_thread = (THREAD) ALLR_alloc((SLONG) sizeof(struct thread));
-/* NOMEM: ALLR_alloc() handled */
-/* FREE:  in CTRL_remove_thread() */
-
-	THREAD_EXIT;
-	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
-					GetCurrentProcess(), &new_thread->thread_handle, 0, FALSE,
-					DUPLICATE_SAME_ACCESS);
-
-	THD_mutex_lock(thread_mutex);
-	new_thread->thread_next = threads;
-	threads = new_thread;
-	THD_mutex_unlock(thread_mutex);
-
-	return new_thread;
-}
-#endif
-
-
-
 void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 {
 /**************************************
@@ -190,42 +154,6 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 
 /* THD_mutex_destroy (thread_mutex); */
 }
-
-
-#ifdef REMOVE
-void CNTL_remove_thread( void *thread)
-{
-/**************************************
- *
- *	C N T L _ r e m o v e _ t h r e a d
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	THREAD *thread_ptr;
-	THREAD this_thread;
-
-	THD_mutex_lock(thread_mutex);
-	for (thread_ptr = &threads; *thread_ptr;
-		 thread_ptr =
-		 &(*thread_ptr)->thread_next) if (*thread_ptr == (THREAD) thread) {
-			*thread_ptr = ((THREAD) thread)->thread_next;
-			break;
-		}
-	THD_mutex_unlock(thread_mutex);
-
-	this_thread = (THREAD) thread;
-	CloseHandle(this_thread->thread_handle);
-
-	THREAD_ENTER;
-	ALLR_free(thread);
-	THREAD_EXIT;
-}
-#endif
-
-
 
 void CNTL_shutdown_service( TEXT * message)
 {
