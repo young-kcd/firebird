@@ -1,3 +1,9 @@
+2004-06-03 15:12  paulbeach
+
+	* firebird2/src/jrd/: svc.cpp (1.67.2.7), svc.h (1.15.2.1):
+	
+	Commit 1.5.1 RC2 Fix as per Dimitry Yemanov
+
 2004-05-31 14:15  paul_reeves
 
 	* firebird2/src/jrd/isc_version.h (1.1.2.15):
