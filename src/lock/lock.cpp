@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.109 2004-11-24 09:11:41 robocop Exp $
+$Id: lock.cpp,v 1.110 2004-12-08 06:03:05 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1920,10 +1920,10 @@ static void bug_assert( const TEXT* string, ULONG line)
  *	Disasterous lock manager bug.  Issue message and abort process.
  *
  **************************************/
-	TEXT buffer[100];
+	TEXT buffer[MAXPATHLEN + 100];
 	lhb LOCK_header_copy;
 
-	sprintf((char *) buffer, "%s %ld: lock assertion failure: %s\n",
+	sprintf((char *) buffer, "%s %ld: lock assertion failure: %.60s\n",
 			__FILE__, line, string);
 
 /* Copy the shared memory so we can examine its state when we crashed */
@@ -1946,7 +1946,7 @@ static void bug( ISC_STATUS * status_vector, const TEXT* string)
  *	Disasterous lock manager bug.  Issue message and abort process.
  *
  **************************************/
-	TEXT s[128];
+	TEXT s[2 * MAXPATHLEN];
 
 #ifdef WIN_NT
 	sprintf(s, "Fatal lock manager error: %s, errno: %ld", string, ERRNO);
@@ -2713,7 +2713,6 @@ static bool fork_lock_manager( ISC_STATUS * status_vector)
  *
  **************************************/
 	TEXT string[MAXPATHLEN];
-	TEXT errorstring[MAXPATHLEN+100];
 	struct stat stat_buf;
 	int pid;
 
@@ -2725,6 +2724,8 @@ static bool fork_lock_manager( ISC_STATUS * status_vector)
 	gds__prefix(string, LOCK_MANAGER);
 #endif
 	if (statistics(string, &stat_buf) == -1) {
+		// bug() fills the vector with this address, it must be static.
+		static TEXT errorstring[MAXPATHLEN + 100];
 		sprintf (errorstring, "can't start lock manager: %s", string);
 		bug(status_vector, errorstring);
 		return false;
