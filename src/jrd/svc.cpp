@@ -3733,17 +3733,6 @@ static void get_action_svc_string(
 	const ISC_USHORT l = gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
 						 sizeof(ISC_USHORT));
 
-	const char* local_server = "localhost:";
-#if defined(WIN_NT) && !defined(SUPERSERVER)
-	// dimitr: temporary hack to make Services API available
-	// for the engine without support of local protocol.
-	// Once XNET is implemented in win32 CS, remove this ugly code.
-	const TEXT* spb_item = *spb - 1;
-	const ISC_USHORT l2 = (*spb_item == isc_spb_dbname) ? strlen(local_server) : 0;
-#else
-	const ISC_USHORT l2 = 0;
-#endif
-
 /* Do not go beyond the bounds of the spb buffer */
 	if (l > *len)
 		ERR_post(isc_bad_spb_form, 0);
@@ -3753,8 +3742,6 @@ static void get_action_svc_string(
 	{
 		**cmd = SVC_TRMNTR;
 		*cmd += 1;
-		MOVE_FASTER(local_server, *cmd, l2);
-		*cmd += l2;
 		MOVE_FASTER(*spb, *cmd, l);
 		*cmd += l;
 		**cmd = SVC_TRMNTR;
@@ -3763,7 +3750,7 @@ static void get_action_svc_string(
 		*cmd += 1;
 	}
 	*spb += l;
-	*total += l + l2 + 1 + 2;		/* Two SVC_TRMNTR for strings */
+	*total += l + 1 + 2;		/* Two SVC_TRMNTR for strings */
 	*len -= sizeof(ISC_USHORT) + l;
 }
 
