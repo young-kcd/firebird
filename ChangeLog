@@ -1,3 +1,53 @@
+2003-01-16 18:47  skidder
+
+	* firebird2/: builds/posix/Makefile.in.libfbclient,
+	builds/posix/Makefile.in.libfbcommon,
+	builds/posix/make.shared.variables, src/alice/alice.h,
+	src/alice/alice_meta.epp, src/alice/all.cpp, src/alice/all.h,
+	src/common/classes/alloc.cpp, src/common/classes/alloc.h,
+	src/common/classes/class_perf.cpp,
+	src/common/classes/class_test.cpp, src/common/classes/test.sh,
+	src/common/classes/tree.h, src/common/config/config.cpp,
+	src/common/memory/allocators.cpp, src/common/memory/allocators.h,
+	src/common/memory/memory_pool.cpp, src/common/memory/memory_pool.h,
+	src/dsql/all.h, src/dsql/alld.cpp, src/dsql/dsql.cpp,
+	src/dsql/hsh.cpp, src/include/fb_blk.h, src/include/fb_list.h,
+	src/include/fb_map.h, src/include/fb_string.h,
+	src/include/fb_vector.h, src/ipserver/ipserver.cpp,
+	src/jrd/all.cpp, src/jrd/all.h, src/jrd/blb.cpp,
+	src/jrd/block_cache.h, src/jrd/btr.cpp, src/jrd/cch.cpp,
+	src/jrd/cmp.cpp, src/jrd/db_alias.cpp, src/jrd/dfw.epp,
+	src/jrd/dyn.epp, src/jrd/exe.h, src/jrd/fun.epp, src/jrd/gds.cpp,
+	src/jrd/gds_proto.h, src/jrd/intl_builtin.cpp,
+	src/jrd/intl_classes.h, src/jrd/jrd.cpp, src/jrd/jrd.h,
+	src/jrd/lck.h, src/jrd/met.epp, src/jrd/old.cpp, src/jrd/pag.cpp,
+	src/jrd/plugin_manager.cpp, src/jrd/rse.cpp, src/jrd/sdw.cpp,
+	src/jrd/sort.cpp, src/jrd/sort_mem.cpp, src/jrd/svc.cpp,
+	src/jrd/tra.cpp, src/jrd/val.cpp, src/jrd/os/path_utils.h,
+	src/jrd/os/thd_priority.h, src/remote/inet_server.cpp,
+	src/remote/xdr.cpp, src/remote/xdr.h, src/remote/xdr_proto.h,
+	src/utilities/dba.epp:
+	
+	Integrate new memory manager into the engine
+
+2003-01-16 17:34  skidder
+
+	* firebird2/configure.in:
+	
+	Fix typo in my latest commit
+
+2003-01-16 17:27  skidder
+
+	* firebird2/: configure.in, src/make.new/config/config.h.in:
+	
+	Add FB_IPC_NAME parameter
+
+2003-01-16 14:53  dimitr
+
+	* firebird2/src/jrd/windows.cpp:
+	
+	Removed PIO for win16.
+
 2003-01-15 15:10  dimitr
 
 	* firebird2/src/ipserver/: ipc.h, ipclient.cpp, ipserver.cpp:
