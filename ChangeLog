@@ -1,3 +1,41 @@
+2003-12-21 12:51  alexpeshkoff
+
+	* firebird2/src/jrd/lck.cpp:
+	
+	Rolled back my recent changes as absolutely wrong.
+
+2003-12-21 03:34  skidder
+
+	* firebird2/src/jrd/: blp.h, exe.h, opt.cpp, par.cpp:
+	
+	Implement MSSQL-like (standard conforming) behavior regarding
+	default nulls placement.  Thanks to Arno changes we can map default
+	placement to indices directly for ODS11+.  This should close
+	SF#225218
+
+2003-12-21 02:35  skidder
+
+	* firebird2/src/dsql/: dsql.tab.h, parse.cpp:
+	
+	Update parse.cpp
+
+2003-12-21 01:43  skidder
+
+	* firebird2/src/: dsql/dsql.tab.h, dsql/gen.cpp, dsql/node.h,
+	dsql/parse.cpp, dsql/parse.y, jrd/blr.h, jrd/par.cpp:
+	
+	Fix NULLS FIRST/LAST issue and update parse.cpp
+
+2003-12-21 01:07  skidder
+
+	* firebird2/src/: dsql/gen.cpp, dsql/node.h, dsql/parse.y,
+	jrd/blr.h, jrd/par.cpp:
+	
+	Fix minor flaw in explicit nulls placement design. This change
+	doesn't cause any user-visible changes in engine behavior. Fix is
+	critical for future development in this area and needs to be
+	backported in B1_5_Release.
+
 2003-12-19 16:43  paul_reeves
 
 	* firebird2/: builds/win32/msvc6/fb2control.dsp,
