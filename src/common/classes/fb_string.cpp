@@ -68,7 +68,7 @@ namespace {
 				m[c >> 3] |= (1 << (c & 7));
 			}
 		}
-		inline bool Contains(const char c) {
+		inline bool Contains(const char c) const {
 			return m[c >> 3] & (1 << (c & 7));
 		}
 	};
@@ -91,10 +91,12 @@ namespace Firebird {
 				 const_pointer p2, size_type n2)
 	{
 		// CVC: npos must be maximum size_type value for all platforms.
-		// fb_assert(npos - n1 > n2 && n1 + n2 <= max_length());
-		checkLength(n1);
-		checkLength(n2);
-		checkLength(n1 + n2);
+		// fb_assert(n2 < npos - n1 && n1 + n2 <= max_length());
+		if (n2 > npos - n1)
+		{
+			Firebird::fatal_exception::raise("String length overflow");
+		}
+		// checkLength(n1 + n2); redundant: initialize() will check.
 		initialize(n1 + n2);
 		memcpy(stringBuffer, p1, n1);
 		memcpy(stringBuffer + n1, p2, n2);
@@ -103,6 +105,18 @@ namespace Firebird {
 	AbstractString::AbstractString(size_type sizeL, char_type c) {
 		initialize(sizeL);
 		memset(stringBuffer, c, sizeL);
+	}
+	
+	AbstractString::size_type AbstractString::copy_to(pointer destination,
+		size_type bufsize) const
+	{
+		if (!destination || !bufsize)
+			return 0;
+
+		const size_type copy_len = length() < bufsize ? length() : bufsize - 1;
+		memcpy(destination, stringBuffer, copy_len);
+		destination[copy_len] = 0;
+		return copy_len;
 	}
 
 	void AbstractString::AdjustRange(size_type length, size_type& pos, size_type& n) {
@@ -213,7 +227,7 @@ namespace Firebird {
 	}
 
 	AbstractString::size_type AbstractString::find_first_of(const_pointer s, size_type pos, size_type n) const {
-		strBitMask sm(s, n);
+		const strBitMask sm(s, n);
 		const_pointer p = &c_str()[pos];
 		while (pos < length()) {
 			if (sm.Contains(*p++)) {
@@ -225,7 +239,7 @@ namespace Firebird {
 	}
 
 	AbstractString::size_type AbstractString::find_last_of(const_pointer s, size_type pos, size_type n) const {
-		strBitMask sm(s, n);
+		const strBitMask sm(s, n);
 		int lpos = length() - 1;
 		if (static_cast<int>(pos) < lpos && pos != npos) {
 			lpos = pos;
@@ -241,7 +255,7 @@ namespace Firebird {
 	}
 
 	AbstractString::size_type AbstractString::find_first_not_of(const_pointer s, size_type pos, size_type n) const {
-		strBitMask sm(s, n);
+		const strBitMask sm(s, n);
 		const_pointer p = &c_str()[pos];
 		while (pos < length()) {
 			if (! sm.Contains(*p++)) {
@@ -253,7 +267,7 @@ namespace Firebird {
 	}
 
 	AbstractString::size_type AbstractString::find_last_not_of(const_pointer s, size_type pos, size_type n) const {
-		strBitMask sm(s, n);
+		const strBitMask sm(s, n);
 		int lpos = length() - 1;
 		if (static_cast<int>(pos) < lpos && pos != npos) {
 			lpos = pos;
@@ -315,7 +329,7 @@ extern "C" {
 	}
 
 	void AbstractString::baseTrim(TrimType WhereTrim, const_pointer ToTrim) {
-		strBitMask sm(ToTrim, strlen(ToTrim));
+		const strBitMask sm(ToTrim, strlen(ToTrim));
 		const_pointer b = c_str();
 		const_pointer e = &c_str()[length() - 1];
 		if (WhereTrim != TrimRight) {
@@ -334,7 +348,7 @@ extern "C" {
 				--e;
 			}
 		}
-		size_type NewLength = e - b + 1;
+		const size_type NewLength = e - b + 1;
 
 		if (NewLength == length())
 			return;

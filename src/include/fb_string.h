@@ -53,17 +53,20 @@ namespace Firebird
 		typedef const_pointer const_iterator;
 		static const size_type npos;
 		enum {INLINE_BUFFER_SIZE = 32, INIT_RESERVE = 16/*, KEEP_SIZE = 512*/};
+		
 	protected:
 		typedef USHORT internal_size_type; // 16 bits!
 		char_type inlineBuffer[INLINE_BUFFER_SIZE];
 		char_type* stringBuffer;
 		internal_size_type stringLength, bufferSize;
+		
 	private:
 		inline void checkPos(size_type pos) const {
 			if (pos >= length()) {
 				fatal_exception::raise("Firebird::string - pos out of range");
 			}
 		}
+		
 		static inline void checkLength(size_type len) {
 			if (len > max_length()) {
 				fatal_exception::raise("Firebird::string - length exceeds predefined limit");
@@ -187,6 +190,7 @@ namespace Firebird
 		enum TrimType {TrimLeft, TrimRight, TrimBoth};
 
 		void baseTrim(TrimType WhereTrim, const_pointer ToTrim);
+		
 	public:
 		inline const_pointer c_str() const {
 			return stringBuffer;
@@ -194,15 +198,26 @@ namespace Firebird
 		inline size_type length() const {
 			return stringLength;
 		}
+		// Call it only when you have worked with at() or operator[]
+		// in case a null ASCII was inserted in the middle of the string.
+		inline size_type recalculate_length()
+		{
+		    stringLength = strlen(stringBuffer);
+		    return stringLength;
+		}
+		
 		void reserve(size_type n = 0);
 		void resize(size_type n, char_type c = ' ');
 
-		inline size_type copy(pointer s, size_type n, size_type pos = 0) const {
+		inline size_type copy_from(pointer s, size_type n, size_type pos = 0) const
+		{
 			AdjustRange(length(), pos, n);
 			memcpy(s, c_str() + pos, n);
 			return n;
 		}
 
+		size_type copy_to(pointer destination, size_type bufsize) const;
+		
 /*		inline void swap(AbstractString& str) {
 			Storage *tmp = StringData;
 			StringData = str.StringData;
@@ -253,9 +268,7 @@ namespace Firebird
 			return find_first_not_of(s, pos, strlen(s));
 		}
 		inline size_type find_first_not_of(char_type c, size_type pos = 0) const {
-			char s[2];
-			s[0] = c;
-			s[1] = 0;
+			const char s[2] = {c, 0};
 			return find_first_not_of(s, pos, 1);
 		}
 		inline size_type find_last_not_of(const AbstractString& str, size_type pos = npos) const {
@@ -266,9 +279,7 @@ namespace Firebird
 			return find_last_not_of(s, pos, strlen(s));
 		}
 		inline size_type find_last_not_of(char_type c, size_type pos = npos) const {
-			char s[2];
-			s[0] = c;
-			s[1] = 0;
+			const char s[2] = {c, 0};
 			return find_last_not_of(s, pos, 1);
 		}
 
@@ -507,7 +518,7 @@ namespace Firebird
 			return it;
 		}
 		inline iterator erase(iterator first, iterator last) {
-			erase(first - c_str(), last-first);
+			erase(first - c_str(), last - first);
 			return first;
 		}
 
