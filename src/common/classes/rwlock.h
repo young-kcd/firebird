@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.8 2003-09-13 09:25:57 brodsom Exp $
+ *  $Id: rwlock.h,v 1.9 2003-11-21 19:42:06 kkuznetsov Exp $
  *
  */
 
@@ -154,6 +154,65 @@ public:
 
 #ifdef MULTI_THREAD
 
+#ifdef SOLARIS
+
+#include <thread.h>
+#include <synch.h>
+#include <errno.h>
+
+namespace Firebird {
+
+class RWLock {
+private:
+	rwlock_t lock;
+public:
+	RWLock() {		
+		if (rwlock_init(&lock, USYNC_PROCESS, NULL))
+		{
+			system_call_failed::raise();
+		}
+	}
+	~RWLock() {
+		if (rwlock_destroy(&lock))
+			system_call_failed::raise();
+	}
+	void beginRead() {
+		if (rw_rdlock(&lock))	
+			system_call_failed::raise();
+	}
+	bool tryBeginRead() {
+		int code = rw_tryrdlock(&lock);
+		if (code == EBUSY) return false;
+		if (code) system_call_failed::raise();
+		return true;
+	}
+	void endRead() {
+		if (rw_unlock(&lock))	
+			system_call_failed::raise();
+	}
+	bool tryBeginWrite() {
+		int code = rw_trywrlock(&lock);
+		if (code == EBUSY) return false;
+		if (code) system_call_failed::raise();
+		return true;
+	}
+	void beginWrite() {
+		if (rw_wrlock(&lock))	
+			system_call_failed::raise();
+	}
+	void endWrite() {
+		if (rw_unlock(&lock))	
+			system_call_failed::raise();
+	}
+};
+
+}
+
+
+
+
+#else
+
 #include <pthread.h>
 #include <errno.h>
 
@@ -216,7 +275,7 @@ public:
 };
 
 }
-
+#endif /*solaris*/
 #endif /*MULTI_THREAD*/
 
 #endif /*!WIN_NT*/
