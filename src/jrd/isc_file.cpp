@@ -1757,7 +1757,7 @@ namespace {
 	{
 	private:
 		const Firebird::PathName getConfigString(void) const {
-			return Firebird::PathName(Config::getUdfAccess());
+			return Firebird::PathName(Config::getDatabaseAccess());
 		}
 	public:
 		DatabaseDirectoryList(MemoryPool& p) : DirectoryList(p) 
