@@ -212,7 +212,8 @@ private:
 				((ItemList *)node)->parent = parent;
 		}		
 	}; 
-	
+
+public:
 	class Accessor {
 	public:
 		Accessor(BePlusTree* _tree) : tree(_tree), curr(NULL), curPos(0) {}
@@ -533,7 +534,8 @@ private:
   		int curPos;
 		Value addErrorValue;
 	};
-	
+
+private:
 	Allocator *pool;
 	int level;
     void *root;

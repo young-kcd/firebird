@@ -135,9 +135,9 @@ bool BackupManager::begin_backup() {
 		// Flush buffers to prevent the amount of allocated pages from increasing
 		// Before lock we'll write only header then. This may not change the number of
 		// pages in file.
+		tdbb->tdbb_flags |= TDBB_set_backup_state;
 		CCH_flush(tdbb, FLUSH_ALL, 0);
 		// Set state in database header page. All changes are written to main database file yet.
-		tdbb->tdbb_flags |= TDBB_set_backup_state;
 		WIN window;
 		HDR header;
 		window.win_page = HEADER_PAGE;
@@ -255,7 +255,7 @@ bool BackupManager::end_backup(bool recover) {
 			window.win_page = all.current().db_page;
 			window.win_flags = 0;
 			PAG page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
-			if (page->pag_scn() != current_scn);
+			if (page->pag_scn() != current_scn)
 				CCH_MARK_MUST_WRITE(tdbb, &window);
 			CCH_RELEASE(tdbb, &window);
 		} while(all.getNext());
@@ -306,7 +306,7 @@ bool BackupManager::end_backup(bool recover) {
 			PIO_close(diff_file);
 			diff_file = NULL;
 		}
-		PIO_unlink(diff_name);
+		unlink(diff_name);
 		
 		unlock_state_write();
 		TRACE("backup ended");

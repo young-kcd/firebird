@@ -30,7 +30,7 @@
 
 #define GUID_BUFF_SIZE 39
 
-typedef struct FB_GUID {
+struct FB_GUID {
 	USHORT data[8];
 };
 

@@ -23,10 +23,13 @@
  * Contributor(s): ______________________________________.
  */
  
+#include <windows.h>
+#include <objbase.h>
+#include <stdio.h>
+
 #include "../jrd/os/guid.h"
 #include "firebird.h"
 #include "fb_exception.h"
-#include <windows.h>
 
 void GenerateGuid(FB_GUID *guid) {
 	if (!SUCCEEDED(CoCreateGuid((GUID*)guid)))
@@ -34,14 +37,13 @@ void GenerateGuid(FB_GUID *guid) {
 }
 
 void GuidToString(char* buffer, FB_GUID *guid) {
-	char* temp;
-	if (UuidToString((UUID*)guid,&temp)!=RPC_S_OK)
-		Firebird::system_call_failed::raise();
-	strcpy(buffer, temp);
-	RpcStringFree(&temp);
+	sprintf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}", 
+		guid->data[0], guid->data[1], guid->data[2], guid->data[3],
+		guid->data[4], guid->data[5], guid->data[6], guid->data[7]);
 }
 
 void StringToGuid(FB_GUID *guid, char* buffer) {
-	if (UuidFromString((unsigned char*)buffer, (UUID*)guid) != RPC_S_OK)
-		Firebird::system_call_failed::raise();
+	sscanf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}", 
+		&guid->data[0], &guid->data[1], &guid->data[2], &guid->data[3],
+		&guid->data[4], &guid->data[5], &guid->data[6], &guid->data[7]);
 }

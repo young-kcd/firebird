@@ -928,7 +928,7 @@ void CCH_fetch_page(
 		CCH_unwind(tdbb, TRUE);
 	}
 	int bak_state = dbb->backup_manager->get_state();
-	ULONG diff_page;
+	ULONG diff_page = 0;
 	if (bak_state == nbak_state_stalled || bak_state == nbak_state_merge) {
 		if (!dbb->backup_manager->lock_alloc() ||
 			!dbb->backup_manager->actualize_alloc(status)) 

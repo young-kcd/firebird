@@ -221,6 +221,9 @@
 				RelativePath="..\..\..\gen\jrd\grant.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\iberr.cpp">
 			</File>
 			<File
@@ -291,6 +294,9 @@
 						Name="VCCLCompilerTool"
 						GlobalOptimizations="FALSE"/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\nbak.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nodebug.cpp">
@@ -501,6 +507,9 @@
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\db_alias.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dbg.h">
 			</File>
 			<File
@@ -631,6 +640,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\grant_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\guid.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ib_stdio.h">
@@ -811,6 +823,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nav_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\nbak.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nlm_thd.h">
