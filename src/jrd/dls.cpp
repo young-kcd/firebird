@@ -58,14 +58,6 @@ static BOOLEAN fdls_mutex_init = FALSE;
 static MUTX_T fdls_mutex[1];
 #endif
 
-/* external file directory list */
-
-static EDLS     first_edls      = { 0, { 0 } };
-#ifdef V4_THREADING
-static BOOLEAN  edls_mutex_init = FALSE;
-static MUTX_T   edls_mutex[1];
-#endif
-
 BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 {
 /**************************************
