@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.30 2003-02-10 15:05:53 brodsom Exp $
+$Id: lock.cpp,v 1.31 2003-02-13 09:38:47 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -199,9 +199,9 @@ static USHORT alloc_semaphore(OWN, STATUS *);
 static void blocking_action(PTR);
 static void blocking_action2(PTR, PTR);
 static void THREAD_ROUTINE blocking_action_thread(PTR *);
-static void bug(STATUS *, CONST TEXT *);
+static void bug(STATUS *, const TEXT *);
 #ifdef DEV_BUILD
-static void bug_assert(CONST TEXT *, ULONG);
+static void bug_assert(const TEXT *, ULONG);
 #endif
 static BOOLEAN convert(PTR, UCHAR, SSHORT, FPTR_INT, int *, STATUS *);
 static USHORT create_owner(STATUS *, SLONG, UCHAR, SLONG *);
@@ -333,7 +333,7 @@ extern int chmod();
 #endif
 
 
-static CONST UCHAR compatibility[] = {
+static const UCHAR compatibility[] = {
 
 /*				Shared	Prot	Shared	Prot
 		none	null	 Read	Read	Write	Write	Exclusive */
@@ -1959,7 +1959,7 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 
 
 #ifdef DEV_BUILD
-static void bug_assert( CONST TEXT * string, ULONG line)
+static void bug_assert( const TEXT * string, ULONG line)
 {
 /**************************************
  *
@@ -1985,7 +1985,7 @@ static void bug_assert( CONST TEXT * string, ULONG line)
 #endif
 
 
-static void bug( STATUS * status_vector, CONST TEXT * string)
+static void bug( STATUS * status_vector, const TEXT * string)
 {
 /**************************************
  *

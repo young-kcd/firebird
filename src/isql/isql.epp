@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.20 2003-02-11 20:16:57 brodsom Exp $
+  $Id: isql.epp,v 1.21 2003-02-13 09:42:17 dimitr Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -4103,7 +4103,7 @@ void ISQL_get_version( BOOLEAN call_by_create_db)
  *	V4, V3.3 or earlier, as well as other info.
  *
  **************************************/
-	static CONST UCHAR db_version_info[] = { isc_info_ods_version,
+	static const UCHAR db_version_info[] = { isc_info_ods_version,
                                              isc_info_ods_minor_version,
                                              isc_info_db_sql_dialect,
                                              isc_info_firebird_version,

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.9 2003-02-11 20:16:58 brodsom Exp $
+ * $Id: extract.epp,v 1.10 2003-02-13 09:42:16 dimitr Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -94,10 +94,10 @@ extern IB_FILE *Out;
 
 /* Command terminator and procedure terminator */
 
-extern "C" CONST SQLTYPES Column_types[];
-extern CONST SCHAR *Integral_subtypes[];
-extern CONST SCHAR *Sub_types[];
-extern CONST SCHAR *UDF_param_types[];
+extern "C" const SQLTYPES Column_types[];
+extern const SCHAR *Integral_subtypes[];
+extern const SCHAR *Sub_types[];
+extern const SCHAR *UDF_param_types[];
 
 extern const char* trigger_action(int);
 
@@ -1117,8 +1117,8 @@ static void list_all_procs()
  **************************************/
 	SSHORT header = TRUE;
 	TEXT msg[MSG_LENGTH];
-	static CONST SCHAR *create_procedure_str1 = "CREATE PROCEDURE %s ";
-	static CONST SCHAR *create_procedure_str2 = "BEGIN EXIT; END %s%s";
+	static const SCHAR *create_procedure_str1 = "CREATE PROCEDURE %s ";
+	static const SCHAR *create_procedure_str2 = "BEGIN EXIT; END %s%s";
 
 
 /*  First the dummy procedures */
@@ -1467,11 +1467,11 @@ static void list_create_db(void)
  *
  **************************************/
 	SCHAR info_buf[20];
-	static CONST SCHAR page_items[] = {
+	static const SCHAR page_items[] = {
 		isc_info_page_size,
 		isc_info_end
 	};
-	static CONST SCHAR wal_items[] = {
+	static const SCHAR wal_items[] = {
 		isc_info_num_wal_buffers,
 		isc_info_wal_buffer_size,
 		isc_info_wal_grpc_wait_usecs,

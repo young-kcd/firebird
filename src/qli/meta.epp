@@ -87,23 +87,23 @@ static void stuff_priv(RLB, USHORT, TEXT *, USHORT, TEXT *, TEXT *);
 static int truncate_string(TEXT *);
 static void wal_info(UCHAR *, SLONG *, SCHAR *, SLONG *);
 
-static CONST UCHAR tpb[] = { gds_tpb_version1, gds_tpb_write };
-static CONST UCHAR db_info[] = { gds_info_implementation, gds_info_end };
+static const UCHAR tpb[] = { gds_tpb_version1, gds_tpb_write };
+static const UCHAR db_info[] = { gds_info_implementation, gds_info_end };
 static UCHAR parm_buffer[256];
 
-static CONST UCHAR db_log_info[] =
+static const UCHAR db_log_info[] =
 	{ gds_info_logfile, gds_info_cur_logfile_name,
 		gds_info_cur_log_part_offset };
 
 /*
-static CONST UCHAR	dpb_trace [] =	{ gds_dpb_version1, gds_dpb_trace, 1, 1 };
-static CONST UCHAR	dpb_num_buffers [ ] = { gds_dpb_version1, gds_dpb_num_buffers, 1, 1 };
+static const UCHAR	dpb_trace [] =	{ gds_dpb_version1, gds_dpb_trace, 1, 1 };
+static const UCHAR	dpb_num_buffers [ ] = { gds_dpb_version1, gds_dpb_num_buffers, 1, 1 };
 */
 
 #define STUFF_STRING(str)	put_dyn_string (rlb, str)
 #define BLR_BYTE	*blr++
 
-static CONST USHORT blr_dtypes[] = {
+static const USHORT blr_dtypes[] = {
 	0,
 	blr_text,
 	blr_text,
@@ -133,12 +133,12 @@ static CONST USHORT blr_dtypes[] = {
 */
 
 typedef struct rfr_tab_t {
-	CONST TEXT *relation;
-	CONST TEXT *field;
+	const TEXT *relation;
+	const TEXT *field;
 	int bit_mask;
 } *RFR_TAB;
 
-static CONST struct rfr_tab_t rfr_table[] = {
+static const struct rfr_tab_t rfr_table[] = {
 	"RDB$INDICES", "RDB$INDEX_INACTIVE", DBB_cap_idx_inactive,
 /* OBSOLETE - 1996-Aug-06 David Schnepper 
 	"RDB$RELATIONS",	"RDB$STORE_TRIGGER",	DBB_cap_triggers,

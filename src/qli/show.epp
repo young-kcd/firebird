@@ -103,9 +103,9 @@ static int show_views_detail(DBB);
 static int truncate_string(TEXT *);
 static void view_info(DBB, TEXT *, TEXT *, SSHORT, SSHORT);
 
-static CONST SCHAR db_items[] =
+static const SCHAR db_items[] =
 	{ gds_info_page_size, isc_info_db_size_in_pages, gds_info_end };
-static CONST UCHAR
+static const UCHAR
   acl_bpb[] = {
 gds_bpb_version1, gds_bpb_source_type, 1, 3,
 

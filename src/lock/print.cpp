@@ -86,13 +86,13 @@ static void prt_request(OUTFILE, LHB, LRQ);
 static void prt_que(OUTFILE, LHB, SCHAR *, SRQ, USHORT);
 static void prt_que2(OUTFILE, LHB, SCHAR *, SRQ, USHORT);
 
-static CONST TEXT history_names[][10] = {
+static const TEXT history_names[][10] = {
 	"n/a", "ENQ", "DEQ", "CONVERT", "SIGNAL", "POST", "WAIT",
 	"DEL_PROC", "DEL_LOCK", "DEL_REQ", "DENY", "GRANT", "LEAVE",
 	"SCAN", "DEAD", "ENTER", "BUG", "ACTIVE", "CLEANUP", "DEL_OWNER"
 };
 
-static CONST UCHAR compatibility[] = {
+static const UCHAR compatibility[] = {
 
 /*				Shared	Prot	Shared	Prot
 		none	null	 Read	Read	Write	Write	Exclusive */

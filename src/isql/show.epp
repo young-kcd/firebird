@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.12 2003-02-11 20:16:57 brodsom Exp $
+ * $Id: show.epp,v 1.13 2003-02-13 09:42:18 dimitr Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -99,7 +99,7 @@ static TEXT SQL_id_for_grant[BUFFER_LENGTH128];
 
 /* Initialize types */
 
-static CONST SCHAR *Object_types[] = {
+static const SCHAR *Object_types[] = {
 	"Table",
 	"View",
 	"Trigger",
@@ -118,7 +118,7 @@ static CONST SCHAR *Object_types[] = {
     "User Defined Function"
 };
 
-extern "C" CONST SQLTYPES Column_types[] = {
+extern "C" const SQLTYPES Column_types[] = {
 	{SMALLINT, "SMALLINT"},		/* NTX: keyword */
 	{INTEGER, "INTEGER"},		/* NTX: keyword */
 	{QUAD, "QUAD"},				/* NTX: keyword */
@@ -140,7 +140,7 @@ extern "C" CONST SQLTYPES Column_types[] = {
 
 #define MAX_INTSUBTYPES	2
 
-CONST SCHAR *Integral_subtypes[] = {
+const SCHAR *Integral_subtypes[] = {
 	"UNKNOWN",					/* Defined type, NTX: keyword */
 	"NUMERIC",					/* NUMERIC, NTX: keyword */
 	"DECIMAL"					/* DECIMAL, NTX: keyword */
@@ -150,7 +150,7 @@ CONST SCHAR *Integral_subtypes[] = {
 
 #define MAXSUBTYPES 8
 
-CONST SCHAR *Sub_types[] = {
+const SCHAR *Sub_types[] = {
 	"UNKNOWN",					/* NTX: keyword */
 	"TEXT",						/* NTX: keyword */
 	"BLR",						/* NTX: keyword */
@@ -162,12 +162,12 @@ CONST SCHAR *Sub_types[] = {
 	"EXTERNAL_FILE_DESCRIPTION"	/* NTX: keyword */
 };
 
-CONST SCHAR *Trigger_prefix_types[] = {
+const SCHAR *Trigger_prefix_types[] = {
 	"BEFORE",			/* NTX: keyword */
 	"AFTER"				/* NTX: keyword */
 };
 
-CONST SCHAR *Trigger_suffix_types[] = {
+const SCHAR *Trigger_suffix_types[] = {
 	"",
 	"INSERT",			/* NTX: keyword */
 	"UPDATE",			/* NTX: keyword */
@@ -180,7 +180,7 @@ BY ISC_DESCRIPTOR is the default for BLOBs and can't be used explicitly;
 BY SCALAR_ARRAY_DESCRIPTOR should be supported in DSQL in the future, since
 the server has already the capability to deliver arrays to UDFs. */
 #define MAX_UDFPARAM_TYPES 4
-CONST SCHAR	*UDF_param_types[] = {
+const SCHAR	*UDF_param_types[] = {
 	" BY VALUE",			/* NTX: keyword */
 	"",						/* BY REFERENCE */
 	" BY DESCRIPTOR",		/* NTX: keyword in FB */
@@ -199,9 +199,9 @@ CONST SCHAR	*UDF_param_types[] = {
 #define priv_REFERENCES	64
 
 
-static CONST struct {
+static const struct {
 	USHORT priv_flag;
-	CONST SCHAR *priv_string;
+	const SCHAR *priv_string;
 } privs[] = {
 	{ priv_DELETE, "DELETE"},		/* NTX: keyword */
 	{ priv_EXECUTE, "EXECUTE"},	/* NTX: keyword */
@@ -217,14 +217,14 @@ static CONST struct {
 #define MAX_PRIV_LIST	(6+2+7+2+6+2+6+2+6+2+10+1)
 
 
-static CONST SCHAR db_dialect_info[] = {
+static const SCHAR db_dialect_info[] = {
 	isc_info_db_sql_dialect,
 	isc_info_end
 };
 
 /* Added support to display FORCED WRITES status. - PR 27-NOV-2001 */
 /* Added support to display transaction info when next_transaction id is fixed. */
-static CONST SCHAR db_items[] = {
+static const SCHAR db_items[] = {
 	isc_info_page_size,
 	isc_info_db_size_in_pages,
 	isc_info_sweep_interval,
@@ -237,7 +237,7 @@ static CONST SCHAR db_items[] = {
 	isc_info_end
 };
 
-static CONST SCHAR wal_items[] = {
+static const SCHAR wal_items[] = {
 	isc_info_num_wal_buffers,
 	isc_info_wal_buffer_size,
 	isc_info_wal_ckpt_length,
@@ -251,7 +251,7 @@ static CONST SCHAR wal_items[] = {
  * This same BPB is safe to use for both V3 & V4 db's - as
  * a V3 db will ignore the source_ & target_interp values.
  */
-static CONST UCHAR metadata_text_bpb[] = {
+static const UCHAR metadata_text_bpb[] = {
 	isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_text,
 	isc_bpb_target_type, 1, BLOB_text,
