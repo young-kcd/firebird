@@ -588,13 +588,9 @@ static SLONG get_tod(void)
  *
  **************************************/
 #ifdef HAVE_GETTIMEOFDAY
-#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
 	struct timeval tp1;
 
-	(void)gettimeofday(&tp1, (struct timezone *)0);
-#else
-	(void)gettimeofday(&tp1);
-#endif
+	GETTIMEOFDAY(&tp1);
 	if (!base_seconds)
 		base_seconds = tp1.tv_sec;
 	return (tp1.tv_sec - base_seconds) * 1000000 + tp1.tv_usec;

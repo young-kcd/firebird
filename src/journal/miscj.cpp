@@ -237,11 +237,7 @@ void MISC_get_time(timeval* current)
  *
  **************************************/
 #ifdef HAVE_GETTIMEOFDAY
-#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
-	(void)gettimeofday(current, (timezone*)0);
-#else
-	(void)gettimeofday(current);
-#endif
+	GETTIMEOFDAY(current);
 #else
 	timeb buffer;
 

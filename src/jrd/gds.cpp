@@ -1166,15 +1166,9 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	TEXT name[MAXPATHLEN];
 
 #ifdef HAVE_GETTIMEOFDAY
-	{
-	    struct timeval tv;
-#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
-	    (void)gettimeofday(&tv, (struct timezone *)0);
-#else
-	    (void)gettimeofday(&tv);
-#endif
-	    now = tv.tv_sec;
-	}
+	struct timeval tv;
+	GETTIMEOFDAY(&tv);
+	now = tv.tv_sec;
 #else
 	now = time((time_t *)0);
 #endif

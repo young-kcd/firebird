@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.80 2003-10-29 10:53:35 robocop Exp $
+$Id: inet.cpp,v 1.81 2003-10-31 11:33:44 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -266,12 +266,8 @@ static ULONG inet_debug_timer(void)
  **************************************/
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tv;
-#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
-	(void)gettimeofday(&tv, (struct timezone *)0);
-#else
-	(void)gettimeofday(&tv);
-#endif
-	return (tv.tv_sec*1000 + tv.tv_usec - INET_start_time);
+	GETTIMEOFDAY(&tv);
+	return (tv.tv_sec * 1000 + tv.tv_usec - INET_start_time);
 #else
 	struct timeb now;
 	ftime(&now);

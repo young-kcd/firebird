@@ -241,11 +241,7 @@ void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
 	times(&perf->perf_times);
 
 #ifdef HAVE_GETTIMEOFDAY
-#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
-	(void)gettimeofday(&tp, (struct timezone *)0);
-#else
-	(void)gettimeofday(&tp);
-#endif
+	GETTIMEOFDAY(&tp);
 	perf->perf_elapsed = tp.tv_sec * 100 + tp.tv_usec / 10000;
 #else
 	ftime(&time_buffer);

@@ -2855,22 +2855,16 @@ static void service_get(SVC		service,
  *
  **************************************/
 	int ch = 'Z';
-	ULONG elapsed_time;
-#ifdef HAVE_GETTIMEOFDAY
-	struct timeval start_time, end_time;
-#else
-	time_t start_time, end_time;
-#endif
+	time_t elapsed_time;
 
 #ifdef HAVE_GETTIMEOFDAY
-#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
-	(void)gettimeofday(&start_time, (struct timezone *)0);
+	struct timeval start_time, end_time;
+	GETTIMEOFDAY(&start_time);
 #else
-	(void)gettimeofday(&start_time);
-#endif
-#else
+	time_t start_time, end_time;
 	time(&start_time);
 #endif
+
 	*return_length = 0;
 	service->svc_flags &= ~SVC_timeout;
 
@@ -2878,11 +2872,7 @@ static void service_get(SVC		service,
 		if (service_empty(service))
 			THREAD_SLEEP(1);
 #ifdef HAVE_GETTIMEOFDAY
-#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
-		(void)gettimeofday(&end_time, (struct timezone *)0);
-#else
-		(void)gettimeofday(&end_time);
-#endif
+		GETTIMEOFDAY(&end_time);
 		elapsed_time = end_time.tv_sec - start_time.tv_sec;
 #else
 		time(&end_time);

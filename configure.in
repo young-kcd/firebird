@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.172 2003-10-30 12:47:59 eku Exp $
+dnl $Id: configure.in,v 1.173 2003-10-31 11:33:33 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -368,6 +368,11 @@ if test "$ac_cv_func_gettimeofday" = "yes"; then
     [AC_MSG_RESULT(no)])
     ;;
   esac
+  AH_BOTTOM([#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+#define GETTIMEOFDAY(x) gettimeofday((x), (struct timezone *)0)
+#else
+#define GETTIMEOFDAY(x) gettimeofday((x))
+#endif])
 fi
 AC_CHECK_FUNCS(time times)
 AC_SEARCH_LIBS(gethostname,nsl)
