@@ -8,7 +8,7 @@
         Dmitry Yemanov <yemanov@yandex.ru>
 
     * Changed aggregate tracking behavior
-		Introduce backwards compatibilty within aggregates.  Deepest field inside aggregate determine where an aggregate-context should belong to.
+        Introduce backwards compatibilty within aggregates.  Deepest field inside aggregate determine where an aggregate-context should belong to.
       Contributor(s):
         Arno Brinkman <firebird@abvisie.nl>
 
@@ -126,7 +126,7 @@
         Structures within Y-valve.
       Contributor(s):
         Alexander Peshkoff <peshkoff@hotmail.ru>
-		Nickolay Samofatov <skidder@bssys.com>
+        Nickolay Samofatov <skidder@bssys.com>
 
     * Comments improvement.
         Single-line comments (--) are now allowed in any position of the SQL statement.
