@@ -189,7 +189,7 @@ static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const 
 	const TEXT*, bool);
 //static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, vec**, UCHAR *, UCHAR *, BOOLEAN);
 //static bool shadow_defined(thread_db*);
-static bool validate_text_type (thread_db*, ISC_STATUS *, TemporaryField*);
+static bool validate_text_type (thread_db*, ISC_STATUS*, const TemporaryField*);
 
 static const UCHAR nonnull_validation_blr[] =
 {
@@ -3560,10 +3560,11 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	TemporaryField* stack;
 	TemporaryField* external;
 	jrd_rel* relation;
-	bid blob_id;
-	blob_id.clear();
+	//bid blob_id;
+	//blob_id.clear();
 
-	USHORT n, external_flag = 0;
+	USHORT n;
+	bool external_flag = false;
 	bool computed_field;
 	ISC_STATUS_ARRAY status;
 	trig_vec* triggers[TRIGGER_MAX];
@@ -3601,7 +3602,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				EXE_unwind(tdbb, request_fmt1);
 				return false;
 			}
-			blob_id = REL.RDB$VIEW_BLR;
+			const bid blob_id = REL.RDB$VIEW_BLR;
 			null_view = blob_id.isEmpty();
 			external_flag = REL.RDB$EXTERNAL_FILE[0];
 			if (REL.RDB$FORMAT == 255)
@@ -3758,7 +3759,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 								 0);
 					}
 
-					// dimitr: view fields shoudn't be marked as computed
+					// dimitr: view fields shouldn't be marked as computed
 					if (null_view && !FLD.RDB$COMPUTED_BLR.isEmpty())
 						tfb->tfb_flags |= TFB_computed;
 
@@ -4456,7 +4457,7 @@ static void setup_trigger_details(thread_db* tdbb,
 
 
 static bool validate_text_type(thread_db* tdbb, ISC_STATUS* status,
-	TemporaryField* tfb)
+	const TemporaryField* tfb)
 {
 /**************************************
  *

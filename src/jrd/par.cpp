@@ -107,7 +107,8 @@ static jrd_nod* par_modify(thread_db*, CompilerScratch*);
 static USHORT par_name(CompilerScratch*, Firebird::string&);
 static jrd_nod* par_plan(thread_db*, CompilerScratch*);
 static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
-static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**, jrd_nod**, USHORT);
+static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**,
+	jrd_nod**, bool);
 static jrd_nod* par_relation(thread_db*, CompilerScratch*, SSHORT, bool);
 static jrd_nod* par_rse(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool);
@@ -1029,9 +1030,9 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	node->nod_arg[e_esp_procedure] = (jrd_nod*) procedure;
 
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_esp_in_msg],
-						&node->nod_arg[e_esp_inputs], TRUE);
+						&node->nod_arg[e_esp_inputs], true);
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_esp_out_msg],
-						&node->nod_arg[e_esp_outputs], FALSE);
+						&node->nod_arg[e_esp_outputs], false);
 
 	jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
 	dep_node->nod_type = nod_dependency;
@@ -1590,8 +1591,6 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 /* we have hit a stream; parse the context number and access type */
 
 	if (node_type == blr_retrieve) {
-		Firebird::string name;
-
 		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
 		plan->nod_type = (NOD_T) (USHORT) blr_table[node_type];
 
@@ -1627,12 +1626,13 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		node_type = (USHORT) BLR_BYTE;
 		USHORT extra_count = 0;
 		jrd_nod* access_type = 0;
-
+		Firebird::string name;
+		
 		switch (node_type) {
 		case blr_navigational:
 			{
 			access_type = plan->nod_arg[e_retrieve_access_type] =
-				PAR_make_node(tdbb, 3);
+				PAR_make_node(tdbb, e_access_type_length);
 			access_type->nod_type = nod_navigational;
 
 			/* pick up the index name and look up the appropriate ids */
@@ -1664,9 +1664,9 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 			   the relation could be a base relation of a view;
 			   save the index name also, for convenience */
 
-			access_type->nod_arg[0] = (jrd_nod*) (IPTR) relation_id;
-			access_type->nod_arg[1] = (jrd_nod*) (IPTR) index_id;
-			access_type->nod_arg[2] = (jrd_nod*) ALL_cstring(tdbb->getDefaultPool(), name);
+			access_type->nod_arg[e_access_type_relation] = (jrd_nod*) (IPTR) relation_id;
+			access_type->nod_arg[e_access_type_index] = (jrd_nod*) (IPTR) index_id;
+			access_type->nod_arg[e_access_type_index_name] = (jrd_nod*) ALL_cstring(tdbb->getDefaultPool(), name);
 
 			if (BLR_PEEK == blr_indices)
 				// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
@@ -1680,7 +1680,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				BLR_BYTE; // skip blr_indices
 			USHORT count = (USHORT) BLR_BYTE;
 			jrd_nod* temp = plan->nod_arg[e_retrieve_access_type] =
-				PAR_make_node(tdbb, count * 3 + extra_count);
+				PAR_make_node(tdbb, count * e_access_type_length + extra_count);
 			for (USHORT i = 0; i < extra_count; i++) {
 				temp->nod_arg[i] = access_type->nod_arg[i];
 			}
@@ -1781,7 +1781,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	csb->csb_rpt[stream].csb_procedure = procedure;
 
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_prc_in_msg],
-						&node->nod_arg[e_prc_inputs], TRUE);
+						&node->nod_arg[e_prc_inputs], true);
 
 	if (csb->csb_g_flags & csb_get_dependencies)
 		par_dependency(tdbb, csb, stream, (SSHORT) - 1, "");
@@ -1795,7 +1795,7 @@ static void par_procedure_parms(
 								CompilerScratch* csb,
 								jrd_prc* procedure,
 								jrd_nod** message_ptr,
-								jrd_nod** parameter_ptr, USHORT input_flag)
+								jrd_nod** parameter_ptr, bool input_flag)
 {
 /**************************************
  *
@@ -2012,7 +2012,7 @@ static jrd_nod* par_relation(
 		csb->csb_rpt[stream].csb_alias = alias_string;
 
 		if (csb->csb_g_flags & csb_get_dependencies)
-			par_dependency(tdbb, csb, stream, (SSHORT) - 1, "");
+			par_dependency(tdbb, csb, stream, (SSHORT) -1, "");
 	}
 	else
 	{

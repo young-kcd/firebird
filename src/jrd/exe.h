@@ -485,9 +485,16 @@ const int e_range_relation_number	= 0;	/* nod_range_relation */
 const int e_range_relation_relation	= 1;
 const int e_range_relation_length	= 2;
 
+// This is for the plan node
 const int e_retrieve_relation		= 0;
 const int e_retrieve_access_type	= 1;
 const int e_retrieve_length			= 2;
+
+// This is for the plan's access_type subnode
+const int e_access_type_relation	= 0;
+const int e_access_type_index		= 1;
+const int e_access_type_index_name	= 2;
+const int e_access_type_length		= 3;
 
 const int e_reset_from_stream	= 0;
 const int e_reset_to_stream		= 1;

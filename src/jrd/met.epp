@@ -715,7 +715,8 @@ void MET_delete_dependencies(thread_db*	tdbb,
 			WITH DEP.RDB$DEPENDENT_NAME = object_name
 			AND DEP.RDB$DEPENDENT_TYPE = dependency_type
 
-        if (!REQUEST(irq_d_deps)) REQUEST(irq_d_deps) = request;
+        if (!REQUEST(irq_d_deps))
+			REQUEST(irq_d_deps) = request;
 
 		ERASE DEP;
 	END_FOR;
@@ -3202,7 +3203,6 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 	trig_vec* triggers[TRIGGER_MAX];
 	vec* vector;
 	jrd_fld* field;
-	jrd_req* request;
 	blb* blob;
 
 	SET_TDBB(tdbb);
@@ -3231,9 +3231,9 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 	}
 
 	relation->rel_flags |= REL_being_scanned;
-	bool dependencies =
+	const bool dependencies =
 		(relation->rel_flags & REL_get_dependencies) ? true : false;
-	bool sys_triggers = (relation->rel_flags & REL_sys_triggers) ? true : false;
+	const bool sys_triggers = (relation->rel_flags & REL_sys_triggers) ? true : false;
 	relation->rel_flags &= ~(REL_get_dependencies | REL_sys_triggers);
 	for (USHORT itr = 0; itr < TRIGGER_MAX; ++itr) {
 		triggers[itr] = NULL;
@@ -3248,7 +3248,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 /* Since this can be called recursively, find an inactive clone of the request */
 
-	request = CMP_find_request(tdbb, irq_r_fields, IRQ_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, irq_r_fields, IRQ_REQUESTS);
 	CompilerScratch* csb = NULL;
 
 	FOR(REQUEST_HANDLE request)
