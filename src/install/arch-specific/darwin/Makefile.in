@@ -53,6 +53,8 @@ package_classic package_embedded:
 			-e 's/_MINOR_VERS_/$(FB_MINOR_VERS)/g' \
 			install/arch-specific/darwin/Description.plist \
 			> $(DIR)/$(INST_NM).pkg/Contents/Resources/Description.plist
+	cp -r install/arch-specific/darwin/Firebird.startupitem \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/StartupItem
 	cp install/arch-specific/darwin/installer_background.pdf \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/background.pdf
 	cp install/arch-specific/darwin/install-script \
@@ -117,6 +119,8 @@ package_super package_server:
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/background.pdf
 	cp install/arch-specific/darwin/install-script \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/postinstall
+	cp -r install/arch-specific/darwin/Firebird.startupitem \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/StartupItem
 	cp install/arch-specific/darwin/install-script \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/postupgrade
 	cp install/arch-specific/darwin/preinstall-script \
@@ -149,13 +153,12 @@ package_super package_server:
 install: install_@FIREBIRD_ARCH_TYPE@
 	
 install_super install_server:
-	installer -pkg `pwd`/$(ROOT)/gen/firebird/Firebird-SS-$(FB_INST_VERS) \
-			-target /
+	installer -verbose -dumplog -pkg \
+			`pwd`/$(ROOT)/gen/firebird/Firebird-SS-$(FB_INST_VERS).pkg -target /
 
 install_embedded install_classic:
-	installer -pkg `pwd`/$(ROOT)/gen/firebird/Firebird-CS-$(FB_INST_VERS) \
-			-target /
-
+	installer -verbose -dumplog -pkg \
+			`pwd`/$(ROOT)/gen/firebird/Firebird-SS-$(FB_INST_VERS).pkg -target /
 
 
 darwin_installer_common: force

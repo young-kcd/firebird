@@ -1,0 +1,28 @@
+#!/bin/sh
+
+##
+# Firebird SQL Database Server
+##
+
+. /etc/rc.common
+
+StartService ()
+{
+    ConsoleMessage "Starting Firebird SQL Database server"
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin start
+}
+
+StopService ()
+{
+    ConsoleMessage "Stopping Firebird SQL Database server"
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -user sysdba -password masterkey shut
+}
+
+RestartService ()
+{
+    ConsoleMessage "Restarting Firebird SQL Database server"
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -user sysdba -password masterkey shut
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin start
+}
+
+RunService "$1"

@@ -67,7 +67,13 @@ fi
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	echo -n
 else
+	$FB_FW/Resources/bin/fbmgr.bin -user sysdba -password masterkey shut
 	rm -rf /Library/StartupItems/Firebird
+fi
+
+# Shutdown any existing servers
+if [ -x /sbin/service ]; then
+	service firebird stop
 fi
 
 # Install the framework
@@ -150,7 +156,7 @@ fi
 
 # Install ourselves in the correct place
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	echo -n
+	cp -r $1/Contents/Resources/StartupItem /Library/StartupItems/Firebird
 else
 	if [ -f /var/run/xinetd.pid -a -d /etc/xinetd.d ]; then
 		cat > /etc/xinetd.d/firebird <<EOF
@@ -219,5 +225,5 @@ fi
 # And last but not least, start the server
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	#echo Starting Firebird Database Server
-	/Library/StartupItems/Firebird.startup/Firebird start
+	/Library/StartupItems/Firebird/Firebird start
 fi
