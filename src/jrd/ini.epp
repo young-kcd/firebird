@@ -700,6 +700,24 @@ void INI_init2(void)
 						}
 					}
 				}
+				else if ((fld[RFLD_F_NAME] == nam_description ||
+					fld[RFLD_F_NAME] == nam_sys_flag) &&
+					relfld[RFLD_R_NAME] == nam_roles)
+				{
+					if (major_version >= ODS_VERSION11)
+					{
+						if (!fld[RFLD_F_MINOR])
+						{
+							n++;
+							if (fld[RFLD_F_UPD_MINOR])
+								relation->rel_flags |= REL_force_scan;
+						}
+						else
+						{
+							relation->rel_flags |= REL_force_scan;
+						}
+					}
+				}
 				else
 				{
 					if (!fld[RFLD_F_MINOR])
