@@ -515,7 +515,7 @@
 "Services functionality will be supported in a later version  of the product",		/*494, service_not_supported           */
 "GENERATOR %s",		/*495, generator_name                  */
 "UDF %s",		/*496, udf_name                        */
-"Invalid parameter to FIRST.  Only positive values are allowed.",		/*497, bad_limit_param                 */
+"Invalid parameter to FIRST.  Only integers >= 0 are allowed.",		/*497, bad_limit_param                 */
 "Invalid parameter to SKIP.  Only integers >= 0 are allowed.",		/*498, bad_skip_param                  */
 "File exceeded maximum size of 2GB.  Add another database file or use a 64 bit I/O version of Firebird.",		/*499, io_32bit_exceeded_err           */
 "Unable to find savepoint with name %s in transaction context",		/*500, invalid_savepoint               */
