@@ -50,8 +50,8 @@
 @echo.
 @echo preprocessing empbuild.e and intlbld.e
 @echo path = %DB_PATH%/gen/examples
-@%ROOT_PATH%\gen\gpre_static -r -m -n -z %ROOT_PATH%\examples\empbuild\empbuild.e %ROOT_PATH%\gen\examples\empbuild.c -b localhost:%DB_PATH%/gen/examples/
-@%ROOT_PATH%\gen\gpre_static -r -m -n -z %ROOT_PATH%\examples\empbuild\intlbld.e %ROOT_PATH%\gen\examples\intlbld.c -b localhost:%DB_PATH%/gen/examples/
+@%ROOT_PATH%\gen\gpre_static -r -m -n -z %ROOT_PATH%\examples\empbuild\empbuild.e %ROOT_PATH%\gen\examples\empbuild.c -b %SERVER_NAME%:%DB_PATH%/gen/examples/
+@%ROOT_PATH%\gen\gpre_static -r -m -n -z %ROOT_PATH%\examples\empbuild\intlbld.e %ROOT_PATH%\gen\examples\intlbld.c -b %SERVER_NAME%:%DB_PATH%/gen/examples/
 @goto :EOF
 
 ::===========
@@ -124,7 +124,7 @@ if "%VS_VER%"=="msvc6" (
 @%ROOT_PATH%\gen\examples\empbuild.exe %DB_PATH%/gen/examples/employee.fdb
 :: The script intldml.sql contains a reference to intlemp.fdb that must be changed
 @del isql.tmp
-@echo s;intlemp.fdb;localhost:%ROOT_PATH%\gen\examples\intlemp.fdb;g > isql.tmp
+@echo s;intlemp.fdb;%SERVER_NAME%:%ROOT_PATH%\gen\examples\intlemp.fdb;g > isql.tmp
 @%ROOT_PATH%\gen\examples\intlbld.exe %DB_PATH%/gen/examples/intlemp.fdb
 @cd %ROOT_PATH%\builds\win32
 
