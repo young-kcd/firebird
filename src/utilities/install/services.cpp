@@ -27,6 +27,7 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <windows.h>
+#include <ntsecapi.h>
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../utilities/install/install_nt.h"
@@ -36,99 +37,7 @@
 /* Defines */
 #define RUNAS_SERVICE " -s"
 
-
-USHORT SERVICES_config(SC_HANDLE manager,
-					   TEXT * service_name,
-					   TEXT * display_name,
-					   USHORT sw_mode,
-					   USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
-{
-/**************************************
- *
- *	S E R V I C E S _ c o n f i g
- *
- **************************************
- *
- * Functional description
- *	Configure an installed service.
- *
- **************************************/
-	HKEY hkey;
-	SLONG status;
-	TEXT *mode;
-
-	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-							   REG_KEY_ROOT_CUR_VER,
-							   0, KEY_WRITE, &hkey)) != ERROR_SUCCESS) {
-		return (*err_handler) (status, "RegOpenKeyEx", NULL);
-	}
-
-	switch (sw_mode) {
-	case DEFAULT_CLIENT:
-		mode = "";
-		break;
-	case NORMAL_PRIORITY:
-		mode = "-r";
-		break;
-	case HIGH_PRIORITY:
-		mode = "-b";
-		break;
-	}
-
-	if ((status = RegSetValueEx(hkey, "DefaultClientMode", 0,
-								REG_SZ, reinterpret_cast<UCHAR*>(mode),
-								(DWORD) (strlen(mode) + 1))) !=
-		ERROR_SUCCESS) {
-		RegCloseKey(hkey);
-		return (*err_handler) (status, "RegSetValueEx", NULL);
-	}
-
-	RegCloseKey(hkey);
-
-	return FB_SUCCESS;
-}
-
-
-USHORT SERVICES_delete(SC_HANDLE manager,
-					   TEXT * service_name,
-					   TEXT * display_name,
-					   USHORT(*err_handler)(SLONG, TEXT *, SC_HANDLE))
-{
-/**************************************
- *
- *	S E R V I C E S _ d e l e t e
- *
- **************************************
- *
- * Functional description
- *	delete installed service param from registry.
- *
- **************************************/
-	HKEY hkey;
-	SLONG status;
-	TEXT *mode;
-
-	mode = "";
-
-	if ((status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-							   REG_KEY_ROOT_CUR_VER,
-							   0, KEY_WRITE, &hkey)) != ERROR_SUCCESS) {
-		return (*err_handler) (status, "RegOpenKeyEx", NULL);
-	}
-
-	if ((status = RegSetValueEx(hkey, "DefaultClientMode", 0,
-								REG_SZ, reinterpret_cast<UCHAR*>(mode),
-								(DWORD) (strlen(mode) + 1))) !=
-		ERROR_SUCCESS) {
-		RegCloseKey(hkey);
-		return (*err_handler) (status, "RegSetValueEx", NULL);
-	}
-
-	RegCloseKey(hkey);
-
-	return FB_SUCCESS;
-}
-
+static void grant_logon_right(TEXT* account);
 
 USHORT SERVICES_install(SC_HANDLE manager,
 						TEXT * service_name,
@@ -152,28 +61,48 @@ USHORT SERVICES_install(SC_HANDLE manager,
  *
  **************************************/
 	SC_HANDLE service;
-	TEXT path_name[260];
+	TEXT path_name[MAXPATHLEN];
+	TEXT full_user_name[128];
 	USHORT len;
 	DWORD errnum;
 	DWORD dwServiceType;
 
 	strcpy(path_name, directory);
 	len = strlen(path_name);
-	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\') {
+	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\')
+	{
 		path_name[len++] = '\\';
 		path_name[len] = 0;
 	}
+
 	strcpy(path_name + len, executable);
+	strcat(path_name, ".exe");
 	strcat(path_name, RUNAS_SERVICE);
 
 	dwServiceType = SERVICE_WIN32_OWN_PROCESS;
-	if (nt_user_name) {
-		if (! nt_user_password)
+	if (nt_user_name != 0)
+	{
+		TEXT *p = nt_user_name;
+		while (*p != '\0' && *p != '\\') ++p;
+		if (*p == '\0')
+		{
+			DWORD cnlen = sizeof(full_user_name);
+			GetComputerName(full_user_name, &cnlen);
+			strcat(full_user_name, "\\");
+			strncat(full_user_name, nt_user_name, sizeof(full_user_name) - (cnlen + 1));
+		}
+		else
+			strncpy(full_user_name, nt_user_name, sizeof(full_user_name));
+		full_user_name[sizeof(full_user_name) -1] = '\0';
+		if (nt_user_password == 0)
 			nt_user_password = "";
+		nt_user_name = full_user_name;
+
+		// Let's grant "Logon as a Service" right to the -login user
+		grant_logon_right(nt_user_name);
 	}
-	else {
+	else
 		dwServiceType |= SERVICE_INTERACTIVE_PROCESS;
-	}
 
 	service = CreateService(manager,
 							service_name,
@@ -186,7 +115,8 @@ USHORT SERVICES_install(SC_HANDLE manager,
 							path_name, NULL, NULL, dependencies, 
 							nt_user_name, nt_user_password);
 
-	if (service == NULL) {
+	if (service == NULL)
+	{
 		errnum = GetLastError();
 		if (errnum == ERROR_DUP_NAME || errnum == ERROR_SERVICE_EXISTS)
 			return IB_SERVICE_ALREADY_DEFINED;
@@ -222,20 +152,17 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
-	if (!QueryServiceStatus(service, &service_status)) {
-		CloseServiceHandle(service);
+	if (!QueryServiceStatus(service, &service_status))
 		return (*err_handler) (GetLastError(), "QueryServiceStatus", service);
-	}
 
-	if (service_status.dwCurrentState != SERVICE_STOPPED) {
+	if (service_status.dwCurrentState != SERVICE_STOPPED)
+	{
 		CloseServiceHandle(service);
 		return IB_SERVICE_RUNNING;
 	}
 
-	if (!DeleteService(service)) {
-		CloseServiceHandle(service);
+	if (!DeleteService(service))
 		return (*err_handler) (GetLastError(), "DeleteService", service);
-	}
 
 	CloseServiceHandle(service);
 
@@ -260,27 +187,48 @@ USHORT SERVICES_start(SC_HANDLE manager,
  *
  **************************************/
 	SC_HANDLE service;
+	SERVICE_STATUS service_status;
 	const TEXT *mode;
+	DWORD errnum;
 
 	service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
-	switch (sw_mode) {
-	case DEFAULT_CLIENT:
-		mode = NULL;
-		break;
-	case NORMAL_PRIORITY:
-		mode = "-r";
-		break;
-	case HIGH_PRIORITY:
-		mode = "-b";
-		break;
+	switch (sw_mode)
+	{
+		case DEFAULT_PRIORITY:
+			mode = NULL;
+			break;
+		case NORMAL_PRIORITY:
+			mode = "-r";
+			break;
+		case HIGH_PRIORITY:
+			mode = "-b";
+			break;
 	}
-	if (!StartService(service, (mode) ? 1 : 0, &mode)) {
+
+	if (!StartService(service, (mode) ? 1 : 0, &mode))
+	{
+		errnum = GetLastError();
 		CloseServiceHandle(service);
-		return (*err_handler) (GetLastError(), "StartService", service);
+		if (errnum == ERROR_SERVICE_ALREADY_RUNNING)
+			return FB_SUCCESS;
+		else
+			return (*err_handler) (errnum, "StartService", NULL);
 	}
+
+	/* Wait for the service to actually start before returning. */
+	do
+	{
+		if (!QueryServiceStatus(service, &service_status))
+			return (*err_handler) (GetLastError(), "QueryServiceStatus", service);
+		Sleep(100);	// Don't loop too quickly (would be useless)
+	}
+	while (service_status.dwCurrentState == SERVICE_START_PENDING);
+
+	if (service_status.dwCurrentState != SERVICE_RUNNING)
+		return (*err_handler) (0, "Service failed to complete its startup sequence.", service);
 
 	CloseServiceHandle(service);
 
@@ -311,27 +259,106 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
-	if (!ControlService(service, SERVICE_CONTROL_STOP, &service_status)) {
-		CloseServiceHandle(service);
+	if (!ControlService(service, SERVICE_CONTROL_STOP, &service_status))
+	{
 		errnum = GetLastError();
+		CloseServiceHandle(service);
 		if (errnum == ERROR_SERVICE_NOT_ACTIVE)
 			return FB_SUCCESS;
 		else
-			return (*err_handler) (errnum, "ControlService", service);
+			return (*err_handler) (errnum, "ControlService", NULL);
 	}
 
-/* Wait for the service to actually stop before returning. */
-
-	do {
-		if (!QueryServiceStatus(service, &service_status)) {
-			CloseServiceHandle(service);
-			return (*err_handler) (GetLastError(), "QueryServiceStatus",
-								   service);
-		}
+	/* Wait for the service to actually stop before returning. */
+	do
+	{
+		if (!QueryServiceStatus(service, &service_status))
+			return (*err_handler) (GetLastError(), "QueryServiceStatus", service);
+		Sleep(100);	// Don't loop too quickly (would be useless)
 	}
 	while (service_status.dwCurrentState == SERVICE_STOP_PENDING);
+
+	if (service_status.dwCurrentState != SERVICE_STOPPED)
+		return (*err_handler) (0, "Service failed to complete its stop sequence", service);
 
 	CloseServiceHandle(service);
 
 	return FB_SUCCESS;
 }
+
+static void grant_logon_right(TEXT* account)
+{
+/**************************************
+ *
+ * g r a n t _ l o g o n _ r i g h t
+ *
+ **************************************
+ *
+ * Functional description
+ *  Grants the "Log on as a service" right to account.
+ *  This is a Windows NT, 2000, XP, 2003 security thing.
+ *  To run a service under an account other than LocalSystem, the account
+ *  must have this right. To succeed granting the right, the current user
+ *  must be an Administrator.
+ *  This function does not report errors, which will happen if the right
+ *  as been granted already.
+ *  OM - August 2003
+ *
+ **************************************/
+
+	LSA_OBJECT_ATTRIBUTES ObjectAttributes;
+	LSA_HANDLE PolicyHandle;
+	PSID pSid;
+	DWORD cbSid;
+	TEXT *pDomain;
+	DWORD cchDomain;
+	SID_NAME_USE peUse;
+	LSA_UNICODE_STRING PrivilegeString;
+
+	// Open the policy on the local machine.
+	ZeroMemory(&ObjectAttributes, sizeof(ObjectAttributes));
+	if (LsaOpenPolicy(NULL, &ObjectAttributes,
+		POLICY_CREATE_ACCOUNT | POLICY_LOOKUP_NAMES, &PolicyHandle)
+			!= (NTSTATUS)0)
+	{
+		return;
+	}
+
+	// Obtain the SID of the user/group. First get required buffer sizes.
+	cbSid = cchDomain = 0;
+	LookupAccountName(NULL, account, NULL, &cbSid, NULL, &cchDomain, &peUse);
+	pSid = (PSID)LocalAlloc(LMEM_ZEROINIT, cbSid);
+	if (pSid == 0)
+	{
+		LsaClose(PolicyHandle);
+		return;
+	}
+	pDomain = (LPTSTR)LocalAlloc(LMEM_ZEROINIT, cchDomain);
+	if (pDomain == 0)
+	{
+		LsaClose(PolicyHandle);
+		LocalFree(pSid);
+		return;
+	}
+	// Now, really obtain the SID of the user/group.
+	if (LookupAccountName(NULL, account, pSid, &cbSid,
+		pDomain, &cchDomain, &peUse) != 0)
+	{
+		// Grant the SeServiceLogonRight to users represented by pSid.
+		PrivilegeString.Buffer = L"SeServiceLogonRight";
+		PrivilegeString.Length = (USHORT) 19 * sizeof(WCHAR); // 19 : char len of Buffer
+		PrivilegeString.MaximumLength=(USHORT)(19 + 1) * sizeof(WCHAR);
+		// No need to check the result.
+		LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1);
+	}
+	
+	LsaClose(PolicyHandle);
+	LocalFree(pSid);
+	LocalFree(pDomain);
+
+	return;
+}
+
+//
+// EOF
+//

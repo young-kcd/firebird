@@ -24,17 +24,17 @@
 #ifndef _UTILITIES_INSTALL_NT_H_
 #define _UTILITIES_INSTALL_NT_H_
 
-#define REMOTE_SERVICE		"FirebirdServer"
-#define REMOTE_DISPLAY_NAME	"Firebird Server"
+#define REMOTE_SERVICE			"FirebirdServer"
+#define REMOTE_DISPLAY_NAME		"Firebird Server"
 #define REMOTE_SS_EXECUTABLE	"bin\\fbserver"
 #define REMOTE_CS_EXECUTABLE	"bin\\fb_inet_server"
-#define ISCGUARD_SERVICE	"FirebirdGuardian"
-#define ISCGUARD_DISPLAY_NAME "Firebird Guardian"
-#define ISCGUARD_EXECUTABLE	"bin\\fbguard"
-#define GUARDIAN_MUTEX      "FirebirdGuardianMutex"
+#define ISCGUARD_SERVICE		"FirebirdGuardian"
+#define ISCGUARD_DISPLAY_NAME	"Firebird Guardian"
+#define ISCGUARD_EXECUTABLE		"bin\\fbguard"
+#define GUARDIAN_MUTEX			"FirebirdGuardianMutex"
 /* Starting with 128 the service prams are user defined */
 #define SERVICE_CREATE_GUARDIAN_MUTEX 128
-#define REMOTE_DEPENDENCIES	"Tcpip\0\0"
+#define REMOTE_DEPENDENCIES		"Tcpip\0\0"
 
 #define COMMAND_NONE		0
 #define COMMAND_INSTALL		1
@@ -42,6 +42,7 @@
 #define COMMAND_START		3
 #define COMMAND_STOP		4
 #define COMMAND_CONFIG		5
+#define COMMAND_QUERY		6
 
 #define STARTUP_DEMAND		0
 #define STARTUP_AUTO		1
@@ -49,7 +50,7 @@
 #define NO_GUARDIAN			0
 #define USE_GUARDIAN		1
 
-#define DEFAULT_CLIENT		0
+#define DEFAULT_PRIORITY	0
 #define NORMAL_PRIORITY		1
 #define HIGH_PRIORITY		2
 
@@ -57,9 +58,9 @@
 #define ARCH_CS				1
 
 #define IB_SERVICE_ALREADY_DEFINED	100
-#define IB_SERVICE_RUNNING		101
+#define IB_SERVICE_RUNNING			101
 
-#define IB_GUARDIAN_ALREADY_DEFINED  102
-#define IB_GUARDIAN_RUNNING		103
+#define IB_GUARDIAN_ALREADY_DEFINED	102
+#define IB_GUARDIAN_RUNNING			103
 
 #endif /* _UTILITIES_INSTALL_NT_H_ */
